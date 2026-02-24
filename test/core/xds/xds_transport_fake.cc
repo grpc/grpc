@@ -199,6 +199,89 @@ bool FakeXdsTransportFactory::FakeStreamingCall::IsOrphaned() {
 }
 
 //
+// FakeXdsTransportFactory::FakeUnaryCall
+//
+
+FakeXdsTransportFactory::FakeUnaryCall::~FakeUnaryCall() {
+  {
+    MutexLock lock(&mu_);
+    if (transport_->abort_on_undrained_messages()) {
+      for (const auto& message : from_client_messages_) {
+        LOG(ERROR) << "[" << transport_->server()->server_uri() << "] " << this
+                   << " From client message left in queue: " << message;
+      }
+      GRPC_CHECK(from_client_messages_.empty());
+    }
+  }
+  transport_->RemoveUnaryCall(method_, this);
+}
+
+void FakeXdsTransportFactory::FakeUnaryCall::Orphan() {
+  transport_->RemoveUnaryCall(method_, this);
+  Unref();
+}
+
+absl::StatusOr<std::string>
+FakeXdsTransportFactory::FakeUnaryCall::SendMessage(std::string payload) {
+  {
+    MutexLock lock(&mu_);
+    from_client_messages_.push_back(std::move(payload));
+  }
+  MutexLock lock(&mu_);
+  while (!response_set_) {
+    if (event_engine_->IsIdle()) {
+      // If idle, we might not get a response?
+      // But we wait.
+    }
+    // We cannot Tick() here if we are blocking the thread that might Tick().
+    // We assume SendMessage is called on a separate thread or event engine is separate.
+    cv_.Wait(&mu_);
+  }
+  if (!status_.ok()) return status_;
+  return to_client_message_;
+}
+
+bool FakeXdsTransportFactory::FakeUnaryCall::HaveMessageFromClient() {
+  MutexLock lock(&mu_);
+  return !from_client_messages_.empty();
+}
+
+std::optional<std::string>
+FakeXdsTransportFactory::FakeUnaryCall::WaitForMessageFromClient() {
+  while (true) {
+    {
+      MutexLock lock(&mu_);
+      if (!from_client_messages_.empty()) {
+        std::string payload = std::move(from_client_messages_.front());
+        from_client_messages_.pop_front();
+        return payload;
+      }
+      if (event_engine_->IsIdle()) return std::nullopt;
+    }
+    event_engine_->Tick();
+  }
+}
+
+void FakeXdsTransportFactory::FakeUnaryCall::SendMessageToClient(
+    absl::string_view payload) {
+  MutexLock lock(&mu_);
+  to_client_message_ = std::string(payload);
+  MaybeDeliverResponseToClient();
+}
+
+void FakeXdsTransportFactory::FakeUnaryCall::MaybeSendStatusToClient(
+    absl::Status status) {
+  MutexLock lock(&mu_);
+  status_ = std::move(status);
+  MaybeDeliverResponseToClient();
+}
+
+void FakeXdsTransportFactory::FakeUnaryCall::MaybeDeliverResponseToClient() {
+  response_set_ = true;
+  cv_.Signal();
+}
+
+//
 // FakeXdsTransportFactory::FakeXdsTransport
 //
 
@@ -249,12 +332,37 @@ FakeXdsTransportFactory::FakeXdsTransport::WaitForStream(const char* method) {
   }
 }
 
+RefCountedPtr<FakeXdsTransportFactory::FakeUnaryCall>
+FakeXdsTransportFactory::FakeXdsTransport::WaitForUnaryCall(
+    const char* method) {
+  while (true) {
+    {
+      MutexLock lock(&mu_);
+      auto it = active_unary_calls_.find(method);
+      if (it != active_unary_calls_.end() && it->second != nullptr) {
+        return it->second;
+      }
+      if (event_engine_->IsIdle()) return nullptr;
+    }
+    event_engine_->Tick();
+  }
+}
+
 void FakeXdsTransportFactory::FakeXdsTransport::RemoveStream(
     const char* method, FakeStreamingCall* call) {
   MutexLock lock(&mu_);
   auto it = active_calls_.find(method);
   if (it != active_calls_.end() && it->second.get() == call) {
     active_calls_.erase(it);
+  }
+}
+
+void FakeXdsTransportFactory::FakeXdsTransport::RemoveUnaryCall(
+    const char* method, FakeUnaryCall* call) {
+  MutexLock lock(&mu_);
+  auto it = active_unary_calls_.find(method);
+  if (it != active_unary_calls_.end() && it->second.get() == call) {
+    active_unary_calls_.erase(it);
   }
 }
 
@@ -278,6 +386,19 @@ FakeXdsTransportFactory::FakeXdsTransport::CreateStreamingCall(
       WeakRefAsSubclass<FakeXdsTransport>(), method, std::move(event_handler));
   MutexLock lock(&mu_);
   active_calls_[method] = call->Ref().TakeAsSubclass<FakeStreamingCall>();
+  return call;
+}
+
+OrphanablePtr<XdsTransportFactory::XdsTransport::UnaryCall>
+FakeXdsTransportFactory::FakeXdsTransport::CreateUnaryCall(const char* method) {
+  // UnaryCall is InternallyRefCounted, so we return OrphanablePtr to it?
+  // Check XdsTransport::CreateUnaryCall signature.
+  // It returns OrphanablePtr<UnaryCall>.
+  // UnaryCall inherits InternallyRefCounted.
+  auto call = MakeOrphanable<FakeUnaryCall>(
+      WeakRefAsSubclass<FakeXdsTransport>(), method);
+  MutexLock lock(&mu_);
+  active_unary_calls_[method] = call->Ref().TakeAsSubclass<FakeUnaryCall>();
   return call;
 }
 
@@ -326,6 +447,14 @@ FakeXdsTransportFactory::WaitForStream(
   auto transport = GetTransport(server);
   if (transport == nullptr) return nullptr;
   return transport->WaitForStream(method);
+}
+
+RefCountedPtr<FakeXdsTransportFactory::FakeUnaryCall>
+FakeXdsTransportFactory::WaitForUnaryCall(
+    const XdsBootstrap::XdsServerTarget& server, const char* method) {
+  auto transport = GetTransport(server);
+  if (transport == nullptr) return nullptr;
+  return transport->WaitForUnaryCall(method);
 }
 
 void FakeXdsTransportFactory::Orphaned() { event_engine_.reset(); }
