@@ -180,7 +180,6 @@ EXPORTS
     grpc_authorization_policy_provider_static_data_create
     grpc_authorization_policy_provider_file_watcher_create
     grpc_authorization_policy_provider_release
-    grpc_tls_identity_pairs_add_pair_with_signer
     grpc_slice_ref
     grpc_slice_unref
     grpc_slice_copy
