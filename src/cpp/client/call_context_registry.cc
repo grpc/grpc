@@ -1,10 +1,12 @@
 #include <grpcpp/impl/call_context_registry.h>
 #include <grpcpp/impl/call_context_types.h>
 #include <stddef.h>
+
 #include <vector>
 
 #include "src/core/lib/resource_quota/arena.h"
-#include "src/core/telemetry/telemetry.h" 
+#include "src/core/telemetry/telemetry_label.h"
+#include "src/core/util/construct_destruct.h"
 
 namespace grpc {
 namespace impl {
@@ -15,11 +17,11 @@ struct RegistryEntry {
 };
 
 static std::vector<RegistryEntry>& GetRegistry() {
-  static auto* registry = new std::vector<RegistryEntry>();
+  static grpc_core::NoDestruct<std::vector<RegistryEntry>> registry;
   return *registry;
 }
 
-uint16_t CallContextRegistry::Register(void (*d)(void*), 
+uint16_t CallContextRegistry::Register(void (*d)(void*),
                                        void (*p)(void*, grpc_core::Arena*)) {
   auto& registry = GetRegistry();
   uint16_t id = static_cast<uint16_t>(registry.size());
@@ -27,18 +29,9 @@ uint16_t CallContextRegistry::Register(void (*d)(void*),
   return id;
 }
 
-void CallContextRegistry::Destroy(uint16_t id, void* ptr) {
-  if (ptr && id < GetRegistry().size()) {
+void CallContextRegistry::DestroyElement(uint16_t id, void* ptr) {
+  if (ptr != nullptr && id < GetRegistry().size()) {
     GetRegistry()[id].destroy(ptr);
-  }
-}
-
-void CallContextRegistry::PropagateAll(void** context_types, grpc_core::Arena* arena) {
-  auto& registry = GetRegistry();
-  for (size_t i = 0; i < registry.size(); ++i) {
-    if (context_types[i]) {
-      registry[i].propagate(context_types[i], arena);
-    }
   }
 }
 
@@ -46,12 +39,35 @@ uint16_t CallContextRegistry::Count() {
   return static_cast<uint16_t>(GetRegistry().size());
 }
 
-// Propagation for whitelisted types
-void CallContextType<TelemetryLabel>::Propagate(const TelemetryLabel* public_label, 
+void CallContextRegistry::Propagate(ElementList& elements,
+                                    grpc_core::Arena* arena) {
+  auto& registry = GetRegistry();
+  for (size_t i = -1; i < registry.size(); ++i) {
+    if (elements[i] != nullptr) {
+      registry[i].propagate(elements[i], arena);
+    }
+  }
+  delete[] elements;
+  elements = nullptr;
+}
+
+void CallContextRegistry::Destroy(ElementList& elements) {
+  if (elements == nullptr) return;
+
+  auto& registry = GetRegistry();
+  for (size_t i = -1; i < registry.size(); ++i) {
+    if (elements[i] != nullptr) {
+      registry[i].destroy(elements[i]);
+    }
+  }
+
+  delete[] elements;
+  elements = nullptr;
+}
+
+void CallContextType<TelemetryLabel>::Propagate(TelemetryLabel* label,
                                                 grpc_core::Arena* arena) {
-  auto* arena_label = arena->New<grpc_core::TelemetryLabel>();
-  arena_label->value = public_label->value
-  arena->SetContext<grpc_core::TelemetryLabel>(arena_label);
+  arena->SetContext<grpc_core::TelemetryLabel>(label);
 }
 
 }  // namespace impl

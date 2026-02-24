@@ -26,6 +26,7 @@
 #include <grpcpp/client_context.h>
 #include <grpcpp/completion_queue.h>
 #include <grpcpp/impl/call.h>
+#include <grpcpp/impl/call_context_registry.h>
 #include <grpcpp/impl/call_op_set_interface.h>
 #include <grpcpp/impl/completion_queue_tag.h>
 #include <grpcpp/impl/rpc_method.h>
@@ -41,6 +42,7 @@
 #include <vector>
 
 #include "src/core/lib/iomgr/iomgr.h"
+#include "src/core/lib/surface/call.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/util/grpc_check.h"
 
@@ -154,9 +156,10 @@ grpc::internal::Call Channel::CreateCallInternal(
     }
   }
   grpc_census_call_set_context(c_call, context->census_context());
-  grpc_core::Arena* arena = grpc_call_get_arena(c_call);
   if (context->context_elements_ != nullptr) {
-    grpc::impl::CallContextRegistry::PropagateAll(context->context_elements_, arena);
+    grpc_core::Arena* arena = grpc_call_get_arena(c_call);
+    grpc::impl::CallContextRegistry::Propagate(context->context_elements_,
+                                               arena);
   }
 
   // ClientRpcInfo should be set before call because set_call also checks
