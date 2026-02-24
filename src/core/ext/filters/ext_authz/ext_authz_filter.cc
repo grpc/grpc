@@ -122,8 +122,9 @@ std::string ExtAuthzFilter::Config::ToString() const {
   parts.push_back(absl::StrCat("instance_name=", instance_name));
   if (ext_authz->xds_grpc_service != nullptr &&
       ext_authz->xds_grpc_service->server_target != nullptr) {
-    parts.push_back(absl::StrCat(
-        "server_uri=", ext_authz->xds_grpc_service->server_target->server_uri()));
+    parts.push_back(
+        absl::StrCat("server_uri=",
+                     ext_authz->xds_grpc_service->server_target->server_uri()));
   } else {
     parts.push_back(absl::StrCat("server_uri=", ext_authz->server_uri));
   }
@@ -133,26 +134,27 @@ std::string ExtAuthzFilter::Config::ToString() const {
         ", denominator=", ext_authz->filter_enabled->denominator, "}"));
   }
   if (ext_authz->deny_at_disable.has_value()) {
-    parts.push_back(absl::StrCat(
-        "deny_at_disable=", ext_authz->deny_at_disable.value() ? "true" : "false"));
+    parts.push_back(
+        absl::StrCat("deny_at_disable=",
+                     ext_authz->deny_at_disable.value() ? "true" : "false"));
   }
-  parts.push_back(absl::StrCat("failure_mode_allow=",
-                               ext_authz->failure_mode_allow ? "true" : "false"));
+  parts.push_back(absl::StrCat(
+      "failure_mode_allow=", ext_authz->failure_mode_allow ? "true" : "false"));
   parts.push_back(absl::StrCat(
       "failure_mode_allow_header_add=",
       ext_authz->failure_mode_allow_header_add ? "true" : "false"));
   parts.push_back(absl::StrCat("status_on_error=", ext_authz->status_on_error));
-  parts.push_back(absl::StrCat(
-      "include_peer_certificate=",
-      ext_authz->include_peer_certificate ? "true" : "false"));
+  parts.push_back(
+      absl::StrCat("include_peer_certificate=",
+                   ext_authz->include_peer_certificate ? "true" : "false"));
   if (ext_authz->decoder_header_mutation_rules.has_value()) {
     const auto& rules = ext_authz->decoder_header_mutation_rules.value();
     std::vector<std::string> rule_parts;
     if (rules.disallow_all) rule_parts.push_back("disallow_all=true");
     if (rules.disallow_is_error) rule_parts.push_back("disallow_is_error=true");
     if (rules.allow_expression.has_value()) {
-      rule_parts.push_back(
-          absl::StrCat("allow_expression=", rules.allow_expression->ToString()));
+      rule_parts.push_back(absl::StrCat("allow_expression=",
+                                        rules.allow_expression->ToString()));
     }
     if (rules.disallow_expression.has_value()) {
       rule_parts.push_back(absl::StrCat("disallow_expression=",
@@ -349,7 +351,9 @@ ServerMetadataHandle ExtAuthzFilter::Call::OnClientInitialMetadata(
 
 absl::Status ExtAuthzFilter::Call::OnServerInitialMetadata(
     ServerMetadata& md, ExtAuthzFilter* filter) {
-      // TODO(rishesh): handle trailer only response 
+  if (md.get(GrpcTrailersOnly()).value_or(false)) {
+    return absl::OkStatus();
+  }
   if (!filter->response_headers_to_add.has_value()) {
     return absl::OkStatus();
   }
@@ -374,7 +378,9 @@ absl::Status ExtAuthzFilter::Call::OnServerInitialMetadata(
 
 absl::Status ExtAuthzFilter::Call::OnServerTrailingMetadata(
     ServerMetadata& md, ExtAuthzFilter* filter) {
-      // TODO(rishesh): handle trailer only response 
+  if (md.get(GrpcTrailersOnly()).value_or(false)) {
+    return absl::OkStatus();
+  }
   if (!filter->response_trailer_to_add.has_value()) {
     return absl::OkStatus();
   }
