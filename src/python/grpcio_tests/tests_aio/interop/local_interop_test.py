@@ -122,7 +122,7 @@ class InsecureLocalInteropTest(InteropTestCaseMixin, AioTestBase):
 class SecureLocalInteropTest(InteropTestCaseMixin, AioTestBase):
     async def setUp(self):
         server_credentials = grpc.ssl_server_credentials(
-            [(resources.private_key(), resources.certificate_chain())]
+            [(resources.server_private_key(), resources.certificate_chain())]
         )
         channel_credentials = grpc.ssl_channel_credentials(
             resources.test_root_certificates()
