@@ -408,7 +408,7 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"xds_channel_filter_chain_per_route",
      description_xds_channel_filter_chain_per_route,
      additional_constraints_xds_channel_filter_chain_per_route, nullptr, 0,
-     false, true},
+     true, true},
 };
 
 }  // namespace grpc_core
@@ -800,7 +800,7 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"xds_channel_filter_chain_per_route",
      description_xds_channel_filter_chain_per_route,
      additional_constraints_xds_channel_filter_chain_per_route, nullptr, 0,
-     false, true},
+     true, true},
 };
 
 }  // namespace grpc_core
@@ -1192,7 +1192,7 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"xds_channel_filter_chain_per_route",
      description_xds_channel_filter_chain_per_route,
      additional_constraints_xds_channel_filter_chain_per_route, nullptr, 0,
-     false, true},
+     true, true},
 };
 
 }  // namespace grpc_core

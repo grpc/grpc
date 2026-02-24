@@ -293,7 +293,7 @@ void ProcessOutgoingDataFrameFlowControl(
 ValueOrHttp2Status<chttp2::FlowControlAction>
 ProcessIncomingDataFrameFlowControl(Http2FrameHeader& frame_header,
                                     chttp2::TransportFlowControl& flow_control,
-                                    RefCountedPtr<Stream> stream) {
+                                    Stream* stream) {
   GRPC_DCHECK_EQ(frame_header.type, 0u);
   if (frame_header.length > 0) {
     if (stream == nullptr) {
@@ -342,7 +342,7 @@ ProcessIncomingDataFrameFlowControl(Http2FrameHeader& frame_header,
 
 bool ProcessIncomingWindowUpdateFrameFlowControl(
     const Http2WindowUpdateFrame& frame,
-    chttp2::TransportFlowControl& flow_control, RefCountedPtr<Stream> stream) {
+    chttp2::TransportFlowControl& flow_control, Stream* stream) {
   if (frame.stream_id != 0) {
     if (stream != nullptr) {
       GRPC_HTTP2_COMMON_DLOG
@@ -393,25 +393,22 @@ void MaybeAddTransportWindowUpdateFrame(
   }
 }
 
-void MaybeAddStreamWindowUpdateFrame(RefCountedPtr<Stream> stream,
+void MaybeAddStreamWindowUpdateFrame(Stream& stream,
                                      FrameSender& frame_sender) {
   GRPC_HTTP2_COMMON_DLOG << "MaybeAddStreamWindowUpdateFrame stream="
-                         << ((stream == nullptr)
-                                 ? "null"
-                                 : absl::StrCat(
-                                       stream->GetStreamId(),
-                                       " CanSendWindowUpdateFrames=",
-                                       stream->CanSendWindowUpdateFrames()));
-  if (stream != nullptr && stream->CanSendWindowUpdateFrames()) {
-    const uint32_t increment = stream->flow_control.MaybeSendUpdate();
+                         << stream.GetStreamId()
+                         << " CanSendWindowUpdateFrames="
+                         << stream.CanSendWindowUpdateFrames();
+  if (stream.CanSendWindowUpdateFrames()) {
+    const uint32_t increment = stream.flow_control.MaybeSendUpdate();
     GRPC_HTTP2_COMMON_DLOG
         << "MaybeAddStreamWindowUpdateFrame MaybeSendUpdate { "
-        << stream->GetStreamId() << ", " << increment << " }"
+        << stream.GetStreamId() << ", " << increment << " }"
         << (increment == 0 ? ". The frame will NOT be sent for increment 0"
                            : "");
     if (increment > 0) {
       frame_sender.AddRegularFrame(
-          Http2WindowUpdateFrame{stream->GetStreamId(), increment});
+          Http2WindowUpdateFrame{stream.GetStreamId(), increment});
     }
   }
 }
@@ -421,7 +418,7 @@ void MaybeAddStreamWindowUpdateFrame(RefCountedPtr<Stream> stream,
 
 Http2Status ParseAndDiscardHeaders(HPackParser& parser, SliceBuffer&& buffer,
                                    HeaderAssembler::ParseHeaderArgs args,
-                                   const RefCountedPtr<Stream> stream,
+                                   Stream* stream,
                                    Http2Status&& original_status) {
   GRPC_HTTP2_COMMON_DLOG << "ParseAndDiscardHeaders buffer "
                             "size: "
@@ -434,8 +431,7 @@ Http2Status ParseAndDiscardHeaders(HPackParser& parser, SliceBuffer&& buffer,
   if (stream != nullptr) {
     // Parse all the data in the header assembler
     Http2Status result = stream->header_assembler.ParseAndDiscardHeaders(
-        parser, args.is_initial_metadata, args.is_client,
-        args.max_header_list_size_soft_limit,
+        parser, args.is_initial_metadata, args.max_header_list_size_soft_limit,
         args.max_header_list_size_hard_limit);
     if (!result.IsOk()) {
       GRPC_DCHECK(result.GetType() ==
