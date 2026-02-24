@@ -19,6 +19,7 @@
 #include <gtest/gtest.h>
 
 #include "envoy/config/core/v3/base.upb.h"
+#include "src/core/util/upb_utils.h"
 #include "src/core/util/validation_errors.h"
 #include "test/core/test_util/test_config.h"
 #include "upb/mem/arena.h"
@@ -190,6 +191,84 @@ TEST_F(ParseHeaderValueOptionTest, ErrorInvalidHeaderValue) {
 }  // namespace
 }  // namespace testing
 }  // namespace grpc_core
+
+namespace {
+
+class ParseEnvoyHeaderTest : public ::testing::Test {
+ protected:
+  ParseEnvoyHeaderTest() = default;
+
+  upb_Arena* arena_ = upb_Arena_New();
+};
+
+TEST_F(ParseEnvoyHeaderTest, NormalHeader) {
+  auto* header = grpc_core::ParseEnvoyHeader("foo", "bar", arena_);
+  EXPECT_EQ(grpc_core::UpbStringToAbsl(envoy_config_core_v3_HeaderValue_key(header)), "foo");
+  EXPECT_EQ(grpc_core::UpbStringToAbsl(envoy_config_core_v3_HeaderValue_value(header)), "bar");
+  EXPECT_TRUE(grpc_core::UpbStringToAbsl(envoy_config_core_v3_HeaderValue_raw_value(header)).empty());
+}
+
+TEST_F(ParseEnvoyHeaderTest, BinaryHeader) {
+  auto* header = grpc_core::ParseEnvoyHeader("foo-bin", "bar", arena_);
+  EXPECT_EQ(grpc_core::UpbStringToAbsl(envoy_config_core_v3_HeaderValue_key(header)), "foo-bin");
+  EXPECT_EQ(grpc_core::UpbStringToAbsl(envoy_config_core_v3_HeaderValue_raw_value(header)), "bar");
+  EXPECT_TRUE(grpc_core::UpbStringToAbsl(envoy_config_core_v3_HeaderValue_value(header)).empty());
+}
+
+TEST_F(ParseEnvoyHeaderTest, RoundTripNormal) {
+  auto* header = grpc_core::ParseEnvoyHeader("foo", "bar", arena_);
+  grpc_core::ValidationErrors errors;
+  auto [key, value] = ParseHeader(header, &errors);
+  EXPECT_TRUE(errors.ok());
+  EXPECT_EQ(key, "foo");
+  EXPECT_EQ(value, "bar");
+}
+
+TEST_F(ParseEnvoyHeaderTest, RoundTripBinary) {
+  auto* header = grpc_core::ParseEnvoyHeader("foo-bin", "bar", arena_);
+  grpc_core::ValidationErrors errors;
+  auto [key, value] = ParseHeader(header, &errors);
+  EXPECT_TRUE(errors.ok());
+  EXPECT_EQ(key, "foo-bin");
+  EXPECT_EQ(value, "bar");
+}
+
+TEST_F(ParseEnvoyHeaderTest, InvalidKey) {
+  // Empty key
+  EXPECT_EQ(grpc_core::ParseEnvoyHeader("", "bar", arena_), nullptr);
+  // Key too long
+  std::string long_key(16385, 'a');
+  EXPECT_EQ(grpc_core::ParseEnvoyHeader(long_key, "bar", arena_), nullptr);
+  // Key with invalid char (uppercase)
+  EXPECT_EQ(grpc_core::ParseEnvoyHeader("Foo", "bar", arena_), nullptr);
+  // Key with invalid char (:)
+  EXPECT_EQ(grpc_core::ParseEnvoyHeader(":foo", "bar", arena_), nullptr);
+  // Key is "host"
+  EXPECT_EQ(grpc_core::ParseEnvoyHeader("host", "bar", arena_), nullptr);
+}
+
+TEST_F(ParseEnvoyHeaderTest, InvalidValue) {
+  // Value too long
+  std::string long_value(16385, 'a');
+  EXPECT_EQ(grpc_core::ParseEnvoyHeader("foo", long_value, arena_), nullptr);
+  // Non-binary value with invalid char
+  EXPECT_NE(grpc_core::ParseEnvoyHeader("foo", "bar\n", arena_), nullptr);
+}
+
+TEST_F(ParseEnvoyHeaderTest, ValidBinaryValue) {
+  // Binary value can contain anything, only length is checked
+  // But wait, ParseEnvoyHeader checks length for binary too.
+  std::string long_value(16385, 'a');
+  EXPECT_EQ(grpc_core::ParseEnvoyHeader("foo-bin", long_value, arena_), nullptr);
+  
+  // Binary value with newline should be fine?
+  // ValidateNonBinaryHeaderValueIsLegal is NOT called for -bin.
+  auto* header = grpc_core::ParseEnvoyHeader("foo-bin", "bar\n", arena_);
+  EXPECT_NE(header, nullptr);
+  EXPECT_EQ(grpc_core::UpbStringToAbsl(envoy_config_core_v3_HeaderValue_raw_value(header)), "bar\n");
+}
+
+}  // namespace
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);

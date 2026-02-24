@@ -114,6 +114,29 @@ std::pair<std::string, std::string> ParseHeader(
   return {std::string(key), std::string(value)};
 }
 
+envoy_config_core_v3_HeaderValue* ParseEnvoyHeader(absl::string_view key,
+                                                   absl::string_view value,
+                                                   upb_Arena* arena) {
+  if (key.empty()) return nullptr;
+  if (key.size() > 16384) return nullptr;
+  if (key == "host") return nullptr;
+  if (ValidateHeaderKeyIsLegal(key) != ValidateMetadataResult::kOk) {
+    return nullptr;
+  }
+  if (value.size() > 16384) return nullptr;
+  auto* header_value = envoy_config_core_v3_HeaderValue_new(arena);
+  envoy_config_core_v3_HeaderValue_set_key(header_value,
+                                           StdStringToUpbString(key));
+  if (absl::EndsWith(key, "-bin")) {
+    envoy_config_core_v3_HeaderValue_set_raw_value(header_value,
+                                                   StdStringToUpbString(value));
+  } else {
+    envoy_config_core_v3_HeaderValue_set_value(header_value,
+                                               StdStringToUpbString(value));
+  }
+  return header_value;
+}
+
 HeaderValueOption ParseHeaderValueOption(
     const envoy_config_core_v3_HeaderValueOption* header_value_option_config,
     ValidationErrors* errors) {
