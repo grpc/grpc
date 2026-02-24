@@ -210,7 +210,8 @@ void DoRpcAndExpectFailure(
   bool wait_for_notification = false;
   if (on_rpc_stalled != nullptr) {
     wait_for_notification = true;
-    grpc_core::ExecCtx exec_ctx;grpc_event_engine::experimental::GetDefaultEventEngine()->RunAfter(
+    grpc_core::ExecCtx exec_ctx;
+    grpc_event_engine::experimental::GetDefaultEventEngine()->RunAfter(
         std::chrono::seconds(1),
         [on_rpc_stalled, &context, notification = &notification]() {
           on_rpc_stalled(&context);

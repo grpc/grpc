@@ -285,7 +285,8 @@ class SslOffloadTsiTestFixture {
     server_options.min_tls_version = tls_version_;
     server_options.max_tls_version = tls_version_;
     if (offload_party_ == OffloadParty::kServer) {
-      server_options.pem_key_cert_pairs = server_pem_key_cert_pairs_with_signer_;
+      server_options.pem_key_cert_pairs =
+          server_pem_key_cert_pairs_with_signer_;
     } else {
       server_options.pem_key_cert_pairs = server_pem_key_cert_pairs_;
     }
@@ -505,11 +506,10 @@ TEST_P(PrivateKeyOffloadTest, OffloadFailsWithSignCancelledOnServer) {
   auto signer = std::make_shared<AsyncTestPrivateKeySigner>(
       "", AsyncTestPrivateKeySigner::Mode::kCancellation);
   auto fixture = std::make_shared<SslOffloadTsiTestFixture>(
-      OffloadParty::kServer,
-      std::static_pointer_cast<PrivateKeySigner>(signer), GetParam());
-  event_engine_->RunAfter(std::chrono::seconds(1), [fixture]() {
-    fixture->Shutdown();
-  });
+      OffloadParty::kServer, std::static_pointer_cast<PrivateKeySigner>(signer),
+      GetParam());
+  event_engine_->RunAfter(std::chrono::seconds(1),
+                          [fixture]() { fixture->Shutdown(); });
   fixture->Run(/*expect_success=*/false, /*expect_success_on_client*/ false);
   EXPECT_TRUE(signer->WasCancelled());
 }
@@ -520,11 +520,10 @@ TEST_P(PrivateKeyOffloadTest, OffloadFailsWithSignCancelledOnClient) {
   auto signer = std::make_shared<AsyncTestPrivateKeySigner>(
       "", AsyncTestPrivateKeySigner::Mode::kCancellation);
   auto fixture = std::make_shared<SslOffloadTsiTestFixture>(
-      OffloadParty::kClient,
-      std::static_pointer_cast<PrivateKeySigner>(signer), GetParam());
-  event_engine_->RunAfter(std::chrono::seconds(1), [fixture]() {
-    fixture->Shutdown();
-  });
+      OffloadParty::kClient, std::static_pointer_cast<PrivateKeySigner>(signer),
+      GetParam());
+  event_engine_->RunAfter(std::chrono::seconds(1),
+                          [fixture]() { fixture->Shutdown(); });
   fixture->Run(/*expect_success=*/false, /*expect_success_on_client*/ false);
   EXPECT_TRUE(signer->WasCancelled());
 }

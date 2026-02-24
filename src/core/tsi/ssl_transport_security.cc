@@ -504,10 +504,10 @@ enum ssl_private_key_result_t TlsPrivateKeySignWrapper(
           return ssl_private_key_success;
         } else {
           if (handshaker->handshaker_next_args.has_value()) {
-              if (handshaker->handshaker_next_args->error_ptr != nullptr) {
-                *handshaker->handshaker_next_args->error_ptr =
-                status_or_string->status().ToString();
-              }
+            if (handshaker->handshaker_next_args->error_ptr != nullptr) {
+              *handshaker->handshaker_next_args->error_ptr =
+                  status_or_string->status().ToString();
+            }
           }
           return ssl_private_key_failure;
         }
