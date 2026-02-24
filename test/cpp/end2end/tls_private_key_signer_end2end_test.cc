@@ -206,13 +206,21 @@ void DoRpcAndExpectFailure(
   request.set_message(kMessage);
   ClientContext context;
   context.set_deadline(grpc_timeout_seconds_to_deadline(/*time_s=*/5));
+  absl::Notification notification;
+  bool wait_for_notification = false;
   if (on_rpc_stalled != nullptr) {
-    grpc_core::ExecCtx exec_ctx;
-    grpc_event_engine::experimental::GetDefaultEventEngine()->RunAfter(
+    wait_for_notification = true;
+    grpc_core::ExecCtx exec_ctx;grpc_event_engine::experimental::GetDefaultEventEngine()->RunAfter(
         std::chrono::seconds(1),
-        [on_rpc_stalled, &context]() { on_rpc_stalled(&context); });
+        [on_rpc_stalled, &context, notification = &notification]() {
+          on_rpc_stalled(&context);
+          notification->Notify();
+        });
   }
   grpc::Status result = stub->Echo(&context, request, &response);
+  if (wait_for_notification) {
+    notification.WaitForNotificationWithTimeout(absl::Seconds(10));
+  }
   EXPECT_FALSE(result.ok());
   if (!expected_error_message.empty()) {
     EXPECT_THAT(result.error_message(),
