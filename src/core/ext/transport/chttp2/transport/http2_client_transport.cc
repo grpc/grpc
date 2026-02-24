@@ -409,7 +409,7 @@ Http2Status Http2ClientTransport::ProcessIncomingFrame(
             std::string(RFC9113::kHalfClosedRemoteState)));
   }
 
-  if (incoming_headers_.ClientReceivedDuplicateMetadata(
+  if (incoming_headers_.DidReceiveDuplicateMetadata(
           stream->did_receive_initial_metadata,
           stream->did_receive_trailing_metadata)) {
     return ParseAndDiscardHeaders(
