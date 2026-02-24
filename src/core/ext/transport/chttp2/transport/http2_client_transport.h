@@ -222,8 +222,7 @@ class Http2ClientTransport final : public ClientTransport,
 
   // Returns a promise to fetch data from the callhandler and pass it further
   // down towards the endpoint.
-  auto CallOutboundLoop(CallHandler call_handler, RefCountedPtr<Stream> stream,
-                        ClientMetadataHandle metadata);
+  auto CallOutboundLoop(RefCountedPtr<Stream> stream);
 
   // Force triggers a transport write cycle
   absl::Status TriggerWriteCycle(DebugLocation whence = {}) {
