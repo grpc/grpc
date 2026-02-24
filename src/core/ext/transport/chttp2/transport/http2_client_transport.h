@@ -171,20 +171,14 @@ class Http2ClientTransport final : public ClientTransport,
 
   Http2Status ProcessMetadata(RefCountedPtr<Stream> stream);
 
-  // Reading from the endpoint.
-
-  // Returns a promise to keep reading in a Loop till a fail/close is
-  // received.
+  // Returns a promise to keep reading in a Loop till a fail/close is received.
   auto ReadLoop();
 
-  // Returns a promise that will read and process one HTTP2 frame.
   auto ReadAndProcessOneFrame();
 
-  // Returns a promise that will process one HTTP2 frame.
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Http2Status
   ProcessOneIncomingFrame(Http2Frame&& frame) {
-    GRPC_HTTP2_CLIENT_DLOG
-        << "Http2ClientTransport ProcessOneIncomingFrame Factory";
+    GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport::ProcessOneIncomingFrame";
     return std::visit(
         [this](auto&& frame) {
           return ProcessIncomingFrame(std::forward<decltype(frame)>(frame));

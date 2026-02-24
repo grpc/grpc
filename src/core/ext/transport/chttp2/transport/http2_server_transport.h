@@ -664,6 +664,11 @@ class Http2ServerTransport final : public ServerTransport,
   Http2ReadContext reader_state_;
 };
 
+// TODO(tjagtap) : [PH2][P1] : Handle the case where a Server receives two
+// header frames. Which means that the client sent trailing metadata. While we
+// dont expect a gRPC C++ peer to send trailing metadata, not handling it might
+// break interop tests and genuine interop cases.
+
 }  // namespace http2
 }  // namespace grpc_core
 
