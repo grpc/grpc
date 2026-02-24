@@ -193,6 +193,12 @@ const char* const additional_constraints_secure_endpoint_offload_large_writes =
 const uint8_t required_experiments_secure_endpoint_offload_large_writes[] = {
     static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient),
     static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener)};
+const char* const description_secure_endpoint_read_coalescing =
+    "Coalesce decrypted bytes in SecureEndpoint if a read_hint is provided.";
+const char* const additional_constraints_secure_endpoint_read_coalescing = "{}";
+const uint8_t required_experiments_secure_endpoint_read_coalescing[] = {
+    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient),
+    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener)};
 const char* const description_skip_clear_peer_on_cancellation =
     "If set, skips clearing of peer string on call cancellation.";
 const char* const additional_constraints_skip_clear_peer_on_cancellation = "{}";
@@ -368,6 +374,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_secure_endpoint_offload_large_writes,
      additional_constraints_secure_endpoint_offload_large_writes,
      required_experiments_secure_endpoint_offload_large_writes, 2, false, true},
+    {"secure_endpoint_read_coalescing",
+     description_secure_endpoint_read_coalescing,
+     additional_constraints_secure_endpoint_read_coalescing,
+     required_experiments_secure_endpoint_read_coalescing, 2, false, true},
     {"skip_clear_peer_on_cancellation",
      description_skip_clear_peer_on_cancellation,
      additional_constraints_skip_clear_peer_on_cancellation, nullptr, 0, false,
@@ -585,6 +595,12 @@ const char* const additional_constraints_secure_endpoint_offload_large_writes =
 const uint8_t required_experiments_secure_endpoint_offload_large_writes[] = {
     static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient),
     static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener)};
+const char* const description_secure_endpoint_read_coalescing =
+    "Coalesce decrypted bytes in SecureEndpoint if a read_hint is provided.";
+const char* const additional_constraints_secure_endpoint_read_coalescing = "{}";
+const uint8_t required_experiments_secure_endpoint_read_coalescing[] = {
+    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient),
+    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener)};
 const char* const description_skip_clear_peer_on_cancellation =
     "If set, skips clearing of peer string on call cancellation.";
 const char* const additional_constraints_skip_clear_peer_on_cancellation = "{}";
@@ -760,6 +776,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_secure_endpoint_offload_large_writes,
      additional_constraints_secure_endpoint_offload_large_writes,
      required_experiments_secure_endpoint_offload_large_writes, 2, false, true},
+    {"secure_endpoint_read_coalescing",
+     description_secure_endpoint_read_coalescing,
+     additional_constraints_secure_endpoint_read_coalescing,
+     required_experiments_secure_endpoint_read_coalescing, 2, false, true},
     {"skip_clear_peer_on_cancellation",
      description_skip_clear_peer_on_cancellation,
      additional_constraints_skip_clear_peer_on_cancellation, nullptr, 0, false,
@@ -977,6 +997,12 @@ const char* const additional_constraints_secure_endpoint_offload_large_writes =
 const uint8_t required_experiments_secure_endpoint_offload_large_writes[] = {
     static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient),
     static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener)};
+const char* const description_secure_endpoint_read_coalescing =
+    "Coalesce decrypted bytes in SecureEndpoint if a read_hint is provided.";
+const char* const additional_constraints_secure_endpoint_read_coalescing = "{}";
+const uint8_t required_experiments_secure_endpoint_read_coalescing[] = {
+    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient),
+    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener)};
 const char* const description_skip_clear_peer_on_cancellation =
     "If set, skips clearing of peer string on call cancellation.";
 const char* const additional_constraints_skip_clear_peer_on_cancellation = "{}";
@@ -1152,6 +1178,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_secure_endpoint_offload_large_writes,
      additional_constraints_secure_endpoint_offload_large_writes,
      required_experiments_secure_endpoint_offload_large_writes, 2, false, true},
+    {"secure_endpoint_read_coalescing",
+     description_secure_endpoint_read_coalescing,
+     additional_constraints_secure_endpoint_read_coalescing,
+     required_experiments_secure_endpoint_read_coalescing, 2, false, true},
     {"skip_clear_peer_on_cancellation",
      description_skip_clear_peer_on_cancellation,
      additional_constraints_skip_clear_peer_on_cancellation, nullptr, 0, false,
