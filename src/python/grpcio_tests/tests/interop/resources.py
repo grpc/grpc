@@ -41,6 +41,7 @@ def server_private_key():
     return pkgutil.get_data(__name__, _PRIVATE_KEY_RESOURCE_PATH)
 
 
+# TODO(gtcooke94): Remove this and use server_private_key where it is used
 def private_key():
     return server_private_key()
 
