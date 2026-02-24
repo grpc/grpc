@@ -325,7 +325,7 @@ class ServerHandlerBackgroundThreadTest(unittest.TestCase):
             else:
                 return None
 
-    class _BlockingRequestIterator():
+    class _BlockingRequestIterator:
         def __init__(self, done):
             self._done = done
 
@@ -340,47 +340,31 @@ class ServerHandlerBackgroundThreadTest(unittest.TestCase):
         self._server.stop(0)
         self._channel.close()
 
-    def test_fail_via_cancel(self):
+    def _run_background_fail_test(self, fail_fn):
         self._server = test_common.test_server()
-        self._server.add_generic_rpc_handlers((self._Handler(
-                lambda ctx: ctx.cancel()),))
+        self._server.add_generic_rpc_handlers((self._Handler(fail_fn),))
         port = self._server.add_insecure_port("[::]:0")
         self._server.start()
         self._channel = grpc.insecure_channel("localhost:%d" % port)
 
         done = threading.Event()
         try:
-            list(self._channel.stream_stream(
-                    _STREAM_STREAM,
-                    _registered_method=True,
-            )(self._BlockingRequestIterator(done)))
-        except grpc.RpcError:
-            # This error is expected
-            pass
+            with self.assertRaises(grpc.RpcError):
+                list(self._channel.stream_stream(
+                        _STREAM_STREAM,
+                        _registered_method=True,
+                )(self._BlockingRequestIterator(done)))
         finally:
             # To release any resources held by _blockingRequestIterator()
             done.set()
+
+
+    def test_fail_via_cancel(self):
+        self._run_background_fail_test(lambda ctx: ctx.cancel())
 
     def test_fail_via_abort(self):
-        self._server = test_common.test_server()
-        self._server.add_generic_rpc_handlers((self._Handler(
-                lambda ctx: ctx.abort(grpc.StatusCode.ABORTED, "fail")),))
-        port = self._server.add_insecure_port("[::]:0")
-        self._server.start()
-        self._channel = grpc.insecure_channel("localhost:%d" % port)
-
-        done = threading.Event()
-        try:
-            list(self._channel.stream_stream(
-                    _STREAM_STREAM,
-                    _registered_method=True,
-            )(self._BlockingRequestIterator(done)))
-        except grpc.RpcError:
-            # This error is expected
-            pass
-        finally:
-            # To release any resources held by _blockingRequestIterator()
-            done.set()
+      self._run_background_fail_test(
+          lambda ctx: ctx.abort(grpc.StatusCode.ABORTED, "fail"))
 
 
 if __name__ == "__main__":
