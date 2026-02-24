@@ -28,9 +28,8 @@
 #include <utility>
 
 #include "src/core/ext/transport/chttp2/transport/frame.h"
-#include "src/core/ext/transport/chttp2/transport/http2_settings.h"
 #include "src/core/ext/transport/chttp2/transport/security_frame.h"
-#include "src/core/lib/event_engine/default_event_engine.h"
+#include "src/core/ext/transport/chttp2/transport/write_cycle.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/context.h"
@@ -40,7 +39,6 @@
 #include "src/core/lib/promise/party.h"
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/promise/seq.h"
-#include "src/core/lib/promise/try_join.h"
 #include "src/core/lib/promise/try_seq.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
@@ -52,11 +50,6 @@
 #include "src/core/util/orphanable.h"
 #include "src/core/util/ref_counted.h"
 #include "src/core/util/ref_counted_ptr.h"
-#include "src/core/util/time.h"
-#include "test/core/promise/poll_matcher.h"
-#include "test/core/test_util/postmortem.h"
-#include "test/core/transport/util/mock_promise_endpoint.h"
-#include "test/core/transport/util/transport_test.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "absl/functional/any_invocable.h"
@@ -175,6 +168,9 @@ class SimulatedTransport : public RefCounted<SimulatedTransport> {
     event_engine_ =
         std::make_shared<ExtensionInjectingEventEngine>(&mock_extension_);
     EXPECT_TRUE(security_frame_handler_->Initialize(event_engine_).is_set);
+    transport_write_context_.StartWriteCycle();
+    // Discard the connection preface
+    MaybeFlushWriteBuffer();
   }
   void OnTransportClosed() {
     LOG(INFO) << "SimulatedTransport::OnTransportClosed";
@@ -207,7 +203,14 @@ class SimulatedTransport : public RefCounted<SimulatedTransport> {
   void MaybeAppendSecurityFrame() {
     LOG(INFO) << "SimulatedTransport::MaybeAppendSecurityFrame";
     const uint32_t previous_length = output_buffer.Length();
-    security_frame_handler_->MaybeAppendSecurityFrame(output_buffer);
+    WriteCycle& write_cycle = transport_write_context_.GetWriteCycle();
+    http2::FrameSender frame_sender = write_cycle.GetFrameSender();
+    security_frame_handler_->MaybeAppendSecurityFrame(frame_sender);
+    if (write_cycle.CanSerializeRegularFrames()) {
+      bool unused = false;
+      SliceBuffer serialized = write_cycle.SerializeRegularFrames({unused});
+      output_buffer.Append(serialized);
+    }
     EXPECT_GE(output_buffer.Length(), previous_length);
   }
 
@@ -216,16 +219,33 @@ class SimulatedTransport : public RefCounted<SimulatedTransport> {
     security_frame_handler_->ProcessPayload(std::move(payload));
   }
 
+  void MaybeFlushWriteBuffer() {
+    WriteCycle& write_cycle = transport_write_context_.GetWriteCycle();
+    if (write_cycle.CanSerializeRegularFrames()) {
+      bool unused = false;
+      SliceBuffer serialized = write_cycle.SerializeRegularFrames({unused});
+    }
+  }
+
   SliceBuffer output_buffer;
   MockTransportFramingEndpointExtension mock_extension_;
   RefCountedPtr<SecurityFrameHandler> security_frame_handler_;
   std::shared_ptr<EventEngine> event_engine_;
   Waker waker_;
+  TransportWriteContext transport_write_context_;
 };
 
 }  // namespace testing
 
 class SecurityFrameHandlerTest : public ::testing::Test {
+ public:
+  SecurityFrameHandlerTest() {
+    transport_write_context_.StartWriteCycle();
+
+    // Flush connection preface
+    MaybeFlushWriteBuffer();
+  }
+
  protected:
   RefCountedPtr<Party> MakeParty(testing::SimulatedTransport* transport) {
     auto arena = SimpleArenaAllocator()->MakeArena();
@@ -233,6 +253,21 @@ class SecurityFrameHandlerTest : public ::testing::Test {
         transport->event_engine_.get());
     return Party::Make(std::move(arena));
   }
+
+  WriteCycle& GetWriteCycle() {
+    return transport_write_context_.GetWriteCycle();
+  }
+
+ private:
+  void MaybeFlushWriteBuffer() {
+    if (transport_write_context_.GetWriteCycle().CanSerializeRegularFrames()) {
+      bool unused = false;
+      SliceBuffer serialized =
+          transport_write_context_.GetWriteCycle().SerializeRegularFrames(
+              {unused});
+    }
+  }
+  TransportWriteContext transport_write_context_;
 };
 
 TEST_F(SecurityFrameHandlerTest, SendFrameCallbackFactoryTest) {
@@ -342,7 +377,12 @@ TEST_F(SecurityFrameHandlerTest, ExtensionNullTest) {
   handler->ProcessPayload(std::move(payload));
 
   SliceBuffer outbuf;
-  handler->MaybeAppendSecurityFrame(outbuf);
+  http2::FrameSender frame_sender = GetWriteCycle().GetFrameSender();
+  handler->MaybeAppendSecurityFrame(frame_sender);
+  if (GetWriteCycle().CanSerializeRegularFrames()) {
+    bool should_reset = false;
+    outbuf.Append(GetWriteCycle().SerializeRegularFrames({should_reset}));
+  }
   EXPECT_EQ(outbuf.Length(), 0);
 
   handler->OnTransportClosed();
