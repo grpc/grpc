@@ -70,8 +70,10 @@
 #include "src/core/xds/grpc/xds_http_filter.h"
 #include "src/core/xds/grpc/xds_http_filter_registry.h"
 #include "src/core/xds/xds_client/xds_client.h"
+#include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
 #include "test/core/test_util/scoped_env_var.h"
 #include "test/core/test_util/test_config.h"
+#include "test/core/xds/xds_transport_fake.h"
 #include "upb/mem/arena.hpp"
 #include "upb/reflection/def.hpp"
 #include "xds/type/v3/typed_struct.pb.h"
@@ -113,7 +115,10 @@ class XdsHttpFilterTest : public ::testing::Test {
 
   static RefCountedPtr<XdsClient> MakeXdsClient(
       absl::string_view extra_bootstrap_text = "",
-      bool trusted_xds_server = false) {
+      bool trusted_xds_server = false,
+      std::shared_ptr<grpc_event_engine::experimental::FuzzingEventEngine>
+          event_engine = nullptr,
+      RefCountedPtr<FakeXdsTransportFactory> transport_factory = nullptr) {
     grpc_error_handle error;
     auto bootstrap = GrpcXdsBootstrap::Create(
         absl::StrCat("{\n"
@@ -143,11 +148,10 @@ class XdsHttpFilterTest : public ::testing::Test {
       Crash(absl::StrFormat("Error parsing bootstrap: %s",
                             bootstrap.status().ToString().c_str()));
     }
-    return MakeRefCounted<XdsClient>(std::move(*bootstrap),
-                                     /*transport_factory=*/nullptr,
-                                     /*event_engine=*/nullptr,
-                                     /*metrics_reporter=*/nullptr, "foo agent",
-                                     "foo version");
+    return MakeRefCounted<XdsClient>(
+        std::move(*bootstrap), std::move(transport_factory),
+        std::move(event_engine),
+        /*metrics_reporter=*/nullptr, "foo agent", "foo version");
   }
 
   XdsExtension MakeXdsExtension(const grpc::protobuf::Message& message) {
@@ -2606,6 +2610,123 @@ TEST_F(XdsExtAuthzFilterTest, ParseTopLevelConfig_InvalidHeaderMutationRules) {
           "ExtAuthz].header_mutation_rules.allow_expression "
           "error:Invalid regex string specified in matcher: missing ]: ["));
 }
+
+class XdsExtAuthzFilterChannelCacheTest : public XdsExtAuthzFilterTest {
+ protected:
+  void SetUpCache() {
+    auto event_engine =
+        std::make_shared<grpc_event_engine::experimental::FuzzingEventEngine>(
+            grpc_event_engine::experimental::FuzzingEventEngine::Options(),
+            fuzzing_event_engine::Actions());
+    auto transport_factory = MakeRefCounted<FakeXdsTransportFactory>(
+        /*too_many_pending_reads_callback=*/[]() {}, event_engine);
+    xds_client_ = MakeXdsClient(
+        "  \"allowed_grpc_services\": {\n"
+        "    \"dns:server.example.com\": {\n"
+        "      \"channel_creds\": [{\"type\": \"insecure\"}],\n"
+        "      \"call_creds\": [\n"
+        "         {\"type\": \"jwt_token_file\",\n"
+        "          \"config\": {\"jwt_token_file\": \"/path/to/file\"}},\n"
+        "         {\"type\": \"jwt_token_file\",\n"
+        "          \"config\": {\"jwt_token_file\": \"/path/to/file\"}}\n"
+        "      ]\n"
+        "    }\n"
+        "  },\n",
+        false, std::move(event_engine), std::move(transport_factory));
+  }
+
+  RefCountedPtr<const ExtAuthzFilter::Config> ParseConfig(
+      absl::string_view destination_uri, absl::string_view call_creds_token) {
+    ExtAuthz ext_authz;
+    auto* grpc_service = ext_authz.mutable_grpc_service();
+    grpc_service->mutable_timeout();
+    auto* md = grpc_service->add_initial_metadata();
+    md->set_key("foo");
+    md->set_value("bar");
+    auto* google_grpc = grpc_service->mutable_google_grpc();
+    google_grpc->set_target_uri(std::string(destination_uri));
+    // Creds specified in proto will be ignored because xDS server is not
+    // trusted.
+    google_grpc->add_channel_credentials_plugin()->PackFrom(
+        envoy::extensions::grpc_service::channel_credentials::google_default::
+            v3::GoogleDefaultCredentials());
+    envoy::extensions::grpc_service::call_credentials::access_token::v3::
+        AccessTokenCredentials call_creds;
+    call_creds.set_token(std::string(call_creds_token));
+    google_grpc->add_call_credentials_plugin()->PackFrom(call_creds);
+
+    XdsExtension extension = MakeXdsExtension(ext_authz);
+    auto config =
+        filter_->ParseTopLevelConfig("", MakeDecodeContext(), extension, &errors_);
+    EXPECT_NE(config, nullptr);
+    return RefCountedPtr<const ExtAuthzFilter::Config>(
+        static_cast<const ExtAuthzFilter::Config*>(config.release()));
+  }
+
+  Blackboard blackboard_;
+};
+
+TEST_F(XdsExtAuthzFilterChannelCacheTest, FirstCache) {
+  SetUpCache();
+  auto config = ParseConfig("dns:server.example.com", "foo");
+  // Initial update
+  filter_->UpdateBlackboard(*config, nullptr, &blackboard_);
+  // Verify cache exists
+  auto cache_ =
+      blackboard_.Get<ExtAuthzFilter::ChannelCache>(config->instance_name);
+  ASSERT_NE(cache_, nullptr);
+}
+
+// TEST_F(XdsExtAuthzFilterChannelCacheTest, SameUri) {
+//   SetUpCache();
+//   auto config1 = ParseConfig("dns:server.example.com", "foo");
+//   filter_->UpdateBlackboard(*config1, nullptr, &blackboard_);
+//   auto cache1 =
+//       blackboard_.Get<ExtAuthzFilter::ChannelCache>(config1->instance_name);
+//   ASSERT_NE(cache1, nullptr);
+
+//   auto config2 = ParseConfig("dns:server.example.com", "foo");
+//   Blackboard blackboard2;
+//   filter_->UpdateBlackboard(*config2, &blackboard_, &blackboard2);
+//   auto cache2 =
+//       blackboard2.Get<ExtAuthzFilter::ChannelCache>(config2->instance_name);
+//   ASSERT_NE(cache2, nullptr);
+//   EXPECT_EQ(cache1, cache2);
+// }
+
+// TEST_F(XdsExtAuthzFilterChannelCacheTest, DifferentUri) {
+//   SetUpCache();
+//   auto config1 = ParseConfig("dns:server.example.com", "foo");
+//   filter_->UpdateBlackboard(*config1, nullptr, &blackboard_);
+//   auto cache1 =
+//       blackboard_.Get<ExtAuthzFilter::ChannelCache>(config1->instance_name);
+//   ASSERT_NE(cache1, nullptr);
+
+//   auto config2 = ParseConfig("dns:server2.example.com", "foo");
+//   Blackboard blackboard2;
+//   filter_->UpdateBlackboard(*config2, &blackboard_, &blackboard2);
+//   auto cache2 =
+//       blackboard2.Get<ExtAuthzFilter::ChannelCache>(config2->instance_name);
+//   ASSERT_NE(cache2, nullptr);
+//   EXPECT_NE(cache1, cache2);
+// }
+
+// TEST_F(XdsExtAuthzFilterChannelCacheTest, DifferentCredentials) {
+//   SetUpCache();
+//   auto config1 = ParseConfig("dns:server.example.com", "foo");
+//   filter_->UpdateBlackboard(*config1, nullptr, &blackboard_);
+//   auto cache1 =
+//       blackboard_.Get<ExtAuthzFilter::ChannelCache>(config1->instance_name);
+//   ASSERT_NE(cache1, nullptr);
+
+//   auto config2 = ParseConfig("dns:server.example.com", "bar");
+//   Blackboard blackboard2;
+//   filter_->UpdateBlackboard(*config2, &blackboard_, &blackboard2);
+//   auto cache2 =
+//       blackboard2.Get<ExtAuthzFilter::ChannelCache>(config2->instance_name);
+//   ASSERT_NE(cache2, nullptr);
+//   EXPECT_NE(cache1, cache2);
+// }
 
 }  // namespace
 }  // namespace testing
