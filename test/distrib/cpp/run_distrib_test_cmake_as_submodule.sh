@@ -20,6 +20,9 @@ cd "$(dirname "$0")/../../.."
 # Use externally provided env to determine build parallelism, otherwise use default.
 GRPC_CPP_DISTRIBTEST_BUILD_COMPILER_JOBS=${GRPC_CPP_DISTRIBTEST_BUILD_COMPILER_JOBS:-4}
 
+# Generate UPB API
+tools/codegen/core/gen_upb_api.sh
+
 # Build helloworld example using cmake, including grpc with "add_subdirectory"
 cd examples/cpp/helloworld
 mkdir -p cmake/build

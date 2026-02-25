@@ -17,6 +17,9 @@ set -ex
 
 # change to grpc repo root
 cd "$(dirname "$0")/../../.."
+if [ -f generate_artifacts.sh ]; then
+  ./generate_artifacts.sh
+fi
 
 ##########################
 # Portability operations #

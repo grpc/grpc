@@ -17,6 +17,9 @@ set -ex
 
 # Set install path to avoid installing to system paths
 cd "$(dirname "$0")/../../.."
+if [ -f generate_artifacts.sh ]; then
+  ./generate_artifacts.sh
+fi
 mkdir -p cmake/install
 INSTALL_PATH="$(pwd)/cmake/install"
 
