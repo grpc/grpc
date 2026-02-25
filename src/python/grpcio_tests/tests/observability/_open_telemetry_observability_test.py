@@ -960,6 +960,13 @@ class OpenTelemetryObservabilityTest(unittest.TestCase):
         self.assertTrue(attempt_span.status.is_ok)
         self.assertTrue(server_span.status.is_ok)
 
+        # validate mandatory attributes
+        attempt_attrs = dict(attempt_span.attributes)
+        self.assertTrue("transparent-retry" in attempt_attrs)
+        self.assertTrue(attempt_attrs["transparent-retry"] == "0")
+        self.assertTrue("previous-rpc-attempts" in attempt_attrs)
+        self.assertTrue(attempt_attrs["previous-rpc-attempts"] == "0")
+
         # validate parent-child relationship
         self.assertTrue(
             client_span.get_span_context().trace_id
