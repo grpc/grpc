@@ -226,9 +226,6 @@ class Http2ServerTransport final : public ServerTransport,
 
   auto ReadLoop();
 
-  // TODO(tjagtap) : [PH2][P1] : Delete this when read path is implemented.
-  auto OnReadLoopEnded();
-
   //////////////////////////////////////////////////////////////////////////////
   // Transport Write Path
 
@@ -254,9 +251,6 @@ class Http2ServerTransport final : public ServerTransport,
 
   // Returns a promise to keep writing in a Loop till a fail/close is received.
   auto WriteLoop();
-
-  // TODO(akshitpatel) : [PH2][P1] : Delete this when write path is implemented.
-  auto OnWriteLoopEnded();
 
   // Force triggers a transport write cycle
   absl::Status TriggerWriteCycle(DebugLocation whence = {}) {
@@ -498,24 +492,6 @@ class Http2ServerTransport final : public ServerTransport,
 
   // This function is supposed to be idempotent.
   void CloseTransport() {}
-
-  // TODO(akshitpatel) : [PH2][P0] : Remove this when actual HandleError is
-  // implemented.
-  absl::Status HandleError(Http2Status status, DebugLocation whence = {}) {
-    auto error_type = status.GetType();
-    GRPC_DCHECK(error_type != Http2Status::Http2ErrorType::kOk);
-
-    if (error_type == Http2Status::Http2ErrorType::kStreamError) {
-      CloseStream(current_frame_header_.stream_id, status.GetAbslStreamError(),
-                  whence);
-      return absl::OkStatus();
-    } else if (error_type == Http2Status::Http2ErrorType::kConnectionError) {
-      CloseTransport();
-      return status.GetAbslConnectionError();
-    }
-
-    GPR_UNREACHABLE_CODE(return absl::InternalError("Invalid error type"));
-  }
 
   // Handles the error status and returns the corresponding absl status. Absl
   // Status is returned so that the error can be gracefully handled
