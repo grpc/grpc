@@ -119,9 +119,9 @@ class OpenTelemetryPlugin:
           meter_provider: A MeterProvider which will be used to collect telemetry data,
         or None which means no metrics will be collected.
           tracer_provider: A TracerProvider which will be used to collect traces or None which means
-            no traces are collected
+            no traces are collected.
           text_map_propagator: A TraceContextTextMapPropagator which will be used for span context
-            propagation or None which means no traces are collected
+            propagation or None which means context propagation is disabled.
           target_attribute_filter: [DEPRECATED] This attribute is deprecated and should
         not be used.
         Once provided, this will be called per channel to decide whether to record the

@@ -118,7 +118,9 @@ class _OpenTelemetryPlugin:
         self._plugin = plugin
         self._metric_to_recorder = {}
         self._tracer = None
+        self._tracer_lock = threading.Lock()
         self._trace_ctx = None
+        self._trace_ctx_lock = threading.Lock()
         self._text_map_propagator = None
         self.identifier = str(id(self))
         self._enabled_client_plugin_options = None
@@ -134,7 +136,7 @@ class _OpenTelemetryPlugin:
 
         tracer_provider = self._plugin.tracer_provider
         text_map_propagator = self._plugin.text_map_propagator
-        if tracer_provider and text_map_propagator:
+        if tracer_provider:
             id_generator_type = type(tracer_provider.id_generator)
             if id_generator_type is not sdk_trace.RandomIdGenerator:
                 raise ValueError(
@@ -145,7 +147,8 @@ class _OpenTelemetryPlugin:
             self._tracer = tracer_provider.get_tracer(
                 "grpc-python", grpc.__version__
             )
-            self._text_map_propagator = text_map_propagator
+            if text_map_propagator:
+                self._text_map_propagator = text_map_propagator
 
     def _should_record(self, stats_data: StatsData) -> bool:
         # Decide if this plugin should record the stats_data.
@@ -202,7 +205,47 @@ class _OpenTelemetryPlugin:
             self._record_stats_data(stats_data)
 
     def is_tracing_configured(self) -> bool:
-        return self._tracer and self._text_map_propagator
+        return self._tracer is not None
+
+    def get_trace_context(self) -> Optional[otel_context.Context]:
+        with self._trace_ctx_lock:
+            return self._trace_ctx
+
+    def _build_context(
+        self,
+        trace_id: str,
+        span_id: str,
+        is_sampled: bool,
+        context: Optional[otel_context.Context] = None
+    ) -> otel_context.Context:
+        """Builds new Otel context from trace_id, span_id and sampling flag."
+
+        Uses `TextMapPropagator` instance when configured, otherwise constructs
+        `SpanContext` directly.
+        """
+        if self._text_map_propagator:
+            # Header formatting as per https://www.w3.org/TR/trace-context/#traceparent-header
+            traceparent = (
+                f"{TRACEPARENT_VERSION_ID}-{trace_id}-{span_id}"
+                f"-{is_sampled:02x}"
+            )
+            return self._text_map_propagator.extract(
+                carrier={"traceparent": traceparent}, context=context
+            )
+
+        span_context = trace.SpanContext(
+            trace_id=int(trace_id, 16),
+            span_id=int(span_id, 16),
+            is_remote=True,
+            trace_flags=trace.TraceFlags(
+                trace.TraceFlags.SAMPLED
+                if is_sampled
+                else trace.TraceFlags.DEFAULT
+            ),
+        )
+        parent_span = trace.NonRecordingSpan(span_context)
+        return trace.set_span_in_context(parent_span, context)
+
 
     def save_trace_context(
         self, trace_id: str, span_id: str, is_sampled: bool
@@ -210,13 +253,13 @@ class _OpenTelemetryPlugin:
         if not self.is_tracing_configured():
             return
 
-        # Header formatting as per https://www.w3.org/TR/trace-context/#traceparent-header
-        traceparent = (
-            f"{TRACEPARENT_VERSION_ID}-{trace_id}-{span_id}-{is_sampled:02x}"
-        )
-        self._trace_ctx = self._text_map_propagator.extract(
-            carrier={"traceparent": traceparent}, context=self._trace_ctx
-        )
+        with self._trace_ctx_lock:
+            self._trace_ctx = self._build_context(
+                trace_id=trace_id,
+                span_id=span_id,
+                is_sampled=is_sampled,
+                context=self._trace_ctx
+            )
 
     def _status_to_otel_status(self, status: str) -> trace.Status:
         if status == "OK":
@@ -235,26 +278,29 @@ class _OpenTelemetryPlugin:
         `trace.IdGenerator`. With this approach IDs are propagated correctly to
         configured exporter instance.
         """
-        # this step is needed to propagate parent span ID correctly
-        self.save_trace_context(
+        # Build parent context locally to avoid race conditions when
+        # concurrent RPCs are collecting traces
+        local_ctx = self._build_context(
             trace_id=tracing_data.trace_id,
             span_id=tracing_data.parent_span_id,
             is_sampled=tracing_data.should_sample,
         )
 
-        # this step is needed to propagate span ID correctly
-        self._tracer.id_generator = _GrpcIdGenerator(
-            trace_id=tracing_data.trace_id, span_id=tracing_data.span_id
-        )
+        # to prevent concurrent RPCs from overwriting shared state
+        with self._tracer_lock:
+            # this step is needed to propagate span ID correctly
+            self._tracer.id_generator = _GrpcIdGenerator(
+                trace_id=tracing_data.trace_id, span_id=tracing_data.span_id
+            )
+            span = self._tracer.start_span(
+                name=tracing_data.name,
+                context=local_ctx,
+                kind=trace.SpanKind.INTERNAL,
+                attributes=tracing_data.span_labels,
+                links=None,
+                start_time=tracing_data.start_time,
+            )
 
-        span = self._tracer.start_span(
-            name=tracing_data.name,
-            context=self._trace_ctx,
-            kind=trace.SpanKind.INTERNAL,
-            attributes=tracing_data.span_labels,
-            links=None,
-            start_time=tracing_data.start_time,
-        )
         for event in tracing_data.span_events:
             span.add_event(
                 name=event["name"],
@@ -531,7 +577,7 @@ class OpenTelemetryObservability(grpc._observability.ObservabilityPlugin):
         # current span is used to track the trace ID. Since it is preserved across different RPCs,
         # we can safely use just the context of the first plugin.
         current_span = trace.get_current_span(
-            context=self._plugins[0]._trace_ctx
+            context=self._plugins[0].get_trace_context()
         ).get_span_context()
         if current_span.is_valid:
             generator = sdk_trace.RandomIdGenerator()

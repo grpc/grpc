@@ -188,6 +188,40 @@ class OpenTelemetryObservabilityTest(unittest.TestCase):
             ],
         )
 
+    def testTracesForUnaryUnaryCallWithoutPropagator(self):
+        with grpc_observability.OpenTelemetryPlugin(
+            tracer_provider=self._tracer_provider,
+        ):
+            server, port = _test_server.start_server()
+            self._server = server
+            _test_server.unary_unary_call(port=port)
+
+        self._validate_spans_exist(self._span_exporter)
+        self._validate_spans(
+            spans=self._span_exporter.get_finished_spans(),
+            expected_span_size=3,
+            expected_server_events=[
+                (
+                    "Outbound message",
+                    {"sequence-number": "0", "message-size": "3"},
+                ),
+                (
+                    "Inbound message",
+                    {"sequence-number": "0", "message-size": "3"},
+                ),
+            ],
+            expected_attempt_events=[
+                (
+                    "Outbound message",
+                    {"sequence-number": "0", "message-size": "3"},
+                ),
+                (
+                    "Inbound message",
+                    {"sequence-number": "0", "message-size": "3"},
+                ),
+            ],
+        )
+
     def testTracesForTwoUnaryUnaryCallsWithContextManager(self):
         with grpc_observability.OpenTelemetryPlugin(
             tracer_provider=self._tracer_provider,
@@ -881,6 +915,25 @@ class OpenTelemetryObservabilityTest(unittest.TestCase):
             grpc_observability.OpenTelemetryPlugin(
                 tracer_provider=otel_tracer_provider,
                 text_map_propagator=TraceContextTextMapPropagator(),
+            )
+
+    def testWrongPluginConfigurationForTracingWithoutPropagator(self):
+        class UserDefinedIdGenerator(sdk_trace.IdGenerator):
+            def generate_span_id(self) -> int:
+                return 0
+
+            def generate_trace_id(self) -> int:
+                return 0
+
+        otel_tracer_provider = sdk_trace.TracerProvider(
+            id_generator=UserDefinedIdGenerator()
+        )
+        with self.assertRaisesRegex(
+            ValueError,
+            "User-defined IdGenerators are not allowed."
+        ):
+            grpc_observability.OpenTelemetryPlugin(
+                tracer_provider=otel_tracer_provider,
             )
 
     def testSpanStatusForUnimplementedRpcMethod(self):
