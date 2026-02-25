@@ -1726,6 +1726,7 @@ grpc_cc_test(
         "absl/status:statusor",
         "absl/strings",
         "absl/synchronization",
+        "absl/time:time",
         "gtest",
         "libcrypto",
         "libssl",
@@ -1733,6 +1734,7 @@ grpc_cc_test(
     tags = ["tls_private_key_signer_test"],
     deps = [
         ":test_service_impl",
+        "//:channel_arg_names",
         "//:gpr",
         "//:grpc",
         "//:grpc++",

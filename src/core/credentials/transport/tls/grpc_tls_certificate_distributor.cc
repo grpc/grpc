@@ -21,14 +21,11 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/tsi/ssl_transport_security.h"
-
-using tsi::IsRootCertInfoEmpty;
-using tsi::RootCertInfo;
 #include "src/core/util/grpc_check.h"
 #include "absl/status/status.h"
 
 bool grpc_tls_certificate_distributor::CertificateInfo::AreRootsEmpty() {
-  return IsRootCertInfoEmpty(roots.get());
+  return tsi::IsRootCertInfoEmpty(roots.get());
 }
 
 void grpc_tls_certificate_distributor::SetKeyMaterials(

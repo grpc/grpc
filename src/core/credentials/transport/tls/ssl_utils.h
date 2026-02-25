@@ -117,7 +117,7 @@ int grpc_ssl_host_matches_name(const tsi_peer* peer,
 
 // --- Default SSL Root Store. ---
 namespace grpc_core {
-using PrivateKey = tsi::PrivateKey;
+using tsi::PrivateKey;
 
 bool IsPrivateKeyEmpty(const PrivateKey& private_key);
 

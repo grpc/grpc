@@ -41,8 +41,6 @@
 #include "src/core/lib/promise/promise.h"
 #include "src/core/transport/auth_context.h"
 #include "src/core/tsi/ssl_transport_security.h"
-
-using tsi::RootCertInfo;
 #include "src/core/tsi/transport_security.h"
 #include "src/core/tsi/transport_security_interface.h"
 #include "src/core/util/debug_location.h"
@@ -244,7 +242,7 @@ class grpc_ssl_server_security_connector
       options.pem_key_cert_pairs =
           server_credentials->config().pem_key_cert_pairs;
       if (server_credentials->config().pem_root_certs != nullptr) {
-        options.root_cert_info = std::make_shared<RootCertInfo>(
+        options.root_cert_info = std::make_shared<tsi::RootCertInfo>(
             server_credentials->config().pem_root_certs);
       }
       options.client_certificate_request =
@@ -363,7 +361,7 @@ class grpc_ssl_server_security_connector
         config->pem_key_cert_pairs, config->num_key_cert_pairs);
     if (config->pem_root_certs != nullptr) {
       options.root_cert_info =
-          std::make_shared<RootCertInfo>(config->pem_root_certs);
+          std::make_shared<tsi::RootCertInfo>(config->pem_root_certs);
     }
     options.client_certificate_request =
         grpc_get_tsi_client_certificate_request_type(
