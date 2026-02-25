@@ -801,7 +801,6 @@ std::unique_ptr<RE2> ParseRegexMatcher(
 }  // namespace
 
 HeaderMutationRules ParseHeaderMutationRules(
-    const XdsResourceType::DecodeContext& context,
     const envoy_config_common_mutation_rules_v3_HeaderMutationRules*
         header_mutation_rules,
     ValidationErrors* errors) {

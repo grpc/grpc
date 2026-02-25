@@ -1305,7 +1305,7 @@ class ParseHeaderMutationRulesTest : public XdsCommonTypesTest {
       const envoy_config_common_mutation_rules_v3_HeaderMutationRules*
           upb_proto,
       ValidationErrors* errors) {
-    return ParseHeaderMutationRules(MakeDecodeContext(), upb_proto, errors);
+    return ParseHeaderMutationRules(upb_proto, errors);
   }
 };
 
