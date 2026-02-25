@@ -84,4 +84,6 @@ PrivateKeySignerPyWrapper::~PrivateKeySignerPyWrapper() {
   PyGILState_Release(state);
 }
 
+std::string MakeStringForCython(const char* inp) { return std::string(inp); }
+
 }  // namespace grpc_core

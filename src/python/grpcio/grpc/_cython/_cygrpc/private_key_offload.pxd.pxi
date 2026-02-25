@@ -95,3 +95,4 @@ cdef extern from "src/python/grpcio/grpc/_cython/_cygrpc/private_key_signing/pri
     shared_ptr[PrivateKeySigner] BuildPrivateKeySigner(SignWrapperForPy, void*, PyObject*)
     cdef cppclass CompletionContext:
         void OnComplete(StatusOr[string])
+    cdef string MakeStringForCython(const char*) noexcept

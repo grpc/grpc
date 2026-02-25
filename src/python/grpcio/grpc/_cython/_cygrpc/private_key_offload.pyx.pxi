@@ -13,7 +13,7 @@
 # limitations under the License.
 from cpython.bytes cimport PyBytes_FromStringAndSize
 from libcpp.utility cimport move
-from cpython cimport PyObject
+from cpython cimport PyObject, PyBytes_AS_STRING
 
 import threading
 
@@ -33,15 +33,15 @@ cdef class OnCompleteWrapper:
     cdef string cpp_string
     if isinstance(result, bytes):
       # We got a signature
-      cpp_string = result
+      cpp_string = MakeStringForCython(PyBytes_AS_STRING(result))
       cpp_result = MakeStringResult(cpp_string)
     elif isinstance(result, Exception):
       # If python returns an exception, convert to absl::Status
-      cpp_string = str(result).encode('utf-8')
+      cpp_string = MakeStringForCython(PyBytes_AS_STRING(str(result).encode('utf-8')))
       cpp_result = MakeInternalError(cpp_string)
     else:
       # Any other return type is not valid
-      cpp_string = f"Invalid result type: {type(result)}".encode('utf-8')
+      cpp_string = MakeStringForCython(PyBytes_AS_STRING(f"Invalid result type: {type(result)}".encode('utf-8')))
       cpp_result = MakeInternalError(cpp_string)
     self.completion_context.get().OnComplete(cpp_result)
 
@@ -67,11 +67,11 @@ cdef PrivateKeySignerPyWrapperResult async_sign_wrapper(string_view inp, CSignat
       cpp_result.is_sync = True
       if isinstance(py_result, bytes):
         # We got a signature
-        cpp_string = py_result
+        cpp_string = MakeStringForCython(PyBytes_AS_STRING(py_result))
         cpp_result.sync_result = MakeStringResult(cpp_string)
       elif isinstance(py_result, Exception):
         # If python returns an exception, convert to absl::Status
-        cpp_string = str(py_result).encode('utf-8')
+        cpp_string = MakeStringForCython(PyBytes_AS_STRING(str(py_result).encode('utf-8')))
         cpp_result.sync_result = MakeInternalError(cpp_string)
       elif callable(py_result):
         # Cancellation func
@@ -81,12 +81,12 @@ cdef PrivateKeySignerPyWrapperResult async_sign_wrapper(string_view inp, CSignat
         cpp_result.async_result.cancel_wrapper = cancel_wrapper
       else:
         # Any other return type is not valid
-        cpp_string = f"Invalid result type: {type(py_result)}".encode('utf-8')
+        cpp_string = MakeStringForCython(PyBytes_AS_STRING(f"Invalid result type: {type(py_result)}".encode('utf-8')))
         cpp_result.sync_result = MakeInternalError(cpp_string)
       return cpp_result
     except Exception as e:
       # If Python raises an exception, make it an error status
-      cpp_result.sync_result = MakeInternalError(f"Exception in user function: {e}".encode('utf-8'))
+      cpp_result.sync_result = MakeInternalError(MakeStringForCython(PyBytes_AS_STRING(f"Exception in user function: {e}".encode('utf-8'))))
       return cpp_result
 
 cdef void cancel_wrapper(void* py_cancel_user_fn) noexcept nogil:

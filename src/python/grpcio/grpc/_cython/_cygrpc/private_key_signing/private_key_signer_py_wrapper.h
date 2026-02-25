@@ -105,6 +105,8 @@ class AsyncSigningHandlePyWrapper : public PrivateKeySigner::AsyncSigningHandle 
   // This will decrememnt the py_user_cancel_fn on object destruction
   ~AsyncSigningHandlePyWrapper() override;
 };
+
+std::string MakeStringForCython(const char* inp);
 }  // namespace grpc_core
 
 #endif  // GRPC_PRIVATE_KEY_SIGNER_PY_WRAPPER_H
