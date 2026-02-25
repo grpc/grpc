@@ -98,7 +98,10 @@ class _Plugin(object):
             pass
 
     def __call__(
-        self, service_url: StrOrBytesType, method_name: StrOrBytesType, callback: Callable
+        self,
+        service_url: StrOrBytesType,
+        method_name: StrOrBytesType,
+        callback: Callable,
     ):
         context = _AuthMetadataContext(
             _common.decode(service_url), _common.decode(method_name)
