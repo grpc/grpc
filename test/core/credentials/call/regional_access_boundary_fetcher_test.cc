@@ -41,6 +41,7 @@
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h"
 #include "test/core/test_util/test_config.h"
+#include "src/core/util/wait_for_single_owner.h"
 
 namespace grpc_core {
 
@@ -113,6 +114,15 @@ class RegionalAccessBoundaryFetcherTest : public ::testing::Test {
 
   void TearDown() override {
     HttpRequest::SetOverride(nullptr, nullptr, nullptr);
+    {
+      grpc_core::ExecCtx exec_ctx;
+      fetcher_.reset();
+    }
+    fuzzing_event_engine_->FuzzingDone();
+    fuzzing_event_engine_->TickUntilIdle();
+    fuzzing_event_engine_->UnsetGlobalHooks();
+    WaitForSingleOwner(std::move(fuzzing_event_engine_));
+    grpc_shutdown();
   }
 
   RefCountedPtr<RegionalAccessBoundaryFetcher> fetcher_;
@@ -138,6 +148,7 @@ TEST_F(RegionalAccessBoundaryFetcherTest, CacheHitDoesNotTriggerFetch) {
 }
 
 TEST_F(RegionalAccessBoundaryFetcherTest, ExpiredCacheTriggersFetch) {
+  ExecCtx exec_ctx;
   set_cache(RegionalAccessBoundary{
       "us-west1", {"us-west1"}, grpc_core::Timestamp::Now() + grpc_core::Duration::Seconds(100)});
   Tick(grpc_core::Duration::Seconds(101));
@@ -153,6 +164,7 @@ TEST_F(RegionalAccessBoundaryFetcherTest, CooldownPreventsFetch) {
 }
 
 TEST_F(RegionalAccessBoundaryFetcherTest, CooldownExpiredAllowsFetch) {
+  ExecCtx exec_ctx;
   set_cooldown_deadline(grpc_core::Timestamp::Now() + grpc_core::Duration::Seconds(100));
   Tick(grpc_core::Duration::Seconds(101));
   metadata_->Append("authorization", Slice::FromStaticString("Bearer token"), [](absl::string_view, const Slice&) { abort(); });
@@ -346,11 +358,40 @@ TEST_F(RegionalAccessBoundaryFetcherTest, RetryableHttpErrors) {
   fetcher_->Fetch("", *metadata_);
   EXPECT_TRUE(fetch_in_flight());
   ExecCtx::Get()->Flush();
-  EXPECT_TRUE(fetch_in_flight());
+  // After failure, fetch should no longer be in flight (request is reset during backoff).
+  EXPECT_FALSE(fetch_in_flight());
   EXPECT_EQ(retry_count(), 1);
   EXPECT_EQ(g_mock_get_count, 1);
-  EXPECT_EQ(g_mock_get_count, 1);
+  // We can advance time and retry.
+  Tick(grpc_core::Duration::Seconds(1) * 1.1 + grpc_core::Duration::Milliseconds(100)); // Initial backoff + jitter + buffer
+  fetcher_->Fetch("", *metadata_);
+  EXPECT_TRUE(fetch_in_flight());
+  ExecCtx::Get()->Flush();
+  EXPECT_EQ(g_mock_get_count, 2);
   fetcher_.reset();
+}
+
+TEST_F(RegionalAccessBoundaryFetcherTest, RetryClearsPendingRequest) {
+  ExecCtx exec_ctx;
+  g_mock_get_count = 0;
+  HttpRequest::SetOverride(httpcli_get_500, nullptr, nullptr);
+  metadata_->Append("authorization", Slice::FromStaticString("Bearer token"), [](absl::string_view, const Slice&) { abort(); });
+  fetcher_->Fetch("", *metadata_);
+  EXPECT_TRUE(fetch_in_flight());
+  ExecCtx::Get()->Flush();
+  // Request should be cleared (reset) during backoff.
+  EXPECT_FALSE(fetch_in_flight());
+  EXPECT_EQ(retry_count(), 1);
+  
+  // Advance time past backoff to allow retry.
+  Tick(grpc_core::Duration::Seconds(10));
+  
+  // Trigger retry.
+  fetcher_->Fetch("", *metadata_);
+  EXPECT_TRUE(fetch_in_flight());
+  ExecCtx::Get()->Flush();
+  EXPECT_EQ(retry_count(), 2);
+  EXPECT_EQ(g_mock_get_count, 2);
 }
 
 TEST_F(RegionalAccessBoundaryFetcherTest, NonRetryableHttpErrors) {

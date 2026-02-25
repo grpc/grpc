@@ -200,6 +200,7 @@ const char kTestAuthority[] = "foo.com";
 const char kTestPath[] = "/foo.v1/ThisIsNotAMethod";
 const char kTestOtherAuthority[] = "bar.com";
 const char kTestOtherPath[] = "/bar.v1/ThisIsNotAMethod";
+const char kGoogleTestAuthority[] = "googleapis.com";
 
 const char test_sts_endpoint_url[] = "https://foo.com:5555/v1/token-exchange";
 
@@ -4963,7 +4964,7 @@ TEST_F(JwtTokenFileCallCredentialsTest, InvalidToken) {
   gpr_free(path);
 }
 
-const char kGoogleTestAuthority[] = "googleapis.com";
+
 
 
 int compute_engine_with_rab_httpcli_get_success_override(

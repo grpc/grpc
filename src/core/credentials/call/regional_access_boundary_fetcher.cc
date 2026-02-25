@@ -134,7 +134,6 @@ void RegionalAccessBoundaryFetcher::OnFetchFailure(
                  << grpc_core::StatusToString(error)
                  << ", HTTP Status: " << http_status << ", Body: "
                  << response_body;
-    pending_request_.reset();
     backoff_.Reset();
     num_retries_ = 0;
     cooldown_deadline_ = grpc_core::Timestamp::Now() + 
@@ -145,6 +144,7 @@ void RegionalAccessBoundaryFetcher::OnFetchFailure(
         cooldown_multiplier_ *= 2;
     }
   }
+  pending_request_.reset();
 }
 
 void RegionalAccessBoundaryFetcher::Fetch(absl::string_view access_token,
