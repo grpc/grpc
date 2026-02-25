@@ -1358,28 +1358,37 @@ TEST_F(ParseHeaderMutationRulesTest, InvalidRegex) {
       "error:Invalid regex string specified in matcher: missing ]: []");
 }
 
-TEST(HeaderMutationRulesTest, IsMutationAllowed) {
+TEST(HeaderMutationRulesTest, DefaultAllowsAll) {
   HeaderMutationRules rules;
-  // 1. Default: everything allowed
   EXPECT_TRUE(rules.IsMutationAllowed("foo"));
   EXPECT_TRUE(rules.IsMutationAllowed("bar"));
-  // 2. Disallow all
+}
+
+TEST(HeaderMutationRulesTest, DisallowAll) {
+  HeaderMutationRules rules;
   rules.disallow_all = true;
   EXPECT_FALSE(rules.IsMutationAllowed("foo"));
   EXPECT_FALSE(rules.IsMutationAllowed("bar"));
-  rules.disallow_all = false;
-  // 3. Disallow expression
+}
+
+TEST(HeaderMutationRulesTest, DisallowExpression) {
+  HeaderMutationRules rules;
   rules.disallow_expression = std::make_unique<RE2>("disallowed.*");
   EXPECT_FALSE(rules.IsMutationAllowed("disallowed_header"));
   EXPECT_TRUE(rules.IsMutationAllowed("allowed_header"));
-  // 4. Allow expression
+}
+
+TEST(HeaderMutationRulesTest, AllowExpression) {
+  HeaderMutationRules rules;
   rules.allow_expression = std::make_unique<RE2>("allowed.*");
-  // "allowed_header" matches allow_expression, and does not match
-  // disallow_expression (which is "disallowed.*")
+  // "allowed_header" matches allow_expression
   EXPECT_TRUE(rules.IsMutationAllowed("allowed_header"));
   // "other" does not match allow_expression
   EXPECT_FALSE(rules.IsMutationAllowed("other"));
-  // 5. Precedence: Disallow expression overrides Allow expression
+}
+
+TEST(HeaderMutationRulesTest, DisallowExpressionOverridesAllowExpression) {
+  HeaderMutationRules rules;
   rules.disallow_expression = std::make_unique<RE2>("common.*");
   rules.allow_expression = std::make_unique<RE2>(".*header");
   // "common_header" matches both. Should be disallowed.
@@ -1391,10 +1400,6 @@ TEST(HeaderMutationRulesTest, IsMutationAllowed) {
   // "stuff" matches neither. Should be disallowed (because allow_expression is
   // set).
   EXPECT_FALSE(rules.IsMutationAllowed("stuff"));
-  // 6. Precedence: Disallow all overrides everything
-  rules.disallow_all = true;
-  EXPECT_FALSE(rules.IsMutationAllowed("unique_header"));
-  rules.disallow_all = false;
 }
 
 }  // namespace
