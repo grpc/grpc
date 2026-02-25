@@ -112,33 +112,6 @@ using StreamWritabilityUpdate =
 // TODO(tjagtap) : [PH2][P5] : Update the experimental status of the code when
 // http2 rollout is completed.
 
-template <typename Factory>
-void Http2ClientTransport::SpawnInfallibleTransportParty(absl::string_view name,
-                                                         Factory&& factory) {
-  SpawnInfallible(general_party_, name, std::forward<Factory>(factory));
-}
-
-template <typename Factory>
-void Http2ClientTransport::SpawnGuardedTransportParty(absl::string_view name,
-                                                      Factory&& factory) {
-  general_party_->Spawn(
-      name, std::forward<Factory>(factory),
-      [self = RefAsSubclass<Http2ClientTransport>()](absl::Status status) {
-        if (!status.ok()) {
-          GRPC_UNUSED absl::Status error = self->HandleError(
-              /*stream_id=*/std::nullopt, ToHttpOkOrConnError(status));
-        }
-      });
-}
-
-template <typename Factory, typename OnDone>
-void Http2ClientTransport::SpawnWithOnDoneTransportParty(absl::string_view name,
-                                                         Factory&& factory,
-                                                         OnDone&& on_done) {
-  general_party_->Spawn(name, std::forward<Factory>(factory),
-                        std::forward<OnDone>(on_done));
-}
-
 void Http2ClientTransport::PerformOp(grpc_transport_op* op) {
   // Notes : Refer : src/core/ext/transport/chaotic_good/client_transport.cc
   // Functions : StartConnectivityWatch, StopConnectivityWatch, PerformOp
@@ -440,43 +413,6 @@ Http2Status Http2ClientTransport::ProcessIncomingFrame(
   return Http2Status::Ok();
 }
 
-Http2Status Http2ClientTransport::ProcessMetadata(
-    RefCountedPtr<Stream> stream) {
-  HeaderAssembler& assembler = stream->header_assembler;
-  CallHandler call = stream->call;
-
-  GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport::ProcessMetadata";
-  if (assembler.IsReady()) {
-    ValueOrHttp2Status<ServerMetadataHandle> read_result =
-        assembler.ReadMetadata(parser_, !incoming_headers_.HeaderHasEndStream(),
-                               /*max_header_list_size_soft_limit=*/
-                               incoming_headers_.soft_limit(),
-                               /*max_header_list_size_hard_limit=*/
-                               settings_->acked().max_header_list_size());
-    if (read_result.IsOk()) {
-      ServerMetadataHandle metadata = TakeValue(std::move(read_result));
-      if (incoming_headers_.HeaderHasEndStream()) {
-        stream->MarkHalfClosedRemote();
-        stream->did_receive_trailing_metadata = true;
-        BeginCloseStream(std::move(stream),
-                         /*reset_stream_error_code=*/std::nullopt,
-                         std::move(metadata));
-      } else {
-        GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport::ProcessMetadata "
-                                  "SpawnPushServerInitialMetadata";
-        metadata->Set(PeerString(), incoming_headers_.peer_string());
-        stream->did_receive_initial_metadata = true;
-        call.SpawnPushServerInitialMetadata(std::move(metadata));
-      }
-      return Http2Status::Ok();
-    }
-    GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport::ProcessMetadata Failed";
-    return ValueOrHttp2Status<Arena::PoolPtr<grpc_metadata_batch>>::TakeStatus(
-        std::move(read_result));
-  }
-  return Http2Status::Ok();
-}
-
 Http2Status Http2ClientTransport::ProcessIncomingFrame(
     Http2RstStreamFrame&& frame) {
   // https://www.rfc-editor.org/rfc/rfc9113.html#name-rst_stream
@@ -764,6 +700,43 @@ Http2Status Http2ClientTransport::ProcessIncomingFrame(
 Http2Status Http2ClientTransport::ProcessIncomingFrame(
     GRPC_UNUSED Http2EmptyFrame&& frame) {
   LOG(DFATAL) << "ParseFramePayload should never return a Http2EmptyFrame";
+  return Http2Status::Ok();
+}
+
+Http2Status Http2ClientTransport::ProcessMetadata(
+    RefCountedPtr<Stream> stream) {
+  HeaderAssembler& assembler = stream->header_assembler;
+  CallHandler call = stream->call;
+
+  GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport::ProcessMetadata";
+  if (assembler.IsReady()) {
+    ValueOrHttp2Status<ServerMetadataHandle> read_result =
+        assembler.ReadMetadata(parser_, !incoming_headers_.HeaderHasEndStream(),
+                               /*max_header_list_size_soft_limit=*/
+                               incoming_headers_.soft_limit(),
+                               /*max_header_list_size_hard_limit=*/
+                               settings_->acked().max_header_list_size());
+    if (read_result.IsOk()) {
+      ServerMetadataHandle metadata = TakeValue(std::move(read_result));
+      if (incoming_headers_.HeaderHasEndStream()) {
+        stream->MarkHalfClosedRemote();
+        stream->did_receive_trailing_metadata = true;
+        BeginCloseStream(std::move(stream),
+                         /*reset_stream_error_code=*/std::nullopt,
+                         std::move(metadata));
+      } else {
+        GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport::ProcessMetadata "
+                                  "SpawnPushServerInitialMetadata";
+        metadata->Set(PeerString(), incoming_headers_.peer_string());
+        stream->did_receive_initial_metadata = true;
+        call.SpawnPushServerInitialMetadata(std::move(metadata));
+      }
+      return Http2Status::Ok();
+    }
+    GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport::ProcessMetadata Failed";
+    return ValueOrHttp2Status<Arena::PoolPtr<grpc_metadata_batch>>::TakeStatus(
+        std::move(read_result));
+  }
   return Http2Status::Ok();
 }
 
@@ -1436,6 +1409,10 @@ void Http2ClientTransport::SpawnTransportLoops() {
   if (!TriggerWriteCycleOrHandleError()) {
     return;
   }
+  // For Client, write happens before read. So MultiplexerLoop is spawned first.
+  // ReadLoop is spawned after the first write.
+  // For Server, read happens before write. So ReadLoop is spawned first.
+  // MultiplexerLoop is spawned after the first read.
   SpawnGuardedTransportParty("MultiplexerLoop", MultiplexerLoop());
   GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport::SpawnTransportLoops End";
 }
