@@ -198,7 +198,7 @@ void DoRpc(const std::string& server_addr,
 // Performs an RPC and expects it to fail.
 // on_rpc_stalled is an optional callback that will be executed after a delay (1
 // second) after the RPC is initiated. This is useful for cases where the RPC is
-// expected to hang and an action is needed to unblock the test.
+// expected to wait and an action is needed to unblock the test.
 void DoRpcAndExpectFailure(
     const std::string& server_addr,
     const experimental::TlsChannelCredentialsOptions& tls_options,
