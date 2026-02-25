@@ -883,6 +883,68 @@ class OpenTelemetryObservabilityTest(unittest.TestCase):
                 text_map_propagator=TraceContextTextMapPropagator(),
             )
 
+    def testSpanStatusForUnimplementedRpcMethod(self):
+        with grpc_observability.OpenTelemetryPlugin(
+            tracer_provider=self._tracer_provider,
+            text_map_propagator=TraceContextTextMapPropagator(),
+        ):
+            server, port = _test_server.start_server()
+            self._server = server
+            # Call a non existent method to trigger UNIMPLEMENTED status
+            with grpc.insecure_channel(f"localhost:{port}") as channel:
+                multi_callable = channel.unary_unary("/test/NonExistent")
+                try:
+                    multi_callable(b"\x00\x00\x00")
+                except grpc.RpcError:
+                    pass
+
+            self._validate_spans_exist(self._span_exporter)
+            spans = self._span_exporter.get_finished_spans()
+            self.assertTrue(len(spans) == 3)
+
+            client_span = next(
+                (span for span in spans if span.name.startswith("Sent.")), None
+            )
+            self.assertIsNotNone(client_span)
+
+            attempt_span = next(
+                (span for span in spans if span.name.startswith("Attempt.")), None
+            )
+            self.assertIsNotNone(attempt_span)
+
+            server_span = next(
+                (span for span in spans if span.name.startswith("Recv.")), None
+            )
+            self.assertIsNotNone(server_span)
+
+            # validate span statuses
+            self.assertFalse(client_span.status.is_ok)
+            self.assertIn("UNIMPLEMENTED", client_span.status.description)
+
+            self.assertFalse(attempt_span.status.is_ok)
+            self.assertIn("UNIMPLEMENTED", attempt_span.status.description)
+
+            self.assertFalse(server_span.status.is_ok)
+            self.assertIn("UNIMPLEMENTED", server_span.status.description)
+
+            # validate parent-child relationship
+            self.assertEqual(
+                client_span.get_span_context().trace_id,
+                attempt_span.get_span_context().trace_id
+            )
+            self.assertEqual(
+                attempt_span.parent.span_id,
+                client_span.get_span_context().span_id
+            )
+            self.assertEqual(
+                attempt_span.get_span_context().trace_id,
+                server_span.get_span_context().trace_id
+            )
+            self.assertEqual(
+                server_span.parent.span_id,
+                attempt_span.get_span_context().span_id
+            )
+
     def assert_eventually(
         self,
         predicate: Callable[[], bool],
@@ -949,12 +1011,17 @@ class OpenTelemetryObservabilityTest(unittest.TestCase):
         client_span = next(
             (span for span in spans if span.name.startswith("Sent.")), None
         )
+        self.assertIsNotNone(client_span)
+
         attempt_span = next(
             (span for span in spans if span.name.startswith("Attempt.")), None
         )
+        self.assertIsNotNone(attempt_span)
+
         server_span = next(
             (span for span in spans if span.name.startswith("Recv.")), None
         )
+        self.assertIsNotNone(server_span)
 
         # validate span statuses
         self.assertTrue(client_span.status.is_ok)
@@ -963,27 +1030,27 @@ class OpenTelemetryObservabilityTest(unittest.TestCase):
 
         # validate mandatory attributes
         attempt_attrs = dict(attempt_span.attributes)
-        self.assertTrue("transparent-retry" in attempt_attrs)
-        self.assertTrue(attempt_attrs["transparent-retry"] == "0")
-        self.assertTrue("previous-rpc-attempts" in attempt_attrs)
-        self.assertTrue(attempt_attrs["previous-rpc-attempts"] == "0")
+        self.assertIn("transparent-retry", attempt_attrs)
+        self.assertEqual(attempt_attrs["transparent-retry"], "0")
+        self.assertIn("previous-rpc-attempts", attempt_attrs)
+        self.assertEqual(attempt_attrs["previous-rpc-attempts"], "0")
 
         # validate parent-child relationship
-        self.assertTrue(
-            client_span.get_span_context().trace_id
-            == attempt_span.get_span_context().trace_id
-        )
-        self.assertTrue(
-            attempt_span.parent.span_id
-            == client_span.get_span_context().span_id
-        )
-        self.assertTrue(
+        self.assertEqual(
+            client_span.get_span_context().trace_id,
             attempt_span.get_span_context().trace_id
-            == server_span.get_span_context().trace_id
         )
-        self.assertTrue(
-            server_span.parent.span_id
-            == attempt_span.get_span_context().span_id
+        self.assertEqual(
+            attempt_span.parent.span_id,
+            client_span.get_span_context().span_id
+        )
+        self.assertEqual(
+            attempt_span.get_span_context().trace_id,
+            server_span.get_span_context().trace_id
+        )
+        self.assertEqual(
+            server_span.parent.span_id,
+            attempt_span.get_span_context().span_id
         )
 
         # validate server span traced events
