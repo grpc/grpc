@@ -104,7 +104,7 @@ bool CommonTlsContext::Empty() const {
 // HeaderMutationRules
 //
 
-bool HeaderMutationRules::IsMutationAllowed(std::string header_name) const {
+bool HeaderMutationRules::IsMutationAllowed(const std::string& header_name) const {
   // If true, all header mutations are disallowed, regardless of any other
   // setting.
   if (disallow_all) {

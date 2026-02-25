@@ -98,7 +98,7 @@ struct HeaderMutationRules {
   std::unique_ptr<RE2> allow_expression;
   std::unique_ptr<RE2> disallow_expression;
 
-  bool IsMutationAllowed(std::string header_name) const;
+  bool IsMutationAllowed(const std::string& header_name) const;
 
   std::string ToString() const;
 
