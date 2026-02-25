@@ -798,33 +798,6 @@ Http2Status Http2ClientTransport::ParseAndDiscardHeaders(
 
 ///////////////////////////////////////////////////////////////////////////////
 // Read Related Promises and Promise Factories
-
-// Callers MUST ensure that the transport is not destroyed till the promise is
-// resolved or cancelled.
-auto Http2ClientTransport::EndpointReadSlice(const size_t num_bytes) {
-  return Map(endpoint_.ReadSlice(num_bytes),
-             [this, num_bytes](absl::StatusOr<Slice> status) {
-               if (status.ok()) {
-                 keepalive_manager_->GotData();
-                 ztrace_collector_->Append(PromiseEndpointReadTrace{num_bytes});
-               }
-               return status;
-             });
-}
-
-// Callers MUST ensure that the transport is not destroyed till the promise is
-// resolved or cancelled.
-auto Http2ClientTransport::EndpointRead(const size_t num_bytes) {
-  return Map(endpoint_.Read(num_bytes),
-             [this, num_bytes](absl::StatusOr<SliceBuffer> status) {
-               if (status.ok()) {
-                 keepalive_manager_->GotData();
-                 ztrace_collector_->Append(PromiseEndpointReadTrace{num_bytes});
-               }
-               return status;
-             });
-}
-
 auto Http2ClientTransport::ReadAndProcessOneFrame() {
   GRPC_HTTP2_CLIENT_DLOG
       << "Http2ClientTransport::ReadAndProcessOneFrame Factory";

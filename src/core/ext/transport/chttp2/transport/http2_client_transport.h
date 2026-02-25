@@ -391,8 +391,36 @@ class Http2ClientTransport final : public ClientTransport,
 
   RefCountedPtr<Stream> LookupStream(uint32_t stream_id);
 
-  auto EndpointReadSlice(const size_t num_bytes);
-  auto EndpointRead(const size_t num_bytes);
+  // Callers MUST ensure that the transport is not destroyed till the promise is
+  // resolved or cancelled.
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto EndpointReadSlice(
+      const size_t num_bytes) {
+    return Map(
+        endpoint_.ReadSlice(num_bytes),
+        [this, num_bytes](absl::StatusOr<Slice> status) {
+          if (status.ok()) {
+            keepalive_manager_->GotData();
+            ztrace_collector_->Append(PromiseEndpointReadTrace{num_bytes});
+          }
+          return status;
+        });
+  }
+
+  // Callers MUST ensure that the transport is not destroyed till the promise is
+  // resolved or cancelled.
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto EndpointRead(
+      const size_t num_bytes) {
+    return Map(
+        endpoint_.Read(num_bytes),
+        [this, num_bytes](absl::StatusOr<SliceBuffer> status) {
+          if (status.ok()) {
+            keepalive_manager_->GotData();
+            ztrace_collector_->Append(PromiseEndpointReadTrace{num_bytes});
+          }
+          return status;
+        });
+  }
+
   auto EndpointWrite(SliceBuffer&& output_buf);
 
   // HTTP2 Settings
