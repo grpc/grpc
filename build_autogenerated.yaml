@@ -6167,14 +6167,20 @@ targets:
   build: test
   language: c++
   headers:
+  - test/core/event_engine/event_engine_test_utils.h
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/tsi/alts/crypt/gsec_test_util.h
   - test/core/tsi/transport_security_test_lib.h
   src:
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/tsi/alts/crypt/gsec_test_util.cc
   - test/core/tsi/alts/frame_protector/alts_frame_protector_test.cc
   - test/core/tsi/transport_security_test_lib.cc
   deps:
   - gtest
+  - protobuf
   - grpc_test_util
 - name: alts_grpc_record_protocol_test
   gtest: true
@@ -9862,12 +9868,18 @@ targets:
   build: test
   language: c++
   headers:
+  - test/core/event_engine/event_engine_test_utils.h
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/tsi/transport_security_test_lib.h
   src:
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/tsi/crl_ssl_transport_security_test.cc
   - test/core/tsi/transport_security_test_lib.cc
   deps:
   - gtest
+  - protobuf
   - grpc_test_util
   platforms:
   - linux
@@ -12590,12 +12602,18 @@ targets:
   build: test
   language: c++
   headers:
+  - test/core/event_engine/event_engine_test_utils.h
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/tsi/transport_security_test_lib.h
   src:
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/tsi/fake_transport_security_test.cc
   - test/core/tsi/transport_security_test_lib.cc
   deps:
   - gtest
+  - protobuf
   - grpc_test_util
 - name: fd_conservation_posix_test
   gtest: true
@@ -20695,12 +20713,18 @@ targets:
   build: test
   language: c++
   headers:
+  - test/core/event_engine/event_engine_test_utils.h
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/tsi/transport_security_test_lib.h
   src:
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/tsi/private_key_offload_test.cc
   - test/core/tsi/transport_security_test_lib.cc
   deps:
   - gtest
+  - protobuf
   - grpc_test_util
 - name: promise_endpoint_test
   gtest: true
@@ -23464,12 +23488,18 @@ targets:
   build: test
   language: c++
   headers:
+  - test/core/event_engine/event_engine_test_utils.h
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/tsi/transport_security_test_lib.h
   src:
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/tsi/spiffe_ssl_transport_security_test.cc
   - test/core/tsi/transport_security_test_lib.cc
   deps:
   - gtest
+  - protobuf
   - grpc_test_util
   platforms:
   - linux
@@ -23501,12 +23531,18 @@ targets:
   build: test
   language: c++
   headers:
+  - test/core/event_engine/event_engine_test_utils.h
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/tsi/transport_security_test_lib.h
   src:
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/tsi/ssl_transport_security_test.cc
   - test/core/tsi/transport_security_test_lib.cc
   deps:
   - gtest
+  - protobuf
   - grpc_test_util
   platforms:
   - linux
@@ -23517,12 +23553,18 @@ targets:
   build: test
   language: c++
   headers:
+  - test/core/event_engine/event_engine_test_utils.h
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/tsi/transport_security_test_lib.h
   src:
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/tsi/ssl_transport_security_utils_test.cc
   - test/core/tsi/transport_security_test_lib.cc
   deps:
   - gtest
+  - protobuf
   - grpc_test_util
   platforms:
   - linux

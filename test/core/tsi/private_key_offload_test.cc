@@ -26,7 +26,10 @@
 #include <memory>
 #include <string>
 
+#include "src/core/lib/iomgr/timer_manager.h"
 #include "src/core/tsi/ssl_transport_security.h"
+#include "src/core/util/wait_for_single_owner.h"
+#include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
 #include "test/core/test_util/test_config.h"
 #include "test/core/test_util/tls_utils.h"
 #include "test/core/tsi/transport_security_test_lib.h"
@@ -150,9 +153,14 @@ class AsyncTestPrivateKeySigner final
  public:
   enum class Mode { kSuccess, kError, kCancellation };
 
-  explicit AsyncTestPrivateKeySigner(absl::string_view private_key,
-                                     Mode mode = Mode::kSuccess)
-      : pkey_(LoadPrivateKeyFromString(private_key)), mode_(mode) {}
+  explicit AsyncTestPrivateKeySigner(
+      absl::string_view private_key,
+      std::shared_ptr<grpc_event_engine::experimental::FuzzingEventEngine>
+          event_engine,
+      Mode mode = Mode::kSuccess)
+      : event_engine_(std::move(event_engine)),
+        pkey_(LoadPrivateKeyFromString(private_key)),
+        mode_(mode) {}
 
   std::variant<absl::StatusOr<std::string>, std::shared_ptr<AsyncSigningHandle>>
   Sign(absl::string_view data_to_sign, SignatureAlgorithm signature_algorithm,
@@ -160,7 +168,8 @@ class AsyncTestPrivateKeySigner final
     if (mode_ == Mode::kCancellation) {
       return std::make_shared<AsyncSigningHandle>();
     }
-    grpc_event_engine::experimental::GetDefaultEventEngine()->Run(
+    event_engine_->RunAfter(
+        Duration::Seconds(2),
         [self = shared_from_this(), data_to_sign = std::string(data_to_sign),
          signature_algorithm,
          on_sign_complete = std::move(on_sign_complete)]() mutable {
@@ -175,6 +184,7 @@ class AsyncTestPrivateKeySigner final
   }
 
   void Cancel(std::shared_ptr<AsyncSigningHandle> /*handle*/) override {
+    LOG(ERROR) << "Here";
     if (!was_cancelled_.exchange(true)) {
       notification_.Notify();
     }
@@ -183,6 +193,8 @@ class AsyncTestPrivateKeySigner final
   bool WasCancelled() { return was_cancelled_.load(); }
 
  private:
+  std::shared_ptr<grpc_event_engine::experimental::FuzzingEventEngine>
+      event_engine_;
   bssl::UniquePtr<EVP_PKEY> pkey_;
   Mode mode_;
   absl::Notification notification_;
@@ -228,16 +240,16 @@ class SslOffloadTsiTestFixture {
     client_pem_key_cert_pairs_with_signer_.emplace_back(signer_, client_cert_);
   }
 
-  void Run(bool expect_success, bool expect_success_on_client) {
+  void Run(bool expect_success, bool expect_success_on_client,
+           grpc_event_engine::experimental::FuzzingEventEngine* event_engine) {
     expect_success_ = expect_success;
     expect_success_on_client_ = expect_success_on_client;
-    tsi_test_do_handshake(&base_);
-    absl::SleepFor(absl::Seconds(5));
+    tsi_test_do_handshake(&base_, event_engine);
+    event_engine->TickUntilIdle();
     tsi_test_fixture_destroy(&base_);
   }
 
   void Shutdown() {
-    MutexLock lock(&mu_);
     if (base_.client_handshaker != nullptr) {
       tsi_handshaker_shutdown(base_.client_handshaker);
     }
@@ -302,11 +314,8 @@ class SslOffloadTsiTestFixture {
     ASSERT_EQ(tsi_ssl_server_handshaker_factory_create_handshaker(
                   server_handshaker_factory_, 0, 0, &server_hs),
               TSI_OK);
-    {
-      MutexLock lock(&mu_);
-      base_.client_handshaker = client_hs;
-      base_.server_handshaker = server_hs;
-    }
+    base_.client_handshaker = client_hs;
+    base_.server_handshaker = server_hs;
   }
 
   static void CheckHandshakerPeers(tsi_test_fixture* fixture) {
@@ -363,24 +372,44 @@ struct tsi_test_fixture_vtable SslOffloadTsiTestFixture::kVtable = {
 class PrivateKeyOffloadTest : public ::testing::TestWithParam<tsi_tls_version> {
  protected:
   void SetUp() override {
-    event_engine_ = grpc_event_engine::experimental::GetDefaultEventEngine();
+    // Without this the test had a failure dealing with grpc timers on TSAN
+    grpc_timer_manager_set_start_threaded(false);
+    event_engine_ =
+        std::make_shared<grpc_event_engine::experimental::FuzzingEventEngine>(
+            grpc_event_engine::experimental::FuzzingEventEngine::Options(),
+            fuzzing_event_engine::Actions());
+    grpc_init();
   }
 
-  std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_;
+  void TearDown() override {
+    ExecCtx exec_ctx;
+    event_engine_->FuzzingDone();
+    exec_ctx.Flush();
+    event_engine_->TickUntilIdle();
+    event_engine_->UnsetGlobalHooks();
+    WaitForSingleOwner(std::move(event_engine_));
+    grpc_shutdown_blocking();
+    event_engine_.reset();
+  }
+
+  std::shared_ptr<grpc_event_engine::experimental::FuzzingEventEngine>
+      event_engine_;
 };
 
 // Verifies that server-side signing offload succeeds.
 TEST_P(PrivateKeyOffloadTest, OffloadOnServerSucceeds) {
   auto fixture = std::make_shared<SslOffloadTsiTestFixture>(
       OffloadParty::kServer, nullptr, GetParam());
-  fixture->Run(/*expect_success=*/true, /*expect_success_on_client*/ true);
+  fixture->Run(/*expect_success=*/true, /*expect_success_on_client*/ true,
+               event_engine_.get());
 }
 
 // Verifies that client-side signing offload succeeds.
 TEST_P(PrivateKeyOffloadTest, OffloadOnClientSucceeds) {
   auto fixture = std::make_shared<SslOffloadTsiTestFixture>(
       OffloadParty::kClient, nullptr, GetParam());
-  fixture->Run(/*expect_success=*/true, /*expect_success_on_client*/ true);
+  fixture->Run(/*expect_success=*/true, /*expect_success_on_client*/ true,
+               event_engine_.get());
 }
 
 // Verifies that providing a completely malformed signature string on the server
@@ -391,7 +420,8 @@ TEST_P(PrivateKeyOffloadTest, OffloadFailsWithBadSignatureOnServer) {
       std::make_shared<SyncTestPrivateKeySigner>(
           "", SyncTestPrivateKeySigner::Mode::kInvalidSignature),
       GetParam());
-  fixture->Run(/*expect_success=*/false, /*expect_success_on_client*/ false);
+  fixture->Run(/*expect_success=*/false, /*expect_success_on_client*/ false,
+               event_engine_.get());
 }
 
 // Verifies that providing a completely malformed signature string on the client
@@ -404,7 +434,8 @@ TEST_P(PrivateKeyOffloadTest, OffloadFailsWithBadSignatureOnClient) {
       GetParam());
   fixture->Run(
       /*expect_success=*/false,
-      /*expect_success_on_client*/ GetParam() == tsi_tls_version::TSI_TLS1_3);
+      /*expect_success_on_client*/ GetParam() == tsi_tls_version::TSI_TLS1_3,
+      event_engine_.get());
 }
 
 // Verifies that an error returned by a synchronous signer on the server fails
@@ -415,7 +446,8 @@ TEST_P(PrivateKeyOffloadTest, OffloadFailsWithSignerErrorOnServer) {
       std::make_shared<SyncTestPrivateKeySigner>(
           "", SyncTestPrivateKeySigner::Mode::kError),
       GetParam());
-  fixture->Run(/*expect_success=*/false, /*expect_success_on_client*/ false);
+  fixture->Run(/*expect_success=*/false, /*expect_success_on_client*/ false,
+               event_engine_.get());
 }
 
 // Verifies that an error returned by a synchronous signer on the client fails
@@ -426,7 +458,8 @@ TEST_P(PrivateKeyOffloadTest, OffloadFailsWithSignerErrorOnClient) {
       std::make_shared<SyncTestPrivateKeySigner>(
           "", SyncTestPrivateKeySigner::Mode::kError),
       GetParam());
-  fixture->Run(/*expect_success=*/false, /*expect_success_on_client*/ false);
+  fixture->Run(/*expect_success=*/false, /*expect_success_on_client*/ false,
+               event_engine_.get());
 }
 
 // Verifies that an error returned by an asynchronous signer on the server fails
@@ -435,9 +468,10 @@ TEST_P(PrivateKeyOffloadTest, OffloadFailsWithAsyncSignerErrorOnServer) {
   auto fixture = std::make_shared<SslOffloadTsiTestFixture>(
       OffloadParty::kServer,
       std::make_shared<AsyncTestPrivateKeySigner>(
-          "", AsyncTestPrivateKeySigner::Mode::kError),
+          "", event_engine_, AsyncTestPrivateKeySigner::Mode::kError),
       GetParam());
-  fixture->Run(/*expect_success=*/false, /*expect_success_on_client*/ false);
+  fixture->Run(/*expect_success=*/false, /*expect_success_on_client*/ false,
+               event_engine_.get());
 }
 
 // Verifies that an error returned by an asynchronous signer on the client fails
@@ -446,9 +480,10 @@ TEST_P(PrivateKeyOffloadTest, OffloadFailsWithAsyncSignerErrorOnClient) {
   auto fixture = std::make_shared<SslOffloadTsiTestFixture>(
       OffloadParty::kClient,
       std::make_shared<AsyncTestPrivateKeySigner>(
-          "", AsyncTestPrivateKeySigner::Mode::kError),
+          "", event_engine_, AsyncTestPrivateKeySigner::Mode::kError),
       GetParam());
-  fixture->Run(/*expect_success=*/false, /*expect_success_on_client*/ false);
+  fixture->Run(/*expect_success=*/false, /*expect_success_on_client*/ false,
+               event_engine_.get());
 }
 
 // Verifies that providing a signature from the wrong key synchronously on the
@@ -459,7 +494,8 @@ TEST_P(PrivateKeyOffloadTest, OffloadFailsWithInvalidSignatureOnServer) {
   auto fixture = std::make_shared<SslOffloadTsiTestFixture>(
       OffloadParty::kServer,
       std::make_shared<SyncTestPrivateKeySigner>(server_key), GetParam());
-  fixture->Run(/*expect_success=*/false, /*expect_success_on_client*/ false);
+  fixture->Run(/*expect_success=*/false, /*expect_success_on_client*/ false,
+               event_engine_.get());
 }
 
 // Verifies that providing a signature from the wrong key synchronously on the
@@ -472,7 +508,8 @@ TEST_P(PrivateKeyOffloadTest, OffloadFailsWithInvalidSignatureOnClient) {
       std::make_shared<SyncTestPrivateKeySigner>(client_key), GetParam());
   fixture->Run(
       /*expect_success=*/false,
-      /*expect_success_on_client*/ GetParam() == tsi_tls_version::TSI_TLS1_3);
+      /*expect_success_on_client*/ GetParam() == tsi_tls_version::TSI_TLS1_3,
+      event_engine_.get());
 }
 
 // Verifies that providing a signature from the wrong key asynchronously on the
@@ -482,8 +519,10 @@ TEST_P(PrivateKeyOffloadTest, OffloadFailsWithAsyncInvalidSignatureOnServer) {
       GetFileContents(absl::StrCat(kTestCredsRelativePath, "server0.key"));
   auto fixture = std::make_shared<SslOffloadTsiTestFixture>(
       OffloadParty::kServer,
-      std::make_shared<AsyncTestPrivateKeySigner>(server_key), GetParam());
-  fixture->Run(/*expect_success=*/false, /*expect_success_on_client*/ false);
+      std::make_shared<AsyncTestPrivateKeySigner>(server_key, event_engine_),
+      GetParam());
+  fixture->Run(/*expect_success=*/false, /*expect_success_on_client*/ false,
+               event_engine_.get());
 }
 
 // Verifies that providing a signature from the wrong key asynchronously on the
@@ -493,23 +532,26 @@ TEST_P(PrivateKeyOffloadTest, OffloadFailsWithAsyncInvalidSignatureOnClient) {
       GetFileContents(absl::StrCat(kTestCredsRelativePath, "client1.key"));
   auto fixture = std::make_shared<SslOffloadTsiTestFixture>(
       OffloadParty::kClient,
-      std::make_shared<AsyncTestPrivateKeySigner>(client_key), GetParam());
+      std::make_shared<AsyncTestPrivateKeySigner>(client_key, event_engine_),
+      GetParam());
   fixture->Run(
       /*expect_success=*/false,
-      /*expect_success_on_client*/ GetParam() == tsi_tls_version::TSI_TLS1_3);
+      /*expect_success_on_client*/ GetParam() == tsi_tls_version::TSI_TLS1_3,
+      event_engine_.get());
 }
 
 // Verifies that client-side async signing is correctly cancelled when the
 // handshaker is shut down.
 TEST_P(PrivateKeyOffloadTest, OffloadFailsWithSignCancelledOnClient) {
   auto signer = std::make_shared<AsyncTestPrivateKeySigner>(
-      "", AsyncTestPrivateKeySigner::Mode::kCancellation);
+      "", event_engine_, AsyncTestPrivateKeySigner::Mode::kCancellation);
   auto fixture = std::make_shared<SslOffloadTsiTestFixture>(
       OffloadParty::kClient, std::static_pointer_cast<PrivateKeySigner>(signer),
       GetParam());
   event_engine_->RunAfter(std::chrono::seconds(1),
                           [fixture]() { fixture->Shutdown(); });
-  fixture->Run(/*expect_success=*/false, /*expect_success_on_client*/ false);
+  fixture->Run(/*expect_success=*/false, /*expect_success_on_client*/ false,
+               event_engine_.get());
   EXPECT_TRUE(signer->WasCancelled());
 }
 
@@ -530,9 +572,6 @@ INSTANTIATE_TEST_SUITE_P(PrivateKeyOffloadTest, PrivateKeyOffloadTest,
 
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(&argc, argv);
-  grpc_init();
   ::testing::InitGoogleTest(&argc, argv);
-  int ret = RUN_ALL_TESTS();
-  grpc_shutdown();
-  return ret;
+  return RUN_ALL_TESTS();
 }
