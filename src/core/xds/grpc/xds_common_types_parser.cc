@@ -805,7 +805,6 @@ HeaderMutationRules ParseHeaderMutationRules(
         header_mutation_rules,
     ValidationErrors* errors) {
   if (header_mutation_rules == nullptr) {
-    ValidationErrors::ScopedField field(errors, ".header_mutation_rules");
     errors->AddError("field is not present");
     return {};
   }

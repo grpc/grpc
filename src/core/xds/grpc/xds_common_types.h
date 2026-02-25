@@ -98,23 +98,21 @@ struct HeaderMutationRules {
   std::unique_ptr<RE2> allow_expression;
   std::unique_ptr<RE2> disallow_expression;
 
-  bool IsMutationAllowed(absl::string_view header_name) const;
+  bool IsMutationAllowed(std::string header_name) const;
 
   std::string ToString() const;
 
   bool operator==(const HeaderMutationRules& other) const {
+    auto is_re_equal = [](RE2* a, RE2* b) {
+      if (a == nullptr) return b == nullptr;
+      if (b == nullptr) return false;
+      return a->pattern() == b->pattern();
+    };
     return disallow_all == other.disallow_all &&
            disallow_is_error == other.disallow_is_error &&
-           (allow_expression == nullptr
-                ? other.allow_expression == nullptr
-                : (other.allow_expression != nullptr &&
-                   allow_expression->pattern() ==
-                       other.allow_expression->pattern())) &&
-           (disallow_expression == nullptr
-                ? other.disallow_expression == nullptr
-                : (other.disallow_expression != nullptr &&
-                   disallow_expression->pattern() ==
-                       other.disallow_expression->pattern()));
+           is_re_equal(disallow_expression.get(),
+                       other.disallow_expression.get()) &&
+           is_re_equal(allow_expression.get(), other.allow_expression.get());
   }
 };
 

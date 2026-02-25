@@ -104,8 +104,7 @@ bool CommonTlsContext::Empty() const {
 // HeaderMutationRules
 //
 
-bool HeaderMutationRules::IsMutationAllowed(
-    absl::string_view header_name) const {
+bool HeaderMutationRules::IsMutationAllowed(std::string header_name) const {
   // If true, all header mutations are disallowed, regardless of any other
   // setting.
   if (disallow_all) {
@@ -113,14 +112,14 @@ bool HeaderMutationRules::IsMutationAllowed(
   }
   // If a header name matches this regex, then it will be disallowed
   if (disallow_expression != nullptr &&
-      RE2::FullMatch(std::string(header_name), *disallow_expression)) {
+      RE2::FullMatch(header_name, *disallow_expression)) {
     return false;
   }
   // If a header name matches this regex and does not match disallow_expression,
   // it will be allowed. If unset, then all headers not matching
   // disallow_expression are allowed
   if (allow_expression == nullptr ||
-      RE2::FullMatch(std::string(header_name), *allow_expression)) {
+      RE2::FullMatch(header_name, *allow_expression)) {
     return true;
   }
   return false;
