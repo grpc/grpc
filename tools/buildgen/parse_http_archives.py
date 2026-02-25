@@ -17,7 +17,9 @@
 
 import ast
 import base64
+import json
 import re
+import sys
 from typing import Any, Dict, Iterable, List, Optional
 
 HttpArchive = Dict[str, Any]
@@ -96,111 +98,7 @@ def parse_http_archives(bazel_output: str) -> HttpArchives:
     return visitor.http_archives
 
 if __name__ == "__main__":
-    bazel_output = '''
-## @@envoy_api+:
-# <builtin>
-http_archive(
-  name = "envoy_api+",
-  urls = ["https://github.com/envoyproxy/data-plane-api/archive/6ef568cf4a67362849911d1d2a546fd9f35db2ff.tar.gz"],
-  integrity = "sha256-7V5sMZ+OvN8kqUkfhmpZm7mjwZO4WalK0TvTH4W0aFU=",
-  strip_prefix = "data-plane-api-6ef568cf4a67362849911d1d2a546fd9f35db2ff",
-  remote_file_urls = {},
-  remote_file_integrity = {},
-  remote_patches = {"https://bcr.bazel.build/modules/envoy_api/0.0.0-20251216-6ef568c/patches/module_dot_bazel.patch": "sha256-vOfVbB4MR3G9b7fewOYg9SO1RRzD+yAB3YYAf09gjnw="},
-  remote_patch_strip = 1,
-)
-# Rule envoy_api+ instantiated at (most recent call last):
-#   <builtin> in <toplevel>
-# Rule http_archive defined at (most recent call last):
-#   /usr/local/google/home/weizheyuan/.cache/bazel/_bazel_weizheyuan/dfd835222162c1a78f49d4137eeab90b/external/bazel_tools/tools/build_defs/repo/http.bzl:392:31 in <toplevel>
-
-## @@googleapis+:
-# <builtin>
-http_archive(
-  name = "googleapis+",
-  urls = ["https://github.com/googleapis/googleapis/archive/2193a2bfcecb92b92aad7a4d81baa428cafd7dfd.zip"],
-  integrity = "sha256-B6b3AM7lynlvUjCHbthFS/HYzECbOz5jRQW8TzKp9ys=",
-  strip_prefix = "googleapis-2193a2bfcecb92b92aad7a4d81baa428cafd7dfd",
-  patches = ["//bazel:googleapis/patches/fix_google_cloud_cpp.patch"],
-  remote_file_urls = {"MODULE.bazel": ["https://bcr.bazel.build/modules/googleapis/0.0.0-20251003-2193a2bf/overlay/MODULE.bazel"], "extensions.bzl": ["https://bcr.bazel.build/modules/googleapis/0.0.0-20251003-2193a2bf/overlay/extensions.bzl"], "tests/bcr/.bazelrc": ["https://bcr.bazel.build/modules/googleapis/0.0.0-20251003-2193a2bf/overlay/tests/bcr/.bazelrc"], "tests/bcr/BUILD.bazel": ["https://bcr.bazel.build/modules/googleapis/0.0.0-20251003-2193a2bf/overlay/tests/bcr/BUILD.bazel"], "tests/bcr/MODULE.bazel": ["https://bcr.bazel.build/modules/googleapis/0.0.0-20251003-2193a2bf/overlay/tests/bcr/MODULE.bazel"], "tests/bcr/failure_test.bzl": ["https://bcr.bazel.build/modules/googleapis/0.0.0-20251003-2193a2bf/overlay/tests/bcr/failure_test.bzl"]},
-  remote_file_integrity = {"MODULE.bazel": "sha256-zJ5e0pTtnr9Czbvd3S3ykEhRnjeXAE3x4/Np8x/08tQ=", "extensions.bzl": "sha256-59FkoqrMX/a/7t3zkSLDmMkuGnajSeOoZI4FZFIwEuw=", "tests/bcr/.bazelrc": "sha256-hFZT+gits3VtXcUkKuh3NCEC9FgBNGuNxaOVCuOiFPk=", "tests/bcr/BUILD.bazel": "sha256-KZzDURLUNDOiMsurUHrnuWYogHPFs7W+Ar9ZrilPLuE=", "tests/bcr/MODULE.bazel": "sha256-4zmBG1uAn7W3ExjUMQChBcrJVSNCE6K8PhIs9SfKy1U=", "tests/bcr/failure_test.bzl": "sha256-AJLzf7NfQOLpWbNIR3TIU28tQMSjd3svlAgh4yCoXm8="},
-  remote_patches = {"https://bcr.bazel.build/modules/googleapis/0.0.0-20251003-2193a2bf/patches/module_dot_bazel.patch": "sha256-0u7LsgwaVMjugknE4OKgNG7e/Sn8S7k7stTW6PE1/so=", "https://bcr.bazel.build/modules/googleapis/0.0.0-20251003-2193a2bf/patches/remove_upb_c_rules.patch": "sha256-MmXB+YzXhG05hDbVgw5S/VZRgu4b2qjQl0OHVEEtP7Y="},
-  remote_patch_strip = 0,
-  patch_args = ["-p1"],
-  patch_cmds = [],
-)
-# Rule googleapis+ instantiated at (most recent call last):
-#   <builtin> in <toplevel>
-# Rule http_archive defined at (most recent call last):
-#   /usr/local/google/home/weizheyuan/.cache/bazel/_bazel_weizheyuan/dfd835222162c1a78f49d4137eeab90b/external/bazel_tools/tools/build_defs/repo/http.bzl:392:31 in <toplevel>
-
-## @@xds+:
-# <builtin>
-http_archive(
-  name = "xds+",
-  urls = ["https://github.com/cncf/xds/archive/ee656c7534f5d7dc23d44dd611689568f72017a6.tar.gz"],
-  integrity = "sha256-SVNfPDNwAEMJ2lAZTAm7/FKNRwJCTdRufVaieKPfwV0=",
-  strip_prefix = "xds-ee656c7534f5d7dc23d44dd611689568f72017a6",
-  remote_file_urls = {},
-  remote_file_integrity = {},
-  remote_patches = {"https://bcr.bazel.build/modules/xds/0.0.0-20251210-ee656c7/patches/bzlmod.patch": "sha256-2kf90WvQ1u/lYxrG4Zwx7OPA6ScyrsFqdKERBlI6yh8="},
-  remote_patch_strip = 1,
-)
-# Rule xds+ instantiated at (most recent call last):
-#   <builtin> in <toplevel>
-# Rule http_archive defined at (most recent call last):
-#   /usr/local/google/home/weizheyuan/.cache/bazel/_bazel_weizheyuan/dfd835222162c1a78f49d4137eeab90b/external/bazel_tools/tools/build_defs/repo/http.bzl:392:31 in <toplevel>
-
-## @@protoc-gen-validate+:
-# <builtin>
-http_archive(
-  name = "protoc-gen-validate+",
-  urls = ["https://github.com/bufbuild/protoc-gen-validate/archive/refs/tags/v1.2.1.tar.gz"],
-  integrity = "sha256-5HGDUnVN8Tk7h5K2MTOKqFYvOQ6BYHg+NlRUvBHZYyg=",
-  strip_prefix = "protoc-gen-validate-1.2.1",
-  remote_file_urls = {"MODULE.bazel": ["https://bcr.bazel.build/modules/protoc-gen-validate/1.2.1.bcr.2/overlay/MODULE.bazel"]},
-  remote_file_integrity = {"MODULE.bazel": "sha256-O9SxSo58eNvvlzKA3quqE52x/jUKqS2gNzCjH1kIIGg="},
-  remote_patches = {"https://bcr.bazel.build/modules/protoc-gen-validate/1.2.1.bcr.2/patches/bazel_9_fixes.patch": "sha256-bv6l2BHe/pw7Zi5HBwBloPAzIC5YxEuqlW+26Brn3fM="},
-  remote_patch_strip = 1,
-)
-# Rule protoc-gen-validate+ instantiated at (most recent call last):
-#   <builtin> in <toplevel>
-# Rule http_archive defined at (most recent call last):
-#   /usr/local/google/home/weizheyuan/.cache/bazel/_bazel_weizheyuan/dfd835222162c1a78f49d4137eeab90b/external/bazel_tools/tools/build_defs/repo/http.bzl:392:31 in <toplevel>
-
-## @@opencensus-proto+:
-# <builtin>
-http_archive(
-  name = "opencensus-proto+",
-  urls = ["https://github.com/census-instrumentation/opencensus-proto/archive/refs/tags/v0.4.1.tar.gz"],
-  integrity = "sha256-49iff57YTJtu7oGMLpMGlQUZQCv4A2mLFcMQt3yi8PM=",
-  strip_prefix = "opencensus-proto-0.4.1/src",
-  remote_file_urls = {"MODULE.bazel": ["https://bcr.bazel.build/modules/opencensus-proto/0.4.1.bcr.2/overlay/MODULE.bazel"]},
-  remote_file_integrity = {"MODULE.bazel": "sha256-eJcGpxSFX5LFyM/PHvMru2Tc07fJBmdWrXmG7FlwnSk="},
-  remote_patches = {"https://bcr.bazel.build/modules/opencensus-proto/0.4.1.bcr.2/patches/py-proto-library.patch": "sha256-CZCdIqmnl+ZncUmGl59JVBwUSdxMmJnrQ/ZxBR544yU="},
-  remote_patch_strip = 2,
-)
-# Rule opencensus-proto+ instantiated at (most recent call last):
-#   <builtin> in <toplevel>
-# Rule http_archive defined at (most recent call last):
-#   /usr/local/google/home/weizheyuan/.cache/bazel/_bazel_weizheyuan/dfd835222162c1a78f49d4137eeab90b/external/bazel_tools/tools/build_defs/repo/http.bzl:392:31 in <toplevel>
-
-## @@cel-spec+:
-# <builtin>
-http_archive(
-  name = "cel-spec+",
-  urls = ["https://github.com/google/cel-spec/archive/refs/tags/v0.25.1.tar.gz"],
-  integrity = "sha256-E1g8WjEoYWSESYRbcJciZ2o8m0M5a2uOnL5FOP63StI=",
-  strip_prefix = "cel-spec-0.25.1",
-  remote_file_urls = {},
-  remote_file_integrity = {},
-  remote_patches = {"https://bcr.bazel.build/modules/cel-spec/0.25.1/patches/module_dot_bazel.patch": "sha256-6/KX6uCZYufXI/BINlGN3qKtvQbhQPedsBTaaOevNOw="},
-  remote_patch_strip = 0,
-)
-# Rule cel-spec+ instantiated at (most recent call last):
-#   <builtin> in <toplevel>
-# Rule http_archive defined at (most recent call last):
-#   /usr/local/google/home/weizheyuan/.cache/bazel/_bazel_weizheyuan/dfd835222162c1a78f49d4137eeab90b/external/bazel_tools/tools/build_defs/repo/http.bzl:392:31 in <toplevel>
-
-'''
+    bazel_output = sys.stdin.read()
     result = parse_http_archives(bazel_output)
+    json_obj = {"http_archives": result}
+    print(json.dumps(json_obj, indent=4))
