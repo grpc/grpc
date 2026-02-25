@@ -957,6 +957,7 @@ class OpenTelemetryObservabilityTest(unittest.TestCase):
         )
 
         # validate span statuses
+        self.assertTrue(client_span.status.is_ok)
         self.assertTrue(attempt_span.status.is_ok)
         self.assertTrue(server_span.status.is_ok)
 

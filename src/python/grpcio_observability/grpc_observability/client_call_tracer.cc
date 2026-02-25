@@ -104,6 +104,7 @@ PythonOpenCensusCallTracer::~PythonOpenCensusCallTracer() {
   }
 
   if (tracing_enabled_) {
+    context_.GetSpan().SetStatus(StatusCodeToString(status_code_));
     context_.EndSpan();
     if (IsSampled()) {
       RecordSpan(context_.GetSpan().ToCensusData());
@@ -411,6 +412,8 @@ void PythonOpenCensusCallTracer::PythonOpenCensusCallAttemptTracer::
     if (IsSampled()) {
       RecordSpan(context_.GetSpan().ToCensusData());
     }
+    grpc_core::MutexLock lock(&parent_->mu_);
+    parent_->status_code_ = status_code_;
   }
 
   // After RecordEnd, Core will make no further usage of this CallAttemptTracer,

@@ -100,7 +100,7 @@ class PythonOpenCensusCallTracer : public grpc_core::ClientCallTracerInterface {
     uint64_t recv_message_count_ = 0;
     uint64_t sent_message_count_ = 0;
     // End status code
-    absl::StatusCode status_code_;
+    absl::StatusCode status_code_ = absl::StatusCode::kOk;
     // Avoid std::map to avoid per-call allocations.
     std::array<grpc_core::RefCountedStringValue,
                static_cast<size_t>(OptionalLabelKey::kSize)>
@@ -164,6 +164,7 @@ class PythonOpenCensusCallTracer : public grpc_core::ClientCallTracerInterface {
   absl::Duration retry_delay_ ABSL_GUARDED_BY(&mu_);
   absl::Time time_at_last_attempt_end_ ABSL_GUARDED_BY(&mu_);
   uint64_t num_active_rpcs_ ABSL_GUARDED_BY(&mu_) = 0;
+  absl::StatusCode status_code_ ABSL_GUARDED_BY(&mu_) = absl::StatusCode::kOk;
 };
 
 }  // namespace grpc_observability
