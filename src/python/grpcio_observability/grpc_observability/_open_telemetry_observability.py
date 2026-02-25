@@ -139,10 +139,11 @@ class _OpenTelemetryPlugin:
         if tracer_provider:
             id_generator_type = type(tracer_provider.id_generator)
             if id_generator_type is not sdk_trace.RandomIdGenerator:
-                raise ValueError(
+                error_msg = (
                     f"User-defined IdGenerators are not allowed. "
                     f"Detected type: {id_generator_type.__name__}"
                 )
+                raise ValueError(error_msg)
 
             self._tracer = tracer_provider.get_tracer(
                 "grpc-python", grpc.__version__

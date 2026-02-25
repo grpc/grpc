@@ -29,13 +29,13 @@ from grpc_observability._open_telemetry_observability import (
 )
 from grpc_observability._open_telemetry_observability import GRPC_METHOD_LABEL
 from grpc_observability._open_telemetry_observability import GRPC_TARGET_LABEL
+from opentelemetry.sdk import trace as sdk_trace
 from opentelemetry.sdk.metrics import MeterProvider
 from opentelemetry.sdk.metrics.export import AggregationTemporality
 from opentelemetry.sdk.metrics.export import MetricExportResult
 from opentelemetry.sdk.metrics.export import MetricExporter
 from opentelemetry.sdk.metrics.export import MetricsData
 from opentelemetry.sdk.metrics.export import PeriodicExportingMetricReader
-from opentelemetry.sdk import trace as sdk_trace
 from opentelemetry.sdk.trace.export import SimpleSpanProcessor
 from opentelemetry.sdk.trace.export import SpanExporter
 from opentelemetry.sdk.trace.export.in_memory_span_exporter import (
@@ -909,8 +909,7 @@ class OpenTelemetryObservabilityTest(unittest.TestCase):
             id_generator=UserDefinedIdGenerator()
         )
         with self.assertRaisesRegex(
-            ValueError,
-            "User-defined IdGenerators are not allowed."
+            ValueError, "User-defined IdGenerators are not allowed."
         ):
             grpc_observability.OpenTelemetryPlugin(
                 tracer_provider=otel_tracer_provider,
@@ -929,8 +928,7 @@ class OpenTelemetryObservabilityTest(unittest.TestCase):
             id_generator=UserDefinedIdGenerator()
         )
         with self.assertRaisesRegex(
-            ValueError,
-            "User-defined IdGenerators are not allowed."
+            ValueError, "User-defined IdGenerators are not allowed."
         ):
             grpc_observability.OpenTelemetryPlugin(
                 tracer_provider=otel_tracer_provider,
@@ -961,7 +959,8 @@ class OpenTelemetryObservabilityTest(unittest.TestCase):
             self.assertIsNotNone(client_span)
 
             attempt_span = next(
-                (span for span in spans if span.name.startswith("Attempt.")), None
+                (span for span in spans if span.name.startswith("Attempt.")),
+                None,
             )
             self.assertIsNotNone(attempt_span)
 
@@ -983,19 +982,19 @@ class OpenTelemetryObservabilityTest(unittest.TestCase):
             # validate parent-child relationship
             self.assertEqual(
                 client_span.get_span_context().trace_id,
-                attempt_span.get_span_context().trace_id
+                attempt_span.get_span_context().trace_id,
             )
             self.assertEqual(
                 attempt_span.parent.span_id,
-                client_span.get_span_context().span_id
+                client_span.get_span_context().span_id,
             )
             self.assertEqual(
                 attempt_span.get_span_context().trace_id,
-                server_span.get_span_context().trace_id
+                server_span.get_span_context().trace_id,
             )
             self.assertEqual(
                 server_span.parent.span_id,
-                attempt_span.get_span_context().span_id
+                attempt_span.get_span_context().span_id,
             )
 
     def assert_eventually(
@@ -1091,19 +1090,18 @@ class OpenTelemetryObservabilityTest(unittest.TestCase):
         # validate parent-child relationship
         self.assertEqual(
             client_span.get_span_context().trace_id,
-            attempt_span.get_span_context().trace_id
+            attempt_span.get_span_context().trace_id,
         )
         self.assertEqual(
-            attempt_span.parent.span_id,
-            client_span.get_span_context().span_id
+            attempt_span.parent.span_id, client_span.get_span_context().span_id
         )
         self.assertEqual(
             attempt_span.get_span_context().trace_id,
-            server_span.get_span_context().trace_id
+            server_span.get_span_context().trace_id,
         )
         self.assertEqual(
             server_span.parent.span_id,
-            attempt_span.get_span_context().span_id
+            attempt_span.get_span_context().span_id,
         )
 
         # validate server span traced events
