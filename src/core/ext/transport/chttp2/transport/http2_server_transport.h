@@ -139,7 +139,7 @@ class Http2ServerTransport final : public ServerTransport,
     return flow_control_.remote_window() > 0;
   }
 
-  // void SpawnTransportLoops();
+  void SpawnTransportLoops();
 
   //////////////////////////////////////////////////////////////////////////////
   // Channelz and ZTrace
@@ -170,11 +170,11 @@ class Http2ServerTransport final : public ServerTransport,
   }
 
   // TODO(tjagtap) : [PH2][P0] : I am not sure why this is public. Check.
-  // void StartConnectivityWatch(
-  //     grpc_connectivity_state state,
-  //     OrphanablePtr<ConnectivityStateWatcherInterface> watcher);
+  void StartConnectivityWatch(
+      grpc_connectivity_state state,
+      OrphanablePtr<ConnectivityStateWatcherInterface> watcher);
 
-  // void StopConnectivityWatch(ConnectivityStateWatcherInterface* watcher);
+  void StopConnectivityWatch(ConnectivityStateWatcherInterface* watcher);
 
   //////////////////////////////////////////////////////////////////////////////
   // Test Only Functions
@@ -186,10 +186,10 @@ class Http2ServerTransport final : public ServerTransport,
 
   absl::Status TestOnlyTriggerWriteCycle() { return TriggerWriteCycle(); }
 
-  // auto TestOnlySendPing(absl::AnyInvocable<void()> on_initiate,
-  //                       bool important = false) {
-  //   return ping_manager_->RequestPing(std::move(on_initiate), important);
-  // }
+  auto TestOnlySendPing(absl::AnyInvocable<void()> on_initiate,
+                        bool important = false) {
+    return ping_manager_->RequestPing(std::move(on_initiate), important);
+  }
 
   int64_t TestOnlyTransportFlowControlWindow();
   int64_t TestOnlyGetStreamFlowControlWindow(const uint32_t stream_id);
@@ -334,11 +334,38 @@ class Http2ServerTransport final : public ServerTransport,
   //////////////////////////////////////////////////////////////////////////////
   // Endpoint Helpers
 
-  // auto EndpointReadSlice(const size_t num_bytes);
-  // auto EndpointRead(const size_t num_bytes);
-  // auto EndpointWrite(SliceBuffer&& output_buf);
+  // Callers MUST ensure that the transport is not destroyed till the promise is
+  // resolved or cancelled.
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto EndpointReadSlice(
+      const size_t num_bytes) {
+    return Map(endpoint_.ReadSlice(num_bytes),
+               [this, num_bytes](absl::StatusOr<Slice> status) {
+                 OnEndpointRead(status.ok(), num_bytes);
+                 return status;
+               });
+  }
 
-  // auto SerializeAndWrite(std::vector<Http2Frame>&& frames);
+  // Callers MUST ensure that the transport is not destroyed till the promise is
+  // resolved or cancelled.
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto EndpointRead(
+      const size_t num_bytes) {
+    return Map(endpoint_.Read(num_bytes),
+               [this, num_bytes](absl::StatusOr<SliceBuffer> status) {
+                 OnEndpointRead(status.ok(), num_bytes);
+                 return status;
+               });
+  }
+
+  void OnEndpointRead(const bool is_ok, const size_t num_bytes) {
+    if (is_ok) {
+      keepalive_manager_->GotData();
+      ztrace_collector_->Append(PromiseEndpointReadTrace{num_bytes});
+    }
+  }
+
+  auto EndpointWrite(SliceBuffer&& output_buf);
+
+  auto SerializeAndWrite();
 
   //////////////////////////////////////////////////////////////////////////////
   // Settings
@@ -351,12 +378,12 @@ class Http2ServerTransport final : public ServerTransport,
   // Flow Control and BDP
 
   // Processes the flow control action and take necessary steps.
-  // void ActOnFlowControlAction(const chttp2::FlowControlAction& action,
-  //                             RefCountedPtr<Stream> stream);
+  void ActOnFlowControlAction(const chttp2::FlowControlAction& action,
+                              Stream* stream);
 
   // void MaybeGetWindowUpdateFrames(SliceBuffer& output_buf);
 
-  // auto FlowControlPeriodicUpdateLoop();
+  auto FlowControlPeriodicUpdateLoop();
 
   // TODO(tjagtap) [PH2][P2][BDP] Remove this when the BDP code is done.
   void AddPeriodicUpdatePromiseWaker() {
@@ -631,7 +658,10 @@ class Http2ServerTransport final : public ServerTransport,
   GRPC_UNUSED bool should_reset_ping_clock_;
   GRPC_UNUSED bool is_first_write_;
   IncomingMetadataTracker incoming_headers_;
-  TransportWriteContext write_context_;
+
+  // Transport wide write context. This is used to track the state of the
+  // transport during write cycles.
+  TransportWriteContext transport_write_context_;
 
   // Tracks the max allowed stream id. Currently this is only set on receiving a
   // graceful GOAWAY frame.
