@@ -428,8 +428,8 @@ class ClientCallDetails(abc.ABC):
         the service-side of the RPC.
       credentials: An optional CallCredentials for the RPC.
       wait_for_ready: An optional flag to enable :term:`wait_for_ready` mechanism.
-      compression: An element of grpc.compression, e.g.
-        grpc.compression.Gzip.
+      compression: An element of grpc.Compression, e.g.
+        grpc.Compression.Gzip.
     """
 
 
@@ -697,8 +697,8 @@ class UnaryUnaryMultiCallable(abc.ABC):
           credentials: An optional CallCredentials for the RPC. Only valid for
             secure Channel.
           wait_for_ready: An optional flag to enable :term:`wait_for_ready` mechanism.
-          compression: An element of grpc.compression, e.g.
-            grpc.compression.Gzip.
+          compression: An element of grpc.Compression, e.g.
+            grpc.Compression.Gzip.
 
         Returns:
           The response value for the RPC.
@@ -731,8 +731,8 @@ class UnaryUnaryMultiCallable(abc.ABC):
           credentials: An optional CallCredentials for the RPC. Only valid for
             secure Channel.
           wait_for_ready: An optional flag to enable :term:`wait_for_ready` mechanism.
-          compression: An element of grpc.compression, e.g.
-            grpc.compression.Gzip.
+          compression: An element of grpc.Compression, e.g.
+            grpc.Compression.Gzip.
 
         Returns:
           The response value for the RPC and a Call value for the RPC.
@@ -765,8 +765,8 @@ class UnaryUnaryMultiCallable(abc.ABC):
           credentials: An optional CallCredentials for the RPC. Only valid for
             secure Channel.
           wait_for_ready: An optional flag to enable :term:`wait_for_ready` mechanism.
-          compression: An element of grpc.compression, e.g.
-            grpc.compression.Gzip.
+          compression: An element of grpc.Compression, e.g.
+            grpc.Compression.Gzip.
 
         Returns:
             An object that is both a Call for the RPC and a Future.
@@ -802,8 +802,8 @@ class UnaryStreamMultiCallable(abc.ABC):
           credentials: An optional CallCredentials for the RPC. Only valid for
             secure Channel.
           wait_for_ready: An optional flag to enable :term:`wait_for_ready` mechanism.
-          compression: An element of grpc.compression, e.g.
-            grpc.compression.Gzip.
+          compression: An element of grpc.Compression, e.g.
+            grpc.Compression.Gzip.
 
         Returns:
             An object that is a Call for the RPC, an iterator of response
@@ -839,8 +839,8 @@ class StreamUnaryMultiCallable(abc.ABC):
           credentials: An optional CallCredentials for the RPC. Only valid for
             secure Channel.
           wait_for_ready: An optional flag to enable :term:`wait_for_ready` mechanism.
-          compression: An element of grpc.compression, e.g.
-            grpc.compression.Gzip.
+          compression: An element of grpc.Compression, e.g.
+            grpc.Compression.Gzip.
 
         Returns:
           The response value for the RPC.
@@ -874,8 +874,8 @@ class StreamUnaryMultiCallable(abc.ABC):
           credentials: An optional CallCredentials for the RPC. Only valid for
             secure Channel.
           wait_for_ready: An optional flag to enable :term:`wait_for_ready` mechanism.
-          compression: An element of grpc.compression, e.g.
-            grpc.compression.Gzip.
+          compression: An element of grpc.Compression, e.g.
+            grpc.Compression.Gzip.
 
         Returns:
           The response value for the RPC and a Call object for the RPC.
@@ -908,8 +908,8 @@ class StreamUnaryMultiCallable(abc.ABC):
           credentials: An optional CallCredentials for the RPC. Only valid for
             secure Channel.
           wait_for_ready: An optional flag to enable :term:`wait_for_ready` mechanism.
-          compression: An element of grpc.compression, e.g.
-            grpc.compression.Gzip.
+          compression: An element of grpc.Compression, e.g.
+            grpc.Compression.Gzip.
 
         Returns:
             An object that is both a Call for the RPC and a Future.
@@ -945,8 +945,8 @@ class StreamStreamMultiCallable(abc.ABC):
           credentials: An optional CallCredentials for the RPC. Only valid for
             secure Channel.
           wait_for_ready: An optional flag to enable :term:`wait_for_ready` mechanism.
-          compression: An element of grpc.compression, e.g.
-            grpc.compression.Gzip.
+          compression: An element of grpc.Compression, e.g.
+            grpc.Compression.Gzip.
 
         Returns:
             An object that is a Call for the RPC, an iterator of response
@@ -1182,8 +1182,8 @@ class ServicerContext(RpcContext, metaclass=abc.ABCMeta):
         """Set the compression algorithm to be used for the entire call.
 
         Args:
-          compression: An element of grpc.compression, e.g.
-            grpc.compression.Gzip.
+          compression: An element of grpc.Compression, e.g.
+            grpc.Compression.Gzip.
         """
         raise NotImplementedError()
 
@@ -2203,8 +2203,8 @@ def server(
       maximum_concurrent_rpcs: The maximum number of concurrent RPCs this server
         will service before returning RESOURCE_EXHAUSTED status, or None to
         indicate no limit.
-      compression: An element of grpc.compression, e.g.
-        grpc.compression.Gzip. This compression algorithm will be used for the
+      compression: An element of grpc.Compression, e.g.
+        grpc.Compression.Gzip. This compression algorithm will be used for the
         lifetime of the server unless overridden.
       xds: If set to true, retrieves server configuration via xDS. This is an
         EXPERIMENTAL option.
