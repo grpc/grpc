@@ -424,7 +424,7 @@ class _Context(grpc.ServicerContext):
 
     def send_initial_metadata(self, initial_metadata: MetadataType) -> None:
         with self._state.condition:
-            if self._state.client is _CANCELLED:
+            if self._state.client is _CANCELLED or self._state.aborted:
                 _raise_rpc_error(self._state)
             if self._state.initial_metadata_allowed:
                 operation = _get_initial_metadata_operation(
