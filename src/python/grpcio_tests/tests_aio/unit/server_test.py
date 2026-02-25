@@ -631,7 +631,7 @@ class TestServer(AioTestBase):
         max_concurrent = 1
         server = aio.server(maximum_concurrent_rpcs=max_concurrent)
         port = server.add_insecure_port("[::]:0")
-        bind_address = "localhost:%d" % port
+        bind_address = f"localhost:{port}"
         server.add_generic_rpc_handlers((_GenericHandler(),))
         await server.start()
         channel = aio.insecure_channel(bind_address)
