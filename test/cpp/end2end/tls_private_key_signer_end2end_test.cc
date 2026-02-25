@@ -121,12 +121,12 @@ class TlsPrivateKeyOffloadTest : public ::testing::Test {
                        server_certificate_provider,
                    int handshake_timeout_ms = 0) {
     absl::Notification notification;
-    server_thread_ = std::make_unique<std::thread>(
-        [this, &notification, server_certificate_provider,
-         handshake_timeout_ms]() {
-          RunServer(&notification, server_certificate_provider,
-                    handshake_timeout_ms);
-        });
+    server_thread_ = std::make_unique<std::thread>([this, &notification,
+                                                    server_certificate_provider,
+                                                    handshake_timeout_ms]() {
+      RunServer(&notification, server_certificate_provider,
+                handshake_timeout_ms);
+    });
     notification.WaitForNotification();
   }
 

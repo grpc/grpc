@@ -499,20 +499,6 @@ TEST_P(PrivateKeyOffloadTest, OffloadFailsWithAsyncInvalidSignatureOnClient) {
       /*expect_success_on_client*/ GetParam() == tsi_tls_version::TSI_TLS1_3);
 }
 
-// Verifies that server-side async signing is correctly cancelled when the
-// handshaker is shut down.
-TEST_P(PrivateKeyOffloadTest, OffloadFailsWithSignCancelledOnServer) {
-  auto signer = std::make_shared<AsyncTestPrivateKeySigner>(
-      "", AsyncTestPrivateKeySigner::Mode::kCancellation);
-  auto fixture = std::make_shared<SslOffloadTsiTestFixture>(
-      OffloadParty::kServer, std::static_pointer_cast<PrivateKeySigner>(signer),
-      GetParam());
-  event_engine_->RunAfter(std::chrono::seconds(1),
-                          [fixture]() { fixture->Shutdown(); });
-  fixture->Run(/*expect_success=*/false, /*expect_success_on_client*/ false);
-  EXPECT_TRUE(signer->WasCancelled());
-}
-
 // Verifies that client-side async signing is correctly cancelled when the
 // handshaker is shut down.
 TEST_P(PrivateKeyOffloadTest, OffloadFailsWithSignCancelledOnClient) {

@@ -431,7 +431,6 @@ enum ssl_private_key_result_t TlsPrivateKeySignWrapper(
     handshaker->MaybeSetError("Handshaker is shuting down");
     return ssl_private_key_failure;
   }
-  handshaker->signed_bytes = "";
   // Create the completion callback by binding the current context.
   auto done_callback =
       absl::bind_front(TlsOffloadSignDoneCallback, handshaker->Ref());

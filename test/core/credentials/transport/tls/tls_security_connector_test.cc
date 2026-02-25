@@ -66,8 +66,8 @@ class TlsSecurityConnectorTest : public ::testing::Test {
   TlsSecurityConnectorTest() {}
 
   void SetUp() override {
-    root_cert_1_ =
-        std::make_shared<tsi::RootCertInfo>(testing::GetFileContents(CA_CERT_PATH));
+    root_cert_1_ = std::make_shared<tsi::RootCertInfo>(
+        testing::GetFileContents(CA_CERT_PATH));
     root_cert_0_ = std::make_shared<tsi::RootCertInfo>(
         testing::GetFileContents(CLIENT_CERT_PATH));
     identity_pairs_1_.emplace_back(
@@ -78,10 +78,12 @@ class TlsSecurityConnectorTest : public ::testing::Test {
         testing::GetFileContents(SERVER_CERT_PATH_0));
     auto map0 = SpiffeBundleMap::FromFile(kSpiffeBundlePath0);
     GRPC_CHECK(map0.ok());
-    spiffe_bundle_map_0_ = std::make_shared<tsi::RootCertInfo>(std::move(*map0));
+    spiffe_bundle_map_0_ =
+        std::make_shared<tsi::RootCertInfo>(std::move(*map0));
     auto map1 = SpiffeBundleMap::FromFile(kSpiffeBundlePath1);
     GRPC_CHECK(map1.ok());
-    spiffe_bundle_map_1_ = std::make_shared<tsi::RootCertInfo>(std::move(*map1));
+    spiffe_bundle_map_1_ =
+        std::make_shared<tsi::RootCertInfo>(std::move(*map1));
   }
 
   static void VerifyExpectedErrorCallback(void* arg, grpc_error_handle error) {
