@@ -1276,4 +1276,11 @@ RefCountedPtr<CollectionScope> GlobalCollectionScope();
     return MakeLabels(__VA_ARGS__);                          \
   }
 
+// GCC-8 has trouble compiling `GRPC_INSTRUMENT_DOMAIN_LABELS()`, so use this
+// instead if there are no labels for a domain.
+#define GRPC_EMPTY_INSTRUMENT_DOMAIN_LABELS()              \
+  static grpc_core::FixedInstrumentLabelList<0> Labels() { \
+    return grpc_core::FixedInstrumentLabelList<0>();       \
+  }
+
 #endif  // GRPC_SRC_CORE_TELEMETRY_INSTRUMENT_H

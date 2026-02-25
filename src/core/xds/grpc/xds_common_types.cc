@@ -124,22 +124,47 @@ std::string XdsGrpcService::ToString() const {
 }
 
 //
-// XdsHeaderMutationRules
+// HeaderMutationRules
 //
 
-std::string XdsHeaderMutationRules::ToString() const {
-  std::vector<std::string> parts;
-  if (disallow_all) parts.push_back("disallow_all=true");
-  if (disallow_expression != nullptr) {
-    parts.push_back(absl::StrCat(
-        "disallow_expression=\"", disallow_expression->pattern(), "\""));
+bool HeaderMutationRules::IsMutationAllowed(const std::string& header_name) const {
+  // If true, all header mutations are disallowed, regardless of any other
+  // setting.
+  if (disallow_all) {
+    return false;
+  }
+  // If a header name matches this regex, then it will be disallowed
+  if (disallow_expression != nullptr &&
+      RE2::FullMatch(header_name, *disallow_expression)) {
+    return false;
+  }
+  // If a header name matches this regex and does not match disallow_expression,
+  // it will be allowed. If unset, then all headers not matching
+  // disallow_expression are allowed
+  if (allow_expression == nullptr ||
+      RE2::FullMatch(header_name, *allow_expression)) {
+    return true;
+  }
+  return false;
+}
+
+std::string HeaderMutationRules::ToString() const {
+  std::vector<std::string> contents;
+  if (disallow_all) {
+    contents.push_back("disallow_all=true");
+  }
+  if (disallow_is_error) {
+    contents.push_back("disallow_is_error=true");
   }
   if (allow_expression != nullptr) {
-    parts.push_back(absl::StrCat(
-        "allow_expression=\"", allow_expression->pattern(), "\""));
+    contents.push_back(
+        absl::StrCat("allow_expression=", allow_expression->pattern()));
   }
-  if (disallow_is_error) parts.push_back("disallow_is_error=true");
-  return absl::StrCat("{", absl::StrJoin(parts, ", "), "}");
+  if (disallow_expression != nullptr) {
+    contents.push_back(
+        absl::StrCat("disallow_expression=", disallow_expression->pattern()));
+  }
+  return absl::StrCat("{", absl::StrJoin(contents, ", "), "}");
 }
 
 }  // namespace grpc_core
