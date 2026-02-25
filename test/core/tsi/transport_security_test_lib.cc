@@ -388,9 +388,6 @@ static void do_handshaker_next(
         const_cast<const unsigned char**>(&bytes_to_send), &bytes_to_send_size,
         &handshaker_result, &on_handshake_next_done_wrapper, args);
     if (result != TSI_ASYNC) {
-      if (event_engine != nullptr) {
-        event_engine->TickUntilIdle();
-      }
       args->error = on_handshake_next_done(
           result, args, bytes_to_send, bytes_to_send_size, handshaker_result);
       if (!args->error.ok()) {
@@ -419,16 +416,10 @@ void tsi_test_do_handshake(
     client_args->transferred_data = false;
     server_args->transferred_data = false;
     do_handshaker_next(client_args, event_engine);
-    if (event_engine != nullptr) {
-      event_engine->TickUntilIdle();
-    }
     if (!client_args->error.ok()) {
       break;
     }
     do_handshaker_next(server_args, event_engine);
-    if (event_engine != nullptr) {
-      event_engine->TickUntilIdle();
-    }
     if (!server_args->error.ok()) {
       break;
     }

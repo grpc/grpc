@@ -382,12 +382,9 @@ void TlsOffloadSignDoneCallback(
     result = async_result.first;
     next_args = std::move(async_result.second);
   }
-  if (next_args.has_value()) {
-    if (next_args->cb != nullptr) {
-      next_args->cb(result, next_args->user_data, next_args->bytes_to_send,
-                    next_args->bytes_to_send_size,
-                    next_args->handshaker_result);
-    }
+  if (next_args.has_value() && next_args->cb != nullptr) {
+    next_args->cb(result, next_args->user_data, next_args->bytes_to_send,
+                  next_args->bytes_to_send_size, next_args->handshaker_result);
   }
 }
 
@@ -434,9 +431,10 @@ enum ssl_private_key_result_t TlsPrivateKeySignWrapper(
   // Create the completion callback by binding the current context.
   auto done_callback =
       absl::bind_front(TlsOffloadSignDoneCallback, handshaker->Ref());
-  // Call the user's async sign function
-  // The contract with the user is that they MUST invoke the callback when
-  // complete in their implementation, and their impl MUST not block.
+  // Call the user's sign function. It can be sync or async.
+  // When the user's sign function is async, the contract is that they MUST
+  // invoke the callback when complete in their implementation, and their impl
+  // MUST not block.
   auto algorithm = ToSignatureAlgorithmClass(signature_algorithm);
   if (!algorithm.ok()) {
     handshaker->MaybeSetError(algorithm.status().ToString());
@@ -2915,6 +2913,8 @@ tsi_result tsi_create_ssl_client_handshaker_factory_with_options(
       grpc_core::Match(
           options->pem_key_cert_pair->private_key, [](const std::string&) {},
           [&](const std::shared_ptr<grpc_core::PrivateKeySigner>& key_signer) {
+            // The Handshaker Factory will own a shared copy of the reference
+            // passed through the options.
             impl->base.key_signer = key_signer;
           });
     }
