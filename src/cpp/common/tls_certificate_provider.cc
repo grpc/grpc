@@ -25,14 +25,13 @@
 #include "src/core/credentials/transport/tls/grpc_tls_certificate_provider.h"
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/match.h"
-#include "absl/status/statusor.h"
 
 namespace grpc {
 namespace experimental {
 
 namespace {
 
-absl::StatusOr<grpc_tls_identity_pairs*> CreatePairsCore(
+grpc_tls_identity_pairs* CreatePairsCore(
     std::vector<IdentityKeyCertPair> identity_key_cert_pairs) {
   grpc_tls_identity_pairs* pairs_core = grpc_tls_identity_pairs_create();
   for (const auto& pair : identity_key_cert_pairs) {
@@ -42,7 +41,7 @@ absl::StatusOr<grpc_tls_identity_pairs*> CreatePairsCore(
   return pairs_core;
 }
 
-absl::StatusOr<grpc_tls_identity_pairs*> CreatePairsCore(
+grpc_tls_identity_pairs* CreatePairsCore(
     std::vector<IdentityKeyOrSignerCertPair>
         identity_key_or_signer_cert_pairs) {
   grpc_tls_identity_pairs* pairs_core = grpc_tls_identity_pairs_create();
@@ -61,7 +60,7 @@ absl::StatusOr<grpc_tls_identity_pairs*> CreatePairsCore(
         });
     if (!status.ok()) {
       grpc_tls_identity_pairs_destroy(pairs_core);
-      return status;
+      return nullptr;
     }
   }
   return pairs_core;
@@ -73,14 +72,13 @@ StaticDataCertificateProvider::StaticDataCertificateProvider(
     const std::string& root_certificate,
     const std::vector<IdentityKeyCertPair>& identity_key_cert_pairs) {
   GRPC_CHECK(!root_certificate.empty() || !identity_key_cert_pairs.empty());
-  auto pairs_core = CreatePairsCore(identity_key_cert_pairs);
-  GRPC_CHECK(pairs_core.ok());
+  auto* pairs_core = CreatePairsCore(identity_key_cert_pairs);
   c_provider_ = grpc_tls_certificate_provider_in_memory_create();
   GRPC_CHECK_NE(c_provider_, nullptr);
   grpc_tls_certificate_provider_in_memory_set_root_certificate(
       c_provider_, root_certificate.c_str());
   grpc_tls_certificate_provider_in_memory_set_identity_certificate(c_provider_,
-                                                                   *pairs_core);
+                                                                   pairs_core);
 };
 
 StaticDataCertificateProvider::~StaticDataCertificateProvider() {
@@ -138,10 +136,9 @@ absl::Status InMemoryCertificateProvider::UpdateRoot(
 absl::Status InMemoryCertificateProvider::UpdateIdentityKeyCertPair(
     std::vector<IdentityKeyCertPair> identity_key_cert_pairs) {
   GRPC_CHECK(!identity_key_cert_pairs.empty());
-  auto pairs_core = CreatePairsCore(std::move(identity_key_cert_pairs));
-  if (!pairs_core.ok()) return pairs_core.status();
+  auto* pairs_core = CreatePairsCore(std::move(identity_key_cert_pairs));
   return grpc_tls_certificate_provider_in_memory_set_identity_certificate(
-             c_provider_, *pairs_core)
+             c_provider_, pairs_core)
              ? absl::OkStatus()
              : absl::InternalError("Unable to update identity certificate");
 }
@@ -150,11 +147,13 @@ absl::Status InMemoryCertificateProvider::UpdateIdentityKeyCertPair(
     std::vector<IdentityKeyOrSignerCertPair>
         identity_key_or_signer_cert_pairs) {
   GRPC_CHECK(!identity_key_or_signer_cert_pairs.empty());
-  auto pairs_core =
+  auto* pairs_core =
       CreatePairsCore(std::move(identity_key_or_signer_cert_pairs));
-  if (!pairs_core.ok()) return pairs_core.status();
+  if (pairs_core == nullptr) {
+    return absl::InternalError("Unable to update identity certificate");
+  }
   return grpc_tls_certificate_provider_in_memory_set_identity_certificate(
-             c_provider_, *pairs_core)
+             c_provider_, pairs_core)
              ? absl::OkStatus()
              : absl::InternalError("Unable to update identity certificate");
 }

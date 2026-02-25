@@ -251,8 +251,6 @@ class SslOffloadTsiTestFixture {
     tsi_ssl_client_handshaker_factory_unref(client_handshaker_factory_);
   }
 
-  tsi_test_fixture base_;  // MUST BE FIRST
-
  private:
   static void SetupHandshakers(tsi_test_fixture* fixture) {
     auto* self = reinterpret_cast<SslOffloadTsiTestFixture*>(fixture);
@@ -335,6 +333,7 @@ class SslOffloadTsiTestFixture {
     // We don't delete here because we are managed by std::shared_ptr.
   }
 
+  tsi_test_fixture base_;  // MUST BE FIRST
   static struct tsi_test_fixture_vtable kVtable;
 
   tsi_ssl_server_handshaker_factory* server_handshaker_factory_ = nullptr;

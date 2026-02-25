@@ -18,8 +18,6 @@
 
 #include "src/core/credentials/transport/tls/grpc_tls_credentials_options.h"
 
-using tsi::RootCertInfo;
-
 #include <grpc/credentials.h>
 #include <grpc/grpc_crl_provider.h>
 #include <grpc/support/alloc.h>
@@ -50,7 +48,7 @@ RefCountedPtr<grpc_tls_certificate_provider> CreateTestingCertificateProvider(
     const PemKeyCertPairList& pem_key_cert_pairs) {
   auto provider = MakeRefCounted<InMemoryCertificateProvider>();
   EXPECT_TRUE(
-      provider->UpdateRoot(std::make_shared<RootCertInfo>(root_cert_info))
+      provider->UpdateRoot(std::make_shared<tsi::RootCertInfo>(root_cert_info))
           .ok());
   EXPECT_TRUE(provider->UpdateIdentityKeyCertPair(pem_key_cert_pairs).ok());
   return provider;
