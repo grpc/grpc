@@ -50,7 +50,9 @@ class CompletionContext {
   explicit CompletionContext(
       grpc_core::PrivateKeySigner::OnSignComplete on_complete)
       : on_complete_(std::move(on_complete)) {}
-  void OnComplete(absl::StatusOr<std::string> result) { on_complete_(result); };
+  void OnComplete(absl::StatusOr<std::string> result) {
+    on_complete_(std::move(result));
+  };
 
  private:
   grpc_core::PrivateKeySigner::OnSignComplete on_complete_;
@@ -107,6 +109,7 @@ class AsyncSigningHandlePyWrapper : public PrivateKeySigner::AsyncSigningHandle 
 };
 
 std::string MakeStringForCython(const char* inp);
+std::string MakeStringForCython(const char* inp, size_t size);
 }  // namespace grpc_core
 
 #endif  // GRPC_PRIVATE_KEY_SIGNER_PY_WRAPPER_H

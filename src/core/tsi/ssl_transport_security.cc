@@ -404,10 +404,12 @@ enum ssl_private_key_result_t TlsPrivateKeyOffloadComplete(SSL* ssl,
                                                            size_t max_out) {
   auto* handshaker = GetHandshaker(ssl);
   if (handshaker == nullptr || !handshaker->signed_bytes.ok()) {
+    std::cout << "GREG: " << handshaker->signed_bytes << "\n";
     return ssl_private_key_failure;
   }
   // Important bit is moving the signed data where it needs to go
   const std::string& signed_data = *handshaker->signed_bytes;
+  std::cout << "GREG: " << signed_data << "\n";
   if (signed_data.length() > max_out) {
     // Result is too large.
     return ssl_private_key_failure;
@@ -422,6 +424,7 @@ enum ssl_private_key_result_t TlsPrivateKeyOffloadComplete(SSL* ssl,
 enum ssl_private_key_result_t TlsPrivateKeySignWrapper(
     SSL* ssl, uint8_t* out, size_t* out_len, size_t max_out,
     uint16_t signature_algorithm, const uint8_t* in, size_t in_len) {
+  std::cout << "GREG: TlsPrivateKeySignWrapper\n";
   tsi_ssl_handshaker* handshaker = GetHandshaker(ssl);
   handshaker->signature_ready = false;
   // Create the completion callback by binding the current context.
@@ -445,6 +448,8 @@ enum ssl_private_key_result_t TlsPrivateKeySignWrapper(
   return grpc_core::MatchMutable(
       &result,
       [&](absl::StatusOr<std::string>* status_or_string) {
+        // std::cout << "GREG: TlsPrivateKeySignWrapper: " << *status_or_string
+        //           << "\n";
         if (status_or_string->ok()) {
           if ((*status_or_string)->size() > max_out) {
             if (handshaker->handshaker_next_args->error != nullptr) {
@@ -455,6 +460,7 @@ enum ssl_private_key_result_t TlsPrivateKeySignWrapper(
           }
           *out_len = (*status_or_string)->size();
           memcpy(out, (*status_or_string)->c_str(), *out_len);
+          std::cout << "GREG: returning success\n";
           return ssl_private_key_success;
         } else {
           if (handshaker->handshaker_next_args->error != nullptr) {
@@ -2244,6 +2250,7 @@ static tsi_result ssl_handshaker_next_impl(tsi_ssl_handshaker* self) {
       impl->handshaker_next_args->received_bytes;
   size_t received_bytes_size = impl->handshaker_next_args->received_bytes_size;
   std::string* error = impl->handshaker_next_args->error;
+  std::cout << "GREG: error: " << *error << "\n";
   // If there are received bytes, process them first.
   tsi_result status = TSI_OK;
   size_t bytes_written = 0;
@@ -2269,6 +2276,7 @@ static tsi_result ssl_handshaker_next_impl(tsi_ssl_handshaker* self) {
         status =
             ssl_handshaker_write_output_buffer(self, &bytes_written, error);
         if (status != TSI_OK) {
+          std::cout << "GREG: status: " << status << "\n";
           return status;
         }
         status = ssl_handshaker_do_handshake(impl, error);
@@ -2290,11 +2298,14 @@ static tsi_result ssl_handshaker_next_impl(tsi_ssl_handshaker* self) {
   }
 
   if (status != TSI_OK) {
+    std::cout << "GREG: error: " << *error << "\n";
+    std::cout << "GREG: status2: " << status << "\n";
     return status;
   }
   // Get bytes to send to the peer, if available.
   status = ssl_handshaker_write_output_buffer(self, &bytes_written, error);
   if (status != TSI_OK) {
+    std::cout << "GREG: status3: " << status << "\n";
     return status;
   }
   impl->handshaker_next_args->bytes_to_send = impl->outgoing_bytes_buffer;
@@ -2312,12 +2323,14 @@ static tsi_result ssl_handshaker_next_impl(tsi_ssl_handshaker* self) {
     status =
         ssl_bytes_remaining(impl, &unused_bytes, &unused_bytes_size, error);
     if (status != TSI_OK) {
+      std::cout << "GREG: status4: " << status << "\n";
       return status;
     }
     if (unused_bytes_size > received_bytes_size) {
       LOG(ERROR) << "More unused bytes than received bytes.";
       gpr_free(unused_bytes);
       if (error != nullptr) *error = "More unused bytes than received bytes.";
+      std::cout << "GREG: status5: " << *error << "\n";
       return TSI_INTERNAL_ERROR;
     }
     status = ssl_handshaker_result_create(
@@ -2341,6 +2354,7 @@ static tsi_result ssl_handshaker_next_impl(tsi_ssl_handshaker* self) {
       }
     }
   }
+  std::cout << "GREG: status6: " << status << "\n";
   return status;
 }
 
@@ -2352,6 +2366,7 @@ static void ssl_handshaker_next_async(tsi_ssl_handshaker* self) {
   {
     grpc_core::MutexLock lock(&self->mu);
     result = ssl_handshaker_next_impl(self);
+    std::cout << "GREG: result - " << result << "\n";
     if (result != TSI_ASYNC) {
       // We now have a result to return to the caller via the callback.
       if (self->handshaker_next_args.has_value()) {
