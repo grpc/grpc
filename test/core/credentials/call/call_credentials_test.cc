@@ -1610,6 +1610,61 @@ TEST_F(CredentialsTest, TestJwtCredsFetchRegionalAccessBoundaryRespectsCache) {
   HttpRequest::SetOverride(nullptr, nullptr, nullptr);
 }
 
+char* encode_and_sign_jwt_any_email(const grpc_auth_json_key* json_key,
+                                    const char* /*audience*/,
+                                    gpr_timespec token_lifetime,
+                                    const char* /*scope*/) {
+  // Validate everything except the specific email address, as we are testing
+  // invalid email/URI scenarios.
+  GRPC_CHECK(grpc_auth_json_key_is_valid(json_key));
+  GRPC_CHECK_NE(json_key->private_key, nullptr);
+#if OPENSSL_VERSION_NUMBER < 0x30000000L
+  GRPC_CHECK(RSA_check_key(json_key->private_key));
+#else
+  EVP_PKEY_CTX* ctx = EVP_PKEY_CTX_new(json_key->private_key, NULL);
+  GRPC_CHECK(EVP_PKEY_private_check(ctx));
+  EVP_PKEY_CTX_free(ctx);
+#endif
+  GRPC_CHECK(json_key->type != nullptr &&
+             strcmp(json_key->type, "service_account") == 0);
+  // Skip specific email check to allow invalid emails for RAB URI testing.
+  
+  GRPC_CHECK_EQ(gpr_time_cmp(token_lifetime, grpc_max_auth_token_lifetime()),
+                0);
+  return gpr_strdup(test_signed_jwt);
+}
+
+TEST_F(CredentialsTest, TestJwtCredsWithInvalidRabUri) {
+  // Key with invalid email (space in email) to trigger invalid RAB URI.
+  char* original_json_key = test_json_key_str();
+  ExecCtx exec_ctx;
+  std::string json_key_str = absl::StrReplaceAll(
+      original_json_key,
+      {{"777-abaslkan11hlb6nmim3bpspl31ud@developer.gserviceaccount.com",
+        "invalid email@developer.gserviceaccount.com"}});
+  gpr_free(original_json_key);
+
+  grpc_call_credentials* creds =
+      grpc_service_account_jwt_access_credentials_create(
+          json_key_str.c_str(), grpc_max_auth_token_lifetime(), nullptr);
+  GRPC_CHECK_NE(creds, nullptr);
+
+  // Expectation: JWT token is generated, but RAB fetcher is null (or doesn't fetch).
+  std::string expected_md_value = absl::StrCat("Bearer ", test_signed_jwt);
+  // Only authorization header expected.
+  std::string emd = absl::StrCat("authorization: ", expected_md_value);
+
+  auto state = RequestMetadataState::NewInstance(absl::OkStatus(), emd);
+  grpc_jwt_encode_and_sign_set_override(encode_and_sign_jwt_any_email);
+  
+  state->RunRequestMetadataTest(creds, kTestUrlScheme, kTestAuthority,
+                                kTestPath);
+  ExecCtx::Get()->Flush();
+
+  creds->Unref();
+  grpc_jwt_encode_and_sign_set_override(nullptr);
+}
+
 TEST_F(CredentialsTest, TestJwtCredsSuccess) {
   const char expected_creds_debug_string_prefix[] =
       "JWTAccessCredentials{ExpirationTime:";
@@ -5154,11 +5209,14 @@ TEST_F(CredentialsTest, TestComputeEngineCredsEmailFetchCancellation) {
   auto arena = SimpleArenaAllocator()->MakeArena();
   auto activity = MakeActivity(
       [&]() {
-        return creds->GetRequestMetadata(
-            ClientMetadataHandle(&md, Arena::PooledDeleter(nullptr)), &args);
+        return Map(creds->GetRequestMetadata(
+                       arena->MakePooled<grpc_metadata_batch>(), &args),
+                   [](absl::StatusOr<ClientMetadataHandle> r) {
+                     return r.status();
+                   });
       },
       ExecCtxWakeupScheduler(),
-      [](absl::StatusOr<ClientMetadataHandle> res) {},
+      [](absl::Status res) {},
       arena.get(), &pollent);
   ExecCtx::Get()->Flush();
                            

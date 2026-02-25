@@ -47,7 +47,7 @@ class FakeCallCredentials : public grpc_call_credentials {
   explicit FakeCallCredentials(absl::string_view url = "https://googleapis.com")
       : grpc_call_credentials(GRPC_SECURITY_NONE),
         regional_access_boundary_fetcher_(
-            MakeRefCounted<RegionalAccessBoundaryFetcher>(
+            RegionalAccessBoundaryFetcher::Create(
                 url, grpc_event_engine::experimental::GetDefaultEventEngine(),
                 BackOff::Options()
                     .set_initial_backoff(Duration::Milliseconds(1))
@@ -94,6 +94,21 @@ class RegionalAccessBoundaryFetcherTest : public ::testing::Test {
 
   WeakRefCountedPtr<RegionalAccessBoundaryFetcher> WeakFetcher() {
     return creds_->regional_access_boundary_fetcher_->WeakRef();
+  }
+
+  bool IsShutdown(RegionalAccessBoundaryFetcher* fetcher) {
+    grpc_core::MutexLock lock(&fetcher->cache_mu_);
+    return fetcher->shutdown_;
+  }
+
+  bool CheckPendingRequestIsNull(RegionalAccessBoundaryFetcher* fetcher) {
+    grpc_core::MutexLock lock(&fetcher->cache_mu_);
+    return fetcher->pending_request_ == nullptr;
+  }
+
+  bool HasCache(RegionalAccessBoundaryFetcher* fetcher) {
+    grpc_core::MutexLock lock(&fetcher->cache_mu_);
+    return fetcher->cache_.has_value();
   }
 
   void SetUp() override {
@@ -169,9 +184,7 @@ TEST_F(RegionalAccessBoundaryFetcherTest, CooldownExpiredAllowsFetch) {
 
 TEST_F(RegionalAccessBoundaryFetcherTest, InvalidUriParsing) {
   creds_ = MakeRefCounted<FakeCallCredentials>("invalid_uri_!@#$");
-  metadata_->Append("authorization", Slice::FromStaticString("Bearer token"), [](absl::string_view, const Slice&) { abort(); });
-  creds_->regional_access_boundary_fetcher_->Fetch("", *metadata_);
-  EXPECT_FALSE(fetch_in_flight());
+  EXPECT_EQ(creds_->regional_access_boundary_fetcher_, nullptr);
 }
 
 TEST_F(RegionalAccessBoundaryFetcherTest, RegionalEndpointIgnored) {
@@ -409,6 +422,7 @@ TEST_F(RegionalAccessBoundaryFetcherTest, CancelPendingFetch) {
 }
 
 static grpc_closure* g_stalled_on_done = nullptr;
+static grpc_http_response* g_stalled_response = nullptr;
 
 int httpcli_get_stalled(const grpc_http_request* /*request*/,
                            const URI& /*uri*/, Timestamp /*deadline*/,
@@ -416,6 +430,7 @@ int httpcli_get_stalled(const grpc_http_request* /*request*/,
                            grpc_http_response* response) {
   g_mock_get_count++;
   g_stalled_on_done = on_done;
+  g_stalled_response = response;
   // Do not call ExecCtx::Run here. The request is now "in flight" and stalled.
   return 1;
 }
@@ -424,6 +439,7 @@ TEST_F(RegionalAccessBoundaryFetcherTest, CancelPendingFetchWithInFlightRequest)
   ExecCtx exec_ctx;
   g_mock_get_count = 0;
   g_stalled_on_done = nullptr;
+  g_stalled_response = nullptr;
   HttpRequest::SetOverride(httpcli_get_stalled, nullptr, nullptr);
   metadata_->Append("authorization", Slice::FromStaticString("Bearer token"), [](absl::string_view, const Slice&) { abort(); });
   
@@ -443,6 +459,42 @@ TEST_F(RegionalAccessBoundaryFetcherTest, CancelPendingFetchWithInFlightRequest)
   ExecCtx::Get()->Flush();
   // The fetch shouldn't be in flight anymore since it was cleanly aborted.
   EXPECT_FALSE(fetch_in_flight(fetcher.operator->()));
+  EXPECT_FALSE(fetch_in_flight(fetcher.operator->()));
+}
+
+TEST_F(RegionalAccessBoundaryFetcherTest, ResponseAfterShutdownIgnored) {
+  ExecCtx exec_ctx;
+  g_mock_get_count = 0;
+  g_stalled_on_done = nullptr;
+  g_stalled_response = nullptr;
+  HttpRequest::SetOverride(httpcli_get_stalled, nullptr, nullptr);
+  metadata_->Append("authorization", Slice::FromStaticString("Bearer token"), [](absl::string_view, const Slice&) { abort(); });
+
+  creds_->regional_access_boundary_fetcher_->Fetch("", *metadata_);
+  EXPECT_TRUE(fetch_in_flight());
+
+  auto fetcher = WeakFetcher();
+  RegionalAccessBoundaryFetcher* fetcher_raw = fetcher.operator->();
+
+  // Orphan the fetcher (simulating shutdown)
+  creds_->regional_access_boundary_fetcher_.reset();
+
+  // Verify fetcher is shutdown but memory is valid
+  EXPECT_TRUE(IsShutdown(fetcher_raw));
+  EXPECT_TRUE(CheckPendingRequestIsNull(fetcher_raw));
+
+  // Simulate a successful response arriving AFTER shutdown
+  if (g_stalled_response != nullptr) {
+    *g_stalled_response = http_response(200, "{\"encodedLocations\": \"us-west1\", \"locations\": [\"us-west1\"]}");
+  }
+  if (g_stalled_on_done != nullptr) {
+    ExecCtx::Run(DEBUG_LOCATION, g_stalled_on_done, absl::OkStatus());
+  }
+
+  ExecCtx::Get()->Flush();
+
+  // Verify cache was NOT updated (it requires inspecting the zombie object)
+  EXPECT_FALSE(HasCache(fetcher_raw));
 }
 
 TEST_F(RegionalAccessBoundaryFetcherTest, CooldownResetsOnSuccess) {
@@ -569,8 +621,7 @@ TEST_F(EmailFetcherTest, FetchesEmailAndThenRab) {
   HttpRequest::SetOverride(httpcli_get_email_success, nullptr, nullptr);
   
   // Start email fetch
-  grpc_polling_entity pollent = grpc_polling_entity_create_from_pollset(nullptr);
-  email_fetcher_->StartEmailFetch(&pollent);
+  email_fetcher_->StartEmailFetch();
   
   // Fetch should trigger RAB fetch if email fetch succeeded
   // We need to wait for email fetch to complete.
@@ -617,8 +668,7 @@ TEST_F(EmailFetcherTest, EmailFetchFailureSkipsRab) {
   ExecCtx exec_ctx;
   HttpRequest::SetOverride(httpcli_get_email_failure, nullptr, nullptr);
   
-  grpc_polling_entity pollent = grpc_polling_entity_create_from_pollset(nullptr);
-  email_fetcher_->StartEmailFetch(&pollent);
+  email_fetcher_->StartEmailFetch();
   ExecCtx::Get()->Flush();
 
   metadata_->Append("authorization", Slice::FromStaticString("Bearer token"), [](absl::string_view, const Slice&) { abort(); });
@@ -647,15 +697,13 @@ TEST_F(EmailFetcherTest, EmailFetchBackoffRespected) {
   g_mock_get_count = 0;
   HttpRequest::SetOverride(httpcli_get_email_failure_counted, nullptr, nullptr);
   
-  grpc_polling_entity pollent = grpc_polling_entity_create_from_pollset(nullptr);
-  
   // 1. First failure triggers backoff.
-  email_fetcher_->StartEmailFetch(&pollent);
+  email_fetcher_->StartEmailFetch();
   ExecCtx::Get()->Flush();
   EXPECT_EQ(g_mock_get_count, 1);
 
   // 2. Immediate second attempt should be skipped due to backoff.
-  email_fetcher_->StartEmailFetch(&pollent);
+  email_fetcher_->StartEmailFetch();
   ExecCtx::Get()->Flush();
   EXPECT_EQ(g_mock_get_count, 1);
 
@@ -663,7 +711,7 @@ TEST_F(EmailFetcherTest, EmailFetchBackoffRespected) {
   exec_ctx.TestOnlySetNow(grpc_core::Timestamp::Now() + grpc_core::Duration::Seconds(2));
   
   // 4. Retry should proceed.
-  email_fetcher_->StartEmailFetch(&pollent);
+  email_fetcher_->StartEmailFetch();
   ExecCtx::Get()->Flush();
   EXPECT_EQ(g_mock_get_count, 2);
 }

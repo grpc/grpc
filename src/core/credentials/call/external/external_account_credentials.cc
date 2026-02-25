@@ -76,7 +76,7 @@ namespace grpc_core {
 
 namespace {
 
-class TokenWithRegionalAccessBoundary
+class TokenWithRegionalAccessBoundary final
     : public TokenFetcherCredentials::Token {
  public:
   TokenWithRegionalAccessBoundary(
@@ -85,7 +85,9 @@ class TokenWithRegionalAccessBoundary
           regional_access_boundary_fetcher)
       : Token(std::move(token), expiration),
         regional_access_boundary_fetcher_(
-            std::move(regional_access_boundary_fetcher)) {}
+            std::move(regional_access_boundary_fetcher)) {
+    CHECK(regional_access_boundary_fetcher_ != nullptr);
+  }
 
   void AddTokenToClientInitialMetadata(ClientMetadata& metadata) override {
     Token::AddTokenToClientInitialMetadata(metadata);
@@ -439,10 +441,15 @@ void ExternalAccountCredentials::ExternalFetchRequest::FinishTokenFetch(
         GRPC_CREDENTIALS_OK) {
       result = GRPC_ERROR_CREATE("Could not parse oauth token");
     } else {
-      result = MakeRefCounted<TokenWithRegionalAccessBoundary>(
-          std::move(*token_value), Timestamp::Now() + token_lifetime,
-          creds_->regional_access_boundary_fetcher_->Ref());
-    }
+      if (creds_->regional_access_boundary_fetcher_ != nullptr) {
+        result = MakeRefCounted<TokenWithRegionalAccessBoundary>(
+            std::move(*token_value), Timestamp::Now() + token_lifetime,
+            creds_->regional_access_boundary_fetcher_->Ref());
+      } else {
+        result = MakeRefCounted<TokenFetcherCredentials::Token>(
+            std::move(*token_value), Timestamp::Now() + token_lifetime);
+      }
+     }
   }
   creds_->event_engine().Run([on_done = std::exchange(on_done_, nullptr),
                               result = std::move(result)]() mutable {
@@ -685,10 +692,10 @@ std::string BuildRegionalAccessBoundaryUrl(
 ExternalAccountCredentials::ExternalAccountCredentials(
     Options options, std::vector<std::string> scopes,
     std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine)
-    : TokenFetcherCredentials(event_engine),
+    : TokenFetcherCredentials(std::move(event_engine)),
       options_(std::move(options)),
       regional_access_boundary_fetcher_(
-          MakeRefCounted<RegionalAccessBoundaryFetcher>(
+          RegionalAccessBoundaryFetcher::Create(
               BuildRegionalAccessBoundaryUrl(options_), event_engine)) {
   if (scopes.empty()) {
     scopes.push_back(GOOGLE_CLOUD_PLATFORM_DEFAULT_SCOPE);

@@ -41,10 +41,7 @@
 #include "src/core/credentials/transport/transport_credentials.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/error.h"
-#include "src/core/lib/iomgr/pollset_set.h"
-#include "src/core/lib/promise/context.h"
 #include "src/core/lib/promise/map.h"
-#include "src/core/lib/promise/poll.h"
 #include "src/core/lib/promise/promise.h"
 #include "src/core/lib/transport/error_utils.h"
 #include "src/core/util/grpc_check.h"
@@ -260,7 +257,7 @@ Oauth2TokenFetcherCredentials::FetchToken(
 
 namespace {
 
-class TokenWithEmail : public grpc_core::TokenFetcherCredentials::Token {
+class TokenWithEmail final : public grpc_core::TokenFetcherCredentials::Token {
  public:
   TokenWithEmail(grpc_core::Slice token, grpc_core::Timestamp expiration,
                  grpc_core::RefCountedPtr<grpc_core::EmailFetcher> email_fetcher)
@@ -327,7 +324,7 @@ class grpc_compute_engine_token_fetcher_credentials
       absl::AnyInvocable<
           void(absl::StatusOr<grpc_core::RefCountedPtr<TokenFetcherCredentials::Token>>)>
           on_done) override {
-    email_fetcher_->StartEmailFetch(pollent());
+    email_fetcher_->StartEmailFetch();
     return grpc_core::MakeOrphanable<HttpFetchRequest>(
         this, deadline,
         [email_fetcher = email_fetcher_, on_done = std::move(on_done)](
@@ -348,7 +345,7 @@ class grpc_compute_engine_token_fetcher_credentials
           on_done(grpc_core::MakeRefCounted<TokenWithEmail>(
               std::move(*access_token_value),
               grpc_core::Timestamp::Now() + token_lifetime,
-              email_fetcher));
+              std::move(email_fetcher)));
         });
   }
 

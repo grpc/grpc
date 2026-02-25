@@ -52,11 +52,30 @@ namespace {
     "/computeMetadata/v1/instance/service-accounts/default/email";
 }
 
-RegionalAccessBoundaryFetcher::RegionalAccessBoundaryFetcher(
+// static
+RefCountedPtr<RegionalAccessBoundaryFetcher>
+RegionalAccessBoundaryFetcher::Create(
     absl::string_view lookup_url,
     std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine,
+    std::optional<grpc_core::BackOff::Options> backoff_options) {
+  auto uri = URI::Parse(lookup_url);
+  if (!uri.ok()) {
+    LOG(WARNING) << "Invalid RegionalAccessBoundary lookup URI \"" << lookup_url
+                 << "\" (" << uri.status() << "); RAB data will not be fetched";
+    return nullptr;
+  }
+  return MakeRefCounted<RegionalAccessBoundaryFetcher>(
+      std::move(*uri), std::move(event_engine), backoff_options);
+}
+
+RegionalAccessBoundaryFetcher::RegionalAccessBoundaryFetcher(
+    grpc_core::URI lookup_uri,
+    std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine,
     std::optional<grpc_core::BackOff::Options> backoff_options)
-    : event_engine_(event_engine == nullptr ? grpc_event_engine::experimental::GetDefaultEventEngine() : std::move(event_engine)),
+    : event_engine_(event_engine == nullptr
+                        ? grpc_event_engine::experimental::GetDefaultEventEngine()
+                        : std::move(event_engine)),
+      lookup_uri_(std::move(lookup_uri)),
       backoff_(
           backoff_options.has_value()
               ? *backoff_options
@@ -65,111 +84,12 @@ RegionalAccessBoundaryFetcher::RegionalAccessBoundaryFetcher(
                     .set_multiplier(2.0)
                     .set_jitter(0.2)
                     .set_max_backoff(Duration::Seconds(60))) {
-  if (event_engine_ == nullptr) {
-    CHECK(event_engine_ != nullptr);
-  }
-  if (!lookup_url.empty()) {
-    auto parsed_uri = URI::Parse(lookup_url);
-    if (parsed_uri.ok()) {
-      lookup_uri_ = std::move(*parsed_uri);
-    } else {
-      LOG(ERROR) << "Unable to create URI for the lookup URL: " << lookup_url;
-    }
-  }
-}
-
-RegionalAccessBoundaryFetcher::Request::
-    Request(grpc_core::WeakRefCountedPtr<RegionalAccessBoundaryFetcher> fetcher,
-                                  grpc_core::URI uri,
-                                  absl::string_view access_token)
-    : access_token_(access_token), uri_(std::move(uri)), fetcher_(std::move(fetcher)) {
-  memset(&response_, 0, sizeof(response_));
-  pollent_ = grpc_polling_entity_create_from_pollset_set(nullptr);
-}
-
-void RegionalAccessBoundaryFetcher::Request::Start() {
-  grpc_http_request request;
-  memset(&request, 0, sizeof(request));
-  grpc_http_header header = {const_cast<char*>("Authorization"),
-                               const_cast<char*>(access_token_.data())};
-  request.hdr_count = 1;
-  request.hdrs = &header;
-  // We pass this as arg to OnResponseWrapper. We must
-  // manually take a ref because C-callback doesn't. The Ref is consumed in
-  // OnResponseWrapper.
-  Ref().release();
-  GRPC_CLOSURE_INIT(&closure_, OnResponseWrapper,
-                    this, grpc_schedule_on_exec_ctx);
-  http_request_ = grpc_core::HttpRequest::Get(
-      uri_,
-      nullptr,  // channel_args
-      &pollent_, &request,
-      grpc_core::Timestamp::Now() + grpc_core::Duration::Seconds(60),
-      &closure_,
-      &response_,
-      grpc_core::RefCountedPtr<grpc_channel_credentials>(
-          grpc_core::CreateHttpRequestSSLCredentials()));
-  if (http_request_ != nullptr) {
-    http_request_->Start();
-  }
-}
-
-void RegionalAccessBoundaryFetcher::Request::Orphan() {
-   http_request_.reset();
-   Unref();
-}
-
-grpc_core::OrphanablePtr<RegionalAccessBoundaryFetcher::Request> RegionalAccessBoundaryFetcher::Request::MakeRetryRequest() {
-    return MakeOrphanable<Request>(fetcher_, uri_, access_token_);
-}
-
-void RegionalAccessBoundaryFetcher::Request::OnResponseWrapper(
-    void* arg, grpc_error_handle error) {
-  grpc_core::RefCountedPtr<Request> req(
-      static_cast<Request*>(arg));
-  req->OnResponse(error);
-}
-
-void RegionalAccessBoundaryFetcher::Request::OnResponse(grpc_error_handle error) {
-  bool should_retry = false;
-  bool success = false;
-  std::string encoded_locations;
-  std::vector<std::string> locations;
-  if (error.ok() && response_.status == 200) {
-    absl::StatusOr<Json> json = grpc_core::JsonParse(
-        absl::string_view(response_.body, response_.body_length));
-    if (json.ok() && json->type() == grpc_core::Json::Type::kObject) {
-      auto it_encoded = json->object().find("encodedLocations");
-      if (it_encoded != json->object().end() &&
-          it_encoded->second.type() == grpc_core::Json::Type::kString) {
-        encoded_locations = it_encoded->second.string();
-      }
-      auto it_locations = json->object().find("locations");
-      if (it_locations != json->object().end() &&
-          it_locations->second.type() == grpc_core::Json::Type::kArray) {
-        for (auto& loc : it_locations->second.array()) {
-          if (loc.type() == grpc_core::Json::Type::kString) {
-            locations.push_back(loc.string());
-          }
-        }
-      }
-      if (!encoded_locations.empty()) {
-        success = true;
-      }
-    }
-  }
-  auto fetcher = fetcher_->RefIfNonZero();
-  if (fetcher != nullptr) {
-    if (success) {
-      fetcher->OnFetchSuccess(std::move(encoded_locations), std::move(locations));
-    } else {
-      fetcher->OnFetchFailure(Ref(), error, response_.status, absl::string_view(response_.body, response_.body_length));
-    }
-  }
+  CHECK(event_engine_ != nullptr);
 }
 
 void RegionalAccessBoundaryFetcher::OnFetchSuccess(std::string encoded_locations, std::vector<std::string> locations) {
   grpc_core::MutexLock lock(&cache_mu_);
+  if (shutdown_) return;
   cache_ = {std::move(encoded_locations), std::move(locations),
             grpc_core::Timestamp::Now() +
                 kRegionalAccessBoundaryCacheDuration};
@@ -184,6 +104,7 @@ void RegionalAccessBoundaryFetcher::OnFetchFailure(
     grpc_core::RefCountedPtr<Request> req, grpc_error_handle error,
     int http_status, absl::string_view response_body) {
   grpc_core::MutexLock lock(&cache_mu_);
+  if (shutdown_) return;
   bool should_enter_cooldown = true;
   if (!absl::IsCancelled(error) &&
       num_retries_ < kMaxRegionalAccessBoundaryRetries) {
@@ -228,13 +149,6 @@ void RegionalAccessBoundaryFetcher::OnFetchFailure(
 
 void RegionalAccessBoundaryFetcher::Fetch(absl::string_view access_token,
                                           ClientMetadata& initial_metadata) {
-  if (!lookup_uri_.has_value()) {
-    // If we have an empty lookup URL, we cannot fetch the regional access
-    // boundary. This can happen if the credential does not have enough
-    // information to construct the URL, such as a missing workforce/workload pool
-    // ID or service account email.
-    return;
-  }
   const Slice* authority_ptr =
       initial_metadata.get_pointer(HttpAuthorityMetadata());
   if (authority_ptr == nullptr) {
@@ -276,13 +190,11 @@ void RegionalAccessBoundaryFetcher::Fetch(absl::string_view access_token,
         pending_request_ == nullptr &&
         next_fetch_time_ <= now &&
         cooldown_deadline_ <= now) {
-      pending_request_ = MakeOrphanable<Request>(
-          WeakRef(), *lookup_uri_, access_token);
+      pending_request_ = MakeOrphanable<Request>(WeakRef(), access_token);
       pending_request_->Start();
     }
     // If we have a cached non-expired token, use it.
     if (cache_.has_value() && cache_->expiration > now) {
-      std::cout << "Using cached regional access boundary: " << cache_->encoded_locations << std::endl;
       initial_metadata.Append(
           kAllowedLocationsKey,
           Slice::FromCopiedString(
@@ -294,16 +206,95 @@ void RegionalAccessBoundaryFetcher::Fetch(absl::string_view access_token,
 
 void RegionalAccessBoundaryFetcher::Orphaned() {
   grpc_core::MutexLock lock(&cache_mu_);
-  if (pending_request_ != nullptr) {
-    pending_request_.reset();
+  shutdown_ = true;
+  pending_request_.reset();
+}
+
+RegionalAccessBoundaryFetcher::Request::
+    Request(grpc_core::WeakRefCountedPtr<RegionalAccessBoundaryFetcher> fetcher,
+                                  absl::string_view access_token)
+    : access_token_(access_token), fetcher_(std::move(fetcher)) {
+  memset(&response_, 0, sizeof(response_));
+  pollent_ = grpc_polling_entity_create_from_pollset_set(nullptr);
+}
+
+void RegionalAccessBoundaryFetcher::Request::Start() {
+  grpc_http_request request;
+  memset(&request, 0, sizeof(request));
+  grpc_http_header header = {const_cast<char*>("Authorization"),
+                               const_cast<char*>(access_token_.data())};
+  request.hdr_count = 1;
+  request.hdrs = &header;
+  // We pass this as arg to OnResponseWrapper. We must
+  // manually take a ref because C-callback doesn't. The Ref is consumed in
+  // OnResponseWrapper.
+  Ref().release();
+  GRPC_CLOSURE_INIT(&closure_, OnResponseWrapper,
+                    this, grpc_schedule_on_exec_ctx);
+  http_request_ = grpc_core::HttpRequest::Get(
+      fetcher_->lookup_uri_,
+      nullptr,  // channel_args
+      &pollent_, &request,
+      grpc_core::Timestamp::Now() + grpc_core::Duration::Seconds(60),
+      &closure_,
+      &response_,
+      grpc_core::RefCountedPtr<grpc_channel_credentials>(
+          grpc_core::CreateHttpRequestSSLCredentials()));
+  http_request_->Start();
+}
+
+void RegionalAccessBoundaryFetcher::Request::Orphan() {
+   http_request_.reset();
+   Unref();
+}
+
+void RegionalAccessBoundaryFetcher::Request::OnResponseWrapper(
+    void* arg, grpc_error_handle error) {
+  grpc_core::RefCountedPtr<Request> req(
+      static_cast<Request*>(arg));
+  req->OnResponse(error);
+}
+
+void RegionalAccessBoundaryFetcher::Request::OnResponse(grpc_error_handle error) {
+  bool success = false;
+  std::string encoded_locations;
+  std::vector<std::string> locations;
+  if (error.ok() && response_.status == 200) {
+    absl::StatusOr<Json> json = grpc_core::JsonParse(
+        absl::string_view(response_.body, response_.body_length));
+    if (json.ok() && json->type() == grpc_core::Json::Type::kObject) {
+      auto it_encoded = json->object().find("encodedLocations");
+      if (it_encoded != json->object().end() &&
+          it_encoded->second.type() == grpc_core::Json::Type::kString) {
+        encoded_locations = it_encoded->second.string();
+      }
+      auto it_locations = json->object().find("locations");
+      if (it_locations != json->object().end() &&
+          it_locations->second.type() == grpc_core::Json::Type::kArray) {
+        for (auto& loc : it_locations->second.array()) {
+          if (loc.type() == grpc_core::Json::Type::kString) {
+            locations.push_back(loc.string());
+          }
+        }
+      }
+      if (!encoded_locations.empty()) {
+        success = true;
+      }
+    }
+  }
+  if (success) {
+    fetcher_->OnFetchSuccess(std::move(encoded_locations), std::move(locations));
+  } else {
+    fetcher_->OnFetchFailure(Ref(), error, response_.status, absl::string_view(response_.body, response_.body_length));
   }
 }
 
-class EmailFetcher::EmailRequest : public InternallyRefCounted<EmailRequest> {
+class EmailFetcher::EmailRequest final : public InternallyRefCounted<EmailRequest> {
  public:
-  EmailRequest(WeakRefCountedPtr<EmailFetcher> fetcher,
-               grpc_polling_entity* pollent)
-      : pollent_(*pollent), fetcher_(std::move(fetcher)) {}
+  explicit EmailRequest(WeakRefCountedPtr<EmailFetcher> fetcher)
+      : fetcher_(std::move(fetcher)) {
+    pollent_ = grpc_polling_entity_create_from_pollset_set(nullptr);
+  }
 
   ~EmailRequest() override { grpc_http_response_destroy(&response_); }
 
@@ -318,11 +309,7 @@ class EmailFetcher::EmailRequest : public InternallyRefCounted<EmailRequest> {
                            GRPC_COMPUTE_ENGINE_METADATA_HOST,
                            kComputeEngineDefaultSaEmailPath, /*query_params=*/{},
                            /*fragment=*/"");
-    if (!uri.ok()) {
-      LOG_EVERY_N_SEC(ERROR, 60) << "Failed to create URI for service account email fetch: "
-                 << uri.status();
-      return;
-    }
+    GRPC_CHECK(uri.ok());
     GRPC_CLOSURE_INIT(&closure_, OnResponseWrapper, this,
                       grpc_schedule_on_exec_ctx);
     http_request_ = HttpRequest::Get(
@@ -347,19 +334,15 @@ class EmailFetcher::EmailRequest : public InternallyRefCounted<EmailRequest> {
   }
 
   void OnResponse(grpc_error_handle error) {
-    auto fetcher = fetcher_->RefIfNonZero();
-    if (fetcher == nullptr) return;
-    if (error.ok() && response_.status == 200) {
-      fetcher->OnEmailFetchComplete(
-          absl::string_view(response_.body, response_.body_length));
+    if (!error.ok()) {
+      fetcher_->OnEmailFetchError(error);
+    } else if (response_.status != 200) {
+      fetcher_->OnEmailFetchError(GRPC_ERROR_CREATE(
+          absl::StrCat("Failed to fetch service account email: HTTP ",
+                       response_.status)));
     } else {
-      if (!error.ok()) {
-         fetcher->OnEmailFetchError(error);
-      } else {
-         fetcher->OnEmailFetchError(GRPC_ERROR_CREATE(
-             absl::StrCat("Failed to fetch service account email: HTTP ",
-                          response_.status)));
-      }
+      fetcher_->OnEmailFetchComplete(
+          absl::string_view(response_.body, response_.body_length));
     }
   }
 
@@ -374,23 +357,23 @@ EmailFetcher::EmailFetcher(
     std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine)
     : event_engine_(event_engine == nullptr
                         ? grpc_event_engine::experimental::GetDefaultEventEngine()
-                        : std::move(event_engine)),
-      backoff_(BackOff::Options()
-                   .set_initial_backoff(Duration::Seconds(1))
-                   .set_multiplier(1.6)
-                   .set_jitter(0.2)
-                   .set_max_backoff(Duration::Seconds(60))),
-      next_fetch_earliest_time_(Timestamp::InfPast()) {}
+                        : std::move(event_engine)) {}
 
-void EmailFetcher::StartEmailFetch(grpc_polling_entity* pollent) {
+void EmailFetcher::StartEmailFetch() {
   MutexLock lock(&mu_);
   if (Timestamp::Now() < next_fetch_earliest_time_) {
     return;
   }
-  if (!std::holds_alternative<std::monostate>(state_)) {
-    return;  // Already started or completed
+  // Check if we are in the initial/retryable state (null EmailRequest)
+  if (auto* pending = std::get_if<OrphanablePtr<EmailRequest>>(&state_)) {
+    if (*pending != nullptr) {
+      return;  // Already fetching email
+    }
+  } else {
+    return;  // Already have RAB fetcher
   }
-  auto request = MakeOrphanable<EmailRequest>(WeakRef(), pollent);
+
+  auto request = MakeOrphanable<EmailRequest>(WeakRef());
   // We keep a temporary ref to start it, but transfer ownership to state_ first.
   auto* request_ptr = request.get();
   state_ = std::move(request);
@@ -410,7 +393,7 @@ EmailFetcher::~EmailFetcher() = default;
 
 void EmailFetcher::Orphaned() {
   MutexLock lock(&mu_);
-  state_ = std::monostate();
+  state_ = OrphanablePtr<EmailRequest>(nullptr);
 }
 
 void EmailFetcher::OnEmailFetchComplete(absl::string_view email) {
@@ -420,9 +403,13 @@ void EmailFetcher::OnEmailFetchComplete(absl::string_view email) {
           "https://iamcredentials.googleapis.com/v1/projects/-/serviceAccounts/"
           "%s/allowedLocations",
           email);
-      state_ = MakeRefCounted<RegionalAccessBoundaryFetcher>(
+      auto rab_fetcher = RegionalAccessBoundaryFetcher::Create(
           rab_url, event_engine_);
-      backoff_.Reset();
+      if (rab_fetcher != nullptr) {
+        state_ = std::move(rab_fetcher);
+      } else {
+        state_ = OrphanablePtr<EmailRequest>(nullptr);
+      }
   }
 }
 
@@ -433,7 +420,7 @@ void EmailFetcher::OnEmailFetchError(grpc_error_handle error) {
         << "Regional Access Boundary fetch skipped due to service account email "
            "fetch failure: "
         << StatusToString(error);
-    state_ = std::monostate();  // Reset to allow retry on next token fetch.
+    state_ = OrphanablePtr<EmailRequest>(nullptr);  // Reset to allow retry on next token fetch.
     next_fetch_earliest_time_ = Timestamp::Now() + backoff_.NextAttemptDelay();
   }
 }

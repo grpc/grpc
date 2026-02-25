@@ -38,10 +38,13 @@ namespace grpc_core {
 
 class RegionalAccessBoundaryFetcher final : public DualRefCounted<RegionalAccessBoundaryFetcher> {
  public:
-  friend class RegionalAccessBoundaryFetcherTest;
+  static grpc_core::RefCountedPtr<RegionalAccessBoundaryFetcher> Create(
+      absl::string_view lookup_url,
+      std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine = nullptr,
+      std::optional<grpc_core::BackOff::Options> backoff_options = std::nullopt);
 
   explicit RegionalAccessBoundaryFetcher(
-      absl::string_view lookup_url,
+      grpc_core::URI lookup_uri,
       std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine = nullptr,
       std::optional<grpc_core::BackOff::Options> backoff_options = std::nullopt);
 
@@ -58,6 +61,8 @@ class RegionalAccessBoundaryFetcher final : public DualRefCounted<RegionalAccess
   void Orphaned() override;
 
  private:
+  friend class RegionalAccessBoundaryFetcherTest;
+
   struct RegionalAccessBoundary {
     std::string encoded_locations;
     std::vector<std::string> locations;
@@ -70,7 +75,7 @@ class RegionalAccessBoundaryFetcher final : public DualRefCounted<RegionalAccess
   void OnFetchFailure(grpc_core::RefCountedPtr<Request> req, grpc_error_handle error, int http_status, absl::string_view response_body);
 
   std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_;
-  std::optional<grpc_core::URI> lookup_uri_;
+  grpc_core::URI lookup_uri_;
   grpc_core::Mutex cache_mu_;
   std::optional<RegionalAccessBoundary> cache_ ABSL_GUARDED_BY(&cache_mu_) ;
   Timestamp next_fetch_time_ ABSL_GUARDED_BY(&cache_mu_) = Timestamp::InfPast();
@@ -79,19 +84,21 @@ class RegionalAccessBoundaryFetcher final : public DualRefCounted<RegionalAccess
   grpc_core::BackOff backoff_ ABSL_GUARDED_BY(&cache_mu_);
   int num_retries_ ABSL_GUARDED_BY(&cache_mu_) = 0;
   grpc_core::OrphanablePtr<Request> pending_request_ ABSL_GUARDED_BY(&cache_mu_);
+  bool shutdown_ ABSL_GUARDED_BY(&cache_mu_) = false;
 };
 
 class RegionalAccessBoundaryFetcher::Request final
 : public grpc_core::InternallyRefCounted<Request> {
  public:
-  Request(grpc_core::WeakRefCountedPtr<RegionalAccessBoundaryFetcher> fetcher, grpc_core::URI uri, absl::string_view access_token);
+  Request(grpc_core::WeakRefCountedPtr<RegionalAccessBoundaryFetcher> fetcher,
+          absl::string_view access_token);
 
   ~Request() override {
     grpc_http_response_destroy(&response_);
   }
 
   void Start();
-  grpc_core::OrphanablePtr<Request> MakeRetryRequest();
+
   // Cancels any pending http request which must be called during
   // destruction to avoid memory leaks from pending http requests.
   void Orphan() override;
@@ -104,18 +111,17 @@ class RegionalAccessBoundaryFetcher::Request final
   grpc_http_response response_;
   grpc_core::OrphanablePtr<grpc_core::HttpRequest> http_request_;
   std::string access_token_;
-  grpc_core::URI uri_;
   grpc_polling_entity pollent_;
   grpc_core::WeakRefCountedPtr<RegionalAccessBoundaryFetcher> fetcher_;
   grpc_closure closure_;
 };
 
-class EmailFetcher : public DualRefCounted<EmailFetcher> {
+class EmailFetcher final : public DualRefCounted<EmailFetcher> {
  public:
   explicit EmailFetcher(
       std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine = nullptr);
 
-  void StartEmailFetch(grpc_polling_entity* pollent);
+  void StartEmailFetch();
 
   // Wrapper for RAB fetcher.
   void Fetch(absl::string_view token, ClientMetadata& metadata);
@@ -134,10 +140,15 @@ class EmailFetcher : public DualRefCounted<EmailFetcher> {
   grpc_core::Mutex mu_;
 
   // Either a pending email request or an RAB fetcher.
-  std::variant<std::monostate, OrphanablePtr<EmailRequest>, RefCountedPtr<RegionalAccessBoundaryFetcher>> state_
+  std::variant<OrphanablePtr<EmailRequest>, RefCountedPtr<RegionalAccessBoundaryFetcher>> state_
       ABSL_GUARDED_BY(&mu_);
-  BackOff backoff_ ABSL_GUARDED_BY(&mu_);
-  Timestamp next_fetch_earliest_time_ ABSL_GUARDED_BY(&mu_);
+  BackOff backoff_ ABSL_GUARDED_BY(&mu_) = BackOff(
+      BackOff::Options()
+          .set_initial_backoff(Duration::Seconds(1))
+          .set_multiplier(1.6)
+          .set_jitter(0.2)
+          .set_max_backoff(Duration::Seconds(60)));
+  Timestamp next_fetch_earliest_time_ ABSL_GUARDED_BY(&mu_) = Timestamp::InfPast();
 };
 
 }  // namespace grpc_core
