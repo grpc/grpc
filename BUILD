@@ -5227,11 +5227,6 @@ grpc_upb_proto_library(
     deps = ["@envoy_api//envoy/config/common/mutation_rules/v3:pkg"],
 )
 
-grpc_upb_proto_reflection_library(
-    name = "envoy_config_common_mutation_rules_upbdefs",
-    deps = ["@envoy_api//envoy/config/common/mutation_rules/v3:pkg"],
-)
-
 grpc_upb_proto_library(
     name = "envoy_config_core_upb",
     deps = ["@envoy_api//envoy/config/core/v3:pkg"],
@@ -5360,11 +5355,6 @@ grpc_upb_proto_library(
 grpc_upb_proto_reflection_library(
     name = "envoy_extensions_filters_http_rbac_upbdefs",
     deps = ["@envoy_api//envoy/extensions/filters/http/rbac/v3:pkg"],
-)
-
-grpc_upb_proto_library(
-    name = "envoy_config_common_mutation_rules_upb",
-    deps = ["@envoy_api//envoy/config/common/mutation_rules/v3:pkg"],
 )
 
 grpc_upb_proto_library(

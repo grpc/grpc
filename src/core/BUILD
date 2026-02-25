@@ -6575,6 +6575,7 @@ grpc_cc_library(
         "envoy_type_upb",
         "error",
         "error_utils",
+        "ext_proc_filter",
         "gcp_authentication_filter",
         "google_rpc_status_upb",
         "grpc_audit_logging",

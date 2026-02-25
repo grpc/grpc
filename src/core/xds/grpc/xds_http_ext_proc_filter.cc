@@ -17,7 +17,6 @@
 #include "src/core/xds/grpc/xds_http_ext_proc_filter.h"
 
 #include "envoy/config/common/mutation_rules/v3/mutation_rules.upb.h"
-#include "envoy/config/common/mutation_rules/v3/mutation_rules.upbdefs.h"
 #include "envoy/extensions/filters/http/ext_proc/v3/ext_proc.upb.h"
 #include "envoy/extensions/filters/http/ext_proc/v3/ext_proc.upbdefs.h"
 #include "envoy/extensions/filters/http/ext_proc/v3/processing_mode.upb.h"
@@ -207,7 +206,13 @@ RefCountedPtr<const FilterConfig> XdsHttpExtProcFilter::ParseTopLevelConfig(
         UpbStringToStdString(response_attributes[i]));
   }
   // mutation_rules
-// FIXME: parse mutation_rules
+  if (const auto* mutation_rules =
+          envoy_extensions_filters_http_ext_proc_v3_ExternalProcessor_mutation_rules(
+              ext_proc);
+      mutation_rules != nullptr) {
+    ValidationErrors::ScopedField field(errors, ".mutation_rules");
+    config->mutation_rules = ParseHeaderMutationRules(mutation_rules, errors);
+  }
   // forwarding_rules
   if (const auto* forwarding_rules =
           envoy_extensions_filters_http_ext_proc_v3_ExternalProcessor_forwarding_rules(
