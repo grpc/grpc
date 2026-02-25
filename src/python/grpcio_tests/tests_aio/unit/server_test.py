@@ -666,7 +666,8 @@ class TestServer(AioTestBase):
         self.assertEqual(wave1_exhausted, 2)
 
         # Wait for all requests to fully complete
-        await asyncio.sleep(test_constants.SHORT_TIMEOUT)
+        # Give other pending tasks change to complete.
+        await asyncio.sleep(0)
 
         # Wave 2: If the counter underflowed, more than 1 request would succeed
         # Expected: 1 success, 2 RESOURCE_EXHAUSTED (same as wave 1)
