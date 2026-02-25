@@ -118,33 +118,6 @@ constexpr int kMpscSize = 10;
 constexpr int kIsClient = false;
 
 //////////////////////////////////////////////////////////////////////////////
-// Transport Functions
-
-void Http2ServerTransport::SetCallDestination(
-    RefCountedPtr<UnstartedCallDestination> call_destination) {
-  // TODO(tjagtap) : [PH2][P2] : Implement this function.
-  GRPC_CHECK(call_destination_ == nullptr);
-  GRPC_CHECK(call_destination != nullptr);
-  call_destination_ = call_destination;
-  // got_acceptor_.Set(); // Copied from CG. Understand and fix.
-}
-
-void Http2ServerTransport::PerformOp(GRPC_UNUSED grpc_transport_op*) {
-  GRPC_HTTP2_SERVER_DLOG << "Http2ServerTransport PerformOp Begin";
-  // TODO(tjagtap) : [PH2][P2] : Implement this function.
-  GRPC_HTTP2_SERVER_DLOG << "Http2ServerTransport PerformOp End";
-}
-
-void Http2ServerTransport::Orphan() {
-  GRPC_HTTP2_SERVER_DLOG << "Http2ServerTransport Orphan Begin";
-  SourceDestructing();
-  // TODO(tjagtap) : [PH2][P2] : Implement the needed cleanup
-  general_party_.reset();
-  Unref();
-  GRPC_HTTP2_SERVER_DLOG << "Http2ServerTransport Orphan End";
-}
-
-//////////////////////////////////////////////////////////////////////////////
 // Channelz and ZTrace
 
 void Http2ServerTransport::AddData(channelz::DataSink sink) {
@@ -197,6 +170,19 @@ void Http2ServerTransport::SpawnAddChannelzData(RefCountedPtr<Party> party,
 
 //////////////////////////////////////////////////////////////////////////////
 // Watchers
+
+void Http2ServerTransport::StartConnectivityWatch(
+    grpc_connectivity_state state,
+    OrphanablePtr<ConnectivityStateWatcherInterface> watcher) {
+  MutexLock lock(&transport_mutex_);
+  state_tracker_.AddWatcher(state, std::move(watcher));
+}
+
+void Http2ServerTransport::StopConnectivityWatch(
+    ConnectivityStateWatcherInterface* watcher) {
+  MutexLock lock(&transport_mutex_);
+  state_tracker_.RemoveWatcher(watcher);
+}
 
 //////////////////////////////////////////////////////////////////////////////
 // Test Only Functions
@@ -1018,6 +1004,40 @@ auto Http2ServerTransport::OnWriteLoopEnded() {
 //////////////////////////////////////////////////////////////////////////////
 // Endpoint Helpers
 
+auto Http2ServerTransport::EndpointWrite(SliceBuffer&& output_buf) {
+  size_t output_buf_length = output_buf.Length();
+  GRPC_HTTP2_SERVER_DLOG << "Http2ServerTransport::EndpointWrite output_buf: "
+                         << output_buf_length;
+
+  transport_write_context_.GetWriteCycle().BeginWrite(output_buf_length);
+  return Map(
+      endpoint_.Write(std::forward<SliceBuffer>(output_buf),
+                      TransportWriteContext::GetWriteArgs(settings_->peer())),
+      [this](absl::Status status) {
+        GRPC_HTTP2_SERVER_DLOG
+            << "Http2ServerTransport::EndpointWrite complete with status = "
+            << status;
+        transport_write_context_.GetWriteCycle().EndWrite(status.ok());
+        return status;
+      });
+}
+
+auto Http2ServerTransport::SerializeAndWrite() {
+  return AssertResultType<absl::Status>(If(
+      transport_write_context_.GetWriteCycle().CanSerializeRegularFrames(),
+      [this]() mutable {
+        WriteCycle& write_cycle = transport_write_context_.GetWriteCycle();
+        const uint64_t frame_count = write_cycle.GetRegularFrameCount();
+        GRPC_HTTP2_SERVER_DLOG
+            << "Http2ServerTransport::SerializeAndWrite frame count: "
+            << frame_count;
+        ztrace_collector_->Append(PromiseEndpointWriteTrace{frame_count});
+        return EndpointWrite(write_cycle.SerializeRegularFrames(
+            WriteCycle::SerializeStats{should_reset_ping_clock_}));
+      },
+      []() { return absl::OkStatus(); }));
+}
+
 //////////////////////////////////////////////////////////////////////////////
 // Settings
 
@@ -1030,11 +1050,83 @@ auto Http2ServerTransport::OnWriteLoopEnded() {
 //////////////////////////////////////////////////////////////////////////////
 // Flow Control and BDP
 
-// void ActOnFlowControlAction(...);
+// Equivalent to grpc_chttp2_act_on_flowctl_action in chttp2_transport.cc
+void Http2ServerTransport::ActOnFlowControlAction(
+    const chttp2::FlowControlAction& action, Stream* stream) {
+  GRPC_HTTP2_SERVER_DLOG << "Http2ServerTransport::ActOnFlowControlAction"
+                         << action.DebugString();
+  if (action.send_stream_update() != kNoActionNeeded) {
+    if (GPR_LIKELY(stream != nullptr)) {
+      GRPC_DCHECK_GT(stream->GetStreamId(), 0u);
+      if (stream->CanSendWindowUpdateFrames()) {
+        flow_control_.AddStreamToWindowUpdateList(stream->GetStreamId());
+        GRPC_HTTP2_SERVER_DLOG
+            << "Http2ServerTransport::ActOnFlowControlAction "
+               "added stream "
+            << stream->GetStreamId() << " to window_update_list_";
+      }
+    } else {
+      GRPC_HTTP2_SERVER_DLOG
+          << "Http2ServerTransport::ActOnFlowControlAction stream is null";
+    }
+  }
+
+  ActOnFlowControlActionSettings(
+      action, settings_->mutable_local(),
+      enable_preferred_rx_crypto_frame_advertisement_);
+
+  if (action.AnyUpdateImmediately()) {
+    // Prioritize sending flow control updates over reading data. If we
+    // continue reading while urgent flow control updates are pending, we might
+    // exhaust the flow control window. This prevents us from sending window
+    // updates to the peer, causing the peer to block unnecessarily while
+    // waiting for flow control tokens.
+    reader_state_.SetPauseReadLoop();
+    if (!TriggerWriteCycleOrHandleError()) {
+      return;
+    }
+
+    GRPC_HTTP2_SERVER_DLOG << "Update Immediately : "
+                           << action.ImmediateUpdateReasons();
+  }
+}
 
 // void MaybeGetWindowUpdateFrames(SliceBuffer& output_buf);
 
-// auto FlowControlPeriodicUpdateLoop();
+auto Http2ServerTransport::FlowControlPeriodicUpdateLoop() {
+  GRPC_HTTP2_SERVER_DLOG
+      << "Http2ServerTransport::FlowControlPeriodicUpdateLoop Factory";
+  return AssertResultType<absl::Status>(
+      Loop([this]() {
+        GRPC_HTTP2_SERVER_DLOG
+            << "Http2ServerTransport::FlowControlPeriodicUpdateLoop Loop";
+        return TrySeq(
+            // TODO(tjagtap) [PH2][P2][BDP] Remove this static sleep when the
+            // BDP code is done.
+            Sleep(chttp2::kFlowControlPeriodicUpdateTimer),
+            [this]() -> Poll<absl::Status> {
+              GRPC_HTTP2_SERVER_DLOG
+                  << "Http2ServerTransport::FlowControlPeriodicUpdateLoop "
+                     "PeriodicUpdate()";
+              chttp2::FlowControlAction action = flow_control_.PeriodicUpdate();
+              bool is_action_empty = action == chttp2::FlowControlAction();
+              // This may trigger a write cycle
+              ActOnFlowControlAction(action, nullptr);
+              if (is_action_empty) {
+                // TODO(tjagtap) [PH2][P2][BDP] Remove this when the BDP code is
+                // done. We must continue to do PeriodicUpdate once BDP is in
+                // place.
+                MutexLock lock(&transport_mutex_);
+                if (GetActiveStreamCountLocked() == 0) {
+                  AddPeriodicUpdatePromiseWaker();
+                  return Pending{};
+                }
+              }
+              return absl::OkStatus();
+            },
+            []() -> LoopCtl<absl::Status> { return Continue{}; });
+      }));
+}
 
 //////////////////////////////////////////////////////////////////////////////
 // Stream List Operations
@@ -1051,14 +1143,50 @@ RefCountedPtr<Stream> Http2ServerTransport::LookupStream(uint32_t stream_id) {
   return it->second;
 }
 
+// AddToStreamList
+
+// MaybeAddStreamToWritableStreamList
+
+// NextStreamId
+
 //////////////////////////////////////////////////////////////////////////////
 // Stream Operations
+
+// CallOutboundLoop
+
+// absl::Status InitializeStream
+
+// DequeueStreamFrames
+
+// MakeStream
+
+// BeginCloseStream
+
+// CloseStream
 
 //////////////////////////////////////////////////////////////////////////////
 // Ping Keepalive and Goaway
 
+// void MaybeSpawnPingTimeout(std::optional<uint64_t> opaque_data);
+
+// void MaybeSpawnDelayedPing(std::optional<Duration> delayed_ping_wait);
+
+// absl::Status AckPing(uint64_t opaque_data);
+
+// void MaybeSpawnKeepaliveLoop();
+
+// uint32_t GetMaxAllowedStreamId() const;
+
+// void SetMaxAllowedStreamId(uint32_t max_allowed_stream_id);
+
 //////////////////////////////////////////////////////////////////////////////
 // Error Path and Close Path
+
+// void MaybeSpawnCloseTransport
+
+// bool CanCloseTransportLocked
+
+// void CloseTransport
 
 //////////////////////////////////////////////////////////////////////////////
 // Misc Transport Stuff
@@ -1233,6 +1361,47 @@ Http2ServerTransport::~Http2ServerTransport() {
   GRPC_HTTP2_SERVER_DLOG << "Http2ServerTransport Destructor Begin";
   general_party_.reset();
   GRPC_HTTP2_SERVER_DLOG << "Http2ServerTransport Destructor End";
+}
+
+//////////////////////////////////////////////////////////////////////////////
+// Transport Functions
+
+void Http2ServerTransport::SetCallDestination(
+    RefCountedPtr<UnstartedCallDestination> call_destination) {
+  // TODO(tjagtap) : [PH2][P2] : Implement this function.
+  GRPC_CHECK(call_destination_ == nullptr);
+  GRPC_CHECK(call_destination != nullptr);
+  call_destination_ = call_destination;
+  // got_acceptor_.Set(); // Copied from CG. Understand and fix.
+}
+
+void Http2ServerTransport::PerformOp(GRPC_UNUSED grpc_transport_op*) {
+  GRPC_HTTP2_SERVER_DLOG << "Http2ServerTransport PerformOp Begin";
+  // TODO(tjagtap) : [PH2][P2] : Implement this function.
+  GRPC_HTTP2_SERVER_DLOG << "Http2ServerTransport PerformOp End";
+}
+
+void Http2ServerTransport::Orphan() {
+  GRPC_HTTP2_SERVER_DLOG << "Http2ServerTransport Orphan Begin";
+  SourceDestructing();
+  // TODO(tjagtap) : [PH2][P2] : Implement the needed cleanup
+  general_party_.reset();
+  Unref();
+  GRPC_HTTP2_SERVER_DLOG << "Http2ServerTransport Orphan End";
+}
+
+void Http2ServerTransport::SpawnTransportLoops() {
+  GRPC_HTTP2_SERVER_DLOG << "Http2ServerTransport::SpawnTransportLoops Begin";
+  // MaybeSpawnKeepaliveLoop();
+  SpawnGuardedTransportParty(
+      "FlowControlPeriodicUpdateLoop",
+      UntilTransportClosed(FlowControlPeriodicUpdateLoop()));
+
+  if (!TriggerWriteCycleOrHandleError()) {
+    return;
+  }
+  // SpawnGuardedTransportParty("MultiplexerLoop", MultiplexerLoop());
+  GRPC_HTTP2_SERVER_DLOG << "Http2ServerTransport::SpawnTransportLoops End";
 }
 
 }  // namespace http2
