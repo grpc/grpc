@@ -100,9 +100,6 @@
 namespace grpc_core {
 namespace http2 {
 
-#define GRPC_HTTP2_SERVER_DLOG \
-  DLOG_IF(INFO, GRPC_TRACE_FLAG_ENABLED(http2_ph2_transport))
-
 using grpc_event_engine::experimental::EventEngine;
 
 // Experimental : This is just the initial skeleton of class
@@ -112,9 +109,6 @@ using grpc_event_engine::experimental::EventEngine;
 // TODO(tjagtap) : [PH2][P3] : Delete this comment when http2
 // rollout begins
 
-// TODO(akshitpatel) : [PH2][P2] : Choose appropriate size later.
-// TODO(tjagtap) : [PH2][P2] : Consider moving to common code.
-constexpr int kMpscSize = 10;
 constexpr int kIsClient = false;
 
 //////////////////////////////////////////////////////////////////////////////
@@ -924,6 +918,7 @@ auto Http2ServerTransport::ReadAndProcessOneFrame() {
         }
 
         return HandleError(
+            std::nullopt,
             ValueOrHttp2Status<Http2Frame>::TakeStatus(std::move(frame)));
       },
       [this](GRPC_UNUSED Http2Frame frame) {
@@ -933,7 +928,7 @@ auto Http2ServerTransport::ReadAndProcessOneFrame() {
               if (status.IsOk()) {
                 return absl::OkStatus();
               }
-              return self->HandleError(std::move(status));
+              return self->HandleError(std::nullopt, std::move(status));
             });
       }));
 }
@@ -946,19 +941,6 @@ auto Http2ServerTransport::ReadLoop() {
       return Continue();
     });
   }));
-}
-
-auto Http2ServerTransport::OnReadLoopEnded() {
-  GRPC_HTTP2_SERVER_DLOG << "Http2ServerTransport OnReadLoopEnded Factory";
-  return
-      [self = RefAsSubclass<Http2ServerTransport>()](absl::Status status) {
-        // TODO(tjagtap) : [PH2][P2] : Implement this.
-        GRPC_HTTP2_SERVER_DLOG
-            << "Http2ServerTransport OnReadLoopEnded Promise Status=" << status;
-        GRPC_UNUSED absl::Status error_status =
-            self->HandleError(Http2Status::AbslConnectionError(
-                status.code(), std::string(status.message())));
-      };
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -982,20 +964,6 @@ auto Http2ServerTransport::WriteLoop() {
       return Continue();
     });
   }));
-}
-
-auto Http2ServerTransport::OnWriteLoopEnded() {
-  GRPC_HTTP2_SERVER_DLOG << "Http2ServerTransport OnWriteLoopEnded Factory";
-  return
-      [self = RefAsSubclass<Http2ServerTransport>()](absl::Status status) {
-        // TODO(tjagtap) : [PH2][P2] : Implement this.
-        GRPC_HTTP2_SERVER_DLOG
-            << "Http2ServerTransport OnWriteLoopEnded Promise Status="
-            << status;
-        GRPC_UNUSED absl::Status error_status =
-            self->HandleError(Http2Status::AbslConnectionError(
-                status.code(), std::string(status.message())));
-      };
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -1328,7 +1296,7 @@ Http2ServerTransport::Http2ServerTransport(
     std::shared_ptr<EventEngine> event_engine)
     : channelz::DataSource(http2::CreateChannelzSocketNode(
           endpoint.GetEventEngineEndpoint(), channel_args)),
-      outgoing_frames_(kMpscSize),
+      outgoing_frames_(10),
       endpoint_(std::move(endpoint)),
       incoming_headers_(IncomingMetadataTracker::GetPeerString(endpoint_)),
       ping_manager_(std::nullopt),
@@ -1351,8 +1319,6 @@ Http2ServerTransport::Http2ServerTransport(
   general_party_arena->SetContext<EventEngine>(event_engine.get());
   general_party_ = Party::Make(std::move(general_party_arena));
 
-  general_party_->Spawn("ReadLoop", ReadLoop(), OnReadLoopEnded());
-  general_party_->Spawn("WriteLoop", WriteLoop(), OnWriteLoopEnded());
   GRPC_HTTP2_SERVER_DLOG << "Http2ServerTransport Constructor End";
 }
 
@@ -1393,14 +1359,24 @@ void Http2ServerTransport::Orphan() {
 void Http2ServerTransport::SpawnTransportLoops() {
   GRPC_HTTP2_SERVER_DLOG << "Http2ServerTransport::SpawnTransportLoops Begin";
   // MaybeSpawnKeepaliveLoop();
-  SpawnGuardedTransportParty(
-      "FlowControlPeriodicUpdateLoop",
-      UntilTransportClosed(FlowControlPeriodicUpdateLoop()));
+
+  // SpawnGuardedTransportParty(
+  //     "FlowControlPeriodicUpdateLoop",
+  //     UntilTransportClosed(FlowControlPeriodicUpdateLoop()));
 
   if (!TriggerWriteCycleOrHandleError()) {
     return;
   }
-  // SpawnGuardedTransportParty("MultiplexerLoop", MultiplexerLoop());
+  // For Client, write happens before read. So MultiplexerLoop is spawned first.
+  // ReadLoop is spawned after the first write.
+  // For Server, read happens before write. So ReadLoop is spawned first.
+  // MultiplexerLoop is spawned after the first read.
+  SpawnGuardedTransportParty("ReadLoop", ReadLoop());
+
+  // TODO(tjagtap) : [PH2][P0] : Spawn MultiplexerLoop after 1st read completes.
+  // TODO(tjagtap) : [PH2][P0] : Remove this when MultiplexerLoop is implemented
+  SpawnGuardedTransportParty("WriteLoop", WriteLoop());
+
   GRPC_HTTP2_SERVER_DLOG << "Http2ServerTransport::SpawnTransportLoops End";
 }
 
