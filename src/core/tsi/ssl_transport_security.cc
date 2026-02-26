@@ -189,7 +189,8 @@ struct tsi_ssl_handshaker : public tsi_handshaker,
   // Will be set if there is a pending call to tsi_handshaker_next(),
   // or nullopt if not.
   std::optional<HandshakerNextArgs> handshaker_next_args ABSL_GUARDED_BY(mu);
-  void MaybeSetError(std::string error) ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu) {
+  const void MaybeSetError(std::string error)
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu) {
     if (!handshaker_next_args.has_value()) return;
     if (handshaker_next_args->error_ptr == nullptr) return;
     *handshaker_next_args->error_ptr = std::move(error);
@@ -455,11 +456,6 @@ enum ssl_private_key_result_t TlsPrivateKeySignWrapper(
       [&](absl::StatusOr<std::string>* status_or_string)
           ABSL_NO_THREAD_SAFETY_ANALYSIS {
             if (status_or_string->ok()) {
-              if ((*status_or_string)->size() > max_out) {
-                handshaker->MaybeSetError(
-                    "Private Key Signature exceeds maximum allowed size.");
-                return ssl_private_key_failure;
-              }
               handshaker->signed_bytes = std::move(*status_or_string);
               return TlsPrivateKeyOffloadComplete(ssl, out, out_len, max_out);
             } else {
@@ -2233,7 +2229,6 @@ static tsi_result ssl_handshaker_write_output_buffer(tsi_handshaker* self,
 
 static tsi_result ssl_handshaker_next_impl(tsi_ssl_handshaker* self)
     ABSL_EXCLUSIVE_LOCKS_REQUIRED(&self->mu) {
-  std::string* error = self->handshaker_next_args->error_ptr;
   // If there are received bytes, process them first.
   tsi_result status = TSI_OK;
   size_t bytes_written = 0;
@@ -2254,17 +2249,18 @@ static tsi_result ssl_handshaker_next_impl(tsi_ssl_handshaker* self)
           remaining_bytes_to_write_to_openssl_size;
       status = ssl_handshaker_process_bytes_from_peer(
           self, remaining_bytes_to_write_to_openssl, &bytes_written_to_openssl,
-          error);
+          self->handshaker_next_args->error_ptr);
       // As long as the BIO is full, drive the SSL handshake to consume bytes
       // from the BIO. If the SSL handshake returns any bytes, write them to
       // the peer.
       while (status == TSI_DRAIN_BUFFER) {
-        status =
-            ssl_handshaker_write_output_buffer(self, &bytes_written, error);
+        status = ssl_handshaker_write_output_buffer(
+            self, &bytes_written, self->handshaker_next_args->error_ptr);
         if (status != TSI_OK) {
           return status;
         }
-        status = ssl_handshaker_do_handshake(self, error);
+        status = ssl_handshaker_do_handshake(
+            self, self->handshaker_next_args->error_ptr);
       }
       // Move the pointer to the first byte not yet successfully written to
       // the BIO.
@@ -2287,8 +2283,8 @@ static tsi_result ssl_handshaker_next_impl(tsi_ssl_handshaker* self)
     // During the PrivateKeyOffload signature, an empty call to
     // ssl_handshaker_do_handshake needs to be forced  after the async offload
     // has completed.
-    status = ssl_handshaker_do_handshake(self, error);
-    self->signed_bytes = "";
+    status = ssl_handshaker_do_handshake(self,
+                                         self->handshaker_next_args->error_ptr);
 #endif
   }
 
@@ -2296,7 +2292,8 @@ static tsi_result ssl_handshaker_next_impl(tsi_ssl_handshaker* self)
     return status;
   }
   // Get bytes to send to the peer, if available.
-  status = ssl_handshaker_write_output_buffer(self, &bytes_written, error);
+  status = ssl_handshaker_write_output_buffer(
+      self, &bytes_written, self->handshaker_next_args->error_ptr);
   if (status != TSI_OK) {
     return status;
   }
@@ -2312,8 +2309,8 @@ static tsi_result ssl_handshaker_next_impl(tsi_ssl_handshaker* self)
     // bytes from the peer that must be processed.
     unsigned char* unused_bytes = nullptr;
     size_t unused_bytes_size = 0;
-    status =
-        ssl_bytes_remaining(self, &unused_bytes, &unused_bytes_size, error);
+    status = ssl_bytes_remaining(self, &unused_bytes, &unused_bytes_size,
+                                 self->handshaker_next_args->error_ptr);
     if (status != TSI_OK) {
       return status;
     }
@@ -2321,12 +2318,13 @@ static tsi_result ssl_handshaker_next_impl(tsi_ssl_handshaker* self)
         self->handshaker_next_args->original_received_bytes_size) {
       LOG(ERROR) << "More unused bytes than received bytes.";
       gpr_free(unused_bytes);
-      if (error != nullptr) *error = "More unused bytes than received bytes.";
+      self->MaybeSetError("More unused bytes than received bytes.");
       return TSI_INTERNAL_ERROR;
     }
     status = ssl_handshaker_result_create(
         self, unused_bytes, unused_bytes_size,
-        &self->handshaker_next_args->handshaker_result, error);
+        &self->handshaker_next_args->handshaker_result,
+        self->handshaker_next_args->error_ptr);
     if (status == TSI_OK) {
       // Indicates that the handshake has completed and that a
       // handshaker_result has been created.

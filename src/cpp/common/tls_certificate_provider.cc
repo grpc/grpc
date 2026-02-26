@@ -25,6 +25,7 @@
 #include "src/core/credentials/transport/tls/grpc_tls_certificate_provider.h"
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/match.h"
+#include "absl/status/statusor.h"
 
 namespace grpc {
 namespace experimental {
@@ -41,7 +42,7 @@ grpc_tls_identity_pairs* CreatePairsCore(
   return pairs_core;
 }
 
-grpc_tls_identity_pairs* CreatePairsCore(
+absl::StatusOr<grpc_tls_identity_pairs*> CreatePairsCore(
     std::vector<IdentityKeyOrSignerCertPair>
         identity_key_or_signer_cert_pairs) {
   grpc_tls_identity_pairs* pairs_core = grpc_tls_identity_pairs_create();
@@ -60,7 +61,7 @@ grpc_tls_identity_pairs* CreatePairsCore(
         });
     if (!status.ok()) {
       grpc_tls_identity_pairs_destroy(pairs_core);
-      return nullptr;
+      return status;
     }
   }
   return pairs_core;
@@ -147,13 +148,11 @@ absl::Status InMemoryCertificateProvider::UpdateIdentityKeyCertPair(
     std::vector<IdentityKeyOrSignerCertPair>
         identity_key_or_signer_cert_pairs) {
   GRPC_CHECK(!identity_key_or_signer_cert_pairs.empty());
-  auto* pairs_core =
+  auto pairs_core_or =
       CreatePairsCore(std::move(identity_key_or_signer_cert_pairs));
-  if (pairs_core == nullptr) {
-    return absl::InternalError("Unable to update identity certificate");
-  }
+  if (!pairs_core_or.ok()) return pairs_core_or.status();
   return grpc_tls_certificate_provider_in_memory_set_identity_certificate(
-             c_provider_, pairs_core)
+             c_provider_, *pairs_core_or)
              ? absl::OkStatus()
              : absl::InternalError("Unable to update identity certificate");
 }

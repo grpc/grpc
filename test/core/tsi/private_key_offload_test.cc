@@ -183,12 +183,7 @@ class AsyncTestPrivateKeySigner final
     return std::make_shared<AsyncSigningHandle>();
   }
 
-  void Cancel(std::shared_ptr<AsyncSigningHandle> /*handle*/) override {
-    LOG(ERROR) << "Here";
-    if (!was_cancelled_.exchange(true)) {
-      notification_.Notify();
-    }
-  }
+  void Cancel(std::shared_ptr<AsyncSigningHandle> /*handle*/) override {}
 
   bool WasCancelled() { return was_cancelled_.load(); }
 
@@ -197,7 +192,6 @@ class AsyncTestPrivateKeySigner final
       event_engine_;
   bssl::UniquePtr<EVP_PKEY> pkey_;
   Mode mode_;
-  absl::Notification notification_;
   std::atomic<bool> was_cancelled_{false};
 };
 
@@ -361,7 +355,6 @@ class SslOffloadTsiTestFixture {
   tsi_tls_version tls_version_;
   bool expect_success_ = false;
   bool expect_success_on_client_ = false;
-  Mutex mu_;
 };
 
 struct tsi_test_fixture_vtable SslOffloadTsiTestFixture::kVtable = {
@@ -389,7 +382,6 @@ class PrivateKeyOffloadTest : public ::testing::TestWithParam<tsi_tls_version> {
     event_engine_->UnsetGlobalHooks();
     WaitForSingleOwner(std::move(event_engine_));
     grpc_shutdown_blocking();
-    event_engine_.reset();
   }
 
   std::shared_ptr<grpc_event_engine::experimental::FuzzingEventEngine>
