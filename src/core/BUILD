@@ -227,6 +227,7 @@ grpc_cc_library(
         "absl/utility",
     ],
     deps = [
+        "channel_args",
         "context_list_entry",
         "grpc_check",
         "resolved_address",
@@ -1119,6 +1120,7 @@ grpc_cc_library(
         "//:gpr",
         "//:grpc_trace",
         "//:promise_upb",
+        "//:promise_upbdefs",
     ],
 )
 
@@ -9306,6 +9308,7 @@ grpc_cc_library(
     hdrs = [
         "ext/transport/chaotic_good/tcp_ztrace_collector.h",
     ],
+    external_deps = ["absl/strings"],
     deps = [
         "chaotic_good_frame_header",
         "chaotic_good_tcp_frame_header",
@@ -9393,6 +9396,7 @@ grpc_cc_library(
     external_deps = [
         "absl/cleanup",
         "absl/container:inlined_vector",
+        "absl/flags:flag",
         "absl/strings",
         "absl/time",
         "absl/log",
@@ -9431,6 +9435,7 @@ grpc_cc_library(
         "transport_framing_endpoint_extension",
         "try_seq",
         "//:channelz",
+        "//:config_vars",
         "//:event_engine_base_hdrs",
         "//:gpr",
         "//:promise",

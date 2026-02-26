@@ -173,7 +173,7 @@
   test_tags: ["core_end2end_test"]
 - name: max_inflight_pings_strict_limit
   description: If set, the max inflight pings limit is strictly enforced.
-  expiry: 2026/03/10
+  expiry: 2026/05/10
   owner: akshitpatel@google.com
   test_tags: []
 - name: metadata_publish_to_app_tag
@@ -235,7 +235,7 @@
     Use promises for the http2 client transport. We have kept client and
     server transport experiments separate to help with smoother roll outs
     and also help with interop testing.
-  expiry: 2026/08/30
+  expiry: 2027/01/16
   owner: tjagtap@google.com
   test_tags: ["core_end2end_test", "cpp_end2end_test"]
   allow_in_fuzzing_config: true
@@ -244,7 +244,7 @@
     Use promises for the http2 server transport. We have kept client and
     server transport experiments separate to help with smoother roll outs
     and also help with interop testing.
-  expiry: 2026/08/30
+  expiry: 2027/01/16
   owner: tjagtap@google.com
   test_tags: []
   allow_in_fuzzing_config: true

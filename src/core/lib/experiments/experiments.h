@@ -78,14 +78,16 @@ inline bool IsEventEngineClientEnabled() { return true; }
 inline bool IsEventEngineDnsEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_DNS_NON_CLIENT_CHANNEL
 inline bool IsEventEngineDnsNonClientChannelEnabled() { return true; }
-inline bool IsEventEngineForkEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_FORK
+inline bool IsEventEngineForkEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_LISTENER
 inline bool IsEventEngineListenerEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_CALLBACK_CQ
 inline bool IsEventEngineCallbackCqEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_FOR_ALL_OTHER_ENDPOINTS
 inline bool IsEventEngineForAllOtherEndpointsEnabled() { return true; }
-inline bool IsEventEnginePollerForPythonEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_POLLER_FOR_PYTHON
+inline bool IsEventEnginePollerForPythonEnabled() { return true; }
 inline bool IsFailRecvMetadataOnDeadlineExceededEnabled() { return false; }
 inline bool IsFreeLargeAllocatorEnabled() { return false; }
 inline bool IsFuseFiltersEnabled() { return false; }
@@ -154,14 +156,16 @@ inline bool IsEventEngineClientEnabled() { return true; }
 inline bool IsEventEngineDnsEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_DNS_NON_CLIENT_CHANNEL
 inline bool IsEventEngineDnsNonClientChannelEnabled() { return true; }
-inline bool IsEventEngineForkEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_FORK
+inline bool IsEventEngineForkEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_LISTENER
 inline bool IsEventEngineListenerEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_CALLBACK_CQ
 inline bool IsEventEngineCallbackCqEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_FOR_ALL_OTHER_ENDPOINTS
 inline bool IsEventEngineForAllOtherEndpointsEnabled() { return true; }
-inline bool IsEventEnginePollerForPythonEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_POLLER_FOR_PYTHON
+inline bool IsEventEnginePollerForPythonEnabled() { return true; }
 inline bool IsFailRecvMetadataOnDeadlineExceededEnabled() { return false; }
 inline bool IsFreeLargeAllocatorEnabled() { return false; }
 inline bool IsFuseFiltersEnabled() { return false; }
@@ -230,14 +234,16 @@ inline bool IsEventEngineClientEnabled() { return true; }
 inline bool IsEventEngineDnsEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_DNS_NON_CLIENT_CHANNEL
 inline bool IsEventEngineDnsNonClientChannelEnabled() { return true; }
-inline bool IsEventEngineForkEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_FORK
+inline bool IsEventEngineForkEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_LISTENER
 inline bool IsEventEngineListenerEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_CALLBACK_CQ
 inline bool IsEventEngineCallbackCqEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_FOR_ALL_OTHER_ENDPOINTS
 inline bool IsEventEngineForAllOtherEndpointsEnabled() { return true; }
-inline bool IsEventEnginePollerForPythonEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_POLLER_FOR_PYTHON
+inline bool IsEventEnginePollerForPythonEnabled() { return true; }
 inline bool IsFailRecvMetadataOnDeadlineExceededEnabled() { return false; }
 inline bool IsFreeLargeAllocatorEnabled() { return false; }
 inline bool IsFuseFiltersEnabled() { return false; }
