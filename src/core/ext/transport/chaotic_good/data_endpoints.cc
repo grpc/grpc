@@ -25,6 +25,7 @@
 #include <utility>
 
 #include "src/core/channelz/property_list.h"
+#include "src/core/config/config_vars.h"
 #include "src/core/ext/transport/chaotic_good/tcp_frame_header.h"
 #include "src/core/ext/transport/chaotic_good/tcp_ztrace_collector.h"
 #include "src/core/ext/transport/chaotic_good/transport_context.h"
@@ -57,7 +58,7 @@ namespace data_endpoints_detail {
 
 namespace {
 const uint64_t kSecurityFramePayloadTag = 0;
-}
+}  // namespace
 
 ///////////////////////////////////////////////////////////////////////////////
 // OutputBuffers
@@ -291,9 +292,11 @@ void OutputBuffers::Schedule() {
         break;
       }
       ztrace_collector_->Append([this, message, selected_reader]() {
-        return WriteLargeFrameHeaderTrace{message->payload_tag,
-                                          WriteSizeForFrame(*message),
-                                          *selected_reader};
+        auto& frame =
+            absl::ConvertVariantTo<FrameInterface&>(message->frame->payload);
+        return WriteLargeFrameHeaderTrace{
+            message->payload_tag, WriteSizeForFrame(*message), *selected_reader,
+            frame.MakeHeader().stream_id};
       });
       SchedulingData& scheduling = scheduling_data[*selected_reader];
       scheduling.queued_bytes += WriteSizeForFrame(*message);
@@ -626,7 +629,7 @@ class MetricsCollector
           GRPC_LATENT_SEE_SCOPE("MetricsCollector::WriteEventSink");
           ztrace_collector->Append([event, timestamp, &metrics,
                                     telemetry_info = self->telemetry_info_,
-                                    &reader]() {
+                                    reader]() {
             EndpointWriteMetricsTrace trace{timestamp, event, {}, reader->id()};
             trace.metrics.reserve(metrics.size());
             for (const auto [id, value] : metrics) {
@@ -747,7 +750,7 @@ auto Endpoint::WriteLoop(RefCountedPtr<EndpointContext> ctx) {
             "DataEndpointPullPayload",
             Race(PullDataPayload(ctx),
                  Map(ctx->secure_frame_queue->Next(),
-                     [](auto x) -> ValueOrFailure<SliceBuffer> {
+                     [](SliceBuffer x) -> ValueOrFailure<SliceBuffer> {
                        return std::move(x);
                      }))),
         [ctx, metrics_collector](SliceBuffer buffer) {
@@ -755,8 +758,10 @@ auto Endpoint::WriteLoop(RefCountedPtr<EndpointContext> ctx) {
               WriteBytesToEndpointTrace{buffer.Length(), ctx->id});
           PromiseEndpoint::WriteArgs write_args;
           auto now = Timestamp::Now();
+          static const Duration kMetricsUpdateInterval = Duration::Milliseconds(
+              ConfigVars::Get().ChaoticGoodMetricsUpdateIntervalMs());
           if (metrics_collector != nullptr &&
-              now - ctx->last_metrics_update > Duration::Milliseconds(100)) {
+              now - ctx->last_metrics_update > kMetricsUpdateInterval) {
             ctx->last_metrics_update = now;
             write_args.set_metrics_sink(metrics_collector->MakeWriteEventSink(
                 buffer.Length(), ctx->reader, ctx->ztrace_collector));
