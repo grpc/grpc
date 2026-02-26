@@ -37,7 +37,12 @@ FUNCTION_NAME="${FUNCTION_PREFIX}-$(uuidgen)"
 function cleanup() {
   # Wait for logs to quiesce.
   sleep "${LOG_QUIESCE_SECONDS}"
-  gcloud functions logs read "${FUNCTION_NAME}" || true
+  gcloud functions logs read "${FUNCTION_NAME}" > log.txt || true
+  cat log.txt
+  if grep -q "SIGABRT" log.txt; then
+    echo "Found SIGABRT in logs"
+    exit 1
+  fi
   (yes || true) | gcloud functions delete "${FUNCTION_NAME}"
 }
 
@@ -51,5 +56,5 @@ HTTP_URL=$(echo "${DEPLOY_OUTPUT}" | grep "url: " | awk '{print $2;}')
 # Send Requests
 for _ in $(seq 1 "${REQUEST_COUNT}"); do
   GCP_IDENTITY_TOKEN=$(gcloud auth print-identity-token 2>/dev/null);
-  curl -v -H "Authorization: Bearer $GCP_IDENTITY_TOKEN" "${HTTP_URL}"
+  curl --fail -v -H "Authorization: Bearer $GCP_IDENTITY_TOKEN" "${HTTP_URL}"
 done
