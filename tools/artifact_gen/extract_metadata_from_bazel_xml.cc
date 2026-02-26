@@ -20,6 +20,8 @@
 #include <string>
 #include <vector>
 
+#include "include/nlohmann/json.hpp"
+#include "pugixml.hpp"
 #include "absl/algorithm/container.h"
 #include "absl/flags/flag.h"
 #include "absl/log/check.h"
@@ -30,8 +32,6 @@
 #include "absl/strings/str_replace.h"
 #include "absl/strings/str_split.h"
 #include "absl/strings/string_view.h"
-#include "include/nlohmann/json.hpp"
-#include "pugixml.hpp"
 
 ABSL_FLAG(std::vector<std::string>, target_query, {},
           "Filename containing bazel query results for some set of targets");
@@ -431,6 +431,14 @@ class ArtifactGen {
   void ExpandUpbProtoLibraryRules() {
     const std::string kGenUpbRoot = "//:src/core/ext/upb-gen/";
     const std::string kGenUpbdefsRoot = "//:src/core/ext/upbdefs-gen/";
+    const std::map<std::string, std::string> kRepoNameMapping{
+        {"@@cel-spec+", "@dev_cel"},
+        {"@@googleapis+", "@com_google_googleapis"},
+        {"@@xds+", "@com_github_cncf_xds"},
+        {"@@protoc-gen-validate+", "@com_envoyproxy_protoc_gen_validate"},
+        {"@@opencensus-proto+", "opencensus_proto"},
+        {"@@envoy_api+", "@envoy_api"},
+    };
     const std::map<std::string, std::string> kExternalLinks{
         {"@com_google_protobuf//", "src/"},
         {"@com_google_googleapis//", ""},
@@ -458,19 +466,39 @@ class ArtifactGen {
       };
       // populate the upb_c_proto_library rule with pre-generated upb headers
       // and sources using proto_rule
-      const auto protos = GetTransitiveProtos(original_dep);
-      CHECK_NE(protos.size(), 0u);
-      std::vector<std::string> files;
-      for (std::string proto_src : protos) {
+      auto get_prefix_to_strip =
+          [&kExternalLinks, &kRepoNameMapping,
+           &name](const std::string& proto_src) -> std::string {
         for (const auto& [prefix, expected_dir] : kExternalLinks) {
           if (absl::StartsWith(proto_src, prefix)) {
             std::string prefix_to_strip = prefix + expected_dir;
             CHECK(absl::StartsWith(proto_src, prefix_to_strip))
                 << "Source file " << proto_src << " in upb rule " << name
                 << " does not have the expected prefix " << prefix_to_strip;
-            proto_src = proto_src.substr(prefix_to_strip.length());
+            return prefix_to_strip;
           }
         }
+        for (const auto& [canonical_repo, apparent_repo] : kRepoNameMapping) {
+          if (absl::StartsWith(proto_src, canonical_repo)) {
+            const std::string apparent_repo =
+                kRepoNameMapping.at(canonical_repo) + "//";
+            std::string prefix_to_strip =
+                canonical_repo + "//" + kExternalLinks.at(apparent_repo);
+            CHECK(absl::StartsWith(proto_src, prefix_to_strip))
+                << "Source file " << proto_src << " in upb rule " << name
+                << " does not have the expected prefix " << prefix_to_strip;
+            return prefix_to_strip;
+          }
+        }
+        return "";
+      };
+      const auto protos = GetTransitiveProtos(original_dep);
+      CHECK_NE(protos.size(), 0u);
+      std::vector<std::string> files;
+      for (std::string proto_src : protos) {
+        const std::string prefix_to_strip = get_prefix_to_strip(proto_src);
+        // A no-op if this isn't a proto target.
+        proto_src = proto_src.substr(prefix_to_strip.length());
         CHECK(!absl::StartsWith(proto_src, "@"))
             << name << " is unknown workspace; proto_src=" << proto_src;
         const std::string proto_src_file =
@@ -549,11 +577,11 @@ class ArtifactGen {
       }
       // if any tags that restrict platform compatibility are present,
       // generate the "platforms" field accordingly
-      // TODO(jtattermusch): there is also a "no_linux" tag, but we cannot take
-      // it into account as it is applied by grpc_cc_test when poller expansion
-      // is made (for tests where uses_polling=true). So for now, we just
-      // assume all tests are compatible with linux and ignore the "no_linux"
-      // tag completely.
+      // TODO(jtattermusch): there is also a "no_linux" tag, but we cannot
+      // take it into account as it is applied by grpc_cc_test when poller
+      // expansion is made (for tests where uses_polling=true). So for now, we
+      // just assume all tests are compatible with linux and ignore the
+      // "no_linux" tag completely.
       if (absl::c_contains(bazel_rule.tags, "no_windows") ||
           absl::c_contains(bazel_rule.tags, "no_mac")) {
         nlohmann::json platforms = nlohmann::json::array();
@@ -745,10 +773,12 @@ class ArtifactGen {
   // All other intermediate dependencies will be merged, which means their
   // source file, headers, etc. will be collected into one build target. This
   // step of processing will greatly reduce the complexity of the generated
-  // build specifications for other build systems, like CMake, Make, setuptools.
+  // build specifications for other build systems, like CMake, Make,
+  // setuptools.
   //
   // The final build metadata are:
-  // * _TRANSITIVE_DEPS: all the transitive dependencies including intermediate
+  // * _TRANSITIVE_DEPS: all the transitive dependencies including
+  // intermediate
   //                     targets;
   // * _COLLAPSED_DEPS:  dependencies that fits our requirement above, and it
   //                     will remove duplicated items and produce the shortest
@@ -756,7 +786,8 @@ class ArtifactGen {
   // * _COLLAPSED_SRCS:  the merged source files;
   // * _COLLAPSED_PUBLIC_HEADERS: the merged public headers;
   // * _COLLAPSED_HEADERS: the merged non-public headers;
-  // * _EXCLUDE_DEPS: intermediate targets to exclude when performing collapsing
+  // * _EXCLUDE_DEPS: intermediate targets to exclude when performing
+  // collapsing
   //      of sources and dependencies.
   //
   // For the collapsed_deps, the algorithm improved cases like:
@@ -841,8 +872,8 @@ class ArtifactGen {
     // Compute the final source files and headers for this build target whose
     // name is `rule_name` (input argument of this function).
     //
-    // Imaging a public target PX has transitive deps [IA, IB, PY, IC, PZ]. PX,
-    // PY and PZ are public build targets. And IA, IB, IC are intermediate
+    // Imaging a public target PX has transitive deps [IA, IB, PY, IC, PZ].
+    // PX, PY and PZ are public build targets. And IA, IB, IC are intermediate
     // targets. In addition, PY depends on IC.
     //
     // Translate the condition into dependency graph:

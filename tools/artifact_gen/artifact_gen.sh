@@ -16,15 +16,23 @@
 
 set -e
 
+BAZEL_QUERY_WITH_BZLMOD=(tools/bazel query --noimplicit_deps --output=xml --enable_bzlmod --noenable_workspace --)
+BAZEL_QUERY_WITH_WORKSPACE=(tools/bazel query --noimplicit_deps --output=xml --noenable_bzlmod --enable_workspace --)
+
 # PHASE 0: query bazel for information we'll need
 cd $(dirname $0)/../..
-tools/bazel query --noimplicit_deps --output=xml 'deps(//test/...)' > tools/artifact_gen/test_deps.xml
-tools/bazel query --noimplicit_deps --output=xml 'deps(//:all)' > tools/artifact_gen/root_all_deps.xml
-tools/bazel query --noimplicit_deps --output=xml 'deps(//src/compiler/...)' > tools/artifact_gen/compiler_deps.xml
-tools/bazel query --noimplicit_deps --output=xml 'kind(alias, "//third_party:*")' > tools/artifact_gen/third_party_alias_deps.xml
-tools/bazel query --noimplicit_deps --output=xml 'deps(kind("^proto_library", @envoy_api//envoy/...))' > tools/artifact_gen/envoy_api_proto_deps.xml
-tools/bazel query --noimplicit_deps --output=xml 'deps("@com_google_protobuf//upb:generated_code_support")' > tools/artifact_gen/upb_deps.xml
-tools/bazel query --noimplicit_deps --output=xml 'kind(http_archive, //external:*)' > tools/artifact_gen/external_http_archive_deps.xml
+"${BAZEL_QUERY_WITH_BZLMOD[@]}" 'deps(//test/...)' > tools/artifact_gen/test_deps.xml
+"${BAZEL_QUERY_WITH_BZLMOD[@]}" 'deps(//:all)' > tools/artifact_gen/root_all_deps.xml
+"${BAZEL_QUERY_WITH_BZLMOD[@]}" 'deps(//src/compiler/...)' > tools/artifact_gen/compiler_deps.xml
+"${BAZEL_QUERY_WITH_BZLMOD[@]}" 'kind(alias, "//third_party:*")' > tools/artifact_gen/third_party_alias_deps.xml
+"${BAZEL_QUERY_WITH_BZLMOD[@]}" 'deps(kind("^proto_library", @envoy_api//envoy/...))' > tools/artifact_gen/envoy_api_proto_deps.xml
+"${BAZEL_QUERY_WITH_BZLMOD[@]}" 'deps("@com_google_protobuf//upb:generated_code_support")' > tools/artifact_gen/upb_deps.xml
+# TODO(weizheyuan): Find a new approach to extract http_archive() metadata.
+#
+# `//external:*` is a pseudo target which is not available in bzlmod.
+# The closest we can do in bazel 8 is `bazel mod show_repo`. Disable bzlmod
+# for this specific command until we find a better solution.
+"${BAZEL_QUERY_WITH_WORKSPACE[@]}" 'kind(http_archive, //external:*)' > tools/artifact_gen/external_http_archive_deps.xml
 
 # PHASE 1: generate artifacts
 cd tools/artifact_gen
