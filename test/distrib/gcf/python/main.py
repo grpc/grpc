@@ -15,13 +15,13 @@
 import functions_framework
 from google.cloud import pubsub_v1
 
-ps_client = pubsub_v1.PublisherClient()
 _PROJECT_ID = "grpc-testing"
 _PUBSUB_TOPIC = "gcf-distribtest-topic"
 
 
 @functions_framework.http
 def test_publish(request):
+    ps_client = pubsub_v1.PublisherClient()
     topic_path = ps_client.topic_path(_PROJECT_ID, _PUBSUB_TOPIC)
     message = '{"function": "TEST"}'
     message_bytes = message.encode("utf-8")
