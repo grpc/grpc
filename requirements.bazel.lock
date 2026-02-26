@@ -97,7 +97,7 @@ twisted==24.11.0
     # via -r requirements.bazel.txt
 typeguard==4.4.2
     # via -r requirements.bazel.txt
-typing-extensions==4.12.2
+typing-extensions==4.13.2
     # via
     #   -r requirements.bazel.txt
     #   automat
