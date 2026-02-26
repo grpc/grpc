@@ -1104,7 +1104,7 @@ absl::Status Http2ClientTransport::DequeueStreamFrames(
   // multiplexer loop as the stream will never be writable again. Additionally,
   // the other two stream refs, CallHandler OnDone and OutboundLoop will be
   // dropped by Callv3 triggering cleaning up the stream object.
-  if (result.InitialMetadataDequeued()) {
+  if (result.IsInitialMetadataDequeued()) {
     GRPC_HTTP2_CLIENT_DLOG
         << "Http2ClientTransport::DequeueStreamFrames InitialMetadataDequeued "
            "stream_id = "
@@ -1114,7 +1114,7 @@ absl::Status Http2ClientTransport::DequeueStreamFrames(
     AddToStreamList(stream);
   }
 
-  if (result.HalfCloseDequeued()) {
+  if (result.IsHalfCloseDequeued()) {
     GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport::DequeueStreamFrames "
                               "HalfCloseDequeued stream_id = "
                            << stream->GetStreamId();
@@ -1125,7 +1125,7 @@ absl::Status Http2ClientTransport::DequeueStreamFrames(
                                            /*close_writes=*/true});
     }
   }
-  if (result.ResetStreamDequeued()) {
+  if (result.IsResetStreamDequeued()) {
     GRPC_HTTP2_CLIENT_DLOG
         << "Http2ClientTransport::DequeueStreamFrames ResetStreamDequeued "
            "stream_id = "
