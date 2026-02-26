@@ -79,7 +79,8 @@ class Ph2InsecureFixture : public InsecureFixture {
   "|RetryHttp2Tests.RetryTransparentMaxConcurrentStreams"    \
   "|RetryHttp2Tests.HighInitialSeqno"                        \
   "|RetryHttp2Tests.CancelDuringDelay"                       \
-  "|RetryTests.CancelDuringDelay"
+  "|RetryTests.CancelDuringDelay"                            \
+  "|CoreEnd2endTests.CancelAfterAccept"
 
 #define LARGE_METADATA_SUITE                                                   \
   "|Http2SingleHopTests.RequestWithLargeMetadataUnderSoftLimit"                \
