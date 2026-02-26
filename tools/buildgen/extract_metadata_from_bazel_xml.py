@@ -37,7 +37,8 @@ from typing import Any, Dict, Iterable, List, Optional
 import xml.etree.ElementTree as ET
 
 import build_cleaner
-from parse_http_archives import parse_http_archives, CANONICAL_TO_APPARENT_NAME_MAPPING, HttpArchive, HttpArchives
+from parse_http_archives import CANONICAL_TO_APPARENT_NAME_MAPPING
+from parse_http_archives import parse_http_archives
 
 BuildMetadata = Dict[str, Any]
 BuildDict = Dict[str, BuildMetadata]
@@ -157,6 +158,7 @@ def _bazel_mod_show_repo() -> StarlarkLike:
         # "com_google_googleapis_imports" in the usage
         # at https://bcr.bazel.build/modules/envoy_api/0.0.0-20251216-6ef568c/MODULE.bazel:45:31
         return e.output
+
 
 def _bazel_query_xml_tree(query: str) -> ET.Element:
     """Get xml output of bazel query invocation, parsed as XML tree"""
@@ -1114,7 +1116,9 @@ def _generate_build_extra_metadata_for_tests(
     return test_metadata
 
 
-def _parse_http_archives(bazel_output: StarlarkLike) -> "List[ExternalProtoLibrary]":
+def _parse_http_archives(
+    bazel_output: StarlarkLike,
+) -> "List[ExternalProtoLibrary]":
     """Parse Bazel http_archive rule into ExternalProtoLibrary objects."""
     http_archives = parse_http_archives(bazel_output)
     result = []
@@ -1461,9 +1465,7 @@ _BAZEL_DEPS_QUERIES = [
 bazel_rules = {}
 for query in _BAZEL_DEPS_QUERIES:
     bazel_rules.update(
-        _extract_rules_from_bazel_xml(
-            _bazel_query_xml_tree(query)
-        )
+        _extract_rules_from_bazel_xml(_bazel_query_xml_tree(query))
     )
 
 # Step 1.5: The sources for UPB protos are pre-generated, so we want

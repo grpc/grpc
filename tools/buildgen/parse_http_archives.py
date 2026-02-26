@@ -20,11 +20,10 @@ import base64
 import json
 import re
 import sys
-from typing import Any, Dict, Iterable, List, Optional
+from typing import Any, Dict, List 
 
 HttpArchive = Dict[str, Any]
 HttpArchives = List[HttpArchive]
-RepoMapping = Dict[str, str]
 
 CANONICAL_TO_APPARENT_NAME_MAPPING = {
     "@@cel-spec+": "@dev_cel",
@@ -34,6 +33,7 @@ CANONICAL_TO_APPARENT_NAME_MAPPING = {
     "@@opencensus-proto+": "opencensus_proto",
     "@@envoy_api+": "@envoy_api",
 }
+
 
 # TODO(weizheyuan): Maybe use a mature library for SRI
 # parsing so we can support other digest algorithms.
@@ -49,6 +49,7 @@ def _integrity_to_sha256(integrity: str) -> str:
     sha256_bytes = base64.b64decode(sha256_base64)
     return sha256_bytes.hex()
 
+
 class KeywordVisitor(ast.NodeVisitor):
     def __init__(self):
         self.http_archive = dict()
@@ -57,9 +58,11 @@ class KeywordVisitor(ast.NodeVisitor):
         if node.arg == "name":
             # Canonical name
             canonical_repo = node.value.value
-            apparent_repo = CANONICAL_TO_APPARENT_NAME_MAPPING["@@" + canonical_repo]
+            apparent_repo = CANONICAL_TO_APPARENT_NAME_MAPPING[
+                "@@" + canonical_repo
+            ]
             self.http_archive["canonical_repo"] = canonical_repo
-            self.http_archive["name"] = apparent_repo[1:] # strip leading '@'
+            self.http_archive["name"] = apparent_repo[1:]  # strip leading '@'
 
         elif node.arg == "url":
             self.http_archive["urls"] = [node.value.value]
@@ -73,22 +76,24 @@ class KeywordVisitor(ast.NodeVisitor):
             self.http_archive["sha256"] = node.value.value
         elif node.arg == "strip_prefix":
             self.http_archive["strip_prefix"] = node.value.value
-        
+
 
 class ModuleVisitor(ast.NodeVisitor):
     def __init__(self):
         self.http_archives = list()
-    
+
     def visit_Call(self, node):
         sub_visitor = KeywordVisitor()
         sub_visitor.visit(node)
         self.http_archives.append(sub_visitor.http_archive)
+
 
 def parse_http_archives(bazel_output: str) -> HttpArchives:
     module = ast.parse(bazel_output)
     visitor = ModuleVisitor()
     visitor.visit(module)
     return visitor.http_archives
+
 
 # When invoked as a script, read starlark-like input from `bazel mod show_repo`
 # and write json to stdout.
