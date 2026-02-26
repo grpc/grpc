@@ -247,6 +247,7 @@ module GRPC
 
       @call.run_batch(ops)
       set_output_stream_done
+      req
     end
 
     # remote_read reads a response from the remote endpoint.
