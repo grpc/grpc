@@ -2037,9 +2037,6 @@ static tsi_result ssl_handshaker_result_create(tsi_ssl_handshaker* handshaker,
     if (handshaker != nullptr) handshaker->MaybeSetError("invalid argument");
     return TSI_INVALID_ARGUMENT;
   }
-  if (!handshaker->handshaker_next_args.has_value()) {
-    return TSI_INTERNAL_ERROR;
-  }
   tsi_ssl_handshaker_result* result =
       grpc_core::Zalloc<tsi_ssl_handshaker_result>();
   result->base.vtable = &handshaker_result_vtable;
