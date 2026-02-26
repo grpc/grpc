@@ -22,7 +22,7 @@ if(gRPC_SSL_PROVIDER STREQUAL "module")
   endif()
 
   if(EXISTS "${BORINGSSL_ROOT_DIR}/CMakeLists.txt")
-    if(MSVC)
+    if(CMAKE_GENERATOR MATCHES "Visual Studio" OR CMAKE_GENERATOR MATCHES "Ninja")
       if(CMAKE_VERSION VERSION_LESS 3.13)
         # Visual Studio build with assembly optimizations is broken for older
         # version of CMake (< 3.13).
