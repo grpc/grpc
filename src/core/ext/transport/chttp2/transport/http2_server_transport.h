@@ -405,9 +405,9 @@ class Http2ServerTransport final : public ServerTransport,
   //////////////////////////////////////////////////////////////////////////////
   // Settings
 
-  // auto WaitForSettingsTimeoutOnDone();
-  // void MaybeSpawnWaitForSettingsTimeout();
-  // void EnforceLatestIncomingSettings();
+  void EnforceLatestIncomingSettings();
+  auto WaitForSettingsTimeoutOnDone();
+  void MaybeSpawnWaitForSettingsTimeout();
 
   //////////////////////////////////////////////////////////////////////////////
   // Flow Control and BDP
