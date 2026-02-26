@@ -131,6 +131,10 @@ class WriteBufferTracker {
 
   std::string DebugString() const;
 
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Http2Frame* MutableLastRegularFrame() {
+    return regular_frames_.empty() ? nullptr : &regular_frames_.back();
+  }
+
   struct SerializeStats {
     bool& should_reset_ping_clock;
   };
@@ -206,6 +210,10 @@ class FrameSender {
 
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION void ReserveRegularFrames(size_t size) {
     tracker_.ReserveRegularFrames(size);
+  }
+
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Http2Frame* MutableLastRegularFrame() {
+    return tracker_.MutableLastRegularFrame();
   }
 
  private:
