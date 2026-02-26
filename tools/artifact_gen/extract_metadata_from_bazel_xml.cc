@@ -480,10 +480,8 @@ class ArtifactGen {
         }
         for (const auto& [canonical_repo, apparent_repo] : kRepoNameMapping) {
           if (absl::StartsWith(proto_src, canonical_repo)) {
-            const std::string apparent_repo =
-                kRepoNameMapping.at(canonical_repo) + "//";
             std::string prefix_to_strip =
-                canonical_repo + "//" + kExternalLinks.at(apparent_repo);
+                canonical_repo + "//" + kExternalLinks.at(apparent_repo + "//");
             CHECK(absl::StartsWith(proto_src, prefix_to_strip))
                 << "Source file " << proto_src << " in upb rule " << name
                 << " does not have the expected prefix " << prefix_to_strip;
@@ -777,8 +775,7 @@ class ArtifactGen {
   // setuptools.
   //
   // The final build metadata are:
-  // * _TRANSITIVE_DEPS: all the transitive dependencies including
-  // intermediate
+  // * _TRANSITIVE_DEPS: all the transitive dependencies including intermediate
   //                     targets;
   // * _COLLAPSED_DEPS:  dependencies that fits our requirement above, and it
   //                     will remove duplicated items and produce the shortest
@@ -786,8 +783,7 @@ class ArtifactGen {
   // * _COLLAPSED_SRCS:  the merged source files;
   // * _COLLAPSED_PUBLIC_HEADERS: the merged public headers;
   // * _COLLAPSED_HEADERS: the merged non-public headers;
-  // * _EXCLUDE_DEPS: intermediate targets to exclude when performing
-  // collapsing
+  // * _EXCLUDE_DEPS: intermediate targets to exclude when performing collapsing
   //      of sources and dependencies.
   //
   // For the collapsed_deps, the algorithm improved cases like:
