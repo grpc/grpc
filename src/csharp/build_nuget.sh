@@ -23,6 +23,12 @@ mkdir -p ../../artifacts
 mkdir -p protoc_plugins
 cp -r "${EXTERNAL_GIT_ROOT}"/input_artifacts/protoc_* protoc_plugins || true
 
+# On macOS, the build produces a universal binary (x64 + arm64) under protoc_macos_x64.
+# Copy it to protoc_macos_aarch64 as well so both NuGet package paths are populated.
+if [ -d "protoc_plugins/protoc_macos_x64" ] && [ ! -d "protoc_plugins/protoc_macos_aarch64" ]; then
+  cp -r protoc_plugins/protoc_macos_x64 protoc_plugins/protoc_macos_aarch64
+fi
+
 # Add current timestamp to dev nugets
 ./nuget_helpers/expand_dev_version.sh
 

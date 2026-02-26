@@ -20,7 +20,13 @@ cd "$(dirname "$0")/../../.."
 mkdir -p cmake/build
 pushd cmake/build
 
-cmake -DgRPC_BUILD_TESTS=OFF -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_STANDARD=17 ../..
+# On macOS, build universal binaries (arm64 + x86_64)
+CMAKE_EXTRA_ARGS=""
+if [ "$(uname)" == "Darwin" ]; then
+  CMAKE_EXTRA_ARGS="-DCMAKE_OSX_ARCHITECTURES=arm64;x86_64"
+fi
+
+cmake -DgRPC_BUILD_TESTS=OFF -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_STANDARD=17 ${CMAKE_EXTRA_ARGS} ../..
 
 # Use externally provided env to determine build parallelism, otherwise use default.
 GRPC_PROTOC_BUILD_COMPILER_JOBS=${GRPC_PROTOC_BUILD_COMPILER_JOBS:-2}
