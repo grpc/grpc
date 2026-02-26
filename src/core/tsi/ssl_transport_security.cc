@@ -2028,14 +2028,17 @@ static const tsi_handshaker_result_vtable handshaker_result_vtable = {
     ssl_handshaker_result_destroy,
 };
 
-static tsi_result ssl_handshaker_result_create(
-    tsi_ssl_handshaker* handshaker, unsigned char* unused_bytes,
-    size_t unused_bytes_size, tsi_handshaker_result** handshaker_result)
+static tsi_result ssl_handshaker_result_create(tsi_ssl_handshaker* handshaker,
+                                               unsigned char* unused_bytes,
+                                               size_t unused_bytes_size)
     ABSL_EXCLUSIVE_LOCKS_REQUIRED(&tsi_ssl_handshaker::mu) {
-  if (handshaker == nullptr || handshaker_result == nullptr ||
+  if (handshaker == nullptr ||
       (unused_bytes_size > 0 && unused_bytes == nullptr)) {
     if (handshaker != nullptr) handshaker->MaybeSetError("invalid argument");
     return TSI_INVALID_ARGUMENT;
+  }
+  if (!handshaker->handshaker_next_args.has_value()) {
+    return TSI_INTERNAL_ERROR;
   }
   tsi_ssl_handshaker_result* result =
       grpc_core::Zalloc<tsi_ssl_handshaker_result>();
@@ -2048,7 +2051,7 @@ static tsi_result ssl_handshaker_result_create(
   // Transfer ownership of |unused_bytes| to the handshaker result.
   result->unused_bytes = unused_bytes;
   result->unused_bytes_size = unused_bytes_size;
-  *handshaker_result = &result->base;
+  handshaker->handshaker_next_args->handshaker_result = &result->base;
   return TSI_OK;
 }
 
@@ -2307,9 +2310,8 @@ static tsi_result ssl_handshaker_next_impl(tsi_ssl_handshaker* self)
       self->MaybeSetError("More unused bytes than received bytes.");
       return TSI_INTERNAL_ERROR;
     }
-    status = ssl_handshaker_result_create(
-        self, unused_bytes, unused_bytes_size,
-        &self->handshaker_next_args->handshaker_result);
+    status =
+        ssl_handshaker_result_create(self, unused_bytes, unused_bytes_size);
     if (status == TSI_OK) {
       // Indicates that the handshake has completed and that a
       // handshaker_result has been created.
