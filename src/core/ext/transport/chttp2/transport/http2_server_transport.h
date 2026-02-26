@@ -120,8 +120,7 @@ class Http2ServerTransport final : public ServerTransport,
   //////////////////////////////////////////////////////////////////////////////
   // Deprecated Stuff
 
-  // TODO(tjagtap) : [PH2][EXT] : These can be removed when event engine rollout
-  // is complete.
+  // TODO(tjagtap) : [PH2][EXT] : Remove after event engine rollout
   void SetPollset(grpc_stream*, grpc_pollset*) override {}
   void SetPollsetSet(grpc_stream*, grpc_pollset_set*) override {}
 
@@ -149,9 +148,7 @@ class Http2ServerTransport final : public ServerTransport,
     return nullptr;
   }
 
-  RefCountedPtr<channelz::SocketNode> GetSocketNode() const override {
-    return nullptr;
-  }
+  RefCountedPtr<channelz::SocketNode> GetSocketNode() const override;
 
   void AddData(channelz::DataSink sink) override;
   void SpawnAddChannelzData(RefCountedPtr<Party> party,
@@ -160,21 +157,8 @@ class Http2ServerTransport final : public ServerTransport,
   //////////////////////////////////////////////////////////////////////////////
   // Watchers
 
-  void StartWatch(RefCountedPtr<StateWatcher>) override {
-    // TODO(roth): Implement as part of migrating server side to new
-    // watcher API.
-  }
-  void StopWatch(RefCountedPtr<StateWatcher>) override {
-    // TODO(roth): Implement as part of migrating server side to new
-    // watcher API.
-  }
-
-  // TODO(tjagtap) : [PH2][P0] : I am not sure why this is public. Check.
-  void StartConnectivityWatch(
-      grpc_connectivity_state state,
-      OrphanablePtr<ConnectivityStateWatcherInterface> watcher);
-
-  void StopConnectivityWatch(ConnectivityStateWatcherInterface* watcher);
+  void StartWatch(RefCountedPtr<StateWatcher> watcher) override;
+  void StopWatch(RefCountedPtr<StateWatcher> watcher) override;
 
   //////////////////////////////////////////////////////////////////////////////
   // Test Only Functions
@@ -196,34 +180,56 @@ class Http2ServerTransport final : public ServerTransport,
 
  private:
   //////////////////////////////////////////////////////////////////////////////
+  // Watchers
+
+  void StartConnectivityWatch(
+      grpc_connectivity_state state,
+      OrphanablePtr<ConnectivityStateWatcherInterface> watcher);
+
+  void StopConnectivityWatch(ConnectivityStateWatcherInterface* watcher);
+
+  void NotifyStateWatcherOnDisconnectLocked(
+      absl::Status status, StateWatcher::DisconnectInfo disconnect_info)
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(&transport_mutex_);
+
+  //////////////////////////////////////////////////////////////////////////////
   // Transport Read Path
 
   // Synchronous functions for processing each type of frame
-  // Http2Status ProcessIncomingFrame(Http2DataFrame&& frame);
-  // Http2Status ProcessIncomingFrame(Http2HeaderFrame&& frame);
-  // Http2Status ProcessIncomingFrame(Http2RstStreamFrame&& frame);
-  // Http2Status ProcessIncomingFrame(Http2SettingsFrame&& frame);
-  // Http2Status ProcessIncomingFrame(Http2PingFrame&& frame);
-  // Http2Status ProcessIncomingFrame(Http2GoawayFrame&& frame);
-  // Http2Status ProcessIncomingFrame(Http2WindowUpdateFrame&& frame);
-  // Http2Status ProcessIncomingFrame(Http2ContinuationFrame&& frame);
+  Http2Status ProcessIncomingFrame(Http2DataFrame&& frame);
+  Http2Status ProcessIncomingFrame(Http2HeaderFrame&& frame);
+  Http2Status ProcessIncomingFrame(Http2RstStreamFrame&& frame);
+  Http2Status ProcessIncomingFrame(Http2SettingsFrame&& frame);
+  Http2Status ProcessIncomingFrame(Http2PingFrame&& frame);
+  Http2Status ProcessIncomingFrame(Http2GoawayFrame&& frame);
+  Http2Status ProcessIncomingFrame(Http2WindowUpdateFrame&& frame);
+  Http2Status ProcessIncomingFrame(Http2ContinuationFrame&& frame);
   Http2Status ProcessIncomingFrame(Http2SecurityFrame&& frame);
   Http2Status ProcessIncomingFrame(Http2UnknownFrame&& frame);
   Http2Status ProcessIncomingFrame(Http2EmptyFrame&& frame);
 
-  // Http2Status ProcessMetadata(RefCountedPtr<Stream> stream);
+  Http2Status ProcessMetadata(RefCountedPtr<Stream> stream);
 
-  // Http2Status ParseAndDiscardHeaders(SliceBuffer&& buffer,
-  //                                    bool is_end_headers,
-  //                                    RefCountedPtr<Stream> stream,
-  //                                    Http2Status&& original_status,
-  //                                    DebugLocation whence = {});
+  Http2Status ParseAndDiscardHeaders(SliceBuffer&& buffer, bool is_end_headers,
+                                     Stream* stream,
+                                     Http2Status&& original_status,
+                                     DebugLocation whence = {});
 
-  auto ProcessOneIncomingFrame(Http2Frame frame);
+  // Returns a promise that will process one HTTP2 frame.
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Http2Status
+  ProcessOneIncomingFrame(Http2Frame&& frame) {
+    GRPC_HTTP2_SERVER_DLOG
+        << "Http2ServerTransport::ProcessOneIncomingFrame Factory";
+    return std::visit(
+        [this](auto&& frame) {
+          return ProcessIncomingFrame(std::forward<decltype(frame)>(frame));
+        },
+        std::forward<Http2Frame>(frame));
+  }
 
-  // Returns a promise that will read and process one HTTP2 frame.
   auto ReadAndProcessOneFrame();
 
+  // Returns a promise to keep reading in a Loop till a fail/close is received.
   auto ReadLoop();
 
   //////////////////////////////////////////////////////////////////////////////
@@ -235,21 +241,55 @@ class Http2ServerTransport final : public ServerTransport,
     absl::Status status = TriggerWriteCycle(whence);
     if (GPR_LIKELY(status.ok())) return true;
     GRPC_HTTP2_SERVER_DLOG
-        << "TriggerWriteCycleOrHandleError failed with status: " << status
-        << " at " << whence.file() << ":" << whence.line();
+        << "Http2ServerTransport::TriggerWriteCycleOrHandleError failed with "
+           "status: "
+        << status << " at " << whence.file() << ":" << whence.line();
     GRPC_UNUSED absl::Status unused_status =
         HandleError(std::nullopt, ToHttpOkOrConnError(status), whence);
     return false;
   }
 
-  // auto ProcessAndWriteControlFrames();
-  // void NotifyControlFramesWriteDone();
+  // Write time sensitive control frames to the endpoint. Frames sent from here
+  // will be GOAWAY, SETTINGS, PING and PING acks, WINDOW_UPDATE and
+  // Custom gRPC security frame.
+  // These frames are written to the endpoint in a single endpoint write. If any
+  // module needs to take action after the write (for cases like spawning
+  // timeout promises), they MUST plug the call in the
+  // NotifyControlFramesWriteDone.
+
+  // Prepares all the HTTP2 control frames that are to be sent out in this write
+  // cycle. The modules can choose to either trigger an endpoint write for the
+  // frames or defer the write with the stream specific frames. In most cases,
+  // the frames are deferred and a single write is triggered for all the
+  // frames.
+  // absl::Status PrepareControlFrames();
+
+  // If there are any urgent frames this would trigger an additional endpoint
+  // write. CAUTION: This will add significant overhead if used for non-urgent
+  // frames.
+  // auto MaybeWriteUrgentFrames();
+
+  // Notify the modules that an endpoint write is done. This corresponds to the
+  // generic endpoint write that happens in the MultiplexerLoop.
+  // void NotifyFramesWriteDone();
+
+  // Notify the modules that an urgent endpoint write is done. If some module
+  // add frames to this buffer in PrepareControlFrames, they can use this to
+  // do post processing after the write is done.
+  // void NotifyUrgentFramesWriteDone();
+
+  // Returns a promise to keep draining control frames and data frames from all
+  // the writable streams and write to the endpoint.
   // auto MultiplexerLoop();
 
-  // Read from the MPSC queue and write it.
+  // Returns a promise to fetch data from the callhandler and pass it further
+  // down towards the endpoint.
+  // auto CallOutboundLoop(RefCountedPtr<Stream> stream);
+
+  // TODO(akshitpatel) : [PH2][P0] : Delete when implementing write loop.
   auto WriteFromQueue();
 
-  // Returns a promise to keep writing in a Loop till a fail/close is received.
+  // TODO(akshitpatel) : [PH2][P0] : Delete when implementing write loop.
   auto WriteLoop();
 
   // Force triggers a transport write cycle
@@ -359,6 +399,7 @@ class Http2ServerTransport final : public ServerTransport,
 
   auto EndpointWrite(SliceBuffer&& output_buf);
 
+  // Serialize and write the frames in the write cycle to the endpoint.
   auto SerializeAndWrite();
 
   //////////////////////////////////////////////////////////////////////////////
@@ -375,7 +416,7 @@ class Http2ServerTransport final : public ServerTransport,
   void ActOnFlowControlAction(const chttp2::FlowControlAction& action,
                               Stream* stream);
 
-  // void MaybeGetWindowUpdateFrames(SliceBuffer& output_buf);
+  // void MaybeGetWindowUpdateFrames(FrameSender& frame_sender);
 
   auto FlowControlPeriodicUpdateLoop();
 
@@ -429,10 +470,10 @@ class Http2ServerTransport final : public ServerTransport,
   // stream,
   //                       ClientMetadataHandle metadata);
 
-  // absl::Status InitializeStream(RefCountedPtr<Stream> stream);
+  // absl::Status InitializeStream(Stream& stream);
 
-  // absl::StatusOr<std::vector<Http2Frame>> DequeueStreamFrames(
-  //     RefCountedPtr<Stream> stream, WriteContext::WriteQuota& write_quota);
+  // absl::Status DequeueStreamFrames(RefCountedPtr<Stream> stream,
+  //                                  WriteCycle& write_cycle);
 
   // Runs on the call party.
   // std::optional<RefCountedPtr<Stream>> MakeStream(CallHandler call_handler);
@@ -451,7 +492,8 @@ class Http2ServerTransport final : public ServerTransport,
     // TODO(akshitpatel) : [PH2][P2] : Implement this.
   }
 
-  // void CloseStream(RefCountedPtr<Stream> stream, CloseStreamArgs args,
+  // This function MUST be idempotent.
+  // void CloseStream(Stream& stream, CloseStreamArgs args,
   //                  DebugLocation whence = {});
 
   //////////////////////////////////////////////////////////////////////////////
@@ -490,7 +532,7 @@ class Http2ServerTransport final : public ServerTransport,
   // bool CanCloseTransportLocked() const
   //     ABSL_EXCLUSIVE_LOCKS_REQUIRED(transport_mutex_);
 
-  // This function is supposed to be idempotent.
+  // This function MUST run on the transport party.
   void CloseTransport() {}
 
   // Handles the error status and returns the corresponding absl status. Absl
@@ -515,10 +557,6 @@ class Http2ServerTransport final : public ServerTransport,
 
   //////////////////////////////////////////////////////////////////////////////
   // Misc Transport Stuff
-
-  // void NotifyStateWatcherOnDisconnectLocked(
-  //     absl::Status status, StateWatcher::DisconnectInfo disconnect_info)
-  //     ABSL_EXCLUSIVE_LOCKS_REQUIRED(&transport_mutex_);
 
   // void ReportDisconnection(const absl::Status& status,
   //                          StateWatcher::DisconnectInfo disconnect_info,

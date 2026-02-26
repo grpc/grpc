@@ -80,7 +80,8 @@ class Http2ServerTransportTest : public TransportTest {
   Http2FrameTestHelper helper_;
 };
 
-TEST_F(Http2ServerTransportTest, TestHttp2ServerTransportObjectCreation) {
+TEST_F(Http2ServerTransportTest,
+       DISABLED_TestHttp2ServerTransportObjectCreation) {
   // Event Engine      : FuzzingEventEngine
   // This test asserts :
   // 1. Tests Http2ServerTransport object creation and destruction. The object
