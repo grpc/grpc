@@ -30,7 +30,8 @@
 // The server side validator function to run
 typedef void (*grpc_bad_client_server_side_validator)(grpc_server* server,
                                                       grpc_completion_queue* cq,
-                                                      void* registered_method);
+                                                      void* registered_method,
+                                                      gpr_event* ready);
 
 // Returns false if we need to read more data.
 typedef bool (*grpc_bad_client_client_stream_validator)(
