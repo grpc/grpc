@@ -289,7 +289,6 @@ GPR_PUBLIC_HDRS = [
     "include/grpc/support/atm_windows.h",
     "include/grpc/support/cpu.h",
     "include/grpc/support/json.h",
-    "include/grpc/support/log.h",
     "include/grpc/support/log_windows.h",
     "include/grpc/support/metrics.h",
     "include/grpc/support/string_util.h",
@@ -870,6 +869,14 @@ grpc_cc_library(
         "//src/core:time_precise",
         "//src/core:time_util",
         "//src/core:useful",
+    ],
+)
+
+grpc_cc_library(
+    name = "gpr_log",
+    srcs = ["//src/core/util/log.cc"],
+    hdrs = [
+        "include/grpc/support/log.h",
     ],
 )
 
