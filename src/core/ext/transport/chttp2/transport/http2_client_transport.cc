@@ -234,7 +234,7 @@ void Http2ClientTransport::Orphan() {
 
 auto Http2ClientTransport::SecurityFrameLoop() {
   GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport::SecurityFrameLoop Factory";
-  return UntilTransportClosed(AssertResultType<Empty>(Loop([this]() {
+  return AssertResultType<Empty>(Loop([this]() {
     return Map(
         security_frame_handler_->WaitForSecurityFrameSending(),
         [this](Empty) -> LoopCtl<Empty> {
@@ -247,7 +247,7 @@ auto Http2ClientTransport::SecurityFrameLoop() {
           }
           return Continue();
         });
-  })));
+  }));
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -816,7 +816,7 @@ auto Http2ClientTransport::ReadAndProcessOneFrame() {
             << "Http2ClientTransport::ReadAndProcessOneFrame Read Frame ";
         return AssertResultType<absl::Status>(Map(
             EndpointRead(current_frame_header_.length),
-            [this](absl::StatusOr<SliceBuffer> payload) {
+            [this](absl::StatusOr<SliceBuffer>&& payload) {
               if (GPR_UNLIKELY(!payload.ok())) {
                 return payload.status();
               }
@@ -847,12 +847,12 @@ auto Http2ClientTransport::ReadAndProcessOneFrame() {
 
 auto Http2ClientTransport::ReadLoop() {
   GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport::ReadLoop Factory";
-  return AssertResultType<absl::Status>(UntilTransportClosed(Loop([this]() {
+  return AssertResultType<absl::Status>(Loop([this]() {
     return TrySeq(ReadAndProcessOneFrame(), []() -> LoopCtl<absl::Status> {
       GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport::ReadLoop Continue";
       return Continue();
     });
-  })));
+  }));
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -971,7 +971,7 @@ absl::Status Http2ClientTransport::PrepareControlFrames() {
     //
     // Because the client is expected to write before it reads, we spawn the
     // ReadLoop of the client only after the first write is queued.
-    SpawnGuardedTransportParty("ReadLoop", ReadLoop());
+    SpawnGuardedTransportParty("ReadLoop", UntilTransportClosed(ReadLoop()));
   }
 
   // Order of Control Frames is important.
@@ -991,7 +991,8 @@ absl::Status Http2ClientTransport::PrepareControlFrames() {
     const SecurityFrameHandler::EndpointExtensionState state =
         security_frame_handler_->Initialize(event_engine_);
     if (state.is_set) {
-      SpawnInfallibleTransportParty("SecurityFrameLoop", SecurityFrameLoop());
+      SpawnInfallibleTransportParty("SecurityFrameLoop",
+                                    UntilTransportClosed(SecurityFrameLoop()));
     }
   }
 
@@ -1154,7 +1155,7 @@ absl::Status Http2ClientTransport::DequeueStreamFrames(
 // Requests (HTTP2 Streams) and writing them into one common endpoint.
 auto Http2ClientTransport::MultiplexerLoop() {
   GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport::MultiplexerLoop Factory";
-  return AssertResultType<absl::Status>(UntilTransportClosed(Loop([this]() {
+  return AssertResultType<absl::Status>(Loop([this]() {
     return TrySeq(
         Map(writable_stream_list_.WaitForReady(
                 AreTransportFlowControlTokensAvailable()),
@@ -1259,7 +1260,7 @@ auto Http2ClientTransport::MultiplexerLoop() {
           transport_write_context_.EndWriteCycle();
           return Continue();
         });
-  })));
+  }));
 }
 
 absl::Status Http2ClientTransport::InitializeStream(Stream& stream) {
@@ -1413,7 +1414,8 @@ void Http2ClientTransport::SpawnTransportLoops() {
   // ReadLoop is spawned after the first write.
   // For Server, read happens before write. So ReadLoop is spawned first.
   // MultiplexerLoop is spawned after the first read.
-  SpawnGuardedTransportParty("MultiplexerLoop", MultiplexerLoop());
+  SpawnGuardedTransportParty("MultiplexerLoop",
+                             UntilTransportClosed(MultiplexerLoop()));
   GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport::SpawnTransportLoops End";
 }
 
