@@ -101,6 +101,14 @@ module GRPC
                    propagate_mask: nil,
                    channel_args: {},
                    interceptors: [])
+
+      call_creds_obj = nil
+      if creds.is_a?(Core::CompositeChannelCredentials)
+        call_creds_obj = creds.call_credentials
+        creds = creds.channel_credentials
+        interceptors.push(ClientAuthInterceptor.new)
+      end
+
       @ch = ClientStub.setup_channel(channel_override, host, creds,
                                      channel_args.dup)
       alt_host = channel_args[Core::Channel::SSL_TARGET]
@@ -108,6 +116,9 @@ module GRPC
       @propagate_mask = propagate_mask
       @timeout = timeout.nil? ? DEFAULT_TIMEOUT : timeout
       @interceptors = InterceptorRegistry.new(interceptors)
+
+      # Attach the credential object to the newly created channel object
+      @ch.call_credentials = call_creds_obj if call_creds_obj
     end
 
     # request_response sends a request to a GRPC server, and returns the
@@ -495,9 +506,10 @@ module GRPC
                              method,
                              nil, # host use nil,
                              deadline)
-      call.set_credentials! credentials unless credentials.nil?
-      ActiveCall.new(call, marshal, unmarshal, deadline,
-                     started: false)
+      active_call = ActiveCall.new(call, marshal, unmarshal, deadline,
+                                   started: false)
+      active_call.call_credentials = credentials if credentials
+      active_call
     end
   end
 end

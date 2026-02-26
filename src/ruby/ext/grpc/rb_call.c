@@ -25,7 +25,6 @@
 #include <grpc/support/alloc.h>
 
 #include "rb_byte_buffer.h"
-#include "rb_call_credentials.h"
 #include "rb_completion_queue.h"
 #include "rb_grpc.h"
 #include "rb_grpc_imports.generated.h"
@@ -357,33 +356,6 @@ static VALUE grpc_rb_call_set_write_flag(VALUE self, VALUE write_flag) {
   }
 
   return rb_ivar_set(self, id_write_flag, write_flag);
-}
-
-/*
-  call-seq:
-  call.set_credentials call_credentials
-
-  Sets credentials on a call */
-static VALUE grpc_rb_call_set_credentials(VALUE self, VALUE credentials) {
-  grpc_rb_call* call = NULL;
-  grpc_call_credentials* creds;
-  grpc_call_error err;
-  if (RTYPEDDATA_DATA(self) == NULL) {
-    rb_raise(grpc_rb_eCallError, "Cannot set credentials of closed call");
-    return Qnil;
-  }
-  TypedData_Get_Struct(self, grpc_rb_call, &grpc_call_data_type, call);
-  creds = grpc_rb_get_wrapped_call_credentials(credentials);
-  err = grpc_call_set_credentials(call->wrapped, creds);
-  if (err != GRPC_CALL_OK) {
-    rb_raise(grpc_rb_eCallError,
-             "grpc_call_set_credentials failed with %s (code=%d)",
-             grpc_call_error_detail_of(err), err);
-  }
-  /* We need the credentials to be alive for as long as the call is alive,
-     but we don't care about destruction order. */
-  rb_ivar_set(self, id_credentials, credentials);
-  return Qnil;
 }
 
 /* grpc_rb_md_ary_fill_hash_cb is the hash iteration callback used
@@ -1022,8 +994,6 @@ void Init_grpc_call() {
   rb_define_method(grpc_rb_cCall, "write_flag", grpc_rb_call_get_write_flag, 0);
   rb_define_method(grpc_rb_cCall, "write_flag=", grpc_rb_call_set_write_flag,
                    1);
-  rb_define_method(grpc_rb_cCall, "set_credentials!",
-                   grpc_rb_call_set_credentials, 1);
 
   /* Ids used to support call attributes */
   id_metadata = rb_intern("metadata");
