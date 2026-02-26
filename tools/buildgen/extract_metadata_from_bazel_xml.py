@@ -78,8 +78,6 @@ class ExternalProtoLibrary:
         self.strip_prefix = ""
 
 
-# Mapping from canonical repo name to apparent repo name.
-# See https://bazel.build/external/overview#canonical-repo-name
 APPARENT_TO_CANONICAL_NAME_MAPPING = {
     v: k for k, v in CANONICAL_TO_APPARENT_NAME_MAPPING.items()
 }
@@ -1465,7 +1463,9 @@ _BAZEL_DEPS_QUERIES = [
 bazel_rules = {}
 for query in _BAZEL_DEPS_QUERIES:
     bazel_rules.update(
-        _extract_rules_from_bazel_xml(_bazel_query_xml_tree(query))
+        _extract_rules_from_bazel_xml(
+            _bazel_query_xml_tree(query)
+        )
     )
 
 # Step 1.5: The sources for UPB protos are pre-generated, so we want

@@ -180,6 +180,43 @@ class Http2ServerTransport final : public ServerTransport,
 
  private:
   //////////////////////////////////////////////////////////////////////////////
+  // Endpoint Helpers
+
+  // Callers MUST ensure that the transport is not destroyed till the promise is
+  // resolved or cancelled.
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto EndpointReadSlice(
+      const size_t num_bytes) {
+    return Map(endpoint_.ReadSlice(num_bytes),
+               [this, num_bytes](absl::StatusOr<Slice> status) {
+                 OnEndpointRead(status.ok(), num_bytes);
+                 return status;
+               });
+  }
+
+  // Callers MUST ensure that the transport is not destroyed till the promise is
+  // resolved or cancelled.
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto EndpointRead(
+      const size_t num_bytes) {
+    return Map(endpoint_.Read(num_bytes),
+               [this, num_bytes](absl::StatusOr<SliceBuffer> status) {
+                 OnEndpointRead(status.ok(), num_bytes);
+                 return status;
+               });
+  }
+
+  void OnEndpointRead(const bool is_ok, const size_t num_bytes) {
+    if (is_ok) {
+      keepalive_manager_->GotData();
+      ztrace_collector_->Append(PromiseEndpointReadTrace{num_bytes});
+    }
+  }
+
+  auto EndpointWrite(SliceBuffer&& output_buf);
+
+  // Serialize and write the frames in the write cycle to the endpoint.
+  auto SerializeAndWrite();
+
+  //////////////////////////////////////////////////////////////////////////////
   // Watchers
 
   void StartConnectivityWatch(
@@ -278,6 +315,9 @@ class Http2ServerTransport final : public ServerTransport,
   // do post processing after the write is done.
   // void NotifyUrgentFramesWriteDone();
 
+  // absl::Status DequeueStreamFrames(RefCountedPtr<Stream> stream,
+  //                                  WriteCycle& write_cycle);
+
   // Returns a promise to keep draining control frames and data frames from all
   // the writable streams and write to the endpoint.
   // auto MultiplexerLoop();
@@ -366,43 +406,6 @@ class Http2ServerTransport final : public ServerTransport,
   }
 
   //////////////////////////////////////////////////////////////////////////////
-  // Endpoint Helpers
-
-  // Callers MUST ensure that the transport is not destroyed till the promise is
-  // resolved or cancelled.
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto EndpointReadSlice(
-      const size_t num_bytes) {
-    return Map(endpoint_.ReadSlice(num_bytes),
-               [this, num_bytes](absl::StatusOr<Slice> status) {
-                 OnEndpointRead(status.ok(), num_bytes);
-                 return status;
-               });
-  }
-
-  // Callers MUST ensure that the transport is not destroyed till the promise is
-  // resolved or cancelled.
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto EndpointRead(
-      const size_t num_bytes) {
-    return Map(endpoint_.Read(num_bytes),
-               [this, num_bytes](absl::StatusOr<SliceBuffer> status) {
-                 OnEndpointRead(status.ok(), num_bytes);
-                 return status;
-               });
-  }
-
-  void OnEndpointRead(const bool is_ok, const size_t num_bytes) {
-    if (is_ok) {
-      keepalive_manager_->GotData();
-      ztrace_collector_->Append(PromiseEndpointReadTrace{num_bytes});
-    }
-  }
-
-  auto EndpointWrite(SliceBuffer&& output_buf);
-
-  // Serialize and write the frames in the write cycle to the endpoint.
-  auto SerializeAndWrite();
-
-  //////////////////////////////////////////////////////////////////////////////
   // Settings
 
   // auto WaitForSettingsTimeoutOnDone();
@@ -416,7 +419,7 @@ class Http2ServerTransport final : public ServerTransport,
   void ActOnFlowControlAction(const chttp2::FlowControlAction& action,
                               Stream* stream);
 
-  // void MaybeGetWindowUpdateFrames(FrameSender& frame_sender);
+  void MaybeGetWindowUpdateFrames(FrameSender& frame_sender);
 
   auto FlowControlPeriodicUpdateLoop();
 
@@ -471,9 +474,6 @@ class Http2ServerTransport final : public ServerTransport,
   //                       ClientMetadataHandle metadata);
 
   // absl::Status InitializeStream(Stream& stream);
-
-  // absl::Status DequeueStreamFrames(RefCountedPtr<Stream> stream,
-  //                                  WriteCycle& write_cycle);
 
   // Runs on the call party.
   // std::optional<RefCountedPtr<Stream>> MakeStream(CallHandler call_handler);
@@ -558,21 +558,37 @@ class Http2ServerTransport final : public ServerTransport,
   //////////////////////////////////////////////////////////////////////////////
   // Misc Transport Stuff
 
-  // void ReportDisconnection(const absl::Status& status,
-  //                          StateWatcher::DisconnectInfo disconnect_info,
-  //                          const char* reason);
+  void ReportDisconnection(const absl::Status& status,
+                           StateWatcher::DisconnectInfo disconnect_info,
+                           const char* reason);
 
-  // void ReportDisconnectionLocked(const absl::Status& status,
-  //                                StateWatcher::DisconnectInfo
-  //                                disconnect_info, const char* reason)
-  //     ABSL_EXCLUSIVE_LOCKS_REQUIRED(&transport_mutex_);
+  void ReportDisconnectionLocked(const absl::Status& status,
+                                 StateWatcher::DisconnectInfo disconnect_info,
+                                 const char* reason)
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(&transport_mutex_);
 
   // bool SetOnDone(CallHandler call_handler, RefCountedPtr<Stream> stream);
 
   void ReadChannelArgs(const ChannelArgs& channel_args,
                        TransportChannelArgs& args);
 
-  auto SecurityFrameLoop();
+  auto SecurityFrameLoop() {
+    GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport::SecurityFrameLoop Factory";
+    return AssertResultType<Empty>(Loop([this]() {
+      return Map(security_frame_handler_->WaitForSecurityFrameSending(),
+                 [this](Empty) -> LoopCtl<Empty> {
+                   if (security_frame_handler_->TriggerWriteSecurityFrame()
+                           .terminate) {
+                     return Empty{};
+                   }
+
+                   if (!TriggerWriteCycleOrHandleError()) {
+                     return Empty{};
+                   }
+                   return Continue();
+                 });
+    }));
+  }
 
   //////////////////////////////////////////////////////////////////////////////
   // Inner Classes and Structs
