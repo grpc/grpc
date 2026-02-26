@@ -1344,6 +1344,7 @@ Http2ClientTransport::Http2ClientTransport(
       next_stream_id_(/*Initial Stream ID*/ 1),
       should_reset_ping_clock_(false),
       incoming_headers_(IncomingMetadataTracker::GetPeerString(endpoint_)),
+      transport_write_context_(kIsClient),
       ping_manager_(std::nullopt),
       keepalive_manager_(std::nullopt),
       goaway_manager_(GoawayInterfaceImpl::Make(this)),

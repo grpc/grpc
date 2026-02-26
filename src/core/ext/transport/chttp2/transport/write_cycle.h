@@ -84,8 +84,8 @@ class WriteBufferTracker {
   static constexpr size_t kInlinedRegularFramesSize = 8;
   static constexpr size_t kInlinedUrgentFramesSize = 2;
 
-  explicit WriteBufferTracker(bool& is_first_write)
-      : is_first_write_(is_first_write) {}
+  explicit WriteBufferTracker(bool& is_first_write, const bool is_client)
+      : is_first_write_(is_first_write), is_client_(is_client) {}
 
   // WriteBufferTracker is move-constructible but not copyable or assignable.
   WriteBufferTracker(const WriteBufferTracker&) = delete;
@@ -122,10 +122,14 @@ class WriteBufferTracker {
     return regular_frames_.size();
   }
 
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto& TestOnlyRegularFrames() {
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION
+  absl::InlinedVector<Http2Frame, kInlinedRegularFramesSize>&
+  TestOnlyRegularFrames() {
     return regular_frames_;
   }
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto& TestOnlyUrgentFrames() {
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION
+  absl::InlinedVector<Http2Frame, kInlinedUrgentFramesSize>&
+  TestOnlyUrgentFrames() {
     return urgent_frames_;
   }
 
@@ -141,38 +145,41 @@ class WriteBufferTracker {
 
   SliceBuffer SerializeRegularFrames(SerializeStats stats) {
     GRPC_DCHECK(CanSerializeRegularFrames());
-    SliceBuffer output_buf;
-    if (GPR_UNLIKELY(is_first_write_)) {
-      // RFC9113: That is, the connection preface starts with the string
-      // "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n".
-      output_buf.Append(
-          Slice::FromCopiedString(GRPC_CHTTP2_CLIENT_CONNECT_STRING));
-      is_first_write_ = false;
-    }
-    auto result =
-        Serialize(absl::Span<Http2Frame>(regular_frames_), output_buf);
-    regular_frames_.clear();
-    stats.should_reset_ping_clock = result.should_reset_ping_clock;
-    return output_buf;
+    return SerializeFrames(regular_frames_, stats);
   }
 
   SliceBuffer SerializeUrgentFrames(SerializeStats stats) {
     GRPC_DCHECK(CanSerializeUrgentFrames());
+    return SerializeFrames(urgent_frames_, stats);
+  }
+
+ private:
+  template <typename FrameContainer>
+  SliceBuffer SerializeFrames(FrameContainer& frames, SerializeStats stats) {
     SliceBuffer output_buf;
     if (GPR_UNLIKELY(is_first_write_)) {
-      // RFC9113: That is, the connection preface starts with the string
-      // "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n".
-      output_buf.Append(
-          Slice::FromCopiedString(GRPC_CHTTP2_CLIENT_CONNECT_STRING));
+      // https://www.rfc-editor.org/rfc/rfc9113.html#name-http-2-connection-preface
+      // RFC9113:
+      // The client and server each send a different connection preface.
+      // Client: The connection preface starts with the string "PRI *
+      // HTTP/2.0\r\n\r\nSM\r\n\r\n". This sequence MUST be followed by a
+      // SETTINGS frame, which MAY be empty.
+      // Server: The server connection preface consists of a potentially empty
+      // SETTINGS frame that MUST be the first frame the server sends in the
+      // HTTP/2 connection.
+      if (is_client_) {
+        output_buf.Append(
+            Slice::FromCopiedString(GRPC_CHTTP2_CLIENT_CONNECT_STRING));
+      }
       is_first_write_ = false;
     }
-    auto result = Serialize(absl::Span<Http2Frame>(urgent_frames_), output_buf);
-    urgent_frames_.clear();
+    SerializeReturn result =
+        Serialize(absl::Span<Http2Frame>(frames), output_buf);
+    frames.clear();
     stats.should_reset_ping_clock = result.should_reset_ping_clock;
     return output_buf;
   }
 
- private:
   // These frames are serialized and written to the endpoint in a single
   // endpoint write.
   absl::InlinedVector<Http2Frame, kInlinedRegularFramesSize> regular_frames_;
@@ -181,6 +188,7 @@ class WriteBufferTracker {
   // written.
   absl::InlinedVector<Http2Frame, kInlinedUrgentFramesSize> urgent_frames_;
   bool& is_first_write_;
+  const bool is_client_;
 };
 
 // Wrapper for WriteBufferTracker and WriteQuota to be used by the callers
@@ -224,8 +232,9 @@ class FrameSender {
 // Per write cycle state.
 class WriteCycle {
  public:
-  WriteCycle(Chttp2WriteSizePolicy* write_size_policy, bool& is_first_write)
-      : write_buffer_tracker_(is_first_write),
+  WriteCycle(Chttp2WriteSizePolicy* write_size_policy, bool& is_first_write,
+             const bool& is_client)
+      : write_buffer_tracker_(is_first_write, is_client),
         write_quota_(write_size_policy->WriteTargetSize()),
         write_size_policy_(write_size_policy) {}
 
@@ -303,8 +312,16 @@ class WriteCycle {
 
 class TransportWriteContext {
  public:
+  TransportWriteContext(const bool is_client) : is_client_(is_client) {}
+
+  // TransportWriteContext cannot be copied, moved or assigned.
+  TransportWriteContext(const TransportWriteContext&) = delete;
+  TransportWriteContext& operator=(const TransportWriteContext&) = delete;
+  TransportWriteContext(TransportWriteContext&&) = delete;
+  TransportWriteContext& operator=(TransportWriteContext&&) = delete;
+
   void StartWriteCycle() {
-    write_cycle_.emplace(&write_size_policy_, is_first_write_);
+    write_cycle_.emplace(&write_size_policy_, is_first_write_, is_client_);
   }
 
   void EndWriteCycle() { write_cycle_.reset(); }
@@ -328,6 +345,7 @@ class TransportWriteContext {
   Chttp2WriteSizePolicy write_size_policy_;
   std::optional<WriteCycle> write_cycle_;
   bool is_first_write_ = true;
+  const bool is_client_;
 };
 
 }  // namespace http2
