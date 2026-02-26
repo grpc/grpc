@@ -270,7 +270,7 @@
   description: Return errors that exist before the start of the call in RunHandler.
   expiry: 2026/06/30
   owner: aananthv@google.com
-  test_tags: []
+  test_tags: ["core_end2end_test"]
 - name: rr_wrr_connect_from_random_index
   description:
     RR and WRR LB policies start connecting from a random index in the
