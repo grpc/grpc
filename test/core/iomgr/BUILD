@@ -137,6 +137,7 @@ grpc_cc_test(
         "//:gpr",
         "//:grpc",
         "//:iomgr",
+        "//src/core:experiments",
         "//src/core:grpc_check",
         "//test/core/test_util:grpc_test_util",
         "//test/core/test_util:grpc_test_util_base",

@@ -59,6 +59,28 @@
     "exclude_configs": [],
     "exclude_iomgrs": [],
     "flaky": false,
+    "gtest": false,
+    "language": "c",
+    "name": "test_core_iomgr_fd_conservation_posix_test",
+    "platforms": [
+      "linux",
+      "mac",
+      "posix"
+    ],
+    "uses_polling": true
+  },
+  {
+    "args": [],
+    "benchmark": false,
+    "ci_platforms": [
+      "linux",
+      "mac",
+      "posix"
+    ],
+    "cpu_cost": 1.0,
+    "exclude_configs": [],
+    "exclude_iomgrs": [],
+    "flaky": false,
     "gtest": true,
     "language": "c++",
     "name": "address_sorting_test",
@@ -9340,6 +9362,28 @@
       "mac",
       "posix",
       "windows"
+    ],
+    "uses_polling": true
+  },
+  {
+    "args": [],
+    "benchmark": false,
+    "ci_platforms": [
+      "linux",
+      "mac",
+      "posix"
+    ],
+    "cpu_cost": 1.0,
+    "exclude_configs": [],
+    "exclude_iomgrs": [],
+    "flaky": false,
+    "gtest": true,
+    "language": "c++",
+    "name": "test_core_event_engine_posix_fd_conservation_posix_test",
+    "platforms": [
+      "linux",
+      "mac",
+      "posix"
     ],
     "uses_polling": true
   },
