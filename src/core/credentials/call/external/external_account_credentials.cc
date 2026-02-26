@@ -673,6 +673,19 @@ ExternalAccountCredentials::Create(
 namespace {
 std::string BuildRegionalAccessBoundaryUrl(
     const ExternalAccountCredentials::Options& options) {
+  if (!options.service_account_impersonation_url.empty()) {
+    std::string_view url = options.service_account_impersonation_url;
+    std::string_view::size_type start = url.find("serviceAccounts/");
+    std::string_view::size_type end = url.find(":generateAccessToken");
+    if (start != std::string_view::npos && end != std::string_view::npos &&
+        start + 16 < end) {
+      std::string_view email = url.substr(start + 16, end - (start + 16));
+      return absl::StrFormat(
+          "https://iamcredentials.googleapis.com/v1/projects/-/serviceAccounts/"
+          "%s/allowedLocations",
+          email);
+    }
+  }
   if (!options.workforce_pool_id.empty()) {
     return absl::StrFormat(
         "https://iamcredentials.googleapis.com/v1/locations/global/"

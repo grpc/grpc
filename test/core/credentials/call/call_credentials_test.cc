@@ -4611,6 +4611,77 @@ TEST_F(ExternalAccountCredentialsTest, SuccessWithWorkloadIdentityPoolRab) {
   HttpRequest::SetOverride(nullptr, nullptr, nullptr);
 }
 
+int external_account_creds_httpcli_get_rab_impersonated(
+    const grpc_http_request* /*request*/, const URI& uri,
+    Timestamp /*deadline*/, grpc_closure* on_done,
+    grpc_http_response* response) {
+  if (uri.path() == "/v1/projects/-/serviceAccounts/test_service_account@test.com/allowedLocations") {
+    *response = http_response(200,
+                              "{\"encodedLocations\": \"0x08\", "
+                              "\"locations\": [\"europe-west1\"]}");
+  } else {
+    LOG(ERROR) << "Unexpected RAB URL: " << uri.ToString();
+    *response = http_response(404, "Not Found");
+  }
+  ExecCtx::Run(DEBUG_LOCATION, on_done, absl::OkStatus());
+  return 1;
+}
+
+int external_account_creds_httpcli_post_success_impersonated(
+    const grpc_http_request* request, const URI& uri, absl::string_view body,
+    Timestamp /*deadline*/, grpc_closure* on_done,
+    grpc_http_response* response) {
+  if (uri.path() == "/token") {
+    *response = http_response(
+        200, valid_external_account_creds_token_exchange_response);
+  } else if (uri.path() == "/v1/projects/-/serviceAccounts/test_service_account@test.com:generateAccessToken") {
+    *response = http_response(
+        200,
+        valid_external_account_creds_service_account_impersonation_response);
+  } else {
+    LOG(ERROR) << "Unexpected POST URL: " << uri.ToString();
+    *response = http_response(404, "Not Found");
+  }
+  ExecCtx::Run(DEBUG_LOCATION, on_done, absl::OkStatus());
+  return 1;
+}
+
+TEST_F(ExternalAccountCredentialsTest, SuccessWithServiceAccountImpersonationRab) {
+  ExecCtx exec_ctx;
+  Json credential_source = Json::FromString("");
+  TestExternalAccountCredentials::ServiceAccountImpersonation
+      service_account_impersonation;
+  service_account_impersonation.token_lifetime_seconds = 3600;
+  TestExternalAccountCredentials::Options options = {
+      "external_account",                 // type;
+      "audience",                         // audience;
+      "subject_token_type",               // subject_token_type;
+      "https://iamcredentials.googleapis.com/v1/projects/-/serviceAccounts/test_service_account@test.com:generateAccessToken", // service_account_impersonation_url;
+      service_account_impersonation,      // service_account_impersonation;
+      "https://foo.com:5555/token",       // token_url;
+      "https://foo.com:5555/token_info",  // token_info_url;
+      credential_source,                  // credential_source;
+      "quota_project_id",                 // quota_project_id;
+      "client_id",                        // client_id;
+      "client_secret",                    // client_secret;
+      "",                                 // workforce_pool_user_project;
+      "test_workforce_pool",              // workforce_pool_id;
+      "",                                 // workload_pool_project;
+      "",                                 // workload_pool_id;
+  };
+  auto creds = MakeRefCounted<TestExternalAccountCredentials>(
+      options, std::vector<std::string>(), event_engine_);
+  auto state = RequestMetadataState::NewInstance(
+      absl::OkStatus(), "authorization: Bearer service_account_impersonation_access_token, x-allowed-locations: 0x08");
+  HttpRequest::SetOverride(external_account_creds_httpcli_get_rab_impersonated,
+                           external_account_creds_httpcli_post_success_impersonated,
+                           httpcli_put_should_not_be_called);
+  state->RunRequestMetadataTest(creds.get(), kTestUrlScheme, kGoogleTestAuthority,
+                                kTestPath);
+  event_engine_->TickUntilIdle();
+  HttpRequest::SetOverride(nullptr, nullptr, nullptr);
+}
+
 TEST_F(ExternalAccountCredentialsTest, SuccessWithRab401) {
   ExecCtx exec_ctx;
   Json credential_source = Json::FromString("");

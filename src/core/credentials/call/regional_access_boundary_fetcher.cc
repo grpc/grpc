@@ -34,12 +34,11 @@ namespace grpc_core {
 namespace {
   constexpr absl::string_view kAllowedLocationsKey = "x-allowed-locations";
   constexpr Duration kRegionalAccessBoundaryBaseCooldownDuration = Duration::Minutes(15);
-  constexpr Duration kRegionalAccessBoundaryMaxCooldownDuration = Duration::Hours(1);
+  constexpr Duration kRegionalAccessBoundaryMaxCooldownDuration = Duration::Hours(6);
   constexpr int kMaxRegionalAccessBoundaryRetries = 6;
   constexpr Duration kRegioanlAccessBoundarySoftCacheGraceDuration = Duration::Hours(1);
   constexpr Duration kRegionalAccessBoundaryCacheDuration = Duration::Hours(6);
   constexpr absl::string_view kRegionalEndpoint = "rep.googleapis.com";
-  constexpr absl::string_view kGoogleApisEndpoint = "googleapis.com";
   // Retryable HTTP Status Codes
   constexpr int kInternalServerErrorCode = 500;
   constexpr int kBadGatewayErrorCode = 502;
@@ -170,17 +169,13 @@ void RegionalAccessBoundaryFetcher::Fetch(absl::string_view access_token,
   if (is_regional) {
     return;
   }
-  bool is_googleapis = authority == kGoogleApisEndpoint ||
-                       absl::EndsWith(authority, absl::StrCat(".", kGoogleApisEndpoint));
-  if (!is_googleapis) {
-    return;
-  }
   {
     const Timestamp now = Timestamp::Now();
     MutexLock lock(&cache_mu_);
     // We kick off a new fetch attempt if all of the following are true:
-    // - We have no cached token, or the cached token's expiration time is less
-    //   than the grace period in the future.
+    // - We have no cached Regioanl Access Boundary data, or the cached
+    //   Regional Access Boundary data's expiration time is less than the grace
+    //   period in the future.
     // - There is no pending fetch currently in flight.
     // - We are not currently in backoff after a failed fetch attempt.
     // - We are not currently in cooldown after a failed fetch attempt.
@@ -193,7 +188,7 @@ void RegionalAccessBoundaryFetcher::Fetch(absl::string_view access_token,
       pending_request_ = MakeOrphanable<Request>(WeakRef(), access_token);
       pending_request_->Start();
     }
-    // If we have a cached non-expired token, use it.
+    // If we have cached non-expired Regional Access Boundary data, use it.
     if (cache_.has_value() && cache_->expiration > now) {
       initial_metadata.Append(
           kAllowedLocationsKey,
@@ -420,7 +415,7 @@ void EmailFetcher::OnEmailFetchError(grpc_error_handle error) {
         << "Regional Access Boundary fetch skipped due to service account email "
            "fetch failure: "
         << StatusToString(error);
-    state_ = OrphanablePtr<EmailRequest>(nullptr);  // Reset to allow retry on next token fetch.
+    state_ = OrphanablePtr<EmailRequest>(nullptr);  // Reset to allow retry on next invocation.
     next_fetch_earliest_time_ = Timestamp::Now() + backoff_.NextAttemptDelay();
   }
 }
