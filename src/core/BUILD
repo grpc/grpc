@@ -227,6 +227,7 @@ grpc_cc_library(
         "absl/utility",
     ],
     deps = [
+        "channel_args",
         "context_list_entry",
         "grpc_check",
         "resolved_address",
