@@ -36,9 +36,9 @@ class TestChannelReady(AioTestBase):
             listen=False, sock_options=(socket.SO_REUSEADDR,)
         )
         self._channel = aio.insecure_channel(f"{address}:{self._port}")
-        self._socket.close()
 
     async def tearDown(self):
+        self._socket.close()
         await self._channel.close()
 
     async def test_channel_ready_success(self):
@@ -63,9 +63,6 @@ class TestChannelReady(AioTestBase):
             if server:
                 await server.stop(None)
 
-    @unittest.skip(
-        "skipping due to flake: https://github.com/grpc/grpc/issues/37949"
-    )
     async def test_channel_ready_blocked(self):
         with self.assertRaises(asyncio.TimeoutError):
             await asyncio.wait_for(
