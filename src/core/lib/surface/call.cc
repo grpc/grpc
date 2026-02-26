@@ -385,6 +385,8 @@ grpc_error_handle Call::UpdateDeadline(Timestamp deadline) {
     InternalRef("deadline");
   }
   deadline_ = deadline;
+  GRPC_TRACE_LOG(call, INFO) << "[call " << this << "] schedule deadline at "
+                             << (deadline - Timestamp::Now()).ToString();
   deadline_task_ = event_engine->RunAfter(deadline - Timestamp::Now(), this);
   return absl::OkStatus();
 }
