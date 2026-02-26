@@ -148,11 +148,11 @@ absl::Status InMemoryCertificateProvider::UpdateIdentityKeyCertPair(
     std::vector<IdentityKeyOrSignerCertPair>
         identity_key_or_signer_cert_pairs) {
   GRPC_CHECK(!identity_key_or_signer_cert_pairs.empty());
-  auto pairs_core_or =
+  auto pairs_core =
       CreatePairsCore(std::move(identity_key_or_signer_cert_pairs));
-  if (!pairs_core_or.ok()) return pairs_core_or.status();
+  if (!pairs_core.ok()) return pairs_core.status();
   return grpc_tls_certificate_provider_in_memory_set_identity_certificate(
-             c_provider_, *pairs_core_or)
+             c_provider_, *pairs_core)
              ? absl::OkStatus()
              : absl::InternalError("Unable to update identity certificate");
 }
