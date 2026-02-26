@@ -1,4 +1,5 @@
 <?php
+
 /*
  *
  * Copyright 2015 gRPC authors.
@@ -79,7 +80,7 @@ class TimevalTest extends \PHPUnit\Framework\TestCase
     {
         $time = new Grpc\Timeval(7200000000);
         $delta = new Grpc\Timeval(7200000000);
-        $delta2 = new Grpc\Timeval(7200000000*2);
+        $delta2 = new Grpc\Timeval(7200000000 * 2);
         $time2 = $time->add($delta2);
         $time2 = $time2->subtract($delta);
         $time2 = $time2->subtract($delta);

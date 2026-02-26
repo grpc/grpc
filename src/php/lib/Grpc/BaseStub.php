@@ -1,4 +1,5 @@
 <?php
+
 /*
  *
  * Copyright 2015 gRPC authors.
@@ -85,7 +86,8 @@ class BaseStub
         $this->channel = static::getDefaultChannel($hostname, $opts);
     }
 
-    private static function updateOpts($opts) {
+    private static function updateOpts($opts)
+    {
         if (!empty($opts['grpc.primary_user_agent'])) {
             $opts['grpc.primary_user_agent'] .= ' ';
         } else {
@@ -270,11 +272,13 @@ class BaseStub
      */
     private function _GrpcUnaryUnary($channel)
     {
-        return function ($method,
-                         $argument,
-                         $deserialize,
-                         array $metadata = [],
-                         array $options = []) use ($channel) {
+        return function (
+            $method,
+            $argument,
+            $deserialize,
+            array $metadata = [],
+            array $options = []
+        ) use ($channel) {
             $call = $this->call_invoker->UnaryCall(
                 $channel,
                 $method,
@@ -307,10 +311,12 @@ class BaseStub
      */
     private function _GrpcStreamUnary($channel)
     {
-        return function ($method,
-                         $deserialize,
-                         array $metadata = [],
-                         array $options = []) use ($channel) {
+        return function (
+            $method,
+            $deserialize,
+            array $metadata = [],
+            array $options = []
+        ) use ($channel) {
             $call = $this->call_invoker->ClientStreamingCall(
                 $channel,
                 $method,
@@ -343,11 +349,13 @@ class BaseStub
      */
     private function _GrpcUnaryStream($channel)
     {
-        return function ($method,
-                         $argument,
-                         $deserialize,
-                         array $metadata = [],
-                         array $options = []) use ($channel) {
+        return function (
+            $method,
+            $argument,
+            $deserialize,
+            array $metadata = [],
+            array $options = []
+        ) use ($channel) {
             $call = $this->call_invoker->ServerStreamingCall(
                 $channel,
                 $method,
@@ -380,10 +388,12 @@ class BaseStub
      */
     private function _GrpcStreamStream($channel)
     {
-        return function ($method,
-                         $deserialize,
-                         array $metadata = [],
-                         array $options = []) use ($channel) {
+        return function (
+            $method,
+            $deserialize,
+            array $metadata = [],
+            array $options = []
+        ) use ($channel) {
             $call = $this->call_invoker->BidiStreamingCall(
                 $channel,
                 $method,
@@ -418,11 +428,13 @@ class BaseStub
     private function _UnaryUnaryCallFactory($channel)
     {
         if (is_a($channel, 'Grpc\Internal\InterceptorChannel')) {
-            return function ($method,
-                             $argument,
-                             $deserialize,
-                             array $metadata = [],
-                             array $options = []) use ($channel) {
+            return function (
+                $method,
+                $argument,
+                $deserialize,
+                array $metadata = [],
+                array $options = []
+            ) use ($channel) {
                 return $channel->getInterceptor()->interceptUnaryUnary(
                     $method,
                     $argument,
@@ -447,11 +459,13 @@ class BaseStub
     private function _UnaryStreamCallFactory($channel)
     {
         if (is_a($channel, 'Grpc\Internal\InterceptorChannel')) {
-            return function ($method,
-                             $argument,
-                             $deserialize,
-                             array $metadata = [],
-                             array $options = []) use ($channel) {
+            return function (
+                $method,
+                $argument,
+                $deserialize,
+                array $metadata = [],
+                array $options = []
+            ) use ($channel) {
                 return $channel->getInterceptor()->interceptUnaryStream(
                     $method,
                     $argument,
@@ -476,10 +490,12 @@ class BaseStub
     private function _StreamUnaryCallFactory($channel)
     {
         if (is_a($channel, 'Grpc\Internal\InterceptorChannel')) {
-            return function ($method,
-                             $deserialize,
-                             array $metadata = [],
-                             array $options = []) use ($channel) {
+            return function (
+                $method,
+                $deserialize,
+                array $metadata = [],
+                array $options = []
+            ) use ($channel) {
                 return $channel->getInterceptor()->interceptStreamUnary(
                     $method,
                     $deserialize,
@@ -503,10 +519,12 @@ class BaseStub
     private function _StreamStreamCallFactory($channel)
     {
         if (is_a($channel, 'Grpc\Internal\InterceptorChannel')) {
-            return function ($method,
-                             $deserialize,
-                             array $metadata = [],
-                             array $options = []) use ($channel) {
+            return function (
+                $method,
+                $deserialize,
+                array $metadata = [],
+                array $options = []
+            ) use ($channel) {
                 return $channel->getInterceptor()->interceptStreamStream(
                     $method,
                     $deserialize,

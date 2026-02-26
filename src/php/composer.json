@@ -5,10 +5,12 @@
   "version": "1.79.0",
   "require": {
     "php": ">=7.1.0",
+    "ext-grpc": "*",
     "google/protobuf": "^v3.3.0"
   },
   "require-dev": {
-    "google/auth": "^v1.3.0"
+    "google/auth": "^v1.3.0",
+    "friendsofphp/php-cs-fixer": "^3.82"
   },
   "autoload": {
     "psr-4": {
@@ -16,5 +18,9 @@
       "": ["tests/interop/",
            "tests/generated_code/"]
     }
+  },
+  "scripts": {
+    "lint": "php-cs-fixer check",
+    "lint:fix": "php-cs-fixer fix"
   }
 }

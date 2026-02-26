@@ -1,4 +1,5 @@
 <?php
+
 /*
  *
  * Copyright 2015 gRPC authors.
@@ -29,9 +30,11 @@ class CallCredentialsTest extends \PHPUnit\Framework\TestCase
     public function setUp(): void
     {
         $this->credentials = Grpc\ChannelCredentials::createSsl(
-            file_get_contents(dirname(__FILE__).'/../data/ca.pem'));
+            file_get_contents(dirname(__FILE__).'/../data/ca.pem')
+        );
         $this->call_credentials = Grpc\CallCredentials::createFromPlugin(
-            [$this, 'callbackFunc']);
+            [$this, 'callbackFunc']
+        );
         $this->credentials = Grpc\ChannelCredentials::createComposite(
             $this->credentials,
             $this->call_credentials
@@ -39,10 +42,13 @@ class CallCredentialsTest extends \PHPUnit\Framework\TestCase
         $server_credentials = Grpc\ServerCredentials::createSsl(
             null,
             file_get_contents(dirname(__FILE__).'/../data/server1.key'),
-            file_get_contents(dirname(__FILE__).'/../data/server1.pem'));
+            file_get_contents(dirname(__FILE__).'/../data/server1.pem')
+        );
         $this->server = new Grpc\Server();
-        $this->port = $this->server->addSecureHttp2Port('0.0.0.0:0',
-                                              $server_credentials);
+        $this->port = $this->server->addSecureHttp2Port(
+            '0.0.0.0:0',
+            $server_credentials
+        );
         $this->server->start();
         $this->host_override = 'foo.test.google.fr';
         $this->channel = new Grpc\Channel(
@@ -74,10 +80,12 @@ class CallCredentialsTest extends \PHPUnit\Framework\TestCase
     {
         $deadline = Grpc\Timeval::infFuture();
         $status_text = 'xyz';
-        $call = new Grpc\Call($this->channel,
-                              '/abc/phony_method',
-                              $deadline,
-                              $this->host_override);
+        $call = new Grpc\Call(
+            $this->channel,
+            '/abc/phony_method',
+            $deadline,
+            $this->host_override
+        );
 
         $event = $call->startBatch([
             Grpc\OP_SEND_INITIAL_METADATA => [],
@@ -136,13 +144,16 @@ class CallCredentialsTest extends \PHPUnit\Framework\TestCase
     public function testCreateComposite()
     {
         $call_credentials2 = Grpc\CallCredentials::createFromPlugin(
-            [$this, 'callbackFunc2']);
+            [$this, 'callbackFunc2']
+        );
         $call_credentials3 = Grpc\CallCredentials::createComposite(
             $this->call_credentials,
             $call_credentials2
         );
-        $this->assertSame('Grpc\CallCredentials',
-                          get_class($call_credentials3));
+        $this->assertSame(
+            'Grpc\CallCredentials',
+            get_class($call_credentials3)
+        );
     }
 
     public function testCreateFromPluginInvalidParam()

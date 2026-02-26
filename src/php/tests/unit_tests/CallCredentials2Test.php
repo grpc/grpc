@@ -1,4 +1,5 @@
 <?php
+
 /*
  *
  * Copyright 2015 gRPC authors.
@@ -27,14 +28,18 @@ class CallCredentials2Test extends \PHPUnit\Framework\TestCase
     public function setUp(): void
     {
         $credentials = Grpc\ChannelCredentials::createSsl(
-            file_get_contents(dirname(__FILE__).'/../data/ca.pem'));
+            file_get_contents(dirname(__FILE__).'/../data/ca.pem')
+        );
         $server_credentials = Grpc\ServerCredentials::createSsl(
             null,
             file_get_contents(dirname(__FILE__).'/../data/server1.key'),
-            file_get_contents(dirname(__FILE__).'/../data/server1.pem'));
+            file_get_contents(dirname(__FILE__).'/../data/server1.pem')
+        );
         $this->server = new Grpc\Server();
-        $this->port = $this->server->addSecureHttp2Port('0.0.0.0:0',
-                                              $server_credentials);
+        $this->port = $this->server->addSecureHttp2Port(
+            '0.0.0.0:0',
+            $server_credentials
+        );
         $this->server->start();
         $this->host_override = 'foo.test.google.fr';
         $this->channel = new Grpc\Channel(
@@ -66,13 +71,16 @@ class CallCredentials2Test extends \PHPUnit\Framework\TestCase
     {
         $deadline = Grpc\Timeval::infFuture();
         $status_text = 'xyz';
-        $call = new Grpc\Call($this->channel,
-                              '/abc/phony_method',
-                              $deadline,
-                              $this->host_override);
+        $call = new Grpc\Call(
+            $this->channel,
+            '/abc/phony_method',
+            $deadline,
+            $this->host_override
+        );
 
         $call_credentials = Grpc\CallCredentials::createFromPlugin(
-            array($this, 'callbackFunc'));
+            [$this, 'callbackFunc']
+        );
         $call->setCredentials($call_credentials);
 
         $event = $call->startBatch([
@@ -136,13 +144,16 @@ class CallCredentials2Test extends \PHPUnit\Framework\TestCase
     {
         $deadline = Grpc\Timeval::infFuture();
         $status_text = 'xyz';
-        $call = new Grpc\Call($this->channel,
-                              '/abc/phony_method',
-                              $deadline,
-                              $this->host_override);
+        $call = new Grpc\Call(
+            $this->channel,
+            '/abc/phony_method',
+            $deadline,
+            $this->host_override
+        );
 
         $call_credentials = Grpc\CallCredentials::createFromPlugin(
-            array($this, 'invalidKeyCallbackFunc'));
+            [$this, 'invalidKeyCallbackFunc']
+        );
         $call->setCredentials($call_credentials);
 
         $event = $call->startBatch([
@@ -168,13 +179,16 @@ class CallCredentials2Test extends \PHPUnit\Framework\TestCase
     {
         $deadline = Grpc\Timeval::infFuture();
         $status_text = 'xyz';
-        $call = new Grpc\Call($this->channel,
-                              '/abc/phony_method',
-                              $deadline,
-                              $this->host_override);
+        $call = new Grpc\Call(
+            $this->channel,
+            '/abc/phony_method',
+            $deadline,
+            $this->host_override
+        );
 
         $call_credentials = Grpc\CallCredentials::createFromPlugin(
-            array($this, 'invalidReturnCallbackFunc'));
+            [$this, 'invalidReturnCallbackFunc']
+        );
         $call->setCredentials($call_credentials);
 
         $event = $call->startBatch([

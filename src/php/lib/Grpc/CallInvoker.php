@@ -1,4 +1,5 @@
 <?php
+
 /*
  *
  * Copyright 2018 gRPC authors.
@@ -16,6 +17,7 @@
  * limitations under the License.
  *
  */
+
 namespace Grpc;
 
 /**

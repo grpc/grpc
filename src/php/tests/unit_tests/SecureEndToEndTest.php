@@ -1,4 +1,5 @@
 <?php
+
 /*
  *
  * Copyright 2015 gRPC authors.
@@ -26,14 +27,18 @@ class SecureEndToEndTest extends \PHPUnit\Framework\TestCase
     public function setUp(): void
     {
         $credentials = Grpc\ChannelCredentials::createSsl(
-            file_get_contents(dirname(__FILE__).'/../data/ca.pem'));
+            file_get_contents(dirname(__FILE__).'/../data/ca.pem')
+        );
         $server_credentials = Grpc\ServerCredentials::createSsl(
             null,
             file_get_contents(dirname(__FILE__).'/../data/server1.key'),
-            file_get_contents(dirname(__FILE__).'/../data/server1.pem'));
+            file_get_contents(dirname(__FILE__).'/../data/server1.pem')
+        );
         $this->server = new Grpc\Server();
-        $this->port = $this->server->addSecureHttp2Port('0.0.0.0:0',
-                                              $server_credentials);
+        $this->port = $this->server->addSecureHttp2Port(
+            '0.0.0.0:0',
+            $server_credentials
+        );
         $this->server->start();
         $this->host_override = 'foo.test.google.fr';
         $this->channel = new Grpc\Channel(
@@ -57,10 +62,12 @@ class SecureEndToEndTest extends \PHPUnit\Framework\TestCase
     {
         $deadline = Grpc\Timeval::infFuture();
         $status_text = 'xyz';
-        $call = new Grpc\Call($this->channel,
-                              'phony_method',
-                              $deadline,
-                              $this->host_override);
+        $call = new Grpc\Call(
+            $this->channel,
+            'phony_method',
+            $deadline,
+            $this->host_override
+        );
 
         $event = $call->startBatch([
             Grpc\OP_SEND_INITIAL_METADATA => [],
@@ -107,10 +114,12 @@ class SecureEndToEndTest extends \PHPUnit\Framework\TestCase
     {
         $deadline = Grpc\Timeval::infFuture();
         $req_text = 'message_write_flags_test';
-        $call = new Grpc\Call($this->channel,
-                              'phony_method',
-                              $deadline,
-                              $this->host_override);
+        $call = new Grpc\Call(
+            $this->channel,
+            'phony_method',
+            $deadline,
+            $this->host_override
+        );
 
         $event = $call->startBatch([
             Grpc\OP_SEND_INITIAL_METADATA => [],
@@ -156,10 +165,12 @@ class SecureEndToEndTest extends \PHPUnit\Framework\TestCase
         $req_text = 'client_server_full_request_response';
         $reply_text = 'reply:client_server_full_request_response';
 
-        $call = new Grpc\Call($this->channel,
-                              'phony_method',
-                              $deadline,
-                              $this->host_override);
+        $call = new Grpc\Call(
+            $this->channel,
+            'phony_method',
+            $deadline,
+            $this->host_override
+        );
 
         $event = $call->startBatch([
             Grpc\OP_SEND_INITIAL_METADATA => [],

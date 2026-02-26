@@ -23,3 +23,6 @@ vendor/
 
 *.pb.php
 *_grpc_pb.php
+
+# PHP CS
+.php-cs-fixer.cache
