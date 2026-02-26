@@ -190,7 +190,7 @@ struct tsi_ssl_handshaker : public tsi_handshaker,
   // or nullopt if not.
   std::optional<HandshakerNextArgs> handshaker_next_args ABSL_GUARDED_BY(mu);
   void MaybeSetError(std::string error) const
-      ABSL_EXCLUSIVE_LOCKS_REQUIRED(&tsi_ssl_handshaker::mu) {
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(&mu) {
     if (!handshaker_next_args.has_value()) return;
     if (handshaker_next_args->error_ptr == nullptr) return;
     *handshaker_next_args->error_ptr = std::move(error);
@@ -2032,9 +2032,9 @@ static tsi_result ssl_handshaker_result_create(tsi_ssl_handshaker* handshaker,
                                                unsigned char* unused_bytes,
                                                size_t unused_bytes_size)
     ABSL_EXCLUSIVE_LOCKS_REQUIRED(&tsi_ssl_handshaker::mu) {
-  if (handshaker == nullptr ||
-      (unused_bytes_size > 0 && unused_bytes == nullptr)) {
-    if (handshaker != nullptr) handshaker->MaybeSetError("invalid argument");
+  if (handshaker == nullptr) return TSI_INVALID_ARGUMENT;
+  if (unused_bytes_size > 0 && unused_bytes == nullptr) {
+    handshaker->MaybeSetError("invalid argument");
     return TSI_INVALID_ARGUMENT;
   }
   tsi_ssl_handshaker_result* result =
@@ -2125,9 +2125,14 @@ static tsi_result ssl_handshaker_do_handshake(tsi_ssl_handshaker* impl)
         LOG(INFO) << "Handshake failed with error "
                   << tsi::SslErrorString(ssl_result) << ": " << err_str
                   << verify_result_str;
-        impl->MaybeSetError(absl::StrCat(
-            tsi::SslErrorString(ssl_result), ": ", err_str, verify_result_str,
-            ": ", impl->signed_bytes.status().ToString()));
+        std::string signer_error = "";
+#if defined(OPENSSL_IS_BORINGSSL)
+        signer_error =
+            absl::StrCat(": ", impl->signed_bytes.status().ToString());
+#endif
+        impl->MaybeSetError(absl::StrCat(tsi::SslErrorString(ssl_result), ": ",
+                                         err_str, verify_result_str,
+                                         signer_error));
         impl->result = TSI_PROTOCOL_FAILURE;
         return impl->result;
       }
@@ -2167,9 +2172,9 @@ static tsi_result ssl_bytes_remaining(tsi_ssl_handshaker* impl,
                                       unsigned char** bytes_remaining,
                                       size_t* bytes_remaining_size)
     ABSL_EXCLUSIVE_LOCKS_REQUIRED(&tsi_ssl_handshaker::mu) {
-  if (impl == nullptr || bytes_remaining == nullptr ||
-      bytes_remaining_size == nullptr) {
-    if (impl != nullptr) impl->MaybeSetError("invalid argument");
+  if (impl == nullptr) return TSI_INVALID_ARGUMENT;
+  if (bytes_remaining == nullptr || bytes_remaining_size == nullptr) {
+    impl->MaybeSetError("invalid argument");
     return TSI_INVALID_ARGUMENT;
   }
   // Attempt to read all of the bytes in SSL's read BIO. These bytes should
