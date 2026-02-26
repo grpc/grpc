@@ -788,114 +788,6 @@ Http2Status Http2ServerTransport::ParseAndDiscardHeaders(
       stream, std::move(original_status));
 }
 
-Http2Status ProcessHttp2DataFrame(Http2DataFrame frame) {
-  // https://www.rfc-editor.org/rfc/rfc9113.html#name-data
-  GRPC_HTTP2_SERVER_DLOG
-      << "Http2ServerTransport ProcessHttp2DataFrame Factory";
-  // TODO(tjagtap) : [PH2][P2] : Implement this.
-  GRPC_HTTP2_SERVER_DLOG
-      << "Http2ServerTransport ProcessHttp2DataFrame Promise { stream_id="
-      << frame.stream_id << ", end_stream=" << frame.end_stream
-      << ", payload length=" << frame.payload.Length() << "}";
-  return Http2Status::Ok();
-}
-
-Http2Status ProcessHttp2HeaderFrame(Http2HeaderFrame frame) {
-  // https://www.rfc-editor.org/rfc/rfc9113.html#name-headers
-  GRPC_HTTP2_SERVER_DLOG
-      << "Http2ServerTransport ProcessHttp2HeaderFrame Factory";
-  // TODO(tjagtap) : [PH2][P2] : Implement this.
-  GRPC_HTTP2_SERVER_DLOG
-      << "Http2ServerTransport ProcessHttp2HeaderFrame Promise { stream_id="
-      << frame.stream_id << ", end_headers=" << frame.end_headers
-      << ", end_stream=" << frame.end_stream
-      << ", payload length=" << frame.payload.Length() << " }";
-  return Http2Status::Ok();
-}
-
-Http2Status ProcessHttp2RstStreamFrame(Http2RstStreamFrame frame) {
-  // https://www.rfc-editor.org/rfc/rfc9113.html#name-rst_stream
-  GRPC_HTTP2_SERVER_DLOG
-      << "Http2ServerTransport ProcessHttp2RstStreamFrame Factory";
-  // TODO(tjagtap) : [PH2][P2] : Implement this.
-  GRPC_HTTP2_SERVER_DLOG
-      << "Http2ServerTransport ProcessHttp2RstStreamFrame Promise{ stream_id="
-      << frame.stream_id << ", error_code=" << frame.error_code << " }";
-  return Http2Status::Ok();
-}
-
-Http2Status ProcessHttp2SettingsFrame(Http2SettingsFrame frame) {
-  // https://www.rfc-editor.org/rfc/rfc9113.html#name-settings
-  GRPC_HTTP2_SERVER_DLOG
-      << "Http2ServerTransport ProcessHttp2SettingsFrame Factory";
-  // TODO(tjagtap) : [PH2][P2] : Implement this.
-  // Load into this.settings_
-  // Take necessary actions as per settings that have changed.
-  GRPC_HTTP2_SERVER_DLOG
-      << "Http2ServerTransport ProcessHttp2SettingsFrame Promise { ack="
-      << frame.ack << ", settings length=" << frame.settings.size() << "}";
-  return Http2Status::Ok();
-}
-
-Http2Status ProcessHttp2PingFrame(Http2PingFrame frame) {
-  // https://www.rfc-editor.org/rfc/rfc9113.html#name-ping
-  GRPC_HTTP2_SERVER_DLOG
-      << "Http2ServerTransport ProcessHttp2PingFrame Factory";
-  // TODO(tjagtap) : [PH2][P2] : Implement this.
-  GRPC_HTTP2_SERVER_DLOG
-      << "Http2ServerTransport ProcessHttp2PingFrame Promise { ack="
-      << frame.ack << ", opaque=" << frame.opaque << " }";
-  return Http2Status::Ok();
-}
-
-Http2Status ProcessHttp2GoawayFrame(Http2GoawayFrame frame) {
-  // https://www.rfc-editor.org/rfc/rfc9113.html#name-goaway
-  GRPC_HTTP2_SERVER_DLOG
-      << "Http2ServerTransport ProcessHttp2GoawayFrame Factory";
-  // TODO(tjagtap) : [PH2][P2] : Implement this.
-  GRPC_HTTP2_SERVER_DLOG
-      << "Http2ServerTransport ProcessHttp2GoawayFrame Promise { "
-         "last_stream_id="
-      << frame.last_stream_id << ", error_code=" << frame.error_code << "}";
-  return Http2Status::Ok();
-}
-
-Http2Status ProcessHttp2WindowUpdateFrame(Http2WindowUpdateFrame frame) {
-  // https://www.rfc-editor.org/rfc/rfc9113.html#name-window_update
-  GRPC_HTTP2_SERVER_DLOG
-      << "Http2ServerTransport ProcessHttp2WindowUpdateFrame Factory";
-  // TODO(tjagtap) : [PH2][P2] : Implement this.
-  GRPC_HTTP2_SERVER_DLOG
-      << "Http2ServerTransport ProcessHttp2WindowUpdateFrame Promise { "
-         " stream_id="
-      << frame.stream_id << ", increment=" << frame.increment << "}";
-  return Http2Status::Ok();
-}
-
-Http2Status ProcessHttp2ContinuationFrame(Http2ContinuationFrame frame) {
-  // https://www.rfc-editor.org/rfc/rfc9113.html#name-continuation
-  GRPC_HTTP2_SERVER_DLOG
-      << "Http2ServerTransport ProcessHttp2ContinuationFrame Factory";
-  // TODO(tjagtap) : [PH2][P2] : Implement this.
-  GRPC_HTTP2_SERVER_DLOG
-      << "Http2ServerTransport ProcessHttp2ContinuationFrame Promise { "
-         "stream_id="
-      << frame.stream_id << ", end_headers=" << frame.end_headers
-      << ", payload length=" << frame.payload.Length() << " }";
-  return Http2Status::Ok();
-}
-
-Http2Status ProcessHttp2SecurityFrame(Http2SecurityFrame frame) {
-  GRPC_HTTP2_SERVER_DLOG
-      << "Http2ServerTransport ProcessHttp2SecurityFrame Factory";
-  // TODO(tjagtap) : [PH2][P2] : Implement this.
-  GRPC_HTTP2_SERVER_DLOG
-      << "Http2ServerTransport ProcessHttp2SecurityFrame Promise { payload "
-         "length="
-      << frame.payload.Length() << " }";
-  return Http2Status::Ok();
-}
-
 auto Http2ServerTransport::ReadAndProcessOneFrame() {
   GRPC_HTTP2_SERVER_DLOG
       << "Http2ServerTransport::ReadAndProcessOneFrame Factory";
@@ -972,12 +864,12 @@ auto Http2ServerTransport::ReadAndProcessOneFrame() {
 
 auto Http2ServerTransport::ReadLoop() {
   GRPC_HTTP2_SERVER_DLOG << "Http2ServerTransport::ReadLoop Factory";
-  return AssertResultType<absl::Status>(UntilTransportClosed(Loop([this]() {
+  return AssertResultType<absl::Status>(Loop([this]() {
     return TrySeq(ReadAndProcessOneFrame(), []() -> LoopCtl<absl::Status> {
       GRPC_HTTP2_SERVER_DLOG << "Http2ServerTransport::ReadLoop Continue";
       return Continue();
     });
-  })));
+  }));
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -1443,7 +1335,7 @@ void Http2ServerTransport::SpawnTransportLoops() {
   // ReadLoop is spawned after the first write.
   // For Server, read happens before write. So ReadLoop is spawned first.
   // MultiplexerLoop is spawned after the first read.
-  SpawnGuardedTransportParty("ReadLoop", ReadLoop());
+  SpawnGuardedTransportParty("ReadLoop", UntilTransportClosed(ReadLoop()));
 
   // TODO(tjagtap) : [PH2][P0] : Spawn MultiplexerLoop after 1st read completes.
   // TODO(tjagtap) : [PH2][P0] : Remove this when MultiplexerLoop is implemented
