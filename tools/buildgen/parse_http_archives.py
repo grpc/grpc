@@ -84,19 +84,14 @@ class ModuleVisitor(ast.NodeVisitor):
         sub_visitor.visit(node)
         self.http_archives.append(sub_visitor.http_archive)
 
-class HttpArchiveInfo:
-    def __init__(self):
-        self.name = None
-        self.urls = []
-        self.strip_prefix = None
-        self.hash = None
-
 def parse_http_archives(bazel_output: str) -> HttpArchives:
     module = ast.parse(bazel_output)
     visitor = ModuleVisitor()
     visitor.visit(module)
     return visitor.http_archives
 
+# When invoked as a script, read starlark-like input from `bazel mod show_repo`
+# and write json to stdout.
 if __name__ == "__main__":
     bazel_output = sys.stdin.read()
     result = parse_http_archives(bazel_output)
