@@ -1843,6 +1843,7 @@ let package = Package(
         "src/core/load_balancing/pick_first/pick_first.cc",
         "src/core/load_balancing/pick_first/pick_first.h",
         "src/core/load_balancing/priority/priority.cc",
+        "src/core/load_balancing/random_subsetting/random_subsetting.cc",
         "src/core/load_balancing/ring_hash/ring_hash.cc",
         "src/core/load_balancing/ring_hash/ring_hash.h",
         "src/core/load_balancing/rls/rls.cc",

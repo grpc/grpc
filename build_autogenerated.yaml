@@ -2097,6 +2097,7 @@ libs:
   - src/core/load_balancing/outlier_detection/outlier_detection.cc
   - src/core/load_balancing/pick_first/pick_first.cc
   - src/core/load_balancing/priority/priority.cc
+  - src/core/load_balancing/random_subsetting/random_subsetting.cc
   - src/core/load_balancing/ring_hash/ring_hash.cc
   - src/core/load_balancing/rls/rls.cc
   - src/core/load_balancing/round_robin/round_robin.cc
@@ -3373,6 +3374,7 @@ libs:
   - src/core/load_balancing/outlier_detection/outlier_detection.cc
   - src/core/load_balancing/pick_first/pick_first.cc
   - src/core/load_balancing/priority/priority.cc
+  - src/core/load_balancing/random_subsetting/random_subsetting.cc
   - src/core/load_balancing/ring_hash/ring_hash.cc
   - src/core/load_balancing/rls/rls.cc
   - src/core/load_balancing/round_robin/round_robin.cc
@@ -22193,6 +22195,24 @@ targets:
   - absl/random:bit_gen_ref
   - absl/random:distributions
   - absl/random:random
+  uses_polling: false
+- name: random_subsetting_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/event_engine/event_engine_test_utils.h
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
+  - test/core/load_balancing/lb_policy_test_lib.h
+  src:
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
+  - test/core/load_balancing/random_subsetting_test.cc
+  deps:
+  - gtest
+  - protobuf
+  - grpc_test_util
   uses_polling: false
 - name: raw_end2end_test
   gtest: true

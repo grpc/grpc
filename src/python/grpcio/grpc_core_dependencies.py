@@ -753,6 +753,7 @@ CORE_SOURCE_FILES = [
     'src/core/load_balancing/outlier_detection/outlier_detection.cc',
     'src/core/load_balancing/pick_first/pick_first.cc',
     'src/core/load_balancing/priority/priority.cc',
+    'src/core/load_balancing/random_subsetting/random_subsetting.cc',
     'src/core/load_balancing/ring_hash/ring_hash.cc',
     'src/core/load_balancing/rls/rls.cc',
     'src/core/load_balancing/round_robin/round_robin.cc',

@@ -251,6 +251,9 @@ promise_primitives:
 queue_pluck:
   default: false
   description: Completion queue plucking. The `api` tracer must be enabled for this flag to have any effect.
+random_subsetting_lb:
+  default: false
+  description: Random subsetting load balancing policy.
 resolver_refcount:
   debug_only: true
   default: false

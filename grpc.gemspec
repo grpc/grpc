@@ -1846,6 +1846,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/load_balancing/pick_first/pick_first.cc )
   s.files += %w( src/core/load_balancing/pick_first/pick_first.h )
   s.files += %w( src/core/load_balancing/priority/priority.cc )
+  s.files += %w( src/core/load_balancing/random_subsetting/random_subsetting.cc )
   s.files += %w( src/core/load_balancing/ring_hash/ring_hash.cc )
   s.files += %w( src/core/load_balancing/ring_hash/ring_hash.h )
   s.files += %w( src/core/load_balancing/rls/rls.cc )

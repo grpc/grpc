@@ -207,6 +207,30 @@ grpc_fuzz_test(
 )
 
 grpc_cc_test(
+    name = "random_subsetting_test",
+    srcs = ["random_subsetting_test.cc"],
+    external_deps = [
+        "gtest",
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
+    ],
+    tags = [
+        "lb_unit_test",
+    ],
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        ":lb_policy_test_lib",
+        "//:config",
+        "//:endpoint_addresses",
+        "//:gpr",
+        "//:ref_counted_ptr",
+        "//:work_serializer",
+    ],
+)
+
+grpc_cc_test(
     name = "round_robin_test",
     srcs = ["round_robin_test.cc"],
     external_deps = [

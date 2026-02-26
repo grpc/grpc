@@ -7320,6 +7320,40 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "grpc_lb_policy_random_subsetting",
+    srcs = [
+        "load_balancing/random_subsetting/random_subsetting.cc",
+    ],
+    external_deps = [
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
+    ],
+    deps = [
+        "channel_args",
+        "delegating_helper",
+        "json",
+        "lb_policy",
+        "lb_policy_factory",
+        "pollset_set",
+        "shared_bit_gen",
+        "validation_errors",
+        "xxhash_inline",
+        "//:config",
+        "//:debug_location",
+        "//:endpoint_addresses",
+        "//:gpr",
+        "//:grpc_base",
+        "//:grpc_trace",
+        "//:lb_child_policy_handler",
+        "//:orphanable",
+        "//:ref_counted_ptr",
+        "//:sockaddr_utils",
+        "//:work_serializer",
+    ],
+)
+
+grpc_cc_library(
     name = "grpc_lb_policy_round_robin",
     srcs = [
         "load_balancing/round_robin/round_robin.cc",

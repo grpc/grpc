@@ -138,3 +138,21 @@ balancers.
 
 The `grpclb` policy gets the list of addresses of the balancers to talk to
 via an attribute returned by the resolver.
+
+### `random_subsetting`
+
+This LB policy is selected via the service config and requires configuration.
+
+The `random_subsetting` policy selects a subset of endpoints using rendezvous
+hashing and passes them to a child LB policy. It maintains two important properties:
+
+1. The policy tries to distribute connections among servers as equally as possible
+2. The policy minimizes connection churn during server scale-ups by using
+   rendezvous hashing
+
+Configuration parameters:
+- `subset_size`: Number of backends each client will connect to (required, must be > 0)
+- `childPolicy`: The child load balancing policy configuration (required)
+
+The policy uses XXH64 hashing with a random seed to consistently select the same
+subset of endpoints across updates while minimizing churn when endpoints change.
