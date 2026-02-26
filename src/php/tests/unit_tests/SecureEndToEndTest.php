@@ -16,7 +16,27 @@
  * limitations under the License.
  *
  */
-class SecureEndToEndTest extends \PHPUnit\Framework\TestCase
+
+use Grpc\Call;
+use Grpc\Channel;
+use Grpc\Server;
+use Grpc\ServerCredentials;
+use Grpc\Timeval;
+use PHPUnit\Framework\TestCase;
+use Grpc\ChannelCredentials;
+use const Grpc\OP_RECV_CLOSE_ON_SERVER;
+use const Grpc\OP_RECV_INITIAL_METADATA;
+use const Grpc\OP_RECV_MESSAGE;
+use const Grpc\OP_RECV_STATUS_ON_CLIENT;
+use const Grpc\OP_SEND_CLOSE_FROM_CLIENT;
+use const Grpc\OP_SEND_INITIAL_METADATA;
+use const Grpc\OP_SEND_MESSAGE;
+use const Grpc\OP_SEND_STATUS_FROM_SERVER;
+use const Grpc\STATUS_INVALID_ARGUMENT;
+use const Grpc\STATUS_OK;
+use const Grpc\WRITE_NO_COMPRESS;
+
+class SecureEndToEndTest extends TestCase
 {
     private $server;
     private $port;
@@ -25,18 +45,18 @@ class SecureEndToEndTest extends \PHPUnit\Framework\TestCase
 
     public function setUp(): void
     {
-        $credentials = Grpc\ChannelCredentials::createSsl(
+        $credentials = ChannelCredentials::createSsl(
             file_get_contents(dirname(__FILE__).'/../data/ca.pem'));
-        $server_credentials = Grpc\ServerCredentials::createSsl(
+        $server_credentials = ServerCredentials::createSsl(
             null,
             file_get_contents(dirname(__FILE__).'/../data/server1.key'),
             file_get_contents(dirname(__FILE__).'/../data/server1.pem'));
-        $this->server = new Grpc\Server();
+        $this->server = new Server();
         $this->port = $this->server->addSecureHttp2Port('0.0.0.0:0',
                                               $server_credentials);
         $this->server->start();
         $this->host_override = 'foo.test.google.fr';
-        $this->channel = new Grpc\Channel(
+        $this->channel = new Channel(
             'localhost:'.$this->port,
             [
             'force_new' => true,
@@ -55,16 +75,16 @@ class SecureEndToEndTest extends \PHPUnit\Framework\TestCase
 
     public function testSimpleRequestBody()
     {
-        $deadline = Grpc\Timeval::infFuture();
+        $deadline = Timeval::infFuture();
         $status_text = 'xyz';
-        $call = new Grpc\Call($this->channel,
+        $call = new Call($this->channel,
                               'phony_method',
                               $deadline,
                               $this->host_override);
 
         $event = $call->startBatch([
-            Grpc\OP_SEND_INITIAL_METADATA => [],
-            Grpc\OP_SEND_CLOSE_FROM_CLIENT => true,
+            OP_SEND_INITIAL_METADATA => [],
+            OP_SEND_CLOSE_FROM_CLIENT => true,
         ]);
 
         $this->assertTrue($event->send_metadata);
@@ -75,13 +95,13 @@ class SecureEndToEndTest extends \PHPUnit\Framework\TestCase
         $server_call = $event->call;
 
         $event = $server_call->startBatch([
-            Grpc\OP_SEND_INITIAL_METADATA => [],
-            Grpc\OP_SEND_STATUS_FROM_SERVER => [
+            OP_SEND_INITIAL_METADATA => [],
+            OP_SEND_STATUS_FROM_SERVER => [
                 'metadata' => [],
-                'code' => Grpc\STATUS_INVALID_ARGUMENT,
+                'code' => STATUS_INVALID_ARGUMENT,
                 'details' => $status_text,
             ],
-            Grpc\OP_RECV_CLOSE_ON_SERVER => true,
+            OP_RECV_CLOSE_ON_SERVER => true,
         ]);
 
         $this->assertTrue($event->send_metadata);
@@ -89,14 +109,14 @@ class SecureEndToEndTest extends \PHPUnit\Framework\TestCase
         $this->assertFalse($event->cancelled);
 
         $event = $call->startBatch([
-            Grpc\OP_RECV_INITIAL_METADATA => true,
-            Grpc\OP_RECV_STATUS_ON_CLIENT => true,
+            OP_RECV_INITIAL_METADATA => true,
+            OP_RECV_STATUS_ON_CLIENT => true,
         ]);
 
         $this->assertSame([], $event->metadata);
         $status = $event->status;
         $this->assertSame([], $status->metadata);
-        $this->assertSame(Grpc\STATUS_INVALID_ARGUMENT, $status->code);
+        $this->assertSame(STATUS_INVALID_ARGUMENT, $status->code);
         $this->assertSame($status_text, $status->details);
 
         unset($call);
@@ -105,18 +125,18 @@ class SecureEndToEndTest extends \PHPUnit\Framework\TestCase
 
     public function testMessageWriteFlags()
     {
-        $deadline = Grpc\Timeval::infFuture();
+        $deadline = Timeval::infFuture();
         $req_text = 'message_write_flags_test';
-        $call = new Grpc\Call($this->channel,
+        $call = new Call($this->channel,
                               'phony_method',
                               $deadline,
                               $this->host_override);
 
         $event = $call->startBatch([
-            Grpc\OP_SEND_INITIAL_METADATA => [],
-            Grpc\OP_SEND_MESSAGE => ['message' => $req_text,
-                                     'flags' => Grpc\WRITE_NO_COMPRESS, ],
-            Grpc\OP_SEND_CLOSE_FROM_CLIENT => true,
+            OP_SEND_INITIAL_METADATA => [],
+            OP_SEND_MESSAGE => ['message' => $req_text,
+                                     'flags' => WRITE_NO_COMPRESS, ],
+            OP_SEND_CLOSE_FROM_CLIENT => true,
         ]);
 
         $this->assertTrue($event->send_metadata);
@@ -127,23 +147,23 @@ class SecureEndToEndTest extends \PHPUnit\Framework\TestCase
         $server_call = $event->call;
 
         $event = $server_call->startBatch([
-            Grpc\OP_SEND_INITIAL_METADATA => [],
-            Grpc\OP_SEND_STATUS_FROM_SERVER => [
+            OP_SEND_INITIAL_METADATA => [],
+            OP_SEND_STATUS_FROM_SERVER => [
                 'metadata' => [],
-                'code' => Grpc\STATUS_OK,
+                'code' => STATUS_OK,
                 'details' => '',
             ],
         ]);
 
         $event = $call->startBatch([
-            Grpc\OP_RECV_INITIAL_METADATA => true,
-            Grpc\OP_RECV_STATUS_ON_CLIENT => true,
+            OP_RECV_INITIAL_METADATA => true,
+            OP_RECV_STATUS_ON_CLIENT => true,
         ]);
 
         $this->assertSame([], $event->metadata);
         $status = $event->status;
         $this->assertSame([], $status->metadata);
-        $this->assertSame(Grpc\STATUS_OK, $status->code);
+        $this->assertSame(STATUS_OK, $status->code);
         $this->assertSame("", $status->details);
 
         unset($call);
@@ -152,19 +172,19 @@ class SecureEndToEndTest extends \PHPUnit\Framework\TestCase
 
     public function testClientServerFullRequestResponse()
     {
-        $deadline = Grpc\Timeval::infFuture();
+        $deadline = Timeval::infFuture();
         $req_text = 'client_server_full_request_response';
         $reply_text = 'reply:client_server_full_request_response';
 
-        $call = new Grpc\Call($this->channel,
+        $call = new Call($this->channel,
                               'phony_method',
                               $deadline,
                               $this->host_override);
 
         $event = $call->startBatch([
-            Grpc\OP_SEND_INITIAL_METADATA => [],
-            Grpc\OP_SEND_CLOSE_FROM_CLIENT => true,
-            Grpc\OP_SEND_MESSAGE => ['message' => $req_text],
+            OP_SEND_INITIAL_METADATA => [],
+            OP_SEND_CLOSE_FROM_CLIENT => true,
+            OP_SEND_MESSAGE => ['message' => $req_text],
         ]);
 
         $this->assertTrue($event->send_metadata);
@@ -176,20 +196,20 @@ class SecureEndToEndTest extends \PHPUnit\Framework\TestCase
         $server_call = $event->call;
 
         $event = $server_call->startBatch([
-            Grpc\OP_RECV_MESSAGE => true,
+            OP_RECV_MESSAGE => true,
         ]);
 
         $this->assertSame($req_text, $event->message);
 
         $event = $server_call->startBatch([
-            Grpc\OP_SEND_INITIAL_METADATA => [],
-            Grpc\OP_SEND_MESSAGE => ['message' => $reply_text],
-            Grpc\OP_SEND_STATUS_FROM_SERVER => [
+            OP_SEND_INITIAL_METADATA => [],
+            OP_SEND_MESSAGE => ['message' => $reply_text],
+            OP_SEND_STATUS_FROM_SERVER => [
                 'metadata' => [],
-                'code' => Grpc\STATUS_OK,
+                'code' => STATUS_OK,
                 'details' => '',
             ],
-            Grpc\OP_RECV_CLOSE_ON_SERVER => true,
+            OP_RECV_CLOSE_ON_SERVER => true,
         ]);
 
         $this->assertTrue($event->send_metadata);
@@ -198,16 +218,16 @@ class SecureEndToEndTest extends \PHPUnit\Framework\TestCase
         $this->assertFalse($event->cancelled);
 
         $event = $call->startBatch([
-            Grpc\OP_RECV_INITIAL_METADATA => true,
-            Grpc\OP_RECV_MESSAGE => true,
-            Grpc\OP_RECV_STATUS_ON_CLIENT => true,
+            OP_RECV_INITIAL_METADATA => true,
+            OP_RECV_MESSAGE => true,
+            OP_RECV_STATUS_ON_CLIENT => true,
         ]);
 
         $this->assertSame([], $event->metadata);
         $this->assertSame($reply_text, $event->message);
         $status = $event->status;
         $this->assertSame([], $status->metadata);
-        $this->assertSame(Grpc\STATUS_OK, $status->code);
+        $this->assertSame(STATUS_OK, $status->code);
         $this->assertSame("", $status->details);
 
         unset($call);

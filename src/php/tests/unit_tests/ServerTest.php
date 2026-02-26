@@ -17,8 +17,17 @@
  *
  */
 
-class ServerTest extends \PHPUnit\Framework\TestCase
+use Grpc\Call;
+use Grpc\ChannelCredentials;
+use Grpc\Server;
+use Grpc\Timeval;
+use PHPUnit\Framework\TestCase;
+
+class ServerTest extends TestCase
 {
+    /**
+     * @var Server|null
+     */
     private $server;
 
     public function setUp(): void
@@ -33,50 +42,50 @@ class ServerTest extends \PHPUnit\Framework\TestCase
 
     public function testConstructorWithNull()
     {
-        $this->server = new Grpc\Server();
+        $this->server = new Server();
         $this->assertNotNull($this->server);
     }
 
     public function testConstructorWithNullArray()
     {
-        $this->server = new Grpc\Server([]);
+        $this->server = new Server([]);
         $this->assertNotNull($this->server);
     }
 
     public function testConstructorWithArray()
     {
         // key of array must be string
-         $this->server = new Grpc\Server(['ip' => '127.0.0.1',
+         $this->server = new Server(['ip' => '127.0.0.1',
                                           'port' => '8080', ]);
         $this->assertNotNull($this->server);
     }
 
     public function testRequestCall()
     {
-        $this->server = new Grpc\Server();
+        $this->server = new Server();
         $port = $this->server->addHttp2Port('0.0.0.0:0');
         $this->server->start();
         $channel = new Grpc\Channel('localhost:'.$port,
              [
                  'force_new' => true,
-                 'credentials' => Grpc\ChannelCredentials::createInsecure()
+                 'credentials' => ChannelCredentials::createInsecure()
              ]);
 
-        $deadline = Grpc\Timeval::infFuture();
-        $call = new Grpc\Call($channel, 'phony_method', $deadline);
+        $deadline = Timeval::infFuture();
+        $call = new Call($channel, 'phony_method', $deadline);
 
         $event = $call->startBatch([Grpc\OP_SEND_INITIAL_METADATA => [],
                                     Grpc\OP_SEND_CLOSE_FROM_CLIENT => true,
                                     ]);
 
         $c = $this->server->requestCall();
-        $this->assertObjectHasAttribute('call', $c);
-        $this->assertObjectHasAttribute('method', $c);
+        $this->assertObjectHasProperty('call', $c);
+        $this->assertObjectHasProperty('method', $c);
         $this->assertSame('phony_method', $c->method);
-        $this->assertObjectHasAttribute('host', $c);
+        $this->assertObjectHasProperty('host', $c);
         $this->assertTrue(is_string($c->host));
-        $this->assertObjectHasAttribute('absolute_deadline', $c);
-        $this->assertObjectHasAttribute('metadata', $c);
+        $this->assertObjectHasProperty('absolute_deadline', $c);
+        $this->assertObjectHasProperty('metadata', $c);
 
         unset($call);
         unset($channel);
@@ -94,51 +103,50 @@ class ServerTest extends \PHPUnit\Framework\TestCase
 
     public function testInvalidConstructor()
     {
-        $this->expectException(\InvalidArgumentException::class);
-        $this->server = new Grpc\Server('invalid_host');
+        $this->expectException(InvalidArgumentException::class);
+        $this->server = new Server('invalid_host');
         $this->assertNull($this->server);
     }
 
     public function testInvalidConstructorWithNumKeyOfArray()
     {
-        $this->expectException(\InvalidArgumentException::class);
-        $this->server = new Grpc\Server([10 => '127.0.0.1',
-                                         20 => '8080', ]);
+        $this->expectException(InvalidArgumentException::class);
+        $this->server = new Server([10 => '127.0.0.1', 20 => '8080', ]);
         $this->assertNull($this->server);
     }
 
     public function testInvalidConstructorWithList()
     {
-        $this->expectException(\InvalidArgumentException::class);
-        $this->server = new Grpc\Server(['127.0.0.1', '8080']);
+        $this->expectException(InvalidArgumentException::class);
+        $this->server = new Server(['127.0.0.1', '8080']);
         $this->assertNull($this->server);
     }
 
     public function testInvalidAddHttp2Port()
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         $this->server = new Grpc\Server([]);
-        $port = $this->server->addHttp2Port(['0.0.0.0:0']);
+        $this->server->addHttp2Port(['0.0.0.0:0']);
     }
 
     public function testInvalidAddSecureHttp2Port()
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         $this->server = new Grpc\Server([]);
-        $port = $this->server->addSecureHttp2Port(['0.0.0.0:0']);
+        $this->server->addSecureHttp2Port(['0.0.0.0:0']);
     }
 
     public function testInvalidAddSecureHttp2Port2()
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         $this->server = new Grpc\Server();
-        $port = $this->server->addSecureHttp2Port('0.0.0.0:0');
+        $this->server->addSecureHttp2Port('0.0.0.0:0');
     }
 
     public function testInvalidAddSecureHttp2Port3()
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         $this->server = new Grpc\Server();
-        $port = $this->server->addSecureHttp2Port('0.0.0.0:0', 'invalid');
+        $this->server->addSecureHttp2Port('0.0.0.0:0', 'invalid');
     }
 }

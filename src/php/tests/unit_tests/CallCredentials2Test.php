@@ -17,27 +17,56 @@
  *
  */
 
-class CallCredentials2Test extends \PHPUnit\Framework\TestCase
+use Grpc\Call;
+use Grpc\CallCredentials;
+use Grpc\Channel;
+use Grpc\ChannelCredentials;
+use Grpc\Server;
+use Grpc\ServerCredentials;
+use Grpc\Timeval;
+use PHPUnit\Framework\TestCase;
+use const Grpc\OP_RECV_CLOSE_ON_SERVER;
+use const Grpc\OP_RECV_INITIAL_METADATA;
+use const Grpc\OP_RECV_STATUS_ON_CLIENT;
+use const Grpc\OP_SEND_CLOSE_FROM_CLIENT;
+use const Grpc\OP_SEND_INITIAL_METADATA;
+use const Grpc\OP_SEND_STATUS_FROM_SERVER;
+use const Grpc\STATUS_INVALID_ARGUMENT;
+use const Grpc\STATUS_UNAVAILABLE;
+
+class CallCredentials2Test extends TestCase
 {
+    /**
+     * @var Server
+     */
     private $server;
+    /**
+     * @var bool
+     */
     private $port;
+    /**
+     * @var string
+     */
     private $host_override;
+    /**
+     * @var Channel
+     */
     private $channel;
 
     public function setUp(): void
     {
-        $credentials = Grpc\ChannelCredentials::createSsl(
+        $credentials = ChannelCredentials::createSsl(
             file_get_contents(dirname(__FILE__).'/../data/ca.pem'));
-        $server_credentials = Grpc\ServerCredentials::createSsl(
+        $server_credentials = ServerCredentials::createSsl(
             null,
             file_get_contents(dirname(__FILE__).'/../data/server1.key'),
             file_get_contents(dirname(__FILE__).'/../data/server1.pem'));
-        $this->server = new Grpc\Server();
+        $this->server = new Server();
         $this->port = $this->server->addSecureHttp2Port('0.0.0.0:0',
                                               $server_credentials);
         $this->server->start();
         $this->host_override = 'foo.test.google.fr';
-        $this->channel = new Grpc\Channel(
+        $this->channel = new Channel(
             'localhost:'.$this->port,
             [
             'force_new' => true,
@@ -64,20 +93,20 @@ class CallCredentials2Test extends \PHPUnit\Framework\TestCase
 
     public function testCreateFromPlugin()
     {
-        $deadline = Grpc\Timeval::infFuture();
+        $deadline = Timeval::infFuture();
         $status_text = 'xyz';
-        $call = new Grpc\Call($this->channel,
+        $call = new Call($this->channel,
                               '/abc/phony_method',
                               $deadline,
                               $this->host_override);
 
-        $call_credentials = Grpc\CallCredentials::createFromPlugin(
+        $call_credentials = CallCredentials::createFromPlugin(
             array($this, 'callbackFunc'));
         $call->setCredentials($call_credentials);
 
         $event = $call->startBatch([
-            Grpc\OP_SEND_INITIAL_METADATA => [],
-            Grpc\OP_SEND_CLOSE_FROM_CLIENT => true,
+            OP_SEND_INITIAL_METADATA => [],
+            OP_SEND_CLOSE_FROM_CLIENT => true,
         ]);
 
         $this->assertTrue($event->send_metadata);
@@ -96,13 +125,13 @@ class CallCredentials2Test extends \PHPUnit\Framework\TestCase
         $server_call = $event->call;
 
         $event = $server_call->startBatch([
-            Grpc\OP_SEND_INITIAL_METADATA => [],
-            Grpc\OP_SEND_STATUS_FROM_SERVER => [
+            OP_SEND_INITIAL_METADATA => [],
+            OP_SEND_STATUS_FROM_SERVER => [
                 'metadata' => [],
-                'code' => Grpc\STATUS_INVALID_ARGUMENT,
+                'code' => STATUS_INVALID_ARGUMENT,
                 'details' => $status_text,
             ],
-            Grpc\OP_RECV_CLOSE_ON_SERVER => true,
+            OP_RECV_CLOSE_ON_SERVER => true,
         ]);
 
         $this->assertTrue($event->send_metadata);
@@ -110,14 +139,14 @@ class CallCredentials2Test extends \PHPUnit\Framework\TestCase
         $this->assertFalse($event->cancelled);
 
         $event = $call->startBatch([
-            Grpc\OP_RECV_INITIAL_METADATA => true,
-            Grpc\OP_RECV_STATUS_ON_CLIENT => true,
+            OP_RECV_INITIAL_METADATA => true,
+            OP_RECV_STATUS_ON_CLIENT => true,
         ]);
 
         $this->assertSame([], $event->metadata);
         $status = $event->status;
         $this->assertSame([], $status->metadata);
-        $this->assertSame(Grpc\STATUS_INVALID_ARGUMENT, $status->code);
+        $this->assertSame(STATUS_INVALID_ARGUMENT, $status->code);
         $this->assertSame($status_text, $status->details);
 
         unset($call);
@@ -134,26 +163,26 @@ class CallCredentials2Test extends \PHPUnit\Framework\TestCase
 
     public function testCallbackWithInvalidKey()
     {
-        $deadline = Grpc\Timeval::infFuture();
+        $deadline = Timeval::infFuture();
         $status_text = 'xyz';
-        $call = new Grpc\Call($this->channel,
+        $call = new Call($this->channel,
                               '/abc/phony_method',
                               $deadline,
                               $this->host_override);
 
-        $call_credentials = Grpc\CallCredentials::createFromPlugin(
+        $call_credentials = CallCredentials::createFromPlugin(
             array($this, 'invalidKeyCallbackFunc'));
         $call->setCredentials($call_credentials);
 
         $event = $call->startBatch([
-            Grpc\OP_SEND_INITIAL_METADATA => [],
-            Grpc\OP_SEND_CLOSE_FROM_CLIENT => true,
-            Grpc\OP_RECV_STATUS_ON_CLIENT => true,
+            OP_SEND_INITIAL_METADATA => [],
+            OP_SEND_CLOSE_FROM_CLIENT => true,
+            OP_RECV_STATUS_ON_CLIENT => true,
         ]);
 
         $this->assertTrue($event->send_metadata);
         $this->assertTrue($event->send_close);
-        $this->assertTrue($event->status->code == Grpc\STATUS_UNAVAILABLE);
+        $this->assertTrue($event->status->code == STATUS_UNAVAILABLE);
     }
 
     public function invalidReturnCallbackFunc($context)
@@ -166,25 +195,25 @@ class CallCredentials2Test extends \PHPUnit\Framework\TestCase
 
     public function testCallbackWithInvalidReturnValue()
     {
-        $deadline = Grpc\Timeval::infFuture();
+        $deadline = Timeval::infFuture();
         $status_text = 'xyz';
-        $call = new Grpc\Call($this->channel,
+        $call = new Call($this->channel,
                               '/abc/phony_method',
                               $deadline,
                               $this->host_override);
 
-        $call_credentials = Grpc\CallCredentials::createFromPlugin(
+        $call_credentials = CallCredentials::createFromPlugin(
             array($this, 'invalidReturnCallbackFunc'));
         $call->setCredentials($call_credentials);
 
         $event = $call->startBatch([
-            Grpc\OP_SEND_INITIAL_METADATA => [],
-            Grpc\OP_SEND_CLOSE_FROM_CLIENT => true,
-            Grpc\OP_RECV_STATUS_ON_CLIENT => true,
+            OP_SEND_INITIAL_METADATA => [],
+            OP_SEND_CLOSE_FROM_CLIENT => true,
+            OP_RECV_STATUS_ON_CLIENT => true,
         ]);
 
         $this->assertTrue($event->send_metadata);
         $this->assertTrue($event->send_close);
-        $this->assertTrue($event->status->code == Grpc\STATUS_UNAVAILABLE);
+        $this->assertTrue($event->status->code == STATUS_UNAVAILABLE);
     }
 }
