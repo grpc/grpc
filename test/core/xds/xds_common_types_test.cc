@@ -1367,7 +1367,6 @@ TEST(HeaderMutationRulesTest, DefaultAllowsAll) {
 TEST(HeaderMutationRulesTest, DisallowAll) {
   HeaderMutationRules rules;
   rules.disallow_all = true;
-  rules.disallow_expression = std::make_unique<RE2>("common.*");
   rules.allow_expression = std::make_unique<RE2>(".*header");
   EXPECT_FALSE(rules.IsMutationAllowed("allow_header"));
 }
