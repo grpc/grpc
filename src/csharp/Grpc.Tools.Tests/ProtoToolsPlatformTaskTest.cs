@@ -92,6 +92,16 @@ namespace Grpc.Tools.Tests
         }
 
         [Test]
+        public void CpuIsS390x()
+        {
+            if (RuntimeInformation.OSArchitecture == Architecture.S390x)
+            {
+                _cpuMatched++;
+                Assert.AreEqual("s390x", _task.Cpu);
+            }
+        }
+
+        [Test]
         public void OsIsWindows()
         {
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))

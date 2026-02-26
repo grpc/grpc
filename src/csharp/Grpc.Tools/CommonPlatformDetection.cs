@@ -29,7 +29,7 @@ namespace Grpc.Core.Internal
     internal static class CommonPlatformDetection
     {
         public enum OSKind { Unknown, Windows, Linux, MacOSX };
-        public enum CpuArchitecture { Unknown, X86, X64, Arm64 };
+        public enum CpuArchitecture { Unknown, X86, X64, Arm64, S390x };
 
         public static OSKind GetOSKind()
         {
@@ -85,6 +85,8 @@ namespace Grpc.Core.Internal
                     return CpuArchitecture.X64;
                 case Architecture.Arm64:
                     return CpuArchitecture.Arm64;
+                case Architecture.S390x:
+                    return CpuArchitecture.S390x;
                 // We do not support other architectures,
                 // so we simply return "unrecognized".
                 default: 

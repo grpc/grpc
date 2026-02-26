@@ -57,6 +57,7 @@ namespace Grpc.Tools
                 case CommonPlatformDetection.CpuArchitecture.X86: Cpu = "x86"; break;
                 case CommonPlatformDetection.CpuArchitecture.X64: Cpu = "x64"; break;
                 case CommonPlatformDetection.CpuArchitecture.Arm64: Cpu = "arm64"; break;
+                case CommonPlatformDetection.CpuArchitecture.S390x: Cpu = "s390x"; break;
                 default: Cpu = ""; break;
             }
 
