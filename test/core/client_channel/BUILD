@@ -251,6 +251,21 @@ grpc_fuzz_test(
 )
 
 grpc_cc_test(
+    name = "subchannel_metrics_test",
+    size = "small",
+    srcs = ["subchannel_metrics_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    deps = [
+        "//:grpc",
+        "//:grpc_client_channel",
+        "//test/core/test_util:fake_stats_plugin",
+        "//test/core/test_util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
     name = "subchannel_stream_limiter_test",
     srcs = ["subchannel_stream_limiter_test.cc"],
     external_deps = ["gtest"],

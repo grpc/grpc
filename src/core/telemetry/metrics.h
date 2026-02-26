@@ -39,6 +39,9 @@
 namespace grpc_core {
 
 constexpr absl::string_view kMetricLabelTarget = "grpc.target";
+constexpr absl::string_view kMetricLabelBackendService =
+    "grpc.lb.backend_service";
+constexpr absl::string_view kMetricLabelLocality = "grpc.lb.locality";
 
 // A global registry of instruments(metrics). This API is designed to be used
 // to register instruments (Counter, Histogram, and Gauge) as part of program
@@ -79,6 +82,7 @@ class GlobalInstrumentsRegistry {
     kCounter,
     kHistogram,
     kCallbackGauge,
+    kUpDownCounter,
   };
   using InstrumentID = uint32_t;
   struct GlobalInstrumentDescriptor {
@@ -171,6 +175,15 @@ class GlobalInstrumentsRegistry {
                         absl::string_view unit, bool enable_by_default) {
     return RegistrationBuilder<ValueType::kDouble, InstrumentType::kCounter, 0,
                                0>(name, description, unit, enable_by_default);
+  }
+  static RegistrationBuilder<ValueType::kInt64, InstrumentType::kUpDownCounter,
+                             0, 0>
+  RegisterInt64UpDownCounter(absl::string_view name,
+                             absl::string_view description,
+                             absl::string_view unit, bool enable_by_default) {
+    return RegistrationBuilder<ValueType::kInt64,
+                               InstrumentType::kUpDownCounter, 0, 0>(
+        name, description, unit, enable_by_default);
   }
   static RegistrationBuilder<ValueType::kUInt64, InstrumentType::kHistogram, 0,
                              0>
@@ -327,6 +340,14 @@ class StatsPlugin {
       GlobalInstrumentsRegistry::GlobalInstrumentHandle handle, double value,
       absl::Span<const absl::string_view> label_values,
       absl::Span<const absl::string_view> optional_label_values) = 0;
+  // Adds \a value to the int64 counter specified by \a handle. \a label_values
+  // and \a optional_label_values specify attributes that are associated with
+  // this measurement and must match with their corresponding keys in
+  // GlobalInstrumentsRegistry::RegisterInt64Counter().
+  virtual void AddCounter(
+      GlobalInstrumentsRegistry::GlobalInstrumentHandle handle, int64_t value,
+      absl::Span<const absl::string_view> label_values,
+      absl::Span<const absl::string_view> optional_label_values) = 0;
   // Records a uint64 \a value to the histogram specified by \a handle. \a
   // label_values and \a optional_label_values specify attributes that are
   // associated with this measurement and must match with their corresponding
@@ -429,6 +450,18 @@ class GlobalStatsPluginRegistry {
             GlobalInstrumentsRegistry::InstrumentType::kCounter, M, N>
             handle,
         double value, std::array<absl::string_view, M> label_values,
+        std::array<absl::string_view, N> optional_values) {
+      for (auto& state : plugins_state_) {
+        state.plugin->AddCounter(handle, value, label_values, optional_values);
+      }
+    }
+    template <std::size_t M, std::size_t N>
+    void AddCounter(
+        GlobalInstrumentsRegistry::TypedGlobalInstrumentHandle<
+            GlobalInstrumentsRegistry::ValueType::kInt64,
+            GlobalInstrumentsRegistry::InstrumentType::kUpDownCounter, M, N>
+            handle,
+        int64_t value, std::array<absl::string_view, M> label_values,
         std::array<absl::string_view, N> optional_values) {
       for (auto& state : plugins_state_) {
         state.plugin->AddCounter(handle, value, label_values, optional_values);
