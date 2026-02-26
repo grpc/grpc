@@ -20,7 +20,7 @@ import base64
 import json
 import re
 import sys
-from typing import Any, Dict, List 
+from typing import Any, Dict, List
 
 HttpArchive = Dict[str, Any]
 HttpArchives = List[HttpArchive]

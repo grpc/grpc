@@ -1463,9 +1463,7 @@ _BAZEL_DEPS_QUERIES = [
 bazel_rules = {}
 for query in _BAZEL_DEPS_QUERIES:
     bazel_rules.update(
-        _extract_rules_from_bazel_xml(
-            _bazel_query_xml_tree(query)
-        )
+        _extract_rules_from_bazel_xml(_bazel_query_xml_tree(query))
     )
 
 # Step 1.5: The sources for UPB protos are pre-generated, so we want
