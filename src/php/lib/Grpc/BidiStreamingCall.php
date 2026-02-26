@@ -19,9 +19,13 @@
 
 namespace Grpc;
 
+use Google\Protobuf\Internal\Message;
+
 /**
  * Represents an active call that allows for sending and receiving messages
  * in streams in any order.
+ *
+ * @template T of Message
  */
 class BidiStreamingCall extends AbstractCall
 {
@@ -41,7 +45,7 @@ class BidiStreamingCall extends AbstractCall
     /**
      * Reads the next value from the server.
      *
-     * @return mixed The next value from the server, or null if there is none
+     * @return T|null The next value from the server, or null if there is none
      */
     public function read()
     {
@@ -61,8 +65,8 @@ class BidiStreamingCall extends AbstractCall
      * Write a single message to the server. This cannot be called after
      * writesDone is called.
      *
-     * @param ByteBuffer $data    The data to write
-     * @param array      $options An array of options, possible keys:
+     * @param T $data    The data to write
+     * @param array<string, mixed>      $options An array of options, possible keys:
      *                            'flags' => a number (optional)
      */
     public function write($data, array $options = [])
@@ -89,7 +93,7 @@ class BidiStreamingCall extends AbstractCall
     /**
      * Wait for the server to send the status, and return it.
      *
-     * @return \stdClass The status object, with integer $code, string
+     * @return object{code: int, metadata: array<string, string[]>, details: string} The status object, with integer $code, string
      *                   $details, and array $metadata members
      */
     public function getStatus()

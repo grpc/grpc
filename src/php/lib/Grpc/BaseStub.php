@@ -19,23 +19,45 @@
 
 namespace Grpc;
 
+use Closure;
+use Exception;
+use Google\Protobuf\Internal\Message;
+use Grpc\Internal\InterceptorChannel;
+use InvalidArgumentException;
+
 /**
  * Base class for generated client stubs. Stub methods are expected to call
  * _simpleRequest or _streamRequest and return the result.
+ *
+ * @template T of Message
  */
 class BaseStub
 {
+    /**
+     * @var string
+     */
     private $hostname;
+    /**
+     * @var string
+     */
     private $hostname_override;
+    /**
+     * @var Channel|InterceptorChannel
+     */
     private $channel;
+    /**
+     * @var CallInvoker
+     */
     private $call_invoker;
 
-    // a callback function
+    /**
+     * @var callable|null a callback function
+     */
     private $update_metadata;
 
     /**
      * @param string  $hostname
-     * @param array   $opts
+     * @param array<string, mixed>   $opts
      *  - 'update_metadata': (optional) a callback function which takes in a
      * metadata array, and returns an updated metadata array
      *  - 'grpc.primary_user_agent': (optional) a user-agent string
@@ -43,8 +65,11 @@ class BaseStub
      */
     public function __construct($hostname, $opts, $channel = null)
     {
-        if (!method_exists('Grpc\ChannelCredentials', 'isDefaultRootsPemSet') ||
-            !ChannelCredentials::isDefaultRootsPemSet()) {
+        if (
+          !method_exists('Grpc\ChannelCredentials', 'isDefaultRootsPemSet') // @phpstan-ignore function.alreadyNarrowedType
+          || !ChannelCredentials::isDefaultRootsPemSet()
+        )
+        {
             $ssl_roots = file_get_contents(
                 dirname(__FILE__).'/../../../../etc/roots.pem'
             );
@@ -74,7 +99,7 @@ class BaseStub
         if ($channel) {
             if (!is_a($channel, 'Grpc\Channel') &&
                 !is_a($channel, 'Grpc\Internal\InterceptorChannel')) {
-                throw new \Exception('The channel argument is not a Channel object '.
+                throw new Exception('The channel argument is not a Channel object '.
                     'or an InterceptorChannel object created by '.
                     'Interceptor::intercept($channel, Interceptor|Interceptor[] $interceptors)');
             }
@@ -85,6 +110,12 @@ class BaseStub
         $this->channel = static::getDefaultChannel($hostname, $opts);
     }
 
+  /**
+   * @param array<string, mixed> $opts
+   *
+   * @return array<string, mixed>
+   * @throws Exception
+   */
     private static function updateOpts($opts) {
         if (!empty($opts['grpc.primary_user_agent'])) {
             $opts['grpc.primary_user_agent'] .= ' ';
@@ -92,7 +123,7 @@ class BaseStub
             $opts['grpc.primary_user_agent'] = '';
         }
         if (defined('\Grpc\VERSION')) {
-            $version_str = \Grpc\VERSION;
+            $version_str = VERSION;
         } else {
             if (!file_exists($composerFile = __DIR__.'/../../composer.json')) {
                 // for grpc/grpc-php subpackage
@@ -103,7 +134,7 @@ class BaseStub
         }
         $opts['grpc.primary_user_agent'] .= 'grpc-php/'.$version_str;
         if (!array_key_exists('credentials', $opts)) {
-            throw new \Exception("The opts['credentials'] key is now ".
+            throw new Exception("The opts['credentials'] key is now ".
                 'required. Please see one of the '.
                 'ChannelCredentials::create methods');
         }
@@ -113,7 +144,8 @@ class BaseStub
     /**
      * Creates and returns the default Channel
      *
-     * @param array $opts Channel constructor options
+     * @param string $hostname
+     * @param array<string, mixed> $opts Channel constructor options
      *
      * @return Channel The channel
      */
@@ -180,18 +212,18 @@ class BaseStub
     }
 
     /**
-     * @param $new_state Connect state
+     * @param int $new_state Connect state
      *
      * @return bool true if state is CHANNEL_READY
      * @throws Exception if state is CHANNEL_FATAL_FAILURE
      */
     private function _checkConnectivityState($new_state)
     {
-        if ($new_state == \Grpc\CHANNEL_READY) {
+        if ($new_state == CHANNEL_READY) {
             return true;
         }
-        if ($new_state == \Grpc\CHANNEL_FATAL_FAILURE) {
-            throw new \Exception('Failed to connect to server');
+        if ($new_state == CHANNEL_FATAL_FAILURE) {
+            throw new Exception('Failed to connect to server');
         }
 
         return false;
@@ -215,7 +247,7 @@ class BaseStub
         // is bad.
         $last_slash_idx = strrpos($method, '/');
         if ($last_slash_idx === false) {
-            throw new \InvalidArgumentException(
+            throw new InvalidArgumentException(
                 'service name must have a slash'
             );
         }
@@ -249,7 +281,7 @@ class BaseStub
         $metadata_copy = [];
         foreach ($metadata as $key => $value) {
             if (!preg_match('/^[.A-Za-z\d_-]+$/', $key)) {
-                throw new \InvalidArgumentException(
+                throw new InvalidArgumentException(
                     'Metadata keys must be nonempty strings containing only '.
                     'alphanumeric characters, hyphens, underscores and dots'
                 );
@@ -264,9 +296,8 @@ class BaseStub
      * Create a function which can be used to create UnaryCall
      *
      * @param Channel|InterceptorChannel   $channel
-     * @param callable $deserialize A function that deserializes the response
      *
-     * @return \Closure
+     * @return Closure
      */
     private function _GrpcUnaryUnary($channel)
     {
@@ -301,9 +332,8 @@ class BaseStub
      * Create a function which can be used to create ServerStreamingCall
      *
      * @param Channel|InterceptorChannel   $channel
-     * @param callable $deserialize A function that deserializes the response
      *
-     * @return \Closure
+     * @return Closure
      */
     private function _GrpcStreamUnary($channel)
     {
@@ -337,9 +367,8 @@ class BaseStub
      * Create a function which can be used to create ClientStreamingCall
      *
      * @param Channel|InterceptorChannel   $channel
-     * @param callable $deserialize A function that deserializes the response
      *
-     * @return \Closure
+     * @return Closure
      */
     private function _GrpcUnaryStream($channel)
     {
@@ -374,9 +403,8 @@ class BaseStub
      * Create a function which can be used to create BidiStreamingCall
      *
      * @param Channel|InterceptorChannel   $channel
-     * @param callable $deserialize A function that deserializes the response
      *
-     * @return \Closure
+     * @return Closure
      */
     private function _GrpcStreamStream($channel)
     {
@@ -411,9 +439,8 @@ class BaseStub
      * Create a function which can be used to create UnaryCall
      *
      * @param Channel|InterceptorChannel   $channel
-     * @param callable $deserialize A function that deserializes the response
      *
-     * @return \Closure
+     * @return Closure
      */
     private function _UnaryUnaryCallFactory($channel)
     {
@@ -440,9 +467,8 @@ class BaseStub
      * Create a function which can be used to create ServerStreamingCall
      *
      * @param Channel|InterceptorChannel   $channel
-     * @param callable $deserialize A function that deserializes the response
      *
-     * @return \Closure
+     * @return Closure
      */
     private function _UnaryStreamCallFactory($channel)
     {
@@ -469,9 +495,8 @@ class BaseStub
      * Create a function which can be used to create ClientStreamingCall
      *
      * @param Channel|InterceptorChannel   $channel
-     * @param callable $deserialize A function that deserializes the response
      *
-     * @return \Closure
+     * @return Closure
      */
     private function _StreamUnaryCallFactory($channel)
     {
@@ -496,9 +521,8 @@ class BaseStub
      * Create a function which can be used to create BidiStreamingCall
      *
      * @param Channel|InterceptorChannel   $channel
-     * @param callable $deserialize A function that deserializes the response
      *
-     * @return \Closure
+     * @return Closure
      */
     private function _StreamStreamCallFactory($channel)
     {
@@ -527,10 +551,10 @@ class BaseStub
      *
      * @param string   $method      The name of the method to call
      * @param mixed    $argument    The argument to the method
-     * @param callable $deserialize A function that deserializes the response
-     * @param array    $metadata    A metadata map to send to the server
+     * @param array{0: class-string<T>, 1: string} $deserialize A function that deserializes the response
+     * @param array<string, string[]>    $metadata    A metadata map to send to the server
      *                              (optional)
-     * @param array    $options     An array of options (optional)
+     * @param array<string, mixed>    $options     An array of options (optional)
      *
      * @return UnaryCall The active call object
      */
@@ -551,10 +575,10 @@ class BaseStub
      * output.
      *
      * @param string   $method      The name of the method to call
-     * @param callable $deserialize A function that deserializes the response
-     * @param array    $metadata    A metadata map to send to the server
+     * @param array{0: class-string<T>, 1: string} $deserialize A function that deserializes the response
+     * @param array<string, string[]>    $metadata    A metadata map to send to the server
      *                              (optional)
-     * @param array    $options     An array of options (optional)
+     * @param array<string, mixed>    $options     An array of options (optional)
      *
      * @return ClientStreamingCall The active call object
      */
@@ -575,10 +599,10 @@ class BaseStub
      *
      * @param string   $method      The name of the method to call
      * @param mixed    $argument    The argument to the method
-     * @param callable $deserialize A function that deserializes the responses
-     * @param array    $metadata    A metadata map to send to the server
+     * @param array{0: class-string<T>, 1: string} $deserialize A function that deserializes the responses
+     * @param array<string, string[]>    $metadata    A metadata map to send to the server
      *                              (optional)
-     * @param array    $options     An array of options (optional)
+     * @param array<string, mixed>    $options     An array of options (optional)
      *
      * @return ServerStreamingCall The active call object
      */
@@ -598,10 +622,10 @@ class BaseStub
      * Call a remote method with messages streaming in both directions.
      *
      * @param string   $method      The name of the method to call
-     * @param callable $deserialize A function that deserializes the responses
-     * @param array    $metadata    A metadata map to send to the server
+     * @param array{0: class-string<T>, 1: string} $deserialize A function that deserializes the responses
+     * @param array<string, string[]>    $metadata    A metadata map to send to the server
      *                              (optional)
-     * @param array    $options     An array of options (optional)
+     * @param array<string, mixed>    $options     An array of options (optional)
      *
      * @return BidiStreamingCall The active call object
      */

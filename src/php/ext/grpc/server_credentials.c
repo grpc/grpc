@@ -64,7 +64,7 @@ zval *grpc_php_wrap_server_credentials(grpc_server_credentials
  * @param string $pem_root_certs PEM encoding of the server root certificates
  * @param string $pem_private_key PEM encoding of the client's private key
  * @param string $pem_cert_chain PEM encoding of the client's certificate chain
- * @return Credentials The new SSL credentials object
+ * @return ServerCredentials The new SSL credentials object
  */
 PHP_METHOD(ServerCredentials, createSsl) {
   char *pem_root_certs = 0;

@@ -19,16 +19,20 @@
 
 namespace Grpc;
 
+use Google\Protobuf\Internal\Message;
+
 /**
  * Represents an active call that sends a stream of messages and then gets
  * a single response.
+ *
+ * @template T of Message
  */
 class ClientStreamingCall extends AbstractCall
 {
     /**
      * Start the call.
      *
-     * @param array $metadata Metadata to send with the call, if applicable
+     * @param array<string, string[]> $metadata Metadata to send with the call, if applicable
      *                        (optional)
      */
     public function start(array $metadata = [])
@@ -42,8 +46,8 @@ class ClientStreamingCall extends AbstractCall
      * Write a single message to the server. This cannot be called after
      * wait is called.
      *
-     * @param ByteBuffer $data    The data to write
-     * @param array      $options An array of options, possible keys:
+     * @param T $data    The data to write
+     * @param array<string, mixed>      $options An array of options, possible keys:
      *                            'flags' => a number (optional)
      */
     public function write($data, array $options = [])
@@ -60,7 +64,7 @@ class ClientStreamingCall extends AbstractCall
     /**
      * Wait for the server to respond with data and a status.
      *
-     * @return array [response data, status]
+     * @return array{0: T|null, 1: object{code: int, metadata: array<string, string[]>, details: string}}
      */
     public function wait()
     {

@@ -526,7 +526,7 @@ PHP_METHOD(Channel, getConnectivityState) {
 /**
  * Watch the connectivity state of the channel until it changed
  * @param long $last_state The previous connectivity state of the channel
- * @param Timeval $deadline_obj The deadline this function should wait until
+ * @param Timeval $deadline The deadline this function should wait until
  * @return bool If the connectivity state changes from last_state
  *              before deadline
  */

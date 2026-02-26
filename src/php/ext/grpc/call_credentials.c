@@ -66,8 +66,8 @@ zval *grpc_php_wrap_call_credentials(grpc_call_credentials
 
 /**
  * Create composite credentials from two existing credentials.
- * @param CallCredentials $cred1_obj The first credential
- * @param CallCredentials $cred2_obj The second credential
+ * @param CallCredentials $creds1 The first credential
+ * @param CallCredentials $creds2 The second credential
  * @return CallCredentials The new composite credentials object
  */
 PHP_METHOD(CallCredentials, createComposite) {
@@ -96,7 +96,7 @@ PHP_METHOD(CallCredentials, createComposite) {
 
 /**
  * Create a call credentials object from the plugin API
- * @param function $fci The callback function
+ * @param function $callback The callback function
  * @return CallCredentials The new call credentials object
  */
 PHP_METHOD(CallCredentials, createFromPlugin) {

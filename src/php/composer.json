@@ -5,10 +5,13 @@
   "version": "1.79.0",
   "require": {
     "php": ">=7.1.0",
+    "ext-grpc": "*",
+    "ext-json": "*",
     "google/protobuf": "^v3.3.0"
   },
   "require-dev": {
-    "google/auth": "^v1.3.0"
+    "google/auth": "^v1.3.0",
+    "phpstan/phpstan": "^2.1"
   },
   "autoload": {
     "psr-4": {
@@ -16,5 +19,8 @@
       "": ["tests/interop/",
            "tests/generated_code/"]
     }
+  },
+  "scripts": {
+    "phpstan": "phpstan analyse -c phpstan.neon"
   }
 }
