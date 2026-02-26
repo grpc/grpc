@@ -124,7 +124,7 @@ class HighContentionDomain final
  public:
   using Backend = HighContentionBackend;
   static constexpr absl::string_view kName = "high_contention";
-  GRPC_INSTRUMENT_DOMAIN_LABELS();
+  GRPC_EMPTY_INSTRUMENT_DOMAIN_LABELS();
 
   static inline const auto kCounter =
       RegisterCounter("high_contention", "Desc", "unit");

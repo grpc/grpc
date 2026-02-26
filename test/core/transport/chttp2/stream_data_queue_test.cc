@@ -126,6 +126,7 @@ class SimpleQueueTest : public TransportTest {
   SimpleQueueTest() { InitParty(); }
 
   Party* GetParty() { return party_.get(); }
+  Arena* GetArena() { return party_->arena(); }
 
   void InitParty() {
     auto party_arena = SimpleArenaAllocator(0)->MakeArena();
@@ -143,7 +144,7 @@ class SimpleQueueTest : public TransportTest {
 
 TEST_F(SimpleQueueTest, EnqueueTest) {
   // Simple test that does a single enqueue.
-  http2::SimpleQueue<int> queue(/*max_tokens=*/100);
+  http2::SimpleQueue<int> queue(GetArena(), /*max_tokens=*/100);
   StrictMock<MockFunction<void(absl::Status)>> on_done;
   EXPECT_CALL(on_done, Call(absl::OkStatus()));
 
@@ -160,7 +161,7 @@ TEST_F(SimpleQueueTest, EnqueueTest) {
 
 TEST_F(SimpleQueueTest, EnqueueZeroTokensTest) {
   // Simple test that does a single enqueue with zero tokens.
-  http2::SimpleQueue<int> queue(/*max_tokens=*/100);
+  http2::SimpleQueue<int> queue(GetArena(), /*max_tokens=*/100);
   StrictMock<MockFunction<void(absl::Status)>> on_done;
   EXPECT_CALL(on_done, Call(absl::OkStatus()));
 
@@ -177,7 +178,7 @@ TEST_F(SimpleQueueTest, EnqueueZeroTokensTest) {
 
 TEST_F(SimpleQueueTest, MultipleEnqueueTest) {
   // Test multiple enqueues. All the enqueues for this test are immediate.
-  http2::SimpleQueue<int> queue(/*max_tokens=*/100);
+  http2::SimpleQueue<int> queue(GetArena(), /*max_tokens=*/100);
   StrictMock<MockFunction<void(absl::Status)>> on_done;
   EXPECT_CALL(on_done, Call(absl::OkStatus()));
   int count = 10;
@@ -208,7 +209,7 @@ TEST_F(SimpleQueueTest, MultipleEnqueueTest) {
 // Dequeue tests
 TEST_F(SimpleQueueTest, DequeueEmptyQueueTest) {
   // Test to dequeue from an empty queue.
-  http2::SimpleQueue<int> queue(/*max_tokens=*/100);
+  http2::SimpleQueue<int> queue(GetArena(), /*max_tokens=*/100);
 
   std::optional<int> result = queue.Dequeue(/*allowed_dequeue_tokens=*/10,
                                             /*allow_oversized_dequeue=*/false);
@@ -220,7 +221,7 @@ TEST_F(SimpleQueueTest, DequeueTest) {
   // complete before dequeuing. This test asserts the following:
   // 1. Both enqueue and dequeue are successful.
   // 2. The dequeue data is the same as the enqueue data.
-  http2::SimpleQueue<int> queue(/*max_tokens=*/100);
+  http2::SimpleQueue<int> queue(GetArena(), /*max_tokens=*/100);
   Latch<void> enqueue_done;
   StrictMock<MockFunction<void(absl::Status)>> on_enqueue_done;
   StrictMock<MockFunction<void(absl::Status)>> on_dequeue_done;
@@ -254,7 +255,7 @@ TEST_F(SimpleQueueTest, DequeueTest) {
 
 TEST_F(SimpleQueueTest, DequeuePartialDequeueTest) {
   // Test to assert on different combinations of allow_oversized_dequeue.
-  http2::SimpleQueue<int> queue(/*max_tokens=*/200);
+  http2::SimpleQueue<int> queue(GetArena(), /*max_tokens=*/200);
   Latch<void> enqueue_done;
   StrictMock<MockFunction<void(absl::Status)>> on_enqueue_done;
   StrictMock<MockFunction<void(absl::Status)>> on_dequeue_done;
@@ -308,7 +309,7 @@ TEST_F(SimpleQueueTest, DequeuePartialDequeueTest) {
 
 TEST_F(SimpleQueueTest, DequeueTokensTest) {
   // Test to assert different combinations of allowed_dequeue_tokens.
-  http2::SimpleQueue<int> queue(/*max_tokens=*/200);
+  http2::SimpleQueue<int> queue(GetArena(), /*max_tokens=*/200);
   Latch<void> enqueue_done;
   StrictMock<MockFunction<void(absl::Status)>> on_enqueue_done;
   StrictMock<MockFunction<void(absl::Status)>> on_dequeue_done;
@@ -365,7 +366,7 @@ TEST_F(SimpleQueueTest, DequeueTokensTest) {
 TEST_F(SimpleQueueTest, BigMessageEnqueueDequeueTest) {
   // Tests that for a queue with current tokens consumed equal to 0, allows a
   // message to be enqueued even if the tokens are more than the max tokens.
-  SimpleQueue<int> queue(/*max_tokens=*/100);
+  SimpleQueue<int> queue(GetArena(), /*max_tokens=*/100);
   StrictMock<MockFunction<void(absl::Status)>> on_done;
   StrictMock<MockFunction<void(absl::Status)>> on_dequeue_done;
   EXPECT_CALL(on_done, Call(absl::OkStatus()));
@@ -453,7 +454,7 @@ MessageHandle TestMessage(SliceBuffer payload, const uint32_t flags) {
   return Arena::MakePooled<Message>(std::move(payload), flags);
 }
 
-class StreamDataQueueTest : public ::testing::Test {
+class StreamDataQueueTest : public SimpleQueueTest {
  public:
   StreamDataQueueTest() {
     transport_write_context_.StartWriteCycle();
@@ -644,8 +645,9 @@ TEST_F(StreamDataQueueTest, ClientEnqueueInitialMetadataTest) {
   // Simple test to enqueue initial metadata.
   HPackCompressor encoder;
   RefCountedPtr<StreamDataQueue<ClientMetadataHandle>> stream_data_queue =
-      MakeRefCounted<StreamDataQueue<ClientMetadataHandle>>(
-          /*is_client=*/true, /*queue_size=*/10);
+      MakeRefCounted<StreamDataQueue<ClientMetadataHandle>>(GetArena(),
+                                                            /*is_client=*/true,
+                                                            /*queue_size=*/10);
   stream_data_queue->SetStreamId(/*stream_id=*/1,
                                  kAllowTrueBinaryMetadataSetting);
   EnqueueInitialMetadataAndCheckSuccess(
@@ -664,6 +666,7 @@ TEST_F(StreamDataQueueTest, ClientEnqueueMultipleMessagesTest) {
       num_messages * (message_size + kGrpcHeaderSizeInBytes);
   RefCountedPtr<StreamDataQueue<ClientMetadataHandle>> stream_data_queue =
       MakeRefCounted<StreamDataQueue<ClientMetadataHandle>>(
+          GetArena(),
           /*is_client=*/true, /*queue_size=*/queued_size);
   stream_data_queue->SetStreamId(/*stream_id=*/1,
                                  kAllowTrueBinaryMetadataSetting);
@@ -687,8 +690,9 @@ TEST_F(StreamDataQueueTest, ClientEnqueueEndStreamTest) {
   // order of enqueue operations (initial metadata -> message -> half close).
   HPackCompressor encoder;
   RefCountedPtr<StreamDataQueue<ClientMetadataHandle>> stream_data_queue =
-      MakeRefCounted<StreamDataQueue<ClientMetadataHandle>>(
-          /*is_client=*/true, /*queue_size=*/10);
+      MakeRefCounted<StreamDataQueue<ClientMetadataHandle>>(GetArena(),
+                                                            /*is_client=*/true,
+                                                            /*queue_size=*/10);
   stream_data_queue->SetStreamId(/*stream_id=*/1,
                                  kAllowTrueBinaryMetadataSetting);
   EnqueueInitialMetadataAndCheckSuccess(
@@ -711,8 +715,9 @@ TEST_F(StreamDataQueueTest, ClientEnqueueResetStreamTest) {
   // after initial metadata.
   HPackCompressor encoder;
   RefCountedPtr<StreamDataQueue<ClientMetadataHandle>> stream_data_queue =
-      MakeRefCounted<StreamDataQueue<ClientMetadataHandle>>(
-          /*is_client=*/true, /*queue_size=*/10);
+      MakeRefCounted<StreamDataQueue<ClientMetadataHandle>>(GetArena(),
+                                                            /*is_client=*/true,
+                                                            /*queue_size=*/10);
   stream_data_queue->SetStreamId(/*stream_id=*/1,
                                  kAllowTrueBinaryMetadataSetting);
   EnqueueInitialMetadataAndCheckSuccess(
@@ -729,8 +734,9 @@ TEST_F(StreamDataQueueTest, ClientEnqueueAfterResetStreamTest) {
   // Test to assert that no more data can be enqueued after a reset stream.
   HPackCompressor encoder;
   RefCountedPtr<StreamDataQueue<ClientMetadataHandle>> stream_data_queue =
-      MakeRefCounted<StreamDataQueue<ClientMetadataHandle>>(
-          /*is_client=*/true, /*queue_size=*/10);
+      MakeRefCounted<StreamDataQueue<ClientMetadataHandle>>(GetArena(),
+                                                            /*is_client=*/true,
+                                                            /*queue_size=*/10);
   stream_data_queue->SetStreamId(/*stream_id=*/1,
                                  kAllowTrueBinaryMetadataSetting);
   EnqueueInitialMetadataAndCheckSuccess(
@@ -765,18 +771,16 @@ TEST_F(StreamDataQueueTest, ClientEnqueueAfterResetStreamTest) {
   std::vector<Http2Frame> expected_frames;
   expected_frames.emplace_back(
       Http2RstStreamFrame{/*stream_id=*/1, /*error_code=*/0});
-  DequeueAndCheckSuccess(
-      stream_data_queue, std::move(expected_frames), encoder,
-      /*can_send_reset_stream=*/true,
-      /*expected_flags=*/
-      StreamDataQueue<ClientMetadataHandle>::kResetStreamDequeued,
-      /*max_tokens=*/0u, max_frame_length, /*flow_control_tokens_consumed=*/0u,
-      /*expected_writable_state=*/false);
-
-  expected_frames.clear();
   DequeueAndCheckSuccess(stream_data_queue, std::move(expected_frames), encoder,
                          /*can_send_reset_stream=*/true,
-                         /*expected_flags=*/0,
+                         /*expected_flags=*/
+                         DequeueFlags::kResetStreamDequeued,
+                         /*max_tokens=*/0u, max_frame_length,
+                         /*flow_control_tokens_consumed=*/0u,
+                         /*expected_writable_state=*/false);
+
+  DequeueAndCheckSuccess(stream_data_queue, std::vector<Http2Frame>(), encoder,
+                         /*can_send_reset_stream=*/true, /*expected_flags=*/0,
                          /*max_tokens=*/0u, max_frame_length,
                          /*flow_control_tokens_consumed=*/0u,
                          /*expected_writable_state=*/false);
@@ -788,8 +792,9 @@ TEST_F(StreamDataQueueTest, ClientEmptyDequeueTest) {
   // dequeue.
   HPackCompressor encoder;
   RefCountedPtr<StreamDataQueue<ClientMetadataHandle>> stream_data_queue =
-      MakeRefCounted<StreamDataQueue<ClientMetadataHandle>>(
-          /*is_client=*/true, /*queue_size=*/10);
+      MakeRefCounted<StreamDataQueue<ClientMetadataHandle>>(GetArena(),
+                                                            /*is_client=*/true,
+                                                            /*queue_size=*/10);
   stream_data_queue->SetStreamId(/*stream_id=*/1,
                                  kAllowTrueBinaryMetadataSetting);
   EXPECT_TRUE(stream_data_queue->TestOnlyIsEmpty());
@@ -809,8 +814,9 @@ TEST_F(StreamDataQueueTest, ClientDequeueMetadataSingleFrameTest) {
   std::vector<Http2Frame> expected_frames;
   const uint32_t max_frame_length = kPathDemoServiceStep.size();
   RefCountedPtr<StreamDataQueue<ClientMetadataHandle>> stream_data_queue =
-      MakeRefCounted<StreamDataQueue<ClientMetadataHandle>>(
-          /*is_client=*/true, /*queue_size=*/10);
+      MakeRefCounted<StreamDataQueue<ClientMetadataHandle>>(GetArena(),
+                                                            /*is_client=*/true,
+                                                            /*queue_size=*/10);
   stream_data_queue->SetStreamId(/*stream_id=*/1,
                                  kAllowTrueBinaryMetadataSetting);
   EnqueueInitialMetadataAndCheckSuccess(
@@ -820,13 +826,13 @@ TEST_F(StreamDataQueueTest, ClientDequeueMetadataSingleFrameTest) {
   GetExpectedHeaderAndContinuationFrames(max_frame_length, expected_frames,
                                          kPathDemoServiceStep,
                                          /*end_stream=*/false);
-  DequeueAndCheckSuccess(
-      stream_data_queue, std::move(expected_frames), encoder,
-      /*can_send_reset_stream=*/false,
-      /*expected_flags=*/
-      StreamDataQueue<ClientMetadataHandle>::kInitialMetadataDequeued,
-      /*max_tokens=*/10, max_frame_length, /*flow_control_tokens_consumed=*/0u,
-      /*expected_writable_state=*/false);
+  DequeueAndCheckSuccess(stream_data_queue, std::move(expected_frames), encoder,
+                         /*can_send_reset_stream=*/false,
+                         /*expected_flags=*/
+                         DequeueFlags::kInitialMetadataDequeued,
+                         /*max_tokens=*/10, max_frame_length,
+                         /*flow_control_tokens_consumed=*/0u,
+                         /*expected_writable_state=*/false);
   EXPECT_TRUE(stream_data_queue->TestOnlyIsEmpty());
 }
 
@@ -840,8 +846,9 @@ TEST_F(StreamDataQueueTest, ClientDequeueFramesTest) {
   const uint32_t max_frame_length = 17u;
   std::vector<Http2Frame> expected_frames;
   RefCountedPtr<StreamDataQueue<ClientMetadataHandle>> stream_data_queue =
-      MakeRefCounted<StreamDataQueue<ClientMetadataHandle>>(
-          /*is_client=*/true, /*queue_size=*/10);
+      MakeRefCounted<StreamDataQueue<ClientMetadataHandle>>(GetArena(),
+                                                            /*is_client=*/true,
+                                                            /*queue_size=*/10);
   stream_data_queue->SetStreamId(/*stream_id=*/1,
                                  kAllowTrueBinaryMetadataSetting);
   EnqueueInitialMetadataAndCheckSuccess(
@@ -852,14 +859,14 @@ TEST_F(StreamDataQueueTest, ClientDequeueFramesTest) {
   GetExpectedHeaderAndContinuationFrames(max_frame_length, expected_frames,
                                          kPathDemoServiceStep,
                                          /*end_stream=*/false);
-  DequeueAndCheckSuccess(
-      stream_data_queue, std::move(expected_frames), encoder,
-      /*can_send_reset_stream=*/false,
-      /*expected_flags=*/
-      StreamDataQueue<ClientMetadataHandle>::kInitialMetadataDequeued,
-      /*max_tokens=*/10,
-      /*max_frame_length=*/max_frame_length,
-      /*flow_control_tokens_consumed=*/0u, /*expected_writable_state=*/false);
+  DequeueAndCheckSuccess(stream_data_queue, std::move(expected_frames), encoder,
+                         /*can_send_reset_stream=*/false,
+                         /*expected_flags=*/
+                         DequeueFlags::kInitialMetadataDequeued,
+                         /*max_tokens=*/10,
+                         /*max_frame_length=*/max_frame_length,
+                         /*flow_control_tokens_consumed=*/0u,
+                         /*expected_writable_state=*/false);
 
   EnqueueMessageAndCheckSuccess(
       stream_data_queue,
@@ -868,7 +875,9 @@ TEST_F(StreamDataQueueTest, ClientDequeueFramesTest) {
       /*expected_priority=*/WritableStreamPriority::kDefault);
   DequeueMessageAndCheckSuccess(stream_data_queue,
                                 /*expected_frames_length=*/{10, 10, 10, 10, 10},
-                                encoder, /*expected_flags=*/0,
+                                encoder,
+                                /*expected_flags=*/
+                                DequeueFlags::kMessageDequeued,
                                 /*expected_writable_state=*/true,
                                 /*max_tokens=*/50,
                                 /*max_frame_length=*/10,
@@ -876,7 +885,8 @@ TEST_F(StreamDataQueueTest, ClientDequeueFramesTest) {
                                 /*flow_control_tokens_consumed=*/50u);
   DequeueMessageAndCheckSuccess(stream_data_queue,
                                 /*expected_frames_length=*/{5}, encoder,
-                                /*expected_flags=*/0,
+                                /*expected_flags=*/
+                                DequeueFlags::kMessageDequeued,
                                 /*expected_writable_state=*/false,
                                 /*max_tokens=*/50,
                                 /*max_frame_length=*/10,
@@ -891,7 +901,8 @@ TEST_F(StreamDataQueueTest, ClientDequeueFramesTest) {
       /*expected_priority=*/WritableStreamPriority::kDefault);
   DequeueMessageAndCheckSuccess(stream_data_queue,
                                 /*expected_frames_length=*/{15, 10}, encoder,
-                                /*expected_flags=*/0,
+                                /*expected_flags=*/
+                                DequeueFlags::kMessageDequeued,
                                 /*expected_writable_state=*/true,
                                 /*max_tokens=*/25,
                                 /*max_frame_length=*/15,
@@ -899,7 +910,8 @@ TEST_F(StreamDataQueueTest, ClientDequeueFramesTest) {
                                 /*flow_control_tokens_consumed=*/25u);
   DequeueMessageAndCheckSuccess(stream_data_queue,
                                 /*expected_frames_length=*/{15, 10}, encoder,
-                                /*expected_flags=*/0,
+                                /*expected_flags=*/
+                                DequeueFlags::kMessageDequeued,
                                 /*expected_writable_state=*/true,
                                 /*max_tokens=*/25,
                                 /*max_frame_length=*/15,
@@ -907,7 +919,8 @@ TEST_F(StreamDataQueueTest, ClientDequeueFramesTest) {
                                 /*flow_control_tokens_consumed=*/25u);
   DequeueMessageAndCheckSuccess(stream_data_queue,
                                 /*expected_frames_length=*/{5}, encoder,
-                                /*expected_flags=*/0,
+                                /*expected_flags=*/
+                                DequeueFlags::kMessageDequeued,
                                 /*expected_writable_state=*/false,
                                 /*max_tokens=*/25,
                                 /*max_frame_length=*/15,
@@ -928,15 +941,13 @@ TEST_F(StreamDataQueueTest, ClientEnqueueDequeueFlowTest) {
   expected_payload.Append(Slice::ZeroContentsWithLength(1));
   expected_close_frames.emplace_back(
       Http2DataFrame{/*stream_id=*/1,
-                     /*end_stream=*/false,
+                     /*end_stream=*/true,
                      /*payload=*/std::move(expected_payload)});
-  expected_close_frames.emplace_back(Http2DataFrame{/*stream_id=*/1,
-                                                    /*end_stream=*/true,
-                                                    /*payload=*/SliceBuffer()});
 
   RefCountedPtr<StreamDataQueue<ClientMetadataHandle>> stream_data_queue =
-      MakeRefCounted<StreamDataQueue<ClientMetadataHandle>>(
-          /*is_client=*/true, /*queue_size=*/10);
+      MakeRefCounted<StreamDataQueue<ClientMetadataHandle>>(GetArena(),
+                                                            /*is_client=*/true,
+                                                            /*queue_size=*/10);
   stream_data_queue->SetStreamId(/*stream_id=*/1,
                                  kAllowTrueBinaryMetadataSetting);
   EnqueueInitialMetadataAndCheckSuccess(
@@ -961,7 +972,7 @@ TEST_F(StreamDataQueueTest, ClientEnqueueDequeueFlowTest) {
       stream_data_queue, std::move(expected_initial_metadata_frames), encoder,
       /*can_send_reset_stream=*/false,
       /*expected_flags=*/
-      StreamDataQueue<ClientMetadataHandle>::kInitialMetadataDequeued,
+      DequeueFlags::kInitialMetadataDequeued,
       /*max_tokens=*/0u, max_frame_length,
       /*flow_control_tokens_consumed=*/0u, /*expected_writable_state=*/true);
 
@@ -969,7 +980,7 @@ TEST_F(StreamDataQueueTest, ClientEnqueueDequeueFlowTest) {
   DequeueAndCheckSuccess(
       stream_data_queue, std::move(expected_close_frames), encoder,
       /*can_send_reset_stream=*/true, /*expected_flags=*/
-      (StreamDataQueue<ClientMetadataHandle>::kHalfCloseDequeued),
+      (DequeueFlags::kHalfCloseDequeued | DequeueFlags::kMessageDequeued),
       /*max_tokens=*/6u, max_frame_length, /*flow_control_tokens_consumed=*/6u,
       /*expected_writable_state=*/false);
 
@@ -983,9 +994,124 @@ TEST_F(StreamDataQueueTest, ClientEnqueueDequeueFlowTest) {
   DequeueAndCheckSuccess(
       stream_data_queue, std::move(expected_close_frames), encoder,
       /*can_send_reset_stream=*/true, /*expected_flags=*/
-      StreamDataQueue<ClientMetadataHandle>::kResetStreamDequeued,
+      DequeueFlags::kResetStreamDequeued,
       /*max_tokens=*/6, max_frame_length, /*flow_control_tokens_consumed=*/0u,
       /*expected_writable_state=*/false);
+  EXPECT_TRUE(stream_data_queue->TestOnlyIsEmpty());
+}
+
+TEST_F(StreamDataQueueTest, ClientMergeEndOfStreamWithMessageTest) {
+  // Test that half-closed merges with a Message in the same session.
+  const uint32_t max_frame_length = 100u;
+  HPackCompressor encoder;
+  auto stream_data_queue =
+      MakeRefCounted<StreamDataQueue<ClientMetadataHandle>>(
+          GetArena(), /*is_client=*/true, /*queue_size=*/10);
+  stream_data_queue->SetStreamId(/*stream_id=*/1,
+                                 kAllowTrueBinaryMetadataSetting);
+
+  // Cycle 1: Dequeue Initial Metadata alone.
+  EnqueueInitialMetadataAndCheckSuccess(
+      stream_data_queue, TestClientInitialMetadata(),
+      /*expected_writeable_state=*/true,
+      /*expected_priority=*/WritableStreamPriority::kDefault);
+
+  std::vector<Http2Frame> expected_frames;
+  GetExpectedHeaderAndContinuationFrames(max_frame_length, expected_frames,
+                                         kPathDemoServiceStep,
+                                         /*end_stream=*/false);
+
+  DequeueAndCheckSuccess(stream_data_queue, std::move(expected_frames), encoder,
+                         /*can_send_reset_stream=*/true,
+                         /*expected_flags=*/
+                         DequeueFlags::kInitialMetadataDequeued,
+                         /*max_tokens=*/100u, max_frame_length,
+                         /*flow_control_tokens_consumed=*/0u,
+                         /*expected_writable_state=*/false);
+
+  // Cycle 2: Enqueue Message and HalfClosed.
+  EnqueueMessageAndCheckSuccess(
+      stream_data_queue,
+      TestMessage(SliceBuffer(Slice::FromExternalString("Hello!")), 0),
+      /*expected_writeable_state=*/true,
+      /*expected_priority=*/WritableStreamPriority::kDefault);
+
+  EnqueueHalfClosedAndCheckSuccess(
+      stream_data_queue,
+      /*expected_writeable_state=*/false,
+      /*expected_priority=*/WritableStreamPriority::kStreamClosed);
+
+  SliceBuffer expected_payload;
+  AppendGrpcHeaderToSliceBuffer(expected_payload, /*flags=*/0, /*length=*/6);
+  expected_payload.Append(Slice::FromExternalString("Hello!"));
+  expected_frames.clear();
+  expected_frames.emplace_back(
+      Http2DataFrame{/*stream_id=*/1,
+                     /*end_stream=*/true,
+                     /*payload=*/std::move(expected_payload)});
+
+  DequeueAndCheckSuccess(
+      stream_data_queue, std::move(expected_frames), encoder,
+      /*can_send_reset_stream=*/true,
+      /*expected_flags=*/
+      DequeueFlags::kHalfCloseDequeued | DequeueFlags::kMessageDequeued,
+      /*max_tokens=*/100u, max_frame_length,
+      /*flow_control_tokens_consumed=*/11u,
+      /*expected_writable_state=*/false);
+
+  EXPECT_TRUE(stream_data_queue->TestOnlyIsEmpty());
+}
+
+TEST_F(StreamDataQueueTest, ClientStandaloneEndOfStreamTest) {
+  // Test that if no other frames are appended in the session, a standalone
+  // Close frame is sent.
+  const uint32_t max_frame_length = 100u;
+  HPackCompressor encoder;
+  auto stream_data_queue =
+      MakeRefCounted<StreamDataQueue<ClientMetadataHandle>>(GetArena(),
+                                                            /*is_client=*/true,
+                                                            /*queue_size=*/10);
+  stream_data_queue->SetStreamId(/*stream_id=*/1,
+                                 kAllowTrueBinaryMetadataSetting);
+
+  // Session 1: Dequeue Initial Metadata.
+  EnqueueInitialMetadataAndCheckSuccess(
+      stream_data_queue, TestClientInitialMetadata(),
+      /*expected_writeable_state=*/true,
+      /*expected_priority=*/WritableStreamPriority::kDefault);
+
+  std::vector<Http2Frame> expected_frames;
+  GetExpectedHeaderAndContinuationFrames(max_frame_length, expected_frames,
+                                         kPathDemoServiceStep,
+                                         /*end_stream=*/false);
+
+  DequeueAndCheckSuccess(stream_data_queue, std::move(expected_frames), encoder,
+                         /*can_send_reset_stream=*/true,
+                         /*expected_flags=*/
+                         DequeueFlags::kInitialMetadataDequeued,
+                         /*max_tokens=*/100u, max_frame_length,
+                         /*flow_control_tokens_consumed=*/0u,
+                         /*expected_writable_state=*/false);
+
+  // Session 2: Dequeue HalfClosed. No other frames in this session.
+  EnqueueHalfClosedAndCheckSuccess(
+      stream_data_queue,
+      /*expected_writeable_state=*/true,
+      /*expected_priority=*/WritableStreamPriority::kStreamClosed);
+
+  expected_frames.clear();
+  expected_frames.emplace_back(Http2DataFrame{/*stream_id=*/1,
+                                              /*end_stream=*/true,
+                                              SliceBuffer()});
+
+  DequeueAndCheckSuccess(stream_data_queue, std::move(expected_frames), encoder,
+                         /*can_send_reset_stream=*/true,
+                         /*expected_flags=*/
+                         DequeueFlags::kHalfCloseDequeued,
+                         /*max_tokens=*/100u, max_frame_length,
+                         /*flow_control_tokens_consumed=*/0u,
+                         /*expected_writable_state=*/false);
+
   EXPECT_TRUE(stream_data_queue->TestOnlyIsEmpty());
 }
 
@@ -996,8 +1122,9 @@ TEST_F(StreamDataQueueTest, ClientDequeueResetStreamTest) {
   std::vector<Http2Frame> empty_frames;
 
   RefCountedPtr<StreamDataQueue<ClientMetadataHandle>> stream_data_queue =
-      MakeRefCounted<StreamDataQueue<ClientMetadataHandle>>(
-          /*is_client=*/true, /*queue_size=*/10);
+      MakeRefCounted<StreamDataQueue<ClientMetadataHandle>>(GetArena(),
+                                                            /*is_client=*/true,
+                                                            /*queue_size=*/10);
   stream_data_queue->SetStreamId(/*stream_id=*/1,
                                  kAllowTrueBinaryMetadataSetting);
   EnqueueInitialMetadataAndCheckSuccess(
@@ -1033,8 +1160,9 @@ TEST_F(StreamDataQueueTest, ClientEnqueueBigMessageResetStreamTest) {
   std::vector<Http2Frame> expected_initial_metadata_frames;
   std::vector<Http2Frame> expected_frames;
   RefCountedPtr<StreamDataQueue<ClientMetadataHandle>> stream_data_queue =
-      MakeRefCounted<StreamDataQueue<ClientMetadataHandle>>(
-          /*is_client=*/true, /*queue_size=*/10);
+      MakeRefCounted<StreamDataQueue<ClientMetadataHandle>>(GetArena(),
+                                                            /*is_client=*/true,
+                                                            /*queue_size=*/10);
   stream_data_queue->SetStreamId(/*stream_id=*/1,
                                  kAllowTrueBinaryMetadataSetting);
 
@@ -1051,7 +1179,7 @@ TEST_F(StreamDataQueueTest, ClientEnqueueBigMessageResetStreamTest) {
       stream_data_queue, std::move(expected_initial_metadata_frames), encoder,
       /*can_send_reset_stream=*/false,
       /*expected_flags=*/
-      StreamDataQueue<ClientMetadataHandle>::kInitialMetadataDequeued,
+      DequeueFlags::kInitialMetadataDequeued,
       /*max_tokens=*/0u, max_frame_length, /*flow_control_tokens_consumed=*/0u,
       /*expected_writable_state=*/false);
 
@@ -1062,7 +1190,8 @@ TEST_F(StreamDataQueueTest, ClientEnqueueBigMessageResetStreamTest) {
       /*expected_priority=*/WritableStreamPriority::kDefault);
   DequeueMessageAndCheckSuccess(stream_data_queue,
                                 /*expected_frames_length=*/{6}, encoder,
-                                /*expected_flags=*/0,
+                                /*expected_flags=*/
+                                DequeueFlags::kMessageDequeued,
                                 /*expected_writable_state=*/true,
                                 /*max_tokens=*/6, max_frame_length,
                                 /*can_send_reset_stream=*/true,
@@ -1074,12 +1203,12 @@ TEST_F(StreamDataQueueTest, ClientEnqueueBigMessageResetStreamTest) {
 
   expected_frames.emplace_back(
       Http2RstStreamFrame{/*stream_id=*/1, /*error_code=*/0});
-  DequeueAndCheckSuccess(
-      stream_data_queue, std::move(expected_frames), encoder,
-      /*can_send_reset_stream=*/true, /*expected_flags=*/
-      StreamDataQueue<ClientMetadataHandle>::kResetStreamDequeued,
-      /*max_tokens=*/6, max_frame_length, /*flow_control_tokens_consumed=*/0u,
-      /*expected_writable_state=*/false);
+  DequeueAndCheckSuccess(stream_data_queue, std::move(expected_frames), encoder,
+                         /*can_send_reset_stream=*/true, /*expected_flags=*/
+                         DequeueFlags::kResetStreamDequeued,
+                         /*max_tokens=*/6, max_frame_length,
+                         /*flow_control_tokens_consumed=*/0u,
+                         /*expected_writable_state=*/false);
   EXPECT_TRUE(stream_data_queue->TestOnlyIsEmpty());
 }
 
@@ -1093,8 +1222,9 @@ TEST_F(StreamDataQueueTest, ClientWritableStateTest) {
   std::vector<Http2Frame> expected_initial_metadata_frames;
   std::vector<Http2Frame> expected_frames;
   RefCountedPtr<StreamDataQueue<ClientMetadataHandle>> stream_data_queue =
-      MakeRefCounted<StreamDataQueue<ClientMetadataHandle>>(
-          /*is_client=*/true, /*queue_size=*/10);
+      MakeRefCounted<StreamDataQueue<ClientMetadataHandle>>(GetArena(),
+                                                            /*is_client=*/true,
+                                                            /*queue_size=*/10);
   stream_data_queue->SetStreamId(/*stream_id=*/1,
                                  kAllowTrueBinaryMetadataSetting);
 
@@ -1111,7 +1241,7 @@ TEST_F(StreamDataQueueTest, ClientWritableStateTest) {
       stream_data_queue, std::move(expected_initial_metadata_frames), encoder,
       /*can_send_reset_stream=*/false,
       /*expected_flags=*/
-      StreamDataQueue<ClientMetadataHandle>::kInitialMetadataDequeued,
+      DequeueFlags::kInitialMetadataDequeued,
       /*max_tokens=*/0u, max_frame_length, /*flow_control_tokens_consumed=*/0u,
       /*expected_writable_state=*/false);
 
@@ -1125,7 +1255,8 @@ TEST_F(StreamDataQueueTest, ClientWritableStateTest) {
   DequeueMessageAndCheckSuccess(
       stream_data_queue,
       /*expected_frames_length=*/{dequeue_size_1}, encoder,
-      /*expected_flags=*/0,
+      /*expected_flags=*/
+      DequeueFlags::kMessageDequeued,
       /*expected_writable_state=*/true,
       /*max_tokens=*/dequeue_size_1, max_frame_length,
       /*can_send_reset_stream=*/true,
@@ -1135,7 +1266,8 @@ TEST_F(StreamDataQueueTest, ClientWritableStateTest) {
   DequeueMessageAndCheckSuccess(
       stream_data_queue,
       /*expected_frames_length=*/{dequeue_size_2}, encoder,
-      /*expected_flags=*/0,
+      /*expected_flags=*/
+      DequeueFlags::kMessageDequeued,
       /*expected_writable_state=*/false,
       /*max_tokens=*/dequeue_size_2 + 1u, max_frame_length,
       /*can_send_reset_stream=*/true,
@@ -1158,7 +1290,8 @@ TEST_F(StreamDataQueueTest, ClientWritableStateTest) {
   DequeueMessageAndCheckSuccess(
       stream_data_queue,
       /*expected_frames_length=*/{dequeue_size_1}, encoder,
-      /*expected_flags=*/0,
+      /*expected_flags=*/
+      DequeueFlags::kMessageDequeued,
       /*expected_writable_state=*/false,
       /*max_tokens=*/dequeue_size_1, max_frame_length,
       /*can_send_reset_stream=*/true,
@@ -1172,7 +1305,8 @@ TEST_F(StreamDataQueueTest, ClientWritableStateTest) {
   DequeueMessageAndCheckSuccess(
       stream_data_queue,
       /*expected_frames_length=*/{dequeue_size_2}, encoder,
-      /*expected_flags=*/0,
+      /*expected_flags=*/
+      DequeueFlags::kMessageDequeued,
       /*expected_writable_state=*/false,
       /*max_tokens=*/dequeue_size_2, max_frame_length,
       /*can_send_reset_stream=*/true,
@@ -1187,7 +1321,8 @@ TEST_F(StreamDataQueueTest, ClientWritableStateTest) {
   DequeueMessageAndCheckSuccess(
       stream_data_queue,
       /*expected_frames_length=*/{1}, encoder,
-      /*expected_flags=*/0,
+      /*expected_flags=*/
+      DequeueFlags::kMessageDequeued,
       /*expected_writable_state=*/false,
       /*max_tokens=*/1, max_frame_length,
       /*can_send_reset_stream=*/true,
@@ -1201,7 +1336,8 @@ TEST_F(StreamDataQueueTest, ClientWritableStateTest) {
   DequeueMessageAndCheckSuccess(
       stream_data_queue,
       /*expected_frames_length=*/{14}, encoder,
-      /*expected_flags=*/0,
+      /*expected_flags=*/
+      DequeueFlags::kMessageDequeued,
       /*expected_writable_state=*/false,
       /*max_tokens=*/14, max_frame_length,
       /*can_send_reset_stream=*/true,
@@ -1216,8 +1352,9 @@ TEST_F(StreamDataQueueTest, ServerEnqueueInitialMetadataTest) {
   // Simple test to enqueue initial metadata.
   HPackCompressor encoder;
   RefCountedPtr<StreamDataQueue<ServerMetadataHandle>> stream_data_queue =
-      MakeRefCounted<StreamDataQueue<ServerMetadataHandle>>(
-          /*is_client=*/false, /*queue_size=*/10);
+      MakeRefCounted<StreamDataQueue<ServerMetadataHandle>>(GetArena(),
+                                                            /*is_client=*/false,
+                                                            /*queue_size=*/10);
   stream_data_queue->SetStreamId(/*stream_id=*/1,
                                  kAllowTrueBinaryMetadataSetting);
   EnqueueInitialMetadataAndCheckSuccess(
@@ -1236,6 +1373,7 @@ TEST_F(StreamDataQueueTest, ServerEnqueueMultipleMessagesTest) {
       num_messages * (message_size + kGrpcHeaderSizeInBytes);
   RefCountedPtr<StreamDataQueue<ServerMetadataHandle>> stream_data_queue =
       MakeRefCounted<StreamDataQueue<ServerMetadataHandle>>(
+          GetArena(),
           /*is_client=*/false, /*queue_size=*/queued_size);
   stream_data_queue->SetStreamId(/*stream_id=*/1,
                                  kAllowTrueBinaryMetadataSetting);
@@ -1260,8 +1398,9 @@ TEST_F(StreamDataQueueTest, ServerEnqueueTrailingMetadataTest) {
   // trailing metadata).
   HPackCompressor encoder;
   RefCountedPtr<StreamDataQueue<ServerMetadataHandle>> stream_data_queue =
-      MakeRefCounted<StreamDataQueue<ServerMetadataHandle>>(
-          /*is_client=*/false, /*queue_size=*/10);
+      MakeRefCounted<StreamDataQueue<ServerMetadataHandle>>(GetArena(),
+                                                            /*is_client=*/false,
+                                                            /*queue_size=*/10);
   stream_data_queue->SetStreamId(/*stream_id=*/1,
                                  kAllowTrueBinaryMetadataSetting);
   EnqueueInitialMetadataAndCheckSuccess(
@@ -1284,8 +1423,9 @@ TEST_F(StreamDataQueueTest, ServerResetStreamTest) {
   // after initial metadata.
   HPackCompressor encoder;
   RefCountedPtr<StreamDataQueue<ServerMetadataHandle>> stream_data_queue =
-      MakeRefCounted<StreamDataQueue<ServerMetadataHandle>>(
-          /*is_client=*/false, /*queue_size=*/10);
+      MakeRefCounted<StreamDataQueue<ServerMetadataHandle>>(GetArena(),
+                                                            /*is_client=*/false,
+                                                            /*queue_size=*/10);
   stream_data_queue->SetStreamId(/*stream_id=*/1,
                                  kAllowTrueBinaryMetadataSetting);
   EnqueueInitialMetadataAndCheckSuccess(
@@ -1302,8 +1442,9 @@ TEST_F(StreamDataQueueTest, ServerEnqueueAfterResetStreamTest) {
   // Test to assert that no more data can be enqueued after a reset stream.
   HPackCompressor encoder;
   RefCountedPtr<StreamDataQueue<ServerMetadataHandle>> stream_data_queue =
-      MakeRefCounted<StreamDataQueue<ServerMetadataHandle>>(
-          /*is_client=*/false, /*queue_size=*/10);
+      MakeRefCounted<StreamDataQueue<ServerMetadataHandle>>(GetArena(),
+                                                            /*is_client=*/false,
+                                                            /*queue_size=*/10);
   stream_data_queue->SetStreamId(/*stream_id=*/1,
                                  kAllowTrueBinaryMetadataSetting);
   EnqueueInitialMetadataAndCheckSuccess(
@@ -1339,18 +1480,17 @@ TEST_F(StreamDataQueueTest, ServerEnqueueAfterResetStreamTest) {
   std::vector<Http2Frame> expected_frames;
   expected_frames.emplace_back(
       Http2RstStreamFrame{/*stream_id=*/1, /*error_code=*/0});
-  DequeueAndCheckSuccess(
-      stream_data_queue, std::move(expected_frames), encoder,
-      /*can_send_reset_stream=*/true,
-      /*expected_flags=*/
-      (StreamDataQueue<ServerMetadataHandle>::kResetStreamDequeued),
-      /*max_tokens=*/0u, max_frame_length, /*flow_control_tokens_consumed=*/0u,
-      /*expected_writable_state=*/false);
-
-  expected_frames.clear();
   DequeueAndCheckSuccess(stream_data_queue, std::move(expected_frames), encoder,
+                         /*can_send_reset_stream=*/true,
+                         /*expected_flags=*/
+                         (DequeueFlags::kResetStreamDequeued),
+                         /*max_tokens=*/0u, max_frame_length,
+                         /*flow_control_tokens_consumed=*/0u,
+                         /*expected_writable_state=*/false);
+
+  DequeueAndCheckSuccess(stream_data_queue, std::vector<Http2Frame>(), encoder,
                          /*can_send_reset_stream=*/true, /*expected_flags=*/0,
-                         /*max_tokens=*/100, max_frame_length,
+                         /*max_tokens=*/0u, max_frame_length,
                          /*flow_control_tokens_consumed=*/0u,
                          /*expected_writable_state=*/false);
   EXPECT_TRUE(stream_data_queue->TestOnlyIsEmpty());
@@ -1375,8 +1515,9 @@ TEST_F(StreamDataQueueTest, ServerEnqueueDequeueFlowTest) {
       /*end_stream=*/true);
 
   RefCountedPtr<StreamDataQueue<ServerMetadataHandle>> stream_data_queue =
-      MakeRefCounted<StreamDataQueue<ServerMetadataHandle>>(
-          /*is_client=*/false, /*queue_size=*/10);
+      MakeRefCounted<StreamDataQueue<ServerMetadataHandle>>(GetArena(),
+                                                            /*is_client=*/false,
+                                                            /*queue_size=*/10);
   stream_data_queue->SetStreamId(/*stream_id=*/1,
                                  kAllowTrueBinaryMetadataSetting);
   EnqueueInitialMetadataAndCheckSuccess(
@@ -1401,14 +1542,16 @@ TEST_F(StreamDataQueueTest, ServerEnqueueDequeueFlowTest) {
       stream_data_queue, std::move(expected_initial_metadata_frames), encoder,
       /*can_send_reset_stream=*/false,
       /*expected_flags=*/
-      StreamDataQueue<ServerMetadataHandle>::kInitialMetadataDequeued,
+      DequeueFlags::kInitialMetadataDequeued,
       /*max_tokens=*/0u, max_frame_length, /*flow_control_tokens_consumed=*/0u,
       /*expected_writable_state=*/true);
 
   // Dequeue Message and Trailing Metadata
   DequeueAndCheckSuccess(
       stream_data_queue, std::move(expected_close_frames), encoder,
-      /*can_send_reset_stream=*/true, /*expected_flags=*/0,
+      /*can_send_reset_stream=*/true, /*expected_flags=*/
+      (DequeueFlags::kTrailingMetadataDequeued |
+       DequeueFlags::kMessageDequeued),
       /*max_tokens=*/6, max_frame_length, /*flow_control_tokens_consumed=*/6u,
       /*expected_writable_state=*/false);
 
@@ -1421,14 +1564,12 @@ TEST_F(StreamDataQueueTest, ServerEnqueueDequeueFlowTest) {
       Http2RstStreamFrame{/*stream_id=*/1, /*error_code=*/0});
   DequeueAndCheckSuccess(
       stream_data_queue, std::move(expected_close_frames), encoder,
-      /*can_send_reset_stream=*/true,
-      /*expected_flags=*/
-      StreamDataQueue<ServerMetadataHandle>::kResetStreamDequeued,
+      /*can_send_reset_stream=*/true, /*expected_flags=*/
+      DequeueFlags::kResetStreamDequeued,
       /*max_tokens=*/6, max_frame_length, /*flow_control_tokens_consumed=*/0u,
       /*expected_writable_state=*/false);
   EXPECT_TRUE(stream_data_queue->TestOnlyIsEmpty());
 }
-
 }  // namespace testing
 }  // namespace http2
 

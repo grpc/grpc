@@ -57,6 +57,7 @@ EXPERIMENT_ENABLES = {
     "schedule_cancellation_over_write": "schedule_cancellation_over_write",
     "secure_endpoint_offload_large_reads": "event_engine_client,event_engine_listener,secure_endpoint_offload_large_reads",
     "secure_endpoint_offload_large_writes": "event_engine_client,event_engine_listener,secure_endpoint_offload_large_writes",
+    "secure_endpoint_read_coalescing": "event_engine_client,event_engine_listener,secure_endpoint_read_coalescing",
     "skip_clear_peer_on_cancellation": "skip_clear_peer_on_cancellation",
     "sleep_promise_exec_ctx_removal": "sleep_promise_exec_ctx_removal",
     "sleep_use_non_owning_waker": "sleep_use_non_owning_waker",
@@ -93,7 +94,6 @@ EXPERIMENTS = {
             "core_end2end_test": [
                 "buffer_list_deletion_prep",
                 "error_flatten",
-                "event_engine_fork",
                 "local_connector_secure",
                 "otel_export_telemetry_domains",
                 "pipelined_read_secure_endpoint",
@@ -103,6 +103,7 @@ EXPERIMENTS = {
                 "retry_in_callv3",
                 "secure_endpoint_offload_large_reads",
                 "secure_endpoint_offload_large_writes",
+                "secure_endpoint_read_coalescing",
                 "subchannel_connection_scaling",
                 "use_call_event_engine_in_completion_queue",
                 "wildcard_ip_expansion_restriction",
@@ -121,9 +122,6 @@ EXPERIMENTS = {
             ],
             "error_tests": [
                 "error_flatten",
-            ],
-            "event_engine_fork_test": [
-                "event_engine_fork",
             ],
             "flow_control_test": [
                 "multiping",
@@ -161,6 +159,7 @@ EXPERIMENTS = {
                 "event_engine_client",
                 "event_engine_dns_non_client_channel",
                 "event_engine_for_all_other_endpoints",
+                "event_engine_fork",
                 "event_engine_listener",
             ],
             "cpp_lb_end2end_test": [
@@ -169,6 +168,9 @@ EXPERIMENTS = {
             ],
             "event_engine_client_test": [
                 "event_engine_client",
+            ],
+            "event_engine_fork_test": [
+                "event_engine_fork",
             ],
             "event_engine_listener_test": [
                 "event_engine_listener",
@@ -201,7 +203,6 @@ EXPERIMENTS = {
             "core_end2end_test": [
                 "buffer_list_deletion_prep",
                 "error_flatten",
-                "event_engine_fork",
                 "local_connector_secure",
                 "otel_export_telemetry_domains",
                 "pipelined_read_secure_endpoint",
@@ -211,6 +212,7 @@ EXPERIMENTS = {
                 "retry_in_callv3",
                 "secure_endpoint_offload_large_reads",
                 "secure_endpoint_offload_large_writes",
+                "secure_endpoint_read_coalescing",
                 "subchannel_connection_scaling",
                 "use_call_event_engine_in_completion_queue",
                 "wildcard_ip_expansion_restriction",
@@ -229,9 +231,6 @@ EXPERIMENTS = {
             ],
             "error_tests": [
                 "error_flatten",
-            ],
-            "event_engine_fork_test": [
-                "event_engine_fork",
             ],
             "flow_control_test": [
                 "multiping",
@@ -269,6 +268,7 @@ EXPERIMENTS = {
                 "event_engine_client",
                 "event_engine_dns_non_client_channel",
                 "event_engine_for_all_other_endpoints",
+                "event_engine_fork",
                 "event_engine_listener",
             ],
             "cpp_lb_end2end_test": [
@@ -277,6 +277,9 @@ EXPERIMENTS = {
             ],
             "event_engine_client_test": [
                 "event_engine_client",
+            ],
+            "event_engine_fork_test": [
+                "event_engine_fork",
             ],
             "event_engine_listener_test": [
                 "event_engine_listener",
@@ -309,7 +312,6 @@ EXPERIMENTS = {
             "core_end2end_test": [
                 "buffer_list_deletion_prep",
                 "error_flatten",
-                "event_engine_fork",
                 "local_connector_secure",
                 "otel_export_telemetry_domains",
                 "pipelined_read_secure_endpoint",
@@ -319,6 +321,7 @@ EXPERIMENTS = {
                 "retry_in_callv3",
                 "secure_endpoint_offload_large_reads",
                 "secure_endpoint_offload_large_writes",
+                "secure_endpoint_read_coalescing",
                 "subchannel_connection_scaling",
                 "use_call_event_engine_in_completion_queue",
                 "wildcard_ip_expansion_restriction",
@@ -337,9 +340,6 @@ EXPERIMENTS = {
             ],
             "error_tests": [
                 "error_flatten",
-            ],
-            "event_engine_fork_test": [
-                "event_engine_fork",
             ],
             "flow_control_test": [
                 "multiping",
@@ -377,6 +377,7 @@ EXPERIMENTS = {
                 "event_engine_client",
                 "event_engine_dns_non_client_channel",
                 "event_engine_for_all_other_endpoints",
+                "event_engine_fork",
                 "event_engine_listener",
             ],
             "cpp_lb_end2end_test": [
@@ -385,6 +386,9 @@ EXPERIMENTS = {
             ],
             "event_engine_client_test": [
                 "event_engine_client",
+            ],
+            "event_engine_fork_test": [
+                "event_engine_fork",
             ],
             "event_engine_listener_test": [
                 "event_engine_listener",

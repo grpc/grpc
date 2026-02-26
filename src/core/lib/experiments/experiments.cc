@@ -193,6 +193,12 @@ const char* const additional_constraints_secure_endpoint_offload_large_writes =
 const uint8_t required_experiments_secure_endpoint_offload_large_writes[] = {
     static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient),
     static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener)};
+const char* const description_secure_endpoint_read_coalescing =
+    "Coalesce decrypted bytes in SecureEndpoint if a read_hint is provided.";
+const char* const additional_constraints_secure_endpoint_read_coalescing = "{}";
+const uint8_t required_experiments_secure_endpoint_read_coalescing[] = {
+    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient),
+    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener)};
 const char* const description_skip_clear_peer_on_cancellation =
     "If set, skips clearing of peer string on call cancellation.";
 const char* const additional_constraints_skip_clear_peer_on_cancellation = "{}";
@@ -273,7 +279,7 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_event_engine_dns_non_client_channel, nullptr, 0,
      true, false},
     {"event_engine_fork", description_event_engine_fork,
-     additional_constraints_event_engine_fork, nullptr, 0, false, false},
+     additional_constraints_event_engine_fork, nullptr, 0, true, false},
     {"event_engine_listener", description_event_engine_listener,
      additional_constraints_event_engine_listener, nullptr, 0, true, false},
     {"event_engine_callback_cq", description_event_engine_callback_cq,
@@ -285,7 +291,7 @@ const ExperimentMetadata g_experiment_metadata[] = {
      required_experiments_event_engine_for_all_other_endpoints, 4, true, false},
     {"event_engine_poller_for_python",
      description_event_engine_poller_for_python,
-     additional_constraints_event_engine_poller_for_python, nullptr, 0, false,
+     additional_constraints_event_engine_poller_for_python, nullptr, 0, true,
      true},
     {"fail_recv_metadata_on_deadline_exceeded",
      description_fail_recv_metadata_on_deadline_exceeded,
@@ -368,6 +374,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_secure_endpoint_offload_large_writes,
      additional_constraints_secure_endpoint_offload_large_writes,
      required_experiments_secure_endpoint_offload_large_writes, 2, false, true},
+    {"secure_endpoint_read_coalescing",
+     description_secure_endpoint_read_coalescing,
+     additional_constraints_secure_endpoint_read_coalescing,
+     required_experiments_secure_endpoint_read_coalescing, 2, false, true},
     {"skip_clear_peer_on_cancellation",
      description_skip_clear_peer_on_cancellation,
      additional_constraints_skip_clear_peer_on_cancellation, nullptr, 0, false,
@@ -585,6 +595,12 @@ const char* const additional_constraints_secure_endpoint_offload_large_writes =
 const uint8_t required_experiments_secure_endpoint_offload_large_writes[] = {
     static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient),
     static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener)};
+const char* const description_secure_endpoint_read_coalescing =
+    "Coalesce decrypted bytes in SecureEndpoint if a read_hint is provided.";
+const char* const additional_constraints_secure_endpoint_read_coalescing = "{}";
+const uint8_t required_experiments_secure_endpoint_read_coalescing[] = {
+    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient),
+    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener)};
 const char* const description_skip_clear_peer_on_cancellation =
     "If set, skips clearing of peer string on call cancellation.";
 const char* const additional_constraints_skip_clear_peer_on_cancellation = "{}";
@@ -665,7 +681,7 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_event_engine_dns_non_client_channel, nullptr, 0,
      true, false},
     {"event_engine_fork", description_event_engine_fork,
-     additional_constraints_event_engine_fork, nullptr, 0, false, false},
+     additional_constraints_event_engine_fork, nullptr, 0, true, false},
     {"event_engine_listener", description_event_engine_listener,
      additional_constraints_event_engine_listener, nullptr, 0, true, false},
     {"event_engine_callback_cq", description_event_engine_callback_cq,
@@ -677,7 +693,7 @@ const ExperimentMetadata g_experiment_metadata[] = {
      required_experiments_event_engine_for_all_other_endpoints, 4, true, false},
     {"event_engine_poller_for_python",
      description_event_engine_poller_for_python,
-     additional_constraints_event_engine_poller_for_python, nullptr, 0, false,
+     additional_constraints_event_engine_poller_for_python, nullptr, 0, true,
      true},
     {"fail_recv_metadata_on_deadline_exceeded",
      description_fail_recv_metadata_on_deadline_exceeded,
@@ -760,6 +776,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_secure_endpoint_offload_large_writes,
      additional_constraints_secure_endpoint_offload_large_writes,
      required_experiments_secure_endpoint_offload_large_writes, 2, false, true},
+    {"secure_endpoint_read_coalescing",
+     description_secure_endpoint_read_coalescing,
+     additional_constraints_secure_endpoint_read_coalescing,
+     required_experiments_secure_endpoint_read_coalescing, 2, false, true},
     {"skip_clear_peer_on_cancellation",
      description_skip_clear_peer_on_cancellation,
      additional_constraints_skip_clear_peer_on_cancellation, nullptr, 0, false,
@@ -977,6 +997,12 @@ const char* const additional_constraints_secure_endpoint_offload_large_writes =
 const uint8_t required_experiments_secure_endpoint_offload_large_writes[] = {
     static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient),
     static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener)};
+const char* const description_secure_endpoint_read_coalescing =
+    "Coalesce decrypted bytes in SecureEndpoint if a read_hint is provided.";
+const char* const additional_constraints_secure_endpoint_read_coalescing = "{}";
+const uint8_t required_experiments_secure_endpoint_read_coalescing[] = {
+    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient),
+    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener)};
 const char* const description_skip_clear_peer_on_cancellation =
     "If set, skips clearing of peer string on call cancellation.";
 const char* const additional_constraints_skip_clear_peer_on_cancellation = "{}";
@@ -1057,7 +1083,7 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_event_engine_dns_non_client_channel, nullptr, 0,
      true, false},
     {"event_engine_fork", description_event_engine_fork,
-     additional_constraints_event_engine_fork, nullptr, 0, false, false},
+     additional_constraints_event_engine_fork, nullptr, 0, true, false},
     {"event_engine_listener", description_event_engine_listener,
      additional_constraints_event_engine_listener, nullptr, 0, true, false},
     {"event_engine_callback_cq", description_event_engine_callback_cq,
@@ -1069,7 +1095,7 @@ const ExperimentMetadata g_experiment_metadata[] = {
      required_experiments_event_engine_for_all_other_endpoints, 4, true, false},
     {"event_engine_poller_for_python",
      description_event_engine_poller_for_python,
-     additional_constraints_event_engine_poller_for_python, nullptr, 0, false,
+     additional_constraints_event_engine_poller_for_python, nullptr, 0, true,
      true},
     {"fail_recv_metadata_on_deadline_exceeded",
      description_fail_recv_metadata_on_deadline_exceeded,
@@ -1152,6 +1178,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_secure_endpoint_offload_large_writes,
      additional_constraints_secure_endpoint_offload_large_writes,
      required_experiments_secure_endpoint_offload_large_writes, 2, false, true},
+    {"secure_endpoint_read_coalescing",
+     description_secure_endpoint_read_coalescing,
+     additional_constraints_secure_endpoint_read_coalescing,
+     required_experiments_secure_endpoint_read_coalescing, 2, false, true},
     {"skip_clear_peer_on_cancellation",
      description_skip_clear_peer_on_cancellation,
      additional_constraints_skip_clear_peer_on_cancellation, nullptr, 0, false,
