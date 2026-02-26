@@ -6,8 +6,8 @@
 namespace Grpc\Testing;
 
 use Google\Protobuf\Internal\GPBType;
-use Google\Protobuf\Internal\RepeatedField;
 use Google\Protobuf\Internal\GPBUtil;
+use Google\Protobuf\RepeatedField;
 
 /**
  * An empty message that you can re-use to avoid defining duplicated empty

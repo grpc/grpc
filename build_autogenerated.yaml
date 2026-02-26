@@ -3610,6 +3610,7 @@ libs:
   - third_party/upb/upb/base/upcast.h
   - third_party/upb/upb/port/atomic.h
   - third_party/upb/upb/port/def.inc
+  - third_party/upb/upb/port/sanitizers.h
   - third_party/upb/upb/port/undef.inc
   - third_party/upb/upb/port/vsnprintf_compat.h
   src:
@@ -3654,6 +3655,7 @@ libs:
   - third_party/upb/upb/lex/unicode.h
   - third_party/upb/upb/port/atomic.h
   - third_party/upb/upb/port/def.inc
+  - third_party/upb/upb/port/sanitizers.h
   - third_party/upb/upb/port/undef.inc
   - third_party/upb/upb/port/vsnprintf_compat.h
   src:
@@ -3673,6 +3675,7 @@ libs:
   - third_party/upb/upb/mem/internal/arena.h
   - third_party/upb/upb/port/atomic.h
   - third_party/upb/upb/port/def.inc
+  - third_party/upb/upb/port/sanitizers.h
   - third_party/upb/upb/port/undef.inc
   - third_party/upb/upb/port/vsnprintf_compat.h
   src:
@@ -3724,14 +3727,40 @@ libs:
   - third_party/upb/upb/mini_descriptor/internal/modifiers.h
   - third_party/upb/upb/mini_descriptor/internal/wire_constants.h
   - third_party/upb/upb/mini_descriptor/link.h
+  - third_party/upb/upb/wire/decode.h
+  - third_party/upb/upb/wire/decode_fast/cardinality.h
+  - third_party/upb/upb/wire/decode_fast/combinations.h
+  - third_party/upb/upb/wire/decode_fast/data.h
+  - third_party/upb/upb/wire/decode_fast/dispatch.h
+  - third_party/upb/upb/wire/decode_fast/field_parsers.h
+  - third_party/upb/upb/wire/decode_fast/function_array.h
+  - third_party/upb/upb/wire/decode_fast/select.h
+  - third_party/upb/upb/wire/eps_copy_input_stream.h
+  - third_party/upb/upb/wire/internal/decoder.h
+  - third_party/upb/upb/wire/internal/reader.h
+  - third_party/upb/upb/wire/reader.h
+  - third_party/upb/upb/wire/types.h
   src:
   - third_party/upb/upb/mini_descriptor/build_enum.c
   - third_party/upb/upb/mini_descriptor/decode.c
   - third_party/upb/upb/mini_descriptor/internal/base92.c
   - third_party/upb/upb/mini_descriptor/internal/encode.c
   - third_party/upb/upb/mini_descriptor/link.c
+  - third_party/upb/upb/wire/decode_fast/dispatch.c
+  - third_party/upb/upb/wire/decode_fast/field_fixed.c
+  - third_party/upb/upb/wire/decode_fast/field_generic.c
+  - third_party/upb/upb/wire/decode_fast/field_message.c
+  - third_party/upb/upb/wire/decode_fast/field_string.c
+  - third_party/upb/upb/wire/decode_fast/field_varint.c
+  - third_party/upb/upb/wire/decode_fast/function_array.c
+  - third_party/upb/upb/wire/decode_fast/select.c
+  - third_party/upb/upb/wire/eps_copy_input_stream.c
+  - third_party/upb/upb/wire/internal/decoder.c
+  - third_party/upb/upb/wire/reader.c
   deps:
-  - upb_mini_table_lib
+  - utf8_range_lib
+  - upb_message_lib
+  - absl/strings:strings
 - name: upb_mini_table_lib
   build: all
   language: c
@@ -3847,20 +3876,22 @@ libs:
   headers:
   - third_party/upb/upb/message/internal/iterator.h
   - third_party/upb/upb/wire/decode.h
+  - third_party/upb/upb/wire/decode_fast/dispatch.h
   - third_party/upb/upb/wire/encode.h
   - third_party/upb/upb/wire/eps_copy_input_stream.h
   - third_party/upb/upb/wire/internal/constants.h
-  - third_party/upb/upb/wire/internal/decode_fast.h
   - third_party/upb/upb/wire/internal/decoder.h
   - third_party/upb/upb/wire/internal/reader.h
   - third_party/upb/upb/wire/reader.h
   - third_party/upb/upb/wire/types.h
+  - third_party/upb/upb/wire/writer.h
   src:
   - third_party/upb/upb/message/internal/iterator.c
   - third_party/upb/upb/wire/decode.c
+  - third_party/upb/upb/wire/decode_fast/dispatch.c
   - third_party/upb/upb/wire/encode.c
   - third_party/upb/upb/wire/eps_copy_input_stream.c
-  - third_party/upb/upb/wire/internal/decode_fast.c
+  - third_party/upb/upb/wire/internal/decoder.c
   - third_party/upb/upb/wire/reader.c
   deps:
   - utf8_range_lib
@@ -5398,6 +5429,7 @@ libs:
   - absl/base:config
   - absl/base:core_headers
   - absl/base:dynamic_annotations
+  - absl/base:log_severity
   - absl/base:prefetch
   - absl/cleanup:cleanup
   - absl/container:btree
@@ -5411,6 +5443,7 @@ libs:
   - absl/hash:hash
   - absl/log:absl_check
   - absl/log:absl_log
+  - absl/log:globals
   - absl/memory:memory
   - absl/meta:type_traits
   - absl/numeric:bits
@@ -5424,7 +5457,6 @@ libs:
   - absl/strings:strings
   - absl/synchronization:synchronization
   - absl/time:time
-  - absl/types:optional
   - absl/types:span
   - absl/utility:utility
   - protobuf
