@@ -38,7 +38,7 @@ pyasn1-modules==0.4.1
 requests==2.32.3
 rsa==4.9
 setuptools==77.0.1
-typing-extensions==4.12.2
+typing-extensions==4.13.2
 urllib3==2.2.3
 wheel==0.46.1
 wrapt==1.17.2

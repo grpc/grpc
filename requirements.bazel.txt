@@ -53,6 +53,6 @@ pyyaml  # for DNS test
 requests
 setuptools>=77.0.1
 typeguard~=4.2
-typing-extensions==4.12.2
+typing-extensions==4.13.2
 twisted  # for DNS test
 urllib3
