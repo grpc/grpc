@@ -63,6 +63,19 @@ TEST(TlsCertificateVerifierTest, SyncCertificateVerifierFails) {
   EXPECT_EQ(sync_status.error_message(), "SyncCertificateVerifier failed");
 }
 
+TEST(TlsCertificateVerifierTest, SyncCertificateVerifierSetsNoStatus) {
+  grpc_tls_custom_verification_check_request request;
+  auto verifier =
+      ExternalCertificateVerifier::Create<SyncCertificateVerifierNoStatusSet>();
+  TlsCustomVerificationCheckRequest cpp_request(&request);
+  grpc::Status sync_status;
+  verifier->Verify(&cpp_request, nullptr, &sync_status);
+  EXPECT_EQ(sync_status.error_code(), grpc::StatusCode::UNAUTHENTICATED);
+  EXPECT_EQ(sync_status.error_message(),
+            "TLS custom verification did not populate status, "
+            "defaulting to unauthenticated.");
+}
+
 TEST(TlsCertificateVerifierTest, AsyncCertificateVerifierSucceeds) {
   grpc_tls_custom_verification_check_request request;
   auto verifier =
