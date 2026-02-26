@@ -42,7 +42,7 @@ class LoadBalancingPolicy::DelegatingChannelControlHelper
     : public LoadBalancingPolicy::ChannelControlHelper {
  public:
   RefCountedPtr<SubchannelInterface> CreateSubchannel(
-      const grpc_resolved_address& address, const ChannelArgs& per_address_args,
+      const std::string& address, const ChannelArgs& per_address_args,
       const ChannelArgs& args) override {
     return parent_helper()->CreateSubchannel(address, per_address_args, args);
   }

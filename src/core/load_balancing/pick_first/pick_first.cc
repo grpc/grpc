@@ -14,7 +14,9 @@
 // limitations under the License.
 //
 
+#include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/load_balancing/pick_first/pick_first.h"
+#include "src/core/util/uri.h"
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/impl/channel_arg_names.h>
@@ -481,17 +483,20 @@ void PickFirst::AttemptToConnectUsingLatestUpdateArgsLocked() {
   }
 }
 
-absl::string_view GetAddressFamily(const grpc_resolved_address& address) {
-  const char* uri_scheme = grpc_sockaddr_get_uri_scheme(&address);
-  return absl::string_view(uri_scheme == nullptr ? "other" : uri_scheme);
+std::string GetAddressFamily(absl::string_view address_uri) {
+  auto uri = grpc_core::URI::Parse(address_uri);
+  if (!uri.ok()) {
+    return "other";
+  }
+  return std::string(uri->scheme());
 };
 
 // An endpoint list iterator that returns only entries for a specific
 // address family, as indicated by the URI scheme.
 class AddressFamilyIterator final {
  public:
-  AddressFamilyIterator(absl::string_view scheme, size_t index)
-      : scheme_(scheme), index_(index) {}
+  AddressFamilyIterator(std::string scheme, size_t index)
+      : scheme_(std::move(scheme)), index_(index) {}
 
   EndpointAddresses* Next(EndpointAddressesList& endpoints,
                           std::vector<bool>* endpoints_moved) {
@@ -506,7 +511,7 @@ class AddressFamilyIterator final {
   }
 
  private:
-  absl::string_view scheme_;
+  std::string scheme_;
   size_t index_;
 };
 
@@ -545,16 +550,16 @@ absl::Status PickFirst::UpdateLocked(UpdateArgs args) {
       // While we're iterating, also determine the desired address family
       // order and the index of the first element of each family, for use in
       // the interleaving below.
-      std::set<absl::string_view> address_families;
+      std::set<std::string> address_families;
       std::vector<AddressFamilyIterator> address_family_order;
       EndpointAddressesList flattened_endpoints;
       for (const auto& endpoint : endpoints) {
         for (const auto& address : endpoint.addresses()) {
           flattened_endpoints.emplace_back(address, endpoint.args());
-          absl::string_view scheme = GetAddressFamily(address);
+          std::string scheme = GetAddressFamily(address);
           bool inserted = address_families.insert(scheme).second;
           if (inserted) {
-            address_family_order.emplace_back(scheme,
+            address_family_order.emplace_back(std::move(scheme),
                                               flattened_endpoints.size() - 1);
           }
         }

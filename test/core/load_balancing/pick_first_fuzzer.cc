@@ -457,20 +457,22 @@ class Fuzzer {
 
    private:
     RefCountedPtr<SubchannelInterface> CreateSubchannel(
-        const grpc_resolved_address& address,
+        const std::string& address,
         const ChannelArgs& /*per_address_args*/,
         const ChannelArgs& args) override {
-      auto address_uri = grpc_sockaddr_to_uri(&address);
-      if (!address_uri.ok()) return nullptr;
       // TODO(roth): Need to use per_address_args here.
-      SubchannelKey key(
-          address, args.RemoveAllKeysWithPrefix(GRPC_ARG_NO_SUBCHANNEL_PREFIX));
+      auto uri = grpc_core::URI::Parse(address);
+      if (!uri.ok()) return nullptr;
+      grpc_resolved_address resolved_addr;
+      if (!grpc_parse_uri(*uri, &resolved_addr)) return nullptr;
+      SubchannelKey key(resolved_addr, args.RemoveAllKeysWithPrefix(
+                                           GRPC_ARG_NO_SUBCHANNEL_PREFIX));
       auto it = fuzzer_->subchannel_pool_.find(key);
       if (it == fuzzer_->subchannel_pool_.end()) {
         it = fuzzer_->subchannel_pool_
                  .emplace(
                      std::piecewise_construct, std::forward_as_tuple(key),
-                     std::forward_as_tuple(std::move(*address_uri), fuzzer_))
+                     std::forward_as_tuple(std::move(address), fuzzer_))
                  .first;
       }
       return it->second.CreateSubchannel();
@@ -636,13 +638,13 @@ class Fuzzer {
     return update_args;
   }
 
-  static std::optional<grpc_resolved_address> MakeAddress(
+  static std::optional<std::string> MakeAddress(
       absl::string_view address_uri) {
     auto uri = URI::Parse(address_uri);
     if (!uri.ok()) return std::nullopt;
-    grpc_resolved_address address;
-    if (!grpc_parse_uri(*uri, &address)) return std::nullopt;
-    return address;
+    grpc_resolved_address resolved_address;
+    if (!grpc_parse_uri(*uri, &resolved_address)) return std::nullopt;
+    return uri->ToString();
   }
 
   static std::optional<std::string> AddressUriFromProto(
@@ -657,9 +659,9 @@ class Fuzzer {
     }
   }
 
-  static std::vector<grpc_resolved_address> MakeAddressList(
+  static std::vector<std::string> MakeAddressList(
       const pick_first_fuzzer::EndpointList::Endpoint& endpoint) {
-    std::vector<grpc_resolved_address> addresses;
+    std::vector<std::string> addresses;
     for (const auto& address_proto : endpoint.addresses()) {
       auto address_uri = AddressUriFromProto(address_proto);
       if (!address_uri.has_value()) continue;
@@ -712,7 +714,11 @@ class Fuzzer {
     if (!address.has_value()) return;
     ChannelArgs args = CreateChannelArgsFromFuzzingConfiguration(
         notification.channel_args(), FuzzingEnvironment());
-    SubchannelKey key(*address, args);
+    auto uri = grpc_core::URI::Parse(*address_uri);
+    if (!uri.ok()) return;
+    grpc_resolved_address resolved_address;
+    if (!grpc_parse_uri(*uri, &resolved_address)) return;
+    SubchannelKey key(resolved_address, args);
     auto [it, created] = subchannel_pool_.emplace(
         std::piecewise_construct, std::forward_as_tuple(key),
         std::forward_as_tuple(*address_uri, this));

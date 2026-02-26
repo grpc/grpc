@@ -17,6 +17,7 @@
 
 #include "src/core/client_channel/client_channel.h"
 #include "src/core/lib/address_utils/parse_address.h"
+#include "src/core/resolver/endpoint_addresses.h"
 #include "test/core/call/call_spine_benchmarks.h"
 #include "absl/memory/memory.h"
 #include "absl/strings/string_view.h"
@@ -133,9 +134,8 @@ class TestResolver final : public Resolver {
       absl::string_view endpoint_address) {
     Resolver::Result result;
     result.args = args_;
-    grpc_resolved_address address;
-    CHECK(grpc_parse_uri(URI::Parse(endpoint_address).value(), &address));
-    result.addresses = EndpointAddressesList({EndpointAddresses{address, {}}});
+    result.addresses = EndpointAddressesList(
+        {EndpointAddresses{std::string(endpoint_address), {}}});
     return result;
   }
 
