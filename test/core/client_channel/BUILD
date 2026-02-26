@@ -74,12 +74,14 @@ grpc_fuzz_test(
         "absl/status",
         "absl/strings",
     ],
+    tags = ["subchannel_test"],
     deps = [
         "//:config",
         "//:grpc",
         "//:grpc_client_channel",
         "//:parse_address",
         "//test/core/call/yodel:yodel_test",
+        "//test/core/test_util:scoped_env_var",
     ],
 )
 

@@ -333,7 +333,8 @@
   description: Subchannel connection scaling support.
   expiry: 2026/07/01
   owner: roth@google.com
-  test_tags: ["core_end2end_test", "cpp_lb_end2end_test", "chttp2_keepalive_tests"]
+  test_tags: ["core_end2end_test", "cpp_lb_end2end_test", "chttp2_keepalive_tests", "subchannel_test"]
+  allow_in_fuzzing_config: false
 - name: subchannel_wrapper_cleanup_on_orphan
   description:
     Fixes the subchannel wrapper to drop any non-cancelled watchers when
