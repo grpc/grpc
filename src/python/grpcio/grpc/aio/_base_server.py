@@ -19,8 +19,8 @@ from typing import Generic, Iterable, Mapping, NoReturn, Optional, Sequence
 import grpc
 
 from ._metadata import Metadata  # pylint: disable=unused-import
-from ._typing import MetadataType
 from ._typing import DoneCallbackType
+from ._typing import MetadataType
 from ._typing import RequestType
 from ._typing import ResponseType
 
