@@ -2040,7 +2040,7 @@ grpc_cc_library(
         "//conditions:default": [],
     }),
     public_hdrs = GRPC_PUBLIC_HDRS + GRPC_PUBLIC_EVENT_ENGINE_HDRS,
-    visibility = ["//bazel:alt_grpc_base_legacy"],
+    visibility = ["//bazel:alt_grpc_base_legacy", "//src/python/grpc:__subpackages__"],
     deps = [
         "byte_buffer",
         "call_combiner",

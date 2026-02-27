@@ -35,8 +35,10 @@ grpc_cc_library(
         "absl/status",
         "absl/status:statusor",
     ],
+    visibility = [
+        "//src/python/grpcio/grpc:__subpackages__",
+    ],
     deps = [
-        "//:exec_ctx",
         "//:gpr",
         "//:grpc_base",
         "@local_config_python//:python_headers",
