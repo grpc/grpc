@@ -1256,69 +1256,82 @@ class V3InterceptorToV2Bridge : public ChannelFilter, public Interceptor {
     auto* state = arena->ManagedNew<V3InterceptorToV2State>();
     arena->SetContext<V3InterceptorToV2State>(state);
     // Now we create a new v3 call pair.  The initiator will be the
-    // client side of the v3 interceptor, and the handler will be the
-    // server side.
+    // client side of the v3 interceptor, and the unstarted handler will be
+    // passed to the v3 interceptor.  The interceptor will wind up returning
+    // a handler to us via state->call_handler_latch, which will represent
+    // the server side of the v3 interceptor.
     auto [initiator, unstarted_handler] =
         MakeCallPair(std::move(call_args.client_initial_metadata),
                      GetContext<Arena>()->Ref());
     // Inject the unstarted handler into the interceptor.
     StartCall(std::move(unstarted_handler));
     // Now return a promise that does all the things.
-    return TrySeq(
-        state->call_handler_latch.Wait(),
-        [initiator = std::move(initiator), call_args = std::move(call_args),
-         next_promise_factory =
-             std::move(next_promise_factory)](CallHandler handler) mutable {
-          // Intercept all pipes from v2 API.
-          call_args.client_to_server_messages->InterceptAndMap(
-              [initiator, handler](MessageHandle message) mutable {
-                initiator.SpawnPushMessage(std::move(message));
-                return Map(handler.PullMessage(),
-                           [](ClientToServerNextMessage message)
-                               -> std::optional<MessageHandle> {
-                             if (!message.ok()) return std::nullopt;
-                             if (!message.has_value()) return std::nullopt;
-                             return message.TakeValue();
-                           });
-              });
-          call_args.server_initial_metadata->InterceptAndMap(
-              [initiator, handler](ServerMetadataHandle metadata) mutable {
-                handler.SpawnPushServerInitialMetadata(std::move(metadata));
-                return initiator.PullServerInitialMetadata();
-              });
-          call_args.server_to_client_messages->InterceptAndMap(
-              [initiator, handler](MessageHandle message) mutable {
-                handler.SpawnPushMessage(std::move(message));
-                return Map(initiator.PullMessage(),
-                           [](ServerToClientNextMessage message)
-                               -> std::optional<MessageHandle> {
-                             if (!message.ok()) return std::nullopt;
-                             if (!message.has_value()) return std::nullopt;
-                             return message.TakeValue();
-                           });
-              });
-          // A wrapper for next_promise_factory that does the following:
-          // - Pulls client initial metadata from the V3 handler and injects
-          //   it into the next V2 filter via CallArgs.
-          // - Polls the next promise to get server trailing metadata
-          //   from the next V2 filter, feeds it into the V3 handler,
-          //   and then gets it out of the V3 initiator.
-          return TrySeq(
-              handler.PullClientInitialMetadata(),
-              [next_promise_factory = std::move(next_promise_factory),
-               call_args = std::move(call_args), handler,
-               initiator](ClientMetadataHandle metadata) mutable {
-                call_args.client_initial_metadata = std::move(metadata);
-                return Seq(
-                    next_promise_factory(std::move(call_args)),
-                    [handler,
-                     initiator](ServerMetadataHandle metadata) mutable {
-                      handler.SpawnPushServerTrailingMetadata(
-                          std::move(metadata));
-                      return initiator.PullServerTrailingMetadata();
-                    });
-              });
-        });
+    return Race(
+        // We need to start polling the initiator for server trailing
+        // metadata immediately, since the v3 interceptor may generate a
+        // failure before any of the other promises resolve.
+        initiator.PullServerTrailingMetadata(),
+        // This promise does the rest of the things, but it will always
+        // return pending, because the promise can't actually finish
+        // until the initiator returns trailing metadata above.
+        TrySeq(
+            state->call_handler_latch.Wait(),
+            [initiator = std::move(initiator), call_args = std::move(call_args),
+             next_promise_factory =
+                 std::move(next_promise_factory)](CallHandler handler) mutable {
+              // Intercept all pipes from v2 API.
+              call_args.client_to_server_messages->InterceptAndMap(
+                  [initiator, handler](MessageHandle message) mutable {
+                    initiator.SpawnPushMessage(std::move(message));
+                    return Map(handler.PullMessage(),
+                               [](ClientToServerNextMessage message)
+                                   -> std::optional<MessageHandle> {
+                                 if (!message.ok()) return std::nullopt;
+                                 if (!message.has_value()) return std::nullopt;
+                                 return message.TakeValue();
+                               });
+                  });
+              call_args.server_initial_metadata->InterceptAndMap(
+                  [initiator, handler](ServerMetadataHandle metadata) mutable {
+                    handler.SpawnPushServerInitialMetadata(std::move(metadata));
+                    return initiator.PullServerInitialMetadata();
+                  });
+              call_args.server_to_client_messages->InterceptAndMap(
+                  [initiator, handler](MessageHandle message) mutable {
+                    handler.SpawnPushMessage(std::move(message));
+                    return Map(initiator.PullMessage(),
+                               [](ServerToClientNextMessage message)
+                                   -> std::optional<MessageHandle> {
+                                 if (!message.ok()) return std::nullopt;
+                                 if (!message.has_value()) return std::nullopt;
+                                 return message.TakeValue();
+                               });
+                  });
+              // A wrapper for next_promise_factory that does the following:
+              // - Pulls client initial metadata from the V3 handler and injects
+              //   it into the next V2 filter via CallArgs.
+              // - Polls the next promise to get server trailing metadata
+              //   from the next V2 filter and feeds it into the V3 handler.
+              // Note that this does not actually pull the trailing metadata
+              // from the V3 initiator; instead, we do that in a separate
+              // promise above.  That promise will always complete at the
+              // end of the call, so we always return pending here.
+              return TrySeq(
+                  handler.PullClientInitialMetadata(),
+                  [next_promise_factory = std::move(next_promise_factory),
+                   call_args = std::move(call_args),
+                   handler](ClientMetadataHandle metadata) mutable {
+                    call_args.client_initial_metadata = std::move(metadata);
+                    return Seq(next_promise_factory(std::move(call_args)),
+                               [handler](ServerMetadataHandle metadata) mutable
+                                   -> Poll<ServerMetadataHandle> {
+                                 handler.SpawnPushServerTrailingMetadata(
+                                     std::move(metadata));
+                                 // We always lose the race.
+                                 return Pending{};
+                               });
+                  });
+            }));
   }
 
  protected:

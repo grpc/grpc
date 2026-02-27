@@ -211,9 +211,6 @@ TEST_P(XdsCompositeFilterEnd2endTest, Basic) {
   EXPECT_THAT(server_initial_metadata,
               ::testing::Not(::testing::Contains(
                   ::testing::Key(::testing::AnyOf("sunk", "status")))));
-// FIXME: the case below fails -- it gets DEADLINE_EXCEEDED instead of
-// failing quickly with UNAVAILABLE
-return;
   // Now send an RPC with no matching header.  Nothing should be added.
   LOG(INFO) << "Sending RPC with no name header...";
   CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE,
