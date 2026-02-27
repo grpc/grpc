@@ -106,7 +106,7 @@ def cc_grpc_library(
         generate_cc(
             name = codegen_grpc_target,
             srcs = proto_targets,
-            plugin = Label("//src/compiler:grpc_cpp_plugin"),
+            plugin = Label("//bazel/private:maybe_grpc_cpp_plugin"),
             well_known_protos = well_known_protos,
             generate_mocks = generate_mocks,
             allow_deprecated = allow_deprecated,

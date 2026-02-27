@@ -16,6 +16,7 @@
 load("@com_google_protobuf//bazel:py_proto_library.bzl", protobuf_py_proto_library = "py_proto_library")
 load("@rules_proto//proto:defs.bzl", "ProtoInfo")
 load("@rules_python//python:py_info.bzl", "PyInfo")
+load("//bazel/private:plugin_toolchain_helpers.bzl", "python_plugin_toolchain", plugin_toolchains = "toolchains")
 load(
     "//bazel:protobuf.bzl",
     "declare_out_files",
@@ -204,22 +205,20 @@ def _generate_pb2_grpc_src_impl(context):
     includes = includes_from_deps(context.attr.deps)
 
     out_files = declare_out_files(protos, context, _GENERATED_GRPC_PROTO_FORMAT)
-    plugin_flags = ["grpc_2_0"] + context.attr.strip_prefixes
+
+    plugin = plugin_toolchains.find_toolchain(context, "_grpc_plugin", python_plugin_toolchain)
+    plugin_flags = plugin_toolchains.options(context, ["grpc_2_0"], python_plugin_toolchain) \
+        + context.attr.strip_prefixes
 
     arguments = []
-    tools = [context.executable._protoc, context.executable._grpc_plugin]
+    tools = [context.executable._protoc, plugin]
     out_dir = get_out_dir(protos, context)
     if out_dir.import_path:
         # is virtual imports
         out_path = get_include_directory(out_files[0])
     else:
         out_path = out_dir.path
-    arguments += get_plugin_args(
-        context.executable._grpc_plugin,
-        plugin_flags,
-        out_path,
-        False,
-    )
+    arguments += get_plugin_args(plugin, plugin_flags, out_path, False)
 
     arguments += [
         "--proto_path={}".format(get_include_directory(i))
@@ -286,7 +285,7 @@ _generate_pb2_grpc_src = rule(
         "_grpc_plugin": attr.label(
             executable = True,
             cfg = "exec",
-            default = Label("//src/compiler:grpc_python_plugin"),
+            default = Label("//bazel/private:maybe_grpc_python_plugin"),
         ),
         "_protoc": attr.label(
             executable = True,
@@ -297,8 +296,12 @@ _generate_pb2_grpc_src = rule(
             default = Label("//src/python/grpcio/grpc:grpcio"),
             providers = [PyInfo],
         ),
+        "_enable_plugin_toolchain_resolution": attr.label(
+            default = Label("//bazel/toolchains:enable_plugin_toolchain_resolution"),
+        ),
     },
     implementation = _generate_pb2_grpc_src_impl,
+    toolchains = plugin_toolchains.use_toolchain(python_plugin_toolchain),
 )
 
 def py_grpc_library(
