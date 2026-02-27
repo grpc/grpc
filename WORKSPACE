@@ -123,3 +123,10 @@ bind(
     name = "madler_zlib",
     actual = "@zlib//:zlib",
 )
+
+load("@rules_python//python:repositories.bzl", "python_register_toolchains")
+
+python_register_toolchains(
+    name = "python_3_11",
+    python_version = "3.11",
+)
