@@ -266,3 +266,26 @@ grpc_cc_test(
         "//test/core/test_util:grpc_test_util",
     ],
 )
+
+grpc_cc_test(
+    name = "ssl_end2end_test",
+    srcs = ["ssl_end2end_test.cc"],
+    data = [
+        "//src/core/tsi/test_creds:ca.pem",
+        "//src/core/tsi/test_creds:server0.key",
+        "//src/core/tsi/test_creds:server0.pem",
+    ],
+    external_deps = [
+        "absl/strings",
+        "gtest",
+    ],
+    deps = [
+	    "//:grpc",
+        "//:gpr",
+        "//:tsi_base",
+        "//:tsi_fake_credentials",
+        "//:tsi_ssl_credentials",
+        "//src/core:useful",
+        "//test/core/test_util:grpc_test_util",
+    ],
+)
