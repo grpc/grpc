@@ -135,6 +135,20 @@ class ClientSideWeightedRoundRobinLbPolicyConfigFactory final
       }
       config["errorUtilizationPenalty"] = Json::FromNumber(value);
     }
+    // metric_names_for_computing_utilization
+    size_t size;
+    auto metric_names_for_computing_utilization =
+        envoy_extensions_load_balancing_policies_client_side_weighted_round_robin_v3_ClientSideWeightedRoundRobin_metric_names_for_computing_utilization(
+            resource, &size);
+    if (metric_names_for_computing_utilization != nullptr && size != 0) {
+      Json::Array metric_names;
+      for (size_t i = 0; i < size; ++i) {
+        metric_names.emplace_back(Json::FromString(
+            UpbStringToStdString(metric_names_for_computing_utilization[i])));
+      }
+      config["metricNamesForComputingUtilization"] =
+          Json::FromArray(std::move(metric_names));
+    }
     return Json::Object{
         {"weighted_round_robin", Json::FromObject(std::move(config))}};
   }
