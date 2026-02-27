@@ -37,6 +37,8 @@ from typing import Any, Dict, Iterable, List, Optional
 import xml.etree.ElementTree as ET
 
 import build_cleaner
+from parse_http_archives import CANONICAL_TO_APPARENT_NAME_MAPPING
+from parse_http_archives import parse_http_archives
 
 BuildMetadata = Dict[str, Any]
 BuildDict = Dict[str, BuildMetadata]
@@ -45,6 +47,7 @@ BuildYaml = Dict[str, Any]
 BuildMetadata = Dict[str, Any]
 BuildDict = Dict[str, BuildMetadata]
 BuildYaml = Dict[str, Any]
+StarlarkLike = str
 
 
 class ExternalProtoLibrary:
@@ -75,16 +78,6 @@ class ExternalProtoLibrary:
         self.strip_prefix = ""
 
 
-# Mapping from canonical repo name to apparent repo name.
-# See https://bazel.build/external/overview#canonical-repo-name
-CANONICAL_TO_APPARENT_NAME_MAPPING = {
-    "@@cel-spec+": "@dev_cel",
-    "@@googleapis+": "@com_google_googleapis",
-    "@@xds+": "@com_github_cncf_xds",
-    "@@protoc-gen-validate+": "@com_envoyproxy_protoc_gen_validate",
-    "@@opencensus-proto+": "opencensus_proto",
-    "@@envoy_api+": "@envoy_api",
-}
 APPARENT_TO_CANONICAL_NAME_MAPPING = {
     v: k for k, v in CANONICAL_TO_APPARENT_NAME_MAPPING.items()
 }
@@ -143,31 +136,41 @@ EXTERNAL_SOURCE_PREFIXES = {
 }
 
 
-# TODO(weizheyuan): Remove `use_bzlmod` argument once migration is finished.
-def _bazel_query_xml_tree(query: str, use_bzlmod: bool) -> ET.Element:
+# bazel mod show_repo should return starlark-like output.
+def _bazel_mod_show_repo() -> StarlarkLike:
+    args = [
+        "tools/bazel",
+        "mod",
+        # TODO(weizheyuan): Remove these 2 arguments once migration is finished.
+        "--enable_bzlmod",
+        "show_repo",
+    ] + list(CANONICAL_TO_APPARENT_NAME_MAPPING.keys())
+    try:
+        output = subprocess.check_output(args)
+        return output
+    except subprocess.CalledProcessError as e:
+        # TODO(weizheyuan): Figure out why this error exists:
+        #
+        # ERROR: module extension @@googleapis+//:extensions.bzl%switched_rules does not generate
+        # repository "com_google_googleapis_imports", yet it is imported as
+        # "com_google_googleapis_imports" in the usage
+        # at https://bcr.bazel.build/modules/envoy_api/0.0.0-20251216-6ef568c/MODULE.bazel:45:31
+        return e.output
+
+
+def _bazel_query_xml_tree(query: str) -> ET.Element:
     """Get xml output of bazel query invocation, parsed as XML tree"""
-    if use_bzlmod:
-        args = [
-            "tools/bazel",
-            "query",
-            "--enable_bzlmod",
-            "--noenable_workspace",
-            "--noimplicit_deps",
-            "--output",
-            "xml",
-            query,
-        ]
-    else:
-        args = [
-            "tools/bazel",
-            "query",
-            "--noenable_bzlmod",
-            "--enable_workspace",
-            "--noimplicit_deps",
-            "--output",
-            "xml",
-            query,
-        ]
+    args = [
+        "tools/bazel",
+        "query",
+        # TODO(weizheyuan): Remove these 2 arguments once migration is finished.
+        "--enable_bzlmod",
+        "--noenable_workspace",
+        "--noimplicit_deps",
+        "--output",
+        "xml",
+        query,
+    ]
     output = subprocess.check_output(args)
     return ET.fromstring(output)
 
@@ -1115,30 +1118,13 @@ def _generate_build_extra_metadata_for_tests(
     return test_metadata
 
 
-def _parse_http_archives(xml_tree: ET.Element) -> "List[ExternalProtoLibrary]":
+def _parse_http_archives(
+    bazel_output: StarlarkLike,
+) -> "List[ExternalProtoLibrary]":
     """Parse Bazel http_archive rule into ExternalProtoLibrary objects."""
+    http_archives = parse_http_archives(bazel_output)
     result = []
-    for xml_http_archive in xml_tree:
-        if (
-            xml_http_archive.tag != "rule"
-            or xml_http_archive.attrib["class"] != "http_archive"
-        ):
-            continue
-        # A distilled Python representation of Bazel http_archive
-        http_archive = dict()
-        for xml_node in xml_http_archive:
-            if xml_node.attrib["name"] == "name":
-                http_archive["name"] = xml_node.attrib["value"]
-            if xml_node.attrib["name"] == "urls":
-                http_archive["urls"] = []
-                for url_node in xml_node:
-                    http_archive["urls"].append(url_node.attrib["value"])
-            if xml_node.attrib["name"] == "url":
-                http_archive["urls"] = [xml_node.attrib["value"]]
-            if xml_node.attrib["name"] == "sha256":
-                http_archive["hash"] = xml_node.attrib["value"]
-            if xml_node.attrib["name"] == "strip_prefix":
-                http_archive["strip_prefix"] = xml_node.attrib["value"]
+    for http_archive in http_archives:
         if http_archive["name"] not in EXTERNAL_PROTO_LIBRARIES:
             # If this http archive is not one of the external proto libraries,
             # we don't want to include it as a CMake target
@@ -1153,15 +1139,8 @@ def _parse_http_archives(xml_tree: ET.Element) -> "List[ExternalProtoLibrary]":
 
 def _generate_external_proto_libraries() -> List[Dict[str, Any]]:
     """Generates the build metadata for external proto libraries"""
-    # TODO(weizheyuan): Find a new approach to extract http_archive() metadata.
-    #
-    # `//external:*` is a pseudo target which is not available in bzlmod.
-    # The closest we can do in bazel 8 is `bazel mod show_repo`. Disable bzlmod
-    # for this specific command until we find a better solution.
-    xml_tree = _bazel_query_xml_tree(
-        "kind(http_archive, //external:*)", use_bzlmod=False
-    )
-    libraries = _parse_http_archives(xml_tree)
+    starlark_like = _bazel_mod_show_repo()
+    libraries = _parse_http_archives(starlark_like)
     libraries.sort(key=lambda x: x.destination)
 
     return list(map(lambda x: x.__dict__, libraries))
@@ -1488,9 +1467,7 @@ _BAZEL_DEPS_QUERIES = [
 bazel_rules = {}
 for query in _BAZEL_DEPS_QUERIES:
     bazel_rules.update(
-        _extract_rules_from_bazel_xml(
-            _bazel_query_xml_tree(query, use_bzlmod=True)
-        )
+        _extract_rules_from_bazel_xml(_bazel_query_xml_tree(query))
     )
 
 # Step 1.5: The sources for UPB protos are pre-generated, so we want

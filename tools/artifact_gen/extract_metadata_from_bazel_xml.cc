@@ -708,55 +708,25 @@ class ArtifactGen {
     pugi::xml_document doc;
     std::string filename = absl::GetFlag(FLAGS_external_http_archive_query);
     CHECK(!filename.empty()) << "external_http_archive_query is not set";
-    pugi::xml_parse_result result = doc.load_file(filename.c_str());
-    CHECK(result) << filename;
 
     std::vector<nlohmann::json> external_proto_libraries;
-    for (const auto& query : doc.children("query")) {
-      for (const auto& child : query.children("rule")) {
-        if (child.attribute("class").as_string() !=
-            absl::string_view("http_archive")) {
-          continue;
-        }
-        HttpArchive http_archive;
-        for (const auto& node : child.children()) {
-          if (node.attribute("name").as_string() == absl::string_view("name")) {
-            http_archive.name = node.attribute("value").as_string();
-          } else if (node.attribute("name").as_string() ==
-                     absl::string_view("urls")) {
-            for (const auto& url_node : node.children()) {
-              http_archive.urls.push_back(
-                  url_node.attribute("value").as_string());
-            }
-          } else if (node.attribute("name").as_string() ==
-                     absl::string_view("url")) {
-            http_archive.urls.push_back(node.attribute("value").as_string());
-          } else if (node.attribute("name").as_string() ==
-                     absl::string_view("sha256")) {
-            http_archive.sha256 = node.attribute("value").as_string();
-          } else if (node.attribute("name").as_string() ==
-                     absl::string_view("strip_prefix")) {
-            http_archive.strip_prefix = node.attribute("value").as_string();
-          }
-        }
-        if (external_proto_libraries_.count(http_archive.name) == 0) {
+    std::ifstream fs(filename);
+    nlohmann::json http_archives = nlohmann::json::parse(fs);
+    // Make a copy for each element
+    for (nlohmann::json http_archive: http_archives["http_archives"]){
+        const std::string name = http_archive["name"].get<std::string>();
+        if (external_proto_libraries_.count(name) == 0) {
           // If this http archive is not one of the external proto libraries,
           // we don't want to include it as a CMake target
           continue;
         }
-
         const auto& extlib =
-            external_proto_libraries_.find(http_archive.name)->second;
-        auto lib = nlohmann::json{
-            {"destination", extlib.destination},
-            {"proto_prefix", extlib.proto_prefix},
-            {"urls", http_archive.urls},
-            {"hash", http_archive.sha256},
-            {"strip_prefix", http_archive.strip_prefix},
-        };
-        external_proto_libraries.push_back(lib);
-      }
+            external_proto_libraries_.find(name)->second;
+        http_archive["destination"] = extlib.destination;
+        http_archive["proto_prefix"] = extlib.proto_prefix;
+        external_proto_libraries.push_back(http_archive);
     }
+
     build_yaml_like_["external_proto_libraries"] = external_proto_libraries;
   }
 

@@ -406,35 +406,17 @@ if(gRPC_BUILD_GRPCPP_OTEL_PLUGIN)
   include(cmake/opentelemetry-cpp.cmake)
 endif()
 
-# Setup external proto library at third_party/cel-spec with 2 download URLs
+# Setup external proto library at third_party/cel-spec if it doesn't exist
 if (NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/third_party/cel-spec AND gRPC_DOWNLOAD_ARCHIVES)
   # Download the archive via HTTP, validate the checksum, and extract to third_party/cel-spec.
   download_archive(
     ${CMAKE_CURRENT_SOURCE_DIR}/third_party/cel-spec
-    https://storage.googleapis.com/grpc-bazel-mirror/github.com/google/cel-spec/archive/9f069b3ee58b02d6f6736c5ebd6587075c1a1b22.tar.gz
-    d6cb6b4ed272500d16546c672a65a7452b241462a200dda3f62a7de413883344
-    cel-spec-9f069b3ee58b02d6f6736c5ebd6587075c1a1b22
+    https://github.com/google/cel-spec/archive/refs/tags/v0.25.1.tar.gz
+    13583c5a312861648449845b709722676a3c9b43396b6b8e9cbe4538feb74ad2
+    cel-spec-0.25.1
   )
 endif()
-if (NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/third_party/cel-spec AND gRPC_DOWNLOAD_ARCHIVES)
-  # Download the archive via HTTP, validate the checksum, and extract to third_party/cel-spec.
-  download_archive(
-    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/cel-spec
-    https://github.com/google/cel-spec/archive/9f069b3ee58b02d6f6736c5ebd6587075c1a1b22.tar.gz
-    d6cb6b4ed272500d16546c672a65a7452b241462a200dda3f62a7de413883344
-    cel-spec-9f069b3ee58b02d6f6736c5ebd6587075c1a1b22
-  )
-endif()
-# Setup external proto library at third_party/envoy-api with 2 download URLs
-if (NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/third_party/envoy-api AND gRPC_DOWNLOAD_ARCHIVES)
-  # Download the archive via HTTP, validate the checksum, and extract to third_party/envoy-api.
-  download_archive(
-    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/envoy-api
-    https://storage.googleapis.com/grpc-bazel-mirror/github.com/envoyproxy/data-plane-api/archive/6ef568cf4a67362849911d1d2a546fd9f35db2ff.tar.gz
-    ed5e6c319f8ebcdf24a9491f866a599bb9a3c193b859a94ad13bd31f85b46855
-    data-plane-api-6ef568cf4a67362849911d1d2a546fd9f35db2ff
-  )
-endif()
+# Setup external proto library at third_party/envoy-api if it doesn't exist
 if (NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/third_party/envoy-api AND gRPC_DOWNLOAD_ARCHIVES)
   # Download the archive via HTTP, validate the checksum, and extract to third_party/envoy-api.
   download_archive(
@@ -444,73 +426,27 @@ if (NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/third_party/envoy-api AND gRPC_DOWNLO
     data-plane-api-6ef568cf4a67362849911d1d2a546fd9f35db2ff
   )
 endif()
-# Setup external proto library at third_party/googleapis with 2 download URLs
+# Setup external proto library at third_party/googleapis if it doesn't exist
 if (NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/third_party/googleapis AND gRPC_DOWNLOAD_ARCHIVES)
   # Download the archive via HTTP, validate the checksum, and extract to third_party/googleapis.
   download_archive(
     ${CMAKE_CURRENT_SOURCE_DIR}/third_party/googleapis
-    https://storage.googleapis.com/grpc-bazel-mirror/github.com/googleapis/googleapis/archive/2193a2bfcecb92b92aad7a4d81baa428cafd7dfd.tar.gz
-    3de3a199400eea7a766091aeb96c4b84c86266ad1f933f9933bbb7c359e727fe
+    https://github.com/googleapis/googleapis/archive/2193a2bfcecb92b92aad7a4d81baa428cafd7dfd.zip
+    07a6f700cee5ca796f5230876ed8454bf1d8cc409b3b3e634505bc4f32a9f72b
     googleapis-2193a2bfcecb92b92aad7a4d81baa428cafd7dfd
   )
 endif()
-if (NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/third_party/googleapis AND gRPC_DOWNLOAD_ARCHIVES)
-  # Download the archive via HTTP, validate the checksum, and extract to third_party/googleapis.
-  download_archive(
-    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/googleapis
-    https://github.com/googleapis/googleapis/archive/2193a2bfcecb92b92aad7a4d81baa428cafd7dfd.tar.gz
-    3de3a199400eea7a766091aeb96c4b84c86266ad1f933f9933bbb7c359e727fe
-    googleapis-2193a2bfcecb92b92aad7a4d81baa428cafd7dfd
-  )
-endif()
-# Setup external proto library at third_party/opencensus-proto/src with 2 download URLs
-if (NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/third_party/opencensus-proto/src AND gRPC_DOWNLOAD_ARCHIVES)
-  # Download the archive via HTTP, validate the checksum, and extract to third_party/opencensus-proto/src.
-  download_archive(
-    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/opencensus-proto/src
-    https://storage.googleapis.com/grpc-bazel-mirror/github.com/census-instrumentation/opencensus-proto/archive/v0.3.0.tar.gz
-    b7e13f0b4259e80c3070b583c2f39e53153085a6918718b1c710caf7037572b0
-    opencensus-proto-0.3.0/src
-  )
-endif()
-if (NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/third_party/opencensus-proto/src AND gRPC_DOWNLOAD_ARCHIVES)
-  # Download the archive via HTTP, validate the checksum, and extract to third_party/opencensus-proto/src.
-  download_archive(
-    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/opencensus-proto/src
-    https://github.com/census-instrumentation/opencensus-proto/archive/v0.3.0.tar.gz
-    b7e13f0b4259e80c3070b583c2f39e53153085a6918718b1c710caf7037572b0
-    opencensus-proto-0.3.0/src
-  )
-endif()
-# Setup external proto library at third_party/protoc-gen-validate with 2 download URLs
+# Setup external proto library at third_party/protoc-gen-validate if it doesn't exist
 if (NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/third_party/protoc-gen-validate AND gRPC_DOWNLOAD_ARCHIVES)
   # Download the archive via HTTP, validate the checksum, and extract to third_party/protoc-gen-validate.
   download_archive(
     ${CMAKE_CURRENT_SOURCE_DIR}/third_party/protoc-gen-validate
-    https://storage.googleapis.com/grpc-bazel-mirror/github.com/bufbuild/protoc-gen-validate/archive/refs/tags/v1.2.1.zip
-    ab51e978326b87e06be7a12fc6496f3ff6586339043557dbbd31f622332a5d45
+    https://github.com/bufbuild/protoc-gen-validate/archive/refs/tags/v1.2.1.tar.gz
+    e4718352754df1393b8792b631338aa8562f390e8160783e365454bc11d96328
     protoc-gen-validate-1.2.1
   )
 endif()
-if (NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/third_party/protoc-gen-validate AND gRPC_DOWNLOAD_ARCHIVES)
-  # Download the archive via HTTP, validate the checksum, and extract to third_party/protoc-gen-validate.
-  download_archive(
-    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/protoc-gen-validate
-    https://github.com/bufbuild/protoc-gen-validate/archive/refs/tags/v1.2.1.zip
-    ab51e978326b87e06be7a12fc6496f3ff6586339043557dbbd31f622332a5d45
-    protoc-gen-validate-1.2.1
-  )
-endif()
-# Setup external proto library at third_party/xds with 2 download URLs
-if (NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/third_party/xds AND gRPC_DOWNLOAD_ARCHIVES)
-  # Download the archive via HTTP, validate the checksum, and extract to third_party/xds.
-  download_archive(
-    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/xds
-    https://storage.googleapis.com/grpc-bazel-mirror/github.com/cncf/xds/archive/ee656c7534f5d7dc23d44dd611689568f72017a6.tar.gz
-    49535f3c3370004309da50194c09bbfc528d4702424dd46e7d56a278a3dfc15d
-    xds-ee656c7534f5d7dc23d44dd611689568f72017a6
-  )
-endif()
+# Setup external proto library at third_party/xds if it doesn't exist
 if (NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/third_party/xds AND gRPC_DOWNLOAD_ARCHIVES)
   # Download the archive via HTTP, validate the checksum, and extract to third_party/xds.
   download_archive(
