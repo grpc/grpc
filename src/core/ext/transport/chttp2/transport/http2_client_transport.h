@@ -91,6 +91,8 @@ namespace http2 {
 class Http2ClientTransport final : public ClientTransport,
                                    public channelz::DataSource {
  public:
+  //////////////////////////////////////////////////////////////////////////////
+  // Constructor, Destructor etc.
   Http2ClientTransport(
       PromiseEndpoint endpoint, const ChannelArgs& channel_args,
       std::shared_ptr<grpc_event_engine::experimental::EventEngine>
@@ -108,9 +110,15 @@ class Http2ClientTransport final : public ClientTransport,
   ServerTransport* server_transport() override { return nullptr; }
   absl::string_view GetTransportName() const override { return "http2"; }
 
+  //////////////////////////////////////////////////////////////////////////////
+  // Deprecated Stuff
+
   // TODO(tjagtap) : [PH2][EXT] : Remove after event engine rollout
   void SetPollset(grpc_stream*, grpc_pollset*) override {}
   void SetPollsetSet(grpc_stream*, grpc_pollset_set*) override {}
+
+  //////////////////////////////////////////////////////////////////////////////
+  // Transport Functions
 
   // Called at the start of a stream.
   void StartCall(CallHandler call_handler) override;
@@ -138,16 +146,16 @@ class Http2ClientTransport final : public ClientTransport,
   void SpawnAddChannelzData(RefCountedPtr<Party> party,
                             channelz::DataSink sink);
 
+  template <typename Factory>
+  void TestOnlySpawnPromise(absl::string_view name, Factory&& factory) {
+    SpawnInfallible(general_party_, name, std::forward<Factory>(factory));
+  }
+
   absl::Status TestOnlyTriggerWriteCycle() { return TriggerWriteCycle(); }
 
   auto TestOnlySendPing(absl::AnyInvocable<void()> on_initiate,
                         bool important = false) {
     return ping_manager_->RequestPing(std::move(on_initiate), important);
-  }
-
-  template <typename Factory>
-  void TestOnlySpawnPromise(absl::string_view name, Factory&& factory) {
-    SpawnInfallible(general_party_, name, std::forward<Factory>(factory));
   }
 
   int64_t TestOnlyTransportFlowControlWindow();
@@ -160,6 +168,43 @@ class Http2ClientTransport final : public ClientTransport,
   void SpawnTransportLoops();
 
  private:
+  //////////////////////////////////////////////////////////////////////////////
+  // Endpoint Helpers
+
+  // Callers MUST ensure that the transport is not destroyed till the promise is
+  // resolved or cancelled.
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto EndpointReadSlice(
+      const size_t num_bytes) {
+    return Map(endpoint_.ReadSlice(num_bytes),
+               [this, num_bytes](absl::StatusOr<Slice> status) {
+                 OnEndpointRead(status.ok(), num_bytes);
+                 return status;
+               });
+  }
+
+  // Callers MUST ensure that the transport is not destroyed till the promise is
+  // resolved or cancelled.
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto EndpointRead(
+      const size_t num_bytes) {
+    return Map(endpoint_.Read(num_bytes),
+               [this, num_bytes](absl::StatusOr<SliceBuffer> status) {
+                 OnEndpointRead(status.ok(), num_bytes);
+                 return status;
+               });
+  }
+
+  void OnEndpointRead(const bool is_ok, const size_t num_bytes) {
+    if (is_ok) {
+      keepalive_manager_->GotData();
+      ztrace_collector_->Append(PromiseEndpointReadTrace{num_bytes});
+    }
+  }
+
+  auto EndpointWrite(SliceBuffer&& output_buf);
+
+  //////////////////////////////////////////////////////////////////////////////
+  // Transport Read Path
+
   // Synchronous functions for processing each type of frame
   Http2Status ProcessIncomingFrame(Http2DataFrame&& frame);
   Http2Status ProcessIncomingFrame(Http2HeaderFrame&& frame);
@@ -190,7 +235,8 @@ class Http2ClientTransport final : public ClientTransport,
         std::forward<Http2Frame>(frame));
   }
 
-  // Writing to the endpoint.
+  //////////////////////////////////////////////////////////////////////////////
+  // Transport Write Path
 
   // Write time sensitive control frames to the endpoint. Frames sent from here
   // will be GOAWAY, SETTINGS, PING and PING acks, WINDOW_UPDATE and
@@ -315,6 +361,9 @@ class Http2ClientTransport final : public ClientTransport,
 
   void AddToStreamList(RefCountedPtr<Stream> stream);
 
+  //////////////////////////////////////////////////////////////////////////////
+  // Spawn Helpers and Promise Helpers
+
   template <typename Promise,
             std::enable_if_t<std::is_same_v<decltype(std::declval<Promise>()()),
                                             Poll<absl::Status>>,
@@ -391,38 +440,9 @@ class Http2ClientTransport final : public ClientTransport,
 
   RefCountedPtr<Stream> LookupStream(uint32_t stream_id);
 
-  // Callers MUST ensure that the transport is not destroyed till the promise is
-  // resolved or cancelled.
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto EndpointReadSlice(
-      const size_t num_bytes) {
-    return Map(endpoint_.ReadSlice(num_bytes),
-               [this, num_bytes](absl::StatusOr<Slice> status) {
-                 OnEndpointRead(status.ok(), num_bytes);
-                 return status;
-               });
-  }
+  //////////////////////////////////////////////////////////////////////////////
+  // Settings
 
-  // Callers MUST ensure that the transport is not destroyed till the promise is
-  // resolved or cancelled.
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto EndpointRead(
-      const size_t num_bytes) {
-    return Map(endpoint_.Read(num_bytes),
-               [this, num_bytes](absl::StatusOr<SliceBuffer> status) {
-                 OnEndpointRead(status.ok(), num_bytes);
-                 return status;
-               });
-  }
-
-  void OnEndpointRead(const bool is_ok, const size_t num_bytes) {
-    if (is_ok) {
-      keepalive_manager_->GotData();
-      ztrace_collector_->Append(PromiseEndpointReadTrace{num_bytes});
-    }
-  }
-
-  auto EndpointWrite(SliceBuffer&& output_buf);
-
-  // HTTP2 Settings
   auto WaitForSettingsTimeoutOnDone();
   void MaybeSpawnWaitForSettingsTimeout();
   void EnforceLatestIncomingSettings();
@@ -468,15 +488,6 @@ class Http2ClientTransport final : public ClientTransport,
 
   void MaybeGetWindowUpdateFrames(FrameSender& frame_sender);
 
-  void ReportDisconnection(const absl::Status& status,
-                           StateWatcher::DisconnectInfo disconnect_info,
-                           const char* reason);
-
-  void ReportDisconnectionLocked(const absl::Status& status,
-                                 StateWatcher::DisconnectInfo disconnect_info,
-                                 const char* reason)
-      ABSL_EXCLUSIVE_LOCKS_REQUIRED(&transport_mutex_);
-
   // Ping Helper functions
   Duration NextAllowedPingInterval() {
     MutexLock lock(&transport_mutex_);
@@ -493,8 +504,6 @@ class Http2ClientTransport final : public ClientTransport,
       const StreamDataQueue<ClientMetadataHandle>::StreamWritabilityUpdate
           result);
 
-  bool SetOnDone(CallHandler call_handler, RefCountedPtr<Stream> stream);
-
   absl::Status DequeueStreamFrames(RefCountedPtr<Stream> stream,
                                    WriteCycle& write_cycle);
 
@@ -502,6 +511,35 @@ class Http2ClientTransport final : public ClientTransport,
                                      Stream* stream,
                                      Http2Status&& original_status,
                                      DebugLocation whence = {});
+
+  //////////////////////////////////////////////////////////////////////////////
+  // Flow Control and BDP
+
+  //////////////////////////////////////////////////////////////////////////////
+  // Stream List Operations
+
+  //////////////////////////////////////////////////////////////////////////////
+  // Stream Operations
+
+  //////////////////////////////////////////////////////////////////////////////
+  // Ping Keepalive and Goaway
+
+  //////////////////////////////////////////////////////////////////////////////
+  // Error Path and Close Path
+
+  //////////////////////////////////////////////////////////////////////////////
+  // Misc Transport Stuff
+
+  void ReportDisconnection(const absl::Status& status,
+                           StateWatcher::DisconnectInfo disconnect_info,
+                           const char* reason);
+
+  void ReportDisconnectionLocked(const absl::Status& status,
+                                 StateWatcher::DisconnectInfo disconnect_info,
+                                 const char* reason)
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(&transport_mutex_);
+
+  bool SetOnDone(CallHandler call_handler, RefCountedPtr<Stream> stream);
 
   void ReadChannelArgs(const ChannelArgs& channel_args,
                        TransportChannelArgs& args);
