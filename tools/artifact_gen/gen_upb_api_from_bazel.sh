@@ -73,8 +73,10 @@ BUILD_TARGETS=$(${TMP_DIR}/gen_upb_api_from_bazel \
                   --upb_rules_xml="${UPB_RULES_XML}")
 
 # Build the upb targets from the root.
+# TODO(weizheyuan): Update gen_upb_api_from_bazel so it properly
+# handles repo mapping under bzlmod.
 if [[ -n "${BUILD_TARGETS}" ]]; then
-  "${BAZEL_BUILD[@]}" ${BUILD_TARGETS}
+  "${BAZEL_BUILD[@]}" --config=no-bzlmod ${BUILD_TARGETS}
 fi
 
 # Run the C++ program to copy the generated files.
