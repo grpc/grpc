@@ -187,7 +187,6 @@ def async_client_private_key_signer(
         target=async_signer_worker,
         args=(data_to_sign, signature_algorithm, on_complete),
     ).start()
-    # Add something where we put something cancellable on this handle
     return no_op_cancel
 
 
@@ -275,7 +274,6 @@ def async_client_private_key_signer_with_cancel(
             cancel.handshake_started_event,
         ),
     ).start()
-    # Add something where we put something cancellable on this handle
     return cancel
 
 

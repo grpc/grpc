@@ -108,6 +108,10 @@ class AsyncSigningHandlePyWrapper : public PrivateKeySigner::AsyncSigningHandle 
   ~AsyncSigningHandlePyWrapper() override;
 };
 
+// Python cannot call the string constructor directly in Cython. The string
+// constructor can throw exceptions, so the generated C code from Cython
+// contains try/catch statements. This fails our strict builds. Instead, we can
+// just construct them here and pass them down.
 std::string MakeStringForCython(const char* inp);
 std::string MakeStringForCython(const char* inp, size_t size);
 }  // namespace grpc_core

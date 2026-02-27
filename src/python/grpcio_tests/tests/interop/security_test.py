@@ -17,7 +17,6 @@ from functools import partial
 import sys
 import threading
 
-# from grpc._cython import cygrpc as _cygrpc
 import time
 import unittest
 import weakref
@@ -69,10 +68,7 @@ class SecurityTest(unittest.TestCase):
         stopped = self.server.stop(None)
         done = stopped.wait(timeout=10)
         self.assertTrue(done)
-        # Without this sleep, the test segfaults on the PyGILState_Ensure in the PrivateKeySignerPyWrapper dtor
-        # time.sleep(1)
 
-    # @unittest.skip(reason="temp")
     def test_success_sync(self):
         """
         Successfully use a custom sync private key signer.
@@ -95,7 +91,6 @@ class SecurityTest(unittest.TestCase):
             response = stub.EmptyCall(empty_pb2.Empty())
             self.assertIsInstance(response, empty_pb2.Empty)
 
-    # @unittest.skip(reason="temp")
     def test_success_async(self):
         """
         Successfully use a custom async private key signer.
@@ -118,7 +113,6 @@ class SecurityTest(unittest.TestCase):
             response = stub.EmptyCall(empty_pb2.Empty())
             self.assertIsInstance(response, empty_pb2.Empty)
 
-    # @unittest.skip(reason="segfaulting")
     def test_bad_sync_signer(self):
         """
         Expect failure using a custom sync private key signer.
@@ -142,7 +136,6 @@ class SecurityTest(unittest.TestCase):
                 stub.EmptyCall(empty_pb2.Empty())
         self.assertIsNotNone(context.exception)
 
-    # @unittest.skip(reason="segfaulting")
     def test_bad_async_signer(self):
         """
         Expect failure using a custom async private key signer.
@@ -166,15 +159,10 @@ class SecurityTest(unittest.TestCase):
                 stub.EmptyCall(empty_pb2.Empty())
         self.assertIsNotNone(context.exception)
 
-    # @unittest.skip(reason="temp")
     def test_async_signer_with_cancel(self):
         """
         Test cancellation of an async signer
         """
-        # Create a handle with a cancellation event and pass it to the signing function..
-        # test_handle = grpc.create_async_handle_for_custom_signer()
-        # test_handle.cancel_event = threading.Event()
-        # test_handle.handshake_started = threading.Event()
         cancel_callable = resources.CancelCallable()
         bound_signing_fn = partial(
             resources.async_signer_with_cancel_injection, cancel_callable
@@ -205,7 +193,6 @@ class SecurityTest(unittest.TestCase):
         # Ensure the cancel event is set
         self.assertTrue(cancel_callable.cancel_event.wait(timeout=1))
 
-    # @unittest.skip(reason="temp")
     def test_async_signer_test_times_out(self):
         """
         Similar to the test where we manually cancel, but just let things timeout
@@ -231,7 +218,6 @@ class SecurityTest(unittest.TestCase):
                 response = stub.EmptyCall(empty_pb2.Empty(), timeout=1)
                 # As everything goes out of scope, we just want to make sure we don't segfault or anything
 
-    # @unittest.skip(reason="temp")
     def test_signer_lifetime(self):
 
         class TrackedSigner:

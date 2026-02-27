@@ -41,7 +41,6 @@ grpc_cc_library(
     deps = [
         "//:gpr",
         "//:grpc_base",
-        # "@local_config_python//:python_headers",
         "@rules_python//python/cc:current_py_cc_headers",
         "@rules_python//python/cc:current_py_cc_libs",
     ],
