@@ -308,7 +308,9 @@ class ServerHandlerBackgroundThreadTest(unittest.TestCase):
             def fail_handler(request_iterator, servicer_context):
                 nonlocal fail_fn
                 # fail in the background
-                failer = threading.Thread(target=fail_fn, args=(servicer_context,))
+                failer = threading.Thread(
+                    target=fail_fn, args=(servicer_context,)
+                )
                 failer.start()
                 # discard requests in the foreground
                 try:
