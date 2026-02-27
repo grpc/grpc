@@ -59,10 +59,10 @@ using RootCertInfo = std::variant<std::string, grpc_core::SpiffeBundleMap>;
 // context.
 typedef struct tsi_ssl_root_certs_store tsi_ssl_root_certs_store;
 
-// Given a NULL-terminated string containing the PEM encoding of the root
-// certificates, creates a tsi_ssl_root_certs_store object.
+// Given a string containing the PEM encoding of the root certificates,
+// creates a tsi_ssl_root_certs_store object.
 tsi_ssl_root_certs_store* tsi_ssl_root_certs_store_create(
-    const char* pem_roots);
+    absl::string_view pem_roots);
 
 // Destroys the tsi_ssl_root_certs_store object.
 void tsi_ssl_root_certs_store_destroy(tsi_ssl_root_certs_store* self);

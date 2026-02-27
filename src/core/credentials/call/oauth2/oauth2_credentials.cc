@@ -416,21 +416,20 @@ namespace grpc_core {
 
 namespace {
 
-void MaybeAddToBody(const char* field_name, const char* field,
+void MaybeAddToBody(absl::string_view field_name, absl::string_view field,
                     std::vector<std::string>* body) {
-  if (field == nullptr || strlen(field) == 0) return;
+  if (field.empty()) return;
   body->push_back(absl::StrFormat("&%s=%s", field_name, field));
 }
 
-grpc_error_handle LoadTokenFile(const char* path, grpc_slice* token) {
-  auto slice = LoadFile(path, /*add_null_terminator=*/true);
+absl::StatusOr<Slice> LoadTokenFile(const char* path) {
+  auto slice = LoadFile(path, /*add_null_terminator=*/false);
   if (!slice.ok()) return slice.status();
   if (slice->empty()) {
     LOG(ERROR) << "Token file " << path << " is empty";
     return GRPC_ERROR_CREATE("Token file is empty.");
   }
-  *token = slice->TakeCSlice();
-  return absl::OkStatus();
+  return slice;
 }
 
 class StsTokenFetcherCredentials : public Oauth2TokenFetcherCredentials {
@@ -490,43 +489,33 @@ class StsTokenFetcherCredentials : public Oauth2TokenFetcherCredentials {
   grpc_error_handle FillBody(char** body, size_t* body_length) {
     *body = nullptr;
     std::vector<std::string> body_parts;
-    grpc_slice subject_token = grpc_empty_slice();
-    grpc_slice actor_token = grpc_empty_slice();
-    grpc_error_handle err;
 
-    auto cleanup = [&body, &body_length, &body_parts, &subject_token,
-                    &actor_token, &err]() {
+    auto cleanup = [&body, &body_length, &body_parts](absl::Status err) {
       if (err.ok()) {
         std::string body_str = absl::StrJoin(body_parts, "");
         *body = gpr_strdup(body_str.c_str());
         *body_length = body_str.size();
       }
-      CSliceUnref(subject_token);
-      CSliceUnref(actor_token);
       return err;
     };
 
-    err = LoadTokenFile(subject_token_path_.get(), &subject_token);
-    if (!err.ok()) return cleanup();
+    auto subject_token = LoadTokenFile(subject_token_path_.get());
+    if (!subject_token.ok()) return cleanup(subject_token.status());
     body_parts.push_back(absl::StrFormat(
         GRPC_STS_POST_MINIMAL_BODY_FORMAT_STRING,
-        reinterpret_cast<const char*>(GRPC_SLICE_START_PTR(subject_token)),
-        subject_token_type_.get()));
+        subject_token->as_string_view(), subject_token_type_.get()));
     MaybeAddToBody("resource", resource_.get(), &body_parts);
     MaybeAddToBody("audience", audience_.get(), &body_parts);
     MaybeAddToBody("scope", scope_.get(), &body_parts);
     MaybeAddToBody("requested_token_type", requested_token_type_.get(),
                    &body_parts);
     if ((actor_token_path_ != nullptr) && *actor_token_path_ != '\0') {
-      err = LoadTokenFile(actor_token_path_.get(), &actor_token);
-      if (!err.ok()) return cleanup();
-      MaybeAddToBody(
-          "actor_token",
-          reinterpret_cast<const char*>(GRPC_SLICE_START_PTR(actor_token)),
-          &body_parts);
+      auto actor_token = LoadTokenFile(actor_token_path_.get());
+      if (!actor_token.ok()) return cleanup(actor_token.status());
+      MaybeAddToBody("actor_token", actor_token->as_string_view(), &body_parts);
       MaybeAddToBody("actor_token_type", actor_token_type_.get(), &body_parts);
     }
-    return cleanup();
+    return cleanup(absl::OkStatus());
   }
 
   URI sts_url_;

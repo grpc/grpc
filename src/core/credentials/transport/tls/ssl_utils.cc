@@ -435,7 +435,7 @@ grpc_security_status grpc_ssl_tsi_client_handshaker_factory_init(
     const char* crl_directory,
     std::shared_ptr<grpc_core::experimental::CrlProvider> crl_provider,
     tsi_ssl_client_handshaker_factory** handshaker_factory) {
-  const char* root_certs = nullptr;
+  absl::string_view root_certs;
   const tsi_ssl_root_certs_store* root_store = nullptr;
   tsi_ssl_client_handshaker_options options;
   bool roots_are_configured = root_cert_info != nullptr;
@@ -445,12 +445,13 @@ grpc_security_status grpc_ssl_tsi_client_handshaker_factory_init(
            "default locations instead";
     // Use default root certificates.
     root_certs = grpc_core::DefaultSslRootStore::GetPemRootCerts();
-    if (root_certs == nullptr) {
+    if (root_certs.empty()) {
       LOG(ERROR) << "Could not get default pem root certs.";
       return GRPC_SECURITY_ERROR;
     }
     root_store = grpc_core::DefaultSslRootStore::GetRootStore();
-    options.root_cert_info = std::make_shared<RootCertInfo>(root_certs);
+    options.root_cert_info =
+        std::make_shared<RootCertInfo>(std::string(root_certs));
   } else {
     options.root_cert_info = std::move(root_cert_info);
   }
@@ -577,12 +578,9 @@ const tsi_ssl_root_certs_store* DefaultSslRootStore::GetRootStore() {
   return default_root_store_;
 }
 
-const char* DefaultSslRootStore::GetPemRootCerts() {
+absl::string_view DefaultSslRootStore::GetPemRootCerts() {
   InitRootStore();
-  return GRPC_SLICE_IS_EMPTY(default_pem_root_certs_)
-             ? nullptr
-             : reinterpret_cast<const char*>
-                   GRPC_SLICE_START_PTR(default_pem_root_certs_);
+  return StringViewFromSlice(default_pem_root_certs_);
 }
 
 grpc_slice DefaultSslRootStore::ComputePemRootCerts() {
@@ -592,7 +590,7 @@ grpc_slice DefaultSslRootStore::ComputePemRootCerts() {
       ConfigVars::Get().DefaultSslRootsFilePath();
   if (!default_root_certs_path.empty()) {
     auto slice =
-        LoadFile(default_root_certs_path, /*add_null_terminator=*/true);
+        LoadFile(default_root_certs_path, /*add_null_terminator=*/false);
     if (!slice.ok()) {
       LOG(ERROR) << "error loading file " << default_root_certs_path << ": "
                  << slice.status();
@@ -624,7 +622,7 @@ grpc_slice DefaultSslRootStore::ComputePemRootCerts() {
   }
   // Fallback to roots manually shipped with gRPC.
   if (result.empty() && ovrd_res != GRPC_SSL_ROOTS_OVERRIDE_FAIL_PERMANENTLY) {
-    auto slice = LoadFile(installed_roots_path, /*add_null_terminator=*/true);
+    auto slice = LoadFile(installed_roots_path, /*add_null_terminator=*/false);
     if (!slice.ok()) {
       LOG(ERROR) << "error loading file " << installed_roots_path << ": "
                  << slice.status();
@@ -643,9 +641,8 @@ void DefaultSslRootStore::InitRootStore() {
 void DefaultSslRootStore::InitRootStoreOnce() {
   default_pem_root_certs_ = ComputePemRootCerts();
   if (!GRPC_SLICE_IS_EMPTY(default_pem_root_certs_)) {
-    default_root_store_ =
-        tsi_ssl_root_certs_store_create(reinterpret_cast<const char*>(
-            GRPC_SLICE_START_PTR(default_pem_root_certs_)));
+    default_root_store_ = tsi_ssl_root_certs_store_create(
+        StringViewFromSlice(default_pem_root_certs_));
   }
 }
 

@@ -74,11 +74,12 @@ class grpc_httpcli_ssl_channel_security_connector final
     }
   }
 
-  tsi_result InitHandshakerFactory(const char* pem_root_certs,
+  tsi_result InitHandshakerFactory(absl::string_view pem_root_certs,
                                    const tsi_ssl_root_certs_store* root_store) {
     tsi_ssl_client_handshaker_options options;
-    if (pem_root_certs != nullptr) {
-      options.root_cert_info = std::make_shared<RootCertInfo>(pem_root_certs);
+    if (!pem_root_certs.empty()) {
+      options.root_cert_info =
+          std::make_shared<RootCertInfo>(std::string(pem_root_certs));
     }
     options.root_store = root_store;
     return tsi_create_ssl_client_handshaker_factory_with_options(
@@ -146,9 +147,9 @@ class grpc_httpcli_ssl_channel_security_connector final
 
 RefCountedPtr<grpc_channel_security_connector>
 httpcli_ssl_channel_security_connector_create(
-    const char* pem_root_certs, const tsi_ssl_root_certs_store* root_store,
-    const char* secure_peer_name) {
-  if (secure_peer_name != nullptr && pem_root_certs == nullptr) {
+    absl::string_view pem_root_certs,
+    const tsi_ssl_root_certs_store* root_store, const char* secure_peer_name) {
+  if (secure_peer_name != nullptr && pem_root_certs.empty()) {
     LOG(ERROR) << "Cannot assert a secure peer name without a trust root.";
     return nullptr;
   }
@@ -169,7 +170,7 @@ class HttpRequestSSLCredentials : public grpc_channel_credentials {
   RefCountedPtr<grpc_channel_security_connector> create_security_connector(
       RefCountedPtr<grpc_call_credentials> /*call_creds*/, const char* target,
       ChannelArgs* args) override {
-    const char* pem_root_certs = DefaultSslRootStore::GetPemRootCerts();
+    absl::string_view pem_root_certs = DefaultSslRootStore::GetPemRootCerts();
     const tsi_ssl_root_certs_store* root_store =
         DefaultSslRootStore::GetRootStore();
     if (root_store == nullptr) {

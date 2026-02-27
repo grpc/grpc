@@ -74,7 +74,7 @@ class grpc_ssl_credentials : public grpc_channel_credentials {
   // that there is a session cache. If a session cache is used, a new handshaker
   // factory will be created and used that contains that session cache.
   grpc_security_status InitializeClientHandshakerFactory(
-      const grpc_ssl_config* config, const char* pem_root_certs,
+      const grpc_ssl_config* config, std::string pem_root_certs,
       const tsi_ssl_root_certs_store* root_store,
       tsi_ssl_session_cache* ssl_session_cache,
       tsi_ssl_client_handshaker_factory** handshaker_factory);
