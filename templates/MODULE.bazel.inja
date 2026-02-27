@@ -57,7 +57,7 @@ bazel_dep(name = "rules_apple", version = "3.16.0", repo_name = "build_bazel_rul
 bazel_dep(name = "rules_cc", version = "0.1.1")
 bazel_dep(name = "rules_proto", version = "7.0.2")
 bazel_dep(name = "rules_shell", version = "0.4.0")
-bazel_dep(name = "rules_go", version = "0.49.0")
+bazel_dep(name = "rules_go", version = "0.49.0", repo_name = "io_bazel_rules_go")
 bazel_dep(name = "xds", version = "0.0.0-20251210-ee656c7", repo_name = "com_github_cncf_xds")
 
 # --- Zlib
