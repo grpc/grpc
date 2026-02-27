@@ -2042,7 +2042,6 @@ class Channel(grpc.Channel):
         self._target = target
         self._call_state = _ChannelCallState(self._channel)
         self._connectivity_state = _ChannelConnectivityState(self._channel)
-        cygrpc.fork_register_channel(self)
         if cygrpc.g_gevent_activated:
             cygrpc.gevent_increment_channel_count()
 
@@ -2191,7 +2190,6 @@ class Channel(grpc.Channel):
     def _close(self) -> None:
         self._unsubscribe_all()
         self._channel.close(cygrpc.StatusCode.cancelled, "Channel closed!")
-        cygrpc.fork_unregister_channel(self)
         if cygrpc.g_gevent_activated:
             cygrpc.gevent_decrement_channel_count()
 
