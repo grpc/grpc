@@ -213,7 +213,15 @@ class PromiseLike<
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION PromiseLike(F&& f)
       : f_(std::forward<F>(f)) {}
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION WrappedResult operator()() {
-    return WrapInPoll(f_());
+    // For cases where f_() already returns a Poll<OriginalResult>, WrapInPoll
+    // triggers a redundant move on the OriginalResult. This poll function being
+    // very widely used this quickly adds up if the move for the underlying type
+    // is expensive.
+    if constexpr (std::is_same_v<OriginalResult, WrappedResult>) {
+      return f_();
+    } else {
+      return WrapInPoll(f_());
+    }
   }
   void ToProto(grpc_channelz_v2_Promise* promise_proto,
                upb_Arena* arena) const {
