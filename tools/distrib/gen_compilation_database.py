@@ -40,7 +40,7 @@ def generateCompilationDatabase(args):
     ]
 
     subprocess.check_call(
-        ["bazel", "build"]
+        ["bazel", "build", "--config=no-bzlmod"]
         + bazel_options
         + [
             "--aspects=@bazel_compdb//:aspects.bzl%compilation_database_aspect",
