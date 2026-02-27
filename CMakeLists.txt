@@ -1787,6 +1787,7 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx status_conversion_test)
   add_dependencies(buildtests_cxx status_flag_test)
   add_dependencies(buildtests_cxx status_helper_test)
+  add_dependencies(buildtests_cxx status_test)
   add_dependencies(buildtests_cxx status_util_test)
   add_dependencies(buildtests_cxx stream_data_queue_test)
   add_dependencies(buildtests_cxx stream_leak_with_queued_flow_control_update_test)
@@ -33044,6 +33045,61 @@ target_link_libraries(status_helper_test
 endif()
 if(gRPC_BUILD_TESTS)
 
+add_executable(status_test
+  ${_gRPC_PROTO_GENS_DIR}/google/rpc/status.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/google/rpc/status.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/google/rpc/status.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/google/rpc/status.grpc.pb.h
+  src/cpp/client/global_callback_hook.cc
+  src/cpp/util/status.cc
+  test/cpp/common/status_test.cc
+)
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(status_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
+target_compile_features(status_test PUBLIC cxx_std_17)
+target_include_directories(status_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(status_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  gtest
+  absl::dynamic_annotations
+  absl::prefetch
+  absl::layout
+  absl::absl_check
+  absl::absl_log
+  absl::strings_internal
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  grpc_test_util
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
 add_executable(status_util_test
   test/core/call/status_util_test.cc
 )
@@ -40370,6 +40426,10 @@ add_executable(xds_common_types_test
   ${_gRPC_PROTO_GENS_DIR}/envoy/annotations/resource.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/annotations/resource.pb.h
   ${_gRPC_PROTO_GENS_DIR}/envoy/annotations/resource.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/common/mutation_rules/v3/mutation_rules.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/common/mutation_rules/v3/mutation_rules.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/common/mutation_rules/v3/mutation_rules.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/common/mutation_rules/v3/mutation_rules.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/address.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/address.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/address.pb.h

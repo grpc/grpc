@@ -252,11 +252,9 @@ class Http2ServerTransport final : public ServerTransport,
                                      Http2Status&& original_status,
                                      DebugLocation whence = {});
 
-  // Returns a promise that will process one HTTP2 frame.
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Http2Status
   ProcessOneIncomingFrame(Http2Frame&& frame) {
-    GRPC_HTTP2_SERVER_DLOG
-        << "Http2ServerTransport::ProcessOneIncomingFrame Factory";
+    GRPC_HTTP2_SERVER_DLOG << "Http2ServerTransport::ProcessOneIncomingFrame";
     return std::visit(
         [this](auto&& frame) {
           return ProcessIncomingFrame(std::forward<decltype(frame)>(frame));
@@ -271,20 +269,6 @@ class Http2ServerTransport final : public ServerTransport,
 
   //////////////////////////////////////////////////////////////////////////////
   // Transport Write Path
-
-  // Triggers a write cycle. If successful, returns true.
-  // If failed, calls HandleError and returns false.
-  bool TriggerWriteCycleOrHandleError(DebugLocation whence = {}) {
-    absl::Status status = TriggerWriteCycle(whence);
-    if (GPR_LIKELY(status.ok())) return true;
-    GRPC_HTTP2_SERVER_DLOG
-        << "Http2ServerTransport::TriggerWriteCycleOrHandleError failed with "
-           "status: "
-        << status << " at " << whence.file() << ":" << whence.line();
-    GRPC_UNUSED absl::Status unused_status =
-        HandleError(std::nullopt, ToHttpOkOrConnError(status), whence);
-    return false;
-  }
 
   // Write time sensitive control frames to the endpoint. Frames sent from here
   // will be GOAWAY, SETTINGS, PING and PING acks, WINDOW_UPDATE and
@@ -338,6 +322,20 @@ class Http2ServerTransport final : public ServerTransport,
         << "Http2ServerTransport::TriggerWriteCycle invoked from "
         << whence.file() << ":" << whence.line();
     return writable_stream_list_.ForceReadyForWrite();
+  }
+
+  // Triggers a write cycle. If successful, returns true.
+  // If failed, calls HandleError and returns false.
+  bool TriggerWriteCycleOrHandleError(DebugLocation whence = {}) {
+    absl::Status status = TriggerWriteCycle(whence);
+    if (GPR_LIKELY(status.ok())) return true;
+    GRPC_HTTP2_SERVER_DLOG
+        << "Http2ServerTransport::TriggerWriteCycleOrHandleError failed with "
+           "status: "
+        << status << " at " << whence.file() << ":" << whence.line();
+    GRPC_UNUSED absl::Status unused_status =
+        HandleError(std::nullopt, ToHttpOkOrConnError(status), whence);
+    return false;
   }
 
   //////////////////////////////////////////////////////////////////////////////
@@ -458,20 +456,37 @@ class Http2ServerTransport final : public ServerTransport,
   //   return (next_stream_id > 1) ? (next_stream_id - 2) : 0;
   // }
 
+  // Returns the number of active streams. A stream is removed from the `active`
+  // list once both client and server agree to close the stream. The count of
+  // stream_list_(even though stream list represents streams open for reads)
+  // works here because of the following cases where the stream is closed:
+  // 1. Reading a RST_STREAM frame: In this case, the stream is immediately
+  //    closed for reads and writes and removed from the stream_list_
+  //    (effectively tracking the number of active streams).
+  // 2. Reading a Trailing Metadata frame: In this case, the stream MAY be
+  //    closed for reads and writes immediately which follows the above case. In
+  //    other cases, the transport either reads RST_STREAM frame from the server
+  //    (and follows case 1) or sends a half close frame and closes the stream
+  //    for reads and writes (in the multiplexer loop).
+  // 3. Hitting error condition in the transport: In this case, RST_STREAM is
+  //    is enqueued and the stream is closed for reads immediately. This means
+  //    we effectively reduce the number of active streams inline (because we
+  //    remove the stream from the stream_list_). This is fine because the
+  //    priority logic in list of writable streams ensures that the RST_STREAM
+  //    frame is given priority over any new streams being created by the
+  //    client.
+  // 4. Application abort: In this case, multiplexer loop will write RST_STREAM
+  //    frame to the endpoint and close the stream from reads and writes. This
+  //    then follows the same reasoning as case 1.
   inline uint32_t GetActiveStreamCountLocked() const
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(transport_mutex_) {
     // TODO(tjagtap) : [PH2][P1] : Check if impl needs to change for server.
+    // TODO(tjagtap) : [PH2][P1] : Check if comment needs to change for server.
     return stream_list_.size();
   }
 
   //////////////////////////////////////////////////////////////////////////////
   // Stream Operations
-
-  // Returns a promise to fetch data from the callhandler and pass it further
-  // down towards the endpoint.
-  // auto CallOutboundLoop(CallHandler call_handler, RefCountedPtr<Stream>
-  // stream,
-  //                       ClientMetadataHandle metadata);
 
   // absl::Status InitializeStream(Stream& stream);
 

@@ -2949,6 +2949,9 @@ grpc_cc_library(
         "absl/status:statusor",
         "absl/strings",
     ],
+    visibility = [
+        "//bazel:posix_engine",
+    ],
     deps = [
         "ares_resolver",
         "event_engine_common",
@@ -6456,6 +6459,7 @@ grpc_cc_library(
         "envoy_admin_upb",
         "envoy_config_cluster_upb",
         "envoy_config_cluster_upbdefs",
+        "envoy_config_common_mutation_rules_upb",
         "envoy_config_core_upb",
         "envoy_config_core_upbdefs",
         "envoy_config_endpoint_upb",
@@ -10845,6 +10849,7 @@ grpc_cc_library(
         "absl/log",
         "absl/functional:any_invocable",
     ],
+    visibility = ["//bazel:wait_for_single_owner"],
     deps = [
         "no_destruct",
         "time",
@@ -11478,6 +11483,11 @@ grpc_upb_proto_library(
 grpc_upb_proto_reflection_library(
     name = "envoy_config_cluster_upbdefs",
     deps = ["@envoy_api//envoy/config/cluster/v3:pkg"],
+)
+
+grpc_upb_proto_library(
+    name = "envoy_config_common_mutation_rules_upb",
+    deps = ["@envoy_api//envoy/config/common/mutation_rules/v3:pkg"],
 )
 
 grpc_upb_proto_library(
