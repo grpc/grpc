@@ -23916,6 +23916,26 @@ targets:
   - gtest
   - grpc_test_util
   uses_polling: false
+- name: status_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - third_party/googleapis/google/rpc/status.proto
+  - src/cpp/client/global_callback_hook.cc
+  - src/cpp/util/status.cc
+  - test/cpp/common/status_test.cc
+  deps:
+  - gtest
+  - absl/base:dynamic_annotations
+  - absl/base:prefetch
+  - absl/container:layout
+  - absl/log:absl_check
+  - absl/log:absl_log
+  - absl/strings:internal
+  - protobuf
+  - grpc_test_util
 - name: status_util_test
   gtest: true
   build: test
