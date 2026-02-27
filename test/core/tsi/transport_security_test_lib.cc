@@ -303,24 +303,25 @@ void tsi_test_frame_protector_receive_message_from_peer(
   gpr_free(message_buffer);
 }
 
-grpc_error_handle on_handshake_next_done(
+void on_handshake_next_done(
     tsi_result result, void* user_data, const unsigned char* bytes_to_send,
     size_t bytes_to_send_size, tsi_handshaker_result* handshaker_result) {
   handshaker_args* args = static_cast<handshaker_args*>(user_data);
   GRPC_CHECK_NE(args, nullptr);
   GRPC_CHECK_NE(args->fixture, nullptr);
   tsi_test_fixture* fixture = args->fixture;
-  grpc_error_handle error;
   // Read more data if we need to.
   if (result == TSI_INCOMPLETE_DATA) {
     GRPC_CHECK_EQ(bytes_to_send_size, 0u);
+    args->error = absl::OkStatus();
     notification_signal(fixture);
-    return error;
+    return;
   }
   if (result != TSI_OK) {
-    notification_signal(fixture);
-    return GRPC_ERROR_CREATE(
+    args->error = GRPC_ERROR_CREATE(
         absl::StrCat("Handshake failed (", tsi_result_to_string(result), ")"));
+    notification_signal(fixture);
+    return;
   }
   // Update handshaker result.
   if (handshaker_result != nullptr) {
@@ -338,8 +339,8 @@ grpc_error_handle on_handshake_next_done(
   if (handshaker_result != nullptr) {
     maybe_append_unused_bytes(args);
   }
+  args->error = absl::OkStatus();
   notification_signal(fixture);
-  return error;
 }
 
 static void on_handshake_next_done_wrapper(
@@ -388,6 +389,8 @@ static void do_handshaker_next(
         const_cast<const unsigned char**>(&bytes_to_send), &bytes_to_send_size,
         &handshaker_result, &on_handshake_next_done_wrapper, args);
     if (result != TSI_ASYNC) {
+      on_handshake_next_done(result, args, bytes_to_send, bytes_to_send_size,
+                             handshaker_result);
       args->error = on_handshake_next_done(
           result, args, bytes_to_send, bytes_to_send_size, handshaker_result);
       if (!args->error.ok()) {
