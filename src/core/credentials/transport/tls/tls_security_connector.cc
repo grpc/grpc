@@ -25,7 +25,9 @@
 #include <grpc/support/string_util.h>
 #include <string.h>
 
+#include <cstddef>
 #include <memory>
+#include <optional>
 #include <utility>
 #include <vector>
 
@@ -213,22 +215,14 @@ void PendingVerifierRequestDestroy(
   }
 }
 
-tsi_ssl_pem_key_cert_pair* ConvertToTsiPemKeyCertPair(
+std::vector<tsi_ssl_pem_key_cert_pair> ConvertToTsiPemKeyCertPair(
     const PemKeyCertPairList& cert_pair_list) {
-  tsi_ssl_pem_key_cert_pair* tsi_pairs = nullptr;
-  size_t num_key_cert_pairs = cert_pair_list.size();
-  if (num_key_cert_pairs > 0) {
-    GRPC_CHECK_NE(cert_pair_list.data(), nullptr);
-    tsi_pairs = static_cast<tsi_ssl_pem_key_cert_pair*>(
-        gpr_zalloc(num_key_cert_pairs * sizeof(tsi_ssl_pem_key_cert_pair)));
-  }
-  for (size_t i = 0; i < num_key_cert_pairs; i++) {
-    GRPC_CHECK(!cert_pair_list[i].private_key().empty());
+  std::vector<tsi_ssl_pem_key_cert_pair> tsi_pairs;
+  for (size_t i = 0; i < cert_pair_list.size(); i++) {
+    GRPC_CHECK(!IsPrivateKeyEmpty(cert_pair_list[i].private_key()));
     GRPC_CHECK(!cert_pair_list[i].cert_chain().empty());
-    tsi_pairs[i].cert_chain =
-        gpr_strdup(cert_pair_list[i].cert_chain().c_str());
-    tsi_pairs[i].private_key =
-        gpr_strdup(cert_pair_list[i].private_key().c_str());
+    tsi_pairs.emplace_back(cert_pair_list[i].private_key(),
+                           cert_pair_list[i].cert_chain());
   }
   return tsi_pairs;
 }
@@ -454,7 +448,7 @@ ArenaPromise<absl::Status> TlsChannelSecurityConnector::CheckCallHost(
 }
 
 void TlsChannelSecurityConnector::TlsChannelCertificateWatcher::
-    OnCertificatesChanged(std::shared_ptr<RootCertInfo> root_certs,
+    OnCertificatesChanged(std::shared_ptr<tsi::RootCertInfo> root_certs,
                           std::optional<PemKeyCertPairList> key_cert_pairs) {
   GRPC_CHECK_NE(security_connector_, nullptr);
   MutexLock lock(&security_connector_->mu_);
@@ -553,23 +547,19 @@ TlsChannelSecurityConnector::UpdateHandshakerFactoryLocked() {
   if (client_handshaker_factory_ != nullptr) {
     tsi_ssl_client_handshaker_factory_unref(client_handshaker_factory_);
   }
-  tsi_ssl_pem_key_cert_pair* pem_key_cert_pair = nullptr;
+  std::vector<tsi_ssl_pem_key_cert_pair> pem_key_cert_pair;
   if (pem_key_cert_pair_list_.has_value()) {
     pem_key_cert_pair = ConvertToTsiPemKeyCertPair(*pem_key_cert_pair_list_);
   }
   bool use_default_roots = options_->root_certificate_distributor() == nullptr;
-  grpc_security_status status = grpc_ssl_tsi_client_handshaker_factory_init(
-      pem_key_cert_pair, use_default_roots ? nullptr : root_cert_info_,
+  return grpc_ssl_tsi_client_handshaker_factory_init(
+      pem_key_cert_pair.empty() ? nullptr : &pem_key_cert_pair[0],
+      use_default_roots ? nullptr : root_cert_info_,
       skip_server_certificate_verification,
       grpc_get_tsi_tls_version(options_->min_tls_version()),
       grpc_get_tsi_tls_version(options_->max_tls_version()), ssl_session_cache_,
       tls_session_key_logger_.get(), options_->crl_directory().c_str(),
       options_->crl_provider(), &client_handshaker_factory_);
-  // Free memory.
-  if (pem_key_cert_pair != nullptr) {
-    grpc_tsi_ssl_pem_key_cert_pairs_destroy(pem_key_cert_pair, 1);
-  }
-  return status;
 }
 
 // -------------------server security connector-------------------
@@ -727,7 +717,7 @@ int TlsServerSecurityConnector::cmp(
 }
 
 void TlsServerSecurityConnector::TlsServerCertificateWatcher::
-    OnCertificatesChanged(std::shared_ptr<RootCertInfo> roots,
+    OnCertificatesChanged(std::shared_ptr<tsi::RootCertInfo> roots,
                           std::optional<PemKeyCertPairList> key_cert_pairs) {
   GRPC_CHECK_NE(security_connector_, nullptr);
   MutexLock lock(&security_connector_->mu_);
@@ -830,21 +820,15 @@ TlsServerSecurityConnector::UpdateHandshakerFactoryLocked() {
   // The identity certs on the server side shouldn't be empty.
   GRPC_CHECK(pem_key_cert_pair_list_.has_value());
   GRPC_CHECK(!(*pem_key_cert_pair_list_).empty());
-  tsi_ssl_pem_key_cert_pair* pem_key_cert_pairs = nullptr;
-  pem_key_cert_pairs = ConvertToTsiPemKeyCertPair(*pem_key_cert_pair_list_);
-  size_t num_key_cert_pairs = (*pem_key_cert_pair_list_).size();
-  grpc_security_status status = grpc_ssl_tsi_server_handshaker_factory_init(
-      pem_key_cert_pairs, num_key_cert_pairs, root_cert_info_,
-      options_->cert_request_type(),
+  std::vector<tsi_ssl_pem_key_cert_pair> pem_key_cert_pairs =
+      ConvertToTsiPemKeyCertPair(*pem_key_cert_pair_list_);
+  return grpc_ssl_tsi_server_handshaker_factory_init(
+      pem_key_cert_pairs, root_cert_info_, options_->cert_request_type(),
       grpc_get_tsi_tls_version(options_->min_tls_version()),
       grpc_get_tsi_tls_version(options_->max_tls_version()),
       tls_session_key_logger_.get(), options_->crl_directory().c_str(),
       options_->send_client_ca_list(), options_->crl_provider(),
       &server_handshaker_factory_);
-  // Free memory.
-  grpc_tsi_ssl_pem_key_cert_pairs_destroy(pem_key_cert_pairs,
-                                          num_key_cert_pairs);
-  return status;
 }
 
 }  // namespace grpc_core

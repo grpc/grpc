@@ -36,7 +36,7 @@
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 
-namespace grpc_core {
+namespace tsi {
 
 const char* SslErrorString(int error) {
   switch (error) {
@@ -449,4 +449,4 @@ absl::StatusOr<std::string> ParseUriString(GENERAL_NAME* subject_alt_name) {
   OPENSSL_free(name);
   return ret;
 }
-}  // namespace grpc_core
+}  // namespace tsi
