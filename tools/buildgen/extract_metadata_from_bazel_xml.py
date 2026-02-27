@@ -430,7 +430,11 @@ def _external_dep_name_from_bazel_dependency(bazel_dep: str) -> Optional[str]:
         or bazel_dep == "@com_google_protobuf//:protobuf_headers"
     ):
         return "protobuf"
-    elif bazel_dep == "@com_google_protobuf//:protoc_lib":
+    elif (
+        bazel_dep == "@com_google_protobuf//:protoc_lib"
+        or bazel_dep
+        == "@com_google_protobuf//src/google/protobuf/compiler:code_generator"
+    ):
         return "protoc"
     elif bazel_dep == "@io_opentelemetry_cpp//api:api":
         return "opentelemetry-cpp::api"
