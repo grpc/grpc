@@ -14,6 +14,7 @@
 // limitations under the License.
 //
 
+#include <gmock/gmock.h>
 #include <google/protobuf/any.pb.h>
 #include <google/protobuf/duration.pb.h>
 #include <google/protobuf/wrappers.pb.h>
@@ -21,6 +22,7 @@
 #include <grpc/status.h>
 #include <grpc/support/json.h>
 #include <grpcpp/impl/codegen/config_protobuf.h>
+#include <gtest/gtest.h>
 
 #include <string>
 #include <utility>
@@ -30,14 +32,18 @@
 #include "envoy/config/core/v3/address.pb.h"
 #include "envoy/config/core/v3/base.pb.h"
 #include "envoy/config/core/v3/extension.pb.h"
+#include "envoy/config/core/v3/grpc_service.pb.h"
 #include "envoy/config/rbac/v3/rbac.pb.h"
 #include "envoy/config/route/v3/route.pb.h"
 #include "envoy/extensions/filters/common/fault/v3/fault.pb.h"
+#include "envoy/extensions/filters/http/ext_authz/v3/ext_authz.pb.h"
 #include "envoy/extensions/filters/http/fault/v3/fault.pb.h"
 #include "envoy/extensions/filters/http/gcp_authn/v3/gcp_authn.pb.h"
 #include "envoy/extensions/filters/http/rbac/v3/rbac.pb.h"
 #include "envoy/extensions/filters/http/router/v3/router.pb.h"
 #include "envoy/extensions/filters/http/stateful_session/v3/stateful_session.pb.h"
+#include "envoy/extensions/grpc_service/call_credentials/access_token/v3/access_token_credentials.pb.h"
+#include "envoy/extensions/grpc_service/channel_credentials/google_default/v3/google_default_credentials.pb.h"
 #include "envoy/extensions/http/stateful_session/cookie/v3/cookie.pb.h"
 #include "envoy/type/http/v3/cookie.pb.h"
 #include "envoy/type/matcher/v3/path.pb.h"
@@ -45,6 +51,7 @@
 #include "envoy/type/matcher/v3/string.pb.h"
 #include "envoy/type/v3/percent.pb.h"
 #include "envoy/type/v3/range.pb.h"
+#include "src/core/ext/filters/ext_authz/ext_authz_filter.h"
 #include "src/core/ext/filters/fault_injection/fault_injection_filter.h"
 #include "src/core/ext/filters/fault_injection/fault_injection_service_config_parser.h"
 #include "src/core/ext/filters/gcp_authentication/gcp_authentication_filter.h"
@@ -59,11 +66,14 @@
 #include "src/core/util/json/json_writer.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/xds/grpc/xds_bootstrap_grpc.h"
+#include "src/core/xds/grpc/xds_http_ext_authz_filter.h"
 #include "src/core/xds/grpc/xds_http_filter.h"
 #include "src/core/xds/grpc/xds_http_filter_registry.h"
 #include "src/core/xds/xds_client/xds_client.h"
+#include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
 #include "test/core/test_util/scoped_env_var.h"
 #include "test/core/test_util/test_config.h"
+#include "test/core/xds/xds_transport_fake.h"
 #include "upb/mem/arena.hpp"
 #include "upb/reflection/def.hpp"
 #include "xds/type/v3/typed_struct.pb.h"
@@ -78,6 +88,8 @@ namespace grpc_core {
 namespace testing {
 namespace {
 
+using ::envoy::config::core::v3::GrpcService;
+using ::envoy::extensions::filters::http::ext_authz::v3::ExtAuthz;
 using ::envoy::extensions::filters::http::fault::v3::HTTPFault;
 using ::envoy::extensions::filters::http::gcp_authn::v3::GcpAuthnFilterConfig;
 using ::envoy::extensions::filters::http::rbac::v3::RBAC;
@@ -88,6 +100,7 @@ using ::envoy::extensions::filters::http::stateful_session::v3::
     StatefulSessionPerRoute;
 using ::envoy::extensions::http::stateful_session::cookie::v3::
     CookieBasedSessionState;
+using ::envoy::type::v3::FractionalPercent;
 
 //
 // base class for filter tests
@@ -100,28 +113,45 @@ class XdsHttpFilterTest : public ::testing::Test {
         decode_context_{xds_client_.get(), xds_server_, upb_def_pool_.ptr(),
                         upb_arena_.ptr()} {}
 
-  static RefCountedPtr<XdsClient> MakeXdsClient() {
+  static RefCountedPtr<XdsClient> MakeXdsClient(
+      absl::string_view extra_bootstrap_text = "",
+      bool trusted_xds_server = false,
+      std::shared_ptr<grpc_event_engine::experimental::FuzzingEventEngine>
+          event_engine = nullptr,
+      RefCountedPtr<FakeXdsTransportFactory> transport_factory = nullptr) {
     grpc_error_handle error;
     auto bootstrap = GrpcXdsBootstrap::Create(
-        "{\n"
-        "  \"xds_servers\": [\n"
-        "    {\n"
-        "      \"server_uri\": \"xds.example.com\",\n"
-        "      \"channel_creds\": [\n"
-        "        {\"type\": \"google_default\"}\n"
-        "      ]\n"
-        "    }\n"
-        "  ]\n"
-        "}");
+        absl::StrCat("{\n"
+                     "  \"xds_servers\": [\n"
+                     "    {\n"
+                     "      \"server_uri\": \"xds.example.com\",\n",
+                     trusted_xds_server ? "      \"server_features\": "
+                                          "[\"trusted_xds_server\"],\n"
+                                        : "",
+                     "      \"channel_creds\": [\n"
+                     "        {\"type\": \"google_default\"}\n"
+                     "      ]\n"
+                     "    }\n"
+                     "  ],\n",
+                     extra_bootstrap_text,
+                     "  \"certificate_providers\": {\n"
+                     "    \"provider1\": {\n"
+                     "      \"plugin_name\": \"file_watcher\",\n"
+                     "      \"config\": {\n"
+                     "        \"certificate_file\": \"/path/to/cert\",\n"
+                     "        \"private_key_file\": \"/path/to/key\"\n"
+                     "      }\n"
+                     "    }\n"
+                     "  }\n",
+                     "}"));
     if (!bootstrap.ok()) {
       Crash(absl::StrFormat("Error parsing bootstrap: %s",
                             bootstrap.status().ToString().c_str()));
     }
-    return MakeRefCounted<XdsClient>(std::move(*bootstrap),
-                                     /*transport_factory=*/nullptr,
-                                     /*event_engine=*/nullptr,
-                                     /*metrics_reporter=*/nullptr, "foo agent",
-                                     "foo version");
+    return MakeRefCounted<XdsClient>(
+        std::move(*bootstrap), std::move(transport_factory),
+        std::move(event_engine),
+        /*metrics_reporter=*/nullptr, "foo agent", "foo version");
   }
 
   XdsExtension MakeXdsExtension(const grpc::protobuf::Message& message) {
@@ -142,6 +172,12 @@ class XdsHttpFilterTest : public ::testing::Test {
   const XdsHttpFilterImpl* GetFilter(absl::string_view type) {
     return registry_.GetFilterForTopLevelType(
         absl::StripPrefix(type, "type.googleapis.com/"));
+  }
+
+  XdsResourceType::DecodeContext MakeDecodeContext() {
+    return XdsResourceType::DecodeContext{
+        xds_client_.get(), *xds_client_->bootstrap().servers().front(),
+        upb_def_pool_.ptr(), upb_arena_.ptr()};
   }
 
   GrpcXdsServer xds_server_;
@@ -2139,6 +2175,558 @@ TEST_F(XdsGcpAuthnFilterTest, GenerateServiceConfig) {
   EXPECT_EQ(service_config->service_config_field_name, "gcp_authentication");
   EXPECT_EQ(service_config->element, "{\"foo\":\"bar\"}");
 }
+
+//
+// ExtAuthz filter tests
+//
+
+class XdsExtAuthzFilterTest : public XdsHttpFilterTest {
+ protected:
+  void SetUp() override {
+    registry_ = XdsHttpFilterRegistry();
+    XdsExtension extension = MakeXdsExtension(ExtAuthz());
+    filter_ = GetFilter(extension.type);
+    GRPC_CHECK_NE(filter_, nullptr) << extension.type;
+  }
+
+  const XdsHttpFilterImpl* filter_;
+  ScopedEnvVar env_var_{"GRPC_EXPERIMENTAL_XDS_EXT_AUTHZ_ON_CLIENT", "true"};
+};
+
+TEST_F(XdsExtAuthzFilterTest, Accessors) {
+  EXPECT_EQ(filter_->ConfigProtoName(),
+            "envoy.extensions.filters.http.ext_authz.v3.ExtAuthz");
+  EXPECT_EQ(filter_->OverrideConfigProtoName(),
+            "envoy.extensions.filters.http.ext_authz.v3.ExtAuthzPerRoute");
+  EXPECT_EQ(filter_->channel_filter(), &ExtAuthzFilter::kFilterVtable);
+  EXPECT_TRUE(filter_->IsSupportedOnClients());
+  EXPECT_FALSE(filter_->IsSupportedOnServers());
+  EXPECT_FALSE(filter_->IsTerminalFilter());
+}
+
+TEST_F(XdsExtAuthzFilterTest, ParseTopLevelConfigTypedStruct) {
+  XdsExtension extension = MakeXdsExtension(ExtAuthz());
+  extension.value = Json();
+  auto config =
+      filter_->ParseTopLevelConfig("", decode_context_, extension, &errors_);
+  absl::Status status = errors_.status(absl::StatusCode::kInvalidArgument,
+                                       "errors validating filter config");
+  EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(status.message(),
+            "errors validating filter config: ["
+            "field:http_filter.value["
+            "envoy.extensions.filters.http.ext_authz.v3.ExtAuthz] "
+            "error:could not parse ext_authz filter config]")
+      << status;
+}
+
+TEST_F(XdsExtAuthzFilterTest, ParseTopLevelConfigUnparsable) {
+  XdsExtension extension = MakeXdsExtension(ExtAuthz());
+  std::string serialized_resource("\0", 1);
+  extension.value = absl::string_view(serialized_resource);
+  auto config =
+      filter_->ParseTopLevelConfig("", decode_context_, extension, &errors_);
+  absl::Status status = errors_.status(absl::StatusCode::kInvalidArgument,
+                                       "errors validating filter config");
+  EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(status.message(),
+            "errors validating filter config: ["
+            "field:http_filter.value["
+            "envoy.extensions.filters.http.ext_authz.v3.ExtAuthz] "
+            "error:could not parse ext_authz filter config]")
+      << status;
+}
+
+TEST_F(XdsExtAuthzFilterTest, ParseTopLevelConfig_MinimalConfig) {
+  ExtAuthz ext_authz;
+  auto* grpc_service = ext_authz.mutable_grpc_service();
+  grpc_service->mutable_google_grpc()->set_target_uri("dns:server.example.com");
+
+  XdsExtension extension = MakeXdsExtension(ext_authz);
+  auto config =
+      filter_->ParseTopLevelConfig("", decode_context_, extension, &errors_);
+  ASSERT_NE(config, nullptr);
+  EXPECT_EQ(config->ToString(),
+            "{instance_name=, server_uri=dns:server.example.com, "
+            "deny_at_disable=true, failure_mode_allow=false, "
+            "failure_mode_allow_header_add=false, status_on_error=0, "
+            "include_peer_certificate=false}");
+}
+
+TEST_F(XdsExtAuthzFilterTest, ParseTopLevelConfig_GrpcService) {
+  xds_client_ = MakeXdsClient(
+      "  \"allowed_grpc_services\": {\n"
+      "    \"dns:server.example.com\": {\n"
+      "      \"channel_creds\": [{\"type\": \"insecure\"}],\n"
+      "      \"call_creds\": [\n"
+      "         {\"type\": \"jwt_token_file\",\n"
+      "          \"config\": {\"jwt_token_file\": \"/path/to/file\"}},\n"
+      "         {\"type\": \"jwt_token_file\",\n"
+      "          \"config\": {\"jwt_token_file\": \"/path/to/file\"}}\n"
+      "      ]\n"
+      "    }\n"
+      "  },\n");
+  ExtAuthz ext_authz;
+  auto* grpc_service = ext_authz.mutable_grpc_service();
+  grpc_service->mutable_timeout();
+  auto* md = grpc_service->add_initial_metadata();
+  md->set_key("foo");
+  md->set_value("bar");
+  auto* google_grpc = grpc_service->mutable_google_grpc();
+  google_grpc->set_target_uri("dns:server.example.com");
+  // Creds specified in proto will be ignored because xDS server is not trusted.
+  google_grpc->add_channel_credentials_plugin()->PackFrom(
+      envoy::extensions::grpc_service::channel_credentials::google_default::v3::
+          GoogleDefaultCredentials());
+  envoy::extensions::grpc_service::call_credentials::access_token::v3::
+      AccessTokenCredentials call_creds;
+  call_creds.set_token("foo");
+  google_grpc->add_call_credentials_plugin()->PackFrom(call_creds);
+
+  XdsExtension extension = MakeXdsExtension(ext_authz);
+  auto config = filter_->ParseTopLevelConfig("", MakeDecodeContext(), extension,
+                                             &errors_);
+  ASSERT_NE(config, nullptr);
+  EXPECT_EQ(config->ToString(),
+            "{instance_name=, server_uri=dns:server.example.com, "
+            "deny_at_disable=true, failure_mode_allow=false, "
+            "failure_mode_allow_header_add=false, status_on_error=0, "
+            "include_peer_certificate=false}");
+}
+
+TEST_F(XdsExtAuthzFilterTest, ParseTopLevelConfig_FilterEnabled) {
+  ExtAuthz ext_authz;
+  auto* grpc_service = ext_authz.mutable_grpc_service();
+  grpc_service->mutable_google_grpc()->set_target_uri("dns:server.example.com");
+  auto* filter = ext_authz.mutable_filter_enabled();
+  auto* percent = filter->mutable_default_value();
+  percent->set_numerator(100);
+  percent->set_denominator(
+      envoy::type::v3::FractionalPercent_DenominatorType_TEN_THOUSAND);
+
+  XdsExtension extension = MakeXdsExtension(ext_authz);
+  auto config =
+      filter_->ParseTopLevelConfig("", decode_context_, extension, &errors_);
+  ASSERT_NE(config, nullptr);
+  auto* ext_authz_config =
+      static_cast<const ExtAuthzFilter::Config*>(config.get());
+  EXPECT_EQ(ext_authz_config->ext_authz->filter_enabled->numerator, 100);
+  EXPECT_EQ(ext_authz_config->ext_authz->filter_enabled->denominator, 10000);
+}
+
+TEST_F(XdsExtAuthzFilterTest, ParseTopLevelConfig_DenyAtDisable) {
+  ExtAuthz ext_authz;
+  auto* grpc_service = ext_authz.mutable_grpc_service();
+  grpc_service->mutable_google_grpc()->set_target_uri("dns:server.example.com");
+  auto* deny_at_disable = ext_authz.mutable_deny_at_disable();
+  auto* bool_value = deny_at_disable->mutable_default_value();
+  bool_value->set_value(true);
+
+  XdsExtension extension = MakeXdsExtension(ext_authz);
+  auto config =
+      filter_->ParseTopLevelConfig("", decode_context_, extension, &errors_);
+  ASSERT_NE(config, nullptr);
+  auto* ext_authz_config =
+      static_cast<const ExtAuthzFilter::Config*>(config.get());
+  EXPECT_TRUE(ext_authz_config->ext_authz->deny_at_disable);
+}
+
+TEST_F(XdsExtAuthzFilterTest, ParseTopLevelConfig_AllowedHeaders) {
+  ExtAuthz ext_authz;
+  auto* grpc_service = ext_authz.mutable_grpc_service();
+  grpc_service->mutable_google_grpc()->set_target_uri("dns:server.example.com");
+  auto* allowed_header = ext_authz.mutable_allowed_headers()->add_patterns();
+  allowed_header->set_exact("foo");
+  allowed_header->set_ignore_case(true);
+
+  XdsExtension extension = MakeXdsExtension(ext_authz);
+  auto config =
+      filter_->ParseTopLevelConfig("", decode_context_, extension, &errors_);
+  ASSERT_NE(config, nullptr);
+  auto* ext_authz_config =
+      static_cast<const ExtAuthzFilter::Config*>(config.get());
+  ASSERT_EQ(ext_authz_config->ext_authz->allowed_headers.size(), 1);
+  EXPECT_EQ(ext_authz_config->ext_authz->allowed_headers[0].string_matcher(),
+            "foo");
+  EXPECT_FALSE(
+      ext_authz_config->ext_authz->allowed_headers[0].case_sensitive());
+}
+
+TEST_F(XdsExtAuthzFilterTest, ParseTopLevelConfig_DisallowedHeaders) {
+  ExtAuthz ext_authz;
+  auto* grpc_service = ext_authz.mutable_grpc_service();
+  grpc_service->mutable_google_grpc()->set_target_uri("dns:server.example.com");
+  auto* disallowed_headers =
+      ext_authz.mutable_disallowed_headers()->add_patterns();
+  disallowed_headers->set_exact("bar");
+  disallowed_headers->set_ignore_case(true);
+
+  XdsExtension extension = MakeXdsExtension(ext_authz);
+  auto config =
+      filter_->ParseTopLevelConfig("", decode_context_, extension, &errors_);
+  ASSERT_NE(config, nullptr);
+  auto* ext_authz_config =
+      static_cast<const ExtAuthzFilter::Config*>(config.get());
+  ASSERT_EQ(ext_authz_config->ext_authz->disallowed_headers.size(), 1);
+  EXPECT_EQ(ext_authz_config->ext_authz->disallowed_headers[0].string_matcher(),
+            "bar");
+  EXPECT_FALSE(
+      ext_authz_config->ext_authz->disallowed_headers[0].case_sensitive());
+}
+
+TEST_F(XdsExtAuthzFilterTest, ParseTopLevelConfig_StatusOnError) {
+  ExtAuthz ext_authz;
+  auto* grpc_service = ext_authz.mutable_grpc_service();
+  grpc_service->mutable_google_grpc()->set_target_uri("dns:server.example.com");
+  ext_authz.mutable_status_on_error()->set_code(
+      envoy::type::v3::StatusCode::InternalServerError);
+
+  XdsExtension extension = MakeXdsExtension(ext_authz);
+  auto config =
+      filter_->ParseTopLevelConfig("", decode_context_, extension, &errors_);
+  ASSERT_NE(config, nullptr);
+  auto* ext_authz_config =
+      static_cast<const ExtAuthzFilter::Config*>(config.get());
+  EXPECT_EQ(ext_authz_config->ext_authz->status_on_error, 500);
+}
+
+TEST_F(XdsExtAuthzFilterTest, ParseTopLevelConfig_FailureModeAllow) {
+  ExtAuthz ext_authz;
+  auto* grpc_service = ext_authz.mutable_grpc_service();
+  grpc_service->mutable_google_grpc()->set_target_uri("dns:server.example.com");
+  ext_authz.set_failure_mode_allow(true);
+
+  XdsExtension extension = MakeXdsExtension(ext_authz);
+  auto config =
+      filter_->ParseTopLevelConfig("", decode_context_, extension, &errors_);
+  ASSERT_NE(config, nullptr);
+  auto* ext_authz_config =
+      static_cast<const ExtAuthzFilter::Config*>(config.get());
+  EXPECT_TRUE(ext_authz_config->ext_authz->failure_mode_allow);
+}
+
+TEST_F(XdsExtAuthzFilterTest, ParseTopLevelConfig_IncludePeerCertificate) {
+  ExtAuthz ext_authz;
+  auto* grpc_service = ext_authz.mutable_grpc_service();
+  grpc_service->mutable_google_grpc()->set_target_uri("dns:server.example.com");
+  ext_authz.set_include_peer_certificate(true);
+
+  XdsExtension extension = MakeXdsExtension(ext_authz);
+  auto config =
+      filter_->ParseTopLevelConfig("", decode_context_, extension, &errors_);
+  ASSERT_NE(config, nullptr);
+  auto* ext_authz_config =
+      static_cast<const ExtAuthzFilter::Config*>(config.get());
+  EXPECT_TRUE(ext_authz_config->ext_authz->include_peer_certificate);
+}
+
+TEST_F(XdsExtAuthzFilterTest, ParseTopLevelConfig_HeaderMutationRules) {
+  ExtAuthz ext_authz;
+  auto* grpc_service = ext_authz.mutable_grpc_service();
+  grpc_service->mutable_google_grpc()->set_target_uri("dns:server.example.com");
+  auto* header_mutation_rules =
+      ext_authz.mutable_decoder_header_mutation_rules();
+  auto* allow = header_mutation_rules->mutable_allow_expression();
+  allow->set_regex("foo");
+  auto* disallow = header_mutation_rules->mutable_disallow_expression();
+  disallow->set_regex("bar");
+
+  XdsExtension extension = MakeXdsExtension(ext_authz);
+  auto config =
+      filter_->ParseTopLevelConfig("", decode_context_, extension, &errors_);
+  ASSERT_NE(config, nullptr);
+  auto* ext_authz_config =
+      static_cast<const ExtAuthzFilter::Config*>(config.get());
+  EXPECT_EQ(ext_authz_config->ext_authz->decoder_header_mutation_rules
+                ->allow_expression->type(),
+            StringMatcher::Type::kSafeRegex);
+  EXPECT_EQ(ext_authz_config->ext_authz->decoder_header_mutation_rules
+                ->allow_expression->regex_matcher()
+                ->pattern(),
+            "foo");
+  EXPECT_EQ(ext_authz_config->ext_authz->decoder_header_mutation_rules
+                ->disallow_expression->type(),
+            StringMatcher::Type::kSafeRegex);
+  EXPECT_EQ(ext_authz_config->ext_authz->decoder_header_mutation_rules
+                ->disallow_expression->regex_matcher()
+                ->pattern(),
+            "bar");
+}
+
+TEST_F(XdsExtAuthzFilterTest, ParseTopLevelConfig_MissingGrpcService) {
+  ExtAuthz ext_authz;
+  auto* filter_enabled = ext_authz.mutable_filter_enabled();
+  filter_enabled->mutable_default_value()->set_numerator(100);
+  filter_enabled->mutable_default_value()->set_denominator(
+      envoy::type::v3::FractionalPercent::HUNDRED);
+  ext_authz.mutable_status_on_error()->set_code(
+      envoy::type::v3::StatusCode::Forbidden);
+
+  XdsExtension extension = MakeXdsExtension(ext_authz);
+  auto config =
+      filter_->ParseTopLevelConfig("", decode_context_, extension, &errors_);
+  EXPECT_FALSE(errors_.ok());
+  absl::Status status = errors_.status(absl::StatusCode::kInvalidArgument,
+                                       "errors validating filter config");
+  EXPECT_THAT(
+      status.message(),
+      ::testing::HasSubstr("field:http_filter.value[envoy.extensions.filters."
+                           "http.ext_authz.v3.ExtAuthz].ext_authz.grpc_service "
+                           "error:grpc_service field must be present"));
+}
+
+TEST_F(XdsExtAuthzFilterTest, ParseTopLevelConfig_MissingFilterEnabled) {
+  ExtAuthz ext_authz;
+  auto* grpc_service = ext_authz.mutable_grpc_service();
+  grpc_service->mutable_google_grpc()->set_target_uri("dns:server.example.com");
+  ext_authz.mutable_status_on_error()->set_code(
+      envoy::type::v3::StatusCode::Forbidden);
+
+  XdsExtension extension = MakeXdsExtension(ext_authz);
+  auto config =
+      filter_->ParseTopLevelConfig("", decode_context_, extension, &errors_);
+  EXPECT_FALSE(errors_.ok());
+  absl::Status status = errors_.status(absl::StatusCode::kInvalidArgument,
+                                       "errors validating filter config");
+  EXPECT_THAT(status.message(),
+              ::testing::HasSubstr(
+                  "field:http_filter.value[envoy.extensions.filters.http.ext_"
+                  "authz.v3.ExtAuthz].ext_authz.filter_enabled "
+                  "error:filter_enabled field is not present"));
+}
+
+TEST_F(XdsExtAuthzFilterTest,
+       ParseTopLevelConfig_MissingFilterEnabledDefaultValue) {
+  ExtAuthz ext_authz;
+  auto* grpc_service = ext_authz.mutable_grpc_service();
+  grpc_service->mutable_google_grpc()->set_target_uri("dns:server.example.com");
+
+  auto* filter_enabled = ext_authz.mutable_filter_enabled();
+  // Set runtime_key but not default_value
+  filter_enabled->set_runtime_key("foo");
+
+  ext_authz.mutable_status_on_error()->set_code(
+      envoy::type::v3::StatusCode::Forbidden);
+
+  XdsExtension extension = MakeXdsExtension(ext_authz);
+  auto config =
+      filter_->ParseTopLevelConfig("", decode_context_, extension, &errors_);
+  EXPECT_FALSE(errors_.ok());
+  absl::Status status = errors_.status(absl::StatusCode::kInvalidArgument,
+                                       "errors validating filter config");
+  EXPECT_THAT(
+      status.message(),
+      ::testing::HasSubstr(
+          "field:http_filter.value[envoy.extensions.filters.http.ext_authz.v3."
+          "ExtAuthz].ext_authz.filter_enabled.default_value "
+          "error:default_value field must be present inside filter_enabled"));
+}
+
+TEST_F(XdsExtAuthzFilterTest, ParseTopLevelConfig_MissingStatusOnError) {
+  ExtAuthz ext_authz;
+  auto* grpc_service = ext_authz.mutable_grpc_service();
+  grpc_service->mutable_google_grpc()->set_target_uri("dns:server.example.com");
+
+  auto* filter_enabled = ext_authz.mutable_filter_enabled();
+  filter_enabled->mutable_default_value()->set_numerator(100);
+  filter_enabled->mutable_default_value()->set_denominator(
+      envoy::type::v3::FractionalPercent::HUNDRED);
+
+  XdsExtension extension = MakeXdsExtension(ext_authz);
+  auto config =
+      filter_->ParseTopLevelConfig("", decode_context_, extension, &errors_);
+  EXPECT_FALSE(errors_.ok());
+  absl::Status status = errors_.status(absl::StatusCode::kInvalidArgument,
+                                       "errors validating filter config");
+  EXPECT_THAT(
+      status.message(),
+      ::testing::HasSubstr("field:http_filter.value[envoy.extensions.filters."
+                           "http.ext_authz.v3.ExtAuthz].ext_authz.status_on_"
+                           "error error:status_on_error field is not present"));
+}
+
+TEST_F(XdsExtAuthzFilterTest, ParseTopLevelConfig_InvalidAllowedHeaders) {
+  ExtAuthz ext_authz;
+  auto* grpc_service = ext_authz.mutable_grpc_service();
+  grpc_service->mutable_google_grpc()->set_target_uri("dns:server.example.com");
+  auto* allowed_header = ext_authz.mutable_allowed_headers()->add_patterns();
+  allowed_header->mutable_safe_regex()->set_regex("[");  // Invalid regex
+
+  XdsExtension extension = MakeXdsExtension(ext_authz);
+  auto config =
+      filter_->ParseTopLevelConfig("", decode_context_, extension, &errors_);
+  EXPECT_FALSE(errors_.ok());
+  absl::Status status = errors_.status(absl::StatusCode::kInvalidArgument,
+                                       "errors validating filter config");
+  EXPECT_THAT(
+      status.message(),
+      ::testing::HasSubstr(
+          "field:http_filter.value[envoy.extensions.filters.http.ext_authz.v3."
+          "ExtAuthz].ext_authz.allowed_headers[0] "
+          "error:Invalid regex string specified in matcher: missing ]: ["));
+}
+
+TEST_F(XdsExtAuthzFilterTest, ParseTopLevelConfig_InvalidDisallowedHeaders) {
+  ExtAuthz ext_authz;
+  auto* grpc_service = ext_authz.mutable_grpc_service();
+  grpc_service->mutable_google_grpc()->set_target_uri("dns:server.example.com");
+  auto* disallowed_headers =
+      ext_authz.mutable_disallowed_headers()->add_patterns();
+  disallowed_headers->mutable_safe_regex()->set_regex("[");  // Invalid regex
+
+  XdsExtension extension = MakeXdsExtension(ext_authz);
+  auto config =
+      filter_->ParseTopLevelConfig("", decode_context_, extension, &errors_);
+  EXPECT_FALSE(errors_.ok());
+  absl::Status status = errors_.status(absl::StatusCode::kInvalidArgument,
+                                       "errors validating filter config");
+  EXPECT_THAT(
+      status.message(),
+      ::testing::HasSubstr(
+          "field:http_filter.value[envoy.extensions.filters.http.ext_authz.v3."
+          "ExtAuthz].ext_authz.disallowed_headers[0] "
+          "error:Invalid regex string specified in matcher: missing ]: ["));
+}
+
+TEST_F(XdsExtAuthzFilterTest, ParseTopLevelConfig_InvalidHeaderMutationRules) {
+  ExtAuthz ext_authz;
+  auto* grpc_service = ext_authz.mutable_grpc_service();
+  grpc_service->mutable_google_grpc()->set_target_uri("dns:server.example.com");
+  auto* header_mutation_rules =
+      ext_authz.mutable_decoder_header_mutation_rules();
+  auto* allow = header_mutation_rules->mutable_allow_expression();
+  allow->set_regex("[");  // Invalid regex
+
+  XdsExtension extension = MakeXdsExtension(ext_authz);
+  auto config =
+      filter_->ParseTopLevelConfig("", decode_context_, extension, &errors_);
+  EXPECT_FALSE(errors_.ok());
+  absl::Status status = errors_.status(absl::StatusCode::kInvalidArgument,
+                                       "errors validating filter config");
+  EXPECT_THAT(
+      status.message(),
+      ::testing::HasSubstr(
+          "field:http_filter.value[envoy.extensions.filters.http.ext_authz.v3."
+          "ExtAuthz].header_mutation_rules.allow_expression "
+          "error:Invalid regex string specified in matcher: missing ]: ["));
+}
+
+class XdsExtAuthzFilterChannelCacheTest : public XdsExtAuthzFilterTest {
+ protected:
+  void SetUpCache() {
+    auto event_engine =
+        std::make_shared<grpc_event_engine::experimental::FuzzingEventEngine>(
+            grpc_event_engine::experimental::FuzzingEventEngine::Options(),
+            fuzzing_event_engine::Actions());
+    auto transport_factory = MakeRefCounted<FakeXdsTransportFactory>(
+        /*too_many_pending_reads_callback=*/[]() {}, event_engine);
+    xds_client_ = MakeXdsClient(
+        "  \"allowed_grpc_services\": {\n"
+        "    \"dns:server.example.com\": {\n"
+        "      \"channel_creds\": [{\"type\": \"insecure\"}],\n"
+        "      \"call_creds\": [\n"
+        "         {\"type\": \"jwt_token_file\",\n"
+        "          \"config\": {\"jwt_token_file\": \"/path/to/file\"}},\n"
+        "         {\"type\": \"jwt_token_file\",\n"
+        "          \"config\": {\"jwt_token_file\": \"/path/to/file\"}}\n"
+        "      ]\n"
+        "    }\n"
+        "  },\n",
+        false, std::move(event_engine), std::move(transport_factory));
+  }
+
+  RefCountedPtr<const ExtAuthzFilter::Config> ParseConfig(
+      absl::string_view destination_uri, absl::string_view call_creds_token) {
+    ExtAuthz ext_authz;
+    auto* grpc_service = ext_authz.mutable_grpc_service();
+    grpc_service->mutable_timeout();
+    auto* md = grpc_service->add_initial_metadata();
+    md->set_key("foo");
+    md->set_value("bar");
+    auto* google_grpc = grpc_service->mutable_google_grpc();
+    google_grpc->set_target_uri(std::string(destination_uri));
+    // Creds specified in proto will be ignored because xDS server is not
+    // trusted.
+    google_grpc->add_channel_credentials_plugin()->PackFrom(
+        envoy::extensions::grpc_service::channel_credentials::google_default::
+            v3::GoogleDefaultCredentials());
+    envoy::extensions::grpc_service::call_credentials::access_token::v3::
+        AccessTokenCredentials call_creds;
+    call_creds.set_token(std::string(call_creds_token));
+    google_grpc->add_call_credentials_plugin()->PackFrom(call_creds);
+
+    XdsExtension extension = MakeXdsExtension(ext_authz);
+    auto config =
+        filter_->ParseTopLevelConfig("", MakeDecodeContext(), extension, &errors_);
+    EXPECT_NE(config, nullptr);
+    return RefCountedPtr<const ExtAuthzFilter::Config>(
+        static_cast<const ExtAuthzFilter::Config*>(config.release()));
+  }
+
+  Blackboard blackboard_;
+};
+
+TEST_F(XdsExtAuthzFilterChannelCacheTest, FirstCache) {
+  SetUpCache();
+  auto config = ParseConfig("dns:server.example.com", "foo");
+  // Initial update
+  filter_->UpdateBlackboard(*config, nullptr, &blackboard_);
+  // Verify cache exists
+  auto cache_ =
+      blackboard_.Get<ExtAuthzFilter::ChannelCache>(config->instance_name);
+  ASSERT_NE(cache_, nullptr);
+}
+
+// TEST_F(XdsExtAuthzFilterChannelCacheTest, SameUri) {
+//   SetUpCache();
+//   auto config1 = ParseConfig("dns:server.example.com", "foo");
+//   filter_->UpdateBlackboard(*config1, nullptr, &blackboard_);
+//   auto cache1 =
+//       blackboard_.Get<ExtAuthzFilter::ChannelCache>(config1->instance_name);
+//   ASSERT_NE(cache1, nullptr);
+
+//   auto config2 = ParseConfig("dns:server.example.com", "foo");
+//   Blackboard blackboard2;
+//   filter_->UpdateBlackboard(*config2, &blackboard_, &blackboard2);
+//   auto cache2 =
+//       blackboard2.Get<ExtAuthzFilter::ChannelCache>(config2->instance_name);
+//   ASSERT_NE(cache2, nullptr);
+//   EXPECT_EQ(cache1, cache2);
+// }
+
+// TEST_F(XdsExtAuthzFilterChannelCacheTest, DifferentUri) {
+//   SetUpCache();
+//   auto config1 = ParseConfig("dns:server.example.com", "foo");
+//   filter_->UpdateBlackboard(*config1, nullptr, &blackboard_);
+//   auto cache1 =
+//       blackboard_.Get<ExtAuthzFilter::ChannelCache>(config1->instance_name);
+//   ASSERT_NE(cache1, nullptr);
+
+//   auto config2 = ParseConfig("dns:server2.example.com", "foo");
+//   Blackboard blackboard2;
+//   filter_->UpdateBlackboard(*config2, &blackboard_, &blackboard2);
+//   auto cache2 =
+//       blackboard2.Get<ExtAuthzFilter::ChannelCache>(config2->instance_name);
+//   ASSERT_NE(cache2, nullptr);
+//   EXPECT_NE(cache1, cache2);
+// }
+
+// TEST_F(XdsExtAuthzFilterChannelCacheTest, DifferentCredentials) {
+//   SetUpCache();
+//   auto config1 = ParseConfig("dns:server.example.com", "foo");
+//   filter_->UpdateBlackboard(*config1, nullptr, &blackboard_);
+//   auto cache1 =
+//       blackboard_.Get<ExtAuthzFilter::ChannelCache>(config1->instance_name);
+//   ASSERT_NE(cache1, nullptr);
+
+//   auto config2 = ParseConfig("dns:server.example.com", "bar");
+//   Blackboard blackboard2;
+//   filter_->UpdateBlackboard(*config2, &blackboard_, &blackboard2);
+//   auto cache2 =
+//       blackboard2.Get<ExtAuthzFilter::ChannelCache>(config2->instance_name);
+//   ASSERT_NE(cache2, nullptr);
+//   EXPECT_NE(cache1, cache2);
+// }
 
 }  // namespace
 }  // namespace testing

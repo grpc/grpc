@@ -5644,6 +5644,81 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "ext_authz_client",
+    srcs = [
+        "ext/filters/ext_authz/ext_authz_client.cc",
+    ],
+    hdrs = [
+        "ext/filters/ext_authz/ext_authz_client.h",
+    ],
+    external_deps = [
+        "absl/base:core_headers",
+        "absl/log",
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
+        "@com_google_protobuf//upb/base",
+        "@com_google_protobuf//upb/mem",
+        "@com_google_protobuf//upb/reflection",
+    ],
+    deps = [
+        "dual_ref_counted",
+        "grpc_check",
+        "status_conversion",
+        "status_helper",
+        "sync",
+        "upb_utils",
+        "xds_common_types",
+        "xds_utils",
+        "//:backoff",
+        "//:debug_location",
+        "//:envoy_config_core_upb",
+        "//:envoy_service_auth_upb",
+        "//:envoy_type_upb",
+        "//:exec_ctx",
+        "//:google_rpc_status_upb",
+        "//:gpr",
+        "//:grpc_base",
+        "//:grpc_trace",
+        "//:orphanable",
+        "//:protobuf_timestamp_upb",
+        "//:ref_counted_ptr",
+        "//:xds_client",
+    ],
+)
+
+grpc_cc_library(
+    name = "ext_authz_filter",
+    srcs = [
+        "ext/filters/ext_authz/ext_authz_filter.cc",
+    ],
+    hdrs = [
+        "ext/filters/ext_authz/ext_authz_filter.h",
+    ],
+    external_deps = [
+        "absl/base:core_headers",
+        "absl/status",
+        "absl/status:statusor",
+        "absl/random:bit_gen_ref",
+        "absl/strings",
+    ],
+    deps = [
+        "channel_args",
+        "ext_authz_client",
+        "filter_args",
+        "grpc_matchers",
+        "ref_counted",
+        "shared_bit_gen",
+        "xds_common_types",
+        "//:debug_location",
+        "//:gpr",
+        "//:grpc_base",
+        "//:promise",
+        "//:ref_counted_ptr",
+    ],
+)
+
+grpc_cc_library(
     name = "gcp_authentication_filter",
     srcs = [
         "ext/filters/gcp_authentication/gcp_authentication_filter.cc",
@@ -6097,6 +6172,28 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "xds_utils",
+    srcs = ["util/xds_utils.cc"],
+    hdrs = [
+        "util/xds_utils.h",
+    ],
+    external_deps = [
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
+        "absl/strings:str_format",
+        "@com_google_protobuf//upb/mem",
+    ],
+    deps = [
+        "envoy_config_core_upb",
+        "upb_utils",
+        "xds_common_types",
+        "//:gpr",
+        "//:grpc_base",
+    ],
+)
+
+grpc_cc_library(
     name = "xds_http_filter",
     srcs = [
         "xds/grpc/xds_http_filter.cc",
@@ -6383,6 +6480,7 @@ grpc_cc_library(
         "xds/grpc/xds_cluster_specifier_plugin.cc",
         "xds/grpc/xds_common_types_parser.cc",
         "xds/grpc/xds_endpoint_parser.cc",
+        "xds/grpc/xds_http_ext_authz_filter.cc",
         "xds/grpc/xds_http_fault_filter.cc",
         "xds/grpc/xds_http_filter_registry.cc",
         "xds/grpc/xds_http_gcp_authn_filter.cc",
@@ -6405,6 +6503,7 @@ grpc_cc_library(
         "xds/grpc/xds_cluster_specifier_plugin.h",
         "xds/grpc/xds_common_types_parser.h",
         "xds/grpc/xds_endpoint_parser.h",
+        "xds/grpc/xds_http_ext_authz_filter.h",
         "xds/grpc/xds_http_fault_filter.h",
         "xds/grpc/xds_http_filter_registry.h",
         "xds/grpc/xds_http_gcp_authn_filter.h",
@@ -6456,6 +6555,7 @@ grpc_cc_library(
         "default_event_engine",
         "down_cast",
         "env",
+        "filter_args",
         "envoy_admin_upb",
         "envoy_config_cluster_upb",
         "envoy_config_cluster_upbdefs",
@@ -6471,6 +6571,8 @@ grpc_cc_library(
         "envoy_extensions_clusters_aggregate_upb",
         "envoy_extensions_clusters_aggregate_upbdefs",
         "envoy_extensions_filters_common_fault_upb",
+        "//:envoy_extensions_filters_http_ext_authz_upb",
+        "//:envoy_extensions_filters_http_ext_authz_upbdefs",
         "envoy_extensions_filters_http_fault_upb",
         "envoy_extensions_filters_http_fault_upbdefs",
         "envoy_extensions_filters_http_gcp_authn_upb",
@@ -6506,6 +6608,7 @@ grpc_cc_library(
         "envoy_type_upb",
         "error",
         "error_utils",
+        "ext_authz_filter",
         "gcp_authentication_filter",
         "google_rpc_status_upb",
         "grpc_audit_logging",
@@ -6586,6 +6689,7 @@ grpc_cc_library(
         "//:config",
         "//:debug_location",
         "//:endpoint_addresses",
+        "//:envoy_config_common_mutation_rules_upb",
         "//:exec_ctx",
         "//:gpr",
         "//:grpc_base",

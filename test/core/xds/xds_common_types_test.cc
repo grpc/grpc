@@ -25,6 +25,7 @@
 #include <utility>
 #include <vector>
 
+#include "envoy/config/common/mutation_rules/v3/mutation_rules.pb.h"
 #include "envoy/config/core/v3/grpc_service.pb.h"
 #include "envoy/extensions/grpc_service/call_credentials/access_token/v3/access_token_credentials.pb.h"
 #include "envoy/extensions/grpc_service/channel_credentials/google_default/v3/google_default_credentials.pb.h"
@@ -39,6 +40,8 @@
 #include "src/core/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/util/crash.h"
+#include "src/core/util/json/json_object_loader.h"
+#include "src/core/util/json/json_reader.h"
 #include "src/core/util/json/json_writer.h"
 #include "src/core/util/matchers.h"
 #include "src/core/util/ref_counted_ptr.h"
@@ -1271,6 +1274,91 @@ TEST_F(ParseXdsGrpcServiceTest, InvalidTargetUri) {
             absl::InvalidArgumentError(
                 "validation failed: ["
                 "field:google_grpc.target_uri error:invalid target URI]"));
+}
+
+//
+// ParseHeaderMutationRules() tests
+//
+
+using HeaderMutationRulesProto =
+    envoy::config::common::mutation_rules::v3::HeaderMutationRules;
+
+class ParseHeaderMutationRulesTest : public XdsCommonTypesTest {
+ protected:
+  const envoy_config_common_mutation_rules_v3_HeaderMutationRules* ConvertToUpb(
+      const HeaderMutationRulesProto proto) {
+    std::string serialized_proto;
+    if (!proto.SerializeToString(&serialized_proto)) {
+      EXPECT_TRUE(false) << "protobuf serialization failed";
+      return nullptr;
+    }
+    const auto* upb_proto =
+        envoy_config_common_mutation_rules_v3_HeaderMutationRules_parse(
+            serialized_proto.data(), serialized_proto.size(), upb_arena_.ptr());
+    if (upb_proto == nullptr) {
+      EXPECT_TRUE(false) << "upb parsing failed";
+      return nullptr;
+    }
+    return upb_proto;
+  }
+
+  HeaderMutationRules Parse(
+      const envoy_config_common_mutation_rules_v3_HeaderMutationRules*
+          upb_proto,
+      ValidationErrors* errors) {
+    return ParseHeaderMutationRules(MakeDecodeContext(), upb_proto, errors);
+  }
+};
+
+TEST_F(ParseHeaderMutationRulesTest, Empty) {
+  HeaderMutationRulesProto proto;
+  const auto* upb_proto = ConvertToUpb(proto);
+  ASSERT_NE(upb_proto, nullptr);
+  ValidationErrors errors;
+  auto rules = Parse(upb_proto, &errors);
+  EXPECT_TRUE(errors.ok()) << errors.status(absl::StatusCode::kInvalidArgument,
+                                            "unexpected errors");
+  EXPECT_FALSE(rules.disallow_all);
+  EXPECT_FALSE(rules.disallow_is_error);
+  EXPECT_EQ(rules.allow_expression.type(), StringMatcher::Type::kExact);
+  EXPECT_TRUE(rules.allow_expression.string_matcher().empty());
+  EXPECT_EQ(rules.disallow_expression.type(), StringMatcher::Type::kExact);
+  EXPECT_TRUE(rules.disallow_expression.string_matcher().empty());
+}
+
+TEST_F(ParseHeaderMutationRulesTest, Basic) {
+  HeaderMutationRulesProto proto;
+  proto.mutable_allow_expression()->set_regex("allow");
+  proto.mutable_disallow_expression()->set_regex("disallow");
+  proto.mutable_disallow_all()->set_value(true);
+  proto.mutable_disallow_is_error()->set_value(true);
+  const auto* upb_proto = ConvertToUpb(proto);
+  ASSERT_NE(upb_proto, nullptr);
+  ValidationErrors errors;
+  auto rules = Parse(upb_proto, &errors);
+  EXPECT_TRUE(errors.ok()) << errors.status(absl::StatusCode::kInvalidArgument,
+                                            "unexpected errors");
+  EXPECT_TRUE(rules.disallow_all);
+  EXPECT_TRUE(rules.disallow_is_error);
+  EXPECT_EQ(rules.allow_expression.type(), StringMatcher::Type::kSafeRegex);
+  EXPECT_EQ(rules.allow_expression.regex_matcher()->pattern(), "allow");
+  EXPECT_EQ(rules.disallow_expression.type(), StringMatcher::Type::kSafeRegex);
+  EXPECT_EQ(rules.disallow_expression.regex_matcher()->pattern(), "disallow");
+}
+
+TEST_F(ParseHeaderMutationRulesTest, InvalidRegex) {
+  HeaderMutationRulesProto proto;
+  proto.mutable_allow_expression()->set_regex("[");
+  const auto* upb_proto = ConvertToUpb(proto);
+  ASSERT_NE(upb_proto, nullptr);
+  ValidationErrors errors;
+  Parse(upb_proto, &errors);
+  EXPECT_FALSE(errors.ok());
+  EXPECT_EQ(
+      errors.status(absl::StatusCode::kInvalidArgument, "validation failed")
+          .message(),
+      "validation failed: [field:header_mutation_rules.allow_expression "
+      "error:Invalid regex string specified in matcher: missing ]: []");
 }
 
 }  // namespace

@@ -477,6 +477,22 @@ void AddServerTrailingMetadata(
 template <typename FilterType>
 void AddServerTrailingMetadata(
     FilterType* channel_data, size_t call_offset,
+    absl::Status (FilterType::Call::*)(ServerMetadata&, FilterType*),
+    std::vector<ServerTrailingMetadataOperator>& to) {
+  to.push_back(ServerTrailingMetadataOperator{
+      channel_data, call_offset,
+      [](void* call_data, void* channel_data, ServerMetadataHandle metadata) {
+        auto r = static_cast<typename FilterType::Call*>(call_data)
+                     ->OnServerTrailingMetadata(
+                         *metadata, static_cast<FilterType*>(channel_data));
+        if (r.ok()) return metadata;
+        return CancelledServerMetadataFromStatus(r);
+      }});
+}
+
+template <typename FilterType>
+void AddServerTrailingMetadata(
+    FilterType* channel_data, size_t call_offset,
     ServerMetadataHandle (FilterType::Call::*)(ServerMetadataHandle),
     std::vector<ServerTrailingMetadataOperator>& to) {
   to.push_back(ServerTrailingMetadataOperator{

@@ -5306,6 +5306,11 @@ grpc_upb_proto_reflection_library(
 )
 
 grpc_upb_proto_library(
+    name = "envoy_config_common_mutation_rules_upb",
+    deps = ["@envoy_api//envoy/config/common/mutation_rules/v3:pkg"],
+)
+
+grpc_upb_proto_library(
     name = "envoy_extensions_filters_http_router_upb",
     deps = ["@envoy_api//envoy/extensions/filters/http/router/v3:pkg"],
 )
@@ -5553,6 +5558,21 @@ grpc_upb_proto_library(
 grpc_upb_proto_reflection_library(
     name = "channelz_property_list_upbdefs",
     deps = ["//src/proto/grpc/channelz/v2:property_list_proto"],
+)
+
+grpc_upb_proto_library(
+    name = "envoy_extensions_filters_http_ext_authz_upb",
+    deps = ["@envoy_api//envoy/extensions/filters/http/ext_authz/v3:pkg"],
+)
+
+grpc_upb_proto_reflection_library(
+    name = "envoy_extensions_filters_http_ext_authz_upbdefs",
+    deps = ["@envoy_api//envoy/extensions/filters/http/ext_authz/v3:pkg"],
+)
+
+grpc_upb_proto_library(
+    name = "envoy_service_auth_upb",
+    deps = ["@envoy_api//envoy/service/auth/v3:pkg"],
 )
 
 grpc_upb_proto_library(

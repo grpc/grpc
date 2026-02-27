@@ -17,6 +17,7 @@
 #ifndef GRPC_SRC_CORE_XDS_GRPC_XDS_COMMON_TYPES_H
 #define GRPC_SRC_CORE_XDS_GRPC_XDS_COMMON_TYPES_H
 
+#include <optional>
 #include <string>
 #include <variant>
 #include <vector>
@@ -90,6 +91,69 @@ struct XdsGrpcService {
   std::unique_ptr<GrpcXdsServerTarget> server_target;
   Duration timeout;
   std::vector<std::pair<std::string, std::string>> initial_metadata;
+};
+
+struct HeaderMutationRules {
+  bool disallow_all;
+  bool disallow_is_error;
+  std::optional<StringMatcher> allow_expression;
+  std::optional<StringMatcher> disallow_expression;
+
+  bool IsHeaderMutationAllowed(std::string key) const;
+
+  bool operator==(const HeaderMutationRules& other) const {
+    return disallow_all == other.disallow_all &&
+           disallow_is_error == other.disallow_is_error &&
+           allow_expression == other.allow_expression &&
+           disallow_expression == other.disallow_expression;
+  }
+};
+
+struct HeaderValueOption {
+  struct HeaderValue {
+    // Header name.
+    std::string key;
+    // Only one of ``value`` or ``raw_value`` can be set.
+    // Header value is encoded as string. This does not work for non-utf8
+    // characters.
+    std::string value;
+  };
+
+  enum class AppendAction {
+    // If the header already exists, this action will result in:
+    //
+    // - Comma-concatenated for predefined inline headers.
+    // - Duplicate header added in the ``HeaderMap`` for other headers.
+    //
+    // If the header doesn't exist then this will add new header with
+    // specified key and value.
+    kAppendIfExistsOrAdd = 0,
+    // This action will add the header if it doesn't already exist. If the
+    // header already exists then this will be a no-op.
+    kAddIfAbsent = 1,
+    // This action will overwrite the specified value by discarding any
+    // existing values if the header already exists. If the header doesn't exist
+    // then this will add the header with specified key and value.
+    kOverwriteIfExistsOrAdd = 2,
+    // This action will overwrite the specified value by discarding any
+    // existing values if the header already exists. If the header doesn't exist
+    // then this will be no-op.
+    kOverwriteIfExists = 3,
+    // Default if not specified
+    kDefault = kAppendIfExistsOrAdd
+  };
+
+  // Header name/value pair that this option applies to
+  HeaderValue header;
+  // Describes the action taken to append/overwrite the given value for an
+  // existing header
+  // or to only add this header if it's absent.
+  // Value defaults to :ref:`APPEND_IF_EXISTS_OR_ADD
+  // <envoy_v3_api_enum_value_config.core.v3.HeaderValueOption.HeaderAppendAction.APPEND_IF_EXISTS_OR_ADD>`.
+  AppendAction append_action;
+  // Is the header value allowed to be empty? If false (default), custom
+  // headers with empty values are dropped, otherwise they are added.
+  bool keep_empty_value;
 };
 
 }  // namespace grpc_core

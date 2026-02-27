@@ -1,0 +1,350 @@
+//
+// Copyright 2026 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+#include "src/core/xds/grpc/xds_http_ext_authz_filter.h"
+
+#include <memory>
+#include <optional>
+#include <string>
+#include <utility>
+#include <variant>
+
+#include "envoy/config/core/v3/base.upb.h"
+#include "envoy/extensions/filters/http/ext_authz/v3/ext_authz.upb.h"
+#include "envoy/extensions/filters/http/ext_authz/v3/ext_authz.upbdefs.h"
+#include "envoy/type/matcher/v3/string.upb.h"
+#include "envoy/type/v3/http_status.upb.h"
+#include "envoy/type/v3/percent.upb.h"
+#include "src/core/ext/filters/ext_authz/ext_authz_filter.h"
+#include "src/core/filter/filter_args.h"
+#include "src/core/lib/channel/channel_args.h"
+#include "src/core/util/env.h"
+#include "src/core/xds/grpc/xds_common_types_parser.h"
+#include "src/core/xds/xds_client/xds_client.h"
+#include "upb/reflection/def.h"
+#include "xds_common_types.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
+
+namespace grpc_core {
+
+// TODO(rishesh): Remove this once the feature passes interop tests.
+bool XdsExtAuthzOnClientEnabled() {
+  auto value = GetEnv("GRPC_EXPERIMENTAL_XDS_EXT_AUTHZ_ON_CLIENT");
+  if (!value.has_value()) return false;
+  bool parsed_value;
+  bool parse_succeeded = gpr_parse_bool_value(value->c_str(), &parsed_value);
+  return parse_succeeded && parsed_value;
+}
+
+absl::string_view XdsHttpExtAuthzFilter::ConfigProtoName() const {
+  return "envoy.extensions.filters.http.ext_authz.v3.ExtAuthz";
+}
+
+absl::string_view XdsHttpExtAuthzFilter::OverrideConfigProtoName() const {
+  return "envoy.extensions.filters.http.ext_authz.v3.ExtAuthzPerRoute";
+}
+
+void XdsHttpExtAuthzFilter::PopulateSymtab(upb_DefPool* symtab) const {
+  envoy_extensions_filters_http_ext_authz_v3_ExtAuthz_getmsgdef(symtab);
+}
+
+std::optional<Json> XdsHttpExtAuthzFilter::GenerateFilterConfig(
+    absl::string_view instance_name,
+    const XdsResourceType::DecodeContext& context,
+    const XdsExtension& extension, ValidationErrors* errors) const {
+  return std::nullopt;
+}
+
+std::optional<Json> XdsHttpExtAuthzFilter::GenerateFilterConfigOverride(
+    absl::string_view /*instance_name*/,
+    const XdsResourceType::DecodeContext& /*context*/,
+    const XdsExtension& /*extension*/, ValidationErrors* errors) const {
+  return std::nullopt;
+}
+
+const grpc_channel_filter* XdsHttpExtAuthzFilter::channel_filter() const {
+  return &ExtAuthzFilter::kFilterVtable;
+}
+
+void XdsHttpExtAuthzFilter::AddFilter(
+    FilterChainBuilder& builder,
+    RefCountedPtr<const FilterConfig> config) const {
+  builder.AddFilter<ExtAuthzFilter>(std::move(config));
+}
+
+absl::StatusOr<XdsHttpFilterImpl::ServiceConfigJsonEntry>
+XdsHttpExtAuthzFilter::GenerateMethodConfig(
+    const Json& /*hcm_filter_config*/,
+    const Json* /*filter_config_override*/) const {
+  return ServiceConfigJsonEntry{"", ""};
+}
+
+absl::StatusOr<XdsHttpFilterImpl::ServiceConfigJsonEntry>
+XdsHttpExtAuthzFilter::GenerateServiceConfig(
+    const Json& /*hcm_filter_config*/) const {
+  return ServiceConfigJsonEntry{"", ""};
+}
+
+void XdsHttpExtAuthzFilter::UpdateBlackboard(const Json& hcm_filter_config,
+                                             const Blackboard* old_blackboard,
+                                             Blackboard* new_blackboard) const {
+}
+
+bool isCacheRequriedToChange(
+    const ExtAuthzFilter::Config& filter_config,
+    RefCountedPtr<ExtAuthzFilter::ChannelCache> cache) {
+  if (cache == nullptr) {
+    return true;
+  }
+  // check for change in server uri
+  auto client = cache->Get();
+  auto old_server_uri = client->server_uri();
+  auto new_server_uri = filter_config.ext_authz->server_uri;
+  if (old_server_uri != new_server_uri) {
+    return true;
+  }
+  // check for channel creds
+  auto old_server_creds =
+      cache->server()->server_target->channel_creds_config();
+  auto new_server_creds = filter_config.ext_authz->xds_grpc_service
+                              ->server_target->channel_creds_config();
+  if (old_server_creds == nullptr || new_server_creds == nullptr) {
+    return true;
+  }
+  if (*old_server_creds == *new_server_creds) {
+    return false;
+  }
+  return true;
+}
+
+void XdsHttpExtAuthzFilter::UpdateBlackboard(const FilterConfig& config,
+                                             const Blackboard* old_blackboard,
+                                             Blackboard* new_blackboard) const {
+  const auto& filter_config = DownCast<const ExtAuthzFilter::Config&>(config);
+  ValidationErrors errors;
+  RefCountedPtr<ExtAuthzFilter::ChannelCache> cache;
+  if (old_blackboard != nullptr) {
+    cache = old_blackboard->Get<ExtAuthzFilter::ChannelCache>(
+        filter_config.instance_name);
+  }
+  if (isCacheRequriedToChange(filter_config, cache)) {
+    auto client = MakeRefCounted<ExtAuthzClient>(
+        filter_config.ext_authz->transport_factory,
+        std::move(filter_config.ext_authz->xds_grpc_service->server_target));
+    cache = MakeRefCounted<ExtAuthzFilter::ChannelCache>(
+        std::move(client), filter_config.ext_authz->xds_grpc_service);
+  }
+  CHECK_NE(new_blackboard, nullptr);
+  new_blackboard->Set(filter_config.instance_name, std::move(cache));
+}
+
+RefCountedPtr<const FilterConfig> XdsHttpExtAuthzFilter::ParseTopLevelConfig(
+    absl::string_view instance_name,
+    const XdsResourceType::DecodeContext& context,
+    const XdsExtension& extension, ValidationErrors* errors) const {
+  const absl::string_view* serialized_filter_config =
+      std::get_if<absl::string_view>(&extension.value);
+  if (serialized_filter_config == nullptr) {
+    errors->AddError("could not parse ext_authz filter config");
+    return nullptr;
+  }
+  auto* ext_authz = envoy_extensions_filters_http_ext_authz_v3_ExtAuthz_parse(
+      serialized_filter_config->data(), serialized_filter_config->size(),
+      context.arena);
+  if (ext_authz == nullptr) {
+    errors->AddError("could not parse ext_authz filter config");
+    return nullptr;
+  }
+  // auto config = MakeRefCounted<const ExtAuthzFilter::Config>();
+  // config->instance_name = std::string(instance_name);
+  auto ext_authz_obj = MakeRefCounted<ExtAuthz>();
+  // XdsGrpcService
+  {
+    const auto* grpc_service_proto =
+        envoy_extensions_filters_http_ext_authz_v3_ExtAuthz_grpc_service(
+            ext_authz);
+    if (grpc_service_proto == nullptr) {
+      ValidationErrors::ScopedField field(errors, ".ext_authz.grpc_service");
+      errors->AddError("grpc_service field must be present");
+    } else {
+      ext_authz_obj->xds_grpc_service = std::make_shared<XdsGrpcService>(
+          ParseXdsGrpcService(context, grpc_service_proto, errors));
+    }
+  }
+  // server_uri
+  {
+    if (ext_authz_obj->xds_grpc_service == nullptr ||
+        ext_authz_obj->xds_grpc_service->server_target == nullptr) {
+      ValidationErrors::ScopedField field(errors, ".ext_authz.client");
+      errors->AddError("ext_authz.client field must be present");
+    } else {
+      ext_authz_obj->server_uri =
+          ext_authz_obj->xds_grpc_service->server_target->server_uri();
+    }
+  }
+  // transport_factory
+  {
+    auto client = context.client;
+    if (client == nullptr || client->transport_factory() == nullptr) {
+      ValidationErrors::ScopedField field(errors, ".context.client");
+      errors->AddError("context.client field must be present");
+    } else {
+      ext_authz_obj->transport_factory = client->transport_factory()->Ref();
+    }
+  }
+  // FilterEnabled
+  {
+    const auto* filter_enabled_proto =
+        envoy_extensions_filters_http_ext_authz_v3_ExtAuthz_filter_enabled(
+            ext_authz);
+    if (filter_enabled_proto == nullptr) {
+      ValidationErrors::ScopedField field(errors, ".ext_authz.filter_enabled");
+      errors->AddError("filter_enabled field is not present");
+    } else {
+      auto default_value =
+          envoy_config_core_v3_RuntimeFractionalPercent_default_value(
+              filter_enabled_proto);
+      if (default_value == nullptr) {
+        ValidationErrors::ScopedField field(
+            errors, ".ext_authz.filter_enabled.default_value");
+        errors->AddError(
+            "default_value field must be present inside filter_enabled");
+      } else {
+        auto numerator =
+            envoy_type_v3_FractionalPercent_numerator(default_value);
+        auto denominator =
+            envoy_type_v3_FractionalPercent_denominator(default_value);
+        int32_t denom_val = 100;
+        switch (denominator) {
+          case envoy_type_v3_FractionalPercent_HUNDRED:
+            denom_val = 100;
+            break;
+          case envoy_type_v3_FractionalPercent_TEN_THOUSAND:
+            denom_val = 10000;
+            break;
+          case envoy_type_v3_FractionalPercent_MILLION:
+            denom_val = 1000000;
+            break;
+          default:
+            denom_val = 100;
+            break;
+        }
+        ext_authz_obj->filter_enabled = {numerator, denom_val};
+      }
+    }
+  }
+  // deny_at_disable
+  {
+    const auto* deny_at_disable_proto =
+        envoy_extensions_filters_http_ext_authz_v3_ExtAuthz_deny_at_disable(
+            ext_authz);
+    if (deny_at_disable_proto != nullptr) {
+      auto* default_value =
+          envoy_config_core_v3_RuntimeFeatureFlag_default_value(
+              deny_at_disable_proto);
+      ext_authz_obj->deny_at_disable = ParseBoolValue(default_value);
+    }
+  }
+  // failure_mode_allow
+  ext_authz_obj->failure_mode_allow =
+      envoy_extensions_filters_http_ext_authz_v3_ExtAuthz_failure_mode_allow(
+          ext_authz);
+  // failure_mode_allow_header_add
+  ext_authz_obj->failure_mode_allow_header_add =
+      envoy_extensions_filters_http_ext_authz_v3_ExtAuthz_failure_mode_allow_header_add(
+          ext_authz);
+  // status_on_error
+  {
+    const auto* status_on_error_proto =
+        envoy_extensions_filters_http_ext_authz_v3_ExtAuthz_status_on_error(
+            ext_authz);
+    if (status_on_error_proto == nullptr) {
+      ValidationErrors::ScopedField field(errors, ".ext_authz.status_on_error");
+      errors->AddError("status_on_error field is not present");
+    } else {
+      ext_authz_obj->status_on_error = static_cast<grpc_status_code>(
+          envoy_type_v3_HttpStatus_code(status_on_error_proto));
+    }
+  }
+  // include_peer_certificate
+  ext_authz_obj->include_peer_certificate =
+      envoy_extensions_filters_http_ext_authz_v3_ExtAuthz_include_peer_certificate(
+          ext_authz);
+  // allowed_headers
+  {
+    const auto* allowed_headers_proto =
+        envoy_extensions_filters_http_ext_authz_v3_ExtAuthz_allowed_headers(
+            ext_authz);
+    if (allowed_headers_proto != nullptr) {
+      size_t size;
+      const auto* patterns = envoy_type_matcher_v3_ListStringMatcher_patterns(
+          allowed_headers_proto, &size);
+      for (size_t i = 0; i < size; ++i) {
+        ValidationErrors::ScopedField field(
+            errors, absl::StrCat(".ext_authz.allowed_headers[", i, "]"));
+        ext_authz_obj->allowed_headers.push_back(
+            {StringMatcherParse(context, patterns[i], errors)});
+      }
+    }
+  }
+  // disallowed_headers
+  {
+    const auto* disallowed_headers_proto =
+        envoy_extensions_filters_http_ext_authz_v3_ExtAuthz_disallowed_headers(
+            ext_authz);
+    if (disallowed_headers_proto != nullptr) {
+      size_t size;
+      const auto* patterns = envoy_type_matcher_v3_ListStringMatcher_patterns(
+          disallowed_headers_proto, &size);
+      for (size_t i = 0; i < size; ++i) {
+        ValidationErrors::ScopedField field(
+            errors, absl::StrCat(".ext_authz.disallowed_headers[", i, "]"));
+        ext_authz_obj->disallowed_headers.push_back(
+            {StringMatcherParse(context, patterns[i], errors)});
+      }
+    }
+  }
+  // HeaderMutationRules
+  {
+    const auto* header_mutation_rules_proto =
+        envoy_extensions_filters_http_ext_authz_v3_ExtAuthz_decoder_header_mutation_rules(
+            ext_authz);
+    if (header_mutation_rules_proto != nullptr) {
+      ext_authz_obj->decoder_header_mutation_rules = ParseHeaderMutationRules(
+          context, header_mutation_rules_proto, errors);
+    }
+  }
+
+  auto config = MakeRefCounted<ExtAuthzFilter::Config>();
+  config->instance_name = std::string(instance_name);
+  config->ext_authz = std::move(ext_authz_obj);
+  return config;
+}
+
+RefCountedPtr<const FilterConfig> XdsHttpExtAuthzFilter::ParseOverrideConfig(
+    absl::string_view /*instance_name*/,
+    const XdsResourceType::DecodeContext& /*context*/,
+    const XdsExtension& /*extension*/, ValidationErrors* errors) const {
+  // TODO(rishesh): add handling for ParseOverrideConfig
+  errors->AddError("GCP auth filter does not support config override");
+  // Return an empty config.  This is used to disable the filter.
+  return MakeRefCounted<ExtAuthzFilter::Config>();
+}
+
+}  // namespace grpc_core

@@ -100,4 +100,27 @@ bool CommonTlsContext::Empty() const {
          certificate_validation_context.Empty();
 }
 
+//
+// HeaderMutationRules
+//
+
+bool HeaderMutationRules::IsHeaderMutationAllowed(std::string key) const {
+  // If true, all header mutations are disallowed, regardless of any other
+  // setting.
+  if (disallow_all) {
+    return false;
+  }
+  // If a header name matches this regex, then it will be disallowed
+  if (disallow_expression.has_value() && disallow_expression->Match(key)) {
+    return false;
+  }
+  // If a header name matches this regex and does not match disallow_expression,
+  // it will be allowed. If unset, then all headers not matching
+  // disallow_expression are allowed
+  if (!allow_expression.has_value() || allow_expression->Match(key)) {
+    return true;
+  }
+  return false;
+}
+
 }  // namespace grpc_core

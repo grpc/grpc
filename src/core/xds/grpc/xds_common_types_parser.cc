@@ -779,4 +779,63 @@ XdsGrpcService ParseXdsGrpcService(
   return xds_grpc_service;
 }
 
+//
+// ParseHeaderMutationRules()
+//
+namespace {
+
+StringMatcher ParseRegexMatcher(
+    const envoy_type_matcher_v3_RegexMatcher* regex_matcher,
+    ValidationErrors* errors) {
+  auto matcher = UpbStringToStdString(
+      envoy_type_matcher_v3_RegexMatcher_regex(regex_matcher));
+  absl::StatusOr<StringMatcher> string_matcher =
+      StringMatcher::Create(StringMatcher::Type::kSafeRegex, matcher);
+  if (!string_matcher.ok()) {
+    errors->AddError(string_matcher.status().message());
+    return StringMatcher();
+  }
+  return *string_matcher;
+}
+
+}  // namespace
+
+HeaderMutationRules ParseHeaderMutationRules(
+    const XdsResourceType::DecodeContext& context,
+    const envoy_config_common_mutation_rules_v3_HeaderMutationRules*
+        header_mutation_rules,
+    ValidationErrors* errors) {
+  HeaderMutationRules header_mutation_rules_config;
+  if (header_mutation_rules == nullptr) {
+    ValidationErrors::ScopedField field(errors, ".header_mutation_rules");
+    errors->AddError("header_mutation_rules field is not present");
+  } else {
+    header_mutation_rules_config.disallow_all =
+        envoy_config_common_mutation_rules_v3_HeaderMutationRules_disallow_all(
+            header_mutation_rules);
+    header_mutation_rules_config.disallow_is_error =
+        envoy_config_common_mutation_rules_v3_HeaderMutationRules_disallow_is_error(
+            header_mutation_rules);
+    const auto* disallow_expression_proto =
+        envoy_config_common_mutation_rules_v3_HeaderMutationRules_disallow_expression(
+            header_mutation_rules);
+    if (disallow_expression_proto != nullptr) {
+      ValidationErrors::ScopedField field(
+          errors, ".header_mutation_rules.disallow_expression");
+      header_mutation_rules_config.disallow_expression =
+          ParseRegexMatcher(disallow_expression_proto, errors);
+    }
+    const auto* allow_expression_proto =
+        envoy_config_common_mutation_rules_v3_HeaderMutationRules_allow_expression(
+            header_mutation_rules);
+    if (allow_expression_proto != nullptr) {
+      ValidationErrors::ScopedField field(
+          errors, ".header_mutation_rules.allow_expression");
+      header_mutation_rules_config.allow_expression =
+          ParseRegexMatcher(allow_expression_proto, errors);
+    }
+  }
+  return header_mutation_rules_config;
+}
+
 }  // namespace grpc_core

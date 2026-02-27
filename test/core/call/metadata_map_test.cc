@@ -180,6 +180,7 @@ std::vector<std::string> GetAllowList() {
           std::string(LbTokenMetadata::key()),
           std::string(TeMetadata::key()),
           std::string(UserAgentMetadata::key()),
+          std::string(XEnvoyAuthFailureModeAllowedMetadata::key()),
           std::string(XEnvoyPeerMetadata::key()),
           std::string(GrpcCallWasCancelled::DebugKey()),
           std::string(GrpcRegisteredMethod::DebugKey()),
@@ -227,6 +228,7 @@ TEST(DebugStringBuilderTest, TestAllAllowListed) {
             "lb-token: lb-token, "
             "te: te, "
             "user-agent: user-agent, "
+            "x-envoy-auth-failure-mode-allowed: x-envoy-auth-failure-mode-allowed, "
             "x-envoy-peer-metadata: x-envoy-peer-metadata, "
             "GrpcCallWasCancelled: GrpcCallWasCancelled, "
             "GrpcRegisteredMethod: GrpcRegisteredMethod, "
@@ -284,6 +286,7 @@ std::vector<std::string> GetEncodableHeaders() {
           std::string(LbCostBinMetadata::key()),
           std::string(LbTokenMetadata::key()),
           std::string(TeMetadata::key()),
+          std::string(XEnvoyAuthFailureModeAllowedMetadata::key()),
       // clang-format on
   };
 }

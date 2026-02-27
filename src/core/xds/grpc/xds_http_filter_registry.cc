@@ -27,6 +27,7 @@
 #include "envoy/extensions/filters/http/router/v3/router.upbdefs.h"
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/json/json.h"
+#include "src/core/xds/grpc/xds_http_ext_authz_filter.h"
 #include "src/core/xds/grpc/xds_http_fault_filter.h"
 #include "src/core/xds/grpc/xds_http_gcp_authn_filter.h"
 #include "src/core/xds/grpc/xds_http_rbac_filter.h"
@@ -116,6 +117,9 @@ XdsHttpFilterRegistry::XdsHttpFilterRegistry(bool register_builtins) {
     RegisterFilter(std::make_unique<XdsHttpRbacFilter>());
     RegisterFilter(std::make_unique<XdsHttpStatefulSessionFilter>());
     RegisterFilter(std::make_unique<XdsHttpGcpAuthnFilter>());
+    if (XdsExtAuthzOnClientEnabled()) {
+      RegisterFilter(std::make_unique<XdsHttpExtAuthzFilter>());
+    }
   }
 }
 
