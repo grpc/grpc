@@ -167,30 +167,6 @@ grpc_cc_test(
     ],
 )
 
-grpc_cc_test(
-    name = "composite_filter_test",
-    srcs = ["composite_filter_test.cc"],
-    external_deps = [
-        "absl/status",
-        "absl/status:statusor",
-        "absl/strings",
-        "gtest",
-    ],
-    uses_event_engine = False,
-    uses_polling = False,
-    deps = [
-        "filter_test",
-        "//:grpc",
-        "//:ref_counted_ptr",
-        "//src/core:channel_args",
-        "//src/core:composite_filter",
-        "//src/core:unique_type_name",
-        "//src/core:xds_matcher",
-        "//src/core:grpc_xds_client",
-        "//test/core/test_util:xds_http_add_header_filter",
-    ],
-)
-
 grpc_cc_benchmark(
     name = "bm_http_client_filter",
     srcs = ["bm_http_client_filter.cc"],

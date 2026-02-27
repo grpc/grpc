@@ -2102,6 +2102,7 @@ grpc_cc_library(
         "//src/core:http2_status",
         "//src/core:if",
         "//src/core:inter_activity_latch",
+        "//src/core:inter_activity_pipe",
         "//src/core:iomgr_fwd",
         "//src/core:latch",
         "//src/core:latent_see",

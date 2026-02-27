@@ -37,7 +37,6 @@
 #include "src/core/xds/grpc/xds_http_filter_registry.h"
 #include "test/core/test_util/scoped_env_var.h"
 #include "test/core/test_util/test_config.h"
-#include "test/core/test_util/test_timeout.h"
 #include "test/core/test_util/xds_http_add_header_filter.h"
 #include "test/cpp/end2end/xds/xds_end2end_test_lib.h"
 #include "xds/type/matcher/v3/matcher.pb.h"
@@ -175,10 +174,6 @@ TEST_P(XdsCompositeFilterEnd2endTest, Basic) {
       default_route_config_);
   // Send RPC with name=enterprise.
   LOG(INFO) << "Sending RPC with name=enterprise...";
-  // FIXME: remove when finished debugging
-//  grpc_core::TestTimeout timeout(
-//      grpc_core::Duration::Seconds(30),
-//      grpc_event_engine::experimental::GetDefaultEventEngine());
   std::multimap<std::string, std::string> server_initial_metadata;
   Status status = SendRpc(RpcOptions()
                               .set_metadata({{"name", "enterprise"}})
@@ -211,9 +206,6 @@ TEST_P(XdsCompositeFilterEnd2endTest, Basic) {
   EXPECT_THAT(server_initial_metadata,
               ::testing::Not(::testing::Contains(
                   ::testing::Key(::testing::AnyOf("sunk", "status")))));
-// FIXME: the case below fails -- it gets DEADLINE_EXCEEDED instead of
-// failing quickly with UNAVAILABLE
-return;
   // Now send an RPC with no matching header.  Nothing should be added.
   LOG(INFO) << "Sending RPC with no name header...";
   CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE,

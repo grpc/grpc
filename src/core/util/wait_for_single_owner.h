@@ -41,8 +41,7 @@ void WaitForSingleOwnerStalled();
 // Usage: WaitForSingleOwner(std::move(obj))
 template <typename T>
 void WaitForSingleOwner(std::shared_ptr<T> obj) {
-// FIXME: is this change okay?
-  WaitForSingleOwnerWithTimeout(std::move(obj), Duration::Seconds(30));
+  WaitForSingleOwnerWithTimeout(std::move(obj), Duration::Hours(24));
 }
 
 // Waits until the use_count of the shared_ptr has reached 1 and returns,

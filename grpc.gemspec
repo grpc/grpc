@@ -1700,6 +1700,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/promise/if.h )
   s.files += %w( src/core/lib/promise/inter_activity_latch.h )
   s.files += %w( src/core/lib/promise/inter_activity_mutex.h )
+  s.files += %w( src/core/lib/promise/inter_activity_pipe.h )
   s.files += %w( src/core/lib/promise/interceptor_list.h )
   s.files += %w( src/core/lib/promise/latch.h )
   s.files += %w( src/core/lib/promise/loop.h )
