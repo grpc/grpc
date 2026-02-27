@@ -49,7 +49,9 @@ DEPS_XML=$(mktemp)
 trap "rm -f ${UPB_RULES_XML} ${DEPS_XML}; rm -rf ${TMP_DIR}" EXIT
 
 # Query for upb rules from the main grpc workspace. This must be run from the root.
-tools/bazel query --output xml --noimplicit_deps //:all > "${UPB_RULES_XML}"
+# TODO(weizheyuan): Update gen_upb_api_from_bazel so it properly
+# handles repo mapping under bzlmod.
+tools/bazel query --config=no-bzlmod --output xml --noimplicit_deps //:all > "${UPB_RULES_XML}"
 
 # Now we can use the generator to get the list of deps.
 DEPS_LIST=$(${TMP_DIR}/gen_upb_api_from_bazel \
@@ -59,7 +61,7 @@ DEPS_LIST=$(${TMP_DIR}/gen_upb_api_from_bazel \
 # Query for all the dependencies of the upb rules. This must be run from the root.
 if [[ -n "${DEPS_LIST}" ]]; then
   DEPS_QUERY="deps($(echo "${DEPS_LIST}" | sed 's/ / + /g'))"
-  tools/bazel query --output xml --noimplicit_deps "${DEPS_QUERY}" > "${DEPS_XML}"
+  tools/bazel query --config=no-bzlmod --output xml --noimplicit_deps "${DEPS_QUERY}" > "${DEPS_XML}"
 else
   # If there are no dependencies, create an empty XML file
   echo '<?xml version="1.0" encoding="UTF-8" standalone="no"?><query/>' > "${DEPS_XML}"
