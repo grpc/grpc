@@ -47,6 +47,18 @@ using ::testing::ContainerEq;
 using ::testing::NotNull;
 using ::testing::TestWithParam;
 using ::testing::ValuesIn;
+using tsi::AkidFromCertificate;
+using tsi::AkidFromCrl;
+using tsi::HasCrlSignBit;
+using tsi::IssuerFromCert;
+using tsi::ParsePemCertificateChain;
+using tsi::ParsePemPrivateKey;
+using tsi::ParseUriString;
+using tsi::SslProtectorProtect;
+using tsi::SslProtectorProtectFlush;
+using tsi::SslProtectorUnprotect;
+using tsi::VerifyCrlCertIssuerNamesMatch;
+using tsi::VerifyCrlSignature;
 
 const char* kValidCrl = "test/core/tsi/test_creds/crl_data/crls/current.crl";
 const char* kCrlIssuer = "test/core/tsi/test_creds/crl_data/ca.pem";
