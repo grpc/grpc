@@ -107,9 +107,10 @@ struct Measurement {
   bool include_exchange_labels;
 };
 
-struct Annotation {
+struct Event {
+  std::string name;
+  std::vector<Label> attributes;
   std::string time_stamp;
-  std::string description;
 };
 
 struct SpanCensusData {
@@ -121,7 +122,7 @@ struct SpanCensusData {
   std::string parent_span_id;
   std::string status;
   std::vector<Label> span_labels;
-  std::vector<Annotation> span_annotations;
+  std::vector<Event> span_events;
   int64_t child_span_count;
   bool should_sample;
 };
@@ -188,7 +189,11 @@ class Span final {
 
   void AddAttribute(absl::string_view key, absl::string_view value);
 
-  void AddAnnotation(absl::string_view description);
+  void AddEvent(absl::string_view name);
+
+  void AddEvent(
+      absl::string_view name,
+      std::vector<std::pair<absl::string_view, absl::string_view>> attributes);
 
   SpanCensusData ToCensusData() const;
 
@@ -203,7 +208,7 @@ class Span final {
   absl::Time end_time_;
   std::string status_;
   std::vector<Label> span_labels_;
-  std::vector<Annotation> span_annotations_;
+  std::vector<Event> span_events_;
   SpanContext context_;
   uint64_t child_span_count_ = 0;
 };
@@ -243,8 +248,12 @@ class PythonCensusContext {
     span_.AddAttribute(key, attribute);
   }
 
-  void AddSpanAnnotation(absl::string_view description) {
-    span_.AddAnnotation(description);
+  void AddSpanEvent(absl::string_view name) { AddSpanEvent(name, {}); }
+
+  void AddSpanEvent(
+      absl::string_view name,
+      std::vector<std::pair<absl::string_view, absl::string_view>> attributes) {
+    span_.AddEvent(name, attributes);
   }
 
   void IncreaseChildSpanCount() { span_.IncreaseChildSpanCount(); }

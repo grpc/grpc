@@ -17,6 +17,10 @@ from typing import AnyStr, Callable, Dict, Iterable, List, Optional
 from grpc_observability import _open_telemetry_observability
 from grpc_observability._observability import OptionalLabelType
 from opentelemetry.metrics import MeterProvider
+from opentelemetry.sdk.trace import TracerProvider
+from opentelemetry.trace.propagation.tracecontext import (
+    TraceContextTextMapPropagator,
+)
 
 GRPC_METHOD_LABEL = "grpc.method"
 GRPC_TARGET_LABEL = "grpc.target"
@@ -92,6 +96,8 @@ class OpenTelemetryPlugin:
 
     plugin_options: Iterable[OpenTelemetryPluginOption]
     meter_provider: Optional[MeterProvider]
+    tracer_provider: Optional[TracerProvider]
+    text_map_propagator: Optional[TraceContextTextMapPropagator]
     target_attribute_filter: Callable[[str], bool]
     generic_method_attribute_filter: Callable[[str], bool]
     _plugins: List[_open_telemetry_observability._OpenTelemetryPlugin]
@@ -101,6 +107,8 @@ class OpenTelemetryPlugin:
         *,
         plugin_options: Optional[Iterable[OpenTelemetryPluginOption]] = None,
         meter_provider: Optional[MeterProvider] = None,
+        tracer_provider: Optional[TracerProvider] = None,
+        text_map_propagator: Optional[TraceContextTextMapPropagator] = None,
         target_attribute_filter: Optional[Callable[[str], bool]] = None,
         generic_method_attribute_filter: Optional[Callable[[str], bool]] = None,
     ):
@@ -110,6 +118,10 @@ class OpenTelemetryPlugin:
         enabled for this OpenTelemetryPlugin.
           meter_provider: A MeterProvider which will be used to collect telemetry data,
         or None which means no metrics will be collected.
+          tracer_provider: A TracerProvider which will be used to collect traces or None which means
+            no traces are collected.
+          text_map_propagator: A TraceContextTextMapPropagator which will be used for span context
+            propagation or None which means context propagation is disabled.
           target_attribute_filter: [DEPRECATED] This attribute is deprecated and should
         not be used.
         Once provided, this will be called per channel to decide whether to record the
@@ -128,6 +140,8 @@ class OpenTelemetryPlugin:
         """
         self.plugin_options = plugin_options or []
         self.meter_provider = meter_provider
+        self.tracer_provider = tracer_provider
+        self.text_map_propagator = text_map_propagator
         self.target_attribute_filter = target_attribute_filter or (
             lambda _target: True
         )

@@ -37,6 +37,7 @@ PLUGIN_IDENTIFIER_SEP = ","
 
 _LOGGER = logging.getLogger(__name__)
 
+_PyEvent = Dict[str, Union[str, Dict[str, str]]]
 
 class _CyMetricsName:
   CY_CLIENT_API_LATENCY = kRpcClientApiLatencyMeasureName
@@ -115,6 +116,11 @@ def activate_config(object py_config) -> None:
 
 def activate_stats() -> None:
   EnablePythonCensusStats(True);
+
+
+def activate_tracing() -> None:
+  EnablePythonCensusTracing(True)
+
 
 def create_client_call_tracer(bytes method_name, bytes target, bytes trace_id, str identifier,
                               dict exchange_labels, object enabled_optional_labels,
@@ -204,12 +210,19 @@ def _c_measurement_to_measurement(object measurement
   return py_measurement
 
 
-def _c_annotation_to_annotations(vector[Annotation] c_annotations) -> List[Tuple[str, str]]:
-  py_annotations = []
-  for annotation in c_annotations:
-    py_annotations.append((_decode(annotation.time_stamp),
-                          _decode(annotation.description)))
-  return py_annotations
+def _c_event_to_events(vector[Event] c_events) -> List[_PyEvent]:
+  py_events = []
+
+  for event in c_events:
+    py_attributes = {}
+    for attribute in event.attributes:
+      py_attributes[_decode(attribute.key)] = _decode(attribute.value)
+    py_events.append({
+      "name": _decode(event.name),
+      "attributes": py_attributes,
+      "time_stamp": _decode(event.time_stamp),
+    })
+  return py_events
 
 
 def observability_deinit() -> None:
@@ -263,9 +276,9 @@ def _get_stats_data(object measurement, object labels, object identifier) -> _ob
 
 
 def _get_tracing_data(SpanCensusData span_data, vector[Label] span_labels,
-                      vector[Annotation] span_annotations) -> _observability.TracingData:
+                      vector[Event] span_events) -> _observability.TracingData:
   py_span_labels = _c_label_to_labels(span_labels)
-  py_span_annotations = _c_annotation_to_annotations(span_annotations)
+  py_span_events = _c_event_to_events(span_events)
   return _observability.TracingData(name=_decode(span_data.name),
                                     start_time = _decode(span_data.start_time),
                                     end_time = _decode(span_data.end_time),
@@ -276,7 +289,7 @@ def _get_tracing_data(SpanCensusData span_data, vector[Label] span_labels,
                                     should_sample = span_data.should_sample,
                                     child_span_count = span_data.child_span_count,
                                     span_labels = py_span_labels,
-                                    span_annotations = py_span_annotations)
+                                    span_events = py_span_events)
 
 
 def _record_rpc_latency(object exporter, str method, str target, float rpc_latency,
@@ -346,7 +359,7 @@ cdef void _flush_census_data(object exporter):
       py_metrics_batch.append(py_metric)
     else:
       py_span = _get_tracing_data(c_census_data.span_data, c_census_data.span_data.span_labels,
-                                  c_census_data.span_data.span_annotations)
+                                  c_census_data.span_data.span_events)
       py_spans_batch.append(py_span)
     g_census_data_buffer.pop()
 

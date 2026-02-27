@@ -17,7 +17,7 @@ import abc
 from dataclasses import dataclass
 from dataclasses import field
 import enum
-from typing import Dict, List, Mapping, Set, Tuple, Union
+from typing import Dict, List, Mapping, Set, Union
 
 
 class Exporter(metaclass=abc.ABCMeta):
@@ -95,9 +95,15 @@ class TracingData:
       child_span_count: The number of child span associated with this span.
       span_labels: A dictionary that maps labels tags associated with this
        span to corresponding label value.
-      span_annotations: A dictionary that maps annotation timeStamp with
-       description. The timeStamp have a format which can be converted
-       to Python datetime.datetime, e.g. 2023-05-29 17:07:09.895
+      span_events: A dictionary that contains traced event data.
+        Following keys are used:
+
+        - "name" - represents event name.
+        - "attributes" - represents optional event attributes in a form
+          of dictionary.
+        - "time_stamp" - represents time stamp when event occurred.
+          The time stamp have a format which can be converted to Python
+          datetime.datetime, e.g. 2023-05-29 17:07:09.895.
     """
 
     name: str
@@ -110,7 +116,9 @@ class TracingData:
     should_sample: bool
     child_span_count: int
     span_labels: Mapping[str, Union[str, bytes]] = field(default_factory=dict)
-    span_annotations: List[Tuple[str, str]] = field(default_factory=list)
+    span_events: List[
+        Dict[str, Union[str, Mapping[str, Union[str, bytes]]]]
+    ] = field(default_factory=list)
 
 
 @enum.unique
