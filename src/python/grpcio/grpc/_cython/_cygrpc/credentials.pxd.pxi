@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+include "private_key_offload.pxd.pxi"
 
 cdef class CallCredentials:
 
