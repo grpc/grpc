@@ -2125,12 +2125,18 @@ static tsi_result ssl_handshaker_do_handshake(tsi_ssl_handshaker* impl)
         LOG(INFO) << "Handshake failed with error "
                   << tsi::SslErrorString(ssl_result) << ": " << err_str
                   << verify_result_str;
+        std::string signer_error;
+#if defined(OPENSSL_IS_BORINGSSL)
+        signer_error =
+            absl::StrCat(": ", impl->signed_bytes.status().ToString());
+#endif
         impl->MaybeSetError(absl::StrCat(tsi::SslErrorString(ssl_result), ": ",
                                          err_str, verify_result_str,
                                          signer_error));
         impl->result = TSI_PROTOCOL_FAILURE;
         return impl->result;
       }
+    }
   }
 }
 
