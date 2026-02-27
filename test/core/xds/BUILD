@@ -408,6 +408,7 @@ grpc_cc_test(
         "@com_github_cncf_xds//xds/type/v3:pkg_cc_proto",
         "@com_google_protobuf//:struct_cc_proto",
         "@com_google_protobuf//:wrappers_cc_proto",
+        "@envoy_api//envoy/config/common/mutation_rules/v3:pkg_cc_proto",
         "@envoy_api//envoy/config/core/v3:pkg_cc_proto",
         "@envoy_api//envoy/extensions/grpc_service/call_credentials/access_token/v3:pkg_cc_proto",
         "@envoy_api//envoy/extensions/grpc_service/channel_credentials/google_default/v3:pkg_cc_proto",
