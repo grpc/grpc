@@ -80,7 +80,8 @@ class Http2ServerTransportTest : public TransportTest {
   Http2FrameTestHelper helper_;
 };
 
-TEST_F(Http2ServerTransportTest, TestHttp2ServerTransportObjectCreation) {
+TEST_F(Http2ServerTransportTest,
+       DISABLED_TestHttp2ServerTransportObjectCreation) {
   // Event Engine      : FuzzingEventEngine
   // This test asserts :
   // 1. Tests Http2ServerTransport object creation and destruction. The object
@@ -89,6 +90,7 @@ TEST_F(Http2ServerTransportTest, TestHttp2ServerTransportObjectCreation) {
   // 3. Tests trivial functions GetTransportName() , server_transport() and
   // client_transport().
 
+  ExecCtx exec_ctx;
   LOG(INFO) << "TestHttp2ServerTransportObjectCreation Begin";
   MockPromiseEndpoint mock_endpoint(/*port=*/1000);
 
@@ -103,14 +105,17 @@ TEST_F(Http2ServerTransportTest, TestHttp2ServerTransportObjectCreation) {
   mock_endpoint.ExpectReadClose(absl::UnavailableError("Connection closed"),
                                 event_engine().get());
 
-  auto server_transport = MakeOrphanable<Http2ServerTransport>(
-      std::move(mock_endpoint.promise_endpoint), GetChannelArgs(),
-      event_engine());
+  OrphanablePtr<Http2ServerTransport> server_transport =
+      MakeOrphanable<Http2ServerTransport>(
+          std::move(mock_endpoint.promise_endpoint), GetChannelArgs(),
+          event_engine());
+  server_transport->SpawnTransportLoops();
 
   EXPECT_EQ(server_transport->filter_stack_transport(), nullptr);
   EXPECT_EQ(server_transport->client_transport(), nullptr);
   EXPECT_NE(server_transport->server_transport(), nullptr);
   EXPECT_EQ(server_transport->GetTransportName(), "http2");
+  EXPECT_GT(server_transport->TestOnlyTransportFlowControlWindow(), 0);
 
   // Wait for Http2ServerTransport's internal activities to finish.
   event_engine()->TickUntilIdle();

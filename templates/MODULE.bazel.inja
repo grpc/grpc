@@ -53,7 +53,6 @@ single_version_override(
 )
 
 bazel_dep(name = "protoc-gen-validate", version = "1.2.1.bcr.1", repo_name = "com_envoyproxy_protoc_gen_validate")  # Not needed directly
-bazel_dep(name = "re2", version = "2024-07-02.bcr.1", repo_name = "com_googlesource_code_re2")  # mismatched 2022-04-01
 bazel_dep(name = "rules_apple", version = "3.16.0", repo_name = "build_bazel_rules_apple")
 bazel_dep(name = "rules_cc", version = "0.1.1")
 bazel_dep(name = "rules_proto", version = "7.0.2")
@@ -61,20 +60,30 @@ bazel_dep(name = "rules_shell", version = "0.4.0")
 bazel_dep(name = "xds", version = "0.0.0-20251210-ee656c7", repo_name = "com_github_cncf_xds")
 
 # --- Zlib
-# Patch is needed to for running Windows RBE tests.
 bazel_dep(name = "zlib", version = "1.3.1.bcr.5")
-single_version_override(
+
+# Use https://github.com/madler/zlib/commit/f1f503da85d52e56aae11557b4d79a42bcaa2b86
+# because it fixes cmake build directory interference issue.
+# The commit is slightly ahead of 1.3.1 so we should be fine.
+archive_override(
     module_name = "zlib",
     patch_strip = 1,
     patches = [
-        "//bazel:zlib.patch",
+        "//bazel/zlib:add_module_dot_bazel.patch",
+        "//bazel/zlib:add_custom_build_file.patch",
     ],
-    version = "1.3.1.bcr.5",
+    sha256 = "da8937719bb6e9600a671f320934c0db3b8020c9c30fecda60b5a5ebdc9a1ea0",
+    strip_prefix = "zlib-f1f503da85d52e56aae11557b4d79a42bcaa2b86",
+    urls = [
+        "https://storage.googleapis.com/grpc-bazel-mirror/github.com/madler/zlib/archive/f1f503da85d52e56aae11557b4d79a42bcaa2b86.tar.gz",
+        "https://github.com/madler/zlib/archive/f1f503da85d52e56aae11557b4d79a42bcaa2b86.tar.gz",
+    ],
 )
 
 # Development dependencies
 # ========================
 bazel_dep(name = "google_benchmark", version = "1.9.0", dev_dependency = True, repo_name = "com_github_google_benchmark")
+bazel_dep(name = "yaml-cpp", version = "0.9.0", dev_dependency = True)
 
 # Python dependencies
 # ===================
@@ -123,6 +132,28 @@ http_archive(
     sha256 = "bf6f56b36d8bc9156e518eb1cc37a146284082fa53522033f772aefbecfd15fc",
     strip_prefix = "typing_extensions-4.12.2",
     url = "https://github.com/python/typing_extensions/archive/4.12.2.tar.gz",
+)
+
+# TODO(weizheyuan): Upgrade to a version available in a BCR
+# once we figure out how to properly use it in cmake setup.
+#
+# Trick bazel by declaring re2 as 2024-07-02.bcr.1 but internally using 2022-04-01,
+# which is the version we use for cmake builds.
+# This override has no effect when grpc is used as a dependency module.
+# See also https://bazel.build/rules/lib/globals/module#archive_override.
+bazel_dep(name = "re2", version = "2024-07-02.bcr.1", repo_name = "com_googlesource_code_re2")  # mismatched 2022-04-01
+archive_override(
+    module_name = "re2",
+    patch_strip = 1,
+    patches = [
+        "//bazel:re2.patch",
+    ],
+    sha256 = "1ae8ccfdb1066a731bba6ee0881baad5efd2cd661acd9569b689f2586e1a50e9",
+    strip_prefix = "re2-2022-04-01",
+    urls = [
+        "https://storage.googleapis.com/grpc-bazel-mirror/github.com/google/re2/archive/2022-04-01.tar.gz",
+        "https://github.com/google/re2/archive/2022-04-01.tar.gz",
+    ],
 )
 
 # --- Provide repo @com_google_fuzztest.
@@ -200,10 +231,3 @@ archive_override(
         "https://sourceforge.net/projects/perfmon2/files/libpfm4/libpfm-4.11.0.tar.gz/download",
     ],
 )
-
-# --- Python headers
-# TODO(weizheyuan): Maybe replace this with python header exposed by rules_python.
-# See also https://github.com/grpc/grpc/issues/24665
-python_configure = use_repo_rule("//third_party/py:python_configure.bzl", "python_configure")
-
-python_configure(name = "local_config_python")

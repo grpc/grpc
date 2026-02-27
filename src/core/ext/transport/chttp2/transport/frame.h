@@ -32,10 +32,6 @@
 
 namespace grpc_core {
 
-// Prints the first `length` bytes of the payload. If the payload is longer than
-// `length`, it appends "<clipped>" to the output.
-std::string MaybeTruncatePayload(SliceBuffer& payload, uint32_t length = 15);
-
 ///////////////////////////////////////////////////////////////////////////////
 // Frame types
 //

@@ -50,6 +50,7 @@
 #include "src/core/ext/transport/chttp2/transport/stream.h"
 #include "src/core/ext/transport/chttp2/transport/stream_data_queue.h"
 #include "src/core/ext/transport/chttp2/transport/writable_streams.h"
+#include "src/core/ext/transport/chttp2/transport/write_cycle.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/promise/activity.h"
@@ -115,9 +116,11 @@ class Http2ClientTransport final : public ClientTransport,
   void StartCall(CallHandler call_handler) override;
 
   void PerformOp(grpc_transport_op*) override;
+
   void StartConnectivityWatch(
       grpc_connectivity_state state,
       OrphanablePtr<ConnectivityStateWatcherInterface> watcher);
+
   void StopConnectivityWatch(ConnectivityStateWatcherInterface* watcher);
 
   void StartWatch(RefCountedPtr<StateWatcher> watcher) override;
@@ -125,13 +128,12 @@ class Http2ClientTransport final : public ClientTransport,
 
   void Orphan() override;
 
-  RefCountedPtr<channelz::SocketNode> GetSocketNode() const override;
-
   std::unique_ptr<channelz::ZTrace> GetZTrace(absl::string_view name) override {
     if (name == "transport_frames") return ztrace_collector_->MakeZTrace();
     return nullptr;
   }
 
+  RefCountedPtr<channelz::SocketNode> GetSocketNode() const override;
   void AddData(channelz::DataSink sink) override;
   void SpawnAddChannelzData(RefCountedPtr<Party> party,
                             channelz::DataSink sink);
@@ -147,12 +149,14 @@ class Http2ClientTransport final : public ClientTransport,
   void TestOnlySpawnPromise(absl::string_view name, Factory&& factory) {
     SpawnInfallible(general_party_, name, std::forward<Factory>(factory));
   }
+
   int64_t TestOnlyTransportFlowControlWindow();
   int64_t TestOnlyGetStreamFlowControlWindow(const uint32_t stream_id);
 
   bool AreTransportFlowControlTokensAvailable() {
     return flow_control_.remote_window() > 0;
   }
+
   void SpawnTransportLoops();
 
  private:
@@ -168,22 +172,17 @@ class Http2ClientTransport final : public ClientTransport,
   Http2Status ProcessIncomingFrame(Http2SecurityFrame&& frame);
   Http2Status ProcessIncomingFrame(Http2UnknownFrame&& frame);
   Http2Status ProcessIncomingFrame(Http2EmptyFrame&& frame);
+
   Http2Status ProcessMetadata(RefCountedPtr<Stream> stream);
 
-  // Reading from the endpoint.
-
-  // Returns a promise to keep reading in a Loop till a fail/close is
-  // received.
+  // Returns a promise to keep reading in a Loop till a fail/close is received.
   auto ReadLoop();
 
-  // Returns a promise that will read and process one HTTP2 frame.
   auto ReadAndProcessOneFrame();
 
-  // Returns a promise that will process one HTTP2 frame.
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Http2Status
   ProcessOneIncomingFrame(Http2Frame&& frame) {
-    GRPC_HTTP2_CLIENT_DLOG
-        << "Http2ClientTransport ProcessOneIncomingFrame Factory";
+    GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport::ProcessOneIncomingFrame";
     return std::visit(
         [this](auto&& frame) {
           return ProcessIncomingFrame(std::forward<decltype(frame)>(frame));
@@ -200,10 +199,27 @@ class Http2ClientTransport final : public ClientTransport,
   // module needs to take action after the write (for cases like spawning
   // timeout promises), they MUST plug the call in the
   // NotifyControlFramesWriteDone.
-  auto ProcessAndWriteControlFrames();
 
-  // Notify the control frames modules that the endpoint write is done.
-  void NotifyControlFramesWriteDone();
+  // Prepares all the HTTP2 control frames that are to be sent out in this write
+  // cycle. The modules can choose to either trigger an endpoint write for the
+  // frames or defer the write with the stream specific frames. In most cases,
+  // the frames are deferred and a single write is triggered for all the
+  // frames.
+  absl::Status PrepareControlFrames();
+
+  // If there are any urgent frames this would trigger an additional endpoint
+  // write. CAUTION: This will add significant overhead if used for non-urgent
+  // frames.
+  auto MaybeWriteUrgentFrames();
+
+  // Notify the modules that an endpoint write is done. This corresponds to the
+  // generic endpoint write that happens in the MultiplexerLoop.
+  void NotifyFramesWriteDone();
+
+  // Notify the modules that an urgent endpoint write is done. If some module
+  // add frames to this buffer in PrepareControlFrames, they can use this to
+  // do post processing after the write is done.
+  void NotifyUrgentFramesWriteDone();
 
   // Returns a promise to keep draining control frames and data frames from all
   // the writable streams and write to the endpoint.
@@ -211,8 +227,7 @@ class Http2ClientTransport final : public ClientTransport,
 
   // Returns a promise to fetch data from the callhandler and pass it further
   // down towards the endpoint.
-  auto CallOutboundLoop(CallHandler call_handler, RefCountedPtr<Stream> stream,
-                        ClientMetadataHandle metadata);
+  auto CallOutboundLoop(RefCountedPtr<Stream> stream);
 
   // Force triggers a transport write cycle
   absl::Status TriggerWriteCycle(DebugLocation whence = {}) {
@@ -228,24 +243,27 @@ class Http2ClientTransport final : public ClientTransport,
     absl::Status status = TriggerWriteCycle(whence);
     if (GPR_LIKELY(status.ok())) return true;
     GRPC_HTTP2_CLIENT_DLOG
-        << "TriggerWriteCycleOrHandleError failed with status: " << status
-        << " at " << whence.file() << ":" << whence.line();
+        << "Http2ClientTransport::TriggerWriteCycleOrHandleError failed with "
+           "status: "
+        << status << " at " << whence.file() << ":" << whence.line();
     GRPC_UNUSED absl::Status unused_status =
         HandleError(std::nullopt, ToHttpOkOrConnError(status), whence);
     return false;
   }
 
   auto FlowControlPeriodicUpdateLoop();
+
   // TODO(tjagtap) [PH2][P2][BDP] Remove this when the BDP code is done.
   void AddPeriodicUpdatePromiseWaker() {
     periodic_updates_waker_ = GetContext<Activity>()->MakeNonOwningWaker();
   }
+
   // TODO(tjagtap) [PH2][P2][BDP] Remove this when the BDP code is done.
   void WakeupPeriodicUpdatePromise() { periodic_updates_waker_.Wakeup(); }
 
   // Processes the flow control action and take necessary steps.
   void ActOnFlowControlAction(const chttp2::FlowControlAction& action,
-                              RefCountedPtr<Stream> stream);
+                              Stream* stream);
 
   void NotifyStateWatcherOnDisconnectLocked(
       absl::Status status, StateWatcher::DisconnectInfo disconnect_info)
@@ -300,7 +318,7 @@ class Http2ClientTransport final : public ClientTransport,
     return (next_stream_id > 1) ? (next_stream_id - 2) : 0;
   }
 
-  absl::Status InitializeStream(RefCountedPtr<Stream> stream);
+  absl::Status InitializeStream(Stream& stream);
 
   void AddToStreamList(RefCountedPtr<Stream> stream);
 
@@ -350,17 +368,32 @@ class Http2ClientTransport final : public ClientTransport,
 
   // Spawns an infallible promise on the transport party.
   template <typename Factory>
-  void SpawnInfallibleTransportParty(absl::string_view name, Factory&& factory);
+  void SpawnInfallibleTransportParty(absl::string_view name,
+                                     Factory&& factory) {
+    SpawnInfallible(general_party_, name, std::forward<Factory>(factory));
+  }
 
   // Spawns a promise on the transport party. If the promise returns a non-ok
   // status, it is handled by closing the transport with the corresponding
   // status.
   template <typename Factory>
-  void SpawnGuardedTransportParty(absl::string_view name, Factory&& factory);
+  void SpawnGuardedTransportParty(absl::string_view name, Factory&& factory) {
+    general_party_->Spawn(
+        name, std::forward<Factory>(factory),
+        [self = RefAsSubclass<Http2ClientTransport>()](absl::Status status) {
+          if (!status.ok()) {
+            GRPC_UNUSED absl::Status error = self->HandleError(
+                /*stream_id=*/std::nullopt, ToHttpOkOrConnError(status));
+          }
+        });
+  }
 
   template <typename Factory, typename OnDone>
   void SpawnWithOnDoneTransportParty(absl::string_view name, Factory&& factory,
-                                     OnDone&& on_done);
+                                     OnDone&& on_done) {
+    general_party_->Spawn(name, std::forward<Factory>(factory),
+                          std::forward<OnDone>(on_done));
+  }
 
   ConnectivityStateTracker state_tracker_ ABSL_GUARDED_BY(transport_mutex_){
       "http2_client", GRPC_CHANNEL_READY};
@@ -371,7 +404,7 @@ class Http2ClientTransport final : public ClientTransport,
   std::optional<RefCountedPtr<Stream>> MakeStream(CallHandler call_handler);
 
   // This function MUST be idempotent.
-  void CloseStream(RefCountedPtr<Stream> stream, CloseStreamArgs args,
+  void CloseStream(Stream& stream, CloseStreamArgs args,
                    DebugLocation whence = {});
 
   void BeginCloseStream(RefCountedPtr<Stream> stream,
@@ -381,8 +414,35 @@ class Http2ClientTransport final : public ClientTransport,
 
   RefCountedPtr<Stream> LookupStream(uint32_t stream_id);
 
-  auto EndpointReadSlice(const size_t num_bytes);
-  auto EndpointRead(const size_t num_bytes);
+  // Callers MUST ensure that the transport is not destroyed till the promise is
+  // resolved or cancelled.
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto EndpointReadSlice(
+      const size_t num_bytes) {
+    return Map(endpoint_.ReadSlice(num_bytes),
+               [this, num_bytes](absl::StatusOr<Slice> status) {
+                 OnEndpointRead(status.ok(), num_bytes);
+                 return status;
+               });
+  }
+
+  // Callers MUST ensure that the transport is not destroyed till the promise is
+  // resolved or cancelled.
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto EndpointRead(
+      const size_t num_bytes) {
+    return Map(endpoint_.Read(num_bytes),
+               [this, num_bytes](absl::StatusOr<SliceBuffer> status) {
+                 OnEndpointRead(status.ok(), num_bytes);
+                 return status;
+               });
+  }
+
+  void OnEndpointRead(const bool is_ok, const size_t num_bytes) {
+    if (is_ok) {
+      keepalive_manager_->GotData();
+      ztrace_collector_->Append(PromiseEndpointReadTrace{num_bytes});
+    }
+  }
+
   auto EndpointWrite(SliceBuffer&& output_buf);
 
   // HTTP2 Settings
@@ -408,11 +468,15 @@ class Http2ClientTransport final : public ClientTransport,
                            Http2Status status, DebugLocation whence = {});
 
   bool should_reset_ping_clock_;
-  bool is_first_write_;
   IncomingMetadataTracker incoming_headers_;
-  WriteContext write_context_;
 
-  auto SerializeAndWrite(std::vector<Http2Frame>&& frames);
+  // Transport wide write context. This is used to track the state of the
+  // transport during write cycles.
+  TransportWriteContext transport_write_context_;
+
+  // Serialize and write the frames in the write cycle to the endpoint.
+  auto SerializeAndWrite();
+
   // Tracks the max allowed stream id. Currently this is only set on receiving a
   // graceful GOAWAY frame.
   uint32_t max_allowed_stream_id_ = RFC9113::kMaxStreamId31Bit;
@@ -431,6 +495,7 @@ class Http2ClientTransport final : public ClientTransport,
   bool test_only_ack_pings_;
   std::optional<PingManager> ping_manager_;
   std::optional<KeepaliveManager> keepalive_manager_;
+
   void MaybeSpawnPingTimeout(std::optional<uint64_t> opaque_data);
   void MaybeSpawnDelayedPing(std::optional<Duration> delayed_ping_wait);
   void MaybeSpawnKeepaliveLoop();
@@ -441,9 +506,10 @@ class Http2ClientTransport final : public ClientTransport,
   auto SendPing(absl::AnyInvocable<void()> on_initiate, bool important) {
     return ping_manager_->RequestPing(std::move(on_initiate), important);
   }
+
   auto WaitForPingAck() { return ping_manager_->WaitForPingAck(); }
 
-  void MaybeGetWindowUpdateFrames(SliceBuffer& output_buf);
+  void MaybeGetWindowUpdateFrames(FrameSender& frame_sender);
 
   void ReportDisconnection(const absl::Status& status,
                            StateWatcher::DisconnectInfo disconnect_info,
@@ -475,8 +541,9 @@ class Http2ClientTransport final : public ClientTransport,
           result);
 
   bool SetOnDone(CallHandler call_handler, RefCountedPtr<Stream> stream);
-  absl::StatusOr<std::vector<Http2Frame>> DequeueStreamFrames(
-      RefCountedPtr<Stream> stream, WriteContext::WriteQuota& write_quota);
+
+  absl::Status DequeueStreamFrames(RefCountedPtr<Stream> stream,
+                                   WriteCycle& write_cycle);
 
   /// Based on channel args, preferred_rx_crypto_frame_sizes are advertised to
   /// the peer
@@ -490,12 +557,15 @@ class Http2ClientTransport final : public ClientTransport,
   Waker periodic_updates_waker_;
 
   Http2ReadContext reader_state_;
+
   Http2Status ParseAndDiscardHeaders(SliceBuffer&& buffer, bool is_end_headers,
-                                     RefCountedPtr<Stream> stream,
+                                     Stream* stream,
                                      Http2Status&& original_status,
                                      DebugLocation whence = {});
+
   void ReadChannelArgs(const ChannelArgs& channel_args,
                        TransportChannelArgs& args);
+
   auto SecurityFrameLoop();
 
   //////////////////////////////////////////////////////////////////////////////

@@ -370,6 +370,7 @@ libs:
   - src/core/ext/transport/chttp2/transport/transport_common.h
   - src/core/ext/transport/chttp2/transport/varint.h
   - src/core/ext/transport/chttp2/transport/writable_streams.h
+  - src/core/ext/transport/chttp2/transport/write_cycle.h
   - src/core/ext/transport/chttp2/transport/write_size_policy.h
   - src/core/ext/transport/inproc/inproc_transport.h
   - src/core/ext/transport/inproc/legacy_inproc_transport.h
@@ -1524,6 +1525,7 @@ libs:
   - src/core/ext/transport/chttp2/transport/stream_lists.cc
   - src/core/ext/transport/chttp2/transport/transport_common.cc
   - src/core/ext/transport/chttp2/transport/varint.cc
+  - src/core/ext/transport/chttp2/transport/write_cycle.cc
   - src/core/ext/transport/chttp2/transport/write_size_policy.cc
   - src/core/ext/transport/chttp2/transport/writing.cc
   - src/core/ext/transport/inproc/inproc_transport.cc
@@ -1881,7 +1883,6 @@ libs:
   - src/core/handshaker/http_connect/http_proxy_mapper.cc
   - src/core/handshaker/http_connect/xds_http_proxy_mapper.cc
   - src/core/handshaker/proxy_mapper_registry.cc
-  - src/core/handshaker/security/legacy_secure_endpoint.cc
   - src/core/handshaker/security/pipelined_secure_endpoint.cc
   - src/core/handshaker/security/secure_endpoint.cc
   - src/core/handshaker/security/security_handshaker.cc
@@ -2569,6 +2570,7 @@ libs:
   - src/core/ext/transport/chttp2/transport/transport_common.h
   - src/core/ext/transport/chttp2/transport/varint.h
   - src/core/ext/transport/chttp2/transport/writable_streams.h
+  - src/core/ext/transport/chttp2/transport/write_cycle.h
   - src/core/ext/transport/chttp2/transport/write_size_policy.h
   - src/core/ext/transport/inproc/inproc_transport.h
   - src/core/ext/transport/inproc/legacy_inproc_transport.h
@@ -3118,6 +3120,7 @@ libs:
   - src/core/ext/transport/chttp2/transport/stream_lists.cc
   - src/core/ext/transport/chttp2/transport/transport_common.cc
   - src/core/ext/transport/chttp2/transport/varint.cc
+  - src/core/ext/transport/chttp2/transport/write_cycle.cc
   - src/core/ext/transport/chttp2/transport/write_size_policy.cc
   - src/core/ext/transport/chttp2/transport/writing.cc
   - src/core/ext/transport/inproc/inproc_transport.cc
@@ -3162,7 +3165,6 @@ libs:
   - src/core/handshaker/http_connect/http_connect_client_handshaker.cc
   - src/core/handshaker/http_connect/http_proxy_mapper.cc
   - src/core/handshaker/proxy_mapper_registry.cc
-  - src/core/handshaker/security/legacy_secure_endpoint.cc
   - src/core/handshaker/security/pipelined_secure_endpoint.cc
   - src/core/handshaker/security/secure_endpoint.cc
   - src/core/handshaker/security/security_handshaker.cc
@@ -5094,7 +5096,6 @@ libs:
   - src/core/handshaker/handshaker.cc
   - src/core/handshaker/handshaker_registry.cc
   - src/core/handshaker/proxy_mapper_registry.cc
-  - src/core/handshaker/security/legacy_secure_endpoint.cc
   - src/core/handshaker/security/pipelined_secure_endpoint.cc
   - src/core/handshaker/security/secure_endpoint.cc
   - src/core/handshaker/security/security_handshaker.cc
@@ -27087,10 +27088,8 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers:
-  - src/core/ext/transport/chttp2/transport/write_cycle.h
+  headers: []
   src:
-  - src/core/ext/transport/chttp2/transport/write_cycle.cc
   - test/core/transport/chttp2/write_cycle_test.cc
   deps:
   - gtest
@@ -28236,6 +28235,7 @@ targets:
   - third_party/cel-spec/proto/cel/expr/syntax.proto
   - third_party/envoy-api/envoy/annotations/deprecation.proto
   - third_party/envoy-api/envoy/annotations/resource.proto
+  - third_party/envoy-api/envoy/config/common/mutation_rules/v3/mutation_rules.proto
   - third_party/envoy-api/envoy/config/core/v3/address.proto
   - third_party/envoy-api/envoy/config/core/v3/backoff.proto
   - third_party/envoy-api/envoy/config/core/v3/base.proto

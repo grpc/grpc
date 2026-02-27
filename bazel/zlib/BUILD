@@ -1,4 +1,4 @@
-# Copyright 2015 gRPC authors.
+# Copyright 2026 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -11,19 +11,8 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-#
-# Needed to enable Windows RBE tests with bzlmod. The genrule() directive
-# seems to use a relative path that's not available on windows test machines.
-# Adding `local = true` force generating header files from local.
-diff --git a/BUILD.bazel b/BUILD.bazel
-index 8fdcf44..56dda01 100644
---- a/BUILD.bazel
-+++ b/BUILD.bazel
-@@ -78,6 +78,7 @@ genrule(
-         ["@copy /Y \"$(location %s)\" \"$(@D)\\zlib\\include\\\"  >NUL" %
-          s for s in _ZLIB_HEADERS],
-     ),
-+    local = True,
- )
- 
- config_setting(
+
+exports_files([
+    "add_custom_build_file.patch",
+    "add_module_dot_bazel.patch",
+])

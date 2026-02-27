@@ -40,7 +40,7 @@ PROJECT_NAME           = "GRPC Core"
 # could be handy for archiving the generated documentation or if some version
 # control system is used.
 
-PROJECT_NUMBER         = 52.0.0
+PROJECT_NUMBER         = 53.0.0
 
 # Using the PROJECT_BRIEF tag one can provide an optional one line description
 # for a project that appears at the top of each page and should give viewer a
@@ -1269,6 +1269,8 @@ src/core/ext/transport/chttp2/transport/transport_common.h \
 src/core/ext/transport/chttp2/transport/varint.cc \
 src/core/ext/transport/chttp2/transport/varint.h \
 src/core/ext/transport/chttp2/transport/writable_streams.h \
+src/core/ext/transport/chttp2/transport/write_cycle.cc \
+src/core/ext/transport/chttp2/transport/write_cycle.h \
 src/core/ext/transport/chttp2/transport/write_size_policy.cc \
 src/core/ext/transport/chttp2/transport/write_size_policy.h \
 src/core/ext/transport/chttp2/transport/writing.cc \
@@ -2169,7 +2171,6 @@ src/core/handshaker/proxy_mapper.h \
 src/core/handshaker/proxy_mapper_registry.cc \
 src/core/handshaker/proxy_mapper_registry.h \
 src/core/handshaker/security/GEMINI.md \
-src/core/handshaker/security/legacy_secure_endpoint.cc \
 src/core/handshaker/security/pipelined_secure_endpoint.cc \
 src/core/handshaker/security/secure_endpoint.cc \
 src/core/handshaker/security/secure_endpoint.h \

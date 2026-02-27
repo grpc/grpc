@@ -455,6 +455,8 @@
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/varint.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/varint.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/writable_streams.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/write_cycle.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/write_cycle.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/write_size_policy.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/write_size_policy.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/writing.cc" role="src" />
@@ -1349,7 +1351,6 @@
     <file baseinstalldir="/" name="src/core/handshaker/proxy_mapper.h" role="src" />
     <file baseinstalldir="/" name="src/core/handshaker/proxy_mapper_registry.cc" role="src" />
     <file baseinstalldir="/" name="src/core/handshaker/proxy_mapper_registry.h" role="src" />
-    <file baseinstalldir="/" name="src/core/handshaker/security/legacy_secure_endpoint.cc" role="src" />
     <file baseinstalldir="/" name="src/core/handshaker/security/pipelined_secure_endpoint.cc" role="src" />
     <file baseinstalldir="/" name="src/core/handshaker/security/secure_endpoint.cc" role="src" />
     <file baseinstalldir="/" name="src/core/handshaker/security/secure_endpoint.h" role="src" />

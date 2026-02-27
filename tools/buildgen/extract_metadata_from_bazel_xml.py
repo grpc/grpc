@@ -30,10 +30,8 @@
 # format entirely or simplify it to a point where it becomes self-explanatory
 # and doesn't need any detailed documentation.
 
-import base64
 import collections
 import os
-import re
 import subprocess
 from typing import Any, Dict, Iterable, List, Optional
 import xml.etree.ElementTree as ET
@@ -76,6 +74,31 @@ class ExternalProtoLibrary:
         self.hash = ""
         self.strip_prefix = ""
 
+
+# Mapping from canonical repo name to apparent repo name.
+# See https://bazel.build/external/overview#canonical-repo-name
+CANONICAL_TO_APPARENT_NAME_MAPPING = {
+    "@@cel-spec+": "@dev_cel",
+    "@@googleapis+": "@com_google_googleapis",
+    "@@xds+": "@com_github_cncf_xds",
+    "@@protoc-gen-validate+": "@com_envoyproxy_protoc_gen_validate",
+    "@@opencensus-proto+": "opencensus_proto",
+    "@@envoy_api+": "@envoy_api",
+}
+APPARENT_TO_CANONICAL_NAME_MAPPING = {
+    v: k for k, v in CANONICAL_TO_APPARENT_NAME_MAPPING.items()
+}
+
+# Mapping from apparent repo name to in-tree file location.
+EXTERNAL_LINKS = {
+    "@com_google_protobuf//": "src/",
+    "@com_google_googleapis//": "",
+    "@com_github_cncf_xds//": "",
+    "@com_envoyproxy_protoc_gen_validate//": "",
+    "@dev_cel//": "proto/",
+    "@envoy_api//": "",
+    "@opencensus_proto//": "",
+}
 
 EXTERNAL_PROTO_LIBRARIES = {
     "envoy_api": ExternalProtoLibrary(
@@ -120,26 +143,32 @@ EXTERNAL_SOURCE_PREFIXES = {
 }
 
 
-# TODO(weizheyuan): Maybe use a mature library for SRI
-# parsing so we can support other digest algorithms.
-# Supporting only sha256 is fine for now because our
-# cmake counterpart download_archive() doesn't support
-# other algorithms anyway.
-def _integrity_to_sha256(integrity: str) -> str:
-    """Convert a SRI to sha256 checksum hex string"""
-    matches = re.match("sha256-(.*)", integrity)
-    if matches is None:
-        return None
-    sha256_base64 = matches.group(1)
-    sha256_bytes = base64.b64decode(sha256_base64)
-    return sha256_bytes.hex()
-
-
-def _bazel_query_xml_tree(query: str) -> ET.Element:
+# TODO(weizheyuan): Remove `use_bzlmod` argument once migration is finished.
+def _bazel_query_xml_tree(query: str, use_bzlmod: bool) -> ET.Element:
     """Get xml output of bazel query invocation, parsed as XML tree"""
-    output = subprocess.check_output(
-        ["tools/bazel", "query", "--noimplicit_deps", "--output", "xml", query]
-    )
+    if use_bzlmod:
+        args = [
+            "tools/bazel",
+            "query",
+            "--enable_bzlmod",
+            "--noenable_workspace",
+            "--noimplicit_deps",
+            "--output",
+            "xml",
+            query,
+        ]
+    else:
+        args = [
+            "tools/bazel",
+            "query",
+            "--noenable_bzlmod",
+            "--enable_workspace",
+            "--noimplicit_deps",
+            "--output",
+            "xml",
+            query,
+        ]
+    output = subprocess.check_output(args)
     return ET.fromstring(output)
 
 
@@ -262,11 +291,24 @@ def _try_extract_source_file_path(label: str) -> str:
         # to check repo name, since the label/path mapping is not
         # available in BUILD files.
         for lib_name, external_proto_lib in EXTERNAL_PROTO_LIBRARIES.items():
-            if label.startswith("@" + lib_name + "//"):
+            apparent_repo_maybe = "@" + lib_name + "//"
+            if label.startswith(apparent_repo_maybe):
                 return label.replace(
-                    "@%s//" % lib_name,
+                    apparent_repo_maybe,
                     external_proto_lib.proto_prefix,
                 ).replace(":", "/")
+            else:
+                canonical_repo_maybe = APPARENT_TO_CANONICAL_NAME_MAPPING.get(
+                    "@" + lib_name
+                )
+                if canonical_repo_maybe is None:
+                    continue
+                canonical_repo_maybe = canonical_repo_maybe + "//"
+                if label.startswith(canonical_repo_maybe):
+                    return label.replace(
+                        canonical_repo_maybe,
+                        external_proto_lib.proto_prefix,
+                    ).replace(":", "/")
 
         # No external library match found
         return None
@@ -388,7 +430,11 @@ def _external_dep_name_from_bazel_dependency(bazel_dep: str) -> Optional[str]:
         or bazel_dep == "@com_google_protobuf//:protobuf_headers"
     ):
         return "protobuf"
-    elif bazel_dep == "@com_google_protobuf//:protoc_lib":
+    elif (
+        bazel_dep == "@com_google_protobuf//:protoc_lib"
+        or bazel_dep
+        == "@com_google_protobuf//src/google/protobuf/compiler:code_generator"
+    ):
         return "protoc"
     elif bazel_dep == "@io_opentelemetry_cpp//api:api":
         return "opentelemetry-cpp::api"
@@ -621,20 +667,26 @@ def _get_transitive_protos(bazel_rules, t):
     return list(set(ret))
 
 
+def _prefix_to_strip(proto_src):
+    apparent_repo = None
+    for canonical_repo in CANONICAL_TO_APPARENT_NAME_MAPPING:
+        if proto_src.startswith(canonical_repo):
+            apparent_repo = (
+                CANONICAL_TO_APPARENT_NAME_MAPPING[canonical_repo] + "//"
+            )
+            return canonical_repo + "//" + EXTERNAL_LINKS[apparent_repo]
+    for repo in EXTERNAL_LINKS:
+        if proto_src.startswith(repo):
+            return repo + EXTERNAL_LINKS[repo]
+    if apparent_repo is None:
+        return None
+
+
 def _expand_upb_proto_library_rules(bazel_rules):
     # Expand the .proto files from UPB proto library rules into the pre-generated
     # upb files.
     GEN_UPB_ROOT = "//:src/core/ext/upb-gen/"
     GEN_UPBDEFS_ROOT = "//:src/core/ext/upbdefs-gen/"
-    EXTERNAL_LINKS = [
-        ("@com_google_protobuf//", "src/"),
-        ("@com_google_googleapis//", ""),
-        ("@com_github_cncf_xds//", ""),
-        ("@com_envoyproxy_protoc_gen_validate//", ""),
-        ("@dev_cel//", "proto/"),
-        ("@envoy_api//", ""),
-        ("@opencensus_proto//", ""),
-    ]
     for name, bazel_rule in bazel_rules.items():
         gen_func = bazel_rule.get("generator_function", None)
         if gen_func in (
@@ -666,20 +718,22 @@ def _expand_upb_proto_library_rules(bazel_rules):
             srcs = []
             hdrs = []
             for proto_src in protos:
-                for external_link in EXTERNAL_LINKS:
-                    if proto_src.startswith(external_link[0]):
-                        prefix_to_strip = external_link[0] + external_link[1]
-                        if not proto_src.startswith(prefix_to_strip):
-                            raise Exception(
-                                'Source file "{0}" in upb rule {1} does not'
-                                ' have the expected prefix "{2}"'.format(
-                                    proto_src, name, prefix_to_strip
-                                )
+                prefix_to_strip = _prefix_to_strip(proto_src)
+                if prefix_to_strip is not None:
+                    if not proto_src.startswith(prefix_to_strip):
+                        raise Exception(
+                            'Source file "{0}" in upb rule {1} does not'
+                            ' have the expected prefix "{2}"'.format(
+                                proto_src, name, prefix_to_strip
                             )
-                        proto_src = proto_src[len(prefix_to_strip) :]
-                        break
+                        )
+                    proto_src = proto_src[len(prefix_to_strip) :]
                 if proto_src.startswith("@"):
-                    raise Exception('"{0}" is unknown workspace.'.format(name))
+                    raise Exception(
+                        '"{0}" is unknown workspace. proto_src={1}'.format(
+                            name, proto_src
+                        )
+                    )
                 proto_src_file = _try_extract_source_file_path(proto_src)
                 if not proto_src_file:
                     raise Exception(
@@ -1083,10 +1137,6 @@ def _parse_http_archives(xml_tree: ET.Element) -> "List[ExternalProtoLibrary]":
                 http_archive["urls"] = [xml_node.attrib["value"]]
             if xml_node.attrib["name"] == "sha256":
                 http_archive["hash"] = xml_node.attrib["value"]
-            if xml_node.attrib["name"] == "integrity":
-                http_archive["hash"] = _integrity_to_sha256(
-                    xml_node.attrib["value"]
-                )
             if xml_node.attrib["name"] == "strip_prefix":
                 http_archive["strip_prefix"] = xml_node.attrib["value"]
         if http_archive["name"] not in EXTERNAL_PROTO_LIBRARIES:
@@ -1103,9 +1153,17 @@ def _parse_http_archives(xml_tree: ET.Element) -> "List[ExternalProtoLibrary]":
 
 def _generate_external_proto_libraries() -> List[Dict[str, Any]]:
     """Generates the build metadata for external proto libraries"""
-    xml_tree = _bazel_query_xml_tree("kind(http_archive, //external:*)")
+    # TODO(weizheyuan): Find a new approach to extract http_archive() metadata.
+    #
+    # `//external:*` is a pseudo target which is not available in bzlmod.
+    # The closest we can do in bazel 8 is `bazel mod show_repo`. Disable bzlmod
+    # for this specific command until we find a better solution.
+    xml_tree = _bazel_query_xml_tree(
+        "kind(http_archive, //external:*)", use_bzlmod=False
+    )
     libraries = _parse_http_archives(xml_tree)
     libraries.sort(key=lambda x: x.destination)
+
     return list(map(lambda x: x.__dict__, libraries))
 
 
@@ -1430,13 +1488,16 @@ _BAZEL_DEPS_QUERIES = [
 bazel_rules = {}
 for query in _BAZEL_DEPS_QUERIES:
     bazel_rules.update(
-        _extract_rules_from_bazel_xml(_bazel_query_xml_tree(query))
+        _extract_rules_from_bazel_xml(
+            _bazel_query_xml_tree(query, use_bzlmod=True)
+        )
     )
 
 # Step 1.5: The sources for UPB protos are pre-generated, so we want
 # to expand the UPB proto library bazel rules into the generated
 # .upb.h and .upb.c files.
 _expand_upb_proto_library_rules(bazel_rules)
+
 
 # Step 1.6: Add explicit protobuf dependency to grpc_proto_library rules
 _patch_grpc_proto_library_rules(bazel_rules)
@@ -1583,5 +1644,6 @@ _detect_and_print_issues(build_yaml_like)
 build_yaml_string = build_cleaner.cleaned_build_yaml_dict_as_string(
     build_yaml_like
 )
+
 with open("build_autogenerated.yaml", "w") as file:
     file.write(build_yaml_string)

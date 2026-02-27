@@ -807,9 +807,10 @@ class SecureEndpoint final : public EventEngine::Endpoint {
       if (frame_protector_.MaybeCompleteReadImmediately()) {
         return MaybeFinishReadImmediately();
       }
-      if (frame_protector_.IsZeroCopyProtector()) {
-        args.set_read_hint_bytes(frame_protector_.min_progress_size());
-      }
+      // min_progress_size is always 1 for non-zero copy frame protectors. This
+      // effectively disables read coalescing, but this is necessary since it
+      // is not trivial to determine the encrypted payload size in advance.
+      args.set_read_hint_bytes(frame_protector_.min_progress_size());
       bool read_completed_immediately = wrapped_ep_->Read(
           [impl = Ref()](absl::Status status) mutable {
             grpc_core::ExecCtx exec_ctx;
@@ -1083,11 +1084,6 @@ grpc_core::OrphanablePtr<grpc_endpoint> grpc_secure_endpoint_create(
     grpc_core::OrphanablePtr<grpc_endpoint> to_wrap,
     grpc_slice* leftover_slices, size_t leftover_nslices,
     const grpc_core::ChannelArgs& channel_args) {
-  if (!grpc_core::IsEventEngineSecureEndpointEnabled()) {
-    return grpc_legacy_secure_endpoint_create(
-        protector, zero_copy_protector, std::move(to_wrap), leftover_slices,
-        channel_args.ToC().get(), leftover_nslices);
-  }
   if (grpc_event_engine::experimental::grpc_get_wrapped_event_engine_endpoint(
           to_wrap.get()) != nullptr) {
     std::unique_ptr<grpc_event_engine::experimental::EventEngine::Endpoint>
