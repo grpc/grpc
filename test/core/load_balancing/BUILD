@@ -464,6 +464,7 @@ grpc_cc_test(
         "//test/core/event_engine:event_engine_test_utils",
         "//test/core/test_util:fake_stats_plugin",
         "//test/core/test_util:grpc_test_util",
+        "//test/core/test_util:scoped_env_var",
     ],
 )
 
