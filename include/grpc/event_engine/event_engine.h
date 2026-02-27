@@ -20,6 +20,7 @@
 #include <grpc/event_engine/memory_allocator.h>
 #include <grpc/event_engine/port.h>
 #include <grpc/event_engine/slice_buffer.h>
+#include <grpc/grpc.h>
 #include <grpc/support/port_platform.h>
 
 #include <bitset>
@@ -158,7 +159,7 @@ class EventEngine : public std::enable_shared_from_this<EventEngine>,
   /// * sockaddr_in6
   class ResolvedAddress {
    public:
-    static constexpr socklen_t MAX_SIZE_BYTES = 128;
+    static constexpr socklen_t MAX_SIZE_BYTES = GRPC_MAX_SOCKADDR_SIZE;
 
     ResolvedAddress(const sockaddr* address, socklen_t size);
     ResolvedAddress() = default;
@@ -732,6 +733,10 @@ template <typename Sink>
 void AbslStringify(Sink& out, const EventEngine::TaskHandle& handle) {
   out.Append(detail::FormatHandleString(handle.keys[0], handle.keys[1]));
 }
+
+/** Fetch a vtable for a grpc_channel_arg that points to a grpc_event_engine
+ */
+const grpc_arg_pointer_vtable* grpc_event_engine_arg_vtable(void);
 
 }  // namespace experimental
 }  // namespace grpc_event_engine

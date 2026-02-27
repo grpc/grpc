@@ -26,8 +26,8 @@ cmake_minimum_required(VERSION 3.16)
 
 set(PACKAGE_NAME          "grpc")
 set(PACKAGE_VERSION       "1.79.0-dev")
-set(gRPC_CORE_VERSION     "52.0.0")
-set(gRPC_CORE_SOVERSION   "52")
+set(gRPC_CORE_VERSION     "53.0.0")
+set(gRPC_CORE_SOVERSION   "53")
 set(gRPC_CPP_VERSION      "1.79.0-dev")
 set(gRPC_CPP_SOVERSION    "1.79")
 set(PACKAGE_STRING        "${PACKAGE_NAME} ${PACKAGE_VERSION}")
@@ -406,35 +406,17 @@ if(gRPC_BUILD_GRPCPP_OTEL_PLUGIN)
   include(cmake/opentelemetry-cpp.cmake)
 endif()
 
-# Setup external proto library at third_party/cel-spec with 2 download URLs
+# Setup external proto library at third_party/cel-spec if it doesn't exist
 if (NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/third_party/cel-spec AND gRPC_DOWNLOAD_ARCHIVES)
   # Download the archive via HTTP, validate the checksum, and extract to third_party/cel-spec.
   download_archive(
     ${CMAKE_CURRENT_SOURCE_DIR}/third_party/cel-spec
-    https://storage.googleapis.com/grpc-bazel-mirror/github.com/google/cel-spec/archive/9f069b3ee58b02d6f6736c5ebd6587075c1a1b22.tar.gz
-    d6cb6b4ed272500d16546c672a65a7452b241462a200dda3f62a7de413883344
-    cel-spec-9f069b3ee58b02d6f6736c5ebd6587075c1a1b22
+    https://github.com/google/cel-spec/archive/refs/tags/v0.25.1.tar.gz
+    13583c5a312861648449845b709722676a3c9b43396b6b8e9cbe4538feb74ad2
+    cel-spec-0.25.1
   )
 endif()
-if (NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/third_party/cel-spec AND gRPC_DOWNLOAD_ARCHIVES)
-  # Download the archive via HTTP, validate the checksum, and extract to third_party/cel-spec.
-  download_archive(
-    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/cel-spec
-    https://github.com/google/cel-spec/archive/9f069b3ee58b02d6f6736c5ebd6587075c1a1b22.tar.gz
-    d6cb6b4ed272500d16546c672a65a7452b241462a200dda3f62a7de413883344
-    cel-spec-9f069b3ee58b02d6f6736c5ebd6587075c1a1b22
-  )
-endif()
-# Setup external proto library at third_party/envoy-api with 2 download URLs
-if (NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/third_party/envoy-api AND gRPC_DOWNLOAD_ARCHIVES)
-  # Download the archive via HTTP, validate the checksum, and extract to third_party/envoy-api.
-  download_archive(
-    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/envoy-api
-    https://storage.googleapis.com/grpc-bazel-mirror/github.com/envoyproxy/data-plane-api/archive/6ef568cf4a67362849911d1d2a546fd9f35db2ff.tar.gz
-    ed5e6c319f8ebcdf24a9491f866a599bb9a3c193b859a94ad13bd31f85b46855
-    data-plane-api-6ef568cf4a67362849911d1d2a546fd9f35db2ff
-  )
-endif()
+# Setup external proto library at third_party/envoy-api if it doesn't exist
 if (NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/third_party/envoy-api AND gRPC_DOWNLOAD_ARCHIVES)
   # Download the archive via HTTP, validate the checksum, and extract to third_party/envoy-api.
   download_archive(
@@ -444,73 +426,27 @@ if (NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/third_party/envoy-api AND gRPC_DOWNLO
     data-plane-api-6ef568cf4a67362849911d1d2a546fd9f35db2ff
   )
 endif()
-# Setup external proto library at third_party/googleapis with 2 download URLs
+# Setup external proto library at third_party/googleapis if it doesn't exist
 if (NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/third_party/googleapis AND gRPC_DOWNLOAD_ARCHIVES)
   # Download the archive via HTTP, validate the checksum, and extract to third_party/googleapis.
   download_archive(
     ${CMAKE_CURRENT_SOURCE_DIR}/third_party/googleapis
-    https://storage.googleapis.com/grpc-bazel-mirror/github.com/googleapis/googleapis/archive/2193a2bfcecb92b92aad7a4d81baa428cafd7dfd.tar.gz
-    3de3a199400eea7a766091aeb96c4b84c86266ad1f933f9933bbb7c359e727fe
+    https://github.com/googleapis/googleapis/archive/2193a2bfcecb92b92aad7a4d81baa428cafd7dfd.zip
+    07a6f700cee5ca796f5230876ed8454bf1d8cc409b3b3e634505bc4f32a9f72b
     googleapis-2193a2bfcecb92b92aad7a4d81baa428cafd7dfd
   )
 endif()
-if (NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/third_party/googleapis AND gRPC_DOWNLOAD_ARCHIVES)
-  # Download the archive via HTTP, validate the checksum, and extract to third_party/googleapis.
-  download_archive(
-    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/googleapis
-    https://github.com/googleapis/googleapis/archive/2193a2bfcecb92b92aad7a4d81baa428cafd7dfd.tar.gz
-    3de3a199400eea7a766091aeb96c4b84c86266ad1f933f9933bbb7c359e727fe
-    googleapis-2193a2bfcecb92b92aad7a4d81baa428cafd7dfd
-  )
-endif()
-# Setup external proto library at third_party/opencensus-proto/src with 2 download URLs
-if (NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/third_party/opencensus-proto/src AND gRPC_DOWNLOAD_ARCHIVES)
-  # Download the archive via HTTP, validate the checksum, and extract to third_party/opencensus-proto/src.
-  download_archive(
-    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/opencensus-proto/src
-    https://storage.googleapis.com/grpc-bazel-mirror/github.com/census-instrumentation/opencensus-proto/archive/v0.3.0.tar.gz
-    b7e13f0b4259e80c3070b583c2f39e53153085a6918718b1c710caf7037572b0
-    opencensus-proto-0.3.0/src
-  )
-endif()
-if (NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/third_party/opencensus-proto/src AND gRPC_DOWNLOAD_ARCHIVES)
-  # Download the archive via HTTP, validate the checksum, and extract to third_party/opencensus-proto/src.
-  download_archive(
-    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/opencensus-proto/src
-    https://github.com/census-instrumentation/opencensus-proto/archive/v0.3.0.tar.gz
-    b7e13f0b4259e80c3070b583c2f39e53153085a6918718b1c710caf7037572b0
-    opencensus-proto-0.3.0/src
-  )
-endif()
-# Setup external proto library at third_party/protoc-gen-validate with 2 download URLs
+# Setup external proto library at third_party/protoc-gen-validate if it doesn't exist
 if (NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/third_party/protoc-gen-validate AND gRPC_DOWNLOAD_ARCHIVES)
   # Download the archive via HTTP, validate the checksum, and extract to third_party/protoc-gen-validate.
   download_archive(
     ${CMAKE_CURRENT_SOURCE_DIR}/third_party/protoc-gen-validate
-    https://storage.googleapis.com/grpc-bazel-mirror/github.com/bufbuild/protoc-gen-validate/archive/refs/tags/v1.2.1.zip
-    ab51e978326b87e06be7a12fc6496f3ff6586339043557dbbd31f622332a5d45
+    https://github.com/bufbuild/protoc-gen-validate/archive/refs/tags/v1.2.1.tar.gz
+    e4718352754df1393b8792b631338aa8562f390e8160783e365454bc11d96328
     protoc-gen-validate-1.2.1
   )
 endif()
-if (NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/third_party/protoc-gen-validate AND gRPC_DOWNLOAD_ARCHIVES)
-  # Download the archive via HTTP, validate the checksum, and extract to third_party/protoc-gen-validate.
-  download_archive(
-    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/protoc-gen-validate
-    https://github.com/bufbuild/protoc-gen-validate/archive/refs/tags/v1.2.1.zip
-    ab51e978326b87e06be7a12fc6496f3ff6586339043557dbbd31f622332a5d45
-    protoc-gen-validate-1.2.1
-  )
-endif()
-# Setup external proto library at third_party/xds with 2 download URLs
-if (NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/third_party/xds AND gRPC_DOWNLOAD_ARCHIVES)
-  # Download the archive via HTTP, validate the checksum, and extract to third_party/xds.
-  download_archive(
-    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/xds
-    https://storage.googleapis.com/grpc-bazel-mirror/github.com/cncf/xds/archive/ee656c7534f5d7dc23d44dd611689568f72017a6.tar.gz
-    49535f3c3370004309da50194c09bbfc528d4702424dd46e7d56a278a3dfc15d
-    xds-ee656c7534f5d7dc23d44dd611689568f72017a6
-  )
-endif()
+# Setup external proto library at third_party/xds if it doesn't exist
 if (NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/third_party/xds AND gRPC_DOWNLOAD_ARCHIVES)
   # Download the archive via HTTP, validate the checksum, and extract to third_party/xds.
   download_archive(
@@ -1852,6 +1788,7 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx status_conversion_test)
   add_dependencies(buildtests_cxx status_flag_test)
   add_dependencies(buildtests_cxx status_helper_test)
+  add_dependencies(buildtests_cxx status_test)
   add_dependencies(buildtests_cxx status_util_test)
   add_dependencies(buildtests_cxx stream_data_queue_test)
   add_dependencies(buildtests_cxx stream_leak_with_queued_flow_control_update_test)
@@ -2427,6 +2364,7 @@ add_library(grpc
   src/core/ext/transport/chttp2/transport/stream_lists.cc
   src/core/ext/transport/chttp2/transport/transport_common.cc
   src/core/ext/transport/chttp2/transport/varint.cc
+  src/core/ext/transport/chttp2/transport/write_cycle.cc
   src/core/ext/transport/chttp2/transport/write_size_policy.cc
   src/core/ext/transport/chttp2/transport/writing.cc
   src/core/ext/transport/inproc/inproc_transport.cc
@@ -2784,7 +2722,6 @@ add_library(grpc
   src/core/handshaker/http_connect/http_proxy_mapper.cc
   src/core/handshaker/http_connect/xds_http_proxy_mapper.cc
   src/core/handshaker/proxy_mapper_registry.cc
-  src/core/handshaker/security/legacy_secure_endpoint.cc
   src/core/handshaker/security/pipelined_secure_endpoint.cc
   src/core/handshaker/security/secure_endpoint.cc
   src/core/handshaker/security/security_handshaker.cc
@@ -3565,6 +3502,7 @@ add_library(grpc_unsecure
   src/core/ext/transport/chttp2/transport/stream_lists.cc
   src/core/ext/transport/chttp2/transport/transport_common.cc
   src/core/ext/transport/chttp2/transport/varint.cc
+  src/core/ext/transport/chttp2/transport/write_cycle.cc
   src/core/ext/transport/chttp2/transport/write_size_policy.cc
   src/core/ext/transport/chttp2/transport/writing.cc
   src/core/ext/transport/inproc/inproc_transport.cc
@@ -3609,7 +3547,6 @@ add_library(grpc_unsecure
   src/core/handshaker/http_connect/http_connect_client_handshaker.cc
   src/core/handshaker/http_connect/http_proxy_mapper.cc
   src/core/handshaker/proxy_mapper_registry.cc
-  src/core/handshaker/security/legacy_secure_endpoint.cc
   src/core/handshaker/security/pipelined_secure_endpoint.cc
   src/core/handshaker/security/secure_endpoint.cc
   src/core/handshaker/security/security_handshaker.cc
@@ -6004,7 +5941,6 @@ add_library(grpc_authorization_provider
   src/core/handshaker/handshaker.cc
   src/core/handshaker/handshaker_registry.cc
   src/core/handshaker/proxy_mapper_registry.cc
-  src/core/handshaker/security/legacy_secure_endpoint.cc
   src/core/handshaker/security/pipelined_secure_endpoint.cc
   src/core/handshaker/security/secure_endpoint.cc
   src/core/handshaker/security/security_handshaker.cc
@@ -7947,6 +7883,12 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(alts_frame_protector_test
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
+  test/core/event_engine/event_engine_test_utils.cc
+  test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/tsi/alts/crypt/gsec_test_util.cc
   test/core/tsi/alts/frame_protector/alts_frame_protector_test.cc
   test/core/tsi/transport_security_test_lib.cc
@@ -7983,6 +7925,7 @@ target_include_directories(alts_frame_protector_test
 target_link_libraries(alts_frame_protector_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
 )
 
@@ -13781,6 +13724,12 @@ if(gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
   add_executable(crl_ssl_transport_security_test
+    ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
+    test/core/event_engine/event_engine_test_utils.cc
+    test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
     test/core/tsi/crl_ssl_transport_security_test.cc
     test/core/tsi/transport_security_test_lib.cc
   )
@@ -13816,6 +13765,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(crl_ssl_transport_security_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
+    ${_gRPC_PROTOBUF_LIBRARIES}
     grpc_test_util
   )
 
@@ -17089,6 +17039,12 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(fake_transport_security_test
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
+  test/core/event_engine/event_engine_test_utils.cc
+  test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/tsi/fake_transport_security_test.cc
   test/core/tsi/transport_security_test_lib.cc
 )
@@ -17124,6 +17080,7 @@ target_include_directories(fake_transport_security_test
 target_link_libraries(fake_transport_security_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
 )
 
@@ -28330,6 +28287,12 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(private_key_offload_test
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
+  test/core/event_engine/event_engine_test_utils.cc
+  test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/tsi/private_key_offload_test.cc
   test/core/tsi/transport_security_test_lib.cc
 )
@@ -28365,6 +28328,7 @@ target_include_directories(private_key_offload_test
 target_link_libraries(private_key_offload_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
 )
 
@@ -32547,6 +32511,12 @@ if(gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
   add_executable(spiffe_ssl_transport_security_test
+    ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
+    test/core/event_engine/event_engine_test_utils.cc
+    test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
     test/core/tsi/spiffe_ssl_transport_security_test.cc
     test/core/tsi/transport_security_test_lib.cc
   )
@@ -32582,6 +32552,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(spiffe_ssl_transport_security_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
+    ${_gRPC_PROTOBUF_LIBRARIES}
     grpc_test_util
   )
 
@@ -32676,6 +32647,12 @@ if(gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
   add_executable(ssl_transport_security_test
+    ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
+    test/core/event_engine/event_engine_test_utils.cc
+    test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
     test/core/tsi/ssl_transport_security_test.cc
     test/core/tsi/transport_security_test_lib.cc
   )
@@ -32711,6 +32688,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(ssl_transport_security_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
+    ${_gRPC_PROTOBUF_LIBRARIES}
     grpc_test_util
   )
 
@@ -32721,6 +32699,12 @@ if(gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
   add_executable(ssl_transport_security_utils_test
+    ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
+    test/core/event_engine/event_engine_test_utils.cc
+    test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
     test/core/tsi/ssl_transport_security_utils_test.cc
     test/core/tsi/transport_security_test_lib.cc
   )
@@ -32756,6 +32740,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(ssl_transport_security_utils_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
+    ${_gRPC_PROTOBUF_LIBRARIES}
     grpc_test_util
   )
 
@@ -33152,6 +33137,61 @@ target_include_directories(status_helper_test
 target_link_libraries(status_helper_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  grpc_test_util
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
+add_executable(status_test
+  ${_gRPC_PROTO_GENS_DIR}/google/rpc/status.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/google/rpc/status.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/google/rpc/status.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/google/rpc/status.grpc.pb.h
+  src/cpp/client/global_callback_hook.cc
+  src/cpp/util/status.cc
+  test/cpp/common/status_test.cc
+)
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(status_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
+target_compile_features(status_test PUBLIC cxx_std_17)
+target_include_directories(status_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(status_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  gtest
+  absl::dynamic_annotations
+  absl::prefetch
+  absl::layout
+  absl::absl_check
+  absl::absl_log
+  absl::strings_internal
+  ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
 )
 
@@ -37572,7 +37612,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(write_cycle_test
-  src/core/ext/transport/chttp2/transport/write_cycle.cc
   test/core/transport/chttp2/write_cycle_test.cc
 )
 if(WIN32 AND MSVC)
@@ -40558,6 +40597,10 @@ add_executable(xds_common_types_test
   ${_gRPC_PROTO_GENS_DIR}/envoy/annotations/resource.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/annotations/resource.pb.h
   ${_gRPC_PROTO_GENS_DIR}/envoy/annotations/resource.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/common/mutation_rules/v3/mutation_rules.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/common/mutation_rules/v3/mutation_rules.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/common/mutation_rules/v3/mutation_rules.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/common/mutation_rules/v3/mutation_rules.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/address.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/address.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/address.pb.h

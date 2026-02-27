@@ -27,6 +27,7 @@ grpc_package(
 
 grpc_cc_library(
     name = "transport_security_test_lib",
+    testonly = 1,
     srcs = ["transport_security_test_lib.cc"],
     hdrs = ["transport_security_test_lib.h"],
     external_deps = [
@@ -36,11 +37,14 @@ grpc_cc_library(
         "absl/strings",
     ],
     deps = [
+        "//:event_engine_base_hdrs",
         "//:gpr",
         "//:grpc",
         "//:tsi_base",
         "//src/core:error",
         "//src/core:grpc_check",
+        "//test/core/event_engine/fuzzing_event_engine",
+        "//test/core/event_engine/fuzzing_event_engine:fuzzing_event_engine_cc_proto",
     ],
 )
 
@@ -294,10 +298,13 @@ grpc_cc_test(
         "//:event_engine_base_hdrs",
         "//:gpr",
         "//:grpc",
+        "//:iomgr_timer",
         "//:tsi",
         "//:tsi_base",
         "//:tsi_ssl_credentials",
-        "//src/core:default_event_engine",
+        "//src/core:wait_for_single_owner",
+        "//test/core/event_engine/fuzzing_event_engine",
+        "//test/core/event_engine/fuzzing_event_engine:fuzzing_event_engine_cc_proto",
         "//test/core/test_util:grpc_test_util",
     ],
 )

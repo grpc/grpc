@@ -46,7 +46,10 @@ def grpc_deps():
     if "zlib" not in native.existing_rules():
         http_archive(
             name = "zlib",
-            build_file = "@com_github_grpc_grpc//third_party:zlib.BUILD",
+            patch_args = ["-p1"],
+            patches = [
+                "@com_github_grpc_grpc//bazel/zlib:add_custom_build_file.patch",
+            ],
             sha256 = "da8937719bb6e9600a671f320934c0db3b8020c9c30fecda60b5a5ebdc9a1ea0",
             strip_prefix = "zlib-f1f503da85d52e56aae11557b4d79a42bcaa2b86",
             urls = [
