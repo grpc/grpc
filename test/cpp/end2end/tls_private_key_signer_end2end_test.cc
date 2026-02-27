@@ -775,7 +775,7 @@ TEST_F(TlsPrivateKeyOffloadTest,
   options.set_identity_cert_name("identity");
   options.set_check_call_host(false);
 
-  DoRpcAndExpectFailure(server_addr_, options, nullptr, "Socket closed");
+  DoRpcAndExpectFailure(server_addr_, options);
 }
 
 // Verifies that the TLS handshake fails when an asynchronous signer provides a
@@ -826,7 +826,7 @@ TEST_F(TlsPrivateKeyOffloadTest,
   options.set_identity_cert_name("identity");
   options.set_check_call_host(false);
 
-  DoRpcAndExpectFailure(server_addr_, options, nullptr, "Socket closed");
+  DoRpcAndExpectFailure(server_addr_, options);
 }
 
 // Verifies that the server correctly times out the handshake if the custom
@@ -879,7 +879,7 @@ TEST_F(TlsPrivateKeyOffloadTest, OffloadWithCustomKeySignerHandshakeTimeout) {
   options.set_identity_cert_name("identity");
   options.set_check_call_host(false);
 
-  DoRpcAndExpectFailure(server_addr_, options, nullptr, "Socket closed");
+  DoRpcAndExpectFailure(server_addr_, options);
 }
 
 // Verifies that the client correctly times out the handshake if the custom

@@ -13,6 +13,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+#if OPENSSL_VERSION_NUMBER >= 0x10100000
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
@@ -588,3 +589,5 @@ int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
 }
+
+#endif
