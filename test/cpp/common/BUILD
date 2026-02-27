@@ -160,3 +160,22 @@ grpc_cc_test(
         "//test/cpp/util:test_util",
     ],
 )
+
+grpc_cc_test(
+    name = "status_test",
+    srcs = ["status_test.cc"],
+    external_deps = [
+        "gtest",
+        "absl/status",
+        "absl/strings",
+        "absl/strings:cord",
+    ],
+    deps = [
+        "//:config_vars",
+        "//:grpcpp_status",
+        "//src/core:experiments",
+        "//test/core/test_util:grpc_test_util",
+        "@com_google_googleapis//google/rpc:status_cc_proto",
+        "@com_google_protobuf//:any_cc_proto",
+    ],
+)

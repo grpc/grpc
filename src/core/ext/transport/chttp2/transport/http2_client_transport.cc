@@ -232,24 +232,6 @@ void Http2ClientTransport::Orphan() {
   GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport::Orphan End";
 }
 
-auto Http2ClientTransport::SecurityFrameLoop() {
-  GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport::SecurityFrameLoop Factory";
-  return AssertResultType<Empty>(Loop([this]() {
-    return Map(
-        security_frame_handler_->WaitForSecurityFrameSending(),
-        [this](Empty) -> LoopCtl<Empty> {
-          if (security_frame_handler_->TriggerWriteSecurityFrame().terminate) {
-            return Empty{};
-          }
-
-          if (!TriggerWriteCycleOrHandleError()) {
-            return Empty{};
-          }
-          return Continue();
-        });
-  }));
-}
-
 ///////////////////////////////////////////////////////////////////////////////
 // Processing each type of frame
 
