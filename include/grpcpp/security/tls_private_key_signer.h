@@ -1,4 +1,6 @@
-// Copyright 2021 gRPC authors.
+//
+//
+// Copyright 2025 gRPC authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,26 +13,22 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+//
+//
 
-#ifndef GRPC_SRC_CORE_LIB_IOMGR_RESOLVED_ADDRESS_H
-#define GRPC_SRC_CORE_LIB_IOMGR_RESOLVED_ADDRESS_H
+#ifndef GRPCPP_SECURITY_TLS_PRIVATE_KEY_SIGNER_H
+#define GRPCPP_SECURITY_TLS_PRIVATE_KEY_SIGNER_H
 
-#include <grpc/support/port_platform.h>
-#include <stddef.h>
+#include <grpc/private_key_signer.h>
+#include <grpcpp/impl/sync.h>
+#include <grpcpp/support/string_ref.h>
 
-#include "src/core/lib/iomgr/port.h"
+namespace grpc {
+namespace experimental {
 
-#ifdef GRPC_WINSOCK_SOCKET
-#include <ws2tcpip.h>
-#endif
+using grpc_core::PrivateKeySigner;  // NOLINT(misc-unused-using-decls)
 
-#if defined(GRPC_POSIX_SOCKET) || defined(GRPC_CFSTREAM)
-#include <sys/socket.h>
-#endif
+}  // namespace experimental
+}  // namespace grpc
 
-struct grpc_resolved_address {
-  char addr[GRPC_MAX_SOCKADDR_SIZE];
-  socklen_t len;
-};
-
-#endif  // GRPC_SRC_CORE_LIB_IOMGR_RESOLVED_ADDRESS_H
+#endif  // GRPCPP_SECURITY_TLS_PRIVATE_KEY_SIGNER_H
