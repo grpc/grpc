@@ -13,16 +13,18 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#if OPENSSL_VERSION_NUMBER >= 0x10100000
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
 #include <grpc/private_key_signer.h>
+
+#if OPENSSL_VERSION_NUMBER >= 0x10100000
 #include <openssl/digest.h>
 #include <openssl/ec.h>
 #include <openssl/evp.h>
 #include <openssl/rsa.h>
 #include <openssl/ssl.h>
+#endif
 
 #include <atomic>
 #include <memory>
@@ -39,6 +41,7 @@
 #include "absl/strings/str_cat.h"
 #include "absl/synchronization/notification.h"
 
+#if OPENSSL_VERSION_NUMBER >= 0x10100000
 namespace grpc_core {
 namespace testing {
 
@@ -583,11 +586,10 @@ INSTANTIATE_TEST_SUITE_P(PrivateKeyOffloadTest, PrivateKeyOffloadTest,
 }  // namespace
 }  // namespace testing
 }  // namespace grpc_core
+#endif
 
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(&argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
 }
-
-#endif
