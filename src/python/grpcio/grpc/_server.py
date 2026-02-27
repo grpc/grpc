@@ -32,6 +32,7 @@ from typing import (
     Iterator,
     List,
     Mapping,
+    NoReturn,
     Optional,
     Sequence,
     Set,
@@ -446,7 +447,7 @@ class _Context(grpc.ServicerContext):
     def trailing_metadata(self) -> Optional[MetadataType]:
         return self._state.trailing_metadata
 
-    def abort(self, code: grpc.StatusCode, details: str) -> None:
+    def abort(self, code: grpc.StatusCode, details: str) -> NoReturn:
         # treat OK like other invalid arguments: fail the RPC
         if code == grpc.StatusCode.OK:
             _LOGGER.error(
@@ -460,7 +461,7 @@ class _Context(grpc.ServicerContext):
             self._state.aborted = True
             raise Exception()  # noqa: TRY002
 
-    def abort_with_status(self, status: grpc.Status) -> None:
+    def abort_with_status(self, status: grpc.Status) -> NoReturn:
         self._state.trailing_metadata = status.trailing_metadata
         self.abort(status.code, status.details)
 
