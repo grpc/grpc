@@ -39,9 +39,8 @@ function cleanup() {
   sleep "${LOG_QUIESCE_SECONDS}"
   gcloud functions logs read "${FUNCTION_NAME}" > log.txt || true
   cat log.txt
-
-  if grep -Fq "RAW: Check w->waitp->cond == nullptr failed: Mutex::Fer while waiting on Condition" log.txt; then
-    echo "Found Mutex error in logs"
+  if grep -q "SIGABRT" log.txt; then
+    echo "Found SIGABRT in logs"
     exit 1
   fi
   (yes || true) | gcloud functions delete "${FUNCTION_NAME}"
