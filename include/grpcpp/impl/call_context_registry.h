@@ -2,6 +2,7 @@
 #define GRPCPP_IMPL_CALL_CONTEXT_REGISTRY_H
 
 #include <cstdint>
+#include <utility>
 
 namespace grpc_core {
 class Arena;
@@ -9,6 +10,23 @@ class Arena;
 
 namespace grpc {
 namespace impl {
+
+// Must define Propagate and extend CallContextTypeBase
+template <typename T>
+struct CallContextType;
+
+template <typename T>
+struct CallContextTypeBase {
+ public:
+  static uint16_t id();
+
+ private:
+  static void Destroy(void* p) { delete static_cast<T*>(p); }
+
+  static void Propagate(void* p, grpc_core::Arena* a) {
+    CallContextType<T>::Propagate(static_cast<T*>(p), a);
+  }
+};
 
 class CallContextRegistry {
  public:
@@ -44,30 +62,17 @@ class CallContextRegistry {
   static uint16_t Register(void (*destroy)(void*),
                            void (*propagate)(void*, grpc_core::Arena*));
 
-  template <typename T>
+  template <typename U>
   friend struct CallContextTypeBase;
 };
 
-// Must define Propagate
 template <typename T>
-struct CallContextType;
+uint16_t CallContextTypeBase<T>::id() {
+  static uint16_t id = CallContextRegistry::Register(
+      &CallContextTypeBase<T>::Destroy, &CallContextTypeBase<T>::Propagate);
+  return id;
+}
 
-template <typename T>
-struct CallContextTypeBase {
- public:
-  static uint16_t id() {
-    static uint16_t id = CallContextRegistry::Register(
-        &CallContextTypeBase<T>::Destroy, &CallContextTypeBase<T>::Propagate);
-    return id;
-  }
-
- private:
-  static void Destroy(void* p) { delete static_cast<T*>(p); }
-
-  static void Propagate(void* p, grpc_core::Arena* a) {
-    CallContextType<T>::Propagate(static_cast<T*>(p), a);
-  }
-};
 
 }  // namespace impl
 }  // namespace grpc

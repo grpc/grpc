@@ -278,7 +278,8 @@ class ClientContext {
 
   template <typename T>
   void SetContext(T element) {
-    CallContextRegistry::SetContext(std::move(element), context_elements_);
+    impl::CallContextRegistry::SetContext(std::move(element),
+                                                context_elements_);
   }
 
   /// Trigger wait-for-ready or not on this request.

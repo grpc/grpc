@@ -5,7 +5,6 @@
 
 namespace grpc_core {
 
-// Pure data. Safe for Public API.
 struct TelemetryLabel {
   std::string value;
 };

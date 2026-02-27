@@ -1815,6 +1815,7 @@ PUBLIC_HEADERS_C += \
     include/grpc/byte_buffer_reader.h \
     include/grpc/census.h \
     include/grpc/compression.h \
+    include/grpc/context_types.h \
     include/grpc/create_channel_from_endpoint.h \
     include/grpc/credentials.h \
     include/grpc/credentials_cpp.h \

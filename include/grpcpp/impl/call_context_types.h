@@ -12,7 +12,7 @@ using TelemetryLabel = grpc_core::TelemetryLabel;
 template <>
 struct CallContextType<TelemetryLabel>
     : public CallContextTypeBase<TelemetryLabel> {
-  static void Propagate(const TelemetryLabel* public_opt,
+  static void Propagate(TelemetryLabel* label,
                         grpc_core::Arena* arena);
 };
 
