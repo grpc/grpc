@@ -82,7 +82,7 @@ def _parse_test_duration(duration_str):
         if duration_str.endswith("s"):
             duration_str = duration_str[:-1]
         return float(duration_str)
-    except:
+    except Exception:
         return None
 
 

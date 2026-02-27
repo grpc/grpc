@@ -117,7 +117,7 @@ def start_port_server(verbose=False):
                         "last ditch attempt to contact port server succeeded"
                     )
                     break
-                except:
+                except Exception:
                     logging.exception(
                         "final attempt to contact port server failed"
                     )
@@ -137,7 +137,7 @@ def start_port_server(verbose=False):
                 logging.exception("while waiting for port_server")
                 time.sleep(1)
                 waits += 1
-            except:
+            except Exception:
                 logging.exception(
                     (
                         'error while contacting port server at "%s".'

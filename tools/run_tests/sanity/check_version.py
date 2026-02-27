@@ -33,7 +33,7 @@ try:
     branch_name = subprocess.check_output(
         "git rev-parse --abbrev-ref HEAD", shell=True
     ).decode()
-except:
+except Exception:
     print("WARNING: not a git repository")
     branch_name = None
 

@@ -322,7 +322,7 @@ for filename in filename_list:
         continue
     try:
         text = load(filename)
-    except:
+    except Exception:
         continue
     m = re.search(re_license, text)
     if m:

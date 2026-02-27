@@ -686,7 +686,7 @@ class TestInterceptedUnaryUnaryCall(AioTestBase):
                 await asyncio.wait_for(
                     called.wait(), timeout=_TIMEOUT_CHECK_IF_CALLBACK_WAS_CALLED
                 )
-            except:
+            except Exception:
                 self.fail("Callback was not called")
 
     async def test_add_done_callback_after_finishes(self):
@@ -720,7 +720,7 @@ class TestInterceptedUnaryUnaryCall(AioTestBase):
                 await asyncio.wait_for(
                     called.wait(), timeout=_TIMEOUT_CHECK_IF_CALLBACK_WAS_CALLED
                 )
-            except:
+            except Exception:
                 self.fail("Callback was not called")
 
     async def test_add_done_callback_after_finishes_before_await(self):
@@ -754,7 +754,7 @@ class TestInterceptedUnaryUnaryCall(AioTestBase):
                 await asyncio.wait_for(
                     called.wait(), timeout=_TIMEOUT_CHECK_IF_CALLBACK_WAS_CALLED
                 )
-            except:
+            except Exception:
                 self.fail("Callback was not called")
 
 

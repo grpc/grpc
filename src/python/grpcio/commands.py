@@ -164,7 +164,7 @@ class BuildProjectMetadata(setuptools.Command):
                                 continue
                             if isinstance(node.value, ast.Constant):
                                 return node.value.value
-        except:
+        except Exception:
             raise
 
         return "-1"

@@ -197,7 +197,7 @@ def render_interop_html_report(
     try:
         with open(html_file_path, "w") as output_file:
             mytemplate.render_context(Context(output_file, **args))
-    except:
+    except Exception:
         print((exceptions.text_error_template().render()))
         raise
 

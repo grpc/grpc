@@ -90,11 +90,11 @@ def _render_row(new, label, old):
     """Render row in 3-column output format."""
     try:
         formatted_new = "{:,}".format(int(new))
-    except:
+    except Exception:
         formatted_new = new
     try:
         formatted_old = "{:,}".format(int(old))
-    except:
+    except Exception:
         formatted_old = old
     return "{:>15}{:>15}{:>15}\n".format(formatted_new, label, formatted_old)
 

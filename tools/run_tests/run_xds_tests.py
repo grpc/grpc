@@ -131,7 +131,7 @@ def parse_port_range(port_arg):
     try:
         port = int(port_arg)
         return list(range(port, port + 1))
-    except:
+    except Exception:
         port_min, port_max = port_arg.split(":")
         return list(range(int(port_min), int(port_max) + 1))
 
@@ -2865,7 +2865,7 @@ def test_csds(gcp, original_backend_service, instance_group, server_uri):
                 if seen != want:
                     logger.info("Incomplete xDS config dump, seen=%s", seen)
                     ok = False
-            except:
+            except Exception:
                 logger.exception("Error in xDS config dump:")
                 ok = False
             finally:

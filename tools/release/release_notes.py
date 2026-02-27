@@ -418,7 +418,7 @@ def main():
     if TOKEN == "":
         try:
             TOKEN = os.environ["GITHUB_TOKEN"]
-        except:
+        except Exception:
             pass
     if TOKEN == "":
         print(

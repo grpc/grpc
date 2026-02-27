@@ -185,7 +185,7 @@ class XdsInteropClientTest(unittest.TestCase):
                     self._assert_client_consistent(
                         server_port, stats_port, _QPS, _NUM_CHANNELS
                     )
-                except:
+                except Exception:
                     _dump_streams("server", server_stdout, server_stderr)
                     _dump_streams("client", client_stdout, client_stderr)
                     raise

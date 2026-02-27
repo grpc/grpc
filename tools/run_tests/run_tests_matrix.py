@@ -455,7 +455,7 @@ def _runs_per_test_type(arg_str):
         if n <= 0:
             raise ValueError
         return n
-    except:
+    except Exception:
         msg = "'{}' is not a positive integer".format(arg_str)
         raise argparse.ArgumentTypeError(msg)
 

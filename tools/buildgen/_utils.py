@@ -37,7 +37,7 @@ class Bunch(dict):
     def __contains__(self, k):
         try:
             return dict.__contains__(self, k) or hasattr(self, k)
-        except:
+        except Exception:
             return False
 
     def __getattr__(self, k):
@@ -57,7 +57,7 @@ class Bunch(dict):
         except AttributeError:
             try:
                 self[k] = v
-            except:
+            except Exception:
                 raise AttributeError(k)
         else:
             object.__setattr__(self, k, v)

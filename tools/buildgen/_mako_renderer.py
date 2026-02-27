@@ -58,7 +58,7 @@ def render_template(template: Template, context: Context) -> None:
     """
     try:
         template.render_context(context)
-    except:
+    except Exception:
         out(exceptions.text_error_template().render())
         raise
 

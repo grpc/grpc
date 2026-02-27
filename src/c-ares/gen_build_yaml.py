@@ -199,7 +199,7 @@ try:
             ],
         }
     ]
-except:
+except Exception:
     pass
 
 print(yaml.dump(out))

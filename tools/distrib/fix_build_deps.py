@@ -298,7 +298,7 @@ def grpc_cc_library(
                 if m:
                     inc.add(m.group(1))
         consumes[name] = list(inc)
-    except:
+    except Exception:
         print("Error while parsing ", name)
         raise
 
