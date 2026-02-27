@@ -533,8 +533,6 @@ class _InterceptedStreamRequestMixin:
         return request_iterator
 
     async def _proxy_writes_as_request_iterator(self):
-        await self._interceptors_task
-
         while True:
             value = await self._write_to_iterator_queue.get()
             if (
