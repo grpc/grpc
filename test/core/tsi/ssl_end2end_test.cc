@@ -25,8 +25,8 @@
 #include "src/core/tsi/transport_security_interface.h"
 #include "test/core/test_util/test_config.h"
 #include "test/core/test_util/tls_utils.h"
-#include "testing/base/public/gmock.h"
-#include "testing/base/public/gunit.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
 #include "absl/strings/string_view.h"
 
 namespace {
