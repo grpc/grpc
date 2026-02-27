@@ -1681,6 +1681,7 @@
     <file baseinstalldir="/" name="src/core/lib/promise/if.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/promise/inter_activity_latch.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/promise/inter_activity_mutex.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/promise/inter_activity_pipe.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/promise/interceptor_list.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/promise/latch.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/promise/loop.h" role="src" />
