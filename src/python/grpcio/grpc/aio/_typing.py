@@ -28,8 +28,8 @@ from grpc._cython.cygrpc import EOF
 
 from ._metadata import Metadata  # pylint: disable=unused-import
 from ._metadata import MetadataKey  # pylint: disable=unused-import
-from ._metadata import MetadataValue  # pylint: disable=unused-import
 from ._metadata import MetadataType  # pylint: disable=unused-import
+from ._metadata import MetadataValue  # pylint: disable=unused-import
 
 RequestType = TypeVar("RequestType")
 ResponseType = TypeVar("ResponseType")
