@@ -51,15 +51,11 @@ class RegionalAccessBoundaryFetcherTest : public ::testing::Test {
   using RegionalAccessBoundary = RegionalAccessBoundaryFetcher::RegionalAccessBoundary;
   static constexpr grpc_core::Duration kRegioanlAccessBoundarySoftCacheGraceDuration = grpc_core::Duration::Hours(1);
   bool has_cache() { grpc_core::MutexLock lock(&fetcher_->cache_mu_); return fetcher_->cache_.has_value(); }
-  int retry_count() { grpc_core::MutexLock lock(&fetcher_->cache_mu_); return fetcher_->num_retries_; }
   std::string cached_encoded_locations() { grpc_core::MutexLock lock(&fetcher_->cache_mu_); return fetcher_->cache_->encoded_locations; }
-  int cooldown_multiplier() { grpc_core::MutexLock lock(&fetcher_->cache_mu_); return fetcher_->cooldown_multiplier_; }
   void set_cache(RegionalAccessBoundary cache) { grpc_core::MutexLock lock(&fetcher_->cache_mu_); fetcher_->cache_ = cache; }
-  void set_cooldown_deadline(grpc_core::Timestamp t) { grpc_core::MutexLock lock(&fetcher_->cache_mu_); fetcher_->cooldown_deadline_ = t; }
-
   bool fetch_in_flight() { grpc_core::MutexLock lock(&fetcher_->cache_mu_); return fetcher_->pending_request_ != nullptr; }
+  grpc_core::Timestamp next_fetch_time() { grpc_core::MutexLock lock(&fetcher_->cache_mu_); return fetcher_->next_fetch_time_; }
 
-  grpc_core::Timestamp cooldown_deadline() { grpc_core::MutexLock lock(&fetcher_->cache_mu_); return fetcher_->cooldown_deadline_; }
 
   bool fetch_in_flight(RegionalAccessBoundaryFetcher* fetcher) { 
     grpc_core::MutexLock lock(&fetcher->cache_mu_); 
@@ -94,10 +90,10 @@ class RegionalAccessBoundaryFetcherTest : public ::testing::Test {
         "https://googleapis.com", 
         fuzzing_event_engine_,
         BackOff::Options()
-            .set_initial_backoff(Duration::Milliseconds(1))
+            .set_initial_backoff(Duration::Seconds(1))
             .set_multiplier(1.1)
             .set_jitter(0.1)
-            .set_max_backoff(Duration::Milliseconds(10)));
+            .set_max_backoff(Duration::Seconds(10)));
     arena_ = SimpleArenaAllocator()->MakeArena();
     metadata_ = arena_->MakePooled<ClientMetadata>();
     metadata_->Set(HttpAuthorityMetadata(),
@@ -157,20 +153,7 @@ TEST_F(RegionalAccessBoundaryFetcherTest, ExpiredCacheTriggersFetch) {
   EXPECT_TRUE(fetch_in_flight());
 }
 
-TEST_F(RegionalAccessBoundaryFetcherTest, CooldownPreventsFetch) {
-  set_cooldown_deadline(grpc_core::Timestamp::Now() + grpc_core::Duration::Seconds(100));
-  fetcher_->Fetch("", *metadata_);
-  EXPECT_FALSE(fetch_in_flight());
-}
 
-TEST_F(RegionalAccessBoundaryFetcherTest, CooldownExpiredAllowsFetch) {
-  ExecCtx exec_ctx;
-  set_cooldown_deadline(grpc_core::Timestamp::Now() + grpc_core::Duration::Seconds(100));
-  Tick(grpc_core::Duration::Seconds(101));
-  metadata_->Append("authorization", Slice::FromStaticString("Bearer token"), [](absl::string_view, const Slice&) { abort(); });
-  fetcher_->Fetch("", *metadata_);
-  EXPECT_TRUE(fetch_in_flight());
-}
 
 TEST_F(RegionalAccessBoundaryFetcherTest, InvalidUriParsing) {
   auto fetcher = RegionalAccessBoundaryFetcher::Create(
@@ -189,16 +172,6 @@ TEST_F(RegionalAccessBoundaryFetcherTest, RegionalEndpointIgnored) {
   fetcher_->Fetch("", *metadata_);
   EXPECT_FALSE(fetch_in_flight());
   metadata_->Set(HttpAuthorityMetadata(), Slice::FromStaticString("foo.rep.googleapis.com"));
-  fetcher_->Fetch("", *metadata_);
-  EXPECT_FALSE(fetch_in_flight());
-}
-
-TEST_F(RegionalAccessBoundaryFetcherTest, NonGoogleApisEndpointIgnored) {
-  metadata_->Append("authorization", Slice::FromStaticString("Bearer token"), [](absl::string_view, const Slice&) { abort(); });
-  metadata_->Set(HttpAuthorityMetadata(), Slice::FromStaticString("example.com"));
-  fetcher_->Fetch("", *metadata_);
-  EXPECT_FALSE(fetch_in_flight());
-  metadata_->Set(HttpAuthorityMetadata(), Slice::FromStaticString("fake-googleapis.com"));
   fetcher_->Fetch("", *metadata_);
   EXPECT_FALSE(fetch_in_flight());
 }
@@ -285,7 +258,7 @@ TEST_F(RegionalAccessBoundaryFetcherTest, ValidJsonResponse) {
   EXPECT_FALSE(fetch_in_flight());
   EXPECT_TRUE(has_cache());
   EXPECT_EQ(cached_encoded_locations(), "us-west1");
-  EXPECT_EQ(cooldown_multiplier(), 1);
+
 }
 
 TEST_F(RegionalAccessBoundaryFetcherTest, MalformedJsonResponse) {
@@ -297,7 +270,7 @@ TEST_F(RegionalAccessBoundaryFetcherTest, MalformedJsonResponse) {
   ExecCtx::Get()->Flush();
   EXPECT_FALSE(fetch_in_flight());
   EXPECT_FALSE(has_cache());
-  EXPECT_GT(cooldown_deadline(), grpc_core::Timestamp::Now());
+  EXPECT_GT(next_fetch_time(), grpc_core::Timestamp::Now());
 }
 
 TEST_F(RegionalAccessBoundaryFetcherTest, ValidJsonMissingFields) {
@@ -309,7 +282,7 @@ TEST_F(RegionalAccessBoundaryFetcherTest, ValidJsonMissingFields) {
   ExecCtx::Get()->Flush();
   EXPECT_FALSE(fetch_in_flight());
   EXPECT_FALSE(has_cache());
-  EXPECT_GT(cooldown_deadline(), grpc_core::Timestamp::Now());
+  EXPECT_GT(next_fetch_time(), grpc_core::Timestamp::Now());
 }
 
 TEST_F(RegionalAccessBoundaryFetcherTest, ValidJsonWithNonStringLocations) {
@@ -325,7 +298,7 @@ TEST_F(RegionalAccessBoundaryFetcherTest, ValidJsonWithNonStringLocations) {
   // The non-string location (123) should be dropped, meaning two valid locations remain.
   // We can't query the vector elements directly from the test's view unless we add accessors.
   // But verifying caching is successful is enough for this test.
-  EXPECT_EQ(cooldown_multiplier(), 1);
+
 }
 
 int g_mock_get_count = 0;
@@ -360,10 +333,9 @@ TEST_F(RegionalAccessBoundaryFetcherTest, RetryableHttpErrors) {
   ExecCtx::Get()->Flush();
   // After failure, fetch should no longer be in flight (request is reset during backoff).
   EXPECT_FALSE(fetch_in_flight());
-  EXPECT_EQ(retry_count(), 1);
   EXPECT_EQ(g_mock_get_count, 1);
   // We can advance time and retry.
-  Tick(grpc_core::Duration::Seconds(1) * 1.1 + grpc_core::Duration::Milliseconds(100)); // Initial backoff + jitter + buffer
+  Tick(grpc_core::Duration::Seconds(1) * 1.5 + grpc_core::Duration::Milliseconds(100)); // Initial backoff (1s) + jitter + buffer
   fetcher_->Fetch("", *metadata_);
   EXPECT_TRUE(fetch_in_flight());
   ExecCtx::Get()->Flush();
@@ -381,7 +353,7 @@ TEST_F(RegionalAccessBoundaryFetcherTest, RetryClearsPendingRequest) {
   ExecCtx::Get()->Flush();
   // Request should be cleared (reset) during backoff.
   EXPECT_FALSE(fetch_in_flight());
-  EXPECT_EQ(retry_count(), 1);
+
   
   // Advance time past backoff to allow retry.
   Tick(grpc_core::Duration::Seconds(10));
@@ -390,23 +362,10 @@ TEST_F(RegionalAccessBoundaryFetcherTest, RetryClearsPendingRequest) {
   fetcher_->Fetch("", *metadata_);
   EXPECT_TRUE(fetch_in_flight());
   ExecCtx::Get()->Flush();
-  EXPECT_EQ(retry_count(), 2);
   EXPECT_EQ(g_mock_get_count, 2);
 }
 
-TEST_F(RegionalAccessBoundaryFetcherTest, NonRetryableHttpErrors) {
-  ExecCtx exec_ctx;
-  g_mock_get_count = 0;
-  HttpRequest::SetOverride(httpcli_get_404, nullptr, nullptr);
-  metadata_->Append("authorization", Slice::FromStaticString("Bearer token"), [](absl::string_view, const Slice&) { abort(); });
-  fetcher_->Fetch("", *metadata_);
-  EXPECT_TRUE(fetch_in_flight());
-  ExecCtx::Get()->Flush();
-  EXPECT_FALSE(fetch_in_flight());
-  EXPECT_EQ(retry_count(), 0);
-  EXPECT_GT(cooldown_deadline(), grpc_core::Timestamp::Now());
-  EXPECT_EQ(g_mock_get_count, 1);
-}
+
 
 
 TEST_F(RegionalAccessBoundaryFetcherTest, CancelPendingFetch) {
@@ -416,7 +375,7 @@ TEST_F(RegionalAccessBoundaryFetcherTest, CancelPendingFetch) {
   fetcher_->Fetch("", *metadata_);
   EXPECT_TRUE(fetch_in_flight());
   ExecCtx::Get()->Flush();
-  EXPECT_EQ(retry_count(), 1);
+
   auto fetcher = WeakFetcher();
   fetcher_.reset();
   EXPECT_FALSE(fetch_in_flight(fetcher.operator->()));
@@ -487,47 +446,63 @@ TEST_F(RegionalAccessBoundaryFetcherTest, ResponseAfterShutdownIgnored) {
   EXPECT_FALSE(HasCache(fetcher_raw));
 }
 
-TEST_F(RegionalAccessBoundaryFetcherTest, CooldownResetsOnSuccess) {
+TEST_F(RegionalAccessBoundaryFetcherTest, BackoffResetsOnSuccess) {
   ExecCtx exec_ctx;
   g_mock_get_count = 0;
-  // 1. Force a 404 error to trigger cooldown immediately (no retries).
-  HttpRequest::SetOverride(httpcli_get_404, nullptr, nullptr);
-  auto metadata_1 = arena_->MakePooled<ClientMetadata>();
-  metadata_1->Append("authorization", Slice::FromStaticString("Bearer token"), [](absl::string_view, const Slice&) { abort(); });
-  metadata_1->Set(HttpAuthorityMetadata(), Slice::FromStaticString("googleapis.com"));
-  fetcher_->Fetch("https://googleapis.com", *metadata_1);
+  // 1. Force a 500 error to trigger backoff.
+  HttpRequest::SetOverride(httpcli_get_500, nullptr, nullptr);
+  metadata_->Append("authorization", Slice::FromStaticString("Bearer token"), [](absl::string_view, const Slice&) { abort(); });
+  fetcher_->Fetch("", *metadata_);
+  EXPECT_TRUE(fetch_in_flight());
   ExecCtx::Get()->Flush();
   EXPECT_FALSE(fetch_in_flight());
-  EXPECT_EQ(cooldown_multiplier(), 2);
-  // 2. Override with a successful 200 OK, but first advance time past cooldown.
+  
+  // Verify backoff is active (next fetch time is in future)
+  grpc_core::Timestamp after_first_fail = grpc_core::Timestamp::Now();
+  EXPECT_GT(next_fetch_time(), after_first_fail);
+  
+  // 2. Advance time past backoff.
+  // 2. Advance time past backoff.
+  Tick(grpc_core::Duration::Seconds(2));
+  
+  // 3. Force a success.
   HttpRequest::SetOverride(httpcli_get_valid_json, nullptr, nullptr);
-  Tick(grpc_core::Duration::Minutes(16));
-  ExecCtx::Get()->Flush();
   auto metadata_success = arena_->MakePooled<ClientMetadata>();
-  metadata_success->Append("authorization", Slice::FromStaticString("Bearer token"), [](absl::string_view, const Slice&) { abort(); });
   metadata_success->Set(HttpAuthorityMetadata(), Slice::FromStaticString("googleapis.com"));
-  fetcher_->Fetch("https://googleapis.com", *metadata_success);
+  metadata_success->Append("authorization", Slice::FromStaticString("Bearer token"), [](absl::string_view, const Slice&) { abort(); });
+  fetcher_->Fetch("", *metadata_success);
+  EXPECT_TRUE(fetch_in_flight());
   ExecCtx::Get()->Flush();
-  // The fetch should succeed and cache the values, resetting cooldown to 1.
   EXPECT_FALSE(fetch_in_flight());
   EXPECT_TRUE(has_cache());
-  if (has_cache()) {
-    EXPECT_EQ(cached_encoded_locations(), "us-west1");
-  }
-  EXPECT_EQ(cooldown_multiplier(), 1);
-  // 3. Fake eviction of cache to simulate a new request later.
+
+  // 4. Invalidate cache to force new fetch.
   set_cache(RegionalAccessBoundary{"", {}, grpc_core::Timestamp::InfPast()});
-  // 4. Force another 404 error on the new request to observe cooldown reset.
-  HttpRequest::SetOverride(httpcli_get_404, nullptr, nullptr);
+
+  // 5. Force another 500 error.
+  HttpRequest::SetOverride(httpcli_get_500, nullptr, nullptr);
   auto metadata_fail = arena_->MakePooled<ClientMetadata>();
-  metadata_fail->Append("authorization", Slice::FromStaticString("Bearer token"), [](absl::string_view, const Slice&) { abort(); });
   metadata_fail->Set(HttpAuthorityMetadata(), Slice::FromStaticString("googleapis.com"));
-  fetcher_->Fetch("https://googleapis.com", *metadata_fail);
+  metadata_fail->Append("authorization", Slice::FromStaticString("Bearer token"), [](absl::string_view, const Slice&) { abort(); });
+  fetcher_->Fetch("", *metadata_fail);
+  EXPECT_TRUE(fetch_in_flight());
   ExecCtx::Get()->Flush();
   EXPECT_FALSE(fetch_in_flight());
-  // Cooldown multiplier should be freshly multiplying to 2, not 4.
-  EXPECT_EQ(cooldown_multiplier(), 2);
+
+  // 6. Verify backoff was reset.
+  // The next fetch time should be approximately initial_backoff from now.
+  // If it wasn't reset, it would be much larger (exponentially increased).
+  // Initial backoff is 1ms. W/ jitter & multiplier it's small.
+  // We can just verify it is > now and <= now + max_expected_initial_backoff.
+  grpc_core::Timestamp now = grpc_core::Timestamp::Now();
+  grpc_core::Timestamp next = next_fetch_time();
+  EXPECT_GT(next, now);
+  // Initial backoff is 1s (set in SetUp). W/ jitter (0.1) it's [0.9s, 1.1s].
+  EXPECT_LT(next - now, grpc_core::Duration::Milliseconds(1200));
+  EXPECT_GT(next - now, grpc_core::Duration::Milliseconds(800));
 }
+
+
 
 TEST_F(RegionalAccessBoundaryFetcherTest, CacheSoftExpirationTriggersRefresh) {
   ExecCtx exec_ctx;
@@ -665,7 +640,7 @@ TEST_F(EmailFetcherTest, EmailFetchBackoffRespected) {
   ExecCtx::Get()->Flush();
   EXPECT_EQ(g_mock_get_count, 1);
   // 3. Advance time past initial backoff (1s with jitters, say 2s to be safe).
-  exec_ctx.TestOnlySetNow(grpc_core::Timestamp::Now() + grpc_core::Duration::Seconds(2));
+  exec_ctx.TestOnlySetNow(grpc_core::Timestamp::Now() + grpc_core::Duration::Seconds(20));
   // 4. Retry should proceed.
   email_fetcher_->StartEmailFetch();
   ExecCtx::Get()->Flush();

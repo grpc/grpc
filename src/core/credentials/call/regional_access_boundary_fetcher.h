@@ -79,10 +79,7 @@ class RegionalAccessBoundaryFetcher final : public DualRefCounted<RegionalAccess
   grpc_core::Mutex cache_mu_;
   std::optional<RegionalAccessBoundary> cache_ ABSL_GUARDED_BY(&cache_mu_) ;
   Timestamp next_fetch_time_ ABSL_GUARDED_BY(&cache_mu_) = Timestamp::InfPast();
-  int cooldown_multiplier_ ABSL_GUARDED_BY(&cache_mu_) = 1;
-  grpc_core::Timestamp cooldown_deadline_ ABSL_GUARDED_BY(&cache_mu_) = grpc_core::Timestamp::ProcessEpoch();
   grpc_core::BackOff backoff_ ABSL_GUARDED_BY(&cache_mu_);
-  int num_retries_ ABSL_GUARDED_BY(&cache_mu_) = 0;
   grpc_core::OrphanablePtr<Request> pending_request_ ABSL_GUARDED_BY(&cache_mu_);
   bool shutdown_ ABSL_GUARDED_BY(&cache_mu_) = false;
 };
@@ -144,10 +141,10 @@ class EmailFetcher final : public DualRefCounted<EmailFetcher> {
       ABSL_GUARDED_BY(&mu_);
   BackOff backoff_ ABSL_GUARDED_BY(&mu_) = BackOff(
       BackOff::Options()
-          .set_initial_backoff(Duration::Seconds(1))
-          .set_multiplier(1.6)
-          .set_jitter(0.2)
-          .set_max_backoff(Duration::Seconds(60)));
+          .set_initial_backoff(Duration::Seconds(15))
+          .set_multiplier(1.75)
+          .set_jitter(0.1)
+          .set_max_backoff(Duration::Hours(6)));
   Timestamp next_fetch_earliest_time_ ABSL_GUARDED_BY(&mu_) = Timestamp::InfPast();
 };
 

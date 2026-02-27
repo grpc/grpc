@@ -33,20 +33,9 @@ namespace grpc_core {
 
 namespace {
   constexpr absl::string_view kAllowedLocationsKey = "x-allowed-locations";
-  constexpr Duration kRegionalAccessBoundaryBaseCooldownDuration = Duration::Minutes(15);
-  constexpr Duration kRegionalAccessBoundaryMaxCooldownDuration = Duration::Hours(6);
-  constexpr int kMaxRegionalAccessBoundaryRetries = 6;
   constexpr Duration kRegioanlAccessBoundarySoftCacheGraceDuration = Duration::Hours(1);
   constexpr Duration kRegionalAccessBoundaryCacheDuration = Duration::Hours(6);
   constexpr absl::string_view kRegionalEndpoint = "rep.googleapis.com";
-  // Retryable HTTP Status Codes
-  constexpr int kInternalServerErrorCode = 500;
-  constexpr int kBadGatewayErrorCode = 502;
-  constexpr int kServiceUnavailableErrorCode = 503;
-  constexpr int kGatewayTimeoutErrorCode = 504;
-  const int kRetryableStatusCodes[] = {
-    kInternalServerErrorCode, kBadGatewayErrorCode,
-    kServiceUnavailableErrorCode, kGatewayTimeoutErrorCode};
   constexpr char kComputeEngineDefaultSaEmailPath[] =
     "/computeMetadata/v1/instance/service-accounts/default/email";
 }
@@ -92,10 +81,7 @@ void RegionalAccessBoundaryFetcher::OnFetchSuccess(std::string encoded_locations
   cache_ = {std::move(encoded_locations), std::move(locations),
             grpc_core::Timestamp::Now() +
                 kRegionalAccessBoundaryCacheDuration};
-  // On success, reset the cooldown multiplier.
-  cooldown_multiplier_ = 1;
   backoff_.Reset();
-  num_retries_ = 0;
   pending_request_.reset();
 }
 
@@ -104,45 +90,12 @@ void RegionalAccessBoundaryFetcher::OnFetchFailure(
     int http_status, absl::string_view response_body) {
   grpc_core::MutexLock lock(&cache_mu_);
   if (shutdown_) return;
-  bool should_enter_cooldown = true;
-  if (!absl::IsCancelled(error) &&
-      num_retries_ < kMaxRegionalAccessBoundaryRetries) {
-    // Retry on 5xx HTTP errors
-    if (!error.ok()) {
-      should_enter_cooldown = false;
-    } else {
-      for (int code : kRetryableStatusCodes) {
-        if (http_status == code) {
-          should_enter_cooldown = false;
-          break;
-        }
-      }
-    }
-  }
-  if (!should_enter_cooldown) {
-    ++num_retries_;
-    LOG(WARNING) << "Regional access boundary request will be retried after "
-                    "failing with error: "
-                 << grpc_core::StatusToString(error)
-                 << ", HTTP Status: " << http_status << ", Body: "
-                 << response_body;
-    next_fetch_time_ = Timestamp::Now() + backoff_.NextAttemptDelay();
-  } else {
-    LOG(WARNING) << "Regional access boundary request failed. Entering "
-                    "cooldown period. Error: "
-                 << grpc_core::StatusToString(error)
-                 << ", HTTP Status: " << http_status << ", Body: "
-                 << response_body;
-    backoff_.Reset();
-    num_retries_ = 0;
-    cooldown_deadline_ = grpc_core::Timestamp::Now() + 
-        kRegionalAccessBoundaryBaseCooldownDuration * cooldown_multiplier_;
-    if (cooldown_multiplier_ *
-            kRegionalAccessBoundaryBaseCooldownDuration <
-        kRegionalAccessBoundaryMaxCooldownDuration) {
-        cooldown_multiplier_ *= 2;
-    }
-  }
+  LOG(WARNING) << "Regional access boundary request will be retried after "
+                  "failing with error: "
+                << grpc_core::StatusToString(error)
+                << ", HTTP Status: " << http_status << ", Body: "
+                << response_body;
+  next_fetch_time_ = Timestamp::Now() + backoff_.NextAttemptDelay();
   pending_request_.reset();
 }
 
@@ -178,13 +131,11 @@ void RegionalAccessBoundaryFetcher::Fetch(absl::string_view access_token,
     //   period in the future.
     // - There is no pending fetch currently in flight.
     // - We are not currently in backoff after a failed fetch attempt.
-    // - We are not currently in cooldown after a failed fetch attempt.
     if ((!cache_.has_value() ||
         (cache_->expiration - now) <=
             kRegioanlAccessBoundarySoftCacheGraceDuration) &&
         pending_request_ == nullptr &&
-        next_fetch_time_ <= now &&
-        cooldown_deadline_ <= now) {
+        next_fetch_time_ <= now) {
       pending_request_ = MakeOrphanable<Request>(WeakRef(), access_token);
       pending_request_->Start();
     }

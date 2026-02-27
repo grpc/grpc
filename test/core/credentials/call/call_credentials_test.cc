@@ -721,14 +721,22 @@ TEST_F(CredentialsTest, TestChannelOauth2GoogleIamCompositeCreds) {
 
 void validate_compute_engine_http_request(const grpc_http_request* request,
                                           const URI& uri) {
-  EXPECT_EQ(uri.authority(), "metadata.google.internal.");
+  if (uri.path() == "/v1/projects/-/serviceAccounts/foo@bar.com/allowedLocations") {
+    EXPECT_EQ(uri.authority(), "iamcredentials.googleapis.com");
+    ASSERT_EQ(request->hdr_count, 1);
+    EXPECT_EQ(absl::string_view(request->hdrs[0].key), "Authorization");
+    EXPECT_THAT(absl::string_view(request->hdrs[0].value), ::testing::StartsWith("Bearer "));
+  } else {
+    EXPECT_EQ(uri.authority(), "metadata.google.internal.");
+    ASSERT_EQ(request->hdr_count, 1);
+    EXPECT_EQ(absl::string_view(request->hdrs[0].key), "Metadata-Flavor");
+    EXPECT_EQ(absl::string_view(request->hdrs[0].value), "Google");
+  }
   EXPECT_THAT(uri.path(),
               ::testing::AnyOf(
                   "/computeMetadata/v1/instance/service-accounts/default/token",
-                  "/computeMetadata/v1/instance/service-accounts/default/email"));
-  ASSERT_EQ(request->hdr_count, 1);
-  EXPECT_EQ(absl::string_view(request->hdrs[0].key), "Metadata-Flavor");
-  EXPECT_EQ(absl::string_view(request->hdrs[0].value), "Google");
+                  "/computeMetadata/v1/instance/service-accounts/default/email",
+                  "/v1/projects/-/serviceAccounts/foo@bar.com/allowedLocations"));
 }
 
 void assert_query_parameters(const URI& uri, absl::string_view expected_key,
@@ -748,6 +756,8 @@ int compute_engine_httpcli_get_success_override(
   if (uri.path() ==
       "/computeMetadata/v1/instance/service-accounts/default/email") {
     *response = http_response(200, "foo@bar.com");
+  } else if (uri.path() == "/v1/projects/-/serviceAccounts/foo@bar.com/allowedLocations") {
+    *response = http_response(200, "{\"locations\": [\"us-west1\"]}");
   } else {
     *response = http_response(200, valid_oauth2_json_response);
   }
@@ -758,7 +768,8 @@ int compute_engine_httpcli_get_success_override(
 int compute_engine_httpcli_get_success_alts_override(
     const grpc_http_request* request, const URI& uri, Timestamp deadline,
     grpc_closure* on_done, grpc_http_response* response) {
-  if (uri.path() != "/computeMetadata/v1/instance/service-accounts/default/email") {
+  if (uri.path() != "/computeMetadata/v1/instance/service-accounts/default/email" &&
+      uri.path() != "/v1/projects/-/serviceAccounts/foo@bar.com/allowedLocations") {
     assert_query_parameters(uri, "transport", "alts");
   }
   return compute_engine_httpcli_get_success_override(request, uri, deadline,
@@ -777,7 +788,8 @@ int compute_engine_httpcli_get_failure_override(
 int compute_engine_httpcli_get_failure_alts_override(
     const grpc_http_request* request, const URI& uri, Timestamp deadline,
     grpc_closure* on_done, grpc_http_response* response) {
-  if (uri.path() != "/computeMetadata/v1/instance/service-accounts/default/email") {
+  if (uri.path() != "/computeMetadata/v1/instance/service-accounts/default/email" &&
+      uri.path() != "/v1/projects/-/serviceAccounts/foo@bar.com/allowedLocations") {
     assert_query_parameters(uri, "transport", "alts");
   }
   return compute_engine_httpcli_get_failure_override(request, uri, deadline,
