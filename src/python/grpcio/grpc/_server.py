@@ -189,7 +189,7 @@ class _RPCState(object):
     compression_algorithm: Optional[grpc.Compression]
     disable_next_compression: bool
     trailing_metadata: Optional[MetadataType]
-    code: Optional[grpc.StatusCode]
+    code: grpc.StatusCode
     details: Optional[bytes]
     statused: bool
     rpc_errors: List[Exception]
@@ -206,7 +206,7 @@ class _RPCState(object):
         self.compression_algorithm = None
         self.disable_next_compression = False
         self.trailing_metadata = None
-        self.code = None
+        self.code = grpc.StatusCode.OK
         self.details = None
         self.statused = False
         self.rpc_errors = []

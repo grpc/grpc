@@ -17,6 +17,7 @@ import inspect
 import traceback
 import functools
 
+import grpc
 
 cdef int _EMPTY_FLAG = 0
 cdef str _RPC_FINISHED_DETAILS = 'RPC already finished.'
@@ -55,7 +56,7 @@ cdef class RPCState:
         self.metadata_sent = False
         self.status_sent = False
         self.status_code = StatusCode.ok
-        self.py_status_code = None
+        self.py_status_code = grpc.StatusCode.OK
         self.status_details = ''
         self.trailing_metadata = _IMMUTABLE_EMPTY_METADATA
         self.compression_algorithm = None
