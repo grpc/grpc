@@ -1269,6 +1269,7 @@ class V3InterceptorToV2Bridge : public ChannelFilter, public Interceptor {
     // We need inter-activity mechanisms to move data between the v2 and v3
     // activities.
     struct PipeOwner {
+      InterActivityLatch<ClientMetadataHandle> client_initial_metadata;
       InterActivityPipe<MessageHandle, 1> client_to_server_messages;
       InterActivityLatch<std::optional<ServerMetadataHandle>>
           server_initial_metadata;
@@ -1300,7 +1301,8 @@ class V3InterceptorToV2Bridge : public ChannelFilter, public Interceptor {
                     // Use an inter-activity pipe to get them back to
                     // the v2 activity.
                     handler.SpawnGuarded(
-                        "pull_message", [handler, pipe_owner]() mutable {
+                        "pull_client_to_server_message",
+                        [handler, pipe_owner]() mutable {
                           return ForEach(
                               MessagesFrom(handler),
                               [pipe_owner](MessageHandle message) {
@@ -1352,7 +1354,8 @@ class V3InterceptorToV2Bridge : public ChannelFilter, public Interceptor {
                     // Use an inter-activity pipe to get them back to
                     // the v2 activity.
                     initiator.SpawnGuarded(
-                        "push_message", [initiator, pipe_owner]() mutable {
+                        "pull_server_to_client_message",
+                        [initiator, pipe_owner]() mutable {
                           return ForEach(
                               MessagesFrom(initiator),
                               [pipe_owner](MessageHandle message) {
@@ -1372,17 +1375,31 @@ class V3InterceptorToV2Bridge : public ChannelFilter, public Interceptor {
                           return std::move(*message);
                         });
                   });
+              // In the v3 handler's activity, pull client initial metadata.
+              // Use an inter-acitivity latch to get it back to the v2
+              // activity.
+              handler.SpawnGuarded(
+                  "pull_client_initial_metadata",
+                  [handler, pipe_owner]() mutable {
+                    return TrySeq(
+                        handler.PullClientInitialMetadata(),
+                        [pipe_owner](ClientMetadataHandle metadata) {
+                          pipe_owner->client_initial_metadata.Set(
+                              std::move(metadata));
+                        });
+                  });
               // A wrapper for next_promise_factory that does the following:
-              // - Pulls client initial metadata from the V3 handler and injects
-              //   it into the next V2 filter via CallArgs.
+              // - Pulls client initial metadata from the V3 handler via
+              //   the inter-activity latch and injects it into the next
+              //   V2 filter via CallArgs.
               // - Polls the next promise to get server trailing metadata
               //   from the next V2 filter and feeds it into the V3 handler.
               // Note that this does not actually pull the trailing metadata
               // from the V3 initiator; instead, we do that in a separate
               // promise above.  That promise will always complete at the
               // end of the call, so we always return pending here.
-              return TrySeq(
-                  handler.PullClientInitialMetadata(),
+              return Seq(
+                  pipe_owner->client_initial_metadata.Wait(),
                   [next_promise_factory = std::move(next_promise_factory),
                    call_args = std::move(call_args),
                    handler](ClientMetadataHandle metadata) mutable {
