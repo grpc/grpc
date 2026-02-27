@@ -1005,7 +1005,7 @@ cdef class AioServer:
             rpc_tasks.add(rpc_task)
             rpc_task.add_done_callback(rpc_tasks.discard)
 
-            if self._limiter is not None:
+            if self._limiter is not None and not concurrency_exceeded:
                 self._limiter.decrease_once_finished(rpc_task)
 
     def _serving_task_crash_handler(self, object task):
