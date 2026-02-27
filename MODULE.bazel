@@ -45,7 +45,6 @@ bazel_dep(name = "opentelemetry-cpp", version = "1.19.0", repo_name = "io_opente
 bazel_dep(name = "platforms", version = "0.0.11")
 
 # --- Protobuf related packages.
-# Pinning to 31.1 to avoid xDs breakage until we can upgrade to Protobuf >= 33.0
 bazel_dep(name = "protobuf", version = "33.2", repo_name = "com_google_protobuf")
 single_version_override(
     module_name = "protobuf",
