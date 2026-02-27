@@ -1330,10 +1330,10 @@ class V3InterceptorToV2Bridge : public ChannelFilter, public Interceptor {
                     // In the v3 initiator's activity, pull the metadata.
                     // Use an inter-activity latch to get it back to
                     // the v2 activity.
-                    initiator.SpawnInfallible(
+                    initiator.SpawnGuarded(
                         "pull_server_initial_metadata",
                         [initiator, pipe_owner]() mutable {
-                          return Seq(
+                          return TrySeq(
                               initiator.PullServerInitialMetadata(),
                               [pipe_owner](std::optional<ServerMetadataHandle>
                                                metadata) {
