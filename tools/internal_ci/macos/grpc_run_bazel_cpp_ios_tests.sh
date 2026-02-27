@@ -50,7 +50,8 @@ ios_tests=$(tools/bazel query "kind(ios_unit_test, tests($test_pattern))" | grep
 python3 tools/run_tests/python_utils/bazel_report_helper.py --report_path bazel_cpp_ios_tests
 
 bazel_cpp_ios_tests/bazel_wrapper \
-  --bazelrc=tools/remote_build/include/test_ios_locally_with_resultstore_results.bazelrc \
+  --bazelrc=tools/remote_build/include/test_locally_with_resultstore_results.bazelrc \
+  --bazelrc=tools/remote_build/include/disable_bzlmod.bazelrc \
   test \
   --google_credentials="${KOKORO_GFILE_DIR}/GrpcTesting-d0eeee2db331.json" \
   "${BAZEL_REMOTE_CACHE_ARGS[@]}" \
