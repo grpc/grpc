@@ -329,7 +329,7 @@ if(MSVC)
   # Inconsistent object sizes can cause stack corruption and should be treated as an error
   set(_gRPC_C_CXX_FLAGS "${_gRPC_C_CXX_FLAGS} /we4789")
   # To decrease the size of PDB files
-  set(CMAKE_EXE_LINKER_FLAGS "/opt:ref /opt:icf /pdbcompress")
+  set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /opt:ref /opt:icf /pdbcompress")
 endif()
 if (MINGW)
   add_definitions(-D_WIN32_WINNT=0x600)
