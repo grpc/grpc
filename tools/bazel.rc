@@ -3,6 +3,11 @@
 common --enable_bzlmod
 common --noenable_workspace
 
+# Can be explicitly disable via --config=no-bzlmod
+# TODO(weizheyuan): Remove this after migration is done.
+common:no-bzlmod --noenable_bzlmod
+common:no-bzlmod --enable_workspace
+
 # Bazel 8 needs this
 common --incompatible_disallow_empty_glob=false
 common --incompatible_disallow_struct_provider_syntax=false
