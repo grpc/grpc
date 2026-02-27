@@ -64,9 +64,6 @@ namespace grpc_core {
 
 namespace promise_detail {
 
-template <typename T>
-class AllOkUnwrapper;
-
 // Traits object to pass to JoinState
 template <typename Result>
 struct AllOkTraits {
@@ -76,25 +73,12 @@ struct AllOkTraits {
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static bool IsOk(const T& x) {
     return IsStatusOk(x);
   }
-  /*
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static Empty Unwrapped(StatusFlag) {
     return Empty{};
   }
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static Empty Unwrapped(absl::Status) {
     return Empty{};
   }
-  template <typename T>
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static
-      typename AllOkUnwrapper<T>::UnwrapResult
-      Unwrapped(const T& x) {
-    return AllOkUnwrapper<T>::Unwrap(x);
-  }
-  */
-  template <typename T>
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static Empty Unwrapped(const T&) {
-    return Empty{};
-  }
-
   template <typename R, typename T>
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static R EarlyReturn(T&& x) {
     return StatusCast<R>(std::forward<T>(x));

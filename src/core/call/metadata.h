@@ -18,7 +18,6 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/call/metadata_batch.h"
-#include "src/core/lib/promise/all_ok.h"
 #include "src/core/lib/promise/try_seq.h"
 
 namespace grpc_core {
@@ -132,13 +131,6 @@ inline bool IsStatusOk(const ServerMetadataOrHandle<T>& x) {
   return x.ok();
 }
 
-template <>
-class promise_detail::AllOkUnwrapper<ServerMetadataHandle> {
- public:
-  using UnwrapResult = Empty;
-  Empty Unwrap(const ServerMetadataHandle&) { return Empty{}; };
-};
-
 namespace promise_detail {
 template <typename T>
 struct AllowGenericTrySeqTraits<ServerMetadataOrHandle<T>> {
@@ -181,8 +173,8 @@ void AbslStringify(Sink& sink, const Arena::PoolPtr<grpc_metadata_batch>& md) {
   sink.Append("}");
 }
 
-// Ok/not-ok check for trailing metadata, so that it can be used as result
-// types for TrySeq.
+// Ok/not-ok check for trailing metadata, so that it can be used as result types
+// for TrySeq.
 inline bool IsStatusOk(const ServerMetadataHandle& m) {
   return m->get(GrpcStatusMetadata()).value_or(GRPC_STATUS_UNKNOWN) ==
          GRPC_STATUS_OK;
