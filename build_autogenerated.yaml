@@ -28157,6 +28157,7 @@ targets:
   - third_party/cel-spec/proto/cel/expr/syntax.proto
   - third_party/envoy-api/envoy/annotations/deprecation.proto
   - third_party/envoy-api/envoy/annotations/resource.proto
+  - third_party/envoy-api/envoy/config/common/mutation_rules/v3/mutation_rules.proto
   - third_party/envoy-api/envoy/config/core/v3/address.proto
   - third_party/envoy-api/envoy/config/core/v3/backoff.proto
   - third_party/envoy-api/envoy/config/core/v3/base.proto
