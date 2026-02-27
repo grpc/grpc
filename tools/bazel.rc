@@ -153,5 +153,5 @@ test --nozip_undeclared_test_outputs
 # Custom checks
 test:postmortem --//:postmortem_checks=true
 
-#common --noenable_workspace
-#common --enable_bzlmod
+common --noenable_workspace
+common --enable_bzlmod

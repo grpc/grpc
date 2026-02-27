@@ -2343,6 +2343,7 @@ let package = Package(
         "third_party/upb/upb/message/value.h",
         "third_party/upb/upb/port/atomic.h",
         "third_party/upb/upb/port/def.inc",
+        "third_party/upb/upb/port/sanitizers.h",
         "third_party/upb/upb/port/undef.inc",
         "third_party/upb/upb/port/vsnprintf_compat.h",
         "third_party/upb/upb/text/encode.c",
