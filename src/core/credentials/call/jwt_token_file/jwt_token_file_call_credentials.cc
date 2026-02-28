@@ -26,12 +26,13 @@ namespace grpc_core {
 class JwtTokenFileCallCredentials::FileReader final
     : public TokenFetcherCredentials::FetchRequest {
  public:
-  FileReader(JwtTokenFileCallCredentials* creds,
+  FileReader(WeakRefCountedPtr<JwtTokenFileCallCredentials> creds,
              absl::AnyInvocable<void(
                  absl::StatusOr<RefCountedPtr<TokenFetcherCredentials::Token>>)>
                  on_done)
-      : creds_(creds), on_done_(std::move(on_done)) {
-    creds->event_engine().Run([self = RefAsSubclass<FileReader>()]() {
+      : creds_(std::move(creds)), on_done_(std::move(on_done)) {
+    // It is safe to access creds_ here because the caller holds a ref to it.
+    creds_->event_engine().Run([self = RefAsSubclass<FileReader>()]() {
       ExecCtx exec_ctx;
       self->ReadFile();
     });
@@ -44,7 +45,13 @@ class JwtTokenFileCallCredentials::FileReader final
 
  private:
   void ReadFile() {
-    auto contents = LoadFile(creds_->path_, /*add_null_terminator=*/false);
+    auto creds_base = creds_->RefIfNonZero();
+    if (creds_base == nullptr) {
+      on_done_(absl::CancelledError("credentials destroyed"));
+      return;
+    }
+    auto creds = creds_base.TakeAsSubclass<JwtTokenFileCallCredentials>();
+    auto contents = LoadFile(creds->path_, /*add_null_terminator=*/false);
     if (!contents.ok()) {
       on_done_(absl::UnavailableError(contents.status().message()));
       return;
@@ -60,7 +67,7 @@ class JwtTokenFileCallCredentials::FileReader final
         *expiration_time));
   }
 
-  JwtTokenFileCallCredentials* creds_;
+  WeakRefCountedPtr<JwtTokenFileCallCredentials> creds_;
   absl::AnyInvocable<void(
       absl::StatusOr<RefCountedPtr<TokenFetcherCredentials::Token>>)>
       on_done_;
@@ -80,7 +87,7 @@ JwtTokenFileCallCredentials::FetchToken(
     absl::AnyInvocable<
         void(absl::StatusOr<RefCountedPtr<TokenFetcherCredentials::Token>>)>
         on_done) {
-  return MakeOrphanable<FileReader>(this, std::move(on_done));
+  return MakeOrphanable<FileReader>(WeakRefAsSubclass<JwtTokenFileCallCredentials>(), std::move(on_done));
 }
 
 }  // namespace grpc_core

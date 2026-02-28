@@ -33,6 +33,7 @@
 #include "src/core/credentials/call/external/file_external_account_credentials.h"
 #include "src/core/credentials/call/external/url_external_account_credentials.h"
 #include "src/core/credentials/call/json_util.h"
+#include "src/core/credentials/call/regional_access_boundary_fetcher.h"
 #include "src/core/credentials/transport/transport_credentials.h"
 #include "src/core/lib/transport/status_conversion.h"
 #include "src/core/util/grpc_check.h"
@@ -45,6 +46,7 @@
 #include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
+#include "src/core/lib/promise/map.h"
 #include "absl/strings/escaping.h"
 #include "absl/strings/match.h"
 #include "absl/strings/numbers.h"
@@ -71,6 +73,34 @@ namespace grpc_core {
 //
 // ExternalAccountCredentials::NoOpFetchBody
 //
+
+namespace {
+
+class TokenWithRegionalAccessBoundary final
+    : public TokenFetcherCredentials::Token {
+ public:
+  TokenWithRegionalAccessBoundary(
+      grpc_core::Slice token, grpc_core::Timestamp expiration,
+      grpc_core::RefCountedPtr<RegionalAccessBoundaryFetcher>
+          regional_access_boundary_fetcher)
+      : Token(std::move(token), expiration),
+        regional_access_boundary_fetcher_(
+            std::move(regional_access_boundary_fetcher)) {
+    CHECK(regional_access_boundary_fetcher_ != nullptr);
+  }
+
+  void AddTokenToClientInitialMetadata(ClientMetadata& metadata) override {
+    Token::AddTokenToClientInitialMetadata(metadata);
+    regional_access_boundary_fetcher_->Fetch(token().as_string_view(),
+                                             metadata);
+  }
+
+ private:
+  grpc_core::RefCountedPtr<RegionalAccessBoundaryFetcher>
+      regional_access_boundary_fetcher_;
+};
+
+}  // namespace
 
 ExternalAccountCredentials::NoOpFetchBody::NoOpFetchBody(
     grpc_event_engine::experimental::EventEngine& event_engine,
@@ -411,9 +441,15 @@ void ExternalAccountCredentials::ExternalFetchRequest::FinishTokenFetch(
         GRPC_CREDENTIALS_OK) {
       result = GRPC_ERROR_CREATE("Could not parse oauth token");
     } else {
-      result = MakeRefCounted<Token>(std::move(*token_value),
-                                     Timestamp::Now() + token_lifetime);
-    }
+      if (creds_->regional_access_boundary_fetcher_ != nullptr) {
+        result = MakeRefCounted<TokenWithRegionalAccessBoundary>(
+            std::move(*token_value), Timestamp::Now() + token_lifetime,
+            creds_->regional_access_boundary_fetcher_->Ref());
+      } else {
+        result = MakeRefCounted<TokenFetcherCredentials::Token>(
+            std::move(*token_value), Timestamp::Now() + token_lifetime);
+      }
+     }
   }
   creds_->event_engine().Run([on_done = std::exchange(on_done_, nullptr),
                               result = std::move(result)]() mutable {
@@ -442,21 +478,54 @@ bool ExternalAccountCredentials::ExternalFetchRequest::MaybeFailLocked(
 
 namespace {
 
+struct WorkloadIdentityPoolFields {
+  absl::string_view project;
+  absl::string_view pool_id;
+};
+
+// Expression to match:
+// //iam.googleapis.com/projects/<project>/locations/global/workloadIdentityPools/<pool-id>/providers/.+
+//
+// Returns the project and pool ID within the WorkloadIdentityPoolFields struct if the audience matches
+// the Workload Identity Pool format, otherwise returns std::nullopt.
+std::optional<WorkloadIdentityPoolFields> MatchWorkloadIdentityPoolAudience(absl::string_view audience) {
+  // Match "//iam.googleapis.com/projects/"
+  if (!absl::ConsumePrefix(&audience, "//iam.googleapis.com/projects/")) {
+    return std::nullopt;
+  }
+  // Match "<project>/locations/global/workloadIdentityPools/"
+  auto location_pos = audience.find("/locations/global/workloadIdentityPools/");
+  if (location_pos == absl::string_view::npos) return std::nullopt;
+  auto project = audience.substr(0, location_pos);
+  if (project.empty()) return std::nullopt;
+  audience.remove_prefix(location_pos +
+                         sizeof("/locations/global/workloadIdentityPools/") - 1);
+  // Match "<pool-id>/providers/"
+  auto provider_pos = audience.find("/providers/");
+  if (provider_pos == absl::string_view::npos) return std::nullopt;
+  auto pool_id = audience.substr(0, provider_pos);
+  if (pool_id.empty()) return std::nullopt;
+  return WorkloadIdentityPoolFields{project, pool_id};
+}
+
 // Expression to match:
 // //iam.googleapis.com/locations/[^/]+/workforcePools/[^/]+/providers/.+
-bool MatchWorkforcePoolAudience(absl::string_view audience) {
+// Returns the workforce pool ID if the audience matches the Workforce Pool
+// format, otherwise returns an empty string view.
+absl::string_view MatchWorkforcePoolAudience(absl::string_view audience) {
   // Match "//iam.googleapis.com/locations/"
-  if (!absl::ConsumePrefix(&audience, "//iam.googleapis.com")) return false;
-  if (!absl::ConsumePrefix(&audience, "/locations/")) return false;
+  if (!absl::ConsumePrefix(&audience, "//iam.googleapis.com")) return "";
+  if (!absl::ConsumePrefix(&audience, "/locations/")) return "";
   // Match "[^/]+/workforcePools/"
   std::pair<absl::string_view, absl::string_view> workforce_pools_split_result =
       absl::StrSplit(audience, absl::MaxSplits("/workforcePools/", 1));
-  if (absl::StrContains(workforce_pools_split_result.first, '/')) return false;
+  if (absl::StrContains(workforce_pools_split_result.first, '/')) return "";
   // Match "[^/]+/providers/.+"
   std::pair<absl::string_view, absl::string_view> providers_split_result =
       absl::StrSplit(workforce_pools_split_result.second,
                      absl::MaxSplits("/providers/", 1));
-  return !absl::StrContains(providers_split_result.first, '/');
+  if (absl::StrContains(providers_split_result.first, '/')) return "";
+  return providers_split_result.first;
 }
 
 }  // namespace
@@ -533,13 +602,24 @@ ExternalAccountCredentials::Create(
   }
   it = json.object().find("workforce_pool_user_project");
   if (it != json.object().end()) {
-    if (MatchWorkforcePoolAudience(options.audience)) {
+    if (auto workforce_pool_id =
+            MatchWorkforcePoolAudience(options.audience);
+        !workforce_pool_id.empty()) {
+      options.workforce_pool_id = std::string(workforce_pool_id);
       options.workforce_pool_user_project = it->second.string();
     } else {
       return GRPC_ERROR_CREATE(
           "workforce_pool_user_project should not be set for non-workforce "
           "pool credentials");
     }
+  }
+  if (auto workload_identity_pool_fields =
+          MatchWorkloadIdentityPoolAudience(options.audience);
+      workload_identity_pool_fields.has_value()) {
+    options.workload_pool_project =
+        std::string(workload_identity_pool_fields->project);
+    options.workload_pool_id =
+        std::string(workload_identity_pool_fields->pool_id);
   }
   it = json.object().find("service_account_impersonation");
   options.service_account_impersonation.token_lifetime_seconds =
@@ -590,19 +670,51 @@ ExternalAccountCredentials::Create(
   if (!error.ok()) return error;
   return creds;
 }
+namespace {
+std::string BuildRegionalAccessBoundaryUrl(
+    const ExternalAccountCredentials::Options& options) {
+  if (!options.service_account_impersonation_url.empty()) {
+    std::string_view url = options.service_account_impersonation_url;
+    std::string_view::size_type start = url.find("serviceAccounts/");
+    std::string_view::size_type end = url.find(":generateAccessToken");
+    if (start != std::string_view::npos && end != std::string_view::npos &&
+        start + 16 < end) {
+      std::string_view email = url.substr(start + 16, end - (start + 16));
+      return absl::StrFormat(
+          "https://iamcredentials.googleapis.com/v1/projects/-/serviceAccounts/"
+          "%s/allowedLocations",
+          email);
+    }
+  }
+  if (!options.workforce_pool_id.empty()) {
+    return absl::StrFormat(
+        "https://iamcredentials.googleapis.com/v1/locations/global/"
+        "workforcePools/%s/allowedLocations",
+        options.workforce_pool_id);
+  } else if (!options.workload_pool_project.empty() &&
+             !options.workload_pool_id.empty()) {
+    return absl::StrFormat(
+        "https://iamcredentials.googleapis.com/v1/projects/"
+        "%s/locations/global/workloadIdentityPools/%s/allowedLocations",
+        options.workload_pool_project, options.workload_pool_id);
+  }
+  return "";
+}
+}
 
 ExternalAccountCredentials::ExternalAccountCredentials(
     Options options, std::vector<std::string> scopes,
     std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine)
     : TokenFetcherCredentials(std::move(event_engine)),
-      options_(std::move(options)) {
+      options_(std::move(options)),
+      regional_access_boundary_fetcher_(
+          RegionalAccessBoundaryFetcher::Create(
+              BuildRegionalAccessBoundaryUrl(options_), event_engine)) {
   if (scopes.empty()) {
     scopes.push_back(GOOGLE_CLOUD_PLATFORM_DEFAULT_SCOPE);
   }
   scopes_ = std::move(scopes);
 }
-
-ExternalAccountCredentials::~ExternalAccountCredentials() {}
 
 std::string ExternalAccountCredentials::MetricsHeaderValue() {
   return absl::StrFormat(

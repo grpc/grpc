@@ -49,7 +49,7 @@ TokenFetcherCredentials::Token::Token(Slice token, Timestamp expiration)
       expiration_(expiration - kTokenExpirationAdjustmentDuration) {}
 
 void TokenFetcherCredentials::Token::AddTokenToClientInitialMetadata(
-    ClientMetadata& metadata) const {
+    ClientMetadata& metadata) {
   metadata.Append(GRPC_AUTHORIZATION_METADATA_KEY, token_.Ref(),
                   [](absl::string_view, const Slice&) { abort(); });
 }
@@ -93,11 +93,14 @@ void TokenFetcherCredentials::FetchState::BackoffTimer::Orphan() {
 }
 
 void TokenFetcherCredentials::FetchState::BackoffTimer::OnTimer() {
-  MutexLock lock(&fetch_state_->creds_->mu_);
+  auto creds = fetch_state_->creds_->RefIfNonZero()
+                   .TakeAsSubclass<TokenFetcherCredentials>();
+  if (creds == nullptr) return;
+  MutexLock lock(&creds->mu_);
   if (!timer_handle_.has_value()) return;
   timer_handle_.reset();
   GRPC_TRACE_LOG(token_fetcher_credentials, INFO)
-      << "[TokenFetcherCredentials " << fetch_state_->creds_.get()
+      << "[TokenFetcherCredentials " << creds.get()
       << "]: fetch_state=" << fetch_state_.get() << " backoff_timer=" << this
       << ": backoff timer fired";
   auto* self_ptr =
@@ -155,12 +158,14 @@ void TokenFetcherCredentials::FetchState::StartFetchAttempt() {
 
 void TokenFetcherCredentials::FetchState::TokenFetchComplete(
     absl::StatusOr<RefCountedPtr<Token>> token) {
-  MutexLock lock(&creds_->mu_);
+  auto creds = creds_->RefIfNonZero().TakeAsSubclass<TokenFetcherCredentials>();
+  if (creds == nullptr) return;
+  MutexLock lock(&creds->mu_);
   // If we were shut down, clean up.
   if (std::holds_alternative<Shutdown>(state_)) {
     if (token.ok()) token = absl::CancelledError("credentials shutdown");
     GRPC_TRACE_LOG(token_fetcher_credentials, INFO)
-        << "[TokenFetcherCredentials " << creds_.get()
+        << "[TokenFetcherCredentials " << creds.get()
         << "]: fetch_state=" << this
         << ": shut down before fetch completed: " << token.status();
     ResumeQueuedCalls(std::move(token));
@@ -169,13 +174,13 @@ void TokenFetcherCredentials::FetchState::TokenFetchComplete(
   // If succeeded, update cache in creds object.
   if (token.ok()) {
     GRPC_TRACE_LOG(token_fetcher_credentials, INFO)
-        << "[TokenFetcherCredentials " << creds_.get()
+        << "[TokenFetcherCredentials " << creds.get()
         << "]: fetch_state=" << this << ": token fetch succeeded";
-    creds_->token_ = *token;
-    creds_->fetch_state_.reset();  // Orphan ourselves.
+    creds->token_ = *token;
+    creds->fetch_state_.reset();  // Orphan ourselves.
   } else {
     GRPC_TRACE_LOG(token_fetcher_credentials, INFO)
-        << "[TokenFetcherCredentials " << creds_.get()
+        << "[TokenFetcherCredentials " << creds.get()
         << "]: fetch_state=" << this
         << ": token fetch failed: " << token.status();
     // If failed, start backoff timer.
@@ -217,6 +222,35 @@ TokenFetcherCredentials::FetchState::QueueCall(
   return queued_call;
 }
 
+void TokenFetcherCredentials::FetchState::CancelCall(QueuedCall* queued_call) {
+  auto creds = creds_->RefIfNonZero().TakeAsSubclass<TokenFetcherCredentials>();
+  if (creds == nullptr) return;
+  MutexLock lock(&creds->mu_);
+  // Create a RefCountedPtr to find in the set.
+  // queued_call is guaranteed to be alive (caller holds ref), so Ref() is safe.
+  auto ref = queued_call->Ref();
+  auto it = queued_calls_.find(ref);
+  if (it != queued_calls_.end()) {
+    grpc_polling_entity_del_from_pollset_set(
+        queued_call->pollent,
+        grpc_polling_entity_pollset_set(&creds_->pollent_));
+    queued_calls_.erase(it);
+  }
+}
+
+TokenFetcherCredentials::CancellationHandler::CancellationHandler(
+    RefCountedPtr<FetchState> fetch_state,
+    RefCountedPtr<QueuedCall> queued_call)
+    : fetch_state(std::move(fetch_state)),
+      queued_call(std::move(queued_call)) {}
+
+TokenFetcherCredentials::CancellationHandler::~CancellationHandler() {
+  if (queued_call != nullptr &&
+      !queued_call->done.load(std::memory_order_acquire)) {
+    fetch_state->CancelCall(queued_call.get());
+  }
+}
+
 //
 // TokenFetcherCredentials
 //
@@ -237,8 +271,11 @@ TokenFetcherCredentials::~TokenFetcherCredentials() {
 }
 
 void TokenFetcherCredentials::Orphaned() {
-  MutexLock lock(&mu_);
-  fetch_state_.reset();
+  {
+    MutexLock lock(&mu_);
+    fetch_state_.reset();
+  }
+  event_engine_.reset();
 }
 
 ArenaPromise<absl::StatusOr<ClientMetadataHandle>>
@@ -281,24 +318,29 @@ TokenFetcherCredentials::GetRequestMetadata(
         << " no cached token; queuing call";
     queued_call = fetch_state_->QueueCall(std::move(initial_metadata));
   }
-  return [this, queued_call = std::move(queued_call)]()
-             -> Poll<absl::StatusOr<ClientMetadataHandle>> {
-    if (!queued_call->done.load(std::memory_order_acquire)) {
+  // We need to remove the call from the queue if the promise is cancelled.
+  // We use a custom deleter/cleanup lambda to achieve this.
+  return [handler = CancellationHandler(fetch_state_->Ref(), queued_call),
+          this]() mutable -> Poll<absl::StatusOr<ClientMetadataHandle>> {
+    // handler keeps queued_call and fetch_state alive.
+    // If this lambda is destroyed, handler destructor runs and cancels if pending.
+    if (!handler.queued_call->done.load(std::memory_order_acquire)) {
       return Pending{};
     }
-    if (!queued_call->result.ok()) {
+    if (!handler.queued_call->result.ok()) {
       GRPC_TRACE_LOG(token_fetcher_credentials, INFO)
           << "[TokenFetcherCredentials " << this
           << "]: " << GetContext<Activity>()->DebugTag()
           << " token fetch failed; failing call";
-      return queued_call->result.status();
+      return handler.queued_call->result.status();
     }
     GRPC_TRACE_LOG(token_fetcher_credentials, INFO)
         << "[TokenFetcherCredentials " << this
         << "]: " << GetContext<Activity>()->DebugTag()
         << " token fetch complete; resuming call";
-    (*queued_call->result)->AddTokenToClientInitialMetadata(*queued_call->md);
-    return std::move(queued_call->md);
+    (*handler.queued_call->result)
+        ->AddTokenToClientInitialMetadata(*handler.queued_call->md);
+    return std::move(handler.queued_call->md);
   };
 }
 
