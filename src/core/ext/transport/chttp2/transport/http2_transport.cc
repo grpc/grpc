@@ -89,6 +89,25 @@ constexpr Duration kServerKeepaliveTime = Duration::Hours(2);
 // familiar with the PH2 project (Moving chttp2 to promises.)
 
 ///////////////////////////////////////////////////////////////////////////////
+// Read and Write helpers
+
+// This is only called by the HTTP2 Server Transport to validate the incoming
+// connection preface. Since a server does not send a connection preface, this
+// validation is not needed for the client transport.
+Http2Status ValidateIncomingConnectionPreface(
+    const absl::StatusOr<Slice>& status) {
+  if (!status.ok()) {
+    return ToHttpOkOrConnError(status.status());
+  } else if (status.value() !=
+             Slice::FromStaticString(GRPC_CHTTP2_CLIENT_CONNECT_STRING)) {
+    return Http2Status::Http2ConnectionError(
+        Http2ErrorCode::kProtocolError,
+        std::string(RFC9113::kFirstSettingsFrameServer));
+  }
+  return Http2Status::Ok();
+}
+
+///////////////////////////////////////////////////////////////////////////////
 // Settings helpers
 
 void InitLocalSettings(Http2Settings& settings, const bool is_client) {

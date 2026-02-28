@@ -111,7 +111,7 @@ using StreamWritabilityUpdate =
 // TODO(tjagtap) : [PH2][P3] : Delete this comment when http2
 // rollout begins
 
-constexpr int kIsClient = false;
+constexpr bool kIsClient = false;
 
 //////////////////////////////////////////////////////////////////////////////
 // Channelz and ZTrace
@@ -850,7 +850,8 @@ auto Http2ServerTransport::ReadAndProcessOneFrame() {
             /*incoming_header_stream_id*/
             incoming_headers_.GetStreamId(),
             /*current_frame_header*/ header,
-            /*last_stream_id=*/100,  // TODO(tjagtap) : [PH2][P0] : Fix
+            // TODO(tjagtap) : [PH2][P0] : Fix
+            /*last_stream_id=*//*GetLastStreamId()*/ 100,
             /*is_client=*/kIsClient, /*is_first_settings_processed=*/
             settings_->IsFirstPeerSettingsApplied());
 
@@ -2104,6 +2105,7 @@ Http2ServerTransport::Http2ServerTransport(
       endpoint_(std::move(endpoint)),
       settings_(MakeRefCounted<SettingsPromiseManager>(nullptr)),
       incoming_headers_(IncomingMetadataTracker::GetPeerString(endpoint_)),
+      transport_write_context_(kIsClient),
       ping_manager_(std::nullopt),
       keepalive_manager_(std::nullopt),
       goaway_manager_(GoawayInterfaceImpl::Make(this)),
@@ -2204,6 +2206,22 @@ void Http2ServerTransport::SpawnTransportLoops() {
   SpawnGuardedTransportParty("WriteLoop", WriteLoop());
 
   GRPC_HTTP2_SERVER_DLOG << "Http2ServerTransport::SpawnTransportLoops End";
+}
+
+void Http2ServerTransport::InitializeAndSpawnTransportLoops() {
+  SpawnGuardedTransportParty(
+      "SpawnTransportLoops", [self = RefAsSubclass<Http2ServerTransport>()] {
+        return Map(
+            self->EndpointReadSlice(GRPC_CHTTP2_CLIENT_CONNECT_STRLEN),
+            [self](absl::StatusOr<Slice> status) -> absl::Status {
+              Http2Status result = ValidateIncomingConnectionPreface(status);
+              if (!result.IsOk()) {
+                return self->HandleError(std::nullopt, std::move(result));
+              }
+              self->SpawnTransportLoops();
+              return absl::OkStatus();
+            });
+      });
 }
 
 }  // namespace http2

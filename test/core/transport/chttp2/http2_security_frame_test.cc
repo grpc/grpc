@@ -232,7 +232,7 @@ class SimulatedTransport : public RefCounted<SimulatedTransport> {
   RefCountedPtr<SecurityFrameHandler> security_frame_handler_;
   std::shared_ptr<EventEngine> event_engine_;
   Waker waker_;
-  TransportWriteContext transport_write_context_;
+  TransportWriteContext transport_write_context_{/*is_client=*/true};
 };
 
 }  // namespace testing
@@ -267,7 +267,7 @@ class SecurityFrameHandlerTest : public ::testing::Test {
               {unused});
     }
   }
-  TransportWriteContext transport_write_context_;
+  TransportWriteContext transport_write_context_{/*is_client=*/true};
 };
 
 TEST_F(SecurityFrameHandlerTest, SendFrameCallbackFactoryTest) {

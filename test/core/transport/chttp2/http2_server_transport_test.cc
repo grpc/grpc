@@ -80,8 +80,7 @@ class Http2ServerTransportTest : public TransportTest {
   Http2FrameTestHelper helper_;
 };
 
-TEST_F(Http2ServerTransportTest,
-       DISABLED_TestHttp2ServerTransportObjectCreation) {
+TEST_F(Http2ServerTransportTest, TestHttp2ServerTransportObjectCreation) {
   // Event Engine      : FuzzingEventEngine
   // This test asserts :
   // 1. Tests Http2ServerTransport object creation and destruction. The object
@@ -95,7 +94,10 @@ TEST_F(Http2ServerTransportTest,
   MockPromiseEndpoint mock_endpoint(/*port=*/1000);
 
   mock_endpoint.ExpectRead(
-      {helper_.EventEngineSliceFromHttp2DataFrame(
+      {EventEngineSlice(
+           grpc_slice_from_copied_string(GRPC_CHTTP2_CLIENT_CONNECT_STRING)),
+       helper_.EventEngineSliceFromHttp2SettingsFrameDefault(),
+       helper_.EventEngineSliceFromHttp2DataFrame(
            /*payload=*/"Hello!", /*stream_id=*/9, /*end_stream=*/false),
        helper_.EventEngineSliceFromHttp2DataFrame(
            /*payload=*/"Bye!", /*stream_id=*/11, /*end_stream=*/true)},
@@ -109,7 +111,7 @@ TEST_F(Http2ServerTransportTest,
       MakeOrphanable<Http2ServerTransport>(
           std::move(mock_endpoint.promise_endpoint), GetChannelArgs(),
           event_engine());
-  server_transport->SpawnTransportLoops();
+  server_transport->InitializeAndSpawnTransportLoops();
 
   EXPECT_EQ(server_transport->filter_stack_transport(), nullptr);
   EXPECT_EQ(server_transport->client_transport(), nullptr);

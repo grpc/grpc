@@ -158,7 +158,7 @@ class PingManagerTest : public YodelTest {
   }
 
   RefCountedPtr<Party> party_;
-  http2::TransportWriteContext transport_write_context_;
+  http2::TransportWriteContext transport_write_context_{/*is_client=*/true};
 };
 }  // namespace
 
