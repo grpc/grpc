@@ -12,6 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import os
+
+os.environ["GRPC_ENABLE_FORK_SUPPORT"] = "1"
+os.environ["GRPC_EXPERIMENTS"] = "event_engine_fork"
+
 import functions_framework
 from google.cloud import pubsub_v1
 
