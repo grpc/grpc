@@ -23,13 +23,13 @@
 
 set -ev
 
-BORINGSSL_ROOT=third_party/boringssl-with-bazel/src
+BORINGSSL_ROOT=third_party/boringssl-with-bazel
 
 cd "$(dirname $0)"
 cd ../../$BORINGSSL_ROOT
 
 BORINGSSL_COMMIT=$(git rev-parse HEAD)
-BORINGSSL_PREFIX_HEADERS_DIR=src/boringssl
+BORINGSSL_PREFIX_HEADERS_DIR=boringssl
 
 rm -rf build
 mkdir -p build

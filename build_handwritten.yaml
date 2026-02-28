@@ -136,7 +136,7 @@ configs:
 defaults:
   boringssl:
     CFLAGS: -g
-    CPPFLAGS: -Ithird_party/boringssl-with-bazel/src/include -fvisibility=hidden -DOPENSSL_NO_ASM
+    CPPFLAGS: -Ithird_party/boringssl-with-bazel/include -fvisibility=hidden -DOPENSSL_NO_ASM
       -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
     CXXFLAGS: -fno-exceptions
   cares:

@@ -76,7 +76,7 @@ Pod::Spec.new do |s|
 
   s.source = {
     :git => 'https://github.com/google/boringssl.git',
-    :commit => "c63fadbde60a2224c22189d14c4001bbd2a3a629",
+    :commit => "781a72b2aa513bbbf01b9bc670b0495a6b115968",
   }
 
   s.ios.deployment_target = '15.0'
@@ -96,7 +96,7 @@ Pod::Spec.new do |s|
   # the `Headers/` directory of the framework (i.e., not under `Headers/include/openssl`).
   #
   # TODO(jcanizales): Debug why this doesn't work on macOS.
-  s.header_mappings_dir = 'src/include/openssl'
+  s.header_mappings_dir = 'include/openssl'
 
   # The above has an undesired effect when creating a static library: It forces users to write
   # includes like `#include <BoringSSL/ssl.h>`. `s.header_dir` adds a path prefix to that, and
@@ -117,10 +117,10 @@ Pod::Spec.new do |s|
   # for public headers and the other for implementation. Each gets its own `header_mappings_dir`,
   # making the linter happy.
   s.subspec 'Interface' do |ss|
-    ss.header_mappings_dir = 'src/include/openssl'
-    ss.private_header_files = 'src/include/openssl/time.h'
-    ss.source_files = 'src/include/openssl/*.h',
-                      'src/include/openssl/**/*.h'
+    ss.header_mappings_dir = 'include/openssl'
+    ss.private_header_files = 'include/openssl/time.h'
+    ss.source_files = 'include/openssl/*.h',
+                      'include/openssl/**/*.h'
   end
   s.subspec 'Implementation' do |ss|
     ss.header_mappings_dir = 'src'
@@ -129,29 +129,29 @@ Pod::Spec.new do |s|
       s.module_name => 'src/PrivacyInfo.xcprivacy'
     }
 
-    ss.source_files = 'src/ssl/*.{h,c,cc}',
-                      'src/ssl/**/*.{h,c,cc}',
-                      'src/crypto/*.{h,c,cc}',
-                      'src/crypto/**/*.{h,c,cc,inc}',
+    ss.source_files = 'ssl/*.{h,c,cc}',
+                      'ssl/**/*.{h,c,cc}',
+                      'crypto/*.{h,c,cc}',
+                      'crypto/**/*.{h,c,cc,inc}',
                       # We have to include fiat because spake25519 depends on it
-                      'src/third_party/fiat/*.{h,c,cc}',
+                      'third_party/fiat/*.{h,c,cc}',
                       # Include the err_data.c pre-generated in boringssl's master-with-bazel branch
-                      'src/gen/crypto/err_data.cc'
+                      'gen/crypto/err_data.cc'
 
-    ss.private_header_files = 'src/ssl/*.h',
-                              'src/ssl/**/*.h',
-                              'src/crypto/*.h',
-                              'src/crypto/**/*.h',
-                              'src/third_party/fiat/*.h'
-    ss.exclude_files = 'src/**/*_test.*',
-                       'src/**/test_*.*',
-                       'src/**/test/*.*'
+    ss.private_header_files = 'ssl/*.h',
+                              'ssl/**/*.h',
+                              'crypto/*.h',
+                              'crypto/**/*.h',
+                              'third_party/fiat/*.h'
+    ss.exclude_files = './**/*_test.*',
+                       './**/test_*.*',
+                       './**/test/*.*'
 
     ss.dependency "#{s.name}/Interface", version
   end
 
   s.pod_target_xcconfig = {
-    # Do not let src/include/openssl/time.h override system API
+    # Do not let include/openssl/time.h override system API
     'USE_HEADERMAP' => 'NO',
     'CLANG_CXX_LANGUAGE_STANDARD' => 'c++17',
   }
