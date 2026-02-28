@@ -101,6 +101,29 @@ bool CommonTlsContext::Empty() const {
 }
 
 //
+// XdsGrpcService
+//
+
+std::string XdsGrpcService::ToString() const {
+  std::vector<std::string> parts;
+  if (server_target != nullptr) {
+    parts.push_back(absl::StrCat("server_target=", server_target->Key()));
+  }
+  if (timeout != Duration::Zero()) {
+    parts.push_back(absl::StrCat("timeout=", timeout.ToString()));
+  }
+  if (!initial_metadata.empty()) {
+    std::vector<std::string> headers;
+    for (const auto& [key, value] : initial_metadata) {
+      headers.push_back(absl::StrCat(key, "=", value));
+    }
+    parts.push_back(
+        absl::StrCat("initial_metadata=[", absl::StrJoin(headers, ", "), "]"));
+  }
+  return absl::StrCat("{", absl::StrJoin(parts, ", "), "}");
+}
+
+//
 // HeaderMutationRules
 //
 
