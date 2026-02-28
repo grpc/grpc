@@ -167,7 +167,7 @@ def AreExperimentsOrdered(experiments):
     return True
 
 
-class ExperimentDefinition(object):
+class ExperimentDefinition:
     def __init__(self, attributes):
         self._error = False
         if "name" not in attributes:
@@ -317,7 +317,7 @@ class ExperimentDefinition(object):
         return self._additional_constraints.get(platform, {})
 
 
-class ExperimentsCompiler(object):
+class ExperimentsCompiler:
     def __init__(
         self,
         defaults,

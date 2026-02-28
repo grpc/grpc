@@ -112,7 +112,7 @@ class TypeSmokeTest(unittest.TestCase):
         del completion_queue
 
 
-class ServerClientMixin(object):
+class ServerClientMixin:
     def setUpMixin(self, server_credentials, client_credentials, host_override):
         self.server_completion_queue = cygrpc.CompletionQueue()
         self.server = cygrpc.Server(
