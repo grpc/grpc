@@ -52,6 +52,7 @@
 #include "src/core/telemetry/stats.h"
 #include "src/core/telemetry/stats_data.h"
 #include "src/core/util/debug_location.h"
+#include "src/core/util/env.h"
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/json/json_args.h"
@@ -129,6 +130,15 @@ const auto kMetricEndpointWeights =
         .OptionalLabels(kMetricLabelLocality, kMetricLabelBackendService)
         .Build();
 
+// TODO(rishesh): Remove this once the feature passes interop tests.
+bool WrrCustomMeticEnabled() {
+  auto value = GetEnv("GRPC_EXPERIMENTAL_WRR_CUSTOM_METRICS");
+  if (!value.has_value()) return false;
+  bool parsed_value;
+  bool parse_succeeded = gpr_parse_bool_value(value->c_str(), &parsed_value);
+  return parse_succeeded && parsed_value;
+}
+
 // Config for WRR policy.
 class WeightedRoundRobinConfig final : public LoadBalancingPolicy::Config {
  public:
@@ -150,6 +160,10 @@ class WeightedRoundRobinConfig final : public LoadBalancingPolicy::Config {
     return weight_expiration_period_;
   }
   float error_utilization_penalty() const { return error_utilization_penalty_; }
+  const std::vector<std::string>& metric_names_for_computing_utilization()
+      const {
+    return metric_names_for_computing_utilization_;
+  }
 
   static const JsonLoaderInterface* JsonLoader(const JsonArgs&) {
     static const auto* loader =
@@ -167,6 +181,9 @@ class WeightedRoundRobinConfig final : public LoadBalancingPolicy::Config {
             .OptionalField(
                 "errorUtilizationPenalty",
                 &WeightedRoundRobinConfig::error_utilization_penalty_)
+            .OptionalField("metricNamesForComputingUtilization",
+                           &WeightedRoundRobinConfig::
+                               metric_names_for_computing_utilization_)
             .Finish();
     return loader;
   }
@@ -188,6 +205,7 @@ class WeightedRoundRobinConfig final : public LoadBalancingPolicy::Config {
   Duration weight_update_period_ = Duration::Seconds(1);
   Duration weight_expiration_period_ = Duration::Minutes(3);
   float error_utilization_penalty_ = 1.0;
+  std::vector<std::string> metric_names_for_computing_utilization_;
 };
 
 // WRR LB policy
@@ -342,9 +360,12 @@ class WeightedRoundRobin final : public LoadBalancingPolicy {
      public:
       SubchannelCallTracker(
           RefCountedPtr<EndpointWeight> weight, float error_utilization_penalty,
-          std::unique_ptr<SubchannelCallTrackerInterface> child_tracker)
+          std::unique_ptr<SubchannelCallTrackerInterface> child_tracker,
+          std::vector<std::string> metric_names_for_computing_utilization = {})
           : weight_(std::move(weight)),
             error_utilization_penalty_(error_utilization_penalty),
+            metric_names_for_computing_utilization_(
+                std::move(metric_names_for_computing_utilization)),
             child_tracker_(std::move(child_tracker)) {}
 
       void Finish(FinishArgs args) override;
@@ -352,6 +373,7 @@ class WeightedRoundRobin final : public LoadBalancingPolicy {
      private:
       RefCountedPtr<EndpointWeight> weight_;
       const float error_utilization_penalty_;
+      const std::vector<std::string> metric_names_for_computing_utilization_;
       std::unique_ptr<SubchannelCallTrackerInterface> child_tracker_;
     };
 
@@ -521,6 +543,38 @@ void WeightedRoundRobin::Picker::SubchannelCallTracker::Finish(
     qps = backend_metric_data->qps;
     eps = backend_metric_data->eps;
     utilization = backend_metric_data->application_utilization;
+    if (WrrCustomMeticEnabled() && utilization <= 0 &&
+        !metric_names_for_computing_utilization_.empty()) {
+      for (const auto& metric_name : metric_names_for_computing_utilization_) {
+        double value = 0;
+        if (metric_name == "cpu_utilization") {
+          value = backend_metric_data->cpu_utilization;
+        } else if (metric_name == "mem_utilization") {
+          value = backend_metric_data->mem_utilization;
+        } else if (metric_name == "application_utilization") {
+          value = backend_metric_data->application_utilization;
+        } else if (absl::StartsWith(metric_name, "named_metrics.")) {
+          auto key = absl::string_view(metric_name).substr(14);
+          auto it = backend_metric_data->named_metrics.find(key);
+          if (it != backend_metric_data->named_metrics.end()) {
+            value = it->second;
+          }
+        }
+        utilization = std::max(utilization, value);
+        LOG(INFO) << "Metric: " << metric_name << " Value: " << value
+                  << " Utilization: " << utilization << " Key: "
+                  << (absl::StartsWith(metric_name, "named_metrics.")
+                          ? absl::string_view(metric_name).substr(14)
+                          : "")
+                  << " MapSize: " << backend_metric_data->named_metrics.size();
+        for (const auto& pair : backend_metric_data->named_metrics) {
+          LOG(INFO) << "In Map: " << pair.first << " = " << pair.second;
+        }
+      }
+    } else {
+      LOG(INFO) << "Config metric names empty: "
+                << metric_names_for_computing_utilization_.empty();
+    }
     if (utilization <= 0) {
       utilization = backend_metric_data->cpu_utilization;
     }
@@ -584,7 +638,8 @@ WeightedRoundRobin::PickResult WeightedRoundRobin::Picker::Pick(PickArgs args) {
       complete->subchannel_call_tracker =
           std::make_unique<SubchannelCallTracker>(
               endpoint_info.weight, config_->error_utilization_penalty(),
-              std::move(complete->subchannel_call_tracker));
+              std::move(complete->subchannel_call_tracker),
+              config_->metric_names_for_computing_utilization());
     }
   }
   return result;
