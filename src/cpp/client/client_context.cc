@@ -73,6 +73,7 @@ ClientContext::ClientContext()
 }
 
 ClientContext::~ClientContext() {
+  grpc::impl::CallContextRegistry::Destroy(context_elements_);
   if (call_) {
     grpc_call_unref(call_);
     call_ = nullptr;

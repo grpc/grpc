@@ -759,6 +759,10 @@ grpc_cc_library(
 grpc_cc_library(
     name = "no_destruct",
     public_hdrs = ["util/no_destruct.h"],
+    visibility = [
+        "//:__pkg__",
+        "//:__subpackages__",
+    ],
     deps = [
         "construct_destruct",
         "//:gpr_platform",
@@ -1862,6 +1866,24 @@ grpc_cc_library(
         "event_engine_memory_allocator",
         "memory_quota",
         "resource_quota",
+        "//:gpr",
+    ],
+)
+
+grpc_cc_library(
+    name = "telemetry_label",
+    hdrs = [
+        "telemetry/telemetry_label.h",
+    ],
+    external_deps = [
+        "absl/log",
+    ],
+    visibility = [
+        "//:__pkg__",
+        "//:__subpackages__",
+    ],
+    deps = [
+        "arena",
         "//:gpr",
     ],
 )
