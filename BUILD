@@ -2034,8 +2034,8 @@ grpc_cc_library(
         "absl/time",
         "absl/types:span",
         "absl/utility",
-        "madler_zlib",
         "@com_google_protobuf//upb/mem",
+        "madler_zlib",
     ],
     linkopts = select({
         "systemd": ["-lsystemd"],
