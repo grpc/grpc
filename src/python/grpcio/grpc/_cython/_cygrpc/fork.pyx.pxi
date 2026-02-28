@@ -85,8 +85,6 @@ cdef void __postfork_child() noexcept nogil:
                 state_to_reset.reset_postfork_child()
             _fork_state.postfork_states_to_reset = []
             _fork_state.fork_epoch += 1
-            for channel in _fork_state.channels:
-                channel._close_on_fork()
             with _fork_state.fork_in_progress_condition:
                 _fork_state.fork_in_progress = False
         except:
@@ -173,16 +171,6 @@ def is_fork_support_enabled():
     return _GRPC_ENABLE_FORK_SUPPORT
 
 
-def fork_register_channel(channel):
-    if _GRPC_ENABLE_FORK_SUPPORT:
-        _fork_state.channels.add(channel)
-
-
-def fork_unregister_channel(channel):
-    if _GRPC_ENABLE_FORK_SUPPORT:
-        _fork_state.channels.discard(channel)
-
-
 class _ActiveThreadCount(object):
     def __init__(self):
         self._num_active_threads = 0
@@ -224,7 +212,6 @@ class _ForkState(object):
         self.fork_handler_registered = False
         self.active_thread_count = _ActiveThreadCount()
         self.fork_epoch = 0
-        self.channels = set()
 
 
 _fork_state = _ForkState()
