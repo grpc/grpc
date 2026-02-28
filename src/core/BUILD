@@ -1019,6 +1019,7 @@ grpc_cc_library(
     deps = [
         "promise_like",
         "//:gpr_platform",
+        "//:promise",
     ],
 )
 
