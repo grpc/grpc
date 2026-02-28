@@ -59,7 +59,6 @@ inline std::optional<uint32_t> ParseUInt32Value(
   return google_protobuf_UInt32Value_value(proto);
 }
 
-// Returns the IP address in URI form.
 std::optional<grpc_resolved_address> ParseXdsAddress(
     const envoy_config_core_v3_Address* address, ValidationErrors* errors);
 

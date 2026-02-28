@@ -658,6 +658,23 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "xds_http_add_header_filter",
+    testonly = 1,
+    srcs = ["xds_http_add_header_filter.cc"],
+    hdrs = ["xds_http_add_header_filter.h"],
+    external_deps = [
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
+    ],
+    deps = [
+        "//:grpc_base",
+        "//src/core:xds_http_filter",
+        "//src/core:json_object_loader",
+    ],
+)
+
+grpc_cc_library(
     name = "test_timeout",
     testonly = True,
     hdrs = ["test_timeout.h"],
