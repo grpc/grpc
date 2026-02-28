@@ -125,16 +125,13 @@ class Http2ClientTransport final : public ClientTransport,
 
   void PerformOp(grpc_transport_op*) override;
 
-  void StartConnectivityWatch(
-      grpc_connectivity_state state,
-      OrphanablePtr<ConnectivityStateWatcherInterface> watcher);
-
-  void StopConnectivityWatch(ConnectivityStateWatcherInterface* watcher);
-
-  void StartWatch(RefCountedPtr<StateWatcher> watcher) override;
-  void StopWatch(RefCountedPtr<StateWatcher> watcher) override;
-
   void Orphan() override;
+
+  bool AreTransportFlowControlTokensAvailable() {
+    return flow_control_.remote_window() > 0;
+  }
+
+  void SpawnTransportLoops();
 
   std::unique_ptr<channelz::ZTrace> GetZTrace(absl::string_view name) override {
     if (name == "transport_frames") return ztrace_collector_->MakeZTrace();
@@ -145,6 +142,9 @@ class Http2ClientTransport final : public ClientTransport,
   void AddData(channelz::DataSink sink) override;
   void SpawnAddChannelzData(RefCountedPtr<Party> party,
                             channelz::DataSink sink);
+
+  void StartWatch(RefCountedPtr<StateWatcher> watcher) override;
+  void StopWatch(RefCountedPtr<StateWatcher> watcher) override;
 
   template <typename Factory>
   void TestOnlySpawnPromise(absl::string_view name, Factory&& factory) {
@@ -160,12 +160,6 @@ class Http2ClientTransport final : public ClientTransport,
 
   int64_t TestOnlyTransportFlowControlWindow();
   int64_t TestOnlyGetStreamFlowControlWindow(const uint32_t stream_id);
-
-  bool AreTransportFlowControlTokensAvailable() {
-    return flow_control_.remote_window() > 0;
-  }
-
-  void SpawnTransportLoops();
 
  private:
   //////////////////////////////////////////////////////////////////////////////
@@ -201,6 +195,12 @@ class Http2ClientTransport final : public ClientTransport,
   }
 
   auto EndpointWrite(SliceBuffer&& output_buf);
+
+  void StartConnectivityWatch(
+      grpc_connectivity_state state,
+      OrphanablePtr<ConnectivityStateWatcherInterface> watcher);
+
+  void StopConnectivityWatch(ConnectivityStateWatcherInterface* watcher);
 
   //////////////////////////////////////////////////////////////////////////////
   // Transport Read Path
