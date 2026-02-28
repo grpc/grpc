@@ -90,6 +90,8 @@ bazel_dep(name = "yaml-cpp", version = "0.9.0", dev_dependency = True)
 
 bazel_dep(name = "rules_python", version = "1.6.3")
 
+DEFAULT_PYTHON_VERSION = "3.11"
+
 PYTHON_VERSIONS = [
     "3.9",
     "3.10",
@@ -99,13 +101,16 @@ PYTHON_VERSIONS = [
     "3.14",
 ]
 
+# TODO(weizheyuan): figure out how it interacts with protobuf 31
+# system_python().
+#
+# Mark 3.11 as defaults to be consistent with WORKSPACE.
+# See also https://rules-python.readthedocs.io/en/latest/api/rules_python/python/extensions/python.html#python.toolchain
 python = use_extension("@rules_python//python/extensions:python.bzl", "python")
+python.defaults(python_version = DEFAULT_PYTHON_VERSION)
 
 [
-    python.toolchain(
-        is_default = python_version == PYTHON_VERSIONS[-1],
-        python_version = python_version,
-    )
+    python.toolchain(python_version = python_version)
     for python_version in PYTHON_VERSIONS
 ]
 
@@ -127,7 +132,7 @@ bazel_dep(name = "cython", version = "3.0.11-1")
 http_archive = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
 http_archive(
-    name = "typing_extensions",
+    name = "grpc_typing_extensions",
     build_file = "//third_party:typing_extensions.BUILD",
     sha256 = "bf6f56b36d8bc9156e518eb1cc37a146284082fa53522033f772aefbecfd15fc",
     strip_prefix = "typing_extensions-4.12.2",
