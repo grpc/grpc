@@ -43,7 +43,7 @@
 # state of each experiment.
 - name: buffer_list_deletion_prep
   description: Gate the removal of old TCP timestamp collection mechanism.
-  expiry: 2026/02/01
+  expiry: 2026/05/01
   owner: ctiller@google.com
   test_tags: [core_end2end_test]
 - name: call_tracer_in_transport
@@ -57,22 +57,23 @@
   expiry: 2026/06/01
   owner: ctiller@google.com
   test_tags: []
+- name: call_tracer_send_trailing_metadata_is_an_annotation
+  description: Use the new annotation-based CallTracer API.
+  expiry: 2026/06/01
+  owner: ctiller@google.com
+  test_tags: []
 - name: chaotic_good_connect_deadline
   description: Use the deadline from the connect args in chaotic good connector
-  expiry: 2026/02/01
+  expiry: 2026/05/01
   owner: ctiller@google.com
   test_tags: [core_end2end_test]
 - name: chaotic_good_framing_layer
   description: Enable the chaotic good framing layer.
-  expiry: 2026/02/01
+  expiry: 2026/05/01
   owner: ctiller@google.com
   test_tags: [core_end2end_test]
   allow_in_fuzzing_config: false
-- name: chttp2_bound_write_size
-  description: Fix a bug where chttp2 can generate very large writes
-  expiry: 2026/02/01
-  owner: ctiller@google.com
-  test_tags: [core_end2end_test]
+
 - name: error_flatten
   description: Flatten errors to ordinary absl::Status form.
   expiry: 2026/04/01
@@ -141,16 +142,9 @@
   owner: mlumish@google.com
   test_tags: []
   uses_polling: true
-- name: event_engine_secure_endpoint
-  description: Use EventEngine secure endpoint wrapper instead of iomgr when available
-  expiry: 2026/01/22
-  owner: alishananda@google.com
-  test_tags: ["core_end2end_test", "secure_endpoint_test", "posix_endpoint_test"]
-  uses_polling: true
-  allow_in_fuzzing_config: false
 - name: fail_recv_metadata_on_deadline_exceeded
   description: Fail recv initial metadata when the deadline is exceeded.
-  expiry: 2026/01/22
+  expiry: 2026/05/01
   owner: vigneshbabu@google.com
   test_tags: []
   allow_in_fuzzing_config: false
@@ -161,32 +155,31 @@
   test_tags: [resource_quota_test]
 - name: fuse_filters
   description: If set, individual filters are merged into fused filters
-  expiry: 2026/02/01
+  expiry: 2026/05/01
   owner: vigneshbabu@google.com
   test_tags: ["minimal_stack_test"]
-  allow_in_fuzzing_config: false
-- name: graceful_external_connection_failure
-  description: If set, handles external connection failures gracefully
-  expiry: 2026/02/01
-  owner: vigneshbabu@google.com
-  test_tags: []
   allow_in_fuzzing_config: false
 - name: keep_alive_ping_timer_batch
   description:
     Avoid explicitly cancelling the keepalive timer. Instead adjust the callback to re-schedule
     itself to the next ping interval.
-  expiry: 2026/02/01
+  expiry: 2026/05/01
   owner: vigneshbabu@google.com
   test_tags: []
 - name: local_connector_secure
   description: Local security connector uses TSI_SECURITY_NONE for LOCAL_TCP connections.
-  expiry: 2026/02/01
+  expiry: 2026/06/01
   owner: mattstev@google.com
   test_tags: ["core_end2end_test"]
 - name: max_inflight_pings_strict_limit
   description: If set, the max inflight pings limit is strictly enforced.
-  expiry: 2026/02/01
+  expiry: 2026/05/10
   owner: akshitpatel@google.com
+  test_tags: []
+- name: metadata_publish_to_app_tag
+  description: Publish metadata to the app using the kPublishToApp metadata field.
+  expiry: 2026/04/01
+  owner: leonzz@google.com
   test_tags: []
 - name: monitoring_experiment
   description: Placeholder experiment to prove/disprove our monitoring is working
@@ -195,17 +188,17 @@
   test_tags: []
 - name: multiping
   description: Allow more than one ping to be in flight at a time by default.
-  expiry: 2026/02/01
+  expiry: 2026/05/01
   owner: ctiller@google.com
   test_tags: [flow_control_test]
 - name: otel_export_telemetry_domains
   description: Export telemetry domains in OpenTelemetry metrics.
-  expiry: 2026/02/01
+  expiry: 2026/05/01
   owner: ctiller@google.com
   test_tags: [core_end2end_test]
 - name: pick_first_ignore_empty_updates
   description: Ignore empty resolutions in pick_first
-  expiry: 2026/02/02
+  expiry: 2026/05/02
   owner: ctiller@google.com
 - name: pick_first_ready_to_connecting
   description:
@@ -219,7 +212,7 @@
   expiry: 2026/03/15
   owner: alishananda@google.com
   test_tags: ["core_end2end_test", "secure_endpoint_test", "posix_endpoint_test"]
-  requires: ["event_engine_client", "event_engine_listener", "event_engine_secure_endpoint"]
+  requires: ["event_engine_client", "event_engine_listener"]
   uses_polling: true
   allow_in_fuzzing_config: false
 - name: pollset_alternative
@@ -234,7 +227,7 @@
 - name: prioritize_finished_requests
   description: Prioritize flushing out finished requests over other in-flight
     requests during transport writes.
-  expiry: 2026/02/01
+  expiry: 2026/05/01
   owner: vigneshbabu@google.com
   test_tags: []
 - name: promise_based_http2_client_transport
@@ -242,22 +235,22 @@
     Use promises for the http2 client transport. We have kept client and
     server transport experiments separate to help with smoother roll outs
     and also help with interop testing.
-  expiry: 2026/01/30
+  expiry: 2027/01/16
   owner: tjagtap@google.com
-  test_tags: ["core_end2end_test", "cpp_end2end_test_client_ph2"]
+  test_tags: ["core_end2end_test", "cpp_end2end_test"]
   allow_in_fuzzing_config: true
 - name: promise_based_http2_server_transport
   description:
     Use promises for the http2 server transport. We have kept client and
     server transport experiments separate to help with smoother roll outs
     and also help with interop testing.
-  expiry: 2026/02/28
+  expiry: 2027/01/16
   owner: tjagtap@google.com
   test_tags: []
   allow_in_fuzzing_config: true
 - name: promise_based_inproc_transport
   description: Use promises for the in-process transport.
-  expiry: 2026/02/01
+  expiry: 2026/05/01
   owner: ctiller@google.com
   test_tags: []
   allow_in_fuzzing_config: false # experiment currently crashes if enabled
@@ -270,7 +263,7 @@
   allow_in_fuzzing_config: true
 - name: retry_in_callv3
   description: Support retries with call-v3
-  expiry: 2026/02/01
+  expiry: 2026/05/01
   owner: ctiller@google.com
   test_tags: [core_end2end_test]
 - name: return_preexisting_errors
@@ -287,51 +280,60 @@
   test_tags: ["lb_unit_test", "cpp_lb_end2end_test"]
 - name: schedule_cancellation_over_write
   description: Allow cancellation op to be scheduled over a write
-  expiry: 2026/02/01
+  expiry: 2026/05/01
   owner: vigneshbabu@google.com
   test_tags: []
 - name: secure_endpoint_offload_large_reads
   description: If a large read needs to be decrypted, use a separate thread.
-  expiry: 2026/02/01
+  expiry: 2026/06/01
   owner: alishananda@google.com
   test_tags: ["core_end2end_test"]
   requires:
     [
       "event_engine_client",
       "event_engine_listener",
-      "event_engine_secure_endpoint",
     ]
 - name: secure_endpoint_offload_large_writes
   description: If a large read write to be encrypted, use a separate thread.
-  expiry: 2026/02/01
+  expiry: 2026/06/01
   owner: alishananda@google.com
   test_tags: ["core_end2end_test"]
   requires:
     [
       "event_engine_client",
       "event_engine_listener",
-      "event_engine_secure_endpoint",
+    ]
+- name: secure_endpoint_read_coalescing
+  description:
+    Coalesce decrypted bytes in SecureEndpoint if a read_hint is provided.
+  expiry: 2026/06/01
+  owner: aananthv@google.com
+  test_tags: ["core_end2end_test"]
+  requires:
+    [
+      "event_engine_client",
+      "event_engine_listener",
     ]
 - name: skip_clear_peer_on_cancellation
   description: If set, skips clearing of peer string on call cancellation.
-  expiry: 2026/03/01
+  expiry: 2026/05/01
   owner: vigneshbabu@google.com
   test_tags: []
 - name: sleep_promise_exec_ctx_removal
   description: If set, polling the sleep promise does not rely on the ExecCtx.
-  expiry: 2026/02/01
+  expiry: 2026/06/01
   owner: akshitpatel@google.com
   test_tags: ["promise_test"]
 - name: sleep_use_non_owning_waker
   description: If set, the sleep promise uses a non-owning waker.
-  expiry: 2026/02/01
+  expiry: 2026/04/01
   owner: akshitpatel@google.com
   test_tags: ["promise_test"]
 - name: subchannel_connection_scaling
   description: Subchannel connection scaling support.
   expiry: 2026/07/01
   owner: roth@google.com
-  test_tags: ["cpp_lb_end2end_test", "chttp2_keepalive_tests"]
+  test_tags: ["core_end2end_test", "cpp_lb_end2end_test", "chttp2_keepalive_tests"]
 - name: subchannel_wrapper_cleanup_on_orphan
   description:
     Fixes the subchannel wrapper to drop any non-cancelled watchers when
@@ -345,34 +347,37 @@
     TCP would not indicate completion of a read operation until a specified
     number of bytes have been read over the socket.
     Buffers are also allocated according to estimated RPC sizes.
-  expiry: 2026/02/01
+  expiry: 2026/08/01
   owner: vigneshbabu@google.com
   test_tags: ["endpoint_test", "flow_control_test"]
 - name: tcp_rcv_lowat
   description: Use SO_RCVLOWAT to avoid wakeups on the read path.
-  expiry: 2026/02/01
+  expiry: 2026/08/01
   owner: vigneshbabu@google.com
   test_tags: ["endpoint_test", "flow_control_test"]
-- name: track_writes_in_resource_quota
-  description: Track the Write memory in Resource Quota.
-  expiry: 2026/02/01
-  owner: snohria@google.com
-  test_tags: [resource_quota_test]
-- name: track_zero_copy_allocations_in_resource_quota
-  description:
-    Track the memory allocattions under the zero copy path in
-    Resource Quota. This includes the encryption / decryption
-    for privacy-and-integrity payloads.
-  expiry: 2026/05/01
-  owner: snohria@google.com
-  test_tags: [resource_quota_test]
 - name: tsi_frame_protector_without_locks
   description: Do not hold locks while using the tsi_frame_protector.
-  expiry: 2026/02/01
+  expiry: 2026/06/01
   owner: mattstev@google.com
   test_tags: []
 - name: unconstrained_max_quota_buffer_size
   description: Discard the cap on the max free pool size for one memory allocator
-  expiry: 2026/02/01
+  expiry: 2026/05/01
   owner: ctiller@google.com
   test_tags: [resource_quota_test]
+- name: use_call_event_engine_in_completion_queue
+  description: Use the call event engine to run callbacks in completion queue.
+  expiry: 2026/06/01
+  owner: aananthv@google.com
+  test_tags: ["core_end2end_test"]
+- name: wildcard_ip_expansion_restriction
+  description:
+    If set, adds optional restriction on when to expand wildcard IPs.
+  expiry: 2026/07/01
+  owner: alishananda@google.com
+  test_tags: ["core_end2end_test"]
+- name: xds_channel_filter_chain_per_route
+  description: xDS channels use a separate filter chain for each route.
+  expiry: 2026/06/01
+  owner: roth@google.com
+  test_tags: ["xds_end2end_test", "xds_test"]

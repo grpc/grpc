@@ -27,20 +27,22 @@
 #include <string>
 #include <utility>
 
-#include "src/core/credentials/transport/tls/spiffe_utils.h"
 #include "src/core/credentials/transport/tls/ssl_utils.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/tsi/ssl_transport_security.h"
 #include "src/core/util/ref_counted.h"
 #include "src/core/util/sync.h"
 #include "absl/base/thread_annotations.h"
-#include "absl/strings/string_view.h"
 
 struct grpc_tls_identity_pairs {
   grpc_core::PemKeyCertPairList pem_key_cert_pairs;
 };
 
 // TLS certificate distributor.
+// TODO(anasalazar): Since there are no use-cases where we need to update root
+// and identity certs as an atomic unit, the flow of the certs through the cert
+// providers and to the TLS security connector can be greatly simplified. We may
+// even be able to remove the distributor code completely.
 struct grpc_tls_certificate_distributor
     : public grpc_core::RefCounted<grpc_tls_certificate_distributor> {
  public:
@@ -59,7 +61,7 @@ struct grpc_tls_certificate_distributor
     // @param key_cert_pairs the contents of the reloaded identity key-cert
     // pairs.
     virtual void OnCertificatesChanged(
-        std::shared_ptr<RootCertInfo> roots,
+        std::shared_ptr<tsi::RootCertInfo> roots,
         std::optional<grpc_core::PemKeyCertPairList> key_cert_pairs) = 0;
 
     // Handles an error that occurs while attempting to fetch certificate data.
@@ -87,7 +89,7 @@ struct grpc_tls_certificate_distributor
   // the SpiffeBundleMap.
   // @param pem_key_cert_pairs The content of identity key-cert pairs.
   void SetKeyMaterials(
-      const std::string& cert_name, std::shared_ptr<RootCertInfo> roots,
+      const std::string& cert_name, std::shared_ptr<tsi::RootCertInfo> roots,
       std::optional<grpc_core::PemKeyCertPairList> pem_key_cert_pairs);
 
   bool HasRootCerts(const std::string& root_cert_name);
@@ -174,7 +176,7 @@ struct grpc_tls_certificate_distributor
   // root certs, while pem_root_certs still contains the valid old data.
   struct CertificateInfo {
     // The contents of the root certificates.
-    std::shared_ptr<RootCertInfo> roots;
+    std::shared_ptr<tsi::RootCertInfo> roots;
     // The contents of the identity key-certificate pairs.
     grpc_core::PemKeyCertPairList pem_key_cert_pairs;
     // TODO(gtcooke94) Swap to using absl::StatusOr<>

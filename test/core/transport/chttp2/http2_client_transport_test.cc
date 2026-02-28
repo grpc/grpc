@@ -42,9 +42,12 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/promise/map.h"
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/promise/seq.h"
+#include "src/core/lib/promise/sleep.h"
 #include "src/core/lib/promise/try_join.h"
+#include "src/core/lib/promise/try_seq.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/util/notification.h"
@@ -229,9 +232,7 @@ TEST_F(Http2ClientTransportTest, TestHttp2ClientTransportWriteFromCall) {
            kPathDemoServiceStep.begin(), kPathDemoServiceStep.end())),
        helper_.EventEngineSliceFromHttp2DataFrame(data_payload,
                                                   /*stream_id=*/1,
-                                                  /*end_stream=*/false),
-       helper_.EventEngineSliceFromEmptyHttp2DataFrame(/*stream_id=*/1,
-                                                       /*end_stream=*/true)},
+                                                  /*end_stream=*/true)},
       event_engine().get(),
       [read_close_trailing_metadata = std::move(read_close_trailing_metadata)](
           SliceBuffer& out, SliceBuffer& expect) mutable {
@@ -431,17 +432,18 @@ TEST_F(Http2ClientTransportTest, TestHttp2ClientTransportPingWrite) {
       std::move(mock_endpoint.promise_endpoint), GetChannelArgs(),
       event_engine(), /*on_receive_settings=*/nullptr);
   client_transport->SpawnTransportLoops();
-  client_transport->TestOnlySpawnPromise(
-      "PingRequest", [&client_transport, &ping_ack_received] {
-        return Map(TrySeq(client_transport->TestOnlyTriggerWriteCycle(),
-                          [&client_transport] {
-                            return client_transport->TestOnlySendPing([] {});
-                          }),
-                   [&ping_ack_received](auto) {
-                     ping_ack_received.Call();
-                     LOG(INFO) << "PingAck Received. Ping Test done.";
-                   });
-      });
+  client_transport->TestOnlySpawnPromise("PingRequest", [&client_transport,
+                                                         &ping_ack_received] {
+    return Map(
+        TrySeq([&] { return client_transport->TestOnlyTriggerWriteCycle(); },
+               [&client_transport] {
+                 return client_transport->TestOnlySendPing([] {});
+               }),
+        [&ping_ack_received](auto) {
+          ping_ack_received.Call();
+          LOG(INFO) << "PingAck Received. Ping Test done.";
+        });
+  });
   event_engine()->TickUntilIdle();
   event_engine()->UnsetGlobalHooks();
 }
@@ -497,10 +499,13 @@ TEST_F(Http2ClientTransportTest, TestHttp2ClientTransportPingTimeout) {
       /*on_receive_settings=*/nullptr);
   client_transport->SpawnTransportLoops();
   client_transport->TestOnlySpawnPromise("PingRequest", [&client_transport] {
-    return Map(TrySeq(client_transport->TestOnlyTriggerWriteCycle(),
-                      [&client_transport] {
-                        return client_transport->TestOnlySendPing([] {});
-                      }),
+    return Map(TrySeq(
+                   [&client_transport] {
+                     return client_transport->TestOnlyTriggerWriteCycle();
+                   },
+                   [&client_transport] {
+                     return client_transport->TestOnlySendPing([] {});
+                   }),
                [](auto) { Crash("Unreachable"); });
   });
 
@@ -606,7 +611,9 @@ TEST_F(Http2ClientTransportTest, TestHttp2ClientTransportMultiplePings) {
   client_transport->TestOnlySpawnPromise(
       "PingRequest", [&client_transport, &ping_ack_received, ping_complete] {
         return Map(TrySeq(
-                       client_transport->TestOnlyTriggerWriteCycle(),
+                       [&client_transport] {
+                         return client_transport->TestOnlyTriggerWriteCycle();
+                       },
                        [&client_transport] {
                          return client_transport->TestOnlySendPing([] {});
                        },
@@ -618,11 +625,14 @@ TEST_F(Http2ClientTransportTest, TestHttp2ClientTransportMultiplePings) {
       });
   client_transport->TestOnlySpawnPromise(
       "PingRequest", [&client_transport, ping_complete] {
-        return Map(TrySeq(ping_complete->Wait(), Sleep(Duration::Seconds(5)),
-                          [&client_transport] {
-                            client_transport->TestOnlyTriggerWriteCycle();
-                            return client_transport->TestOnlySendPing([] {});
-                          }),
+        return Map(TrySeq(
+                       ping_complete->Wait(), Sleep(Duration::Seconds(5)),
+                       [&client_transport] {
+                         return client_transport->TestOnlyTriggerWriteCycle();
+                       },
+                       [&client_transport] {
+                         return client_transport->TestOnlySendPing([] {});
+                       }),
                    [](auto) { Crash("Unreachable"); });
       });
   event_engine()->TickUntilIdle();
@@ -786,13 +796,16 @@ TEST_F(Http2ClientTransportTest, TestCanStreamReceiveDataFrames) {
   auto read_cb = mock_endpoint.ExpectDelayedRead(
       {
           helper_.EventEngineSliceFromHttp2SettingsFrameDefault(),
-          helper_.EventEngineSliceFromEmptyHttp2DataFrame(1, false),
+          helper_.EventEngineSliceFromEmptyHttp2DataFrame(/*stream_id=*/1,
+                                                          /*end_stream=*/false),
           helper_.EventEngineSliceFromHttp2GoawayFrame(
               /*debug_data=*/"kthxbye", /*last_stream_id=*/1,
               /*error_code=*/
               static_cast<uint32_t>(Http2ErrorCode::kNoError)),
       },
       event_engine().get());
+  auto read_close_transport = mock_endpoint.ExpectDelayedReadClose(
+      absl::UnavailableError(kConnectionClosed), event_engine().get());
   mock_endpoint.ExpectWriteWithCallback(
       {
           helper_.EventEngineSliceFromHttp2HeaderFrame(
@@ -810,11 +823,6 @@ TEST_F(Http2ClientTransportTest, TestCanStreamReceiveDataFrames) {
           helper_.EventEngineSliceFromHttp2SettingsFrameAck(),
       },
       event_engine().get());
-  mock_endpoint.ExpectWrite(
-      {helper_.EventEngineSliceFromHttp2RstStreamFrame(
-          /*stream_id=*/1, /*error_code=*/
-          static_cast<uint32_t>(Http2ErrorCode::kStreamClosed))},
-      event_engine().get());
 
   mock_endpoint.ExpectWrite(
       {
@@ -823,6 +831,9 @@ TEST_F(Http2ClientTransportTest, TestCanStreamReceiveDataFrames) {
               /*last_stream_id=*/0,
               /*error_code=*/
               static_cast<uint32_t>(Http2ErrorCode::kInternalError)),
+          helper_.EventEngineSliceFromHttp2RstStreamFrame(
+              /*stream_id=*/1, /*error_code=*/
+              static_cast<uint32_t>(Http2ErrorCode::kStreamClosed)),
       },
       event_engine().get());
 
@@ -831,8 +842,6 @@ TEST_F(Http2ClientTransportTest, TestCanStreamReceiveDataFrames) {
       event_engine(), /*on_receive_settings=*/nullptr);
   client_transport->SpawnTransportLoops();
 
-  auto read_close_transport = mock_endpoint.ExpectDelayedReadClose(
-      absl::UnavailableError(kConnectionClosed), event_engine().get());
   auto call = MakeCall(TestInitialMetadata());
   client_transport->StartCall(call.handler.StartCall());
   call.initiator.SpawnInfallible(
@@ -1261,9 +1270,7 @@ TEST_F(Http2ClientTransportTest, ReadGracefulGoaway) {
            kPathDemoServiceStep.begin(), kPathDemoServiceStep.end())),
        helper_.EventEngineSliceFromHttp2DataFrame(data_payload,
                                                   /*stream_id=*/1,
-                                                  /*end_stream=*/false),
-       helper_.EventEngineSliceFromEmptyHttp2DataFrame(/*stream_id=*/1,
-                                                       /*end_stream=*/true)},
+                                                  /*end_stream=*/true)},
       event_engine().get(),
       [read_close_trailing_metadata = std::move(read_close_trailing_metadata)](
           SliceBuffer& out, SliceBuffer& expect) mutable {
@@ -1364,9 +1371,7 @@ TEST_F(Http2ClientTransportTest, ReadGracefulGoawayCannotStartNewStreams) {
            kPathDemoServiceStep.begin(), kPathDemoServiceStep.end())),
        helper_.EventEngineSliceFromHttp2DataFrame(data_payload,
                                                   /*stream_id=*/1,
-                                                  /*end_stream=*/false),
-       helper_.EventEngineSliceFromEmptyHttp2DataFrame(/*stream_id=*/1,
-                                                       /*end_stream=*/true)},
+                                                  /*end_stream=*/true)},
       event_engine().get(),
       [&, read_frames = std::move(read_frames)](SliceBuffer& out,
                                                 SliceBuffer& expect) mutable {
@@ -1553,9 +1558,6 @@ TEST_F(Http2ClientTransportTest, TestInitialSequenceNumber) {
            /*end_stream=*/false),
        helper_.EventEngineSliceFromHttp2DataFrame(
            data_payload,
-           /*stream_id=*/kInitialSequenceNumber,
-           /*end_stream=*/false),
-       helper_.EventEngineSliceFromEmptyHttp2DataFrame(
            /*stream_id=*/kInitialSequenceNumber,
            /*end_stream=*/true)},
       event_engine().get(),

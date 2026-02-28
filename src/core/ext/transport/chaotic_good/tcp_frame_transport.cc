@@ -69,6 +69,19 @@ TcpFrameTransport::TcpFrameTransport(
 }
 
 auto TcpFrameTransport::WriteFrame(MpscQueued<OutgoingFrame> queued_frame) {
+  if (const auto* metadata_frame =
+          std::get_if<ClientInitialMetadataFrame>(&queued_frame->payload)) {
+    for (const auto& meta : metadata_frame->body.unknown_metadata()) {
+      if (meta.key() == "flow-id") {
+        uint64_t flow_id;
+        if (absl::SimpleAtoi(meta.value(), &flow_id)) {
+          ztrace_collector_->Append(ChunkStreamAssociationTrace{
+              static_cast<int64_t>(metadata_frame->stream_id), flow_id});
+        }
+        break;
+      }
+    }
+  }
   const auto& frame =
       absl::ConvertVariantTo<FrameInterface&>(queued_frame->payload);
   FrameHeader header = frame.MakeHeader();

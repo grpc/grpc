@@ -138,15 +138,15 @@ class FakeCertificateProvider final : public grpc_tls_certificate_provider {
             "No certificates available for cert_name \"", cert_name, "\""));
         distributor_->SetErrorForCert(cert_name, error, error);
       } else {
-        std::shared_ptr<RootCertInfo> root_cert_info;
+        std::shared_ptr<tsi::RootCertInfo> root_cert_info;
         std::optional<grpc_core::PemKeyCertPairList> pem_key_cert_pairs;
         if (root_being_watched) {
           if (it->second.spiffe_bundle_map.size() != 0) {
-            root_cert_info =
-                std::make_shared<RootCertInfo>(it->second.spiffe_bundle_map);
+            root_cert_info = std::make_shared<tsi::RootCertInfo>(
+                it->second.spiffe_bundle_map);
           } else {
-            root_cert_info =
-                std::make_shared<RootCertInfo>(it->second.root_certificate);
+            root_cert_info = std::make_shared<tsi::RootCertInfo>(
+                it->second.root_certificate);
           }
         }
         if (identity_being_watched) {

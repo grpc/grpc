@@ -184,7 +184,6 @@ grpc_cc_library(
         "//src/core:grpc_check",
         "//src/core:load_file",
         "//src/proto/grpc/reflection/v1alpha:reflection_proto",
-        "@com_google_protobuf//src/google/protobuf/compiler:importer",
     ],
 )
 
@@ -476,6 +475,28 @@ grpc_cc_test(
         "//src/proto/grpc/testing:test_cc_grpc",
         "//test/core/test_util:grpc_test_util",
         "//test/cpp/util:test_util",
+    ],
+)
+
+grpc_cc_library(
+    name = "channelz_util",
+    testonly = 1,
+    srcs = [
+        "channelz_util.cc",
+    ],
+    hdrs = [
+        "channelz_util.h",
+    ],
+    external_deps = [
+        "protobuf",
+        "absl/strings",
+    ],
+    deps = [
+        "//:channelz",
+        "//src/core:down_cast",
+        "//src/core:grpc_check",
+        "//src/proto/grpc/channelz/v2:channelz_cc_proto",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 

@@ -93,6 +93,11 @@ package_group(
 )
 
 package_group(
+    name = "client_channel_internal_header",
+    packages = [],
+)
+
+package_group(
     name = "core_credentials",
     packages = [],
 )
@@ -129,6 +134,11 @@ package_group(
 
 package_group(
     name = "grpc++_public_hdrs",
+    packages = [],
+)
+
+package_group(
+    name = "grpc++_unsecure",
     packages = [],
 )
 
@@ -251,5 +261,15 @@ package_group(
 
 package_group(
     name = "transport_common",
+    packages = [],
+)
+
+package_group(
+    name = "posix_engine",
+    packages = [],
+)
+
+package_group(
+    name = "wait_for_single_owner",
     packages = [],
 )
