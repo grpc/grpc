@@ -14,12 +14,15 @@
 """Implementation of the metadata abstraction for gRPC Asyncio Python."""
 from collections import OrderedDict
 from collections import abc
-from typing import Any, Iterator, List, Optional, Tuple, Union
+from collections.abc import Iterable
+from typing import Any, Iterator, List, Optional, Sequence, Tuple, Union
 
 from typing_extensions import Self
 
 MetadataKey = str
 MetadataValue = Union[str, bytes]
+MetadatumType = Tuple[MetadataKey, MetadataValue]
+MetadataType = Union["Metadata", Sequence[MetadatumType]]
 
 
 class Metadata(abc.Collection):  # noqa: PLW1641
@@ -35,15 +38,30 @@ class Metadata(abc.Collection):  # noqa: PLW1641
         * Allows partial mutation on the data without recreating the new object from scratch.
     """
 
-    def __init__(self, *args: Tuple[MetadataKey, MetadataValue]) -> None:
+    def __init__(self, *args: MetadatumType) -> None:
         self._metadata = OrderedDict()
         for md_key, md_value in args:
             self.add(md_key, md_value)
 
     @classmethod
-    def from_tuple(cls, raw_metadata: Union[tuple, Self]):
+    def from_tuple(cls, raw_metadata: tuple):
+        if raw_metadata:
+            return cls(*raw_metadata)
+        return cls()
+
+    @classmethod
+    def _create(
+        cls,
+        raw_metadata: Union[
+            None, Self, Iterable[tuple[MetadataKey, MetadataValue]]
+        ],
+    ) -> Self:
+        if raw_metadata is None:
+            return Metadata()
         if isinstance(raw_metadata, cls):
             return raw_metadata
+        if isinstance(raw_metadata, (tuple, list)):
+            return cls.from_tuple(tuple(raw_metadata))
         if raw_metadata:
             return cls(*raw_metadata)
         return cls()
