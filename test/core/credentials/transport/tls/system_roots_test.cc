@@ -20,11 +20,13 @@
 #include <stdio.h>
 
 #if defined(GPR_LINUX) || defined(GPR_FREEBSD) || defined(GPR_APPLE) || \
-    defined(GPR_WINDOWS)
+    defined(GPR_NETBSD) || defined(GPR_OPENBSD) || defined(GPR_WINDOWS)
 #include <string.h>
-#if defined(GPR_LINUX) || defined(GPR_FREEBSD) || defined(GPR_APPLE)
+#if defined(GPR_LINUX) || defined(GPR_FREEBSD) || defined(GPR_APPLE) || \
+    defined(GPR_NETBSD) || defined(GPR_OPENBSD)
 #include <sys/param.h>
-#endif  // GPR_LINUX || GPR_FREEBSD || GPR_APPLE
+#endif  // GPR_LINUX || GPR_FREEBSD || GPR_APPLE || GPR_NETBSD ||
+        // GPR_OPENBSD
 
 #include <grpc/grpc_security.h>
 #include <grpc/support/alloc.h>
@@ -52,7 +54,8 @@ namespace {
 // The GetAbsoluteFilePath and CreateRootCertsBundle helper functions are only
 // defined on some platforms. On other platforms (e.g. Windows), we rely on
 // built-in helper functions to play similar (but not exactly the same) roles.
-#if defined(GPR_LINUX) || defined(GPR_FREEBSD) || defined(GPR_APPLE)
+#if defined(GPR_LINUX) || defined(GPR_FREEBSD) || defined(GPR_APPLE) || \
+    defined(GPR_NETBSD) || defined(GPR_OPENBSD)
 TEST(AbsoluteFilePathTest, ConcatenatesCorrectly) {
   const char* directory = "nonexistent/test/directory";
   const char* filename = "doesnotexist.txt";
@@ -88,7 +91,8 @@ TEST(CreateRootCertsBundleTest, BundlesCorrectly) {
       << "Expected: \"" << result_slice.as_string_view() << "\"\n"
       << "Actual:   \"" << roots_bundle_str << "\"";
 }
-#endif  // GPR_LINUX || GPR_FREEBSD || GPR_APPLE
+#endif  // GPR_LINUX || GPR_FREEBSD || GPR_APPLE || GPR_NETBSD ||
+        // GPR_OPENBSD
 
 #if defined(GPR_WINDOWS)
 TEST(LoadSystemRootCertsTest, Success) {
@@ -113,4 +117,5 @@ int main() {
       "systems ***\n");
   return 0;
 }
-#endif  // GPR_LINUX || GPR_FREEBSD || GPR_APPLE || GPR_WINDOWS
+#endif  // GPR_LINUX || GPR_FREEBSD || GPR_APPLE || GPR_NETBSD ||
+        // GPR_OPENBSD || GPR_WINDOWS
