@@ -180,8 +180,9 @@ class OpHandlerImpl {
                 "PromiseFactory must return a promise");
 
   OpHandlerImpl() : state_(State::kDismissed) {}
-  explicit OpHandlerImpl(SetupResult result) : state_(State::kPromiseFactory) {
-    Construct(&promise_factory_, std::move(result));
+  explicit OpHandlerImpl(SetupResult&& result)
+      : state_(State::kPromiseFactory) {
+    Construct(&promise_factory_, std::forward<SetupResult>(result));
   }
 
   ~OpHandlerImpl() {
@@ -286,8 +287,9 @@ class OpHandlerImpl {
 };
 
 template <grpc_op_type op_type, typename PromiseFactory>
-auto OpHandler(PromiseFactory setup) {
-  return OpHandlerImpl<PromiseFactory, op_type>(std::move(setup));
+auto OpHandler(PromiseFactory&& setup) {
+  return OpHandlerImpl<PromiseFactory, op_type>(
+      std::forward<PromiseFactory>(setup));
 }
 
 class BatchOpIndex {
@@ -341,7 +343,7 @@ class WaitForCqEndOp {
     grpc_completion_queue* cq;
   };
   struct Started {
-    explicit Started(Waker waker) : waker(std::move(waker)) {}
+    explicit Started(Waker&& waker) : waker(std::forward<Waker>(waker)) {}
     Waker waker;
     grpc_cq_completion completion;
     std::atomic<bool> done{false};
@@ -400,7 +402,7 @@ class WaitForCqEndOp {
 };
 
 template <typename FalliblePart, typename FinalPart>
-auto InfallibleBatch(FalliblePart fallible_part, FinalPart final_part,
+auto InfallibleBatch(FalliblePart&& fallible_part, FinalPart&& final_part,
                      bool is_notify_tag_closure, void* notify_tag,
                      grpc_completion_queue* cq) {
   // Perform fallible_part, then final_part, then wait for the
@@ -409,9 +411,9 @@ auto InfallibleBatch(FalliblePart fallible_part, FinalPart final_part,
   // There's a slight bug here in that if we cancel this promise after
   // the WaitForCqEndOp we'll double post -- but we don't currently do that.
   return OnCancelFactory(
-      [fallible_part = std::move(fallible_part),
-       final_part = std::move(final_part), is_notify_tag_closure, notify_tag,
-       cq]() mutable {
+      [fallible_part = std::forward<FalliblePart>(fallible_part),
+       final_part = std::forward<FinalPart>(final_part), is_notify_tag_closure,
+       notify_tag, cq]() mutable {
         return LogPollBatch(notify_tag,
                             Seq(std::move(fallible_part), std::move(final_part),
                                 [is_notify_tag_closure, notify_tag, cq]() {
@@ -429,15 +431,15 @@ auto InfallibleBatch(FalliblePart fallible_part, FinalPart final_part,
 }
 
 template <typename FalliblePart>
-auto FallibleBatch(FalliblePart fallible_part, bool is_notify_tag_closure,
+auto FallibleBatch(FalliblePart&& fallible_part, bool is_notify_tag_closure,
                    void* notify_tag, grpc_completion_queue* cq) {
   // Perform fallible_part, then wait for the completion queue to be done.
   // If cancelled, we'll ensure the completion queue is notified.
   // There's a slight bug here in that if we cancel this promise after
   // the WaitForCqEndOp we'll double post -- but we don't currently do that.
   return OnCancelFactory(
-      [fallible_part = std::move(fallible_part), is_notify_tag_closure,
-       notify_tag, cq]() mutable {
+      [fallible_part = std::forward<FalliblePart>(fallible_part),
+       is_notify_tag_closure, notify_tag, cq]() mutable {
         return LogPollBatch(
             notify_tag,
             Seq(std::move(fallible_part),
@@ -457,7 +459,7 @@ auto FallibleBatch(FalliblePart fallible_part, bool is_notify_tag_closure,
 template <typename F>
 class PollBatchLogger {
  public:
-  PollBatchLogger(void* tag, F f) : tag_(tag), f_(std::move(f)) {}
+  PollBatchLogger(void* tag, F&& f) : tag_(tag), f_(std::forward<F>(f)) {}
 
   auto operator()() {
     GRPC_TRACE_LOG(call, INFO) << "Poll batch " << tag_;
@@ -486,8 +488,8 @@ class PollBatchLogger {
 };
 
 template <typename F>
-PollBatchLogger<F> LogPollBatch(void* tag, F f) {
-  return PollBatchLogger<F>(tag, std::move(f));
+PollBatchLogger<F> LogPollBatch(void* tag, F&& f) {
+  return PollBatchLogger<F>(tag, std::forward<F>(f));
 }
 
 class MessageReceiver {
@@ -509,8 +511,9 @@ class MessageReceiver {
     recv_message_ = op.data.recv_message.recv_message;
     return [this, puller]() mutable {
       return Map(puller->PullMessage(),
-                 [this](typename Puller::NextMessage msg) {
-                   return FinishRecvMessage(std::move(msg));
+                 [this](typename Puller::NextMessage&& msg) {
+                   return FinishRecvMessage(
+                       std::forward<typename Puller::NextMessage>(msg));
                  });
     };
   }
