@@ -242,6 +242,7 @@ void Call::MaybeUnpublishFromParent() {
 }
 
 void Call::CancelWithStatus(grpc_status_code status, const char* description) {
+  status = grpc_status_code_clamp_to_valid(status);
   if (!IsErrorFlattenEnabled()) {
     CancelWithError(grpc_error_set_int(
         grpc_error_set_str(
@@ -462,6 +463,11 @@ grpc_call_error grpc_call_cancel_with_status(grpc_call* c,
   GRPC_CHECK_EQ(reserved, nullptr);
   if (c == nullptr) {
     return GRPC_CALL_ERROR;
+  }
+  if (!grpc_status_code_from_int(static_cast<int>(status), &status)) {
+    GRPC_TRACE_LOG(api, WARNING)
+        << "status=" << (int)status
+        << ": input status code is out of valid range, converting to UNKNOWN";
   }
   grpc_core::ExecCtx exec_ctx;
   grpc_core::Call::FromC(c)->CancelWithStatus(status, description);

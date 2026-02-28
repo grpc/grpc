@@ -40,6 +40,7 @@
 #include <utility>
 
 #include "src/core/call/metadata.h"
+#include "src/core/call/status_util.h"
 #include "src/core/lib/event_engine/event_engine_context.h"
 #include "src/core/lib/promise/all_ok.h"
 #include "src/core/lib/promise/status_flag.h"
@@ -415,7 +416,7 @@ void ClientCall::CommitBatch(const grpc_op* ops, size_t nops, void* notify_tag,
              out_trailing_metadata]() {
               auto* status = cancel_status_.Get();
               GRPC_CHECK_NE(status, nullptr);
-              *out_status = static_cast<grpc_status_code>(status->code());
+              grpc_status_code_from_int(status->raw_code(), out_status);
               *out_status_details =
                   Slice::FromCopiedString(status->message()).TakeCSlice();
               if (out_error_string != nullptr) {

@@ -40,6 +40,19 @@ const char* grpc_status_code_to_string(grpc_status_code status);
 // true.
 bool grpc_status_code_from_int(int status_int, grpc_status_code* status);
 
+// Clamps a grpc_status_code value to the valid range [0-16].
+// If the given value is outside this range, returns GRPC_STATUS_UNKNOWN.
+// This function is used to sanitize status codes received from external sources
+// (e.g., network, plugins, user code) to ensure they fall within the valid
+// range defined by the gRPC specification.
+grpc_status_code grpc_status_code_clamp_to_valid(grpc_status_code status);
+
+// Converts a grpc_status_code to absl::StatusCode, clamping to valid range
+// first. If the grpc_status_code is not valid (outside range [0-16]), it is
+// first clamped to GRPC_STATUS_UNKNOWN before conversion. Returns the
+// corresponding absl::StatusCode for the (possibly clamped) status.
+absl::StatusCode grpc_status_code_to_absl_status_code(grpc_status_code status);
+
 namespace grpc_core {
 namespace internal {
 
