@@ -43,6 +43,6 @@ set PATH=C:\bazel;%PATH%
 bazel --version
 
 echo "!TIME!: Running the bazel build"
-bazel build --config=clang-cl --config=windows_opt --build_tag_filters=-no_windows :all src/core:all
+bazel build --config=no-bzlmod --config=clang-cl --config=windows_opt --build_tag_filters=-no_windows :all src/core:all
 
 echo "!TIME!: Job Finished"
