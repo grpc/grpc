@@ -41,6 +41,14 @@ def map_dir(filename):
 def get_srcs(files, lib):
     return files[lib]["srcs"]
 
+def get_asm_outputs(files):
+    crypto_asm = []
+    crypto_nasm = []
+    for name, properties in files.items():
+        crypto_asm += properties.get("asm", list()) # end with .S
+        crypto_nasm += properties.get("nasm", list()) # end with .asm
+    return {"crypto_asm": sorted(crypto_asm), "crypto_nasm": sorted(crypto_nasm)}
+
 class Grpc(object):
     """Adapter for boring-SSL json sources files."""
 
@@ -50,11 +58,7 @@ class Grpc(object):
 
     def WriteFiles(self, files):
         test_binaries = ["ssl_test", "crypto_test"]
-        asm_outputs = {
-            key: value
-            for key, value in files.items()
-            if any(f.endswith(".S") or f.endswith(".asm") for f in value)
-        }
+        asm_outputs = get_asm_outputs(files)
         self.yaml = {
             "#": "generated with src/boringssl/gen_build_yaml.py",
             "raw_boringssl_build_output_for_debugging": {
@@ -93,7 +97,7 @@ class Grpc(object):
                     "secure": False,
                     "boringssl": True,
                     "defaults": "boringssl",
-                    "src": [map_dir(f) for f in sorted(files["test_support"])],
+                    "src": [map_dir(f) for f in sorted(files["test_support"]["srcs"])],
                 },
             ],
             "targets": [
@@ -103,7 +107,7 @@ class Grpc(object):
                     "run": False,
                     "secure": False,
                     "language": "c++",
-                    "src": sorted(map_dir(f) for f in files[test]),
+                    "src": sorted(map_dir(f) for f in files[test]["srcs"]),
                     "vs_proj_dir": "test/boringssl",
                     "boringssl": True,
                     "defaults": "boringssl",
