@@ -1250,11 +1250,30 @@ auto Http2ServerTransport::WriteLoop() {
 //////////////////////////////////////////////////////////////////////////////
 // Settings
 
-// auto WaitForSettingsTimeoutOnDone();
+void Http2ServerTransport::EnforceLatestIncomingSettings() {
+  encoder_.SetMaxTableSize(settings_->peer().header_table_size());
+}
 
-// void MaybeSpawnWaitForSettingsTimeout();
+auto Http2ServerTransport::WaitForSettingsTimeoutOnDone() {
+  return [self = RefAsSubclass<Http2ServerTransport>()](absl::Status status) {
+    if (!status.ok()) {
+      GRPC_UNUSED absl::Status result = self->HandleError(
+          std::nullopt, Http2Status::Http2ConnectionError(
+                            Http2ErrorCode::kProtocolError,
+                            std::string(RFC9113::kSettingsTimeout)));
+    }
+  };
+}
 
-// void EnforceLatestIncomingSettings();
+void Http2ServerTransport::MaybeSpawnWaitForSettingsTimeout() {
+  if (settings_->ShouldSpawnWaitForSettingsTimeout()) {
+    GRPC_HTTP2_SERVER_DLOG
+        << "Http2ServerTransport::MaybeSpawnWaitForSettingsTimeout Spawning";
+    SpawnWithOnDoneTransportParty("WaitForSettingsTimeout",
+                                  settings_->WaitForSettingsTimeout(),
+                                  WaitForSettingsTimeoutOnDone());
+  }
+}
 
 //////////////////////////////////////////////////////////////////////////////
 // Flow Control and BDP
