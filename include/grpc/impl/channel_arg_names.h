@@ -369,6 +369,26 @@
  */
 #define GRPC_ARG_ADDRESS_HTTP_PROXY_ENABLED_ADDRESSES \
   "grpc.address_http_proxy_enabled_addresses"
+/** If non-zero, enables TLS for the connection to the HTTP proxy (HTTPS proxy).
+ *  Boolean valued. Defaults to false. Automatically set to true when proxy URI
+ *  uses https:// scheme. */
+#define GRPC_ARG_HTTP_PROXY_TLS_ENABLED "grpc.http_proxy_tls_enabled"
+/** PEM-encoded root certificates for verifying the HTTPS proxy server
+ *  certificate. If not set, system default roots are used. String value. */
+#define GRPC_ARG_HTTP_PROXY_TLS_ROOT_CERTS "grpc.http_proxy_tls_root_certs"
+/** If non-zero, verifies the HTTPS proxy server certificate. Boolean valued.
+ *  Defaults to true. */
+#define GRPC_ARG_HTTP_PROXY_TLS_VERIFY_SERVER_CERT \
+  "grpc.http_proxy_tls_verify_server_cert"
+/** Expected server name for HTTPS proxy certificate verification. If not set,
+ *  the proxy hostname from the URI is used. String value. */
+#define GRPC_ARG_HTTP_PROXY_TLS_SERVER_NAME "grpc.http_proxy_tls_server_name"
+/** PEM-encoded client certificate chain for mTLS with the HTTPS proxy.
+ *  Optional. String value. */
+#define GRPC_ARG_HTTP_PROXY_TLS_CERT_CHAIN "grpc.http_proxy_tls_cert_chain"
+/** PEM-encoded client private key for mTLS with the HTTPS proxy.
+ *  Optional. String value. */
+#define GRPC_ARG_HTTP_PROXY_TLS_PRIVATE_KEY "grpc.http_proxy_tls_private_key"
 /** If set to non zero, surfaces the user agent string to the server. User
     agent is surfaced by default. */
 #define GRPC_ARG_SURFACE_USER_AGENT "grpc.surface_user_agent"

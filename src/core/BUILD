@@ -1723,6 +1723,49 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "secure_endpoint",
+    srcs = [
+        "handshaker/security/secure_endpoint.cc",
+    ],
+    hdrs = [
+        "handshaker/security/secure_endpoint.h",
+    ],
+    external_deps = [
+        "absl/base:core_headers",
+        "absl/log:log",
+        "absl/status",
+        "absl/strings",
+        "absl/types:span",
+    ],
+    deps = [
+        "arena",
+        "channel_args",
+        "closure",
+        "error",
+        "experiments",
+        "grpc_check",
+        "iomgr_fwd",
+        "memory_quota",
+        "ref_counted",
+        "resource_quota",
+        "slice",
+        "slice_buffer",
+        "sync",
+        "useful",
+        "//:debug_location",
+        "//:exec_ctx",
+        "//:gpr",
+        "//:grpc_trace",
+        "//:iomgr",
+        "//:orphanable",
+        "//:ref_counted_ptr",
+        "//:resource_quota_api",
+        "//:tsi",
+        "//:tsi_base",
+    ],
+)
+
+grpc_cc_library(
     name = "channel_creds_registry",
     hdrs = [
         "credentials/transport/channel_creds_registry.h",
@@ -4319,6 +4362,29 @@ grpc_cc_library(
         "//:parse_address",
         "//:sockaddr_utils",
         "//:uri",
+    ],
+)
+
+grpc_cc_library(
+    name = "http_proxy_tls_credentials",
+    srcs = [
+        "handshaker/http_connect/http_proxy_tls_credentials.cc",
+    ],
+    hdrs = [
+        "handshaker/http_connect/http_proxy_tls_credentials.h",
+    ],
+    external_deps = [
+        "absl/log",
+        "absl/strings",
+    ],
+    deps = [
+        "channel_args",
+        "//:channel_arg_names",
+        "//:gpr",
+        "//:grpc_core_credentials_header",
+        "//:grpc_public_hdrs",
+        "//:grpc_security_base",
+        "//:ref_counted_ptr",
     ],
 )
 
@@ -10982,6 +11048,49 @@ grpc_cc_library(
         "load_file",
         "ssl_transport_security_utils",
         "status_helper",
+    ],
+)
+
+grpc_cc_library(
+    name = "ssl_utils",
+    srcs = [
+        "//src/core:credentials/transport/tls/ssl_utils.cc",
+    ],
+    hdrs = [
+        "//src/core:credentials/transport/tls/ssl_utils.h",
+    ],
+    external_deps = [
+        "absl/log:log",
+        "absl/status",
+        "absl/strings",
+        "libcrypto",
+        "libssl",
+    ],
+    deps = [
+        "channel_args",
+        "error",
+        "grpc_check",
+        "grpc_transport_chttp2_alpn",
+        "load_file",
+        "ref_counted",
+        "slice",
+        "spiffe_utils",
+        "ssl_key_logging",
+        "ssl_transport_security_utils",
+        "useful",
+        "//:channel_arg_names",
+        "//:config_vars",
+        "//:gpr",
+        "//:grpc_base",
+        "//:grpc_core_credentials_header",
+        "//:grpc_credentials_util",
+        "//:grpc_public_hdrs",
+        "//:grpc_security_base",
+        "//:ref_counted_ptr",
+        "//:transport_auth_context",
+        "//:tsi",
+        "//:tsi_base",
+        "//:tsi_ssl_credentials",
     ],
 )
 

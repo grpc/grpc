@@ -647,6 +647,7 @@ grpc_cc_library(
         "grpc_security_base",
         "grpc_trace",
         "http_connect_client_handshaker",
+        "https_proxy_tls_handshaker",
         "iomgr_timer",
         "server",
         "transport_auth_context",
@@ -744,6 +745,7 @@ grpc_cc_library(
         "grpc_security_base",
         "grpc_trace",
         "http_connect_client_handshaker",
+        "https_proxy_tls_handshaker",
         "httpcli",
         "iomgr_timer",
         "promise",
@@ -3531,6 +3533,74 @@ grpc_cc_library(
         "//src/core:slice",
         "//src/core:slice_buffer",
         "//src/core:sync",
+    ],
+)
+
+grpc_cc_library(
+    name = "https_proxy_tls_handshaker",
+    srcs = [
+        "//src/core:handshaker/http_connect/https_proxy_tls_handshaker.cc",
+    ],
+    external_deps = [
+        "absl/base:core_headers",
+        "absl/functional:any_invocable",
+        "absl/log:log",
+        "absl/status",
+        "absl/strings",
+    ],
+    public_hdrs = [
+        "//src/core:handshaker/http_connect/https_proxy_tls_handshaker.h",
+    ],
+    visibility = ["//bazel:alt_grpc_base_legacy"],
+    deps = [
+        "channel_arg_names",
+        "config",
+        "debug_location",
+        "exec_ctx",
+        "gpr",
+        "grpc_base",
+        "grpc_public_hdrs",
+        "grpc_security_base",
+        "handshaker",
+        "iomgr",
+        "ref_counted_ptr",
+        "tsi",
+        "tsi_base",
+        "tsi_ssl_credentials",
+        "//src/core:channel_args",
+        "//src/core:closure",
+        "//src/core:error",
+        "//src/core:grpc_check",
+        "//src/core:grpc_transport_chttp2_client_connector",
+        "//src/core:handshaker_factory",
+        "//src/core:handshaker_registry",
+        "//src/core:iomgr_fwd",
+        "//src/core:secure_endpoint",
+        "//src/core:slice",
+        "//src/core:slice_buffer",
+        "//src/core:ssl_utils",
+        "//src/core:sync",
+    ],
+)
+
+grpc_cc_library(
+    name = "http_proxy_tls_credentials",
+    srcs = [
+        "//src/core:handshaker/http_connect/http_proxy_tls_credentials.cc",
+    ],
+    external_deps = [
+        "absl/log:log",
+    ],
+    public_hdrs = [
+        "//src/core:handshaker/http_connect/http_proxy_tls_credentials.h",
+    ],
+    visibility = ["//bazel:alt_grpc_base_legacy"],
+    deps = [
+        "gpr",
+        "grpc_public_hdrs",
+        "grpc_security_base",
+        "ref_counted_ptr",
+        "//src/core:channel_args",
     ],
 )
 
