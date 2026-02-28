@@ -778,6 +778,8 @@ _LANGUAGES_WITH_HTTP2_CLIENTS_FOR_HTTP2_SERVER_TEST_CASES = [
 
 _LANGUAGES_FOR_ALTS_TEST_CASES = ["java", "go", "c++", "python"]
 
+_LANGUAGES_FOR_MCS_TEST_CASE = ["c++"]
+
 _SERVERS_FOR_ALTS_TEST_CASES = ["java", "go", "c++", "python"]
 
 _TRANSPORT_SECURITY_OPTIONS = ["tls", "alts", "insecure"]
@@ -1031,6 +1033,7 @@ def cloud_to_cloud_jobspec(
     docker_image=None,
     transport_security="tls",
     manual_cmd_log=None,
+    add_env={},
 ):
     """Creates jobspec for cloud-to-cloud interop test"""
     interop_only_options = [
@@ -1090,6 +1093,7 @@ def cloud_to_cloud_jobspec(
         cwd = language.client_cwd
 
     environ = language.global_env()
+    environ.update(add_env)
     if docker_image and language.safename != "objc":
         # we can't run client in docker for objc.
         container_name = dockerjob.random_name(
@@ -1127,7 +1131,11 @@ def cloud_to_cloud_jobspec(
 
 
 def server_jobspec(
-    language, docker_image, transport_security="tls", manual_cmd_log=None
+    language,
+    docker_image,
+    transport_security="tls",
+    manual_cmd_log=None,
+    set_max_concurrent_streams_limit=False,
 ):
     """Create jobspec for running a server"""
     container_name = dockerjob.random_name(
@@ -1146,6 +1154,8 @@ def server_jobspec(
             % transport_security
         )
         sys.exit(1)
+    if set_max_concurrent_streams_limit:
+        server_cmd += ["--set_max_concurrent_streams_limit=true"]
     cmdline = bash_cmdline(language.server_cmd(server_cmd))
     environ = language.global_env()
     docker_args = ["--name=%s" % container_name]
@@ -1425,6 +1435,14 @@ argp.add_argument(
     nargs="?",
     help="Upload test results to a specified BQ table.",
 )
+argp.add_argument(
+    "--max_concurrent_streams_connection_scaling",
+    default=False,
+    action="store_const",
+    const=True,
+    help="Enable Max concurrent streams connection scaling testing",
+)
+
 args = argp.parse_args()
 
 servers = set(
@@ -1458,6 +1476,13 @@ if args.manual_run and not args.use_docker:
 if not args.use_docker and servers:
     print(
         "Running interop servers is only supported with --use_docker option"
+        " enabled."
+    )
+    sys.exit(1)
+
+if args.max_concurrent_streams_connection_scaling and not args.use_docker:
+    print(
+        "Running interop for max concurrent streams connection scaling is only supported with --use_docker option"
         " enabled."
     )
     sys.exit(1)
@@ -1792,6 +1817,43 @@ try:
                         manual_cmd_log=client_manual_cmd_log,
                     )
                     jobs.append(test_job)
+
+    if args.max_concurrent_streams_connection_scaling:
+        languages_for_mcs_cs = set(
+            _LANGUAGES[l]
+            for l in _LANGUAGES_WITH_HTTP2_CLIENTS_FOR_HTTP2_SERVER_TEST_CASES
+            if "all" in args.language or l in args.language
+        )
+        if not languages_for_mcs_cs:
+            print('MCS connection scaling tests will be skipped since none of the supported client languages for MCS connection scaling testcases was specified')
+        else:
+            if args.server != 'java':
+                print('Using java for MCS connection scaling server to be used by all MCS connection scaling clients.')
+            mcs_server_jobspec = server_jobspec(
+                _LANGUAGES['java'],
+                docker_images.get('java'),
+                args.transport_security,
+                manual_cmd_log=server_manual_cmd_log,
+                set_max_concurrent_streams_limit=True,
+            )
+            mcs_server_job = dockerjob.DockerJob(mcs_server_jobspec)
+            # Because the gRPC Java server takes some time to come up
+            time.sleep(30)
+
+            for language in languages_for_mcs_cs:
+                test_job = cloud_to_cloud_jobspec(
+                    language,
+                    'max_concurrent_streams_connection_scaling',
+                    'java-mcs',
+                    'localhost',
+                    mcs_server_job.mapped_port(_DEFAULT_SERVER_PORT),
+                    docker_image=docker_images.get(str(language)),
+                    transport_security=args.transport_security,
+                    manual_cmd_log=client_manual_cmd_log,
+                    add_env={'GRPC_EXPERIMENTAL_MAX_CONCURRENT_STREAMS_CONNECTION_SCALING': 'true',
+                        'GRPC_EXPERIMENTS': 'subchannel_connection_scaling'},
+                )
+                jobs.append(test_job)
 
     if not jobs:
         print("No jobs to run.")
