@@ -16,9 +16,10 @@
 
 #include <vector>
 
-#include "fuzztest/fuzztest.h"
 #include "src/core/ext/transport/chaotic_good/chaotic_good_frame.pb.h"
+#include "src/core/lib/experiments/config.h"
 #include "gtest/gtest.h"
+#include "fuzztest/fuzztest.h"
 
 namespace grpc_core {
 namespace {
@@ -120,6 +121,84 @@ void ConfigTest(FuzzerChannelArgs client_args_input,
   }
 }
 FUZZ_TEST(MyTestSuite, ConfigTest);
+
+TEST(ConfigTest, ChunkingDisabledByDefault) {
+  // Ensure the experiment is disabled (default).
+  ForceEnableExperiment("chaotic_good_send_supported_features", false);
+
+  ChannelArgs args;
+  chaotic_good::Config client_config(args);
+  chaotic_good::Config server_config(args);
+
+  chaotic_good_frame::Settings client_settings;
+  client_config.PrepareClientOutgoingSettings(client_settings);
+
+  // Verify that supported features do NOT include CHUNKING (current behavior).
+  bool has_chunking = false;
+  for (auto feature : client_settings.supported_features()) {
+    if (feature == chaotic_good_frame::Settings::CHUNKING) {
+      has_chunking = true;
+      break;
+    }
+  }
+  EXPECT_FALSE(has_chunking);
+
+  EXPECT_TRUE(
+      server_config.ReceiveClientIncomingSettings(client_settings).ok());
+
+  chaotic_good_frame::Settings server_settings;
+  server_config.PrepareServerOutgoingSettings(server_settings);
+
+  FakeClientConnectionFactory fake_factory;
+  EXPECT_TRUE(
+      client_config.ReceiveServerIncomingSettings(server_settings, fake_factory)
+          .ok());
+
+  // Verify that max chunk size is 0 because chunking was not negotiated.
+  EXPECT_EQ(client_config.max_recv_chunk_size(), 0u);
+  EXPECT_EQ(client_config.max_send_chunk_size(), 0u);
+  EXPECT_EQ(server_config.max_recv_chunk_size(), 0u);
+  EXPECT_EQ(server_config.max_send_chunk_size(), 0u);
+}
+
+TEST(ConfigTest, ChunkingEnabledWithExperiment) {
+  // Ensure the experiment is enabled.
+  ForceEnableExperiment("chaotic_good_send_supported_features", true);
+
+  ChannelArgs args;
+  chaotic_good::Config client_config(args);
+  chaotic_good::Config server_config(args);
+
+  chaotic_good_frame::Settings client_settings;
+  client_config.PrepareClientOutgoingSettings(client_settings);
+
+  // Verify that supported features INCLUDE CHUNKING.
+  bool has_chunking = false;
+  for (auto feature : client_settings.supported_features()) {
+    if (feature == chaotic_good_frame::Settings::CHUNKING) {
+      has_chunking = true;
+      break;
+    }
+  }
+  EXPECT_TRUE(has_chunking);
+
+  EXPECT_TRUE(
+      server_config.ReceiveClientIncomingSettings(client_settings).ok());
+
+  chaotic_good_frame::Settings server_settings;
+  server_config.PrepareServerOutgoingSettings(server_settings);
+
+  FakeClientConnectionFactory fake_factory;
+  EXPECT_TRUE(
+      client_config.ReceiveServerIncomingSettings(server_settings, fake_factory)
+          .ok());
+
+  // Verify that max chunk size is NOT 0 because chunking was negotiated.
+  EXPECT_NE(client_config.max_recv_chunk_size(), 0u);
+  EXPECT_NE(client_config.max_send_chunk_size(), 0u);
+  EXPECT_NE(server_config.max_recv_chunk_size(), 0u);
+  EXPECT_NE(server_config.max_send_chunk_size(), 0u);
+}
 
 }  // namespace
 }  // namespace grpc_core

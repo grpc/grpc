@@ -73,7 +73,11 @@
   owner: ctiller@google.com
   test_tags: [core_end2end_test]
   allow_in_fuzzing_config: false
-
+- name: chaotic_good_send_supported_features
+  description: Send supported features in chaotic good settings frames.
+  expiry: 2026/05/01
+  owner: ctiller@google.com
+  test_tags: [core_end2end_test]
 - name: error_flatten
   description: Flatten errors to ordinary absl::Status form.
   expiry: 2026/04/01
