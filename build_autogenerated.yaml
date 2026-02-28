@@ -4145,6 +4145,8 @@ libs:
   - include/grpcpp/version_info.h
   - include/grpcpp/xds_server_builder.h
   headers:
+  - src/core/client_channel/virtual_channel.h
+  - src/core/transport/session_endpoint.h
   - src/core/xds/grpc/xds_enabled_server.h
   - src/cpp/client/client_stats_interceptor.h
   - src/cpp/client/create_channel_internal.h
@@ -4158,6 +4160,8 @@ libs:
   - src/cpp/server/thread_pool_interface.h
   - src/cpp/thread_manager/thread_manager.h
   src:
+  - src/core/client_channel/virtual_channel.cc
+  - src/core/transport/session_endpoint.cc
   - src/cpp/client/call_credentials.cc
   - src/cpp/client/channel_cc.cc
   - src/cpp/client/channel_credentials.cc
@@ -4525,6 +4529,8 @@ libs:
   - include/grpcpp/support/validate_service_config.h
   - include/grpcpp/version_info.h
   headers:
+  - src/core/client_channel/virtual_channel.h
+  - src/core/transport/session_endpoint.h
   - src/cpp/client/client_stats_interceptor.h
   - src/cpp/client/create_channel_internal.h
   - src/cpp/server/backend_metric_recorder.h
@@ -4534,6 +4540,8 @@ libs:
   - src/cpp/server/thread_pool_interface.h
   - src/cpp/thread_manager/thread_manager.h
   src:
+  - src/core/client_channel/virtual_channel.cc
+  - src/core/transport/session_endpoint.cc
   - src/cpp/client/call_credentials.cc
   - src/cpp/client/channel_cc.cc
   - src/cpp/client/channel_credentials.cc
@@ -15486,6 +15494,18 @@ targets:
   - protobuf
   - grpc_test_util
   uses_polling: false
+- name: http2_tunnel_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/transport/chttp2/tunnel.proto
+  - test/core/transport/chttp2/http2_tunnel_test.cc
+  deps:
+  - gtest
+  - grpc++_test_config
+  - grpc++_test_util
 - name: http_proxy_mapper_test
   gtest: true
   build: test

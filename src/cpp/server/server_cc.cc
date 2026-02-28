@@ -503,10 +503,11 @@ class Server::SyncRequest final : public grpc::internal::CompletionQueueTag {
   SyncRequest(Server* server, grpc::internal::RpcServiceMethod* method)
       : server_(server),
         method_(method),
-        has_request_payload_(method->method_type() ==
-                                 grpc::internal::RpcMethod::NORMAL_RPC ||
-                             method->method_type() ==
-                                 grpc::internal::RpcMethod::SERVER_STREAMING),
+        has_request_payload_(
+            method->method_type() == grpc::internal::RpcMethod::NORMAL_RPC ||
+            method->method_type() ==
+                grpc::internal::RpcMethod::SERVER_STREAMING ||
+            method->method_type() == grpc::internal::RpcMethod::SESSION_RPC),
         cq_(grpc_completion_queue_create_for_pluck(nullptr)) {}
 
   template <class CallAllocation>
@@ -562,10 +563,11 @@ class Server::CallbackRequest final
                   grpc_core::Server::RegisteredCallAllocation* data)
       : server_(server),
         method_(method),
-        has_request_payload_(method->method_type() ==
-                                 grpc::internal::RpcMethod::NORMAL_RPC ||
-                             method->method_type() ==
-                                 grpc::internal::RpcMethod::SERVER_STREAMING),
+        has_request_payload_(
+            method->method_type() == grpc::internal::RpcMethod::NORMAL_RPC ||
+            method->method_type() ==
+                grpc::internal::RpcMethod::SERVER_STREAMING ||
+            method->method_type() == grpc::internal::RpcMethod::SESSION_RPC),
         cq_(cq),
         tag_(this),
         ctx_(server_->context_allocator() != nullptr
@@ -1039,6 +1041,7 @@ static grpc_server_register_method_payload_handling PayloadHandlingForMethod(
     grpc::internal::RpcServiceMethod* method) {
   switch (method->method_type()) {
     case grpc::internal::RpcMethod::NORMAL_RPC:
+    case grpc::internal::RpcMethod::SESSION_RPC:
     case grpc::internal::RpcMethod::SERVER_STREAMING:
       return GRPC_SRM_PAYLOAD_READ_INITIAL_BYTE_BUFFER;
     case grpc::internal::RpcMethod::CLIENT_STREAMING:

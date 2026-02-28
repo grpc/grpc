@@ -1031,6 +1031,7 @@ include/grpcpp/impl/create_auth_context.h \
 include/grpcpp/impl/delegating_channel.h \
 include/grpcpp/impl/generic_serialize.h \
 include/grpcpp/impl/generic_stub_internal.h \
+include/grpcpp/impl/generic_stub_session.h \
 include/grpcpp/impl/grpc_library.h \
 include/grpcpp/impl/intercepted_channel.h \
 include/grpcpp/impl/interceptor_common.h \
