@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM arm64v8/ruby:3.1-bullseye
+FROM arm64v8/ruby:3.2-bullseye
 
 #=================
 # Basic C core dependencies
