@@ -192,8 +192,8 @@ class EventEngine : public std::enable_shared_from_this<EventEngine>,
     class ReadArgs final {
      public:
       ReadArgs() = default;
-      ReadArgs(const ReadArgs&) = delete;
-      ReadArgs& operator=(const ReadArgs&) = delete;
+      ReadArgs(const ReadArgs&) = default;
+      ReadArgs& operator=(const ReadArgs&) = default;
       ReadArgs(ReadArgs&&) = default;
       ReadArgs& operator=(ReadArgs&&) = default;
 
