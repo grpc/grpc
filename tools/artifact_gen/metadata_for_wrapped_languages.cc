@@ -240,7 +240,7 @@ void ExpandVersion(nlohmann::json& config) {
 
 void AddBoringSslMetadata(nlohmann::json& metadata) {
   std::ifstream sources_in(
-      "../../third_party/boringssl-with-bazel/sources.json");
+      "../../third_party/boringssl-with-bazel/gen/sources.json");
   auto sources = nlohmann::json::parse(sources_in);
   auto file_list = [&sources](std::initializer_list<std::string> sections) {
     std::vector<std::string> ret;

@@ -70,7 +70,7 @@ Updating some dependencies requires extra care.
     `templates/gRPC-Core.podspec.template`.
 - You can see an example of previous [upgrade](https://github.com/grpc/grpc/pull/24270).
 
-### Updating third_party/boringssl-with-bazel
+### Updating third_party/boringssl-with-bazel (TODO)
 
 NOTE: updating the boringssl dependency is now part of the internal grpc release tooling (see [go/grpc-release](http://go/grpc-release)).
 Prefer using the release tooling when possible. The instructions below are provided as a reference and aren't guaranteed to be up-to-date.
