@@ -14,6 +14,8 @@
 
 import atexit
 
+include "private_key_offload.pyx.pxi"
+
 def _spawn_callback_in_thread(cb_func, args):
   t = ForkManagedThread(target=cb_func, args=args)
   t.setDaemon(True)
@@ -188,29 +190,43 @@ cdef class SSLSessionCacheLRU:
 
 cdef class SSLChannelCredentials(ChannelCredentials):
 
-  def __cinit__(self, pem_root_certificates, private_key, certificate_chain):
+  def __cinit__(self, pem_root_certificates, private_key, certificate_chain, private_key_signer=None):
     if pem_root_certificates is not None and not isinstance(pem_root_certificates, bytes):
       raise TypeError('expected certificate to be bytes, got %s' % (type(pem_root_certificates)))
     self._pem_root_certificates = pem_root_certificates
     self._private_key = private_key
     self._certificate_chain = certificate_chain
+    self._private_key_signer = private_key_signer
+    # This gets passed around C++, make sure it stays
+    Py_INCREF(self._private_key_signer)
+
+  def __dealloc__(self):
+    # We manually increased the reference count, decrease it on dealloc of this object
+    Py_DECREF(self._private_key_signer)
 
   cdef grpc_channel_credentials *c(self) except *:
     cdef const char *c_pem_root_certificates
     cdef const char *c_private_key
     cdef const char *c_cert_chain
+    cdef shared_ptr[PrivateKeySigner] c_private_key_signer
     cdef grpc_tls_credentials_options* c_tls_credentials_options
     cdef grpc_tls_identity_pairs* c_tls_identity_pairs = NULL
     cdef grpc_tls_certificate_provider* c_tls_certificate_provider
+    cdef Status private_key_status
 
     c_tls_credentials_options = grpc_tls_credentials_options_create()
     c_pem_root_certificates = self._pem_root_certificates or <const char*>NULL
-
-    if self._private_key or self._certificate_chain:
+    if self._private_key or self._certificate_chain or self._private_key_signer:
       c_tls_identity_pairs = grpc_tls_identity_pairs_create()
       c_private_key = self._private_key or <const char*>NULL
       c_cert_chain = self._certificate_chain or <const char*>NULL
-      grpc_tls_identity_pairs_add_pair(c_tls_identity_pairs, c_private_key, c_cert_chain)
+      if self._private_key_signer:
+        c_private_key_signer = build_private_key_signer(self._private_key_signer)
+        private_key_status = grpc_tls_identity_pairs_add_pair_with_signer(c_tls_identity_pairs, c_private_key_signer, c_cert_chain)
+        if not private_key_status.ok():
+          return NULL
+      else:
+        grpc_tls_identity_pairs_add_pair(c_tls_identity_pairs, c_private_key, c_cert_chain)
 
     if c_pem_root_certificates != NULL or c_tls_identity_pairs != NULL:
       c_tls_certificate_provider = grpc_tls_certificate_provider_in_memory_create()

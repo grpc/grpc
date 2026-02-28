@@ -20714,6 +20714,8 @@ targets:
   build: test
   language: c++
   headers:
+  - test/core/tsi/transport_security_test_lib.h
+  src:
   - test/core/event_engine/event_engine_test_utils.h
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/tsi/transport_security_test_lib.h
