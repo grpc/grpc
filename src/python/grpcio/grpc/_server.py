@@ -424,7 +424,7 @@ class _Context(grpc.ServicerContext):
 
     def send_initial_metadata(self, initial_metadata: MetadataType) -> None:
         with self._state.condition:
-            if self._state.client is _CANCELLED:
+            if self._state.client is _CANCELLED or self._state.aborted:
                 _raise_rpc_error(self._state)
             if self._state.initial_metadata_allowed:
                 operation = _get_initial_metadata_operation(
@@ -458,6 +458,7 @@ class _Context(grpc.ServicerContext):
             self._state.code = code
             self._state.details = _common.encode(details)
             self._state.aborted = True
+            self._state.condition.notify_all()
             raise Exception()  # noqa: TRY002
 
     def abort_with_status(self, status: grpc.Status) -> None:
@@ -498,7 +499,7 @@ class _RequestIterator(object):
         self._request_deserializer = request_deserializer
 
     def _raise_or_start_receive_message(self) -> None:
-        if self._state.client is _CANCELLED:
+        if self._state.client is _CANCELLED or self._state.aborted:
             _raise_rpc_error(self._state)
         elif not _is_rpc_state_active(self._state):
             raise StopIteration()
@@ -512,7 +513,7 @@ class _RequestIterator(object):
             self._state.due.add(_RECEIVE_MESSAGE_TOKEN)
 
     def _look_for_request(self) -> Any:
-        if self._state.client is _CANCELLED:
+        if self._state.client is _CANCELLED or self._state.aborted:
             _raise_rpc_error(self._state)
         elif (
             self._state.request is None
