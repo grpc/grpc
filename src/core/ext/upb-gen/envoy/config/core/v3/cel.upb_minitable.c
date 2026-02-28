@@ -24,16 +24,10 @@ static const upb_MiniTableField envoy_config_core_v3_CelExpressionConfig__fields
 const upb_MiniTable envoy__config__core__v3__CelExpressionConfig_msg_init = {
   NULL,
   &envoy_config_core_v3_CelExpressionConfig__fields[0],
-  16, 3, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(24), 0,
+  16, 3, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.config.core.v3.CelExpressionConfig",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x000800003f000008, &upb_psb1_1bt},
-    {0x000900003f000010, &upb_psb1_1bt},
-    {0x000a00003f000018, &upb_psb1_1bt},
-  })
 };
 
 const upb_MiniTable* envoy__config__core__v3__CelExpressionConfig_msg_init_ptr = &envoy__config__core__v3__CelExpressionConfig_msg_init;

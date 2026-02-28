@@ -44,14 +44,10 @@ static const upb_MiniTableField google_protobuf_Struct_FieldsEntry__fields[2] = 
 const upb_MiniTable google__protobuf__Struct__FieldsEntry_msg_init = {
   &google_protobuf_Struct_FieldsEntry__submsgs[0],
   &google_protobuf_Struct_FieldsEntry__fields[0],
-  48, 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(8), 0,
+  48, 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "google.protobuf.Struct.FieldsEntry",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x001000003f00000a, &upb_pss_1bt},
-  })
 };
 
 const upb_MiniTable* google__protobuf__Struct__FieldsEntry_msg_init_ptr = &google__protobuf__Struct__FieldsEntry_msg_init;
@@ -72,18 +68,14 @@ static const upb_MiniTableField google_protobuf_Value__fields[6] = {
 const upb_MiniTable google__protobuf__Value_msg_init = {
   &google_protobuf_Value__submsgs[0],
   &google_protobuf_Value__fields[0],
-  UPB_SIZE(24, 32), 6, kUpb_ExtMode_NonExtendable, 6, UPB_FASTTABLE_MASK(56), 0,
+  UPB_SIZE(24, 32), 6, kUpb_ExtMode_NonExtendable, 6, UPB_FASTTABLE_MASK(24), 0,
 #ifdef UPB_TRACING_ENABLED
   "google.protobuf.Value",
 #endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0010000801000008, &upb_pov4_1bt},
-    {0x0010000802000011, &upb_pof8_1bt},
-    {0x001000080300001a, &upb_pos_1bt},
-    {0x0010000804000020, &upb_pob1_1bt},
-    {0x001000080500002a, &upb_pom_1bt_max64b},
-    {0x0010000806010032, &upb_pom_1bt_max64b},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0010000802000011, &upb_DecodeFast_Fixed64_Oneof_Tag1Byte},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
   })
 };
@@ -100,14 +92,10 @@ static const upb_MiniTableField google_protobuf_ListValue__fields[1] = {
 const upb_MiniTable google__protobuf__ListValue_msg_init = {
   &google_protobuf_ListValue__submsgs[0],
   &google_protobuf_ListValue__fields[0],
-  16, 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(8), 0,
+  16, 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "google.protobuf.ListValue",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x000800003f00000a, &upb_prm_1bt_max64b},
-  })
 };
 
 const upb_MiniTable* google__protobuf__ListValue_msg_init_ptr = &google__protobuf__ListValue_msg_init;

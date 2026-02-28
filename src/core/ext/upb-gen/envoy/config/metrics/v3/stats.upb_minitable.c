@@ -33,16 +33,10 @@ static const upb_MiniTableField envoy_config_metrics_v3_StatsSink__fields[2] = {
 const upb_MiniTable envoy__config__metrics__v3__StatsSink_msg_init = {
   &envoy_config_metrics_v3_StatsSink__submsgs[0],
   &envoy_config_metrics_v3_StatsSink__fields[0],
-  UPB_SIZE(24, 40), 2, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(24), 0,
+  UPB_SIZE(24, 40), 2, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.config.metrics.v3.StatsSink",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x001000003f00000a, &upb_pss_1bt},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x002000080300001a, &upb_pom_1bt_maxmaxb},
-  })
 };
 
 const upb_MiniTable* envoy__config__metrics__v3__StatsSink_msg_init_ptr = &envoy__config__metrics__v3__StatsSink_msg_init;
@@ -63,20 +57,10 @@ static const upb_MiniTableField envoy_config_metrics_v3_StatsConfig__fields[4] =
 const upb_MiniTable envoy__config__metrics__v3__StatsConfig_msg_init = {
   &envoy_config_metrics_v3_StatsConfig__submsgs[0],
   &envoy_config_metrics_v3_StatsConfig__fields[0],
-  UPB_SIZE(32, 48), 4, kUpb_ExtMode_NonExtendable, 4, UPB_FASTTABLE_MASK(56), 0,
+  UPB_SIZE(32, 48), 4, kUpb_ExtMode_NonExtendable, 4, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.config.metrics.v3.StatsConfig",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x001000003f00000a, &upb_prm_1bt_max64b},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x002800003f030022, &upb_prm_1bt_max64b},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-  })
 };
 
 const upb_MiniTable* envoy__config__metrics__v3__StatsConfig_msg_init_ptr = &envoy__config__metrics__v3__StatsConfig_msg_init;
@@ -94,16 +78,10 @@ static const upb_MiniTableField envoy_config_metrics_v3_StatsMatcher__fields[3] 
 const upb_MiniTable envoy__config__metrics__v3__StatsMatcher_msg_init = {
   &envoy_config_metrics_v3_StatsMatcher__submsgs[0],
   &envoy_config_metrics_v3_StatsMatcher__fields[0],
-  UPB_SIZE(16, 24), 3, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(24), 0,
+  UPB_SIZE(16, 24), 3, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.config.metrics.v3.StatsMatcher",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0010000801000008, &upb_pob1_1bt},
-    {0x0010000802000012, &upb_pom_1bt_maxmaxb},
-    {0x001000080301001a, &upb_pom_1bt_maxmaxb},
-  })
 };
 
 const upb_MiniTable* envoy__config__metrics__v3__StatsMatcher_msg_init_ptr = &envoy__config__metrics__v3__StatsMatcher_msg_init;
@@ -116,16 +94,10 @@ static const upb_MiniTableField envoy_config_metrics_v3_TagSpecifier__fields[3] 
 const upb_MiniTable envoy__config__metrics__v3__TagSpecifier_msg_init = {
   NULL,
   &envoy_config_metrics_v3_TagSpecifier__fields[0],
-  UPB_SIZE(32, 48), 3, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(24), 0,
+  UPB_SIZE(32, 48), 3, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.config.metrics.v3.TagSpecifier",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x001000003f00000a, &upb_pss_1bt},
-    {0x0020000802000012, &upb_pos_1bt},
-    {0x002000080300001a, &upb_pos_1bt},
-  })
 };
 
 const upb_MiniTable* envoy__config__metrics__v3__TagSpecifier_msg_init_ptr = &envoy__config__metrics__v3__TagSpecifier_msg_init;
@@ -150,7 +122,7 @@ const upb_MiniTable envoy__config__metrics__v3__HistogramBucketSettings_msg_init
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x001800003f000012, &upb_ppf8_1bt},
+    {0x001800003f000012, &upb_DecodeFast_Fixed64_Packed_Tag1Byte},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
   })
 };
@@ -169,16 +141,10 @@ static const upb_MiniTableField envoy_config_metrics_v3_StatsdSink__fields[3] = 
 const upb_MiniTable envoy__config__metrics__v3__StatsdSink_msg_init = {
   &envoy_config_metrics_v3_StatsdSink__submsgs[0],
   &envoy_config_metrics_v3_StatsdSink__fields[0],
-  UPB_SIZE(32, 48), 3, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(24), 0,
+  UPB_SIZE(32, 48), 3, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.config.metrics.v3.StatsdSink",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x002000080100000a, &upb_pom_1bt_maxmaxb},
-    {0x0020000802000012, &upb_pos_1bt},
-    {0x001000003f00001a, &upb_pss_1bt},
-  })
 };
 
 const upb_MiniTable* envoy__config__metrics__v3__StatsdSink_msg_init_ptr = &envoy__config__metrics__v3__StatsdSink_msg_init;
@@ -196,16 +162,10 @@ static const upb_MiniTableField envoy_config_metrics_v3_DogStatsdSink__fields[3]
 const upb_MiniTable envoy__config__metrics__v3__DogStatsdSink_msg_init = {
   &envoy_config_metrics_v3_DogStatsdSink__submsgs[0],
   &envoy_config_metrics_v3_DogStatsdSink__fields[0],
-  UPB_SIZE(32, 48), 3, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(24), 0,
+  UPB_SIZE(32, 48), 3, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.config.metrics.v3.DogStatsdSink",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0028000c0100000a, &upb_pom_1bt_maxmaxb},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x001000003f00001a, &upb_pss_1bt},
-  })
 };
 
 const upb_MiniTable* envoy__config__metrics__v3__DogStatsdSink_msg_init_ptr = &envoy__config__metrics__v3__DogStatsdSink_msg_init;
@@ -216,14 +176,10 @@ static const upb_MiniTableField envoy_config_metrics_v3_HystrixSink__fields[1] =
 const upb_MiniTable envoy__config__metrics__v3__HystrixSink_msg_init = {
   NULL,
   &envoy_config_metrics_v3_HystrixSink__fields[0],
-  16, 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(8), 0,
+  16, 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.config.metrics.v3.HystrixSink",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x000800003f000008, &upb_psv8_1bt},
-  })
 };
 
 const upb_MiniTable* envoy__config__metrics__v3__HystrixSink_msg_init_ptr = &envoy__config__metrics__v3__HystrixSink_msg_init;

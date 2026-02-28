@@ -33,16 +33,10 @@ static const upb_MiniTableField envoy_config_cluster_v3_CircuitBreakers__fields[
 const upb_MiniTable envoy__config__cluster__v3__CircuitBreakers_msg_init = {
   &envoy_config_cluster_v3_CircuitBreakers__submsgs[0],
   &envoy_config_cluster_v3_CircuitBreakers__fields[0],
-  UPB_SIZE(16, 24), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
+  UPB_SIZE(16, 24), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.config.cluster.v3.CircuitBreakers",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x000800003f00000a, &upb_prm_1bt_max128b},
-    {0x001000003f010012, &upb_prm_1bt_max128b},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-  })
 };
 
 const upb_MiniTable* envoy__config__cluster__v3__CircuitBreakers_msg_init_ptr = &envoy__config__cluster__v3__CircuitBreakers_msg_init;
@@ -69,20 +63,10 @@ static const upb_MiniTableField envoy_config_cluster_v3_CircuitBreakers_Threshol
 const upb_MiniTable envoy__config__cluster__v3__CircuitBreakers__Thresholds_msg_init = {
   &envoy_config_cluster_v3_CircuitBreakers_Thresholds__submsgs[0],
   &envoy_config_cluster_v3_CircuitBreakers_Thresholds__fields[0],
-  UPB_SIZE(40, 64), 8, kUpb_ExtMode_NonExtendable, 8, UPB_FASTTABLE_MASK(56), 0,
+  UPB_SIZE(40, 64), 8, kUpb_ExtMode_NonExtendable, 8, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.config.cluster.v3.CircuitBreakers.Thresholds",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x000c00003f000008, &upb_psv4_1bt},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x000900003f000030, &upb_psb1_1bt},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-  })
 };
 
 const upb_MiniTable* envoy__config__cluster__v3__CircuitBreakers__Thresholds_msg_init_ptr = &envoy__config__cluster__v3__CircuitBreakers__Thresholds_msg_init;

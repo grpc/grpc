@@ -25,14 +25,10 @@ static const upb_MiniTableField envoy_extensions_clusters_aggregate_v3_ClusterCo
 const upb_MiniTable envoy__extensions__clusters__aggregate__v3__ClusterConfig_msg_init = {
   NULL,
   &envoy_extensions_clusters_aggregate_v3_ClusterConfig__fields[0],
-  16, 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(8), 0,
+  16, 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.extensions.clusters.aggregate.v3.ClusterConfig",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x000800003f00000a, &upb_prs_1bt},
-  })
 };
 
 const upb_MiniTable* envoy__extensions__clusters__aggregate__v3__ClusterConfig_msg_init_ptr = &envoy__extensions__clusters__aggregate__v3__ClusterConfig_msg_init;
@@ -48,16 +44,10 @@ static const upb_MiniTableField envoy_extensions_clusters_aggregate_v3_Aggregate
 const upb_MiniTable envoy__extensions__clusters__aggregate__v3__AggregateClusterResource_msg_init = {
   &envoy_extensions_clusters_aggregate_v3_AggregateClusterResource__submsgs[0],
   &envoy_extensions_clusters_aggregate_v3_AggregateClusterResource__fields[0],
-  UPB_SIZE(24, 40), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
+  UPB_SIZE(24, 40), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.extensions.clusters.aggregate.v3.AggregateClusterResource",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x001000003f000012, &upb_pss_1bt},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-  })
 };
 
 const upb_MiniTable* envoy__extensions__clusters__aggregate__v3__AggregateClusterResource_msg_init_ptr = &envoy__extensions__clusters__aggregate__v3__AggregateClusterResource_msg_init;

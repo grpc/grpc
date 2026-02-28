@@ -39,20 +39,10 @@ static const upb_MiniTableField xds_type_v3_CelExpression__fields[5] = {
 const upb_MiniTable xds__type__v3__CelExpression_msg_init = {
   &xds_type_v3_CelExpression__submsgs[0],
   &xds_type_v3_CelExpression__fields[0],
-  UPB_SIZE(40, 56), 5, kUpb_ExtMode_NonExtendable, 5, UPB_FASTTABLE_MASK(56), 0,
+  UPB_SIZE(40, 56), 5, kUpb_ExtMode_NonExtendable, 5, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "xds.type.v3.CelExpression",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0030000c0100000a, &upb_pom_1bt_maxmaxb},
-    {0x0030000c02010012, &upb_pom_1bt_maxmaxb},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x001000003f00002a, &upb_pss_1bt},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-  })
 };
 
 const upb_MiniTable* xds__type__v3__CelExpression_msg_init_ptr = &xds__type__v3__CelExpression_msg_init;

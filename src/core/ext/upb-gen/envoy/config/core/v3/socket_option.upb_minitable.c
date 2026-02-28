@@ -34,20 +34,10 @@ static const upb_MiniTableField envoy_config_core_v3_SocketOption__fields[7] = {
 const upb_MiniTable envoy__config__core__v3__SocketOption_msg_init = {
   &envoy_config_core_v3_SocketOption__submsgs[0],
   &envoy_config_core_v3_SocketOption__fields[0],
-  UPB_SIZE(56, 80), 7, kUpb_ExtMode_NonExtendable, 7, UPB_FASTTABLE_MASK(56), 0,
+  UPB_SIZE(56, 80), 7, kUpb_ExtMode_NonExtendable, 7, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.config.core.v3.SocketOption",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x001800003f00000a, &upb_pss_1bt},
-    {0x003800003f000010, &upb_psv8_1bt},
-    {0x004000003f000018, &upb_psv8_1bt},
-    {0x0028001004000020, &upb_pov8_1bt},
-    {0x002800100500002a, &upb_pob_1bt},
-    {0x000c00003f000030, &upb_psv4_1bt},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-  })
 };
 
 const upb_MiniTable* envoy__config__core__v3__SocketOption_msg_init_ptr = &envoy__config__core__v3__SocketOption_msg_init;
@@ -102,14 +92,10 @@ static const upb_MiniTableField envoy_config_core_v3_SocketOptionsOverride__fiel
 const upb_MiniTable envoy__config__core__v3__SocketOptionsOverride_msg_init = {
   &envoy_config_core_v3_SocketOptionsOverride__submsgs[0],
   &envoy_config_core_v3_SocketOptionsOverride__fields[0],
-  16, 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(8), 0,
+  16, 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.config.core.v3.SocketOptionsOverride",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x000800003f00000a, &upb_prm_1bt_max128b},
-  })
 };
 
 const upb_MiniTable* envoy__config__core__v3__SocketOptionsOverride_msg_init_ptr = &envoy__config__core__v3__SocketOptionsOverride_msg_init;
