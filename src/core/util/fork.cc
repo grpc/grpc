@@ -96,16 +96,20 @@ class ExecCtxState {
   }
 
   bool BlockExecCtx() {
-    // Assumes there is an active ExecCtx when this function is called.
-    // This is critical because the forking thread MUST have an ExecCtx count of 1
-    // (representing itself). The while loop waits until count_ > UNBLOCKED(1),
-    // ensuring all *other* background threads have drained their ExecCtxs before
-    // proceeding with the fork.
+    // The caller (grpc_prefork) ensures there is an active ExecCtx when this
+    // function is called. This is critical because the forking thread MUST
+    // have an ExecCtx count of 1 (representing itself). The while loop waits
+    // until count_ > UNBLOCKED(1), ensuring all *other* background threads have
+    // drained their ExecCtxs before proceeding with the fork.
     gpr_mu_lock(&mu_);
     gpr_atm_no_barrier_store(&forking_, 1);
     fork_complete_ = false;
 
     // Wait up to 3 seconds for background threads to drop their ExecCtxs.
+    // We expect this to happen very quickly because IncExecCtxCount() prevents
+    // new threads from starting (since forking_ is 1), and existing threads
+    // only execute short-lived, non-blocking tasks that naturally finish and
+    // drop their count rapidly.
     gpr_timespec deadline = gpr_time_add(
         gpr_now(GPR_CLOCK_REALTIME), gpr_time_from_seconds(3, GPR_TIMESPAN));
 

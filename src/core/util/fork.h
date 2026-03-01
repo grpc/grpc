@@ -63,7 +63,11 @@ class GPR_DLL Fork {
       child_postfork_func reset_child_polling_engine);
   static const std::set<child_postfork_func>& GetResetChildPollingEngineFunc();
 
-  // Block creation of more ExecCtx s until AllowExecCtx() is called
+  // Block creation of more ExecCtx s until AllowExecCtx() is called.
+  // Wait up to 3 seconds for existing active ExecCtxs to drain down to exactly
+  // 1 (the one used to invoke this function).
+  // Return true if they successfully drain. Return false if the timeout is
+  // reached (meaning background threads are hung).
   static bool BlockExecCtx();
   static void AllowExecCtx();
 
