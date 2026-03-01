@@ -52,6 +52,7 @@ class ExecCtxState {
     gpr_mu_init(&mu_);
     gpr_cv_init(&cv_);
     gpr_atm_no_barrier_store(&count_, UNBLOCKED(0));
+    gpr_atm_no_barrier_store(&forking_, 0);
   }
 
   void IncExecCtxCount() {
@@ -62,11 +63,12 @@ class ExecCtxState {
     }
     gpr_atm count = gpr_atm_no_barrier_load(&count_);
     while (true) {
-      if (count <= BLOCKED(1)) {
+      if (count <= BLOCKED(1) || gpr_atm_no_barrier_load(&forking_)) {
         // This only occurs if we are trying to fork.  Wait until the fork()
         // operation completes before allowing new ExecCtxs.
         gpr_mu_lock(&mu_);
-        if (gpr_atm_no_barrier_load(&count_) <= BLOCKED(1)) {
+        if (gpr_atm_no_barrier_load(&count_) <= BLOCKED(1) ||
+            gpr_atm_no_barrier_load(&forking_)) {
           while (!fork_complete_) {
             gpr_cv_wait(&cv_, &mu_, gpr_inf_future(GPR_CLOCK_REALTIME));
           }
@@ -84,17 +86,27 @@ class ExecCtxState {
       return;
     }
     gpr_atm_no_barrier_fetch_add(&count_, -1);
+    if (GPR_UNLIKELY(gpr_atm_no_barrier_load(&forking_))) {
+      gpr_mu_lock(&mu_);
+      if (gpr_atm_no_barrier_load(&count_) == UNBLOCKED(1)) {
+        gpr_cv_signal(&cv_);
+      }
+      gpr_mu_unlock(&mu_);
+    }
   }
 
   bool BlockExecCtx() {
     // Assumes there is an active ExecCtx when this function is called
-    if (gpr_atm_no_barrier_cas(&count_, UNBLOCKED(1), BLOCKED(1))) {
-      gpr_mu_lock(&mu_);
-      fork_complete_ = false;
-      gpr_mu_unlock(&mu_);
-      return true;
+    gpr_mu_lock(&mu_);
+    gpr_atm_no_barrier_store(&forking_, 1);
+    fork_complete_ = false;
+    while (gpr_atm_no_barrier_load(&count_) > UNBLOCKED(1)) {
+      gpr_cv_wait(&cv_, &mu_, gpr_inf_future(GPR_CLOCK_REALTIME));
     }
-    return false;
+    gpr_atm_no_barrier_store(&count_, BLOCKED(1));
+    gpr_atm_no_barrier_store(&forking_, 0);
+    gpr_mu_unlock(&mu_);
+    return true;
   }
 
   void AllowExecCtx() {
@@ -115,6 +127,7 @@ class ExecCtxState {
   gpr_mu mu_;
   gpr_cv cv_;
   gpr_atm count_;
+  gpr_atm forking_;
 };
 
 class ThreadState {
