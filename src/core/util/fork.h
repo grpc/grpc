@@ -64,7 +64,7 @@ class GPR_DLL Fork {
   static const std::set<child_postfork_func>& GetResetChildPollingEngineFunc();
 
   // Block creation of more ExecCtx s until AllowExecCtx() is called
-  static void BlockExecCtx();
+  static bool BlockExecCtx();
   static void AllowExecCtx();
 
   // Increment the count of active threads.

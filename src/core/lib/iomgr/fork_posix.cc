@@ -67,7 +67,11 @@ void grpc_prefork() {
                  "polling strategies";
     return;
   }
-  grpc_core::Fork::BlockExecCtx();
+  if (!grpc_core::Fork::BlockExecCtx()) {
+    LOG(INFO) << "Other threads are currently calling into gRPC, skipping "
+                 "fork() handlers";
+    return;
+  }
   grpc_timer_manager_set_threading(false);
   grpc_core::ExecCtx::Get()->Flush();
   grpc_core::Fork::AwaitThreads();

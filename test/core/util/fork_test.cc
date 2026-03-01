@@ -102,9 +102,10 @@ TEST(ForkTest, ExecCount) {
   grpc_core::Fork::AllowExecCtx();
 
   grpc_core::Fork::IncExecCtxCount();
-  ASSERT_TRUE(grpc_core::Fork::BlockExecCtx());
+  grpc_core::Fork::IncExecCtxCount();
+  ASSERT_FALSE(grpc_core::Fork::BlockExecCtx());
   grpc_core::Fork::DecExecCtxCount();
-  grpc_core::Fork::AllowExecCtx();
+  grpc_core::Fork::DecExecCtxCount();
 
   // Test that block_exec_ctx() blocks grpc_core::Fork::IncExecCtxCount
   bool exec_ctx_created = false;

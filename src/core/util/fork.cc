@@ -95,7 +95,7 @@ class ExecCtxState {
     }
   }
 
-  void BlockExecCtx() {
+  bool BlockExecCtx() {
     // Assumes there is an active ExecCtx when this function is called.
     // This is critical because the forking thread MUST have an ExecCtx count of 1
     // (representing itself). The while loop waits until count_ > UNBLOCKED(1),
@@ -104,12 +104,30 @@ class ExecCtxState {
     gpr_mu_lock(&mu_);
     gpr_atm_no_barrier_store(&forking_, 1);
     fork_complete_ = false;
+
+    // Wait up to 3 seconds for background threads to drop their ExecCtxs.
+    gpr_timespec deadline = gpr_time_add(
+        gpr_now(GPR_CLOCK_REALTIME), gpr_time_from_seconds(3, GPR_TIMESPAN));
+
     while (gpr_atm_no_barrier_load(&count_) > UNBLOCKED(1)) {
-      gpr_cv_wait(&cv_, &mu_, gpr_inf_future(GPR_CLOCK_REALTIME));
+      if (gpr_cv_wait(&cv_, &mu_, deadline)) {
+        // Timeout reached.
+        break;
+      }
     }
+
+    if (gpr_atm_no_barrier_load(&count_) > UNBLOCKED(1)) {
+      gpr_atm_no_barrier_store(&forking_, 0);
+      fork_complete_ = true;
+      gpr_cv_broadcast(&cv_);
+      gpr_mu_unlock(&mu_);
+      return false;
+    }
+
     gpr_atm_no_barrier_store(&count_, BLOCKED(1));
     gpr_atm_no_barrier_store(&forking_, 0);
     gpr_mu_unlock(&mu_);
+    return true;
   }
 
   void AllowExecCtx() {
@@ -220,10 +238,11 @@ Fork::GetResetChildPollingEngineFunc() {
   return *reset_child_polling_engine_;
 }
 
-void Fork::BlockExecCtx() {
+bool Fork::BlockExecCtx() {
   if (support_enabled_.load(std::memory_order_relaxed)) {
-    NoDestructSingleton<ExecCtxState>::Get()->BlockExecCtx();
+    return NoDestructSingleton<ExecCtxState>::Get()->BlockExecCtx();
   }
+  return false;
 }
 
 void Fork::AllowExecCtx() {
