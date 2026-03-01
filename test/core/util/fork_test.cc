@@ -102,6 +102,11 @@ TEST(ForkTest, ExecCount) {
   grpc_core::Fork::AllowExecCtx();
 
   grpc_core::Fork::IncExecCtxCount();
+  ASSERT_TRUE(grpc_core::Fork::BlockExecCtx());
+  grpc_core::Fork::DecExecCtxCount();
+  grpc_core::Fork::AllowExecCtx();
+
+  grpc_core::Fork::IncExecCtxCount();
   grpc_core::Fork::IncExecCtxCount();
   ASSERT_FALSE(grpc_core::Fork::BlockExecCtx());
   grpc_core::Fork::DecExecCtxCount();
