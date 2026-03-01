@@ -31,3 +31,4 @@ do
   python3 $gen_build_yaml/gen_build_yaml.py > $output_file
   gen_build_files="$gen_build_files $output_file"
 done
+echo $gen_build_files
