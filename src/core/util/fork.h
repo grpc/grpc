@@ -67,7 +67,7 @@ class GPR_DLL Fork {
   // Wait up to 3 seconds for existing active ExecCtxs to drain down to exactly
   // 1 (the one used to invoke this function).
   // Return true if they successfully drain. Return false if the timeout is
-  // reached (meaning background threads are hung).
+  // reached (meaning background threads are blocked).
   static bool BlockExecCtx();
   static void AllowExecCtx();
 
