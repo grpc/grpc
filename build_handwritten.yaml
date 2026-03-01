@@ -217,9 +217,16 @@ swift_package:
   - grpc_authorization_provider
   - gpr
   - upb_base_lib
+  - upb_hash_lib
+  - upb_lex_lib
   - upb_mem_lib
   - upb_message_lib
+  - upb_mini_descriptor_lib
+  - upb_mini_table_lib
   - upb_json_lib
+  - upb_reflection_lib
   - upb_textformat_lib
+  - upb_wire_lib
   - utf8_range_lib
   - re2
+  - z
