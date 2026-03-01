@@ -63,12 +63,8 @@ class GPR_DLL Fork {
       child_postfork_func reset_child_polling_engine);
   static const std::set<child_postfork_func>& GetResetChildPollingEngineFunc();
 
-  // Check if there is a single active ExecCtx
-  // (the one used to invoke this function).  If there are more,
-  // return false.  Otherwise, return true and block creation of
-  // more ExecCtx s until AllowExecCtx() is called
-  //
-  static bool BlockExecCtx();
+  // Block creation of more ExecCtx s until AllowExecCtx() is called
+  static void BlockExecCtx();
   static void AllowExecCtx();
 
   // Increment the count of active threads.
