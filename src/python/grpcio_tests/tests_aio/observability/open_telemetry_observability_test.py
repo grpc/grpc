@@ -23,6 +23,7 @@ import unittest
 import grpc_observability
 from grpc_observability import _open_telemetry_measures
 from opentelemetry.sdk.metrics import MeterProvider
+from opentelemetry.sdk.metrics import view
 from opentelemetry.sdk.metrics.export import AggregationTemporality
 from opentelemetry.sdk.metrics.export import MetricExportResult
 from opentelemetry.sdk.metrics.export import MetricExporter
@@ -54,9 +55,7 @@ class OTelMetricExporter(MetricExporter):
         self,
         all_metrics: Dict[str, List],
         preferred_temporality: Dict[type, AggregationTemporality] | None = None,
-        preferred_aggregation: (
-            Dict[type, "opentelemetry.sdk.metrics.view.Aggregation"] | None
-        ) = None,
+        preferred_aggregation: Dict[type, view.Aggregation] | None = None,
     ):
         super().__init__(
             preferred_temporality=preferred_temporality,
