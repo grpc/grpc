@@ -1287,7 +1287,8 @@ class V3InterceptorToV2Bridge : public ChannelFilter, public Interceptor {
         // until the initiator returns trailing metadata above.
         TrySeq(
             state->call_handler_latch.Wait(),
-            [initiator, pipe_owner, call_args = std::move(call_args),
+            [initiator = initiator, pipe_owner,
+             call_args = std::move(call_args),
              next_promise_factory =
                  std::move(next_promise_factory)](CallHandler handler) mutable {
               // Intercept all pipes from v2 API.
