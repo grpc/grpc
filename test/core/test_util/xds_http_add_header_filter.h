@@ -14,6 +14,9 @@
 // limitations under the License.
 //
 
+#ifndef GRPC_TEST_CORE_TEST_UTIL_XDS_HTTP_ADD_HEADER_FILTER_H
+#define GRPC_TEST_CORE_TEST_UTIL_XDS_HTTP_ADD_HEADER_FILTER_H
+
 #include <memory>
 #include <optional>
 #include <string>
@@ -179,3 +182,5 @@ class XdsHttpAddHeaderFilterFactory final : public XdsHttpFilterImpl {
 };
 
 }  // namespace grpc_core
+
+#endif  // GRPC_TEST_CORE_TEST_UTIL_XDS_HTTP_ADD_HEADER_FILTER_H
