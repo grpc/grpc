@@ -91,6 +91,6 @@ cdef extern from "src/python/grpcio/grpc/_cython/_cygrpc/private_key_signing/pri
     ctypedef PrivateKeySignerPyWrapperResult(*SignWrapperForPy)(string_view, CSignatureAlgorithm, void*, unique_ptr[CompletionContext]) noexcept nogil
     shared_ptr[PrivateKeySigner] BuildPrivateKeySigner(SignWrapperForPy, void*, PyObject*)
     cdef cppclass CompletionContext:
-        void OnComplete(StatusOr[string])
+        void OnComplete(StatusOr[string]) nogil
     cdef string MakeStringForCython(const char*) noexcept
     cdef string MakeStringForCython(const char*, size_t) noexcept

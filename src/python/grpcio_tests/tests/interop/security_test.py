@@ -19,6 +19,7 @@ import threading
 
 import time
 import unittest
+import queue
 import weakref
 
 import grpc
@@ -246,6 +247,45 @@ class SecurityTest(unittest.TestCase):
         self.assertIsNotNone(
             signer_ref(), "Signer was garbage collected prematurely!"
         )
+
+    def test_success_async_multi(self):
+        """
+        Successfully use a single signer cred for many channels
+        """
+
+        q = queue.Queue()
+        credential = grpc.experimental.ssl_channel_credentials_with_custom_signer(
+            private_key_sign_fn=resources.async_client_private_key_signer,
+            root_certificates=resources.test_root_certificates(),
+            certificate_chain=resources.client_certificate_chain(),
+        )
+
+        def channel_with_credential(creds, q, port):
+            with grpc.secure_channel(
+                "localhost:{}".format(port),
+                creds,
+                (
+                    (
+                        "grpc.ssl_target_name_override",
+                        _SERVER_HOST_OVERRIDE,
+                    ),
+                ),
+            ) as channel:
+                stub = test_pb2_grpc.TestServiceStub(channel)
+                response = stub.EmptyCall(empty_pb2.Empty())
+                q.put(response)
+
+        threads = []
+        for _ in range(10):
+            t = threading.Thread(
+                target=channel_with_credential, args=(credential, q, self.port)
+            )
+            t.start()
+            threads.append(t)
+        for t in threads:
+            t.join()
+        while not q.empty():
+            self.assertIsInstance(q.get(), empty_pb2.Empty)
 
 
 if __name__ == "__main__":
