@@ -8721,6 +8721,7 @@ grpc_cc_library(
         "time",
         "transport_common",
         "writable_streams",
+        "write_cycle",
         ":chttp2_flow_control",
         ":match_promise",
         ":poll",

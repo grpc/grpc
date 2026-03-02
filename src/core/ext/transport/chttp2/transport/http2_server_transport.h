@@ -139,6 +139,7 @@ class Http2ServerTransport final : public ServerTransport,
   }
 
   void SpawnTransportLoops();
+  void InitializeAndSpawnTransportLoops();
 
   //////////////////////////////////////////////////////////////////////////////
   // Channelz and ZTrace
@@ -700,8 +701,7 @@ class Http2ServerTransport final : public ServerTransport,
 
   RefCountedPtr<StateWatcher> watcher_ ABSL_GUARDED_BY(transport_mutex_);
 
-  GRPC_UNUSED bool should_reset_ping_clock_;
-  GRPC_UNUSED bool is_first_write_;
+  bool should_reset_ping_clock_;
   IncomingMetadataTracker incoming_headers_;
 
   // Transport wide write context. This is used to track the state of the

@@ -57,9 +57,10 @@ namespace testing {
 
 using EventEngineSlice = grpc_event_engine::experimental::Slice;
 
-class SettingsPromiseManagerTest : public ::testing::Test {
+class SettingsPromiseManagerTest : public ::testing::TestWithParam<bool> {
  public:
-  SettingsPromiseManagerTest() {
+  SettingsPromiseManagerTest()
+      : transport_write_context_(/*is_client=*/GetParam()) {
     transport_write_context_.StartWriteCycle();
     // Discard the connection preface
     MaybeFlushWriteBuffer();
@@ -135,7 +136,7 @@ void AppendSettingsFrame(SliceBuffer& buf,
   Serialize(absl::Span<Http2Frame>(&frame, 1), buf);
 }
 
-TEST_F(SettingsPromiseManagerTest, NoTimeoutOneSetting) {
+TEST_P(SettingsPromiseManagerTest, NoTimeoutOneSetting) {
   // First start the timer and then immediately send the ACK
   // Check that the status must always be OK.
   auto party = MakeParty();
@@ -157,7 +158,7 @@ TEST_F(SettingsPromiseManagerTest, NoTimeoutOneSetting) {
   notification.WaitForNotification();
 }
 
-TEST_F(SettingsPromiseManagerTest, NoTimeoutThreeSettings) {
+TEST_P(SettingsPromiseManagerTest, NoTimeoutThreeSettings) {
   // Starting the timer and sending the ACK immediately three times in a row.
   // Check that the status must always be OK.
   auto party = MakeParty();
@@ -183,7 +184,7 @@ TEST_F(SettingsPromiseManagerTest, NoTimeoutThreeSettings) {
   notification.WaitForNotification();
 }
 
-TEST_F(SettingsPromiseManagerTest, NoTimeoutThreeSettingsDelayed) {
+TEST_P(SettingsPromiseManagerTest, NoTimeoutThreeSettingsDelayed) {
   // Starting the timer and sending the ACK immediately three times in a row.
   // Check that the status must always be OK.
   auto party = MakeParty();
@@ -209,7 +210,7 @@ TEST_F(SettingsPromiseManagerTest, NoTimeoutThreeSettingsDelayed) {
   notification.WaitForNotification();
 }
 
-TEST_F(SettingsPromiseManagerTest, NoTimeoutOneSettingRareOrder) {
+TEST_P(SettingsPromiseManagerTest, NoTimeoutOneSettingRareOrder) {
   // Emulating the case where we receive the ACK before we even spawn the timer.
   // This could happen if our write promise gets blocked on a very large write
   // and the RTT is low and peer responsiveness is high.
@@ -234,7 +235,7 @@ TEST_F(SettingsPromiseManagerTest, NoTimeoutOneSettingRareOrder) {
   notification.WaitForNotification();
 }
 
-TEST_F(SettingsPromiseManagerTest, NoTimeoutThreeSettingsRareOrder) {
+TEST_P(SettingsPromiseManagerTest, NoTimeoutThreeSettingsRareOrder) {
   // Emulating the case where we receive the ACK before we even spawn the timer.
   // This could happen if our write promise gets blocked on a very large write
   // and the RTT is low and peer responsiveness is high.
@@ -263,7 +264,7 @@ TEST_F(SettingsPromiseManagerTest, NoTimeoutThreeSettingsRareOrder) {
   notification.WaitForNotification();
 }
 
-TEST_F(SettingsPromiseManagerTest, NoTimeoutThreeSettingsMixedOrder) {
+TEST_P(SettingsPromiseManagerTest, NoTimeoutThreeSettingsMixedOrder) {
   auto party = MakeParty();
   SettingsPromiseManager manager(/*on_receive_settings=*/nullptr);
   ExecCtx exec_ctx;
@@ -289,7 +290,7 @@ TEST_F(SettingsPromiseManagerTest, NoTimeoutThreeSettingsMixedOrder) {
   notification.WaitForNotification();
 }
 
-TEST_F(SettingsPromiseManagerTest, TimeoutOneSetting) {
+TEST_P(SettingsPromiseManagerTest, TimeoutOneSetting) {
   // Testing one timeout test
   // Also ensuring that receiving the ACK after the timeout does not crash or
   // leak memory.
@@ -316,7 +317,7 @@ TEST_F(SettingsPromiseManagerTest, TimeoutOneSetting) {
   notification2.WaitForNotification();
 }
 
-TEST_F(SettingsPromiseManagerTest, MaybeGetSettingsAndSettingsAckFramesIdle) {
+TEST_P(SettingsPromiseManagerTest, MaybeGetSettingsAndSettingsAckFramesIdle) {
   // Tests that in idle state, first call to
   // MaybeGetSettingsAndSettingsAckFrames sends initial settings, and second
   // call does nothing.
@@ -359,7 +360,7 @@ TEST_F(SettingsPromiseManagerTest, MaybeGetSettingsAndSettingsAckFramesIdle) {
   EXPECT_EQ(output_buf.JoinIntoString(), "hello");
 }
 
-TEST_F(SettingsPromiseManagerTest,
+TEST_P(SettingsPromiseManagerTest,
        MaybeGetSettingsAndSettingsAckFramesMultipleAcks) {
   // If multiple settings frames are received then multiple ACKs should be sent.
   chttp2::TransportFlowControl transport_flow_control(
@@ -405,7 +406,7 @@ TEST_F(SettingsPromiseManagerTest,
   EXPECT_EQ(output_buf.JoinIntoString(), expected_buf.JoinIntoString());
 }
 
-TEST_F(SettingsPromiseManagerTest,
+TEST_P(SettingsPromiseManagerTest,
        MaybeGetSettingsAndSettingsAckFramesAfterAckAndChange) {
   // Tests that after initial settings are sent and ACKed, no frame is sent. If
   // settings are changed, a new SETTINGS frame with diff is sent.
@@ -500,7 +501,7 @@ TEST_F(SettingsPromiseManagerTest,
   EXPECT_EQ(output_buf.Length(), 0);
 }
 
-TEST_F(SettingsPromiseManagerTest,
+TEST_P(SettingsPromiseManagerTest,
        MaybeGetSettingsAndSettingsAckFramesWithAck) {
   // Tests that if we need to send initial settings and also ACK received
   // settings, both frames are sent.
@@ -540,7 +541,7 @@ TEST_F(SettingsPromiseManagerTest,
   EXPECT_EQ(output_buf.JoinIntoString(), expected_buf.JoinIntoString());
 }
 
-TEST_F(SettingsPromiseManagerTest, OnReceiveSettingsCalled) {
+TEST_P(SettingsPromiseManagerTest, OnReceiveSettingsCalled) {
   ExecCtx exec_ctx;
   Notification notification;
   std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine =
@@ -559,7 +560,7 @@ TEST_F(SettingsPromiseManagerTest, OnReceiveSettingsCalled) {
   notification.WaitForNotification();
 }
 
-TEST_F(SettingsPromiseManagerTest, IsFirstPeerSettingsAppliedTest) {
+TEST_P(SettingsPromiseManagerTest, IsFirstPeerSettingsAppliedTest) {
   bool should_spawn_security_frame_loop = false;
   SettingsPromiseManager manager(/*on_receive_settings=*/nullptr);
   EXPECT_FALSE(manager.IsFirstPeerSettingsApplied());
@@ -572,7 +573,7 @@ TEST_F(SettingsPromiseManagerTest, IsFirstPeerSettingsAppliedTest) {
   EXPECT_TRUE(manager.IsFirstPeerSettingsApplied());
 }
 
-TEST_F(SettingsPromiseManagerTest, IsSecurityFrameExpectedTest) {
+TEST_P(SettingsPromiseManagerTest, IsSecurityFrameExpectedTest) {
   SettingsPromiseManager manager(/*on_receive_settings=*/nullptr);
   bool should_spawn_security_frame_loop = false;
 
@@ -599,7 +600,7 @@ TEST_F(SettingsPromiseManagerTest, IsSecurityFrameExpectedTest) {
   EXPECT_FALSE(manager.IsSecurityFrameExpected());
 }
 
-TEST_F(SettingsPromiseManagerTest, ShouldSpawnSecurityFrameLoopTest) {
+TEST_P(SettingsPromiseManagerTest, ShouldSpawnSecurityFrameLoopTest) {
   SettingsPromiseManager manager(/*on_receive_settings=*/nullptr);
   bool should_spawn_security_frame_loop = false;
 
@@ -611,7 +612,7 @@ TEST_F(SettingsPromiseManagerTest, ShouldSpawnSecurityFrameLoopTest) {
   EXPECT_FALSE(should_spawn_security_frame_loop);
 }
 
-TEST_F(SettingsPromiseManagerTest, ShouldSpawnSecurityFrameLoopTrueTest) {
+TEST_P(SettingsPromiseManagerTest, ShouldSpawnSecurityFrameLoopTrueTest) {
   SettingsPromiseManager manager(/*on_receive_settings=*/nullptr);
   bool should_spawn_security_frame_loop = false;
 
@@ -625,7 +626,7 @@ TEST_F(SettingsPromiseManagerTest, ShouldSpawnSecurityFrameLoopTrueTest) {
   EXPECT_TRUE(should_spawn_security_frame_loop);
 }
 
-TEST_F(SettingsPromiseManagerTest, ShouldSpawnSecurityFrameLoopFalseTest) {
+TEST_P(SettingsPromiseManagerTest, ShouldSpawnSecurityFrameLoopFalseTest) {
   SettingsPromiseManager manager(/*on_receive_settings=*/nullptr);
   bool should_spawn_security_frame_loop = false;
 
@@ -638,7 +639,7 @@ TEST_F(SettingsPromiseManagerTest, ShouldSpawnSecurityFrameLoopFalseTest) {
   EXPECT_FALSE(should_spawn_security_frame_loop);
 }
 
-TEST_F(SettingsPromiseManagerTest, ShouldSpawnSecurityFrameLoopOnlyOnceTest) {
+TEST_P(SettingsPromiseManagerTest, ShouldSpawnSecurityFrameLoopOnlyOnceTest) {
   SettingsPromiseManager manager(/*on_receive_settings=*/nullptr);
   bool should_spawn_security_frame_loop = false;
 
@@ -660,6 +661,9 @@ TEST_F(SettingsPromiseManagerTest, ShouldSpawnSecurityFrameLoopOnlyOnceTest) {
             Http2ErrorCode::kNoError);
   EXPECT_FALSE(should_spawn_security_frame_loop);
 }
+
+INSTANTIATE_TEST_SUITE_P(IsClient, SettingsPromiseManagerTest,
+                         ::testing::Bool());
 
 }  // namespace testing
 
