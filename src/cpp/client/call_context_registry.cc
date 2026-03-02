@@ -61,7 +61,6 @@ void CallContextRegistry::Destroy(ElementList& elements) {
       registry[i].destroy(elements[i]);
     }
   }
-
   delete[] elements;
   elements = nullptr;
 }

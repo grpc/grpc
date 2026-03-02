@@ -508,7 +508,7 @@ class ClientContext {
   std::multimap<std::string, std::string> send_initial_metadata_;
   mutable grpc::internal::MetadataMap recv_initial_metadata_;
   mutable grpc::internal::MetadataMap trailing_metadata_;
-  grpc::impl::CallContextRegistry::ElementList context_elements_ = nullptr;
+  impl::CallContextRegistry::ElementList context_elements_ = nullptr;
 
   grpc_call* propagate_from_call_;
   PropagationOptions propagation_options_;
