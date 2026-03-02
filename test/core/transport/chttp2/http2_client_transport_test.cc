@@ -232,9 +232,7 @@ TEST_F(Http2ClientTransportTest, TestHttp2ClientTransportWriteFromCall) {
            kPathDemoServiceStep.begin(), kPathDemoServiceStep.end())),
        helper_.EventEngineSliceFromHttp2DataFrame(data_payload,
                                                   /*stream_id=*/1,
-                                                  /*end_stream=*/false),
-       helper_.EventEngineSliceFromEmptyHttp2DataFrame(/*stream_id=*/1,
-                                                       /*end_stream=*/true)},
+                                                  /*end_stream=*/true)},
       event_engine().get(),
       [read_close_trailing_metadata = std::move(read_close_trailing_metadata)](
           SliceBuffer& out, SliceBuffer& expect) mutable {
@@ -1272,9 +1270,7 @@ TEST_F(Http2ClientTransportTest, ReadGracefulGoaway) {
            kPathDemoServiceStep.begin(), kPathDemoServiceStep.end())),
        helper_.EventEngineSliceFromHttp2DataFrame(data_payload,
                                                   /*stream_id=*/1,
-                                                  /*end_stream=*/false),
-       helper_.EventEngineSliceFromEmptyHttp2DataFrame(/*stream_id=*/1,
-                                                       /*end_stream=*/true)},
+                                                  /*end_stream=*/true)},
       event_engine().get(),
       [read_close_trailing_metadata = std::move(read_close_trailing_metadata)](
           SliceBuffer& out, SliceBuffer& expect) mutable {
@@ -1375,9 +1371,7 @@ TEST_F(Http2ClientTransportTest, ReadGracefulGoawayCannotStartNewStreams) {
            kPathDemoServiceStep.begin(), kPathDemoServiceStep.end())),
        helper_.EventEngineSliceFromHttp2DataFrame(data_payload,
                                                   /*stream_id=*/1,
-                                                  /*end_stream=*/false),
-       helper_.EventEngineSliceFromEmptyHttp2DataFrame(/*stream_id=*/1,
-                                                       /*end_stream=*/true)},
+                                                  /*end_stream=*/true)},
       event_engine().get(),
       [&, read_frames = std::move(read_frames)](SliceBuffer& out,
                                                 SliceBuffer& expect) mutable {
@@ -1564,9 +1558,6 @@ TEST_F(Http2ClientTransportTest, TestInitialSequenceNumber) {
            /*end_stream=*/false),
        helper_.EventEngineSliceFromHttp2DataFrame(
            data_payload,
-           /*stream_id=*/kInitialSequenceNumber,
-           /*end_stream=*/false),
-       helper_.EventEngineSliceFromEmptyHttp2DataFrame(
            /*stream_id=*/kInitialSequenceNumber,
            /*end_stream=*/true)},
       event_engine().get(),

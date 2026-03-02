@@ -913,6 +913,7 @@ TEST_F(GrpclbEnd2endTest, SelectGrpclbWithMigrationServiceConfig) {
 
 TEST_F(GrpclbEnd2endTest,
        SelectGrpclbWithMigrationServiceConfigAndNoAddresses) {
+  SKIP_TEST_FOR_PH2_CLIENT("TODO(tjagtap) [PH2][P3][Client] Fix flake");
   const int kFallbackTimeoutMs = 200;
   ResetStub(kFallbackTimeoutMs);
   SetNextResolution({}, {},

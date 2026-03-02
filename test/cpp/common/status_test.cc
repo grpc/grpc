@@ -1,4 +1,4 @@
-// Copyright 2021 gRPC authors.
+// Copyright 2026 gRPC authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,25 +12,5 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_SRC_CORE_LIB_IOMGR_RESOLVED_ADDRESS_H
-#define GRPC_SRC_CORE_LIB_IOMGR_RESOLVED_ADDRESS_H
-
-#include <grpc/support/port_platform.h>
-#include <stddef.h>
-
-#include "src/core/lib/iomgr/port.h"
-
-#ifdef GRPC_WINSOCK_SOCKET
-#include <ws2tcpip.h>
-#endif
-
-#if defined(GRPC_POSIX_SOCKET) || defined(GRPC_CFSTREAM)
-#include <sys/socket.h>
-#endif
-
-struct grpc_resolved_address {
-  char addr[GRPC_MAX_SOCKADDR_SIZE];
-  socklen_t len;
-};
-
-#endif  // GRPC_SRC_CORE_LIB_IOMGR_RESOLVED_ADDRESS_H
+// TODO(ctiller): Add tests
+int main(int argc, char** argv) {}

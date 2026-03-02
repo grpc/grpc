@@ -227,7 +227,7 @@ Key test files include:
 
 ## Similarities of PH2 and Chaotic Good
 
-PH2 shares several architectural similarities with the [Chaotic Good transport](../chaotic_good/GEMINI.md) transport:
+PH2 shares several architectural similarities with the [Chaotic Good transport](../chaotic_good/GEMINI.md) :
 
 *   **Promise-Based:** Both transports are built upon the gRPC Promise library for managing asynchronous operations. This is a departure from the callback-based system in CHTTP2.
 *   **Call V3 Stack:** Both are designed to work with the newer Call V3 stack.

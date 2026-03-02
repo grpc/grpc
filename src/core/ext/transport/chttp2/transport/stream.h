@@ -61,22 +61,28 @@ enum class HttpStreamState : uint8_t {
 };
 
 // Managing the streams
-struct Stream : public RefCounted<Stream> {
+class Stream : public RefCounted<Stream> {
+ public:
   explicit Stream(CallHandler call_handler,
                   chttp2::TransportFlowControl& transport_flow_control,
                   const bool is_client)
-      : call(std::move(call_handler)),
+      : header_assembler(is_client),
+        flow_control(&transport_flow_control),
+        call(std::move(call_handler)),
         is_write_closed(false),
-        stream_state(HttpStreamState::kIdle),
         stream_id(kInvalidStreamId),
-        header_assembler(is_client),
+        stream_state(HttpStreamState::kIdle),
         did_receive_initial_metadata(false),
         did_receive_trailing_metadata(false),
         did_push_server_trailing_metadata(false),
         data_queue(MakeRefCounted<StreamDataQueue<ClientMetadataHandle>>(
             call.arena(), /*is_client*/ is_client,
-            /*queue_size*/ kStreamQueueSize)),
-        flow_control(&transport_flow_control) {}
+            /*queue_size*/ kStreamQueueSize)) {}
+
+  Stream(const Stream&) = delete;
+  Stream(Stream&&) = delete;
+  Stream& operator=(const Stream&) = delete;
+  Stream& operator=(Stream&&) = delete;
 
   // TODO(akshitpatel) : [PH2][P4] : SetStreamId can be avoided if we pass the
   // stream id as a parameter to the dequeue function. The only downside here
@@ -274,7 +280,31 @@ struct Stream : public RefCounted<Stream> {
     }
   }
 
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION bool IsInitialMetadataReceived() const {
+    return did_receive_initial_metadata;
+  }
+
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION void SetInitialMetadataReceived() {
+    did_receive_initial_metadata = true;
+  }
+
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION bool IsTrailingMetadataReceived() const {
+    return did_receive_trailing_metadata;
+  }
+
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION void SetTrailingMetadataReceived() {
+    did_receive_trailing_metadata = true;
+  }
+
+  CallHandler& Call() { return call; }
+
+  GrpcMessageAssembler assembler;
+  HeaderAssembler header_assembler;
+  chttp2::StreamFlowControl flow_control;
+
+ private:
   CallHandler call;
+
   // This flag is kept separate from the stream_state as the stream_state
   // is inline with the HTTP2 spec, whereas this flag is an implementation
   // detail of the PH2 transport. As far as PH2 is concerned, if a stream is
@@ -283,18 +313,16 @@ struct Stream : public RefCounted<Stream> {
   // stream from the transport map), then all the frames read on that stream
   // will be dropped.
   std::atomic<bool> is_write_closed;
+  uint32_t stream_id;
+
   // This MUST be accessed from the transport party.
   HttpStreamState stream_state;
-  uint32_t stream_id;
-  GrpcMessageAssembler assembler;
-  HeaderAssembler header_assembler;
   bool did_receive_initial_metadata;
   bool did_receive_trailing_metadata;
   bool did_push_server_trailing_metadata;
   // TODO(akshitpatel) : [PH2][P3][Server] : This would need to change to
   // accomodate ServerMetadataHandle for the server side.
   RefCountedPtr<StreamDataQueue<ClientMetadataHandle>> data_queue;
-  chttp2::StreamFlowControl flow_control;
 };
 
 }  // namespace http2

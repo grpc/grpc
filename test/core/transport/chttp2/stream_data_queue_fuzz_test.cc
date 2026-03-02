@@ -322,7 +322,7 @@ class StreamDataQueueFuzzTest : public YodelTest {
   RefCountedPtr<Party> party_;
   RefCountedPtr<Party> party2_;
   HPackCompressor encoder_;
-  http2::TransportWriteContext transport_write_context_;
+  http2::TransportWriteContext transport_write_context_{/*is_client=*/true};
 };
 
 // TODO(akshitpatel) : [PH2][P3] : Add a test for server side.
