@@ -1381,12 +1381,11 @@ class V3InterceptorToV2Bridge : public ChannelFilter, public Interceptor {
               handler.SpawnGuarded(
                   "pull_client_initial_metadata",
                   [handler, pipe_owner]() mutable {
-                    return TrySeq(
-                        handler.PullClientInitialMetadata(),
-                        [pipe_owner](ClientMetadataHandle metadata) {
-                          pipe_owner->client_initial_metadata.Set(
-                              std::move(metadata));
-                        });
+                    return TrySeq(handler.PullClientInitialMetadata(),
+                                  [pipe_owner](ClientMetadataHandle metadata) {
+                                    pipe_owner->client_initial_metadata.Set(
+                                        std::move(metadata));
+                                  });
                   });
               // A wrapper for next_promise_factory that does the following:
               // - Pulls client initial metadata from the V3 handler via

@@ -123,8 +123,7 @@ class XdsCompositeFilterEnd2endTest : public XdsEnd2endTest {
   }
 
   static Matcher BuildMatcher(
-      const std::string& input_header_name,
-      MatcherData matcher_data,
+      const std::string& input_header_name, MatcherData matcher_data,
       std::optional<ActionData> on_no_match = std::nullopt) {
     Matcher matcher;
     auto* matcher_tree = matcher.mutable_matcher_tree();
@@ -172,9 +171,9 @@ class XdsCompositeFilterEnd2endTest : public XdsEnd2endTest {
     ExtensionWithMatcherPerRoute override_config;
     *override_config.mutable_xds_matcher() = std::move(matcher);
     RouteConfiguration route_config = default_route_config_;
-    auto& typed_per_filter_config =
-        *route_config.mutable_virtual_hosts(0)->mutable_routes(0)
-        ->mutable_typed_per_filter_config();
+    auto& typed_per_filter_config = *route_config.mutable_virtual_hosts(0)
+                                         ->mutable_routes(0)
+                                         ->mutable_typed_per_filter_config();
     typed_per_filter_config[kFilterInstanceName].PackFrom(override_config);
     return route_config;
   }
@@ -243,9 +242,8 @@ TEST_P(XdsCompositeFilterEnd2endTest, OnNoMatch) {
   std::pair<std::string, std::string> on_no_match = {"status", "unknown"};
   SetListenerAndRouteConfiguration(
       balancer_.get(),
-      BuildListenerWithCompositeFilter(
-          BuildMatcher("name", std::move(matcher_data),
-                       std::move(on_no_match))),
+      BuildListenerWithCompositeFilter(BuildMatcher(
+          "name", std::move(matcher_data), std::move(on_no_match))),
       default_route_config_);
   // Send RPC with name=enterprise.
   LOG(INFO) << "Sending RPC with name=enterprise...";
@@ -261,8 +259,7 @@ TEST_P(XdsCompositeFilterEnd2endTest, OnNoMatch) {
   // Send RPC with no matching header.  Should hit the on_no_match.
   LOG(INFO) << "Sending RPC with no name header...";
   server_initial_metadata.clear();
-  status = SendRpc(RpcOptions()
-                       .set_echo_metadata_initially(true),
+  status = SendRpc(RpcOptions().set_echo_metadata_initially(true),
                    /*response=*/nullptr, &server_initial_metadata);
   EXPECT_TRUE(status.ok()) << "code=" << status.error_code()
                            << " message=" << status.error_message();
