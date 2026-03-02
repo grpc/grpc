@@ -312,7 +312,8 @@ class WriteCycle {
 
 class TransportWriteContext {
  public:
-  TransportWriteContext(const bool is_client) : is_client_(is_client) {}
+  explicit TransportWriteContext(const bool is_client)
+      : is_client_(is_client) {}
 
   // TransportWriteContext cannot be copied, moved or assigned.
   TransportWriteContext(const TransportWriteContext&) = delete;

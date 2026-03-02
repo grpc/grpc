@@ -88,7 +88,7 @@ class TestsNeedingStreamObjects : public ::testing::Test {
     stream->InitializeStream(stream_id,
                              /*allow_true_binary_metadata_peer=*/true,
                              /*allow_true_binary_metadata_acked=*/true);
-    GRPC_CHECK_EQ(stream->stream_id, stream_id);
+    GRPC_CHECK_EQ(stream->GetStreamId(), stream_id);
     stream_set_.push_back(std::move(stream));
     return stream_set_.back();
   }
@@ -114,7 +114,7 @@ class ConnectionPrefaceValidationTest : public ::testing::Test {
 };
 
 TEST_F(ConnectionPrefaceValidationTest,
-       ValidateIncomingConnectionPreface_Success) {
+       ValidateIncomingConnectionPrefaceSuccess) {
   absl::StatusOr<Slice> status =
       Slice::FromStaticString(GRPC_CHTTP2_CLIENT_CONNECT_STRING);
   Http2Status result = ValidateIncomingConnectionPreface(status);
@@ -122,7 +122,7 @@ TEST_F(ConnectionPrefaceValidationTest,
 }
 
 TEST_F(ConnectionPrefaceValidationTest,
-       ValidateIncomingConnectionPreface_ErrorStatus) {
+       ValidateIncomingConnectionPrefaceErrorStatus) {
   absl::Status error = absl::InternalError("some error");
   absl::StatusOr<Slice> status = error;
   Http2Status result = ValidateIncomingConnectionPreface(status);
@@ -134,7 +134,7 @@ TEST_F(ConnectionPrefaceValidationTest,
 }
 
 TEST_F(ConnectionPrefaceValidationTest,
-       ValidateIncomingConnectionPreface_WrongString) {
+       ValidateIncomingConnectionPrefaceWrongString) {
   // Case 1: Random wrong string
   VerifyProtocolError(Slice::FromStaticString("WRONG STRING"));
 

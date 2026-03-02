@@ -357,7 +357,7 @@ Http2Status Http2ServerTransport::ProcessIncomingFrame(Http2DataFrame&& frame) {
   //           << "Http2ServerTransport::ProcessIncomingFrame(DataFrame) "
   //              "SpawnPushMessage "
   //           << message->DebugString();
-  //       stream->call.SpawnPushMessage(std::move(message));
+  //       stream->call().SpawnPushMessage(std::move(message));
   //       continue;
   //     }
   //     GRPC_HTTP2_SERVER_DLOG
@@ -421,8 +421,8 @@ Http2Status Http2ServerTransport::ProcessIncomingFrame(
   //   }
 
   //   if (incoming_headers_.ClientReceivedDuplicateMetadata(
-  //           stream->did_receive_initial_metadata,
-  //           stream->did_receive_trailing_metadata)) {
+  //           stream->IsInitialMetadataReceived(),
+  //           stream->IsTrailingMetadataReceived())) {
   //     return ParseAndDiscardHeaders(
   //         std::move(frame.payload), frame.end_headers, stream.get(),
   //         Http2Status::Http2StreamError(
@@ -764,7 +764,7 @@ Http2Status Http2ServerTransport::ProcessIncomingFrame(
 Http2Status Http2ServerTransport::ProcessMetadata(
     RefCountedPtr<Stream> stream) {
   HeaderAssembler& assembler = stream->header_assembler;
-  CallHandler call = stream->call;
+  // CallHandler& call = stream->Call();
 
   GRPC_HTTP2_SERVER_DLOG << "Http2ServerTransport::ProcessMetadata";
   if (assembler.IsReady()) {
@@ -778,7 +778,7 @@ Http2Status Http2ServerTransport::ProcessMetadata(
       // ServerMetadataHandle metadata = TakeValue(std::move(read_result));
       // if (incoming_headers_.HeaderHasEndStream()) {
       //   stream->MarkHalfClosedRemote();
-      //   stream->did_receive_trailing_metadata = true;
+      //   stream->SetTrailingMetadataReceived();
       //   // BeginCloseStream(std::move(stream),
       //   //                  /*reset_stream_error_code=*/std::nullopt,
       //   //                  std::move(metadata));
@@ -786,7 +786,7 @@ Http2Status Http2ServerTransport::ProcessMetadata(
       //   GRPC_HTTP2_SERVER_DLOG << "Http2ServerTransport::ProcessMetadata "
       //                             "SpawnPushServerInitialMetadata";
       //   metadata->Set(PeerString(), incoming_headers_.peer_string());
-      //   stream->did_receive_initial_metadata = true;
+      //   stream->SetInitialMetadataReceived();
       //   call.SpawnPushServerInitialMetadata(std::move(metadata));
       // }
       return Http2Status::Ok();
@@ -1074,7 +1074,7 @@ auto Http2ServerTransport::ReadLoop() {
 //                            << stream->GetStreamId();
 //     stream->MarkHalfClosedLocal();
 
-//     if (stream->did_receive_trailing_metadata) {
+//     if (stream->IsTrailingMetadataReceived()) {
 //       CloseStream(*stream, CloseStreamArgs{/*close_reads=*/true,
 //                                            /*close_writes=*/true});
 //     }
@@ -1499,7 +1499,7 @@ RefCountedPtr<Stream> Http2ServerTransport::LookupStream(uint32_t stream_id) {
 //   return GRPC_LATENT_SEE_PROMISE(
 //       "Ph2CallOutboundLoop",
 //       TrySeq(
-//           Map(stream->call.PullClientInitialMetadata(),
+//           Map(stream->Call().PullClientInitialMetadata(),
 //               [send_initial_metadata = std::move(send_initial_metadata)](
 //                   ValueOrFailure<ClientMetadataHandle> metadata) mutable {
 //                 if (GPR_UNLIKELY(!metadata.ok())) {
@@ -1509,12 +1509,12 @@ RefCountedPtr<Stream> Http2ServerTransport::LookupStream(uint32_t stream_id) {
 //                 return std::move(send_initial_metadata)(
 //                     TakeValue(std::move(metadata)));
 //               }),
-//           ForEach(MessagesFrom(stream->call), std::move(send_message)),
+//           ForEach(MessagesFrom(stream->Call()), std::move(send_message)),
 //           [send_half_closed = std::move(send_half_closed)]() mutable {
 //             return std::move(send_half_closed)();
 //           },
 //           [stream]() mutable {
-//             return Map(stream->call.WasCancelled(), [](bool cancelled) {
+//             return Map(stream->Call().WasCancelled(), [](bool cancelled) {
 //               GRPC_HTTP2_SERVER_DLOG
 //                   << "Http2ServerTransport::CallOutboundLoop End with "
 //                      "cancelled="
