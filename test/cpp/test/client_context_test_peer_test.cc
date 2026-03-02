@@ -83,21 +83,16 @@ TEST(ClientContextTestPeerTest, TelemetryLabelPropagatedToArena) {
       "localhost:1234", GRPC_STATUS_INTERNAL, "error");
   auto channel = grpc::CreateChannelInternal("", c_channel, {});
   grpc::GenericStub stub(channel);
-
   ClientContext ctx;
   ctx.SetContext(grpc::impl::TelemetryLabel{"test_label"});
-
   CompletionQueue cq;
-  // PrepareCall triggers Channel::CreateCall which calls Propagate
+  // PrepareCall creates a call but doesn't start it, so the call is initialized but has not failed yet.
   const std::string kMethodName("/method");
   auto call = stub.PrepareCall(&ctx, kMethodName, &cq);
-
   grpc_call* c_call = ctx.c_call();
   ASSERT_NE(c_call, nullptr);
   grpc_core::Arena* arena = grpc_call_get_arena(c_call);
   ASSERT_NE(arena, nullptr);
-
-  // Ensure the label was propagated to the Core Arena
   auto* label = arena->GetContext<grpc::impl::TelemetryLabel>();
   ASSERT_NE(label, nullptr);
   EXPECT_EQ(label->value, "test_label");
