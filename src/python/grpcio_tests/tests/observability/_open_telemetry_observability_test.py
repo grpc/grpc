@@ -12,7 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from collections import defaultdict
+from collections import defaultdict, Counter
+import concurrent.futures
 import datetime
 import logging
 import os
@@ -29,13 +30,13 @@ from grpc_observability._open_telemetry_observability import (
 )
 from grpc_observability._open_telemetry_observability import GRPC_METHOD_LABEL
 from grpc_observability._open_telemetry_observability import GRPC_TARGET_LABEL
-from opentelemetry.sdk import trace as sdk_trace
 from opentelemetry.sdk.metrics import MeterProvider
 from opentelemetry.sdk.metrics.export import AggregationTemporality
 from opentelemetry.sdk.metrics.export import MetricExportResult
 from opentelemetry.sdk.metrics.export import MetricExporter
 from opentelemetry.sdk.metrics.export import MetricsData
 from opentelemetry.sdk.metrics.export import PeriodicExportingMetricReader
+from opentelemetry.sdk import trace as sdk_trace
 from opentelemetry.sdk.trace.export import SimpleSpanProcessor
 from opentelemetry.sdk.trace.export import SpanExporter
 from opentelemetry.sdk.trace.export.in_memory_span_exporter import (
@@ -909,7 +910,8 @@ class OpenTelemetryObservabilityTest(unittest.TestCase):
             id_generator=UserDefinedIdGenerator()
         )
         with self.assertRaisesRegex(
-            ValueError, "User-defined IdGenerators are not allowed."
+            ValueError,
+            "User-defined IdGenerators are not allowed."
         ):
             grpc_observability.OpenTelemetryPlugin(
                 tracer_provider=otel_tracer_provider,
@@ -928,11 +930,70 @@ class OpenTelemetryObservabilityTest(unittest.TestCase):
             id_generator=UserDefinedIdGenerator()
         )
         with self.assertRaisesRegex(
-            ValueError, "User-defined IdGenerators are not allowed."
+            ValueError,
+            "User-defined IdGenerators are not allowed."
         ):
             grpc_observability.OpenTelemetryPlugin(
                 tracer_provider=otel_tracer_provider,
             )
+
+    def testConcurrentRpcsHaveCorrectSpanIds(self):
+        NUM_RPCS = 50
+        EXPECTED_SPANS = NUM_RPCS * 3  # Sent + Attempt + Recv per RPC
+
+        with grpc_observability.OpenTelemetryPlugin(
+            tracer_provider=self._tracer_provider,
+            text_map_propagator=TraceContextTextMapPropagator(),
+        ):
+            server, port = _test_server.start_server()
+            self._server = server
+            channel = grpc.insecure_channel(f"localhost:{port}")
+            multi_callable = channel.unary_unary("/test/UnaryUnary")
+
+            def do_rpc(unused):
+                multi_callable(b"\x00\x00\x00")
+
+            with concurrent.futures.ThreadPoolExecutor(
+                max_workers=8
+            ) as pool:
+                list(pool.map(do_rpc, range(NUM_RPCS)))
+
+            channel.close()
+
+        self.assert_eventually(
+            lambda: len(
+                self._span_exporter.get_finished_spans()
+            ) >= EXPECTED_SPANS,
+            timeout=datetime.timedelta(seconds=10),
+            message=lambda: (
+                f"Expected {EXPECTED_SPANS} spans, got "
+                f"{len(self._span_exporter.get_finished_spans())}"
+            ),
+        )
+
+        spans = self._span_exporter.get_finished_spans()
+        self.assertTrue(len(spans) == EXPECTED_SPANS)
+
+        sent_count = sum(1 for s in spans if s.name.startswith("Sent."))
+        self.assertTrue(sent_count == NUM_RPCS)
+
+        attempt_count = sum(1 for s in spans if s.name.startswith("Attempt."))
+        self.assertTrue(attempt_count == NUM_RPCS)
+
+        recv_count = sum(1 for s in spans if s.name.startswith("Recv."))
+        self.assertTrue(recv_count == NUM_RPCS)
+
+        # Verify id
+        span_ids = [s.get_span_context().span_id for s in spans]
+        counts = Counter(span_ids)
+        #print(counts)
+        for span_id, count in counts.items():
+            self.assertTrue(count == 1)
+
+        trace_ids = [s.context.trace_id for s in spans]
+        counts = Counter(trace_ids)
+        print(counts)
+
 
     def testSpanStatusForUnimplementedRpcMethod(self):
         with grpc_observability.OpenTelemetryPlugin(
@@ -949,53 +1010,52 @@ class OpenTelemetryObservabilityTest(unittest.TestCase):
                 except grpc.RpcError:
                     pass
 
-            self._validate_spans_exist(self._span_exporter)
-            spans = self._span_exporter.get_finished_spans()
-            self.assertTrue(len(spans) == 3)
+        self._validate_spans_exist(self._span_exporter)
+        spans = self._span_exporter.get_finished_spans()
+        self.assertTrue(len(spans) == 3)
 
-            client_span = next(
-                (span for span in spans if span.name.startswith("Sent.")), None
-            )
-            self.assertIsNotNone(client_span)
+        client_span = next(
+            (span for span in spans if span.name.startswith("Sent.")), None
+        )
+        self.assertIsNotNone(client_span)
 
-            attempt_span = next(
-                (span for span in spans if span.name.startswith("Attempt.")),
-                None,
-            )
-            self.assertIsNotNone(attempt_span)
+        attempt_span = next(
+            (span for span in spans if span.name.startswith("Attempt.")), None
+        )
+        self.assertIsNotNone(attempt_span)
 
-            server_span = next(
-                (span for span in spans if span.name.startswith("Recv.")), None
-            )
-            self.assertIsNotNone(server_span)
+        server_span = next(
+            (span for span in spans if span.name.startswith("Recv.")), None
+        )
+        self.assertIsNotNone(server_span)
 
-            # validate span statuses
-            self.assertFalse(client_span.status.is_ok)
-            self.assertIn("UNIMPLEMENTED", client_span.status.description)
+        # validate span statuses
+        self.assertFalse(client_span.status.is_ok)
+        self.assertIn("UNIMPLEMENTED", client_span.status.description)
 
-            self.assertFalse(attempt_span.status.is_ok)
-            self.assertIn("UNIMPLEMENTED", attempt_span.status.description)
+        self.assertFalse(attempt_span.status.is_ok)
+        self.assertIn("UNIMPLEMENTED", attempt_span.status.description)
 
-            self.assertFalse(server_span.status.is_ok)
-            self.assertIn("UNIMPLEMENTED", server_span.status.description)
+        self.assertFalse(server_span.status.is_ok)
+        self.assertIn("UNIMPLEMENTED", server_span.status.description)
 
-            # validate parent-child relationship
-            self.assertEqual(
-                client_span.get_span_context().trace_id,
-                attempt_span.get_span_context().trace_id,
-            )
-            self.assertEqual(
-                attempt_span.parent.span_id,
-                client_span.get_span_context().span_id,
-            )
-            self.assertEqual(
-                attempt_span.get_span_context().trace_id,
-                server_span.get_span_context().trace_id,
-            )
-            self.assertEqual(
-                server_span.parent.span_id,
-                attempt_span.get_span_context().span_id,
-            )
+        # validate parent-child relationship
+        self.assertEqual(
+            client_span.get_span_context().trace_id,
+            attempt_span.get_span_context().trace_id
+        )
+        self.assertEqual(
+            attempt_span.parent.span_id,
+            client_span.get_span_context().span_id
+        )
+        self.assertEqual(
+            attempt_span.get_span_context().trace_id,
+            server_span.get_span_context().trace_id
+        )
+        self.assertEqual(
+            server_span.parent.span_id,
+            attempt_span.get_span_context().span_id
+        )
 
     def assert_eventually(
         self,
@@ -1090,18 +1150,19 @@ class OpenTelemetryObservabilityTest(unittest.TestCase):
         # validate parent-child relationship
         self.assertEqual(
             client_span.get_span_context().trace_id,
-            attempt_span.get_span_context().trace_id,
+            attempt_span.get_span_context().trace_id
         )
         self.assertEqual(
-            attempt_span.parent.span_id, client_span.get_span_context().span_id
+            attempt_span.parent.span_id,
+            client_span.get_span_context().span_id
         )
         self.assertEqual(
             attempt_span.get_span_context().trace_id,
-            server_span.get_span_context().trace_id,
+            server_span.get_span_context().trace_id
         )
         self.assertEqual(
             server_span.parent.span_id,
-            attempt_span.get_span_context().span_id,
+            attempt_span.get_span_context().span_id
         )
 
         # validate server span traced events
