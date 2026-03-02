@@ -946,11 +946,11 @@ TEST_F(TlsPrivateKeyOffloadTest,
 }  // namespace testing
 }  // namespace grpc
 
+#endif
+
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(&argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   int ret = RUN_ALL_TESTS();
   return ret;
 }
-
-#endif
