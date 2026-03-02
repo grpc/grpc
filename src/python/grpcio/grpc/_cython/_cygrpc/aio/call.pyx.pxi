@@ -141,7 +141,7 @@ cdef class _AioCall(GrpcCallWrapper):
                 return
         with _observability.get_plugin() as plugin:
             if plugin and plugin.observability_enabled:
-                capsule = plugin.create_client_call_tracer(method, self._channel._target)
+                capsule = plugin.create_client_call_tracer(method, self._channel.target)
                 capsule_ptr = cpython.PyCapsule_GetPointer(capsule, CLIENT_CALL_TRACER)
                 _set_call_tracer(self.call, capsule_ptr)
                 self._call_tracer_capsule = capsule
