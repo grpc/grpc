@@ -41,6 +41,7 @@
 #include "absl/strings/str_cat.h"
 #include "absl/synchronization/notification.h"
 
+#if defined(OPENSSL_IS_BORINGSSL)
 #if OPENSSL_VERSION_NUMBER >= 0x10100000
 namespace grpc_core {
 namespace testing {
@@ -586,10 +587,12 @@ INSTANTIATE_TEST_SUITE_P(PrivateKeyOffloadTest, PrivateKeyOffloadTest,
 }  // namespace
 }  // namespace testing
 }  // namespace grpc_core
-#endif
 
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(&argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
 }
+
+#endif  // OPENSSL_VERSION_NUMBER >= 0x10100000
+#endif  // OPENSSL_IS_BORINGSSL

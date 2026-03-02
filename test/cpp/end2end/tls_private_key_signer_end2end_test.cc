@@ -16,6 +16,8 @@
 //
 //
 
+#if defined(OPENSSL_IS_BORINGSSL)
+
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/impl/channel_arg_names.h>
 #include <grpcpp/channel.h>
@@ -950,3 +952,5 @@ int main(int argc, char** argv) {
   int ret = RUN_ALL_TESTS();
   return ret;
 }
+
+#endif
