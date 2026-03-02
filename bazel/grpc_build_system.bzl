@@ -41,8 +41,21 @@ load("@rules_shell//shell:sh_binary.bzl", "sh_binary")
 load("@rules_shell//shell:sh_test.bzl", "sh_test")
 load("//bazel:cc_grpc_library.bzl", "cc_grpc_library")
 load("//bazel:copts.bzl", "GRPC_DEFAULT_COPTS")
-load("//bazel:experiments.bzl", "EXPERIMENTS", "EXPERIMENT_ENABLES", "EXPERIMENT_POLLERS")
-load("//bazel:test_experiments.bzl", "TEST_EXPERIMENTS", "TEST_EXPERIMENT_ENABLES", "TEST_EXPERIMENT_POLLERS")
+load("//bazel:experiments_helper.bzl", "compute_experiment_data")
+load("//src/core:lib/experiments/experiments.bzl", "EXPERIMENTS")
+load("//src/core:lib/experiments/rollouts.bzl", "ROLLOUTS")
+load("//test/core/experiments/fixtures:test_experiments.bzl", FIXTURE_EXPERIMENTS = "EXPERIMENTS")
+load("//test/core/experiments/fixtures:test_experiments_rollout.bzl", FIXTURE_ROLLOUTS = "ROLLOUTS")
+
+_DATA = compute_experiment_data(EXPERIMENTS, ROLLOUTS)
+_FIXTURE_DATA = compute_experiment_data(FIXTURE_EXPERIMENTS, FIXTURE_ROLLOUTS)
+
+EXPERIMENT_ENABLES = _DATA.experiment_enables
+EXPERIMENT_POLLERS = _DATA.experiment_pollers
+EXPERIMENT_MAP = _DATA.platform_config
+TEST_EXPERIMENT_ENABLES = _FIXTURE_DATA.experiment_enables
+TEST_EXPERIMENT_POLLERS = _FIXTURE_DATA.experiment_pollers
+TEST_EXPERIMENT_MAP = _FIXTURE_DATA.platform_config
 
 # The set of pollers to test against if a test exercises polling
 POLLERS = ["epoll1", "poll"]
@@ -455,8 +468,8 @@ def expand_tests(name, srcs, deps, tags, args, exclude_pollers, uses_polling, us
                             config[mode][experiment] = []
                         config[mode][experiment].append(platform)
 
-    _populate_experiments_platform_config(experiments, EXPERIMENTS)
-    _populate_experiments_platform_config(experiments, TEST_EXPERIMENTS)
+    _populate_experiments_platform_config(experiments, EXPERIMENT_MAP)
+    _populate_experiments_platform_config(experiments, TEST_EXPERIMENT_MAP)
 
     mode_config = {
         # format: <mode>: (enabled_target_tags, disabled_target_tags)
