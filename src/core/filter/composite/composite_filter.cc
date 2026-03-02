@@ -90,6 +90,7 @@ CompositeFilter::CompositeFilter(const ChannelArgs& args,
                                  RefCountedPtr<const Config> config,
                                  ChannelFilter::Args filter_args)
     : config_(std::move(config)) {
+  if (config_->matcher == nullptr) return;
   // Populate filter_chain_map_ from config_.
   config_->matcher->ForEachAction([&](const XdsMatcher::Action& action) {
     if (action.type() != ExecuteFilterAction::Type()) return;
@@ -137,6 +138,15 @@ void CompositeFilter::InterceptCall(
         return TrySeq(
             handler.PullClientInitialMetadata(),
             [handler, self](ClientMetadataHandle metadata) {
+              if (self->config_->matcher == nullptr) {
+                GRPC_TRACE_LOG(channel, INFO)
+                    << "[composite " << self.get()
+                    << "]: no matcher configured, starting child call";
+                CallInitiator initiator = self->MakeChildCall(
+                    std::move(metadata), GetContext<Arena>()->Ref());
+                ForwardCall(handler, initiator);
+                return absl::OkStatus();
+              }
               // Use the matcher to find an action to use for this call.
               XdsMatcher::Result actions;
               if (!self->config_->matcher->FindMatches(

@@ -261,13 +261,14 @@ RefCountedPtr<const FilterConfig> XdsHttpCompositeFilter::ParseTopLevelConfig(
     }
   }
   // Parse matcher.
-  ValidationErrors::ScopedField field(errors, ".xds_matcher");
   auto config = MakeRefCounted<CompositeFilter::Config>();
-  config->matcher = ParseMatcher(
-      context,
+  const auto* matcher =
       envoy_extensions_common_matching_v3_ExtensionWithMatcher_xds_matcher(
-          extension_with_matcher),
-      errors);
+          extension_with_matcher);
+  if (matcher != nullptr) {
+    ValidationErrors::ScopedField field(errors, ".xds_matcher");
+    config->matcher = ParseMatcher(context, matcher, errors);
+  }
   return config;
 }
 
@@ -303,6 +304,7 @@ void XdsHttpCompositeFilter::UpdateBlackboard(
     const FilterConfig& config, const Blackboard* old_blackboard,
     Blackboard* new_blackboard) const {
   auto& composite_config = DownCast<const CompositeFilter::Config&>(config);
+  if (composite_config.matcher == nullptr) return;
   composite_config.matcher->ForEachAction(
       [&](const XdsMatcher::Action& action) {
         if (action.type() != CompositeFilter::ExecuteFilterAction::Type()) {

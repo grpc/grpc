@@ -2303,6 +2303,21 @@ TEST_F(XdsCompositeFilterTest, ParseTopLevelConfigSamplePercentage) {
             "sample_per_million=250000}, keep_matching=false}}}}");
 }
 
+TEST_F(XdsCompositeFilterTest, ParseTopLevelConfigNoMatcher) {
+  ExtensionWithMatcher extension_with_matcher;
+  extension_with_matcher.mutable_extension_config()
+      ->mutable_typed_config()
+      ->PackFrom(Composite());
+  XdsExtension extension = MakeXdsExtension(extension_with_matcher);
+  auto config =
+      filter_->ParseTopLevelConfig("", decode_context_, extension, &errors_);
+  ASSERT_TRUE(errors_.ok()) << errors_.status(
+      absl::StatusCode::kInvalidArgument, "unexpected errors");
+  ASSERT_NE(config, nullptr);
+  ASSERT_EQ(config->type(), CompositeFilter::Config::Type());
+  EXPECT_EQ(config->ToString(), "{}");
+}
+
 TEST_F(XdsCompositeFilterTest, ParseTopLevelConfigInvalidNestedFilterConfig) {
   ExtensionWithMatcher extension_with_matcher;
   extension_with_matcher.mutable_extension_config()
@@ -2415,10 +2430,7 @@ TEST_F(XdsCompositeFilterTest, ParseTopLevelConfigRequiredFieldsMissing) {
             "errors validating filter config: ["
             "field:http_filter.value["
             "envoy.extensions.common.matching.v3.ExtensionWithMatcher]"
-            ".extension_config error:field not set; "
-            "field:http_filter.value["
-            "envoy.extensions.common.matching.v3.ExtensionWithMatcher]"
-            ".xds_matcher error:field not set]")
+            ".extension_config error:field not set]")
       << status;
 }
 
