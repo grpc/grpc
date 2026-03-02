@@ -44,14 +44,6 @@ struct AsyncResult {
 typedef void (*CompletionFunctionPyWrapper)(absl::StatusOr<std::string> result,
                                             void* c_on_complete_fn);
 
-// A C-Style function for the Cython layer to call when the gRPC C++ layer calls
-// `Sign` on the `PrivateKeySignerPyWrapper`.
-typedef PrivateKeySignerPyWrapperResult (*SignWrapperForPy)(
-    absl::string_view data_to_sign,
-    grpc_core::PrivateKeySigner::SignatureAlgorithm signature_algorithm,
-    void* py_user_sign_fn,
-    std::unique_ptr<CompletionContext> completion_context);
-
 // The result of the sign call for interop between Cython and C. Is converted to
 // the C++ std::variant Sign result.
 struct PrivateKeySignerPyWrapperResult {
@@ -59,6 +51,14 @@ struct PrivateKeySignerPyWrapperResult {
   AsyncResult async_result;
   bool is_sync;
 };
+
+// A C-Style function for the Cython layer to call when the gRPC C++ layer calls
+// `Sign` on the `PrivateKeySignerPyWrapper`.
+typedef PrivateKeySignerPyWrapperResult (*SignWrapperForPy)(
+    absl::string_view data_to_sign,
+    grpc_core::PrivateKeySigner::SignatureAlgorithm signature_algorithm,
+    void* py_user_sign_fn,
+    std::unique_ptr<CompletionContext> completion_context);
 
 // The context needed for calling the Completion callback at the Cython layer.
 // Wrapped in regular Python and passed to the user for them to be able to call
