@@ -1,4 +1,4 @@
-# Copyright 2025 gRPC authors.
+# Copyright 2026 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -27,8 +27,6 @@ cdef extern from "absl/status/status.h" namespace "absl":
         Status(AbslStatusCode, string)
         Status()
         bint ok()
-
-    # Status InternalError(const string& message)
 
 cdef extern from "absl/status/statusor.h" namespace "absl":
     cdef cppclass StatusOr[T]:
@@ -81,7 +79,6 @@ cpdef enum SignatureAlgorithm:
 
 cdef extern from "src/python/grpcio/grpc/_cython/_cygrpc/private_key_signing/private_key_signer_py_wrapper.h" namespace "grpc_core":
     ctypedef void (*CancelWrapperForPy)(void*) noexcept nogil
-    ctypedef void (*PythonCallableDecref)(void*) noexcept nogil
     cdef cppclass AsyncResult:
         AsyncResult(CancelWrapperForPy, void*)
         CancelWrapperForPy cancel_wrapper

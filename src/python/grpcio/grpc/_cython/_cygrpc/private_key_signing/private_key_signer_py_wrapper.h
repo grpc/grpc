@@ -1,6 +1,6 @@
 //
 //
-// Copyright 2025 gRPC authors.
+// Copyright 2026 gRPC authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -29,22 +29,40 @@
 
 namespace grpc_core {
 
+// A C-style callback for the PrivateKeySigner Cancel function.
 typedef void (*CancelWrapperForPy)(void* cancel_data);
-typedef void (*PythonCallableDecref)(void* py_user_cancel_fn);
+
+// A wrapper for holding the user's Python cancellation function as well as the
+// C callback that can call that function.
 struct AsyncResult {
   CancelWrapperForPy cancel_wrapper;
   void* py_user_cancel_fn;
 };
 
+// A C-Style callback for the Completion function that will be passed to the
+// cython layer.
+typedef void (*CompletionFunctionPyWrapper)(absl::StatusOr<std::string> result,
+                                            void* c_on_complete_fn);
+
+// A C-Style function for the Cython layer to call when the gRPC C++ layer calls
+// `Sign` on the `PrivateKeySignerPyWrapper`.
+typedef PrivateKeySignerPyWrapperResult (*SignWrapperForPy)(
+    absl::string_view data_to_sign,
+    grpc_core::PrivateKeySigner::SignatureAlgorithm signature_algorithm,
+    void* py_user_sign_fn,
+    std::unique_ptr<CompletionContext> completion_context);
+
+// The result of the sign call for interop between Cython and C. Is converted to
+// the C++ std::variant Sign result.
 struct PrivateKeySignerPyWrapperResult {
   absl::StatusOr<std::string> sync_result;
   AsyncResult async_result;
   bool is_sync;
 };
 
-typedef void (*CompletionFunctionPyWrapper)(absl::StatusOr<std::string> result,
-                                            void* c_on_complete_fn);
-
+// The context needed for calling the Completion callback at the Cython layer.
+// Wrapped in regular Python and passed to the user for them to be able to call
+// the proper on_complete callback passed out by gRPC Core.
 class CompletionContext {
  public:
   explicit CompletionContext(
@@ -55,14 +73,9 @@ class CompletionContext {
   };
 
  private:
+  // Holds the completion function passed out by gRPC Core.
   grpc_core::PrivateKeySigner::OnSignComplete on_complete_;
 };
-
-typedef PrivateKeySignerPyWrapperResult (*SignWrapperForPy)(
-    absl::string_view data_to_sign,
-    grpc_core::PrivateKeySigner::SignatureAlgorithm signature_algorithm,
-    void* py_user_sign_fn,
-    std::unique_ptr<CompletionContext> completion_context);
 
 // An implementation of PrivateKeySigner for interop with Python.
 class PrivateKeySignerPyWrapper
