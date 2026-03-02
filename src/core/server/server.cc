@@ -1184,6 +1184,8 @@ Server::MakeCallDestination(const ChannelArgs& args,
   });
   CoreConfiguration::Get().channel_init().AddToInterceptionChainBuilder(
       GRPC_SERVER_CHANNEL, builder);
+// FIXME: maybe need an unstarted destination here, so that we can
+// choose the filter chain first?
   return builder.Build(
       MakeCallDestinationFromHandlerFunction([this](CallHandler handler) {
         return MatchAndPublishCall(std::move(handler));
@@ -2067,7 +2069,14 @@ void Server::CallData::StartTransportStreamOpBatchImpl(
     batch->payload->recv_trailing_metadata.recv_trailing_metadata_ready =
         &recv_trailing_metadata_ready_;
   }
-  grpc_call_next_op(elem, batch);
+  if (!IsXdsServerFilterChainPerRouteEnabled()) {
+    grpc_call_next_op(elem, batch);
+    return;
+  }
+// FIXME: use server config selector
+// note: needs to be here instead of in the ServerConfigSelectorFilter,
+// because we need to know which type of FilterChainBuilder to create
+// based on whether we're running v1 stack or v3 stack
 }
 
 void Server::CallData::RecvInitialMetadataReady(void* arg,

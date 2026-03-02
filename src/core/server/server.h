@@ -90,6 +90,8 @@ class ServerConfigFetcher
     UpdateChannelArgsForConnection(const grpc_core::ChannelArgs& args,
                                    grpc_endpoint* tcp) = 0;
 
+    // TODO(roth): Remove this once the xds_server_filter_chain_per_route
+    // experiment is removed.
     virtual void UpdateBlackboard(const Blackboard* old_blackboard,
                                   Blackboard* new_blackboard) = 0;
   };
