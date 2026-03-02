@@ -4,7 +4,6 @@
 #
 #    pip-compile --allow-unsafe --output-file=requirements.bazel.lock requirements.bazel.txt
 #
---index-url https://us-python.pkg.dev/artifact-foundry-prod/ah-3p-staging-python/simple/
 
 absl-py==2.1.0
     # via -r requirements.bazel.txt
