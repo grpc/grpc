@@ -43,13 +43,32 @@ class SingleLoader:
         self.suite = unittest.TestSuite()
         suites = []
 
-        # Look in the current working directory for test modules
-        for _, module_name, _ in pkgutil.walk_packages([os.getcwd()]):
-            if target_module in module_name:
-                spec = importlib.util.find_spec(module_name)
+        # Look in the current working directory for the test file physically
+        target_file = target_module + ".py"
+        target_module_name = None
+        for root, _, files in os.walk(os.getcwd(), followlinks=True):
+            if target_file in files:
+                filepath = os.path.join(root, target_file)
+                # Find the longest sys.path prefix
+                best_match = None
+                for sp in sys.path:
+                    if filepath.startswith(sp) and (best_match is None or len(sp) > len(best_match)):
+                        best_match = sp
+                if best_match:
+                    rel_path = filepath[len(best_match):]
+                    if rel_path.startswith(os.sep):
+                        rel_path = rel_path[len(os.sep):]
+                    target_module_name = rel_path[:-3].replace(os.sep, '.')
+                    break
+
+        if target_module_name:
+            import importlib.util
+            spec = importlib.util.find_spec(target_module_name)
+            if spec is not None:
                 module = importlib.util.module_from_spec(spec)
-                spec.loader.exec_module(module)
-                suites.append(loader.loadTestsFromModule(module))
+                if spec.loader is not None:
+                    spec.loader.exec_module(module)
+                    suites.append(loader.loadTestsFromModule(module))
 
         assert len(suites) == 1, f"Expected only 1 test module. Found {suites}"
         self.suite.addTest(suites[0])
