@@ -669,8 +669,8 @@ grpc_cc_library(
     ],
     deps = [
         "//:grpc_base",
-        "//src/core:xds_http_filter",
         "//src/core:json_object_loader",
+        "//src/core:xds_http_filter",
     ],
 )
 
