@@ -26,6 +26,9 @@ test/distrib/bazel/cpp
 test/distrib/bazel/python
 test/distrib/bazel/python_second_test_repo
 
+# Uses it's own MODULE.bazel deps.
+tools/artifact_gen
+
 # Directories build containing own BUILD files.
 test/bzlmod
 src/python/grpcio_tests/src/
