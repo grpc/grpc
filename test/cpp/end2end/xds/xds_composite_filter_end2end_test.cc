@@ -61,11 +61,11 @@ using ::envoy::type::matcher::v3::HttpRequestHeaderMatchInput;
 using ::xds::type::matcher::v3::Matcher;
 using ::xds::type::v3::TypedStruct;
 
+// TODO(roth): Add some unit tests once we have a v3 filter/interceptor
+// test framework.
+
 class XdsCompositeFilterEnd2endTest : public XdsEnd2endTest {
  public:
-  XdsCompositeFilterEnd2endTest()
-      : env_("GRPC_EXPERIMENTAL_XDS_COMPOSITE_FILTER") {}
-
   void SetUp() override {
     if (!grpc_core::IsXdsChannelFilterChainPerRouteEnabled()) {
       GTEST_SKIP()
@@ -177,14 +177,14 @@ class XdsCompositeFilterEnd2endTest : public XdsEnd2endTest {
     typed_per_filter_config[kFilterInstanceName].PackFrom(override_config);
     return route_config;
   }
-
-  grpc_core::testing::ScopedExperimentalEnvVar env_;
 };
 
 INSTANTIATE_TEST_SUITE_P(XdsTest, XdsCompositeFilterEnd2endTest,
                          ::testing::Values(XdsTestType()), &XdsTestType::Name);
 
 TEST_P(XdsCompositeFilterEnd2endTest, TopLevelConfig) {
+  grpc_core::testing::ScopedExperimentalEnvVar env(
+      "GRPC_EXPERIMENTAL_XDS_COMPOSITE_FILTER");
   // Configure the composite filter.
   MatcherData matcher_data;
   matcher_data["enterprise"] = {"status", "legend"};
@@ -236,6 +236,8 @@ TEST_P(XdsCompositeFilterEnd2endTest, TopLevelConfig) {
 }
 
 TEST_P(XdsCompositeFilterEnd2endTest, OnNoMatch) {
+  grpc_core::testing::ScopedExperimentalEnvVar env(
+      "GRPC_EXPERIMENTAL_XDS_COMPOSITE_FILTER");
   // Configure the composite filter.
   MatcherData matcher_data;
   matcher_data["enterprise"] = {"status", "legend"};
@@ -268,6 +270,8 @@ TEST_P(XdsCompositeFilterEnd2endTest, OnNoMatch) {
 }
 
 TEST_P(XdsCompositeFilterEnd2endTest, TopLevelConfigEmptyMatcher) {
+  grpc_core::testing::ScopedExperimentalEnvVar env(
+      "GRPC_EXPERIMENTAL_XDS_COMPOSITE_FILTER");
   SetListenerAndRouteConfiguration(
       balancer_.get(), BuildListenerWithCompositeFilter(std::nullopt),
       default_route_config_);
@@ -275,6 +279,8 @@ TEST_P(XdsCompositeFilterEnd2endTest, TopLevelConfigEmptyMatcher) {
 }
 
 TEST_P(XdsCompositeFilterEnd2endTest, OverrideConfig) {
+  grpc_core::testing::ScopedExperimentalEnvVar env(
+      "GRPC_EXPERIMENTAL_XDS_COMPOSITE_FILTER");
   // Configure the composite filter.
   // The top-level filter has an empty matcher, but there is an override
   // config in the route.
@@ -295,6 +301,21 @@ TEST_P(XdsCompositeFilterEnd2endTest, OverrideConfig) {
                            << " message=" << status.error_message();
   EXPECT_THAT(server_initial_metadata,
               ::testing::Contains(::testing::Pair("status", "legend")));
+}
+
+TEST_P(XdsCompositeFilterEnd2endTest, FilterUnsupportedWithoutEnvVar) {
+  SetListenerAndRouteConfiguration(
+      balancer_.get(), BuildListenerWithCompositeFilter(std::nullopt),
+      default_route_config_);
+  CheckRpcSendFailure(
+      DEBUG_LOCATION, StatusCode::UNAVAILABLE,
+      "empty address list \\(LDS resource server.example.com: "
+      "invalid resource: errors validating ApiListener: "
+      "\\[field:api_listener.api_listener.value\\["
+      "envoy.extensions.filters.network.http_connection_manager.v3"
+      ".HttpConnectionManager\\].http_filters\\[0\\].typed_config.value\\["
+      "envoy.extensions.common.matching.v3.ExtensionWithMatcher\\] "
+      "error:unsupported filter type\\].*");
 }
 
 }  // namespace
