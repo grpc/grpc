@@ -52,14 +52,6 @@ struct PrivateKeySignerPyWrapperResult {
   bool is_sync;
 };
 
-// A C-Style function for the Cython layer to call when the gRPC C++ layer calls
-// `Sign` on the `PrivateKeySignerPyWrapper`.
-typedef PrivateKeySignerPyWrapperResult (*SignWrapperForPy)(
-    absl::string_view data_to_sign,
-    grpc_core::PrivateKeySigner::SignatureAlgorithm signature_algorithm,
-    void* py_user_sign_fn,
-    std::unique_ptr<CompletionContext> completion_context);
-
 // The context needed for calling the Completion callback at the Cython layer.
 // Wrapped in regular Python and passed to the user for them to be able to call
 // the proper on_complete callback passed out by gRPC Core.
@@ -76,6 +68,14 @@ class CompletionContext {
   // Holds the completion function passed out by gRPC Core.
   grpc_core::PrivateKeySigner::OnSignComplete on_complete_;
 };
+
+// A C-Style function for the Cython layer to call when the gRPC C++ layer calls
+// `Sign` on the `PrivateKeySignerPyWrapper`.
+typedef PrivateKeySignerPyWrapperResult (*SignWrapperForPy)(
+    absl::string_view data_to_sign,
+    grpc_core::PrivateKeySigner::SignatureAlgorithm signature_algorithm,
+    void* py_user_sign_fn,
+    std::unique_ptr<CompletionContext> completion_context);
 
 // An implementation of PrivateKeySigner for interop with Python.
 class PrivateKeySignerPyWrapper
