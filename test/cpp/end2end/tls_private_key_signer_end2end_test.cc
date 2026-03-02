@@ -16,8 +16,6 @@
 //
 //
 
-#if defined(OPENSSL_IS_BORINGSSL)
-
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/impl/channel_arg_names.h>
 #include <grpcpp/channel.h>
@@ -58,6 +56,8 @@
 #include "absl/strings/string_view.h"
 #include "absl/synchronization/notification.h"
 #include "absl/time/time.h"
+
+#if defined(OPENSSL_IS_BORINGSSL)
 
 namespace grpc {
 namespace testing {
