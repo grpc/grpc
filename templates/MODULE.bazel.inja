@@ -90,6 +90,8 @@ bazel_dep(name = "yaml-cpp", version = "0.9.0", dev_dependency = True)
 
 bazel_dep(name = "rules_python", version = "1.6.3")
 
+DEFAULT_PYTHON_VERSION = "3.11"
+
 PYTHON_VERSIONS = [
     "3.9",
     "3.10",
@@ -99,13 +101,16 @@ PYTHON_VERSIONS = [
     "3.14",
 ]
 
+# TODO(weizheyuan): figure out how it interacts with protobuf 31
+# system_python().
+#
+# Mark 3.11 as defaults to be consistent with WORKSPACE.
+# See also https://rules-python.readthedocs.io/en/latest/api/rules_python/python/extensions/python.html#python.toolchain
 python = use_extension("@rules_python//python/extensions:python.bzl", "python")
+python.defaults(python_version = DEFAULT_PYTHON_VERSION)
 
 [
-    python.toolchain(
-        is_default = python_version == PYTHON_VERSIONS[-1],
-        python_version = python_version,
-    )
+    python.toolchain(python_version = python_version)
     for python_version in PYTHON_VERSIONS
 ]
 
