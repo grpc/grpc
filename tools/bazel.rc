@@ -138,8 +138,6 @@ build:ubsan --action_env=UBSAN_OPTIONS=halt_on_error=1:print_stacktrace=1:suppre
 build:python_single_threaded_unary_stream --test_env="GRPC_SINGLE_THREADED_UNARY_STREAM=true"
 
 build:python --copt=-DGRPC_PYTHON_BUILD
-build:python --action_env=TEMPORARILY_DISABLE_PROTOBUF_VERSION_CHECK=true
-build:python --test_env=TEMPORARILY_DISABLE_PROTOBUF_VERSION_CHECK=true
 
 # Compile database generation config
 build:compdb --build_tag_filters=-nocompdb
