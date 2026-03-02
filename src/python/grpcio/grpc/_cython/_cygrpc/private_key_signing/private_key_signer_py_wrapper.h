@@ -78,6 +78,7 @@ typedef PrivateKeySignerPyWrapperResult (*SignWrapperForPy)(
     std::unique_ptr<CompletionContext> completion_context);
 
 // An implementation of PrivateKeySigner for interop with Python.
+// It is thread-safe to call Sign on this class.
 class PrivateKeySignerPyWrapper
     : public PrivateKeySigner,
       public std::enable_shared_from_this<PrivateKeySignerPyWrapper> {

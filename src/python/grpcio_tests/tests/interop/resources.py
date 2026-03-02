@@ -231,6 +231,7 @@ def async_signer_worker_until_cancel(
             cancellation_event.wait(timeout=1)
         except Exception as e:
             on_complete(e)
+    on_complete(ValueError("Private Key Signing cancelled."))
 
 
 def async_signer_with_cancel_injection(
