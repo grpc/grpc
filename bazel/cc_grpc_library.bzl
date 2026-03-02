@@ -22,7 +22,7 @@ load("//bazel:protobuf.bzl", "well_known_proto_libs")
 def cc_grpc_library(
         name,
         srcs,
-        deps,
+        deps = [],
         proto_only = False,
         well_known_protos = False,
         generate_mocks = False,
@@ -47,8 +47,9 @@ def cc_grpc_library(
         srcs (list): A single .proto file which contains services definitions,
           or if grpc_only parameter is True, a single proto_library which
           contains services descriptors.
-        deps (list): A list of C++ proto_library (or cc_proto_library) which
+        deps (list, optional): A list of C++ proto_library (or cc_proto_library) which
           provides the compiled code of any message that the services depend on.
+          Defaults to [].
         proto_only (bool): If True, create only C++ proto classes library,
           avoid creating C++ grpc classes library (expect it in deps).
           Deprecated, use native cc_proto_library instead. False by default.
