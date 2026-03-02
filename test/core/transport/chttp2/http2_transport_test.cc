@@ -37,6 +37,7 @@
 #include "src/core/ext/transport/chttp2/transport/http2_status.h"
 #include "src/core/ext/transport/chttp2/transport/internal_channel_arg_names.h"
 #include "src/core/ext/transport/chttp2/transport/stream.h"
+#include "src/core/ext/transport/chttp2/transport/transport_common.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/promise/loop.h"
@@ -74,7 +75,7 @@ class TestsNeedingStreamObjects : public ::testing::Test {
     RefCountedPtr<Arena> arena = SimpleArenaAllocator()->MakeArena();
     arena->SetContext<grpc_event_engine::experimental::EventEngine>(
         grpc_event_engine::experimental::GetDefaultEventEngine().get());
-    auto client_initial_metadata =
+    Arena::PoolPtr<ClientMetadata> client_initial_metadata =
         Arena::MakePooledForOverwrite<ClientMetadata>();
     client_initial_metadata->Set(HttpPathMetadata(),
                                  Slice::FromCopiedString("/foo/bar"));
@@ -96,6 +97,59 @@ class TestsNeedingStreamObjects : public ::testing::Test {
  private:
   std::vector<RefCountedPtr<Stream>> stream_set_;
 };
+
+///////////////////////////////////////////////////////////////////////////////
+// Connection Preface Validation Tests
+
+class ConnectionPrefaceValidationTest : public ::testing::Test {
+ protected:
+  void VerifyProtocolError(absl::StatusOr<Slice> input) {
+    Http2Status result = ValidateIncomingConnectionPreface(input);
+    EXPECT_FALSE(result.IsOk());
+    EXPECT_EQ(result.GetType(), Http2Status::Http2ErrorType::kConnectionError);
+    EXPECT_EQ(result.GetConnectionErrorCode(), Http2ErrorCode::kProtocolError);
+    EXPECT_EQ(result.GetAbslConnectionError().message(),
+              RFC9113::kFirstSettingsFrameServer);
+  }
+};
+
+TEST_F(ConnectionPrefaceValidationTest,
+       ValidateIncomingConnectionPreface_Success) {
+  absl::StatusOr<Slice> status =
+      Slice::FromStaticString(GRPC_CHTTP2_CLIENT_CONNECT_STRING);
+  Http2Status result = ValidateIncomingConnectionPreface(status);
+  EXPECT_TRUE(result.IsOk());
+}
+
+TEST_F(ConnectionPrefaceValidationTest,
+       ValidateIncomingConnectionPreface_ErrorStatus) {
+  absl::Status error = absl::InternalError("some error");
+  absl::StatusOr<Slice> status = error;
+  Http2Status result = ValidateIncomingConnectionPreface(status);
+  EXPECT_FALSE(result.IsOk());
+  EXPECT_EQ(result.GetType(), Http2Status::Http2ErrorType::kConnectionError);
+  EXPECT_EQ(result.GetAbslConnectionError().code(),
+            absl::StatusCode::kInternal);
+  EXPECT_EQ(result.GetAbslConnectionError().message(), "some error");
+}
+
+TEST_F(ConnectionPrefaceValidationTest,
+       ValidateIncomingConnectionPreface_WrongString) {
+  // Case 1: Random wrong string
+  VerifyProtocolError(Slice::FromStaticString("WRONG STRING"));
+
+  std::string correct_preface = GRPC_CHTTP2_CLIENT_CONNECT_STRING;
+
+  // Case 2: One character different
+  std::string wrong_preface = correct_preface;
+  wrong_preface.back() = 'a';
+  VerifyProtocolError(Slice::FromCopiedString(wrong_preface));
+
+  // Case 3: One character less
+  std::string short_preface =
+      correct_preface.substr(0, correct_preface.length() - 1);
+  VerifyProtocolError(Slice::FromCopiedString(short_preface));
+}
 
 ///////////////////////////////////////////////////////////////////////////////
 // Settings and ChannelArgs helpers tests
@@ -638,7 +692,7 @@ TEST_F(TestsNeedingStreamObjects,
 class Http2ReadContextTest : public ::testing::Test {
  protected:
   RefCountedPtr<Party> MakeParty() {
-    auto arena = SimpleArenaAllocator()->MakeArena();
+    RefCountedPtr<Arena> arena = SimpleArenaAllocator()->MakeArena();
     arena->SetContext<grpc_event_engine::experimental::EventEngine>(
         event_engine_.get());
     return Party::Make(std::move(arena));
