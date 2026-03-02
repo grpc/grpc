@@ -14,11 +14,11 @@
 
 import faulthandler
 from functools import partial
+import queue
 import sys
 import threading
 import time
 import unittest
-import queue
 import weakref
 
 import grpc
@@ -253,10 +253,12 @@ class SecurityTest(unittest.TestCase):
         """
 
         q = queue.Queue()
-        credential = grpc.experimental.ssl_channel_credentials_with_custom_signer(
-            private_key_sign_fn=resources.async_client_private_key_signer,
-            root_certificates=resources.test_root_certificates(),
-            certificate_chain=resources.client_certificate_chain(),
+        credential = (
+            grpc.experimental.ssl_channel_credentials_with_custom_signer(
+                private_key_sign_fn=resources.async_client_private_key_signer,
+                root_certificates=resources.test_root_certificates(),
+                certificate_chain=resources.client_certificate_chain(),
+            )
         )
 
         def channel_with_credential(creds, q, port):
