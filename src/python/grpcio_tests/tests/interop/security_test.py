@@ -16,7 +16,6 @@ import faulthandler
 from functools import partial
 import sys
 import threading
-
 import time
 import unittest
 import weakref
