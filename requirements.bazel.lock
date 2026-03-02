@@ -85,6 +85,8 @@ setuptools==77.0.1
     #   incremental
     #   zope-event
     #   zope-interface
+tomli==2.4.0
+    # via -r requirements.bazel.txt
 twisted==24.11.0
     # via -r requirements.bazel.txt
 typeguard==4.4.2
