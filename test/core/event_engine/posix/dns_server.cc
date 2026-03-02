@@ -309,7 +309,7 @@ void DnsServer::ServerLoop(int sockfd) {
 absl::StatusOr<DnsServer> DnsServer::Start(int port) {
   bool success = false;
   int sockfd = socket(AF_INET, SOCK_DGRAM, 0);
-  if (sockfd > 0) {
+  if (sockfd >= 0) {
     int flags = fcntl(sockfd, F_GETFL, 0);
     if (flags >= 0) {
       success = fcntl(sockfd, F_SETFL, flags | O_NONBLOCK) == 0;
