@@ -185,7 +185,7 @@ def build_image_jobspec(runtime, env, gcr_tag, stack_base):
         cmdline=[image_builder_path],
         environ=build_env,
         shortname="build_docker_%s" % runtime,
-        timeout_seconds=60 * 60,
+        timeout_seconds=30 * 60,
     )
     build_job.tag = tag
     return build_job
