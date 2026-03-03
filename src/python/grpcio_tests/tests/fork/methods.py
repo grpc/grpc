@@ -230,13 +230,7 @@ class _ChildProcess(object):
 
 def _async_unary_same_channel(channel):
     def child_target():
-        try:
-            _async_unary(stub)
-            raise Exception(
-                "Child should not be able to re-use channel after fork"
-            )
-        except ValueError as expected_value_error:
-            pass
+        _async_unary(stub)
 
     stub = test_pb2_grpc.TestServiceStub(channel)
     _async_unary(stub)
@@ -263,13 +257,7 @@ def _async_unary_new_channel(channel, args):
 
 def _blocking_unary_same_channel(channel):
     def child_target():
-        try:
-            _blocking_unary(stub)
-            raise Exception(
-                "Child should not be able to re-use channel after fork"
-            )
-        except ValueError as expected_value_error:
-            pass
+        _blocking_unary(stub)
 
     stub = test_pb2_grpc.TestServiceStub(channel)
     _blocking_unary(stub)
@@ -328,13 +316,11 @@ def _connectivity_watch(channel, args):
             child_channel.subscribe(child_connectivity_callback)
             _async_unary(child_stub)
             if not child_channel_ready_event.wait(timeout=_RPC_TIMEOUT_S):
-                raise ValueError("Channel did not move to READY")
-            if len(parent_states) > 1:
-                raise ValueError(
-                    "Received connectivity updates on parent callback",
-                    parent_states,
-                )
+                raise ValueError("Child channel did not move to READY")
+            if not parent_channel_ready_event.wait(timeout=_RPC_TIMEOUT_S):
+                raise ValueError("Parent channel did not move to READY")
             child_channel.unsubscribe(child_connectivity_callback)
+            channel.unsubscribe(parent_connectivity_callback)
 
     def parent_connectivity_callback(state):
         parent_states.append(state)
@@ -413,13 +399,7 @@ def _ping_pong_with_child_processes_after_first_response(
 def _in_progress_bidi_continue_call(channel):
     def child_target(parent_bidi_call, parent_channel, args):
         stub = test_pb2_grpc.TestServiceStub(parent_channel)
-        try:
-            _async_unary(stub)
-            raise Exception(
-                "Child should not be able to re-use channel after fork"
-            )
-        except ValueError as expected_value_error:
-            pass
+        _async_unary(stub)
         inherited_code = parent_bidi_call.code()
         if inherited_code != grpc.StatusCode.CANCELLED:
             raise ValueError(
@@ -437,13 +417,7 @@ def _in_progress_bidi_continue_call(channel):
 def _in_progress_bidi_same_channel_async_call(channel):
     def child_target(parent_bidi_call, parent_channel, args):
         stub = test_pb2_grpc.TestServiceStub(parent_channel)
-        try:
-            _async_unary(stub)
-            raise Exception(
-                "Child should not be able to re-use channel after fork"
-            )
-        except ValueError as expected_value_error:
-            pass
+        _async_unary(stub)
 
     _ping_pong_with_child_processes_after_first_response(
         channel, None, child_target
@@ -453,13 +427,7 @@ def _in_progress_bidi_same_channel_async_call(channel):
 def _in_progress_bidi_same_channel_blocking_call(channel):
     def child_target(parent_bidi_call, parent_channel, args):
         stub = test_pb2_grpc.TestServiceStub(parent_channel)
-        try:
-            _blocking_unary(stub)
-            raise Exception(
-                "Child should not be able to re-use channel after fork"
-            )
-        except ValueError as expected_value_error:
-            pass
+        _blocking_unary(stub)
 
     _ping_pong_with_child_processes_after_first_response(
         channel, None, child_target

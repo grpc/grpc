@@ -2195,10 +2195,10 @@ class Channel(grpc.Channel):
         if cygrpc.g_gevent_activated:
             cygrpc.gevent_decrement_channel_count()
 
-    def _close_on_fork(self) -> None:
+    def _cancel_calls_on_fork(self) -> None:
         self._unsubscribe_all()
-        self._channel.close_on_fork(
-            cygrpc.StatusCode.cancelled, "Channel closed due to fork"
+        self._channel.cancel_calls_on_fork(
+            cygrpc.StatusCode.cancelled, "Call cancelled in fork child"
         )
 
     def __enter__(self):
