@@ -143,7 +143,7 @@ def ssl_channel_credentials_with_custom_signer(
 
     Args:
       private_key_sign_fn: a function with the signature of
-        `CustomPrivateKeySignWithHandle`. This function can return synchronously
+        `CustomPrivateKeySign`. This function can return synchronously
         or asynchronously.  To return synchronously, return the signed bytes.
         To return asynchronously, return a PrivateKeySignCancel callable. This
         can be a no-op function if no cancellation is needed. It can also be a
