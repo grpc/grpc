@@ -299,7 +299,7 @@ grpc_error_handle Server::ListenerState::SetupTransport(
     blackboard = blackboard_shard.blackboard;
   }
   return server_->SetupTransport(transport, accepting_pollset, args,
-                                 blackboard.get());
+                                 std::move(blackboard));
 }
 
 void Server::ListenerState::DrainConnectionsLocked() {
@@ -1174,22 +1174,173 @@ auto Server::MatchAndPublishCall(CallHandler call_handler) {
   });
 }
 
+namespace {
+
+class FilterChainImpl final : public FilterChain {
+ public:
+  explicit FilterChainImpl(RefCountedPtr<UnstartedCallDestination> destination)
+      : destination_(std::move(destination)) {}
+
+  UnstartedCallDestination* destination() const { return destination_.get(); }
+
+ private:
+  RefCountedPtr<UnstartedCallDestination> destination_;
+};
+
+class FilterChainBuilderImpl final : public FilterChainBuilder {
+ public:
+  FilterChainBuilderImpl(
+      const ChannelArgs& channel_args, Blackboard* blackboard,
+      std::function<void(ClientMetadata&)> on_client_initial_metadata,
+      RefCountedPtr<UnstartedCallDestination> destination)
+      : channel_args_(channel_args),
+        blackboard_(blackboard),
+        on_client_initial_metadata_(std::move(on_client_initial_metadata)),
+        destination_(std::move(destination)) {}
+
+  absl::StatusOr<RefCountedPtr<FilterChain>> Build() override {
+    if (builder_ == nullptr) InitBuilder();
+    auto top_of_stack_destination = builder_->Build(destination_);
+    if (!top_of_stack_destination.ok()) {
+      return MaybeRewriteIllegalStatusCode(top_of_stack_destination.status(),
+                                           "filter stack construction");
+    }
+    builder_.reset();
+    return MakeRefCounted<FilterChainImpl>(
+        std::move(*top_of_stack_destination));
+  }
+
+ private:
+  void AddFilter(const FilterHandle& filter_handle,
+                 RefCountedPtr<const FilterConfig> config) override {
+    if (builder_ == nullptr) InitBuilder();
+    filter_handle.AddToBuilder(builder_.get(), std::move(config));
+  }
+
+  void InitBuilder() {
+    builder_ =
+        std::make_unique<InterceptionChainBuilder>(channel_args_, blackboard_);
+    builder_.AddOnClientInitialMetadata(on_client_initial_metadata_);
+    CoreConfiguration::Get().channel_init().AddToInterceptionChainBuilder(
+        GRPC_SERVER_CHANNEL, *builder_);
+  }
+
+  const ChannelArgs channel_args_;
+  const Blackboard* blackboard_;
+  const std::function<void(ClientMetadata&)> on_client_initial_metadata_;
+  const RefCountedPtr<UnstartedCallDestination> destination_;
+  std::unique_ptr<InterceptionChainBuilder> builder_;
+};
+
+class ServerConfigSelectorCallDestination final
+    : public UnstartedCallDestination {
+ public:
+  ServerConfigSelectorCallDestination(
+      RefCountedPtr<ServerConfigSelectorProvider> provider,
+      const ChannelArgs& args, RefCountedPtr<Blackboard> blackboard,
+      std::function<void(ClientMetadata&)> on_client_initial_metadata,
+      RefCountedPtr<UnstartedCallDestination> destination)
+      : provider_(std::move(provider)),
+        args_(args),
+        blackboard_(std::move(blackboard)),
+        on_client_initial_metadata_(std::move(on_client_initial_metadata)),
+        destination_(std::move(destination)) {}
+
+  void StartCall(UnstartedCallHandler unstarted_handler) override {
+    unstarted_handler.SpawnGuardedUntilCallCompletes(
+        "select filter chain",
+        [self = RefAsSubclass<ServerConfigSelectorCallDestination>(),
+         unstarted_handler]() mutable {
+          return Map(
+              self->config_selector_.Next(),
+              [self, unstarted_handler](
+                  absl::StatusOr<RefCountedPtr<ServerConfigSelector>>
+                      config_selector) mutable {
+                if (!config_selector.ok()) return config_selector.status();
+                auto call_config = (*config_selector)->GetCallConfig(
+                    unstarted_handler.UnprocessedClientInitialMetadata());
+                if (!call_config.ok()) return call_config.status();
+                auto& filter_chain = DownCast<const FilterChainImpl&>(
+                    *call_config->filter_chain);
+                auto destination = filter_chain.destination();
+                destination->StartCall(std::move(unstarted_handler));
+                return absl::OkStatus();
+              });
+        });
+  }
+
+ private:
+  class Watcher final
+      : public ServerConfigSelectorProvider::ServerConfigSelectorWatcher {
+   public:
+    explicit Watcher(
+        WeakRefCountedPtr<ServerConfigSelectorCallDestination> destination)
+        : destination_(std::move(destination)) {}
+
+    void OnServerConfigSelectorUpdate(
+        absl::StatusOr<RefCountedPtr<ServerConfigSelector>>
+            config_selector) override {
+      destination_->OnServerConfigSelectorUpdate(std::move(config_selector));
+    }
+
+   private:
+    WeakRefCountedPtr<ServerConfigSelectorCallDestination> destination_;
+  };
+
+  void OnServerConfigSelectorUpdate(
+      absl::StatusOr<RefCountedPtr<ServerConfigSelector>> config_selector) {
+    if (!config_selector.ok()) {
+      config_selector_.Set(config_selector.status());
+      return;
+    }
+    FilterChainBuilderImpl builder(
+        args_, blackboard_.get(), on_client_initial_metadata_, destination_);
+    (*config_selector)->BuildFilterChains(builder);
+    config_selector_.Set(std::move(config_selector));
+  }
+
+  RefCountedPtr<ServerConfigSelectorProvider> provider_;
+  ChannelArgs args_;
+  const RefCountedPtr<Blackboard> blackboard_;
+  std::function<void(ClientMetadata&)> on_client_initial_metadata_;
+  RefCountedPtr<UnstartedCallDestination> destination_;
+
+  Observable<absl::StatusOr<RefCountedPtr<ServerConfigSelector>>>
+      config_selector_;
+};
+
+}  // namespace
+
 absl::StatusOr<RefCountedPtr<UnstartedCallDestination>>
 Server::MakeCallDestination(const ChannelArgs& args,
-                            const Blackboard* blackboard) {
-  InterceptionChainBuilder builder(args, blackboard);
+                            RefCountedPtr<Blackboard> blackboard) {
   // TODO(ctiller): find a way to avoid adding a server ref per call
-  builder.AddOnClientInitialMetadata([self = Ref()](ClientMetadata& md) {
+  auto on_client_initial_metadata = [self = Ref()](ClientMetadata& md) {
     self->SetRegisteredMethodOnMetadata(md);
-  });
+  };
+  auto destination = MakeCallDestinationFromHandlerFunction(
+      [this](CallHandler handler) {
+        return MatchAndPublishCall(std::move(handler));
+      });
+  // If we have a ServerConfigSelectorProvider, use a
+  // ServerConfigSelectorCallDestination to select the filter chain on a
+  // per-call basis.
+  auto server_config_selector_provider =
+      args.GetObjectRef<ServerConfigSelectorProvider>();
+  if (IsXdsServerFilterChainPerRouteEnabled() &&
+      server_config_selector_provider != nullptr) {
+    return MakeRefCounted<ServerConfigSelectorCallDestination>(
+        std::move(server_config_selector_provider), args,
+        std::move(blackboard), std::move(on_client_initial_metadata),
+        std::move(destination));
+  }
+  // No ServerConfigSelectorCallDestination, so construct a filter chain
+  // directly.
+  InterceptionChainBuilder builder(args, blackboard.get());
+  builder.AddOnClientInitialMetadata(std::move(on_client_initial_metadata));
   CoreConfiguration::Get().channel_init().AddToInterceptionChainBuilder(
       GRPC_SERVER_CHANNEL, builder);
-// FIXME: maybe need an unstarted destination here, so that we can
-// choose the filter chain first?
-  return builder.Build(
-      MakeCallDestinationFromHandlerFunction([this](CallHandler handler) {
-        return MatchAndPublishCall(std::move(handler));
-      }));
+  return builder.Build(std::move(destination));
 }
 
 Server::Server(const ChannelArgs& args)
@@ -1314,7 +1465,7 @@ void Server::Start() {
 grpc_error_handle Server::SetupTransport(Transport* transport,
                                          grpc_pollset* accepting_pollset,
                                          const ChannelArgs& args,
-                                         const Blackboard* blackboard) {
+                                         RefCountedPtr<Blackboard> blackboard) {
   GRPC_LATENT_SEE_SCOPE("Server::SetupTransport");
   // Create channel.
   global_stats().IncrementServerChannelsCreated();
@@ -1327,7 +1478,7 @@ grpc_error_handle Server::SetupTransport(Transport* transport,
     auto destination = MakeCallDestination(
         args.SetObject(transport).SetObject<channelz::BaseNode>(
             transport->GetSocketNode()),
-        blackboard);
+        std::move(blackboard));
     if (!destination.ok()) {
       return absl_status_to_grpc_error(destination.status());
     }
@@ -1346,12 +1497,13 @@ grpc_error_handle Server::SetupTransport(Transport* transport,
     ++connections_open_;
     stream_quota_->IncrementOpenChannels();
   } else {
+// FIXME: figure out how to deter filter stack creation
     GRPC_CHECK(transport->filter_stack_transport() != nullptr);
     absl::StatusOr<RefCountedPtr<Channel>> channel = LegacyChannel::Create(
         "",
         args.SetObject(transport).SetObject<channelz::BaseNode>(
             transport->GetSocketNode()),
-        GRPC_SERVER_CHANNEL, blackboard);
+        GRPC_SERVER_CHANNEL, blackboard.get());
     if (!channel.ok()) {
       return absl_status_to_grpc_error(channel.status());
     }
@@ -1374,11 +1526,9 @@ grpc_error_handle Server::SetupTransport(Transport* transport,
       channelz_socket_uuid = socket_node->uuid();
       socket_node->AddParent(channelz_node_.get());
     }
-
     // Initialize chand.
     chand->InitTransport(Ref(), std::move(*channel), cq_idx, transport,
                          channelz_socket_uuid);
-
     stream_quota_->IncrementOpenChannels();
   }
   return absl::OkStatus();

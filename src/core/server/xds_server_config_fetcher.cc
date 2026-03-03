@@ -325,9 +325,7 @@ class XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
           http_filters);
   ~XdsServerConfigSelector() override = default;
 
-  void BuildFilterChains(FilterChainBuilder& builder,
-                         const Blackboard* old_blackboard,
-                         Blackboard* new_blackboard) override;
+  void BuildFilterChains(FilterChainBuilder& builder) override;
 
   absl::StatusOr<CallConfig> GetCallConfig(
       grpc_metadata_batch* metadata) override;
@@ -1097,15 +1095,13 @@ absl::StatusOr<ChannelArgs> XdsServerConfigFetcher::ListenerWatcher::
   auto* server_creds = args.GetObject<grpc_server_credentials>();
   if (server_creds != nullptr &&
       server_creds->type() == XdsServerCredentials::Type()) {
-    absl::StatusOr<RefCountedPtr<XdsCertificateProvider>> result =
+    auto xds_certificate_provider =
         CreateOrGetXdsCertificateProviderFromFilterChainData(filter_chain);
-    if (!result.ok()) {
-      return result.status();
+    if (!xds_certificate_provider.ok()) {
+      return xds_certificate_provider.status();
     }
-    RefCountedPtr<XdsCertificateProvider> xds_certificate_provider =
-        std::move(*result);
-    GRPC_CHECK(xds_certificate_provider != nullptr);
-    args = args.SetObject(xds_certificate_provider);
+    GRPC_CHECK(*xds_certificate_provider != nullptr);
+    args = args.SetObject(std::move(*xds_certificate_provider));
   }
   return args;
 }
@@ -1190,9 +1186,7 @@ XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
 }
 
 void XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
-    XdsServerConfigSelector::BuildFilterChains(
-    FilterChainBuilder& builder, const Blackboard* old_blackboard,
-    Blackboard* new_blackboard) {
+    XdsServerConfigSelector::BuildFilterChains(FilterChainBuilder& builder) {
 // FIXME: implement
 }
 

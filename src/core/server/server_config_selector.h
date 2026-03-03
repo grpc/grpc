@@ -40,12 +40,10 @@ class ServerConfigSelector : public RefCounted<ServerConfigSelector> {
  public:
   ~ServerConfigSelector() override = default;
 
-  // The channel will call this when the provider returns a new
+  // The server will call this when the provider returns a new
   // ServerConfigSelector to initialize the filter chains that the
   // ServerConfigSelector may need.
-  virtual void BuildFilterChains(FilterChainBuilder& builder,
-                                 const Blackboard* old_blackboard,
-                                 Blackboard* new_blackboard) = 0;
+  virtual void BuildFilterChains(FilterChainBuilder& builder) = 0;
 
   // Configuration to apply to an incoming call
   struct CallConfig {
