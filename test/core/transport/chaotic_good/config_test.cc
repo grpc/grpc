@@ -122,7 +122,7 @@ void ConfigTest(FuzzerChannelArgs client_args_input,
 }
 FUZZ_TEST(MyTestSuite, ConfigTest);
 
-static void SetExperiments(absl::string_view experiments) {
+void SetExperiments(absl::string_view experiments) {
   ConfigVars::Overrides overrides;
   overrides.experiments = experiments;
   ConfigVars::SetOverrides(overrides);
