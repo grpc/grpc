@@ -81,7 +81,7 @@ PrivateKeySignerPyWrapper::~PrivateKeySignerPyWrapper() {
   // Python will stay alive until this event is set
   PyObject* result = PyObject_CallMethod(destroy_event_, "set", "()");
   if (result != nullptr) {
-    Py_DECREF(reuslt)
+    Py_DECREF(result);
   }
   PyGILState_Release(state);
 }

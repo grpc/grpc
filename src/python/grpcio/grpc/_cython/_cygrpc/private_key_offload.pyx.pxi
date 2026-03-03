@@ -99,7 +99,7 @@ cdef void cancel_wrapper(void* py_cancel_user_fn) noexcept nogil:
       py_cancel_func()
     except Exception as e:
       # Exceptions in cancellation
-      pass
+      _LOGGER.warning('Exception in user-provided cancellation function: %s', e)
     
 
 # To be called from the python layer when the user provides a signer function.
