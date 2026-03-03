@@ -90,6 +90,9 @@ namespace http2 {
 // http2 rollout is completed.
 class Http2ClientTransport final : public ClientTransport,
                                    public channelz::DataSource {
+  // TODO(tjagtap) : [PH2][P3] Move the definitions to the header for better
+  // inlining. For now definitions are in the cc file to
+  // reduce cognitive load in the header.
  public:
   //////////////////////////////////////////////////////////////////////////////
   // Constructor, Destructor etc.
@@ -133,18 +136,28 @@ class Http2ClientTransport final : public ClientTransport,
 
   void SpawnTransportLoops();
 
+  //////////////////////////////////////////////////////////////////////////////
+  // Channelz and ZTrace
+
   std::unique_ptr<channelz::ZTrace> GetZTrace(absl::string_view name) override {
     if (name == "transport_frames") return ztrace_collector_->MakeZTrace();
     return nullptr;
   }
 
   RefCountedPtr<channelz::SocketNode> GetSocketNode() const override;
+
   void AddData(channelz::DataSink sink) override;
   void SpawnAddChannelzData(RefCountedPtr<Party> party,
                             channelz::DataSink sink);
 
+  //////////////////////////////////////////////////////////////////////////////
+  // Watchers
+
   void StartWatch(RefCountedPtr<StateWatcher> watcher) override;
   void StopWatch(RefCountedPtr<StateWatcher> watcher) override;
+
+  //////////////////////////////////////////////////////////////////////////////
+  // Test Only Functions
 
   template <typename Factory>
   void TestOnlySpawnPromise(absl::string_view name, Factory&& factory) {
@@ -195,6 +208,12 @@ class Http2ClientTransport final : public ClientTransport,
   }
 
   auto EndpointWrite(SliceBuffer&& output_buf);
+
+  // Serialize and write the frames in the write cycle to the endpoint.
+  auto SerializeAndWrite();
+
+  //////////////////////////////////////////////////////////////////////////////
+  // Watchers
 
   void StartConnectivityWatch(
       grpc_connectivity_state state,
@@ -453,20 +472,6 @@ class Http2ClientTransport final : public ClientTransport,
   void MaybeSpawnCloseTransport(Http2Status http2_status,
                                 DebugLocation whence = {});
 
-  // Handles the error status and returns the corresponding absl status. Absl
-  // Status is returned so that the error can be gracefully handled
-  // by promise primitives.
-  // If the error is a stream error, it closes the stream and returns an ok
-  // status. Ok status is returned because the calling transport promise loops
-  // should not be cancelled in case of stream errors.
-  // If the error is a connection error, it closes the transport and returns the
-  // corresponding (failed) absl status.
-  absl::Status HandleError(const std::optional<uint32_t> stream_id,
-                           Http2Status status, DebugLocation whence = {});
-
-  // Serialize and write the frames in the write cycle to the endpoint.
-  auto SerializeAndWrite();
-
   uint32_t GetMaxAllowedStreamId() const;
 
   void SetMaxAllowedStreamId(uint32_t max_allowed_stream_id);
@@ -512,20 +517,16 @@ class Http2ClientTransport final : public ClientTransport,
                                      Http2Status&& original_status,
                                      DebugLocation whence = {});
 
-  //////////////////////////////////////////////////////////////////////////////
-  // Flow Control and BDP
-
-  //////////////////////////////////////////////////////////////////////////////
-  // Stream List Operations
-
-  //////////////////////////////////////////////////////////////////////////////
-  // Stream Operations
-
-  //////////////////////////////////////////////////////////////////////////////
-  // Ping Keepalive and Goaway
-
-  //////////////////////////////////////////////////////////////////////////////
-  // Error Path and Close Path
+  // Handles the error status and returns the corresponding absl status. Absl
+  // Status is returned so that the error can be gracefully handled
+  // by promise primitives.
+  // If the error is a stream error, it closes the stream and returns an ok
+  // status. Ok status is returned because the calling transport promise loops
+  // should not be cancelled in case of stream errors.
+  // If the error is a connection error, it closes the transport and returns the
+  // corresponding (failed) absl status.
+  absl::Status HandleError(const std::optional<uint32_t> stream_id,
+                           Http2Status status, DebugLocation whence = {});
 
   //////////////////////////////////////////////////////////////////////////////
   // Misc Transport Stuff

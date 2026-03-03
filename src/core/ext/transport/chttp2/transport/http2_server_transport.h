@@ -692,8 +692,7 @@ class Http2ServerTransport final : public ServerTransport,
   GRPC_UNUSED uint32_t next_stream_id_;
   HPackCompressor encoder_;
   HPackParser parser_;
-  GRPC_UNUSED bool is_transport_closed_ ABSL_GUARDED_BY(transport_mutex_) =
-      false;
+  bool is_transport_closed_ ABSL_GUARDED_BY(transport_mutex_) = false;
   Latch<void> transport_closed_latch_;
 
   ConnectivityStateTracker state_tracker_ ABSL_GUARDED_BY(transport_mutex_){
@@ -727,8 +726,8 @@ class Http2ServerTransport final : public ServerTransport,
 
   /// Based on channel args, preferred_rx_crypto_frame_sizes are advertised to
   /// the peer
-  GRPC_UNUSED bool enable_preferred_rx_crypto_frame_advertisement_;
-  GRPC_UNUSED RefCountedPtr<SecurityFrameHandler> security_frame_handler_;
+  bool enable_preferred_rx_crypto_frame_advertisement_;
+  RefCountedPtr<SecurityFrameHandler> security_frame_handler_;
   MemoryOwner memory_owner_;
   chttp2::TransportFlowControl flow_control_;
   std::shared_ptr<PromiseHttp2ZTraceCollector> ztrace_collector_;
