@@ -2685,8 +2685,8 @@ grpc_cc_library(
         "//src/core:json",
         "//src/core:json_reader",
         "//src/core:load_file",
-        "//src/core:no_destruct",
         "//src/core:match",
+        "//src/core:no_destruct",
         "//src/core:ref_counted",
         "//src/core:resource_quota",
         "//src/core:slice",
@@ -3367,12 +3367,12 @@ grpc_cc_library(
     hdrs = [
         "//src/core:config/config_vars.h",
     ],
-    linkstatic = True,
     external_deps = [
         "absl/flags:flag",
         "absl/strings",
         "absl/types:optional",
     ],
+    linkstatic = True,
     deps = [
         "gpr_platform",
         "load_config",

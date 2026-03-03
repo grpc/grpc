@@ -158,8 +158,7 @@ grpc::internal::Call Channel::CreateCallInternal(
   grpc_census_call_set_context(c_call, context->census_context());
   if (context->context_elements_ != nullptr) {
     grpc_core::Arena* arena = grpc_call_get_arena(c_call);
-    impl::CallContextRegistry::Propagate(context->context_elements_,
-                                               arena);
+    impl::CallContextRegistry::Propagate(context->context_elements_, arena);
   }
 
   // ClientRpcInfo should be set before call because set_call also checks

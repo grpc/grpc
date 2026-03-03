@@ -17,6 +17,7 @@
 //
 
 #include <grpc/grpc.h>
+#include <grpc/status.h>
 #include <grpcpp/channel.h>
 #include <grpcpp/generic/generic_stub.h>
 #include <grpcpp/impl/call_context_types.h>
@@ -25,7 +26,6 @@
 #include <cstring>
 #include <vector>
 
-#include "include/grpc/status.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/surface/call.h"
 #include "src/core/telemetry/telemetry_label.h"
@@ -86,7 +86,8 @@ TEST(ClientContextTestPeerTest, TelemetryLabelPropagatedToArena) {
   ClientContext ctx;
   ctx.SetContext(grpc::impl::TelemetryLabel{"test_label"});
   CompletionQueue cq;
-  // PrepareCall creates a call but doesn't start it, so the call is initialized but has not failed yet.
+  // PrepareCall creates a call but doesn't start it, so the call is initialized
+  // but has not failed yet.
   const std::string kMethodName("/method");
   auto call = stub.PrepareCall(&ctx, kMethodName, &cq);
   grpc_call* c_call = ctx.c_call();
@@ -97,7 +98,6 @@ TEST(ClientContextTestPeerTest, TelemetryLabelPropagatedToArena) {
   ASSERT_NE(label, nullptr);
   EXPECT_EQ(label->value, "test_label");
 }
-
 
 }  // namespace testing
 }  // namespace grpc
