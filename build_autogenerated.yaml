@@ -24071,7 +24071,7 @@ targets:
   - test/core/transport/chttp2/stream_test.cc
   deps:
   - gtest
-  - grpc
+  - grpc_test_util
   uses_polling: false
 - name: streaming_throughput_test
   gtest: true

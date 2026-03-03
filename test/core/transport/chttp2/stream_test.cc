@@ -31,7 +31,7 @@
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/util/ref_counted_ptr.h"
-#include "testing/base/public/gunit.h"
+#include "gtest/gtest.h"
 
 namespace grpc_core {
 namespace http2 {
@@ -57,7 +57,6 @@ TEST(StreamTest, Minimal) {
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
-  // Must call to create default EventEngine.
   grpc_init();
   int ret = RUN_ALL_TESTS();
   grpc_shutdown();

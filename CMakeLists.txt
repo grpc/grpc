@@ -33418,7 +33418,7 @@ target_include_directories(stream_test
 target_link_libraries(stream_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc
+  grpc_test_util
 )
 
 

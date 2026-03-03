@@ -946,6 +946,8 @@ grpc_cc_test(
         "//src/core:grpc_check",
         "//src/core:metadata",
         "//src/core:ph2_stream",
+        "//test/core/test_util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util_base",
     ],
 )
 
