@@ -126,7 +126,7 @@ class XdsHttpAddHeaderFilterFactory final : public XdsHttpFilterImpl {
   absl::string_view OverrideConfigProtoName() const override {
     return kFilterName;
   }
-  void PopulateSymtab(upb_DefPool* symtab) const override {}
+  void PopulateSymtab(upb_DefPool* /*symtab*/) const override {}
   void AddFilter(FilterChainBuilder& builder,
                  RefCountedPtr<const FilterConfig> config) const override {
     builder.AddFilter<AddHeaderFilter>(std::move(config));
