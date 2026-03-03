@@ -23,6 +23,7 @@
 #include "envoy/config/core/v3/grpc_service.upb.h"
 #include "envoy/extensions/transport_sockets/tls/v3/tls.upb.h"
 #include "envoy/type/matcher/v3/string.upb.h"
+#include "envoy/type/v3/percent.upb.h"
 #include "google/protobuf/any.upb.h"
 #include "google/protobuf/duration.upb.h"
 #include "google/protobuf/struct.upb.h"
@@ -57,6 +58,10 @@ inline std::optional<uint32_t> ParseUInt32Value(
   if (proto == nullptr) return std::nullopt;
   return google_protobuf_UInt32Value_value(proto);
 }
+
+// Returns the number per million.
+uint32_t ParseFractionalPercent(
+    const envoy_type_v3_FractionalPercent* fractional_percent);
 
 std::optional<grpc_resolved_address> ParseXdsAddress(
     const envoy_config_core_v3_Address* address, ValidationErrors* errors);

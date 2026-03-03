@@ -33,6 +33,7 @@
 #include "envoy/extensions/transport_sockets/tls/v3/tls.upb.h"
 #include "envoy/type/matcher/v3/regex.pb.h"
 #include "envoy/type/matcher/v3/string.pb.h"
+#include "envoy/type/v3/percent.upb.h"
 #include "google/protobuf/any.upb.h"
 #include "google/protobuf/duration.upb.h"
 #include "re2/re2.h"
@@ -173,6 +174,52 @@ TEST_F(DurationTest, ValuesTooHigh) {
             "field:nanos error:value must be in the range [0, 999999999]; "
             "field:seconds error:value must be in the range [0, 315576000000]]")
       << status;
+}
+
+//
+// ParseFractionalPercent() tests
+//
+
+using FractionalPercentTest = XdsCommonTypesTest;
+
+TEST_F(FractionalPercentTest, AlwaysIfUnset) {
+  EXPECT_EQ(1000000, ParseFractionalPercent(nullptr));
+}
+
+TEST_F(FractionalPercentTest, PerHundred) {
+  envoy_type_v3_FractionalPercent* proto =
+      envoy_type_v3_FractionalPercent_new(upb_arena_.ptr());
+  envoy_type_v3_FractionalPercent_set_numerator(proto, 30);
+  envoy_type_v3_FractionalPercent_set_denominator(
+      proto, envoy_type_v3_FractionalPercent_HUNDRED);
+  EXPECT_EQ(300000, ParseFractionalPercent(proto));
+}
+
+TEST_F(FractionalPercentTest, PerTenThousand) {
+  envoy_type_v3_FractionalPercent* proto =
+      envoy_type_v3_FractionalPercent_new(upb_arena_.ptr());
+  envoy_type_v3_FractionalPercent_set_numerator(proto, 30);
+  envoy_type_v3_FractionalPercent_set_denominator(
+      proto, envoy_type_v3_FractionalPercent_TEN_THOUSAND);
+  EXPECT_EQ(3000, ParseFractionalPercent(proto));
+}
+
+TEST_F(FractionalPercentTest, PerMillion) {
+  envoy_type_v3_FractionalPercent* proto =
+      envoy_type_v3_FractionalPercent_new(upb_arena_.ptr());
+  envoy_type_v3_FractionalPercent_set_numerator(proto, 30);
+  envoy_type_v3_FractionalPercent_set_denominator(
+      proto, envoy_type_v3_FractionalPercent_MILLION);
+  EXPECT_EQ(30, ParseFractionalPercent(proto));
+}
+
+TEST_F(FractionalPercentTest, ClampsValue) {
+  envoy_type_v3_FractionalPercent* proto =
+      envoy_type_v3_FractionalPercent_new(upb_arena_.ptr());
+  envoy_type_v3_FractionalPercent_set_numerator(proto, 105);
+  envoy_type_v3_FractionalPercent_set_denominator(
+      proto, envoy_type_v3_FractionalPercent_HUNDRED);
+  EXPECT_EQ(1000000, ParseFractionalPercent(proto));
 }
 
 //
