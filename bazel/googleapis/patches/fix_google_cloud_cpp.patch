@@ -1,0 +1,25 @@
+# Inspired by https://github.com/googleapis/google-cloud-cpp/blob/2839e9dba793ca023e11ea67f201f66f74fa7d3e/bazel/googleapis.BUILD
+diff --git a/BUILD.bazel b/BUILD.bazel
+index 026553f5c..7c7bc0419 100644
+--- a/BUILD.bazel
++++ b/BUILD.bazel
+@@ -1,3 +1,19 @@
++package(default_visibility = ["//visibility:public"])
++
++licenses(["notice"])  # Apache 2.0
++
++# This build file overlays on top of the BUILD files for the googleapis repo,
++# and it adds a target that lets us include their header files using
++# angle-brackets, thus treating their headers as system includes. This allows
++# us to dial-up the warnings in our own code, without seeing compiler warnings
++# from their headers, which we do not own.
++cc_library(
++    name = "googleapis_system_includes",
++    includes = [
++        ".",
++    ],
++)
++
+ genrule(
+     name = "build_gen",
+     srcs = glob(

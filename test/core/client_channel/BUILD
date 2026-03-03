@@ -65,8 +65,8 @@ grpc_fuzz_test(
 )
 
 grpc_fuzz_test(
-    name = "connected_subchannel_test",
-    srcs = ["connected_subchannel_test.cc"],
+    name = "subchannel_test",
+    srcs = ["subchannel_test.cc"],
     external_deps = [
         "fuzztest",
         "fuzztest_main",
@@ -247,5 +247,17 @@ grpc_fuzz_test(
     deps = [
         "//src/core:json_reader",
         "//src/core:retry_interceptor",
+    ],
+)
+
+grpc_cc_test(
+    name = "subchannel_stream_limiter_test",
+    srcs = ["subchannel_stream_limiter_test.cc"],
+    external_deps = ["gtest"],
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//:grpc_client_channel",
+        "//test/core/test_util:grpc_test_util",
     ],
 )

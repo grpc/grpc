@@ -45,7 +45,7 @@ pushd src/python/grpcio_observability;
 popd;
 
 # Install xds_protos
-pushd tools/distrib/python/xds_protos;
+pushd py_xds_protos;
   GRPC_PYTHON_BUILD_WITH_CYTHON=1 pip install .
 popd;
 

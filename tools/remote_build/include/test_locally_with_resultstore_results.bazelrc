@@ -13,3 +13,5 @@ import %workspace%/tools/remote_build/include/rbe_base_config.bazelrc
 build --remote_upload_local_results=false
 
 import %workspace%/tools/remote_build/include/test_config_common.bazelrc
+# TODO(weizheyuan): Fix test failures. See https://github.com/grpc/grpc/issues/41487
+import %workspace%/tools/remote_build/include/disable_bzlmod.bazelrc

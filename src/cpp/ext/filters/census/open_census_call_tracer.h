@@ -33,6 +33,7 @@
 #include "opencensus/trace/span_id.h"
 #include "opencensus/trace/trace_id.h"
 #include "src/core/call/metadata_batch.h"
+#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice.h"
@@ -81,7 +82,15 @@ class OpenCensusCallTracer : public grpc_core::ClientCallTracerInterface {
 
     void RecordSendInitialMetadata(
         grpc_metadata_batch* send_initial_metadata) override;
+    void MutateSendInitialMetadata(
+        grpc_metadata_batch* send_initial_metadata) override;
     void RecordSendTrailingMetadata(
+        grpc_metadata_batch* send_trailing_metadata) override {
+      GRPC_CHECK(
+          !grpc_core::IsCallTracerSendTrailingMetadataIsAnAnnotationEnabled());
+      MutateSendTrailingMetadata(send_trailing_metadata);
+    }
+    void MutateSendTrailingMetadata(
         grpc_metadata_batch* /*send_trailing_metadata*/) override {}
     void RecordSendMessage(const grpc_core::Message& send_message) override;
     void RecordSendCompressedMessage(

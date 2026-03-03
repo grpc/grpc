@@ -30,7 +30,7 @@
 #include "src/core/util/grpc_check.h"
 #include "absl/log/log.h"
 
-/// -- Wrapper APIs declared in grpc_security.h -- *
+/// -- Wrapper APIs declared in credentials.h -- *
 
 grpc_tls_credentials_options* grpc_tls_credentials_options_create() {
   grpc_core::ExecCtx exec_ctx;
@@ -61,32 +61,10 @@ void grpc_tls_credentials_options_set_verify_server_cert(
   options->set_verify_server_cert(verify_server_cert);
 }
 
-void grpc_tls_credentials_options_set_certificate_provider(
-    grpc_tls_credentials_options* options,
-    grpc_tls_certificate_provider* provider) {
-  GRPC_CHECK_NE(options, nullptr);
-  GRPC_CHECK_NE(provider, nullptr);
-  grpc_core::ExecCtx exec_ctx;
-  options->set_certificate_provider(
-      provider->Ref(DEBUG_LOCATION, "set_certificate_provider"));
-}
-
-void grpc_tls_credentials_options_watch_root_certs(
-    grpc_tls_credentials_options* options) {
-  GRPC_CHECK_NE(options, nullptr);
-  options->set_watch_root_cert(true);
-}
-
 void grpc_tls_credentials_options_set_root_cert_name(
     grpc_tls_credentials_options* options, const char* root_cert_name) {
   GRPC_CHECK_NE(options, nullptr);
   options->set_root_cert_name(root_cert_name);
-}
-
-void grpc_tls_credentials_options_watch_identity_key_cert_pairs(
-    grpc_tls_credentials_options* options) {
-  GRPC_CHECK_NE(options, nullptr);
-  options->set_watch_identity_pair(true);
 }
 
 void grpc_tls_credentials_options_set_identity_cert_name(
@@ -158,4 +136,31 @@ void grpc_tls_credentials_options_set_max_tls_version(
     grpc_tls_credentials_options* options, grpc_tls_version max_tls_version) {
   GRPC_CHECK_NE(options, nullptr);
   options->set_max_tls_version(max_tls_version);
+}
+
+void grpc_tls_credentials_options_set_identity_certificate_provider(
+    grpc_tls_credentials_options* options,
+    grpc_tls_certificate_provider* provider) {
+  GRPC_CHECK_NE(options, nullptr);
+  GRPC_CHECK_NE(provider, nullptr);
+  grpc_core::ExecCtx exec_ctx;
+  options->set_identity_certificate_provider(
+      provider->Ref(DEBUG_LOCATION, "set_identity_certificate_provider"));
+}
+
+void grpc_tls_credentials_options_set_root_certificate_provider(
+    grpc_tls_credentials_options* options,
+    grpc_tls_certificate_provider* provider) {
+  GRPC_CHECK_NE(options, nullptr);
+  GRPC_CHECK_NE(provider, nullptr);
+  grpc_core::ExecCtx exec_ctx;
+  options->set_root_certificate_provider(
+      provider->Ref(DEBUG_LOCATION, "set_root_certificate_provider"));
+}
+
+GRPCAPI void grpc_tls_credentials_options_set_sni_override(
+    grpc_tls_credentials_options* options,
+    std::optional<std::string> sni_override) {
+  GRPC_CHECK_NE(options, nullptr);
+  options->set_sni_override(sni_override);
 }

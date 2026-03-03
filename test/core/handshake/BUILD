@@ -171,7 +171,7 @@ grpc_cc_test(
         "//:channel_arg_names",
         "//:gpr",
         "//:grpc",
-        "//:http_connect_handshaker",
+        "//:http_connect_client_handshaker",
         "//:parse_address",
         "//:sockaddr_utils",
         "//src/core:channel_args",

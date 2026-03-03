@@ -192,23 +192,25 @@ const upb_MiniTable envoy__config__tap__v3__HttpGenericBodyMatch__GenericTextMat
 };
 
 const upb_MiniTable* envoy__config__tap__v3__HttpGenericBodyMatch__GenericTextMatch_msg_init_ptr = &envoy__config__tap__v3__HttpGenericBodyMatch__GenericTextMatch_msg_init;
-static const upb_MiniTableSubInternal envoy_config_tap_v3_OutputConfig__submsgs[3] = {
+static const upb_MiniTableSubInternal envoy_config_tap_v3_OutputConfig__submsgs[4] = {
   {.UPB_PRIVATE(submsg) = &envoy__config__tap__v3__OutputSink_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &google__protobuf__UInt32Value_msg_init_ptr},
   {.UPB_PRIVATE(submsg) = &google__protobuf__UInt32Value_msg_init_ptr},
   {.UPB_PRIVATE(submsg) = &google__protobuf__UInt32Value_msg_init_ptr},
 };
 
-static const upb_MiniTableField envoy_config_tap_v3_OutputConfig__fields[4] = {
+static const upb_MiniTableField envoy_config_tap_v3_OutputConfig__fields[5] = {
   {1, UPB_SIZE(12, 16), 0, 0, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   {2, UPB_SIZE(16, 24), 64, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   {3, UPB_SIZE(20, 32), 65, 2, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   {4, 9, 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
+  {5, UPB_SIZE(24, 40), 66, 3, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
 };
 
 const upb_MiniTable envoy__config__tap__v3__OutputConfig_msg_init = {
   &envoy_config_tap_v3_OutputConfig__submsgs[0],
   &envoy_config_tap_v3_OutputConfig__fields[0],
-  UPB_SIZE(24, 40), 4, kUpb_ExtMode_NonExtendable, 4, UPB_FASTTABLE_MASK(56), 0,
+  UPB_SIZE(32, 48), 5, kUpb_ExtMode_NonExtendable, 5, UPB_FASTTABLE_MASK(56), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.config.tap.v3.OutputConfig",
 #endif

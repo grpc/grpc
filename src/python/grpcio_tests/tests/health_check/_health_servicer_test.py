@@ -15,7 +15,6 @@
 
 import logging
 import queue
-import sys
 import threading
 import time
 import unittest
@@ -40,10 +39,7 @@ def _consume_responses(response_iterator, response_queue):
         response_queue.put(response)
 
 
-class BaseWatchTests(object):
-    @unittest.skipIf(
-        sys.version_info[0] < 3, "ProtoBuf descriptor has moved on from Python2"
-    )
+class BaseWatchTests:
     class WatchTests(unittest.TestCase):
         def start_server(self, non_blocking=False, thread_pool=None):
             self._thread_pool = thread_pool
@@ -266,9 +262,6 @@ class BaseWatchTests(object):
             self.assertTrue(response_queue.empty())
 
 
-@unittest.skipIf(
-    sys.version_info[0] < 3, "ProtoBuf descriptor has moved on from Python2"
-)
 class HealthServicerTest(BaseWatchTests.WatchTests):
     def setUp(self):
         self._thread_pool = thread_pool.RecordingThreadPool(max_workers=None)
@@ -309,9 +302,6 @@ class HealthServicerTest(BaseWatchTests.WatchTests):
         self.assertEqual(health.SERVICE_NAME, "grpc.health.v1.Health")
 
 
-@unittest.skipIf(
-    sys.version_info[0] < 3, "ProtoBuf descriptor has moved on from Python2"
-)
 class HealthServicerBackwardsCompatibleWatchTest(BaseWatchTests.WatchTests):
     def setUp(self):
         super(HealthServicerBackwardsCompatibleWatchTest, self).start_server(

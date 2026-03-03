@@ -1,4 +1,4 @@
-#! /bin/bash -ex
+#!/usr/bin/env bash
 # Copyright 2025 The gRPC Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,9 +13,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-VIRTUALENV=.venv_check_pytype
-python3.11 -m virtualenv $VIRTUALENV
-source $VIRTUALENV/bin/activate
+set -eux
+
+VIRTUALENV=".venv-ci-pytype"
+python3.11 -m virtualenv "${VIRTUALENV}"
+source "${VIRTUALENV}/bin/activate"
+python -VV
 
 pip install pytype==2024.10.11
+pip list
+
 pytype --output=~/.cache/pytype --config=grpc-style-config.toml

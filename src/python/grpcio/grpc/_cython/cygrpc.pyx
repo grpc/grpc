@@ -37,6 +37,7 @@ _LOGGER = logging.getLogger(__name__)
 # TODO(atash): figure out why the coverage tool gets confused about the Cython
 # coverage plugin when the following files don't have a '.pxi' suffix.
 include "_cygrpc/grpc_string.pyx.pxi"
+include "_cygrpc/absl.pyx.pxi"
 include "_cygrpc/arguments.pyx.pxi"
 include "_cygrpc/call.pyx.pxi"
 include "_cygrpc/channel.pyx.pxi"
@@ -61,10 +62,7 @@ include "_cygrpc/grpc_gevent.pyx.pxi"
 
 include "_cygrpc/thread.pyx.pxi"
 
-IF UNAME_SYSNAME == "Windows":
-    include "_cygrpc/fork_windows.pyx.pxi"
-ELSE:
-    include "_cygrpc/fork_posix.pyx.pxi"
+include "_cygrpc/fork.pyx.pxi"
 
 # Following pxi files are part of the Aio module
 include "_cygrpc/aio/common.pyx.pxi"
@@ -75,7 +73,6 @@ include "_cygrpc/aio/grpc_aio.pyx.pxi"
 include "_cygrpc/aio/call.pyx.pxi"
 include "_cygrpc/aio/channel.pyx.pxi"
 include "_cygrpc/aio/server.pyx.pxi"
-
 
 #
 # initialize gRPC

@@ -21,14 +21,8 @@ cdef float _POLL_AWAKE_INTERVAL_S = 0.2
 # loop.add_reader method.
 cdef bint _has_fd_monitoring = True
 
-IF UNAME_SYSNAME == "Windows":
-    cdef void _unified_socket_write(int fd) noexcept nogil:
-        win_socket_send(<WIN_SOCKET>fd, b"1", 1, 0)
-ELSE:
-    from posix cimport unistd
-
-    cdef void _unified_socket_write(int fd) noexcept nogil:
-        unistd.write(fd, b"1", 1)
+cdef void _unified_socket_write(int fd) noexcept nogil:
+    _unified_socket_write_impl(fd)
 
 
 def _handle_callback_wrapper(CallbackWrapper callback_wrapper, int success):
@@ -131,21 +125,33 @@ cdef class PollerCompletionQueue(BaseCompletionQueue):
         for loop in self._loops:
             self._loops.get(loop).close()
 
+        # Close the read socket to prevent the `_poller_thread` from blocking on a `write` syscall
+        # when the Unix-domain socket buffer is full. Once the loops above are closed, the read
+        # socket is no longer being read, so close it to avoid `write` syscall hangs.
+        #
+        # See `sock_alloc_send_pskb` for more details about these `write` syscall hangs.
+        self._read_socket.close()
+
         # TODO(https://github.com/grpc/grpc/issues/22365) perform graceful shutdown
         grpc_completion_queue_shutdown(self._cq)
         while not self._shutdown:
             self._poller_thread.join(timeout=_POLL_AWAKE_INTERVAL_S)
         grpc_completion_queue_destroy(self._cq)
 
-        # Clean up socket resources
-        self._read_socket.close()
+        # Clean up the write socket
         self._write_socket.close()
 
     def _handle_events(self, object context_loop):
         cdef bytes data
         if _has_fd_monitoring:
             # If fd monitoring is working, clean the socket without blocking.
-            data = self._read_socket.recv(1)
+            try:
+                # In case of multiple loops, the read socket might be read by multiple threads.
+                # But only one of them will read the 1 byte sent by the poller thread.
+                # So, we need to handle the case where the socket is already empty.
+                data = self._read_socket.recv(1)
+            except BlockingIOError:
+                pass
         cdef grpc_event event
         cdef CallbackContext *context
 

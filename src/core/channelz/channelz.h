@@ -253,7 +253,7 @@ class BaseNode : public DualRefCounted<BaseNode> {
       std::shared_ptr<grpc_event_engine::experimental::EventEngine>
           event_engine,
       ZTrace::Callback callback);
-  Json::Object AdditionalInfo();
+  Json::Array AdditionalInfo();
 
   const ChannelTrace& trace() const { return trace_; }
   template <typename... Args>
@@ -331,14 +331,17 @@ class DataSinkImplementation {
   };
 
   void AddData(absl::string_view name, std::unique_ptr<Data> data);
-  Json::Object Finalize(bool timed_out);
+  Json::Array Finalize(bool timed_out);
   void Finalize(bool timed_out, grpc_channelz_v2_Entity* entity,
                 upb_Arena* arena);
 
  private:
   Mutex mu_;
-  std::map<std::string, std::unique_ptr<Data>> additional_info_
-      ABSL_GUARDED_BY(mu_);
+  struct Element {
+    std::string name;
+    std::unique_ptr<Data> data;
+  };
+  std::vector<Element> additional_info_ ABSL_GUARDED_BY(mu_);
 };
 
 // Wrapper around absl::AnyInvocable<void()> that is used to notify when the

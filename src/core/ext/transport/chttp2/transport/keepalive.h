@@ -18,8 +18,10 @@
 #ifndef GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_KEEPALIVE_H
 #define GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_KEEPALIVE_H
 
+#include "src/core/lib/promise/loop.h"
 #include "src/core/lib/promise/party.h"
 #include "src/core/lib/promise/promise.h"
+#include "src/core/lib/promise/sleep.h"
 #include "src/core/util/grpc_check.h"
 #include "absl/status/status.h"
 
@@ -45,8 +47,7 @@ class KeepAliveInterface {
 class KeepaliveManager {
  public:
   KeepaliveManager(std::unique_ptr<KeepAliveInterface> keep_alive_interface,
-                   Duration keepalive_timeout, Duration keepalive_time,
-                   Party* party);
+                   Duration keepalive_timeout, Duration keepalive_time);
 
   // Needs to be called when any data is read from the endpoint.
   void GotData() {
@@ -66,11 +67,13 @@ class KeepaliveManager {
     keepalive_timeout_ = keepalive_timeout;
   }
 
- private:
-  // Spawns the keepalive loop on the given party. This MUST be called at most
-  // once during the lifetime of the keepalive manager.
-  void MaybeSpawnKeepaliveLoop(Party* party);
+  bool IsKeepAliveLoopNeeded();
 
+  // Returns a promise that processes keepalive pings. This MUST be called at
+  // most once during the lifetime of the keepalive manager.
+  Promise<absl::Status> KeepaliveLoop();
+
+ private:
   // Returns a promise that sleeps for the keepalive_timeout_ and triggers the
   // keepalive timeout unless data is read within the keepalive timeout.
   auto WaitForKeepAliveTimeout();

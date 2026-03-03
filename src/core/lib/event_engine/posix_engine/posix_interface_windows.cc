@@ -126,6 +126,22 @@ absl::Status EventEnginePosixInterface::PrepareTcpClientSocket(
       "EventEnginePosixInterface::PrepareTcpClientSocket");
 }
 
+absl::Status EventEnginePosixInterface::PrepareListenerSocketOptions(
+    const FileDescriptor& fd, const PosixTcpOptions& options,
+    const EventEngine::ResolvedAddress& address) {
+  grpc_core::Crash(
+      "unimplemented on this platform: "
+      "EventEnginePosixInterface::PrepareListenerSocketOptions");
+}
+
+absl::StatusOr<EventEngine::ResolvedAddress>
+EventEnginePosixInterface::BindListenerSocket(
+    const FileDescriptor& fd, const EventEngine::ResolvedAddress& address) {
+  grpc_core::Crash(
+      "unimplemented on this platform: "
+      "EventEnginePosixInterface::BindListenerSocket");
+}
+
 absl::StatusOr<EventEngine::ResolvedAddress>
 EventEnginePosixInterface::PrepareListenerSocket(
     const FileDescriptor& fd, const PosixTcpOptions& options,

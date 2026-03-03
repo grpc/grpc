@@ -23,11 +23,11 @@ namespace grpc_core {
 
 class XdsMatcherActionFactory {
  public:
+  virtual ~XdsMatcherActionFactory() = default;
   virtual absl::string_view type() const = 0;
   virtual std::unique_ptr<XdsMatcher::Action> ParseAndCreateAction(
       const XdsResourceType::DecodeContext& context,
       absl::string_view serialized_value, ValidationErrors* errors) const = 0;
-  virtual ~XdsMatcherActionFactory() = default;
 };
 
 class XdsMatcherActionRegistry {

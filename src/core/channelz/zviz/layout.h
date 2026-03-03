@@ -37,11 +37,15 @@ enum class Intent {
   kKey,
   kValue,
   kWarning,
+  kCode,
 };
 
 template <typename Sink>
 void AbslStringify(Sink& sink, Intent intent) {
   switch (intent) {
+    case Intent::kCode:
+      sink.Append("code");
+      break;
     case Intent::kBanner:
       sink.Append("banner");
       break;

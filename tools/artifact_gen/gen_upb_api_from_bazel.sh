@@ -15,11 +15,24 @@
 
 set -ex
 
+export CC=`which gcc`
+export CXX=`which g++`
+GCC_VERSION=$(g++ --version | grep -Eo '[0-9]{1,2}\.[0-9]{1,2}\.[0-9]{1,2}' | head -n 1)
+
+if [[ ${GCC_VERSION} > "15.0.0" ]]; then
+  BAZEL_BUILD_ARTIFACT=(../../tools/bazel --bazelrc ../../tools/artifact_gen/fix_absl_g++15_linker_error_workaround.bazelrc build)
+  BAZEL_BUILD=(tools/bazel --bazelrc tools/artifact_gen/fix_absl_g++15_linker_error_workaround.bazelrc build)
+else
+  BAZEL_BUILD_ARTIFACT=(../../tools/bazel build)
+  BAZEL_BUILD=(tools/bazel build)
+fi
+
+
 # cd to repo root
 cd "$(dirname "$0")/../.."
 
 # Build the C++ generator. This must be done from within the sub-workspace.
-(cd tools/artifact_gen && ../../tools/bazel build //:gen_upb_api_from_bazel)
+(cd tools/artifact_gen && "${BAZEL_BUILD_ARTIFACT[@]}" //:gen_upb_api_from_bazel)
 
 # Now that the tool is built, we can move the executable to a temporary location
 # to avoid issues with the nested bazel workspaces.
@@ -36,7 +49,9 @@ DEPS_XML=$(mktemp)
 trap "rm -f ${UPB_RULES_XML} ${DEPS_XML}; rm -rf ${TMP_DIR}" EXIT
 
 # Query for upb rules from the main grpc workspace. This must be run from the root.
-tools/bazel query --output xml --noimplicit_deps //:all > "${UPB_RULES_XML}"
+# TODO(weizheyuan): Update gen_upb_api_from_bazel so it properly
+# handles repo mapping under bzlmod.
+tools/bazel query --config=no-bzlmod --output xml --noimplicit_deps //:all > "${UPB_RULES_XML}"
 
 # Now we can use the generator to get the list of deps.
 DEPS_LIST=$(${TMP_DIR}/gen_upb_api_from_bazel \
@@ -46,7 +61,7 @@ DEPS_LIST=$(${TMP_DIR}/gen_upb_api_from_bazel \
 # Query for all the dependencies of the upb rules. This must be run from the root.
 if [[ -n "${DEPS_LIST}" ]]; then
   DEPS_QUERY="deps($(echo "${DEPS_LIST}" | sed 's/ / + /g'))"
-  tools/bazel query --output xml --noimplicit_deps "${DEPS_QUERY}" > "${DEPS_XML}"
+  tools/bazel query --config=no-bzlmod --output xml --noimplicit_deps "${DEPS_QUERY}" > "${DEPS_XML}"
 else
   # If there are no dependencies, create an empty XML file
   echo '<?xml version="1.0" encoding="UTF-8" standalone="no"?><query/>' > "${DEPS_XML}"
@@ -58,8 +73,10 @@ BUILD_TARGETS=$(${TMP_DIR}/gen_upb_api_from_bazel \
                   --upb_rules_xml="${UPB_RULES_XML}")
 
 # Build the upb targets from the root.
+# TODO(weizheyuan): Update gen_upb_api_from_bazel so it properly
+# handles repo mapping under bzlmod.
 if [[ -n "${BUILD_TARGETS}" ]]; then
-  tools/bazel build ${BUILD_TARGETS}
+  "${BAZEL_BUILD[@]}" --config=no-bzlmod ${BUILD_TARGETS}
 fi
 
 # Run the C++ program to copy the generated files.
@@ -67,4 +84,4 @@ ${TMP_DIR}/gen_upb_api_from_bazel \
   --mode=generate_and_copy \
   --upb_rules_xml="${UPB_RULES_XML}" \
   --deps_xml="${DEPS_XML}" \
-  "$@" 
+  "$@"

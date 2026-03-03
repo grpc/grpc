@@ -57,7 +57,8 @@ struct google_protobuf_BoolValue;
 typedef enum {
   envoy_config_accesslog_v3_ComparisonFilter_EQ = 0,
   envoy_config_accesslog_v3_ComparisonFilter_GE = 1,
-  envoy_config_accesslog_v3_ComparisonFilter_LE = 2
+  envoy_config_accesslog_v3_ComparisonFilter_LE = 2,
+  envoy_config_accesslog_v3_ComparisonFilter_NE = 3
 } envoy_config_accesslog_v3_ComparisonFilter_Op;
 
 typedef enum {

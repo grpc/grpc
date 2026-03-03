@@ -9,6 +9,7 @@
 #include <stddef.h>
 #include "upb/generated_code_support.h"
 #include "envoy/extensions/clusters/aggregate/v3/cluster.upb_minitable.h"
+#include "envoy/config/core/v3/config_source.upb_minitable.h"
 #include "udpa/annotations/status.upb_minitable.h"
 #include "udpa/annotations/versioning.upb_minitable.h"
 #include "validate/validate.upb_minitable.h"
@@ -35,15 +36,41 @@ const upb_MiniTable envoy__extensions__clusters__aggregate__v3__ClusterConfig_ms
 };
 
 const upb_MiniTable* envoy__extensions__clusters__aggregate__v3__ClusterConfig_msg_init_ptr = &envoy__extensions__clusters__aggregate__v3__ClusterConfig_msg_init;
-static const upb_MiniTable *messages_layout[1] = {
+static const upb_MiniTableSubInternal envoy_extensions_clusters_aggregate_v3_AggregateClusterResource__submsgs[1] = {
+  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__ConfigSource_msg_init_ptr},
+};
+
+static const upb_MiniTableField envoy_extensions_clusters_aggregate_v3_AggregateClusterResource__fields[2] = {
+  {1, UPB_SIZE(12, 32), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {2, 16, 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
+};
+
+const upb_MiniTable envoy__extensions__clusters__aggregate__v3__AggregateClusterResource_msg_init = {
+  &envoy_extensions_clusters_aggregate_v3_AggregateClusterResource__submsgs[0],
+  &envoy_extensions_clusters_aggregate_v3_AggregateClusterResource__fields[0],
+  UPB_SIZE(24, 40), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.extensions.clusters.aggregate.v3.AggregateClusterResource",
+#endif
+  UPB_FASTTABLE_INIT({
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x001000003f000012, &upb_pss_1bt},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+  })
+};
+
+const upb_MiniTable* envoy__extensions__clusters__aggregate__v3__AggregateClusterResource_msg_init_ptr = &envoy__extensions__clusters__aggregate__v3__AggregateClusterResource_msg_init;
+static const upb_MiniTable *messages_layout[2] = {
   &envoy__extensions__clusters__aggregate__v3__ClusterConfig_msg_init,
+  &envoy__extensions__clusters__aggregate__v3__AggregateClusterResource_msg_init,
 };
 
 const upb_MiniTableFile envoy_extensions_clusters_aggregate_v3_cluster_proto_upb_file_layout = {
   messages_layout,
   NULL,
   NULL,
-  1,
+  2,
   0,
   0,
 };

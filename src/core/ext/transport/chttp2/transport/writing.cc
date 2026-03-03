@@ -341,19 +341,9 @@ class WriteContext {
   }
 
   grpc_chttp2_stream* NextStream() {
-    if (grpc_core::IsChttp2BoundWriteSizeEnabled()) {
-      if (t_->outbuf.c_slice_buffer()->length >= target_write_size_) {
-        result_.partial = true;
-        return nullptr;
-      }
-    } else {
-      // TODO(ctiller): this is likely buggy now, but everything seems to be
-      // working, so I'm keeping the above fix just for the experiment until
-      // we've had time to soak it fully.
-      if (t_->outbuf.c_slice_buffer()->length > target_write_size_) {
-        result_.partial = true;
-        return nullptr;
-      }
+    if (t_->outbuf.c_slice_buffer()->length >= target_write_size_) {
+      result_.partial = true;
+      return nullptr;
     }
 
     grpc_chttp2_stream* s;
@@ -422,9 +412,7 @@ class DataSendContext {
             {t_->settings.peer().max_frame_size(), stream_remote_window(),
              t_->flow_control.remote_window(),
              static_cast<int64_t>(write_context_->target_write_size()) -
-                 (grpc_core::IsChttp2BoundWriteSizeEnabled()
-                      ? static_cast<int64_t>(t_->outbuf.Length())
-                      : static_cast<int64_t>(0))}),
+                 static_cast<int64_t>(t_->outbuf.Length())}),
         0, std::numeric_limits<uint32_t>::max());
   }
 
@@ -564,7 +552,7 @@ class StreamWriteContext {
         t_->http2_stats->IncrementHttp2StreamStalls();
         report_stall(t_, s_, "stream");
         grpc_chttp2_list_add_stalled_by_stream(t_, s_);
-      } else if (grpc_core::IsChttp2BoundWriteSizeEnabled()) {
+      } else {
         GRPC_CHTTP2_STREAM_REF(s_, "chttp2_writing:fork");
         grpc_chttp2_list_add_writable_stream(t_, s_);
         stream_became_writable_ = true;
@@ -725,22 +713,36 @@ grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
       num_stream_bytes = t->outbuf.c_slice_buffer()->length - orig_len;
       s->byte_counter += static_cast<size_t>(num_stream_bytes);
       ++s->write_counter;
-      if (s->traced && grpc_endpoint_can_track_err(t->ep.get())) {
-        grpc_core::CopyContextFn copy_context_fn =
-            grpc_core::GrpcHttp2GetCopyContextFn();
-        if (copy_context_fn != nullptr &&
-            grpc_core::GrpcHttp2GetWriteTimestampsCallback() != nullptr) {
-          // Old way of collecting TCP traces
-          t->context_list->emplace_back(
-              copy_context_fn(s->arena), outbuf_relative_start_pos,
-              num_stream_bytes, s->byte_counter, s->write_counter - 1);
-        } else if (s->call_tracer != nullptr &&
-                   grpc_event_engine::experimental::
-                       grpc_is_event_engine_endpoint(t->ep.get())) {
+      // TODO(ctiller): we're duplicating logic here whilst the experiment is
+      // rolling out, in order to make the deletion of the experiment simpler.
+      if (grpc_core::IsBufferListDeletionPrepEnabled()) {
+        if (s->call_tracer != nullptr &&
+            grpc_event_engine::experimental::grpc_is_event_engine_endpoint(
+                t->ep.get())) {
           // New way of collecting TCP traces
           auto tcp_call_tracer = s->call_tracer->StartNewTcpTrace();
           if (tcp_call_tracer != nullptr) {
             ctx.AddTcpCallTracer(std::move(tcp_call_tracer), s->byte_counter);
+          }
+        }
+      } else {
+        if (s->traced && grpc_endpoint_can_track_err(t->ep.get())) {
+          grpc_core::CopyContextFn copy_context_fn =
+              grpc_core::GrpcHttp2GetCopyContextFn();
+          if (copy_context_fn != nullptr &&
+              grpc_core::GrpcHttp2GetWriteTimestampsCallback() != nullptr) {
+            // Old way of collecting TCP traces
+            t->context_list->emplace_back(
+                copy_context_fn(s->arena), outbuf_relative_start_pos,
+                num_stream_bytes, s->byte_counter, s->write_counter - 1);
+          } else if (s->call_tracer != nullptr &&
+                     grpc_event_engine::experimental::
+                         grpc_is_event_engine_endpoint(t->ep.get())) {
+            // New way of collecting TCP traces
+            auto tcp_call_tracer = s->call_tracer->StartNewTcpTrace();
+            if (tcp_call_tracer != nullptr) {
+              ctx.AddTcpCallTracer(std::move(tcp_call_tracer), s->byte_counter);
+            }
           }
         }
       }

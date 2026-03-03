@@ -34,6 +34,7 @@
 #include <utility>
 #include <variant>
 
+#include "src/core/call/metadata.h"
 #include "src/core/call/metadata_batch.h"
 #include "src/core/channelz/channelz.h"
 #include "src/core/ext/transport/chttp2/transport/call_tracer_wrapper.h"
@@ -314,6 +315,7 @@ struct grpc_chttp2_transport final : public grpc_core::FilterStackTransport,
       transport_framing_endpoint_extension = nullptr;
 
   grpc_core::MemoryOwner memory_owner;
+  grpc_core::StreamQuotaRefPtr stream_quota;
   const grpc_core::MemoryAllocator::Reservation self_reservation;
   grpc_core::ReclamationSweep active_reclamation;
   grpc_core::InstrumentStorageRefPtr<grpc_core::ResourceQuotaDomain>
@@ -891,8 +893,10 @@ void grpc_chttp2_reset_ping_clock(grpc_chttp2_transport* t);
 void grpc_chttp2_mark_stream_writable(grpc_chttp2_transport* t,
                                       grpc_chttp2_stream* s);
 
-void grpc_chttp2_cancel_stream(grpc_chttp2_transport* t, grpc_chttp2_stream* s,
-                               grpc_error_handle due_to_error, bool tarpit);
+void grpc_chttp2_cancel_stream(
+    grpc_chttp2_transport* t, grpc_chttp2_stream* s,
+    grpc_error_handle due_to_error, bool tarpit,
+    grpc_core::ServerMetadataHandle send_trailing_metadata = nullptr);
 
 void grpc_chttp2_maybe_complete_recv_initial_metadata(grpc_chttp2_transport* t,
                                                       grpc_chttp2_stream* s);
