@@ -221,6 +221,10 @@ class Http2ClientTransport final : public ClientTransport,
 
   void StopConnectivityWatch(ConnectivityStateWatcherInterface* watcher);
 
+  void NotifyStateWatcherOnDisconnectLocked(
+      absl::Status status, StateWatcher::DisconnectInfo disconnect_info)
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(&transport_mutex_);
+
   //////////////////////////////////////////////////////////////////////////////
   // Transport Read Path
 
@@ -239,10 +243,10 @@ class Http2ClientTransport final : public ClientTransport,
 
   Http2Status ProcessMetadata(RefCountedPtr<Stream> stream);
 
-  // Returns a promise to keep reading in a Loop till a fail/close is received.
-  auto ReadLoop();
-
-  auto ReadAndProcessOneFrame();
+  Http2Status ParseAndDiscardHeaders(SliceBuffer&& buffer, bool is_end_headers,
+                                     Stream* stream,
+                                     Http2Status&& original_status,
+                                     DebugLocation whence = {});
 
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Http2Status
   ProcessOneIncomingFrame(Http2Frame&& frame) {
@@ -253,6 +257,11 @@ class Http2ClientTransport final : public ClientTransport,
         },
         std::forward<Http2Frame>(frame));
   }
+
+  auto ReadAndProcessOneFrame();
+
+  // Returns a promise to keep reading in a Loop till a fail/close is received.
+  auto ReadLoop();
 
   //////////////////////////////////////////////////////////////////////////////
   // Transport Write Path
@@ -285,6 +294,9 @@ class Http2ClientTransport final : public ClientTransport,
   // add frames to this buffer in PrepareControlFrames, they can use this to
   // do post processing after the write is done.
   void NotifyUrgentFramesWriteDone();
+
+  absl::Status DequeueStreamFrames(RefCountedPtr<Stream> stream,
+                                   WriteCycle& write_cycle);
 
   // Returns a promise to keep draining control frames and data frames from all
   // the writable streams and write to the endpoint.
@@ -329,10 +341,6 @@ class Http2ClientTransport final : public ClientTransport,
   // Processes the flow control action and take necessary steps.
   void ActOnFlowControlAction(const chttp2::FlowControlAction& action,
                               Stream* stream);
-
-  void NotifyStateWatcherOnDisconnectLocked(
-      absl::Status status, StateWatcher::DisconnectInfo disconnect_info)
-      ABSL_EXCLUSIVE_LOCKS_REQUIRED(&transport_mutex_);
 
   // Returns the number of active streams. A stream is removed from the `active`
   // list once both client and server agree to close the stream. The count of
@@ -479,7 +487,8 @@ class Http2ClientTransport final : public ClientTransport,
   bool CanCloseTransportLocked() const
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(transport_mutex_);
 
-  // Ping related members
+  //////////////////////////////////////////////////////////////////////////////
+  // Ping Keepalive and Goaway
 
   void MaybeSpawnPingTimeout(std::optional<uint64_t> opaque_data);
   void MaybeSpawnDelayedPing(std::optional<Duration> delayed_ping_wait);
@@ -509,13 +518,8 @@ class Http2ClientTransport final : public ClientTransport,
       const StreamDataQueue<ClientMetadataHandle>::StreamWritabilityUpdate
           result);
 
-  absl::Status DequeueStreamFrames(RefCountedPtr<Stream> stream,
-                                   WriteCycle& write_cycle);
-
-  Http2Status ParseAndDiscardHeaders(SliceBuffer&& buffer, bool is_end_headers,
-                                     Stream* stream,
-                                     Http2Status&& original_status,
-                                     DebugLocation whence = {});
+  //////////////////////////////////////////////////////////////////////////////
+  // Error Path and Close Path
 
   // Handles the error status and returns the corresponding absl status. Absl
   // Status is returned so that the error can be gracefully handled
