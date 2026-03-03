@@ -40,7 +40,7 @@ grpc_cc_library(
     ],
     deps = [
         "//:gpr",
-        "//:grpc_base",
+        "//:grpc",
         "@rules_python//python/cc:current_py_cc_headers",
         "@rules_python//python/cc:current_py_cc_libs",
     ],
