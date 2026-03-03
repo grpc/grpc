@@ -308,7 +308,7 @@ Http2Status Http2ClientTransport::ProcessIncomingFrame(Http2DataFrame&& frame) {
           << "Http2ClientTransport::ProcessIncomingFrame(DataFrame) "
              "SpawnPushMessage "
           << message->DebugString();
-      stream->Call().SpawnPushMessage(std::move(message));
+      stream->GetCallHandler().SpawnPushMessage(std::move(message));
       continue;
     }
     GRPC_HTTP2_CLIENT_DLOG
@@ -688,7 +688,7 @@ Http2Status Http2ClientTransport::ProcessIncomingFrame(
 Http2Status Http2ClientTransport::ProcessMetadata(
     RefCountedPtr<Stream> stream) {
   HeaderAssembler& assembler = stream->header_assembler;
-  CallHandler& call = stream->Call();
+  CallHandler& call = stream->GetCallHandler();
 
   GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport::ProcessMetadata";
   if (assembler.IsReady()) {
@@ -1429,7 +1429,7 @@ void Http2ClientTransport::ReadChannelArgs(const ChannelArgs& channel_args,
 absl::Status Http2ClientTransport::HandleError(
     const std::optional<uint32_t> stream_id, Http2Status status,
     DebugLocation whence) {
-  auto error_type = status.GetType();
+  Http2Status::Http2ErrorType error_type = status.GetType();
   GRPC_DCHECK(error_type != Http2Status::Http2ErrorType::kOk);
 
   if (error_type == Http2Status::Http2ErrorType::kStreamError) {
@@ -1948,8 +1948,7 @@ std::optional<RefCountedPtr<Stream>> Http2ClientTransport::MakeStream(
     CallHandler call_handler) {
   // https://datatracker.ietf.org/doc/html/rfc9113#name-stream-identifiers
   RefCountedPtr<Stream> stream;
-  stream = MakeRefCounted<Stream>(call_handler, flow_control_,
-                                  /*is_client=*/kIsClient);
+  stream = MakeRefCounted<Stream>(call_handler, flow_control_);
   const bool on_done_added = SetOnDone(std::move(call_handler), stream);
   if (!on_done_added) return std::nullopt;
   return std::move(stream);
@@ -2031,7 +2030,7 @@ auto Http2ClientTransport::CallOutboundLoop(RefCountedPtr<Stream> stream) {
   return GRPC_LATENT_SEE_PROMISE(
       "Ph2CallOutboundLoop",
       TrySeq(
-          Map(stream->Call().PullClientInitialMetadata(),
+          Map(stream->GetCallHandler().PullClientInitialMetadata(),
               [send_initial_metadata = std::move(send_initial_metadata)](
                   ValueOrFailure<ClientMetadataHandle> metadata) mutable {
                 if (GPR_UNLIKELY(!metadata.ok())) {
@@ -2041,18 +2040,21 @@ auto Http2ClientTransport::CallOutboundLoop(RefCountedPtr<Stream> stream) {
                 return std::move(send_initial_metadata)(
                     TakeValue(std::move(metadata)));
               }),
-          ForEach(MessagesFrom(stream->Call()), std::move(send_message)),
+          ForEach(MessagesFrom(stream->GetCallHandler()),
+                  std::move(send_message)),
           [send_half_closed = std::move(send_half_closed)]() mutable {
             return std::move(send_half_closed)();
           },
           [stream]() mutable {
-            return Map(stream->Call().WasCancelled(), [](bool cancelled) {
-              GRPC_HTTP2_CLIENT_DLOG
-                  << "Http2ClientTransport::CallOutboundLoop End with "
-                     "cancelled="
-                  << cancelled;
-              return (cancelled) ? absl::CancelledError() : absl::OkStatus();
-            });
+            return Map(
+                stream->GetCallHandler().WasCancelled(), [](bool cancelled) {
+                  GRPC_HTTP2_CLIENT_DLOG
+                      << "Http2ClientTransport::CallOutboundLoop End with "
+                         "cancelled="
+                      << cancelled;
+                  return (cancelled) ? absl::CancelledError()
+                                     : absl::OkStatus();
+                });
           }));
 }
 
