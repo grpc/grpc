@@ -62,12 +62,13 @@ namespace grpc_core {
 namespace http2 {
 namespace testing {
 
-class TestsNeedingStreamObjects : public ::testing::Test {
+class TestsNeedingStreamObjects : public ::testing::TestWithParam<bool> {
  protected:
   TestsNeedingStreamObjects()
       : transport_flow_control_(
             /*name=*/"TestFlowControl", /*enable_bdp_probe=*/false,
-            /*memory_owner=*/nullptr) {}
+            /*memory_owner=*/nullptr),
+        is_client_(GetParam()) {}
 
   void SetUp() override {}
 
@@ -82,9 +83,11 @@ class TestsNeedingStreamObjects : public ::testing::Test {
     std::unique_ptr<CallInitiatorAndHandler> call_pair =
         std::make_unique<CallInitiatorAndHandler>(
             MakeCallPair(std::move(client_initial_metadata), std::move(arena)));
-    RefCountedPtr<Stream> stream = MakeRefCounted<Stream>(
-        call_pair->handler.StartCall(), transport_flow_control_,
-        /*is_client=*/true);  // Params
+    RefCountedPtr<Stream> stream =
+        is_client_ ? MakeRefCounted<Stream>(call_pair->handler.StartCall(),
+                                            transport_flow_control_)
+                   : MakeRefCounted<Stream>(call_pair->initiator,
+                                            transport_flow_control_);
     stream->InitializeStream(stream_id,
                              /*allow_true_binary_metadata_peer=*/true,
                              /*allow_true_binary_metadata_acked=*/true);
@@ -96,7 +99,11 @@ class TestsNeedingStreamObjects : public ::testing::Test {
 
  private:
   std::vector<RefCountedPtr<Stream>> stream_set_;
+  const bool is_client_;
 };
+
+INSTANTIATE_TEST_SUITE_P(TestsNeedingStreamObjects, TestsNeedingStreamObjects,
+                         ::testing::Bool());
 
 ///////////////////////////////////////////////////////////////////////////////
 // Connection Preface Validation Tests
@@ -421,7 +428,7 @@ TEST(Http2CommonTransportTest, ProcessIncomingDataFrameFlowControlNullStream1) {
   }
 }
 
-TEST_F(TestsNeedingStreamObjects,
+TEST_P(TestsNeedingStreamObjects,
        ProcessIncomingDataFrameFlowControlWithStream) {
   const uint32_t frame_payload_size = 20000;
   RefCountedPtr<Stream> stream = CreateMinimalTestStream(1);
@@ -481,7 +488,7 @@ TEST_F(TestsNeedingStreamObjects,
             "of size 20000 overflows local window of 5535}");
 }
 
-TEST_F(TestsNeedingStreamObjects,
+TEST_P(TestsNeedingStreamObjects,
        ProcessIncomingDataFrameTransportWindowUpdate) {
   const uint32_t frame_payload_size = 60000;
   RefCountedPtr<Stream> stream = CreateMinimalTestStream(1);
@@ -528,7 +535,7 @@ TEST_F(TestsNeedingStreamObjects,
       "size 60000 overflows local window of 5535}");
 }
 
-TEST_F(TestsNeedingStreamObjects,
+TEST_P(TestsNeedingStreamObjects,
        ProcessIncomingDataFrameTransportAndStreamWindowUpdate) {
   const uint32_t frame_payload_size = 60000;
   RefCountedPtr<Stream> stream = CreateMinimalTestStream(1);
@@ -634,7 +641,7 @@ TEST(Http2CommonTransportTest,
             chttp2::kDefaultWindow + 1000 + 10000);
 }
 
-TEST_F(TestsNeedingStreamObjects,
+TEST_P(TestsNeedingStreamObjects,
        ProcessIncomingWindowUpdateFrameFlowControlWithStream) {
   RefCountedPtr<Stream> stream = CreateMinimalTestStream(1);
   EXPECT_EQ(transport_flow_control_.remote_window(), chttp2::kDefaultWindow);

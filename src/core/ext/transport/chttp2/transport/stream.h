@@ -25,6 +25,7 @@
 #include <cstdint>
 #include <string>
 #include <utility>
+#include <variant>
 
 #include "src/core/call/call_spine.h"
 #include "src/core/call/message.h"
@@ -64,9 +65,8 @@ enum class HttpStreamState : uint8_t {
 class Stream : public RefCounted<Stream> {
  public:
   explicit Stream(CallHandler call_handler,
-                  chttp2::TransportFlowControl& transport_flow_control,
-                  const bool is_client)
-      : header_assembler(is_client),
+                  chttp2::TransportFlowControl& transport_flow_control)
+      : header_assembler(/*is_client*/ true),
         flow_control(&transport_flow_control),
         call(std::move(call_handler)),
         is_write_closed(false),
@@ -76,7 +76,22 @@ class Stream : public RefCounted<Stream> {
         did_receive_trailing_metadata(false),
         did_push_server_trailing_metadata(false),
         data_queue(MakeRefCounted<StreamDataQueue<ClientMetadataHandle>>(
-            call.arena(), /*is_client*/ is_client,
+            std::get<CallHandler>(call).arena(), /*is_client*/ true,
+            /*queue_size*/ kStreamQueueSize)) {}
+
+  explicit Stream(CallInitiator call_initiator,
+                  chttp2::TransportFlowControl& transport_flow_control)
+      : header_assembler(/*is_client*/ false),
+        flow_control(&transport_flow_control),
+        call(std::move(call_initiator)),
+        is_write_closed(false),
+        stream_id(kInvalidStreamId),
+        stream_state(HttpStreamState::kIdle),
+        did_receive_initial_metadata(false),
+        did_receive_trailing_metadata(false),
+        did_push_server_trailing_metadata(false),
+        data_queue(MakeRefCounted<StreamDataQueue<ClientMetadataHandle>>(
+            std::get<CallInitiator>(call).arena(), /*is_client*/ false,
             /*queue_size*/ kStreamQueueSize)) {}
 
   Stream(const Stream&) = delete;
@@ -258,7 +273,7 @@ class Stream : public RefCounted<Stream> {
           Http2ErrorCode::kStreamClosed,
           std::string(RFC9113::kHalfClosedRemoteState));
     }
-    if (!did_receive_initial_metadata || did_receive_trailing_metadata) {
+    if (!IsInitialMetadataReceived() || IsTrailingMetadataReceived()) {
       return Http2Status::Http2StreamError(
           Http2ErrorCode::kStreamClosed,
           std::string(GrpcErrors::kOutOfOrderDataFrame));
@@ -267,6 +282,7 @@ class Stream : public RefCounted<Stream> {
   }
 
   void MaybePushServerTrailingMetadata(ServerMetadataHandle&& metadata) {
+    GRPC_DCHECK(std::holds_alternative<CallHandler>(call));
     GRPC_HTTP2_STREAM_LOG << "Stream::MaybePushServerTrailingMetadata "
                              "stream_id="
                           << stream_id
@@ -276,7 +292,7 @@ class Stream : public RefCounted<Stream> {
 
     if (!did_push_server_trailing_metadata) {
       did_push_server_trailing_metadata = true;
-      call.SpawnPushServerTrailingMetadata(std::move(metadata));
+      GetCallHandler().SpawnPushServerTrailingMetadata(std::move(metadata));
     }
   }
 
@@ -296,14 +312,20 @@ class Stream : public RefCounted<Stream> {
     did_receive_trailing_metadata = true;
   }
 
-  CallHandler& Call() { return call; }
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION CallHandler& GetCallHandler() {
+    return std::get<CallHandler>(call);
+  }
+
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION CallInitiator& GetCallInitiator() {
+    return std::get<CallInitiator>(call);
+  }
 
   GrpcMessageAssembler assembler;
   HeaderAssembler header_assembler;
   chttp2::StreamFlowControl flow_control;
 
  private:
-  CallHandler call;
+  std::variant<CallInitiator, CallHandler> call;
 
   // This flag is kept separate from the stream_state as the stream_state
   // is inline with the HTTP2 spec, whereas this flag is an implementation
@@ -320,7 +342,7 @@ class Stream : public RefCounted<Stream> {
   bool did_receive_initial_metadata;
   bool did_receive_trailing_metadata;
   bool did_push_server_trailing_metadata;
-  // TODO(akshitpatel) : [PH2][P3][Server] : This would need to change to
+  // TODO(akshitpatel) : [PH2][P0][Server] : This would need to change to
   // accomodate ServerMetadataHandle for the server side.
   RefCountedPtr<StreamDataQueue<ClientMetadataHandle>> data_queue;
 };
