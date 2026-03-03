@@ -122,9 +122,16 @@ void ConfigTest(FuzzerChannelArgs client_args_input,
 }
 FUZZ_TEST(MyTestSuite, ConfigTest);
 
+static void SetExperiments(absl::string_view experiments) {
+  grpc_core::ConfigVars::Overrides overrides;
+  overrides.experiments = experiments;
+  grpc_core::ConfigVars::SetOverrides(overrides);
+  grpc_core::TestOnlyReloadExperimentsFromConfigVariables();
+}
+
 TEST(ConfigTest, ChunkingDisabledByDefault) {
   // Ensure the experiment is disabled (default).
-  ForceEnableExperiment("chaotic_good_send_supported_features", false);
+  SetExperiments("-chaotic_good_send_supported_features");
 
   ChannelArgs args;
   chaotic_good::Config client_config(args);
@@ -163,7 +170,7 @@ TEST(ConfigTest, ChunkingDisabledByDefault) {
 
 TEST(ConfigTest, ChunkingEnabledWithExperiment) {
   // Ensure the experiment is enabled.
-  ForceEnableExperiment("chaotic_good_send_supported_features", true);
+  SetExperiments("chaotic_good_send_supported_features");
 
   ChannelArgs args;
   chaotic_good::Config client_config(args);
