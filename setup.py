@@ -308,7 +308,6 @@ CYTHON_EXTENSION_PACKAGE_NAMES = ()
 CYTHON_EXTENSION_MODULE_NAMES = ("grpc._cython.cygrpc",)
 
 GRPCIO_CC_SRCS = ()
-CYTHON_HELPER_C_FILES = ()
 
 _PRIVATE_KEY_SIGNING_FILES = (
     os.path.join(
@@ -321,7 +320,7 @@ _PRIVATE_KEY_SIGNING_FILES = (
     ),
 )
 
-CYTHON_HELPER_C_FILES += _PRIVATE_KEY_SIGNING_FILES
+GRPCIO_CC_SRCS += _PRIVATE_KEY_SIGNING_FILES
 
 CORE_C_FILES = tuple(grpc_core_dependencies.CORE_SOURCE_FILES)
 if "win32" in sys.platform:
@@ -526,7 +525,7 @@ def cython_extensions_and_necessity():
             name=module_name,
             sources=(
                 [module_file]
-                + list(CYTHON_HELPER_C_FILES)
+                + list(GRPCIO_CC_SRCS)
                 + core_c_files
                 + asm_files
                 + ["third_party/abseil-cpp/absl/log/initialize.cc"]

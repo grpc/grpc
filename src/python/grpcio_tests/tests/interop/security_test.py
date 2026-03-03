@@ -252,7 +252,7 @@ class SecurityTest(unittest.TestCase):
         Successfully use a single signer cred for many channels
         """
 
-        q = queue.Queue()
+        results_queue = queue.Queue()
         credential = (
             grpc.experimental.ssl_channel_credentials_with_custom_signer(
                 private_key_sign_fn=resources.async_client_private_key_signer,
@@ -279,14 +279,15 @@ class SecurityTest(unittest.TestCase):
         threads = []
         for _ in range(10):
             t = threading.Thread(
-                target=channel_with_credential, args=(credential, q, self.port)
+                target=channel_with_credential,
+                args=(credential, results_queue, self.port),
             )
             t.start()
             threads.append(t)
         for t in threads:
             t.join()
-        while not q.empty():
-            self.assertIsInstance(q.get(), empty_pb2.Empty)
+        while not results_queue.empty():
+            self.assertIsInstance(results_queue.get(), empty_pb2.Empty)
 
 
 if __name__ == "__main__":
