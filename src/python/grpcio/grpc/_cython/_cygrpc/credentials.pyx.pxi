@@ -14,8 +14,6 @@
 
 import atexit
 
-include "private_key_offload.pyx.pxi"
-
 def _spawn_callback_in_thread(cb_func, args):
   t = ForkManagedThread(target=cb_func, args=args)
   t.setDaemon(True)
