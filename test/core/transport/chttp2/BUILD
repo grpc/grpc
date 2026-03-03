@@ -934,11 +934,18 @@ grpc_cc_test(
     ],
     uses_polling = False,
     deps = [
+        "//:event_engine_base_hdrs",
+        "//:exec_ctx",
+        "//:gpr",
+        "//:grpc",
+        "//:ref_counted_ptr",
+        "//src/core:arena",
+        "//src/core:call_spine",
         "//src/core:chttp2_flow_control",
         "//src/core:default_event_engine",
-        "//src/core:header_assembler",
-        "//src/core:http2_status",
-        "//src/core:message_assembler",
+        "//src/core:grpc_check",
+        "//src/core:metadata",
+        "//src/core:ph2_stream",
     ],
 )
 
