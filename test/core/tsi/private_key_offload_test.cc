@@ -18,14 +18,6 @@
 #include <grpc/grpc.h>
 #include <grpc/private_key_signer.h>
 
-#if OPENSSL_VERSION_NUMBER >= 0x10100000
-#include <openssl/digest.h>
-#include <openssl/ec.h>
-#include <openssl/evp.h>
-#include <openssl/rsa.h>
-#include <openssl/ssl.h>
-#endif
-
 #include <atomic>
 #include <memory>
 #include <string>
@@ -43,6 +35,12 @@
 
 #if defined(OPENSSL_IS_BORINGSSL)
 #if OPENSSL_VERSION_NUMBER >= 0x10100000
+#include <openssl/digest.h>
+#include <openssl/ec.h>
+#include <openssl/evp.h>
+#include <openssl/rsa.h>
+#include <openssl/ssl.h>
+
 namespace grpc_core {
 namespace testing {
 
