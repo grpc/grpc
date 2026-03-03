@@ -131,6 +131,7 @@ CustomPrivateKeySign = Callable[
 ]
 
 
+@experimental_api
 def ssl_channel_credentials_with_custom_signer(
     *,
     private_key_sign_fn: CustomPrivateKeySign,
@@ -138,10 +139,11 @@ def ssl_channel_credentials_with_custom_signer(
     certificate_chain: bytes,
 ) -> grpc.ChannelCredentials:
     """Creates a ChannelCredentials for use with an SSL-enabled Channel with a custom signer.
+    THIS IS AN EXPERIMENTAL API.
 
     Args:
       private_key_sign_fn: a function with the signature of
-        `CustomPrivateKeySignWithHandle`. This function can return synchronoulsy
+        `CustomPrivateKeySignWithHandle`. This function can return synchronously
         or asynchronously.  To return synchronously, return the signed bytes.
         To return asynchronously, return a PrivateKeySignCancel callable. This
         can be a no-op function if no cancellation is needed. It can also be a
@@ -154,7 +156,7 @@ def ssl_channel_credentials_with_custom_signer(
         or None to retrieve them from a default location chosen by gRPC
         runtime.
       certificate_chain: The PEM-encoded certificate chain as a byte string
-        to use or None if no certificate chain should be used.
+        to use
 
     Returns:
       A ChannelCredentials for use with an SSL-enabled Channel.
