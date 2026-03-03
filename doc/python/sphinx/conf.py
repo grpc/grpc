@@ -52,12 +52,13 @@ author = "The gRPC Authors"
 # Import generated grpc_version after the path been modified
 import grpc_version
 
-version = ".".join(grpc_version.VERSION.split(".")[:3])
 release = grpc_version.VERSION
-if "dev" in grpc_version.VERSION:
+version = ".".join(release.split(".")[:3])
+if "dev" in release:
     branch = "master"
 else:
-    branch = "v%s.%s.x" % tuple(grpc_version.VERSION.split(".")[:2])
+    _major, _minor = release.split(".")[:2]
+    branch = f"v{_major}.{_minor}.x"
 
 # -- General configuration ---------------------------------------------------
 
@@ -141,6 +142,6 @@ todo_include_todos = True
 # -- Options for substitutions -----------------------------------------------
 
 rst_epilog = (
-    ".. |channel_arg_names_link| replace:: https://github.com/grpc/grpc/blob/%s/include/grpc/impl/channel_arg_names.h"
-    % branch
+    ".. |channel_arg_names_link| replace::"
+    f" https://github.com/grpc/grpc/blob/{branch}/include/grpc/impl/channel_arg_names.h"
 )
