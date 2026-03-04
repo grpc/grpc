@@ -2196,7 +2196,6 @@ class Channel(grpc.Channel):
             cygrpc.gevent_decrement_channel_count()
 
     def _cancel_calls_on_fork(self) -> None:
-        self._unsubscribe_all()
         self._channel.cancel_calls_on_fork(
             cygrpc.StatusCode.cancelled, "Call cancelled in fork child"
         )
