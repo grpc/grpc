@@ -759,10 +759,6 @@ grpc_cc_library(
 grpc_cc_library(
     name = "no_destruct",
     public_hdrs = ["util/no_destruct.h"],
-    visibility = [
-        "//:__pkg__",
-        "//:__subpackages__",
-    ],
     deps = [
         "construct_destruct",
         "//:gpr_platform",
@@ -1877,10 +1873,6 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/log",
-    ],
-    visibility = [
-        "//:__pkg__",
-        "//:__subpackages__",
     ],
     deps = [
         "arena",

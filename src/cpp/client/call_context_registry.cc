@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <grpcpp/call_context_types.h>
 #include <grpcpp/impl/call_context_registry.h>
-#include <grpcpp/impl/call_context_types.h>
 #include <stddef.h>
 
 #include <cstdint>

@@ -4984,6 +4984,7 @@ foreach(_hdr
   include/grpc++/support/sync_stream.h
   include/grpc++/support/time.h
   include/grpcpp/alarm.h
+  include/grpcpp/call_context_types.h
   include/grpcpp/channel.h
   include/grpcpp/client_context.h
   include/grpcpp/completion_queue.h
@@ -5000,7 +5001,6 @@ foreach(_hdr
   include/grpcpp/health_check_service_interface.h
   include/grpcpp/impl/call.h
   include/grpcpp/impl/call_context_registry.h
-  include/grpcpp/impl/call_context_types.h
   include/grpcpp/impl/call_op_set.h
   include/grpcpp/impl/call_op_set_interface.h
   include/grpcpp/impl/channel_argument_option.h
@@ -5729,6 +5729,7 @@ foreach(_hdr
   include/grpc++/support/sync_stream.h
   include/grpc++/support/time.h
   include/grpcpp/alarm.h
+  include/grpcpp/call_context_types.h
   include/grpcpp/channel.h
   include/grpcpp/client_context.h
   include/grpcpp/completion_queue.h
@@ -5745,7 +5746,6 @@ foreach(_hdr
   include/grpcpp/health_check_service_interface.h
   include/grpcpp/impl/call.h
   include/grpcpp/impl/call_context_registry.h
-  include/grpcpp/impl/call_context_types.h
   include/grpcpp/impl/call_op_set.h
   include/grpcpp/impl/call_op_set_interface.h
   include/grpcpp/impl/channel_argument_option.h

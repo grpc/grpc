@@ -18,9 +18,9 @@
 
 #include <grpc/grpc.h>
 #include <grpc/status.h>
+#include <grpcpp/call_context_types.h>
 #include <grpcpp/channel.h>
 #include <grpcpp/generic/generic_stub.h>
-#include <grpcpp/impl/call_context_types.h>
 #include <grpcpp/test/client_context_test_peer.h>
 
 #include <cstring>
@@ -40,8 +40,8 @@ const char val1[] = "metadata-val1";
 const char val2[] = "metadata-val2";
 
 bool ServerInitialMetadataContains(const ClientContext& context,
-                                   const grpc::string_ref& key,
-                                   const grpc::string_ref& value) {
+                                   const string_ref& key,
+                                   const string_ref& value) {
   const auto& server_metadata = context.GetServerInitialMetadata();
   for (auto iter = server_metadata.begin(); iter != server_metadata.end();
        ++iter) {
@@ -78,13 +78,13 @@ TEST(ClientContextTestPeerTest, GetSendInitialMetadata) {
 }
 
 TEST(ClientContextTestPeerTest, TelemetryLabelPropagatedToArena) {
-  grpc::internal::GrpcLibrary init_lib;
+  internal::GrpcLibrary init_lib;
   grpc_channel* c_channel = grpc_lame_client_channel_create(
       "localhost:1234", GRPC_STATUS_INTERNAL, "error");
-  auto channel = grpc::CreateChannelInternal("", c_channel, {});
-  grpc::GenericStub stub(channel);
+  auto channel = CreateChannelInternal("", c_channel, {});
+  GenericStub stub(channel);
   ClientContext ctx;
-  ctx.SetContext(grpc::impl::TelemetryLabel{"test_label"});
+  ctx.SetContext(TelemetryLabel{"test_label"});
   CompletionQueue cq;
   // PrepareCall creates a call but doesn't start it, so the call is initialized
   // but has not failed yet.
@@ -94,7 +94,7 @@ TEST(ClientContextTestPeerTest, TelemetryLabelPropagatedToArena) {
   ASSERT_NE(c_call, nullptr);
   grpc_core::Arena* arena = grpc_call_get_arena(c_call);
   ASSERT_NE(arena, nullptr);
-  auto* label = arena->GetContext<grpc::impl::TelemetryLabel>();
+  auto* label = arena->GetContext<TelemetryLabel>();
   ASSERT_NE(label, nullptr);
   EXPECT_EQ(label->value, "test_label");
 }

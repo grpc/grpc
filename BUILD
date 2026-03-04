@@ -473,7 +473,7 @@ GRPCXX_PUBLIC_HDRS = [
     "include/grpcpp/grpcpp.h",
     "include/grpcpp/health_check_service_interface.h",
     "include/grpcpp/impl/call_context_registry.h",
-    "include/grpcpp/impl/call_context_types.h",
+    "include/grpcpp/call_context_types.h",
     "include/grpcpp/impl/call_op_set_interface.h",
     "include/grpcpp/impl/call_op_set.h",
     "include/grpcpp/impl/call.h",
@@ -3372,7 +3372,6 @@ grpc_cc_library(
         "absl/strings",
         "absl/types:optional",
     ],
-    linkstatic = True,
     deps = [
         "gpr_platform",
         "load_config",
