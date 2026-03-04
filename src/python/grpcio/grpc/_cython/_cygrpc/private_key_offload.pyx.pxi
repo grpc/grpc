@@ -62,12 +62,13 @@ cdef PrivateKeySignerPyWrapperResult async_sign_wrapper(string_view inp, CSignat
 
     # Call the user's Python function and handle results
     py_result = None
+    # Mark sync by default, change if the result is async
+    cpp_result.is_sync = True
     try:
       data = inp.data()
       size = inp.length()
       py_bytes = PyBytes_FromStringAndSize(data, size)
       py_result = py_user_func(py_bytes, algorithm, py_on_complete_wrapper)
-      cpp_result.is_sync = True
       if isinstance(py_result, bytes):
         # We got a signature
         cpp_string = MakeStringForCython(PyBytes_AsString(py_result), PyBytes_GET_SIZE(py_result))
