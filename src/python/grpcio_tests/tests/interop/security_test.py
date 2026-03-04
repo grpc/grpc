@@ -220,11 +220,6 @@ class SecurityTest(unittest.TestCase):
 
     def test_signer_lifetime(self):
 
-        class TrackedSigner:
-
-            def __call__(self, data, algo, cb):
-                return b"signature"
-
         def create_channel():
             signer = TrackedSigner()
             ref = weakref.ref(signer)
@@ -288,6 +283,78 @@ class SecurityTest(unittest.TestCase):
             t.join()
         while not results_queue.empty():
             self.assertIsInstance(results_queue.get(), empty_pb2.Empty)
+
+
+class TrackedSigner:
+    def __init__(self, should_fail=False):
+        self.should_fail = should_fail
+
+    def __call__(self, data, algorithm):
+        if self.should_fail:
+            raise ValueError("failure")
+        return resources.sign_private_key(
+            data, resources.client_private_key(), algorithm
+        )
+
+
+def test_signer_lifetime_happy_path(self):
+    signer = TrackedSigner()
+
+    initial_ref_count = sys.getrefcount(signer)
+
+    creds = grpc.experimental.ssl_channel_credentials_with_custom_signer(
+        root_certificates=resources.test_root_certificates(),
+        private_key_signer=signer,
+    )
+
+    channel = grpc.secure_channel("localhost:50051", creds)
+
+    current_ref_count = sys.getrefcount(signer)
+    self.assertGreater(
+        current_ref_count,
+        initial_ref_count,
+    )
+
+    channel.close()
+    del channel
+
+    gc.collect()
+
+    final_ref_count = sys.getrefcount(signer)
+    self.assertEqual(
+        final_ref_count,
+        initial_ref_count,
+    )
+
+
+def test_signer_lifetime_failure_path(self):
+    signer = TrackedSigner(should_fail=True)
+
+    initial_ref_count = sys.getrefcount(signer)
+
+    creds = grpc.experimental.ssl_channel_credentials_with_custom_signer(
+        root_certificates=resources.test_root_certificates(),
+        private_key_signer=signer,
+    )
+
+    channel = grpc.secure_channel("localhost:50051", creds)
+
+    current_ref_count = sys.getrefcount(signer)
+    self.assertGreater(
+        current_ref_count,
+        initial_ref_count,
+    )
+
+    channel.close()
+    del channel
+
+    gc.collect()
+
+    final_ref_count = sys.getrefcount(signer)
+    self.assertEqual(
+        final_ref_count,
+        initial_ref_count,
+    )
 
 
 if __name__ == "__main__":
