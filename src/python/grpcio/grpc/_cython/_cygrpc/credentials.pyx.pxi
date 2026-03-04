@@ -226,7 +226,7 @@ cdef class SSLChannelCredentials(ChannelCredentials):
         if not private_key_status.ok():
           grpc_tls_identity_pairs_destroy(c_tls_identity_pairs)
           grpc_tls_credentials_options_destroy(c_tls_credentials_options)
-          return NULL
+          raise RuntimeError("Unable to create custom PrivateKeySigner with user provided function: ", private_key_status.ToString());
       else:
         grpc_tls_identity_pairs_add_pair(c_tls_identity_pairs, c_private_key, c_cert_chain)
 

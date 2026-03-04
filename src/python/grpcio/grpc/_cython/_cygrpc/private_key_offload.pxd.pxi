@@ -26,6 +26,7 @@ cdef extern from "absl/status/status.h" namespace "absl":
     cdef cppclass Status:
         Status(AbslStatusCode, string)
         Status()
+        string ToString()
         bint ok()
 
 cdef extern from "absl/status/statusor.h" namespace "absl":
