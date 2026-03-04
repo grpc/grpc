@@ -113,13 +113,20 @@ std::shared_ptr<PrivateKeySigner> BuildPrivateKeySigner(
 
 class AsyncSigningHandlePyWrapper : public PrivateKeySigner::AsyncSigningHandle {
  public:
+  AsyncSigningHandlePyWrapper(CancelWrapperForPy cancel_py_wrapper,
+                              void* py_user_cancel_fn)
+      : cancel_py_wrapper_(cancel_py_wrapper),
+        py_user_cancel_fn_(py_user_cancel_fn) {}
+  // This will decrememnt the py_user_cancel_fn on object destruction
+  ~AsyncSigningHandlePyWrapper() override;
+  void Cancel();
+
+ private:
   // This is a function provided by the Cython implementation of Private Key
   // Offloading.
   CancelWrapperForPy cancel_py_wrapper_;
   // This will hold the Python callable object
-  void* py_user_cancel_fn;
-  // This will decrememnt the py_user_cancel_fn on object destruction
-  ~AsyncSigningHandlePyWrapper() override;
+  void* py_user_cancel_fn_;
 };
 
 // Python cannot call the string constructor directly in Cython. The string

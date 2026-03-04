@@ -41,21 +41,19 @@ PrivateKeySignerPyWrapper::Sign(absl::string_view data_to_sign,
   if (result.is_sync) {
     return result.sync_result;
   } else {
-    auto handle = std::make_shared<AsyncSigningHandlePyWrapper>();
-    handle->cancel_py_wrapper_ = result.async_result.cancel_wrapper;
-    handle->py_user_cancel_fn = result.async_result.py_user_cancel_fn;
+    auto handle = std::make_shared<AsyncSigningHandlePyWrapper>(
+        result.async_result.cancel_wrapper,
+        result.async_result.py_user_cancel_fn);
     return handle;
   }
 }
 
 void PrivateKeySignerPyWrapper::Cancel(
     std::shared_ptr<AsyncSigningHandle> handle) {
+  if (handle == nullptr) return;
   auto handle_impl =
       std::static_pointer_cast<AsyncSigningHandlePyWrapper>(handle);
-  if (handle == nullptr || handle_impl->cancel_py_wrapper_ == nullptr) {
-    return;
-  }
-  handle_impl->cancel_py_wrapper_(handle_impl->py_user_cancel_fn);
+  handle_impl->Cancel();
 }
 
 std::shared_ptr<PrivateKeySigner> BuildPrivateKeySigner(
@@ -71,7 +69,7 @@ std::shared_ptr<PrivateKeySigner> BuildPrivateKeySigner(
 
 AsyncSigningHandlePyWrapper::~AsyncSigningHandlePyWrapper() {
   PyGILState_STATE state = PyGILState_Ensure();
-  Py_DECREF(py_user_cancel_fn);
+  Py_DECREF(py_user_cancel_fn_);
   PyGILState_Release(state);
 }
 
@@ -84,6 +82,13 @@ PrivateKeySignerPyWrapper::~PrivateKeySignerPyWrapper() {
     Py_DECREF(result);
   }
   PyGILState_Release(state);
+}
+
+void AsyncSigningHandlePyWrapper::Cancel() {
+  if (cancel_py_wrapper_ == nullptr || py_user_cancel_fn_ == nullptr) {
+    return;
+  }
+  cancel_py_wrapper_(py_user_cancel_fn_);
 }
 
 std::string MakeStringForCython(const char* inp, size_t size) {
