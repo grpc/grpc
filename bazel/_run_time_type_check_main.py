@@ -46,21 +46,17 @@ class SingleLoader:
         # Look in the current working directory for the test file physically
         target_file = target_module + ".py"
         target_module_name = None
-        for root, _, files in os.walk(os.getcwd(), followlinks=True):
+        for root, _, files in os.walk(os.getcwd()):
             if target_file in files:
                 filepath = os.path.join(root, target_file)
                 rel_path = os.path.relpath(filepath, os.getcwd())
                 target_module_name = rel_path[:-3].replace(os.sep, '.')
                 break
 
-        if target_module_name:
-            import importlib.util
-            spec = importlib.util.find_spec(target_module_name)
-            if spec is not None:
-                module = importlib.util.module_from_spec(spec)
-                if spec.loader is not None:
-                    spec.loader.exec_module(module)
-                    suites.append(loader.loadTestsFromModule(module))
+        spec = importlib.util.find_spec(target_module_name)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        suites.append(loader.loadTestsFromModule(module))
 
         assert len(suites) == 1, f"Expected only 1 test module. Found {suites}"
         self.suite.addTest(suites[0])
