@@ -36,6 +36,7 @@ def generateCompilationDatabase(args):
     # This option lives here to override those specified in bazelrc.
     bazel_options = shlex.split(os.environ.get("BAZEL_BUILD_OPTIONS", "")) + [
         "--config=compdb",
+        "--config=no-bzlmod",
         "--remote_download_outputs=all",
     ]
 
