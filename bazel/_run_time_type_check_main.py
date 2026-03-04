@@ -46,12 +46,16 @@ class SingleLoader:
         # Look in the current working directory for the test file physically
         target_file = target_module + ".py"
         target_module_name = None
+
         for root, _, files in os.walk(os.getcwd()):
             if target_file in files:
                 filepath = os.path.join(root, target_file)
                 rel_path = os.path.relpath(filepath, os.getcwd())
                 target_module_name = rel_path[:-3].replace(os.sep, '.')
                 break
+
+        if target_module_name is None:
+            raise ValueError(f"Could not find target module {target_module}")
 
         spec = importlib.util.find_spec(target_module_name)
         module = importlib.util.module_from_spec(spec)
