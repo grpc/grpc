@@ -49,17 +49,9 @@ class SingleLoader:
         for root, _, files in os.walk(os.getcwd(), followlinks=True):
             if target_file in files:
                 filepath = os.path.join(root, target_file)
-                # Find the longest sys.path prefix
-                best_match = None
-                for sp in sys.path:
-                    if filepath.startswith(sp) and (best_match is None or len(sp) > len(best_match)):
-                        best_match = sp
-                if best_match:
-                    rel_path = filepath[len(best_match):]
-                    if rel_path.startswith(os.sep):
-                        rel_path = rel_path[len(os.sep):]
-                    target_module_name = rel_path[:-3].replace(os.sep, '.')
-                    break
+                rel_path = os.path.relpath(filepath, os.getcwd())
+                target_module_name = rel_path[:-3].replace(os.sep, '.')
+                break
 
         if target_module_name:
             import importlib.util
