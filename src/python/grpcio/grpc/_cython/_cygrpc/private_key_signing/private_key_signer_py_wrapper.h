@@ -86,7 +86,7 @@ class PrivateKeySignerPyWrapper final
   PrivateKeySignerPyWrapper(SignWrapperForPy sign_py_wrapper,
                             void* py_user_sign_fn, PyObject* destroy_event)
       : sign_py_wrapper_(sign_py_wrapper),
-        py_user_sign_fn(py_user_sign_fn),
+        py_user_sign_fn_(py_user_sign_fn),
         destroy_event_(destroy_event) {}
   ~PrivateKeySignerPyWrapper() override;
 
@@ -101,7 +101,7 @@ class PrivateKeySignerPyWrapper final
   // Offloading.
   SignWrapperForPy sign_py_wrapper_;
   // This will hold the Python callable object
-  void* py_user_sign_fn;
+  void* py_user_sign_fn_;
   // An event to make sure the python interpreter stays alive until this
   // destruction is complete
   PyObject* destroy_event_;

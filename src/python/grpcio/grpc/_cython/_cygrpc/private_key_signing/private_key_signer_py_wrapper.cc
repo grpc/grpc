@@ -29,7 +29,7 @@ namespace grpc_python {
 
 PrivateKeySignerPyWrapper::~PrivateKeySignerPyWrapper() {
   PyGILState_STATE state = PyGILState_Ensure();
-  Py_DECREF(static_cast<PyObject*>(py_user_sign_fn));
+  Py_DECREF(static_cast<PyObject*>(py_user_sign_fn_));
   // Python will stay alive until this event is set
   PyObject* result = PyObject_CallMethod(destroy_event_, "set", "()");
   // crash if result is nullptr? - discussing
@@ -46,7 +46,7 @@ PrivateKeySignerPyWrapper::Sign(absl::string_view data_to_sign,
       std::make_unique<CompletionContext>(std::move(on_sign_complete));
 
   PrivateKeySignerPyWrapperResult result =
-      sign_py_wrapper_(data_to_sign, signature_algorithm, py_user_sign_fn,
+      sign_py_wrapper_(data_to_sign, signature_algorithm, py_user_sign_fn_,
                        std::move(completion_context));
   if (result.is_sync) {
     return result.sync_result;
