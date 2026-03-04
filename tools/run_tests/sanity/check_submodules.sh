@@ -42,6 +42,7 @@ third_party/protoc-gen-validate 7b06248484ceeaa947e93ca2747eccf336a88ecc
 third_party/re2 0c5616df9c0aaa44c9440d87422012423d91c7d1
 third_party/xds ee656c7534f5d7dc23d44dd611689568f72017a6
 third_party/zlib f1f503da85d52e56aae11557b4d79a42bcaa2b86
+third_party/zstd f8745da6ff1ad1e7bab384bd1f9d742439278e99
 EOF
 
 if ! diff -u "$submodules" "$want_submodules"; then

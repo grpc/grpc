@@ -2036,6 +2036,7 @@ grpc_cc_library(
         "absl/utility",
         "madler_zlib",
         "@com_google_protobuf//upb/mem",
+        "@zstd",
     ],
     linkopts = select({
         "systemd": ["-lsystemd"],

@@ -24,6 +24,8 @@
 #include <string.h>
 #include <zconf.h>
 #include <zlib.h>
+#include <zstd.h>
+#include <memory>
 
 #include "src/core/lib/slice/slice.h"
 #include "src/core/util/grpc_check.h"
@@ -140,6 +142,103 @@ static int zlib_decompress(grpc_slice_buffer* input, grpc_slice_buffer* output,
   return r;
 }
 
+struct CompressTraits {
+  static std::unique_ptr<ZSTD_CCtx, decltype(&ZSTD_freeCCtx)> CreateContext() {
+    return std::unique_ptr<ZSTD_CCtx, decltype(&ZSTD_freeCCtx)>(
+       ZSTD_createCCtx(),
+       &ZSTD_freeCCtx);
+  }
+
+  static size_t ProcessPart(
+       ZSTD_CCtx* context,
+       ZSTD_outBuffer* zstd_output,
+       ZSTD_inBuffer* zstd_input,
+       bool is_last_chunk) {
+    const ZSTD_EndDirective end_directive = is_last_chunk ? ZSTD_e_end : ZSTD_e_continue;
+    return ZSTD_compressStream2(context, zstd_output, zstd_input, end_directive);
+  }
+};
+
+struct DecompressTraits {
+  static std::unique_ptr<ZSTD_DCtx, decltype(&ZSTD_freeDCtx)> CreateContext() {
+    return std::unique_ptr<ZSTD_DCtx, decltype(&ZSTD_freeDCtx)>(
+       ZSTD_createDCtx(),
+       &ZSTD_freeDCtx);
+  }
+
+  static size_t ProcessPart(
+       ZSTD_DCtx* context,
+       ZSTD_outBuffer* zstd_output,
+       ZSTD_inBuffer* zstd_input,
+       bool /* is_last_chunk */) {
+    return ZSTD_decompressStream(context, zstd_output, zstd_input);
+  }
+};
+
+template<typename Traits>
+static bool zstd_common(grpc_slice_buffer* input, grpc_slice_buffer* output) {
+  const auto context_ptr = Traits::CreateContext();
+  if (!context_ptr) {
+    VLOG(2) << "Failed create zstd context";
+    return false;
+  }
+  for (size_t i = 0; i < input->count; i++) {
+    const bool is_last_chunk = (i == input->count - 1);
+    ZSTD_inBuffer zstd_input;
+    zstd_input.src = GRPC_SLICE_START_PTR(input->slices[i]);
+    zstd_input.size = GRPC_SLICE_LENGTH(input->slices[i]);
+    zstd_input.pos = 0;
+    bool should_continue = true;
+    while (should_continue) {
+      grpc_slice outbuf = GRPC_SLICE_MALLOC(OUTPUT_BLOCK_SIZE);
+      ZSTD_outBuffer zstd_output;
+      zstd_output.dst = GRPC_SLICE_START_PTR(outbuf);
+      zstd_output.size = GRPC_SLICE_LENGTH(outbuf);
+      zstd_output.pos = 0;
+      size_t const process_result = Traits::ProcessPart(context_ptr.get(), &zstd_output, &zstd_input, is_last_chunk);
+      if (ZSTD_isError(process_result)) {
+        VLOG(2) << "Zstd error, code: " << ZSTD_getErrorCode(process_result);
+        grpc_core::CSliceUnref(outbuf);
+        return false;
+      }
+      const auto out_data_left = zstd_output.size - zstd_output.pos;
+      outbuf.data.refcounted.length -= out_data_left;
+      grpc_slice_buffer_add_indexed(output, outbuf);
+
+      should_continue = is_last_chunk ? (process_result != 0) : (zstd_input.pos != zstd_input.size);
+    }
+  }
+  return true;
+}
+
+static int zstd_compress(grpc_slice_buffer* input, grpc_slice_buffer* output) {
+  const size_t count_before = output->count;
+  const size_t length_before = output->length;
+  if (!zstd_common<CompressTraits>(input, output) || output->length >= input->length) {
+    for (size_t i = count_before; i < output->count; i++) {
+      grpc_core::CSliceUnref(output->slices[i]);
+    }
+    output->count = count_before;
+    output->length = length_before;
+    return 0;
+  }
+  return 1;
+}
+
+static int zstd_decompress(grpc_slice_buffer* input, grpc_slice_buffer* output) {
+  const size_t count_before = output->count;
+  const size_t length_before = output->length;
+  if (!zstd_common<DecompressTraits>(input, output)) {
+    for (size_t i = count_before; i < output->count; i++) {
+      grpc_core::CSliceUnref(output->slices[i]);
+    }
+    output->count = count_before;
+    output->length = length_before;
+    return 0;
+  }
+  return 1;
+}
+
 static int copy(grpc_slice_buffer* input, grpc_slice_buffer* output) {
   size_t i;
   for (i = 0; i < input->count; i++) {
@@ -159,6 +258,8 @@ static int compress_inner(grpc_compression_algorithm algorithm,
       return zlib_compress(input, output, 0);
     case GRPC_COMPRESS_GZIP:
       return zlib_compress(input, output, 1);
+    case GRPC_COMPRESS_ZSTD:
+      return zstd_compress(input, output);
     case GRPC_COMPRESS_ALGORITHMS_COUNT:
       break;
   }
@@ -184,6 +285,8 @@ int grpc_msg_decompress(grpc_compression_algorithm algorithm,
       return zlib_decompress(input, output, 0);
     case GRPC_COMPRESS_GZIP:
       return zlib_decompress(input, output, 1);
+    case GRPC_COMPRESS_ZSTD:
+      return zstd_decompress(input, output);
     case GRPC_COMPRESS_ALGORITHMS_COUNT:
       break;
   }

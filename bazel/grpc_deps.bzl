@@ -58,6 +58,17 @@ def grpc_deps():
             ],
         )
 
+    if "zstd" not in native.existing_rules():
+        http_archive(
+            name = "zstd",
+            sha256 = "b000df72df0023933a729bac00fa422a222949cfa84eb8500f3a9af34441fb6e",
+            # TODO!! Fix before push.
+            strip_prefix = "kek",
+            urls = [
+                "https://github.com/facebook/zstd/archive/refs/tags/v1.5.7.tar.gz",
+            ],
+        )
+
     if "com_google_protobuf" not in native.existing_rules():
         http_archive(
             name = "com_google_protobuf",
