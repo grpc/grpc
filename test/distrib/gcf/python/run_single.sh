@@ -51,5 +51,5 @@ HTTP_URL=$(echo "${DEPLOY_OUTPUT}" | grep "url: " | awk '{print $2;}')
 # Send Requests
 for _ in $(seq 1 "${REQUEST_COUNT}"); do
   GCP_IDENTITY_TOKEN=$(gcloud auth print-identity-token 2>/dev/null);
-  curl -v -H "Authorization: Bearer $GCP_IDENTITY_TOKEN" "${HTTP_URL}"
+  curl --fail-with-body -v -H "Authorization: Bearer $GCP_IDENTITY_TOKEN" "${HTTP_URL}"
 done
