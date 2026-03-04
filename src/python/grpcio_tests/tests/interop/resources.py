@@ -78,29 +78,24 @@ def check_key_cert_match(key_bytes, cert_bytes):
 def sign_private_key(data_to_sign, private_key_bytes, signature_algorithm):
     # Determine the key type and apply appropriate padding and algorithm.
     # This example assumes an RSA key. Different logic is needed for other key types (e.g., EC).
-    try:
-        success = check_key_cert_match(
-            private_key_bytes, client_certificate_chain()
-        )
-        if not success:
-            raise ValueError("provided key and certificate do not match.")
-        private_key = serialization.load_pem_private_key(
-            private_key_bytes,
-            password=None,
-            backend=default_backend(),
-        )
-        if not isinstance(private_key, rsa.RSAPrivateKey):
-            raise ValueError("The provided key is not an RSA private key.")
-    except Exception as e:
-        raise e
+    success = check_key_cert_match(private_key_bytes, client_certificate_chain())
+    if not success:
+        raise ValueError("provided key and certificate do not match.")
+    private_key = serialization.load_pem_private_key(
+        private_key_bytes,
+        password=None,
+        backend=default_backend(),
+    )
+    if not isinstance(private_key, rsa.RSAPrivateKey):
+        raise ValueError("The provided key is not an RSA private key.")
 
     if isinstance(private_key, rsa.RSAPrivateKey):
+        if (
+            signature_algorithm
+            != grpc.experimental.PrivateKeySignatureAlgorithm.RSA_PSS_RSAE_SHA256
+        ):
+            raise ValueError("Expect the private key to be PSS SHA256")
         try:
-            if (
-                signature_algorithm
-                != grpc.experimental.PrivateKeySignatureAlgorithm.RSA_PSS_RSAE_SHA256
-            ):
-                raise ValueError("Expect the private key to be PSS SHA256")
             hasher = hashes.SHA256()
             pss_padding = padding.PSS(
                 mgf=padding.MGF1(hasher),
@@ -110,7 +105,7 @@ def sign_private_key(data_to_sign, private_key_bytes, signature_algorithm):
             signature = private_key.sign(data_to_sign, pss_padding, hasher)
             return signature
         except Exception as e:
-            raise e
+            raise
     else:
         raise ValueError(
             "Unsupported private key type. This example only supports RSA."
