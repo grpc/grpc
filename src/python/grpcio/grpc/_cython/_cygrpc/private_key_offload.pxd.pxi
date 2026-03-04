@@ -82,7 +82,6 @@ cdef extern from "src/python/grpcio/grpc/_cython/_cygrpc/private_key_signing/pri
     cdef cppclass PrivateKeySignerPyWrapper:
         ctypedef void (*CancelWrapperForPy)(void*) noexcept nogil
         cppclass AsyncResult:
-            AsyncResult(CancelWrapperForPy, void*)
             CancelWrapperForPy cancel_wrapper
             void* py_user_cancel_fn
         cppclass PrivateKeySignerPyWrapperResult:
