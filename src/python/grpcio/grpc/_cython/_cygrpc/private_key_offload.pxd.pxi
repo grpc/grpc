@@ -75,7 +75,7 @@ cpdef enum SignatureAlgorithm:
     RSA_PSS_RSAE_SHA256 = <int>CSignatureAlgorithm.kRsaPssRsaeSha256
     RSA_PSS_RSAE_SHA384 = <int>CSignatureAlgorithm.kRsaPssRsaeSha384
     RSA_PSS_RSAE_SHA512 = <int>CSignatureAlgorithm.kRsaPssRsaeSha512
-    
+
 
 
 cdef extern from "src/python/grpcio/grpc/_cython/_cygrpc/private_key_signing/private_key_signer_py_wrapper.h" namespace "grpc_python":

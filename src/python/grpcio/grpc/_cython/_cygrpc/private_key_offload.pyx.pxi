@@ -26,7 +26,7 @@ cdef StatusOr[string] MakeStringResult(string result):
 
 cdef class OnCompleteWrapper:
   cdef unique_ptr[CompletionContext] completion_context
-  
+
   # Makes this class callable
   def __call__(self, result):
     cdef StatusOr[string] cpp_result
@@ -100,7 +100,7 @@ cdef void cancel_wrapper(void* py_cancel_user_fn) noexcept nogil:
     except Exception as e:
       # Exceptions in cancellation
       _LOGGER.warning('Exception in user-provided cancellation function: %s', e)
-    
+
 
 # To be called from the python layer when the user provides a signer function.
 cdef shared_ptr[PrivateKeySigner] build_private_key_signer(py_user_func):
