@@ -34,6 +34,7 @@ cdef class AioChannel:
         self.target = target
         self.loop = loop
         self._status = AIO_CHANNEL_STATUS_READY
+        self._registered_call_handles = {}
 
         if credentials is None:
             self._is_secure = False
@@ -110,11 +111,32 @@ cdef class AioChannel:
     def closed(self):
         return self._status in (AIO_CHANNEL_STATUS_CLOSING, AIO_CHANNEL_STATUS_DESTROYED)
 
+    def get_registered_call_handle(self, bytes method):
+        """
+        Get or registers a call handler for a method.
+
+        This method is not thread-safe. It is acceptable since method is only called
+        during multicallable construction, not during RPC exeution. Moreover there
+        are no `await` suspension points, which can interleave.
+
+        Args:
+          method: Required, the method name for the RPC.
+
+        Returns:
+          The registered call handle pointer as a Python Long.
+        """
+        if method not in self._registered_call_handles:
+            self._registered_call_handles[method] = cpython.PyLong_FromVoidPtr(
+                grpc_channel_register_call(
+                    self.channel, <const char*>method, NULL, NULL))
+        return self._registered_call_handles[method]
+
     def call(self,
              bytes method,
              object deadline,
              object python_call_credentials,
-             object wait_for_ready):
+             object wait_for_ready,
+             object registered_call_handle = None):
         """Assembles a Cython Call object.
 
         Returns:
@@ -132,4 +154,4 @@ cdef class AioChannel:
         else:
             cython_call_credentials = None
 
-        return _AioCall(self, deadline, method, cython_call_credentials, wait_for_ready)
+        return _AioCall(self, deadline, method, cython_call_credentials, wait_for_ready, registered_call_handle)
