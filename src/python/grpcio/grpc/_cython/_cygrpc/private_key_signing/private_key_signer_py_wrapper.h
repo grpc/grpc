@@ -27,7 +27,7 @@
 #include "grpc/private_key_signer.h"
 #include "absl/status/statusor.h"
 
-namespace grpc_core {
+namespace grpc_python {
 
 // A C-style callback for the PrivateKeySigner Cancel function.
 typedef void (*CancelWrapperForPy)(void* cancel_data);
@@ -80,7 +80,7 @@ typedef PrivateKeySignerPyWrapperResult (*SignWrapperForPy)(
 // An implementation of PrivateKeySigner for interop with Python.
 // It is thread-safe to call Sign on this class.
 class PrivateKeySignerPyWrapper
-    : public PrivateKeySigner,
+    : public grpc_core::PrivateKeySigner,
       public std::enable_shared_from_this<PrivateKeySignerPyWrapper> {
  public:
   PrivateKeySignerPyWrapper(SignWrapperForPy sign_py_wrapper,
@@ -108,10 +108,11 @@ class PrivateKeySignerPyWrapper
 };
 
 // The entry point for Cython to build a PrivateKeySigner.
-std::shared_ptr<PrivateKeySigner> BuildPrivateKeySigner(
+std::shared_ptr<grpc_core::PrivateKeySigner> BuildPrivateKeySigner(
     SignWrapperForPy sign, void* py_user_sign_fn, PyObject* destroy_event);
 
-class AsyncSigningHandlePyWrapper : public PrivateKeySigner::AsyncSigningHandle {
+class AsyncSigningHandlePyWrapper
+    : public grpc_core::PrivateKeySigner::AsyncSigningHandle {
  public:
   AsyncSigningHandlePyWrapper(CancelWrapperForPy cancel_py_wrapper,
                               void* py_user_cancel_fn)
@@ -135,6 +136,6 @@ class AsyncSigningHandlePyWrapper : public PrivateKeySigner::AsyncSigningHandle 
 // just construct them here and pass them down.
 std::string MakeStringForCython(const char* inp);
 std::string MakeStringForCython(const char* inp, size_t size);
-}  // namespace grpc_core
+}  // namespace grpc_python
 
 #endif  // GRPC_PRIVATE_KEY_SIGNER_PY_WRAPPER_H

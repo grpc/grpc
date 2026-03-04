@@ -25,7 +25,7 @@
 #include "Python.h"
 #include "grpc/private_key_signer.h"
 
-namespace grpc_core {
+namespace grpc_python {
 
 PrivateKeySignerPyWrapper::~PrivateKeySignerPyWrapper() {
   PyGILState_STATE state = PyGILState_Ensure();
@@ -38,7 +38,7 @@ PrivateKeySignerPyWrapper::~PrivateKeySignerPyWrapper() {
 }
 
 std::variant<absl::StatusOr<std::string>,
-             std::shared_ptr<PrivateKeySigner::AsyncSigningHandle>>
+             std::shared_ptr<grpc_core::PrivateKeySigner::AsyncSigningHandle>>
 PrivateKeySignerPyWrapper::Sign(absl::string_view data_to_sign,
                                 SignatureAlgorithm signature_algorithm,
                                 OnSignComplete on_sign_complete) {
@@ -66,7 +66,7 @@ void PrivateKeySignerPyWrapper::Cancel(
   handle_impl->Cancel();
 }
 
-std::shared_ptr<PrivateKeySigner> BuildPrivateKeySigner(
+std::shared_ptr<grpc_core::PrivateKeySigner> BuildPrivateKeySigner(
     SignWrapperForPy sign_py_wrapper, void* py_user_sign_fn,
     PyObject* destroy_event) {
   PyGILState_STATE state = PyGILState_Ensure();
@@ -96,4 +96,4 @@ std::string MakeStringForCython(const char* inp, size_t size) {
 
 std::string MakeStringForCython(const char* inp) { return std::string(inp); }
 
-}  // namespace grpc_core
+}  // namespace grpc_python

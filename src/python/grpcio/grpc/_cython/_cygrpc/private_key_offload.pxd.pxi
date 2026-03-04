@@ -77,7 +77,7 @@ cpdef enum SignatureAlgorithm:
     
 
 
-cdef extern from "src/python/grpcio/grpc/_cython/_cygrpc/private_key_signing/private_key_signer_py_wrapper.h" namespace "grpc_core":
+cdef extern from "src/python/grpcio/grpc/_cython/_cygrpc/private_key_signing/private_key_signer_py_wrapper.h" namespace "grpc_python":
     ctypedef void (*CancelWrapperForPy)(void*) noexcept nogil
     cdef cppclass AsyncResult:
         AsyncResult(CancelWrapperForPy, void*)
