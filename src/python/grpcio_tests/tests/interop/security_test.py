@@ -14,6 +14,7 @@
 
 import faulthandler
 from functools import partial
+import gc
 import queue
 import sys
 import threading
