@@ -60,8 +60,8 @@ std::shared_ptr<PrivateKeySigner> BuildPrivateKeySigner(
     SignWrapperForPy sign_py_wrapper, void* py_user_sign_fn,
     PyObject* destroy_event) {
   PyGILState_STATE state = PyGILState_Ensure();
-  Py_INCREF(static_cast<PyObject*>(py_user_sign_fn));
-  Py_INCREF(static_cast<PyObject*>(destroy_event));
+  Py_INCREF(py_user_sign_fn);
+  Py_INCREF(destroy_event);
   PyGILState_Release(state);
   return std::make_shared<PrivateKeySignerPyWrapper>(
       sign_py_wrapper, py_user_sign_fn, destroy_event);
