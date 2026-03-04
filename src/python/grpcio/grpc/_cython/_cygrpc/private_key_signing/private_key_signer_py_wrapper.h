@@ -55,7 +55,7 @@ struct PrivateKeySignerPyWrapperResult {
 // The context needed for calling the Completion callback at the Cython layer.
 // Wrapped in regular Python and passed to the user for them to be able to call
 // the proper on_complete callback passed out by gRPC Core.
-class CompletionContext {
+class CompletionContext final {
  public:
   explicit CompletionContext(
       grpc_core::PrivateKeySigner::OnSignComplete on_complete)
@@ -79,7 +79,7 @@ typedef PrivateKeySignerPyWrapperResult (*SignWrapperForPy)(
 
 // An implementation of PrivateKeySigner for interop with Python.
 // It is thread-safe to call Sign on this class.
-class PrivateKeySignerPyWrapper
+class PrivateKeySignerPyWrapper final
     : public grpc_core::PrivateKeySigner,
       public std::enable_shared_from_this<PrivateKeySignerPyWrapper> {
  public:
@@ -88,11 +88,11 @@ class PrivateKeySignerPyWrapper
       : sign_py_wrapper_(sign_py_wrapper),
         py_user_sign_fn(py_user_sign_fn),
         destroy_event_(destroy_event) {}
+  ~PrivateKeySignerPyWrapper() override;
+
   std::variant<absl::StatusOr<std::string>, std::shared_ptr<AsyncSigningHandle>>
   Sign(absl::string_view data_to_sign, SignatureAlgorithm signature_algorithm,
        OnSignComplete on_sign_complete) override;
-
-  ~PrivateKeySignerPyWrapper() override;
 
   void Cancel(std::shared_ptr<AsyncSigningHandle> handle) override;
 
