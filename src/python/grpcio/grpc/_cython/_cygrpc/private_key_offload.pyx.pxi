@@ -25,13 +25,13 @@ cdef StatusOr[string] MakeStringResult(string result):
   return StatusOr[string](result)
 
 cdef class OnCompleteWrapper:
-  cdef unique_ptr[CompletionContext] completion_context
+  cdef unique_ptr[PrivateKeySignerPyWrapper.CompletionContext] completion_context
 
   # Makes this class callable
   def __call__(self, result):
     cdef StatusOr[string] cpp_result
     cdef string cpp_string
-    cdef CompletionContext* local_completion_context
+    cdef PrivateKeySignerPyWrapper.CompletionContext* local_completion_context
     local_completion_context = self.completion_context.get()
     if isinstance(result, bytes):
       # We got a signature
@@ -48,11 +48,11 @@ cdef class OnCompleteWrapper:
     with nogil:
       local_completion_context.OnComplete(cpp_result)
 
-cdef PrivateKeySignerPyWrapperResult async_sign_wrapper(string_view inp, CSignatureAlgorithm algorithm, void* py_user_sign_fn, unique_ptr[CompletionContext] completion_context) noexcept nogil:
+cdef PrivateKeySignerPyWrapper.PrivateKeySignerPyWrapperResult async_sign_wrapper(string_view inp, CSignatureAlgorithm algorithm, void* py_user_sign_fn, unique_ptr[PrivateKeySignerPyWrapper.CompletionContext] completion_context) noexcept nogil:
   cdef string cpp_string
   cdef const char* data
   cdef size_t size
-  cdef PrivateKeySignerPyWrapperResult cpp_result
+  cdef PrivateKeySignerPyWrapper.PrivateKeySignerPyWrapperResult cpp_result
   with gil:
     # Cast the void* pointer holding the user's python sign impl
     py_user_func = <object>py_user_sign_fn
@@ -111,5 +111,5 @@ cdef shared_ptr[PrivateKeySigner] build_private_key_signer(py_user_func):
   destroy_event = threading.Event()
   destroy_lambda = lambda event=destroy_event: event.wait()
   threading.Thread(target=destroy_lambda, daemon=False).start()
-  py_private_key_signer = BuildPrivateKeySigner(async_sign_wrapper, <void*>py_user_func, <PyObject*>destroy_event)
+  py_private_key_signer = PrivateKeySignerPyWrapper.BuildPrivateKeySigner(async_sign_wrapper, <void*>py_user_func, <PyObject*>destroy_event)
   return py_private_key_signer

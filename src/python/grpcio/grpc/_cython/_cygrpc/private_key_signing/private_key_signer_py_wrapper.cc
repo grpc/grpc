@@ -66,9 +66,10 @@ void PrivateKeySignerPyWrapper::Cancel(
   handle_impl->Cancel();
 }
 
-std::shared_ptr<grpc_core::PrivateKeySigner> BuildPrivateKeySigner(
-    SignWrapperForPy sign_py_wrapper, void* py_user_sign_fn,
-    PyObject* destroy_event) {
+std::shared_ptr<grpc_core::PrivateKeySigner>
+PrivateKeySignerPyWrapper::BuildPrivateKeySigner(
+    PrivateKeySignerPyWrapper::SignWrapperForPy sign_py_wrapper,
+    void* py_user_sign_fn, PyObject* destroy_event) {
   PyGILState_STATE state = PyGILState_Ensure();
   Py_INCREF(py_user_sign_fn);
   Py_INCREF(destroy_event);

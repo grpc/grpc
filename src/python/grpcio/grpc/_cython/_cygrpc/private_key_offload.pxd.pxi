@@ -79,18 +79,20 @@ cpdef enum SignatureAlgorithm:
 
 
 cdef extern from "src/python/grpcio/grpc/_cython/_cygrpc/private_key_signing/private_key_signer_py_wrapper.h" namespace "grpc_python":
-    ctypedef void (*CancelWrapperForPy)(void*) noexcept nogil
-    cdef cppclass AsyncResult:
-        AsyncResult(CancelWrapperForPy, void*)
-        CancelWrapperForPy cancel_wrapper
-        void* py_user_cancel_fn
-    cdef cppclass PrivateKeySignerPyWrapperResult:
-        StatusOr[string] sync_result
-        AsyncResult async_result
-        bint is_sync
-    ctypedef PrivateKeySignerPyWrapperResult(*SignWrapperForPy)(string_view, CSignatureAlgorithm, void*, unique_ptr[CompletionContext]) noexcept nogil
-    shared_ptr[PrivateKeySigner] BuildPrivateKeySigner(SignWrapperForPy, void*, PyObject*)
-    cdef cppclass CompletionContext:
-        void OnComplete(StatusOr[string]) nogil
+    cdef cppclass PrivateKeySignerPyWrapper:
+        ctypedef void (*CancelWrapperForPy)(void*) noexcept nogil
+        cppclass AsyncResult:
+            AsyncResult(CancelWrapperForPy, void*)
+            CancelWrapperForPy cancel_wrapper
+            void* py_user_cancel_fn
+        cppclass PrivateKeySignerPyWrapperResult:
+            StatusOr[string] sync_result
+            AsyncResult async_result
+            bint is_sync
+        cppclass CompletionContext:
+            void OnComplete(StatusOr[string]) nogil
+        ctypedef PrivateKeySignerPyWrapperResult(*SignWrapperForPy)(string_view, CSignatureAlgorithm, void*, unique_ptr[CompletionContext]) noexcept nogil
+        @staticmethod
+        shared_ptr[PrivateKeySigner] BuildPrivateKeySigner(SignWrapperForPy, void*, PyObject*)
     cdef string MakeStringForCython(const char*) noexcept
     cdef string MakeStringForCython(const char*, size_t) noexcept
