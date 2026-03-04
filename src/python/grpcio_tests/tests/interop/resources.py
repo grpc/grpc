@@ -131,6 +131,7 @@ def sync_client_private_key_signer(
     )
     return signature
 
+
 def bad_async_signer_worker(data_to_sign, signature_algorithm, on_complete):
     """
     A signing function that uses a mismatched private key and certificate.
