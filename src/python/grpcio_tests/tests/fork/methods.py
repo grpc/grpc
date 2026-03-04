@@ -315,10 +315,11 @@ def _connectivity_watch(channel, args):
             child_stub = test_pb2_grpc.TestServiceStub(child_channel)
             child_channel.subscribe(child_connectivity_callback)
             _async_unary(child_stub)
+            _async_unary(stub)
             if not child_channel_ready_event.wait(timeout=_RPC_TIMEOUT_S):
                 raise ValueError("Child channel did not move to READY")
             if not parent_channel_ready_event.wait(timeout=_RPC_TIMEOUT_S):
-                raise ValueError("Child channel did not move to READY")
+                raise ValueError("Parent channel did not move to READY")
             child_channel.unsubscribe(child_connectivity_callback)
             channel.unsubscribe(parent_connectivity_callback)
 
