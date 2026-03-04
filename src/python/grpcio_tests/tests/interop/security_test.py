@@ -137,6 +137,27 @@ class SecurityTest(unittest.TestCase):
                 stub.EmptyCall(empty_pb2.Empty())
         self.assertIsNotNone(context.exception)
 
+    def test_sync_signer_raises_directly(self):
+        """Expect failure using a custom sync signer that directly raises an exception"""
+        with grpc.secure_channel(
+            "localhost:{}".format(self.port),
+            grpc.experimental.ssl_channel_credentials_with_custom_signer(
+                private_key_sign_fn=resources.sync_raises_exception,
+                root_certificates=resources.test_root_certificates(),
+                certificate_chain=resources.client_certificate_chain(),
+            ),
+            (
+                (
+                    "grpc.ssl_target_name_override",
+                    _SERVER_HOST_OVERRIDE,
+                ),
+            ),
+        ) as channel:
+            stub = test_pb2_grpc.TestServiceStub(channel)
+            with self.assertRaises(Exception) as context:
+                stub.EmptyCall(empty_pb2.Empty())
+        self.assertIsNotNone(context.exception)
+
     def test_bad_async_signer(self):
         """
         Expect failure using a custom async private key signer.

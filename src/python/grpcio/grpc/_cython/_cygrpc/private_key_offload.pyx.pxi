@@ -73,10 +73,6 @@ cdef PrivateKeySignerPyWrapper.PrivateKeySignerPyWrapperResult async_sign_wrappe
         # We got a signature
         cpp_string = MakeStringForCython(PyBytes_AsString(py_result), PyBytes_GET_SIZE(py_result))
         cpp_result.sync_result = MakeStringResult(cpp_string)
-      elif isinstance(py_result, Exception):
-        # If python returns an exception, convert to absl::Status
-        cpp_string = MakeStringForCython(PyBytes_AsString(str(py_result).encode('utf-8')))
-        cpp_result.sync_result = MakeInternalError(cpp_string)
       elif callable(py_result):
         # Cancellation func
         cpp_result.is_sync = False

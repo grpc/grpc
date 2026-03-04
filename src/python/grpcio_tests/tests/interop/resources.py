@@ -83,16 +83,16 @@ def sign_private_key(data_to_sign, private_key_bytes, signature_algorithm):
             private_key_bytes, client_certificate_chain()
         )
         if not success:
-            return ValueError("provided key and certificate do not match.")
+            raise ValueError("provided key and certificate do not match.")
         private_key = serialization.load_pem_private_key(
             private_key_bytes,
             password=None,
             backend=default_backend(),
         )
         if not isinstance(private_key, rsa.RSAPrivateKey):
-            return ValueError("The provided key is not an RSA private key.")
+            raise ValueError("The provided key is not an RSA private key.")
     except Exception as e:
-        return e
+        raise e
 
     if isinstance(private_key, rsa.RSAPrivateKey):
         try:
@@ -100,7 +100,7 @@ def sign_private_key(data_to_sign, private_key_bytes, signature_algorithm):
                 signature_algorithm
                 != grpc.experimental.PrivateKeySignatureAlgorithm.RSA_PSS_RSAE_SHA256
             ):
-                return ValueError("Expect the private key to be PSS SHA256")
+                raise ValueError("Expect the private key to be PSS SHA256")
             hasher = hashes.SHA256()
             pss_padding = padding.PSS(
                 mgf=padding.MGF1(hasher),
@@ -110,9 +110,9 @@ def sign_private_key(data_to_sign, private_key_bytes, signature_algorithm):
             signature = private_key.sign(data_to_sign, pss_padding, hasher)
             return signature
         except Exception as e:
-            return e
+            raise e
     else:
-        return ValueError(
+        raise ValueError(
             "Unsupported private key type. This example only supports RSA."
         )
 
@@ -123,7 +123,6 @@ def sync_client_private_key_signer(
     on_complete,
 ):
     """
-    Of type CustomPrivateKeySign - Callable[[bytes, SignatureAlgorithm], bytes]
     Takes in data_to_sign and signs it using the test private key with a sync return
     """
     private_key_bytes = client_private_key()
@@ -131,7 +130,6 @@ def sync_client_private_key_signer(
         data_to_sign, private_key_bytes, signature_algorithm
     )
     return signature
-
 
 def bad_async_signer_worker(data_to_sign, signature_algorithm, on_complete):
     """
@@ -141,9 +139,13 @@ def bad_async_signer_worker(data_to_sign, signature_algorithm, on_complete):
     """
     # Use the server private key and expect failure
     private_key_bytes = server_private_key()
-    signature = sign_private_key(
-        data_to_sign, private_key_bytes, signature_algorithm
-    )
+    signature = ValueError("bad signature")
+    try:
+        signature = sign_private_key(
+            data_to_sign, private_key_bytes, signature_algorithm
+        )
+    except Exception as e:
+        signature = e
     on_complete(signature)
 
 
@@ -151,7 +153,6 @@ def bad_async_client_private_key_signer(
     data_to_sign, signature_algorithm, on_complete
 ):
     """
-    Of type CustomPrivateKeySign - Callable[[bytes, SignatureAlgorithm], bytes]
     Takes in data_to_sign and signs it using the wrong private key, resulting in handshake failure
     """
     threading.Thread(
@@ -180,7 +181,6 @@ def async_client_private_key_signer(
     data_to_sign, signature_algorithm, on_complete
 ):
     """
-    Of type CustomPrivateKeySign - Callable[[bytes, SignatureAlgorithm], bytes]
     Takes in data_to_sign and signs it using the test private key
     """
     threading.Thread(
@@ -194,7 +194,6 @@ def sync_bad_client_private_key_signer(
     data_to_sign, signature_algorithm, on_complete
 ):
     """
-    Of type CustomPrivateKeySign - Callable[[bytes, SignatureAlgorithm], bytes]
     Takes in data_to_sign and signs it using the wrong private key and returns synchronously
     """
     # use the server's private key
@@ -203,6 +202,13 @@ def sync_bad_client_private_key_signer(
         data_to_sign, private_key_bytes, signature_algorithm
     )
     return signature
+
+
+def sync_raises_exception(data_to_sign, signature_algorithm, on_complete):
+    """
+    raises an exception
+    """
+    raise ValueError("Intentional testing exception")
 
 
 class CancelCallable:
