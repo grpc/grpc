@@ -46,10 +46,13 @@ class ServerConfigSelector : public RefCounted<ServerConfigSelector> {
   virtual void BuildFilterChains(FilterChainBuilder& builder) = 0;
 
   // Configuration to apply to an incoming call
+  // TODO(roth): When we remove the xds_server_filter_chain_per_route
+  // experiment, remove this struct and have GetCallConfig() return
+  // the filter chain directly.
   struct CallConfig {
     const ServiceConfigParser::ParsedConfigVector* method_configs = nullptr;
     RefCountedPtr<ServiceConfig> service_config;
-    RefCountedPtr<const FilterChain> filter_chain;
+    absl::StatusOr<RefCountedPtr<const FilterChain>> filter_chain;
   };
   // Returns the CallConfig to apply to a call based on the incoming \a metadata
   virtual absl::StatusOr<CallConfig> GetCallConfig(

@@ -319,10 +319,20 @@ class XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
     XdsServerConfigSelector final : public ServerConfigSelector {
  public:
   static absl::StatusOr<RefCountedPtr<XdsServerConfigSelector>> Create(
-      const XdsHttpFilterRegistry& http_filter_registry,
-      std::shared_ptr<const XdsRouteConfigResource> rds_update,
+      RefCountedPtr<GrpcXdsClient> xds_client,
+      std::shared_ptr<const XdsRouteConfigResource> route_config,
       const std::vector<XdsListenerResource::HttpConnectionManager::HttpFilter>&
           http_filters);
+
+  XdsServerConfigSelector(
+      RefCountedPtr<GrpcXdsClient> xds_client,
+      std::shared_ptr<const XdsRouteConfigResource> route_config,
+      const std::vector<XdsListenerResource::HttpConnectionManager::HttpFilter>&
+          http_filters)
+      : xds_client_(std::move(xds_client)),
+        route_config_(std::move(route_config)),
+        http_filters_(http_filters) {}
+
   ~XdsServerConfigSelector() override = default;
 
   void BuildFilterChains(FilterChainBuilder& builder) override;
@@ -333,13 +343,9 @@ class XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
  private:
   struct VirtualHost {
     struct Route {
-      // true if an action other than kNonForwardingAction is configured.
-      bool unsupported_action;
-      // TODO(roth): Consider holding a ref to the RDS resource and storing
-      // a pointer to the matchers within that RDS resource, rather than
-      // copying the matchers here.
-      XdsRouteConfigResource::Route::Matchers matchers;
+      const XdsRouteConfigResource::Route* route;
       RefCountedPtr<ServiceConfig> method_config;
+      absl::StatusOr<RefCountedPtr<const FilterChain>> filter_chain;
     };
 
     class RouteListIterator final : public XdsRouting::RouteListIterator {
@@ -351,14 +357,14 @@ class XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
 
       const XdsRouteConfigResource::Route::Matchers& GetMatchersForRoute(
           size_t index) const override {
-        return (*routes_)[index].matchers;
+        return (*routes_)[index].route->matchers;
       }
 
      private:
       const std::vector<Route>* routes_;
     };
 
-    std::vector<std::string> domains;
+    const XdsRouteConfigResource::VirtualHost* virtual_host;
     std::vector<Route> routes;
   };
 
@@ -373,12 +379,20 @@ class XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
 
     const std::vector<std::string>& GetDomainsForVirtualHost(
         size_t index) const override {
-      return (*virtual_hosts_)[index].domains;
+      return (*virtual_hosts_)[index].virtual_host->domains;
     }
 
    private:
     const std::vector<VirtualHost>* virtual_hosts_;
   };
+
+  RefCountedPtr<GrpcXdsClient> xds_client_;
+  std::shared_ptr<const XdsRouteConfigResource> route_config_;
+  // TODO(roth): Consider holding a ref to the LDS resource and storing
+  // a pointer to the HTTP filters within that LDS resource, rather than
+  // copying the HTTP filters here.
+  const std::vector<XdsListenerResource::HttpConnectionManager::HttpFilter>
+     http_filters_;
 
   std::vector<VirtualHost> virtual_hosts_;
 };
@@ -412,9 +426,7 @@ class XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
       return static_resource_.status();
     }
     return XdsServerConfigSelector::Create(
-        DownCast<const GrpcXdsBootstrap&>(xds_client_->bootstrap())
-            .http_filter_registry(),
-        static_resource_.value(), http_filters_);
+        xds_client_, static_resource_.value(), http_filters_);
   }
 
   void CancelWatch() override { watcher_.reset(); }
@@ -1121,8 +1133,13 @@ void XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
                   http_filter.config_proto_type);
           GRPC_CHECK_NE(filter_impl,
                         nullptr);  // Enforced in config validation.
-          filter_impl->UpdateBlackboard(http_filter.config, old_blackboard,
-                                        new_blackboard);
+          if (!IsXdsServerFilterChainPerRouteEnabled()) {
+            filter_impl->UpdateBlackboard(http_filter.config, old_blackboard,
+                                          new_blackboard);
+            continue;
+          }
+          filter_impl->UpdateBlackboard(*http_filter.filter_config,
+                                        old_blackboard, new_blackboard);
         }
       });
 }
@@ -1136,23 +1153,27 @@ absl::StatusOr<
                       FilterChainMatchManager::XdsServerConfigSelector>>
 XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
     XdsServerConfigSelector::Create(
-        const XdsHttpFilterRegistry& http_filter_registry,
-        std::shared_ptr<const XdsRouteConfigResource> rds_update,
+        RefCountedPtr<GrpcXdsClient> xds_client,
+        std::shared_ptr<const XdsRouteConfigResource> route_config,
         const std::vector<
             XdsListenerResource::HttpConnectionManager::HttpFilter>&
             http_filters) {
-  auto config_selector = MakeRefCounted<XdsServerConfigSelector>();
-  for (auto& vhost : rds_update->virtual_hosts) {
+  const XdsHttpFilterRegistry& http_filter_registry =
+      DownCast<const GrpcXdsBootstrap&>(xds_client->bootstrap())
+          .http_filter_registry();
+  auto config_selector = MakeRefCounted<XdsServerConfigSelector>(
+      std::move(xds_client), std::move(route_config), http_filters);
+  // TODO(roth): When we remove the xds_server_filter_chain_per_route
+  // experiment, this code will no longer need to fail, so we can move
+  // it into the ctor, and we'll no longer need this factory function.
+  for (auto& vhost : config_selector->route_config_->virtual_hosts) {
     config_selector->virtual_hosts_.emplace_back();
     auto& virtual_host = config_selector->virtual_hosts_.back();
-    virtual_host.domains = vhost.domains;
+    virtual_host.virtual_host = &vhost;
     for (auto& route : vhost.routes) {
       virtual_host.routes.emplace_back();
       auto& config_selector_route = virtual_host.routes.back();
-      config_selector_route.matchers = route.matchers;
-      config_selector_route.unsupported_action =
-          std::get_if<XdsRouteConfigResource::Route::NonForwardingAction>(
-              &route.action) == nullptr;
+      config_selector_route.route = &route;
       if (!IsXdsServerFilterChainPerRouteEnabled()) {
         auto result = XdsRouting::GeneratePerHTTPFilterConfigsForMethodConfig(
             http_filter_registry, http_filters, vhost, route, nullptr,
@@ -1187,7 +1208,19 @@ XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
 
 void XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
     XdsServerConfigSelector::BuildFilterChains(FilterChainBuilder& builder) {
-// FIXME: implement
+  const XdsHttpFilterRegistry& http_filter_registry =
+      DownCast<const GrpcXdsBootstrap&>(xds_client_->bootstrap())
+          .http_filter_registry();
+  for (auto& vhost : virtual_hosts_) {
+    for (auto& route : vhost.routes) {
+      XdsRouting::PerRouteFilterChainBuilder per_route_builder(
+          http_filters_, http_filter_registry, *vhost.virtual_host, builder,
+          /*add_last_filter=*/nullptr, /*old_blackboard=*/nullptr,
+          /*new_blackboard=*/nullptr);
+      route.filter_chain =
+          per_route_builder.BuildFilterChainForRoute(*route.route);
+    }
+  }
 }
 
 absl::StatusOr<ServerConfigSelector::CallConfig>
@@ -1217,7 +1250,9 @@ XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
   if (route_index.has_value()) {
     auto& route = virtual_host.routes[route_index.value()];
     // Found the matching route
-    if (route.unsupported_action) {
+    if (!std::holds_alternative<
+            XdsRouteConfigResource::Route::NonForwardingAction>(
+                route.route->action)) {
       return absl::UnavailableError("matching route has unsupported action");
     }
     if (route.method_config != nullptr) {
@@ -1225,7 +1260,7 @@ XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
           route.method_config->GetMethodParsedConfigVector(grpc_empty_slice());
       call_config.service_config = route.method_config;
     }
-// FIXME: set call_config.filter_chain
+    call_config.filter_chain = route.filter_chain;
     return call_config;
   }
   return absl::UnavailableError("no route matched");
@@ -1282,9 +1317,7 @@ XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
     return resource.status();
   }
   return XdsServerConfigSelector::Create(
-      DownCast<const GrpcXdsBootstrap&>(xds_client_->bootstrap())
-          .http_filter_registry(),
-      resource.value(), http_filters_);
+      xds_client_, resource.value(), http_filters_);
 }
 
 void XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
@@ -1314,9 +1347,7 @@ void XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
     watcher_->OnServerConfigSelectorUpdate(resource_.status());
   } else {
     watcher_->OnServerConfigSelectorUpdate(XdsServerConfigSelector::Create(
-        DownCast<const GrpcXdsBootstrap&>(xds_client_->bootstrap())
-            .http_filter_registry(),
-        *resource_, http_filters_));
+        xds_client_, *resource_, http_filters_));
   }
 }
 

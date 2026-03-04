@@ -56,6 +56,7 @@
 #include "src/core/lib/promise/cancel_callback.h"
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/promise/map.h"
+#include "src/core/lib/promise/observable.h"
 #include "src/core/lib/promise/pipe.h"
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/promise/promise.h"
@@ -72,6 +73,7 @@
 #include "src/core/lib/surface/legacy_channel.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/error_utils.h"
+#include "src/core/server/server_config_selector.h"
 #include "src/core/telemetry/stats.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/debug_location.h"
@@ -1192,7 +1194,7 @@ class FilterChainBuilderImpl final : public FilterChainBuilder {
   FilterChainBuilderImpl(
       const ChannelArgs& channel_args, Blackboard* blackboard,
       std::function<void(ClientMetadata&)> on_client_initial_metadata,
-      RefCountedPtr<UnstartedCallDestination> destination)
+      RefCountedPtr<CallDestination> destination)
       : channel_args_(channel_args),
         blackboard_(blackboard),
         on_client_initial_metadata_(std::move(on_client_initial_metadata)),
@@ -1202,8 +1204,7 @@ class FilterChainBuilderImpl final : public FilterChainBuilder {
     if (builder_ == nullptr) InitBuilder();
     auto top_of_stack_destination = builder_->Build(destination_);
     if (!top_of_stack_destination.ok()) {
-      return MaybeRewriteIllegalStatusCode(top_of_stack_destination.status(),
-                                           "filter stack construction");
+      return top_of_stack_destination.status();
     }
     builder_.reset();
     return MakeRefCounted<FilterChainImpl>(
@@ -1220,7 +1221,8 @@ class FilterChainBuilderImpl final : public FilterChainBuilder {
   void InitBuilder() {
     builder_ =
         std::make_unique<InterceptionChainBuilder>(channel_args_, blackboard_);
-    builder_.AddOnClientInitialMetadata(on_client_initial_metadata_);
+    builder_->AddOnClientInitialMetadata(on_client_initial_metadata_);
+// FIXME: is this the right order with respect to the xDS filters?
     CoreConfiguration::Get().channel_init().AddToInterceptionChainBuilder(
         GRPC_SERVER_CHANNEL, *builder_);
   }
@@ -1228,7 +1230,7 @@ class FilterChainBuilderImpl final : public FilterChainBuilder {
   const ChannelArgs channel_args_;
   const Blackboard* blackboard_;
   const std::function<void(ClientMetadata&)> on_client_initial_metadata_;
-  const RefCountedPtr<UnstartedCallDestination> destination_;
+  const RefCountedPtr<CallDestination> destination_;
   std::unique_ptr<InterceptionChainBuilder> builder_;
 };
 
@@ -1239,35 +1241,50 @@ class ServerConfigSelectorCallDestination final
       RefCountedPtr<ServerConfigSelectorProvider> provider,
       const ChannelArgs& args, RefCountedPtr<Blackboard> blackboard,
       std::function<void(ClientMetadata&)> on_client_initial_metadata,
-      RefCountedPtr<UnstartedCallDestination> destination)
+      RefCountedPtr<CallDestination> destination)
       : provider_(std::move(provider)),
         args_(args),
         blackboard_(std::move(blackboard)),
         on_client_initial_metadata_(std::move(on_client_initial_metadata)),
-        destination_(std::move(destination)) {}
+        destination_(std::move(destination)),
+        config_selector_(nullptr) {
+// FIXME: do we need to grab the initial config selector from here first?
+    (void)provider_->Watch(std::make_unique<Watcher>(
+        WeakRefAsSubclass<ServerConfigSelectorCallDestination>()));
+  }
 
   void StartCall(UnstartedCallHandler unstarted_handler) override {
     unstarted_handler.SpawnGuardedUntilCallCompletes(
         "select filter chain",
         [self = RefAsSubclass<ServerConfigSelectorCallDestination>(),
+         last_config_selector =
+             absl::StatusOr<RefCountedPtr<ServerConfigSelector>>(nullptr),
          unstarted_handler]() mutable {
           return Map(
-              self->config_selector_.Next(),
-              [self, unstarted_handler](
+              self->config_selector_.Next(last_config_selector),
+              [self, unstarted_handler, &last_config_selector](
                   absl::StatusOr<RefCountedPtr<ServerConfigSelector>>
                       config_selector) mutable {
-                if (!config_selector.ok()) return config_selector.status();
-                auto call_config = (*config_selector)->GetCallConfig(
-                    unstarted_handler.UnprocessedClientInitialMetadata());
+                last_config_selector = std::move(config_selector);
+                if (!last_config_selector.ok()) {
+                  return last_config_selector.status();
+                }
+                auto call_config = (*last_config_selector)->GetCallConfig(
+                    &unstarted_handler.UnprocessedClientInitialMetadata());
                 if (!call_config.ok()) return call_config.status();
+                if (!call_config->filter_chain.ok()) {
+                  return call_config->filter_chain.status();
+                }
                 auto& filter_chain = DownCast<const FilterChainImpl&>(
-                    *call_config->filter_chain);
+                    **call_config->filter_chain);
                 auto destination = filter_chain.destination();
                 destination->StartCall(std::move(unstarted_handler));
                 return absl::OkStatus();
               });
         });
   }
+
+  void Orphaned() override { provider_->CancelWatch(); }
 
  private:
   class Watcher final
@@ -1303,7 +1320,7 @@ class ServerConfigSelectorCallDestination final
   ChannelArgs args_;
   const RefCountedPtr<Blackboard> blackboard_;
   std::function<void(ClientMetadata&)> on_client_initial_metadata_;
-  RefCountedPtr<UnstartedCallDestination> destination_;
+  RefCountedPtr<CallDestination> destination_;
 
   Observable<absl::StatusOr<RefCountedPtr<ServerConfigSelector>>>
       config_selector_;
