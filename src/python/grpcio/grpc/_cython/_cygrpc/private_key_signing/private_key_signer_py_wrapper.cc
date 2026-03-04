@@ -27,6 +27,16 @@
 
 namespace grpc_core {
 
+PrivateKeySignerPyWrapper::~PrivateKeySignerPyWrapper() {
+  PyGILState_STATE state = PyGILState_Ensure();
+  Py_DECREF(static_cast<PyObject*>(py_user_sign_fn));
+  // Python will stay alive until this event is set
+  PyObject* result = PyObject_CallMethod(destroy_event_, "set", "()");
+  // crash if result is nullptr? - discussing
+  Py_XDECREF(result);
+  PyGILState_Release(state);
+}
+
 std::variant<absl::StatusOr<std::string>,
              std::shared_ptr<PrivateKeySigner::AsyncSigningHandle>>
 PrivateKeySignerPyWrapper::Sign(absl::string_view data_to_sign,
@@ -70,17 +80,6 @@ std::shared_ptr<PrivateKeySigner> BuildPrivateKeySigner(
 AsyncSigningHandlePyWrapper::~AsyncSigningHandlePyWrapper() {
   PyGILState_STATE state = PyGILState_Ensure();
   Py_DECREF(py_user_cancel_fn_);
-  PyGILState_Release(state);
-}
-
-PrivateKeySignerPyWrapper::~PrivateKeySignerPyWrapper() {
-  PyGILState_STATE state = PyGILState_Ensure();
-  Py_DECREF(static_cast<PyObject*>(py_user_sign_fn));
-  // Python will stay alive until this event is set
-  PyObject* result = PyObject_CallMethod(destroy_event_, "set", "()");
-  if (result != nullptr) {
-    Py_DECREF(result);
-  }
   PyGILState_Release(state);
 }
 
