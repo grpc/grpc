@@ -236,7 +236,7 @@ def _async_unary_same_channel(channel):
         try:
             _async_unary(stub)
         except grpc.RpcError as rpc_error:
-            if rpc_error.code != grpc.StatusCode.UNAVAILABLE:
+            if rpc_error.code() != grpc.StatusCode.UNAVAILABLE:
                 raise ValueError("Unexpected status code") from rpc_error
 
     stub = test_pb2_grpc.TestServiceStub(channel)
@@ -268,7 +268,7 @@ def _blocking_unary_same_channel(channel):
         try:
             _blocking_unary(stub)
         except grpc.RpcError as rpc_error:
-            if rpc_error.code != grpc.StatusCode.UNAVAILABLE:
+            if rpc_error.code() != grpc.StatusCode.UNAVAILABLE:
                 raise ValueError("Unexpected status code") from rpc_error
 
     stub = test_pb2_grpc.TestServiceStub(channel)
@@ -415,7 +415,7 @@ def _in_progress_bidi_continue_call(channel):
         try:
             _async_unary(stub)
         except grpc.RpcError as rpc_error:
-            if rpc_error.code != grpc.StatusCode.UNAVAILABLE:
+            if rpc_error.code() != grpc.StatusCode.UNAVAILABLE:
                 raise ValueError("Unexpected status code") from rpc_error
         inherited_code = parent_bidi_call.code()
         if inherited_code != grpc.StatusCode.CANCELLED:
@@ -437,7 +437,7 @@ def _in_progress_bidi_same_channel_async_call(channel):
         try:
             _async_unary(stub)
         except grpc.RpcError as rpc_error:
-            if rpc_error.code != grpc.StatusCode.UNAVAILABLE:
+            if rpc_error.code() != grpc.StatusCode.UNAVAILABLE:
                 raise ValueError("Unexpected status code") from rpc_error
 
     _ping_pong_with_child_processes_after_first_response(
@@ -451,7 +451,7 @@ def _in_progress_bidi_same_channel_blocking_call(channel):
         try:
             _blocking_unary(stub)
         except grpc.RpcError as rpc_error:
-            if rpc_error.code != grpc.StatusCode.UNAVAILABLE:
+            if rpc_error.code() != grpc.StatusCode.UNAVAILABLE:
                 raise ValueError("Unexpected status code") from rpc_error
 
     _ping_pong_with_child_processes_after_first_response(
