@@ -39,11 +39,6 @@ struct AsyncResult {
   void* py_user_cancel_fn;
 };
 
-// A C-Style callback for the Completion function that will be passed to the
-// cython layer.
-typedef void (*CompletionFunctionPyWrapper)(absl::StatusOr<std::string> result,
-                                            void* c_on_complete_fn);
-
 // The result of the sign call for interop between Cython and C. Is converted to
 // the C++ std::variant Sign result.
 struct PrivateKeySignerPyWrapperResult {
