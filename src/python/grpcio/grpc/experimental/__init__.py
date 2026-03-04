@@ -116,7 +116,7 @@ def wrap_server_method_handler(wrapper, handler):
 # A Callable to return in the async case
 # See the `ssl_channel_credentials_with_custom_signer` docstring for more detail on usage.
 PrivateKeySignCancel = Callable[[], None]
-PrivateKeySignatureAlgorithm = _cygrpc.SignatureAlgorithm
+PrivateKeySignatureAlgorithm = _cygrpc.PrivateKeySignatureAlgorithm
 PrivateKeyOnComplete = Callable[[Union[bytes, Exception]], None]
 
 # See the `ssl_channel_credentials_with_custom_signer` docstring for more detail on usage.
@@ -139,19 +139,18 @@ def ssl_channel_credentials_with_custom_signer(
     certificate_chain: bytes,
 ) -> grpc.ChannelCredentials:
     """Creates a ChannelCredentials for use with an SSL-enabled Channel with a custom signer.
+
     THIS IS AN EXPERIMENTAL API.
 
     Args:
       private_key_sign_fn: a function with the signature of
-        `CustomPrivateKeySign`. This function can return synchronously
-        or asynchronously.  To return synchronously, return the signed bytes.
-        To return asynchronously, return a PrivateKeySignCancel callable. This
-        can be a no-op function if no cancellation is needed. It can also be a
-        Python object with __call__(self) implemented for the implementer to
-        store async state and cancellation logic on. In the async case, this
-        function must return this callable quickly, then call the passed in
-        `PrivateKeyOnComplete` when the async signing operation is complete to
-        trigger gRPC to continue the handshake.
+        `CustomPrivateKeySign`. This function can return synchronously or
+        asynchronously.  To return synchronously, return the signed bytes.  To
+        return asynchronously, return a callable matching the
+        `PrivateKeySignCancel` signature.This can be a no-op if no cancellation is
+        needed. In the async case, this function must return this callable
+        quickly, then call the passed in `PrivateKeyOnComplete` when the async
+        signing operation is complete to trigger gRPC to continue the handshake.
       root_certificates: The PEM-encoded root certificates as a byte string,
         or None to retrieve them from a default location chosen by gRPC
         runtime.

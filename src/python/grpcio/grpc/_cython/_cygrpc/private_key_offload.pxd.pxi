@@ -65,7 +65,8 @@ cdef extern from "grpc/private_key_signer.h":
         shared_ptr[PrivateKeySigner] private_key_signer,
         const char* cert_chain)
 
-cpdef enum SignatureAlgorithm:
+cpdef enum PrivateKeySignatureAlgorithm:
+    """Supported signature algorithms for private key signing implementations."""
     RSA_PKCS1_SHA256 = <int>CSignatureAlgorithm.kRsaPkcs1Sha256
     RSA_PKCS1_SHA384 = <int>CSignatureAlgorithm.kRsaPkcs1Sha384
     RSA_PKCS1_SHA512 = <int>CSignatureAlgorithm.kRsaPkcs1Sha512
