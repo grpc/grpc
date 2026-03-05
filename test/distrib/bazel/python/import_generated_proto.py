@@ -25,11 +25,9 @@ import gen_echo_pb2_grpc
 
 class GeneratedProtoImportTest(unittest.TestCase):
     def test_stubs_are_importable(self):
-        from gen_echo_pb2_grpc import (
-            EchoServiceServicer,
-            EchoServiceStub,
-            add_EchoServiceServicer_to_server,
-        )
+        from gen_echo_pb2_grpc import EchoServiceServicer
+        from gen_echo_pb2_grpc import EchoServiceStub
+        from gen_echo_pb2_grpc import add_EchoServiceServicer_to_server
 
     def test_proto_message_is_importable(self):
         from gen_echo_pb2 import EchoRequest
