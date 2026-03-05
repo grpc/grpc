@@ -1871,8 +1871,8 @@ grpc_cc_library(
     hdrs = [
         "telemetry/telemetry_label.h",
     ],
-    external_deps = [
-        "absl/log",
+    public_hdrs = [
+        "//:include/grpc/context_types.h",
     ],
     deps = [
         "arena",
