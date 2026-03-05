@@ -81,18 +81,18 @@ cpdef enum PrivateKeySignatureAlgorithm:
 
 cdef extern from "src/python/grpcio/grpc/_cython/_cygrpc/private_key_signing/private_key_signer_py_wrapper.h" namespace "grpc_python":
     cdef cppclass PrivateKeySignerPyWrapper:
-        ctypedef void (*CancelWrapperForPy)(void*) noexcept nogil
+        ctypedef void (*CancelWrapperForPy)(PyObject*) noexcept nogil
         cppclass AsyncResult:
             CancelWrapperForPy cancel_wrapper
-            void* py_user_cancel_fn
+            PyObject* py_user_cancel_fn
         cppclass PrivateKeySignerPyWrapperResult:
             StatusOr[string] sync_result
             AsyncResult async_result
             bint is_sync
         cppclass CompletionContext:
             void OnComplete(StatusOr[string]) nogil
-        ctypedef PrivateKeySignerPyWrapperResult(*SignWrapperForPy)(string_view, CSignatureAlgorithm, void*, weak_ptr[CompletionContext]) noexcept nogil
+        ctypedef PrivateKeySignerPyWrapperResult(*SignWrapperForPy)(string_view, CSignatureAlgorithm, PyObject*, weak_ptr[CompletionContext]) noexcept nogil
         @staticmethod
-        shared_ptr[PrivateKeySigner] BuildPrivateKeySigner(SignWrapperForPy, void*, PyObject*)
+        shared_ptr[PrivateKeySigner] Create(SignWrapperForPy, PyObject*, PyObject*)
     cdef string MakeStringForCython(const char*) noexcept
     cdef string MakeStringForCython(const char*, size_t) noexcept

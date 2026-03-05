@@ -51,13 +51,13 @@ cdef class OnCompleteWrapper:
       if local_completion_context != NULL:
         local_completion_context.OnComplete(cpp_result)
 
-cdef PrivateKeySignerPyWrapper.PrivateKeySignerPyWrapperResult async_sign_wrapper(string_view inp, CSignatureAlgorithm algorithm, void* py_user_sign_fn, weak_ptr[PrivateKeySignerPyWrapper.CompletionContext] completion_context) noexcept nogil:
+cdef PrivateKeySignerPyWrapper.PrivateKeySignerPyWrapperResult async_sign_wrapper(string_view inp, CSignatureAlgorithm algorithm, PyObject* py_user_sign_fn, weak_ptr[PrivateKeySignerPyWrapper.CompletionContext] completion_context) noexcept nogil:
   cdef string cpp_string
   cdef const char* data
   cdef size_t size
   cdef PrivateKeySignerPyWrapper.PrivateKeySignerPyWrapperResult cpp_result
   with gil:
-    # Cast the void* pointer holding the user's python sign impl
+    # Cast the PyObject* pointer holding the user's python sign impl
     py_user_func = <object>py_user_sign_fn
 
     py_on_complete_wrapper = OnCompleteWrapper()
@@ -80,7 +80,7 @@ cdef PrivateKeySignerPyWrapper.PrivateKeySignerPyWrapperResult async_sign_wrappe
         # Cancellation func
         cpp_result.is_sync = False
         Py_INCREF(py_result)
-        cpp_result.async_result.py_user_cancel_fn = <void*> py_result
+        cpp_result.async_result.py_user_cancel_fn = <PyObject*> py_result
         cpp_result.async_result.cancel_wrapper = cancel_wrapper
       else:
         # Any other return type is not valid
@@ -92,7 +92,7 @@ cdef PrivateKeySignerPyWrapper.PrivateKeySignerPyWrapperResult async_sign_wrappe
       cpp_result.sync_result = MakeInternalError(MakeStringForCython(PyBytes_AsString(f"Exception in user function: {e}".encode('utf-8'))))
       return cpp_result
 
-cdef void cancel_wrapper(void* py_cancel_user_fn) noexcept nogil:
+cdef void cancel_wrapper(PyObject* py_cancel_user_fn) noexcept nogil:
   with gil:
     try:
       py_cancel_func = <object>py_cancel_user_fn
@@ -110,5 +110,5 @@ cdef shared_ptr[PrivateKeySigner] build_private_key_signer(py_user_func):
   destroy_event = threading.Event()
   destroy_lambda = lambda event=destroy_event: event.wait()
   threading.Thread(target=destroy_lambda, daemon=False).start()
-  py_private_key_signer = PrivateKeySignerPyWrapper.BuildPrivateKeySigner(async_sign_wrapper, <void*>py_user_func, <PyObject*>destroy_event)
+  py_private_key_signer = PrivateKeySignerPyWrapper.Create(async_sign_wrapper, <PyObject*>py_user_func, <PyObject*>destroy_event)
   return py_private_key_signer

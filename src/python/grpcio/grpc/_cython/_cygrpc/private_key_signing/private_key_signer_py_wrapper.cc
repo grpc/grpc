@@ -28,6 +28,17 @@
 
 namespace grpc_python {
 
+std::shared_ptr<grpc_core::PrivateKeySigner> PrivateKeySignerPyWrapper::Create(
+    PrivateKeySignerPyWrapper::SignWrapperForPy sign_py_wrapper,
+    PyObject* py_user_sign_fn, PyObject* destroy_event) {
+  PyGILState_STATE state = PyGILState_Ensure();
+  Py_INCREF(py_user_sign_fn);
+  Py_INCREF(destroy_event);
+  PyGILState_Release(state);
+  return std::make_shared<PrivateKeySignerPyWrapper>(
+      sign_py_wrapper, py_user_sign_fn, destroy_event);
+}
+
 PrivateKeySignerPyWrapper::~PrivateKeySignerPyWrapper() {
   PyGILState_STATE state = PyGILState_Ensure();
   Py_DECREF(static_cast<PyObject*>(py_user_sign_fn_));
@@ -51,7 +62,8 @@ PrivateKeySignerPyWrapper::Sign(absl::string_view data_to_sign,
   if (result.is_sync) {
     return result.sync_result;
   } else {
-    auto handle = std::make_shared<AsyncSigningHandlePyWrapper>(
+    auto handle = std::make_shared<
+        PrivateKeySignerPyWrapper::AsyncSigningHandlePyWrapper>(
         result.async_result.cancel_wrapper,
         result.async_result.py_user_cancel_fn, std::move(completion_context));
     return handle;
@@ -61,34 +73,23 @@ PrivateKeySignerPyWrapper::Sign(absl::string_view data_to_sign,
 void PrivateKeySignerPyWrapper::Cancel(
     std::shared_ptr<AsyncSigningHandle> handle) {
   if (handle == nullptr) return;
-  auto handle_impl =
-      std::static_pointer_cast<AsyncSigningHandlePyWrapper>(handle);
+  auto handle_impl = std::static_pointer_cast<
+      PrivateKeySignerPyWrapper::AsyncSigningHandlePyWrapper>(handle);
   handle_impl->Cancel();
 }
 
-std::shared_ptr<grpc_core::PrivateKeySigner>
-PrivateKeySignerPyWrapper::BuildPrivateKeySigner(
-    PrivateKeySignerPyWrapper::SignWrapperForPy sign_py_wrapper,
-    void* py_user_sign_fn, PyObject* destroy_event) {
-  PyGILState_STATE state = PyGILState_Ensure();
-  Py_INCREF(py_user_sign_fn);
-  Py_INCREF(destroy_event);
-  PyGILState_Release(state);
-  return std::make_shared<PrivateKeySignerPyWrapper>(
-      sign_py_wrapper, py_user_sign_fn, destroy_event);
-}
-
-AsyncSigningHandlePyWrapper::~AsyncSigningHandlePyWrapper() {
+PrivateKeySignerPyWrapper::AsyncSigningHandlePyWrapper::
+    ~AsyncSigningHandlePyWrapper() {
   PyGILState_STATE state = PyGILState_Ensure();
   Py_DECREF(py_user_cancel_fn_);
   PyGILState_Release(state);
 }
 
-void AsyncSigningHandlePyWrapper::Cancel() {
+void PrivateKeySignerPyWrapper::AsyncSigningHandlePyWrapper::Cancel() {
   if (cancel_py_wrapper_ != nullptr && py_user_cancel_fn_ != nullptr) {
     cancel_py_wrapper_(py_user_cancel_fn_);
   }
-  completion_context_->OnComplete(absl::CancelledError("Connection cancelled"));
+  completion_context_ = nullptr;
 }
 
 std::string MakeStringForCython(const char* inp, size_t size) {
