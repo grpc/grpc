@@ -95,17 +95,14 @@ def sign_private_key(data_to_sign, private_key_bytes, signature_algorithm):
             != grpc.experimental.PrivateKeySignatureAlgorithm.RSA_PSS_RSAE_SHA256
         ):
             raise ValueError("Expect the private key to be PSS SHA256")
-        try:
-            hasher = hashes.SHA256()
-            pss_padding = padding.PSS(
-                mgf=padding.MGF1(hasher),
-                salt_length=hasher.digest_size,
-            )
+        hasher = hashes.SHA256()
+        pss_padding = padding.PSS(
+            mgf=padding.MGF1(hasher),
+            salt_length=hasher.digest_size,
+        )
 
-            signature = private_key.sign(data_to_sign, pss_padding, hasher)
-            return signature
-        except Exception as e:
-            raise
+        signature = private_key.sign(data_to_sign, pss_padding, hasher)
+        return signature
     else:
         raise ValueError(
             "Unsupported private key type. This example only supports RSA."
