@@ -334,7 +334,7 @@ def _connectivity_watch(channel, args):
             if not child_channel_ready_event.wait(timeout=_RPC_TIMEOUT_S):
                 raise ValueError("Child channel did not move to READY")
             if not parent_channel_ready_event.wait(timeout=_RPC_TIMEOUT_S):
-                raise ValueError("Parent channel did not move to READY")
+                raise ValueError("Parent channel did not move to READY. States=" + str(parent_states))
             child_channel.unsubscribe(child_connectivity_callback)
             channel.unsubscribe(parent_connectivity_callback)
 
