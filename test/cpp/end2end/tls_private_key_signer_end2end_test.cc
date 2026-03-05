@@ -30,11 +30,6 @@
 #include <grpcpp/server_builder.h>
 #include <grpcpp/support/channel_arguments.h>
 #include <grpcpp/support/status.h>
-#include <openssl/digest.h>
-#include <openssl/ec.h>
-#include <openssl/evp.h>
-#include <openssl/rsa.h>
-#include <openssl/ssl.h>
 
 #include <functional>
 #include <memory>
@@ -56,6 +51,14 @@
 #include "absl/strings/string_view.h"
 #include "absl/synchronization/notification.h"
 #include "absl/time/time.h"
+
+#if defined(OPENSSL_IS_BORINGSSL)
+
+#include <openssl/digest.h>
+#include <openssl/ec.h>
+#include <openssl/evp.h>
+#include <openssl/rsa.h>
+#include <openssl/ssl.h>
 
 namespace grpc {
 namespace testing {
@@ -943,6 +946,8 @@ TEST_F(TlsPrivateKeyOffloadTest,
 }  // namespace
 }  // namespace testing
 }  // namespace grpc
+
+#endif
 
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(&argc, argv);
