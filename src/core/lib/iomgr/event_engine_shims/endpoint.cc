@@ -108,7 +108,7 @@ class EventEngineEndpointWrapper {
     read_buffer->Clear();
     return endpoint_->Read(
         [this](absl::Status status) { FinishPendingRead(status); }, read_buffer,
-        std::move(args));
+        args);
   }
 
   void FinishPendingRead(absl::Status status) {
@@ -302,7 +302,7 @@ void EndpointRead(grpc_endpoint* ep, grpc_slice_buffer* slices,
 
   EventEngine::Endpoint::ReadArgs read_args;
   read_args.set_read_hint_bytes(min_progress_size);
-  if (eeep->wrapper->Read(cb, slices, std::move(read_args))) {
+  if (eeep->wrapper->Read(cb, slices, read_args)) {
     // Read succeeded immediately. Run the callback inline.
     eeep->wrapper->FinishPendingRead(absl::OkStatus());
   }
