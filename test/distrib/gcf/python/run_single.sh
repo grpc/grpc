@@ -23,6 +23,8 @@ set -euxo pipefail
 
 RUNTIME="$1"
 ARTIFACT_URL="$2"
+# region us-west1 was already hardcoded in run.sh, we should propagate it.
+REGION="us-west1"
 
 REQUEST_COUNT=20
 LOG_QUIESCE_SECONDS=10
@@ -39,21 +41,27 @@ function cleanup() {
   sleep "${LOG_QUIESCE_SECONDS}"
 
   # TODO: improve log error detection per https://github.com/grpc/grpc/pull/41749#discussion_r2876215927
-  gcloud functions logs read "${FUNCTION_NAME}" || true
-  (yes || true) | gcloud functions delete "${FUNCTION_NAME}"
+  gcloud functions logs read "${FUNCTION_NAME}" --region="${REGION}" || true
+  (yes || true) | gcloud functions delete "${FUNCTION_NAME}" --region="${REGION}"
 }
 
 trap cleanup SIGINT SIGTERM EXIT
 
 # Deploy
 
-# region west2 was already hardcoded in run.sh, we should fix that.
-DEPLOY_OUTPUT=$(gcloud functions deploy "${FUNCTION_NAME}" --entry-point test_publish --runtime "${RUNTIME}" --region=us-west1 --gen2 --trigger-http --allow-unauthenticated --ingress-settings=internal-only)
+DEPLOY_OUTPUT=$(gcloud functions deploy "${FUNCTION_NAME}" \
+  --entry-point="test_publish" \
+  --runtime="${RUNTIME}"  \
+  --region="${REGION}"  \
+  --gen2 \
+  --trigger-http \
+  --allow-unauthenticated \
+  --ingress-settings="internal-only")
 HTTP_URL=$(echo "${DEPLOY_OUTPUT}" | grep "url: " | awk '{print $2;}')
 
 # Send Requests
 for _ in $(seq 1 "${REQUEST_COUNT}"); do
   # TODO(sergiitk): switch to --fail-with-body once the base image contains
   #   curl >= v7.76.0; as of 2026-03-04 it's v7.68.0.
-  curl -L --fail "${HTTP_URL}"
+  curl -L --fail --no-progress-meter "${HTTP_URL}" && echo
 done
