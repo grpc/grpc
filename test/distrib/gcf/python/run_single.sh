@@ -55,5 +55,5 @@ HTTP_URL=$(echo "${DEPLOY_OUTPUT}" | grep "url: " | awk '{print $2;}')
 for _ in $(seq 1 "${REQUEST_COUNT}"); do
   # TODO(sergiitk): switch to --fail-with-body once the base image contains
   #   curl >= v7.76.0; as of 2026-03-04 it's v7.68.0.
-  curl -v --fail "${HTTP_URL}"
+  curl -L --fail "${HTTP_URL}"
 done
