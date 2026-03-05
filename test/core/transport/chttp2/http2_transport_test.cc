@@ -440,7 +440,8 @@ TEST_P(TestsNeedingStreamObjects,
 
   EXPECT_EQ(transport_flow_control_.test_only_announced_window(),
             chttp2::kDefaultWindow);
-  EXPECT_EQ(stream->flow_control.test_only_announced_window_delta(), 0);
+  EXPECT_EQ(stream->GetStreamFlowControl().test_only_announced_window_delta(),
+            0);
 
   // First DATA frame of size frame_payload_size
   ValueOrHttp2Status<chttp2::FlowControlAction> action1 =
@@ -449,7 +450,7 @@ TEST_P(TestsNeedingStreamObjects,
   EXPECT_TRUE(action1.IsOk());
   EXPECT_EQ(transport_flow_control_.test_only_announced_window(),
             chttp2::kDefaultWindow - frame_payload_size);
-  EXPECT_EQ(stream->flow_control.test_only_announced_window_delta(),
+  EXPECT_EQ(stream->GetStreamFlowControl().test_only_announced_window_delta(),
             -static_cast<int64_t>(frame_payload_size));
 
   // 2nd DATA frame of size frame_payload_size
@@ -459,7 +460,7 @@ TEST_P(TestsNeedingStreamObjects,
   EXPECT_TRUE(action2.IsOk());
   EXPECT_EQ(transport_flow_control_.test_only_announced_window(),
             chttp2::kDefaultWindow - 2 * frame_payload_size);
-  EXPECT_EQ(stream->flow_control.test_only_announced_window_delta(),
+  EXPECT_EQ(stream->GetStreamFlowControl().test_only_announced_window_delta(),
             -2 * static_cast<int64_t>(frame_payload_size));
 
   // 3rd DATA frame of size frame_payload_size
@@ -469,7 +470,7 @@ TEST_P(TestsNeedingStreamObjects,
   EXPECT_TRUE(action3.IsOk());
   EXPECT_EQ(transport_flow_control_.test_only_announced_window(),
             chttp2::kDefaultWindow - 3 * frame_payload_size);
-  EXPECT_EQ(stream->flow_control.test_only_announced_window_delta(),
+  EXPECT_EQ(stream->GetStreamFlowControl().test_only_announced_window_delta(),
             -3 * static_cast<int64_t>(frame_payload_size));
 
   // 4th DATA frame of size frame_payload_size.
@@ -500,7 +501,8 @@ TEST_P(TestsNeedingStreamObjects,
 
   EXPECT_EQ(transport_flow_control_.test_only_announced_window(),
             chttp2::kDefaultWindow);
-  EXPECT_EQ(stream->flow_control.test_only_announced_window_delta(), 0);
+  EXPECT_EQ(stream->GetStreamFlowControl().test_only_announced_window_delta(),
+            0);
 
   // Receive first large DATA frame.
   ValueOrHttp2Status<chttp2::FlowControlAction> action1 =
@@ -509,7 +511,7 @@ TEST_P(TestsNeedingStreamObjects,
   EXPECT_TRUE(action1.IsOk());
   EXPECT_EQ(transport_flow_control_.test_only_announced_window(),
             chttp2::kDefaultWindow - frame_payload_size);
-  EXPECT_EQ(stream->flow_control.test_only_announced_window_delta(),
+  EXPECT_EQ(stream->GetStreamFlowControl().test_only_announced_window_delta(),
             -static_cast<int64_t>(frame_payload_size));
 
   // Send the flow control update to peer for transport
@@ -549,7 +551,7 @@ TEST_P(TestsNeedingStreamObjects,
 
   EXPECT_EQ(transport_flow_control_.test_only_announced_window(),
             expected_announced_window);
-  EXPECT_EQ(stream->flow_control.test_only_announced_window_delta(),
+  EXPECT_EQ(stream->GetStreamFlowControl().test_only_announced_window_delta(),
             expected_announced_window_delta);
 
   // Receive first large DATA frame.
@@ -561,11 +563,11 @@ TEST_P(TestsNeedingStreamObjects,
   EXPECT_TRUE(action1.IsOk());
   EXPECT_EQ(transport_flow_control_.test_only_announced_window(),
             expected_announced_window);
-  EXPECT_EQ(stream->flow_control.test_only_announced_window_delta(),
+  EXPECT_EQ(stream->GetStreamFlowControl().test_only_announced_window_delta(),
             expected_announced_window_delta);
 
   chttp2::StreamFlowControl::IncomingUpdateContext stream_flow_control_context(
-      &stream->flow_control);
+      &stream->GetStreamFlowControl());
   stream_flow_control_context.SetMinProgressSize(frame_payload_size);
   chttp2::FlowControlAction action = stream_flow_control_context.MakeAction();
   EXPECT_EQ(action.send_stream_update(),
@@ -574,14 +576,14 @@ TEST_P(TestsNeedingStreamObjects,
   // Send the flow control update to peer for stream
   uint32_t transport_increment =
       transport_flow_control_.MaybeSendUpdate(/*writing_anyway=*/true);
-  uint32_t stream_increment = stream->flow_control.MaybeSendUpdate();
+  uint32_t stream_increment = stream->GetStreamFlowControl().MaybeSendUpdate();
   EXPECT_GT(transport_increment, 0);
   EXPECT_GT(stream_increment, 0);
   expected_announced_window += transport_increment;
   expected_announced_window_delta += stream_increment;
   EXPECT_EQ(transport_flow_control_.test_only_announced_window(),
             expected_announced_window);
-  EXPECT_EQ(stream->flow_control.test_only_announced_window_delta(),
+  EXPECT_EQ(stream->GetStreamFlowControl().test_only_announced_window_delta(),
             expected_announced_window_delta);
 
   // Receive 2nd large DATA frame.
@@ -593,7 +595,7 @@ TEST_P(TestsNeedingStreamObjects,
   expected_announced_window_delta -= frame_payload_size;
   EXPECT_EQ(transport_flow_control_.test_only_announced_window(),
             expected_announced_window);
-  EXPECT_EQ(stream->flow_control.test_only_announced_window_delta(),
+  EXPECT_EQ(stream->GetStreamFlowControl().test_only_announced_window_delta(),
             expected_announced_window_delta);
 }
 
@@ -645,7 +647,7 @@ TEST_P(TestsNeedingStreamObjects,
        ProcessIncomingWindowUpdateFrameFlowControlWithStream) {
   RefCountedPtr<Stream> stream = CreateMinimalTestStream(1);
   EXPECT_EQ(transport_flow_control_.remote_window(), chttp2::kDefaultWindow);
-  EXPECT_EQ(stream->flow_control.remote_window_delta(), 0);
+  EXPECT_EQ(stream->GetStreamFlowControl().remote_window_delta(), 0);
 
   Http2WindowUpdateFrame frame;
   frame.increment = 1000;
@@ -656,7 +658,7 @@ TEST_P(TestsNeedingStreamObjects,
   ProcessIncomingWindowUpdateFrameFlowControl(frame, transport_flow_control_,
                                               stream.get());
   EXPECT_EQ(transport_flow_control_.remote_window(), chttp2::kDefaultWindow);
-  EXPECT_EQ(stream->flow_control.remote_window_delta(), 1000);
+  EXPECT_EQ(stream->GetStreamFlowControl().remote_window_delta(), 1000);
 
   // If stream_id == 0, transport flow control window should increase.
   frame.stream_id = 0;
@@ -664,7 +666,7 @@ TEST_P(TestsNeedingStreamObjects,
                                               stream.get());
   EXPECT_EQ(transport_flow_control_.remote_window(),
             chttp2::kDefaultWindow + 1000);
-  EXPECT_EQ(stream->flow_control.remote_window_delta(), 1000);
+  EXPECT_EQ(stream->GetStreamFlowControl().remote_window_delta(), 1000);
 
   // If increment is 0, no change in flow control window.
   // Although 0 increment would be a connection layer at the frame parsing
@@ -675,13 +677,13 @@ TEST_P(TestsNeedingStreamObjects,
                                               stream.get());
   EXPECT_EQ(transport_flow_control_.remote_window(),
             chttp2::kDefaultWindow + 1000);
-  EXPECT_EQ(stream->flow_control.remote_window_delta(), 1000);
+  EXPECT_EQ(stream->GetStreamFlowControl().remote_window_delta(), 1000);
   frame.stream_id = 1;
   ProcessIncomingWindowUpdateFrameFlowControl(frame, transport_flow_control_,
                                               stream.get());
   EXPECT_EQ(transport_flow_control_.remote_window(),
             chttp2::kDefaultWindow + 1000);
-  EXPECT_EQ(stream->flow_control.remote_window_delta(), 1000);
+  EXPECT_EQ(stream->GetStreamFlowControl().remote_window_delta(), 1000);
 
   // Large increment
   frame.increment = 10000;
@@ -690,7 +692,7 @@ TEST_P(TestsNeedingStreamObjects,
                                               stream.get());
   EXPECT_EQ(transport_flow_control_.remote_window(),
             chttp2::kDefaultWindow + 1000);
-  EXPECT_EQ(stream->flow_control.remote_window_delta(), 1000 + 10000);
+  EXPECT_EQ(stream->GetStreamFlowControl().remote_window_delta(), 1000 + 10000);
 }
 
 ///////////////////////////////////////////////////////////////////////////////

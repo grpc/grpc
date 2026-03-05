@@ -280,7 +280,7 @@ Http2Status Http2ClientTransport::ProcessIncomingFrame(Http2DataFrame&& frame) {
   GRPC_HTTP2_CLIENT_DLOG
       << "Http2ClientTransport::ProcessIncomingFrame(DataFrame) "
          "AppendNewDataFrame";
-  GrpcMessageAssembler& assembler = stream->assembler;
+  GrpcMessageAssembler& assembler = stream->GetGrpcMessageAssembler();
   Http2Status status =
       assembler.AppendNewDataFrame(frame.payload, frame.end_stream);
   if (!status.IsOk()) {
@@ -375,7 +375,8 @@ Http2Status Http2ClientTransport::ProcessIncomingFrame(
             std::string(GrpcErrors::kTooManyMetadata)));
   }
 
-  Http2Status append_result = stream->header_assembler.AppendHeaderFrame(frame);
+  Http2Status append_result =
+      stream->GetHeaderAssembler().AppendHeaderFrame(frame);
   if (!append_result.IsOk()) {
     // Frame payload is not consumed if AppendHeaderFrame returns a non-OK
     // status. We need to process it to keep our in consistent state.
@@ -640,7 +641,7 @@ Http2Status Http2ClientTransport::ProcessIncomingFrame(
   }
 
   Http2Status append_result =
-      stream->header_assembler.AppendContinuationFrame(frame);
+      stream->GetHeaderAssembler().AppendContinuationFrame(frame);
   if (!append_result.IsOk()) {
     // Frame payload is not consumed if AppendContinuationFrame returns a
     // non-OK status. We need to process it to keep our in consistent state.
@@ -687,7 +688,7 @@ Http2Status Http2ClientTransport::ProcessIncomingFrame(
 
 Http2Status Http2ClientTransport::ProcessMetadata(
     RefCountedPtr<Stream> stream) {
-  HeaderAssembler& assembler = stream->header_assembler;
+  HeaderAssembler& assembler = stream->GetHeaderAssembler();
   CallHandler& call = stream->GetCallHandler();
 
   GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport::ProcessMetadata";
@@ -1051,17 +1052,18 @@ absl::Status Http2ClientTransport::DequeueStreamFrames(
   // we are clamping the write_bytes_remaining_ to that range.
   FrameSender frame_sender = write_cycle.GetFrameSender();
   const uint32_t tokens = GetMaxPermittedDequeue(
-      flow_control_, stream->flow_control, write_cycle.GetWriteBytesRemaining(),
-      settings_->peer());
-  const uint32_t stream_flow_control_tokens = static_cast<uint32_t>(
-      GetStreamFlowControlTokens(stream->flow_control, settings_->peer()));
-  stream->flow_control.ReportIfStalled(
+      flow_control_, stream->GetStreamFlowControl(),
+      write_cycle.GetWriteBytesRemaining(), settings_->peer());
+  const uint32_t stream_flow_control_tokens =
+      static_cast<uint32_t>(GetStreamFlowControlTokens(
+          stream->GetStreamFlowControl(), settings_->peer()));
+  stream->GetStreamFlowControl().ReportIfStalled(
       /*is_client=*/kIsClient, stream->GetStreamId(), settings_->peer());
   StreamDataQueue<ClientMetadataHandle>::DequeueResult result =
       stream->DequeueFrames(tokens, stream_flow_control_tokens,
                             settings_->peer().max_frame_size(), encoder_,
                             frame_sender);
-  ProcessOutgoingDataFrameFlowControl(stream->flow_control,
+  ProcessOutgoingDataFrameFlowControl(stream->GetStreamFlowControl(),
                                       result.flow_control_tokens_consumed);
   if (result.is_writable) {
     // Stream is still writable. Enqueue it back to the writable
@@ -2091,7 +2093,7 @@ int64_t Http2ClientTransport::TestOnlyGetStreamFlowControlWindow(
   if (stream == nullptr) {
     return -1;
   }
-  return stream->flow_control.remote_window_delta();
+  return stream->GetStreamFlowControl().remote_window_delta();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
