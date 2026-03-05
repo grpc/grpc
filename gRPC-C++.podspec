@@ -109,6 +109,7 @@ Pod::Spec.new do |s|
                       'include/grpcpp/generic/generic_stub_callback.h',
                       'include/grpcpp/grpcpp.h',
                       'include/grpcpp/health_check_service_interface.h',
+                      'include/grpcpp/impl/allowed_call_context_types.h',
                       'include/grpcpp/impl/call.h',
                       'include/grpcpp/impl/call_context_registry.h',
                       'include/grpcpp/impl/call_op_set.h',

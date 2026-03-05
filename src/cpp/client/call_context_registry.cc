@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include <grpcpp/call_context_types.h>
+#include <grpcpp/impl/allowed_call_context_types.h>
 #include <grpcpp/impl/call_context_registry.h>
 #include <stddef.h>
 

@@ -36,6 +36,7 @@
 
 #include <grpc/impl/compression_types.h>
 #include <grpc/impl/propagation_bits.h>
+#include <grpcpp/impl/allowed_call_context_types.h>
 #include <grpcpp/impl/call_context_registry.h>
 #include <grpcpp/impl/create_auth_context.h>
 #include <grpcpp/impl/metadata_map.h>

@@ -50,7 +50,7 @@ class CallContextRegistry {
   // Adds an element to elements.
   template <typename T>
   static void SetContext(T element, ElementList& elements) {
-    uint16_t id = grpc::impl::CallContextType<T>::id();
+    uint16_t id = CallContextType<T>::id();
     if (elements == nullptr) {
       uint16_t num_elements = Count();
       elements = new void*[num_elements]();
