@@ -789,6 +789,9 @@ grpc_cc_library(
     hdrs = [
         "http2_common_test_inputs.h",
     ],
+    external_deps = [
+        "absl/log:check",
+        "absl/log:log",
         "absl/strings",
     ],
     deps = [
