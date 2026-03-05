@@ -43,9 +43,9 @@ def _channel(args):
     target = "{}:{}".format(args["server_host"], args["server_port"])
     if args["use_tls"]:
         channel_credentials = grpc.ssl_channel_credentials()
-        channel = grpc.secure_channel(target, channel_credentials)
+        channel = grpc.secure_channel(target, channel_credentials, (("grpc.use_local_subchannel_pool", 1),))
     else:
-        channel = grpc.insecure_channel(target)
+        channel = grpc.insecure_channel(target, (("grpc.use_local_subchannel_pool", 1),))
     return channel
 
 
