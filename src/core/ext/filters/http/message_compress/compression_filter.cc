@@ -179,6 +179,11 @@ absl::StatusOr<MessageHandle> ChannelCompression::DecompressMessage(
       (message->flags() & GRPC_WRITE_INTERNAL_COMPRESS) == 0) {
     return std::move(message);
   }
+  if (!enabled_compression_algorithms().IsSet(args.algorithm)) {
+    return absl::UnimplementedError(
+        absl::StrCat("Compression algorithm not supported: ",
+                     CompressionAlgorithmAsString(args.algorithm)));
+  }
   // Try to decompress the payload.
   SliceBuffer decompressed_slices;
   if (grpc_msg_decompress(args.algorithm, message->payload()->c_slice_buffer(),
