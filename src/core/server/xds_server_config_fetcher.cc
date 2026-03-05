@@ -1138,6 +1138,7 @@ void XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
                                           new_blackboard);
             continue;
           }
+// FIXME: this is wrong -- need to do the MergeConfigs() thing
           filter_impl->UpdateBlackboard(*http_filter.filter_config,
                                         old_blackboard, new_blackboard);
         }
