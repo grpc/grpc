@@ -22818,6 +22818,16 @@ targets:
   deps:
   - gtest
   - grpc_test_util
+- name: secure_endpoint_read_coalescing_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/handshake/secure_endpoint_read_coalescing_test.cc
+  deps:
+  - gtest
+  - grpc_test_util
 - name: secure_endpoint_test
   gtest: true
   build: test

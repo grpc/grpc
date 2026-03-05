@@ -608,7 +608,7 @@ class PosixEndpoint : public PosixEndpointWithFdSupport {
             grpc_event_engine::experimental::SliceBuffer* buffer,
             grpc_event_engine::experimental::EventEngine::Endpoint::ReadArgs
                 args) override {
-    return impl_->Read(std::move(on_read), buffer, std::move(args));
+    return impl_->Read(std::move(on_read), buffer, args);
   }
 
   bool Write(absl::AnyInvocable<void(absl::Status)> on_writable,
