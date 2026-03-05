@@ -159,6 +159,13 @@ grpc_error_handle grpc_chttp2_data_parser_parse(void* /*parser*/,
           "Invalid gRPC compression flag (must be 0 or 1)");
     }
   }
+  if (s->is_unary && s->received_payload && GRPC_SLICE_LENGTH(slice) > 0) {
+    return GRPC_ERROR_CREATE(
+        "More than one DATA frame with payload received for unary RPC");
+  }
+  if (GRPC_SLICE_LENGTH(slice) > 0) {
+    s->received_payload = true;
+  }
   grpc_core::CSliceRef(slice);
   grpc_slice_buffer_add(&s->frame_storage, slice);
   grpc_chttp2_maybe_complete_recv_message(t, s);

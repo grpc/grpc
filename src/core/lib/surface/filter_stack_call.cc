@@ -979,6 +979,7 @@ grpc_call_error FilterStackCall::StartBatch(const grpc_op* ops, size_t nops,
           stream_op_payload->recv_initial_metadata.trailing_metadata_available =
               &is_trailers_only_;
         }
+        stream_op_payload->recv_initial_metadata.is_unary = true;
         pending_ops |= PendingOpMask(PendingOp::kRecvInitialMetadata);
         break;
       }
