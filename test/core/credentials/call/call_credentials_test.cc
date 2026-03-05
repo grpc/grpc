@@ -81,6 +81,7 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_replace.h"
+#include "absl/strings/str_split.h"
 
 // TODO(roth): Refactor this so that we can split up the individual call
 // creds tests into their own files.
@@ -540,6 +541,28 @@ class RequestMetadataState : public RefCounted<RequestMetadataState> {
     md_.Remove(HttpPathMetadata());
     LOG(INFO) << "expected metadata: " << expected_;
     LOG(INFO) << "actual metadata: " << md_.DebugString();
+    
+    // We cannot use DebugString() for validation because it redacts sensitive headers
+    std::multimap<std::string, std::string> actual_metadata;
+    md_.Log([&actual_metadata](absl::string_view key, absl::string_view value) {
+      if (key == "authorization") {
+        return;
+      }
+      actual_metadata.emplace(std::string(key), std::string(value));
+    });
+
+    std::multimap<std::string, std::string> expected_metadata;
+    if (!expected_.empty()) {
+      std::vector<absl::string_view> parts = absl::StrSplit(expected_, ", ");
+      for (const auto& part : parts) {
+        std::pair<absl::string_view, absl::string_view> kv = absl::StrSplit(part, absl::MaxSplits(": ", 1));
+        if (kv.first == "authorization") {
+          continue;
+        }
+        expected_metadata.emplace(std::string(kv.first), std::string(kv.second));
+      }
+    }
+    EXPECT_THAT(actual_metadata, ::testing::UnorderedElementsAreArray(expected_metadata));
   }
 
   grpc_error_handle expected_error_;
@@ -1510,7 +1533,8 @@ TEST_F(CredentialsTest, TestJwtCredsWithRegionalAccessBoundary) {
   char* json_key_string = test_json_key_str();
   ExecCtx exec_ctx;
   std::string expected_md_value = absl::StrCat("Bearer ", test_signed_jwt);
-  std::string emd = absl::StrCat("authorization: ", expected_md_value, ", ",
+  std::string emd_without_rab = absl::StrCat("authorization: ", expected_md_value);
+  std::string emd_with_rab = absl::StrCat("authorization: ", expected_md_value, ", ",
                                  "x-allowed-locations: us-west1");
   grpc_call_credentials* creds =
       grpc_service_account_jwt_access_credentials_create(
@@ -1518,13 +1542,17 @@ TEST_F(CredentialsTest, TestJwtCredsWithRegionalAccessBoundary) {
   HttpRequest::SetOverride(httpcli_get_valid_json_regional_access_boundary,
                            nullptr, nullptr);
   // First request: jwt_encode_and_sign should be called.
-  auto state = RequestMetadataState::NewInstance(absl::OkStatus(), emd);
+  auto state = RequestMetadataState::NewInstance(absl::OkStatus(), emd_without_rab);
   grpc_jwt_encode_and_sign_set_override(encode_and_sign_jwt_success);
   state->RunRequestMetadataTest(creds, kTestUrlScheme, kTestAuthority,
                                 kTestPath);
   ExecCtx::Get()->Flush();
   EXPECT_THAT(creds->debug_string(),
             ::testing::StartsWith(expected_creds_debug_string_prefix));
+  state = RequestMetadataState::NewInstance(absl::OkStatus(), emd_with_rab);
+  state->RunRequestMetadataTest(creds, kTestUrlScheme, kTestAuthority,
+                                kTestPath);
+  ExecCtx::Get()->Flush();
   creds->Unref();
   gpr_free(json_key_string);
   grpc_jwt_encode_and_sign_set_override(nullptr);
@@ -1537,7 +1565,8 @@ TEST_F(CredentialsTest, TestJwtCredsFetchRegionalAccessBoundaryRespectsCache) {
   char* json_key_string = test_json_key_str();
   ExecCtx exec_ctx;
   std::string expected_md_value = absl::StrCat("Bearer ", test_signed_jwt);
-  std::string emd = absl::StrCat("authorization: ", expected_md_value, ", ",
+  std::string emd_without_rab = absl::StrCat("authorization: ", expected_md_value);
+  std::string emd_with_rab = absl::StrCat("authorization: ", expected_md_value, ", ",
                                  "x-allowed-locations: us-west1");
   grpc_call_credentials* creds =
       grpc_service_account_jwt_access_credentials_create(
@@ -1545,13 +1574,13 @@ TEST_F(CredentialsTest, TestJwtCredsFetchRegionalAccessBoundaryRespectsCache) {
   HttpRequest::SetOverride(httpcli_get_valid_json_regional_access_boundary,
                            nullptr, nullptr);
   // First request: jwt_encode_and_sign should be called.
-  auto state = RequestMetadataState::NewInstance(absl::OkStatus(), emd);
+  auto state = RequestMetadataState::NewInstance(absl::OkStatus(), emd_without_rab);
   grpc_jwt_encode_and_sign_set_override(encode_and_sign_jwt_success);
   state->RunRequestMetadataTest(creds, kTestUrlScheme, kTestAuthority,
                                 kTestPath);
   ExecCtx::Get()->Flush();
   // Second request: the cached token should be served directly.
-  state = RequestMetadataState::NewInstance(absl::OkStatus(), emd);
+  state = RequestMetadataState::NewInstance(absl::OkStatus(), emd_with_rab);
   grpc_jwt_encode_and_sign_set_override(
       encode_and_sign_jwt_should_not_be_called);
   state->RunRequestMetadataTest(creds, kTestUrlScheme, kTestAuthority,
@@ -4576,14 +4605,21 @@ TEST_F(ExternalAccountCredentialsTest, SuccessWithWorkforcePoolRab) {
   };
   auto creds = MakeRefCounted<TestExternalAccountCredentials>(
       options, std::vector<std::string>(), event_engine_);
-  auto state = RequestMetadataState::NewInstance(
+  auto state_initial = RequestMetadataState::NewInstance(
+      absl::OkStatus(), "authorization: Bearer token_exchange_access_token");
+  auto state_cached = RequestMetadataState::NewInstance(
       absl::OkStatus(), "authorization: Bearer token_exchange_access_token, x-allowed-locations: 0x08");
   HttpRequest::SetOverride(external_account_creds_httpcli_get_rab_success,
                            external_account_creds_httpcli_post_success,
                            httpcli_put_should_not_be_called);
-  state->RunRequestMetadataTest(creds.get(), kTestUrlScheme, kTestAuthority,
+  state_initial->RunRequestMetadataTest(creds.get(), kTestUrlScheme, kTestAuthority,
                                 kTestPath);
   event_engine_->TickUntilIdle();
+  ExecCtx::Get()->Flush();
+  state_cached->RunRequestMetadataTest(creds.get(), kTestUrlScheme, kTestAuthority,
+                                kTestPath);
+  event_engine_->TickUntilIdle();
+  ExecCtx::Get()->Flush();
   HttpRequest::SetOverride(nullptr, nullptr, nullptr);
 }
 
@@ -4612,14 +4648,21 @@ TEST_F(ExternalAccountCredentialsTest, SuccessWithWorkloadIdentityPoolRab) {
   };
   auto creds = MakeRefCounted<TestExternalAccountCredentials>(
       options, std::vector<std::string>(), event_engine_);
-  auto state = RequestMetadataState::NewInstance(
+  auto state_initial = RequestMetadataState::NewInstance(
+      absl::OkStatus(), "authorization: Bearer token_exchange_access_token");
+  auto state_cached = RequestMetadataState::NewInstance(
       absl::OkStatus(), "authorization: Bearer token_exchange_access_token, x-allowed-locations: 0x08");
   HttpRequest::SetOverride(external_account_creds_httpcli_get_rab_success,
                            external_account_creds_httpcli_post_success,
                            httpcli_put_should_not_be_called);
-  state->RunRequestMetadataTest(creds.get(), kTestUrlScheme, kGoogleTestAuthority,
+  state_initial->RunRequestMetadataTest(creds.get(), kTestUrlScheme, kGoogleTestAuthority,
                                 kTestPath);
   event_engine_->TickUntilIdle();
+  ExecCtx::Get()->Flush();
+  state_cached->RunRequestMetadataTest(creds.get(), kTestUrlScheme, kGoogleTestAuthority,
+                                kTestPath);
+  event_engine_->TickUntilIdle();
+  ExecCtx::Get()->Flush();
   HttpRequest::SetOverride(nullptr, nullptr, nullptr);
 }
 
@@ -4683,14 +4726,21 @@ TEST_F(ExternalAccountCredentialsTest, SuccessWithServiceAccountImpersonationRab
   };
   auto creds = MakeRefCounted<TestExternalAccountCredentials>(
       options, std::vector<std::string>(), event_engine_);
-  auto state = RequestMetadataState::NewInstance(
+  auto state_initial = RequestMetadataState::NewInstance(
+      absl::OkStatus(), "authorization: Bearer service_account_impersonation_access_token");
+  auto state_cached = RequestMetadataState::NewInstance(
       absl::OkStatus(), "authorization: Bearer service_account_impersonation_access_token, x-allowed-locations: 0x08");
   HttpRequest::SetOverride(external_account_creds_httpcli_get_rab_impersonated,
                            external_account_creds_httpcli_post_success_impersonated,
                            httpcli_put_should_not_be_called);
-  state->RunRequestMetadataTest(creds.get(), kTestUrlScheme, kGoogleTestAuthority,
+  state_initial->RunRequestMetadataTest(creds.get(), kTestUrlScheme, kGoogleTestAuthority,
                                 kTestPath);
   event_engine_->TickUntilIdle();
+  ExecCtx::Get()->Flush();
+  state_cached->RunRequestMetadataTest(creds.get(), kTestUrlScheme, kGoogleTestAuthority,
+                                kTestPath);
+  event_engine_->TickUntilIdle();
+  ExecCtx::Get()->Flush();
   HttpRequest::SetOverride(nullptr, nullptr, nullptr);
 }
 
@@ -4859,12 +4909,13 @@ TEST_F(GcpServiceAccountIdentityCredentialsTest, Basic) {
   g_audience = "CV-6";
   auto token =
       MakeJwtTokenWithExpiration(Timestamp::Now() + Duration::Hours(1));
+  auto auth_header = "authorization: Bearer " + token;
   g_token = token.c_str();
   ExecCtx exec_ctx;
   auto creds =
       MakeRefCounted<GcpServiceAccountIdentityCallCredentials>(g_audience);
   GRPC_CHECK_EQ(creds->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
-  auto state = RequestMetadataState::NewInstance(absl::OkStatus(), g_token);
+  auto state = RequestMetadataState::NewInstance(absl::OkStatus(), auth_header);
   state->RunRequestMetadataTest(creds.get(), kTestUrlScheme, kTestAuthority,
                                 kTestPath);
   ExecCtx::Get()->Flush();
@@ -5012,7 +5063,7 @@ TEST_F(JwtTokenFileCallCredentialsTest, Basic) {
   auto creds = MakeRefCounted<JwtTokenFileCallCredentials>(path, event_engine_);
   GRPC_CHECK_EQ(creds->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
   ExecCtx exec_ctx;
-  auto state = RequestMetadataState::NewInstance(absl::OkStatus(), token);
+  auto state = RequestMetadataState::NewInstance(absl::OkStatus(), "authorization: Bearer " + token);
   state->RunRequestMetadataTest(creds.get(), kTestUrlScheme, kTestAuthority,
                                 kTestPath);
   event_engine_->TickUntilIdle();
@@ -5050,24 +5101,57 @@ TEST_F(JwtTokenFileCallCredentialsTest, InvalidToken) {
 
 
 
+// Global variables to coordinate request ordering
+static grpc_closure* g_token_on_done = nullptr;
+static grpc_closure g_email_wrapper_closure;
+static grpc_closure* g_original_email_on_done = nullptr;
+
+static void OnEmailDoneWrapper(void* /*arg*/, grpc_error_handle error) {
+  // Schedule token callback first (so it's deeper in the stack/queue if LIFO)
+  // Wait... if it is LIFO, the LAST scheduled runs FIRST.
+  // We want Email callback to run FIRST.
+  // So Email callback must be LAST scheduled.
+  
+  if (g_token_on_done != nullptr) {
+    grpc_core::Closure::Run(DEBUG_LOCATION, g_token_on_done, absl::OkStatus());
+    g_token_on_done = nullptr;
+  }
+  
+  // Run the original email callback last (so it runs first)
+  if (g_original_email_on_done != nullptr) {
+    grpc_core::Closure::Run(DEBUG_LOCATION, g_original_email_on_done, error);
+  }
+}
+
 int compute_engine_with_rab_httpcli_get_success_override(
     const grpc_http_request* request, const URI& uri, Timestamp /*deadline*/,
     grpc_closure* on_done, grpc_http_response* response) {
   if (uri.path() ==
       "/computeMetadata/v1/instance/service-accounts/default/email") {
     *response = http_response(200, "foo@bar.com");
+    // Wrap the email callback to trigger token callback afterwards
+    g_original_email_on_done = on_done;
+    GRPC_CLOSURE_INIT(&g_email_wrapper_closure, OnEmailDoneWrapper, nullptr,
+                      grpc_schedule_on_exec_ctx);
+    ExecCtx::Run(DEBUG_LOCATION, &g_email_wrapper_closure, absl::OkStatus());
+    return 1;
   } else if (uri.path() ==
              "/computeMetadata/v1/instance/service-accounts/default/token") {
     *response = http_response(200, valid_oauth2_json_response);
+    // Delay token callback until email matches
+    g_token_on_done = on_done;
+    return 1;
   } else if (uri.path().find("allowedLocations") != std::string::npos) {
     *response = http_response(200,
                               "{\"encodedLocations\": \"0x08\", "
                               "\"locations\": [\"europe-west1\"]}");
+    ExecCtx::Run(DEBUG_LOCATION, on_done, absl::OkStatus());
+    return 1;
   } else {
     *response = http_response(404, "");
+    ExecCtx::Run(DEBUG_LOCATION, on_done, absl::OkStatus());
+    return 1;
   }
-  ExecCtx::Run(DEBUG_LOCATION, on_done, absl::OkStatus());
-  return 1;
 }
 
 int compute_engine_with_rab_401_httpcli_get_override(
@@ -5090,14 +5174,24 @@ int compute_engine_with_rab_401_httpcli_get_override(
 
 TEST_F(CredentialsTest, TestComputeEngineCredsWithRabSuccess) {
   ExecCtx exec_ctx;
-  std::string emd = "authorization: Bearer ya29.AHES6ZRN3-HlhAPya30GnW_bHSb_, x-allowed-locations: 0x08";
+  g_token_on_done = nullptr;
+  g_original_email_on_done = nullptr;
+  std::string emd_cached = "authorization: Bearer ya29.AHES6ZRN3-HlhAPya30GnW_bHSb_, x-allowed-locations: 0x08";
+  std::string emd_initial = "authorization: Bearer ya29.AHES6ZRN3-HlhAPya30GnW_bHSb_";
   grpc_call_credentials* creds =
       grpc_google_compute_engine_credentials_create(nullptr);
-  auto state = RequestMetadataState::NewInstance(absl::OkStatus(), emd);
+  auto state_initial = RequestMetadataState::NewInstance(absl::OkStatus(), emd_initial);
+
+  auto state_cached = RequestMetadataState::NewInstance(absl::OkStatus(), emd_cached);
   HttpRequest::SetOverride(compute_engine_with_rab_httpcli_get_success_override,
                            httpcli_post_should_not_be_called,
                            httpcli_put_should_not_be_called);
-  state->RunRequestMetadataTest(creds, kTestUrlScheme, kTestAuthority,
+  // 1. Initial request (fetches email, might miss RAB)
+  state_initial->RunRequestMetadataTest(creds, kTestUrlScheme, kTestAuthority,
+                                kTestPath);
+  ExecCtx::Get()->Flush();
+  // 2. Secondary request (uses cached RAB)
+  state_cached->RunRequestMetadataTest(creds, kTestUrlScheme, kTestAuthority,
                                 kTestPath);
   ExecCtx::Get()->Flush();
   creds->Unref();
@@ -5134,7 +5228,7 @@ int compute_engine_concurrent_fetch_override(
 TEST_F(CredentialsTest, TestComputeEngineCredsConcurrentFetch) {
   ExecCtx exec_ctx;
   g_email_fetch_count = 0;
-  std::string emd = "authorization: Bearer ya29.AHES6ZRN3-HlhAPya30GnW_bHSb_, x-allowed-locations: 0x08";
+  std::string emd = "authorization: Bearer ya29.AHES6ZRN3-HlhAPya30GnW_bHSb_";
   grpc_call_credentials* creds =
       grpc_google_compute_engine_credentials_create(nullptr);
   auto state1 = RequestMetadataState::NewInstance(absl::OkStatus(), emd);
