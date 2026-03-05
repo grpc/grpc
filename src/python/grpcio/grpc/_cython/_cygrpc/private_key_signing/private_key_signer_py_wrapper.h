@@ -76,7 +76,7 @@ class PrivateKeySignerPyWrapper final
       absl::string_view data_to_sign,
       grpc_core::PrivateKeySigner::SignatureAlgorithm signature_algorithm,
       void* py_user_sign_fn,
-      std::unique_ptr<CompletionContext> completion_context);
+      std::weak_ptr<CompletionContext> completion_context);
   PrivateKeySignerPyWrapper(SignWrapperForPy sign_py_wrapper,
                             void* py_user_sign_fn, PyObject* destroy_event)
       : sign_py_wrapper_(sign_py_wrapper),
@@ -110,9 +110,12 @@ class AsyncSigningHandlePyWrapper
  public:
   AsyncSigningHandlePyWrapper(
       PrivateKeySignerPyWrapper::CancelWrapperForPy cancel_py_wrapper,
-      void* py_user_cancel_fn)
+      void* py_user_cancel_fn,
+      std::shared_ptr<PrivateKeySignerPyWrapper::CompletionContext>
+          completion_context)
       : cancel_py_wrapper_(cancel_py_wrapper),
-        py_user_cancel_fn_(py_user_cancel_fn) {}
+        py_user_cancel_fn_(py_user_cancel_fn),
+        completion_context_(std::move(completion_context)) {}
   // This will decrememnt the py_user_cancel_fn on object destruction
   ~AsyncSigningHandlePyWrapper() override;
   void Cancel();
@@ -123,6 +126,8 @@ class AsyncSigningHandlePyWrapper
   PrivateKeySignerPyWrapper::CancelWrapperForPy cancel_py_wrapper_;
   // This will hold the Python callable object
   void* py_user_cancel_fn_;
+  std::shared_ptr<PrivateKeySignerPyWrapper::CompletionContext>
+      completion_context_;
 };
 
 // Python cannot call the string constructor directly in Cython. The string

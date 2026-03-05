@@ -14,7 +14,7 @@
 # distutils: language=c++
 
 from libcpp.string cimport string
-from libcpp.memory cimport shared_ptr, unique_ptr
+from libcpp.memory cimport shared_ptr, weak_ptr
 from cpython cimport PyObject
 
 cdef extern from "absl/status/status.h" namespace "absl":
@@ -91,7 +91,7 @@ cdef extern from "src/python/grpcio/grpc/_cython/_cygrpc/private_key_signing/pri
             bint is_sync
         cppclass CompletionContext:
             void OnComplete(StatusOr[string]) nogil
-        ctypedef PrivateKeySignerPyWrapperResult(*SignWrapperForPy)(string_view, CSignatureAlgorithm, void*, unique_ptr[CompletionContext]) noexcept nogil
+        ctypedef PrivateKeySignerPyWrapperResult(*SignWrapperForPy)(string_view, CSignatureAlgorithm, void*, weak_ptr[CompletionContext]) noexcept nogil
         @staticmethod
         shared_ptr[PrivateKeySigner] BuildPrivateKeySigner(SignWrapperForPy, void*, PyObject*)
     cdef string MakeStringForCython(const char*) noexcept

@@ -24,6 +24,7 @@
 
 #include "Python.h"
 #include "grpc/private_key_signer.h"
+#include "absl/status/status.h"
 
 namespace grpc_python {
 
@@ -43,17 +44,16 @@ PrivateKeySignerPyWrapper::Sign(absl::string_view data_to_sign,
                                 SignatureAlgorithm signature_algorithm,
                                 OnSignComplete on_sign_complete) {
   auto completion_context =
-      std::make_unique<CompletionContext>(std::move(on_sign_complete));
+      std::make_shared<CompletionContext>(std::move(on_sign_complete));
 
-  PrivateKeySignerPyWrapperResult result =
-      sign_py_wrapper_(data_to_sign, signature_algorithm, py_user_sign_fn_,
-                       std::move(completion_context));
+  PrivateKeySignerPyWrapperResult result = sign_py_wrapper_(
+      data_to_sign, signature_algorithm, py_user_sign_fn_, completion_context);
   if (result.is_sync) {
     return result.sync_result;
   } else {
     auto handle = std::make_shared<AsyncSigningHandlePyWrapper>(
         result.async_result.cancel_wrapper,
-        result.async_result.py_user_cancel_fn);
+        result.async_result.py_user_cancel_fn, std::move(completion_context));
     return handle;
   }
 }
@@ -85,10 +85,10 @@ AsyncSigningHandlePyWrapper::~AsyncSigningHandlePyWrapper() {
 }
 
 void AsyncSigningHandlePyWrapper::Cancel() {
-  if (cancel_py_wrapper_ == nullptr || py_user_cancel_fn_ == nullptr) {
-    return;
+  if (cancel_py_wrapper_ != nullptr && py_user_cancel_fn_ != nullptr) {
+    cancel_py_wrapper_(py_user_cancel_fn_);
   }
-  cancel_py_wrapper_(py_user_cancel_fn_);
+  completion_context_->OnComplete(absl::CancelledError("Connection cancelled"));
 }
 
 std::string MakeStringForCython(const char* inp, size_t size) {

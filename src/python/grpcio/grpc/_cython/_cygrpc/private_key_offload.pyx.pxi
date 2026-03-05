@@ -25,14 +25,14 @@ cdef StatusOr[string] MakeStringResult(string result):
   return StatusOr[string](result)
 
 cdef class OnCompleteWrapper:
-  cdef unique_ptr[PrivateKeySignerPyWrapper.CompletionContext] completion_context
+  cdef weak_ptr[PrivateKeySignerPyWrapper.CompletionContext] completion_context
 
   # Makes this class callable
   def __call__(self, result):
     cdef StatusOr[string] cpp_result
     cdef string cpp_string
+    cdef shared_ptr[PrivateKeySignerPyWrapper.CompletionContext] locked_completion_context 
     cdef PrivateKeySignerPyWrapper.CompletionContext* local_completion_context
-    local_completion_context = self.completion_context.get()
     if isinstance(result, bytes):
       # We got a signature
       cpp_string = MakeStringForCython(PyBytes_AsString(result), PyBytes_GET_SIZE(result))
@@ -45,10 +45,13 @@ cdef class OnCompleteWrapper:
       # Any other return type is not valid
       cpp_string = MakeStringForCython(PyBytes_AsString(f"Invalid result type: {type(result)}".encode('utf-8')))
       cpp_result = MakeInternalError(cpp_string)
+    locked_completion_context = self.completion_context.lock()
+    local_completion_context = locked_completion_context.get()
     with nogil:
-      local_completion_context.OnComplete(cpp_result)
+      if local_completion_context != NULL:
+        local_completion_context.OnComplete(cpp_result)
 
-cdef PrivateKeySignerPyWrapper.PrivateKeySignerPyWrapperResult async_sign_wrapper(string_view inp, CSignatureAlgorithm algorithm, void* py_user_sign_fn, unique_ptr[PrivateKeySignerPyWrapper.CompletionContext] completion_context) noexcept nogil:
+cdef PrivateKeySignerPyWrapper.PrivateKeySignerPyWrapperResult async_sign_wrapper(string_view inp, CSignatureAlgorithm algorithm, void* py_user_sign_fn, weak_ptr[PrivateKeySignerPyWrapper.CompletionContext] completion_context) noexcept nogil:
   cdef string cpp_string
   cdef const char* data
   cdef size_t size
