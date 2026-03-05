@@ -42,7 +42,7 @@ function cleanup() {
 
   # TODO: improve log error detection per https://github.com/grpc/grpc/pull/41749#discussion_r2876215927
   gcloud functions logs read "${FUNCTION_NAME}" --region="${REGION}" || true
-  (yes || true) | gcloud functions delete "${FUNCTION_NAME}" --region="${REGION}"
+  gcloud -q functions delete "${FUNCTION_NAME}" --region="${REGION}"
 }
 
 trap cleanup SIGINT SIGTERM EXIT
