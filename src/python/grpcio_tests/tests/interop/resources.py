@@ -261,7 +261,8 @@ def async_client_private_key_signer_with_cancel(
 ):
     """
     Of type CustomPrivateKeySign - Callable[[bytes,
-    PrivateKeySignatureAlgorithm], bytes] Takes in data_to_sign and signs it
+    PrivateKeySignatureAlgorithm], bytes].
+    Takes in data_to_sign and signs it
     using the test private key Runs infinitely until cancelled
     """
     cancel = CancelCallable()
