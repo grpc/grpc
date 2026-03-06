@@ -86,7 +86,7 @@ cdef void __postfork_child() noexcept nogil:
             _fork_state.postfork_states_to_reset = []
             _fork_state.fork_epoch += 1
             for channel in _fork_state.channels:
-                channel._cancel_calls_on_fork()
+                channel._postfork_child()
             with _fork_state.fork_in_progress_condition:
                 _fork_state.fork_in_progress = False
         except:
