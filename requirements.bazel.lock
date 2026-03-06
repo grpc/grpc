@@ -91,7 +91,7 @@ requests==2.32.3
     #   opentelemetry-resourcedetector-gcp
 rsa==4.9
     # via google-auth
-tomli==2.4.0
+tomli==2.2.1
     # via incremental
 twisted==24.11.0
     # via -r requirements.bazel.txt

@@ -78,7 +78,9 @@ def check_key_cert_match(key_bytes, cert_bytes):
 def sign_private_key(data_to_sign, private_key_bytes, signature_algorithm):
     # Determine the key type and apply appropriate padding and algorithm.
     # This example assumes an RSA key. Different logic is needed for other key types (e.g., EC).
-    success = check_key_cert_match(private_key_bytes, client_certificate_chain())
+    success = check_key_cert_match(
+        private_key_bytes, client_certificate_chain()
+    )
     if not success:
         raise ValueError("provided key and certificate do not match.")
     private_key = serialization.load_pem_private_key(

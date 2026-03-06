@@ -15,6 +15,7 @@
 
 These APIs are subject to be removed during any minor version release.
 """
+from __future__ import annotations
 
 import copy
 import functools
@@ -125,16 +126,16 @@ CustomPrivateKeySign = Callable[
     [
         bytes,
         PrivateKeySignatureAlgorithm,
-        PrivateKeyOnComplete,
+        "PrivateKeyOnComplete",
     ],
-    Union[bytes, PrivateKeySignCancel],
+    Union[bytes, "PrivateKeySignCancel"],
 ]
 
 
 @experimental_api
 def ssl_channel_credentials_with_custom_signer(
     *,
-    private_key_sign_fn: CustomPrivateKeySign,
+    private_key_sign_fn: "CustomPrivateKeySign",
     root_certificates: Optional[bytes] = None,
     certificate_chain: bytes,
 ) -> grpc.ChannelCredentials:
