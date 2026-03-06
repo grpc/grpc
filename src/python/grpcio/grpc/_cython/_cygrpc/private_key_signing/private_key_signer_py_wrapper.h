@@ -78,6 +78,31 @@ class PrivateKeySignerPyWrapper final
       PyObject* py_user_sign_fn,
       std::weak_ptr<CompletionContext> completion_context);
 
+  class AsyncSigningHandlePyWrapper
+      : public grpc_core::PrivateKeySigner::AsyncSigningHandle {
+   public:
+    AsyncSigningHandlePyWrapper(
+        PrivateKeySignerPyWrapper::CancelWrapperForPy cancel_py_wrapper,
+        PyObject* py_user_cancel_fn,
+        std::shared_ptr<PrivateKeySignerPyWrapper::CompletionContext>
+            completion_context)
+        : cancel_py_wrapper_(cancel_py_wrapper),
+          py_user_cancel_fn_(py_user_cancel_fn),
+          completion_context_(std::move(completion_context)) {}
+    // This will decrememnt the py_user_cancel_fn on object destruction
+    ~AsyncSigningHandlePyWrapper() override;
+    void Cancel();
+
+   private:
+    // This is a function provided by the Cython implementation of Private Key
+    // Offloading.
+    PrivateKeySignerPyWrapper::CancelWrapperForPy cancel_py_wrapper_;
+    // This will hold the Python callable object
+    PyObject* py_user_cancel_fn_;
+    std::shared_ptr<PrivateKeySignerPyWrapper::CompletionContext>
+        completion_context_;
+  };
+
   // The entry point for Cython to build a PrivateKeySigner.
   static std::shared_ptr<grpc_core::PrivateKeySigner> Create(
       SignWrapperForPy sign, PyObject* py_user_sign_fn,
@@ -96,40 +121,15 @@ class PrivateKeySignerPyWrapper final
 
   void Cancel(std::shared_ptr<AsyncSigningHandle> handle) override;
 
-  class AsyncSigningHandlePyWrapper
-      : public grpc_core::PrivateKeySigner::AsyncSigningHandle {
-   public:
-   AsyncSigningHandlePyWrapper(
-       PrivateKeySignerPyWrapper::CancelWrapperForPy cancel_py_wrapper,
-       PyObject* py_user_cancel_fn,
-       std::shared_ptr<PrivateKeySignerPyWrapper::CompletionContext>
-           completion_context)
-       : cancel_py_wrapper_(cancel_py_wrapper),
-         py_user_cancel_fn_(py_user_cancel_fn),
-         completion_context_(std::move(completion_context)) {}
-   // This will decrememnt the py_user_cancel_fn on object destruction
-   ~AsyncSigningHandlePyWrapper() override;
-   void Cancel();
-
-  private:
-   // This is a function provided by the Cython implementation of Private Key
-   // Offloading.
-   PrivateKeySignerPyWrapper::CancelWrapperForPy cancel_py_wrapper_;
-   // This will hold the Python callable object
-   PyObject* py_user_cancel_fn_;
-   std::shared_ptr<PrivateKeySignerPyWrapper::CompletionContext>
-       completion_context_;
-  };
-
-private:
-// This is a function provided by the Cython implementation of Private Key
-// Offloading.
-SignWrapperForPy sign_py_wrapper_;
-// This will hold the Python callable object
-PyObject* py_user_sign_fn_;
-// An event to make sure the python interpreter stays alive until this
-// destruction is complete
-PyObject* destroy_event_;
+ private:
+  // This is a function provided by the Cython implementation of Private Key
+  // Offloading.
+  SignWrapperForPy sign_py_wrapper_;
+  // This will hold the Python callable object
+  PyObject* py_user_sign_fn_;
+  // An event to make sure the python interpreter stays alive until this
+  // destruction is complete
+  PyObject* destroy_event_;
 };
 
 // Python cannot call the string constructor directly in Cython. The string

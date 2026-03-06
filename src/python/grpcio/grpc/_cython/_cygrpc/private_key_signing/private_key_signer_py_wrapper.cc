@@ -62,8 +62,7 @@ PrivateKeySignerPyWrapper::Sign(absl::string_view data_to_sign,
   if (result.is_sync) {
     return result.sync_result;
   } else {
-    auto handle = std::make_shared<
-        PrivateKeySignerPyWrapper::AsyncSigningHandlePyWrapper>(
+    auto handle = std::make_shared<AsyncSigningHandlePyWrapper>(
         result.async_result.cancel_wrapper,
         result.async_result.py_user_cancel_fn, std::move(completion_context));
     return handle;
@@ -73,8 +72,8 @@ PrivateKeySignerPyWrapper::Sign(absl::string_view data_to_sign,
 void PrivateKeySignerPyWrapper::Cancel(
     std::shared_ptr<AsyncSigningHandle> handle) {
   if (handle == nullptr) return;
-  auto handle_impl = std::static_pointer_cast<
-      PrivateKeySignerPyWrapper::AsyncSigningHandlePyWrapper>(handle);
+  auto handle_impl =
+      std::static_pointer_cast<AsyncSigningHandlePyWrapper>(handle);
   handle_impl->Cancel();
 }
 
@@ -89,7 +88,7 @@ void PrivateKeySignerPyWrapper::AsyncSigningHandlePyWrapper::Cancel() {
   if (cancel_py_wrapper_ != nullptr && py_user_cancel_fn_ != nullptr) {
     cancel_py_wrapper_(py_user_cancel_fn_);
   }
-  completion_context_ = nullptr;
+  completion_context_.reset();
 }
 
 std::string MakeStringForCython(const char* inp, size_t size) {
