@@ -58,7 +58,7 @@ async def serve():
     await server.start()
     print("Server started, listening on " + _SERVER_PORT)
 
-    # Sleep to make sure client made RPC call and all metrics are exported.
+    # Wait for the client to send an RPC, and for metrics to export.
     await asyncio.sleep(10)
     print("Metrics exported on Server side:")
     for metric in all_metrics:
