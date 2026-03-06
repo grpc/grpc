@@ -252,7 +252,7 @@ RefCountedPtr<const FilterConfig> XdsHttpCompositeFilter::ParseTopLevelConfig(
 }
 
 RefCountedPtr<const FilterConfig> XdsHttpCompositeFilter::ParseOverrideConfig(
-    absl::string_view instance_name,
+    absl::string_view /*instance_name*/,
     const XdsResourceType::DecodeContext& context,
     const XdsExtension& extension, ValidationErrors* errors) const {
   const absl::string_view* serialized_filter_config =
