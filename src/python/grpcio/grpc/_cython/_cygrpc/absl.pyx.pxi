@@ -20,6 +20,7 @@ cdef bint _disable_absl_init_log = os.environ.get("GRPC_PYTHON_DISABLE_ABSL_INIT
 #
 cdef _initialize_absl():
   if not _disable_absl_init_log:
+    SetStderrThreshold(LogSeverityAtLeast.kInfo)
     InitializeLog()
 
 _initialize_absl()

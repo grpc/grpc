@@ -36,5 +36,7 @@ pyx_library(
     deps = [
         "//:grpc",
         "@com_google_absl//absl/log:initialize",
+        "@com_google_absl//absl/log:globals",
+        "@com_google_absl//absl/base:log_severity",
     ],
 )
