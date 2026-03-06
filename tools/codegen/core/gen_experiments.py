@@ -13,11 +13,10 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""
-Generate experiment related code artifacts.
+"""Generate experiment related code artifacts.
 
 Invoke as: tools/codegen/core/gen_experiments.py
-Experiment definitions are in src/core/lib/experiments/experiments.yaml
+Experiment definitions are in src/core/lib/experiments/experiments.bzl
 """
 
 from __future__ import print_function
@@ -27,13 +26,10 @@ import os
 import sys
 
 import experiments_compiler as exp
-import yaml
 
 REPO_ROOT = os.path.normpath(
     os.path.join(os.path.dirname(__file__), "../../..")
 )
-print(REPO_ROOT)
-os.chdir(REPO_ROOT)
 
 DEFAULTS = {
     "broken": "false",
@@ -93,6 +89,58 @@ def ParseCommandLineArguments(args):
         help="Prohibit 'debug' configurations",
         default=False,
     )
+    flag_parser.add_argument(
+        "--experiment_definitions",
+        type=str,
+        default="src/core/lib/experiments/experiments.bzl",
+        help="Specifies the file containing oss experiment definitions",
+    )
+    flag_parser.add_argument(
+        "--rollout_definitions",
+        type=str,
+        default="src/core/lib/experiments/rollouts.bzl",
+        help="Specifies the file containing rollout definitions",
+    )
+    flag_parser.add_argument(
+        "--output_mode",
+        type=str,
+        default="production",
+        choices=["production", "test"],
+        help="If specified, only generate for this mode",
+    )
+    flag_parser.add_argument(
+        "--exp_hdr_codegen_output_file",
+        type=str,
+        default="src/core/lib/experiments/experiments.h",
+        help="Specifies the location where the generated hdr file is written",
+    )
+    flag_parser.add_argument(
+        "--exp_src_codegen_output_file",
+        type=str,
+        default="src/core/lib/experiments/experiments.cc",
+        help="Specifies the location where the generated src file is written",
+    )
+    flag_parser.add_argument(
+        "--exp_test_codegen_output_file",
+        type=str,
+        default="test/core/experiments/experiments_test.cc",
+        help="Specifies the location where the generated test file is written",
+    )
+    flag_parser.add_argument(
+        "--disable_gen_hdrs",
+        action="store_true",
+        help="If specified, disables generation of experiments hdr files",
+    )
+    flag_parser.add_argument(
+        "--disable_gen_srcs",
+        action="store_true",
+        help="If specified, disables generation of experiments source files",
+    )
+    flag_parser.add_argument(
+        "--disable_gen_test",
+        action="store_true",
+        help="If specified, disables generation of experiments tests",
+    )
     return flag_parser.parse_args(args)
 
 
@@ -107,39 +155,35 @@ def _InjectGithubPath(path):
 def _GenerateExperimentFiles(args, mode):
     if mode == "test":
         _EXPERIMENTS_DEFS = (
-            "test/core/experiments/fixtures/test_experiments.yaml"
+            "test/core/experiments/fixtures/test_experiments.bzl"
         )
         _EXPERIMENTS_ROLLOUTS = (
-            "test/core/experiments/fixtures/test_experiments_rollout.yaml"
+            "test/core/experiments/fixtures/test_experiments_rollout.bzl"
         )
         _EXPERIMENTS_HDR_FILE = "test/core/experiments/fixtures/experiments.h"
         _EXPERIMENTS_SRC_FILE = "test/core/experiments/fixtures/experiments.cc"
-        _EXPERIMENTS_BZL_FILE = "bazel/test_experiments.bzl"
     else:
-        _EXPERIMENTS_DEFS = "src/core/lib/experiments/experiments.yaml"
-        _EXPERIMENTS_ROLLOUTS = "src/core/lib/experiments/rollouts.yaml"
+        _EXPERIMENTS_DEFS = "src/core/lib/experiments/experiments.bzl"
+        _EXPERIMENTS_ROLLOUTS = "src/core/lib/experiments/rollouts.bzl"
         _EXPERIMENTS_HDR_FILE = "src/core/lib/experiments/experiments.h"
         _EXPERIMENTS_SRC_FILE = "src/core/lib/experiments/experiments.cc"
-        _EXPERIMENTS_BZL_FILE = "bazel/experiments.bzl"
-        if "/google3/" in REPO_ROOT:
-            _EXPERIMENTS_ROLLOUTS = _InjectGithubPath(_EXPERIMENTS_ROLLOUTS)
+
+    # Override defaults if flags are provided
+    if args.output_mode == mode or args.output_mode is None:
+        if args.experiment_definitions and mode != "test":
+            _EXPERIMENTS_DEFS = args.experiment_definitions
+        if args.rollout_definitions and mode != "test":
+            _EXPERIMENTS_ROLLOUTS = args.rollout_definitions
+
+        if args.exp_hdr_codegen_output_file:
+            _EXPERIMENTS_HDR_FILE = args.exp_hdr_codegen_output_file
+        elif "/google3/" in REPO_ROOT and mode != "test":
             _EXPERIMENTS_HDR_FILE = _InjectGithubPath(_EXPERIMENTS_HDR_FILE)
+
+        if args.exp_src_codegen_output_file:
+            _EXPERIMENTS_SRC_FILE = args.exp_src_codegen_output_file
+        elif "/google3/" in REPO_ROOT and mode != "test":
             _EXPERIMENTS_SRC_FILE = _InjectGithubPath(_EXPERIMENTS_SRC_FILE)
-            _EXPERIMENTS_BZL_FILE = _InjectGithubPath(_EXPERIMENTS_BZL_FILE)
-
-    with open(_EXPERIMENTS_DEFS) as f:
-        attrs = yaml.safe_load(f.read())
-
-    if not exp.AreExperimentsOrdered(attrs):
-        print("Experiments are not ordered")
-        sys.exit(1)
-
-    with open(_EXPERIMENTS_ROLLOUTS) as f:
-        rollouts = yaml.safe_load(f.read())
-
-    if not exp.AreExperimentsOrdered(rollouts):
-        print("Rollouts are not ordered")
-        sys.exit(1)
 
     compiler = exp.ExperimentsCompiler(
         DEFAULTS,
@@ -149,45 +193,48 @@ def _GenerateExperimentFiles(args, mode):
         BZL_LIST_FOR_DEFAULTS,
     )
 
+    if not compiler.LoadExperimentsFromBzl(
+        _EXPERIMENTS_DEFS, "EXPERIMENTS", args.check
+    ):
+        sys.exit(1)
+
+    if not compiler.LoadRolloutsFromBzl(_EXPERIMENTS_ROLLOUTS, "ROLLOUTS"):
+        sys.exit(1)
+
     experiment_annotation = "gRPC Experiments: "
-    for attr in attrs:
-        exp_definition = exp.ExperimentDefinition(attr)
-        if not exp_definition.IsValid(args.check):
-            sys.exit(1)
-        experiment_annotation += exp_definition.name + ":0,"
-        if not compiler.AddExperimentDefinition(exp_definition):
-            print("Experiment = %s ERROR adding" % exp_definition.name)
-            sys.exit(1)
+    for name in compiler.experiment_names:
+        experiment_annotation += name + ":0,"
 
     if len(experiment_annotation) > 2000:
         print("comma-delimited string of experiments is too long")
         sys.exit(1)
 
-    for rollout_attr in rollouts:
-        if not compiler.AddRolloutSpecification(rollout_attr):
-            print("ERROR adding rollout spec")
-            sys.exit(1)
-
     if mode != "test" and args.no_dbg_experiments:
         print("Ensuring no debug experiments are configured")
         compiler.EnsureNoDebugExperiments()
 
-    print(f"Mode = {mode} Generating experiments headers")
-    compiler.GenerateExperimentsHdr(_EXPERIMENTS_HDR_FILE, mode)
+    if not args.disable_gen_hdrs:
+        print(
+            f"Mode = {mode} Generating experiments headers into"
+            f" {_EXPERIMENTS_HDR_FILE}"
+        )
+        compiler.GenerateExperimentsHdr(_EXPERIMENTS_HDR_FILE, mode)
 
-    print(f"Mode = {mode} Generating experiments srcs")
-    compiler.GenerateExperimentsSrc(
-        _EXPERIMENTS_SRC_FILE, _EXPERIMENTS_HDR_FILE, mode
-    )
-
-    print("Generating experiments.bzl")
-    compiler.GenExperimentsBzl(mode, _EXPERIMENTS_BZL_FILE)
-    if mode == "test":
-        print("Generating experiments tests")
-        compiler.GenTest(
-            os.path.join(REPO_ROOT, "test/core/experiments/experiments_test.cc")
+    if not args.disable_gen_srcs:
+        print(
+            f"Mode = {mode} Generating experiments srcs into"
+            f" {_EXPERIMENTS_SRC_FILE}"
+        )
+        compiler.GenerateExperimentsSrc(
+            _EXPERIMENTS_SRC_FILE, _EXPERIMENTS_HDR_FILE, mode
         )
 
+    if mode == "test" and not args.disable_gen_test:
+        print(
+            "Generating experiments tests into"
+            f" {args.exp_test_codegen_output_file}"
+        )
+        compiler.GenTest(args.exp_test_codegen_output_file)
 
-_GenerateExperimentFiles(args, "production")
-_GenerateExperimentFiles(args, "test")
+
+_GenerateExperimentFiles(args, args.output_mode)

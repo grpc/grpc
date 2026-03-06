@@ -26,10 +26,10 @@ grpc_package(
 grpc_cc_library(
     name = "experiments_lib",
     srcs = [
-        "fixtures/experiments.cc",
+        "//test/core/experiments/fixtures:experiments.cc",
     ],
     hdrs = [
-        "fixtures/experiments.h",
+        "//test/core/experiments/fixtures:experiments.h",
     ],
     deps = [
         "//:gpr",

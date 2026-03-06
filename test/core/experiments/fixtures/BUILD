@@ -12,20 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-- name: test_experiment_1
-  default: 
-    ios: broken
-    windows: false
-    posix: debug
-- name: test_experiment_2
-  default:
-    ios: true
-    windows: false
-    posix: debug
-- name: test_experiment_3
-  default: debug
-- name: test_experiment_4
-  default:
-    ios: true
-    windows: true
-    posix: false
+exports_files(
+    [
+        "experiments.cc",
+        "experiments.h",
+        "test_experiments.bzl",
+        "test_experiments_rollout.bzl",
+    ],
+    visibility = ["//:__subpackages__"],
+)
