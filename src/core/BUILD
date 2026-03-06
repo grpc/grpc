@@ -1871,12 +1871,10 @@ grpc_cc_library(
     hdrs = [
         "telemetry/telemetry_label.h",
     ],
-    public_hdrs = [
-        "//:include/grpc/context_types.h",
-    ],
     deps = [
         "arena",
         "//:gpr",
+        "//:grpc_public_hdrs",
     ],
 )
 

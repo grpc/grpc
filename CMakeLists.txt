@@ -4984,7 +4984,6 @@ foreach(_hdr
   include/grpc++/support/stub_options.h
   include/grpc++/support/sync_stream.h
   include/grpc++/support/time.h
-  include/grpc/context_types.h
   include/grpcpp/alarm.h
   include/grpcpp/call_context_types.h
   include/grpcpp/channel.h
@@ -5731,7 +5730,6 @@ foreach(_hdr
   include/grpc++/support/stub_options.h
   include/grpc++/support/sync_stream.h
   include/grpc++/support/time.h
-  include/grpc/context_types.h
   include/grpcpp/alarm.h
   include/grpcpp/call_context_types.h
   include/grpcpp/channel.h
