@@ -118,7 +118,7 @@ def wrap_server_method_handler(wrapper, handler):
 # See the `ssl_channel_credentials_with_custom_signer` docstring for more detail on usage.
 PrivateKeySignCancel = Callable[[], None]
 PrivateKeySignatureAlgorithm = _cygrpc.PrivateKeySignatureAlgorithm
-PrivateKeyOnComplete = Callable[[bytes], None]
+PrivateKeyOnComplete = Callable[[Union[bytes, Exception]], None]
 
 # See the `ssl_channel_credentials_with_custom_signer` docstring for more detail on usage.
 # The custom signing function for a user to implement and pass to gRPC Python.
