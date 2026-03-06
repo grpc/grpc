@@ -42,7 +42,7 @@ class CompositeFilter final : public V3InterceptorToV2Bridge<CompositeFilter> {
   // A matcher action indicating that no filter chain should be used.
   class SkipFilterAction final : public XdsMatcher::Action {
    public:
-    bool Equals(const Action& other) const override { return true; }
+    bool Equals(const Action& /*other*/) const override { return true; }
 
     std::string ToString() const override { return "SkipFilter"; }
 
