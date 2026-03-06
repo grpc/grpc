@@ -18,14 +18,6 @@
 #include <grpc/grpc.h>
 #include <grpc/private_key_signer.h>
 
-#if OPENSSL_VERSION_NUMBER >= 0x10100000
-#include <openssl/digest.h>
-#include <openssl/ec.h>
-#include <openssl/evp.h>
-#include <openssl/rsa.h>
-#include <openssl/ssl.h>
-#endif
-
 #include <atomic>
 #include <memory>
 #include <string>
@@ -41,7 +33,14 @@
 #include "absl/strings/str_cat.h"
 #include "absl/synchronization/notification.h"
 
+#if defined(OPENSSL_IS_BORINGSSL)
 #if OPENSSL_VERSION_NUMBER >= 0x10100000
+#include <openssl/digest.h>
+#include <openssl/ec.h>
+#include <openssl/evp.h>
+#include <openssl/rsa.h>
+#include <openssl/ssl.h>
+
 namespace grpc_core {
 namespace testing {
 
@@ -586,7 +585,9 @@ INSTANTIATE_TEST_SUITE_P(PrivateKeyOffloadTest, PrivateKeyOffloadTest,
 }  // namespace
 }  // namespace testing
 }  // namespace grpc_core
-#endif
+
+#endif  // OPENSSL_VERSION_NUMBER >= 0x10100000
+#endif  // OPENSSL_IS_BORINGSSL
 
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(&argc, argv);
