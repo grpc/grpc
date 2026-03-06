@@ -52,16 +52,11 @@ stub = test_pb2_grpc.TestServiceStub(channel)
 
 
 def initial_call():
-    time.sleep(0.5)
-
     response = stub.UnaryCall(messages_pb2.SimpleRequest(), timeout=5)
 
 
 if os.getenv("TEST_INITIAL_CALL", "0") == "1":
     initial_call()
-
-time.sleep(0.5)
-
 
 def process_call():
     try:
@@ -137,9 +132,6 @@ class FunctionsFrameworkForkTest(unittest.TestCase):
         )
         
         try:
-            # wait a bit for the server to start
-            time.sleep(3)
-            
             # send a request
             import urllib.request
             req = urllib.request.Request(f"http://localhost:{framework_port}/")
