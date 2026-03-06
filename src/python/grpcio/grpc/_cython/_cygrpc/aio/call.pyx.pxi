@@ -142,10 +142,13 @@ cdef class _AioCall(GrpcCallWrapper):
         with _observability.get_plugin() as plugin:
             if not (plugin and plugin.observability_enabled):
                 return
-            capsule = plugin.create_client_call_tracer(method, self._channel.target)
-            capsule_ptr = cpython.PyCapsule_GetPointer(capsule, CLIENT_CALL_TRACER)
-            _set_call_tracer(self.call, capsule_ptr)
-            self._call_tracer_capsule = capsule
+            try:
+                capsule = plugin.create_client_call_tracer(method, self._channel.target)
+                capsule_ptr = cpython.PyCapsule_GetPointer(capsule, CLIENT_CALL_TRACER)
+                _set_call_tracer(self.call, capsule_ptr)
+                self._call_tracer_capsule = capsule
+            except Exception as e:
+                _LOGGER.exception(f"Failed to set client call tracer for {method}")
 
 
     cdef void _set_status(self, AioRpcStatus status) except *:
