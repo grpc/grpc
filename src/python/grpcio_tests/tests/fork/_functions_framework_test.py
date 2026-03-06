@@ -13,25 +13,27 @@
 # limitations under the License.
 
 import os
-import subprocess
+from pathlib import Path
 import socket
+import subprocess
 import sys
 import tempfile
 import threading
 import time
 import unittest
 
+from src.proto.grpc.testing import test_pb2_grpc
 from tests.fork import debugger
 from tests.interop import service as interop_service
 from tests.unit import test_common
-from src.proto.grpc.testing import test_pb2_grpc
+
 
 def _dump_streams(name, streams):
     assert len(streams) == 2
     for stream_name, stream in zip(("STDOUT", "STDERR"), streams):
         stream.seek(0)
         sys.stderr.write(
-            "{} {}:\n{}\n".format(name, stream_name, stream.read().decode("utf-8", "ignore"))
+            "{} {}:\n{}\n".format(name, stream_name, stream.read())
         )
         stream.close()
     sys.stderr.flush()
@@ -93,35 +95,35 @@ class FunctionsFrameworkForkTest(unittest.TestCase):
         server = test_common.test_server()
         test_pb2_grpc.add_TestServiceServicer_to_server(
             interop_service.TestService(), server)
-        port = server.add_insecure_port('[::]:0')
+        port = server.add_insecure_port("[::]:0")
         server.start()
 
         script = _CLIENT_FORK_SCRIPT_TEMPLATE % port
-        
+
         # We need to run functions framework targeting this script.
         # Write the script to a temporary file.
         fd, script_path = tempfile.mkstemp(suffix=".py")
-        os.write(fd, script.encode("utf-8"))
+        os.write(fd, script)
         os.close(fd)
-            
+
         streams = tuple(tempfile.TemporaryFile() for _ in range(2))
-        
+
         env = os.environ.copy()
         if fork_support:
-            env['GRPC_ENABLE_FORK_SUPPORT'] = '1'
+            env["GRPC_ENABLE_FORK_SUPPORT"] = "1"
         else:
-            env['GRPC_ENABLE_FORK_SUPPORT'] = '0'
-            
+            env["GRPC_ENABLE_FORK_SUPPORT"] = "0"
+
         if initial_call:
-            env['TEST_INITIAL_CALL'] = '1'
-        
+            env["TEST_INITIAL_CALL"] = "1"
+
         # Ensure PYTHONPATH is passed to the subprocess (macOS SIP strips it by default)
-        env['PYTHONPATH'] = os.environ.get('PYTHONPATH', '')
-        
+        env["PYTHONPATH"] = os.environ.get("PYTHONPATH", "")
+
         # Find a free port
         sock = socket.socket()
         sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        sock.bind(('', 0))
+        sock.bind(("", 0))
         framework_port = sock.getsockname()[1]
         sock.close()
 
@@ -130,21 +132,21 @@ class FunctionsFrameworkForkTest(unittest.TestCase):
             [sys.executable, "-m", "functions_framework", "--target", "hello", "--source", script_path, "--port", str(framework_port)],
             stdout=streams[0], stderr=streams[1], env=env
         )
-        
+
         try:
             # send a request
             import urllib.request
             req = urllib.request.Request(f"http://localhost:{framework_port}/")
             try:
-                response = urllib.request.urlopen(req, timeout=10)
-                resp_text = response.read().decode('utf-8')
+                with urllib.request.urlopen(req, timeout=10) as response: # noqa: S310
+                    resp_text = response.read()
             except Exception as e:
                 # server might not be serving successfully, ignore
                 resp_text = str(e)
-            
+
             # terminate process
             process.terminate()
-            
+
             try:
                 process.wait(timeout=_SUBPROCESS_TIMEOUT_S)
             except subprocess.TimeoutExpired:
@@ -153,13 +155,13 @@ class FunctionsFrameworkForkTest(unittest.TestCase):
                 process.kill()
                 process.wait()
                 raise AssertionError("Parent process timed out.")
-                
+
             self.assertIn("OK", resp_text, f"Framework HTTP request failed: {resp_text}")
         finally:
-            os.unlink(script_path)
+            Path.unlink(script_path)
             # Dump output as in the original fork interop test
             _dump_streams("Client", streams)
-            
+
             server.stop(None).wait()
 
 if __name__ == "__main__":
