@@ -155,7 +155,10 @@ class OpenTelemetryObservabilityTest(AioTestBase):
             if "grpc.server" in base_metric.name:
                 self.assertTrue(
                     base_metric.name in metric_names,
-                    msg=f"metric {base_metric.name} not found in exported metrics: {metric_names}!",
+                    msg=(
+                        f"metric {base_metric.name} not found"
+                        f"in exported metrics: {metric_names}!"
+                    ),
                 )
 
     def _validate_client_metrics_names(self, metric_names: Set[str]) -> None:
