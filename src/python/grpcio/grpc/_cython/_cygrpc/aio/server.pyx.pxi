@@ -793,7 +793,7 @@ async def _schedule_rpc_coro(object rpc_coro,
     finally:
         # All batches (both OK and NOK paths) are complete at this point. Explicitly
         # release the call so that the server call tracer records completion metrics
-        # (duration, bytes) immediatelly rather than waiting for non-deterministic
+        # (duration, bytes) immediately rather than waiting for non-deterministic
         # garbage collection of RPCState object
         if rpc_state.call:
             grpc_call_unref(rpc_state.call)
