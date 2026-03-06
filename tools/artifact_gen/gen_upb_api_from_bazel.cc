@@ -28,6 +28,7 @@
 #include <string>
 #include <vector>
 
+#include "pugixml.hpp"
 #include "absl/flags/flag.h"
 #include "absl/flags/parse.h"
 #include "absl/log/log.h"
@@ -35,7 +36,6 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_join.h"
 #include "absl/strings/str_replace.h"
-#include "pugixml.hpp"
 
 // Command-line flags
 ABSL_FLAG(bool, verbose, false, "Enable verbose output.");
@@ -80,7 +80,8 @@ std::map<std::string, Rule> ParseBazelRules(
 
   for (pugi::xml_node rule_node : doc.child("query").children("rule")) {
     std::string rule_class = rule_node.attribute("class").as_string();
-    if (!rule_types.empty() && rule_types.find(rule_class) == rule_types.end()) {
+    if (!rule_types.empty() &&
+        rule_types.find(rule_class) == rule_types.end()) {
       continue;
     }
 
@@ -227,24 +228,26 @@ void CopyFile(const std::string& src, const std::string& dest) {
       exit(1);
     }
   }
-  
-  // Copy file content without preserving permissions (like Python's shutil.copyfile)
+
+  // Copy file content without preserving permissions (like Python's
+  // shutil.copyfile)
   std::ifstream src_file(src, std::ios::binary);
   if (!src_file) {
     std::cerr << "Error: Cannot open source file: " << src << std::endl;
     exit(1);
   }
-  
+
   std::ofstream dest_file(dest_path, std::ios::binary);
   if (!dest_file) {
     std::cerr << "Error: Cannot open destination file: " << dest << std::endl;
     exit(1);
   }
-  
+
   dest_file << src_file.rdbuf();
-  
+
   if (!dest_file.good() || !src_file.good()) {
-    std::cerr << "Error: Failed to copy file content from " << src << " to " << dest << std::endl;
+    std::cerr << "Error: Failed to copy file content from " << src << " to "
+              << dest << std::endl;
     exit(1);
   }
 }
@@ -264,10 +267,11 @@ void CopyUpbGeneratedFiles(std::vector<Rule>& rules, bool verbose,
 
   std::map<std::string, std::string> files_to_copy;
   for (const auto& rule : rules) {
-    const auto& extensions = (rule.type == "upb_c_proto_library")
-                                 ? std::vector<std::string>{".upb.h", ".upb_minitable.h",
-                                                    ".upb_minitable.c"}
-                                 : std::vector<std::string>{".upbdefs.h", ".upbdefs.c"};
+    const auto& extensions =
+        (rule.type == "upb_c_proto_library")
+            ? std::vector<std::string>{".upb.h", ".upb_minitable.h",
+                                       ".upb_minitable.c"}
+            : std::vector<std::string>{".upbdefs.h", ".upbdefs.c"};
     const auto& output_dir =
         (rule.type == "upb_c_proto_library") ? upb_out : upbdefs_out;
     for (const auto& proto_file_raw : rule.proto_files) {

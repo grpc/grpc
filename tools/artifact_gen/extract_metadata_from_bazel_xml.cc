@@ -713,18 +713,17 @@ class ArtifactGen {
     std::ifstream fs(filename);
     nlohmann::json http_archives = nlohmann::json::parse(fs);
     // Make a copy for each element
-    for (nlohmann::json http_archive: http_archives["http_archives"]){
-        const std::string name = http_archive["name"].get<std::string>();
-        if (external_proto_libraries_.count(name) == 0) {
-          // If this http archive is not one of the external proto libraries,
-          // we don't want to include it as a CMake target
-          continue;
-        }
-        const auto& extlib =
-            external_proto_libraries_.find(name)->second;
-        http_archive["destination"] = extlib.destination;
-        http_archive["proto_prefix"] = extlib.proto_prefix;
-        external_proto_libraries.push_back(http_archive);
+    for (nlohmann::json http_archive : http_archives["http_archives"]) {
+      const std::string name = http_archive["name"].get<std::string>();
+      if (external_proto_libraries_.count(name) == 0) {
+        // If this http archive is not one of the external proto libraries,
+        // we don't want to include it as a CMake target
+        continue;
+      }
+      const auto& extlib = external_proto_libraries_.find(name)->second;
+      http_archive["destination"] = extlib.destination;
+      http_archive["proto_prefix"] = extlib.proto_prefix;
+      external_proto_libraries.push_back(http_archive);
     }
 
     build_yaml_like_["external_proto_libraries"] = external_proto_libraries;
