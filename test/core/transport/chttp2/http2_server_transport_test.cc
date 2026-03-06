@@ -96,7 +96,7 @@ TEST_F(Http2ServerTransportTest, TestHttp2ServerTransportObjectCreation) {
   mock_endpoint.ExpectRead(
       {EventEngineSlice(
            grpc_slice_from_copied_string(GRPC_CHTTP2_CLIENT_CONNECT_STRING)),
-       helper_.EventEngineSliceFromHttp2SettingsFrameDefault(),
+       helper_.EventEngineSliceFromHttp2SettingsFrameClientDefault(),
        helper_.EventEngineSliceFromHttp2DataFrame(
            /*payload=*/"Hello!", /*stream_id=*/9, /*end_stream=*/false),
        helper_.EventEngineSliceFromHttp2DataFrame(
