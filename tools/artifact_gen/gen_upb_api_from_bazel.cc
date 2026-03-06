@@ -60,7 +60,7 @@ struct Rule {
   std::vector<std::string> proto_files;
 };
 
-struct ExternalRepoPrefix{
+struct ExternalRepoPrefix {
   // Repo name in file path, can be apparent or canonical
   std::string repo;
   // Canonical name is the actual folder name under bazel-out/.
@@ -184,7 +184,7 @@ ExternalRepoPrefix GetExternalRepoPrefix(const std::string& file) {
     std::string source_dir;
   };
 
-  static const std::vector<ExternalLink> kExternalLinks = {
+  const std::vector<ExternalLink> kExternalLinks = {
       {"@@protobuf+//", "@com_google_protobuf//", "src/"},
       {"@@googleapis+//", "@com_google_googleapis//", ""},
       {"@@xds+//", "@com_github_cncf_xds//", ""},
