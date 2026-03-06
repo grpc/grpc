@@ -42,7 +42,7 @@ certifi
 chardet
 gevent~=25.8
 google-auth
-cryptography
+cryptography~=45.0
 googleapis-common-protos
 idna
 opentelemetry-api
