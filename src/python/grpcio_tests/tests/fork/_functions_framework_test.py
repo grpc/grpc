@@ -88,20 +88,11 @@ _SUBPROCESS_TIMEOUT_S = 80
 )
 class FunctionsFrameworkForkTest(unittest.TestCase):
 
-    @unittest.skip("Skipping for now, since it fails")
     def testFunctionsFrameworkForkOnInitialCallOn(self):
         self._verifyTestCase(fork_support=True, initial_call=True)
 
-    @unittest.skip("Skipping for now, since it fails")
     def testFunctionsFrameworkForkOnInitialCallOff(self):
         self._verifyTestCase(fork_support=True, initial_call=False)
-
-    def testFunctionsFrameworkForkOffInitialCallOn(self):
-        self._verifyTestCase(fork_support=False, initial_call=True)
-
-    @unittest.skip("Skipping for now, since it hangs")
-    def testFunctionsFrameworkForkOffInitialCallOff(self):
-        self._verifyTestCase(fork_support=False, initial_call=False)
 
     def _verifyTestCase(self, fork_support, initial_call):
         server = test_common.test_server()
