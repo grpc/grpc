@@ -983,6 +983,7 @@ grpc_cc_test(
         "//:orphanable",
         "//src/core:arena",
         "//src/core:call_filters",
+        "//src/core:call_spine",
         "//src/core:channel_args",
         "//src/core:chttp2_flow_control",
         "//src/core:default_event_engine",
