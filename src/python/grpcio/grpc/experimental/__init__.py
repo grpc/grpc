@@ -118,7 +118,7 @@ def wrap_server_method_handler(wrapper, handler):
 # See the `ssl_channel_credentials_with_custom_signer` docstring for more detail on usage.
 PrivateKeySignCancel = Callable[[], None]
 PrivateKeySignatureAlgorithm = _cygrpc.PrivateKeySignatureAlgorithm
-PrivateKeyOnComplete = Callable[[Union[bytes, Exception]], None]
+PrivateKeySignOnComplete = Callable[[Union[bytes, Exception]], None]
 
 # See the `ssl_channel_credentials_with_custom_signer` docstring for more detail on usage.
 # The custom signing function for a user to implement and pass to gRPC Python.
@@ -126,7 +126,7 @@ CustomPrivateKeySign = Callable[
     [
         bytes,
         PrivateKeySignatureAlgorithm,
-        "PrivateKeyOnComplete",
+        "PrivateKeySignOnComplete",
     ],
     Union[bytes, "PrivateKeySignCancel"],
 ]
@@ -142,6 +142,7 @@ def ssl_channel_credentials_with_custom_signer(
     """Creates a ChannelCredentials for use with an SSL-enabled Channel with a custom signer.
 
     THIS IS AN EXPERIMENTAL API.
+    This API will be removed in a future version and combined with `grpc.ssl_channel_credentials`.
 
     Args:
       private_key_sign_fn: a function with the signature of
@@ -150,7 +151,7 @@ def ssl_channel_credentials_with_custom_signer(
         return asynchronously, return a callable matching the
         `PrivateKeySignCancel` signature.This can be a no-op if no cancellation is
         needed. In the async case, this function must return this callable
-        quickly, then call the passed in `PrivateKeyOnComplete` when the async
+        quickly, then call the passed in `PrivateKeySignOnComplete` when the async
         signing operation is complete to trigger gRPC to continue the handshake.
       root_certificates: The PEM-encoded root certificates as a byte string,
         or None to retrieve them from a default location chosen by gRPC
