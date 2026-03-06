@@ -122,8 +122,6 @@ class TokenFetcherCredentials : public grpc_call_credentials {
     RefCountedPtr<QueuedCall> QueueCall(ClientMetadataHandle initial_metadata)
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(&TokenFetcherCredentials::mu_);
 
-    void CancelCall(QueuedCall* queued_call);
-
    private:
     class BackoffTimer : public InternallyRefCounted<BackoffTimer> {
      public:
@@ -164,17 +162,6 @@ class TokenFetcherCredentials : public grpc_call_credentials {
         ABSL_GUARDED_BY(&TokenFetcherCredentials::mu_);
     // Backoff state.
     BackOff backoff_ ABSL_GUARDED_BY(&TokenFetcherCredentials::mu_);
-  };
-
-  struct CancellationHandler {
-    CancellationHandler(RefCountedPtr<FetchState> fetch_state,
-                        RefCountedPtr<QueuedCall> queued_call);
-    ~CancellationHandler();
-    CancellationHandler(CancellationHandler&&) = default;
-    CancellationHandler& operator=(CancellationHandler&&) = default;
-
-    RefCountedPtr<FetchState> fetch_state;
-    RefCountedPtr<QueuedCall> queued_call;
   };
 
   int cmp_impl(const grpc_call_credentials* other) const override {

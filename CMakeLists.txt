@@ -2325,6 +2325,8 @@ add_library(grpc
   src/core/credentials/call/jwt_token_file/jwt_token_file_call_credentials.cc
   src/core/credentials/call/jwt_util.cc
   src/core/credentials/call/oauth2/oauth2_credentials.cc
+  src/core/credentials/call/regional_access_boundary_fetcher.cc
+  src/core/credentials/call/regional_access_boundary_fetcher.h
   src/core/credentials/call/plugin/plugin_credentials.cc
   src/core/credentials/call/token_fetcher/token_fetcher_credentials.cc
   src/core/credentials/transport/alts/alts_credentials.cc

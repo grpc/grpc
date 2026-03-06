@@ -11381,6 +11381,7 @@ grpc_cc_library(
         "json",
         "json_reader",
         "metadata",
+        "pollset_set",
         "ref_counted",
         "slice",
         "time",

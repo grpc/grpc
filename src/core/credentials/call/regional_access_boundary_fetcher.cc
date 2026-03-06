@@ -28,6 +28,8 @@
 #include "src/core/util/json/json_reader.h"
 #include "absl/log/log.h"
 #include "absl/strings/str_format.h"
+#include "src/core/lib/iomgr/polling_entity.h"
+#include "src/core/lib/iomgr/pollset_set.h"
 
 namespace grpc_core {
 
@@ -40,7 +42,6 @@ namespace {
     "/computeMetadata/v1/instance/service-accounts/default/email";
 }
 
-// static
 RefCountedPtr<RegionalAccessBoundaryFetcher>
 RegionalAccessBoundaryFetcher::Create(
     absl::string_view lookup_url,
@@ -75,7 +76,7 @@ RegionalAccessBoundaryFetcher::RegionalAccessBoundaryFetcher(
   CHECK(event_engine_ != nullptr);
 }
 
-void RegionalAccessBoundaryFetcher::OnFetchSuccess(std::string encoded_locations, std::vector<std::string> locations) {
+void RegionalAccessBoundaryFetcher::OnFetchSuccess(Slice encoded_locations, std::vector<std::string> locations) {
   grpc_core::MutexLock lock(&cache_mu_);
   if (shutdown_) return;
   cache_ = {std::move(encoded_locations), std::move(locations),
@@ -143,9 +144,11 @@ void RegionalAccessBoundaryFetcher::Fetch(absl::string_view access_token,
     if (cache_.has_value() && cache_->expiration > now) {
       initial_metadata.Append(
           kAllowedLocationsKey,
-          Slice::FromCopiedString(
-              cache_->encoded_locations),
-          [](absl::string_view, const Slice&) { abort(); });
+          cache_->encoded_locations.Ref(),
+          [](absl::string_view, const Slice&) { 
+            LOG_EVERY_N_SEC(WARNING, 60) 
+                << "Regional access boundary header could not be appended";
+          });
     }
   }
 }
@@ -161,7 +164,13 @@ RegionalAccessBoundaryFetcher::Request::
                                   absl::string_view access_token)
     : access_token_(access_token), fetcher_(std::move(fetcher)) {
   memset(&response_, 0, sizeof(response_));
-  pollent_ = grpc_polling_entity_create_from_pollset_set(nullptr);
+  pollent_ = grpc_polling_entity_create_from_pollset_set(
+      grpc_pollset_set_create());
+}
+
+RegionalAccessBoundaryFetcher::Request::~Request() {
+  grpc_http_response_destroy(&response_);
+  grpc_pollset_set_destroy(grpc_polling_entity_pollset_set(&pollent_));
 }
 
 void RegionalAccessBoundaryFetcher::Request::Start() {
@@ -229,7 +238,7 @@ void RegionalAccessBoundaryFetcher::Request::OnResponse(grpc_error_handle error)
     }
   }
   if (success) {
-    fetcher_->OnFetchSuccess(std::move(encoded_locations), std::move(locations));
+    fetcher_->OnFetchSuccess(Slice::FromCopiedString(encoded_locations), std::move(locations));
   } else {
     fetcher_->OnFetchFailure(Ref(), error, response_.status, absl::string_view(response_.body, response_.body_length));
   }
@@ -239,10 +248,14 @@ class EmailFetcher::EmailRequest final : public InternallyRefCounted<EmailReques
  public:
   explicit EmailRequest(WeakRefCountedPtr<EmailFetcher> fetcher)
       : fetcher_(std::move(fetcher)) {
-    pollent_ = grpc_polling_entity_create_from_pollset_set(nullptr);
+    pollent_ = grpc_polling_entity_create_from_pollset_set(
+        grpc_pollset_set_create());
   }
 
-  ~EmailRequest() override { grpc_http_response_destroy(&response_); }
+  ~EmailRequest() override {
+    grpc_http_response_destroy(&response_);
+    grpc_pollset_set_destroy(grpc_polling_entity_pollset_set(&pollent_));
+  }
 
   void Start() {
     grpc_http_header header = {const_cast<char*>("Metadata-Flavor"),
@@ -305,20 +318,17 @@ EmailFetcher::EmailFetcher(
                         ? grpc_event_engine::experimental::GetDefaultEventEngine()
                         : std::move(event_engine)) {}
 
+EmailFetcher::~EmailFetcher() = default;
+
 void EmailFetcher::StartEmailFetch() {
   MutexLock lock(&mu_);
   if (Timestamp::Now() < next_fetch_earliest_time_) {
     return;
   }
   // Check if we are in the initial/retryable state (null EmailRequest)
-  if (auto* pending = std::get_if<OrphanablePtr<EmailRequest>>(&state_)) {
-    if (*pending != nullptr) {
-      return;  // Already fetching email
-    }
-  } else {
-    return;  // Already have RAB fetcher
-  }
-
+  auto* pending = std::get_if<OrphanablePtr<EmailRequest>>(&state_);
+  if (pending == nullptr) return;  // Already have RAB fetcher.
+  if (*pending != nullptr) return;  // Email fetch already in progress.
   auto request = MakeOrphanable<EmailRequest>(WeakRef());
   // We keep a temporary ref to start it, but transfer ownership to state_ first.
   auto* request_ptr = request.get();
@@ -335,7 +345,7 @@ void EmailFetcher::Fetch(absl::string_view token,
   }
 }
 
-EmailFetcher::~EmailFetcher() = default;
+
 
 void EmailFetcher::Orphaned() {
   MutexLock lock(&mu_);

@@ -64,18 +64,18 @@ class RegionalAccessBoundaryFetcher final : public DualRefCounted<RegionalAccess
   friend class RegionalAccessBoundaryFetcherTest;
 
   struct RegionalAccessBoundary {
-    std::string encoded_locations;
+    Slice encoded_locations;
     std::vector<std::string> locations;
     grpc_core::Timestamp expiration;
   };
 
   class Request;
 
-  void OnFetchSuccess(std::string encoded_locations, std::vector<std::string> locations);
+  void OnFetchSuccess(Slice encoded_locations, std::vector<std::string> locations);
   void OnFetchFailure(grpc_core::RefCountedPtr<Request> req, grpc_error_handle error, int http_status, absl::string_view response_body);
 
   std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_;
-  grpc_core::URI lookup_uri_;
+  const grpc_core::URI lookup_uri_;
   grpc_core::Mutex cache_mu_;
   std::optional<RegionalAccessBoundary> cache_ ABSL_GUARDED_BY(&cache_mu_) ;
   Timestamp next_fetch_time_ ABSL_GUARDED_BY(&cache_mu_) = Timestamp::InfPast();
@@ -90,9 +90,7 @@ class RegionalAccessBoundaryFetcher::Request final
   Request(grpc_core::WeakRefCountedPtr<RegionalAccessBoundaryFetcher> fetcher,
           absl::string_view access_token);
 
-  ~Request() override {
-    grpc_http_response_destroy(&response_);
-  }
+  ~Request() override;
 
   void Start();
 
@@ -117,13 +115,13 @@ class EmailFetcher final : public DualRefCounted<EmailFetcher> {
  public:
   explicit EmailFetcher(
       std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine = nullptr);
+  
+  ~EmailFetcher() override;
 
   void StartEmailFetch();
 
   // Wrapper for RAB fetcher.
   void Fetch(absl::string_view token, ClientMetadata& metadata);
-
-  ~EmailFetcher() override;
 
   void Orphaned() override;
 

@@ -541,7 +541,6 @@ class RequestMetadataState : public RefCounted<RequestMetadataState> {
     md_.Remove(HttpPathMetadata());
     LOG(INFO) << "expected metadata: " << expected_;
     LOG(INFO) << "actual metadata: " << md_.DebugString();
-    
     // We cannot use DebugString() for validation because it redacts sensitive headers
     std::multimap<std::string, std::string> actual_metadata;
     md_.Log([&actual_metadata](absl::string_view key, absl::string_view value) {
@@ -550,7 +549,6 @@ class RequestMetadataState : public RefCounted<RequestMetadataState> {
       }
       actual_metadata.emplace(std::string(key), std::string(value));
     });
-
     std::multimap<std::string, std::string> expected_metadata;
     if (!expected_.empty()) {
       std::vector<absl::string_view> parts = absl::StrSplit(expected_, ", ");
@@ -845,114 +843,6 @@ int httpcli_put_should_not_be_called(const grpc_http_request* /*request*/,
                                      grpc_http_response* /*response*/) {
   GRPC_CHECK(false) << "HTTP PUT should not be called";
   return 1;
-}
-
-TEST_F(CredentialsTest, TestComputeEngineCredsSuccess) {
-  ExecCtx exec_ctx;
-  std::string emd = "authorization: Bearer ya29.AHES6ZRN3-HlhAPya30GnW_bHSb_";
-  const char expected_creds_debug_string[] =
-      "GoogleComputeEngineTokenFetcherCredentials";
-  grpc_call_credentials* creds =
-      grpc_google_compute_engine_credentials_create(nullptr);
-  // Check security level.
-  GRPC_CHECK_EQ(creds->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
-  // First request: http get should be called.
-  auto state = RequestMetadataState::NewInstance(absl::OkStatus(), emd);
-  HttpRequest::SetOverride(compute_engine_httpcli_get_success_override,
-                           httpcli_post_should_not_be_called,
-                           httpcli_put_should_not_be_called);
-  state->RunRequestMetadataTest(creds, kTestUrlScheme, kTestAuthority,
-                                kTestPath);
-  ExecCtx::Get()->Flush();
-  // Second request: the cached token should be served directly.
-  state = RequestMetadataState::NewInstance(absl::OkStatus(), emd);
-  HttpRequest::SetOverride(httpcli_get_should_not_be_called,
-                           httpcli_post_should_not_be_called,
-                           httpcli_put_should_not_be_called);
-  state->RunRequestMetadataTest(creds, kTestUrlScheme, kTestAuthority,
-                                kTestPath);
-  ExecCtx::Get()->Flush();
-  GRPC_CHECK_EQ(
-      strcmp(creds->debug_string().c_str(), expected_creds_debug_string), 0);
-  creds->Unref();
-  HttpRequest::SetOverride(nullptr, nullptr, nullptr);
-}
-
-TEST_F(CredentialsTest, TestComputeEngineCredsWithAltsSuccess) {
-  ExecCtx exec_ctx;
-  std::string emd = "authorization: Bearer ya29.AHES6ZRN3-HlhAPya30GnW_bHSb_";
-  const char expected_creds_debug_string[] =
-      "GoogleComputeEngineTokenFetcherCredentials";
-  grpc_google_compute_engine_credentials_options options;
-  options.alts_hard_bound = true;
-  grpc_call_credentials* creds =
-      grpc_google_compute_engine_credentials_create(&options);
-  // Check security level.
-  CHECK_EQ(creds->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
-  // First request: http get should be called.
-  auto state = RequestMetadataState::NewInstance(absl::OkStatus(), emd);
-  HttpRequest::SetOverride(compute_engine_httpcli_get_success_alts_override,
-                           httpcli_post_should_not_be_called,
-                           httpcli_put_should_not_be_called);
-  state->RunRequestMetadataTest(creds, kTestUrlScheme, kTestAuthority,
-                                kTestPath);
-  ExecCtx::Get()->Flush();
-  // Second request: the cached token should be served directly.
-  state = RequestMetadataState::NewInstance(absl::OkStatus(), emd);
-  HttpRequest::SetOverride(httpcli_get_should_not_be_called,
-                           httpcli_post_should_not_be_called,
-                           httpcli_put_should_not_be_called);
-  state->RunRequestMetadataTest(creds, kTestUrlScheme, kTestAuthority,
-                                kTestPath);
-  ExecCtx::Get()->Flush();
-  CHECK_EQ(strcmp(creds->debug_string().c_str(), expected_creds_debug_string),
-           0);
-  creds->Unref();
-  HttpRequest::SetOverride(nullptr, nullptr, nullptr);
-}
-
-TEST_F(CredentialsTest, TestComputeEngineCredsFailure) {
-  ExecCtx exec_ctx;
-  const char expected_creds_debug_string[] =
-      "GoogleComputeEngineTokenFetcherCredentials";
-  auto state = RequestMetadataState::NewInstance(
-      absl::UnauthenticatedError("HTTP token fetch failed with status 403"),
-      {});
-  grpc_call_credentials* creds =
-      grpc_google_compute_engine_credentials_create(nullptr);
-  HttpRequest::SetOverride(compute_engine_httpcli_get_failure_override,
-                           httpcli_post_should_not_be_called,
-                           httpcli_put_should_not_be_called);
-  state->RunRequestMetadataTest(creds, kTestUrlScheme, kTestAuthority,
-                                kTestPath);
-  ExecCtx::Get()->Flush();
-  GRPC_CHECK_EQ(
-      strcmp(creds->debug_string().c_str(), expected_creds_debug_string), 0);
-  creds->Unref();
-  HttpRequest::SetOverride(nullptr, nullptr, nullptr);
-}
-
-TEST_F(CredentialsTest, TestComputeEngineCredsWithAltsFailure) {
-  ExecCtx exec_ctx;
-  const char expected_creds_debug_string[] =
-      "GoogleComputeEngineTokenFetcherCredentials";
-  auto state = RequestMetadataState::NewInstance(
-      absl::UnauthenticatedError("HTTP token fetch failed with status 403"),
-      {});
-  grpc_google_compute_engine_credentials_options options;
-  options.alts_hard_bound = true;
-  grpc_call_credentials* creds =
-      grpc_google_compute_engine_credentials_create(&options);
-  HttpRequest::SetOverride(compute_engine_httpcli_get_failure_alts_override,
-                           httpcli_post_should_not_be_called,
-                           httpcli_put_should_not_be_called);
-  state->RunRequestMetadataTest(creds, kTestUrlScheme, kTestAuthority,
-                                kTestPath);
-  ExecCtx::Get()->Flush();
-  CHECK_EQ(strcmp(creds->debug_string().c_str(), expected_creds_debug_string),
-           0);
-  creds->Unref();
-  HttpRequest::SetOverride(nullptr, nullptr, nullptr);
 }
 
 void validate_refresh_token_http_request(const grpc_http_request* request,
@@ -5098,15 +4988,12 @@ TEST_F(JwtTokenFileCallCredentialsTest, InvalidToken) {
   gpr_free(path);
 }
 
-
-
-
 // Global variables to coordinate request ordering
-static grpc_closure* g_token_on_done = nullptr;
-static grpc_closure g_email_wrapper_closure;
-static grpc_closure* g_original_email_on_done = nullptr;
+grpc_closure* g_token_on_done = nullptr;
+grpc_closure g_email_wrapper_closure;
+grpc_closure* g_original_email_on_done = nullptr;
 
-static void OnEmailDoneWrapper(void* /*arg*/, grpc_error_handle error) {
+void OnEmailDoneWrapper(void* /*arg*/, grpc_error_handle error) {
   // Schedule token callback first (so it's deeper in the stack/queue if LIFO)
   // Wait... if it is LIFO, the LAST scheduled runs FIRST.
   // We want Email callback to run FIRST.
@@ -5301,6 +5188,114 @@ TEST_F(CredentialsTest, TestComputeEngineCredsEmailFetchCancellation) {
   ExecCtx::Get()->Flush();
   HttpRequest::SetOverride(nullptr, nullptr, nullptr);
   grpc_pollset_destroy(pollset);
+}
+
+TEST_F(CredentialsTest, TestComputeEngineCredsSuccess) {
+  ExecCtx exec_ctx;
+  std::string emd = "authorization: Bearer ya29.AHES6ZRN3-HlhAPya30GnW_bHSb_";
+  const char expected_creds_debug_string[] =
+      "GoogleComputeEngineTokenFetcherCredentials";
+  grpc_call_credentials* creds =
+      grpc_google_compute_engine_credentials_create(nullptr);
+  // Check security level.
+  GRPC_CHECK_EQ(creds->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
+  // First request: http get should be called.
+  auto state = RequestMetadataState::NewInstance(absl::OkStatus(), emd);
+  HttpRequest::SetOverride(compute_engine_httpcli_get_success_override,
+                           httpcli_post_should_not_be_called,
+                           httpcli_put_should_not_be_called);
+  state->RunRequestMetadataTest(creds, kTestUrlScheme, kTestAuthority,
+                                kTestPath);
+  ExecCtx::Get()->Flush();
+  // Second request: the cached token should be served directly.
+  state = RequestMetadataState::NewInstance(absl::OkStatus(), emd);
+  HttpRequest::SetOverride(httpcli_get_should_not_be_called,
+                           httpcli_post_should_not_be_called,
+                           httpcli_put_should_not_be_called);
+  state->RunRequestMetadataTest(creds, kTestUrlScheme, kTestAuthority,
+                                kTestPath);
+  ExecCtx::Get()->Flush();
+  GRPC_CHECK_EQ(
+      strcmp(creds->debug_string().c_str(), expected_creds_debug_string), 0);
+  creds->Unref();
+  HttpRequest::SetOverride(nullptr, nullptr, nullptr);
+}
+
+TEST_F(CredentialsTest, TestComputeEngineCredsWithAltsSuccess) {
+  ExecCtx exec_ctx;
+  std::string emd = "authorization: Bearer ya29.AHES6ZRN3-HlhAPya30GnW_bHSb_";
+  const char expected_creds_debug_string[] =
+      "GoogleComputeEngineTokenFetcherCredentials";
+  grpc_google_compute_engine_credentials_options options;
+  options.alts_hard_bound = true;
+  grpc_call_credentials* creds =
+      grpc_google_compute_engine_credentials_create(&options);
+  // Check security level.
+  CHECK_EQ(creds->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
+  // First request: http get should be called.
+  auto state = RequestMetadataState::NewInstance(absl::OkStatus(), emd);
+  HttpRequest::SetOverride(compute_engine_httpcli_get_success_alts_override,
+                           httpcli_post_should_not_be_called,
+                           httpcli_put_should_not_be_called);
+  state->RunRequestMetadataTest(creds, kTestUrlScheme, kTestAuthority,
+                                kTestPath);
+  ExecCtx::Get()->Flush();
+  // Second request: the cached token should be served directly.
+  state = RequestMetadataState::NewInstance(absl::OkStatus(), emd);
+  HttpRequest::SetOverride(httpcli_get_should_not_be_called,
+                           httpcli_post_should_not_be_called,
+                           httpcli_put_should_not_be_called);
+  state->RunRequestMetadataTest(creds, kTestUrlScheme, kTestAuthority,
+                                kTestPath);
+  ExecCtx::Get()->Flush();
+  CHECK_EQ(strcmp(creds->debug_string().c_str(), expected_creds_debug_string),
+           0);
+  creds->Unref();
+  HttpRequest::SetOverride(nullptr, nullptr, nullptr);
+}
+
+TEST_F(CredentialsTest, TestComputeEngineCredsFailure) {
+  ExecCtx exec_ctx;
+  const char expected_creds_debug_string[] =
+      "GoogleComputeEngineTokenFetcherCredentials";
+  auto state = RequestMetadataState::NewInstance(
+      absl::UnauthenticatedError("HTTP token fetch failed with status 403"),
+      {});
+  grpc_call_credentials* creds =
+      grpc_google_compute_engine_credentials_create(nullptr);
+  HttpRequest::SetOverride(compute_engine_httpcli_get_failure_override,
+                           httpcli_post_should_not_be_called,
+                           httpcli_put_should_not_be_called);
+  state->RunRequestMetadataTest(creds, kTestUrlScheme, kTestAuthority,
+                                kTestPath);
+  ExecCtx::Get()->Flush();
+  GRPC_CHECK_EQ(
+      strcmp(creds->debug_string().c_str(), expected_creds_debug_string), 0);
+  creds->Unref();
+  HttpRequest::SetOverride(nullptr, nullptr, nullptr);
+}
+
+TEST_F(CredentialsTest, TestComputeEngineCredsWithAltsFailure) {
+  ExecCtx exec_ctx;
+  const char expected_creds_debug_string[] =
+      "GoogleComputeEngineTokenFetcherCredentials";
+  auto state = RequestMetadataState::NewInstance(
+      absl::UnauthenticatedError("HTTP token fetch failed with status 403"),
+      {});
+  grpc_google_compute_engine_credentials_options options;
+  options.alts_hard_bound = true;
+  grpc_call_credentials* creds =
+      grpc_google_compute_engine_credentials_create(&options);
+  HttpRequest::SetOverride(compute_engine_httpcli_get_failure_alts_override,
+                           httpcli_post_should_not_be_called,
+                           httpcli_put_should_not_be_called);
+  state->RunRequestMetadataTest(creds, kTestUrlScheme, kTestAuthority,
+                                kTestPath);
+  ExecCtx::Get()->Flush();
+  CHECK_EQ(strcmp(creds->debug_string().c_str(), expected_creds_debug_string),
+           0);
+  creds->Unref();
+  HttpRequest::SetOverride(nullptr, nullptr, nullptr);
 }
 }  // namespace
 }  // namespace grpc_core
