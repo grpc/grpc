@@ -157,7 +157,7 @@ class PromiseEndpoint {
                 ExecCtx exec_ctx;
                 read_state->Complete(std::move(status), num_bytes);
               },
-              &read_state_->pending_buffer, std::move(read_args))) {
+              &read_state_->pending_buffer, read_args)) {
         read_state_->waker = Waker();
         read_state_->pending_buffer.MoveFirstNBytesIntoSliceBuffer(
             read_state_->pending_buffer.Length(), read_state_->buffer);
