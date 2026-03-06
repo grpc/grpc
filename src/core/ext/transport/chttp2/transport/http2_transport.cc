@@ -89,6 +89,25 @@ constexpr Duration kServerKeepaliveTime = Duration::Hours(2);
 // familiar with the PH2 project (Moving chttp2 to promises.)
 
 ///////////////////////////////////////////////////////////////////////////////
+// Read and Write helpers
+
+// This is only called by the HTTP2 Server Transport to validate the incoming
+// connection preface. Since a server does not send a connection preface, this
+// validation is not needed for the client transport.
+Http2Status ValidateIncomingConnectionPreface(
+    const absl::StatusOr<Slice>& status) {
+  if (!status.ok()) {
+    return ToHttpOkOrConnError(status.status());
+  } else if (status.value() !=
+             Slice::FromStaticString(GRPC_CHTTP2_CLIENT_CONNECT_STRING)) {
+    return Http2Status::Http2ConnectionError(
+        Http2ErrorCode::kProtocolError,
+        std::string(RFC9113::kFirstSettingsFrameServer));
+  }
+  return Http2Status::Ok();
+}
+
+///////////////////////////////////////////////////////////////////////////////
 // Settings helpers
 
 void InitLocalSettings(Http2Settings& settings, const bool is_client) {
@@ -319,7 +338,7 @@ ProcessIncomingDataFrameFlowControl(Http2FrameHeader& frame_header,
       return action;
     } else {
       chttp2::StreamFlowControl::IncomingUpdateContext stream_fc(
-          &stream->flow_control);
+          &stream->GetStreamFlowControl());
       absl::Status fc_status = stream_fc.RecvData(frame_header.length);
       chttp2::FlowControlAction action = stream_fc.MakeAction();
       GRPC_HTTP2_COMMON_DLOG
@@ -350,7 +369,7 @@ bool ProcessIncomingWindowUpdateFrameFlowControl(
           << "ProcessIncomingWindowUpdateFrameFlowControl stream "
           << frame.stream_id << " increment " << frame.increment;
       chttp2::StreamFlowControl::OutgoingUpdateContext fc_update(
-          &stream->flow_control);
+          &stream->GetStreamFlowControl());
       fc_update.RecvUpdate(frame.increment);
     } else {
       // If stream id is non zero, and stream is nullptr, maybe the stream was
@@ -401,7 +420,7 @@ void MaybeAddStreamWindowUpdateFrame(Stream& stream,
                          << " CanSendWindowUpdateFrames="
                          << stream.CanSendWindowUpdateFrames();
   if (stream.CanSendWindowUpdateFrames()) {
-    const uint32_t increment = stream.flow_control.MaybeSendUpdate();
+    const uint32_t increment = stream.GetStreamFlowControl().MaybeSendUpdate();
     GRPC_HTTP2_COMMON_DLOG
         << "MaybeAddStreamWindowUpdateFrame MaybeSendUpdate { "
         << stream.GetStreamId() << ", " << increment << " }"
@@ -431,7 +450,7 @@ Http2Status ParseAndDiscardHeaders(HPackParser& parser, SliceBuffer&& buffer,
 
   if (stream != nullptr) {
     // Parse all the data in the header assembler
-    Http2Status result = stream->header_assembler.ParseAndDiscardHeaders(
+    Http2Status result = stream->GetHeaderAssembler().ParseAndDiscardHeaders(
         parser, args.is_initial_metadata, args.max_header_list_size_soft_limit,
         args.max_header_list_size_hard_limit);
     if (!result.IsOk()) {

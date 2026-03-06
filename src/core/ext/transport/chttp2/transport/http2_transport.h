@@ -32,6 +32,7 @@
 #include "src/core/ext/transport/chttp2/transport/write_cycle.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/poll.h"
+#include "src/core/lib/slice/slice.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "absl/log/log.h"
 #include "absl/status/status.h"
@@ -114,6 +115,9 @@ class Http2ReadContext {
   bool should_pause_read_loop_ = false;
   Waker read_loop_waker_;
 };
+
+Http2Status ValidateIncomingConnectionPreface(
+    const absl::StatusOr<Slice>& status);
 
 ///////////////////////////////////////////////////////////////////////////////
 // Settings helpers

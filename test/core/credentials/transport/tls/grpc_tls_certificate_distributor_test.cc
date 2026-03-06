@@ -68,8 +68,8 @@ SpiffeBundleMap GetRawSpiffeBundleMap() {
   return *map;
 }
 
-std::shared_ptr<RootCertInfo> GetTestSpiffeBundleMap() {
-  return std::make_shared<RootCertInfo>(GetRawSpiffeBundleMap());
+std::shared_ptr<tsi::RootCertInfo> GetTestSpiffeBundleMap() {
+  return std::make_shared<tsi::RootCertInfo>(GetRawSpiffeBundleMap());
 }
 
 SpiffeBundleMap GetRawSpiffeBundleMap2() {
@@ -78,16 +78,16 @@ SpiffeBundleMap GetRawSpiffeBundleMap2() {
   return *map;
 }
 
-std::shared_ptr<RootCertInfo> GetTestSpiffeBundleMap2() {
-  return std::make_shared<RootCertInfo>(GetRawSpiffeBundleMap2());
+std::shared_ptr<tsi::RootCertInfo> GetTestSpiffeBundleMap2() {
+  return std::make_shared<tsi::RootCertInfo>(GetRawSpiffeBundleMap2());
 }
 
-std::shared_ptr<RootCertInfo> GetRootCert1() {
-  return std::make_shared<RootCertInfo>(kRootCert1Contents);
+std::shared_ptr<tsi::RootCertInfo> GetRootCert1() {
+  return std::make_shared<tsi::RootCertInfo>(kRootCert1Contents);
 }
 
-std::shared_ptr<RootCertInfo> GetRootCert2() {
-  return std::make_shared<RootCertInfo>(kRootCert2Contents);
+std::shared_ptr<tsi::RootCertInfo> GetRootCert2() {
+  return std::make_shared<tsi::RootCertInfo>(kRootCert2Contents);
 }
 
 MATCHER_P2(MatchesCredentialInfo, root_matcher, identity_matcher, "") {
@@ -122,8 +122,8 @@ class GrpcTlsCertificateDistributorTest : public ::testing::Test {
   // if the status updates are correct.
   struct CredentialInfo {
     PemKeyCertPairList key_cert_pairs;
-    std::shared_ptr<RootCertInfo> root_cert_info;
-    CredentialInfo(std::shared_ptr<RootCertInfo> roots,
+    std::shared_ptr<tsi::RootCertInfo> root_cert_info;
+    CredentialInfo(std::shared_ptr<tsi::RootCertInfo> roots,
                    PemKeyCertPairList key_cert)
         : key_cert_pairs(std::move(key_cert)),
           root_cert_info(std::move(roots)) {}
@@ -178,9 +178,9 @@ class GrpcTlsCertificateDistributorTest : public ::testing::Test {
     ~TlsCertificatesTestWatcher() override { state_->watcher = nullptr; }
 
     void OnCertificatesChanged(
-        std::shared_ptr<RootCertInfo> roots,
+        std::shared_ptr<tsi::RootCertInfo> roots,
         std::optional<PemKeyCertPairList> key_cert_pairs) override {
-      std::shared_ptr<RootCertInfo> updated_root;
+      std::shared_ptr<tsi::RootCertInfo> updated_root;
       if (roots != nullptr) {
         updated_root = std::move(roots);
       }

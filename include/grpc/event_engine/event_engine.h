@@ -159,7 +159,7 @@ class EventEngine : public std::enable_shared_from_this<EventEngine>,
   /// * sockaddr_in6
   class ResolvedAddress {
    public:
-    static constexpr socklen_t MAX_SIZE_BYTES = 128;
+    static constexpr socklen_t MAX_SIZE_BYTES = GRPC_MAX_SOCKADDR_SIZE;
 
     ResolvedAddress(const sockaddr* address, socklen_t size);
     ResolvedAddress() = default;
@@ -192,8 +192,8 @@ class EventEngine : public std::enable_shared_from_this<EventEngine>,
     class ReadArgs final {
      public:
       ReadArgs() = default;
-      ReadArgs(const ReadArgs&) = delete;
-      ReadArgs& operator=(const ReadArgs&) = delete;
+      ReadArgs(const ReadArgs&) = default;
+      ReadArgs& operator=(const ReadArgs&) = default;
       ReadArgs(ReadArgs&&) = default;
       ReadArgs& operator=(ReadArgs&&) = default;
 

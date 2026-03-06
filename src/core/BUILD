@@ -2949,6 +2949,9 @@ grpc_cc_library(
         "absl/status:statusor",
         "absl/strings",
     ],
+    visibility = [
+        "//bazel:posix_engine",
+    ],
     deps = [
         "ares_resolver",
         "event_engine_common",
@@ -4866,6 +4869,7 @@ grpc_cc_library(
         "arena_promise",
         "channel_args",
         "closure",
+        "down_cast",
         "error",
         "grpc_check",
         "iomgr_fwd",
@@ -6494,6 +6498,7 @@ grpc_cc_library(
         "envoy_admin_upb",
         "envoy_config_cluster_upb",
         "envoy_config_cluster_upbdefs",
+        "envoy_config_common_mutation_rules_upb",
         "envoy_config_core_upb",
         "envoy_config_core_upbdefs",
         "envoy_config_endpoint_upb",
@@ -6797,7 +6802,10 @@ grpc_cc_library(
     srcs = [
         "credentials/transport/channel_creds_registry_init.cc",
     ],
-    external_deps = ["absl/strings"],
+    external_deps = [
+        "absl/functional:any_invocable",
+        "absl/strings",
+    ],
     deps = [
         "channel_creds_registry",
         "envoy_extensions_grpc_service_channel_credentials_tls_upb",
@@ -6805,6 +6813,7 @@ grpc_cc_library(
         "envoy_extensions_transport_sockets_tls_upb",
         "grpc_fake_credentials",
         "grpc_google_default_credentials",
+        "grpc_ssl_credentials",
         "grpc_tls_credentials",
         "json",
         "json_args",
@@ -8759,6 +8768,7 @@ grpc_cc_library(
         "time",
         "transport_common",
         "writable_streams",
+        "write_cycle",
         ":chttp2_flow_control",
         ":match_promise",
         ":poll",
@@ -9247,6 +9257,7 @@ grpc_cc_library(
         "chaotic_good_pending_connection",
         "chaotic_good_tcp_frame_transport",
         "event_engine_extensions",
+        "experiments",
     ],
 )
 
@@ -10888,6 +10899,7 @@ grpc_cc_library(
         "absl/log",
         "absl/functional:any_invocable",
     ],
+    visibility = ["//bazel:wait_for_single_owner"],
     deps = [
         "no_destruct",
         "time",
@@ -11521,6 +11533,11 @@ grpc_upb_proto_library(
 grpc_upb_proto_reflection_library(
     name = "envoy_config_cluster_upbdefs",
     deps = ["@envoy_api//envoy/config/cluster/v3:pkg"],
+)
+
+grpc_upb_proto_library(
+    name = "envoy_config_common_mutation_rules_upb",
+    deps = ["@envoy_api//envoy/config/common/mutation_rules/v3:pkg"],
 )
 
 grpc_upb_proto_library(
