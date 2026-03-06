@@ -45,7 +45,7 @@ async def serve():
         exporter=otel_exporter,
         export_interval_millis=_OTEL_EXPORT_INTERVAL_S * 1000,
     )
-    provider = MeterProvider(metric_readers=[reader])
+    provider = MeterProvider(metric_readers=(reader,))
 
     otel_plugin = grpc_observability.OpenTelemetryPlugin(
         meter_provider=provider

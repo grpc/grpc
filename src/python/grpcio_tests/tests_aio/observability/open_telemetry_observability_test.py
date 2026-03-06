@@ -100,7 +100,7 @@ class OpenTelemetryObservabilityTest(AioTestBase):
             exporter=otel_exporter,
             export_interval_millis=OTEL_EXPORT_INTERVAL_S * 1000,
         )
-        self._provider = MeterProvider(metric_readers=[reader])
+        self._provider = MeterProvider(metric_readers=(reader,))
         self._otel_plugin = grpc_observability.OpenTelemetryPlugin(
             meter_provider=self._provider
         )
