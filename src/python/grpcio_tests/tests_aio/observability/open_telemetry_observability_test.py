@@ -17,7 +17,7 @@ import collections
 import logging
 import os
 import sys
-from typing import Any, Dict, List, Set
+from typing import Any, List, Set
 import unittest
 
 import grpc_observability
@@ -51,10 +51,10 @@ class OTelMetricExporter(otel_metrics_export.MetricExporter):
         self,
         all_metrics: dict[str, List],
         preferred_temporality: (
-            Dict[type, otel_metrics_export.AggregationTemporality] | None
+            dict[type, otel_metrics_export.AggregationTemporality] | None
         ) = None,
         preferred_aggregation: (
-            Dict[type, otel_metrics_view.Aggregation] | None
+            dict[type, otel_metrics_view.Aggregation] | None
         ) = None,
     ):
         super().__init__(
