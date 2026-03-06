@@ -13,7 +13,7 @@
 # limitations under the License.
 
 import asyncio
-from collections import defaultdict
+import collections
 import logging
 import os
 import sys
@@ -22,13 +22,9 @@ import unittest
 
 import grpc_observability
 from grpc_observability import _open_telemetry_measures
-from opentelemetry.sdk.metrics import MeterProvider
-from opentelemetry.sdk.metrics import view
-from opentelemetry.sdk.metrics.export import AggregationTemporality
-from opentelemetry.sdk.metrics.export import MetricExportResult
-from opentelemetry.sdk.metrics.export import MetricExporter
-from opentelemetry.sdk.metrics.export import MetricsData
-from opentelemetry.sdk.metrics.export import PeriodicExportingMetricReader
+from opentelemetry.sdk import metrics as otel_metrics
+from opentelemetry.sdk.metrics import export as otel_metrics_export
+from opentelemetry.sdk.metrics import view as otel_metrics_view
 
 from tests_aio.observability import _test_server
 from tests_aio.unit._test_base import AioTestBase
@@ -39,7 +35,7 @@ STREAM_LENGTH = 5
 OTEL_EXPORT_INTERVAL_S = 0.5
 
 
-class OTelMetricExporter(MetricExporter):
+class OTelMetricExporter(otel_metrics_export.MetricExporter):
     """Implementation of :class:`MetricExporter` that export metrics to the
     provided metric_list.
 
@@ -54,8 +50,12 @@ class OTelMetricExporter(MetricExporter):
     def __init__(
         self,
         all_metrics: dict[str, List],
-        preferred_temporality: Dict[type, AggregationTemporality] | None = None,
-        preferred_aggregation: Dict[type, view.Aggregation] | None = None,
+        preferred_temporality: (
+            Dict[type, otel_metrics_export.AggregationTemporality] | None
+        ) = None,
+        preferred_aggregation: (
+            Dict[type, otel_metrics_view.Aggregation] | None
+        ) = None,
     ):
         super().__init__(
             preferred_temporality=preferred_temporality,
@@ -65,12 +65,12 @@ class OTelMetricExporter(MetricExporter):
 
     def export(
         self,
-        metrics_data: MetricsData,
+        metrics_data: otel_metrics_export.MetricsData,
         timeout_millis: float = 10_000,
         **kwargs,
-    ) -> MetricExportResult:
+    ) -> otel_metrics_export.MetricExportResult:
         self.record_metric(metrics_data)
-        return MetricExportResult.SUCCESS
+        return otel_metrics_export.MetricExportResult.SUCCESS
 
     def shutdown(self, timeout_millis: float = 30_000, **kwargs) -> None:
         pass
@@ -78,7 +78,9 @@ class OTelMetricExporter(MetricExporter):
     def force_flush(self, timeout_millis: float = 10_000) -> bool:
         return True
 
-    def record_metric(self, metrics_data: MetricsData) -> None:
+    def record_metric(
+        self, metrics_data: otel_metrics_export.MetricsData
+    ) -> None:
         for resource_metric in metrics_data.resource_metrics:
             for scope_metric in resource_metric.scope_metrics:
                 for metric in scope_metric.metrics:
@@ -94,13 +96,13 @@ class OTelMetricExporter(MetricExporter):
 )
 class OpenTelemetryObservabilityTest(AioTestBase):
     async def setUp(self):
-        self.all_metrics = defaultdict(list)
+        self.all_metrics = collections.defaultdict(list)
         otel_exporter = OTelMetricExporter(self.all_metrics)
-        reader = PeriodicExportingMetricReader(
+        reader = otel_metrics_export.PeriodicExportingMetricReader(
             exporter=otel_exporter,
             export_interval_millis=OTEL_EXPORT_INTERVAL_S * 1000,
         )
-        self._provider = MeterProvider(metric_readers=(reader,))
+        self._provider = otel_metrics.MeterProvider(metric_readers=(reader,))
         self._otel_plugin = grpc_observability.OpenTelemetryPlugin(
             meter_provider=self._provider
         )
@@ -139,7 +141,8 @@ class OpenTelemetryObservabilityTest(AioTestBase):
     async def _validate_metrics_exist(
         self, all_metrics: dict[str, Any]
     ) -> None:
-        # Sleep here to make sure we have at least one export from OTel MetricExporter.
+        # Sleep here to make sure we have at least one export from
+        # OTel MetricExporter.
         await asyncio.sleep(5)
         self.assertTrue(
             len(all_metrics.keys()) > 1,
@@ -166,7 +169,10 @@ class OpenTelemetryObservabilityTest(AioTestBase):
             if "grpc.client" in base_metric.name:
                 self.assertTrue(
                     base_metric.name in metric_names,
-                    msg=f"metric {base_metric.name} not found in exported metrics: {metric_names}!",
+                    msg=(
+                        f"metric {base_metric.name} not found"
+                        f"in exported metrics: {metric_names}!"
+                    ),
                 )
 
 

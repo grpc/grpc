@@ -14,7 +14,7 @@
 """gRPC Python AsyncIO helloworld.Greeter client with observability enabled."""
 
 import asyncio
-from collections import defaultdict
+import collections
 import logging
 
 import grpc
@@ -22,20 +22,20 @@ import grpc_observability
 import helloworld_pb2
 import helloworld_pb2_grpc
 import open_telemetry_exporter
-from opentelemetry.sdk.metrics import MeterProvider
-from opentelemetry.sdk.metrics.export import PeriodicExportingMetricReader
+from opentelemetry.sdk import metrics as otel_metrics
+from opentelemetry.sdk.metrics import export as otel_metrics_export
 
 OTEL_EXPORT_INTERVAL_S = 0.5
 
 
 async def run() -> None:
-    all_metrics = defaultdict(list)
+    all_metrics = collections.defaultdict(list)
     otel_exporter = open_telemetry_exporter.OTelMetricExporter(all_metrics)
-    reader = PeriodicExportingMetricReader(
+    reader = otel_metrics_export.PeriodicExportingMetricReader(
         exporter=otel_exporter,
         export_interval_millis=OTEL_EXPORT_INTERVAL_S * 1000,
     )
-    provider = MeterProvider(metric_readers=[reader])
+    provider = otel_metrics.MeterProvider(metric_readers=(reader,))
 
     otel_plugin = grpc_observability.OpenTelemetryPlugin(
         meter_provider=provider
