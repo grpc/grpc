@@ -36,33 +36,16 @@ def clear_server_call_tracer_factory() -> None:
 
 
 def maybe_save_server_trace_context(RequestCallEvent event) -> None:
-  cdef CallSpan* server_call_tracer
+  cdef ServerCallTracerInterface* server_call_tracer
   with _observability.get_plugin() as plugin:
     if not (plugin and plugin.tracing_enabled):
       return
-    server_call_tracer = static_cast['CallSpan*'](_get_call_tracer(event.call.c_call))
+    server_call_tracer = static_cast['ServerCallTracerInterface*'](_get_call_tracer(event.call.c_call))
     # TraceId and SpanId is hex string, need to convert to str
-    trace_id = _decode_as_hex(server_call_tracer.TraceId())
-    span_id = _decode_as_hex(server_call_tracer.SpanId())
+    trace_id = _decode(codecs.decode(server_call_tracer.TraceId(), 'hex_codec'))
+    span_id = _decode(codecs.decode(server_call_tracer.SpanId(), 'hex_codec'))
     is_sampled = server_call_tracer.IsSampled()
     plugin.save_trace_context(trace_id, span_id, is_sampled)
-
-
-def maybe_save_server_trace_context_aio(GrpcCallWrapper call_wrapper) -> None:
-  cdef CallSpan* server_call_tracer
-  with _observability.get_plugin() as plugin:
-    if not (plugin and plugin.tracing_enabled):
-      return
-    server_call_tracer = static_cast['CallSpan*'](_get_call_tracer(call_wrapper.call))
-    # TraceId and SpanId is hex string, need to convert to str
-    trace_id = _decode_as_hex(server_call_tracer.TraceId())
-    span_id = _decode_as_hex(server_call_tracer.SpanId())
-    is_sampled = server_call_tracer.IsSampled()
-    plugin.save_trace_context(trace_id, span_id, is_sampled)
-
-
-cdef str _decode_as_hex(string id):
-  return _decode(codecs.decode(id, 'hex_codec'))
 
 
 cdef void _set_call_tracer(grpc_call* call, void* capsule_ptr):
