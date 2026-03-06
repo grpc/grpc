@@ -53,7 +53,7 @@ class OTelMetricExporter(MetricExporter):
 
     def __init__(
         self,
-        all_metrics: Dict[str, List],
+        all_metrics: dict[str, List],
         preferred_temporality: Dict[type, AggregationTemporality] | None = None,
         preferred_aggregation: Dict[type, view.Aggregation] | None = None,
     ):
@@ -137,7 +137,7 @@ class OpenTelemetryObservabilityTest(AioTestBase):
         self._validate_all_metrics_names(self.all_metrics.keys())
 
     async def _validate_metrics_exist(
-        self, all_metrics: Dict[str, Any]
+        self, all_metrics: dict[str, Any]
     ) -> None:
         # Sleep here to make sure we have at least one export from OTel MetricExporter.
         await asyncio.sleep(5)
