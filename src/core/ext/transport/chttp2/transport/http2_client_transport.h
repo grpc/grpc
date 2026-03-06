@@ -328,6 +328,20 @@ class Http2ClientTransport final : public ClientTransport,
     return false;
   }
 
+  auto FlowControlPeriodicUpdateLoop();
+
+  // TODO(tjagtap) [PH2][P2][BDP] Remove this when the BDP code is done.
+  void AddPeriodicUpdatePromiseWaker() {
+    periodic_updates_waker_ = GetContext<Activity>()->MakeNonOwningWaker();
+  }
+
+  // TODO(tjagtap) [PH2][P2][BDP] Remove this when the BDP code is done.
+  void WakeupPeriodicUpdatePromise() { periodic_updates_waker_.Wakeup(); }
+
+  // Processes the flow control action and take necessary steps.
+  void ActOnFlowControlAction(const chttp2::FlowControlAction& action,
+                              Stream* stream);
+
   // Returns the number of active streams. A stream is removed from the `active`
   // list once both client and server agree to close the stream. The count of
   // stream_list_(even though stream list represents streams open for reads)
@@ -371,6 +385,8 @@ class Http2ClientTransport final : public ClientTransport,
   }
 
   absl::Status InitializeStream(Stream& stream);
+
+  void AddToStreamList(RefCountedPtr<Stream> stream);
 
   //////////////////////////////////////////////////////////////////////////////
   // Spawn Helpers and Promise Helpers
@@ -449,43 +465,14 @@ class Http2ClientTransport final : public ClientTransport,
                         ServerMetadataHandle&& metadata,
                         DebugLocation whence = {});
 
+  RefCountedPtr<Stream> LookupStream(uint32_t stream_id);
+
   //////////////////////////////////////////////////////////////////////////////
   // Settings
 
   auto WaitForSettingsTimeoutOnDone();
   void MaybeSpawnWaitForSettingsTimeout();
   void EnforceLatestIncomingSettings();
-
-  //////////////////////////////////////////////////////////////////////////////
-  // Flow Control and BDP
-
-  // Processes the flow control action and take necessary steps.
-  void ActOnFlowControlAction(const chttp2::FlowControlAction& action,
-                              Stream* stream);
-
-  void MaybeGetWindowUpdateFrames(FrameSender& frame_sender);
-
-  auto FlowControlPeriodicUpdateLoop();
-
-  // TODO(tjagtap) [PH2][P2][BDP] Remove this when the BDP code is done.
-  void AddPeriodicUpdatePromiseWaker() {
-    periodic_updates_waker_ = GetContext<Activity>()->MakeNonOwningWaker();
-  }
-
-  // TODO(tjagtap) [PH2][P2][BDP] Remove this when the BDP code is done.
-  void WakeupPeriodicUpdatePromise() { periodic_updates_waker_.Wakeup(); }
-
-  //////////////////////////////////////////////////////////////////////////////
-  // Stream List Operations
-
-  RefCountedPtr<Stream> LookupStream(uint32_t stream_id);
-
-  void AddToStreamList(RefCountedPtr<Stream> stream);
-
-  absl::Status MaybeAddStreamToWritableStreamList(
-      const RefCountedPtr<Stream> stream,
-      const StreamDataQueue<ClientMetadataHandle>::StreamWritabilityUpdate
-          result);
 
   // This function MUST run on the transport party.
   void CloseTransport();
@@ -513,6 +500,8 @@ class Http2ClientTransport final : public ClientTransport,
 
   auto WaitForPingAck() { return ping_manager_->WaitForPingAck(); }
 
+  void MaybeGetWindowUpdateFrames(FrameSender& frame_sender);
+
   // Ping Helper functions
   Duration NextAllowedPingInterval() {
     MutexLock lock(&transport_mutex_);
@@ -523,6 +512,11 @@ class Http2ClientTransport final : public ClientTransport,
   }
 
   absl::Status AckPing(uint64_t opaque_data);
+
+  absl::Status MaybeAddStreamToWritableStreamList(
+      const RefCountedPtr<Stream> stream,
+      const StreamDataQueue<ClientMetadataHandle>::StreamWritabilityUpdate
+          result);
 
   //////////////////////////////////////////////////////////////////////////////
   // Error Path and Close Path
