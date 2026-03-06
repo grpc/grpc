@@ -93,7 +93,8 @@ Pod::Spec.new do |s|
   s.subspec 'Interface' do |ss|
     ss.header_mappings_dir = 'include/grpcpp'
 
-    ss.source_files = 'include/grpcpp/alarm.h',
+    ss.source_files = 'include/grpc/context_types.h',
+                      'include/grpcpp/alarm.h',
                       'include/grpcpp/call_context_types.h',
                       'include/grpcpp/channel.h',
                       'include/grpcpp/client_context.h',
