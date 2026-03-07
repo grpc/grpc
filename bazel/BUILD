@@ -273,3 +273,20 @@ package_group(
     name = "wait_for_single_owner",
     packages = [],
 )
+
+# See https://github.com/grpc/grpc/issues/41798.
+toolchain(
+    name = "workaround_ios_py_toolchain",
+    # Point to the existing hermetic runtime implementation
+    toolchain = "@python_3_11_aarch64-apple-darwin//:python_runtimes",
+    toolchain_type = "@bazel_tools//tools/python:toolchain_type",
+    # Force using host python for ios simulator
+    target_compatible_with = [
+        "@platforms//os:ios",
+        "@platforms//cpu:aarch64",
+    ],
+    exec_compatible_with = [
+        "@platforms//os:macos",
+        "@platforms//cpu:aarch64",
+    ],
+)
