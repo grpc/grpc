@@ -1278,6 +1278,9 @@ class Sanity(object):
                 # under docker we already have the right version of bazel
                 # so we can just disable the wrapper.
                 environ["DISABLE_BAZEL_WRAPPER"] = "true"
+
+            # Important! Individual job's timeout has effect if greater than
+            # test suite's timeout, see _create_test_jobs in run_tests_matrix.py
             return [
                 self.config.job_spec(
                     cmd["script"].split(),
