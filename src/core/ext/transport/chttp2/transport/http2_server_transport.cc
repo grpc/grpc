@@ -484,37 +484,37 @@ Http2Status Http2ServerTransport::ProcessIncomingFrame(
       << "Http2ServerTransport::ProcessIncomingFrame(SettingsFrame) { ack="
       << frame.ack << ", settings length=" << frame.settings.size() << "}";
 
-  //   if (!frame.ack) {
-  //     Http2Status status = ValidateSettingsValues(frame.settings);
-  //     if (!status.IsOk()) {
-  //       return status;
-  //     }
-  //     settings_->BufferPeerSettings(std::move(frame.settings));
-  //     absl::Status trigger_write_status = TriggerWriteCycle();
-  //     if (!trigger_write_status.ok()) {
-  //       return ToHttpOkOrConnError(trigger_write_status);
-  //     }
+  if (!frame.ack) {
+    Http2Status status = ValidateSettingsValues(frame.settings);
+    if (!status.IsOk()) {
+      return status;
+    }
+    settings_->BufferPeerSettings(std::move(frame.settings));
+    absl::Status trigger_write_status = TriggerWriteCycle();
+    if (!trigger_write_status.ok()) {
+      return ToHttpOkOrConnError(trigger_write_status);
+    }
 
-  //     if (GPR_UNLIKELY(!settings_->IsFirstPeerSettingsApplied())) {
-  //       // Apply the first settings before we read any other frames.
-  //       reader_state_.SetPauseReadLoop();
-  //     }
-  //   } else {
-  //     if (settings_->OnSettingsAckReceived()) {
-  //       parser_.hpack_table()->SetMaxBytes(
-  //           settings_->acked().header_table_size());
-  //       ActOnFlowControlAction(flow_control_.SetAckedInitialWindow(
-  //                                  settings_->acked().initial_window_size()),
-  //                              /*stream=*/nullptr);
-  //     } else {
-  //       // TODO(tjagtap) [PH2][P4] : The RFC does not say anything about
-  //       what
-  //       // should happen if we receive an unsolicited SETTINGS ACK. Decide
-  //       if we
-  //       // want to respond with any error or just proceed.
-  //       LOG(ERROR) << "Settings ack received without sending settings";
-  //     }
-  //   }
+    if (GPR_UNLIKELY(!settings_->IsFirstPeerSettingsApplied())) {
+      // Apply the first settings before we read any other frames.
+      // TODO(tjagtap) [PH2][P0][Write] Uncomment when write loop does wakeup
+      // reader_state_.SetPauseReadLoop();
+    }
+  } else {
+    if (settings_->OnSettingsAckReceived()) {
+      // TODO(tjagtap) [PH2][P0] : Implement this.
+      // parser_.hpack_table()->SetMaxBytes(
+      //     settings_->acked().header_table_size());
+      // ActOnFlowControlAction(flow_control_.SetAckedInitialWindow(
+      //                            settings_->acked().initial_window_size()),
+      //                        /*stream=*/nullptr);
+    } else {
+      // TODO(tjagtap) [PH2][P4] : The RFC does not say anything about what
+      // should happen if we receive an unsolicited SETTINGS ACK. Decide if we
+      // want to respond with any error or just proceed.
+      LOG(ERROR) << "Settings ack received without sending settings";
+    }
+  }
   return Http2Status::Ok();
 }
 
@@ -1252,11 +1252,30 @@ auto Http2ServerTransport::WriteLoop() {
 //////////////////////////////////////////////////////////////////////////////
 // Settings
 
-// auto WaitForSettingsTimeoutOnDone();
+void Http2ServerTransport::EnforceLatestIncomingSettings() {
+  encoder_.SetMaxTableSize(settings_->peer().header_table_size());
+}
 
-// void MaybeSpawnWaitForSettingsTimeout();
+auto Http2ServerTransport::WaitForSettingsTimeoutOnDone() {
+  return [self = RefAsSubclass<Http2ServerTransport>()](absl::Status status) {
+    if (!status.ok()) {
+      GRPC_UNUSED absl::Status result = self->HandleError(
+          std::nullopt, Http2Status::Http2ConnectionError(
+                            Http2ErrorCode::kProtocolError,
+                            std::string(RFC9113::kSettingsTimeout)));
+    }
+  };
+}
 
-// void EnforceLatestIncomingSettings();
+void Http2ServerTransport::MaybeSpawnWaitForSettingsTimeout() {
+  if (settings_->ShouldSpawnWaitForSettingsTimeout()) {
+    GRPC_HTTP2_SERVER_DLOG
+        << "Http2ServerTransport::MaybeSpawnWaitForSettingsTimeout Spawning";
+    SpawnWithOnDoneTransportParty("WaitForSettingsTimeout",
+                                  settings_->WaitForSettingsTimeout(),
+                                  WaitForSettingsTimeoutOnDone());
+  }
+}
 
 //////////////////////////////////////////////////////////////////////////////
 // Flow Control and BDP
@@ -2099,13 +2118,17 @@ uint32_t Http2ServerTransport::GoawayInterfaceImpl::GetLastAcceptedStreamId() {
 // Constructor, Destructor etc.
 
 Http2ServerTransport::Http2ServerTransport(
-    PromiseEndpoint endpoint, GRPC_UNUSED const ChannelArgs& channel_args,
-    std::shared_ptr<EventEngine> event_engine)
+    PromiseEndpoint endpoint, const ChannelArgs& channel_args,
+    std::shared_ptr<EventEngine> event_engine,
+    absl::AnyInvocable<void(absl::StatusOr<uint32_t>)> on_receive_settings)
     : channelz::DataSource(http2::CreateChannelzSocketNode(
           endpoint.GetEventEngineEndpoint(), channel_args)),
-      outgoing_frames_(10),
+      outgoing_frames_(10),  // TODO(akshitpatel) : [PH2][P0][Write] : Remove
+      event_engine_(std::move(event_engine)),
       endpoint_(std::move(endpoint)),
-      settings_(MakeRefCounted<SettingsPromiseManager>(nullptr)),
+      settings_(MakeRefCounted<SettingsPromiseManager>(
+          std::move(on_receive_settings))),
+      should_reset_ping_clock_(false),
       incoming_headers_(IncomingMetadataTracker::GetPeerString(endpoint_)),
       transport_write_context_(kIsClient),
       ping_manager_(std::nullopt),
@@ -2120,16 +2143,13 @@ Http2ServerTransport::Http2ServerTransport(
           channel_args.GetBool(GRPC_ARG_HTTP2_BDP_PROBE).value_or(true),
           &memory_owner_),
       ztrace_collector_(std::make_shared<PromiseHttp2ZTraceCollector>()) {
-  // TODO(tjagtap) : [PH2][P2] : Save and apply channel_args.
-  // TODO(tjagtap) : [PH2][P2] : Initialize settings_ to appropriate values.
-
   GRPC_HTTP2_SERVER_DLOG << "Http2ServerTransport Constructor Begin";
   SourceConstructed();
 
   // Initialize the general party and write party.
-  auto general_party_arena = SimpleArenaAllocator(0)->MakeArena();
-  general_party_arena->SetContext<EventEngine>(event_engine.get());
-  general_party_ = Party::Make(std::move(general_party_arena));
+  RefCountedPtr<Arena> party_arena = SimpleArenaAllocator(0)->MakeArena();
+  party_arena->SetContext<EventEngine>(event_engine_.get());
+  general_party_ = Party::Make(std::move(party_arena));
 
   InitLocalSettings(settings_->mutable_local(), /*is_client=*/kIsClient);
   TransportChannelArgs args;
@@ -2153,9 +2173,10 @@ Http2ServerTransport::Http2ServerTransport(
 }
 
 Http2ServerTransport::~Http2ServerTransport() {
-  // TODO(tjagtap) : [PH2][P2] : Implement the needed cleanup
   GRPC_HTTP2_SERVER_DLOG << "Http2ServerTransport Destructor Begin";
-  general_party_.reset();
+  // TODO(akshitpatel) : [PH2][P0][Close] : Remove call to
+  // HandleTransportShutdown() from here and plumb CloseTransport() correctly.
+  settings_->HandleTransportShutdown(event_engine_.get());
   GRPC_HTTP2_SERVER_DLOG << "Http2ServerTransport Destructor End";
 }
 
@@ -2163,12 +2184,11 @@ Http2ServerTransport::~Http2ServerTransport() {
 // Transport Functions
 
 void Http2ServerTransport::SetCallDestination(
-    RefCountedPtr<UnstartedCallDestination> call_destination) {
-  // TODO(tjagtap) : [PH2][P2] : Implement this function.
+    RefCountedPtr<UnstartedCallDestination> unstarted_call_handler) {
+  // This is called once in the lifetime of the transport.
   GRPC_CHECK(call_destination_ == nullptr);
-  GRPC_CHECK(call_destination != nullptr);
-  call_destination_ = call_destination;
-  // got_acceptor_.Set(); // Copied from CG. Understand and fix.
+  GRPC_CHECK(unstarted_call_handler != nullptr);
+  call_destination_ = unstarted_call_handler;
 }
 
 void Http2ServerTransport::PerformOp(GRPC_UNUSED grpc_transport_op*) {

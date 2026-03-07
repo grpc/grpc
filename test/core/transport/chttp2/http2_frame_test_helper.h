@@ -21,11 +21,10 @@
 #include <utility>
 #include <vector>
 
+#include "src/core/call/metadata_info.h"
 #include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/ext/transport/chttp2/transport/http2_settings.h"
-#include "src/core/ext/transport/chttp2/transport/http2_settings_manager.h"
 #include "src/core/ext/transport/chttp2/transport/http2_status.h"
-#include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "absl/strings/string_view.h"
@@ -85,19 +84,33 @@ class Http2FrameTestHelper {
         Http2SettingsFrame{false, std::move(settings)});
   }
 
-  EventEngineSlice EventEngineSliceFromHttp2SettingsFrameDefault() const {
+  EventEngineSlice EventEngineSliceFromHttp2SettingsFrameClientDefault() const {
     std::vector<Http2SettingsFrame::Setting> settings;
     settings.push_back({Http2Settings::kEnablePushWireId, 0});
     settings.push_back({Http2Settings::kMaxConcurrentStreamsWireId, 0u});
     settings.push_back({Http2Settings::kInitialWindowSizeWireId, 65535u});
-    settings.push_back({Http2Settings::kMaxHeaderListSizeWireId, 16384u});
-    settings.push_back({Http2Settings::kGrpcAllowTrueBinaryMetadataWireId, 1u});
+    settings.push_back({Http2Settings::kMaxHeaderListSizeWireId,
+                        DEFAULT_MAX_HEADER_LIST_SIZE});
+    settings.push_back(
+        {Http2Settings::kGrpcAllowTrueBinaryMetadataWireId, true});
+    return EventEngineSliceFromHttp2Frame(
+        Http2SettingsFrame{false, std::move(settings)});
+  }
+
+  EventEngineSlice EventEngineSliceFromHttp2SettingsFrameServerDefault() const {
+    std::vector<Http2SettingsFrame::Setting> settings;
+    settings.push_back({Http2Settings::kMaxHeaderListSizeWireId,
+                        DEFAULT_MAX_HEADER_LIST_SIZE});
+    settings.push_back({Http2Settings::kInitialWindowSizeWireId, 65535u});
+    settings.push_back(
+        {Http2Settings::kGrpcAllowTrueBinaryMetadataWireId, true});
     return EventEngineSliceFromHttp2Frame(
         Http2SettingsFrame{false, std::move(settings)});
   }
 
   EventEngineSlice EventEngineSliceFromHttp2PingFrame(
-      bool ack = false, uint64_t opaque = 0x123456789abcdef0) const {
+      const bool ack = false,
+      const uint64_t opaque = 0x123456789abcdef0) const {
     return EventEngineSliceFromHttp2Frame(Http2PingFrame{ack, opaque});
   }
 
