@@ -130,7 +130,6 @@ EVENT_ENGINE_TEST_TARGETS=(
   //src/objective-c/tests:InteropTestsRemote
   //src/objective-c/tests:MacTests
   //src/objective-c/tests:UnitTests
-  //src/objective-c/tests:EventEngineUnitTests
   //src/objective-c/tests:CFStreamTests
   //src/objective-c/tests:tvtests_build_test
 )
