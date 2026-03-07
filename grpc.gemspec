@@ -274,6 +274,8 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/credentials/call/oauth2/oauth2_credentials.h )
   s.files += %w( src/core/credentials/call/plugin/plugin_credentials.cc )
   s.files += %w( src/core/credentials/call/plugin/plugin_credentials.h )
+  s.files += %w( src/core/credentials/call/regional_access_boundary_fetcher.cc )
+  s.files += %w( src/core/credentials/call/regional_access_boundary_fetcher.h )
   s.files += %w( src/core/credentials/call/token_fetcher/token_fetcher_credentials.cc )
   s.files += %w( src/core/credentials/call/token_fetcher/token_fetcher_credentials.h )
   s.files += %w( src/core/credentials/transport/alts/alts_credentials.cc )

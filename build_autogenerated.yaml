@@ -267,6 +267,7 @@ libs:
   - src/core/credentials/call/jwt_util.h
   - src/core/credentials/call/oauth2/oauth2_credentials.h
   - src/core/credentials/call/plugin/plugin_credentials.h
+  - src/core/credentials/call/regional_access_boundary_fetcher.h
   - src/core/credentials/call/token_fetcher/token_fetcher_credentials.h
   - src/core/credentials/transport/alts/alts_credentials.h
   - src/core/credentials/transport/alts/alts_security_connector.h
@@ -1426,6 +1427,7 @@ libs:
   - src/core/credentials/call/jwt_util.cc
   - src/core/credentials/call/oauth2/oauth2_credentials.cc
   - src/core/credentials/call/plugin/plugin_credentials.cc
+  - src/core/credentials/call/regional_access_boundary_fetcher.cc
   - src/core/credentials/call/token_fetcher/token_fetcher_credentials.cc
   - src/core/credentials/transport/alts/alts_credentials.cc
   - src/core/credentials/transport/alts/alts_security_connector.cc
@@ -22252,6 +22254,22 @@ targets:
   - test/core/util/ref_counted_test.cc
   deps:
   - gtest
+  - grpc_test_util
+- name: regional_access_boundary_fetcher_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/event_engine/event_engine_test_utils.h
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
+  src:
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - test/core/credentials/call/regional_access_boundary_fetcher_test.cc
+  - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
+  deps:
+  - gtest
+  - protobuf
   - grpc_test_util
 - name: remove_stream_from_stalled_lists_test
   gtest: true

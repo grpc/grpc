@@ -267,6 +267,8 @@ let package = Package(
         "src/core/credentials/call/oauth2/oauth2_credentials.h",
         "src/core/credentials/call/plugin/plugin_credentials.cc",
         "src/core/credentials/call/plugin/plugin_credentials.h",
+        "src/core/credentials/call/regional_access_boundary_fetcher.cc",
+        "src/core/credentials/call/regional_access_boundary_fetcher.h",
         "src/core/credentials/call/token_fetcher/token_fetcher_credentials.cc",
         "src/core/credentials/call/token_fetcher/token_fetcher_credentials.h",
         "src/core/credentials/transport/alts/alts_credentials.cc",
