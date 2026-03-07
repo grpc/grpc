@@ -1279,7 +1279,7 @@ class Sanity(object):
                 # so we can just disable the wrapper.
                 environ["DISABLE_BAZEL_WRAPPER"] = "true"
 
-            # Important! Individual job's timeout has effect if greater than
+            # Important! Individual job's timeout HAS NO EFFECT if greater than
             # test suite's timeout, see _create_test_jobs in run_tests_matrix.py
             return [
                 self.config.job_spec(
