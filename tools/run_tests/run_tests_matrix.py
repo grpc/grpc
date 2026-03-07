@@ -243,8 +243,10 @@ def _create_test_jobs(extra_args=[], inner_jobs=_DEFAULT_INNER_JOBS):
         labels=["basictests"],
         extra_args=extra_args + ["--report_multi_target"],
         inner_jobs=inner_jobs,
+        # Important! When changing the timeout, verify individual test timeouts
+        # in run_tests.py Sanity are less than this.
         # TODO(ac-patel): decrease when the job is optimized to only consider code diff.
-        timeout_seconds=datetime.timedelta(hours=1, minutes=30).total_seconds(),
+        timeout_seconds=datetime.timedelta(hours=1, minutes=25).total_seconds(),
     )
 
     # supported on all platforms.

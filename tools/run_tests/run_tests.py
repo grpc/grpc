@@ -1284,7 +1284,7 @@ class Sanity(object):
             return [
                 self.config.job_spec(
                     cmd["script"].split(),
-                    timeout_seconds=90 * 60,
+                    timeout_seconds=80 * 60,
                     environ=environ,
                     cpu_cost=cmd.get("cpu_cost", 1),
                 )
