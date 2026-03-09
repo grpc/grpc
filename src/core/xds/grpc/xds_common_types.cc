@@ -17,6 +17,7 @@
 #include "src/core/xds/grpc/xds_common_types.h"
 
 #include "src/core/util/match.h"
+#include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
@@ -106,6 +107,12 @@ bool CommonTlsContext::Empty() const {
 
 bool HeaderMutationRules::IsMutationAllowed(
     const std::string& header_name) const {
+  // Regardless of the mutation rules, we never allow certain headers.
+  if (absl::StartsWith(header_name, ":") ||
+      absl::StartsWith(header_name, "grpc-") ||
+      header_name == "host") {
+    return false;
+  }
   // If true, all header mutations are disallowed, regardless of any other
   // setting.
   if (disallow_all) {

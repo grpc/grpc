@@ -1413,6 +1413,17 @@ TEST(HeaderMutationRulesTest, DisallowExpressionOverridesAllowExpression) {
   EXPECT_FALSE(rules.IsMutationAllowed("stuff"));
 }
 
+TEST(HeaderMutationRulesTest, SomeHeadersNeverAllowed) {
+  HeaderMutationRules rules;
+  rules.allow_expression = std::make_unique<RE2>(".*");
+  EXPECT_TRUE(rules.IsMutationAllowed("foo"));
+  EXPECT_TRUE(rules.IsMutationAllowed("bar"));
+  // Still does not allow certain headers.
+  EXPECT_FALSE(rules.IsMutationAllowed("host"));
+  EXPECT_FALSE(rules.IsMutationAllowed(":path"));
+  EXPECT_FALSE(rules.IsMutationAllowed("grpc-foo"));
+}
+
 }  // namespace
 }  // namespace testing
 }  // namespace grpc_core
