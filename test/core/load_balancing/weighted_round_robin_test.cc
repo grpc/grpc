@@ -1397,6 +1397,40 @@ TEST_F(WeightedRoundRobinTest, WrrCustomMetricEnabled_MultipleMetricsMax) {
       {{kAddresses[0], 1}, {kAddresses[1], 9}, {kAddresses[2], 5}});
 }
 
+TEST_F(WeightedRoundRobinTest, WrrCustomMetricEnabled_FallbackPriority) {
+  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_WRR_CUSTOM_METRICS");
+  const std::array<absl::string_view, 3> kAddresses = {
+      "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442", "ipv4:127.0.0.1:443"};
+  auto stats_plugin = std::make_shared<FakeStatsPlugin>(
+      nullptr, /*use_disabled_by_default_metrics=*/true);
+  stats_plugin_group_.AddStatsPlugin(stats_plugin, nullptr);
+  std::vector<std::string> metric_names = {"named_metrics.foo"};
+  auto picker = SendInitialUpdateAndWaitForConnected(
+      kAddresses,
+      ConfigBuilder().SetMetricNamesForComputingUtilization(metric_names));
+  ASSERT_NE(picker, nullptr);
+  // Addr 0: foo=0.9, app=0.1, cpu=0.1 -> Uses foo (0.9). Weight: 100/0.9 =
+  // 111.1 Addr 1: foo=-1.0 (ignored), app=0.9, cpu=0.1 -> Falls back to app
+  // (0.9). Weight: 100/0.9 = 111.1 Addr 2: foo=0.0 (ignored), app=0.0
+  // (ignored), cpu=0.45 -> Falls back to cpu (0.45). Weight: 100/0.45 = 222.2
+  // We expect weights in ratio 1:1:2.
+  WaitForWeightedRoundRobinPicks(
+      &picker,
+      {{kAddresses[0],
+        MakeBackendMetricData(
+            /*app_utilization=*/0.1, /*qps=*/100.0, /*eps=*/0.0,
+            /*cpu_utilization=*/0.1, /*mem_utilization=*/0.0, {{"foo", 0.9}})},
+       {kAddresses[1],
+        MakeBackendMetricData(
+            /*app_utilization=*/0.9, /*qps=*/100.0, /*eps=*/0.0,
+            /*cpu_utilization=*/0.1, /*mem_utilization=*/0.0, {{"foo", -1.0}})},
+       {kAddresses[2], MakeBackendMetricData(
+                           /*app_utilization=*/0.0, /*qps=*/100.0, /*eps=*/0.0,
+                           /*cpu_utilization=*/0.45, /*mem_utilization=*/0.0,
+                           {{"foo", 0.0}})}},
+      {{kAddresses[0], 1}, {kAddresses[1], 1}, {kAddresses[2], 2}});
+}
+
 // Checks that if enabled but no metric names provided, we default to CPU.
 TEST_F(WeightedRoundRobinTest,
        WrrCustomMetricEnabled_NoMetricNamesDefaultsToCpu) {

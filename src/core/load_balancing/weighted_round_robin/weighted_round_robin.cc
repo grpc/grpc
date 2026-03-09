@@ -139,6 +139,55 @@ bool WrrCustomMeticEnabled() {
   return parse_succeeded && parsed_value;
 }
 
+double GetUtilization(
+    const BackendMetricData& backend_metric_data,
+    const std::vector<std::string>& metric_names_for_computing_utilization) {
+  double utilization = 0;
+  bool custom_metric_found = false;
+  if (WrrCustomMeticEnabled() &&
+      !metric_names_for_computing_utilization.empty()) {
+    for (const auto& metric_name : metric_names_for_computing_utilization) {
+      double value = 0;
+      if (metric_name == "cpu_utilization") {
+        value = backend_metric_data.cpu_utilization;
+      } else if (metric_name == "mem_utilization") {
+        value = backend_metric_data.mem_utilization;
+      } else if (metric_name == "application_utilization") {
+        value = backend_metric_data.application_utilization;
+      } else if (absl::StartsWith(metric_name, "named_metrics.")) {
+        auto key = absl::string_view(metric_name).substr(14);
+        auto it = backend_metric_data.named_metrics.find(key);
+        if (it != backend_metric_data.named_metrics.end()) {
+          value = it->second;
+        }
+      }
+      if (value > 0) {
+        utilization = std::max(utilization, value);
+        custom_metric_found = true;
+      }
+      LOG(INFO) << "Metric: " << metric_name << " Value: " << value
+                << " Utilization: " << utilization << " Key: "
+                << (absl::StartsWith(metric_name, "named_metrics.")
+                        ? absl::string_view(metric_name).substr(14)
+                        : "")
+                << " MapSize: " << backend_metric_data.named_metrics.size();
+      for (const auto& pair : backend_metric_data.named_metrics) {
+        LOG(INFO) << "In Map: " << pair.first << " = " << pair.second;
+      }
+    }
+  } else {
+    LOG(INFO) << "Config metric names empty: "
+              << metric_names_for_computing_utilization.empty();
+  }
+  if (!custom_metric_found) {
+    utilization = backend_metric_data.application_utilization;
+  }
+  if (utilization <= 0) {
+    utilization = backend_metric_data.cpu_utilization;
+  }
+  return utilization;
+}
+
 // Config for WRR policy.
 class WeightedRoundRobinConfig final : public LoadBalancingPolicy::Config {
  public:
@@ -270,9 +319,13 @@ class WeightedRoundRobin final : public LoadBalancingPolicy {
       class OobWatcher final : public OobBackendMetricWatcher {
        public:
         OobWatcher(RefCountedPtr<EndpointWeight> weight,
-                   float error_utilization_penalty)
+                   float error_utilization_penalty,
+                   std::vector<std::string>
+                       metric_names_for_computing_utilization = {})
             : weight_(std::move(weight)),
-              error_utilization_penalty_(error_utilization_penalty) {}
+              error_utilization_penalty_(error_utilization_penalty),
+              metric_names_for_computing_utilization_(
+                  std::move(metric_names_for_computing_utilization)) {}
 
         void OnBackendMetricReport(
             const BackendMetricData& backend_metric_data) override;
@@ -280,6 +333,7 @@ class WeightedRoundRobin final : public LoadBalancingPolicy {
        private:
         RefCountedPtr<EndpointWeight> weight_;
         const float error_utilization_penalty_;
+        const std::vector<std::string> metric_names_for_computing_utilization_;
       };
 
       RefCountedPtr<SubchannelInterface> CreateSubchannel(
@@ -542,42 +596,8 @@ void WeightedRoundRobin::Picker::SubchannelCallTracker::Finish(
   if (backend_metric_data != nullptr) {
     qps = backend_metric_data->qps;
     eps = backend_metric_data->eps;
-    utilization = backend_metric_data->application_utilization;
-    if (WrrCustomMeticEnabled() && utilization <= 0 &&
-        !metric_names_for_computing_utilization_.empty()) {
-      for (const auto& metric_name : metric_names_for_computing_utilization_) {
-        double value = 0;
-        if (metric_name == "cpu_utilization") {
-          value = backend_metric_data->cpu_utilization;
-        } else if (metric_name == "mem_utilization") {
-          value = backend_metric_data->mem_utilization;
-        } else if (metric_name == "application_utilization") {
-          value = backend_metric_data->application_utilization;
-        } else if (absl::StartsWith(metric_name, "named_metrics.")) {
-          auto key = absl::string_view(metric_name).substr(14);
-          auto it = backend_metric_data->named_metrics.find(key);
-          if (it != backend_metric_data->named_metrics.end()) {
-            value = it->second;
-          }
-        }
-        utilization = std::max(utilization, value);
-        LOG(INFO) << "Metric: " << metric_name << " Value: " << value
-                  << " Utilization: " << utilization << " Key: "
-                  << (absl::StartsWith(metric_name, "named_metrics.")
-                          ? absl::string_view(metric_name).substr(14)
-                          : "")
-                  << " MapSize: " << backend_metric_data->named_metrics.size();
-        for (const auto& pair : backend_metric_data->named_metrics) {
-          LOG(INFO) << "In Map: " << pair.first << " = " << pair.second;
-        }
-      }
-    } else {
-      LOG(INFO) << "Config metric names empty: "
-                << metric_names_for_computing_utilization_.empty();
-    }
-    if (utilization <= 0) {
-      utilization = backend_metric_data->cpu_utilization;
-    }
+    utilization = GetUtilization(*backend_metric_data,
+                                 metric_names_for_computing_utilization_);
   }
   weight_->MaybeUpdateWeight(qps, eps, utilization, error_utilization_penalty_);
 }
@@ -872,10 +892,8 @@ WeightedRoundRobin::GetOrCreateWeight(
 
 void WeightedRoundRobin::WrrEndpointList::WrrEndpoint::OobWatcher::
     OnBackendMetricReport(const BackendMetricData& backend_metric_data) {
-  double utilization = backend_metric_data.application_utilization;
-  if (utilization <= 0) {
-    utilization = backend_metric_data.cpu_utilization;
-  }
+  double utilization = GetUtilization(backend_metric_data,
+                                      metric_names_for_computing_utilization_);
   weight_->MaybeUpdateWeight(backend_metric_data.qps, backend_metric_data.eps,
                              utilization, error_utilization_penalty_);
 }
@@ -896,7 +914,8 @@ WeightedRoundRobin::WrrEndpointList::WrrEndpoint::CreateSubchannel(
     subchannel->AddDataWatcher(MakeOobBackendMetricWatcher(
         wrr->config_->oob_reporting_period(),
         std::make_unique<OobWatcher>(
-            weight_, wrr->config_->error_utilization_penalty())));
+            weight_, wrr->config_->error_utilization_penalty(),
+            wrr->config_->metric_names_for_computing_utilization())));
   }
   return subchannel;
 }
