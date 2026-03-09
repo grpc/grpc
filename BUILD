@@ -108,7 +108,9 @@ config_setting(
 
 grpc_clang_cl_settings()
 
-grpc_ios_toolchains("python_3_11_ios_sim_arm64_workaround")
+grpc_ios_toolchains(
+    name = "python_3_11_ios_sim_arm64_workaround",
+)
 
 config_setting(
     name = "grpc_no_rls_flag",
