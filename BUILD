@@ -22,6 +22,7 @@ load(
     "grpc_cc_library",
     "grpc_clang_cl_settings",
     "grpc_filegroup",
+    "grpc_ios_toolchains",
     "grpc_generate_one_off_targets",
     "grpc_upb_proto_library",
     "grpc_upb_proto_reflection_library",
@@ -106,6 +107,8 @@ config_setting(
 )
 
 grpc_clang_cl_settings()
+
+grpc_ios_toolchains()
 
 config_setting(
     name = "grpc_no_rls_flag",

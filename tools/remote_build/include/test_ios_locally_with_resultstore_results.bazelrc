@@ -14,5 +14,6 @@ build --remote_upload_local_results=false
 
 import %workspace%/tools/remote_build/include/test_config_common.bazelrc
 
-# TODO(weizheyuan): Converge to test_locally_with_resultstore_results.bazelrc
+# TODO(weizheyuan): Converge with test_locally_with_resultstore_results.bazelrc
 # once bzlmod migration is done.
+buiild --extra_toolchains=//:python_3_11_ios_sim_arm64_workaround

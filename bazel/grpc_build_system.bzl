@@ -863,3 +863,25 @@ def grpc_clang_cl_settings():
             "@bazel_tools//tools/cpp:clang-cl",
         ],
     )
+
+# Certain iOS tests (e.g. //src/objective-c/tests:EventEngineUnitTest)s
+# Requires running py_binary code in simulator which doesn't work
+# well with @rules_python's toolchain autodetection. Customize this
+# toolchain to make our CI tests pass.
+# See https://github.com/grpc/grpc/issues/41798.
+def grpc_ios_toolchains():
+    native.toolchain(
+        name = "python_3_11_ios_sim_arm64_workaround",
+        # Point to the existing hermetic runtime implementation
+        toolchain = "@python_3_11_aarch64-apple-darwin//:python_runtimes",
+        toolchain_type = "@bazel_tools//tools/python:toolchain_type",
+        # Force using host python for ios simulator
+        target_compatible_with = [
+            "@platforms//os:ios",
+            "@platforms//cpu:aarch64",
+        ],
+        exec_compatible_with = [
+            "@platforms//os:macos",
+            "@platforms//cpu:aarch64",
+        ],
+    )
