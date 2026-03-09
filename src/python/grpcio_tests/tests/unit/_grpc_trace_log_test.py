@@ -33,7 +33,8 @@ class TraceLogTest(unittest.TestCase):
         # Run the subprocess and capture both stdout and stderr.
         process = subprocess.run(
             [sys.executable, "-c", script],
-            check=False, env=env,
+            check=False,
+            env=env,
             capture_output=True,
             text=True,
         )
