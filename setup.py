@@ -452,17 +452,6 @@ else:
     DEFINE_MACROS += (
         ("HAVE_CONFIG_H", 1),
         ("GRPC_ENABLE_FORK_SUPPORT", 1),
-        # Set runtime GRPC_ENABLE_FORK_SUPPORT setting in core to "off".
-        #
-        # By default, gRPC core GRPC_ENABLE_FORK_SUPPORT runtime config_var
-        # is "on" when it's compiled with GRPC_ENABLE_FORK_SUPPORT macro.
-        # However, in python GRPC_ENABLE_FORK_SUPPORT by default is "off".
-        # Compare config_vars.cc and fork_posix.pyx.pxi.
-        # This leads to an inconsistent and broken behavior.
-        #
-        # Important! This must by in sync with the default value for the
-        # GRPC_ENABLE_FORK_SUPPORT env var parsed in fork_posix.pyx.pxi
-        ("GRPC_ENABLE_FORK_SUPPORT_DEFAULT", "false"),
     )
 
 # Fix for multiprocessing support on Apple devices.

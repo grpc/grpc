@@ -479,7 +479,7 @@ class PipelinedSecureEndpoint final : public EventEngine::Endpoint {
 
   bool Read(absl::AnyInvocable<void(absl::Status)> on_read, SliceBuffer* buffer,
             ReadArgs in_args) override {
-    return impl_->Read(std::move(on_read), buffer, std::move(in_args));
+    return impl_->Read(std::move(on_read), buffer, in_args);
   }
 
   bool Write(absl::AnyInvocable<void(absl::Status)> on_writable,
@@ -614,7 +614,7 @@ class PipelinedSecureEndpoint final : public EventEngine::Endpoint {
       GRPC_CHECK(on_read_ == nullptr);
       pending_output_buffer_ = buffer;
       on_read_ = std::move(on_read);
-      last_read_args_ = std::move(args);
+      last_read_args_ = args;
       return false;
     }
 
@@ -695,7 +695,7 @@ class PipelinedSecureEndpoint final : public EventEngine::Endpoint {
       ReadArgs args;
       args.set_read_hint_bytes(frame_protector_.min_progress_size());
       lock.Release();
-      event_engine_->Run([impl = Ref(), args = std::move(args)]() mutable {
+      event_engine_->Run([impl = Ref(), args = args]() mutable {
         grpc_core::ExecCtx exec_ctx;
         // If the endpoint closed whilst waiting for this callback, then
         // fail out the read and we're done.
@@ -711,7 +711,7 @@ class PipelinedSecureEndpoint final : public EventEngine::Endpoint {
               grpc_core::ExecCtx exec_ctx;
               FinishFirstRead(std::move(impl), status);
             },
-            impl->staging_protected_data_buffer_.get(), std::move(args));
+            impl->staging_protected_data_buffer_.get(), args);
         if (read_finished_immediately) {
           lock.Release();
           {
@@ -810,7 +810,7 @@ class PipelinedSecureEndpoint final : public EventEngine::Endpoint {
           source_buffer = std::move(impl->protected_data_buffer_);
           impl->frame_protector_.TraceOp("data",
                                          source_buffer->c_slice_buffer());
-          args = std::move(impl->last_read_args_);
+          args = impl->last_read_args_;
           if (impl->frame_protector_.IsZeroCopyProtector()) {
             // We currently only track min progress size for zero copy
             // protectors. Once we add this for non-zero copy protectors, we
@@ -822,18 +822,19 @@ class PipelinedSecureEndpoint final : public EventEngine::Endpoint {
                 std::max<size_t>(1, impl->frame_protector_.min_progress_size() -
                                         source_buffer->Length()));
           } else if (args.read_hint_bytes() > 0) {
-            args.set_read_hint_bytes(std::max<size_t>(
-                1, args.read_hint_bytes() - source_buffer->Length()));
+            // This effectively disables read coalescing for non zerocopy
+            // protectors, but this is necessary since it is not trivial to
+            // determine the encrypted payload size in advance.
+            args.set_read_hint_bytes(1);
           }
         }
 
         // Kick off the next read in another thread while we unprotect in this
         // thread.
-        impl->event_engine_->Run(
-            [impl = impl->Ref(), args = std::move(args)]() mutable {
-              grpc_core::ExecCtx exec_ctx;
-              StartAsyncRead(std::move(impl), std::move(args));
-            });
+        impl->event_engine_->Run([impl = impl->Ref(), args = args]() mutable {
+          grpc_core::ExecCtx exec_ctx;
+          StartAsyncRead(std::move(impl), args);
+        });
 
         {
           grpc_core::ReleasableMutexLock lock(impl->frame_protector_.read_mu());
@@ -889,7 +890,7 @@ class PipelinedSecureEndpoint final : public EventEngine::Endpoint {
             grpc_core::ExecCtx exec_ctx;
             FinishAsyncRead(std::move(impl), status);
           },
-          impl->staging_protected_data_buffer_.get(), std::move(args));
+          impl->staging_protected_data_buffer_.get(), args);
       if (read_finished_immediately) {
         lock.Release();
         bool should_unprotect = false;

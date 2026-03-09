@@ -102,9 +102,10 @@ class Http2ServerTransport final : public ServerTransport,
   //////////////////////////////////////////////////////////////////////////////
   // Constructor, Destructor etc.
   Http2ServerTransport(
-      PromiseEndpoint endpoint, GRPC_UNUSED const ChannelArgs& channel_args,
+      PromiseEndpoint endpoint, const ChannelArgs& channel_args,
       std::shared_ptr<grpc_event_engine::experimental::EventEngine>
-          event_engine);
+          event_engine,
+      absl::AnyInvocable<void(absl::StatusOr<uint32_t>)> on_receive_settings);
 
   Http2ServerTransport(const Http2ServerTransport&) = delete;
   Http2ServerTransport& operator=(const Http2ServerTransport&) = delete;
@@ -128,7 +129,7 @@ class Http2ServerTransport final : public ServerTransport,
   // Transport Functions
 
   void SetCallDestination(
-      RefCountedPtr<UnstartedCallDestination> call_destination) override;
+      RefCountedPtr<UnstartedCallDestination> unstarted_call_handler) override;
 
   void PerformOp(grpc_transport_op*) override;
 
@@ -139,6 +140,7 @@ class Http2ServerTransport final : public ServerTransport,
   }
 
   void SpawnTransportLoops();
+  void InitializeAndSpawnTransportLoops();
 
   //////////////////////////////////////////////////////////////////////////////
   // Channelz and ZTrace
@@ -406,9 +408,9 @@ class Http2ServerTransport final : public ServerTransport,
   //////////////////////////////////////////////////////////////////////////////
   // Settings
 
-  // auto WaitForSettingsTimeoutOnDone();
-  // void MaybeSpawnWaitForSettingsTimeout();
-  // void EnforceLatestIncomingSettings();
+  void EnforceLatestIncomingSettings();
+  auto WaitForSettingsTimeoutOnDone();
+  void MaybeSpawnWaitForSettingsTimeout();
 
   //////////////////////////////////////////////////////////////////////////////
   // Flow Control and BDP
@@ -548,7 +550,7 @@ class Http2ServerTransport final : public ServerTransport,
   //     ABSL_EXCLUSIVE_LOCKS_REQUIRED(transport_mutex_);
 
   // This function MUST run on the transport party.
-  void CloseTransport() {}
+  void CloseTransport();
 
   // Handles the error status and returns the corresponding absl status. Absl
   // Status is returned so that the error can be gracefully handled
@@ -691,8 +693,7 @@ class Http2ServerTransport final : public ServerTransport,
   GRPC_UNUSED uint32_t next_stream_id_;
   HPackCompressor encoder_;
   HPackParser parser_;
-  GRPC_UNUSED bool is_transport_closed_ ABSL_GUARDED_BY(transport_mutex_) =
-      false;
+  bool is_transport_closed_ ABSL_GUARDED_BY(transport_mutex_) = false;
   Latch<void> transport_closed_latch_;
 
   ConnectivityStateTracker state_tracker_ ABSL_GUARDED_BY(transport_mutex_){
@@ -700,8 +701,7 @@ class Http2ServerTransport final : public ServerTransport,
 
   RefCountedPtr<StateWatcher> watcher_ ABSL_GUARDED_BY(transport_mutex_);
 
-  GRPC_UNUSED bool should_reset_ping_clock_;
-  GRPC_UNUSED bool is_first_write_;
+  bool should_reset_ping_clock_;
   IncomingMetadataTracker incoming_headers_;
 
   // Transport wide write context. This is used to track the state of the
@@ -727,8 +727,8 @@ class Http2ServerTransport final : public ServerTransport,
 
   /// Based on channel args, preferred_rx_crypto_frame_sizes are advertised to
   /// the peer
-  GRPC_UNUSED bool enable_preferred_rx_crypto_frame_advertisement_;
-  GRPC_UNUSED RefCountedPtr<SecurityFrameHandler> security_frame_handler_;
+  bool enable_preferred_rx_crypto_frame_advertisement_;
+  RefCountedPtr<SecurityFrameHandler> security_frame_handler_;
   MemoryOwner memory_owner_;
   chttp2::TransportFlowControl flow_control_;
   std::shared_ptr<PromiseHttp2ZTraceCollector> ztrace_collector_;
