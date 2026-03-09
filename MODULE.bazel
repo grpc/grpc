@@ -119,6 +119,7 @@ python.defaults(python_version = DEFAULT_PYTHON_VERSION)
     python.toolchain(python_version = python_version)
     for python_version in PYTHON_VERSIONS
 ]
+
 use_repo(python, "python_3_11_aarch64-apple-darwin")
 
 pip = use_extension("@rules_python//python/extensions:pip.bzl", "pip")
