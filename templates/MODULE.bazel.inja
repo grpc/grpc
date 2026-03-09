@@ -122,7 +122,7 @@ python.defaults(python_version = DEFAULT_PYTHON_VERSION)
 
 use_repo(python, "python_3_11_aarch64-apple-darwin")
 
-register_toolchain("//:python_3_11_ios_sim_arm64_workaround")
+register_toolchains("//:python_3_11_ios_sim_arm64_workaround")
 
 pip = use_extension("@rules_python//python/extensions:pip.bzl", "pip")
 
