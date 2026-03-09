@@ -60,6 +60,16 @@ struct Rule {
   std::vector<std::string> proto_files;
 };
 
+struct ExternalRepoPrefix {
+  // Repo name in file path, can be apparent or canonical
+  std::string repo;
+  // Canonical name is the actual folder name under bazel-out/.
+  std::string canonical_repo;
+  // Used by GetBazelBinRootPath() for lookup.
+  std::string apparent_repo;
+  std::string source_dir;
+};
+
 std::string ReadFile(const std::string& path) {
   std::ifstream file(path);
   if (!file.is_open()) {
@@ -168,50 +178,76 @@ std::string GetUpbPath(std::string proto_path, const std::string& ext) {
   return absl::StrReplaceAll(proto_path, {{".proto", ext}});
 }
 
-std::pair<std::string, std::string> GetExternalLink(const std::string& file) {
-  const std::vector<std::pair<std::string, std::string>> kExternalLinks = {
-      {"@com_google_protobuf//", "src/"},
-      {"@com_google_googleapis//", ""},
-      {"@com_github_cncf_xds//", ""},
-      {"@com_envoyproxy_protoc_gen_validate//", ""},
-      {"@dev_cel//", "proto/"},
-      {"@envoy_api//", ""},
-      {"@opencensus_proto//", ""},
+ExternalRepoPrefix GetExternalRepoPrefix(const std::string& file) {
+  struct ExternalLink{
+    std::string canonical_repo;
+    std::string apparent_repo;
+    std::string source_dir;
   };
-  for (const auto& link : kExternalLinks) {
-    if (absl::StartsWith(file, link.first)) {
-      return link;
+
+  const std::vector<ExternalLink> kExternalLinks = {
+      {"@@protobuf+//", "@com_google_protobuf//", "src/"},
+      {"@@googleapis+//", "@com_google_googleapis//", ""},
+      {"@@xds+//", "@com_github_cncf_xds//", ""},
+      {"@@protoc-gen-validate+//", "@com_envoyproxy_protoc_gen_validate//", ""},
+      {"@@cel-spec+//", "@dev_cel//", "proto/"},
+      {"@@envoy_api+//", "@envoy_api//", ""},
+      {"@@opencensus-proto+//", "@opencensus_proto//", ""},
+  };
+  for (const auto& elink : kExternalLinks) {
+    if (absl::StartsWith(file, elink.canonical_repo)) {
+      return ExternalRepoPrefix{
+        .repo = elink.canonical_repo,
+        .canonical_repo = elink.canonical_repo,
+        .apparent_repo = elink.apparent_repo,
+        .source_dir = elink.source_dir,
+      };
+    }
+    if (absl::StartsWith(file, elink.apparent_repo)) {
+      return ExternalRepoPrefix{
+        .repo = elink.apparent_repo,
+        .canonical_repo = elink.canonical_repo,
+        .apparent_repo = elink.apparent_repo,
+        .source_dir = elink.source_dir,
+      };
     }
   }
-  return {"//", ""};
+  return ExternalRepoPrefix{
+    .repo = "//",
+    .canonical_repo = "",
+    .apparent_repo = "",
+    .source_dir = "",
+  };
 }
 
 std::string GetBazelBinRootPath(
-    const std::pair<std::string, std::string>& elink, const std::string& file) {
+    const ExternalRepoPrefix& external_repo_prefix, const std::string& file) {
   const std::string kBazelBinRoot = "bazel-bin/";
-  if (elink.first == "@com_google_protobuf//") {
+  const std::string& source_dir = external_repo_prefix.source_dir;
+  const std::string& canonical_repo = external_repo_prefix.canonical_repo;
+  const std::string& apparent_repo = external_repo_prefix.apparent_repo;
+  if (apparent_repo == "@com_google_protobuf//") {
     std::string name_part = std::filesystem::path(file).stem().string();
     // For upb generated files, we need to strip two extensions.
     name_part = std::filesystem::path(name_part).stem().string();
     return absl::StrCat(
         kBazelBinRoot, "external/",
-        absl::StrReplaceAll(elink.first, {{"@", ""}, {"//", ""}}),
+        absl::StrReplaceAll(canonical_repo, {{"@", ""}, {"//", ""}}),
         "/src/google/protobuf/_virtual_imports/", name_part, "_proto/", file);
   }
-  if (elink.first == "@dev_cel//") {
+  if (apparent_repo == "@dev_cel//") {
     std::string name_part = std::filesystem::path(file).stem().string();
     // For upb generated files, we need to strip two extensions.
     name_part = std::filesystem::path(name_part).stem().string();
     return absl::StrCat(
         kBazelBinRoot, "external/",
-        absl::StrReplaceAll(elink.first, {{"@", ""}, {"//", ""}}),
+        absl::StrReplaceAll(canonical_repo, {{"@", ""}, {"//", ""}}),
         "/proto/cel/expr/_virtual_imports/", name_part, "_proto/", file);
   }
-  if (absl::StartsWith(elink.first, "@")) {
+  if (absl::StartsWith(apparent_repo, "@")) {
     return absl::StrCat(
         kBazelBinRoot, "external/",
-        absl::StrReplaceAll(elink.first, {{"@", ""}, {"//", ""}}), "/",
-        elink.second, file);
+        absl::StrReplaceAll(canonical_repo, {{"@", ""}, {"//", ""}}), "/", source_dir, file);
   } else {
     return absl::StrCat(kBazelBinRoot, file);
   }
@@ -275,8 +311,8 @@ void CopyUpbGeneratedFiles(std::vector<Rule>& rules, bool verbose,
     const auto& output_dir =
         (rule.type == "upb_c_proto_library") ? upb_out : upbdefs_out;
     for (const auto& proto_file_raw : rule.proto_files) {
-      auto elink = GetExternalLink(proto_file_raw);
-      std::string prefix_to_strip = elink.first + elink.second;
+      auto external_repo_prefix = GetExternalRepoPrefix(proto_file_raw);
+      const std::string prefix_to_strip = external_repo_prefix.repo + external_repo_prefix.source_dir ;
       if (!absl::StartsWith(proto_file_raw, prefix_to_strip)) {
         std::cerr << "Source file \"" << proto_file_raw
                   << "\" does not have the expected prefix \""
@@ -286,7 +322,7 @@ void CopyUpbGeneratedFiles(std::vector<Rule>& rules, bool verbose,
       std::string proto_file = proto_file_raw.substr(prefix_to_strip.length());
       for (const auto& ext : extensions) {
         std::string file = GetUpbPath(proto_file, ext);
-        std::string src = GetBazelBinRootPath(elink, file);
+        std::string src = GetBazelBinRootPath(external_repo_prefix, file);
         std::string dest = output_dir + "/" + file;
         files_to_copy[src] = dest;
       }
