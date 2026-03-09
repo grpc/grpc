@@ -170,6 +170,7 @@ transport to their counterparts in the newer Promise-based PH2 transport.
 *   **Stream Initiation/Handling**:
     *   CHTTP2: Functions like `init_stream`, `chttp2_perform_stream_op_locked`, etc., in `chttp2_transport.cc`.
     *   PH2: Handled within `Http2ClientTransport::StartCall` for clients, and `Http2ServerTransport::SetCallDestination` for servers.
+    # TODO(tjagtap) [PH2][P0] Fix this
 
 *   **Error Handling**:
     *   CHTTP2: Error handling with `grpc_error_handle` throughout the code.
