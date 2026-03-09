@@ -869,9 +869,9 @@ def grpc_clang_cl_settings():
 # well with @rules_python's toolchain autodetection. Customize this
 # toolchain to make our CI tests pass.
 # See https://github.com/grpc/grpc/issues/41798.
-def grpc_ios_toolchains():
+def grpc_ios_toolchains(name):
     native.toolchain(
-        name = "python_3_11_ios_sim_arm64_workaround",
+        name = name,
         # Point to the existing hermetic runtime implementation
         toolchain = "@python_3_11_aarch64-apple-darwin//:python_runtimes",
         toolchain_type = "@bazel_tools//tools/python:toolchain_type",
