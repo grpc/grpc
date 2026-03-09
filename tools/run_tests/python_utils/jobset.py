@@ -289,6 +289,10 @@ class Job(object):
         self._suppress_failure_message = False
         self._quiet_success = quiet_success
         if not self._quiet_success:
+            # TODO(sergiitk): should we print out the timeout here? It may be
+            #   useful to make it easier identify timeout issues when we have
+            #   multiple layers of run_tests.py, f.e run_tests_matrix.py runs
+            #   run_tests.py that starts a docker job that also runs run_tests.py
             message("START", spec.shortname, do_newline=self._travis)
         self.result = JobResult()
         self.start()
