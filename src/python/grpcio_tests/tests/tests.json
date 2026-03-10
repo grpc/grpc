@@ -65,7 +65,7 @@
   "tests.unit._error_message_encoding_test.ErrorMessageEncodingTest",
   "tests.unit._exit_test.ExitTest",
   "tests.unit._grpc_shutdown_test.GrpcShutdownTest",
-  "tests.unit._grpc_trace_log_test.GrpcTraceLogTest",
+  "tests.unit._absl_log_test.GrpcTraceLogTest",
   "tests.unit._interceptor_test.InterceptorTest",
   "tests.unit._invalid_metadata_test.InvalidMetadataTest",
   "tests.unit._invocation_defects_test.InvocationDefectsTest",
