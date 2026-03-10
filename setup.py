@@ -349,7 +349,6 @@ if BUILD_WITH_SYSTEM_ABSL:
     CORE_C_FILES = filter(
         lambda x: "third_party/abseil-cpp" not in x, CORE_C_FILES
     )
-    system_absl_path = os.path.join("/usr", "include")
     ABSL_INCLUDE = (os.path.join("/usr", "include"),)
 
 EXTENSION_INCLUDE_DIRECTORIES = (
