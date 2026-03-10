@@ -40,6 +40,11 @@ function cleanup() {
   # Capture exit status of the main script.
   local exit_status="$?"
 
+  # Print without repeating due to -x.
+  { set +x; } 2>/dev/null
+  echo -e "\nInitiating cleanup for ${FUNCTION_NAME}. Waiting for logs to quiesce: ${LOG_QUIESCE_SECONDS} sec."
+  set -x
+
   # Wait for logs to quiesce.
   sleep "${LOG_QUIESCE_SECONDS}"
 
@@ -69,5 +74,8 @@ HTTP_URL=$(echo "${DEPLOY_OUTPUT}" | grep "url: " | awk '{print $2;}')
 for _ in $(seq 1 "${REQUEST_COUNT}"); do
   # TODO(sergiitk): switch to --fail-with-body once the base image contains
   #   curl >= v7.76.0; as of 2026-03-04 it's v7.68.0.
-  curl -L --fail --no-progress-meter "${HTTP_URL}" && echo
+  curl -L --fail --no-progress-meter "${HTTP_URL}"
+
+  # Print a newline to make logs readable: the "ok" response end with \n.
+  { set +x; } 2>/dev/null; echo; set -x
 done
