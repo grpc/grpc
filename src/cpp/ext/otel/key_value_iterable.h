@@ -56,14 +56,16 @@ class OpenTelemetryPluginImpl::KeyValueIterable
       const OpenTelemetryPluginImpl::ActivePluginOptionsView*
           active_plugin_options_view,
       absl::Span<const grpc_core::RefCountedStringValue> optional_labels,
-      bool is_client, const OpenTelemetryPluginImpl* otel_plugin)
+      bool is_client, const OpenTelemetryPluginImpl* otel_plugin,
+      bool is_call_level = false)
       : injected_labels_from_plugin_options_(
             injected_labels_from_plugin_options),
         additional_labels_(additional_labels),
         active_plugin_options_view_(active_plugin_options_view),
         optional_labels_(optional_labels),
         is_client_(is_client),
-        otel_plugin_(otel_plugin) {}
+        otel_plugin_(otel_plugin),
+        is_call_level_(is_call_level) {}
 
   bool ForEachKeyValue(opentelemetry::nostd::function_ref<
                        bool(opentelemetry::nostd::string_view,
@@ -100,21 +102,43 @@ class OpenTelemetryPluginImpl::KeyValueIterable
     }
     // Add per-call optional labels
     if (!optional_labels_.empty()) {
-      GRPC_CHECK(
-          optional_labels_.size() ==
-          static_cast<size_t>(grpc_core::ClientCallTracerInterface::
-                                  CallAttemptTracer::OptionalLabelKey::kSize));
-      for (size_t i = 0; i < optional_labels_.size(); ++i) {
-        if (!otel_plugin_->per_call_optional_label_bits_.test(i)) {
-          continue;
+      if (is_call_level_) {
+        GRPC_CHECK(
+            optional_labels_.size() ==
+            static_cast<size_t>(
+                grpc_core::ClientCallTracerInterface::OptionalLabelKey::kSize));
+        for (size_t i = 0; i < optional_labels_.size(); ++i) {
+          if (!otel_plugin_->per_call_optional_label_bits_.test(i)) {
+            continue;
+          }
+          if (!callback(
+                  AbslStrViewToOpenTelemetryStrView(
+                      CallOptionalLabelKeyToString(
+                          static_cast<grpc_core::ClientCallTracerInterface::
+                                          OptionalLabelKey>(i))),
+                  AbslStrViewToOpenTelemetryStrView(
+                      optional_labels_[i].as_string_view()))) {
+            return false;
+          }
         }
-        if (!callback(
-                AbslStrViewToOpenTelemetryStrView(OptionalLabelKeyToString(
-                    static_cast<grpc_core::ClientCallTracerInterface::
-                                    CallAttemptTracer::OptionalLabelKey>(i))),
-                AbslStrViewToOpenTelemetryStrView(
-                    optional_labels_[i].as_string_view()))) {
-          return false;
+      } else {
+        GRPC_CHECK(optional_labels_.size() ==
+                   static_cast<size_t>(
+                       grpc_core::ClientCallTracerInterface::CallAttemptTracer::
+                           OptionalLabelKey::kSize));
+        for (size_t i = 0; i < optional_labels_.size(); ++i) {
+          if (!otel_plugin_->per_attempt_optional_label_bits_.test(i)) {
+            continue;
+          }
+          if (!callback(
+                  AbslStrViewToOpenTelemetryStrView(OptionalLabelKeyToString(
+                      static_cast<grpc_core::ClientCallTracerInterface::
+                                      CallAttemptTracer::OptionalLabelKey>(
+                          i))),
+                  AbslStrViewToOpenTelemetryStrView(
+                      optional_labels_[i].as_string_view()))) {
+            return false;
+          }
         }
       }
     }
@@ -153,6 +177,7 @@ class OpenTelemetryPluginImpl::KeyValueIterable
   absl::Span<const grpc_core::RefCountedStringValue> optional_labels_;
   bool is_client_;
   const OpenTelemetryPluginImpl* otel_plugin_;
+  bool is_call_level_;
 };
 
 }  // namespace internal
