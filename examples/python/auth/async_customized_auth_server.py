@@ -35,7 +35,6 @@ _SIGNATURE_HEADER_KEY = "x-signature"
 class SignatureValidationInterceptor(grpc.aio.ServerInterceptor):
     def __init__(self):
         def abort(ignored_request, context: grpc.aio.ServicerContext) -> None:
-            context.send_initial_metadata([("xyz", "abc")])
             context.abort(grpc.StatusCode.UNAUTHENTICATED, "Invalid signature")
 
         self._abort_handler = grpc.unary_unary_rpc_method_handler(abort)
