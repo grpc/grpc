@@ -28,7 +28,6 @@ src/python/grpcio_status/grpc_status/google/rpc/status.proto
 python_pylint_venv/
 black_virtual_environment/
 isort_virtual_environment/
-setup_deprecated.py
 
 # Node installation output
 node_modules
