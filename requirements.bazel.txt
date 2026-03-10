@@ -48,7 +48,7 @@ opentelemetry-api
 opentelemetry-exporter-prometheus
 opentelemetry-resourcedetector-gcp
 opentelemetry-sdk
-protobuf>=6.31.1,<7.0.0
+protobuf==6.31.1 # Pinning the version to be same with third_party/protobuf
 pyyaml  # for DNS test
 requests
 setuptools>=77.0.1
