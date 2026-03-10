@@ -50,6 +50,7 @@
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/surface/call.h"
 #include "src/core/telemetry/tcp_tracer.h"
+#include "src/core/telemetry/telemetry_label.h"
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/sync.h"
 #include "src/cpp/ext/otel/key_value_iterable.h"
