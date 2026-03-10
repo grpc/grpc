@@ -555,6 +555,12 @@ if __name__ == "__main__":
         help="Upload test results to a specified BQ table.",
     )
     argp.add_argument(
+        "--inner_jobs_extra_args",
+        default=[],
+        action="append",
+        help="Extra args passed down to the underlying scripts by run_tests.py",
+    )
+    argp.add_argument(
         "--extra_args",
         default="",
         type=str,
@@ -578,6 +584,9 @@ if __name__ == "__main__":
         extra_args.append("--bq_result_table")
         extra_args.append("%s" % args.bq_result_table)
         extra_args.append("--measure_cpu_costs")
+    if args.inner_jobs_extra_args:
+        for inner_arg in args.inner_jobs_extra_args:
+            extra_args.append("--script_args=%s" % inner_arg)
     if args.extra_args:
         extra_args.extend(args.extra_args)
 
