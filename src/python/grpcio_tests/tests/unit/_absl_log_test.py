@@ -18,7 +18,6 @@ import subprocess
 import sys
 import unittest
 
-import time
 
 class AbslLogTest(unittest.TestCase):
 
@@ -51,7 +50,10 @@ class AbslLogTest(unittest.TestCase):
             "WARNING: All log messages before absl::InitializeLog() is called"
             " are written to STDERR"
         )
-        self.assertFalse(absl_warning in self.output, f"absl::InitializeLog() warning unexpectedly found in output:\n{self.output}")
+        self.assertFalse(
+            absl_warning in self.output,
+            f"absl::InitializeLog() warning unexpectedly found in output:\n{self.output}",
+        )
 
     def test_grpc_trace_log(self):
         """Checks that the expected grpc trace messages are in the log"""
@@ -72,7 +74,7 @@ class AbslLogTest(unittest.TestCase):
         self.assertTrue(
             not missing_traces,
             f"Missing expected api trace(s) {missing_traces}, in output:\n"
-            f"{self.output}"
+            f"{self.output}",
         )
 
 
