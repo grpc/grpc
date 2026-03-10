@@ -37,12 +37,18 @@ echo "${ARTIFACT_URL}" >>requirements.txt
 FUNCTION_NAME="${FUNCTION_PREFIX}-$(uuidgen)"
 
 function cleanup() {
+  # Capture exit status of the main script.
+  local exit_status="$?"
+
   # Wait for logs to quiesce.
   sleep "${LOG_QUIESCE_SECONDS}"
 
   # TODO: improve log error detection per https://github.com/grpc/grpc/pull/41749#discussion_r2876215927
   gcloud functions logs read "${FUNCTION_NAME}" --region="${REGION}" || true
-  gcloud -q functions delete "${FUNCTION_NAME}" --region="${REGION}"
+  gcloud -q functions delete "${FUNCTION_NAME}" --region="${REGION}" || true
+
+  # Propagate exit status.
+  exit "$exit_status"
 }
 
 trap cleanup SIGINT SIGTERM EXIT
