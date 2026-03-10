@@ -52,7 +52,7 @@ class AuthGateway(grpc.AuthMetadataPlugin):
         #     service_url=u'https://localhost:50051/helloworld.Greeter',
         #     method_name=u'SayHello')
         signature = context.method_name[::-1]
-        callback(((_SIGNATURE_HEADER_KEY, signature),), None)
+        callback((("xyz", signature),), None)
 
 
 def create_client_channel(addr: str) -> grpc.aio.Channel:
@@ -80,6 +80,13 @@ async def send_rpc(channel: grpc.aio.Channel) -> helloworld_pb2.HelloReply:
         response = await stub.SayHello(request)
     except grpc.RpcError as rpc_error:
         _LOGGER.error("Received error: %s", rpc_error)
+        print(type(rpc_error))
+        print(dir(rpc_error))
+        print(rpc_error.code())
+        print(rpc_error.details())
+        print(rpc_error.debug_error_string())
+        print(rpc_error.initial_metadata())
+        print(rpc_error.trailing_metadata())
         return rpc_error
     else:
         _LOGGER.info("Received message: %s", response)

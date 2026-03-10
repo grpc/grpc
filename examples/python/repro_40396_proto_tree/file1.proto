@@ -1,0 +1,4 @@
+syntax = "proto2";
+package com.test.api;
+
+import "file2.proto";

@@ -1,0 +1,13 @@
+[build-system]
+requires = ["setuptools>=42", "wheel", "Cython"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "hello_app"
+version = "0.1.0"
+dependencies = [
+    "grpcio",
+]
+
+[tool.setuptools.package-dir]
+"" = "."

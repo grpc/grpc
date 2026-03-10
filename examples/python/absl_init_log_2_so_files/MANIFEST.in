@@ -1,0 +1,3 @@
+include hello_cython.pyx
+include hello.cc
+include hello.h

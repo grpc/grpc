@@ -1,0 +1,17 @@
+// Save this as repro.proto
+syntax = "proto3";
+
+package com.test.api;
+
+service Greeter {
+  rpc SayHello (HelloRequest) returns (HelloReply);
+}
+
+message HelloRequest {
+  string name = 1;
+  optional int32 status = 2;
+}
+
+message HelloReply {
+  string message = 1;
+}
