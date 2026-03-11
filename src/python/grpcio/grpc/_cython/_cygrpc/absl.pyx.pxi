@@ -22,7 +22,7 @@ cdef _initialize_absl():
   if _disable_absl_init_log:
     return
 
-  InitializeLog()
   SetStderrThreshold(LogSeverityAtLeast.kInfo)
+  InitializeLog()
 
 _initialize_absl()
