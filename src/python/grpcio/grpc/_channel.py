@@ -1987,6 +1987,7 @@ def _augment_options(
                 _USER_AGENT,
             ),
         )
+        + (("fork_epoch", cygrpc.get_fork_epoch()))
     )
 
 
@@ -2024,6 +2025,9 @@ class Channel(grpc.Channel):
     _connectivity_state: _ChannelConnectivityState
     _target: str
     _registered_call_handles: Dict[str, int]
+    _core_options: Sequence[ChannelArgumentType]
+    _credentials: Optional[grpc.ChannelCredentials]
+    _compression: Optional[grpc.Compression]
 
     def __init__(
         self,
@@ -2041,22 +2045,27 @@ class Channel(grpc.Channel):
           compression: An optional value indicating the compression method to be
             used over the lifetime of the channel.
         """
-        python_options, core_options = _separate_channel_options(options)
+        python_options, self._core_options = _separate_channel_options(options)
         self._single_threaded_unary_stream = (
             _DEFAULT_SINGLE_THREADED_UNARY_STREAM
         )
         self._process_python_options(python_options)
-        self._channel = cygrpc.Channel(
-            _common.encode(target),
-            _augment_options(core_options, compression),
-            credentials,
-        )
+        self._credentials = credentials
+        self._compression = compression
+        self._create_internal_channel()
         self._target = target
-        self._call_state = _ChannelCallState(self._channel)
-        self._connectivity_state = _ChannelConnectivityState(self._channel)
         cygrpc.fork_register_channel(self)
         if cygrpc.g_gevent_activated:
             cygrpc.gevent_increment_channel_count()
+
+    def _create_internal_channel(self) -> None:
+        self._channel = cygrpc.Channel(
+            _common.encode(self._target),
+            _augment_options(self._core_options, self._compression),
+            self._credentials,
+        )
+        self._call_state = _ChannelCallState(self._channel)
+        self._connectivity_state = _ChannelConnectivityState(self._channel)
 
     def _get_registered_call_handle(self, method: str) -> int:
         """
@@ -2208,9 +2217,10 @@ class Channel(grpc.Channel):
             cygrpc.gevent_decrement_channel_count()
 
     def _postfork_child(self) -> None:
-        self._channel.cancel_calls_on_fork(
+        self._channel.close_on_fork(
             cygrpc.StatusCode.cancelled, "Call cancelled in fork child"
         )
+        self._create_internal_channel()
         _maybe_spawn_poll_connectivity_postfork(self._connectivity_state)
 
     def __enter__(self):

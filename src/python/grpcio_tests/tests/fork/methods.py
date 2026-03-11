@@ -46,12 +46,9 @@ def _channel(args):
         channel = grpc.secure_channel(
             target,
             channel_credentials,
-            (("grpc.use_local_subchannel_pool", 1),),
         )
     else:
-        channel = grpc.insecure_channel(
-            target, (("grpc.use_local_subchannel_pool", 1),)
-        )
+        channel = grpc.insecure_channel(target)
     return channel
 
 
@@ -236,11 +233,7 @@ class _ChildProcess(object):
 
 def _async_unary_same_channel(channel):
     def child_target():
-        try:
-            _async_unary(stub)
-        except grpc.RpcError as rpc_error:
-            if rpc_error.code() != grpc.StatusCode.UNAVAILABLE:
-                raise ValueError("Unexpected status code") from rpc_error
+        _async_unary(stub)
 
     stub = test_pb2_grpc.TestServiceStub(channel)
     _async_unary(stub)
@@ -268,11 +261,7 @@ def _async_unary_new_channel(channel, args):
 
 def _blocking_unary_same_channel(channel):
     def child_target():
-        try:
-            _blocking_unary(stub)
-        except grpc.RpcError as rpc_error:
-            if rpc_error.code() != grpc.StatusCode.UNAVAILABLE:
-                raise ValueError("Unexpected status code") from rpc_error
+        _blocking_unary(stub)
 
     stub = test_pb2_grpc.TestServiceStub(channel)
     _blocking_unary(stub)
@@ -334,10 +323,7 @@ def _connectivity_watch(channel, args):
             if not child_channel_ready_event.wait(timeout=_RPC_TIMEOUT_S):
                 raise ValueError("Child channel did not move to READY")
             if not parent_channel_ready_event.wait(timeout=_RPC_TIMEOUT_S):
-                raise ValueError(
-                    "Parent channel did not move to READY. States="
-                    + str(parent_states)
-                )
+                raise ValueError("Parent channel did not move to READY")
             child_channel.unsubscribe(child_connectivity_callback)
             channel.unsubscribe(parent_connectivity_callback)
 
@@ -418,11 +404,7 @@ def _ping_pong_with_child_processes_after_first_response(
 def _in_progress_bidi_continue_call(channel):
     def child_target(parent_bidi_call, parent_channel, args):
         stub = test_pb2_grpc.TestServiceStub(parent_channel)
-        try:
-            _async_unary(stub)
-        except grpc.RpcError as rpc_error:
-            if rpc_error.code() != grpc.StatusCode.UNAVAILABLE:
-                raise ValueError("Unexpected status code") from rpc_error
+        _async_unary(stub)
         inherited_code = parent_bidi_call.code()
         if inherited_code != grpc.StatusCode.CANCELLED:
             raise ValueError(
@@ -440,11 +422,7 @@ def _in_progress_bidi_continue_call(channel):
 def _in_progress_bidi_same_channel_async_call(channel):
     def child_target(parent_bidi_call, parent_channel, args):
         stub = test_pb2_grpc.TestServiceStub(parent_channel)
-        try:
-            _async_unary(stub)
-        except grpc.RpcError as rpc_error:
-            if rpc_error.code() != grpc.StatusCode.UNAVAILABLE:
-                raise ValueError("Unexpected status code") from rpc_error
+        _async_unary(stub)
 
     _ping_pong_with_child_processes_after_first_response(
         channel, None, child_target
@@ -454,11 +432,7 @@ def _in_progress_bidi_same_channel_async_call(channel):
 def _in_progress_bidi_same_channel_blocking_call(channel):
     def child_target(parent_bidi_call, parent_channel, args):
         stub = test_pb2_grpc.TestServiceStub(parent_channel)
-        try:
-            _blocking_unary(stub)
-        except grpc.RpcError as rpc_error:
-            if rpc_error.code() != grpc.StatusCode.UNAVAILABLE:
-                raise ValueError("Unexpected status code") from rpc_error
+        _blocking_unary(stub)
 
     _ping_pong_with_child_processes_after_first_response(
         channel, None, child_target
