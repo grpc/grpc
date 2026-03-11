@@ -26,7 +26,6 @@
 #include <grpc/support/alloc.h>
 #include <string.h>
 
-#include "rb_call_credentials.h"
 #include "rb_grpc.h"
 #include "rb_grpc_imports.generated.h"
 
@@ -195,35 +194,6 @@ static VALUE grpc_rb_channel_credentials_init(int argc, VALUE* argv,
   return self;
 }
 
-static VALUE grpc_rb_channel_credentials_compose(int argc, VALUE* argv,
-                                                 VALUE self) {
-  grpc_channel_credentials* creds;
-  grpc_call_credentials* other;
-  grpc_channel_credentials* prev = NULL;
-  VALUE mark;
-  if (argc == 0) {
-    return self;
-  }
-  mark = rb_ary_new();
-  rb_ary_push(mark, self);
-  creds = grpc_rb_get_wrapped_channel_credentials(self);
-  for (int i = 0; i < argc; i++) {
-    rb_ary_push(mark, argv[i]);
-    other = grpc_rb_get_wrapped_call_credentials(argv[i]);
-    creds = grpc_composite_channel_credentials_create(creds, other, NULL);
-    if (prev != NULL) {
-      grpc_channel_credentials_release(prev);
-    }
-    prev = creds;
-
-    if (creds == NULL) {
-      rb_raise(rb_eRuntimeError,
-               "Failed to compose channel and call credentials");
-    }
-  }
-  return grpc_rb_wrap_channel_credentials(creds, mark);
-}
-
 static grpc_ssl_roots_override_result get_ssl_roots_override(
     char** pem_root_certs_ptr) {
   *pem_root_certs_ptr = pem_root_certs;
@@ -256,8 +226,6 @@ void Init_grpc_channel_credentials() {
                    grpc_rb_channel_credentials_init, -1);
   rb_define_method(grpc_rb_cChannelCredentials, "initialize_copy",
                    grpc_rb_cannot_init_copy, 1);
-  rb_define_method(grpc_rb_cChannelCredentials, "compose",
-                   grpc_rb_channel_credentials_compose, -1);
   rb_define_module_function(grpc_rb_cChannelCredentials,
                             "set_default_roots_pem",
                             grpc_rb_set_default_roots_pem, 1);
