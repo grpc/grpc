@@ -2052,8 +2052,8 @@ class Channel(grpc.Channel):
         self._process_python_options(python_options)
         self._credentials = credentials
         self._compression = compression
-        self._create_internal_channel()
         self._target = target
+        self._create_internal_channel()
         cygrpc.fork_register_channel(self)
         if cygrpc.g_gevent_activated:
             cygrpc.gevent_increment_channel_count()
