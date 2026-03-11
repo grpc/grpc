@@ -1987,7 +1987,7 @@ def _augment_options(
                 _USER_AGENT,
             ),
         )
-        + (("fork_epoch", cygrpc.get_fork_epoch()))
+        + (("fork_epoch", cygrpc.get_fork_epoch()),)
     )
 
 
