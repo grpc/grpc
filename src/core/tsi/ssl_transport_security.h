@@ -1,3 +1,7 @@
+#include <cstdint>
+#include <variant>
+#include <vector>
+
 //
 //
 // Copyright 2015 gRPC authors.
@@ -28,9 +32,9 @@
 #include <memory>
 #include <string>
 
+#include "src/core/credentials/transport/tls/grpc_tls_certificate_selector.h"
 #include "src/core/credentials/transport/tls/spiffe_utils.h"
 #include "src/core/tsi/ssl/key_logging/ssl_key_logging.h"
-#include "src/core/tsi/ssl_transport_security_utils.h"
 #include "src/core/tsi/transport_security_interface.h"
 #include "absl/strings/string_view.h"
 
@@ -291,7 +295,9 @@ typedef struct tsi_ssl_server_handshaker_factory
 // - This method returns TSI_OK on success or TSI_INVALID_PARAMETER in the case
 //   where a parameter is invalid.
 tsi_result tsi_create_ssl_server_handshaker_factory(
-    std::vector<tsi_ssl_pem_key_cert_pair> pem_key_cert_pairs,
+    std::variant<std::vector<tsi_ssl_pem_key_cert_pair>,
+                 std::shared_ptr<grpc_core::CertificateSelector>>
+        pem_key_cert,
     const char* pem_client_root_certs, int force_client_auth,
     const char* cipher_suites, const char** alpn_protocols,
     uint16_t num_alpn_protocols, tsi_ssl_server_handshaker_factory** factory);
@@ -304,7 +310,9 @@ tsi_result tsi_create_ssl_server_handshaker_factory(
 //   authenticate with an SSL cert. Note that this option is ignored if
 //   pem_client_root_certs is NULL or pem_client_roots_certs_size is 0
 tsi_result tsi_create_ssl_server_handshaker_factory_ex(
-    std::vector<tsi_ssl_pem_key_cert_pair> pem_key_cert_pairs,
+    std::variant<std::vector<tsi_ssl_pem_key_cert_pair>,
+                 std::shared_ptr<grpc_core::CertificateSelector>>
+        pem_key_cert,
     const char* pem_client_root_certs,
     tsi_client_certificate_request_type client_certificate_request,
     const char* cipher_suites, const char** alpn_protocols,
@@ -371,6 +379,10 @@ struct tsi_ssl_server_handshaker_options {
   // server root certificates or a SPIFFE bundle map. This parameter may be NULL
   // if the server does not want the client to be authenticated with SSL.
   std::shared_ptr<tsi::RootCertInfo> root_cert_info;
+
+  // certificate_selector is used to select the certificate to use for the
+  // handshake.
+  std::shared_ptr<grpc_core::CertificateSelector> certificate_selector;
 
   // TODO(gtcooke94) this ctor is not needed
   // https://github.com/grpc/grpc/pull/39708/files#r2143735662

@@ -1,12 +1,37 @@
 # bazelrc file
 
-common --enable_bzlmod
-common --noenable_workspace
+common:bzlmod --enable_bzlmod
+common:bzlmod --noenable_workspace
+
+# Needed because bzlmod can break PEP 420 implicit workspace package.
+# WORKSPACE seems unaffected, possibly because it doesn't do repo name mangling.
+#
+# See also https://github.com/bazel-contrib/rules_python/issues/55
+#
+# Error message: ModuleNotFoundError: No module named 'src.python'
+# A list of tests that need this flag to pass:
+#
+# //src/python/grpcio_tests/tests_aio/interop:local_interop_test
+# //src/python/grpcio_tests/tests_aio/reflection:reflection_servicer_test
+# //src/python/grpcio_tests/tests_aio/unit:*
+# //src/python/grpcio_tests/tests_py3_only/interop:xds_interop_client_test
+# //src/python/grpcio_tests/tests/admin:admin_test
+# //src/python/grpcio_tests/tests/csds:csds_test
+# //src/python/grpcio_tests/tests/fork:fork_test
+# //src/python/grpcio_tests/tests/interop:_insecure_intraop_test
+# //src/python/grpcio_tests/tests/interop:_secure_intraop_test
+# //src/python/grpcio_tests/tests/reflection:_reflection_client_test
+# //src/python/grpcio_tests/tests/reflection:_reflection_servicer_test
+build:python-bzlmod --incompatible_default_to_explicit_init_py
+build:python-bzlmod --config=bzlmod # inherit bzlmod configuration
 
 # Can be explicitly disable via --config=no-bzlmod
 # TODO(weizheyuan): Remove this after migration is done.
 common:no-bzlmod --noenable_bzlmod
 common:no-bzlmod --enable_workspace
+
+# Enable bzlmod by default.
+common --config=bzlmod
 
 # Bazel 8 needs this
 common --incompatible_disallow_empty_glob=false
@@ -137,6 +162,7 @@ build:ubsan --action_env=UBSAN_OPTIONS=halt_on_error=1:print_stacktrace=1:suppre
 
 build:python_single_threaded_unary_stream --test_env="GRPC_SINGLE_THREADED_UNARY_STREAM=true"
 
+build:python --config=python-bzlmod
 build:python --copt=-DGRPC_PYTHON_BUILD
 
 # Compile database generation config

@@ -271,6 +271,29 @@ grpc_cc_test(
     ],
 )
 
+grpc_cc_library(
+    name = "private_key_signer_test_util",
+    testonly = 1,
+    srcs = ["private_key_signer_test_util.cc"],
+    hdrs = ["private_key_signer_test_util.h"],
+    external_deps = [
+        "libcrypto",
+        "absl/strings",
+        "absl/status",
+        "absl/status:statusor",
+        "libssl",
+    ],
+    deps = [
+        "//:event_engine_base_hdrs",
+        "//:gpr",
+        "//:grpc",
+        "//:tsi_base",
+        "//src/core:time",
+        "//test/core/event_engine/fuzzing_event_engine",
+        "//test/core/event_engine/fuzzing_event_engine:fuzzing_event_engine_cc_proto",
+    ],
+)
+
 grpc_cc_test(
     name = "private_key_offload_test",
     srcs = ["private_key_offload_test.cc"],
@@ -291,7 +314,6 @@ grpc_cc_test(
         "absl/types:optional",
         "gtest",
         "libcrypto",
-        "libssl",
     ],
     deps = [
         ":transport_security_test_lib",
@@ -302,6 +324,48 @@ grpc_cc_test(
         "//:tsi",
         "//:tsi_base",
         "//:tsi_ssl_credentials",
+        "//src/core:wait_for_single_owner",
+        "//test/core/event_engine/fuzzing_event_engine",
+        "//test/core/event_engine/fuzzing_event_engine:fuzzing_event_engine_cc_proto",
+        "//test/core/test_util:grpc_test_util",
+        "//test/core/tsi:private_key_signer_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "cert_selection_offload_test",
+    srcs = ["cert_selection_offload_test.cc"],
+    data = [
+        "//src/core/tsi/test_creds:ca.pem",
+        "//src/core/tsi/test_creds:client.key",
+        "//src/core/tsi/test_creds:client.pem",
+        "//src/core/tsi/test_creds:client1.key",
+        "//src/core/tsi/test_creds:server0.key",
+        "//src/core/tsi/test_creds:server1.key",
+        "//src/core/tsi/test_creds:server1.pem",
+    ],
+    external_deps = [
+        "absl/log:log",
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
+        "gtest",
+        "libcrypto",
+        "libssl",
+    ],
+    deps = [
+        ":private_key_signer_test_util",
+        ":transport_security_test_lib",
+        "//:event_engine_base_hdrs",
+        "//:exec_ctx",
+        "//:gpr",
+        "//:grpc",
+        "//:iomgr_timer",
+        "//:tsi",
+        "//:tsi_base",
+        "//:tsi_ssl_credentials",
+        "//src/core:grpc_tls_certificate_selector",
+        "//src/core:time",
         "//src/core:wait_for_single_owner",
         "//test/core/event_engine/fuzzing_event_engine",
         "//test/core/event_engine/fuzzing_event_engine:fuzzing_event_engine_cc_proto",
