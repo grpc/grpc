@@ -2357,6 +2357,7 @@ NewSubchannel::ChooseConnectionLocked() {
 
 void NewSubchannel::RetryQueuedRpcs() {
   MutexLock lock(&mu_);
+  if (shutdown_) return;
   RetryQueuedRpcsLocked();
 }
 
