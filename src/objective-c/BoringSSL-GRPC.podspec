@@ -173,7 +173,7 @@ Pod::Spec.new do |s|
       Darwin) opts="" ;;
            *) opts="--ignore-garbage" ;;
     esac
-    base64 --decode $opts <<EOF | gunzip > src/include/openssl/boringssl_prefix_symbols.h
+    base64 --decode $opts <<EOF | gunzip > include/openssl/boringssl_prefix_symbols.h
       H4sICAAAAAAC/2JvcmluZ3NzbF9wcmVmaXhfc3ltYm9scy5oALS9W3PbyJbn+96fwtH9MhPRZ29LLrtc
       c55kma5S25bUolxdNS8IkEiS2AYBGAnq4k9/MgGQyMtaCayVOhM7esoi/r8/kPd7/vOfr7aiFE3aiuzV
       6vn0j2RVNXm5lbJI6kZs8qdkJ9JMNP+Qu1dV+epD9+ty+eXVutrv8/b/vDpf/fJL+ubX12fpL7++fy/O

@@ -204,7 +204,7 @@
         Darwin) opts="" ;;
              *) opts="--ignore-garbage" ;;
       esac
-      base64 --decode $opts <<EOF | gunzip > src/include/openssl/boringssl_prefix_symbols.h
+      base64 --decode $opts <<EOF | gunzip > include/openssl/boringssl_prefix_symbols.h
         % for line in compress_and_encode_file('src/boringssl/boringssl_prefix_symbols.h'):
         ${line.decode('utf-8')}
         % endfor
