@@ -272,7 +272,7 @@ void AddBoringSslMetadata(nlohmann::json& metadata) {
        {"build", "private"},
        {"language", "c"},
        {"secure", false},
-       {"src", file_list({"/ssl/srcs", "/crypto/srcs"})},
+       {"src", file_list({"/ssl/srcs", "/crypto/srcs", "/bcm/srcs"})},
        {"asm_src", asm_srcs},
        {"headers",
         file_list({"/ssl/hdrs", "/ssl/internal_hdrs", "/crypto/hdrs",

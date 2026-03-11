@@ -137,6 +137,7 @@ let package = Package(
         "crypto/evp/scrypt.cc",
         "crypto/evp/sign.cc",
         "crypto/ex_data.cc",
+        "crypto/fipsmodule/bcm.cc",
         "crypto/fipsmodule/fips_shared_support.cc",
         "crypto/fuzzer_mode.cc",
         "crypto/hpke/hpke.cc",

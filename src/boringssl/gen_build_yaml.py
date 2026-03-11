@@ -71,7 +71,7 @@ class Grpc(object):
                     "language": "c",
                     "secure": False,
                     "src": sorted(
-                        map_dir(f) for f in files["ssl"]["srcs"] + files["crypto"]["srcs"]
+                        map_dir(f) for f in files["ssl"]["srcs"] + files["crypto"]["srcs"] + files["bcm"]["srcs"]
                     ),
                     "asm_src": {
                         k: [map_dir(f) for f in value]

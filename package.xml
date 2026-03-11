@@ -2851,6 +2851,7 @@
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/crypto/fipsmodule/aes/key_wrap.cc.inc" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/crypto/fipsmodule/aes/mode_wrappers.cc.inc" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/crypto/fipsmodule/aes/ofb.cc.inc" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl-with-bazel/crypto/fipsmodule/bcm.cc" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/crypto/fipsmodule/bcm_interface.h" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/crypto/fipsmodule/bn/add.cc.inc" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/crypto/fipsmodule/bn/asm/x86_64-gcc.cc.inc" role="src" />

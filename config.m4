@@ -1237,6 +1237,7 @@ if test "$PHP_GRPC" != "no"; then
     third_party/boringssl-with-bazel/crypto/evp/scrypt.cc \
     third_party/boringssl-with-bazel/crypto/evp/sign.cc \
     third_party/boringssl-with-bazel/crypto/ex_data.cc \
+    third_party/boringssl-with-bazel/crypto/fipsmodule/bcm.cc \
     third_party/boringssl-with-bazel/crypto/fipsmodule/fips_shared_support.cc \
     third_party/boringssl-with-bazel/crypto/fuzzer_mode.cc \
     third_party/boringssl-with-bazel/crypto/hpke/hpke.cc \

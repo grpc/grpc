@@ -2848,6 +2848,7 @@ Gem::Specification.new do |s|
   s.files += %w( third_party/boringssl-with-bazel/crypto/fipsmodule/aes/key_wrap.cc.inc )
   s.files += %w( third_party/boringssl-with-bazel/crypto/fipsmodule/aes/mode_wrappers.cc.inc )
   s.files += %w( third_party/boringssl-with-bazel/crypto/fipsmodule/aes/ofb.cc.inc )
+  s.files += %w( third_party/boringssl-with-bazel/crypto/fipsmodule/bcm.cc )
   s.files += %w( third_party/boringssl-with-bazel/crypto/fipsmodule/bcm_interface.h )
   s.files += %w( third_party/boringssl-with-bazel/crypto/fipsmodule/bn/add.cc.inc )
   s.files += %w( third_party/boringssl-with-bazel/crypto/fipsmodule/bn/asm/x86_64-gcc.cc.inc )
