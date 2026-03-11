@@ -122,6 +122,7 @@ class InternalOpenTelemetryPluginOption
 absl::string_view OpenTelemetryMethodKey();
 absl::string_view OpenTelemetryStatusKey();
 absl::string_view OpenTelemetryTargetKey();
+absl::string_view OpenTelemetryCustomLabelKey();
 
 class OpenTelemetryPluginBuilderImpl {
  public:

@@ -18,6 +18,7 @@
 
 #include "src/cpp/ext/otel/otel_client_call_tracer.h"
 
+#include <grpc/context_types.h>
 #include <grpc/status.h>
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
@@ -25,6 +26,7 @@
 #include <stdint.h>
 
 #include <array>
+#include <cstddef>
 #include <functional>
 #include <memory>
 #include <optional>
@@ -49,6 +51,7 @@
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/surface/call.h"
 #include "src/core/telemetry/tcp_tracer.h"
+#include "src/core/telemetry/telemetry_label.h"
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/sync.h"
 #include "src/cpp/ext/otel/key_value_iterable.h"
@@ -122,11 +125,20 @@ OpenTelemetryPluginImpl::ClientCallTracerInterface::
         uint64_t attempt_num, bool is_transparent_retry)
     : parent_(parent), start_time_(absl::Now()) {
   if (parent_->otel_plugin_->client_.attempt.started != nullptr) {
-    std::array<std::pair<absl::string_view, absl::string_view>, 2>
-        additional_labels = {
+    auto* label = parent->arena_->GetContext<grpc_core::TelemetryLabel>();
+    std::string label_str = label == nullptr ? "" : label->value;
+    SetOptionalLabel(OptionalLabelKey::kTelemetryLabel, grpc_core::RefCountedStringValue(label_str));
+    const bool telemetry_label_enabled = parent->otel_plugin_->per_call_optional_label_bits_.test(
+    static_cast<size_t>(OptionalLabelKey::kTelemetryLabel));
+    std::array<std::pair<absl::string_view, absl::string_view>, 3>
+      labels  = {
             {{OpenTelemetryMethodKey(), parent_->MethodForStats()},
              {OpenTelemetryTargetKey(),
-              parent_->scope_config_->filtered_target()}}};
+              parent_->scope_config_->filtered_target()},
+            {telemetry_label_enabled ? OptionalLabelKeyToString(OptionalLabelKey::kTelemetryLabel) : "",
+              telemetry_label_enabled ? label->value : ""}}};
+    absl::Span<std::pair<absl::string_view, absl::string_view>> additional_labels = absl::MakeSpan(labels).subspan(0, telemetry_label_enabled ? 3 : 2);
+
     // We might not have all the injected labels that we want at this point, so
     // avoid recording a subset of injected labels here.
     parent_->otel_plugin_->client_.attempt.started->Add(
@@ -472,17 +484,25 @@ OpenTelemetryPluginImpl::ClientCallTracerInterface::ClientCallTracerInterface(
 
 OpenTelemetryPluginImpl::ClientCallTracerInterface::
     ~ClientCallTracerInterface() {
+  auto* label = arena_->GetContext<grpc_core::TelemetryLabel>();
+  std::string label_str = label == nullptr ? "" : label->value;
   std::array<std::pair<opentelemetry::nostd::string_view,
                        opentelemetry::common::AttributeValue>,
-             2>
-      attributes = {
+             3>
+      all_attributes = {
           std::pair(AbslStringViewToNoStdStringView(OpenTelemetryMethodKey()),
                     opentelemetry::common::AttributeValue(
                         AbslStringViewToNoStdStringView(MethodForStats()))),
           std::pair(AbslStringViewToNoStdStringView(OpenTelemetryTargetKey()),
                     opentelemetry::common::AttributeValue(
                         AbslStringViewToNoStdStringView(
-                            scope_config_->filtered_target())))};
+                            scope_config_->filtered_target()))),
+              std::pair(AbslStringViewToNoStdStringView(OpenTelemetryCustomLabelKey()), opentelemetry::common::AttributeValue(
+                    AbslStringViewToNoStdStringView(label_str)))};
+  const bool telemetry_label_enabled = otel_plugin_->per_call_optional_label_bits_.test(
+    static_cast<size_t>(grpc_core::ClientCallTracerInterface::CallAttemptTracer::OptionalLabelKey::kTelemetryLabel));
+    absl::Span<std::pair<opentelemetry::nostd::string_view,
+                       opentelemetry::common::AttributeValue>> attributes = absl::MakeSpan(all_attributes).subspan(0, telemetry_label_enabled ? 3 : 2);
   if (otel_plugin_->client_.call.retries != nullptr && retries_ > 1) {
     otel_plugin_->client_.call.retries->Record(
         retries_ - 1, attributes, opentelemetry::context::Context{});
