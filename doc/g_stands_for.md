@@ -77,4 +77,5 @@
 - 1.75 'g' stands for ['gemini'](https://github.com/grpc/grpc/tree/v1.75.x)
 - 1.76 'g' stands for ['genuine'](https://github.com/grpc/grpc/tree/v1.76.x)
 - 1.78 'g' stands for ['gutsy'](https://github.com/grpc/grpc/tree/v1.78.x)
-- 1.79 'g' stands for ['glimmering'](https://github.com/grpc/grpc/tree/master)
+- 1.79 'g' stands for ['glimmering'](https://github.com/grpc/grpc/tree/v1.79.x)
+- 1.80 'g' stands for ['graphic'](https://github.com/grpc/grpc/tree/master)
