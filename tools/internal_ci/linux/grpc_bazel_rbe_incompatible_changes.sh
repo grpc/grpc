@@ -20,7 +20,8 @@ wget https://github.com/bazelbuild/bazelisk/releases/download/v0.0.7/bazelisk-li
 chmod u+x bazelisk-linux-amd64
 
 # We want bazelisk to run the latest stable version
-export USE_BAZEL_VERSION=latest
+# TODO(weizheyuan): Reset this to `latest` once we fully support bazel 9.
+export USE_BAZEL_VERSION=8.0.1
 # Use bazelisk instead of our usual //tools/bazel wrapper
 mv bazelisk-linux-amd64 github/grpc/tools/bazel
 

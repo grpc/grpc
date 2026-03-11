@@ -698,6 +698,8 @@ class NewSubchannel final : public Subchannel {
   absl::string_view locality_;
 };
 
+void TestOnlySetSubchannelAlwaysSendCallsToTransport(bool enabled);
+
 }  // namespace grpc_core
 
 #endif  // GRPC_SRC_CORE_CLIENT_CHANNEL_SUBCHANNEL_H

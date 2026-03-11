@@ -224,8 +224,8 @@ def server(
       maximum_concurrent_rpcs: The maximum number of concurrent RPCs this server
         will service before returning RESOURCE_EXHAUSTED status, or None to
         indicate no limit.
-      compression: An element of grpc.compression, e.g.
-        grpc.compression.Gzip. This compression algorithm will be used for the
+      compression: An element of grpc.Compression, e.g.
+        grpc.Compression.Gzip. This compression algorithm will be used for the
         lifetime of the server unless overridden by set_compression.
 
     Returns:

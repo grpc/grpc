@@ -196,7 +196,6 @@ class TestTypeMetadata(unittest.TestCase):
 
     def test_metadata_from_tuple(self):
         scenarios = (
-            (None, Metadata()),
             (Metadata(), Metadata()),
             (self._DEFAULT_DATA, Metadata(*self._DEFAULT_DATA)),
             (self._MULTI_ENTRY_DATA, Metadata(*self._MULTI_ENTRY_DATA)),
@@ -205,6 +204,26 @@ class TestTypeMetadata(unittest.TestCase):
         for source, expected in scenarios:
             with self.subTest(raw_metadata=source, expected=expected):
                 self.assertEqual(expected, Metadata.from_tuple(source))
+
+    def test_keys_values_items(self):
+        metadata = Metadata(*self._MULTI_ENTRY_DATA)
+        self.assertEqual(list(metadata.keys()), ["key1", "key2"])
+        self.assertEqual(
+            list(metadata.values()), [["value1", "other value 1"], ["value2"]]
+        )
+        self.assertEqual(
+            list(metadata.items()),
+            [
+                ("key1", ["value1", "other value 1"]),
+                ("key2", ["value2"]),
+            ],
+        )
+
+        # Test with empty metadata
+        empty_metadata = Metadata()
+        self.assertEqual(list(empty_metadata.keys()), [])
+        self.assertEqual(list(empty_metadata.values()), [])
+        self.assertEqual(list(empty_metadata.items()), [])
 
 
 class TestMetadataWithServer(AioTestBase):

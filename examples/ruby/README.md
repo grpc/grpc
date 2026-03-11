@@ -31,7 +31,6 @@ INSTALL
 
   ```sh
   $ # from this directory
-  $ gem install bundler # if you don't already have bundler available
   $ bundle install
   ```
 

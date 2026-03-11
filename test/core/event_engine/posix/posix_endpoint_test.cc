@@ -351,9 +351,6 @@ class PosixSecureEndpointTest
       public ::testing::TestWithParam<PosixSecureEndpointTestParams> {
  public:
   void SetUp() override {
-    if (!grpc_core::IsEventEngineSecureEndpointEnabled()) {
-      GTEST_SKIP() << "EventEngineSecureEndpoint is not enabled";
-    }
     PosixEndpointTestBase::SetUp();
     if (GetParam().has_leftover_bytes) {
       grpc_slice leftover_slice =
@@ -521,7 +518,7 @@ TEST_P(PosixSecureEndpointTest, ConnectExchangeBidiDataTransferTest) {
               grpc_get_wrapped_event_engine_endpoint(
                   server_secure_endpoint.get()),
               /*read_hint_bytes=*/
-              (GetParam().use_zero_copy_protector ? -1 : client_msg.size() + 4))
+              (GetParam().use_zero_copy_protector ? -1 : client_msg.size()))
               .ok());
       // Send from server to client and verify data read at the client.
       server_msg = GetNextSendMessage();
@@ -533,7 +530,7 @@ TEST_P(PosixSecureEndpointTest, ConnectExchangeBidiDataTransferTest) {
               grpc_get_wrapped_event_engine_endpoint(
                   client_secure_endpoint.get()),
               /*read_hint_bytes=*/
-              (GetParam().use_zero_copy_protector ? -1 : server_msg.size() + 4))
+              (GetParam().use_zero_copy_protector ? -1 : server_msg.size()))
               .ok());
     }
   }

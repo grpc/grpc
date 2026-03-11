@@ -35,6 +35,7 @@
 #include "src/core/ext/transport/chttp2/transport/http2_settings.h"
 #include "src/core/ext/transport/chttp2/transport/http2_settings_manager.h"
 #include "src/core/ext/transport/chttp2/transport/http2_status.h"
+#include "src/core/ext/transport/chttp2/transport/write_cycle.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/promise/activity.h"
@@ -229,15 +230,15 @@ class SettingsPromiseManager final : public RefCounted<SettingsPromiseManager> {
   // acknowledgment. This MUST be called only after the
   // MaybeReportAndApplyBufferedPeerSettings function.
   void MaybeGetSettingsAndSettingsAckFrames(
-      chttp2::TransportFlowControl& flow_control, SliceBuffer& output_buf) {
+      chttp2::TransportFlowControl& flow_control,
+      http2::FrameSender& frame_sender) {
     GRPC_SETTINGS_TIMEOUT_DLOG << "MaybeGetSettingsAndSettingsAckFrames";
     if (did_previous_settings_promise_resolve_) {
       std::optional<Http2Frame> settings_frame = settings_.MaybeSendUpdate();
       if (settings_frame.has_value()) {
         GRPC_SETTINGS_TIMEOUT_DLOG
             << "MaybeGetSettingsAndSettingsAckFrames Frame Settings ";
-        Serialize(absl::Span<Http2Frame>(&settings_frame.value(), 1),
-                  output_buf);
+        frame_sender.AddRegularFrame(std::move(*settings_frame));
         flow_control.FlushedSettings();
         WillSendSettings();
       }
@@ -245,11 +246,11 @@ class SettingsPromiseManager final : public RefCounted<SettingsPromiseManager> {
     if (num_acks_to_send_ > 0) {
       GRPC_SETTINGS_TIMEOUT_DLOG << "Sending " << num_acks_to_send_
                                  << " settings ACK frames";
-      std::vector<Http2Frame> ack_frames(num_acks_to_send_);
+      frame_sender.ReserveRegularFrames(num_acks_to_send_);
       for (uint32_t i = 0; i < num_acks_to_send_; ++i) {
-        ack_frames[i] = Http2SettingsFrame{true, {}};
+        frame_sender.AddRegularFrame(Http2SettingsFrame{true, {}});
       }
-      Serialize(absl::MakeSpan(ack_frames), output_buf);
+
       num_acks_to_send_ = 0;
     }
   }
@@ -295,7 +296,11 @@ class SettingsPromiseManager final : public RefCounted<SettingsPromiseManager> {
            peer_max_concurrent_streams =
                settings_.peer().max_concurrent_streams()]() mutable {
             ExecCtx exec_ctx;
-            std::move(on_receive_settings)(peer_max_concurrent_streams);
+            on_receive_settings(peer_max_concurrent_streams);
+            // Ensure the captured callback is destroyed while ExecCtx is still
+            // alive. Its destructor may trigger work that needs to schedule
+            // closures on the ExecCtx.
+            on_receive_settings = nullptr;
           });
       GRPC_DCHECK(on_receive_first_settings_ == nullptr);
     }
@@ -311,8 +316,11 @@ class SettingsPromiseManager final : public RefCounted<SettingsPromiseManager> {
       event_engine->Run([on_receive_settings =
                              std::move(on_receive_first_settings_)]() mutable {
         ExecCtx exec_ctx;
-        std::move(on_receive_settings)(
-            absl::UnavailableError("transport closed"));
+        on_receive_settings(absl::UnavailableError("transport closed"));
+        // Ensure the captured callback is destroyed while ExecCtx is still
+        // alive. Its destructor may trigger work that needs to schedule
+        // closures on the ExecCtx.
+        on_receive_settings = nullptr;
       });
       GRPC_DCHECK(on_receive_first_settings_ == nullptr);
     }

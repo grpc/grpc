@@ -252,11 +252,13 @@ class GrpcXdsTransportFactory::GrpcXdsTransport::StateWatcher final
 
 namespace {
 
-RefCountedPtr<Channel> CreateXdsChannel(const ChannelArgs& args,
-                                        const GrpcXdsServerInterface& server) {
+RefCountedPtr<Channel> CreateXdsChannel(
+    const ChannelArgs& args,
+    CertificateProviderStoreInterface& certificate_provider_store,
+    const GrpcXdsServerInterface& server) {
   RefCountedPtr<grpc_channel_credentials> channel_creds =
       CoreConfiguration::Get().channel_creds_registry().CreateChannelCreds(
-          server.channel_creds_config());
+          server.channel_creds_config(), certificate_provider_store);
   RefCountedPtr<grpc_call_credentials> call_creds;
   for (const auto& call_creds_config : server.call_creds_configs()) {
     RefCountedPtr<grpc_call_credentials> creds =
@@ -289,8 +291,9 @@ GrpcXdsTransportFactory::GrpcXdsTransport::GrpcXdsTransport(
       key_(server.Key()) {
   GRPC_TRACE_LOG(xds_client, INFO)
       << "[GrpcXdsTransport " << this << "] created";
-  channel_ = CreateXdsChannel(factory_->args_,
-                              DownCast<const GrpcXdsServerInterface&>(server));
+  channel_ =
+      CreateXdsChannel(factory_->args_, *factory_->certificate_provider_store_,
+                       DownCast<const GrpcXdsServerInterface&>(server));
   GRPC_CHECK(channel_ != nullptr);
   if (channel_->IsLame()) {
     *status = absl::UnavailableError("xds client has a lame channel");
@@ -374,8 +377,11 @@ ChannelArgs ModifyChannelArgs(const ChannelArgs& args) {
 
 }  // namespace
 
-GrpcXdsTransportFactory::GrpcXdsTransportFactory(const ChannelArgs& args)
+GrpcXdsTransportFactory::GrpcXdsTransportFactory(
+    const ChannelArgs& args,
+    RefCountedPtr<CertificateProviderStoreInterface> certificate_provider_store)
     : args_(ModifyChannelArgs(args)),
+      certificate_provider_store_(std::move(certificate_provider_store)),
       interested_parties_(grpc_pollset_set_create()) {
   // Calling grpc_init to ensure gRPC does not shut down until the XdsClient is
   // destroyed.

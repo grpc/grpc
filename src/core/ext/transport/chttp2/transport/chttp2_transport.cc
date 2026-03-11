@@ -1421,8 +1421,8 @@ void grpc_chttp2_add_incoming_goaway(grpc_chttp2_transport* t,
   if (!grpc_core::test_only_disable_transient_failure_state_notification) {
     connectivity_state_set(t, GRPC_CHANNEL_TRANSIENT_FAILURE, status,
                            "got_goaway");
+    t->NotifyStateWatcherOnDisconnectLocked(std::move(status), disconnect_info);
   }
-  t->NotifyStateWatcherOnDisconnectLocked(std::move(status), disconnect_info);
 }
 
 static void maybe_start_some_streams(grpc_chttp2_transport* t) {
@@ -3714,6 +3714,10 @@ void grpc_chttp2_transport::MaybeNotifyOnReceiveSettingsLocked(
       [notify_on_receive_settings = std::move(notify_on_receive_settings),
        max_concurrent_streams]() mutable {
         grpc_core::ExecCtx exec_ctx;
-        std::move(notify_on_receive_settings)(max_concurrent_streams);
+        notify_on_receive_settings(max_concurrent_streams);
+        // Ensure the captured callback is destroyed while ExecCtx is still
+        // alive. Its destructor may trigger work that needs to schedule
+        // closures on the ExecCtx.
+        notify_on_receive_settings = nullptr;
       });
 }
