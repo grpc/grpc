@@ -397,7 +397,8 @@ RingHash::PickResult RingHash::Picker::Pick(PickArgs args) {
               endpoint_info.endpoint);
           [[fallthrough]];
         case GRPC_CHANNEL_CONNECTING:
-          return PickResult::Queue();
+          return PickResult::Queue(
+              "RingHash: endpoint not ready. Not using random hash.");
         default:
           break;
       }
@@ -419,7 +420,9 @@ RingHash::PickResult RingHash::Picker::Pick(PickArgs args) {
         requested_connection = true;
       }
     }
-    if (requested_connection) return PickResult::Queue();
+    if (requested_connection)
+      return PickResult::Queue(
+          "RingHash: endpoint not ready. Using random hash.");
   }
   std::string message = absl::StrCat(
       "ring hash cannot find a connected endpoint; first failure: ",

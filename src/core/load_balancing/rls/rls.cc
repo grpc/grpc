@@ -1018,7 +1018,7 @@ LoadBalancingPolicy::PickResult RlsLb::Picker::Pick(PickArgs args) {
   GRPC_TRACE_LOG(rls_lb, INFO)
       << "[rlslb " << lb_policy_.get() << "] picker=" << this
       << ": RLS request pending; queuing pick";
-  return PickResult::Queue();
+  return PickResult::Queue("RLS request pending.");
 }
 
 LoadBalancingPolicy::PickResult RlsLb::Picker::PickFromDefaultTargetOrFail(

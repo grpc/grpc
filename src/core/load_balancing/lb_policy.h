@@ -233,7 +233,11 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
     /// Pick cannot be completed until something changes on the control
     /// plane.  The client channel will queue the pick and try again the
     /// next time the picker is updated.
-    struct Queue {};
+    struct Queue {
+      std::string reason;
+
+      explicit Queue(absl::string_view r) : reason(r) {}
+    };
 
     /// Pick failed.  If the call is wait_for_ready, the client channel
     /// will wait for the next picker and try again; otherwise, it
@@ -256,7 +260,7 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
 
     // A pick result must be one of these types.
     // Default to Queue, just to allow default construction.
-    std::variant<Complete, Queue, Fail, Drop> result = Queue();
+    std::variant<Complete, Queue, Fail, Drop> result = Queue("Default value");
 
     PickResult() = default;
     // NOLINTNEXTLINE(google-explicit-constructor)
