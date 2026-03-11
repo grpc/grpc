@@ -368,7 +368,7 @@ Q = @
 endif
 
 CORE_VERSION = 53.0.0
-CPP_VERSION = 1.79.0-pre1
+CPP_VERSION = 1.80.0-pre1
 
 CPPFLAGS_NO_ARCH += $(addprefix -I, $(INCLUDES)) $(addprefix -D, $(DEFINES))
 CPPFLAGS += $(CPPFLAGS_NO_ARCH) $(ARCH_FLAGS)
