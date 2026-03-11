@@ -20,7 +20,9 @@ import yaml
 
 run_dir = os.path.dirname(sys.argv[0])
 sources_path = os.path.abspath(
-    os.path.join(run_dir, "../../third_party/boringssl-with-bazel/gen/sources.json")
+    os.path.join(
+        run_dir, "../../third_party/boringssl-with-bazel/gen/sources.json"
+    )
 )
 try:
     with open(sources_path, "r") as s:
@@ -38,16 +40,22 @@ except IOError:
 def map_dir(filename):
     return "third_party/boringssl-with-bazel/" + filename
 
+
 def get_srcs(files, lib):
     return files[lib]["srcs"]
+
 
 def get_asm_outputs(files):
     crypto_asm = []
     crypto_nasm = []
     for name, properties in files.items():
-        crypto_asm += properties.get("asm", list()) # end with .S
-        crypto_nasm += properties.get("nasm", list()) # end with .asm
-    return {"crypto_asm": sorted(crypto_asm), "crypto_nasm": sorted(crypto_nasm)}
+        crypto_asm += properties.get("asm", list())  # end with .S
+        crypto_nasm += properties.get("nasm", list())  # end with .asm
+    return {
+        "crypto_asm": sorted(crypto_asm),
+        "crypto_nasm": sorted(crypto_nasm),
+    }
+
 
 class Grpc(object):
     """Adapter for boring-SSL json sources files."""
@@ -71,7 +79,10 @@ class Grpc(object):
                     "language": "c",
                     "secure": False,
                     "src": sorted(
-                        map_dir(f) for f in files["ssl"]["srcs"] + files["crypto"]["srcs"] + files["bcm"]["srcs"]
+                        map_dir(f)
+                        for f in files["ssl"]["srcs"]
+                        + files["crypto"]["srcs"]
+                        + files["bcm"]["srcs"]
                     ),
                     "asm_src": {
                         k: [map_dir(f) for f in value]
@@ -97,7 +108,10 @@ class Grpc(object):
                     "secure": False,
                     "boringssl": True,
                     "defaults": "boringssl",
-                    "src": [map_dir(f) for f in sorted(files["test_support"]["srcs"])],
+                    "src": [
+                        map_dir(f)
+                        for f in sorted(files["test_support"]["srcs"])
+                    ],
                 },
             ],
             "targets": [
