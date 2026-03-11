@@ -34327,10 +34327,6 @@ add_executable(test_cpp_end2end_subchannel_metrics_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/google/api/http.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/google/api/http.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/google/api/http.pb.h
