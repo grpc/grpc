@@ -822,11 +822,8 @@ void QueryableDomain::TestOnlyResetAll() {
 RefCountedPtr<DomainStorage> QueryableDomain::GetDomainStorage(
     RefCountedPtr<CollectionScope> scope,
     absl::Span<const std::string> label_values) {
-  // auto key_labels =
-  //     FilterLabels(label_names_, scope->labels_of_interest_, label_values);
-  // temporary unfilterd:
   auto key_labels =
-      std::vector<std::string>(label_values.begin(), label_values.end());
+      FilterLabels(label_names_, scope->labels_of_interest_, label_values);
   if (scope->parents_.size() == 1 && scope->parents_[0] != nullptr) {
     auto parent_key_labels = FilterLabels(
         label_names_, scope->parents_[0]->labels_of_interest_, label_values);

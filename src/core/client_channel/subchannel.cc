@@ -565,7 +565,7 @@ class OldSubchannel::ConnectedSubchannelStateWatcher final
         if (c->stats_plugin_group_ != nullptr) {
           absl::string_view disconnect_reason =
               c->shutdown_ ? "subchannel shutdown" : "unknown";
-          auto scope = GlobalCollectionScope();
+          auto scope = c->stats_plugin_group_->GetCollectionScope();
           SubchannelMetricsDomainDisconnections::GetStorage(
               scope, c->target_, c->backend_service_, c->locality_,
               disconnect_reason)
@@ -981,7 +981,8 @@ void OldSubchannel::OnConnectingFinishedLocked(grpc_error_handle error) {
     // Record failed connection attempt
     if (stats_plugin_group_ != nullptr) {
       SubchannelMetricsDomainAttempts::GetStorage(
-          GlobalCollectionScope(), target_, backend_service_, locality_)
+          stats_plugin_group_->GetCollectionScope(), target_, backend_service_,
+          locality_)
           ->Increment(
               SubchannelMetricsDomainAttempts::kConnectionAttemptsFailed);
     }
@@ -1087,7 +1088,7 @@ bool OldSubchannel::PublishTransportLocked() {
                             .TakeAsSubclass<OldSubchannel>()));
   // Record successful connection attempt
   if (stats_plugin_group_ != nullptr) {
-    auto scope = GlobalCollectionScope();
+    auto scope = stats_plugin_group_->GetCollectionScope();
     SubchannelMetricsDomainAttempts::GetStorage(scope, target_,
                                                 backend_service_, locality_)
         ->Increment(
@@ -1853,7 +1854,7 @@ class NewSubchannel::ConnectionStateWatcher final
             break;
         }
       }
-      auto scope = GlobalCollectionScope();
+      auto scope = subchannel->stats_plugin_group_->GetCollectionScope();
       SubchannelMetricsDomainDisconnections::GetStorage(
           scope, subchannel->target_, subchannel->backend_service_,
           subchannel->locality_, disconnect_reason)
@@ -2307,7 +2308,8 @@ void NewSubchannel::OnConnectingFinishedLocked(grpc_error_handle error) {
     // Record failed connection attempt
     if (stats_plugin_group_ != nullptr) {
       SubchannelMetricsDomainAttempts::GetStorage(
-          GlobalCollectionScope(), target_, backend_service_, locality_)
+          stats_plugin_group_->GetCollectionScope(), target_, backend_service_,
+          locality_)
           ->Increment(
               SubchannelMetricsDomainAttempts::kConnectionAttemptsFailed);
     }
@@ -2419,7 +2421,7 @@ bool NewSubchannel::PublishTransportLocked() {
   }
   // Record successful connection attempt
   if (stats_plugin_group_ != nullptr) {
-    auto scope = GlobalCollectionScope();
+    auto scope = stats_plugin_group_->GetCollectionScope();
     SubchannelMetricsDomainAttempts::GetStorage(scope, target_,
                                                 backend_service_, locality_)
         ->Increment(
