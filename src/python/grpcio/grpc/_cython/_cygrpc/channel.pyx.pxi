@@ -483,27 +483,49 @@ cdef _close(Channel channel, grpc_status_code code, object details,
       while state.c_channel != NULL:
         state.condition.wait()
 
+cdef _create_c_channel(_ChannelState state, bytes target, tuple arguments, ChannelCredentials channel_credentials):
+  arguments = arguments + (("fork_epoch", get_fork_epoch()),)
+  cdef _ChannelArgs channel_args = _ChannelArgs(arguments)
+  c_channel_credentials = (
+      channel_credentials.c() if channel_credentials is not None
+      else grpc_insecure_credentials_create())
+  state.c_channel = grpc_channel_create(
+      <char *>target, c_channel_credentials, channel_args.c_args())
+  grpc_channel_credentials_release(c_channel_credentials)
+  
+
+cdef _reset(Channel channel, grpc_status_code code, object details):
+  cdef _ChannelState state = channel._state
+  cdef _CallState call_state
+  cdef bytes target = channel.target()
+  encoded_details = _encode(details)
+  with state.condition:
+    if state.open:
+      for call_state in set(state.integrated_call_states.values()):
+        grpc_call_cancel_with_status(
+            call_state.c_call, code, encoded_details, NULL)
+      for call_state in state.segregated_call_states:
+        grpc_call_cancel_with_status(
+            call_state.c_call, code, encoded_details, NULL)
+
+      while not _calls_drained(state):
+        event = channel.next_call_event()
+        if event.completion_type == CompletionType.queue_timeout:
+            continue
+        event.tag(event)
+      grpc_channel_destroy(state.c_channel)
+      _create_c_channel(state, target, channel._arguments, channel._channel_credentials)
+    else:
+      # Another call to close already completed in the past or is currently
+      # being executed in another thread.
+      while state.c_channel != NULL:
+        state.condition.wait()
+
+
 
 cdef _calls_drained(_ChannelState state):
   return not (state.integrated_call_states or state.segregated_call_states or
               state.connectivity_due)
-
-cdef _cancel_all_calls(Channel channel, grpc_status_code code, object details):
-  cdef _ChannelState state = channel._state
-  cdef _CallState call_state
-  encoded_details = _encode(details)
-  with state.condition:
-    for call_state in set(state.integrated_call_states.values()):
-      grpc_call_cancel_with_status(
-          call_state.c_call, code, encoded_details, NULL)
-    for call_state in state.segregated_call_states:
-      grpc_call_cancel_with_status(
-          call_state.c_call, code, encoded_details, NULL)
-    while not _calls_drained(state):
-      event = channel.next_call_event()
-      if event.completion_type == CompletionType.queue_timeout:
-          continue
-      event.tag(event)
 
 
 cdef class Channel:
@@ -519,14 +541,9 @@ cdef class Channel:
     self._state.c_connectivity_completion_queue = (
         grpc_completion_queue_create_for_next(NULL))
     self._arguments = arguments
-    cdef _ChannelArgs channel_args = _ChannelArgs(arguments)
-    c_channel_credentials = (
-        channel_credentials.c() if channel_credentials is not None
-        else grpc_insecure_credentials_create())
-    self._state.c_channel = grpc_channel_create(
-        <char *>target, c_channel_credentials, channel_args.c_args())
+    self._channel_credentials = channel_credentials
+    _create_c_channel(self._state, target, arguments, channel_credentials)
     self._registered_call_handles = {}
-    grpc_channel_credentials_release(c_channel_credentials)
 
   def target(self):
     cdef char *c_target
@@ -581,11 +598,8 @@ cdef class Channel:
   def close(self, code, details):
     _close(self, code, details, False)
 
-  def close_on_fork(self, code, details):
-    _close(self, code, details, True)
-
-  def cancel_calls_on_fork(self, code, details):
-    _cancel_all_calls(self, code, details)
+  def reset_on_fork(self, code, details):
+    _reset(self, code, details)
 
   def get_registered_call_handle(self, method):
     """
