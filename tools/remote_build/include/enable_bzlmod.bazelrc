@@ -9,7 +9,11 @@ common --ignore_dev_dependency=false
 # Needed because bzlmod can break PEP 420 implicit workspace package.
 # WORKSPACE seems unaffected, possibly because it doesn't do repo name mangling.
 #
+# See also https://github.com/bazel-contrib/rules_python/issues/55
+#
+# Error message: ModuleNotFoundError: No module named 'src.python'
 # A list of tests that need this flag to pass:
+#
 # //src/python/grpcio_tests/tests_aio/interop:local_interop_test
 # //src/python/grpcio_tests/tests_aio/reflection:reflection_servicer_test
 # //src/python/grpcio_tests/tests_aio/unit:*
@@ -21,7 +25,5 @@ common --ignore_dev_dependency=false
 # //src/python/grpcio_tests/tests/interop:_secure_intraop_test
 # //src/python/grpcio_tests/tests/reflection:_reflection_client_test
 # //src/python/grpcio_tests/tests/reflection:_reflection_servicer_test
-#
-# See https://github.com/bazel-contrib/rules_python/issues/55
 build:python --incompatible_default_to_explicit_init_py
 build:python_single_threaded_unary_stream --incompatible_default_to_explicit_init_py
