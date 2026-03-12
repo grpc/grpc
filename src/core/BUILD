@@ -3837,6 +3837,35 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "ext_proc_filter",
+    srcs = [
+        "ext/filters/ext_proc/ext_proc_filter.cc",
+    ],
+    hdrs = [
+        "ext/filters/ext_proc/ext_proc_filter.h",
+    ],
+    external_deps = [
+        "absl/container:flat_hash_map",
+        "absl/random",
+        "absl/status:statusor",
+        "absl/strings",
+    ],
+    deps = [
+        "call_destination",
+        "channel_args",
+        "down_cast",
+        "filter_args",
+        "interception_chain",
+        "metadata_batch",
+        "unique_type_name",
+        "xds_common_types",
+        "xds_http_filter",
+        "//:grpc_base",
+        "//:ref_counted_ptr",
+    ],
+)
+
+grpc_cc_library(
     name = "fused_filters",
     srcs = [
         "filter/fused_filters.cc",
