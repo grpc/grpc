@@ -148,7 +148,6 @@ grpc_error_handle grpc_chttp2_data_parser_parse(void* /*parser*/,
                                                 grpc_chttp2_stream* s,
                                                 const grpc_slice& slice,
                                                 int is_last) {
-
   grpc_core::CSliceRef(slice);
   grpc_slice_buffer_add(&s->frame_storage, slice);
   grpc_chttp2_maybe_complete_recv_message(t, s);
