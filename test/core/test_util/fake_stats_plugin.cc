@@ -230,14 +230,13 @@ std::optional<T> FakeStatsPlugin::GetMetricValueByNameImpl(
 }
 
 std::optional<uint64_t> FakeStatsPlugin::GetUInt64MetricValueByName(
-    absl::string_view name,
-    absl::Span<const absl::string_view> all_label_values) {
-  return GetMetricValueByNameImpl<uint64_t>(name, all_label_values);
+    absl::string_view name, absl::Span<const absl::string_view> labels) {
+  return GetMetricValueByNameImpl<uint64_t>(name, labels);
 }
 
 std::optional<int64_t> FakeStatsPlugin::GetInt64MetricValueByName(
-    absl::string_view name,
-    absl::Span<const absl::string_view> all_label_values) {
-  return GetMetricValueByNameImpl<int64_t>(name, all_label_values);
+    absl::string_view name, absl::Span<const absl::string_view> labels) {
+  return GetMetricValueByNameImpl<int64_t>(name, labels);
 }
+
 }  // namespace grpc_core
