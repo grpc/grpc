@@ -3837,7 +3837,7 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "ext_proc_filter",
+    name = "grpc_ext_proc_filter",
     srcs = [
         "ext/filters/ext_proc/ext_proc_filter.cc",
     ],
@@ -6448,6 +6448,7 @@ grpc_cc_library(
         "xds/grpc/xds_common_types_parser.cc",
         "xds/grpc/xds_endpoint_parser.cc",
         "xds/grpc/xds_http_composite_filter.cc",
+        "xds/grpc/xds_http_ext_proc_filter.cc",
         "xds/grpc/xds_http_fault_filter.cc",
         "xds/grpc/xds_http_filter_registry.cc",
         "xds/grpc/xds_http_gcp_authn_filter.cc",
@@ -6471,6 +6472,7 @@ grpc_cc_library(
         "xds/grpc/xds_common_types_parser.h",
         "xds/grpc/xds_endpoint_parser.h",
         "xds/grpc/xds_http_composite_filter.h",
+        "xds/grpc/xds_http_ext_proc_filter.h",
         "xds/grpc/xds_http_fault_filter.h",
         "xds/grpc/xds_http_filter_registry.h",
         "xds/grpc/xds_http_gcp_authn_filter.h",
@@ -6546,6 +6548,8 @@ grpc_cc_library(
         "envoy_extensions_filters_common_matcher_action_upbdefs",
         "envoy_extensions_filters_http_composite_upb",
         "envoy_extensions_filters_http_composite_upbdefs",
+        "//:envoy_extensions_filters_http_ext_proc_upb",
+        "//:envoy_extensions_filters_http_ext_proc_upbdefs",
         "envoy_extensions_filters_http_fault_upb",
         "envoy_extensions_filters_http_fault_upbdefs",
         "envoy_extensions_filters_http_gcp_authn_upb",
@@ -6585,6 +6589,7 @@ grpc_cc_library(
         "google_rpc_status_upb",
         "grpc_audit_logging",
         "grpc_check",
+        "grpc_ext_proc_filter",
         "grpc_fake_credentials",
         "grpc_fault_injection_filter",
         "grpc_lb_policy_pick_first",
