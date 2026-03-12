@@ -57,7 +57,7 @@ def get_asm_outputs(files):
     }
 
 
-class Grpc(object):
+class Grpc:
     """Adapter for boring-SSL json sources files."""
 
     def __init__(self, sources):

@@ -1937,6 +1937,7 @@ grpc_cc_library(
         "//src/core:iomgr_fwd",
         "//src/core:map",
         "//src/core:metadata_batch",
+        "//src/core:metrics",
         "//src/core:per_cpu",
         "//src/core:pipe",
         "//src/core:poll",

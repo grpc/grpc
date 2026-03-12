@@ -253,7 +253,7 @@ def _ping_pong_scenario(
     return scenario
 
 
-class Language(object):
+class Language:
     @property
     def safename(self):
         return str(self)

@@ -128,8 +128,8 @@ class Http2ServerTransport final : public ServerTransport,
   //////////////////////////////////////////////////////////////////////////////
   // Transport Functions
 
-  void SetCallDestination(
-      RefCountedPtr<UnstartedCallDestination> unstarted_call_handler) override;
+  void SetCallDestination(RefCountedPtr<UnstartedCallDestination>
+                              unstarted_call_destination) override;
 
   void PerformOp(grpc_transport_op*) override;
 
@@ -421,6 +421,12 @@ class Http2ServerTransport final : public ServerTransport,
 
   void MaybeGetWindowUpdateFrames(FrameSender& frame_sender);
 
+  // On receiving an increase in the initial_window size, update the writability
+  // for all active streams. This may un-stall streams that are stalled due to
+  // lack of flow control tokens. This is needed as the stream flow control
+  // tokens are calculated based on the initial window size.
+  // absl::Status UpdateAllStreamsWritability();
+
   auto FlowControlPeriodicUpdateLoop();
 
   // TODO(tjagtap) [PH2][P2][BDP] Remove this when the BDP code is done.
@@ -436,7 +442,7 @@ class Http2ServerTransport final : public ServerTransport,
 
   RefCountedPtr<Stream> LookupStream(uint32_t stream_id);
 
-  // void AddToStreamList(RefCountedPtr<Stream> stream);
+  void AddToStreamList(RefCountedPtr<Stream> stream);
 
   // absl::Status MaybeAddStreamToWritableStreamList(
   //     const RefCountedPtr<Stream> stream,
@@ -493,7 +499,11 @@ class Http2ServerTransport final : public ServerTransport,
   // absl::Status InitializeStream(Stream& stream);
 
   // Runs on the call party.
-  // std::optional<RefCountedPtr<Stream>> MakeStream(CallHandler call_handler);
+  std::optional<RefCountedPtr<Stream>> MakeStream(
+      CallInitiator&& call_initiator, const uint32_t stream_id);
+
+  absl::Status IncomingStream(ClientMetadataHandle&& metadata,
+                              const uint32_t stream_id);
 
   // void BeginCloseStream(RefCountedPtr<Stream> stream,
   //                       std::optional<uint32_t> reset_stream_error_code,
@@ -584,13 +594,13 @@ class Http2ServerTransport final : public ServerTransport,
                                  const char* reason)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(&transport_mutex_);
 
-  // bool SetOnDone(CallHandler call_handler, RefCountedPtr<Stream> stream);
+  bool SetOnDone(RefCountedPtr<Stream> stream);
 
   void ReadChannelArgs(const ChannelArgs& channel_args,
                        TransportChannelArgs& args);
 
   auto SecurityFrameLoop() {
-    GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport::SecurityFrameLoop Factory";
+    GRPC_HTTP2_SERVER_DLOG << "Http2ServerTransport::SecurityFrameLoop Factory";
     return AssertResultType<Empty>(Loop([this]() {
       return Map(security_frame_handler_->WaitForSecurityFrameSending(),
                  [this](Empty) -> LoopCtl<Empty> {

@@ -650,29 +650,31 @@ Http2Status Http2ServerTransport::ProcessIncomingFrame(
          " stream_id="
       << frame.stream_id << ", increment=" << frame.increment << "}";
 
-  //   RefCountedPtr<Stream> stream = nullptr;
-  //   if (frame.stream_id != 0) {
-  //     stream = LookupStream(frame.stream_id);
-  //   }
-  //   if (stream != nullptr) {
-  //     StreamWritabilityUpdate update =
-  //         stream->ReceivedFlowControlWindowUpdate(frame.increment);
-  //     if (update.became_writable) {
-  //       absl::Status status = writable_stream_list_.EnqueueWrapper(
-  //           stream, update.priority,
-  //           AreTransportFlowControlTokensAvailable());
-  //       if (!status.ok()) {
-  //         return ToHttpOkOrConnError(status);
-  //       }
+  // RefCountedPtr<Stream> stream = nullptr;
+  // if (frame.stream_id != 0) {
+  //   stream = LookupStream(frame.stream_id);
+  // }
+
+  // const bool should_trigger_write =
+  // ProcessIncomingWindowUpdateFrameFlowControl(
+  //     frame, flow_control_, stream.get());
+
+  // if (should_trigger_write) {
+  //   return ToHttpOkOrConnError(TriggerWriteCycle());
+  // }
+
+  // if (stream != nullptr) {
+  //   StreamWritabilityUpdate update =
+  //       stream->UpdateStreamWritability(GetStreamFlowControlTokens(
+  //           stream->GetStreamFlowControl(), settings_->peer()));
+  //   if (update.became_writable) {
+  //     absl::Status status = writable_stream_list_.EnqueueWrapper(
+  //         stream, update.priority, AreTransportFlowControlTokensAvailable());
+  //     if (!status.ok()) {
+  //       return ToHttpOkOrConnError(status);
   //     }
   //   }
-
-  //   const bool should_trigger_write =
-  //   ProcessIncomingWindowUpdateFrameFlowControl(
-  //       frame, flow_control_, stream.get());
-  //   if (should_trigger_write) {
-  //     return ToHttpOkOrConnError(TriggerWriteCycle());
-  //   }
+  // }
   return Http2Status::Ok();
 }
 
@@ -949,9 +951,28 @@ auto Http2ServerTransport::ReadLoop() {
 
 //   goaway_manager_.MaybeGetSerializedGoawayFrame(frame_sender);
 //   bool should_spawn_security_frame_loop = false;
-//   http2::Http2ErrorCode apply_status =
-//       settings_->MaybeReportAndApplyBufferedPeerSettings(
-//           event_engine_.get(), should_spawn_security_frame_loop);
+// const uint32_t old_initial_window_size =
+//     settings_->peer().initial_window_size();
+// http2::Http2ErrorCode apply_status =
+//     settings_->MaybeReportAndApplyBufferedPeerSettings(
+//         event_engine_.get(), should_spawn_security_frame_loop);
+
+// if (apply_status == http2::Http2ErrorCode::kNoError) {
+//   const uint32_t new_initial_window_size =
+//       settings_->peer().initial_window_size();
+//   if (new_initial_window_size > old_initial_window_size) {
+//     // TODO(akshitpatel) [PH2][P5] : Currently, if calling
+//     // UpdateAllStreamsWritability() makes one or more streams writable. Once
+//     // a stream is writable, it is enqueued to the writable stream list.
+//     // However, these streams are not written out until the next write cycle.
+//     // Might be worth considering to write out these streams immediately.
+//     settings_->IncrementInitialWindowSizeIncreaseCount();
+//     absl::Status status = UpdateAllStreamsWritability();
+//     if (GPR_UNLIKELY(!status.ok())) {
+//       return status;
+//     }
+//   }
+// }
 //   if (should_spawn_security_frame_loop) {
 //     const SecurityFrameHandler::EndpointExtensionState state =
 //         security_frame_handler_->Initialize(event_engine_);
@@ -1566,15 +1587,68 @@ RefCountedPtr<Stream> Http2ServerTransport::LookupStream(uint32_t stream_id) {
 //   return absl::OkStatus();
 // }
 
-// std::optional<RefCountedPtr<Stream>> Http2ServerTransport::MakeStream(
-//     CallHandler call_handler) {
-//   // https://datatracker.ietf.org/doc/html/rfc9113#name-stream-identifiers
-//   RefCountedPtr<Stream> stream;
-//   stream = MakeRefCounted<Stream>(call_handler, flow_control_);
-//   const bool on_done_added = SetOnDone(std::move(call_handler), stream);
-//   if (!on_done_added) return std::nullopt;
-//   return std::move(stream);
-// }
+std::optional<RefCountedPtr<Stream>> Http2ServerTransport::MakeStream(
+    CallInitiator&& call_initiator, const uint32_t stream_id) {
+  RefCountedPtr<Stream> stream =
+      MakeRefCounted<Stream>(call_initiator, flow_control_, stream_id,
+                             settings_->peer().allow_true_binary_metadata(),
+                             settings_->acked().allow_true_binary_metadata());
+  const bool on_done_added = SetOnDone(stream);
+  if (!on_done_added) return std::nullopt;
+  return std::move(stream);
+}
+
+absl::Status Http2ServerTransport::IncomingStream(
+    ClientMetadataHandle&& metadata, const uint32_t stream_id) {
+  // TODO(akshitpatel) : [PH2][P0] : Check the GOAWAY conditions.
+  // if(stream_id > last_accepted_stream_id_) {
+  //   return HandleError(stream_id, Http2Status::Http2ConnectionError(
+  //                                     Http2ErrorCode::kProtocolError,
+  //                                     "Stream id is less than last accepted
+  //                                     stream id: " +
+  //                                         std::to_string(stream_id)));
+  // }
+
+  RefCountedPtr<Stream> it = LookupStream(stream_id);
+  if (it != nullptr) {
+    return HandleError(stream_id, Http2Status::Http2ConnectionError(
+                                      Http2ErrorCode::kProtocolError,
+                                      "Stream id already exists: " +
+                                          std::to_string(stream_id)));
+  }
+  // TODO(tjagtap) : [PH2][P1] : Evaluate use of
+  // SimpleArenaAllocator vs CallArenaAllocator here.
+  RefCountedPtr<Arena> arena = SimpleArenaAllocator(0)->MakeArena();
+  arena->SetContext<EventEngine>(event_engine_.get());
+  CallInitiatorAndHandler call =
+      MakeCallPair(std::move(metadata), std::move(arena));
+
+  std::optional<RefCountedPtr<Stream>> result =
+      MakeStream(std::move(call.initiator), stream_id);
+  if (!result.has_value()) {
+    return absl::CancelledError();
+  }
+  RefCountedPtr<Stream> stream = std::move(result.value());
+  // TODO(akshitpatel) : [PH2][P0] : Implement this.
+  // TODO(akshitpatel) : [PH2][P1] : Try to access the stream list only once in
+  // this function.
+  // AddToStreamList(stream);
+
+  // TODO(tjagtap) : [PH2][P1] : We could receive a valid Metadata. And
+  // Spawn CallOutboundLoop. But before the CallOutboundLoop starts, if
+  // a BAD frame is received, it might cause either Stream of Transport Error.
+  // Handle those errors.
+  stream->GetCallInitiator().SpawnGuarded(
+      "CallOutboundLoop", [this, stream = std::move(stream),
+                           call_handler = std::move(call.handler)]() mutable {
+        call_destination_->StartCall(std::move(call_handler));
+        // TODO(akshitpatel) : [PH2][P0] : Implement CallOutboundLoop.
+        // Evaluate taking stream as a parameter instead of call_initiator
+        // return CallOutboundLoop(stream_id, call_initiator);
+        return []() { return absl::OkStatus(); };
+      });
+  return absl::OkStatus();
+}
 
 // This function is idempotent and MUST be called from the transport party.
 // All the scenarios that can lead to this function being called are:
@@ -1777,6 +1851,35 @@ RefCountedPtr<Stream> Http2ServerTransport::LookupStream(uint32_t stream_id) {
 //   }
 // }
 
+// absl::Status Http2ServerTransport::UpdateAllStreamsWritability() {
+//   MutexLock lock(&transport_mutex_);
+//   GRPC_HTTP2_SERVER_DLOG
+//       << "Http2ServerTransport::UpdateAllStreamsWritability total streams: "
+//       << stream_list_.size();
+//   // This loop iterates over all active streams. For each stream this would
+//   // internally take a stream specific lock and update the stream
+//   writability.
+//   // This is not optimal but should be fine as this function is only called
+//   when
+//   // initial window size is increased which in theory should not be very
+//   // frequent.
+//   for (const auto& [stream_id, stream] : stream_list_) {
+//     StreamWritabilityUpdate update =
+//         stream->UpdateStreamWritability(GetStreamFlowControlTokens(
+//             stream->GetStreamFlowControl(), settings_->peer()));
+//     absl::Status status = MaybeAddStreamToWritableStreamList(stream, update);
+//     if (GPR_UNLIKELY(!status.ok())) {
+//       GRPC_HTTP2_SERVER_DLOG << "Http2ServerTransport::"
+//                                 "UpdateAllStreamsWritability failed for
+//                                 stream "
+//                              << stream_id << " with status " << status;
+//       return status;
+//     }
+//   }
+
+//   return absl::OkStatus();
+// }
+
 //////////////////////////////////////////////////////////////////////////////
 // Ping Keepalive and Goaway
 
@@ -1956,8 +2059,12 @@ void Http2ServerTransport::ReportDisconnectionLocked(
   NotifyStateWatcherOnDisconnectLocked(status, disconnect_info);
 }
 
-// bool Http2ServerTransport::SetOnDone(CallHandler call_handler,
-//                                      RefCountedPtr<Stream> stream) {
+bool Http2ServerTransport::SetOnDone(RefCountedPtr<Stream> stream) {
+  // TODO(akshitpatel) : [PH2][P0] : Implement this.
+  return stream->GetCallInitiator().OnDone(
+      [self = RefAsSubclass<Http2ServerTransport>(),
+       stream = std::move(stream)](GRPC_UNUSED bool cancelled) mutable {});
+}
 //   return call_handler.OnDone([self = RefAsSubclass<Http2ServerTransport>(),
 //                               stream =
 //                                   std::move(stream)](bool cancelled) mutable
@@ -2184,11 +2291,12 @@ Http2ServerTransport::~Http2ServerTransport() {
 // Transport Functions
 
 void Http2ServerTransport::SetCallDestination(
-    RefCountedPtr<UnstartedCallDestination> unstarted_call_handler) {
+    RefCountedPtr<UnstartedCallDestination> unstarted_call_destination) {
   // This is called once in the lifetime of the transport.
   GRPC_CHECK(call_destination_ == nullptr);
-  GRPC_CHECK(unstarted_call_handler != nullptr);
-  call_destination_ = unstarted_call_handler;
+  GRPC_CHECK(unstarted_call_destination != nullptr);
+  call_destination_ = std::move(unstarted_call_destination);
+  InitializeAndSpawnTransportLoops();
 }
 
 void Http2ServerTransport::PerformOp(GRPC_UNUSED grpc_transport_op*) {

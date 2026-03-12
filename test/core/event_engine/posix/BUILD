@@ -328,6 +328,7 @@ grpc_cc_test(
         "//test/core/event_engine/posix:posix_engine_test_utils",
         "//test/core/event_engine/test_suite/posix:oracle_event_engine_posix",
         "//test/core/test_util:grpc_test_util",
+        "//test/core/test_util:test_memory_allocator",
     ],
 )
 

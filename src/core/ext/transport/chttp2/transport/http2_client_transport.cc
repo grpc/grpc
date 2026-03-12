@@ -588,9 +588,18 @@ Http2Status Http2ClientTransport::ProcessIncomingFrame(
   if (frame.stream_id != 0) {
     stream = LookupStream(frame.stream_id);
   }
+
+  const bool should_trigger_write = ProcessIncomingWindowUpdateFrameFlowControl(
+      frame, flow_control_, stream.get());
+
+  if (should_trigger_write) {
+    return ToHttpOkOrConnError(TriggerWriteCycle());
+  }
+
   if (stream != nullptr) {
     StreamWritabilityUpdate update =
-        stream->ReceivedFlowControlWindowUpdate(frame.increment);
+        stream->UpdateStreamWritability(GetStreamFlowControlTokens(
+            stream->GetStreamFlowControl(), settings_->peer()));
     if (update.became_writable) {
       absl::Status status = writable_stream_list_.EnqueueWrapper(
           stream, update.priority, AreTransportFlowControlTokensAvailable());
@@ -598,12 +607,6 @@ Http2Status Http2ClientTransport::ProcessIncomingFrame(
         return ToHttpOkOrConnError(status);
       }
     }
-  }
-
-  const bool should_trigger_write = ProcessIncomingWindowUpdateFrameFlowControl(
-      frame, flow_control_, stream.get());
-  if (should_trigger_write) {
-    return ToHttpOkOrConnError(TriggerWriteCycle());
   }
   return Http2Status::Ok();
 }
@@ -917,6 +920,32 @@ void Http2ClientTransport::ActOnFlowControlAction(
   }
 }
 
+absl::Status Http2ClientTransport::UpdateAllStreamsWritability() {
+  MutexLock lock(&transport_mutex_);
+  GRPC_HTTP2_CLIENT_DLOG
+      << "Http2ClientTransport::UpdateAllStreamsWritability total streams: "
+      << stream_list_.size();
+  // This loop iterates over all active streams. For each stream this would
+  // internally take a stream specific lock and update the stream writability.
+  // This is not optimal but should be fine as this function is only called when
+  // initial window size is increased which in theory should not be very
+  // frequent.
+  for (const auto& [stream_id, stream] : stream_list_) {
+    StreamWritabilityUpdate update =
+        stream->UpdateStreamWritability(GetStreamFlowControlTokens(
+            stream->GetStreamFlowControl(), settings_->peer()));
+    absl::Status status = MaybeAddStreamToWritableStreamList(stream, update);
+    if (GPR_UNLIKELY(!status.ok())) {
+      GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport::"
+                                "UpdateAllStreamsWritability failed for stream "
+                             << stream_id << " with status " << status;
+      return status;
+    }
+  }
+
+  return absl::OkStatus();
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 // Write Related Promises and Promise Factories
 auto Http2ClientTransport::EndpointWrite(SliceBuffer&& output_buf) {
@@ -967,9 +996,30 @@ absl::Status Http2ClientTransport::PrepareControlFrames() {
 
   goaway_manager_.MaybeGetSerializedGoawayFrame(frame_sender);
   bool should_spawn_security_frame_loop = false;
+
+  const uint32_t old_initial_window_size =
+      settings_->peer().initial_window_size();
   http2::Http2ErrorCode apply_status =
       settings_->MaybeReportAndApplyBufferedPeerSettings(
           event_engine_.get(), should_spawn_security_frame_loop);
+
+  if (apply_status == http2::Http2ErrorCode::kNoError) {
+    const uint32_t new_initial_window_size =
+        settings_->peer().initial_window_size();
+    if (new_initial_window_size > old_initial_window_size) {
+      // TODO(akshitpatel) [PH2][P5] : Currently, if calling
+      // UpdateAllStreamsWritability() makes one or more streams writable. Once
+      // a stream is writable, it is enqueued to the writable stream list.
+      // However, these streams are not written out until the next write cycle.
+      // Might be worth considering to write out these streams immediately.
+      settings_->IncrementInitialWindowSizeIncreaseCount();
+      absl::Status status = UpdateAllStreamsWritability();
+      if (GPR_UNLIKELY(!status.ok())) {
+        return status;
+      }
+    }
+  }
+
   if (should_spawn_security_frame_loop) {
     const SecurityFrameHandler::EndpointExtensionState state =
         security_frame_handler_->Initialize(event_engine_);
@@ -1260,9 +1310,9 @@ absl::Status Http2ClientTransport::InitializeStream(Stream& stream) {
                          << next_stream_id.value() << " to stream: " << &stream
                          << ", allow_true_binary_metadata:"
                          << settings_->peer().allow_true_binary_metadata();
-  stream.InitializeStream(next_stream_id.value(),
-                          settings_->peer().allow_true_binary_metadata(),
-                          settings_->acked().allow_true_binary_metadata());
+  stream.InitializeClientStream(
+      next_stream_id.value(), settings_->peer().allow_true_binary_metadata(),
+      settings_->acked().allow_true_binary_metadata());
   return absl::OkStatus();
 }
 
@@ -1948,9 +1998,8 @@ bool Http2ClientTransport::SetOnDone(CallHandler call_handler,
 
 std::optional<RefCountedPtr<Stream>> Http2ClientTransport::MakeStream(
     CallHandler call_handler) {
-  // https://datatracker.ietf.org/doc/html/rfc9113#name-stream-identifiers
-  RefCountedPtr<Stream> stream;
-  stream = MakeRefCounted<Stream>(call_handler, flow_control_);
+  RefCountedPtr<Stream> stream =
+      MakeRefCounted<Stream>(call_handler, flow_control_);
   const bool on_done_added = SetOnDone(std::move(call_handler), stream);
   if (!on_done_added) return std::nullopt;
   return std::move(stream);
