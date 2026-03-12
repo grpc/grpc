@@ -333,7 +333,7 @@ TEST_P(CdsTest, MetricLabels) {
   EXPECT_THAT(
       fake_client_call_tracer_factory.GetLastFakeClientCallTracer()
           ->GetLastCallAttemptTracer()
-          ->GetOptionalLabels(),
+          ->GetOptionalLabelsAsStringViews(),
       ::testing::ElementsAre(
           ::testing::Pair(OptionalLabelKey::kXdsServiceName, "myservice"),
           ::testing::Pair(OptionalLabelKey::kXdsServiceNamespace,
@@ -349,7 +349,7 @@ TEST_P(CdsTest, MetricLabels) {
   EXPECT_THAT(
       fake_client_call_tracer_factory.GetLastFakeClientCallTracer()
           ->GetLastCallAttemptTracer()
-          ->GetOptionalLabels(),
+          ->GetOptionalLabelsAsStringViews(),
       ::testing::ElementsAre(
           ::testing::Pair(OptionalLabelKey::kXdsServiceName, "myservice"),
           ::testing::Pair(OptionalLabelKey::kXdsServiceNamespace,

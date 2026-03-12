@@ -113,7 +113,8 @@ class OpenCensusCallTracer : public grpc_core::ClientCallTracerInterface {
     void RecordAnnotation(const Annotation& annotation) override;
     std::shared_ptr<grpc_core::TcpCallTracer> StartNewTcpTrace() override;
     void SetOptionalLabel(OptionalLabelKey,
-                          grpc_core::RefCountedStringValue) override {}
+                          std::variant<grpc_core::RefCountedStringValue,
+                                       absl::string_view>) override {}
 
     experimental::CensusContext* context() { return &context_; }
 

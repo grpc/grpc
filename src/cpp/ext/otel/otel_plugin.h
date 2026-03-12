@@ -92,7 +92,9 @@ class LabelsInjector {
   // false when callback returns false.
   virtual bool AddOptionalLabels(
       bool is_client,
-      absl::Span<const grpc_core::RefCountedStringValue> optional_labels,
+      absl::Span<const std::variant<grpc_core::RefCountedStringValue,
+                                    absl::string_view>>
+          optional_labels,
       opentelemetry::nostd::function_ref<
           bool(opentelemetry::nostd::string_view,
                opentelemetry::common::AttributeValue)>
@@ -102,8 +104,9 @@ class LabelsInjector {
   // produce through the AddOptionalLabels method.
   virtual size_t GetOptionalLabelsSize(
       bool is_client,
-      absl::Span<const grpc_core::RefCountedStringValue> optional_labels)
-      const = 0;
+      absl::Span<const std::variant<grpc_core::RefCountedStringValue,
+                                    absl::string_view>>
+          optional_labels) const = 0;
 };
 
 class InternalOpenTelemetryPluginOption

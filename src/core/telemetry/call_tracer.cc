@@ -225,8 +225,9 @@ class DelegatingClientCallTracer : public ClientCallTracerInterface {
     std::shared_ptr<TcpCallTracer> StartNewTcpTrace() override {
       return nullptr;
     }
-    void SetOptionalLabel(OptionalLabelKey key,
-                          RefCountedStringValue value) override {
+    void SetOptionalLabel(
+        OptionalLabelKey key,
+        std::variant<RefCountedStringValue, absl::string_view> value) override {
       for (auto* tracer : tracers_) {
         tracer->SetOptionalLabel(key, value);
       }

@@ -50,7 +50,9 @@ class PythonLabelsInjector {
   // Add optional xds labels from optional_labels_span to labels.
   void AddXdsOptionalLabels(
       bool is_client,
-      absl::Span<const grpc_core::RefCountedStringValue> optional_labels_span,
+      absl::Span<const std::variant<grpc_core::RefCountedStringValue,
+                                    absl::string_view>>
+          optional_labels_span,
       std::vector<Label>& labels);
 
  private:

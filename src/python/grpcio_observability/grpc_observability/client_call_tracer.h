@@ -84,8 +84,10 @@ class PythonOpenCensusCallTracer : public grpc_core::ClientCallTracerInterface {
     void RecordAnnotation(absl::string_view annotation) override;
     void RecordAnnotation(const Annotation& annotation) override;
     std::shared_ptr<grpc_core::TcpCallTracer> StartNewTcpTrace() override;
-    void SetOptionalLabel(OptionalLabelKey key,
-                          grpc_core::RefCountedStringValue value) override;
+    void SetOptionalLabel(
+        OptionalLabelKey key,
+        std::variant<grpc_core::RefCountedStringValue, absl::string_view> value)
+        override;
 
    private:
     // Maximum size of trace context is sent on the wire.
@@ -102,7 +104,7 @@ class PythonOpenCensusCallTracer : public grpc_core::ClientCallTracerInterface {
     // End status code
     absl::StatusCode status_code_;
     // Avoid std::map to avoid per-call allocations.
-    std::array<grpc_core::RefCountedStringValue,
+    std::array<std::variant<grpc_core::RefCountedStringValue, absl::string_view>,
                static_cast<size_t>(OptionalLabelKey::kSize)>
         optional_labels_array_;
     std::vector<Label> labels_from_peer_;
