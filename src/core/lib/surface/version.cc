@@ -24,4 +24,4 @@
 
 const char* grpc_version_string(void) { return "53.0.0"; }
 
-const char* grpc_g_stands_for(void) { return "glimmering"; }
+const char* grpc_g_stands_for(void) { return "graphic"; }

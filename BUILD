@@ -23,6 +23,7 @@ load(
     "grpc_clang_cl_settings",
     "grpc_filegroup",
     "grpc_generate_one_off_targets",
+    "grpc_ios_toolchains",
     "grpc_upb_proto_library",
     "grpc_upb_proto_reflection_library",
     "python_config_settings",
@@ -106,6 +107,10 @@ config_setting(
 )
 
 grpc_clang_cl_settings()
+
+grpc_ios_toolchains(
+    name = "python_3_11_ios_sim_arm64_workaround",
+)
 
 config_setting(
     name = "grpc_no_rls_flag",
@@ -275,11 +280,11 @@ config_setting(
 python_config_settings()
 
 # This should be updated along with build_handwritten.yaml
-g_stands_for = "glimmering"  # @unused
+g_stands_for = "graphic"  # @unused
 
 core_version = "53.0.0"  # @unused
 
-version = "1.79.0-dev"  # @unused
+version = "1.81.0-dev"  # @unused
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
