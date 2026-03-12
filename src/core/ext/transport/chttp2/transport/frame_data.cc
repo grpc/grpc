@@ -148,24 +148,7 @@ grpc_error_handle grpc_chttp2_data_parser_parse(void* /*parser*/,
                                                 grpc_chttp2_stream* s,
                                                 const grpc_slice& slice,
                                                 int is_last) {
-  if (GRPC_SLICE_LENGTH(slice) > 0) {
-    uint8_t compression_flag = GRPC_SLICE_START_PTR(slice)[0];
-    if (compression_flag == 1) {
-      return absl::InternalError(
-          "Compression bit set but no encoding configured");
-    }
-    if (compression_flag > 1) {
-      return absl::InternalError(
-          "Invalid gRPC compression flag (must be 0 or 1)");
-    }
-  }
-  if (s->is_unary && s->received_payload && GRPC_SLICE_LENGTH(slice) > 0) {
-    return GRPC_ERROR_CREATE(
-        "More than one DATA frame with payload received for unary RPC");
-  }
-  if (GRPC_SLICE_LENGTH(slice) > 0) {
-    s->received_payload = true;
-  }
+
   grpc_core::CSliceRef(slice);
   grpc_slice_buffer_add(&s->frame_storage, slice);
   grpc_chttp2_maybe_complete_recv_message(t, s);

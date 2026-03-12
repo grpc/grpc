@@ -760,9 +760,6 @@ struct grpc_chttp2_stream {
   /// Whether the bytes needs to be traced using Fathom
   bool traced = false;
 
-  bool is_unary = false;
-  bool received_payload = false;
-
   // The last time a stream window update was received.
   grpc_core::Timestamp last_window_update_time =
       grpc_core::Timestamp::InfPast();

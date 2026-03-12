@@ -367,7 +367,6 @@ struct grpc_transport_stream_op_batch_payload {
     // uses this to set the success flag of OnReadInitialMetadataDone()
     // callback.
     bool* trailing_metadata_available = nullptr;
-    bool is_unary;
   } recv_initial_metadata;
 
   struct {

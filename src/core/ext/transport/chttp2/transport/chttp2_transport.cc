@@ -1771,7 +1771,6 @@ static void recv_initial_metadata_locked(
       op_payload->recv_initial_metadata.recv_initial_metadata;
   s->trailing_metadata_available =
       op_payload->recv_initial_metadata.trailing_metadata_available;
-  s->is_unary = op_payload->recv_initial_metadata.is_unary;
   if (s->parsed_trailers_only && s->trailing_metadata_available != nullptr) {
     *s->trailing_metadata_available = true;
   }
