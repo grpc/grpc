@@ -166,7 +166,7 @@ class Stream : public RefCounted<Stream> {
                                         state == HttpStreamState::kClosed));
   }
 
-  auto ReceivedFlowControlWindowUpdate(const uint32_t stream_fc_tokens) {
+  auto UpdateStreamWritability(const int64_t stream_fc_tokens) {
     return data_queue_->ReceivedFlowControlWindowUpdate(stream_fc_tokens);
   }
 

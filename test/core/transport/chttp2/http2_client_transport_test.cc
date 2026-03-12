@@ -1151,6 +1151,186 @@ TEST_F(Http2ClientTransportTest, TestMaxAllowedStreamId) {
   step3->Wait();
 }
 
+///////////////////////////////////////////////////////////////////////////////
+// Stream Stall/Unstall Tests
+
+TEST_F(Http2ClientTransportTest,
+       TestHttp2ClientStreamWindowUpdateUnblocksStream) {
+  // This test asserts that when the peer sends a Stream WINDOW_UPDATE frame,
+  // a stream that was stalled due to zero flow control window
+  // becomes writable and sends its pending data.
+
+  ExecCtx ctx;
+  // 1. Initialize transport and exchange settings.
+  InitTransport(GetChannelArgs());
+  SpawnTransportLoopsAndExchangeSettings();
+
+  // 2. Peer reduces the initial window size to 0.
+  auto step = endpoint()->NewStep();
+  std::vector<Http2SettingsFrame::Setting> settings;
+  settings.push_back({Http2Settings::kInitialWindowSizeWireId, 0u});
+  step->ThenPerformRead({
+      helper_.EventEngineSliceFromHttp2SettingsFrame(settings),
+  });
+  step->ThenExpectWrite({
+      helper_.EventEngineSliceFromHttp2SettingsFrameAck(),
+  });
+  step->Wait();
+
+  // 3. Client starts call. Sends initial metadata, but NOT data (initial
+  //    window size is 0).
+  StrictMock<MockFunction<void()>> on_done;
+  EXPECT_CALL(on_done, Call());
+
+  auto step2 = endpoint()->NewStep();
+  step2->ThenExpectWrite({
+      helper_.EventEngineSliceFromHttp2HeaderFrame(
+          std::string(kPathDemoServiceStep.begin(), kPathDemoServiceStep.end()),
+          /*stream_id=*/1, /*end_headers=*/true, /*end_stream=*/false),
+  });
+
+  CallInitiator initiator = StartCall(TestInitialMetadata());
+
+  initiator.SpawnGuarded("test-send", [initiator]() mutable {
+    return Seq(
+        initiator.PushMessage(Arena::MakePooled<Message>(
+            SliceBuffer(Slice::FromExternalString("Hello!")), 0)),
+        [initiator = initiator]() mutable { return initiator.FinishSends(); },
+        []() { return absl::OkStatus(); });
+  });
+  initiator.SpawnInfallible("test-wait", [initiator, &on_done]() mutable {
+    return Seq(initiator.PullServerTrailingMetadata(),
+               [&on_done](ServerMetadataHandle metadata) mutable {
+                 on_done.Call();
+                 return Empty{};
+               });
+  });
+
+  step2->Wait();
+  event_engine()->Tick();
+
+  // 4. Peer sends WINDOW_UPDATE frame.
+  auto step3 = endpoint()->NewStep();
+  step3->ThenPerformRead({
+      helper_.EventEngineSliceFromHttp2WindowUpdateFrame(
+          /*stream_id=*/1, /*increment=*/65535),
+  });
+
+  // 5. Client processes the WINDOW_UPDATE frame and sends the stalled DATA
+  //    frame.
+  step3->ThenExpectWrite({
+      helper_.EventEngineSliceFromHttp2DataFrame("Hello!",
+                                                 /*stream_id=*/1,
+                                                 /*end_stream=*/true),
+  });
+
+  // 6. Peer sends Trailing metadata.
+  step3->ThenPerformRead({
+      helper_.EventEngineSliceFromHttp2HeaderFrame(
+          std::string(kPathDemoServiceStep.begin(), kPathDemoServiceStep.end()),
+          /*stream_id=*/1, /*end_headers=*/true, /*end_stream=*/true),
+  });
+
+  step3->Wait();
+  // Tick to allow the transport to process the Trailing metadata.
+  event_engine()->Tick();
+
+  // Tear down the transport.
+  auto step4 = endpoint()->NewStep();
+  AddTransportCloseExpectations(step4.get());
+  step4->Wait();
+}
+
+TEST_F(Http2ClientTransportTest,
+       TestHttp2ClientInitialWindowSizeIncreaseUnblocksStreams) {
+  // This test asserts that when the peer increases the initial window size,
+  // a stream that was stalled due to zero flow control window
+  // becomes writable and sends its pending data.
+
+  ExecCtx ctx;
+  // 1. Initialize transport and exchange settings.
+  InitTransport(GetChannelArgs());
+  SpawnTransportLoopsAndExchangeSettings();
+
+  // 2. Peer reduces the initial window size to 0.
+  auto step = endpoint()->NewStep();
+  std::vector<Http2SettingsFrame::Setting> settings;
+  settings.push_back({Http2Settings::kInitialWindowSizeWireId, 0u});
+  step->ThenPerformRead({
+      helper_.EventEngineSliceFromHttp2SettingsFrame(settings),
+  });
+  step->ThenExpectWrite({
+      helper_.EventEngineSliceFromHttp2SettingsFrameAck(),
+  });
+  step->Wait();
+
+  // 3. Client starts call. Sends initial metadata, but NOT data (window is 0).
+  StrictMock<MockFunction<void()>> on_done;
+  EXPECT_CALL(on_done, Call());
+
+  auto step2 = endpoint()->NewStep();
+  step2->ThenExpectWrite({
+      helper_.EventEngineSliceFromHttp2HeaderFrame(
+          std::string(kPathDemoServiceStep.begin(), kPathDemoServiceStep.end()),
+          /*stream_id=*/1, /*end_headers=*/true, /*end_stream=*/false),
+  });
+
+  CallInitiator initiator = StartCall(TestInitialMetadata());
+
+  initiator.SpawnGuarded("test-send", [initiator]() mutable {
+    return Seq(
+        initiator.PushMessage(Arena::MakePooled<Message>(
+            SliceBuffer(Slice::FromExternalString("Hello!")), 0)),
+        [initiator = initiator]() mutable { return initiator.FinishSends(); },
+        []() { return absl::OkStatus(); });
+  });
+  initiator.SpawnInfallible("test-wait", [initiator, &on_done]() mutable {
+    return Seq(initiator.PullServerTrailingMetadata(),
+               [&on_done](ServerMetadataHandle metadata) mutable {
+                 on_done.Call();
+                 return Empty{};
+               });
+  });
+
+  step2->Wait();
+  event_engine()->Tick();
+
+  // 4. Peer increases the initial window size.
+  // 5. Client processes the settings frame and sends the stalled DATA frame.
+  auto step3 = endpoint()->NewStep();
+  settings.clear();
+  settings.push_back({Http2Settings::kInitialWindowSizeWireId, 65535u});
+  step3->ThenPerformRead({
+      helper_.EventEngineSliceFromHttp2SettingsFrame(settings),
+  });
+
+  step3->ThenExpectWrite({
+      helper_.EventEngineSliceFromHttp2SettingsFrameAck(),
+  });
+
+  step3->ThenExpectWrite({
+      helper_.EventEngineSliceFromHttp2DataFrame("Hello!",
+                                                 /*stream_id=*/1,
+                                                 /*end_stream=*/true),
+  });
+
+  // 7. Peer sends Trailing metadata.
+  step3->ThenPerformRead({
+      helper_.EventEngineSliceFromHttp2HeaderFrame(
+          std::string(kPathDemoServiceStep.begin(), kPathDemoServiceStep.end()),
+          /*stream_id=*/1, /*end_headers=*/true, /*end_stream=*/true),
+  });
+
+  step3->Wait();
+  // Tick to allow the transport to process the Trailing metadata.
+  event_engine()->Tick();
+
+  // Tear down the transport.
+  auto step4 = endpoint()->NewStep();
+  AddTransportCloseExpectations(step4.get());
+  step4->Wait();
+}
+
 // TODO(tjagtap) : [PH2][P2] Write tests similar to
 // TestHeaderDataHeaderFrameOrder for Continuation frame read.
 
