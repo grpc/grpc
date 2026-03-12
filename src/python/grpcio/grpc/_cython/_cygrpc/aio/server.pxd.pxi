@@ -78,6 +78,7 @@ cdef class _ConcurrentRpcLimiter:
 cdef class AioServer:
     cdef Server _server
     cdef list _generic_handlers
+    cdef dict _registered_method_handlers  # Dict[str, grpc.RpcMethodHandler]
     cdef AioServerStatus _status
     cdef object _loop  # asyncio.EventLoop
     cdef object _serving_task  # asyncio.Task
