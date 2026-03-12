@@ -134,6 +134,7 @@ inline bool IsUseCallEventEngineInCompletionQueueEnabled() { return false; }
 inline bool IsWildcardIpExpansionRestrictionEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_XDS_CHANNEL_FILTER_CHAIN_PER_ROUTE
 inline bool IsXdsChannelFilterChainPerRouteEnabled() { return true; }
+inline bool IsXdsServerFilterChainPerRouteEnabled() { return false; }
 
 #elif defined(GPR_WINDOWS)
 inline bool IsBufferListDeletionPrepEnabled() { return false; }
@@ -213,6 +214,7 @@ inline bool IsUseCallEventEngineInCompletionQueueEnabled() { return false; }
 inline bool IsWildcardIpExpansionRestrictionEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_XDS_CHANNEL_FILTER_CHAIN_PER_ROUTE
 inline bool IsXdsChannelFilterChainPerRouteEnabled() { return true; }
+inline bool IsXdsServerFilterChainPerRouteEnabled() { return false; }
 
 #else
 inline bool IsBufferListDeletionPrepEnabled() { return false; }
@@ -292,6 +294,7 @@ inline bool IsUseCallEventEngineInCompletionQueueEnabled() { return false; }
 inline bool IsWildcardIpExpansionRestrictionEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_XDS_CHANNEL_FILTER_CHAIN_PER_ROUTE
 inline bool IsXdsChannelFilterChainPerRouteEnabled() { return true; }
+inline bool IsXdsServerFilterChainPerRouteEnabled() { return false; }
 #endif
 
 #else
@@ -350,6 +353,7 @@ enum ExperimentIds {
   kExperimentIdUseCallEventEngineInCompletionQueue,
   kExperimentIdWildcardIpExpansionRestriction,
   kExperimentIdXdsChannelFilterChainPerRoute,
+  kExperimentIdXdsServerFilterChainPerRoute,
   kNumExperiments
 };
 #define GRPC_EXPERIMENT_IS_INCLUDED_BUFFER_LIST_DELETION_PREP
@@ -570,6 +574,10 @@ inline bool IsWildcardIpExpansionRestrictionEnabled() {
 #define GRPC_EXPERIMENT_IS_INCLUDED_XDS_CHANNEL_FILTER_CHAIN_PER_ROUTE
 inline bool IsXdsChannelFilterChainPerRouteEnabled() {
   return IsExperimentEnabled<kExperimentIdXdsChannelFilterChainPerRoute>();
+}
+#define GRPC_EXPERIMENT_IS_INCLUDED_XDS_SERVER_FILTER_CHAIN_PER_ROUTE
+inline bool IsXdsServerFilterChainPerRouteEnabled() {
+  return IsExperimentEnabled<kExperimentIdXdsServerFilterChainPerRoute>();
 }
 
 extern const ExperimentMetadata g_experiment_metadata[kNumExperiments];

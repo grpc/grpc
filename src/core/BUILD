@@ -4358,6 +4358,7 @@ grpc_cc_library(
     ],
     deps = [
         "dual_ref_counted",
+        "filter_chain",
         "grpc_service_config",
         "metadata_batch",
         "ref_counted",

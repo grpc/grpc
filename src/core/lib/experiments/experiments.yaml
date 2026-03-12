@@ -385,3 +385,8 @@
   expiry: 2026/06/01
   owner: roth@google.com
   test_tags: ["xds_end2end_test", "xds_test"]
+- name: xds_server_filter_chain_per_route
+  description: xDS servers use a separate filter chain for each route.
+  expiry: 2026/06/01
+  owner: roth@google.com
+  test_tags: ["xds_end2end_test", "xds_test"]

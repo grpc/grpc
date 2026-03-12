@@ -71,6 +71,7 @@ EXPERIMENT_ENABLES = {
     "use_call_event_engine_in_completion_queue": "use_call_event_engine_in_completion_queue",
     "wildcard_ip_expansion_restriction": "wildcard_ip_expansion_restriction",
     "xds_channel_filter_chain_per_route": "xds_channel_filter_chain_per_route",
+    "xds_server_filter_chain_per_route": "xds_server_filter_chain_per_route",
 }
 
 EXPERIMENT_POLLERS = [
@@ -149,6 +150,10 @@ EXPERIMENTS = {
             "xds_end2end_test": [
                 "error_flatten",
                 "subchannel_wrapper_cleanup_on_orphan",
+                "xds_server_filter_chain_per_route",
+            ],
+            "xds_test": [
+                "xds_server_filter_chain_per_route",
             ],
         },
         "on": {
@@ -259,6 +264,10 @@ EXPERIMENTS = {
             "xds_end2end_test": [
                 "error_flatten",
                 "subchannel_wrapper_cleanup_on_orphan",
+                "xds_server_filter_chain_per_route",
+            ],
+            "xds_test": [
+                "xds_server_filter_chain_per_route",
             ],
         },
         "on": {
@@ -369,6 +378,10 @@ EXPERIMENTS = {
             "xds_end2end_test": [
                 "error_flatten",
                 "subchannel_wrapper_cleanup_on_orphan",
+                "xds_server_filter_chain_per_route",
+            ],
+            "xds_test": [
+                "xds_server_filter_chain_per_route",
             ],
         },
         "on": {
