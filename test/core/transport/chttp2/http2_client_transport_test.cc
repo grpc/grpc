@@ -98,7 +98,7 @@ class Http2ClientTransportTest : public Http2TransportTest {
 
   void SpawnTransportLoopsAndExchangeSettings() {
     ExecCtx ctx;
-    auto step = endpoint()->NewStep();
+    std::shared_ptr<EventSequenceEndpoint::Step> step = endpoint()->NewStep();
     AddTransportStartExpectations(step.get());
     client_transport_->SpawnTransportLoops();
     step->Wait();
@@ -114,22 +114,21 @@ class Http2ClientTransportTest : public Http2TransportTest {
     step->ThenExpectWrite({
         EventEngineSlice(
             grpc_slice_from_copied_string(GRPC_CHTTP2_CLIENT_CONNECT_STRING)),
-        helper_.EventEngineSliceFromHttp2SettingsFrameClientDefault(),
+        helper_.SerializedDefaultClientSettingsFrame(),
     });
 
-    step->ThenPerformRead(
-        {helper_.EventEngineSliceFromHttp2SettingsFrameServerDefault(),
-         helper_.EventEngineSliceFromHttp2SettingsFrameAck()});
+    step->ThenPerformRead({helper_.SerializedDefaultServerSettingsFrame(),
+                           helper_.SerializedSettingsFrameAck()});
 
     step->ThenExpectWrite({
-        helper_.EventEngineSliceFromHttp2SettingsFrameAck(),
+        helper_.SerializedSettingsFrameAck(),
     });
   }
 
   void AddTransportCloseExpectations(EventSequenceEndpoint::Step* step) {
     step->ThenFailRead(absl::UnavailableError(kConnectionClosed));
     step->ThenExpectWrite({
-        helper_.EventEngineSliceFromHttp2GoawayFrame(
+        helper_.SerializedGoawayFrame(
             /*debug_data=*/kConnectionClosed, /*last_stream_id=*/0,
             /*error_code=*/
             static_cast<uint32_t>(Http2ErrorCode::kInternalError)),
@@ -137,7 +136,7 @@ class Http2ClientTransportTest : public Http2TransportTest {
   }
 
   CallInitiator StartCall(ClientMetadataHandle initial_metadata) {
-    auto call = MakeCall(std::move(initial_metadata));
+    CallInitiatorAndHandler call = MakeCall(std::move(initial_metadata));
     client_transport_->StartCall(call.handler.StartCall());
     return call.initiator;
   }
@@ -176,18 +175,19 @@ TEST_F(Http2ClientTransportTest, TestHttp2ClientTransportObjectCreation) {
       client_transport()->GetZTrace("transport_frames");
   EXPECT_NE(trace, nullptr);
 
-  auto socket_node = client_transport()->GetSocketNode();
+  RefCountedPtr<channelz::SocketNode> socket_node =
+      client_transport()->GetSocketNode();
   EXPECT_NE(socket_node, nullptr);
 
-  auto step = endpoint()->NewStep();
+  std::shared_ptr<EventSequenceEndpoint::Step> step = endpoint()->NewStep();
 
   step->ThenPerformRead(
-      {helper_.EventEngineSliceFromHttp2DataFrame(
+      {helper_.SerializedDataFrame(
            /*payload=*/"Hello!", /*stream_id=*/9, /*end_stream=*/false),
-       helper_.EventEngineSliceFromHttp2DataFrame(
+       helper_.SerializedDataFrame(
            /*payload=*/"Bye!", /*stream_id=*/11, /*end_stream=*/true)});
   step->ThenExpectWrite({
-      helper_.EventEngineSliceFromHttp2GoawayFrame(
+      helper_.SerializedGoawayFrame(
           /*debug_data=*/RFC9113::kUnknownStreamId, /*last_stream_id=*/0,
           /*error_code=*/
           static_cast<uint32_t>(Http2ErrorCode::kProtocolError)),
@@ -220,24 +220,23 @@ TEST_F(Http2ClientTransportTest, TestHttp2ClientTransportWriteFromCall) {
   // 2. Client starts a new stream and sends Initial Metadata, Data frame and
   //    half-closes the stream.
   // 3. Server sends back Trailers-only.
-  auto step = endpoint()->NewStep();
+  std::shared_ptr<EventSequenceEndpoint::Step> step = endpoint()->NewStep();
 
   step->ThenExpectWrite({
-      helper_.EventEngineSliceFromHttp2HeaderFrame(std::string(
-          kPathDemoServiceStep.begin(), kPathDemoServiceStep.end())),
+      helper_.SerializedHeaderFrame(std::string(kPathDemoServiceStep.begin(),
+                                                kPathDemoServiceStep.end())),
   });
-  step->ThenExpectWrite(
-      {helper_.EventEngineSliceFromHttp2DataFrame(data_payload,
-                                                  /*stream_id=*/1,
-                                                  /*end_stream=*/true)});
+  step->ThenExpectWrite({helper_.SerializedDataFrame(data_payload,
+                                                     /*stream_id=*/1,
+                                                     /*end_stream=*/true)});
 
   step->ThenExpectWrite([](SliceBuffer& buffer) {});
-  step->ThenPerformRead({helper_.EventEngineSliceFromHttp2HeaderFrame(
+  step->ThenPerformRead({helper_.SerializedHeaderFrame(
       std::string(kPathDemoServiceStep.begin(), kPathDemoServiceStep.end()),
       /*stream_id=*/1,
       /*end_headers=*/true, /*end_stream=*/true)});
 
-  auto initiator = StartCall(TestInitialMetadata());
+  CallInitiator initiator = StartCall(TestInitialMetadata());
 
   StrictMock<MockFunction<void()>> on_done;
   EXPECT_CALL(on_done, Call());
@@ -268,7 +267,7 @@ TEST_F(Http2ClientTransportTest, TestHttp2ClientTransportWriteFromCall) {
       RFC9113::kHttp2InitialWindowSize - (size_t(data_payload.size()) + 5u));
 
   // Teardown the transport.
-  auto step2 = endpoint()->NewStep();
+  std::shared_ptr<EventSequenceEndpoint::Step> step2 = endpoint()->NewStep();
   AddTransportCloseExpectations(step2.get());
   step2->Wait();
 }
@@ -286,22 +285,22 @@ TEST_F(Http2ClientTransportTest, TestHttp2ClientTransportPingRead) {
 
   // 2. Server sends a ping request.
   // 3. Client sends a ping ack.
-  auto step = endpoint()->NewStep();
+  std::shared_ptr<EventSequenceEndpoint::Step> step = endpoint()->NewStep();
 
   step->ThenPerformRead({
-      helper_.EventEngineSliceFromHttp2PingFrame(/*ack=*/false,
-                                                 /*opaque=*/1234),
+      helper_.SerializedPingFrame(/*ack=*/false,
+                                  /*opaque=*/1234),
   });
 
   step->ThenExpectWrite({
-      helper_.EventEngineSliceFromHttp2PingFrame(/*ack=*/true,
-                                                 /*opaque=*/1234),
+      helper_.SerializedPingFrame(/*ack=*/true,
+                                  /*opaque=*/1234),
   });
 
   step->Wait();
 
   // Teardown the transport.
-  auto step2 = endpoint()->NewStep();
+  std::shared_ptr<EventSequenceEndpoint::Step> step2 = endpoint()->NewStep();
   AddTransportCloseExpectations(step2.get());
   step2->Wait();
 }
@@ -324,21 +323,19 @@ TEST_F(Http2ClientTransportTest, TestHttp2ClientTransportPingWrite) {
   StrictMock<MockFunction<void()>> ping_ack_received;
   EXPECT_CALL(ping_ack_received, Call());
 
-  auto step = endpoint()->NewStep();
+  std::shared_ptr<EventSequenceEndpoint::Step> step = endpoint()->NewStep();
 
   // Redundant ack.
-  step->ThenPerformRead(
-      {helper_.EventEngineSliceFromHttp2PingFrame(/*ack=*/true,
-                                                  /*opaque=*/1234)});
+  step->ThenPerformRead({helper_.SerializedPingFrame(/*ack=*/true,
+                                                     /*opaque=*/1234)});
 
   step->ThenExpectWrite([&, step](SliceBuffer& buffer) {
     uint64_t opaque_id =
         VerifyPingFrameAndReturnOpaqueId(buffer, /*is_ack=*/false);
     // Now that we know the opaque ID, we expect the Server (Mock) to send back:
     // 1. Ping Ack with the same opaque ID.
-    step->InsertReadAtHead(
-        {helper_.EventEngineSliceFromHttp2PingFrame(/*ack=*/true,
-                                                    /*opaque=*/opaque_id)});
+    step->InsertReadAtHead({helper_.SerializedPingFrame(/*ack=*/true,
+                                                        /*opaque=*/opaque_id)});
   });
 
   client_transport()->TestOnlySpawnPromise("PingRequest", [this,
@@ -356,7 +353,7 @@ TEST_F(Http2ClientTransportTest, TestHttp2ClientTransportPingWrite) {
   event_engine()->Tick();
 
   // Teardown the transport.
-  auto step2 = endpoint()->NewStep();
+  std::shared_ptr<EventSequenceEndpoint::Step> step2 = endpoint()->NewStep();
   AddTransportCloseExpectations(step2.get());
   step2->Wait();
 }
@@ -374,14 +371,14 @@ TEST_F(Http2ClientTransportTest, TestHttp2ClientTransportPingTimeout) {
 
   // 2. Client sends a ping request.
   // 3. Ping timeout occurs and client transport is closed.
-  auto step = endpoint()->NewStep();
+  std::shared_ptr<EventSequenceEndpoint::Step> step = endpoint()->NewStep();
   step->ThenExpectWrite([&](SliceBuffer& buffer) {
     GRPC_UNUSED uint64_t opaque_id =
         VerifyPingFrameAndReturnOpaqueId(buffer, /*is_ack=*/false);
   });
 
   step->ThenExpectWrite({
-      helper_.EventEngineSliceFromHttp2GoawayFrame(
+      helper_.SerializedGoawayFrame(
           /*debug_data=*/GRPC_CHTTP2_PING_TIMEOUT_STR, /*last_stream_id=*/0,
           /*error_code=*/
           static_cast<uint32_t>(Http2ErrorCode::kRefusedStream)),
@@ -409,30 +406,30 @@ TEST_F(Http2ClientTransportTest, TestHeaderDataHeaderFrameOrder) {
   // 1. Client starts a new stream and sends Initial Metadata and half-closes
   //    the stream.
   // 2. Server sends Initial Metadata, Data frame and Trailing Metadata.
-  auto step = endpoint()->NewStep();
+  std::shared_ptr<EventSequenceEndpoint::Step> step = endpoint()->NewStep();
 
   step->ThenExpectWrite({
-      helper_.EventEngineSliceFromHttp2HeaderFrame(std::string(
-          kPathDemoServiceStep.begin(), kPathDemoServiceStep.end())),
+      helper_.SerializedHeaderFrame(std::string(kPathDemoServiceStep.begin(),
+                                                kPathDemoServiceStep.end())),
   });
   step->ThenExpectWrite({
-      helper_.EventEngineSliceFromEmptyHttp2DataFrame(/*stream_id=*/1,
-                                                      /*end_stream=*/true),
+      helper_.SerializedEmptyDataFrame(/*stream_id=*/1,
+                                       /*end_stream=*/true),
   });
 
   step->ThenPerformRead(
-      {helper_.EventEngineSliceFromHttp2HeaderFrame(
-           std::string(kPathDemoServiceStep.begin(),
-                       kPathDemoServiceStep.end()),
-           /*stream_id=*/1,
-           /*end_headers=*/true, /*end_stream=*/false),
-       helper_.EventEngineSliceFromHttp2DataFrame(
+      {helper_.SerializedHeaderFrame(std::string(kPathDemoServiceStep.begin(),
+                                                 kPathDemoServiceStep.end()),
+                                     /*stream_id=*/1,
+                                     /*end_headers=*/true,
+                                     /*end_stream=*/false),
+       helper_.SerializedDataFrame(
            /*payload=*/"Hello", /*stream_id=*/1, /*end_stream=*/false),
-       helper_.EventEngineSliceFromHttp2HeaderFrame(
-           std::string(kPathDemoServiceStep.begin(),
-                       kPathDemoServiceStep.end()),
-           /*stream_id=*/1,
-           /*end_headers=*/true, /*end_stream=*/true)});
+       helper_.SerializedHeaderFrame(std::string(kPathDemoServiceStep.begin(),
+                                                 kPathDemoServiceStep.end()),
+                                     /*stream_id=*/1,
+                                     /*end_headers=*/true,
+                                     /*end_stream=*/true)});
 
   CallInitiator initiator = StartCall(TestInitialMetadata());
 
@@ -484,7 +481,7 @@ TEST_F(Http2ClientTransportTest, TestHeaderDataHeaderFrameOrder) {
             RFC9113::kHttp2InitialWindowSize);
 
   // Tear down the transport.
-  auto step2 = endpoint()->NewStep();
+  std::shared_ptr<EventSequenceEndpoint::Step> step2 = endpoint()->NewStep();
   AddTransportCloseExpectations(step2.get());
   step2->Wait();
 }
@@ -501,29 +498,29 @@ TEST_F(Http2ClientTransportTest, TestCanStreamReceiveDataFrames) {
   // 1. Client starts a new stream and sends Initial Metadata.
   // 2. Server sends a data frame on the new stream followed by a GoAway frame.
   // 3. Client closes the stream with a RST_STREAM frame.
-  auto step = endpoint()->NewStep();
+  std::shared_ptr<EventSequenceEndpoint::Step> step = endpoint()->NewStep();
 
   step->ThenExpectWrite({
-      helper_.EventEngineSliceFromHttp2HeaderFrame(
+      helper_.SerializedHeaderFrame(
           std::string(kPathDemoServiceStep.begin(), kPathDemoServiceStep.end()),
           /*stream_id=*/1,
           /*end_headers=*/true, /*end_stream=*/false),
   });
 
   step->ThenPerformRead({
-      helper_.EventEngineSliceFromEmptyHttp2DataFrame(1, false),
-      helper_.EventEngineSliceFromHttp2GoawayFrame(
+      helper_.SerializedEmptyDataFrame(1, false),
+      helper_.SerializedGoawayFrame(
           /*debug_data=*/"kthxbye", /*last_stream_id=*/1,
           /*error_code=*/
           static_cast<uint32_t>(Http2ErrorCode::kNoError)),
   });
 
-  step->ThenExpectWrite({helper_.EventEngineSliceFromHttp2RstStreamFrame(
+  step->ThenExpectWrite({helper_.SerializedRstStreamFrame(
       /*stream_id=*/1, /*error_code=*/
       static_cast<uint32_t>(Http2ErrorCode::kStreamClosed))});
 
   step->ThenExpectWrite({
-      helper_.EventEngineSliceFromHttp2GoawayFrame(
+      helper_.SerializedGoawayFrame(
           /*debug_data=*/"kthxbye",
           /*last_stream_id=*/0,
           /*error_code=*/
@@ -564,23 +561,23 @@ TEST_F(Http2ClientTransportTest, StreamCleanupTrailingMetadata) {
   // 1. Client starts a new stream and sends Initial Metadata.
   // 2. Server sends Trailers-only.
   // 3. Client closes the stream and sends RST_STREAM.
-  auto step = endpoint()->NewStep();
+  std::shared_ptr<EventSequenceEndpoint::Step> step = endpoint()->NewStep();
 
   step->ThenExpectWrite({
-      helper_.EventEngineSliceFromHttp2HeaderFrame(
+      helper_.SerializedHeaderFrame(
           std::string(kPathDemoServiceStep.begin(), kPathDemoServiceStep.end()),
           /*stream_id=*/1,
           /*end_headers=*/true, /*end_stream=*/false),
   });
   step->ThenPerformRead({
-      helper_.EventEngineSliceFromHttp2HeaderFrame(
+      helper_.SerializedHeaderFrame(
           std::string(kPathDemoServiceStep.begin(), kPathDemoServiceStep.end()),
           /*stream_id=*/1,
           /*end_headers=*/true, /*end_stream=*/true),
   });
   step->ThenExpectWrite({
-      helper_.EventEngineSliceFromEmptyHttp2DataFrame(/*stream_id=*/1,
-                                                      /*end_stream=*/true),
+      helper_.SerializedEmptyDataFrame(/*stream_id=*/1,
+                                       /*end_stream=*/true),
   });
 
   CallInitiator initiator = StartCall(TestInitialMetadata());
@@ -600,7 +597,7 @@ TEST_F(Http2ClientTransportTest, StreamCleanupTrailingMetadata) {
   step->Wait();
 
   // Tear down the transport.
-  auto step2 = endpoint()->NewStep();
+  std::shared_ptr<EventSequenceEndpoint::Step> step2 = endpoint()->NewStep();
   AddTransportCloseExpectations(step2.get());
   step2->Wait();
 }
@@ -616,20 +613,20 @@ TEST_F(Http2ClientTransportTest, StreamCleanupTrailingMetadataWithResetStream) {
 
   // 1. Client starts a new stream and sends Initial Metadata.
   // 2. Server sends Trailers-only and RST_STREAM.
-  auto step = endpoint()->NewStep();
+  std::shared_ptr<EventSequenceEndpoint::Step> step = endpoint()->NewStep();
 
   step->ThenExpectWrite({
-      helper_.EventEngineSliceFromHttp2HeaderFrame(
+      helper_.SerializedHeaderFrame(
           std::string(kPathDemoServiceStep.begin(), kPathDemoServiceStep.end()),
           /*stream_id=*/1,
           /*end_headers=*/true, /*end_stream=*/false),
   });
   step->ThenPerformRead({
-      helper_.EventEngineSliceFromHttp2HeaderFrame(
+      helper_.SerializedHeaderFrame(
           std::string(kPathDemoServiceStep.begin(), kPathDemoServiceStep.end()),
           /*stream_id=*/1,
           /*end_headers=*/true, /*end_stream=*/true),
-      helper_.EventEngineSliceFromHttp2RstStreamFrame(),
+      helper_.SerializedRstStreamFrame(),
   });
 
   CallInitiator initiator = StartCall(TestInitialMetadata());
@@ -649,7 +646,7 @@ TEST_F(Http2ClientTransportTest, StreamCleanupTrailingMetadataWithResetStream) {
   step->Wait();
 
   // Tear down the transport.
-  auto step2 = endpoint()->NewStep();
+  std::shared_ptr<EventSequenceEndpoint::Step> step2 = endpoint()->NewStep();
   AddTransportCloseExpectations(step2.get());
   step2->Wait();
 }
@@ -665,16 +662,16 @@ TEST_F(Http2ClientTransportTest, StreamCleanupResetStream) {
 
   // 1. Client starts a new stream and sends Initial Metadata.
   // 2. Server sends RST_STREAM.
-  auto step = endpoint()->NewStep();
+  std::shared_ptr<EventSequenceEndpoint::Step> step = endpoint()->NewStep();
 
   step->ThenExpectWrite({
-      helper_.EventEngineSliceFromHttp2HeaderFrame(
+      helper_.SerializedHeaderFrame(
           std::string(kPathDemoServiceStep.begin(), kPathDemoServiceStep.end()),
           /*stream_id=*/1,
           /*end_headers=*/true, /*end_stream=*/false),
   });
   step->ThenPerformRead({
-      helper_.EventEngineSliceFromHttp2RstStreamFrame(),
+      helper_.SerializedRstStreamFrame(),
   });
 
   CallInitiator initiator = StartCall(TestInitialMetadata());
@@ -696,7 +693,7 @@ TEST_F(Http2ClientTransportTest, StreamCleanupResetStream) {
   event_engine()->Tick();
 
   // Tear down the transport.
-  auto step2 = endpoint()->NewStep();
+  std::shared_ptr<EventSequenceEndpoint::Step> step2 = endpoint()->NewStep();
   AddTransportCloseExpectations(step2.get());
   step2->Wait();
 }
@@ -709,16 +706,16 @@ TEST_F(Http2ClientTransportTest, Http2ClientTransportStreamAbortTest) {
 
   // 1. Client starts a new stream and sends Initial Metadata.
   // 2. Client cancels the stream and sends RST_STREAM.
-  auto step = endpoint()->NewStep();
+  std::shared_ptr<EventSequenceEndpoint::Step> step = endpoint()->NewStep();
 
   step->ThenExpectWrite({
-      helper_.EventEngineSliceFromHttp2HeaderFrame(
+      helper_.SerializedHeaderFrame(
           std::string(kPathDemoServiceStep.begin(), kPathDemoServiceStep.end()),
           /*stream_id=*/1,
           /*end_headers=*/true, /*end_stream=*/false),
   });
   step->ThenExpectWrite({
-      helper_.EventEngineSliceFromHttp2RstStreamFrame(
+      helper_.SerializedRstStreamFrame(
           /*stream_id=*/1,
           /*error_code=*/static_cast<uint32_t>(http2::Http2ErrorCode::kCancel)),
   });
@@ -749,7 +746,7 @@ TEST_F(Http2ClientTransportTest, Http2ClientTransportStreamAbortTest) {
   step->Wait();
 
   // Tear down the transport.
-  auto step2 = endpoint()->NewStep();
+  std::shared_ptr<EventSequenceEndpoint::Step> step2 = endpoint()->NewStep();
   AddTransportCloseExpectations(step2.get());
   step2->Wait();
 }
@@ -766,21 +763,21 @@ TEST_F(Http2ClientTransportTest, Http2ClientTransportAbortTest) {
   // 1. Client starts a new stream and sends Initial Metadata.
   // 2. Transport is closed by simulating a failed endpoint read.
   // 3. Client sends GOAWAY and RST_STREAM.
-  auto step = endpoint()->NewStep();
+  std::shared_ptr<EventSequenceEndpoint::Step> step = endpoint()->NewStep();
 
   step->ThenExpectWrite({
-      helper_.EventEngineSliceFromHttp2HeaderFrame(
+      helper_.SerializedHeaderFrame(
           std::string(kPathDemoServiceStep.begin(), kPathDemoServiceStep.end()),
           /*stream_id=*/1,
           /*end_headers=*/true, /*end_stream=*/false),
   });
   step->ThenFailRead(absl::UnavailableError(kConnectionClosed));
   step->ThenExpectWrite({
-      helper_.EventEngineSliceFromHttp2GoawayFrame(
+      helper_.SerializedGoawayFrame(
           /*debug_data=*/kConnectionClosed, /*last_stream_id=*/0,
           /*error_code=*/
           static_cast<uint32_t>(Http2ErrorCode::kInternalError)),
-      helper_.EventEngineSliceFromHttp2RstStreamFrame(
+      helper_.SerializedRstStreamFrame(
           /*stream_id=*/1, /*error_code=*/static_cast<uint32_t>(
               http2::Http2ErrorCode::kInternalError)),
   });
@@ -818,18 +815,18 @@ TEST_F(Http2ClientTransportTest, ReadGracefulGoaway) {
 
   // 1. Client starts a new stream with Initial Metadata and half close.
   // 2. Server sends graceful GOAWAY.
-  auto step = endpoint()->NewStep();
+  std::shared_ptr<EventSequenceEndpoint::Step> step = endpoint()->NewStep();
 
-  step->ThenExpectWrite({helper_.EventEngineSliceFromHttp2HeaderFrame(
+  step->ThenExpectWrite({helper_.SerializedHeaderFrame(
       std::string(kPathDemoServiceStep.begin(), kPathDemoServiceStep.end()))});
   step->ThenExpectWrite({
-      helper_.EventEngineSliceFromHttp2DataFrame(data_payload,
-                                                 /*stream_id=*/1,
-                                                 /*end_stream=*/true),
+      helper_.SerializedDataFrame(data_payload,
+                                  /*stream_id=*/1,
+                                  /*end_stream=*/true),
   });
 
   step->ThenPerformRead({
-      helper_.EventEngineSliceFromHttp2GoawayFrame(
+      helper_.SerializedGoawayFrame(
           "Graceful GOAWAY", /*last_stream_id=*/1, /*error_code=*/
           Http2ErrorCodeToFrameErrorCode(Http2ErrorCode::kNoError)),
   });
@@ -862,15 +859,15 @@ TEST_F(Http2ClientTransportTest, ReadGracefulGoaway) {
 
   // 3. Server sends Trailers-only for the stream.
   // 4. Client closes the stream, closes the transport and sends GOAWAY.
-  auto step2 = endpoint()->NewStep();
+  std::shared_ptr<EventSequenceEndpoint::Step> step2 = endpoint()->NewStep();
   step2->ThenPerformRead({
-      helper_.EventEngineSliceFromHttp2HeaderFrame(
+      helper_.SerializedHeaderFrame(
           std::string(kPathDemoServiceStep.begin(), kPathDemoServiceStep.end()),
           /*stream_id=*/1,
           /*end_headers=*/true, /*end_stream=*/true),
   });
   step2->ThenExpectWrite({
-      helper_.EventEngineSliceFromHttp2GoawayFrame(
+      helper_.SerializedGoawayFrame(
           /*debug_data=*/RFC9113::kLastStreamClosed,
           /*last_stream_id=*/0,
           /*error_code=*/
@@ -891,20 +888,20 @@ TEST_F(Http2ClientTransportTest, ReadGracefulGoawayCannotStartNewStreams) {
 
   // 1. Client starts a new stream with Initial Metadata and half close.
   // 2. Server sends graceful GOAWAY.
-  auto step = endpoint()->NewStep();
+  std::shared_ptr<EventSequenceEndpoint::Step> step = endpoint()->NewStep();
 
   // Check 1: Client sends headers and data
-  step->ThenExpectWrite({helper_.EventEngineSliceFromHttp2HeaderFrame(
+  step->ThenExpectWrite({helper_.SerializedHeaderFrame(
       std::string(kPathDemoServiceStep.begin(), kPathDemoServiceStep.end()))});
   step->ThenExpectWrite({
-      helper_.EventEngineSliceFromHttp2DataFrame(data_payload,
-                                                 /*stream_id=*/1,
-                                                 /*end_stream=*/true),
+      helper_.SerializedDataFrame(data_payload,
+                                  /*stream_id=*/1,
+                                  /*end_stream=*/true),
   });
 
   // After stream 1 is started, server sends a GOAWAY and trailing metadata.
   step->ThenPerformRead({
-      helper_.EventEngineSliceFromHttp2GoawayFrame(
+      helper_.SerializedGoawayFrame(
           "Graceful GOAWAY",
           /*last_stream_id=*/RFC9113::kMaxStreamId31Bit, /*error_code=*/
           Http2ErrorCodeToFrameErrorCode(Http2ErrorCode::kNoError)),
@@ -934,7 +931,7 @@ TEST_F(Http2ClientTransportTest, ReadGracefulGoawayCannotStartNewStreams) {
   event_engine()->Tick();
 
   // 3. Client attempts to start a new stream and fails.
-  auto step2 = endpoint()->NewStep();
+  std::shared_ptr<EventSequenceEndpoint::Step> step2 = endpoint()->NewStep();
 
   CallInitiator initiator2 = StartCall(TestInitialMetadata());
 
@@ -955,15 +952,15 @@ TEST_F(Http2ClientTransportTest, ReadGracefulGoawayCannotStartNewStreams) {
 
   // 4. Server sends trailers-only for the stream.
   // 5. Client closes the stream, closes the transport and sends GOAWAY.
-  auto step3 = endpoint()->NewStep();
+  std::shared_ptr<EventSequenceEndpoint::Step> step3 = endpoint()->NewStep();
   step3->ThenPerformRead({
-      helper_.EventEngineSliceFromHttp2HeaderFrame(
+      helper_.SerializedHeaderFrame(
           std::string(kPathDemoServiceStep.begin(), kPathDemoServiceStep.end()),
           /*stream_id=*/1,
           /*end_headers=*/true, /*end_stream=*/true),
   });
   step3->ThenExpectWrite({
-      helper_.EventEngineSliceFromHttp2GoawayFrame(
+      helper_.SerializedGoawayFrame(
           /*debug_data=*/RFC9113::kLastStreamClosed,
           /*last_stream_id=*/0,
           /*error_code=*/
@@ -982,14 +979,14 @@ TEST_F(Http2ClientTransportTest, TestFlowControlWindow) {
   SpawnTransportLoopsAndExchangeSettings();
 
   // 2. Server sends two WINDOW_UPDATE frames.
-  auto step = endpoint()->NewStep();
+  std::shared_ptr<EventSequenceEndpoint::Step> step = endpoint()->NewStep();
 
   // Simulate the client receiving two WINDOW_UPDATE frames from the peer.
   step->ThenPerformRead(
-      {helper_.EventEngineSliceFromHttp2WindowUpdateFrame(/*stream_id=*/0,
-                                                          /*increment=*/1000),
-       helper_.EventEngineSliceFromHttp2WindowUpdateFrame(/*stream_id=*/0,
-                                                          /*increment=*/500)});
+      {helper_.SerializedWindowUpdateFrame(/*stream_id=*/0,
+                                           /*increment=*/1000),
+       helper_.SerializedWindowUpdateFrame(/*stream_id=*/0,
+                                           /*increment=*/500)});
 
   step->Wait();
   // Tick to allow the transport to process the WINDOW_UPDATE frames.
@@ -999,7 +996,7 @@ TEST_F(Http2ClientTransportTest, TestFlowControlWindow) {
   EXPECT_EQ(client_transport()->TestOnlyTransportFlowControlWindow(),
             RFC9113::kHttp2InitialWindowSize + 1000 + 500);
 
-  auto step2 = endpoint()->NewStep();
+  std::shared_ptr<EventSequenceEndpoint::Step> step2 = endpoint()->NewStep();
   AddTransportCloseExpectations(step2.get());
   step2->Wait();
 }
@@ -1014,7 +1011,7 @@ TEST_F(Http2ClientTransportTest, TestInitialSequenceNumber) {
 
   ExecCtx ctx;
   // 1. Initialize the transport and exchange settings.
-  constexpr uint32_t kInitialSequenceNumber = 5;
+  constexpr uint32_t kInitialSequenceNumber = 5u;
   InitTransport(GetChannelArgs().Set(GRPC_ARG_HTTP2_INITIAL_SEQUENCE_NUMBER,
                                      kInitialSequenceNumber));
   SpawnTransportLoopsAndExchangeSettings();
@@ -1025,21 +1022,20 @@ TEST_F(Http2ClientTransportTest, TestInitialSequenceNumber) {
   // 2. Client starts a new stream (stream id = kInitialSequenceNumber) with
   //    Initial Metadata and half close.
   // 3. Server sends trailers-only for the stream.
-  auto step = endpoint()->NewStep();
+  std::shared_ptr<EventSequenceEndpoint::Step> step = endpoint()->NewStep();
 
-  step->ThenExpectWrite({helper_.EventEngineSliceFromHttp2HeaderFrame(
+  step->ThenExpectWrite({helper_.SerializedHeaderFrame(
       std::string(kPathDemoServiceStep.begin(), kPathDemoServiceStep.end()),
       /*stream_id=*/kInitialSequenceNumber, /*end_headers=*/true,
       /*end_stream=*/false)});
   step->ThenExpectWrite({
-      helper_.EventEngineSliceFromHttp2DataFrame(
-          data_payload,
-          /*stream_id=*/kInitialSequenceNumber,
-          /*end_stream=*/true),
+      helper_.SerializedDataFrame(data_payload,
+                                  /*stream_id=*/kInitialSequenceNumber,
+                                  /*end_stream=*/true),
   });
 
   step->ThenPerformRead({
-      helper_.EventEngineSliceFromHttp2HeaderFrame(
+      helper_.SerializedHeaderFrame(
           std::string(kPathDemoServiceStep.begin(), kPathDemoServiceStep.end()),
           /*stream_id=*/kInitialSequenceNumber,
           /*end_headers=*/true, /*end_stream=*/true),
@@ -1066,7 +1062,7 @@ TEST_F(Http2ClientTransportTest, TestInitialSequenceNumber) {
   event_engine()->Tick();
 
   // Teardown the transport.
-  auto step2 = endpoint()->NewStep();
+  std::shared_ptr<EventSequenceEndpoint::Step> step2 = endpoint()->NewStep();
   AddTransportCloseExpectations(step2.get());
   step2->Wait();
 }
@@ -1089,9 +1085,9 @@ TEST_F(Http2ClientTransportTest, TestMaxAllowedStreamId) {
 
   // 2. Client starts a new stream (stream id = kMaxAllowedStreamId) with
   //    Initial Metadata and half close.
-  auto step = endpoint()->NewStep();
+  std::shared_ptr<EventSequenceEndpoint::Step> step = endpoint()->NewStep();
 
-  step->ThenExpectWrite({helper_.EventEngineSliceFromHttp2HeaderFrame(
+  step->ThenExpectWrite({helper_.SerializedHeaderFrame(
       std::string(kPathDemoServiceStep.begin(), kPathDemoServiceStep.end()),
       /*stream_id=*/kMaxAllowedStreamId, /*end_headers=*/true,
       /*end_stream=*/false)});
@@ -1114,7 +1110,7 @@ TEST_F(Http2ClientTransportTest, TestMaxAllowedStreamId) {
   event_engine()->Tick();
 
   // 3. Client attempts to start a new stream and fails.
-  auto step2 = endpoint()->NewStep();
+  std::shared_ptr<EventSequenceEndpoint::Step> step2 = endpoint()->NewStep();
   CallInitiator initiator2 = StartCall(TestInitialMetadata());
   initiator2.SpawnInfallible("test-wait-call2", [&, initiator2]() mutable {
     return Seq(initiator2.PullServerTrailingMetadata(),
@@ -1132,17 +1128,17 @@ TEST_F(Http2ClientTransportTest, TestMaxAllowedStreamId) {
 
   // 4. Server sends trailers-only for the stream.
   // 5. Client closes the stream, closes the transport and sends GOAWAY.
-  auto step3 = endpoint()->NewStep();
-  step3->ThenPerformRead({helper_.EventEngineSliceFromHttp2HeaderFrame(
-                              std::string(kPathDemoServiceStep.begin(),
-                                          kPathDemoServiceStep.end()),
-                              /*stream_id=*/kMaxAllowedStreamId,
-                              /*end_headers=*/true, /*end_stream=*/true),
-                          helper_.EventEngineSliceFromHttp2RstStreamFrame(
-                              /*stream_id=*/kMaxAllowedStreamId)});
+  std::shared_ptr<EventSequenceEndpoint::Step> step3 = endpoint()->NewStep();
+  step3->ThenPerformRead(
+      {helper_.SerializedHeaderFrame(std::string(kPathDemoServiceStep.begin(),
+                                                 kPathDemoServiceStep.end()),
+                                     /*stream_id=*/kMaxAllowedStreamId,
+                                     /*end_headers=*/true, /*end_stream=*/true),
+       helper_.SerializedRstStreamFrame(
+           /*stream_id=*/kMaxAllowedStreamId)});
 
   step3->ThenExpectWrite({
-      helper_.EventEngineSliceFromHttp2GoawayFrame(
+      helper_.SerializedGoawayFrame(
           /*debug_data=*/RFC9113::kLastStreamClosed,
           /*last_stream_id=*/0,
           /*error_code=*/
@@ -1166,14 +1162,14 @@ TEST_F(Http2ClientTransportTest,
   SpawnTransportLoopsAndExchangeSettings();
 
   // 2. Peer reduces the initial window size to 0.
-  auto step = endpoint()->NewStep();
+  std::shared_ptr<EventSequenceEndpoint::Step> step = endpoint()->NewStep();
   std::vector<Http2SettingsFrame::Setting> settings;
   settings.push_back({Http2Settings::kInitialWindowSizeWireId, 0u});
   step->ThenPerformRead({
-      helper_.EventEngineSliceFromHttp2SettingsFrame(settings),
+      helper_.SerializedSettingsFrame(settings),
   });
   step->ThenExpectWrite({
-      helper_.EventEngineSliceFromHttp2SettingsFrameAck(),
+      helper_.SerializedSettingsFrameAck(),
   });
   step->Wait();
 
@@ -1182,9 +1178,9 @@ TEST_F(Http2ClientTransportTest,
   StrictMock<MockFunction<void()>> on_done;
   EXPECT_CALL(on_done, Call());
 
-  auto step2 = endpoint()->NewStep();
+  std::shared_ptr<EventSequenceEndpoint::Step> step2 = endpoint()->NewStep();
   step2->ThenExpectWrite({
-      helper_.EventEngineSliceFromHttp2HeaderFrame(
+      helper_.SerializedHeaderFrame(
           std::string(kPathDemoServiceStep.begin(), kPathDemoServiceStep.end()),
           /*stream_id=*/1, /*end_headers=*/true, /*end_stream=*/false),
   });
@@ -1210,23 +1206,23 @@ TEST_F(Http2ClientTransportTest,
   event_engine()->Tick();
 
   // 4. Peer sends WINDOW_UPDATE frame.
-  auto step3 = endpoint()->NewStep();
+  std::shared_ptr<EventSequenceEndpoint::Step> step3 = endpoint()->NewStep();
   step3->ThenPerformRead({
-      helper_.EventEngineSliceFromHttp2WindowUpdateFrame(
+      helper_.SerializedWindowUpdateFrame(
           /*stream_id=*/1, /*increment=*/65535),
   });
 
   // 5. Client processes the WINDOW_UPDATE frame and sends the stalled DATA
   //    frame.
   step3->ThenExpectWrite({
-      helper_.EventEngineSliceFromHttp2DataFrame("Hello!",
-                                                 /*stream_id=*/1,
-                                                 /*end_stream=*/true),
+      helper_.SerializedDataFrame("Hello!",
+                                  /*stream_id=*/1,
+                                  /*end_stream=*/true),
   });
 
   // 6. Peer sends Trailing metadata.
   step3->ThenPerformRead({
-      helper_.EventEngineSliceFromHttp2HeaderFrame(
+      helper_.SerializedHeaderFrame(
           std::string(kPathDemoServiceStep.begin(), kPathDemoServiceStep.end()),
           /*stream_id=*/1, /*end_headers=*/true, /*end_stream=*/true),
   });
@@ -1236,7 +1232,7 @@ TEST_F(Http2ClientTransportTest,
   event_engine()->Tick();
 
   // Tear down the transport.
-  auto step4 = endpoint()->NewStep();
+  std::shared_ptr<EventSequenceEndpoint::Step> step4 = endpoint()->NewStep();
   AddTransportCloseExpectations(step4.get());
   step4->Wait();
 }
@@ -1253,14 +1249,14 @@ TEST_F(Http2ClientTransportTest,
   SpawnTransportLoopsAndExchangeSettings();
 
   // 2. Peer reduces the initial window size to 0.
-  auto step = endpoint()->NewStep();
+  std::shared_ptr<EventSequenceEndpoint::Step> step = endpoint()->NewStep();
   std::vector<Http2SettingsFrame::Setting> settings;
   settings.push_back({Http2Settings::kInitialWindowSizeWireId, 0u});
   step->ThenPerformRead({
-      helper_.EventEngineSliceFromHttp2SettingsFrame(settings),
+      helper_.SerializedSettingsFrame(settings),
   });
   step->ThenExpectWrite({
-      helper_.EventEngineSliceFromHttp2SettingsFrameAck(),
+      helper_.SerializedSettingsFrameAck(),
   });
   step->Wait();
 
@@ -1268,9 +1264,9 @@ TEST_F(Http2ClientTransportTest,
   StrictMock<MockFunction<void()>> on_done;
   EXPECT_CALL(on_done, Call());
 
-  auto step2 = endpoint()->NewStep();
+  std::shared_ptr<EventSequenceEndpoint::Step> step2 = endpoint()->NewStep();
   step2->ThenExpectWrite({
-      helper_.EventEngineSliceFromHttp2HeaderFrame(
+      helper_.SerializedHeaderFrame(
           std::string(kPathDemoServiceStep.begin(), kPathDemoServiceStep.end()),
           /*stream_id=*/1, /*end_headers=*/true, /*end_stream=*/false),
   });
@@ -1297,26 +1293,26 @@ TEST_F(Http2ClientTransportTest,
 
   // 4. Peer increases the initial window size.
   // 5. Client processes the settings frame and sends the stalled DATA frame.
-  auto step3 = endpoint()->NewStep();
+  std::shared_ptr<EventSequenceEndpoint::Step> step3 = endpoint()->NewStep();
   settings.clear();
   settings.push_back({Http2Settings::kInitialWindowSizeWireId, 65535u});
   step3->ThenPerformRead({
-      helper_.EventEngineSliceFromHttp2SettingsFrame(settings),
+      helper_.SerializedSettingsFrame(settings),
   });
 
   step3->ThenExpectWrite({
-      helper_.EventEngineSliceFromHttp2SettingsFrameAck(),
+      helper_.SerializedSettingsFrameAck(),
   });
 
   step3->ThenExpectWrite({
-      helper_.EventEngineSliceFromHttp2DataFrame("Hello!",
-                                                 /*stream_id=*/1,
-                                                 /*end_stream=*/true),
+      helper_.SerializedDataFrame("Hello!",
+                                  /*stream_id=*/1,
+                                  /*end_stream=*/true),
   });
 
   // 7. Peer sends Trailing metadata.
   step3->ThenPerformRead({
-      helper_.EventEngineSliceFromHttp2HeaderFrame(
+      helper_.SerializedHeaderFrame(
           std::string(kPathDemoServiceStep.begin(), kPathDemoServiceStep.end()),
           /*stream_id=*/1, /*end_headers=*/true, /*end_stream=*/true),
   });
@@ -1326,7 +1322,7 @@ TEST_F(Http2ClientTransportTest,
   event_engine()->Tick();
 
   // Tear down the transport.
-  auto step4 = endpoint()->NewStep();
+  std::shared_ptr<EventSequenceEndpoint::Step> step4 = endpoint()->NewStep();
   AddTransportCloseExpectations(step4.get());
   step4->Wait();
 }
