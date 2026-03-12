@@ -18,6 +18,7 @@
 #define GRPC_SRC_CORE_XDS_GRPC_XDS_COMMON_TYPES_PARSER_H
 
 #include <optional>
+#include <vector>
 
 #include "envoy/config/common/mutation_rules/v3/mutation_rules.upb.h"
 #include "envoy/config/core/v3/base.upb.h"
@@ -74,6 +75,11 @@ StringMatcher StringMatcherParse(
 StringMatcher StringMatcherParse(
     const XdsResourceType::DecodeContext& context,
     const xds_type_matcher_v3_StringMatcher* matcher_proto,
+    ValidationErrors* errors);
+
+std::vector<StringMatcher> ListStringMatcherParse(
+    const XdsResourceType::DecodeContext& context,
+    const envoy_type_matcher_v3_ListStringMatcher* list_matcher_proto,
     ValidationErrors* errors);
 
 CommonTlsContext CommonTlsContextParse(
