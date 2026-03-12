@@ -1,4 +1,4 @@
-# Copyright 2019 gRPC authors.
+# Copyright 2026 The gRPC Authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -11,17 +11,3 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-cdef enum AioChannelStatus:
-    AIO_CHANNEL_STATUS_UNKNOWN
-    AIO_CHANNEL_STATUS_READY
-    AIO_CHANNEL_STATUS_CLOSING
-    AIO_CHANNEL_STATUS_DESTROYED
-
-cdef class AioChannel:
-    cdef:
-        grpc_channel * channel
-        object loop
-        readonly bytes target
-        AioChannelStatus _status
-        bint _is_secure
