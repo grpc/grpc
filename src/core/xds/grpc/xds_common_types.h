@@ -90,6 +90,17 @@ struct XdsGrpcService {
   std::unique_ptr<GrpcXdsServerTarget> server_target;
   Duration timeout;
   std::vector<std::pair<std::string, std::string>> initial_metadata;
+
+  bool operator==(const XdsGrpcService& other) const {
+    if (timeout != other.timeout) return false;
+    if (initial_metadata != other.initial_metadata) return false;
+    if (server_target == nullptr) return other.server_target == nullptr;
+    if (other.server_target == nullptr) return false;
+    if (!server_target->Equals(*other.server_target)) return false;
+    return true;
+  }
+
+  std::string ToString() const;
 };
 
 struct HeaderMutationRules {
