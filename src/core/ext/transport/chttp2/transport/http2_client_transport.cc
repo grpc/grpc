@@ -1310,9 +1310,9 @@ absl::Status Http2ClientTransport::InitializeStream(Stream& stream) {
                          << next_stream_id.value() << " to stream: " << &stream
                          << ", allow_true_binary_metadata:"
                          << settings_->peer().allow_true_binary_metadata();
-  stream.InitializeStream(next_stream_id.value(),
-                          settings_->peer().allow_true_binary_metadata(),
-                          settings_->acked().allow_true_binary_metadata());
+  stream.InitializeClientStream(
+      next_stream_id.value(), settings_->peer().allow_true_binary_metadata(),
+      settings_->acked().allow_true_binary_metadata());
   return absl::OkStatus();
 }
 
@@ -1998,9 +1998,8 @@ bool Http2ClientTransport::SetOnDone(CallHandler call_handler,
 
 std::optional<RefCountedPtr<Stream>> Http2ClientTransport::MakeStream(
     CallHandler call_handler) {
-  // https://datatracker.ietf.org/doc/html/rfc9113#name-stream-identifiers
-  RefCountedPtr<Stream> stream;
-  stream = MakeRefCounted<Stream>(call_handler, flow_control_);
+  RefCountedPtr<Stream> stream =
+      MakeRefCounted<Stream>(call_handler, flow_control_);
   const bool on_done_added = SetOnDone(std::move(call_handler), stream);
   if (!on_done_added) return std::nullopt;
   return std::move(stream);

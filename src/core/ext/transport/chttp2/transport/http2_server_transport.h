@@ -128,8 +128,8 @@ class Http2ServerTransport final : public ServerTransport,
   //////////////////////////////////////////////////////////////////////////////
   // Transport Functions
 
-  void SetCallDestination(
-      RefCountedPtr<UnstartedCallDestination> unstarted_call_handler) override;
+  void SetCallDestination(RefCountedPtr<UnstartedCallDestination>
+                              unstarted_call_destination) override;
 
   void PerformOp(grpc_transport_op*) override;
 
@@ -442,7 +442,7 @@ class Http2ServerTransport final : public ServerTransport,
 
   RefCountedPtr<Stream> LookupStream(uint32_t stream_id);
 
-  // void AddToStreamList(RefCountedPtr<Stream> stream);
+  void AddToStreamList(RefCountedPtr<Stream> stream);
 
   // absl::Status MaybeAddStreamToWritableStreamList(
   //     const RefCountedPtr<Stream> stream,
@@ -499,7 +499,11 @@ class Http2ServerTransport final : public ServerTransport,
   // absl::Status InitializeStream(Stream& stream);
 
   // Runs on the call party.
-  // std::optional<RefCountedPtr<Stream>> MakeStream(CallHandler call_handler);
+  std::optional<RefCountedPtr<Stream>> MakeStream(
+      CallInitiator&& call_initiator, const uint32_t stream_id);
+
+  absl::Status IncomingStream(ClientMetadataHandle&& metadata,
+                              const uint32_t stream_id);
 
   // void BeginCloseStream(RefCountedPtr<Stream> stream,
   //                       std::optional<uint32_t> reset_stream_error_code,
@@ -590,7 +594,7 @@ class Http2ServerTransport final : public ServerTransport,
                                  const char* reason)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(&transport_mutex_);
 
-  // bool SetOnDone(CallHandler call_handler, RefCountedPtr<Stream> stream);
+  bool SetOnDone(RefCountedPtr<Stream> stream);
 
   void ReadChannelArgs(const ChannelArgs& channel_args,
                        TransportChannelArgs& args);
