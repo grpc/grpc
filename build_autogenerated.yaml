@@ -20056,6 +20056,7 @@ targets:
   - test/core/event_engine/posix/posix_engine_test_utils.h
   - test/core/event_engine/test_suite/event_engine_test_framework.h
   - test/core/event_engine/test_suite/posix/oracle_event_engine_posix.h
+  - test/core/test_util/test_memory_allocator.h
   src:
   - test/core/event_engine/event_engine_test_utils.cc
   - test/core/event_engine/posix/posix_endpoint_test.cc
@@ -22637,7 +22638,8 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers: []
+  headers:
+  - test/core/test_util/test_memory_allocator.h
   src:
   - test/core/handshake/secure_endpoint_read_coalescing_test.cc
   deps:
