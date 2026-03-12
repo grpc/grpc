@@ -22,6 +22,7 @@
 #include <utility>
 
 #include "src/core/lib/promise/detail/promise_like.h"
+#include "src/core/lib/promise/promise.h"
 #include "absl/meta/type_traits.h"
 
 // PromiseFactory is an adaptor class.
@@ -129,7 +130,13 @@ GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION
     absl::enable_if_t<!IsVoidCallable<ResultOf<F(A)>>::value,
                       PromiseLike<Curried<RemoveCVRef<F>, A>>>
     PromiseFactoryImpl(Token, F&& f, A&& arg) {
-  return Curried<RemoveCVRef<F>, A>(std::forward<F>(f), std::forward<A>(arg));
+  return PromiseLike<Curried<RemoveCVRef<F>, A>>(
+      std::in_place,
+      [](F&& f, A&& arg) {
+        return Curried<RemoveCVRef<F>, A>(std::forward<F>(f),
+                                          std::forward<A>(arg));
+      },
+      std::forward<F>(f), std::forward<A>(arg));
 }
 
 // Promote a callable() -> T|Poll<T> to a PromiseFactory(A) -> Promise<T>
@@ -137,8 +144,8 @@ GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION
 template <typename A, typename F>
 GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline absl::enable_if_t<
     !IsVoidCallable<ResultOf<F()>>::value, PromiseLike<RemoveCVRef<F>>>
-PromiseFactoryImpl(OnceToken, F f, A&&) {
-  return PromiseLike<F>(std::move(f));
+PromiseFactoryImpl(OnceToken, F&& f, A&&) {
+  return PromiseLike<F>(std::forward<RemoveCVRef<F>>(f));
 }
 
 // Promote a callable() -> Poll<T> to a PromiseFactory() -> Promise<T>
@@ -147,8 +154,8 @@ GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline absl::enable_if_t<
     !IsVoidCallable<ResultOf<F()>>::value &&
         PollTraits<ResultOf<F()>>::is_poll(),
     PromiseLike<RemoveCVRef<F>>>
-PromiseFactoryImpl(OnceToken, F f) {
-  return PromiseLike<F>(std::move(f));
+PromiseFactoryImpl(OnceToken, F&& f) {
+  return PromiseLike<RemoveCVRef<F>>(std::forward<F>(f));
 }
 
 // Promote a callable() -> T to a PromiseFactory() -> Immediate<T>
@@ -158,7 +165,7 @@ GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline auto PromiseFactoryImpl(
                          !PollTraits<ResultOf<F()>>::is_poll() &&
                          !std::is_same_v<ResultOf<F()>, void>,
                      OnceToken>,
-    F f) {
+    F&& f) {
   auto f2 = [x = f()]() mutable { return std::move(x); };
   return PromiseLike<decltype(f2)>(std::move(f2));
 }
@@ -168,7 +175,7 @@ GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline auto PromiseFactoryImpl(
                          !PollTraits<ResultOf<F()>>::is_poll() &&
                          std::is_same_v<ResultOf<F()>, void>,
                      OnceToken>,
-    F f) {
+    F&& f) {
   f();
   auto f2 = []() { return Empty{}; };
   return PromiseLike<decltype(f2)>(std::move(f2));
@@ -180,7 +187,8 @@ GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline absl::enable_if_t<
     IsVoidCallable<ResultOf<F(A)>>::value,
     PromiseLike<decltype(std::declval<F>()(std::declval<A>()))>>
 PromiseFactoryImpl(Token, F&& f, A&& arg) {
-  return f(std::forward<A>(arg));
+  return PromiseLike<decltype(std::declval<F>()(std::declval<A>()))>(
+      std::in_place, std::forward<F>(f), std::forward<A>(arg));
 }
 
 // Given a callable(A) -> Promise<T>, name it a PromiseFactory and use it.
@@ -189,7 +197,8 @@ GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline absl::enable_if_t<
     IsVoidCallable<ResultOf<F(A)>>::value,
     PromiseLike<decltype(std::declval<F>()(std::declval<A>()))>>
 PromiseFactoryImpl(Token, F& f, A&& arg) {
-  return f(std::forward<A>(arg));
+  return PromiseLike<decltype(std::declval<F>()(std::declval<A>()))>(
+      std::in_place, f, std::forward<A>(arg));
 }
 
 // Given a callable() -> Promise<T>, promote it to a
@@ -199,7 +208,8 @@ GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION
     absl::enable_if_t<IsVoidCallable<ResultOf<F()>>::value,
                       PromiseLike<decltype(std::declval<F>()())>>
     PromiseFactoryImpl(Token, F&& f, A&&) {
-  return f();
+  return PromiseLike<decltype(std::declval<F>()())>(std::in_place,
+                                                    std::forward<F>(f));
 }
 
 // Given a callable() -> Promise<T>, name it a PromiseFactory and use it.
@@ -208,7 +218,8 @@ GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION
     absl::enable_if_t<IsVoidCallable<ResultOf<F()>>::value,
                       PromiseLike<decltype(std::declval<F>()())>>
     PromiseFactoryImpl(Token, F&& f) {
-  return f();
+  return PromiseLike<decltype(std::declval<F>()())>(std::in_place,
+                                                    std::forward<F>(f));
 }
 
 template <typename A, typename F>
@@ -225,8 +236,8 @@ class OncePromiseFactory {
                                               std::declval<A>()));
   using UnderlyingFactory = F;
 
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION explicit OncePromiseFactory(F f)
-      : f_(std::move(f)) {}
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION explicit OncePromiseFactory(F&& f)
+      : f_(std::forward<F>(f)) {}
 
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Promise Make(Arg&& a) {
     return PromiseFactoryImpl(OnceToken{}, std::move(f_), std::forward<Arg>(a));
@@ -243,8 +254,8 @@ class OncePromiseFactory<void, F> {
   using Promise = decltype(PromiseFactoryImpl(OnceToken{}, std::move(f_)));
   using UnderlyingFactory = F;
 
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION explicit OncePromiseFactory(F f)
-      : f_(std::move(f)) {}
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION explicit OncePromiseFactory(F&& f)
+      : f_(std::forward<F>(f)) {}
 
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Promise Make() {
     return PromiseFactoryImpl(OnceToken{}, std::move(f_));
@@ -265,8 +276,8 @@ class RepeatedPromiseFactory {
   using Promise =
       decltype(PromiseFactoryImpl(RepeatableToken{}, f_, std::declval<A>()));
 
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION explicit RepeatedPromiseFactory(F f)
-      : f_(std::move(f)) {}
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION explicit RepeatedPromiseFactory(F&& f)
+      : f_(std::forward<F>(f)) {}
 
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Promise Make(Arg&& a) const {
     return PromiseFactoryImpl(RepeatableToken{}, f_, std::forward<Arg>(a));
@@ -293,8 +304,8 @@ class RepeatedPromiseFactory<void, F> {
   using Arg = void;
   using Promise = decltype(PromiseFactoryImpl(RepeatableToken{}, f_));
 
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION explicit RepeatedPromiseFactory(F f)
-      : f_(std::move(f)) {}
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION explicit RepeatedPromiseFactory(F&& f)
+      : f_(std::forward<F>(f)) {}
 
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Promise Make() const {
     return PromiseFactoryImpl(RepeatableToken{}, f_);

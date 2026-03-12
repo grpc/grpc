@@ -71,6 +71,7 @@ class SimpleQueueFuzzTest : public YodelTest {
   using YodelTest::YodelTest;
 
   Party* GetParty() { return party_.get(); }
+  Arena* GetArena() { return party_->arena(); }
 
   void InitParty() {
     auto party_arena = SimpleArenaAllocator(0)->MakeArena();
@@ -116,7 +117,7 @@ YODEL_TEST(SimpleQueueFuzzTest, EnqueueAndDequeueMultiPartyTest) {
   // dequeues 100 entries. This test asserts the following:
   // 1. All enqueues and dequeues are successful.
   // 2. The dequeue data is the same as the enqueue data.
-  SimpleQueue<int> queue(/*max_tokens=*/100);
+  SimpleQueue<int> queue(GetArena(), /*max_tokens=*/100);
   StrictMock<MockFunction<void(absl::Status)>> on_done;
   StrictMock<MockFunction<void(absl::Status)>> on_dequeue_done;
   EXPECT_CALL(on_done, Call(absl::OkStatus()));
@@ -181,6 +182,7 @@ class StreamDataQueueFuzzTest : public YodelTest {
 
   Party* GetParty() { return party_.get(); }
   Party* GetParty2() { return party2_.get(); }
+  Arena* GetArena() { return party_->arena(); }
 
   void InitParty() {
     auto party_arena = SimpleArenaAllocator(0)->MakeArena();
@@ -224,7 +226,8 @@ class StreamDataQueueFuzzTest : public YodelTest {
   class AssembleFrames {
    public:
     explicit AssembleFrames(const uint32_t stream_id,
-                            const bool allow_true_binary_metadata) {
+                            const bool allow_true_binary_metadata)
+        : header_assembler_(/*is_client=*/true) {
       header_assembler_.InitializeStream(stream_id, allow_true_binary_metadata);
     }
     void operator()(Http2HeaderFrame frame) {
@@ -265,7 +268,6 @@ class StreamDataQueueFuzzTest : public YodelTest {
       ValueOrHttp2Status<ClientMetadataHandle> status_or_metadata =
           header_assembler_.ReadMetadata(
               parser_, /*is_initial_metadata=*/true,
-              /*is_client=*/true,
               /*max_header_list_size_soft_limit=*/
               default_settings_.max_header_list_size(),
               /*max_header_list_size_hard_limit=*/
@@ -320,7 +322,7 @@ class StreamDataQueueFuzzTest : public YodelTest {
   RefCountedPtr<Party> party_;
   RefCountedPtr<Party> party2_;
   HPackCompressor encoder_;
-  http2::TransportWriteContext transport_write_context_;
+  http2::TransportWriteContext transport_write_context_{/*is_client=*/true};
 };
 
 // TODO(akshitpatel) : [PH2][P3] : Add a test for server side.
@@ -344,6 +346,7 @@ YODEL_TEST(StreamDataQueueFuzzTest, EnqueueDequeueMultiParty) {
   EXPECT_CALL(on_dequeue_done, Call());
   HPackCompressor encoder;
   StreamDataQueue<ClientMetadataHandle> stream_data_queue(
+      GetArena(),
       /*is_client=*/true,
       /*queue_size=*/queue_size);
   stream_data_queue.SetStreamId(stream_id,

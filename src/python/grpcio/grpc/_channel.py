@@ -118,7 +118,7 @@ def _unknown_code_details(
     )
 
 
-class _RPCState(object):
+class _RPCState:
     condition: threading.Condition
     due: Set[cygrpc.OperationType]
     initial_metadata: Optional[MetadataType]
@@ -1686,7 +1686,7 @@ class _InitialMetadataFlags(int):
         return self
 
 
-class _ChannelCallState(object):
+class _ChannelCallState:
     channel: cygrpc.Channel
     managed_calls: int
     threading: bool
@@ -1792,7 +1792,7 @@ def _channel_managed_call_management(state: _ChannelCallState):
     return create
 
 
-class _ChannelConnectivityState(object):
+class _ChannelConnectivityState:
     lock: threading.RLock
     channel: grpc.Channel
     polling: bool

@@ -32,6 +32,7 @@
 #include "src/core/ext/transport/chttp2/transport/write_cycle.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/poll.h"
+#include "src/core/lib/slice/slice.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "absl/log/log.h"
 #include "absl/status/status.h"
@@ -115,6 +116,9 @@ class Http2ReadContext {
   Waker read_loop_waker_;
 };
 
+Http2Status ValidateIncomingConnectionPreface(
+    const absl::StatusOr<Slice>& status);
+
 ///////////////////////////////////////////////////////////////////////////////
 // Settings helpers
 
@@ -167,18 +171,17 @@ void ProcessOutgoingDataFrameFlowControl(
 ValueOrHttp2Status<chttp2::FlowControlAction>
 ProcessIncomingDataFrameFlowControl(Http2FrameHeader& frame,
                                     chttp2::TransportFlowControl& flow_control,
-                                    RefCountedPtr<Stream> stream);
+                                    Stream* stream);
 
 // Returns true if a write should be triggered
 bool ProcessIncomingWindowUpdateFrameFlowControl(
     const Http2WindowUpdateFrame& frame,
-    chttp2::TransportFlowControl& flow_control, RefCountedPtr<Stream> stream);
+    chttp2::TransportFlowControl& flow_control, Stream* stream);
 
 void MaybeAddTransportWindowUpdateFrame(
     chttp2::TransportFlowControl& flow_control, FrameSender& frame_sender);
 
-void MaybeAddStreamWindowUpdateFrame(RefCountedPtr<Stream> stream,
-                                     FrameSender& frame_sender);
+void MaybeAddStreamWindowUpdateFrame(Stream& stream, FrameSender& frame_sender);
 
 ///////////////////////////////////////////////////////////////////////////////
 // Header and Continuation frame processing helpers
@@ -215,7 +218,7 @@ void MaybeAddStreamWindowUpdateFrame(RefCountedPtr<Stream> stream,
 // it returns the original status.
 Http2Status ParseAndDiscardHeaders(HPackParser& parser, SliceBuffer&& buffer,
                                    HeaderAssembler::ParseHeaderArgs args,
-                                   RefCountedPtr<Stream> stream,
+                                   Stream* stream,
                                    Http2Status&& original_status);
 
 }  // namespace http2

@@ -13,8 +13,8 @@
  <date>2019-09-24</date>
  <time>16:06:07</time>
  <version>
-  <release>1.79.0dev</release>
-  <api>1.79.0dev</api>
+  <release>1.81.0dev</release>
+  <api>1.81.0dev</api>
  </version>
  <stability>
   <release>beta</release>
@@ -22,7 +22,7 @@
  </stability>
  <license>Apache 2.0</license>
  <notes>
-- gRPC Core 1.79.0 update
+- gRPC Core 1.81.0 update
  </notes>
  <contents>
   <dir baseinstalldir="/" name="/">
@@ -85,6 +85,7 @@
     <file baseinstalldir="/" name="include/grpc/impl/slice_type.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/load_reporting.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/passive_listener.h" role="src" />
+    <file baseinstalldir="/" name="include/grpc/private_key_signer.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/slice.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/slice_buffer.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/status.h" role="src" />
@@ -415,8 +416,6 @@
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/hpack_parser_table.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/http2_client_transport.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/http2_client_transport.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/http2_server_transport.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/http2_server_transport.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/http2_settings.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/http2_settings.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/http2_settings_manager.cc" role="src" />
@@ -1352,7 +1351,6 @@
     <file baseinstalldir="/" name="src/core/handshaker/proxy_mapper.h" role="src" />
     <file baseinstalldir="/" name="src/core/handshaker/proxy_mapper_registry.cc" role="src" />
     <file baseinstalldir="/" name="src/core/handshaker/proxy_mapper_registry.h" role="src" />
-    <file baseinstalldir="/" name="src/core/handshaker/security/legacy_secure_endpoint.cc" role="src" />
     <file baseinstalldir="/" name="src/core/handshaker/security/pipelined_secure_endpoint.cc" role="src" />
     <file baseinstalldir="/" name="src/core/handshaker/security/secure_endpoint.cc" role="src" />
     <file baseinstalldir="/" name="src/core/handshaker/security/secure_endpoint.h" role="src" />
