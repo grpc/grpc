@@ -328,8 +328,6 @@ class Http2ClientTransport final : public ClientTransport,
     return false;
   }
 
-  absl::Status InitializeStream(Stream& stream);
-
   //////////////////////////////////////////////////////////////////////////////
   // Spawn Helpers and Promise Helpers
 
@@ -395,24 +393,12 @@ class Http2ClientTransport final : public ClientTransport,
                           std::forward<OnDone>(on_done));
   }
 
-  // Runs on the call party.
-  std::optional<RefCountedPtr<Stream>> MakeStream(CallHandler call_handler);
-
-  // This function MUST be idempotent.
-  void CloseStream(Stream& stream, CloseStreamArgs args,
-                   DebugLocation whence = {});
-
-  void BeginCloseStream(RefCountedPtr<Stream> stream,
-                        std::optional<uint32_t> reset_stream_error_code,
-                        ServerMetadataHandle&& metadata,
-                        DebugLocation whence = {});
-
   //////////////////////////////////////////////////////////////////////////////
   // Settings
 
+  void EnforceLatestIncomingSettings();
   auto WaitForSettingsTimeoutOnDone();
   void MaybeSpawnWaitForSettingsTimeout();
-  void EnforceLatestIncomingSettings();
 
   //////////////////////////////////////////////////////////////////////////////
   // Flow Control and BDP
@@ -496,25 +482,25 @@ class Http2ClientTransport final : public ClientTransport,
   //////////////////////////////////////////////////////////////////////////////
   // Stream Operations
 
-  // This function MUST run on the transport party.
-  void CloseTransport();
+  absl::Status InitializeStream(Stream& stream);
 
-  void MaybeSpawnCloseTransport(Http2Status http2_status,
-                                DebugLocation whence = {});
+  // Runs on the call party.
+  std::optional<RefCountedPtr<Stream>> MakeStream(CallHandler call_handler);
 
-  uint32_t GetMaxAllowedStreamId() const;
+  void BeginCloseStream(RefCountedPtr<Stream> stream,
+                        std::optional<uint32_t> reset_stream_error_code,
+                        ServerMetadataHandle&& metadata,
+                        DebugLocation whence = {});
 
-  void SetMaxAllowedStreamId(uint32_t max_allowed_stream_id);
-
-  bool CanCloseTransportLocked() const
-      ABSL_EXCLUSIVE_LOCKS_REQUIRED(transport_mutex_);
+  // This function MUST be idempotent.
+  void CloseStream(Stream& stream, CloseStreamArgs args,
+                   DebugLocation whence = {});
 
   //////////////////////////////////////////////////////////////////////////////
   // Ping Keepalive and Goaway
 
   void MaybeSpawnPingTimeout(std::optional<uint64_t> opaque_data);
   void MaybeSpawnDelayedPing(std::optional<Duration> delayed_ping_wait);
-  void MaybeSpawnKeepaliveLoop();
 
   auto SendPing(absl::AnyInvocable<void()> on_initiate, bool important) {
     return ping_manager_->RequestPing(std::move(on_initiate), important);
@@ -522,7 +508,6 @@ class Http2ClientTransport final : public ClientTransport,
 
   auto WaitForPingAck() { return ping_manager_->WaitForPingAck(); }
 
-  // Ping Helper functions
   Duration NextAllowedPingInterval() {
     MutexLock lock(&transport_mutex_);
     return (!keepalive_permit_without_calls_ &&
@@ -533,8 +518,22 @@ class Http2ClientTransport final : public ClientTransport,
 
   absl::Status AckPing(uint64_t opaque_data);
 
+  void MaybeSpawnKeepaliveLoop();
+
+  uint32_t GetMaxAllowedStreamId() const;
+  void SetMaxAllowedStreamId(uint32_t max_allowed_stream_id);
+
   //////////////////////////////////////////////////////////////////////////////
   // Error Path and Close Path
+
+  void MaybeSpawnCloseTransport(Http2Status http2_status,
+                                DebugLocation whence = {});
+
+  bool CanCloseTransportLocked() const
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(transport_mutex_);
+
+  // This function MUST run on the transport party.
+  void CloseTransport();
 
   // Handles the error status and returns the corresponding absl status. Absl
   // Status is returned so that the error can be gracefully handled

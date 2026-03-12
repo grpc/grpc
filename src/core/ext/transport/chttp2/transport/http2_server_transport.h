@@ -421,6 +421,12 @@ class Http2ServerTransport final : public ServerTransport,
 
   void MaybeGetWindowUpdateFrames(FrameSender& frame_sender);
 
+  // On receiving an increase in the initial_window size, update the writability
+  // for all active streams. This may un-stall streams that are stalled due to
+  // lack of flow control tokens. This is needed as the stream flow control
+  // tokens are calculated based on the initial window size.
+  // absl::Status UpdateAllStreamsWritability();
+
   auto FlowControlPeriodicUpdateLoop();
 
   // TODO(tjagtap) [PH2][P2][BDP] Remove this when the BDP code is done.
@@ -590,7 +596,7 @@ class Http2ServerTransport final : public ServerTransport,
                        TransportChannelArgs& args);
 
   auto SecurityFrameLoop() {
-    GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport::SecurityFrameLoop Factory";
+    GRPC_HTTP2_SERVER_DLOG << "Http2ServerTransport::SecurityFrameLoop Factory";
     return AssertResultType<Empty>(Loop([this]() {
       return Map(security_frame_handler_->WaitForSecurityFrameSending(),
                  [this](Empty) -> LoopCtl<Empty> {
