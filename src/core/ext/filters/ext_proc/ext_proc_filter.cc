@@ -128,7 +128,13 @@ void ExtProcFilter::InterceptCall(
     UnstartedCallHandler unstarted_call_handler) {
   // Consume the call coming to us from the client side.
   CallHandler handler = Consume(std::move(unstarted_call_handler));
-  // FIXME: implement
+  handler.SpawnGuarded("ext_proc_call", [self = RefAsSubclass<ExtProcFilter>(), handler]() mutable {
+    return TrySeq(
+        handler.PullClientInitialMetadata(),
+        [handler, self](ClientMetadataHandle metadata) {
+          return absl::OkStatus();
+        });
+  });
 }
 
 }  // namespace grpc_core
