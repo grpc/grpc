@@ -650,29 +650,31 @@ Http2Status Http2ServerTransport::ProcessIncomingFrame(
          " stream_id="
       << frame.stream_id << ", increment=" << frame.increment << "}";
 
-  //   RefCountedPtr<Stream> stream = nullptr;
-  //   if (frame.stream_id != 0) {
-  //     stream = LookupStream(frame.stream_id);
-  //   }
-  //   if (stream != nullptr) {
-  //     StreamWritabilityUpdate update =
-  //         stream->ReceivedFlowControlWindowUpdate(frame.increment);
-  //     if (update.became_writable) {
-  //       absl::Status status = writable_stream_list_.EnqueueWrapper(
-  //           stream, update.priority,
-  //           AreTransportFlowControlTokensAvailable());
-  //       if (!status.ok()) {
-  //         return ToHttpOkOrConnError(status);
-  //       }
+  // RefCountedPtr<Stream> stream = nullptr;
+  // if (frame.stream_id != 0) {
+  //   stream = LookupStream(frame.stream_id);
+  // }
+
+  // const bool should_trigger_write =
+  // ProcessIncomingWindowUpdateFrameFlowControl(
+  //     frame, flow_control_, stream.get());
+
+  // if (should_trigger_write) {
+  //   return ToHttpOkOrConnError(TriggerWriteCycle());
+  // }
+
+  // if (stream != nullptr) {
+  //   StreamWritabilityUpdate update =
+  //       stream->UpdateStreamWritability(GetStreamFlowControlTokens(
+  //           stream->GetStreamFlowControl(), settings_->peer()));
+  //   if (update.became_writable) {
+  //     absl::Status status = writable_stream_list_.EnqueueWrapper(
+  //         stream, update.priority, AreTransportFlowControlTokensAvailable());
+  //     if (!status.ok()) {
+  //       return ToHttpOkOrConnError(status);
   //     }
   //   }
-
-  //   const bool should_trigger_write =
-  //   ProcessIncomingWindowUpdateFrameFlowControl(
-  //       frame, flow_control_, stream.get());
-  //   if (should_trigger_write) {
-  //     return ToHttpOkOrConnError(TriggerWriteCycle());
-  //   }
+  // }
   return Http2Status::Ok();
 }
 
@@ -949,9 +951,28 @@ auto Http2ServerTransport::ReadLoop() {
 
 //   goaway_manager_.MaybeGetSerializedGoawayFrame(frame_sender);
 //   bool should_spawn_security_frame_loop = false;
-//   http2::Http2ErrorCode apply_status =
-//       settings_->MaybeReportAndApplyBufferedPeerSettings(
-//           event_engine_.get(), should_spawn_security_frame_loop);
+// const uint32_t old_initial_window_size =
+//     settings_->peer().initial_window_size();
+// http2::Http2ErrorCode apply_status =
+//     settings_->MaybeReportAndApplyBufferedPeerSettings(
+//         event_engine_.get(), should_spawn_security_frame_loop);
+
+// if (apply_status == http2::Http2ErrorCode::kNoError) {
+//   const uint32_t new_initial_window_size =
+//       settings_->peer().initial_window_size();
+//   if (new_initial_window_size > old_initial_window_size) {
+//     // TODO(akshitpatel) [PH2][P5] : Currently, if calling
+//     // UpdateAllStreamsWritability() makes one or more streams writable. Once
+//     // a stream is writable, it is enqueued to the writable stream list.
+//     // However, these streams are not written out until the next write cycle.
+//     // Might be worth considering to write out these streams immediately.
+//     settings_->IncrementInitialWindowSizeIncreaseCount();
+//     absl::Status status = UpdateAllStreamsWritability();
+//     if (GPR_UNLIKELY(!status.ok())) {
+//       return status;
+//     }
+//   }
+// }
 //   if (should_spawn_security_frame_loop) {
 //     const SecurityFrameHandler::EndpointExtensionState state =
 //         security_frame_handler_->Initialize(event_engine_);
@@ -1775,6 +1796,35 @@ RefCountedPtr<Stream> Http2ServerTransport::LookupStream(uint32_t stream_id) {
 //     GRPC_UNUSED absl::Status status = HandleError(
 //         /*stream_id=*/std::nullopt, std::move(*close_transport_error));
 //   }
+// }
+
+// absl::Status Http2ServerTransport::UpdateAllStreamsWritability() {
+//   MutexLock lock(&transport_mutex_);
+//   GRPC_HTTP2_SERVER_DLOG
+//       << "Http2ServerTransport::UpdateAllStreamsWritability total streams: "
+//       << stream_list_.size();
+//   // This loop iterates over all active streams. For each stream this would
+//   // internally take a stream specific lock and update the stream
+//   writability.
+//   // This is not optimal but should be fine as this function is only called
+//   when
+//   // initial window size is increased which in theory should not be very
+//   // frequent.
+//   for (const auto& [stream_id, stream] : stream_list_) {
+//     StreamWritabilityUpdate update =
+//         stream->UpdateStreamWritability(GetStreamFlowControlTokens(
+//             stream->GetStreamFlowControl(), settings_->peer()));
+//     absl::Status status = MaybeAddStreamToWritableStreamList(stream, update);
+//     if (GPR_UNLIKELY(!status.ok())) {
+//       GRPC_HTTP2_SERVER_DLOG << "Http2ServerTransport::"
+//                                 "UpdateAllStreamsWritability failed for
+//                                 stream "
+//                              << stream_id << " with status " << status;
+//       return status;
+//     }
+//   }
+
+//   return absl::OkStatus();
 // }
 
 //////////////////////////////////////////////////////////////////////////////

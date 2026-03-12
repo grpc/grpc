@@ -423,6 +423,12 @@ class Http2ClientTransport final : public ClientTransport,
 
   void MaybeGetWindowUpdateFrames(FrameSender& frame_sender);
 
+  // On receiving an increase in the initial_window size, update the writability
+  // for all active streams. This may un-stall streams that are stalled due to
+  // lack of flow control tokens. This is needed as the stream flow control
+  // tokens are calculated based on the initial window size.
+  absl::Status UpdateAllStreamsWritability();
+
   auto FlowControlPeriodicUpdateLoop();
 
   // TODO(tjagtap) [PH2][P2][BDP] Remove this when the BDP code is done.
