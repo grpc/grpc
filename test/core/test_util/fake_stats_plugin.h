@@ -234,9 +234,16 @@ class FakeStatsPlugin : public StatsPlugin {
       bool use_disabled_by_default_metrics = false)
       : channel_filter_(std::move(channel_filter)),
         use_disabled_by_default_metrics_(use_disabled_by_default_metrics) {
+    InstrumentLabelSet labels;
     GlobalInstrumentsRegistry::ForEach(
         [&](const GlobalInstrumentsRegistry::GlobalInstrumentDescriptor&
                 descriptor) {
+          for (const auto& key : descriptor.label_keys) {
+            labels.Set(InstrumentLabel(key));
+          }
+          for (const auto& key : descriptor.optional_label_keys) {
+            labels.Set(InstrumentLabel(key));
+          }
           if (!use_disabled_by_default_metrics &&
               !descriptor.enable_by_default) {
             return;
@@ -281,6 +288,12 @@ class FakeStatsPlugin : public StatsPlugin {
               Crash("unknown instrument type");
           }
         });
+    InstrumentMetadata::ForEachInstrument([&](const auto* desc) {
+      for (const auto& l : desc->domain->label_names()) {
+        labels.Set(l);
+      }
+    });
+    collection_scope_ = CreateCollectionScope({}, labels);
   }
 
   RefCountedPtr<CollectionScope> GetCollectionScope() const override {

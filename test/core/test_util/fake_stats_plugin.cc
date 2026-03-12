@@ -225,7 +225,7 @@ std::optional<T> FakeStatsPlugin::GetMetricValueByNameImpl(
   DomainMetricsSink<T> sink(name, keys, values);
   MetricsQuery()
       .OnlyMetrics({std::string(name)})
-      .Run(GlobalCollectionScope(), sink);
+      .Run(GetCollectionScope(), sink);
   return sink.captured_value();
 }
 
