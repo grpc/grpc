@@ -216,7 +216,11 @@ std::optional<T> FakeStatsPlugin::GetMetricValueByNameImpl(
   const auto* desc = instrument_detail::InstrumentIndex::Get().Find(name);
   if (desc == nullptr) return std::nullopt;
   const auto& names = desc->domain->label_names();
-  std::vector<std::string> keys(names.begin(), names.end());
+  std::vector<std::string> keys;
+  keys.reserve(names.size());
+  for (const auto& l : names) {
+    keys.emplace_back(l.label());
+  }
   std::vector<std::string> values(labels.begin(), labels.end());
   DomainMetricsSink<T> sink(name, keys, values);
   MetricsQuery()

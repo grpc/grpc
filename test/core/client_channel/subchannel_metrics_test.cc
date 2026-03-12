@@ -25,6 +25,15 @@ namespace grpc_core {
 namespace testing {
 namespace {
 
+std::vector<std::string> GetLabelNames(const InstrumentLabelList& list) {
+  std::vector<std::string> names;
+  names.reserve(list.size());
+  for (const auto& l : list) {
+    names.push_back(std::string(l.label()));
+  }
+  return names;
+}
+
 class SubchannelTest : public ::testing::Test {
  protected:
   void SetUp() override { grpc_init(); }
@@ -42,7 +51,7 @@ TEST_F(SubchannelTest, MetricDefinitionDisconnections) {
   EXPECT_TRUE(std::holds_alternative<InstrumentMetadata::CounterShape>(
       descriptor->shape));
   EXPECT_THAT(
-      descriptor->domain->label_names(),
+      GetLabelNames(descriptor->domain->label_names()),
       ::testing::ElementsAre("grpc.target", "grpc.lb.backend_service",
                              "grpc.lb.locality", "grpc.disconnect_error"));
 }
@@ -63,7 +72,7 @@ TEST_F(SubchannelTest, MetricDefinitionConnectionAttemptsSucceeded) {
     EXPECT_EQ(descriptor->unit, "attempt");
     EXPECT_TRUE(std::holds_alternative<InstrumentMetadata::CounterShape>(
         descriptor->shape));
-    EXPECT_THAT(descriptor->domain->label_names(),
+    EXPECT_THAT(GetLabelNames(descriptor->domain->label_names()),
                 ::testing::ElementsAre("grpc.target", "grpc.lb.backend_service",
                                        "grpc.lb.locality"));
   }
@@ -79,7 +88,7 @@ TEST_F(SubchannelTest, MetricDefinitionOpenConnections) {
   EXPECT_TRUE(std::holds_alternative<InstrumentMetadata::UpDownCounterShape>(
       descriptor->shape));
   EXPECT_THAT(
-      descriptor->domain->label_names(),
+      GetLabelNames(descriptor->domain->label_names()),
       ::testing::ElementsAre("grpc.target", "grpc.security_level",
                              "grpc.lb.backend_service", "grpc.lb.locality"));
 }

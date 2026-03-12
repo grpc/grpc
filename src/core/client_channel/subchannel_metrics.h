@@ -26,8 +26,8 @@ class SubchannelMetricsDomainAttempts final
  public:
   using Backend = LowContentionBackend;
   static constexpr absl::string_view kName = "subchannel";
-  static constexpr auto kLabels =
-      Labels("grpc.target", "grpc.lb.backend_service", "grpc.lb.locality");
+  GRPC_INSTRUMENT_DOMAIN_LABELS("grpc.target", "grpc.lb.backend_service",
+                                "grpc.lb.locality");
 
   static inline const auto kConnectionAttemptsSucceeded =
       RegisterCounter("grpc.subchannel.connection_attempts_succeeded",
@@ -42,9 +42,8 @@ class SubchannelMetricsDomainDisconnections final
  public:
   using Backend = LowContentionBackend;
   static constexpr absl::string_view kName = "subchannel";
-  static constexpr auto kLabels =
-      Labels("grpc.target", "grpc.lb.backend_service", "grpc.lb.locality",
-             "grpc.disconnect_error");
+  GRPC_INSTRUMENT_DOMAIN_LABELS("grpc.target", "grpc.lb.backend_service",
+                                "grpc.lb.locality", "grpc.disconnect_error");
 
   static inline const auto kDisconnections = RegisterCounter(
       "grpc.subchannel.disconnections",
@@ -57,9 +56,8 @@ class SubchannelConnectionsDomainOpenConnections final
  public:
   using Backend = LowContentionBackend;
   static constexpr absl::string_view kName = "subchannel";
-  static constexpr auto kLabels =
-      Labels("grpc.target", "grpc.security_level", "grpc.lb.backend_service",
-             "grpc.lb.locality");
+  GRPC_INSTRUMENT_DOMAIN_LABELS("grpc.target", "grpc.security_level",
+                                "grpc.lb.backend_service", "grpc.lb.locality");
 
   static inline const auto kOpenConnections = RegisterUpDownCounter(
       "grpc.subchannel.open_connections",

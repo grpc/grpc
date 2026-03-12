@@ -520,58 +520,74 @@ class FakeStatsPlugin : public StatsPlugin {
     DomainMetricsSink(absl::string_view target_name,
                       absl::Span<const std::string> label_keys,
                       absl::Span<const std::string> label_values)
-        : target_name_(target_name),
-          target_label_keys_(label_keys.begin(), label_keys.end()),
-          target_label_values_(label_values.begin(), label_values.end()) {}
+        : target_name_(target_name) {
+      for (size_t i = 0; i < label_keys.size(); ++i) {
+        target_labels_.emplace(label_keys[i], label_values[i]);
+      }
+    }
 
-    void Counter(absl::Span<const std::string> label_keys,
+    void Counter(InstrumentLabelList label_keys,
                  absl::Span<const std::string> label_values,
                  absl::string_view name, uint64_t value) override {
-      if (name != target_name_) return;
-      if (label_keys.size() != target_label_keys_.size() ||
-          label_values.size() != target_label_values_.size())
-        return;
-      for (size_t i = 0; i < label_keys.size(); ++i) {
-        if (label_keys[i] != target_label_keys_[i] ||
-            label_values[i] != target_label_values_[i])
-          return;
-      }
-      captured_value_ = static_cast<T>(value);
+      RecordValue(label_keys, label_values, name, value);
     }
-    void UpDownCounter(absl::Span<const std::string> label_keys,
+    void UpDownCounter(InstrumentLabelList label_keys,
                        absl::Span<const std::string> label_values,
                        absl::string_view name, uint64_t value) override {
-      if (name != target_name_) return;
-      if (label_keys.size() != target_label_keys_.size() ||
-          label_values.size() != target_label_values_.size())
-        return;
-      for (size_t i = 0; i < label_keys.size(); ++i) {
-        if (label_keys[i] != target_label_keys_[i] ||
-            label_values[i] != target_label_values_[i])
-          return;
-      }
-      captured_value_ = static_cast<T>(value);
+      RecordValue(label_keys, label_values, name, value);
     }
-    void Histogram(absl::Span<const std::string> /*label_keys*/,
+    void Histogram(InstrumentLabelList /*label_keys*/,
                    absl::Span<const std::string> /*label_values*/,
                    absl::string_view /*name*/, HistogramBuckets /*bounds*/,
                    absl::Span<const uint64_t> /*counts*/) override {}
-    void DoubleGauge(absl::Span<const std::string> /*label_keys*/,
+    void DoubleGauge(InstrumentLabelList /*label_keys*/,
                      absl::Span<const std::string> /*label_values*/,
                      absl::string_view /*name*/, double /*value*/) override {}
-    void IntGauge(absl::Span<const std::string> /*label_keys*/,
+    void IntGauge(InstrumentLabelList /*label_keys*/,
                   absl::Span<const std::string> /*label_values*/,
                   absl::string_view /*name*/, int64_t /*value*/) override {}
-    void UintGauge(absl::Span<const std::string> /*label_keys*/,
+    void UintGauge(InstrumentLabelList /*label_keys*/,
                    absl::Span<const std::string> /*label_values*/,
                    absl::string_view /*name*/, uint64_t /*value*/) override {}
 
     std::optional<T> captured_value() const { return captured_value_; }
 
    private:
+    void RecordValue(InstrumentLabelList label_keys,
+                     absl::Span<const std::string> label_values,
+                     absl::string_view name, uint64_t value) {
+      if (name != target_name_) return;
+      if (!MatchLabels(label_keys, label_values)) return;
+      captured_value_ = static_cast<T>(value);
+    }
+
+    bool MatchLabels(const InstrumentLabelList& label_keys,
+                     absl::Span<const std::string> label_values) const {
+      if (label_keys.size() != target_labels_.size() ||
+          label_values.size() != target_labels_.size()) {
+        LOG(ERROR) << "MatchLabels size mismatch: label_keys="
+                   << label_keys.size()
+                   << " label_values=" << label_values.size()
+                   << " target=" << target_labels_.size();
+        return false;
+      }
+      for (size_t i = 0; i < label_keys.size(); ++i) {
+        auto it = target_labels_.find(label_keys[i].label());
+        if (it == target_labels_.end()) return false;
+
+        const std::string& expected = it->second;
+        const std::string& actual = label_values[i];
+        if (expected != actual) {
+          LOG(ERROR) << "MatchLabels failed for key: " << label_keys[i].label()
+                     << " expected: " << expected << " actual: " << actual;
+          return false;
+        }
+      }
+      return true;
+    }
+
     absl::string_view target_name_;
-    std::vector<std::string> target_label_keys_;
-    std::vector<std::string> target_label_values_;
+    absl::flat_hash_map<std::string, std::string> target_labels_;
     std::optional<T> captured_value_;
   };
   class Reporter : public CallbackMetricReporter {
