@@ -149,7 +149,7 @@ def _server_streaming(stub):
         )
 
 
-class _Pipe(object):
+class _Pipe:
     def __init__(self):
         self._condition = threading.Condition()
         self._values = []
