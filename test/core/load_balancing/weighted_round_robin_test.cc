@@ -445,6 +445,214 @@ TEST_F(WeightedRoundRobinTest, AppUtilOverCpuUtil) {
       {{kAddresses[0], 1}, {kAddresses[1], 3}, {kAddresses[2], 3}});
 }
 
+TEST_F(WeightedRoundRobinTest, WrrCustomMetricDisabledFallback) {
+  const std::array<absl::string_view, 3> kAddresses = {
+      "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442", "ipv4:127.0.0.1:443"};
+  std::vector<std::string> metric_names = {"named_metrics.foo"};
+  auto picker = SendInitialUpdateAndWaitForConnected(
+      kAddresses,
+      ConfigBuilder().SetMetricNamesForComputingUtilization(metric_names));
+  ASSERT_NE(picker, nullptr);
+  // Address 0 reports a high named metric "foo", but since feature is disabled,
+  // it should use cpu_utilization (fallback) or app_utilization.
+  // Here we provide
+  // app_utilization=0
+  // cpu_utilization=0.1.
+  // "foo" = 0.9.
+  // If ignored, utilization = 0.1 (cpu).
+  WaitForWeightedRoundRobinPicks(
+      &picker,
+      {{kAddresses[0],
+        MakeBackendMetricData(/*app_utilization=*/0,
+                              /*qps=*/100.0, /*eps=*/0.0,
+                              /*cpu_utilization=*/0.1,
+                              /*mem_utilization=*/0.0, {{"foo", 0.9}})},
+       {kAddresses[1], MakeBackendMetricData(/*app_utilization=*/0,
+                                             /*qps=*/100.0, /*eps=*/0.0,
+                                             /*cpu_utilization=*/0.1)}},
+      {{kAddresses[0], 1}, {kAddresses[1], 1}, {kAddresses[2], 1}});
+}
+
+TEST_F(WeightedRoundRobinTest, WrrCustomMetricEnabledCpuUtilization) {
+  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_WRR_CUSTOM_METRICS");
+  const std::array<absl::string_view, 3> kAddresses = {
+      "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442", "ipv4:127.0.0.1:443"};
+  std::vector<std::string> metric_names = {"cpu_utilization"};
+  auto picker = SendInitialUpdateAndWaitForConnected(
+      kAddresses,
+      ConfigBuilder().SetMetricNamesForComputingUtilization(metric_names));
+  ASSERT_NE(picker, nullptr);
+  // Addr 0: cpu=0.9, weight ~ 1.1
+  // Addr 1: cpu=0.1, weight ~ 10
+  // Ratio 1:9
+  WaitForWeightedRoundRobinPicks(
+      &picker,
+      {{kAddresses[0], MakeBackendMetricData(/*app_utilization=*/0,
+                                             /*qps=*/100.0, /*eps=*/0.0,
+                                             /*cpu_utilization=*/0.9)},
+       {kAddresses[1], MakeBackendMetricData(/*app_utilization=*/0,
+                                             /*qps=*/100.0, /*eps=*/0.0,
+                                             /*cpu_utilization=*/0.1)}},
+      {{kAddresses[0], 1},
+       {kAddresses[1], 9},
+       {kAddresses[2], 5}});  // Addr 2 gets average
+}
+
+TEST_F(WeightedRoundRobinTest, WrrCustomMetricEnabledMemUtilization) {
+  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_WRR_CUSTOM_METRICS");
+  const std::array<absl::string_view, 3> kAddresses = {
+      "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442", "ipv4:127.0.0.1:443"};
+  std::vector<std::string> metric_names = {"mem_utilization"};
+  auto picker = SendInitialUpdateAndWaitForConnected(
+      kAddresses,
+      ConfigBuilder().SetMetricNamesForComputingUtilization(metric_names));
+  ASSERT_NE(picker, nullptr);
+  // Addr 0: mem=0.9, weight ~ 1.1
+  // Addr 1: mem=0.1, weight ~ 10
+  WaitForWeightedRoundRobinPicks(
+      &picker,
+      {{kAddresses[0], MakeBackendMetricData(/*app_utilization=*/0,
+                                             /*qps=*/100.0, /*eps=*/0.0,
+                                             /*cpu_utilization=*/0.0,
+                                             /*mem_utilization=*/0.9)},
+       {kAddresses[1], MakeBackendMetricData(/*app_utilization=*/0,
+                                             /*qps=*/100.0, /*eps=*/0.0,
+                                             /*cpu_utilization=*/0.0,
+                                             /*mem_utilization=*/0.1)}},
+      {{kAddresses[0], 1}, {kAddresses[1], 9}, {kAddresses[2], 5}});
+}
+
+TEST_F(WeightedRoundRobinTest, WrrCustomMetricEnabledAppUtilization) {
+  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_WRR_CUSTOM_METRICS");
+  const std::array<absl::string_view, 3> kAddresses = {
+      "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442", "ipv4:127.0.0.1:443"};
+  std::vector<std::string> metric_names = {"application_utilization"};
+  auto picker = SendInitialUpdateAndWaitForConnected(
+      kAddresses,
+      ConfigBuilder().SetMetricNamesForComputingUtilization(metric_names));
+  ASSERT_NE(picker, nullptr);
+  // Checks that we use application_utilization when specified in the list of
+  // custom metric names.
+  WaitForWeightedRoundRobinPicks(
+      &picker,
+      {{kAddresses[0], MakeBackendMetricData(/*app_utilization=*/0.9,
+                                             /*qps=*/100.0, /*eps=*/0.0)},
+       {kAddresses[1], MakeBackendMetricData(/*app_utilization=*/0.1,
+                                             /*qps=*/100.0, /*eps=*/0.0)}},
+      {{kAddresses[0], 1}, {kAddresses[1], 9}, {kAddresses[2], 5}});
+}
+
+TEST_F(WeightedRoundRobinTest, WrrCustomMetricEnabledNamedMetric) {
+  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_WRR_CUSTOM_METRICS");
+  const std::array<absl::string_view, 3> kAddresses = {
+      "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442", "ipv4:127.0.0.1:443"};
+  std::vector<std::string> metric_names = {"named_metrics.foo"};
+  auto picker = SendInitialUpdateAndWaitForConnected(
+      kAddresses,
+      ConfigBuilder().SetMetricNamesForComputingUtilization(metric_names));
+  ASSERT_NE(picker, nullptr);
+  // Addr 0: foo=0.9
+  // Addr 1: foo=0.1
+  WaitForWeightedRoundRobinPicks(
+      &picker,
+      {{kAddresses[0],
+        MakeBackendMetricData(/*app_utilization=*/0,
+                              /*qps=*/100.0, /*eps=*/0.0,
+                              /*cpu_utilization=*/0.0,
+                              /*mem_utilization=*/0.0, {{"foo", 0.9}})},
+       {kAddresses[1],
+        MakeBackendMetricData(/*app_utilization=*/0,
+                              /*qps=*/100.0, /*eps=*/0.0,
+                              /*cpu_utilization=*/0.0,
+                              /*mem_utilization=*/0.0, {{"foo", 0.1}})}},
+      {{kAddresses[0], 1}, {kAddresses[1], 9}, {kAddresses[2], 5}});
+}
+
+TEST_F(WeightedRoundRobinTest, WrrCustomMetricEnabledMultipleMetricsMax) {
+  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_WRR_CUSTOM_METRICS");
+  const std::array<absl::string_view, 3> kAddresses = {
+      "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442", "ipv4:127.0.0.1:443"};
+  // Checks that we take the MAX of the specified metrics.
+  std::vector<std::string> metric_names = {"named_metrics.foo",
+                                           "named_metrics.bar"};
+  auto picker = SendInitialUpdateAndWaitForConnected(
+      kAddresses,
+      ConfigBuilder().SetMetricNamesForComputingUtilization(metric_names));
+  ASSERT_NE(picker, nullptr);
+  // Addr 0: foo=0.9, bar=0.1 -> max 0.9
+  // Addr 1: foo=0.1, bar=0.1 -> max 0.1
+  WaitForWeightedRoundRobinPicks(
+      &picker,
+      {{kAddresses[0], MakeBackendMetricData(/*app_utilization=*/0,
+                                             /*qps=*/100.0, /*eps=*/0.0,
+                                             /*cpu_utilization=*/0.0,
+                                             /*mem_utilization=*/0.0,
+                                             {{"foo", 0.9}, {"bar", 0.1}})},
+       {kAddresses[1], MakeBackendMetricData(/*app_utilization=*/0,
+                                             /*qps=*/100.0, /*eps=*/0.0,
+                                             /*cpu_utilization=*/0.0,
+                                             /*mem_utilization=*/0.0,
+                                             {{"foo", 0.1}, {"bar", 0.1}})}},
+      {{kAddresses[0], 1}, {kAddresses[1], 9}, {kAddresses[2], 5}});
+}
+
+TEST_F(WeightedRoundRobinTest, WrrCustomMetricEnabledFallbackPriority) {
+  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_WRR_CUSTOM_METRICS");
+  const std::array<absl::string_view, 3> kAddresses = {
+      "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442", "ipv4:127.0.0.1:443"};
+  std::vector<std::string> metric_names = {"named_metrics.foo"};
+  auto picker = SendInitialUpdateAndWaitForConnected(
+      kAddresses,
+      ConfigBuilder().SetMetricNamesForComputingUtilization(metric_names));
+  ASSERT_NE(picker, nullptr);
+  // Addr 0: foo=0.9, app=0.1, cpu=0.1
+  // Uses foo (0.9). Weight: 100/0.9 = 111.1
+  // Addr 1: foo=-1.0 (ignored), app=0.9, cpu=0.1
+  // Falls back to app (0.9). Weight: 100/0.9 = 111.1
+  // Addr 2: foo=0.0 (ignored), app=0.0 (ignored), cpu=0.45
+  // Falls back to cpu (0.45). Weight: 100/0.45 = 222.2
+  // We expect weights in ratio 1:1:2.
+  WaitForWeightedRoundRobinPicks(
+      &picker,
+      {{kAddresses[0],
+        MakeBackendMetricData(
+            /*app_utilization=*/0.1, /*qps=*/100.0, /*eps=*/0.0,
+            /*cpu_utilization=*/0.1, /*mem_utilization=*/0.0, {{"foo", 0.9}})},
+       {kAddresses[1],
+        MakeBackendMetricData(
+            /*app_utilization=*/0.9, /*qps=*/100.0, /*eps=*/0.0,
+            /*cpu_utilization=*/0.1, /*mem_utilization=*/0.0, {{"foo", -1.0}})},
+       {kAddresses[2], MakeBackendMetricData(
+                           /*app_utilization=*/0.0, /*qps=*/100.0, /*eps=*/0.0,
+                           /*cpu_utilization=*/0.45, /*mem_utilization=*/0.0,
+                           {{"foo", 0.0}})}},
+      {{kAddresses[0], 1}, {kAddresses[1], 1}, {kAddresses[2], 2}});
+}
+
+// TODO(rishesh): Once the env var guard is removed, this entire test case can
+// be removed, since it will be a duplicate of several existing tests above.
+// Checks that if enabled but no metric names provided, we default to CPU.
+TEST_F(WeightedRoundRobinTest,
+       WrrCustomMetricEnabledNoMetricNamesDefaultsToCpu) {
+  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_WRR_CUSTOM_METRICS");
+  const std::array<absl::string_view, 3> kAddresses = {
+      "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442", "ipv4:127.0.0.1:443"};
+  // No metric names provided, should default to CPU utilization.
+  auto picker = SendInitialUpdateAndWaitForConnected(kAddresses);
+  ASSERT_NE(picker, nullptr);
+  // Addr 0: cpu=0.9
+  // Addr 1: cpu=0.1
+  WaitForWeightedRoundRobinPicks(
+      &picker,
+      {{kAddresses[0], MakeBackendMetricData(/*app_utilization=*/0,
+                                             /*qps=*/100.0, /*eps=*/0.0,
+                                             /*cpu_utilization=*/0.9)},
+       {kAddresses[1], MakeBackendMetricData(/*app_utilization=*/0,
+                                             /*qps=*/100.0, /*eps=*/0.0,
+                                             /*cpu_utilization=*/0.1)}},
+      {{kAddresses[0], 1}, {kAddresses[1], 9}, {kAddresses[2], 5}});
+}
+
 TEST_F(WeightedRoundRobinTest, Eps) {
   // Send address list to LB policy.
   const std::array<absl::string_view, 3> kAddresses = {
@@ -1185,287 +1393,6 @@ TEST_F(WeightedRoundRobinTest, MetricValues) {
   EXPECT_THAT(stats_plugin->GetUInt64CounterValue(
                   kEndpointWeightStale, kLabelValues, kOptionalLabelValues),
               ::testing::Optional(3));
-}
-
-TEST_F(WeightedRoundRobinTest, WrrCustomMetricDisabled_EnvVarFalse) {
-  ScopedEnvVar env_var("GRPC_EXPERIMENTAL_WRR_CUSTOM_METRICS", "false");
-  const std::array<absl::string_view, 3> kAddresses = {
-      "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442", "ipv4:127.0.0.1:443"};
-  std::vector<std::string> metric_names = {"named_metrics.foo"};
-  auto picker = SendInitialUpdateAndWaitForConnected(
-      kAddresses,
-      ConfigBuilder().SetMetricNamesForComputingUtilization(metric_names));
-  ASSERT_NE(picker, nullptr);
-  // Address 0 reports a high named metric "foo", but since feature is disabled,
-  // it should use cpu_utilization (fallback) or app_utilization.
-  // Here we provide app_utilization=0, cpu_utilization=0.1.
-  // "foo" = 0.9.
-  // If ignored, utilization = 0.1 (cpu).
-  WaitForWeightedRoundRobinPicks(
-      &picker,
-      {{kAddresses[0],
-        MakeBackendMetricData(/*app_utilization=*/0,
-                              /*qps=*/100.0, /*eps=*/0.0,
-                              /*cpu_utilization=*/0.1,
-                              /*mem_utilization=*/0.0, {{"foo", 0.9}})},
-       {kAddresses[1], MakeBackendMetricData(/*app_utilization=*/0,
-                                             /*qps=*/100.0, /*eps=*/0.0,
-                                             /*cpu_utilization=*/0.1)}},
-      {{kAddresses[0], 1}, {kAddresses[1], 1}, {kAddresses[2], 1}});
-}
-
-TEST_F(WeightedRoundRobinTest, WrrCustomMetricEnabled_CpuUtilization) {
-  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_WRR_CUSTOM_METRICS");
-  const std::array<absl::string_view, 3> kAddresses = {
-      "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442", "ipv4:127.0.0.1:443"};
-  auto stats_plugin = std::make_shared<FakeStatsPlugin>(
-      nullptr, /*use_disabled_by_default_metrics=*/true);
-  stats_plugin_group_.AddStatsPlugin(stats_plugin, nullptr);
-  std::vector<std::string> metric_names = {"cpu_utilization"};
-  auto picker = SendInitialUpdateAndWaitForConnected(
-      kAddresses,
-      ConfigBuilder().SetMetricNamesForComputingUtilization(metric_names));
-  ASSERT_NE(picker, nullptr);
-  // Addr 0: cpu=0.9, weight ~ 1.1
-  // Addr 1: cpu=0.1, weight ~ 10
-  // Ratio 1:9
-  WaitForWeightedRoundRobinPicks(
-      &picker,
-      {{kAddresses[0], MakeBackendMetricData(/*app_utilization=*/0,
-                                             /*qps=*/100.0, /*eps=*/0.0,
-                                             /*cpu_utilization=*/0.9)},
-       {kAddresses[1], MakeBackendMetricData(/*app_utilization=*/0,
-                                             /*qps=*/100.0, /*eps=*/0.0,
-                                             /*cpu_utilization=*/0.1)}},
-      {{kAddresses[0], 1},
-       {kAddresses[1], 9},
-       {kAddresses[2], 5}});  // Addr 2 gets average
-  const auto kEndpointWeights =
-      GlobalInstrumentsRegistryTestPeer::FindDoubleHistogramHandleByName(
-          "grpc.lb.wrr.endpoint_weights")
-          .value();
-  const absl::string_view kLabelValues[] = {target_};
-  const absl::string_view kOptionalLabelValues[] = {kLocalityName,
-                                                    kBackendServiceName};
-  EXPECT_THAT(stats_plugin->GetDoubleHistogramValue(
-                  kEndpointWeights, kLabelValues, kOptionalLabelValues),
-              ::testing::Optional(::testing::AllOf(
-                  ::testing::Contains(::testing::DoubleNear(111.111111, 0.001)),
-                  ::testing::Contains(::testing::DoubleNear(1000.0, 0.001)))));
-}
-
-TEST_F(WeightedRoundRobinTest, WrrCustomMetricEnabled_MemUtilization) {
-  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_WRR_CUSTOM_METRICS");
-  const std::array<absl::string_view, 3> kAddresses = {
-      "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442", "ipv4:127.0.0.1:443"};
-  auto stats_plugin = std::make_shared<FakeStatsPlugin>(
-      nullptr, /*use_disabled_by_default_metrics=*/true);
-  stats_plugin_group_.AddStatsPlugin(stats_plugin, nullptr);
-  std::vector<std::string> metric_names = {"mem_utilization"};
-  auto picker = SendInitialUpdateAndWaitForConnected(
-      kAddresses,
-      ConfigBuilder().SetMetricNamesForComputingUtilization(metric_names));
-  ASSERT_NE(picker, nullptr);
-  // Addr 0: mem=0.9, weight ~ 1.1
-  // Addr 1: mem=0.1, weight ~ 10
-  WaitForWeightedRoundRobinPicks(
-      &picker,
-      {{kAddresses[0], MakeBackendMetricData(/*app_utilization=*/0,
-                                             /*qps=*/100.0, /*eps=*/0.0,
-                                             /*cpu_utilization=*/0.0,
-                                             /*mem_utilization=*/0.9)},
-       {kAddresses[1], MakeBackendMetricData(/*app_utilization=*/0,
-                                             /*qps=*/100.0, /*eps=*/0.0,
-                                             /*cpu_utilization=*/0.0,
-                                             /*mem_utilization=*/0.1)}},
-      {{kAddresses[0], 1}, {kAddresses[1], 9}, {kAddresses[2], 5}});
-  const auto kEndpointWeights =
-      GlobalInstrumentsRegistryTestPeer::FindDoubleHistogramHandleByName(
-          "grpc.lb.wrr.endpoint_weights")
-          .value();
-  const absl::string_view kLabelValues[] = {target_};
-  const absl::string_view kOptionalLabelValues[] = {kLocalityName,
-                                                    kBackendServiceName};
-  EXPECT_THAT(stats_plugin->GetDoubleHistogramValue(
-                  kEndpointWeights, kLabelValues, kOptionalLabelValues),
-              ::testing::Optional(::testing::AllOf(
-                  ::testing::Contains(::testing::DoubleNear(111.111111, 0.001)),
-                  ::testing::Contains(::testing::DoubleNear(1000.0, 0.001)))));
-}
-
-TEST_F(WeightedRoundRobinTest, WrrCustomMetricEnabled_AppUtilization) {
-  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_WRR_CUSTOM_METRICS");
-  const std::array<absl::string_view, 3> kAddresses = {
-      "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442", "ipv4:127.0.0.1:443"};
-  auto stats_plugin = std::make_shared<FakeStatsPlugin>(
-      nullptr, /*use_disabled_by_default_metrics=*/true);
-  stats_plugin_group_.AddStatsPlugin(stats_plugin, nullptr);
-  std::vector<std::string> metric_names = {"application_utilization"};
-  auto picker = SendInitialUpdateAndWaitForConnected(
-      kAddresses,
-      ConfigBuilder().SetMetricNamesForComputingUtilization(metric_names));
-  ASSERT_NE(picker, nullptr);
-  // app_utilization > 0 naturally overrides other logic, so we just verify it
-  // works.
-  WaitForWeightedRoundRobinPicks(
-      &picker,
-      {{kAddresses[0], MakeBackendMetricData(/*app_utilization=*/0.9,
-                                             /*qps=*/100.0, /*eps=*/0.0)},
-       {kAddresses[1], MakeBackendMetricData(/*app_utilization=*/0.1,
-                                             /*qps=*/100.0, /*eps=*/0.0)}},
-      {{kAddresses[0], 1}, {kAddresses[1], 9}, {kAddresses[2], 5}});
-  const auto kEndpointWeights =
-      GlobalInstrumentsRegistryTestPeer::FindDoubleHistogramHandleByName(
-          "grpc.lb.wrr.endpoint_weights")
-          .value();
-  const absl::string_view kLabelValues[] = {target_};
-  const absl::string_view kOptionalLabelValues[] = {kLocalityName,
-                                                    kBackendServiceName};
-  EXPECT_THAT(stats_plugin->GetDoubleHistogramValue(
-                  kEndpointWeights, kLabelValues, kOptionalLabelValues),
-              ::testing::Optional(::testing::AllOf(
-                  ::testing::Contains(::testing::DoubleNear(111.111111, 0.001)),
-                  ::testing::Contains(::testing::DoubleNear(1000.0, 0.001)))));
-}
-
-TEST_F(WeightedRoundRobinTest, WrrCustomMetricEnabled_NamedMetric) {
-  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_WRR_CUSTOM_METRICS");
-  const std::array<absl::string_view, 3> kAddresses = {
-      "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442", "ipv4:127.0.0.1:443"};
-  auto stats_plugin = std::make_shared<FakeStatsPlugin>(
-      nullptr, /*use_disabled_by_default_metrics=*/true);
-  stats_plugin_group_.AddStatsPlugin(stats_plugin, nullptr);
-  std::vector<std::string> metric_names = {"named_metrics.foo"};
-  auto picker = SendInitialUpdateAndWaitForConnected(
-      kAddresses,
-      ConfigBuilder().SetMetricNamesForComputingUtilization(metric_names));
-  ASSERT_NE(picker, nullptr);
-  // Addr 0: foo=0.9
-  // Addr 1: foo=0.1
-  WaitForWeightedRoundRobinPicks(
-      &picker,
-      {{kAddresses[0],
-        MakeBackendMetricData(/*app_utilization=*/0,
-                              /*qps=*/100.0, /*eps=*/0.0,
-                              /*cpu_utilization=*/0.0,
-                              /*mem_utilization=*/0.0, {{"foo", 0.9}})},
-       {kAddresses[1],
-        MakeBackendMetricData(/*app_utilization=*/0,
-                              /*qps=*/100.0, /*eps=*/0.0,
-                              /*cpu_utilization=*/0.0,
-                              /*mem_utilization=*/0.0, {{"foo", 0.1}})}},
-      {{kAddresses[0], 1}, {kAddresses[1], 9}, {kAddresses[2], 5}});
-  const auto kEndpointWeights =
-      GlobalInstrumentsRegistryTestPeer::FindDoubleHistogramHandleByName(
-          "grpc.lb.wrr.endpoint_weights")
-          .value();
-  const absl::string_view kLabelValues[] = {target_};
-  const absl::string_view kOptionalLabelValues[] = {kLocalityName,
-                                                    kBackendServiceName};
-  EXPECT_THAT(stats_plugin->GetDoubleHistogramValue(
-                  kEndpointWeights, kLabelValues, kOptionalLabelValues),
-              ::testing::Optional(::testing::AllOf(
-                  ::testing::Contains(::testing::DoubleNear(111.111111, 0.001)),
-                  ::testing::Contains(::testing::DoubleNear(1000.0, 0.001)))));
-}
-
-TEST_F(WeightedRoundRobinTest, WrrCustomMetricEnabled_MultipleMetricsMax) {
-  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_WRR_CUSTOM_METRICS");
-  const std::array<absl::string_view, 3> kAddresses = {
-      "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442", "ipv4:127.0.0.1:443"};
-  // Checks that we take the MAX of the specified metrics.
-  std::vector<std::string> metric_names = {"named_metrics.foo",
-                                           "named_metrics.bar"};
-  auto picker = SendInitialUpdateAndWaitForConnected(
-      kAddresses,
-      ConfigBuilder().SetMetricNamesForComputingUtilization(metric_names));
-  ASSERT_NE(picker, nullptr);
-  // Addr 0: foo=0.9, bar=0.1 -> max 0.9
-  // Addr 1: foo=0.1, bar=0.1 -> max 0.1
-  WaitForWeightedRoundRobinPicks(
-      &picker,
-      {{kAddresses[0], MakeBackendMetricData(/*app_utilization=*/0,
-                                             /*qps=*/100.0, /*eps=*/0.0,
-                                             /*cpu_utilization=*/0.0,
-                                             /*mem_utilization=*/0.0,
-                                             {{"foo", 0.9}, {"bar", 0.1}})},
-       {kAddresses[1], MakeBackendMetricData(/*app_utilization=*/0,
-                                             /*qps=*/100.0, /*eps=*/0.0,
-                                             /*cpu_utilization=*/0.0,
-                                             /*mem_utilization=*/0.0,
-                                             {{"foo", 0.1}, {"bar", 0.1}})}},
-      {{kAddresses[0], 1}, {kAddresses[1], 9}, {kAddresses[2], 5}});
-}
-
-TEST_F(WeightedRoundRobinTest, WrrCustomMetricEnabled_FallbackPriority) {
-  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_WRR_CUSTOM_METRICS");
-  const std::array<absl::string_view, 3> kAddresses = {
-      "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442", "ipv4:127.0.0.1:443"};
-  auto stats_plugin = std::make_shared<FakeStatsPlugin>(
-      nullptr, /*use_disabled_by_default_metrics=*/true);
-  stats_plugin_group_.AddStatsPlugin(stats_plugin, nullptr);
-  std::vector<std::string> metric_names = {"named_metrics.foo"};
-  auto picker = SendInitialUpdateAndWaitForConnected(
-      kAddresses,
-      ConfigBuilder().SetMetricNamesForComputingUtilization(metric_names));
-  ASSERT_NE(picker, nullptr);
-  // Addr 0: foo=0.9, app=0.1, cpu=0.1 -> Uses foo (0.9). Weight: 100/0.9 =
-  // 111.1 Addr 1: foo=-1.0 (ignored), app=0.9, cpu=0.1 -> Falls back to app
-  // (0.9). Weight: 100/0.9 = 111.1 Addr 2: foo=0.0 (ignored), app=0.0
-  // (ignored), cpu=0.45 -> Falls back to cpu (0.45). Weight: 100/0.45 = 222.2
-  // We expect weights in ratio 1:1:2.
-  WaitForWeightedRoundRobinPicks(
-      &picker,
-      {{kAddresses[0],
-        MakeBackendMetricData(
-            /*app_utilization=*/0.1, /*qps=*/100.0, /*eps=*/0.0,
-            /*cpu_utilization=*/0.1, /*mem_utilization=*/0.0, {{"foo", 0.9}})},
-       {kAddresses[1],
-        MakeBackendMetricData(
-            /*app_utilization=*/0.9, /*qps=*/100.0, /*eps=*/0.0,
-            /*cpu_utilization=*/0.1, /*mem_utilization=*/0.0, {{"foo", -1.0}})},
-       {kAddresses[2], MakeBackendMetricData(
-                           /*app_utilization=*/0.0, /*qps=*/100.0, /*eps=*/0.0,
-                           /*cpu_utilization=*/0.45, /*mem_utilization=*/0.0,
-                           {{"foo", 0.0}})}},
-      {{kAddresses[0], 1}, {kAddresses[1], 1}, {kAddresses[2], 2}});
-}
-
-// Checks that if enabled but no metric names provided, we default to CPU.
-TEST_F(WeightedRoundRobinTest,
-       WrrCustomMetricEnabled_NoMetricNamesDefaultsToCpu) {
-  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_WRR_CUSTOM_METRICS");
-  const std::array<absl::string_view, 3> kAddresses = {
-      "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442", "ipv4:127.0.0.1:443"};
-  auto stats_plugin = std::make_shared<FakeStatsPlugin>(
-      nullptr, /*use_disabled_by_default_metrics=*/true);
-  stats_plugin_group_.AddStatsPlugin(stats_plugin, nullptr);
-  // No metric names provided, should default to CPU utilization.
-  auto picker = SendInitialUpdateAndWaitForConnected(kAddresses);
-  ASSERT_NE(picker, nullptr);
-  // Addr 0: cpu=0.9
-  // Addr 1: cpu=0.1
-  WaitForWeightedRoundRobinPicks(
-      &picker,
-      {{kAddresses[0], MakeBackendMetricData(/*app_utilization=*/0,
-                                             /*qps=*/100.0, /*eps=*/0.0,
-                                             /*cpu_utilization=*/0.9)},
-       {kAddresses[1], MakeBackendMetricData(/*app_utilization=*/0,
-                                             /*qps=*/100.0, /*eps=*/0.0,
-                                             /*cpu_utilization=*/0.1)}},
-      {{kAddresses[0], 1}, {kAddresses[1], 9}, {kAddresses[2], 5}});
-  const auto kEndpointWeights =
-      GlobalInstrumentsRegistryTestPeer::FindDoubleHistogramHandleByName(
-          "grpc.lb.wrr.endpoint_weights")
-          .value();
-  const absl::string_view kLabelValues[] = {target_};
-  const absl::string_view kOptionalLabelValues[] = {kLocalityName,
-                                                    kBackendServiceName};
-  EXPECT_THAT(stats_plugin->GetDoubleHistogramValue(
-                  kEndpointWeights, kLabelValues, kOptionalLabelValues),
-              ::testing::Optional(::testing::AllOf(
-                  ::testing::Contains(::testing::DoubleNear(111.111111, 0.001)),
-                  ::testing::Contains(::testing::DoubleNear(1000.0, 0.001)))));
 }
 
 }  // namespace
