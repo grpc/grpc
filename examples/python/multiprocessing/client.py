@@ -13,10 +13,6 @@
 # limitations under the License.
 """An example of multiprocessing concurrency with gRPC."""
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 import argparse
 import atexit
 import logging
