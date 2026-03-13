@@ -279,7 +279,7 @@ g_stands_for = "glimmering"  # @unused
 
 core_version = "53.0.0"  # @unused
 
-version = "1.80.0-pre1"  # @unused
+version = "1.80.0"  # @unused
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
