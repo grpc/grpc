@@ -296,7 +296,7 @@ def create_server_call_tracer_factory_option(
     xds: bool,
 ) -> Union[Tuple[ChannelArgumentType], Tuple[()]]:
     with get_plugin() as plugin:
-        if plugin and plugin.stats_enabled:
+        if plugin and (plugin.stats_enabled or plugin.tracing_enabled):
             server_call_tracer_factory_address = (
                 _cygrpc.get_server_call_tracer_factory_address(plugin, xds)
             )

@@ -54,6 +54,9 @@ def handle_unary_stream(request, servicer_context):
 
 
 def handle_stream_unary(request_iterator, servicer_context):
+    # we need to read requests to produce otel traces
+    for request in request_iterator:
+        pass
     return _RESPONSE
 
 
