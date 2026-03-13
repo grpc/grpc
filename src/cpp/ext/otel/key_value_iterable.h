@@ -115,8 +115,7 @@ class OpenTelemetryPluginImpl::KeyValueIterable
                     static_cast<grpc_core::ClientCallTracerInterface::
                                     CallAttemptTracer::OptionalLabelKey>(i))),
                 AbslStrViewToOpenTelemetryStrView(
-                    OpenTelemetryPluginImpl::GetOptionalLabelValue(
-                        optional_labels_[i])))) {
+                    GetOptionalLabelValue(optional_labels_[i])))) {
           return false;
         }
       }
