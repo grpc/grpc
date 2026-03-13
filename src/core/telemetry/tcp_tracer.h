@@ -112,6 +112,23 @@ struct TcpConnectionMetrics {
   std::optional<uint32_t> nic_rx_delay_usec;
 };
 
+// Represents the information about a transfer.
+struct Latency {
+  enum class Type {
+    UNKNOWN,
+    RATE_LIMIT_LATENCY,
+    TRANSFER_LATENCY,
+  };
+  // The type of the latency.
+  Type type = Type::UNKNOWN;
+  // The connection metrics during the measurement.
+  TcpConnectionMetrics metrics;
+  // Size of the transfer.
+  std::optional<uint64_t> size;
+  // The transfer latency.
+  std::optional<absl::Duration> latency;
+};
+
 class TcpCallTracer {
  public:
   struct TcpEventMetric {
@@ -140,6 +157,9 @@ class TcpConnectionTracer {
 
   // Records a snapshot of connection metrics.
   virtual void RecordConnectionMetrics(TcpConnectionMetrics metrics) = 0;
+
+  // Periodically records latency metrics for a connection.
+  virtual void RecordLatency(Latency latency) = 0;
 };
 
 }  // namespace grpc_core
