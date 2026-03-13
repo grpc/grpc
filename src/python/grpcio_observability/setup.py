@@ -26,15 +26,11 @@ import setuptools
 from setuptools import Extension
 from setuptools.command import build_ext
 
-# Manually insert the source directory into the Python path for local module
-# imports to succeed
-sys.path.insert(0, os.path.abspath("."))
+import ._parallel_compile_patch
+import .observability_lib_deps
 
-import _parallel_compile_patch
-import observability_lib_deps
-
-import grpc_version
-import python_version
+import .grpc_version
+import .python_version
 
 _parallel_compile_patch.monkeypatch_compile_maybe()
 
