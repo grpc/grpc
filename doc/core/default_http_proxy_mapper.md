@@ -66,6 +66,46 @@ addresses as the host between the range `10.10.0.0` to `10.10.0.255`.
 The lookup and subsequent usage of an HTTP proxy for a specific channel can also
 be disabled by setting the channel arg `GRPC_ARG_ENABLE_HTTP_PROXY` to 0.
 
+## HTTPS Proxy Support
+
+gRPC supports HTTPS proxies where the connection to the proxy itself is
+TLS-encrypted. This ensures that proxy authentication credentials (such as
+BasicAuth username and password) are transmitted securely rather than in
+plaintext.
+
+### Enabling HTTPS Proxy
+
+To use an HTTPS proxy, simply set the proxy URI with the `https://` scheme
+instead of `http://`:
+
+```
+# Environment variable
+export https_proxy="https://username:password@proxy.example.com:8443"
+
+# Or via channel arg
+GRPC_ARG_HTTP_PROXY = "https://username:password@proxy.example.com:8443"
+```
+
+When the `https://` scheme is detected, gRPC will:
+1. Establish a TCP connection to the proxy
+2. Perform a TLS handshake with the proxy
+3. Send the HTTP CONNECT request (with credentials) over the encrypted connection
+4. After the tunnel is established, perform another TLS handshake with the target server
+
+### HTTPS Proxy TLS Configuration
+
+Additional TLS configuration for the proxy connection can be provided via
+channel arguments:
+
+| Channel Arg | Description |
+|-------------|-------------|
+| `GRPC_ARG_HTTP_PROXY_TLS_ENABLED` | Boolean. Explicitly enable/disable TLS to proxy. Automatically set to `true` when using `https://` scheme. |
+| `GRPC_ARG_HTTP_PROXY_TLS_ROOT_CERTS` | PEM-encoded root certificates for verifying the proxy server certificate. If not set, system default roots are used. |
+| `GRPC_ARG_HTTP_PROXY_TLS_VERIFY_SERVER_CERT` | Boolean. Whether to verify the proxy server certificate. Defaults to `true`. |
+| `GRPC_ARG_HTTP_PROXY_TLS_SERVER_NAME` | Expected server name for proxy certificate verification. If not set, the proxy hostname from the URI is used. |
+| `GRPC_ARG_HTTP_PROXY_TLS_CERT_CHAIN` | PEM-encoded client certificate chain for mutual TLS (mTLS) with the proxy. Optional. |
+| `GRPC_ARG_HTTP_PROXY_TLS_PRIVATE_KEY` | PEM-encoded client private key for mTLS with the proxy. Optional. |
+
 ## Address Proxy
 
 **Case 2** in the proposal documents a partially protected environment, where

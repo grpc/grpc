@@ -101,11 +101,16 @@ bool AddressIncluded(const std::optional<grpc_resolved_address>& target_address,
 /// Parses the 'https_proxy' env var (fallback on 'http_proxy') and returns the
 /// proxy hostname to resolve or nullopt on error. Also sets 'user_cred' to user
 /// credentials if present in the 'http_proxy' env var, otherwise leaves it
-/// unchanged.
+/// unchanged. Sets 'use_tls' to true if the proxy URI uses https:// scheme.
+/// Sets 'proxy_server_name' to the proxy hostname for TLS verification.
 ///
 std::optional<std::string> GetHttpProxyServer(
-    const ChannelArgs& args, std::optional<std::string>* user_cred) {
+    const ChannelArgs& args, std::optional<std::string>* user_cred,
+    bool* use_tls, std::optional<std::string>* proxy_server_name) {
   GRPC_CHECK_NE(user_cred, nullptr);
+  GRPC_CHECK_NE(use_tls, nullptr);
+  GRPC_CHECK_NE(proxy_server_name, nullptr);
+  *use_tls = false;
   absl::StatusOr<URI> uri;
   // We check the following places to determine the HTTP proxy to use, stopping
   // at the first one that is set:
@@ -128,7 +133,17 @@ std::optional<std::string> GetHttpProxyServer(
                << uri.status();
     return std::nullopt;
   }
-  if (uri->scheme() != "http") {
+  if (uri->scheme() == "http") {
+    *use_tls = false;
+  } else if (uri->scheme() == "https") {
+    *use_tls = true;
+    // Extract the hostname for TLS server name verification
+    absl::string_view host;
+    absl::string_view port;
+    SplitHostPort(uri->host_port(), &host, &port);
+    *proxy_server_name = std::string(host);
+    VLOG(2) << "HTTPS proxy detected, TLS will be used for proxy connection";
+  } else {
     LOG(ERROR) << "'" << uri->scheme() << "' scheme not supported in proxy URI";
     return std::nullopt;
   }
@@ -189,7 +204,10 @@ std::optional<std::string> HttpProxyMapper::MapName(
     return std::nullopt;
   }
   std::optional<std::string> user_cred;
-  auto name_to_resolve = GetHttpProxyServer(*args, &user_cred);
+  bool use_tls = false;
+  std::optional<std::string> proxy_server_name;
+  auto name_to_resolve =
+      GetHttpProxyServer(*args, &user_cred, &use_tls, &proxy_server_name);
   if (!name_to_resolve.has_value()) return name_to_resolve;
   absl::StatusOr<URI> uri = URI::Parse(server_uri);
   if (!uri.ok() || uri->path().empty()) {
@@ -239,6 +257,13 @@ std::optional<std::string> HttpProxyMapper::MapName(
     *args = args->Set(
         GRPC_ARG_HTTP_CONNECT_HEADERS,
         absl::StrCat("Proxy-Authorization:Basic ", encoded_user_cred));
+  }
+  // Set HTTPS proxy TLS channel args if using TLS to the proxy.
+  if (use_tls) {
+    *args = args->Set(GRPC_ARG_HTTP_PROXY_TLS_ENABLED, true);
+    if (proxy_server_name.has_value()) {
+      *args = args->Set(GRPC_ARG_HTTP_PROXY_TLS_SERVER_NAME, *proxy_server_name);
+    }
   }
   return name_to_resolve;
 }
