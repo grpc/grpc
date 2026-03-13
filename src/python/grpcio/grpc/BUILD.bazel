@@ -85,6 +85,9 @@ py_library(
 py_library(
     name = "aio",
     srcs = glob(["aio/**/*.py"]),
+    # copybara:strip_begin
+    lazy_imports = True,
+    # copybara:strip_end
 )
 
 py_library(
