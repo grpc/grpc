@@ -44,7 +44,7 @@ class SingleLoader:
         suites = []
 
         # Look in the current working directory for the test file physically
-        target_file = target_module + ".py"
+        target_file = f"{target_module}.py"
         target_module_name = None
 
         for root, _, files in os.walk(os.getcwd()):
