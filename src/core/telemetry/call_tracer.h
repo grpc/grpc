@@ -189,17 +189,6 @@ class CallTracerInterface : public CallTracerAnnotationInterface {
 class ClientCallTracerInterface;
 class ServerCallTracerInterface;
 
-// Inline function to extract string_view from a variant of
-// RefCountedStringValue and absl::string_view.
-inline absl::string_view GetStringView(
-    const std::variant<RefCountedStringValue, absl::string_view>& v) {
-  if (const auto* rcsv = std::get_if<RefCountedStringValue>(&v);
-      rcsv != nullptr) {
-    return rcsv->as_string_view();
-  }
-  return std::get<absl::string_view>(v);
-}
-
 // Interface for a tracer that records activities on a call. Actual attempts for
 // this call are traced with CallAttemptTracer after invoking RecordNewAttempt()
 // on the ClientCallTracer object.
@@ -239,9 +228,8 @@ class ClientCallTracerInterface : public CallTracerAnnotationInterface {
 
     // Sets an optional label on the per-attempt metrics recorded at the end of
     // the attempt.
-    virtual void SetOptionalLabel(
-        OptionalLabelKey key,
-        std::variant<RefCountedStringValue, absl::string_view> value) = 0;
+    virtual void SetOptionalLabel(OptionalLabelKey key,
+                                  RefCountedStringValue value) = 0;
   };
 
   ~ClientCallTracerInterface() override {}
@@ -411,8 +399,8 @@ class CallAttemptTracer final : public CallTracer {
   void RecordEnd() { interface_->RecordEnd(); }
   void SetOptionalLabel(
       ClientCallTracerInterface::CallAttemptTracer::OptionalLabelKey key,
-      std::variant<RefCountedStringValue, absl::string_view> value) {
-    interface_->SetOptionalLabel(key, std::move(value));
+      RefCountedStringValue value) {
+    interface_->SetOptionalLabel(key, value);
   }
 
  private:

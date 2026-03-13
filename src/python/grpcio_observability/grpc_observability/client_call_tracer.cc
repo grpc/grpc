@@ -226,10 +226,8 @@ std::shared_ptr<grpc_core::TcpCallTracer> PythonOpenCensusCallTracer::
 }
 
 void PythonOpenCensusCallTracer::PythonOpenCensusCallAttemptTracer::
-    SetOptionalLabel(
-        OptionalLabelKey key,
-        std::variant<grpc_core::RefCountedStringValue, absl::string_view>
-            value) {
+    SetOptionalLabel(OptionalLabelKey key,
+                     grpc_core::RefCountedStringValue value) {
   optional_labels_array_[static_cast<size_t>(key)] = std::move(value);
 }
 

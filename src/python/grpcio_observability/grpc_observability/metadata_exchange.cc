@@ -79,9 +79,7 @@ void PythonLabelsInjector::AddExchangeLabelsToMetadata(
 
 void PythonLabelsInjector::AddXdsOptionalLabels(
     bool is_client,
-    absl::Span<
-        const std::variant<grpc_core::RefCountedStringValue, absl::string_view>>
-        optional_labels_span,
+    absl::Span<const grpc_core::RefCountedStringValue> optional_labels_span,
     std::vector<Label>& labels) {
   if (!is_client) {
     // Currently the CSM optional labels are only set on client.
@@ -90,13 +88,17 @@ void PythonLabelsInjector::AddXdsOptionalLabels(
   // Performs JSON label name format to CSM Observability Metric spec format
   // conversion.
   absl::string_view service_name =
-      grpc_core::GetStringView(optional_labels_span[static_cast<size_t>(
-          grpc_core::ClientCallTracerInterface::CallAttemptTracer::
-              OptionalLabelKey::kXdsServiceName)]);
+      optional_labels_span
+          [static_cast<size_t>(
+               grpc_core::ClientCallTracerInterface::CallAttemptTracer::
+                   OptionalLabelKey::kXdsServiceName)]
+              .as_string_view();
   absl::string_view service_namespace =
-      grpc_core::GetStringView(optional_labels_span[static_cast<size_t>(
-          grpc_core::ClientCallTracerInterface::CallAttemptTracer::
-              OptionalLabelKey::kXdsServiceNamespace)]);
+      optional_labels_span
+          [static_cast<size_t>(
+               grpc_core::ClientCallTracerInterface::CallAttemptTracer::
+                   OptionalLabelKey::kXdsServiceNamespace)]
+              .as_string_view();
   // According to the CSM Observability Metric spec, if the control plane fails
   // to provide these labels, the client will set their values to "unknown".
   if (service_name.empty()) {

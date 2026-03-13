@@ -54,9 +54,7 @@ class ServiceMeshLabelsInjector : public LabelsInjector {
   // Add optional labels to the traced calls.
   bool AddOptionalLabels(
       bool is_client,
-      absl::Span<const std::variant<grpc_core::RefCountedStringValue,
-                                    absl::string_view>>
-          optional_labels,
+      absl::Span<const grpc_core::RefCountedStringValue> optional_labels,
       opentelemetry::nostd::function_ref<
           bool(opentelemetry::nostd::string_view,
                opentelemetry::common::AttributeValue)>
@@ -65,8 +63,7 @@ class ServiceMeshLabelsInjector : public LabelsInjector {
   // Gets the size of the actual optional labels.
   size_t GetOptionalLabelsSize(
       bool is_client,
-      absl::Span<const std::variant<grpc_core::RefCountedStringValue,
-                                    absl::string_view>> /*optional_labels*/)
+      absl::Span<const grpc_core::RefCountedStringValue> /*optional_labels*/)
       const override {
     return is_client ? 2 : 0;
   }

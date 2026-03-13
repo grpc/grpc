@@ -25,7 +25,6 @@
 
 #include <memory>
 #include <string>
-#include <variant>
 
 #include "opentelemetry/trace/span.h"
 #include "src/core/call/metadata_batch.h"
@@ -107,10 +106,8 @@ class OpenTelemetryPluginImpl::ClientCallTracerInterface
     void RecordAnnotation(const Annotation& /*annotation*/) override;
     void RecordAnnotation(absl::string_view annotation, absl::Time time);
     std::shared_ptr<grpc_core::TcpCallTracer> StartNewTcpTrace() override;
-    void SetOptionalLabel(
-        OptionalLabelKey key,
-        std::variant<grpc_core::RefCountedStringValue, absl::string_view> value)
-        override;
+    void SetOptionalLabel(OptionalLabelKey key,
+                          grpc_core::RefCountedStringValue value) override;
 
    private:
     class TcpCallTracer;
@@ -122,9 +119,8 @@ class OpenTelemetryPluginImpl::ClientCallTracerInterface
     absl::Time start_time_;
     std::unique_ptr<LabelsIterable> injected_labels_;
     // Avoid std::map to avoid per-call allocations.
-    std::array<
-        std::variant<grpc_core::RefCountedStringValue, absl::string_view>,
-        static_cast<size_t>(OptionalLabelKey::kSize)>
+    std::array<grpc_core::RefCountedStringValue,
+               static_cast<size_t>(OptionalLabelKey::kSize)>
         optional_labels_;
     std::vector<std::unique_ptr<LabelsIterable>>
         injected_labels_from_plugin_options_;

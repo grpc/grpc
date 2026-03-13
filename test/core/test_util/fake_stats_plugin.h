@@ -52,7 +52,7 @@ namespace grpc_core {
 //   // expectations.
 //   EXPECT_THAT(fake_client_call_tracer_factory.GetLastFakeClientCallTracer()
 //                   ->GetLastCallAttemptTracer()
-//                   ->GetOptionalLabelsAsStringViews(),
+//                   ->GetOptionalLabels(),
 //               VerifyCsmServiceLabels());
 void RegisterFakeStatsPlugin();
 
@@ -105,29 +105,22 @@ class FakeClientCallTracer : public ClientCallTracerInterface {
     std::shared_ptr<TcpCallTracer> StartNewTcpTrace() override {
       return nullptr;
     }
-    void SetOptionalLabel(
-        OptionalLabelKey key,
-        std::variant<RefCountedStringValue, absl::string_view> value) override {
+    void SetOptionalLabel(OptionalLabelKey key,
+                          RefCountedStringValue value) override {
       optional_labels_.emplace(key, std::move(value));
     }
     std::string TraceId() override { return ""; }
     std::string SpanId() override { return ""; }
     bool IsSampled() override { return false; }
 
-    std::map<OptionalLabelKey, absl::string_view>
-    GetOptionalLabelsAsStringViews() const {
-      std::map<OptionalLabelKey, absl::string_view> result;
-      for (const auto& [key, var] : optional_labels_) {
-        result[key] = GetStringView(var);
-      }
-      return result;
+    const std::map<OptionalLabelKey, RefCountedStringValue>& GetOptionalLabels()
+        const {
+      return optional_labels_;
     }
 
    private:
     std::vector<std::string>* annotation_logger_;
-    std::map<OptionalLabelKey,
-             std::variant<RefCountedStringValue, absl::string_view>>
-        optional_labels_;
+    std::map<OptionalLabelKey, RefCountedStringValue> optional_labels_;
   };
 
   explicit FakeClientCallTracer(std::vector<std::string>* annotation_logger)
