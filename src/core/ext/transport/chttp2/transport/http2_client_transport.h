@@ -185,7 +185,7 @@ class Http2ClientTransport final : public ClientTransport,
     return Map(endpoint_.ReadSlice(num_bytes),
                [this, num_bytes](absl::StatusOr<Slice> status) {
                  OnEndpointRead(status.ok(), num_bytes);
-                 return status;
+                 return absl::StatusOr<Slice>(std::move(status));
                });
   }
 
@@ -196,7 +196,7 @@ class Http2ClientTransport final : public ClientTransport,
     return Map(endpoint_.Read(num_bytes),
                [this, num_bytes](absl::StatusOr<SliceBuffer> status) {
                  OnEndpointRead(status.ok(), num_bytes);
-                 return status;
+                 return absl::StatusOr<SliceBuffer>(std::move(status));
                });
   }
 
