@@ -30,7 +30,11 @@
 #include <grpcpp/support/status.h>
 
 #include <atomic>
+#include <cstddef>
 #include <functional>
+#include <memory>
+#include <type_traits>
+#include <utility>
 
 #include "absl/log/absl_check.h"
 
@@ -40,6 +44,8 @@ class ClientContext;
 
 namespace internal {
 class RpcMethod;
+
+std::shared_ptr<grpc::Channel> CreateVirtualChannel(grpc_call* call);
 
 /// Perform a callback-based unary call.  May optionally specify the base
 /// class of the Request and Response so that the internal calls and structures
@@ -146,6 +152,7 @@ class ClientReadReactor;
 template <class Request>
 class ClientWriteReactor;
 class ClientUnaryReactor;
+class ClientSessionReactor;
 
 // NOTE: The streaming objects are not actually implemented in the public API.
 //       These interfaces are provided for mocking only. Typical applications
@@ -210,6 +217,15 @@ class ClientCallbackUnary {
 
  protected:
   void BindReactor(ClientUnaryReactor* reactor);
+};
+
+class ClientCallbackSession {
+ public:
+  virtual ~ClientCallbackSession() {}
+  virtual void StartCall() = 0;
+
+ protected:
+  void BindReactor(ClientSessionReactor* reactor);
 };
 
 // The following classes are the reactor interfaces that are to be implemented
@@ -447,6 +463,27 @@ class ClientUnaryReactor : public internal::ClientReactor {
 
 // Define function out-of-line from class to avoid forward declaration issue
 inline void ClientCallbackUnary::BindReactor(ClientUnaryReactor* reactor) {
+  reactor->BindCall(this);
+}
+
+/// \a ClientSessionReactor is a reactor-style interface for a session RPC.
+/// This will be activated as any other reactor-based RPC, by calling
+/// StartCall on the reactor.
+class ClientSessionReactor : public internal::ClientReactor {
+ public:
+  void StartCall() { call_->StartCall(); }
+  void OnDone(const grpc::Status& /*s*/) override {}
+  virtual void OnSessionReady(std::shared_ptr<grpc::Channel> channel) = 0;
+  virtual void OnSessionAcknowledged(bool /*ok*/) {}
+
+ private:
+  friend class ClientCallbackSession;
+  void BindCall(ClientCallbackSession* call) { call_ = call; }
+  ClientCallbackSession* call_;
+};
+
+// Define function out-of-line from class to avoid forward declaration issue
+inline void ClientCallbackSession::BindReactor(ClientSessionReactor* reactor) {
   reactor->BindCall(this);
 }
 
@@ -1241,6 +1278,139 @@ class ClientCallbackUnaryFactory {
                                 static_cast<const BaseRequest*>(request),
                                 static_cast<BaseResponse*>(response), reactor);
   }
+};
+
+class ClientCallbackSessionImpl final : public ClientCallbackSession {
+ public:
+  // always allocated against a call arena, no memory free required
+  static void operator delete(void* /*ptr*/, std::size_t size) {
+    ABSL_CHECK_EQ(size, sizeof(ClientCallbackSessionImpl));
+  }
+
+  // This operator should never be called as the memory should be freed as part
+  // of the arena destruction. It only exists to provide a matching operator
+  // delete to the operator new so that some compilers will not complain (see
+  // https://github.com/grpc/grpc/issues/11301) Note at the time of adding this
+  // there are no tests catching the compiler warning.
+  static void operator delete(void*, void*) { ABSL_CHECK(false); }
+
+  void StartCall() override {
+    send_tag_.Set(
+        call_.call(), [this](bool ok) { OnSendDone(ok); }, &send_ops_,
+        /*can_inline=*/false);
+
+    send_ops_.SendInitialMetadata(&context_->send_initial_metadata_,
+                                  context_->initial_metadata_flags());
+    send_ops_.set_core_cq_tag(&send_tag_);
+    send_ops_.FillOps(&call_);
+
+    // Also start the receive status op
+    meta_tag_.Set(
+        call_.call(), [this](bool ok) { OnRecvInitialMetadataDone(ok); },
+        &meta_ops_,
+        /*can_inline=*/false);
+    meta_ops_.RecvInitialMetadata(context_);
+    meta_ops_.set_core_cq_tag(&meta_tag_);
+    meta_ops_.FillOps(&call_);
+    finish_tag_.Set(
+        call_.call(), [this](bool ok) { OnFinishDone(ok); }, &finish_ops_,
+        /*can_inline=*/false);
+    finish_ops_.ClientRecvStatus(context_, &status_);
+    finish_ops_.set_core_cq_tag(&finish_tag_);
+    finish_ops_.FillOps(&call_);
+  }
+
+ private:
+  friend class ClientCallbackSessionFactory;
+
+  template <class Request>
+  ClientCallbackSessionImpl(grpc::ChannelInterface* channel,
+                            grpc::internal::Call call,
+                            grpc::ClientContext* context,
+                            const Request* request,
+                            grpc::ClientSessionReactor* reactor,
+                            std::function<void(grpc::Status)>&& on_completion)
+      : context_(context),
+        call_(call),
+        reactor_(reactor),
+        on_completion_(std::move(on_completion)) {
+    this->BindReactor(reactor);
+    ABSL_CHECK(
+        send_ops_.SendMessagePtr(request, channel->memory_allocator()).ok());
+  }
+
+  void OnSendDone(bool ok) {
+    if (ok) {
+      auto virtual_channel = internal::CreateVirtualChannel(call_.call());
+      reactor_->OnSessionReady(std::move(virtual_channel));
+    }
+    MaybeFinish();
+  }
+
+  void OnRecvInitialMetadataDone(bool ok) {
+    reactor_->OnSessionAcknowledged(
+        ok && !reactor_->InternalTrailersOnly(call_.call()));
+    MaybeFinish();
+  }
+
+  void OnFinishDone(bool /*ok*/) { MaybeFinish(); }
+
+  void MaybeFinish() {
+    if (--ops_outstanding_ == 0) {
+      grpc::Status s = std::move(status_);
+      auto* reactor = reactor_;
+      auto on_completion = std::move(on_completion_);
+      auto* call = call_.call();
+      this->~ClientCallbackSessionImpl();
+      grpc_call_run_in_event_engine(call, [reactor, on_completion, s]() {
+        on_completion(s);
+        reactor->OnDone(s);
+      });
+      grpc_call_unref(call);
+    }
+  }
+
+  grpc::ClientContext* context_;
+  grpc::internal::Call call_;
+  grpc::ClientSessionReactor* reactor_;
+  std::function<void(grpc::Status)> on_completion_;
+  grpc::internal::CallOpSet<grpc::internal::CallOpSendInitialMetadata,
+                            grpc::internal::CallOpSendMessage>
+      send_ops_;
+  grpc::internal::CallbackWithSuccessTag send_tag_;
+  grpc::internal::CallOpSet<grpc::internal::CallOpRecvInitialMetadata>
+      meta_ops_;
+  grpc::internal::CallbackWithSuccessTag meta_tag_;
+  grpc::internal::CallOpSet<grpc::internal::CallOpClientRecvStatus> finish_ops_;
+  grpc::internal::CallbackWithSuccessTag finish_tag_;
+  grpc::Status status_;
+  std::atomic<int> ops_outstanding_{3};
+};
+
+// ClientCallbackSessionFactory is an experimental API for creating a
+// ClientCallbackSession. It is not part of the public API and may be removed or
+// changed without notice.
+class ClientCallbackSessionFactory {
+ private:
+  template <class Request, class BaseRequest = Request>
+  static void Create(
+      grpc::ChannelInterface* channel, const grpc::internal::RpcMethod& method,
+      grpc::ClientContext* context, const Request* request,
+      ClientSessionReactor* reactor,
+      std::function<void(grpc::Status)>&& on_completion = nullptr) {
+    grpc::internal::Call call =
+        channel->CreateCall(method, context, channel->CallbackCQ());
+
+    grpc_call_ref(call.call());
+
+    new (grpc_call_arena_alloc(call.call(), sizeof(ClientCallbackSessionImpl)))
+        ClientCallbackSessionImpl(channel, call, context,
+                                  static_cast<const BaseRequest*>(request),
+                                  reactor, std::move(on_completion));
+  }
+
+  template <class RequestType, class ResponseType>
+  friend class GenericStubSession;
 };
 
 }  // namespace internal
