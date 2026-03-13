@@ -530,6 +530,40 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "xds_ext_proc_end2end_test",
+    size = "large",
+    srcs = ["xds_ext_proc_end2end_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    flaky = True,
+    linkstatic = True,  # Fixes dyld error on MacOS
+    tags = [
+        "no_test_ios",
+        "no_windows",
+        "xds_end2end_test",
+    ],  # TODO(jtattermusch): fix test on windows
+    deps = [
+        ":xds_end2end_test_lib",
+        "//:config_vars",
+        "//:gpr",
+        "//:grpc",
+        "//:grpc++",
+        "//src/core:client_channel_backup_poller",
+        "//test/core/test_util:grpc_test_util",
+        "//test/core/test_util:scoped_env_var",
+        "@envoy_api//envoy/config/cluster/v3:pkg_cc_proto",
+        "@envoy_api//envoy/extensions/grpc_service/call_credentials/access_token/v3:pkg_cc_proto",
+        "@envoy_api//envoy/extensions/grpc_service/channel_credentials/google_default/v3:pkg_cc_proto",
+        "@envoy_api//envoy/extensions/filters/http/ext_proc/v3:pkg_cc_proto",
+        "@envoy_api//envoy/extensions/filters/http/router/v3:pkg_cc_proto",
+        "@envoy_api//envoy/extensions/filters/network/http_connection_manager/v3:pkg_cc_proto",
+        "@envoy_api//envoy/service/ext_proc/v3:pkg_cc_grpc",
+        "@envoy_api//envoy/service/ext_proc/v3:pkg_cc_proto",
+    ],
+)
+
+grpc_cc_test(
     name = "xds_composite_filter_end2end_test",
     size = "large",
     srcs = ["xds_composite_filter_end2end_test.cc"],
