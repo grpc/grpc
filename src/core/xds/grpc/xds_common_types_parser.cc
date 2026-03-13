@@ -618,9 +618,14 @@ std::pair<std::string, std::string> ParseHeader(
   {
     ValidationErrors::ScopedField field(errors, ".key");
     if (key.size() > 16384) errors->AddError("longer than 16384 bytes");
-    ValidateMetadataResult result = ValidateHeaderKeyIsLegal(key);
-    if (result != ValidateMetadataResult::kOk) {
-      errors->AddError(ValidateMetadataResultToString(result));
+    if (absl::StartsWith(key, ":") || absl::StartsWith(key, "grpc-") ||
+        key == "host") {
+      errors->AddError(absl::StrCat("header \"", key, "\" not allowed"));
+    } else {
+      ValidateMetadataResult result = ValidateHeaderKeyIsLegal(key);
+      if (result != ValidateMetadataResult::kOk) {
+        errors->AddError(ValidateMetadataResultToString(result));
+      }
     }
   }
   // value or raw_value

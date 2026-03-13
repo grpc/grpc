@@ -71,7 +71,7 @@ opentelemetry-semantic-conventions==0.51b0
     # via opentelemetry-sdk
 prometheus-client==0.21.1
     # via opentelemetry-exporter-prometheus
-protobuf==6.33.5
+protobuf==6.31.1
     # via
     #   -r requirements.bazel.txt
     #   googleapis-common-protos
@@ -91,7 +91,7 @@ requests==2.32.3
     #   opentelemetry-resourcedetector-gcp
 rsa==4.9
     # via google-auth
-tomli==2.4.0
+tomli==2.2.1
     # via incremental
 twisted==24.11.0
     # via -r requirements.bazel.txt

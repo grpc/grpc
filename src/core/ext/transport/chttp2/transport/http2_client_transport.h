@@ -183,9 +183,9 @@ class Http2ClientTransport final : public ClientTransport,
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto EndpointReadSlice(
       const size_t num_bytes) {
     return Map(endpoint_.ReadSlice(num_bytes),
-               [this, num_bytes](absl::StatusOr<Slice> status) {
+               [this, num_bytes](absl::StatusOr<Slice>&& status) {
                  OnEndpointRead(status.ok(), num_bytes);
-                 return status;
+                 return std::move(status);
                });
   }
 
@@ -194,9 +194,9 @@ class Http2ClientTransport final : public ClientTransport,
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto EndpointRead(
       const size_t num_bytes) {
     return Map(endpoint_.Read(num_bytes),
-               [this, num_bytes](absl::StatusOr<SliceBuffer> status) {
+               [this, num_bytes](absl::StatusOr<SliceBuffer>&& status) {
                  OnEndpointRead(status.ok(), num_bytes);
-                 return status;
+                 return std::move(status);
                });
   }
 
