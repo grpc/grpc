@@ -242,11 +242,8 @@ TokenFetcherCredentials::~TokenFetcherCredentials() {
 }
 
 void TokenFetcherCredentials::Orphaned() {
-  {
-    MutexLock lock(&mu_);
-    fetch_state_.reset();
-  }
-  event_engine_.reset();
+  MutexLock lock(&mu_);
+  fetch_state_.reset();
 }
 
 ArenaPromise<absl::StatusOr<ClientMetadataHandle>>

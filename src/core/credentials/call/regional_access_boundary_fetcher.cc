@@ -354,7 +354,7 @@ void EmailFetcher::Fetch(absl::string_view token,
 
 void EmailFetcher::Orphaned() {
   MutexLock lock(&mu_);
-  state_ = OrphanablePtr<EmailRequest>(nullptr);
+  state_ = RefCountedPtr<RegionalAccessBoundaryFetcher>(nullptr);
 }
 
 void EmailFetcher::OnEmailFetchComplete(absl::string_view email) {
