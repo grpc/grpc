@@ -1335,6 +1335,19 @@ TEST_P(End2endTest, ClientCancelsBidi) {
   }
 }
 
+TEST_P(End2endTest, SerializationFailure) {
+  ResetStub();
+  EchoRequest request;
+  EchoResponse response;
+  // Too big to be serialized (exceeds 2GB total)
+  request.set_message(string(static_cast<size_t>(INT_MAX), 'a'));
+  request.mutable_param()->set_server_die(true);
+
+  ClientContext context;
+  Status s = stub_->Echo(&context, request, &response);
+  EXPECT_FALSE(s.ok());
+}
+
 TEST_P(End2endTest, RpcMaxMessageSize) {
   ResetStub();
   EchoRequest request;
