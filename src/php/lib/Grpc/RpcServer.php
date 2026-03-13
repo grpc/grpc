@@ -1,4 +1,5 @@
 <?php
+
 /*
  *
  * Copyright 2020 gRPC authors.
@@ -61,43 +62,45 @@ class RpcServer extends Server
     public function run()
     {
         $this->start();
-        while (true) try {
-            // This blocks until the server receives a request
-            $event = $this->waitForNextEvent();
-
-            $full_path = $event->method;
-            $context = new ServerContext($event);
-            $server_writer = new ServerCallWriter($event->call, $context);
-
-            if (!array_key_exists($full_path, $this->paths_map)) {
-                $context->setStatus(Status::unimplemented());
-                $server_writer->finish();
-                continue;
-            };
-
-            $method_desc = $this->paths_map[$full_path];
-            $server_reader = new ServerCallReader(
-                $event->call,
-                $method_desc->request_type
-            );
-
+        while (true) {
             try {
-                $this->processCall(
-                    $method_desc,
-                    $server_reader,
-                    $server_writer,
-                    $context
+                // This blocks until the server receives a request
+                $event = $this->waitForNextEvent();
+
+                $full_path = $event->method;
+                $context = new ServerContext($event);
+                $server_writer = new ServerCallWriter($event->call, $context);
+
+                if (!array_key_exists($full_path, $this->paths_map)) {
+                    $context->setStatus(Status::unimplemented());
+                    $server_writer->finish();
+                    continue;
+                };
+
+                $method_desc = $this->paths_map[$full_path];
+                $server_reader = new ServerCallReader(
+                    $event->call,
+                    $method_desc->request_type
                 );
+
+                try {
+                    $this->processCall(
+                        $method_desc,
+                        $server_reader,
+                        $server_writer,
+                        $context
+                    );
+                } catch (\Exception $e) {
+                    $context->setStatus(Status::status(
+                        STATUS_INTERNAL,
+                        $e->getMessage()
+                    ));
+                    $server_writer->finish();
+                }
             } catch (\Exception $e) {
-                $context->setStatus(Status::status(
-                    STATUS_INTERNAL,
-                    $e->getMessage()
-                ));
-                $server_writer->finish();
+                fwrite(STDERR, "ERROR: " . $e->getMessage() . PHP_EOL);
+                exit(1);
             }
-        } catch (\Exception $e) {
-            fwrite(STDERR, "ERROR: " . $e->getMessage() . PHP_EOL);
-            exit(1);
         }
     }
 
@@ -113,8 +116,8 @@ class RpcServer extends Server
                 $request = $server_reader->read();
                 $response =
                     call_user_func(
-                        array($method_desc->service, $method_desc->method_name),
-                        $request ?? new $method_desc->request_type,
+                        [$method_desc->service, $method_desc->method_name],
+                        $request ?? new $method_desc->request_type(),
                         $context
                     );
                 $server_writer->finish($response);
@@ -122,15 +125,15 @@ class RpcServer extends Server
             case MethodDescriptor::SERVER_STREAMING_CALL:
                 $request = $server_reader->read();
                 call_user_func(
-                    array($method_desc->service, $method_desc->method_name),
-                    $request ?? new $method_desc->request_type,
+                    [$method_desc->service, $method_desc->method_name],
+                    $request ?? new $method_desc->request_type(),
                     $server_writer,
                     $context
                 );
                 break;
             case MethodDescriptor::CLIENT_STREAMING_CALL:
                 $response = call_user_func(
-                    array($method_desc->service, $method_desc->method_name),
+                    [$method_desc->service, $method_desc->method_name],
                     $server_reader,
                     $context
                 );
@@ -138,7 +141,7 @@ class RpcServer extends Server
                 break;
             case MethodDescriptor::BIDI_STREAMING_CALL:
                 call_user_func(
-                    array($method_desc->service, $method_desc->method_name),
+                    [$method_desc->service, $method_desc->method_name],
                     $server_reader,
                     $server_writer,
                     $context
