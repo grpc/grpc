@@ -45,6 +45,9 @@ for pkg in ALL_PACKAGES:
 
 # -- Project information -----------------------------------------------------
 
+# See Sphinx configuration variables at
+# https://www.sphinx-doc.org/en/master/usage/configuration.html
+
 project = "gRPC Python"
 copyright = "2025, The gRPC Authors"
 author = "The gRPC Authors"
@@ -55,10 +58,10 @@ import grpc_version
 release = grpc_version.VERSION
 version = ".".join(release.split(".")[:3])
 if "dev" in release:
-    branch = "master"
+    _branch = "master"
 else:
     _major, _minor = release.split(".")[:2]
-    branch = f"v{_major}.{_minor}.x"
+    _branch = f"v{_major}.{_minor}.x"
 
 # -- General configuration ---------------------------------------------------
 
@@ -88,7 +91,9 @@ autodoc_default_options = {
     "members": None,
 }
 
-autodoc_mock_imports = ["envoy"]
+autodoc_mock_imports = [
+    "envoy",
+]
 
 autodoc_typehints = "description"
 
@@ -143,5 +148,5 @@ todo_include_todos = True
 
 rst_epilog = (
     ".. |channel_arg_names_link| replace::"
-    f" https://github.com/grpc/grpc/blob/{branch}/include/grpc/impl/channel_arg_names.h"
+    f" https://github.com/grpc/grpc/blob/{_branch}/include/grpc/impl/channel_arg_names.h"
 )
