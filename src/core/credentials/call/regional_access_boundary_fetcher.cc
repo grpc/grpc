@@ -240,7 +240,11 @@ void RegionalAccessBoundaryFetcher::Request::OnResponse(grpc_error_handle error)
   if (success) {
     fetcher_->OnFetchSuccess(Slice::FromCopiedString(encoded_locations), std::move(locations));
   } else {
-    fetcher_->OnFetchFailure(Ref(), error, response_.status, absl::string_view(response_.body, response_.body_length));
+    fetcher_->OnFetchFailure(
+        Ref(), error, response_.status,
+        response_.body != nullptr
+            ? absl::string_view(response_.body, response_.body_length)
+            : absl::string_view());
   }
 }
 
@@ -248,6 +252,7 @@ class EmailFetcher::EmailRequest final : public InternallyRefCounted<EmailReques
  public:
   explicit EmailRequest(WeakRefCountedPtr<EmailFetcher> fetcher)
       : fetcher_(std::move(fetcher)) {
+    memset(&response_, 0, sizeof(response_));
     pollent_ = grpc_polling_entity_create_from_pollset_set(
         grpc_pollset_set_create());
   }

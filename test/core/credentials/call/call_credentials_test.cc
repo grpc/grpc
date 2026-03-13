@@ -4495,6 +4495,11 @@ TEST_F(ExternalAccountCredentialsTest, SuccessWithWorkforcePoolRab) {
   };
   auto creds = MakeRefCounted<TestExternalAccountCredentials>(
       options, std::vector<std::string>(), event_engine_);
+
+  // Check ref count of event_engine. It should be three to cover:
+  // (one in test, one in TokenFetcherCredentials, and one in RegionalAccessBoundaryFetcher
+  EXPECT_EQ(event_engine_.use_count(), 3);
+
   auto state_initial = RequestMetadataState::NewInstance(
       absl::OkStatus(), "authorization: Bearer token_exchange_access_token");
   auto state_cached = RequestMetadataState::NewInstance(

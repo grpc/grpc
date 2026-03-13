@@ -628,6 +628,15 @@ TEST_F(EmailFetcherTest, EmailFetchBackoffRespected) {
   EXPECT_EQ(g_mock_get_count, 2);
 }
 
+TEST_F(EmailFetcherTest, EarlyDestructionDoesNotCrash) {
+  ExecCtx exec_ctx;
+  HttpRequest::SetOverride(httpcli_get_stalled, nullptr, nullptr);
+  email_fetcher_->StartEmailFetch();
+  // Do NOT flush ExecCtx. We want the request to be in flight.
+  // Now destroy the fetcher.
+  email_fetcher_.reset();
+}
+
 }  // namespace
 
 
