@@ -25,9 +25,7 @@
 
 #include <atomic>
 #include <cstring>
-#include <functional>
 #include <memory>
-#include <optional>
 #include <utility>
 
 #include "src/core/lib/event_engine/extensions/chaotic_good_extension.h"
@@ -40,10 +38,7 @@
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
-#include "src/core/util/dump_args.h"
 #include "src/core/util/grpc_check.h"
-#include "src/core/util/sync.h"
-#include "absl/base/thread_annotations.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 
@@ -73,7 +68,7 @@ class PromiseEndpoint {
   // Concurrent writes are not supported, which means callers should not call
   // `Write()` before the previous write finishes. Doing that results in
   // undefined behavior.
-  auto Write(SliceBuffer data, WriteArgs write_args) {
+  auto Write(SliceBuffer&& data, WriteArgs write_args) {
     GRPC_LATENT_SEE_SCOPE("GRPC:Write");
     // Start write and assert previous write finishes.
     auto prev = write_state_->state.exchange(WriteState::kWriting,
@@ -170,12 +165,12 @@ class PromiseEndpoint {
     return If(
         complete,
         [this, num_bytes]() {
-          SliceBuffer ret;
-          grpc_slice_buffer_move_first_no_inline(
-              read_state_->buffer.c_slice_buffer(), num_bytes,
-              ret.c_slice_buffer());
-          return [ret = std::move(
-                      ret)]() mutable -> Poll<absl::StatusOr<SliceBuffer>> {
+          return [read_state = read_state_,
+                  num_bytes]() mutable -> Poll<absl::StatusOr<SliceBuffer>> {
+            SliceBuffer ret;
+            grpc_slice_buffer_move_first_no_inline(
+                read_state->buffer.c_slice_buffer(), num_bytes,
+                ret.c_slice_buffer());
             return std::move(ret);
           };
         },
@@ -209,11 +204,12 @@ class PromiseEndpoint {
   // `ReadSlice()` before the previous read finishes. Doing that results in
   // undefined behavior.
   auto ReadSlice(size_t num_bytes) {
-    return Map(Read(num_bytes),
-               [](absl::StatusOr<SliceBuffer> buffer) -> absl::StatusOr<Slice> {
-                 if (!buffer.ok()) return buffer.status();
-                 return buffer->JoinIntoSlice();
-               });
+    return Map(
+        Read(num_bytes),
+        [](absl::StatusOr<SliceBuffer>&& buffer) -> absl::StatusOr<Slice> {
+          if (!buffer.ok()) return buffer.status();
+          return buffer->JoinIntoSlice();
+        });
   }
 
   // Returns a promise that resolves to a byte with type `uint8_t`.
