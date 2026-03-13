@@ -19,6 +19,7 @@
 #include <grpc/create_channel_from_endpoint.h>
 #include <grpc/grpc.h>
 #include <grpc/impl/channel_arg_names.h>
+#include <grpc/impl/grpc_types.h>
 #include <grpc/support/port_platform.h>
 
 #include "src/core/channelz/channelz.h"
@@ -26,6 +27,7 @@
 #include "src/core/client_channel/direct_channel.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/credentials/transport/transport_credentials.h"
+#include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_args_preconditioning.h"
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
@@ -40,6 +42,7 @@
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/surface/lame_client.h"
 #include "src/core/lib/surface/legacy_channel.h"
+#include "src/core/resolver/endpoint_addresses.h"
 #include "src/core/resolver/fake/fake_resolver.h"
 #include "src/core/telemetry/stats.h"
 #include "src/core/telemetry/stats_data.h"
@@ -169,7 +172,16 @@ grpc_channel* CreateChannelFromEndpoint(
   }
   Resolver::Result result;
   result.args = channel_args;
-  result.addresses = EndpointAddressesList({EndpointAddresses{address, {}}});
+  auto uri = grpc_sockaddr_to_uri(&address);
+  if (!uri.ok()) {
+    return grpc_lame_client_channel_create(
+        "fake:created-from-endpoint",
+        static_cast<grpc_status_code>(uri.status().code()),
+        absl::StrCat("Failed to convert address to URI: ",
+                     uri.status().message())
+            .c_str());
+  }
+  result.addresses = EndpointAddressesList({EndpointAddresses{*uri, {}}});
   response_generator->SetResponseAsync(std::move(result));
   auto r = CreateClientEndpointChannel(
       "fake:created-from-endpoint", creds,

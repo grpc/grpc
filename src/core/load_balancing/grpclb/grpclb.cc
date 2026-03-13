@@ -453,7 +453,7 @@ class GrpcLb final : public LoadBalancingPolicy {
         : ParentOwningDelegatingChannelControlHelper(std::move(parent)) {}
 
     RefCountedPtr<SubchannelInterface> CreateSubchannel(
-        const grpc_resolved_address& address,
+        const std::string& address,
         const ChannelArgs& per_address_args, const ChannelArgs& args) override;
     void UpdateState(grpc_connectivity_state state, const absl::Status& status,
                      RefCountedPtr<SubchannelPicker> picker) override;
@@ -651,17 +651,19 @@ class GrpcLb::Serverlist::AddressIterator final
           server.load_balance_token, GPR_ARRAY_SIZE(server.load_balance_token));
       auto lb_token = grpc_event_engine::experimental::Slice::FromCopiedBuffer(
           server.load_balance_token, lb_token_length);
+      auto addr_uri = grpc_sockaddr_to_uri(&addr);
+      std::string addr_str =
+          addr_uri.ok() ? *addr_uri : addr_uri.status().ToString();
       if (lb_token.empty()) {
-        auto addr_uri = grpc_sockaddr_to_uri(&addr);
         GRPC_TRACE_LOG(glb, INFO)
-            << "Missing LB token for backend address '"
-            << (addr_uri.ok() ? *addr_uri : addr_uri.status().ToString())
+            << "Missing LB token for backend address '" << addr_str
             << "'. The empty token will be used instead";
       }
       // Return address with a channel arg containing LB token and stats object.
       callback(EndpointAddresses(
-          addr, ChannelArgs().SetObject(MakeRefCounted<TokenAndClientStatsArg>(
-                    std::move(lb_token), client_stats_))));
+          addr_str,
+          ChannelArgs().SetObject(MakeRefCounted<TokenAndClientStatsArg>(
+              std::move(lb_token), client_stats_))));
     }
   }
 
@@ -786,15 +788,14 @@ GrpcLb::PickResult GrpcLb::Picker::Pick(PickArgs args) {
 //
 
 RefCountedPtr<SubchannelInterface> GrpcLb::Helper::CreateSubchannel(
-    const grpc_resolved_address& address, const ChannelArgs& per_address_args,
+    const std::string& address, const ChannelArgs& per_address_args,
     const ChannelArgs& args) {
   if (parent()->shutting_down_) return nullptr;
   const auto* arg = per_address_args.GetObject<TokenAndClientStatsArg>();
   if (arg == nullptr) {
-    auto addr_str = grpc_sockaddr_to_string(&address, false);
     Crash(
         absl::StrFormat("[grpclb %p] no TokenAndClientStatsArg for address %s",
-                        parent(), addr_str.value_or("N/A").c_str()));
+                        parent(), address));
   }
   return MakeRefCounted<SubchannelWrapper>(
       parent()->channel_control_helper()->CreateSubchannel(

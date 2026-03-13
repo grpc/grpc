@@ -22,6 +22,7 @@
 #include "src/core/config/core_configuration.h"
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/channel/promise_based_filter.h"
+#include "src/core/resolver/endpoint_addresses.h"
 #include "src/core/service_config/service_config_impl.h"
 #include "test/core/call/yodel/yodel_test.h"
 #include "gtest/gtest.h"
@@ -84,9 +85,8 @@ class ClientChannelTest : public YodelTest {
       absl::StatusOr<RefCountedPtr<ServiceConfig>> service_config = nullptr,
       RefCountedPtr<ConfigSelector> config_selector = nullptr) {
     Resolver::Result result;
-    grpc_resolved_address address;
-    CHECK(grpc_parse_uri(URI::Parse(endpoint_address).value(), &address));
-    result.addresses = EndpointAddressesList({EndpointAddresses{address, {}}});
+    result.addresses = EndpointAddressesList(
+        {EndpointAddresses{std::string(endpoint_address), {}}});
     result.service_config = std::move(service_config);
     if (config_selector != nullptr) {
       CHECK(result.service_config.ok())
