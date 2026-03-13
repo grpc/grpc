@@ -34,7 +34,7 @@ gevent==25.9.1
     # via -r requirements.bazel.txt
 google-auth==2.38.0
     # via -r requirements.bazel.txt
-googleapis-common-protos==1.66.0
+googleapis-common-protos==1.72.0
     # via -r requirements.bazel.txt
 greenlet==3.2.4
     # via gevent
@@ -71,7 +71,7 @@ opentelemetry-semantic-conventions==0.51b0
     # via opentelemetry-sdk
 prometheus-client==0.21.1
     # via opentelemetry-exporter-prometheus
-protobuf==5.29.3
+protobuf==6.31.1
     # via
     #   -r requirements.bazel.txt
     #   googleapis-common-protos
