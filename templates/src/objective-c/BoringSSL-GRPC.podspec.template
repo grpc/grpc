@@ -174,9 +174,9 @@
                                 'crypto/*.h',
                                 'crypto/**/*.h',
                                 'third_party/fiat/*.h'
-      ss.exclude_files = './**/*_test.*',
-                         './**/test_*.*',
-                         './**/test/*.*'
+      ss.exclude_files = '**/*_test.*',
+                         '**/test_*.*',
+                         '**/test/*.*'
 
       ss.dependency "#{s.name}/Interface", version
     end
