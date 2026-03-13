@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Interceptors implementation of gRPC Asyncio Python."""
+
 from __future__ import annotations
 
 from abc import ABCMeta
@@ -634,9 +635,11 @@ class InterceptedUnaryUnaryCall(
         request_serializer: Optional[SerializingFunction],
         response_deserializer: Optional[DeserializingFunction],
         loop: asyncio.AbstractEventLoop,
+        registered_call_handle: Optional[int] = None,
     ) -> None:
         self._loop = loop
         self._channel = channel
+        self._registered_call_handle = registered_call_handle
         interceptors_task = loop.create_task(
             self._invoke(
                 interceptors,
@@ -695,6 +698,7 @@ class InterceptedUnaryUnaryCall(
                 request_serializer,
                 response_deserializer,
                 self._loop,
+                self._registered_call_handle,
             )
 
         client_call_details = ClientCallDetails(
@@ -731,9 +735,11 @@ class InterceptedUnaryStreamCall(
         request_serializer: Optional[SerializingFunction],
         response_deserializer: Optional[DeserializingFunction],
         loop: asyncio.AbstractEventLoop,
+        registered_call_handle: Optional[int] = None,
     ) -> None:
         self._loop = loop
         self._channel = channel
+        self._registered_call_handle = registered_call_handle
         self._init_stream_response_mixin()
         self._last_returned_call_from_interceptors = None
         interceptors_task = loop.create_task(
@@ -807,6 +813,7 @@ class InterceptedUnaryStreamCall(
                 request_serializer,
                 response_deserializer,
                 self._loop,
+                self._registered_call_handle,
             )
 
             return self._last_returned_call_from_interceptors
@@ -851,9 +858,11 @@ class InterceptedStreamUnaryCall(
         request_serializer: Optional[SerializingFunction],
         response_deserializer: Optional[DeserializingFunction],
         loop: asyncio.AbstractEventLoop,
+        registered_call_handle: Optional[int] = None,
     ) -> None:
         self._loop = loop
         self._channel = channel
+        self._registered_call_handle = registered_call_handle
         request_iterator = self._init_stream_request_mixin(request_iterator)
         interceptors_task = loop.create_task(
             self._invoke(
@@ -909,6 +918,7 @@ class InterceptedStreamUnaryCall(
                 request_serializer,
                 response_deserializer,
                 self._loop,
+                self._registered_call_handle,
             )
 
         client_call_details = ClientCallDetails(
@@ -950,9 +960,11 @@ class InterceptedStreamStreamCall(
         request_serializer: Optional[SerializingFunction],
         response_deserializer: Optional[DeserializingFunction],
         loop: asyncio.AbstractEventLoop,
+        registered_call_handle: Optional[int] = None,
     ) -> None:
         self._loop = loop
         self._channel = channel
+        self._registered_call_handle = registered_call_handle
         self._init_stream_response_mixin()
         request_iterator = self._init_stream_request_mixin(request_iterator)
         self._last_returned_call_from_interceptors = None
@@ -1027,6 +1039,7 @@ class InterceptedStreamStreamCall(
                 request_serializer,
                 response_deserializer,
                 self._loop,
+                self._registered_call_handle,
             )
             return self._last_returned_call_from_interceptors
 

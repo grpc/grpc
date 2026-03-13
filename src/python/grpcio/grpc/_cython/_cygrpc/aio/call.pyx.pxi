@@ -46,7 +46,8 @@ cdef int _get_send_initial_metadata_flags(object wait_for_ready) except *:
 cdef class _AioCall(GrpcCallWrapper):
 
     def __cinit__(self, AioChannel channel, object deadline,
-                  bytes method, CallCredentials call_credentials, object wait_for_ready):
+                  bytes method, CallCredentials call_credentials, object wait_for_ready,
+                  object registered_call_handle):
         init_grpc_aio()
         self.call = NULL
         self._channel = channel
@@ -61,7 +62,7 @@ cdef class _AioCall(GrpcCallWrapper):
         self._deadline = deadline
         self._send_initial_metadata_flags = _get_send_initial_metadata_flags(wait_for_ready)
         self._call_tracer_capsule = None
-        self._create_grpc_call(deadline, method, call_credentials)
+        self._create_grpc_call(deadline, method, call_credentials, registered_call_handle)
 
     def __dealloc__(self):
         if self.call:
@@ -98,7 +99,8 @@ cdef class _AioCall(GrpcCallWrapper):
     cdef void _create_grpc_call(self,
                                 object deadline,
                                 bytes method,
-                                CallCredentials credentials) except *:
+                                CallCredentials credentials,
+                                object registered_call_handle) except *:
         """Creates the corresponding Core object for this RPC.
 
         For unary calls, the grpc_call lives shortly and can be destroyed after
@@ -111,28 +113,45 @@ cdef class _AioCall(GrpcCallWrapper):
         cdef gpr_timespec c_deadline = _timespec_from_time(deadline)
         cdef grpc_call_error set_credentials_error
 
-        method_slice = grpc_slice_from_copied_buffer(
-            <const char *> method,
-            <size_t> len(method)
-        )
-        self.call = grpc_channel_create_call(
-            self._channel.channel,
-            NULL,
-            _EMPTY_MASK,
-            global_completion_queue(),
-            method_slice,
-            NULL,
-            c_deadline,
-            NULL
-        )
+        if registered_call_handle:
+            self.call = grpc_channel_create_registered_call(
+                self._channel.channel,
+                NULL,
+                _EMPTY_MASK,
+                global_completion_queue(),
+                cpython.PyLong_AsVoidPtr(registered_call_handle),
+                c_deadline,
+                NULL
+            )
+            self._maybe_save_registered_method(method)
+        else:
+            method_slice = grpc_slice_from_copied_buffer(
+                <const char *> method,
+                <size_t> len(method)
+            )
+            self.call = grpc_channel_create_call(
+                self._channel.channel,
+                NULL,
+                _EMPTY_MASK,
+                global_completion_queue(),
+                method_slice,
+                NULL,
+                c_deadline,
+                NULL
+            )
+            grpc_slice_unref(method_slice)
 
         if credentials is not None:
             set_credentials_error = grpc_call_set_credentials(self.call, credentials.c())
             if set_credentials_error != GRPC_CALL_OK:
                 raise InternalError("Credentials couldn't have been set: {0}".format(set_credentials_error))
 
-        grpc_slice_unref(method_slice)
         self._maybe_set_client_call_tracer_on_call(method)
+
+    cdef void _maybe_save_registered_method(self, bytes method) except *:
+        with _observability.get_plugin() as plugin:
+            if plugin and plugin.observability_enabled:
+                plugin.save_registered_method(method)
 
     cdef void _maybe_set_client_call_tracer_on_call(self, bytes method) except *:
         # TODO(zgoda): use channel args to exclude those metrics.

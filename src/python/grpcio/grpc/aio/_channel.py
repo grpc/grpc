@@ -94,6 +94,7 @@ class _BaseMultiCallable:
     _interceptors: Optional[Sequence[ClientInterceptor]]
     _references: List[Any]
     _loop: asyncio.AbstractEventLoop
+    _registered_call_handle: Optional[int]
 
     # pylint: disable=too-many-arguments
     def __init__(
@@ -105,6 +106,7 @@ class _BaseMultiCallable:
         interceptors: Optional[Sequence[ClientInterceptor]],
         references: List[Any],
         loop: asyncio.AbstractEventLoop,
+        _registered_call_handle: Optional[int] = None,
     ) -> None:
         self._loop = loop
         self._channel = channel
@@ -113,6 +115,7 @@ class _BaseMultiCallable:
         self._response_deserializer = response_deserializer
         self._interceptors = interceptors
         self._references = references
+        self._registered_call_handle = _registered_call_handle
 
     @staticmethod
     def _init_metadata(
@@ -160,6 +163,7 @@ class UnaryUnaryMultiCallable(
                 self._request_serializer,
                 self._response_deserializer,
                 self._loop,
+                self._registered_call_handle,
             )
         else:
             call = InterceptedUnaryUnaryCall(
@@ -174,6 +178,7 @@ class UnaryUnaryMultiCallable(
                 self._request_serializer,
                 self._response_deserializer,
                 self._loop,
+                self._registered_call_handle,
             )
 
         return call
@@ -206,6 +211,7 @@ class UnaryStreamMultiCallable(
                 self._request_serializer,
                 self._response_deserializer,
                 self._loop,
+                self._registered_call_handle,
             )
         else:
             call = InterceptedUnaryStreamCall(
@@ -220,6 +226,7 @@ class UnaryStreamMultiCallable(
                 self._request_serializer,
                 self._response_deserializer,
                 self._loop,
+                self._registered_call_handle,
             )
 
         return call
@@ -251,6 +258,7 @@ class StreamUnaryMultiCallable(
                 self._request_serializer,
                 self._response_deserializer,
                 self._loop,
+                self._registered_call_handle,
             )
         else:
             call = InterceptedStreamUnaryCall(
@@ -265,6 +273,7 @@ class StreamUnaryMultiCallable(
                 self._request_serializer,
                 self._response_deserializer,
                 self._loop,
+                self._registered_call_handle,
             )
 
         return call
@@ -296,6 +305,7 @@ class StreamStreamMultiCallable(
                 self._request_serializer,
                 self._response_deserializer,
                 self._loop,
+                self._registered_call_handle,
             )
         else:
             call = InterceptedStreamStreamCall(
@@ -310,6 +320,7 @@ class StreamStreamMultiCallable(
                 self._request_serializer,
                 self._response_deserializer,
                 self._loop,
+                self._registered_call_handle,
             )
 
         return call
@@ -479,14 +490,25 @@ class Channel(_base_channel.Channel):
             await self.wait_for_state_change(state)
             state = self.get_state(try_to_connect=True)
 
-    # TODO(xuanwn): Implement this method after we have
-    # observability for Asyncio.
     def _get_registered_call_handle(self, method: str) -> int:
-        pass
+        """
+        Get the registered call handle for a method.
 
-    # TODO(xuanwn): Implement _registered_method after we have
-    # observability for Asyncio.
-    # pylint: disable=arguments-differ,unused-argument
+        This is a semi-private method. It is intended for use only by gRPC generated code.
+
+        This method is not thread-safe. It is acceptable since method is only called
+        during multicallable construction, not during RPC exeution. Moreover there
+        are no `await` suspension points, which can interleave.
+
+        Args:
+          method: Required, the method name for the RPC.
+
+        Returns:
+          The registered call handle pointer in the form of a Python Long.
+        """
+        return self._channel.get_registered_call_handle(_common.encode(method))
+
+    # pylint: disable=arguments-differ
     def unary_unary(
         self,
         method: str,
@@ -494,6 +516,9 @@ class Channel(_base_channel.Channel):
         response_deserializer: Optional[DeserializingFunction] = None,
         _registered_method: Optional[bool] = False,
     ) -> UnaryUnaryMultiCallable:
+        _registered_call_handle = None
+        if _registered_method:
+            _registered_call_handle = self._get_registered_call_handle(method)
         return UnaryUnaryMultiCallable(
             self._channel,
             _common.encode(method),
@@ -502,11 +527,10 @@ class Channel(_base_channel.Channel):
             self._unary_unary_interceptors,
             [self],
             self._loop,
+            _registered_call_handle,
         )
 
-    # TODO(xuanwn): Implement _registered_method after we have
-    # observability for Asyncio.
-    # pylint: disable=arguments-differ,unused-argument
+    # pylint: disable=arguments-differ
     def unary_stream(
         self,
         method: str,
@@ -514,6 +538,9 @@ class Channel(_base_channel.Channel):
         response_deserializer: Optional[DeserializingFunction] = None,
         _registered_method: Optional[bool] = False,
     ) -> UnaryStreamMultiCallable:
+        _registered_call_handle = None
+        if _registered_method:
+            _registered_call_handle = self._get_registered_call_handle(method)
         return UnaryStreamMultiCallable(
             self._channel,
             _common.encode(method),
@@ -522,11 +549,10 @@ class Channel(_base_channel.Channel):
             self._unary_stream_interceptors,
             [self],
             self._loop,
+            _registered_call_handle,
         )
 
-    # TODO(xuanwn): Implement _registered_method after we have
-    # observability for Asyncio.
-    # pylint: disable=arguments-differ,unused-argument
+    # pylint: disable=arguments-differ
     def stream_unary(
         self,
         method: str,
@@ -534,6 +560,9 @@ class Channel(_base_channel.Channel):
         response_deserializer: Optional[DeserializingFunction] = None,
         _registered_method: Optional[bool] = False,
     ) -> StreamUnaryMultiCallable:
+        _registered_call_handle = None
+        if _registered_method:
+            _registered_call_handle = self._get_registered_call_handle(method)
         return StreamUnaryMultiCallable(
             self._channel,
             _common.encode(method),
@@ -542,11 +571,10 @@ class Channel(_base_channel.Channel):
             self._stream_unary_interceptors,
             [self],
             self._loop,
+            _registered_call_handle,
         )
 
-    # TODO(xuanwn): Implement _registered_method after we have
-    # observability for Asyncio.
-    # pylint: disable=arguments-differ,unused-argument
+    # pylint: disable=arguments-differ
     def stream_stream(
         self,
         method: str,
@@ -554,6 +582,9 @@ class Channel(_base_channel.Channel):
         response_deserializer: Optional[DeserializingFunction] = None,
         _registered_method: Optional[bool] = False,
     ) -> StreamStreamMultiCallable:
+        _registered_call_handle = None
+        if _registered_method:
+            _registered_call_handle = self._get_registered_call_handle(method)
         return StreamStreamMultiCallable(
             self._channel,
             _common.encode(method),
@@ -562,6 +593,7 @@ class Channel(_base_channel.Channel):
             self._stream_stream_interceptors,
             [self],
             self._loop,
+            _registered_call_handle,
         )
 
 
