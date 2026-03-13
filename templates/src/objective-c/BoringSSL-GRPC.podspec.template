@@ -211,7 +211,7 @@
       EOF
 
       # PrivacyInfo.xcprivacy is not part of BoringSSL repo, inject it during pod installation
-      base64 --decode $opts <<EOF | gunzip > src/PrivacyInfo.xcprivacy
+      base64 --decode $opts <<EOF | gunzip > PrivacyInfo.xcprivacy
         % for line in compress_and_encode_file('src/objective-c/PrivacyInfo.xcprivacy'):
         ${line.decode('utf-8')}
         % endfor
