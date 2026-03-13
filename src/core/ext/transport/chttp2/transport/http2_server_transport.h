@@ -102,9 +102,10 @@ class Http2ServerTransport final : public ServerTransport,
   //////////////////////////////////////////////////////////////////////////////
   // Constructor, Destructor etc.
   Http2ServerTransport(
-      PromiseEndpoint endpoint, GRPC_UNUSED const ChannelArgs& channel_args,
+      PromiseEndpoint endpoint, const ChannelArgs& channel_args,
       std::shared_ptr<grpc_event_engine::experimental::EventEngine>
-          event_engine);
+          event_engine,
+      absl::AnyInvocable<void(absl::StatusOr<uint32_t>)> on_receive_settings);
 
   Http2ServerTransport(const Http2ServerTransport&) = delete;
   Http2ServerTransport& operator=(const Http2ServerTransport&) = delete;
@@ -128,7 +129,7 @@ class Http2ServerTransport final : public ServerTransport,
   // Transport Functions
 
   void SetCallDestination(
-      RefCountedPtr<UnstartedCallDestination> call_destination) override;
+      RefCountedPtr<UnstartedCallDestination> unstarted_call_handler) override;
 
   void PerformOp(grpc_transport_op*) override;
 
@@ -407,9 +408,9 @@ class Http2ServerTransport final : public ServerTransport,
   //////////////////////////////////////////////////////////////////////////////
   // Settings
 
-  // auto WaitForSettingsTimeoutOnDone();
-  // void MaybeSpawnWaitForSettingsTimeout();
-  // void EnforceLatestIncomingSettings();
+  void EnforceLatestIncomingSettings();
+  auto WaitForSettingsTimeoutOnDone();
+  void MaybeSpawnWaitForSettingsTimeout();
 
   //////////////////////////////////////////////////////////////////////////////
   // Flow Control and BDP
@@ -549,7 +550,7 @@ class Http2ServerTransport final : public ServerTransport,
   //     ABSL_EXCLUSIVE_LOCKS_REQUIRED(transport_mutex_);
 
   // This function MUST run on the transport party.
-  void CloseTransport() {}
+  void CloseTransport();
 
   // Handles the error status and returns the corresponding absl status. Absl
   // Status is returned so that the error can be gracefully handled
