@@ -76,6 +76,8 @@ namespace grpc_core {
 
 template <>
 struct ArenaContextType<census_context> {
+  static constexpr ArenaContextPropagation kPropagation =
+      ArenaContextPropagation::kForward;
   static void Destroy(census_context*) {}
 };
 
@@ -237,6 +239,8 @@ class Call : public CppImplOf<Call, grpc_call>,
 
 template <>
 struct ArenaContextType<Call> {
+  static constexpr ArenaContextPropagation kPropagation =
+      ArenaContextPropagation::kForward;
   static void Destroy(Call*) {}
 };
 
