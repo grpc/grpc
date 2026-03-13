@@ -42,6 +42,7 @@
 #include "src/core/telemetry/instrument.h"
 #include "src/core/telemetry/metrics.h"
 #include "src/core/util/down_cast.h"
+#include "src/core/util/match.h"
 #include "absl/container/flat_hash_map.h"
 #include "absl/container/flat_hash_set.h"
 #include "absl/functional/any_invocable.h"
@@ -92,7 +93,9 @@ class LabelsInjector {
   // false when callback returns false.
   virtual bool AddOptionalLabels(
       bool is_client,
-      absl::Span<const grpc_core::RefCountedStringValue> optional_labels,
+      absl::Span<const std::variant<grpc_core::RefCountedStringValue,
+                                    absl::string_view>>
+          optional_labels,
       opentelemetry::nostd::function_ref<
           bool(opentelemetry::nostd::string_view,
                opentelemetry::common::AttributeValue)>
@@ -102,8 +105,9 @@ class LabelsInjector {
   // produce through the AddOptionalLabels method.
   virtual size_t GetOptionalLabelsSize(
       bool is_client,
-      absl::Span<const grpc_core::RefCountedStringValue> optional_labels)
-      const = 0;
+      absl::Span<const std::variant<grpc_core::RefCountedStringValue,
+                                    absl::string_view>>
+          optional_labels) const = 0;
 };
 
 class InternalOpenTelemetryPluginOption
@@ -247,6 +251,16 @@ class OpenTelemetryPluginImpl
   grpc_core::RefCountedPtr<grpc_core::CollectionScope> GetCollectionScope()
       const override {
     return collection_scope_;
+  }
+
+  static absl::string_view GetOptionalLabelValue(
+      std::variant<grpc_core::RefCountedStringValue, absl::string_view> v) {
+    return grpc_core::Match(
+        v,
+        [](const grpc_core::RefCountedStringValue& value) {
+          return value.as_string_view();
+        },
+        [](absl::string_view value) { return value; });
   }
 
  private:
