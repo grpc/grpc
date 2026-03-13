@@ -40,6 +40,8 @@ namespace grpc {
 namespace internal {
 
 // Forward declarations
+class Server;
+void BindSessionToInnerServer(grpc_call* call, grpc::Server* inner_server);
 template <class Request, class Response>
 class CallbackUnaryHandler;
 template <class Request, class Response>
@@ -193,6 +195,7 @@ template <class Response>
 class ServerWriteReactor;
 template <class Request, class Response>
 class ServerBidiReactor;
+class ServerSessionReactor;
 
 // NOTE: The actual call/stream object classes are provided as API only to
 // support mocking. There are no implementations of these class interfaces in
@@ -209,6 +212,21 @@ class ServerCallbackUnary : public internal::ServerCallbackCall {
   template <class Reactor>
   void BindReactor(Reactor* reactor) {
     reactor->InternalBindCall(this);
+  }
+};
+
+class ServerCallbackSession : public internal::ServerCallbackCall {
+ public:
+  ~ServerCallbackSession() override {}
+
+  virtual void Finish(grpc::Status s) = 0;
+  virtual void SendInitialMetadata() = 0;
+  virtual void BindInnerServer(grpc::Server* inner_server) = 0;
+
+ protected:
+  template <class Reactor>
+  void BindReactor(Reactor* reactor) {
+    reactor->InternalBindSession(this);
   }
 };
 
@@ -771,6 +789,75 @@ class ServerUnaryReactor : public internal::ServerReactor {
   PreBindBacklog backlog_ ABSL_GUARDED_BY(call_mu_);
 };
 
+class ServerSessionReactor : public internal::ServerReactor {
+ public:
+  ServerSessionReactor() : session_(nullptr) {}
+  ~ServerSessionReactor() override = default;
+
+  /// StartSendInitialMetadata is exactly like ServerBidiReactor.
+  void StartSendInitialMetadata() ABSL_LOCKS_EXCLUDED(session_mu_) {
+    ServerCallbackSession* session = session_.load(std::memory_order_acquire);
+    if (session == nullptr) {
+      grpc::internal::MutexLock l(&session_mu_);
+      session = session_.load(std::memory_order_relaxed);
+      if (session == nullptr) {
+        backlog_.send_initial_metadata_wanted = true;
+        return;
+      }
+    }
+    session->SendInitialMetadata();
+  }
+
+  /// Finish is similar to ServerBidiReactor except for one detail.
+  /// If the status is non-OK, any message will not be sent. Instead,
+  /// the client will only receive the status and any trailing metadata.
+  void Finish(grpc::Status s) ABSL_LOCKS_EXCLUDED(session_mu_) {
+    ServerCallbackSession* session = session_.load(std::memory_order_acquire);
+    if (session == nullptr) {
+      grpc::internal::MutexLock l(&session_mu_);
+      session = session_.load(std::memory_order_relaxed);
+      if (session == nullptr) {
+        backlog_.finish_wanted = true;
+        backlog_.status_wanted = std::move(s);
+        return;
+      }
+    }
+    session->Finish(std::move(s));
+  }
+
+  /// The following notifications are exactly like ServerBidiReactor.
+  virtual void OnSendInitialMetadataDone(bool /*ok*/) {}
+  void OnDone() override = 0;
+  void OnCancel() override {}
+
+ private:
+  friend class ServerCallbackSession;
+  // May be overridden by internal implementation details. This is not a public
+  // customization point.
+  virtual void InternalBindSession(ServerCallbackSession* session)
+      ABSL_LOCKS_EXCLUDED(session_mu_) {
+    grpc::internal::MutexLock l(&session_mu_);
+
+    if (GPR_UNLIKELY(backlog_.send_initial_metadata_wanted)) {
+      session->SendInitialMetadata();
+    }
+    if (GPR_UNLIKELY(backlog_.finish_wanted)) {
+      session->Finish(std::move(backlog_.status_wanted));
+    }
+    // Set session_ last so that other functions can use it lock-free
+    session_.store(session, std::memory_order_release);
+  }
+
+  grpc::internal::Mutex session_mu_;
+  std::atomic<ServerCallbackSession*> session_{nullptr};
+  struct PreBindBacklog {
+    bool send_initial_metadata_wanted = false;
+    bool finish_wanted = false;
+    grpc::Status status_wanted;
+  };
+  PreBindBacklog backlog_ ABSL_GUARDED_BY(session_mu_);
+};
+
 namespace internal {
 
 template <class Base>
@@ -789,6 +876,8 @@ using UnimplementedWriteReactor =
 template <class Request, class Response>
 using UnimplementedBidiReactor =
     FinishOnlyReactor<ServerBidiReactor<Request, Response>>;
+
+using UnimplementedSessionReactor = FinishOnlyReactor<ServerSessionReactor>;
 
 }  // namespace internal
 
