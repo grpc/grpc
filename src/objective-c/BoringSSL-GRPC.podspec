@@ -753,7 +753,7 @@ Pod::Spec.new do |s|
     EOF
 
     # PrivacyInfo.xcprivacy is not part of BoringSSL repo, inject it during pod installation
-    base64 --decode $opts <<EOF | gunzip > src/PrivacyInfo.xcprivacy
+    base64 --decode $opts <<EOF | gunzip > PrivacyInfo.xcprivacy
       H4sICAAAAAAC/1ByaXZhY3lJbmZvLnhjcHJpdmFjeQCFUU1PwjAYPo9fUXtnr7uoMWMEN0iWEFykHDw2
       3Ss2dGvTNuD+vUWdk4hya54+n3nT6VujyB6tk7qd0CS+pgRboWvZbid0wxbjOzrNRulV8Ziz52pOjJLO
       k2rzsCxzQscAM2MUAhSsINWyXDMSPADmK0roq/fmHuBwOMT8yIqFbo5EB5XVBq3vlsFsHARx7WsaYj7d
