@@ -60,13 +60,8 @@ namespace Grpc.Tools
                 default: Cpu = ""; break;
             }
 
-            // Use x64 on macosx arm64 until a native protoc is shipped
-            if (Os == "macosx" && Cpu == "arm64")
-            {
-                Cpu = "x64";
-            }
             // Use x86 on Windows arm64 until a native protoc is shipped
-            else if (Os == "windows" && Cpu == "arm64")
+            if (Os == "windows" && Cpu == "arm64")
             {
                 Cpu = "x86";
             }
