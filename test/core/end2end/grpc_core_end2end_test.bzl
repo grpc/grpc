@@ -278,7 +278,7 @@ def grpc_core_end2end_test_suite(
             ],
             data = _DATA,
             shard_count = shard_count,
-            tags = tags + ["core_end2end_test", "grpc:fails-internally", "grpc:no-internal-poller"],
+            tags = tags + ["core_end2end_test", "grpc:fails-internally"],
             flaky = flaky,
             **kwargs
         )
