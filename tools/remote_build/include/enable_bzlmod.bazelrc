@@ -5,3 +5,6 @@ common --enable_workspace=false
 # transitive dependencies that are currently at mismatched versions.
 #common --check_direct_dependencies=error
 common --ignore_dev_dependency=false
+# Needed because bazel can break PEP 420 implicit workspace package.
+# WORKSPACE seems unaffected, possibly due to not having repo name mangling.
+# See https://github.com/bazel-contrib/rules_python/issues/55

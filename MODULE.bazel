@@ -142,7 +142,7 @@ bazel_dep(name = "cython", version = "3.0.11-1")
 http_archive = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
 http_archive(
-    name = "typing_extensions",
+    name = "grpc_typing_extensions",
     build_file = "//third_party:typing_extensions.BUILD",
     integrity = "sha256-v29Ws22LyRVuUY6xzDehRihAgvpTUiAz93Ku++z9Ffw=",
     strip_prefix = "typing_extensions-4.12.2",
