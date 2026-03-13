@@ -19,6 +19,7 @@
 #include <grpc/grpc.h>
 #include <grpc/slice.h>
 #include <grpc/status.h>
+#include <gtest/gtest.h>
 #include <string.h>
 
 #include "src/core/util/grpc_check.h"

@@ -17,6 +17,7 @@
 //
 
 #include <grpc/grpc.h>
+#include <gtest/gtest.h>
 #include <sys/resource.h>
 
 #include "src/core/lib/experiments/config.h"
