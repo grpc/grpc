@@ -1213,6 +1213,53 @@ for the entire test case) to receive an OOB load report that matches the
 requested load report in step 3. Similar to step 2.
 5. Client half closes the stream, and asserts the streaming call is successful. 
 
+### max_concurrent_streams_connection_scaling
+
+This test verifies that when the maximum concurrent streams limit has been reached
+on the connection, the subchannel scales connections upto the configured limit.
+
+Server features:
+* [FullDuplexCall][]
+* [Max Concurrent Streams Limit][]
+* [Fill Peer Socket Address][]
+
+Procedure:
+ 1. Client creates a channel with a service config setting the connection scaling limit per subchannel to 2:
+    ```
+    {
+      connectionScaling:{
+        maxConnectionsPerSubchannel: 2
+      }
+    }
+    ```
+
+ 2.  Client starts 3 FullDuplexCall rpcs with a request to fill the peer socket address in
+ the response.
+
+    ```
+    {
+      response_parameters:{
+        fill_peer_socket_address: true
+      }
+    }
+    ```
+
+ 3. Client waits for the initial reply from each rpc before starting the next rpc, with the reply 
+ expected be of the format
+
+    ```
+    {
+      peer_socket_address: <peer socket address>
+    }
+    ```
+    
+ 4. Client half-closes the 3 rpcs and asserts the streaming calls are successful.
+
+Client asserts:
+* The peer socket address received for the first two rpcs are the same.
+
+* The peer socket address received for the third rpc is different.
+
 ### Experimental Tests
 
 These tests are not yet standardized, and are not yet implemented in all
@@ -1465,3 +1512,16 @@ will first clear all the previous metrics data, and then add utilization metrics
 from `orca_oob_report` to the `OpenRCAService`.
 The server implementation should use a lock or similar mechanism to allow only
 one client to control the server's out-of-band reports until the end of the RPC.
+
+### Fill peer socket address
+[Fill Peer Socket Address]: #fill-peer-socket-address
+
+If a StreamingInputCallRequest has `fill_peer_socket_address`, then the
+StreamingOutputCallResponse should have peer_socket_address filled with
+the peer address the server sees for the connection.
+
+### Max concurrent streams limit
+[Max Concurrent Streams Limit]: #max-concurrent-streams-limit
+
+If the test server is started with the commandline argument --set_max_concurrent_streams_limit=true,
+a max concurrent streams limit of 2 is imposed. This is only implemented by the Java server.
