@@ -26,4 +26,3 @@ common --ignore_dev_dependency=false
 # //src/python/grpcio_tests/tests/reflection:_reflection_client_test
 # //src/python/grpcio_tests/tests/reflection:_reflection_servicer_test
 build:python --incompatible_default_to_explicit_init_py
-build:python_single_threaded_unary_stream --incompatible_default_to_explicit_init_py

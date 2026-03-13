@@ -15,7 +15,7 @@
 
 set -ex
 
-RESULTSTORE_RESULTS_FLAG="--bazelrc=tools/remote_build/include/test_python_locally_with_resultstore_results.bazelrc"
+RESULTSTORE_RESULTS_FLAG="--bazelrc=tools/remote_build/include/test_locally_with_resultstore_results.bazelrc"
 TEST_TARGETS="//src/python/... //tools/distrib/python/grpcio_tools/... //examples/python/..."
 BAZEL_FLAGS="--test_output=errors --config=python"
 
