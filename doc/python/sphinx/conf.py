@@ -64,11 +64,14 @@ extensions = [
     'sphinx.ext.napoleon',
     'sphinx.ext.coverage',
     'sphinx.ext.autodoc.typehints',
+    'myst_parser',
+    'sphinxcontrib.mermaid',
 ]
 
 napoleon_google_docstring = True
 napoleon_numpy_docstring = True
 napoleon_include_special_with_doc = True
+myst_fence_as_directive = ["mermaid"]
 
 autodoc_default_options = {
     'members': None,
