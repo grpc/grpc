@@ -49,7 +49,7 @@ TokenFetcherCredentials::Token::Token(Slice token, Timestamp expiration)
       expiration_(expiration - kTokenExpirationAdjustmentDuration) {}
 
 void TokenFetcherCredentials::Token::AddTokenToClientInitialMetadata(
-    ClientMetadata& metadata) const {
+    ClientMetadata& metadata) {
   metadata.Append(GRPC_AUTHORIZATION_METADATA_KEY, token_.Ref(),
                   [](absl::string_view, const Slice&) { abort(); });
 }
@@ -93,11 +93,14 @@ void TokenFetcherCredentials::FetchState::BackoffTimer::Orphan() {
 }
 
 void TokenFetcherCredentials::FetchState::BackoffTimer::OnTimer() {
-  MutexLock lock(&fetch_state_->creds_->mu_);
+  auto creds = fetch_state_->creds_->RefIfNonZero()
+                   .TakeAsSubclass<TokenFetcherCredentials>();
+  if (creds == nullptr) return;
+  MutexLock lock(&creds->mu_);
   if (!timer_handle_.has_value()) return;
   timer_handle_.reset();
   GRPC_TRACE_LOG(token_fetcher_credentials, INFO)
-      << "[TokenFetcherCredentials " << fetch_state_->creds_.get()
+      << "[TokenFetcherCredentials " << creds.get()
       << "]: fetch_state=" << fetch_state_.get() << " backoff_timer=" << this
       << ": backoff timer fired";
   auto* self_ptr =
@@ -155,12 +158,14 @@ void TokenFetcherCredentials::FetchState::StartFetchAttempt() {
 
 void TokenFetcherCredentials::FetchState::TokenFetchComplete(
     absl::StatusOr<RefCountedPtr<Token>> token) {
-  MutexLock lock(&creds_->mu_);
+  auto creds = creds_->RefIfNonZero().TakeAsSubclass<TokenFetcherCredentials>();
+  if (creds == nullptr) return;
+  MutexLock lock(&creds->mu_);
   // If we were shut down, clean up.
   if (std::holds_alternative<Shutdown>(state_)) {
     if (token.ok()) token = absl::CancelledError("credentials shutdown");
     GRPC_TRACE_LOG(token_fetcher_credentials, INFO)
-        << "[TokenFetcherCredentials " << creds_.get()
+        << "[TokenFetcherCredentials " << creds.get()
         << "]: fetch_state=" << this
         << ": shut down before fetch completed: " << token.status();
     ResumeQueuedCalls(std::move(token));
@@ -169,13 +174,13 @@ void TokenFetcherCredentials::FetchState::TokenFetchComplete(
   // If succeeded, update cache in creds object.
   if (token.ok()) {
     GRPC_TRACE_LOG(token_fetcher_credentials, INFO)
-        << "[TokenFetcherCredentials " << creds_.get()
+        << "[TokenFetcherCredentials " << creds.get()
         << "]: fetch_state=" << this << ": token fetch succeeded";
-    creds_->token_ = *token;
-    creds_->fetch_state_.reset();  // Orphan ourselves.
+    creds->token_ = *token;
+    creds->fetch_state_.reset();  // Orphan ourselves.
   } else {
     GRPC_TRACE_LOG(token_fetcher_credentials, INFO)
-        << "[TokenFetcherCredentials " << creds_.get()
+        << "[TokenFetcherCredentials " << creds.get()
         << "]: fetch_state=" << this
         << ": token fetch failed: " << token.status();
     // If failed, start backoff timer.
