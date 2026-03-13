@@ -104,8 +104,9 @@ class PythonOpenCensusCallTracer : public grpc_core::ClientCallTracerInterface {
     // End status code
     absl::StatusCode status_code_;
     // Avoid std::map to avoid per-call allocations.
-    std::array<std::variant<grpc_core::RefCountedStringValue, absl::string_view>,
-               static_cast<size_t>(OptionalLabelKey::kSize)>
+    std::array<
+        std::variant<grpc_core::RefCountedStringValue, absl::string_view>,
+        static_cast<size_t>(OptionalLabelKey::kSize)>
         optional_labels_array_;
     std::vector<Label> labels_from_peer_;
     bool is_trailers_only_ = false;

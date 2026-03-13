@@ -55,8 +55,8 @@ class OpenTelemetryPluginImpl::KeyValueIterable
           additional_labels,
       const OpenTelemetryPluginImpl::ActivePluginOptionsView*
           active_plugin_options_view,
-      absl::Span<
-          const std::variant<grpc_core::RefCountedStringValue, absl::string_view>>
+      absl::Span<const std::variant<grpc_core::RefCountedStringValue,
+                                    absl::string_view>>
           optional_labels,
       bool is_client, const OpenTelemetryPluginImpl* otel_plugin)
       : injected_labels_from_plugin_options_(

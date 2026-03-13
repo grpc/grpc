@@ -79,8 +79,8 @@ void PythonLabelsInjector::AddExchangeLabelsToMetadata(
 
 void PythonLabelsInjector::AddXdsOptionalLabels(
     bool is_client,
-    absl::Span<const std::variant<grpc_core::RefCountedStringValue,
-                                  absl::string_view>>
+    absl::Span<
+        const std::variant<grpc_core::RefCountedStringValue, absl::string_view>>
         optional_labels_span,
     std::vector<Label>& labels) {
   if (!is_client) {
@@ -89,12 +89,12 @@ void PythonLabelsInjector::AddXdsOptionalLabels(
   }
   // Performs JSON label name format to CSM Observability Metric spec format
   // conversion.
-  absl::string_view service_name = grpc_core::GetStringView(
-      optional_labels_span[static_cast<size_t>(
+  absl::string_view service_name =
+      grpc_core::GetStringView(optional_labels_span[static_cast<size_t>(
           grpc_core::ClientCallTracerInterface::CallAttemptTracer::
               OptionalLabelKey::kXdsServiceName)]);
-  absl::string_view service_namespace = grpc_core::GetStringView(
-      optional_labels_span[static_cast<size_t>(
+  absl::string_view service_namespace =
+      grpc_core::GetStringView(optional_labels_span[static_cast<size_t>(
           grpc_core::ClientCallTracerInterface::CallAttemptTracer::
               OptionalLabelKey::kXdsServiceNamespace)]);
   // According to the CSM Observability Metric spec, if the control plane fails

@@ -122,8 +122,9 @@ class OpenTelemetryPluginImpl::ClientCallTracerInterface
     absl::Time start_time_;
     std::unique_ptr<LabelsIterable> injected_labels_;
     // Avoid std::map to avoid per-call allocations.
-    std::array<std::variant<grpc_core::RefCountedStringValue, absl::string_view>,
-               static_cast<size_t>(OptionalLabelKey::kSize)>
+    std::array<
+        std::variant<grpc_core::RefCountedStringValue, absl::string_view>,
+        static_cast<size_t>(OptionalLabelKey::kSize)>
         optional_labels_;
     std::vector<std::unique_ptr<LabelsIterable>>
         injected_labels_from_plugin_options_;

@@ -37,8 +37,8 @@
 #include "src/core/config/core_configuration.h"
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
 #include "src/core/telemetry/call_tracer.h"
-#include "test/core/test_util/fail_first_call_filter.h"
 #include "src/core/telemetry/telemetry_label.h"
+#include "test/core/test_util/fail_first_call_filter.h"
 #include "test/core/test_util/fake_stats_plugin.h"
 #include "test/core/test_util/test_config.h"
 #include "test/cpp/end2end/test_service_impl.h"
@@ -933,8 +933,9 @@ TEST_F(OpenTelemetryPluginEnd2EndTest, OptionalPerCallLabels) {
                            ::testing::Key("grpc.lb.locality"))),
                        ::testing::Not(::testing::Contains(
                            ::testing::Key("grpc.lb.backend_service")))));
-  EXPECT_EQ(std::get<std::string>(
-                client_attributes.at("grpc.client.call.custom")), kTelemetryLabelValue);
+  EXPECT_EQ(
+      std::get<std::string>(client_attributes.at("grpc.client.call.custom")),
+      kTelemetryLabelValue);
   // Verify client side metric (grpc.client.attempt.duration) sees this label.
   ASSERT_EQ(data["grpc.client.attempt.duration"].size(), 1);
   const auto& client_duration_attributes =
@@ -998,7 +999,8 @@ TEST_F(OpenTelemetryPluginEnd2EndTest, OptionalPerCallLabelsWhenNotAvailable) {
                 client_duration_attributes.at("grpc.lb.backend_service")),
             "");
   EXPECT_EQ(std::get<std::string>(
-                client_duration_attributes.at("grpc.client.call.custom")), "");
+                client_duration_attributes.at("grpc.client.call.custom")),
+            "");
 }
 
 // Tests that when optional labels are injected but not enabled by the

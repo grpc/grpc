@@ -427,10 +427,11 @@ OpenTelemetryPluginImpl::ClientCallTracerInterface::CallAttemptTracer<
 }
 
 template <typename UnrefBehavior>
-void OpenTelemetryPluginImpl::ClientCallTracerInterface::CallAttemptTracer<
-    UnrefBehavior>::SetOptionalLabel(
-    OptionalLabelKey key,
-    std::variant<grpc_core::RefCountedStringValue, absl::string_view> value) {
+void OpenTelemetryPluginImpl::ClientCallTracerInterface::
+    CallAttemptTracer<UnrefBehavior>::SetOptionalLabel(
+        OptionalLabelKey key,
+        std::variant<grpc_core::RefCountedStringValue, absl::string_view>
+            value) {
   GRPC_CHECK(key < OptionalLabelKey::kSize);
   optional_labels_[static_cast<size_t>(key)] = std::move(value);
 }

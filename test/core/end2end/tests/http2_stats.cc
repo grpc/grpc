@@ -210,10 +210,9 @@ class FakeCallTracer : public ClientCallTracerInterface {
     void RecordAnnotation(absl::string_view /*annotation*/) override {}
     void RecordAnnotation(const Annotation& /*annotation*/) override {}
 
-    void SetOptionalLabel(
-        OptionalLabelKey /*key*/,
-        std::variant<RefCountedStringValue, absl::string_view> /*value*/)
-        override {}
+    void SetOptionalLabel(OptionalLabelKey /*key*/,
+                          std::variant<RefCountedStringValue,
+                                       absl::string_view> /*value*/) override {}
 
    private:
     std::shared_ptr<TestState> test_state_;
