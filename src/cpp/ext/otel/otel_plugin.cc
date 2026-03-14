@@ -810,6 +810,22 @@ OpenTelemetryPluginImpl::OpenTelemetryPluginImpl(
               }
               break;
             case grpc_core::GlobalInstrumentsRegistry::InstrumentType::
+                kUpDownCounter:
+              switch (descriptor.value_type) {
+                case grpc_core::GlobalInstrumentsRegistry::ValueType::kInt64:
+                  instruments_data_[descriptor.index].instrument =
+                      meter->CreateInt64UpDownCounter(
+                          std::string(descriptor.name),
+                          std::string(descriptor.description),
+                          std::string(descriptor.unit));
+                  break;
+                default:
+                  grpc_core::Crash(
+                      absl::StrFormat("Unknown or unsupported value type: %d",
+                                      descriptor.value_type));
+              }
+              break;
+            case grpc_core::GlobalInstrumentsRegistry::InstrumentType::
                 kHistogram:
               switch (descriptor.value_type) {
                 case grpc_core::GlobalInstrumentsRegistry::ValueType::kUInt64:
@@ -911,14 +927,11 @@ OpenTelemetryPluginImpl::~OpenTelemetryPluginImpl() {
                 state.get());
             state->ot_callback_registered = false;
           }
-        });
+        },
+        [](const std::unique_ptr<
+            opentelemetry::metrics::UpDownCounter<int64_t>>&) {});
   }
 }
-
-namespace {
-constexpr absl::string_view kLocality = "grpc.lb.locality";
-constexpr absl::string_view kBackendService = "grpc.lb.backend_service";
-}  // namespace
 
 absl::string_view OpenTelemetryPluginImpl::OptionalLabelKeyToString(
     grpc_core::ClientCallTracerInterface::CallAttemptTracer::OptionalLabelKey
@@ -926,10 +939,10 @@ absl::string_view OpenTelemetryPluginImpl::OptionalLabelKeyToString(
   switch (key) {
     case grpc_core::ClientCallTracerInterface::CallAttemptTracer::
         OptionalLabelKey::kLocality:
-      return kLocality;
+      return grpc_core::kMetricLabelLocality;
     case grpc_core::ClientCallTracerInterface::CallAttemptTracer::
         OptionalLabelKey::kBackendService:
-      return kBackendService;
+      return grpc_core::kMetricLabelBackendService;
     default:
       grpc_core::Crash("Illegal OptionalLabelKey index");
   }
@@ -938,10 +951,10 @@ absl::string_view OpenTelemetryPluginImpl::OptionalLabelKeyToString(
 std::optional<
     grpc_core::ClientCallTracerInterface::CallAttemptTracer::OptionalLabelKey>
 OpenTelemetryPluginImpl::OptionalLabelStringToKey(absl::string_view key) {
-  if (key == kLocality) {
+  if (key == grpc_core::kMetricLabelLocality) {
     return grpc_core::ClientCallTracerInterface::CallAttemptTracer::
         OptionalLabelKey::kLocality;
-  } else if (key == kBackendService) {
+  } else if (key == grpc_core::kMetricLabelBackendService) {
     return grpc_core::ClientCallTracerInterface::CallAttemptTracer::
         OptionalLabelKey::kBackendService;
   }
@@ -1042,6 +1055,35 @@ void OpenTelemetryPluginImpl::AddCounter(
         ->Add(value);
   } else {
     std::get<std::unique_ptr<opentelemetry::metrics::Counter<double>>>(
+        instrument_data.instrument)
+        ->Add(value, NPCMetricsKeyValueIterable(
+                         descriptor.label_keys, label_values,
+                         descriptor.optional_label_keys, optional_values,
+                         instrument_data.optional_labels_bits));
+  }
+}
+void OpenTelemetryPluginImpl::AddCounter(
+    grpc_core::GlobalInstrumentsRegistry::GlobalInstrumentHandle handle,
+    int64_t value, absl::Span<const absl::string_view> label_values,
+    absl::Span<const absl::string_view> optional_values) {
+  if (meter_provider_ == nullptr) return;
+  const auto& instrument_data = instruments_data_.at(handle.index);
+  if (std::holds_alternative<Disabled>(instrument_data.instrument)) {
+    return;
+  }
+  CHECK(std::holds_alternative<
+        std::unique_ptr<opentelemetry::metrics::UpDownCounter<int64_t>>>(
+      instrument_data.instrument));
+  const auto& descriptor =
+      grpc_core::GlobalInstrumentsRegistry::GetInstrumentDescriptor(handle);
+  CHECK(descriptor.label_keys.size() == label_values.size());
+  CHECK(descriptor.optional_label_keys.size() == optional_values.size());
+  if (label_values.empty() && optional_values.empty()) {
+    std::get<std::unique_ptr<opentelemetry::metrics::UpDownCounter<int64_t>>>(
+        instrument_data.instrument)
+        ->Add(value);
+  } else {
+    std::get<std::unique_ptr<opentelemetry::metrics::UpDownCounter<int64_t>>>(
         instrument_data.instrument)
         ->Add(value, NPCMetricsKeyValueIterable(
                          descriptor.label_keys, label_values,
