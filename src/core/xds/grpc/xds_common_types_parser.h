@@ -59,7 +59,6 @@ inline std::optional<uint32_t> ParseUInt32Value(
   return google_protobuf_UInt32Value_value(proto);
 }
 
-// Returns the IP address in URI form.
 std::optional<grpc_resolved_address> ParseXdsAddress(
     const envoy_config_core_v3_Address* address, ValidationErrors* errors);
 
@@ -70,6 +69,15 @@ StringMatcher StringMatcherParse(
 StringMatcher StringMatcherParse(
     const XdsResourceType::DecodeContext& context,
     const xds_type_matcher_v3_StringMatcher* matcher_proto,
+    ValidationErrors* errors);
+
+std::vector<StringMatcher> ListStringMatcherParse(
+    const XdsResourceType::DecodeContext& context,
+    const envoy_type_matcher_v3_ListStringMatcher* matcher_proto,
+    ValidationErrors* errors);
+std::vector<StringMatcher> ListStringMatcherParse(
+    const XdsResourceType::DecodeContext& context,
+    const xds_type_matcher_v3_ListStringMatcher* matcher_proto,
     ValidationErrors* errors);
 
 CommonTlsContext CommonTlsContextParse(

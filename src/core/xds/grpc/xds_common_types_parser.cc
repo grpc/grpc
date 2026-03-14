@@ -243,6 +243,38 @@ StringMatcher StringMatcherParse(
   return StringMatcherParseInternal(proto_accessor, errors);
 }
 
+std::vector<StringMatcher> ListStringMatcherParse(
+    const XdsResourceType::DecodeContext& /*context*/,
+    const envoy_type_matcher_v3_ListStringMatcher* matcher_proto,
+    ValidationErrors* errors) {
+  size_t size;
+  const envoy_type_matcher_v3_StringMatcher* const* patterns =
+      envoy_type_matcher_v3_ListStringMatcher_patterns(matcher_proto, &size);
+  std::vector<StringMatcher> matchers;
+  for (size_t i = 0; i < size; ++i) {
+    ValidationErrors::ScopedField field(
+        errors, absl::StrCat(".patterns[", i, "]"));
+    matchers.push_back(StringMatcherParse(patterns[i], errors);
+  }
+  return matchers;
+}
+
+std::vector<StringMatcher> ListStringMatcherParse(
+    const XdsResourceType::DecodeContext& /*context*/,
+    const xds_type_matcher_v3_ListStringMatcher* matcher_proto,
+    ValidationErrors* errors) {
+  size_t size;
+  const xds_type_matcher_v3_StringMatcher* const* patterns =
+      xds_type_matcher_v3_ListStringMatcher_patterns(matcher_proto, &size);
+  std::vector<StringMatcher> matchers;
+  for (size_t i = 0; i < size; ++i) {
+    ValidationErrors::ScopedField field(
+        errors, absl::StrCat(".patterns[", i, "]"));
+    matchers.push_back(StringMatcherParse(patterns[i], errors);
+  }
+  return matchers;
+}
+
 //
 // CommonTlsContextParse()
 //
