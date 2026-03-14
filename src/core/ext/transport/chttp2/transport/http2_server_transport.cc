@@ -480,6 +480,7 @@ Http2Status Http2ServerTransport::ProcessIncomingFrame(
 Http2Status Http2ServerTransport::ProcessIncomingFrame(
     Http2SettingsFrame&& frame) {
   // https://www.rfc-editor.org/rfc/rfc9113.html#name-settings
+
   GRPC_HTTP2_SERVER_DLOG
       << "Http2ServerTransport::ProcessIncomingFrame(SettingsFrame) { ack="
       << frame.ack << ", settings length=" << frame.settings.size() << "}";
@@ -515,6 +516,7 @@ Http2Status Http2ServerTransport::ProcessIncomingFrame(
       LOG(ERROR) << "Settings ack received without sending settings";
     }
   }
+
   return Http2Status::Ok();
 }
 
@@ -837,14 +839,12 @@ auto Http2ServerTransport::ReadAndProcessOneFrame() {
       // the frame header.
       EndpointReadSlice(kFrameHeaderSize),
       // Parse the frame header.
-      [](Slice header_bytes) -> Http2FrameHeader {
+      [this](Slice header_bytes) {
         GRPC_HTTP2_SERVER_DLOG
             << "Http2ServerTransport::ReadAndProcessOneFrame Parse "
             << header_bytes.as_string_view();
-        return Http2FrameHeader::Parse(header_bytes.begin());
-      },
-      // Validate the incoming frame as per the current state of the transport
-      [this](Http2FrameHeader header) {
+        Http2FrameHeader header = Http2FrameHeader::Parse(header_bytes.begin());
+        // Validate the incoming frame as per the current state of the transport
         Http2Status status = ValidateFrameHeader(
             /*max_frame_size_setting*/ settings_->acked().max_frame_size(),
             /*incoming_header_in_progress*/
@@ -1567,25 +1567,11 @@ RefCountedPtr<Stream> Http2ServerTransport::LookupStream(uint32_t stream_id) {
 //           }));
 // }
 
-// absl::Status Http2ServerTransport::InitializeStream(Stream& stream) {
-//   absl::StatusOr<uint32_t> next_stream_id = NextStreamId();
-//   if (!next_stream_id.ok()) {
-//     GRPC_HTTP2_SERVER_DLOG << "Http2ServerTransport::InitializeStream "
-//                               "Failed to get next stream id for stream: "
-//                            << &stream;
-//     return std::move(next_stream_id).status();
-//   }
-//   GRPC_HTTP2_SERVER_DLOG << "Http2ServerTransport::InitializeStream "
-//                             "Assigned stream id: "
-//                          << next_stream_id.value() << " to stream: " <<
-//                          &stream
-//                          << ", allow_true_binary_metadata:"
-//                          << settings_->peer().allow_true_binary_metadata();
-//   stream.InitializeStream(next_stream_id.value(),
-//                           settings_->peer().allow_true_binary_metadata(),
-//                           settings_->acked().allow_true_binary_metadata());
-//   return absl::OkStatus();
-// }
+absl::Status Http2ServerTransport::InitializeStream(
+    GRPC_UNUSED Stream& stream) {
+  GRPC_DCHECK(false) << "Should not be called for server";
+  return absl::OkStatus();
+}
 
 std::optional<RefCountedPtr<Stream>> Http2ServerTransport::MakeStream(
     CallInitiator&& call_initiator, const uint32_t stream_id) {
@@ -2158,7 +2144,8 @@ absl::Status Http2ServerTransport::PingSystemInterfaceImpl::TriggerWrite() {
 
 Promise<absl::Status>
 Http2ServerTransport::PingSystemInterfaceImpl::PingTimeout() {
-  GRPC_HTTP2_SERVER_DLOG << "Ping timeout at time: " << Timestamp::Now();
+  GRPC_HTTP2_SERVER_DLOG << "PingSystemInterfaceImpl::PingTimeout at time: "
+                         << Timestamp::Now();
 
   // TODO(akshitpatel) : [PH2][P2] : The error code here has been chosen
   // based on CHTTP2's usage of GRPC_STATUS_UNAVAILABLE (which corresponds
@@ -2187,7 +2174,8 @@ Http2ServerTransport::KeepAliveInterfaceImpl::SendPingAndWaitForAck() {
 
 Promise<absl::Status>
 Http2ServerTransport::KeepAliveInterfaceImpl::OnKeepAliveTimeout() {
-  GRPC_HTTP2_SERVER_DLOG << "Keepalive timeout triggered";
+  GRPC_HTTP2_SERVER_DLOG
+      << "KeepAliveInterfaceImpl::OnKeepAliveTimeout triggered";
   // TODO(akshitpatel) : [PH2][P2] : The error code here has been chosen
   // based on CHTTP2's usage of GRPC_STATUS_UNAVAILABLE (which corresponds
   // to kRefusedStream). However looking at RFC9113, definition of
@@ -2281,6 +2269,10 @@ Http2ServerTransport::Http2ServerTransport(
 
 Http2ServerTransport::~Http2ServerTransport() {
   GRPC_HTTP2_SERVER_DLOG << "Http2ServerTransport Destructor Begin";
+  // GRPC_DCHECK(stream_list_.empty());
+  // GRPC_DCHECK(general_party_ == nullptr);
+  // memory_owner_.Reset();
+
   // TODO(akshitpatel) : [PH2][P0][Close] : Remove call to
   // HandleTransportShutdown() from here and plumb CloseTransport() correctly.
   settings_->HandleTransportShutdown(event_engine_.get());
@@ -2299,19 +2291,45 @@ void Http2ServerTransport::SetCallDestination(
   InitializeAndSpawnTransportLoops();
 }
 
-void Http2ServerTransport::PerformOp(GRPC_UNUSED grpc_transport_op*) {
+void Http2ServerTransport::PerformOp(grpc_transport_op* op) {
   GRPC_HTTP2_SERVER_DLOG << "Http2ServerTransport PerformOp Begin";
-  // TODO(tjagtap) : [PH2][P2] : Implement this function.
+  // TODO(tjagtap) : [PH2][P1] : Implement the needed operations.
+  bool did_stuff = false;
+  if (op->start_connectivity_watch != nullptr) {
+    StartConnectivityWatch(op->start_connectivity_watch_state,
+                           std::move(op->start_connectivity_watch));
+    did_stuff = true;
+  }
+  if (op->stop_connectivity_watch != nullptr) {
+    StopConnectivityWatch(op->stop_connectivity_watch);
+    did_stuff = true;
+  }
+  // GRPC_CHECK(!op->set_accept_stream)
+  //     << "Set_accept_stream not supported on clients";
+  GRPC_DCHECK(did_stuff) << "Unimplemented transport perform op ";
+
+  ExecCtx::Run(DEBUG_LOCATION, op->on_consumed, absl::OkStatus());
+
+  // TODO(tjagtap) : [PH2][P2] :
+  // Refer src/core/ext/transport/chttp2/transport/chttp2_transport.cc
+  // perform_transport_op_locked
+  // Maybe more operations needed to be implemented.
+  // TODO(tjagtap) : [PH2][P2] : Consider either not using a transport level
+  // lock, or making this run on the Transport party - whatever is better.
   GRPC_HTTP2_SERVER_DLOG << "Http2ServerTransport PerformOp End";
 }
 
 void Http2ServerTransport::Orphan() {
-  GRPC_HTTP2_SERVER_DLOG << "Http2ServerTransport Orphan Begin";
+  GRPC_HTTP2_SERVER_DLOG << "Http2ServerTransport::Orphan Begin";
   SourceDestructing();
-  // TODO(tjagtap) : [PH2][P2] : Implement the needed cleanup
+  // MaybeSpawnCloseTransport(
+  //     ToHttpOkOrConnError(absl::UnavailableError("Orphaned")));
+
+  // TODO(tjagtap) : [PH2][P2] : Implement the needed cleanup. This is not the
+  // right place to clean up the party.
   general_party_.reset();
   Unref();
-  GRPC_HTTP2_SERVER_DLOG << "Http2ServerTransport Orphan End";
+  GRPC_HTTP2_SERVER_DLOG << "Http2ServerTransport::Orphan End";
 }
 
 void Http2ServerTransport::SpawnTransportLoops() {
