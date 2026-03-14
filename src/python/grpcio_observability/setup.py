@@ -299,7 +299,9 @@ def extension_modules():
         from Cython import Build
 
         return Build.cythonize(
-            extensions, compiler_directives={"language_level": "3"}
+            extensions,
+            compiler_directives={"language_level": "3"},
+            nthreads=_parallel_compile_patch.BUILD_EXT_COMPILER_JOBS,
         )
     else:
         return extensions

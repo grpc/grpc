@@ -30,6 +30,7 @@ import traceback
 from setuptools.command import build_ext
 from setuptools.command import build_py
 import support
+import _parallel_compile_patch
 
 PYTHON_STEM = os.path.dirname(os.path.abspath(__file__))
 GRPC_STEM = os.path.abspath(PYTHON_STEM + "../../../../")
@@ -251,7 +252,7 @@ def try_cythonize(extensions, linetracing=False, mandatory=True):
             )
         return extensions
     cython_compiler_directives = {}
-    nthreads = os.cpu_count()
+    nthreads = _parallel_compile_patch.BUILD_EXT_COMPILER_JOBS
     if linetracing:
         additional_define_macros = [("CYTHON_TRACE_NOGIL", "1")]
         cython_compiler_directives["linetrace"] = True
