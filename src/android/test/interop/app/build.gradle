@@ -19,7 +19,6 @@ android {
                         project.property('protoc') : '/usr/local/bin/protoc'
                 def grpc_cpp_plugin = project.hasProperty('grpc_cpp_plugin') ?
                         project.property('grpc_cpp_plugin') : '/usr/local/bin/grpc_cpp_plugin'
-                def boringssl_dir = project.property('boringssl_dir')
 
                 cppFlags "-std=c++17 -frtti -fexceptions"
                 arguments '-DANDROID_STL=c++_shared'
@@ -32,9 +31,6 @@ android {
                 arguments '-DgRPC_CPP_PLUGIN_EXECUTABLE=' + grpc_cpp_plugin
                 arguments '-Dprotobuf_INSTALL=OFF'
                 arguments '-Dutf8_range_ENABLE_INSTALL=OFF'
-                arguments '-DFIND_SSL_FORCE_NO_MODULE=ON'
-                arguments '-DgRPC_SSL_PROVIDER=package'
-                arguments '-DOpenSSL_DIR=' + boringssl_dir
                 version "3.22.1"
             }
         }

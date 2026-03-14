@@ -66,25 +66,11 @@ if(gRPC_SSL_PROVIDER STREQUAL "module")
     set(gRPC_INSTALL FALSE)
   endif()
 elseif(gRPC_SSL_PROVIDER STREQUAL "package")
-  # TODO: Maybe get rid of FIND_SSL_FORCE_NO_MODULE. Currently
-  # it is used by our Android CI test.
-  # See https://github.com/grpc/grpc/issues/41854.
-  if (FIND_SSL_FORCE_NO_MODULE)
-    # CMake find_package() has special logic for
-    # ssl which ignores boringssl's OpenSSLConfig.cmake by default.
-    # Use NO_MODULE so this directive works with pre-build boringssl.
-
-    # See also
-    #   https://cmake.org/cmake/help/v3.6/module/FindOpenSSL.html
-    #   https://cmake.org/cmake/help/latest/command/find_package.html
-    find_package(OpenSSL REQUIRED NO_MODULE)
-  else()
-    # OpenSSL installation directory can be configured by setting OPENSSL_ROOT_DIR
-    # We expect to locate OpenSSL using the built-in cmake module as the openssl
-    # project itself does not provide installation support in its CMakeLists.txt
-    # See also:
-    find_package(OpenSSL REQUIRED)
-  endif()
+  # OpenSSL installation directory can be configured by setting OPENSSL_ROOT_DIR
+  # We expect to locate OpenSSL using the built-in cmake module as the openssl
+  # project itself does not provide installation support in its CMakeLists.txt
+  # See https://cmake.org/cmake/help/v3.6/module/FindOpenSSL.html
+  find_package(OpenSSL REQUIRED)
   
   if(TARGET OpenSSL::SSL)
     set(_gRPC_SSL_LIBRARIES OpenSSL::SSL OpenSSL::Crypto)
