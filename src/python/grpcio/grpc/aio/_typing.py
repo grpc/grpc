@@ -26,16 +26,15 @@ from typing import (
 
 from grpc._cython.cygrpc import EOF
 
-from ._metadata import Metadata
-from ._metadata import MetadataKey
-from ._metadata import MetadataValue
+from ._metadata import Metadata  # pylint: disable=unused-import
+from ._metadata import MetadataKey  # pylint: disable=unused-import
+from ._metadata import MetadataType  # pylint: disable=unused-import
+from ._metadata import MetadataValue  # pylint: disable=unused-import
 
 RequestType = TypeVar("RequestType")
 ResponseType = TypeVar("ResponseType")
 SerializingFunction = Callable[[Any], bytes]
 DeserializingFunction = Callable[[bytes], Any]
-MetadatumType = Tuple[MetadataKey, MetadataValue]
-MetadataType = Union[Metadata, Sequence[MetadatumType]]
 ChannelArgumentType = Sequence[Tuple[str, Any]]
 EOFType = type(EOF)
 DoneCallbackType = Callable[[Any], None]
