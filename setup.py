@@ -541,6 +541,7 @@ def cython_extensions_and_necessity():
     return (
         commands.try_cythonize(
             extensions,
+            nthreads= os.num_cpu(),
             linetracing=ENABLE_CYTHON_TRACING,
             mandatory=BUILD_WITH_CYTHON,
         ),

@@ -324,7 +324,7 @@ def extension_modules():
     if BUILD_WITH_CYTHON:
         from Cython import Build
 
-        return Build.cythonize(extensions)
+        return Build.cythonize(extensions, nthreads=os.num_cpu())
     else:
         return extensions
 
