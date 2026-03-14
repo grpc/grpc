@@ -39,11 +39,18 @@ if(gRPC_SSL_PROVIDER STREQUAL "module")
         endif()
       endif()
     endif()
-
+    if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+      # Check if the version is 7.x
+      if (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 7.0 AND
+          CMAKE_CXX_COMPILER_VERSION VERSION_LESS 8.0)
+          message(STATUS "Detected GCC 7: Applying bitfield-width workaround for BoringSSL")
+          add_compile_options(-Wno-error)
+      endif()
+    endif()
     add_subdirectory(${BORINGSSL_ROOT_DIR} third_party/boringssl-with-bazel)
     if(TARGET ssl)
       set(_gRPC_SSL_LIBRARIES ssl crypto)
-      set(_gRPC_SSL_INCLUDE_DIR ${BORINGSSL_ROOT_DIR}/src/include)
+      set(_gRPC_SSL_INCLUDE_DIR ${BORINGSSL_ROOT_DIR}/include)
       if(gRPC_INSTALL AND _gRPC_INSTALL_SUPPORTED_FROM_MODULE)
         install(TARGETS ssl crypto EXPORT gRPCTargets
           RUNTIME DESTINATION ${gRPC_INSTALL_BINDIR}
@@ -59,11 +66,25 @@ if(gRPC_SSL_PROVIDER STREQUAL "module")
     set(gRPC_INSTALL FALSE)
   endif()
 elseif(gRPC_SSL_PROVIDER STREQUAL "package")
-  # OpenSSL installation directory can be configured by setting OPENSSL_ROOT_DIR
-  # We expect to locate OpenSSL using the built-in cmake module as the openssl
-  # project itself does not provide installation support in its CMakeLists.txt
-  # See https://cmake.org/cmake/help/v3.6/module/FindOpenSSL.html
-  find_package(OpenSSL REQUIRED)
+  # TODO: Maybe get rid of FIND_SSL_FORCE_NO_MODULE. Currently
+  # it is used by our Android CI test.
+  # See https://github.com/grpc/grpc/issues/41854.
+  if (FIND_SSL_FORCE_NO_MODULE)
+    # CMake find_package() has special logic for
+    # ssl which ignores boringssl's OpenSSLConfig.cmake by default.
+    # Use NO_MODULE so this directive works with pre-build boringssl.
+
+    # See also
+    #   https://cmake.org/cmake/help/v3.6/module/FindOpenSSL.html
+    #   https://cmake.org/cmake/help/latest/command/find_package.html
+    find_package(OpenSSL REQUIRED NO_MODULE)
+  else()
+    # OpenSSL installation directory can be configured by setting OPENSSL_ROOT_DIR
+    # We expect to locate OpenSSL using the built-in cmake module as the openssl
+    # project itself does not provide installation support in its CMakeLists.txt
+    # See also:
+    find_package(OpenSSL REQUIRED)
+  endif()
   
   if(TARGET OpenSSL::SSL)
     set(_gRPC_SSL_LIBRARIES OpenSSL::SSL OpenSSL::Crypto)

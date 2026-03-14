@@ -30,12 +30,31 @@ popd
 PROTOC=${REPO_ROOT}/cmake/build/third_party/protobuf/protoc
 PLUGIN=${REPO_ROOT}/cmake/build/grpc_cpp_plugin
 
+###########################
+# Pre-build boringssl to avoid gradle fipsmodule build error.
+pushd ${REPO_ROOT}/third_party/boringssl-with-bazel
+mkdir -p cmake/build
+cd cmake/build
+BORINGSSL_INSTALL_PREFIX=$(pwd)/install
+cmake -DCMAKE_INSTALL_PREFIX=./install -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_STANDARD=17 ../..
+# Generates the following files so find_package(OpenSSL)
+# can find BoringSSL properly:
+#
+#   OpenSSLConfig.cmake
+#   OpenSSLTargets.cmake
+#   OpenSSLTargets-noconfig.cmake
+make -j8 && make install
+popd # back to REPO_ROOT
+BORINGSSL_DIR=${BORINGSSL_INSTALL_PREFIX}/lib/cmake/OpenSSL
+
 # Build and run interop instrumentation tests on Firebase Test Lab
 cd "${REPO_ROOT}/src/android/test/interop/"
 ./gradlew assembleDebug --parallel \
+    "-Pboringssl_dir=${BORINGSSL_DIR}" \
     "-Pprotoc=${PROTOC}" \
     "-Pgrpc_cpp_plugin=${PLUGIN}"
 ./gradlew assembleDebugAndroidTest \
+    "-Pboringssl_dir=${BORINGSSL_DIR}" \
     "-Pprotoc=${PROTOC}" \
     "-Pgrpc_cpp_plugin=${PLUGIN}"
 
