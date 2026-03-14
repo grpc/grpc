@@ -145,6 +145,7 @@ TEST(ClientSideWeightedRoundRobinTest, FieldsExplicitlySet) {
   wrr.mutable_weight_expiration_period()->set_seconds(3);
   wrr.mutable_weight_update_period()->set_seconds(4);
   wrr.mutable_error_utilization_penalty()->set_value(5.0);
+  wrr.add_metric_names_for_computing_utilization("cpu_usage");
   LoadBalancingPolicyProto policy;
   policy.add_policies()
       ->mutable_typed_extension_config()
@@ -157,6 +158,7 @@ TEST(ClientSideWeightedRoundRobinTest, FieldsExplicitlySet) {
             "\"blackoutPeriod\":\"2.000000000s\","
             "\"enableOobLoadReport\":true,"
             "\"errorUtilizationPenalty\":5,"
+            "\"metricNamesForComputingUtilization\":[\"cpu_usage\"],"
             "\"oobReportingPeriod\":\"1.000000000s\","
             "\"weightExpirationPeriod\":\"3.000000000s\","
             "\"weightUpdatePeriod\":\"4.000000000s\""

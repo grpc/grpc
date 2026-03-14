@@ -6453,6 +6453,7 @@ grpc_cc_library(
         "channel_args_endpoint_config",
         "channel_creds_registry",
         "channel_fwd",
+        "client_channel_service_config",
         "closure",
         "connectivity_state",
         "default_event_engine",
@@ -7397,7 +7398,9 @@ grpc_cc_library(
     ],
     deps = [
         "channel_args",
+        "client_channel_service_config",
         "connectivity_state",
+        "env",
         "experiments",
         "grpc_backend_metric_data",
         "grpc_check",
