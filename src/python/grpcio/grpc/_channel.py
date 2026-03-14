@@ -1821,8 +1821,6 @@ class _ChannelConnectivityState:
     def reset_postfork_child(self) -> None:
         self.polling = False
         self.connectivity = None
-        self.try_to_connect = False
-        self.callbacks_and_connectivities = []
         self.delivering = False
 
 
@@ -1847,13 +1845,13 @@ def _deliver(
     callbacks = initial_callbacks
     while True:
         for callback in callbacks:
-            cygrpc.block_if_fork_in_progress(state)
             try:
                 callback(connectivity)
             except Exception:  # pylint: disable=broad-except
                 _LOGGER.exception(
                     _CHANNEL_SUBSCRIPTION_CALLBACK_ERROR_LOG_MESSAGE
                 )
+        cygrpc.block_if_fork_in_progress(state)
         with state.lock:
             callbacks = _deliveries(state)
             if callbacks:
@@ -1930,6 +1928,18 @@ def _poll_connectivity(
                         _spawn_delivery(state, callbacks)
 
 
+def _spawn_poll_connecitivity(
+    state: _ChannelConnectivityState, try_to_connect: bool
+) -> None:
+    polling_thread = cygrpc.ForkManagedThread(
+        target=_poll_connectivity,
+        args=(state, state.channel, bool(try_to_connect)),
+    )
+    polling_thread.setDaemon(True)
+    polling_thread.start()
+    state.polling = True
+
+
 def _subscribe(
     state: _ChannelConnectivityState,
     callback: Callable[[grpc.ChannelConnectivity], None],
@@ -1937,13 +1947,7 @@ def _subscribe(
 ) -> None:
     with state.lock:
         if not state.callbacks_and_connectivities and not state.polling:
-            polling_thread = cygrpc.ForkManagedThread(
-                target=_poll_connectivity,
-                args=(state, state.channel, bool(try_to_connect)),
-            )
-            polling_thread.setDaemon(True)
-            polling_thread.start()
-            state.polling = True
+            _spawn_poll_connecitivity(state, try_to_connect)
             state.callbacks_and_connectivities.append([callback, None])
         elif not state.delivering and state.connectivity is not None:
             _spawn_delivery(state, (callback,))
@@ -2001,6 +2005,14 @@ def _separate_channel_options(
         else:
             core_options.append(pair)
     return python_options, core_options
+
+
+def _maybe_spawn_poll_connectivity_postfork(
+    state: _ChannelConnectivityState,
+) -> None:
+    with state.lock:
+        if state.callbacks_and_connectivities and not state.polling:
+            _spawn_poll_connecitivity(state, state.try_to_connect)
 
 
 class Channel(grpc.Channel):
@@ -2195,11 +2207,11 @@ class Channel(grpc.Channel):
         if cygrpc.g_gevent_activated:
             cygrpc.gevent_decrement_channel_count()
 
-    def _close_on_fork(self) -> None:
-        self._unsubscribe_all()
-        self._channel.close_on_fork(
-            cygrpc.StatusCode.cancelled, "Channel closed due to fork"
+    def _postfork_child(self) -> None:
+        self._channel.reset_on_fork(
+            cygrpc.StatusCode.cancelled, "Call cancelled in fork child"
         )
+        _maybe_spawn_poll_connectivity_postfork(self._connectivity_state)
 
     def __enter__(self):
         return self
