@@ -1549,3 +1549,13 @@ grpc_cc_test(
         "//test/core/test_util:grpc_test_util",
     ],
 )
+
+grpc_cc_test(
+    name = "cardinality_test",
+    srcs = ["cardinality_test.cc"],
+    external_deps = ["gtest"],
+    deps = [
+        "//:grpc_base",
+        "//test/core/test_util:grpc_test_util",
+    ],
+)
