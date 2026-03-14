@@ -179,6 +179,11 @@ class OpenTelemetryPluginImpl::ClientCallTracerInterface
   absl::Time time_at_last_attempt_end_ ABSL_GUARDED_BY(&mu_);
   uint64_t num_active_attempts_ ABSL_GUARDED_BY(&mu_) = 0;
   opentelemetry::nostd::shared_ptr<opentelemetry::trace::Span> span_;
+  // Avoid std::map to avoid per-call allocations.
+  std::array<grpc_core::RefCountedStringValue,
+             static_cast<size_t>(
+                 grpc_core::ClientCallTracerInterface::OptionalLabelKey::kSize)>
+      optional_labels_;
 };
 
 }  // namespace internal

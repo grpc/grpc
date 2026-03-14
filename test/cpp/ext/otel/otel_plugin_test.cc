@@ -20,6 +20,7 @@
 
 #include <grpcpp/ext/otel_plugin.h>
 #include <grpcpp/grpcpp.h>
+#include <grpcpp/call_context_types.h>
 
 #include <atomic>
 #include <chrono>
@@ -37,6 +38,7 @@
 #include "src/core/config/core_configuration.h"
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
 #include "src/core/telemetry/call_tracer.h"
+#include "src/core/telemetry/telemetry_label.h"
 #include "test/core/test_util/fail_first_call_filter.h"
 #include "test/core/test_util/fake_stats_plugin.h"
 #include "test/core/test_util/test_config.h"
@@ -1341,6 +1343,84 @@ TEST_F(OpenTelemetryPluginEnd2EndTest, RegisterMultipleStatsPluginsPerServer) {
                       ::testing::Field(&opentelemetry::sdk::metrics::
                                            HistogramPointData::count_,
                                        ::testing::Eq(1)))))))));
+}
+
+TEST_F(OpenTelemetryPluginEnd2EndTest, TelemetryLabelPropagation) {
+  Init(std::move(
+      Options()
+          .set_metric_names({
+              grpc::OpenTelemetryPluginBuilder::kClientAttemptStartedInstrumentName,
+              grpc::OpenTelemetryPluginBuilder::kClientAttemptDurationInstrumentName,
+              grpc::OpenTelemetryPluginBuilder::
+                  kClientAttemptSentTotalCompressedMessageSizeInstrumentName,
+              grpc::OpenTelemetryPluginBuilder::
+                  kClientAttemptRcvdTotalCompressedMessageSizeInstrumentName,
+              grpc::OpenTelemetryPluginBuilder::kClientCallRetriesInstrumentName,
+              grpc::OpenTelemetryPluginBuilder::kClientCallRetryDelayInstrumentName,
+          })
+          .add_optional_label("grpc.client.call.custom")
+          .set_service_config(
+              "{\n"
+              "  \"methodConfig\": [ {\n"
+              "    \"name\": [\n"
+              "      { \"service\": \"grpc.testing.EchoTestService\" }\n"
+              "    ],\n"
+              "    \"retryPolicy\": {\n"
+              "      \"maxAttempts\": 3,\n"
+              "      \"initialBackoff\": \"0.1s\",\n"
+              "      \"maxBackoff\": \"120s\",\n"
+              "      \"backoffMultiplier\": 1,\n"
+              "      \"retryableStatusCodes\": [ \"ABORTED\" ]\n"
+              "    }\n"
+              "  } ]\n"
+              "}")));
+  const std::string kTelemetryLabelValue = "test_label_value";
+  {
+    EchoRequest request;
+    request.mutable_param()->mutable_expected_error()->set_code(StatusCode::ABORTED);
+    request.set_message("foo");
+    EchoResponse response;
+    grpc::ClientContext context;
+    context.SetContext(TelemetryLabel{kTelemetryLabelValue});
+    grpc::Status status = stub_->Echo(&context, request, &response);
+    EXPECT_EQ(status.error_code(), StatusCode::ABORTED);
+  }
+
+  const std::vector<std::string> kMetricNames = {
+      "grpc.client.attempt.started",
+      "grpc.client.attempt.duration",
+      "grpc.client.attempt.sent_total_compressed_message_size",
+      "grpc.client.attempt.rcvd_total_compressed_message_size",
+      "grpc.client.call.retries",
+      "grpc.client.call.retry_delay",
+  };
+
+  auto data = ReadCurrentMetricsData(
+      [&](const absl::flat_hash_map<
+          std::string,
+          std::vector<opentelemetry::sdk::metrics::PointDataAttributes>>&
+              data) {
+        for (const auto& metric_name : kMetricNames) {
+          if (!data.contains(metric_name)) return true;
+        }
+        return false;
+      });
+
+  for (const auto& metric_name : kMetricNames) {
+    bool found = false;
+    for (const auto& point : data[metric_name]) {
+      const auto& attributes = point.attributes.GetAttributes();
+      auto it = attributes.find("grpc.client.call.custom");
+      if (it != attributes.end()) {
+        const auto* value = std::get_if<std::string>(&it->second);
+        if (value != nullptr && *value == kTelemetryLabelValue) {
+          found = true;
+          break;
+        }
+      }
+    }
+    EXPECT_TRUE(found) << "Telemetry label not found for metric: " << metric_name;
+  }
 }
 
 }  // namespace

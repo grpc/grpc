@@ -23,6 +23,7 @@
 #include <grpc/support/port_platform.h>
 #include <grpc/support/time.h>
 #include <stdint.h>
+#include <grpc/context_types.h>
 
 #include <array>
 #include <functional>
@@ -49,6 +50,7 @@
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/surface/call.h"
 #include "src/core/telemetry/tcp_tracer.h"
+#include "src/core/telemetry/telemetry_label.h"
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/sync.h"
 #include "src/cpp/ext/otel/key_value_iterable.h"
@@ -121,6 +123,11 @@ OpenTelemetryPluginImpl::ClientCallTracerInterface::
         OpenTelemetryPluginImpl::ClientCallTracerInterface* const parent,
         uint64_t attempt_num, bool is_transparent_retry)
     : parent_(parent), start_time_(absl::Now()) {
+  optional_labels_[static_cast<size_t>(
+      OptionalLabelKey::kTelemetryLabel)] =
+      parent_->optional_labels_[static_cast<size_t>(
+          grpc_core::ClientCallTracerInterface::OptionalLabelKey::
+              kTelemetryLabel)];
   if (parent_->otel_plugin_->client_.attempt.started != nullptr) {
     std::array<std::pair<absl::string_view, absl::string_view>, 2>
         additional_labels = {
@@ -133,7 +140,7 @@ OpenTelemetryPluginImpl::ClientCallTracerInterface::
         1, KeyValueIterable(
                /*injected_labels_from_plugin_options=*/{}, additional_labels,
                /*active_plugin_options_view=*/nullptr,
-               /*optional_labels=*/{},
+               optional_labels_,
                /*is_client=*/true, parent_->otel_plugin_));
   }
   if (parent_->otel_plugin_->tracer_ != nullptr) {
@@ -445,6 +452,12 @@ OpenTelemetryPluginImpl::ClientCallTracerInterface::ClientCallTracerInterface(
       registered_method_(registered_method),
       otel_plugin_(otel_plugin),
       scope_config_(std::move(scope_config)) {
+  auto* label = arena_->GetContext<grpc_core::TelemetryLabel>();
+  if (label != nullptr) {
+    optional_labels_[static_cast<size_t>(
+        grpc_core::ClientCallTracerInterface::OptionalLabelKey::
+            kTelemetryLabel)] = grpc_core::RefCountedStringValue(label->value);
+  }
   if (otel_plugin_->tracer_ != nullptr) {
     opentelemetry::trace::StartSpanOptions options;
     // Get the parent span from the parent call if available, otherwise fall
@@ -472,30 +485,27 @@ OpenTelemetryPluginImpl::ClientCallTracerInterface::ClientCallTracerInterface(
 
 OpenTelemetryPluginImpl::ClientCallTracerInterface::
     ~ClientCallTracerInterface() {
-  std::array<std::pair<opentelemetry::nostd::string_view,
-                       opentelemetry::common::AttributeValue>,
-             2>
-      attributes = {
-          std::pair(AbslStringViewToNoStdStringView(OpenTelemetryMethodKey()),
-                    opentelemetry::common::AttributeValue(
-                        AbslStringViewToNoStdStringView(MethodForStats()))),
-          std::pair(AbslStringViewToNoStdStringView(OpenTelemetryTargetKey()),
-                    opentelemetry::common::AttributeValue(
-                        AbslStringViewToNoStdStringView(
-                            scope_config_->filtered_target())))};
+  std::array<std::pair<absl::string_view, absl::string_view>, 2>
+      additional_labels = {
+          {{OpenTelemetryMethodKey(), MethodForStats()},
+           {OpenTelemetryTargetKey(), scope_config_->filtered_target()}}};
+  KeyValueIterable labels(
+      /*injected_labels_from_plugin_options=*/{}, additional_labels,
+      &scope_config_->active_plugin_options_view(), optional_labels_,
+      /*is_client=*/true, otel_plugin_, /*is_call_level=*/true);
   if (otel_plugin_->client_.call.retries != nullptr && retries_ > 1) {
     otel_plugin_->client_.call.retries->Record(
-        retries_ - 1, attributes, opentelemetry::context::Context{});
+        retries_ - 1, labels, opentelemetry::context::Context{});
   }
   if (otel_plugin_->client_.call.transparent_retries != nullptr &&
       transparent_retries_ != 0) {
     otel_plugin_->client_.call.transparent_retries->Record(
-        transparent_retries_, attributes, opentelemetry::context::Context{});
+        transparent_retries_, labels, opentelemetry::context::Context{});
   }
   if (otel_plugin_->client_.call.retry_delay != nullptr &&
       retry_delay_ != absl::ZeroDuration() && retries_ > 1) {
     otel_plugin_->client_.call.retry_delay->Record(
-        absl::ToDoubleSeconds(retry_delay_), attributes,
+        absl::ToDoubleSeconds(retry_delay_), labels,
         opentelemetry::context::Context{});
   }
   if (span_ != nullptr) {
