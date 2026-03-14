@@ -251,11 +251,13 @@ def try_cythonize(extensions, linetracing=False, mandatory=True):
             )
         return extensions
     cython_compiler_directives = {}
+    nthreads = os.cpu_count()
     if linetracing:
         additional_define_macros = [("CYTHON_TRACE_NOGIL", "1")]
         cython_compiler_directives["linetrace"] = True
     return Cython.Build.cythonize(
         extensions,
+        nthreads= nthreads,
         include_path=[
             include_dir
             for extension in extensions
