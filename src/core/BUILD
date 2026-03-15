@@ -8721,6 +8721,7 @@ grpc_cc_library(
         "ref_counted",
         "resource_quota",
         "sleep",
+        "status_flag",
         "stream_data_queue",
         "sync",
         "time",
