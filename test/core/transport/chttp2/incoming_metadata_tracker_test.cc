@@ -167,8 +167,7 @@ TEST(IncomingMetadataTrackerTest, NewHeaderFrameAfterContinuationSequence) {
   EXPECT_EQ(tracker.GetStreamId(), 11);
 }
 
-TEST(IncomingMetadataTrackerTest, ClientReceivedDuplicateMetadataChecks) {
-  // Verifies ClientReceivedDuplicateMetadata logic.
+TEST(IncomingMetadataTrackerTest, DidReceiveDuplicateMetadataChecks) {
   IncomingMetadataTracker tracker(Slice::FromCopiedString("test"));
 
   // Scenario 1: Initial metadata frame (end_stream=false)
@@ -176,11 +175,11 @@ TEST(IncomingMetadataTrackerTest, ClientReceivedDuplicateMetadataChecks) {
       "", /*stream_id=*/1, /*end_headers=*/true, /*end_stream=*/false);
   tracker.OnHeaderReceived(header_initial);
   // If we haven't pushed initial metadata, it's not a duplicate.
-  EXPECT_FALSE(tracker.ClientReceivedDuplicateMetadata(
+  EXPECT_FALSE(tracker.DidReceiveDuplicateMetadata(
       /*did_receive_initial_metadata=*/false,
       /*did_receive_trailing_metadata=*/false));
   // If we have pushed initial metadata, it's a duplicate.
-  EXPECT_TRUE(tracker.ClientReceivedDuplicateMetadata(
+  EXPECT_TRUE(tracker.DidReceiveDuplicateMetadata(
       /*did_receive_initial_metadata=*/true,
       /*did_receive_trailing_metadata=*/false));
 
@@ -189,11 +188,11 @@ TEST(IncomingMetadataTrackerTest, ClientReceivedDuplicateMetadataChecks) {
       "", /*stream_id=*/1, /*end_headers=*/true, /*end_stream=*/true);
   tracker.OnHeaderReceived(header_trailing);
   // If we haven't pushed trailing metadata, it's not a duplicate.
-  EXPECT_FALSE(tracker.ClientReceivedDuplicateMetadata(
+  EXPECT_FALSE(tracker.DidReceiveDuplicateMetadata(
       /*did_receive_initial_metadata=*/true,
       /*did_receive_trailing_metadata=*/false));
   // If we have pushed trailing metadata, it's a duplicate.
-  EXPECT_TRUE(tracker.ClientReceivedDuplicateMetadata(
+  EXPECT_TRUE(tracker.DidReceiveDuplicateMetadata(
       /*did_receive_initial_metadata=*/true,
       /*did_receive_trailing_metadata=*/true));
 }

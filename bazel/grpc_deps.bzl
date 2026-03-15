@@ -46,7 +46,10 @@ def grpc_deps():
     if "zlib" not in native.existing_rules():
         http_archive(
             name = "zlib",
-            build_file = "@com_github_grpc_grpc//third_party:zlib.BUILD",
+            patch_args = ["-p1"],
+            patches = [
+                "@com_github_grpc_grpc//bazel/zlib:add_custom_build_file.patch",
+            ],
             sha256 = "da8937719bb6e9600a671f320934c0db3b8020c9c30fecda60b5a5ebdc9a1ea0",
             strip_prefix = "zlib-f1f503da85d52e56aae11557b4d79a42bcaa2b86",
             urls = [
@@ -426,10 +429,11 @@ def grpc_test_only_deps():
     if "yaml-cpp" not in native.existing_rules():
         http_archive(
             name = "yaml-cpp",
-            sha256 = "fbe74bbdcee21d656715688706da3c8becfd946d92cd44705cc6098bb23b3a16",
-            strip_prefix = "yaml-cpp-0.8.0",
+            integrity = "sha256-KYWT2cRA/ZA0uLGT2WMYt21JvJfGzq23sINu3wttdTk=",
+            strip_prefix = "",
             urls = [
-                "https://github.com/jbeder/yaml-cpp/archive/refs/tags/0.8.0.tar.gz",
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/jbeder/yaml-cpp/releases/download/yaml-cpp-0.9.0/yaml-cpp-yaml-cpp-0.9.0.tar.gz",
+                "https://github.com/jbeder/yaml-cpp/releases/download/yaml-cpp-0.9.0/yaml-cpp-yaml-cpp-0.9.0.tar.gz",
             ],
         )
 

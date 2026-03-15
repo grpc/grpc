@@ -147,6 +147,7 @@ grpc_cc_test(
         "absl/strings",
         "gtest",
     ],
+    tags = ["xds_test"],
     uses_event_engine = False,
     uses_polling = False,
     deps = [
