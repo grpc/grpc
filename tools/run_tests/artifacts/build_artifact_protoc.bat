@@ -18,6 +18,9 @@ mkdir -p %ARTIFACTS_OUT%
 cd /d %~dp0\..\..\..
 
 mkdir cmake
+if exist generate_artifacts.sh (
+  bash generate_artifacts.sh || goto :error
+)
 cd cmake
 mkdir build
 cd build

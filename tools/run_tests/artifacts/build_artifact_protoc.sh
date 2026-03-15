@@ -17,6 +17,10 @@ set -ex
 
 cd "$(dirname "$0")/../../.."
 
+if [ -f generate_artifacts.sh ]; then
+  ./generate_artifacts.sh
+fi
+
 mkdir -p cmake/build
 pushd cmake/build
 
