@@ -29,6 +29,10 @@ TEST_PATH=$(cd "$(dirname $0)" > /dev/null ; pwd)
 
 cd $(dirname $0)/../../..
 
+if [ -f generate_artifacts.sh ]; then
+  ./generate_artifacts.sh
+fi
+
 cd $EXAMPLE_PATH
 
 # clean the directory
