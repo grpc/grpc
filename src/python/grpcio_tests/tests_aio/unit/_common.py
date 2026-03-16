@@ -18,7 +18,6 @@ from typing import AsyncIterable, Union
 
 import grpc
 from grpc.aio._metadata import Metadata
-from grpc.aio._metadata import MetadatumType
 from grpc.aio._typing import MetadataKey
 from grpc.aio._typing import MetadataValue
 from grpc.experimental import aio

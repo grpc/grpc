@@ -12,10 +12,21 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Implementation of the metadata abstraction for gRPC Asyncio Python."""
+from __future__ import annotations
+
 from collections import OrderedDict
 from collections import abc
-from collections.abc import Iterable
-from typing import Any, Iterator, List, Optional, Sequence, Tuple, Union
+from collections.abc import (
+    Collection,
+    ItemsView,
+    Iterable,
+    KeysView,
+    ValuesView,
+    Iterator,
+    Sequence
+)
+
+from typing import Union, Tuple, Any
 
 from typing_extensions import Self
 
@@ -53,15 +64,13 @@ class Metadata(abc.Collection):  # noqa: PLW1641
     def _create(
         cls,
         raw_metadata: Union[
-            None, Self, Iterable[tuple[MetadataKey, MetadataValue]]
+            None, Self, Iterable[MetadatumType]
         ],
     ) -> Self:
         if raw_metadata is None:
             return Metadata()
         if isinstance(raw_metadata, cls):
             return raw_metadata
-        if isinstance(raw_metadata, (tuple, list)):
-            return cls.from_tuple(tuple(raw_metadata))
         if raw_metadata:
             return cls(*raw_metadata)
         return cls()

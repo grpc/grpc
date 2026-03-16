@@ -26,10 +26,12 @@ from typing import (
 
 from grpc._cython.cygrpc import EOF
 
-from ._metadata import Metadata  # pylint: disable=unused-import
-from ._metadata import MetadataKey  # pylint: disable=unused-import
-from ._metadata import MetadataType  # pylint: disable=unused-import
-from ._metadata import MetadataValue  # pylint: disable=unused-import
+# pylint: disable=unused-import
+from ._metadata import Metadata
+from ._metadata import MetadataKey
+from ._metadata import MetadataType
+from ._metadata import MetadataValue
+# pylint: enable=unused-import
 
 RequestType = TypeVar("RequestType")
 ResponseType = TypeVar("ResponseType")
