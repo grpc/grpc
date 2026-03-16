@@ -158,7 +158,6 @@ TEST(ClientSideWeightedRoundRobinTest, FieldsExplicitlySet) {
             "\"blackoutPeriod\":\"2.000000000s\","
             "\"enableOobLoadReport\":true,"
             "\"errorUtilizationPenalty\":5,"
-            "\"metricNamesForComputingUtilization\":[\"cpu_usage\"],"
             "\"oobReportingPeriod\":\"1.000000000s\","
             "\"weightExpirationPeriod\":\"3.000000000s\","
             "\"weightUpdatePeriod\":\"4.000000000s\""
