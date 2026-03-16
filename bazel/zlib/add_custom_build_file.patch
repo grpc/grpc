@@ -1,6 +1,10 @@
+diff --git a/BUILD.bazel b/BUILD.bazel
+new file mode 100644
+index 0000000..6eaf7c0
 --- /dev/null
 +++ b/BUILD.bazel
-@@ -0,0 +1,36 @@
+@@ -0,0 +1,41 @@
++load("@rules_cc//cc:defs.bzl", "cc_library")
 +cc_library(
 +    name = "zlib",
 +    srcs = [
@@ -8,6 +12,10 @@
 +        "compress.c",
 +        "crc32.c",
 +        "deflate.c",
++        "gzclose.c",
++        "gzlib.c",
++        "gzread.c",
++        "gzwrite.c",
 +        "infback.c",
 +        "inffast.c",
 +        "inflate.c",

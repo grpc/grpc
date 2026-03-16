@@ -72,6 +72,18 @@ bazel_dep(name = "rules_cc", version = "0.2.15")
 cc_configure = use_extension("@rules_cc//cc:extensions.bzl", "cc_configure_extension")
 use_repo(cc_configure, "local_config_cc")
 
+# Use archive_override because BCR release changes the folder structure and move
+# headers to include/ folder, which can break our wrapper language builds.
+archive_override(
+    module_name = "zlib",
+    integrity = "sha256-uSWM9iVOf3w38c1h26lDocXqPP9XGMeJg02sNZCU9fc=",
+    strip_prefix = "zlib-da607da739fa6047df13e66a2af6b8bec7c2a498",
+    urls = [
+        "https://storage.googleapis.com/grpc-bazel-mirror/github.com/madler/zlib/archive/da607da739fa6047df13e66a2af6b8bec7c2a498.tar.gz",
+        "https://github.com/madler/zlib/archive/da607da739fa6047df13e66a2af6b8bec7c2a498.tar.gz",
+    ],
+)
+
 # Development dependencies
 # ========================
 bazel_dep(name = "google_benchmark", version = "1.9.0", dev_dependency = True, repo_name = "com_github_google_benchmark")
