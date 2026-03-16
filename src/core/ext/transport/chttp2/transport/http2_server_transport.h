@@ -496,7 +496,7 @@ class Http2ServerTransport final : public ServerTransport,
   //////////////////////////////////////////////////////////////////////////////
   // Stream Operations
 
-  // absl::Status InitializeStream(Stream& stream);
+  absl::Status InitializeStream(Stream& stream);
 
   // Runs on the call party.
   std::optional<RefCountedPtr<Stream>> MakeStream(
