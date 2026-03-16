@@ -528,11 +528,11 @@ class FakeStatsPlugin : public StatsPlugin {
 
  private:
   template <typename T>
-  class DomainMetricsSink : public MetricsSink {
+  class DomainMetricsSink final : public MetricsSink {
    public:
-    DomainMetricsSink(absl::string_view target_name,
-                      absl::Span<const std::string> label_keys,
-                      absl::Span<const std::string> label_values)
+    explicit DomainMetricsSink(absl::string_view target_name,
+                               absl::Span<const std::string> label_keys,
+                               absl::Span<const std::string> label_values)
         : target_name_(target_name) {
       for (size_t i = 0; i < label_keys.size(); ++i) {
         target_labels_.emplace(label_keys[i], label_values[i]);
