@@ -39,6 +39,8 @@ if(gRPC_SSL_PROVIDER STREQUAL "module")
         endif()
       endif()
     endif()
+    # Silence a false positive warning in gcc 7, see https://github.com/grpc/grpc/issues/41869.
+    # There's no dedicated warning flag for this. Had to demote all warnings with -Wno-error.
     if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
       # Check if the version is 7.x
       if (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 7.0 AND
