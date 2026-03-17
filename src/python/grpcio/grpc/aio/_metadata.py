@@ -26,7 +26,7 @@ from collections.abc import (
     Sequence,
 )
 
-from typing import Union, Tuple, Any
+from typing import Any, Optional, Tuple, Union
 
 from typing_extensions import Self
 
