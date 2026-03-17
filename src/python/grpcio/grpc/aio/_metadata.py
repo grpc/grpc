@@ -15,7 +15,7 @@
 from __future__ import annotations
 
 from collections import OrderedDict
-from collections import abc
+from collections.abc import Collection
 from collections.abc import ItemsView
 from collections.abc import Iterable
 from collections.abc import Iterator
@@ -32,7 +32,7 @@ MetadatumType = Tuple[MetadataKey, MetadataValue]
 MetadataType = Union["Metadata", Sequence[MetadatumType]]
 
 
-class Metadata(abc.Collection):  # noqa: PLW1641
+class Metadata(Collection):  # noqa: PLW1641
     """Metadata abstraction for the asynchronous calls and interceptors.
 
     The metadata is a mapping from str -> List[str]
