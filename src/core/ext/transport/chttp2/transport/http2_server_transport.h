@@ -543,7 +543,7 @@ class Http2ServerTransport final : public ServerTransport,
   //              : Duration::Seconds(1);
   // }
 
-  // absl::Status AckPing(uint64_t opaque_data);
+  absl::Status AckPing(uint64_t opaque_data);
 
   // void MaybeSpawnKeepaliveLoop();
 
