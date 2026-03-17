@@ -43,6 +43,7 @@
 #include "src/core/credentials/transport/security_connector.h"
 #include "src/core/credentials/transport/transport_credentials.h"
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
+#include "src/core/ext/transport/chttp2/transport/http2_server_transport.h"
 #include "src/core/ext/transport/chttp2/transport/internal.h"
 #include "src/core/ext/transport/chttp2/transport/legacy_frame.h"
 #include "src/core/handshaker/handshaker.h"
@@ -70,7 +71,9 @@
 #include "src/core/lib/resource_quota/connection_quota.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
+#include "src/core/lib/surface/channel_create.h"
 #include "src/core/lib/transport/error_utils.h"
+#include "src/core/lib/transport/promise_endpoint.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/server/server.h"
 #include "src/core/util/debug_location.h"
@@ -226,41 +229,84 @@ void NewChttp2ServerListener::ActiveConnection::HandshakingState::
   // code, so we can just clean up here without creating a transport.
   if (!connection_->shutdown_ && result.ok() &&
       (*result)->endpoint != nullptr) {
-    RefCountedPtr<Transport> transport =
-        grpc_create_chttp2_transport((*result)->args,
-                                     std::move((*result)->endpoint), false)
-            ->Ref();
-    grpc_error_handle channel_init_err =
-        connection_->listener_state_->SetupTransport(
-            transport.get(), accepting_pollset_, (*result)->args);
-    if (channel_init_err.ok()) {
+    const bool is_callv3 =
+        (*result)->args.GetBool(GRPC_ARG_USE_V3_STACK).value_or(false);
+    Transport* transport = nullptr;
+    grpc_error_handle channel_init_err;
+
+    if (!is_callv3) {
       // Use notify_on_receive_settings callback to enforce the
       // handshake deadline.
-      connection_->state_ =
-          DownCast<grpc_chttp2_transport*>(transport.get())->Ref();
-      grpc_closure* on_close = &connection_->on_close_;
-      // Refs held by OnClose()
-      connection_->Ref().release();
-      grpc_chttp2_transport_start_reading(
-          transport.get(), (*result)->read_buffer.c_slice_buffer(),
-          [self = Ref()](absl::StatusOr<uint32_t>) {
-            self->OnReceiveSettings();
-          },
-          nullptr, on_close);
-      timer_handle_ = connection_->listener_state_->event_engine()->RunAfter(
-          deadline_ - Timestamp::Now(), [self = Ref()]() mutable {
-            // HandshakingState deletion might require an active ExecCtx.
-            ExecCtx exec_ctx;
-            auto* self_ptr = self.get();
-            self_ptr->connection_->work_serializer_.Run(
-                [self = std::move(self)]() { self->OnTimeoutLocked(); },
-                DEBUG_LOCATION);
-          });
+      transport = grpc_create_chttp2_transport(
+          (*result)->args, std::move((*result)->endpoint), false);
+      channel_init_err = connection_->listener_state_->SetupTransport(
+          transport, accepting_pollset_, (*result)->args);
+      if (channel_init_err.ok()) {
+        connection_->state_ =
+            DownCast<grpc_chttp2_transport*>(transport)->Ref();
+        grpc_closure* on_close = &connection_->on_close_;
+        // Refs held by OnClose()
+        connection_->Ref().release();
+        grpc_chttp2_transport_start_reading(
+            transport, (*result)->read_buffer.c_slice_buffer(),
+            [self = Ref()](absl::StatusOr<uint32_t>) {
+              self->OnReceiveSettings();
+            },
+            nullptr, on_close);
+      }
     } else {
-      // Failed to create channel from transport. Clean up.
-      LOG(ERROR) << "Failed to create channel: "
-                 << StatusToString(channel_init_err);
-      transport->Orphan();
+      std::unique_ptr<EventEngine::Endpoint> event_engine_endpoint =
+          grpc_event_engine::experimental::
+              grpc_take_wrapped_event_engine_endpoint(
+                  (*result)->endpoint.release());
+      if (GPR_UNLIKELY(event_engine_endpoint == nullptr)) {
+        LOG(ERROR) << "Failed to take endpoint.";
+        channel_init_err = absl::InternalError("Failed to take endpoint");
+      } else {
+        PromiseEndpoint promise_endpoint(std::move(event_engine_endpoint),
+                                         std::move((*result)->read_buffer));
+        std::shared_ptr<EventEngine> event_engine_ptr =
+            (*result)->args.GetObjectRef<EventEngine>();
+        // TODO(akshitpatel) : [PH2][P3] : Consider making on_close_
+        // absl::AnyInvocable.
+        grpc_closure* on_close = &connection_->on_close_;
+        // Refs held by OnClose()
+        connection_->Ref().release();
+        // Use notify_on_receive_settings callback to enforce the
+        // handshake deadline.
+        transport = new http2::Http2ServerTransport(
+            std::move(promise_endpoint), (*result)->args,
+            std::move(event_engine_ptr),
+            [self = Ref()](absl::StatusOr<uint32_t>) {
+              self->OnReceiveSettings();
+            },
+            on_close);
+        channel_init_err = connection_->listener_state_->SetupTransport(
+            transport, accepting_pollset_, (*result)->args);
+        if (GPR_LIKELY(channel_init_err.ok())) {
+          connection_->state_ =
+              DownCast<http2::Http2ServerTransport*>(transport)
+                  ->RefAsSubclass<http2::Http2ServerTransport>();
+        }
+      }
+    }
+
+    if (transport != nullptr) {
+      if (channel_init_err.ok()) {
+        timer_handle_ = connection_->listener_state_->event_engine()->RunAfter(
+            deadline_ - Timestamp::Now(), [self = Ref()]() mutable {
+              // HandshakingState deletion might require an active ExecCtx.
+              ExecCtx exec_ctx;
+              auto* self_ptr = self.get();
+              self_ptr->connection_->work_serializer_.Run(
+                  [self = std::move(self)]() { self->OnTimeoutLocked(); },
+                  DEBUG_LOCATION);
+            });
+      } else {
+        LOG(ERROR) << "Failed to create channel: "
+                   << StatusToString(channel_init_err);
+        transport->Orphan();
+      }
     }
   }
   // Since the handshake manager is done, the connection no longer needs to
@@ -268,7 +314,7 @@ void NewChttp2ServerListener::ActiveConnection::HandshakingState::
   handshake_mgr_.reset();
   connection_->listener_state_->OnHandshakeDone(connection_.get());
   // Clean up if we don't have a transport
-  if (!std::holds_alternative<RefCountedPtr<grpc_chttp2_transport>>(
+  if (std::holds_alternative<OrphanablePtr<HandshakingState>>(
           connection_->state_)) {
     connection_->listener_state_->connection_quota()->ReleaseConnections(1);
     connection_->listener_state_->RemoveLogicalConnection(connection_.get());
@@ -373,6 +419,11 @@ void NewChttp2ServerListener::ActiveConnection::SendGoAwayImplLocked() {
                 static_cast<intptr_t>(Http2ErrorCode::kNoError));
             transport->PerformOp(op);
           }
+        },
+        [](const RefCountedPtr<http2::Http2ServerTransport>& transport) {
+          // TODO(akshitpatel) [PH2][P0] : Add support for GOAWAY for
+          // Http2ServerTransport.
+          LOG(FATAL) << "Not implemented";
         });
   }
 }
@@ -397,6 +448,11 @@ void NewChttp2ServerListener::ActiveConnection::
               "Drain grace time expired. Closing connection immediately.");
           transport->PerformOp(op);
         }
+      },
+      [](const RefCountedPtr<http2::Http2ServerTransport>& transport) {
+        // TODO(akshitpatel) [PH2][P0] : Add support for disconnect immediately
+        // for Http2ServerTransport.
+        LOG(FATAL) << "Not implemented";
       });
 }
 
@@ -615,8 +671,12 @@ absl::StatusOr<int> Chttp2ServerAddPort(Server* server, const char* addr,
   if (addr == nullptr) {
     return GRPC_ERROR_CREATE("Invalid address: addr cannot be a nullptr.");
   }
+
+  ChannelArgs updated_args = args.Set(
+      GRPC_ARG_USE_V3_STACK, IsPromiseBasedHttp2ServerTransportEnabled());
   if (strncmp(addr, "external:", 9) == 0) {
-    auto r = NewChttp2ServerListener::CreateWithAcceptor(server, addr, args);
+    auto r =
+        NewChttp2ServerListener::CreateWithAcceptor(server, addr, updated_args);
     if (!r.ok()) return r;
     return -1;
   }
@@ -683,7 +743,8 @@ absl::StatusOr<int> Chttp2ServerAddPort(Server* server, const char* addr,
         grpc_event_engine::experimental::ResolvedAddressSetPort(addr, port_num);
       }
       int port_temp = -1;
-      error = NewChttp2ServerListener::Create(server, addr, args, &port_temp);
+      error = NewChttp2ServerListener::Create(server, addr, updated_args,
+                                              &port_temp);
       if (!error.ok()) {
         error_list.push_back(error);
       } else {
@@ -779,9 +840,10 @@ void grpc_server_add_channel_from_fd(grpc_server* server, int fd,
   grpc_core::Server* core_server = grpc_core::Server::FromC(server);
 
   grpc_core::ChannelArgs server_args = core_server->channel_args();
+  const bool is_callv3 = grpc_core::IsPromiseBasedHttp2ServerTransportEnabled();
+  server_args = server_args.Set(GRPC_ARG_USE_V3_STACK, is_callv3);
+
   std::string name = absl::StrCat("fd:", fd);
-  auto memory_quota =
-      server_args.GetObject<grpc_core::ResourceQuota>()->memory_quota();
   grpc_core::OrphanablePtr<grpc_endpoint> server_endpoint(
       grpc_tcp_create_from_fd(
           grpc_fd_create(fd, name.c_str(), true),
@@ -791,15 +853,36 @@ void grpc_server_add_channel_from_fd(grpc_server* server, int fd,
   for (grpc_pollset* pollset : core_server->pollsets()) {
     grpc_endpoint_add_to_pollset(server_endpoint.get(), pollset);
   }
-  grpc_core::Transport* transport = grpc_create_chttp2_transport(
-      server_args, std::move(server_endpoint), false  // is_client
-  );
-  grpc_error_handle error =
-      core_server->SetupTransport(transport, nullptr, server_args);
-  if (error.ok()) {
-    grpc_chttp2_transport_start_reading(transport, nullptr, nullptr, nullptr,
-                                        nullptr);
+
+  grpc_core::Transport* transport;
+  grpc_error_handle error;
+  if (!is_callv3) {
+    transport = grpc_create_chttp2_transport(server_args,
+                                             std::move(server_endpoint), false);
+    error = core_server->SetupTransport(transport, nullptr, server_args);
+    if (error.ok()) {
+      grpc_chttp2_transport_start_reading(transport, nullptr, nullptr, nullptr,
+                                          nullptr);
+    }
   } else {
+    std::unique_ptr<grpc_event_engine::experimental::EventEngine::Endpoint>
+        event_engine_endpoint = grpc_event_engine::experimental::
+            grpc_take_wrapped_event_engine_endpoint(server_endpoint.release());
+    if (event_engine_endpoint != nullptr) {
+      grpc_core::PromiseEndpoint promise_endpoint(
+          std::move(event_engine_endpoint), grpc_core::SliceBuffer());
+      auto event_engine_ptr =
+          server_args.GetObjectRef<grpc_core::EventEngine>();
+      transport = new grpc_core::http2::Http2ServerTransport(
+          std::move(promise_endpoint), server_args, std::move(event_engine_ptr),
+          [](absl::StatusOr<uint32_t>) {}, /*on_close_callback=*/nullptr);
+      error = core_server->SetupTransport(transport, nullptr, server_args);
+    } else {
+      LOG(ERROR) << "Failed to take endpoint.";
+    }
+  }
+
+  if (!error.ok() && transport != nullptr) {
     LOG(ERROR) << "Failed to create channel: "
                << grpc_core::StatusToString(error);
     transport->Orphan();
@@ -837,6 +920,8 @@ absl::Status grpc_server_add_passive_listener(
   auto args = server->channel_args()
                   .SetObject(credentials->Ref())
                   .SetObject(std::move(sc));
+  args = args.Set(GRPC_ARG_USE_V3_STACK,
+                  grpc_core::IsPromiseBasedHttp2ServerTransportEnabled());
   passive_listener->listener_ =
       grpc_core::NewChttp2ServerListener::CreateForPassiveListener(
           server, args, passive_listener);
