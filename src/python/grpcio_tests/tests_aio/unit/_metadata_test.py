@@ -215,6 +215,21 @@ class TestTypeMetadata(unittest.TestCase):
             with self.subTest(raw_metadata=source, expected=expected):
                 self.assertEqual(expected, Metadata.from_tuple(source))  # type: ignore
 
+    @typeguard.suppress_type_checks
+    def test_create_invalid_type(self):
+        # 1. raw_metadata is set
+        l = {"key", "value"}
+        self.assertEqual(Metadata._create(l), Metadata(("key", "value")))
+
+        # 2. raw_metadata is string
+        l = "key, value"
+        with self.assertRaises(ValueError) as container:
+            Metadata._create(l)
+        self.assertEqual(
+            str(container.exception),
+            "not enough values to unpack (expected 2, got 1)"
+        )
+
     def test_create(self):
         # 1. raw_metadata is None
         self.assertEqual(Metadata._create(None), Metadata())
@@ -230,18 +245,6 @@ class TestTypeMetadata(unittest.TestCase):
         # 4. raw_metadata is list
         l = [("key", "value")]
         self.assertEqual(Metadata._create(l), Metadata(("key", "value")))
-
-        # 5. raw_metadata is set
-        l = {"key", "value"}
-        self.assertEqual(Metadata._create(l), Metadata(("key", "value")))
-
-        l = "key, value"
-        with self.assertRaises(ValueError) as container:
-            Metadata._create(l)
-        self.assertEqual(
-            str(container.exception),
-            "not enough values to unpack (expected 2, got 1)"
-        )
 
         # 5. raw_metadata is empty list
         self.assertEqual(Metadata._create([]), Metadata())
