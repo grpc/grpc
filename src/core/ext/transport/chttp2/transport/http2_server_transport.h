@@ -445,9 +445,9 @@ class Http2ServerTransport final : public ServerTransport,
   void AddToStreamList(RefCountedPtr<Stream> stream);
 
   absl::Status MaybeAddStreamToWritableStreamList(
-      const RefCountedPtr<Stream> stream,
-      const StreamDataQueue<ClientMetadataHandle>::StreamWritabilityUpdate
-          result) {
+      GRPC_UNUSED const RefCountedPtr<Stream> stream,
+      GRPC_UNUSED const StreamDataQueue<
+          ClientMetadataHandle>::StreamWritabilityUpdate result) {
     // TODO(akshitpatel) : [PH2][P0] : Implement this.
     return absl::OkStatus();
   }
