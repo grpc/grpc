@@ -16,16 +16,13 @@ from __future__ import annotations
 
 from collections import OrderedDict
 from collections import abc
-from collections.abc import (
-    Collection,
-    ItemsView,
-    Iterable,
-    KeysView,
-    ValuesView,
-    Iterator,
-    Sequence,
-)
-
+from collections.abc import Collection
+from collections.abc import ItemsView
+from collections.abc import Iterable
+from collections.abc import Iterator
+from collections.abc import KeysView
+from collections.abc import Sequence
+from collections.abc import ValuesView
 from typing import Any, List, Optional, Tuple, Union
 
 from typing_extensions import Self
