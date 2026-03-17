@@ -242,8 +242,6 @@ Http2Status Http2ClientTransport::ProcessIncomingFrame(Http2DataFrame&& frame) {
       << frame.stream_id << ", end_stream:" << frame.end_stream
       << ", payload length=" << frame.payload.Length() << "}";
 
-  // TODO(akshitpatel) : [PH2][P3] : Investigate if we should do this even if
-  // the function returns a non-ok status?
   ping_manager_->ReceivedDataFrame();
 
   RefCountedPtr<Stream> stream = LookupStream(frame.stream_id);
@@ -276,7 +274,6 @@ Http2Status Http2ClientTransport::ProcessIncomingFrame(Http2DataFrame&& frame) {
     return stream_status;
   }
 
-  // Add frame to assembler
   GRPC_HTTP2_CLIENT_DLOG
       << "Http2ClientTransport::ProcessIncomingFrame(DataFrame) "
          "AppendNewDataFrame";

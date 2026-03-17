@@ -285,8 +285,6 @@ Http2Status Http2ServerTransport::ProcessIncomingFrame(Http2DataFrame&& frame) {
       << frame.stream_id << ", end_stream:" << frame.end_stream
       << ", payload length=" << frame.payload.Length() << "}";
 
-  // TODO(akshitpatel) : [PH2][P3] : Investigate if we should do this even if
-  // the function returns a non-ok status?
   ping_manager_->ReceivedDataFrame();
 
   RefCountedPtr<Stream> stream = LookupStream(frame.stream_id);
@@ -319,7 +317,6 @@ Http2Status Http2ServerTransport::ProcessIncomingFrame(Http2DataFrame&& frame) {
     return stream_status;
   }
 
-  // Add frame to assembler
   GRPC_HTTP2_SERVER_DLOG
       << "Http2ServerTransport::ProcessIncomingFrame(DataFrame) "
          "AppendNewDataFrame";
@@ -365,7 +362,7 @@ Http2Status Http2ServerTransport::ProcessIncomingFrame(Http2DataFrame&& frame) {
   // 3. One data frame with a full message
   // 4. Three data frames with one full message
   // 5. One data frame with three full messages. All messages should be pushed.
-  // Will need to mock the call_handler object and test this along with the
+  // Will need to mock the call_initiator object and test this along with the
   // Header reading code. Because we need a stream in place for the lookup to
   // work.
   return Http2Status::Ok();
@@ -375,71 +372,65 @@ Http2Status Http2ServerTransport::ProcessIncomingFrame(
     Http2HeaderFrame&& frame) {
   // https://www.rfc-editor.org/rfc/rfc9113.html#name-headers
   GRPC_HTTP2_SERVER_DLOG
-      << "Http2ServerTransport::ProcessIncomingFrame(HeaderFrame) {stream_id = "
-      << frame.stream_id << ",end_headers = " << frame.end_headers
+      << "Http2ServerTransport::ProcessIncomingFrame(HeaderFrame) { stream_id="
+      << frame.stream_id << ", end_headers=" << frame.end_headers
       << ", end_stream=" << frame.end_stream << " }";
   // State update MUST happen before processing the frame.
-  //   incoming_headers_.OnHeaderReceived(frame);
+  incoming_headers_.OnHeaderReceived(frame);
 
-  //   ping_manager_->ReceivedDataFrame();
+  ping_manager_->ReceivedDataFrame();
 
-  //   RefCountedPtr<Stream> stream = LookupStream(frame.stream_id);
-  //   if (stream == nullptr) {
-  //     // TODO(tjagtap) : [PH2][P3] : Implement this.
-  //     // RFC9113 : The identifier of a newly established stream MUST be
-  //     // numerically greater than all streams that the initiating endpoint
-  //     has
-  //     // opened or reserved. This governs streams that are opened using a
-  //     HEADERS
-  //     // frame and streams that are reserved using PUSH_PROMISE. An endpoint
-  //     that
-  //     // receives an unexpected stream identifier MUST respond with a
-  //     connection
-  //     // error (Section 5.4.1) of type PROTOCOL_ERROR.
-  //     GRPC_HTTP2_SERVER_DLOG
-  //         << "Http2ServerTransport::ProcessIncomingFrame(HeaderFrame) { "
-  //            "stream_id="
-  //         << frame.stream_id << "} Lookup Failed";
-  //     return ParseAndDiscardHeaders(std::move(frame.payload),
-  //     frame.end_headers,
-  //                                   /*stream=*/nullptr, Http2Status::Ok());
-  //   }
+  RefCountedPtr<Stream> stream = LookupStream(frame.stream_id);
+  if (stream == nullptr) {
+    // TODO(tjagtap) : [PH2][P3] : Implement this.
+    // RFC9113 : The identifier of a newly established stream MUST be
+    // numerically greater than all streams that the initiating endpoint has
+    // opened or reserved. This governs streams that are opened using a HEADERS
+    // frame and streams that are reserved using PUSH_PROMISE. An endpoint that
+    // receives an unexpected stream identifier MUST respond with a connection
+    // error (Section 5.4.1) of type PROTOCOL_ERROR.
+    GRPC_HTTP2_SERVER_DLOG
+        << "Http2ServerTransport::ProcessIncomingFrame(HeaderFrame) { "
+           "stream_id="
+        << frame.stream_id << "} Lookup Failed";
+    return ParseAndDiscardHeaders(std::move(frame.payload), frame.end_headers,
+                                  /*stream=*/nullptr, Http2Status::Ok());
+  }
 
-  //   if (stream->IsStreamHalfClosedRemote()) {
-  //     return ParseAndDiscardHeaders(
-  //         std::move(frame.payload), frame.end_headers, stream.get(),
-  //         Http2Status::Http2StreamError(
-  //             Http2ErrorCode::kStreamClosed,
-  //             std::string(RFC9113::kHalfClosedRemoteState)));
-  //   }
+  if (stream->IsStreamHalfClosedRemote()) {
+    return ParseAndDiscardHeaders(
+        std::move(frame.payload), frame.end_headers, stream.get(),
+        Http2Status::Http2StreamError(
+            Http2ErrorCode::kStreamClosed,
+            std::string(RFC9113::kHalfClosedRemoteState)));
+  }
 
-  //   if (incoming_headers_.ClientReceivedDuplicateMetadata(
-  //           stream->IsInitialMetadataReceived(),
-  //           stream->IsTrailingMetadataReceived())) {
-  //     return ParseAndDiscardHeaders(
-  //         std::move(frame.payload), frame.end_headers, stream.get(),
-  //         Http2Status::Http2StreamError(
-  //             Http2ErrorCode::kInternalError,
-  //             std::string(GrpcErrors::kTooManyMetadata)));
-  //   }
+  if (incoming_headers_.DidReceiveDuplicateMetadata(
+          stream->IsInitialMetadataReceived(),
+          stream->IsTrailingMetadataReceived())) {
+    return ParseAndDiscardHeaders(
+        std::move(frame.payload), frame.end_headers, stream.get(),
+        Http2Status::Http2StreamError(
+            Http2ErrorCode::kInternalError,
+            std::string(GrpcErrors::kTooManyMetadata)));
+  }
 
-  //   Http2Status append_result =
-  //   stream->GetHeaderAssembler().AppendHeaderFrame(frame); if
-  //   (!append_result.IsOk()) {
-  //     // Frame payload is not consumed if AppendHeaderFrame returns a non-OK
-  //     // status. We need to process it to keep our in consistent state.
-  //     return ParseAndDiscardHeaders(std::move(frame.payload),
-  //     frame.end_headers,
-  //                                   stream.get(), std::move(append_result));
-  //   }
+  Http2Status append_result =
+      stream->GetHeaderAssembler().AppendHeaderFrame(frame);
+  if (!append_result.IsOk()) {
+    // Frame payload is not consumed if AppendHeaderFrame returns a non-OK
+    // status. We need to process it to keep our in consistent state.
+    return ParseAndDiscardHeaders(std::move(frame.payload), frame.end_headers,
+                                  stream.get(), std::move(append_result));
+  }
 
-  //   Http2Status status = ProcessMetadata(stream);
-  //   if (!status.IsOk()) {
-  //     // Frame payload has been moved to the HeaderAssembler. So calling
-  //     // ParseAndDiscardHeaders with an empty buffer.
-  //     return ParseAndDiscardHeaders(SliceBuffer(), frame.end_headers,
-  //                                   stream.get(), std::move(status));
-  //   }
+  Http2Status status = ProcessMetadata(stream);
+  if (!status.IsOk()) {
+    // Frame payload has been moved to the HeaderAssembler. So calling
+    // ParseAndDiscardHeaders with an empty buffer.
+    return ParseAndDiscardHeaders(SliceBuffer(), frame.end_headers,
+                                  stream.get(), std::move(status));
+  }
 
   // Frame payload has either been processed or moved to the HeaderAssembler.
   return Http2Status::Ok();
@@ -679,53 +670,46 @@ Http2Status Http2ServerTransport::ProcessIncomingFrame(
          "stream_id="
       << frame.stream_id << ", end_headers=" << frame.end_headers << " }";
 
-  //   // State update MUST happen before processing the frame.
-  //   incoming_headers_.OnContinuationReceived(frame);
+  // State update MUST happen before processing the frame.
+  incoming_headers_.OnContinuationReceived(frame);
 
-  //   RefCountedPtr<Stream> stream = LookupStream(frame.stream_id);
-  //   if (stream == nullptr) {
-  //     // TODO(tjagtap) : [PH2][P3] : Implement this.
-  //     // RFC9113 : The identifier of a newly established stream MUST be
-  //     // numerically greater than all streams that the initiating endpoint
-  //     has
-  //     // opened or reserved. This governs streams that are opened using a
-  //     HEADERS
-  //     // frame and streams that are reserved using PUSH_PROMISE. An
-  //     endpoint that
-  //     // receives an unexpected stream identifier MUST respond with a
-  //     connection
-  //     // error (Section 5.4.1) of type PROTOCOL_ERROR.
-  //     return ParseAndDiscardHeaders(std::move(frame.payload),
-  //     frame.end_headers,
-  //                                   nullptr, Http2Status::Ok());
-  //   }
+  RefCountedPtr<Stream> stream = LookupStream(frame.stream_id);
+  if (stream == nullptr) {
+    // TODO(tjagtap) : [PH2][P3] : Implement this.
+    // RFC9113 : The identifier of a newly established stream MUST be
+    // numerically greater than all streams that the initiating endpoint has
+    // opened or reserved. This governs streams that are opened using a HEADERS
+    // frame and streams that are reserved using PUSH_PROMISE. An endpoint that
+    // receives an unexpected stream identifier MUST respond with a connection
+    // error (Section 5.4.1) of type PROTOCOL_ERROR.
+    return ParseAndDiscardHeaders(std::move(frame.payload), frame.end_headers,
+                                  nullptr, Http2Status::Ok());
+  }
 
-  //   if (stream->IsStreamHalfClosedRemote()) {
-  //     return ParseAndDiscardHeaders(
-  //         std::move(frame.payload), frame.end_headers, stream.get(),
-  //         Http2Status::Http2StreamError(
-  //             Http2ErrorCode::kStreamClosed,
-  //             std::string(RFC9113::kHalfClosedRemoteState)));
-  //   }
+  if (stream->IsStreamHalfClosedRemote()) {
+    return ParseAndDiscardHeaders(
+        std::move(frame.payload), frame.end_headers, stream.get(),
+        Http2Status::Http2StreamError(
+            Http2ErrorCode::kStreamClosed,
+            std::string(RFC9113::kHalfClosedRemoteState)));
+  }
 
-  //   Http2Status append_result =
-  //       stream->GetHeaderAssembler().AppendContinuationFrame(frame);
-  //   if (!append_result.IsOk()) {
-  //     // Frame payload is not consumed if AppendContinuationFrame returns a
-  //     // non-OK status. We need to process it to keep our in consistent
-  //     state. return ParseAndDiscardHeaders(std::move(frame.payload),
-  //     frame.end_headers,
-  //                                   stream.get(),
-  //                                   std::move(append_result));
-  //   }
+  Http2Status append_result =
+      stream->GetHeaderAssembler().AppendContinuationFrame(frame);
+  if (!append_result.IsOk()) {
+    // Frame payload is not consumed if AppendContinuationFrame returns a
+    // non-OK status. We need to process it to keep our in consistent state.
+    return ParseAndDiscardHeaders(std::move(frame.payload), frame.end_headers,
+                                  stream.get(), std::move(append_result));
+  }
 
-  //   Http2Status status = ProcessMetadata(stream);
-  //   if (!status.IsOk()) {
-  //     // Frame payload is consumed by HeaderAssembler. So passing an empty
-  //     // SliceBuffer to ParseAndDiscardHeaders.
-  //     return ParseAndDiscardHeaders(SliceBuffer(), frame.end_headers,
-  //                                   stream.get(), std::move(status));
-  //   }
+  Http2Status status = ProcessMetadata(stream);
+  if (!status.IsOk()) {
+    // Frame payload is consumed by HeaderAssembler. So passing an empty
+    // SliceBuffer to ParseAndDiscardHeaders.
+    return ParseAndDiscardHeaders(SliceBuffer(), frame.end_headers,
+                                  stream.get(), std::move(status));
+  }
 
   // Frame payload has either been processed or moved to the HeaderAssembler.
   return Http2Status::Ok();
@@ -774,9 +758,9 @@ Http2Status Http2ServerTransport::ProcessMetadata(
       // if (incoming_headers_.HeaderHasEndStream()) {
       //   stream->MarkHalfClosedRemote();
       //   stream->SetTrailingMetadataReceived();
-      //   // BeginCloseStream(std::move(stream),
-      //   //                  /*reset_stream_error_code=*/std::nullopt,
-      //   //                  std::move(metadata));
+      // BeginCloseStream(std::move(stream),
+      //                  /*reset_stream_error_code=*/std::nullopt,
+      //                  std::move(metadata));
       // } else {
       //   GRPC_HTTP2_SERVER_DLOG << "Http2ServerTransport::ProcessMetadata "
       //                             "SpawnPushServerInitialMetadata";
