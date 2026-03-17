@@ -16,9 +16,12 @@ from __future__ import annotations
 
 from collections import OrderedDict
 from collections import abc
+from collections.abc import ItemsView
 from collections.abc import Iterable
 from collections.abc import Iterator
+from collections.abc import KeysView
 from collections.abc import Sequence
+from collections.abc import ValuesView
 from typing import Any, List, Optional, Tuple, Union
 
 from typing_extensions import Self
@@ -116,14 +119,14 @@ class Metadata(abc.Collection):  # noqa: PLW1641
             for value in values:
                 yield (key, value)
 
-    def keys(self) -> abc.KeysView:
-        return abc.KeysView(self._metadata)
+    def keys(self) -> KeysView:
+        return KeysView(self._metadata)
 
-    def values(self) -> abc.ValuesView:
-        return abc.ValuesView(self._metadata)
+    def values(self) -> ValuesView:
+        return ValuesView(self._metadata)
 
-    def items(self) -> abc.ItemsView:
-        return abc.ItemsView(self._metadata)
+    def items(self) -> ItemsView:
+        return ItemsView(self._metadata)
 
     def get(
         self, key: MetadataKey, default: Optional[MetadataValue] = None
