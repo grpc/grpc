@@ -31,6 +31,7 @@ from ._metadata import Metadata
 from ._metadata import MetadataKey
 from ._metadata import MetadataType
 from ._metadata import MetadataValue
+from ._metadata import MetadatumType
 
 # pylint: enable=unused-import
 
