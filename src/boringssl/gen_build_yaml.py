@@ -13,6 +13,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# Extract metadata from boringssl's sources.json and generate yaml file
+# for code generation.
+# See also https://github.com/google/boringssl/blob/main/INCORPORATING.md#build-support.
+
 import json
 import os
 import sys
@@ -36,15 +40,12 @@ except IOError:
     with open(sources_path, "r") as s:
         sources = json.load(s)
 
-
+# Map the file location in sources.json to the relative path in gRPC repo.
 def map_dir(filename):
     return "third_party/boringssl-with-bazel/" + filename
 
-
-def get_srcs(files, lib):
-    return files[lib]["srcs"]
-
-
+# Get all the asm/nasm source files from boringssl's upstream sources.json.
+# NASM files are consumed by windows build, and ASM files are used by linux/macos.
 def get_asm_outputs(files):
     crypto_asm = []
     crypto_nasm = []
