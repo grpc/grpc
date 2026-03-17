@@ -221,7 +221,7 @@ class TestTypeMetadata(unittest.TestCase):
         # 2. raw_metadata is string
         l = "key, value"
         with self.assertRaises(ValueError) as container:
-            Metadata._create(l)
+            Metadata._create(l)  # type: ignore
         self.assertEqual(
             str(container.exception),
             "not enough values to unpack (expected 2, got 1)",
