@@ -56,6 +56,8 @@ class Metadata(abc.Collection):  # noqa: PLW1641
 
     @classmethod
     def from_tuple(cls, raw_metadata: tuple):
+        # Note: We unintentionally support non-tuple arguments here. We plan
+        # to emit a DeprecationWarning when a non-tuple type is used.
         if raw_metadata:
             return cls(*raw_metadata)
         return cls()
@@ -67,6 +69,8 @@ class Metadata(abc.Collection):  # noqa: PLW1641
             None, Self, Iterable[MetadatumType]
         ],
     ) -> Self:
+        # TODO: Make this method public and encourage people to use it instead
+        # of `from_tuple` to create metadata from non-tuple types.
         if raw_metadata is None:
             return Metadata()
         if isinstance(raw_metadata, cls):
