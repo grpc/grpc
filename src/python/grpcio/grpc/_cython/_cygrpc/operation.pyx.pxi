@@ -167,9 +167,9 @@ cdef class ReceiveMessageOperation(Operation):
       message_reader_status = grpc_byte_buffer_reader_init(
           &message_reader, self._c_message_byte_buffer)
       if message_reader_status:
-        total_length = grpc_byte_buffer_length(message_reader.buffer)
+        total_length = grpc_byte_buffer_length(self._c_message_byte_buffer)
         self._message = PyBytes_FromStringAndSize(NULL, total_length)
-        destination_ptr = <char*>self._message
+        destination_ptr = <char*>PyBytes_AS_STRING(self._message)
         while grpc_byte_buffer_reader_next(&message_reader, &message_slice):
           slice_len = grpc_slice_length(message_slice)
           if slice_len > 0:
@@ -179,10 +179,8 @@ cdef class ReceiveMessageOperation(Operation):
         grpc_byte_buffer_reader_destroy(&message_reader)
       else:
         self._message = None
-      grpc_byte_buffer_destroy(self._c_message_byte_buffer)
     else:
       self._message = None
-
   def message(self):
     return self._message
 
