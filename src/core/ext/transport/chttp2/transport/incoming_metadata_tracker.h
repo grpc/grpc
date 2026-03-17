@@ -76,7 +76,7 @@ class IncomingMetadataTracker {
   // Writing Header and Continuation State
 
   // Called when a HEADER frame is received.
-  void OnHeaderReceived(const Http2HeaderFrame& frame) {
+  void UpdateState(const Http2HeaderFrame& frame) {
     GRPC_CHECK(!incoming_header_in_progress_);
     incoming_header_in_progress_ = !frame.end_headers;
     incoming_header_stream_id_ = frame.stream_id;
@@ -84,7 +84,7 @@ class IncomingMetadataTracker {
   }
 
   // Called when a CONTINUATION frame is received.
-  void OnContinuationReceived(const Http2ContinuationFrame& frame) {
+  void UpdateState(const Http2ContinuationFrame& frame) {
     GRPC_CHECK(incoming_header_in_progress_);
     GRPC_CHECK_EQ(frame.stream_id, incoming_header_stream_id_);
     incoming_header_in_progress_ = !frame.end_headers;

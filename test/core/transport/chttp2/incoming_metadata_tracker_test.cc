@@ -45,7 +45,7 @@ TEST(IncomingMetadataTrackerTest, HeaderWithEndHeaders) {
   IncomingMetadataTracker tracker(Slice::FromCopiedString("test"));
   Http2HeaderFrame header = GenerateHeaderFrame(
       "", /*stream_id=*/1, /*end_headers=*/true, /*end_stream=*/false);
-  tracker.OnHeaderReceived(header);
+  tracker.UpdateState(header);
   EXPECT_FALSE(tracker.IsWaitingForContinuationFrame());
   EXPECT_FALSE(tracker.HeaderHasEndStream());
   EXPECT_EQ(tracker.GetStreamId(), 1);
@@ -57,7 +57,7 @@ TEST(IncomingMetadataTrackerTest, HeaderWithEndHeadersAndEndStream) {
   IncomingMetadataTracker tracker(Slice::FromCopiedString("test"));
   Http2HeaderFrame header = GenerateHeaderFrame(
       "", /*stream_id=*/1, /*end_headers=*/true, /*end_stream=*/true);
-  tracker.OnHeaderReceived(header);
+  tracker.UpdateState(header);
   EXPECT_FALSE(tracker.IsWaitingForContinuationFrame());
   EXPECT_TRUE(tracker.HeaderHasEndStream());
   EXPECT_EQ(tracker.GetStreamId(), 1);
@@ -68,7 +68,7 @@ TEST(IncomingMetadataTrackerTest, HeaderWithoutEndHeaders) {
   IncomingMetadataTracker tracker(Slice::FromCopiedString("test"));
   Http2HeaderFrame header = GenerateHeaderFrame(
       "", /*stream_id=*/3, /*end_headers=*/false, /*end_stream=*/false);
-  tracker.OnHeaderReceived(header);
+  tracker.UpdateState(header);
   EXPECT_TRUE(tracker.IsWaitingForContinuationFrame());
   EXPECT_FALSE(tracker.HeaderHasEndStream());
   EXPECT_EQ(tracker.GetStreamId(), 3);
@@ -80,7 +80,7 @@ TEST(IncomingMetadataTrackerTest, HeaderWithoutEndHeadersWithEndStream) {
   IncomingMetadataTracker tracker(Slice::FromCopiedString("test"));
   Http2HeaderFrame header = GenerateHeaderFrame(
       "", /*stream_id=*/3, /*end_headers=*/false, /*end_stream=*/true);
-  tracker.OnHeaderReceived(header);
+  tracker.UpdateState(header);
   EXPECT_TRUE(tracker.IsWaitingForContinuationFrame());
   EXPECT_TRUE(tracker.HeaderHasEndStream());
   EXPECT_EQ(tracker.GetStreamId(), 3);
@@ -92,14 +92,14 @@ TEST(IncomingMetadataTrackerTest, HeaderThenContinuationWithEndHeaders) {
   IncomingMetadataTracker tracker(Slice::FromCopiedString("test"));
   Http2HeaderFrame header = GenerateHeaderFrame(
       "", /*stream_id=*/5, /*end_headers=*/false, /*end_stream=*/false);
-  tracker.OnHeaderReceived(header);
+  tracker.UpdateState(header);
   EXPECT_TRUE(tracker.IsWaitingForContinuationFrame());
   EXPECT_FALSE(tracker.HeaderHasEndStream());
   EXPECT_EQ(tracker.GetStreamId(), 5);
 
   Http2ContinuationFrame continuation =
       GenerateContinuationFrame("", /*stream_id=*/5, /*end_headers=*/true);
-  tracker.OnContinuationReceived(continuation);
+  tracker.UpdateState(continuation);
   EXPECT_FALSE(tracker.IsWaitingForContinuationFrame());
 }
 
@@ -108,13 +108,13 @@ TEST(IncomingMetadataTrackerTest, HeaderThenContinuationWithoutEndHeaders) {
   IncomingMetadataTracker tracker(Slice::FromCopiedString("test"));
   Http2HeaderFrame header = GenerateHeaderFrame(
       "", /*stream_id=*/7, /*end_headers=*/false, /*end_stream=*/false);
-  tracker.OnHeaderReceived(header);
+  tracker.UpdateState(header);
   EXPECT_TRUE(tracker.IsWaitingForContinuationFrame());
   EXPECT_EQ(tracker.GetStreamId(), 7);
 
   Http2ContinuationFrame continuation =
       GenerateContinuationFrame("", /*stream_id=*/7, /*end_headers=*/false);
-  tracker.OnContinuationReceived(continuation);
+  tracker.UpdateState(continuation);
   EXPECT_TRUE(tracker.IsWaitingForContinuationFrame());
 }
 
@@ -125,18 +125,18 @@ TEST(IncomingMetadataTrackerTest,
   IncomingMetadataTracker tracker(Slice::FromCopiedString("test"));
   Http2HeaderFrame header = GenerateHeaderFrame(
       "", /*stream_id=*/9, /*end_headers=*/false, /*end_stream=*/false);
-  tracker.OnHeaderReceived(header);
+  tracker.UpdateState(header);
   EXPECT_TRUE(tracker.IsWaitingForContinuationFrame());
   EXPECT_EQ(tracker.GetStreamId(), 9);
 
   Http2ContinuationFrame continuation1 =
       GenerateContinuationFrame("", /*stream_id=*/9, /*end_headers=*/false);
-  tracker.OnContinuationReceived(continuation1);
+  tracker.UpdateState(continuation1);
   EXPECT_TRUE(tracker.IsWaitingForContinuationFrame());
 
   Http2ContinuationFrame continuation2 =
       GenerateContinuationFrame("", /*stream_id=*/9, /*end_headers=*/true);
-  tracker.OnContinuationReceived(continuation2);
+  tracker.UpdateState(continuation2);
   EXPECT_FALSE(tracker.IsWaitingForContinuationFrame());
 }
 
@@ -146,23 +146,23 @@ TEST(IncomingMetadataTrackerTest, NewHeaderFrameAfterContinuationSequence) {
   IncomingMetadataTracker tracker(Slice::FromCopiedString("test"));
   Http2HeaderFrame header = GenerateHeaderFrame(
       "", /*stream_id=*/9, /*end_headers=*/false, /*end_stream=*/false);
-  tracker.OnHeaderReceived(header);
+  tracker.UpdateState(header);
   EXPECT_TRUE(tracker.IsWaitingForContinuationFrame());
   EXPECT_EQ(tracker.GetStreamId(), 9);
 
   Http2ContinuationFrame continuation1 =
       GenerateContinuationFrame("", /*stream_id=*/9, /*end_headers=*/false);
-  tracker.OnContinuationReceived(continuation1);
+  tracker.UpdateState(continuation1);
   EXPECT_TRUE(tracker.IsWaitingForContinuationFrame());
 
   Http2ContinuationFrame continuation2 =
       GenerateContinuationFrame("", /*stream_id=*/9, /*end_headers=*/true);
-  tracker.OnContinuationReceived(continuation2);
+  tracker.UpdateState(continuation2);
   EXPECT_FALSE(tracker.IsWaitingForContinuationFrame());
 
   Http2HeaderFrame header2 = GenerateHeaderFrame(
       "", /*stream_id=*/11, /*end_headers=*/true, /*end_stream=*/true);
-  tracker.OnHeaderReceived(header2);
+  tracker.UpdateState(header2);
   EXPECT_FALSE(tracker.IsWaitingForContinuationFrame());
   EXPECT_EQ(tracker.GetStreamId(), 11);
 }
@@ -173,7 +173,7 @@ TEST(IncomingMetadataTrackerTest, DidReceiveDuplicateMetadataChecks) {
   // Scenario 1: Initial metadata frame (end_stream=false)
   Http2HeaderFrame header_initial = GenerateHeaderFrame(
       "", /*stream_id=*/1, /*end_headers=*/true, /*end_stream=*/false);
-  tracker.OnHeaderReceived(header_initial);
+  tracker.UpdateState(header_initial);
   // If we haven't pushed initial metadata, it's not a duplicate.
   EXPECT_FALSE(tracker.DidReceiveDuplicateMetadata(
       /*did_receive_initial_metadata=*/false,
@@ -186,7 +186,7 @@ TEST(IncomingMetadataTrackerTest, DidReceiveDuplicateMetadataChecks) {
   // Scenario 2: Trailing metadata frame (end_stream=true)
   Http2HeaderFrame header_trailing = GenerateHeaderFrame(
       "", /*stream_id=*/1, /*end_headers=*/true, /*end_stream=*/true);
-  tracker.OnHeaderReceived(header_trailing);
+  tracker.UpdateState(header_trailing);
   // If we haven't pushed trailing metadata, it's not a duplicate.
   EXPECT_FALSE(tracker.DidReceiveDuplicateMetadata(
       /*did_receive_initial_metadata=*/true,
