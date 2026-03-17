@@ -160,17 +160,30 @@ cdef class ReceiveMessageOperation(Operation):
     cdef grpc_byte_buffer_reader message_reader
     cdef bint message_reader_status
     cdef grpc_slice message_slice
+    cdef size_t slice_len
+    cdef size_t total_length
+    cdef size_t offset = 0
+    cdef char* destination_ptr
+    cdef bytes result_bytes
 
     if self._c_message_byte_buffer != NULL:
       message_reader_status = grpc_byte_buffer_reader_init(
           &message_reader, self._c_message_byte_buffer)
       if message_reader_status:
-        message_slice = grpc_byte_buffer_reader_readall(&message_reader)
-        self._message = _slice_bytes(message_slice)
-        grpc_slice_unref(message_slice)
+        total_length = grpc_byte_buffer_length(self._c_message_byte_buffer)
+        result_bytes = PyBytes_FromStringAndSize(NULL, total_length)
+        destination_ptr = PyBytes_AS_STRING(result_bytes)
+        while grpc_byte_buffer_reader_next(&message_reader, &message_slice):
+          slice_len = grpc_slice_length(message_slice)
+          if slice_len > 0:
+            memcpy(destination_ptr + offset, grpc_slice_start_ptr(message_slice), slice_len)
+            offset += slice_len
+          grpc_slice_unref(message_slice)
         grpc_byte_buffer_reader_destroy(&message_reader)
+        self._message = result_bytes
       else:
         self._message = None
+      grpc_byte_buffer_destroy(self._c_message_byte_buffer)
     else:
       self._message = None
 

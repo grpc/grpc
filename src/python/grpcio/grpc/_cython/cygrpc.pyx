@@ -15,6 +15,9 @@
 
 cimport cpython
 
+from cpython.bytes cimport PyBytes_FromStringAndSize, PyBytes_AS_STRING
+from libc.string cimport memcpy
+
 import logging
 import os
 import sys
