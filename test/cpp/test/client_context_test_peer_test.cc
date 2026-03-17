@@ -16,9 +16,8 @@
 //
 //
 
-#include <grpc/grpc.h>
-#include <grpc/status.h>
-#include <grpcpp/call_context_types.h>
+
+#include <grpcpp/impl/grpc_library.h>
 #include <grpcpp/channel.h>
 #include <grpcpp/generic/generic_stub.h>
 #include <grpcpp/test/client_context_test_peer.h>
@@ -40,8 +39,8 @@ const char val1[] = "metadata-val1";
 const char val2[] = "metadata-val2";
 
 bool ServerInitialMetadataContains(const ClientContext& context,
-                                   const string_ref& key,
-                                   const string_ref& value) {
+                                   const grpc::string_ref& key,
+                                   const grpc::string_ref& value) {
   const auto& server_metadata = context.GetServerInitialMetadata();
   for (auto iter = server_metadata.begin(); iter != server_metadata.end();
        ++iter) {
