@@ -376,7 +376,7 @@ Http2Status Http2ServerTransport::ProcessIncomingFrame(
       << frame.stream_id << ", end_headers=" << frame.end_headers
       << ", end_stream=" << frame.end_stream << " }";
   // State update MUST happen before processing the frame.
-  incoming_headers_.OnHeaderReceived(frame);
+  incoming_headers_.UpdateState(frame);
 
   ping_manager_->ReceivedDataFrame();
 
@@ -415,8 +415,7 @@ Http2Status Http2ServerTransport::ProcessIncomingFrame(
             std::string(GrpcErrors::kTooManyMetadata)));
   }
 
-  Http2Status append_result =
-      stream->GetHeaderAssembler().AppendHeaderFrame(frame);
+  Http2Status append_result = stream->GetHeaderAssembler().AppendFrame(frame);
   if (!append_result.IsOk()) {
     // Frame payload is not consumed if AppendHeaderFrame returns a non-OK
     // status. We need to process it to keep our in consistent state.
@@ -671,7 +670,7 @@ Http2Status Http2ServerTransport::ProcessIncomingFrame(
       << frame.stream_id << ", end_headers=" << frame.end_headers << " }";
 
   // State update MUST happen before processing the frame.
-  incoming_headers_.OnContinuationReceived(frame);
+  incoming_headers_.UpdateState(frame);
 
   RefCountedPtr<Stream> stream = LookupStream(frame.stream_id);
   if (stream == nullptr) {
@@ -694,8 +693,7 @@ Http2Status Http2ServerTransport::ProcessIncomingFrame(
             std::string(RFC9113::kHalfClosedRemoteState)));
   }
 
-  Http2Status append_result =
-      stream->GetHeaderAssembler().AppendContinuationFrame(frame);
+  Http2Status append_result = stream->GetHeaderAssembler().AppendFrame(frame);
   if (!append_result.IsOk()) {
     // Frame payload is not consumed if AppendContinuationFrame returns a
     // non-OK status. We need to process it to keep our in consistent state.
