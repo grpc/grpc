@@ -31,6 +31,7 @@ from ._metadata import Metadata
 from ._metadata import MetadataKey
 from ._metadata import MetadataType
 from ._metadata import MetadataValue
+
 # pylint: enable=unused-import
 
 RequestType = TypeVar("RequestType")

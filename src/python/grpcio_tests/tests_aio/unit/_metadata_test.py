@@ -236,7 +236,9 @@ class TestTypeMetadata(unittest.TestCase):
         self.assertEqual(Metadata._create(l), Metadata(("key", "value")))
 
         l = "key, value"
-        self.assertRaises(ValueError("not enough values to unpack (expected 2, got 1)"), )
+        self.assertRaises(
+            ValueError("not enough values to unpack (expected 2, got 1)"),
+        )
 
         # 5. raw_metadata is empty list
         self.assertEqual(Metadata._create([]), Metadata())
