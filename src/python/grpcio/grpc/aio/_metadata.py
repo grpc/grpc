@@ -60,7 +60,7 @@ class Metadata(abc.Collection):  # noqa: PLW1641
         cls,
         raw_metadata: Union[None, Self, Iterable[MetadatumType]],
     ) -> Self:
-        # TODO: Make this method public and encourage people to use it instead
+        # TODO(asheshvidyut): Make this method public and encourage people to use it instead
         # of `from_tuple` to create metadata from non-tuple types.
         if raw_metadata is None:
             return Metadata()
