@@ -285,32 +285,32 @@ class Http2ServerTransport final : public ServerTransport,
   // frames or defer the write with the stream specific frames. In most cases,
   // the frames are deferred and a single write is triggered for all the
   // frames.
-  // absl::Status PrepareControlFrames();
+  absl::Status PrepareControlFrames();
 
   // If there are any urgent frames this would trigger an additional endpoint
   // write. CAUTION: This will add significant overhead if used for non-urgent
   // frames.
-  // auto MaybeWriteUrgentFrames();
+  auto MaybeWriteUrgentFrames();
 
   // Notify the modules that an endpoint write is done. This corresponds to the
   // generic endpoint write that happens in the MultiplexerLoop.
-  // void NotifyFramesWriteDone();
+  void NotifyFramesWriteDone();
 
   // Notify the modules that an urgent endpoint write is done. If some module
   // add frames to this buffer in PrepareControlFrames, they can use this to
   // do post processing after the write is done.
-  // void NotifyUrgentFramesWriteDone();
+  void NotifyUrgentFramesWriteDone();
 
-  // absl::Status DequeueStreamFrames(RefCountedPtr<Stream> stream,
-  //                                  WriteCycle& write_cycle);
+  absl::Status DequeueStreamFrames(RefCountedPtr<Stream> stream,
+                                   WriteCycle& write_cycle);
 
   // Returns a promise to keep draining control frames and data frames from all
   // the writable streams and write to the endpoint.
-  // auto MultiplexerLoop();
+  auto MultiplexerLoop();
 
-  // Returns a promise to fetch data from the callhandler and pass it further
+  // Returns a promise to fetch data from the CallInitiator and pass it further
   // down towards the endpoint.
-  // auto CallOutboundLoop(RefCountedPtr<Stream> stream);
+  auto CallOutboundLoop(RefCountedPtr<Stream> stream);
 
   // TODO(akshitpatel) : [PH2][P0] : Delete when implementing write loop.
   auto WriteFromQueue();
@@ -425,7 +425,7 @@ class Http2ServerTransport final : public ServerTransport,
   // for all active streams. This may un-stall streams that are stalled due to
   // lack of flow control tokens. This is needed as the stream flow control
   // tokens are calculated based on the initial window size.
-  // absl::Status UpdateAllStreamsWritability();
+  absl::Status UpdateAllStreamsWritability();
 
   auto FlowControlPeriodicUpdateLoop();
 
@@ -444,10 +444,13 @@ class Http2ServerTransport final : public ServerTransport,
 
   void AddToStreamList(RefCountedPtr<Stream> stream);
 
-  // absl::Status MaybeAddStreamToWritableStreamList(
-  //     const RefCountedPtr<Stream> stream,
-  //     const StreamDataQueue<ClientMetadataHandle>::StreamWritabilityUpdate
-  //         result);
+  absl::Status MaybeAddStreamToWritableStreamList(
+      const RefCountedPtr<Stream> stream,
+      const StreamDataQueue<ClientMetadataHandle>::StreamWritabilityUpdate
+          result) {
+    // TODO(akshitpatel) : [PH2][P0] : Implement this.
+    return absl::OkStatus();
+  }
 
   // Returns the next stream id. If the next stream id is not available, it
   // returns std::nullopt. MUST be called from the transport party.
