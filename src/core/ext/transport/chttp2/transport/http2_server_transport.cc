@@ -287,84 +287,77 @@ Http2Status Http2ServerTransport::ProcessIncomingFrame(Http2DataFrame&& frame) {
 
   // TODO(akshitpatel) : [PH2][P3] : Investigate if we should do this even if
   // the function returns a non-ok status?
-  //   ping_manager_->ReceivedDataFrame();
+  ping_manager_->ReceivedDataFrame();
 
-  //   RefCountedPtr<Stream> stream = LookupStream(frame.stream_id);
+  RefCountedPtr<Stream> stream = LookupStream(frame.stream_id);
 
-  //   ValueOrHttp2Status<chttp2::FlowControlAction> flow_control_action =
-  //       ProcessIncomingDataFrameFlowControl(current_frame_header_,
-  //       flow_control_,
-  //                                           stream.get());
-  //   if (!flow_control_action.IsOk()) {
-  //     return ValueOrHttp2Status<chttp2::FlowControlAction>::TakeStatus(
-  //         std::move(flow_control_action));
-  //   }
-  //   ActOnFlowControlAction(flow_control_action.value(), stream.get());
+  ValueOrHttp2Status<chttp2::FlowControlAction> flow_control_action =
+      ProcessIncomingDataFrameFlowControl(current_frame_header_, flow_control_,
+                                          stream.get());
+  if (!flow_control_action.IsOk()) {
+    return ValueOrHttp2Status<chttp2::FlowControlAction>::TakeStatus(
+        std::move(flow_control_action));
+  }
+  ActOnFlowControlAction(flow_control_action.value(), stream.get());
 
-  //   if (stream == nullptr) {
-  //     // TODO(tjagtap) : [PH2][P2] : Implement the correct behaviour later.
-  //     // RFC9113 : If a DATA frame is received whose stream is not in the
-  //     "open"
-  //     // or "half-closed (local)" state, the recipient MUST respond with a
-  //     stream
-  //     // error (Section 5.4.2) of type STREAM_CLOSED.
-  //     GRPC_HTTP2_SERVER_DLOG
-  //         << "Http2ServerTransport::ProcessIncomingFrame(DataFrame) {
-  //         stream_id="
-  //         << frame.stream_id << "} Lookup Failed";
-  //     return Http2Status::Ok();
-  //   }
+  if (stream == nullptr) {
+    // TODO(tjagtap) : [PH2][P2] : Implement the correct behaviour later.
+    // RFC9113 : If a DATA frame is received whose stream is not in the "open"
+    // or "half-closed (local)" state, the recipient MUST respond with a stream
+    // error (Section 5.4.2) of type STREAM_CLOSED.
+    GRPC_HTTP2_SERVER_DLOG
+        << "Http2ServerTransport::ProcessIncomingFrame(DataFrame) { stream_id="
+        << frame.stream_id << "} Lookup Failed";
+    return Http2Status::Ok();
+  }
 
-  //   // TODO(akshitpatel) : [PH2][P3] : We should add a check to reset stream
-  //   if
-  //   // the stream state is kIdle as well.
+  // TODO(akshitpatel) : [PH2][P3] : We should add a check to reset stream if
+  // the stream state is kIdle as well.
 
-  //   Http2Status stream_status = stream->CanStreamReceiveDataFrames();
-  //   if (!stream_status.IsOk()) {
-  //     return stream_status;
-  //   }
+  Http2Status stream_status = stream->CanStreamReceiveDataFrames();
+  if (!stream_status.IsOk()) {
+    return stream_status;
+  }
 
-  //   // Add frame to assembler
-  //   GRPC_HTTP2_SERVER_DLOG
-  //       << "Http2ServerTransport::ProcessIncomingFrame(DataFrame) "
-  //          "AppendNewDataFrame";
-  //   GrpcMessageAssembler& assembler = stream->GetGrpcMessageAssembler();
-  //   Http2Status status =
-  //       assembler.AppendNewDataFrame(frame.payload, frame.end_stream);
-  //   if (!status.IsOk()) {
-  //     GRPC_HTTP2_SERVER_DLOG
-  //         << "Http2ServerTransport::ProcessIncomingFrame(DataFrame) "
-  //            "AppendNewDataFrame Failed";
-  //     return status;
-  //   }
+  // Add frame to assembler
+  GRPC_HTTP2_SERVER_DLOG
+      << "Http2ServerTransport::ProcessIncomingFrame(DataFrame) "
+         "AppendNewDataFrame";
+  GrpcMessageAssembler& assembler = stream->GetGrpcMessageAssembler();
+  Http2Status status =
+      assembler.AppendNewDataFrame(frame.payload, frame.end_stream);
+  if (!status.IsOk()) {
+    GRPC_HTTP2_SERVER_DLOG
+        << "Http2ServerTransport::ProcessIncomingFrame(DataFrame) "
+           "AppendNewDataFrame Failed";
+    return status;
+  }
 
-  //   // Pass the messages up the stack if it is ready.
-  //   while (true) {
-  //     GRPC_HTTP2_SERVER_DLOG
-  //         << "Http2ServerTransport::ProcessIncomingFrame(DataFrame) "
-  //            "ExtractMessage";
-  //     ValueOrHttp2Status<MessageHandle> result = assembler.ExtractMessage();
-  //     if (!result.IsOk()) {
-  //       GRPC_HTTP2_SERVER_DLOG
-  //           << "Http2ServerTransport::ProcessIncomingFrame(DataFrame) "
-  //              "ExtractMessage Failed";
-  //       return
-  //       ValueOrHttp2Status<MessageHandle>::TakeStatus(std::move(result));
-  //     }
-  //     MessageHandle message = TakeValue(std::move(result));
-  //     if (message != nullptr) {
-  //       GRPC_HTTP2_SERVER_DLOG
-  //           << "Http2ServerTransport::ProcessIncomingFrame(DataFrame) "
-  //              "SpawnPushMessage "
-  //           << message->DebugString();
-  //       stream->GetCallInitiator().SpawnPushMessage(std::move(message));
-  //       continue;
-  //     }
-  //     GRPC_HTTP2_SERVER_DLOG
-  //         << "Http2ServerTransport::ProcessIncomingFrame(DataFrame) While
-  //         Break";
-  //     break;
-  //   }
+  // Pass the messages up the stack if it is ready.
+  while (true) {
+    GRPC_HTTP2_SERVER_DLOG
+        << "Http2ServerTransport::ProcessIncomingFrame(DataFrame) "
+           "ExtractMessage";
+    ValueOrHttp2Status<MessageHandle> result = assembler.ExtractMessage();
+    if (!result.IsOk()) {
+      GRPC_HTTP2_SERVER_DLOG
+          << "Http2ServerTransport::ProcessIncomingFrame(DataFrame) "
+             "ExtractMessage Failed";
+      return ValueOrHttp2Status<MessageHandle>::TakeStatus(std::move(result));
+    }
+    MessageHandle message = TakeValue(std::move(result));
+    if (message != nullptr) {
+      GRPC_HTTP2_SERVER_DLOG
+          << "Http2ServerTransport::ProcessIncomingFrame(DataFrame) "
+             "SpawnPushMessage "
+          << message->DebugString();
+      stream->GetCallInitiator().SpawnPushMessage(std::move(message));
+      continue;
+    }
+    GRPC_HTTP2_SERVER_DLOG
+        << "Http2ServerTransport::ProcessIncomingFrame(DataFrame) While Break";
+    break;
+  }
 
   // TODO(tjagtap) : [PH2][P2] : List of Tests:
   // 1. Data frame with unknown stream ID
@@ -503,12 +496,11 @@ Http2Status Http2ServerTransport::ProcessIncomingFrame(
     }
   } else {
     if (settings_->OnSettingsAckReceived()) {
-      // TODO(tjagtap) [PH2][P0] : Implement this.
-      // parser_.hpack_table()->SetMaxBytes(
-      //     settings_->acked().header_table_size());
-      // ActOnFlowControlAction(flow_control_.SetAckedInitialWindow(
-      //                            settings_->acked().initial_window_size()),
-      //                        /*stream=*/nullptr);
+      parser_.hpack_table()->SetMaxBytes(
+          settings_->acked().header_table_size());
+      ActOnFlowControlAction(flow_control_.SetAckedInitialWindow(
+                                 settings_->acked().initial_window_size()),
+                             /*stream=*/nullptr);
     } else {
       // TODO(tjagtap) [PH2][P4] : The RFC does not say anything about what
       // should happen if we receive an unsolicited SETTINGS ACK. Decide if we
@@ -525,27 +517,27 @@ Http2Status Http2ServerTransport::ProcessIncomingFrame(Http2PingFrame&& frame) {
   GRPC_HTTP2_SERVER_DLOG
       << "Http2ServerTransport::ProcessIncomingFrame(PingFrame) { ack="
       << frame.ack << ", opaque=" << frame.opaque << " }";
-  //   if (frame.ack) {
-  //     return ToHttpOkOrConnError(AckPing(frame.opaque));
-  //   } else {
-  //     if (test_only_ack_pings_) {
-  //       // TODO(akshitpatel) : [PH2][P2] : Have a counter to track number
-  //       // of pending induced frames (Ping/Settings Ack). This is to
-  //       // ensure that if write is taking a long time, we can stop reads
-  //       // and prioritize writes. RFC9113: PING responses SHOULD be given
-  //       // higher priority than any other frame.
-  //       ping_manager_->AddPendingPingAck(frame.opaque);
-  //       // TODO(akshitpatel) : [PH2][P2] : This is done assuming that the
-  //       // other ProcessFrame promises may return stream or connection
-  //       // failures. If this does not turn out to be true, consider
-  //       // returning absl::Status here.
-  //       return ToHttpOkOrConnError(TriggerWriteCycle());
-  //     } else {
-  //       GRPC_HTTP2_SERVER_DLOG
-  //           << "Http2ServerTransport::ProcessIncomingFrame(PingFrame) "
-  //              "test_only_ack_pings_ is false. Ignoring the ping request.";
-  //     }
-  //   }
+  if (frame.ack) {
+    return ToHttpOkOrConnError(AckPing(frame.opaque));
+  } else {
+    if (test_only_ack_pings_) {
+      // TODO(akshitpatel) : [PH2][P2] : Have a counter to track number
+      // of pending induced frames (Ping/Settings Ack). This is to
+      // ensure that if write is taking a long time, we can stop reads
+      // and prioritize writes. RFC9113: PING responses SHOULD be given
+      // higher priority than any other frame.
+      ping_manager_->AddPendingPingAck(frame.opaque);
+      // TODO(akshitpatel) : [PH2][P2] : This is done assuming that the
+      // other ProcessFrame promises may return stream or connection
+      // failures. If this does not turn out to be true, consider
+      // returning absl::Status here.
+      return ToHttpOkOrConnError(TriggerWriteCycle());
+    } else {
+      GRPC_HTTP2_SERVER_DLOG
+          << "Http2ServerTransport::ProcessIncomingFrame(PingFrame) "
+             "test_only_ack_pings_ is false. Ignoring the ping request.";
+    }
+  }
   return Http2Status::Ok();
 }
 
@@ -652,31 +644,30 @@ Http2Status Http2ServerTransport::ProcessIncomingFrame(
          " stream_id="
       << frame.stream_id << ", increment=" << frame.increment << "}";
 
-  // RefCountedPtr<Stream> stream = nullptr;
-  // if (frame.stream_id != 0) {
-  //   stream = LookupStream(frame.stream_id);
-  // }
+  RefCountedPtr<Stream> stream = nullptr;
+  if (frame.stream_id != 0) {
+    stream = LookupStream(frame.stream_id);
+  }
 
-  // const bool should_trigger_write =
-  // ProcessIncomingWindowUpdateFrameFlowControl(
-  //     frame, flow_control_, stream.get());
+  const bool should_trigger_write = ProcessIncomingWindowUpdateFrameFlowControl(
+      frame, flow_control_, stream.get());
 
-  // if (should_trigger_write) {
-  //   return ToHttpOkOrConnError(TriggerWriteCycle());
-  // }
+  if (should_trigger_write) {
+    return ToHttpOkOrConnError(TriggerWriteCycle());
+  }
 
-  // if (stream != nullptr) {
-  //   StreamWritabilityUpdate update =
-  //       stream->UpdateStreamWritability(GetStreamFlowControlTokens(
-  //           stream->GetStreamFlowControl(), settings_->peer()));
-  //   if (update.became_writable) {
-  //     absl::Status status = writable_stream_list_.EnqueueWrapper(
-  //         stream, update.priority, AreTransportFlowControlTokensAvailable());
-  //     if (!status.ok()) {
-  //       return ToHttpOkOrConnError(status);
-  //     }
-  //   }
-  // }
+  if (stream != nullptr) {
+    StreamWritabilityUpdate update =
+        stream->UpdateStreamWritability(GetStreamFlowControlTokens(
+            stream->GetStreamFlowControl(), settings_->peer()));
+    if (update.became_writable) {
+      absl::Status status = writable_stream_list_.EnqueueWrapper(
+          stream, update.priority, AreTransportFlowControlTokensAvailable());
+      if (!status.ok()) {
+        return ToHttpOkOrConnError(status);
+      }
+    }
+  }
   return Http2Status::Ok();
 }
 
@@ -1891,24 +1882,24 @@ absl::Status Http2ServerTransport::IncomingStream(
 //   }
 // }
 
-// absl::Status Http2ServerTransport::AckPing(uint64_t opaque_data) {
-//   // It is possible that the PingRatePolicy may decide to not send a ping
-//   // request (in cases like the number of inflight pings is too high).
-//   // When this happens, it becomes important to ensure that if a ping ack
-//   // is received and there is an "important" outstanding ping request, we
-//   // should retry to send it out now.
-//   if (ping_manager_->AckPing(opaque_data)) {
-//     if (ping_manager_->ImportantPingRequested()) {
-//       return TriggerWriteCycle();
-//     }
-//   } else {
-//     GRPC_HTTP2_SERVER_DLOG << "Http2ServerTransport::AckPing Unknown ping "
-//                               "response received for ping id="
-//                            << opaque_data;
-//   }
+absl::Status Http2ServerTransport::AckPing(uint64_t opaque_data) {
+  // It is possible that the PingRatePolicy may decide to not send a ping
+  // request (in cases like the number of inflight pings is too high).
+  // When this happens, it becomes important to ensure that if a ping ack
+  // is received and there is an "important" outstanding ping request, we
+  // should retry to send it out now.
+  if (ping_manager_->AckPing(opaque_data)) {
+    if (ping_manager_->ImportantPingRequested()) {
+      return TriggerWriteCycle();
+    }
+  } else {
+    GRPC_HTTP2_SERVER_DLOG << "Http2ServerTransport::AckPing Unknown ping "
+                              "response received for ping id="
+                           << opaque_data;
+  }
 
-//   return absl::OkStatus();
-// }
+  return absl::OkStatus();
+}
 
 // void Http2ServerTransport::MaybeSpawnKeepaliveLoop() {
 //   if (keepalive_manager_->IsKeepAliveLoopNeeded()) {
