@@ -160,32 +160,43 @@ cdef class ReceiveMessageOperation(Operation):
     cdef grpc_byte_buffer_reader message_reader
     cdef bint message_reader_status
     cdef grpc_slice message_slice
-    cdef size_t slice_len
-    cdef size_t total_length
-    cdef size_t offset = 0
-    cdef char* destination_ptr
-    cdef bytes result_bytes
+    cdef size_t message_slice_length
+    cdef list chunks = None
+    cdef bytes first_chunk = None
+    cdef bytes bytes_slice
 
     if self._c_message_byte_buffer != NULL:
       message_reader_status = grpc_byte_buffer_reader_init(
           &message_reader, self._c_message_byte_buffer)
       if message_reader_status:
-        total_length = grpc_byte_buffer_length(self._c_message_byte_buffer)
-        result_bytes = PyBytes_FromStringAndSize(NULL, total_length)
-        destination_ptr = PyBytes_AS_STRING(result_bytes)
         while grpc_byte_buffer_reader_next(&message_reader, &message_slice):
-          slice_len = grpc_slice_length(message_slice)
-          if slice_len > 0:
-            memcpy(destination_ptr + offset, grpc_slice_start_ptr(message_slice), slice_len)
-            offset += slice_len
+          message_slice_length = grpc_slice_length(message_slice)
+          if message_slice_length > 0:
+            bytes_slice = PyBytes_FromStringAndSize(
+                <char*>grpc_slice_start_ptr(message_slice),
+                message_slice_length)
+            if first_chunk is None and chunks is None:
+              first_chunk = bytes_slice
+            else:
+              if chunks is None:
+                chunks = [first_chunk, bytes_slice]
+              else:
+                chunks.append(bytes_slice)
           grpc_slice_unref(message_slice)
         grpc_byte_buffer_reader_destroy(&message_reader)
-        self._message = result_bytes
+        
+        if chunks is not None:
+          self._message = b"".join(chunks)
+        elif first_chunk is not None:
+          self._message = first_chunk
+        else:
+          self._message = b""
       else:
         self._message = None
       grpc_byte_buffer_destroy(self._c_message_byte_buffer)
     else:
       self._message = None
+
 
   def message(self):
     return self._message
