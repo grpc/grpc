@@ -326,6 +326,10 @@ CORE_C_FILES = tuple(grpc_core_dependencies.CORE_SOURCE_FILES)
 if "win32" in sys.platform:
     CORE_C_FILES = filter(lambda x: "third_party/cares" not in x, CORE_C_FILES)
 
+ABSL_SOURCES = [
+    "third_party/abseil-cpp/absl/log/initialize.cc",
+]
+
 if BUILD_WITH_SYSTEM_OPENSSL:
     CORE_C_FILES = filter(
         lambda x: "third_party/boringssl" not in x, CORE_C_FILES
@@ -349,7 +353,12 @@ if BUILD_WITH_SYSTEM_ABSL:
     CORE_C_FILES = filter(
         lambda x: "third_party/abseil-cpp" not in x, CORE_C_FILES
     )
-    ABSL_INCLUDE = (os.path.join("/usr", "include"),)
+    system_absl_path = os.path.join("/usr", "include")
+    ABSL_INCLUDE = (system_absl_path,)
+    ABSL_SOURCES = [
+        p.replace("third_party/abseil-cpp", system_absl_path)
+        for p in ABSL_SOURCES
+    ]
 
 EXTENSION_INCLUDE_DIRECTORIES = (
     (PYTHON_STEM,)
@@ -517,7 +526,7 @@ def cython_extensions_and_necessity():
                 + list(GRPCIO_CC_SRCS)
                 + core_c_files
                 + asm_files
-                + ["third_party/abseil-cpp/absl/log/initialize.cc"]
+                + ABSL_SOURCES
             ),
             include_dirs=list(EXTENSION_INCLUDE_DIRECTORIES),
             libraries=list(EXTENSION_LIBRARIES),
