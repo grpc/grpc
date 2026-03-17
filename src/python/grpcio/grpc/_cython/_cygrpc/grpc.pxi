@@ -168,6 +168,7 @@ cdef extern from "grpc/grpc.h":
   int grpc_byte_buffer_reader_next(grpc_byte_buffer_reader *reader,
                                    grpc_slice *slice) nogil
   void grpc_byte_buffer_reader_destroy(grpc_byte_buffer_reader *reader) nogil
+  grpc_slice grpc_byte_buffer_reader_readall(grpc_byte_buffer_reader* reader) nogil
 
   ctypedef enum grpc_status_code:
     GRPC_STATUS_OK
