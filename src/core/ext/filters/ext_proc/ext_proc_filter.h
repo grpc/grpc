@@ -117,14 +117,20 @@ class ExtProcFilter final : public V3InterceptorToV2Bridge<ExtProcFilter> {
     InterActivityLatch<ClientMetadataHandle> client_initial_metadata;
     InterActivityPipe<MessageHandle, 1> client_to_server_messages;
     InterActivityLatch<std::optional<ServerMetadataHandle>>
-        server_initial_metadata;
+    server_initial_metadata;
     InterActivityPipe<MessageHandle, 1> server_to_client_messages;
+    InterActivityLatch<ServerMetadataHandle> server_trailing_metadata;
   };
-
-  auto ClientToServer(CallHandler handler, CallInitiator initiator,
-                      PipeOwner* pipe_owner);
-  auto ServerToClient(CallHandler handler, CallInitiator initiator);
-  auto ServerTrailingMetadata(CallHandler handler, CallInitiator initiator);
+  
+  auto ClientInitialMetadata(CallHandler handler);
+  auto ClientToServerMessages(CallHandler handler, CallInitiator initiator,
+                              PipeOwner* pipe_owner);
+  auto ServerInitialMetadata(CallHandler handler, CallInitiator initiator,
+                             PipeOwner* pipe_owner);
+  auto ServerToClientMessages(CallHandler handler, CallInitiator initiator,
+                              PipeOwner* pipe_owner);
+  auto ServerTrailingMetadata(CallHandler handler, CallInitiator initiator,
+                              PipeOwner* pipe_owner);
 
   RefCountedPtr<const Config> config_;
 };
