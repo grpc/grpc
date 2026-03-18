@@ -134,118 +134,77 @@ ExtProcFilter::ExtProcFilter(const ChannelArgs& args,
                              ChannelFilter::Args filter_args)
     : config_(std::move(config)) {}
 
-auto ExtProcFilter::ClientToServerMessages(CallHandler handler,
+auto ExtProcFilter::ServerTrailingMetadata(CallHandler handler,
                                            CallInitiator initiator) {
-  auto client_to_server_messages_pipe = std::make_shared<Pipe<MessageHandle>>();
-  handler.SpawnInfallible(
-      "ext_proc_process_client_messages",
-      [client_to_server_messages_pipe = client_to_server_messages_pipe,
-       initiator = initiator]() mutable {
-        return Seq(ForEach(std::move(client_to_server_messages_pipe->receiver),
-                           [initiator](MessageHandle msg) mutable {
-                             if (g_test_ext_proc_message_modifier != nullptr) {
-                               g_test_ext_proc_message_modifier(&msg);
-                             }
-                             initiator.SpawnPushMessage(std::move(msg));
-                             return Success{};
-                           }),
-                   [initiator]() mutable { initiator.SpawnFinishSends(); });
-      });
-      
-  handler.SpawnInfallible(
-      "read_client_messages",
-      [handler = handler, client_to_server_messages_pipe =
-                              client_to_server_messages_pipe]() mutable {
-        return Seq(
-            ForEach(
-                MessagesFrom(handler),
-                [client_to_server_messages_pipe](MessageHandle msg) mutable {
-                  return Map(client_to_server_messages_pipe->sender.Push(
-                                 std::move(msg)),
-                             [](bool) { return Success{}; });
-                }),
-            []() {});
-      });
-
-  
+  return Seq(initiator.PullServerTrailingMetadata(),
+             [handler](ServerMetadataHandle md) mutable {
+               handler.SpawnPushServerTrailingMetadata(std::move(md));
+               return absl::OkStatus();
+             });
 }
 
-auto ExtProcFilter::ServerInitialMetadata(CallHandler handler,
-                                          CallInitiator initiator) {
-  initiator.SpawnInfallible("read_the_things", [initiator = initiator,
-                                                handler = handler]() mutable {
-    return Seq(
-        initiator.CancelIfFails(TrySeq(
-            initiator.PullServerInitialMetadata(),
-            [handler,
-             initiator](std::optional<ServerMetadataHandle> md) mutable {
-              const bool has_md = md.has_value();
-              return If(
-                  has_md,
-                  [handler, initiator, md = std::move(md)]() mutable {
-                    handler.SpawnPushServerInitialMetadata(std::move(*md));
-                    return ForEach(MessagesFrom(initiator),
-                                   [handler](MessageHandle msg) mutable {
-                                     handler.SpawnPushMessage(std::move(msg));
-                                     return Success{};
-                                   });
-                  },
-                  []() -> StatusFlag { return Success{}; });
-            })),
-        initiator.PullServerTrailingMetadata(),
-        [handler](ServerMetadataHandle md) mutable {
-          handler.SpawnPushServerTrailingMetadata(std::move(md));
-        });
-  });
-}
-
-auto ExtProcFilter::ClientInitialMetadata(CallHandler handler) {
+auto ExtProcFilter::ServerToClient(CallHandler handler,
+                                   CallInitiator initiator) {
   return TrySeq(
-      handler.PullClientInitialMetadata(),
-      [handler, self = Ref(), this](ClientMetadataHandle metadata) mutable {
-        metadata->Log([&](absl::string_view key, absl::string_view value) {
-          GRPC_TRACE_LOG(channel, INFO)
-              << "[ext_proc rishesh-------" << self.get() << "]: key: " << key
-              << ", value: " << value;
-        });
-        // Once modifications are complete, set the latch to
-        // unblock the main call pipeline and forward the mutate data.
-        if (g_test_ext_proc_metadata_modifier != nullptr) {
-          g_test_ext_proc_metadata_modifier(metadata.get());
-        }
-        // FIXME(rishesh): add handling for metadata response
-        pipe_owner_->client_initial_metadata.Set(std::move(metadata));
-        // Step 2: Suspend pipeline execution until the Latch signals that
-        // the optionally modified metadata is available.
-        return Seq(pipe_owner_->client_initial_metadata.Wait(),
-                   [handler, self = Ref(), this](
-                       ClientMetadataHandle metadata) mutable {
-                     // Create the child call using the newly mutated metadata
-                     CallInitiator initiator = MakeChildCall(
-                         std::move(metadata), GetContext<Arena>()->Ref());
-                     handler.AddChildCall(initiator);
-                     // 1. Client-to-server messages via Pipe.
-                     ClientToServerMessages(handler, initiator);
-                     // 2. Server-to-client messages and metadata.
-                     ServerInitialMetadata(handler, initiator);
-                     return absl::OkStatus();
-                   });
+      initiator.PullServerInitialMetadata(),
+      [self = RefAsSubclass<ExtProcFilter>(), handler,
+       initiator](std::optional<ServerMetadataHandle> metadata) mutable {
+        const bool has_md = metadata.has_value();
+        return If(
+            has_md,
+            [self, handler, initiator, md = std::move(metadata)]() mutable {
+              handler.SpawnPushServerInitialMetadata(std::move(*md));
+              return Seq(ForEach(MessagesFrom(initiator),
+                                 [handler](MessageHandle message) mutable {
+                                   handler.SpawnPushMessage(std::move(message));
+                                   return Success{};
+                                 }),
+                         self->ServerTrailingMetadata(handler, initiator));
+            },
+            [self, handler, initiator]() mutable {
+              return self->ServerTrailingMetadata(handler, initiator);
+            });
       });
 }
 
-auto ExtProcFilter::ServerToClientMessages(CallHandler handler) {}
-auto ExtProcFilter::ServerTrailingMetadata(CallHandler handler) {}
+auto ExtProcFilter::ClientToServer(CallHandler handler,
+                                   CallInitiator initiator) {
+  return Seq(ForEach(MessagesFrom(handler),
+                     [initiator](MessageHandle message) mutable {
+                       if (g_test_ext_proc_message_modifier != nullptr) {
+                         g_test_ext_proc_message_modifier(&message);
+                       }
+                       initiator.SpawnPushMessage(std::move(message));
+                       return Success{};
+                     }),
+             [initiator]() mutable {
+               initiator.SpawnFinishSends();
+               return absl::OkStatus();
+             });
+}
 
 void ExtProcFilter::InterceptCall(UnstartedCallHandler unstarted_call_handler) {
-  // Consume the call coming to us from the client side.
-  // This yields a handler that can be used to interact with the client-side
-  // of the call.
   pipe_owner_ = GetContext<Arena>()->ManagedNew<PipeOwner>();
   CallHandler handler = Consume(std::move(unstarted_call_handler));
   handler.SpawnGuarded("ext_proc_call", [self = RefAsSubclass<ExtProcFilter>(),
                                          handler]() mutable {
-    // Step 1: Wait for and pull the initial metadata from the client.
-    return self->ClientInitialMetadata(handler);
+    return TrySeq(
+        handler.PullClientInitialMetadata(),
+        [self, handler](ClientMetadataHandle metadata) mutable {
+          if (g_test_ext_proc_metadata_modifier != nullptr) {
+            g_test_ext_proc_metadata_modifier(metadata.get());
+          }
+          CallInitiator initiator =
+              self->MakeChildCall(std::move(metadata), handler.arena()->Ref());
+          handler.AddChildCall(initiator);
+
+          initiator.SpawnGuarded(
+              "server_to_client", [self, handler, initiator]() mutable {
+                return self->ServerToClient(handler, initiator);
+              });
+
+          return self->ClientToServer(handler, initiator);
+        });
   });
 }
 
