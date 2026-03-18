@@ -41,20 +41,10 @@ static const upb_MiniTableField envoy_extensions_filters_http_gcp_authn_v3_GcpAu
 const upb_MiniTable envoy__extensions__filters__http__gcp_0authn__v3__GcpAuthnFilterConfig_msg_init = {
   &envoy_extensions_filters_http_gcp_authn_v3_GcpAuthnFilterConfig__submsgs[0],
   &envoy_extensions_filters_http_gcp_authn_v3_GcpAuthnFilterConfig__fields[0],
-  UPB_SIZE(40, 72), 6, kUpb_ExtMode_NonExtendable, 6, UPB_FASTTABLE_MASK(56), 0,
+  UPB_SIZE(40, 72), 6, kUpb_ExtMode_NonExtendable, 6, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.extensions.filters.http.gcp_authn.v3.GcpAuthnFilterConfig",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x001000003f00002a, &upb_pss_1bt},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-  })
 };
 
 const upb_MiniTable* envoy__extensions__filters__http__gcp_0authn__v3__GcpAuthnFilterConfig_msg_init_ptr = &envoy__extensions__filters__http__gcp_0authn__v3__GcpAuthnFilterConfig_msg_init;
@@ -65,14 +55,10 @@ static const upb_MiniTableField envoy_extensions_filters_http_gcp_authn_v3_Audie
 const upb_MiniTable envoy__extensions__filters__http__gcp_0authn__v3__Audience_msg_init = {
   NULL,
   &envoy_extensions_filters_http_gcp_authn_v3_Audience__fields[0],
-  UPB_SIZE(16, 24), 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(8), 0,
+  UPB_SIZE(16, 24), 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.extensions.filters.http.gcp_authn.v3.Audience",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x000800003f00000a, &upb_pss_1bt},
-  })
 };
 
 const upb_MiniTable* envoy__extensions__filters__http__gcp_0authn__v3__Audience_msg_init_ptr = &envoy__extensions__filters__http__gcp_0authn__v3__Audience_msg_init;
@@ -102,16 +88,10 @@ static const upb_MiniTableField envoy_extensions_filters_http_gcp_authn_v3_Token
 const upb_MiniTable envoy__extensions__filters__http__gcp_0authn__v3__TokenHeader_msg_init = {
   NULL,
   &envoy_extensions_filters_http_gcp_authn_v3_TokenHeader__fields[0],
-  UPB_SIZE(24, 40), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
+  UPB_SIZE(24, 40), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.extensions.filters.http.gcp_authn.v3.TokenHeader",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x000800003f00000a, &upb_pss_1bt},
-    {0x001800003f000012, &upb_pss_1bt},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-  })
 };
 
 const upb_MiniTable* envoy__extensions__filters__http__gcp_0authn__v3__TokenHeader_msg_init_ptr = &envoy__extensions__filters__http__gcp_0authn__v3__TokenHeader_msg_init;
