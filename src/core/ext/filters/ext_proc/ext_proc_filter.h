@@ -115,7 +115,7 @@ class ExtProcFilter final : public V3InterceptorToV2Bridge<ExtProcFilter> {
   void InterceptCall(UnstartedCallHandler unstarted_call_handler) override;
 
   auto ClientInitialMetadata(CallHandler handler);
-  auto ClientToServerMessages(CallHandler handler);
+  auto ClientToServerMessages(CallHandler handler, CallInitiator initiator);
   auto ServerInitialMetadata(CallHandler handler, CallInitiator initiator);
   auto ServerToClientMessages(CallHandler handler);
   auto ServerTrailingMetadata(CallHandler handler);
