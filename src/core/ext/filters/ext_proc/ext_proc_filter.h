@@ -116,8 +116,8 @@ class ExtProcFilter final : public V3InterceptorToV2Bridge<ExtProcFilter> {
 
   auto ClientInitialMetadata(CallHandler handler);
   auto ClientToServerMessages(CallHandler handler);
+  auto ServerInitialMetadata(CallHandler handler, CallInitiator initiator);
   auto ServerToClientMessages(CallHandler handler);
-  auto ServerInitialMetadata(CallHandler handler);
   auto ServerTrailingMetadata(CallHandler handler);
 
   RefCountedPtr<const Config> config_;
