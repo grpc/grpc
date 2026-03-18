@@ -905,16 +905,15 @@ def _handle_unary_unary(
             method_handler.request_deserializer,
             method_handler.response_serializer,
         )
-    else:
-        return thread_pool.submit(
-            _unary_response_in_pool,
-            rpc_event,
-            state,
-            method_handler.unary_unary,
-            unary_request,
-            method_handler.request_deserializer,
-            method_handler.response_serializer,
-        )
+    return thread_pool.submit(
+        _unary_response_in_pool,
+        rpc_event,
+        state,
+        method_handler.unary_unary,
+        unary_request,
+        method_handler.request_deserializer,
+        method_handler.response_serializer,
+    )
 
 
 def _handle_unary_stream(
@@ -940,16 +939,15 @@ def _handle_unary_stream(
             method_handler.request_deserializer,
             method_handler.response_serializer,
         )
-    else:
-        return thread_pool.submit(
-            _stream_response_in_pool,
-            rpc_event,
-            state,
-            method_handler.unary_stream,
-            unary_request,
-            method_handler.request_deserializer,
-            method_handler.response_serializer,
-        )
+    return thread_pool.submit(
+        _stream_response_in_pool,
+        rpc_event,
+        state,
+        method_handler.unary_stream,
+        unary_request,
+        method_handler.request_deserializer,
+        method_handler.response_serializer,
+    )
 
 
 def _handle_stream_unary(
@@ -975,16 +973,15 @@ def _handle_stream_unary(
             method_handler.request_deserializer,
             method_handler.response_serializer,
         )
-    else:
-        return thread_pool.submit(
-            _unary_response_in_pool,
-            rpc_event,
-            state,
-            method_handler.stream_unary,
-            lambda: request_iterator,
-            method_handler.request_deserializer,
-            method_handler.response_serializer,
-        )
+    return thread_pool.submit(
+        _unary_response_in_pool,
+        rpc_event,
+        state,
+        method_handler.stream_unary,
+        lambda: request_iterator,
+        method_handler.request_deserializer,
+        method_handler.response_serializer,
+    )
 
 
 def _handle_stream_stream(
@@ -1010,16 +1007,15 @@ def _handle_stream_stream(
             method_handler.request_deserializer,
             method_handler.response_serializer,
         )
-    else:
-        return thread_pool.submit(
-            _stream_response_in_pool,
-            rpc_event,
-            state,
-            method_handler.stream_stream,
-            lambda: request_iterator,
-            method_handler.request_deserializer,
-            method_handler.response_serializer,
-        )
+    return thread_pool.submit(
+        _stream_response_in_pool,
+        rpc_event,
+        state,
+        method_handler.stream_stream,
+        lambda: request_iterator,
+        method_handler.request_deserializer,
+        method_handler.response_serializer,
+    )
 
 
 def _find_method_handler(
