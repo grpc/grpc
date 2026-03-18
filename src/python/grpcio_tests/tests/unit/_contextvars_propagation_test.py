@@ -184,7 +184,7 @@ class ContextVarsPropagationTest(unittest.TestCase):
 
 
 class ContextVarsServerHandlerTest(unittest.TestCase):
-    @unittest.skipIf(not contextvars_supported(), "Contextvars not supported")
+    @unittest.skipUnless(contextvars_supported(), "Contextvars not supported")
     def test_contextvars_preserved_in_thread_pool(self):
         import contextvars
         from concurrent import futures
