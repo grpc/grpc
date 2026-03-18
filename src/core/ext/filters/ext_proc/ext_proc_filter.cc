@@ -134,8 +134,6 @@ ExtProcFilter::ExtProcFilter(const ChannelArgs& args,
                              ChannelFilter::Args filter_args)
     : config_(std::move(config)) {}
 
-auto ExtProcFilter::ClientInitialMetadata(CallHandler handler) {}
-
 auto ExtProcFilter::ClientToServerMessages(CallHandler handler,
                                            CallInitiator initiator) {
   auto client_to_server_messages_pipe = std::make_shared<Pipe<MessageHandle>>();
@@ -199,6 +197,53 @@ auto ExtProcFilter::ServerInitialMetadata(CallHandler handler,
   });
 }
 
+auto ExtProcFilter::ClientInitialMetadata(CallHandler handler) {
+  return TrySeq(
+      handler.PullClientInitialMetadata(),
+      [handler, self = Ref(), this](ClientMetadataHandle metadata) mutable {
+        // Create a Latch to hold the metadata while we asynchronously
+        // process (e.g., mutate) it before forwarding it downstream.
+        auto metadata_latch = std::make_shared<Latch<ClientMetadataHandle>>();
+
+        // Spawn a background task to process the metadata.
+        // In reality, this could be an async RPC to an external processor.
+        handler.SpawnInfallible(
+            "ext_proc_process_metadata",
+            [metadata_latch, metadata = std::move(metadata), self]() mutable {
+              metadata->Log(
+                  [&](absl::string_view key, absl::string_view value) {
+                    GRPC_TRACE_LOG(channel, INFO)
+                        << "[ext_proc rishesh-------" << self.get()
+                        << "]: key: " << key << ", value: " << value;
+                  });
+              // Once modifications are complete, set the latch to
+              // unblock the main call pipeline and forward the mutate data.
+              if (g_test_ext_proc_metadata_modifier != nullptr) {
+                g_test_ext_proc_metadata_modifier(metadata.get());
+              }
+              metadata_latch->Set(std::move(metadata));
+              return Empty{};
+            });
+
+        // Step 2: Suspend pipeline execution until the Latch signals that
+        // the optionally modified metadata is available.
+        return Seq(metadata_latch->Wait(),
+                   [handler, self = Ref(), this,
+                    metadata_latch](ClientMetadataHandle metadata) mutable {
+                     // Create the child call using the newly mutated metadata
+                     CallInitiator initiator = MakeChildCall(
+                         std::move(metadata), GetContext<Arena>()->Ref());
+                     handler.AddChildCall(initiator);
+
+                     // 1. Client-to-server messages via Pipe.
+                     ClientToServerMessages(handler, initiator);
+                     // 2. Server-to-client messages and metadata.
+                     ServerInitialMetadata(handler, initiator);
+                     return absl::OkStatus();
+                   });
+      });
+}
+
 auto ExtProcFilter::ServerToClientMessages(CallHandler handler) {}
 auto ExtProcFilter::ServerTrailingMetadata(CallHandler handler) {}
 
@@ -210,50 +255,7 @@ void ExtProcFilter::InterceptCall(UnstartedCallHandler unstarted_call_handler) {
   handler.SpawnGuarded("ext_proc_call", [self = RefAsSubclass<ExtProcFilter>(),
                                          handler]() mutable {
     // Step 1: Wait for and pull the initial metadata from the client.
-    return TrySeq(
-        handler.PullClientInitialMetadata(),
-        [handler, self](ClientMetadataHandle metadata) mutable {
-          // Create a Latch to hold the metadata while we asynchronously
-          // process (e.g., mutate) it before forwarding it downstream.
-          auto metadata_latch = std::make_shared<Latch<ClientMetadataHandle>>();
-
-          // Spawn a background task to process the metadata.
-          // In reality, this could be an async RPC to an external processor.
-          handler.SpawnInfallible(
-              "ext_proc_process_metadata",
-              [metadata_latch, metadata = std::move(metadata), self]() mutable {
-                metadata->Log(
-                    [&](absl::string_view key, absl::string_view value) {
-                      GRPC_TRACE_LOG(channel, INFO)
-                          << "[ext_proc rishesh-------" << self.get()
-                          << "]: key: " << key << ", value: " << value;
-                    });
-                // Once modifications are complete, set the latch to
-                // unblock the main call pipeline and forward the mutate data.
-                if (g_test_ext_proc_metadata_modifier != nullptr) {
-                  g_test_ext_proc_metadata_modifier(metadata.get());
-                }
-                metadata_latch->Set(std::move(metadata));
-                return Empty{};
-              });
-
-          // Step 2: Suspend pipeline execution until the Latch signals that
-          // the optionally modified metadata is available.
-          return Seq(metadata_latch->Wait(),
-                     [handler, self,
-                      metadata_latch](ClientMetadataHandle metadata) mutable {
-                       // Create the child call using the newly mutated metadata
-                       CallInitiator initiator = self->MakeChildCall(
-                           std::move(metadata), GetContext<Arena>()->Ref());
-                       handler.AddChildCall(initiator);
-
-                       // 1. Client-to-server messages via Pipe.
-                       self->ClientToServerMessages(handler, initiator);
-                       // 2. Server-to-client messages and metadata.
-                       self->ServerInitialMetadata(handler, initiator);
-                       return absl::OkStatus();
-                     });
-        });
+    return self->ClientInitialMetadata(handler);
   });
 }
 
