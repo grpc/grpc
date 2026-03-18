@@ -5,7 +5,7 @@ import warnings
 
 from envoy.service.ext_proc.v3 import external_processor_pb2 as envoy_dot_service_dot_ext__proc_dot_v3_dot_external__processor__pb2
 
-GRPC_GENERATED_VERSION = '1.74.0'
+GRPC_GENERATED_VERSION = '1.81.0.dev0'
 GRPC_VERSION = grpc.__version__
 _version_not_supported = False
 
@@ -18,14 +18,14 @@ except ImportError:
 if _version_not_supported:
     raise RuntimeError(
         f'The grpc package installed is at version {GRPC_VERSION},'
-        + f' but the generated code in envoy/service/ext_proc/v3/external_processor_pb2_grpc.py depends on'
+        + ' but the generated code in envoy/service/ext_proc/v3/external_processor_pb2_grpc.py depends on'
         + f' grpcio>={GRPC_GENERATED_VERSION}.'
         + f' Please upgrade your grpc module to grpcio>={GRPC_GENERATED_VERSION}'
         + f' or downgrade your generated code using grpcio-tools<={GRPC_VERSION}.'
     )
 
 
-class ExternalProcessorStub(object):
+class ExternalProcessorStub:
     """[#protodoc-title: External processing service]
 
     A service that can access and modify HTTP requests and responses
@@ -70,7 +70,7 @@ class ExternalProcessorStub(object):
                 _registered_method=True)
 
 
-class ExternalProcessorServicer(object):
+class ExternalProcessorServicer:
     """[#protodoc-title: External processing service]
 
     A service that can access and modify HTTP requests and responses
@@ -128,7 +128,7 @@ def add_ExternalProcessorServicer_to_server(servicer, server):
 
 
  # This class is part of an EXPERIMENTAL API.
-class ExternalProcessor(object):
+class ExternalProcessor:
     """[#protodoc-title: External processing service]
 
     A service that can access and modify HTTP requests and responses
