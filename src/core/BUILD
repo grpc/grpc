@@ -3866,6 +3866,7 @@ grpc_cc_library(
         "metadata_batch",
         "pipe",
         "seq",
+        "try_join",
         "try_seq",
         "unique_type_name",
         "xds_common_types",
