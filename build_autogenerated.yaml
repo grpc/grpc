@@ -1173,6 +1173,7 @@ libs:
   - src/core/load_balancing/subchannel_interface.h
   - src/core/load_balancing/weighted_round_robin/static_stride_scheduler.h
   - src/core/load_balancing/weighted_target/weighted_target.h
+  - src/core/load_balancing/xds/cds.h
   - src/core/load_balancing/xds/xds_channel_args.h
   - src/core/load_balancing/xds/xds_override_host.h
   - src/core/net/socket_mutator.h
@@ -8207,6 +8208,17 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
+  uses_polling: false
+- name: cds_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/load_balancing/cds_test.cc
+  deps:
+  - gtest
+  - grpc_test_util
   uses_polling: false
 - name: cel_authorization_engine_test
   gtest: true
