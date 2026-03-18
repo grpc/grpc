@@ -5715,6 +5715,7 @@ grpc_cc_library(
         "xds_http_filter",
         "xds_matcher",
         "xds_matcher_context",
+        "//:gpr",
         "//:grpc_base",
         "//:ref_counted_ptr",
     ],
@@ -6388,6 +6389,7 @@ grpc_cc_library(
         "match",
         "trie_lookup",
         "unique_type_name",
+        "//:gpr",
     ],
 )
 
