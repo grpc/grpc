@@ -40,9 +40,11 @@ except IOError:
     with open(sources_path, "r") as s:
         sources = json.load(s)
 
+
 # Map the file location in sources.json to the relative path in gRPC repo.
 def map_dir(filename):
     return "third_party/boringssl-with-bazel/" + filename
+
 
 # Get all the asm/nasm source files from boringssl's upstream sources.json.
 # NASM files are consumed by windows build, and ASM files are used by linux/macos.
