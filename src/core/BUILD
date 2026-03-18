@@ -6355,6 +6355,7 @@ grpc_cc_library(
         "match",
         "trie_lookup",
         "unique_type_name",
+        "//:gpr",
     ],
 )
 
