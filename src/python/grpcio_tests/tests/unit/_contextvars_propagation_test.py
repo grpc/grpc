@@ -183,6 +183,69 @@ class ContextVarsPropagationTest(unittest.TestCase):
                     raise q.get()
 
 
+class ContextVarsServerHandlerTest(unittest.TestCase):
+    @unittest.skipIf(not contextvars_supported(), "Contextvars not supported")
+    def test_contextvars_preserved_in_thread_pool(self):
+        import contextvars
+        from concurrent import futures
+
+        _DEFAULT_CONTEXT_VALUE = "missing"
+        _MODIFIED_CONTEXT_VALUE = "modified_context_value"
+        _TEST_CONTEXT_VAR = contextvars.ContextVar(
+            "test_context_var", default=_DEFAULT_CONTEXT_VALUE
+        )
+        _REQUEST = b"0000"
+
+        class ContextVarsCheckingHandler:
+            def __init__(self):
+                self.calls = 0
+                self.first_call_value = None
+                self.second_call_value = None
+
+            def handle_unary_unary(self, request, context):
+                self.calls += 1
+                if self.calls == 1:
+                    self.first_call_value = _TEST_CONTEXT_VAR.get()
+                    _TEST_CONTEXT_VAR.set(_MODIFIED_CONTEXT_VALUE)
+                elif self.calls == 2:
+                    self.second_call_value = _TEST_CONTEXT_VAR.get()
+                return request
+
+        handler_instance = ContextVarsCheckingHandler()
+        method_handlers = {
+            "SayHello": grpc.unary_unary_rpc_method_handler(
+                handler_instance.handle_unary_unary
+            )
+        }
+        server_thread_pool = futures.ThreadPoolExecutor(max_workers=1)
+        server = grpc.server(server_thread_pool)
+        server.add_generic_rpc_handlers(
+            (grpc.method_handlers_generic_handler("test", method_handlers),)
+        )
+        port = server.add_insecure_port("[::]:0")
+        server.start()
+
+        try:
+            with grpc.insecure_channel(f"localhost:{port}") as channel:
+                stub = channel.unary_unary("/test/SayHello")
+
+                # First call
+                stub(_REQUEST)
+                # Second call
+                stub(_REQUEST)
+
+            self.assertEqual(handler_instance.calls, 2)
+            self.assertEqual(
+                handler_instance.first_call_value, _DEFAULT_CONTEXT_VALUE
+            )
+            self.assertEqual(
+                handler_instance.second_call_value, _MODIFIED_CONTEXT_VALUE
+            )
+        finally:
+            server.stop(None)
+            server_thread_pool.shutdown()
+
+
 if __name__ == "__main__":
     logging.basicConfig()
     unittest.main(verbosity=2)
