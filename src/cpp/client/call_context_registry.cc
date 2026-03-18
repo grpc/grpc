@@ -82,7 +82,9 @@ void CallContextRegistry::Destroy(ElementList& elements) {
 
 void CallContextType<TelemetryLabel>::Propagate(TelemetryLabel* label,
                                                 grpc_core::Arena* arena) {
-  arena->SetContext<grpc_core::TelemetryLabel>(label);
+  arena->SetContext<grpc_core::TelemetryLabel>(
+      arena->ManagedNew<grpc_core::TelemetryLabel>(std::move(*label)));
+  delete label;
 }
 
 }  // namespace impl

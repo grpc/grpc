@@ -23,7 +23,7 @@ namespace grpc_core {
 
 template <>
 struct ArenaContextType<TelemetryLabel> {
-  static void Destroy(TelemetryLabel* l) { delete l; }
+  static void Destroy(TelemetryLabel*) {}
 };
 
 }  // namespace grpc_core
