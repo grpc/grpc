@@ -113,6 +113,13 @@ class ExtProcFilter final : public V3InterceptorToV2Bridge<ExtProcFilter> {
   void Orphaned() override {}
 
   void InterceptCall(UnstartedCallHandler unstarted_call_handler) override;
+  struct PipeOwner {
+    InterActivityLatch<ClientMetadataHandle> client_initial_metadata;
+    InterActivityPipe<MessageHandle, 1> client_to_server_messages;
+    InterActivityLatch<std::optional<ServerMetadataHandle>>
+        server_initial_metadata;
+    InterActivityPipe<MessageHandle, 1> server_to_client_messages;
+  };
 
   auto ClientInitialMetadata(CallHandler handler);
   auto ClientToServerMessages(CallHandler handler, CallInitiator initiator);
@@ -121,6 +128,7 @@ class ExtProcFilter final : public V3InterceptorToV2Bridge<ExtProcFilter> {
   auto ServerTrailingMetadata(CallHandler handler);
 
   RefCountedPtr<const Config> config_;
+  PipeOwner* pipe_owner_ = nullptr;
 };
 
 extern void (*g_test_ext_proc_metadata_modifier)(grpc_metadata_batch*);

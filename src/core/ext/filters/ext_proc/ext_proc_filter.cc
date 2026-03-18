@@ -138,6 +138,21 @@ auto ExtProcFilter::ClientToServerMessages(CallHandler handler,
                                            CallInitiator initiator) {
   auto client_to_server_messages_pipe = std::make_shared<Pipe<MessageHandle>>();
   handler.SpawnInfallible(
+      "ext_proc_process_client_messages",
+      [client_to_server_messages_pipe = client_to_server_messages_pipe,
+       initiator = initiator]() mutable {
+        return Seq(ForEach(std::move(client_to_server_messages_pipe->receiver),
+                           [initiator](MessageHandle msg) mutable {
+                             if (g_test_ext_proc_message_modifier != nullptr) {
+                               g_test_ext_proc_message_modifier(&msg);
+                             }
+                             initiator.SpawnPushMessage(std::move(msg));
+                             return Success{};
+                           }),
+                   [initiator]() mutable { initiator.SpawnFinishSends(); });
+      });
+      
+  handler.SpawnInfallible(
       "read_client_messages",
       [handler = handler, client_to_server_messages_pipe =
                               client_to_server_messages_pipe]() mutable {
@@ -152,20 +167,7 @@ auto ExtProcFilter::ClientToServerMessages(CallHandler handler,
             []() {});
       });
 
-  handler.SpawnInfallible(
-      "ext_proc_process_client_messages",
-      [client_to_server_messages_pipe = client_to_server_messages_pipe,
-       initiator = initiator]() mutable {
-        return Seq(ForEach(std::move(client_to_server_messages_pipe->receiver),
-                           [initiator](MessageHandle msg) mutable {
-                             if (g_test_ext_proc_message_modifier != nullptr) {
-                               g_test_ext_proc_message_modifier(&msg);
-                             }
-                             initiator.SpawnPushMessage(std::move(msg));
-                             return Success{};
-                           }),
-                   [initiator]() mutable { initiator.SpawnFinishSends(); });
-      });
+  
 }
 
 auto ExtProcFilter::ServerInitialMetadata(CallHandler handler,
@@ -201,40 +203,27 @@ auto ExtProcFilter::ClientInitialMetadata(CallHandler handler) {
   return TrySeq(
       handler.PullClientInitialMetadata(),
       [handler, self = Ref(), this](ClientMetadataHandle metadata) mutable {
-        // Create a Latch to hold the metadata while we asynchronously
-        // process (e.g., mutate) it before forwarding it downstream.
-        auto metadata_latch = std::make_shared<Latch<ClientMetadataHandle>>();
-
-        // Spawn a background task to process the metadata.
-        // In reality, this could be an async RPC to an external processor.
-        handler.SpawnInfallible(
-            "ext_proc_process_metadata",
-            [metadata_latch, metadata = std::move(metadata), self]() mutable {
-              metadata->Log(
-                  [&](absl::string_view key, absl::string_view value) {
-                    GRPC_TRACE_LOG(channel, INFO)
-                        << "[ext_proc rishesh-------" << self.get()
-                        << "]: key: " << key << ", value: " << value;
-                  });
-              // Once modifications are complete, set the latch to
-              // unblock the main call pipeline and forward the mutate data.
-              if (g_test_ext_proc_metadata_modifier != nullptr) {
-                g_test_ext_proc_metadata_modifier(metadata.get());
-              }
-              metadata_latch->Set(std::move(metadata));
-              return Empty{};
-            });
-
+        metadata->Log([&](absl::string_view key, absl::string_view value) {
+          GRPC_TRACE_LOG(channel, INFO)
+              << "[ext_proc rishesh-------" << self.get() << "]: key: " << key
+              << ", value: " << value;
+        });
+        // Once modifications are complete, set the latch to
+        // unblock the main call pipeline and forward the mutate data.
+        if (g_test_ext_proc_metadata_modifier != nullptr) {
+          g_test_ext_proc_metadata_modifier(metadata.get());
+        }
+        // FIXME(rishesh): add handling for metadata response
+        pipe_owner_->client_initial_metadata.Set(std::move(metadata));
         // Step 2: Suspend pipeline execution until the Latch signals that
         // the optionally modified metadata is available.
-        return Seq(metadata_latch->Wait(),
-                   [handler, self = Ref(), this,
-                    metadata_latch](ClientMetadataHandle metadata) mutable {
+        return Seq(pipe_owner_->client_initial_metadata.Wait(),
+                   [handler, self = Ref(), this](
+                       ClientMetadataHandle metadata) mutable {
                      // Create the child call using the newly mutated metadata
                      CallInitiator initiator = MakeChildCall(
                          std::move(metadata), GetContext<Arena>()->Ref());
                      handler.AddChildCall(initiator);
-
                      // 1. Client-to-server messages via Pipe.
                      ClientToServerMessages(handler, initiator);
                      // 2. Server-to-client messages and metadata.
@@ -251,6 +240,7 @@ void ExtProcFilter::InterceptCall(UnstartedCallHandler unstarted_call_handler) {
   // Consume the call coming to us from the client side.
   // This yields a handler that can be used to interact with the client-side
   // of the call.
+  pipe_owner_ = GetContext<Arena>()->ManagedNew<PipeOwner>();
   CallHandler handler = Consume(std::move(unstarted_call_handler));
   handler.SpawnGuarded("ext_proc_call", [self = RefAsSubclass<ExtProcFilter>(),
                                          handler]() mutable {
