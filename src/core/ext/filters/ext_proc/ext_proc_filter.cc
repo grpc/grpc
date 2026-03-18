@@ -169,23 +169,52 @@ auto ExtProcFilter::ServerToClient(CallHandler handler,
 
 auto ExtProcFilter::ClientToServer(CallHandler handler,
                                    CallInitiator initiator) {
-  return Seq(ForEach(MessagesFrom(handler),
-                     [initiator](MessageHandle message) mutable {
-                       if (g_test_ext_proc_message_modifier != nullptr) {
-                         g_test_ext_proc_message_modifier(&message);
-                       }
-                       initiator.SpawnPushMessage(std::move(message));
-                       return Success{};
-                     }),
-             [initiator]() mutable {
-               initiator.SpawnFinishSends();
-               return absl::OkStatus();
-             });
+  struct ConsumerAction {
+    mutable CallInitiator initiator;
+    auto operator()(MessageHandle message) const {
+      initiator.SpawnPushMessage(std::move(message));
+      return Map([]() { return Empty{}; }, [](Empty) { return absl::OkStatus(); });
+    }
+  };
+
+  initiator.SpawnGuarded(
+      "client_to_server_consumer",
+      [self = RefAsSubclass<ExtProcFilter>(), initiator]() mutable {
+        return Seq(
+            ForEach(std::move(self->pipe_owner_->client_to_server_messages.receiver),
+                    ConsumerAction{initiator}),
+            [initiator](absl::Status) mutable {
+              initiator.SpawnFinishSends();
+              return absl::OkStatus();
+            });
+      });
+
+  return Seq(
+      ForEach(MessagesFrom(handler),
+              [self = RefAsSubclass<ExtProcFilter>()](MessageHandle message) {
+                if (g_test_ext_proc_message_modifier != nullptr) {
+                  g_test_ext_proc_message_modifier(&message);
+                }
+                return Map(
+                    self->pipe_owner_->client_to_server_messages.sender.Push(
+                        std::move(message)),
+                    [](bool success) -> absl::Status {
+                      if (!success) {
+                        return absl::InternalError("Push to pipe failed");
+                      }
+                      return absl::OkStatus();
+                    });
+              }),
+      [self = RefAsSubclass<ExtProcFilter>()](absl::Status status) mutable {
+        self->pipe_owner_->client_to_server_messages.sender.MarkClosed();
+        return status;
+      });
 }
 
 void ExtProcFilter::InterceptCall(UnstartedCallHandler unstarted_call_handler) {
   pipe_owner_ = GetContext<Arena>()->ManagedNew<PipeOwner>();
   CallHandler handler = Consume(std::move(unstarted_call_handler));
+
   handler.SpawnGuarded("ext_proc_call", [self = RefAsSubclass<ExtProcFilter>(),
                                          handler]() mutable {
     return TrySeq(
@@ -194,16 +223,21 @@ void ExtProcFilter::InterceptCall(UnstartedCallHandler unstarted_call_handler) {
           if (g_test_ext_proc_metadata_modifier != nullptr) {
             g_test_ext_proc_metadata_modifier(metadata.get());
           }
-          CallInitiator initiator =
-              self->MakeChildCall(std::move(metadata), handler.arena()->Ref());
-          handler.AddChildCall(initiator);
+          self->pipe_owner_->client_initial_metadata.Set(std::move(metadata));
+          return Seq(self->pipe_owner_->client_initial_metadata.Wait(),
+                     [self, handler](ClientMetadataHandle metadata) mutable {
+                       CallInitiator initiator = self->MakeChildCall(
+                           std::move(metadata), handler.arena()->Ref());
+                       handler.AddChildCall(initiator);
 
-          initiator.SpawnGuarded(
-              "server_to_client", [self, handler, initiator]() mutable {
-                return self->ServerToClient(handler, initiator);
-              });
+                       initiator.SpawnGuarded(
+                           "server_to_client",
+                           [self, handler, initiator]() mutable {
+                             return self->ServerToClient(handler, initiator);
+                           });
 
-          return self->ClientToServer(handler, initiator);
+                       return self->ClientToServer(handler, initiator);
+                     });
         });
   });
 }
