@@ -134,11 +134,38 @@ ExtProcFilter::ExtProcFilter(const ChannelArgs& args,
                              ChannelFilter::Args filter_args)
     : config_(std::move(config)) {}
 
-auto ExtProcFilter::ClientInitialMetadata(CallHandler handler){}
-auto ExtProcFilter::ClientToServerMessages(CallHandler handler){}
-auto ExtProcFilter::ServerToClientMessages(CallHandler handler){}
-auto ExtProcFilter::ServerInitialMetadata(CallHandler handler){}
-auto ExtProcFilter::ServerTrailingMetadata(CallHandler handler){}
+auto ExtProcFilter::ClientInitialMetadata(CallHandler handler) {}
+auto ExtProcFilter::ClientToServerMessages(CallHandler handler) {}
+auto ExtProcFilter::ServerInitialMetadata(CallHandler handler,
+                                          CallInitiator initiator) {
+  initiator.SpawnInfallible("read_the_things", [initiator = initiator,
+                                                handler = handler]() mutable {
+    return Seq(
+        initiator.CancelIfFails(TrySeq(
+            initiator.PullServerInitialMetadata(),
+            [handler,
+             initiator](std::optional<ServerMetadataHandle> md) mutable {
+              const bool has_md = md.has_value();
+              return If(
+                  has_md,
+                  [handler, initiator, md = std::move(md)]() mutable {
+                    handler.SpawnPushServerInitialMetadata(std::move(*md));
+                    return ForEach(MessagesFrom(initiator),
+                                   [handler](MessageHandle msg) mutable {
+                                     handler.SpawnPushMessage(std::move(msg));
+                                     return Success{};
+                                   });
+                  },
+                  []() -> StatusFlag { return Success{}; });
+            })),
+        initiator.PullServerTrailingMetadata(),
+        [handler](ServerMetadataHandle md) mutable {
+          handler.SpawnPushServerTrailingMetadata(std::move(md));
+        });
+  });
+}
+auto ExtProcFilter::ServerToClientMessages(CallHandler handler) {}
+auto ExtProcFilter::ServerTrailingMetadata(CallHandler handler) {}
 
 void ExtProcFilter::InterceptCall(UnstartedCallHandler unstarted_call_handler) {
   // Consume the call coming to us from the client side.
@@ -177,75 +204,51 @@ void ExtProcFilter::InterceptCall(UnstartedCallHandler unstarted_call_handler) {
 
           // Step 2: Suspend pipeline execution until the Latch signals that
           // the optionally modified metadata is available.
-          return Seq(metadata_latch->Wait(), [handler, self, metadata_latch](
-                                                 ClientMetadataHandle
-                                                     metadata) mutable {
-            // Create the child call using the newly mutated metadata
-            CallInitiator initiator = self->MakeChildCall(
-                std::move(metadata), GetContext<Arena>()->Ref());
-            handler.AddChildCall(initiator);
+          return Seq(
+              metadata_latch->Wait(),
+              [handler, self,
+               metadata_latch](ClientMetadataHandle metadata) mutable {
+                // Create the child call using the newly mutated metadata
+                CallInitiator initiator = self->MakeChildCall(
+                    std::move(metadata), GetContext<Arena>()->Ref());
+                handler.AddChildCall(initiator);
 
-            // 1. Client-to-server messages via Pipe.
-            auto message_pipe = std::make_shared<Pipe<MessageHandle>>();
-            handler.SpawnInfallible(
-                "read_client_messages", [handler, message_pipe]() mutable {
-                  return Seq(
-                      ForEach(MessagesFrom(handler),
-                              [message_pipe](MessageHandle msg) mutable {
-                                return Map(
-                                    message_pipe->sender.Push(std::move(msg)),
-                                    [](bool) { return Success{}; });
-                              }),
-                      []() {});
-                });
+                // 1. Client-to-server messages via Pipe.
+                auto message_pipe = std::make_shared<Pipe<MessageHandle>>();
+                handler.SpawnInfallible(
+                    "read_client_messages", [handler, message_pipe]() mutable {
+                      return Seq(
+                          ForEach(MessagesFrom(handler),
+                                  [message_pipe](MessageHandle msg) mutable {
+                                    return Map(message_pipe->sender.Push(
+                                                   std::move(msg)),
+                                               [](bool) { return Success{}; });
+                                  }),
+                          []() {});
+                    });
 
-            handler.SpawnInfallible(
-                "ext_proc_process_client_messages",
-                [message_pipe, initiator]() mutable {
-                  return Seq(
-                      ForEach(std::move(message_pipe->receiver),
-                              [initiator](MessageHandle msg) mutable {
-                                if (g_test_ext_proc_message_modifier !=
-                                    nullptr) {
-                                  g_test_ext_proc_message_modifier(&msg);
-                                }
-                                initiator.SpawnPushMessage(std::move(msg));
-                                return Success{};
-                              }),
-                      [initiator]() mutable { initiator.SpawnFinishSends(); });
-                });
-
-            // 2. Server-to-client messages and metadata.
-            initiator.SpawnInfallible("read_the_things", [initiator,
-                                                          handler]() mutable {
-              return Seq(
-                  initiator.CancelIfFails(TrySeq(
-                      initiator.PullServerInitialMetadata(),
-                      [handler, initiator](
-                          std::optional<ServerMetadataHandle> md) mutable {
-                        const bool has_md = md.has_value();
-                        return If(
-                            has_md,
-                            [handler, initiator, md = std::move(md)]() mutable {
-                              handler.SpawnPushServerInitialMetadata(
-                                  std::move(*md));
-                              return ForEach(
-                                  MessagesFrom(initiator),
-                                  [handler](MessageHandle msg) mutable {
-                                    handler.SpawnPushMessage(std::move(msg));
+                handler.SpawnInfallible(
+                    "ext_proc_process_client_messages",
+                    [message_pipe, initiator]() mutable {
+                      return Seq(
+                          ForEach(std::move(message_pipe->receiver),
+                                  [initiator](MessageHandle msg) mutable {
+                                    if (g_test_ext_proc_message_modifier !=
+                                        nullptr) {
+                                      g_test_ext_proc_message_modifier(&msg);
+                                    }
+                                    initiator.SpawnPushMessage(std::move(msg));
                                     return Success{};
-                                  });
-                            },
-                            []() -> StatusFlag { return Success{}; });
-                      })),
-                  initiator.PullServerTrailingMetadata(),
-                  [handler](ServerMetadataHandle md) mutable {
-                    handler.SpawnPushServerTrailingMetadata(std::move(md));
-                  });
-            });
+                                  }),
+                          [initiator]() mutable {
+                            initiator.SpawnFinishSends();
+                          });
+                    });
 
-            return absl::OkStatus();
-          });
+                // 2. Server-to-client messages and metadata.
+                self->ServerInitialMetadata(handler, initiator);
+                return absl::OkStatus();
+              });
         });
   });
 }
