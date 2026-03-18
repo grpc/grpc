@@ -1435,14 +1435,6 @@ argp.add_argument(
     nargs="?",
     help="Upload test results to a specified BQ table.",
 )
-argp.add_argument(
-    "--max_concurrent_streams_connection_scaling",
-    default=False,
-    action="store_const",
-    const=True,
-    help="Enable Max concurrent streams connection scaling testing",
-)
-
 args = argp.parse_args()
 
 servers = set(
@@ -1476,13 +1468,6 @@ if args.manual_run and not args.use_docker:
 if not args.use_docker and servers:
     print(
         "Running interop servers is only supported with --use_docker option"
-        " enabled."
-    )
-    sys.exit(1)
-
-if args.max_concurrent_streams_connection_scaling and not args.use_docker:
-    print(
-        "Running interop for max concurrent streams connection scaling is only supported with --use_docker option"
         " enabled."
     )
     sys.exit(1)
@@ -1818,7 +1803,7 @@ try:
                     )
                     jobs.append(test_job)
 
-    if args.max_concurrent_streams_connection_scaling:
+    if 'java' in servers:
         languages_for_mcs_cs = set(
             _LANGUAGES[l]
             for l in _LANGUAGES_WITH_HTTP2_CLIENTS_FOR_HTTP2_SERVER_TEST_CASES
@@ -1827,8 +1812,6 @@ try:
         if not languages_for_mcs_cs:
             print('MCS connection scaling tests will be skipped since none of the supported client languages for MCS connection scaling testcases was specified')
         else:
-            if args.server != 'java':
-                print('Using java for MCS connection scaling server to be used by all MCS connection scaling clients.')
             mcs_server_jobspec = server_jobspec(
                 _LANGUAGES['java'],
                 docker_images.get('java'),
