@@ -36,14 +36,14 @@
 namespace grpc_core {
 
 struct PipeOwner {
-    InterActivityLatch<ClientMetadataHandle> client_initial_metadata;
-    InterActivityPipe<MessageHandle, 1> client_to_server_messages;
-    InterActivityLatch<std::optional<ServerMetadataHandle>>
-    server_initial_metadata;
-    InterActivityPipe<MessageHandle, 1> server_to_client_messages;
-    InterActivityLatch<ServerMetadataHandle> server_trailing_metadata;
-  };
-  
+  InterActivityLatch<ClientMetadataHandle> client_initial_metadata;
+  InterActivityPipe<MessageHandle, 1> client_to_server_messages;
+  InterActivityLatch<std::optional<ServerMetadataHandle>>
+      server_initial_metadata;
+  InterActivityPipe<MessageHandle, 1> server_to_client_messages;
+  InterActivityLatch<ServerMetadataHandle> server_trailing_metadata;
+};
+
 class ExtProcFilter final : public V3InterceptorToV2Bridge<ExtProcFilter> {
  public:
   struct ProcessingMode {
@@ -122,7 +122,7 @@ class ExtProcFilter final : public V3InterceptorToV2Bridge<ExtProcFilter> {
   void Orphaned() override {}
 
   void InterceptCall(UnstartedCallHandler unstarted_call_handler) override;
-  
+
   auto ClientInitialMetadata(CallHandler handler);
   auto StartCallLoops(CallHandler handler, PipeOwner* pipe_owner,
                       ClientMetadataHandle metadata);
