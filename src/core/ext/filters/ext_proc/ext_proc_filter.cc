@@ -166,8 +166,7 @@ auto ExtProcFilter::ServerToClientMessages(CallHandler handler,
     mutable CallHandler handler;
     auto operator()(MessageHandle message) const {
       handler.SpawnPushMessage(std::move(message));
-      return Map([]() { return Empty{}; },
-                 [](Empty) { return absl::OkStatus(); });
+      return []() { return absl::OkStatus(); };
     }
   };
 
@@ -229,7 +228,7 @@ auto ExtProcFilter::ServerInitialMetadata(CallHandler handler,
                                      std::move(*waited_metadata));
                                  return Seq(
                                      self->ServerToClientMessages(
-                                         handler, initiator, pipe_owner), 
+                                         handler, initiator, pipe_owner),
                                      self->ServerTrailingMetadata(
                                          handler, initiator, pipe_owner));
                                });
@@ -253,49 +252,67 @@ auto ExtProcFilter::ServerInitialMetadata(CallHandler handler,
 auto ExtProcFilter::ClientToServerMessages(CallHandler handler,
                                            CallInitiator initiator,
                                            PipeOwner* pipe_owner) {
-  struct ConsumerAction {
-    mutable CallInitiator initiator;
-    auto operator()(MessageHandle message) const {
-      initiator.SpawnPushMessage(std::move(message));
-      return Map([]() { return Empty{}; },
-                 [](Empty) { return absl::OkStatus(); });
-    }
-  };
+  return If(
+      !config_->observability_mode,
+      [handler, initiator, pipe_owner]() mutable {
+        struct ConsumerAction {
+          mutable CallInitiator initiator;
+          auto operator()(MessageHandle message) const {
+            initiator.SpawnPushMessage(std::move(message));
+            return []() { return absl::OkStatus(); };
+          }
+        };
 
-  auto consumer =
-      Seq(ForEach(std::move(pipe_owner->client_to_server_messages.receiver),
-                  ConsumerAction{initiator}),
-          [initiator](absl::Status status) mutable {
-            initiator.SpawnFinishSends();
-            return status;
-          });
+        auto consumer = Seq(
+            ForEach(std::move(pipe_owner->client_to_server_messages.receiver),
+                    ConsumerAction{initiator}),
+            [initiator](absl::Status status) mutable {
+              initiator.SpawnFinishSends();
+              return status;
+            });
 
-  auto producer =
-      Seq(ForEach(MessagesFrom(handler),
-                  [pipe_owner](MessageHandle message) {
-                    if (g_test_ext_proc_message_modifier != nullptr) {
-                      g_test_ext_proc_message_modifier(&message);
-                    }
-                    return Map(
-                        pipe_owner->client_to_server_messages.sender.Push(
-                            std::move(message)),
-                        [](bool success) -> absl::Status {
-                          if (!success) {
-                            return absl::InternalError("Push to pipe failed");
-                          }
-                          return absl::OkStatus();
-                        });
-                  }),
-          [pipe_owner](absl::Status status) mutable {
-            pipe_owner->client_to_server_messages.sender.MarkClosed();
-            return status;
-          });
+        auto producer = Seq(
+            ForEach(MessagesFrom(handler),
+                    [pipe_owner](MessageHandle message) {
+                      if (g_test_ext_proc_message_modifier != nullptr) {
+                        g_test_ext_proc_message_modifier(&message);
+                      }
+                      return Map(
+                          pipe_owner->client_to_server_messages.sender.Push(
+                              std::move(message)),
+                          [](bool success) -> absl::Status {
+                            if (!success) {
+                              return absl::InternalError("Push to pipe failed");
+                            }
+                            return absl::OkStatus();
+                          });
+                    }),
+            [pipe_owner](absl::Status status) mutable {
+              pipe_owner->client_to_server_messages.sender.MarkClosed();
+              return status;
+            });
 
-  return Map(TryJoin<absl::StatusOr>(std::move(producer), std::move(consumer)),
-             [](auto result) -> absl::Status {
-               if (!result.ok()) return result.status();
-               return absl::OkStatus();
-             });
+        return Map(
+            TryJoin<absl::StatusOr>(std::move(producer), std::move(consumer)),
+            [](auto result) -> absl::Status {
+              if (!result.ok()) return result.status();
+              return absl::OkStatus();
+            });
+      },
+      [handler, initiator]() mutable {
+        return Seq(ForEach(MessagesFrom(handler),
+                           [initiator](MessageHandle message) mutable {
+                             if (g_test_ext_proc_message_modifier != nullptr) {
+                               g_test_ext_proc_message_modifier(&message);
+                             }
+                             initiator.SpawnPushMessage(std::move(message));
+                             return []() { return absl::OkStatus(); };
+                           }),
+                   [initiator](absl::Status status) mutable {
+                     initiator.SpawnFinishSends();
+                     return status;
+                   });
+      });
 }
 
 auto ExtProcFilter::StartCallLoops(CallHandler handler, PipeOwner* pipe_owner,
