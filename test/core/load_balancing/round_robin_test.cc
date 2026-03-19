@@ -145,9 +145,6 @@ TEST_F(RoundRobinTest, MultipleAddressesPerEndpoint) {
 }
 
 TEST_F(RoundRobinTest, StartsConnectingFromRandomIndex) {
-  if (!IsRrWrrConnectFromRandomIndexEnabled()) {
-    GTEST_SKIP() << "rr_wrr_connect_from_random_index experiment not enabled";
-  }
   const std::array<absl::string_view, 3> kAddresses = {
       "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442", "ipv4:127.0.0.1:443"};
   std::vector<absl::string_view> connect_order;

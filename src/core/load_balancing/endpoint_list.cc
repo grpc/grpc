@@ -171,13 +171,6 @@ void EndpointList::Init(
                                               const ChannelArgs&)>
         create_endpoint) {
   if (endpoints == nullptr) return;
-  if (!IsRrWrrConnectFromRandomIndexEnabled()) {
-    endpoints->ForEach([&](const EndpointAddresses& endpoint) {
-      endpoints_.push_back(
-          create_endpoint(Ref(DEBUG_LOCATION, "Endpoint"), endpoint, args));
-    });
-    return;
-  }
   // If all clients get the same endpoint list in the same order, and they
   // all start connection attempts in that order, and all connection attempts
   // take approximately the same amount of time, then all clients are
