@@ -24790,6 +24790,7 @@ targets:
   language: c++
   headers:
   - test/core/test_util/fake_stats_plugin.h
+  - test/core/test_util/scoped_env_var.h
   - test/cpp/end2end/connection_attempt_injector.h
   src:
   - src/proto/grpc/testing/echo.proto
