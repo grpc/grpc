@@ -19,7 +19,6 @@
 #include <array>
 #include <memory>
 
-#include "src/core/lib/experiments/experiments.h"
 #include "src/core/resolver/endpoint_addresses.h"
 #include "src/core/util/orphanable.h"
 #include "src/core/util/ref_counted_ptr.h"

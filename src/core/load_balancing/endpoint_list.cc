@@ -28,7 +28,6 @@
 
 #include "src/core/config/core_configuration.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/load_balancing/delegating_helper.h"
 #include "src/core/load_balancing/lb_policy.h"
