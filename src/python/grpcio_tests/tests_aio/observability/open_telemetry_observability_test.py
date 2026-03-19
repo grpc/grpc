@@ -14,10 +14,12 @@
 
 import asyncio
 import collections
+import datetime
 import logging
 import os
 import sys
-from typing import Any, List, Set
+import time
+from typing import Any, Callable, List, Optional, Set
 import unittest
 
 import grpc_observability
@@ -116,15 +118,31 @@ class OpenTelemetryObservabilityBase(AioTestBase):
         self._otel_plugin.deregister_global()
         self._provider.shutdown(timeout_millis=1_000)
 
+    def assert_eventually(
+        self,
+        predicate: Callable[[], bool],
+        *,
+        timeout: Optional[datetime.timedelta] = None,
+        message: Optional[Callable[[], str]] = None,
+    ) -> None:
+        message = message or (lambda: "Proposition did not evaluate to true")
+        timeout = timeout or datetime.timedelta(seconds=5)
+        end = datetime.datetime.now() + timeout
+        while datetime.datetime.now() < end:
+            if predicate():
+                break
+            time.sleep(0.5)
+        else:
+            self.fail(message() + " after " + str(timeout))
+
     async def _validate_metrics_exist(
         self, all_metrics: dict[str, Any]
     ) -> None:
         # Sleep here to make sure we have at least one export from
         # OTel MetricExporter.
-        await asyncio.sleep(5)
-        self.assertTrue(
-            len(all_metrics.keys()) > 1,
-            msg="No metrics were exported after 5s",
+        self.assert_eventually(
+            lambda: len(all_metrics.keys()) > 1,
+            message=lambda: f"No metrics were exported",
         )
 
     def _validate_all_metrics_names(self, metric_names: Set[str]) -> None:

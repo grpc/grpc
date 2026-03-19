@@ -648,7 +648,9 @@ class TestServerInterceptorWithRegisteredMethods(AioTestBase):
         )
 
         try:
-            async with grpc.aio.insecure_channel(f"localhost:{port}") as channel:
+            async with grpc.aio.insecure_channel(
+                f"localhost:{port}"
+            ) as channel:
                 multi_callable = channel.unary_unary(
                     fully_qualified_method, _registered_method=True
                 )

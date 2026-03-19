@@ -720,6 +720,7 @@ class TestServer(AioTestBase):
         response = await unary_unary_call(_REQUEST)
         self.assertEqual(response, _REGISTERED_RESPONSE)
 
+
 if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG)
     unittest.main(verbosity=2)

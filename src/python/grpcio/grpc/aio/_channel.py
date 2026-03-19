@@ -490,9 +490,11 @@ class Channel(_base_channel.Channel):
             await self.wait_for_state_change(state)
             state = self.get_state(try_to_connect=True)
 
-    def _get_registered_call_handle(self, method: str) -> int:
+    def _get_registered_call_handle(
+        self, method: str, _registered_method: bool
+    ) -> int:
         """
-        Get the registered call handle for a method.
+        Get the registered call handle for a registered method or None.
 
         This is a semi-private method. It is intended for use only by gRPC generated code.
 
@@ -506,7 +508,11 @@ class Channel(_base_channel.Channel):
         Returns:
           The registered call handle pointer in the form of a Python Long.
         """
-        return self._channel.get_registered_call_handle(_common.encode(method))
+        if _registered_method:
+            return self._channel.get_registered_call_handle(
+                _common.encode(method)
+            )
+        return None
 
     # pylint: disable=arguments-differ
     def unary_unary(
@@ -516,9 +522,6 @@ class Channel(_base_channel.Channel):
         response_deserializer: Optional[DeserializingFunction] = None,
         _registered_method: Optional[bool] = False,
     ) -> UnaryUnaryMultiCallable:
-        _registered_call_handle = None
-        if _registered_method:
-            _registered_call_handle = self._get_registered_call_handle(method)
         return UnaryUnaryMultiCallable(
             self._channel,
             _common.encode(method),
@@ -527,7 +530,7 @@ class Channel(_base_channel.Channel):
             self._unary_unary_interceptors,
             [self],
             self._loop,
-            _registered_call_handle,
+            self._get_registered_call_handle(method, _registered_method),
         )
 
     # pylint: disable=arguments-differ
@@ -538,9 +541,6 @@ class Channel(_base_channel.Channel):
         response_deserializer: Optional[DeserializingFunction] = None,
         _registered_method: Optional[bool] = False,
     ) -> UnaryStreamMultiCallable:
-        _registered_call_handle = None
-        if _registered_method:
-            _registered_call_handle = self._get_registered_call_handle(method)
         return UnaryStreamMultiCallable(
             self._channel,
             _common.encode(method),
@@ -549,7 +549,7 @@ class Channel(_base_channel.Channel):
             self._unary_stream_interceptors,
             [self],
             self._loop,
-            _registered_call_handle,
+            self._get_registered_call_handle(method, _registered_method),
         )
 
     # pylint: disable=arguments-differ
@@ -560,9 +560,6 @@ class Channel(_base_channel.Channel):
         response_deserializer: Optional[DeserializingFunction] = None,
         _registered_method: Optional[bool] = False,
     ) -> StreamUnaryMultiCallable:
-        _registered_call_handle = None
-        if _registered_method:
-            _registered_call_handle = self._get_registered_call_handle(method)
         return StreamUnaryMultiCallable(
             self._channel,
             _common.encode(method),
@@ -571,7 +568,7 @@ class Channel(_base_channel.Channel):
             self._stream_unary_interceptors,
             [self],
             self._loop,
-            _registered_call_handle,
+            self._get_registered_call_handle(method, _registered_method),
         )
 
     # pylint: disable=arguments-differ
@@ -582,9 +579,6 @@ class Channel(_base_channel.Channel):
         response_deserializer: Optional[DeserializingFunction] = None,
         _registered_method: Optional[bool] = False,
     ) -> StreamStreamMultiCallable:
-        _registered_call_handle = None
-        if _registered_method:
-            _registered_call_handle = self._get_registered_call_handle(method)
         return StreamStreamMultiCallable(
             self._channel,
             _common.encode(method),
@@ -593,7 +587,7 @@ class Channel(_base_channel.Channel):
             self._stream_stream_interceptors,
             [self],
             self._loop,
-            _registered_call_handle,
+            self._get_registered_call_handle(method, _registered_method),
         )
 
 
