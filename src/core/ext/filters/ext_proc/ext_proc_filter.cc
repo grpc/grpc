@@ -138,16 +138,26 @@ ExtProcFilter::ExtProcFilter(const ChannelArgs& args,
 auto ExtProcFilter::ServerTrailingMetadata(CallHandler handler,
                                            CallInitiator initiator,
                                            PipeOwner* pipe_owner) {
-  return Seq(initiator.PullServerTrailingMetadata(),
-             [handler, pipe_owner](ServerMetadataHandle md) mutable {
-               pipe_owner->server_trailing_metadata.Set(std::move(md));
-               return Seq(
-                   pipe_owner->server_trailing_metadata.Wait(),
-                   [handler](ServerMetadataHandle md) mutable {
-                     handler.SpawnPushServerTrailingMetadata(std::move(md));
-                     return absl::OkStatus();
-                   });
-             });
+  return Seq(
+      initiator.PullServerTrailingMetadata(),
+      [self = RefAsSubclass<ExtProcFilter>(), handler,
+       pipe_owner](ServerMetadataHandle md) mutable {
+        return If(
+            !self->config_->observability_mode,
+            [handler, pipe_owner, &md]() mutable {
+              pipe_owner->server_trailing_metadata.Set(std::move(md));
+              return Seq(pipe_owner->server_trailing_metadata.Wait(),
+                         [handler](ServerMetadataHandle md) mutable {
+                           handler.SpawnPushServerTrailingMetadata(
+                               std::move(md));
+                           return absl::OkStatus();
+                         });
+            },
+            [handler, &md]() mutable {
+              handler.SpawnPushServerTrailingMetadata(std::move(md));
+              return absl::OkStatus();
+            });
+      });
 }
 
 auto ExtProcFilter::ServerToClientMessages(CallHandler handler,
