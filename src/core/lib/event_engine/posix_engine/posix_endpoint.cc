@@ -1307,6 +1307,16 @@ PosixEndpointImpl::PosixEndpointImpl(EventHandle* handle,
   auto peer_address = posix_interface.PeerAddress(fd);
   if (peer_address.ok()) {
     peer_address_ = *peer_address;
+    // For Unix domain sockets, if clients don't bind to a path 
+    // getpeername() returns only the address family (size <= sizeof(sa_family_t)),
+    // yielding a truncated URI like "unix:". Fall back to the local address
+    // (the server's socket path) so that ServerContext::peer() returns
+    // a meaningful value instead.
+    if (peer_address_.address()->sa_family == AF_UNIX &&
+        peer_address_.size() <= sizeof(sa_family_t) &&
+        local_address_.size() > 0) {
+      peer_address_ = local_address_;
+    }
   }
   target_length_ = static_cast<double>(options.tcp_read_chunk_size);
   bytes_read_this_round_ = 0;

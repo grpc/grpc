@@ -473,6 +473,17 @@ static void on_read(void* arg, grpc_error_handle err) {
       LOG(ERROR) << "Invalid address: " << addr_uri.status();
       goto error;
     }
+    // For Unix domain sockets, if client don't bind to path
+    // getpeername() returns an empty sun_path producing a truncated URI like
+    // "unix:". Fall back to the listener address so that
+    // ServerContext::peer() returns the server's socket path instead.
+    if (grpc_is_unix_socket(&addr) && addr_uri.value() == "unix:") {
+      addr_uri = grpc_sockaddr_to_uri(&sp->addr);
+      if (!addr_uri.ok()) {
+        LOG(ERROR) << "Invalid listener address: " << addr_uri.status();
+        goto error;
+      }
+    }
     GRPC_TRACE_LOG(tcp, INFO)
         << "SERVER_CONNECT: incoming connection: " << *addr_uri;
 

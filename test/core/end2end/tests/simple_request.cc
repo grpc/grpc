@@ -40,7 +40,7 @@ namespace grpc_core {
 namespace {
 void CheckPeer(std::string peer_name) {
   // If the peer name is a uds path, then check if it is filled
-  if (absl::StartsWith(peer_name, "unix:/")) {
+  if (absl::StartsWith(peer_name, "unix:")) {
     EXPECT_THAT(peer_name, StartsWith("unix:/tmp/grpc_fullstack_test."));
   }
 }
