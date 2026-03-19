@@ -15,29 +15,31 @@
 // Must be last.
 #include "upb/port/def.inc"
 
-extern const struct upb_MiniTable UPB_PRIVATE(_kUpb_MiniTable_StaticallyTreeShaken);
-static const upb_MiniTableField envoy_admin_v3_SimpleMetric__fields[3] = {
+extern const UPB_PRIVATE(upb_GeneratedExtensionListEntry)* UPB_PRIVATE(upb_generated_extension_list);
+typedef struct {
+  upb_MiniTableField fields[3];
+} envoy__admin__v3__SimpleMetric_msg_init_Fields;
+
+static const envoy__admin__v3__SimpleMetric_msg_init_Fields envoy_admin_v3_SimpleMetric__fields = {{
   {1, 8, 0, kUpb_NoSub, 5, (int)kUpb_FieldMode_Scalar | (int)kUpb_LabelFlags_IsAlternate | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)},
   {2, UPB_SIZE(24, 32), 0, kUpb_NoSub, 4, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)},
   {3, UPB_SIZE(12, 16), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
-};
+}};
 
 const upb_MiniTable envoy__admin__v3__SimpleMetric_msg_init = {
-  NULL,
-  &envoy_admin_v3_SimpleMetric__fields[0],
+  &envoy_admin_v3_SimpleMetric__fields.fields[0],
   UPB_SIZE(32, 40), 3, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(24), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.admin.v3.SimpleMetric",
 #endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x000800003f000008, &upb_psv4_1bt},
-    {0x002000003f000010, &upb_psv8_1bt},
-    {0x001000003f00001a, &upb_pss_1bt},
+    {0x000800003f000008, &upb_DecodeFast_Varint32_Scalar_Tag1Byte},
+    {0x002000003f000010, &upb_DecodeFast_Varint64_Scalar_Tag1Byte},
+    {0x001000003f00001a, &upb_DecodeFast_String_Scalar_Tag1Byte},
   })
 };
 
-const upb_MiniTable* envoy__admin__v3__SimpleMetric_msg_init_ptr = &envoy__admin__v3__SimpleMetric_msg_init;
 static const upb_MiniTable *messages_layout[1] = {
   &envoy__admin__v3__SimpleMetric_msg_init,
 };

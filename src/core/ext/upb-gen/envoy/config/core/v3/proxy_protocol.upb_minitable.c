@@ -16,103 +16,105 @@
 // Must be last.
 #include "upb/port/def.inc"
 
-extern const struct upb_MiniTable UPB_PRIVATE(_kUpb_MiniTable_StaticallyTreeShaken);
-static const upb_MiniTableField envoy_config_core_v3_ProxyProtocolPassThroughTLVs__fields[2] = {
+extern const UPB_PRIVATE(upb_GeneratedExtensionListEntry)* UPB_PRIVATE(upb_generated_extension_list);
+typedef struct {
+  upb_MiniTableField fields[2];
+} envoy__config__core__v3__ProxyProtocolPassThroughTLVs_msg_init_Fields;
+
+static const envoy__config__core__v3__ProxyProtocolPassThroughTLVs_msg_init_Fields envoy_config_core_v3_ProxyProtocolPassThroughTLVs__fields = {{
   {1, 8, 0, kUpb_NoSub, 5, (int)kUpb_FieldMode_Scalar | (int)kUpb_LabelFlags_IsAlternate | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)},
   {2, UPB_SIZE(12, 16), 0, kUpb_NoSub, 13, (int)kUpb_FieldMode_Array | (int)kUpb_LabelFlags_IsPacked | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-};
+}};
 
 const upb_MiniTable envoy__config__core__v3__ProxyProtocolPassThroughTLVs_msg_init = {
-  NULL,
-  &envoy_config_core_v3_ProxyProtocolPassThroughTLVs__fields[0],
+  &envoy_config_core_v3_ProxyProtocolPassThroughTLVs__fields.fields[0],
   UPB_SIZE(16, 24), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.config.core.v3.ProxyProtocolPassThroughTLVs",
 #endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x000800003f000008, &upb_psv4_1bt},
-    {0x001000003f000012, &upb_ppv4_1bt},
+    {0x000800003f000008, &upb_DecodeFast_Varint32_Scalar_Tag1Byte},
+    {0x001000003f000012, &upb_DecodeFast_Varint32_Packed_Tag1Byte},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
   })
 };
 
-const upb_MiniTable* envoy__config__core__v3__ProxyProtocolPassThroughTLVs_msg_init_ptr = &envoy__config__core__v3__ProxyProtocolPassThroughTLVs_msg_init;
-static const upb_MiniTableSubInternal envoy_config_core_v3_TlvEntry__submsgs[1] = {
-  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__SubstitutionFormatString_msg_init_ptr},
-};
+typedef struct {
+  upb_MiniTableField fields[3];
+  upb_MiniTableSubInternal subs[1];
+} envoy__config__core__v3__TlvEntry_msg_init_Fields;
 
-static const upb_MiniTableField envoy_config_core_v3_TlvEntry__fields[3] = {
+static const envoy__config__core__v3__TlvEntry_msg_init_Fields envoy_config_core_v3_TlvEntry__fields = {{
   {1, 12, 0, kUpb_NoSub, 13, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)},
   {2, UPB_SIZE(20, 16), 0, kUpb_NoSub, 12, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
-  {3, UPB_SIZE(16, 32), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-};
+  {3, UPB_SIZE(16, 32), 64, UPB_SIZE(3, 4), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+ },
+  {
+  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__SubstitutionFormatString_msg_init},
+}};
 
 const upb_MiniTable envoy__config__core__v3__TlvEntry_msg_init = {
-  &envoy_config_core_v3_TlvEntry__submsgs[0],
-  &envoy_config_core_v3_TlvEntry__fields[0],
+  &envoy_config_core_v3_TlvEntry__fields.fields[0],
   UPB_SIZE(32, 40), 3, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(24), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.config.core.v3.TlvEntry",
 #endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x000c00003f000008, &upb_psv4_1bt},
-    {0x001000003f000012, &upb_psb_1bt},
+    {0x000c00003f000008, &upb_DecodeFast_Varint32_Scalar_Tag1Byte},
+    {0x001000003f000012, &upb_DecodeFast_Bytes_Scalar_Tag1Byte},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
   })
 };
 
-const upb_MiniTable* envoy__config__core__v3__TlvEntry_msg_init_ptr = &envoy__config__core__v3__TlvEntry_msg_init;
-static const upb_MiniTableSubInternal envoy_config_core_v3_ProxyProtocolConfig__submsgs[2] = {
-  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__ProxyProtocolPassThroughTLVs_msg_init_ptr},
-  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__TlvEntry_msg_init_ptr},
-};
+typedef struct {
+  upb_MiniTableField fields[3];
+  upb_MiniTableSubInternal subs[2];
+} envoy__config__core__v3__ProxyProtocolConfig_msg_init_Fields;
 
-static const upb_MiniTableField envoy_config_core_v3_ProxyProtocolConfig__fields[3] = {
+static const envoy__config__core__v3__ProxyProtocolConfig_msg_init_Fields envoy_config_core_v3_ProxyProtocolConfig__fields = {{
   {1, 12, 0, kUpb_NoSub, 5, (int)kUpb_FieldMode_Scalar | (int)kUpb_LabelFlags_IsAlternate | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)},
-  {2, 16, 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-  {3, UPB_SIZE(20, 24), 0, 1, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-};
+  {2, 16, 64, UPB_SIZE(6, 7), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {3, UPB_SIZE(20, 24), 0, UPB_SIZE(4, 6), 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+ },
+  {
+  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__ProxyProtocolPassThroughTLVs_msg_init},
+  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__TlvEntry_msg_init},
+}};
 
 const upb_MiniTable envoy__config__core__v3__ProxyProtocolConfig_msg_init = {
-  &envoy_config_core_v3_ProxyProtocolConfig__submsgs[0],
-  &envoy_config_core_v3_ProxyProtocolConfig__fields[0],
-  UPB_SIZE(24, 32), 3, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(24), 0,
+  &envoy_config_core_v3_ProxyProtocolConfig__fields.fields[0],
+  UPB_SIZE(24, 32), 3, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(8), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.config.core.v3.ProxyProtocolConfig",
 #endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x000c00003f000008, &upb_psv4_1bt},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x001800003f01001a, &upb_prm_1bt_max64b},
+    {0x000c00003f000008, &upb_DecodeFast_Varint32_Scalar_Tag1Byte},
   })
 };
 
-const upb_MiniTable* envoy__config__core__v3__ProxyProtocolConfig_msg_init_ptr = &envoy__config__core__v3__ProxyProtocolConfig_msg_init;
-static const upb_MiniTableSubInternal envoy_config_core_v3_PerHostConfig__submsgs[1] = {
-  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__TlvEntry_msg_init_ptr},
-};
+typedef struct {
+  upb_MiniTableField fields[1];
+  upb_MiniTableSubInternal subs[1];
+} envoy__config__core__v3__PerHostConfig_msg_init_Fields;
 
-static const upb_MiniTableField envoy_config_core_v3_PerHostConfig__fields[1] = {
-  {1, 8, 0, 0, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-};
+static const envoy__config__core__v3__PerHostConfig_msg_init_Fields envoy_config_core_v3_PerHostConfig__fields = {{
+  {1, 8, 0, UPB_SIZE(3, 4), 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+ },
+  {
+  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__TlvEntry_msg_init},
+}};
 
 const upb_MiniTable envoy__config__core__v3__PerHostConfig_msg_init = {
-  &envoy_config_core_v3_PerHostConfig__submsgs[0],
-  &envoy_config_core_v3_PerHostConfig__fields[0],
-  16, 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(8), 0,
+  &envoy_config_core_v3_PerHostConfig__fields.fields[0],
+  16, 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.config.core.v3.PerHostConfig",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x000800003f00000a, &upb_prm_1bt_max64b},
-  })
 };
 
-const upb_MiniTable* envoy__config__core__v3__PerHostConfig_msg_init_ptr = &envoy__config__core__v3__PerHostConfig_msg_init;
 static const upb_MiniTable *messages_layout[4] = {
   &envoy__config__core__v3__ProxyProtocolPassThroughTLVs_msg_init,
   &envoy__config__core__v3__TlvEntry_msg_init,

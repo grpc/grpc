@@ -15,25 +15,27 @@
 // Must be last.
 #include "upb/port/def.inc"
 
-extern const struct upb_MiniTable UPB_PRIVATE(_kUpb_MiniTable_StaticallyTreeShaken);
-static const upb_MiniTableSubInternal envoy_extensions_transport_sockets_http_11_proxy_v3_Http11ProxyUpstreamTransport__submsgs[1] = {
-  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__TransportSocket_msg_init_ptr},
-};
+extern const UPB_PRIVATE(upb_GeneratedExtensionListEntry)* UPB_PRIVATE(upb_generated_extension_list);
+typedef struct {
+  upb_MiniTableField fields[1];
+  upb_MiniTableSubInternal subs[1];
+} envoy__extensions__transport_0sockets__http_011_0proxy__v3__Http11ProxyUpstreamTransport_msg_init_Fields;
 
-static const upb_MiniTableField envoy_extensions_transport_sockets_http_11_proxy_v3_Http11ProxyUpstreamTransport__fields[1] = {
-  {1, UPB_SIZE(12, 16), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-};
+static const envoy__extensions__transport_0sockets__http_011_0proxy__v3__Http11ProxyUpstreamTransport_msg_init_Fields envoy_extensions_transport_sockets_http_11_proxy_v3_Http11ProxyUpstreamTransport__fields = {{
+  {1, UPB_SIZE(12, 16), 64, UPB_SIZE(3, 4), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+ },
+  {
+  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__TransportSocket_msg_init},
+}};
 
 const upb_MiniTable envoy__extensions__transport_0sockets__http_011_0proxy__v3__Http11ProxyUpstreamTransport_msg_init = {
-  &envoy_extensions_transport_sockets_http_11_proxy_v3_Http11ProxyUpstreamTransport__submsgs[0],
-  &envoy_extensions_transport_sockets_http_11_proxy_v3_Http11ProxyUpstreamTransport__fields[0],
+  &envoy_extensions_transport_sockets_http_11_proxy_v3_Http11ProxyUpstreamTransport__fields.fields[0],
   UPB_SIZE(16, 24), 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.extensions.transport_sockets.http_11_proxy.v3.Http11ProxyUpstreamTransport",
 #endif
 };
 
-const upb_MiniTable* envoy__extensions__transport_0sockets__http_011_0proxy__v3__Http11ProxyUpstreamTransport_msg_init_ptr = &envoy__extensions__transport_0sockets__http_011_0proxy__v3__Http11ProxyUpstreamTransport_msg_init;
 static const upb_MiniTable *messages_layout[1] = {
   &envoy__extensions__transport_0sockets__http_011_0proxy__v3__Http11ProxyUpstreamTransport_msg_init,
 };

@@ -19,13 +19,9 @@ extern "C" {
 #endif
 
 extern const upb_MiniTable envoy__admin__v3__Clusters_msg_init;
-extern const upb_MiniTable* envoy__admin__v3__Clusters_msg_init_ptr;
 extern const upb_MiniTable envoy__admin__v3__ClusterStatus_msg_init;
-extern const upb_MiniTable* envoy__admin__v3__ClusterStatus_msg_init_ptr;
 extern const upb_MiniTable envoy__admin__v3__HostStatus_msg_init;
-extern const upb_MiniTable* envoy__admin__v3__HostStatus_msg_init_ptr;
 extern const upb_MiniTable envoy__admin__v3__HostHealthStatus_msg_init;
-extern const upb_MiniTable* envoy__admin__v3__HostHealthStatus_msg_init_ptr;
 
 extern const upb_MiniTableFile envoy_admin_v3_clusters_proto_upb_file_layout;
 

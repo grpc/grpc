@@ -6,8 +6,8 @@
 namespace Grpc\Testing;
 
 use Google\Protobuf\Internal\GPBType;
-use Google\Protobuf\Internal\RepeatedField;
 use Google\Protobuf\Internal\GPBUtil;
+use Google\Protobuf\RepeatedField;
 
 /**
  * Metrics data the server will update and send to the client. It mirrors orca load report
@@ -66,9 +66,8 @@ class TestOrcaReport extends \Google\Protobuf\Internal\Message
      * @param float $var
      * @return $this
      */
-    public function setCpuUtilization($var)
+    public function setCpuUtilization(float $var)
     {
-        GPBUtil::checkDouble($var);
         $this->cpu_utilization = $var;
 
         return $this;
@@ -88,9 +87,8 @@ class TestOrcaReport extends \Google\Protobuf\Internal\Message
      * @param float $var
      * @return $this
      */
-    public function setMemoryUtilization($var)
+    public function setMemoryUtilization(float $var)
     {
-        GPBUtil::checkDouble($var);
         $this->memory_utilization = $var;
 
         return $this;
@@ -110,7 +108,7 @@ class TestOrcaReport extends \Google\Protobuf\Internal\Message
      * @param array|\Google\Protobuf\Internal\MapField $var
      * @return $this
      */
-    public function setRequestCost($var)
+    public function setRequestCost(array|\Google\Protobuf\Internal\MapField $var)
     {
         $arr = GPBUtil::checkMapField($var, \Google\Protobuf\Internal\GPBType::STRING, \Google\Protobuf\Internal\GPBType::DOUBLE);
         $this->request_cost = $arr;
@@ -132,7 +130,7 @@ class TestOrcaReport extends \Google\Protobuf\Internal\Message
      * @param array|\Google\Protobuf\Internal\MapField $var
      * @return $this
      */
-    public function setUtilization($var)
+    public function setUtilization(array|\Google\Protobuf\Internal\MapField $var)
     {
         $arr = GPBUtil::checkMapField($var, \Google\Protobuf\Internal\GPBType::STRING, \Google\Protobuf\Internal\GPBType::DOUBLE);
         $this->utilization = $arr;

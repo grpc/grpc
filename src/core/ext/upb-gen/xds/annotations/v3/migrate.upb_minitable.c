@@ -14,53 +14,60 @@
 // Must be last.
 #include "upb/port/def.inc"
 
-extern const struct upb_MiniTable UPB_PRIVATE(_kUpb_MiniTable_StaticallyTreeShaken);
-static const upb_MiniTableField xds_annotations_v3_MigrateAnnotation__fields[1] = {
+extern const UPB_PRIVATE(upb_GeneratedExtensionListEntry)* UPB_PRIVATE(upb_generated_extension_list);
+typedef struct {
+  upb_MiniTableField fields[1];
+} xds__annotations__v3__MigrateAnnotation_msg_init_Fields;
+
+static const xds__annotations__v3__MigrateAnnotation_msg_init_Fields xds_annotations_v3_MigrateAnnotation__fields = {{
   {1, 8, 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
-};
+}};
 
 const upb_MiniTable xds__annotations__v3__MigrateAnnotation_msg_init = {
-  NULL,
-  &xds_annotations_v3_MigrateAnnotation__fields[0],
+  &xds_annotations_v3_MigrateAnnotation__fields.fields[0],
   UPB_SIZE(16, 24), 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(8), 0,
 #ifdef UPB_TRACING_ENABLED
   "xds.annotations.v3.MigrateAnnotation",
 #endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x000800003f00000a, &upb_pss_1bt},
+    {0x000800003f00000a, &upb_DecodeFast_String_Scalar_Tag1Byte},
   })
 };
 
-const upb_MiniTable* xds__annotations__v3__MigrateAnnotation_msg_init_ptr = &xds__annotations__v3__MigrateAnnotation_msg_init;
-static const upb_MiniTableField xds_annotations_v3_FieldMigrateAnnotation__fields[2] = {
+typedef struct {
+  upb_MiniTableField fields[2];
+} xds__annotations__v3__FieldMigrateAnnotation_msg_init_Fields;
+
+static const xds__annotations__v3__FieldMigrateAnnotation_msg_init_Fields xds_annotations_v3_FieldMigrateAnnotation__fields = {{
   {1, 8, 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
   {2, UPB_SIZE(16, 24), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
-};
+}};
 
 const upb_MiniTable xds__annotations__v3__FieldMigrateAnnotation_msg_init = {
-  NULL,
-  &xds_annotations_v3_FieldMigrateAnnotation__fields[0],
+  &xds_annotations_v3_FieldMigrateAnnotation__fields.fields[0],
   UPB_SIZE(24, 40), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
 #ifdef UPB_TRACING_ENABLED
   "xds.annotations.v3.FieldMigrateAnnotation",
 #endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x000800003f00000a, &upb_pss_1bt},
-    {0x001800003f000012, &upb_pss_1bt},
+    {0x000800003f00000a, &upb_DecodeFast_String_Scalar_Tag1Byte},
+    {0x001800003f000012, &upb_DecodeFast_String_Scalar_Tag1Byte},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
   })
 };
 
-const upb_MiniTable* xds__annotations__v3__FieldMigrateAnnotation_msg_init_ptr = &xds__annotations__v3__FieldMigrateAnnotation_msg_init;
-static const upb_MiniTableField xds_annotations_v3_FileMigrateAnnotation__fields[1] = {
+typedef struct {
+  upb_MiniTableField fields[1];
+} xds__annotations__v3__FileMigrateAnnotation_msg_init_Fields;
+
+static const xds__annotations__v3__FileMigrateAnnotation_msg_init_Fields xds_annotations_v3_FileMigrateAnnotation__fields = {{
   {2, 8, 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
-};
+}};
 
 const upb_MiniTable xds__annotations__v3__FileMigrateAnnotation_msg_init = {
-  NULL,
-  &xds_annotations_v3_FileMigrateAnnotation__fields[0],
+  &xds_annotations_v3_FileMigrateAnnotation__fields.fields[0],
   UPB_SIZE(16, 24), 1, kUpb_ExtMode_NonExtendable, 0, UPB_FASTTABLE_MASK(24), 0,
 #ifdef UPB_TRACING_ENABLED
   "xds.annotations.v3.FileMigrateAnnotation",
@@ -68,45 +75,44 @@ const upb_MiniTable xds__annotations__v3__FileMigrateAnnotation_msg_init = {
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x000800003f000012, &upb_pss_1bt},
+    {0x000800003f000012, &upb_DecodeFast_String_Scalar_Tag1Byte},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
   })
 };
 
-const upb_MiniTable* xds__annotations__v3__FileMigrateAnnotation_msg_init_ptr = &xds__annotations__v3__FileMigrateAnnotation_msg_init;
 UPB_LINKARR_APPEND(upb_AllExts)
 const upb_MiniTableExtension xds_annotations_v3_message_migrate_ext = {
-  {112948430, 0, 0, 0, 11, (int)kUpb_FieldMode_Scalar | (int)kUpb_LabelFlags_IsExtension | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-  &google__protobuf__MessageOptions_msg_init,
+  {112948430, 0, 0, UPB_SIZE(3, 4), 11, (int)kUpb_FieldMode_Scalar | (int)kUpb_LabelFlags_IsExtension | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   {.UPB_PRIVATE(submsg) = &xds__annotations__v3__MigrateAnnotation_msg_init},
+  &google__protobuf__MessageOptions_msg_init,
 
 };
 UPB_LINKARR_APPEND(upb_AllExts)
 const upb_MiniTableExtension xds_annotations_v3_field_migrate_ext = {
-  {112948430, 0, 0, 0, 11, (int)kUpb_FieldMode_Scalar | (int)kUpb_LabelFlags_IsExtension | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-  &google__protobuf__FieldOptions_msg_init,
+  {112948430, 0, 0, UPB_SIZE(3, 4), 11, (int)kUpb_FieldMode_Scalar | (int)kUpb_LabelFlags_IsExtension | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   {.UPB_PRIVATE(submsg) = &xds__annotations__v3__FieldMigrateAnnotation_msg_init},
+  &google__protobuf__FieldOptions_msg_init,
 
 };
 UPB_LINKARR_APPEND(upb_AllExts)
 const upb_MiniTableExtension xds_annotations_v3_enum_migrate_ext = {
-  {112948430, 0, 0, 0, 11, (int)kUpb_FieldMode_Scalar | (int)kUpb_LabelFlags_IsExtension | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-  &google__protobuf__EnumOptions_msg_init,
+  {112948430, 0, 0, UPB_SIZE(3, 4), 11, (int)kUpb_FieldMode_Scalar | (int)kUpb_LabelFlags_IsExtension | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   {.UPB_PRIVATE(submsg) = &xds__annotations__v3__MigrateAnnotation_msg_init},
+  &google__protobuf__EnumOptions_msg_init,
 
 };
 UPB_LINKARR_APPEND(upb_AllExts)
 const upb_MiniTableExtension xds_annotations_v3_enum_value_migrate_ext = {
-  {112948430, 0, 0, 0, 11, (int)kUpb_FieldMode_Scalar | (int)kUpb_LabelFlags_IsExtension | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-  &google__protobuf__EnumValueOptions_msg_init,
+  {112948430, 0, 0, UPB_SIZE(3, 4), 11, (int)kUpb_FieldMode_Scalar | (int)kUpb_LabelFlags_IsExtension | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   {.UPB_PRIVATE(submsg) = &xds__annotations__v3__MigrateAnnotation_msg_init},
+  &google__protobuf__EnumValueOptions_msg_init,
 
 };
 UPB_LINKARR_APPEND(upb_AllExts)
 const upb_MiniTableExtension xds_annotations_v3_file_migrate_ext = {
-  {112948430, 0, 0, 0, 11, (int)kUpb_FieldMode_Scalar | (int)kUpb_LabelFlags_IsExtension | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-  &google__protobuf__FileOptions_msg_init,
+  {112948430, 0, 0, UPB_SIZE(3, 4), 11, (int)kUpb_FieldMode_Scalar | (int)kUpb_LabelFlags_IsExtension | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   {.UPB_PRIVATE(submsg) = &xds__annotations__v3__FileMigrateAnnotation_msg_init},
+  &google__protobuf__FileOptions_msg_init,
 
 };
 static const upb_MiniTable *messages_layout[3] = {
@@ -124,6 +130,20 @@ static const upb_MiniTableExtension *extensions_layout[5] = {
   &xds_annotations_v3_file_migrate_ext,
 };
 
+UPB_LINKARR_DECLARE(upb_AllExts, const upb_MiniTableExtension);
+UPB_CONSTRUCTOR(upb_GeneratedRegistry_Constructor, xds_annotations_v3_migrate_proto_ext_constructor) {
+  static bool finished = false;
+  if (finished) return;
+  finished = true;
+  static UPB_PRIVATE(upb_GeneratedExtensionListEntry) entry = {
+    UPB_LINKARR_START(upb_AllExts),
+    UPB_LINKARR_STOP(upb_AllExts),
+    NULL
+  };
+  UPB_ASSERT(entry.next == NULL);
+  entry.next = UPB_PRIVATE(upb_generated_extension_list);
+  UPB_PRIVATE(upb_generated_extension_list) = &entry;
+}
 const upb_MiniTableFile xds_annotations_v3_migrate_proto_upb_file_layout = {
   messages_layout,
   NULL,

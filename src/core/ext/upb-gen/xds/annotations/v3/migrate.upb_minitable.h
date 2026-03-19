@@ -19,11 +19,8 @@ extern "C" {
 #endif
 
 extern const upb_MiniTable xds__annotations__v3__MigrateAnnotation_msg_init;
-extern const upb_MiniTable* xds__annotations__v3__MigrateAnnotation_msg_init_ptr;
 extern const upb_MiniTable xds__annotations__v3__FieldMigrateAnnotation_msg_init;
-extern const upb_MiniTable* xds__annotations__v3__FieldMigrateAnnotation_msg_init_ptr;
 extern const upb_MiniTable xds__annotations__v3__FileMigrateAnnotation_msg_init;
-extern const upb_MiniTable* xds__annotations__v3__FileMigrateAnnotation_msg_init_ptr;
 extern const upb_MiniTableExtension xds_annotations_v3_message_migrate_ext;
 extern const upb_MiniTableExtension xds_annotations_v3_field_migrate_ext;
 extern const upb_MiniTableExtension xds_annotations_v3_enum_migrate_ext;
