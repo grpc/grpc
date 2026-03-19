@@ -277,6 +277,8 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/credentials/call/plugin/plugin_credentials.h )
   s.files += %w( src/core/credentials/call/token_fetcher/token_fetcher_credentials.cc )
   s.files += %w( src/core/credentials/call/token_fetcher/token_fetcher_credentials.h )
+  s.files += %w( src/core/credentials/call/utils/redact_utils.cc )
+  s.files += %w( src/core/credentials/call/utils/redact_utils.h )
   s.files += %w( src/core/credentials/transport/alts/alts_credentials.cc )
   s.files += %w( src/core/credentials/transport/alts/alts_credentials.h )
   s.files += %w( src/core/credentials/transport/alts/alts_security_connector.cc )

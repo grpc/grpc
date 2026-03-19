@@ -108,6 +108,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/credentials/call/oauth2/oauth2_credentials.cc \
     src/core/credentials/call/plugin/plugin_credentials.cc \
     src/core/credentials/call/token_fetcher/token_fetcher_credentials.cc \
+    src/core/credentials/call/utils/redact_utils.cc \
     src/core/credentials/transport/alts/alts_credentials.cc \
     src/core/credentials/transport/alts/alts_security_connector.cc \
     src/core/credentials/transport/alts/check_gcp_environment.cc \
@@ -1506,6 +1507,7 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/credentials/call/oauth2)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/credentials/call/plugin)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/credentials/call/token_fetcher)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/credentials/call/utils)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/credentials/transport)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/credentials/transport/alts)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/credentials/transport/composite)

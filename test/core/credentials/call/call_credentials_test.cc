@@ -2404,7 +2404,7 @@ int external_account_creds_httpcli_post_failure_token_exchange_bad_request(
     absl::string_view /*body*/, Timestamp /*deadline*/, grpc_closure* on_done,
     grpc_http_response* response) {
   if (uri.path() == "/token") {
-    *response = http_response(400, "");
+    *response = http_response(400, valid_oauth2_json_response);
   } else if (uri.path() == "/service_account_impersonation") {
     *response = http_response(
         200,
@@ -3283,7 +3283,7 @@ TEST_F(ExternalAccountCredentialsTest,
       httpcli_put_should_not_be_called);
   grpc_error_handle expected_error = absl::UnauthenticatedError(
       "error fetching oauth2 token: Missing or invalid access_token in "
-      "{\"not_access_token\":\"not_access_token\",\"expires_in\":3599, "
+      "{\"expires_in\":3599,\"not_access_token\":\"not_access_token\","
       "\"token_type\":\"Bearer\"}.");
   auto state = RequestMetadataState::NewInstance(expected_error, {});
   state->RunRequestMetadataTest(creds.get(), kTestUrlScheme, kTestAuthority,
@@ -3321,7 +3321,8 @@ TEST_F(ExternalAccountCredentialsTest, FailureTokenExchangeResponseNotOk) {
       httpcli_put_should_not_be_called);
   grpc_error_handle expected_error = absl::UnauthenticatedError(
       "error fetching oauth2 token: Call to HTTP server ended with status 400 "
-      "[]");
+      "[{\"access_token\":\"<redacted>\",\"expires_in\":3599,\"token_type\":"
+      "\"Bearer\"}]");
   auto state = RequestMetadataState::NewInstance(expected_error, {});
   state->RunRequestMetadataTest(creds.get(), kTestUrlScheme, kTestAuthority,
                                 kTestPath);

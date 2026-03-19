@@ -5093,6 +5093,7 @@ grpc_cc_library(
         "metadata_batch",
         "poll",
         "pollset_set",
+        "redact_utils",
         "ref_counted",
         "slice",
         "slice_refcount",
@@ -5154,6 +5155,7 @@ grpc_cc_library(
         "json_reader",
         "json_writer",
         "load_file",
+        "redact_utils",
         "slice",
         "slice_refcount",
         "status_conversion",
@@ -11483,6 +11485,20 @@ grpc_cc_library(
         "status_flag",
         "transport_common",
         "try_seq",
+    ],
+)
+
+grpc_cc_library(
+    name = "redact_utils",
+    srcs = ["credentials/call/utils/redact_utils.cc"],
+    hdrs = ["credentials/call/utils/redact_utils.h"],
+    external_deps = [
+        "absl/strings",
+    ],
+    deps = [
+        ":json",
+        ":json_reader",
+        ":json_writer",
     ],
 )
 
