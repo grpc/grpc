@@ -61,7 +61,7 @@ def grpc_deps():
     if "com_google_protobuf" not in native.existing_rules():
         http_archive(
             name = "com_google_protobuf",
-            sha256 = "d0e3a75876a81e1536028bb9cf9181382b198da4cc6fa6aef86879ef629ac807",
+            sha256 = "374166fe6f8f1178ef2d759262548eb7063bde83c2805f6db71c5fca87a9d87d",
             strip_prefix = "protobuf-b6f9284da830b69be787732ffdaa35049d20a088",
             urls = [
                 # https://github.com/protocolbuffers/protobuf/commits/v31.1
