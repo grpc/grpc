@@ -21,11 +21,13 @@
 #include <string>
 
 #include "src/core/credentials/transport/fake/fake_credentials.h"
+#include "src/core/lib/experiments/config.h"
 #include "src/core/telemetry/instrument.h"
 #include "src/core/telemetry/metrics.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/test_util/fake_stats_plugin.h"
 #include "test/core/test_util/port.h"
+#include "test/core/test_util/scoped_env_var.h"
 #include "test/core/test_util/test_config.h"
 #include "test/core/test_util/tls_utils.h"
 #include "test/cpp/end2end/connection_attempt_injector.h"
@@ -234,6 +236,69 @@ TEST_F(SubchannelMetricsTest, SecurityLevelsPrivacyAndIntegrity) {
                   "grpc.subchannel.open_connections",
                   {kOverridedTarget, "privacy_and_integrity", "", ""}),
               ::testing::Optional(0));
+}
+
+TEST_F(SubchannelMetricsTest, OldSubchannelDisconnectionYieldsUnknown) {
+  ConnectionAttemptInjector injector;
+  const int port = grpc_pick_unused_port_or_die();
+  std::string target = kTargetAddrPart + std::to_string(port);
+  ServerBuilder builder;
+  builder.AddListeningPort(target, grpc::InsecureServerCredentials());
+  auto service = std::make_unique<MinimalEchoService>();
+  builder.RegisterService(service.get());
+  auto server = builder.BuildAndStart();
+  auto channel =
+      grpc::CreateChannel(target, grpc::InsecureChannelCredentials());
+  auto stub = grpc::testing::EchoTestService::NewStub(channel);
+  grpc::ClientContext context;
+  grpc::testing::EchoRequest request;
+  grpc::testing::EchoResponse response;
+  request.set_message("test");
+  ASSERT_TRUE(stub->Echo(&context, request, &response).ok());
+  server->Shutdown();
+  WaitForChannelState(channel.get(), [](grpc_connectivity_state state) {
+    return state == GRPC_CHANNEL_TRANSIENT_FAILURE ||
+           state == GRPC_CHANNEL_SHUTDOWN;
+  });
+  EXPECT_THAT(
+      stats_plugin_->GetUInt64MetricValueByName(
+          "grpc.subchannel.disconnections", {target, "", "", "unknown"}),
+      ::testing::Optional(1));
+}
+
+TEST_F(SubchannelMetricsTest, NewSubchannelDisconnectionYieldsGoaway0) {
+  grpc_core::ConfigVars::Overrides overrides;
+  overrides.client_channel_backup_poll_interval_ms = 1;
+  overrides.experiments = "subchannel_connection_scaling";
+  grpc_core::ConfigVars::SetOverrides(overrides);
+  grpc_core::TestOnlyReloadExperimentsFromConfigVariables();
+  ConnectionAttemptInjector injector;
+  const int port = grpc_pick_unused_port_or_die();
+  std::string target = kTargetAddrPart + std::to_string(port);
+  ServerBuilder builder;
+  builder.AddListeningPort(target, grpc::InsecureServerCredentials());
+  auto service = std::make_unique<MinimalEchoService>();
+  builder.RegisterService(service.get());
+  auto server = builder.BuildAndStart();
+  auto channel =
+      grpc::CreateChannel(target, grpc::InsecureChannelCredentials());
+  auto stub = grpc::testing::EchoTestService::NewStub(channel);
+  grpc::ClientContext context;
+  grpc::testing::EchoRequest request;
+  grpc::testing::EchoResponse response;
+  request.set_message("test");
+  ASSERT_TRUE(stub->Echo(&context, request, &response).ok());
+  server->Shutdown();
+  WaitForChannelState(channel.get(), [](grpc_connectivity_state state) {
+    return state == GRPC_CHANNEL_TRANSIENT_FAILURE ||
+           state == GRPC_CHANNEL_SHUTDOWN;
+  });
+
+  // New subchannel logs a fully parsed HTTP/2 Goaway event
+  EXPECT_THAT(
+      stats_plugin_->GetUInt64MetricValueByName(
+          "grpc.subchannel.disconnections", {target, "", "", "GOAWAY 0"}),
+      ::testing::Optional(1));
 }
 
 }  // namespace

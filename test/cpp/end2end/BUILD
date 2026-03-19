@@ -1766,9 +1766,11 @@ grpc_cc_test(
     ],
     deps = [
         ":connection_attempt_injector",
+        "//src/core:experiments",
         "//src/proto/grpc/testing:echo_cc_grpc",
         "//test/core/test_util:fake_stats_plugin",
         "//test/core/test_util:grpc_test_util",
+        "//test/core/test_util:scoped_env_var",
         "//test/cpp/util:test_util",
     ],
 )
