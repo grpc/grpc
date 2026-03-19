@@ -1381,6 +1381,26 @@ TEST_P(XdsMetricsTest, MetricValues) {
   }
 }
 
+TEST_P(XdsMetricsTest, SubchannelMetricsHaveLocalityAndBackendServiceLabels) {
+  const std::string target = absl::StrCat("xds:", kServerName);
+  CreateAndStartBackends(2, /*xds_enabled=*/true);
+  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends(0, 1)},
+                        {"locality1", CreateEndpointsForBackends(1, 2)}});
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
+  WaitForAllBackends(DEBUG_LOCATION);
+
+  EXPECT_THAT(
+      stats_plugin_->GetUInt64MetricValueByName(
+          "grpc.subchannel.connection_attempts_succeeded",
+          {target, kDefaultClusterName, LocalityNameString("locality0")}),
+      ::testing::Optional(::testing::Gt(0)));
+  EXPECT_THAT(
+      stats_plugin_->GetUInt64MetricValueByName(
+          "grpc.subchannel.connection_attempts_succeeded",
+          {target, kDefaultClusterName, LocalityNameString("locality1")}),
+      ::testing::Optional(::testing::Gt(0)));
+}
+
 //
 // XdsFederationDisabledTest
 //
