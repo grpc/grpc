@@ -162,45 +162,61 @@ auto ExtProcFilter::ServerTrailingMetadata(CallHandler handler,
 auto ExtProcFilter::ServerToClientMessages(CallHandler handler,
                                            CallInitiator initiator,
                                            PipeOwner* pipe_owner) {
-  struct ConsumerAction {
-    mutable CallHandler handler;
-    auto operator()(MessageHandle message) const {
-      handler.SpawnPushMessage(std::move(message));
-      return []() { return absl::OkStatus(); };
-    }
-  };
+  return If(
+      !config_->observability_mode,
+      [handler, initiator, pipe_owner]() mutable {
+        struct ConsumerAction {
+          mutable CallHandler handler;
+          auto operator()(MessageHandle message) const {
+            handler.SpawnPushMessage(std::move(message));
+            return []() { return absl::OkStatus(); };
+          }
+        };
 
-  auto consumer =
-      Seq(ForEach(std::move(pipe_owner->server_to_client_messages.receiver),
-                  ConsumerAction{handler}),
-          [](absl::Status status) mutable { return status; });
+        auto consumer = Seq(
+            ForEach(std::move(pipe_owner->server_to_client_messages.receiver),
+                    ConsumerAction{handler}),
+            [](absl::Status status) mutable { return status; });
 
-  auto producer =
-      Seq(ForEach(MessagesFrom(initiator),
-                  [pipe_owner](MessageHandle message) {
-                    if (g_test_ext_proc_message_modifier != nullptr) {
-                      g_test_ext_proc_message_modifier(&message);
-                    }
-                    return Map(
-                        pipe_owner->server_to_client_messages.sender.Push(
-                            std::move(message)),
-                        [](bool success) -> absl::Status {
-                          if (!success) {
-                            return absl::InternalError("Push to pipe failed");
-                          }
-                          return absl::OkStatus();
-                        });
-                  }),
-          [pipe_owner](absl::Status status) mutable {
-            pipe_owner->server_to_client_messages.sender.MarkClosed();
-            return status;
-          });
+        auto producer = Seq(
+            ForEach(MessagesFrom(initiator),
+                    [pipe_owner](MessageHandle message) {
+                      if (g_test_ext_proc_message_modifier != nullptr) {
+                        g_test_ext_proc_message_modifier(&message);
+                      }
+                      return Map(
+                          pipe_owner->server_to_client_messages.sender.Push(
+                              std::move(message)),
+                          [](bool success) -> absl::Status {
+                            if (!success) {
+                              return absl::InternalError("Push to pipe failed");
+                            }
+                            return absl::OkStatus();
+                          });
+                    }),
+            [pipe_owner](absl::Status status) mutable {
+              pipe_owner->server_to_client_messages.sender.MarkClosed();
+              return status;
+            });
 
-  return Map(TryJoin<absl::StatusOr>(std::move(producer), std::move(consumer)),
-             [](auto result) -> absl::Status {
-               if (!result.ok()) return result.status();
-               return absl::OkStatus();
-             });
+        return Map(
+            TryJoin<absl::StatusOr>(std::move(producer), std::move(consumer)),
+            [](auto result) -> absl::Status {
+              if (!result.ok()) return result.status();
+              return absl::OkStatus();
+            });
+      },
+      [handler, initiator]() mutable {
+        return Seq(ForEach(MessagesFrom(initiator),
+                           [handler](MessageHandle message) mutable {
+                             if (g_test_ext_proc_message_modifier != nullptr) {
+                               g_test_ext_proc_message_modifier(&message);
+                             }
+                             handler.SpawnPushMessage(std::move(message));
+                             return []() { return absl::OkStatus(); };
+                           }),
+                   [](absl::Status status) mutable { return status; });
+      });
 }
 
 auto ExtProcFilter::ServerInitialMetadata(CallHandler handler,
