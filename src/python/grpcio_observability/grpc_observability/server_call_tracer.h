@@ -84,6 +84,8 @@ class PythonOpenCensusServerCallTracer
 
   void RecordSendTrailingMetadata(
       grpc_metadata_batch* send_trailing_metadata) override;
+  void MutateSendTrailingMetadata(
+      grpc_metadata_batch* send_trailing_metadata) override;
 
   void RecordSendMessage(const grpc_core::Message& send_message) override;
 

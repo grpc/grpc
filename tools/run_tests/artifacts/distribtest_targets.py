@@ -14,6 +14,7 @@
 # limitations under the License.
 """Definition of targets run distribution package tests."""
 
+import datetime
 import os.path
 import sys
 
@@ -87,7 +88,7 @@ def create_jobspec(
     return jobspec
 
 
-class CSharpDistribTest(object):
+class CSharpDistribTest:
     """Tests C# NuGet package"""
 
     def __init__(
@@ -159,7 +160,7 @@ class CSharpDistribTest(object):
         return self.name
 
 
-class PythonDistribTest(object):
+class PythonDistribTest:
     """Tests Python package"""
 
     def __init__(
@@ -187,13 +188,25 @@ class PythonDistribTest(object):
             raise Exception("Not supported yet.")
 
         if self.source:
+            # The "source" tests verify that the source distributions can be
+            # be installed on popular OSs, see the list in
+            # tools/dockerfile/distribtest/python_dev_*.
+            #
+            # Note that our cython-based packages will be actually compiled
+            # during pip install. For this reason:
+            #
+            # 1. We use python_dev_* images, which contain the build essentials.
+            # 2. The source tests will take significantly longer than binary.
             return create_docker_jobspec(
                 self.name,
                 "tools/dockerfile/distribtest/python_dev_%s_%s"
                 % (self.docker_suffix, self.arch),
                 "test/distrib/python/run_source_distrib_test.sh",
                 copy_rel_path="test/distrib",
-                timeout_seconds=45 * 60,
+                timeout_seconds=datetime.timedelta(
+                    hours=1,
+                    minutes=30,
+                ).total_seconds(),
             )
         else:
             return create_docker_jobspec(
@@ -202,14 +215,16 @@ class PythonDistribTest(object):
                 % (self.docker_suffix, self.arch),
                 "test/distrib/python/run_binary_distrib_test.sh",
                 copy_rel_path="test/distrib",
-                timeout_seconds=45 * 60,
+                # TODO(sergiitk): consider decreasing this, they seem to take
+                # only around 5 mintues.
+                timeout_seconds=datetime.timedelta(minutes=45).total_seconds(),
             )
 
     def __str__(self):
         return self.name
 
 
-class RubyDistribTest(object):
+class RubyDistribTest:
     """Tests Ruby package"""
 
     def __init__(
@@ -288,7 +303,7 @@ class RubyDistribTest(object):
         return self.name
 
 
-class PHP8DistribTest(object):
+class PHP8DistribTest:
     """Tests PHP8 package"""
 
     def __init__(self, platform, arch, docker_suffix=None, presubmit=False):
@@ -331,7 +346,7 @@ class PHP8DistribTest(object):
         return self.name
 
 
-class CppDistribTest(object):
+class CppDistribTest:
     """Tests Cpp make install by building examples."""
 
     def __init__(
@@ -528,6 +543,13 @@ def targets():
             ruby_version="ruby_3_4",
             presubmit=True,
         ),
+        RubyDistribTest(
+            "linux-gnu",
+            "x64",
+            "debian11",
+            ruby_version="ruby_4_0",
+            presubmit=True,
+        ),
         RubyDistribTest("linux-gnu", "x64", "ubuntu2204", presubmit=True),
         RubyDistribTest("linux-gnu", "x64", "ubuntu2404", presubmit=True),
         RubyDistribTest(
@@ -556,6 +578,13 @@ def targets():
             "x64",
             "alpine",
             ruby_version="ruby_3_4",
+            presubmit=True,
+        ),
+        RubyDistribTest(
+            "linux-musl",
+            "x64",
+            "alpine",
+            ruby_version="ruby_4_0",
             presubmit=True,
         ),
         # PHP8

@@ -804,12 +804,12 @@ absl::StatusOr<std::string> EventEnginePosixInterface::PeerAddressString(
   return ResolvedAddressToNormalizedString((*status));
 }
 
-absl::StatusOr<EventEngine::ResolvedAddress>
-EventEnginePosixInterface::PrepareListenerSocket(
+absl::Status EventEnginePosixInterface::PrepareListenerSocketOptions(
     const FileDescriptor& fd, const PosixTcpOptions& options,
     const EventEngine::ResolvedAddress& address) {
   if (!IsCorrectGeneration(fd)) {
-    return absl::InternalError("PrepareListenerSocket: wrong generation");
+    return absl::InternalError(
+        "PrepareListenerSocketOptions: wrong generation");
   }
   int f = fd.fd();
   if (IsSocketReusePortSupported() && options.allow_reuse_port &&
@@ -837,6 +837,16 @@ EventEnginePosixInterface::PrepareListenerSocket(
     // it's not fatal, so just log it.
     VLOG(2) << "Node does not support SO_ZEROCOPY, continuing.";
   }
+  return absl::OkStatus();
+}
+
+absl::StatusOr<EventEngine::ResolvedAddress>
+EventEnginePosixInterface::BindListenerSocket(
+    const FileDescriptor& fd, const EventEngine::ResolvedAddress& address) {
+  if (!IsCorrectGeneration(fd)) {
+    return absl::InternalError("BindListenerSocket: wrong generation");
+  }
+  int f = fd.fd();
   if (bind(f, address.address(), address.size()) < 0) {
     auto sockaddr_str = ResolvedAddressToString(address);
     if (!sockaddr_str.ok()) {
@@ -861,6 +871,14 @@ EventEnginePosixInterface::PrepareListenerSocket(
         absl::StrCat("Error in getsockname: ", std::strerror(errno)));
   }
   return sockname_temp;
+}
+
+absl::StatusOr<EventEngine::ResolvedAddress>
+EventEnginePosixInterface::PrepareListenerSocket(
+    const FileDescriptor& fd, const PosixTcpOptions& options,
+    const EventEngine::ResolvedAddress& address) {
+  GRPC_RETURN_IF_ERROR(PrepareListenerSocketOptions(fd, options, address));
+  return BindListenerSocket(fd, address);
 }
 
 // Set a socket using a grpc_socket_mutator
@@ -1049,7 +1067,11 @@ bool EventEnginePosixInterface::IsCorrectGeneration(
 absl::StatusOr<std::pair<FileDescriptor, FileDescriptor> >
 EventEnginePosixInterface::Pipe() {
   int pipefd[2];
+#if defined(GPR_ANDROID)
+  int r = pipe2(pipefd, 0);
+#else
   int r = pipe(pipefd);
+#endif  // GPR_ANDROID
   if (0 != r) {
     return absl::Status(absl::StatusCode::kInternal,
                         absl::StrCat("pipe: ", grpc_core::StrError(errno)));

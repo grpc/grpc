@@ -65,11 +65,6 @@ void grpc_tcp_server_shutdown_starting_add(grpc_tcp_server* s,
   grpc_tcp_server_impl->shutdown_starting_add(s, shutdown_starting);
 }
 
-void grpc_tcp_server_shutdown_ending_add(grpc_tcp_server* s,
-                                         grpc_closure* shutdown_ending) {
-  grpc_tcp_server_impl->shutdown_ending_add(s, shutdown_ending);
-}
-
 void grpc_tcp_server_unref(grpc_tcp_server* s) {
   grpc_tcp_server_impl->unref(s);
 }

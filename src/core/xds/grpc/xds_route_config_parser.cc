@@ -398,16 +398,22 @@ XdsRouteConfigResource::TypedPerFilterConfig ParseTypedPerFilterConfig(
         DownCast<const GrpcXdsBootstrap&>(context.client->bootstrap())
             .http_filter_registry();
     const XdsHttpFilterImpl* filter_impl =
-        http_filter_registry.GetFilterForType(extension_to_use->type);
+        http_filter_registry.GetFilterForOverrideType(extension_to_use->type);
     if (filter_impl == nullptr) {
       if (!is_optional) errors->AddError("unsupported filter type");
       continue;
     }
-    std::optional<XdsHttpFilterImpl::FilterConfig> filter_config =
-        filter_impl->GenerateFilterConfigOverride(
-            key, context, std::move(*extension_to_use), errors);
+    auto& entry = typed_per_filter_config[std::string(key)];
+    entry.config_proto_type = filter_impl->OverrideConfigProtoName();
+    std::optional<Json> filter_config =
+        filter_impl->GenerateFilterConfigOverride(key, context,
+                                                  *extension_to_use, errors);
     if (filter_config.has_value()) {
-      typed_per_filter_config[std::string(key)] = std::move(*filter_config);
+      entry.config = std::move(*filter_config);
+    }
+    if (IsXdsChannelFilterChainPerRouteEnabled()) {
+      entry.filter_config = filter_impl->ParseOverrideConfig(
+          key, context, *extension_to_use, errors);
     }
   }
   return typed_per_filter_config;

@@ -46,6 +46,7 @@
 #include "src/core/call/metadata.h"
 #include "src/core/call/metadata_batch.h"
 #include "src/core/channelz/property_list.h"
+#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/cancel_callback.h"
 #include "src/core/lib/promise/detail/promise_like.h"
@@ -76,45 +77,48 @@ class PublishToAppEncoder {
     Append(key.c_slice(), value.c_slice());
   }
 
-  // Catch anything that is not explicitly handled, and do not publish it to the
-  // application. If new metadata is added to a batch that needs to be
-  // published, it should be called out here.
+  // Publish only metadata traits that have kPublishToApp == true.
   template <typename Which>
-  void Encode(Which, const typename Which::ValueType&) {}
-
-  void Encode(UserAgentMetadata, const Slice& slice) {
-    Append(UserAgentMetadata::key(), slice);
-  }
-
-  void Encode(HostMetadata, const Slice& slice) {
-    Append(HostMetadata::key(), slice);
-  }
-
-  void Encode(GrpcPreviousRpcAttemptsMetadata, uint32_t count) {
-    Append(GrpcPreviousRpcAttemptsMetadata::key(), count);
-  }
-
-  void Encode(GrpcRetryPushbackMsMetadata, Duration count) {
-    Append(GrpcRetryPushbackMsMetadata::key(), count.millis());
-  }
-
-  void Encode(LbTokenMetadata, const Slice& slice) {
-    Append(LbTokenMetadata::key(), slice);
-  }
-
-  void Encode(W3CTraceParentMetadata, const Slice& slice) {
-    Append(W3CTraceParentMetadata::key(), slice);
-  }
-
-  void Encode(XForwardedForMetadata, const Slice& slice) {
-    Append(XForwardedForMetadata::key(), slice);
-  }
-
-  void Encode(XForwardedHostMetadata, const Slice& slice) {
-    Append(XForwardedHostMetadata::key(), slice);
+  void Encode(Which, const typename Which::ValueType& value) {
+    if (IsMetadataPublishToAppTagEnabled()) {
+      if constexpr (Which::kPublishToApp) {
+        Append(Which::key(), value);
+      }
+    } else {
+      if constexpr (std::is_same<UserAgentMetadata, Which>::value) {
+        Append(Which::key(), value);
+      }
+      if constexpr (std::is_same<HostMetadata, Which>::value) {
+        Append(Which::key(), value);
+      }
+      if constexpr (std::is_same<GrpcPreviousRpcAttemptsMetadata,
+                                 Which>::value) {
+        Append(Which::key(), value);
+      }
+      if constexpr (std::is_same<GrpcRetryPushbackMsMetadata, Which>::value) {
+        Append(Which::key(), value);
+      }
+      if constexpr (std::is_same<LbTokenMetadata, Which>::value) {
+        Append(Which::key(), value);
+      }
+      if constexpr (std::is_same<W3CTraceParentMetadata, Which>::value) {
+        Append(Which::key(), value);
+      }
+      if constexpr (std::is_same<XForwardedForMetadata, Which>::value) {
+        Append(Which::key(), value);
+      }
+      if constexpr (std::is_same<XForwardedHostMetadata, Which>::value) {
+        Append(Which::key(), value);
+      }
+    }
   }
 
  private:
+  void Append(absl::string_view key, Duration value) {
+    Append(StaticSlice::FromStaticString(key).c_slice(),
+           Slice::FromInt64(value.millis()).c_slice());
+  }
+
   void Append(absl::string_view key, int64_t value) {
     Append(StaticSlice::FromStaticString(key).c_slice(),
            Slice::FromInt64(value).c_slice());
@@ -176,8 +180,9 @@ class OpHandlerImpl {
                 "PromiseFactory must return a promise");
 
   OpHandlerImpl() : state_(State::kDismissed) {}
-  explicit OpHandlerImpl(SetupResult result) : state_(State::kPromiseFactory) {
-    Construct(&promise_factory_, std::move(result));
+  explicit OpHandlerImpl(SetupResult&& result)
+      : state_(State::kPromiseFactory) {
+    Construct(&promise_factory_, std::forward<SetupResult>(result));
   }
 
   ~OpHandlerImpl() {
@@ -282,8 +287,9 @@ class OpHandlerImpl {
 };
 
 template <grpc_op_type op_type, typename PromiseFactory>
-auto OpHandler(PromiseFactory setup) {
-  return OpHandlerImpl<PromiseFactory, op_type>(std::move(setup));
+auto OpHandler(PromiseFactory&& setup) {
+  return OpHandlerImpl<PromiseFactory, op_type>(
+      std::forward<PromiseFactory>(setup));
 }
 
 class BatchOpIndex {
@@ -337,7 +343,7 @@ class WaitForCqEndOp {
     grpc_completion_queue* cq;
   };
   struct Started {
-    explicit Started(Waker waker) : waker(std::move(waker)) {}
+    explicit Started(Waker&& waker) : waker(std::forward<Waker>(waker)) {}
     Waker waker;
     grpc_cq_completion completion;
     std::atomic<bool> done{false};
@@ -396,7 +402,7 @@ class WaitForCqEndOp {
 };
 
 template <typename FalliblePart, typename FinalPart>
-auto InfallibleBatch(FalliblePart fallible_part, FinalPart final_part,
+auto InfallibleBatch(FalliblePart&& fallible_part, FinalPart&& final_part,
                      bool is_notify_tag_closure, void* notify_tag,
                      grpc_completion_queue* cq) {
   // Perform fallible_part, then final_part, then wait for the
@@ -405,9 +411,9 @@ auto InfallibleBatch(FalliblePart fallible_part, FinalPart final_part,
   // There's a slight bug here in that if we cancel this promise after
   // the WaitForCqEndOp we'll double post -- but we don't currently do that.
   return OnCancelFactory(
-      [fallible_part = std::move(fallible_part),
-       final_part = std::move(final_part), is_notify_tag_closure, notify_tag,
-       cq]() mutable {
+      [fallible_part = std::forward<FalliblePart>(fallible_part),
+       final_part = std::forward<FinalPart>(final_part), is_notify_tag_closure,
+       notify_tag, cq]() mutable {
         return LogPollBatch(notify_tag,
                             Seq(std::move(fallible_part), std::move(final_part),
                                 [is_notify_tag_closure, notify_tag, cq]() {
@@ -425,15 +431,15 @@ auto InfallibleBatch(FalliblePart fallible_part, FinalPart final_part,
 }
 
 template <typename FalliblePart>
-auto FallibleBatch(FalliblePart fallible_part, bool is_notify_tag_closure,
+auto FallibleBatch(FalliblePart&& fallible_part, bool is_notify_tag_closure,
                    void* notify_tag, grpc_completion_queue* cq) {
   // Perform fallible_part, then wait for the completion queue to be done.
   // If cancelled, we'll ensure the completion queue is notified.
   // There's a slight bug here in that if we cancel this promise after
   // the WaitForCqEndOp we'll double post -- but we don't currently do that.
   return OnCancelFactory(
-      [fallible_part = std::move(fallible_part), is_notify_tag_closure,
-       notify_tag, cq]() mutable {
+      [fallible_part = std::forward<FalliblePart>(fallible_part),
+       is_notify_tag_closure, notify_tag, cq]() mutable {
         return LogPollBatch(
             notify_tag,
             Seq(std::move(fallible_part),
@@ -453,7 +459,7 @@ auto FallibleBatch(FalliblePart fallible_part, bool is_notify_tag_closure,
 template <typename F>
 class PollBatchLogger {
  public:
-  PollBatchLogger(void* tag, F f) : tag_(tag), f_(std::move(f)) {}
+  PollBatchLogger(void* tag, F&& f) : tag_(tag), f_(std::forward<F>(f)) {}
 
   auto operator()() {
     GRPC_TRACE_LOG(call, INFO) << "Poll batch " << tag_;
@@ -482,8 +488,8 @@ class PollBatchLogger {
 };
 
 template <typename F>
-PollBatchLogger<F> LogPollBatch(void* tag, F f) {
-  return PollBatchLogger<F>(tag, std::move(f));
+PollBatchLogger<F> LogPollBatch(void* tag, F&& f) {
+  return PollBatchLogger<F>(tag, std::forward<F>(f));
 }
 
 class MessageReceiver {
@@ -505,8 +511,9 @@ class MessageReceiver {
     recv_message_ = op.data.recv_message.recv_message;
     return [this, puller]() mutable {
       return Map(puller->PullMessage(),
-                 [this](typename Puller::NextMessage msg) {
-                   return FinishRecvMessage(std::move(msg));
+                 [this](typename Puller::NextMessage&& msg) {
+                   return FinishRecvMessage(
+                       std::forward<typename Puller::NextMessage>(msg));
                  });
     };
   }

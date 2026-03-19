@@ -607,3 +607,16 @@ void grpc_call_run_in_event_engine(const grpc_call* call,
       ->GetContext<grpc_event_engine::experimental::EventEngine>()
       ->Run(std::move(cb));
 }
+
+void grpc_call_run_cq_cb(const grpc_call* call,
+                         absl::AnyInvocable<void()>&& cb) {
+  if (grpc_core::IsUseCallEventEngineInCompletionQueueEnabled()) {
+    grpc_call_run_in_event_engine(
+        call, [cb = std::forward<absl::AnyInvocable<void()>>(cb)]() mutable {
+          grpc_core::ExecCtx exec_ctx;
+          cb();
+        });
+  } else {
+    cb();
+  }
+}

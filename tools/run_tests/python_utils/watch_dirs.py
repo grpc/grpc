@@ -17,7 +17,7 @@ import os
 import time
 
 
-class DirWatcher(object):
+class DirWatcher:
     """Helper to watch a (set) of directories for modifications."""
 
     def __init__(self, paths):

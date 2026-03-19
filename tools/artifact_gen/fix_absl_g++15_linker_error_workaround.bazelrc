@@ -1,0 +1,10 @@
+# Work around a linker error seemingly caused by absl.
+# @abseil-cpp//absl/flags:flag
+#
+# ld.lld: error: relocation refers to a discarded section: .text._ZN4absl12lts_202601079MutexLockD2Ev
+# >>> defined in bazel-out/k8-fastbuild/bin/external/abseil-cpp+/absl/flags/_objs/program_name/program_name.pic.o
+# >>> referenced by program_name.cc
+# >>>               bazel-out/k8-fastbuild/bin/external/abseil-cpp+/absl/flags/_objs/program_name/program_name.pic.o:(.sframe+0x15C)
+# Discussion: https://yaqs.corp.google.com/eng/q/3916204231928840192
+common --copt=-Wa,--gsframe=no
+common --host_copt=-Wa,--gsframe=no

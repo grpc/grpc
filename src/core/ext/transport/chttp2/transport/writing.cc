@@ -341,19 +341,9 @@ class WriteContext {
   }
 
   grpc_chttp2_stream* NextStream() {
-    if (grpc_core::IsChttp2BoundWriteSizeEnabled()) {
-      if (t_->outbuf.c_slice_buffer()->length >= target_write_size_) {
-        result_.partial = true;
-        return nullptr;
-      }
-    } else {
-      // TODO(ctiller): this is likely buggy now, but everything seems to be
-      // working, so I'm keeping the above fix just for the experiment until
-      // we've had time to soak it fully.
-      if (t_->outbuf.c_slice_buffer()->length > target_write_size_) {
-        result_.partial = true;
-        return nullptr;
-      }
+    if (t_->outbuf.c_slice_buffer()->length >= target_write_size_) {
+      result_.partial = true;
+      return nullptr;
     }
 
     grpc_chttp2_stream* s;
@@ -422,9 +412,7 @@ class DataSendContext {
             {t_->settings.peer().max_frame_size(), stream_remote_window(),
              t_->flow_control.remote_window(),
              static_cast<int64_t>(write_context_->target_write_size()) -
-                 (grpc_core::IsChttp2BoundWriteSizeEnabled()
-                      ? static_cast<int64_t>(t_->outbuf.Length())
-                      : static_cast<int64_t>(0))}),
+                 static_cast<int64_t>(t_->outbuf.Length())}),
         0, std::numeric_limits<uint32_t>::max());
   }
 
@@ -564,7 +552,7 @@ class StreamWriteContext {
         t_->http2_stats->IncrementHttp2StreamStalls();
         report_stall(t_, s_, "stream");
         grpc_chttp2_list_add_stalled_by_stream(t_, s_);
-      } else if (grpc_core::IsChttp2BoundWriteSizeEnabled()) {
+      } else {
         GRPC_CHTTP2_STREAM_REF(s_, "chttp2_writing:fork");
         grpc_chttp2_list_add_writable_stream(t_, s_);
         stream_became_writable_ = true;

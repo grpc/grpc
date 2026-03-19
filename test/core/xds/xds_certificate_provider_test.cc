@@ -56,26 +56,26 @@ constexpr absl::string_view kGoodSpiffeBundleMapPath2 =
     "test/core/credentials/transport/tls/test_data/spiffe/"
     "test_bundles/spiffebundle2.json";
 
-std::shared_ptr<RootCertInfo> kRootCert1() {
-  return std::make_shared<RootCertInfo>(kRootCert1Contents);
+std::shared_ptr<tsi::RootCertInfo> kRootCert1() {
+  return std::make_shared<tsi::RootCertInfo>(kRootCert1Contents);
 }
 
-std::shared_ptr<RootCertInfo> kRootCert2() {
-  return std::make_shared<RootCertInfo>(kRootCert2Contents);
+std::shared_ptr<tsi::RootCertInfo> kRootCert2() {
+  return std::make_shared<tsi::RootCertInfo>(kRootCert2Contents);
 }
 
-std::shared_ptr<RootCertInfo> GetGoodSpiffeBundleMap() {
+std::shared_ptr<tsi::RootCertInfo> GetGoodSpiffeBundleMap() {
   auto spiffe_bundle_map = SpiffeBundleMap::FromFile(kGoodSpiffeBundleMapPath);
   EXPECT_TRUE(spiffe_bundle_map.ok());
   if (!spiffe_bundle_map.ok()) return nullptr;
-  return std::make_shared<RootCertInfo>(std::move(*spiffe_bundle_map));
+  return std::make_shared<tsi::RootCertInfo>(std::move(*spiffe_bundle_map));
 }
 
-std::shared_ptr<RootCertInfo> GetGoodSpiffeBundleMap2() {
+std::shared_ptr<tsi::RootCertInfo> GetGoodSpiffeBundleMap2() {
   auto spiffe_bundle_map = SpiffeBundleMap::FromFile(kGoodSpiffeBundleMapPath2);
   EXPECT_TRUE(spiffe_bundle_map.ok());
   if (!spiffe_bundle_map.ok()) return nullptr;
-  return std::make_shared<RootCertInfo>(std::move(*spiffe_bundle_map));
+  return std::make_shared<tsi::RootCertInfo>(std::move(*spiffe_bundle_map));
 }
 
 PemKeyCertPairList MakeKeyCertPairsType1() {
@@ -114,7 +114,7 @@ class TestCertificatesWatcher
   ~TestCertificatesWatcher() override {}
 
   void OnCertificatesChanged(
-      std::shared_ptr<RootCertInfo> roots,
+      std::shared_ptr<tsi::RootCertInfo> roots,
       std::optional<PemKeyCertPairList> key_cert_pairs) override {
     if (roots != nullptr) {
       if (roots != root_cert_info_) {
@@ -140,7 +140,7 @@ class TestCertificatesWatcher
     return key_cert_pairs_;
   }
 
-  std::shared_ptr<RootCertInfo> root_cert_info() const {
+  std::shared_ptr<tsi::RootCertInfo> root_cert_info() const {
     return root_cert_info_;
   }
 
@@ -150,7 +150,7 @@ class TestCertificatesWatcher
 
  private:
   std::optional<PemKeyCertPairList> key_cert_pairs_;
-  std::shared_ptr<RootCertInfo> root_cert_info_;
+  std::shared_ptr<tsi::RootCertInfo> root_cert_info_;
   grpc_error_handle root_cert_error_;
   grpc_error_handle identity_cert_error_;
 };
