@@ -113,7 +113,6 @@ EXPERIMENTS = {
             "cpp_end2end_test": [
                 "error_flatten",
                 "promise_based_http2_client_transport",
-                "subchannel_wrapper_cleanup_on_orphan",
             ],
             "cpp_lb_end2end_test": [
                 "subchannel_connection_scaling",
@@ -148,7 +147,6 @@ EXPERIMENTS = {
             ],
             "xds_end2end_test": [
                 "error_flatten",
-                "subchannel_wrapper_cleanup_on_orphan",
             ],
         },
         "on": {
@@ -163,6 +161,9 @@ EXPERIMENTS = {
                 "event_engine_for_all_other_endpoints",
                 "event_engine_fork",
                 "event_engine_listener",
+            ],
+            "cpp_end2end_test": [
+                "subchannel_wrapper_cleanup_on_orphan",
             ],
             "cpp_lb_end2end_test": [
                 "pick_first_ready_to_connecting",
@@ -188,6 +189,7 @@ EXPERIMENTS = {
                 "event_engine_dns",
             ],
             "xds_end2end_test": [
+                "subchannel_wrapper_cleanup_on_orphan",
                 "xds_channel_filter_chain_per_route",
             ],
             "xds_test": [
@@ -223,7 +225,6 @@ EXPERIMENTS = {
             "cpp_end2end_test": [
                 "error_flatten",
                 "promise_based_http2_client_transport",
-                "subchannel_wrapper_cleanup_on_orphan",
             ],
             "cpp_lb_end2end_test": [
                 "subchannel_connection_scaling",
@@ -258,7 +259,6 @@ EXPERIMENTS = {
             ],
             "xds_end2end_test": [
                 "error_flatten",
-                "subchannel_wrapper_cleanup_on_orphan",
             ],
         },
         "on": {
@@ -273,6 +273,9 @@ EXPERIMENTS = {
                 "event_engine_for_all_other_endpoints",
                 "event_engine_fork",
                 "event_engine_listener",
+            ],
+            "cpp_end2end_test": [
+                "subchannel_wrapper_cleanup_on_orphan",
             ],
             "cpp_lb_end2end_test": [
                 "pick_first_ready_to_connecting",
@@ -298,6 +301,7 @@ EXPERIMENTS = {
                 "event_engine_dns",
             ],
             "xds_end2end_test": [
+                "subchannel_wrapper_cleanup_on_orphan",
                 "xds_channel_filter_chain_per_route",
             ],
             "xds_test": [
@@ -333,7 +337,6 @@ EXPERIMENTS = {
             "cpp_end2end_test": [
                 "error_flatten",
                 "promise_based_http2_client_transport",
-                "subchannel_wrapper_cleanup_on_orphan",
             ],
             "cpp_lb_end2end_test": [
                 "subchannel_connection_scaling",
@@ -368,7 +371,6 @@ EXPERIMENTS = {
             ],
             "xds_end2end_test": [
                 "error_flatten",
-                "subchannel_wrapper_cleanup_on_orphan",
             ],
         },
         "on": {
@@ -383,6 +385,9 @@ EXPERIMENTS = {
                 "event_engine_for_all_other_endpoints",
                 "event_engine_fork",
                 "event_engine_listener",
+            ],
+            "cpp_end2end_test": [
+                "subchannel_wrapper_cleanup_on_orphan",
             ],
             "cpp_lb_end2end_test": [
                 "pick_first_ready_to_connecting",
@@ -408,6 +413,7 @@ EXPERIMENTS = {
                 "event_engine_dns",
             ],
             "xds_end2end_test": [
+                "subchannel_wrapper_cleanup_on_orphan",
                 "xds_channel_filter_chain_per_route",
             ],
             "xds_test": [
