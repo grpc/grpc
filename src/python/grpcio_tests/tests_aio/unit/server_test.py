@@ -25,6 +25,7 @@ from tests.unit.framework.common import test_constants
 from tests_aio.unit._test_base import AioTestBase
 
 _SIMPLE_UNARY_UNARY = "/test/SimpleUnaryUnary"
+_SIMPLE_UNARY_UNARY_REGISTERED = "/test/SimpleUnaryUnaryRegistered"
 _BLOCK_FOREVER = "/test/BlockForever"
 _BLOCK_BRIEFLY = "/test/BlockBriefly"
 _UNARY_STREAM_ASYNC_GEN = "/test/UnaryStreamAsyncGen"
@@ -45,6 +46,7 @@ _INVALID_TRAILING_METADATA = "/test/InvalidTrailingMetadata"
 
 _REQUEST = b"\x00\x00\x00"
 _RESPONSE = b"\x01\x01\x01"
+_REGISTERED_RESPONSE = b"\x02\x02\x02"
 _NUM_STREAM_REQUESTS = 3
 _NUM_STREAM_RESPONSES = 5
 _MAXIMUM_CONCURRENT_RPCS = 5
@@ -55,6 +57,9 @@ class _GenericHandler(grpc.GenericRpcHandler):
         self._called = asyncio.get_event_loop().create_future()
         self._routing_table = {
             _SIMPLE_UNARY_UNARY: grpc.unary_unary_rpc_method_handler(
+                self._unary_unary
+            ),
+            _SIMPLE_UNARY_UNARY_REGISTERED: grpc.unary_unary_rpc_method_handler(
                 self._unary_unary
             ),
             _BLOCK_FOREVER: grpc.unary_unary_rpc_method_handler(
@@ -244,6 +249,19 @@ async def _start_test_server():
     port = server.add_insecure_port("[::]:0")
     generic_handler = _GenericHandler()
     server.add_generic_rpc_handlers((generic_handler,))
+
+    async def registered_unary_unary_handler(
+        unused_request_iter, unused_context
+    ):
+        return _REGISTERED_RESPONSE
+
+    registered_handlers = {
+        "SimpleUnaryUnaryRegistered": grpc.unary_unary_rpc_method_handler(
+            registered_unary_unary_handler
+        ),
+    }
+    server.add_registered_method_handlers("test", registered_handlers)
+
     await server.start()
     return "localhost:%d" % port, server, generic_handler
 
@@ -693,6 +711,14 @@ class TestServer(AioTestBase):
         self.assertEqual(grpc.StatusCode.UNKNOWN, rpc_error.code())
         self.assertIn("trailing", rpc_error.details())
 
+    async def test_registered_handler_takes_precedence(self):
+        # Generic handler returns _RESPONSE for this method
+        # Registered handler return _REGISTERED_RESPONSE for this method
+        unary_unary_call = self._channel.unary_unary(
+            _SIMPLE_UNARY_UNARY_REGISTERED, _registered_method=True
+        )
+        response = await unary_unary_call(_REQUEST)
+        self.assertEqual(response, _REGISTERED_RESPONSE)
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG)
