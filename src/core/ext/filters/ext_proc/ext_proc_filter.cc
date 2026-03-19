@@ -216,18 +216,32 @@ auto ExtProcFilter::ServerInitialMetadata(CallHandler handler,
             has_md,
             [self, handler, initiator, pipe_owner,
              pulled_md = std::move(pulled_metadata)]() mutable {
-              pipe_owner->server_initial_metadata.Set(std::move(pulled_md));
-              return Seq(pipe_owner->server_initial_metadata.Wait(),
-                         [self, handler, initiator,
-                          pipe_owner](std::optional<ServerMetadataHandle>
-                                          waited_metadata) mutable {
-                           handler.SpawnPushServerInitialMetadata(
-                               std::move(*waited_metadata));
-                           return Seq(self->ServerToClientMessages(
-                                          handler, initiator, pipe_owner),
-                                      self->ServerTrailingMetadata(
-                                          handler, initiator, pipe_owner));
-                         });
+              return If(
+                  !self->config_->observability_mode,
+                  [self, handler, initiator, pipe_owner, &pulled_md]() mutable {
+                    pipe_owner->server_initial_metadata.Set(
+                        std::move(pulled_md));
+                    return Seq(pipe_owner->server_initial_metadata.Wait(),
+                               [self, handler, initiator,
+                                pipe_owner](std::optional<ServerMetadataHandle>
+                                                waited_metadata) mutable {
+                                 handler.SpawnPushServerInitialMetadata(
+                                     std::move(*waited_metadata));
+                                 return Seq(
+                                     self->ServerToClientMessages(
+                                         handler, initiator, pipe_owner), 
+                                     self->ServerTrailingMetadata(
+                                         handler, initiator, pipe_owner));
+                               });
+                  },
+                  [self, handler, initiator, pipe_owner, &pulled_md]() mutable {
+                    handler.SpawnPushServerInitialMetadata(
+                        std::move(*pulled_md));
+                    return Seq(self->ServerToClientMessages(handler, initiator,
+                                                            pipe_owner),
+                               self->ServerTrailingMetadata(handler, initiator,
+                                                            pipe_owner));
+                  });
             },
             [self, handler, initiator, pipe_owner]() mutable {
               return self->ServerTrailingMetadata(handler, initiator,
