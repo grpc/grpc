@@ -25,29 +25,50 @@ class ResourceQuotaDomain final : public InstrumentDomain<ResourceQuotaDomain> {
   using Backend = HighContentionBackend;
   static constexpr absl::string_view kName = "resource_quota";
 
-  static inline const auto kCallsDropped = RegisterCounter(
-      "grpc.resource_quota.calls_dropped",
-      "EXPERIMENTAL.  Number of calls dropped due to resource quota "
-      "exceeded",
-      "calls");
-  static inline const auto kCallsRejected = RegisterCounter(
-      "grpc.resource_quota.calls_rejected",
-      "EXPERIMENTAL.  Number of calls rejected due to resource quota "
-      "exceeded",
-      "calls");
-  static inline const auto kConnectionsDropped = RegisterCounter(
-      "grpc.resource_quota.connections_dropped",
-      "EXPERIMENTAL.  Number of connections dropped due to resource quota "
-      "exceeded",
-      "connections");
-  static inline const auto kInstantaneousMemoryPressure = RegisterDoubleGauge(
-      "grpc.resource_quota.instantaneous_memory_pressure",
-      "The current instantaneously measured memory pressure.", "ratio");
-  static inline const auto kMemoryPressureControlValue = RegisterDoubleGauge(
-      "grpc.resource_quota.memory_pressure_control_value",
-      "A control value that can be used to scale buffer sizes up or down to "
-      "adjust memory pressure to our target set point.",
-      "ratio");
+  // Use function-local statics (Meyers singletons) instead of static inline
+  // data members to ensure lazy initialization on first use.  This avoids
+  // duplicate metric registration when the header is transitively included by
+  // translation units compiled into different shared libraries (e.g. libgrpc
+  // and libgrpc++), where each DSO's .init_array would otherwise run its own
+  // copy of the static inline initializers.
+  static const auto& kCallsDropped() {
+    static const auto handle = RegisterCounter(
+        "grpc.resource_quota.calls_dropped",
+        "EXPERIMENTAL.  Number of calls dropped due to resource quota "
+        "exceeded",
+        "calls");
+    return handle;
+  }
+  static const auto& kCallsRejected() {
+    static const auto handle = RegisterCounter(
+        "grpc.resource_quota.calls_rejected",
+        "EXPERIMENTAL.  Number of calls rejected due to resource quota "
+        "exceeded",
+        "calls");
+    return handle;
+  }
+  static const auto& kConnectionsDropped() {
+    static const auto handle = RegisterCounter(
+        "grpc.resource_quota.connections_dropped",
+        "EXPERIMENTAL.  Number of connections dropped due to resource quota "
+        "exceeded",
+        "connections");
+    return handle;
+  }
+  static const auto& kInstantaneousMemoryPressure() {
+    static const auto handle = RegisterDoubleGauge(
+        "grpc.resource_quota.instantaneous_memory_pressure",
+        "The current instantaneously measured memory pressure.", "ratio");
+    return handle;
+  }
+  static const auto& kMemoryPressureControlValue() {
+    static const auto handle = RegisterDoubleGauge(
+        "grpc.resource_quota.memory_pressure_control_value",
+        "A control value that can be used to scale buffer sizes up or down to "
+        "adjust memory pressure to our target set point.",
+        "ratio");
+    return handle;
+  }
 };
 
 }  // namespace grpc_core

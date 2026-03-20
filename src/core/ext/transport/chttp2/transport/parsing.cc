@@ -676,7 +676,7 @@ static grpc_error_handle init_header_frame_parser(grpc_chttp2_transport* t,
       // We have more streams allocated than we'd like, so apply some pushback
       // by refusing this stream.
       t->memory_owner.telemetry_storage()->Increment(
-          grpc_core::ResourceQuotaDomain::kCallsRejected);
+          grpc_core::ResourceQuotaDomain::kCallsRejected());
       ++t->num_pending_induced_frames;
       grpc_slice_buffer_add(
           &t->qbuf, grpc_chttp2_rst_stream_create(
