@@ -25,9 +25,7 @@
 #include "re2/re2.h"
 #include "src/core/util/match.h"
 #include "src/core/util/matchers.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/str_format.h"
-#include "absl/strings/str_join.h"
+#include "src/core/util/string.h"
 
 namespace grpc_core {
 
@@ -36,10 +34,15 @@ namespace grpc_core {
 //
 
 std::string XdsRouteConfigResource::FilterConfigOverride::ToString() const {
-  return absl::StrCat(
-      "{config_proto_type=", config_proto_type, ", config=", JsonDump(config),
-      ", filter_config=",
-      filter_config == nullptr ? "null" : filter_config->ToString(), "}");
+  std::string result = "{config_proto_type=";
+  StrAppend(result, config_proto_type);
+  StrAppend(result, ", config=");
+  StrAppend(result, JsonDump(config));
+  StrAppend(result, ", filter_config=");
+  StrAppend(result,
+            filter_config == nullptr ? "null" : filter_config->ToString());
+  StrAppend(result, "}");
+  return result;
 }
 
 //
@@ -48,19 +51,20 @@ std::string XdsRouteConfigResource::FilterConfigOverride::ToString() const {
 
 std::string XdsRouteConfigResource::RetryPolicy::RetryBackOff::ToString()
     const {
-  std::vector<std::string> contents;
-  contents.push_back(
-      absl::StrCat("RetryBackOff Base: ", base_interval.ToString()));
-  contents.push_back(
-      absl::StrCat("RetryBackOff max: ", max_interval.ToString()));
-  return absl::StrJoin(contents, ",");
+  std::string result = "RetryBackOff Base: ";
+  StrAppend(result, base_interval.ToString());
+  StrAppend(result, ",RetryBackOff max: ");
+  StrAppend(result, max_interval.ToString());
+  return result;
 }
 
 std::string XdsRouteConfigResource::RetryPolicy::ToString() const {
-  std::vector<std::string> contents;
-  contents.push_back(absl::StrFormat("num_retries=%d", num_retries));
-  contents.push_back(retry_back_off.ToString());
-  return absl::StrCat("{", absl::StrJoin(contents, ","), "}");
+  std::string result = "{num_retries=";
+  StrAppend(result, std::to_string(num_retries));
+  StrAppend(result, ",");
+  StrAppend(result, retry_back_off.ToString());
+  StrAppend(result, "}");
+  return result;
 }
 
 //
@@ -68,17 +72,18 @@ std::string XdsRouteConfigResource::RetryPolicy::ToString() const {
 //
 
 std::string XdsRouteConfigResource::Route::Matchers::ToString() const {
-  std::vector<std::string> contents;
-  contents.push_back(
-      absl::StrFormat("PathMatcher{%s}", path_matcher.ToString()));
+  std::string result = "PathMatcher{";
+  StrAppend(result, path_matcher.ToString());
+  StrAppend(result, "}");
   for (const HeaderMatcher& header_matcher : header_matchers) {
-    contents.push_back(header_matcher.ToString());
+    StrAppend(result, "\n");
+    StrAppend(result, header_matcher.ToString());
   }
   if (fraction_per_million.has_value()) {
-    contents.push_back(absl::StrFormat("Fraction Per Million %d",
-                                       fraction_per_million.value()));
+    StrAppend(result, "\nFraction Per Million ");
+    StrAppend(result, std::to_string(fraction_per_million.value()));
   }
-  return absl::StrJoin(contents, "\n");
+  return result;
 }
 
 //
@@ -137,9 +142,15 @@ bool XdsRouteConfigResource::Route::RouteAction::HashPolicy::Header::operator==(
 std::string
 XdsRouteConfigResource::Route::RouteAction::HashPolicy::Header::ToString()
     const {
-  return absl::StrCat("Header ", header_name, "/",
-                      (regex == nullptr) ? "" : regex->pattern(), "/",
-                      regex_substitution);
+  std::string result = "Header ";
+  StrAppend(result, header_name);
+  StrAppend(result, "/");
+  if (regex != nullptr) {
+    StrAppend(result, regex->pattern());
+  }
+  StrAppend(result, "/");
+  StrAppend(result, regex_substitution);
+  return result;
 }
 
 //
@@ -148,11 +159,15 @@ XdsRouteConfigResource::Route::RouteAction::HashPolicy::Header::ToString()
 
 std::string XdsRouteConfigResource::Route::RouteAction::HashPolicy::ToString()
     const {
-  std::string type = Match(
-      policy, [](const Header& header) { return header.ToString(); },
-      [](const ChannelId&) -> std::string { return "ChannelId"; });
-  return absl::StrCat("{", type, ", terminal=", terminal ? "true" : "false",
-                      "}");
+  std::string result = "{";
+  Match(
+      policy,
+      [&](const Header& header) { StrAppend(result, header.ToString()); },
+      [&](const ChannelId&) { StrAppend(result, "ChannelId"); });
+  StrAppend(result, ", terminal=");
+  StrAppend(result, terminal ? "true" : "false");
+  StrAppend(result, "}");
+  return result;
 }
 
 //
@@ -161,18 +176,24 @@ std::string XdsRouteConfigResource::Route::RouteAction::HashPolicy::ToString()
 
 std::string
 XdsRouteConfigResource::Route::RouteAction::ClusterWeight::ToString() const {
-  std::vector<std::string> contents;
-  contents.push_back(absl::StrCat("cluster=", name));
-  contents.push_back(absl::StrCat("weight=", weight));
+  std::string result = "{cluster=";
+  StrAppend(result, name);
+  StrAppend(result, ", weight=");
+  StrAppend(result, std::to_string(weight));
   if (!typed_per_filter_config.empty()) {
-    std::vector<std::string> parts;
+    StrAppend(result, ", typed_per_filter_config={");
+    bool is_first = true;
     for (const auto& [key, config] : typed_per_filter_config) {
-      parts.push_back(absl::StrCat(key, "=", config.ToString()));
+      if (!is_first) StrAppend(result, ", ");
+      StrAppend(result, key);
+      StrAppend(result, "=");
+      StrAppend(result, config.ToString());
+      is_first = false;
     }
-    contents.push_back(absl::StrCat("typed_per_filter_config={",
-                                    absl::StrJoin(parts, ", "), "}"));
+    StrAppend(result, "}");
   }
-  return absl::StrCat("{", absl::StrJoin(contents, ", "), "}");
+  StrAppend(result, "}");
+  return result;
 }
 
 //
@@ -180,36 +201,54 @@ XdsRouteConfigResource::Route::RouteAction::ClusterWeight::ToString() const {
 //
 
 std::string XdsRouteConfigResource::Route::RouteAction::ToString() const {
-  std::vector<std::string> contents;
-  contents.reserve(hash_policies.size());
+  std::string result = "{";
+  bool is_first = true;
   for (const HashPolicy& hash_policy : hash_policies) {
-    contents.push_back(absl::StrCat("hash_policy=", hash_policy.ToString()));
+    if (!is_first) StrAppend(result, ", ");
+    StrAppend(result, "hash_policy=");
+    StrAppend(result, hash_policy.ToString());
+    is_first = false;
   }
   if (retry_policy.has_value()) {
-    contents.push_back(absl::StrCat("retry_policy=", retry_policy->ToString()));
+    if (!is_first) StrAppend(result, ", ");
+    StrAppend(result, "retry_policy=");
+    StrAppend(result, retry_policy->ToString());
+    is_first = false;
   }
   Match(
       action,
-      [&contents](const ClusterName& cluster_name) {
-        contents.push_back(
-            absl::StrFormat("Cluster name: %s", cluster_name.cluster_name));
+      [&](const ClusterName& cluster_name) {
+        if (!is_first) StrAppend(result, ", ");
+        StrAppend(result, "Cluster name: ");
+        StrAppend(result, cluster_name.cluster_name);
+        is_first = false;
       },
-      [&contents](const std::vector<ClusterWeight>& weighted_clusters) {
+      [&](const std::vector<ClusterWeight>& weighted_clusters) {
         for (const ClusterWeight& cluster_weight : weighted_clusters) {
-          contents.push_back(cluster_weight.ToString());
+          if (!is_first) StrAppend(result, ", ");
+          StrAppend(result, cluster_weight.ToString());
+          is_first = false;
         }
       },
-      [&contents](
-          const ClusterSpecifierPluginName& cluster_specifier_plugin_name) {
-        contents.push_back(absl::StrFormat(
-            "Cluster specifier plugin name: %s",
-            cluster_specifier_plugin_name.cluster_specifier_plugin_name));
+      [&](const ClusterSpecifierPluginName& cluster_specifier_plugin_name) {
+        if (!is_first) StrAppend(result, ", ");
+        StrAppend(result, "Cluster specifier plugin name: ");
+        StrAppend(result,
+                  cluster_specifier_plugin_name.cluster_specifier_plugin_name);
+        is_first = false;
       });
   if (max_stream_duration.has_value()) {
-    contents.push_back(max_stream_duration->ToString());
+    if (!is_first) StrAppend(result, ", ");
+    StrAppend(result, max_stream_duration->ToString());
+    is_first = false;
   }
-  if (auto_host_rewrite) contents.push_back("auto_host_rewrite=true");
-  return absl::StrCat("{", absl::StrJoin(contents, ", "), "}");
+  if (auto_host_rewrite) {
+    if (!is_first) StrAppend(result, ", ");
+    StrAppend(result, "auto_host_rewrite=true");
+    is_first = false;
+  }
+  StrAppend(result, "}");
+  return result;
 }
 
 //
@@ -217,26 +256,30 @@ std::string XdsRouteConfigResource::Route::RouteAction::ToString() const {
 //
 
 std::string XdsRouteConfigResource::Route::ToString() const {
-  std::vector<std::string> contents;
-  contents.push_back(matchers.ToString());
+  std::string result = matchers.ToString();
   auto* route_action =
       std::get_if<XdsRouteConfigResource::Route::RouteAction>(&action);
+  StrAppend(result, "\n");
   if (route_action != nullptr) {
-    contents.push_back(absl::StrCat("route=", route_action->ToString()));
+    StrAppend(result, "route=");
+    StrAppend(result, route_action->ToString());
   } else if (std::holds_alternative<
                  XdsRouteConfigResource::Route::NonForwardingAction>(action)) {
-    contents.push_back("non_forwarding_action={}");
+    StrAppend(result, "non_forwarding_action={}");
   } else {
-    contents.push_back("unknown_action={}");
+    StrAppend(result, "unknown_action={}");
   }
   if (!typed_per_filter_config.empty()) {
-    contents.push_back("typed_per_filter_config={");
+    StrAppend(result, "\ntyped_per_filter_config={");
     for (const auto& [name, config] : typed_per_filter_config) {
-      contents.push_back(absl::StrCat("  ", name, "=", config.ToString()));
+      StrAppend(result, "\n  ");
+      StrAppend(result, name);
+      StrAppend(result, "=");
+      StrAppend(result, config.ToString());
     }
-    contents.push_back("}");
+    StrAppend(result, "\n}");
   }
-  return absl::StrJoin(contents, "\n");
+  return result;
 }
 
 //
@@ -244,26 +287,29 @@ std::string XdsRouteConfigResource::Route::ToString() const {
 //
 
 std::string XdsRouteConfigResource::VirtualHost::ToString() const {
-  std::vector<std::string> parts;
-  parts.push_back(
-      absl::StrCat("vhost={\n"
-                   "  domains=[",
-                   absl::StrJoin(domains, ", "),
-                   "]\n"
-                   "  routes=[\n"));
+  std::string result = "vhost={\n  domains=[";
+  bool is_first = true;
+  for (const std::string& domain : domains) {
+    if (!is_first) StrAppend(result, ", ");
+    StrAppend(result, domain);
+    is_first = false;
+  }
+  StrAppend(result, "]\n  routes=[\n");
   for (const XdsRouteConfigResource::Route& route : routes) {
-    parts.push_back("    {\n");
-    parts.push_back(route.ToString());
-    parts.push_back("\n    }\n");
+    StrAppend(result, "    {\n");
+    StrAppend(result, route.ToString());
+    StrAppend(result, "\n    }\n");
   }
-  parts.push_back("  ]\n");
-  parts.push_back("  typed_per_filter_config={\n");
+  StrAppend(result, "  ]\n  typed_per_filter_config={\n");
   for (const auto& [name, config] : typed_per_filter_config) {
-    parts.push_back(absl::StrCat("    ", name, "=", config.ToString(), "\n"));
+    StrAppend(result, "    ");
+    StrAppend(result, name);
+    StrAppend(result, "=");
+    StrAppend(result, config.ToString());
+    StrAppend(result, "\n");
   }
-  parts.push_back("  }\n");
-  parts.push_back("}\n");
-  return absl::StrJoin(parts, "");
+  StrAppend(result, "  }\n}\n");
+  return result;
 }
 
 //
@@ -271,17 +317,19 @@ std::string XdsRouteConfigResource::VirtualHost::ToString() const {
 //
 
 std::string XdsRouteConfigResource::ToString() const {
-  std::vector<std::string> parts;
-  parts.reserve(virtual_hosts.size());
+  std::string result;
   for (const VirtualHost& vhost : virtual_hosts) {
-    parts.push_back(vhost.ToString());
+    StrAppend(result, vhost.ToString());
   }
-  parts.push_back("cluster_specifier_plugins={\n");
+  StrAppend(result, "cluster_specifier_plugins={\n");
   for (const auto& [name, plugin] : cluster_specifier_plugin_map) {
-    parts.push_back(absl::StrFormat("%s={%s}\n", name, plugin));
+    StrAppend(result, name);
+    StrAppend(result, "={");
+    StrAppend(result, plugin);
+    StrAppend(result, "}\n");
   }
-  parts.push_back("}");
-  return absl::StrJoin(parts, "");
+  StrAppend(result, "}");
+  return result;
 }
 
 }  // namespace grpc_core

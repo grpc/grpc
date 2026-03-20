@@ -28,7 +28,7 @@
 #include "src/core/util/env.h"
 #include "src/core/util/json/json_reader.h"
 #include "src/core/util/json/json_writer.h"
-#include "absl/strings/str_cat.h"
+#include "src/core/util/string.h"
 #include "absl/strings/string_view.h"
 
 namespace grpc_core {
@@ -118,7 +118,10 @@ RefCountedPtr<const ChannelCredsConfig> ParseXdsBootstrapChannelCreds(
   if (channel_creds_list.has_value()) {
     ValidationErrors::ScopedField field(errors, ".channel_creds");
     for (size_t i = 0; i < channel_creds_list->size(); ++i) {
-      ValidationErrors::ScopedField field(errors, absl::StrCat("[", i, "]"));
+      std::string field_name = "[";
+      StrAppend(field_name, std::to_string(i));
+      StrAppend(field_name, "]");
+      ValidationErrors::ScopedField field(errors, field_name);
       auto& creds = (*channel_creds_list)[i];
       // Select the first channel creds type that we support, but
       // validate all entries.
@@ -148,7 +151,10 @@ std::vector<RefCountedPtr<const CallCredsConfig>> ParseXdsBootstrapCallCreds(
   if (call_creds_list.has_value()) {
     ValidationErrors::ScopedField field(errors, ".call_creds");
     for (size_t i = 0; i < call_creds_list->size(); ++i) {
-      ValidationErrors::ScopedField field(errors, absl::StrCat("[", i, "]"));
+      std::string field_name = "[";
+      StrAppend(field_name, std::to_string(i));
+      StrAppend(field_name, "]");
+      ValidationErrors::ScopedField field(errors, field_name);
       auto& creds = (*call_creds_list)[i];
       if (CoreConfiguration::Get().call_creds_registry().IsSupported(
               creds.type)) {
@@ -204,33 +210,41 @@ void GrpcXdsServer::JsonPostLoad(const Json& json, const JsonArgs& args,
 }
 
 std::string GrpcXdsServer::Key() const {
-  std::vector<std::string> parts;
-  parts.push_back("{");
-  parts.push_back(absl::StrCat("target=", server_target_->Key()));
+  std::string result = "{target=";
+  StrAppend(result, server_target_->Key());
   if (!server_features_.empty()) {
-    parts.push_back(absl::StrCat("server_features=[",
-                                 absl::StrJoin(server_features_, ","), "]"));
+    StrAppend(result, ", server_features=[");
+    bool is_first = true;
+    for (const auto& feature : server_features_) {
+      if (!is_first) StrAppend(result, ",");
+      StrAppend(result, feature);
+      is_first = false;
+    }
+    StrAppend(result, "]");
   }
-  parts.push_back("}");
-  return absl::StrJoin(parts, ",");
+  StrAppend(result, "}");
+  return result;
 }
 
 std::string GrpcXdsServerTarget::Key() const {
-  std::vector<std::string> parts;
-  parts.push_back("{");
-  parts.push_back(absl::StrCat("server_uri=", server_uri_));
+  std::string result = "{server_uri=";
+  StrAppend(result, server_uri_);
   if (channel_creds_config_ != nullptr) {
-    parts.push_back(
-        absl::StrCat("channel_creds={type=", channel_creds_config_->type(),
-                     ", config=", channel_creds_config_->ToString(), "}"));
+    StrAppend(result, ", channel_creds={type=");
+    StrAppend(result, channel_creds_config_->type());
+    StrAppend(result, ", config=");
+    StrAppend(result, channel_creds_config_->ToString());
+    StrAppend(result, "}");
   }
   for (const auto& call_creds_config : call_creds_configs_) {
-    parts.push_back(absl::StrCat("call_creds={type=", call_creds_config->type(),
-                                 ", config=", call_creds_config->ToString(),
-                                 "}"));
+    StrAppend(result, ", call_creds={type=");
+    StrAppend(result, call_creds_config->type());
+    StrAppend(result, ", config=");
+    StrAppend(result, call_creds_config->ToString());
+    StrAppend(result, "}");
   }
-  parts.push_back("}");
-  return absl::StrJoin(parts, ",");
+  StrAppend(result, "}");
+  return result;
 }
 
 bool GrpcXdsServerTarget::Equals(const XdsServerTarget& other) const {

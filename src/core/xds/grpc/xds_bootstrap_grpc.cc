@@ -35,9 +35,6 @@
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/match.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/str_format.h"
-#include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
 
 namespace grpc_core {
@@ -126,8 +123,9 @@ absl::StatusOr<std::unique_ptr<GrpcXdsBootstrap>> GrpcXdsBootstrap::Create(
     absl::string_view json_string) {
   auto json = JsonParse(json_string);
   if (!json.ok()) {
-    return absl::InvalidArgumentError(absl::StrCat(
-        "Failed to parse bootstrap JSON string: ", json.status().ToString()));
+    std::string message = "Failed to parse bootstrap JSON string: ";
+    StrAppend(message, json.status().ToString());
+    return absl::InvalidArgumentError(message);
   }
   // Validate JSON.
   class XdsJsonArgs final : public JsonArgs {
@@ -181,99 +179,127 @@ void GrpcXdsBootstrap::JsonPostLoad(const Json& /*json*/,
   {
     ValidationErrors::ScopedField field(errors, ".authorities");
     for (const auto& [name, authority] : authorities_) {
-      ValidationErrors::ScopedField field(
-          errors, absl::StrCat("[\"", name,
-                               "\"].client_listener_resource_name_template"));
-      std::string expected_prefix = absl::StrCat("xdstp://", name, "/");
+      std::string field_name = "[\"";
+      StrAppend(field_name, name);
+      StrAppend(field_name, "\"].client_listener_resource_name_template");
+      ValidationErrors::ScopedField field(errors, field_name);
+      std::string expected_prefix = "xdstp://";
+      StrAppend(expected_prefix, name);
+      StrAppend(expected_prefix, "/");
       if (!authority.client_listener_resource_name_template().empty() &&
           !absl::StartsWith(authority.client_listener_resource_name_template(),
                             expected_prefix)) {
-        errors->AddError(
-            absl::StrCat("field must begin with \"", expected_prefix, "\""));
+        std::string error_message = "field must begin with \"";
+        StrAppend(error_message, expected_prefix);
+        StrAppend(error_message, "\"");
+        errors->AddError(error_message);
       }
     }
   }
 }
 
 std::string GrpcXdsBootstrap::ToString() const {
-  std::vector<std::string> parts;
+  std::string result;
   if (node_.has_value()) {
-    parts.push_back(
-        absl::StrFormat("node={\n"
-                        "  id=\"%s\",\n"
-                        "  cluster=\"%s\",\n"
-                        "  locality={\n"
-                        "    region=\"%s\",\n"
-                        "    zone=\"%s\",\n"
-                        "    sub_zone=\"%s\"\n"
-                        "  },\n"
-                        "  metadata=%s,\n"
-                        "},\n",
-                        node_->id(), node_->cluster(), node_->locality_region(),
-                        node_->locality_zone(), node_->locality_sub_zone(),
-                        JsonDump(Json::FromObject(node_->metadata()))));
+    StrAppend(result, "node={\n");
+    StrAppend(result, "  id=\"");
+    StrAppend(result, node_->id());
+    StrAppend(result, "\",\n");
+    StrAppend(result, "  cluster=\"");
+    StrAppend(result, node_->cluster());
+    StrAppend(result, "\",\n");
+    StrAppend(result, "  locality={\n");
+    StrAppend(result, "    region=\"");
+    StrAppend(result, node_->locality_region());
+    StrAppend(result, "\",\n");
+    StrAppend(result, "    zone=\"");
+    StrAppend(result, node_->locality_zone());
+    StrAppend(result, "\",\n");
+    StrAppend(result, "    sub_zone=\"");
+    StrAppend(result, node_->locality_sub_zone());
+    StrAppend(result, "\"\n");
+    StrAppend(result, "  },\n");
+    StrAppend(result, "  metadata=");
+    StrAppend(result, JsonDump(Json::FromObject(node_->metadata())));
+    StrAppend(result, ",\n");
+    StrAppend(result, "},\n");
   }
-  std::vector<std::string> server_strings;
-  for (auto& server : servers_) {
-    server_strings.emplace_back(server.Key());
+  StrAppend(result, "    servers=[\n");
+  bool is_first = true;
+  for (const auto& server : servers_) {
+    if (!is_first) StrAppend(result, ",\n");
+    StrAppend(result, server.Key());
+    is_first = false;
   }
-  parts.push_back(absl::StrFormat("    servers=[\n%s\n],\n",
-                                  absl::StrJoin(server_strings, ",\n")));
+  StrAppend(result, "\n],\n");
   if (!client_default_listener_resource_name_template_.empty()) {
-    parts.push_back(absl::StrFormat(
-        "client_default_listener_resource_name_template=\"%s\",\n",
-        client_default_listener_resource_name_template_));
+    StrAppend(result, "client_default_listener_resource_name_template=\"");
+    StrAppend(result, client_default_listener_resource_name_template_);
+    StrAppend(result, "\",\n");
   }
   if (!server_listener_resource_name_template_.empty()) {
-    parts.push_back(
-        absl::StrFormat("server_listener_resource_name_template=\"%s\",\n",
-                        server_listener_resource_name_template_));
+    StrAppend(result, "server_listener_resource_name_template=\"");
+    StrAppend(result, server_listener_resource_name_template_);
+    StrAppend(result, "\",\n");
   }
-  parts.push_back("authorities={\n");
+  StrAppend(result, "authorities={\n");
   for (const auto& [name, authority] : authorities_) {
-    parts.push_back(absl::StrFormat("  %s={\n", name));
-    parts.push_back(
-        absl::StrFormat("    client_listener_resource_name_template=\"%s\",\n",
-                        authority.client_listener_resource_name_template()));
-    std::vector<std::string> server_strings;
-    for (const XdsServer* server : authority.servers()) {
-      server_strings.emplace_back(server->Key());
+    StrAppend(result, "  ");
+    StrAppend(result, name);
+    StrAppend(result, "={\n");
+    StrAppend(result, "    client_listener_resource_name_template=\"");
+    StrAppend(result, authority.client_listener_resource_name_template());
+    StrAppend(result, "\",\n");
+    if (!authority.servers().empty()) {
+      StrAppend(result, "    servers=[\n");
+      bool is_first_server = true;
+      for (const XdsServer* server : authority.servers()) {
+        if (!is_first_server) StrAppend(result, ",\n");
+        StrAppend(result, server->Key());
+        is_first_server = false;
+      }
+      StrAppend(result, "\n],\n");
     }
-    if (!server_strings.empty()) {
-      parts.push_back(absl::StrFormat("    servers=[\n%s\n],\n",
-                                      absl::StrJoin(server_strings, ",\n")));
-    }
-    parts.push_back("      },\n");
+    StrAppend(result, "      },\n");
   }
-  parts.push_back("}\n");
-  parts.push_back("certificate_providers={\n");
+  StrAppend(result, "}\n");
+  StrAppend(result, "certificate_providers={\n");
   for (const auto& [name, plugin_definition] : certificate_providers_) {
-    parts.push_back(
-        absl::StrFormat("  %s={\n"
-                        "    plugin_name=%s\n"
-                        "    config=%s\n"
-                        "  },\n",
-                        name, plugin_definition.plugin_name,
-                        plugin_definition.config->ToString()));
+    StrAppend(result, "  ");
+    StrAppend(result, name);
+    StrAppend(result, "={\n");
+    StrAppend(result, "    plugin_name=");
+    StrAppend(result, plugin_definition.plugin_name);
+    StrAppend(result, "\n");
+    StrAppend(result, "    config=");
+    StrAppend(result, plugin_definition.config->ToString());
+    StrAppend(result, "\n");
+    StrAppend(result, "  },\n");
   }
-  parts.push_back("}");
-  parts.push_back("allowed_grpc_services={\n");
+  StrAppend(result, "}");
+  StrAppend(result, "allowed_grpc_services={\n");
   for (const auto& [target_uri, creds] : allowed_grpc_services_) {
-    parts.push_back(absl::StrCat("  ", target_uri, "={\n"));
+    StrAppend(result, "  ");
+    StrAppend(result, target_uri);
+    StrAppend(result, "={\n");
     if (creds.channel_creds_config != nullptr) {
-      parts.push_back(absl::StrCat(
-          "    channel_creds={type=", creds.channel_creds_config->type(),
-          ", config=", creds.channel_creds_config->ToString(), "},\n"));
+      StrAppend(result, "    channel_creds={type=");
+      StrAppend(result, creds.channel_creds_config->type());
+      StrAppend(result, ", config=");
+      StrAppend(result, creds.channel_creds_config->ToString());
+      StrAppend(result, "},\n");
     }
     for (const auto& call_creds_config : creds.call_creds_configs) {
-      parts.push_back(
-          absl::StrCat("    call_creds={type=", call_creds_config->type(),
-                       ", config=", call_creds_config->ToString(), "},\n"));
+      StrAppend(result, "    call_creds={type=");
+      StrAppend(result, call_creds_config->type());
+      StrAppend(result, ", config=");
+      StrAppend(result, call_creds_config->ToString());
+      StrAppend(result, "},\n");
     }
-    parts.push_back("  },\n");
+    StrAppend(result, "  },\n");
   }
-  parts.push_back("}");
-  return absl::StrJoin(parts, "");
+  StrAppend(result, "}");
+  return result;
 }
 
 const XdsBootstrap::Authority* GrpcXdsBootstrap::LookupAuthority(
