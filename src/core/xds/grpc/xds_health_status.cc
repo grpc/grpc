@@ -19,7 +19,6 @@
 #include <string>
 
 #include "envoy/config/core/v3/health_check.upb.h"
-
 #include "src/core/util/string.h"
 
 namespace grpc_core {

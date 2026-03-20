@@ -6089,12 +6089,12 @@ grpc_cc_library(
     ],
     tags = ["nofixdeps"],
     deps = [
-        "//:gpr",
         "grpc_matchers",
         "json",
         "match",
         "validation_errors",
         "xds_server_grpc",
+        "//:gpr",
     ],
 )
 

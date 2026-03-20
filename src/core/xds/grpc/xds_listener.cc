@@ -67,7 +67,8 @@ std::string XdsListenerResource::HttpConnectionManager::HttpFilter::ToString()
   StrAppend(result, ", config=");
   StrAppend(result, JsonDump(config));
   StrAppend(result, ", filter_config=");
-  StrAppend(result, filter_config == nullptr ? "null" : filter_config->ToString());
+  StrAppend(result,
+            filter_config == nullptr ? "null" : filter_config->ToString());
   StrAppend(result, "}");
   return result;
 }
