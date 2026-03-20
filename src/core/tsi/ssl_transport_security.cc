@@ -44,7 +44,7 @@
 #include <grpc/support/sync.h>
 #include <grpc/support/thd_id.h>
 #include <openssl/bio.h>
-#include <openssl/crypto.h>  // For OPENSSL_free
+#include <openssl/crypto.h>
 #include <openssl/engine.h>
 #include <openssl/err.h>
 #include <openssl/ssl.h>
@@ -82,11 +82,6 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 
-// Name of the environment variable controlling OpenSSL cleanup timeout.
-// This variable allows users to specify the timeout (in seconds) for OpenSSL
-// resource cleanup during gRPC shutdown. If not set, a default timeout is used.
-#define GRPC_ARG_OPENSSL_CLEANUP_TIMEOUT_ENV "grpc.openssl_cleanup_timeout"
-
 namespace {
 
 // ----- Generic constants. -----
@@ -95,6 +90,11 @@ constexpr size_t kMaxChainLength = 100;
 constexpr size_t kMaxProtectedFrameSizeUpperBound = 16384;
 constexpr size_t kMaxProtectedFrameSizeLowerBound = 1024;
 constexpr size_t kMaxProtectionOverhead = 100;
+constexpr absl::Duration kOpenSslCleanupDefaultTimeout = absl::Seconds(2);
+// Name of environment variable that allows users to specify the timeout (in
+// seconds) for OpenSSL resource cleanup during gRPC shutdown.
+constexpr absl::string_view kOpenSslCleanupTimeoutEnvVar =
+    "grpc.openssl_cleanup_timeout";
 constexpr size_t kOutgoingBufferInitialSize = 1024;
 constexpr unsigned char kSslSessionIdContext[] = {'g', 'r', 'p', 'c'};
 
@@ -484,9 +484,6 @@ const SSL_PRIVATE_KEY_METHOD TlsOffloadPrivateKeyMethod = {
 
 #if OPENSSL_VERSION_NUMBER < 0x10100000
 static gpr_mu* g_openssl_mutexes = nullptr;
-static void openssl_locking_cb(int mode, int type, const char* file,
-                               int line) GRPC_UNUSED;
-static unsigned long openssl_thread_id_cb(void) GRPC_UNUSED;
 
 static void openssl_locking_cb(int mode, int type, const char* file, int line) {
   if (mode & CRYPTO_LOCK) {
@@ -507,7 +504,7 @@ static void verified_root_cert_free(void* /*parent*/, void* ptr,
   X509_free(static_cast<X509*>(ptr));
 }
 
-static void init_openssl(void) {
+static void InitializeOpenSsl() {
 #if OPENSSL_VERSION_NUMBER >= 0x10100000
   OPENSSL_init_ssl(0, nullptr);
   // Ensure OPENSSL global clean up happens after gRPC shutdown completes.
@@ -519,12 +516,12 @@ static void init_openssl(void) {
     // This allows users to override the default cleanup timeout for OpenSSL
     // resource deallocation during gRPC shutdown.
     std::optional<std::string> env =
-        grpc_core::GetEnv(GRPC_ARG_OPENSSL_CLEANUP_TIMEOUT_ENV);
-    int timeout_sec = 2;
+        grpc_core::GetEnv(kOpenSslCleanupTimeoutEnvVar);
+    absl::Duration timeout = kOpenSslCleanupDefaultTimeout;
     if (env.has_value()) {
       int parsed_timeout_sec = 0;
       if (absl::SimpleAtoi(*env, &parsed_timeout_sec)) {
-        timeout_sec = parsed_timeout_sec;
+        timeout = absl::Seconds(parsed_timeout_sec);
       } else {
         GRPC_TRACE_LOG(tsi, ERROR)
             << "Invalid value [" << (*env) << "] for "
@@ -532,8 +529,7 @@ static void init_openssl(void) {
             << " environment variable. Using default value of 2 seconds.";
       }
     }
-
-    grpc_wait_for_shutdown_with_timeout(absl::Seconds(timeout_sec));
+    grpc_wait_for_shutdown_with_timeout(timeout);
   });
 #else
   SSL_library_init();
@@ -575,6 +571,7 @@ static void init_openssl(void) {
       SSL_get_ex_new_index(0, nullptr, nullptr, nullptr, nullptr);
   GRPC_CHECK_NE(g_ssl_ex_handshaker_index, -1);
 }
+
 // --- Ssl utils. ---
 
 static void ssl_log_where_info(const SSL* ssl, int where, int flag,
@@ -1653,24 +1650,14 @@ tsi_ssl_root_certs_store* tsi_ssl_root_certs_store_create(
     LOG(ERROR) << "The root certificates are empty.";
     return nullptr;
   }
-  tsi_ssl_root_certs_store* root_store = static_cast<tsi_ssl_root_certs_store*>(
-      gpr_zalloc(sizeof(tsi_ssl_root_certs_store)));
-  if (root_store == nullptr) {
-    LOG(ERROR) << "Could not allocate buffer for ssl_root_certs_store.";
-    return nullptr;
-  }
+  tsi_ssl_root_certs_store* root_store = new tsi_ssl_root_certs_store();
   root_store->store = X509_STORE_new();
-  if (root_store->store == nullptr) {
-    LOG(ERROR) << "Could not allocate buffer for X509_STORE.";
-    gpr_free(root_store);
-    return nullptr;
-  }
   tsi_result result = x509_store_load_certs(root_store->store, pem_roots,
                                             strlen(pem_roots), nullptr);
   if (result != TSI_OK) {
     LOG(ERROR) << "Could not load root certificates.";
     X509_STORE_free(root_store->store);
-    gpr_free(root_store);
+    delete root_store;
     return nullptr;
   }
 #if OPENSSL_VERSION_NUMBER >= 0x10100000
@@ -1685,7 +1672,7 @@ tsi_ssl_root_certs_store* tsi_ssl_root_certs_store_create(
 void tsi_ssl_root_certs_store_destroy(tsi_ssl_root_certs_store* self) {
   if (self == nullptr) return;
   X509_STORE_free(self->store);
-  gpr_free(self);
+  delete self;
 }
 
 // --- tsi_ssl_session_cache methods implementation. ---
@@ -1996,11 +1983,6 @@ static tsi_result ssl_handshaker_result_create(tsi_ssl_handshaker* handshaker,
                                                unsigned char* unused_bytes,
                                                size_t unused_bytes_size)
     ABSL_EXCLUSIVE_LOCKS_REQUIRED(&tsi_ssl_handshaker::mu) {
-  if (handshaker == nullptr) return TSI_INVALID_ARGUMENT;
-  if (unused_bytes_size > 0 && unused_bytes == nullptr) {
-    handshaker->MaybeSetError("invalid argument");
-    return TSI_INVALID_ARGUMENT;
-  }
   tsi_ssl_handshaker_result* result =
       grpc_core::Zalloc<tsi_ssl_handshaker_result>();
   result->base.vtable = &handshaker_result_vtable;
@@ -2134,11 +2116,6 @@ static tsi_result ssl_bytes_remaining(tsi_ssl_handshaker* impl,
                                       unsigned char** bytes_remaining,
                                       size_t* bytes_remaining_size)
     ABSL_EXCLUSIVE_LOCKS_REQUIRED(&tsi_ssl_handshaker::mu) {
-  if (impl == nullptr) return TSI_INVALID_ARGUMENT;
-  if (bytes_remaining == nullptr || bytes_remaining_size == nullptr) {
-    impl->MaybeSetError("invalid argument");
-    return TSI_INVALID_ARGUMENT;
-  }
   // Attempt to read all of the bytes in SSL's read BIO. These bytes should
   // contain application data records that were appended to a handshake record
   // containing the ClientFinished or ServerFinished message.
@@ -2766,12 +2743,7 @@ static tsi_ssl_handshaker_factory_vtable client_handshaker_factory_vtable = {
 tsi_result tsi_create_ssl_client_handshaker_factory_with_options(
     const tsi_ssl_client_handshaker_options* options,
     tsi_ssl_client_handshaker_factory** factory) {
-  SSL_CTX* ssl_context = nullptr;
-  tsi_ssl_client_handshaker_factory* impl = nullptr;
-  tsi_result result = TSI_OK;
-
-  gpr_once_init(&g_init_openssl_once, init_openssl);
-
+  // Validate the input.
   if (factory == nullptr) return TSI_INVALID_ARGUMENT;
   *factory = nullptr;
   if (options->root_store == nullptr && options->root_cert_info == nullptr &&
@@ -2779,28 +2751,33 @@ tsi_result tsi_create_ssl_client_handshaker_factory_with_options(
     return TSI_INVALID_ARGUMENT;
   }
 
+  // Construct the SSL_CTX.
+  SSL_CTX* ssl_context = nullptr;
+  gpr_once_init(&g_init_openssl_once, InitializeOpenSsl);
 #if OPENSSL_VERSION_NUMBER >= 0x10100000
   ssl_context = SSL_CTX_new(TLS_method());
 #else
   ssl_context = SSL_CTX_new(TLSv1_2_method());
 #endif
-#if OPENSSL_VERSION_NUMBER >= 0x10101000 && !defined(LIBRESSL_VERSION_NUMBER)
-  SSL_CTX_set_options(ssl_context, SSL_OP_NO_RENEGOTIATION);
-#endif
   if (ssl_context == nullptr) {
-    tsi::LogSslErrorStack();
-    LOG(ERROR) << "Could not create ssl context.";
+    LOG(ERROR) << "Could not create ssl context: " << GetOpenSslError();
     return TSI_INVALID_ARGUMENT;
   }
 
-  result = tsi_set_min_and_max_tls_versions(
-      ssl_context, options->min_tls_version, options->max_tls_version);
-  if (result != TSI_OK) return result;
-
-  impl = new tsi_ssl_client_handshaker_factory();
+  // Create the SSL handshaker factory.
+  tsi_ssl_client_handshaker_factory* impl =
+      new tsi_ssl_client_handshaker_factory();
   tsi_ssl_handshaker_factory_init(&impl->base);
   impl->base.vtable = &client_handshaker_factory_vtable;
   impl->ssl_context = ssl_context;
+
+// Configure the SSL_CTX.
+#if OPENSSL_VERSION_NUMBER >= 0x10101000 && !defined(LIBRESSL_VERSION_NUMBER)
+  SSL_CTX_set_options(ssl_context, SSL_OP_NO_RENEGOTIATION);
+#endif
+  result = tsi_set_min_and_max_tls_versions(
+      ssl_context, options->min_tls_version, options->max_tls_version);
+  if (result != TSI_OK) return result;
   if (options->session_cache != nullptr) {
     // Unref is called manually on factory destruction.
     impl->session_cache =
@@ -2949,22 +2926,22 @@ static tsi_ssl_handshaker_factory_vtable server_handshaker_factory_vtable = {
 tsi_result tsi_create_ssl_server_handshaker_factory_with_options(
     const tsi_ssl_server_handshaker_options* options,
     tsi_ssl_server_handshaker_factory** factory) {
-  tsi_ssl_server_handshaker_factory* impl = nullptr;
-  tsi_result result = TSI_OK;
-  size_t i = 0;
-
-  gpr_once_init(&g_init_openssl_once, init_openssl);
-
+  // Validate the inputs.
   if (factory == nullptr) return TSI_INVALID_ARGUMENT;
   *factory = nullptr;
   if (options->pem_key_cert_pairs.empty()) {
     return TSI_INVALID_ARGUMENT;
   }
 
-  impl = new tsi_ssl_server_handshaker_factory();
+  // Create the SSL handshaker factory.
+  tsi_result result = TSI_OK;
+  tsi_ssl_server_handshaker_factory* impl =
+      new tsi_ssl_server_handshaker_factory();
   tsi_ssl_handshaker_factory_init(&impl->base);
   impl->base.vtable = &server_handshaker_factory_vtable;
 
+  // Initialize the SSL contexts.
+  gpr_once_init(&g_init_openssl_once, InitializeOpenSsl);
   impl->ssl_contexts = static_cast<SSL_CTX**>(
       gpr_zalloc(options->pem_key_cert_pairs.size() * sizeof(SSL_CTX*)));
   impl->ssl_context_x509_subject_names = static_cast<tsi_peer*>(
@@ -2993,6 +2970,7 @@ tsi_result tsi_create_ssl_server_handshaker_factory_with_options(
     impl->key_logger = options->key_logger->Ref();
   }
 
+  int i = 0;
   for (i = 0; i < options->pem_key_cert_pairs.size(); i++) {
     do {
 #if OPENSSL_VERSION_NUMBER >= 0x10100000
