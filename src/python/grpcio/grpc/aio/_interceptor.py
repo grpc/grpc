@@ -393,8 +393,6 @@ class InterceptedCall:
         call = self._interceptors_task.result()
         return call.cancelled()
 
-        return call.cancelled()
-
     def done(self) -> bool:
         if not self._interceptors_task.done():
             return False
@@ -408,8 +406,6 @@ class InterceptedCall:
             return True
 
         call = self._interceptors_task.result()
-        return call.done()
-
         return call.done()
 
     def add_done_callback(self, callback: DoneCallbackType) -> None:
