@@ -408,6 +408,7 @@ class Channel(_base_channel.Channel):
             if tasks_to_wait:
                 await asyncio.wait(tasks_to_wait, timeout=grace)
 
+        # Time to cancel existing calls.
         for call in calls:
             call.cancel()
 
