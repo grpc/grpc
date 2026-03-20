@@ -15,6 +15,7 @@
 
 import asyncio
 import sys
+import weakref
 from typing import Any, Iterable, List, Optional, Sequence
 
 import grpc
@@ -88,6 +89,7 @@ class _BaseMultiCallable:
 
     _loop: asyncio.AbstractEventLoop
     _channel: cygrpc.AioChannel
+    _channel_py: "Channel"
     _method: bytes
     _request_serializer: Optional[SerializingFunction]
     _response_deserializer: Optional[DeserializingFunction]
@@ -113,6 +115,7 @@ class _BaseMultiCallable:
         self._response_deserializer = response_deserializer
         self._interceptors = interceptors
         self._references = references
+        self._channel_py = references[0]
 
     @staticmethod
     def _init_metadata(
@@ -176,6 +179,7 @@ class UnaryUnaryMultiCallable(
                 self._loop,
             )
 
+        self._channel_py._active_calls.add(call)
         return call
 
 
@@ -222,6 +226,7 @@ class UnaryStreamMultiCallable(
                 self._loop,
             )
 
+        self._channel_py._active_calls.add(call)
         return call
 
 
@@ -267,6 +272,7 @@ class StreamUnaryMultiCallable(
                 self._loop,
             )
 
+        self._channel_py._active_calls.add(call)
         return call
 
 
@@ -312,6 +318,7 @@ class StreamStreamMultiCallable(
                 self._loop,
             )
 
+        self._channel_py._active_calls.add(call)
         return call
 
 
@@ -367,6 +374,7 @@ class Channel(_base_channel.Channel):
                     )
 
         self._loop = cygrpc.get_working_loop()
+        self._active_calls = weakref.WeakSet()
         self._channel = cygrpc.AioChannel(
             _common.encode(target),
             _augment_channel_arguments(options, compression),
@@ -387,65 +395,7 @@ class Channel(_base_channel.Channel):
         # No new calls will be accepted by the Cython channel.
         self._channel.closing()
 
-        # Iterate through running tasks
-        tasks = _all_tasks()
-        calls = []
-        call_tasks = []
-        for task in tasks:
-            try:
-                stack = task.get_stack(limit=1)
-            except AttributeError as attribute_error:
-                # NOTE(lidiz) tl;dr: If the Task is created with a CPython
-                # object, it will trigger AttributeError.
-                #
-                # In the global finalizer, the event loop schedules
-                # a CPython PyAsyncGenAThrow object.
-                # https://github.com/python/cpython/blob/00e45877e33d32bb61aa13a2033e3bba370bda4d/Lib/asyncio/base_events.py#L484
-                #
-                # However, the PyAsyncGenAThrow object is written in C and
-                # failed to include the normal Python frame objects. Hence,
-                # this exception is a false negative, and it is safe to ignore
-                # the failure. It is fixed by https://github.com/python/cpython/pull/18669,
-                # but not available until 3.9 or 3.8.3. So, we have to keep it
-                # for a while.
-                # TODO(lidiz): drop this hack after 3.8 deprecation
-                if "frame" in str(attribute_error):
-                    continue
-                raise
-
-            # If the Task is created by a C-extension, the stack will be empty.
-            if not stack:
-                continue
-
-            # Locate ones created by `aio.Call`.
-            frame = stack[0]
-            candidate = frame.f_locals.get("self")
-            # Explicitly check for a non-null candidate instead of the more pythonic 'if candidate:'
-            # because doing 'if candidate:' assumes that the coroutine implements '__bool__' which
-            # might not always be the case.
-            if candidate is not None and isinstance(candidate, _base_call.Call):
-                if hasattr(candidate, "_channel"):
-                    # For intercepted Call object
-                    if candidate._channel is not self._channel:
-                        continue
-                elif hasattr(candidate, "_cython_call"):
-                    # For normal Call object
-                    if candidate._cython_call._channel is not self._channel:
-                        continue
-                else:
-                    # Unidentified Call object
-                    error_msg = f"Unrecognized call object: {candidate}"
-                    raise cygrpc.InternalError(error_msg)
-
-                calls.append(candidate)
-                call_tasks.append(task)
-
-        # If needed, try to wait for them to finish.
-        # Call objects are not always awaitables.
-        if grace and call_tasks:
-            await asyncio.wait(call_tasks, timeout=grace)
-
-        # Time to cancel existing calls.
+        calls = list(self._active_calls)
         for call in calls:
             call.cancel()
 
