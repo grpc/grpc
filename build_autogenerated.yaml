@@ -23399,6 +23399,17 @@ targets:
   - linux
   - posix
   - mac
+- name: ssl_utils_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/credentials/transport/tls/ssl_utils_test.cc
+  - third_party/googletest/googlemock/src/gmock_main.cc
+  deps:
+  - gtest
+  - grpc_test_util
 - name: stack_tracer_test
   gtest: true
   build: test
