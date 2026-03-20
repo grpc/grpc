@@ -156,19 +156,16 @@ class TestCloseChannel(AioTestBase):
 
         try:
             channel = aio.insecure_channel(server_target)
-
-
             stub = test_pb2_grpc.TestServiceStub(channel)
-
             call = stub.FullDuplexCall()
 
             await call.write(messages_pb2.StreamingOutputCallRequest())
+
             await call.read()
 
             await call.done_writing()
 
             await channel.close(grace=0.5)
-
         finally:
             await server.stop(None)
 
