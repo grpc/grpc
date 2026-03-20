@@ -67,7 +67,17 @@ inline void ApplyCommonChannelArguments(ChannelArguments& args) {
   }
 }
 
-#define SKIP_TEST_FOR_PH2(message)                            \
+#define SKIP_TEST_FOR_PH2_CLIENT(message)                     \
+  if (grpc_core::IsPromiseBasedHttp2ClientTransportEnabled()) \
+    GTEST_SKIP() << (message);
+
+#define SKIP_TEST_FOR_PH2_SERVER(message)                     \
+  if (grpc_core::IsPromiseBasedHttp2ServerTransportEnabled()) \
+    GTEST_SKIP() << (message);
+
+// Retry for PH2 will be implemented separately, after the PH2 Client and Server
+// rollout starts.
+#define SKIP_RETRY_TEST_FOR_PH2_CLIENT(message)               \
   if (grpc_core::IsPromiseBasedHttp2ClientTransportEnabled()) \
     GTEST_SKIP() << (message);
 

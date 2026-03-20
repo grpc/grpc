@@ -27,17 +27,20 @@ namespace grpc_core {
 namespace {
 
 TEST(TestTimeoutTest, NoCrashIfDestroyedBeforeTimeout) {
+  grpc_init();
   auto engine = grpc_event_engine::experimental::GetDefaultEventEngine();
   {
     TestTimeout timeout(Duration::Milliseconds(10), engine);
   }
   // Wait longer than timeout to ensure it doesn't crash
-  std::this_thread::sleep_for(std::chrono::seconds(2));
+  std::this_thread::sleep_for(std::chrono::seconds(20));
+  grpc_shutdown();
 }
 
 TEST(TestTimeoutDeathTest, CrashIfTimeoutExpires) {
   EXPECT_DEATH(
       {
+        grpc_init();
         auto engine = grpc_event_engine::experimental::GetDefaultEventEngine();
         TestTimeout timeout(Duration::Milliseconds(10), engine);
         std::this_thread::sleep_for(std::chrono::seconds(20));
@@ -50,8 +53,6 @@ TEST(TestTimeoutDeathTest, CrashIfTimeoutExpires) {
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
-  grpc_init();
   int r = RUN_ALL_TESTS();
-  grpc_shutdown();
   return r;
 }

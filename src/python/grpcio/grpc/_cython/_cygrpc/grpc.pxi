@@ -590,12 +590,17 @@ cdef extern from "grpc/credentials.h":
     pass
 
   grpc_tls_credentials_options *grpc_tls_credentials_options_create() nogil
+  void grpc_tls_credentials_options_destroy(grpc_tls_credentials_options* options) nogil
 
   ctypedef struct grpc_tls_certificate_provider:
     # We don't care about the internals (and in fact don't know them)
     pass
+  
+  void grpc_tls_credentials_options_set_root_certificate_provider(
+    grpc_tls_credentials_options *options,
+    grpc_tls_certificate_provider *provider) nogil
 
-  void grpc_tls_credentials_options_set_certificate_provider(
+  void grpc_tls_credentials_options_set_identity_certificate_provider(
     grpc_tls_credentials_options *options,
     grpc_tls_certificate_provider *provider) nogil
 
@@ -604,24 +609,23 @@ cdef extern from "grpc/credentials.h":
     pass
 
   grpc_tls_identity_pairs *grpc_tls_identity_pairs_create() nogil
+  void grpc_tls_identity_pairs_destroy(grpc_tls_identity_pairs* pairs) nogil
 
   void grpc_tls_identity_pairs_add_pair(
     grpc_tls_identity_pairs *pairs,
     const char *private_key,
     const char *cert_chain) nogil
 
-  grpc_tls_certificate_provider *grpc_tls_certificate_provider_static_data_create(
-    const char *root_certificate, grpc_tls_identity_pairs *pem_key_cert_pairs) nogil
+  grpc_tls_certificate_provider *grpc_tls_certificate_provider_in_memory_create() nogil
 
-  void grpc_tls_credentials_options_set_certificate_provider(
-    grpc_tls_credentials_options *options,
-    grpc_tls_certificate_provider *provider) nogil
+  void grpc_tls_certificate_provider_in_memory_set_root_certificate(
+    grpc_tls_certificate_provider* provider, const char* root_cert
+  ) nogil
 
-  void grpc_tls_credentials_options_watch_root_certs(
-    grpc_tls_credentials_options *options) nogil
-
-  void grpc_tls_credentials_options_watch_identity_key_cert_pairs(
-    grpc_tls_credentials_options *options) nogil
+  void grpc_tls_certificate_provider_in_memory_set_identity_certificate(
+    grpc_tls_certificate_provider* provider, 
+    grpc_tls_identity_pairs* pem_key_cert_pairs
+  ) nogil
 
   void grpc_tls_certificate_provider_release(
     grpc_tls_certificate_provider *provider) nogil

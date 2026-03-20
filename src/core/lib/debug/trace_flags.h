@@ -109,6 +109,7 @@ extern TraceFlag secure_endpoint_trace;
 extern TraceFlag server_channel_trace;
 extern TraceFlag stateful_session_filter_trace;
 extern TraceFlag subchannel_trace;
+extern TraceFlag subchannel_call_trace;
 extern TraceFlag subchannel_pool_trace;
 extern TraceFlag tcp_trace;
 extern TraceFlag timer_trace;

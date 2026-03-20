@@ -58,9 +58,8 @@
 #include "absl/container/flat_hash_set.h"
 #include "absl/status/status.h"
 
-/** This arg is intended for internal use only, primarily
- *  for passing endpoint information during subchannel creation or connection.
- */
+// This arg is intended for internal use only, primarily for passing
+// endpoint information during subchannel creation or connection.
 #define GRPC_ARG_SUBCHANNEL_ENDPOINT "grpc.internal.subchannel_endpoint"
 
 namespace grpc_core {
@@ -571,14 +570,30 @@ class NewSubchannel final : public Subchannel {
 
   class ConnectionStateWatcher;
 
+  class QueuedCall;
+
   // Tears down any existing connection, and arranges for destruction
   void Orphaned() override ABSL_LOCKS_EXCLUDED(mu_);
 
-  RefCountedPtr<ConnectedSubchannel> GetConnectedSubchannel();
+  RefCountedPtr<ConnectedSubchannel> ChooseConnectionLocked()
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
+  void RetryQueuedRpcs() ABSL_LOCKS_EXCLUDED(mu_);
+  void RetryQueuedRpcsLocked() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
+  void MaybeFailAllQueuedRpcsLocked() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
+  void FailAllQueuedRpcsLocked(absl::Status status)
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
-  // Sets the subchannel's connectivity state to \a state.
-  void SetConnectivityStateLocked(grpc_connectivity_state state,
-                                  const absl::Status& status)
+  // Updates the subchannel's connectivity state.
+  void SetLastFailureLocked(const absl::Status& status)
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
+  grpc_connectivity_state ComputeConnectivityStateLocked() const
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
+  absl::Status ConnectivityStatusToReportLocked() const
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
+  void MaybeUpdateConnectivityStateLocked() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
+
+  // Returns true if the connection was removed.
+  bool RemoveConnectionLocked(ConnectedSubchannel* connected_subchannel)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
   void ThrottleKeepaliveTimeLocked(Duration new_keepalive_time)
@@ -621,6 +636,7 @@ class NewSubchannel final : public Subchannel {
   // Protects the other members.
   Mutex mu_;
 
+  bool connection_attempt_in_flight_ ABSL_GUARDED_BY(mu_) = false;
   bool shutdown_ ABSL_GUARDED_BY(mu_) = false;
 
   // Connectivity state tracking.
@@ -631,20 +647,21 @@ class NewSubchannel final : public Subchannel {
   // - READY: connection attempt succeeded, connected_subchannel_ created
   // - TRANSIENT_FAILURE: connection attempt failed, retry timer pending
   grpc_connectivity_state state_ ABSL_GUARDED_BY(mu_) = GRPC_CHANNEL_IDLE;
-  absl::Status status_ ABSL_GUARDED_BY(mu_);
+  absl::Status last_failure_status_ ABSL_GUARDED_BY(mu_);
   // The list of connectivity state watchers.
   ConnectivityStateWatcherList watcher_list_ ABSL_GUARDED_BY(mu_);
   // Used for sending connectivity state notifications.
   WorkSerializer work_serializer_;
 
-  // Active connection, or null.
-  RefCountedPtr<ConnectedSubchannel> connected_subchannel_ ABSL_GUARDED_BY(mu_);
+  // Established connections.
+  std::vector<RefCountedPtr<ConnectedSubchannel>> connections_
+      ABSL_GUARDED_BY(mu_);
 
   // Backoff state.
   BackOff backoff_ ABSL_GUARDED_BY(mu_);
   Timestamp next_attempt_time_ ABSL_GUARDED_BY(mu_);
-  grpc_event_engine::experimental::EventEngine::TaskHandle retry_timer_handle_
-      ABSL_GUARDED_BY(mu_);
+  std::optional<grpc_event_engine::experimental::EventEngine::TaskHandle>
+      retry_timer_handle_ ABSL_GUARDED_BY(mu_);
 
   // Keepalive time period
   Duration keepalive_time_ ABSL_GUARDED_BY(mu_);
@@ -653,7 +670,20 @@ class NewSubchannel final : public Subchannel {
   std::map<UniqueTypeName, DataProducerInterface*> data_producer_map_
       ABSL_GUARDED_BY(mu_);
   std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_;
+
+  // A queue of calls waiting to be dispatched to a connection.
+  // If a call is cancelled while in the queue, its entry will be reset
+  // to null, so we ignore null values when draining the queue.
+  //
+  // Note that each queued call holds a C++ reference to its entry in the
+  // queue, which it will set to null if it gets cancelled.  Therefore,
+  // this data structure must guarantee that references to entries are not
+  // invalidated as entries are added or removed from the queue (i.e.,
+  // std::vector<> would not work).
+  std::deque<QueuedCall*> queued_calls_ ABSL_GUARDED_BY(mu_);
 };
+
+void TestOnlySetSubchannelAlwaysSendCallsToTransport(bool enabled);
 
 }  // namespace grpc_core
 

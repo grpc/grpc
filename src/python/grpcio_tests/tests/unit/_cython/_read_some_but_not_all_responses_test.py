@@ -24,7 +24,7 @@ _EMPTY_FLAGS = 0
 _EMPTY_METADATA = ()
 
 
-class _ServerDriver(object):
+class _ServerDriver:
     def __init__(self, completion_queue, shutdown_tag):
         self._condition = threading.Condition()
         self._completion_queue = completion_queue
@@ -63,7 +63,7 @@ class _ServerDriver(object):
             return tuple(self._events)
 
 
-class _QueueDriver(object):
+class _QueueDriver:
     def __init__(self, condition, completion_queue, due):
         self._condition = condition
         self._completion_queue = completion_queue

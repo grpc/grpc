@@ -71,6 +71,7 @@ class CallTracerAnnotationInterface {
     kMetadataSizes,
     kHttpTransport,
     kSendInitialMetadata,
+    kSendTrailingMetadata,
     kDoNotUse_MustBeLast,
   };
 
@@ -121,6 +122,22 @@ class SendInitialMetadataAnnotation final
   const grpc_metadata_batch* metadata_;
 };
 
+class SendTrailingMetadataAnnotation final
+    : public CallTracerAnnotationInterface::Annotation {
+ public:
+  explicit SendTrailingMetadataAnnotation(grpc_metadata_batch* metadata)
+      : Annotation(CallTracerAnnotationInterface::AnnotationType::
+                       kSendTrailingMetadata),
+        metadata_(metadata) {}
+  const grpc_metadata_batch* metadata() const { return metadata_; }
+  std::string ToString() const override;
+  void ForEachKeyValue(
+      absl::FunctionRef<void(absl::string_view, ValueType)> f) const override;
+
+ private:
+  const grpc_metadata_batch* metadata_;
+};
+
 // The base class for CallAttemptTracer and ServerCallTracer.
 // TODO(yashykt): What's a better name for this?
 class CallTracerInterface : public CallTracerAnnotationInterface {
@@ -133,6 +150,8 @@ class CallTracerInterface : public CallTracerAnnotationInterface {
   virtual void MutateSendInitialMetadata(
       grpc_metadata_batch* send_initial_metadata) = 0;
   virtual void RecordSendTrailingMetadata(
+      grpc_metadata_batch* send_trailing_metadata) = 0;
+  virtual void MutateSendTrailingMetadata(
       grpc_metadata_batch* send_trailing_metadata) = 0;
   virtual void RecordSendMessage(const Message& send_message) = 0;
   // Only invoked if message was actually compressed.
@@ -306,9 +325,7 @@ class CallTracer : public CallSpan {
       : CallSpan(interface), interface_(interface) {}
 
   void RecordSendInitialMetadata(grpc_metadata_batch* send_initial_metadata);
-  void RecordSendTrailingMetadata(grpc_metadata_batch* send_trailing_metadata) {
-    interface_->RecordSendTrailingMetadata(send_trailing_metadata);
-  }
+  void RecordSendTrailingMetadata(grpc_metadata_batch* send_trailing_metadata);
   void RecordSendMessage(const Message& send_message) {
     interface_->RecordSendMessage(send_message);
   }

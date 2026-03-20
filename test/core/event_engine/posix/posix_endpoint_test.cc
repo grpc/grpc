@@ -20,6 +20,7 @@
 
 #include <algorithm>
 #include <chrono>
+#include <cstddef>
 #include <list>
 #include <memory>
 #include <string>
@@ -52,15 +53,19 @@
 #include "test/core/event_engine/posix/posix_engine_test_utils.h"
 #include "test/core/event_engine/test_suite/posix/oracle_event_engine_posix.h"
 #include "test/core/test_util/port.h"
+#include "test/core/test_util/test_memory_allocator.h"
 #include "gtest/gtest.h"
 #include "absl/log/log.h"
 #include "absl/status/statusor.h"
+#include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_split.h"
 #include "absl/strings/string_view.h"
 
 namespace grpc_event_engine {
 namespace experimental {
+
+using ::grpc_core::testing::TestMemoryAllocatorFactory;
 
 namespace {
 
@@ -351,9 +356,6 @@ class PosixSecureEndpointTest
       public ::testing::TestWithParam<PosixSecureEndpointTestParams> {
  public:
   void SetUp() override {
-    if (!grpc_core::IsEventEngineSecureEndpointEnabled()) {
-      GTEST_SKIP() << "EventEngineSecureEndpoint is not enabled";
-    }
     PosixEndpointTestBase::SetUp();
     if (GetParam().has_leftover_bytes) {
       grpc_slice leftover_slice =
@@ -370,26 +372,34 @@ class PosixSecureEndpointTest
   }
 
   void TearDown() override {
-    if (GetParam().use_zero_copy_protector) {
+    if (GetParam().use_zero_copy_protector || test_skipped_) {
       tsi_frame_protector_destroy(client_protector_);
       tsi_frame_protector_destroy(server_protector_);
-    } else {
+    }
+    if (!GetParam().use_zero_copy_protector || test_skipped_) {
       tsi_zero_copy_grpc_protector_destroy(client_zero_copy_protector_);
       tsi_zero_copy_grpc_protector_destroy(server_zero_copy_protector_);
     }
     grpc_slice_unref(encrypted_leftover_data_);
+    if (test_skipped_) {
+      // Manually clear slices in leftover data.
+      // TODO(aananthv): Why do we need to do this?
+      for (int i = 0; i < leftover_data_.Count(); i++) {
+        grpc_slice_unref(leftover_data_.c_slice_at(i));
+      }
+    }
     leftover_data_.Clear();
     PosixEndpointTestBase::TearDown();
   }
 
   grpc_core::OrphanablePtr<grpc_endpoint> CreateSecureEndpoint(
       std::unique_ptr<EventEngine::Endpoint> endpoint, bool leftover,
-      bool use_zero_copy_protector, bool is_client) {
+      bool use_zero_copy_protector, bool is_client,
+      grpc_core::ChannelArgs args) {
     if (leftover) {
       EncryptLeftoverBytes(&leftover_data_, server_protector_,
                            &encrypted_leftover_data_);
     }
-    grpc_core::ChannelArgs args;
     auto quota = grpc_core::ResourceQuota::Default();
     args = args.Set(GRPC_ARG_RESOURCE_QUOTA, quota);
     return grpc_secure_endpoint_create(
@@ -407,7 +417,7 @@ class PosixSecureEndpointTest
 
   std::string GetLeftoverDataStr() { return leftover_data_str_; }
 
- private:
+ protected:
   void EncryptLeftoverBytes(grpc_core::SliceBuffer* leftover_data,
                             tsi_frame_protector* protector,
                             grpc_slice* encrypted_leftover_data) {
@@ -458,6 +468,7 @@ class PosixSecureEndpointTest
   grpc_core::SliceBuffer leftover_data_;
   grpc_slice encrypted_leftover_data_ = grpc_empty_slice();
   std::string leftover_data_str_ = "hello world 12345678900987654321";
+  bool test_skipped_ = false;
 };
 
 TEST_P(PosixSecureEndpointTest, ConnectExchangeBidiDataTransferTest) {
@@ -474,15 +485,17 @@ TEST_P(PosixSecureEndpointTest, ConnectExchangeBidiDataTransferTest) {
     auto server_endpoint = std::move((*it).server_endpoint);
     EXPECT_NE(client_endpoint, nullptr);
     EXPECT_NE(server_endpoint, nullptr);
+    grpc_core::ChannelArgs args;
     auto client_secure_endpoint = CreateSecureEndpoint(
         std::move(client_endpoint),
         /*leftover=*/GetParam().has_leftover_bytes,
         /*use_zero_copy_protector=*/GetParam().use_zero_copy_protector,
-        /*is_client=*/true);
+        /*is_client=*/true, args);
+    grpc_core::ChannelArgs server_args;
     auto server_secure_endpoint = CreateSecureEndpoint(
         std::move(server_endpoint), /*leftover=*/false,
         /*use_zero_copy_protector=*/GetParam().use_zero_copy_protector,
-        /*is_client=*/false);
+        /*is_client=*/false, server_args);
     connections.erase(it);
 
     if (GetParam().has_leftover_bytes) {
@@ -521,7 +534,7 @@ TEST_P(PosixSecureEndpointTest, ConnectExchangeBidiDataTransferTest) {
               grpc_get_wrapped_event_engine_endpoint(
                   server_secure_endpoint.get()),
               /*read_hint_bytes=*/
-              (GetParam().use_zero_copy_protector ? -1 : client_msg.size() + 4))
+              (GetParam().use_zero_copy_protector ? -1 : client_msg.size()))
               .ok());
       // Send from server to client and verify data read at the client.
       server_msg = GetNextSendMessage();
@@ -533,8 +546,96 @@ TEST_P(PosixSecureEndpointTest, ConnectExchangeBidiDataTransferTest) {
               grpc_get_wrapped_event_engine_endpoint(
                   client_secure_endpoint.get()),
               /*read_hint_bytes=*/
-              (GetParam().use_zero_copy_protector ? -1 : server_msg.size() + 4))
+              (GetParam().use_zero_copy_protector ? -1 : server_msg.size()))
               .ok());
+    }
+  }
+  worker->Wait();
+}
+
+TEST_P(PosixSecureEndpointTest, UsesMemoryAllocatorFactoryIfProvided) {
+  if (grpc_core::IsPipelinedReadSecureEndpointEnabled()) {
+    // TODO(alishananda): Implement this for pipelined read secure endpoint.
+    test_skipped_ = true;
+    return;
+  }
+  if (PosixPoller() == nullptr) {
+    return;
+  }
+  Worker* worker = new Worker(GetPosixEE(), PosixPoller());
+  worker->Start();
+  {
+    auto connections = CreateConnectedEndpoints(*PosixPoller(), true, 1,
+                                                GetPosixEE(), GetOracleEE());
+    auto it = connections.begin();
+    auto client_endpoint = std::move((*it).client_endpoint);
+    auto server_endpoint = std::move((*it).server_endpoint);
+    EXPECT_NE(client_endpoint, nullptr);
+    EXPECT_NE(server_endpoint, nullptr);
+
+    TestMemoryAllocatorFactory test_factory;
+    grpc_core::ChannelArgs args = grpc_core::ChannelArgs().Set(
+        GRPC_ARG_EVENT_ENGINE_USE_MEMORY_ALLOCATOR_FACTORY,
+        grpc_core::ChannelArgs::Pointer(
+            &test_factory, grpc_core::ChannelArgTypeTraits<
+                               TestMemoryAllocatorFactory>::VTable()));
+
+    auto client_secure_endpoint_grpc = CreateSecureEndpoint(
+        std::move(client_endpoint), /*leftover=*/GetParam().has_leftover_bytes,
+        /*use_zero_copy_protector=*/GetParam().use_zero_copy_protector,
+        /*is_client=*/true, args);
+    auto client_secure_endpoint = grpc_get_wrapped_event_engine_endpoint(
+        client_secure_endpoint_grpc.get());
+
+    EXPECT_TRUE(test_factory.create_called());
+    EXPECT_TRUE(absl::StartsWith(test_factory.last_requested_name(),
+                                 "secure_endpoint-"));
+
+    grpc_core::ChannelArgs server_args = args;
+    auto server_secure_endpoint_grpc = CreateSecureEndpoint(
+        std::move(server_endpoint), /*leftover=*/false,
+        /*use_zero_copy_protector=*/GetParam().use_zero_copy_protector,
+        /*is_client=*/false, server_args);
+    auto server_secure_endpoint = grpc_get_wrapped_event_engine_endpoint(
+        server_secure_endpoint_grpc.get());
+
+    if (GetParam().has_leftover_bytes) {
+      grpc_core::Notification read_done;
+      SliceBuffer read_buffer;
+      if (client_secure_endpoint->Read(
+              [&](absl::Status status) {
+                CHECK_OK(status) << "Failed to read leftover data from "
+                                    "client secure endpoint";
+                read_done.Notify();
+              },
+              &read_buffer, {})) {
+        read_done.Notify();
+      }
+      read_done.WaitForNotification();
+      EXPECT_EQ(read_buffer.Count(), 1);
+      EXPECT_EQ(read_buffer.TakeFirst().as_string_view(), GetLeftoverDataStr());
+    }
+
+    // Exchange one message to trigger read coalescing buffer allocation.
+    std::string server_msg = "hello world";
+    ASSERT_TRUE(
+        SendValidatePayload(
+            server_msg, server_secure_endpoint, client_secure_endpoint,
+            /*read_hint_bytes=*/
+            (GetParam().use_zero_copy_protector ? -1 : server_msg.size()))
+            .ok());
+    EXPECT_NE(test_factory.last_created_impl(), nullptr);
+
+    if (GetParam().use_zero_copy_protector) {
+      // Memory allocator is not currently used for zero copy protector.
+      EXPECT_EQ(test_factory.last_created_impl()->total_bytes_reserved(), 0);
+    } else {
+      size_t expected_bytes_reserved = server_msg.size();
+      if (GetParam().has_leftover_bytes) {
+        expected_bytes_reserved += GetLeftoverDataStr().size();
+      }
+      EXPECT_GE(test_factory.last_created_impl()->total_bytes_reserved(),
+                expected_bytes_reserved);
     }
   }
   worker->Wait();

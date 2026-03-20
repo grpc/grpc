@@ -34,6 +34,8 @@ GCS_ROOT=gs://packages.grpc.io/
 GCS_ARCHIVE_PREFIX=archive/
 GCS_ARCHIVE_ROOT=$GCS_ROOT$GCS_ARCHIVE_PREFIX
 GCS_INDEX=$GCS_ROOT$INDEX_FILENAME
+GCS_NATIVE_DEBUG=${GCS_ROOT}grpc-ruby-native-debug-symbols
+INPUT_NATIVE_DEBUG_DIR=${INPUT_ARTIFACTS}/ruby-native-debug-symbols
 
 LOCAL_STAGING_TEMPDIR=$(mktemp -d)
 LOCAL_BUILD_ROOT=$LOCAL_STAGING_TEMPDIR/$BUILD_RELPATH
@@ -153,6 +155,33 @@ EOF
 </build>
 EOF
 }> "$LOCAL_BUILD_INDEX"
+
+if [[ -d "$INPUT_NATIVE_DEBUG_DIR" ]]; then
+  debug_gems=("$INPUT_NATIVE_DEBUG_DIR"/grpc-native-debug-*.gem)
+
+  if [[ ${#debug_gems[@]} -gt 0 ]]; then
+    echo "Found ${#debug_gems[@]} Ruby native debug gems to upload."
+    local_stage="$(mktemp -d)"
+    cp "${debug_gems[@]}" "$local_stage/"
+
+    (
+      cd "$local_stage"
+      sha256sum ./*.gem > checksums.txt
+    )
+
+    if [[ ! -f "$local_stage/checksums.txt" ]]; then
+      echo "Error: checksums generation failed." >&2
+      exit 1
+    fi
+
+    gsutil -m cp -n "$local_stage"/* "$GCS_NATIVE_DEBUG/v$GRPC_VERSION/"
+    echo "Uploaded Ruby native debug gems to $GCS_NATIVE_DEBUG/v$GRPC_VERSION/"
+
+    rm -rf "$local_stage"
+  else
+    echo "No Ruby native debug gems found to upload."
+  fi
+fi
 
 LOCAL_BUILD_INDEX_SIZE=$(stat -c%s "$LOCAL_BUILD_INDEX")
 LOCAL_BUILD_INDEX_SHA256=$(openssl sha256 -r "$LOCAL_BUILD_INDEX" | cut -d " " -f 1)

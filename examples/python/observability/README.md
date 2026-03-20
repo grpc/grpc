@@ -1,9 +1,11 @@
 gRPC Observability Example
 =====================
 
-The examples here demonstrate how to setup gRPC Python Observability with Opentelemetry.
+The examples here demonstrate how to setup gRPC Python Observability with OpenTelemetry.
 
 More details about how to use gRPC Python Observability APIs can be found in [OpenTelemetry Metrics gRFC](https://github.com/grpc/proposal/blob/master/A66-otel-stats.md#opentelemetry-metrics).
+
+This directory contains both synchronous and asynchronous (AsyncIO) examples of gRPC observability.
 
 ### Install Requirements
 
@@ -19,7 +21,9 @@ cd examples/python/observability
 python -m pip install -r requirements.txt
 ```
 
-### Run the Server
+### Synchronous Example
+
+#### Run the Server
 
 Start the server:
 
@@ -27,7 +31,7 @@ Start the server:
 python -m observability_greeter_server
 ```
 
-### Run the Client
+#### Run the Client
 
 Note that client should start within 10 seconds of the server becoming active.
 
@@ -35,9 +39,27 @@ Note that client should start within 10 seconds of the server becoming active.
 python -m observability_greeter_client
 ```
 
+### AsyncIO Example
+
+#### Run the Server
+
+Start the server:
+
+```sh
+python -m async_observability_greeter_server
+```
+
+#### Run the Client
+
+Note that client should start within 10 seconds of the server becoming active.
+
+```sh
+python -m async_observability_greeter_client
+```
+
 ### Verifying Metrics
 
-The example will print a list of metric names collected.
+Both synchronous and asynchronous examples will print a list of metric names collected.
 
 Server Side:
 

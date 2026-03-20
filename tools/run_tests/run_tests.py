@@ -14,12 +14,9 @@
 # limitations under the License.
 """Run tests in parallel."""
 
-from __future__ import print_function
-
 import argparse
 import ast
 import collections
-import glob
 import itertools
 import json
 import logging
@@ -30,21 +27,14 @@ import platform
 import random
 import re
 import shlex
-import socket
 import subprocess
 import sys
-import tempfile
 import time
-import traceback
-import uuid
-
-import six
-from six.moves import urllib
+import urllib
 
 import python_utils.jobset as jobset
 import python_utils.report_utils as report_utils
 import python_utils.start_port_server as start_port_server
-import python_utils.watch_dirs as watch_dirs
 
 try:
     from python_utils.upload_test_results import upload_results_to_bq
@@ -112,7 +102,7 @@ def _print_debug_info_epilogue(dockerfile_dir=None):
 
 
 # SimpleConfig: just compile with CONFIG=config, and run the binary to test
-class Config(object):
+class Config:
     def __init__(
         self,
         config,
@@ -164,6 +154,14 @@ class Config(object):
             ),
             flake_retries=4 if flaky or args.allow_flakes else 0,
             timeout_retries=1 if flaky or args.allow_flakes else 0,
+        )
+
+    def __repr__(self):
+        return (
+            f"<Config build_config={self.build_config}"
+            f" environ={self.environ} tool_prefix={self.tool_prefix}"
+            f" timeout_multiplier={self.timeout_multiplier}"
+            f" iomgr_platform={self.iomgr_platform}>"
         )
 
 
@@ -268,7 +266,7 @@ def _pypy_pattern_function(major):
         raise ValueError("Unknown PyPy major version")
 
 
-class CLanguage(object):
+class CLanguage:
     def __init__(self, lang_suffix, test_lang):
         self.lang_suffix = lang_suffix
         self.platform = platform_string()
@@ -622,7 +620,7 @@ class CLanguage(object):
         return self.lang_suffix
 
 
-class Php8Language(object):
+class Php8Language:
     def configure(self, config, args):
         self.config = config
         self.args = args
@@ -666,7 +664,7 @@ class PythonConfig(
     """Tuple of commands (named s.t. 'what it says on the tin' applies)"""
 
 
-class PythonLanguage(object):
+class PythonLanguage:
     _TEST_SPECS_FILE = {
         "native": ["src/python/grpcio_tests/tests/tests.json"],
         "asyncio": ["src/python/grpcio_tests/tests_aio/tests.json"],
@@ -913,7 +911,7 @@ class PythonLanguage(object):
         return "python"
 
 
-class RubyLanguage(object):
+class RubyLanguage:
     def configure(self, config, args):
         self.config = config
         self.args = args
@@ -1043,7 +1041,7 @@ class RubyLanguage(object):
         return "ruby"
 
 
-class CSharpLanguage(object):
+class CSharpLanguage:
     def __init__(self):
         self.platform = platform_string()
 
@@ -1090,7 +1088,7 @@ class CSharpLanguage(object):
             else:
                 raise Exception('Illegal runtime "%s" was specified.')
 
-            for assembly in six.iterkeys(tests_by_assembly):
+            for assembly in tests_by_assembly:
                 assembly_file = "src/csharp/%s/%s/%s%s" % (
                     assembly,
                     assembly_subdir,
@@ -1149,7 +1147,7 @@ class CSharpLanguage(object):
         return "csharp"
 
 
-class ObjCLanguage(object):
+class ObjCLanguage:
     def configure(self, config, args):
         self.config = config
         self.args = args
@@ -1257,7 +1255,7 @@ class ObjCLanguage(object):
         return "objc"
 
 
-class Sanity(object):
+class Sanity:
     def __init__(self, config_file):
         self.config_file = config_file
 
@@ -1280,10 +1278,13 @@ class Sanity(object):
                 # under docker we already have the right version of bazel
                 # so we can just disable the wrapper.
                 environ["DISABLE_BAZEL_WRAPPER"] = "true"
+
+            # Important! Individual job's timeout HAS NO EFFECT if greater than
+            # test suite's timeout, see _create_test_jobs in run_tests_matrix.py
             return [
                 self.config.job_spec(
                     cmd["script"].split(),
-                    timeout_seconds=90 * 60,
+                    timeout_seconds=80 * 60,
                     environ=environ,
                     cpu_cost=cmd.get("cpu_cost", 1),
                 )
@@ -1482,7 +1483,7 @@ def _calculate_num_runs_failures(list_of_results):
     return num_runs, num_failures
 
 
-class BuildAndRunError(object):
+class BuildAndRunError:
     """Represents error type in _build_and_run."""
 
     BUILD = object()

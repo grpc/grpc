@@ -34,6 +34,7 @@
 #include <utility>
 #include <variant>
 
+#include "src/core/call/metadata.h"
 #include "src/core/call/metadata_batch.h"
 #include "src/core/channelz/channelz.h"
 #include "src/core/ext/transport/chttp2/transport/call_tracer_wrapper.h"
@@ -532,6 +533,7 @@ struct grpc_chttp2_transport final : public grpc_core::FilterStackTransport,
   grpc_core::Duration keepalive_timeout;
   /// number of stream objects currently allocated by this transport
   std::atomic<size_t> streams_allocated{0};
+  uint32_t max_deallocating_streams = 0;
   /// keep-alive state machine state
   grpc_chttp2_keepalive_state keepalive_state;
   // Soft limit on max header size.
@@ -892,8 +894,10 @@ void grpc_chttp2_reset_ping_clock(grpc_chttp2_transport* t);
 void grpc_chttp2_mark_stream_writable(grpc_chttp2_transport* t,
                                       grpc_chttp2_stream* s);
 
-void grpc_chttp2_cancel_stream(grpc_chttp2_transport* t, grpc_chttp2_stream* s,
-                               grpc_error_handle due_to_error, bool tarpit);
+void grpc_chttp2_cancel_stream(
+    grpc_chttp2_transport* t, grpc_chttp2_stream* s,
+    grpc_error_handle due_to_error, bool tarpit,
+    grpc_core::ServerMetadataHandle send_trailing_metadata = nullptr);
 
 void grpc_chttp2_maybe_complete_recv_initial_metadata(grpc_chttp2_transport* t,
                                                       grpc_chttp2_stream* s);

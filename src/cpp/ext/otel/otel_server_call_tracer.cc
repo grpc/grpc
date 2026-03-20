@@ -254,7 +254,14 @@ void OpenTelemetryPluginImpl::ServerCallTracerInterface::
 }
 
 void OpenTelemetryPluginImpl::ServerCallTracerInterface::
-    RecordSendTrailingMetadata(
+    RecordSendTrailingMetadata(grpc_metadata_batch* send_trailing_metadata) {
+  GRPC_CHECK(
+      !grpc_core::IsCallTracerSendTrailingMetadataIsAnAnnotationEnabled());
+  MutateSendTrailingMetadata(send_trailing_metadata);
+}
+
+void OpenTelemetryPluginImpl::ServerCallTracerInterface::
+    MutateSendTrailingMetadata(
         grpc_metadata_batch* /*send_trailing_metadata*/) {
   // We need to record the time when the trailing metadata was sent to
   // mark the completeness of the request.
@@ -321,10 +328,12 @@ void OpenTelemetryPluginImpl::ServerCallTracerInterface::RecordOutgoingBytes(
 void OpenTelemetryPluginImpl::ServerCallTracerInterface::RecordAnnotation(
     const Annotation& annotation) {
   if (annotation.type() == grpc_core::CallTracerAnnotationInterface::
-                               AnnotationType::kSendInitialMetadata) {
-    // Otel does not have any immutable tracing for send initial metadata.
-    // All Otel work for send initial metadata is mutation, which is handled in
-    // MutateSendInitialMetadata.
+                               AnnotationType::kSendInitialMetadata ||
+      annotation.type() == grpc_core::CallTracerAnnotationInterface::
+                               AnnotationType::kSendTrailingMetadata) {
+    // Otel does not have any immutable tracing for send initial/trailing
+    // metadata. All Otel work for send initial/trailing metadata is mutation,
+    // which is handled in MutateSendInitialMetadata/MutateSendTrailingMetadata.
     return;
   }
   RecordAnnotation(annotation.ToString());

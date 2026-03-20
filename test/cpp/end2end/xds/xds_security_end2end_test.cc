@@ -155,11 +155,11 @@ class FakeCertificateProvider final : public grpc_tls_certificate_provider {
             "No certificates available for cert_name \"", cert_name, "\""));
         distributor_->SetErrorForCert(cert_name, error, error);
       } else {
-        std::shared_ptr<RootCertInfo> root_cert_info;
+        std::shared_ptr<tsi::RootCertInfo> root_cert_info;
         std::optional<grpc_core::PemKeyCertPairList> pem_key_cert_pairs;
         if (root_being_watched) {
           root_cert_info =
-              std::make_shared<RootCertInfo>(it->second.root_certificate);
+              std::make_shared<tsi::RootCertInfo>(it->second.root_certificate);
         }
         if (identity_being_watched) {
           pem_key_cert_pairs = it->second.identity_key_cert_pairs;
@@ -934,7 +934,6 @@ TEST_P(XdsSniSecurityTest, LegacySniBehavior) {
 }
 
 TEST_P(XdsSniSecurityTest, NoSniGetsFirstCertificate) {
-  grpc_core::testing::ScopedExperimentalEnvVar env("GRPC_EXPERIMENTAL_XDS_SNI");
   g_fake1_cert_data_map->Set({{"", {root_cert_, identity_pair_}}});
   EdsResourceArgs args({
       {"locality0", CreateEndpointsForBackends(0, 1)},
@@ -957,7 +956,6 @@ TEST_P(XdsSniSecurityTest, FixedSni) {
   // This test effectively tests for two different things at once:
   // 1. That the client sends the SNI "foo" when configured to do so.
   // 2. That the client successfully validates the SAN "foo" with a SAN matcher.
-  grpc_core::testing::ScopedExperimentalEnvVar env("GRPC_EXPERIMENTAL_XDS_SNI");
   g_fake1_cert_data_map->Set({{"", {root_cert_, identity_pair_}}});
   EdsResourceArgs args({
       {"locality0", CreateEndpointsForBackends(0, 1)},
@@ -977,7 +975,6 @@ TEST_P(XdsSniSecurityTest, FixedSni) {
 }
 
 TEST_P(XdsSniSecurityTest, AutoHostSniNoOpWhenEndpointHasNoHostname) {
-  grpc_core::testing::ScopedExperimentalEnvVar env("GRPC_EXPERIMENTAL_XDS_SNI");
   g_fake1_cert_data_map->Set({{"", {root_cert_, identity_pair_}}});
   EdsResourceArgs args({
       {"locality0", CreateEndpointsForBackends(0, 1)},
@@ -998,7 +995,6 @@ TEST_P(XdsSniSecurityTest, AutoHostSniNoOpWhenEndpointHasNoHostname) {
 }
 
 TEST_P(XdsSniSecurityTest, EdsAutoHostSni) {
-  grpc_core::testing::ScopedExperimentalEnvVar env("GRPC_EXPERIMENTAL_XDS_SNI");
   g_fake1_cert_data_map->Set({{"", {root_cert_, identity_pair_}}});
   EdsResourceArgs args({
       {"locality0",
@@ -1021,7 +1017,6 @@ TEST_P(XdsSniSecurityTest, EdsAutoHostSni) {
 }
 
 TEST_P(XdsSniSecurityTest, LogicalDNSAutoHostSni) {
-  grpc_core::testing::ScopedExperimentalEnvVar env("GRPC_EXPERIMENTAL_XDS_SNI");
   g_fake1_cert_data_map->Set({{"", {root_cert_, identity_pair_}}});
   auto cluster = default_cluster_;
   cluster.set_type(Cluster::LOGICAL_DNS);
@@ -1055,7 +1050,6 @@ TEST_P(XdsSniSecurityTest, LogicalDNSAutoHostSni) {
 }
 
 TEST_P(XdsSniSecurityTest, AutoSniSanValidation) {
-  grpc_core::testing::ScopedExperimentalEnvVar env("GRPC_EXPERIMENTAL_XDS_SNI");
   g_fake1_cert_data_map->Set({{"", {root_cert_, identity_pair_}}});
   EdsResourceArgs args({
       {"locality0", CreateEndpointsForBackends(0, 1)},
@@ -1076,7 +1070,6 @@ TEST_P(XdsSniSecurityTest, AutoSniSanValidation) {
 }
 
 TEST_P(XdsSniSecurityTest, AutoSniSanValidationWithAutoHostSni) {
-  grpc_core::testing::ScopedExperimentalEnvVar env("GRPC_EXPERIMENTAL_XDS_SNI");
   g_fake1_cert_data_map->Set({{"", {root_cert_, identity_pair_}}});
   EdsResourceArgs args({
       {"locality0",
@@ -1099,7 +1092,6 @@ TEST_P(XdsSniSecurityTest, AutoSniSanValidationWithAutoHostSni) {
 }
 
 TEST_P(XdsSniSecurityTest, SanValidationFailure) {
-  grpc_core::testing::ScopedExperimentalEnvVar env("GRPC_EXPERIMENTAL_XDS_SNI");
   g_fake1_cert_data_map->Set({{"", {root_cert_, identity_pair_}}});
   EdsResourceArgs args({
       {"locality0", CreateEndpointsForBackends(0, 1)},

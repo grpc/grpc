@@ -22,13 +22,24 @@ module(
 # Regular dependencies
 # ====================
 
+# Upgrade version of rules_swift to avoid an error in BCR CI of not
+# finding switfc.exe on Windows with bazel 7.
+bazel_dep(name = "rules_swift", version = "2.5.0")
+
+# -- Abseil library.
+# Pinning version to be consistent with third_party/abseil-cpp
 bazel_dep(name = "abseil-cpp", version = "20250512.1", repo_name = "com_google_absl")
-bazel_dep(name = "apple_support", version = "1.17.1", repo_name = "build_bazel_apple_support")
+single_version_override(
+    module_name = "abseil-cpp",
+    version = "20250512.1",
+)
+
+bazel_dep(name = "platforms", version = "1.0.0")
+bazel_dep(name = "apple_support", version = "1.19.0", repo_name = "build_bazel_apple_support")
 bazel_dep(name = "bazel_skylib", version = "1.8.1")
-bazel_dep(name = "boringssl", version = "0.20241024.0")  # mistmatched 20241211
+bazel_dep(name = "boringssl", version = "0.20241024.0")  # mismatched 20241211
 bazel_dep(name = "c-ares", version = "1.19.1", repo_name = "com_github_cares_cares")
 bazel_dep(name = "envoy_api", version = "0.0.0-20251216-6ef568c")
-bazel_dep(name = "googleapis", version = "0.0.0-20251003-2193a2bf", repo_name = "com_google_googleapis")
 bazel_dep(name = "googleapis-cc", version = "1.0.0")
 bazel_dep(name = "googleapis-grpc-cc", version = "1.0.0")
 bazel_dep(name = "googleapis-python", version = "1.0.0")
@@ -36,25 +47,60 @@ bazel_dep(name = "googletest", version = "1.17.0", repo_name = "com_google_googl
 bazel_dep(name = "opencensus-cpp", version = "0.0.0-20230502-50eb5de.bcr.2", repo_name = "io_opencensus_cpp")
 bazel_dep(name = "openssl", version = "3.3.1.bcr.1")
 bazel_dep(name = "opentelemetry-cpp", version = "1.19.0", repo_name = "io_opentelemetry_cpp")
-bazel_dep(name = "platforms", version = "0.0.11")
+
+# --- Protobuf related packages.
+# Pinning to 31.1 to avoid xDs breakage until we can upgrade to Protobuf >= 33.0
 bazel_dep(name = "protobuf", version = "31.1", repo_name = "com_google_protobuf")
+single_version_override(
+    module_name = "protobuf",
+    version = "31.1",
+)
+
 bazel_dep(name = "protoc-gen-validate", version = "1.2.1.bcr.1", repo_name = "com_envoyproxy_protoc_gen_validate")  # Not needed directly
-bazel_dep(name = "re2", version = "2024-07-02.bcr.1", repo_name = "com_googlesource_code_re2")  # mistmached 2022-04-01
 bazel_dep(name = "rules_apple", version = "3.16.0", repo_name = "build_bazel_rules_apple")
-bazel_dep(name = "rules_cc", version = "0.1.1")
 bazel_dep(name = "rules_proto", version = "7.0.2")
-bazel_dep(name = "xds", version = "0.0.0-20240423-555b57e", repo_name = "com_github_cncf_xds")  # mismatched 20231116
+bazel_dep(name = "rules_shell", version = "0.4.0")
+bazel_dep(name = "rules_go", version = "0.49.0", repo_name = "io_bazel_rules_go")
+bazel_dep(name = "xds", version = "0.0.0-20251210-ee656c7", repo_name = "com_github_cncf_xds")
+
+# --- Zlib
 bazel_dep(name = "zlib", version = "1.3.1.bcr.5")
+
+# --- CC toolchains
+bazel_dep(name = "rules_cc", version = "0.2.15")
+
+cc_configure = use_extension("@rules_cc//cc:extensions.bzl", "cc_configure_extension")
+use_repo(cc_configure, "local_config_cc")
+
+# Use https://github.com/madler/zlib/commit/f1f503da85d52e56aae11557b4d79a42bcaa2b86
+# because it fixes cmake build directory interference issue.
+# The commit is slightly ahead of 1.3.1 so we should be fine.
+archive_override(
+    module_name = "zlib",
+    integrity = "sha256-2ok3cZu26WAKZx8yCTTA2zuAIMnDD+zaYLWl69yaHqA=",
+    patch_strip = 1,
+    patches = [
+        "//bazel/zlib:add_module_dot_bazel.patch",
+        "//bazel/zlib:add_custom_build_file.patch",
+    ],
+    strip_prefix = "zlib-f1f503da85d52e56aae11557b4d79a42bcaa2b86",
+    urls = [
+        "https://storage.googleapis.com/grpc-bazel-mirror/github.com/madler/zlib/archive/f1f503da85d52e56aae11557b4d79a42bcaa2b86.tar.gz",
+        "https://github.com/madler/zlib/archive/f1f503da85d52e56aae11557b4d79a42bcaa2b86.tar.gz",
+    ],
+)
 
 # Development dependencies
 # ========================
 bazel_dep(name = "google_benchmark", version = "1.9.0", dev_dependency = True, repo_name = "com_github_google_benchmark")
-bazel_dep(name = "rules_shell", version = "0.4.0", dev_dependency = True)
+bazel_dep(name = "yaml-cpp", version = "0.9.0", dev_dependency = True)
 
 # Python dependencies
 # ===================
 
 bazel_dep(name = "rules_python", version = "1.6.3")
+
+DEFAULT_PYTHON_VERSION = "3.11"
 
 PYTHON_VERSIONS = [
     "3.9",
@@ -65,15 +111,22 @@ PYTHON_VERSIONS = [
     "3.14",
 ]
 
+# TODO(weizheyuan): figure out how it interacts with protobuf 31
+# system_python().
+#
+# Mark 3.11 as defaults to be consistent with WORKSPACE.
+# See also https://rules-python.readthedocs.io/en/latest/api/rules_python/python/extensions/python.html#python.toolchain
 python = use_extension("@rules_python//python/extensions:python.bzl", "python")
+python.defaults(python_version = DEFAULT_PYTHON_VERSION)
 
 [
-    python.toolchain(
-        is_default = python_version == PYTHON_VERSIONS[-1],
-        python_version = python_version,
-    )
+    python.toolchain(python_version = python_version)
     for python_version in PYTHON_VERSIONS
 ]
+
+use_repo(python, "python_3_11_aarch64-apple-darwin")
+
+register_toolchains("//:python_3_11_ios_sim_arm64_workaround")
 
 pip = use_extension("@rules_python//python/extensions:pip.bzl", "pip")
 
@@ -93,15 +146,117 @@ bazel_dep(name = "cython", version = "3.0.11-1")
 http_archive = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
 http_archive(
-    name = "typing_extensions",
+    name = "grpc_typing_extensions",
     build_file = "//third_party:typing_extensions.BUILD",
-    sha256 = "bf6f56b36d8bc9156e518eb1cc37a146284082fa53522033f772aefbecfd15fc",
+    integrity = "sha256-v29Ws22LyRVuUY6xzDehRihAgvpTUiAz93Ku++z9Ffw=",
     strip_prefix = "typing_extensions-4.12.2",
     url = "https://github.com/python/typing_extensions/archive/4.12.2.tar.gz",
 )
 
-# Provide repo @com_google_fuzztest.
-include("//bazel:com_google_fuzztest.MODULE.bazel")
+# TODO(weizheyuan): Upgrade to a version available in a BCR
+# once we figure out how to properly use it in cmake setup.
+#
+# Trick bazel by declaring re2 as 2024-07-02.bcr.1 but internally using 2022-04-01,
+# which is the version we use for cmake builds.
+# This override has no effect when grpc is used as a dependency module.
+# See also https://bazel.build/rules/lib/globals/module#archive_override.
+bazel_dep(name = "re2", version = "2024-07-02.bcr.1", repo_name = "com_googlesource_code_re2")  # mismatched 2022-04-01
+archive_override(
+    module_name = "re2",
+    integrity = "sha256-GujM/bEGanMbum7giBuq1e/SzWYazZVptonyWG4aUOk=",
+    patch_strip = 1,
+    patches = [
+        "//bazel:re2.patch",
+    ],
+    strip_prefix = "re2-2022-04-01",
+    urls = [
+        "https://storage.googleapis.com/grpc-bazel-mirror/github.com/google/re2/archive/2022-04-01.tar.gz",
+        "https://github.com/google/re2/archive/2022-04-01.tar.gz",
+    ],
+)
 
-# Provides repo @grpc_custom_exec_properties.
-include("//bazel:grpc_custom_exec_properties.MODULE.bazel")
+# --- Provide repo @com_google_fuzztest.
+bazel_dep(name = "fuzztest", version = "20250805.0", dev_dependency = True, repo_name = "com_google_fuzztest")  # mismatched 2023-05-16
+
+# This package is not directly used by grpc, but requested by fuzztest.
+#
+# The reason for version bump is because bazel resolve this package to riegeli@0.0.0-20240606-973b6f0,
+# which is incompatible with the version of abseil-cpp we use.
+#
+# See also https://bazel.build/external/module#version-selection.
+bazel_dep(name = "riegeli", version = "0.0.0-20250706-c4d1f27", dev_dependency = True)
+
+# --- Provide repo @grpc_custom_exec_properties.
+http_archive(
+    name = "bazel_toolchains",
+    integrity = "sha256-F57AL4Cehqv1Y1bYiYyL10Bp8b18VgRAUMLNPXnQ4CQ=",
+    strip_prefix = "bazel-toolchains-4.1.0",
+    urls = [
+        "https://mirror.bazel.build/github.com/bazelbuild/bazel-toolchains/releases/download/4.1.0/bazel-toolchains-4.1.0.tar.gz",
+        "https://github.com/bazelbuild/bazel-toolchains/releases/download/4.1.0/bazel-toolchains-4.1.0.tar.gz",
+    ],
+)
+
+exec_properties = use_extension("//bazel:extensions.bzl", "exec_properties")
+exec_properties.custom_exec_properties(
+    name = "grpc_custom_exec_properties",
+    constant = "LARGE_MACHINE",
+    rbe_exec_properties_dict = {
+        "os": "ubuntu",
+        "machine_size": "large",
+    },
+)
+use_repo(exec_properties, "grpc_custom_exec_properties")
+
+# -- google_cloud_cpp 2.35.0 related repos, which requires a modified version of googleapis, hence the version pinning.
+bazel_dep(name = "googleapis", version = "0.0.0-20251003-2193a2bf", repo_name = "com_google_googleapis")
+single_version_override(
+    module_name = "googleapis",
+    patch_strip = 1,
+    patches = [
+        "//bazel:googleapis/patches/fix_google_cloud_cpp.patch",
+    ],
+    version = "0.0.0-20251003-2193a2bf",
+)
+
+bazel_dep(name = "google_cloud_cpp", version = "2.35.0", dev_dependency = True)
+archive_override(
+    module_name = "google_cloud_cpp",
+    integrity = "sha256-geooz55bsDLTVrAYdAnzCxA1+OpbUwZ16iSMimwAcKo=",
+    strip_prefix = "google-cloud-cpp-2.35.0",
+    urls = [
+        "https://storage.googleapis.com/grpc-bazel-mirror/github.com/googleapis/google-cloud-cpp/archive/refs/tags/v2.35.0.tar.gz",
+        "https://github.com/googleapis/google-cloud-cpp/archive/refs/tags/v2.35.0.tar.gz",
+    ],
+)
+
+# --- libpfm 4.11.0
+#
+# Not directly used, depended on by google_benchmark.
+# Override URL with our mirror site because the original link is broken.
+#
+# See also https://github.com/bazelbuild/bazel-central-registry/blob/c83ac4d4bac24aeebf1b99f8b8d21166e0886397/modules/libpfm/4.11.0.bcr.1/source.json
+bazel_dep(name = "libpfm", version = "4.11.0.bcr.1", dev_dependency = True)
+archive_override(
+    module_name = "libpfm",
+    integrity = "sha256-XaX4hyveFLNjTJaI2YD2i9ootRAmhyPMEpc+7bq5/sw=",
+    patch_strip = 1,
+    patches = [
+        "//bazel:libpfm.patch",
+    ],
+    strip_prefix = "libpfm-4.11.0",
+    urls = [
+        "https://storage.googleapis.com/grpc-bazel-mirror/sourceforge.net/projects/perfmon2/files/libpfm4/libpfm-4.11.0.tar.gz",
+        "https://sourceforge.net/projects/perfmon2/files/libpfm4/libpfm-4.11.0.tar.gz/download",
+    ],
+)
+
+http_archive(
+    name = "bazel_compdb",
+    sha256 = "79502264d1a3a4b6309d4dae8c822e7349bcfe33e84f3c6d1affb2a40d11a31d",
+    strip_prefix = "bazel-compilation-database-d198303a4319092ab31895c4b98d64174ebe8872",
+    urls = [
+        "https://storage.googleapis.com/grpc-bazel-mirror/github.com/grailbio/bazel-compilation-database/archive/d198303a4319092ab31895c4b98d64174ebe8872.tar.gz",
+        "https://github.com/grailbio/bazel-compilation-database/archive/d198303a4319092ab31895c4b98d64174ebe8872.tar.gz",
+    ],
+)

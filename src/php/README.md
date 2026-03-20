@@ -184,7 +184,7 @@ $ bazel build src/compiler:grpc_php_plugin
 ```
 
 The `protoc` binary will be found in
-`bazel-bin/external/com_google_protobuf/protoc`.
+`bazel-bin/external/protobuf+/protoc`.
 The `grpc_php_plugin` binary will be found in
 `bazel-bin/src/compiler/grpc_php_plugin`.
 

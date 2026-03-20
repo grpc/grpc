@@ -16,12 +16,16 @@ certifi==2025.1.31
     # via
     #   -r requirements.bazel.txt
     #   requests
+cffi==2.0.0
+    # via cryptography
 chardet==5.2.0
     # via -r requirements.bazel.txt
 charset-normalizer==3.4.1
     # via requests
 constantly==23.10.4
     # via twisted
+cryptography==45.0.7
+    # via -r requirements.bazel.txt
 deprecated==1.2.18
     # via
     #   opentelemetry-api
@@ -30,7 +34,7 @@ gevent==25.9.1
     # via -r requirements.bazel.txt
 google-auth==2.38.0
     # via -r requirements.bazel.txt
-googleapis-common-protos==1.66.0
+googleapis-common-protos==1.72.0
     # via -r requirements.bazel.txt
 greenlet==3.2.4
     # via gevent
@@ -67,7 +71,7 @@ opentelemetry-semantic-conventions==0.51b0
     # via opentelemetry-sdk
 prometheus-client==0.21.1
     # via opentelemetry-exporter-prometheus
-protobuf==5.29.3
+protobuf==6.31.1
     # via
     #   -r requirements.bazel.txt
     #   googleapis-common-protos
@@ -77,6 +81,8 @@ pyasn1==0.6.1
     #   rsa
 pyasn1-modules==0.4.1
     # via google-auth
+pycparser==2.23
+    # via cffi
 pyyaml==6.0.3
     # via -r requirements.bazel.txt
 requests==2.32.3

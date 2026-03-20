@@ -69,7 +69,7 @@ shared_examples 'basic GRPC message delivery is OK' do
   it 'clients can cancel a call on the server' do
     expected_code = StatusCodes::CANCELLED
     expected_details = 'CANCELLED'
-    cancel_proc = proc { |call| call.cancel }
+    cancel_proc = proc(&:cancel)
     client_cancel_test(cancel_proc, expected_code, expected_details)
   end
 
@@ -277,6 +277,46 @@ describe 'the secure http client/server' do
     expected_md.each do |k, v|
       expect(echo_service.received_md[0][k]).to eq(v)
     end
+  end
+
+  it 'plugin procs survive GC after their CallCredentials wrapper is collected' do
+    # Regression test for use-after-free in grpc_metadata_credentials_plugin.
+    # When CallCredentials are composed via a.compose(b), the resulting
+    # wrapper marks b but NOT a. If a's Ruby wrapper is GC'd, the C-level
+    # composite still holds a's plugin. Without the pin_plugin_proc fix,
+    # a's proc would be collected, and invoking the callback would crash
+    # with a segfault (rb_id_table_lookup on freed memory).
+    first_call_count = 0
+
+    first_creds = GRPC::Core::CallCredentials.new(proc {
+      first_call_count += 1
+      { 'first-key' => 'first-value' }
+    })
+    second_creds = GRPC::Core::CallCredentials.new(proc {
+      { 'second-key' => 'second-value' }
+    })
+    composed = first_creds.compose(second_creds)
+
+    # Drop references. composed.mark includes second_creds but NOT first_creds,
+    # so first_creds' Ruby wrapper becomes GC-eligible while its C plugin
+    # survives inside the composite.
+    first_creds = nil # rubocop:disable Lint/UselessAssignment
+    second_creds = nil # rubocop:disable Lint/UselessAssignment
+
+    # Force GC to collect the first_creds wrapper. Without the fix, the proc
+    # from first_creds would also be collected here.
+    GC.start(full_mark: true, immediate_sweep: true)
+
+    # Make an RPC with the composed credentials — both plugin callbacks fire.
+    # Without the fix, accessing the freed proc would crash the process.
+    echo_service = EchoService.new
+    run_services_on_server(@server, services: [echo_service]) do
+      expect(@stub.an_rpc(EchoMsg.new,
+                          credentials: composed)).to be_a(EchoMsg)
+    end
+    expect(first_call_count).to eq(1)
+    expect(echo_service.received_md[0]['first-key']).to eq('first-value')
+    expect(echo_service.received_md[0]['second-key']).to eq('second-value')
   end
 
   it 'modifies large metadata with CallCredentials' do

@@ -56,17 +56,6 @@ def _collect_errors(fn):
     return _wrapped
 
 
-def _python3_check(fn):
-    @functools.wraps(fn)
-    def _wrapped():
-        if sys.version_info[0] == 3:
-            fn()
-        else:
-            _assert_unimplemented("Python 3")
-
-    return _wrapped
-
-
 def _run_in_subprocess(test_case):
     # The default start method of multiprocessing in linux has changed to
     # `forkserver` instead of `fork` from Python 3.14. This causes problems
@@ -106,7 +95,6 @@ def _assert_unimplemented(msg_substr):
 
 
 @_collect_errors
-@_python3_check
 def _test_sunny_day():
     import grpc
 
@@ -118,7 +106,6 @@ def _test_sunny_day():
 
 
 @_collect_errors
-@_python3_check
 def _test_well_known_types():
     import grpc
 
@@ -130,7 +117,6 @@ def _test_well_known_types():
 
 
 @_collect_errors
-@_python3_check
 def _test_grpc_tools_unimportable():
     with _grpc_tools_unimportable():
         _assert_unimplemented("grpcio-tools")

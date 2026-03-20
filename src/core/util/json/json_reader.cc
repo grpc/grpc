@@ -242,10 +242,6 @@ uint32_t JsonReader::ReadChar() {
   if (remaining_input_ == 0) return GRPC_JSON_READ_CHAR_EOF;
   const uint32_t r = *input_++;
   --remaining_input_;
-  if (r == 0) {
-    remaining_input_ = 0;
-    return GRPC_JSON_READ_CHAR_EOF;
-  }
   return r;
 }
 
