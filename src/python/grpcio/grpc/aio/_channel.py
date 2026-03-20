@@ -402,6 +402,8 @@ class Channel(_base_channel.Channel):
             for call in calls:
                 if hasattr(call, "_call_response"):
                     tasks_to_wait.append(call._call_response)
+                elif hasattr(call, "_preparation"):
+                    tasks_to_wait.append(call._preparation)
 
             if tasks_to_wait:
                 await asyncio.wait(tasks_to_wait, timeout=grace)
