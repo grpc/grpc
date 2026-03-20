@@ -124,75 +124,49 @@ struct tsi_ssl_pem_key_cert_pair {
   tsi_ssl_pem_key_cert_pair(tsi::PrivateKey pk, std::string cert_chain_pem)
       : private_key(std::move(pk)), cert_chain(std::move(cert_chain_pem)) {}
 };
-// TO BE DEPRECATED.
-// Creates a client handshaker factory.
-// - pem_key_cert_pair is a pointer to the object containing client's private
-//   key and certificate chain. This parameter can be NULL if the client does
-//   not have such a key/cert pair.
-// - pem_roots_cert is the NULL-terminated string containing the PEM encoding of
-//   the server root certificates.
-// - cipher_suites contains an optional list of the ciphers that the client
-//   supports. The format of this string is described in:
-//   https://www.openssl.org/docs/apps/ciphers.html.
-//   This parameter can be set to NULL to use the default set of ciphers.
-//   TODO(jboeuf): Revisit the format of this parameter.
-// - alpn_protocols is an array containing the NULL terminated protocol names
-//   that the handshakers created with this factory support. This parameter can
-//   be NULL.
-// - num_alpn_protocols is the number of alpn protocols and associated lengths
-//   specified. If this parameter is 0, the other alpn parameters must be NULL.
-// - factory is the address of the factory pointer to be created.
-
-// - This method returns TSI_OK on success or TSI_INVALID_PARAMETER in the case
-//   where a parameter is invalid.
-tsi_result tsi_create_ssl_client_handshaker_factory(
-    const tsi_ssl_pem_key_cert_pair* pem_key_cert_pair,
-    const char* pem_root_certs, const char* cipher_suites,
-    const char** alpn_protocols, uint16_t num_alpn_protocols,
-    tsi_ssl_client_handshaker_factory** factory);
 
 struct tsi_ssl_client_handshaker_options {
   // pem_key_cert_pair is a pointer to the object containing client's private
   // key and certificate chain. This parameter can be NULL if the client does
   // not have such a key/cert pair.
-  const tsi_ssl_pem_key_cert_pair* pem_key_cert_pair;
+  const tsi_ssl_pem_key_cert_pair* pem_key_cert_pair = nullptr;
   // root_store is a pointer to the ssl_root_certs_store object. If root_store
   // is not nullptr and SSL implementation permits, root_store will be used as
   // root certificates. Otherwise, pem_roots_cert will be used to load server
   // root certificates.
-  const tsi_ssl_root_certs_store* root_store;
+  const tsi_ssl_root_certs_store* root_store = nullptr;
   // cipher_suites contains an optional list of the ciphers that the client
   // supports. The format of this string is described in:
   // https://www.openssl.org/docs/apps/ciphers.html.
   // This parameter can be set to NULL to use the default set of ciphers.
   // TODO(jboeuf): Revisit the format of this parameter.
-  const char* cipher_suites;
+  const char* cipher_suites = nullptr;
   // alpn_protocols is an array containing the NULL terminated protocol names
   // that the handshakers created with this factory support. This parameter can
   // be NULL.
-  const char** alpn_protocols;
+  const char** alpn_protocols = nullptr;
   // num_alpn_protocols is the number of alpn protocols and associated lengths
   // specified. If this parameter is 0, the other alpn parameters must be
   // NULL.
-  size_t num_alpn_protocols;
+  size_t num_alpn_protocols = 0;
   // ssl_session_cache is a cache for reusable client-side sessions.
-  tsi_ssl_session_cache* session_cache;
+  tsi_ssl_session_cache* session_cache = nullptr;
   // tsi_ssl_key_logger is an instance used to log SSL keys to a file.
-  tsi::TlsSessionKeyLoggerCache::TlsSessionKeyLogger* key_logger;
+  tsi::TlsSessionKeyLoggerCache::TlsSessionKeyLogger* key_logger = nullptr;
 
   // skip server certificate verification.
-  bool skip_server_certificate_verification;
+  bool skip_server_certificate_verification = false;
 
   // The min and max TLS versions that will be negotiated by the handshaker.
-  tsi_tls_version min_tls_version;
-  tsi_tls_version max_tls_version;
+  tsi_tls_version min_tls_version = tsi_tls_version::TSI_TLS1_2;
+  tsi_tls_version max_tls_version = tsi_tls_version::TSI_TLS1_3;
 
   // The directory where all hashed CRL files enforced by the handshaker are
   // located. If the directory is invalid, CRL checking will fail open and just
   // log. An empty directory will not enable crl checking. Only OpenSSL version
   // >= 1.1 is supported for CRL checking. Cannot be used in conjunction with
   // `crl_provider`.
-  const char* crl_directory;
+  const char* crl_directory = nullptr;
 
   // A provider of CRLs. If set, when doing handshakes the `CrlProvider`'s
   // `GetCrl` function will be called to find CRLs when checking certificates
@@ -204,21 +178,6 @@ struct tsi_ssl_client_handshaker_options {
   // root_cert_info is either the string containing the PEM encoding of the
   // client root certificates or a SPIFFE bundle map.
   std::shared_ptr<tsi::RootCertInfo> root_cert_info;
-
-  // TODO(gtcooke94) this ctor is not needed
-  // https://github.com/grpc/grpc/pull/39708/files#r2143735662
-  tsi_ssl_client_handshaker_options()
-      : pem_key_cert_pair(nullptr),
-        root_store(nullptr),
-        cipher_suites(nullptr),
-        alpn_protocols(nullptr),
-        num_alpn_protocols(0),
-        session_cache(nullptr),
-        key_logger(nullptr),
-        skip_server_certificate_verification(false),
-        min_tls_version(tsi_tls_version::TSI_TLS1_2),
-        max_tls_version(tsi_tls_version::TSI_TLS1_3),
-        crl_directory(nullptr) {}
 };
 
 // Creates a client handshaker factory.
@@ -263,52 +222,8 @@ void tsi_ssl_client_handshaker_factory_unref(
 
 // --- tsi_ssl_server_handshaker_factory object ---
 
-// This object creates a client tsi_handshaker objects implemented in terms of
-// the TLS 1.2 specification.
-
 typedef struct tsi_ssl_server_handshaker_factory
     tsi_ssl_server_handshaker_factory;
-
-// TO BE DEPRECATED.
-// Creates a server handshaker factory.
-// - pem_key_cert_pairs is an array private key / certificate chains of the
-//   server.
-// - pem_root_certs is the NULL-terminated string containing the PEM encoding
-//   of the client root certificates. This parameter may be NULL if the server
-//   does not want the client to be authenticated with SSL.
-// - cipher_suites contains an optional list of the ciphers that the server
-//   supports. The format of this string is described in:
-//   https://www.openssl.org/docs/apps/ciphers.html.
-//   This parameter can be set to NULL to use the default set of ciphers.
-//   TODO(jboeuf): Revisit the format of this parameter.
-// - alpn_protocols is an array containing the NULL terminated protocol names
-//   that the handshakers created with this factory support. This parameter can
-//   be NULL.
-// - num_alpn_protocols is the number of alpn protocols and associated lengths
-//   specified. If this parameter is 0, the other alpn parameters must be NULL.
-// - factory is the address of the factory pointer to be created.
-
-// - This method returns TSI_OK on success or TSI_INVALID_PARAMETER in the case
-//   where a parameter is invalid.
-tsi_result tsi_create_ssl_server_handshaker_factory(
-    std::vector<tsi_ssl_pem_key_cert_pair> pem_key_cert_pairs,
-    const char* pem_client_root_certs, int force_client_auth,
-    const char* cipher_suites, const char** alpn_protocols,
-    uint16_t num_alpn_protocols, tsi_ssl_server_handshaker_factory** factory);
-
-// TO BE DEPRECATED.
-// Same as tsi_create_ssl_server_handshaker_factory method except uses
-// tsi_client_certificate_request_type to support more ways to handle client
-// certificate authentication.
-// - client_certificate_request, if set to non-zero will force the client to
-//   authenticate with an SSL cert. Note that this option is ignored if
-//   pem_client_root_certs is NULL or pem_client_roots_certs_size is 0
-tsi_result tsi_create_ssl_server_handshaker_factory_ex(
-    std::vector<tsi_ssl_pem_key_cert_pair> pem_key_cert_pairs,
-    const char* pem_client_root_certs,
-    tsi_client_certificate_request_type client_certificate_request,
-    const char* cipher_suites, const char** alpn_protocols,
-    uint16_t num_alpn_protocols, tsi_ssl_server_handshaker_factory** factory);
 
 struct tsi_ssl_server_handshaker_options {
   // pem_key_cert_pairs is an array private key / certificate chains of the
@@ -317,37 +232,38 @@ struct tsi_ssl_server_handshaker_options {
   // client_certificate_request, if set to non-zero will force the client to
   // authenticate with an SSL cert. Note that this option is ignored if
   // root_cert_info is NULL
-  tsi_client_certificate_request_type client_certificate_request;
+  tsi_client_certificate_request_type client_certificate_request =
+      TSI_DONT_REQUEST_CLIENT_CERTIFICATE;
   // cipher_suites contains an optional list of the ciphers that the server
   // supports. The format of this string is described in:
   // https://www.openssl.org/docs/apps/ciphers.html.
   // This parameter can be set to NULL to use the default set of ciphers.
   // TODO(jboeuf): Revisit the format of this parameter.
-  const char* cipher_suites;
+  const char* cipher_suites = nullptr;
   // alpn_protocols is an array containing the NULL terminated protocol names
   // that the handshakers created with this factory support. This parameter can
   // be NULL.
-  const char** alpn_protocols;
+  const char** alpn_protocols = nullptr;
   // num_alpn_protocols is the number of alpn protocols and associated lengths
   // specified. If this parameter is 0, the other alpn parameters must be
   // NULL.
-  uint16_t num_alpn_protocols;
+  uint16_t num_alpn_protocols = 0;
   // session_ticket_key is optional key for encrypting session keys. If
   // parameter is not specified it must be NULL.
-  const char* session_ticket_key;
+  const char* session_ticket_key = nullptr;
   // session_ticket_key_size is a size of session ticket encryption key.
-  size_t session_ticket_key_size;
+  size_t session_ticket_key_size = 0;
   // The min and max TLS versions that will be negotiated by the handshaker.
-  tsi_tls_version min_tls_version;
-  tsi_tls_version max_tls_version;
+  tsi_tls_version min_tls_version = tsi_tls_version::TSI_TLS1_2;
+  tsi_tls_version max_tls_version = tsi_tls_version::TSI_TLS1_3;
   // tsi_ssl_key_logger is an instance used to log SSL keys to a file.
-  tsi::TlsSessionKeyLoggerCache::TlsSessionKeyLogger* key_logger;
+  tsi::TlsSessionKeyLoggerCache::TlsSessionKeyLogger* key_logger = nullptr;
 
   // The directory where all hashed CRL files are cached in the x.509 store and
   // enforced by the handshaker are located. If the directory is invalid, CRL
   // checking will fail open and just log. An empty directory will not enable
   // crl checking. Only OpenSSL version > 1.1 is supported for CRL checking
-  const char* crl_directory;
+  const char* crl_directory = nullptr;
 
   // A provider of CRLs. If set, when doing handshakes the `CrlProvider`'s
   // `GetCrl` function will be called to find CRLs when checking certificates
@@ -365,27 +281,12 @@ struct tsi_ssl_server_handshaker_options {
   // bundle is sufficiently large, then setting this bit to true will result in
   // the server being unable to generate a ServerHello, and hence the server
   // will be unusable.
-  bool send_client_ca_list;
+  bool send_client_ca_list = true;
 
   // root_cert_info is either the string containing the PEM encoding of the
   // server root certificates or a SPIFFE bundle map. This parameter may be NULL
   // if the server does not want the client to be authenticated with SSL.
   std::shared_ptr<tsi::RootCertInfo> root_cert_info;
-
-  // TODO(gtcooke94) this ctor is not needed
-  // https://github.com/grpc/grpc/pull/39708/files#r2143735662
-  tsi_ssl_server_handshaker_options()
-      : client_certificate_request(TSI_DONT_REQUEST_CLIENT_CERTIFICATE),
-        cipher_suites(nullptr),
-        alpn_protocols(nullptr),
-        num_alpn_protocols(0),
-        session_ticket_key(nullptr),
-        session_ticket_key_size(0),
-        min_tls_version(tsi_tls_version::TSI_TLS1_2),
-        max_tls_version(tsi_tls_version::TSI_TLS1_3),
-        key_logger(nullptr),
-        crl_directory(nullptr),
-        send_client_ca_list(true) {}
 };
 
 // Creates a server handshaker factory.
