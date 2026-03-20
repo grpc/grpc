@@ -388,7 +388,7 @@ class Channel(_base_channel.Channel):
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         await self._close(None)
 
-    async def _close(self, grace):  # pylint: disable=too-many-branches
+    async def _close(self, grace: Optional[float]):  # pylint: disable=too-many-branches
         if self._channel.closed():
             return
 
@@ -396,6 +396,16 @@ class Channel(_base_channel.Channel):
         self._channel.closing()
 
         calls = list(self._active_calls)
+
+        if grace is not None and grace > 0:
+            tasks_to_wait = []
+            for call in calls:
+                if hasattr(call, "_call_response"):
+                    tasks_to_wait.append(call._call_response)
+
+            if tasks_to_wait:
+                await asyncio.wait(tasks_to_wait, timeout=grace)
+
         for call in calls:
             call.cancel()
 
