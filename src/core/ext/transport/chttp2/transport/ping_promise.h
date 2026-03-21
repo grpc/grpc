@@ -29,6 +29,7 @@
 #include "src/core/ext/transport/chttp2/transport/ping_abuse_policy.h"
 #include "src/core/ext/transport/chttp2/transport/ping_callbacks.h"
 #include "src/core/ext/transport/chttp2/transport/ping_rate_policy.h"
+#include "src/core/ext/transport/chttp2/transport/write_cycle.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/promise/if.h"
 #include "src/core/lib/promise/inter_activity_latch.h"
@@ -192,7 +193,7 @@ class PingManager {
   // buffer with the serialized ping frames. Returns the arguments for
   // scheduling the delayed ping.
   std::optional<Duration> MaybeGetSerializedPingFrames(
-      SliceBuffer& output_buf, Duration next_allowed_ping_interval);
+      FrameSender& frame_sender, Duration next_allowed_ping_interval);
 
   // Notify the ping system that a ping has been sent. Returns the opaque data
   // of the ping frame if a new ping was sent. The caller is expected to

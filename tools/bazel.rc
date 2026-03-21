@@ -1,12 +1,12 @@
 # bazelrc file
 
-# Bazel 7 begins to enable module by default which breaks gRPC build.
-# Therefore, this option is disabled until gRPC works with bzlmod.
-common --enable_bzlmod=false
+common --enable_bzlmod
+common --noenable_workspace
 
-# gRPC build will break under Bazel 8 because Bazel 8 disables workspace by default.
-# To prevent this, we've enabled workspace again until gRPC fully transitions to Bzlmod.
-common --enable_workspace=true
+# Can be explicitly disable via --config=no-bzlmod
+# TODO(weizheyuan): Remove this after migration is done.
+common:no-bzlmod --noenable_bzlmod
+common:no-bzlmod --enable_workspace
 
 # Bazel 8 needs this
 common --incompatible_disallow_empty_glob=false
@@ -136,8 +136,6 @@ build:ubsan --action_env=UBSAN_OPTIONS=halt_on_error=1:print_stacktrace=1:suppre
 # build:ubsan --linkopt=--rtlib=compiler-rt
 
 build:python_single_threaded_unary_stream --test_env="GRPC_SINGLE_THREADED_UNARY_STREAM=true"
-
-build:python_poller_engine --test_env="GRPC_ASYNCIO_ENGINE=poller"
 
 build:python --copt=-DGRPC_PYTHON_BUILD
 

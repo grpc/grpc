@@ -170,6 +170,7 @@ transport to their counterparts in the newer Promise-based PH2 transport.
 *   **Stream Initiation/Handling**:
     *   CHTTP2: Functions like `init_stream`, `chttp2_perform_stream_op_locked`, etc., in `chttp2_transport.cc`.
     *   PH2: Handled within `Http2ClientTransport::StartCall` for clients, and `Http2ServerTransport::SetCallDestination` for servers.
+    # TODO(tjagtap) [PH2][P0] Fix this
 
 *   **Error Handling**:
     *   CHTTP2: Error handling with `grpc_error_handle` throughout the code.
@@ -227,7 +228,7 @@ Key test files include:
 
 ## Similarities of PH2 and Chaotic Good
 
-PH2 shares several architectural similarities with the [Chaotic Good transport](../chaotic_good/GEMINI.md) transport:
+PH2 shares several architectural similarities with the [Chaotic Good transport](../chaotic_good/GEMINI.md) :
 
 *   **Promise-Based:** Both transports are built upon the gRPC Promise library for managing asynchronous operations. This is a departure from the callback-based system in CHTTP2.
 *   **Call V3 Stack:** Both are designed to work with the newer Call V3 stack.
@@ -243,6 +244,8 @@ Since the number of slots in a Party is 16, we need to account for all the slots
 that we use in the transport.
 We need to ensure that our slots do not exceed 16.
 
+## PH2 Client Party Slots Usage
+
 | Name | Category | Description | Max Spawns at a time | When is it spawned | Max Duration | Resolution |
 |---|---|---|---|---|---|---|
 | SecurityFrameLoop | Loop | Security Frame | 1 | After Constructor | Lifetime of the transport | Transport Close |
@@ -255,3 +258,8 @@ We need to ensure that our slots do not exceed 16.
 | Keepalive | Loop | Keepalive Loop | 1 | If Keepalive is enabled, after constructor | Lifetime of the transport | Transport Close
 | Ping | Timeout + Misc | | 4 | Sending a ping request | Timeout or a specific duration |
 | | | **Total** | 12 | | | |
+
+## PH2 Server Party Slots Usage
+
+| Name | Category | Description | Max Spawns at a time | When is it spawned | Max Duration | Resolution |
+|---|---|---|---|---|---|---|

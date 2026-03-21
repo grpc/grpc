@@ -21,7 +21,7 @@
 
 Pod::Spec.new do |s|
   s.name     = 'gRPC-Core'
-  version = '1.79.0-dev'
+  version = '1.81.0-dev'
   s.version  = version
   s.summary  = 'Core cross-platform gRPC library, written in C'
   s.homepage = 'https://grpc.io'
@@ -173,6 +173,7 @@ Pod::Spec.new do |s|
                       'include/grpc/impl/slice_type.h',
                       'include/grpc/load_reporting.h',
                       'include/grpc/passive_listener.h',
+                      'include/grpc/private_key_signer.h',
                       'include/grpc/slice.h',
                       'include/grpc/slice_buffer.h',
                       'include/grpc/status.h',
@@ -589,6 +590,8 @@ Pod::Spec.new do |s|
                       'src/core/ext/transport/chttp2/transport/varint.cc',
                       'src/core/ext/transport/chttp2/transport/varint.h',
                       'src/core/ext/transport/chttp2/transport/writable_streams.h',
+                      'src/core/ext/transport/chttp2/transport/write_cycle.cc',
+                      'src/core/ext/transport/chttp2/transport/write_cycle.h',
                       'src/core/ext/transport/chttp2/transport/write_size_policy.cc',
                       'src/core/ext/transport/chttp2/transport/write_size_policy.h',
                       'src/core/ext/transport/chttp2/transport/writing.cc',
@@ -1483,7 +1486,6 @@ Pod::Spec.new do |s|
                       'src/core/handshaker/proxy_mapper.h',
                       'src/core/handshaker/proxy_mapper_registry.cc',
                       'src/core/handshaker/proxy_mapper_registry.h',
-                      'src/core/handshaker/security/legacy_secure_endpoint.cc',
                       'src/core/handshaker/security/pipelined_secure_endpoint.cc',
                       'src/core/handshaker/security/secure_endpoint.cc',
                       'src/core/handshaker/security/secure_endpoint.h',
@@ -2314,6 +2316,7 @@ Pod::Spec.new do |s|
                       'src/core/xds/grpc/xds_health_status.h',
                       'src/core/xds/grpc/xds_http_fault_filter.cc',
                       'src/core/xds/grpc/xds_http_fault_filter.h',
+                      'src/core/xds/grpc/xds_http_filter.cc',
                       'src/core/xds/grpc/xds_http_filter.h',
                       'src/core/xds/grpc/xds_http_filter_registry.cc',
                       'src/core/xds/grpc/xds_http_filter_registry.h',
@@ -2794,6 +2797,7 @@ Pod::Spec.new do |s|
                               'src/core/ext/transport/chttp2/transport/transport_common.h',
                               'src/core/ext/transport/chttp2/transport/varint.h',
                               'src/core/ext/transport/chttp2/transport/writable_streams.h',
+                              'src/core/ext/transport/chttp2/transport/write_cycle.h',
                               'src/core/ext/transport/chttp2/transport/write_size_policy.h',
                               'src/core/ext/transport/inproc/inproc_transport.h',
                               'src/core/ext/transport/inproc/legacy_inproc_transport.h',

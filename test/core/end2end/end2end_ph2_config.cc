@@ -67,30 +67,8 @@ class Ph2InsecureFixture : public InsecureFixture {
 #define GRPC_HTTP2_PH2_FEATURE_MASK \
   (FEATURE_MASK_IS_HTTP2 | FEATURE_MASK_IS_CALL_V3 | FEATURE_MASK_IS_PH2_CLIENT)
 
-// This macro defines a set of cancellation and deadline tests that are
-// frequently broken. Grouping them here allows them to be added to the
-// GRPC_HTTP2_PROMISE_CLIENT_TRANSPORT_AVOID_LIST list easily.
-#define CANCEL_SUITE                        \
-  "|CoreEnd2endTests.CancelAfterAccept"     \
-  "|CoreEnd2endTests.CancelAfterClientDone" \
-  "|CoreEnd2endTests.CancelAfterInvoke3"    \
-  "|CoreEnd2endTests.CancelAfterInvoke4"    \
-  "|CoreEnd2endTests.CancelAfterInvoke5"    \
-  "|CoreEnd2endTests.CancelAfterInvoke6"    \
-  "|CoreEnd2endTests.CancelAfterRoundTrip"  \
-  "|CoreEnd2endTests.CancelWithStatus1"     \
-  "|CoreEnd2endTests.CancelWithStatus2"     \
-  "|CoreEnd2endTests.CancelWithStatus3"     \
-  "|CoreEnd2endTests.CancelWithStatus4"
-
-#define DEADLINE_SUITE                      \
-  "|CoreDeadlineTests.DeadlineAfterInvoke3" \
-  "|CoreDeadlineTests.DeadlineAfterInvoke4" \
-  "|CoreDeadlineTests.DeadlineAfterInvoke5" \
-  "|CoreDeadlineTests.DeadlineAfterInvoke6" \
-  "|CoreDeadlineTests.DeadlineAfterRoundTrip"
-
 #define RETRY_SUITE "|RetryTests|RetryHttp2Tests"
+
 #define SECURE_SUITE                                                   \
   "|SecureEnd2endTests|PerCallCredsTests|PerCallCredsOnInsecureTests|" \
   "ProxyAuthTests"
@@ -100,7 +78,9 @@ class Ph2InsecureFixture : public InsecureFixture {
   "|RetryHttp2Tests.BadPing"                                 \
   "|RetryHttp2Tests.RetryTransparentMaxConcurrentStreams"    \
   "|RetryHttp2Tests.HighInitialSeqno"                        \
-  "|RetryHttp2Tests.CancelDuringDelay"
+  "|RetryHttp2Tests.CancelDuringDelay"                       \
+  "|RetryTests.CancelDuringDelay"                            \
+  "|CoreEnd2endTests.CancelAfterAccept"
 
 #define LARGE_METADATA_SUITE                                                   \
   "|Http2SingleHopTests.RequestWithLargeMetadataUnderSoftLimit"                \

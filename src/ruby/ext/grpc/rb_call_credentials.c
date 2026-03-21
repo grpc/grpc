@@ -306,6 +306,7 @@ static VALUE grpc_rb_call_credentials_compose(int argc, VALUE* argv,
     return self;
   }
   mark = rb_ary_new();
+  rb_ary_push(mark, self);
   creds = grpc_rb_get_wrapped_call_credentials(self);
   for (int i = 0; i < argc; i++) {
     rb_ary_push(mark, argv[i]);

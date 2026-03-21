@@ -10,6 +10,7 @@
   "tests_aio.unit._metadata_test.TestTypeMetadata",
   "tests_aio.unit.abort_test.TestAbort",
   "tests_aio.unit.aio_rpc_error_test.TestAioRpcError",
+  "tests_aio.unit.multithread_test.MultithreadTest",
   "tests_aio.unit.auth_context_test.TestAuthContext",
   "tests_aio.unit.call_test.TestStreamStreamCall",
   "tests_aio.unit.call_test.TestStreamUnaryCall",
