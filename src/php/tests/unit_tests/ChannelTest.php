@@ -1,4 +1,5 @@
 <?php
+
 /*
  *
  * Copyright 2018 gRPC authors.
@@ -30,23 +31,28 @@ class ChannelTest extends \PHPUnit\Framework\TestCase
 
     public function tearDown(): void
     {
-        foreach ([$this->channel, $this->channel1, $this->channel2, $this->channel3] as $channel)
-        if (!empty($channel)) {
-            $channel->close();
+        foreach ([$this->channel, $this->channel1, $this->channel2, $this->channel3] as $channel) {
+            if (!empty($channel)) {
+                $channel->close();
+            }
         }
     }
 
     public function testInsecureCredentials()
     {
-        $this->channel = new Grpc\Channel('localhost:50000',
-            ['credentials' => Grpc\ChannelCredentials::createInsecure()]);
+        $this->channel = new Grpc\Channel(
+            'localhost:50000',
+            ['credentials' => Grpc\ChannelCredentials::createInsecure()]
+        );
         $this->assertSame('Grpc\Channel', get_class($this->channel));
     }
 
     public function testConstructorCreateSsl()
     {
-        $channel = new Grpc\Channel('localhost:50033', 
-            ['credentials' => \Grpc\ChannelCredentials::createSsl()]);
+        $channel = new Grpc\Channel(
+            'localhost:50033',
+            ['credentials' => \Grpc\ChannelCredentials::createSsl()]
+        );
         $this->assertNotNull($channel);
     }
 
@@ -58,14 +64,16 @@ class ChannelTest extends \PHPUnit\Framework\TestCase
         $this->assertNotNull($xdsCreds);
     }
 
-    public function disabled_testCreateXdsWithInsecure() {
+    public function disabled_testCreateXdsWithInsecure()
+    {
         $xdsCreds = \Grpc\ChannelCredentials::createXds(
             \Grpc\ChannelCredentials::createInsecure()
         );
         $this->assertNotNull($xdsCreds);
     }
 
-    public function testCreateXdsWithNull() {
+    public function testCreateXdsWithNull()
+    {
         $this->expectException(\InvalidArgumentException::class);
         $xdsCreds = \Grpc\ChannelCredentials::createXds(null);
     }
@@ -89,50 +97,62 @@ class ChannelTest extends \PHPUnit\Framework\TestCase
 
     public function testGetConnectivityState()
     {
-        $this->channel = new Grpc\Channel('localhost:50001',
-             ['credentials' => Grpc\ChannelCredentials::createInsecure()]);
+        $this->channel = new Grpc\Channel(
+            'localhost:50001',
+            ['credentials' => Grpc\ChannelCredentials::createInsecure()]
+        );
         $state = $this->channel->getConnectivityState();
         $this->assertEquals(0, $state);
     }
 
     public function testGetConnectivityStateWithInt()
     {
-        $this->channel = new Grpc\Channel('localhost:50002',
-             ['credentials' => Grpc\ChannelCredentials::createInsecure()]);
+        $this->channel = new Grpc\Channel(
+            'localhost:50002',
+            ['credentials' => Grpc\ChannelCredentials::createInsecure()]
+        );
         $state = $this->channel->getConnectivityState(123);
         $this->assertEquals(0, $state);
     }
 
     public function testGetConnectivityStateWithString()
     {
-        $this->channel = new Grpc\Channel('localhost:50003',
-             ['credentials' => Grpc\ChannelCredentials::createInsecure()]);
+        $this->channel = new Grpc\Channel(
+            'localhost:50003',
+            ['credentials' => Grpc\ChannelCredentials::createInsecure()]
+        );
         $state = $this->channel->getConnectivityState('hello');
         $this->assertEquals(0, $state);
     }
 
     public function testGetConnectivityStateWithBool()
     {
-        $this->channel = new Grpc\Channel('localhost:50004',
-             ['credentials' => Grpc\ChannelCredentials::createInsecure()]);
+        $this->channel = new Grpc\Channel(
+            'localhost:50004',
+            ['credentials' => Grpc\ChannelCredentials::createInsecure()]
+        );
         $state = $this->channel->getConnectivityState(true);
         $this->assertEquals(0, $state);
     }
 
     public function testGetTarget()
     {
-        $this->channel = new Grpc\Channel('localhost:50005',
-             ['credentials' => Grpc\ChannelCredentials::createInsecure()]);
+        $this->channel = new Grpc\Channel(
+            'localhost:50005',
+            ['credentials' => Grpc\ChannelCredentials::createInsecure()]
+        );
         $target = $this->channel->getTarget();
         $this->assertTrue(is_string($target));
     }
 
     public function testWatchConnectivityState()
     {
-        $this->channel = new Grpc\Channel('localhost:50006',
-             ['credentials' => Grpc\ChannelCredentials::createInsecure()]);
+        $this->channel = new Grpc\Channel(
+            'localhost:50006',
+            ['credentials' => Grpc\ChannelCredentials::createInsecure()]
+        );
         $now = Grpc\Timeval::now();
-        $deadline = $now->add(new Grpc\Timeval(100*1000));  // 100ms
+        $deadline = $now->add(new Grpc\Timeval(100 * 1000));  // 100ms
         // we act as if 'CONNECTING'(=1) was the last state
         // we saw, so the default state of 'IDLE' should be delivered instantly
         $state = $this->channel->watchConnectivityState(1, $deadline);
@@ -143,8 +163,10 @@ class ChannelTest extends \PHPUnit\Framework\TestCase
 
     public function testClose()
     {
-        $this->channel = new Grpc\Channel('localhost:50007',
-             ['credentials' => Grpc\ChannelCredentials::createInsecure()]);
+        $this->channel = new Grpc\Channel(
+            'localhost:50007',
+            ['credentials' => Grpc\ChannelCredentials::createInsecure()]
+        );
         $this->assertNotNull($this->channel);
         $this->channel->close();
     }
@@ -166,53 +188,67 @@ class ChannelTest extends \PHPUnit\Framework\TestCase
     public function testInvalidCredentials()
     {
         $this->expectException(\InvalidArgumentException::class);
-        $this->channel = new Grpc\Channel('localhost:50009',
-            ['credentials' => new Grpc\Timeval(100)]);
+        $this->channel = new Grpc\Channel(
+            'localhost:50009',
+            ['credentials' => new Grpc\Timeval(100)]
+        );
     }
 
     public function testInvalidOptionsArray()
     {
         $this->expectException(\InvalidArgumentException::class);
-        $this->channel = new Grpc\Channel('localhost:50010',
-            ['abc' => []]);
+        $this->channel = new Grpc\Channel(
+            'localhost:50010',
+            ['abc' => []]
+        );
     }
 
     public function testInvalidGetConnectivityStateWithArray()
     {
         $this->expectException(\InvalidArgumentException::class);
-        $this->channel = new Grpc\Channel('localhost:50011',
-            ['credentials' => Grpc\ChannelCredentials::createInsecure()]);
+        $this->channel = new Grpc\Channel(
+            'localhost:50011',
+            ['credentials' => Grpc\ChannelCredentials::createInsecure()]
+        );
         $this->channel->getConnectivityState([]);
     }
 
     public function testInvalidWatchConnectivityState()
     {
         $this->expectException(\InvalidArgumentException::class);
-        $this->channel = new Grpc\Channel('localhost:50012',
-            ['credentials' => Grpc\ChannelCredentials::createInsecure()]);
+        $this->channel = new Grpc\Channel(
+            'localhost:50012',
+            ['credentials' => Grpc\ChannelCredentials::createInsecure()]
+        );
         $this->channel->watchConnectivityState([]);
     }
 
     public function testInvalidWatchConnectivityState2()
     {
         $this->expectException(\InvalidArgumentException::class);
-        $this->channel = new Grpc\Channel('localhost:50013',
-            ['credentials' => Grpc\ChannelCredentials::createInsecure()]);
+        $this->channel = new Grpc\Channel(
+            'localhost:50013',
+            ['credentials' => Grpc\ChannelCredentials::createInsecure()]
+        );
         $this->channel->watchConnectivityState(1, 'hi');
     }
 
 
-    public function assertConnecting($state) {
-      $this->assertTrue($state == GRPC\CHANNEL_CONNECTING ||
-                        $state == GRPC\CHANNEL_TRANSIENT_FAILURE);
+    public function assertConnecting($state)
+    {
+        $this->assertTrue($state == GRPC\CHANNEL_CONNECTING ||
+                          $state == GRPC\CHANNEL_TRANSIENT_FAILURE);
     }
 
-    public function waitUntilNotIdle($channel) {
+    public function waitUntilNotIdle($channel)
+    {
         for ($i = 0; $i < 10; $i++) {
             $now = Grpc\Timeval::now();
             $deadline = $now->add(new Grpc\Timeval(1000));
-            if ($channel->watchConnectivityState(GRPC\CHANNEL_IDLE,
-                                                 $deadline)) {
+            if ($channel->watchConnectivityState(
+                GRPC\CHANNEL_IDLE,
+                $deadline
+            )) {
                 return true;
             }
         }
@@ -596,21 +632,28 @@ class ChannelTest extends \PHPUnit\Framework\TestCase
     {
         $creds = Grpc\ChannelCredentials::createSsl();
         $callCreds = Grpc\CallCredentials::createFromPlugin(
-            [$this, 'callbackFunc']);
+            [$this, 'callbackFunc']
+        );
         $credsWithCallCreds = Grpc\ChannelCredentials::createComposite(
-            $creds, $callCreds);
+            $creds,
+            $callCreds
+        );
 
         // If a ChannelCredentials object is composed with a
         // CallCredentials object, the underlying grpc channel will
         // always be created new and NOT persisted.
-        $this->channel1 = new Grpc\Channel('localhost:50026',
-                                           ["credentials" =>
+        $this->channel1 = new Grpc\Channel(
+            'localhost:50026',
+            ["credentials" =>
                                             $credsWithCallCreds,
                                             "grpc_target_persist_bound" => 3,
-                                            ]);
-        $this->channel2 = new Grpc\Channel('localhost:50026',
-                                           ["credentials" =>
-                                            $credsWithCallCreds]);
+                                            ]
+        );
+        $this->channel2 = new Grpc\Channel(
+            'localhost:50026',
+            ["credentials" =>
+                                            $credsWithCallCreds]
+        );
 
         // try to connect on channel1
         $state = $this->channel1->getConnectivityState(true);
@@ -628,28 +671,40 @@ class ChannelTest extends \PHPUnit\Framework\TestCase
     public function testPersistentChannelWithDifferentCallCredentials()
     {
         $callCreds1 = Grpc\CallCredentials::createFromPlugin(
-            [$this, 'callbackFunc']);
+            [$this, 'callbackFunc']
+        );
         $callCreds2 = Grpc\CallCredentials::createFromPlugin(
-            [$this, 'callbackFunc2']);
+            [$this, 'callbackFunc2']
+        );
 
         $creds1 = Grpc\ChannelCredentials::createSsl();
         $creds2 = Grpc\ChannelCredentials::createComposite(
-            $creds1, $callCreds1);
+            $creds1,
+            $callCreds1
+        );
         $creds3 = Grpc\ChannelCredentials::createComposite(
-            $creds1, $callCreds2);
+            $creds1,
+            $callCreds2
+        );
 
         // Similar to the test above, anytime a ChannelCredentials
         // object is composed with a CallCredentials object, the
         // underlying grpc channel will always be separate and not
         // persisted
-        $this->channel1 = new Grpc\Channel('localhost:50027',
-                                           ["credentials" => $creds1,
+        $this->channel1 = new Grpc\Channel(
+            'localhost:50027',
+            ["credentials" => $creds1,
                                             "grpc_target_persist_bound" => 3,
-                                            ]);
-        $this->channel2 = new Grpc\Channel('localhost:50027',
-                                           ["credentials" => $creds2]);
-        $this->channel3 = new Grpc\Channel('localhost:50027',
-                                           ["credentials" => $creds3]);
+                                            ]
+        );
+        $this->channel2 = new Grpc\Channel(
+            'localhost:50027',
+            ["credentials" => $creds2]
+        );
+        $this->channel3 = new Grpc\Channel(
+            'localhost:50027',
+            ["credentials" => $creds3]
+        );
 
         // try to connect on channel1
         $state = $this->channel1->getConnectivityState(true);
@@ -674,8 +729,10 @@ class ChannelTest extends \PHPUnit\Framework\TestCase
         ]);
         // even though all the channel params are the same, channel2
         // has a new and different underlying channel
-        $this->channel2 = new Grpc\Channel('localhost:50028',
-                                           ["force_new" => true]);
+        $this->channel2 = new Grpc\Channel(
+            'localhost:50028',
+            ["force_new" => true]
+        );
 
         // try to connect on channel1
         $state = $this->channel1->getConnectivityState(true);
@@ -696,8 +753,10 @@ class ChannelTest extends \PHPUnit\Framework\TestCase
         $this->channel1 = new Grpc\Channel('localhost:50029', [
             "grpc_target_persist_bound" => 2,
         ]);
-        $this->channel2 = new Grpc\Channel('localhost:50029',
-                                           ["force_new" => true]);
+        $this->channel2 = new Grpc\Channel(
+            'localhost:50029',
+            ["force_new" => true]
+        );
         // channel3 shares with channel1
         $this->channel3 = new Grpc\Channel('localhost:50029', []);
 
@@ -741,8 +800,10 @@ class ChannelTest extends \PHPUnit\Framework\TestCase
         $this->channel1 = new Grpc\Channel('localhost:50130', [
             "grpc_target_persist_bound" => 2,
         ]);
-        $this->channel2 = new Grpc\Channel('localhost:50130',
-                                           ["force_new" => true]);
+        $this->channel2 = new Grpc\Channel(
+            'localhost:50130',
+            ["force_new" => true]
+        );
         // channel3 shares with channel1
         $this->channel3 = new Grpc\Channel('localhost:50130', []);
 
@@ -764,8 +825,10 @@ class ChannelTest extends \PHPUnit\Framework\TestCase
         $this->channel1 = new Grpc\Channel('localhost:50230', [
             "grpc_target_persist_bound" => 2,
         ]);
-        $this->channel2 = new Grpc\Channel('localhost:50230',
-          ["force_new" => true]);
+        $this->channel2 = new Grpc\Channel(
+            'localhost:50230',
+            ["force_new" => true]
+        );
         // channel3 shares with channel1
         $this->channel3 = new Grpc\Channel('localhost:50230', []);
 
@@ -788,8 +851,10 @@ class ChannelTest extends \PHPUnit\Framework\TestCase
         $this->channel1 = new Grpc\Channel('localhost:50031', [
             "grpc_target_persist_bound" => 2,
         ]);
-        $this->channel2 = new Grpc\Channel('localhost:50031',
-                                           ["force_new" => true]);
+        $this->channel2 = new Grpc\Channel(
+            'localhost:50031',
+            ["force_new" => true]
+        );
         $this->channel3 = new Grpc\Channel('localhost:50031', []);
 
         $this->channel2->close();
