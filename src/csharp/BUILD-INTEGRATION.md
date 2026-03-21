@@ -20,7 +20,7 @@ However this package helps to simplify generating the C# source files by
 integrating the code generation into the build process. It can be used when building both
 the server and client projects, and by both c-core C# projects and grpc-dotnet projects:
 * The `Grpc.AspNetCore` metapackage already includes a reference to `Grpc.Tools`. 
-* gRPC for .NET client projects and projects using `Grpc.Core` need to reference `Grpc.Tools` explicity if you want code generation for those projects
+* gRPC for .NET client projects and projects using `Grpc.Core` need to reference `Grpc.Tools` explicitly if you want code generation for those projects
 
 `Grpc.Tools` is only used at build-time and has no runtime components.
 It should be marked with `PrivateAssets="All"` to prevent it from being included at runtime, e.g.
@@ -289,9 +289,9 @@ following properties change the behavior of `Grpc.Tools`:
 | `Protobuf_ProtocFullPath` | Same as `PROTOBUF_PROTOC` environment variable                          |
 | `gRPC_PluginFullPath` | Same as `GRPC_PROTOC_PLUGIN` environment variable                           |
 | `Protobuf_NoWarnMissingExpected` | Default: `false`. If `true` then no warnings are given if expected files not generated. See example below for an explanation. |
-| `Protobuf_OutputPath`| Default: `IntermediateOutputPath` - ususally the `obj` directory. Sets the default value for `OutputDir` on `<Protobuf>` items.|
+| `Protobuf_OutputPath`| Default: `IntermediateOutputPath` - usually the `obj` directory. Sets the default value for `OutputDir` on `<Protobuf>` items.|
 | `EnableDefaultProtobufItems` | Default: `false`. If `true` then `.proto` files under the project are automatically included without the need to specify any `<Protobuf>` items. |
-| `Protobuf_StandardImportsPath` | The path for protobuf's [well known types](https://protobuf.dev/reference/protobuf/google.protobuf/) included in the NuGet package. It is automcatically passed to `protoc`  via the `-I/--proto_path` option. |
+| `Protobuf_StandardImportsPath` | The path for protobuf's [well known types](https://protobuf.dev/reference/protobuf/google.protobuf/) included in the NuGet package. It is automatically passed to `protoc`  via the `-I/--proto_path` option. |
 
 # Scenarios and Examples
 
@@ -389,7 +389,7 @@ separately compile as they are only used in import statements. E.g.:
       ... />
 ```
 
-Note: The path for protobuf's [well known types](https://protobuf.dev/reference/protobuf/google.protobuf/) is automatically included. E.g. the `import` below will work without having to explicity specifying the path in `AdditionalImportDirs`:
+Note: The path for protobuf's [well known types](https://protobuf.dev/reference/protobuf/google.protobuf/) is automatically included. E.g. the `import` below will work without having to explicitly specifying the path in `AdditionalImportDirs`:
 ```protobuf
 import "google/protobuf/wrappers.proto";
 ```
@@ -449,7 +449,7 @@ You will see the warning message:
  if all these are true:
  * the location for the generated files is configured to a directory outside of the project, e.g. `OutputDir="..\outside-project\"`
  * `*Grpc.cs` files have not been created because the `.proto` file does not contain a
-service definintion
+service definition
 * you have not specified `GrpcServices="None"`
 
 This is because `Grpc.Tools` only creates empty `*Grpc.cs` files in directories
@@ -514,7 +514,7 @@ dotnet add package Grpc.Tools
 
 In Visual Studio it is possible to set some frequently used per-file options on `.proto` files 
 without editing the `.csproj` file directly. However editing the `.csproj` gives you more
-flexibilty.
+flexibility.
 
 ### "dotnet SDK" projects
 
@@ -625,7 +625,7 @@ dotnet build
 
 ## <a name="proto-only-nuget"></a>Including `.proto` files in NuGet packages
 
-There might be occassions when you are given a NuGet package that contains
+There might be occasions when you are given a NuGet package that contains
 `.proto` files that you wish to use in your own project, or you may wish to 
 package your own `.proto` files in a NuGet package for others to use.
 
@@ -704,7 +704,7 @@ My.Example.Protos.targets:
       <Protobuf_StandardImportsPath>$(Protobuf_StandardImportsPath);$(MyPackage_ProtosPath)</Protobuf_StandardImportsPath>
     </PropertyGroup>
 
-    <!-- These message are not required but included here for diagnostics -->
+    <!-- These messages are not required but included here for diagnostics -->
     <Message Text="Included proto files at $(MyExampleProtos_ProtosPath) in import path." Importance="high" />
     <Message Text="Updated proto imports path: $(Protobuf_StandardImportsPath)" Importance="high" />
   </Target>
