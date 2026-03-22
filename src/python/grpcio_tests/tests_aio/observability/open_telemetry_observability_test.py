@@ -24,9 +24,9 @@ import unittest
 import grpc_observability
 from grpc_observability import _open_telemetry_measures
 from opentelemetry.sdk import metrics as otel_metrics
+from opentelemetry.sdk import trace as otel_trace
 from opentelemetry.sdk.metrics import export as otel_metrics_export
 from opentelemetry.sdk.metrics import view as otel_metrics_view
-from opentelemetry.sdk import trace as otel_trace
 from opentelemetry.sdk.trace import export as otel_trace_export
 from opentelemetry.sdk.trace.export import in_memory_span_exporter
 
@@ -111,7 +111,9 @@ class OpenTelemetryObservabilityTest(AioTestBase):
         )
         otel_tracer_provider = otel_trace.TracerProvider()
         self._span_exporter = in_memory_span_exporter.InMemorySpanExporter()
-        span_processor = otel_trace_export.SimpleSpanProcessor(self._span_exporter)
+        span_processor = otel_trace_export.SimpleSpanProcessor(
+            self._span_exporter
+        )
         otel_tracer_provider.add_span_processor(span_processor)
         self._tracer_provider = otel_tracer_provider
         self._otel_plugin = grpc_observability.OpenTelemetryPlugin(
@@ -499,19 +501,17 @@ class OpenTelemetryObservabilityTest(AioTestBase):
         # validate parent-child relationship
         self.assertEqual(
             client_span.get_span_context().trace_id,
-            attempt_span.get_span_context().trace_id
+            attempt_span.get_span_context().trace_id,
         )
         self.assertEqual(
-            attempt_span.parent.span_id,
-            client_span.get_span_context().span_id
+            attempt_span.parent.span_id, client_span.get_span_context().span_id
         )
         self.assertEqual(
             attempt_span.get_span_context().trace_id,
-            server_span.get_span_context().trace_id
+            server_span.get_span_context().trace_id,
         )
         self.assertEqual(
-            server_span.parent.span_id,
-            attempt_span.get_span_context().span_id
+            server_span.parent.span_id, attempt_span.get_span_context().span_id
         )
 
         # validate server span traced events

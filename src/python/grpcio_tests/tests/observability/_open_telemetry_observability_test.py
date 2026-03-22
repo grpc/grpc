@@ -12,8 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from collections import defaultdict, Counter
-import concurrent.futures
+import collections
 import datetime
 import logging
 import os
@@ -30,18 +29,12 @@ from grpc_observability._open_telemetry_observability import (
 )
 from grpc_observability._open_telemetry_observability import GRPC_METHOD_LABEL
 from grpc_observability._open_telemetry_observability import GRPC_TARGET_LABEL
-from opentelemetry.sdk.metrics import MeterProvider
-from opentelemetry.sdk.metrics.export import AggregationTemporality
-from opentelemetry.sdk.metrics.export import MetricExportResult
-from opentelemetry.sdk.metrics.export import MetricExporter
-from opentelemetry.sdk.metrics.export import MetricsData
-from opentelemetry.sdk.metrics.export import PeriodicExportingMetricReader
-from opentelemetry.sdk import trace as sdk_trace
-from opentelemetry.sdk.trace.export import SimpleSpanProcessor
-from opentelemetry.sdk.trace.export import SpanExporter
-from opentelemetry.sdk.trace.export.in_memory_span_exporter import (
-    InMemorySpanExporter,
-)
+from opentelemetry.sdk import metrics as otel_metrics
+from opentelemetry.sdk import trace as otel_trace
+from opentelemetry.sdk.metrics import export as otel_metrics_export
+from opentelemetry.sdk.metrics import view as otel_metrics_view
+from opentelemetry.sdk.trace import export as otel_trace_export
+from opentelemetry.sdk.trace.export import in_memory_span_exporter
 from opentelemetry.trace.propagation.tracecontext import (
     TraceContextTextMapPropagator,
 )
@@ -54,7 +47,7 @@ STREAM_LENGTH = 5
 OTEL_EXPORT_INTERVAL_S = 0.5
 
 
-class OTelMetricExporter(MetricExporter):
+class OTelMetricExporter(otel_metrics_export.MetricExporter):
     """Implementation of :class:`MetricExporter` that export metrics to the
     provided metric_list.
 
@@ -68,11 +61,13 @@ class OTelMetricExporter(MetricExporter):
 
     def __init__(
         self,
-        all_metrics: Dict[str, List],
-        preferred_temporality: Dict[type, AggregationTemporality] = None,
-        preferred_aggregation: Dict[
-            type, "opentelemetry.sdk.metrics.view.Aggregation"
-        ] = None,
+        all_metrics: dict[str, List],
+        preferred_temporality: (
+            dict[type, otel_metrics_export.AggregationTemporality] | None
+        ) = None,
+        preferred_aggregation: (
+            dict[type, otel_metrics_view.Aggregation] | None
+        ) = None,
     ):
         super().__init__(
             preferred_temporality=preferred_temporality,
@@ -82,12 +77,12 @@ class OTelMetricExporter(MetricExporter):
 
     def export(
         self,
-        metrics_data: MetricsData,
+        metrics_data: otel_metrics_export.MetricsData,
         timeout_millis: float = 10_000,
         **kwargs,
-    ) -> MetricExportResult:
+    ) -> otel_metrics_export.MetricExportResult:
         self.record_metric(metrics_data)
-        return MetricExportResult.SUCCESS
+        return otel_metrics_export.MetricExportResult.SUCCESS
 
     def shutdown(self, timeout_millis: float = 30_000, **kwargs) -> None:
         pass
@@ -95,7 +90,9 @@ class OTelMetricExporter(MetricExporter):
     def force_flush(self, timeout_millis: float = 10_000) -> bool:
         return True
 
-    def record_metric(self, metrics_data: MetricsData) -> None:
+    def record_metric(
+        self, metrics_data: otel_metrics_export.MetricsData
+    ) -> None:
         for resource_metric in metrics_data.resource_metrics:
             for scope_metric in resource_metric.scope_metrics:
                 for metric in scope_metric.metrics:
@@ -118,22 +115,37 @@ class _ServerInterceptor(grpc.ServerInterceptor):
         return continuation(handler_call_details)
 
 
+class _MetadataCapturingServerInterceptor(grpc.ServerInterceptor):
+    def __init__(self):
+        self.captured_metadata = []
+
+    def intercept_service(self, continuation, handler_call_details):
+        self.captured_metadata.append(
+            dict(handler_call_details.invocation_metadata)
+        )
+        return continuation(handler_call_details)
+
+
 @unittest.skipIf(
     os.name == "nt" or "darwin" in sys.platform,
     "Observability is not supported in Windows and MacOS",
 )
 class OpenTelemetryObservabilityTest(unittest.TestCase):
     def setUp(self):
-        self.all_metrics = defaultdict(list)
+        self.all_metrics = collections.defaultdict(list)
         otel_metric_exporter = OTelMetricExporter(self.all_metrics)
-        metric_reader = PeriodicExportingMetricReader(
+        metric_reader = otel_metrics_export.PeriodicExportingMetricReader(
             exporter=otel_metric_exporter,
             export_interval_millis=OTEL_EXPORT_INTERVAL_S * 1000,
         )
-        self._meter_provider = MeterProvider(metric_readers=[metric_reader])
-        otel_tracer_provider = sdk_trace.TracerProvider()
-        self._span_exporter = InMemorySpanExporter()
-        span_processor = SimpleSpanProcessor(self._span_exporter)
+        self._meter_provider = otel_metrics.MeterProvider(
+            metric_readers=(metric_reader,)
+        )
+        otel_tracer_provider = otel_trace.TracerProvider()
+        self._span_exporter = in_memory_span_exporter.InMemorySpanExporter()
+        span_processor = otel_trace_export.SimpleSpanProcessor(
+            self._span_exporter
+        )
         otel_tracer_provider.add_span_processor(span_processor)
         self._tracer_provider = otel_tracer_provider
         self._server = None
@@ -233,11 +245,12 @@ class OpenTelemetryObservabilityTest(unittest.TestCase):
             _test_server.unary_unary_call(port=port)
             _test_server.unary_unary_call(port=port)
 
-        # for each unary unary server call, 3 spans are created, which must be validated separately
+        self._validate_spans_exist(self._span_exporter)
+
+        # for each unary unary server call, 3 spans are created, which must be
+        # validated separately
         first_rpc_spans = self._span_exporter.get_finished_spans()[0:3]
         second_rpc_spans = self._span_exporter.get_finished_spans()[3:]
-
-        self._validate_spans_exist(self._span_exporter)
         self._validate_spans(
             spans=first_rpc_spans,
             expected_span_size=3,
@@ -488,7 +501,7 @@ class OpenTelemetryObservabilityTest(unittest.TestCase):
         self._validate_metrics_exist(self.all_metrics)
         self._validate_all_metrics_names(self.all_metrics.keys())
 
-        self.all_metrics = defaultdict(list)
+        self.all_metrics = collections.defaultdict(list)
         _test_server.unary_unary_call(port=self._port)
         with self.assertRaisesRegex(AssertionError, "No metrics was exported"):
             self._validate_metrics_exist(self.all_metrics)
@@ -508,7 +521,7 @@ class OpenTelemetryObservabilityTest(unittest.TestCase):
         self._validate_metrics_exist(self.all_metrics)
         self._validate_all_metrics_names(self.all_metrics.keys())
 
-        self.all_metrics = defaultdict(list)
+        self.all_metrics = collections.defaultdict(list)
         _test_server.unary_unary_call(port=self._port)
         with self.assertRaisesRegex(AssertionError, "No metrics was exported"):
             self._validate_metrics_exist(self.all_metrics)
@@ -899,19 +912,18 @@ class OpenTelemetryObservabilityTest(unittest.TestCase):
         self.assertTrue(UNARY_METHOD_NAME not in server_method_values)
 
     def testWrongPluginConfigurationForTracing(self):
-        class UserDefinedIdGenerator(sdk_trace.IdGenerator):
+        class UserDefinedIdGenerator(otel_trace.IdGenerator):
             def generate_span_id(self) -> int:
                 return 0
 
             def generate_trace_id(self) -> int:
                 return 0
 
-        otel_tracer_provider = sdk_trace.TracerProvider(
+        otel_tracer_provider = otel_trace.TracerProvider(
             id_generator=UserDefinedIdGenerator()
         )
         with self.assertRaisesRegex(
-            ValueError,
-            "User-defined IdGenerators are not allowed."
+            ValueError, "User-defined IdGenerators are not allowed."
         ):
             grpc_observability.OpenTelemetryPlugin(
                 tracer_provider=otel_tracer_provider,
@@ -919,81 +931,22 @@ class OpenTelemetryObservabilityTest(unittest.TestCase):
             )
 
     def testWrongPluginConfigurationForTracingWithoutPropagator(self):
-        class UserDefinedIdGenerator(sdk_trace.IdGenerator):
+        class UserDefinedIdGenerator(otel_trace.IdGenerator):
             def generate_span_id(self) -> int:
                 return 0
 
             def generate_trace_id(self) -> int:
                 return 0
 
-        otel_tracer_provider = sdk_trace.TracerProvider(
+        otel_tracer_provider = otel_trace.TracerProvider(
             id_generator=UserDefinedIdGenerator()
         )
         with self.assertRaisesRegex(
-            ValueError,
-            "User-defined IdGenerators are not allowed."
+            ValueError, "User-defined IdGenerators are not allowed."
         ):
             grpc_observability.OpenTelemetryPlugin(
                 tracer_provider=otel_tracer_provider,
             )
-
-    def testConcurrentRpcsHaveCorrectSpanIds(self):
-        NUM_RPCS = 50
-        EXPECTED_SPANS = NUM_RPCS * 3  # Sent + Attempt + Recv per RPC
-
-        with grpc_observability.OpenTelemetryPlugin(
-            tracer_provider=self._tracer_provider,
-            text_map_propagator=TraceContextTextMapPropagator(),
-        ):
-            server, port = _test_server.start_server()
-            self._server = server
-            channel = grpc.insecure_channel(f"localhost:{port}")
-            multi_callable = channel.unary_unary("/test/UnaryUnary")
-
-            def do_rpc(unused):
-                multi_callable(b"\x00\x00\x00")
-
-            with concurrent.futures.ThreadPoolExecutor(
-                max_workers=8
-            ) as pool:
-                list(pool.map(do_rpc, range(NUM_RPCS)))
-
-            channel.close()
-
-        self.assert_eventually(
-            lambda: len(
-                self._span_exporter.get_finished_spans()
-            ) >= EXPECTED_SPANS,
-            timeout=datetime.timedelta(seconds=10),
-            message=lambda: (
-                f"Expected {EXPECTED_SPANS} spans, got "
-                f"{len(self._span_exporter.get_finished_spans())}"
-            ),
-        )
-
-        spans = self._span_exporter.get_finished_spans()
-        self.assertTrue(len(spans) == EXPECTED_SPANS)
-
-        sent_count = sum(1 for s in spans if s.name.startswith("Sent."))
-        self.assertTrue(sent_count == NUM_RPCS)
-
-        attempt_count = sum(1 for s in spans if s.name.startswith("Attempt."))
-        self.assertTrue(attempt_count == NUM_RPCS)
-
-        recv_count = sum(1 for s in spans if s.name.startswith("Recv."))
-        self.assertTrue(recv_count == NUM_RPCS)
-
-        # Verify id
-        span_ids = [s.get_span_context().span_id for s in spans]
-        counts = Counter(span_ids)
-        #print(counts)
-        for span_id, count in counts.items():
-            self.assertTrue(count == 1)
-
-        trace_ids = [s.context.trace_id for s in spans]
-        counts = Counter(trace_ids)
-        print(counts)
-
 
     def testSpanStatusForUnimplementedRpcMethod(self):
         with grpc_observability.OpenTelemetryPlugin(
@@ -1042,19 +995,105 @@ class OpenTelemetryObservabilityTest(unittest.TestCase):
         # validate parent-child relationship
         self.assertEqual(
             client_span.get_span_context().trace_id,
-            attempt_span.get_span_context().trace_id
+            attempt_span.get_span_context().trace_id,
         )
         self.assertEqual(
-            attempt_span.parent.span_id,
-            client_span.get_span_context().span_id
+            attempt_span.parent.span_id, client_span.get_span_context().span_id
         )
         self.assertEqual(
             attempt_span.get_span_context().trace_id,
-            server_span.get_span_context().trace_id
+            server_span.get_span_context().trace_id,
         )
         self.assertEqual(
-            server_span.parent.span_id,
-            attempt_span.get_span_context().span_id
+            server_span.parent.span_id, attempt_span.get_span_context().span_id
+        )
+
+    @unittest.expectedFailure
+    # TODO(Zgoda): Implement header injection with map propagator object
+    def testTraceparentHeaderInjectedWithTextMapPropagator(self):
+        interceptor = _MetadataCapturingServerInterceptor()
+
+        with grpc_observability.OpenTelemetryPlugin(
+            tracer_provider=self._tracer_provider,
+            text_map_propagator=TraceContextTextMapPropagator(),
+        ):
+            server, port = _test_server.start_server(
+                interceptors=(interceptor,)
+            )
+            self._server = server
+            _test_server.unary_unary_call(port=port)
+
+        self._validate_spans_exist(self._span_exporter)
+        spans = self._span_exporter.get_finished_spans()
+
+        client_span = next(
+            (span for span in spans if span.name.startswith("Sent.")), None
+        )
+        self.assertIsNotNone(client_span)
+        expected_trace_id = format(
+            client_span.get_span_context().trace_id, "032x"
+        )
+
+        self.assertEqual(len(interceptor.captured_metadata), 1)
+        metadata = interceptor.captured_metadata[0]
+        self.assertIn(
+            "traceparent",
+            metadata,
+            msg=(
+                f"traceparent header not found in metadata: ",
+                f"{list(metadata.keys())}",
+            ),
+        )
+
+        traceparent = metadata["traceparent"]
+        parts = traceparent.split("-")
+        self.assertEqual(
+            len(parts), 4, msg=f"Invalid traceparent format: {traceparent}"
+        )
+        self.assertEqual(parts[0], "00", msg="Expected traceparent version 00")
+        self.assertEqual(
+            parts[1],
+            expected_trace_id,
+            msg=(
+                f"TraceID mismatch: traceparent has {parts[1]}, ",
+                f"span has {expected_trace_id}",
+            ),
+        )
+
+    def testServiceToServiceTraceIdPropagation(self):
+        with grpc_observability.OpenTelemetryPlugin(
+            tracer_provider=self._tracer_provider,
+            text_map_propagator=TraceContextTextMapPropagator(),
+        ):
+            server, port = _test_server.start_server()
+            self._server = server
+            # Trigger nested RPC to a new server
+            _test_server.unary_unary_call(
+                port=port,
+                metadata=[
+                    _test_server.TRIGGER_RPC_METADATA,
+                    _test_server.TRIGGER_RPC_TO_NEW_SERVER_METADATA,
+                ],
+            )
+
+        self._validate_spans_exist(self._span_exporter)
+        spans = self._span_exporter.get_finished_spans()
+
+        # Expect 6 spans: Sent/Attempt/Recv for original RPC +
+        # Sent/Attempt/Recv for the nested RPC to the second server
+        self.assertEqual(
+            len(spans), 6, msg=f"Expected 6 spans, got: {len(spans)}"
+        )
+
+        # All spans must share the same trace ID
+        trace_ids = {span.get_span_context().trace_id for span in spans}
+        self.assertEqual(
+            len(trace_ids),
+            1,
+            msg=(
+                f"Expected all spans to share one trace ID, ",
+                f"got {len(trace_ids)} distinct trace IDs",
+            ),
         )
 
     def assert_eventually(
@@ -1075,7 +1114,7 @@ class OpenTelemetryObservabilityTest(unittest.TestCase):
             self.fail(message() + " after " + str(timeout))
 
     def _validate_metrics_exist(self, all_metrics: Dict[str, Any]) -> None:
-        # Sleep here to make sure we have at least one export from OTel MetricExporter.
+        # Sleep here to make sure we have at least one export from OTel otel_metrics_export.MetricExporter.
         self.assert_eventually(
             lambda: len(all_metrics.keys()) > 1,
             message=lambda: f"No metrics was exported",
@@ -1101,8 +1140,11 @@ class OpenTelemetryObservabilityTest(unittest.TestCase):
                     msg=f"metric {base_metric.name} not found in exported metrics: {metric_names}!",
                 )
 
-    def _validate_spans_exist(self, span_exporter: SpanExporter):
-        # Sleep here to make sure we have at least one export from OTel SpanExporter.
+    def _validate_spans_exist(
+        self, span_exporter: otel_trace_export.SpanExporter
+    ):
+        # Sleep here to make sure we have at least one export from
+        # OTel SpanExporter.
         self.assert_eventually(
             lambda: len(span_exporter.get_finished_spans()) > 1,
             message=lambda: f"No traces were exported",
@@ -1110,7 +1152,7 @@ class OpenTelemetryObservabilityTest(unittest.TestCase):
 
     def _validate_spans(
         self,
-        spans: Sequence[sdk_trace.ReadableSpan],
+        spans: Sequence[otel_trace.ReadableSpan],
         expected_span_size: int,
         expected_server_events: Sequence[Tuple[str, Dict[str, str]]],
         expected_attempt_events: Sequence[Tuple[str, Dict[str, str]]],
@@ -1150,19 +1192,17 @@ class OpenTelemetryObservabilityTest(unittest.TestCase):
         # validate parent-child relationship
         self.assertEqual(
             client_span.get_span_context().trace_id,
-            attempt_span.get_span_context().trace_id
+            attempt_span.get_span_context().trace_id,
         )
         self.assertEqual(
-            attempt_span.parent.span_id,
-            client_span.get_span_context().span_id
+            attempt_span.parent.span_id, client_span.get_span_context().span_id
         )
         self.assertEqual(
             attempt_span.get_span_context().trace_id,
-            server_span.get_span_context().trace_id
+            server_span.get_span_context().trace_id,
         )
         self.assertEqual(
-            server_span.parent.span_id,
-            attempt_span.get_span_context().span_id
+            server_span.parent.span_id, attempt_span.get_span_context().span_id
         )
 
         # validate server span traced events

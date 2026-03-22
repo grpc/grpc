@@ -40,7 +40,10 @@ def handle_unary_unary(request, servicer_context):
                 second_server = grpc.server(
                     futures.ThreadPoolExecutor(max_workers=10)
                 )
-                second_server.add_generic_rpc_handlers((_GenericHandler(),))
+                generic_handler = grpc.method_handlers_generic_handler(
+                    _SERVICE_NAME, RPC_METHOD_HANDLERS
+                )
+                second_server.add_generic_rpc_handlers((generic_handler,))
                 second_server_port = second_server.add_insecure_port("[::]:0")
                 second_server.start()
                 unary_unary_call(port=second_server_port)
@@ -83,22 +86,6 @@ class _MethodHandler(grpc.RpcMethodHandler):
             self.unary_stream = handle_unary_stream
         else:
             self.unary_unary = handle_unary_unary
-
-
-class _GenericHandler(grpc.GenericRpcHandler):
-    def service(self, handler_call_details):
-        if handler_call_details.method == _UNARY_UNARY:
-            return _MethodHandler(False, False)
-        if handler_call_details.method == _UNARY_UNARY_FILTERED:
-            return _MethodHandler(False, False)
-        elif handler_call_details.method == _UNARY_STREAM:
-            return _MethodHandler(False, True)
-        elif handler_call_details.method == _STREAM_UNARY:
-            return _MethodHandler(True, False)
-        elif handler_call_details.method == _STREAM_STREAM:
-            return _MethodHandler(True, True)
-        else:
-            return None
 
 
 RPC_METHOD_HANDLERS = {
