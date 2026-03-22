@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import contextvars
 import logging
 import threading
 import time
@@ -108,7 +109,7 @@ class _OpenTelemetryPlugin:
     _plugin: OpenTelemetryPlugin
     _metric_to_recorder: Dict[MetricsName, Union[Counter, Histogram]]
     _tracer: Optional[sdk_trace.Tracer]
-    _trace_ctx: Optional[otel_context.Context]
+    _trace_ctx_var: contextvars.ContextVar
     _text_map_propagator: Optional[TraceContextTextMapPropagator]
     _enabled_client_plugin_options: Optional[List[OpenTelemetryPluginOption]]
     _enabled_server_plugin_options: Optional[List[OpenTelemetryPluginOption]]
@@ -119,8 +120,9 @@ class _OpenTelemetryPlugin:
         self._metric_to_recorder = {}
         self._tracer = None
         self._tracer_lock = threading.Lock()
-        self._trace_ctx = None
-        self._trace_ctx_lock = threading.Lock()
+        self._trace_ctx_var = contextvars.ContextVar(
+            "grpc_trace_ctx", default=None
+        )
         self._text_map_propagator = None
         self.identifier = str(id(self))
         self._enabled_client_plugin_options = None
@@ -209,15 +211,14 @@ class _OpenTelemetryPlugin:
         return self._tracer is not None
 
     def get_trace_context(self) -> Optional[otel_context.Context]:
-        with self._trace_ctx_lock:
-            return self._trace_ctx
+        return self._trace_ctx_var.get()
 
     def _build_context(
         self,
         trace_id: str,
         span_id: str,
         is_sampled: bool,
-        context: Optional[otel_context.Context] = None
+        context: Optional[otel_context.Context] = None,
     ) -> otel_context.Context:
         """Builds new Otel context from trace_id, span_id and sampling flag."
 
@@ -247,20 +248,20 @@ class _OpenTelemetryPlugin:
         parent_span = trace.NonRecordingSpan(span_context)
         return trace.set_span_in_context(parent_span, context)
 
-
     def save_trace_context(
         self, trace_id: str, span_id: str, is_sampled: bool
     ) -> None:
         if not self.is_tracing_configured():
             return
 
-        with self._trace_ctx_lock:
-            self._trace_ctx = self._build_context(
+        self._trace_ctx_var.set(
+            self._build_context(
                 trace_id=trace_id,
                 span_id=span_id,
                 is_sampled=is_sampled,
-                context=self._trace_ctx
+                context=self._trace_ctx_var.get(),
             )
+        )
 
     def _status_to_otel_status(self, status: str) -> trace.Status:
         if status == "OK":
