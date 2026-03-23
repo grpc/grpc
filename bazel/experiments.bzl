@@ -36,6 +36,7 @@ EXPERIMENT_ENABLES = {
     "fail_recv_metadata_on_deadline_exceeded": "fail_recv_metadata_on_deadline_exceeded",
     "free_large_allocator": "free_large_allocator",
     "fuse_filters": "fuse_filters",
+    "h2_max_deallocating_streams_headroom": "h2_max_deallocating_streams_headroom",
     "keep_alive_ping_timer_batch": "keep_alive_ping_timer_batch",
     "local_connector_secure": "local_connector_secure",
     "max_inflight_pings_strict_limit": "max_inflight_pings_strict_limit",
