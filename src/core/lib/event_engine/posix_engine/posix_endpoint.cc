@@ -1134,6 +1134,7 @@ bool PosixEndpointImpl::TcpFlush(absl::Status& status) {
     }
 
     GRPC_CHECK_EQ(outgoing_byte_idx_, 0u);
+    GRPC_CHECK_LE((*send_result), sending_length);
     bytes_counter_ += *send_result;
     trailing = sending_length - static_cast<size_t>(*send_result);
     while (trailing > 0) {
