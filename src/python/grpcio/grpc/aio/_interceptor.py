@@ -386,7 +386,10 @@ class InterceptedCall:
             return True
 
         if exc is not None:
-            if isinstance(exc, AioRpcError) and exc.code() == grpc.StatusCode.CANCELLED:
+            if (
+                isinstance(exc, AioRpcError)
+                and exc.code() == grpc.StatusCode.CANCELLED
+            ):
                 return True
             return False
 
