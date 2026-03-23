@@ -35,7 +35,7 @@ class CdsChildNameStateTest : public ::testing::Test {
   }
 
   static std::shared_ptr<const XdsEndpointResource> MakeEndpointResource(
-      const std::vector<std::vector<std::string /*sub_zone*/>> priorities) {
+      const std::vector<std::vector<std::string /*sub_zone*/>>& priorities) {
     auto endpoint_resource = std::make_shared<XdsEndpointResource>();
     for (size_t i = 0; i < priorities.size(); ++i) {
       XdsEndpointResource::Priority priority;
@@ -51,21 +51,20 @@ class CdsChildNameStateTest : public ::testing::Test {
   }
 
   static XdsConfig::ClusterConfig::EndpointConfig MakeEndpointConfig(
-      const std::shared_ptr<const XdsEndpointResource> endpoint_resource) {
-    return XdsConfig::ClusterConfig::EndpointConfig(
-        std::move(endpoint_resource), /*resolution_note=*/"");
+      const std::shared_ptr<const XdsEndpointResource>& endpoint_resource) {
+    return XdsConfig::ClusterConfig::EndpointConfig(endpoint_resource,
+                                                    /*resolution_note=*/"");
   }
 
   static XdsConfig::ClusterConfig::EndpointConfig MakeEndpointConfig(
-      const std::vector<std::vector<std::string /*sub_zone*/>> priorities) {
-    return MakeEndpointConfig(MakeEndpointResource(std::move(priorities)));
+      const std::vector<std::vector<std::string /*sub_zone*/>>& priorities) {
+    return MakeEndpointConfig(MakeEndpointResource(priorities));
   }
 
   static XdsConfig::ClusterConfig MakeClusterConfig(
-      const std::shared_ptr<const XdsEndpointResource> endpoint_resource) {
+      const std::shared_ptr<const XdsEndpointResource>& endpoint_resource) {
     return XdsConfig::ClusterConfig(
-        /*cluster=*/nullptr, std::move(endpoint_resource),
-        /*resolution_note=*/"");
+        /*cluster=*/nullptr, endpoint_resource, /*resolution_note=*/"");
   }
 };
 
