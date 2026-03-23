@@ -38,7 +38,7 @@ namespace {
 // never ran (received_final_op_atm_ == 0), the call should be terminated
 // with UNAVAILABLE (server went away), not CANCELLED (caller cancelled).
 CORE_END2END_TEST(CoreEnd2endTests,
-                  EarlyServerShutdownFinishesPendingCalls) {
+                  ShutdownFinishesPendingCalls) {
   SKIP_IF_V3();
   SKIP_IF_FUZZING();
 
