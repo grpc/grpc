@@ -648,21 +648,6 @@ GRPCAPI void grpc_tls_identity_pairs_destroy(grpc_tls_identity_pairs* pairs);
 /**
  * EXPERIMENTAL API - Subject to change
  *
- * Creates a grpc_tls_certificate_provider that will load credential data from
- * static string during initialization. This provider will always return the
- * same cert data for all cert names.
- * root_certificate and pem_key_cert_pairs can be nullptr, indicating the
- * corresponding credential data is not needed.
- * This function will make a copy of |root_certificate|.
- * The ownership of |pem_key_cert_pairs| is transferred.
- */
-GRPCAPI grpc_tls_certificate_provider*
-grpc_tls_certificate_provider_static_data_create(
-    const char* root_certificate, grpc_tls_identity_pairs* pem_key_cert_pairs);
-
-/**
- * EXPERIMENTAL API - Subject to change
- *
  * Creates a grpc_tls_certificate_provider that will watch the credential
  * changes on the file system. This provider will always return the up-to-date
  * cert data for all the cert names callers set through
@@ -691,6 +676,46 @@ grpc_tls_certificate_provider_file_watcher_create(
     const char* private_key_path, const char* identity_certificate_path,
     const char* root_cert_path, const char* spiffe_bundle_map_path,
     unsigned int refresh_interval_sec);
+
+/**
+ * EXPERIMENTAL API - Subject to change
+ *
+ * Creates a grpc_tls_certificate_provider that will load credential data from
+ * memory during initialization. This provider allows updating the identity and
+ * root certificates independently.
+ */
+GRPCAPI grpc_tls_certificate_provider*
+grpc_tls_certificate_provider_in_memory_create();
+
+/**
+ * EXPERIMENTAL API - Subject to change
+ *
+ * Update the root certificate of a grpc_tls_certificate_provider created with
+ * `grpc_tls_certificate_provider_in_memory_create`.
+ *
+ * root_certificate can be nullptr, indicating the corresponding credential data
+ * is not needed. This function will make a copy of |root_cert|.
+ *
+ * Returns true if the root certificate was successfully updated.
+ */
+GRPCAPI bool grpc_tls_certificate_provider_in_memory_set_root_certificate(
+    grpc_tls_certificate_provider* provider, const char* root_cert);
+
+/**
+ * EXPERIMENTAL API - Subject to change
+ *
+ * Update the identity certificate of a grpc_tls_certificate_provider created
+ * with `grpc_tls_certificate_provider_in_memory_create`.
+ *
+ * pem_key_cert_pairs can be nullptr, indicating the
+ * corresponding credential data is not needed.
+ * The ownership of |pem_key_cert_pairs| is transferred.
+ *
+ * Returns true if the identity certificate was successfully updated.
+ */
+GRPCAPI bool grpc_tls_certificate_provider_in_memory_set_identity_certificate(
+    grpc_tls_certificate_provider* provider,
+    grpc_tls_identity_pairs* pem_key_cert_pairs);
 
 /**
  * EXPERIMENTAL API - Subject to change

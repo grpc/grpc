@@ -76,7 +76,7 @@ class IncomingMetadataTracker {
   // Writing Header and Continuation State
 
   // Called when a HEADER frame is received.
-  void OnHeaderReceived(const Http2HeaderFrame& frame) {
+  void UpdateState(const Http2HeaderFrame& frame) {
     GRPC_CHECK(!incoming_header_in_progress_);
     incoming_header_in_progress_ = !frame.end_headers;
     incoming_header_stream_id_ = frame.stream_id;
@@ -84,7 +84,7 @@ class IncomingMetadataTracker {
   }
 
   // Called when a CONTINUATION frame is received.
-  void OnContinuationReceived(const Http2ContinuationFrame& frame) {
+  void UpdateState(const Http2ContinuationFrame& frame) {
     GRPC_CHECK(incoming_header_in_progress_);
     GRPC_CHECK_EQ(frame.stream_id, incoming_header_stream_id_);
     incoming_header_in_progress_ = !frame.end_headers;
@@ -106,7 +106,12 @@ class IncomingMetadataTracker {
   // Returns stream id of stream for which headers are being received.
   uint32_t GetStreamId() const { return incoming_header_stream_id_; }
 
-  bool ClientReceivedDuplicateMetadata(
+  // A gRPC server is permitted to send both initial metadata and trailing
+  // metadata where initial metadata is optional.
+  // A gRPC C++ client is permitted to send only initial metadata.
+  // However, other gRPC Client implementations may send trailing metadata too.
+  // So we allow only a maximum of 2 metadata per streams.
+  bool DidReceiveDuplicateMetadata(
       const bool did_receive_initial_metadata,
       const bool did_receive_trailing_metadata) const {
     const bool is_duplicate_initial_metadata =
@@ -114,13 +119,6 @@ class IncomingMetadataTracker {
     const bool is_duplicate_trailing_metadata =
         incoming_header_end_stream_ && did_receive_trailing_metadata;
     return is_duplicate_initial_metadata || is_duplicate_trailing_metadata;
-  }
-
-  bool ServerReceivedDuplicateMetadata(
-      const bool did_receive_initial_metadata) const {
-    // TODO(tjagtap) : [PH2][P2] : Verify this when implementing Server.
-    // Also write a small unit test for it.
-    return !incoming_header_end_stream_ && did_receive_initial_metadata;
   }
 
   std::string DebugString() const {

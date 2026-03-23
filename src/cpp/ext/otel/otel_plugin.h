@@ -581,7 +581,6 @@ class OpenTelemetryPluginImpl
   absl::AnyInvocable<bool(
       const OpenTelemetryPluginBuilder::ChannelScope& /*scope*/) const>
       channel_scope_filter_;
-  std::vector<std::string> collapse_labels_;  // const after init
   std::vector<std::unique_ptr<ExporterCallback>> exporter_callbacks_;
   grpc_core::RefCountedPtr<grpc_core::CollectionScope> collection_scope_;
 };

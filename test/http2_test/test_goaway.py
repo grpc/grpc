@@ -18,7 +18,7 @@ import time
 import http2_base_server
 
 
-class TestcaseGoaway(object):
+class TestcaseGoaway:
     """
     This test does the following:
       Process incoming request normally, i.e. send headers, data and trailers.
