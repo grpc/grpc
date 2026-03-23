@@ -1029,8 +1029,10 @@ grpc_cc_test(
     tags = ["no_windows"],
     uses_polling = False,
     deps = [
+        "http2_common_test_inputs",
         ":http2_frame_test_helper",
         "//:channel_arg_names",
+        "//:channelz",
         "//:chttp2_frame",
         "//:config",
         "//:event_engine_base_hdrs",
@@ -1040,6 +1042,7 @@ grpc_cc_test(
         "//:grpc_transport_chttp2",
         "//:orphanable",
         "//src/core:arena",
+        "//src/core:call_filters",
         "//src/core:call_spine",
         "//src/core:channel_args",
         "//src/core:chttp2_flow_control",

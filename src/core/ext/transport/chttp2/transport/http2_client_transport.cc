@@ -242,8 +242,6 @@ Http2Status Http2ClientTransport::ProcessIncomingFrame(Http2DataFrame&& frame) {
       << frame.stream_id << ", end_stream:" << frame.end_stream
       << ", payload length=" << frame.payload.Length() << "}";
 
-  // TODO(akshitpatel) : [PH2][P3] : Investigate if we should do this even if
-  // the function returns a non-ok status?
   ping_manager_->ReceivedDataFrame();
 
   RefCountedPtr<Stream> stream = LookupStream(frame.stream_id);
@@ -276,7 +274,6 @@ Http2Status Http2ClientTransport::ProcessIncomingFrame(Http2DataFrame&& frame) {
     return stream_status;
   }
 
-  // Add frame to assembler
   GRPC_HTTP2_CLIENT_DLOG
       << "Http2ClientTransport::ProcessIncomingFrame(DataFrame) "
          "AppendNewDataFrame";
@@ -336,7 +333,7 @@ Http2Status Http2ClientTransport::ProcessIncomingFrame(
       << frame.stream_id << ", end_headers=" << frame.end_headers
       << ", end_stream=" << frame.end_stream << " }";
   // State update MUST happen before processing the frame.
-  incoming_headers_.OnHeaderReceived(frame);
+  incoming_headers_.UpdateState(frame);
 
   ping_manager_->ReceivedDataFrame();
 
@@ -375,8 +372,7 @@ Http2Status Http2ClientTransport::ProcessIncomingFrame(
             std::string(GrpcErrors::kTooManyMetadata)));
   }
 
-  Http2Status append_result =
-      stream->GetHeaderAssembler().AppendHeaderFrame(frame);
+  Http2Status append_result = stream->GetHeaderAssembler().AppendFrame(frame);
   if (!append_result.IsOk()) {
     // Frame payload is not consumed if AppendHeaderFrame returns a non-OK
     // status. We need to process it to keep our in consistent state.
@@ -620,7 +616,7 @@ Http2Status Http2ClientTransport::ProcessIncomingFrame(
       << frame.stream_id << ", end_headers=" << frame.end_headers << " }";
 
   // State update MUST happen before processing the frame.
-  incoming_headers_.OnContinuationReceived(frame);
+  incoming_headers_.UpdateState(frame);
 
   RefCountedPtr<Stream> stream = LookupStream(frame.stream_id);
   if (stream == nullptr) {
@@ -643,8 +639,7 @@ Http2Status Http2ClientTransport::ProcessIncomingFrame(
             std::string(RFC9113::kHalfClosedRemoteState)));
   }
 
-  Http2Status append_result =
-      stream->GetHeaderAssembler().AppendContinuationFrame(frame);
+  Http2Status append_result = stream->GetHeaderAssembler().AppendFrame(frame);
   if (!append_result.IsOk()) {
     // Frame payload is not consumed if AppendContinuationFrame returns a
     // non-OK status. We need to process it to keep our in consistent state.
@@ -765,14 +760,12 @@ auto Http2ClientTransport::ReadAndProcessOneFrame() {
       // the frame header.
       EndpointReadSlice(kFrameHeaderSize),
       // Parse the frame header.
-      [](Slice header_bytes) -> Http2FrameHeader {
+      [this](Slice header_bytes) {
         GRPC_HTTP2_CLIENT_DLOG
             << "Http2ClientTransport::ReadAndProcessOneFrame Parse "
             << header_bytes.as_string_view();
-        return Http2FrameHeader::Parse(header_bytes.begin());
-      },
-      // Validate the incoming frame as per the current state of the transport
-      [this](Http2FrameHeader header) {
+        Http2FrameHeader header = Http2FrameHeader::Parse(header_bytes.begin());
+        // Validate the incoming frame as per the current state of the transport
         Http2Status status = ValidateFrameHeader(
             /*max_frame_size_setting*/ settings_->acked().max_frame_size(),
             /*incoming_header_in_progress*/
