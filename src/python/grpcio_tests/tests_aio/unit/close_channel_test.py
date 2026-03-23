@@ -180,9 +180,11 @@ class TestCloseChannel(AioTestBase):
                 continue
             pending.append(t)
 
-        self.assertEqual(len(pending), 0, f"Leaked tasks: {[getattr(t.get_coro(), '__qualname__', str(t)) for t in pending]}")
-
-
+        self.assertEqual(
+            len(pending),
+            0,
+            f"Leaked tasks: {[getattr(t.get_coro(), '__qualname__', str(t)) for t in pending]}",
+        )
 
 
 if __name__ == "__main__":

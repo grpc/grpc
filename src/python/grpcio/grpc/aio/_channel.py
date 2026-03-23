@@ -15,8 +15,8 @@
 
 import asyncio
 import sys
-import weakref
 from typing import Any, Iterable, List, Optional, Sequence
+import weakref
 
 import grpc
 from grpc import _common
@@ -388,7 +388,9 @@ class Channel(_base_channel.Channel):
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         await self._close(None)
 
-    async def _close(self, grace: Optional[float]):  # pylint: disable=too-many-branches
+    async def _close(
+        self, grace: Optional[float]
+    ):  # pylint: disable=too-many-branches
         if self._channel.closed():
             return
 
