@@ -33,7 +33,7 @@ XDS_PROTOS_GENCODE_GRPC_VERSION = "1.74.0"
 
 INSTALL_REQUIRES = [
     f"grpcio>={XDS_PROTOS_GENCODE_GRPC_VERSION}",
-    "protobuf>=6.31.1,<7.0.0",
+    "protobuf>=6.33.5,<7.0.0",
 ]
 SETUP_REQUIRES = INSTALL_REQUIRES + [
     f"grpcio-tools>={XDS_PROTOS_GENCODE_GRPC_VERSION}"
