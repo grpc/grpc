@@ -5,7 +5,7 @@ import warnings
 
 from envoy.service.status.v3 import csds_pb2 as envoy_dot_service_dot_status_dot_v3_dot_csds__pb2
 
-GRPC_GENERATED_VERSION = '1.81.0.dev0'
+GRPC_GENERATED_VERSION = '1.74.0'
 GRPC_VERSION = grpc.__version__
 _version_not_supported = False
 
@@ -18,14 +18,14 @@ except ImportError:
 if _version_not_supported:
     raise RuntimeError(
         f'The grpc package installed is at version {GRPC_VERSION},'
-        + ' but the generated code in envoy/service/status/v3/csds_pb2_grpc.py depends on'
+        + f' but the generated code in envoy/service/status/v3/csds_pb2_grpc.py depends on'
         + f' grpcio>={GRPC_GENERATED_VERSION}.'
         + f' Please upgrade your grpc module to grpcio>={GRPC_GENERATED_VERSION}'
         + f' or downgrade your generated code using grpcio-tools<={GRPC_VERSION}.'
     )
 
 
-class ClientStatusDiscoveryServiceStub:
+class ClientStatusDiscoveryServiceStub(object):
     """[#protodoc-title: Client status discovery service (CSDS)]
 
     CSDS is Client Status Discovery Service. It can be used to get the status of
@@ -51,7 +51,7 @@ class ClientStatusDiscoveryServiceStub:
                 _registered_method=True)
 
 
-class ClientStatusDiscoveryServiceServicer:
+class ClientStatusDiscoveryServiceServicer(object):
     """[#protodoc-title: Client status discovery service (CSDS)]
 
     CSDS is Client Status Discovery Service. It can be used to get the status of
@@ -92,7 +92,7 @@ def add_ClientStatusDiscoveryServiceServicer_to_server(servicer, server):
 
 
  # This class is part of an EXPERIMENTAL API.
-class ClientStatusDiscoveryService:
+class ClientStatusDiscoveryService(object):
     """[#protodoc-title: Client status discovery service (CSDS)]
 
     CSDS is Client Status Discovery Service. It can be used to get the status of

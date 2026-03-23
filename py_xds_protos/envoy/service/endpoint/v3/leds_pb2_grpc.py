@@ -5,7 +5,7 @@ import warnings
 
 from envoy.service.discovery.v3 import discovery_pb2 as envoy_dot_service_dot_discovery_dot_v3_dot_discovery__pb2
 
-GRPC_GENERATED_VERSION = '1.81.0.dev0'
+GRPC_GENERATED_VERSION = '1.74.0'
 GRPC_VERSION = grpc.__version__
 _version_not_supported = False
 
@@ -18,14 +18,14 @@ except ImportError:
 if _version_not_supported:
     raise RuntimeError(
         f'The grpc package installed is at version {GRPC_VERSION},'
-        + ' but the generated code in envoy/service/endpoint/v3/leds_pb2_grpc.py depends on'
+        + f' but the generated code in envoy/service/endpoint/v3/leds_pb2_grpc.py depends on'
         + f' grpcio>={GRPC_GENERATED_VERSION}.'
         + f' Please upgrade your grpc module to grpcio>={GRPC_GENERATED_VERSION}'
         + f' or downgrade your generated code using grpcio-tools<={GRPC_VERSION}.'
     )
 
 
-class LocalityEndpointDiscoveryServiceStub:
+class LocalityEndpointDiscoveryServiceStub(object):
     """[#not-implemented-hide:]
     [#protodoc-title: LEDS]
     Locality-Endpoint discovery
@@ -47,7 +47,7 @@ class LocalityEndpointDiscoveryServiceStub:
                 _registered_method=True)
 
 
-class LocalityEndpointDiscoveryServiceServicer:
+class LocalityEndpointDiscoveryServiceServicer(object):
     """[#not-implemented-hide:]
     [#protodoc-title: LEDS]
     Locality-Endpoint discovery
@@ -82,7 +82,7 @@ def add_LocalityEndpointDiscoveryServiceServicer_to_server(servicer, server):
 
 
  # This class is part of an EXPERIMENTAL API.
-class LocalityEndpointDiscoveryService:
+class LocalityEndpointDiscoveryService(object):
     """[#not-implemented-hide:]
     [#protodoc-title: LEDS]
     Locality-Endpoint discovery

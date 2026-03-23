@@ -5,7 +5,7 @@ import warnings
 
 from envoy.api.v2 import discovery_pb2 as envoy_dot_api_dot_v2_dot_discovery__pb2
 
-GRPC_GENERATED_VERSION = '1.81.0.dev0'
+GRPC_GENERATED_VERSION = '1.74.0'
 GRPC_VERSION = grpc.__version__
 _version_not_supported = False
 
@@ -18,14 +18,14 @@ except ImportError:
 if _version_not_supported:
     raise RuntimeError(
         f'The grpc package installed is at version {GRPC_VERSION},'
-        + ' but the generated code in envoy/service/discovery/v2/rtds_pb2_grpc.py depends on'
+        + f' but the generated code in envoy/service/discovery/v2/rtds_pb2_grpc.py depends on'
         + f' grpcio>={GRPC_GENERATED_VERSION}.'
         + f' Please upgrade your grpc module to grpcio>={GRPC_GENERATED_VERSION}'
         + f' or downgrade your generated code using grpcio-tools<={GRPC_VERSION}.'
     )
 
 
-class RuntimeDiscoveryServiceStub:
+class RuntimeDiscoveryServiceStub(object):
     """[#protodoc-title: Runtime Discovery Service (RTDS)]
     RTDS :ref:`configuration overview <config_runtime_rtds>`
 
@@ -55,7 +55,7 @@ class RuntimeDiscoveryServiceStub:
                 _registered_method=True)
 
 
-class RuntimeDiscoveryServiceServicer:
+class RuntimeDiscoveryServiceServicer(object):
     """[#protodoc-title: Runtime Discovery Service (RTDS)]
     RTDS :ref:`configuration overview <config_runtime_rtds>`
 
@@ -106,7 +106,7 @@ def add_RuntimeDiscoveryServiceServicer_to_server(servicer, server):
 
 
  # This class is part of an EXPERIMENTAL API.
-class RuntimeDiscoveryService:
+class RuntimeDiscoveryService(object):
     """[#protodoc-title: Runtime Discovery Service (RTDS)]
     RTDS :ref:`configuration overview <config_runtime_rtds>`
 

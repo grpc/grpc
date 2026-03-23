@@ -5,7 +5,7 @@ import warnings
 
 from envoy.service.accesslog.v2 import als_pb2 as envoy_dot_service_dot_accesslog_dot_v2_dot_als__pb2
 
-GRPC_GENERATED_VERSION = '1.81.0.dev0'
+GRPC_GENERATED_VERSION = '1.74.0'
 GRPC_VERSION = grpc.__version__
 _version_not_supported = False
 
@@ -18,14 +18,14 @@ except ImportError:
 if _version_not_supported:
     raise RuntimeError(
         f'The grpc package installed is at version {GRPC_VERSION},'
-        + ' but the generated code in envoy/service/accesslog/v2/als_pb2_grpc.py depends on'
+        + f' but the generated code in envoy/service/accesslog/v2/als_pb2_grpc.py depends on'
         + f' grpcio>={GRPC_GENERATED_VERSION}.'
         + f' Please upgrade your grpc module to grpcio>={GRPC_GENERATED_VERSION}'
         + f' or downgrade your generated code using grpcio-tools<={GRPC_VERSION}.'
     )
 
 
-class AccessLogServiceStub:
+class AccessLogServiceStub(object):
     """[#protodoc-title: gRPC Access Log Service (ALS)]
 
     Service for streaming access logs from Envoy to an access log server.
@@ -44,7 +44,7 @@ class AccessLogServiceStub:
                 _registered_method=True)
 
 
-class AccessLogServiceServicer:
+class AccessLogServiceServicer(object):
     """[#protodoc-title: gRPC Access Log Service (ALS)]
 
     Service for streaming access logs from Envoy to an access log server.
@@ -78,7 +78,7 @@ def add_AccessLogServiceServicer_to_server(servicer, server):
 
 
  # This class is part of an EXPERIMENTAL API.
-class AccessLogService:
+class AccessLogService(object):
     """[#protodoc-title: gRPC Access Log Service (ALS)]
 
     Service for streaming access logs from Envoy to an access log server.

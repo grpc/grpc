@@ -5,7 +5,7 @@ import warnings
 
 from envoy.service.event_reporting.v3 import event_reporting_service_pb2 as envoy_dot_service_dot_event__reporting_dot_v3_dot_event__reporting__service__pb2
 
-GRPC_GENERATED_VERSION = '1.81.0.dev0'
+GRPC_GENERATED_VERSION = '1.74.0'
 GRPC_VERSION = grpc.__version__
 _version_not_supported = False
 
@@ -18,14 +18,14 @@ except ImportError:
 if _version_not_supported:
     raise RuntimeError(
         f'The grpc package installed is at version {GRPC_VERSION},'
-        + ' but the generated code in envoy/service/event_reporting/v3/event_reporting_service_pb2_grpc.py depends on'
+        + f' but the generated code in envoy/service/event_reporting/v3/event_reporting_service_pb2_grpc.py depends on'
         + f' grpcio>={GRPC_GENERATED_VERSION}.'
         + f' Please upgrade your grpc module to grpcio>={GRPC_GENERATED_VERSION}'
         + f' or downgrade your generated code using grpcio-tools<={GRPC_VERSION}.'
     )
 
 
-class EventReportingServiceStub:
+class EventReportingServiceStub(object):
     """[#protodoc-title: gRPC Event Reporting Service]
 
     [#not-implemented-hide:]
@@ -46,7 +46,7 @@ class EventReportingServiceStub:
                 _registered_method=True)
 
 
-class EventReportingServiceServicer:
+class EventReportingServiceServicer(object):
     """[#protodoc-title: gRPC Event Reporting Service]
 
     [#not-implemented-hide:]
@@ -79,7 +79,7 @@ def add_EventReportingServiceServicer_to_server(servicer, server):
 
 
  # This class is part of an EXPERIMENTAL API.
-class EventReportingService:
+class EventReportingService(object):
     """[#protodoc-title: gRPC Event Reporting Service]
 
     [#not-implemented-hide:]
