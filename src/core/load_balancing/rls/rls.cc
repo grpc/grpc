@@ -680,8 +680,8 @@ class RlsLb final : public LoadBalancingPolicy {
     grpc_metadata_array recv_initial_metadata_;
     grpc_byte_buffer* recv_message_ = nullptr;
     grpc_metadata_array recv_trailing_metadata_;
-    grpc_status_code status_recv_;
-    grpc_slice status_details_recv_;
+    grpc_status_code status_recv_ = GRPC_STATUS_UNKNOWN;
+    grpc_slice status_details_recv_ = grpc_empty_slice();
   };
 
   void ShutdownLocked() override;
