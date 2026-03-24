@@ -219,7 +219,7 @@ class TestTypeMetadata(unittest.TestCase):
     def test_create_invalid_type(self):
         # raw_metadata is string
         with self.assertRaises(ValueError) as container:
-            Metadata._create("test_string")
+            Metadata._create("test_string") # type: ignore
         self.assertEqual(
             str(container.exception),
             "not enough values to unpack (expected 2, got 1)",
