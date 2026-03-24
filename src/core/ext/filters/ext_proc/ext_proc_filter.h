@@ -22,6 +22,11 @@
 #include <utility>
 #include <vector>
 
+// struct envoy_service_ext_proc_v3_ProcessingRequest;
+// struct envoy_config_core_v3_HeaderMap;
+#include "upb/base/string_view.h"
+#include "envoy/config/core/v3/base.upb.h"
+#include "envoy/service/ext_proc/v3/external_processor.upb.h"
 #include "src/core/call/call_destination.h"
 #include "src/core/filter/filter_args.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -42,6 +47,45 @@ struct PipeOwner {
       server_initial_metadata;
   InterActivityPipe<MessageHandle, 1> server_to_client_messages;
   InterActivityLatch<ServerMetadataHandle> server_trailing_metadata;
+};
+
+enum class BodySendMode {
+  kNone = 0,
+  kGrpc,
+};
+
+class ExtProcRequest {
+ public:
+  class Builder {
+   public:
+    explicit Builder(upb_Arena* arena);
+    Builder& SetRequestHeaders(envoy_config_core_v3_HeaderMap* headers,
+                               bool end_of_stream);
+    Builder& SetResponseHeaders(envoy_config_core_v3_HeaderMap* headers,
+                                bool end_of_stream);
+    Builder& SetRequestBody(upb_StringView buf, bool end_of_stream);
+    Builder& SetResponseBody(upb_StringView buf, bool end_of_stream);
+    Builder& SetResponseTrailers(envoy_config_core_v3_HeaderMap* trailer);
+    Builder& SetObservabilityMode(bool mode);
+    Builder& SetAttributes(const std::map<std::string, std::string>& attributes);
+    Builder& SetProtocolConfigRequest(bool is_first_message, BodySendMode mode);
+    Builder& SetProtocolConfigResponse(bool is_first_message, BodySendMode mode);
+
+    ExtProcRequest Build();
+
+   private:
+    upb_Arena* arena_;
+    envoy_service_ext_proc_v3_ProcessingRequest* request_;
+  };
+
+  std::string SerializeMessage();
+
+ private:
+  explicit ExtProcRequest(upb_Arena* arena,
+                          envoy_service_ext_proc_v3_ProcessingRequest* request);
+                          
+  upb_Arena* arena_;
+  envoy_service_ext_proc_v3_ProcessingRequest* request_;
 };
 
 class ExtProcFilter final : public V3InterceptorToV2Bridge<ExtProcFilter> {
