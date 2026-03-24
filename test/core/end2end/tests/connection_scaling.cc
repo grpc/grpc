@@ -19,6 +19,8 @@
 
 #include <memory>
 
+#include "absl/strings/match.h"
+
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/util/time.h"
@@ -178,11 +180,13 @@ CORE_END2END_TEST(Http2SingleHopTests, HonorsMaxConnectionsPerSubchannel) {
   // Third and fourth RPCs should be on the same connection, which is
   // different from the connection of the first two.
   EXPECT_EQ(s3.GetPeer(), s4.GetPeer());
-  // TODO(roth): Due to https://github.com/grpc/grpc/issues/35006, if
-  // the peer is a UDS, it will essentially always be a constant string.
-  // We should either fix that issue or maybe change this test to use
-  // channelz instead.
-  if (s1.GetPeer() != "unix:") EXPECT_NE(s1.GetPeer(), s3.GetPeer());
+  // UDS connections always report the server's socket path as the peer
+  // (since unbound clients have no address), so all connections look
+  // identical. Skip the peer-differentiation check for any UDS address.
+  auto peer1 = s1.GetPeer();
+  if (!peer1.has_value() || !absl::StartsWith(*peer1, "unix:")) {
+    EXPECT_NE(s1.GetPeer(), s3.GetPeer());
+  }
   // Start a 5th RPC, which will be queued.
   auto c5 = NewClientCall("/epsilon").Timeout(Duration::Seconds(1000)).Create();
   c5.NewBatch(901).SendInitialMetadata({});

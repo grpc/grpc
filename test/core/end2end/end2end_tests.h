@@ -101,6 +101,8 @@
 #define FEATURE_MASK_IS_CALL_V3 (1 << 16)
 #define FEATURE_MASK_IS_LOCAL_TCP_CREDS (1 << 17)
 #define FEATURE_MASK_IS_PH2_CLIENT (1 << 18)
+// Fixture uses a Unix Domain Socket (fullstack, not abstract namespace).
+#define FEATURE_MASK_IS_FULLSTACK_UDS (1 << 19)
 
 #define FAIL_AUTH_CHECK_SERVER_ARG_NAME "fail_auth_check"
 
