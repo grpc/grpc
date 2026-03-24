@@ -132,11 +132,11 @@ def grpc_deps():
     if "com_googlesource_code_re2" not in native.existing_rules():
         http_archive(
             name = "com_googlesource_code_re2",
-            sha256 = "1ae8ccfdb1066a731bba6ee0881baad5efd2cd661acd9569b689f2586e1a50e9",
-            strip_prefix = "re2-2022-04-01",
+            sha256 = "87f6029d2f6de8aa023654240a03ada90e876ce9a4676e258dd01ea4c26ffd67",
+            strip_prefix = "re2-2025-11-05",
             urls = [
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/google/re2/archive/2022-04-01.tar.gz",
-                "https://github.com/google/re2/archive/2022-04-01.tar.gz",
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/google/re2/archive/2025-11-05.tar.gz",
+                "https://github.com/google/re2/archive/2025-11-05.tar.gz",
             ],
         )
 
@@ -144,11 +144,11 @@ def grpc_deps():
         http_archive(
             name = "com_github_cares_cares",
             build_file = "@com_github_grpc_grpc//third_party:cares/cares.BUILD",
-            sha256 = "cd1968cd09d384a5c553c82bf53ba458e47e9bfcdc253a3627f1b36ea6f814e2",
-            strip_prefix = "c-ares-d3a507e920e7af18a5efb7f9f1d8044ed4750013",
+            sha256 = "8c94116cb366ae4a44e487da4d9f7e736287d329efa6f88fdf077cd2d0a2e4b8",
+            strip_prefix = "c-ares-3ac47ee46edd8ea40370222f91613fc16c434853",
             urls = [
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/c-ares/c-ares/archive/d3a507e920e7af18a5efb7f9f1d8044ed4750013.tar.gz",
-                "https://github.com/c-ares/c-ares/archive/d3a507e920e7af18a5efb7f9f1d8044ed4750013.tar.gz",
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/c-ares/c-ares/archive/3ac47ee46edd8ea40370222f91613fc16c434853.tar.gz",
+                "https://github.com/c-ares/c-ares/archive/3ac47ee46edd8ea40370222f91613fc16c434853.tar.gz",
             ],
         )
 

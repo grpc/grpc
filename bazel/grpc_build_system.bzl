@@ -35,6 +35,7 @@ load("@com_google_protobuf//bazel:upb_proto_library.bzl", "upb_proto_library", "
 load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
 load("@rules_cc//cc:cc_test.bzl", "cc_test")
+load("@rules_cc//cc/common:cc_info.bzl", "CcInfo")
 load("@rules_cc//cc:objc_library.bzl", "objc_library")
 load("@rules_proto//proto:defs.bzl", "proto_library")
 load("@rules_python//python:defs.bzl", "py_binary")
