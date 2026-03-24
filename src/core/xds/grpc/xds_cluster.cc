@@ -34,14 +34,19 @@ std::string XdsClusterResource::UpstreamTlsContext::ToString() const {
     StrAppend(result, common_tls_context.ToString());
     is_first = false;
   }
-  if (!is_first) StrAppend(result, ", ");
-  StrAppend(result, "sni=");
-  StrAppend(result, sni);
+  if (!sni.empty()) {
+    StrAppend(result, is_first ? "sni=" : ", sni=");
+    StrAppend(result, sni);
+    is_first = false;
+  }
   if (auto_host_sni) {
-    StrAppend(result, ", auto_host_sni=true");
+    StrAppend(result, is_first ? "auto_host_sni=true" : ", auto_host_sni=true");
+    is_first = false;
   }
   if (auto_sni_san_validation) {
-    StrAppend(result, ", auto_sni_san_validation=true");
+    StrAppend(result, is_first ? "auto_sni_san_validation=true"
+                               : ", auto_sni_san_validation=true");
+    is_first = false;
   }
   StrAppend(result, "}");
   return result;

@@ -59,15 +59,15 @@ const char* XdsHealthStatus::ToString() const {
 
 std::string XdsHealthStatusSet::ToString() const {
   std::string result = "{";
-  bool first = true;
+  bool is_first = true;
   for (const auto& status :
        {XdsHealthStatus::kUnknown, XdsHealthStatus::kHealthy,
         XdsHealthStatus::kDraining}) {
     const XdsHealthStatus health_status(status);
     if (Contains(health_status)) {
-      if (!first) StrAppend(result, ", ");
+      if (!is_first) StrAppend(result, ", ");
       StrAppend(result, health_status.ToString());
-      first = false;
+      is_first = false;
     }
   }
   StrAppend(result, "}");

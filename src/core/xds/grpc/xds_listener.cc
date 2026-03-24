@@ -78,10 +78,10 @@ std::string XdsListenerResource::HttpConnectionManager::HttpFilter::ToString()
 //
 
 std::string XdsListenerResource::DownstreamTlsContext::ToString() const {
-  std::string result = "common_tls_context=";
+  std::string result = "{common_tls_context=";
   StrAppend(result, common_tls_context.ToString());
   StrAppend(result, ", require_client_certificate=");
-  StrAppend(result, require_client_certificate ? "true" : "false");
+  StrAppend(result, require_client_certificate ? "true}" : "false}");
   return result;
 }
 

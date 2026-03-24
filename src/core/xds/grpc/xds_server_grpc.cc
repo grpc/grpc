@@ -29,6 +29,7 @@
 #include "src/core/util/json/json_reader.h"
 #include "src/core/util/json/json_writer.h"
 #include "src/core/util/string.h"
+#include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 
 namespace grpc_core {
@@ -118,10 +119,7 @@ RefCountedPtr<const ChannelCredsConfig> ParseXdsBootstrapChannelCreds(
   if (channel_creds_list.has_value()) {
     ValidationErrors::ScopedField field(errors, ".channel_creds");
     for (size_t i = 0; i < channel_creds_list->size(); ++i) {
-      std::string field_name = "[";
-      StrAppend(field_name, std::to_string(i));
-      StrAppend(field_name, "]");
-      ValidationErrors::ScopedField field(errors, field_name);
+      ValidationErrors::ScopedField field(errors, absl::StrCat("[", i, "]"));
       auto& creds = (*channel_creds_list)[i];
       // Select the first channel creds type that we support, but
       // validate all entries.
@@ -151,10 +149,7 @@ std::vector<RefCountedPtr<const CallCredsConfig>> ParseXdsBootstrapCallCreds(
   if (call_creds_list.has_value()) {
     ValidationErrors::ScopedField field(errors, ".call_creds");
     for (size_t i = 0; i < call_creds_list->size(); ++i) {
-      std::string field_name = "[";
-      StrAppend(field_name, std::to_string(i));
-      StrAppend(field_name, "]");
-      ValidationErrors::ScopedField field(errors, field_name);
+      ValidationErrors::ScopedField field(errors, absl::StrCat("[", i, "]"));
       auto& creds = (*call_creds_list)[i];
       if (CoreConfiguration::Get().call_creds_registry().IsSupported(
               creds.type)) {
@@ -216,7 +211,7 @@ std::string GrpcXdsServer::Key() const {
     StrAppend(result, ", server_features=[");
     bool is_first = true;
     for (const auto& feature : server_features_) {
-      if (!is_first) StrAppend(result, ",");
+      if (!is_first) StrAppend(result, ", ");
       StrAppend(result, feature);
       is_first = false;
     }

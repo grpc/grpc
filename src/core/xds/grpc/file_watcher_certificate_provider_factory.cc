@@ -58,26 +58,35 @@ absl::string_view FileWatcherCertificateProviderFactory::Config::name() const {
 
 std::string FileWatcherCertificateProviderFactory::Config::ToString() const {
   std::string result = "{";
+  bool is_first = true;
   if (!identity_cert_file_.empty()) {
     StrAppend(result, "certificate_file=\"");
     StrAppend(result, identity_cert_file_);
-    StrAppend(result, "\", ");
+    StrAppend(result, "\"");
+    is_first = false;
   }
   if (!private_key_file_.empty()) {
+    if (!is_first) StrAppend(result, ", ");
     StrAppend(result, "private_key_file=\"");
     StrAppend(result, private_key_file_);
-    StrAppend(result, "\", ");
+    StrAppend(result, "\"");
+    is_first = false;
   }
   if (!root_cert_file_.empty()) {
+    if (!is_first) StrAppend(result, ", ");
     StrAppend(result, "ca_certificate_file=\"");
     StrAppend(result, root_cert_file_);
-    StrAppend(result, "\", ");
+    StrAppend(result, "\"");
+    is_first = false;
   }
   if (!spiffe_bundle_map_file_.empty()) {
+    if (!is_first) StrAppend(result, ", ");
     StrAppend(result, "spiffe_bundle_map_file=\"");
     StrAppend(result, spiffe_bundle_map_file_);
-    StrAppend(result, "\", ");
+    StrAppend(result, "\"");
+    is_first = false;
   }
+  if (!is_first) StrAppend(result, ", ");
   StrAppend(result, "refresh_interval=");
   StrAppend(result, absl::StrCat(refresh_interval_.millis()));
   StrAppend(result, "ms}");

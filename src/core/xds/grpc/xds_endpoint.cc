@@ -96,7 +96,7 @@ std::string XdsEndpointResource::DropConfig::ToString() const {
 }
 
 std::string XdsEndpointResource::ToString() const {
-  std::string result = "priorities=[";
+  std::string result = "{priorities=[";
   for (size_t i = 0; i < priorities.size(); ++i) {
     if (i > 0) StrAppend(result, ", ");
     StrAppend(result, "priority ");
@@ -104,9 +104,12 @@ std::string XdsEndpointResource::ToString() const {
     StrAppend(result, ": ");
     StrAppend(result, priorities[i].ToString());
   }
-  StrAppend(result, "], drop_config=");
-  StrAppend(result,
-            drop_config == nullptr ? "<null>" : drop_config->ToString());
+  StrAppend(result, "]");
+  if (drop_config != nullptr) {
+    StrAppend(result, ", drop_config=");
+    StrAppend(result, drop_config->ToString());
+  }
+  StrAppend(result, "}");
   return result;
 }
 

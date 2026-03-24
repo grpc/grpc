@@ -51,18 +51,19 @@ bool XdsMetadataMap::operator==(const XdsMetadataMap& other) const {
 }
 
 std::string XdsMetadataMap::ToString() const {
-  std::vector<std::string> entries;
-  for (const auto& [key, value] : map_) {
-    std::string entry = key;
-    StrAppend(entry, "=");
-    StrAppend(entry, value->ToString());
-    entries.push_back(std::move(entry));
+  std::vector<absl::string_view> keys;
+  for (const auto& [key, _] : map_) {
+    keys.push_back(key);
   }
-  std::sort(entries.begin(), entries.end());
+  std::sort(keys.begin(), keys.end());
   std::string result = "{";
-  for (size_t i = 0; i < entries.size(); ++i) {
+  for (size_t i = 0; i < keys.size(); ++i) {
+    auto it = map_.find(keys[i]);
+    if (it == map_.end()) continue;  // Should never happen.
     if (i > 0) StrAppend(result, ", ");
-    StrAppend(result, entries[i]);
+    StrAppend(result, keys[i]);
+    StrAppend(result, "=");
+    StrAppend(result, it->second->ToString());
   }
   StrAppend(result, "}");
   return result;

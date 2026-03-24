@@ -51,17 +51,18 @@ std::string XdsRouteConfigResource::FilterConfigOverride::ToString() const {
 
 std::string XdsRouteConfigResource::RetryPolicy::RetryBackOff::ToString()
     const {
-  std::string result = "RetryBackOff Base: ";
+  std::string result = "{base_interval=";
   StrAppend(result, base_interval.ToString());
-  StrAppend(result, ",RetryBackOff max: ");
+  StrAppend(result, ", max_interval=");
   StrAppend(result, max_interval.ToString());
+  StrAppend(result, "}");
   return result;
 }
 
 std::string XdsRouteConfigResource::RetryPolicy::ToString() const {
   std::string result = "{num_retries=";
   StrAppend(result, std::to_string(num_retries));
-  StrAppend(result, ",");
+  StrAppend(result, ", retry_back_off=");
   StrAppend(result, retry_back_off.ToString());
   StrAppend(result, "}");
   return result;
@@ -72,17 +73,24 @@ std::string XdsRouteConfigResource::RetryPolicy::ToString() const {
 //
 
 std::string XdsRouteConfigResource::Route::Matchers::ToString() const {
-  std::string result = "PathMatcher{";
+  std::string result = "{path_matcher={";
   StrAppend(result, path_matcher.ToString());
   StrAppend(result, "}");
-  for (const HeaderMatcher& header_matcher : header_matchers) {
-    StrAppend(result, "\n");
-    StrAppend(result, header_matcher.ToString());
+  if (!header_matchers.empty()) {
+    StrAppend(result, ", header_matchers=[");
+    bool is_first = true;
+    for (const HeaderMatcher& header_matcher : header_matchers) {
+      if (!is_first) StrAppend(result, ", ");
+      StrAppend(result, header_matcher.ToString());
+      is_first = false;
+    }
+    StrAppend(result, "]");
   }
   if (fraction_per_million.has_value()) {
-    StrAppend(result, "\nFraction Per Million ");
-    StrAppend(result, std::to_string(fraction_per_million.value()));
+    StrAppend(result, ", fraction_per_million=");
+    StrAppend(result, std::to_string(*fraction_per_million));
   }
+  StrAppend(result, "}");
   return result;
 }
 
@@ -142,14 +150,17 @@ bool XdsRouteConfigResource::Route::RouteAction::HashPolicy::Header::operator==(
 std::string
 XdsRouteConfigResource::Route::RouteAction::HashPolicy::Header::ToString()
     const {
-  std::string result = "Header ";
+  std::string result = "header{name=";
   StrAppend(result, header_name);
-  StrAppend(result, "/");
   if (regex != nullptr) {
+    StrAppend(result, ", regex=");
     StrAppend(result, regex->pattern());
   }
-  StrAppend(result, "/");
-  StrAppend(result, regex_substitution);
+  if (!regex_substitution.empty()) {
+    StrAppend(result, ", regex_substitution=");
+    StrAppend(result, regex_substitution);
+  }
+  StrAppend(result, "}");
   return result;
 }
 
@@ -204,7 +215,6 @@ std::string XdsRouteConfigResource::Route::RouteAction::ToString() const {
   std::string result = "{";
   bool is_first = true;
   for (const HashPolicy& hash_policy : hash_policies) {
-    if (!is_first) StrAppend(result, ", ");
     StrAppend(result, "hash_policy=");
     StrAppend(result, hash_policy.ToString());
     is_first = false;
@@ -219,26 +229,30 @@ std::string XdsRouteConfigResource::Route::RouteAction::ToString() const {
       action,
       [&](const ClusterName& cluster_name) {
         if (!is_first) StrAppend(result, ", ");
-        StrAppend(result, "Cluster name: ");
+        StrAppend(result, "cluster_name=");
         StrAppend(result, cluster_name.cluster_name);
         is_first = false;
       },
       [&](const std::vector<ClusterWeight>& weighted_clusters) {
-        for (const ClusterWeight& cluster_weight : weighted_clusters) {
-          if (!is_first) StrAppend(result, ", ");
-          StrAppend(result, cluster_weight.ToString());
-          is_first = false;
+        if (!is_first) StrAppend(result, ", ");
+        StrAppend(result, "weighted_clusters=[");
+        for (size_t i = 0; i < weighted_clusters.size(); ++i) {
+          if (i > 0) StrAppend(result, ", ");
+          StrAppend(result, weighted_clusters[i].ToString());
         }
+        StrAppend(result, "]");
+        is_first = false;
       },
       [&](const ClusterSpecifierPluginName& cluster_specifier_plugin_name) {
         if (!is_first) StrAppend(result, ", ");
-        StrAppend(result, "Cluster specifier plugin name: ");
+        StrAppend(result, "cluster_specifier_plugin_name=");
         StrAppend(result,
                   cluster_specifier_plugin_name.cluster_specifier_plugin_name);
         is_first = false;
       });
   if (max_stream_duration.has_value()) {
     if (!is_first) StrAppend(result, ", ");
+    StrAppend(result, ", max_stream_duration=");
     StrAppend(result, max_stream_duration->ToString());
     is_first = false;
   }
@@ -256,29 +270,31 @@ std::string XdsRouteConfigResource::Route::RouteAction::ToString() const {
 //
 
 std::string XdsRouteConfigResource::Route::ToString() const {
-  std::string result = matchers.ToString();
-  auto* route_action =
-      std::get_if<XdsRouteConfigResource::Route::RouteAction>(&action);
-  StrAppend(result, "\n");
-  if (route_action != nullptr) {
-    StrAppend(result, "route=");
-    StrAppend(result, route_action->ToString());
-  } else if (std::holds_alternative<
-                 XdsRouteConfigResource::Route::NonForwardingAction>(action)) {
-    StrAppend(result, "non_forwarding_action={}");
-  } else {
-    StrAppend(result, "unknown_action={}");
-  }
+  std::string result = "{matchers=";
+  StrAppend(result, matchers.ToString());
+  Match(
+      action,
+      [&](const UnknownAction&) {
+        StrAppend(result, ",\n  unknown_action={}");
+      },
+      [&](const RouteAction& route_action) {
+        StrAppend(result, ",\n  route_action=");
+        StrAppend(result, route_action.ToString());
+      },
+      [&](const NonForwardingAction&) {
+        StrAppend(result, ",\n  non_forwarding_action={}");
+      });
   if (!typed_per_filter_config.empty()) {
-    StrAppend(result, "\ntyped_per_filter_config={");
+    StrAppend(result, ",\n  typed_per_filter_config={");
     for (const auto& [name, config] : typed_per_filter_config) {
-      StrAppend(result, "\n  ");
+      StrAppend(result, "\n    ");
       StrAppend(result, name);
       StrAppend(result, "=");
       StrAppend(result, config.ToString());
     }
-    StrAppend(result, "\n}");
+    StrAppend(result, "\n  }");
   }
+  StrAppend(result, "}");
   return result;
 }
 
@@ -287,28 +303,26 @@ std::string XdsRouteConfigResource::Route::ToString() const {
 //
 
 std::string XdsRouteConfigResource::VirtualHost::ToString() const {
-  std::string result = "vhost={\n  domains=[";
+  std::string result = "{domains=[";
   bool is_first = true;
   for (const std::string& domain : domains) {
     if (!is_first) StrAppend(result, ", ");
     StrAppend(result, domain);
     is_first = false;
   }
-  StrAppend(result, "]\n  routes=[\n");
+  StrAppend(result, "]\n  routes=[");
   for (const XdsRouteConfigResource::Route& route : routes) {
-    StrAppend(result, "    {\n");
+    StrAppend(result, "\n    ");
     StrAppend(result, route.ToString());
-    StrAppend(result, "\n    }\n");
   }
-  StrAppend(result, "  ]\n  typed_per_filter_config={\n");
+  StrAppend(result, "  ]\n  typed_per_filter_config={");
   for (const auto& [name, config] : typed_per_filter_config) {
-    StrAppend(result, "    ");
+    StrAppend(result, "\n    ");
     StrAppend(result, name);
     StrAppend(result, "=");
     StrAppend(result, config.ToString());
-    StrAppend(result, "\n");
   }
-  StrAppend(result, "  }\n}\n");
+  StrAppend(result, "\n  }}");
   return result;
 }
 
@@ -317,16 +331,25 @@ std::string XdsRouteConfigResource::VirtualHost::ToString() const {
 //
 
 std::string XdsRouteConfigResource::ToString() const {
-  std::string result;
-  for (const VirtualHost& vhost : virtual_hosts) {
-    StrAppend(result, vhost.ToString());
+  std::string result = "{vhosts=[";
+  for (size_t i = 0; i < virtual_hosts.size(); ++i) {
+    StrAppend(result, i > 0 ? ",\n  " : "\n  ");
+    StrAppend(result, virtual_hosts[i].ToString());
   }
-  StrAppend(result, "cluster_specifier_plugins={\n");
-  for (const auto& [name, plugin] : cluster_specifier_plugin_map) {
-    StrAppend(result, name);
-    StrAppend(result, "={");
-    StrAppend(result, plugin);
-    StrAppend(result, "}\n");
+  StrAppend(result, "\n  ]");
+  if (!cluster_specifier_plugin_map.empty()) {
+    if (!virtual_hosts.empty()) StrAppend(result, ",");
+    StrAppend(result, "\n  cluster_specifier_plugins={");
+    bool is_first = true;
+    for (const auto& [name, plugin] : cluster_specifier_plugin_map) {
+      StrAppend(result, is_first ? "\n    " : ",\n    ");
+      StrAppend(result, name);
+      StrAppend(result, "={");
+      StrAppend(result, plugin);
+      StrAppend(result, "}\n");
+      is_first = false;
+    }
+    StrAppend(result, "}");
   }
   StrAppend(result, "}");
   return result;
