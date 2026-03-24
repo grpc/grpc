@@ -323,6 +323,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/credentials/transport/tls/grpc_tls_certificate_match.cc )
   s.files += %w( src/core/credentials/transport/tls/grpc_tls_certificate_provider.cc )
   s.files += %w( src/core/credentials/transport/tls/grpc_tls_certificate_provider.h )
+  s.files += %w( src/core/credentials/transport/tls/grpc_tls_certificate_selector.h )
   s.files += %w( src/core/credentials/transport/tls/grpc_tls_certificate_verifier.cc )
   s.files += %w( src/core/credentials/transport/tls/grpc_tls_certificate_verifier.h )
   s.files += %w( src/core/credentials/transport/tls/grpc_tls_credentials_options.cc )
