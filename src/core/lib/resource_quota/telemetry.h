@@ -31,7 +31,7 @@ class ResourceQuotaDomain final : public InstrumentDomain<ResourceQuotaDomain> {
   // translation units compiled into different shared libraries (e.g. libgrpc
   // and libgrpc++), where each DSO's .init_array would otherwise run its own
   // copy of the static inline initializers.
-  static const auto& kCallsDropped() {
+  static const auto& NumCallsDropped() {
     static const auto handle = RegisterCounter(
         "grpc.resource_quota.calls_dropped",
         "EXPERIMENTAL.  Number of calls dropped due to resource quota "
@@ -39,7 +39,7 @@ class ResourceQuotaDomain final : public InstrumentDomain<ResourceQuotaDomain> {
         "calls");
     return handle;
   }
-  static const auto& kCallsRejected() {
+  static const auto& NumCallsRejected() {
     static const auto handle = RegisterCounter(
         "grpc.resource_quota.calls_rejected",
         "EXPERIMENTAL.  Number of calls rejected due to resource quota "
@@ -47,7 +47,7 @@ class ResourceQuotaDomain final : public InstrumentDomain<ResourceQuotaDomain> {
         "calls");
     return handle;
   }
-  static const auto& kConnectionsDropped() {
+  static const auto& NumConnectionsDropped() {
     static const auto handle = RegisterCounter(
         "grpc.resource_quota.connections_dropped",
         "EXPERIMENTAL.  Number of connections dropped due to resource quota "
@@ -55,13 +55,13 @@ class ResourceQuotaDomain final : public InstrumentDomain<ResourceQuotaDomain> {
         "connections");
     return handle;
   }
-  static const auto& kInstantaneousMemoryPressure() {
+  static const auto& DblInstantaneousMemoryPressure() {
     static const auto handle = RegisterDoubleGauge(
         "grpc.resource_quota.instantaneous_memory_pressure",
         "The current instantaneously measured memory pressure.", "ratio");
     return handle;
   }
-  static const auto& kMemoryPressureControlValue() {
+  static const auto& DblMemoryPressureControlValue() {
     static const auto handle = RegisterDoubleGauge(
         "grpc.resource_quota.memory_pressure_control_value",
         "A control value that can be used to scale buffer sizes up or down to "
