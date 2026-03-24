@@ -1,5 +1,15 @@
 workspace(name = "com_github_grpc_grpc")
 
+print('''
+============================================================================
+[WARNING] gRPC will deprecate WORKSPACE support in favor of bzlmod for
+bazel 8/9 compatibility. Please consider upgrading bazel version to 8 or above
+and add a MODULE.bazel for dependency management.
+
+Migration Guide: https://bazel.build/external/migration
+============================================================================
+''')
+
 load("//bazel:grpc_deps.bzl", "grpc_deps", "grpc_test_only_deps")
 
 grpc_deps()
