@@ -8472,8 +8472,16 @@ grpc_cc_library(
         "grpc_check",
         "grpc_promise_endpoint",
         "slice",
+        ":header_assembler",
+        ":http2_status",
+        ":http2_transport",
         ":metadata_info",
+        ":ph2_stream",
+        ":slice_buffer",
         "//:chttp2_frame",
+        "//:debug_location",
+        "//:gpr_platform",
+        "//:hpack_parser",
     ],
 )
 
