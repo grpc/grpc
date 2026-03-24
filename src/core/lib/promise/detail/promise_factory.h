@@ -214,7 +214,7 @@ GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline
 
 // Given a callable() -> Promise<T>, name it a PromiseFactory and use it.
 template <typename Token, typename F>
-GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline
     absl::enable_if_t<IsVoidCallable<ResultOf<F()>>::value,
                       PromiseLike<decltype(std::declval<F>()())>>
     PromiseFactoryImpl(Token, F&& f) {
