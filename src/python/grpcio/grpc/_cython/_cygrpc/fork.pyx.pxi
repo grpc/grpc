@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import os
+import sys
 
 _AWAIT_THREADS_TIMEOUT_SECONDS = 5
 
@@ -29,15 +30,20 @@ _TRUE_VALUES = ['yes',  'Yes',  'YES', 'true', 'True', 'TRUE', '1']
 #
 # This flag is not supported on Windows.
 # This flag is also not supported for non-native IO manager.
-#
-# Important: when changing the default, GRPC_ENABLE_FORK_SUPPORT_DEFAULT
-# macro in the setup.py needs to be updated to the same value.
-# TODO(sergiitk): reconsider enabling this by default.
 _GRPC_ENABLE_FORK_SUPPORT = (
     os.environ.get('GRPC_ENABLE_FORK_SUPPORT', '0')
         .lower() in _TRUE_VALUES)
 
+if sys.platform == "win32":
+    _GRPC_ENABLE_FORK_SUPPORT = False
+
 _fork_handler_failed = False
+
+# These cdef functions are always compiled, even on Windows, to satisfy the
+# declarations in fork.pxd.pxi. On Windows they are effectively unused
+# because _GRPC_ENABLE_FORK_SUPPORT is forced to False.
+# In simple terms, they are not run on Windows because
+# we don't register them on fork.
 
 cdef void __prefork() noexcept nogil:
     with gil:
@@ -99,15 +105,14 @@ def fork_handlers_and_grpc_init():
     if _GRPC_ENABLE_FORK_SUPPORT:
         with _fork_state.fork_handler_registered_lock:
             if not _fork_state.fork_handler_registered:
-                os.register_at_fork(before=__prefork,
-                                    after_in_parent=__postfork_parent,
-                                    after_in_child=__postfork_child)
-                _fork_state.fork_handler_registered = True
+                if hasattr(os, 'register_at_fork'):
+                    os.register_at_fork(before=__prefork,
+                                        after_in_parent=__postfork_parent,
+                                        after_in_child=__postfork_child)
+                    _fork_state.fork_handler_registered = True
 
 
-
-
-class ForkManagedThread(object):
+class ForkManagedThread:
     def __init__(self, target, args=()):
         if _GRPC_ENABLE_FORK_SUPPORT:
             def managed_target(*args):
@@ -155,7 +160,9 @@ def return_from_user_request_generator():
 
 
 def get_fork_epoch():
-    return _fork_state.fork_epoch
+    if _GRPC_ENABLE_FORK_SUPPORT:
+        return _fork_state.fork_epoch
+    return 0
 
 
 def is_fork_support_enabled():
@@ -172,7 +179,7 @@ def fork_unregister_channel(channel):
         _fork_state.channels.discard(channel)
 
 
-class _ActiveThreadCount(object):
+class _ActiveThreadCount:
     def __init__(self):
         self._num_active_threads = 0
         self._condition = threading.Condition()
@@ -204,7 +211,7 @@ class _ActiveThreadCount(object):
                     return False
 
 
-class _ForkState(object):
+class _ForkState:
     def __init__(self):
         self.fork_in_progress_condition = threading.Condition()
         self.fork_in_progress = False

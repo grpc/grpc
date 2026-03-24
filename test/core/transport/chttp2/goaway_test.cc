@@ -37,7 +37,7 @@ using ::testing::StrictMock;
 class MockGoawayInterface : public GoawayInterface {
  public:
   MOCK_METHOD(Promise<absl::Status>, SendPingAndWaitForAck, (), (override));
-  MOCK_METHOD(void, TriggerWriteCycle, (), (override));
+  MOCK_METHOD(absl::Status, TriggerWriteCycle, (), (override));
   MOCK_METHOD(uint32_t, GetLastAcceptedStreamId, (), (override));
 
   ::testing::Sequence trigger_write_cycle_seq_;
@@ -58,6 +58,7 @@ class MockGoawayInterface : public GoawayInterface {
         .InSequence(trigger_write_cycle_seq_)
         .WillOnce(([]() {
           LOG(INFO) << "MockGoawayInterface TriggerWriteCycle Polled";
+          return absl::OkStatus();
         }));
   }
 

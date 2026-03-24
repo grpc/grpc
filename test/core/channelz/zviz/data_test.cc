@@ -821,6 +821,36 @@ TEST(PromiseTest, CustomMultiline) {
   })");
 }
 
+TEST(PromiseTest, ForEachReader) {
+  ExpectPromiseTransformsTo(
+      R"pb(
+        for_each_promise {
+          reader_factory: "reader"
+          action_factory: "action"
+          reader_promise { unknown_promise: "reader_promise" }
+        }
+      )pb",
+      R"(ForEach(
+  reader, action,
+  Unknown(reader_promise)
+))");
+}
+
+TEST(PromiseTest, ForEachAction) {
+  ExpectPromiseTransformsTo(
+      R"pb(
+        for_each_promise {
+          reader_factory: "reader"
+          action_factory: "action"
+          action_promise { unknown_promise: "action_promise" }
+        }
+      )pb",
+      R"(ForEach(
+  reader, action,
+  Unknown(action_promise)
+))");
+}
+
 TEST(DataTest, PromiseInData) {
   ExpectDataTransformsTo(
       R"pb(

@@ -29,7 +29,7 @@ from tests.qps import histogram
 from tests.unit import resources
 
 
-class GenericStub(object):
+class GenericStub:
     def __init__(self, channel: aio.Channel):
         self.UnaryCall = channel.unary_unary(
             "/grpc.testing.BenchmarkService/UnaryCall"

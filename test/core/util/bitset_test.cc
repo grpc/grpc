@@ -91,6 +91,20 @@ TYPED_TEST(BitSetTest, Count) {
   }
 }
 
+TYPED_TEST(BitSetTest, Merge) {
+  constexpr size_t kBits = TypeParam::kBits;
+  BitSet<kBits> b1;
+  BitSet<kBits> b2;
+  for (size_t i = 0; i < kBits; i++) {
+    if (i % 3 == 0) b1.set(i);
+    if (i % 5 == 0) b2.set(i);
+  }
+  b1.Merge(b2);
+  for (size_t i = 0; i < kBits; i++) {
+    EXPECT_EQ(b1.is_set(i), i % 3 == 0 || i % 5 == 0);
+  }
+}
+
 TEST(ToIntTest, ToInt) {
   auto make_bitset = [](bool b0, bool b1, bool b2) {
     BitSet<3> b;

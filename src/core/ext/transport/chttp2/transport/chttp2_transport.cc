@@ -140,6 +140,8 @@ using grpc_core::Json;
 
 #define GRPC_ARG_HTTP2_PING_ON_RST_STREAM_PERCENT \
   "grpc.http2.ping_on_rst_stream_percent"
+#define GRPC_ARG_HTTP2_MAX_DEALLOCATING_STREAMS \
+  "grpc.http2.max_deallocating_streams"
 
 static grpc_core::Duration g_default_client_keepalive_time =
     grpc_core::Duration::Infinity();
@@ -552,6 +554,11 @@ static void read_channel_args(grpc_chttp2_transport* t,
   t->max_concurrent_streams_reject_on_client =
       channel_args.GetBool(GRPC_ARG_MAX_CONCURRENT_STREAMS_REJECT_ON_CLIENT)
           .value_or(false);
+
+  t->max_deallocating_streams =
+      channel_args.GetInt(GRPC_ARG_HTTP2_MAX_DEALLOCATING_STREAMS)
+          .value_or(grpc_core::IsH2MaxDeallocatingStreamsHeadroomEnabled() ? 100
+                                                                           : 0);
 }
 
 static void init_keepalive_pings_if_enabled_locked(
@@ -1421,8 +1428,8 @@ void grpc_chttp2_add_incoming_goaway(grpc_chttp2_transport* t,
   if (!grpc_core::test_only_disable_transient_failure_state_notification) {
     connectivity_state_set(t, GRPC_CHANNEL_TRANSIENT_FAILURE, status,
                            "got_goaway");
+    t->NotifyStateWatcherOnDisconnectLocked(std::move(status), disconnect_info);
   }
-  t->NotifyStateWatcherOnDisconnectLocked(std::move(status), disconnect_info);
 }
 
 static void maybe_start_some_streams(grpc_chttp2_transport* t) {
@@ -3714,6 +3721,10 @@ void grpc_chttp2_transport::MaybeNotifyOnReceiveSettingsLocked(
       [notify_on_receive_settings = std::move(notify_on_receive_settings),
        max_concurrent_streams]() mutable {
         grpc_core::ExecCtx exec_ctx;
-        std::move(notify_on_receive_settings)(max_concurrent_streams);
+        notify_on_receive_settings(max_concurrent_streams);
+        // Ensure the captured callback is destroyed while ExecCtx is still
+        // alive. Its destructor may trigger work that needs to schedule
+        // closures on the ExecCtx.
+        notify_on_receive_settings = nullptr;
       });
 }

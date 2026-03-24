@@ -76,19 +76,18 @@ absl::string_view XdsHttpFaultFilter::ConfigProtoName() const {
 }
 
 absl::string_view XdsHttpFaultFilter::OverrideConfigProtoName() const {
-  return "";
+  return "envoy.extensions.filters.http.fault.v3.HTTPFault";
 }
 
 void XdsHttpFaultFilter::PopulateSymtab(upb_DefPool* symtab) const {
   envoy_extensions_filters_http_fault_v3_HTTPFault_getmsgdef(symtab);
 }
 
-std::optional<XdsHttpFilterImpl::FilterConfig>
-XdsHttpFaultFilter::GenerateFilterConfig(
+std::optional<Json> XdsHttpFaultFilter::GenerateFilterConfig(
     absl::string_view /*instance_name*/,
-    const XdsResourceType::DecodeContext& context, XdsExtension extension,
-    ValidationErrors* errors) const {
-  absl::string_view* serialized_filter_config =
+    const XdsResourceType::DecodeContext& context,
+    const XdsExtension& extension, ValidationErrors* errors) const {
+  const absl::string_view* serialized_filter_config =
       std::get_if<absl::string_view>(&extension.value);
   if (serialized_filter_config == nullptr) {
     errors->AddError("could not parse fault injection filter config");
@@ -199,27 +198,26 @@ XdsHttpFaultFilter::GenerateFilterConfig(
     fault_injection_policy_json["maxFaults"] =
         Json::FromNumber(*max_fault_wrapper);
   }
-  return FilterConfig{ConfigProtoName(),
-                      Json::FromObject(std::move(fault_injection_policy_json))};
+  return Json::FromObject(std::move(fault_injection_policy_json));
 }
 
-std::optional<XdsHttpFilterImpl::FilterConfig>
-XdsHttpFaultFilter::GenerateFilterConfigOverride(
+std::optional<Json> XdsHttpFaultFilter::GenerateFilterConfigOverride(
     absl::string_view instance_name,
-    const XdsResourceType::DecodeContext& context, XdsExtension extension,
-    ValidationErrors* errors) const {
+    const XdsResourceType::DecodeContext& context,
+    const XdsExtension& extension, ValidationErrors* errors) const {
   // HTTPFault filter has the same message type in HTTP connection manager's
   // filter config and in overriding filter config field.
-  return GenerateFilterConfig(instance_name, context, std::move(extension),
-                              errors);
-}
-
-void XdsHttpFaultFilter::AddFilter(FilterChainBuilder& builder) const {
-  builder.AddFilter<FaultInjectionFilter>(nullptr);
+  return GenerateFilterConfig(instance_name, context, extension, errors);
 }
 
 const grpc_channel_filter* XdsHttpFaultFilter::channel_filter() const {
   return &FaultInjectionFilter::kFilterVtable;
+}
+
+void XdsHttpFaultFilter::AddFilter(
+    FilterChainBuilder& builder,
+    RefCountedPtr<const FilterConfig> config) const {
+  builder.AddFilter<FaultInjectionFilter>(std::move(config));
 }
 
 ChannelArgs XdsHttpFaultFilter::ModifyChannelArgs(
@@ -229,19 +227,125 @@ ChannelArgs XdsHttpFaultFilter::ModifyChannelArgs(
 
 absl::StatusOr<XdsHttpFilterImpl::ServiceConfigJsonEntry>
 XdsHttpFaultFilter::GenerateMethodConfig(
-    const FilterConfig& hcm_filter_config,
-    const FilterConfig* filter_config_override) const {
-  Json policy_json = filter_config_override != nullptr
-                         ? filter_config_override->config
-                         : hcm_filter_config.config;
+    const Json& hcm_filter_config, const Json* filter_config_override) const {
+  const Json& policy_json = filter_config_override != nullptr
+                                ? *filter_config_override
+                                : hcm_filter_config;
   // The policy JSON may be empty, that's allowed.
   return ServiceConfigJsonEntry{"faultInjectionPolicy", JsonDump(policy_json)};
 }
 
 absl::StatusOr<XdsHttpFilterImpl::ServiceConfigJsonEntry>
 XdsHttpFaultFilter::GenerateServiceConfig(
-    const FilterConfig& /*hcm_filter_config*/) const {
+    const Json& /*hcm_filter_config*/) const {
   return ServiceConfigJsonEntry{"", ""};
+}
+
+RefCountedPtr<const FilterConfig> XdsHttpFaultFilter::ParseTopLevelConfig(
+    absl::string_view /*instance_name*/,
+    const XdsResourceType::DecodeContext& context,
+    const XdsExtension& extension, ValidationErrors* errors) const {
+  const absl::string_view* serialized_filter_config =
+      std::get_if<absl::string_view>(&extension.value);
+  if (serialized_filter_config == nullptr) {
+    errors->AddError("could not parse fault injection filter config");
+    return nullptr;
+  }
+  auto* http_fault = envoy_extensions_filters_http_fault_v3_HTTPFault_parse(
+      serialized_filter_config->data(), serialized_filter_config->size(),
+      context.arena);
+  if (http_fault == nullptr) {
+    errors->AddError("could not parse fault injection filter config");
+    return nullptr;
+  }
+  auto config = MakeRefCounted<FaultInjectionFilter::Config>();
+  // Section 1: Parse the abort injection config
+  const auto* fault_abort =
+      envoy_extensions_filters_http_fault_v3_HTTPFault_abort(http_fault);
+  if (fault_abort != nullptr) {
+    ValidationErrors::ScopedField field(errors, ".abort");
+    // Try if gRPC status code is set first.  Otherwise, use HTTP status.
+    if (int abort_grpc_status_code_raw =
+            envoy_extensions_filters_http_fault_v3_FaultAbort_grpc_status(
+                fault_abort);
+        abort_grpc_status_code_raw != 0) {
+      if (!grpc_status_code_from_int(abort_grpc_status_code_raw,
+                                     &config->abort_code)) {
+        ValidationErrors::ScopedField field(errors, ".grpc_status");
+        errors->AddError(absl::StrCat("invalid gRPC status code: ",
+                                      abort_grpc_status_code_raw));
+      }
+    } else if (
+        int abort_http_status_code =
+            envoy_extensions_filters_http_fault_v3_FaultAbort_http_status(
+                fault_abort);
+        abort_http_status_code != 0 && abort_http_status_code != 200) {
+      config->abort_code =
+          grpc_http2_status_to_grpc_status(abort_http_status_code);
+    }
+    // Set the headers if we enabled header abort injection control
+    if (envoy_extensions_filters_http_fault_v3_FaultAbort_has_header_abort(
+            fault_abort)) {
+      config->abort_code_header = "x-envoy-fault-abort-grpc-request";
+      config->abort_percentage_header = "x-envoy-fault-abort-percentage";
+    }
+    // Set the fraction percent
+    auto* percent =
+        envoy_extensions_filters_http_fault_v3_FaultAbort_percentage(
+            fault_abort);
+    if (percent != nullptr) {
+      config->abort_percentage_numerator =
+          envoy_type_v3_FractionalPercent_numerator(percent);
+      config->abort_percentage_denominator = GetDenominator(percent);
+    }
+  }
+  // Section 2: Parse the delay injection config
+  const auto* fault_delay =
+      envoy_extensions_filters_http_fault_v3_HTTPFault_delay(http_fault);
+  if (fault_delay != nullptr) {
+    ValidationErrors::ScopedField field(errors, ".delay");
+    // Parse the delay duration
+    const auto* delay_duration =
+        envoy_extensions_filters_common_fault_v3_FaultDelay_fixed_delay(
+            fault_delay);
+    if (delay_duration != nullptr) {
+      ValidationErrors::ScopedField field(errors, ".fixed_delay");
+      config->delay = ParseDuration(delay_duration, errors);
+    }
+    // Set the headers if we enabled header delay injection control
+    if (envoy_extensions_filters_common_fault_v3_FaultDelay_has_header_delay(
+            fault_delay)) {
+      config->delay_header = "x-envoy-fault-delay-request";
+      config->delay_percentage_header =
+          "x-envoy-fault-delay-request-percentage";
+    }
+    // Set the fraction percent
+    auto* percent =
+        envoy_extensions_filters_common_fault_v3_FaultDelay_percentage(
+            fault_delay);
+    if (percent != nullptr) {
+      config->delay_percentage_numerator =
+          envoy_type_v3_FractionalPercent_numerator(percent);
+      config->delay_percentage_denominator = GetDenominator(percent);
+    }
+  }
+  // Section 3: Parse the maximum active faults
+  auto max_fault_wrapper = ParseUInt32Value(
+      envoy_extensions_filters_http_fault_v3_HTTPFault_max_active_faults(
+          http_fault));
+  if (max_fault_wrapper.has_value()) {
+    config->max_faults = *max_fault_wrapper;
+  }
+  return config;
+}
+
+RefCountedPtr<const FilterConfig> XdsHttpFaultFilter::ParseOverrideConfig(
+    absl::string_view instance_name,
+    const XdsResourceType::DecodeContext& context,
+    const XdsExtension& extension, ValidationErrors* errors) const {
+  // HTTPFault filter has the same message type in HTTP connection manager's
+  // filter config and in overriding filter config field.
+  return ParseTopLevelConfig(instance_name, context, extension, errors);
 }
 
 }  // namespace grpc_core

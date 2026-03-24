@@ -5,3 +5,24 @@ common --enable_workspace=false
 # transitive dependencies that are currently at mismatched versions.
 #common --check_direct_dependencies=error
 common --ignore_dev_dependency=false
+
+# Needed because bzlmod can break PEP 420 implicit workspace package.
+# WORKSPACE seems unaffected, possibly because it doesn't do repo name mangling.
+#
+# See also https://github.com/bazel-contrib/rules_python/issues/55
+#
+# Error message: ModuleNotFoundError: No module named 'src.python'
+# A list of tests that need this flag to pass:
+#
+# //src/python/grpcio_tests/tests_aio/interop:local_interop_test
+# //src/python/grpcio_tests/tests_aio/reflection:reflection_servicer_test
+# //src/python/grpcio_tests/tests_aio/unit:*
+# //src/python/grpcio_tests/tests_py3_only/interop:xds_interop_client_test
+# //src/python/grpcio_tests/tests/admin:admin_test
+# //src/python/grpcio_tests/tests/csds:csds_test
+# //src/python/grpcio_tests/tests/fork:fork_test
+# //src/python/grpcio_tests/tests/interop:_insecure_intraop_test
+# //src/python/grpcio_tests/tests/interop:_secure_intraop_test
+# //src/python/grpcio_tests/tests/reflection:_reflection_client_test
+# //src/python/grpcio_tests/tests/reflection:_reflection_servicer_test
+build:python --incompatible_default_to_explicit_init_py

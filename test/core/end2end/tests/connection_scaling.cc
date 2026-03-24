@@ -40,7 +40,7 @@ namespace {
 // finished, we should be able to do this by injecting a custom EE impl
 // that allows us to intercept connection attempts.
 
-CORE_END2END_TEST(Http2SingleHopTests, SubchannelConnectionScaling) {
+CORE_END2END_TEST(Http2FullstackSingleHopTests, SubchannelConnectionScaling) {
   SKIP_IF_MINSTACK();
   if (!IsSubchannelConnectionScalingEnabled()) {
     GTEST_SKIP()
@@ -104,7 +104,12 @@ CORE_END2END_TEST(Http2SingleHopTests, SubchannelConnectionScaling) {
   // the peer is a UDS, it will essentially always be a constant string.
   // We should either fix that issue or maybe change this test to use
   // channelz instead.
-  if (s1.GetPeer() != "unix:") EXPECT_NE(s1.GetPeer(), s4.GetPeer());
+  // TODO(roth): The peer address also seems to be the same for
+  // unix-abstract: addresses.  Not sure why -- that needs investigation.
+  std::string s1_peer = s1.GetPeer().value_or("");
+  if (s1_peer != "unix:" && !absl::StartsWith(s1_peer, "unix-abstract:")) {
+    EXPECT_NE(s1.GetPeer(), s4.GetPeer());
+  }
   // Clean up.
   c1.Cancel();
   c2.Cancel();
@@ -117,7 +122,8 @@ CORE_END2END_TEST(Http2SingleHopTests, SubchannelConnectionScaling) {
   Step();
 }
 
-CORE_END2END_TEST(Http2SingleHopTests, HonorsMaxConnectionsPerSubchannel) {
+CORE_END2END_TEST(Http2FullstackSingleHopTests,
+                  HonorsMaxConnectionsPerSubchannel) {
   SKIP_IF_MINSTACK();
   if (!IsSubchannelConnectionScalingEnabled()) {
     GTEST_SKIP()
@@ -180,11 +186,14 @@ CORE_END2END_TEST(Http2SingleHopTests, HonorsMaxConnectionsPerSubchannel) {
   // Third and fourth RPCs should be on the same connection, which is
   // different from the connection of the first two.
   EXPECT_EQ(s3.GetPeer(), s4.GetPeer());
-  // UDS connections always report the server's socket path as the peer
-  // (since unbound clients have no address), so all connections look
-  // identical. Skip the peer-differentiation check for any UDS address.
-  auto peer1 = s1.GetPeer();
-  if (!peer1.has_value() || !absl::StartsWith(*peer1, "unix:")) {
+  // TODO(roth): Due to https://github.com/grpc/grpc/issues/35006, if
+  // the peer is a UDS, it will essentially always be a constant string.
+  // We should either fix that issue or maybe change this test to use
+  // channelz instead.
+  // TODO(roth): The peer address also seems to be the same for
+  // unix-abstract: addresses.  Not sure why -- that needs investigation.
+  std::string s1_peer = s1.GetPeer().value_or("");
+  if (s1_peer != "unix:" && !absl::StartsWith(s1_peer, "unix-abstract:")) {
     EXPECT_NE(s1.GetPeer(), s3.GetPeer());
   }
   // Start a 5th RPC, which will be queued.
