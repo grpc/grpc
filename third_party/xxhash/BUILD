@@ -1,3 +1,5 @@
+load("@rules_cc//cc:cc_library.bzl", "cc_library")
+
 # TODO(donnadionne): describe this package.
 cc_library(
     name = "xxhash",
