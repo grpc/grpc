@@ -24,7 +24,7 @@ module(
 
 # Upgrade version of rules_swift to avoid an error in BCR CI of not
 # finding switfc.exe on Windows with bazel 7.
-bazel_dep(name = "rules_swift", version = "2.5.0")
+bazel_dep(name = "rules_swift", version = "2.5.0", max_compatibility_level = 3)
 
 # -- Abseil library.
 # Pinning version to be consistent with third_party/abseil-cpp
@@ -38,7 +38,7 @@ bazel_dep(name = "platforms", version = "1.0.0")
 bazel_dep(name = "apple_support", version = "1.19.0", repo_name = "build_bazel_apple_support")
 bazel_dep(name = "bazel_skylib", version = "1.8.1")
 bazel_dep(name = "boringssl", version = "0.20241024.0")  # mismatched 20241211
-bazel_dep(name = "c-ares", version = "1.19.1", repo_name = "com_github_cares_cares")
+bazel_dep(name = "c-ares", version = "1.34.6", repo_name = "com_github_cares_cares")
 bazel_dep(name = "envoy_api", version = "0.0.0-20251216-6ef568c")
 bazel_dep(name = "googleapis-cc", version = "1.0.0")
 bazel_dep(name = "googleapis-grpc-cc", version = "1.0.0")
@@ -153,27 +153,7 @@ http_archive(
     url = "https://github.com/python/typing_extensions/archive/4.12.2.tar.gz",
 )
 
-# TODO(weizheyuan): Upgrade to a version available in a BCR
-# once we figure out how to properly use it in cmake setup.
-#
-# Trick bazel by declaring re2 as 2024-07-02.bcr.1 but internally using 2022-04-01,
-# which is the version we use for cmake builds.
-# This override has no effect when grpc is used as a dependency module.
-# See also https://bazel.build/rules/lib/globals/module#archive_override.
-bazel_dep(name = "re2", version = "2024-07-02.bcr.1", repo_name = "com_googlesource_code_re2")  # mismatched 2022-04-01
-archive_override(
-    module_name = "re2",
-    integrity = "sha256-GujM/bEGanMbum7giBuq1e/SzWYazZVptonyWG4aUOk=",
-    patch_strip = 1,
-    patches = [
-        "//bazel:re2.patch",
-    ],
-    strip_prefix = "re2-2022-04-01",
-    urls = [
-        "https://storage.googleapis.com/grpc-bazel-mirror/github.com/google/re2/archive/2022-04-01.tar.gz",
-        "https://github.com/google/re2/archive/2022-04-01.tar.gz",
-    ],
-)
+bazel_dep(name = "re2", version = "2025-11-05.bcr.1", repo_name = "com_googlesource_code_re2")
 
 # --- Provide repo @com_google_fuzztest.
 bazel_dep(name = "fuzztest", version = "20250805.0", dev_dependency = True, repo_name = "com_google_fuzztest")  # mismatched 2023-05-16
