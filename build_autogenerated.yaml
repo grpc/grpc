@@ -23355,6 +23355,16 @@ targets:
   - gtest
   - grpc_test_util
   uses_polling: false
+- name: ssl_security_connector_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/credentials/transport/ssl/ssl_security_connector_test.cc
+  deps:
+  - gtest
+  - grpc_test_util
 - name: ssl_transport_security_test
   gtest: true
   build: test
