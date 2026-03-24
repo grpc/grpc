@@ -577,7 +577,7 @@ void SelectCertDoneCallback(
   tsi_result next_result;
   std::optional<HandshakerNextArgs> next_args;
   {
-    grpc_core::MutexLock lock(handshaker->mu);
+    grpc_core::MutexLock lock(&handshaker->mu);
     if (!result.ok()) {
       handshaker->cert_selection_status = std::move(result).status();
     } else {
@@ -2583,7 +2583,7 @@ static void ssl_handshaker_shutdown(tsi_handshaker* self) {
       cert_selection_handle;
   std::optional<HandshakerNextArgs> next_args;
   {
-    grpc_core::MutexLock lock(impl->mu);
+    grpc_core::MutexLock lock(&impl->mu);
     if (impl->ssl == nullptr) return;
     impl->is_shutdown = true;
     if (impl->factory_ref->key_signer != nullptr &&
@@ -2763,7 +2763,7 @@ static tsi_result create_tsi_ssl_handshaker(
     }
   }
   {
-    grpc_core::MutexLock lock(impl->mu);
+    grpc_core::MutexLock lock(&impl->mu);
     impl->key_signer = factory->key_signer;
   }
 #endif  // defined(OPENSSL_IS_BORINGSSL)
