@@ -217,10 +217,9 @@ class TestTypeMetadata(unittest.TestCase):
 
     @typeguard.suppress_type_checks
     def test_create_invalid_type(self):
-
         # raw_metadata is string
         with self.assertRaises(ValueError) as container:
-            Metadata._create("key, value")
+            Metadata._create("test_string")
         self.assertEqual(
             str(container.exception),
             "not enough values to unpack (expected 2, got 1)",
@@ -229,6 +228,12 @@ class TestTypeMetadata(unittest.TestCase):
     def test_create(self):
         # raw_metadata is None
         self.assertEqual(Metadata._create(None), Metadata())
+
+        # raw_metadata is empty list
+        self.assertEqual(Metadata._create([]), Metadata())
+
+        # raw_metadata is empty tuple
+        self.assertEqual(Metadata._create(()), Metadata())
 
         # raw_metadata is Metadata
         m = Metadata(("key", "value"))
@@ -245,12 +250,6 @@ class TestTypeMetadata(unittest.TestCase):
         # raw_metadata is set
         s = {("key", "value")}
         self.assertEqual(Metadata._create(s), Metadata(("key", "value")))
-
-        # raw_metadata is empty list
-        self.assertEqual(Metadata._create([]), Metadata())
-
-        # raw_metadata is empty tuple
-        self.assertEqual(Metadata._create(()), Metadata())
 
     def test_keys_values_items(self):
         metadata = Metadata(*self._MULTI_ENTRY_DATA)
