@@ -3463,6 +3463,25 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "mitigation_engine",
+    hdrs = [
+        "mitigation_engine/mitigation_engine.h",
+    ],
+    external_deps = [
+        "absl/strings",
+    ],
+    deps = [
+        "arena",
+        "channel_args",
+        "dual_ref_counted",
+        "metadata_batch",
+        "ref_counted",
+        "useful",
+        "//:ref_counted_ptr",
+    ],
+)
+
+grpc_cc_library(
     name = "channel_args_preconditioning",
     srcs = [
         "lib/channel/channel_args_preconditioning.cc",
@@ -9126,6 +9145,7 @@ grpc_cc_library(
         "iomgr_fwd",
         "match",
         "memory_quota",
+        "mitigation_engine",
         "pollset_set",
         "resolved_address",
         "resource_quota",

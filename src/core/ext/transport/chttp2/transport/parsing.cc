@@ -61,6 +61,7 @@
 #include "src/core/lib/transport/bdp_estimator.h"
 #include "src/core/lib/transport/error_utils.h"
 #include "src/core/lib/transport/transport.h"
+#include "src/core/mitigation_engine/mitigation_engine.h"
 #include "src/core/telemetry/call_tracer.h"
 #include "src/core/telemetry/stats.h"
 #include "src/core/telemetry/stats_data.h"
@@ -517,7 +518,8 @@ static grpc_error_handle init_header_skip_frame_parser(
       /*metadata_size_hard_limit=*/
       t->settings.acked().max_header_list_size(),
       hpack_boundary_type(t, is_eoh), priority_type,
-      hpack_parser_log_info(t, HPackParser::LogInfo::kDontKnow));
+      hpack_parser_log_info(t, HPackParser::LogInfo::kDontKnow),
+      t->mitigation_engine.get());
   return absl::OkStatus();
 }
 
@@ -834,7 +836,8 @@ static grpc_error_handle init_header_frame_parser(grpc_chttp2_transport* t,
                              /*metadata_size_hard_limit=*/
                              t->settings.acked().max_header_list_size(),
                              hpack_boundary_type(t, is_eoh), priority_type,
-                             hpack_parser_log_info(t, frame_type));
+                             hpack_parser_log_info(t, frame_type),
+                             t->mitigation_engine.get());
   return absl::OkStatus();
 }
 

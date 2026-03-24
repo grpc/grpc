@@ -1191,6 +1191,7 @@ libs:
   - src/core/load_balancing/xds/cds.h
   - src/core/load_balancing/xds/xds_channel_args.h
   - src/core/load_balancing/xds/xds_override_host.h
+  - src/core/mitigation_engine/mitigation_engine.h
   - src/core/net/socket_mutator.h
   - src/core/resolver/dns/c_ares/dns_resolver_ares.h
   - src/core/resolver/dns/c_ares/grpc_ares_ev_driver.h
@@ -2933,6 +2934,7 @@ libs:
   - src/core/load_balancing/weighted_round_robin/static_stride_scheduler.h
   - src/core/load_balancing/weighted_round_robin/weighted_round_robin.h
   - src/core/load_balancing/weighted_target/weighted_target.h
+  - src/core/mitigation_engine/mitigation_engine.h
   - src/core/net/socket_mutator.h
   - src/core/resolver/dns/c_ares/dns_resolver_ares.h
   - src/core/resolver/dns/c_ares/grpc_ares_ev_driver.h
@@ -18972,6 +18974,16 @@ targets:
   - gtest
   - absl/base:config
   - absl/base:core_headers
+- name: mitigation_engine_provider_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/mitigation_engine/mitigation_engine_provider_test.cc
+  deps:
+  - gtest
+  - grpc_test_util
 - name: mock_stream_test
   gtest: true
   build: test

@@ -72,6 +72,7 @@
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/lib/transport/transport_framing_endpoint_extension.h"
+#include "src/core/mitigation_engine/mitigation_engine.h"
 #include "src/core/telemetry/call_tracer.h"
 #include "src/core/telemetry/context_list_entry.h"
 #include "src/core/telemetry/stats.h"
@@ -618,6 +619,9 @@ struct grpc_chttp2_transport final : public grpc_core::FilterStackTransport,
   grpc_core::Timestamp last_ztrace_time = grpc_core::Timestamp::InfPast();
 
   GPR_NO_UNIQUE_ADDRESS grpc_core::latent_see::Flow write_flow;
+
+  // Current mitigation engine, retrieved once per connection.
+  grpc_core::RefCountedPtr<grpc_core::MitigationEngine> mitigation_engine;
 };
 
 typedef enum {
