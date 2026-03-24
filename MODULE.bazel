@@ -24,7 +24,7 @@ module(
 
 # Upgrade version of rules_swift to avoid an error in BCR CI of not
 # finding switfc.exe on Windows with bazel 7.
-bazel_dep(name = "rules_swift", version = "2.5.0")
+bazel_dep(name = "rules_swift", version = "2.5.0", max_compatibility_level=3)
 
 # -- Abseil library.
 # Pinning version to be consistent with third_party/abseil-cpp
