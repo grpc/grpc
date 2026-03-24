@@ -37,16 +37,16 @@ constexpr absl::string_view kServerKeyPath =
 
 TEST(SslSecurityConnectorTest, ServerSecurityConnectorCreationWithAlpnString) {
   std::string server_cert =
-      grpc_core::testing::GetFileContents(std::string(kServerCertPath));
+      testing::GetFileContents(std::string(kServerCertPath));
   std::string server_key =
-      grpc_core::testing::GetFileContents(std::string(kServerKeyPath));
+      testing::GetFileContents(std::string(kServerKeyPath));
   grpc_ssl_pem_key_cert_pair pem_key_cert_pair = {server_key.c_str(),
                                                   server_cert.c_str()};
   grpc_server_credentials* creds = grpc_ssl_server_credentials_create(
       nullptr, &pem_key_cert_pair, 1, 0, nullptr);
   // Create security connector
-  grpc_core::ChannelArgs args;
-  grpc_core::RefCountedPtr<grpc_server_security_connector> sc =
+  ChannelArgs args;
+  RefCountedPtr<grpc_server_security_connector> sc =
       creds->create_security_connector(
           args.Set(GRPC_ARG_TRANSPORT_PROTOCOLS, "h2"));
   ASSERT_NE(sc, nullptr);
