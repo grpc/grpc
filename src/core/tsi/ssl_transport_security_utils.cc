@@ -281,11 +281,11 @@ bool VerifyCrlCertIssuerNamesMatch(X509_CRL* crl, X509* cert) {
   if (cert == nullptr || crl == nullptr) {
     return false;
   }
-  X509_NAME* cert_issuer_name = X509_get_issuer_name(cert);
+  auto* cert_issuer_name = X509_get_issuer_name(cert);
   if (cert == nullptr) {
     return false;
   }
-  X509_NAME* crl_issuer_name = X509_CRL_get_issuer(crl);
+  auto* crl_issuer_name = X509_CRL_get_issuer(crl);
   if (crl_issuer_name == nullptr) {
     return false;
   }
@@ -316,9 +316,9 @@ absl::StatusOr<std::string> IssuerFromCert(X509* cert) {
   if (cert == nullptr) {
     return absl::InvalidArgumentError("cert cannot be null");
   }
-  X509_NAME* issuer = X509_get_issuer_name(cert);
+  auto* issuer = X509_get_issuer_name(cert);
   unsigned char* buf = nullptr;
-  int len = i2d_X509_NAME(issuer, &buf);
+  int len = i2d_X509_NAME(const_cast<X509_NAME*>(issuer), &buf);
   if (len < 0 || buf == nullptr) {
     return absl::InvalidArgumentError("could not read issuer name from cert");
   }
@@ -338,7 +338,8 @@ absl::StatusOr<std::string> AkidFromCertificate(X509* cert) {
     if (X509_get_ext_by_NID(cert, NID_authority_key_identifier, j) != -1) {
       return absl::InvalidArgumentError("Could not get AKID from certificate.");
     }
-    akid = X509_EXTENSION_get_data(X509_get_ext(cert, j));
+    akid = const_cast<ASN1_OCTET_STRING*>(
+        X509_EXTENSION_get_data(X509_get_ext(cert, j)));
   } else {
     return absl::InvalidArgumentError("Could not get AKID from certificate.");
   }
@@ -363,7 +364,8 @@ absl::StatusOr<std::string> AkidFromCrl(X509_CRL* crl) {
     if (X509_CRL_get_ext_by_NID(crl, NID_authority_key_identifier, j) != -1) {
       return absl::InvalidArgumentError("Could not get AKID from crl.");
     }
-    akid = X509_EXTENSION_get_data(X509_CRL_get_ext(crl, j));
+    akid = const_cast<ASN1_OCTET_STRING*>(
+        X509_EXTENSION_get_data(X509_CRL_get_ext(crl, j)));
   } else {
     return absl::InvalidArgumentError("Could not get AKID from crl.");
   }
