@@ -23,6 +23,7 @@
 #include <grpc/support/string_util.h>
 #include <openssl/crypto.h>
 #include <openssl/err.h>
+#include <openssl/evp.h>
 #include <openssl/pem.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -930,7 +931,16 @@ TEST_P(SslTransportSecurityTest, DoRoundTripWithErrorOnStack) {
   LOG(INFO) << "ssl_tsi_test_do_round_trip_with_error_on_stack";
   // Invoke an SSL function that causes an error, and ensure the error
   // makes it to the stack.
+#if OPENSSL_VERSION_NUMBER < 0x30000000L
   ASSERT_FALSE(EC_KEY_new_by_curve_name(NID_rsa));
+#else
+  // Use EVP_PKEY_CTX with an invalid operation to push an error.
+  EVP_PKEY_CTX* err_ctx = EVP_PKEY_CTX_new_id(EVP_PKEY_RSA, nullptr);
+  ASSERT_NE(err_ctx, nullptr);
+  // Calling sign_init without a key will fail and push an error.
+  ASSERT_LE(EVP_PKEY_sign_init(err_ctx), 0);
+  EVP_PKEY_CTX_free(err_ctx);
+#endif
   ASSERT_NE(ERR_peek_error(), 0);
   SetUpSslFixture(/*tls_version=*/std::get<0>(GetParam()),
                   /*send_client_ca_list=*/std::get<1>(GetParam()));
