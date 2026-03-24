@@ -24,7 +24,6 @@
 
 // struct envoy_service_ext_proc_v3_ProcessingRequest;
 // struct envoy_config_core_v3_HeaderMap;
-#include "upb/base/string_view.h"
 #include "envoy/config/core/v3/base.upb.h"
 #include "envoy/service/ext_proc/v3/external_processor.upb.h"
 #include "src/core/call/call_destination.h"
@@ -35,6 +34,7 @@
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/unique_type_name.h"
 #include "src/core/xds/grpc/xds_common_types.h"
+#include "upb/base/string_view.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 
@@ -54,6 +54,34 @@ enum class BodySendMode {
   kGrpc,
 };
 
+struct ExtProcResponse {
+  struct HeaderMutation {
+    std::vector<std::pair<std::string, std::string>> set_headers;
+    std::vector<std::string> remove_headers;
+  };
+  std::optional<HeaderMutation> request_headers;
+  std::optional<HeaderMutation> response_headers;
+  std::optional<HeaderMutation> response_trailers;
+  struct BodyMutation {
+    std::string body;
+    bool end_of_stream = false;
+    bool end_of_stream_without_message = false;
+  };
+  std::optional<BodyMutation> request_body;
+  std::optional<BodyMutation> response_body;
+  struct ImmediateResponse {
+    uint32_t status;
+    HeaderMutation header_mutation;
+    std::string details;
+  };
+  std::optional<ImmediateResponse> immediate_response;
+  bool mode_override = false;
+  bool request_drain = false;
+};
+
+absl::StatusOr<ExtProcResponse> ParseExtProcResponse(
+    envoy_service_ext_proc_v3_ProcessingResponse* response);
+
 class ExtProcRequest {
  public:
   class Builder {
@@ -67,9 +95,11 @@ class ExtProcRequest {
     Builder& SetResponseBody(upb_StringView buf, bool end_of_stream);
     Builder& SetResponseTrailers(envoy_config_core_v3_HeaderMap* trailer);
     Builder& SetObservabilityMode(bool mode);
-    Builder& SetAttributes(const std::map<std::string, std::string>& attributes);
+    Builder& SetAttributes(
+        const std::map<std::string, std::string>& attributes);
     Builder& SetProtocolConfigRequest(bool is_first_message, BodySendMode mode);
-    Builder& SetProtocolConfigResponse(bool is_first_message, BodySendMode mode);
+    Builder& SetProtocolConfigResponse(bool is_first_message,
+                                       BodySendMode mode);
 
     ExtProcRequest Build();
 
@@ -83,7 +113,7 @@ class ExtProcRequest {
  private:
   explicit ExtProcRequest(upb_Arena* arena,
                           envoy_service_ext_proc_v3_ProcessingRequest* request);
-                          
+
   upb_Arena* arena_;
   envoy_service_ext_proc_v3_ProcessingRequest* request_;
 };

@@ -42,6 +42,212 @@
 namespace grpc_core {
 
 //
+// ExtProcResponse
+//
+
+namespace {
+
+ExtProcResponse::HeaderMutation ParseHeaderMutation(
+    const envoy_service_ext_proc_v3_HeaderMutation* header_mutation) {
+  if (header_mutation == nullptr) {
+    return {};
+  }
+  ExtProcResponse::HeaderMutation header_mutation_response;
+  size_t set_headers_size = 0;
+  const envoy_config_core_v3_HeaderValueOption* const* set_headers =
+      envoy_service_ext_proc_v3_HeaderMutation_set_headers(header_mutation,
+                                                           &set_headers_size);
+  for (size_t i = 0; i < set_headers_size; ++i) {
+    const envoy_config_core_v3_HeaderValue* header_value =
+        envoy_config_core_v3_HeaderValueOption_header(set_headers[i]);
+    if (header_value != nullptr) {
+      upb_StringView key = envoy_config_core_v3_HeaderValue_key(header_value);
+      upb_StringView value =
+          envoy_config_core_v3_HeaderValue_value(header_value);
+      header_mutation_response.set_headers.emplace_back(
+          UpbStringToStdString(key), UpbStringToStdString(value));
+    }
+  }
+  size_t remove_headers_size = 0;
+  upb_StringView const* remove_headers =
+      envoy_service_ext_proc_v3_HeaderMutation_remove_headers(
+          header_mutation, &remove_headers_size);
+  for (size_t i = 0; i < remove_headers_size; ++i) {
+    header_mutation_response.remove_headers.emplace_back(
+        UpbStringToStdString(remove_headers[i]));
+  }
+  return header_mutation_response;
+}
+
+absl::StatusOr<ExtProcResponse::HeaderMutation> ParseHeaders(
+    const envoy_service_ext_proc_v3_CommonResponse* common_response) {
+  if (common_response == nullptr) {
+    return absl::InvalidArgumentError("common_response is not available");
+  }
+  // parse ResponseStatus status if CONTINUE_AND_REPLACE return error
+  int32_t status =
+      envoy_service_ext_proc_v3_CommonResponse_status(common_response);
+  if (status == envoy_service_ext_proc_v3_CommonResponse_CONTINUE_AND_REPLACE) {
+    return absl::InvalidArgumentError("CONTINUE_AND_REPLACE is not supported");
+  }
+  // otherwise parse HeaderMutation header_mutation and return header mutation
+  const envoy_service_ext_proc_v3_HeaderMutation* header_mutation =
+      envoy_service_ext_proc_v3_CommonResponse_header_mutation(common_response);
+
+  return ParseHeaderMutation(header_mutation);
+}
+
+absl::StatusOr<ExtProcResponse::BodyMutation> ParseBodyMutation(
+    const envoy_service_ext_proc_v3_CommonResponse* common_response) {
+  if (common_response == nullptr) {
+    return ExtProcResponse::BodyMutation{};
+  }
+  int32_t status =
+      envoy_service_ext_proc_v3_CommonResponse_status(common_response);
+  if (status == envoy_service_ext_proc_v3_CommonResponse_CONTINUE_AND_REPLACE) {
+    return absl::InvalidArgumentError("CONTINUE_AND_REPLACE is not supported");
+  }
+  const envoy_service_ext_proc_v3_BodyMutation* body_mutation =
+      envoy_service_ext_proc_v3_CommonResponse_body_mutation(common_response);
+  if (body_mutation == nullptr) {
+    return absl::InvalidArgumentError("body_mutation is not available");
+  }
+  auto streamed_response =
+      envoy_service_ext_proc_v3_BodyMutation_streamed_response(body_mutation);
+  if (streamed_response == nullptr) {
+    return absl::InvalidArgumentError("streamed_response is not available");
+  }
+  if (envoy_service_ext_proc_v3_StreamedBodyResponse_grpc_message_compressed(
+          streamed_response)) {
+    return absl::InvalidArgumentError(
+        "grpc_message_compressed is not supported");
+  }
+  auto body =
+      envoy_service_ext_proc_v3_StreamedBodyResponse_body(streamed_response);
+  auto end_of_stream =
+      envoy_service_ext_proc_v3_StreamedBodyResponse_end_of_stream(
+          streamed_response);
+  auto end_of_stream_without_message =
+      envoy_service_ext_proc_v3_StreamedBodyResponse_end_of_stream_without_message(
+          streamed_response);
+  return ExtProcResponse::BodyMutation{
+      UpbStringToStdString(body), end_of_stream, end_of_stream_without_message};
+}
+}  // namespace
+
+absl::StatusOr<ExtProcResponse> ParseExtProcResponse(
+    envoy_service_ext_proc_v3_ProcessingResponse* response) {
+  ExtProcResponse ext_proc_response;
+  if (response == nullptr) {
+    return ext_proc_response;
+  }
+  switch (
+      envoy_service_ext_proc_v3_ProcessingResponse_response_case(response)) {
+    case envoy_service_ext_proc_v3_ProcessingResponse_response_request_headers: {
+      const envoy_service_ext_proc_v3_HeadersResponse* request_headers =
+          envoy_service_ext_proc_v3_ProcessingResponse_request_headers(
+              response);
+      const envoy_service_ext_proc_v3_CommonResponse* common_response =
+          envoy_service_ext_proc_v3_HeadersResponse_response(request_headers);
+      auto request_headers_response = ParseHeaders(common_response);
+      if (!request_headers_response.ok()) {
+        return request_headers_response.status();
+      }
+      ext_proc_response.request_headers =
+          std::move(request_headers_response.value());
+      break;
+    }
+    case envoy_service_ext_proc_v3_ProcessingResponse_response_response_headers: {
+      const envoy_service_ext_proc_v3_HeadersResponse* response_headers =
+          envoy_service_ext_proc_v3_ProcessingResponse_response_headers(
+              response);
+      const envoy_service_ext_proc_v3_CommonResponse* common_response =
+          envoy_service_ext_proc_v3_HeadersResponse_response(response_headers);
+      auto response_headers_response = ParseHeaders(common_response);
+      if (!response_headers_response.ok()) {
+        return response_headers_response.status();
+      }
+      ext_proc_response.response_headers =
+          std::move(response_headers_response.value());
+      break;
+    }
+    case envoy_service_ext_proc_v3_ProcessingResponse_response_request_trailers: {
+      // Not implemented in ExtProcResponse currently
+      break;
+    }
+    case envoy_service_ext_proc_v3_ProcessingResponse_response_response_trailers: {
+      const envoy_service_ext_proc_v3_TrailersResponse* response_trailer =
+          envoy_service_ext_proc_v3_ProcessingResponse_response_trailers(
+              response);
+      const envoy_service_ext_proc_v3_HeaderMutation* header_mutation =
+          envoy_service_ext_proc_v3_TrailersResponse_header_mutation(
+              response_trailer);
+      ext_proc_response.response_trailers =
+          ParseHeaderMutation(header_mutation);
+      break;
+    }
+    case envoy_service_ext_proc_v3_ProcessingResponse_response_request_body: {
+      const envoy_service_ext_proc_v3_BodyResponse* request_body =
+          envoy_service_ext_proc_v3_ProcessingResponse_request_body(response);
+      const envoy_service_ext_proc_v3_CommonResponse* common_response =
+          envoy_service_ext_proc_v3_BodyResponse_response(request_body);
+      auto request_body_response = ParseBodyMutation(common_response);
+      if (!request_body_response.ok()) {
+        return request_body_response.status();
+      }
+      ext_proc_response.request_body = std::move(request_body_response.value());
+      break;
+    }
+    case envoy_service_ext_proc_v3_ProcessingResponse_response_response_body: {
+      const envoy_service_ext_proc_v3_BodyResponse* response_body =
+          envoy_service_ext_proc_v3_ProcessingResponse_response_body(response);
+      const envoy_service_ext_proc_v3_CommonResponse* common_response =
+          envoy_service_ext_proc_v3_BodyResponse_response(response_body);
+      auto response_body_response = ParseBodyMutation(common_response);
+      if (!response_body_response.ok()) {
+        return response_body_response.status();
+      }
+      ext_proc_response.response_body =
+          std::move(response_body_response.value());
+      break;
+    }
+    case envoy_service_ext_proc_v3_ProcessingResponse_response_immediate_response: {
+      const envoy_service_ext_proc_v3_ImmediateResponse* immediate_response =
+          envoy_service_ext_proc_v3_ProcessingResponse_immediate_response(
+              response);
+      ExtProcResponse::ImmediateResponse immediate_response_value;
+      immediate_response_value.details = UpbStringToStdString(
+          envoy_service_ext_proc_v3_ImmediateResponse_details(
+              immediate_response));
+      immediate_response_value.header_mutation = ParseHeaderMutation(
+          envoy_service_ext_proc_v3_ImmediateResponse_headers(
+              immediate_response));
+      auto grpc_status =
+          envoy_service_ext_proc_v3_ImmediateResponse_grpc_status(
+              immediate_response);
+      // FIXME(rishesh): what should be handling here if grpc_status is nullptr
+      if (grpc_status != nullptr) {
+        immediate_response_value.status =
+            envoy_service_ext_proc_v3_GrpcStatus_status(grpc_status);
+      }
+      ext_proc_response.immediate_response =
+          std::move(immediate_response_value);
+      break;
+    }
+    case envoy_service_ext_proc_v3_ProcessingResponse_response_NOT_SET:
+    default:
+      break;
+  }
+  // parse mode_override
+  ext_proc_response.mode_override =
+      envoy_service_ext_proc_v3_ProcessingResponse_mode_override(response);
+  // parse request_drain
+  ext_proc_response.request_drain =
+      envoy_service_ext_proc_v3_ProcessingResponse_request_drain(response);
+  return ext_proc_response;
+}
+
+//
 // ExtProcRequest::Builder
 //
 
@@ -59,8 +265,8 @@ ExtProcRequest::Builder& ExtProcRequest::Builder::SetRequestHeaders(
   envoy_service_ext_proc_v3_HttpHeaders_set_headers(http_headers, headers);
   envoy_service_ext_proc_v3_HttpHeaders_set_end_of_stream(http_headers,
                                                           end_of_stream);
-  envoy_service_ext_proc_v3_ProcessingRequest_set_request_headers(
-      request_, http_headers);
+  envoy_service_ext_proc_v3_ProcessingRequest_set_request_headers(request_,
+                                                                  http_headers);
   return *this;
 }
 
@@ -81,8 +287,7 @@ ExtProcRequest::Builder& ExtProcRequest::Builder::SetRequestBody(
       envoy_service_ext_proc_v3_HttpBody_new(arena_);
   envoy_service_ext_proc_v3_HttpBody_set_body(body, buf);
   envoy_service_ext_proc_v3_HttpBody_set_end_of_stream(body, end_of_stream);
-  envoy_service_ext_proc_v3_ProcessingRequest_set_request_body(
-      request_, body);
+  envoy_service_ext_proc_v3_ProcessingRequest_set_request_body(request_, body);
   return *this;
 }
 
@@ -92,8 +297,7 @@ ExtProcRequest::Builder& ExtProcRequest::Builder::SetResponseBody(
       envoy_service_ext_proc_v3_HttpBody_new(arena_);
   envoy_service_ext_proc_v3_HttpBody_set_body(body, buf);
   envoy_service_ext_proc_v3_HttpBody_set_end_of_stream(body, end_of_stream);
-  envoy_service_ext_proc_v3_ProcessingRequest_set_response_body(
-      request_, body);
+  envoy_service_ext_proc_v3_ProcessingRequest_set_response_body(request_, body);
   return *this;
 }
 
@@ -108,8 +312,8 @@ ExtProcRequest::Builder& ExtProcRequest::Builder::SetResponseTrailers(
 
 ExtProcRequest::Builder& ExtProcRequest::Builder::SetObservabilityMode(
     bool mode) {
-  envoy_service_ext_proc_v3_ProcessingRequest_set_observability_mode(
-      request_, mode);
+  envoy_service_ext_proc_v3_ProcessingRequest_set_observability_mode(request_,
+                                                                     mode);
   return *this;
 }
 
@@ -121,7 +325,8 @@ ExtProcRequest::Builder& ExtProcRequest::Builder::SetAttributes(
   for (const auto& [name, value] : attributes) {
     char* name_buf = static_cast<char*>(upb_Arena_Malloc(arena_, name.size()));
     memcpy(name_buf, name.data(), name.size());
-    char* value_buf = static_cast<char*>(upb_Arena_Malloc(arena_, value.size()));
+    char* value_buf =
+        static_cast<char*>(upb_Arena_Malloc(arena_, value.size()));
     memcpy(value_buf, value.data(), value.size());
     google_protobuf_Value* val_msg = google_protobuf_Value_new(arena_);
     google_protobuf_Value_set_string_value(
