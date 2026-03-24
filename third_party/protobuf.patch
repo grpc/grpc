@@ -12,3 +12,17 @@ index 45a6c20c5..c28dd8852 100755
 +    __import__('pkg_resources').declare_namespace(__name__)
 +  except ImportError:
 +    __path__ = __import__('pkgutil').extend_path(__path__, __name__)
++
+diff --git a/upb_generator/c/names.h b/upb_generator/c/names.h
+index e5b23d9a5..3bbadaa6b 100644
+--- a/upb_generator/c/names.h
++++ b/upb_generator/c/names.h
+@@ -101,6 +101,7 @@ template <class T>
+   for (const auto field : msg_def.fields()) {
+     if (field.IsSequence() || field.IsMap()) {
+       fields.emplace(field.name(), kContainerField);
+-    } else if (field.ctype() == decltype(field)::CType::kUpb_CType_String) {
++    } else if (field.ctype() == decltype(field)::CType::kUpb_CType_String ||
++               field.ctype() == decltype(field)::CType::kUpb_CType_Bytes) {
+       fields.emplace(field.name(), kStringField);
+     } else {

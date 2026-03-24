@@ -2125,11 +2125,11 @@ UPB_INLINE bool envoy_service_ext_proc_v3_BodyMutation_has_body(const envoy_serv
   const upb_MiniTableField field = {1, UPB_SIZE(12, 16), -9, kUpb_NoSub, 12, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
   return upb_Message_HasBaseField(UPB_UPCAST(msg), &field);
 }
-UPB_INLINE void envoy_service_ext_proc_v3_BodyMutation_clear_clear_body(envoy_service_ext_proc_v3_BodyMutation* msg) {
+UPB_INLINE void envoy_service_ext_proc_v3_BodyMutation_clear_clear_body_(envoy_service_ext_proc_v3_BodyMutation* msg) {
   const upb_MiniTableField field = {2, UPB_SIZE(12, 16), -9, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
   upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
 }
-UPB_INLINE bool envoy_service_ext_proc_v3_BodyMutation_clear_body(const envoy_service_ext_proc_v3_BodyMutation* msg) {
+UPB_INLINE bool envoy_service_ext_proc_v3_BodyMutation_clear_body_(const envoy_service_ext_proc_v3_BodyMutation* msg) {
   bool default_val = false;
   bool ret;
   const upb_MiniTableField field = {2, UPB_SIZE(12, 16), -9, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
@@ -2137,7 +2137,7 @@ UPB_INLINE bool envoy_service_ext_proc_v3_BodyMutation_clear_body(const envoy_se
                                     &default_val, &ret);
   return ret;
 }
-UPB_INLINE bool envoy_service_ext_proc_v3_BodyMutation_has_clear_body(const envoy_service_ext_proc_v3_BodyMutation* msg) {
+UPB_INLINE bool envoy_service_ext_proc_v3_BodyMutation_has_clear_body_(const envoy_service_ext_proc_v3_BodyMutation* msg) {
   const upb_MiniTableField field = {2, UPB_SIZE(12, 16), -9, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
   return upb_Message_HasBaseField(UPB_UPCAST(msg), &field);
 }
@@ -2163,7 +2163,7 @@ UPB_INLINE void envoy_service_ext_proc_v3_BodyMutation_set_body(envoy_service_ex
   const upb_MiniTableField field = {1, UPB_SIZE(12, 16), -9, kUpb_NoSub, 12, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
   upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
-UPB_INLINE void envoy_service_ext_proc_v3_BodyMutation_set_clear_body(envoy_service_ext_proc_v3_BodyMutation *msg, bool value) {
+UPB_INLINE void envoy_service_ext_proc_v3_BodyMutation_set_clear_body_(envoy_service_ext_proc_v3_BodyMutation *msg, bool value) {
   const upb_MiniTableField field = {2, UPB_SIZE(12, 16), -9, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
   upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
