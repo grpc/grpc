@@ -59,7 +59,7 @@ class CertificateSelector {
   // TODO(lwge): Consider supporting DER private key string.
   static absl::StatusOr<SelectCertResult> CreateSelectCertResult(
       const std::vector<std::string>& cert_chain,
-      std::shared_ptr<PrivateKeySigner> private_key);
+      std::shared_ptr<PrivateKeySigner> private_key_signer);
 
   // Takes PEM-formatted cert chains, and PEM-formatted private key string or a
   // signer.

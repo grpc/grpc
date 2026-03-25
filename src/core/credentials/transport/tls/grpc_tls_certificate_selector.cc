@@ -37,7 +37,7 @@ namespace grpc_core {
 absl::StatusOr<CertificateSelector::SelectCertResult>
 CertificateSelector::CreateSelectCertResult(
     const std::vector<std::string>& cert_chain,
-    std::shared_ptr<PrivateKeySigner> key_signer) {
+    std::shared_ptr<PrivateKeySigner> private_key_signer) {
   CertificateSelector::SelectCertResult result;
 #if defined(OPENSSL_IS_BORINGSSL)
   std::vector<bssl::UniquePtr<CRYPTO_BUFFER>> raw_cert_chain;
@@ -52,7 +52,7 @@ CertificateSelector::CreateSelectCertResult(
     raw_cert_chain.push_back(std::move(raw_cert));
   }
   result.cert_chain = std::move(raw_cert_chain);
-  result.private_key = key_signer;
+  result.private_key = private_key_signer;
 #endif
   return result;
 }
