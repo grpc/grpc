@@ -41,6 +41,9 @@ module GRPC
         channel_args['grpc.primary_user_agent'] += ' '
       end
       channel_args['grpc.primary_user_agent'] += "grpc-ruby/#{VERSION}"
+      if creds.is_a?(Core::CompositeChannelCredentials)
+        creds = creds.channel_credentials
+      end
       unless creds.is_a?(Core::ChannelCredentials) ||
              creds.is_a?(Core::XdsChannelCredentials) ||
              creds.is_a?(Symbol)
@@ -101,7 +104,17 @@ module GRPC
                    propagate_mask: nil,
                    channel_args: {},
                    interceptors: [])
-      @ch = ClientStub.setup_channel(channel_override, host, creds,
+      if creds.is_a?(Core::CompositeChannelCredentials)
+        @call_creds = creds.call_credentials
+        @channel_creds = creds.channel_credentials
+      elsif creds.is_a?(Core::CallCredentials)
+        @call_creds = creds
+        @channel_creds = :this_channel_is_insecure
+      else
+        @call_creds = nil
+        @channel_creds = creds
+      end
+      @ch = ClientStub.setup_channel(channel_override, host, @channel_creds,
                                      channel_args.dup)
       alt_host = channel_args[Core::Channel::SSL_TARGET]
       @host = alt_host.nil? ? host : alt_host
@@ -155,29 +168,30 @@ module GRPC
                          metadata: {})
       c = new_active_call(method, marshal, unmarshal,
                           deadline: deadline,
-                          parent: parent,
-                          credentials: credentials)
+                          parent: parent)
+      # Apply credentials before setting up the operation
+      resolved_metadata = apply_credentials_to_metadata(metadata, credentials)
       interception_context = @interceptors.build_context
       intercept_args = {
         method: method,
         request: req,
         call: c.interceptable,
-        metadata: metadata
+        metadata: resolved_metadata
       }
       if return_op
         # return the operation view of the active_call; define #execute as a
         # new method for this instance that invokes #request_response.
-        c.merge_metadata_to_send(metadata)
+        c.merge_metadata_to_send(resolved_metadata)
         op = c.operation
         op.define_singleton_method(:execute) do
           interception_context.intercept!(:request_response, intercept_args) do
-            c.request_response(req, metadata: metadata)
+            c.request_response(req, metadata: resolved_metadata)
           end
         end
         op
       else
         interception_context.intercept!(:request_response, intercept_args) do
-          c.request_response(req, metadata: metadata)
+          c.request_response(req, metadata: resolved_metadata)
         end
       end
     end
@@ -232,19 +246,19 @@ module GRPC
                         metadata: {})
       c = new_active_call(method, marshal, unmarshal,
                           deadline: deadline,
-                          parent: parent,
-                          credentials: credentials)
+                          parent: parent)
+      resolved_metadata = apply_credentials_to_metadata(metadata, credentials)
       interception_context = @interceptors.build_context
       intercept_args = {
         method: method,
         requests: requests,
         call: c.interceptable,
-        metadata: metadata
+        metadata: resolved_metadata
       }
       if return_op
         # return the operation view of the active_call; define #execute as a
         # new method for this instance that invokes #client_streamer.
-        c.merge_metadata_to_send(metadata)
+        c.merge_metadata_to_send(resolved_metadata)
         op = c.operation
         op.define_singleton_method(:execute) do
           interception_context.intercept!(:client_streamer, intercept_args) do
@@ -254,7 +268,7 @@ module GRPC
         op
       else
         interception_context.intercept!(:client_streamer, intercept_args) do
-          c.client_streamer(requests, metadata: metadata)
+          c.client_streamer(requests, metadata: resolved_metadata)
         end
       end
     end
@@ -324,19 +338,19 @@ module GRPC
                         &blk)
       c = new_active_call(method, marshal, unmarshal,
                           deadline: deadline,
-                          parent: parent,
-                          credentials: credentials)
+                          parent: parent)
+      resolved_metadata = apply_credentials_to_metadata(metadata, credentials)
       interception_context = @interceptors.build_context
       intercept_args = {
         method: method,
         request: req,
         call: c.interceptable,
-        metadata: metadata
+        metadata: resolved_metadata
       }
       if return_op
         # return the operation view of the active_call; define #execute
         # as a new method for this instance that invokes #server_streamer
-        c.merge_metadata_to_send(metadata)
+        c.merge_metadata_to_send(resolved_metadata)
         op = c.operation
         op.define_singleton_method(:execute) do
           interception_context.intercept!(:server_streamer, intercept_args) do
@@ -346,7 +360,7 @@ module GRPC
         op
       else
         interception_context.intercept!(:server_streamer, intercept_args) do
-          c.server_streamer(req, metadata: metadata, &blk)
+          c.server_streamer(req, metadata: resolved_metadata, &blk)
         end
       end
     end
@@ -446,19 +460,19 @@ module GRPC
                       &blk)
       c = new_active_call(method, marshal, unmarshal,
                           deadline: deadline,
-                          parent: parent,
-                          credentials: credentials)
+                          parent: parent)
+      resolved_metadata = apply_credentials_to_metadata(metadata, credentials)
       interception_context = @interceptors.build_context
       intercept_args = {
         method: method,
         requests: requests,
         call: c.interceptable,
-        metadata: metadata
+        metadata: resolved_metadata
       }
       if return_op
         # return the operation view of the active_call; define #execute
         # as a new method for this instance that invokes #bidi_streamer
-        c.merge_metadata_to_send(metadata)
+        c.merge_metadata_to_send(resolved_metadata)
         op = c.operation
         op.define_singleton_method(:execute) do
           interception_context.intercept!(:bidi_streamer, intercept_args) do
@@ -468,7 +482,7 @@ module GRPC
         op
       else
         interception_context.intercept!(:bidi_streamer, intercept_args) do
-          c.bidi_streamer(requests, metadata: metadata, &blk)
+          c.bidi_streamer(requests, metadata: resolved_metadata, &blk)
         end
       end
     end
@@ -482,12 +496,9 @@ module GRPC
     # @param unmarshal [Function] f(string)->obj that unmarshals responses
     # @param parent [Grpc::Call] a parent call, available when calls are
     #   made from server
-    # @param credentials [Core::CallCredentials] credentials to use when making
-    #   the call
     def new_active_call(method, marshal, unmarshal,
                         deadline: nil,
-                        parent: nil,
-                        credentials: nil)
+                        parent: nil)
       deadline = from_relative_time(@timeout) if deadline.nil?
       # Provide each new client call with its own completion queue
       call = @ch.create_call(parent, # parent call
@@ -495,9 +506,16 @@ module GRPC
                              method,
                              nil, # host use nil,
                              deadline)
-      call.set_credentials! credentials unless credentials.nil?
       ActiveCall.new(call, marshal, unmarshal, deadline,
                      started: false)
+    end
+
+    # Applies credentials to metadata by resolving and executing credential callbacks
+    # @api private
+    def apply_credentials_to_metadata(metadata, credentials)
+      resolved_creds = Core::CallCredentialsHelper.resolve(@call_creds, credentials)
+      Core::CallCredentialsHelper.apply(resolved_creds, metadata, @host, @channel_creds)
+      metadata
     end
   end
 end

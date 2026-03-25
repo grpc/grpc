@@ -232,7 +232,7 @@ describe 'ClientStub' do  # rubocop:disable Metrics/BlockLength
         th.join
       end
 
-      it 'should receive UNAVAILABLE if call credentials plugin fails' do
+      it 'should receive UNAUTHENTICATED if call credentials plugin fails' do
         server_port = create_secure_test_server
         server_started_notifier = GRPC::Notifier.new
         th = Thread.new do
@@ -261,14 +261,14 @@ describe 'ClientStub' do  # rubocop:disable Metrics/BlockLength
         end
         creds = GRPC::Core::CallCredentials.new(failing_auth)
 
-        unavailable_error_occurred = false
+        unauthenticated_error_occurred = false
         begin
           get_response(stub, credentials: creds)
-        rescue GRPC::Unavailable => e
-          unavailable_error_occurred = true
+        rescue GRPC::Unauthenticated => e
+          unauthenticated_error_occurred = true
           expect(e.details.include?(error_message)).to be true
         end
-        expect(unavailable_error_occurred).to eq(true)
+        expect(unauthenticated_error_occurred).to eq(true)
 
         @server.shutdown_and_notify(Time.now + 3)
         th.join
@@ -301,7 +301,7 @@ describe 'ClientStub' do  # rubocop:disable Metrics/BlockLength
     describe 'via a call operation' do
       after(:each) do
         # make sure op.wait doesn't freeze, even if there's a bad status
-        @op.wait
+        @op&.wait
       end
       def get_response(stub, run_start_call_first: false, credentials: nil)
         @op = stub.request_response(@method, @sent_msg, noop, noop,
@@ -403,7 +403,7 @@ describe 'ClientStub' do  # rubocop:disable Metrics/BlockLength
     describe 'via a call operation' do
       after(:each) do
         # make sure op.wait doesn't freeze, even if there's a bad status
-        @op.wait
+        @op&.wait
       end
       def get_response(stub, run_start_call_first: false)
         @op = stub.client_streamer(@method, @sent_msgs, noop, noop,
@@ -522,7 +522,7 @@ describe 'ClientStub' do  # rubocop:disable Metrics/BlockLength
 
     describe 'via a call operation' do
       after(:each) do
-        @op.wait # make sure wait doesn't freeze
+        @op&.wait
       end
       def get_responses(stub, run_start_call_first: false, unmarshal: noop)
         @op = stub.server_streamer(@method, @sent_msg, noop, unmarshal,
@@ -841,7 +841,7 @@ describe 'ClientStub' do  # rubocop:disable Metrics/BlockLength
 
     describe 'via a call operation' do
       after(:each) do
-        @op.wait # make sure wait doesn't freeze
+        @op&.wait
       end
       def get_responses(stub, run_start_call_first: false, deadline: nil,
                         marshal_proc: noop)
