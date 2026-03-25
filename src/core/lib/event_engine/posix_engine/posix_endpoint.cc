@@ -23,7 +23,9 @@
 #include <limits.h>
 
 #include <algorithm>
+#include <atomic>
 #include <cctype>
+#include <cstddef>
 #include <cstdint>
 #include <cstdlib>
 #include <memory>
@@ -62,6 +64,7 @@
 #include <sys/resource.h>      // IWYU pragma: keep
 #endif
 #include <netinet/in.h>  // IWYU pragma: keep
+#include <sys/un.h>      // IWYU pragma: keep
 
 #ifndef SOL_TCP
 #define SOL_TCP IPPROTO_TCP
@@ -1307,15 +1310,42 @@ PosixEndpointImpl::PosixEndpointImpl(EventHandle* handle,
   auto peer_address = posix_interface.PeerAddress(fd);
   if (peer_address.ok()) {
     peer_address_ = *peer_address;
-    // For Unix domain sockets, if clients don't bind to a path 
+    // For Unix domain sockets, if clients don't bind to a path,
     // getpeername() returns only the address family (size <= sizeof(sa_family_t)),
-    // yielding a truncated URI like "unix:". Fall back to the local address
-    // (the server's socket path) so that ServerContext::peer() returns
-    // a meaningful value instead.
+    // yielding a truncated URI like "unix:".  Build a unique peer address by
+    // appending a per-connection counter to the server's local path so that
+    // each accepted connection is distinguishable via GetPeer().
     if (peer_address_.address()->sa_family == AF_UNIX &&
         peer_address_.size() <= sizeof(sa_family_t) &&
         local_address_.size() > 0) {
-      peer_address_ = local_address_;
+      static std::atomic<uint64_t> uds_conn_id{0};
+      uint64_t id = uds_conn_id.fetch_add(1, std::memory_order_relaxed);
+      const sockaddr_un* local_un =
+          reinterpret_cast<const sockaddr_un*>(local_address_.address());
+      sockaddr_un peer_un{};
+      peer_un.sun_family = AF_UNIX;
+      int written;
+      socklen_t peer_len;
+      if (local_un->sun_path[0] == '\0') {
+        // Abstract socket: sun_path[0] is '\0', name starts at sun_path[1].
+        written =
+            snprintf(peer_un.sun_path + 1, sizeof(peer_un.sun_path) - 1,
+                     "%s_%" PRIu64, local_un->sun_path + 1, id);
+        peer_len = static_cast<socklen_t>(
+            offsetof(struct sockaddr_un, sun_path) + 1 +
+            std::min(written, static_cast<int>(sizeof(peer_un.sun_path) - 1)));
+      } else {
+        // Path-based socket.
+        written = snprintf(peer_un.sun_path, sizeof(peer_un.sun_path),
+                           "%s_%" PRIu64, local_un->sun_path, id);
+        peer_len = static_cast<socklen_t>(
+            offsetof(struct sockaddr_un, sun_path) +
+            std::min(written,
+                     static_cast<int>(sizeof(peer_un.sun_path) - 1)) +
+            1);
+      }
+      peer_address_ = EventEngine::ResolvedAddress(
+          reinterpret_cast<const sockaddr*>(&peer_un), peer_len);
     }
   }
   target_length_ = static_cast<double>(options.tcp_read_chunk_size);
