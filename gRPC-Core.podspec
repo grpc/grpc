@@ -204,7 +204,7 @@ Pod::Spec.new do |s|
     ss.libraries = 'z'
     ss.dependency "#{s.name}/Interface", version
     ss.dependency "#{s.name}/Privacy", version
-    ss.dependency 'BoringSSL-GRPC', '0.0.42'
+    ss.dependency 'BoringSSL-GRPC', '0.0.43'
     ss.dependency 'abseil/algorithm/container', abseil_version
     ss.dependency 'abseil/base/base', abseil_version
     ss.dependency 'abseil/base/config', abseil_version
