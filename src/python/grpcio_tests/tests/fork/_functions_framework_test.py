@@ -64,9 +64,10 @@ def process_call():
     try:
         response = stub.UnaryCall(messages_pb2.SimpleRequest(), timeout=5)
     except grpc.RpcError as e:
-        return f"gRPC error: {e.code().name}\\n"
+    except grpc.RpcError as e:
+        return f"gRPC error: {e.code().name}\n"
     except Exception as e:
-        return f"Other error: {e!r}\\n"
+        return f"Other error: {e!r}\n"
 
     return "OK, called"
 
