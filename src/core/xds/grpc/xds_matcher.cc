@@ -159,7 +159,7 @@ bool XdsMatcherList::AndPredicate::Equals(const Predicate& other) const {
 namespace {
 
 // Code shared between AndPredicate::ToString() and OrPredicate::ToString().
-std::string PredicateListToString(
+ABSL_ATTRIBUTE_NOINLINE std::string PredicateListToString(
     absl::string_view type,
     const std::vector<std::unique_ptr<XdsMatcherList::Predicate>>& predicates) {
   std::string result;
@@ -227,7 +227,7 @@ namespace {
 
 // Code shared between XdsMatcherExactMap::ToString() and
 // XdsMatcherPrefixMap::ToString().
-std::string MatcherMapToString(
+ABSL_ATTRIBUTE_NOINLINE std::string MatcherMapToString(
     absl::string_view type,
     const XdsMatcher::InputValue<absl::string_view>& input,
     std::vector<std::pair<std::string, std::string>> map_entries,
