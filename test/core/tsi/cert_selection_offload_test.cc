@@ -143,8 +143,8 @@ class SslCertSelectorTsiTestFixture {
 
   SslCertSelectorTsiTestFixture(
       const FixtureOptions& options,
-      const std::shared_ptr<grpc_event_engine::experimental::FuzzingEventEngine>&
-          event_engine)
+      const std::shared_ptr<
+          grpc_event_engine::experimental::FuzzingEventEngine>& event_engine)
       : tls_version_(options.tls_version) {
     tsi_test_fixture_init(&base_);
     base_.test_unused_bytes = true;
@@ -154,7 +154,8 @@ class SslCertSelectorTsiTestFixture {
         GetFileContents(absl::StrCat(kTestCredsRelativePath, "server1.key"));
     server_cert_ =
         GetFileContents(absl::StrCat(kTestCredsRelativePath, "server1.pem"));
-    std::variant<absl::string_view, std::shared_ptr<PrivateKeySigner>> private_key;
+    std::variant<absl::string_view, std::shared_ptr<PrivateKeySigner>>
+        private_key;
     if (options.use_signer) {
       if (options.is_private_key_signing_async) {
         private_key = std::make_shared<AsyncTestPrivateKeySigner>(
@@ -321,98 +322,78 @@ class CertSelectionOffloadTest
 };
 
 TEST_P(CertSelectionOffloadTest, SyncCertSelectionWithStaticKeySucceeds) {
-  SslCertSelectorTsiTestFixture::FixtureOptions options{
-      .use_signer = false,
-      .is_cert_selection_async = false,
-      .is_private_key_signing_async = false,
-      .expect_cert_selection_success = true,
-      .expect_private_key_signing_success = true,
-      .tls_version = GetParam(),
-  };
+  SslCertSelectorTsiTestFixture::FixtureOptions options;
+  options.use_signer = false;
+  options.is_cert_selection_async = false;
+  options.expect_cert_selection_success = true;
+  options.tls_version = GetParam();
   auto fixture =
       std::make_shared<SslCertSelectorTsiTestFixture>(options, event_engine_);
   fixture->Run(/*expect_success=*/true, event_engine_.get());
 }
 
 TEST_P(CertSelectionOffloadTest, SyncCertSelectionFails) {
-  SslCertSelectorTsiTestFixture::FixtureOptions options{
-      .use_signer = false,
-      .is_cert_selection_async = false,
-      .is_private_key_signing_async = false,
-      .expect_cert_selection_success = false,
-      .expect_private_key_signing_success = true,
-      .tls_version = GetParam(),
-  };
+  SslCertSelectorTsiTestFixture::FixtureOptions options;
+  options.is_cert_selection_async = false;
+  options.expect_cert_selection_success = false;
+  options.tls_version = GetParam();
   auto fixture =
       std::make_shared<SslCertSelectorTsiTestFixture>(options, event_engine_);
   fixture->Run(/*expect_success=*/false, event_engine_.get());
 }
 
 TEST_P(CertSelectionOffloadTest, SyncCertSelectionWithSyncSignerSucceeds) {
-  SslCertSelectorTsiTestFixture::FixtureOptions options{
-      .use_signer = true,
-      .is_cert_selection_async = false,
-      .is_private_key_signing_async = false,
-      .expect_cert_selection_success = true,
-      .expect_private_key_signing_success = true,
-      .tls_version = GetParam(),
-  };
+  SslCertSelectorTsiTestFixture::FixtureOptions options;
+  options.use_signer = true;
+  options.is_cert_selection_async = false;
+  options.is_private_key_signing_async = false;
+  options.expect_cert_selection_success = true;
+  options.expect_private_key_signing_success = true;
+  options.tls_version = GetParam();
   auto fixture =
       std::make_shared<SslCertSelectorTsiTestFixture>(options, event_engine_);
   fixture->Run(/*expect_success=*/true, event_engine_.get());
 }
 
 TEST_P(CertSelectionOffloadTest, SyncCertSelectionWithAsyncSignerSucceeds) {
-  SslCertSelectorTsiTestFixture::FixtureOptions options{
-      .use_signer = true,
-      .is_cert_selection_async = false,
-      .is_private_key_signing_async = true,
-      .expect_cert_selection_success = true,
-      .expect_private_key_signing_success = true,
-      .tls_version = GetParam(),
-  };
+  SslCertSelectorTsiTestFixture::FixtureOptions options;
+  options.use_signer = true;
+  options.is_cert_selection_async = false;
+  options.is_private_key_signing_async = true;
+  options.expect_cert_selection_success = true;
+  options.expect_private_key_signing_success = true;
+  options.tls_version = GetParam();
   auto fixture =
       std::make_shared<SslCertSelectorTsiTestFixture>(options, event_engine_);
   fixture->Run(/*expect_success=*/true, event_engine_.get());
 }
 
 TEST_P(CertSelectionOffloadTest, AsyncCertSelectionWithStaticKeySucceeds) {
-  SslCertSelectorTsiTestFixture::FixtureOptions options{
-      .use_signer = false,
-      .is_cert_selection_async = true,
-      .is_private_key_signing_async = false,
-      .expect_cert_selection_success = true,
-      .expect_private_key_signing_success = true,
-      .tls_version = GetParam(),
-  };
+  SslCertSelectorTsiTestFixture::FixtureOptions options;
+  options.use_signer = false;
+  options.is_cert_selection_async = true;
+  options.expect_cert_selection_success = true;
+  options.tls_version = GetParam();
   auto fixture =
       std::make_shared<SslCertSelectorTsiTestFixture>(options, event_engine_);
   fixture->Run(/*expect_success=*/true, event_engine_.get());
 }
 
 TEST_P(CertSelectionOffloadTest, AsyncCertSelectionFails) {
-  SslCertSelectorTsiTestFixture::FixtureOptions options{
-      .use_signer = false,
-      .is_cert_selection_async = true,
-      .is_private_key_signing_async = false,
-      .expect_cert_selection_success = false,
-      .expect_private_key_signing_success = true,
-      .tls_version = GetParam(),
-  };
+  SslCertSelectorTsiTestFixture::FixtureOptions options;
+  options.is_cert_selection_async = true;
+  options.expect_cert_selection_success = false;
+  options.tls_version = GetParam();
   auto fixture =
       std::make_shared<SslCertSelectorTsiTestFixture>(options, event_engine_);
   fixture->Run(/*expect_success=*/false, event_engine_.get());
 }
 
 TEST_P(CertSelectionOffloadTest, AsyncCertSelectionCancelled) {
-  SslCertSelectorTsiTestFixture::FixtureOptions options{
-      .use_signer = false,
-      .is_cert_selection_async = true,
-      .is_private_key_signing_async = false,
-      .expect_cert_selection_success = false,
-      .expect_private_key_signing_success = true,
-      .tls_version = GetParam(),
-  };
+  SslCertSelectorTsiTestFixture::FixtureOptions options;
+  options.is_cert_selection_async = true;
+  options.expect_cert_selection_success = true;
+  options.tls_version = GetParam();
   auto fixture =
       std::make_shared<SslCertSelectorTsiTestFixture>(options, event_engine_);
   event_engine_->RunAfter(Duration::Seconds(1),
@@ -422,28 +403,26 @@ TEST_P(CertSelectionOffloadTest, AsyncCertSelectionCancelled) {
 }
 
 TEST_P(CertSelectionOffloadTest, AsyncCertSelectionWithSyncSignerSucceeds) {
-  SslCertSelectorTsiTestFixture::FixtureOptions options{
-      .use_signer = true,
-      .is_cert_selection_async = true,
-      .is_private_key_signing_async = false,
-      .expect_cert_selection_success = true,
-      .expect_private_key_signing_success = true,
-      .tls_version = GetParam(),
-  };
+  SslCertSelectorTsiTestFixture::FixtureOptions options;
+  options.use_signer = true;
+  options.is_cert_selection_async = true;
+  options.is_private_key_signing_async = false;
+  options.expect_cert_selection_success = true;
+  options.expect_private_key_signing_success = true;
+  options.tls_version = GetParam();
   auto fixture =
       std::make_shared<SslCertSelectorTsiTestFixture>(options, event_engine_);
   fixture->Run(/*expect_success=*/true, event_engine_.get());
 }
 
 TEST_P(CertSelectionOffloadTest, AsyncCertSelectionWithAsyncSignerSucceeds) {
-  SslCertSelectorTsiTestFixture::FixtureOptions options{
-      .use_signer = true,
-      .is_cert_selection_async = true,
-      .is_private_key_signing_async = true,
-      .expect_cert_selection_success = true,
-      .expect_private_key_signing_success = true,
-      .tls_version = GetParam(),
-  };
+  SslCertSelectorTsiTestFixture::FixtureOptions options;
+  options.use_signer = true;
+  options.is_cert_selection_async = true;
+  options.is_private_key_signing_async = true;
+  options.expect_cert_selection_success = true;
+  options.expect_private_key_signing_success = true;
+  options.tls_version = GetParam();
   auto fixture =
       std::make_shared<SslCertSelectorTsiTestFixture>(options, event_engine_);
   fixture->Run(/*expect_success=*/true, event_engine_.get());
