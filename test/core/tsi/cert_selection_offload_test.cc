@@ -143,8 +143,8 @@ class SslCertSelectorTsiTestFixture {
 
   SslCertSelectorTsiTestFixture(
       const FixtureOptions& options,
-      const std::shared_ptr<grpc_event_engine::experimental::FuzzingEventEngine>&
-          event_engine)
+      const std::shared_ptr<
+          grpc_event_engine::experimental::FuzzingEventEngine>& event_engine)
       : tls_version_(options.tls_version) {
     tsi_test_fixture_init(&base_);
     base_.test_unused_bytes = true;
@@ -154,7 +154,8 @@ class SslCertSelectorTsiTestFixture {
         GetFileContents(absl::StrCat(kTestCredsRelativePath, "server1.key"));
     server_cert_ =
         GetFileContents(absl::StrCat(kTestCredsRelativePath, "server1.pem"));
-    std::variant<absl::string_view, std::shared_ptr<PrivateKeySigner>> private_key;
+    std::variant<absl::string_view, std::shared_ptr<PrivateKeySigner>>
+        private_key;
     if (options.use_signer) {
       if (options.is_private_key_signing_async) {
         private_key = std::make_shared<AsyncTestPrivateKeySigner>(
