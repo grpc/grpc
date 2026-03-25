@@ -481,7 +481,7 @@ class ObjcLanguage:
     def client_cmd(self, args):
         # from args, extract the server port and craft xcodebuild command out of it
         for arg in args:
-            port = re.search("--server_port=(\d+)", arg)
+            port = re.search(r"--server_port=(\d+)", arg)
             if port:
                 portnum = port.group(1)
                 cmdline = (
