@@ -428,6 +428,36 @@ class ArtifactGen {
     }
   }
 
+  // TODO: As of protobuf 33.x certain upb experimental features are not implemented properly
+  // and gated behind config flag such as //upb:fasttable_enabled_setting.
+  //
+  // Our codegen tooling uses bazel query which doesn't resolve such conditional dependencies
+  // properly, so we do manual pruning here as a temporary fix.
+  //
+  // Better solutions would be using more accurate resolution with `bazel cquery`,
+  // and/or use protobuf's official cmake/libupb.cmake for our cmake builds.
+  void PruneUpbExperimentalFeatures() {
+    // constexpr char kUpbTargetPattern[] = "//upb";
+    constexpr char kUpbDecodeFastTargetPattern[] = "//upb/wire/decode_fast";
+    auto it_rule = rules_.begin();
+    while (it_rule != rules_.end()){
+      BazelRule& rule = it_rule->second;
+      if (absl::StrContains(rule.name, kUpbDecodeFastTargetPattern)){
+        it_rule = rules_.erase(it_rule);
+        continue;
+      }
+      // Use index to avoid iterator invalidation.
+      for (int i = 0; i < rule.deps.size(); ){
+        if (absl::StrContains(rule.deps[i], kUpbDecodeFastTargetPattern)){
+          rule.deps.erase(rule.deps.begin() + i);
+        } else {
+          ++i;
+        }
+      }
+      ++it_rule;
+    }
+  }
+
   void ExpandUpbProtoLibraryRules() {
     const std::string kGenUpbRoot = "//:src/core/ext/upb-gen/";
     const std::string kGenUpbdefsRoot = "//:src/core/ext/upbdefs-gen/";
@@ -1198,7 +1228,10 @@ nlohmann::json ExtractMetadataFromBazelXml() {
   for (auto target_query : absl::GetFlag(FLAGS_target_query)) {
     generator.LoadRulesXml(target_query);
   }
+
   generator.ExpandUpbProtoLibraryRules();
+  generator.PruneUpbExperimentalFeatures();
+
   generator.PatchGrpcProtoLibraryRules();
   generator.PatchDescriptorUpbProtoLibrary();
   generator.PopulateCcTests();
