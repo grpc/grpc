@@ -54,8 +54,7 @@
 namespace grpc_core {
 namespace testing {
 namespace {
-constexpr absl::string_view kTestCredsRelativePath =
-    "src/core/tsi/test_creds/";
+constexpr absl::string_view kTestCredsRelativePath = "src/core/tsi/test_creds/";
 const char kServerName[] = "foo.test.google.fr";
 
 std::vector<std::string> GetCertChain(absl::string_view cert) {

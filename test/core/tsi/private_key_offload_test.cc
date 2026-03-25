@@ -41,8 +41,7 @@ namespace grpc_core {
 namespace testing {
 
 namespace {
-constexpr absl::string_view kTestCredsRelativePath =
-    "src/core/tsi/test_creds/";
+constexpr absl::string_view kTestCredsRelativePath = "src/core/tsi/test_creds/";
 
 enum class OffloadParty {
   kClient,

@@ -1,3 +1,5 @@
+#ifndef GRPC_SRC_CORE_TSI_SSL_TRANSPORT_SECURITY_H
+#define GRPC_SRC_CORE_TSI_SSL_TRANSPORT_SECURITY_H
 #include <cstdint>
 #include <variant>
 #include <vector>
@@ -19,9 +21,6 @@
 // limitations under the License.
 //
 //
-
-#ifndef GRPC_SRC_CORE_TSI_SSL_TRANSPORT_SECURITY_H
-#define GRPC_SRC_CORE_TSI_SSL_TRANSPORT_SECURITY_H
 
 #include <grpc/grpc_crl_provider.h>
 #include <grpc/grpc_security_constants.h>
