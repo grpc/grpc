@@ -198,7 +198,7 @@ def _generate_deps_file_content():
             and not name.endswith((".upb.c", ".upb_minitable.c"))
         ):
             filepath = _bazel_name_to_file_path(name)
-            if filepath and '/upb/wire/decode_fast' not in filepath:
+            if filepath:
                 cc_files.add(filepath)
 
     deps_file_content = DEPS_FILE_CONTENT.format(

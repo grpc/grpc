@@ -163,6 +163,9 @@ def _bazel_query_xml_tree(query: str) -> ET.Element:
     args = [
         "tools/bazel",
         "query",
+        # TODO(weizheyuan): Remove these 2 arguments once migration is finished.
+        "--enable_bzlmod",
+        "--noenable_workspace",
         "--noimplicit_deps",
         "--output",
         "xml",
@@ -681,21 +684,6 @@ def _prefix_to_strip(proto_src):
     if apparent_repo is None:
         return None
 
-# TODO: As of protobuf 33.x certain upb experimental features are not implemented properly
-# and gated behind config flag such as //upb:fasttable_enabled_setting.
-# 
-# Our codegen tooling uses bazel query which doesn't resolve such conditional dependencies
-# properly, so we do manual pruning here as a temporary fix.
-# 
-# Better solutions would be using more accurate resolution with `bazel cquery`,
-# and/or use protobuf's official cmake/libupb.cmake for our cmake builds.
-def _prune_upb_experimental_feature_rules(bazel_rules: BuildDict):
-    UPB_DECODE_FAST_TARGET_PATTERN = "//upb/wire/decode_fast"
-    bazel_rules = {k: v for k, v in bazel_rules.items() if UPB_DECODE_FAST_TARGET_PATTERN not in k}
-
-    for rule_name, rule in bazel_rules.items():
-        rule["deps"] = [dep for dep in rule["deps"] if UPB_DECODE_FAST_TARGET_PATTERN not in dep]
-    
 
 def _expand_upb_proto_library_rules(bazel_rules):
     # Expand the .proto files from UPB proto library rules into the pre-generated
@@ -1486,7 +1474,6 @@ for query in _BAZEL_DEPS_QUERIES:
 # to expand the UPB proto library bazel rules into the generated
 # .upb.h and .upb.c files.
 _expand_upb_proto_library_rules(bazel_rules)
-_prune_upb_experimental_feature_rules(bazel_rules)
 
 
 # Step 1.6: Add explicit protobuf dependency to grpc_proto_library rules
