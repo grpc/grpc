@@ -261,7 +261,7 @@ class grpc_ssl_server_security_connector
           tsi_create_ssl_server_handshaker_factory_with_options(
               &options, &server_handshaker_factory_);
       if (alpn_string_parsed) {
-        for (int i = 0; i < num_alpn_protocols; ++i) {
+        for (size_t i = 0; i < num_alpn_protocols; ++i) {
           gpr_free(const_cast<char*>(alpn_protocol_strings[i]));
         }
       }
