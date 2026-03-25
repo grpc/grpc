@@ -94,3 +94,4 @@ ArityAgnosticMethodHandler = Union[
         [Iterator[RequestType], "ServicerContext"], Iterator[ResponseType]
     ],
 ]
+StrOrBytes = Union[str, bytes]
