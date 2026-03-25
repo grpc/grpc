@@ -14,8 +14,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_TEST_CORE_TSI_PRIVATE_KEY_SIGNER_TEST_UTIL_H_
-#define GRPC_TEST_CORE_TSI_PRIVATE_KEY_SIGNER_TEST_UTIL_H_
+#ifndef GRPC_TEST_CORE_TSI_PRIVATE_KEY_SIGNER_TEST_UTIL_H
+#define GRPC_TEST_CORE_TSI_PRIVATE_KEY_SIGNER_TEST_UTIL_H
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/private_key_signer.h>
@@ -86,4 +86,4 @@ class AsyncTestPrivateKeySigner final
 }  // namespace testing
 }  // namespace grpc_core
 
-#endif  // GRPC_TEST_CORE_TSI_PRIVATE_KEY_SIGNER_TEST_UTIL_H_
+#endif  // GRPC_TEST_CORE_TSI_PRIVATE_KEY_SIGNER_TEST_UTIL_H
