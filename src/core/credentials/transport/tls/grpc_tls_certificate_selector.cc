@@ -81,7 +81,7 @@ CertificateSelector::CreateSelectCertResult(
   }
   result.cert_chain = std::move(raw_cert_chain);
   absl::Status status = absl::OkStatus();
-  grpc_core::MatchMutable(
+  MatchMutable(
       &private_key,
       [&](absl::string_view* key) {
         GRPC_CHECK_LE(key->size(), static_cast<size_t>(INT_MAX));
