@@ -68,7 +68,7 @@ CertificateSelector::CreateSelectCertResult(
   bssl::UniquePtr<BIO> bio(
       BIO_new_mem_buf(cert_chain.data(), cert_chain.size()));
   uint8_t* cert_data = nullptr;
-  int64_t cert_len;
+  long cert_len;
   while (PEM_bytes_read_bio(&cert_data, &cert_len, nullptr, PEM_STRING_X509,
                             bio.get(), nullptr, nullptr)) {
     raw_cert_chain.push_back(bssl::UniquePtr<CRYPTO_BUFFER>(

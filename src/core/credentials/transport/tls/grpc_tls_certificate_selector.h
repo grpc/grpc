@@ -33,6 +33,13 @@
 
 namespace grpc_core {
 
+// Performs server-side certificate selection per TLS handshake.
+// Users should implement the `SelectCert` API. It should either return the
+// result synchronously or an async handle to support cancellation. In the
+// asynchronous case, the implementation is expected to invoke
+// `OnSelectCertComplete` when the cert selection is done. Users should use the
+// appropriate `CreateSelectCertResults` function to create the
+// `SelectCertResult` struct.
 class CertificateSelector {
  public:
   struct SelectCertInfo {
@@ -58,7 +65,8 @@ class CertificateSelector {
   // signer.
   static absl::StatusOr<SelectCertResult> CreateSelectCertResult(
       absl::string_view cert_chain,
-      std::variant<absl::string_view, std::shared_ptr<PrivateKeySigner>> private_key);
+      std::variant<absl::string_view, std::shared_ptr<PrivateKeySigner>>
+          private_key);
 
   class AsyncCertSelectionHandle {
    public:
