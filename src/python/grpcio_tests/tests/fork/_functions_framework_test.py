@@ -13,7 +13,7 @@
 # limitations under the License.
 
 import os
-from pathlib import Path
+
 import socket
 import subprocess
 import sys
@@ -37,44 +37,7 @@ def _dump_streams(name, streams):
         stream.close()
     sys.stderr.flush()
 
-_CLIENT_FORK_SCRIPT_TEMPLATE = """
-import os
-import time
 
-import functions_framework
-import grpc
-
-from src.proto.grpc.testing import test_pb2
-from src.proto.grpc.testing import test_pb2_grpc
-from src.proto.grpc.testing import messages_pb2
-
-channel = grpc.insecure_channel("localhost:%d")
-stub = test_pb2_grpc.TestServiceStub(channel)
-
-
-def initial_call():
-    response = stub.UnaryCall(messages_pb2.SimpleRequest(), timeout=5)
-
-
-if os.getenv("TEST_INITIAL_CALL", "0") == "1":
-    initial_call()
-
-def process_call():
-    try:
-        response = stub.UnaryCall(messages_pb2.SimpleRequest(), timeout=5)
-    except grpc.RpcError as e:
-    except grpc.RpcError as e:
-        return f"gRPC error: {e.code().name}\n"
-    except Exception as e:
-        return f"Other error: {e!r}\n"
-
-    return "OK, called"
-
-
-@functions_framework.http
-def hello(request):
-    return process_call()
-"""
 
 _SUBPROCESS_TIMEOUT_S = 80
 
@@ -98,13 +61,9 @@ class FunctionsFrameworkForkTest(unittest.TestCase):
         port = server.add_insecure_port("[::]:0")
         server.start()
 
-        script = _CLIENT_FORK_SCRIPT_TEMPLATE % port
+        # No need to write temp file, the script is extracted to a separate file.
+        script_path = os.path.join(os.path.dirname(__file__), "_functions_framework_app.py")
 
-        # We need to run functions framework targeting this script.
-        # Write the script to a temporary file.
-        fd, script_path = tempfile.mkstemp(suffix=".py")
-        os.write(fd, script.encode())
-        os.close(fd)
 
         streams = tuple(tempfile.TemporaryFile() for _ in range(2))
 
@@ -116,6 +75,8 @@ class FunctionsFrameworkForkTest(unittest.TestCase):
 
         if initial_call:
             env["TEST_INITIAL_CALL"] = "1"
+
+        env["GRPC_SERVER_PORT"] = str(port)
 
         # Ensure PYTHONPATH is passed to the subprocess (macOS SIP strips it by default)
         env["PYTHONPATH"] = os.environ.get("PYTHONPATH", "")
@@ -158,7 +119,7 @@ class FunctionsFrameworkForkTest(unittest.TestCase):
 
             self.assertIn("OK", resp_text, f"Framework HTTP request failed: {resp_text}")
         finally:
-            Path.unlink(script_path)
+            # No need cleanup for fixed file
             # Dump output as in the original fork interop test
             _dump_streams("Client", streams)
 
