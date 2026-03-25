@@ -223,7 +223,7 @@ def _generate_deps_file_content():
     for name in cc_files_output:
         if name.endswith(".c") or name.endswith(".cc"):
             filepath = _bazel_name_to_file_path(name)
-            if filepath:
+            if filepath and '/upb/wire/decode_fast' not in filepath:
                 cc_files.append(filepath)
 
     # Collect list of .proto files that will be bundled in the grpcio_tools package.
