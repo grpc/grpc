@@ -21,7 +21,7 @@ import grpc
 from grpc import _common
 from grpc._cython import cygrpc
 from grpc._typing import MetadataType
-from grpc._typing import StrOrBytesType
+from grpc._typing import StrOrBytes
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -99,10 +99,10 @@ class _Plugin(object):
 
     def __call__(
         self,
-        service_url: StrOrBytesType,
-        method_name: StrOrBytesType,
+        service_url: StrOrBytes,
+        method_name: StrOrBytes,
         callback: Callable,
-    ):
+    ) -> None:
         context = _AuthMetadataContext(
             _common.decode(service_url), _common.decode(method_name)
         )
