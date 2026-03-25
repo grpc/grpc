@@ -501,7 +501,8 @@ PrepareSelectCertInfo(const SSL_CLIENT_HELLO* client_hello) {
   if (sni == nullptr) {
     return absl::InvalidArgumentError("No server name from client hello.");
   }
-  grpc_core::CertificateSelector::SelectCertInfo select_cert_info{.sni = sni};
+  grpc_core::CertificateSelector::SelectCertInfo select_cert_info;
+  select_cert_info.sni = sni;
   return select_cert_info;
 }
 
