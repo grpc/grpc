@@ -4574,12 +4574,21 @@ grpc_cc_library(
     hdrs = [
         "credentials/transport/tls/grpc_tls_certificate_selector.h",
     ],
+    srcs = [
+        "credentials/transport/tls/grpc_tls_certificate_selector.cc",
+    ],
     external_deps = [
+        "absl/status",
         "absl/status:statusor",
         "absl/functional:any_invocable",
+        "absl/strings",
+        "libcrypto",
+        "libssl",
     ],
     deps = [
         "//:grpc_public_hdrs",
+        "grpc_check",
+        "match",
     ],
 )
 

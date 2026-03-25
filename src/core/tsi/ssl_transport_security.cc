@@ -505,69 +505,34 @@ PrepareSelectCertInfo(const SSL_CLIENT_HELLO* client_hello) {
   return select_cert_info;
 }
 
-absl::StatusOr<std::vector<bssl::UniquePtr<CRYPTO_BUFFER>>> PrepareRawCertChain(
-    grpc_core::CertificateSelector::SelectCertResult& result) {
-  std::vector<bssl::UniquePtr<CRYPTO_BUFFER>> raw_cert_chain;
-  raw_cert_chain.reserve(result.certificate_chain.size());
-  for (absl::string_view cert : result.certificate_chain) {
-    bssl::UniquePtr<CRYPTO_BUFFER> raw_cert(CRYPTO_BUFFER_new(
-        reinterpret_cast<const unsigned char*>(cert.data()), cert.size(),
-        /*pool=*/nullptr));
-    if (raw_cert == nullptr) {
-      return absl::InvalidArgumentError("Failed to create crypto buffer.");
-    }
-    raw_cert_chain.push_back(std::move(raw_cert));
-  }
-  return raw_cert_chain;
-}
-
 absl::Status ProcessSelectCertResult(
     tsi_ssl_handshaker* handshaker,
     grpc_core::CertificateSelector::SelectCertResult result)
     ABSL_EXCLUSIVE_LOCKS_REQUIRED(&tsi_ssl_handshaker::mu) {
-  absl::StatusOr<std::vector<bssl::UniquePtr<CRYPTO_BUFFER>>> raw_cert_chain =
-      PrepareRawCertChain(result);
-  absl::Status status = absl::OkStatus();
-  if (!raw_cert_chain.ok()) {
-    return raw_cert_chain.status();
-  } else {
-    std::vector<CRYPTO_BUFFER*> cert_chain;
-    cert_chain.reserve(raw_cert_chain->size());
-    for (auto& raw_cert : *raw_cert_chain) {
-      cert_chain.push_back(raw_cert.get());
-    }
-    grpc_core::MatchMutable(
-        &result.private_key,
-        [&](std::string* private_key) {
-          GRPC_CHECK_LE(private_key->size(), static_cast<size_t>(INT_MAX));
-          bssl::UniquePtr<BIO> pem(BIO_new_mem_buf(
-              private_key->data(), static_cast<int>(private_key->size())));
-          if (pem == nullptr) {
-            status = absl::InternalError("Failed to create pem BIO.");
-            return;
-          }
-          bssl::UniquePtr<EVP_PKEY> pkey(PEM_read_bio_PrivateKey(
-              pem.get(), nullptr, nullptr, const_cast<char*>("")));
-          if (pkey == nullptr) {
-            status = absl::InvalidArgumentError("Failed to read private key.");
-            return;
-          }
-          if (!SSL_set_chain_and_key(handshaker->ssl, cert_chain.data(),
-                                     cert_chain.size(), pkey.get(),
-                                     /*privkey_method=*/nullptr)) {
-            status = absl::InternalError("Failed to set chain and key.");
-          }
-        },
-        [&](std::shared_ptr<grpc_core::PrivateKeySigner>* key_signer)
-            ABSL_NO_THREAD_SAFETY_ANALYSIS {
-              handshaker->key_signer = std::move(*key_signer);
-              if (!SSL_set_chain_and_key(
-                      handshaker->ssl, cert_chain.data(), cert_chain.size(),
-                      /*privkey=*/nullptr, &TlsOffloadPrivateKeyMethod)) {
-                status = absl::InternalError("Failed to set chain and key.");
-              }
-            });
+  std::vector<CRYPTO_BUFFER*> cert_chain;
+  cert_chain.reserve(result.cert_chain.size());
+  for (auto& raw_cert : result.cert_chain) {
+    cert_chain.push_back(raw_cert.get());
   }
+  absl::Status status = absl::OkStatus();
+  grpc_core::MatchMutable(
+      &result.private_key,
+      [&](bssl::UniquePtr<EVP_PKEY>* key) {
+        if (!SSL_set_chain_and_key(handshaker->ssl, cert_chain.data(),
+                                   cert_chain.size(), key->get(),
+                                   /*privkey_method=*/nullptr)) {
+          status = absl::InternalError("Failed to set chain and key.");
+        }
+      },
+      [&](std::shared_ptr<grpc_core::PrivateKeySigner>* signer)
+          ABSL_NO_THREAD_SAFETY_ANALYSIS {
+            handshaker->key_signer = std::move(*signer);
+            if (!SSL_set_chain_and_key(
+                    handshaker->ssl, cert_chain.data(), cert_chain.size(),
+                    /*privkey=*/nullptr, &TlsOffloadPrivateKeyMethod)) {
+              status = absl::InternalError("Failed to set chain and key.");
+            }
+          });
   return status;
 }
 

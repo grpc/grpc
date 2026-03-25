@@ -337,10 +337,6 @@ grpc_cc_test(
     srcs = ["cert_selection_offload_test.cc"],
     data = [
         "//src/core/tsi/test_creds:ca.pem",
-        "//src/core/tsi/test_creds:client.key",
-        "//src/core/tsi/test_creds:client.pem",
-        "//src/core/tsi/test_creds:client1.key",
-        "//src/core/tsi/test_creds:server0.key",
         "//src/core/tsi/test_creds:server1.key",
         "//src/core/tsi/test_creds:server1.pem",
     ],

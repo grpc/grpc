@@ -19,12 +19,10 @@
 #include <grpc/private_key_signer.h>
 
 #include <atomic>
-#include <cstdint>
 #include <memory>
 #include <string>
 #include <utility>
 #include <variant>
-#include <vector>
 
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/timer_manager.h"
@@ -54,35 +52,19 @@
 namespace grpc_core {
 namespace testing {
 namespace {
-constexpr absl::string_view kTestCredsRelativePath =
-    "src/core/tsi/test_creds/";
+constexpr absl::string_view kTestCredsRelativePath = "src/core/tsi/test_creds/";
 const char kServerName[] = "foo.test.google.fr";
-
-std::vector<std::string> GetCertChain(absl::string_view cert) {
-  std::vector<std::string> cert_chain;
-  bssl::UniquePtr<BIO> bio(BIO_new_mem_buf(cert.data(), cert.size()));
-  uint8_t* cert_data = nullptr;
-  int64_t cert_len;
-  while (PEM_bytes_read_bio(&cert_data, &cert_len, nullptr, PEM_STRING_X509,
-                            bio.get(), nullptr, nullptr)) {
-    cert_chain.push_back(
-        std::string(reinterpret_cast<char*>(cert_data), cert_len));
-    OPENSSL_free(cert_data);
-  }
-  return cert_chain;
-}
 
 class SyncTestCertificateSelector : public CertificateSelector {
  public:
   SyncTestCertificateSelector(
-      std::string cert,
-      std::variant<std::string, std::shared_ptr<PrivateKeySigner>> private_key,
+      absl::string_view cert_chain,
+      std::variant<absl::string_view, std::shared_ptr<PrivateKeySigner>>
+          private_key,
       bool expect_success = true)
-      : cert_chain_(GetCertChain(cert)),
+      : cert_chain_(cert_chain),
         private_key_(std::move(private_key)),
-        expect_success_(expect_success) {
-    bssl::UniquePtr<BIO> bio(BIO_new_mem_buf(cert.data(), cert.size()));
-  }
+        expect_success_(expect_success) {}
 
   std::variant<absl::StatusOr<SelectCertResult>,
                std::shared_ptr<AsyncCertSelectionHandle>>
@@ -90,30 +72,28 @@ class SyncTestCertificateSelector : public CertificateSelector {
     if (!expect_success_) {
       return absl::InternalError("Failed to select cert.");
     }
-    SelectCertResult result{
-        .certificate_chain = cert_chain_,
-        .private_key = private_key_,
-    };
-    return result;
+    return CreateSelectCertResult(cert_chain_, private_key_);
   }
 
   void Cancel(std::shared_ptr<AsyncCertSelectionHandle> /*handle*/) override {}
 
  private:
-  std::vector<std::string> cert_chain_;
-  std::variant<std::string, std::shared_ptr<PrivateKeySigner>> private_key_;
+  absl::string_view cert_chain_;
+  std::variant<absl::string_view, std::shared_ptr<PrivateKeySigner>>
+      private_key_;
   bool expect_success_;
 };
 
 class AsyncTestCertificateSelector : public CertificateSelector {
  public:
   AsyncTestCertificateSelector(
-      std::string cert,
-      std::variant<std::string, std::shared_ptr<PrivateKeySigner>> private_key,
+      absl::string_view cert_chain,
+      std::variant<absl::string_view, std::shared_ptr<PrivateKeySigner>>
+          private_key,
       std::shared_ptr<grpc_event_engine::experimental::FuzzingEventEngine>
           event_engine,
       bool expect_success = true)
-      : cert_chain_(GetCertChain(cert)),
+      : cert_chain_(cert_chain),
         private_key_(std::move(private_key)),
         event_engine_(std::move(event_engine)),
         expect_success_(expect_success) {}
@@ -122,20 +102,15 @@ class AsyncTestCertificateSelector : public CertificateSelector {
                std::shared_ptr<AsyncCertSelectionHandle>>
   SelectCert(const SelectCertInfo&, OnSelectCertComplete on_complete) override {
     auto handle = std::make_shared<AsyncCertSelectionHandle>();
-    event_engine_->RunAfter(
-        Duration::Seconds(2),
-        [this, handle, on_complete = std::move(on_complete)]() mutable {
-          if (!expect_success_) {
-            std::move(on_complete)(
-                absl::InternalError("Failed to select cert."));
-            return;
-          }
-          SelectCertResult result{
-              .certificate_chain = cert_chain_,
-              .private_key = private_key_,
-          };
-          std::move(on_complete)(result);
-        });
+    event_engine_->RunAfter(Duration::Seconds(2), [this, handle,
+                                                   on_complete = std::move(
+                                                       on_complete)]() mutable {
+      if (!expect_success_) {
+        std::move(on_complete)(absl::InternalError("Failed to select cert."));
+        return;
+      }
+      std::move(on_complete)(CreateSelectCertResult(cert_chain_, private_key_));
+    });
     return handle;
   }
 
@@ -146,8 +121,9 @@ class AsyncTestCertificateSelector : public CertificateSelector {
   bool WasCancelled() { return was_cancelled_.load(); }
 
  private:
-  std::vector<std::string> cert_chain_;
-  std::variant<std::string, std::shared_ptr<PrivateKeySigner>> private_key_;
+  absl::string_view cert_chain_;
+  std::variant<absl::string_view, std::shared_ptr<PrivateKeySigner>>
+      private_key_;
   std::shared_ptr<grpc_event_engine::experimental::FuzzingEventEngine>
       event_engine_;
   bool expect_success_;
@@ -167,7 +143,7 @@ class SslCertSelectorTsiTestFixture {
 
   SslCertSelectorTsiTestFixture(
       const FixtureOptions& options,
-      std::shared_ptr<grpc_event_engine::experimental::FuzzingEventEngine>
+      const std::shared_ptr<grpc_event_engine::experimental::FuzzingEventEngine>&
           event_engine)
       : tls_version_(options.tls_version) {
     tsi_test_fixture_init(&base_);
@@ -178,7 +154,7 @@ class SslCertSelectorTsiTestFixture {
         GetFileContents(absl::StrCat(kTestCredsRelativePath, "server1.key"));
     server_cert_ =
         GetFileContents(absl::StrCat(kTestCredsRelativePath, "server1.pem"));
-    std::variant<std::string, std::shared_ptr<PrivateKeySigner>> private_key;
+    std::variant<absl::string_view, std::shared_ptr<PrivateKeySigner>> private_key;
     if (options.use_signer) {
       if (options.is_private_key_signing_async) {
         private_key = std::make_shared<AsyncTestPrivateKeySigner>(

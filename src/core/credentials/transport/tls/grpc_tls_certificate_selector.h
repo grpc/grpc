@@ -19,6 +19,8 @@
 #define GRPC_SRC_CORE_CREDENTIALS_TRANSPORT_TLS_GRPC_TLS_CERTIFICATE_SELECTOR_H_
 
 #include <grpc/private_key_signer.h>
+#include <openssl/bio.h>
+#include <openssl/ssl.h>
 
 #include <memory>
 #include <string>
@@ -27,10 +29,9 @@
 
 #include "absl/functional/any_invocable.h"
 #include "absl/status/statusor.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
-
-using PrivateKey = std::variant<std::string, std::shared_ptr<PrivateKeySigner>>;
 
 class CertificateSelector {
  public:
@@ -38,11 +39,26 @@ class CertificateSelector {
     std::string sni;
   };
 
+  // TODO(lwge): This should be an opaque struct when moved to a public header.
   struct SelectCertResult {
-    // The certificates must be DER-encoded here.
-    std::vector<std::string> certificate_chain;
-    PrivateKey private_key;
+#if defined(OPENSSL_IS_BORINGSSL)
+    std::vector<bssl::UniquePtr<CRYPTO_BUFFER>> cert_chain;
+    std::variant<bssl::UniquePtr<EVP_PKEY>, std::shared_ptr<PrivateKeySigner>>
+        private_key;
+#endif
   };
+
+  // Takes DER-formatted cert chains, and a signer.
+  // TODO(lwge): Consider supporting DER private key string.
+  static absl::StatusOr<SelectCertResult> CreateSelectCertResult(
+      const std::vector<std::string>& cert_chain,
+      std::shared_ptr<PrivateKeySigner> private_key);
+
+  // Takes PEM-formatted cert chains, and PEM-formatted private key string or a
+  // signer.
+  static absl::StatusOr<SelectCertResult> CreateSelectCertResult(
+      absl::string_view cert_chain,
+      std::variant<absl::string_view, std::shared_ptr<PrivateKeySigner>> private_key);
 
   class AsyncCertSelectionHandle {
    public:

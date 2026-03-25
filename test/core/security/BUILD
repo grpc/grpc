@@ -139,3 +139,26 @@ grpc_cc_test(
         "//test/core/test_util:grpc_test_util",
     ],
 )
+
+grpc_cc_test(
+    name = "grpc_tls_certificate_selector_test",
+    srcs = ["grpc_tls_certificate_selector_test.cc"],
+    data = [
+        "//src/core/tsi/test_creds:server1.key",
+        "//src/core/tsi/test_creds:server1.pem",
+    ],
+    external_deps = [
+        "gtest",
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
+        "libssl",
+        "libcrypto",
+    ],
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//src/core:grpc_tls_certificate_selector",
+        "//test/core/test_util:grpc_test_util",
+    ],
+)
