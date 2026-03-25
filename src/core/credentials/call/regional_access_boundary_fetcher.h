@@ -142,7 +142,7 @@ class EmailFetcher final : public DualRefCounted<EmailFetcher> {
           .set_initial_backoff(Duration::Seconds(15))
           .set_multiplier(1.75)
           .set_jitter(0.1)
-          .set_max_backoff(Duration::Hours(6)));
+          .set_max_backoff(Duration::Minutes(2)));
   Timestamp next_fetch_earliest_time_ ABSL_GUARDED_BY(&mu_) = Timestamp::InfPast();
 };
 
