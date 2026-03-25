@@ -103,7 +103,7 @@ class FunctionsFrameworkForkTest(unittest.TestCase):
         # We need to run functions framework targeting this script.
         # Write the script to a temporary file.
         fd, script_path = tempfile.mkstemp(suffix=".py")
-        os.write(fd, script)
+        os.write(fd, script.encode())
         os.close(fd)
 
         streams = tuple(tempfile.TemporaryFile() for _ in range(2))
