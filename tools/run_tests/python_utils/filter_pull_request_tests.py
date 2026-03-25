@@ -117,7 +117,7 @@ _ALLOWLIST_DICT = {
 }
 
 # Regex that combines all keys in _ALLOWLIST_DICT
-_ALL_TRIGGERS = re.compile(f"({")|(".join(_ALLOWLIST_DICT)})")
+_ALL_TRIGGERS = re.compile(f"({')|('.join(_ALLOWLIST_DICT)})")
 
 # Add all triggers to their respective test suites
 for trigger, test_suites in _ALLOWLIST_DICT.items():
