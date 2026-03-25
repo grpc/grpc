@@ -1456,6 +1456,7 @@ libs:
   - src/core/credentials/transport/tls/grpc_tls_certificate_distributor.cc
   - src/core/credentials/transport/tls/grpc_tls_certificate_match.cc
   - src/core/credentials/transport/tls/grpc_tls_certificate_provider.cc
+  - src/core/credentials/transport/tls/grpc_tls_certificate_selector.cc
   - src/core/credentials/transport/tls/grpc_tls_certificate_verifier.cc
   - src/core/credentials/transport/tls/grpc_tls_credentials_options.cc
   - src/core/credentials/transport/tls/grpc_tls_crl_provider.cc
@@ -14712,6 +14713,16 @@ targets:
   headers: []
   src:
   - test/core/credentials/transport/tls/grpc_tls_certificate_provider_test.cc
+  deps:
+  - gtest
+  - grpc_test_util
+- name: grpc_tls_certificate_selector_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/security/grpc_tls_certificate_selector_test.cc
   deps:
   - gtest
   - grpc_test_util

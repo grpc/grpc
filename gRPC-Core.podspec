@@ -439,6 +439,7 @@ Pod::Spec.new do |s|
                       'src/core/credentials/transport/tls/grpc_tls_certificate_match.cc',
                       'src/core/credentials/transport/tls/grpc_tls_certificate_provider.cc',
                       'src/core/credentials/transport/tls/grpc_tls_certificate_provider.h',
+                      'src/core/credentials/transport/tls/grpc_tls_certificate_selector.cc',
                       'src/core/credentials/transport/tls/grpc_tls_certificate_selector.h',
                       'src/core/credentials/transport/tls/grpc_tls_certificate_verifier.cc',
                       'src/core/credentials/transport/tls/grpc_tls_certificate_verifier.h',
