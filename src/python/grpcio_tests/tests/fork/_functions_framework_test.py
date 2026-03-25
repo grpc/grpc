@@ -139,7 +139,7 @@ class FunctionsFrameworkForkTest(unittest.TestCase):
             req = urllib.request.Request(f"http://localhost:{framework_port}/")
             try:
                 with urllib.request.urlopen(req, timeout=10) as response: # noqa: S310
-                    resp_text = response.read()
+                    resp_text = response.read().decode()
             except Exception as e:
                 # server might not be serving successfully, ignore
                 resp_text = str(e)
