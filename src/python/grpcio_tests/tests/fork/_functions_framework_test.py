@@ -119,8 +119,6 @@ class FunctionsFrameworkForkTest(unittest.TestCase):
 
             self.assertIn("OK", resp_text, f"Framework HTTP request failed: {resp_text}")
         finally:
-            # No need cleanup for fixed file
-            # Dump output as in the original fork interop test
             _dump_streams("Client", streams)
 
             server.stop(None).wait()
