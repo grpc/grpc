@@ -34118,7 +34118,6 @@ if(gRPC_BUILD_TESTS)
 
 add_executable(test_core_client_channel_subchannel_metrics_test
   test/core/client_channel/subchannel_metrics_test.cc
-  test/core/test_util/fake_stats_plugin.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)

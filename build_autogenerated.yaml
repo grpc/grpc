@@ -24277,11 +24277,9 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers:
-  - test/core/test_util/fake_stats_plugin.h
+  headers: []
   src:
   - test/core/client_channel/subchannel_metrics_test.cc
-  - test/core/test_util/fake_stats_plugin.cc
   deps:
   - gtest
   - grpc_test_util
