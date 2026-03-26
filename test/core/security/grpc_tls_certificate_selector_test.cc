@@ -57,7 +57,7 @@ class TlsCertificateSelectorTest : public ::testing::Test {
     std::vector<std::string> cert_chain;
     BIO* bio = BIO_new_mem_buf(chain.data(), chain.size());
     uint8_t* cert_data = nullptr;
-    int64_t cert_len;
+    long cert_len;
     while (PEM_bytes_read_bio(&cert_data, &cert_len, nullptr, PEM_STRING_X509,
                               bio, nullptr, nullptr)) {
       cert_chain.push_back(

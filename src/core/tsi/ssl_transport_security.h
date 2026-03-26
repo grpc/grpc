@@ -1,9 +1,3 @@
-#ifndef GRPC_SRC_CORE_TSI_SSL_TRANSPORT_SECURITY_H
-#define GRPC_SRC_CORE_TSI_SSL_TRANSPORT_SECURITY_H
-#include <cstdint>
-#include <variant>
-#include <vector>
-
 //
 //
 // Copyright 2015 gRPC authors.
@@ -22,14 +16,20 @@
 //
 //
 
+#ifndef GRPC_SRC_CORE_TSI_SSL_TRANSPORT_SECURITY_H
+#define GRPC_SRC_CORE_TSI_SSL_TRANSPORT_SECURITY_H
+
 #include <grpc/grpc_crl_provider.h>
 #include <grpc/grpc_security_constants.h>
 #include <grpc/private_key_signer.h>
 #include <grpc/support/port_platform.h>
 #include <openssl/x509.h>
 
+#include <cstdint>
 #include <memory>
 #include <string>
+#include <variant>
+#include <vector>
 
 #include "src/core/credentials/transport/tls/grpc_tls_certificate_selector.h"
 #include "src/core/credentials/transport/tls/spiffe_utils.h"

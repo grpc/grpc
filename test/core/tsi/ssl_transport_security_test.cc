@@ -28,15 +28,10 @@
 #include <stdio.h>
 #include <string.h>
 
-#include <cstdint>
-#include <memory>
-#include <optional>
 #include <string>
 #include <thread>
-#include <tuple>
 #include <vector>
 
-#include "src/core/credentials/transport/tls/ssl_utils.h"
 #include "src/core/tsi/transport_security.h"
 #include "src/core/tsi/transport_security_interface.h"
 #include "src/core/util/memory.h"
