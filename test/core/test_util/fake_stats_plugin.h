@@ -234,16 +234,9 @@ class FakeStatsPlugin : public StatsPlugin {
       bool use_disabled_by_default_metrics = false)
       : channel_filter_(std::move(channel_filter)),
         use_disabled_by_default_metrics_(use_disabled_by_default_metrics) {
-    InstrumentLabelSet labels;
     GlobalInstrumentsRegistry::ForEach(
         [&](const GlobalInstrumentsRegistry::GlobalInstrumentDescriptor&
                 descriptor) {
-          for (const auto& key : descriptor.label_keys) {
-            labels.Set(InstrumentLabel(key));
-          }
-          for (const auto& key : descriptor.optional_label_keys) {
-            labels.Set(InstrumentLabel(key));
-          }
           if (!use_disabled_by_default_metrics &&
               !descriptor.enable_by_default) {
             return;
@@ -283,6 +276,7 @@ class FakeStatsPlugin : public StatsPlugin {
               Crash("unknown instrument type");
           }
         });
+    InstrumentLabelSet labels;
     InstrumentMetadata::ForEachInstrument([&](const auto* desc) {
       for (const auto& l : desc->domain->label_names()) {
         labels.Set(l);
@@ -488,10 +482,6 @@ class FakeStatsPlugin : public StatsPlugin {
     return iter->second.GetValue(label_values, optional_values);
   }
 
-  template <typename T>
-  std::optional<T> GetMetricValueByNameImpl(
-      absl::string_view name, absl::Span<const absl::string_view> labels);
-
   std::optional<uint64_t> GetUInt64MetricValueByName(
       absl::string_view name, absl::Span<const absl::string_view> labels);
 
@@ -499,6 +489,9 @@ class FakeStatsPlugin : public StatsPlugin {
       absl::string_view name, absl::Span<const absl::string_view> labels);
 
  private:
+  template <typename T>
+  std::optional<T> GetMetricValueByNameImpl(
+      absl::string_view name, absl::Span<const absl::string_view> labels);
   template <typename T>
   class DomainMetricsSink final : public MetricsSink {
    public:
@@ -516,11 +509,13 @@ class FakeStatsPlugin : public StatsPlugin {
                  absl::string_view name, uint64_t value) override {
       RecordValue(label_keys, label_values, name, value);
     }
+
     void UpDownCounter(InstrumentLabelList label_keys,
                        absl::Span<const std::string> label_values,
                        absl::string_view name, uint64_t value) override {
       RecordValue(label_keys, label_values, name, value);
     }
+
     void Histogram(InstrumentLabelList /*label_keys*/,
                    absl::Span<const std::string> /*label_values*/,
                    absl::string_view /*name*/, HistogramBuckets /*bounds*/,
@@ -559,7 +554,6 @@ class FakeStatsPlugin : public StatsPlugin {
       for (size_t i = 0; i < label_keys.size(); ++i) {
         auto it = target_labels_.find(label_keys[i].label());
         if (it == target_labels_.end()) return false;
-
         const std::string& expected = it->second;
         const std::string& actual = label_values[i];
         if (expected != actual) {

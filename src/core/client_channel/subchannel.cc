@@ -99,17 +99,19 @@ using ::grpc_event_engine::experimental::EventEngine;
 // Subchannel::ConnectivityStateWatcherInterface.
 using TransportConnectivityStateWatcher = ConnectivityStateWatcherInterface;
 
+namespace {
+
 constexpr absl::string_view kSecurityLevelUnknown = "unknown";
 constexpr absl::string_view kSecurityLevelNone = "none";
 constexpr absl::string_view kSecurityLevelIntegrityOnly = "integrity_only";
 constexpr absl::string_view kSecurityLevelPrivacyAndIntegrity =
     "privacy_and_integrity";
 
-static absl::string_view GetSecurityLevelFromArgs(const ChannelArgs& args) {
-  auto auth_context = args.GetObjectRef<grpc_auth_context>();
+absl::string_view GetSecurityLevelFromArgs(const ChannelArgs& args) {
+  auto auth_context = args.GetObject<grpc_auth_context>();
   if (auth_context != nullptr) {
     grpc_auth_property_iterator it = grpc_auth_context_find_properties_by_name(
-        auth_context.get(), GRPC_TRANSPORT_SECURITY_LEVEL_PROPERTY_NAME);
+        auth_context, GRPC_TRANSPORT_SECURITY_LEVEL_PROPERTY_NAME);
     const grpc_auth_property* prop = grpc_auth_property_iterator_next(&it);
     if (prop != nullptr) {
       absl::string_view tsi_level(prop->value, prop->value_length);
@@ -124,6 +126,8 @@ static absl::string_view GetSecurityLevelFromArgs(const ChannelArgs& args) {
   }
   return kSecurityLevelUnknown;
 }
+
+}  // namespace
 
 //
 // Subchannel::Call
