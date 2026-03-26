@@ -19,12 +19,12 @@ import logging
 import os
 import random
 import threading
-import typeguard
 from typing import Callable, Iterable, Sequence, Tuple
 import unittest
 
 import grpc
 from grpc.experimental import aio
+import typeguard
 
 from src.proto.grpc.testing import messages_pb2
 from src.proto.grpc.testing import test_pb2_grpc
