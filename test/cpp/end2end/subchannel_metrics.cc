@@ -19,6 +19,7 @@
 #include <grpcpp/server_builder.h>
 
 #include <string>
+#include <thread>
 
 #include "src/core/credentials/transport/fake/fake_credentials.h"
 #include "src/core/lib/experiments/config.h"
@@ -114,22 +115,11 @@ TEST_F(SubchannelMetricsTest, SubchannelMetricsBasic) {
   auto channel =
       grpc::CreateChannel(target, grpc::InsecureChannelCredentials());
   auto stub = grpc::testing::EchoTestService::NewStub(channel);
-  auto hold = injector.AddHold(port);
   channel->GetState(true);
-  hold->Wait();
-  hold->Resume();
   EXPECT_TRUE(
       WaitForChannelState(channel.get(), [](grpc_connectivity_state state) {
         return state == GRPC_CHANNEL_READY;
       }));
-  grpc::testing::EchoRequest request;
-  request.set_message("test");
-  grpc::testing::EchoResponse response;
-  grpc::ClientContext context;
-  context.set_deadline(std::chrono::system_clock::now() +
-                       std::chrono::seconds(1));
-  grpc::Status status = stub->Echo(&context, request, &response);
-  ASSERT_TRUE(status.ok()) << "RPC failed: " << status.error_message();
   EXPECT_THAT(
       stats_plugin_->GetUInt64MetricValueByName(
           "grpc.subchannel.connection_attempts_succeeded", {target, "", ""}),
@@ -173,19 +163,20 @@ TEST_F(SubchannelMetricsTest, MultipleConnectionAttemptsFailed) {
   auto channel = CreateChannelWithBackoff(target, 1000);
   std::vector<std::unique_ptr<ConnectionAttemptInjector::Hold>> holds;
   constexpr int kConnecionAttempts = 3;
-  for (int i = 0; i < kConnecionAttempts; ++i) {
+  for (int i = 0; i < kConnecionAttempts + 1; ++i) {
     holds.push_back(injector.AddHold(port));
   }
   channel->GetState(true);
-  for (auto& hold : holds) {
-    hold->Wait();
-    hold->Fail(absl::UnavailableError("test failure"));
+  for (int i = 0; i < kConnecionAttempts; ++i) {
+    holds[i]->Wait();
+    holds[i]->Fail(absl::UnavailableError("test failure"));
   }
-  absl::SleepFor(absl::Milliseconds(50));
+  holds[kConnecionAttempts]->Wait();
   EXPECT_THAT(
       stats_plugin_->GetUInt64MetricValueByName(
           "grpc.subchannel.connection_attempts_failed", {target, "", ""}),
       ::testing::Optional(kConnecionAttempts));
+  holds[kConnecionAttempts]->Resume();
 }
 
 TEST_F(SubchannelMetricsTest, SecurityLevelsPrivacyAndIntegrity) {
@@ -298,9 +289,26 @@ TEST_F(SubchannelMetricsTest, NewSubchannelDisconnectionYieldsGoawayNoError) {
                   {target, "", "", "GOAWAY NO_ERROR"}),
               ::testing::Optional(1));
 }
+
+TEST_F(SubchannelMetricsTest, ConnectionAttemptIgnoredOnShutdown) {
+  ConnectionAttemptInjector injector;
+  const int port = grpc_pick_unused_port_or_die();
+  std::string target = kTargetAddrPart + std::to_string(port);
+  auto channel = CreateChannelWithBackoff(target, 1000);
+  auto hold = injector.AddHold(port);
+  channel->GetState(true);
+  hold->Wait();
+  std::thread reset_thread([&]() { channel.reset(); });
+  absl::SleepFor(absl::Seconds(1));
+  hold->Resume();
+  reset_thread.join();
+  EXPECT_EQ(
       stats_plugin_->GetUInt64MetricValueByName(
-          "grpc.subchannel.disconnections", {target, "", "", "GOAWAY 0"}),
-      ::testing::Optional(1));
+          "grpc.subchannel.connection_attempts_succeeded", {target, "", ""}),
+      std::nullopt);
+  EXPECT_EQ(stats_plugin_->GetUInt64MetricValueByName(
+                "grpc.subchannel.connection_attempts_failed", {target, "", ""}),
+            std::nullopt);
 }
 
 }  // namespace

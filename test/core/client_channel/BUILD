@@ -260,7 +260,6 @@ grpc_cc_test(
     deps = [
         "//:grpc",
         "//:grpc_client_channel",
-        "//test/core/test_util:fake_stats_plugin",
         "//test/core/test_util:grpc_test_util",
     ],
 )
