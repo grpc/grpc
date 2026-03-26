@@ -23,6 +23,9 @@
 #include <grpc/support/sync.h>
 #include <openssl/x509v3.h>
 
+#include <cstdint>
+#include <vector>
+
 #include "src/core/tsi/transport_security_interface.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
 
@@ -108,6 +111,7 @@ struct tsi_test_fixture {
   gpr_cv cv;
   gpr_mu mu;
   bool notified;
+  grpc_event_engine::experimental::FuzzingEventEngine* event_engine;
 };
 
 struct tsi_test_frame_protector_fixture {
@@ -124,8 +128,8 @@ struct tsi_test_channel {
   // simulated channels between client and server. If the server (client)
   // wants to send data to the client (server), he will write data to
   // client_channel (server_channel), which will be read by client (server).
-  uint8_t* client_channel;
-  uint8_t* server_channel;
+  std::vector<uint8_t> client_channel;
+  std::vector<uint8_t> server_channel;
   // size of data written to the client/server channel.
   size_t bytes_written_to_client_channel;
   size_t bytes_written_to_server_channel;
