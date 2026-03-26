@@ -24,6 +24,9 @@
 #include "upb/wire/internal/decoder.h"
 #include "upb/wire/types.h"
 
+#if defined(_MSC_VER)
+#include <intrin.h>
+#endif
 // Must be last include.
 #include "upb/port/def.inc"
 
@@ -57,7 +60,13 @@ void* fastdecode_resizearr(upb_Decoder* d, void* dst, fastdecode_arr* farr,
     char* old_ptr = (char*)upb_Array_MutableDataPtr(farr->arr);
     char* new_ptr =
         (char*)upb_Arena_Realloc(&d->arena, old_ptr, old_bytes, new_bytes);
+#if defined(_MSC_VER)
+    uint32_t __elem_size_lg2;
+    _BitScanForward(&__elem_size_lg2, valbytes);
+    uint8_t elem_size_lg2 = (uint8_t)__elem_size_lg2;
+#else
     uint8_t elem_size_lg2 = __builtin_ctz(valbytes);
+#endif
     UPB_PRIVATE(_upb_Array_SetTaggedPtr)(farr->arr, new_ptr, elem_size_lg2);
     farr->arr->UPB_PRIVATE(capacity) = new_capacity;
     dst = (void*)(new_ptr + (old_capacity * valbytes));
@@ -137,7 +146,13 @@ void* fastdecode_getfield(upb_Decoder* d, const char* ptr, upb_Message* msg,
     case kUpb_DecodeFast_Repeated:
     case kUpb_DecodeFast_Packed: {
       // Get pointer to upb_Array and allocate/expand if necessary.
+#if defined(_MSC_VER)
+      uint32_t __elem_size_lg2;
+      _BitScanForward(&__elem_size_lg2, valbytes);
+      uint8_t elem_size_lg2 = (uint8_t)__elem_size_lg2;
+#else
       uint8_t elem_size_lg2 = __builtin_ctz(valbytes);
+#endif
       upb_Array** arr_p = (upb_Array**)fastdecode_fieldmem(msg, *data);
       char* begin;
       upb_DecodeFast_SetHasbits(msg, *hasbits);
