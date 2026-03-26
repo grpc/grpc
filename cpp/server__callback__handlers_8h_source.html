@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.78.1</span>
+   &#160;<span id="projectnumber">1.80.0</span>
    </div>
   </td>
  </tr>
@@ -215,7 +215,7 @@ $(function() {
 <div class="line"><a name="l00144"></a><span class="lineno">  144</span>&#160;        finish_ops_.ServerSendStatus(&amp;ctx_-&gt;trailing_metadata_, s);</div>
 <div class="line"><a name="l00145"></a><span class="lineno">  145</span>&#160;      }</div>
 <div class="line"><a name="l00146"></a><span class="lineno">  146</span>&#160;      finish_ops_.set_core_cq_tag(&amp;finish_tag_);</div>
-<div class="line"><a name="l00147"></a><span class="lineno">  147</span>&#160;      call_.PerformOps(&amp;finish_ops_);</div>
+<div class="line"><a name="l00147"></a><span class="lineno">  147</span>&#160;      finish_ops_.FillOps(&amp;call_);</div>
 <div class="line"><a name="l00148"></a><span class="lineno">  148</span>&#160;    }</div>
 <div class="line"><a name="l00149"></a><span class="lineno">  149</span>&#160; </div>
 <div class="line"><a name="l00150"></a><span class="lineno">  150</span>&#160;    <span class="keywordtype">void</span> SendInitialMetadata()<span class="keyword"> override </span>{</div>
@@ -242,7 +242,7 @@ $(function() {
 <div class="line"><a name="l00171"></a><span class="lineno">  171</span>&#160;      }</div>
 <div class="line"><a name="l00172"></a><span class="lineno">  172</span>&#160;      ctx_-&gt;sent_initial_metadata_ = <span class="keyword">true</span>;</div>
 <div class="line"><a name="l00173"></a><span class="lineno">  173</span>&#160;      meta_ops_.set_core_cq_tag(&amp;meta_tag_);</div>
-<div class="line"><a name="l00174"></a><span class="lineno">  174</span>&#160;      call_.PerformOps(&amp;meta_ops_);</div>
+<div class="line"><a name="l00174"></a><span class="lineno">  174</span>&#160;      meta_ops_.FillOps(&amp;call_);</div>
 <div class="line"><a name="l00175"></a><span class="lineno">  175</span>&#160;    }</div>
 <div class="line"><a name="l00176"></a><span class="lineno">  176</span>&#160; </div>
 <div class="line"><a name="l00177"></a><span class="lineno">  177</span>&#160;   <span class="keyword">private</span>:</div>
@@ -400,7 +400,7 @@ $(function() {
 <div class="line"><a name="l00333"></a><span class="lineno">  333</span>&#160;        finish_ops_.ServerSendStatus(&amp;ctx_-&gt;trailing_metadata_, s);</div>
 <div class="line"><a name="l00334"></a><span class="lineno">  334</span>&#160;      }</div>
 <div class="line"><a name="l00335"></a><span class="lineno">  335</span>&#160;      finish_ops_.set_core_cq_tag(&amp;finish_tag_);</div>
-<div class="line"><a name="l00336"></a><span class="lineno">  336</span>&#160;      call_.PerformOps(&amp;finish_ops_);</div>
+<div class="line"><a name="l00336"></a><span class="lineno">  336</span>&#160;      finish_ops_.FillOps(&amp;call_);</div>
 <div class="line"><a name="l00337"></a><span class="lineno">  337</span>&#160;    }</div>
 <div class="line"><a name="l00338"></a><span class="lineno">  338</span>&#160; </div>
 <div class="line"><a name="l00339"></a><span class="lineno">  339</span>&#160;    <span class="keywordtype">void</span> SendInitialMetadata()<span class="keyword"> override </span>{</div>
@@ -425,13 +425,13 @@ $(function() {
 <div class="line"><a name="l00358"></a><span class="lineno">  358</span>&#160;      }</div>
 <div class="line"><a name="l00359"></a><span class="lineno">  359</span>&#160;      ctx_-&gt;sent_initial_metadata_ = <span class="keyword">true</span>;</div>
 <div class="line"><a name="l00360"></a><span class="lineno">  360</span>&#160;      meta_ops_.set_core_cq_tag(&amp;meta_tag_);</div>
-<div class="line"><a name="l00361"></a><span class="lineno">  361</span>&#160;      call_.PerformOps(&amp;meta_ops_);</div>
+<div class="line"><a name="l00361"></a><span class="lineno">  361</span>&#160;      meta_ops_.FillOps(&amp;call_);</div>
 <div class="line"><a name="l00362"></a><span class="lineno">  362</span>&#160;    }</div>
 <div class="line"><a name="l00363"></a><span class="lineno">  363</span>&#160; </div>
 <div class="line"><a name="l00364"></a><span class="lineno">  364</span>&#160;    <span class="keywordtype">void</span> Read(RequestType* req)<span class="keyword"> override </span>{</div>
 <div class="line"><a name="l00365"></a><span class="lineno">  365</span>&#160;      this-&gt;<a class="code" href="classgrpc_1_1internal_1_1_server_callback_call.html#abf7d5b632ff79a688b342b235275be72">Ref</a>();</div>
 <div class="line"><a name="l00366"></a><span class="lineno">  366</span>&#160;      read_ops_.RecvMessage(req);</div>
-<div class="line"><a name="l00367"></a><span class="lineno">  367</span>&#160;      call_.PerformOps(&amp;read_ops_);</div>
+<div class="line"><a name="l00367"></a><span class="lineno">  367</span>&#160;      read_ops_.FillOps(&amp;call_);</div>
 <div class="line"><a name="l00368"></a><span class="lineno">  368</span>&#160;    }</div>
 <div class="line"><a name="l00369"></a><span class="lineno">  369</span>&#160; </div>
 <div class="line"><a name="l00370"></a><span class="lineno">  370</span>&#160;   <span class="keyword">private</span>:</div>
@@ -603,7 +603,7 @@ $(function() {
 <div class="line"><a name="l00536"></a><span class="lineno">  536</span>&#160;        ctx_-&gt;sent_initial_metadata_ = <span class="keyword">true</span>;</div>
 <div class="line"><a name="l00537"></a><span class="lineno">  537</span>&#160;      }</div>
 <div class="line"><a name="l00538"></a><span class="lineno">  538</span>&#160;      finish_ops_.ServerSendStatus(&amp;ctx_-&gt;trailing_metadata_, s);</div>
-<div class="line"><a name="l00539"></a><span class="lineno">  539</span>&#160;      call_.PerformOps(&amp;finish_ops_);</div>
+<div class="line"><a name="l00539"></a><span class="lineno">  539</span>&#160;      finish_ops_.FillOps(&amp;call_);</div>
 <div class="line"><a name="l00540"></a><span class="lineno">  540</span>&#160;    }</div>
 <div class="line"><a name="l00541"></a><span class="lineno">  541</span>&#160; </div>
 <div class="line"><a name="l00542"></a><span class="lineno">  542</span>&#160;    <span class="keywordtype">void</span> SendInitialMetadata()<span class="keyword"> override </span>{</div>
@@ -628,7 +628,7 @@ $(function() {
 <div class="line"><a name="l00561"></a><span class="lineno">  561</span>&#160;      }</div>
 <div class="line"><a name="l00562"></a><span class="lineno">  562</span>&#160;      ctx_-&gt;sent_initial_metadata_ = <span class="keyword">true</span>;</div>
 <div class="line"><a name="l00563"></a><span class="lineno">  563</span>&#160;      meta_ops_.set_core_cq_tag(&amp;meta_tag_);</div>
-<div class="line"><a name="l00564"></a><span class="lineno">  564</span>&#160;      call_.PerformOps(&amp;meta_ops_);</div>
+<div class="line"><a name="l00564"></a><span class="lineno">  564</span>&#160;      meta_ops_.FillOps(&amp;call_);</div>
 <div class="line"><a name="l00565"></a><span class="lineno">  565</span>&#160;    }</div>
 <div class="line"><a name="l00566"></a><span class="lineno">  566</span>&#160; </div>
 <div class="line"><a name="l00567"></a><span class="lineno">  567</span>&#160;    <span class="keywordtype">void</span> Write(<span class="keyword">const</span> ResponseType* resp, <a class="code" href="classgrpc_1_1_write_options.html">grpc::WriteOptions</a> options)<span class="keyword"> override </span>{</div>
@@ -648,7 +648,7 @@ $(function() {
 <div class="line"><a name="l00581"></a><span class="lineno">  581</span>&#160;      ABSL_CHECK(</div>
 <div class="line"><a name="l00582"></a><span class="lineno">  582</span>&#160;          write_ops_.SendMessagePtr(resp, options, ctx_-&gt;memory_allocator())</div>
 <div class="line"><a name="l00583"></a><span class="lineno">  583</span>&#160;              .ok());</div>
-<div class="line"><a name="l00584"></a><span class="lineno">  584</span>&#160;      call_.PerformOps(&amp;write_ops_);</div>
+<div class="line"><a name="l00584"></a><span class="lineno">  584</span>&#160;      write_ops_.FillOps(&amp;call_);</div>
 <div class="line"><a name="l00585"></a><span class="lineno">  585</span>&#160;    }</div>
 <div class="line"><a name="l00586"></a><span class="lineno">  586</span>&#160; </div>
 <div class="line"><a name="l00587"></a><span class="lineno">  587</span>&#160;    <span class="keywordtype">void</span> WriteAndFinish(<span class="keyword">const</span> ResponseType* resp, <a class="code" href="classgrpc_1_1_write_options.html">grpc::WriteOptions</a> options,</div>
@@ -819,7 +819,7 @@ $(function() {
 <div class="line"><a name="l00752"></a><span class="lineno">  752</span>&#160;        ctx_-&gt;sent_initial_metadata_ = <span class="keyword">true</span>;</div>
 <div class="line"><a name="l00753"></a><span class="lineno">  753</span>&#160;      }</div>
 <div class="line"><a name="l00754"></a><span class="lineno">  754</span>&#160;      finish_ops_.ServerSendStatus(&amp;ctx_-&gt;trailing_metadata_, s);</div>
-<div class="line"><a name="l00755"></a><span class="lineno">  755</span>&#160;      call_.PerformOps(&amp;finish_ops_);</div>
+<div class="line"><a name="l00755"></a><span class="lineno">  755</span>&#160;      finish_ops_.FillOps(&amp;call_);</div>
 <div class="line"><a name="l00756"></a><span class="lineno">  756</span>&#160;    }</div>
 <div class="line"><a name="l00757"></a><span class="lineno">  757</span>&#160; </div>
 <div class="line"><a name="l00758"></a><span class="lineno">  758</span>&#160;    <span class="keywordtype">void</span> SendInitialMetadata()<span class="keyword"> override </span>{</div>
@@ -844,7 +844,7 @@ $(function() {
 <div class="line"><a name="l00777"></a><span class="lineno">  777</span>&#160;      }</div>
 <div class="line"><a name="l00778"></a><span class="lineno">  778</span>&#160;      ctx_-&gt;sent_initial_metadata_ = <span class="keyword">true</span>;</div>
 <div class="line"><a name="l00779"></a><span class="lineno">  779</span>&#160;      meta_ops_.set_core_cq_tag(&amp;meta_tag_);</div>
-<div class="line"><a name="l00780"></a><span class="lineno">  780</span>&#160;      call_.PerformOps(&amp;meta_ops_);</div>
+<div class="line"><a name="l00780"></a><span class="lineno">  780</span>&#160;      meta_ops_.FillOps(&amp;call_);</div>
 <div class="line"><a name="l00781"></a><span class="lineno">  781</span>&#160;    }</div>
 <div class="line"><a name="l00782"></a><span class="lineno">  782</span>&#160; </div>
 <div class="line"><a name="l00783"></a><span class="lineno">  783</span>&#160;    <span class="keywordtype">void</span> Write(<span class="keyword">const</span> ResponseType* resp, <a class="code" href="classgrpc_1_1_write_options.html">grpc::WriteOptions</a> options)<span class="keyword"> override </span>{</div>
@@ -864,7 +864,7 @@ $(function() {
 <div class="line"><a name="l00797"></a><span class="lineno">  797</span>&#160;      ABSL_CHECK(</div>
 <div class="line"><a name="l00798"></a><span class="lineno">  798</span>&#160;          write_ops_.SendMessagePtr(resp, options, ctx_-&gt;memory_allocator())</div>
 <div class="line"><a name="l00799"></a><span class="lineno">  799</span>&#160;              .ok());</div>
-<div class="line"><a name="l00800"></a><span class="lineno">  800</span>&#160;      call_.PerformOps(&amp;write_ops_);</div>
+<div class="line"><a name="l00800"></a><span class="lineno">  800</span>&#160;      write_ops_.FillOps(&amp;call_);</div>
 <div class="line"><a name="l00801"></a><span class="lineno">  801</span>&#160;    }</div>
 <div class="line"><a name="l00802"></a><span class="lineno">  802</span>&#160; </div>
 <div class="line"><a name="l00803"></a><span class="lineno">  803</span>&#160;    <span class="keywordtype">void</span> WriteAndFinish(<span class="keyword">const</span> ResponseType* resp, <a class="code" href="classgrpc_1_1_write_options.html">grpc::WriteOptions</a> options,</div>
@@ -879,7 +879,7 @@ $(function() {
 <div class="line"><a name="l00812"></a><span class="lineno">  812</span>&#160;    <span class="keywordtype">void</span> Read(RequestType* req)<span class="keyword"> override </span>{</div>
 <div class="line"><a name="l00813"></a><span class="lineno">  813</span>&#160;      this-&gt;Ref();</div>
 <div class="line"><a name="l00814"></a><span class="lineno">  814</span>&#160;      read_ops_.RecvMessage(req);</div>
-<div class="line"><a name="l00815"></a><span class="lineno">  815</span>&#160;      call_.PerformOps(&amp;read_ops_);</div>
+<div class="line"><a name="l00815"></a><span class="lineno">  815</span>&#160;      read_ops_.FillOps(&amp;call_);</div>
 <div class="line"><a name="l00816"></a><span class="lineno">  816</span>&#160;    }</div>
 <div class="line"><a name="l00817"></a><span class="lineno">  817</span>&#160; </div>
 <div class="line"><a name="l00818"></a><span class="lineno">  818</span>&#160;   <span class="keyword">private</span>:</div>
@@ -973,27 +973,27 @@ $(function() {
 <div class="line"><a name="l00906"></a><span class="lineno">  906</span>&#160;<span class="preprocessor">#endif  // GRPCPP_IMPL_SERVER_CALLBACK_HANDLERS_H</span></div>
 </div><!-- fragment --></div><!-- contents -->
 <div class="ttc" id="aclassgrpc_1_1_server_read_reactor_html"><div class="ttname"><a href="classgrpc_1_1_server_read_reactor.html">grpc::ServerReadReactor</a></div><div class="ttdoc">ServerReadReactor is the interface for a client-streaming RPC.</div><div class="ttdef"><b>Definition:</b> server_callback.h:191</div></div>
-<div class="ttc" id="aclassgrpc_1_1internal_1_1_callback_with_success_tag_html"><div class="ttname"><a href="classgrpc_1_1internal_1_1_callback_with_success_tag.html">grpc::internal::CallbackWithSuccessTag</a></div><div class="ttdoc">CallbackWithSuccessTag can be reused multiple times, and will be used in this fashion for streaming o...</div><div class="ttdef"><b>Definition:</b> callback_common.h:148</div></div>
+<div class="ttc" id="aclassgrpc_1_1internal_1_1_callback_with_success_tag_html"><div class="ttname"><a href="classgrpc_1_1internal_1_1_callback_with_success_tag.html">grpc::internal::CallbackWithSuccessTag</a></div><div class="ttdoc">CallbackWithSuccessTag can be reused multiple times, and will be used in this fashion for streaming o...</div><div class="ttdef"><b>Definition:</b> callback_common.h:155</div></div>
 <div class="ttc" id="aclassgrpc_1_1_server_callback_reader_writer_html_af04fc504f776c5dd73670c489fd2d324"><div class="ttname"><a href="classgrpc_1_1_server_callback_reader_writer.html#af04fc504f776c5dd73670c489fd2d324">grpc::ServerCallbackReaderWriter::SendInitialMetadata</a></div><div class="ttdeci">virtual void SendInitialMetadata()=0</div></div>
 <div class="ttc" id="asupport_2message__allocator_8h_html"><div class="ttname"><a href="support_2message__allocator_8h.html">message_allocator.h</a></div></div>
 <div class="ttc" id="agrpc_8h_html_ab8b0d5c78fb89f05bc43d349dae561be"><div class="ttname"><a href="grpc_8h.html#ab8b0d5c78fb89f05bc43d349dae561be">grpc_call_arena_alloc</a></div><div class="ttdeci">GRPCAPI void * grpc_call_arena_alloc(grpc_call *call, size_t size)</div><div class="ttdoc">Allocate memory in the grpc_call arena: this memory is automatically discarded at call completion.</div></div>
-<div class="ttc" id="aclassgrpc_1_1internal_1_1_call_op_server_send_status_html"><div class="ttname"><a href="classgrpc_1_1internal_1_1_call_op_server_send_status.html">grpc::internal::CallOpServerSendStatus</a></div><div class="ttdef"><b>Definition:</b> call_op_set.h:658</div></div>
+<div class="ttc" id="aclassgrpc_1_1internal_1_1_call_op_server_send_status_html"><div class="ttname"><a href="classgrpc_1_1internal_1_1_call_op_server_send_status.html">grpc::internal::CallOpServerSendStatus</a></div><div class="ttdef"><b>Definition:</b> call_op_set.h:656</div></div>
 <div class="ttc" id="anamespacegrpc_html"><div class="ttname"><a href="namespacegrpc.html">grpc</a></div><div class="ttdoc">An Alarm posts the user-provided tag to its associated completion queue or invokes the user-provided ...</div><div class="ttdef"><b>Definition:</b> alarm.h:33</div></div>
 <div class="ttc" id="aclassgrpc_1_1internal_1_1_call_op_set_html"><div class="ttname"><a href="classgrpc_1_1internal_1_1_call_op_set.html">grpc::internal::CallOpSet&lt; grpc::internal::CallOpSendInitialMetadata &gt;</a></div></div>
 <div class="ttc" id="aclassgrpc_1_1_callback_server_context_html"><div class="ttname"><a href="classgrpc_1_1_callback_server_context.html">grpc::CallbackServerContext</a></div><div class="ttdef"><b>Definition:</b> server_context.h:626</div></div>
 <div class="ttc" id="anamespacegrpc_html_ad4ef983a9e193cab69837e552c2f4ff3"><div class="ttname"><a href="namespacegrpc.html#ad4ef983a9e193cab69837e552c2f4ff3">grpc::Deserialize</a></div><div class="ttdeci">auto Deserialize(BufferPtr buffer, Message *msg)</div><div class="ttdef"><b>Definition:</b> serialization_traits.h:120</div></div>
-<div class="ttc" id="aclassgrpc_1_1internal_1_1_call_op_send_message_html"><div class="ttname"><a href="classgrpc_1_1internal_1_1_call_op_send_message.html">grpc::internal::CallOpSendMessage</a></div><div class="ttdef"><b>Definition:</b> call_op_set.h:289</div></div>
+<div class="ttc" id="aclassgrpc_1_1internal_1_1_call_op_send_message_html"><div class="ttname"><a href="classgrpc_1_1internal_1_1_call_op_send_message.html">grpc::internal::CallOpSendMessage</a></div><div class="ttdef"><b>Definition:</b> call_op_set.h:287</div></div>
 <div class="ttc" id="astructgrpc_1_1internal_1_1_method_handler_1_1_handler_parameter_html"><div class="ttname"><a href="structgrpc_1_1internal_1_1_method_handler_1_1_handler_parameter.html">grpc::internal::MethodHandler::HandlerParameter</a></div><div class="ttdef"><b>Definition:</b> rpc_service_method.h:43</div></div>
 <div class="ttc" id="aclassgrpc_1_1_message_holder_html_a960bd63c4c3da73af97bf446d6f8eccc"><div class="ttname"><a href="classgrpc_1_1_message_holder.html#a960bd63c4c3da73af97bf446d6f8eccc">grpc::MessageHolder::response</a></div><div class="ttdeci">ResponseT * response()</div><div class="ttdef"><b>Definition:</b> message_allocator.h:46</div></div>
-<div class="ttc" id="aclassgrpc_1_1internal_1_1_call_html"><div class="ttname"><a href="classgrpc_1_1internal_1_1_call.html">grpc::internal::Call</a></div><div class="ttdoc">Straightforward wrapping of the C call object.</div><div class="ttdef"><b>Definition:</b> call.h:36</div></div>
+<div class="ttc" id="aclassgrpc_1_1internal_1_1_call_html"><div class="ttname"><a href="classgrpc_1_1internal_1_1_call.html">grpc::internal::Call</a></div><div class="ttdoc">Straightforward wrapping of the C call object.</div><div class="ttdef"><b>Definition:</b> call.h:34</div></div>
 <div class="ttc" id="agrpcpp_2impl_2rpc__service__method_8h_html"><div class="ttname"><a href="grpcpp_2impl_2rpc__service__method_8h.html">rpc_service_method.h</a></div></div>
 <div class="ttc" id="aclassgrpc_1_1internal_1_1_callback_client_streaming_handler_html_a1e5d2c0c6d4a46143b6cdd8823e5c846"><div class="ttname"><a href="classgrpc_1_1internal_1_1_callback_client_streaming_handler.html#a1e5d2c0c6d4a46143b6cdd8823e5c846">grpc::internal::CallbackClientStreamingHandler::RunHandler</a></div><div class="ttdeci">void RunHandler(const HandlerParameter &amp;param) final</div><div class="ttdef"><b>Definition:</b> server_callback_handlers.h:262</div></div>
 <div class="ttc" id="agrpcpp_2support_2status_8h_html"><div class="ttname"><a href="grpcpp_2support_2status_8h.html">status.h</a></div></div>
 <div class="ttc" id="aclassgrpc_1_1_server_callback_unary_html_ac19e75a9fd8a50e77ae6293fa6b4c35e"><div class="ttname"><a href="classgrpc_1_1_server_callback_unary.html#ac19e75a9fd8a50e77ae6293fa6b4c35e">grpc::ServerCallbackUnary::BindReactor</a></div><div class="ttdeci">void BindReactor(Reactor *reactor)</div><div class="ttdef"><b>Definition:</b> server_callback.h:210</div></div>
-<div class="ttc" id="aclassgrpc_1_1internal_1_1_call_op_send_initial_metadata_html"><div class="ttname"><a href="classgrpc_1_1internal_1_1_call_op_send_initial_metadata.html">grpc::internal::CallOpSendInitialMetadata</a></div><div class="ttdef"><b>Definition:</b> call_op_set.h:219</div></div>
+<div class="ttc" id="aclassgrpc_1_1internal_1_1_call_op_send_initial_metadata_html"><div class="ttname"><a href="classgrpc_1_1internal_1_1_call_op_send_initial_metadata.html">grpc::internal::CallOpSendInitialMetadata</a></div><div class="ttdef"><b>Definition:</b> call_op_set.h:217</div></div>
 <div class="ttc" id="aclassgrpc_1_1internal_1_1_server_callback_call_html_a81e8341db8a1636364a8a4205114a3fe"><div class="ttname"><a href="classgrpc_1_1internal_1_1_server_callback_call.html#a81e8341db8a1636364a8a4205114a3fe">grpc::internal::ServerCallbackCall::MaybeCallOnCancel</a></div><div class="ttdeci">void MaybeCallOnCancel(ServerReactor *reactor)</div><div class="ttdef"><b>Definition:</b> server_callback.h:110</div></div>
 <div class="ttc" id="aclassgrpc_1_1internal_1_1_callback_client_streaming_handler_html_a2df453f2c7d4972c7b34ad4c8a1c51ec"><div class="ttname"><a href="classgrpc_1_1internal_1_1_callback_client_streaming_handler.html#a2df453f2c7d4972c7b34ad4c8a1c51ec">grpc::internal::CallbackClientStreamingHandler::CallbackClientStreamingHandler</a></div><div class="ttdeci">CallbackClientStreamingHandler(std::function&lt; ServerReadReactor&lt; RequestType &gt; *(grpc::CallbackServerContext *, ResponseType *)&gt; get_reactor)</div><div class="ttdef"><b>Definition:</b> server_callback_handlers.h:257</div></div>
-<div class="ttc" id="aclassgrpc_1_1_status_html_ab80672b5665c32dc0937a0d58a3ce192"><div class="ttname"><a href="classgrpc_1_1_status.html#ab80672b5665c32dc0937a0d58a3ce192">grpc::Status::ok</a></div><div class="ttdeci">bool ok() const</div><div class="ttdoc">Is the status OK?</div><div class="ttdef"><b>Definition:</b> status.h:125</div></div>
+<div class="ttc" id="aclassgrpc_1_1_status_html_ab80672b5665c32dc0937a0d58a3ce192"><div class="ttname"><a href="classgrpc_1_1_status.html#ab80672b5665c32dc0937a0d58a3ce192">grpc::Status::ok</a></div><div class="ttdeci">bool ok() const</div><div class="ttdoc">Is the status OK?</div><div class="ttdef"><b>Definition:</b> status.h:124</div></div>
 <div class="ttc" id="agrpc_8h_html_a37a3bcb24b22addd01a9d0881c5a438c"><div class="ttname"><a href="grpc_8h.html#a37a3bcb24b22addd01a9d0881c5a438c">grpc_call_ref</a></div><div class="ttdeci">GRPCAPI void grpc_call_ref(grpc_call *call)</div><div class="ttdoc">Ref a call.</div></div>
 <div class="ttc" id="aclassgrpc_1_1_server_callback_reader_writer_html"><div class="ttname"><a href="classgrpc_1_1_server_callback_reader_writer.html">grpc::ServerCallbackReaderWriter</a></div><div class="ttdef"><b>Definition:</b> server_callback.h:247</div></div>
 <div class="ttc" id="aclassgrpc_1_1internal_1_1_callback_unary_handler_html_aa511327ae458dde01ba7a91d57c4d99b"><div class="ttname"><a href="classgrpc_1_1internal_1_1_callback_unary_handler.html#aa511327ae458dde01ba7a91d57c4d99b">grpc::internal::CallbackUnaryHandler::CallbackUnaryHandler</a></div><div class="ttdeci">CallbackUnaryHandler(std::function&lt; ServerUnaryReactor *(grpc::CallbackServerContext *, const RequestType *, ResponseType *)&gt; get_reactor)</div><div class="ttdef"><b>Definition:</b> server_callback_handlers.h:37</div></div>
@@ -1019,27 +1019,27 @@ $(function() {
 <div class="ttc" id="aclassgrpc_1_1internal_1_1_method_handler_html"><div class="ttname"><a href="classgrpc_1_1internal_1_1_method_handler.html">grpc::internal::MethodHandler</a></div><div class="ttdoc">Base class for running an RPC handler.</div><div class="ttdef"><b>Definition:</b> rpc_service_method.h:40</div></div>
 <div class="ttc" id="asupport_2server__callback_8h_html"><div class="ttname"><a href="support_2server__callback_8h.html">server_callback.h</a></div></div>
 <div class="ttc" id="aclassgrpc_1_1_message_holder_html_a0b37ed2c38f80b0752363b55c39d5b43"><div class="ttname"><a href="classgrpc_1_1_message_holder.html#a0b37ed2c38f80b0752363b55c39d5b43">grpc::MessageHolder::request</a></div><div class="ttdeci">RequestT * request()</div><div class="ttdef"><b>Definition:</b> message_allocator.h:45</div></div>
-<div class="ttc" id="aclassgrpc_1_1_write_options_html"><div class="ttname"><a href="classgrpc_1_1_write_options.html">grpc::WriteOptions</a></div><div class="ttdoc">Per-message write options.</div><div class="ttdef"><b>Definition:</b> call_op_set.h:81</div></div>
+<div class="ttc" id="aclassgrpc_1_1_write_options_html"><div class="ttname"><a href="classgrpc_1_1_write_options.html">grpc::WriteOptions</a></div><div class="ttdoc">Per-message write options.</div><div class="ttdef"><b>Definition:</b> call_op_set.h:79</div></div>
 <div class="ttc" id="aclassgrpc_1_1_server_write_reactor_html"><div class="ttname"><a href="classgrpc_1_1_server_write_reactor.html">grpc::ServerWriteReactor</a></div><div class="ttdoc">ServerWriteReactor is the interface for a server-streaming RPC.</div><div class="ttdef"><b>Definition:</b> server_callback.h:193</div></div>
 <div class="ttc" id="anamespacegrpc_1_1internal_html_ae958c1306bc082dacba2f7751337132d"><div class="ttname"><a href="namespacegrpc_1_1internal.html#ae958c1306bc082dacba2f7751337132d">grpc::internal::UnimplementedUnaryReactor</a></div><div class="ttdeci">FinishOnlyReactor&lt; ServerUnaryReactor &gt; UnimplementedUnaryReactor</div><div class="ttdef"><b>Definition:</b> server_callback.h:783</div></div>
 <div class="ttc" id="aclassgrpc_1_1internal_1_1_callback_bidi_handler_html"><div class="ttname"><a href="classgrpc_1_1internal_1_1_callback_bidi_handler.html">grpc::internal::CallbackBidiHandler</a></div><div class="ttdef"><b>Definition:</b> server_callback_handlers.h:680</div></div>
 <div class="ttc" id="anamespacegrpc_html_aff1730578c90160528f6a8d67ef5c43ba31d8b2f1f3307ed261328cb3eece163b"><div class="ttname"><a href="namespacegrpc.html#aff1730578c90160528f6a8d67ef5c43ba31d8b2f1f3307ed261328cb3eece163b">grpc::UNIMPLEMENTED</a></div><div class="ttdeci">@ UNIMPLEMENTED</div><div class="ttdoc">Operation is not implemented or not supported/enabled in this service.</div><div class="ttdef"><b>Definition:</b> status_code_enum.h:117</div></div>
 <div class="ttc" id="aclassgrpc_1_1_server_callback_writer_html"><div class="ttname"><a href="classgrpc_1_1_server_callback_writer.html">grpc::ServerCallbackWriter</a></div><div class="ttdef"><b>Definition:</b> server_callback.h:230</div></div>
 <div class="ttc" id="agrpc_2impl_2call_8h_html"><div class="ttname"><a href="grpc_2impl_2call_8h.html">call.h</a></div></div>
-<div class="ttc" id="aclassgrpc_1_1internal_1_1_call_html_a1ea7cfae5dc2ca7a3bc261825edb6d24"><div class="ttname"><a href="classgrpc_1_1internal_1_1_call.html#a1ea7cfae5dc2ca7a3bc261825edb6d24">grpc::internal::Call::call</a></div><div class="ttdeci">grpc_call * call() const</div><div class="ttdef"><b>Definition:</b> call.h:70</div></div>
+<div class="ttc" id="aclassgrpc_1_1internal_1_1_call_html_a1ea7cfae5dc2ca7a3bc261825edb6d24"><div class="ttname"><a href="classgrpc_1_1internal_1_1_call.html#a1ea7cfae5dc2ca7a3bc261825edb6d24">grpc::internal::Call::call</a></div><div class="ttdeci">grpc_call * call() const</div><div class="ttdef"><b>Definition:</b> call.h:55</div></div>
 <div class="ttc" id="agrpcpp_2server__context_8h_html"><div class="ttname"><a href="grpcpp_2server__context_8h.html">server_context.h</a></div></div>
 <div class="ttc" id="anamespacestd_html"><div class="ttname"><a href="namespacestd.html">std</a></div><div class="ttdef"><b>Definition:</b> async_unary_call.h:410</div></div>
-<div class="ttc" id="aclassgrpc_1_1_write_options_html_aecd282a8c7424e4b0c1a5f512c44b8a8"><div class="ttname"><a href="classgrpc_1_1_write_options.html#aecd282a8c7424e4b0c1a5f512c44b8a8">grpc::WriteOptions::set_buffer_hint</a></div><div class="ttdeci">WriteOptions &amp; set_buffer_hint()</div><div class="ttdoc">Sets flag indicating that the write may be buffered and need not go out on the wire immediately.</div><div class="ttdef"><b>Definition:</b> call_op_set.h:119</div></div>
+<div class="ttc" id="aclassgrpc_1_1_write_options_html_aecd282a8c7424e4b0c1a5f512c44b8a8"><div class="ttname"><a href="classgrpc_1_1_write_options.html#aecd282a8c7424e4b0c1a5f512c44b8a8">grpc::WriteOptions::set_buffer_hint</a></div><div class="ttdeci">WriteOptions &amp; set_buffer_hint()</div><div class="ttdoc">Sets flag indicating that the write may be buffered and need not go out on the wire immediately.</div><div class="ttdef"><b>Definition:</b> call_op_set.h:117</div></div>
 <div class="ttc" id="aclassgrpc_1_1internal_1_1_callback_unary_handler_html_ac0545e7cdb9b3075d84d2f0edd377bb6"><div class="ttname"><a href="classgrpc_1_1internal_1_1_callback_unary_handler.html#ac0545e7cdb9b3075d84d2f0edd377bb6">grpc::internal::CallbackUnaryHandler::SetMessageAllocator</a></div><div class="ttdeci">void SetMessageAllocator(MessageAllocator&lt; RequestType, ResponseType &gt; *allocator)</div><div class="ttdef"><b>Definition:</b> server_callback_handlers.h:43</div></div>
 <div class="ttc" id="aclassgrpc_1_1_server_callback_unary_html_a5cd344f3c067d29a521b92b631268dac"><div class="ttname"><a href="classgrpc_1_1_server_callback_unary.html#a5cd344f3c067d29a521b92b631268dac">grpc::ServerCallbackUnary::SendInitialMetadata</a></div><div class="ttdeci">virtual void SendInitialMetadata()=0</div></div>
 <div class="ttc" id="aclassgrpc_1_1internal_1_1_callback_client_streaming_handler_html"><div class="ttname"><a href="classgrpc_1_1internal_1_1_callback_client_streaming_handler.html">grpc::internal::CallbackClientStreamingHandler</a></div><div class="ttdef"><b>Definition:</b> server_callback_handlers.h:255</div></div>
 <div class="ttc" id="aclassgrpc_1_1internal_1_1_server_callback_call_html_abf7d5b632ff79a688b342b235275be72"><div class="ttname"><a href="classgrpc_1_1internal_1_1_server_callback_call.html#abf7d5b632ff79a688b342b235275be72">grpc::internal::ServerCallbackCall::Ref</a></div><div class="ttdeci">void Ref()</div><div class="ttdoc">Increases the reference count.</div><div class="ttdef"><b>Definition:</b> server_callback.h:128</div></div>
 <div class="ttc" id="aclassgrpc_1_1internal_1_1_callback_bidi_handler_html_a5573a0b8e030bc029a023b1627aa9a80"><div class="ttname"><a href="classgrpc_1_1internal_1_1_callback_bidi_handler.html#a5573a0b8e030bc029a023b1627aa9a80">grpc::internal::CallbackBidiHandler::CallbackBidiHandler</a></div><div class="ttdeci">CallbackBidiHandler(std::function&lt; ServerBidiReactor&lt; RequestType, ResponseType &gt; *(grpc::CallbackServerContext *)&gt; get_reactor)</div><div class="ttdef"><b>Definition:</b> server_callback_handlers.h:682</div></div>
 <div class="ttc" id="aclassgrpc_1_1_server_callback_reader_html"><div class="ttname"><a href="classgrpc_1_1_server_callback_reader.html">grpc::ServerCallbackReader</a></div><div class="ttdef"><b>Definition:</b> server_callback.h:216</div></div>
-<div class="ttc" id="aclassgrpc_1_1_write_options_html_a7d08d7bc3a62cc4cfe8499d4bd70e0d7"><div class="ttname"><a href="classgrpc_1_1_write_options.html#a7d08d7bc3a62cc4cfe8499d4bd70e0d7">grpc::WriteOptions::is_last_message</a></div><div class="ttdeci">bool is_last_message() const</div><div class="ttdoc">Get value for the flag indicating that this is the last message, and should be coalesced with trailin...</div><div class="ttdef"><b>Definition:</b> call_op_set.h:174</div></div>
+<div class="ttc" id="aclassgrpc_1_1_write_options_html_a7d08d7bc3a62cc4cfe8499d4bd70e0d7"><div class="ttname"><a href="classgrpc_1_1_write_options.html#a7d08d7bc3a62cc4cfe8499d4bd70e0d7">grpc::WriteOptions::is_last_message</a></div><div class="ttdeci">bool is_last_message() const</div><div class="ttdoc">Get value for the flag indicating that this is the last message, and should be coalesced with trailin...</div><div class="ttdef"><b>Definition:</b> call_op_set.h:172</div></div>
 <div class="ttc" id="aclassgrpc_1_1_message_holder_html"><div class="ttname"><a href="classgrpc_1_1_message_holder.html">grpc::MessageHolder&lt; RequestType, ResponseType &gt;</a></div></div>
 <div class="ttc" id="aclassgrpc_1_1_byte_buffer_html_ae03627c8b3297965fa0cdd4f03a9af0f"><div class="ttname"><a href="classgrpc_1_1_byte_buffer.html#ae03627c8b3297965fa0cdd4f03a9af0f">grpc::ByteBuffer::Release</a></div><div class="ttdeci">void Release()</div><div class="ttdoc">Forget underlying byte buffer without destroying Use this only for un-owned byte buffers.</div><div class="ttdef"><b>Definition:</b> byte_buffer.h:143</div></div>
-<div class="ttc" id="anamespacegrpc_1_1internal_html_a7015d612ccec586d33e7afb77e8e515e"><div class="ttname"><a href="namespacegrpc_1_1internal.html#a7015d612ccec586d33e7afb77e8e515e">grpc::internal::CatchingReactorGetter</a></div><div class="ttdeci">Reactor * CatchingReactorGetter(Func &amp;&amp;func, Args &amp;&amp;... args)</div><div class="ttdef"><b>Definition:</b> callback_common.h:55</div></div>
+<div class="ttc" id="anamespacegrpc_1_1internal_html_a7015d612ccec586d33e7afb77e8e515e"><div class="ttname"><a href="namespacegrpc_1_1internal.html#a7015d612ccec586d33e7afb77e8e515e">grpc::internal::CatchingReactorGetter</a></div><div class="ttdeci">Reactor * CatchingReactorGetter(Func &amp;&amp;func, Args &amp;&amp;... args)</div><div class="ttdef"><b>Definition:</b> callback_common.h:57</div></div>
 <div class="ttc" id="aclassgrpc_1_1_server_callback_unary_html"><div class="ttname"><a href="classgrpc_1_1_server_callback_unary.html">grpc::ServerCallbackUnary</a></div><div class="ttdef"><b>Definition:</b> server_callback.h:200</div></div>
 <div class="ttc" id="aclassgrpc_1_1_server_unary_reactor_html"><div class="ttname"><a href="classgrpc_1_1_server_unary_reactor.html">grpc::ServerUnaryReactor</a></div><div class="ttdef"><b>Definition:</b> server_callback.h:706</div></div>
 <div class="ttc" id="aclassgrpc_1_1internal_1_1_callback_server_streaming_handler_html_abdb4d73f231a04b688c9c594c6cd2c6a"><div class="ttname"><a href="classgrpc_1_1internal_1_1_callback_server_streaming_handler.html#abdb4d73f231a04b688c9c594c6cd2c6a">grpc::internal::CallbackServerStreamingHandler::RunHandler</a></div><div class="ttdeci">void RunHandler(const HandlerParameter &amp;param) final</div><div class="ttdef"><b>Definition:</b> server_callback_handlers.h:456</div></div>
@@ -1048,7 +1048,7 @@ $(function() {
 <div class="ttc" id="aclassgrpc_1_1internal_1_1_callback_unary_handler_html_a646b7d063c74f4bce30ad27eb4c18b1e"><div class="ttname"><a href="classgrpc_1_1internal_1_1_callback_unary_handler.html#a646b7d063c74f4bce30ad27eb4c18b1e">grpc::internal::CallbackUnaryHandler::Deserialize</a></div><div class="ttdeci">void * Deserialize(grpc_call *call, grpc_byte_buffer *req, grpc::Status *status, void **handler_data) final</div><div class="ttdef"><b>Definition:</b> server_callback_handlers.h:83</div></div>
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Feb 20 2026 17:27:59 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu Mar 26 2026 18:32:24 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.78.1</span>
+   &#160;<span id="projectnumber">1.80.0</span>
    </div>
   </td>
  </tr>
@@ -963,13 +963,19 @@ $(function() {
 <div class="line"><a name="l00891"></a><span class="lineno">  891</span>&#160;<span class="preprocessor">#endif</span></div>
 <div class="line"><a name="l00892"></a><span class="lineno">  892</span>&#160;<span class="preprocessor">#endif</span></div>
 <div class="line"><a name="l00893"></a><span class="lineno">  893</span>&#160; </div>
-<div class="line"><a name="l00894"></a><span class="lineno">  894</span>&#160;<span class="preprocessor">#endif </span><span class="comment">/* GRPC_SUPPORT_PORT_PLATFORM_H */</span><span class="preprocessor"></span></div>
+<div class="line"><a name="l00894"></a><span class="lineno">  894</span>&#160;<span class="preprocessor">#ifdef GPR_OPENBSD</span></div>
+<div class="line"><a name="l00895"></a><span class="lineno">  895</span>&#160;<span class="preprocessor">#define GRPC_MAX_SOCKADDR_SIZE 256</span></div>
+<div class="line"><a name="l00896"></a><span class="lineno">  896</span>&#160;<span class="preprocessor">#else</span></div>
+<div class="line"><a name="l00897"></a><span class="lineno"><a class="line" href="support_2port__platform_8h.html#aa9cd304afa2c2f9757531c4b2a8168b6">  897</a></span>&#160;<span class="preprocessor">#define GRPC_MAX_SOCKADDR_SIZE 128</span></div>
+<div class="line"><a name="l00898"></a><span class="lineno">  898</span>&#160;<span class="preprocessor">#endif</span></div>
+<div class="line"><a name="l00899"></a><span class="lineno">  899</span>&#160; </div>
+<div class="line"><a name="l00900"></a><span class="lineno">  900</span>&#160;<span class="preprocessor">#endif </span><span class="comment">/* GRPC_SUPPORT_PORT_PLATFORM_H */</span><span class="preprocessor"></span></div>
 </div><!-- fragment --></div><!-- contents -->
 <div class="ttc" id="asupport_2port__platform_8h_html_ae73de412cde28680b1a91f444463d4df"><div class="ttname"><a href="support_2port__platform_8h.html#ae73de412cde28680b1a91f444463d4df">GPR_ATTRIBUTE_NORETURN</a></div><div class="ttdeci">#define GPR_ATTRIBUTE_NORETURN</div><div class="ttdef"><b>Definition:</b> port_platform.h:707</div></div>
 <div class="ttc" id="asupport_2port__platform_8h_html_ad81f265625a28840b8be4c9f8247d50f"><div class="ttname"><a href="support_2port__platform_8h.html#ad81f265625a28840b8be4c9f8247d50f">gpr_unreachable_code</a></div><div class="ttdeci">void gpr_unreachable_code(const char *reason, const char *file, int line)</div></div>
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Feb 20 2026 17:27:58 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu Mar 26 2026 18:32:24 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

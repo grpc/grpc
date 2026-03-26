@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.78.1</span>
+   &#160;<span id="projectnumber">1.80.0</span>
    </div>
   </td>
  </tr>
@@ -144,7 +144,7 @@ $(function() {
 <div class="line"><a name="l00077"></a><span class="lineno">   77</span>&#160;    ops.AllowNoMessage();</div>
 <div class="line"><a name="l00078"></a><span class="lineno">   78</span>&#160;    ops.ClientSendClose();</div>
 <div class="line"><a name="l00079"></a><span class="lineno">   79</span>&#160;    ops.ClientRecvStatus(context, &amp;status_);</div>
-<div class="line"><a name="l00080"></a><span class="lineno">   80</span>&#160;    call.PerformOps(&amp;ops);</div>
+<div class="line"><a name="l00080"></a><span class="lineno">   80</span>&#160;    ops.FillOps(&amp;call);</div>
 <div class="line"><a name="l00081"></a><span class="lineno">   81</span>&#160;    cq.Pluck(&amp;ops);</div>
 <div class="line"><a name="l00082"></a><span class="lineno">   82</span>&#160;    <span class="comment">// Some of the ops might fail. If the ops fail in the core layer, status</span></div>
 <div class="line"><a name="l00083"></a><span class="lineno">   83</span>&#160;    <span class="comment">// would reflect the error. But, if the ops fail in the C++ layer, the</span></div>
@@ -169,16 +169,16 @@ $(function() {
 <div class="line"><a name="l00102"></a><span class="lineno">  102</span>&#160; </div>
 <div class="line"><a name="l00103"></a><span class="lineno">  103</span>&#160;<span class="preprocessor">#endif  // GRPCPP_IMPL_CLIENT_UNARY_CALL_H</span></div>
 </div><!-- fragment --></div><!-- contents -->
-<div class="ttc" id="aclassgrpc_1_1internal_1_1_call_op_recv_initial_metadata_html"><div class="ttname"><a href="classgrpc_1_1internal_1_1_call_op_recv_initial_metadata.html">grpc::internal::CallOpRecvInitialMetadata</a></div><div class="ttdef"><b>Definition:</b> call_op_set.h:725</div></div>
-<div class="ttc" id="aclassgrpc_1_1internal_1_1_call_op_client_send_close_html"><div class="ttname"><a href="classgrpc_1_1internal_1_1_call_op_client_send_close.html">grpc::internal::CallOpClientSendClose</a></div><div class="ttdef"><b>Definition:</b> call_op_set.h:623</div></div>
+<div class="ttc" id="aclassgrpc_1_1internal_1_1_call_op_recv_initial_metadata_html"><div class="ttname"><a href="classgrpc_1_1internal_1_1_call_op_recv_initial_metadata.html">grpc::internal::CallOpRecvInitialMetadata</a></div><div class="ttdef"><b>Definition:</b> call_op_set.h:723</div></div>
+<div class="ttc" id="aclassgrpc_1_1internal_1_1_call_op_client_send_close_html"><div class="ttname"><a href="classgrpc_1_1internal_1_1_call_op_client_send_close.html">grpc::internal::CallOpClientSendClose</a></div><div class="ttdef"><b>Definition:</b> call_op_set.h:621</div></div>
 <div class="ttc" id="anamespacegrpc_html"><div class="ttname"><a href="namespacegrpc.html">grpc</a></div><div class="ttdoc">An Alarm posts the user-provided tag to its associated completion queue or invokes the user-provided ...</div><div class="ttdef"><b>Definition:</b> alarm.h:33</div></div>
 <div class="ttc" id="aclassgrpc_1_1internal_1_1_call_op_set_html"><div class="ttname"><a href="classgrpc_1_1internal_1_1_call_op_set.html">grpc::internal::CallOpSet</a></div><div class="ttdoc">Primary implementation of CallOpSetInterface.</div><div class="ttdef"><b>Definition:</b> completion_queue.h:97</div></div>
-<div class="ttc" id="aclassgrpc_1_1internal_1_1_call_op_send_message_html"><div class="ttname"><a href="classgrpc_1_1internal_1_1_call_op_send_message.html">grpc::internal::CallOpSendMessage</a></div><div class="ttdef"><b>Definition:</b> call_op_set.h:289</div></div>
+<div class="ttc" id="aclassgrpc_1_1internal_1_1_call_op_send_message_html"><div class="ttname"><a href="classgrpc_1_1internal_1_1_call_op_send_message.html">grpc::internal::CallOpSendMessage</a></div><div class="ttdef"><b>Definition:</b> call_op_set.h:287</div></div>
 <div class="ttc" id="aclassgrpc_1_1internal_1_1_blocking_unary_call_impl_html"><div class="ttname"><a href="classgrpc_1_1internal_1_1_blocking_unary_call_impl.html">grpc::internal::BlockingUnaryCallImpl</a></div><div class="ttdef"><b>Definition:</b> client_context.h:102</div></div>
-<div class="ttc" id="aclassgrpc_1_1internal_1_1_call_html"><div class="ttname"><a href="classgrpc_1_1internal_1_1_call.html">grpc::internal::Call</a></div><div class="ttdoc">Straightforward wrapping of the C call object.</div><div class="ttdef"><b>Definition:</b> call.h:36</div></div>
+<div class="ttc" id="aclassgrpc_1_1internal_1_1_call_html"><div class="ttname"><a href="classgrpc_1_1internal_1_1_call.html">grpc::internal::Call</a></div><div class="ttdoc">Straightforward wrapping of the C call object.</div><div class="ttdef"><b>Definition:</b> call.h:34</div></div>
 <div class="ttc" id="agrpcpp_2support_2status_8h_html"><div class="ttname"><a href="grpcpp_2support_2status_8h.html">status.h</a></div></div>
-<div class="ttc" id="aclassgrpc_1_1internal_1_1_call_op_send_initial_metadata_html"><div class="ttname"><a href="classgrpc_1_1internal_1_1_call_op_send_initial_metadata.html">grpc::internal::CallOpSendInitialMetadata</a></div><div class="ttdef"><b>Definition:</b> call_op_set.h:219</div></div>
-<div class="ttc" id="aclassgrpc_1_1_status_html_ab80672b5665c32dc0937a0d58a3ce192"><div class="ttname"><a href="classgrpc_1_1_status.html#ab80672b5665c32dc0937a0d58a3ce192">grpc::Status::ok</a></div><div class="ttdeci">bool ok() const</div><div class="ttdoc">Is the status OK?</div><div class="ttdef"><b>Definition:</b> status.h:125</div></div>
+<div class="ttc" id="aclassgrpc_1_1internal_1_1_call_op_send_initial_metadata_html"><div class="ttname"><a href="classgrpc_1_1internal_1_1_call_op_send_initial_metadata.html">grpc::internal::CallOpSendInitialMetadata</a></div><div class="ttdef"><b>Definition:</b> call_op_set.h:217</div></div>
+<div class="ttc" id="aclassgrpc_1_1_status_html_ab80672b5665c32dc0937a0d58a3ce192"><div class="ttname"><a href="classgrpc_1_1_status.html#ab80672b5665c32dc0937a0d58a3ce192">grpc::Status::ok</a></div><div class="ttdeci">bool ok() const</div><div class="ttdoc">Is the status OK?</div><div class="ttdef"><b>Definition:</b> status.h:124</div></div>
 <div class="ttc" id="aclassgrpc_1_1_status_html"><div class="ttname"><a href="classgrpc_1_1_status.html">grpc::Status</a></div><div class="ttdoc">Did it work? If it didn't, why?</div><div class="ttdef"><b>Definition:</b> status.h:34</div></div>
 <div class="ttc" id="agrpc__types_8h_html_a6f3d3ec662c2a8ac669c98163d511343afc366f1bf1fc412fafd97557bc0160c8"><div class="ttname"><a href="grpc__types_8h.html#a6f3d3ec662c2a8ac669c98163d511343afc366f1bf1fc412fafd97557bc0160c8">GRPC_CQ_DEFAULT_POLLING</a></div><div class="ttdeci">@ GRPC_CQ_DEFAULT_POLLING</div><div class="ttdoc">The completion queue will have an associated pollset and there is no restriction on the type of file ...</div><div class="ttdef"><b>Definition:</b> grpc_types.h:413</div></div>
 <div class="ttc" id="aclassgrpc_1_1_client_context_html"><div class="ttname"><a href="classgrpc_1_1_client_context.html">grpc::ClientContext</a></div><div class="ttdoc">A ClientContext allows the person implementing a service client to:</div><div class="ttdef"><b>Definition:</b> client_context.h:194</div></div>
@@ -192,9 +192,9 @@ $(function() {
 <div class="ttc" id="agrpc__types_8h_html_a52497b2b6db8035126a8b45467a14d97"><div class="ttname"><a href="grpc__types_8h.html#a52497b2b6db8035126a8b45467a14d97">GRPC_CQ_CURRENT_VERSION</a></div><div class="ttdeci">#define GRPC_CQ_CURRENT_VERSION</div><div class="ttdef"><b>Definition:</b> grpc_types.h:459</div></div>
 <div class="ttc" id="acall__op__set_8h_html"><div class="ttname"><a href="call__op__set_8h.html">call_op_set.h</a></div></div>
 <div class="ttc" id="agrpcpp_2impl_2call_8h_html"><div class="ttname"><a href="grpcpp_2impl_2call_8h.html">call.h</a></div></div>
-<div class="ttc" id="aclassgrpc_1_1internal_1_1_call_op_client_recv_status_html"><div class="ttname"><a href="classgrpc_1_1internal_1_1_call_op_client_recv_status.html">grpc::internal::CallOpClientRecvStatus</a></div><div class="ttdef"><b>Definition:</b> call_op_set.h:773</div></div>
+<div class="ttc" id="aclassgrpc_1_1internal_1_1_call_op_client_recv_status_html"><div class="ttname"><a href="classgrpc_1_1internal_1_1_call_op_client_recv_status.html">grpc::internal::CallOpClientRecvStatus</a></div><div class="ttdef"><b>Definition:</b> call_op_set.h:771</div></div>
 <div class="ttc" id="aclassgrpc_1_1_completion_queue_html"><div class="ttname"><a href="classgrpc_1_1_completion_queue.html">grpc::CompletionQueue</a></div><div class="ttdoc">A thin wrapper around grpc_completion_queue (see src/core/lib/surface/completion_queue....</div><div class="ttdef"><b>Definition:</b> completion_queue.h:104</div></div>
-<div class="ttc" id="aclassgrpc_1_1internal_1_1_call_op_recv_message_html"><div class="ttname"><a href="classgrpc_1_1internal_1_1_call_op_recv_message.html">grpc::internal::CallOpRecvMessage</a></div><div class="ttdef"><b>Definition:</b> call_op_set.h:429</div></div>
+<div class="ttc" id="aclassgrpc_1_1internal_1_1_call_op_recv_message_html"><div class="ttname"><a href="classgrpc_1_1internal_1_1_call_op_recv_message.html">grpc::internal::CallOpRecvMessage</a></div><div class="ttdef"><b>Definition:</b> call_op_set.h:427</div></div>
 <div class="ttc" id="aclassgrpc_1_1internal_1_1_rpc_method_html"><div class="ttname"><a href="classgrpc_1_1internal_1_1_rpc_method.html">grpc::internal::RpcMethod</a></div><div class="ttdoc">Descriptor of an RPC method.</div><div class="ttdef"><b>Definition:</b> rpc_method.h:29</div></div>
 <div class="ttc" id="anamespacegrpc_1_1internal_html_a997ff44cb7bf8240626c3da1a1ddd7c9"><div class="ttname"><a href="namespacegrpc_1_1internal.html#a997ff44cb7bf8240626c3da1a1ddd7c9">grpc::internal::BlockingUnaryCall</a></div><div class="ttdeci">Status BlockingUnaryCall(ChannelInterface *channel, const RpcMethod &amp;method, grpc::ClientContext *context, const InputMessage &amp;request, OutputMessage *result)</div><div class="ttdoc">Wrapper that performs a blocking unary call.</div><div class="ttdef"><b>Definition:</b> client_unary_call.h:42</div></div>
 <div class="ttc" id="anamespacegrpc_1_1protobuf_1_1util_html_ad372120c6db3d26bf54ab69b6f595fe4"><div class="ttname"><a href="namespacegrpc_1_1protobuf_1_1util.html#ad372120c6db3d26bf54ab69b6f595fe4">grpc::protobuf::util::Status</a></div><div class="ttdeci">::absl::Status Status</div><div class="ttdef"><b>Definition:</b> config_protobuf.h:107</div></div>
@@ -202,7 +202,7 @@ $(function() {
 <div class="ttc" id="aclassgrpc_1_1_channel_interface_html_aa0b31feb48aad6ccc4c45c9620aed4fc"><div class="ttname"><a href="classgrpc_1_1_channel_interface.html#aa0b31feb48aad6ccc4c45c9620aed4fc">grpc::ChannelInterface::memory_allocator</a></div><div class="ttdeci">virtual grpc_event_engine::experimental::MemoryAllocator * memory_allocator() const</div><div class="ttdef"><b>Definition:</b> channel_interface.h:106</div></div>
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Feb 20 2026 17:27:58 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu Mar 26 2026 18:32:23 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

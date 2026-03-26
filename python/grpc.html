@@ -8,7 +8,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>gRPC &#8212; gRPC Python Docs v1.78.1</title>
+    <title>gRPC &#8212; gRPC Python Docs v1.80.0</title>
   
   
   
@@ -39,7 +39,7 @@
   <link rel="preload" as="script" href="_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
 <link rel="preload" as="script" href="_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
 
-    <script src="_static/documentation_options.js?v=ef80e3d6"></script>
+    <script src="_static/documentation_options.js?v=99d36d13"></script>
     <script src="_static/doctools.js?v=9a2dae69"></script>
     <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <script async="async" src="https://www.googletagmanager.com/gtag/js?id=UA-60127042-1"></script>
@@ -62,7 +62,7 @@
     <link rel="prev" title="Welcome to gRPC Python’s documentation!" href="index.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="1.78.1" />
+  <meta name="docsearch:version" content="1.80.0" />
   </head>
   
   
@@ -124,7 +124,7 @@
   
   
   
-    <p class="title logo__title">gRPC Python Docs v1.78.1</p>
+    <p class="title logo__title">gRPC Python Docs v1.80.0</p>
   
 </a></div>
     
@@ -524,8 +524,8 @@ to configure the channel.</p></li>
 <li><p><strong>maximum_concurrent_rpcs</strong> – The maximum number of concurrent RPCs this server
 will service before returning RESOURCE_EXHAUSTED status, or None to
 indicate no limit.</p></li>
-<li><p><strong>compression</strong> – An element of grpc.compression, e.g.
-grpc.compression.Gzip. This compression algorithm will be used for the
+<li><p><strong>compression</strong> – An element of grpc.Compression, e.g.
+grpc.Compression.Gzip. This compression algorithm will be used for the
 lifetime of the server unless overridden.</p></li>
 <li><p><strong>xds</strong> – If set to true, retrieves server configuration via xDS. This is an
 EXPERIMENTAL option.</p></li>
@@ -1509,8 +1509,8 @@ the service-side of the RPC.</p>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="grpc.ClientCallDetails.compression">
 <span class="sig-name descname"><span class="pre">compression</span></span><a class="headerlink" href="#grpc.ClientCallDetails.compression" title="Link to this definition">#</a></dt>
-<dd><p>An element of grpc.compression, e.g.
-grpc.compression.Gzip.</p>
+<dd><p>An element of grpc.Compression, e.g.
+grpc.Compression.Gzip.</p>
 </dd></dl>
 
 </dd></dl>
@@ -1846,8 +1846,8 @@ the gRPC runtime to determine the status code of the RPC.</p>
 <dd><p>Set the compression algorithm to be used for the entire call.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>compression</strong> – An element of grpc.compression, e.g.
-grpc.compression.Gzip.</p>
+<dd class="field-odd"><p><strong>compression</strong> – An element of grpc.Compression, e.g.
+grpc.Compression.Gzip.</p>
 </dd>
 </dl>
 </dd></dl>
@@ -2095,8 +2095,8 @@ service-side of the RPC.</p></li>
 <li><p><strong>credentials</strong> – An optional CallCredentials for the RPC. Only valid for
 secure Channel.</p></li>
 <li><p><strong>wait_for_ready</strong> – An optional flag to enable <a class="reference internal" href="glossary.html#term-wait_for_ready"><span class="xref std std-term">wait_for_ready</span></a> mechanism.</p></li>
-<li><p><strong>compression</strong> – An element of grpc.compression, e.g.
-grpc.compression.Gzip.</p></li>
+<li><p><strong>compression</strong> – An element of grpc.Compression, e.g.
+grpc.Compression.Gzip.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
@@ -2125,8 +2125,8 @@ service-side of the RPC.</p></li>
 <li><p><strong>credentials</strong> – An optional CallCredentials for the RPC. Only valid for
 secure Channel.</p></li>
 <li><p><strong>wait_for_ready</strong> – An optional flag to enable <a class="reference internal" href="glossary.html#term-wait_for_ready"><span class="xref std std-term">wait_for_ready</span></a> mechanism.</p></li>
-<li><p><strong>compression</strong> – An element of grpc.compression, e.g.
-grpc.compression.Gzip.</p></li>
+<li><p><strong>compression</strong> – An element of grpc.Compression, e.g.
+grpc.Compression.Gzip.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
@@ -2154,8 +2154,8 @@ service-side of the RPC.</p></li>
 <li><p><strong>credentials</strong> – An optional CallCredentials for the RPC. Only valid for
 secure Channel.</p></li>
 <li><p><strong>wait_for_ready</strong> – An optional flag to enable <a class="reference internal" href="glossary.html#term-wait_for_ready"><span class="xref std std-term">wait_for_ready</span></a> mechanism.</p></li>
-<li><p><strong>compression</strong> – An element of grpc.compression, e.g.
-grpc.compression.Gzip.</p></li>
+<li><p><strong>compression</strong> – An element of grpc.Compression, e.g.
+grpc.Compression.Gzip.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
@@ -2190,8 +2190,8 @@ service-side of the RPC.</p></li>
 <li><p><strong>credentials</strong> – An optional CallCredentials for the RPC. Only valid for
 secure Channel.</p></li>
 <li><p><strong>wait_for_ready</strong> – An optional flag to enable <a class="reference internal" href="glossary.html#term-wait_for_ready"><span class="xref std std-term">wait_for_ready</span></a> mechanism.</p></li>
-<li><p><strong>compression</strong> – An element of grpc.compression, e.g.
-grpc.compression.Gzip.</p></li>
+<li><p><strong>compression</strong> – An element of grpc.Compression, e.g.
+grpc.Compression.Gzip.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
@@ -2225,8 +2225,8 @@ service-side of the RPC.</p></li>
 <li><p><strong>credentials</strong> – An optional CallCredentials for the RPC. Only valid for
 secure Channel.</p></li>
 <li><p><strong>wait_for_ready</strong> – An optional flag to enable <a class="reference internal" href="glossary.html#term-wait_for_ready"><span class="xref std std-term">wait_for_ready</span></a> mechanism.</p></li>
-<li><p><strong>compression</strong> – An element of grpc.compression, e.g.
-grpc.compression.Gzip.</p></li>
+<li><p><strong>compression</strong> – An element of grpc.Compression, e.g.
+grpc.Compression.Gzip.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
@@ -2255,8 +2255,8 @@ service-side of the RPC.</p></li>
 <li><p><strong>credentials</strong> – An optional CallCredentials for the RPC. Only valid for
 secure Channel.</p></li>
 <li><p><strong>wait_for_ready</strong> – An optional flag to enable <a class="reference internal" href="glossary.html#term-wait_for_ready"><span class="xref std std-term">wait_for_ready</span></a> mechanism.</p></li>
-<li><p><strong>compression</strong> – An element of grpc.compression, e.g.
-grpc.compression.Gzip.</p></li>
+<li><p><strong>compression</strong> – An element of grpc.Compression, e.g.
+grpc.Compression.Gzip.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
@@ -2285,8 +2285,8 @@ service-side of the RPC.</p></li>
 <li><p><strong>credentials</strong> – An optional CallCredentials for the RPC. Only valid for
 secure Channel.</p></li>
 <li><p><strong>wait_for_ready</strong> – An optional flag to enable <a class="reference internal" href="glossary.html#term-wait_for_ready"><span class="xref std std-term">wait_for_ready</span></a> mechanism.</p></li>
-<li><p><strong>compression</strong> – An element of grpc.compression, e.g.
-grpc.compression.Gzip.</p></li>
+<li><p><strong>compression</strong> – An element of grpc.Compression, e.g.
+grpc.Compression.Gzip.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
@@ -2321,8 +2321,8 @@ service-side of the RPC.</p></li>
 <li><p><strong>credentials</strong> – An optional CallCredentials for the RPC. Only valid for
 secure Channel.</p></li>
 <li><p><strong>wait_for_ready</strong> – An optional flag to enable <a class="reference internal" href="glossary.html#term-wait_for_ready"><span class="xref std std-term">wait_for_ready</span></a> mechanism.</p></li>
-<li><p><strong>compression</strong> – An element of grpc.compression, e.g.
-grpc.compression.Gzip.</p></li>
+<li><p><strong>compression</strong> – An element of grpc.Compression, e.g.
+grpc.Compression.Gzip.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>

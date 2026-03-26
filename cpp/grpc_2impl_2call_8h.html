@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.78.1</span>
+   &#160;<span id="projectnumber">1.80.0</span>
    </div>
   </td>
  </tr>
@@ -82,8 +82,38 @@ $(function() {
 Functions</h2></td></tr>
 <tr class="memitem:a6df2684a045833af0d9a19d55f883095"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc_2impl_2call_8h.html#a6df2684a045833af0d9a19d55f883095">grpc_call_run_in_event_engine</a> (const <a class="el" href="grpc__types_8h.html#a122f8f4f0a585396d993d9b55848f222">grpc_call</a> *call, absl::AnyInvocable&lt; void()&gt; cb)</td></tr>
 <tr class="separator:a6df2684a045833af0d9a19d55f883095"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a35446392830f48b3867da23fa3dcd327"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc_2impl_2call_8h.html#a35446392830f48b3867da23fa3dcd327">grpc_call_run_cq_cb</a> (const <a class="el" href="grpc__types_8h.html#a122f8f4f0a585396d993d9b55848f222">grpc_call</a> *call, absl::AnyInvocable&lt; void()&gt; &amp;&amp;cb)</td></tr>
+<tr class="separator:a35446392830f48b3867da23fa3dcd327"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Function Documentation</h2>
+<a id="a35446392830f48b3867da23fa3dcd327"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a35446392830f48b3867da23fa3dcd327">&#9670;&nbsp;</a></span>grpc_call_run_cq_cb()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void grpc_call_run_cq_cb </td>
+          <td>(</td>
+          <td class="paramtype">const <a class="el" href="grpc__types_8h.html#a122f8f4f0a585396d993d9b55848f222">grpc_call</a> *&#160;</td>
+          <td class="paramname"><em>call</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">absl::AnyInvocable&lt; void()&gt; &amp;&amp;&#160;</td>
+          <td class="paramname"><em>cb</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
 <a id="a6df2684a045833af0d9a19d55f883095"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a6df2684a045833af0d9a19d55f883095">&#9670;&nbsp;</a></span>grpc_call_run_in_event_engine()</h2>
 
@@ -115,7 +145,7 @@ Functions</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Feb 20 2026 17:27:59 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu Mar 26 2026 18:32:24 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

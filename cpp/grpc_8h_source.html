@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.78.1</span>
+   &#160;<span id="projectnumber">1.80.0</span>
    </div>
   </td>
  </tr>
@@ -335,47 +335,50 @@ $(function() {
 <div class="line"><a name="l00529"></a><span class="lineno">  529</span>&#160;<a class="code" href="support_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <span class="keywordtype">void</span> <a class="code" href="grpc_8h.html#affc13775130fa5f376d885f742cacfe7">grpc_resource_quota_set_max_threads</a>(</div>
 <div class="line"><a name="l00530"></a><span class="lineno">  530</span>&#160;    <a class="code" href="grpc__types_8h.html#a16d58b8d7c93609d01311b869f4a8d05">grpc_resource_quota</a>* resource_quota, <span class="keywordtype">int</span> new_max_threads);</div>
 <div class="line"><a name="l00531"></a><span class="lineno">  531</span>&#160; </div>
-<div class="line"><a name="l00534"></a><span class="lineno">  534</span>&#160;<a class="code" href="support_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <a class="code" href="structgrpc__slice.html">grpc_slice</a> <a class="code" href="grpc_8h.html#a7408718487625d05c9abad7dce78d923">grpc_dump_xds_configs</a>(<span class="keywordtype">void</span>);</div>
+<div class="line"><a name="l00533"></a><span class="lineno">  533</span>&#160;<a class="code" href="support_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <span class="keywordtype">void</span> <a class="code" href="grpc_8h.html#ab2e75431d82cef2fd1035e03ac548adf">grpc_resource_quota_set_max_outstanding_streams</a>(</div>
+<div class="line"><a name="l00534"></a><span class="lineno">  534</span>&#160;    <a class="code" href="grpc__types_8h.html#a16d58b8d7c93609d01311b869f4a8d05">grpc_resource_quota</a>* resource_quota, <span class="keywordtype">int</span> new_max_outstanding_streams);</div>
 <div class="line"><a name="l00535"></a><span class="lineno">  535</span>&#160; </div>
-<div class="line"><a name="l00538"></a><span class="lineno">  538</span>&#160;<a class="code" href="support_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <span class="keyword">const</span> <a class="code" href="structgrpc__arg__pointer__vtable.html">grpc_arg_pointer_vtable</a>* <a class="code" href="grpc_8h.html#ae379b66894447c1b67473f20a16a6821">grpc_resource_quota_arg_vtable</a>(<span class="keywordtype">void</span>);</div>
+<div class="line"><a name="l00538"></a><span class="lineno">  538</span>&#160;<a class="code" href="support_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <a class="code" href="structgrpc__slice.html">grpc_slice</a> <a class="code" href="grpc_8h.html#a7408718487625d05c9abad7dce78d923">grpc_dump_xds_configs</a>(<span class="keywordtype">void</span>);</div>
 <div class="line"><a name="l00539"></a><span class="lineno">  539</span>&#160; </div>
-<div class="line"><a name="l00540"></a><span class="lineno">  540</span>&#160;<span class="comment">/************* CHANNELZ API *************/</span></div>
-<div class="line"><a name="l00554"></a><span class="lineno">  554</span>&#160;<span class="comment">/* Gets all root channels (i.e. channels the application has directly</span></div>
-<div class="line"><a name="l00555"></a><span class="lineno">  555</span>&#160;<span class="comment">   created). This does not include subchannels nor non-top level channels.</span></div>
-<div class="line"><a name="l00556"></a><span class="lineno">  556</span>&#160;<span class="comment">   The returned string is allocated and must be freed by the application. */</span></div>
-<div class="line"><a name="l00557"></a><span class="lineno">  557</span>&#160;<a class="code" href="support_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <span class="keywordtype">char</span>* <a class="code" href="grpc_8h.html#afe4d34fb3ed282c259bc94f5ed45b183">grpc_channelz_get_top_channels</a>(intptr_t start_channel_id);</div>
-<div class="line"><a name="l00558"></a><span class="lineno">  558</span>&#160; </div>
-<div class="line"><a name="l00559"></a><span class="lineno">  559</span>&#160;<span class="comment">/* Gets all servers that exist in the process. */</span></div>
-<div class="line"><a name="l00560"></a><span class="lineno">  560</span>&#160;<a class="code" href="support_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <span class="keywordtype">char</span>* <a class="code" href="grpc_8h.html#a4581bf691bc258f4280c1da8c79f817d">grpc_channelz_get_servers</a>(intptr_t start_server_id);</div>
-<div class="line"><a name="l00561"></a><span class="lineno">  561</span>&#160; </div>
-<div class="line"><a name="l00562"></a><span class="lineno">  562</span>&#160;<span class="comment">/* Returns a single Server, or else a NOT_FOUND code. */</span></div>
-<div class="line"><a name="l00563"></a><span class="lineno">  563</span>&#160;<a class="code" href="support_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <span class="keywordtype">char</span>* <a class="code" href="grpc_8h.html#ab0f2e2c55348873010ee6cbe25a1a288">grpc_channelz_get_server</a>(intptr_t server_id);</div>
-<div class="line"><a name="l00564"></a><span class="lineno">  564</span>&#160; </div>
-<div class="line"><a name="l00565"></a><span class="lineno">  565</span>&#160;<span class="comment">/* Gets all server sockets that exist in the server. */</span></div>
-<div class="line"><a name="l00566"></a><span class="lineno">  566</span>&#160;<a class="code" href="support_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <span class="keywordtype">char</span>* <a class="code" href="grpc_8h.html#a4ad7342a04c28c6a16f0256cfc007032">grpc_channelz_get_server_sockets</a>(intptr_t server_id,</div>
-<div class="line"><a name="l00567"></a><span class="lineno">  567</span>&#160;                                               intptr_t start_socket_id,</div>
-<div class="line"><a name="l00568"></a><span class="lineno">  568</span>&#160;                                               intptr_t max_results);</div>
-<div class="line"><a name="l00569"></a><span class="lineno">  569</span>&#160; </div>
-<div class="line"><a name="l00570"></a><span class="lineno">  570</span>&#160;<span class="comment">/* Returns a single Channel, or else a NOT_FOUND code. The returned string</span></div>
-<div class="line"><a name="l00571"></a><span class="lineno">  571</span>&#160;<span class="comment">   is allocated and must be freed by the application. */</span></div>
-<div class="line"><a name="l00572"></a><span class="lineno">  572</span>&#160;<a class="code" href="support_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <span class="keywordtype">char</span>* <a class="code" href="grpc_8h.html#ab7254f9b17f4efa3d5111b928bd78d3c">grpc_channelz_get_channel</a>(intptr_t channel_id);</div>
+<div class="line"><a name="l00542"></a><span class="lineno">  542</span>&#160;<a class="code" href="support_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <span class="keyword">const</span> <a class="code" href="structgrpc__arg__pointer__vtable.html">grpc_arg_pointer_vtable</a>* <a class="code" href="grpc_8h.html#ae379b66894447c1b67473f20a16a6821">grpc_resource_quota_arg_vtable</a>(<span class="keywordtype">void</span>);</div>
+<div class="line"><a name="l00543"></a><span class="lineno">  543</span>&#160; </div>
+<div class="line"><a name="l00544"></a><span class="lineno">  544</span>&#160;<span class="comment">/************* CHANNELZ API *************/</span></div>
+<div class="line"><a name="l00558"></a><span class="lineno">  558</span>&#160;<span class="comment">/* Gets all root channels (i.e. channels the application has directly</span></div>
+<div class="line"><a name="l00559"></a><span class="lineno">  559</span>&#160;<span class="comment">   created). This does not include subchannels nor non-top level channels.</span></div>
+<div class="line"><a name="l00560"></a><span class="lineno">  560</span>&#160;<span class="comment">   The returned string is allocated and must be freed by the application. */</span></div>
+<div class="line"><a name="l00561"></a><span class="lineno">  561</span>&#160;<a class="code" href="support_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <span class="keywordtype">char</span>* <a class="code" href="grpc_8h.html#afe4d34fb3ed282c259bc94f5ed45b183">grpc_channelz_get_top_channels</a>(intptr_t start_channel_id);</div>
+<div class="line"><a name="l00562"></a><span class="lineno">  562</span>&#160; </div>
+<div class="line"><a name="l00563"></a><span class="lineno">  563</span>&#160;<span class="comment">/* Gets all servers that exist in the process. */</span></div>
+<div class="line"><a name="l00564"></a><span class="lineno">  564</span>&#160;<a class="code" href="support_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <span class="keywordtype">char</span>* <a class="code" href="grpc_8h.html#a4581bf691bc258f4280c1da8c79f817d">grpc_channelz_get_servers</a>(intptr_t start_server_id);</div>
+<div class="line"><a name="l00565"></a><span class="lineno">  565</span>&#160; </div>
+<div class="line"><a name="l00566"></a><span class="lineno">  566</span>&#160;<span class="comment">/* Returns a single Server, or else a NOT_FOUND code. */</span></div>
+<div class="line"><a name="l00567"></a><span class="lineno">  567</span>&#160;<a class="code" href="support_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <span class="keywordtype">char</span>* <a class="code" href="grpc_8h.html#ab0f2e2c55348873010ee6cbe25a1a288">grpc_channelz_get_server</a>(intptr_t server_id);</div>
+<div class="line"><a name="l00568"></a><span class="lineno">  568</span>&#160; </div>
+<div class="line"><a name="l00569"></a><span class="lineno">  569</span>&#160;<span class="comment">/* Gets all server sockets that exist in the server. */</span></div>
+<div class="line"><a name="l00570"></a><span class="lineno">  570</span>&#160;<a class="code" href="support_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <span class="keywordtype">char</span>* <a class="code" href="grpc_8h.html#a4ad7342a04c28c6a16f0256cfc007032">grpc_channelz_get_server_sockets</a>(intptr_t server_id,</div>
+<div class="line"><a name="l00571"></a><span class="lineno">  571</span>&#160;                                               intptr_t start_socket_id,</div>
+<div class="line"><a name="l00572"></a><span class="lineno">  572</span>&#160;                                               intptr_t max_results);</div>
 <div class="line"><a name="l00573"></a><span class="lineno">  573</span>&#160; </div>
-<div class="line"><a name="l00574"></a><span class="lineno">  574</span>&#160;<span class="comment">/* Returns a single Subchannel, or else a NOT_FOUND code. The returned string</span></div>
+<div class="line"><a name="l00574"></a><span class="lineno">  574</span>&#160;<span class="comment">/* Returns a single Channel, or else a NOT_FOUND code. The returned string</span></div>
 <div class="line"><a name="l00575"></a><span class="lineno">  575</span>&#160;<span class="comment">   is allocated and must be freed by the application. */</span></div>
-<div class="line"><a name="l00576"></a><span class="lineno">  576</span>&#160;<a class="code" href="support_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <span class="keywordtype">char</span>* <a class="code" href="grpc_8h.html#a3e4a297b24f0e9b4ec59f3098b29ff0a">grpc_channelz_get_subchannel</a>(intptr_t subchannel_id);</div>
+<div class="line"><a name="l00576"></a><span class="lineno">  576</span>&#160;<a class="code" href="support_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <span class="keywordtype">char</span>* <a class="code" href="grpc_8h.html#ab7254f9b17f4efa3d5111b928bd78d3c">grpc_channelz_get_channel</a>(intptr_t channel_id);</div>
 <div class="line"><a name="l00577"></a><span class="lineno">  577</span>&#160; </div>
-<div class="line"><a name="l00578"></a><span class="lineno">  578</span>&#160;<span class="comment">/* Returns a single Socket, or else a NOT_FOUND code. The returned string</span></div>
+<div class="line"><a name="l00578"></a><span class="lineno">  578</span>&#160;<span class="comment">/* Returns a single Subchannel, or else a NOT_FOUND code. The returned string</span></div>
 <div class="line"><a name="l00579"></a><span class="lineno">  579</span>&#160;<span class="comment">   is allocated and must be freed by the application. */</span></div>
-<div class="line"><a name="l00580"></a><span class="lineno">  580</span>&#160;<a class="code" href="support_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <span class="keywordtype">char</span>* <a class="code" href="grpc_8h.html#aa3c7622a98ff25d48db43ef2871aa37f">grpc_channelz_get_socket</a>(intptr_t socket_id);</div>
+<div class="line"><a name="l00580"></a><span class="lineno">  580</span>&#160;<a class="code" href="support_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <span class="keywordtype">char</span>* <a class="code" href="grpc_8h.html#a3e4a297b24f0e9b4ec59f3098b29ff0a">grpc_channelz_get_subchannel</a>(intptr_t subchannel_id);</div>
 <div class="line"><a name="l00581"></a><span class="lineno">  581</span>&#160; </div>
-<div class="line"><a name="l00587"></a><span class="lineno">  587</span>&#160;<a class="code" href="support_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <span class="keyword">const</span> <a class="code" href="structgrpc__arg__pointer__vtable.html">grpc_arg_pointer_vtable</a>*</div>
-<div class="line"><a name="l00588"></a><span class="lineno">  588</span>&#160;<a class="code" href="grpc_8h.html#a578d29d2471b6be1df3cd4a463390a65">grpc_authorization_policy_provider_arg_vtable</a>(<span class="keywordtype">void</span>);</div>
-<div class="line"><a name="l00589"></a><span class="lineno">  589</span>&#160; </div>
-<div class="line"><a name="l00590"></a><span class="lineno">  590</span>&#160;<span class="preprocessor">#ifdef __cplusplus</span></div>
-<div class="line"><a name="l00591"></a><span class="lineno">  591</span>&#160;}</div>
-<div class="line"><a name="l00592"></a><span class="lineno">  592</span>&#160;<span class="preprocessor">#endif</span></div>
+<div class="line"><a name="l00582"></a><span class="lineno">  582</span>&#160;<span class="comment">/* Returns a single Socket, or else a NOT_FOUND code. The returned string</span></div>
+<div class="line"><a name="l00583"></a><span class="lineno">  583</span>&#160;<span class="comment">   is allocated and must be freed by the application. */</span></div>
+<div class="line"><a name="l00584"></a><span class="lineno">  584</span>&#160;<a class="code" href="support_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <span class="keywordtype">char</span>* <a class="code" href="grpc_8h.html#aa3c7622a98ff25d48db43ef2871aa37f">grpc_channelz_get_socket</a>(intptr_t socket_id);</div>
+<div class="line"><a name="l00585"></a><span class="lineno">  585</span>&#160; </div>
+<div class="line"><a name="l00591"></a><span class="lineno">  591</span>&#160;<a class="code" href="support_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <span class="keyword">const</span> <a class="code" href="structgrpc__arg__pointer__vtable.html">grpc_arg_pointer_vtable</a>*</div>
+<div class="line"><a name="l00592"></a><span class="lineno">  592</span>&#160;<a class="code" href="grpc_8h.html#a578d29d2471b6be1df3cd4a463390a65">grpc_authorization_policy_provider_arg_vtable</a>(<span class="keywordtype">void</span>);</div>
 <div class="line"><a name="l00593"></a><span class="lineno">  593</span>&#160; </div>
-<div class="line"><a name="l00594"></a><span class="lineno">  594</span>&#160;<span class="preprocessor">#endif </span><span class="comment">/* GRPC_GRPC_H */</span><span class="preprocessor"></span></div>
+<div class="line"><a name="l00594"></a><span class="lineno">  594</span>&#160;<span class="preprocessor">#ifdef __cplusplus</span></div>
+<div class="line"><a name="l00595"></a><span class="lineno">  595</span>&#160;}</div>
+<div class="line"><a name="l00596"></a><span class="lineno">  596</span>&#160;<span class="preprocessor">#endif</span></div>
+<div class="line"><a name="l00597"></a><span class="lineno">  597</span>&#160; </div>
+<div class="line"><a name="l00598"></a><span class="lineno">  598</span>&#160;<span class="preprocessor">#endif </span><span class="comment">/* GRPC_GRPC_H */</span><span class="preprocessor"></span></div>
 </div><!-- fragment --></div><!-- contents -->
 <div class="ttc" id="agrpc_8h_html_afe4d34fb3ed282c259bc94f5ed45b183"><div class="ttname"><a href="grpc_8h.html#afe4d34fb3ed282c259bc94f5ed45b183">grpc_channelz_get_top_channels</a></div><div class="ttdeci">GRPCAPI char * grpc_channelz_get_top_channels(intptr_t start_channel_id)</div><div class="ttdoc">Channelz is under active development.</div></div>
 <div class="ttc" id="acensus_8h_html_a27fc8788690179599713226f1f054736"><div class="ttname"><a href="census_8h.html#a27fc8788690179599713226f1f054736">census_context</a></div><div class="ttdeci">struct census_context census_context</div><div class="ttdoc">A Census Context is a handle used by Census to represent the current tracing and stats collection inf...</div><div class="ttdef"><b>Definition:</b> census.h:33</div></div>
@@ -441,6 +444,7 @@ $(function() {
 <div class="ttc" id="aconnectivity__state_8h_html_a065b65f5cdd062a67d82e2b6bcf68cf2"><div class="ttname"><a href="connectivity__state_8h.html#a065b65f5cdd062a67d82e2b6bcf68cf2">grpc_connectivity_state</a></div><div class="ttdeci">grpc_connectivity_state</div><div class="ttdoc">Connectivity state of a channel.</div><div class="ttdef"><b>Definition:</b> connectivity_state.h:30</div></div>
 <div class="ttc" id="astructgrpc__serving__status__update_html"><div class="ttname"><a href="structgrpc__serving__status__update.html">grpc_serving_status_update</a></div><div class="ttdef"><b>Definition:</b> grpc.h:434</div></div>
 <div class="ttc" id="agrpc__types_8h_html_a122f8f4f0a585396d993d9b55848f222"><div class="ttname"><a href="grpc__types_8h.html#a122f8f4f0a585396d993d9b55848f222">grpc_call</a></div><div class="ttdeci">struct grpc_call grpc_call</div><div class="ttdoc">A Call represents an RPC.</div><div class="ttdef"><b>Definition:</b> grpc_types.h:68</div></div>
+<div class="ttc" id="agrpc_8h_html_ab2e75431d82cef2fd1035e03ac548adf"><div class="ttname"><a href="grpc_8h.html#ab2e75431d82cef2fd1035e03ac548adf">grpc_resource_quota_set_max_outstanding_streams</a></div><div class="ttdeci">GRPCAPI void grpc_resource_quota_set_max_outstanding_streams(grpc_resource_quota *resource_quota, int new_max_outstanding_streams)</div><div class="ttdoc">Update the size of the maximum number of streams allowed.</div></div>
 <div class="ttc" id="astructgrpc__byte__buffer_html"><div class="ttname"><a href="structgrpc__byte__buffer.html">grpc_byte_buffer</a></div><div class="ttdef"><b>Definition:</b> grpc_types.h:41</div></div>
 <div class="ttc" id="aconnectivity__state_8h_html"><div class="ttname"><a href="connectivity__state_8h.html">connectivity_state.h</a></div></div>
 <div class="ttc" id="agrpc_2credentials_8h_html_a2350ef1b38c4f69d0ff8510dcbe40072"><div class="ttname"><a href="grpc_2credentials_8h.html#a2350ef1b38c4f69d0ff8510dcbe40072">grpc_call_credentials</a></div><div class="ttdeci">struct grpc_call_credentials grpc_call_credentials</div><div class="ttdef"><b>Definition:</b> credentials.h:42</div></div>
@@ -501,7 +505,7 @@ $(function() {
 <div class="ttc" id="asupport_2port__platform_8h_html"><div class="ttname"><a href="support_2port__platform_8h.html">port_platform.h</a></div></div>
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Feb 20 2026 17:27:58 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu Mar 26 2026 18:32:24 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

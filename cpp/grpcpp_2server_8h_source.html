@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.78.1</span>
+   &#160;<span id="projectnumber">1.80.0</span>
    </div>
   </td>
  </tr>
@@ -230,116 +230,113 @@ $(function() {
 <div class="line"><a name="l00248"></a><span class="lineno">  248</span>&#160;    context_allocator_ = std::move(<a class="code" href="classgrpc_1_1_server.html#ace1254eaac4f93abfa7cd49c5b54f8f3">context_allocator</a>);</div>
 <div class="line"><a name="l00249"></a><span class="lineno">  249</span>&#160;  }</div>
 <div class="line"><a name="l00250"></a><span class="lineno">  250</span>&#160; </div>
-<div class="line"><a name="l00251"></a><span class="lineno">  251</span>&#160;  <span class="keywordtype">void</span> PerformOpsOnCall(<a class="code" href="classgrpc_1_1internal_1_1_call_op_set_interface.html">internal::CallOpSetInterface</a>* ops,</div>
-<div class="line"><a name="l00252"></a><span class="lineno">  252</span>&#160;                        <a class="code" href="classgrpc_1_1internal_1_1_call.html">internal::Call</a>* call) <span class="keyword">override</span>;</div>
+<div class="line"><a name="l00251"></a><span class="lineno">  251</span>&#160;  <span class="keywordtype">void</span> ShutdownInternal(<a class="code" href="structgpr__timespec.html">gpr_timespec</a> deadline)</div>
+<div class="line"><a name="l00252"></a><span class="lineno">  252</span>&#160;      ABSL_LOCKS_EXCLUDED(mu_) <span class="keyword">override</span>;</div>
 <div class="line"><a name="l00253"></a><span class="lineno">  253</span>&#160; </div>
-<div class="line"><a name="l00254"></a><span class="lineno">  254</span>&#160;  <span class="keywordtype">void</span> ShutdownInternal(<a class="code" href="structgpr__timespec.html">gpr_timespec</a> deadline)</div>
-<div class="line"><a name="l00255"></a><span class="lineno">  255</span>&#160;      ABSL_LOCKS_EXCLUDED(mu_) <span class="keyword">override</span>;</div>
-<div class="line"><a name="l00256"></a><span class="lineno">  256</span>&#160; </div>
-<div class="line"><a name="l00257"></a><span class="lineno">  257</span>&#160;  <span class="keywordtype">int</span> max_receive_message_size()<span class="keyword"> const override </span>{</div>
-<div class="line"><a name="l00258"></a><span class="lineno">  258</span>&#160;    <span class="keywordflow">return</span> max_receive_message_size_;</div>
-<div class="line"><a name="l00259"></a><span class="lineno">  259</span>&#160;  }</div>
-<div class="line"><a name="l00260"></a><span class="lineno">  260</span>&#160; </div>
-<div class="line"><a name="l00261"></a><span class="lineno">  261</span>&#160;  <span class="keywordtype">bool</span> call_metric_recording_enabled()<span class="keyword"> const override </span>{</div>
-<div class="line"><a name="l00262"></a><span class="lineno">  262</span>&#160;    <span class="keywordflow">return</span> call_metric_recording_enabled_;</div>
-<div class="line"><a name="l00263"></a><span class="lineno">  263</span>&#160;  }</div>
-<div class="line"><a name="l00264"></a><span class="lineno">  264</span>&#160; </div>
-<div class="line"><a name="l00265"></a><span class="lineno">  265</span>&#160;  experimental::ServerMetricRecorder* server_metric_recorder()<span class="keyword"> const override </span>{</div>
-<div class="line"><a name="l00266"></a><span class="lineno">  266</span>&#160;    <span class="keywordflow">return</span> server_metric_recorder_;</div>
-<div class="line"><a name="l00267"></a><span class="lineno">  267</span>&#160;  }</div>
-<div class="line"><a name="l00268"></a><span class="lineno">  268</span>&#160; </div>
-<div class="line"><a name="l00269"></a><span class="lineno">  269</span>&#160;  CompletionQueue* CallbackCQ() ABSL_LOCKS_EXCLUDED(mu_) override;</div>
-<div class="line"><a name="l00270"></a><span class="lineno">  270</span>&#160; </div>
-<div class="line"><a name="l00271"></a><span class="lineno">  271</span>&#160;  <a class="code" href="classgrpc_1_1_server.html#a3531f118e1eafdfb790596dad66c8ed9">ServerInitializer</a>* initializer();</div>
-<div class="line"><a name="l00272"></a><span class="lineno">  272</span>&#160; </div>
-<div class="line"><a name="l00273"></a><span class="lineno">  273</span>&#160;  <span class="comment">// Functions to manage the server shutdown ref count. Things that increase</span></div>
-<div class="line"><a name="l00274"></a><span class="lineno">  274</span>&#160;  <span class="comment">// the ref count are the running state of the server (take a ref at start and</span></div>
-<div class="line"><a name="l00275"></a><span class="lineno">  275</span>&#160;  <span class="comment">// drop it at shutdown) and each running callback RPC.</span></div>
-<div class="line"><a name="l00276"></a><span class="lineno">  276</span>&#160;  <span class="keywordtype">void</span> Ref();</div>
-<div class="line"><a name="l00277"></a><span class="lineno">  277</span>&#160;  <span class="keywordtype">void</span> UnrefWithPossibleNotify() ABSL_LOCKS_EXCLUDED(mu_);</div>
-<div class="line"><a name="l00278"></a><span class="lineno">  278</span>&#160;  <span class="keywordtype">void</span> UnrefAndWaitLocked() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);</div>
+<div class="line"><a name="l00254"></a><span class="lineno">  254</span>&#160;  <span class="keywordtype">int</span> max_receive_message_size()<span class="keyword"> const override </span>{</div>
+<div class="line"><a name="l00255"></a><span class="lineno">  255</span>&#160;    <span class="keywordflow">return</span> max_receive_message_size_;</div>
+<div class="line"><a name="l00256"></a><span class="lineno">  256</span>&#160;  }</div>
+<div class="line"><a name="l00257"></a><span class="lineno">  257</span>&#160; </div>
+<div class="line"><a name="l00258"></a><span class="lineno">  258</span>&#160;  <span class="keywordtype">bool</span> call_metric_recording_enabled()<span class="keyword"> const override </span>{</div>
+<div class="line"><a name="l00259"></a><span class="lineno">  259</span>&#160;    <span class="keywordflow">return</span> call_metric_recording_enabled_;</div>
+<div class="line"><a name="l00260"></a><span class="lineno">  260</span>&#160;  }</div>
+<div class="line"><a name="l00261"></a><span class="lineno">  261</span>&#160; </div>
+<div class="line"><a name="l00262"></a><span class="lineno">  262</span>&#160;  experimental::ServerMetricRecorder* server_metric_recorder()<span class="keyword"> const override </span>{</div>
+<div class="line"><a name="l00263"></a><span class="lineno">  263</span>&#160;    <span class="keywordflow">return</span> server_metric_recorder_;</div>
+<div class="line"><a name="l00264"></a><span class="lineno">  264</span>&#160;  }</div>
+<div class="line"><a name="l00265"></a><span class="lineno">  265</span>&#160; </div>
+<div class="line"><a name="l00266"></a><span class="lineno">  266</span>&#160;  CompletionQueue* CallbackCQ() ABSL_LOCKS_EXCLUDED(mu_) override;</div>
+<div class="line"><a name="l00267"></a><span class="lineno">  267</span>&#160; </div>
+<div class="line"><a name="l00268"></a><span class="lineno">  268</span>&#160;  <a class="code" href="classgrpc_1_1_server.html#a3531f118e1eafdfb790596dad66c8ed9">ServerInitializer</a>* initializer();</div>
+<div class="line"><a name="l00269"></a><span class="lineno">  269</span>&#160; </div>
+<div class="line"><a name="l00270"></a><span class="lineno">  270</span>&#160;  <span class="comment">// Functions to manage the server shutdown ref count. Things that increase</span></div>
+<div class="line"><a name="l00271"></a><span class="lineno">  271</span>&#160;  <span class="comment">// the ref count are the running state of the server (take a ref at start and</span></div>
+<div class="line"><a name="l00272"></a><span class="lineno">  272</span>&#160;  <span class="comment">// drop it at shutdown) and each running callback RPC.</span></div>
+<div class="line"><a name="l00273"></a><span class="lineno">  273</span>&#160;  <span class="keywordtype">void</span> Ref();</div>
+<div class="line"><a name="l00274"></a><span class="lineno">  274</span>&#160;  <span class="keywordtype">void</span> UnrefWithPossibleNotify() ABSL_LOCKS_EXCLUDED(mu_);</div>
+<div class="line"><a name="l00275"></a><span class="lineno">  275</span>&#160;  <span class="keywordtype">void</span> UnrefAndWaitLocked() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);</div>
+<div class="line"><a name="l00276"></a><span class="lineno">  276</span>&#160; </div>
+<div class="line"><a name="l00277"></a><span class="lineno">  277</span>&#160;  <a class="code" href="namespacestd.html">std</a>::vector&lt;<a class="code" href="namespacestd.html">std</a>::shared_ptr&lt;internal::ExternalConnectionAcceptorImpl&gt;&gt;</div>
+<div class="line"><a name="l00278"></a><span class="lineno">  278</span>&#160;      acceptors_;</div>
 <div class="line"><a name="l00279"></a><span class="lineno">  279</span>&#160; </div>
-<div class="line"><a name="l00280"></a><span class="lineno">  280</span>&#160;  <a class="code" href="namespacestd.html">std</a>::vector&lt;<a class="code" href="namespacestd.html">std</a>::shared_ptr&lt;internal::ExternalConnectionAcceptorImpl&gt;&gt;</div>
-<div class="line"><a name="l00281"></a><span class="lineno">  281</span>&#160;      acceptors_;</div>
-<div class="line"><a name="l00282"></a><span class="lineno">  282</span>&#160; </div>
-<div class="line"><a name="l00283"></a><span class="lineno">  283</span>&#160;  <span class="comment">// A vector of interceptor factory objects.</span></div>
-<div class="line"><a name="l00284"></a><span class="lineno">  284</span>&#160;  <span class="comment">// This should be destroyed after health_check_service_ and this requirement</span></div>
-<div class="line"><a name="l00285"></a><span class="lineno">  285</span>&#160;  <span class="comment">// is satisfied by declaring interceptor_creators_ before</span></div>
-<div class="line"><a name="l00286"></a><span class="lineno">  286</span>&#160;  <span class="comment">// health_check_service_. (C++ mandates that member objects be destroyed in</span></div>
-<div class="line"><a name="l00287"></a><span class="lineno">  287</span>&#160;  <span class="comment">// the reverse order of initialization.)</span></div>
-<div class="line"><a name="l00288"></a><span class="lineno">  288</span>&#160;  <a class="code" href="namespacestd.html">std</a>::vector&lt;<a class="code" href="namespacestd.html">std</a>::unique_ptr&lt;<a class="code" href="classgrpc_1_1_server.html#a19e2240f62b8ed2522beea7dffa11934">experimental</a>::ServerInterceptorFactoryInterface&gt;&gt;</div>
-<div class="line"><a name="l00289"></a><span class="lineno">  289</span>&#160;      interceptor_creators_;</div>
-<div class="line"><a name="l00290"></a><span class="lineno">  290</span>&#160; </div>
-<div class="line"><a name="l00291"></a><span class="lineno">  291</span>&#160;  <span class="keywordtype">int</span> max_receive_message_size_;</div>
-<div class="line"><a name="l00292"></a><span class="lineno">  292</span>&#160; </div>
-<div class="line"><a name="l00296"></a><span class="lineno">  296</span>&#160;  <a class="code" href="namespacestd.html">std</a>::shared_ptr&lt;<a class="code" href="namespacestd.html">std</a>::vector&lt;<a class="code" href="namespacestd.html">std</a>::unique_ptr&lt;ServerCompletionQueue&gt;&gt;&gt;</div>
-<div class="line"><a name="l00297"></a><span class="lineno">  297</span>&#160;      sync_server_cqs_;</div>
-<div class="line"><a name="l00298"></a><span class="lineno">  298</span>&#160; </div>
-<div class="line"><a name="l00301"></a><span class="lineno">  301</span>&#160;  <a class="code" href="namespacestd.html">std</a>::vector&lt;<a class="code" href="namespacestd.html">std</a>::unique_ptr&lt;SyncRequestThreadManager&gt;&gt; sync_req_mgrs_;</div>
+<div class="line"><a name="l00280"></a><span class="lineno">  280</span>&#160;  <span class="comment">// A vector of interceptor factory objects.</span></div>
+<div class="line"><a name="l00281"></a><span class="lineno">  281</span>&#160;  <span class="comment">// This should be destroyed after health_check_service_ and this requirement</span></div>
+<div class="line"><a name="l00282"></a><span class="lineno">  282</span>&#160;  <span class="comment">// is satisfied by declaring interceptor_creators_ before</span></div>
+<div class="line"><a name="l00283"></a><span class="lineno">  283</span>&#160;  <span class="comment">// health_check_service_. (C++ mandates that member objects be destroyed in</span></div>
+<div class="line"><a name="l00284"></a><span class="lineno">  284</span>&#160;  <span class="comment">// the reverse order of initialization.)</span></div>
+<div class="line"><a name="l00285"></a><span class="lineno">  285</span>&#160;  <a class="code" href="namespacestd.html">std</a>::vector&lt;<a class="code" href="namespacestd.html">std</a>::unique_ptr&lt;<a class="code" href="classgrpc_1_1_server.html#a19e2240f62b8ed2522beea7dffa11934">experimental</a>::ServerInterceptorFactoryInterface&gt;&gt;</div>
+<div class="line"><a name="l00286"></a><span class="lineno">  286</span>&#160;      interceptor_creators_;</div>
+<div class="line"><a name="l00287"></a><span class="lineno">  287</span>&#160; </div>
+<div class="line"><a name="l00288"></a><span class="lineno">  288</span>&#160;  <span class="keywordtype">int</span> max_receive_message_size_;</div>
+<div class="line"><a name="l00289"></a><span class="lineno">  289</span>&#160; </div>
+<div class="line"><a name="l00293"></a><span class="lineno">  293</span>&#160;  <a class="code" href="namespacestd.html">std</a>::shared_ptr&lt;<a class="code" href="namespacestd.html">std</a>::vector&lt;<a class="code" href="namespacestd.html">std</a>::unique_ptr&lt;ServerCompletionQueue&gt;&gt;&gt;</div>
+<div class="line"><a name="l00294"></a><span class="lineno">  294</span>&#160;      sync_server_cqs_;</div>
+<div class="line"><a name="l00295"></a><span class="lineno">  295</span>&#160; </div>
+<div class="line"><a name="l00298"></a><span class="lineno">  298</span>&#160;  <a class="code" href="namespacestd.html">std</a>::vector&lt;<a class="code" href="namespacestd.html">std</a>::unique_ptr&lt;SyncRequestThreadManager&gt;&gt; sync_req_mgrs_;</div>
+<div class="line"><a name="l00299"></a><span class="lineno">  299</span>&#160; </div>
+<div class="line"><a name="l00300"></a><span class="lineno">  300</span>&#160;  <span class="comment">// Memory allocator for the server.</span></div>
+<div class="line"><a name="l00301"></a><span class="lineno">  301</span>&#160;  <a class="code" href="namespacegrpc__event__engine.html">grpc_event_engine</a>::<a class="code" href="classgrpc_1_1_server.html#a19e2240f62b8ed2522beea7dffa11934">experimental</a>::MemoryAllocator memory_allocator_;</div>
 <div class="line"><a name="l00302"></a><span class="lineno">  302</span>&#160; </div>
-<div class="line"><a name="l00303"></a><span class="lineno">  303</span>&#160;  <span class="comment">// Memory allocator for the server.</span></div>
-<div class="line"><a name="l00304"></a><span class="lineno">  304</span>&#160;  <a class="code" href="namespacegrpc__event__engine.html">grpc_event_engine</a>::<a class="code" href="classgrpc_1_1_server.html#a19e2240f62b8ed2522beea7dffa11934">experimental</a>::MemoryAllocator memory_allocator_;</div>
-<div class="line"><a name="l00305"></a><span class="lineno">  305</span>&#160; </div>
-<div class="line"><a name="l00306"></a><span class="lineno">  306</span>&#160;  <span class="comment">// Server status</span></div>
-<div class="line"><a name="l00307"></a><span class="lineno">  307</span>&#160;  mutable internal::Mutex mu_;</div>
-<div class="line"><a name="l00308"></a><span class="lineno">  308</span>&#160;  <span class="keywordtype">bool</span> started_;</div>
-<div class="line"><a name="l00309"></a><span class="lineno">  309</span>&#160;  <span class="keywordtype">bool</span> shutdown_ ABSL_GUARDED_BY(mu_);</div>
-<div class="line"><a name="l00310"></a><span class="lineno">  310</span>&#160;  <span class="keywordtype">bool</span> shutdown_notified_</div>
-<div class="line"><a name="l00311"></a><span class="lineno">  311</span>&#160;      ABSL_GUARDED_BY(mu_);  <span class="comment">// Was notify called on the shutdown_cv_</span></div>
-<div class="line"><a name="l00312"></a><span class="lineno">  312</span>&#160;  internal::CondVar shutdown_done_cv_;</div>
-<div class="line"><a name="l00313"></a><span class="lineno">  313</span>&#160;  <span class="keywordtype">bool</span> shutdown_done_ ABSL_GUARDED_BY(mu_) = false;</div>
-<div class="line"><a name="l00314"></a><span class="lineno">  314</span>&#160;  <a class="code" href="namespacestd.html">std</a>::atomic_int shutdown_refs_outstanding_{1};</div>
-<div class="line"><a name="l00315"></a><span class="lineno">  315</span>&#160; </div>
-<div class="line"><a name="l00316"></a><span class="lineno">  316</span>&#160;  internal::CondVar shutdown_cv_;</div>
-<div class="line"><a name="l00317"></a><span class="lineno">  317</span>&#160; </div>
-<div class="line"><a name="l00318"></a><span class="lineno">  318</span>&#160;  std::shared_ptr&lt;GlobalCallbacks&gt; global_callbacks_;</div>
-<div class="line"><a name="l00319"></a><span class="lineno">  319</span>&#160; </div>
-<div class="line"><a name="l00320"></a><span class="lineno">  320</span>&#160;  std::vector&lt;std::string&gt; services_;</div>
-<div class="line"><a name="l00321"></a><span class="lineno">  321</span>&#160;  <span class="keywordtype">bool</span> has_async_generic_service_ = <span class="keyword">false</span>;</div>
-<div class="line"><a name="l00322"></a><span class="lineno">  322</span>&#160;  <span class="keywordtype">bool</span> has_callback_generic_service_ = <span class="keyword">false</span>;</div>
-<div class="line"><a name="l00323"></a><span class="lineno">  323</span>&#160;  <span class="keywordtype">bool</span> has_callback_methods_ = <span class="keyword">false</span>;</div>
+<div class="line"><a name="l00303"></a><span class="lineno">  303</span>&#160;  <span class="comment">// Server status</span></div>
+<div class="line"><a name="l00304"></a><span class="lineno">  304</span>&#160;  mutable internal::Mutex mu_;</div>
+<div class="line"><a name="l00305"></a><span class="lineno">  305</span>&#160;  <span class="keywordtype">bool</span> started_;</div>
+<div class="line"><a name="l00306"></a><span class="lineno">  306</span>&#160;  <span class="keywordtype">bool</span> shutdown_ ABSL_GUARDED_BY(mu_);</div>
+<div class="line"><a name="l00307"></a><span class="lineno">  307</span>&#160;  <span class="keywordtype">bool</span> shutdown_notified_</div>
+<div class="line"><a name="l00308"></a><span class="lineno">  308</span>&#160;      ABSL_GUARDED_BY(mu_);  <span class="comment">// Was notify called on the shutdown_cv_</span></div>
+<div class="line"><a name="l00309"></a><span class="lineno">  309</span>&#160;  internal::CondVar shutdown_done_cv_;</div>
+<div class="line"><a name="l00310"></a><span class="lineno">  310</span>&#160;  <span class="keywordtype">bool</span> shutdown_done_ ABSL_GUARDED_BY(mu_) = false;</div>
+<div class="line"><a name="l00311"></a><span class="lineno">  311</span>&#160;  <a class="code" href="namespacestd.html">std</a>::atomic_int shutdown_refs_outstanding_{1};</div>
+<div class="line"><a name="l00312"></a><span class="lineno">  312</span>&#160; </div>
+<div class="line"><a name="l00313"></a><span class="lineno">  313</span>&#160;  internal::CondVar shutdown_cv_;</div>
+<div class="line"><a name="l00314"></a><span class="lineno">  314</span>&#160; </div>
+<div class="line"><a name="l00315"></a><span class="lineno">  315</span>&#160;  std::shared_ptr&lt;GlobalCallbacks&gt; global_callbacks_;</div>
+<div class="line"><a name="l00316"></a><span class="lineno">  316</span>&#160; </div>
+<div class="line"><a name="l00317"></a><span class="lineno">  317</span>&#160;  std::vector&lt;std::string&gt; services_;</div>
+<div class="line"><a name="l00318"></a><span class="lineno">  318</span>&#160;  <span class="keywordtype">bool</span> has_async_generic_service_ = <span class="keyword">false</span>;</div>
+<div class="line"><a name="l00319"></a><span class="lineno">  319</span>&#160;  <span class="keywordtype">bool</span> has_callback_generic_service_ = <span class="keyword">false</span>;</div>
+<div class="line"><a name="l00320"></a><span class="lineno">  320</span>&#160;  <span class="keywordtype">bool</span> has_callback_methods_ = <span class="keyword">false</span>;</div>
+<div class="line"><a name="l00321"></a><span class="lineno">  321</span>&#160; </div>
+<div class="line"><a name="l00322"></a><span class="lineno">  322</span>&#160;  <span class="comment">// Pointer to the wrapped grpc_server.</span></div>
+<div class="line"><a name="l00323"></a><span class="lineno">  323</span>&#160;  <a class="code" href="grpc__types_8h.html#a2bbbaad8f7a806f6c834b68c5dd916d8">grpc_server</a>* server_;</div>
 <div class="line"><a name="l00324"></a><span class="lineno">  324</span>&#160; </div>
-<div class="line"><a name="l00325"></a><span class="lineno">  325</span>&#160;  <span class="comment">// Pointer to the wrapped grpc_server.</span></div>
-<div class="line"><a name="l00326"></a><span class="lineno">  326</span>&#160;  <a class="code" href="grpc__types_8h.html#a2bbbaad8f7a806f6c834b68c5dd916d8">grpc_server</a>* server_;</div>
-<div class="line"><a name="l00327"></a><span class="lineno">  327</span>&#160; </div>
-<div class="line"><a name="l00328"></a><span class="lineno">  328</span>&#160;  std::unique_ptr&lt;ServerInitializer&gt; server_initializer_;</div>
-<div class="line"><a name="l00329"></a><span class="lineno">  329</span>&#160; </div>
-<div class="line"><a name="l00330"></a><span class="lineno">  330</span>&#160;  std::unique_ptr&lt;ContextAllocator&gt; context_allocator_;</div>
+<div class="line"><a name="l00325"></a><span class="lineno">  325</span>&#160;  std::unique_ptr&lt;ServerInitializer&gt; server_initializer_;</div>
+<div class="line"><a name="l00326"></a><span class="lineno">  326</span>&#160; </div>
+<div class="line"><a name="l00327"></a><span class="lineno">  327</span>&#160;  std::unique_ptr&lt;ContextAllocator&gt; context_allocator_;</div>
+<div class="line"><a name="l00328"></a><span class="lineno">  328</span>&#160; </div>
+<div class="line"><a name="l00329"></a><span class="lineno">  329</span>&#160;  std::unique_ptr&lt;HealthCheckServiceInterface&gt; health_check_service_;</div>
+<div class="line"><a name="l00330"></a><span class="lineno">  330</span>&#160;  <span class="keywordtype">bool</span> health_check_service_disabled_;</div>
 <div class="line"><a name="l00331"></a><span class="lineno">  331</span>&#160; </div>
-<div class="line"><a name="l00332"></a><span class="lineno">  332</span>&#160;  std::unique_ptr&lt;HealthCheckServiceInterface&gt; health_check_service_;</div>
-<div class="line"><a name="l00333"></a><span class="lineno">  333</span>&#160;  <span class="keywordtype">bool</span> health_check_service_disabled_;</div>
-<div class="line"><a name="l00334"></a><span class="lineno">  334</span>&#160; </div>
-<div class="line"><a name="l00335"></a><span class="lineno">  335</span>&#160;  <span class="comment">// When appropriate, use a default callback generic service to handle</span></div>
-<div class="line"><a name="l00336"></a><span class="lineno">  336</span>&#160;  <span class="comment">// unimplemented methods</span></div>
-<div class="line"><a name="l00337"></a><span class="lineno">  337</span>&#160;  std::unique_ptr&lt;CallbackGenericService&gt; unimplemented_service_;</div>
+<div class="line"><a name="l00332"></a><span class="lineno">  332</span>&#160;  <span class="comment">// When appropriate, use a default callback generic service to handle</span></div>
+<div class="line"><a name="l00333"></a><span class="lineno">  333</span>&#160;  <span class="comment">// unimplemented methods</span></div>
+<div class="line"><a name="l00334"></a><span class="lineno">  334</span>&#160;  std::unique_ptr&lt;CallbackGenericService&gt; unimplemented_service_;</div>
+<div class="line"><a name="l00335"></a><span class="lineno">  335</span>&#160; </div>
+<div class="line"><a name="l00336"></a><span class="lineno">  336</span>&#160;  <span class="comment">// A special handler for resource exhausted in sync case</span></div>
+<div class="line"><a name="l00337"></a><span class="lineno">  337</span>&#160;  std::unique_ptr&lt;internal::MethodHandler&gt; resource_exhausted_handler_;</div>
 <div class="line"><a name="l00338"></a><span class="lineno">  338</span>&#160; </div>
-<div class="line"><a name="l00339"></a><span class="lineno">  339</span>&#160;  <span class="comment">// A special handler for resource exhausted in sync case</span></div>
-<div class="line"><a name="l00340"></a><span class="lineno">  340</span>&#160;  std::unique_ptr&lt;internal::MethodHandler&gt; resource_exhausted_handler_;</div>
+<div class="line"><a name="l00339"></a><span class="lineno">  339</span>&#160;  <span class="comment">// Handler for callback generic service, if any</span></div>
+<div class="line"><a name="l00340"></a><span class="lineno">  340</span>&#160;  std::unique_ptr&lt;internal::MethodHandler&gt; generic_handler_;</div>
 <div class="line"><a name="l00341"></a><span class="lineno">  341</span>&#160; </div>
-<div class="line"><a name="l00342"></a><span class="lineno">  342</span>&#160;  <span class="comment">// Handler for callback generic service, if any</span></div>
-<div class="line"><a name="l00343"></a><span class="lineno">  343</span>&#160;  std::unique_ptr&lt;internal::MethodHandler&gt; generic_handler_;</div>
-<div class="line"><a name="l00344"></a><span class="lineno">  344</span>&#160; </div>
-<div class="line"><a name="l00345"></a><span class="lineno">  345</span>&#160;  <span class="comment">// callback_cq_ references the callbackable completion queue associated</span></div>
-<div class="line"><a name="l00346"></a><span class="lineno">  346</span>&#160;  <span class="comment">// with this server (if any). It is set on the first call to CallbackCQ().</span></div>
-<div class="line"><a name="l00347"></a><span class="lineno">  347</span>&#160;  <span class="comment">// It is _not owned_ by the server; ownership belongs with its internal</span></div>
-<div class="line"><a name="l00348"></a><span class="lineno">  348</span>&#160;  <span class="comment">// shutdown callback tag (invoked when the CQ is fully shutdown).</span></div>
-<div class="line"><a name="l00349"></a><span class="lineno">  349</span>&#160;  std::atomic&lt;CompletionQueue*&gt; callback_cq_{<span class="keyword">nullptr</span>};</div>
-<div class="line"><a name="l00350"></a><span class="lineno">  350</span>&#160; </div>
-<div class="line"><a name="l00351"></a><span class="lineno">  351</span>&#160;  <span class="comment">// List of CQs passed in by user that must be Shutdown only after Server is</span></div>
-<div class="line"><a name="l00352"></a><span class="lineno">  352</span>&#160;  <span class="comment">// Shutdown.  Even though this is only used with NDEBUG, instantiate it in all</span></div>
-<div class="line"><a name="l00353"></a><span class="lineno">  353</span>&#160;  <span class="comment">// cases since otherwise the size will be inconsistent.</span></div>
-<div class="line"><a name="l00354"></a><span class="lineno">  354</span>&#160;  std::vector&lt;CompletionQueue*&gt; cq_list_;</div>
+<div class="line"><a name="l00342"></a><span class="lineno">  342</span>&#160;  <span class="comment">// callback_cq_ references the callbackable completion queue associated</span></div>
+<div class="line"><a name="l00343"></a><span class="lineno">  343</span>&#160;  <span class="comment">// with this server (if any). It is set on the first call to CallbackCQ().</span></div>
+<div class="line"><a name="l00344"></a><span class="lineno">  344</span>&#160;  <span class="comment">// It is _not owned_ by the server; ownership belongs with its internal</span></div>
+<div class="line"><a name="l00345"></a><span class="lineno">  345</span>&#160;  <span class="comment">// shutdown callback tag (invoked when the CQ is fully shutdown).</span></div>
+<div class="line"><a name="l00346"></a><span class="lineno">  346</span>&#160;  std::atomic&lt;CompletionQueue*&gt; callback_cq_{<span class="keyword">nullptr</span>};</div>
+<div class="line"><a name="l00347"></a><span class="lineno">  347</span>&#160; </div>
+<div class="line"><a name="l00348"></a><span class="lineno">  348</span>&#160;  <span class="comment">// List of CQs passed in by user that must be Shutdown only after Server is</span></div>
+<div class="line"><a name="l00349"></a><span class="lineno">  349</span>&#160;  <span class="comment">// Shutdown.  Even though this is only used with NDEBUG, instantiate it in all</span></div>
+<div class="line"><a name="l00350"></a><span class="lineno">  350</span>&#160;  <span class="comment">// cases since otherwise the size will be inconsistent.</span></div>
+<div class="line"><a name="l00351"></a><span class="lineno">  351</span>&#160;  std::vector&lt;CompletionQueue*&gt; cq_list_;</div>
+<div class="line"><a name="l00352"></a><span class="lineno">  352</span>&#160; </div>
+<div class="line"><a name="l00353"></a><span class="lineno">  353</span>&#160;  <span class="comment">// Whetner per-call load reporting is enabled.</span></div>
+<div class="line"><a name="l00354"></a><span class="lineno">  354</span>&#160;  <span class="keywordtype">bool</span> call_metric_recording_enabled_ = <span class="keyword">false</span>;</div>
 <div class="line"><a name="l00355"></a><span class="lineno">  355</span>&#160; </div>
-<div class="line"><a name="l00356"></a><span class="lineno">  356</span>&#160;  <span class="comment">// Whetner per-call load reporting is enabled.</span></div>
-<div class="line"><a name="l00357"></a><span class="lineno">  357</span>&#160;  <span class="keywordtype">bool</span> call_metric_recording_enabled_ = <span class="keyword">false</span>;</div>
-<div class="line"><a name="l00358"></a><span class="lineno">  358</span>&#160; </div>
-<div class="line"><a name="l00359"></a><span class="lineno">  359</span>&#160;  <span class="comment">// Interface to read or update server-wide metrics. Optional.</span></div>
-<div class="line"><a name="l00360"></a><span class="lineno">  360</span>&#160;  experimental::ServerMetricRecorder* server_metric_recorder_ = <span class="keyword">nullptr</span>;</div>
-<div class="line"><a name="l00361"></a><span class="lineno">  361</span>&#160;};</div>
-<div class="line"><a name="l00362"></a><span class="lineno">  362</span>&#160; </div>
-<div class="line"><a name="l00363"></a><span class="lineno">  363</span>&#160;}  <span class="comment">// namespace grpc</span></div>
-<div class="line"><a name="l00364"></a><span class="lineno">  364</span>&#160; </div>
-<div class="line"><a name="l00365"></a><span class="lineno">  365</span>&#160;<span class="preprocessor">#endif  // GRPCPP_SERVER_H</span></div>
+<div class="line"><a name="l00356"></a><span class="lineno">  356</span>&#160;  <span class="comment">// Interface to read or update server-wide metrics. Optional.</span></div>
+<div class="line"><a name="l00357"></a><span class="lineno">  357</span>&#160;  experimental::ServerMetricRecorder* server_metric_recorder_ = <span class="keyword">nullptr</span>;</div>
+<div class="line"><a name="l00358"></a><span class="lineno">  358</span>&#160;};</div>
+<div class="line"><a name="l00359"></a><span class="lineno">  359</span>&#160; </div>
+<div class="line"><a name="l00360"></a><span class="lineno">  360</span>&#160;}  <span class="comment">// namespace grpc</span></div>
+<div class="line"><a name="l00361"></a><span class="lineno">  361</span>&#160; </div>
+<div class="line"><a name="l00362"></a><span class="lineno">  362</span>&#160;<span class="preprocessor">#endif  // GRPCPP_SERVER_H</span></div>
 </div><!-- fragment --></div><!-- contents -->
 <div class="ttc" id="aclassgrpc_1_1_server_html_ad48818dac08e28a2ea3694d1f5462c6b"><div class="ttname"><a href="classgrpc_1_1_server.html#ad48818dac08e28a2ea3694d1f5462c6b">grpc::Server::InProcessChannel</a></div><div class="ttdeci">std::shared_ptr&lt; Channel &gt; InProcessChannel(const ChannelArguments &amp;args)</div><div class="ttdoc">Establish a channel for in-process communication.</div></div>
 <div class="ttc" id="acompression_8h_html"><div class="ttname"><a href="compression_8h.html">compression.h</a></div></div>
@@ -356,7 +353,6 @@ $(function() {
 <div class="ttc" id="aclassgrpc_1_1_server_1_1_global_callbacks_html_a3a20848314924c94c349508e970138e9"><div class="ttname"><a href="classgrpc_1_1_server_1_1_global_callbacks.html#a3a20848314924c94c349508e970138e9">grpc::Server::GlobalCallbacks::PostSynchronousRequest</a></div><div class="ttdeci">virtual void PostSynchronousRequest(ServerContext *context)=0</div><div class="ttdoc">Called after application callback for each synchronous server request.</div></div>
 <div class="ttc" id="aclassgrpc_1_1_health_check_service_interface_html"><div class="ttname"><a href="classgrpc_1_1_health_check_service_interface.html">grpc::HealthCheckServiceInterface</a></div><div class="ttdoc">The gRPC server uses this interface to expose the health checking service without depending on protob...</div><div class="ttdef"><b>Definition:</b> health_check_service_interface.h:31</div></div>
 <div class="ttc" id="aclassgrpc_1_1_server_credentials_html"><div class="ttname"><a href="classgrpc_1_1_server_credentials.html">grpc::ServerCredentials</a></div><div class="ttdoc">Wrapper around grpc_server_credentials, a way to authenticate a server.</div><div class="ttdef"><b>Definition:</b> server_credentials.h:69</div></div>
-<div class="ttc" id="aclassgrpc_1_1internal_1_1_call_html"><div class="ttname"><a href="classgrpc_1_1internal_1_1_call.html">grpc::internal::Call</a></div><div class="ttdoc">Straightforward wrapping of the C call object.</div><div class="ttdef"><b>Definition:</b> call.h:36</div></div>
 <div class="ttc" id="agrpcpp_2health__check__service__interface_8h_html"><div class="ttname"><a href="grpcpp_2health__check__service__interface_8h.html">health_check_service_interface.h</a></div></div>
 <div class="ttc" id="aclassgrpc_1_1_server_1_1experimental__type_html_adf46f1a1df23d20e6f84bfab9ba0c329"><div class="ttname"><a href="classgrpc_1_1_server_1_1experimental__type.html#adf46f1a1df23d20e6f84bfab9ba0c329">grpc::Server::experimental_type::experimental_type</a></div><div class="ttdeci">experimental_type(Server *server)</div><div class="ttdef"><b>Definition:</b> server.h:113</div></div>
 <div class="ttc" id="agrpcpp_2impl_2rpc__service__method_8h_html"><div class="ttname"><a href="grpcpp_2impl_2rpc__service__method_8h.html">rpc_service_method.h</a></div></div>
@@ -375,7 +371,6 @@ $(function() {
 <div class="ttc" id="agrpcpp_2completion__queue_8h_html"><div class="ttname"><a href="grpcpp_2completion__queue_8h.html">completion_queue.h</a></div></div>
 <div class="ttc" id="aclassgrpc_1_1_server_html_a3fb2f6e7339bd065f5c8069c21daf378"><div class="ttname"><a href="classgrpc_1_1_server.html#a3fb2f6e7339bd065f5c8069c21daf378">grpc::Server::AddListeningPort</a></div><div class="ttdeci">int AddListeningPort(const std::string &amp;addr, ServerCredentials *creds) override</div><div class="ttdoc">Try binding the server to the given addr endpoint (port, and optionally including IP address to bind ...</div></div>
 <div class="ttc" id="aclassgrpc_1_1_server_html_aedf0915c3f3795d23e9737c7e8377601"><div class="ttname"><a href="classgrpc_1_1_server.html#aedf0915c3f3795d23e9737c7e8377601">grpc::Server::memory_allocator</a></div><div class="ttdeci">grpc_event_engine::experimental::MemoryAllocator * memory_allocator() override</div></div>
-<div class="ttc" id="aclassgrpc_1_1internal_1_1_call_op_set_interface_html"><div class="ttname"><a href="classgrpc_1_1internal_1_1_call_op_set_interface.html">grpc::internal::CallOpSetInterface</a></div><div class="ttdoc">An abstract collection of call ops, used to generate the grpc_call_op structure to pass down to the l...</div><div class="ttdef"><b>Definition:</b> call_op_set_interface.h:36</div></div>
 <div class="ttc" id="agrpc__types_8h_html_a2bbbaad8f7a806f6c834b68c5dd916d8"><div class="ttname"><a href="grpc__types_8h.html#a2bbbaad8f7a806f6c834b68c5dd916d8">grpc_server</a></div><div class="ttdeci">struct grpc_server grpc_server</div><div class="ttdoc">A server listens to some port and responds to request calls.</div><div class="ttdef"><b>Definition:</b> grpc_types.h:63</div></div>
 <div class="ttc" id="aclassgrpc_1_1_server_html_a01bdfb4554d12a10bdc9cf875ffa74dd"><div class="ttname"><a href="classgrpc_1_1_server.html#a01bdfb4554d12a10bdc9cf875ffa74dd">grpc::Server::server</a></div><div class="ttdeci">grpc_server * server() override</div><div class="ttdef"><b>Definition:</b> server.h:197</div></div>
 <div class="ttc" id="aclassgrpc_1_1_server_1_1_global_callbacks_html_a8598181d5682b98a7df098a6a68538d8"><div class="ttname"><a href="classgrpc_1_1_server_1_1_global_callbacks.html#a8598181d5682b98a7df098a6a68538d8">grpc::Server::GlobalCallbacks::UpdateArguments</a></div><div class="ttdeci">virtual void UpdateArguments(ChannelArguments *)</div><div class="ttdoc">Called before server is created.</div><div class="ttdef"><b>Definition:</b> server.h:78</div></div>
@@ -402,7 +397,7 @@ $(function() {
 <div class="ttc" id="aclassgrpc_1_1_server_html_adf01b3e4829b2871502d78c1d6d63522"><div class="ttname"><a href="classgrpc_1_1_server.html#adf01b3e4829b2871502d78c1d6d63522">grpc::Server::set_health_check_service</a></div><div class="ttdeci">void set_health_check_service(std::unique_ptr&lt; HealthCheckServiceInterface &gt; service)</div><div class="ttdoc">NOTE: This method is not part of the public API for this class.</div><div class="ttdef"><b>Definition:</b> server.h:200</div></div>
 <div class="ttc" id="amemory__allocator_8h_html"><div class="ttname"><a href="memory__allocator_8h.html">memory_allocator.h</a></div></div>
 <div class="ttc" id="aclassgrpc_1_1_server_builder_html"><div class="ttname"><a href="classgrpc_1_1_server_builder.html">grpc::ServerBuilder</a></div><div class="ttdoc">A builder class for the creation and startup of grpc::Server instances.</div><div class="ttdef"><b>Definition:</b> server_builder.h:88</div></div>
-<div class="ttc" id="aclassgrpc_1_1_server_interface_html"><div class="ttname"><a href="classgrpc_1_1_server_interface.html">grpc::ServerInterface</a></div><div class="ttdef"><b>Definition:</b> server_interface.h:60</div></div>
+<div class="ttc" id="aclassgrpc_1_1_server_interface_html"><div class="ttname"><a href="classgrpc_1_1_server_interface.html">grpc::ServerInterface</a></div><div class="ttdef"><b>Definition:</b> server_interface.h:59</div></div>
 <div class="ttc" id="asupport_2atm_8h_html"><div class="ttname"><a href="support_2atm_8h.html">atm.h</a></div></div>
 <div class="ttc" id="astructgpr__timespec_html"><div class="ttname"><a href="structgpr__timespec.html">gpr_timespec</a></div><div class="ttdoc">Analogous to struct timespec.</div><div class="ttdef"><b>Definition:</b> time.h:47</div></div>
 <div class="ttc" id="aclassgrpc_1_1_server_1_1_global_callbacks_html"><div class="ttname"><a href="classgrpc_1_1_server_1_1_global_callbacks.html">grpc::Server::GlobalCallbacks</a></div><div class="ttdoc">Global callbacks are a set of hooks that are called when server events occur.</div><div class="ttdef"><b>Definition:</b> server.h:74</div></div>
@@ -412,7 +407,7 @@ $(function() {
 <div class="ttc" id="asupport_2port__platform_8h_html"><div class="ttname"><a href="support_2port__platform_8h.html">port_platform.h</a></div></div>
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Feb 20 2026 17:27:58 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu Mar 26 2026 18:32:24 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>
