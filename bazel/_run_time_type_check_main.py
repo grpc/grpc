@@ -15,6 +15,7 @@
 import argparse
 import importlib.util
 import os
+import pathlib
 import pkgutil
 import sys
 from typing import Optional, Sequence
@@ -64,13 +65,25 @@ class SingleLoader:
         self.suite = unittest.TestSuite()
         suites = []
 
-        # Look in the current working directory for test modules
-        for _, module_name, _ in pkgutil.walk_packages([os.getcwd()]):
-            if target_module in module_name:
-                spec = importlib.util.find_spec(module_name)
-                module = importlib.util.module_from_spec(spec)
-                spec.loader.exec_module(module)
-                suites.append(loader.loadTestsFromModule(module))
+        # TODO: Refactor/cleanup as discussed in
+        # https://github.com/grpc/grpc/pull/41713#discussion_r2932055174
+        #
+        # Look in the current working directory for the test file physically
+        target_file = f"{target_module}.py"
+        target_module_name = None
+
+        cwd = pathlib.Path.cwd()
+        filepath = next(cwd.rglob(target_file), None)
+        if not filepath:
+            raise ValueError(f"Could not find target module {target_module}")
+        rel_path = filepath.relative_to(cwd)
+        # Remove the file extension and replace path separators with dots.
+        target_module_name = str(rel_path.with_suffix('')).replace(os.sep, '.')
+
+        spec = importlib.util.find_spec(target_module_name)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        suites.append(loader.loadTestsFromModule(module))
 
         assert len(suites) == 1, f"Expected only 1 test module. Found {suites}"
         self.suite.addTest(suites[0])

@@ -61,10 +61,10 @@
 - name: event_engine_for_all_other_endpoints
   default: true
 - name: event_engine_fork
-  default: false
+  default: true
 - name: event_engine_listener
   default: true
-- name: event_engine_secure_endpoint
+- name: event_engine_poller_for_python
   default: true
 - name: fail_recv_metadata_on_deadline_exceeded
   default: false
@@ -72,8 +72,6 @@
   default: false
 - name: fuse_filters
   default: false
-- name: graceful_external_connection_failure
-  default: true
 - name: keep_alive_ping_timer_batch
   default: false
 - name: local_connector_secure
@@ -116,3 +114,5 @@
   default: false
 - name: use_call_event_engine_in_completion_queue
   default: false
+- name: xds_channel_filter_chain_per_route
+  default: true

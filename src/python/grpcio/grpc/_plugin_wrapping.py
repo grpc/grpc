@@ -38,7 +38,7 @@ class _AuthMetadataContext(
     pass
 
 
-class _CallbackState(object):
+class _CallbackState:
     def __init__(self):
         self.lock = threading.Lock()
         self.called = False
@@ -78,7 +78,7 @@ class _AuthMetadataPluginCallback(grpc.AuthMetadataPluginCallback):
             )
 
 
-class _Plugin(object):
+class _Plugin:
     _metadata_plugin: grpc.AuthMetadataPlugin
 
     def __init__(self, metadata_plugin: grpc.AuthMetadataPlugin):

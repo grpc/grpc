@@ -24,6 +24,7 @@
 
 #include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/ext/transport/chttp2/transport/http2_status.h"
+#include "src/core/ext/transport/chttp2/transport/write_cycle.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/if.h"
 #include "src/core/lib/promise/promise.h"
@@ -342,7 +343,7 @@ class GoawayManager {
 
   // Called from the transport write cycle to serialize the GOAWAY frame if
   // needed.
-  void MaybeGetSerializedGoawayFrame(SliceBuffer& output_buf);
+  void MaybeGetSerializedGoawayFrame(FrameSender& frame_sender);
 
   bool IsImmediateGoAway() const {
     return context_->goaway_state == GoawayState::kImmediateGoawayRequested;

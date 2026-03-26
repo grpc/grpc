@@ -32,10 +32,6 @@
 
 namespace grpc_core {
 
-// Prints the first `length` bytes of the payload. If the payload is longer than
-// `length`, it appends "<clipped>" to the output.
-std::string MaybeTruncatePayload(SliceBuffer& payload, uint32_t length = 15);
-
 ///////////////////////////////////////////////////////////////////////////////
 // Frame types
 //
@@ -240,7 +236,7 @@ struct SerializeReturn {
 // Http2UnknownFrame.
 // It is expected that hdr.length == payload.Length().
 http2::ValueOrHttp2Status<Http2Frame> ParseFramePayload(
-    const Http2FrameHeader& hdr, SliceBuffer payload);
+    const Http2FrameHeader& hdr, SliceBuffer&& payload);
 
 // Serialize frame and append to out, leaves frames in an unknown state (may
 // move things out of frames)

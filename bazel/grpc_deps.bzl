@@ -33,20 +33,21 @@ def grpc_deps():
     if "boringssl" not in native.existing_rules():
         http_archive(
             name = "boringssl",
-            # Use github mirror instead of https://boringssl.googlesource.com/boringssl
-            # to obtain a boringssl archive with consistent sha256
-            sha256 = "b717df72df0023933a729bac00fa422a222949cfa84eb8500f3a9af34441fb6e",
-            strip_prefix = "boringssl-c63fadbde60a2224c22189d14c4001bbd2a3a629",
+            sha256 = "bacdc92ab6ee2e1b1047638ca0c830247bdf6f62be55081be0e319cfa3478719",
+            strip_prefix = "boringssl-2b44a3701a4788e1ef866ddc7f143060a3d196c9",
             urls = [
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/google/boringssl/archive/c63fadbde60a2224c22189d14c4001bbd2a3a629.tar.gz",
-                "https://github.com/google/boringssl/archive/c63fadbde60a2224c22189d14c4001bbd2a3a629.tar.gz",
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/google/boringssl/archive/2b44a3701a4788e1ef866ddc7f143060a3d196c9.tar.gz",
+                "https://github.com/google/boringssl/archive/2b44a3701a4788e1ef866ddc7f143060a3d196c9.tar.gz",
             ],
         )
 
     if "zlib" not in native.existing_rules():
         http_archive(
             name = "zlib",
-            build_file = "@com_github_grpc_grpc//third_party:zlib.BUILD",
+            patch_args = ["-p1"],
+            patches = [
+                "@com_github_grpc_grpc//bazel/zlib:add_custom_build_file.patch",
+            ],
             sha256 = "da8937719bb6e9600a671f320934c0db3b8020c9c30fecda60b5a5ebdc9a1ea0",
             strip_prefix = "zlib-f1f503da85d52e56aae11557b4d79a42bcaa2b86",
             urls = [

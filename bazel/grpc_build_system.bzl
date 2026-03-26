@@ -76,6 +76,12 @@ def _get_external_deps(external_deps):
                 "//:grpc_no_ares": [],
                 "//conditions:default": ["//third_party:cares"],
             })
+        elif dep == "protobuf":
+            ret.append("@com_google_protobuf//:protobuf")
+        elif dep == "protobuf_clib":
+            ret.extend(["@com_google_protobuf//src/google/protobuf/compiler:code_generator", "@com_google_protobuf//src/google/protobuf/compiler:importer"])
+        elif dep == "protobuf_headers":
+            ret.extend(["@com_google_protobuf//:protobuf_headers", "@com_google_protobuf//src/google/protobuf/io", "@com_google_protobuf//src/google/protobuf/io:printer", "@com_google_protobuf//src/google/protobuf/io:tokenizer"])
         elif dep.startswith("absl/"):
             ret.append("@com_google_absl//" + dep)
         elif dep.startswith("google/"):
@@ -855,5 +861,27 @@ def grpc_clang_cl_settings():
             "@platforms//cpu:x86_64",
             "@platforms//os:windows",
             "@bazel_tools//tools/cpp:clang-cl",
+        ],
+    )
+
+# Certain iOS tests (e.g. //src/objective-c/tests:EventEngineUnitTest)s
+# Requires running py_binary code in simulator which doesn't work
+# well with @rules_python's toolchain autodetection. Customize this
+# toolchain to make our CI tests pass.
+# See https://github.com/grpc/grpc/issues/41798.
+def grpc_ios_toolchains(name):
+    native.toolchain(
+        name = name,
+        # Point to the existing hermetic runtime implementation
+        toolchain = "@python_3_11_aarch64-apple-darwin//:python_runtimes",
+        toolchain_type = "@bazel_tools//tools/python:toolchain_type",
+        # Force using host python for ios simulator
+        target_compatible_with = [
+            "@platforms//os:ios",
+            "@platforms//cpu:aarch64",
+        ],
+        exec_compatible_with = [
+            "@platforms//os:macos",
+            "@platforms//cpu:aarch64",
         ],
     )
