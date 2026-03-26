@@ -19,6 +19,7 @@ import logging
 import os
 import random
 import threading
+import typeguard
 from typing import Callable, Iterable, Sequence, Tuple
 import unittest
 
@@ -186,6 +187,7 @@ class TestCompatibility(AioTestBase):
 
         await self._run_in_another_thread(sync_work)
 
+    @typeguard.suppress_type_checks
     async def test_server(self):
         class GenericHandlers(grpc.GenericRpcHandler):
             def service(self, handler_call_details):
