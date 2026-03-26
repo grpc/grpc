@@ -266,7 +266,7 @@ TEST_F(SubchannelMetricsTest, OldSubchannelDisconnectionYieldsUnknown) {
       ::testing::Optional(1));
 }
 
-TEST_F(SubchannelMetricsTest, NewSubchannelDisconnectionYieldsGoaway0) {
+TEST_F(SubchannelMetricsTest, NewSubchannelDisconnectionYieldsGoawayNoError) {
   grpc_core::ConfigVars::Overrides overrides;
   overrides.client_channel_backup_poll_interval_ms = 1;
   overrides.experiments = "subchannel_connection_scaling";
@@ -293,9 +293,11 @@ TEST_F(SubchannelMetricsTest, NewSubchannelDisconnectionYieldsGoaway0) {
     return state == GRPC_CHANNEL_TRANSIENT_FAILURE ||
            state == GRPC_CHANNEL_SHUTDOWN;
   });
-
-  // New subchannel logs a fully parsed HTTP/2 Goaway event
-  EXPECT_THAT(
+  EXPECT_THAT(stats_plugin_->GetUInt64MetricValueByName(
+                  "grpc.subchannel.disconnections",
+                  {target, "", "", "GOAWAY NO_ERROR"}),
+              ::testing::Optional(1));
+}
       stats_plugin_->GetUInt64MetricValueByName(
           "grpc.subchannel.disconnections", {target, "", "", "GOAWAY 0"}),
       ::testing::Optional(1));

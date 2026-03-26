@@ -1831,10 +1831,10 @@ class NewSubchannel::ConnectionStateWatcher final
           case DisconnectReason::kGoaway:
             if (disconnect_info.http2_error_code.has_value()) {
               disconnect_reason = absl::StrCat(
-                  "GOAWAY ",
-                  static_cast<int>(*disconnect_info.http2_error_code));
+                  "GOAWAY ", http2::Http2Status::DebugGetCode(
+                                 *disconnect_info.http2_error_code));
             } else {
-              disconnect_reason = "goaway";
+              disconnect_reason = "GOAWAY UNKNOWN";
             }
             break;
           case DisconnectReason::kConnectionReset:
