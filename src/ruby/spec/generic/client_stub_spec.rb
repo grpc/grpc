@@ -232,7 +232,7 @@ describe 'ClientStub' do  # rubocop:disable Metrics/BlockLength
         th.join
       end
 
-      it 'should receive UNAUTHENTICATED if call credentials plugin fails' do
+      it 'should receive UNAVAILABLE if call credentials plugin fails' do
         server_port = create_secure_test_server
         server_started_notifier = GRPC::Notifier.new
         th = Thread.new do
@@ -261,14 +261,14 @@ describe 'ClientStub' do  # rubocop:disable Metrics/BlockLength
         end
         creds = GRPC::Core::CallCredentials.new(failing_auth)
 
-        unauthenticated_error_occurred = false
+        unavailable_error_occurred = false
         begin
           get_response(stub, credentials: creds)
-        rescue GRPC::Unauthenticated => e
-          unauthenticated_error_occurred = true
+        rescue GRPC::Unavailable => e
+          unavailable_error_occurred = true
           expect(e.details.include?(error_message)).to be true
         end
-        expect(unauthenticated_error_occurred).to eq(true)
+        expect(unavailable_error_occurred).to eq(true)
 
         @server.shutdown_and_notify(Time.now + 3)
         th.join
