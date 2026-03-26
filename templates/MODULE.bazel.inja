@@ -72,14 +72,13 @@ bazel_dep(name = "rules_cc", version = "0.2.15")
 cc_configure = use_extension("@rules_cc//cc:extensions.bzl", "cc_configure_extension")
 use_repo(cc_configure, "local_config_cc")
 
-# Use archive_override because BCR release changes the folder structure and move
-# headers to include/ folder, which can break our wrapper language builds.
 archive_override(
     module_name = "zlib",
     integrity = "sha256-uSWM9iVOf3w38c1h26lDocXqPP9XGMeJg02sNZCU9fc=",
     patch_strip = 1,
     patches = [
         "//bazel/zlib:add_custom_build_file.patch",
+        "//bazel/zlib:fix_io_header.patch",
     ],
     strip_prefix = "zlib-da607da739fa6047df13e66a2af6b8bec7c2a498",
     urls = [
