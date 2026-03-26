@@ -1008,11 +1008,6 @@ void OldSubchannel::OnConnectingFinishedLocked(grpc_error_handle error) {
 
 bool OldSubchannel::PublishTransportLocked() {
   auto socket_node = connecting_result_.transport->GetSocketNode();
-  auto auth_context =
-      connecting_result_.channel_args.GetObjectRef<grpc_auth_context>();
-  if (auth_context != nullptr) {
-    args_ = args_.SetObject(auth_context);
-  }
   if (connecting_result_.transport->filter_stack_transport() != nullptr) {
     // Construct channel stack.
     // Builder takes ownership of transport.
@@ -1031,7 +1026,7 @@ bool OldSubchannel::PublishTransportLocked() {
       return false;
     }
     connected_subchannel_ = MakeRefCounted<LegacyConnectedSubchannel>(
-        std::move(*stack), args_, channelz_node_);
+        std::move(*stack), connecting_result_.channel_args, channelz_node_);
   } else {
     OrphanablePtr<ClientTransport> transport(
         std::exchange(connecting_result_.transport, nullptr)
@@ -1070,7 +1065,8 @@ bool OldSubchannel::PublishTransportLocked() {
       return false;
     }
     connected_subchannel_ = MakeRefCounted<NewConnectedSubchannel>(
-        std::move(*call_destination), std::move(transport_destination), args_);
+        std::move(*call_destination), std::move(transport_destination),
+        connecting_result_.channel_args);
   }
   connecting_result_.Reset();
   // Publish.
@@ -2338,11 +2334,6 @@ void NewSubchannel::OnConnectingFinishedLocked(grpc_error_handle error) {
 
 bool NewSubchannel::PublishTransportLocked() {
   auto socket_node = connecting_result_.transport->GetSocketNode();
-  auto auth_context =
-      connecting_result_.channel_args.GetObjectRef<grpc_auth_context>();
-  if (auth_context != nullptr) {
-    args_ = args_.SetObject(auth_context);
-  }
   Transport* transport = connecting_result_.transport;
   RefCountedPtr<ConnectedSubchannel> connected_subchannel;
   if (connecting_result_.transport->filter_stack_transport() != nullptr) {
@@ -2363,8 +2354,9 @@ bool NewSubchannel::PublishTransportLocked() {
       return false;
     }
     connected_subchannel = MakeRefCounted<LegacyConnectedSubchannel>(
-        WeakRef().TakeAsSubclass<NewSubchannel>(), std::move(*stack), args_,
-        channelz_node_, connecting_result_.max_concurrent_streams);
+        WeakRef().TakeAsSubclass<NewSubchannel>(), std::move(*stack),
+        connecting_result_.channel_args, channelz_node_,
+        connecting_result_.max_concurrent_streams);
   } else {
     OrphanablePtr<ClientTransport> transport(
         std::exchange(connecting_result_.transport, nullptr)
@@ -2404,7 +2396,7 @@ bool NewSubchannel::PublishTransportLocked() {
     }
     connected_subchannel = MakeRefCounted<NewConnectedSubchannel>(
         WeakRef().TakeAsSubclass<NewSubchannel>(), std::move(*call_destination),
-        std::move(transport_destination), args_,
+        std::move(transport_destination), connecting_result_.channel_args,
         connecting_result_.max_concurrent_streams);
   }
   connecting_result_.Reset();
