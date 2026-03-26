@@ -170,7 +170,7 @@ module GRPC
                           deadline: deadline,
                           parent: parent)
       # Apply credentials before setting up the operation
-      resolved_metadata = apply_credentials_to_metadata(metadata, credentials)
+      resolved_metadata = apply_credentials_to_metadata(metadata, credentials, method)
       interception_context = @interceptors.build_context
       intercept_args = {
         method: method,
@@ -247,7 +247,7 @@ module GRPC
       c = new_active_call(method, marshal, unmarshal,
                           deadline: deadline,
                           parent: parent)
-      resolved_metadata = apply_credentials_to_metadata(metadata, credentials)
+      resolved_metadata = apply_credentials_to_metadata(metadata, credentials, method)
       interception_context = @interceptors.build_context
       intercept_args = {
         method: method,
@@ -339,7 +339,7 @@ module GRPC
       c = new_active_call(method, marshal, unmarshal,
                           deadline: deadline,
                           parent: parent)
-      resolved_metadata = apply_credentials_to_metadata(metadata, credentials)
+      resolved_metadata = apply_credentials_to_metadata(metadata, credentials, method)
       interception_context = @interceptors.build_context
       intercept_args = {
         method: method,
@@ -461,7 +461,7 @@ module GRPC
       c = new_active_call(method, marshal, unmarshal,
                           deadline: deadline,
                           parent: parent)
-      resolved_metadata = apply_credentials_to_metadata(metadata, credentials)
+      resolved_metadata = apply_credentials_to_metadata(metadata, credentials, method)
       interception_context = @interceptors.build_context
       intercept_args = {
         method: method,
@@ -511,10 +511,13 @@ module GRPC
     end
 
     # Applies credentials to metadata by resolving and executing credential callbacks
+    # @param metadata [Hash] the metadata hash to add credentials to
+    # @param credentials [CallCredentials, nil] per-call credentials
+    # @param method [String, nil] the RPC method path for jwt_aud_uri construction
     # @api private
-    def apply_credentials_to_metadata(metadata, credentials)
+    def apply_credentials_to_metadata(metadata, credentials, method = nil)
       resolved_creds = Core::CallCredentialsHelper.resolve(@call_creds, credentials)
-      Core::CallCredentialsHelper.apply(resolved_creds, metadata, @host, @channel_creds)
+      Core::CallCredentialsHelper.apply(resolved_creds, metadata, @host, @channel_creds, method)
       metadata
     end
   end
