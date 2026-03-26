@@ -38,7 +38,6 @@ if TYPE_CHECKING:
 
 _LOGGER = logging.getLogger(__name__)
 
-_channel = Any  # _channel.py imports this module.
 ClientCallTracerCapsule = TypeVar("ClientCallTracerCapsule")
 ServerCallTracerFactoryCapsule = TypeVar("ServerCallTracerFactoryCapsule")
 
