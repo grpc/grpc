@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">52.0.0</span>
+   &#160;<span id="projectnumber">53.0.0</span>
    </div>
   </td>
  </tr>
@@ -149,6 +149,9 @@ Functions</h2></td></tr>
 <tr class="memitem:a63b311e6a61a5abd34c9ba4d410c4cd5"><td class="memTemplParams" colspan="2">template&lt;typename Sink &gt; </td></tr>
 <tr class="memitem:a63b311e6a61a5abd34c9ba4d410c4cd5"><td class="memTemplItemLeft" align="right" valign="top">void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="namespacegrpc__event__engine_1_1experimental.html#a63b311e6a61a5abd34c9ba4d410c4cd5">AbslStringify</a> (Sink &amp;out, const <a class="el" href="structgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_task_handle.html">EventEngine::TaskHandle</a> &amp;handle)</td></tr>
 <tr class="separator:a63b311e6a61a5abd34c9ba4d410c4cd5"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2700d08c096d8be674670ffc56183450"><td class="memItemLeft" align="right" valign="top">const <a class="el" href="structgrpc__arg__pointer__vtable.html">grpc_arg_pointer_vtable</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc__event__engine_1_1experimental.html#a2700d08c096d8be674670ffc56183450">grpc_event_engine_arg_vtable</a> (void)</td></tr>
+<tr class="memdesc:a2700d08c096d8be674670ffc56183450"><td class="mdescLeft">&#160;</td><td class="mdescRight">Fetch a vtable for a grpc_channel_arg that points to a <a class="el" href="namespacegrpc__event__engine.html">grpc_event_engine</a>.  <a href="namespacegrpc__event__engine_1_1experimental.html#a2700d08c096d8be674670ffc56183450">More...</a><br /></td></tr>
+<tr class="separator:a2700d08c096d8be674670ffc56183450"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Function Documentation</h2>
 <a id="a272eb5df1f70a9691ae6ada9d296a2be"></a>
@@ -267,6 +270,26 @@ template&lt;typename Sink &gt; </div>
 
 <p>Returns the default <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html" title="The EventEngine Interface.">EventEngine</a> instance. </p>
 <p>Note that if <a class="el" href="namespacegrpc__event__engine_1_1experimental.html#a8ddc58d63713337d5de0005fb9dad042" title="Set the default EventEngine instance, which will be used throughout gRPC.">SetDefaultEventEngine()</a> has not been called, then the default <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html" title="The EventEngine Interface.">EventEngine</a> may be created and destroyed as needed, meaning that multiple calls to <a class="el" href="namespacegrpc__event__engine_1_1experimental.html#a58656208f066797bf54e99bd5ad83818" title="Returns the default EventEngine instance.">GetDefaultEventEngine()</a> over a process's lifetime may return different instances. Callers are expected to call <a class="el" href="namespacegrpc__event__engine_1_1experimental.html#a58656208f066797bf54e99bd5ad83818" title="Returns the default EventEngine instance.">GetDefaultEventEngine()</a> once and hold the returned reference for as long as they need the <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html" title="The EventEngine Interface.">EventEngine</a> instance. </p>
+
+</div>
+</div>
+<a id="a2700d08c096d8be674670ffc56183450"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a2700d08c096d8be674670ffc56183450">&#9670;&nbsp;</a></span>grpc_event_engine_arg_vtable()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">const <a class="el" href="structgrpc__arg__pointer__vtable.html">grpc_arg_pointer_vtable</a>* grpc_event_engine::experimental::grpc_event_engine_arg_vtable </td>
+          <td>(</td>
+          <td class="paramtype">void&#160;</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Fetch a vtable for a grpc_channel_arg that points to a <a class="el" href="namespacegrpc__event__engine.html">grpc_event_engine</a>. </p>
 
 </div>
 </div>
@@ -506,7 +529,7 @@ template&lt;typename Sink &gt; </div>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Feb 20 2026 17:27:57 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu Mar 26 2026 18:32:22 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

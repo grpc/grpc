@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">52.0.0</span>
+   &#160;<span id="projectnumber">53.0.0</span>
    </div>
   </td>
  </tr>
@@ -336,6 +336,9 @@ Macros</h2></td></tr>
 <tr class="memitem:ga7a2a214214ad1af38b0f67429838b215"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__grpc__arg__keys.html#ga7a2a214214ad1af38b0f67429838b215">GRPC_ARG_HAPPY_EYEBALLS_CONNECTION_ATTEMPT_DELAY_MS</a>&#160;&#160;&#160;&quot;grpc.happy_eyeballs_connection_attempt_delay_ms&quot;</td></tr>
 <tr class="memdesc:ga7a2a214214ad1af38b0f67429838b215"><td class="mdescLeft">&#160;</td><td class="mdescRight">Connection Attempt Delay for use in Happy Eyeballs, in milliseconds.  <a href="group__grpc__arg__keys.html#ga7a2a214214ad1af38b0f67429838b215">More...</a><br /></td></tr>
 <tr class="separator:ga7a2a214214ad1af38b0f67429838b215"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga014c52d3ff1482d82765f1b870918747"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__grpc__arg__keys.html#ga014c52d3ff1482d82765f1b870918747">GRPC_ARG_EVENT_ENGINE</a>&#160;&#160;&#160;&quot;grpc.experimental.event_engine&quot;</td></tr>
+<tr class="memdesc:ga014c52d3ff1482d82765f1b870918747"><td class="mdescLeft">&#160;</td><td class="mdescRight">If set, uses the provided EventEngine as the channel's event engine.  <a href="group__grpc__arg__keys.html#ga014c52d3ff1482d82765f1b870918747">More...</a><br /></td></tr>
+<tr class="separator:ga014c52d3ff1482d82765f1b870918747"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga7e1a4b301b2e9682abff15ea1cc5b371"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__grpc__arg__keys.html#ga7e1a4b301b2e9682abff15ea1cc5b371">GRPC_ARG_EVENT_ENGINE_USE_MEMORY_ALLOCATOR_FACTORY</a>&#160;&#160;&#160;&quot;grpc.event_engine_use_memory_allocator_factory&quot;</td></tr>
 <tr class="memdesc:ga7e1a4b301b2e9682abff15ea1cc5b371"><td class="mdescLeft">&#160;</td><td class="mdescRight">It accepts a MemoryAllocatorFactory as input and If specified, it forces the default event engine to use memory allocators created using the provided factory.  <a href="group__grpc__arg__keys.html#ga7e1a4b301b2e9682abff15ea1cc5b371">More...</a><br /></td></tr>
 <tr class="separator:ga7e1a4b301b2e9682abff15ea1cc5b371"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -710,6 +713,23 @@ Macros</h2></td></tr>
 
 <p>Enables retry functionality. </p>
 <p>Defaults to true. When enabled, transparent retries will be performed as appropriate, and configurable retries are enabled when they are configured via the service config. For details, see: <a href="https://github.com/grpc/proposal/blob/master/A6-client-retries.md">https://github.com/grpc/proposal/blob/master/A6-client-retries.md</a> NOTE: Hedging functionality is not yet implemented, so those fields in the service config will currently be ignored. See also the GRPC_ARG_EXPERIMENTAL_ENABLE_HEDGING arg below. </p>
+
+</div>
+</div>
+<a id="ga014c52d3ff1482d82765f1b870918747"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ga014c52d3ff1482d82765f1b870918747">&#9670;&nbsp;</a></span>GRPC_ARG_EVENT_ENGINE</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">#define GRPC_ARG_EVENT_ENGINE&#160;&#160;&#160;&quot;grpc.experimental.event_engine&quot;</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>If set, uses the provided EventEngine as the channel's event engine. </p>
+<p>TODO(aananthv): Remove GRPC_INTERNAL_ARG_EVENT_ENGINE once all usages are migrated to this arg. </p>
 
 </div>
 </div>
@@ -1991,7 +2011,7 @@ Macros</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Feb 20 2026 17:27:57 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu Mar 26 2026 18:32:22 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

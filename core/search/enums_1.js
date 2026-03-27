@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['type_2176',['Type',['../classgrpc__core_1_1experimental_1_1_json.html#a42ab3d14c94ec45eaae8038ad9c3919a',1,'grpc_core::experimental::Json']]]
+  ['signaturealgorithm_2217',['SignatureAlgorithm',['../classgrpc__core_1_1_private_key_signer.html#a5e6cd46d546e2aaa3dee7cdda67c1c2e',1,'grpc_core::PrivateKeySigner']]]
 ];

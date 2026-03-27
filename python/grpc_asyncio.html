@@ -8,7 +8,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>gRPC AsyncIO API &#8212; gRPC Python Docs v1.78.1</title>
+    <title>gRPC AsyncIO API &#8212; gRPC Python Docs v1.80.0</title>
   
   
   
@@ -39,7 +39,7 @@
   <link rel="preload" as="script" href="_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
 <link rel="preload" as="script" href="_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
 
-    <script src="_static/documentation_options.js?v=ef80e3d6"></script>
+    <script src="_static/documentation_options.js?v=99d36d13"></script>
     <script src="_static/doctools.js?v=9a2dae69"></script>
     <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <script async="async" src="https://www.googletagmanager.com/gtag/js?id=UA-60127042-1"></script>
@@ -62,7 +62,7 @@
     <link rel="prev" title="gRPC" href="grpc.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="1.78.1" />
+  <meta name="docsearch:version" content="1.80.0" />
   </head>
   
   
@@ -124,7 +124,7 @@
   
   
   
-    <p class="title logo__title">gRPC Python Docs v1.78.1</p>
+    <p class="title logo__title">gRPC Python Docs v1.80.0</p>
   
 </a></div>
     
@@ -595,8 +595,8 @@ to configure the channel.</p></li>
 <li><p><strong>maximum_concurrent_rpcs</strong> (<em>int</em><em> | </em><em>None</em>) – The maximum number of concurrent RPCs this server
 will service before returning RESOURCE_EXHAUSTED status, or None to
 indicate no limit.</p></li>
-<li><p><strong>compression</strong> (<a class="reference internal" href="grpc.html#grpc.Compression" title="grpc.Compression"><em>Compression</em></a><em> | </em><em>None</em>) – An element of grpc.compression, e.g.
-grpc.compression.Gzip. This compression algorithm will be used for the
+<li><p><strong>compression</strong> (<a class="reference internal" href="grpc.html#grpc.Compression" title="grpc.Compression"><em>Compression</em></a><em> | </em><em>None</em>) – An element of grpc.Compression, e.g.
+grpc.Compression.Gzip. This compression algorithm will be used for the
 lifetime of the server unless overridden by set_compression.</p></li>
 </ul>
 </dd>
@@ -906,7 +906,7 @@ determined. Hence, its methods no longer needs to be coroutines.</p>
 </dl>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>args</strong> (<em>Tuple</em><em>[</em><em>str</em><em>, </em><em>str</em><em> | </em><em>bytes</em><em>]</em>)</p>
+<dd class="field-odd"><p><strong>args</strong> (<em>MetadatumType</em>)</p>
 </dd>
 </dl>
 <dl class="py method">
@@ -1997,13 +1997,13 @@ interceptor chooses to service this RPC, or None otherwise.</p>
 <li><p><strong>request</strong> (<em>RequestType</em>) – The request value for the RPC.</p></li>
 <li><p><strong>timeout</strong> (<em>float</em><em> | </em><em>None</em>) – An optional duration of time in seconds to allow
 for the RPC.</p></li>
-<li><p><strong>metadata</strong> (<a class="reference internal" href="#grpc.aio.Metadata" title="grpc.aio._metadata.Metadata"><em>Metadata</em></a><em> | </em><em>Sequence</em><em>[</em><em>Tuple</em><em>[</em><em>str</em><em>, </em><em>str</em><em> | </em><em>bytes</em><em>]</em><em>] </em><em>| </em><em>None</em>) – Optional <a class="reference internal" href="glossary.html#term-metadata"><span class="xref std std-term">metadata</span></a> to be transmitted to the
+<li><p><strong>metadata</strong> (<a class="reference internal" href="#grpc.aio.Metadata" title="grpc.aio.Metadata"><em>Metadata</em></a><em> | </em><em>Sequence</em><em>[</em><em>Tuple</em><em>[</em><em>str</em><em>, </em><em>str</em><em> | </em><em>bytes</em><em>]</em><em>] </em><em>| </em><em>None</em>) – Optional <a class="reference internal" href="glossary.html#term-metadata"><span class="xref std std-term">metadata</span></a> to be transmitted to the
 service-side of the RPC.</p></li>
 <li><p><strong>credentials</strong> (<a class="reference internal" href="grpc.html#grpc.CallCredentials" title="grpc.CallCredentials"><em>CallCredentials</em></a><em> | </em><em>None</em>) – An optional CallCredentials for the RPC. Only valid for
 secure Channel.</p></li>
 <li><p><strong>wait_for_ready</strong> (<em>bool</em><em> | </em><em>None</em>) – An optional flag to enable <a class="reference internal" href="glossary.html#term-wait_for_ready"><span class="xref std std-term">wait_for_ready</span></a> mechanism.</p></li>
-<li><p><strong>compression</strong> (<a class="reference internal" href="grpc.html#grpc.Compression" title="grpc.Compression"><em>Compression</em></a><em> | </em><em>None</em>) – An element of grpc.compression, e.g.
-grpc.compression.Gzip.</p></li>
+<li><p><strong>compression</strong> (<a class="reference internal" href="grpc.html#grpc.Compression" title="grpc.Compression"><em>Compression</em></a><em> | </em><em>None</em>) – An element of grpc.Compression, e.g.
+grpc.Compression.Gzip.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
@@ -2036,13 +2036,13 @@ grpc.compression.Gzip.</p></li>
 <li><p><strong>request</strong> (<em>RequestType</em>) – The request value for the RPC.</p></li>
 <li><p><strong>timeout</strong> (<em>float</em><em> | </em><em>None</em>) – An optional duration of time in seconds to allow
 for the RPC.</p></li>
-<li><p><strong>metadata</strong> (<a class="reference internal" href="#grpc.aio.Metadata" title="grpc.aio._metadata.Metadata"><em>Metadata</em></a><em> | </em><em>Sequence</em><em>[</em><em>Tuple</em><em>[</em><em>str</em><em>, </em><em>str</em><em> | </em><em>bytes</em><em>]</em><em>] </em><em>| </em><em>None</em>) – Optional <a class="reference internal" href="glossary.html#term-metadata"><span class="xref std std-term">metadata</span></a> to be transmitted to the
+<li><p><strong>metadata</strong> (<a class="reference internal" href="#grpc.aio.Metadata" title="grpc.aio.Metadata"><em>Metadata</em></a><em> | </em><em>Sequence</em><em>[</em><em>Tuple</em><em>[</em><em>str</em><em>, </em><em>str</em><em> | </em><em>bytes</em><em>]</em><em>] </em><em>| </em><em>None</em>) – Optional <a class="reference internal" href="glossary.html#term-metadata"><span class="xref std std-term">metadata</span></a> to be transmitted to the
 service-side of the RPC.</p></li>
 <li><p><strong>credentials</strong> (<a class="reference internal" href="grpc.html#grpc.CallCredentials" title="grpc.CallCredentials"><em>CallCredentials</em></a><em> | </em><em>None</em>) – An optional CallCredentials for the RPC. Only valid for
 secure Channel.</p></li>
 <li><p><strong>wait_for_ready</strong> (<em>bool</em><em> | </em><em>None</em>) – An optional flag to enable <a class="reference internal" href="glossary.html#term-wait_for_ready"><span class="xref std std-term">wait_for_ready</span></a> mechanism.</p></li>
-<li><p><strong>compression</strong> (<a class="reference internal" href="grpc.html#grpc.Compression" title="grpc.Compression"><em>Compression</em></a><em> | </em><em>None</em>) – An element of grpc.compression, e.g.
-grpc.compression.Gzip.</p></li>
+<li><p><strong>compression</strong> (<a class="reference internal" href="grpc.html#grpc.Compression" title="grpc.Compression"><em>Compression</em></a><em> | </em><em>None</em>) – An element of grpc.Compression, e.g.
+grpc.Compression.Gzip.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
@@ -2076,13 +2076,13 @@ grpc.compression.Gzip.</p></li>
 messages for the RPC.</p></li>
 <li><p><strong>timeout</strong> (<em>float</em><em> | </em><em>None</em>) – An optional duration of time in seconds to allow
 for the RPC.</p></li>
-<li><p><strong>metadata</strong> (<a class="reference internal" href="#grpc.aio.Metadata" title="grpc.aio._metadata.Metadata"><em>Metadata</em></a><em> | </em><em>Sequence</em><em>[</em><em>Tuple</em><em>[</em><em>str</em><em>, </em><em>str</em><em> | </em><em>bytes</em><em>]</em><em>] </em><em>| </em><em>None</em>) – Optional <a class="reference internal" href="glossary.html#term-metadata"><span class="xref std std-term">metadata</span></a> to be transmitted to the
+<li><p><strong>metadata</strong> (<a class="reference internal" href="#grpc.aio.Metadata" title="grpc.aio.Metadata"><em>Metadata</em></a><em> | </em><em>Sequence</em><em>[</em><em>Tuple</em><em>[</em><em>str</em><em>, </em><em>str</em><em> | </em><em>bytes</em><em>]</em><em>] </em><em>| </em><em>None</em>) – Optional <a class="reference internal" href="glossary.html#term-metadata"><span class="xref std std-term">metadata</span></a> to be transmitted to the
 service-side of the RPC.</p></li>
 <li><p><strong>credentials</strong> (<a class="reference internal" href="grpc.html#grpc.CallCredentials" title="grpc.CallCredentials"><em>CallCredentials</em></a><em> | </em><em>None</em>) – An optional CallCredentials for the RPC. Only valid for
 secure Channel.</p></li>
 <li><p><strong>wait_for_ready</strong> (<em>bool</em><em> | </em><em>None</em>) – An optional flag to enable <a class="reference internal" href="glossary.html#term-wait_for_ready"><span class="xref std std-term">wait_for_ready</span></a> mechanism.</p></li>
-<li><p><strong>compression</strong> (<a class="reference internal" href="grpc.html#grpc.Compression" title="grpc.Compression"><em>Compression</em></a><em> | </em><em>None</em>) – An element of grpc.compression, e.g.
-grpc.compression.Gzip.</p></li>
+<li><p><strong>compression</strong> (<a class="reference internal" href="grpc.html#grpc.Compression" title="grpc.Compression"><em>Compression</em></a><em> | </em><em>None</em>) – An element of grpc.Compression, e.g.
+grpc.Compression.Gzip.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
@@ -2116,13 +2116,13 @@ grpc.compression.Gzip.</p></li>
 messages for the RPC.</p></li>
 <li><p><strong>timeout</strong> (<em>float</em><em> | </em><em>None</em>) – An optional duration of time in seconds to allow
 for the RPC.</p></li>
-<li><p><strong>metadata</strong> (<a class="reference internal" href="#grpc.aio.Metadata" title="grpc.aio._metadata.Metadata"><em>Metadata</em></a><em> | </em><em>Sequence</em><em>[</em><em>Tuple</em><em>[</em><em>str</em><em>, </em><em>str</em><em> | </em><em>bytes</em><em>]</em><em>] </em><em>| </em><em>None</em>) – Optional <a class="reference internal" href="glossary.html#term-metadata"><span class="xref std std-term">metadata</span></a> to be transmitted to the
+<li><p><strong>metadata</strong> (<a class="reference internal" href="#grpc.aio.Metadata" title="grpc.aio.Metadata"><em>Metadata</em></a><em> | </em><em>Sequence</em><em>[</em><em>Tuple</em><em>[</em><em>str</em><em>, </em><em>str</em><em> | </em><em>bytes</em><em>]</em><em>] </em><em>| </em><em>None</em>) – Optional <a class="reference internal" href="glossary.html#term-metadata"><span class="xref std std-term">metadata</span></a> to be transmitted to the
 service-side of the RPC.</p></li>
 <li><p><strong>credentials</strong> (<a class="reference internal" href="grpc.html#grpc.CallCredentials" title="grpc.CallCredentials"><em>CallCredentials</em></a><em> | </em><em>None</em>) – An optional CallCredentials for the RPC. Only valid for
 secure Channel.</p></li>
 <li><p><strong>wait_for_ready</strong> (<em>bool</em><em> | </em><em>None</em>) – An optional flag to enable <a class="reference internal" href="glossary.html#term-wait_for_ready"><span class="xref std std-term">wait_for_ready</span></a> mechanism.</p></li>
-<li><p><strong>compression</strong> (<a class="reference internal" href="grpc.html#grpc.Compression" title="grpc.Compression"><em>Compression</em></a><em> | </em><em>None</em>) – An element of grpc.compression, e.g.
-grpc.compression.Gzip.</p></li>
+<li><p><strong>compression</strong> (<a class="reference internal" href="grpc.html#grpc.Compression" title="grpc.Compression"><em>Compression</em></a><em> | </em><em>None</em>) – An element of grpc.Compression, e.g.
+grpc.Compression.Gzip.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>

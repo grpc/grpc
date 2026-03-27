@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.78.1</span>
+   &#160;<span id="projectnumber">1.80.0</span>
    </div>
   </td>
  </tr>
@@ -326,6 +326,9 @@ Functions</h2></td></tr>
 <tr class="memitem:affc13775130fa5f376d885f742cacfe7"><td class="memItemLeft" align="right" valign="top"><a class="el" href="support_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc_8h.html#affc13775130fa5f376d885f742cacfe7">grpc_resource_quota_set_max_threads</a> (<a class="el" href="grpc__types_8h.html#a16d58b8d7c93609d01311b869f4a8d05">grpc_resource_quota</a> *resource_quota, int new_max_threads)</td></tr>
 <tr class="memdesc:affc13775130fa5f376d885f742cacfe7"><td class="mdescLeft">&#160;</td><td class="mdescRight">Update the size of the maximum number of threads allowed.  <a href="grpc_8h.html#affc13775130fa5f376d885f742cacfe7">More...</a><br /></td></tr>
 <tr class="separator:affc13775130fa5f376d885f742cacfe7"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab2e75431d82cef2fd1035e03ac548adf"><td class="memItemLeft" align="right" valign="top"><a class="el" href="support_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc_8h.html#ab2e75431d82cef2fd1035e03ac548adf">grpc_resource_quota_set_max_outstanding_streams</a> (<a class="el" href="grpc__types_8h.html#a16d58b8d7c93609d01311b869f4a8d05">grpc_resource_quota</a> *resource_quota, int new_max_outstanding_streams)</td></tr>
+<tr class="memdesc:ab2e75431d82cef2fd1035e03ac548adf"><td class="mdescLeft">&#160;</td><td class="mdescRight">Update the size of the maximum number of streams allowed.  <a href="grpc_8h.html#ab2e75431d82cef2fd1035e03ac548adf">More...</a><br /></td></tr>
+<tr class="separator:ab2e75431d82cef2fd1035e03ac548adf"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a7408718487625d05c9abad7dce78d923"><td class="memItemLeft" align="right" valign="top"><a class="el" href="support_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <a class="el" href="structgrpc__slice.html">grpc_slice</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc_8h.html#a7408718487625d05c9abad7dce78d923">grpc_dump_xds_configs</a> (void)</td></tr>
 <tr class="memdesc:a7408718487625d05c9abad7dce78d923"><td class="mdescLeft">&#160;</td><td class="mdescRight">EXPERIMENTAL.  <a href="grpc_8h.html#a7408718487625d05c9abad7dce78d923">More...</a><br /></td></tr>
 <tr class="separator:a7408718487625d05c9abad7dce78d923"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -2035,6 +2038,36 @@ Functions</h2></td></tr>
 
 </div>
 </div>
+<a id="ab2e75431d82cef2fd1035e03ac548adf"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ab2e75431d82cef2fd1035e03ac548adf">&#9670;&nbsp;</a></span>grpc_resource_quota_set_max_outstanding_streams()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="support_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> void grpc_resource_quota_set_max_outstanding_streams </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="grpc__types_8h.html#a16d58b8d7c93609d01311b869f4a8d05">grpc_resource_quota</a> *&#160;</td>
+          <td class="paramname"><em>resource_quota</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int&#160;</td>
+          <td class="paramname"><em>new_max_outstanding_streams</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Update the size of the maximum number of streams allowed. </p>
+
+</div>
+</div>
 <a id="affc13775130fa5f376d885f742cacfe7"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#affc13775130fa5f376d885f742cacfe7">&#9670;&nbsp;</a></span>grpc_resource_quota_set_max_threads()</h2>
 
@@ -2674,7 +2707,7 @@ Functions</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Feb 20 2026 17:27:59 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu Mar 26 2026 18:32:24 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>
