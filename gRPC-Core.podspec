@@ -93,7 +93,7 @@ Pod::Spec.new do |s|
   }
 
   s.default_subspecs = 'Interface', 'Implementation'
-  s.compiler_flags = '-DGRPC_ARES=0 -Wno-comma' + zlib_extra_flags()
+  s.compiler_flags = '-DGRPC_ARES=0 -Wno-comma -Wno-implicit-function-declaration'
   s.libraries = 'c++'
 
   # Exposes the privacy manifest. Depended on by any subspecs containing

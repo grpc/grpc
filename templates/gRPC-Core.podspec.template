@@ -64,10 +64,9 @@
   #
   # For bazel build this is fixed by `bazel/zlib/fix_io_header.patch`. In wrapper
   # langauges we have to disable this warning.
-  #
-  # See also https://github.com/grpc/grpc/issues/41958.
+  # See also https://github.com/grpc/grpc/issues/41958
   def zlib_extra_flags():
-    return ' -Wnoimplicit-function-declaration'
+    return '-Wno-implicit-function-declaration'
 
   def collect_files_for_libs(libs, fields):
     files = set()
@@ -87,6 +86,7 @@
   grpc_private_headers = collect_files_for_libs(grpc_full_deps, ("headers", ))
 
   grpc_abseil_specs = list_abseil_specs("grpc")
+  compiler_flags="-DGRPC_ARES=0 -Wno-comma " + zlib_extra_flags();
   %>
   Pod::Spec.new do |s|
     s.name     = 'gRPC-Core'
@@ -162,7 +162,7 @@
     }
 
     s.default_subspecs = 'Interface', 'Implementation'
-    s.compiler_flags = '-DGRPC_ARES=0 -Wno-comma' + zlib_extra_flags()
+    s.compiler_flags = '${compiler_flags}'
     s.libraries = 'c++'
 
     # Exposes the privacy manifest. Depended on by any subspecs containing
