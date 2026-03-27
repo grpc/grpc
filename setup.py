@@ -273,12 +273,22 @@ if EXTRA_ENV_COMPILE_ARGS is None:
         EXTRA_ENV_COMPILE_ARGS += (
             " -fvisibility=hidden -fno-wrapv -fno-exceptions"
         )
+        # Needed by zlib 1.3.2
+        # See https://github.com/grpc/grpc/issues/41958.
+        EXTRA_ENV_COMPILE_ARGS += (
+            " -Wno-implicit-function-declaration"
+        )
     elif "darwin" in sys.platform:
         # AppleClang by defaults uses C17 so only C++17 needs to be specified.
         EXTRA_ENV_COMPILE_ARGS += " -std=c++17"
         EXTRA_ENV_COMPILE_ARGS += (
             " -stdlib=libc++ -fvisibility=hidden -fno-wrapv -fno-exceptions"
             " -DHAVE_UNISTD_H"
+        )
+        # Needed by zlib 1.3.2
+        # See https://github.com/grpc/grpc/issues/41958.
+        EXTRA_ENV_COMPILE_ARGS += (
+            " -Wno-implicit-function-declaration"
         )
 
 if EXTRA_ENV_LINK_ARGS is None:
