@@ -191,6 +191,13 @@ cdef class SSLChannelCredentials(ChannelCredentials):
   def __cinit__(self, pem_root_certificates, private_key, certificate_chain, private_key_signer=None):
     if pem_root_certificates is not None and not isinstance(pem_root_certificates, bytes):
       raise TypeError('expected certificate to be bytes, got %s' % (type(pem_root_certificates)))
+    # Validate arguments to avoid runtime crashes due to asserts.
+    if private_key is not None and certificate_chain is None:
+      raise ValueError('certificate_chain must be provided when private_key is specified')
+    if private_key_signer is not None and certificate_chain is None:
+      raise ValueError('certificate_chain must be provided when private_key_signer is specified')
+    if certificate_chain is not None and private_key is None and private_key_signer is None:
+      raise ValueError('private_key or private_key_signer must be provided when certificate_chain is specified')
     self._pem_root_certificates = pem_root_certificates
     self._private_key = private_key
     self._certificate_chain = certificate_chain
