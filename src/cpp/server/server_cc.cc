@@ -1039,6 +1039,7 @@ static grpc_server_register_method_payload_handling PayloadHandlingForMethod(
     grpc::internal::RpcServiceMethod* method) {
   switch (method->method_type()) {
     case grpc::internal::RpcMethod::NORMAL_RPC:
+    case grpc::internal::RpcMethod::SESSION_RPC:
     case grpc::internal::RpcMethod::SERVER_STREAMING:
       return GRPC_SRM_PAYLOAD_READ_INITIAL_BYTE_BUFFER;
     case grpc::internal::RpcMethod::CLIENT_STREAMING:
