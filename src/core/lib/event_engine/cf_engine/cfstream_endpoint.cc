@@ -174,13 +174,23 @@ void CFStreamEndpointImpl::SetupStreams(
       cf_write_stream_, dispatch_get_global_queue(QOS_CLASS_DEFAULT, 0));
 
   if (!CFReadStreamOpen(cf_read_stream_)) {
-    auto status = CFErrorToStatus(CFReadStreamCopyError(cf_read_stream_));
+    CFErrorRef error = CFReadStreamCopyError(cf_read_stream_);
+    auto status = CFErrorToStatus(error);
+    if (error) {
+       CFRelease(error);
+       error = nullptr;
+    }
     on_connect(std::move(status));
     return;
   }
 
   if (!CFWriteStreamOpen(cf_write_stream_)) {
-    auto status = CFErrorToStatus(CFWriteStreamCopyError(cf_write_stream_));
+    CFErrorRef error = CFWriteStreamCopyError(cf_write_stream_);
+    auto status = CFErrorToStatus(error);
+    if (error) {
+       CFRelease(error);
+       error = nullptr;
+    }
     on_connect(std::move(status));
     return;
   }
@@ -308,6 +318,8 @@ void CFStreamEndpointImpl::Shutdown() {
 
   CFReadStreamClose(cf_read_stream_);
   CFWriteStreamClose(cf_write_stream_);
+  CFRelease(cf_read_stream_);
+  CFRelease(cf_write_stream_);
 }
 
 bool CFStreamEndpointImpl::Read(absl::AnyInvocable<void(absl::Status)> on_read,
