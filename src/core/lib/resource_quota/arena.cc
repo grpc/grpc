@@ -22,11 +22,11 @@
 #include <grpc/support/port_platform.h>
 
 #include <atomic>
+#include <cstddef>
 #include <new>
 
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/util/alloc.h"
-#include "absl/log/log.h"
 namespace grpc_core {
 
 namespace {
@@ -50,6 +50,7 @@ void* ArenaStorage(size_t& initial_size) {
 Arena::~Arena() {
   for (size_t i = 0; i < arena_detail::BaseArenaContextTraits::NumContexts();
        ++i) {
+    if (!owned_contexts_.is_set(i)) continue;
     arena_detail::BaseArenaContextTraits::Destroy(i, contexts()[i]);
   }
   DestroyManagedNewObjects();
@@ -102,6 +103,29 @@ void Arena::DestroyManagedNewObjects() {
 void Arena::Destroy() const {
   this->~Arena();
   gpr_free_aligned(const_cast<Arena*>(this));
+}
+
+void Arena::ForwardPropagateContextFrom(Arena* parent) {
+  for (size_t i = 0; i < arena_detail::BaseArenaContextTraits::NumContexts();
+       ++i) {
+    DCHECK(!owned_contexts_.is_set(i));
+    contexts()[i] = parent->contexts()[i];
+  }
+}
+
+void Arena::ReversePropagateContextFrom(Arena* child) {
+  auto reverse_propagation_contexts =
+      arena_detail::BaseArenaContextTraits::reverse_propagation_contexts();
+  for (size_t i = 0; i < arena_detail::BaseArenaContextTraits::NumContexts();
+       ++i) {
+    if (!reverse_propagation_contexts.is_set(i)) continue;
+    if (contexts()[i] == child->contexts()[i]) continue;
+    if (owned_contexts_.is_set(i)) {
+      arena_detail::BaseArenaContextTraits::Destroy(i, contexts()[i]);
+      owned_contexts_.clear(i);
+    }
+    contexts()[i] = child->contexts()[i];
+  }
 }
 
 void* Arena::AllocZone(size_t size) {

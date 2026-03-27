@@ -31,6 +31,7 @@
 
 #include <atomic>
 #include <cstddef>
+#include <cstdint>
 #include <iosfwd>
 #include <memory>
 #include <utility>
@@ -38,12 +39,26 @@
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/util/alloc.h"
+#include "src/core/util/bitset.h"
 #include "src/core/util/construct_destruct.h"
 
 namespace grpc_core {
 
+static constexpr uint16_t kMaxArenaContexts = 16;
+
 class Arena;
 
+enum class ArenaContextPropagation {
+  kForward,
+  kForwardAndReverse,
+};
+
+// Define an ArenaContextType instance for each arena context type.
+// Members should be:
+//   // direction of propagation
+//   static constexpr ArenaContextPropagation kPropagation;
+//   // destroy/deallocate an owned context
+//   static void Destroy(T* instance);
 template <typename T>
 struct ArenaContextType;
 
@@ -55,7 +70,7 @@ class BaseArenaContextTraits {
  public:
   // Count of number of contexts that have been allocated.
   static uint16_t NumContexts() {
-    return static_cast<uint16_t>(RegisteredTraits().size());
+    return static_cast<uint16_t>(RegisteredTraits().vtables.size());
   }
 
   // Number of bytes required to store the context pointers on an arena.
@@ -64,21 +79,42 @@ class BaseArenaContextTraits {
   // Call the registered destruction function for a context.
   static void Destroy(uint16_t id, void* ptr) {
     if (ptr == nullptr) return;
-    RegisteredTraits()[id](ptr);
+    RegisteredTraits().vtables[id].destroy(ptr);
+  }
+
+  static BitSet<kMaxArenaContexts> reverse_propagation_contexts() {
+    return RegisteredTraits().reverse_propagation_contexts;
   }
 
  protected:
+  struct VTable {
+    void (*destroy)(void*);
+  };
+
   // Allocate a new context id and register the destruction function.
-  static uint16_t MakeId(void (*destroy)(void* ptr)) {
+  static uint16_t MakeId(VTable vtable, ArenaContextPropagation propagation) {
     auto& traits = RegisteredTraits();
-    const uint16_t id = static_cast<uint16_t>(traits.size());
-    traits.push_back(destroy);
+    const uint16_t id = static_cast<uint16_t>(traits.vtables.size());
+    DCHECK_LT(id, kMaxArenaContexts);
+    traits.vtables.push_back(vtable);
+    switch (propagation) {
+      case ArenaContextPropagation::kForward:
+        break;
+      case ArenaContextPropagation::kForwardAndReverse:
+        traits.reverse_propagation_contexts.set(id);
+        break;
+    }
     return id;
   }
 
  private:
-  static std::vector<void (*)(void*)>& RegisteredTraits() {
-    static NoDestruct<std::vector<void (*)(void*)>> registered_traits;
+  struct Traits {
+    BitSet<kMaxArenaContexts> reverse_propagation_contexts;
+    std::vector<VTable> vtables;
+  };
+
+  static Traits& RegisteredTraits() {
+    static NoDestruct<Traits> registered_traits;
     return *registered_traits;
   }
 };
@@ -94,13 +130,17 @@ class ArenaContextTraits : public BaseArenaContextTraits {
 };
 
 template <typename T>
-GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline void DestroyArenaContext(void* p) {
-  ArenaContextType<T>::Destroy(static_cast<T*>(p));
-}
+class ContextVTableImpls {
+ public:
+  static void DestroyArenaContext(void* p) {
+    ArenaContextType<T>::Destroy(static_cast<T*>(p));
+  }
+};
 
 template <typename T>
 const uint16_t ArenaContextTraits<T>::id_ =
-    BaseArenaContextTraits::MakeId(DestroyArenaContext<T>);
+    BaseArenaContextTraits::MakeId({ContextVTableImpls<T>::DestroyArenaContext},
+                                   ArenaContextType<T>::kPropagation);
 
 template <typename T, typename SfinaeVoid = void>
 struct GetContextId {
@@ -159,6 +199,9 @@ class Arena final : public RefCounted<Arena, NonPolymorphicRefCount,
   // Create an arena, with \a initial_size bytes in the first allocated buffer.
   static RefCountedPtr<Arena> Create(size_t initial_size,
                                      RefCountedPtr<ArenaFactory> arena_factory);
+
+  void ForwardPropagateContextFrom(Arena* parent);
+  void ReversePropagateContextFrom(Arena* child);
 
   // Destroy all `ManagedNew` allocated objects.
   // Allows safe destruction of these objects even if they need context held by
@@ -311,10 +354,12 @@ class Arena final : public RefCounted<Arena, NonPolymorphicRefCount,
 
   template <typename T>
   void SetContext(T* context) {
-    void*& slot = contexts()[arena_detail::ArenaContextTraits<T>::id()];
-    if (slot != nullptr) {
+    const auto id = arena_detail::ArenaContextTraits<T>::id();
+    void*& slot = contexts()[id];
+    if (owned_contexts_.is_set(id)) {
       ArenaContextType<T>::Destroy(static_cast<T*>(slot));
     }
+    owned_contexts_.set(id, true);
     slot = context;
     DCHECK_EQ(GetContext<T>(), context);
   }
@@ -371,9 +416,10 @@ class Arena final : public RefCounted<Arena, NonPolymorphicRefCount,
 
   // Keep track of the total used size. We use this in our call sizing
   // hysteresis.
-  const size_t initial_zone_size_;
-  std::atomic<size_t> total_used_;
-  std::atomic<size_t> total_allocated_{initial_zone_size_};
+  const uint32_t initial_zone_size_;
+  std::atomic<uint32_t> total_used_;
+  std::atomic<uint32_t> total_allocated_{initial_zone_size_};
+  BitSet<kMaxArenaContexts> owned_contexts_;
   // If the initial arena allocation wasn't enough, we allocate additional zones
   // in a reverse linked list. Each additional zone consists of (1) a pointer to
   // the zone added before this zone (null if this is the first additional zone)
