@@ -19,15 +19,23 @@
 #ifndef GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_INCOMING_METADATA_TRACKER_H
 #define GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_INCOMING_METADATA_TRACKER_H
 
+#include <grpc/support/port_platform.h>
+
 #include <cstdint>
 #include <string>
 #include <utility>
 
 #include "src/core/call/metadata_info.h"
-#include "src/core/ext/transport/chttp2/transport/frame.h"
+#include "src/core/ext/transport/chttp2/transport/header_assembler.h"
+#include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
+#include "src/core/ext/transport/chttp2/transport/http2_status.h"
+#include "src/core/ext/transport/chttp2/transport/http2_transport.h"
+#include "src/core/ext/transport/chttp2/transport/stream.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/slice/slice.h"
+#include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/transport/promise_endpoint.h"
+#include "src/core/util/debug_location.h"
 #include "src/core/util/grpc_check.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
@@ -46,8 +54,8 @@ class IncomingMetadataTracker {
   // a time. This class is distinct from HeaderAssembler, which buffers header
   // payloads on a per-stream basis.
  public:
-  explicit IncomingMetadataTracker(Slice peer_string)
-      : peer_string_(std::move(peer_string)) {}
+  explicit IncomingMetadataTracker(Slice peer_string, const bool is_client)
+      : peer_string_(std::move(peer_string)), is_client_(is_client) {}
   ~IncomingMetadataTracker() = default;
 
   IncomingMetadataTracker(IncomingMetadataTracker&& rvalue) = delete;
@@ -71,6 +79,30 @@ class IncomingMetadataTracker {
     max_header_list_size_soft_limit_ = limit;
   }
   uint32_t soft_limit() const { return max_header_list_size_soft_limit_; }
+
+  HPackParser& parser() { return parser_; }
+
+  void SetMaxHeaderTableSize(const uint32_t size) {
+    parser_.hpack_table()->SetMaxBytes(size);
+  }
+
+  Http2Status ParseAndDiscardHeaders(
+      SliceBuffer&& buffer, const bool is_end_headers, Stream* stream,
+      Http2Status&& original_status,
+      const uint32_t max_header_list_size_hard_limit) {
+    return http2::ParseAndDiscardHeaders(
+        parser_, std::move(buffer),
+        HeaderAssembler::ParseHeaderArgs{
+            /*is_initial_metadata=*/!incoming_header_end_stream_,
+            /*is_end_headers=*/is_end_headers,
+            /*is_client=*/is_client_,
+            /*max_header_list_size_soft_limit=*/
+            max_header_list_size_soft_limit_,
+            /*max_header_list_size_hard_limit=*/max_header_list_size_hard_limit,
+            /*stream_id=*/incoming_header_stream_id_,
+        },
+        stream, std::move(original_status));
+  }
 
   //////////////////////////////////////////////////////////////////////////////
   // Writing Header and Continuation State
@@ -134,12 +166,14 @@ class IncomingMetadataTracker {
   // Initialized only once at the time of transport creation.
   // Should remain constant for the lifetime of the transport.
   const Slice peer_string_;
+  const bool is_client_;
 
   bool incoming_header_in_progress_ = false;
   bool incoming_header_end_stream_ = false;
   uint32_t incoming_header_stream_id_ = 0;
   uint32_t max_header_list_size_soft_limit_ =
       DEFAULT_MAX_HEADER_LIST_SIZE_SOFT_LIMIT;
+  HPackParser parser_;
 };
 
 }  // namespace http2

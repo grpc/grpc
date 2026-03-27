@@ -243,11 +243,6 @@ class Http2ClientTransport final : public ClientTransport,
 
   Http2Status ProcessMetadata(RefCountedPtr<Stream> stream);
 
-  Http2Status ParseAndDiscardHeaders(SliceBuffer&& buffer, bool is_end_headers,
-                                     Stream* stream,
-                                     Http2Status&& original_status,
-                                     DebugLocation whence = {});
-
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Http2Status
   ProcessOneIncomingFrame(Http2Frame&& frame) {
     GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport::ProcessOneIncomingFrame";
@@ -658,7 +653,6 @@ class Http2ClientTransport final : public ClientTransport,
 
   uint32_t next_stream_id_;
   HPackCompressor encoder_;
-  HPackParser parser_;
   bool is_transport_closed_ ABSL_GUARDED_BY(transport_mutex_) = false;
   Latch<void> transport_closed_latch_;
 
