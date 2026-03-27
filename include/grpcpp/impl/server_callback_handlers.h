@@ -26,6 +26,8 @@
 #include <grpcpp/support/server_callback.h>
 #include <grpcpp/support/status.h>
 
+#include "grpcpp/impl/service_type.h"
+#include "grpcpp/server.h"
 #include "absl/log/absl_check.h"
 
 namespace grpc {
@@ -897,6 +899,224 @@ class CallbackBidiHandler : public grpc::internal::MethodHandler {
     // callbacks_outstanding_ follows a refcount pattern
     std::atomic<intptr_t> callbacks_outstanding_{
         3};  // reserve for OnStarted, Finish, and CompletionOp
+  };
+};
+
+template <class RequestType>
+class CallbackSessionHandler : public grpc::internal::MethodHandler {
+ public:
+  explicit CallbackSessionHandler(
+      std::function<ServerSessionReactor*(grpc::CallbackServerContext*,
+                                          const RequestType*)>
+          get_reactor,
+      grpc::Service* service = nullptr)
+      : get_reactor_(std::move(get_reactor)), service_(service) {}
+
+  void RunHandler(const HandlerParameter& param) final {
+    // Arena allocate a controller structure (that includes request/response)
+    grpc_call_ref(param.call->call());
+    auto* allocator_state =
+        static_cast<MessageHolder<RequestType, grpc::ByteBuffer>*>(
+            param.internal_data);
+
+    grpc::Server* inner_server = nullptr;
+    if (service_ != nullptr) {
+      inner_server = dynamic_cast<grpc::Server*>(service_->server_);
+    }
+
+    auto* call = new (grpc_call_arena_alloc(param.call->call(),
+                                            sizeof(ServerCallbackSessionImpl)))
+        ServerCallbackSessionImpl(
+            static_cast<grpc::CallbackServerContext*>(param.server_context),
+            param.call, allocator_state, param.call_requester, inner_server);
+
+    param.server_context->BeginCompletionOp(
+        param.call, [call](bool) { call->MaybeDone(); }, call);
+
+    ServerSessionReactor* reactor = nullptr;
+    if (param.status.ok()) {
+      reactor = grpc::internal::CatchingReactorGetter<ServerSessionReactor>(
+          get_reactor_,
+          static_cast<grpc::CallbackServerContext*>(param.server_context),
+          call->request());
+    }
+
+    if (reactor == nullptr) {
+      // if deserialization or reactor creator failed, we need to fail the call.
+      reactor = new (grpc_call_arena_alloc(param.call->call(),
+                                           sizeof(UnimplementedSessionReactor)))
+          UnimplementedSessionReactor(
+              grpc::Status(grpc::StatusCode::UNIMPLEMENTED, ""));
+    }
+
+    /// Invoke SetupReactor as the last part of the handler
+    call->SetupReactor(reactor);
+  }
+
+  void* Deserialize(grpc_call* call, grpc_byte_buffer* req,
+                    grpc::Status* status, void** handler_data) final {
+    grpc::ByteBuffer buf;
+    buf.set_buffer(req);
+    RequestType* request = nullptr;
+    MessageHolder<RequestType, grpc::ByteBuffer>* allocator_state;
+    allocator_state = new (grpc_call_arena_alloc(
+        call, sizeof(DefaultMessageHolder<RequestType, grpc::ByteBuffer>)))
+        DefaultMessageHolder<RequestType, grpc::ByteBuffer>();
+    *handler_data = allocator_state;
+    request = allocator_state->request();
+    *status = grpc::Deserialize(&buf, request);
+    buf.Release();
+    if (status->ok()) {
+      return request;
+    }
+    return nullptr;
+  }
+
+ private:
+  std::function<ServerSessionReactor*(grpc::CallbackServerContext*,
+                                      const RequestType*)>
+      get_reactor_;
+  grpc::Service* service_;
+
+  class ServerCallbackSessionImpl : public ServerCallbackSession {
+   public:
+    void Finish(grpc::Status s) override {
+      if (ctx_->IsCancelled()) {
+        MaybeDone(
+            reactor_.load(std::memory_order_relaxed)->InternalInlineable());
+        return;
+      }
+      // A callback that only contains a call to MaybeDone can be run as an
+      // inline callback regardless of whether or not OnDone is inlineable
+      // because if the actual OnDone callback needs to be scheduled, MaybeDone
+      // is responsible for dispatching to an EventEngine thread if needed.
+      // Thus, when setting up the finish_tag_, we can set its own callback to
+      // inlineable.
+      finish_tag_.Set(
+          call_.call(),
+          [this](bool) {
+            this->MaybeDone(
+                reactor_.load(std::memory_order_relaxed)->InternalInlineable());
+          },
+          &finish_ops_, /*can_inline=*/true);
+      finish_ops_.set_core_cq_tag(&finish_tag_);
+
+      bool is_first_metadata = !ctx_->sent_initial_metadata_;
+      if (is_first_metadata) {
+        finish_ops_.SendInitialMetadata(&ctx_->initial_metadata_,
+                                        ctx_->initial_metadata_flags());
+        if (ctx_->compression_level_set()) {
+          finish_ops_.set_compression_level(ctx_->compression_level());
+        }
+        ctx_->sent_initial_metadata_ = true;
+      }
+      finish_ops_.ServerSendStatus(&ctx_->trailing_metadata_, s);
+      finish_ops_.set_core_cq_tag(&finish_tag_);
+      finish_ops_.FillOps(&call_);
+      if (is_first_metadata && inner_server_ != nullptr) {
+        BindInnerServer(inner_server_);
+      }
+    }
+
+    void SendInitialMetadata() override {
+      ABSL_CHECK(!ctx_->sent_initial_metadata_);
+      this->Ref();
+      // The callback for this function should not be marked inline because it
+      // is directly invoking a user-controlled reaction
+      // (OnSendInitialMetadataDone). Thus it must be dispatched to an
+      // EventEngine thread. However, any OnDone needed after that can be
+      // inlined because it is already running on an EventEngine thread.
+      meta_tag_.Set(
+          call_.call(),
+          [this](bool ok) {
+            ServerSessionReactor* reactor =
+                reactor_.load(std::memory_order_relaxed);
+            reactor->OnSendInitialMetadataDone(ok);
+            this->MaybeDone(/*inlineable_ondone=*/true);
+          },
+          &meta_ops_, /*can_inline=*/false);
+      meta_ops_.SendInitialMetadata(&ctx_->initial_metadata_,
+                                    ctx_->initial_metadata_flags());
+      if (ctx_->compression_level_set()) {
+        meta_ops_.set_compression_level(ctx_->compression_level());
+      }
+      ctx_->sent_initial_metadata_ = true;
+      meta_ops_.set_core_cq_tag(&meta_tag_);
+      meta_ops_.FillOps(&call_);
+      if (inner_server_ != nullptr) {
+        BindInnerServer(inner_server_);
+      }
+    }
+
+    void BindInnerServer(grpc::Server* inner_server) override {
+      grpc::internal::BindSessionToInnerServer(call_.call(), inner_server);
+    }
+
+   private:
+    friend class CallbackSessionHandler<RequestType>;
+
+    ServerCallbackSessionImpl(
+        grpc::CallbackServerContext* ctx, grpc::internal::Call* call,
+        MessageHolder<RequestType, grpc::ByteBuffer>* allocator_state,
+        std::function<void()> call_requester, grpc::Server* inner_server)
+        : ctx_(ctx),
+          call_(*call),
+          allocator_state_(allocator_state),
+          call_requester_(std::move(call_requester)),
+          inner_server_(inner_server) {
+      ctx_->set_message_allocator_state(allocator_state);
+    }
+
+    grpc_call* call() override { return call_.call(); }
+
+    /// SetupReactor binds the reactor (which also releases any queued
+    /// operations), maybe calls OnCancel if possible/needed, and maybe marks
+    /// the completion of the RPC. This should be the last component of the
+    /// handler.
+    void SetupReactor(ServerSessionReactor* reactor) {
+      reactor_.store(reactor, std::memory_order_relaxed);
+      this->BindReactor(reactor);
+      this->MaybeCallOnCancel(reactor);
+      this->MaybeDone(reactor->InternalInlineable());
+    }
+
+    const RequestType* request() { return allocator_state_->request(); }
+
+    void CallOnDone() override {
+      reactor_.load(std::memory_order_relaxed)->OnDone();
+      grpc_call* call = call_.call();
+      auto call_requester = std::move(call_requester_);
+      allocator_state_->Release();
+      if (ctx_->context_allocator() != nullptr) {
+        ctx_->context_allocator()->Release(ctx_);
+      }
+      this->~ServerCallbackSessionImpl();  // explicitly call destructor
+      grpc_call_unref(call);
+      call_requester();
+    }
+
+    ServerReactor* reactor() override {
+      return reactor_.load(std::memory_order_relaxed);
+    }
+
+    grpc::internal::CallOpSet<grpc::internal::CallOpSendInitialMetadata>
+        meta_ops_;
+    grpc::internal::CallbackWithSuccessTag meta_tag_;
+    grpc::internal::CallOpSet<grpc::internal::CallOpSendInitialMetadata,
+                              grpc::internal::CallOpServerSendStatus>
+        finish_ops_;
+    grpc::internal::CallbackWithSuccessTag finish_tag_;
+
+    grpc::CallbackServerContext* const ctx_;
+    grpc::internal::Call call_;
+    MessageHolder<RequestType, grpc::ByteBuffer>* const allocator_state_;
+    std::function<void()> call_requester_;
+    grpc::Server* inner_server_;
+    // The memory ordering of reactor_ follows ServerCallbackUnaryImpl.
+    std::atomic<ServerSessionReactor*> reactor_;
+    // callbacks_outstanding_ follows a refcount pattern
+    std::atomic<intptr_t> callbacks_outstanding_{
+        3};  // reserve for start, Finish, and CompletionOp
   };
 };
 
