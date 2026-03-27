@@ -881,6 +881,7 @@ include/grpc/byte_buffer.h \
 include/grpc/byte_buffer_reader.h \
 include/grpc/census.h \
 include/grpc/compression.h \
+include/grpc/context_types.h \
 include/grpc/create_channel_from_endpoint.h \
 include/grpc/credentials.h \
 include/grpc/credentials_cpp.h \
@@ -959,6 +960,7 @@ include/grpc/support/thd_id.h \
 include/grpc/support/time.h \
 include/grpc/support/workaround_list.h \
 include/grpcpp/alarm.h \
+include/grpcpp/call_context_types.h \
 include/grpcpp/channel.h \
 include/grpcpp/client_context.h \
 include/grpcpp/completion_queue.h \
@@ -973,7 +975,9 @@ include/grpcpp/generic/generic_stub.h \
 include/grpcpp/generic/generic_stub_callback.h \
 include/grpcpp/grpcpp.h \
 include/grpcpp/health_check_service_interface.h \
+include/grpcpp/impl/allowed_call_context_types.h \
 include/grpcpp/impl/call.h \
+include/grpcpp/impl/call_context_registry.h \
 include/grpcpp/impl/call_op_set.h \
 include/grpcpp/impl/call_op_set_interface.h \
 include/grpcpp/impl/channel_argument_option.h \

@@ -1868,6 +1868,18 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "telemetry_label",
+    hdrs = [
+        "telemetry/telemetry_label.h",
+    ],
+    deps = [
+        "arena",
+        "//:gpr",
+        "//:grpc_public_hdrs",
+    ],
+)
+
+grpc_cc_library(
     name = "thread_quota",
     srcs = [
         "lib/resource_quota/thread_quota.cc",

@@ -146,6 +146,7 @@ libs:
   - include/grpc/byte_buffer_reader.h
   - include/grpc/census.h
   - include/grpc/compression.h
+  - include/grpc/context_types.h
   - include/grpc/create_channel_from_endpoint.h
   - include/grpc/credentials.h
   - include/grpc/credentials_cpp.h
@@ -2387,6 +2388,7 @@ libs:
   - include/grpc/byte_buffer_reader.h
   - include/grpc/census.h
   - include/grpc/compression.h
+  - include/grpc/context_types.h
   - include/grpc/create_channel_from_endpoint.h
   - include/grpc/credentials.h
   - include/grpc/credentials_cpp.h
@@ -4010,6 +4012,7 @@ libs:
   - include/grpc++/support/sync_stream.h
   - include/grpc++/support/time.h
   - include/grpcpp/alarm.h
+  - include/grpcpp/call_context_types.h
   - include/grpcpp/channel.h
   - include/grpcpp/client_context.h
   - include/grpcpp/completion_queue.h
@@ -4024,7 +4027,9 @@ libs:
   - include/grpcpp/generic/generic_stub_callback.h
   - include/grpcpp/grpcpp.h
   - include/grpcpp/health_check_service_interface.h
+  - include/grpcpp/impl/allowed_call_context_types.h
   - include/grpcpp/impl/call.h
+  - include/grpcpp/impl/call_context_registry.h
   - include/grpcpp/impl/call_op_set.h
   - include/grpcpp/impl/call_op_set_interface.h
   - include/grpcpp/impl/channel_argument_option.h
@@ -4145,6 +4150,7 @@ libs:
   - include/grpcpp/version_info.h
   - include/grpcpp/xds_server_builder.h
   headers:
+  - src/core/telemetry/telemetry_label.h
   - src/core/xds/grpc/xds_enabled_server.h
   - src/cpp/client/client_stats_interceptor.h
   - src/cpp/client/create_channel_internal.h
@@ -4158,6 +4164,7 @@ libs:
   - src/cpp/server/thread_pool_interface.h
   - src/cpp/thread_manager/thread_manager.h
   src:
+  - src/cpp/client/call_context_registry.cc
   - src/cpp/client/call_credentials.cc
   - src/cpp/client/channel_cc.cc
   - src/cpp/client/channel_credentials.cc
@@ -4391,6 +4398,7 @@ libs:
   - include/grpc++/support/sync_stream.h
   - include/grpc++/support/time.h
   - include/grpcpp/alarm.h
+  - include/grpcpp/call_context_types.h
   - include/grpcpp/channel.h
   - include/grpcpp/client_context.h
   - include/grpcpp/completion_queue.h
@@ -4405,7 +4413,9 @@ libs:
   - include/grpcpp/generic/generic_stub_callback.h
   - include/grpcpp/grpcpp.h
   - include/grpcpp/health_check_service_interface.h
+  - include/grpcpp/impl/allowed_call_context_types.h
   - include/grpcpp/impl/call.h
+  - include/grpcpp/impl/call_context_registry.h
   - include/grpcpp/impl/call_op_set.h
   - include/grpcpp/impl/call_op_set_interface.h
   - include/grpcpp/impl/channel_argument_option.h
@@ -4525,6 +4535,7 @@ libs:
   - include/grpcpp/support/validate_service_config.h
   - include/grpcpp/version_info.h
   headers:
+  - src/core/telemetry/telemetry_label.h
   - src/cpp/client/client_stats_interceptor.h
   - src/cpp/client/create_channel_internal.h
   - src/cpp/server/backend_metric_recorder.h
@@ -4534,6 +4545,7 @@ libs:
   - src/cpp/server/thread_pool_interface.h
   - src/cpp/thread_manager/thread_manager.h
   src:
+  - src/cpp/client/call_context_registry.cc
   - src/cpp/client/call_credentials.cc
   - src/cpp/client/channel_cc.cc
   - src/cpp/client/channel_credentials.cc
@@ -4591,6 +4603,7 @@ libs:
   - include/grpc/byte_buffer.h
   - include/grpc/byte_buffer_reader.h
   - include/grpc/compression.h
+  - include/grpc/context_types.h
   - include/grpc/create_channel_from_endpoint.h
   - include/grpc/credentials.h
   - include/grpc/credentials_cpp.h
