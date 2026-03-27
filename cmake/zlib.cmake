@@ -28,6 +28,9 @@ if(gRPC_ZLIB_PROVIDER STREQUAL "module")
     if(TARGET zlibstatic)
       set(_gRPC_ZLIB_LIBRARIES zlibstatic)
       set(_gRPC_ZLIB_INCLUDE_DIR "${ZLIB_ROOT_DIR}" "${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib")
+      if(CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang")
+        target_compile_options(zlibstatic PRIVATE "-Wno-implicit-function-declaration")
+      endif()
       if(gRPC_INSTALL AND _gRPC_INSTALL_SUPPORTED_FROM_MODULE)
         install(TARGETS zlibstatic EXPORT gRPCTargets
           RUNTIME DESTINATION ${gRPC_INSTALL_BINDIR}
