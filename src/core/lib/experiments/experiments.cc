@@ -178,11 +178,6 @@ const char* const additional_constraints_retry_in_callv3 = "{}";
 const char* const description_return_preexisting_errors =
     "Return errors that exist before the start of the call in RunHandler.";
 const char* const additional_constraints_return_preexisting_errors = "{}";
-const char* const description_rr_wrr_connect_from_random_index =
-    "RR and WRR LB policies start connecting from a random index in the "
-    "address list.";
-const char* const additional_constraints_rr_wrr_connect_from_random_index =
-    "{}";
 const char* const description_schedule_cancellation_over_write =
     "Allow cancellation op to be scheduled over a write";
 const char* const additional_constraints_schedule_cancellation_over_write =
@@ -374,10 +369,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_retry_in_callv3, nullptr, 0, false, true},
     {"return_preexisting_errors", description_return_preexisting_errors,
      additional_constraints_return_preexisting_errors, nullptr, 0, false, true},
-    {"rr_wrr_connect_from_random_index",
-     description_rr_wrr_connect_from_random_index,
-     additional_constraints_rr_wrr_connect_from_random_index, nullptr, 0, true,
-     true},
     {"schedule_cancellation_over_write",
      description_schedule_cancellation_over_write,
      additional_constraints_schedule_cancellation_over_write, nullptr, 0, false,
@@ -596,11 +587,6 @@ const char* const additional_constraints_retry_in_callv3 = "{}";
 const char* const description_return_preexisting_errors =
     "Return errors that exist before the start of the call in RunHandler.";
 const char* const additional_constraints_return_preexisting_errors = "{}";
-const char* const description_rr_wrr_connect_from_random_index =
-    "RR and WRR LB policies start connecting from a random index in the "
-    "address list.";
-const char* const additional_constraints_rr_wrr_connect_from_random_index =
-    "{}";
 const char* const description_schedule_cancellation_over_write =
     "Allow cancellation op to be scheduled over a write";
 const char* const additional_constraints_schedule_cancellation_over_write =
@@ -792,10 +778,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_retry_in_callv3, nullptr, 0, false, true},
     {"return_preexisting_errors", description_return_preexisting_errors,
      additional_constraints_return_preexisting_errors, nullptr, 0, false, true},
-    {"rr_wrr_connect_from_random_index",
-     description_rr_wrr_connect_from_random_index,
-     additional_constraints_rr_wrr_connect_from_random_index, nullptr, 0, true,
-     true},
     {"schedule_cancellation_over_write",
      description_schedule_cancellation_over_write,
      additional_constraints_schedule_cancellation_over_write, nullptr, 0, false,
@@ -1014,11 +996,6 @@ const char* const additional_constraints_retry_in_callv3 = "{}";
 const char* const description_return_preexisting_errors =
     "Return errors that exist before the start of the call in RunHandler.";
 const char* const additional_constraints_return_preexisting_errors = "{}";
-const char* const description_rr_wrr_connect_from_random_index =
-    "RR and WRR LB policies start connecting from a random index in the "
-    "address list.";
-const char* const additional_constraints_rr_wrr_connect_from_random_index =
-    "{}";
 const char* const description_schedule_cancellation_over_write =
     "Allow cancellation op to be scheduled over a write";
 const char* const additional_constraints_schedule_cancellation_over_write =
@@ -1210,10 +1187,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_retry_in_callv3, nullptr, 0, false, true},
     {"return_preexisting_errors", description_return_preexisting_errors,
      additional_constraints_return_preexisting_errors, nullptr, 0, false, true},
-    {"rr_wrr_connect_from_random_index",
-     description_rr_wrr_connect_from_random_index,
-     additional_constraints_rr_wrr_connect_from_random_index, nullptr, 0, true,
-     true},
     {"schedule_cancellation_over_write",
      description_schedule_cancellation_over_write,
      additional_constraints_schedule_cancellation_over_write, nullptr, 0, false,

@@ -228,7 +228,6 @@ grpc_cc_test(
         "//:orphanable",
         "//:ref_counted_ptr",
         "//src/core:channel_args",
-        "//src/core:experiments",
         "//src/core:grpc_lb_policy_round_robin",
         "//test/core/test_util:grpc_test_util",
     ],
