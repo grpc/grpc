@@ -18,6 +18,7 @@
 
 #include <grpc/grpc.h>
 #include <grpc/slice.h>
+#include <gtest/gtest.h>
 
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/server/server.h"
