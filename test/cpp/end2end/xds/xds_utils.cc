@@ -74,6 +74,9 @@ std::string XdsBootstrapBuilder::Build() {
   }
   fields.push_back(MakeCertificateProviderText());
   fields.push_back(MakeAuthorityText());
+  if (allowed_grpc_services_) {
+    fields.push_back(MakeAllowedGrpcService());
+  }
   return absl::StrCat("{", absl::StrJoin(fields, ",\n"), "}");
 }
 
@@ -176,6 +179,18 @@ std::string XdsBootstrapBuilder::MakeAuthorityText() {
   }
   return absl::StrCat("\"authorities\": {\n", absl::StrJoin(entries, ",\n"),
                       "\n}");
+}
+
+std::string XdsBootstrapBuilder::MakeAllowedGrpcService() {
+  return "\"allowed_grpc_services\": {\n"
+         "  \"dns:server.example.com\": {\n"
+         "    \"channel_creds\": [{\"type\": \"insecure\"}],\n"
+         "    \"call_creds\": [\n"
+         "       {\"type\": \"jwt_token_file\",\n"
+         "        \"config\": {\"jwt_token_file\": \"/path/to/file\"}}\n"
+         "    ]\n"
+         "  }\n"
+         "}\n";
 }
 
 //
