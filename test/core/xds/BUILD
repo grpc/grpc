@@ -415,6 +415,7 @@ grpc_cc_test(
         "@envoy_api//envoy/extensions/grpc_service/channel_credentials/insecure/v3:pkg_cc_proto",
         "@envoy_api//envoy/extensions/transport_sockets/tls/v3:pkg_cc_proto",
         "@envoy_api//envoy/type/matcher/v3:pkg_cc_proto",
+        "@envoy_api//envoy/type/v3:pkg_cc_proto",
     ],
 )
 
@@ -538,6 +539,7 @@ grpc_cc_test(
         "//:grpc_trace",
         "//:ref_counted_ptr",
         "//:xds_client",
+        "//src/core:composite_filter",
         "//src/core:error",
         "//src/core:gcp_authentication_filter",
         "//src/core:grpc_check",
