@@ -34,6 +34,13 @@ namespace grpc {
 // provides the methods defined by DescriptorDatabase interfaces. It can be used
 // to feed a DescriptorPool instance.
 class ProtoReflectionDescriptorDatabase : public protobuf::DescriptorDatabase {
+ protected:
+#if GOOGLE_PROTOBUF_VERSION >= 7034000
+  using StringViewArg = absl::string_view;
+#else
+  using StringViewArg = const std::string&;
+#endif
+
  public:
   explicit ProtoReflectionDescriptorDatabase(
       std::unique_ptr<reflection::v1alpha::ServerReflection::Stub> stub);
@@ -47,13 +54,13 @@ class ProtoReflectionDescriptorDatabase : public protobuf::DescriptorDatabase {
   //
   // Find a file by file name.  Fills in *output and returns true if found.
   // Otherwise, returns false, leaving the contents of *output undefined.
-  bool FindFileByName(const string& filename,
+  bool FindFileByName(StringViewArg filename,
                       protobuf::FileDescriptorProto* output) override;
 
   // Find the file that declares the given fully-qualified symbol name.
   // If found, fills in *output and returns true, otherwise returns false
   // and leaves *output undefined.
-  bool FindFileContainingSymbol(const string& symbol_name,
+  bool FindFileContainingSymbol(StringViewArg symbol_name,
                                 protobuf::FileDescriptorProto* output) override;
 
   // Find the file which defines an extension extending the given message type
@@ -61,7 +68,7 @@ class ProtoReflectionDescriptorDatabase : public protobuf::DescriptorDatabase {
   // otherwise returns false and leaves *output undefined.  containing_type
   // must be a fully-qualified type name.
   bool FindFileContainingExtension(
-      const string& containing_type, int field_number,
+      StringViewArg containing_type, int field_number,
       protobuf::FileDescriptorProto* output) override;
 
   // Finds the tag numbers used by all known extensions of
@@ -71,7 +78,7 @@ class ProtoReflectionDescriptorDatabase : public protobuf::DescriptorDatabase {
   // FindFileContainingExtension will return true on all of the found
   // numbers. Returns true if the search was successful, otherwise
   // returns false and leaves output unchanged.
-  bool FindAllExtensionNumbers(const string& extendee_type,
+  bool FindAllExtensionNumbers(StringViewArg extendee_type,
                                std::vector<int>* output) override;
 
   // Provide a list of full names of registered services
