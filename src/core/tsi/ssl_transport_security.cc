@@ -45,7 +45,9 @@
 #include <grpc/support/thd_id.h>
 #include <openssl/bio.h>
 #include <openssl/crypto.h>  // For OPENSSL_free
+#if !defined(OPENSSL_NO_ENGINE)
 #include <openssl/engine.h>
+#endif
 #include <openssl/err.h>
 #include <openssl/ssl.h>
 #include <openssl/tls1.h>
@@ -474,7 +476,7 @@ const SSL_PRIVATE_KEY_METHOD TlsOffloadPrivateKeyMethod = {
 #if !defined(OPENSSL_IS_BORINGSSL) && !defined(OPENSSL_NO_ENGINE)
 static const char kSslEnginePrefix[] = "engine:";
 #endif
-#if OPENSSL_VERSION_NUMBER >= 0x30000000
+#if OPENSSL_VERSION_NUMBER >= 0x30000000L
 static const int kSslEcCurveNames[] = {NID_X9_62_prime256v1};
 #endif
 
@@ -530,6 +532,11 @@ static void init_openssl(void) {
     }
 
     grpc_wait_for_shutdown_with_timeout(absl::Seconds(timeout_sec));
+#if OPENSSL_VERSION_NUMBER >= 0x40000000L
+    // OpenSSL 4.0 no longer registers OPENSSL_cleanup() via atexit(),
+    // so we must call it explicitly.
+    OPENSSL_cleanup();
+#endif
   });
 #else
   SSL_library_init();
@@ -624,9 +631,7 @@ static int looks_like_ip_address(absl::string_view name) {
 static tsi_result ssl_get_x509_common_name(X509* cert, unsigned char** utf8,
                                            size_t* utf8_size) {
   int common_name_index = -1;
-  X509_NAME_ENTRY* common_name_entry = nullptr;
-  ASN1_STRING* common_name_asn1 = nullptr;
-  X509_NAME* subject_name = X509_get_subject_name(cert);
+  auto* subject_name = X509_get_subject_name(cert);
   int utf8_returned_size = 0;
   if (subject_name == nullptr) {
     VLOG(2) << "Could not get subject name from certificate.";
@@ -638,12 +643,13 @@ static tsi_result ssl_get_x509_common_name(X509* cert, unsigned char** utf8,
     VLOG(2) << "Could not get common name of subject from certificate.";
     return TSI_NOT_FOUND;
   }
-  common_name_entry = X509_NAME_get_entry(subject_name, common_name_index);
+  auto* common_name_entry =
+      X509_NAME_get_entry(subject_name, common_name_index);
   if (common_name_entry == nullptr) {
     LOG(ERROR) << "Could not get common name entry from certificate.";
     return TSI_INTERNAL_ERROR;
   }
-  common_name_asn1 = X509_NAME_ENTRY_get_data(common_name_entry);
+  auto* common_name_asn1 = X509_NAME_ENTRY_get_data(common_name_entry);
   if (common_name_asn1 == nullptr) {
     LOG(ERROR) << "Could not get common name entry asn1 from certificate.";
     return TSI_INTERNAL_ERROR;
@@ -684,7 +690,7 @@ static tsi_result peer_property_from_x509_common_name(
 static tsi_result peer_property_from_x509_subject(X509* cert,
                                                   tsi_peer_property* property,
                                                   bool is_verified_root_cert) {
-  X509_NAME* subject_name = X509_get_subject_name(cert);
+  auto* subject_name = X509_get_subject_name(cert);
   if (subject_name == nullptr) {
     GRPC_TRACE_LOG(tsi, INFO) << "Could not get subject name from certificate.";
     return TSI_NOT_FOUND;
@@ -780,17 +786,18 @@ static tsi_result add_subject_alt_names_properties_to_peer(
       char ntop_buf[INET6_ADDRSTRLEN];
       int af;
 
-      if (subject_alt_name->d.iPAddress->length == 4) {
+      if (ASN1_STRING_length(subject_alt_name->d.iPAddress) == 4) {
         af = AF_INET;
-      } else if (subject_alt_name->d.iPAddress->length == 16) {
+      } else if (ASN1_STRING_length(subject_alt_name->d.iPAddress) == 16) {
         af = AF_INET6;
       } else {
         LOG(ERROR) << "SAN IP Address contained invalid IP";
         result = TSI_INTERNAL_ERROR;
         break;
       }
-      const char* name = inet_ntop(af, subject_alt_name->d.iPAddress->data,
-                                   ntop_buf, INET6_ADDRSTRLEN);
+      const char* name =
+          inet_ntop(af, ASN1_STRING_get0_data(subject_alt_name->d.iPAddress),
+                    ntop_buf, INET6_ADDRSTRLEN);
       if (name == nullptr) {
         LOG(ERROR) << "Could not get IP string from asn1 octet.";
         result = TSI_INTERNAL_ERROR;
@@ -1073,13 +1080,13 @@ static tsi_result x509_store_load_certs(X509_STORE* cert_store,
       break;  // We're at the end of stream.
     }
     if (root_names != nullptr) {
-      root_name = X509_get_subject_name(root);
-      if (root_name == nullptr) {
+      auto* root_subject = X509_get_subject_name(root);
+      if (root_subject == nullptr) {
         LOG(ERROR) << "Could not get name from root certificate.";
         result = TSI_INVALID_ARGUMENT;
         break;
       }
-      root_name = X509_NAME_dup(root_name);
+      root_name = X509_NAME_dup(const_cast<X509_NAME*>(root_subject));
       if (root_name == nullptr) {
         result = TSI_OUT_OF_RESOURCES;
         break;

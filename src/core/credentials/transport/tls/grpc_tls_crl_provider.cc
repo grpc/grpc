@@ -56,12 +56,12 @@ absl::StatusOr<std::string> IssuerFromCrl(X509_CRL* crl) {
   if (crl == nullptr) {
     return absl::InvalidArgumentError("crl cannot be null");
   }
-  X509_NAME* issuer = X509_CRL_get_issuer(crl);
+  auto* issuer = X509_CRL_get_issuer(crl);
   if (issuer == nullptr) {
     return absl::InvalidArgumentError("crl cannot have null issuer");
   }
   unsigned char* buf = nullptr;
-  int len = i2d_X509_NAME(issuer, &buf);
+  int len = i2d_X509_NAME(const_cast<X509_NAME*>(issuer), &buf);
   if (len < 0 || buf == nullptr) {
     return absl::InvalidArgumentError("crl cannot have null issuer");
   }
