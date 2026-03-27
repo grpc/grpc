@@ -107,7 +107,7 @@ void RegionalAccessBoundaryFetcher::Fetch(absl::string_view access_token,
   if (authority_ptr == nullptr) {
     return;
   }
-  std::string_view authority = authority_ptr->as_string_view();
+  absl::string_view authority = authority_ptr->as_string_view();
   absl::string_view host;
   absl::string_view port;
   if (SplitHostPort(authority, &host, &port)) {
