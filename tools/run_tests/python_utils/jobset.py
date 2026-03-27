@@ -181,7 +181,7 @@ def which(filename):
     raise Exception("%s not found" % filename)
 
 
-class JobSpec(object):
+class JobSpec:
     """Specifies what to run for a job."""
 
     def __init__(
@@ -257,7 +257,7 @@ class JobSpec(object):
         )
 
 
-class JobResult(object):
+class JobResult:
     def __init__(self):
         self.state = "UNKNOWN"
         self.returncode = -1
@@ -274,7 +274,7 @@ def read_from_start(f):
     return f.read()
 
 
-class Job(object):
+class Job:
     """Manages one job."""
 
     def __init__(
@@ -289,6 +289,10 @@ class Job(object):
         self._suppress_failure_message = False
         self._quiet_success = quiet_success
         if not self._quiet_success:
+            # TODO(sergiitk): should we print out the timeout here? It may be
+            #   useful to make it easier identify timeout issues when we have
+            #   multiple layers of run_tests.py, f.e run_tests_matrix.py runs
+            #   run_tests.py that starts a docker job that also runs run_tests.py
             message("START", spec.shortname, do_newline=self._travis)
         self.result = JobResult()
         self.start()
@@ -477,7 +481,7 @@ class Job(object):
         self._suppress_failure_message = True
 
 
-class Jobset(object):
+class Jobset:
     """Manages one run of jobs."""
 
     def __init__(

@@ -168,7 +168,7 @@ void ValidateOneHeader(const uint32_t stream_id, HPackParser& parser,
   Http2HeaderFrame header = GenerateHeaderFrame(
       kSimpleRequestEncoded, stream_id, /*end_headers=*/end_headers,
       /*end_stream=*/false);
-  Http2Status status = assembler.AppendHeaderFrame(header);
+  Http2Status status = assembler.AppendFrame(header);
   EXPECT_TRUE(status.IsOk());
   EXPECT_EQ(assembler.GetBufferedHeadersLength(), kSimpleRequestEncodedLen);
 
@@ -213,7 +213,7 @@ TEST_P(HeaderAssemblerDisassemblerTest, InvalidAssemblerNotReady1) {
   EXPECT_EQ(assembler.GetBufferedHeadersLength(), 0u);
   EXPECT_EQ(assembler.IsReady(), false);
 
-  Http2Status status = assembler.AppendHeaderFrame(header);
+  Http2Status status = assembler.AppendFrame(header);
   EXPECT_TRUE(status.IsOk());
 
   EXPECT_EQ(assembler.GetBufferedHeadersLength(), kSimpleRequestEncodedLen);
@@ -254,19 +254,19 @@ void ValidateOneHeaderTwoContinuation(const uint32_t stream_id,
   EXPECT_EQ(assembler.IsReady(), false);
 
   size_t expected_size = kSimpleRequestEncodedPart1Len;
-  Http2Status status = assembler.AppendHeaderFrame(header);
+  Http2Status status = assembler.AppendFrame(header);
   EXPECT_TRUE(status.IsOk());
   EXPECT_EQ(assembler.GetBufferedHeadersLength(), expected_size);
   EXPECT_EQ(assembler.IsReady(), false);
 
   expected_size += kSimpleRequestEncodedPart2Len;
-  Http2Status status1 = assembler.AppendContinuationFrame(continuation1);
+  Http2Status status1 = assembler.AppendFrame(continuation1);
   EXPECT_TRUE(status1.IsOk());
   EXPECT_EQ(assembler.GetBufferedHeadersLength(), expected_size);
   EXPECT_EQ(assembler.IsReady(), false);
 
   expected_size += kSimpleRequestEncodedPart3Len;
-  Http2Status status2 = assembler.AppendContinuationFrame(continuation2);
+  Http2Status status2 = assembler.AppendFrame(continuation2);
   EXPECT_TRUE(status2.IsOk());
   EXPECT_EQ(assembler.GetBufferedHeadersLength(), expected_size);
   EXPECT_EQ(assembler.IsReady(), true);
@@ -314,13 +314,13 @@ TEST_P(HeaderAssemblerDisassemblerTest, InvalidAssemblerNotReady2) {
   EXPECT_EQ(assembler.GetBufferedHeadersLength(), 0u);
   EXPECT_EQ(assembler.IsReady(), false);
 
-  Http2Status status = assembler.AppendHeaderFrame(header);
+  Http2Status status = assembler.AppendFrame(header);
   EXPECT_TRUE(status.IsOk());
   EXPECT_EQ(assembler.GetBufferedHeadersLength(),
             kSimpleRequestEncodedPart1Len);
   EXPECT_EQ(assembler.IsReady(), false);
 
-  Http2Status status1 = assembler.AppendContinuationFrame(continuation1);
+  Http2Status status1 = assembler.AppendFrame(continuation1);
   EXPECT_TRUE(status1.IsOk());
   EXPECT_EQ(assembler.GetBufferedHeadersLength(),
             kSimpleRequestEncodedPart1Len + kSimpleRequestEncodedPart2Len);
@@ -393,7 +393,7 @@ Arena::PoolPtr<grpc_metadata_batch> GenerateMetadata(
       /*end_stream=*/is_trailing_metadata);
   EXPECT_EQ(header.payload.Length(), kSimpleRequestEncodedLen);
 
-  Http2Status status = assembler.AppendHeaderFrame(header);
+  Http2Status status = assembler.AppendFrame(header);
   Http2Settings default_settings;
   ValueOrHttp2Status<Arena::PoolPtr<grpc_metadata_batch>> result =
       assembler.ReadMetadata(parser, /*is_initial_metadata=*/true,
@@ -631,7 +631,7 @@ TEST_P(HeaderAssemblerDisassemblerTest, Reversibility) {
     assembler.InitializeStream(stream_id,
                                test_param_allow_true_binary_metadata());
     Http2HeaderFrame& header = std::get<Http2HeaderFrame>(frame);
-    Http2Status status = assembler.AppendHeaderFrame(header);
+    Http2Status status = assembler.AppendFrame(header);
     Http2Settings default_settings;
     ValueOrHttp2Status<Arena::PoolPtr<grpc_metadata_batch>> result =
         assembler.ReadMetadata(parser, /*is_initial_metadata=*/true,

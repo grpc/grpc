@@ -125,6 +125,18 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "test_memory_allocator",
+    testonly = 1,
+    hdrs = ["test_memory_allocator.h"],
+    external_deps = [
+        "absl/strings",
+    ],
+    deps = [
+        "//:grpc_base",
+    ],
+)
+
+grpc_cc_library(
     name = "grpc_test_util",
     srcs = TEST_UTILS_THAT_USE_GRPC_H_SOURCES + ["tls_utils.cc"],
     hdrs = TEST_UTILS_THAT_USE_GRPC_H_HEADERS + ["tls_utils.h"],

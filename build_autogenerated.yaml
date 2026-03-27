@@ -7199,6 +7199,7 @@ targets:
   - src/core/lib/promise/detail/promise_like.h
   - src/core/lib/promise/detail/status.h
   - src/core/lib/promise/poll.h
+  - src/core/lib/promise/promise.h
   - src/core/lib/promise/status_flag.h
   - src/core/lib/slice/percent_encoding.h
   - src/core/lib/slice/slice.h
@@ -12428,6 +12429,7 @@ targets:
   - src/core/lib/promise/detail/status.h
   - src/core/lib/promise/exec_ctx_wakeup_scheduler.h
   - src/core/lib/promise/poll.h
+  - src/core/lib/promise/promise.h
   - src/core/lib/slice/percent_encoding.h
   - src/core/lib/slice/slice.h
   - src/core/lib/slice/slice_buffer.h
@@ -12632,20 +12634,6 @@ targets:
   - gtest
   - protobuf
   - grpc_test_util
-- name: fd_conservation_posix_test
-  gtest: true
-  build: test
-  language: c++
-  headers: []
-  src:
-  - test/core/iomgr/fd_conservation_posix_test.cc
-  deps:
-  - gtest
-  - grpc_test_util
-  platforms:
-  - linux
-  - posix
-  - mac
 - name: fd_posix_test
   gtest: true
   build: test
@@ -15239,6 +15227,7 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/promise/poll_matcher.h
   - test/core/test_util/postmortem.h
+  - test/core/transport/chttp2/http2_common_test_inputs.h
   - test/core/transport/chttp2/http2_frame_test_helper.h
   - test/core/transport/util/mock_promise_endpoint.h
   - test/core/transport/util/transport_test.h
@@ -15467,6 +15456,7 @@ targets:
   - src/core/lib/promise/detail/promise_like.h
   - src/core/lib/promise/if.h
   - src/core/lib/promise/poll.h
+  - src/core/lib/promise/promise.h
   - src/core/lib/slice/percent_encoding.h
   - src/core/lib/slice/slice.h
   - src/core/lib/slice/slice_buffer.h
@@ -16937,6 +16927,7 @@ targets:
   - src/core/lib/promise/join.h
   - src/core/lib/promise/map.h
   - src/core/lib/promise/poll.h
+  - src/core/lib/promise/promise.h
   - src/core/lib/promise/status_flag.h
   - src/core/lib/slice/percent_encoding.h
   - src/core/lib/slice/slice.h
@@ -20088,6 +20079,7 @@ targets:
   - test/core/event_engine/posix/posix_engine_test_utils.h
   - test/core/event_engine/test_suite/event_engine_test_framework.h
   - test/core/event_engine/test_suite/posix/oracle_event_engine_posix.h
+  - test/core/test_util/test_memory_allocator.h
   src:
   - test/core/event_engine/event_engine_test_utils.cc
   - test/core/event_engine/posix/posix_endpoint_test.cc
@@ -20644,6 +20636,7 @@ targets:
   - src/core/lib/promise/detail/promise_factory.h
   - src/core/lib/promise/detail/promise_like.h
   - src/core/lib/promise/poll.h
+  - src/core/lib/promise/promise.h
   - src/core/lib/slice/percent_encoding.h
   - src/core/lib/slice/slice.h
   - src/core/lib/slice/slice_buffer.h
@@ -22666,7 +22659,8 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers: []
+  headers:
+  - test/core/test_util/test_memory_allocator.h
   src:
   - test/core/handshake/secure_endpoint_read_coalescing_test.cc
   deps:
@@ -24070,6 +24064,7 @@ targets:
   - src/core/lib/promise/detail/promise_variant.h
   - src/core/lib/promise/if.h
   - src/core/lib/promise/poll.h
+  - src/core/lib/promise/promise.h
   - src/core/lib/promise/switch.h
   - src/core/lib/slice/percent_encoding.h
   - src/core/lib/slice/slice.h
@@ -24325,6 +24320,20 @@ targets:
   deps:
   - gtest
   - grpc_test_util
+- name: test_core_event_engine_posix_fd_conservation_posix_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/event_engine/posix/fd_conservation_posix_test.cc
+  deps:
+  - gtest
+  - grpc_test_util
+  platforms:
+  - linux
+  - posix
+  - mac
 - name: test_core_event_engine_posix_timer_heap_test
   gtest: true
   build: test
@@ -24692,6 +24701,20 @@ targets:
   - absl/utility:utility
   - gpr
   uses_polling: false
+- name: test_core_iomgr_fd_conservation_posix_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/iomgr/fd_conservation_posix_test.cc
+  deps:
+  - gtest
+  - grpc_test_util
+  platforms:
+  - linux
+  - posix
+  - mac
 - name: test_core_iomgr_timer_heap_test
   gtest: true
   build: test
@@ -26704,6 +26727,7 @@ targets:
   - src/core/lib/promise/detail/status.h
   - src/core/lib/promise/map.h
   - src/core/lib/promise/poll.h
+  - src/core/lib/promise/promise.h
   - src/core/lib/promise/wait_for_callback.h
   - src/core/lib/slice/percent_encoding.h
   - src/core/lib/slice/slice.h

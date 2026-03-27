@@ -1019,6 +1019,7 @@ grpc_cc_library(
     deps = [
         "promise_like",
         "//:gpr_platform",
+        "//:promise",
     ],
 )
 
@@ -8516,8 +8517,16 @@ grpc_cc_library(
         "grpc_check",
         "grpc_promise_endpoint",
         "slice",
+        ":header_assembler",
+        ":http2_status",
+        ":http2_transport",
         ":metadata_info",
+        ":ph2_stream",
+        ":slice_buffer",
         "//:chttp2_frame",
+        "//:debug_location",
+        "//:gpr_platform",
+        "//:hpack_parser",
     ],
 )
 
@@ -8765,6 +8774,7 @@ grpc_cc_library(
         "ref_counted",
         "resource_quota",
         "sleep",
+        "status_flag",
         "stream_data_queue",
         "sync",
         "time",
@@ -10834,6 +10844,7 @@ grpc_cc_library(
         "sync",
         "time",
         "//:call_tracer",
+        "//:channel_arg_names",
         "//:gpr",
     ],
 )
