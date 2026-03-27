@@ -94,13 +94,11 @@ COPY_FILES_SOURCE_TARGET_PAIRS = [
     ("third_party/protobuf/src", "third_party/protobuf/src"),
     ("third_party/protobuf/go", "third_party/protobuf/go"),
     ("third_party/protobuf/java", "third_party/protobuf/java"),
-
     # Overwrite contents of third_party/protobuf/upb to pick up
     # our patches.
     # See third_party/upb.patch
     ("third_party/protobuf/upb", "third_party/protobuf/upb"),
     ("third_party/upb/upb", "third_party/protobuf/upb"),
-
     (
         "third_party/protobuf/upb_generator",
         "third_party/protobuf/upb_generator",

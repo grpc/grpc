@@ -91,13 +91,11 @@ GRPCIO_OBSERVABILITY_ROOT_PREFIX = "src/python/grpcio_observability/"
 COPY_FILES_SOURCE_TARGET_PAIRS = [
     ("include", "grpc_root/include"),
     ("third_party/abseil-cpp/absl", "third_party/abseil-cpp/absl"),
-
     # Overwrite contents of third_party/protobuf/upb to pick up
     # our patches.
     # See third_party/upb.patch
     ("third_party/protobuf/upb", "third_party/protobuf/upb"),
     ("third_party/upb/upb", "third_party/protobuf/upb"),
-
     (
         "third_party/protobuf/third_party/utf8_range",
         "third_party/protobuf/third_party/utf8_range",
