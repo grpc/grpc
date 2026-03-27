@@ -80,7 +80,7 @@
   test_tags: [core_end2end_test]
 - name: error_flatten
   description: Flatten errors to ordinary absl::Status form.
-  expiry: 2026/04/01
+  expiry: 2026/06/01
   owner: roth@google.com
   test_tags:
     ["core_end2end_test", "cpp_end2end_test", "xds_end2end_test", "error_tests"]
