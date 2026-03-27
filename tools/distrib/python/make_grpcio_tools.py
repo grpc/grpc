@@ -74,8 +74,8 @@ CC_INCLUDES = [
     os.path.join("third_party", "protobuf"),
     os.path.join("third_party", "protobuf", "src"),
     os.path.join("third_party", "protobuf", "upb_generator", "cmake"),
-    os.path.join("third_party", "upb", "upb"),
-    os.path.join("third_party", "upb", "upb", "reflection", "cmake"),
+    os.path.join("third_party", "protobuf", "upb"),
+    os.path.join("third_party", "protobuf", "upb", "reflection", "cmake"),
     os.path.join("third_party", "protobuf", "third_party", "utf8_range"),
 ]
 
@@ -94,9 +94,7 @@ COPY_FILES_SOURCE_TARGET_PAIRS = [
     ("third_party/protobuf/src", "third_party/protobuf/src"),
     ("third_party/protobuf/go", "third_party/protobuf/go"),
     ("third_party/protobuf/java", "third_party/protobuf/java"),
-    # Use our patched upb to make it build properly on MSVC.
-    # See https://github.com/grpc/grpc/issues/41951
-    ("third_party/upb/upb", "third_party/upb/upb"),
+    ("third_party/protobuf/upb", "third_party/protobuf/upb"),
     (
         "third_party/protobuf/upb_generator",
         "third_party/protobuf/upb_generator",
@@ -226,7 +224,6 @@ def _generate_deps_file_content():
         if name.endswith(".c") or name.endswith(".cc"):
             filepath = _bazel_name_to_file_path(name)
             if filepath:
-                filepath = filepath.replace('protobuf/upb/', 'upb/upb/')
                 cc_files.append(filepath)
 
     # Collect list of .proto files that will be bundled in the grpcio_tools package.
