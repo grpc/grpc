@@ -80,6 +80,7 @@ grpc_cc_test(
     external_deps = ["gtest"],
     deps = [
         "//:grpc",
+        "//:grpc_base",
         "//:grpc_core_credentials_header",
         "//:grpc_security_base",
         "//src/core:grpc_ssl_credentials",
