@@ -105,6 +105,7 @@ EXPORTS
     grpc_completion_queue_destroy
     grpc_completion_queue_thread_local_cache_init
     grpc_completion_queue_thread_local_cache_flush
+    grpc_completion_queue_set_notify_fd
     grpc_channel_check_connectivity_state
     grpc_channel_watch_connectivity_state
     grpc_channel_support_connectivity_watcher

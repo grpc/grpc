@@ -19,12 +19,17 @@
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
+#include <grpc/grpc_posix.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/atm.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 #include <stdio.h>
+
+#ifndef GPR_WINDOWS
+#include <unistd.h>
+#endif
 
 #include <algorithm>
 #include <atomic>
@@ -428,6 +433,10 @@ struct grpc_completion_queue {
 
   grpc_closure pollset_shutdown_done;
   int num_polls;
+
+  // EXPERIMENTAL: file descriptor signaled via write() on event enqueue.
+  // -1 means disabled. Only effective for GRPC_CQ_NEXT completion queues.
+  std::atomic<int> notify_fd{-1};
 };
 
 // Forward declarations
@@ -599,6 +608,7 @@ grpc_completion_queue* grpc_completion_queue_create_internal(
 
   cq->vtable = vtable;
   cq->poller_vtable = poller_vtable;
+  cq->notify_fd.store(-1, std::memory_order_relaxed);
 
   // One for destroy(), one for pollset_shutdown
   new (&cq->owning_refs) grpc_core::RefCount(
@@ -652,6 +662,10 @@ int grpc_get_cq_poll_num(grpc_completion_queue* cq) {
   cur_num_polls = cq->num_polls;
   gpr_mu_unlock(cq->mu);
   return cur_num_polls;
+}
+
+void grpc_completion_queue_set_notify_fd(grpc_completion_queue* cq, int fd) {
+  cq->notify_fd.store(fd, std::memory_order_release);
 }
 
 #ifndef NDEBUG
@@ -776,6 +790,18 @@ static void cq_end_op_for_next(
   storage->next = static_cast<uintptr_t>(is_success);
 
   cq_check_tag(cq, tag, true);  // Used in debug builds only
+
+#ifndef GPR_WINDOWS
+  {
+    int nfd = cq->notify_fd.load(std::memory_order_acquire);
+    if (nfd >= 0) {
+      uint64_t val = 1;
+      // Best-effort write; failure is non-fatal (the application will still
+      // retrieve the event via Next/AsyncNext).
+      (void)write(nfd, &val, sizeof(val));
+    }
+  }
+#endif
 
   if (g_cached_cq == cq && g_cached_event == nullptr) {
     g_cached_event = storage;
