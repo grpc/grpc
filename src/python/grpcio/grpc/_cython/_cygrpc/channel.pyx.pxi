@@ -520,12 +520,12 @@ cdef _reset(Channel channel, grpc_status_code code, object details):
       # being executed in another thread.
       while state.c_channel != NULL:
         state.condition.wait()
+  channel._registered_call_handles.clear()
 
 
 
 cdef _calls_drained(_ChannelState state):
-  return not (state.integrated_call_states or state.segregated_call_states or
-              state.connectivity_due)
+  return not (state.integrated_call_states or state.segregated_call_states)
 
 
 cdef class Channel:
