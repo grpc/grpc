@@ -301,6 +301,35 @@ DATA_ENDPOINTS_TEST(CanWriteSecurityFrame) {
   WaitForAllPendingWork();
 }
 
+DATA_ENDPOINTS_TEST(CanWriteSecurityFrameWithOneBytePayload) {
+  util::testing::MockPromiseEndpoint ep(1234);
+  auto* transport_framing_endpoint_extension = ep.endpoint->AddExtension<
+      util::testing::MockTransportFramingEndpointExtension>();
+  absl::AnyInvocable<void(SliceBuffer*)> send_frame_callback;
+  EXPECT_CALL(*transport_framing_endpoint_extension, SetSendFrameCallback)
+      .WillOnce(::testing::SaveArgByMove<0>(&send_frame_callback));
+  auto close_ep = ep.ExpectDelayedReadClose(absl::UnavailableError("test done"),
+                                            event_engine().get());
+  chaotic_good::DataEndpoints data_endpoints(
+      Endpoints(std::move(ep.promise_endpoint)),
+      MakeRefCounted<chaotic_good::TransportContext>(
+          event_engine(), MakeTestChannelzSocketNode()),
+      64, 64, std::make_shared<chaotic_good::TcpZTraceCollector>(), false,
+      "rand", Time1Clock());
+  ::testing::Mock::VerifyAndClearExpectations(
+      transport_framing_endpoint_extension);
+  ep.ExpectWrite(
+      {DataFrameHeader(64, 0, 0, 1),
+       grpc_event_engine::experimental::Slice::FromCopiedString("x"),
+       PaddingBytes(63)},
+      event_engine().get());
+  SliceBuffer security_frame_bytes(Slice::FromCopiedString("x"));
+  send_frame_callback(&security_frame_bytes);
+  WaitForAllPendingWork();
+  close_ep();
+  WaitForAllPendingWork();
+}
+
 DATA_ENDPOINTS_TEST(CanReadSecurityFrame) {
   util::testing::MockPromiseEndpoint ep(1234);
   auto* transport_framing_endpoint_extension =
