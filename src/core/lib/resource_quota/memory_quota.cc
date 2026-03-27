@@ -717,9 +717,9 @@ BasicMemoryQuota::PressureInfo BasicMemoryQuota::GetPressureInfo() {
 
 void BasicMemoryQuota::PopulateGaugeData(GaugeSink<ResourceQuotaDomain>& sink) {
   auto pressure_info = GetPressureInfo();
-  sink.Set(ResourceQuotaDomain::kInstantaneousMemoryPressure,
+  sink.Set(ResourceQuotaDomain::DblInstantaneousMemoryPressure(),
            pressure_info.instantaneous_pressure);
-  sink.Set(ResourceQuotaDomain::kMemoryPressureControlValue,
+  sink.Set(ResourceQuotaDomain::DblMemoryPressureControlValue(),
            pressure_info.pressure_control_value);
 }
 
