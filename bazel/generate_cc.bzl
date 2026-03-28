@@ -18,6 +18,7 @@ directly.
 """
 
 load("@rules_proto//proto:defs.bzl", "ProtoInfo")
+load("//bazel/private:plugin_toolchain_helpers.bzl", "cpp_plugin_toolchain", plugin_toolchains = "toolchains")
 load(
     "//bazel:protobuf.bzl",
     "get_include_directory",
@@ -115,14 +116,16 @@ def generate_cc_impl(ctx):
 
     arguments = []
     if ctx.executable.plugin:
+        plugin = plugin_toolchains.find_toolchain(ctx, "plugin", cpp_plugin_toolchain)
+        plugin_options = plugin_toolchains.options(ctx, ctx.attr.flags, cpp_plugin_toolchain)
         arguments += get_plugin_args(
-            ctx.executable.plugin,
-            ctx.attr.flags,
+            plugin,
+            plugin_options,
             output_dir,
             ctx.attr.generate_mocks,
             ctx.attr.allow_deprecated,
         )
-        tools = [ctx.executable.plugin]
+        tools = [plugin]
     else:
         arguments.append("--cpp_out=" + ",".join(ctx.attr.flags) + ":" + output_dir)
         tools = []
@@ -212,10 +215,14 @@ _generate_cc = rule(
             executable = True,
             cfg = "exec",
         ),
+        "_enable_plugin_toolchain_resolution": attr.label(
+            default = Label("//bazel/toolchains:enable_plugin_toolchain_resolution"),
+        ),
     },
     # We generate .h files, so we need to output to genfiles.
     output_to_genfiles = True,
     implementation = generate_cc_impl,
+    toolchains = plugin_toolchains.use_toolchain(cpp_plugin_toolchain),
 )
 
 def generate_cc(well_known_protos, **kwargs):
