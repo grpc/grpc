@@ -24,6 +24,7 @@ import unittest
 
 import grpc
 from grpc.experimental import aio
+import typeguard
 
 from src.proto.grpc.testing import messages_pb2
 from src.proto.grpc.testing import test_pb2_grpc
@@ -186,6 +187,7 @@ class TestCompatibility(AioTestBase):
 
         await self._run_in_another_thread(sync_work)
 
+    @typeguard.suppress_type_checks
     async def test_server(self):
         class GenericHandlers(grpc.GenericRpcHandler):
             def service(self, handler_call_details):
