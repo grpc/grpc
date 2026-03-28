@@ -147,6 +147,9 @@ EXPERIMENTS = {
             "secure_endpoint_test": [
                 "pipelined_read_secure_endpoint",
             ],
+            "subchannel_test": [
+                "subchannel_connection_scaling",
+            ],
             "xds_end2end_test": [
                 "error_flatten",
                 "subchannel_wrapper_cleanup_on_orphan",
@@ -257,6 +260,9 @@ EXPERIMENTS = {
             "secure_endpoint_test": [
                 "pipelined_read_secure_endpoint",
             ],
+            "subchannel_test": [
+                "subchannel_connection_scaling",
+            ],
             "xds_end2end_test": [
                 "error_flatten",
                 "subchannel_wrapper_cleanup_on_orphan",
@@ -366,6 +372,9 @@ EXPERIMENTS = {
             ],
             "secure_endpoint_test": [
                 "pipelined_read_secure_endpoint",
+            ],
+            "subchannel_test": [
+                "subchannel_connection_scaling",
             ],
             "xds_end2end_test": [
                 "error_flatten",
