@@ -63,6 +63,8 @@ extern void RegisterOutlierDetectionLbPolicy(
     CoreConfiguration::Builder* builder);
 extern void RegisterWeightedTargetLbPolicy(CoreConfiguration::Builder* builder);
 extern void RegisterPickFirstLbPolicy(CoreConfiguration::Builder* builder);
+extern void RegisterRandomSubsettingLbPolicy(
+    CoreConfiguration::Builder* builder);
 extern void RegisterRingHashLbPolicy(CoreConfiguration::Builder* builder);
 extern void RegisterRoundRobinLbPolicy(CoreConfiguration::Builder* builder);
 extern void RegisterWeightedRoundRobinLbPolicy(
@@ -109,6 +111,7 @@ void BuildCoreConfiguration(CoreConfiguration::Builder* builder) {
 #endif
   RegisterPickFirstLbPolicy(builder);
 #ifndef GRPC_MINIMAL_LB_POLICY
+  RegisterRandomSubsettingLbPolicy(builder);
   RegisterRoundRobinLbPolicy(builder);
   RegisterRingHashLbPolicy(builder);
   RegisterWeightedRoundRobinLbPolicy(builder);
