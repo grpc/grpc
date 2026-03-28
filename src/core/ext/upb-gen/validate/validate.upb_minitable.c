@@ -16,102 +16,74 @@
 // Must be last.
 #include "upb/port/def.inc"
 
-extern const struct upb_MiniTable UPB_PRIVATE(_kUpb_MiniTable_StaticallyTreeShaken);
-static const upb_MiniTableSubInternal validate_FieldRules__submsgs[22] = {
-  {.UPB_PRIVATE(submsg) = &validate__FloatRules_msg_init_ptr},
-  {.UPB_PRIVATE(submsg) = &validate__DoubleRules_msg_init_ptr},
-  {.UPB_PRIVATE(submsg) = &validate__Int32Rules_msg_init_ptr},
-  {.UPB_PRIVATE(submsg) = &validate__Int64Rules_msg_init_ptr},
-  {.UPB_PRIVATE(submsg) = &validate__UInt32Rules_msg_init_ptr},
-  {.UPB_PRIVATE(submsg) = &validate__UInt64Rules_msg_init_ptr},
-  {.UPB_PRIVATE(submsg) = &validate__SInt32Rules_msg_init_ptr},
-  {.UPB_PRIVATE(submsg) = &validate__SInt64Rules_msg_init_ptr},
-  {.UPB_PRIVATE(submsg) = &validate__Fixed32Rules_msg_init_ptr},
-  {.UPB_PRIVATE(submsg) = &validate__Fixed64Rules_msg_init_ptr},
-  {.UPB_PRIVATE(submsg) = &validate__SFixed32Rules_msg_init_ptr},
-  {.UPB_PRIVATE(submsg) = &validate__SFixed64Rules_msg_init_ptr},
-  {.UPB_PRIVATE(submsg) = &validate__BoolRules_msg_init_ptr},
-  {.UPB_PRIVATE(submsg) = &validate__StringRules_msg_init_ptr},
-  {.UPB_PRIVATE(submsg) = &validate__BytesRules_msg_init_ptr},
-  {.UPB_PRIVATE(submsg) = &validate__EnumRules_msg_init_ptr},
-  {.UPB_PRIVATE(submsg) = &validate__MessageRules_msg_init_ptr},
-  {.UPB_PRIVATE(submsg) = &validate__RepeatedRules_msg_init_ptr},
-  {.UPB_PRIVATE(submsg) = &validate__MapRules_msg_init_ptr},
-  {.UPB_PRIVATE(submsg) = &validate__AnyRules_msg_init_ptr},
-  {.UPB_PRIVATE(submsg) = &validate__DurationRules_msg_init_ptr},
-  {.UPB_PRIVATE(submsg) = &validate__TimestampRules_msg_init_ptr},
-};
+extern const UPB_PRIVATE(upb_GeneratedExtensionListEntry)* UPB_PRIVATE(upb_generated_extension_list);
+typedef struct {
+  upb_MiniTableField fields[22];
+  upb_MiniTableSubInternal subs[22];
+} validate__FieldRules_msg_init_Fields;
 
-static const upb_MiniTableField validate_FieldRules__fields[22] = {
-  {1, UPB_SIZE(20, 24), UPB_SIZE(-17, -13), 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-  {2, UPB_SIZE(20, 24), UPB_SIZE(-17, -13), 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-  {3, UPB_SIZE(20, 24), UPB_SIZE(-17, -13), 2, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-  {4, UPB_SIZE(20, 24), UPB_SIZE(-17, -13), 3, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-  {5, UPB_SIZE(20, 24), UPB_SIZE(-17, -13), 4, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-  {6, UPB_SIZE(20, 24), UPB_SIZE(-17, -13), 5, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-  {7, UPB_SIZE(20, 24), UPB_SIZE(-17, -13), 6, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-  {8, UPB_SIZE(20, 24), UPB_SIZE(-17, -13), 7, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-  {9, UPB_SIZE(20, 24), UPB_SIZE(-17, -13), 8, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-  {10, UPB_SIZE(20, 24), UPB_SIZE(-17, -13), 9, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-  {11, UPB_SIZE(20, 24), UPB_SIZE(-17, -13), 10, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-  {12, UPB_SIZE(20, 24), UPB_SIZE(-17, -13), 11, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-  {13, UPB_SIZE(20, 24), UPB_SIZE(-17, -13), 12, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-  {14, UPB_SIZE(20, 24), UPB_SIZE(-17, -13), 13, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-  {15, UPB_SIZE(20, 24), UPB_SIZE(-17, -13), 14, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-  {16, UPB_SIZE(20, 24), UPB_SIZE(-17, -13), 15, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-  {17, UPB_SIZE(12, 16), 64, 16, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-  {18, UPB_SIZE(20, 24), UPB_SIZE(-17, -13), 17, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-  {19, UPB_SIZE(20, 24), UPB_SIZE(-17, -13), 18, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-  {20, UPB_SIZE(20, 24), UPB_SIZE(-17, -13), 19, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-  {21, UPB_SIZE(20, 24), UPB_SIZE(-17, -13), 20, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-  {22, UPB_SIZE(20, 24), UPB_SIZE(-17, -13), 21, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-};
+static const validate__FieldRules_msg_init_Fields validate_FieldRules__fields = {{
+  {1, UPB_SIZE(20, 24), UPB_SIZE(-17, -13), 66, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {2, UPB_SIZE(20, 24), UPB_SIZE(-17, -13), UPB_SIZE(64, 65), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {3, UPB_SIZE(20, 24), UPB_SIZE(-17, -13), UPB_SIZE(62, 64), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {4, UPB_SIZE(20, 24), UPB_SIZE(-17, -13), UPB_SIZE(60, 63), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {5, UPB_SIZE(20, 24), UPB_SIZE(-17, -13), UPB_SIZE(58, 62), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {6, UPB_SIZE(20, 24), UPB_SIZE(-17, -13), UPB_SIZE(56, 61), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {7, UPB_SIZE(20, 24), UPB_SIZE(-17, -13), UPB_SIZE(54, 60), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {8, UPB_SIZE(20, 24), UPB_SIZE(-17, -13), UPB_SIZE(52, 59), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {9, UPB_SIZE(20, 24), UPB_SIZE(-17, -13), UPB_SIZE(50, 58), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {10, UPB_SIZE(20, 24), UPB_SIZE(-17, -13), UPB_SIZE(48, 57), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {11, UPB_SIZE(20, 24), UPB_SIZE(-17, -13), UPB_SIZE(46, 56), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {12, UPB_SIZE(20, 24), UPB_SIZE(-17, -13), UPB_SIZE(44, 55), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {13, UPB_SIZE(20, 24), UPB_SIZE(-17, -13), UPB_SIZE(42, 54), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {14, UPB_SIZE(20, 24), UPB_SIZE(-17, -13), UPB_SIZE(40, 53), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {15, UPB_SIZE(20, 24), UPB_SIZE(-17, -13), UPB_SIZE(38, 52), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {16, UPB_SIZE(20, 24), UPB_SIZE(-17, -13), UPB_SIZE(36, 51), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {17, UPB_SIZE(12, 16), 64, UPB_SIZE(34, 50), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {18, UPB_SIZE(20, 24), UPB_SIZE(-17, -13), UPB_SIZE(32, 49), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {19, UPB_SIZE(20, 24), UPB_SIZE(-17, -13), UPB_SIZE(30, 48), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {20, UPB_SIZE(20, 24), UPB_SIZE(-17, -13), UPB_SIZE(28, 47), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {21, UPB_SIZE(20, 24), UPB_SIZE(-17, -13), UPB_SIZE(26, 46), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {22, UPB_SIZE(20, 24), UPB_SIZE(-17, -13), UPB_SIZE(24, 45), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+ },
+  {
+  {.UPB_PRIVATE(submsg) = &validate__FloatRules_msg_init},
+  {.UPB_PRIVATE(submsg) = &validate__DoubleRules_msg_init},
+  {.UPB_PRIVATE(submsg) = &validate__Int32Rules_msg_init},
+  {.UPB_PRIVATE(submsg) = &validate__Int64Rules_msg_init},
+  {.UPB_PRIVATE(submsg) = &validate__UInt32Rules_msg_init},
+  {.UPB_PRIVATE(submsg) = &validate__UInt64Rules_msg_init},
+  {.UPB_PRIVATE(submsg) = &validate__SInt32Rules_msg_init},
+  {.UPB_PRIVATE(submsg) = &validate__SInt64Rules_msg_init},
+  {.UPB_PRIVATE(submsg) = &validate__Fixed32Rules_msg_init},
+  {.UPB_PRIVATE(submsg) = &validate__Fixed64Rules_msg_init},
+  {.UPB_PRIVATE(submsg) = &validate__SFixed32Rules_msg_init},
+  {.UPB_PRIVATE(submsg) = &validate__SFixed64Rules_msg_init},
+  {.UPB_PRIVATE(submsg) = &validate__BoolRules_msg_init},
+  {.UPB_PRIVATE(submsg) = &validate__StringRules_msg_init},
+  {.UPB_PRIVATE(submsg) = &validate__BytesRules_msg_init},
+  {.UPB_PRIVATE(submsg) = &validate__EnumRules_msg_init},
+  {.UPB_PRIVATE(submsg) = &validate__MessageRules_msg_init},
+  {.UPB_PRIVATE(submsg) = &validate__RepeatedRules_msg_init},
+  {.UPB_PRIVATE(submsg) = &validate__MapRules_msg_init},
+  {.UPB_PRIVATE(submsg) = &validate__AnyRules_msg_init},
+  {.UPB_PRIVATE(submsg) = &validate__DurationRules_msg_init},
+  {.UPB_PRIVATE(submsg) = &validate__TimestampRules_msg_init},
+}};
 
 const upb_MiniTable validate__FieldRules_msg_init = {
-  &validate_FieldRules__submsgs[0],
-  &validate_FieldRules__fields[0],
-  UPB_SIZE(24, 32), 22, kUpb_ExtMode_NonExtendable, 22, UPB_FASTTABLE_MASK(248), 0,
+  &validate_FieldRules__fields.fields[0],
+  UPB_SIZE(24, 32), 22, kUpb_ExtMode_NonExtendable, 22, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "validate.FieldRules",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0018000c0100000a, &upb_pom_1bt_max64b},
-    {0x0018000c02010012, &upb_pom_1bt_max128b},
-    {0x0018000c0302001a, &upb_pom_1bt_max64b},
-    {0x0018000c04030022, &upb_pom_1bt_max128b},
-    {0x0018000c0504002a, &upb_pom_1bt_max64b},
-    {0x0018000c06050032, &upb_pom_1bt_max128b},
-    {0x0018000c0706003a, &upb_pom_1bt_max64b},
-    {0x0018000c08070042, &upb_pom_1bt_max128b},
-    {0x0018000c0908004a, &upb_pom_1bt_max64b},
-    {0x0018000c0a090052, &upb_pom_1bt_max128b},
-    {0x0018000c0b0a005a, &upb_pom_1bt_max64b},
-    {0x0018000c0c0b0062, &upb_pom_1bt_max128b},
-    {0x0018000c0d0c006a, &upb_pom_1bt_max64b},
-    {0x0018000c0e0d0072, &upb_pom_1bt_max192b},
-    {0x0018000c0f0e007a, &upb_pom_1bt_max192b},
-    {0x0018000c100f0182, &upb_pom_2bt_max64b},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0018000c12110192, &upb_pom_2bt_max64b},
-    {0x0018000c1312019a, &upb_pom_2bt_max64b},
-    {0x0018000c141301a2, &upb_pom_2bt_max64b},
-    {0x0018000c151401aa, &upb_pom_2bt_max128b},
-    {0x0018000c161501b2, &upb_pom_2bt_max128b},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-  })
 };
 
-const upb_MiniTable* validate__FieldRules_msg_init_ptr = &validate__FieldRules_msg_init;
-static const upb_MiniTableField validate_FloatRules__fields[8] = {
+typedef struct {
+  upb_MiniTableField fields[8];
+} validate__FloatRules_msg_init_Fields;
+
+static const validate__FloatRules_msg_init_Fields validate_FloatRules__fields = {{
   {1, 12, 64, kUpb_NoSub, 2, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)},
   {2, 16, 65, kUpb_NoSub, 2, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)},
   {3, 20, 66, kUpb_NoSub, 2, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)},
@@ -120,29 +92,39 @@ static const upb_MiniTableField validate_FloatRules__fields[8] = {
   {6, 32, 0, kUpb_NoSub, 2, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   {7, UPB_SIZE(36, 40), 0, kUpb_NoSub, 2, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   {8, 9, 69, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
-};
+}};
 
 const upb_MiniTable validate__FloatRules_msg_init = {
-  NULL,
-  &validate_FloatRules__fields[0],
-  UPB_SIZE(40, 48), 8, kUpb_ExtMode_NonExtendable, 8, UPB_FASTTABLE_MASK(56), 0,
+  &validate_FloatRules__fields.fields[0],
+  UPB_SIZE(40, 48), 8, kUpb_ExtMode_NonExtendable, 8, UPB_FASTTABLE_MASK(120), 0,
 #ifdef UPB_TRACING_ENABLED
   "validate.FloatRules",
 #endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x000c00000000000d, &upb_DecodeFast_Fixed32_Scalar_Tag1Byte},
+    {0x0010000001000015, &upb_DecodeFast_Fixed32_Scalar_Tag1Byte},
+    {0x001400000200001d, &upb_DecodeFast_Fixed32_Scalar_Tag1Byte},
+    {0x0018000003000025, &upb_DecodeFast_Fixed32_Scalar_Tag1Byte},
+    {0x001c00000400002d, &upb_DecodeFast_Fixed32_Scalar_Tag1Byte},
+    {0x002000003f000035, &upb_DecodeFast_Fixed32_Repeated_Tag1Byte},
+    {0x002800003f00003d, &upb_DecodeFast_Fixed32_Repeated_Tag1Byte},
+    {0x0009000005000040, &upb_DecodeFast_Bool_Scalar_Tag1Byte},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x002000003f000035, &upb_prf4_1bt},
-    {0x002800003f00003d, &upb_prf4_1bt},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
   })
 };
 
-const upb_MiniTable* validate__FloatRules_msg_init_ptr = &validate__FloatRules_msg_init;
-static const upb_MiniTableField validate_DoubleRules__fields[8] = {
+typedef struct {
+  upb_MiniTableField fields[8];
+} validate__DoubleRules_msg_init_Fields;
+
+static const validate__DoubleRules_msg_init_Fields validate_DoubleRules__fields = {{
   {1, UPB_SIZE(24, 16), 64, kUpb_NoSub, 1, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)},
   {2, UPB_SIZE(32, 24), 65, kUpb_NoSub, 1, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)},
   {3, UPB_SIZE(40, 32), 66, kUpb_NoSub, 1, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)},
@@ -151,29 +133,39 @@ static const upb_MiniTableField validate_DoubleRules__fields[8] = {
   {6, UPB_SIZE(12, 56), 0, kUpb_NoSub, 1, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   {7, UPB_SIZE(16, 64), 0, kUpb_NoSub, 1, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   {8, 9, 69, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
-};
+}};
 
 const upb_MiniTable validate__DoubleRules_msg_init = {
-  NULL,
-  &validate_DoubleRules__fields[0],
-  UPB_SIZE(64, 72), 8, kUpb_ExtMode_NonExtendable, 8, UPB_FASTTABLE_MASK(56), 0,
+  &validate_DoubleRules__fields.fields[0],
+  UPB_SIZE(64, 72), 8, kUpb_ExtMode_NonExtendable, 8, UPB_FASTTABLE_MASK(120), 0,
 #ifdef UPB_TRACING_ENABLED
   "validate.DoubleRules",
 #endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0010000000000009, &upb_DecodeFast_Fixed64_Scalar_Tag1Byte},
+    {0x0018000001000011, &upb_DecodeFast_Fixed64_Scalar_Tag1Byte},
+    {0x0020000002000019, &upb_DecodeFast_Fixed64_Scalar_Tag1Byte},
+    {0x0028000003000021, &upb_DecodeFast_Fixed64_Scalar_Tag1Byte},
+    {0x0030000004000029, &upb_DecodeFast_Fixed64_Scalar_Tag1Byte},
+    {0x003800003f000031, &upb_DecodeFast_Fixed64_Repeated_Tag1Byte},
+    {0x004000003f000039, &upb_DecodeFast_Fixed64_Repeated_Tag1Byte},
+    {0x0009000005000040, &upb_DecodeFast_Bool_Scalar_Tag1Byte},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x003800003f000031, &upb_prf8_1bt},
-    {0x004000003f000039, &upb_prf8_1bt},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
   })
 };
 
-const upb_MiniTable* validate__DoubleRules_msg_init_ptr = &validate__DoubleRules_msg_init;
-static const upb_MiniTableField validate_Int32Rules__fields[8] = {
+typedef struct {
+  upb_MiniTableField fields[8];
+} validate__Int32Rules_msg_init_Fields;
+
+static const validate__Int32Rules_msg_init_Fields validate_Int32Rules__fields = {{
   {1, 12, 64, kUpb_NoSub, 5, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)},
   {2, 16, 65, kUpb_NoSub, 5, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)},
   {3, 20, 66, kUpb_NoSub, 5, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)},
@@ -182,29 +174,39 @@ static const upb_MiniTableField validate_Int32Rules__fields[8] = {
   {6, 32, 0, kUpb_NoSub, 5, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   {7, UPB_SIZE(36, 40), 0, kUpb_NoSub, 5, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   {8, 9, 69, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
-};
+}};
 
 const upb_MiniTable validate__Int32Rules_msg_init = {
-  NULL,
-  &validate_Int32Rules__fields[0],
-  UPB_SIZE(40, 48), 8, kUpb_ExtMode_NonExtendable, 8, UPB_FASTTABLE_MASK(56), 0,
+  &validate_Int32Rules__fields.fields[0],
+  UPB_SIZE(40, 48), 8, kUpb_ExtMode_NonExtendable, 8, UPB_FASTTABLE_MASK(120), 0,
 #ifdef UPB_TRACING_ENABLED
   "validate.Int32Rules",
 #endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x000c000000000008, &upb_DecodeFast_Varint32_Scalar_Tag1Byte},
+    {0x0010000001000010, &upb_DecodeFast_Varint32_Scalar_Tag1Byte},
+    {0x0014000002000018, &upb_DecodeFast_Varint32_Scalar_Tag1Byte},
+    {0x0018000003000020, &upb_DecodeFast_Varint32_Scalar_Tag1Byte},
+    {0x001c000004000028, &upb_DecodeFast_Varint32_Scalar_Tag1Byte},
+    {0x002000003f000030, &upb_DecodeFast_Varint32_Repeated_Tag1Byte},
+    {0x002800003f000038, &upb_DecodeFast_Varint32_Repeated_Tag1Byte},
+    {0x0009000005000040, &upb_DecodeFast_Bool_Scalar_Tag1Byte},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x002000003f000030, &upb_prv4_1bt},
-    {0x002800003f000038, &upb_prv4_1bt},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
   })
 };
 
-const upb_MiniTable* validate__Int32Rules_msg_init_ptr = &validate__Int32Rules_msg_init;
-static const upb_MiniTableField validate_Int64Rules__fields[8] = {
+typedef struct {
+  upb_MiniTableField fields[8];
+} validate__Int64Rules_msg_init_Fields;
+
+static const validate__Int64Rules_msg_init_Fields validate_Int64Rules__fields = {{
   {1, UPB_SIZE(24, 16), 64, kUpb_NoSub, 3, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)},
   {2, UPB_SIZE(32, 24), 65, kUpb_NoSub, 3, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)},
   {3, UPB_SIZE(40, 32), 66, kUpb_NoSub, 3, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)},
@@ -213,29 +215,39 @@ static const upb_MiniTableField validate_Int64Rules__fields[8] = {
   {6, UPB_SIZE(12, 56), 0, kUpb_NoSub, 3, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   {7, UPB_SIZE(16, 64), 0, kUpb_NoSub, 3, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   {8, 9, 69, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
-};
+}};
 
 const upb_MiniTable validate__Int64Rules_msg_init = {
-  NULL,
-  &validate_Int64Rules__fields[0],
-  UPB_SIZE(64, 72), 8, kUpb_ExtMode_NonExtendable, 8, UPB_FASTTABLE_MASK(56), 0,
+  &validate_Int64Rules__fields.fields[0],
+  UPB_SIZE(64, 72), 8, kUpb_ExtMode_NonExtendable, 8, UPB_FASTTABLE_MASK(120), 0,
 #ifdef UPB_TRACING_ENABLED
   "validate.Int64Rules",
 #endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0010000000000008, &upb_DecodeFast_Varint64_Scalar_Tag1Byte},
+    {0x0018000001000010, &upb_DecodeFast_Varint64_Scalar_Tag1Byte},
+    {0x0020000002000018, &upb_DecodeFast_Varint64_Scalar_Tag1Byte},
+    {0x0028000003000020, &upb_DecodeFast_Varint64_Scalar_Tag1Byte},
+    {0x0030000004000028, &upb_DecodeFast_Varint64_Scalar_Tag1Byte},
+    {0x003800003f000030, &upb_DecodeFast_Varint64_Repeated_Tag1Byte},
+    {0x004000003f000038, &upb_DecodeFast_Varint64_Repeated_Tag1Byte},
+    {0x0009000005000040, &upb_DecodeFast_Bool_Scalar_Tag1Byte},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x003800003f000030, &upb_prv8_1bt},
-    {0x004000003f000038, &upb_prv8_1bt},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
   })
 };
 
-const upb_MiniTable* validate__Int64Rules_msg_init_ptr = &validate__Int64Rules_msg_init;
-static const upb_MiniTableField validate_UInt32Rules__fields[8] = {
+typedef struct {
+  upb_MiniTableField fields[8];
+} validate__UInt32Rules_msg_init_Fields;
+
+static const validate__UInt32Rules_msg_init_Fields validate_UInt32Rules__fields = {{
   {1, 12, 64, kUpb_NoSub, 13, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)},
   {2, 16, 65, kUpb_NoSub, 13, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)},
   {3, 20, 66, kUpb_NoSub, 13, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)},
@@ -244,29 +256,39 @@ static const upb_MiniTableField validate_UInt32Rules__fields[8] = {
   {6, 32, 0, kUpb_NoSub, 13, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   {7, UPB_SIZE(36, 40), 0, kUpb_NoSub, 13, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   {8, 9, 69, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
-};
+}};
 
 const upb_MiniTable validate__UInt32Rules_msg_init = {
-  NULL,
-  &validate_UInt32Rules__fields[0],
-  UPB_SIZE(40, 48), 8, kUpb_ExtMode_NonExtendable, 8, UPB_FASTTABLE_MASK(56), 0,
+  &validate_UInt32Rules__fields.fields[0],
+  UPB_SIZE(40, 48), 8, kUpb_ExtMode_NonExtendable, 8, UPB_FASTTABLE_MASK(120), 0,
 #ifdef UPB_TRACING_ENABLED
   "validate.UInt32Rules",
 #endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x000c000000000008, &upb_DecodeFast_Varint32_Scalar_Tag1Byte},
+    {0x0010000001000010, &upb_DecodeFast_Varint32_Scalar_Tag1Byte},
+    {0x0014000002000018, &upb_DecodeFast_Varint32_Scalar_Tag1Byte},
+    {0x0018000003000020, &upb_DecodeFast_Varint32_Scalar_Tag1Byte},
+    {0x001c000004000028, &upb_DecodeFast_Varint32_Scalar_Tag1Byte},
+    {0x002000003f000030, &upb_DecodeFast_Varint32_Repeated_Tag1Byte},
+    {0x002800003f000038, &upb_DecodeFast_Varint32_Repeated_Tag1Byte},
+    {0x0009000005000040, &upb_DecodeFast_Bool_Scalar_Tag1Byte},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x002000003f000030, &upb_prv4_1bt},
-    {0x002800003f000038, &upb_prv4_1bt},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
   })
 };
 
-const upb_MiniTable* validate__UInt32Rules_msg_init_ptr = &validate__UInt32Rules_msg_init;
-static const upb_MiniTableField validate_UInt64Rules__fields[8] = {
+typedef struct {
+  upb_MiniTableField fields[8];
+} validate__UInt64Rules_msg_init_Fields;
+
+static const validate__UInt64Rules_msg_init_Fields validate_UInt64Rules__fields = {{
   {1, UPB_SIZE(24, 16), 64, kUpb_NoSub, 4, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)},
   {2, UPB_SIZE(32, 24), 65, kUpb_NoSub, 4, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)},
   {3, UPB_SIZE(40, 32), 66, kUpb_NoSub, 4, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)},
@@ -275,29 +297,39 @@ static const upb_MiniTableField validate_UInt64Rules__fields[8] = {
   {6, UPB_SIZE(12, 56), 0, kUpb_NoSub, 4, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   {7, UPB_SIZE(16, 64), 0, kUpb_NoSub, 4, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   {8, 9, 69, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
-};
+}};
 
 const upb_MiniTable validate__UInt64Rules_msg_init = {
-  NULL,
-  &validate_UInt64Rules__fields[0],
-  UPB_SIZE(64, 72), 8, kUpb_ExtMode_NonExtendable, 8, UPB_FASTTABLE_MASK(56), 0,
+  &validate_UInt64Rules__fields.fields[0],
+  UPB_SIZE(64, 72), 8, kUpb_ExtMode_NonExtendable, 8, UPB_FASTTABLE_MASK(120), 0,
 #ifdef UPB_TRACING_ENABLED
   "validate.UInt64Rules",
 #endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0010000000000008, &upb_DecodeFast_Varint64_Scalar_Tag1Byte},
+    {0x0018000001000010, &upb_DecodeFast_Varint64_Scalar_Tag1Byte},
+    {0x0020000002000018, &upb_DecodeFast_Varint64_Scalar_Tag1Byte},
+    {0x0028000003000020, &upb_DecodeFast_Varint64_Scalar_Tag1Byte},
+    {0x0030000004000028, &upb_DecodeFast_Varint64_Scalar_Tag1Byte},
+    {0x003800003f000030, &upb_DecodeFast_Varint64_Repeated_Tag1Byte},
+    {0x004000003f000038, &upb_DecodeFast_Varint64_Repeated_Tag1Byte},
+    {0x0009000005000040, &upb_DecodeFast_Bool_Scalar_Tag1Byte},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x003800003f000030, &upb_prv8_1bt},
-    {0x004000003f000038, &upb_prv8_1bt},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
   })
 };
 
-const upb_MiniTable* validate__UInt64Rules_msg_init_ptr = &validate__UInt64Rules_msg_init;
-static const upb_MiniTableField validate_SInt32Rules__fields[8] = {
+typedef struct {
+  upb_MiniTableField fields[8];
+} validate__SInt32Rules_msg_init_Fields;
+
+static const validate__SInt32Rules_msg_init_Fields validate_SInt32Rules__fields = {{
   {1, 12, 64, kUpb_NoSub, 17, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)},
   {2, 16, 65, kUpb_NoSub, 17, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)},
   {3, 20, 66, kUpb_NoSub, 17, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)},
@@ -306,29 +338,39 @@ static const upb_MiniTableField validate_SInt32Rules__fields[8] = {
   {6, 32, 0, kUpb_NoSub, 17, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   {7, UPB_SIZE(36, 40), 0, kUpb_NoSub, 17, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   {8, 9, 69, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
-};
+}};
 
 const upb_MiniTable validate__SInt32Rules_msg_init = {
-  NULL,
-  &validate_SInt32Rules__fields[0],
-  UPB_SIZE(40, 48), 8, kUpb_ExtMode_NonExtendable, 8, UPB_FASTTABLE_MASK(56), 0,
+  &validate_SInt32Rules__fields.fields[0],
+  UPB_SIZE(40, 48), 8, kUpb_ExtMode_NonExtendable, 8, UPB_FASTTABLE_MASK(120), 0,
 #ifdef UPB_TRACING_ENABLED
   "validate.SInt32Rules",
 #endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x000c000000000008, &upb_DecodeFast_ZigZag32_Scalar_Tag1Byte},
+    {0x0010000001000010, &upb_DecodeFast_ZigZag32_Scalar_Tag1Byte},
+    {0x0014000002000018, &upb_DecodeFast_ZigZag32_Scalar_Tag1Byte},
+    {0x0018000003000020, &upb_DecodeFast_ZigZag32_Scalar_Tag1Byte},
+    {0x001c000004000028, &upb_DecodeFast_ZigZag32_Scalar_Tag1Byte},
+    {0x002000003f000030, &upb_DecodeFast_ZigZag32_Repeated_Tag1Byte},
+    {0x002800003f000038, &upb_DecodeFast_ZigZag32_Repeated_Tag1Byte},
+    {0x0009000005000040, &upb_DecodeFast_Bool_Scalar_Tag1Byte},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x002000003f000030, &upb_prz4_1bt},
-    {0x002800003f000038, &upb_prz4_1bt},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
   })
 };
 
-const upb_MiniTable* validate__SInt32Rules_msg_init_ptr = &validate__SInt32Rules_msg_init;
-static const upb_MiniTableField validate_SInt64Rules__fields[8] = {
+typedef struct {
+  upb_MiniTableField fields[8];
+} validate__SInt64Rules_msg_init_Fields;
+
+static const validate__SInt64Rules_msg_init_Fields validate_SInt64Rules__fields = {{
   {1, UPB_SIZE(24, 16), 64, kUpb_NoSub, 18, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)},
   {2, UPB_SIZE(32, 24), 65, kUpb_NoSub, 18, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)},
   {3, UPB_SIZE(40, 32), 66, kUpb_NoSub, 18, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)},
@@ -337,29 +379,39 @@ static const upb_MiniTableField validate_SInt64Rules__fields[8] = {
   {6, UPB_SIZE(12, 56), 0, kUpb_NoSub, 18, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   {7, UPB_SIZE(16, 64), 0, kUpb_NoSub, 18, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   {8, 9, 69, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
-};
+}};
 
 const upb_MiniTable validate__SInt64Rules_msg_init = {
-  NULL,
-  &validate_SInt64Rules__fields[0],
-  UPB_SIZE(64, 72), 8, kUpb_ExtMode_NonExtendable, 8, UPB_FASTTABLE_MASK(56), 0,
+  &validate_SInt64Rules__fields.fields[0],
+  UPB_SIZE(64, 72), 8, kUpb_ExtMode_NonExtendable, 8, UPB_FASTTABLE_MASK(120), 0,
 #ifdef UPB_TRACING_ENABLED
   "validate.SInt64Rules",
 #endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0010000000000008, &upb_DecodeFast_ZigZag64_Scalar_Tag1Byte},
+    {0x0018000001000010, &upb_DecodeFast_ZigZag64_Scalar_Tag1Byte},
+    {0x0020000002000018, &upb_DecodeFast_ZigZag64_Scalar_Tag1Byte},
+    {0x0028000003000020, &upb_DecodeFast_ZigZag64_Scalar_Tag1Byte},
+    {0x0030000004000028, &upb_DecodeFast_ZigZag64_Scalar_Tag1Byte},
+    {0x003800003f000030, &upb_DecodeFast_ZigZag64_Repeated_Tag1Byte},
+    {0x004000003f000038, &upb_DecodeFast_ZigZag64_Repeated_Tag1Byte},
+    {0x0009000005000040, &upb_DecodeFast_Bool_Scalar_Tag1Byte},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x003800003f000030, &upb_prz8_1bt},
-    {0x004000003f000038, &upb_prz8_1bt},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
   })
 };
 
-const upb_MiniTable* validate__SInt64Rules_msg_init_ptr = &validate__SInt64Rules_msg_init;
-static const upb_MiniTableField validate_Fixed32Rules__fields[8] = {
+typedef struct {
+  upb_MiniTableField fields[8];
+} validate__Fixed32Rules_msg_init_Fields;
+
+static const validate__Fixed32Rules_msg_init_Fields validate_Fixed32Rules__fields = {{
   {1, 12, 64, kUpb_NoSub, 7, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)},
   {2, 16, 65, kUpb_NoSub, 7, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)},
   {3, 20, 66, kUpb_NoSub, 7, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)},
@@ -368,29 +420,39 @@ static const upb_MiniTableField validate_Fixed32Rules__fields[8] = {
   {6, 32, 0, kUpb_NoSub, 7, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   {7, UPB_SIZE(36, 40), 0, kUpb_NoSub, 7, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   {8, 9, 69, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
-};
+}};
 
 const upb_MiniTable validate__Fixed32Rules_msg_init = {
-  NULL,
-  &validate_Fixed32Rules__fields[0],
-  UPB_SIZE(40, 48), 8, kUpb_ExtMode_NonExtendable, 8, UPB_FASTTABLE_MASK(56), 0,
+  &validate_Fixed32Rules__fields.fields[0],
+  UPB_SIZE(40, 48), 8, kUpb_ExtMode_NonExtendable, 8, UPB_FASTTABLE_MASK(120), 0,
 #ifdef UPB_TRACING_ENABLED
   "validate.Fixed32Rules",
 #endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x000c00000000000d, &upb_DecodeFast_Fixed32_Scalar_Tag1Byte},
+    {0x0010000001000015, &upb_DecodeFast_Fixed32_Scalar_Tag1Byte},
+    {0x001400000200001d, &upb_DecodeFast_Fixed32_Scalar_Tag1Byte},
+    {0x0018000003000025, &upb_DecodeFast_Fixed32_Scalar_Tag1Byte},
+    {0x001c00000400002d, &upb_DecodeFast_Fixed32_Scalar_Tag1Byte},
+    {0x002000003f000035, &upb_DecodeFast_Fixed32_Repeated_Tag1Byte},
+    {0x002800003f00003d, &upb_DecodeFast_Fixed32_Repeated_Tag1Byte},
+    {0x0009000005000040, &upb_DecodeFast_Bool_Scalar_Tag1Byte},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x002000003f000035, &upb_prf4_1bt},
-    {0x002800003f00003d, &upb_prf4_1bt},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
   })
 };
 
-const upb_MiniTable* validate__Fixed32Rules_msg_init_ptr = &validate__Fixed32Rules_msg_init;
-static const upb_MiniTableField validate_Fixed64Rules__fields[8] = {
+typedef struct {
+  upb_MiniTableField fields[8];
+} validate__Fixed64Rules_msg_init_Fields;
+
+static const validate__Fixed64Rules_msg_init_Fields validate_Fixed64Rules__fields = {{
   {1, UPB_SIZE(24, 16), 64, kUpb_NoSub, 6, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)},
   {2, UPB_SIZE(32, 24), 65, kUpb_NoSub, 6, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)},
   {3, UPB_SIZE(40, 32), 66, kUpb_NoSub, 6, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)},
@@ -399,29 +461,39 @@ static const upb_MiniTableField validate_Fixed64Rules__fields[8] = {
   {6, UPB_SIZE(12, 56), 0, kUpb_NoSub, 6, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   {7, UPB_SIZE(16, 64), 0, kUpb_NoSub, 6, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   {8, 9, 69, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
-};
+}};
 
 const upb_MiniTable validate__Fixed64Rules_msg_init = {
-  NULL,
-  &validate_Fixed64Rules__fields[0],
-  UPB_SIZE(64, 72), 8, kUpb_ExtMode_NonExtendable, 8, UPB_FASTTABLE_MASK(56), 0,
+  &validate_Fixed64Rules__fields.fields[0],
+  UPB_SIZE(64, 72), 8, kUpb_ExtMode_NonExtendable, 8, UPB_FASTTABLE_MASK(120), 0,
 #ifdef UPB_TRACING_ENABLED
   "validate.Fixed64Rules",
 #endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0010000000000009, &upb_DecodeFast_Fixed64_Scalar_Tag1Byte},
+    {0x0018000001000011, &upb_DecodeFast_Fixed64_Scalar_Tag1Byte},
+    {0x0020000002000019, &upb_DecodeFast_Fixed64_Scalar_Tag1Byte},
+    {0x0028000003000021, &upb_DecodeFast_Fixed64_Scalar_Tag1Byte},
+    {0x0030000004000029, &upb_DecodeFast_Fixed64_Scalar_Tag1Byte},
+    {0x003800003f000031, &upb_DecodeFast_Fixed64_Repeated_Tag1Byte},
+    {0x004000003f000039, &upb_DecodeFast_Fixed64_Repeated_Tag1Byte},
+    {0x0009000005000040, &upb_DecodeFast_Bool_Scalar_Tag1Byte},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x003800003f000031, &upb_prf8_1bt},
-    {0x004000003f000039, &upb_prf8_1bt},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
   })
 };
 
-const upb_MiniTable* validate__Fixed64Rules_msg_init_ptr = &validate__Fixed64Rules_msg_init;
-static const upb_MiniTableField validate_SFixed32Rules__fields[8] = {
+typedef struct {
+  upb_MiniTableField fields[8];
+} validate__SFixed32Rules_msg_init_Fields;
+
+static const validate__SFixed32Rules_msg_init_Fields validate_SFixed32Rules__fields = {{
   {1, 12, 64, kUpb_NoSub, 15, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)},
   {2, 16, 65, kUpb_NoSub, 15, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)},
   {3, 20, 66, kUpb_NoSub, 15, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)},
@@ -430,29 +502,39 @@ static const upb_MiniTableField validate_SFixed32Rules__fields[8] = {
   {6, 32, 0, kUpb_NoSub, 15, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   {7, UPB_SIZE(36, 40), 0, kUpb_NoSub, 15, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   {8, 9, 69, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
-};
+}};
 
 const upb_MiniTable validate__SFixed32Rules_msg_init = {
-  NULL,
-  &validate_SFixed32Rules__fields[0],
-  UPB_SIZE(40, 48), 8, kUpb_ExtMode_NonExtendable, 8, UPB_FASTTABLE_MASK(56), 0,
+  &validate_SFixed32Rules__fields.fields[0],
+  UPB_SIZE(40, 48), 8, kUpb_ExtMode_NonExtendable, 8, UPB_FASTTABLE_MASK(120), 0,
 #ifdef UPB_TRACING_ENABLED
   "validate.SFixed32Rules",
 #endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x000c00000000000d, &upb_DecodeFast_Fixed32_Scalar_Tag1Byte},
+    {0x0010000001000015, &upb_DecodeFast_Fixed32_Scalar_Tag1Byte},
+    {0x001400000200001d, &upb_DecodeFast_Fixed32_Scalar_Tag1Byte},
+    {0x0018000003000025, &upb_DecodeFast_Fixed32_Scalar_Tag1Byte},
+    {0x001c00000400002d, &upb_DecodeFast_Fixed32_Scalar_Tag1Byte},
+    {0x002000003f000035, &upb_DecodeFast_Fixed32_Repeated_Tag1Byte},
+    {0x002800003f00003d, &upb_DecodeFast_Fixed32_Repeated_Tag1Byte},
+    {0x0009000005000040, &upb_DecodeFast_Bool_Scalar_Tag1Byte},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x002000003f000035, &upb_prf4_1bt},
-    {0x002800003f00003d, &upb_prf4_1bt},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
   })
 };
 
-const upb_MiniTable* validate__SFixed32Rules_msg_init_ptr = &validate__SFixed32Rules_msg_init;
-static const upb_MiniTableField validate_SFixed64Rules__fields[8] = {
+typedef struct {
+  upb_MiniTableField fields[8];
+} validate__SFixed64Rules_msg_init_Fields;
+
+static const validate__SFixed64Rules_msg_init_Fields validate_SFixed64Rules__fields = {{
   {1, UPB_SIZE(24, 16), 64, kUpb_NoSub, 16, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)},
   {2, UPB_SIZE(32, 24), 65, kUpb_NoSub, 16, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)},
   {3, UPB_SIZE(40, 32), 66, kUpb_NoSub, 16, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)},
@@ -461,47 +543,60 @@ static const upb_MiniTableField validate_SFixed64Rules__fields[8] = {
   {6, UPB_SIZE(12, 56), 0, kUpb_NoSub, 16, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   {7, UPB_SIZE(16, 64), 0, kUpb_NoSub, 16, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   {8, 9, 69, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
-};
+}};
 
 const upb_MiniTable validate__SFixed64Rules_msg_init = {
-  NULL,
-  &validate_SFixed64Rules__fields[0],
-  UPB_SIZE(64, 72), 8, kUpb_ExtMode_NonExtendable, 8, UPB_FASTTABLE_MASK(56), 0,
+  &validate_SFixed64Rules__fields.fields[0],
+  UPB_SIZE(64, 72), 8, kUpb_ExtMode_NonExtendable, 8, UPB_FASTTABLE_MASK(120), 0,
 #ifdef UPB_TRACING_ENABLED
   "validate.SFixed64Rules",
 #endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0010000000000009, &upb_DecodeFast_Fixed64_Scalar_Tag1Byte},
+    {0x0018000001000011, &upb_DecodeFast_Fixed64_Scalar_Tag1Byte},
+    {0x0020000002000019, &upb_DecodeFast_Fixed64_Scalar_Tag1Byte},
+    {0x0028000003000021, &upb_DecodeFast_Fixed64_Scalar_Tag1Byte},
+    {0x0030000004000029, &upb_DecodeFast_Fixed64_Scalar_Tag1Byte},
+    {0x003800003f000031, &upb_DecodeFast_Fixed64_Repeated_Tag1Byte},
+    {0x004000003f000039, &upb_DecodeFast_Fixed64_Repeated_Tag1Byte},
+    {0x0009000005000040, &upb_DecodeFast_Bool_Scalar_Tag1Byte},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x003800003f000031, &upb_prf8_1bt},
-    {0x004000003f000039, &upb_prf8_1bt},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
   })
 };
 
-const upb_MiniTable* validate__SFixed64Rules_msg_init_ptr = &validate__SFixed64Rules_msg_init;
-static const upb_MiniTableField validate_BoolRules__fields[1] = {
+typedef struct {
+  upb_MiniTableField fields[1];
+} validate__BoolRules_msg_init_Fields;
+
+static const validate__BoolRules_msg_init_Fields validate_BoolRules__fields = {{
   {1, 9, 64, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
-};
+}};
 
 const upb_MiniTable validate__BoolRules_msg_init = {
-  NULL,
-  &validate_BoolRules__fields[0],
-  16, 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(255), 0,
+  &validate_BoolRules__fields.fields[0],
+  16, 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(8), 0,
 #ifdef UPB_TRACING_ENABLED
   "validate.BoolRules",
 #endif
+  UPB_FASTTABLE_INIT({
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0009000000000008, &upb_DecodeFast_Bool_Scalar_Tag1Byte},
+  })
 };
 
-const upb_MiniTable* validate__BoolRules_msg_init_ptr = &validate__BoolRules_msg_init;
-static const upb_MiniTableSubInternal validate_StringRules__submsgs[1] = {
-  {.UPB_PRIVATE(subenum) = &validate__KnownRegex_enum_init},
-};
+typedef struct {
+  upb_MiniTableField fields[26];
+  upb_MiniTableSubInternal subs[1];
+} validate__StringRules_msg_init_Fields;
 
-static const upb_MiniTableField validate_StringRules__fields[26] = {
+static const validate__StringRules_msg_init_Fields validate_StringRules__fields = {{
   {1, UPB_SIZE(28, 24), 64, kUpb_NoSub, 12, (int)kUpb_FieldMode_Scalar | (int)kUpb_LabelFlags_IsAlternate | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
   {2, UPB_SIZE(80, 120), 65, kUpb_NoSub, 4, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)},
   {3, UPB_SIZE(88, 128), 66, kUpb_NoSub, 4, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)},
@@ -525,46 +620,48 @@ static const upb_MiniTableField validate_StringRules__fields[26] = {
   {21, UPB_SIZE(24, 16), UPB_SIZE(-21, -13), kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
   {22, UPB_SIZE(24, 16), UPB_SIZE(-21, -13), kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
   {23, UPB_SIZE(68, 104), 75, kUpb_NoSub, 12, (int)kUpb_FieldMode_Scalar | (int)kUpb_LabelFlags_IsAlternate | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
-  {24, UPB_SIZE(24, 16), UPB_SIZE(-21, -13), 0, 14, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)},
+  {24, UPB_SIZE(24, 16), UPB_SIZE(-21, -13), 9, 14, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)},
   {25, 10, 76, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
   {26, 11, 77, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
-};
+ },
+  {
+  {.UPB_PRIVATE(subenum) = &validate__KnownRegex_enum_init},
+}};
 
 const upb_MiniTable validate__StringRules_msg_init = {
-  &validate_StringRules__submsgs[0],
-  &validate_StringRules__fields[0],
+  &validate_StringRules__fields.fields[0],
   UPB_SIZE(128, 184), 26, kUpb_ExtMode_NonExtendable, 26, UPB_FASTTABLE_MASK(248), 0,
 #ifdef UPB_TRACING_ENABLED
   "validate.StringRules",
 #endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x001800000000000a, &upb_DecodeFast_Bytes_Scalar_Tag1Byte},
+    {0x0078000001000010, &upb_DecodeFast_Varint64_Scalar_Tag1Byte},
+    {0x0080000002000018, &upb_DecodeFast_Varint64_Scalar_Tag1Byte},
+    {0x0088000003000020, &upb_DecodeFast_Varint64_Scalar_Tag1Byte},
+    {0x0090000004000028, &upb_DecodeFast_Varint64_Scalar_Tag1Byte},
+    {0x0028000005000032, &upb_DecodeFast_Bytes_Scalar_Tag1Byte},
+    {0x003800000600003a, &upb_DecodeFast_Bytes_Scalar_Tag1Byte},
+    {0x0048000007000042, &upb_DecodeFast_Bytes_Scalar_Tag1Byte},
+    {0x005800000800004a, &upb_DecodeFast_Bytes_Scalar_Tag1Byte},
+    {0x009800003f000052, &upb_DecodeFast_Bytes_Repeated_Tag1Byte},
+    {0x00a000003f00005a, &upb_DecodeFast_Bytes_Repeated_Tag1Byte},
+    {0x0010000c0c000060, &upb_DecodeFast_Bool_Oneof_Tag1Byte},
+    {0x0010000c0d000068, &upb_DecodeFast_Bool_Oneof_Tag1Byte},
+    {0x0010000c0e000070, &upb_DecodeFast_Bool_Oneof_Tag1Byte},
+    {0x0010000c0f000078, &upb_DecodeFast_Bool_Oneof_Tag1Byte},
+    {0x0010000c10000180, &upb_DecodeFast_Bool_Oneof_Tag2Byte},
+    {0x0010000c11000188, &upb_DecodeFast_Bool_Oneof_Tag2Byte},
+    {0x0010000c12000190, &upb_DecodeFast_Bool_Oneof_Tag2Byte},
+    {0x00a8000009000198, &upb_DecodeFast_Varint64_Scalar_Tag2Byte},
+    {0x00b000000a0001a0, &upb_DecodeFast_Varint64_Scalar_Tag2Byte},
+    {0x0010000c150001a8, &upb_DecodeFast_Bool_Oneof_Tag2Byte},
+    {0x0010000c160001b0, &upb_DecodeFast_Bool_Oneof_Tag2Byte},
+    {0x006800000b0001ba, &upb_DecodeFast_Bytes_Scalar_Tag2Byte},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x009800003f000052, &upb_prs_1bt},
-    {0x00a000003f00005a, &upb_prs_1bt},
-    {0x0010000c0c000060, &upb_pob1_1bt},
-    {0x0010000c0d000068, &upb_pob1_1bt},
-    {0x0010000c0e000070, &upb_pob1_1bt},
-    {0x0010000c0f000078, &upb_pob1_1bt},
-    {0x0010000c10000180, &upb_pob1_2bt},
-    {0x0010000c11000188, &upb_pob1_2bt},
-    {0x0010000c12000190, &upb_pob1_2bt},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0010000c150001a8, &upb_pob1_2bt},
-    {0x0010000c160001b0, &upb_pob1_2bt},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x000a00000c0001c8, &upb_DecodeFast_Bool_Scalar_Tag2Byte},
+    {0x000b00000d0001d0, &upb_DecodeFast_Bool_Scalar_Tag2Byte},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
@@ -573,8 +670,11 @@ const upb_MiniTable validate__StringRules_msg_init = {
   })
 };
 
-const upb_MiniTable* validate__StringRules_msg_init_ptr = &validate__StringRules_msg_init;
-static const upb_MiniTableField validate_BytesRules__fields[14] = {
+typedef struct {
+  upb_MiniTableField fields[14];
+} validate__BytesRules_msg_init_Fields;
+
+static const validate__BytesRules_msg_init_Fields validate_BytesRules__fields = {{
   {1, UPB_SIZE(24, 16), 64, kUpb_NoSub, 12, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
   {2, UPB_SIZE(64, 96), 65, kUpb_NoSub, 4, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)},
   {3, UPB_SIZE(72, 104), 66, kUpb_NoSub, 4, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)},
@@ -589,184 +689,258 @@ static const upb_MiniTableField validate_BytesRules__fields[14] = {
   {12, 11, UPB_SIZE(-21, -13), kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
   {13, UPB_SIZE(80, 128), 71, kUpb_NoSub, 4, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)},
   {14, 10, 72, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
-};
+}};
 
 const upb_MiniTable validate__BytesRules_msg_init = {
-  NULL,
-  &validate_BytesRules__fields[0],
+  &validate_BytesRules__fields.fields[0],
   UPB_SIZE(88, 136), 14, kUpb_ExtMode_NonExtendable, 14, UPB_FASTTABLE_MASK(120), 0,
 #ifdef UPB_TRACING_ENABLED
   "validate.BytesRules",
 #endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x007000003f000042, &upb_prb_1bt},
-    {0x007800003f00004a, &upb_prb_1bt},
-    {0x000b000c0a000050, &upb_pob1_1bt},
-    {0x000b000c0b000058, &upb_pob1_1bt},
-    {0x000b000c0c000060, &upb_pob1_1bt},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x001000000000000a, &upb_DecodeFast_Bytes_Scalar_Tag1Byte},
+    {0x0060000001000010, &upb_DecodeFast_Varint64_Scalar_Tag1Byte},
+    {0x0068000002000018, &upb_DecodeFast_Varint64_Scalar_Tag1Byte},
+    {0x0020000003000022, &upb_DecodeFast_Bytes_Scalar_Tag1Byte},
+    {0x003000000400002a, &upb_DecodeFast_Bytes_Scalar_Tag1Byte},
+    {0x0040000005000032, &upb_DecodeFast_Bytes_Scalar_Tag1Byte},
+    {0x005000000600003a, &upb_DecodeFast_Bytes_Scalar_Tag1Byte},
+    {0x007000003f000042, &upb_DecodeFast_Bytes_Repeated_Tag1Byte},
+    {0x007800003f00004a, &upb_DecodeFast_Bytes_Repeated_Tag1Byte},
+    {0x000b000c0a000050, &upb_DecodeFast_Bool_Oneof_Tag1Byte},
+    {0x000b000c0b000058, &upb_DecodeFast_Bool_Oneof_Tag1Byte},
+    {0x000b000c0c000060, &upb_DecodeFast_Bool_Oneof_Tag1Byte},
+    {0x0080000007000068, &upb_DecodeFast_Varint64_Scalar_Tag1Byte},
+    {0x000a000008000070, &upb_DecodeFast_Bool_Scalar_Tag1Byte},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
   })
 };
 
-const upb_MiniTable* validate__BytesRules_msg_init_ptr = &validate__BytesRules_msg_init;
-static const upb_MiniTableField validate_EnumRules__fields[4] = {
+typedef struct {
+  upb_MiniTableField fields[4];
+} validate__EnumRules_msg_init_Fields;
+
+static const validate__EnumRules_msg_init_Fields validate_EnumRules__fields = {{
   {1, 12, 64, kUpb_NoSub, 5, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)},
   {2, 9, 65, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
   {3, 16, 0, kUpb_NoSub, 5, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   {4, UPB_SIZE(20, 24), 0, kUpb_NoSub, 5, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-};
+}};
 
 const upb_MiniTable validate__EnumRules_msg_init = {
-  NULL,
-  &validate_EnumRules__fields[0],
+  &validate_EnumRules__fields.fields[0],
   UPB_SIZE(24, 32), 4, kUpb_ExtMode_NonExtendable, 4, UPB_FASTTABLE_MASK(56), 0,
 #ifdef UPB_TRACING_ENABLED
   "validate.EnumRules",
 #endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x001000003f000018, &upb_prv4_1bt},
-    {0x001800003f000020, &upb_prv4_1bt},
+    {0x000c000000000008, &upb_DecodeFast_Varint32_Scalar_Tag1Byte},
+    {0x0009000001000010, &upb_DecodeFast_Bool_Scalar_Tag1Byte},
+    {0x001000003f000018, &upb_DecodeFast_Varint32_Repeated_Tag1Byte},
+    {0x001800003f000020, &upb_DecodeFast_Varint32_Repeated_Tag1Byte},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
   })
 };
 
-const upb_MiniTable* validate__EnumRules_msg_init_ptr = &validate__EnumRules_msg_init;
-static const upb_MiniTableField validate_MessageRules__fields[2] = {
+typedef struct {
+  upb_MiniTableField fields[2];
+} validate__MessageRules_msg_init_Fields;
+
+static const validate__MessageRules_msg_init_Fields validate_MessageRules__fields = {{
   {1, 9, 64, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
   {2, 10, 65, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
-};
+}};
 
 const upb_MiniTable validate__MessageRules_msg_init = {
-  NULL,
-  &validate_MessageRules__fields[0],
-  16, 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(255), 0,
+  &validate_MessageRules__fields.fields[0],
+  16, 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
 #ifdef UPB_TRACING_ENABLED
   "validate.MessageRules",
 #endif
+  UPB_FASTTABLE_INIT({
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0009000000000008, &upb_DecodeFast_Bool_Scalar_Tag1Byte},
+    {0x000a000001000010, &upb_DecodeFast_Bool_Scalar_Tag1Byte},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+  })
 };
 
-const upb_MiniTable* validate__MessageRules_msg_init_ptr = &validate__MessageRules_msg_init;
-static const upb_MiniTableSubInternal validate_RepeatedRules__submsgs[1] = {
-  {.UPB_PRIVATE(submsg) = &validate__FieldRules_msg_init_ptr},
-};
+typedef struct {
+  upb_MiniTableField fields[5];
+  upb_MiniTableSubInternal subs[1];
+} validate__RepeatedRules_msg_init_Fields;
 
-static const upb_MiniTableField validate_RepeatedRules__fields[5] = {
+static const validate__RepeatedRules_msg_init_Fields validate_RepeatedRules__fields = {{
   {1, 16, 64, kUpb_NoSub, 4, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)},
   {2, 24, 65, kUpb_NoSub, 4, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)},
   {3, 9, 66, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
-  {4, UPB_SIZE(12, 32), 67, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {4, UPB_SIZE(12, 32), 67, UPB_SIZE(6, 7), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   {5, 10, 68, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
-};
+ },
+  {
+  {.UPB_PRIVATE(submsg) = &validate__FieldRules_msg_init},
+}};
 
 const upb_MiniTable validate__RepeatedRules_msg_init = {
-  &validate_RepeatedRules__submsgs[0],
-  &validate_RepeatedRules__fields[0],
-  UPB_SIZE(32, 40), 5, kUpb_ExtMode_NonExtendable, 5, UPB_FASTTABLE_MASK(255), 0,
+  &validate_RepeatedRules__fields.fields[0],
+  UPB_SIZE(32, 40), 5, kUpb_ExtMode_NonExtendable, 5, UPB_FASTTABLE_MASK(56), 0,
 #ifdef UPB_TRACING_ENABLED
   "validate.RepeatedRules",
 #endif
+  UPB_FASTTABLE_INIT({
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0010000000000008, &upb_DecodeFast_Varint64_Scalar_Tag1Byte},
+    {0x0018000001000010, &upb_DecodeFast_Varint64_Scalar_Tag1Byte},
+    {0x0009000002000018, &upb_DecodeFast_Bool_Scalar_Tag1Byte},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x000a000004000028, &upb_DecodeFast_Bool_Scalar_Tag1Byte},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+  })
 };
 
-const upb_MiniTable* validate__RepeatedRules_msg_init_ptr = &validate__RepeatedRules_msg_init;
-static const upb_MiniTableSubInternal validate_MapRules__submsgs[2] = {
-  {.UPB_PRIVATE(submsg) = &validate__FieldRules_msg_init_ptr},
-  {.UPB_PRIVATE(submsg) = &validate__FieldRules_msg_init_ptr},
-};
+typedef struct {
+  upb_MiniTableField fields[6];
+  upb_MiniTableSubInternal subs[2];
+} validate__MapRules_msg_init_Fields;
 
-static const upb_MiniTableField validate_MapRules__fields[6] = {
+static const validate__MapRules_msg_init_Fields validate_MapRules__fields = {{
   {1, UPB_SIZE(24, 16), 64, kUpb_NoSub, 4, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)},
   {2, UPB_SIZE(32, 24), 65, kUpb_NoSub, 4, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)},
   {3, 9, 66, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
-  {4, UPB_SIZE(12, 32), 67, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-  {5, UPB_SIZE(16, 40), 68, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {4, UPB_SIZE(12, 32), 67, 9, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {5, UPB_SIZE(16, 40), 68, UPB_SIZE(7, 8), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   {6, 10, 69, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
-};
+ },
+  {
+  {.UPB_PRIVATE(submsg) = &validate__FieldRules_msg_init},
+  {.UPB_PRIVATE(submsg) = &validate__FieldRules_msg_init},
+}};
 
 const upb_MiniTable validate__MapRules_msg_init = {
-  &validate_MapRules__submsgs[0],
-  &validate_MapRules__fields[0],
-  UPB_SIZE(40, 48), 6, kUpb_ExtMode_NonExtendable, 6, UPB_FASTTABLE_MASK(255), 0,
+  &validate_MapRules__fields.fields[0],
+  UPB_SIZE(40, 48), 6, kUpb_ExtMode_NonExtendable, 6, UPB_FASTTABLE_MASK(56), 0,
 #ifdef UPB_TRACING_ENABLED
   "validate.MapRules",
 #endif
+  UPB_FASTTABLE_INIT({
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0010000000000008, &upb_DecodeFast_Varint64_Scalar_Tag1Byte},
+    {0x0018000001000010, &upb_DecodeFast_Varint64_Scalar_Tag1Byte},
+    {0x0009000002000018, &upb_DecodeFast_Bool_Scalar_Tag1Byte},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x000a000005000030, &upb_DecodeFast_Bool_Scalar_Tag1Byte},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+  })
 };
 
-const upb_MiniTable* validate__MapRules_msg_init_ptr = &validate__MapRules_msg_init;
-static const upb_MiniTableField validate_AnyRules__fields[3] = {
+typedef struct {
+  upb_MiniTableField fields[3];
+} validate__AnyRules_msg_init_Fields;
+
+static const validate__AnyRules_msg_init_Fields validate_AnyRules__fields = {{
   {1, 9, 64, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
   {2, UPB_SIZE(12, 16), 0, kUpb_NoSub, 12, (int)kUpb_FieldMode_Array | (int)kUpb_LabelFlags_IsAlternate | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   {3, UPB_SIZE(16, 24), 0, kUpb_NoSub, 12, (int)kUpb_FieldMode_Array | (int)kUpb_LabelFlags_IsAlternate | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-};
+}};
 
 const upb_MiniTable validate__AnyRules_msg_init = {
-  NULL,
-  &validate_AnyRules__fields[0],
+  &validate_AnyRules__fields.fields[0],
   UPB_SIZE(24, 32), 3, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(24), 0,
 #ifdef UPB_TRACING_ENABLED
   "validate.AnyRules",
 #endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x001000003f000012, &upb_prs_1bt},
-    {0x001800003f00001a, &upb_prs_1bt},
+    {0x0009000000000008, &upb_DecodeFast_Bool_Scalar_Tag1Byte},
+    {0x001000003f000012, &upb_DecodeFast_Bytes_Repeated_Tag1Byte},
+    {0x001800003f00001a, &upb_DecodeFast_Bytes_Repeated_Tag1Byte},
   })
 };
 
-const upb_MiniTable* validate__AnyRules_msg_init_ptr = &validate__AnyRules_msg_init;
-static const upb_MiniTableSubInternal validate_DurationRules__submsgs[7] = {
-  {.UPB_PRIVATE(submsg) = &google__protobuf__Duration_msg_init_ptr},
-  {.UPB_PRIVATE(submsg) = &google__protobuf__Duration_msg_init_ptr},
-  {.UPB_PRIVATE(submsg) = &google__protobuf__Duration_msg_init_ptr},
-  {.UPB_PRIVATE(submsg) = &google__protobuf__Duration_msg_init_ptr},
-  {.UPB_PRIVATE(submsg) = &google__protobuf__Duration_msg_init_ptr},
-  {.UPB_PRIVATE(submsg) = &google__protobuf__Duration_msg_init_ptr},
-  {.UPB_PRIVATE(submsg) = &google__protobuf__Duration_msg_init_ptr},
-};
+typedef struct {
+  upb_MiniTableField fields[8];
+  upb_MiniTableSubInternal subs[7];
+} validate__DurationRules_msg_init_Fields;
 
-static const upb_MiniTableField validate_DurationRules__fields[8] = {
+static const validate__DurationRules_msg_init_Fields validate_DurationRules__fields = {{
   {1, 9, 64, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
-  {2, UPB_SIZE(12, 16), 65, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-  {3, UPB_SIZE(16, 24), 66, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-  {4, UPB_SIZE(20, 32), 67, 2, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-  {5, UPB_SIZE(24, 40), 68, 3, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-  {6, UPB_SIZE(28, 48), 69, 4, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-  {7, UPB_SIZE(32, 56), 0, 5, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-  {8, UPB_SIZE(36, 64), 0, 6, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-};
+  {2, UPB_SIZE(12, 16), 65, 21, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {3, UPB_SIZE(16, 24), 66, UPB_SIZE(19, 20), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {4, UPB_SIZE(20, 32), 67, UPB_SIZE(17, 19), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {5, UPB_SIZE(24, 40), 68, UPB_SIZE(15, 18), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {6, UPB_SIZE(28, 48), 69, UPB_SIZE(13, 17), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {7, UPB_SIZE(32, 56), 0, UPB_SIZE(11, 16), 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {8, UPB_SIZE(36, 64), 0, UPB_SIZE(9, 15), 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+ },
+  {
+  {.UPB_PRIVATE(submsg) = &google__protobuf__Duration_msg_init},
+  {.UPB_PRIVATE(submsg) = &google__protobuf__Duration_msg_init},
+  {.UPB_PRIVATE(submsg) = &google__protobuf__Duration_msg_init},
+  {.UPB_PRIVATE(submsg) = &google__protobuf__Duration_msg_init},
+  {.UPB_PRIVATE(submsg) = &google__protobuf__Duration_msg_init},
+  {.UPB_PRIVATE(submsg) = &google__protobuf__Duration_msg_init},
+  {.UPB_PRIVATE(submsg) = &google__protobuf__Duration_msg_init},
+}};
 
 const upb_MiniTable validate__DurationRules_msg_init = {
-  &validate_DurationRules__submsgs[0],
-  &validate_DurationRules__fields[0],
-  UPB_SIZE(40, 72), 8, kUpb_ExtMode_NonExtendable, 8, UPB_FASTTABLE_MASK(120), 0,
+  &validate_DurationRules__fields.fields[0],
+  UPB_SIZE(40, 72), 8, kUpb_ExtMode_NonExtendable, 8, UPB_FASTTABLE_MASK(8), 0,
 #ifdef UPB_TRACING_ENABLED
   "validate.DurationRules",
 #endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0009000000000008, &upb_DecodeFast_Bool_Scalar_Tag1Byte},
+  })
+};
+
+typedef struct {
+  upb_MiniTableField fields[9];
+  upb_MiniTableSubInternal subs[6];
+} validate__TimestampRules_msg_init_Fields;
+
+static const validate__TimestampRules_msg_init_Fields validate_TimestampRules__fields = {{
+  {1, 10, 64, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
+  {2, 16, 65, UPB_SIZE(24, 25), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {3, UPB_SIZE(20, 24), 66, UPB_SIZE(22, 24), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {4, UPB_SIZE(24, 32), 67, UPB_SIZE(20, 23), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {5, UPB_SIZE(28, 40), 68, UPB_SIZE(18, 22), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {6, UPB_SIZE(32, 48), 69, UPB_SIZE(16, 21), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {7, 11, 70, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
+  {8, 12, 71, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
+  {9, UPB_SIZE(36, 56), 72, UPB_SIZE(8, 14), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+ },
+  {
+  {.UPB_PRIVATE(submsg) = &google__protobuf__Timestamp_msg_init},
+  {.UPB_PRIVATE(submsg) = &google__protobuf__Timestamp_msg_init},
+  {.UPB_PRIVATE(submsg) = &google__protobuf__Timestamp_msg_init},
+  {.UPB_PRIVATE(submsg) = &google__protobuf__Timestamp_msg_init},
+  {.UPB_PRIVATE(submsg) = &google__protobuf__Timestamp_msg_init},
+  {.UPB_PRIVATE(submsg) = &google__protobuf__Duration_msg_init},
+}};
+
+const upb_MiniTable validate__TimestampRules_msg_init = {
+  &validate_TimestampRules__fields.fields[0],
+  UPB_SIZE(40, 64), 9, kUpb_ExtMode_NonExtendable, 9, UPB_FASTTABLE_MASK(120), 0,
+#ifdef UPB_TRACING_ENABLED
+  "validate.TimestampRules",
+#endif
+  UPB_FASTTABLE_INIT({
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x000a000000000008, &upb_DecodeFast_Bool_Scalar_Tag1Byte},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x003800003f05003a, &upb_prm_1bt_maxmaxb},
-    {0x004000003f060042, &upb_prm_1bt_maxmaxb},
+    {0x000b000006000038, &upb_DecodeFast_Bool_Scalar_Tag1Byte},
+    {0x000c000007000040, &upb_DecodeFast_Bool_Scalar_Tag1Byte},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
@@ -777,38 +951,6 @@ const upb_MiniTable validate__DurationRules_msg_init = {
   })
 };
 
-const upb_MiniTable* validate__DurationRules_msg_init_ptr = &validate__DurationRules_msg_init;
-static const upb_MiniTableSubInternal validate_TimestampRules__submsgs[6] = {
-  {.UPB_PRIVATE(submsg) = &google__protobuf__Timestamp_msg_init_ptr},
-  {.UPB_PRIVATE(submsg) = &google__protobuf__Timestamp_msg_init_ptr},
-  {.UPB_PRIVATE(submsg) = &google__protobuf__Timestamp_msg_init_ptr},
-  {.UPB_PRIVATE(submsg) = &google__protobuf__Timestamp_msg_init_ptr},
-  {.UPB_PRIVATE(submsg) = &google__protobuf__Timestamp_msg_init_ptr},
-  {.UPB_PRIVATE(submsg) = &google__protobuf__Duration_msg_init_ptr},
-};
-
-static const upb_MiniTableField validate_TimestampRules__fields[9] = {
-  {1, 10, 64, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
-  {2, 16, 65, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-  {3, UPB_SIZE(20, 24), 66, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-  {4, UPB_SIZE(24, 32), 67, 2, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-  {5, UPB_SIZE(28, 40), 68, 3, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-  {6, UPB_SIZE(32, 48), 69, 4, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-  {7, 11, 70, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
-  {8, 12, 71, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
-  {9, UPB_SIZE(36, 56), 72, 5, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-};
-
-const upb_MiniTable validate__TimestampRules_msg_init = {
-  &validate_TimestampRules__submsgs[0],
-  &validate_TimestampRules__fields[0],
-  UPB_SIZE(40, 64), 9, kUpb_ExtMode_NonExtendable, 9, UPB_FASTTABLE_MASK(255), 0,
-#ifdef UPB_TRACING_ENABLED
-  "validate.TimestampRules",
-#endif
-};
-
-const upb_MiniTable* validate__TimestampRules_msg_init_ptr = &validate__TimestampRules_msg_init;
 const upb_MiniTableEnum validate__KnownRegex_enum_init = {
     64,
     0,
@@ -820,30 +962,30 @@ const upb_MiniTableEnum validate__KnownRegex_enum_init = {
 
 UPB_LINKARR_APPEND(upb_AllExts)
 const upb_MiniTableExtension validate_disabled_ext = {
-  {1071, 0, 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | (int)kUpb_LabelFlags_IsExtension | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
-  &google__protobuf__MessageOptions_msg_init,
+  {1071, 0, 0, UPB_SIZE(3, 4), 8, (int)kUpb_FieldMode_Scalar | (int)kUpb_LabelFlags_IsExtension | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
   {.UPB_PRIVATE(submsg) = NULL},
+  &google__protobuf__MessageOptions_msg_init,
 
 };
 UPB_LINKARR_APPEND(upb_AllExts)
 const upb_MiniTableExtension validate_ignored_ext = {
-  {1072, 0, 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | (int)kUpb_LabelFlags_IsExtension | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
-  &google__protobuf__MessageOptions_msg_init,
+  {1072, 0, 0, UPB_SIZE(3, 4), 8, (int)kUpb_FieldMode_Scalar | (int)kUpb_LabelFlags_IsExtension | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
   {.UPB_PRIVATE(submsg) = NULL},
+  &google__protobuf__MessageOptions_msg_init,
 
 };
 UPB_LINKARR_APPEND(upb_AllExts)
 const upb_MiniTableExtension validate_required_ext = {
-  {1071, 0, 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | (int)kUpb_LabelFlags_IsExtension | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
-  &google__protobuf__OneofOptions_msg_init,
+  {1071, 0, 0, UPB_SIZE(3, 4), 8, (int)kUpb_FieldMode_Scalar | (int)kUpb_LabelFlags_IsExtension | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
   {.UPB_PRIVATE(submsg) = NULL},
+  &google__protobuf__OneofOptions_msg_init,
 
 };
 UPB_LINKARR_APPEND(upb_AllExts)
 const upb_MiniTableExtension validate_rules_ext = {
-  {1071, 0, 0, 0, 11, (int)kUpb_FieldMode_Scalar | (int)kUpb_LabelFlags_IsExtension | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-  &google__protobuf__FieldOptions_msg_init,
+  {1071, 0, 0, UPB_SIZE(3, 4), 11, (int)kUpb_FieldMode_Scalar | (int)kUpb_LabelFlags_IsExtension | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   {.UPB_PRIVATE(submsg) = &validate__FieldRules_msg_init},
+  &google__protobuf__FieldOptions_msg_init,
 
 };
 static const upb_MiniTable *messages_layout[23] = {
@@ -884,6 +1026,20 @@ static const upb_MiniTableExtension *extensions_layout[4] = {
   &validate_rules_ext,
 };
 
+UPB_LINKARR_DECLARE(upb_AllExts, const upb_MiniTableExtension);
+UPB_CONSTRUCTOR(upb_GeneratedRegistry_Constructor, validate_validate_proto_ext_constructor) {
+  static bool finished = false;
+  if (finished) return;
+  finished = true;
+  static UPB_PRIVATE(upb_GeneratedExtensionListEntry) entry = {
+    UPB_LINKARR_START(upb_AllExts),
+    UPB_LINKARR_STOP(upb_AllExts),
+    NULL
+  };
+  UPB_ASSERT(entry.next == NULL);
+  entry.next = UPB_PRIVATE(upb_generated_extension_list);
+  UPB_PRIVATE(upb_generated_extension_list) = &entry;
+}
 const upb_MiniTableFile validate_validate_proto_upb_file_layout = {
   messages_layout,
   enums_layout,

@@ -19,19 +19,12 @@ extern "C" {
 #endif
 
 extern const upb_MiniTable grpc__channelz__v2__PropertyList_msg_init;
-extern const upb_MiniTable* grpc__channelz__v2__PropertyList_msg_init_ptr;
 extern const upb_MiniTable grpc__channelz__v2__PropertyList__Element_msg_init;
-extern const upb_MiniTable* grpc__channelz__v2__PropertyList__Element_msg_init_ptr;
 extern const upb_MiniTable grpc__channelz__v2__PropertyGrid_msg_init;
-extern const upb_MiniTable* grpc__channelz__v2__PropertyGrid_msg_init_ptr;
 extern const upb_MiniTable grpc__channelz__v2__PropertyGrid__Row_msg_init;
-extern const upb_MiniTable* grpc__channelz__v2__PropertyGrid__Row_msg_init_ptr;
 extern const upb_MiniTable grpc__channelz__v2__PropertyTable_msg_init;
-extern const upb_MiniTable* grpc__channelz__v2__PropertyTable_msg_init_ptr;
 extern const upb_MiniTable grpc__channelz__v2__PropertyTable__Row_msg_init;
-extern const upb_MiniTable* grpc__channelz__v2__PropertyTable__Row_msg_init_ptr;
 extern const upb_MiniTable grpc__channelz__v2__PropertyValue_msg_init;
-extern const upb_MiniTable* grpc__channelz__v2__PropertyValue_msg_init_ptr;
 
 extern const upb_MiniTableFile src_proto_grpc_channelz_v2_property_list_proto_upb_file_layout;
 

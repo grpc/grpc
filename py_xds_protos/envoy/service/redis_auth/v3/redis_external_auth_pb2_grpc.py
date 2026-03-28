@@ -5,7 +5,7 @@ import warnings
 
 from envoy.service.redis_auth.v3 import redis_external_auth_pb2 as envoy_dot_service_dot_redis__auth_dot_v3_dot_redis__external__auth__pb2
 
-GRPC_GENERATED_VERSION = '1.74.0'
+GRPC_GENERATED_VERSION = '1.81.0.dev0'
 GRPC_VERSION = grpc.__version__
 _version_not_supported = False
 
@@ -18,14 +18,14 @@ except ImportError:
 if _version_not_supported:
     raise RuntimeError(
         f'The grpc package installed is at version {GRPC_VERSION},'
-        + f' but the generated code in envoy/service/redis_auth/v3/redis_external_auth_pb2_grpc.py depends on'
+        + ' but the generated code in envoy/service/redis_auth/v3/redis_external_auth_pb2_grpc.py depends on'
         + f' grpcio>={GRPC_GENERATED_VERSION}.'
         + f' Please upgrade your grpc module to grpcio>={GRPC_GENERATED_VERSION}'
         + f' or downgrade your generated code using grpcio-tools<={GRPC_VERSION}.'
     )
 
 
-class RedisProxyExternalAuthStub(object):
+class RedisProxyExternalAuthStub:
     """[#protodoc-title: Redis external authentication service]
 
     The messages used by the redis_proxy filter when performing external authentication.
@@ -46,7 +46,7 @@ class RedisProxyExternalAuthStub(object):
                 _registered_method=True)
 
 
-class RedisProxyExternalAuthServicer(object):
+class RedisProxyExternalAuthServicer:
     """[#protodoc-title: Redis external authentication service]
 
     The messages used by the redis_proxy filter when performing external authentication.
@@ -78,7 +78,7 @@ def add_RedisProxyExternalAuthServicer_to_server(servicer, server):
 
 
  # This class is part of an EXPERIMENTAL API.
-class RedisProxyExternalAuth(object):
+class RedisProxyExternalAuth:
     """[#protodoc-title: Redis external authentication service]
 
     The messages used by the redis_proxy filter when performing external authentication.

@@ -5,17 +5,20 @@
 # license that can be found in the LICENSE file or at
 # https://developers.google.com/open-source/licenses/bsd
 
+load("@bazel_skylib//rules:common_settings.bzl", "bool_flag")
+load("@rules_cc//cc:cc_test.bzl", "cc_test")
+load("@rules_cc//cc:defs.bzl", "cc_library")
 load("//bazel:proto_library.bzl", "proto_library")
+load("//upb/bazel:copts.bzl", "UPB_DEFAULT_COPTS", "UPB_DEFAULT_CPPOPTS")
 load(
-    "//bazel:upb_minitable_proto_library.bzl",
+    "//upb/bazel:upb_minitable_proto_library.bzl",
     "upb_minitable_proto_library",
 )
 load(
-    "//bazel:upb_proto_library.bzl",
+    "//upb/bazel:upb_proto_library.bzl",
     "upb_c_proto_library",
     "upb_proto_reflection_library",
 )
-load("//upb/bazel:build_defs.bzl", "UPB_DEFAULT_COPTS")
 
 package(default_applicable_licenses = ["//:license"])
 
@@ -36,7 +39,6 @@ cc_library(
         "map.h",
         "map_gencode_util.h",
         "message.h",
-        "tagged_ptr.h",
         "value.h",
     ],
     copts = UPB_DEFAULT_COPTS,
@@ -45,12 +47,26 @@ cc_library(
         ":internal",
         ":types",
         "//upb/base",
-        "//upb/mem",
-        "//upb:mini_table",
-        "//upb:port",
         "//upb/base:internal",
         "//upb/hash",
+        "//upb/mem",
+        "//upb/mini_table",
         "//upb/mini_table:internal",
+        "//upb/port",
+    ],
+)
+
+cc_library(
+    name = "message_cc",
+    hdrs = [
+        "accessors.hpp",
+    ],
+    copts = UPB_DEFAULT_CPPOPTS,
+    visibility = ["//upb:__subpackages__"],
+    deps = [
+        ":message",
+        "//upb/base",
+        "//upb/mini_table",
     ],
 )
 
@@ -68,19 +84,18 @@ cc_library(
         "internal/map.h",
         "internal/map_sorter.h",
         "internal/message.h",
-        "internal/tagged_ptr.h",
     ],
     copts = UPB_DEFAULT_COPTS,
     visibility = ["//visibility:public"],
     deps = [
         ":types",
         "//upb/base",
-        "//upb/mem",
-        "//upb:mini_table",
-        "//upb:port",
         "//upb/base:internal",
         "//upb/hash",
+        "//upb/mem",
+        "//upb/mini_table",
         "//upb/mini_table:internal",
+        "//upb/port",
     ],
 )
 
@@ -97,8 +112,8 @@ cc_library(
     deps = [
         ":internal",
         ":message",
-        "//upb:mini_table",
-        "//upb:port",
+        "//upb/mini_table",
+        "//upb/port",
     ],
 )
 
@@ -119,12 +134,12 @@ cc_library(
         ":iterator",
         ":message",
         "//upb/base",
-        "//upb:eps_copy_input_stream",
         "//upb/mem",
-        "//upb:mini_table",
-        "//upb:port",
-        "//upb:wire_reader",
+        "//upb/mini_table",
         "//upb/mini_table:internal",
+        "//upb/port",
+        "//upb/wire:eps_copy_input_stream",
+        "//upb/wire:reader",
     ],
 )
 
@@ -144,12 +159,12 @@ cc_library(
         ":internal",
         ":message",
         "//upb/base",
-        "//upb/mem",
-        "//upb:mini_table",
-        "//upb:port",
-        "//upb:wire",
         "//upb/base:internal",
+        "//upb/mem",
+        "//upb/mini_table",
         "//upb/mini_table:internal",
+        "//upb/port",
+        "//upb/wire",
     ],
 )
 
@@ -167,12 +182,12 @@ cc_library(
         ":internal",
         ":message",
         "//upb/base",
-        "//upb:eps_copy_input_stream",
         "//upb/mem",
-        "//upb:mini_table",
-        "//upb:port",
-        "//upb:wire",
-        "//upb:wire_reader",
+        "//upb/mini_table",
+        "//upb/port",
+        "//upb/wire",
+        "//upb/wire:eps_copy_input_stream",
+        "//upb/wire:reader",
     ],
 )
 
@@ -182,15 +197,15 @@ cc_test(
     deps = [
         ":copy",
         ":internal",
+        ":message",
         "//upb/base",
         "//upb/mem",
-        "//upb:message",
-        "//upb:mini_table",
-        "//upb:port",
-        "//upb:wire",
+        "//upb/mini_table",
+        "//upb/port",
         "//upb/test:test_messages_proto2_upb_minitable",
         "//upb/test:test_messages_proto2_upb_proto",
         "//upb/test:test_upb_proto",
+        "//upb/wire",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],
@@ -205,7 +220,7 @@ cc_library(
     visibility = ["//visibility:public"],
     deps = [
         ":message",
-        "//upb:port",
+        "//upb/port",
     ],
 )
 
@@ -219,8 +234,8 @@ cc_library(
     visibility = ["//visibility:public"],
     deps = [
         "//upb/base",
-        "//upb:port",
         "//upb/hash",
+        "//upb/port",
     ],
 )
 
@@ -257,16 +272,16 @@ cc_test(
         "//src/google/protobuf",
         "//upb/base",
         "//upb/mem",
-        "//upb:mini_descriptor",
-        "//upb:mini_table",
-        "//upb:port",
-        "//upb:wire",
+        "//upb/mini_descriptor",
         "//upb/mini_descriptor:internal",
+        "//upb/mini_table",
+        "//upb/port",
         "//upb/test:test_messages_proto2_upb_minitable",
         "//upb/test:test_messages_proto2_upb_proto",
         "//upb/test:test_messages_proto3_upb_minitable",
         "//upb/test:test_messages_proto3_upb_proto",
         "//upb/test:test_upb_proto",
+        "//upb/wire",
         "@abseil-cpp//absl/container:flat_hash_set",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
@@ -293,12 +308,13 @@ cc_test(
         ":internal",
         ":message",
         "//upb/base",
-        "//upb/mem",
-        "//upb:port",
-        "//upb:wire",
-        "//upb:wire_reader",
         "//upb/base:internal",
+        "//upb/mem",
+        "//upb/port",
         "//upb/test:test_messages_proto2_upb_proto",
+        "//upb/wire",
+        "//upb/wire:reader",
+        "//upb/wire/test_util:wire_message",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],
@@ -314,12 +330,12 @@ cc_test(
         "//src/google/protobuf",
         "//upb/base",
         "//upb/mem",
-        "//upb:mini_table",
-        "//upb:port",
-        "//upb:wire",
+        "//upb/mini_table",
+        "//upb/port",
         "//upb/test:test_messages_proto2_upb_minitable",
         "//upb/test:test_messages_proto2_upb_proto",
         "//upb/test:test_upb_proto",
+        "//upb/wire",
         "@abseil-cpp//absl/container:flat_hash_set",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
@@ -349,14 +365,14 @@ cc_test(
         "//src/google/protobuf",
         "//upb/base",
         "//upb/mem",
-        "//upb:mini_descriptor",
-        "//upb:mini_table",
-        "//upb:wire",
+        "//upb/mini_descriptor",
         "//upb/mini_descriptor:internal",
+        "//upb/mini_table",
         "//upb/test:test_messages_proto2_upb_proto",
         "//upb/test:test_messages_proto3_upb_proto",
         "//upb/test:test_proto_upb_minitable",
         "//upb/test:test_upb_proto",
+        "//upb/wire",
         "@abseil-cpp//absl/container:flat_hash_set",
         "@abseil-cpp//absl/strings:string_view",
         "@googletest//:gtest",
@@ -364,32 +380,49 @@ cc_test(
     ],
 )
 
+bool_flag(
+    name = "fuzz_dump_minitable",
+    build_setting_default = False,
+)
+
+config_setting(
+    name = "fuzz_dump_minitable_enabled",
+    flag_values = {":fuzz_dump_minitable": "True"},
+)
+
 # This test doesn't directly include any files from this subdir so it probably
 # should live elsewhere.
 cc_test(
     name = "test",
     srcs = ["test.cc"],
+    args = ["--fuzztest_stack_limit_kb=256"],
+    copts = UPB_DEFAULT_CPPOPTS + select({
+        ":fuzz_dump_minitable_enabled": ["-DUPB_FUZZ_DUMP_MINITABLE"],
+        "//conditions:default": [],
+    }),
     deps = [
+        ":compare",
         ":internal",
         ":message",
         ":message_test_upb_minitable_proto",
         ":message_test_upb_proto",
         ":message_test_upb_proto_reflection",
         "//upb/base",
-        "//upb:eps_copy_input_stream",
         "//upb/json",
         "//upb/mem",
-        "//upb:message_compare",
-        "//upb:mini_descriptor",
-        "//upb:mini_table",
-        "//upb:port",
-        "//upb:reflection",
-        "//upb:wire",
-        "//upb:wire_reader",
+        "//upb/mini_descriptor",
+        "//upb/mini_table",
+        "//upb/mini_table:debug_string",
         "//upb/mini_table:internal",
+        "//upb/port",
+        "//upb/reflection",
         "//upb/test:fuzz_util",
         "//upb/test:test_messages_proto3_upb_proto",
         "//upb/text:debug",
+        "//upb/wire",
+        "//upb/wire:eps_copy_input_stream",
+        "//upb/wire:reader",
+        "//upb/wire:writer",
         "@abseil-cpp//absl/cleanup",
         "@abseil-cpp//absl/numeric:bits",
         "@abseil-cpp//absl/strings",
@@ -444,7 +477,7 @@ cc_test(
         ":utf8_test_upb_proto",
         "//upb/base",
         "//upb/mem",
-        "//upb:wire",
+        "//upb/wire",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],

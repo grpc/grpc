@@ -5,7 +5,7 @@ import warnings
 
 from envoy.service.load_stats.v2 import lrs_pb2 as envoy_dot_service_dot_load__stats_dot_v2_dot_lrs__pb2
 
-GRPC_GENERATED_VERSION = '1.74.0'
+GRPC_GENERATED_VERSION = '1.81.0.dev0'
 GRPC_VERSION = grpc.__version__
 _version_not_supported = False
 
@@ -18,14 +18,14 @@ except ImportError:
 if _version_not_supported:
     raise RuntimeError(
         f'The grpc package installed is at version {GRPC_VERSION},'
-        + f' but the generated code in envoy/service/load_stats/v2/lrs_pb2_grpc.py depends on'
+        + ' but the generated code in envoy/service/load_stats/v2/lrs_pb2_grpc.py depends on'
         + f' grpcio>={GRPC_GENERATED_VERSION}.'
         + f' Please upgrade your grpc module to grpcio>={GRPC_GENERATED_VERSION}'
         + f' or downgrade your generated code using grpcio-tools<={GRPC_VERSION}.'
     )
 
 
-class LoadReportingServiceStub(object):
+class LoadReportingServiceStub:
     """[#protodoc-title: Load reporting service]
 
     """
@@ -43,7 +43,7 @@ class LoadReportingServiceStub(object):
                 _registered_method=True)
 
 
-class LoadReportingServiceServicer(object):
+class LoadReportingServiceServicer:
     """[#protodoc-title: Load reporting service]
 
     """
@@ -98,7 +98,7 @@ def add_LoadReportingServiceServicer_to_server(servicer, server):
 
 
  # This class is part of an EXPERIMENTAL API.
-class LoadReportingService(object):
+class LoadReportingService:
     """[#protodoc-title: Load reporting service]
 
     """

@@ -10,9 +10,7 @@
 #define ENVOY_CONFIG_COMMON_MUTATION_RULES_V3_MUTATION_RULES_PROTO_UPB_H__UPB_H_
 
 #include "upb/generated_code_support.h"
-
 #include "envoy/config/common/mutation_rules/v3/mutation_rules.upb_minitable.h"
-
 #include "envoy/config/core/v3/base.upb_minitable.h"
 #include "envoy/type/matcher/v3/regex.upb_minitable.h"
 #include "envoy/type/matcher/v3/string.upb_minitable.h"
@@ -26,10 +24,18 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+typedef struct envoy_config_common_mutation_rules_v3_HeaderMutationRules {
+  upb_Message UPB_PRIVATE(base);
+} envoy_config_common_mutation_rules_v3_HeaderMutationRules;
 
-typedef struct envoy_config_common_mutation_rules_v3_HeaderMutationRules { upb_Message UPB_PRIVATE(base); } envoy_config_common_mutation_rules_v3_HeaderMutationRules;
-typedef struct envoy_config_common_mutation_rules_v3_HeaderMutation { upb_Message UPB_PRIVATE(base); } envoy_config_common_mutation_rules_v3_HeaderMutation;
-typedef struct envoy_config_common_mutation_rules_v3_HeaderMutation_RemoveOnMatch { upb_Message UPB_PRIVATE(base); } envoy_config_common_mutation_rules_v3_HeaderMutation_RemoveOnMatch;
+typedef struct envoy_config_common_mutation_rules_v3_HeaderMutation {
+  upb_Message UPB_PRIVATE(base);
+} envoy_config_common_mutation_rules_v3_HeaderMutation;
+
+typedef struct envoy_config_common_mutation_rules_v3_HeaderMutation_RemoveOnMatch {
+  upb_Message UPB_PRIVATE(base);
+} envoy_config_common_mutation_rules_v3_HeaderMutation_RemoveOnMatch;
+
 struct envoy_config_core_v3_HeaderValueOption;
 struct envoy_type_matcher_v3_RegexMatcher;
 struct envoy_type_matcher_v3_StringMatcher;
@@ -38,167 +44,170 @@ struct google_protobuf_BoolValue;
 
 
 /* envoy.config.common.mutation_rules.v3.HeaderMutationRules */
-
 UPB_INLINE envoy_config_common_mutation_rules_v3_HeaderMutationRules* envoy_config_common_mutation_rules_v3_HeaderMutationRules_new(upb_Arena* arena) {
   return (envoy_config_common_mutation_rules_v3_HeaderMutationRules*)_upb_Message_New(&envoy__config__common__mutation_0rules__v3__HeaderMutationRules_msg_init, arena);
 }
-UPB_INLINE envoy_config_common_mutation_rules_v3_HeaderMutationRules* envoy_config_common_mutation_rules_v3_HeaderMutationRules_parse(const char* buf, size_t size, upb_Arena* arena) {
+UPB_INLINE envoy_config_common_mutation_rules_v3_HeaderMutationRules* envoy_config_common_mutation_rules_v3_HeaderMutationRules_parse(const char* buf, size_t size,
+                                        upb_Arena* arena) {
   envoy_config_common_mutation_rules_v3_HeaderMutationRules* ret = envoy_config_common_mutation_rules_v3_HeaderMutationRules_new(arena);
   if (!ret) return NULL;
-  if (upb_Decode(buf, size, UPB_UPCAST(ret), &envoy__config__common__mutation_0rules__v3__HeaderMutationRules_msg_init, NULL, 0, arena) !=
-      kUpb_DecodeStatus_Ok) {
-    return NULL;
-  }
-  return ret;
-}
-UPB_INLINE envoy_config_common_mutation_rules_v3_HeaderMutationRules* envoy_config_common_mutation_rules_v3_HeaderMutationRules_parse_ex(const char* buf, size_t size,
-                           const upb_ExtensionRegistry* extreg,
-                           int options, upb_Arena* arena) {
-  envoy_config_common_mutation_rules_v3_HeaderMutationRules* ret = envoy_config_common_mutation_rules_v3_HeaderMutationRules_new(arena);
-  if (!ret) return NULL;
-  if (upb_Decode(buf, size, UPB_UPCAST(ret), &envoy__config__common__mutation_0rules__v3__HeaderMutationRules_msg_init, extreg, options,
+  if (upb_Decode(buf, size, UPB_UPCAST(ret), &envoy__config__common__mutation_0rules__v3__HeaderMutationRules_msg_init, NULL, 0,
                  arena) != kUpb_DecodeStatus_Ok) {
     return NULL;
   }
   return ret;
 }
-UPB_INLINE char* envoy_config_common_mutation_rules_v3_HeaderMutationRules_serialize(const envoy_config_common_mutation_rules_v3_HeaderMutationRules* msg, upb_Arena* arena, size_t* len) {
+UPB_INLINE envoy_config_common_mutation_rules_v3_HeaderMutationRules* envoy_config_common_mutation_rules_v3_HeaderMutationRules_parse_ex(
+    const char* buf, size_t size, const upb_ExtensionRegistry* extreg,
+    int options, upb_Arena* arena) {
+  envoy_config_common_mutation_rules_v3_HeaderMutationRules* ret = envoy_config_common_mutation_rules_v3_HeaderMutationRules_new(arena);
+  if (!ret) return NULL;
+  if (upb_Decode(buf, size, UPB_UPCAST(ret), &envoy__config__common__mutation_0rules__v3__HeaderMutationRules_msg_init, extreg,
+                 options, arena) != kUpb_DecodeStatus_Ok) {
+    return NULL;
+  }
+  return ret;
+}
+UPB_INLINE char* envoy_config_common_mutation_rules_v3_HeaderMutationRules_serialize(const envoy_config_common_mutation_rules_v3_HeaderMutationRules* msg,
+                                      upb_Arena* arena, size_t* len) {
   char* ptr;
   (void)upb_Encode(UPB_UPCAST(msg), &envoy__config__common__mutation_0rules__v3__HeaderMutationRules_msg_init, 0, arena, &ptr, len);
   return ptr;
 }
-UPB_INLINE char* envoy_config_common_mutation_rules_v3_HeaderMutationRules_serialize_ex(const envoy_config_common_mutation_rules_v3_HeaderMutationRules* msg, int options,
-                                 upb_Arena* arena, size_t* len) {
+UPB_INLINE char* envoy_config_common_mutation_rules_v3_HeaderMutationRules_serialize_ex(const envoy_config_common_mutation_rules_v3_HeaderMutationRules* msg,
+                                         int options, upb_Arena* arena,
+                                         size_t* len) {
   char* ptr;
   (void)upb_Encode(UPB_UPCAST(msg), &envoy__config__common__mutation_0rules__v3__HeaderMutationRules_msg_init, options, arena, &ptr, len);
   return ptr;
 }
 UPB_INLINE void envoy_config_common_mutation_rules_v3_HeaderMutationRules_clear_allow_all_routing(envoy_config_common_mutation_rules_v3_HeaderMutationRules* msg) {
-  const upb_MiniTableField field = {1, UPB_SIZE(12, 16), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {1, UPB_SIZE(12, 16), 64, UPB_SIZE(21, 22), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE const struct google_protobuf_BoolValue* envoy_config_common_mutation_rules_v3_HeaderMutationRules_allow_all_routing(const envoy_config_common_mutation_rules_v3_HeaderMutationRules* msg) {
   const struct google_protobuf_BoolValue* default_val = NULL;
   const struct google_protobuf_BoolValue* ret;
-  const upb_MiniTableField field = {1, UPB_SIZE(12, 16), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {1, UPB_SIZE(12, 16), 64, UPB_SIZE(21, 22), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&google__protobuf__BoolValue_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
 }
 UPB_INLINE bool envoy_config_common_mutation_rules_v3_HeaderMutationRules_has_allow_all_routing(const envoy_config_common_mutation_rules_v3_HeaderMutationRules* msg) {
-  const upb_MiniTableField field = {1, UPB_SIZE(12, 16), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {1, UPB_SIZE(12, 16), 64, UPB_SIZE(21, 22), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   return upb_Message_HasBaseField(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE void envoy_config_common_mutation_rules_v3_HeaderMutationRules_clear_allow_envoy(envoy_config_common_mutation_rules_v3_HeaderMutationRules* msg) {
-  const upb_MiniTableField field = {2, UPB_SIZE(16, 24), 65, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {2, UPB_SIZE(16, 24), 65, UPB_SIZE(19, 21), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE const struct google_protobuf_BoolValue* envoy_config_common_mutation_rules_v3_HeaderMutationRules_allow_envoy(const envoy_config_common_mutation_rules_v3_HeaderMutationRules* msg) {
   const struct google_protobuf_BoolValue* default_val = NULL;
   const struct google_protobuf_BoolValue* ret;
-  const upb_MiniTableField field = {2, UPB_SIZE(16, 24), 65, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {2, UPB_SIZE(16, 24), 65, UPB_SIZE(19, 21), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&google__protobuf__BoolValue_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
 }
 UPB_INLINE bool envoy_config_common_mutation_rules_v3_HeaderMutationRules_has_allow_envoy(const envoy_config_common_mutation_rules_v3_HeaderMutationRules* msg) {
-  const upb_MiniTableField field = {2, UPB_SIZE(16, 24), 65, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {2, UPB_SIZE(16, 24), 65, UPB_SIZE(19, 21), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   return upb_Message_HasBaseField(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE void envoy_config_common_mutation_rules_v3_HeaderMutationRules_clear_disallow_system(envoy_config_common_mutation_rules_v3_HeaderMutationRules* msg) {
-  const upb_MiniTableField field = {3, UPB_SIZE(20, 32), 66, 2, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {3, UPB_SIZE(20, 32), 66, UPB_SIZE(17, 20), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE const struct google_protobuf_BoolValue* envoy_config_common_mutation_rules_v3_HeaderMutationRules_disallow_system(const envoy_config_common_mutation_rules_v3_HeaderMutationRules* msg) {
   const struct google_protobuf_BoolValue* default_val = NULL;
   const struct google_protobuf_BoolValue* ret;
-  const upb_MiniTableField field = {3, UPB_SIZE(20, 32), 66, 2, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {3, UPB_SIZE(20, 32), 66, UPB_SIZE(17, 20), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&google__protobuf__BoolValue_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
 }
 UPB_INLINE bool envoy_config_common_mutation_rules_v3_HeaderMutationRules_has_disallow_system(const envoy_config_common_mutation_rules_v3_HeaderMutationRules* msg) {
-  const upb_MiniTableField field = {3, UPB_SIZE(20, 32), 66, 2, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {3, UPB_SIZE(20, 32), 66, UPB_SIZE(17, 20), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   return upb_Message_HasBaseField(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE void envoy_config_common_mutation_rules_v3_HeaderMutationRules_clear_disallow_all(envoy_config_common_mutation_rules_v3_HeaderMutationRules* msg) {
-  const upb_MiniTableField field = {4, UPB_SIZE(24, 40), 67, 3, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {4, UPB_SIZE(24, 40), 67, UPB_SIZE(15, 19), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE const struct google_protobuf_BoolValue* envoy_config_common_mutation_rules_v3_HeaderMutationRules_disallow_all(const envoy_config_common_mutation_rules_v3_HeaderMutationRules* msg) {
   const struct google_protobuf_BoolValue* default_val = NULL;
   const struct google_protobuf_BoolValue* ret;
-  const upb_MiniTableField field = {4, UPB_SIZE(24, 40), 67, 3, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {4, UPB_SIZE(24, 40), 67, UPB_SIZE(15, 19), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&google__protobuf__BoolValue_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
 }
 UPB_INLINE bool envoy_config_common_mutation_rules_v3_HeaderMutationRules_has_disallow_all(const envoy_config_common_mutation_rules_v3_HeaderMutationRules* msg) {
-  const upb_MiniTableField field = {4, UPB_SIZE(24, 40), 67, 3, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {4, UPB_SIZE(24, 40), 67, UPB_SIZE(15, 19), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   return upb_Message_HasBaseField(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE void envoy_config_common_mutation_rules_v3_HeaderMutationRules_clear_allow_expression(envoy_config_common_mutation_rules_v3_HeaderMutationRules* msg) {
-  const upb_MiniTableField field = {5, UPB_SIZE(28, 48), 68, 4, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {5, UPB_SIZE(28, 48), 68, UPB_SIZE(13, 18), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE const struct envoy_type_matcher_v3_RegexMatcher* envoy_config_common_mutation_rules_v3_HeaderMutationRules_allow_expression(const envoy_config_common_mutation_rules_v3_HeaderMutationRules* msg) {
   const struct envoy_type_matcher_v3_RegexMatcher* default_val = NULL;
   const struct envoy_type_matcher_v3_RegexMatcher* ret;
-  const upb_MiniTableField field = {5, UPB_SIZE(28, 48), 68, 4, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {5, UPB_SIZE(28, 48), 68, UPB_SIZE(13, 18), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__type__matcher__v3__RegexMatcher_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
 }
 UPB_INLINE bool envoy_config_common_mutation_rules_v3_HeaderMutationRules_has_allow_expression(const envoy_config_common_mutation_rules_v3_HeaderMutationRules* msg) {
-  const upb_MiniTableField field = {5, UPB_SIZE(28, 48), 68, 4, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {5, UPB_SIZE(28, 48), 68, UPB_SIZE(13, 18), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   return upb_Message_HasBaseField(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE void envoy_config_common_mutation_rules_v3_HeaderMutationRules_clear_disallow_expression(envoy_config_common_mutation_rules_v3_HeaderMutationRules* msg) {
-  const upb_MiniTableField field = {6, UPB_SIZE(32, 56), 69, 5, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {6, UPB_SIZE(32, 56), 69, UPB_SIZE(11, 17), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE const struct envoy_type_matcher_v3_RegexMatcher* envoy_config_common_mutation_rules_v3_HeaderMutationRules_disallow_expression(const envoy_config_common_mutation_rules_v3_HeaderMutationRules* msg) {
   const struct envoy_type_matcher_v3_RegexMatcher* default_val = NULL;
   const struct envoy_type_matcher_v3_RegexMatcher* ret;
-  const upb_MiniTableField field = {6, UPB_SIZE(32, 56), 69, 5, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {6, UPB_SIZE(32, 56), 69, UPB_SIZE(11, 17), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__type__matcher__v3__RegexMatcher_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
 }
 UPB_INLINE bool envoy_config_common_mutation_rules_v3_HeaderMutationRules_has_disallow_expression(const envoy_config_common_mutation_rules_v3_HeaderMutationRules* msg) {
-  const upb_MiniTableField field = {6, UPB_SIZE(32, 56), 69, 5, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {6, UPB_SIZE(32, 56), 69, UPB_SIZE(11, 17), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   return upb_Message_HasBaseField(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE void envoy_config_common_mutation_rules_v3_HeaderMutationRules_clear_disallow_is_error(envoy_config_common_mutation_rules_v3_HeaderMutationRules* msg) {
-  const upb_MiniTableField field = {7, UPB_SIZE(36, 64), 70, 6, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {7, UPB_SIZE(36, 64), 70, UPB_SIZE(9, 16), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE const struct google_protobuf_BoolValue* envoy_config_common_mutation_rules_v3_HeaderMutationRules_disallow_is_error(const envoy_config_common_mutation_rules_v3_HeaderMutationRules* msg) {
   const struct google_protobuf_BoolValue* default_val = NULL;
   const struct google_protobuf_BoolValue* ret;
-  const upb_MiniTableField field = {7, UPB_SIZE(36, 64), 70, 6, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {7, UPB_SIZE(36, 64), 70, UPB_SIZE(9, 16), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&google__protobuf__BoolValue_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
 }
 UPB_INLINE bool envoy_config_common_mutation_rules_v3_HeaderMutationRules_has_disallow_is_error(const envoy_config_common_mutation_rules_v3_HeaderMutationRules* msg) {
-  const upb_MiniTableField field = {7, UPB_SIZE(36, 64), 70, 6, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {7, UPB_SIZE(36, 64), 70, UPB_SIZE(9, 16), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   return upb_Message_HasBaseField(UPB_UPCAST(msg), &field);
 }
 
-UPB_INLINE void envoy_config_common_mutation_rules_v3_HeaderMutationRules_set_allow_all_routing(envoy_config_common_mutation_rules_v3_HeaderMutationRules *msg, struct google_protobuf_BoolValue* value) {
-  const upb_MiniTableField field = {1, UPB_SIZE(12, 16), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+UPB_INLINE void envoy_config_common_mutation_rules_v3_HeaderMutationRules_set_allow_all_routing(envoy_config_common_mutation_rules_v3_HeaderMutationRules* msg, struct google_protobuf_BoolValue* value) {
+  const upb_MiniTableField field = {1, UPB_SIZE(12, 16), 64, UPB_SIZE(21, 22), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&google__protobuf__BoolValue_msg_init);
-  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message*)msg, &field, &value);
 }
-UPB_INLINE struct google_protobuf_BoolValue* envoy_config_common_mutation_rules_v3_HeaderMutationRules_mutable_allow_all_routing(envoy_config_common_mutation_rules_v3_HeaderMutationRules* msg, upb_Arena* arena) {
+UPB_INLINE struct google_protobuf_BoolValue* envoy_config_common_mutation_rules_v3_HeaderMutationRules_mutable_allow_all_routing(
+    envoy_config_common_mutation_rules_v3_HeaderMutationRules* msg, upb_Arena* arena) {
   struct google_protobuf_BoolValue* sub = (struct google_protobuf_BoolValue*)envoy_config_common_mutation_rules_v3_HeaderMutationRules_allow_all_routing(msg);
   if (sub == NULL) {
     sub = (struct google_protobuf_BoolValue*)_upb_Message_New(&google__protobuf__BoolValue_msg_init, arena);
@@ -206,12 +215,13 @@ UPB_INLINE struct google_protobuf_BoolValue* envoy_config_common_mutation_rules_
   }
   return sub;
 }
-UPB_INLINE void envoy_config_common_mutation_rules_v3_HeaderMutationRules_set_allow_envoy(envoy_config_common_mutation_rules_v3_HeaderMutationRules *msg, struct google_protobuf_BoolValue* value) {
-  const upb_MiniTableField field = {2, UPB_SIZE(16, 24), 65, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+UPB_INLINE void envoy_config_common_mutation_rules_v3_HeaderMutationRules_set_allow_envoy(envoy_config_common_mutation_rules_v3_HeaderMutationRules* msg, struct google_protobuf_BoolValue* value) {
+  const upb_MiniTableField field = {2, UPB_SIZE(16, 24), 65, UPB_SIZE(19, 21), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&google__protobuf__BoolValue_msg_init);
-  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message*)msg, &field, &value);
 }
-UPB_INLINE struct google_protobuf_BoolValue* envoy_config_common_mutation_rules_v3_HeaderMutationRules_mutable_allow_envoy(envoy_config_common_mutation_rules_v3_HeaderMutationRules* msg, upb_Arena* arena) {
+UPB_INLINE struct google_protobuf_BoolValue* envoy_config_common_mutation_rules_v3_HeaderMutationRules_mutable_allow_envoy(
+    envoy_config_common_mutation_rules_v3_HeaderMutationRules* msg, upb_Arena* arena) {
   struct google_protobuf_BoolValue* sub = (struct google_protobuf_BoolValue*)envoy_config_common_mutation_rules_v3_HeaderMutationRules_allow_envoy(msg);
   if (sub == NULL) {
     sub = (struct google_protobuf_BoolValue*)_upb_Message_New(&google__protobuf__BoolValue_msg_init, arena);
@@ -219,12 +229,13 @@ UPB_INLINE struct google_protobuf_BoolValue* envoy_config_common_mutation_rules_
   }
   return sub;
 }
-UPB_INLINE void envoy_config_common_mutation_rules_v3_HeaderMutationRules_set_disallow_system(envoy_config_common_mutation_rules_v3_HeaderMutationRules *msg, struct google_protobuf_BoolValue* value) {
-  const upb_MiniTableField field = {3, UPB_SIZE(20, 32), 66, 2, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+UPB_INLINE void envoy_config_common_mutation_rules_v3_HeaderMutationRules_set_disallow_system(envoy_config_common_mutation_rules_v3_HeaderMutationRules* msg, struct google_protobuf_BoolValue* value) {
+  const upb_MiniTableField field = {3, UPB_SIZE(20, 32), 66, UPB_SIZE(17, 20), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&google__protobuf__BoolValue_msg_init);
-  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message*)msg, &field, &value);
 }
-UPB_INLINE struct google_protobuf_BoolValue* envoy_config_common_mutation_rules_v3_HeaderMutationRules_mutable_disallow_system(envoy_config_common_mutation_rules_v3_HeaderMutationRules* msg, upb_Arena* arena) {
+UPB_INLINE struct google_protobuf_BoolValue* envoy_config_common_mutation_rules_v3_HeaderMutationRules_mutable_disallow_system(
+    envoy_config_common_mutation_rules_v3_HeaderMutationRules* msg, upb_Arena* arena) {
   struct google_protobuf_BoolValue* sub = (struct google_protobuf_BoolValue*)envoy_config_common_mutation_rules_v3_HeaderMutationRules_disallow_system(msg);
   if (sub == NULL) {
     sub = (struct google_protobuf_BoolValue*)_upb_Message_New(&google__protobuf__BoolValue_msg_init, arena);
@@ -232,12 +243,13 @@ UPB_INLINE struct google_protobuf_BoolValue* envoy_config_common_mutation_rules_
   }
   return sub;
 }
-UPB_INLINE void envoy_config_common_mutation_rules_v3_HeaderMutationRules_set_disallow_all(envoy_config_common_mutation_rules_v3_HeaderMutationRules *msg, struct google_protobuf_BoolValue* value) {
-  const upb_MiniTableField field = {4, UPB_SIZE(24, 40), 67, 3, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+UPB_INLINE void envoy_config_common_mutation_rules_v3_HeaderMutationRules_set_disallow_all(envoy_config_common_mutation_rules_v3_HeaderMutationRules* msg, struct google_protobuf_BoolValue* value) {
+  const upb_MiniTableField field = {4, UPB_SIZE(24, 40), 67, UPB_SIZE(15, 19), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&google__protobuf__BoolValue_msg_init);
-  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message*)msg, &field, &value);
 }
-UPB_INLINE struct google_protobuf_BoolValue* envoy_config_common_mutation_rules_v3_HeaderMutationRules_mutable_disallow_all(envoy_config_common_mutation_rules_v3_HeaderMutationRules* msg, upb_Arena* arena) {
+UPB_INLINE struct google_protobuf_BoolValue* envoy_config_common_mutation_rules_v3_HeaderMutationRules_mutable_disallow_all(
+    envoy_config_common_mutation_rules_v3_HeaderMutationRules* msg, upb_Arena* arena) {
   struct google_protobuf_BoolValue* sub = (struct google_protobuf_BoolValue*)envoy_config_common_mutation_rules_v3_HeaderMutationRules_disallow_all(msg);
   if (sub == NULL) {
     sub = (struct google_protobuf_BoolValue*)_upb_Message_New(&google__protobuf__BoolValue_msg_init, arena);
@@ -245,12 +257,13 @@ UPB_INLINE struct google_protobuf_BoolValue* envoy_config_common_mutation_rules_
   }
   return sub;
 }
-UPB_INLINE void envoy_config_common_mutation_rules_v3_HeaderMutationRules_set_allow_expression(envoy_config_common_mutation_rules_v3_HeaderMutationRules *msg, struct envoy_type_matcher_v3_RegexMatcher* value) {
-  const upb_MiniTableField field = {5, UPB_SIZE(28, 48), 68, 4, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+UPB_INLINE void envoy_config_common_mutation_rules_v3_HeaderMutationRules_set_allow_expression(envoy_config_common_mutation_rules_v3_HeaderMutationRules* msg, struct envoy_type_matcher_v3_RegexMatcher* value) {
+  const upb_MiniTableField field = {5, UPB_SIZE(28, 48), 68, UPB_SIZE(13, 18), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__type__matcher__v3__RegexMatcher_msg_init);
-  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message*)msg, &field, &value);
 }
-UPB_INLINE struct envoy_type_matcher_v3_RegexMatcher* envoy_config_common_mutation_rules_v3_HeaderMutationRules_mutable_allow_expression(envoy_config_common_mutation_rules_v3_HeaderMutationRules* msg, upb_Arena* arena) {
+UPB_INLINE struct envoy_type_matcher_v3_RegexMatcher* envoy_config_common_mutation_rules_v3_HeaderMutationRules_mutable_allow_expression(
+    envoy_config_common_mutation_rules_v3_HeaderMutationRules* msg, upb_Arena* arena) {
   struct envoy_type_matcher_v3_RegexMatcher* sub = (struct envoy_type_matcher_v3_RegexMatcher*)envoy_config_common_mutation_rules_v3_HeaderMutationRules_allow_expression(msg);
   if (sub == NULL) {
     sub = (struct envoy_type_matcher_v3_RegexMatcher*)_upb_Message_New(&envoy__type__matcher__v3__RegexMatcher_msg_init, arena);
@@ -258,12 +271,13 @@ UPB_INLINE struct envoy_type_matcher_v3_RegexMatcher* envoy_config_common_mutati
   }
   return sub;
 }
-UPB_INLINE void envoy_config_common_mutation_rules_v3_HeaderMutationRules_set_disallow_expression(envoy_config_common_mutation_rules_v3_HeaderMutationRules *msg, struct envoy_type_matcher_v3_RegexMatcher* value) {
-  const upb_MiniTableField field = {6, UPB_SIZE(32, 56), 69, 5, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+UPB_INLINE void envoy_config_common_mutation_rules_v3_HeaderMutationRules_set_disallow_expression(envoy_config_common_mutation_rules_v3_HeaderMutationRules* msg, struct envoy_type_matcher_v3_RegexMatcher* value) {
+  const upb_MiniTableField field = {6, UPB_SIZE(32, 56), 69, UPB_SIZE(11, 17), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__type__matcher__v3__RegexMatcher_msg_init);
-  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message*)msg, &field, &value);
 }
-UPB_INLINE struct envoy_type_matcher_v3_RegexMatcher* envoy_config_common_mutation_rules_v3_HeaderMutationRules_mutable_disallow_expression(envoy_config_common_mutation_rules_v3_HeaderMutationRules* msg, upb_Arena* arena) {
+UPB_INLINE struct envoy_type_matcher_v3_RegexMatcher* envoy_config_common_mutation_rules_v3_HeaderMutationRules_mutable_disallow_expression(
+    envoy_config_common_mutation_rules_v3_HeaderMutationRules* msg, upb_Arena* arena) {
   struct envoy_type_matcher_v3_RegexMatcher* sub = (struct envoy_type_matcher_v3_RegexMatcher*)envoy_config_common_mutation_rules_v3_HeaderMutationRules_disallow_expression(msg);
   if (sub == NULL) {
     sub = (struct envoy_type_matcher_v3_RegexMatcher*)_upb_Message_New(&envoy__type__matcher__v3__RegexMatcher_msg_init, arena);
@@ -271,12 +285,13 @@ UPB_INLINE struct envoy_type_matcher_v3_RegexMatcher* envoy_config_common_mutati
   }
   return sub;
 }
-UPB_INLINE void envoy_config_common_mutation_rules_v3_HeaderMutationRules_set_disallow_is_error(envoy_config_common_mutation_rules_v3_HeaderMutationRules *msg, struct google_protobuf_BoolValue* value) {
-  const upb_MiniTableField field = {7, UPB_SIZE(36, 64), 70, 6, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+UPB_INLINE void envoy_config_common_mutation_rules_v3_HeaderMutationRules_set_disallow_is_error(envoy_config_common_mutation_rules_v3_HeaderMutationRules* msg, struct google_protobuf_BoolValue* value) {
+  const upb_MiniTableField field = {7, UPB_SIZE(36, 64), 70, UPB_SIZE(9, 16), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&google__protobuf__BoolValue_msg_init);
-  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message*)msg, &field, &value);
 }
-UPB_INLINE struct google_protobuf_BoolValue* envoy_config_common_mutation_rules_v3_HeaderMutationRules_mutable_disallow_is_error(envoy_config_common_mutation_rules_v3_HeaderMutationRules* msg, upb_Arena* arena) {
+UPB_INLINE struct google_protobuf_BoolValue* envoy_config_common_mutation_rules_v3_HeaderMutationRules_mutable_disallow_is_error(
+    envoy_config_common_mutation_rules_v3_HeaderMutationRules* msg, upb_Arena* arena) {
   struct google_protobuf_BoolValue* sub = (struct google_protobuf_BoolValue*)envoy_config_common_mutation_rules_v3_HeaderMutationRules_disallow_is_error(msg);
   if (sub == NULL) {
     sub = (struct google_protobuf_BoolValue*)_upb_Message_New(&google__protobuf__BoolValue_msg_init, arena);
@@ -286,37 +301,39 @@ UPB_INLINE struct google_protobuf_BoolValue* envoy_config_common_mutation_rules_
 }
 
 /* envoy.config.common.mutation_rules.v3.HeaderMutation */
-
 UPB_INLINE envoy_config_common_mutation_rules_v3_HeaderMutation* envoy_config_common_mutation_rules_v3_HeaderMutation_new(upb_Arena* arena) {
   return (envoy_config_common_mutation_rules_v3_HeaderMutation*)_upb_Message_New(&envoy__config__common__mutation_0rules__v3__HeaderMutation_msg_init, arena);
 }
-UPB_INLINE envoy_config_common_mutation_rules_v3_HeaderMutation* envoy_config_common_mutation_rules_v3_HeaderMutation_parse(const char* buf, size_t size, upb_Arena* arena) {
+UPB_INLINE envoy_config_common_mutation_rules_v3_HeaderMutation* envoy_config_common_mutation_rules_v3_HeaderMutation_parse(const char* buf, size_t size,
+                                        upb_Arena* arena) {
   envoy_config_common_mutation_rules_v3_HeaderMutation* ret = envoy_config_common_mutation_rules_v3_HeaderMutation_new(arena);
   if (!ret) return NULL;
-  if (upb_Decode(buf, size, UPB_UPCAST(ret), &envoy__config__common__mutation_0rules__v3__HeaderMutation_msg_init, NULL, 0, arena) !=
-      kUpb_DecodeStatus_Ok) {
-    return NULL;
-  }
-  return ret;
-}
-UPB_INLINE envoy_config_common_mutation_rules_v3_HeaderMutation* envoy_config_common_mutation_rules_v3_HeaderMutation_parse_ex(const char* buf, size_t size,
-                           const upb_ExtensionRegistry* extreg,
-                           int options, upb_Arena* arena) {
-  envoy_config_common_mutation_rules_v3_HeaderMutation* ret = envoy_config_common_mutation_rules_v3_HeaderMutation_new(arena);
-  if (!ret) return NULL;
-  if (upb_Decode(buf, size, UPB_UPCAST(ret), &envoy__config__common__mutation_0rules__v3__HeaderMutation_msg_init, extreg, options,
+  if (upb_Decode(buf, size, UPB_UPCAST(ret), &envoy__config__common__mutation_0rules__v3__HeaderMutation_msg_init, NULL, 0,
                  arena) != kUpb_DecodeStatus_Ok) {
     return NULL;
   }
   return ret;
 }
-UPB_INLINE char* envoy_config_common_mutation_rules_v3_HeaderMutation_serialize(const envoy_config_common_mutation_rules_v3_HeaderMutation* msg, upb_Arena* arena, size_t* len) {
+UPB_INLINE envoy_config_common_mutation_rules_v3_HeaderMutation* envoy_config_common_mutation_rules_v3_HeaderMutation_parse_ex(
+    const char* buf, size_t size, const upb_ExtensionRegistry* extreg,
+    int options, upb_Arena* arena) {
+  envoy_config_common_mutation_rules_v3_HeaderMutation* ret = envoy_config_common_mutation_rules_v3_HeaderMutation_new(arena);
+  if (!ret) return NULL;
+  if (upb_Decode(buf, size, UPB_UPCAST(ret), &envoy__config__common__mutation_0rules__v3__HeaderMutation_msg_init, extreg,
+                 options, arena) != kUpb_DecodeStatus_Ok) {
+    return NULL;
+  }
+  return ret;
+}
+UPB_INLINE char* envoy_config_common_mutation_rules_v3_HeaderMutation_serialize(const envoy_config_common_mutation_rules_v3_HeaderMutation* msg,
+                                      upb_Arena* arena, size_t* len) {
   char* ptr;
   (void)upb_Encode(UPB_UPCAST(msg), &envoy__config__common__mutation_0rules__v3__HeaderMutation_msg_init, 0, arena, &ptr, len);
   return ptr;
 }
-UPB_INLINE char* envoy_config_common_mutation_rules_v3_HeaderMutation_serialize_ex(const envoy_config_common_mutation_rules_v3_HeaderMutation* msg, int options,
-                                 upb_Arena* arena, size_t* len) {
+UPB_INLINE char* envoy_config_common_mutation_rules_v3_HeaderMutation_serialize_ex(const envoy_config_common_mutation_rules_v3_HeaderMutation* msg,
+                                         int options, upb_Arena* arena,
+                                         size_t* len) {
   char* ptr;
   (void)upb_Encode(UPB_UPCAST(msg), &envoy__config__common__mutation_0rules__v3__HeaderMutation_msg_init, options, arena, &ptr, len);
   return ptr;
@@ -327,7 +344,9 @@ typedef enum {
   envoy_config_common_mutation_rules_v3_HeaderMutation_action_remove_on_match = 3,
   envoy_config_common_mutation_rules_v3_HeaderMutation_action_NOT_SET = 0
 } envoy_config_common_mutation_rules_v3_HeaderMutation_action_oneofcases;
-UPB_INLINE envoy_config_common_mutation_rules_v3_HeaderMutation_action_oneofcases envoy_config_common_mutation_rules_v3_HeaderMutation_action_case(const envoy_config_common_mutation_rules_v3_HeaderMutation* msg) {
+
+UPB_INLINE envoy_config_common_mutation_rules_v3_HeaderMutation_action_oneofcases
+envoy_config_common_mutation_rules_v3_HeaderMutation_action_case(const envoy_config_common_mutation_rules_v3_HeaderMutation* msg) {
   const upb_MiniTableField field = {1, UPB_SIZE(12, 16), -9, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
   return (envoy_config_common_mutation_rules_v3_HeaderMutation_action_oneofcases)upb_Message_WhichOneofFieldNumber(
       UPB_UPCAST(msg), &field);
@@ -353,50 +372,51 @@ UPB_INLINE bool envoy_config_common_mutation_rules_v3_HeaderMutation_has_remove(
   return upb_Message_HasBaseField(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE void envoy_config_common_mutation_rules_v3_HeaderMutation_clear_append(envoy_config_common_mutation_rules_v3_HeaderMutation* msg) {
-  const upb_MiniTableField field = {2, UPB_SIZE(12, 16), -9, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {2, UPB_SIZE(12, 16), -9, UPB_SIZE(6, 7), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE const struct envoy_config_core_v3_HeaderValueOption* envoy_config_common_mutation_rules_v3_HeaderMutation_append(const envoy_config_common_mutation_rules_v3_HeaderMutation* msg) {
   const struct envoy_config_core_v3_HeaderValueOption* default_val = NULL;
   const struct envoy_config_core_v3_HeaderValueOption* ret;
-  const upb_MiniTableField field = {2, UPB_SIZE(12, 16), -9, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {2, UPB_SIZE(12, 16), -9, UPB_SIZE(6, 7), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__core__v3__HeaderValueOption_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
 }
 UPB_INLINE bool envoy_config_common_mutation_rules_v3_HeaderMutation_has_append(const envoy_config_common_mutation_rules_v3_HeaderMutation* msg) {
-  const upb_MiniTableField field = {2, UPB_SIZE(12, 16), -9, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {2, UPB_SIZE(12, 16), -9, UPB_SIZE(6, 7), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   return upb_Message_HasBaseField(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE void envoy_config_common_mutation_rules_v3_HeaderMutation_clear_remove_on_match(envoy_config_common_mutation_rules_v3_HeaderMutation* msg) {
-  const upb_MiniTableField field = {3, UPB_SIZE(12, 16), -9, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {3, UPB_SIZE(12, 16), -9, UPB_SIZE(4, 6), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE const envoy_config_common_mutation_rules_v3_HeaderMutation_RemoveOnMatch* envoy_config_common_mutation_rules_v3_HeaderMutation_remove_on_match(const envoy_config_common_mutation_rules_v3_HeaderMutation* msg) {
   const envoy_config_common_mutation_rules_v3_HeaderMutation_RemoveOnMatch* default_val = NULL;
   const envoy_config_common_mutation_rules_v3_HeaderMutation_RemoveOnMatch* ret;
-  const upb_MiniTableField field = {3, UPB_SIZE(12, 16), -9, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {3, UPB_SIZE(12, 16), -9, UPB_SIZE(4, 6), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__common__mutation_0rules__v3__HeaderMutation__RemoveOnMatch_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
 }
 UPB_INLINE bool envoy_config_common_mutation_rules_v3_HeaderMutation_has_remove_on_match(const envoy_config_common_mutation_rules_v3_HeaderMutation* msg) {
-  const upb_MiniTableField field = {3, UPB_SIZE(12, 16), -9, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {3, UPB_SIZE(12, 16), -9, UPB_SIZE(4, 6), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   return upb_Message_HasBaseField(UPB_UPCAST(msg), &field);
 }
 
-UPB_INLINE void envoy_config_common_mutation_rules_v3_HeaderMutation_set_remove(envoy_config_common_mutation_rules_v3_HeaderMutation *msg, upb_StringView value) {
+UPB_INLINE void envoy_config_common_mutation_rules_v3_HeaderMutation_set_remove(envoy_config_common_mutation_rules_v3_HeaderMutation* msg, upb_StringView value) {
   const upb_MiniTableField field = {1, UPB_SIZE(12, 16), -9, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
-  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message*)msg, &field, &value);
 }
-UPB_INLINE void envoy_config_common_mutation_rules_v3_HeaderMutation_set_append(envoy_config_common_mutation_rules_v3_HeaderMutation *msg, struct envoy_config_core_v3_HeaderValueOption* value) {
-  const upb_MiniTableField field = {2, UPB_SIZE(12, 16), -9, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+UPB_INLINE void envoy_config_common_mutation_rules_v3_HeaderMutation_set_append(envoy_config_common_mutation_rules_v3_HeaderMutation* msg, struct envoy_config_core_v3_HeaderValueOption* value) {
+  const upb_MiniTableField field = {2, UPB_SIZE(12, 16), -9, UPB_SIZE(6, 7), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__core__v3__HeaderValueOption_msg_init);
-  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message*)msg, &field, &value);
 }
-UPB_INLINE struct envoy_config_core_v3_HeaderValueOption* envoy_config_common_mutation_rules_v3_HeaderMutation_mutable_append(envoy_config_common_mutation_rules_v3_HeaderMutation* msg, upb_Arena* arena) {
+UPB_INLINE struct envoy_config_core_v3_HeaderValueOption* envoy_config_common_mutation_rules_v3_HeaderMutation_mutable_append(
+    envoy_config_common_mutation_rules_v3_HeaderMutation* msg, upb_Arena* arena) {
   struct envoy_config_core_v3_HeaderValueOption* sub = (struct envoy_config_core_v3_HeaderValueOption*)envoy_config_common_mutation_rules_v3_HeaderMutation_append(msg);
   if (sub == NULL) {
     sub = (struct envoy_config_core_v3_HeaderValueOption*)_upb_Message_New(&envoy__config__core__v3__HeaderValueOption_msg_init, arena);
@@ -404,12 +424,13 @@ UPB_INLINE struct envoy_config_core_v3_HeaderValueOption* envoy_config_common_mu
   }
   return sub;
 }
-UPB_INLINE void envoy_config_common_mutation_rules_v3_HeaderMutation_set_remove_on_match(envoy_config_common_mutation_rules_v3_HeaderMutation *msg, envoy_config_common_mutation_rules_v3_HeaderMutation_RemoveOnMatch* value) {
-  const upb_MiniTableField field = {3, UPB_SIZE(12, 16), -9, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+UPB_INLINE void envoy_config_common_mutation_rules_v3_HeaderMutation_set_remove_on_match(envoy_config_common_mutation_rules_v3_HeaderMutation* msg, envoy_config_common_mutation_rules_v3_HeaderMutation_RemoveOnMatch* value) {
+  const upb_MiniTableField field = {3, UPB_SIZE(12, 16), -9, UPB_SIZE(4, 6), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__common__mutation_0rules__v3__HeaderMutation__RemoveOnMatch_msg_init);
-  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message*)msg, &field, &value);
 }
-UPB_INLINE struct envoy_config_common_mutation_rules_v3_HeaderMutation_RemoveOnMatch* envoy_config_common_mutation_rules_v3_HeaderMutation_mutable_remove_on_match(envoy_config_common_mutation_rules_v3_HeaderMutation* msg, upb_Arena* arena) {
+UPB_INLINE struct envoy_config_common_mutation_rules_v3_HeaderMutation_RemoveOnMatch* envoy_config_common_mutation_rules_v3_HeaderMutation_mutable_remove_on_match(
+    envoy_config_common_mutation_rules_v3_HeaderMutation* msg, upb_Arena* arena) {
   struct envoy_config_common_mutation_rules_v3_HeaderMutation_RemoveOnMatch* sub = (struct envoy_config_common_mutation_rules_v3_HeaderMutation_RemoveOnMatch*)envoy_config_common_mutation_rules_v3_HeaderMutation_remove_on_match(msg);
   if (sub == NULL) {
     sub = (struct envoy_config_common_mutation_rules_v3_HeaderMutation_RemoveOnMatch*)_upb_Message_New(&envoy__config__common__mutation_0rules__v3__HeaderMutation__RemoveOnMatch_msg_init, arena);
@@ -419,65 +440,68 @@ UPB_INLINE struct envoy_config_common_mutation_rules_v3_HeaderMutation_RemoveOnM
 }
 
 /* envoy.config.common.mutation_rules.v3.HeaderMutation.RemoveOnMatch */
-
 UPB_INLINE envoy_config_common_mutation_rules_v3_HeaderMutation_RemoveOnMatch* envoy_config_common_mutation_rules_v3_HeaderMutation_RemoveOnMatch_new(upb_Arena* arena) {
   return (envoy_config_common_mutation_rules_v3_HeaderMutation_RemoveOnMatch*)_upb_Message_New(&envoy__config__common__mutation_0rules__v3__HeaderMutation__RemoveOnMatch_msg_init, arena);
 }
-UPB_INLINE envoy_config_common_mutation_rules_v3_HeaderMutation_RemoveOnMatch* envoy_config_common_mutation_rules_v3_HeaderMutation_RemoveOnMatch_parse(const char* buf, size_t size, upb_Arena* arena) {
+UPB_INLINE envoy_config_common_mutation_rules_v3_HeaderMutation_RemoveOnMatch* envoy_config_common_mutation_rules_v3_HeaderMutation_RemoveOnMatch_parse(const char* buf, size_t size,
+                                        upb_Arena* arena) {
   envoy_config_common_mutation_rules_v3_HeaderMutation_RemoveOnMatch* ret = envoy_config_common_mutation_rules_v3_HeaderMutation_RemoveOnMatch_new(arena);
   if (!ret) return NULL;
-  if (upb_Decode(buf, size, UPB_UPCAST(ret), &envoy__config__common__mutation_0rules__v3__HeaderMutation__RemoveOnMatch_msg_init, NULL, 0, arena) !=
-      kUpb_DecodeStatus_Ok) {
-    return NULL;
-  }
-  return ret;
-}
-UPB_INLINE envoy_config_common_mutation_rules_v3_HeaderMutation_RemoveOnMatch* envoy_config_common_mutation_rules_v3_HeaderMutation_RemoveOnMatch_parse_ex(const char* buf, size_t size,
-                           const upb_ExtensionRegistry* extreg,
-                           int options, upb_Arena* arena) {
-  envoy_config_common_mutation_rules_v3_HeaderMutation_RemoveOnMatch* ret = envoy_config_common_mutation_rules_v3_HeaderMutation_RemoveOnMatch_new(arena);
-  if (!ret) return NULL;
-  if (upb_Decode(buf, size, UPB_UPCAST(ret), &envoy__config__common__mutation_0rules__v3__HeaderMutation__RemoveOnMatch_msg_init, extreg, options,
+  if (upb_Decode(buf, size, UPB_UPCAST(ret), &envoy__config__common__mutation_0rules__v3__HeaderMutation__RemoveOnMatch_msg_init, NULL, 0,
                  arena) != kUpb_DecodeStatus_Ok) {
     return NULL;
   }
   return ret;
 }
-UPB_INLINE char* envoy_config_common_mutation_rules_v3_HeaderMutation_RemoveOnMatch_serialize(const envoy_config_common_mutation_rules_v3_HeaderMutation_RemoveOnMatch* msg, upb_Arena* arena, size_t* len) {
+UPB_INLINE envoy_config_common_mutation_rules_v3_HeaderMutation_RemoveOnMatch* envoy_config_common_mutation_rules_v3_HeaderMutation_RemoveOnMatch_parse_ex(
+    const char* buf, size_t size, const upb_ExtensionRegistry* extreg,
+    int options, upb_Arena* arena) {
+  envoy_config_common_mutation_rules_v3_HeaderMutation_RemoveOnMatch* ret = envoy_config_common_mutation_rules_v3_HeaderMutation_RemoveOnMatch_new(arena);
+  if (!ret) return NULL;
+  if (upb_Decode(buf, size, UPB_UPCAST(ret), &envoy__config__common__mutation_0rules__v3__HeaderMutation__RemoveOnMatch_msg_init, extreg,
+                 options, arena) != kUpb_DecodeStatus_Ok) {
+    return NULL;
+  }
+  return ret;
+}
+UPB_INLINE char* envoy_config_common_mutation_rules_v3_HeaderMutation_RemoveOnMatch_serialize(const envoy_config_common_mutation_rules_v3_HeaderMutation_RemoveOnMatch* msg,
+                                      upb_Arena* arena, size_t* len) {
   char* ptr;
   (void)upb_Encode(UPB_UPCAST(msg), &envoy__config__common__mutation_0rules__v3__HeaderMutation__RemoveOnMatch_msg_init, 0, arena, &ptr, len);
   return ptr;
 }
-UPB_INLINE char* envoy_config_common_mutation_rules_v3_HeaderMutation_RemoveOnMatch_serialize_ex(const envoy_config_common_mutation_rules_v3_HeaderMutation_RemoveOnMatch* msg, int options,
-                                 upb_Arena* arena, size_t* len) {
+UPB_INLINE char* envoy_config_common_mutation_rules_v3_HeaderMutation_RemoveOnMatch_serialize_ex(const envoy_config_common_mutation_rules_v3_HeaderMutation_RemoveOnMatch* msg,
+                                         int options, upb_Arena* arena,
+                                         size_t* len) {
   char* ptr;
   (void)upb_Encode(UPB_UPCAST(msg), &envoy__config__common__mutation_0rules__v3__HeaderMutation__RemoveOnMatch_msg_init, options, arena, &ptr, len);
   return ptr;
 }
 UPB_INLINE void envoy_config_common_mutation_rules_v3_HeaderMutation_RemoveOnMatch_clear_key_matcher(envoy_config_common_mutation_rules_v3_HeaderMutation_RemoveOnMatch* msg) {
-  const upb_MiniTableField field = {1, UPB_SIZE(12, 16), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {1, UPB_SIZE(12, 16), 64, UPB_SIZE(3, 4), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE const struct envoy_type_matcher_v3_StringMatcher* envoy_config_common_mutation_rules_v3_HeaderMutation_RemoveOnMatch_key_matcher(const envoy_config_common_mutation_rules_v3_HeaderMutation_RemoveOnMatch* msg) {
   const struct envoy_type_matcher_v3_StringMatcher* default_val = NULL;
   const struct envoy_type_matcher_v3_StringMatcher* ret;
-  const upb_MiniTableField field = {1, UPB_SIZE(12, 16), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {1, UPB_SIZE(12, 16), 64, UPB_SIZE(3, 4), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__type__matcher__v3__StringMatcher_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
 }
 UPB_INLINE bool envoy_config_common_mutation_rules_v3_HeaderMutation_RemoveOnMatch_has_key_matcher(const envoy_config_common_mutation_rules_v3_HeaderMutation_RemoveOnMatch* msg) {
-  const upb_MiniTableField field = {1, UPB_SIZE(12, 16), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {1, UPB_SIZE(12, 16), 64, UPB_SIZE(3, 4), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   return upb_Message_HasBaseField(UPB_UPCAST(msg), &field);
 }
 
-UPB_INLINE void envoy_config_common_mutation_rules_v3_HeaderMutation_RemoveOnMatch_set_key_matcher(envoy_config_common_mutation_rules_v3_HeaderMutation_RemoveOnMatch *msg, struct envoy_type_matcher_v3_StringMatcher* value) {
-  const upb_MiniTableField field = {1, UPB_SIZE(12, 16), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+UPB_INLINE void envoy_config_common_mutation_rules_v3_HeaderMutation_RemoveOnMatch_set_key_matcher(envoy_config_common_mutation_rules_v3_HeaderMutation_RemoveOnMatch* msg, struct envoy_type_matcher_v3_StringMatcher* value) {
+  const upb_MiniTableField field = {1, UPB_SIZE(12, 16), 64, UPB_SIZE(3, 4), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__type__matcher__v3__StringMatcher_msg_init);
-  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message*)msg, &field, &value);
 }
-UPB_INLINE struct envoy_type_matcher_v3_StringMatcher* envoy_config_common_mutation_rules_v3_HeaderMutation_RemoveOnMatch_mutable_key_matcher(envoy_config_common_mutation_rules_v3_HeaderMutation_RemoveOnMatch* msg, upb_Arena* arena) {
+UPB_INLINE struct envoy_type_matcher_v3_StringMatcher* envoy_config_common_mutation_rules_v3_HeaderMutation_RemoveOnMatch_mutable_key_matcher(
+    envoy_config_common_mutation_rules_v3_HeaderMutation_RemoveOnMatch* msg, upb_Arena* arena) {
   struct envoy_type_matcher_v3_StringMatcher* sub = (struct envoy_type_matcher_v3_StringMatcher*)envoy_config_common_mutation_rules_v3_HeaderMutation_RemoveOnMatch_key_matcher(msg);
   if (sub == NULL) {
     sub = (struct envoy_type_matcher_v3_StringMatcher*)_upb_Message_New(&envoy__type__matcher__v3__StringMatcher_msg_init, arena);
@@ -487,9 +511,9 @@ UPB_INLINE struct envoy_type_matcher_v3_StringMatcher* envoy_config_common_mutat
 }
 
 #ifdef __cplusplus
-}  /* extern "C" */
+              } /* extern "C" */
 #endif
 
 #include "upb/port/undef.inc"
 
-#endif  /* ENVOY_CONFIG_COMMON_MUTATION_RULES_V3_MUTATION_RULES_PROTO_UPB_H__UPB_H_ */
+#endif /* ENVOY_CONFIG_COMMON_MUTATION_RULES_V3_MUTATION_RULES_PROTO_UPB_H__UPB_H_ */

@@ -42,8 +42,17 @@ upb_ExtensionRegistry* upb_ExtensionRegistry_New(upb_Arena* arena) {
 
 UPB_API upb_ExtensionRegistryStatus upb_ExtensionRegistry_Add(
     upb_ExtensionRegistry* r, const upb_MiniTableExtension* e) {
+  uint32_t fieldnum = upb_MiniTableExtension_Number(e);
+  const upb_MiniTable* extendee = upb_MiniTableExtension_Extendee(e);
+
+  const uint32_t kMaxFieldNumber = (1 << 29) - 1;
+  if (fieldnum == 0 ||
+      (fieldnum > kMaxFieldNumber && !upb_MiniTable_IsMessageSet(extendee))) {
+    return kUpb_ExtensionRegistryStatus_InvalidExtension;
+  }
+
   char buf[EXTREG_KEY_SIZE];
-  extreg_key(buf, e->UPB_PRIVATE(extendee), upb_MiniTableExtension_Number(e));
+  extreg_key(buf, extendee, fieldnum);
 
   if (upb_strtable_lookup2(&r->exts, buf, EXTREG_KEY_SIZE, NULL)) {
     return kUpb_ExtensionRegistryStatus_DuplicateEntry;
@@ -79,26 +88,6 @@ failure:
   UPB_ASSERT(status != kUpb_ExtensionRegistryStatus_Ok);
   return status;
 }
-
-#ifdef UPB_LINKARR_DECLARE
-
-UPB_LINKARR_DECLARE(upb_AllExts, const upb_MiniTableExtension);
-
-bool upb_ExtensionRegistry_AddAllLinkedExtensions(upb_ExtensionRegistry* r) {
-  const upb_MiniTableExtension* start = UPB_LINKARR_START(upb_AllExts);
-  const upb_MiniTableExtension* stop = UPB_LINKARR_STOP(upb_AllExts);
-  for (const upb_MiniTableExtension* p = start; p < stop; p++) {
-    // Windows can introduce zero padding, so we have to skip zeroes.
-    if (upb_MiniTableExtension_Number(p) != 0) {
-      if (upb_ExtensionRegistry_Add(r, p) != kUpb_ExtensionRegistryStatus_Ok) {
-        return false;
-      }
-    }
-  }
-  return true;
-}
-
-#endif  // UPB_LINKARR_DECLARE
 
 const upb_MiniTableExtension* upb_ExtensionRegistry_Lookup(
     const upb_ExtensionRegistry* r, const upb_MiniTable* t, uint32_t num) {

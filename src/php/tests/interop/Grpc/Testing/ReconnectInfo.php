@@ -6,8 +6,8 @@
 namespace Grpc\Testing;
 
 use Google\Protobuf\Internal\GPBType;
-use Google\Protobuf\Internal\RepeatedField;
 use Google\Protobuf\Internal\GPBUtil;
+use Google\Protobuf\RepeatedField;
 
 /**
  * For reconnect interop test only.
@@ -34,7 +34,7 @@ class ReconnectInfo extends \Google\Protobuf\Internal\Message
      *     Optional. Data for populating the Message object.
      *
      *     @type bool $passed
-     *     @type array<int>|\Google\Protobuf\Internal\RepeatedField $backoff_ms
+     *     @type int[] $backoff_ms
      * }
      */
     public function __construct($data = NULL) {
@@ -56,9 +56,8 @@ class ReconnectInfo extends \Google\Protobuf\Internal\Message
      * @param bool $var
      * @return $this
      */
-    public function setPassed($var)
+    public function setPassed(bool $var)
     {
-        GPBUtil::checkBool($var);
         $this->passed = $var;
 
         return $this;
@@ -66,7 +65,7 @@ class ReconnectInfo extends \Google\Protobuf\Internal\Message
 
     /**
      * Generated from protobuf field <code>repeated int32 backoff_ms = 2;</code>
-     * @return \Google\Protobuf\Internal\RepeatedField
+     * @return RepeatedField<int>
      */
     public function getBackoffMs()
     {
@@ -75,10 +74,10 @@ class ReconnectInfo extends \Google\Protobuf\Internal\Message
 
     /**
      * Generated from protobuf field <code>repeated int32 backoff_ms = 2;</code>
-     * @param array<int>|\Google\Protobuf\Internal\RepeatedField $var
+     * @param int[] $var
      * @return $this
      */
-    public function setBackoffMs($var)
+    public function setBackoffMs(array|RepeatedField $var)
     {
         $arr = GPBUtil::checkRepeatedField($var, \Google\Protobuf\Internal\GPBType::INT32);
         $this->backoff_ms = $arr;
