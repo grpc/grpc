@@ -316,6 +316,8 @@ let package = Package(
         "src/core/credentials/transport/tls/grpc_tls_certificate_match.cc",
         "src/core/credentials/transport/tls/grpc_tls_certificate_provider.cc",
         "src/core/credentials/transport/tls/grpc_tls_certificate_provider.h",
+        "src/core/credentials/transport/tls/grpc_tls_certificate_selector.cc",
+        "src/core/credentials/transport/tls/grpc_tls_certificate_selector.h",
         "src/core/credentials/transport/tls/grpc_tls_certificate_verifier.cc",
         "src/core/credentials/transport/tls/grpc_tls_certificate_verifier.h",
         "src/core/credentials/transport/tls/grpc_tls_credentials_options.cc",
