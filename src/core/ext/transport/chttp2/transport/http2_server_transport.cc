@@ -63,6 +63,7 @@
 #include "src/core/ext/transport/chttp2/transport/transport_common.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace_impl.h"
+#include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/promise/for_each.h"
 #include "src/core/lib/promise/if.h"
@@ -91,6 +92,7 @@
 #include "src/core/util/sync.h"
 #include "src/core/util/time.h"
 #include "absl/container/flat_hash_map.h"
+#include "absl/functional/any_invocable.h"
 #include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/strings/cord.h"
@@ -1684,6 +1686,8 @@ absl::Status Http2ServerTransport::AckPing(uint64_t opaque_data) {
 //////////////////////////////////////////////////////////////////////////////
 // Error Path and Close Path
 
+// TODO(akshitpatel) : [PH2][P1] : Invoke on_close_callback_ when CloseTransport
+// is implemented.
 // void Http2ServerTransport::MaybeSpawnCloseTransport(Http2Status http2_status,
 //                                                     DebugLocation whence) {
 //   GRPC_HTTP2_SERVER_DLOG << "Http2ServerTransport::MaybeSpawnCloseTransport "
@@ -1977,7 +1981,8 @@ uint32_t Http2ServerTransport::GoawayInterfaceImpl::GetLastAcceptedStreamId() {
 Http2ServerTransport::Http2ServerTransport(
     PromiseEndpoint endpoint, const ChannelArgs& channel_args,
     std::shared_ptr<EventEngine> event_engine,
-    absl::AnyInvocable<void(absl::StatusOr<uint32_t>)> on_receive_settings)
+    absl::AnyInvocable<void(absl::StatusOr<uint32_t>)> on_receive_settings,
+    grpc_closure* on_close_callback)
     : channelz::DataSource(http2::CreateChannelzSocketNode(
           endpoint.GetEventEngineEndpoint(), channel_args)),
       outgoing_frames_(10),  // TODO(akshitpatel) : [PH2][P0][Write] : Remove
@@ -1985,6 +1990,7 @@ Http2ServerTransport::Http2ServerTransport(
       endpoint_(std::move(endpoint)),
       settings_(MakeRefCounted<SettingsPromiseManager>(
           std::move(on_receive_settings))),
+      on_close_callback_(on_close_callback),
       should_reset_ping_clock_(false),
       incoming_headers_(IncomingMetadataTracker::GetPeerString(endpoint_),
                         kIsClient),
