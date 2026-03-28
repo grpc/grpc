@@ -129,7 +129,8 @@ inline bool IsSubchannelConnectionScalingEnabled() { return false; }
 inline bool IsSubchannelWrapperCleanupOnOrphanEnabled() { return false; }
 inline bool IsTcpFrameSizeTuningEnabled() { return false; }
 inline bool IsTcpRcvLowatEnabled() { return false; }
-inline bool IsTsiFrameProtectorWithoutLocksEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_TSI_FRAME_PROTECTOR_WITHOUT_LOCKS
+inline bool IsTsiFrameProtectorWithoutLocksEnabled() { return true; }
 inline bool IsUnconstrainedMaxQuotaBufferSizeEnabled() { return false; }
 inline bool IsUseCallEventEngineInCompletionQueueEnabled() { return false; }
 inline bool IsWildcardIpExpansionRestrictionEnabled() { return false; }
@@ -209,7 +210,8 @@ inline bool IsSubchannelConnectionScalingEnabled() { return false; }
 inline bool IsSubchannelWrapperCleanupOnOrphanEnabled() { return false; }
 inline bool IsTcpFrameSizeTuningEnabled() { return false; }
 inline bool IsTcpRcvLowatEnabled() { return false; }
-inline bool IsTsiFrameProtectorWithoutLocksEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_TSI_FRAME_PROTECTOR_WITHOUT_LOCKS
+inline bool IsTsiFrameProtectorWithoutLocksEnabled() { return true; }
 inline bool IsUnconstrainedMaxQuotaBufferSizeEnabled() { return false; }
 inline bool IsUseCallEventEngineInCompletionQueueEnabled() { return false; }
 inline bool IsWildcardIpExpansionRestrictionEnabled() { return false; }
@@ -289,7 +291,8 @@ inline bool IsSubchannelConnectionScalingEnabled() { return false; }
 inline bool IsSubchannelWrapperCleanupOnOrphanEnabled() { return false; }
 inline bool IsTcpFrameSizeTuningEnabled() { return false; }
 inline bool IsTcpRcvLowatEnabled() { return false; }
-inline bool IsTsiFrameProtectorWithoutLocksEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_TSI_FRAME_PROTECTOR_WITHOUT_LOCKS
+inline bool IsTsiFrameProtectorWithoutLocksEnabled() { return true; }
 inline bool IsUnconstrainedMaxQuotaBufferSizeEnabled() { return false; }
 inline bool IsUseCallEventEngineInCompletionQueueEnabled() { return false; }
 inline bool IsWildcardIpExpansionRestrictionEnabled() { return false; }

@@ -109,7 +109,7 @@
 - name: tcp_rcv_lowat
   default: false
 - name: tsi_frame_protector_without_locks
-  default: false
+  default: true
 - name: unconstrained_max_quota_buffer_size
   default: false
 - name: use_call_event_engine_in_completion_queue
