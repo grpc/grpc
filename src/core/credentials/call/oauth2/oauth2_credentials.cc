@@ -37,13 +37,11 @@
 
 #include "src/core/call/metadata_batch.h"
 #include "src/core/credentials/call/json_util.h"
-#include "src/core/credentials/call/token_fetcher/token_fetcher_credentials.h"
+#include "src/core/credentials/call/regional_access_boundary_fetcher.h"
 #include "src/core/credentials/transport/transport_credentials.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/error.h"
-#include "src/core/lib/iomgr/pollset_set.h"
-#include "src/core/lib/promise/context.h"
-#include "src/core/lib/promise/poll.h"
+#include "src/core/lib/promise/map.h"
 #include "src/core/lib/promise/promise.h"
 #include "src/core/lib/transport/error_utils.h"
 #include "src/core/util/grpc_check.h"
@@ -55,6 +53,7 @@
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/status_helper.h"
 #include "src/core/util/uri.h"
+#include <grpc/event_engine/event_engine.h>
 #include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/strings/numbers.h"
@@ -258,25 +257,45 @@ Oauth2TokenFetcherCredentials::FetchToken(
 
 namespace {
 
-class grpc_compute_engine_token_fetcher_credentials
-    : public grpc_core::Oauth2TokenFetcherCredentials {
+class TokenWithEmail final : public grpc_core::TokenFetcherCredentials::Token {
  public:
-  grpc_compute_engine_token_fetcher_credentials() = default;
-  explicit grpc_compute_engine_token_fetcher_credentials(
-      std::vector<grpc_core::URI::QueryParam> query_params)
-      : query_params_(std::move(query_params)) {}
-  ~grpc_compute_engine_token_fetcher_credentials() override = default;
+  TokenWithEmail(grpc_core::Slice token, grpc_core::Timestamp expiration,
+                 grpc_core::RefCountedPtr<grpc_core::EmailFetcher> email_fetcher)
+      : Token(std::move(token), expiration),
+        email_fetcher_(std::move(email_fetcher)) {}
 
-  std::string debug_string() override {
-    return absl::StrFormat(
-        "GoogleComputeEngineTokenFetcherCredentials{%s}",
-        grpc_core::Oauth2TokenFetcherCredentials::debug_string());
+  void AddTokenToClientInitialMetadata(grpc_core::ClientMetadata& metadata) override {
+    Token::AddTokenToClientInitialMetadata(metadata);
+    email_fetcher_->Fetch(token().as_string_view(), metadata);
   }
 
  private:
+  grpc_core::RefCountedPtr<grpc_core::EmailFetcher> email_fetcher_;
+};
+
+class grpc_compute_engine_token_fetcher_credentials
+    : public grpc_core::HttpTokenFetcherCredentials {
+ public:
+  grpc_compute_engine_token_fetcher_credentials()
+      : email_fetcher_(grpc_core::MakeRefCounted<grpc_core::EmailFetcher>()) {}
+  explicit grpc_compute_engine_token_fetcher_credentials(
+      std::vector<grpc_core::URI::QueryParam> query_params)
+      : query_params_(std::move(query_params)),
+        email_fetcher_(grpc_core::MakeRefCounted<grpc_core::EmailFetcher>()) {}
+
+  std::string debug_string() override {
+    return "GoogleComputeEngineTokenFetcherCredentials";
+  }
+
+  grpc_core::UniqueTypeName type() const override {
+    static grpc_core::UniqueTypeName::Factory kFactory("ComputeEngine");
+    return kFactory.Create();
+  }
+
   grpc_core::OrphanablePtr<grpc_core::HttpRequest> StartHttpRequest(
-      grpc_polling_entity* pollent, grpc_core::Timestamp deadline,
-      grpc_http_response* response, grpc_closure* on_complete) override {
+        grpc_polling_entity* pollent, grpc_core::Timestamp deadline,
+        grpc_http_response* response, grpc_closure* on_complete) override {
+    memset(response, 0, sizeof(*response));
     grpc_http_header header = {const_cast<char*>("Metadata-Flavor"),
                                const_cast<char*>("Google")};
     grpc_http_request request;
@@ -292,14 +311,46 @@ class grpc_compute_engine_token_fetcher_credentials
                                       query_params_, "" /* fragment */);
     GRPC_CHECK(uri.ok());  // params are hardcoded
     auto http_request = grpc_core::HttpRequest::Get(
-        std::move(*uri), /*args=*/nullptr, pollent, &request, deadline,
-        on_complete, response,
+        std::move(*uri), /*args=*/nullptr, pollent, &request,
+        deadline, on_complete, response,
         grpc_core::RefCountedPtr<grpc_channel_credentials>(
             grpc_insecure_credentials_create()));
     http_request->Start();
     return http_request;
   }
 
+  grpc_core::OrphanablePtr<FetchRequest> FetchToken(
+      grpc_core::Timestamp deadline,
+      absl::AnyInvocable<
+          void(absl::StatusOr<grpc_core::RefCountedPtr<TokenFetcherCredentials::Token>>)>
+          on_done) override {
+    email_fetcher_->StartEmailFetch();
+    return grpc_core::MakeOrphanable<HttpFetchRequest>(
+        this, deadline,
+        [email_fetcher = email_fetcher_, on_done = std::move(on_done)](
+            absl::StatusOr<grpc_http_response> response) mutable {
+          if (!response.ok()) {
+            on_done(response.status());
+            return;
+          }
+          std::optional<grpc_core::Slice> access_token_value;
+          grpc_core::Duration token_lifetime;
+          grpc_credentials_status status =
+              grpc_oauth2_token_fetcher_credentials_parse_server_response(
+                  &(*response), &access_token_value, &token_lifetime);
+          if (status != GRPC_CREDENTIALS_OK) {
+            on_done(absl::UnavailableError("error parsing oauth2 token"));
+            return;
+          }
+          on_done(grpc_core::MakeRefCounted<TokenWithEmail>(
+              std::move(*access_token_value),
+              grpc_core::Timestamp::Now() + token_lifetime,
+              std::move(email_fetcher)));
+        });
+  }
+
+ private:
+  grpc_core::RefCountedPtr<grpc_core::EmailFetcher> email_fetcher_;
   std::vector<grpc_core::URI::QueryParam> query_params_;
 };
 }  // namespace

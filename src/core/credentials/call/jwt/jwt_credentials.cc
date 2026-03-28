@@ -16,6 +16,7 @@
 //
 
 #include "src/core/credentials/call/jwt/jwt_credentials.h"
+#include <grpc/event_engine/event_engine.h>
 
 #include <grpc/credentials.h>
 #include <grpc/support/alloc.h>
@@ -101,6 +102,10 @@ grpc_service_account_jwt_access_credentials::GetRequestMetadata(
         absl::UnauthenticatedError("Could not generate JWT."));
   }
 
+  if (regional_access_boundary_fetcher_ != nullptr) {
+    regional_access_boundary_fetcher_->Fetch(
+        jwt_value->as_string_view(), *initial_metadata);
+  }
   initial_metadata->Append(
       GRPC_AUTHORIZATION_METADATA_KEY, std::move(*jwt_value),
       [](absl::string_view, const grpc_core::Slice&) { abort(); });
@@ -110,7 +115,9 @@ grpc_service_account_jwt_access_credentials::GetRequestMetadata(
 grpc_service_account_jwt_access_credentials::
     grpc_service_account_jwt_access_credentials(grpc_auth_json_key key,
                                                 gpr_timespec token_lifetime)
-    : key_(key) {
+    : key_(key), regional_access_boundary_fetcher_(grpc_core::RegionalAccessBoundaryFetcher::Create(
+        absl::StrFormat("https://iamcredentials.googleapis.com/v1/projects/-/"
+                     "serviceAccounts/%s/allowedLocations", key_.client_email))) {
   gpr_timespec max_token_lifetime = grpc_max_auth_token_lifetime();
   if (gpr_time_cmp(token_lifetime, max_token_lifetime) > 0) {
     VLOG(2) << "Cropping token lifetime to maximum allowed value ("
