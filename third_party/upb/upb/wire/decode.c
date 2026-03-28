@@ -37,13 +37,24 @@
 #include "upb/mini_table/internal/message.h"
 #include "upb/mini_table/internal/sub.h"
 #include "upb/mini_table/message.h"
-#include "upb/mini_table/sub.h"
-#include "upb/port/atomic.h"
 #include "upb/wire/encode.h"
 #include "upb/wire/eps_copy_input_stream.h"
 #include "upb/wire/internal/constants.h"
 #include "upb/wire/internal/decoder.h"
 #include "upb/wire/reader.h"
+
+// Our awkward dance for including fasttable only when it is enabled.
+#include "upb/port/def.inc"
+#if UPB_FASTTABLE
+#define UPB_INCLUDE_FAST_DECODE
+#endif
+#include "upb/port/undef.inc"
+
+#ifdef UPB_INCLUDE_FAST_DECODE
+#include "upb/wire/decode_fast/dispatch.h"
+#endif
+
+#undef UPB_INCLUDE_FAST_DECODE
 
 // Must be last.
 #include "upb/port/def.inc"
@@ -64,7 +75,6 @@ enum {
   kUpb_DecodeOp_Scalar1Byte = 0,
   kUpb_DecodeOp_Scalar4Byte = 2,
   kUpb_DecodeOp_Scalar8Byte = 3,
-  kUpb_DecodeOp_Enum = 1,
 
   // Scalar/repeated ops.
   kUpb_DecodeOp_String = 4,
@@ -108,24 +118,6 @@ static const upb_MiniTableEnum* _upb_MiniTableSubs_EnumByField(
   return subs[field->UPB_PRIVATE(submsg_index)].UPB_PRIVATE(subenum);
 }
 
-static const char* _upb_Decoder_DecodeMessage(upb_Decoder* d, const char* ptr,
-                                              upb_Message* msg,
-                                              const upb_MiniTable* layout);
-
-UPB_NORETURN static void* _upb_Decoder_ErrorJmp(upb_Decoder* d,
-                                                upb_DecodeStatus status) {
-  UPB_ASSERT(status != kUpb_DecodeStatus_Ok);
-  d->status = status;
-  UPB_LONGJMP(d->err, 1);
-}
-
-const char* _upb_FastDecoder_ErrorJmp(upb_Decoder* d, int status) {
-  UPB_ASSERT(status != kUpb_DecodeStatus_Ok);
-  d->status = status;
-  UPB_LONGJMP(d->err, 1);
-  return NULL;
-}
-
 static void _upb_Decoder_VerifyUtf8(upb_Decoder* d, const char* buf, int len) {
   if (!_upb_Decoder_VerifyUtf8Inline(buf, len)) {
     _upb_Decoder_ErrorJmp(d, kUpb_DecodeStatus_BadUtf8);
@@ -149,31 +141,47 @@ typedef struct {
 
 UPB_NOINLINE
 static _upb_DecodeLongVarintReturn _upb_Decoder_DecodeLongVarint(
-    const char* ptr, uint64_t val) {
-  _upb_DecodeLongVarintReturn ret = {NULL, 0};
+    const char* ptr, uint64_t val, upb_Decoder* d) {
   uint64_t byte;
   for (int i = 1; i < 10; i++) {
     byte = (uint8_t)ptr[i];
     val += (byte - 1) << (i * 7);
     if (!(byte & 0x80)) {
-      ret.ptr = ptr + i + 1;
-      ret.val = val;
-      return ret;
+      return (_upb_DecodeLongVarintReturn){.ptr = ptr + i + 1, .val = val};
     }
   }
-  return ret;
+  _upb_Decoder_ErrorJmp(d, kUpb_DecodeStatus_Malformed);
+}
+
+UPB_NOINLINE
+static _upb_DecodeLongVarintReturn _upb_Decoder_DecodeLongTag(const char* ptr,
+                                                              uint64_t val,
+                                                              upb_Decoder* d) {
+  uint64_t byte;
+  for (int i = 1; i < 5; i++) {
+    byte = (uint8_t)ptr[i];
+    val += (byte - 1) << (i * 7);
+    if (!(byte & 0x80)) {
+      if (val > UINT32_MAX) {
+        break;
+      }
+      return (_upb_DecodeLongVarintReturn){.ptr = ptr + i + 1, .val = val};
+    }
+  }
+  _upb_Decoder_ErrorJmp(d, kUpb_DecodeStatus_Malformed);
 }
 
 UPB_FORCEINLINE
 const char* _upb_Decoder_DecodeVarint(upb_Decoder* d, const char* ptr,
                                       uint64_t* val) {
+  UPB_PRIVATE(upb_EpsCopyInputStream_ConsumeBytes)(&d->input, 10);
   uint64_t byte = (uint8_t)*ptr;
   if (UPB_LIKELY((byte & 0x80) == 0)) {
     *val = byte;
     return ptr + 1;
   } else {
-    _upb_DecodeLongVarintReturn res = _upb_Decoder_DecodeLongVarint(ptr, byte);
-    if (!res.ptr) _upb_Decoder_ErrorJmp(d, kUpb_DecodeStatus_Malformed);
+    _upb_DecodeLongVarintReturn res =
+        _upb_Decoder_DecodeLongVarint(ptr, byte, d);
     *val = res.val;
     return res.ptr;
   }
@@ -182,16 +190,13 @@ const char* _upb_Decoder_DecodeVarint(upb_Decoder* d, const char* ptr,
 UPB_FORCEINLINE
 const char* _upb_Decoder_DecodeTag(upb_Decoder* d, const char* ptr,
                                    uint32_t* val) {
+  UPB_PRIVATE(upb_EpsCopyInputStream_ConsumeBytes)(&d->input, 5);
   uint64_t byte = (uint8_t)*ptr;
   if (UPB_LIKELY((byte & 0x80) == 0)) {
     *val = byte;
     return ptr + 1;
   } else {
-    const char* start = ptr;
-    _upb_DecodeLongVarintReturn res = _upb_Decoder_DecodeLongVarint(ptr, byte);
-    if (!res.ptr || res.ptr - start > 5 || res.val > UINT32_MAX) {
-      _upb_Decoder_ErrorJmp(d, kUpb_DecodeStatus_Malformed);
-    }
+    _upb_DecodeLongVarintReturn res = _upb_Decoder_DecodeLongTag(ptr, byte, d);
     *val = res.val;
     return res.ptr;
   }
@@ -217,8 +222,8 @@ static void _upb_Decoder_MungeInt32(wireval* val) {
   }
 }
 
-static void _upb_Decoder_Munge(int type, wireval* val) {
-  switch (type) {
+static void _upb_Decoder_Munge(const upb_MiniTableField* field, wireval* val) {
+  switch (field->UPB_PRIVATE(descriptortype)) {
     case kUpb_FieldType_Bool:
       val->bool_val = val->uint64_val != 0;
       break;
@@ -234,9 +239,10 @@ static void _upb_Decoder_Munge(int type, wireval* val) {
     }
     case kUpb_FieldType_Int32:
     case kUpb_FieldType_UInt32:
-    case kUpb_FieldType_Enum:
       _upb_Decoder_MungeInt32(val);
       break;
+    case kUpb_FieldType_Enum:
+      UPB_UNREACHABLE();
   }
 }
 
@@ -381,13 +387,9 @@ static char* upb_Decoder_EncodeVarint32(uint32_t val, char* ptr) {
 }
 
 UPB_FORCEINLINE
-bool _upb_Decoder_CheckEnum(upb_Decoder* d, const char* ptr, upb_Message* msg,
-                            const upb_MiniTableEnum* e,
-                            const upb_MiniTableField* field, wireval* val) {
-  const uint32_t v = val->uint32_val;
-
-  if (UPB_LIKELY(upb_MiniTableEnum_CheckValue(e, v))) return true;
-
+void _upb_Decoder_AddEnumValueToUnknown(upb_Decoder* d, upb_Message* msg,
+                                        const upb_MiniTableField* field,
+                                        wireval* val) {
   // Unrecognized enum goes into unknown fields.
   // For packed fields the tag could be arbitrarily far in the past,
   // so we just re-encode the tag and value here.
@@ -399,27 +401,12 @@ bool _upb_Decoder_CheckEnum(upb_Decoder* d, const char* ptr, upb_Message* msg,
   char buf[2 * kUpb_Decoder_EncodeVarint32MaxSize];
   char* end = buf;
   end = upb_Decoder_EncodeVarint32(tag, end);
-  end = upb_Decoder_EncodeVarint32(v, end);
+  end = upb_Decoder_EncodeVarint32(val->uint64_val, end);
 
   if (!UPB_PRIVATE(_upb_Message_AddUnknown)(unknown_msg, buf, end - buf,
-                                            &d->arena, false)) {
+                                            &d->arena, NULL)) {
     _upb_Decoder_ErrorJmp(d, kUpb_DecodeStatus_OutOfMemory);
   }
-  return false;
-}
-
-UPB_NOINLINE
-static const char* _upb_Decoder_DecodeEnumArray(
-    upb_Decoder* d, const char* ptr, upb_Message* msg, upb_Array* arr,
-    const upb_MiniTableSubInternal* subs, const upb_MiniTableField* field,
-    wireval* val) {
-  const upb_MiniTableEnum* e = _upb_MiniTableSubs_EnumByField(subs, field);
-  if (!_upb_Decoder_CheckEnum(d, ptr, msg, e, field, val)) return ptr;
-  void* mem = UPB_PTR_AT(upb_Array_MutableDataPtr(arr),
-                         arr->UPB_PRIVATE(size) * 4, void);
-  arr->UPB_PRIVATE(size)++;
-  memcpy(mem, val, 4);
-  return ptr;
 }
 
 UPB_FORCEINLINE
@@ -446,11 +433,11 @@ const char* _upb_Decoder_DecodeFixedPacked(upb_Decoder* d, const char* ptr,
     char* dst = mem;
     while (!_upb_Decoder_IsDone(d, &ptr)) {
       if (lg2 == 2) {
-        ptr = upb_WireReader_ReadFixed32(ptr, dst);
+        ptr = upb_WireReader_ReadFixed32(ptr, dst, &d->input);
         dst += 4;
       } else {
         UPB_ASSERT(lg2 == 3);
-        ptr = upb_WireReader_ReadFixed64(ptr, dst);
+        ptr = upb_WireReader_ReadFixed64(ptr, dst, &d->input);
         dst += 8;
       }
     }
@@ -472,7 +459,7 @@ const char* _upb_Decoder_DecodeVarintPacked(upb_Decoder* d, const char* ptr,
   while (!_upb_Decoder_IsDone(d, &ptr)) {
     wireval elem;
     ptr = _upb_Decoder_DecodeVarint(d, ptr, &elem.uint64_val);
-    _upb_Decoder_Munge(field->UPB_PRIVATE(descriptortype), &elem);
+    _upb_Decoder_Munge(field, &elem);
     if (_upb_Decoder_Reserve(d, arr, 1)) {
       out = UPB_PTR_AT(upb_Array_MutableDataPtr(arr),
                        arr->UPB_PRIVATE(size) << lg2, void);
@@ -497,8 +484,8 @@ static const char* _upb_Decoder_DecodeEnumPacked(
   while (!_upb_Decoder_IsDone(d, &ptr)) {
     wireval elem;
     ptr = _upb_Decoder_DecodeVarint(d, ptr, &elem.uint64_val);
-    _upb_Decoder_MungeInt32(&elem);
-    if (!_upb_Decoder_CheckEnum(d, ptr, msg, e, field, &elem)) {
+    if (!upb_MiniTableEnum_CheckValue(e, elem.uint64_val)) {
+      _upb_Decoder_AddEnumValueToUnknown(d, msg, field, &elem);
       continue;
     }
     if (_upb_Decoder_Reserve(d, arr, 1)) {
@@ -581,8 +568,6 @@ static const char* _upb_Decoder_DecodeToArray(
     case OP_VARPCK_LG2(3):
       return _upb_Decoder_DecodeVarintPacked(d, ptr, arr, val, field,
                                              op - OP_VARPCK_LG2(0));
-    case kUpb_DecodeOp_Enum:
-      return _upb_Decoder_DecodeEnumArray(d, ptr, msg, arr, subs, field, val);
     case kUpb_DecodeOp_PackedEnum:
       return _upb_Decoder_DecodeEnumPacked(d, ptr, msg, arr, subs, field, val);
     default:
@@ -706,13 +691,6 @@ static const char* _upb_Decoder_DecodeToSubMessage(
   void* mem = UPB_PTR_AT(msg, field->UPB_PRIVATE(offset), void);
   int type = field->UPB_PRIVATE(descriptortype);
 
-  if (UPB_UNLIKELY(op == kUpb_DecodeOp_Enum) &&
-      !_upb_Decoder_CheckEnum(d, ptr, msg,
-                              _upb_MiniTableSubs_EnumByField(subs, field),
-                              field, val)) {
-    return ptr;
-  }
-
   // Set presence if necessary.
   if (UPB_PRIVATE(_upb_MiniTableField_HasHasbit)(field)) {
     UPB_PRIVATE(_upb_Message_SetHasbit)(msg, field);
@@ -752,7 +730,6 @@ static const char* _upb_Decoder_DecodeToSubMessage(
     case kUpb_DecodeOp_Scalar8Byte:
       memcpy(mem, val, 8);
       break;
-    case kUpb_DecodeOp_Enum:
     case kUpb_DecodeOp_Scalar4Byte:
       memcpy(mem, val, 4);
       break;
@@ -764,32 +741,6 @@ static const char* _upb_Decoder_DecodeToSubMessage(
   }
 
   return ptr;
-}
-
-UPB_NOINLINE
-const char* _upb_Decoder_CheckRequired(upb_Decoder* d, const char* ptr,
-                                       const upb_Message* msg,
-                                       const upb_MiniTable* m) {
-  UPB_ASSERT(m->UPB_PRIVATE(required_count));
-  if (UPB_UNLIKELY(d->options & kUpb_DecodeOption_CheckRequired)) {
-    d->missing_required =
-        !UPB_PRIVATE(_upb_Message_IsInitializedShallow)(msg, m);
-  }
-  return ptr;
-}
-
-UPB_FORCEINLINE
-bool _upb_Decoder_TryFastDispatch(upb_Decoder* d, const char** ptr,
-                                  upb_Message* msg, const upb_MiniTable* m) {
-#if UPB_FASTTABLE
-  if (m && m->UPB_PRIVATE(table_mask) != (unsigned char)-1) {
-    uint16_t tag = _upb_FastDecoder_LoadTag(*ptr);
-    intptr_t table = decode_totable(m);
-    *ptr = _upb_FastDecoder_TagDispatch(d, *ptr, msg, table, 0, tag);
-    return true;
-  }
-#endif
-  return false;
 }
 
 static const char* upb_Decoder_SkipField(upb_Decoder* d, const char* ptr,
@@ -911,7 +862,7 @@ static const char* upb_Decoder_DecodeMessageSetItem(
       case kMessageTag: {
         uint32_t size;
         ptr = upb_Decoder_DecodeSize(d, ptr, &size);
-        const char* data = ptr;
+        const char* data = upb_EpsCopyInputStream_GetInputPtr(&d->input, ptr);
         ptr += size;
         if (state_mask & kUpb_HavePayload) break;  // Ignore dup.
         state_mask |= kUpb_HavePayload;
@@ -958,43 +909,15 @@ UPB_NOINLINE const upb_MiniTableField* _upb_Decoder_FindExtensionField(
   return &upb_Decoder_FieldNotFoundField;
 }
 
-static const upb_MiniTableField* _upb_Decoder_FindField(
-    upb_Decoder* d, const upb_MiniTable* t, uint32_t field_number,
-    uint32_t* last_field_index, int wire_type) {
+static const upb_MiniTableField* _upb_Decoder_FindField(upb_Decoder* d,
+                                                        const upb_MiniTable* t,
+                                                        uint32_t field_number,
+                                                        int wire_type) {
   if (t == NULL) return &upb_Decoder_FieldNotFoundField;
 
-  uint32_t idx = ((uint32_t)field_number) - 1;  // 0 wraps to UINT32_MAX
-  if (idx < t->UPB_PRIVATE(dense_below)) {
-    // Fastest case: index into dense fields, and don't update last_field_index.
-    return &t->UPB_PRIVATE(fields)[idx];
-  }
-
-  uint32_t field_count = t->UPB_PRIVATE(field_count);
-  if (t->UPB_PRIVATE(dense_below) < field_count) {
-    // Linear search non-dense fields. Resume scanning from last_field_index
-    // since fields are usually in order.
-    idx = *last_field_index;
-    uint32_t candidate;
-    do {
-      candidate = t->UPB_PRIVATE(fields)[idx].UPB_PRIVATE(number);
-      if (candidate == field_number) {
-        goto found;
-      }
-    } while (++idx < field_count);
-
-    if (UPB_LIKELY(field_number > candidate)) {
-      // The field number we encountered is larger than any of our known fields,
-      // so it's likely that subsequent ones will be too.
-      *last_field_index = idx - 1;
-    } else {
-      // Fields not in tag order - scan from beginning
-      for (idx = t->UPB_PRIVATE(dense_below); idx < *last_field_index; idx++) {
-        if (t->UPB_PRIVATE(fields)[idx].UPB_PRIVATE(number) == field_number) {
-          goto found;
-        }
-      }
-    }
-  }
+  const upb_MiniTableField* field =
+      upb_MiniTable_FindFieldByNumber(t, field_number);
+  if (field) return field;
 
   if (d->extreg && t->UPB_PRIVATE(ext)) {
     return _upb_Decoder_FindExtensionField(d, t, field_number,
@@ -1002,11 +925,6 @@ static const upb_MiniTableField* _upb_Decoder_FindField(
   }
 
   return &upb_Decoder_FieldNotFoundField;  // Unknown field.
-
-found:
-  UPB_ASSERT(t->UPB_PRIVATE(fields)[idx].UPB_PRIVATE(number) == field_number);
-  *last_field_index = idx;
-  return &t->UPB_PRIVATE(fields)[idx];
 }
 
 static int _upb_Decoder_GetVarintOp(const upb_MiniTableField* field) {
@@ -1025,7 +943,7 @@ static int _upb_Decoder_GetVarintOp(const upb_MiniTableField* field) {
       [kUpb_FieldType_Message] = kUpb_DecodeOp_UnknownField,
       [kUpb_FieldType_Bytes] = kUpb_DecodeOp_UnknownField,
       [kUpb_FieldType_UInt32] = kUpb_DecodeOp_Scalar4Byte,
-      [kUpb_FieldType_Enum] = kUpb_DecodeOp_Enum,
+      [kUpb_FieldType_Enum] = kUpb_DecodeOp_Scalar4Byte,
       [kUpb_FieldType_SFixed32] = kUpb_DecodeOp_UnknownField,
       [kUpb_FieldType_SFixed64] = kUpb_DecodeOp_UnknownField,
       [kUpb_FieldType_SInt32] = kUpb_DecodeOp_Scalar4Byte,
@@ -1151,21 +1069,33 @@ const char* _upb_Decoder_DecodeWireValue(upb_Decoder* d, const char* ptr,
   switch (wire_type) {
     case kUpb_WireType_Varint:
       ptr = _upb_Decoder_DecodeVarint(d, ptr, &val->uint64_val);
+      if (upb_MiniTableField_IsClosedEnum(field)) {
+        const upb_MiniTableEnum* e =
+            upb_MiniTableField_IsExtension(field)
+                ? upb_MiniTableExtension_GetSubEnum(
+                      (const upb_MiniTableExtension*)field)
+                : upb_MiniTable_GetSubEnumTable(mt, field);
+        if (!upb_MiniTableEnum_CheckValue(e, val->uint64_val)) {
+          *op = kUpb_DecodeOp_UnknownField;
+          return ptr;
+        }
+      } else {
+        _upb_Decoder_Munge(field, val);
+      }
       *op = _upb_Decoder_GetVarintOp(field);
-      _upb_Decoder_Munge(field->UPB_PRIVATE(descriptortype), val);
       return ptr;
     case kUpb_WireType_32Bit:
       *op = kUpb_DecodeOp_Scalar4Byte;
       if (((1 << field->UPB_PRIVATE(descriptortype)) & kFixed32OkMask) == 0) {
         *op = kUpb_DecodeOp_UnknownField;
       }
-      return upb_WireReader_ReadFixed32(ptr, &val->uint32_val);
+      return upb_WireReader_ReadFixed32(ptr, &val->uint32_val, &d->input);
     case kUpb_WireType_64Bit:
       *op = kUpb_DecodeOp_Scalar8Byte;
       if (((1 << field->UPB_PRIVATE(descriptortype)) & kFixed64OkMask) == 0) {
         *op = kUpb_DecodeOp_UnknownField;
       }
-      return upb_WireReader_ReadFixed64(ptr, &val->uint64_val);
+      return upb_WireReader_ReadFixed64(ptr, &val->uint64_val, &d->input);
     case kUpb_WireType_Delimited:
       ptr = upb_Decoder_DecodeSize(d, ptr, &val->size);
       *op = _upb_Decoder_GetDelimitedOp(d, mt, field);
@@ -1296,9 +1226,9 @@ static const char* _upb_Decoder_DecodeUnknownField(upb_Decoder* d,
     // bounds checks are needed before adding the unknown field.
     _upb_Decoder_IsDone(d, &ptr);
     const char* input_ptr = upb_EpsCopyInputStream_GetInputPtr(&d->input, ptr);
-    if (!UPB_PRIVATE(_upb_Message_AddUnknown)(msg, input_start,
-                                              input_ptr - input_start,
-                                              &d->arena, d->input.aliasing)) {
+    if (!UPB_PRIVATE(_upb_Message_AddUnknown)(
+            msg, input_start, input_ptr - input_start, &d->arena,
+            d->input.aliasing ? d->input.buffer_start : NULL)) {
       _upb_Decoder_ErrorJmp(d, kUpb_DecodeStatus_OutOfMemory);
     }
   } else if (wire_type == kUpb_WireType_StartGroup) {
@@ -1307,101 +1237,123 @@ static const char* _upb_Decoder_DecodeUnknownField(upb_Decoder* d,
   return ptr;
 }
 
-UPB_NOINLINE
-static const char* _upb_Decoder_DecodeMessage(upb_Decoder* d, const char* ptr,
-                                              upb_Message* msg,
-                                              const upb_MiniTable* layout) {
-  uint32_t last_field_index = 0;
-
-#if UPB_FASTTABLE
-  // The first time we want to skip fast dispatch, because we may have just been
-  // invoked by the fast parser to handle a case that it bailed on.
-  if (!_upb_Decoder_IsDone(d, &ptr)) goto nofast;
-#endif
-
-  while (!_upb_Decoder_IsDone(d, &ptr)) {
-    uint32_t tag;
-    const upb_MiniTableField* field;
-    int field_number;
-    int wire_type;
-    wireval val;
-    int op;
-
-    if (_upb_Decoder_TryFastDispatch(d, &ptr, msg, layout)) break;
-
-#if UPB_FASTTABLE
-  nofast:
-#endif
-
+UPB_FORCEINLINE
+const char* _upb_Decoder_DecodeFieldTag(upb_Decoder* d, const char* ptr,
+                                        int* field_number, int* wire_type) {
 #ifndef NDEBUG
-    d->debug_tagstart = ptr;
+  d->debug_tagstart = ptr;
 #endif
 
-    UPB_ASSERT(ptr < d->input.limit_ptr);
-    ptr = _upb_Decoder_DecodeTag(d, ptr, &tag);
-    field_number = tag >> 3;
-    wire_type = tag & 7;
-
-#ifndef NDEBUG
-    d->debug_valstart = ptr;
-#endif
-
-    if (wire_type == kUpb_WireType_EndGroup) {
-      d->end_group = field_number;
-      return ptr;
-    }
-
-    field = _upb_Decoder_FindField(d, layout, field_number, &last_field_index,
-                                   wire_type);
-    ptr = _upb_Decoder_DecodeWireValue(d, ptr, layout, field, wire_type, &val,
-                                       &op);
-
-    if (op >= 0) {
-      ptr = _upb_Decoder_DecodeKnownField(d, ptr, msg, layout, field, op, &val);
-    } else {
-      switch (op) {
-        case kUpb_DecodeOp_UnknownField:
-          ptr = _upb_Decoder_DecodeUnknownField(d, ptr, msg, field_number,
-                                                wire_type, val);
-          break;
-        case kUpb_DecodeOp_MessageSetItem:
-          ptr = upb_Decoder_DecodeMessageSetItem(d, ptr, msg, layout);
-          break;
-      }
-    }
-  }
-
-  return UPB_UNLIKELY(layout && layout->UPB_PRIVATE(required_count))
-             ? _upb_Decoder_CheckRequired(d, ptr, msg, layout)
-             : ptr;
+  uint32_t tag;
+  UPB_ASSERT(ptr < d->input.limit_ptr);
+  ptr = _upb_Decoder_DecodeTag(d, ptr, &tag);
+  *field_number = tag >> 3;
+  *wire_type = tag & 7;
+  return ptr;
 }
 
-const char* _upb_FastDecoder_DecodeGeneric(struct upb_Decoder* d,
-                                           const char* ptr, upb_Message* msg,
-                                           intptr_t table, uint64_t hasbits,
-                                           uint64_t data) {
-  (void)data;
-  *(uint32_t*)msg |= hasbits;
-  return _upb_Decoder_DecodeMessage(d, ptr, msg, decode_totablep(table));
+UPB_FORCEINLINE
+const char* _upb_Decoder_DecodeFieldData(upb_Decoder* d, const char* ptr,
+                                         upb_Message* msg,
+                                         const upb_MiniTable* mt,
+                                         int field_number, int wire_type) {
+#ifndef NDEBUG
+  d->debug_valstart = ptr;
+#endif
+
+  int op;
+  wireval val;
+
+  const upb_MiniTableField* field =
+      _upb_Decoder_FindField(d, mt, field_number, wire_type);
+  ptr = _upb_Decoder_DecodeWireValue(d, ptr, mt, field, wire_type, &val, &op);
+
+  if (op >= 0) {
+    return _upb_Decoder_DecodeKnownField(d, ptr, msg, mt, field, op, &val);
+  } else {
+    switch (op) {
+      case kUpb_DecodeOp_UnknownField:
+        return _upb_Decoder_DecodeUnknownField(d, ptr, msg, field_number,
+                                               wire_type, val);
+      case kUpb_DecodeOp_MessageSetItem:
+        return upb_Decoder_DecodeMessageSetItem(d, ptr, msg, mt);
+      default:
+        UPB_UNREACHABLE();
+    }
+  }
+}
+
+static const char* _upb_Decoder_EndMessage(upb_Decoder* d, const char* ptr) {
+  d->message_is_done = true;
+  return ptr;
+}
+
+UPB_FORCEINLINE
+const char* _upb_Decoder_DecodeFieldNoFast(upb_Decoder* d, const char* ptr,
+                                           upb_Message* msg,
+                                           const upb_MiniTable* mt) {
+  int field_number;
+  int wire_type;
+
+  ptr = _upb_Decoder_DecodeFieldTag(d, ptr, &field_number, &wire_type);
+
+  if (wire_type == kUpb_WireType_EndGroup) {
+    d->end_group = field_number;
+    return _upb_Decoder_EndMessage(d, ptr);
+  }
+
+  ptr = _upb_Decoder_DecodeFieldData(d, ptr, msg, mt, field_number, wire_type);
+  _upb_Decoder_Trace(d, 'M');
+  return ptr;
+}
+
+UPB_FORCEINLINE
+const char* _upb_Decoder_DecodeField(upb_Decoder* d, const char* ptr,
+                                     upb_Message* msg, const upb_MiniTable* mt,
+                                     uint64_t last_field_index, uint64_t data) {
+#ifdef UPB_ENABLE_FASTTABLE
+  if (mt && mt->UPB_PRIVATE(table_mask) != (unsigned char)-1 &&
+      !(d->options & kUpb_DecodeOption_DisableFastTable)) {
+    intptr_t table = decode_totable(mt);
+    ptr = upb_DecodeFast_Dispatch(d, ptr, msg, table, 0, 0);
+    if (d->message_is_done) return ptr;
+    _upb_Decoder_Trace(d, '<');
+  } else if (_upb_Decoder_IsDone(d, &ptr)) {
+    return _upb_Decoder_EndMessage(d, ptr);
+  }
+#else
+  if (_upb_Decoder_IsDone(d, &ptr)) {
+    return _upb_Decoder_EndMessage(d, ptr);
+  }
+#endif
+
+  return _upb_Decoder_DecodeFieldNoFast(d, ptr, msg, mt);
+}
+
+UPB_NOINLINE
+const char* _upb_Decoder_DecodeMessage(upb_Decoder* d, const char* ptr,
+                                       upb_Message* msg,
+                                       const upb_MiniTable* mt) {
+  UPB_ASSERT(d->message_is_done == false);
+
+  do {
+    ptr = _upb_Decoder_DecodeField(d, ptr, msg, mt, 0, 0);
+  } while (!d->message_is_done);
+  d->message_is_done = false;
+
+  return UPB_UNLIKELY(mt && mt->UPB_PRIVATE(required_count))
+             ? _upb_Decoder_CheckRequired(d, ptr, msg, mt)
+             : ptr;
 }
 
 static upb_DecodeStatus _upb_Decoder_DecodeTop(struct upb_Decoder* d,
                                                const char* buf,
                                                upb_Message* msg,
                                                const upb_MiniTable* m) {
-  if (!_upb_Decoder_TryFastDispatch(d, &buf, msg, m)) {
-    _upb_Decoder_DecodeMessage(d, buf, msg, m);
-  }
+  _upb_Decoder_DecodeMessage(d, buf, msg, m);
   if (d->end_group != DECODE_NOGROUP) return kUpb_DecodeStatus_Malformed;
   if (d->missing_required) return kUpb_DecodeStatus_MissingRequired;
   return kUpb_DecodeStatus_Ok;
-}
-
-UPB_NOINLINE
-const char* _upb_Decoder_IsDoneFallback(upb_EpsCopyInputStream* e,
-                                        const char* ptr, int overrun) {
-  return _upb_EpsCopyInputStream_IsDoneFallbackInline(
-      e, ptr, overrun, _upb_Decoder_BufferFlipCallback);
 }
 
 static upb_DecodeStatus upb_Decoder_Decode(upb_Decoder* const decoder,
@@ -1415,9 +1367,11 @@ static upb_DecodeStatus upb_Decoder_Decode(upb_Decoder* const decoder,
     UPB_ASSERT(decoder->status != kUpb_DecodeStatus_Ok);
   }
 
-  UPB_PRIVATE(_upb_Arena_SwapOut)(arena, &decoder->arena);
+  return upb_Decoder_Destroy(decoder, arena);
+}
 
-  return decoder->status;
+static uint16_t upb_DecodeOptions_GetMaxDepth(uint32_t options) {
+  return options >> 16;
 }
 
 uint16_t upb_DecodeOptions_GetEffectiveMaxDepth(uint32_t options) {
@@ -1431,23 +1385,20 @@ upb_DecodeStatus upb_Decode(const char* buf, size_t size, upb_Message* msg,
                             upb_Arena* arena) {
   UPB_ASSERT(!upb_Message_IsFrozen(msg));
   upb_Decoder decoder;
+  buf = upb_Decoder_Init(&decoder, buf, size, extreg, options, arena, NULL, 0);
 
-  upb_EpsCopyInputStream_Init(&decoder.input, &buf, size,
-                              options & kUpb_DecodeOption_AliasString);
+  return upb_Decoder_Decode(&decoder, buf, msg, mt, arena);
+}
 
-  decoder.extreg = extreg;
-  decoder.depth = upb_DecodeOptions_GetEffectiveMaxDepth(options);
-  decoder.end_group = DECODE_NOGROUP;
-  decoder.options = (uint16_t)options;
-  decoder.missing_required = false;
-  decoder.status = kUpb_DecodeStatus_Ok;
-
-  // Violating the encapsulation of the arena for performance reasons.
-  // This is a temporary arena that we swap into and swap out of when we are
-  // done.  The temporary arena only needs to be able to handle allocation,
-  // not fuse or free, so it does not need many of the members to be initialized
-  // (particularly parent_or_count).
-  UPB_PRIVATE(_upb_Arena_SwapIn)(&decoder.arena, arena);
+upb_DecodeStatus upb_DecodeWithTrace(const char* buf, size_t size,
+                                     upb_Message* msg, const upb_MiniTable* mt,
+                                     const upb_ExtensionRegistry* extreg,
+                                     int options, upb_Arena* arena,
+                                     char* trace_buf, size_t trace_size) {
+  UPB_ASSERT(!upb_Message_IsFrozen(msg));
+  upb_Decoder decoder;
+  buf = upb_Decoder_Init(&decoder, buf, size, extreg, options, arena, trace_buf,
+                         trace_size);
 
   return upb_Decoder_Decode(&decoder, buf, msg, mt, arena);
 }
