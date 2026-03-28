@@ -44,6 +44,9 @@ set ARTIFACT_DIR=%cd%\%ARTIFACTS_OUT%
 set "GRPC_PYTHON_BUILD_USE_SHORT_TEMP_DIR_NAME=1"
 
 @rem Build gRPC Python distribution
+if exist generate_artifacts.sh (
+  bash generate_artifacts.sh || goto :error
+)
 python -m build || goto :error
 
 @rem Set up gRPC Python tools

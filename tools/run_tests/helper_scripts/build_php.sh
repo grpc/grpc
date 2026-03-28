@@ -19,6 +19,9 @@ CONFIG=${CONFIG:-opt}
 
 # change to grpc repo root
 cd "$(dirname "$0")/../../.."
+if [ -f generate_artifacts.sh ]; then
+  ./generate_artifacts.sh
+fi
 
 # build C core first
 make -j"${GRPC_RUN_TESTS_JOBS}" EMBED_OPENSSL=true EMBED_ZLIB=true static_c shared_c
