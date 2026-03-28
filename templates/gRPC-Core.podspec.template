@@ -58,6 +58,16 @@
             absl_specs.add(get_absl_spec_name(dep))
     return list(sorted(absl_specs))
 
+  # TODO: remove this function if upstream releases a fix.
+  # This is needed for zlib 1.3.2 specifically because it uses posix functions
+  # such as open(), close(), seek() without including <unistd.h>.
+  #
+  # For bazel build this is fixed by `bazel/zlib/fix_io_header.patch`. In wrapper
+  # langauges we have to disable this warning.
+  # See also https://github.com/grpc/grpc/issues/41958
+  def zlib_extra_flags():
+    return '-Wno-implicit-function-declaration'
+
   def collect_files_for_libs(libs, fields):
     files = set()
     for lib_name in libs:
@@ -76,6 +86,7 @@
   grpc_private_headers = collect_files_for_libs(grpc_full_deps, ("headers", ))
 
   grpc_abseil_specs = list_abseil_specs("grpc")
+  compiler_flags="-DGRPC_ARES=0 -Wno-comma " + zlib_extra_flags();
   %>
   Pod::Spec.new do |s|
     s.name     = 'gRPC-Core'
@@ -151,7 +162,7 @@
     }
 
     s.default_subspecs = 'Interface', 'Implementation'
-    s.compiler_flags = '-DGRPC_ARES=0 -Wno-comma'
+    s.compiler_flags = '${compiler_flags}'
     s.libraries = 'c++'
 
     # Exposes the privacy manifest. Depended on by any subspecs containing
@@ -202,5 +213,7 @@
       set -e
       find src/core -type f \\( -path '*.h' -or -path '*.cc' \\) -print0 | xargs -0 -L1 sed -E -i'.grpc_back' 's;#include <openssl/(.*)>;#if COCOAPODS==1\\\n  #include <openssl_grpc/\\1>\\\n#else\\\n  #include <openssl/\\1>\\\n#endif;g'
       find src/core/ -type f -name '*.grpc_back' -print0 | xargs -0 rm
+      cd third_party/zlib
+      ./configure
     END_OF_COMMAND
   end

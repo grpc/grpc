@@ -3480,7 +3480,11 @@
     <file baseinstalldir="/" name="third_party/zlib/crc32.h" role="src" />
     <file baseinstalldir="/" name="third_party/zlib/deflate.c" role="src" />
     <file baseinstalldir="/" name="third_party/zlib/deflate.h" role="src" />
+    <file baseinstalldir="/" name="third_party/zlib/gzclose.c" role="src" />
     <file baseinstalldir="/" name="third_party/zlib/gzguts.h" role="src" />
+    <file baseinstalldir="/" name="third_party/zlib/gzlib.c" role="src" />
+    <file baseinstalldir="/" name="third_party/zlib/gzread.c" role="src" />
+    <file baseinstalldir="/" name="third_party/zlib/gzwrite.c" role="src" />
     <file baseinstalldir="/" name="third_party/zlib/infback.c" role="src" />
     <file baseinstalldir="/" name="third_party/zlib/inffast.c" role="src" />
     <file baseinstalldir="/" name="third_party/zlib/inffast.h" role="src" />
