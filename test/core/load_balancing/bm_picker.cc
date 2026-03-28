@@ -65,13 +65,9 @@ class BenchmarkHelper : public std::enable_shared_from_this<BenchmarkHelper> {
       work_serializer_->Run([this, num_endpoints]() {
         EndpointAddressesList addresses;
         for (size_t i = 0; i < num_endpoints; i++) {
-          grpc_resolved_address addr;
           int port = i % 65536;
           int ip = i / 65536;
-          CHECK_LT(ip, 256);
-          CHECK(grpc_parse_uri(
-              URI::Parse(absl::StrCat("ipv4:127.0.0.", ip, ":", port)).value(),
-              &addr));
+          std::string addr = absl::StrCat("ipv4:127.0.0.", ip, ":", port);
           addresses.emplace_back(addr, ChannelArgs());
         }
         CHECK_OK(lb_policy_->UpdateLocked(LoadBalancingPolicy::UpdateArgs{
@@ -143,7 +139,7 @@ class BenchmarkHelper : public std::enable_shared_from_this<BenchmarkHelper> {
     explicit LbHelper(BenchmarkHelper* helper) : helper_(helper) {}
 
     RefCountedPtr<SubchannelInterface> CreateSubchannel(
-        const grpc_resolved_address& address,
+        const std::string& address,
         const ChannelArgs& per_address_args, const ChannelArgs& args) override {
       return MakeRefCounted<SubchannelFake>(helper_);
     }
