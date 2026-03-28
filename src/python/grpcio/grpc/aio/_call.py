@@ -418,6 +418,14 @@ class _StreamRequestMixin(Call):
             self._async_request_poller = self._loop.create_task(
                 self._consume_request_iterator(request_iterator)
             )
+            # Cancel the Task when the RPC is done.
+            # If the RPC fails immediately but this Task is still pending or running,
+            # these errors will occur:
+            # - Task was destroyed but it is pending!
+            # - aclose(): asynchronous generator is already running
+            self.add_done_callback(
+                lambda call: call._async_request_poller.cancel()
+            )
             self._request_style = _APIStyle.ASYNC_GENERATOR
         else:
             self._async_request_poller = None
