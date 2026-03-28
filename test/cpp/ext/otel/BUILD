@@ -84,6 +84,7 @@ grpc_cc_test(
         "//:config",
         "//:grpc++",
         "//src/core:channel_args_endpoint_config",
+        "//src/core:telemetry_label",
         "//src/cpp/ext/otel:otel_plugin",
         "//test/core/promise:test_context",
         "//test/core/test_util:fail_first_call_filter",

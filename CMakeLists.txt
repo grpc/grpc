@@ -3198,6 +3198,7 @@ foreach(_hdr
   include/grpc/byte_buffer_reader.h
   include/grpc/census.h
   include/grpc/compression.h
+  include/grpc/context_types.h
   include/grpc/create_channel_from_endpoint.h
   include/grpc/credentials.h
   include/grpc/credentials_cpp.h
@@ -3934,6 +3935,7 @@ foreach(_hdr
   include/grpc/byte_buffer_reader.h
   include/grpc/census.h
   include/grpc/compression.h
+  include/grpc/context_types.h
   include/grpc/create_channel_from_endpoint.h
   include/grpc/credentials.h
   include/grpc/credentials_cpp.h
@@ -4826,6 +4828,7 @@ endif()
 endif()
 
 add_library(grpc++
+  src/cpp/client/call_context_registry.cc
   src/cpp/client/call_credentials.cc
   src/cpp/client/channel_cc.cc
   src/cpp/client/channel_credentials.cc
@@ -5006,6 +5009,7 @@ foreach(_hdr
   include/grpc++/support/sync_stream.h
   include/grpc++/support/time.h
   include/grpcpp/alarm.h
+  include/grpcpp/call_context_types.h
   include/grpcpp/channel.h
   include/grpcpp/client_context.h
   include/grpcpp/completion_queue.h
@@ -5020,7 +5024,9 @@ foreach(_hdr
   include/grpcpp/generic/generic_stub_callback.h
   include/grpcpp/grpcpp.h
   include/grpcpp/health_check_service_interface.h
+  include/grpcpp/impl/allowed_call_context_types.h
   include/grpcpp/impl/call.h
+  include/grpcpp/impl/call_context_registry.h
   include/grpcpp/impl/call_op_set.h
   include/grpcpp/impl/call_op_set_interface.h
   include/grpcpp/impl/channel_argument_option.h
@@ -5577,6 +5583,7 @@ target_link_libraries(grpc++_test_util
 endif()
 
 add_library(grpc++_unsecure
+  src/cpp/client/call_context_registry.cc
   src/cpp/client/call_credentials.cc
   src/cpp/client/channel_cc.cc
   src/cpp/client/channel_credentials.cc
@@ -5748,6 +5755,7 @@ foreach(_hdr
   include/grpc++/support/sync_stream.h
   include/grpc++/support/time.h
   include/grpcpp/alarm.h
+  include/grpcpp/call_context_types.h
   include/grpcpp/channel.h
   include/grpcpp/client_context.h
   include/grpcpp/completion_queue.h
@@ -5762,7 +5770,9 @@ foreach(_hdr
   include/grpcpp/generic/generic_stub_callback.h
   include/grpcpp/grpcpp.h
   include/grpcpp/health_check_service_interface.h
+  include/grpcpp/impl/allowed_call_context_types.h
   include/grpcpp/impl/call.h
+  include/grpcpp/impl/call_context_registry.h
   include/grpcpp/impl/call_op_set.h
   include/grpcpp/impl/call_op_set_interface.h
   include/grpcpp/impl/channel_argument_option.h
@@ -6270,6 +6280,7 @@ foreach(_hdr
   include/grpc/byte_buffer.h
   include/grpc/byte_buffer_reader.h
   include/grpc/compression.h
+  include/grpc/context_types.h
   include/grpc/create_channel_from_endpoint.h
   include/grpc/credentials.h
   include/grpc/credentials_cpp.h

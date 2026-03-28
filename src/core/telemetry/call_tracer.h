@@ -194,6 +194,11 @@ class ServerCallTracerInterface;
 // on the ClientCallTracer object.
 class ClientCallTracerInterface : public CallTracerAnnotationInterface {
  public:
+  enum class OptionalLabelKey : std::uint8_t {
+    kTelemetryLabel,
+    kSize  // should be last
+  };
+
   // Interface for a tracer that records activities on a particular call
   // attempt.
   // (A single RPC can have multiple attempts due to retry/hedging policies or
@@ -206,6 +211,7 @@ class ClientCallTracerInterface : public CallTracerAnnotationInterface {
       kXdsServiceNamespace,  // not public
       kLocality,
       kBackendService,
+      kTelemetryLabel,
       kSize  // should be last
     };
 

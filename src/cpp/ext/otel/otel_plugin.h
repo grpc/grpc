@@ -437,12 +437,16 @@ class OpenTelemetryPluginImpl
   static absl::string_view OptionalLabelKeyToString(
       grpc_core::ClientCallTracerInterface::CallAttemptTracer::OptionalLabelKey
           key);
+  static absl::string_view CallOptionalLabelKeyToString(
+      grpc_core::ClientCallTracerInterface::OptionalLabelKey key);
 
   // Returns the OptionalLabelKey form of \a key if \a key is recognized and
   // is public, std::nullopt otherwise.
   static std::optional<
       grpc_core::ClientCallTracerInterface::CallAttemptTracer::OptionalLabelKey>
   OptionalLabelStringToKey(absl::string_view key);
+  static std::optional<grpc_core::ClientCallTracerInterface::OptionalLabelKey>
+  CallOptionalLabelStringToKey(absl::string_view key);
 
   static absl::string_view GetMethodFromPath(const grpc_core::Slice& path);
 
@@ -544,6 +548,7 @@ class OpenTelemetryPluginImpl
   ServerMetrics server_;
   static constexpr int kOptionalLabelsSizeLimit = 64;
   using OptionalLabelsBitSet = std::bitset<kOptionalLabelsSizeLimit>;
+  OptionalLabelsBitSet per_attempt_optional_label_bits_;
   OptionalLabelsBitSet per_call_optional_label_bits_;
   // Instruments for non-per-call metrics.
   struct Disabled {};
