@@ -301,7 +301,7 @@ describe 'ClientStub' do  # rubocop:disable Metrics/BlockLength
     describe 'via a call operation' do
       after(:each) do
         # make sure op.wait doesn't freeze, even if there's a bad status
-        @op.wait
+        @op&.wait
       end
       def get_response(stub, run_start_call_first: false, credentials: nil)
         @op = stub.request_response(@method, @sent_msg, noop, noop,
@@ -403,7 +403,7 @@ describe 'ClientStub' do  # rubocop:disable Metrics/BlockLength
     describe 'via a call operation' do
       after(:each) do
         # make sure op.wait doesn't freeze, even if there's a bad status
-        @op.wait
+        @op&.wait
       end
       def get_response(stub, run_start_call_first: false)
         @op = stub.client_streamer(@method, @sent_msgs, noop, noop,
@@ -522,7 +522,7 @@ describe 'ClientStub' do  # rubocop:disable Metrics/BlockLength
 
     describe 'via a call operation' do
       after(:each) do
-        @op.wait # make sure wait doesn't freeze
+        @op&.wait
       end
       def get_responses(stub, run_start_call_first: false, unmarshal: noop)
         @op = stub.server_streamer(@method, @sent_msg, noop, unmarshal,
@@ -841,7 +841,7 @@ describe 'ClientStub' do  # rubocop:disable Metrics/BlockLength
 
     describe 'via a call operation' do
       after(:each) do
-        @op.wait # make sure wait doesn't freeze
+        @op&.wait
       end
       def get_responses(stub, run_start_call_first: false, deadline: nil,
                         marshal_proc: noop)

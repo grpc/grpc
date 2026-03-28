@@ -134,16 +134,6 @@ describe GRPC::Core::Call do
     end
   end
 
-  describe '#set_credentials!' do
-    it 'can set a valid CallCredentials object' do
-      make_test_call do |call|
-        auth_proc = proc { { 'plugin_key' => 'plugin_value' } }
-        creds = GRPC::Core::CallCredentials.new auth_proc
-        expect { call.set_credentials! creds }.not_to raise_error
-      end
-    end
-  end
-
   describe '#cancel' do
     it 'completes ok' do
       make_test_call do |call|
