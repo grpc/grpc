@@ -269,6 +269,7 @@ libs:
   - src/core/credentials/call/oauth2/oauth2_credentials.h
   - src/core/credentials/call/plugin/plugin_credentials.h
   - src/core/credentials/call/token_fetcher/token_fetcher_credentials.h
+  - src/core/credentials/call/utils/redact_utils.h
   - src/core/credentials/transport/alts/alts_credentials.h
   - src/core/credentials/transport/alts/alts_security_connector.h
   - src/core/credentials/transport/alts/check_gcp_environment.h
@@ -1441,6 +1442,7 @@ libs:
   - src/core/credentials/call/oauth2/oauth2_credentials.cc
   - src/core/credentials/call/plugin/plugin_credentials.cc
   - src/core/credentials/call/token_fetcher/token_fetcher_credentials.cc
+  - src/core/credentials/call/utils/redact_utils.cc
   - src/core/credentials/transport/alts/alts_credentials.cc
   - src/core/credentials/transport/alts/alts_security_connector.cc
   - src/core/credentials/transport/alts/check_gcp_environment.cc
@@ -22115,6 +22117,32 @@ targets:
   - gtest
   - grpc_authorization_provider
   - grpc_test_util
+- name: redact_utils_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/test_util/test_call_creds.h
+  - third_party/protoc-gen-validate/validate/validate.h
+  src:
+  - third_party/envoy-api/envoy/extensions/grpc_service/call_credentials/access_token/v3/access_token_credentials.proto
+  - third_party/googleapis/google/api/annotations.proto
+  - third_party/googleapis/google/api/http.proto
+  - third_party/googleapis/google/api/httpbody.proto
+  - third_party/googleapis/google/rpc/status.proto
+  - third_party/protoc-gen-validate/validate/validate.proto
+  - third_party/xds/udpa/annotations/migrate.proto
+  - third_party/xds/udpa/annotations/security.proto
+  - third_party/xds/udpa/annotations/sensitive.proto
+  - third_party/xds/udpa/annotations/status.proto
+  - third_party/xds/udpa/annotations/versioning.proto
+  - test/core/credentials/call/redact_utils_test.cc
+  - test/core/test_util/test_call_creds.cc
+  deps:
+  - gtest
+  - protobuf
+  - grpc_test_util
+  uses_polling: false
 - name: ref_counted_ptr_test
   gtest: true
   build: test

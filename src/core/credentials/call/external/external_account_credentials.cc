@@ -33,6 +33,7 @@
 #include "src/core/credentials/call/external/file_external_account_credentials.h"
 #include "src/core/credentials/call/external/url_external_account_credentials.h"
 #include "src/core/credentials/call/json_util.h"
+#include "src/core/credentials/call/utils/redact_utils.h"
 #include "src/core/credentials/transport/transport_credentials.h"
 #include "src/core/lib/transport/status_conversion.h"
 #include "src/core/util/grpc_check.h"
@@ -117,7 +118,8 @@ void ExternalAccountCredentials::HttpFetchBody::OnHttpResponse(
     self->Finish(absl::Status(
         static_cast<absl::StatusCode>(status_code),
         absl::StrCat("Call to HTTP server ended with status ",
-                     self->response_.status, " [", response_body, "]")));
+                     self->response_.status, " [",
+                     RedactSensitiveJsonFields(response_body), "]")));
     return;
   }
   self->Finish(std::string(response_body));
@@ -291,8 +293,9 @@ void ExternalAccountCredentials::ExternalFetchRequest::
   }
   auto it = json->object().find("access_token");
   if (it == json->object().end() || it->second.type() != Json::Type::kString) {
-    FinishTokenFetch(absl::UnauthenticatedError(absl::StrFormat(
-        "Missing or invalid access_token in %s.", *response_body)));
+    FinishTokenFetch(absl::UnauthenticatedError(
+        absl::StrFormat("Missing or invalid access_token in %s.",
+                        RedactSensitiveJsonFields(*response_body))));
     return;
   }
   absl::string_view access_token = it->second.string();
@@ -369,15 +372,17 @@ void ExternalAccountCredentials::ExternalFetchRequest::
   }
   auto it = json->object().find("accessToken");
   if (it == json->object().end() || it->second.type() != Json::Type::kString) {
-    FinishTokenFetch(GRPC_ERROR_CREATE(absl::StrFormat(
-        "Missing or invalid accessToken in %s.", *response_body)));
+    FinishTokenFetch(GRPC_ERROR_CREATE(
+        absl::StrFormat("Missing or invalid accessToken in %s.",
+                        RedactSensitiveJsonFields(*response_body))));
     return;
   }
   absl::string_view access_token = it->second.string();
   it = json->object().find("expireTime");
   if (it == json->object().end() || it->second.type() != Json::Type::kString) {
-    FinishTokenFetch(GRPC_ERROR_CREATE(absl::StrFormat(
-        "Missing or invalid expireTime in %s.", *response_body)));
+    FinishTokenFetch(GRPC_ERROR_CREATE(
+        absl::StrFormat("Missing or invalid expireTime in response from "
+                        "service account impersonation.")));
     return;
   }
   absl::string_view expire_time = it->second.string();

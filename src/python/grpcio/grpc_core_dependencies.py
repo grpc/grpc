@@ -83,6 +83,7 @@ CORE_SOURCE_FILES = [
     'src/core/credentials/call/oauth2/oauth2_credentials.cc',
     'src/core/credentials/call/plugin/plugin_credentials.cc',
     'src/core/credentials/call/token_fetcher/token_fetcher_credentials.cc',
+    'src/core/credentials/call/utils/redact_utils.cc',
     'src/core/credentials/transport/alts/alts_credentials.cc',
     'src/core/credentials/transport/alts/alts_security_connector.cc',
     'src/core/credentials/transport/alts/check_gcp_environment.cc',

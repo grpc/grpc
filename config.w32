@@ -73,6 +73,7 @@ if (PHP_GRPC != "no") {
     "src\\core\\credentials\\call\\oauth2\\oauth2_credentials.cc " +
     "src\\core\\credentials\\call\\plugin\\plugin_credentials.cc " +
     "src\\core\\credentials\\call\\token_fetcher\\token_fetcher_credentials.cc " +
+    "src\\core\\credentials\\call\\utils\\redact_utils.cc " +
     "src\\core\\credentials\\transport\\alts\\alts_credentials.cc " +
     "src\\core\\credentials\\transport\\alts\\alts_security_connector.cc " +
     "src\\core\\credentials\\transport\\alts\\check_gcp_environment.cc " +
@@ -1505,6 +1506,7 @@ if (PHP_GRPC != "no") {
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\credentials\\call\\oauth2");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\credentials\\call\\plugin");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\credentials\\call\\token_fetcher");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\credentials\\call\\utils");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\credentials\\transport");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\credentials\\transport\\alts");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\credentials\\transport\\composite");

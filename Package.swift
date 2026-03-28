@@ -270,6 +270,8 @@ let package = Package(
         "src/core/credentials/call/plugin/plugin_credentials.h",
         "src/core/credentials/call/token_fetcher/token_fetcher_credentials.cc",
         "src/core/credentials/call/token_fetcher/token_fetcher_credentials.h",
+        "src/core/credentials/call/utils/redact_utils.cc",
+        "src/core/credentials/call/utils/redact_utils.h",
         "src/core/credentials/transport/alts/alts_credentials.cc",
         "src/core/credentials/transport/alts/alts_credentials.h",
         "src/core/credentials/transport/alts/alts_security_connector.cc",
