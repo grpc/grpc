@@ -518,11 +518,16 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "time_precise",
-    srcs = ["util/time_precise.cc"],
+    srcs = [
+        "util/time_precise.cc",
+    ],
     hdrs = [
         "util/time_precise.h",
     ],
-    external_deps = ["absl/log"],
+    external_deps = [
+        "absl/log",
+        "absl/base",
+    ],
     tags = [
         "nofixdeps",
     ],
