@@ -53,7 +53,7 @@
   "\x00\x00\x00\x00"
 
 static void verifier(grpc_server* server, grpc_completion_queue* cq,
-                     void* /*registered_method*/) {
+                     void* /*registered_method*/, gpr_event* ready) {
   grpc_call_error error;
   grpc_call* s;
   grpc_call_details call_details;
@@ -64,6 +64,7 @@ static void verifier(grpc_server* server, grpc_completion_queue* cq,
   grpc_metadata_array request_metadata_recv;
   int was_cancelled = 2;
 
+  gpr_event_set(ready, reinterpret_cast<void*>(1));
   grpc_call_details_init(&call_details);
   grpc_metadata_array_init(&request_metadata_recv);
 
