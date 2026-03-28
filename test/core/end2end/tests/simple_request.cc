@@ -38,15 +38,22 @@ using testing::StartsWith;
 
 namespace grpc_core {
 namespace {
-void CheckPeer(std::string peer_name) {
-  // If the peer name is a uds path, then check if it is filled
-  if (absl::StartsWith(peer_name, "unix:/")) {
+void CheckPeer(std::string peer_name, bool is_fullstack_uds) {
+  // For UDS fullstack configs, assert the full server socket path is present.
+  // This catches the regression where an unbound UDS client causes
+  // ServerContext::peer() to return a truncated "unix:" with no path.
+  // Also assert if the peer already starts with "unix:/" on any config, to
+  // catch wrong paths. Anonymous AF_UNIX socket pairs legitimately return
+  // "unix:" with no path and are excluded by the is_fullstack_uds=false path.
+  if (is_fullstack_uds || absl::StartsWith(peer_name, "unix:/")) {
     EXPECT_THAT(peer_name, StartsWith("unix:/tmp/grpc_fullstack_test."));
   }
 }
 
 void SimpleRequestBody(CoreEnd2endTest& test) {
   auto before = global_stats().Collect();
+  bool is_fullstack_uds =
+      test.test_config()->feature_mask & FEATURE_MASK_IS_FULLSTACK_UDS;
   auto c = test.NewClientCall("/foo").Timeout(Duration::Minutes(1)).Create();
   EXPECT_NE(c.GetPeer(), std::nullopt);
   IncomingStatusOnClient server_status;
@@ -60,9 +67,9 @@ void SimpleRequestBody(CoreEnd2endTest& test) {
   test.Expect(101, true);
   test.Step();
   EXPECT_NE(s.GetPeer(), std::nullopt);
-  CheckPeer(*s.GetPeer());
+  CheckPeer(*s.GetPeer(), is_fullstack_uds);
   EXPECT_NE(c.GetPeer(), std::nullopt);
-  CheckPeer(*c.GetPeer());
+  CheckPeer(*c.GetPeer(), is_fullstack_uds);
   IncomingCloseOnServer client_close;
   s.NewBatch(102)
       .SendInitialMetadata({})
