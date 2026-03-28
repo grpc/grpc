@@ -24,6 +24,7 @@
 #include <string>
 #include <utility>
 
+#include "src/core/call/status_util.h"
 #include "src/core/credentials/transport/tls/tls_utils.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -53,8 +54,8 @@ bool ExternalCertificateVerifier::Verify(
                                             &status_code, &error_details);
   if (is_done) {
     if (status_code != GRPC_STATUS_OK) {
-      *sync_status = absl::Status(static_cast<absl::StatusCode>(status_code),
-                                  error_details);
+      *sync_status = absl::Status(
+          grpc_status_code_to_absl_status_code(status_code), error_details);
     }
     MutexLock lock(&mu_);
     request_map_.erase(request);
@@ -85,8 +86,8 @@ void ExternalCertificateVerifier::OnVerifyDone(
   if (callback != nullptr) {
     absl::Status return_status;
     if (status != GRPC_STATUS_OK) {
-      return_status =
-          absl::Status(static_cast<absl::StatusCode>(status), error_details);
+      return_status = absl::Status(grpc_status_code_to_absl_status_code(status),
+                                   error_details);
     }
     callback(return_status);
   }
