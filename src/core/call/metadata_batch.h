@@ -581,6 +581,15 @@ struct W3CTraceParentMetadata : public SimpleSliceBasedMetadata {
   static absl::string_view key() { return "traceparent"; }
 };
 
+// tracestate metadata
+struct W3CTraceStateMetadata : public SimpleSliceBasedMetadata {
+  static constexpr bool kPublishToApp = true;
+  static constexpr bool kRepeatable = true;
+  static constexpr bool kTransferOnTrailersOnly = false;
+  using CompressionTraits = NoCompressionCompressor;
+  static absl::string_view key() { return "tracestate"; }
+};
+
 // Annotation added by a transport to note whether a failed request was never
 // placed on the wire, or never seen by a server.
 struct GrpcStreamNetworkState {
@@ -883,6 +892,22 @@ class GetStringValueHelper {
     const auto* value = container_->get_pointer(Trait());
     if (value == nullptr) return std::nullopt;
     return value->as_string_view();
+  }
+
+  template <typename Trait>
+  GPR_ATTRIBUTE_NOINLINE absl::enable_if_t<
+      Trait::kRepeatable == true &&
+          std::is_same<Slice, typename Trait::ValueType>::value,
+      std::optional<absl::string_view>>
+  Found(Trait) {
+    const auto* value = container_->get_pointer(Trait());
+    if (value == nullptr) return std::nullopt;
+    backing_->clear();
+    for (const auto& v : *value) {
+      if (!backing_->empty()) backing_->push_back(',');
+      backing_->append(v.as_string_view());
+    }
+    return *backing_;
   }
 
   template <typename Trait>
@@ -1700,6 +1725,7 @@ using grpc_metadata_batch_base = grpc_core::MetadataMap<
     grpc_core::LbCostBinMetadata, grpc_core::LbTokenMetadata,
     grpc_core::XEnvoyPeerMetadata, grpc_core::XForwardedForMetadata,
     grpc_core::XForwardedHostMetadata, grpc_core::W3CTraceParentMetadata,
+    grpc_core::W3CTraceStateMetadata,
     // Non-encodable things
     grpc_core::GrpcStreamNetworkState, grpc_core::PeerString,
     grpc_core::GrpcStatusContext, grpc_core::GrpcStatusFromWire,
