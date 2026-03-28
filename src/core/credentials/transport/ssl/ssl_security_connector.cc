@@ -228,6 +228,7 @@ class grpc_ssl_server_security_connector
           static_cast<const grpc_ssl_server_credentials*>(server_creds());
       size_t num_alpn_protocols = 0;
       const char** alpn_protocol_strings = nullptr;
+      bool alpn_string_parsed = true;
       if (alpn_preferred_protocol_raw_list.has_value()) {
 #if TSI_OPENSSL_ALPN_SUPPORT
         alpn_protocol_strings = ParseAlpnStringIntoArray(
@@ -235,6 +236,7 @@ class grpc_ssl_server_security_connector
 #endif  // TSI_OPENSSL_ALPN_SUPPORT
       }
       if (alpn_protocol_strings == nullptr) {
+        alpn_string_parsed = false;
         alpn_protocol_strings =
             grpc_fill_alpn_protocol_strings(&num_alpn_protocols);
       }
@@ -258,6 +260,11 @@ class grpc_ssl_server_security_connector
       const tsi_result result =
           tsi_create_ssl_server_handshaker_factory_with_options(
               &options, &server_handshaker_factory_);
+      if (alpn_string_parsed) {
+        for (size_t i = 0; i < num_alpn_protocols; ++i) {
+          gpr_free(const_cast<char*>(alpn_protocol_strings[i]));
+        }
+      }
       gpr_free(alpn_protocol_strings);
       if (result != TSI_OK) {
         LOG(ERROR) << "Handshaker factory creation failed with "
