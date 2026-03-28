@@ -28,6 +28,7 @@
 #include "src/proto/grpc/testing/benchmark_service.grpc.pb.h"
 #include "test/cpp/qps/qps_server_builder.h"
 #include "test/cpp/qps/server.h"
+#include "test/cpp/qps/session_util.h"
 #include "test/cpp/qps/usage_timer.h"
 #include "absl/log/log.h"
 
@@ -37,6 +38,8 @@ namespace testing {
 class BenchmarkCallbackServiceImpl final
     : public BenchmarkService::CallbackService {
  public:
+  BenchmarkCallbackServiceImpl() { grpc::experimental::SetVirtualService(this); }
+
   grpc::ServerUnaryReactor* UnaryCall(grpc::CallbackServerContext* context,
                                       const SimpleRequest* request,
                                       SimpleResponse* response) override {
@@ -127,17 +130,10 @@ class BenchmarkCallbackServiceImpl final
           }
           return;
         }
-        StartWrite(&response_);
-      }
-
-      void OnWriteDone(bool ok) override {
-        if (!ok) {
-          if (!finished_.test_and_set()) {
-            Finish(grpc::Status::OK);
-          }
-          return;
+        if (!finished_.test_and_set()) {
+          StartWriteAndFinish(&response_, grpc::WriteOptions(),
+                              grpc::Status::OK);
         }
-        StartWrite(&response_);
       }
 
       void OnCancel() override {
@@ -172,25 +168,50 @@ class BenchmarkCallbackServiceImpl final
 class CallbackServer final : public grpc::testing::Server {
  public:
   explicit CallbackServer(const ServerConfig& config) : Server(config) {
-    std::unique_ptr<ServerBuilder> builder = CreateQpsServerBuilder();
+    if (config.use_session()) {
+      std::unique_ptr<ServerBuilder> inner_builder = CreateQpsServerBuilder();
+      ApplyConfigToBuilder(config, inner_builder.get());
+      inner_builder->RegisterService(&service_);
+      inner_server_ = inner_builder->BuildAndStart();
 
-    auto port_num = port();
-    // Negative port number means inproc server, so no listen port needed
-    if (port_num >= 0) {
-      std::string server_address = grpc_core::JoinHostPort("::", port_num);
-      builder->AddListeningPort(
-          server_address, Server::CreateServerCredentials(config), &port_num);
+      std::unique_ptr<ServerBuilder> outer_builder = CreateQpsServerBuilder();
+      auto port_num = port();
+      if (port_num >= 0) {
+        std::string server_address = grpc_core::JoinHostPort("::", port_num);
+        outer_builder->AddListeningPort(
+            server_address, Server::CreateServerCredentials(config), &port_num);
+      }
+      outer_service_ = std::make_unique<OuterSessionService>(&service_);
+      outer_builder->RegisterService(outer_service_.get());
+      impl_ = outer_builder->BuildAndStart();
+    } else {
+      std::unique_ptr<ServerBuilder> builder = CreateQpsServerBuilder();
+
+      auto port_num = port();
+      // Negative port number means inproc server, so no listen port needed
+      if (port_num >= 0) {
+        std::string server_address = grpc_core::JoinHostPort("::", port_num);
+        builder->AddListeningPort(
+            server_address, Server::CreateServerCredentials(config), &port_num);
+      }
+
+      ApplyConfigToBuilder(config, builder.get());
+
+      builder->RegisterService(&service_);
+
+      impl_ = builder->BuildAndStart();
     }
 
-    ApplyConfigToBuilder(config, builder.get());
-
-    builder->RegisterService(&service_);
-
-    impl_ = builder->BuildAndStart();
     if (impl_ == nullptr) {
-      LOG(ERROR) << "Server: Fail to BuildAndStart(port=" << port_num << ")";
+      LOG(ERROR) << "Server: Fail to BuildAndStart";
     } else {
-      LOG(INFO) << "Server: BuildAndStart(port=" << port_num << ")";
+      LOG(INFO) << "Server: BuildAndStart";
+    }
+  }
+
+  ~CallbackServer() override {
+    if (inner_server_) {
+      inner_server_->Shutdown();
     }
   }
 
@@ -201,6 +222,8 @@ class CallbackServer final : public grpc::testing::Server {
 
  private:
   BenchmarkCallbackServiceImpl service_;
+  std::unique_ptr<OuterSessionService> outer_service_;
+  std::unique_ptr<grpc::Server> inner_server_;
   std::unique_ptr<grpc::Server> impl_;
 };
 
