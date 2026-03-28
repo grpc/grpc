@@ -2528,7 +2528,15 @@ static tsi_result create_tsi_ssl_handshaker(
     // allowed as host names.
     if (server_name_indication != nullptr &&
         !looks_like_ip_address(server_name_indication)) {
-      if (!SSL_set_tlsext_host_name(ssl, server_name_indication)) {
+      // Per RFC 6066 Section 3, the SNI hostname must not include a trailing
+      // dot. A trailing dot denotes a fully qualified domain name (FQDN) and
+      // is valid in DNS contexts, but is explicitly prohibited in the SNI
+      // extension. Strip it before setting the hostname.
+      std::string sni_hostname(server_name_indication);
+      if (!sni_hostname.empty() && sni_hostname.back() == '.') {
+        sni_hostname.pop_back();
+      }
+      if (!SSL_set_tlsext_host_name(ssl, sni_hostname.c_str())) {
         LOG(ERROR) << "Invalid server name indication "
                    << server_name_indication;
         SSL_free(ssl);
