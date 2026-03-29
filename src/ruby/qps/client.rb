@@ -119,7 +119,7 @@ class BenchmarkClient
     resp = stub.streaming_call(q.each_item)
     start = Time.now
     q.push(req)
-    pushed_sentinal = false
+    pushed_sentinel = false
     resp.each do |r|
       @histogram.add((Time.now-start)*1e9)
       if !@done
@@ -127,9 +127,9 @@ class BenchmarkClient
         start = Time.now
         q.push(req)
       else
-        q.push(self) unless pushed_sentinal
+        q.push(self) unless pushed_sentinel
 	# Continue polling on the responses to consume and release resources
-        pushed_sentinal = true
+        pushed_sentinel = true
       end
     end
   end

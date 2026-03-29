@@ -997,7 +997,7 @@ void Init_grpc_call() {
       rb_define_class_under(grpc_rb_mGrpcCore, "MetadataArray", rb_cObject);
   rb_undef_alloc_func(grpc_rb_cMdAry);
 
-  /* Prevent allocation or inialization of the Call class */
+  /* Prevent allocation or initialization of the Call class */
   rb_define_alloc_func(grpc_rb_cCall, grpc_rb_cannot_alloc);
   rb_define_method(grpc_rb_cCall, "initialize", grpc_rb_cannot_init, 0);
   rb_define_method(grpc_rb_cCall, "initialize_copy", grpc_rb_cannot_init_copy,
