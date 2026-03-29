@@ -132,6 +132,15 @@ constexpr grpc_core::Duration kLifeguardMinSleepBetweenChecks{
 // Maximum time the lifeguard thread should sleep between checking for new work.
 constexpr grpc_core::Duration kLifeguardMaxSleepBetweenChecks{
     grpc_core::Duration::Seconds(1)};
+// Minimum time to wait between attempts of creating the lifeguard thread.
+constexpr grpc_core::Duration kLifeguardStartMinSleep{
+    grpc_core::Duration::Milliseconds(15)};
+// Maximum time to wait between attempts of creating the lifeguard thread.
+constexpr grpc_core::Duration kLifeguardStartMaxSleep{
+    grpc_core::Duration::Seconds(1)};
+// Total time before giving up attempting to create the lifeguard thread.
+constexpr grpc_core::Duration kLifeguardStartTimeout{
+    grpc_core::Duration::Seconds(10)};
 constexpr grpc_core::Duration kBlockUntilThreadCountTimeout{
     grpc_core::Duration::Seconds(60)};
 
@@ -378,15 +387,35 @@ WorkStealingThreadPool::WorkStealingThreadPoolImpl::Lifeguard::Lifeguard(
   // lifeguard_running_ is set early to avoid a quiesce race while the
   // lifeguard is still starting up.
   lifeguard_running_.store(true);
-  grpc_core::Thread(
-      "lifeguard",
-      [](void* arg) {
-        auto* lifeguard = static_cast<Lifeguard*>(arg);
-        lifeguard->LifeguardMain();
-      },
-      this, nullptr,
-      grpc_core::Thread::Options().set_tracked(false).set_joinable(false))
-      .Start();
+
+  grpc_core::BackOff start_backoff(
+      grpc_core::BackOff::Options()
+          .set_initial_backoff(kLifeguardStartMinSleep)
+          .set_max_backoff(kLifeguardStartMaxSleep)
+          .set_multiplier(1.3));
+  grpc_core::Timestamp deadline = grpc_core::Timestamp::Now() +
+                                  kLifeguardStartTimeout;
+  while (true) {
+    bool success = false;
+    grpc_core::Thread thread(
+        "lifeguard",
+        [](void* arg) {
+          auto* lifeguard = static_cast<Lifeguard*>(arg);
+          lifeguard->LifeguardMain();
+        },
+        this, &success,
+        grpc_core::Thread::Options().set_tracked(false).set_joinable(false));
+    if (success) {
+      thread.Start();
+      break;
+    } else if (grpc_core::Timestamp::Now() > deadline) {
+      grpc_core::Crash("Failed to start lifeguard thread");
+    } else {
+      // Wait until the system/user has sufficient resources to create a thread.
+      absl::SleepFor(
+          absl::Milliseconds(start_backoff.NextAttemptDelay().millis()));
+    }
+  }
 }
 
 void WorkStealingThreadPool::WorkStealingThreadPoolImpl::Lifeguard::
