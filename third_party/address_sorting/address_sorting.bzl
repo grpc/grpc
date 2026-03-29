@@ -28,8 +28,10 @@
 # OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 # SUCH DAMAGE.
 
+load("@rules_cc//cc:cc_library.bzl", "cc_library")
+
 def address_sorting_cc_library(name, srcs, hdrs, copts, includes, linkopts=[]):
-    native.cc_library(
+    cc_library(
         name = name,
         srcs = srcs,
         hdrs = hdrs,
