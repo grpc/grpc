@@ -1750,8 +1750,6 @@ class NewSubchannel::ConnectionStateWatcher final
       // connection attempt.
       subchannel->RetryQueuedRpcsLocked();
     }
-    // Reset backoff.
-    subchannel->backoff_.Reset();
   }
 
   void OnPeerMaxConcurrentStreamsUpdate(
@@ -2264,6 +2262,8 @@ bool NewSubchannel::PublishTransportLocked() {
         connecting_result_.max_concurrent_streams);
   }
   connecting_result_.Reset();
+  // Reset backoff.
+  backoff_.Reset();
   // Publish.
   GRPC_TRACE_LOG(subchannel, INFO)
       << "subchannel " << this << " " << key_.ToString()
@@ -2357,6 +2357,7 @@ NewSubchannel::ChooseConnectionLocked() {
 
 void NewSubchannel::RetryQueuedRpcs() {
   MutexLock lock(&mu_);
+  if (shutdown_) return;
   RetryQueuedRpcsLocked();
 }
 

@@ -209,6 +209,8 @@ grpc_cc_test(
     srcs = ["secure_endpoint_read_coalescing_test.cc"],
     external_deps = [
         "absl/status",
+        "absl/strings",
+        "absl/strings:string_view",
         "absl/synchronization",
         "gtest",
     ],
@@ -228,5 +230,6 @@ grpc_cc_test(
         "//src/core:slice",
         "//test/core/test_util:grpc_test_util",
         "//test/core/test_util:grpc_test_util_base",
+        "//test/core/test_util:test_memory_allocator",
     ],
 )

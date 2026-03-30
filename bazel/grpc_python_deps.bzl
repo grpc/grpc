@@ -28,7 +28,7 @@ def grpc_python_deps():
 
     # This version should be same as that in G3
     http_archive(
-        name = "typing_extensions",
+        name = "grpc_typing_extensions",
         build_file = "@com_github_grpc_grpc//third_party:typing_extensions.BUILD",
         sha256 = "bf6f56b36d8bc9156e518eb1cc37a146284082fa53522033f772aefbecfd15fc",
         strip_prefix = "typing_extensions-4.12.2",

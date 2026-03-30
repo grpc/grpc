@@ -5,7 +5,7 @@ import grpc
 import phone_pb2 as phone__pb2
 
 
-class PhoneStub(object):
+class PhoneStub:
     """Missing associated documentation comment in .proto file."""
 
     def __init__(self, channel):
@@ -21,7 +21,7 @@ class PhoneStub(object):
                 )
 
 
-class PhoneServicer(object):
+class PhoneServicer:
     """Missing associated documentation comment in .proto file."""
 
     def StreamCall(self, request_iterator, context):
@@ -46,7 +46,7 @@ def add_PhoneServicer_to_server(servicer, server):
 
 
  # This class is part of an EXPERIMENTAL API.
-class Phone(object):
+class Phone:
     """Missing associated documentation comment in .proto file."""
 
     @staticmethod
