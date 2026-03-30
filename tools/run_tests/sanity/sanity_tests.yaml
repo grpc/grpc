@@ -11,6 +11,7 @@
 - script: tools/run_tests/sanity/check_qps_scenario_changes.py
 - script: tools/run_tests/sanity/check_shellcheck.sh
 - script: tools/run_tests/sanity/check_submodules.sh
+- script: tools/run_tests/sanity/check_upb_directory_contents.sh
 - script: tools/run_tests/sanity/check_test_filtering.py
 - script: tools/run_tests/sanity/check_testing_docker_images.sh
 - script: tools/run_tests/sanity/check_tracer_sanity.py

@@ -4088,6 +4088,9 @@ if(WIN32 AND MSVC)
   set_target_properties(upb_base_lib PROPERTIES COMPILE_PDB_NAME "upb_base_lib"
     COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
   )
+  target_compile_options(upb_base_lib PRIVATE
+    /Zc:preprocessor
+  )
   if(gRPC_INSTALL)
     install(FILES ${CMAKE_CURRENT_BINARY_DIR}/upb_base_lib.pdb
       DESTINATION ${gRPC_INSTALL_LIBDIR} OPTIONAL
@@ -4138,6 +4141,9 @@ set_target_properties(upb_hash_lib PROPERTIES
 if(WIN32 AND MSVC)
   set_target_properties(upb_hash_lib PROPERTIES COMPILE_PDB_NAME "upb_hash_lib"
     COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
+  )
+  target_compile_options(upb_hash_lib PRIVATE
+    /Zc:preprocessor
   )
   if(gRPC_INSTALL)
     install(FILES ${CMAKE_CURRENT_BINARY_DIR}/upb_hash_lib.pdb
@@ -4192,6 +4198,9 @@ set_target_properties(upb_json_lib PROPERTIES
 if(WIN32 AND MSVC)
   set_target_properties(upb_json_lib PROPERTIES COMPILE_PDB_NAME "upb_json_lib"
     COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
+  )
+  target_compile_options(upb_json_lib PRIVATE
+    /Zc:preprocessor
   )
   if(gRPC_INSTALL)
     install(FILES ${CMAKE_CURRENT_BINARY_DIR}/upb_json_lib.pdb
@@ -4249,6 +4258,9 @@ if(WIN32 AND MSVC)
   set_target_properties(upb_lex_lib PROPERTIES COMPILE_PDB_NAME "upb_lex_lib"
     COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
   )
+  target_compile_options(upb_lex_lib PRIVATE
+    /Zc:preprocessor
+  )
   if(gRPC_INSTALL)
     install(FILES ${CMAKE_CURRENT_BINARY_DIR}/upb_lex_lib.pdb
       DESTINATION ${gRPC_INSTALL_LIBDIR} OPTIONAL
@@ -4300,6 +4312,9 @@ set_target_properties(upb_mem_lib PROPERTIES
 if(WIN32 AND MSVC)
   set_target_properties(upb_mem_lib PROPERTIES COMPILE_PDB_NAME "upb_mem_lib"
     COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
+  )
+  target_compile_options(upb_mem_lib PRIVATE
+    /Zc:preprocessor
   )
   if(gRPC_INSTALL)
     install(FILES ${CMAKE_CURRENT_BINARY_DIR}/upb_mem_lib.pdb
@@ -4359,6 +4374,9 @@ if(WIN32 AND MSVC)
   set_target_properties(upb_message_lib PROPERTIES COMPILE_PDB_NAME "upb_message_lib"
     COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
   )
+  target_compile_options(upb_message_lib PRIVATE
+    /Zc:preprocessor
+  )
   if(gRPC_INSTALL)
     install(FILES ${CMAKE_CURRENT_BINARY_DIR}/upb_message_lib.pdb
       DESTINATION ${gRPC_INSTALL_LIBDIR} OPTIONAL
@@ -4402,6 +4420,17 @@ add_library(upb_mini_descriptor_lib
   third_party/upb/upb/mini_descriptor/internal/base92.c
   third_party/upb/upb/mini_descriptor/internal/encode.c
   third_party/upb/upb/mini_descriptor/link.c
+  third_party/upb/upb/wire/decode_fast/dispatch.c
+  third_party/upb/upb/wire/decode_fast/field_fixed.c
+  third_party/upb/upb/wire/decode_fast/field_generic.c
+  third_party/upb/upb/wire/decode_fast/field_message.c
+  third_party/upb/upb/wire/decode_fast/field_string.c
+  third_party/upb/upb/wire/decode_fast/field_varint.c
+  third_party/upb/upb/wire/decode_fast/function_array.c
+  third_party/upb/upb/wire/decode_fast/select.c
+  third_party/upb/upb/wire/eps_copy_input_stream.c
+  third_party/upb/upb/wire/internal/decoder.c
+  third_party/upb/upb/wire/reader.c
 )
 
 target_compile_features(upb_mini_descriptor_lib PUBLIC cxx_std_17)
@@ -4414,6 +4443,9 @@ set_target_properties(upb_mini_descriptor_lib PROPERTIES
 if(WIN32 AND MSVC)
   set_target_properties(upb_mini_descriptor_lib PROPERTIES COMPILE_PDB_NAME "upb_mini_descriptor_lib"
     COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
+  )
+  target_compile_options(upb_mini_descriptor_lib PRIVATE
+    /Zc:preprocessor
   )
   if(gRPC_INSTALL)
     install(FILES ${CMAKE_CURRENT_BINARY_DIR}/upb_mini_descriptor_lib.pdb
@@ -4437,7 +4469,9 @@ target_include_directories(upb_mini_descriptor_lib
 )
 target_link_libraries(upb_mini_descriptor_lib
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  upb_mini_table_lib
+  utf8_range_lib
+  upb_message_lib
+  absl::strings
 )
 
 
@@ -4468,6 +4502,9 @@ set_target_properties(upb_mini_table_lib PROPERTIES
 if(WIN32 AND MSVC)
   set_target_properties(upb_mini_table_lib PROPERTIES COMPILE_PDB_NAME "upb_mini_table_lib"
     COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
+  )
+  target_compile_options(upb_mini_table_lib PRIVATE
+    /Zc:preprocessor
   )
   if(gRPC_INSTALL)
     install(FILES ${CMAKE_CURRENT_BINARY_DIR}/upb_mini_table_lib.pdb
@@ -4540,6 +4577,9 @@ if(WIN32 AND MSVC)
   set_target_properties(upb_reflection_lib PROPERTIES COMPILE_PDB_NAME "upb_reflection_lib"
     COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
   )
+  target_compile_options(upb_reflection_lib PRIVATE
+    /Zc:preprocessor
+  )
   if(gRPC_INSTALL)
     install(FILES ${CMAKE_CURRENT_BINARY_DIR}/upb_reflection_lib.pdb
       DESTINATION ${gRPC_INSTALL_LIBDIR} OPTIONAL
@@ -4594,6 +4634,9 @@ if(WIN32 AND MSVC)
   set_target_properties(upb_textformat_lib PROPERTIES COMPILE_PDB_NAME "upb_textformat_lib"
     COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
   )
+  target_compile_options(upb_textformat_lib PRIVATE
+    /Zc:preprocessor
+  )
   if(gRPC_INSTALL)
     install(FILES ${CMAKE_CURRENT_BINARY_DIR}/upb_textformat_lib.pdb
       DESTINATION ${gRPC_INSTALL_LIBDIR} OPTIONAL
@@ -4635,9 +4678,10 @@ endif()
 add_library(upb_wire_lib
   third_party/upb/upb/message/internal/iterator.c
   third_party/upb/upb/wire/decode.c
+  third_party/upb/upb/wire/decode_fast/dispatch.c
   third_party/upb/upb/wire/encode.c
   third_party/upb/upb/wire/eps_copy_input_stream.c
-  third_party/upb/upb/wire/internal/decode_fast.c
+  third_party/upb/upb/wire/internal/decoder.c
   third_party/upb/upb/wire/reader.c
 )
 
@@ -4651,6 +4695,9 @@ set_target_properties(upb_wire_lib PROPERTIES
 if(WIN32 AND MSVC)
   set_target_properties(upb_wire_lib PROPERTIES COMPILE_PDB_NAME "upb_wire_lib"
     COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
+  )
+  target_compile_options(upb_wire_lib PRIVATE
+    /Zc:preprocessor
   )
   if(gRPC_INSTALL)
     install(FILES ${CMAKE_CURRENT_BINARY_DIR}/upb_wire_lib.pdb
@@ -6423,7 +6470,6 @@ target_link_libraries(grpc_plugin_support
   absl::strings
   absl::synchronization
   absl::time
-  absl::optional
   absl::span
   absl::utility
   ${_gRPC_PROTOBUF_LIBRARIES}
@@ -54696,7 +54742,7 @@ generate_pkgconfig(
   "absl_algorithm_container absl_any_invocable absl_base absl_bind_front absl_bits absl_btree absl_check absl_cleanup absl_config absl_cord absl_core_headers absl_flags absl_flags_marshalling absl_flat_hash_map absl_flat_hash_set absl_function_ref absl_hash absl_inlined_vector absl_log absl_log_globals absl_log_severity absl_memory absl_no_destructor absl_node_hash_map absl_optional absl_random_bit_gen_ref absl_random_distributions absl_random_random absl_span absl_status absl_statusor absl_str_format absl_string_view absl_strings absl_synchronization absl_time absl_type_traits absl_utility gpr"
   "libcares openssl re2 zlib"
   "-lgrpc"
-  "-laddress_sorting -lupb_textformat_lib -lupb_json_lib -lupb_reflection_lib -lupb_wire_lib -lupb_message_lib -lutf8_range_lib -lupb_mini_descriptor_lib -lupb_mini_table_lib -lupb_hash_lib -lupb_mem_lib -lupb_base_lib -lupb_lex_lib"
+  "-laddress_sorting -lupb_textformat_lib -lupb_json_lib -lupb_reflection_lib -lupb_wire_lib -lupb_mini_descriptor_lib -lupb_message_lib -lupb_mini_table_lib -lupb_hash_lib -lupb_mem_lib -lupb_base_lib -lutf8_range_lib -lupb_lex_lib"
   "grpc.pc")
 
 # grpc_unsecure .pc file
@@ -54707,7 +54753,7 @@ generate_pkgconfig(
   "absl_algorithm_container absl_any_invocable absl_base absl_bind_front absl_bits absl_btree absl_check absl_cleanup absl_config absl_cord absl_core_headers absl_flags absl_flags_marshalling absl_flat_hash_map absl_flat_hash_set absl_function_ref absl_hash absl_inlined_vector absl_log absl_log_globals absl_log_severity absl_memory absl_no_destructor absl_node_hash_map absl_optional absl_random_bit_gen_ref absl_random_distributions absl_random_random absl_span absl_status absl_statusor absl_str_format absl_string_view absl_strings absl_synchronization absl_time absl_type_traits absl_utility gpr"
   "libcares zlib"
   "-lgrpc_unsecure"
-  "-laddress_sorting -lupb_textformat_lib -lupb_reflection_lib -lupb_wire_lib -lupb_message_lib -lutf8_range_lib -lupb_mini_descriptor_lib -lupb_mini_table_lib -lupb_hash_lib -lupb_mem_lib -lupb_base_lib -lupb_lex_lib"
+  "-laddress_sorting -lupb_textformat_lib -lupb_reflection_lib -lupb_wire_lib -lupb_mini_descriptor_lib -lupb_message_lib -lupb_mini_table_lib -lupb_hash_lib -lupb_mem_lib -lupb_base_lib -lutf8_range_lib -lupb_lex_lib"
   "grpc_unsecure.pc")
 
 # grpc++ .pc file
@@ -54718,7 +54764,7 @@ generate_pkgconfig(
   "absl_absl_check absl_absl_log absl_algorithm_container absl_any_invocable absl_base absl_bind_front absl_bits absl_btree absl_check absl_cleanup absl_config absl_cord absl_core_headers absl_dynamic_annotations absl_flags absl_flags_marshalling absl_flat_hash_map absl_flat_hash_set absl_function_ref absl_hash absl_inlined_vector absl_layout absl_log absl_log_globals absl_log_severity absl_memory absl_no_destructor absl_node_hash_map absl_optional absl_prefetch absl_random_bit_gen_ref absl_random_distributions absl_random_random absl_span absl_status absl_statusor absl_str_format absl_string_view absl_strings absl_strings_internal absl_synchronization absl_time absl_type_traits absl_utility gpr grpc"
   "libcares openssl re2 zlib"
   "-lgrpc++"
-  "-laddress_sorting -lupb_textformat_lib -lupb_json_lib -lupb_reflection_lib -lupb_wire_lib -lupb_message_lib -lutf8_range_lib -lupb_mini_descriptor_lib -lupb_mini_table_lib -lupb_hash_lib -lupb_mem_lib -lupb_base_lib -lupb_lex_lib"
+  "-laddress_sorting -lupb_textformat_lib -lupb_json_lib -lupb_reflection_lib -lupb_wire_lib -lupb_mini_descriptor_lib -lupb_message_lib -lupb_mini_table_lib -lupb_hash_lib -lupb_mem_lib -lupb_base_lib -lutf8_range_lib -lupb_lex_lib"
   "grpc++.pc")
 
 # grpc++_unsecure .pc file
@@ -54729,7 +54775,7 @@ generate_pkgconfig(
   "absl_absl_check absl_absl_log absl_algorithm_container absl_any_invocable absl_base absl_bind_front absl_bits absl_btree absl_check absl_cleanup absl_config absl_cord absl_core_headers absl_dynamic_annotations absl_flags absl_flags_marshalling absl_flat_hash_map absl_flat_hash_set absl_function_ref absl_hash absl_inlined_vector absl_layout absl_log absl_log_globals absl_log_severity absl_memory absl_no_destructor absl_node_hash_map absl_optional absl_prefetch absl_random_bit_gen_ref absl_random_distributions absl_random_random absl_span absl_status absl_statusor absl_str_format absl_string_view absl_strings absl_strings_internal absl_synchronization absl_time absl_type_traits absl_utility gpr grpc_unsecure"
   "libcares zlib"
   "-lgrpc++_unsecure"
-  "-laddress_sorting -lupb_textformat_lib -lupb_reflection_lib -lupb_wire_lib -lupb_message_lib -lutf8_range_lib -lupb_mini_descriptor_lib -lupb_mini_table_lib -lupb_hash_lib -lupb_mem_lib -lupb_base_lib -lupb_lex_lib"
+  "-laddress_sorting -lupb_textformat_lib -lupb_reflection_lib -lupb_wire_lib -lupb_mini_descriptor_lib -lupb_message_lib -lupb_mini_table_lib -lupb_hash_lib -lupb_mem_lib -lupb_base_lib -lutf8_range_lib -lupb_lex_lib"
   "grpc++_unsecure.pc")
 
 if(gRPC_BUILD_GRPCPP_OTEL_PLUGIN)
@@ -54741,6 +54787,6 @@ if(gRPC_BUILD_GRPCPP_OTEL_PLUGIN)
     "absl_absl_check absl_absl_log absl_algorithm_container absl_any_invocable absl_base absl_bind_front absl_bits absl_btree absl_check absl_cleanup absl_config absl_cord absl_core_headers absl_dynamic_annotations absl_flags absl_flags_marshalling absl_flat_hash_map absl_flat_hash_set absl_function_ref absl_hash absl_inlined_vector absl_layout absl_log absl_log_globals absl_log_severity absl_memory absl_no_destructor absl_node_hash_map absl_optional absl_prefetch absl_random_bit_gen_ref absl_random_distributions absl_random_random absl_span absl_status absl_statusor absl_str_format absl_string_view absl_strings absl_strings_internal absl_synchronization absl_time absl_type_traits absl_utility gpr grpc grpc++ opentelemetry_api"
     "libcares openssl re2 zlib"
     "-lgrpcpp_otel_plugin"
-    "-laddress_sorting -lupb_textformat_lib -lupb_json_lib -lupb_reflection_lib -lupb_wire_lib -lupb_message_lib -lutf8_range_lib -lupb_mini_descriptor_lib -lupb_mini_table_lib -lupb_hash_lib -lupb_mem_lib -lupb_base_lib -lupb_lex_lib"
+    "-laddress_sorting -lupb_textformat_lib -lupb_json_lib -lupb_reflection_lib -lupb_wire_lib -lupb_mini_descriptor_lib -lupb_message_lib -lupb_mini_table_lib -lupb_hash_lib -lupb_mem_lib -lupb_base_lib -lutf8_range_lib -lupb_lex_lib"
     "grpcpp_otel_plugin.pc")
 endif()
