@@ -688,7 +688,10 @@ static grpc_error_handle init_header_frame_parser(grpc_chttp2_transport* t,
     } else if (GPR_UNLIKELY(
                    t->max_concurrent_streams_overload_protection &&
                    t->streams_allocated.load(std::memory_order_relaxed) >
-                       t->settings.local().max_concurrent_streams())) {
+                       static_cast<uint64_t>(
+                           t->settings.local().max_concurrent_streams()) +
+                           static_cast<uint64_t>(
+                               t->max_deallocating_streams))) {
       // We have more streams allocated than we'd like, so apply some pushback
       // by refusing this stream.
       ++t->num_pending_induced_frames;
