@@ -116,6 +116,18 @@ grpc_cc_grpc_library(
     ],
 )
 
+grpc_cc_grpc_library(
+    name = "echo_cc_grpc_unsecure",
+    srcs = ["echo_proto"],
+    generate_mocks = True,
+    grpc_dep = "//:grpc++_unsecure",
+    deps = [
+        "echo_cc_proto",
+        "echo_messages_cc_proto",
+        "simple_messages_cc_proto",
+    ],
+)
+
 grpc_internal_proto_library(
     name = "empty_proto",
     srcs = ["empty.proto"],
