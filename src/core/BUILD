@@ -6876,6 +6876,9 @@ grpc_cc_library(
     srcs = [
         "load_balancing/xds/cds.cc",
     ],
+    hdrs = [
+        "load_balancing/xds/cds.h",
+    ],
     external_deps = [
         "absl/log",
         "absl/status",
@@ -6904,6 +6907,7 @@ grpc_cc_library(
         "unique_type_name",
         "xds_cluster",
         "xds_common_types",
+        "xds_config",
         "xds_dependency_manager",
         "xds_health_status",
         "//:config",
