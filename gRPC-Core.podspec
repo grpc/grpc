@@ -93,7 +93,7 @@ Pod::Spec.new do |s|
   }
 
   s.default_subspecs = 'Interface', 'Implementation'
-  s.compiler_flags = '-DGRPC_ARES=0 -Wno-comma -Wno-implicit-function-declaration'
+  s.compiler_flags = '-DGRPC_ARES=0 -Wno-comma'
   s.libraries = 'c++'
 
   # Exposes the privacy manifest. Depended on by any subspecs containing
@@ -4012,6 +4012,7 @@ Pod::Spec.new do |s|
     set -e
     find src/core -type f \\( -path '*.h' -or -path '*.cc' \\) -print0 | xargs -0 -L1 sed -E -i'.grpc_back' 's;#include <openssl/(.*)>;#if COCOAPODS==1\\\n  #include <openssl_grpc/\\1>\\\n#else\\\n  #include <openssl/\\1>\\\n#endif;g'
     find src/core/ -type f -name '*.grpc_back' -print0 | xargs -0 rm
+    # Run ./configure to update zconf.h
     cd third_party/zlib
     ./configure
   END_OF_COMMAND
