@@ -402,11 +402,9 @@ class Channel(_base_channel.Channel):
         if grace is not None and grace > 0:
             tasks_to_wait = []
             for call in calls:
-                # Unary response calls (UnaryUnary, StreamUnary) use _call_response
-                if hasattr(call, "_call_response"):
+                if isinstance(call, _base_call._UnaryResponseCall):
                     tasks_to_wait.append(call._call_response)
-                # Stream response calls (UnaryStream, StreamStream) use _preparation
-                elif hasattr(call, "_preparation"):
+                elif isinstance(call, _base_call._StreamResponseCall):
                     tasks_to_wait.append(call._preparation)
 
             if tasks_to_wait:
