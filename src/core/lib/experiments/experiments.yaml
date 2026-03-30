@@ -80,7 +80,7 @@
   test_tags: [core_end2end_test]
 - name: error_flatten
   description: Flatten errors to ordinary absl::Status form.
-  expiry: 2026/04/01
+  expiry: 2026/06/01
   owner: roth@google.com
   test_tags:
     ["core_end2end_test", "cpp_end2end_test", "xds_end2end_test", "error_tests"]
@@ -280,13 +280,6 @@
   expiry: 2026/06/30
   owner: aananthv@google.com
   test_tags: []
-- name: rr_wrr_connect_from_random_index
-  description:
-    RR and WRR LB policies start connecting from a random index in the
-    address list.
-  expiry: 2026/04/01
-  owner: roth@google.com
-  test_tags: ["lb_unit_test", "cpp_lb_end2end_test"]
 - name: schedule_cancellation_over_write
   description: Allow cancellation op to be scheduled over a write
   expiry: 2026/05/01
