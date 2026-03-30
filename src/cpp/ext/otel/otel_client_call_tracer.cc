@@ -509,7 +509,7 @@ OpenTelemetryPluginImpl::ClientCallTracerInterface::
   if (otel_plugin_->per_call_optional_label_bits_.test(static_cast<size_t>(
           grpc_core::ClientCallTracerInterface::CallAttemptTracer::
               OptionalLabelKey::kTelemetryLabel))) {
-    absl::string_view value;
+    absl::string_view value{};
     if (auto* label = arena_->GetContext<grpc_core::TelemetryLabel>();
         label != nullptr) {
       value = label->value;
