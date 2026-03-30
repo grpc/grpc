@@ -5,7 +5,7 @@ import warnings
 
 from envoy.service.discovery.v2 import hds_pb2 as envoy_dot_service_dot_discovery_dot_v2_dot_hds__pb2
 
-GRPC_GENERATED_VERSION = '1.74.0'
+GRPC_GENERATED_VERSION = '1.81.0.dev0'
 GRPC_VERSION = grpc.__version__
 _version_not_supported = False
 
@@ -18,14 +18,14 @@ except ImportError:
 if _version_not_supported:
     raise RuntimeError(
         f'The grpc package installed is at version {GRPC_VERSION},'
-        + f' but the generated code in envoy/service/discovery/v2/hds_pb2_grpc.py depends on'
+        + ' but the generated code in envoy/service/discovery/v2/hds_pb2_grpc.py depends on'
         + f' grpcio>={GRPC_GENERATED_VERSION}.'
         + f' Please upgrade your grpc module to grpcio>={GRPC_GENERATED_VERSION}'
         + f' or downgrade your generated code using grpcio-tools<={GRPC_VERSION}.'
     )
 
 
-class HealthDiscoveryServiceStub(object):
+class HealthDiscoveryServiceStub:
     """[#protodoc-title: Health Discovery Service (HDS)]
 
     HDS is Health Discovery Service. It compliments Envoy’s health checking
@@ -53,7 +53,7 @@ class HealthDiscoveryServiceStub(object):
                 _registered_method=True)
 
 
-class HealthDiscoveryServiceServicer(object):
+class HealthDiscoveryServiceServicer:
     """[#protodoc-title: Health Discovery Service (HDS)]
 
     HDS is Health Discovery Service. It compliments Envoy’s health checking
@@ -133,7 +133,7 @@ def add_HealthDiscoveryServiceServicer_to_server(servicer, server):
 
 
  # This class is part of an EXPERIMENTAL API.
-class HealthDiscoveryService(object):
+class HealthDiscoveryService:
     """[#protodoc-title: Health Discovery Service (HDS)]
 
     HDS is Health Discovery Service. It compliments Envoy’s health checking

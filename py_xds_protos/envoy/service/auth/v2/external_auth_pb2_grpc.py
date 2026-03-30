@@ -5,7 +5,7 @@ import warnings
 
 from envoy.service.auth.v2 import external_auth_pb2 as envoy_dot_service_dot_auth_dot_v2_dot_external__auth__pb2
 
-GRPC_GENERATED_VERSION = '1.74.0'
+GRPC_GENERATED_VERSION = '1.81.0.dev0'
 GRPC_VERSION = grpc.__version__
 _version_not_supported = False
 
@@ -18,14 +18,14 @@ except ImportError:
 if _version_not_supported:
     raise RuntimeError(
         f'The grpc package installed is at version {GRPC_VERSION},'
-        + f' but the generated code in envoy/service/auth/v2/external_auth_pb2_grpc.py depends on'
+        + ' but the generated code in envoy/service/auth/v2/external_auth_pb2_grpc.py depends on'
         + f' grpcio>={GRPC_GENERATED_VERSION}.'
         + f' Please upgrade your grpc module to grpcio>={GRPC_GENERATED_VERSION}'
         + f' or downgrade your generated code using grpcio-tools<={GRPC_VERSION}.'
     )
 
 
-class AuthorizationStub(object):
+class AuthorizationStub:
     """[#protodoc-title: Authorization Service ]
 
     The authorization service request messages used by external authorization :ref:`network filter
@@ -48,7 +48,7 @@ class AuthorizationStub(object):
                 _registered_method=True)
 
 
-class AuthorizationServicer(object):
+class AuthorizationServicer:
     """[#protodoc-title: Authorization Service ]
 
     The authorization service request messages used by external authorization :ref:`network filter
@@ -82,7 +82,7 @@ def add_AuthorizationServicer_to_server(servicer, server):
 
 
  # This class is part of an EXPERIMENTAL API.
-class Authorization(object):
+class Authorization:
     """[#protodoc-title: Authorization Service ]
 
     The authorization service request messages used by external authorization :ref:`network filter

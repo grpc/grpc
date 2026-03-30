@@ -19,9 +19,7 @@ extern "C" {
 #endif
 
 extern const upb_MiniTable envoy__config__core__v3__DnsResolverOptions_msg_init;
-extern const upb_MiniTable* envoy__config__core__v3__DnsResolverOptions_msg_init_ptr;
 extern const upb_MiniTable envoy__config__core__v3__DnsResolutionConfig_msg_init;
-extern const upb_MiniTable* envoy__config__core__v3__DnsResolutionConfig_msg_init_ptr;
 
 extern const upb_MiniTableFile envoy_config_core_v3_resolver_proto_upb_file_layout;
 

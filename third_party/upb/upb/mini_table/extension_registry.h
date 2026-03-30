@@ -62,6 +62,7 @@ typedef enum {
   kUpb_ExtensionRegistryStatus_Ok = 0,
   kUpb_ExtensionRegistryStatus_DuplicateEntry = 1,
   kUpb_ExtensionRegistryStatus_OutOfMemory = 2,
+  kUpb_ExtensionRegistryStatus_InvalidExtension = 3,
 } upb_ExtensionRegistryStatus;
 
 // Creates a upb_ExtensionRegistry in the given arena.
@@ -77,23 +78,6 @@ UPB_API upb_ExtensionRegistryStatus upb_ExtensionRegistry_Add(
 // Possible errors include OOM or an extension number that already exists.
 upb_ExtensionRegistryStatus upb_ExtensionRegistry_AddArray(
     upb_ExtensionRegistry* r, const upb_MiniTableExtension** e, size_t count);
-
-#ifdef UPB_LINKARR_DECLARE
-
-// Adds all extensions linked into the binary into the registry.  The set of
-// linked extensions is assembled by the linker using linker arrays.  This
-// will likely not work properly if the extensions are split across multiple
-// shared libraries.
-//
-// Returns true if all extensions were added successfully, false on out of
-// memory or if any extensions were already present.
-//
-// This API is currently not available on MSVC (though it *is* available on
-// Windows using clang-cl).
-UPB_API bool upb_ExtensionRegistry_AddAllLinkedExtensions(
-    upb_ExtensionRegistry* r);
-
-#endif  // UPB_LINKARR_DECLARE
 
 // Looks up the extension (if any) defined for message type |t| and field
 // number |num|. Returns the extension if found, otherwise NULL.

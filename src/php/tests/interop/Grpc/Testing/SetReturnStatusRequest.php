@@ -6,8 +6,8 @@
 namespace Grpc\Testing;
 
 use Google\Protobuf\Internal\GPBType;
-use Google\Protobuf\Internal\RepeatedField;
 use Google\Protobuf\Internal\GPBUtil;
+use Google\Protobuf\RepeatedField;
 
 /**
  * Status that will be return to callers of the Hook method
@@ -54,7 +54,7 @@ class SetReturnStatusRequest extends \Google\Protobuf\Internal\Message
      * @param int $var
      * @return $this
      */
-    public function setGrpcCodeToReturn($var)
+    public function setGrpcCodeToReturn(int $var)
     {
         GPBUtil::checkInt32($var);
         $this->grpc_code_to_return = $var;
@@ -76,9 +76,9 @@ class SetReturnStatusRequest extends \Google\Protobuf\Internal\Message
      * @param string $var
      * @return $this
      */
-    public function setGrpcStatusDescription($var)
+    public function setGrpcStatusDescription(string $var)
     {
-        GPBUtil::checkString($var, True);
+        GPBUtil::checkString($var, true);
         $this->grpc_status_description = $var;
 
         return $this;

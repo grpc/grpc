@@ -14,30 +14,32 @@
 // Must be last.
 #include "upb/port/def.inc"
 
-extern const struct upb_MiniTable UPB_PRIVATE(_kUpb_MiniTable_StaticallyTreeShaken);
-static const upb_MiniTableField udpa_annotations_VersioningAnnotation__fields[1] = {
+extern const UPB_PRIVATE(upb_GeneratedExtensionListEntry)* UPB_PRIVATE(upb_generated_extension_list);
+typedef struct {
+  upb_MiniTableField fields[1];
+} udpa__annotations__VersioningAnnotation_msg_init_Fields;
+
+static const udpa__annotations__VersioningAnnotation_msg_init_Fields udpa_annotations_VersioningAnnotation__fields = {{
   {1, 8, 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
-};
+}};
 
 const upb_MiniTable udpa__annotations__VersioningAnnotation_msg_init = {
-  NULL,
-  &udpa_annotations_VersioningAnnotation__fields[0],
+  &udpa_annotations_VersioningAnnotation__fields.fields[0],
   UPB_SIZE(16, 24), 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(8), 0,
 #ifdef UPB_TRACING_ENABLED
   "udpa.annotations.VersioningAnnotation",
 #endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x000800003f00000a, &upb_pss_1bt},
+    {0x000800003f00000a, &upb_DecodeFast_String_Scalar_Tag1Byte},
   })
 };
 
-const upb_MiniTable* udpa__annotations__VersioningAnnotation_msg_init_ptr = &udpa__annotations__VersioningAnnotation_msg_init;
 UPB_LINKARR_APPEND(upb_AllExts)
 const upb_MiniTableExtension udpa_annotations_versioning_ext = {
-  {7881811, 0, 0, 0, 11, (int)kUpb_FieldMode_Scalar | (int)kUpb_LabelFlags_IsExtension | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-  &google__protobuf__MessageOptions_msg_init,
+  {7881811, 0, 0, UPB_SIZE(3, 4), 11, (int)kUpb_FieldMode_Scalar | (int)kUpb_LabelFlags_IsExtension | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   {.UPB_PRIVATE(submsg) = &udpa__annotations__VersioningAnnotation_msg_init},
+  &google__protobuf__MessageOptions_msg_init,
 
 };
 static const upb_MiniTable *messages_layout[1] = {
@@ -49,6 +51,20 @@ static const upb_MiniTableExtension *extensions_layout[1] = {
   &udpa_annotations_versioning_ext,
 };
 
+UPB_LINKARR_DECLARE(upb_AllExts, const upb_MiniTableExtension);
+UPB_CONSTRUCTOR(upb_GeneratedRegistry_Constructor, udpa_annotations_versioning_proto_ext_constructor) {
+  static bool finished = false;
+  if (finished) return;
+  finished = true;
+  static UPB_PRIVATE(upb_GeneratedExtensionListEntry) entry = {
+    UPB_LINKARR_START(upb_AllExts),
+    UPB_LINKARR_STOP(upb_AllExts),
+    NULL
+  };
+  UPB_ASSERT(entry.next == NULL);
+  entry.next = UPB_PRIVATE(upb_generated_extension_list);
+  UPB_PRIVATE(upb_generated_extension_list) = &entry;
+}
 const upb_MiniTableFile udpa_annotations_versioning_proto_upb_file_layout = {
   messages_layout,
   NULL,

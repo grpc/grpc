@@ -22,8 +22,8 @@ struct upb_MiniTableExtension {
   // Do not move this field. We need to be able to alias pointers.
   struct upb_MiniTableField UPB_PRIVATE(field);
 
-  const struct upb_MiniTable* UPB_PRIVATE(extendee);
   union upb_MiniTableSub UPB_PRIVATE(sub);  // NULL unless submsg or proto2 enum
+  const struct upb_MiniTable* UPB_PRIVATE(extendee);
 };
 
 #ifdef __cplusplus
@@ -38,6 +38,11 @@ upb_MiniTableExtension_CType(const struct upb_MiniTableExtension* e) {
 UPB_API_INLINE uint32_t
 upb_MiniTableExtension_Number(const struct upb_MiniTableExtension* e) {
   return e->UPB_PRIVATE(field).UPB_ONLYBITS(number);
+}
+
+UPB_API_INLINE const struct upb_MiniTable* upb_MiniTableExtension_Extendee(
+    const struct upb_MiniTableExtension* e) {
+  return e->UPB_PRIVATE(extendee);
 }
 
 UPB_API_INLINE const struct upb_MiniTable* upb_MiniTableExtension_GetSubMessage(
@@ -74,6 +79,11 @@ UPB_API_INLINE bool upb_MiniTableExtension_SetSubEnum(
   }
   e->UPB_PRIVATE(sub).UPB_PRIVATE(subenum) = en;
   return true;
+}
+
+UPB_API_INLINE const struct upb_MiniTableField* upb_MiniTableExtension_ToField(
+    const struct upb_MiniTableExtension* e) {
+  return &e->UPB_PRIVATE(field);
 }
 
 UPB_INLINE upb_FieldRep UPB_PRIVATE(_upb_MiniTableExtension_GetRep)(

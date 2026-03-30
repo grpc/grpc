@@ -6,8 +6,8 @@
 namespace Grpc\Testing;
 
 use Google\Protobuf\Internal\GPBType;
-use Google\Protobuf\Internal\RepeatedField;
 use Google\Protobuf\Internal\GPBUtil;
+use Google\Protobuf\RepeatedField;
 
 /**
  * A block of data, to simply increase gRPC message size.
@@ -50,7 +50,7 @@ class Payload extends \Google\Protobuf\Internal\Message
      * The type of data in body.
      *
      * Generated from protobuf field <code>.grpc.testing.PayloadType type = 1;</code>
-     * @return int
+     * @return int one of the values in {@see \Grpc\Testing\PayloadType}
      */
     public function getType()
     {
@@ -61,10 +61,10 @@ class Payload extends \Google\Protobuf\Internal\Message
      * The type of data in body.
      *
      * Generated from protobuf field <code>.grpc.testing.PayloadType type = 1;</code>
-     * @param int $var
+     * @param int $var one of the values in {@see \Grpc\Testing\PayloadType}
      * @return $this
      */
-    public function setType($var)
+    public function setType(int $var)
     {
         GPBUtil::checkEnum($var, \Grpc\Testing\PayloadType::class);
         $this->type = $var;
@@ -90,9 +90,9 @@ class Payload extends \Google\Protobuf\Internal\Message
      * @param string $var
      * @return $this
      */
-    public function setBody($var)
+    public function setBody(string $var)
     {
-        GPBUtil::checkString($var, False);
+        GPBUtil::checkString($var, false);
         $this->body = $var;
 
         return $this;

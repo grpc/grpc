@@ -3629,12 +3629,14 @@ libs:
   public_headers: []
   headers:
   - third_party/upb/upb/base/descriptor_constants.h
+  - third_party/upb/upb/base/error_handler.h
   - third_party/upb/upb/base/status.h
   - third_party/upb/upb/base/status.hpp
   - third_party/upb/upb/base/string_view.h
   - third_party/upb/upb/base/upcast.h
   - third_party/upb/upb/port/atomic.h
   - third_party/upb/upb/port/def.inc
+  - third_party/upb/upb/port/sanitizers.h
   - third_party/upb/upb/port/undef.inc
   - third_party/upb/upb/port/vsnprintf_compat.h
   src:
@@ -3679,6 +3681,7 @@ libs:
   - third_party/upb/upb/lex/unicode.h
   - third_party/upb/upb/port/atomic.h
   - third_party/upb/upb/port/def.inc
+  - third_party/upb/upb/port/sanitizers.h
   - third_party/upb/upb/port/undef.inc
   - third_party/upb/upb/port/vsnprintf_compat.h
   src:
@@ -3698,6 +3701,7 @@ libs:
   - third_party/upb/upb/mem/internal/arena.h
   - third_party/upb/upb/port/atomic.h
   - third_party/upb/upb/port/def.inc
+  - third_party/upb/upb/port/sanitizers.h
   - third_party/upb/upb/port/undef.inc
   - third_party/upb/upb/port/vsnprintf_compat.h
   src:
@@ -3718,11 +3722,9 @@ libs:
   - third_party/upb/upb/message/internal/map.h
   - third_party/upb/upb/message/internal/map_sorter.h
   - third_party/upb/upb/message/internal/message.h
-  - third_party/upb/upb/message/internal/tagged_ptr.h
   - third_party/upb/upb/message/map.h
   - third_party/upb/upb/message/map_gencode_util.h
   - third_party/upb/upb/message/message.h
-  - third_party/upb/upb/message/tagged_ptr.h
   - third_party/upb/upb/message/value.h
   src:
   - third_party/upb/upb/message/accessors.c
@@ -3749,14 +3751,41 @@ libs:
   - third_party/upb/upb/mini_descriptor/internal/modifiers.h
   - third_party/upb/upb/mini_descriptor/internal/wire_constants.h
   - third_party/upb/upb/mini_descriptor/link.h
+  - third_party/upb/upb/wire/decode.h
+  - third_party/upb/upb/wire/decode_fast/cardinality.h
+  - third_party/upb/upb/wire/decode_fast/combinations.h
+  - third_party/upb/upb/wire/decode_fast/data.h
+  - third_party/upb/upb/wire/decode_fast/dispatch.h
+  - third_party/upb/upb/wire/decode_fast/field_parsers.h
+  - third_party/upb/upb/wire/decode_fast/function_array.h
+  - third_party/upb/upb/wire/decode_fast/select.h
+  - third_party/upb/upb/wire/eps_copy_input_stream.h
+  - third_party/upb/upb/wire/internal/decoder.h
+  - third_party/upb/upb/wire/internal/eps_copy_input_stream.h
+  - third_party/upb/upb/wire/internal/reader.h
+  - third_party/upb/upb/wire/reader.h
+  - third_party/upb/upb/wire/types.h
   src:
   - third_party/upb/upb/mini_descriptor/build_enum.c
   - third_party/upb/upb/mini_descriptor/decode.c
   - third_party/upb/upb/mini_descriptor/internal/base92.c
   - third_party/upb/upb/mini_descriptor/internal/encode.c
   - third_party/upb/upb/mini_descriptor/link.c
+  - third_party/upb/upb/wire/decode_fast/cardinality.c
+  - third_party/upb/upb/wire/decode_fast/dispatch.c
+  - third_party/upb/upb/wire/decode_fast/field_fixed.c
+  - third_party/upb/upb/wire/decode_fast/field_message.c
+  - third_party/upb/upb/wire/decode_fast/field_string.c
+  - third_party/upb/upb/wire/decode_fast/field_varint.c
+  - third_party/upb/upb/wire/decode_fast/function_array.c
+  - third_party/upb/upb/wire/decode_fast/select.c
+  - third_party/upb/upb/wire/eps_copy_input_stream.c
+  - third_party/upb/upb/wire/internal/decoder.c
+  - third_party/upb/upb/wire/reader.c
   deps:
-  - upb_mini_table_lib
+  - utf8_range_lib
+  - upb_message_lib
+  - absl/strings:strings
 - name: upb_mini_table_lib
   build: all
   language: c
@@ -3769,10 +3798,12 @@ libs:
   - third_party/upb/upb/mini_table/extension_registry.h
   - third_party/upb/upb/mini_table/field.h
   - third_party/upb/upb/mini_table/file.h
+  - third_party/upb/upb/mini_table/generated_registry.h
   - third_party/upb/upb/mini_table/internal/enum.h
   - third_party/upb/upb/mini_table/internal/extension.h
   - third_party/upb/upb/mini_table/internal/field.h
   - third_party/upb/upb/mini_table/internal/file.h
+  - third_party/upb/upb/mini_table/internal/generated_registry.h
   - third_party/upb/upb/mini_table/internal/message.h
   - third_party/upb/upb/mini_table/internal/size_log2.h
   - third_party/upb/upb/mini_table/internal/sub.h
@@ -3780,6 +3811,7 @@ libs:
   - third_party/upb/upb/mini_table/sub.h
   src:
   - third_party/upb/upb/mini_table/extension_registry.c
+  - third_party/upb/upb/mini_table/generated_registry.c
   - third_party/upb/upb/mini_table/internal/message.c
   - third_party/upb/upb/mini_table/message.c
   deps:
@@ -3872,20 +3904,23 @@ libs:
   headers:
   - third_party/upb/upb/message/internal/iterator.h
   - third_party/upb/upb/wire/decode.h
+  - third_party/upb/upb/wire/decode_fast/dispatch.h
   - third_party/upb/upb/wire/encode.h
   - third_party/upb/upb/wire/eps_copy_input_stream.h
   - third_party/upb/upb/wire/internal/constants.h
-  - third_party/upb/upb/wire/internal/decode_fast.h
   - third_party/upb/upb/wire/internal/decoder.h
+  - third_party/upb/upb/wire/internal/eps_copy_input_stream.h
   - third_party/upb/upb/wire/internal/reader.h
   - third_party/upb/upb/wire/reader.h
   - third_party/upb/upb/wire/types.h
+  - third_party/upb/upb/wire/writer.h
   src:
   - third_party/upb/upb/message/internal/iterator.c
   - third_party/upb/upb/wire/decode.c
+  - third_party/upb/upb/wire/decode_fast/dispatch.c
   - third_party/upb/upb/wire/encode.c
   - third_party/upb/upb/wire/eps_copy_input_stream.c
-  - third_party/upb/upb/wire/internal/decode_fast.c
+  - third_party/upb/upb/wire/internal/decoder.c
   - third_party/upb/upb/wire/reader.c
   deps:
   - utf8_range_lib
@@ -5441,6 +5476,7 @@ libs:
   - absl/base:config
   - absl/base:core_headers
   - absl/base:dynamic_annotations
+  - absl/base:no_destructor
   - absl/base:prefetch
   - absl/cleanup:cleanup
   - absl/container:btree

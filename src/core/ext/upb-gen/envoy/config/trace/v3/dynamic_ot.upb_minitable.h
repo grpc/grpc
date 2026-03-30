@@ -19,7 +19,6 @@ extern "C" {
 #endif
 
 extern const upb_MiniTable envoy__config__trace__v3__DynamicOtConfig_msg_init;
-extern const upb_MiniTable* envoy__config__trace__v3__DynamicOtConfig_msg_init_ptr;
 
 extern const upb_MiniTableFile envoy_config_trace_v3_dynamic_ot_proto_upb_file_layout;
 
