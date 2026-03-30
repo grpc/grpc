@@ -273,6 +273,7 @@ if EXTRA_ENV_COMPILE_ARGS is None:
         EXTRA_ENV_COMPILE_ARGS += (
             " -fvisibility=hidden -fno-wrapv -fno-exceptions"
         )
+        # TODO: Figure out how to remove this flag.
         # Needed by zlib 1.3.2
         # See https://github.com/grpc/grpc/issues/41958.
         EXTRA_ENV_COMPILE_ARGS += " -Wno-implicit-function-declaration"
@@ -283,6 +284,7 @@ if EXTRA_ENV_COMPILE_ARGS is None:
             " -stdlib=libc++ -fvisibility=hidden -fno-wrapv -fno-exceptions"
             " -DHAVE_UNISTD_H"
         )
+        # TODO: Figure out how to remove this flag.
         # Needed by zlib 1.3.2
         # See https://github.com/grpc/grpc/issues/41958.
         EXTRA_ENV_COMPILE_ARGS += " -Wno-implicit-function-declaration"
