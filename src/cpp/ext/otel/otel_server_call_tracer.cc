@@ -276,10 +276,11 @@ void OpenTelemetryPluginImpl::ServerCallTracerInterface::RecordEnd(
            {OpenTelemetryStatusKey(),
             grpc_status_code_to_string(final_info->final_status)}}};
   // Currently we do not have any optional labels on the server side.
-  KeyValueIterable labels(
-      injected_labels_from_plugin_options_, additional_labels,
-      /*active_plugin_options_view=*/nullptr, /*optional_labels=*/{},
-      /*is_client=*/false, otel_plugin_);
+  KeyValueIterable labels(injected_labels_from_plugin_options_,
+                          additional_labels,
+                          /*active_plugin_options_view=*/nullptr,
+                          /*optional_labels=*/{}, /*is_client=*/false,
+                          otel_plugin_);
   if (otel_plugin_->server_.call.duration != nullptr) {
     otel_plugin_->server_.call.duration->Record(
         absl::ToDoubleSeconds(elapsed_time_), labels,
