@@ -208,6 +208,8 @@ class ExtProcFilter final : public V3InterceptorToV2Bridge<ExtProcFilter> {
                               PipeOwner* pipe_owner);
   auto ServerTrailingMetadata(CallHandler handler, CallInitiator initiator,
                               PipeOwner* pipe_owner);
+  auto CancelAndPushError(CallHandler handler, CallInitiator initiator,
+                          absl::Status status);
 
   RefCountedPtr<const Config> config_;
 };
@@ -217,6 +219,9 @@ extern void (*g_test_ext_proc_server_initial_metadata_modifier)(grpc_metadata_ba
 extern void (*g_test_ext_proc_server_trailing_metadata_modifier)(grpc_metadata_batch*);
 extern void (*g_test_ext_proc_client_to_server_message_modifier)(MessageHandle*);
 extern void (*g_test_ext_proc_server_to_client_message_modifier)(MessageHandle*);
+extern absl::Status (*g_test_ext_proc_client_initial_metadata_status_hook)();
+extern absl::Status (*g_test_ext_proc_client_initial_metadata_wait_status_hook)();
+extern absl::Status (*g_test_ext_proc_server_to_client_message_status_hook)();
 
 }  // namespace grpc_core
 

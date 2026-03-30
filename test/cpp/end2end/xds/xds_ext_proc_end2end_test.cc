@@ -56,7 +56,17 @@ class XdsExtProcEnd2endTest : public XdsEnd2endTest {
                /*balancer_authority_override=*/"", /*args=*/nullptr);
   }
 
-  void TearDown() override { XdsEnd2endTest::TearDown(); }
+  void TearDown() override {
+    grpc_core::g_test_ext_proc_metadata_modifier = nullptr;
+    grpc_core::g_test_ext_proc_server_initial_metadata_modifier = nullptr;
+    grpc_core::g_test_ext_proc_server_trailing_metadata_modifier = nullptr;
+    grpc_core::g_test_ext_proc_client_to_server_message_modifier = nullptr;
+    grpc_core::g_test_ext_proc_server_to_client_message_modifier = nullptr;
+    grpc_core::g_test_ext_proc_client_initial_metadata_status_hook = nullptr;
+    grpc_core::g_test_ext_proc_client_initial_metadata_wait_status_hook = nullptr;
+    grpc_core::g_test_ext_proc_server_to_client_message_status_hook = nullptr;
+    XdsEnd2endTest::TearDown();
+  }
 
   Listener BuildListenerWithExtProcFilter() {
     Listener listener = default_listener_;
@@ -379,6 +389,81 @@ TEST_P(XdsExtProcEnd2endTest, ObservabilityMode) {
   grpc_core::g_test_ext_proc_metadata_modifier = nullptr;
   grpc_core::g_test_ext_proc_client_to_server_message_modifier = nullptr;
   grpc_core::g_test_ext_proc_server_to_client_message_modifier = nullptr;
+}
+
+TEST_P(XdsExtProcEnd2endTest, ClientInitialMetadataStatusHookFailsRpc) {
+  grpc_core::g_test_ext_proc_client_initial_metadata_status_hook = []() {
+    return absl::InternalError("forced failure from hook");
+  };
+
+  CreateAndStartBackends(1, /*xds_enabled=*/false);
+  SetListenerAndRouteConfiguration(
+      balancer_.get(), BuildListenerWithExtProcFilter(), default_route_config_);
+
+  Cluster ext_proc_cluster = default_cluster_;
+  ext_proc_cluster.set_name(std::string(kExtProcClusterName));
+  balancer_->ads_service()->SetCdsResource(ext_proc_cluster);
+  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
+
+  EchoResponse response;
+  Status status = SendRpc(RpcOptions(), &response);
+
+  grpc_core::g_test_ext_proc_client_initial_metadata_status_hook = nullptr;
+
+  EXPECT_FALSE(status.ok());
+  EXPECT_EQ(status.error_code(), StatusCode::INTERNAL);
+  EXPECT_THAT(status.error_message(), ::testing::HasSubstr("forced failure from hook"));
+}
+
+TEST_P(XdsExtProcEnd2endTest, ClientInitialMetadataWaitStatusHookFailsRpc) {
+  grpc_core::g_test_ext_proc_client_initial_metadata_wait_status_hook = []() {
+    return absl::InternalError("forced failure from wait hook");
+  };
+
+  CreateAndStartBackends(1, /*xds_enabled=*/false);
+  SetListenerAndRouteConfiguration(
+      balancer_.get(), BuildListenerWithExtProcFilter(), default_route_config_);
+
+  Cluster ext_proc_cluster = default_cluster_;
+  ext_proc_cluster.set_name(std::string(kExtProcClusterName));
+  balancer_->ads_service()->SetCdsResource(ext_proc_cluster);
+  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
+
+  EchoResponse response;
+  Status status = SendRpc(RpcOptions(), &response);
+
+  grpc_core::g_test_ext_proc_client_initial_metadata_wait_status_hook = nullptr;
+
+  EXPECT_FALSE(status.ok());
+  EXPECT_EQ(status.error_code(), StatusCode::INTERNAL);
+  EXPECT_THAT(status.error_message(), ::testing::HasSubstr("forced failure from wait hook"));
+}
+
+TEST_P(XdsExtProcEnd2endTest, ServerToClientMessageStatusHookFailsRpc) {
+  grpc_core::g_test_ext_proc_server_to_client_message_status_hook = []() {
+    return absl::InternalError("forced failure from server to client message hook");
+  };
+
+  CreateAndStartBackends(1, /*xds_enabled=*/false);
+  SetListenerAndRouteConfiguration(
+      balancer_.get(), BuildListenerWithExtProcFilter(), default_route_config_);
+
+  Cluster ext_proc_cluster = default_cluster_;
+  ext_proc_cluster.set_name(std::string(kExtProcClusterName));
+  balancer_->ads_service()->SetCdsResource(ext_proc_cluster);
+  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
+
+  EchoResponse response;
+  Status status = SendRpc(RpcOptions(), &response);
+
+  grpc_core::g_test_ext_proc_server_to_client_message_status_hook = nullptr;
+
+  EXPECT_FALSE(status.ok());
+  EXPECT_EQ(status.error_code(), StatusCode::INTERNAL);
+  EXPECT_THAT(status.error_message(), ::testing::HasSubstr("forced failure from server to client message hook"));
 }
 
 }  // namespace
