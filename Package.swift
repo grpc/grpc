@@ -1875,6 +1875,7 @@ let package = Package(
         "src/core/load_balancing/weighted_target/weighted_target.cc",
         "src/core/load_balancing/weighted_target/weighted_target.h",
         "src/core/load_balancing/xds/cds.cc",
+        "src/core/load_balancing/xds/cds.h",
         "src/core/load_balancing/xds/xds_channel_args.h",
         "src/core/load_balancing/xds/xds_cluster_impl.cc",
         "src/core/load_balancing/xds/xds_cluster_manager.cc",

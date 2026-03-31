@@ -102,6 +102,8 @@
   default: false
 - name: sleep_use_non_owning_waker
   default: true
+- name: subchannel_wrapper_cleanup_on_orphan
+  default: true
 - name: tcp_frame_size_tuning
   default: false
 - name: tcp_rcv_lowat

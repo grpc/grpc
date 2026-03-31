@@ -1185,6 +1185,7 @@ libs:
   - src/core/load_balancing/subchannel_interface.h
   - src/core/load_balancing/weighted_round_robin/static_stride_scheduler.h
   - src/core/load_balancing/weighted_target/weighted_target.h
+  - src/core/load_balancing/xds/cds.h
   - src/core/load_balancing/xds/xds_channel_args.h
   - src/core/load_balancing/xds/xds_override_host.h
   - src/core/net/socket_mutator.h
@@ -3641,6 +3642,16 @@ libs:
   src:
   - third_party/upb/upb/base/status.c
   deps: []
+- name: upb_descriptor_lib
+  build: all
+  language: c
+  public_headers: []
+  headers:
+  - src/core/ext/upb-gen/google/protobuf/descriptor.upb.h
+  - third_party/upb/upb/reflection/descriptor_bootstrap.h
+  src:
+  - src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c
+  deps: []
 - name: upb_hash_lib
   build: all
   language: c
@@ -3803,7 +3814,6 @@ libs:
   language: c
   public_headers: []
   headers:
-  - src/core/ext/upb-gen/google/protobuf/descriptor.upb.h
   - third_party/upb/upb/message/copy.h
   - third_party/upb/upb/message/merge.h
   - third_party/upb/upb/reflection/common.h
@@ -3811,7 +3821,6 @@ libs:
   - third_party/upb/upb/reflection/def.hpp
   - third_party/upb/upb/reflection/def_pool.h
   - third_party/upb/upb/reflection/def_type.h
-  - third_party/upb/upb/reflection/descriptor_bootstrap.h
   - third_party/upb/upb/reflection/enum_def.h
   - third_party/upb/upb/reflection/enum_reserved_range.h
   - third_party/upb/upb/reflection/enum_value_def.h
@@ -3842,7 +3851,6 @@ libs:
   - third_party/upb/upb/reflection/oneof_def.h
   - third_party/upb/upb/reflection/service_def.h
   src:
-  - src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c
   - third_party/upb/upb/message/copy.c
   - third_party/upb/upb/message/merge.c
   - third_party/upb/upb/reflection/def_pool.c
@@ -3864,6 +3872,7 @@ libs:
   - third_party/upb/upb/reflection/service_def.c
   deps:
   - upb_mini_descriptor_lib
+  - upb_descriptor_lib
   - upb_wire_lib
 - name: upb_textformat_lib
   build: all
@@ -8262,6 +8271,17 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
+  uses_polling: false
+- name: cds_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/load_balancing/cds_test.cc
+  deps:
+  - gtest
+  - grpc_test_util
   uses_polling: false
 - name: cel_authorization_engine_test
   gtest: true
@@ -22951,7 +22971,6 @@ targets:
   - test/cpp/server/server_builder_test.cc
   deps:
   - gtest
-  - grpc++
   - grpc++_unsecure
   - grpc_test_util_unsecure
   platforms:
@@ -22974,7 +22993,6 @@ targets:
   - test/cpp/server/server_builder_with_socket_mutator_test.cc
   deps:
   - gtest
-  - grpc++
   - grpc++_unsecure
   - grpc_test_util_unsecure
   platforms:
