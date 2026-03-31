@@ -1523,5 +1523,5 @@ the peer address the server sees for the connection.
 ### Max concurrent streams limit
 [Max Concurrent Streams Limit]: #max-concurrent-streams-limit
 
-If the test server is started with the commandline argument --set_max_concurrent_streams_limit=true,
-a max concurrent streams limit of 2 is imposed. This is only implemented by the Java server.
+If the test server is started with the commandline argument --max_concurrent_streams_limit=N,
+a max concurrent streams limit of N is imposed. This is only implemented by the Java server.

@@ -1135,7 +1135,7 @@ def server_jobspec(
     docker_image,
     transport_security="tls",
     manual_cmd_log=None,
-    set_max_concurrent_streams_limit=False,
+    max_concurrent_streams_limit=None,
 ):
     """Create jobspec for running a server"""
     container_name = dockerjob.random_name(
@@ -1154,8 +1154,10 @@ def server_jobspec(
             % transport_security
         )
         sys.exit(1)
-    if set_max_concurrent_streams_limit:
-        server_cmd += ["--set_max_concurrent_streams_limit=true"]
+    if max_concurrent_streams_limit is not None:
+        server_cmd += [
+            "--max_concurrent_streams_limit=%d" % max_concurrent_streams_limit
+        ]
     cmdline = bash_cmdline(language.server_cmd(server_cmd))
     environ = language.global_env()
     docker_args = ["--name=%s" % container_name]
@@ -1813,11 +1815,11 @@ try:
             print('MCS connection scaling tests will be skipped since none of the supported client languages for MCS connection scaling testcases was specified')
         else:
             mcs_server_jobspec = server_jobspec(
-                _LANGUAGES['java'],
-                docker_images.get('java'),
+                _LANGUAGES["java"],
+                docker_images.get("java"),
                 args.transport_security,
                 manual_cmd_log=server_manual_cmd_log,
-                set_max_concurrent_streams_limit=True,
+                max_concurrent_streams_limit=2,
             )
             mcs_server_job = dockerjob.DockerJob(mcs_server_jobspec)
             # Because the gRPC Java server takes some time to come up
