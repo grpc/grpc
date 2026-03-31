@@ -1,6 +1,6 @@
 //
 //
-// Copyright 2025 gRPC authors.
+// Copyright 2026 gRPC authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,6 +17,9 @@
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
 #include <grpc/private_key_signer.h>
+#include <openssl/bio.h>
+#include <openssl/mem.h>
+#include <openssl/pem.h>
 
 #include <atomic>
 #include <memory>
@@ -41,10 +44,6 @@
 #include "absl/strings/string_view.h"
 
 #if defined(OPENSSL_IS_BORINGSSL)
-#if OPENSSL_VERSION_NUMBER >= 0x10100000
-#include <openssl/bio.h>
-#include <openssl/mem.h>
-#include <openssl/pem.h>
 
 #include "src/core/credentials/transport/tls/grpc_tls_certificate_selector.h"
 #include "test/core/tsi/private_key_signer_test_util.h"
@@ -52,6 +51,7 @@
 namespace grpc_core {
 namespace testing {
 namespace {
+
 constexpr absl::string_view kTestCredsRelativePath = "src/core/tsi/test_creds/";
 const char kServerName[] = "foo.test.google.fr";
 
@@ -233,7 +233,7 @@ class SslCertSelectorTsiTestFixture {
     server_options.min_tls_version = tls_version_;
     server_options.max_tls_version = tls_version_;
     ASSERT_NE(cert_selector_, nullptr);
-    server_options.certificate_selector = cert_selector_;
+    server_options.pem_key_cert_pairs = cert_selector_;
     ASSERT_EQ(tsi_create_ssl_server_handshaker_factory_with_options(
                   &server_options, &server_handshaker_factory_),
               TSI_OK);
@@ -443,7 +443,6 @@ INSTANTIATE_TEST_SUITE_P(CertSelectionOffloadTest, CertSelectionOffloadTest,
 }  // namespace testing
 }  // namespace grpc_core
 
-#endif  // OPENSSL_VERSION_NUMBER >= 0x10100000
 #endif  // OPENSSL_IS_BORINGSSL
 
 int main(int argc, char** argv) {

@@ -212,7 +212,7 @@ struct tsi_ssl_handshaker : public tsi_handshaker,
   }
 #if defined(OPENSSL_IS_BORINGSSL)
   // Only possible in the server case.
-  std::shared_ptr<grpc_core::CertificateSelector> certificate_selector;
+  grpc_core::CertificateSelector* certificate_selector = nullptr;
   std::shared_ptr<grpc_core::CertificateSelector::AsyncCertSelectionHandle>
       cert_selection_handle ABSL_GUARDED_BY(mu);
   // Will be set if the certificate selector is used and the asynchronous cert
@@ -494,15 +494,16 @@ const SSL_PRIVATE_KEY_METHOD TlsOffloadPrivateKeyMethod = {
     nullptr,  // decrypt not implemented for this use case
     TlsPrivateKeyOffloadComplete};
 
-absl::StatusOr<grpc_core::CertificateSelector::SelectCertInfo>
-PrepareSelectCertInfo(const SSL_CLIENT_HELLO* client_hello) {
+grpc_core::CertificateSelector::SelectCertInfo PrepareSelectCertInfo(
+    const SSL_CLIENT_HELLO* client_hello) {
+  grpc_core::CertificateSelector::SelectCertInfo select_cert_info;
   const char* sni =
       SSL_get_servername(client_hello->ssl, TLSEXT_NAMETYPE_host_name);
-  if (sni == nullptr) {
-    return absl::InvalidArgumentError("No server name from client hello.");
+  if (sni != nullptr) {
+    select_cert_info.sni = sni;
+  } else {
+    VLOG(2) << "Client did not provide SNI for cert selection.";
   }
-  grpc_core::CertificateSelector::SelectCertInfo select_cert_info;
-  select_cert_info.sni = sni;
   return select_cert_info;
 }
 
@@ -510,6 +511,9 @@ absl::Status ProcessSelectCertResult(
     tsi_ssl_handshaker* handshaker,
     grpc_core::CertificateSelector::SelectCertResult result)
     ABSL_EXCLUSIVE_LOCKS_REQUIRED(&tsi_ssl_handshaker::mu) {
+  if (result.cert_chain.empty()) {
+    return absl::InvalidArgumentError("The cert chain is empty.");
+  }
   std::vector<CRYPTO_BUFFER*> cert_chain;
   cert_chain.reserve(result.cert_chain.size());
   for (auto& raw_cert : result.cert_chain) {
@@ -519,19 +523,27 @@ absl::Status ProcessSelectCertResult(
   grpc_core::MatchMutable(
       &result.private_key,
       [&](bssl::UniquePtr<EVP_PKEY>* key) {
+        VLOG(2) << "Select cert result returns a static private key.";
         if (!SSL_set_chain_and_key(handshaker->ssl, cert_chain.data(),
                                    cert_chain.size(), key->get(),
                                    /*privkey_method=*/nullptr)) {
-          status = absl::InternalError("Failed to set chain and key.");
+          status = absl::InternalError(
+              absl::StrFormat("Failed to set chain and key: %s",
+                              tsi::SslErrorString(SSL_get_error(
+                                  handshaker->ssl, /*ret_code=*/0))));
         }
       },
       [&](std::shared_ptr<grpc_core::PrivateKeySigner>* signer)
           ABSL_NO_THREAD_SAFETY_ANALYSIS {
+            VLOG(2) << "Select cert result returns a private key signer.";
             handshaker->key_signer = std::move(*signer);
             if (!SSL_set_chain_and_key(
                     handshaker->ssl, cert_chain.data(), cert_chain.size(),
                     /*privkey=*/nullptr, &TlsOffloadPrivateKeyMethod)) {
-              status = absl::InternalError("Failed to set chain and key.");
+              status = absl::InternalError(
+                  absl::StrFormat("Failed to set chain and key: %s",
+                                  tsi::SslErrorString(SSL_get_error(
+                                      handshaker->ssl, /*ret_code=*/0))));
             }
           });
   return status;
@@ -545,6 +557,7 @@ void SelectCertDoneCallback(
   {
     grpc_core::MutexLock lock(&handshaker->mu);
     if (!result.ok()) {
+      VLOG(2) << "SelectCert failed " << result.status();
       handshaker->cert_selection_status = std::move(result).status();
     } else {
       handshaker->cert_selection_status =
@@ -565,48 +578,60 @@ ssl_select_cert_result_t SelectCertificateCallback(
     const SSL_CLIENT_HELLO* client_hello)
     ABSL_EXCLUSIVE_LOCKS_REQUIRED(&tsi_ssl_handshaker::mu) {
   tsi_ssl_handshaker* handshaker = GetHandshaker(client_hello->ssl);
+  // Sanity check. Should never happen.
   if (handshaker == nullptr) {
+    LOG(ERROR) << "Handshaker is nullptr";
     return ssl_select_cert_error;
   }
   // The async cert selection is finished.
   if (handshaker->cert_selection_status.has_value()) {
     if (!handshaker->cert_selection_status->ok()) {
+      LOG(INFO) << "Async cert selection failed: "
+                << *handshaker->cert_selection_status;
+      handshaker->MaybeSetError(handshaker->cert_selection_status->ToString());
       return ssl_select_cert_error;
     }
     // The cert selection is done.
     return ssl_select_cert_success;
   }
-  absl::StatusOr<grpc_core::CertificateSelector::SelectCertInfo>
-      select_cert_info = PrepareSelectCertInfo(client_hello);
-  if (!select_cert_info.ok()) {
+  // Sanity check. Should never happen.
+  if (handshaker->certificate_selector == nullptr) {
+    LOG(ERROR) << "Certificate selector is nullptr.";
     return ssl_select_cert_error;
   }
   std::variant<
       absl::StatusOr<grpc_core::CertificateSelector::SelectCertResult>,
       std::shared_ptr<grpc_core::CertificateSelector::AsyncCertSelectionHandle>>
       result = handshaker->certificate_selector->SelectCert(
-          *select_cert_info,
+          PrepareSelectCertInfo(client_hello),
           absl::bind_front(SelectCertDoneCallback, handshaker));
-  ssl_select_cert_result_t ssl_select_cert_result = ssl_select_cert_retry;
+  ssl_select_cert_result_t ssl_select_cert_result = ssl_select_cert_success;
+  // The outer function guarantees the mutex lock, and we have to disable the
+  // absl thread safety analysis because the use of MatchMutable.
   grpc_core::MatchMutable(
       &result,
       [&](absl::StatusOr<grpc_core::CertificateSelector::SelectCertResult>*
               select_cert_result) ABSL_NO_THREAD_SAFETY_ANALYSIS {
         if (!select_cert_result->ok()) {
+          LOG(INFO) << "Sync select cert failed: "
+                    << select_cert_result->status();
+          handshaker->MaybeSetError(select_cert_result->status().ToString());
           ssl_select_cert_result = ssl_select_cert_error;
-        } else {
-          ssl_select_cert_result =
-              ProcessSelectCertResult(handshaker,
-                                      *std::move(*select_cert_result))
-                      .ok()
-                  ? ssl_select_cert_success
-                  : ssl_select_cert_error;
+          return;
+        }
+        absl::Status status = ProcessSelectCertResult(
+            handshaker, *std::move(*select_cert_result));
+        if (!status.ok()) {
+          LOG(INFO) << "Sync select cert failed: " << status;
+          handshaker->MaybeSetError(status.ToString());
+          ssl_select_cert_result = ssl_select_cert_error;
         }
       },
       [&](std::shared_ptr<
           grpc_core::CertificateSelector::AsyncCertSelectionHandle>*
               async_handle) ABSL_NO_THREAD_SAFETY_ANALYSIS {
         handshaker->cert_selection_handle = std::move(*async_handle);
+        ssl_select_cert_result = ssl_select_cert_retry;
       });
   return ssl_select_cert_result;
 }
@@ -2420,7 +2445,7 @@ static tsi_result ssl_handshaker_next_impl(tsi_ssl_handshaker* self)
              self->certificate_selector != nullptr) {
     // During the PrivateKeyOffload signature or asynchronous certificate
     // selection, an empty call to ssl_handshaker_do_handshake needs to be
-    // forced  after the async offload has completed.
+    // forced after the async offload has completed.
     status = ssl_handshaker_do_handshake(self);
 #endif
   }
@@ -2725,7 +2750,7 @@ static tsi_result create_tsi_ssl_handshaker(
     tsi_ssl_server_handshaker_factory* server_factory =
         reinterpret_cast<tsi_ssl_server_handshaker_factory*>(factory);
     if (server_factory->certificate_selector != nullptr) {
-      impl->certificate_selector = server_factory->certificate_selector;
+      impl->certificate_selector = server_factory->certificate_selector.get();
     }
   }
   {
@@ -3177,12 +3202,12 @@ static tsi_ssl_handshaker_factory_vtable server_handshaker_factory_vtable = {
 tsi_result tsi_create_ssl_server_handshaker_factory(
     std::variant<std::vector<tsi_ssl_pem_key_cert_pair>,
                  std::shared_ptr<grpc_core::CertificateSelector>>
-        pem_key_cert,
+        pem_key_cert_pairs,
     const char* pem_client_root_certs, int force_client_auth,
     const char* cipher_suites, const char** alpn_protocols,
     uint16_t num_alpn_protocols, tsi_ssl_server_handshaker_factory** factory) {
   return tsi_create_ssl_server_handshaker_factory_ex(
-      std::move(pem_key_cert), pem_client_root_certs,
+      std::move(pem_key_cert_pairs), pem_client_root_certs,
       force_client_auth ? TSI_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY
                         : TSI_DONT_REQUEST_CLIENT_CERTIFICATE,
       cipher_suites, alpn_protocols, num_alpn_protocols, factory);
@@ -3191,21 +3216,13 @@ tsi_result tsi_create_ssl_server_handshaker_factory(
 tsi_result tsi_create_ssl_server_handshaker_factory_ex(
     std::variant<std::vector<tsi_ssl_pem_key_cert_pair>,
                  std::shared_ptr<grpc_core::CertificateSelector>>
-        pem_key_cert,
+        pem_key_cert_pairs,
     const char* pem_client_root_certs,
     tsi_client_certificate_request_type client_certificate_request,
     const char* cipher_suites, const char** alpn_protocols,
     uint16_t num_alpn_protocols, tsi_ssl_server_handshaker_factory** factory) {
   tsi_ssl_server_handshaker_options options;
-  Match(
-      pem_key_cert,
-      [&](const std::vector<tsi_ssl_pem_key_cert_pair>& pem_key_cert_pairs) {
-        options.pem_key_cert_pairs = pem_key_cert_pairs;
-      },
-      [&](const std::shared_ptr<grpc_core::CertificateSelector>&
-              certificate_selector) {
-        options.certificate_selector = certificate_selector;
-      });
+  options.pem_key_cert_pairs = std::move(pem_key_cert_pairs);
   if (pem_client_root_certs != nullptr) {
     options.root_cert_info =
         std::make_shared<tsi::RootCertInfo>(pem_client_root_certs);
@@ -3227,10 +3244,21 @@ tsi_result tsi_create_ssl_server_handshaker_factory_with_options(
 
   gpr_once_init(&g_init_openssl_once, init_openssl);
 
+  std::vector<tsi_ssl_pem_key_cert_pair> pem_key_cert_pairs;
+  std::shared_ptr<grpc_core::CertificateSelector> certificate_selector;
+  grpc_core::Match(
+      options->pem_key_cert_pairs,
+      [&](std::vector<tsi_ssl_pem_key_cert_pair> key_cert_pairs) {
+        pem_key_cert_pairs = std::move(key_cert_pairs);
+      },
+      [&](std::shared_ptr<grpc_core::CertificateSelector>
+              selector) {
+        certificate_selector = std::move(selector);
+      });
   if (factory == nullptr) return TSI_INVALID_ARGUMENT;
   *factory = nullptr;
-  if (options->pem_key_cert_pairs.empty() &&
-      options->certificate_selector == nullptr) {
+  if (pem_key_cert_pairs.empty() &&
+      certificate_selector == nullptr) {
     return TSI_INVALID_ARGUMENT;
   }
 
@@ -3238,8 +3266,8 @@ tsi_result tsi_create_ssl_server_handshaker_factory_with_options(
   tsi_ssl_handshaker_factory_init(&impl->base);
   impl->base.vtable = &server_handshaker_factory_vtable;
 
-  impl->ssl_context_count = options->certificate_selector == nullptr
-                                ? options->pem_key_cert_pairs.size()
+  impl->ssl_context_count = certificate_selector == nullptr
+                                ? pem_key_cert_pairs.size()
                                 : 1;
   impl->ssl_contexts = static_cast<SSL_CTX**>(
       gpr_zalloc(impl->ssl_context_count * sizeof(SSL_CTX*)));
@@ -3290,13 +3318,17 @@ tsi_result tsi_create_ssl_server_handshaker_factory_with_options(
                                                 options->max_tls_version);
       if (result != TSI_OK) return result;
 
-      if (options->certificate_selector == nullptr) {
+      if (certificate_selector == nullptr) {
         result = populate_ssl_context(impl->ssl_contexts[i],
-                                      &options->pem_key_cert_pairs[i],
+                                      &pem_key_cert_pairs[i],
                                       options->cipher_suites);
       } else {
 #if defined(OPENSSL_IS_BORINGSSL)
-        impl->certificate_selector = options->certificate_selector;
+        // Only populates the cipher suites.
+        result = populate_ssl_context(impl->ssl_contexts[i],
+                                      /*key_cert_pair=*/nullptr,
+                                      options->cipher_suites);
+        impl->certificate_selector = certificate_selector;
         SSL_CTX_set_select_certificate_cb(impl->ssl_contexts[i],
                                           SelectCertificateCallback);
 #else
@@ -3309,9 +3341,9 @@ tsi_result tsi_create_ssl_server_handshaker_factory_with_options(
 
 #if defined(OPENSSL_IS_BORINGSSL)
       if (impl->base.key_signer == nullptr &&
-          options->certificate_selector == nullptr) {
+          certificate_selector == nullptr) {
         grpc_core::Match(
-            options->pem_key_cert_pairs[i].private_key,
+            pem_key_cert_pairs[i].private_key,
             [](const std::string&) {},
             [&](const std::shared_ptr<grpc_core::PrivateKeySigner>&
                     key_signer) { impl->base.key_signer = key_signer; });
@@ -3419,9 +3451,9 @@ tsi_result tsi_create_ssl_server_handshaker_factory_with_options(
       }
 #endif
 
-      if (options->certificate_selector == nullptr) {
+      if (certificate_selector == nullptr) {
         result = tsi_ssl_extract_x509_subject_names_from_pem_cert(
-            options->pem_key_cert_pairs[i].cert_chain.c_str(),
+            pem_key_cert_pairs[i].cert_chain.c_str(),
             &impl->ssl_context_x509_subject_names[i]);
         if (result != TSI_OK) break;
         SSL_CTX_set_tlsext_servername_callback(

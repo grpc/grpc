@@ -37,9 +37,9 @@ namespace grpc_core {
 absl::StatusOr<CertificateSelector::SelectCertResult>
 CertificateSelector::CreateSelectCertResult(
     const std::vector<std::string>& cert_chain,
-    std::shared_ptr<PrivateKeySigner> private_key_signer) {
-  CertificateSelector::SelectCertResult result;
+    std::variant<absl::string_view, std::shared_ptr<PrivateKeySigner>> private_key) {
 #if defined(OPENSSL_IS_BORINGSSL)
+  CertificateSelector::SelectCertResult result;
   std::vector<bssl::UniquePtr<CRYPTO_BUFFER>> raw_cert_chain;
   raw_cert_chain.reserve(cert_chain.size());
   for (absl::string_view cert : cert_chain) {
@@ -52,9 +52,24 @@ CertificateSelector::CreateSelectCertResult(
     raw_cert_chain.push_back(std::move(raw_cert));
   }
   result.cert_chain = std::move(raw_cert_chain);
-  result.private_key = private_key_signer;
-#endif
+  absl::Status status = absl::OkStatus();
+  MatchMutable(
+      &private_key,
+      [&](absl::string_view* key) {
+        // TODO(lwge): Support processing DER private key.
+        status = absl::UnimplementedError("DER-format private key string is not supported.");
+      },
+      [&](std::shared_ptr<PrivateKeySigner>* key_signer) {
+        result.private_key = *key_signer;
+      });
+  if (!status.ok()) {
+    return status;
+  }
   return result;
+#else
+  return absl::FailedPreconditionError(
+      "Select cert result creation is not supported.");
+#endif
 }
 
 absl::StatusOr<CertificateSelector::SelectCertResult>
@@ -62,8 +77,8 @@ CertificateSelector::CreateSelectCertResult(
     absl::string_view cert_chain,
     std::variant<absl::string_view, std::shared_ptr<PrivateKeySigner>>
         private_key) {
-  CertificateSelector::SelectCertResult result;
 #if defined(OPENSSL_IS_BORINGSSL)
+  CertificateSelector::SelectCertResult result;
   std::vector<bssl::UniquePtr<CRYPTO_BUFFER>> raw_cert_chain;
   bssl::UniquePtr<BIO> bio(
       BIO_new_mem_buf(cert_chain.data(), cert_chain.size()));
@@ -105,8 +120,11 @@ CertificateSelector::CreateSelectCertResult(
   if (!status.ok()) {
     return status;
   }
-#endif
   return result;
+#else
+  return absl::FailedPreconditionError(
+      "Select cert result creation is not supported");
+#endif
 }
 
 }  // namespace grpc_core

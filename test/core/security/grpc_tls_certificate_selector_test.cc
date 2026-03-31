@@ -1,4 +1,4 @@
-// Copyright 2021 gRPC authors.
+// Copyright 2026 gRPC authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -53,9 +53,9 @@ class TlsCertificateSelectorTest : public ::testing::Test {
         private_key_(GetFileContents(
             absl::StrCat(kTestCredsRelativePath, "server1.key"))) {}
 
-  static std::vector<std::string> GetCertChainInDer(absl::string_view chain) {
+  static std::vector<std::string> ConvertCertChainToDer(absl::string_view pem_cert_chain) {
     std::vector<std::string> cert_chain;
-    BIO* bio = BIO_new_mem_buf(chain.data(), chain.size());
+    BIO* bio = BIO_new_mem_buf(pem_cert_chain.data(), pem_cert_chain.size());
     uint8_t* cert_data = nullptr;
     long cert_len;
     while (PEM_bytes_read_bio(&cert_data, &cert_len, nullptr, PEM_STRING_X509,
@@ -105,7 +105,7 @@ TEST_F(TlsCertificateSelectorTest,
 
 TEST_F(TlsCertificateSelectorTest, CreateSelectCertResultFromDerSuccess) {
   ASSERT_OK(CertificateSelector::CreateSelectCertResult(
-      GetCertChainInDer(cert_chain_), /*private_key_signer=*/nullptr));
+      ConvertCertChainToDer(cert_chain_), /*private_key_signer=*/nullptr));
 }
 
 }  // namespace

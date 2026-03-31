@@ -320,8 +320,10 @@ tsi_result tsi_create_ssl_server_handshaker_factory_ex(
 
 struct tsi_ssl_server_handshaker_options {
   // pem_key_cert_pairs is an array private key / certificate chains of the
-  // server.
-  std::vector<tsi_ssl_pem_key_cert_pair> pem_key_cert_pairs;
+  // server, or a certificate selector.
+  std::variant<std::vector<tsi_ssl_pem_key_cert_pair>,
+               std::shared_ptr<grpc_core::CertificateSelector>>
+      pem_key_cert_pairs;
   // client_certificate_request, if set to non-zero will force the client to
   // authenticate with an SSL cert. Note that this option is ignored if
   // root_cert_info is NULL
@@ -379,10 +381,6 @@ struct tsi_ssl_server_handshaker_options {
   // server root certificates or a SPIFFE bundle map. This parameter may be NULL
   // if the server does not want the client to be authenticated with SSL.
   std::shared_ptr<tsi::RootCertInfo> root_cert_info;
-
-  // certificate_selector is used to select the certificate to use for the
-  // handshake.
-  std::shared_ptr<grpc_core::CertificateSelector> certificate_selector;
 
   // TODO(gtcooke94) this ctor is not needed
   // https://github.com/grpc/grpc/pull/39708/files#r2143735662

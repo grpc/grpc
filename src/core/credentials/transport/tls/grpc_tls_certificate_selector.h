@@ -33,13 +33,10 @@
 
 namespace grpc_core {
 
-// Performs server-side certificate selection per TLS handshake.
-// Users should implement the `SelectCert` API. It should either return the
-// result synchronously or an async handle to support cancellation. In the
-// asynchronous case, the implementation is expected to invoke
-// `OnSelectCertComplete` when the cert selection is done. Users should use the
-// appropriate `CreateSelectCertResults` function to create the
-// `SelectCertResult` struct.
+// Performs server-side certificate selection during the handshake based on the
+// SNI. Users must implement the `SelectCert` and `Cancel` methods.
+// The implementation must be thread-safe, as `SelectCert` may be called for
+// multiple TLS handshakes at the same time.
 class CertificateSelector {
  public:
   struct SelectCertInfo {
@@ -55,11 +52,12 @@ class CertificateSelector {
 #endif
   };
 
-  // Takes DER-formatted cert chains, and a signer.
-  // TODO(lwge): Consider supporting DER private key string.
+  // Takes DER-formatted cert chains, and DER-formatted private key string or a
+  // signer.
   static absl::StatusOr<SelectCertResult> CreateSelectCertResult(
       const std::vector<std::string>& cert_chain,
-      std::shared_ptr<PrivateKeySigner> private_key_signer);
+      std::variant<absl::string_view, std::shared_ptr<PrivateKeySigner>>
+          private_key);
 
   // Takes PEM-formatted cert chains, and PEM-formatted private key string or a
   // signer.
@@ -78,10 +76,19 @@ class CertificateSelector {
 
   virtual ~CertificateSelector() = default;
 
+  // Performs the cert selection based on `SelectCertInfo`.
+  // Since the client is not required to provide the server name, the
+  // implementation should make a decision by itself on what to return. It
+  // should either return the result synchronously or an async handle to support
+  // cancellation. In the asynchronous case, the implementation is expected to
+  // invoke `OnSelectCertComplete` when the cert selection is done. Users should
+  // use the appropriate `CreateSelectCertResults` function to create the
+  // `SelectCertResult` struct.
   virtual std::variant<absl::StatusOr<SelectCertResult>,
                        std::shared_ptr<AsyncCertSelectionHandle>>
   SelectCert(const SelectCertInfo&, OnSelectCertComplete) = 0;
 
+  // Cancels the async select cert call corresponding to the handle.
   virtual void Cancel(std::shared_ptr<AsyncCertSelectionHandle>) = 0;
 };
 
