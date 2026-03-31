@@ -42,7 +42,5 @@ doc/trace_flags.md linguist-generated=true
 src/core/lib/debug/trace_flags.h linguist-generated=true
 src/core/lib/debug/trace_flags.cc linguist-generated=true
 src/python/grpcio_observability/observability_lib_deps.py linguist-generated=true
-src/core/ext/upb-gen/** linguist-generated=true
-src/core/ext/upbdefs-gen/** linguist-generated=true
 third_party/upb/upb/** linguist-generated=true
 third_party/utf8_range/** linguist-generated=true

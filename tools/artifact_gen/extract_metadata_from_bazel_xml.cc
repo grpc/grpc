@@ -441,18 +441,17 @@ class ArtifactGen {
   void PruneUpbExperimentalFeatures() {
     constexpr char kUpbExcludedTargetsPattern[] = "//upb/wire/decode_fast";
     // These targets are needed by upb_generator.
-    std::vector<std::string> kUpbExcludedTargetsExceptions = {
+    const std::vector<absl::string_view> kUpbExcludedTargetsExceptions = {
       "@com_google_protobuf//upb/wire/decode_fast:select",
       "@com_google_protobuf//upb/wire/decode_fast:combinations",
       "@com_google_protobuf//upb/wire/decode_fast:data",
     };
     auto should_include = [&](absl::string_view rule) {
-
-      if(!absl::StrContains(rule, kUpbExcludedTargetsPattern)) {
+      if (!absl::StrContains(rule, kUpbExcludedTargetsPattern)) {
         return true;
       }
       LOG(INFO) << "checking experimental target: " << rule;
-      for (const std::string& e: kUpbExcludedTargetsExceptions) {
+      for (const absl::string_view e: kUpbExcludedTargetsExceptions) {
         if (absl::EndsWith(rule, e)) {
           return true;
         }
@@ -466,14 +465,14 @@ class ArtifactGen {
         it_rule = rules_.erase(it_rule);
         continue;
       }
+      std::vector<std::string> pruned_deps;
       // Use index to avoid iterator invalidation.
-      for (int i = 0; i < rule.deps.size(); ) {
-        if (!should_include(rule.deps[i])) {
-          rule.deps.erase(rule.deps.begin() + i);
-        } else {
-          ++i;
+      for (const std::string& dep: rule.deps) {
+        if (should_include(dep)) {
+          pruned_deps.push_back(dep);
         }
       }
+      std::swap(rule.deps, pruned_deps);
       ++it_rule;
     }
   }
