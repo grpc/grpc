@@ -33,6 +33,7 @@
     <file baseinstalldir="/" name="include/grpc/byte_buffer_reader.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/census.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/compression.h" role="src" />
+    <file baseinstalldir="/" name="include/grpc/context_types.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/create_channel_from_endpoint.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/credentials.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/credentials_cpp.h" role="src" />
@@ -1858,6 +1859,7 @@
     <file baseinstalldir="/" name="src/core/load_balancing/weighted_target/weighted_target.cc" role="src" />
     <file baseinstalldir="/" name="src/core/load_balancing/weighted_target/weighted_target.h" role="src" />
     <file baseinstalldir="/" name="src/core/load_balancing/xds/cds.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/load_balancing/xds/cds.h" role="src" />
     <file baseinstalldir="/" name="src/core/load_balancing/xds/xds_channel_args.h" role="src" />
     <file baseinstalldir="/" name="src/core/load_balancing/xds/xds_cluster_impl.cc" role="src" />
     <file baseinstalldir="/" name="src/core/load_balancing/xds/xds_cluster_manager.cc" role="src" />

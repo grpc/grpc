@@ -1212,6 +1212,11 @@ _BUILD_EXTRA_METADATA = {
         "build": "all",
         "_RENAME": "upb_mini_table_lib",
     },
+    "@com_google_protobuf//upb/reflection:descriptor_upb_proto": {
+        "language": "c",
+        "build": "all",
+        "_RENAME": "upb_descriptor_lib",
+    },
     "@com_google_protobuf//upb/reflection:reflection": {
         "language": "c",
         "build": "all",

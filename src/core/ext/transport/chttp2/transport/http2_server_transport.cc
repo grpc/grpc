@@ -1179,28 +1179,28 @@ RefCountedPtr<Stream> Http2ServerTransport::LookupStream(uint32_t stream_id) {
   return it->second;
 }
 
-// void Http2ServerTransport::AddToStreamList(RefCountedPtr<Stream> stream) {
-//   bool should_wake_periodic_updates = false;
-//   {
-//     MutexLock lock(&transport_mutex_);
-//     GRPC_DCHECK(stream != nullptr) << "stream is null";
-//     GRPC_DCHECK_GT(stream->GetStreamId(), 0u) << "stream id is invalid";
-//     GRPC_HTTP2_SERVER_DLOG
-//         << "Http2ServerTransport::AddToStreamList for stream id: "
-//         << stream->GetStreamId();
-//     const uint32_t stream_id = stream->GetStreamId();
-//     stream_list_.emplace(stream_id, std::move(stream));
-//     // TODO(tjagtap) [PH2][P2][BDP] Remove this when the BDP code is done.
-//     if (GetActiveStreamCountLocked() == 1) {
-//       should_wake_periodic_updates = true;
-//     }
-//   }
-//   // TODO(tjagtap) [PH2][P2][BDP] Remove this when the BDP code is done.
-//   if (should_wake_periodic_updates) {
-//     // Release the lock before you wake up another promise on the party.
-//     WakeupPeriodicUpdatePromise();
-//   }
-// }
+void Http2ServerTransport::AddToStreamList(RefCountedPtr<Stream> stream) {
+  bool should_wake_periodic_updates = false;
+  {
+    MutexLock lock(&transport_mutex_);
+    GRPC_DCHECK(stream != nullptr) << "stream is null";
+    GRPC_DCHECK_GT(stream->GetStreamId(), 0u) << "stream id is invalid";
+    GRPC_HTTP2_SERVER_DLOG
+        << "Http2ServerTransport::AddToStreamList for stream id: "
+        << stream->GetStreamId();
+    const uint32_t stream_id = stream->GetStreamId();
+    stream_list_.emplace(stream_id, std::move(stream));
+    // TODO(tjagtap) [PH2][P2][BDP] Remove this when the BDP code is done.
+    if (GetActiveStreamCountLocked() == 1) {
+      should_wake_periodic_updates = true;
+    }
+  }
+  // TODO(tjagtap) [PH2][P2][BDP] Remove this when the BDP code is done.
+  if (should_wake_periodic_updates) {
+    // Release the lock before you wake up another promise on the party.
+    WakeupPeriodicUpdatePromise();
+  }
+}
 
 // absl::Status Http2ServerTransport::MaybeAddStreamToWritableStreamList(
 //     RefCountedPtr<Stream> stream,
@@ -1389,10 +1389,9 @@ absl::Status Http2ServerTransport::IncomingStream(
     return absl::CancelledError();
   }
   RefCountedPtr<Stream> stream = std::move(result.value());
-  // TODO(akshitpatel) : [PH2][P0] : Implement this.
   // TODO(akshitpatel) : [PH2][P1] : Try to access the stream list only once in
   // this function.
-  // AddToStreamList(stream);
+  AddToStreamList(stream);
 
   // TODO(tjagtap) : [PH2][P1] : We could receive a valid Metadata. And
   // Spawn CallOutboundLoop. But before the CallOutboundLoop starts, if

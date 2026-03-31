@@ -1868,6 +1868,18 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "telemetry_label",
+    hdrs = [
+        "telemetry/telemetry_label.h",
+    ],
+    deps = [
+        "arena",
+        "//:gpr",
+        "//:grpc_public_hdrs",
+    ],
+)
+
+grpc_cc_library(
     name = "thread_quota",
     srcs = [
         "lib/resource_quota/thread_quota.cc",
@@ -6864,6 +6876,9 @@ grpc_cc_library(
     srcs = [
         "load_balancing/xds/cds.cc",
     ],
+    hdrs = [
+        "load_balancing/xds/cds.h",
+    ],
     external_deps = [
         "absl/log",
         "absl/status",
@@ -6892,6 +6907,7 @@ grpc_cc_library(
         "unique_type_name",
         "xds_cluster",
         "xds_common_types",
+        "xds_config",
         "xds_dependency_manager",
         "xds_health_status",
         "//:config",
@@ -7166,7 +7182,6 @@ grpc_cc_library(
         "channel_args",
         "delegating_helper",
         "down_cast",
-        "experiments",
         "grpc_check",
         "grpc_lb_policy_pick_first",
         "json",
