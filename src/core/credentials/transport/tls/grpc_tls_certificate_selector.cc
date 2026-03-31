@@ -55,7 +55,7 @@ CertificateSelector::CreateSelectCertResult(
   absl::Status status = absl::OkStatus();
   MatchMutable(
       &private_key,
-      [&](absl::string_view* key) {
+      [&](absl::string_view*) {
         // TODO(lwge): Support processing DER private key.
         status = absl::UnimplementedError("DER-format private key string is not supported.");
       },
