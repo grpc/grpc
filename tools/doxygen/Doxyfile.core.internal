@@ -40,7 +40,7 @@ PROJECT_NAME           = "GRPC Core"
 # could be handy for archiving the generated documentation or if some version
 # control system is used.
 
-PROJECT_NUMBER         = 52.0.0
+PROJECT_NUMBER         = 53.0.0
 
 # Using the PROJECT_BRIEF tag one can provide an optional one line description
 # for a project that appears at the top of each page and should give viewer a
@@ -816,6 +816,7 @@ include/grpc/byte_buffer.h \
 include/grpc/byte_buffer_reader.h \
 include/grpc/census.h \
 include/grpc/compression.h \
+include/grpc/context_types.h \
 include/grpc/create_channel_from_endpoint.h \
 include/grpc/credentials.h \
 include/grpc/credentials_cpp.h \
@@ -868,6 +869,7 @@ include/grpc/impl/propagation_bits.h \
 include/grpc/impl/slice_type.h \
 include/grpc/load_reporting.h \
 include/grpc/passive_listener.h \
+include/grpc/private_key_signer.h \
 include/grpc/slice.h \
 include/grpc/slice_buffer.h \
 include/grpc/status.h \
@@ -1488,9 +1490,18 @@ src/core/ext/upb-gen/envoy/data/accesslog/v3/accesslog.upb_minitable.h \
 src/core/ext/upb-gen/envoy/extensions/clusters/aggregate/v3/cluster.upb.h \
 src/core/ext/upb-gen/envoy/extensions/clusters/aggregate/v3/cluster.upb_minitable.c \
 src/core/ext/upb-gen/envoy/extensions/clusters/aggregate/v3/cluster.upb_minitable.h \
+src/core/ext/upb-gen/envoy/extensions/common/matching/v3/extension_matcher.upb.h \
+src/core/ext/upb-gen/envoy/extensions/common/matching/v3/extension_matcher.upb_minitable.c \
+src/core/ext/upb-gen/envoy/extensions/common/matching/v3/extension_matcher.upb_minitable.h \
 src/core/ext/upb-gen/envoy/extensions/filters/common/fault/v3/fault.upb.h \
 src/core/ext/upb-gen/envoy/extensions/filters/common/fault/v3/fault.upb_minitable.c \
 src/core/ext/upb-gen/envoy/extensions/filters/common/fault/v3/fault.upb_minitable.h \
+src/core/ext/upb-gen/envoy/extensions/filters/common/matcher/action/v3/skip_action.upb.h \
+src/core/ext/upb-gen/envoy/extensions/filters/common/matcher/action/v3/skip_action.upb_minitable.c \
+src/core/ext/upb-gen/envoy/extensions/filters/common/matcher/action/v3/skip_action.upb_minitable.h \
+src/core/ext/upb-gen/envoy/extensions/filters/http/composite/v3/composite.upb.h \
+src/core/ext/upb-gen/envoy/extensions/filters/http/composite/v3/composite.upb_minitable.c \
+src/core/ext/upb-gen/envoy/extensions/filters/http/composite/v3/composite.upb_minitable.h \
 src/core/ext/upb-gen/envoy/extensions/filters/http/fault/v3/fault.upb.h \
 src/core/ext/upb-gen/envoy/extensions/filters/http/fault/v3/fault.upb_minitable.c \
 src/core/ext/upb-gen/envoy/extensions/filters/http/fault/v3/fault.upb_minitable.h \
@@ -1955,8 +1966,14 @@ src/core/ext/upbdefs-gen/envoy/data/accesslog/v3/accesslog.upbdefs.c \
 src/core/ext/upbdefs-gen/envoy/data/accesslog/v3/accesslog.upbdefs.h \
 src/core/ext/upbdefs-gen/envoy/extensions/clusters/aggregate/v3/cluster.upbdefs.c \
 src/core/ext/upbdefs-gen/envoy/extensions/clusters/aggregate/v3/cluster.upbdefs.h \
+src/core/ext/upbdefs-gen/envoy/extensions/common/matching/v3/extension_matcher.upbdefs.c \
+src/core/ext/upbdefs-gen/envoy/extensions/common/matching/v3/extension_matcher.upbdefs.h \
 src/core/ext/upbdefs-gen/envoy/extensions/filters/common/fault/v3/fault.upbdefs.c \
 src/core/ext/upbdefs-gen/envoy/extensions/filters/common/fault/v3/fault.upbdefs.h \
+src/core/ext/upbdefs-gen/envoy/extensions/filters/common/matcher/action/v3/skip_action.upbdefs.c \
+src/core/ext/upbdefs-gen/envoy/extensions/filters/common/matcher/action/v3/skip_action.upbdefs.h \
+src/core/ext/upbdefs-gen/envoy/extensions/filters/http/composite/v3/composite.upbdefs.c \
+src/core/ext/upbdefs-gen/envoy/extensions/filters/http/composite/v3/composite.upbdefs.h \
 src/core/ext/upbdefs-gen/envoy/extensions/filters/http/fault/v3/fault.upbdefs.c \
 src/core/ext/upbdefs-gen/envoy/extensions/filters/http/fault/v3/fault.upbdefs.h \
 src/core/ext/upbdefs-gen/envoy/extensions/filters/http/gcp_authn/v3/gcp_authn.upbdefs.c \
@@ -2147,6 +2164,8 @@ src/core/filter/auth/client_auth_filter.cc \
 src/core/filter/auth/server_auth_filter.cc \
 src/core/filter/blackboard.cc \
 src/core/filter/blackboard.h \
+src/core/filter/composite/composite_filter.cc \
+src/core/filter/composite/composite_filter.h \
 src/core/filter/filter_args.h \
 src/core/filter/filter_chain.h \
 src/core/filter/fused_filters.cc \
@@ -2170,7 +2189,6 @@ src/core/handshaker/proxy_mapper.h \
 src/core/handshaker/proxy_mapper_registry.cc \
 src/core/handshaker/proxy_mapper_registry.h \
 src/core/handshaker/security/GEMINI.md \
-src/core/handshaker/security/legacy_secure_endpoint.cc \
 src/core/handshaker/security/pipelined_secure_endpoint.cc \
 src/core/handshaker/security/secure_endpoint.cc \
 src/core/handshaker/security/secure_endpoint.h \
@@ -2497,6 +2515,7 @@ src/core/lib/promise/for_each.h \
 src/core/lib/promise/if.h \
 src/core/lib/promise/inter_activity_latch.h \
 src/core/lib/promise/inter_activity_mutex.h \
+src/core/lib/promise/inter_activity_pipe.h \
 src/core/lib/promise/interceptor_list.h \
 src/core/lib/promise/latch.h \
 src/core/lib/promise/loop.h \
@@ -2678,6 +2697,7 @@ src/core/load_balancing/weighted_round_robin/weighted_round_robin.cc \
 src/core/load_balancing/weighted_target/weighted_target.cc \
 src/core/load_balancing/weighted_target/weighted_target.h \
 src/core/load_balancing/xds/cds.cc \
+src/core/load_balancing/xds/cds.h \
 src/core/load_balancing/xds/xds_channel_args.h \
 src/core/load_balancing/xds/xds_cluster_impl.cc \
 src/core/load_balancing/xds/xds_cluster_manager.cc \
@@ -3039,6 +3059,8 @@ src/core/xds/grpc/xds_endpoint_parser.cc \
 src/core/xds/grpc/xds_endpoint_parser.h \
 src/core/xds/grpc/xds_health_status.cc \
 src/core/xds/grpc/xds_health_status.h \
+src/core/xds/grpc/xds_http_composite_filter.cc \
+src/core/xds/grpc/xds_http_composite_filter.h \
 src/core/xds/grpc/xds_http_fault_filter.cc \
 src/core/xds/grpc/xds_http_fault_filter.h \
 src/core/xds/grpc/xds_http_filter.cc \

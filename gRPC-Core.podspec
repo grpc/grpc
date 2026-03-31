@@ -21,7 +21,7 @@
 
 Pod::Spec.new do |s|
   s.name     = 'gRPC-Core'
-  version = '1.79.0-dev'
+  version = '1.81.0-dev'
   s.version  = version
   s.summary  = 'Core cross-platform gRPC library, written in C'
   s.homepage = 'https://grpc.io'
@@ -121,6 +121,7 @@ Pod::Spec.new do |s|
                       'include/grpc/byte_buffer_reader.h',
                       'include/grpc/census.h',
                       'include/grpc/compression.h',
+                      'include/grpc/context_types.h',
                       'include/grpc/create_channel_from_endpoint.h',
                       'include/grpc/credentials.h',
                       'include/grpc/credentials_cpp.h',
@@ -173,6 +174,7 @@ Pod::Spec.new do |s|
                       'include/grpc/impl/slice_type.h',
                       'include/grpc/load_reporting.h',
                       'include/grpc/passive_listener.h',
+                      'include/grpc/private_key_signer.h',
                       'include/grpc/slice.h',
                       'include/grpc/slice_buffer.h',
                       'include/grpc/status.h',
@@ -203,7 +205,7 @@ Pod::Spec.new do |s|
     ss.libraries = 'z'
     ss.dependency "#{s.name}/Interface", version
     ss.dependency "#{s.name}/Privacy", version
-    ss.dependency 'BoringSSL-GRPC', '0.0.41'
+    ss.dependency 'BoringSSL-GRPC', '0.0.42'
     ss.dependency 'abseil/algorithm/container', abseil_version
     ss.dependency 'abseil/base/base', abseil_version
     ss.dependency 'abseil/base/config', abseil_version
@@ -808,9 +810,18 @@ Pod::Spec.new do |s|
                       'src/core/ext/upb-gen/envoy/extensions/clusters/aggregate/v3/cluster.upb.h',
                       'src/core/ext/upb-gen/envoy/extensions/clusters/aggregate/v3/cluster.upb_minitable.c',
                       'src/core/ext/upb-gen/envoy/extensions/clusters/aggregate/v3/cluster.upb_minitable.h',
+                      'src/core/ext/upb-gen/envoy/extensions/common/matching/v3/extension_matcher.upb.h',
+                      'src/core/ext/upb-gen/envoy/extensions/common/matching/v3/extension_matcher.upb_minitable.c',
+                      'src/core/ext/upb-gen/envoy/extensions/common/matching/v3/extension_matcher.upb_minitable.h',
                       'src/core/ext/upb-gen/envoy/extensions/filters/common/fault/v3/fault.upb.h',
                       'src/core/ext/upb-gen/envoy/extensions/filters/common/fault/v3/fault.upb_minitable.c',
                       'src/core/ext/upb-gen/envoy/extensions/filters/common/fault/v3/fault.upb_minitable.h',
+                      'src/core/ext/upb-gen/envoy/extensions/filters/common/matcher/action/v3/skip_action.upb.h',
+                      'src/core/ext/upb-gen/envoy/extensions/filters/common/matcher/action/v3/skip_action.upb_minitable.c',
+                      'src/core/ext/upb-gen/envoy/extensions/filters/common/matcher/action/v3/skip_action.upb_minitable.h',
+                      'src/core/ext/upb-gen/envoy/extensions/filters/http/composite/v3/composite.upb.h',
+                      'src/core/ext/upb-gen/envoy/extensions/filters/http/composite/v3/composite.upb_minitable.c',
+                      'src/core/ext/upb-gen/envoy/extensions/filters/http/composite/v3/composite.upb_minitable.h',
                       'src/core/ext/upb-gen/envoy/extensions/filters/http/fault/v3/fault.upb.h',
                       'src/core/ext/upb-gen/envoy/extensions/filters/http/fault/v3/fault.upb_minitable.c',
                       'src/core/ext/upb-gen/envoy/extensions/filters/http/fault/v3/fault.upb_minitable.h',
@@ -1275,8 +1286,14 @@ Pod::Spec.new do |s|
                       'src/core/ext/upbdefs-gen/envoy/data/accesslog/v3/accesslog.upbdefs.h',
                       'src/core/ext/upbdefs-gen/envoy/extensions/clusters/aggregate/v3/cluster.upbdefs.c',
                       'src/core/ext/upbdefs-gen/envoy/extensions/clusters/aggregate/v3/cluster.upbdefs.h',
+                      'src/core/ext/upbdefs-gen/envoy/extensions/common/matching/v3/extension_matcher.upbdefs.c',
+                      'src/core/ext/upbdefs-gen/envoy/extensions/common/matching/v3/extension_matcher.upbdefs.h',
                       'src/core/ext/upbdefs-gen/envoy/extensions/filters/common/fault/v3/fault.upbdefs.c',
                       'src/core/ext/upbdefs-gen/envoy/extensions/filters/common/fault/v3/fault.upbdefs.h',
+                      'src/core/ext/upbdefs-gen/envoy/extensions/filters/common/matcher/action/v3/skip_action.upbdefs.c',
+                      'src/core/ext/upbdefs-gen/envoy/extensions/filters/common/matcher/action/v3/skip_action.upbdefs.h',
+                      'src/core/ext/upbdefs-gen/envoy/extensions/filters/http/composite/v3/composite.upbdefs.c',
+                      'src/core/ext/upbdefs-gen/envoy/extensions/filters/http/composite/v3/composite.upbdefs.h',
                       'src/core/ext/upbdefs-gen/envoy/extensions/filters/http/fault/v3/fault.upbdefs.c',
                       'src/core/ext/upbdefs-gen/envoy/extensions/filters/http/fault/v3/fault.upbdefs.h',
                       'src/core/ext/upbdefs-gen/envoy/extensions/filters/http/gcp_authn/v3/gcp_authn.upbdefs.c',
@@ -1466,6 +1483,8 @@ Pod::Spec.new do |s|
                       'src/core/filter/auth/server_auth_filter.cc',
                       'src/core/filter/blackboard.cc',
                       'src/core/filter/blackboard.h',
+                      'src/core/filter/composite/composite_filter.cc',
+                      'src/core/filter/composite/composite_filter.h',
                       'src/core/filter/filter_args.h',
                       'src/core/filter/filter_chain.h',
                       'src/core/filter/fused_filters.cc',
@@ -1485,7 +1504,6 @@ Pod::Spec.new do |s|
                       'src/core/handshaker/proxy_mapper.h',
                       'src/core/handshaker/proxy_mapper_registry.cc',
                       'src/core/handshaker/proxy_mapper_registry.h',
-                      'src/core/handshaker/security/legacy_secure_endpoint.cc',
                       'src/core/handshaker/security/pipelined_secure_endpoint.cc',
                       'src/core/handshaker/security/secure_endpoint.cc',
                       'src/core/handshaker/security/secure_endpoint.h',
@@ -1800,6 +1818,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/promise/if.h',
                       'src/core/lib/promise/inter_activity_latch.h',
                       'src/core/lib/promise/inter_activity_mutex.h',
+                      'src/core/lib/promise/inter_activity_pipe.h',
                       'src/core/lib/promise/interceptor_list.h',
                       'src/core/lib/promise/latch.h',
                       'src/core/lib/promise/loop.h',
@@ -1975,6 +1994,7 @@ Pod::Spec.new do |s|
                       'src/core/load_balancing/weighted_target/weighted_target.cc',
                       'src/core/load_balancing/weighted_target/weighted_target.h',
                       'src/core/load_balancing/xds/cds.cc',
+                      'src/core/load_balancing/xds/cds.h',
                       'src/core/load_balancing/xds/xds_channel_args.h',
                       'src/core/load_balancing/xds/xds_cluster_impl.cc',
                       'src/core/load_balancing/xds/xds_cluster_manager.cc',
@@ -2314,6 +2334,8 @@ Pod::Spec.new do |s|
                       'src/core/xds/grpc/xds_endpoint_parser.h',
                       'src/core/xds/grpc/xds_health_status.cc',
                       'src/core/xds/grpc/xds_health_status.h',
+                      'src/core/xds/grpc/xds_http_composite_filter.cc',
+                      'src/core/xds/grpc/xds_http_composite_filter.h',
                       'src/core/xds/grpc/xds_http_fault_filter.cc',
                       'src/core/xds/grpc/xds_http_fault_filter.h',
                       'src/core/xds/grpc/xds_http_filter.cc',
@@ -2941,8 +2963,14 @@ Pod::Spec.new do |s|
                               'src/core/ext/upb-gen/envoy/data/accesslog/v3/accesslog.upb_minitable.h',
                               'src/core/ext/upb-gen/envoy/extensions/clusters/aggregate/v3/cluster.upb.h',
                               'src/core/ext/upb-gen/envoy/extensions/clusters/aggregate/v3/cluster.upb_minitable.h',
+                              'src/core/ext/upb-gen/envoy/extensions/common/matching/v3/extension_matcher.upb.h',
+                              'src/core/ext/upb-gen/envoy/extensions/common/matching/v3/extension_matcher.upb_minitable.h',
                               'src/core/ext/upb-gen/envoy/extensions/filters/common/fault/v3/fault.upb.h',
                               'src/core/ext/upb-gen/envoy/extensions/filters/common/fault/v3/fault.upb_minitable.h',
+                              'src/core/ext/upb-gen/envoy/extensions/filters/common/matcher/action/v3/skip_action.upb.h',
+                              'src/core/ext/upb-gen/envoy/extensions/filters/common/matcher/action/v3/skip_action.upb_minitable.h',
+                              'src/core/ext/upb-gen/envoy/extensions/filters/http/composite/v3/composite.upb.h',
+                              'src/core/ext/upb-gen/envoy/extensions/filters/http/composite/v3/composite.upb_minitable.h',
                               'src/core/ext/upb-gen/envoy/extensions/filters/http/fault/v3/fault.upb.h',
                               'src/core/ext/upb-gen/envoy/extensions/filters/http/fault/v3/fault.upb_minitable.h',
                               'src/core/ext/upb-gen/envoy/extensions/filters/http/gcp_authn/v3/gcp_authn.upb.h',
@@ -3229,7 +3257,10 @@ Pod::Spec.new do |s|
                               'src/core/ext/upbdefs-gen/envoy/config/trace/v3/zipkin.upbdefs.h',
                               'src/core/ext/upbdefs-gen/envoy/data/accesslog/v3/accesslog.upbdefs.h',
                               'src/core/ext/upbdefs-gen/envoy/extensions/clusters/aggregate/v3/cluster.upbdefs.h',
+                              'src/core/ext/upbdefs-gen/envoy/extensions/common/matching/v3/extension_matcher.upbdefs.h',
                               'src/core/ext/upbdefs-gen/envoy/extensions/filters/common/fault/v3/fault.upbdefs.h',
+                              'src/core/ext/upbdefs-gen/envoy/extensions/filters/common/matcher/action/v3/skip_action.upbdefs.h',
+                              'src/core/ext/upbdefs-gen/envoy/extensions/filters/http/composite/v3/composite.upbdefs.h',
                               'src/core/ext/upbdefs-gen/envoy/extensions/filters/http/fault/v3/fault.upbdefs.h',
                               'src/core/ext/upbdefs-gen/envoy/extensions/filters/http/gcp_authn/v3/gcp_authn.upbdefs.h',
                               'src/core/ext/upbdefs-gen/envoy/extensions/filters/http/rbac/v3/rbac.upbdefs.h',
@@ -3324,6 +3355,7 @@ Pod::Spec.new do |s|
                               'src/core/ext/upbdefs-gen/xds/type/v3/typed_struct.upbdefs.h',
                               'src/core/filter/auth/auth_filters.h',
                               'src/core/filter/blackboard.h',
+                              'src/core/filter/composite/composite_filter.h',
                               'src/core/filter/filter_args.h',
                               'src/core/filter/filter_chain.h',
                               'src/core/handshaker/endpoint_info/endpoint_info_handshaker.h',
@@ -3505,6 +3537,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/promise/if.h',
                               'src/core/lib/promise/inter_activity_latch.h',
                               'src/core/lib/promise/inter_activity_mutex.h',
+                              'src/core/lib/promise/inter_activity_pipe.h',
                               'src/core/lib/promise/interceptor_list.h',
                               'src/core/lib/promise/latch.h',
                               'src/core/lib/promise/loop.h',
@@ -3601,6 +3634,7 @@ Pod::Spec.new do |s|
                               'src/core/load_balancing/subchannel_interface.h',
                               'src/core/load_balancing/weighted_round_robin/static_stride_scheduler.h',
                               'src/core/load_balancing/weighted_target/weighted_target.h',
+                              'src/core/load_balancing/xds/cds.h',
                               'src/core/load_balancing/xds/xds_channel_args.h',
                               'src/core/load_balancing/xds/xds_override_host.h',
                               'src/core/net/socket_mutator.h',
@@ -3777,6 +3811,7 @@ Pod::Spec.new do |s|
                               'src/core/xds/grpc/xds_endpoint.h',
                               'src/core/xds/grpc/xds_endpoint_parser.h',
                               'src/core/xds/grpc/xds_health_status.h',
+                              'src/core/xds/grpc/xds_http_composite_filter.h',
                               'src/core/xds/grpc/xds_http_fault_filter.h',
                               'src/core/xds/grpc/xds_http_filter.h',
                               'src/core/xds/grpc/xds_http_filter_registry.h',

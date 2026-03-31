@@ -27,6 +27,7 @@ DIRS=(
     'test'
     'tools'
     'setup.py'
+    'doc/python'
 )
 
 VIRTUALENV=".venv-ci-black"

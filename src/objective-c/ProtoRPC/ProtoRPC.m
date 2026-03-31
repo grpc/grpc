@@ -219,7 +219,6 @@
   GRPCCall2 *copiedCall;
   @synchronized(self) {
     copiedCall = _call;
-    _call = nil;
   }
   [copiedCall finish];
 }
