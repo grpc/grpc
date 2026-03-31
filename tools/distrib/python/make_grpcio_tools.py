@@ -68,7 +68,8 @@ EXTERNAL_LINKS = [
 
 PROTOBUF_PROTO_PREFIX = "@com_google_protobuf//"
 
-# See third_party/protobuf/src/file_lists.cmake
+# Exclude conditional dependencies that are not needed by gRPC.
+# Required files can be found at third_party/protobuf/src/file_lists.cmake
 UPB_EXCLUDE_CC_FILES_PATTERN = "third_party/protobuf/upb/wire/decode_fast"
 UPB_EXCLUDE_CC_FILES_EXCEPTIONS = [
     "third_party/protobuf/upb/wire/decode_fast/select.c",
