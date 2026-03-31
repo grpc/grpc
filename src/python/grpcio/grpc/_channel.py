@@ -2208,7 +2208,7 @@ class Channel(grpc.Channel):
             cygrpc.gevent_decrement_channel_count()
 
     def _postfork_child(self) -> None:
-        self._channel.reset_on_fork(
+        self._channel.cancel_calls_on_fork(
             cygrpc.StatusCode.cancelled, "Call cancelled in fork child"
         )
         _maybe_spawn_poll_connectivity_postfork(self._connectivity_state)
