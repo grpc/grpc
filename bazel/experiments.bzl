@@ -111,7 +111,6 @@ EXPERIMENTS = {
             ],
             "cpp_end2end_test": [
                 "promise_based_http2_client_transport",
-                "subchannel_wrapper_cleanup_on_orphan",
             ],
             "cpp_lb_end2end_test": [
                 "subchannel_connection_scaling",
@@ -141,9 +140,6 @@ EXPERIMENTS = {
             "secure_endpoint_test": [
                 "pipelined_read_secure_endpoint",
             ],
-            "xds_end2end_test": [
-                "subchannel_wrapper_cleanup_on_orphan",
-            ],
         },
         "on": {
             "cancel_ares_query_test": [
@@ -161,6 +157,7 @@ EXPERIMENTS = {
             ],
             "cpp_end2end_test": [
                 "error_flatten",
+                "subchannel_wrapper_cleanup_on_orphan",
             ],
             "cpp_lb_end2end_test": [
                 "pick_first_ready_to_connecting",
@@ -188,6 +185,7 @@ EXPERIMENTS = {
             ],
             "xds_end2end_test": [
                 "error_flatten",
+                "subchannel_wrapper_cleanup_on_orphan",
                 "xds_channel_filter_chain_per_route",
             ],
             "xds_test": [
@@ -221,7 +219,6 @@ EXPERIMENTS = {
             ],
             "cpp_end2end_test": [
                 "promise_based_http2_client_transport",
-                "subchannel_wrapper_cleanup_on_orphan",
             ],
             "cpp_lb_end2end_test": [
                 "subchannel_connection_scaling",
@@ -251,9 +248,6 @@ EXPERIMENTS = {
             "secure_endpoint_test": [
                 "pipelined_read_secure_endpoint",
             ],
-            "xds_end2end_test": [
-                "subchannel_wrapper_cleanup_on_orphan",
-            ],
         },
         "on": {
             "cancel_ares_query_test": [
@@ -271,6 +265,7 @@ EXPERIMENTS = {
             ],
             "cpp_end2end_test": [
                 "error_flatten",
+                "subchannel_wrapper_cleanup_on_orphan",
             ],
             "cpp_lb_end2end_test": [
                 "pick_first_ready_to_connecting",
@@ -298,6 +293,7 @@ EXPERIMENTS = {
             ],
             "xds_end2end_test": [
                 "error_flatten",
+                "subchannel_wrapper_cleanup_on_orphan",
                 "xds_channel_filter_chain_per_route",
             ],
             "xds_test": [
@@ -331,7 +327,6 @@ EXPERIMENTS = {
             ],
             "cpp_end2end_test": [
                 "promise_based_http2_client_transport",
-                "subchannel_wrapper_cleanup_on_orphan",
             ],
             "cpp_lb_end2end_test": [
                 "subchannel_connection_scaling",
@@ -361,9 +356,6 @@ EXPERIMENTS = {
             "secure_endpoint_test": [
                 "pipelined_read_secure_endpoint",
             ],
-            "xds_end2end_test": [
-                "subchannel_wrapper_cleanup_on_orphan",
-            ],
         },
         "on": {
             "cancel_ares_query_test": [
@@ -381,6 +373,7 @@ EXPERIMENTS = {
             ],
             "cpp_end2end_test": [
                 "error_flatten",
+                "subchannel_wrapper_cleanup_on_orphan",
             ],
             "cpp_lb_end2end_test": [
                 "pick_first_ready_to_connecting",
@@ -408,6 +401,7 @@ EXPERIMENTS = {
             ],
             "xds_end2end_test": [
                 "error_flatten",
+                "subchannel_wrapper_cleanup_on_orphan",
                 "xds_channel_filter_chain_per_route",
             ],
             "xds_test": [
