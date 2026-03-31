@@ -1070,6 +1070,11 @@ def cloud_to_cloud_jobspec(
             '--service_config_json=\'{"loadBalancingConfig":[{"test_backend_metrics_load_balancer":{}}]}\''
         ]
 
+    if test_case == "max_concurrent_streams_connection_scaling":
+        interop_only_options += [
+            '--service_config_json=\'{"connectionScaling":{"maxConnectionsPerSubchannel": 2}}\''
+        ]
+
     common_options = [
         "--test_case=%s" % client_test_case,
         "--server_host=%s" % server_host,
