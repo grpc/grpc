@@ -8259,6 +8259,16 @@ targets:
   - absl/utility:utility
   - gpr
   uses_polling: false
+- name: cardinality_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/transport/chttp2/cardinality_test.cc
+  deps:
+  - gtest
+  - grpc_test_util
 - name: cds_test
   gtest: true
   build: test
