@@ -264,8 +264,7 @@ def grpc_cc_grpc_library(
         deps = [],
         visibility = None,
         generate_mocks = False,
-        allow_deprecated = False,
-        grpc_dep = "//:grpc++"):
+        allow_deprecated = False):
     """A wrapper around cc_grpc_library that forces grpc_only=True.
 
     Callers are expected to have their own proto_library() and
@@ -275,7 +274,7 @@ def grpc_cc_grpc_library(
     cc_grpc_library(
         name = name,
         srcs = srcs,
-        deps = deps + [grpc_dep],
+        deps = deps + ["//:grpc++"],
         visibility = visibility,
         generate_mocks = generate_mocks,
         allow_deprecated = allow_deprecated,

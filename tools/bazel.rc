@@ -85,6 +85,7 @@ build:asan --copt=-DADDRESS_SANITIZER  # used by absl
 build:asan --linkopt=-fsanitize=address
 build:asan --action_env=ASAN_OPTIONS=detect_leaks=1:color=always
 build:asan --action_env=LSAN_OPTIONS=suppressions=test/core/test_util/lsan_suppressions.txt:report_objects=1
+#build:asan --action_env=ASAN_OPTIONS=detect_odr_violation=0  # https://github.com/google/sanitizers/issues/1017
 
 build:coverage --copt=-fprofile-instr-generate
 build:coverage --copt=-fcoverage-mapping
@@ -112,6 +113,7 @@ build:asan_macos --copt=-O0
 build:asan_macos --copt=-fno-omit-frame-pointer
 build:asan_macos --linkopt=-fsanitize=address
 build:asan_macos --action_env=ASAN_OPTIONS=detect_leaks=0
+#build:asan_macos --action_env=ASAN_OPTIONS=detect_odr_violation=0  # https://github.com/google/sanitizers/issues/1017
 build:asan_macos --dynamic_mode=off
 
 build:msan --strip=never
