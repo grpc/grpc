@@ -964,7 +964,8 @@ void WeightedRoundRobin::WrrEndpointList::
         << this;
     wrr->channel_control_helper()->UpdateState(
         GRPC_CHANNEL_CONNECTING, absl::OkStatus(),
-        MakeRefCounted<QueuePicker>(nullptr));
+        MakeRefCounted<QueuePicker>(
+            nullptr, "WeightedRoundRobin subchannel connecting"));
   } else if (num_transient_failure_ == size()) {
     GRPC_TRACE_LOG(weighted_round_robin_lb, INFO)
         << "[WRR " << wrr << "] reporting TRANSIENT_FAILURE with endpoint list "

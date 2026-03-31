@@ -233,7 +233,11 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
     /// Pick cannot be completed until something changes on the control
     /// plane.  The client channel will queue the pick and try again the
     /// next time the picker is updated.
-    struct Queue {};
+    struct Queue {
+      std::string reason;
+
+      explicit Queue(absl::string_view r) : reason(r) {}
+    };
 
     /// Pick failed.  If the call is wait_for_ready, the client channel
     /// will wait for the next picker and try again; otherwise, it
@@ -256,7 +260,7 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
 
     // A pick result must be one of these types.
     // Default to Queue, just to allow default construction.
-    std::variant<Complete, Queue, Fail, Drop> result = Queue();
+    std::variant<Complete, Queue, Fail, Drop> result = Queue("Default value");
 
     PickResult() = default;
     // NOLINTNEXTLINE(google-explicit-constructor)
@@ -440,8 +444,9 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
   // first pick is seen.
   class QueuePicker final : public SubchannelPicker {
    public:
-    explicit QueuePicker(RefCountedPtr<LoadBalancingPolicy> parent)
-        : parent_(std::move(parent)) {}
+    explicit QueuePicker(RefCountedPtr<LoadBalancingPolicy> parent,
+                         absl::string_view reason)
+        : parent_(std::move(parent)), reason_(reason) {}
 
     ~QueuePicker() override { parent_.reset(DEBUG_LOCATION, "QueuePicker"); }
 
@@ -450,6 +455,7 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
    private:
     Mutex mu_;
     RefCountedPtr<LoadBalancingPolicy> parent_ ABSL_GUARDED_BY(&mu_);
+    const std::string reason_;
   };
 
   // A picker that returns PickResult::Fail for all picks.

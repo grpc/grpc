@@ -390,7 +390,8 @@ void RoundRobin::RoundRobinEndpointList::
         << this;
     round_robin->channel_control_helper()->UpdateState(
         GRPC_CHANNEL_CONNECTING, absl::OkStatus(),
-        MakeRefCounted<QueuePicker>(nullptr));
+        MakeRefCounted<QueuePicker>(nullptr,
+                                    "RoundRobin subchannel connecting"));
   } else if (num_transient_failure_ == size()) {
     GRPC_TRACE_LOG(round_robin, INFO)
         << "[RR " << round_robin

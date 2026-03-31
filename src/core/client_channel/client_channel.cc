@@ -1339,7 +1339,9 @@ OrphanablePtr<LoadBalancingPolicy> ClientChannel::CreateLbPolicyLocked(
   // channel into TRANSIENT_FAILURE) and make sure we have a queueing picker.
   UpdateStateAndPickerLocked(
       GRPC_CHANNEL_CONNECTING, absl::Status(), "started resolving",
-      MakeRefCounted<LoadBalancingPolicy::QueuePicker>(nullptr));
+      MakeRefCounted<LoadBalancingPolicy::QueuePicker>(
+          nullptr,
+          "Connecting channel again after a previous trasient failure."));
   // Now create the LB policy.
   LoadBalancingPolicy::Args lb_policy_args;
   lb_policy_args.work_serializer = work_serializer_;

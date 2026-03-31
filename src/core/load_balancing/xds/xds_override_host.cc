@@ -483,14 +483,14 @@ XdsOverrideHostLb::Picker::PickOverriddenHost(
         [subchannel = std::move(idle_subchannel)]() {
           subchannel->RequestConnection();
         });
-    return PickResult::Queue();
+    return PickResult::Queue("XdsOverrideHostLb: IDLE subchannel");
   }
   // No READY or IDLE subchannels.  If we found a CONNECTING subchannel,
   // queue the pick and wait for the connection attempt to complete.
   if (found_connecting) {
     GRPC_TRACE_LOG(xds_override_host_lb, INFO)
         << "Picker override found CONNECTING subchannel";
-    return PickResult::Queue();
+    return PickResult::Queue("XdsOverrideHostLb: CONNECTING subchannel");
   }
   // No READY, IDLE, or CONNECTING subchannels found.  If we found an
   // entry that has no subchannel, then queue the pick and trigger
@@ -503,7 +503,7 @@ XdsOverrideHostLb::Picker::PickOverriddenHost(
          address = std::string(address_with_no_subchannel)]() {
           policy->CreateSubchannelForAddress(address);
         });
-    return PickResult::Queue();
+    return PickResult::Queue("XdsOverrideHostLb: no subchannel");
   }
   // No entry found that was not in TRANSIENT_FAILURE.
   return std::nullopt;

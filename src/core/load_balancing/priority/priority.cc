@@ -628,7 +628,8 @@ RefCountedPtr<LoadBalancingPolicy::SubchannelPicker>
 PriorityLb::ChildPriority::GetPicker() {
   if (picker_ == nullptr) {
     return MakeRefCounted<QueuePicker>(
-        priority_policy_->Ref(DEBUG_LOCATION, "QueuePicker"));
+        priority_policy_->Ref(DEBUG_LOCATION, "QueuePicker"),
+        "PriorityLB child connecting");
   }
   return picker_;
 }

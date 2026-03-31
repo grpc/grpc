@@ -213,7 +213,7 @@ LOAD_BALANCED_CALL_DESTINATION_TEST(StartCallOnDestroyedChannel) {
   EXPECT_CALL(*mock_picker, Pick)
       .WillOnce([&queued_once](LoadBalancingPolicy::PickArgs) {
         queued_once.store(true, std::memory_order_relaxed);
-        return LoadBalancingPolicy::PickResult::Queue{};
+        return LoadBalancingPolicy::PickResult::Queue("");
       });
   picker().Set(mock_picker);
   TickUntil<Empty>([&queued_once]() -> Poll<Empty> {

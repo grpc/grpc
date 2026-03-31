@@ -623,7 +623,8 @@ void PickFirst::GoIdle() {
   }
   // Enter idle.
   UpdateState(GRPC_CHANNEL_IDLE, absl::OkStatus(),
-              MakeRefCounted<QueuePicker>(Ref(DEBUG_LOCATION, "QueuePicker")));
+              MakeRefCounted<QueuePicker>(Ref(DEBUG_LOCATION, "QueuePicker"),
+                                          "Idle PickFirst"));
 }
 
 //
@@ -652,7 +653,8 @@ void PickFirst::HealthWatcher::OnConnectivityStateChange(
     case GRPC_CHANNEL_CONNECTING:
       policy_->channel_control_helper()->UpdateState(
           new_state, absl::OkStatus(),
-          MakeRefCounted<QueuePicker>(policy_->Ref()));
+          MakeRefCounted<QueuePicker>(
+              policy_->Ref(), "PickFirst health watcher state is connecting."));
       break;
     case GRPC_CHANNEL_TRANSIENT_FAILURE: {
       std::string message = absl::StrCat("health watch: ", status.message());
@@ -796,8 +798,11 @@ void PickFirst::SubchannelList::SubchannelData::SubchannelState::
   if (IsPickFirstReadyToConnectingEnabled() &&
       (new_state == GRPC_CHANNEL_CONNECTING ||
        new_state == GRPC_CHANNEL_TRANSIENT_FAILURE)) {
-    pick_first_->UpdateState(GRPC_CHANNEL_CONNECTING, absl::OkStatus(),
-                             MakeRefCounted<QueuePicker>(nullptr));
+    pick_first_->UpdateState(
+        GRPC_CHANNEL_CONNECTING, absl::OkStatus(),
+        MakeRefCounted<QueuePicker>(nullptr,
+                                    "Pickfirst subchannel went from ready to "
+                                    "connecting or transient failure"));
     pick_first_->AttemptToConnectUsingLatestUpdateArgsLocked();
     // Unset the selected subchannel, so that when we see the initial
     // connectivity state notifications for the subchannels in the new
@@ -970,7 +975,8 @@ void PickFirst::SubchannelList::SubchannelData::OnConnectivityStateChange(
       // TODO(roth): Squelch duplicate CONNECTING updates.
       if (p->state_ != GRPC_CHANNEL_TRANSIENT_FAILURE) {
         p->UpdateState(GRPC_CHANNEL_CONNECTING, absl::OkStatus(),
-                       MakeRefCounted<QueuePicker>(nullptr));
+                       MakeRefCounted<QueuePicker>(
+                           nullptr, "PickFirst subchannel is connecting"));
       }
       break;
     default:
