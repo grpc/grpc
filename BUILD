@@ -2385,6 +2385,7 @@ grpc_cc_library(
         "exec_ctx",
         "gpr",
         "grpc_base",
+        "//src/core:metrics",
         "grpc_core_credentials_header",
         "grpc_public_hdrs",
         "grpc_trace",

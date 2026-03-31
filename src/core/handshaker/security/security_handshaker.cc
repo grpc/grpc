@@ -50,6 +50,7 @@
 #include "src/core/lib/iomgr/tcp_server.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_internal.h"
+#include "src/core/telemetry/metrics.h"
 #include "src/core/telemetry/stats.h"
 #include "src/core/telemetry/stats_data.h"
 #include "src/core/transport/auth_context.h"
@@ -70,6 +71,19 @@
 namespace grpc_core {
 
 namespace {
+
+constexpr absl::string_view kMetricLabelStatus = "grpc.security.handshaker.status";
+constexpr absl::string_view kMetricLabelErrorDetails = "grpc.security.handshaker.error_details";
+constexpr absl::string_view kMetricLabelProtocol = "grpc.security.handshaker.protocol";
+
+const auto kMetricHandshakerDuration =
+    GlobalInstrumentsRegistry::RegisterDoubleHistogram(
+        "grpc.security.handshaker.duration",
+        "Handshake duration in milliseconds.",
+        "ms", false)
+        .Labels(kMetricLabelStatus, kMetricLabelProtocol)
+        .OptionalLabels(kMetricLabelErrorDetails)
+        .Build();
 
 class SecurityHandshaker : public Handshaker {
  public:
@@ -127,6 +141,7 @@ class SecurityHandshaker : public Handshaker {
   size_t max_frame_size_ = 0;
   std::string tsi_handshake_error_;
   grpc_closure* on_peer_checked_ ABSL_GUARDED_BY(mu_) = nullptr;
+  Timestamp start_time_;
 };
 
 SecurityHandshaker::SecurityHandshaker(tsi_handshaker* handshaker,
@@ -183,6 +198,19 @@ void SecurityHandshaker::HandshakeFailedLocked(absl::Status error) {
 }
 
 void SecurityHandshaker::Finish(absl::Status status) {
+  double duration_ms = (Timestamp::Now() - start_time_).millis();
+  auto* stats_plugin_group = args_->args.GetObject<GlobalStatsPluginRegistry::StatsPluginGroup>();
+  if (stats_plugin_group != nullptr) {
+    std::string status_str = status.ok() ? "OK" : absl::StatusCodeToString(status.code());
+    std::string error_details = status.ok() ? "NONE" : "AUTH_ERROR";
+    std::string protocol = std::string(connector_->type().name());
+
+    std::array<absl::string_view, 2> label_values = {status_str, protocol};
+    std::array<absl::string_view, 1> optional_values = {error_details};
+
+    stats_plugin_group->RecordHistogram(
+        kMetricHandshakerDuration, duration_ms, label_values, optional_values);
+  }
   InvokeOnHandshakeDone(args_, std::move(on_handshake_done_),
                         std::move(status));
 }
@@ -529,6 +557,7 @@ void SecurityHandshaker::DoHandshake(
   MutexLock lock(&mu_);
   args_ = args;
   on_handshake_done_ = std::move(on_handshake_done);
+  start_time_ = Timestamp::Now();
   size_t bytes_received_size = MoveReadBufferIntoHandshakeBuffer();
   grpc_error_handle error =
       DoHandshakerNextLocked(handshake_buffer_, bytes_received_size);
