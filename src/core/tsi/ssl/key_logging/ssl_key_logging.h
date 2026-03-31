@@ -53,11 +53,8 @@ class TlsSessionKeyLoggerCache
     TlsSessionKeyLogger(const TlsSessionKeyLogger&) = delete;
     TlsSessionKeyLogger& operator=(const TlsSessionKeyLogger&) = delete;
     // Writes session keys into the file in the NSS key logging format.
-    // This is called upon completion of a handshake. The associated ssl_context
-    // is also provided here to support future extensions such as logging
-    // keys only when connections are made by certain IPs etc.
-    void LogSessionKeys(SSL_CTX* ssl_context,
-                        const std::string& session_keys_info);
+    // This is called upon completion of a handshake.
+    void LogSessionKeys(const std::string& session_keys_info);
 
    private:
     grpc_core::Mutex lock_;  // protects appends to file
