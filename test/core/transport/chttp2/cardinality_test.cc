@@ -39,8 +39,6 @@ class CardinalityTest : public ::testing::Test {
   void TearDown() override { grpc_shutdown(); }
 };
 
-using ::testing::HasSubstr;
-
 TEST_F(CardinalityTest, StreamingAllowsMultipleDataFrames) {
   ExecCtx exec_ctx;
   auto arena = SimpleArenaAllocator()->MakeArena();
