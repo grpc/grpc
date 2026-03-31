@@ -22925,7 +22925,6 @@ targets:
   - test/cpp/server/server_builder_test.cc
   deps:
   - gtest
-  - grpc++
   - grpc++_unsecure
   - grpc_test_util_unsecure
   platforms:
@@ -22948,7 +22947,6 @@ targets:
   - test/cpp/server/server_builder_with_socket_mutator_test.cc
   deps:
   - gtest
-  - grpc++
   - grpc++_unsecure
   - grpc_test_util_unsecure
   platforms:
