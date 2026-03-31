@@ -15,6 +15,7 @@
 
 #include "src/core/credentials/transport/tls/grpc_tls_certificate_selector.h"
 
+#include <grpc/private_key_signer.h>
 #include <openssl/bio.h>
 #include <openssl/pem.h>
 
@@ -53,7 +54,8 @@ class TlsCertificateSelectorTest : public ::testing::Test {
         private_key_(GetFileContents(
             absl::StrCat(kTestCredsRelativePath, "server1.key"))) {}
 
-  static std::vector<std::string> ConvertCertChainToDer(absl::string_view pem_cert_chain) {
+  static std::vector<std::string> ConvertCertChainToDer(
+      absl::string_view pem_cert_chain) {
     std::vector<std::string> cert_chain;
     BIO* bio = BIO_new_mem_buf(pem_cert_chain.data(), pem_cert_chain.size());
     uint8_t* cert_data = nullptr;
@@ -104,8 +106,15 @@ TEST_F(TlsCertificateSelectorTest,
 }
 
 TEST_F(TlsCertificateSelectorTest, CreateSelectCertResultFromDerSuccess) {
+  std::shared_ptr<PrivateKeySigner> signer;
   ASSERT_OK(CertificateSelector::CreateSelectCertResult(
-      ConvertCertChainToDer(cert_chain_), /*private_key_signer=*/nullptr));
+      ConvertCertChainToDer(cert_chain_), signer));
+}
+
+TEST_F(TlsCertificateSelectorTest, CreateSelectCertResultFromDerStaticKeyUnimplemented) {
+  ASSERT_THAT(CertificateSelector::CreateSelectCertResult(
+                  ConvertCertChainToDer(cert_chain_), "key"),
+              StatusIs(absl::StatusCode::kUnimplemented));
 }
 
 }  // namespace
