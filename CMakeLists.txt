@@ -31199,7 +31199,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(server_builder_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
-    grpc++
     grpc++_unsecure
     grpc_test_util_unsecure
   )
@@ -31274,7 +31273,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(server_builder_with_socket_mutator_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
-    grpc++
     grpc++_unsecure
     grpc_test_util_unsecure
   )
