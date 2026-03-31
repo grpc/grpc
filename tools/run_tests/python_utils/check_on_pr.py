@@ -59,7 +59,7 @@ def _jwt_token():
         {
             "iat": int(time.time()),
             "exp": int(time.time() + 60 * 10),  # expire in 10 minutes
-            "iss": _GITHUB_APP_ID,
+            "iss": f"{_GITHUB_APP_ID}",
         },
         github_app_key,
         algorithm="RS256",

@@ -19,16 +19,25 @@
 #ifndef GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_INCOMING_METADATA_TRACKER_H
 #define GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_INCOMING_METADATA_TRACKER_H
 
+#include <grpc/support/port_platform.h>
+
 #include <cstdint>
 #include <string>
 #include <utility>
 
 #include "src/core/call/metadata_info.h"
-#include "src/core/ext/transport/chttp2/transport/frame.h"
+#include "src/core/ext/transport/chttp2/transport/header_assembler.h"
+#include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
+#include "src/core/ext/transport/chttp2/transport/http2_status.h"
+#include "src/core/ext/transport/chttp2/transport/http2_transport.h"
+#include "src/core/ext/transport/chttp2/transport/stream.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/slice/slice.h"
+#include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/transport/promise_endpoint.h"
+#include "src/core/util/debug_location.h"
 #include "src/core/util/grpc_check.h"
+#include "absl/log/log.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 
@@ -46,8 +55,8 @@ class IncomingMetadataTracker {
   // a time. This class is distinct from HeaderAssembler, which buffers header
   // payloads on a per-stream basis.
  public:
-  explicit IncomingMetadataTracker(Slice peer_string)
-      : peer_string_(std::move(peer_string)) {}
+  explicit IncomingMetadataTracker(Slice peer_string, const bool is_client)
+      : peer_string_(std::move(peer_string)), is_client_(is_client) {}
   ~IncomingMetadataTracker() = default;
 
   IncomingMetadataTracker(IncomingMetadataTracker&& rvalue) = delete;
@@ -71,6 +80,64 @@ class IncomingMetadataTracker {
     max_header_list_size_soft_limit_ = limit;
   }
   uint32_t soft_limit() const { return max_header_list_size_soft_limit_; }
+
+  HPackParser& parser() { return parser_; }
+
+  void SetMaxHeaderTableSize(const uint32_t size) {
+    parser_.hpack_table()->SetMaxBytes(size);
+  }
+
+  // This function is used to partially process a HEADER or CONTINUATION frame.
+  // `PARTIAL PROCESSING` means reading the payload of a HEADER or CONTINUATION
+  // and processing it with the HPACK decoder, and then discarding the payload.
+  // This is done to keep the transports HPACK parser in sync with peers HPACK.
+  // Scenarios where 'partial processing' is used when we receive a HEADER or
+  // CONTINUATION frames when a stream is closed, or there is a Stream Error. We
+  // do not do partial processing for Connection Errors because the Transport
+  // will be destroyed soon after.
+  Http2Status ParseAndDiscardHeaders(
+      SliceBuffer&& buffer, const bool is_end_headers, Stream* stream,
+      Http2Status&& original_status,
+      const uint32_t max_header_list_size_hard_limit) {
+    const HeaderAssembler::ParseHeaderArgs args = {
+        /*is_initial_metadata=*/!incoming_header_end_stream_,
+        /*is_end_headers=*/is_end_headers,
+        /*is_client=*/is_client_,
+        /*max_header_list_size_soft_limit=*/
+        max_header_list_size_soft_limit_,
+        /*max_header_list_size_hard_limit=*/max_header_list_size_hard_limit,
+        /*stream_id=*/incoming_header_stream_id_,
+    };
+    GRPC_HTTP2_COMMON_DLOG << "ParseAndDiscardHeaders buffer "
+                              "size: "
+                           << buffer.Length() << " args: " << args.DebugString()
+                           << " stream_id: "
+                           << (stream == nullptr ? 0 : stream->GetStreamId())
+                           << " original_status: "
+                           << original_status.DebugString();
+    if (stream != nullptr) {
+      // Parse all the data in the header assembler
+      Http2Status result = stream->GetHeaderAssembler().ParseAndDiscardHeaders(
+          parser_, args.is_initial_metadata,
+          args.max_header_list_size_soft_limit,
+          args.max_header_list_size_hard_limit);
+      if (!result.IsOk()) {
+        GRPC_DCHECK(result.GetType() ==
+                    Http2Status::Http2ErrorType::kConnectionError);
+        LOG(ERROR) << "Connection Error: " << result;
+        return result;
+      }
+    }
+
+    if (buffer.Length() == 0) {
+      return std::move(original_status);
+    }
+
+    Http2Status status = HeaderAssembler::ParseHeader(
+        parser_, std::move(buffer), /*grpc_metadata_batch=*/nullptr, args);
+
+    return (status.IsOk()) ? std::move(original_status) : std::move(status);
+  }
 
   //////////////////////////////////////////////////////////////////////////////
   // Writing Header and Continuation State
@@ -134,12 +201,14 @@ class IncomingMetadataTracker {
   // Initialized only once at the time of transport creation.
   // Should remain constant for the lifetime of the transport.
   const Slice peer_string_;
+  const bool is_client_;
 
   bool incoming_header_in_progress_ = false;
   bool incoming_header_end_stream_ = false;
   uint32_t incoming_header_stream_id_ = 0;
   uint32_t max_header_list_size_soft_limit_ =
       DEFAULT_MAX_HEADER_LIST_SIZE_SOFT_LIMIT;
+  HPackParser parser_;
 };
 
 }  // namespace http2
