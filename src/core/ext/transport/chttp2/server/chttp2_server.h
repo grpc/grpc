@@ -30,7 +30,9 @@
 #include "src/core/handshaker/handshaker.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/error.h"
+#include "src/core/mitigation_engine/mitigation_engine.h"
 #include "src/core/server/server.h"
+#include "src/core/util/ref_counted_ptr.h"
 
 namespace grpc_core {
 
@@ -202,6 +204,11 @@ class NewChttp2ServerListener : public Server::ListenerInterface {
     return listener_state_->server()
         ->channel_args()
         .GetObject<grpc_event_engine::experimental::EventEngine>();
+  }
+
+  RefCountedPtr<MitigationEngine> mitigation_engine() const {
+    auto* provider = args_.GetObject<MitigationEngineProvider>();
+    return provider != nullptr ? provider->GetEngine() : nullptr;
   }
 
   grpc_tcp_server* tcp_server_ = nullptr;

@@ -175,7 +175,7 @@ class HpackEncoderTestHelper {
     parser.BeginFrame(batch, /*metadata_size_soft_limit=*/1024u * 1024u,
                       /*metadata_size_hard_limit=*/1024u * 1024u,
                       HPackParser::Boundary::EndOfStream,
-                      HPackParser::Priority::None, log_info);
+                      HPackParser::Priority::None, log_info, nullptr);
 
     grpc_slice_buffer header_trash;
     grpc_slice_buffer_init(&header_trash);

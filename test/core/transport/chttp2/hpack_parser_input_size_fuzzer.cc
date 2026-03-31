@@ -92,7 +92,8 @@ absl::StatusOr<std::string> TestVector(grpc_slice_split_mode mode,
   HPackParser parser;
   parser.BeginFrame(
       &b, 1024, 1024, HPackParser::Boundary::None, HPackParser::Priority::None,
-      HPackParser::LogInfo{1, HPackParser::LogInfo::kHeaders, false});
+      HPackParser::LogInfo{1, HPackParser::LogInfo::kHeaders, false},
+      nullptr);
 
   grpc_split_slices(mode, const_cast<grpc_slice*>(&input.c_slice()), 1, &slices,
                     &nslices);

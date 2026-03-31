@@ -40,6 +40,7 @@
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_refcount.h"
 #include "src/core/lib/surface/validate_metadata.h"
+#include "src/core/mitigation_engine/mitigation_engine.h"
 #include "src/core/telemetry/call_tracer.h"
 #include "src/core/telemetry/stats.h"
 #include "src/core/telemetry/stats_data.h"
@@ -997,6 +998,21 @@ class HPackParser::Parser {
     auto value_slice = value.value.Take();
     const auto transport_size =
         key_string.size() + value.wire_size + hpack_constants::kEntryOverhead;
+    if (state_.mitigation_engine != nullptr) {
+      auto action = state_.mitigation_engine->EvaluateIncomingMetadata(
+          key_string, value_slice.as_string_view());
+      if (action.has_value()) {
+        if (action.value() == MitigationEngine::Action::kCloseConnection) {
+          input_->SetErrorAndStopParsing(
+              HpackParseResult::MitigationEngineError(
+                  key_string, MitigationEngine::Action::kCloseConnection));
+        } else if (action.value() == MitigationEngine::Action::kRejectRpc) {
+          input_->SetErrorAndContinueParsing(
+              HpackParseResult::MitigationEngineError(
+                  key_string, MitigationEngine::Action::kRejectRpc));
+        }
+      }
+    }
     auto md = grpc_metadata_batch::Parse(
         key_string, std::move(value_slice), state_.add_to_table, transport_size,
         [key_string, this](absl::string_view message, const Slice&) {
@@ -1092,13 +1108,15 @@ void HPackParser::BeginFrame(grpc_metadata_batch* metadata_buffer,
                              uint32_t metadata_size_soft_limit,
                              uint32_t metadata_size_hard_limit,
                              Boundary boundary, Priority priority,
-                             LogInfo log_info) {
+                             LogInfo log_info,
+                             MitigationEngine* mitigation_engine) {
   metadata_buffer_ = metadata_buffer;
   if (metadata_buffer != nullptr) {
     metadata_buffer->Set(GrpcStatusFromWire(), true);
   }
   boundary_ = boundary;
   priority_ = priority;
+  state_.mitigation_engine = mitigation_engine;
   state_.dynamic_table_updates_allowed = 2;
   state_.metadata_early_detection.SetLimits(
       /*soft_limit=*/metadata_size_soft_limit,
@@ -1133,6 +1151,21 @@ grpc_error_handle HPackParser::ParseInput(Input input, bool is_last,
                                           CallSpan* call_tracer) {
   ParseInputInner(&input);
   if (is_last && is_boundary()) {
+    if (state_.mitigation_engine != nullptr && metadata_buffer_ != nullptr) {
+      auto action = state_.mitigation_engine->EvaluateAllIncomingMetadata(
+          *metadata_buffer_);
+      if (action.has_value()) {
+        if (action.value() == MitigationEngine::Action::kCloseConnection) {
+          input.SetErrorAndStopParsing(
+              HpackParseResult::MitigationEngineError(
+                  /*key=*/"", MitigationEngine::Action::kCloseConnection));
+        } else if (action.value() == MitigationEngine::Action::kRejectRpc) {
+          input.SetErrorAndContinueParsing(
+              HpackParseResult::MitigationEngineError(
+                  /*key=*/"", MitigationEngine::Action::kRejectRpc));
+        }
+      }
+    }
     if (state_.metadata_early_detection.Reject(state_.frame_length,
                                                input.bitsrc())) {
       HandleMetadataSoftSizeLimitExceeded(&input);
