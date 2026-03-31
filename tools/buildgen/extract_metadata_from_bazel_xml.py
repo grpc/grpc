@@ -681,12 +681,13 @@ def _prefix_to_strip(proto_src):
     if apparent_repo is None:
         return None
 
+
 # TODO: As of protobuf 33.x certain upb experimental features are not implemented properly
 # and gated behind config flag such as //upb:fasttable_enabled_setting.
-# 
+#
 # Our codegen tooling uses bazel query which doesn't resolve such conditional dependencies
 # properly, so we do manual pruning here as a temporary fix.
-# 
+#
 # Better solutions would be using more accurate resolution with `bazel cquery`,
 # and/or use protobuf's official cmake/libupb.cmake for our cmake builds.
 def _prune_upb_experimental_feature_rules(bazel_rules: BuildDict):
@@ -708,7 +709,7 @@ def _prune_upb_experimental_feature_rules(bazel_rules: BuildDict):
 
     for rule_name, rule in bazel_rules.items():
         rule["deps"] = [dep for dep in rule["deps"] if _should_include(dep)]
-    
+
 
 def _expand_upb_proto_library_rules(bazel_rules):
     # Expand the .proto files from UPB proto library rules into the pre-generated

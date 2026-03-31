@@ -218,6 +218,7 @@ def _generate_deps_file_content():
         if cc_file in UPB_EXCLUDE_CC_FILES_EXCEPTIONS:
             return True
         return False
+
     cc_files = [f for f in cc_files if _should_include(f)]
 
     deps_file_content = DEPS_FILE_CONTENT.format(
