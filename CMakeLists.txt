@@ -4142,6 +4142,9 @@ if(WIN32 AND MSVC)
   set_target_properties(upb_descriptor_lib PROPERTIES COMPILE_PDB_NAME "upb_descriptor_lib"
     COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
   )
+  target_compile_options(upb_descriptor_lib PRIVATE
+    /Zc:preprocessor
+  )
   if(gRPC_INSTALL)
     install(FILES ${CMAKE_CURRENT_BINARY_DIR}/upb_descriptor_lib.pdb
       DESTINATION ${gRPC_INSTALL_LIBDIR} OPTIONAL
