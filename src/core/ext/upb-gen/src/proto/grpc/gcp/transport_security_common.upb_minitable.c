@@ -42,16 +42,10 @@ static const upb_MiniTableField grpc_gcp_RpcProtocolVersions_Version__fields[2] 
 const upb_MiniTable grpc__gcp__RpcProtocolVersions__Version_msg_init = {
   NULL,
   &grpc_gcp_RpcProtocolVersions_Version__fields[0],
-  16, 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
+  16, 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "grpc.gcp.RpcProtocolVersions.Version",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x000800003f000008, &upb_psv4_1bt},
-    {0x000c00003f000010, &upb_psv4_1bt},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-  })
 };
 
 const upb_MiniTable* grpc__gcp__RpcProtocolVersions__Version_msg_init_ptr = &grpc__gcp__RpcProtocolVersions__Version_msg_init;
@@ -62,14 +56,10 @@ static const upb_MiniTableField grpc_gcp_TransportProtocolPreferences__fields[1]
 const upb_MiniTable grpc__gcp__TransportProtocolPreferences_msg_init = {
   NULL,
   &grpc_gcp_TransportProtocolPreferences__fields[0],
-  16, 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(8), 0,
+  16, 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "grpc.gcp.TransportProtocolPreferences",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x000800003f00000a, &upb_prs_1bt},
-  })
 };
 
 const upb_MiniTable* grpc__gcp__TransportProtocolPreferences_msg_init_ptr = &grpc__gcp__TransportProtocolPreferences_msg_init;
@@ -80,14 +70,10 @@ static const upb_MiniTableField grpc_gcp_NegotiatedTransportProtocol__fields[1] 
 const upb_MiniTable grpc__gcp__NegotiatedTransportProtocol_msg_init = {
   NULL,
   &grpc_gcp_NegotiatedTransportProtocol__fields[0],
-  UPB_SIZE(16, 24), 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(8), 0,
+  UPB_SIZE(16, 24), 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "grpc.gcp.NegotiatedTransportProtocol",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x000800003f00000a, &upb_pss_1bt},
-  })
 };
 
 const upb_MiniTable* grpc__gcp__NegotiatedTransportProtocol_msg_init_ptr = &grpc__gcp__NegotiatedTransportProtocol_msg_init;
