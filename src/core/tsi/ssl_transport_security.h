@@ -209,6 +209,10 @@ struct tsi_ssl_client_handshaker_options {
   // client root certificates or a SPIFFE bundle map.
   std::shared_ptr<tsi::RootCertInfo> root_cert_info;
 
+  // The list of key exchange groups (TLS curves) that will be negotiated by
+  // the handshaker, in order of preference.
+  std::vector<grpc_tls_key_exchange_group> key_exchange_groups;
+
   // TODO(gtcooke94) this ctor is not needed
   // https://github.com/grpc/grpc/pull/39708/files#r2143735662
   tsi_ssl_client_handshaker_options()
@@ -381,6 +385,10 @@ struct tsi_ssl_server_handshaker_options {
   // server root certificates or a SPIFFE bundle map. This parameter may be NULL
   // if the server does not want the client to be authenticated with SSL.
   std::shared_ptr<tsi::RootCertInfo> root_cert_info;
+
+  // The list of key exchange groups (TLS curves) that will be negotiated by
+  // the handshaker, in order of preference.
+  std::vector<grpc_tls_key_exchange_group> key_exchange_groups;
 
   // TODO(gtcooke94) this ctor is not needed
   // https://github.com/grpc/grpc/pull/39708/files#r2143735662

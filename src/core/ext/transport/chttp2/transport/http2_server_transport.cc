@@ -30,6 +30,7 @@
 #include <memory>
 #include <optional>
 #include <string>
+#include <type_traits>
 #include <utility>
 #include <variant>
 #include <vector>
@@ -368,13 +369,8 @@ Http2Status Http2ServerTransport::ProcessIncomingFrame(Http2DataFrame&& frame) {
   return Http2Status::Ok();
 }
 
-Http2Status Http2ServerTransport::ProcessIncomingFrame(
-    Http2HeaderFrame&& frame) {
-  // https://www.rfc-editor.org/rfc/rfc9113.html#name-headers
-  GRPC_HTTP2_SERVER_DLOG
-      << "Http2ServerTransport::ProcessIncomingFrame(HeaderFrame) { stream_id="
-      << frame.stream_id << ", end_headers=" << frame.end_headers
-      << ", end_stream=" << frame.end_stream << " }";
+template <typename T>
+Http2Status Http2ServerTransport::ProcessIncomingMetadata(T&& frame) {
   // State update MUST happen before processing the frame.
   incoming_headers_.UpdateState(frame);
 
@@ -389,39 +385,25 @@ Http2Status Http2ServerTransport::ProcessIncomingFrame(
     // frame and streams that are reserved using PUSH_PROMISE. An endpoint that
     // receives an unexpected stream identifier MUST respond with a connection
     // error (Section 5.4.1) of type PROTOCOL_ERROR.
-    GRPC_HTTP2_SERVER_DLOG
-        << "Http2ServerTransport::ProcessIncomingFrame(HeaderFrame) { "
-           "stream_id="
-        << frame.stream_id << "} Lookup Failed";
+    GRPC_HTTP2_SERVER_DLOG << "Http2ServerTransport::ProcessIncomingMetadata { "
+                              "stream_id="
+                           << frame.stream_id << "} Lookup Failed";
     return incoming_headers_.ParseAndDiscardHeaders(
         std::move(frame.payload), frame.end_headers,
         /*stream=*/nullptr, Http2Status::Ok(),
         settings_->acked().max_header_list_size());
   }
 
-  if (stream->IsStreamHalfClosedRemote()) {
-    return incoming_headers_.ParseAndDiscardHeaders(
-        std::move(frame.payload), frame.end_headers, stream.get(),
-        Http2Status::Http2StreamError(
-            Http2ErrorCode::kStreamClosed,
-            std::string(RFC9113::kHalfClosedRemoteState)),
-        settings_->acked().max_header_list_size());
-  }
-
-  if (incoming_headers_.DidReceiveDuplicateMetadata(
-          stream->IsInitialMetadataReceived(),
-          stream->IsTrailingMetadataReceived())) {
-    return incoming_headers_.ParseAndDiscardHeaders(
-        std::move(frame.payload), frame.end_headers, stream.get(),
-        Http2Status::Http2StreamError(
-            Http2ErrorCode::kInternalError,
-            std::string(GrpcErrors::kTooManyMetadata)),
-        settings_->acked().max_header_list_size());
+  Http2Status validation_status =
+      ValidateMetadataFrameState(frame, *stream, incoming_headers_,
+                                 settings_->acked().max_header_list_size());
+  if (!validation_status.IsOk()) {
+    return validation_status;
   }
 
   Http2Status append_result = stream->GetHeaderAssembler().AppendFrame(frame);
   if (!append_result.IsOk()) {
-    // Frame payload is not consumed if AppendHeaderFrame returns a non-OK
+    // Frame payload is not consumed if AppendFrame returns a non-OK
     // status. We need to process it to keep our in consistent state.
     return incoming_headers_.ParseAndDiscardHeaders(
         std::move(frame.payload), frame.end_headers, stream.get(),
@@ -439,6 +421,16 @@ Http2Status Http2ServerTransport::ProcessIncomingFrame(
 
   // Frame payload has either been processed or moved to the HeaderAssembler.
   return Http2Status::Ok();
+}
+
+Http2Status Http2ServerTransport::ProcessIncomingFrame(
+    Http2HeaderFrame&& frame) {
+  // https://www.rfc-editor.org/rfc/rfc9113.html#name-headers
+  GRPC_HTTP2_SERVER_DLOG
+      << "Http2ServerTransport::ProcessIncomingFrame(HeaderFrame) { stream_id="
+      << frame.stream_id << ", end_headers=" << frame.end_headers
+      << ", end_stream=" << frame.end_stream << " }";
+  return ProcessIncomingMetadata(std::forward<Http2HeaderFrame>(frame));
 }
 
 Http2Status Http2ServerTransport::ProcessIncomingFrame(
@@ -498,9 +490,9 @@ Http2Status Http2ServerTransport::ProcessIncomingFrame(
                                  settings_->acked().initial_window_size()),
                              /*stream=*/nullptr);
     } else {
-      // TODO(tjagtap) [PH2][P4] : The RFC does not say anything about what
-      // should happen if we receive an unsolicited SETTINGS ACK. Decide if we
-      // want to respond with any error or just proceed.
+      // CHTTP2 returns a connection error for an unsolicited SETTINGS ACK.
+      // However, we ignore it in PH2 since RFC 9113 doesn't explicitly mandate
+      // an error.
       LOG(ERROR) << "Settings ack received without sending settings. Ignore.";
     }
   }
@@ -674,53 +666,7 @@ Http2Status Http2ServerTransport::ProcessIncomingFrame(
       << "Http2ServerTransport::ProcessIncomingFrame(ContinuationFrame) { "
          "stream_id="
       << frame.stream_id << ", end_headers=" << frame.end_headers << " }";
-
-  // State update MUST happen before processing the frame.
-  incoming_headers_.UpdateState(frame);
-
-  RefCountedPtr<Stream> stream = LookupStream(frame.stream_id);
-  if (stream == nullptr) {
-    // TODO(tjagtap) : [PH2][P3] : Implement this.
-    // RFC9113 : The identifier of a newly established stream MUST be
-    // numerically greater than all streams that the initiating endpoint has
-    // opened or reserved. This governs streams that are opened using a HEADERS
-    // frame and streams that are reserved using PUSH_PROMISE. An endpoint that
-    // receives an unexpected stream identifier MUST respond with a connection
-    // error (Section 5.4.1) of type PROTOCOL_ERROR.
-    return incoming_headers_.ParseAndDiscardHeaders(
-        std::move(frame.payload), frame.end_headers, nullptr, Http2Status::Ok(),
-        settings_->acked().max_header_list_size());
-  }
-
-  if (stream->IsStreamHalfClosedRemote()) {
-    return incoming_headers_.ParseAndDiscardHeaders(
-        std::move(frame.payload), frame.end_headers, stream.get(),
-        Http2Status::Http2StreamError(
-            Http2ErrorCode::kStreamClosed,
-            std::string(RFC9113::kHalfClosedRemoteState)),
-        settings_->acked().max_header_list_size());
-  }
-
-  Http2Status append_result = stream->GetHeaderAssembler().AppendFrame(frame);
-  if (!append_result.IsOk()) {
-    // Frame payload is not consumed if AppendContinuationFrame returns a
-    // non-OK status. We need to process it to keep our in consistent state.
-    return incoming_headers_.ParseAndDiscardHeaders(
-        std::move(frame.payload), frame.end_headers, stream.get(),
-        std::move(append_result), settings_->acked().max_header_list_size());
-  }
-
-  Http2Status status = ProcessMetadata(stream);
-  if (!status.IsOk()) {
-    // Frame payload is consumed by HeaderAssembler. So passing an empty
-    // SliceBuffer to ParseAndDiscardHeaders.
-    return incoming_headers_.ParseAndDiscardHeaders(
-        SliceBuffer(), frame.end_headers, stream.get(), std::move(status),
-        settings_->acked().max_header_list_size());
-  }
-
-  // Frame payload has either been processed or moved to the HeaderAssembler.
-  return Http2Status::Ok();
+  return ProcessIncomingMetadata(std::forward<Http2ContinuationFrame>(frame));
 }
 
 Http2Status Http2ServerTransport::ProcessIncomingFrame(
@@ -1233,28 +1179,28 @@ RefCountedPtr<Stream> Http2ServerTransport::LookupStream(uint32_t stream_id) {
   return it->second;
 }
 
-// void Http2ServerTransport::AddToStreamList(RefCountedPtr<Stream> stream) {
-//   bool should_wake_periodic_updates = false;
-//   {
-//     MutexLock lock(&transport_mutex_);
-//     GRPC_DCHECK(stream != nullptr) << "stream is null";
-//     GRPC_DCHECK_GT(stream->GetStreamId(), 0u) << "stream id is invalid";
-//     GRPC_HTTP2_SERVER_DLOG
-//         << "Http2ServerTransport::AddToStreamList for stream id: "
-//         << stream->GetStreamId();
-//     const uint32_t stream_id = stream->GetStreamId();
-//     stream_list_.emplace(stream_id, std::move(stream));
-//     // TODO(tjagtap) [PH2][P2][BDP] Remove this when the BDP code is done.
-//     if (GetActiveStreamCountLocked() == 1) {
-//       should_wake_periodic_updates = true;
-//     }
-//   }
-//   // TODO(tjagtap) [PH2][P2][BDP] Remove this when the BDP code is done.
-//   if (should_wake_periodic_updates) {
-//     // Release the lock before you wake up another promise on the party.
-//     WakeupPeriodicUpdatePromise();
-//   }
-// }
+void Http2ServerTransport::AddToStreamList(RefCountedPtr<Stream> stream) {
+  bool should_wake_periodic_updates = false;
+  {
+    MutexLock lock(&transport_mutex_);
+    GRPC_DCHECK(stream != nullptr) << "stream is null";
+    GRPC_DCHECK_GT(stream->GetStreamId(), 0u) << "stream id is invalid";
+    GRPC_HTTP2_SERVER_DLOG
+        << "Http2ServerTransport::AddToStreamList for stream id: "
+        << stream->GetStreamId();
+    const uint32_t stream_id = stream->GetStreamId();
+    stream_list_.emplace(stream_id, std::move(stream));
+    // TODO(tjagtap) [PH2][P2][BDP] Remove this when the BDP code is done.
+    if (GetActiveStreamCountLocked() == 1) {
+      should_wake_periodic_updates = true;
+    }
+  }
+  // TODO(tjagtap) [PH2][P2][BDP] Remove this when the BDP code is done.
+  if (should_wake_periodic_updates) {
+    // Release the lock before you wake up another promise on the party.
+    WakeupPeriodicUpdatePromise();
+  }
+}
 
 // absl::Status Http2ServerTransport::MaybeAddStreamToWritableStreamList(
 //     RefCountedPtr<Stream> stream,
@@ -1443,10 +1389,9 @@ absl::Status Http2ServerTransport::IncomingStream(
     return absl::CancelledError();
   }
   RefCountedPtr<Stream> stream = std::move(result.value());
-  // TODO(akshitpatel) : [PH2][P0] : Implement this.
   // TODO(akshitpatel) : [PH2][P1] : Try to access the stream list only once in
   // this function.
-  // AddToStreamList(stream);
+  AddToStreamList(stream);
 
   // TODO(tjagtap) : [PH2][P1] : We could receive a valid Metadata. And
   // Spawn CallOutboundLoop. But before the CallOutboundLoop starts, if

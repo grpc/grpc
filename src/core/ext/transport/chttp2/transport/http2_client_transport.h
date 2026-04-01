@@ -253,6 +253,9 @@ class Http2ClientTransport final : public ClientTransport,
         std::forward<Http2Frame>(frame));
   }
 
+  template <typename T>
+  Http2Status ProcessIncomingMetadata(T&& frame);
+
   auto ReadAndProcessOneFrame();
 
   // Returns a promise to keep reading in a Loop till a fail/close is received.
@@ -678,7 +681,6 @@ class Http2ClientTransport final : public ClientTransport,
   std::optional<PingManager> ping_manager_;
   std::optional<KeepaliveManager> keepalive_manager_;
 
-  // Flags
   bool keepalive_permit_without_calls_;
 
   GoawayManager goaway_manager_;
