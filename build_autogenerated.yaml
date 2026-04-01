@@ -9392,6 +9392,7 @@ targets:
   language: c++
   headers:
   - src/cpp/server/orca/orca_service.h
+  - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/postmortem.h
   - test/core/test_util/scoped_env_var.h
   - test/core/test_util/test_lb_policies.h
@@ -9414,6 +9415,7 @@ targets:
   - third_party/protoc-gen-validate/validate/validate.proto
   - third_party/xds/xds/data/orca/v3/orca_load_report.proto
   - src/cpp/server/orca/orca_service.cc
+  - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/test_lb_policies.cc
   - test/cpp/end2end/client_lb_end2end_test.cc
   - test/cpp/end2end/connection_attempt_injector.cc
@@ -23966,6 +23968,16 @@ targets:
   - gtest
   - grpc_test_util
   uses_polling: false
+- name: subchannel_metrics_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/client_channel/subchannel_metrics_test.cc
+  deps:
+  - gtest
+  - grpc_test_util
 - name: subchannel_stream_limiter_test
   gtest: true
   build: test
@@ -24273,16 +24285,6 @@ targets:
   - gtest
   - grpc
   uses_polling: false
-- name: test_core_client_channel_subchannel_metrics_test
-  gtest: true
-  build: test
-  language: c++
-  headers: []
-  src:
-  - test/core/client_channel/subchannel_metrics_test.cc
-  deps:
-  - gtest
-  - grpc_test_util
 - name: test_core_credentials_transport_ssl_ssl_credentials_test
   gtest: true
   build: test
@@ -24779,28 +24781,6 @@ targets:
   - third_party/xds/xds/data/orca/v3/orca_load_report.proto
   - test/cpp/end2end/ssl_credentials_test.cc
   - test/cpp/end2end/test_service_impl.cc
-  deps:
-  - gtest
-  - grpc++_test_util
-- name: test_cpp_end2end_subchannel_metrics_test
-  gtest: true
-  build: test
-  language: c++
-  headers:
-  - test/core/test_util/fake_stats_plugin.h
-  - test/core/test_util/scoped_env_var.h
-  - test/cpp/end2end/connection_attempt_injector.h
-  src:
-  - src/proto/grpc/testing/echo.proto
-  - src/proto/grpc/testing/echo_messages.proto
-  - src/proto/grpc/testing/simple_messages.proto
-  - third_party/googleapis/google/api/http.proto
-  - third_party/googleapis/google/rpc/status.proto
-  - third_party/protoc-gen-validate/validate/validate.proto
-  - third_party/xds/xds/data/orca/v3/orca_load_report.proto
-  - test/core/test_util/fake_stats_plugin.cc
-  - test/cpp/end2end/connection_attempt_injector.cc
-  - test/cpp/end2end/subchannel_metrics.cc
   deps:
   - gtest
   - grpc++_test_util
