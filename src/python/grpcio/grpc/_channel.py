@@ -1865,6 +1865,10 @@ def _spawn_delivery(
     state: _ChannelConnectivityState,
     callbacks: Sequence[Callable[[grpc.ChannelConnectivity], None]],
 ) -> None:
+    """Spawn a thread running the _deliver function.
+
+    Should only be called while holding state.lock.
+    """
     delivering_thread = cygrpc.ForkManagedThread(
         target=_deliver,
         args=(
@@ -1931,6 +1935,10 @@ def _poll_connectivity(
 def _spawn_poll_connectivity(
     state: _ChannelConnectivityState, try_to_connect: bool
 ) -> None:
+    """Spawn a thread running the _poll_connectivity function.
+
+    Should only be called while holding state.lock.
+    """
     polling_thread = cygrpc.ForkManagedThread(
         target=_poll_connectivity,
         args=(state, state.channel, bool(try_to_connect)),

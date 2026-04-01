@@ -517,7 +517,7 @@ cdef class Channel:
         grpc_completion_queue_create_for_next(NULL))
     self._state.c_connectivity_completion_queue = (
         grpc_completion_queue_create_for_next(NULL))
-    arguments = arguments + (("fork_epoch", get_fork_epoch()),)
+    arguments = arguments + (("grpc.fork_epoch", get_fork_epoch()),)
     self._arguments = arguments
     cdef _ChannelArgs channel_args = _ChannelArgs(arguments)
     c_channel_credentials = (
