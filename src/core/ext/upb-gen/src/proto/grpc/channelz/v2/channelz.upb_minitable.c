@@ -28,14 +28,10 @@ static const upb_MiniTableField grpc_channelz_v2_Data__fields[2] = {
 const upb_MiniTable grpc__channelz__v2__Data_msg_init = {
   &grpc_channelz_v2_Data__submsgs[0],
   &grpc_channelz_v2_Data__fields[0],
-  UPB_SIZE(24, 40), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(8), 0,
+  UPB_SIZE(24, 40), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "grpc.channelz.v2.Data",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x001000003f00000a, &upb_pss_1bt},
-  })
 };
 
 const upb_MiniTable* grpc__channelz__v2__Data_msg_init_ptr = &grpc__channelz__v2__Data_msg_init;
@@ -57,20 +53,10 @@ static const upb_MiniTableField grpc_channelz_v2_Entity__fields[7] = {
 const upb_MiniTable grpc__channelz__v2__Entity_msg_init = {
   &grpc_channelz_v2_Entity__submsgs[0],
   &grpc_channelz_v2_Entity__fields[0],
-  UPB_SIZE(40, 64), 7, kUpb_ExtMode_NonExtendable, 7, UPB_FASTTABLE_MASK(56), 0,
+  UPB_SIZE(40, 64), 7, kUpb_ExtMode_NonExtendable, 7, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "grpc.channelz.v2.Entity",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x002000003f000008, &upb_psv8_1bt},
-    {0x001000003f000012, &upb_pss_1bt},
-    {0x002800003f00001a, &upb_ppv8_1bt},
-    {0x000800003f000020, &upb_psb1_1bt},
-    {0x000900003f000028, &upb_psb1_1bt},
-    {0x003000003f000032, &upb_prm_1bt_max64b},
-    {0x003800003f01003a, &upb_prm_1bt_max64b},
-  })
 };
 
 const upb_MiniTable* grpc__channelz__v2__Entity_msg_init_ptr = &grpc__channelz__v2__Entity_msg_init;
@@ -88,16 +74,10 @@ static const upb_MiniTableField grpc_channelz_v2_TraceEvent__fields[3] = {
 const upb_MiniTable grpc__channelz__v2__TraceEvent_msg_init = {
   &grpc_channelz_v2_TraceEvent__submsgs[0],
   &grpc_channelz_v2_TraceEvent__fields[0],
-  UPB_SIZE(32, 48), 3, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(24), 0,
+  UPB_SIZE(32, 48), 3, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "grpc.channelz.v2.TraceEvent",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x001000003f00000a, &upb_pss_1bt},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x002800003f01001a, &upb_prm_1bt_max64b},
-  })
 };
 
 const upb_MiniTable* grpc__channelz__v2__TraceEvent_msg_init_ptr = &grpc__channelz__v2__TraceEvent_msg_init;

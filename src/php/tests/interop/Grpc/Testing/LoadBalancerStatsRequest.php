@@ -6,8 +6,8 @@
 namespace Grpc\Testing;
 
 use Google\Protobuf\Internal\GPBType;
-use Google\Protobuf\Internal\RepeatedField;
 use Google\Protobuf\Internal\GPBUtil;
+use Google\Protobuf\RepeatedField;
 
 /**
  * Generated from protobuf message <code>grpc.testing.LoadBalancerStatsRequest</code>
@@ -45,7 +45,7 @@ class LoadBalancerStatsRequest extends \Google\Protobuf\Internal\Message
      *           Request stats for the next num_rpcs sent by client.
      *     @type int $timeout_sec
      *           If num_rpcs have not completed within timeout_sec, return partial results.
-     *     @type array<string>|\Google\Protobuf\Internal\RepeatedField $metadata_keys
+     *     @type string[] $metadata_keys
      *           Response header + trailer metadata entries we want the values of.
      *           Matching of the keys is case-insensitive as per rfc7540#section-8.1.2
      *           * (asterisk) is a special value that will return all metadata entries
@@ -114,7 +114,7 @@ class LoadBalancerStatsRequest extends \Google\Protobuf\Internal\Message
      * * (asterisk) is a special value that will return all metadata entries
      *
      * Generated from protobuf field <code>repeated string metadata_keys = 3;</code>
-     * @return \Google\Protobuf\Internal\RepeatedField
+     * @return RepeatedField<string>
      */
     public function getMetadataKeys()
     {
@@ -127,7 +127,7 @@ class LoadBalancerStatsRequest extends \Google\Protobuf\Internal\Message
      * * (asterisk) is a special value that will return all metadata entries
      *
      * Generated from protobuf field <code>repeated string metadata_keys = 3;</code>
-     * @param array<string>|\Google\Protobuf\Internal\RepeatedField $var
+     * @param string[] $var
      * @return $this
      */
     public function setMetadataKeys($var)

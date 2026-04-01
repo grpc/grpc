@@ -35,20 +35,10 @@ static const upb_MiniTableField cel_expr_CheckedExpr__fields[5] = {
 const upb_MiniTable cel__expr__CheckedExpr_msg_init = {
   &cel_expr_CheckedExpr__submsgs[0],
   &cel_expr_CheckedExpr__fields[0],
-  UPB_SIZE(40, 64), 5, kUpb_ExtMode_NonExtendable, 0, UPB_FASTTABLE_MASK(56), 0,
+  UPB_SIZE(40, 64), 5, kUpb_ExtMode_NonExtendable, 0, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "cel.expr.CheckedExpr",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x001000003f000032, &upb_pss_1bt},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-  })
 };
 
 const upb_MiniTable* cel__expr__CheckedExpr_msg_init_ptr = &cel__expr__CheckedExpr_msg_init;
@@ -64,14 +54,10 @@ static const upb_MiniTableField cel_expr_CheckedExpr_ReferenceMapEntry__fields[2
 const upb_MiniTable cel__expr__CheckedExpr__ReferenceMapEntry_msg_init = {
   &cel_expr_CheckedExpr_ReferenceMapEntry__submsgs[0],
   &cel_expr_CheckedExpr_ReferenceMapEntry__fields[0],
-  48, 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(8), 0,
+  48, 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "cel.expr.CheckedExpr.ReferenceMapEntry",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x001000003f000008, &upb_psv8_1bt},
-  })
 };
 
 const upb_MiniTable* cel__expr__CheckedExpr__ReferenceMapEntry_msg_init_ptr = &cel__expr__CheckedExpr__ReferenceMapEntry_msg_init;
@@ -87,14 +73,10 @@ static const upb_MiniTableField cel_expr_CheckedExpr_TypeMapEntry__fields[2] = {
 const upb_MiniTable cel__expr__CheckedExpr__TypeMapEntry_msg_init = {
   &cel_expr_CheckedExpr_TypeMapEntry__submsgs[0],
   &cel_expr_CheckedExpr_TypeMapEntry__fields[0],
-  48, 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(8), 0,
+  48, 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "cel.expr.CheckedExpr.TypeMapEntry",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x001000003f000008, &upb_psv8_1bt},
-  })
 };
 
 const upb_MiniTable* cel__expr__CheckedExpr__TypeMapEntry_msg_init_ptr = &cel__expr__CheckedExpr__TypeMapEntry_msg_init;
@@ -127,28 +109,10 @@ static const upb_MiniTableField cel_expr_Type__fields[13] = {
 const upb_MiniTable cel__expr__Type_msg_init = {
   &cel_expr_Type__submsgs[0],
   &cel_expr_Type__fields[0],
-  UPB_SIZE(24, 32), 13, kUpb_ExtMode_NonExtendable, 12, UPB_FASTTABLE_MASK(120), 0,
+  UPB_SIZE(24, 32), 13, kUpb_ExtMode_NonExtendable, 12, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "cel.expr.Type",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x001000080100000a, &upb_pom_1bt_maxmaxb},
-    {0x0010000802000010, &upb_pov4_1bt},
-    {0x0010000803000018, &upb_pov4_1bt},
-    {0x0010000804000020, &upb_pov4_1bt},
-    {0x0010000805000028, &upb_pov4_1bt},
-    {0x0010000806010032, &upb_pom_1bt_max64b},
-    {0x001000080702003a, &upb_pom_1bt_max64b},
-    {0x0010000808030042, &upb_pom_1bt_max64b},
-    {0x001000080900004a, &upb_pos_1bt},
-    {0x001000080a000052, &upb_pos_1bt},
-    {0x001000080b04005a, &upb_pom_1bt_max64b},
-    {0x001000080c050062, &upb_pom_1bt_maxmaxb},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x001000080e060072, &upb_pom_1bt_max64b},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-  })
 };
 
 const upb_MiniTable* cel__expr__Type_msg_init_ptr = &cel__expr__Type_msg_init;
@@ -203,16 +167,10 @@ static const upb_MiniTableField cel_expr_Type_FunctionType__fields[2] = {
 const upb_MiniTable cel__expr__Type__FunctionType_msg_init = {
   &cel_expr_Type_FunctionType__submsgs[0],
   &cel_expr_Type_FunctionType__fields[0],
-  UPB_SIZE(24, 32), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
+  UPB_SIZE(24, 32), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "cel.expr.Type.FunctionType",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x001800003f010012, &upb_prm_1bt_max64b},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-  })
 };
 
 const upb_MiniTable* cel__expr__Type__FunctionType_msg_init_ptr = &cel__expr__Type__FunctionType_msg_init;
@@ -228,16 +186,10 @@ static const upb_MiniTableField cel_expr_Type_AbstractType__fields[2] = {
 const upb_MiniTable cel__expr__Type__AbstractType_msg_init = {
   &cel_expr_Type_AbstractType__submsgs[0],
   &cel_expr_Type_AbstractType__fields[0],
-  UPB_SIZE(24, 32), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
+  UPB_SIZE(24, 32), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "cel.expr.Type.AbstractType",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x000800003f00000a, &upb_pss_1bt},
-    {0x001800003f000012, &upb_prm_1bt_max64b},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-  })
 };
 
 const upb_MiniTable* cel__expr__Type__AbstractType_msg_init_ptr = &cel__expr__Type__AbstractType_msg_init;
@@ -255,16 +207,10 @@ static const upb_MiniTableField cel_expr_Decl__fields[3] = {
 const upb_MiniTable cel__expr__Decl_msg_init = {
   &cel_expr_Decl__submsgs[0],
   &cel_expr_Decl__fields[0],
-  UPB_SIZE(24, 40), 3, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(24), 0,
+  UPB_SIZE(24, 40), 3, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "cel.expr.Decl",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x001000003f00000a, &upb_pss_1bt},
-    {0x0020000802000012, &upb_pom_1bt_max64b},
-    {0x002000080301001a, &upb_pom_1bt_max64b},
-  })
 };
 
 const upb_MiniTable* cel__expr__Decl_msg_init_ptr = &cel__expr__Decl_msg_init;
@@ -282,16 +228,10 @@ static const upb_MiniTableField cel_expr_Decl_IdentDecl__fields[3] = {
 const upb_MiniTable cel__expr__Decl__IdentDecl_msg_init = {
   &cel_expr_Decl_IdentDecl__submsgs[0],
   &cel_expr_Decl_IdentDecl__fields[0],
-  UPB_SIZE(32, 48), 3, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(24), 0,
+  UPB_SIZE(32, 48), 3, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "cel.expr.Decl.IdentDecl",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x001000003f00001a, &upb_pss_1bt},
-  })
 };
 
 const upb_MiniTable* cel__expr__Decl__IdentDecl_msg_init_ptr = &cel__expr__Decl__IdentDecl_msg_init;
@@ -307,16 +247,10 @@ static const upb_MiniTableField cel_expr_Decl_FunctionDecl__fields[2] = {
 const upb_MiniTable cel__expr__Decl__FunctionDecl_msg_init = {
   &cel_expr_Decl_FunctionDecl__submsgs[0],
   &cel_expr_Decl_FunctionDecl__fields[0],
-  UPB_SIZE(24, 32), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
+  UPB_SIZE(24, 32), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "cel.expr.Decl.FunctionDecl",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x001800003f00000a, &upb_prm_1bt_max128b},
-    {0x000800003f000012, &upb_pss_1bt},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-  })
 };
 
 const upb_MiniTable* cel__expr__Decl__FunctionDecl_msg_init_ptr = &cel__expr__Decl__FunctionDecl_msg_init;
@@ -337,20 +271,10 @@ static const upb_MiniTableField cel_expr_Decl_FunctionDecl_Overload__fields[6] =
 const upb_MiniTable cel__expr__Decl__FunctionDecl__Overload_msg_init = {
   &cel_expr_Decl_FunctionDecl_Overload__submsgs[0],
   &cel_expr_Decl_FunctionDecl_Overload__fields[0],
-  UPB_SIZE(40, 72), 6, kUpb_ExtMode_NonExtendable, 6, UPB_FASTTABLE_MASK(56), 0,
+  UPB_SIZE(40, 72), 6, kUpb_ExtMode_NonExtendable, 6, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "cel.expr.Decl.FunctionDecl.Overload",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x001000003f00000a, &upb_pss_1bt},
-    {0x003000003f000012, &upb_prm_1bt_max64b},
-    {0x003800003f00001a, &upb_prs_1bt},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x000900003f000028, &upb_psb1_1bt},
-    {0x002000003f000032, &upb_pss_1bt},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-  })
 };
 
 const upb_MiniTable* cel__expr__Decl__FunctionDecl__Overload_msg_init_ptr = &cel__expr__Decl__FunctionDecl__Overload_msg_init;
@@ -367,16 +291,10 @@ static const upb_MiniTableField cel_expr_Reference__fields[3] = {
 const upb_MiniTable cel__expr__Reference_msg_init = {
   &cel_expr_Reference__submsgs[0],
   &cel_expr_Reference__fields[0],
-  UPB_SIZE(32, 48), 3, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(24), 0,
+  UPB_SIZE(32, 48), 3, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "cel.expr.Reference",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x001000003f00000a, &upb_pss_1bt},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x002000003f00001a, &upb_prs_1bt},
-  })
 };
 
 const upb_MiniTable* cel__expr__Reference_msg_init_ptr = &cel__expr__Reference_msg_init;
