@@ -485,8 +485,7 @@ cdef _close(Channel channel, grpc_status_code code, object details,
 
 
 cdef _calls_drained(_ChannelState state):
-  return not (state.integrated_call_states or state.segregated_call_states or
-              state.connectivity_due)
+  return not (state.integrated_call_states or state.segregated_call_states)
 
 cdef _cancel_all_calls(Channel channel, grpc_status_code code, object details):
   cdef _ChannelState state = channel._state

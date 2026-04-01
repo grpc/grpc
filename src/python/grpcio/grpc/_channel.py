@@ -1928,7 +1928,7 @@ def _poll_connectivity(
                         _spawn_delivery(state, callbacks)
 
 
-def _spawn_poll_connecitivity(
+def _spawn_poll_connectivity(
     state: _ChannelConnectivityState, try_to_connect: bool
 ) -> None:
     polling_thread = cygrpc.ForkManagedThread(
@@ -1947,7 +1947,7 @@ def _subscribe(
 ) -> None:
     with state.lock:
         if not state.callbacks_and_connectivities and not state.polling:
-            _spawn_poll_connecitivity(state, try_to_connect)
+            _spawn_poll_connectivity(state, try_to_connect)
             state.callbacks_and_connectivities.append([callback, None])
         elif not state.delivering and state.connectivity is not None:
             _spawn_delivery(state, (callback,))
@@ -2012,7 +2012,7 @@ def _maybe_spawn_poll_connectivity_postfork(
 ) -> None:
     with state.lock:
         if state.callbacks_and_connectivities and not state.polling:
-            _spawn_poll_connecitivity(state, state.try_to_connect)
+            _spawn_poll_connectivity(state, state.try_to_connect)
 
 
 class Channel(grpc.Channel):
