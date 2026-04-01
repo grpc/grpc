@@ -33,6 +33,7 @@
     <file baseinstalldir="/" name="include/grpc/byte_buffer_reader.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/census.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/compression.h" role="src" />
+    <file baseinstalldir="/" name="include/grpc/context_types.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/create_channel_from_endpoint.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/credentials.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/credentials_cpp.h" role="src" />
@@ -674,9 +675,18 @@
     <file baseinstalldir="/" name="src/core/ext/upb-gen/envoy/extensions/clusters/aggregate/v3/cluster.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-gen/envoy/extensions/clusters/aggregate/v3/cluster.upb_minitable.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-gen/envoy/extensions/clusters/aggregate/v3/cluster.upb_minitable.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-gen/envoy/extensions/common/matching/v3/extension_matcher.upb.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-gen/envoy/extensions/common/matching/v3/extension_matcher.upb_minitable.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-gen/envoy/extensions/common/matching/v3/extension_matcher.upb_minitable.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-gen/envoy/extensions/filters/common/fault/v3/fault.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-gen/envoy/extensions/filters/common/fault/v3/fault.upb_minitable.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-gen/envoy/extensions/filters/common/fault/v3/fault.upb_minitable.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-gen/envoy/extensions/filters/common/matcher/action/v3/skip_action.upb.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-gen/envoy/extensions/filters/common/matcher/action/v3/skip_action.upb_minitable.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-gen/envoy/extensions/filters/common/matcher/action/v3/skip_action.upb_minitable.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-gen/envoy/extensions/filters/http/composite/v3/composite.upb.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-gen/envoy/extensions/filters/http/composite/v3/composite.upb_minitable.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-gen/envoy/extensions/filters/http/composite/v3/composite.upb_minitable.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-gen/envoy/extensions/filters/http/fault/v3/fault.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-gen/envoy/extensions/filters/http/fault/v3/fault.upb_minitable.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-gen/envoy/extensions/filters/http/fault/v3/fault.upb_minitable.h" role="src" />
@@ -1141,8 +1151,14 @@
     <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/envoy/data/accesslog/v3/accesslog.upbdefs.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/envoy/extensions/clusters/aggregate/v3/cluster.upbdefs.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/envoy/extensions/clusters/aggregate/v3/cluster.upbdefs.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/envoy/extensions/common/matching/v3/extension_matcher.upbdefs.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/envoy/extensions/common/matching/v3/extension_matcher.upbdefs.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/envoy/extensions/filters/common/fault/v3/fault.upbdefs.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/envoy/extensions/filters/common/fault/v3/fault.upbdefs.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/envoy/extensions/filters/common/matcher/action/v3/skip_action.upbdefs.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/envoy/extensions/filters/common/matcher/action/v3/skip_action.upbdefs.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/envoy/extensions/filters/http/composite/v3/composite.upbdefs.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/envoy/extensions/filters/http/composite/v3/composite.upbdefs.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/envoy/extensions/filters/http/fault/v3/fault.upbdefs.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/envoy/extensions/filters/http/fault/v3/fault.upbdefs.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/envoy/extensions/filters/http/gcp_authn/v3/gcp_authn.upbdefs.c" role="src" />
@@ -1332,6 +1348,8 @@
     <file baseinstalldir="/" name="src/core/filter/auth/server_auth_filter.cc" role="src" />
     <file baseinstalldir="/" name="src/core/filter/blackboard.cc" role="src" />
     <file baseinstalldir="/" name="src/core/filter/blackboard.h" role="src" />
+    <file baseinstalldir="/" name="src/core/filter/composite/composite_filter.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/filter/composite/composite_filter.h" role="src" />
     <file baseinstalldir="/" name="src/core/filter/filter_args.h" role="src" />
     <file baseinstalldir="/" name="src/core/filter/filter_chain.h" role="src" />
     <file baseinstalldir="/" name="src/core/filter/fused_filters.cc" role="src" />
@@ -1665,6 +1683,7 @@
     <file baseinstalldir="/" name="src/core/lib/promise/if.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/promise/inter_activity_latch.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/promise/inter_activity_mutex.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/promise/inter_activity_pipe.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/promise/interceptor_list.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/promise/latch.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/promise/loop.h" role="src" />
@@ -1840,6 +1859,7 @@
     <file baseinstalldir="/" name="src/core/load_balancing/weighted_target/weighted_target.cc" role="src" />
     <file baseinstalldir="/" name="src/core/load_balancing/weighted_target/weighted_target.h" role="src" />
     <file baseinstalldir="/" name="src/core/load_balancing/xds/cds.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/load_balancing/xds/cds.h" role="src" />
     <file baseinstalldir="/" name="src/core/load_balancing/xds/xds_channel_args.h" role="src" />
     <file baseinstalldir="/" name="src/core/load_balancing/xds/xds_cluster_impl.cc" role="src" />
     <file baseinstalldir="/" name="src/core/load_balancing/xds/xds_cluster_manager.cc" role="src" />
@@ -2179,6 +2199,8 @@
     <file baseinstalldir="/" name="src/core/xds/grpc/xds_endpoint_parser.h" role="src" />
     <file baseinstalldir="/" name="src/core/xds/grpc/xds_health_status.cc" role="src" />
     <file baseinstalldir="/" name="src/core/xds/grpc/xds_health_status.h" role="src" />
+    <file baseinstalldir="/" name="src/core/xds/grpc/xds_http_composite_filter.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/xds/grpc/xds_http_composite_filter.h" role="src" />
     <file baseinstalldir="/" name="src/core/xds/grpc/xds_http_fault_filter.cc" role="src" />
     <file baseinstalldir="/" name="src/core/xds/grpc/xds_http_fault_filter.h" role="src" />
     <file baseinstalldir="/" name="src/core/xds/grpc/xds_http_filter.cc" role="src" />
@@ -3376,6 +3398,7 @@
     <file baseinstalldir="/" name="third_party/upb/upb/mini_table/sub.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/port/atomic.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/port/def.inc" role="src" />
+    <file baseinstalldir="/" name="third_party/upb/upb/port/sanitizers.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/port/undef.inc" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/port/vsnprintf_compat.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/reflection/common.h" role="src" />
@@ -3437,18 +3460,22 @@
     <file baseinstalldir="/" name="third_party/upb/upb/text/options.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/wire/decode.c" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/wire/decode.h" role="src" />
+    <file baseinstalldir="/" name="third_party/upb/upb/wire/decode_fast/combinations.h" role="src" />
+    <file baseinstalldir="/" name="third_party/upb/upb/wire/decode_fast/data.h" role="src" />
+    <file baseinstalldir="/" name="third_party/upb/upb/wire/decode_fast/select.c" role="src" />
+    <file baseinstalldir="/" name="third_party/upb/upb/wire/decode_fast/select.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/wire/encode.c" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/wire/encode.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/wire/eps_copy_input_stream.c" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/wire/eps_copy_input_stream.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/wire/internal/constants.h" role="src" />
-    <file baseinstalldir="/" name="third_party/upb/upb/wire/internal/decode_fast.c" role="src" />
-    <file baseinstalldir="/" name="third_party/upb/upb/wire/internal/decode_fast.h" role="src" />
+    <file baseinstalldir="/" name="third_party/upb/upb/wire/internal/decoder.c" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/wire/internal/decoder.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/wire/internal/reader.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/wire/reader.c" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/wire/reader.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/wire/types.h" role="src" />
+    <file baseinstalldir="/" name="third_party/upb/upb/wire/writer.h" role="src" />
     <file baseinstalldir="/" name="third_party/utf8_range/utf8_range.c" role="src" />
     <file baseinstalldir="/" name="third_party/utf8_range/utf8_range.h" role="src" />
     <file baseinstalldir="/" name="third_party/utf8_range/utf8_range_neon.inc" role="src" />
