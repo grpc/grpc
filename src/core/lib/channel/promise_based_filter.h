@@ -254,15 +254,17 @@ template <typename Derived, typename SfinaeVoid = void>
 class CallWrapper;
 
 template <typename Derived>
-class CallWrapper<Derived, absl::void_t<decltype(typename Derived::Call(
-                               std::declval<Derived*>()))>>
+class CallWrapper<Derived, std::conditional_t<true, void,
+                                              decltype(typename Derived::Call(
+                                                  std::declval<Derived*>()))>>
     : public Derived::Call {
  public:
   explicit CallWrapper(Derived* channel) : Derived::Call(channel) {}
 };
 
 template <typename Derived>
-class CallWrapper<Derived, absl::void_t<decltype(typename Derived::Call())>>
+class CallWrapper<
+    Derived, std::conditional_t<true, void, decltype(typename Derived::Call())>>
     : public Derived::Call {
  public:
   explicit CallWrapper(Derived*) : Derived::Call() {}

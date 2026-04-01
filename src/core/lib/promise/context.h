@@ -17,6 +17,7 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <type_traits>
 #include <utility>
 
 #include "src/core/util/down_cast.h"
@@ -77,7 +78,8 @@ class Context<T, absl::void_t<decltype(ContextType<T>())>>
 };
 
 template <typename T>
-class Context<T, absl::void_t<typename ContextSubclass<T>::Base>>
+class Context<T,
+              std::conditional_t<true, void, typename ContextSubclass<T>::Base>>
     : public Context<typename ContextSubclass<T>::Base> {
  public:
   using Context<typename ContextSubclass<T>::Base>::Context;
