@@ -76,7 +76,7 @@ class ClientChannel : public Channel {
                         grpc_pollset_set* /*pollset_set_alternative*/,
                         Slice path, std::optional<Slice> authority,
                         Timestamp deadline, bool registered_method,
-                        void** context_elements,
+                        void*** context_elements,
                         void (*context_propagator)(void**& context_elements,
                                                    Arena* arena)) override;
 

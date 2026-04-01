@@ -71,7 +71,7 @@ typedef struct grpc_call_create_args {
   grpc_core::Timestamp send_deadline;
   bool registered_method;  // client_only
 
-  void** context_elements;
+  void*** context_elements;
   void (*context_propagator)(void**& context_elements, grpc_core::Arena* arena);
 } grpc_call_create_args;
 

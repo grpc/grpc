@@ -127,11 +127,22 @@ grpc::internal::Call Channel::CreateCallInternal(
     grpc::CompletionQueue* cq, size_t interceptor_pos) {
   const bool kRegistered = method.channel_tag() && context->authority().empty();
   grpc_call* c_call = nullptr;
+  grpc_core::ExecCtx exec_ctx;
   if (kRegistered) {
-    c_call = grpc_channel_create_registered_call(
-        c_channel_, context->propagate_from_call_,
-        context->propagation_options_.c_bitmask(), cq->cq(),
-        method.channel_tag(), context->raw_deadline(), nullptr);
+    auto* rc =
+        static_cast<grpc_core::Channel::RegisteredCall*>(method.channel_tag());
+    c_call = grpc_core::Channel::FromC(c_channel_)
+                 ->CreateCall(
+                     context->propagate_from_call_,
+                     context->propagation_options_.c_bitmask(), cq->cq(),
+                     nullptr, rc->path.Ref(),
+                     rc->authority.has_value()
+                         ? std::optional<grpc_core::Slice>(rc->authority->Ref())
+                         : std::nullopt,
+                     grpc_core::Timestamp::FromTimespecRoundUp(
+                         context->raw_deadline()),
+                     /*registered_method=*/true, &context->context_elements_,
+                     impl::CallContextRegistry::Propagate);
   } else {
     const ::std::string* host_str = nullptr;
     if (!context->authority_.empty()) {
@@ -145,7 +156,6 @@ grpc::internal::Call Channel::CreateCallInternal(
     if (host_str != nullptr) {
       host_slice = grpc::SliceFromCopiedString(*host_str);
     }
-    grpc_core::ExecCtx exec_ctx;
     c_call =
         grpc_core::Channel::FromC(c_channel_)
             ->CreateCall(
@@ -157,7 +167,7 @@ grpc::internal::Call Channel::CreateCallInternal(
                                           grpc_core::CSliceRef(host_slice)),
                 grpc_core::Timestamp::FromTimespecRoundUp(
                     context->raw_deadline()),
-                /*registered_method=*/false, context->context_elements_,
+                /*registered_method=*/false, &context->context_elements_,
                 impl::CallContextRegistry::Propagate);
     grpc_slice_unref(method_slice);
     if (host_str != nullptr) {
