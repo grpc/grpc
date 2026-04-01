@@ -37,7 +37,8 @@ namespace grpc_core {
 absl::StatusOr<CertificateSelector::SelectCertResult>
 CertificateSelector::CreateSelectCertResult(
     const std::vector<std::string>& cert_chain,
-    std::variant<absl::string_view, std::shared_ptr<PrivateKeySigner>> private_key) {
+    std::variant<absl::string_view, std::shared_ptr<PrivateKeySigner>>
+        private_key) {
 #if defined(OPENSSL_IS_BORINGSSL)
   CertificateSelector::SelectCertResult result;
   std::vector<bssl::UniquePtr<CRYPTO_BUFFER>> raw_cert_chain;
@@ -57,7 +58,8 @@ CertificateSelector::CreateSelectCertResult(
       &private_key,
       [&](absl::string_view*) {
         // TODO(lwge): Support processing DER private key.
-        status = absl::UnimplementedError("DER-format private key string is not supported.");
+        status = absl::UnimplementedError(
+            "DER-format private key string is not supported.");
       },
       [&](std::shared_ptr<PrivateKeySigner>* key_signer) {
         result.private_key = *key_signer;

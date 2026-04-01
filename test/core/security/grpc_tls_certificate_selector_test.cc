@@ -111,7 +111,8 @@ TEST_F(TlsCertificateSelectorTest, CreateSelectCertResultFromDerSuccess) {
       ConvertCertChainToDer(cert_chain_), signer));
 }
 
-TEST_F(TlsCertificateSelectorTest, CreateSelectCertResultFromDerStaticKeyUnimplemented) {
+TEST_F(TlsCertificateSelectorTest,
+       CreateSelectCertResultFromDerStaticKeyUnimplemented) {
   ASSERT_THAT(CertificateSelector::CreateSelectCertResult(
                   ConvertCertChainToDer(cert_chain_), "key"),
               StatusIs(absl::StatusCode::kUnimplemented));

@@ -59,7 +59,6 @@
 #include <memory>
 #include <optional>
 #include <string>
-#include <vector>
 
 #include "src/core/credentials/transport/tls/grpc_tls_certificate_selector.h"
 #include "src/core/credentials/transport/tls/grpc_tls_crl_provider.h"

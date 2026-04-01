@@ -1263,7 +1263,8 @@ TEST(SslTransportSecurityTest, TestServerHandshakerFactoryRefcounting) {
   cert_pair.private_key = grpc_core::testing::GetFileContents(
       SSL_TSI_TEST_CREDENTIALS_DIR "server0.key");
   tsi_ssl_server_handshaker_options options;
-  options.pem_key_cert_pairs = std::vector<tsi_ssl_pem_key_cert_pair>{cert_pair};
+  options.pem_key_cert_pairs =
+      std::vector<tsi_ssl_pem_key_cert_pair>{cert_pair};
   if (!cert_chain.empty()) {
     options.root_cert_info = std::make_shared<tsi::RootCertInfo>(cert_chain);
   }
