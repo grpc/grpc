@@ -23,7 +23,12 @@
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
 
+#include <chrono>
 #include <memory>
+#include <thread>
+
+// Take dependency to cast to impl for caching tests
+#include "src/core/tsi/ssl/session_cache/ssl_session_cache.h"
 
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/postmortem.h"
@@ -85,7 +90,7 @@ class SslCredentialsTest : public ::testing::Test {
   grpc_core::PostMortem post_mortem_;
 };
 
-void DoRpc(const std::string& server_addr,
+std::shared_ptr<Channel> DoRpc(const std::string& server_addr,
            const SslCredentialsOptions& ssl_options,
            grpc_ssl_session_cache* cache, bool expect_session_reuse) {
   ChannelArguments channel_args;
@@ -110,12 +115,14 @@ void DoRpc(const std::string& server_addr,
   std::shared_ptr<const AuthContext> auth_context = context.auth_context();
   std::vector<grpc::string_ref> properties =
       auth_context->FindPropertyValues(GRPC_SSL_SESSION_REUSED_PROPERTY);
-  ASSERT_EQ(properties.size(), 1u);
+  EXPECT_EQ(properties.size(), 1u);
+  if (properties.size() != 1u) return nullptr;
   if (expect_session_reuse) {
     EXPECT_EQ("true", ToString(properties[0]));
   } else {
     EXPECT_EQ("false", ToString(properties[0]));
   }
+  return channel;
 }
 
 TEST_F(SslCredentialsTest, SequentialResumption) {
@@ -136,7 +143,20 @@ TEST_F(SslCredentialsTest, SequentialResumption) {
 
   grpc_ssl_session_cache* cache = grpc_ssl_session_cache_create_lru(16);
 
-  DoRpc(server_addr_, ssl_options, cache, /*expect_session_reuse=*/false);
+  auto first_channel = DoRpc(server_addr_, ssl_options, cache, /*expect_session_reuse=*/false);
+
+  // Need to cast to impl so we can see the size of the cache
+  // Does hard-tie to the cache impl for this test
+  auto* cache_impl = reinterpret_cast<tsi::SslSessionLRUCache*>(cache);
+  auto start = std::chrono::steady_clock::now();
+  // In TLS1.3, the cache updates async from the RPC, wait for it to hae content.
+  while (cache_impl->Size() == 0) {
+    if (std::chrono::steady_clock::now() - start > std::chrono::seconds(5)) {
+      FAIL() << "Timed out waiting for session ticket to be cached.";
+    }
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+  }
+
   for (int i = 0; i < 10; i++) {
     DoRpc(server_addr_, ssl_options, cache, /*expect_session_reuse=*/true);
   }
