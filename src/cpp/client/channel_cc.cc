@@ -146,15 +146,19 @@ grpc::internal::Call Channel::CreateCallInternal(
       host_slice = grpc::SliceFromCopiedString(*host_str);
     }
     grpc_core::ExecCtx exec_ctx;
-    c_call = grpc_core::Channel::FromC(c_channel_)->CreateCall(
-        context->propagate_from_call_, context->propagation_options_.c_bitmask(),
-        cq->cq(), nullptr, grpc_core::Slice(grpc_core::CSliceRef(method_slice)),
-        host_str == nullptr
-            ? std::nullopt
-            : std::optional<grpc_core::Slice>(grpc_core::CSliceRef(host_slice)),
-        grpc_core::Timestamp::FromTimespecRoundUp(context->raw_deadline()),
-        /*registered_method=*/false, context->context_elements_,
-        impl::CallContextRegistry::Propagate);
+    c_call =
+        grpc_core::Channel::FromC(c_channel_)
+            ->CreateCall(
+                context->propagate_from_call_,
+                context->propagation_options_.c_bitmask(), cq->cq(), nullptr,
+                grpc_core::Slice(grpc_core::CSliceRef(method_slice)),
+                host_str == nullptr ? std::nullopt
+                                    : std::optional<grpc_core::Slice>(
+                                          grpc_core::CSliceRef(host_slice)),
+                grpc_core::Timestamp::FromTimespecRoundUp(
+                    context->raw_deadline()),
+                /*registered_method=*/false, context->context_elements_,
+                impl::CallContextRegistry::Propagate);
     grpc_slice_unref(method_slice);
     if (host_str != nullptr) {
       grpc_slice_unref(host_slice);
