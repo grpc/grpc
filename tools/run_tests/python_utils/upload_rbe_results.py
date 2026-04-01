@@ -150,6 +150,9 @@ def _get_resultstore_data(api_key, invocation_id):
             else raw_resp.decode("utf-8", "ignore")
         )
         results = json.loads(decoded_resp)
+        with open("/tmp/results.json", "w", encoding="utf-8") as f:
+            f.write(decoded_resp)
+        print("results: {}".format(decoded_resp))
         all_actions.extend(results["actions"])
         if "nextPageToken" not in results:
             break
