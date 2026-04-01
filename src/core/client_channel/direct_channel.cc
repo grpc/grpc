@@ -71,10 +71,14 @@ grpc_call* DirectChannel::CreateCall(
     grpc_call* parent_call, uint32_t propagation_mask,
     grpc_completion_queue* cq, grpc_pollset_set* /*pollset_set_alternative*/,
     Slice path, std::optional<Slice> authority, Timestamp deadline,
-    bool /*registered_method*/) {
+    bool /*registered_method*/, void** context_elements,
+    void (*context_propagator)(void**& context_elements, Arena* arena)) {
   auto arena = call_arena_allocator()->MakeArena();
   arena->SetContext<grpc_event_engine::experimental::EventEngine>(
       event_engine_.get());
+  if (context_elements != nullptr && context_propagator != nullptr) {
+    context_propagator(context_elements, arena.get());
+  }
   return MakeClientCall(parent_call, propagation_mask, cq, std::move(path),
                         std::move(authority), false, deadline,
                         compression_options(), std::move(arena), Ref());

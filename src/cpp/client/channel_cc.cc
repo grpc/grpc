@@ -145,21 +145,22 @@ grpc::internal::Call Channel::CreateCallInternal(
     if (host_str != nullptr) {
       host_slice = grpc::SliceFromCopiedString(*host_str);
     }
-    c_call = grpc_channel_create_call(
-        c_channel_, context->propagate_from_call_,
-        context->propagation_options_.c_bitmask(), cq->cq(), method_slice,
-        host_str == nullptr ? nullptr : &host_slice, context->raw_deadline(),
-        nullptr);
+    grpc_core::ExecCtx exec_ctx;
+    c_call = grpc_core::Channel::FromC(c_channel_)->CreateCall(
+        context->propagate_from_call_, context->propagation_options_.c_bitmask(),
+        cq->cq(), nullptr, grpc_core::Slice(grpc_core::CSliceRef(method_slice)),
+        host_str == nullptr
+            ? std::nullopt
+            : std::optional<grpc_core::Slice>(grpc_core::CSliceRef(host_slice)),
+        grpc_core::Timestamp::FromTimespecRoundUp(context->raw_deadline()),
+        /*registered_method=*/false, context->context_elements_,
+        impl::CallContextRegistry::Propagate);
     grpc_slice_unref(method_slice);
     if (host_str != nullptr) {
       grpc_slice_unref(host_slice);
     }
   }
   grpc_census_call_set_context(c_call, context->census_context());
-  if (context->context_elements_ != nullptr) {
-    grpc_core::Arena* arena = grpc_call_get_arena(c_call);
-    impl::CallContextRegistry::Propagate(context->context_elements_, arena);
-  }
 
   // ClientRpcInfo should be set before call because set_call also checks
   // whether the call has been cancelled, and if the call was cancelled, we

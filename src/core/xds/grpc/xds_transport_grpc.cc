@@ -78,7 +78,7 @@ GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::GrpcStreamingCall(
       /*parent_call=*/nullptr, GRPC_PROPAGATE_DEFAULTS, /*cq=*/nullptr,
       factory_->interested_parties(), Slice::FromStaticString(method),
       /*authority=*/std::nullopt, Timestamp::InfFuture(),
-      /*registered_method=*/true);
+      /*registered_method=*/true, nullptr, nullptr);
   GRPC_CHECK_NE(call_, nullptr);
   // Init data associated with the call.
   grpc_metadata_array_init(&initial_metadata_recv_);

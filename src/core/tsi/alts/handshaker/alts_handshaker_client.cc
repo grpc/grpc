@@ -809,7 +809,7 @@ alts_handshaker_client* alts_grpc_handshaker_client_create(
                 /*cq=*/nullptr, interested_parties,
                 grpc_core::Slice::FromStaticString(ALTS_SERVICE_METHOD),
                 /*authority=*/std::nullopt, grpc_core::Timestamp::InfFuture(),
-                /*registered_method=*/true);
+                /*registered_method=*/true, nullptr, nullptr);
   GRPC_CLOSURE_INIT(&client->on_handshaker_service_resp_recv, grpc_cb, client,
                     grpc_schedule_on_exec_ctx);
   GRPC_CLOSURE_INIT(&client->on_status_received, on_status_received, client,

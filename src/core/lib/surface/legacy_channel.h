@@ -64,7 +64,9 @@ class LegacyChannel final : public Channel {
                         grpc_completion_queue* cq,
                         grpc_pollset_set* pollset_set_alternative, Slice path,
                         std::optional<Slice> authority, Timestamp deadline,
-                        bool registered_method) override;
+                        bool registered_method, void** context_elements,
+                        void (*context_propagator)(void**& context_elements,
+                                                   Arena* arena)) override;
 
   void StartCall(UnstartedCallHandler) override {
     Crash("StartCall() not supported on LegacyChannel");

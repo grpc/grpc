@@ -161,13 +161,12 @@ bool LegacyChannel::IsLame() const {
   return elem->filter == &LameClientFilter::kFilter;
 }
 
-grpc_call* LegacyChannel::CreateCall(grpc_call* parent_call,
-                                     uint32_t propagation_mask,
-                                     grpc_completion_queue* cq,
-                                     grpc_pollset_set* pollset_set_alternative,
-                                     Slice path, std::optional<Slice> authority,
-                                     Timestamp deadline,
-                                     bool registered_method) {
+grpc_call* LegacyChannel::CreateCall(
+    grpc_call* parent_call, uint32_t propagation_mask, grpc_completion_queue* cq,
+    grpc_pollset_set* pollset_set_alternative, Slice path,
+    std::optional<Slice> authority, Timestamp deadline, bool registered_method,
+    void** context_elements,
+    void (*context_propagator)(void**& context_elements, Arena* arena)) {
   GRPC_CHECK(is_client_);
   GRPC_CHECK(!(cq != nullptr && pollset_set_alternative != nullptr));
   grpc_call_create_args args;
@@ -182,6 +181,8 @@ grpc_call* LegacyChannel::CreateCall(grpc_call* parent_call,
   args.authority = std::move(authority);
   args.send_deadline = deadline;
   args.registered_method = registered_method;
+  args.context_elements = context_elements;
+  args.context_propagator = context_propagator;
   grpc_call* call;
   GRPC_LOG_IF_ERROR("call_create", grpc_call_create(&args, &call));
   return call;
