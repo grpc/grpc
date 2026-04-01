@@ -799,6 +799,13 @@ grpc_cc_test(
 grpc_cc_test(
     name = "client_lb_end2end_test",
     srcs = ["client_lb_end2end_test.cc"],
+    data = [
+        "//src/core/tsi/test_creds:ca.pem",
+        "//src/core/tsi/test_creds:client.key",
+        "//src/core/tsi/test_creds:client.pem",
+        "//src/core/tsi/test_creds:server1.key",
+        "//src/core/tsi/test_creds:server1.pem",
+    ],
     external_deps = [
         "absl/log:check",
         "absl/log:log",
@@ -857,6 +864,7 @@ grpc_cc_test(
         "//src/proto/grpc/testing:echo_cc_grpc",
         "//src/proto/grpc/testing:echo_messages_cc_proto",
         "//src/proto/grpc/testing/duplicate:echo_duplicate_cc_grpc",
+        "//test/core/test_util:fake_stats_plugin",
         "//test/core/test_util:grpc_test_util",
         "//test/core/test_util:grpc_test_util_base",
         "//test/core/test_util:postmortem",
@@ -1747,30 +1755,6 @@ grpc_cc_test(
         "//src/proto/grpc/testing:echo_cc_grpc",
         "//src/proto/grpc/testing:echo_messages_cc_proto",
         "//test/core/test_util:grpc_test_util",
-        "//test/cpp/util:test_util",
-    ],
-)
-
-grpc_cc_test(
-    name = "subchannel_metrics_test",
-    srcs = ["subchannel_metrics.cc"],
-    data = [
-        "//src/core/tsi/test_creds:ca.pem",
-        "//src/core/tsi/test_creds:client.key",
-        "//src/core/tsi/test_creds:client.pem",
-        "//src/core/tsi/test_creds:server1.key",
-        "//src/core/tsi/test_creds:server1.pem",
-    ],
-    external_deps = [
-        "gtest",
-    ],
-    deps = [
-        ":connection_attempt_injector",
-        "//src/core:experiments",
-        "//src/proto/grpc/testing:echo_cc_grpc",
-        "//test/core/test_util:fake_stats_plugin",
-        "//test/core/test_util:grpc_test_util",
-        "//test/core/test_util:scoped_env_var",
         "//test/cpp/util:test_util",
     ],
 )
