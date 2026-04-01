@@ -510,7 +510,7 @@ grpc_core::CertificateSelector::SelectCertInfo PrepareSelectCertInfo(
 
 absl::Status ProcessSelectCertResult(
     tsi_ssl_handshaker* handshaker,
-    grpc_core::CertificateSelector::SelectCertResult result)
+    const grpc_core::CertificateSelector::SelectCertResult& result)
     ABSL_EXCLUSIVE_LOCKS_REQUIRED(&tsi_ssl_handshaker::mu) {
   if (result.cert_chain.empty()) {
     return absl::InvalidArgumentError("The cert chain is empty.");
@@ -521,12 +521,12 @@ absl::Status ProcessSelectCertResult(
     cert_chain.push_back(raw_cert.get());
   }
   absl::Status status = absl::OkStatus();
-  grpc_core::MatchMutable(
-      &result.private_key,
-      [&](bssl::UniquePtr<EVP_PKEY>* key) {
+  grpc_core::Match(
+      result.private_key,
+      [&](const bssl::UniquePtr<EVP_PKEY>& key) {
         VLOG(2) << "Select cert result returns a static private key.";
         if (!SSL_set_chain_and_key(handshaker->ssl, cert_chain.data(),
-                                   cert_chain.size(), key->get(),
+                                   cert_chain.size(), key.get(),
                                    /*privkey_method=*/nullptr)) {
           status = absl::InternalError(
               absl::StrFormat("Failed to set chain and key: %s",
@@ -534,10 +534,10 @@ absl::Status ProcessSelectCertResult(
                                   handshaker->ssl, /*ret_code=*/0))));
         }
       },
-      [&](std::shared_ptr<grpc_core::PrivateKeySigner>* signer)
+      [&](std::shared_ptr<grpc_core::PrivateKeySigner> signer)
           ABSL_NO_THREAD_SAFETY_ANALYSIS {
             VLOG(2) << "Select cert result returns a private key signer.";
-            handshaker->key_signer = std::move(*signer);
+            handshaker->key_signer = std::move(signer);
             if (!SSL_set_chain_and_key(
                     handshaker->ssl, cert_chain.data(), cert_chain.size(),
                     /*privkey=*/nullptr, &TlsOffloadPrivateKeyMethod)) {
@@ -562,7 +562,7 @@ void SelectCertDoneCallback(
       handshaker->cert_selection_status = std::move(result).status();
     } else {
       handshaker->cert_selection_status =
-          ProcessSelectCertResult(handshaker, *std::move(result));
+          ProcessSelectCertResult(handshaker, *result);
     }
     auto async_result = ssl_handshaker_next_async(handshaker);
     next_result = async_result.first;
@@ -609,19 +609,19 @@ ssl_select_cert_result_t SelectCertificateCallback(
   ssl_select_cert_result_t ssl_select_cert_result = ssl_select_cert_success;
   // The outer function guarantees the mutex lock, and we have to disable the
   // absl thread safety analysis because the use of MatchMutable.
-  grpc_core::MatchMutable(
-      &result,
-      [&](absl::StatusOr<grpc_core::CertificateSelector::SelectCertResult>*
+  grpc_core::Match(
+      result,
+      [&](const absl::StatusOr<grpc_core::CertificateSelector::SelectCertResult>&
               select_cert_result) ABSL_NO_THREAD_SAFETY_ANALYSIS {
-        if (!select_cert_result->ok()) {
+        if (!select_cert_result.ok()) {
           LOG(INFO) << "Sync select cert failed: "
-                    << select_cert_result->status();
-          handshaker->MaybeSetError(select_cert_result->status().ToString());
+                    << select_cert_result.status();
+          handshaker->MaybeSetError(select_cert_result.status().ToString());
           ssl_select_cert_result = ssl_select_cert_error;
           return;
         }
         absl::Status status = ProcessSelectCertResult(
-            handshaker, *std::move(*select_cert_result));
+            handshaker, *select_cert_result);
         if (!status.ok()) {
           LOG(INFO) << "Sync select cert failed: " << status;
           handshaker->MaybeSetError(status.ToString());
@@ -629,9 +629,9 @@ ssl_select_cert_result_t SelectCertificateCallback(
         }
       },
       [&](std::shared_ptr<
-          grpc_core::CertificateSelector::AsyncCertSelectionHandle>*
+          grpc_core::CertificateSelector::AsyncCertSelectionHandle>
               async_handle) ABSL_NO_THREAD_SAFETY_ANALYSIS {
-        handshaker->cert_selection_handle = std::move(*async_handle);
+        handshaker->cert_selection_handle = std::move(async_handle);
         ssl_select_cert_result = ssl_select_cert_retry;
       });
   return ssl_select_cert_result;
