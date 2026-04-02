@@ -306,5 +306,90 @@ CORE_END2END_TEST(Http2Tests,
               StartsWith("CLIENT: Received message larger than max"));
 }
 
+CORE_END2END_TEST(Http2Tests,
+                  MaxMessageLengthOnServerOnRequestAfterDecompression) {
+  SKIP_IF_MINSTACK();
+  constexpr int kLimit = 1024;
+  constexpr size_t kPayloadSize = 64 * 1024;
+  const std::string payload(kPayloadSize, 'a');
+
+  InitServer(DefaultServerArgs()
+                 .Set(GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH, kLimit)
+                 .Set(GRPC_ARG_ENABLE_PER_MESSAGE_DECOMPRESSION, true));
+  InitClient(ChannelArgs().Set(GRPC_ARG_ENABLE_PER_MESSAGE_COMPRESSION, true));
+
+  auto c = NewClientCall("/service/method").Create();
+  IncomingStatusOnClient status;
+  IncomingMetadata server_initial_metadata;
+  c.NewBatch(1)
+      .SendInitialMetadata({{"grpc-internal-encoding-request", "gzip"}})
+      .SendMessage(payload)
+      .SendCloseFromClient()
+      .RecvInitialMetadata(server_initial_metadata)
+      .RecvStatusOnClient(status);
+
+  auto s = RequestCall(101);
+  Expect(101, true);
+  Step();
+
+  IncomingMessage client_message;
+  IncomingCloseOnServer client_close;
+  s.NewBatch(102).RecvMessage(client_message);
+  s.NewBatch(103).RecvCloseOnServer(client_close);
+  // Validate the failing recv path explicitly to avoid deadlocks in this flow.
+  Expect(102, false);
+  Expect(103, true);
+  Expect(1, true);
+  Step();
+
+  EXPECT_TRUE(client_close.was_cancelled());
+  EXPECT_EQ(status.status(), GRPC_STATUS_RESOURCE_EXHAUSTED);
+  EXPECT_THAT(status.message(),
+              StartsWith("SERVER: Received message larger than max"));
+}
+
+CORE_END2END_TEST(Http2Tests,
+                  MaxMessageLengthOnClientOnResponseAfterDecompression) {
+  SKIP_IF_MINSTACK();
+  constexpr int kLimit = 1024;
+  constexpr size_t kPayloadSize = 64 * 1024;
+  const std::string payload(kPayloadSize, 'a');
+
+  InitServer(
+      DefaultServerArgs().Set(GRPC_ARG_ENABLE_PER_MESSAGE_COMPRESSION, true));
+  InitClient(ChannelArgs()
+                 .Set(GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH, kLimit)
+                 .Set(GRPC_ARG_ENABLE_PER_MESSAGE_DECOMPRESSION, true));
+
+  auto c = NewClientCall("/service/method").Create();
+  IncomingStatusOnClient status;
+  IncomingMetadata server_initial_metadata;
+  IncomingMessage server_message;
+  c.NewBatch(1)
+      .SendInitialMetadata({})
+      .SendCloseFromClient()
+      .RecvInitialMetadata(server_initial_metadata)
+      .RecvMessage(server_message)
+      .RecvStatusOnClient(status);
+
+  auto s = RequestCall(101);
+  Expect(101, true);
+  Step();
+
+  IncomingCloseOnServer client_close;
+  s.NewBatch(102)
+      .SendInitialMetadata({{"grpc-internal-encoding-request", "gzip"}})
+      .RecvCloseOnServer(client_close)
+      .SendMessage(payload)
+      .SendStatusFromServer(GRPC_STATUS_OK, "xyz", {});
+  Expect(102, true);
+  Expect(1, true);
+  Step();
+
+  EXPECT_EQ(status.status(), GRPC_STATUS_RESOURCE_EXHAUSTED);
+  EXPECT_THAT(status.message(),
+              StartsWith("CLIENT: Received message larger than max"));
+}
+
 }  // namespace
 }  // namespace grpc_core

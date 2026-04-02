@@ -256,8 +256,22 @@ ClientCompressionFilter::Call::OnServerToClientMessage(
     MessageHandle message, ClientCompressionFilter* filter) {
   GRPC_LATENT_SEE_SCOPE(
       "ClientCompressionFilter::Call::OnServerToClientMessage");
-  return filter->compression_engine_.DecompressMessage(
-      /*is_client=*/true, std::move(message), decompress_args_, call_tracer_);
+  auto decompressed = filter->compression_engine_.DecompressMessage(
+    /*is_client=*/true, std::move(message), decompress_args_, call_tracer_);
+  if (!decompressed.ok()) {
+    return decompressed.status();
+  }
+  const bool is_client = true;
+  if (decompress_args_.max_recv_message_length.has_value() &&
+    (*decompressed)->payload()->Length() >
+      static_cast<size_t>(*decompress_args_.max_recv_message_length)) {
+    return absl::ResourceExhaustedError(
+        absl::StrFormat("%s: Received message larger than max (%u vs. %d)",
+                        is_client ? "CLIENT" : "SERVER",
+                        (*decompressed)->payload()->Length(),
+                        *decompress_args_.max_recv_message_length));
+  }
+  return std::move(*decompressed);
 }
 
 void ServerCompressionFilter::Call::OnClientInitialMetadata(
@@ -272,9 +286,23 @@ ServerCompressionFilter::Call::OnClientToServerMessage(
     MessageHandle message, ServerCompressionFilter* filter) {
   GRPC_LATENT_SEE_SCOPE(
       "ServerCompressionFilter::Call::OnClientToServerMessage");
-  return filter->compression_engine_.DecompressMessage(
-      /*is_client=*/false, std::move(message), decompress_args_,
-      MaybeGetContext<CallTracer>());
+  auto decompressed = filter->compression_engine_.DecompressMessage(
+    /*is_client=*/false, std::move(message), decompress_args_,
+    MaybeGetContext<CallTracer>());
+  if (!decompressed.ok()) {
+    return decompressed.status();
+  }
+  const bool is_client = false;
+  if (decompress_args_.max_recv_message_length.has_value() &&
+    (*decompressed)->payload()->Length() >
+      static_cast<size_t>(*decompress_args_.max_recv_message_length)) {
+    return absl::ResourceExhaustedError(
+        absl::StrFormat("%s: Received message larger than max (%u vs. %d)",
+                        is_client ? "CLIENT" : "SERVER",
+                        (*decompressed)->payload()->Length(),
+                        *decompress_args_.max_recv_message_length));
+  }
+  return std::move(*decompressed);
 }
 
 void ServerCompressionFilter::Call::OnServerInitialMetadata(
