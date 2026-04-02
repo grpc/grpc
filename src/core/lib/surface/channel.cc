@@ -56,10 +56,11 @@ Channel::RegisteredCall::RegisteredCall(const RegisteredCall& other)
 Channel::RegisteredCall::~RegisteredCall() {}
 
 //
-// Channel
+// ChannelForFilterStackCall
 //
 
-Channel::Channel(std::string target, const ChannelArgs& channel_args)
+ChannelForFilterStackCall::ChannelForFilterStackCall(
+    std::string target, const ChannelArgs& channel_args)
     : target_(std::move(target)),
       channelz_node_(channel_args.GetObjectRef<channelz::ChannelNode>()),
       compression_options_(CompressionOptionsFromChannelArgs(channel_args)),
@@ -67,8 +68,15 @@ Channel::Channel(std::string target, const ChannelArgs& channel_args)
           channel_args.GetObject<ResourceQuota>()
               ->memory_quota()
               ->CreateMemoryOwner(),
-          1024)),
-      memory_allocator_(&call_arena_allocator_->allocator()) {}
+          1024)) {}
+
+//
+// Channel
+//
+
+Channel::Channel(std::string target, const ChannelArgs& channel_args)
+    : ChannelForFilterStackCall(target, channel_args),
+      memory_allocator_(&call_arena_allocator()->allocator()) {}
 
 Channel::RegisteredCall* Channel::RegisterCall(const char* method,
                                                const char* host) {

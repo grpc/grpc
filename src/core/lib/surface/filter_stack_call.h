@@ -76,8 +76,12 @@ class FilterStackCall final : public Call {
   }
 
   // TODO(ctiller): return absl::StatusOr<SomeSmartPointer<Call>>?
-  static grpc_error_handle Create(grpc_call_create_args* args,
-                                  grpc_call** out_call);
+  static grpc_error_handle Create(
+      grpc_call_create_args* args,
+      RefCountedPtr<ChannelForFilterStackCall> channel,
+      grpc_channel_stack* channel_stack,
+      grpc_event_engine::experimental::EventEngine* event_engine,
+      grpc_call** out_call);
 
   static Call* FromTopElem(grpc_call_element* elem) {
     return FromCallStack(grpc_call_stack_from_top_element(elem));
@@ -145,7 +149,7 @@ class FilterStackCall final : public Call {
     this->~FilterStackCall();
   }
 
-  Channel* channel() const { return channel_.get(); }
+  ChannelForFilterStackCall* channel() const { return channel_.get(); }
 
  private:
   class ScopedContext : public promise_detail::Context<Arena> {
@@ -231,8 +235,8 @@ class FilterStackCall final : public Call {
     void FinishBatch(grpc_error_handle error);
   };
 
-  FilterStackCall(RefCountedPtr<Arena> arena,
-                  const grpc_call_create_args& args);
+  FilterStackCall(RefCountedPtr<Arena> arena, const grpc_call_create_args& args,
+                  RefCountedPtr<ChannelForFilterStackCall> channel);
 
   static void ReleaseCall(void* call, grpc_error_handle);
   static void DestroyCall(void* call, grpc_error_handle);
@@ -262,7 +266,7 @@ class FilterStackCall final : public Call {
     incoming_compression_algorithm_ = algorithm;
   }
 
-  RefCountedPtr<Channel> channel_;
+  RefCountedPtr<ChannelForFilterStackCall> channel_;
   RefCount ext_ref_;
   CallCombiner call_combiner_;
   grpc_completion_queue* cq_;

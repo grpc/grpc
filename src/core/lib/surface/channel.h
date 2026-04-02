@@ -56,7 +56,36 @@ namespace grpc_core {
 // Forward declaration to avoid dependency loop.
 class Transport;
 
-class Channel : public UnstartedCallDestination,
+// The parts of the channel interface needed by FilterStackCall for v1.
+//
+// This needs to inherit from DualRefCounted<>, but so does Channel, which
+// gets that inheritence through UnstartedCallDestination.  So in order
+// to avoid a diamond dependency problem, we inherit from
+// UnstartedCallDestination here, even though we don't need that
+// interface for v1.
+class ChannelForFilterStackCall : public UnstartedCallDestination {
+ public:
+  absl::string_view target() const { return target_; }
+  channelz::ChannelNode* channelz_node() const { return channelz_node_.get(); }
+  grpc_compression_options compression_options() const {
+    return compression_options_;
+  }
+  CallArenaAllocator* call_arena_allocator() const {
+    return call_arena_allocator_.get();
+  }
+
+ protected:
+  ChannelForFilterStackCall(std::string target,
+                            const ChannelArgs& channel_args);
+
+ private:
+  const std::string target_;
+  const RefCountedPtr<channelz::ChannelNode> channelz_node_;
+  const grpc_compression_options compression_options_;
+  const RefCountedPtr<CallArenaAllocator> call_arena_allocator_;
+};
+
+class Channel : public ChannelForFilterStackCall,
                 public CppImplOf<Channel, grpc_channel> {
  public:
   struct RegisteredCall {
@@ -104,12 +133,6 @@ class Channel : public UnstartedCallDestination,
 
   virtual void ResetConnectionBackoff() = 0;
 
-  absl::string_view target() const { return target_; }
-  channelz::ChannelNode* channelz_node() const { return channelz_node_.get(); }
-  grpc_compression_options compression_options() const {
-    return compression_options_;
-  }
-
   RegisteredCall* RegisterCall(const char* method, const char* host);
 
   int TestOnlyRegisteredCalls() {
@@ -128,10 +151,6 @@ class Channel : public UnstartedCallDestination,
   virtual bool is_client() const { return true; }
   virtual bool is_promising() const { return true; }
 
-  CallArenaAllocator* call_arena_allocator() const {
-    return call_arena_allocator_.get();
-  }
-
   grpc_event_engine::experimental::MemoryAllocator* memory_allocator() const {
     return memory_allocator_;
   }
@@ -140,9 +159,7 @@ class Channel : public UnstartedCallDestination,
   Channel(std::string target, const ChannelArgs& channel_args);
 
  private:
-  const std::string target_;
-  const RefCountedPtr<channelz::ChannelNode> channelz_node_;
-  const grpc_compression_options compression_options_;
+  grpc_event_engine::experimental::MemoryAllocator* memory_allocator_ = nullptr;
 
   Mutex mu_;
   // The map key needs to be owned strings rather than unowned char*'s to
@@ -150,8 +167,6 @@ class Channel : public UnstartedCallDestination,
   // the C++ or other wrapped language Channel that registered these calls).
   std::map<std::pair<std::string, std::string>, RegisteredCall>
       registration_table_ ABSL_GUARDED_BY(mu_);
-  const RefCountedPtr<CallArenaAllocator> call_arena_allocator_;
-  grpc_event_engine::experimental::MemoryAllocator* memory_allocator_ = nullptr;
 };
 
 }  // namespace grpc_core

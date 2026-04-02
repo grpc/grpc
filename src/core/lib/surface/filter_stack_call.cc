@@ -78,20 +78,23 @@ namespace grpc_core {
 // prefix.
 using GrpcClosure = Closure;
 
-FilterStackCall::FilterStackCall(RefCountedPtr<Arena> arena,
-                                 const grpc_call_create_args& args)
+FilterStackCall::FilterStackCall(
+    RefCountedPtr<Arena> arena, const grpc_call_create_args& args,
+    RefCountedPtr<ChannelForFilterStackCall> channel)
     : Call(args.server_transport_data == nullptr, args.send_deadline,
            std::move(arena)),
-      channel_(args.channel->RefAsSubclass<Channel>()),
+      channel_(std::move(channel)),
       cq_(args.cq),
       stream_op_payload_{} {
   SourceConstructed();
 }
 
-grpc_error_handle FilterStackCall::Create(grpc_call_create_args* args,
-                                          grpc_call** out_call) {
-  Channel* channel = args->channel.get();
-
+grpc_error_handle FilterStackCall::Create(
+    grpc_call_create_args* args,
+    RefCountedPtr<ChannelForFilterStackCall> channel,
+    grpc_channel_stack* channel_stack,
+    grpc_event_engine::experimental::EventEngine* event_engine,
+    grpc_call** out_call) {
   auto add_init_error = [](grpc_error_handle* composite,
                            grpc_error_handle new_err) {
     if (new_err.ok()) return;
@@ -103,15 +106,14 @@ grpc_error_handle FilterStackCall::Create(grpc_call_create_args* args,
 
   FilterStackCall* call;
   grpc_error_handle error;
-  grpc_channel_stack* channel_stack = channel->channel_stack();
   size_t call_alloc_size =
       GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(FilterStackCall)) +
       channel_stack->call_stack_size;
 
   RefCountedPtr<Arena> arena = channel->call_arena_allocator()->MakeArena();
-  arena->SetContext<grpc_event_engine::experimental::EventEngine>(
-      args->channel->event_engine());
-  call = new (arena->Alloc(call_alloc_size)) FilterStackCall(arena, *args);
+  arena->SetContext<grpc_event_engine::experimental::EventEngine>(event_engine);
+  call = new (arena->Alloc(call_alloc_size))
+      FilterStackCall(arena, *args, std::move(channel));
   GRPC_DCHECK(FromC(call->c_ptr()) == call);
   GRPC_DCHECK(FromCallStack(call->call_stack()) == call);
   *out_call = call->c_ptr();
@@ -194,7 +196,7 @@ grpc_error_handle FilterStackCall::Create(grpc_call_create_args* args,
   }
 
   if (call->is_client()) {
-    channelz::ChannelNode* channelz_channel = channel->channelz_node();
+    channelz::ChannelNode* channelz_channel = call->channel()->channelz_node();
     if (channelz_channel != nullptr) {
       channelz_channel->RecordCallStarted();
     }
@@ -1144,17 +1146,20 @@ done_with_error:
 }
 
 char* FilterStackCall::GetPeer() {
+  absl::string_view peer_string_view;
   Slice peer_slice = GetPeerString();
   if (!peer_slice.empty()) {
-    absl::string_view peer_string_view = peer_slice.as_string_view();
+    peer_string_view = peer_slice.as_string_view();
+  } else {
+    peer_string_view = channel_->target();
+  }
+  if (!peer_string_view.empty()) {
     char* peer_string =
         static_cast<char*>(gpr_malloc(peer_string_view.size() + 1));
     memcpy(peer_string, peer_string_view.data(), peer_string_view.size());
     peer_string[peer_string_view.size()] = '\0';
     return peer_string;
   }
-  char* peer_string = grpc_channel_get_target(channel_->c_ptr());
-  if (peer_string != nullptr) return peer_string;
   return gpr_strdup("unknown");
 }
 
@@ -1162,7 +1167,11 @@ char* FilterStackCall::GetPeer() {
 
 grpc_error_handle grpc_call_create(grpc_call_create_args* args,
                                    grpc_call** out_call) {
-  return grpc_core::FilterStackCall::Create(args, out_call);
+  auto* channel_stack = args->channel->channel_stack();
+  auto* event_engine = args->channel->event_engine();
+  auto channel = std::move(args->channel);
+  return grpc_core::FilterStackCall::Create(
+      args, std::move(channel), channel_stack, event_engine, out_call);
 }
 
 grpc_call* grpc_call_from_top_element(grpc_call_element* surface_element) {
