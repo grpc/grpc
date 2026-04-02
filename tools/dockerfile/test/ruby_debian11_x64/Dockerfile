@@ -109,8 +109,8 @@ RUN /bin/bash -l -c "gem install bundler --no-document"
 RUN ln -s /bin/mkdir /usr/bin/mkdir
 
 #=================
-# Use cmake 3.25 from archived debian 11 backports
-# should only be used for images based on debian 11
+# Use cmake 3.25 from archived debian 11 (bullseye) backports.
+# Note that this should only be used for images based on debian 11.
 
 RUN echo "deb http://archive.debian.org/debian bullseye-backports main" >> /etc/apt/sources.list
 

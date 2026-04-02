@@ -88,8 +88,8 @@ RUN python3 -m pip install --upgrade google-auth==1.23.0 google-api-python-clien
 
 
 #=================
-# Use cmake 3.25 from archived debian 11 backports
-# should only be used for images based on debian 11
+# Use cmake 3.25 from archived debian 11 (bullseye) backports.
+# Note that this should only be used for images based on debian 11.
 
 RUN echo "deb http://archive.debian.org/debian bullseye-backports main" >> /etc/apt/sources.list
 
