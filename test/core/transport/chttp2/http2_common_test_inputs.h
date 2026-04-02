@@ -190,8 +190,8 @@ class Http2TransportTest : public util::testing::TransportTest {
 
     // Verify it looks like a PING frame.
     // Construct a PING frame with opaque=0 and compare the frame header.
-    auto expect_slice = helper_.EventEngineSliceFromHttp2PingFrame(
-        /*ack=*/is_ack, /*opaque=*/0);
+    transport::testing::EventEngineSlice expect_slice =
+        helper_.SerializedPingFrame(/*ack=*/is_ack, /*opaque=*/0);
     char expect_buffer[kFrameHeaderSize + 1] = {};
     SliceBuffer sb;
     sb.Append(Slice(grpc_slice_copy(expect_slice.c_slice())));
@@ -200,7 +200,7 @@ class Http2TransportTest : public util::testing::TransportTest {
               absl::string_view(expect_buffer, kFrameHeaderSize));
 
     // Extract Opaque ID from payload
-    auto mutable_slice = buffer.JoinIntoSlice().TakeMutable();
+    MutableSlice mutable_slice = buffer.JoinIntoSlice().TakeMutable();
     uint8_t* opaque_id_ptr = mutable_slice.data();
     return Read8b(opaque_id_ptr + kFrameHeaderSize);
   }

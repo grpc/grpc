@@ -88,7 +88,7 @@ def create_jobspec(
     return jobspec
 
 
-class CSharpDistribTest(object):
+class CSharpDistribTest:
     """Tests C# NuGet package"""
 
     def __init__(
@@ -160,7 +160,7 @@ class CSharpDistribTest(object):
         return self.name
 
 
-class PythonDistribTest(object):
+class PythonDistribTest:
     """Tests Python package"""
 
     def __init__(
@@ -224,7 +224,7 @@ class PythonDistribTest(object):
         return self.name
 
 
-class RubyDistribTest(object):
+class RubyDistribTest:
     """Tests Ruby package"""
 
     def __init__(
@@ -303,7 +303,7 @@ class RubyDistribTest(object):
         return self.name
 
 
-class PHP8DistribTest(object):
+class PHP8DistribTest:
     """Tests PHP8 package"""
 
     def __init__(self, platform, arch, docker_suffix=None, presubmit=False):
@@ -346,7 +346,7 @@ class PHP8DistribTest(object):
         return self.name
 
 
-class CppDistribTest(object):
+class CppDistribTest:
     """Tests Cpp make install by building examples."""
 
     def __init__(

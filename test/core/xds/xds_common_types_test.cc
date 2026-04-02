@@ -1206,18 +1206,31 @@ TEST_F(ParseXdsGrpcServiceTest, InvalidHeaderKeyAndValue) {
   auto* header_value = grpc_service.add_initial_metadata();
   header_value->set_key("Foo");
   header_value->set_value("\x1f");
+  header_value = grpc_service.add_initial_metadata();
+  header_value->set_key("host");
+  header_value->set_value("x");
+  header_value = grpc_service.add_initial_metadata();
+  header_value->set_key(":path");
+  header_value->set_value("x");
+  header_value = grpc_service.add_initial_metadata();
+  header_value->set_key("grpc-foo");
+  header_value->set_value("x");
   auto* google_grpc = grpc_service.mutable_google_grpc();
   google_grpc->set_target_uri("dns:server.example.com");
   google_grpc->add_channel_credentials_plugin()->PackFrom(
       envoy::extensions::grpc_service::channel_credentials::insecure::v3::
           InsecureCredentials());
   auto xds_grpc_service = Parse(grpc_service);
-  EXPECT_EQ(xds_grpc_service.status(),
-            absl::InvalidArgumentError("validation failed: ["
-                                       "field:initial_metadata[0].key "
-                                       "error:Illegal header key; "
-                                       "field:initial_metadata[0].value "
-                                       "error:Illegal header value]"));
+  EXPECT_EQ(
+      xds_grpc_service.status(),
+      absl::InvalidArgumentError(
+          "validation failed: ["
+          "field:initial_metadata[0].key error:Illegal header key; "
+          "field:initial_metadata[0].value error:Illegal header value; "
+          "field:initial_metadata[1].key error:header \"host\" not allowed; "
+          "field:initial_metadata[2].key error:header \":path\" not allowed; "
+          "field:initial_metadata[3].key "
+          "error:header \"grpc-foo\" not allowed]"));
 }
 
 TEST_F(ParseXdsGrpcServiceTest, RawHeaderValueForBinaryHeader) {
@@ -1445,6 +1458,17 @@ TEST(HeaderMutationRulesTest, DisallowExpressionOverridesAllowExpression) {
   // "stuff" matches neither. Should be disallowed (because allow_expression is
   // set).
   EXPECT_FALSE(rules.IsMutationAllowed("stuff"));
+}
+
+TEST(HeaderMutationRulesTest, SomeHeadersNeverAllowed) {
+  HeaderMutationRules rules;
+  rules.allow_expression = std::make_unique<RE2>(".*");
+  EXPECT_TRUE(rules.IsMutationAllowed("foo"));
+  EXPECT_TRUE(rules.IsMutationAllowed("bar"));
+  // Still does not allow certain headers.
+  EXPECT_FALSE(rules.IsMutationAllowed("host"));
+  EXPECT_FALSE(rules.IsMutationAllowed(":path"));
+  EXPECT_FALSE(rules.IsMutationAllowed("grpc-foo"));
 }
 
 }  // namespace

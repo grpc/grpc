@@ -21,29 +21,35 @@
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/util/shared_bit_gen.h"
+#include "src/core/util/string.h"
 #include "src/core/xds/grpc/xds_http_filter.h"
 #include "src/core/xds/grpc/xds_matcher_context.h"
 #include "absl/random/random.h"
 #include "absl/strings/str_cat.h"
-#include "absl/strings/str_join.h"
 
 namespace grpc_core {
 
 std::string CompositeFilter::ExecuteFilterAction::ToString() const {
-  std::vector<std::string> filters;
+  std::string result = "ExecuteFilterAction{filter_chain=[";
+  bool is_first = true;
   for (const auto& [_, config] : filter_chain_) {
-    filters.push_back(
-        config == nullptr
-            ? "<null>"
-            : absl::StrCat(config->type().name(), "=", config->ToString()));
+    if (!is_first) StrAppend(result, ", ");
+    if (config == nullptr) {
+      StrAppend(result, "<null>");
+    } else {
+      StrAppend(result, config->type().name());
+      StrAppend(result, "=");
+      StrAppend(result, config->ToString());
+    }
+    is_first = false;
   }
-  std::vector<std::string> parts;
-  parts.push_back(
-      absl::StrCat("filter_chain=[", absl::StrJoin(filters, ", "), "]"));
+  StrAppend(result, "]");
   if (sample_per_million_ < 1000000) {
-    parts.push_back(absl::StrCat("sample_per_million=", sample_per_million_));
+    StrAppend(result, ", sample_per_million=");
+    StrAppend(result, absl::StrCat(sample_per_million_));
   }
-  return absl::StrCat("ExecuteFilterAction{", absl::StrJoin(parts, ", "), "}");
+  StrAppend(result, "}");
+  return result;
 }
 
 const grpc_channel_filter CompositeFilter::kFilterVtable =

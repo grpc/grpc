@@ -21,7 +21,7 @@
 
 Pod::Spec.new do |s|
   s.name     = 'gRPC-Core'
-  version = '1.79.0-dev'
+  version = '1.81.0-dev'
   s.version  = version
   s.summary  = 'Core cross-platform gRPC library, written in C'
   s.homepage = 'https://grpc.io'
@@ -121,6 +121,7 @@ Pod::Spec.new do |s|
                       'include/grpc/byte_buffer_reader.h',
                       'include/grpc/census.h',
                       'include/grpc/compression.h',
+                      'include/grpc/context_types.h',
                       'include/grpc/create_channel_from_endpoint.h',
                       'include/grpc/credentials.h',
                       'include/grpc/credentials_cpp.h',
@@ -204,7 +205,7 @@ Pod::Spec.new do |s|
     ss.libraries = 'z'
     ss.dependency "#{s.name}/Interface", version
     ss.dependency "#{s.name}/Privacy", version
-    ss.dependency 'BoringSSL-GRPC', '0.0.41'
+    ss.dependency 'BoringSSL-GRPC', '0.0.42'
     ss.dependency 'abseil/algorithm/container', abseil_version
     ss.dependency 'abseil/base/base', abseil_version
     ss.dependency 'abseil/base/config', abseil_version
@@ -1993,6 +1994,7 @@ Pod::Spec.new do |s|
                       'src/core/load_balancing/weighted_target/weighted_target.cc',
                       'src/core/load_balancing/weighted_target/weighted_target.h',
                       'src/core/load_balancing/xds/cds.cc',
+                      'src/core/load_balancing/xds/cds.h',
                       'src/core/load_balancing/xds/xds_channel_args.h',
                       'src/core/load_balancing/xds/xds_cluster_impl.cc',
                       'src/core/load_balancing/xds/xds_cluster_manager.cc',
@@ -2536,6 +2538,7 @@ Pod::Spec.new do |s|
                       'third_party/upb/upb/mini_table/sub.h',
                       'third_party/upb/upb/port/atomic.h',
                       'third_party/upb/upb/port/def.inc',
+                      'third_party/upb/upb/port/sanitizers.h',
                       'third_party/upb/upb/port/undef.inc',
                       'third_party/upb/upb/port/vsnprintf_compat.h',
                       'third_party/upb/upb/reflection/common.h',
@@ -2597,18 +2600,22 @@ Pod::Spec.new do |s|
                       'third_party/upb/upb/text/options.h',
                       'third_party/upb/upb/wire/decode.c',
                       'third_party/upb/upb/wire/decode.h',
+                      'third_party/upb/upb/wire/decode_fast/combinations.h',
+                      'third_party/upb/upb/wire/decode_fast/data.h',
+                      'third_party/upb/upb/wire/decode_fast/select.c',
+                      'third_party/upb/upb/wire/decode_fast/select.h',
                       'third_party/upb/upb/wire/encode.c',
                       'third_party/upb/upb/wire/encode.h',
                       'third_party/upb/upb/wire/eps_copy_input_stream.c',
                       'third_party/upb/upb/wire/eps_copy_input_stream.h',
                       'third_party/upb/upb/wire/internal/constants.h',
-                      'third_party/upb/upb/wire/internal/decode_fast.c',
-                      'third_party/upb/upb/wire/internal/decode_fast.h',
+                      'third_party/upb/upb/wire/internal/decoder.c',
                       'third_party/upb/upb/wire/internal/decoder.h',
                       'third_party/upb/upb/wire/internal/reader.h',
                       'third_party/upb/upb/wire/reader.c',
                       'third_party/upb/upb/wire/reader.h',
                       'third_party/upb/upb/wire/types.h',
+                      'third_party/upb/upb/wire/writer.h',
                       'third_party/utf8_range/utf8_range.c',
                       'third_party/utf8_range/utf8_range.h',
                       'third_party/utf8_range/utf8_range_neon.inc',
@@ -3632,6 +3639,7 @@ Pod::Spec.new do |s|
                               'src/core/load_balancing/subchannel_interface.h',
                               'src/core/load_balancing/weighted_round_robin/static_stride_scheduler.h',
                               'src/core/load_balancing/weighted_target/weighted_target.h',
+                              'src/core/load_balancing/xds/cds.h',
                               'src/core/load_balancing/xds/xds_channel_args.h',
                               'src/core/load_balancing/xds/xds_override_host.h',
                               'src/core/net/socket_mutator.h',
@@ -3931,6 +3939,7 @@ Pod::Spec.new do |s|
                               'third_party/upb/upb/mini_table/sub.h',
                               'third_party/upb/upb/port/atomic.h',
                               'third_party/upb/upb/port/def.inc',
+                              'third_party/upb/upb/port/sanitizers.h',
                               'third_party/upb/upb/port/undef.inc',
                               'third_party/upb/upb/port/vsnprintf_compat.h',
                               'third_party/upb/upb/reflection/common.h',
@@ -3972,14 +3981,17 @@ Pod::Spec.new do |s|
                               'third_party/upb/upb/text/internal/encode.h',
                               'third_party/upb/upb/text/options.h',
                               'third_party/upb/upb/wire/decode.h',
+                              'third_party/upb/upb/wire/decode_fast/combinations.h',
+                              'third_party/upb/upb/wire/decode_fast/data.h',
+                              'third_party/upb/upb/wire/decode_fast/select.h',
                               'third_party/upb/upb/wire/encode.h',
                               'third_party/upb/upb/wire/eps_copy_input_stream.h',
                               'third_party/upb/upb/wire/internal/constants.h',
-                              'third_party/upb/upb/wire/internal/decode_fast.h',
                               'third_party/upb/upb/wire/internal/decoder.h',
                               'third_party/upb/upb/wire/internal/reader.h',
                               'third_party/upb/upb/wire/reader.h',
                               'third_party/upb/upb/wire/types.h',
+                              'third_party/upb/upb/wire/writer.h',
                               'third_party/utf8_range/utf8_range.h',
                               'third_party/utf8_range/utf8_range_neon.inc',
                               'third_party/utf8_range/utf8_range_sse.inc',

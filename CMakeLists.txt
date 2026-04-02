@@ -25,11 +25,11 @@
 cmake_minimum_required(VERSION 3.16)
 
 set(PACKAGE_NAME          "grpc")
-set(PACKAGE_VERSION       "1.79.0-dev")
+set(PACKAGE_VERSION       "1.81.0-dev")
 set(gRPC_CORE_VERSION     "53.0.0")
 set(gRPC_CORE_SOVERSION   "53")
-set(gRPC_CPP_VERSION      "1.79.0-dev")
-set(gRPC_CPP_SOVERSION    "1.79")
+set(gRPC_CPP_VERSION      "1.81.0-dev")
+set(gRPC_CPP_SOVERSION    "1.81")
 set(PACKAGE_STRING        "${PACKAGE_NAME} ${PACKAGE_VERSION}")
 set(PACKAGE_TARNAME       "${PACKAGE_NAME}-${PACKAGE_VERSION}")
 set(PACKAGE_BUGREPORT     "https://github.com/grpc/grpc/issues/")
@@ -1341,6 +1341,7 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx call_utils_test)
   add_dependencies(buildtests_cxx cancel_ares_query_test)
   add_dependencies(buildtests_cxx cancel_callback_test)
+  add_dependencies(buildtests_cxx cds_test)
   add_dependencies(buildtests_cxx cel_authorization_engine_test)
   add_dependencies(buildtests_cxx certificate_provider_registry_test)
   add_dependencies(buildtests_cxx certificate_provider_store_test)
@@ -1469,9 +1470,6 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx factory_test)
   add_dependencies(buildtests_cxx fake_resolver_test)
   add_dependencies(buildtests_cxx fake_transport_security_test)
-  if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
-    add_dependencies(buildtests_cxx fd_conservation_posix_test)
-  endif()
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     add_dependencies(buildtests_cxx fd_posix_test)
   endif()
@@ -1831,8 +1829,14 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx tcp_socket_utils_test)
   add_dependencies(buildtests_cxx test_core_credentials_transport_ssl_ssl_credentials_test)
   add_dependencies(buildtests_cxx test_core_credentials_transport_tls_tls_credentials_test)
+  if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
+    add_dependencies(buildtests_cxx test_core_event_engine_posix_fd_conservation_posix_test)
+  endif()
   add_dependencies(buildtests_cxx test_core_event_engine_posix_timer_heap_test)
   add_dependencies(buildtests_cxx test_core_event_engine_slice_buffer_test)
+  if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
+    add_dependencies(buildtests_cxx test_core_iomgr_fd_conservation_posix_test)
+  endif()
   add_dependencies(buildtests_cxx test_core_iomgr_timer_heap_test)
   add_dependencies(buildtests_cxx test_core_slice_slice_buffer_test)
   add_dependencies(buildtests_cxx test_core_slice_slice_test)
@@ -3195,6 +3199,7 @@ foreach(_hdr
   include/grpc/byte_buffer_reader.h
   include/grpc/census.h
   include/grpc/compression.h
+  include/grpc/context_types.h
   include/grpc/create_channel_from_endpoint.h
   include/grpc/credentials.h
   include/grpc/credentials_cpp.h
@@ -3931,6 +3936,7 @@ foreach(_hdr
   include/grpc/byte_buffer_reader.h
   include/grpc/census.h
   include/grpc/compression.h
+  include/grpc/context_types.h
   include/grpc/create_channel_from_endpoint.h
   include/grpc/credentials.h
   include/grpc/credentials_cpp.h
@@ -4082,6 +4088,9 @@ if(WIN32 AND MSVC)
   set_target_properties(upb_base_lib PROPERTIES COMPILE_PDB_NAME "upb_base_lib"
     COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
   )
+  target_compile_options(upb_base_lib PRIVATE
+    /Zc:preprocessor
+  )
   if(gRPC_INSTALL)
     install(FILES ${CMAKE_CURRENT_BINARY_DIR}/upb_base_lib.pdb
       DESTINATION ${gRPC_INSTALL_LIBDIR} OPTIONAL
@@ -4118,6 +4127,60 @@ if(gRPC_INSTALL)
 endif()
 
 
+add_library(upb_descriptor_lib
+  src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c
+)
+
+target_compile_features(upb_descriptor_lib PUBLIC cxx_std_17)
+
+set_target_properties(upb_descriptor_lib PROPERTIES
+  VERSION ${gRPC_CORE_VERSION}
+  SOVERSION ${gRPC_CORE_SOVERSION}
+)
+
+if(WIN32 AND MSVC)
+  set_target_properties(upb_descriptor_lib PROPERTIES COMPILE_PDB_NAME "upb_descriptor_lib"
+    COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
+  )
+  target_compile_options(upb_descriptor_lib PRIVATE
+    /Zc:preprocessor
+  )
+  if(gRPC_INSTALL)
+    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/upb_descriptor_lib.pdb
+      DESTINATION ${gRPC_INSTALL_LIBDIR} OPTIONAL
+    )
+  endif()
+endif()
+
+target_include_directories(upb_descriptor_lib
+  PUBLIC $<INSTALL_INTERFACE:${gRPC_INSTALL_INCLUDEDIR}> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+)
+target_link_libraries(upb_descriptor_lib
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+)
+
+
+
+if(gRPC_INSTALL)
+  install(TARGETS upb_descriptor_lib EXPORT gRPCTargets
+    RUNTIME DESTINATION ${gRPC_INSTALL_BINDIR}
+    BUNDLE DESTINATION  ${gRPC_INSTALL_BINDIR}
+    LIBRARY DESTINATION ${gRPC_INSTALL_LIBDIR}
+    ARCHIVE DESTINATION ${gRPC_INSTALL_LIBDIR}
+  )
+endif()
+
+
 add_library(upb_hash_lib
   third_party/upb/upb/hash/common.c
 )
@@ -4132,6 +4195,9 @@ set_target_properties(upb_hash_lib PROPERTIES
 if(WIN32 AND MSVC)
   set_target_properties(upb_hash_lib PROPERTIES COMPILE_PDB_NAME "upb_hash_lib"
     COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
+  )
+  target_compile_options(upb_hash_lib PRIVATE
+    /Zc:preprocessor
   )
   if(gRPC_INSTALL)
     install(FILES ${CMAKE_CURRENT_BINARY_DIR}/upb_hash_lib.pdb
@@ -4186,6 +4252,9 @@ set_target_properties(upb_json_lib PROPERTIES
 if(WIN32 AND MSVC)
   set_target_properties(upb_json_lib PROPERTIES COMPILE_PDB_NAME "upb_json_lib"
     COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
+  )
+  target_compile_options(upb_json_lib PRIVATE
+    /Zc:preprocessor
   )
   if(gRPC_INSTALL)
     install(FILES ${CMAKE_CURRENT_BINARY_DIR}/upb_json_lib.pdb
@@ -4243,6 +4312,9 @@ if(WIN32 AND MSVC)
   set_target_properties(upb_lex_lib PROPERTIES COMPILE_PDB_NAME "upb_lex_lib"
     COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
   )
+  target_compile_options(upb_lex_lib PRIVATE
+    /Zc:preprocessor
+  )
   if(gRPC_INSTALL)
     install(FILES ${CMAKE_CURRENT_BINARY_DIR}/upb_lex_lib.pdb
       DESTINATION ${gRPC_INSTALL_LIBDIR} OPTIONAL
@@ -4294,6 +4366,9 @@ set_target_properties(upb_mem_lib PROPERTIES
 if(WIN32 AND MSVC)
   set_target_properties(upb_mem_lib PROPERTIES COMPILE_PDB_NAME "upb_mem_lib"
     COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
+  )
+  target_compile_options(upb_mem_lib PRIVATE
+    /Zc:preprocessor
   )
   if(gRPC_INSTALL)
     install(FILES ${CMAKE_CURRENT_BINARY_DIR}/upb_mem_lib.pdb
@@ -4353,6 +4428,9 @@ if(WIN32 AND MSVC)
   set_target_properties(upb_message_lib PROPERTIES COMPILE_PDB_NAME "upb_message_lib"
     COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
   )
+  target_compile_options(upb_message_lib PRIVATE
+    /Zc:preprocessor
+  )
   if(gRPC_INSTALL)
     install(FILES ${CMAKE_CURRENT_BINARY_DIR}/upb_message_lib.pdb
       DESTINATION ${gRPC_INSTALL_LIBDIR} OPTIONAL
@@ -4396,6 +4474,9 @@ add_library(upb_mini_descriptor_lib
   third_party/upb/upb/mini_descriptor/internal/base92.c
   third_party/upb/upb/mini_descriptor/internal/encode.c
   third_party/upb/upb/mini_descriptor/link.c
+  third_party/upb/upb/wire/decode_fast/select.c
+  third_party/upb/upb/wire/eps_copy_input_stream.c
+  third_party/upb/upb/wire/reader.c
 )
 
 target_compile_features(upb_mini_descriptor_lib PUBLIC cxx_std_17)
@@ -4408,6 +4489,9 @@ set_target_properties(upb_mini_descriptor_lib PROPERTIES
 if(WIN32 AND MSVC)
   set_target_properties(upb_mini_descriptor_lib PROPERTIES COMPILE_PDB_NAME "upb_mini_descriptor_lib"
     COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
+  )
+  target_compile_options(upb_mini_descriptor_lib PRIVATE
+    /Zc:preprocessor
   )
   if(gRPC_INSTALL)
     install(FILES ${CMAKE_CURRENT_BINARY_DIR}/upb_mini_descriptor_lib.pdb
@@ -4432,6 +4516,7 @@ target_include_directories(upb_mini_descriptor_lib
 target_link_libraries(upb_mini_descriptor_lib
   ${_gRPC_ALLTARGETS_LIBRARIES}
   upb_mini_table_lib
+  absl::strings
 )
 
 
@@ -4462,6 +4547,9 @@ set_target_properties(upb_mini_table_lib PROPERTIES
 if(WIN32 AND MSVC)
   set_target_properties(upb_mini_table_lib PROPERTIES COMPILE_PDB_NAME "upb_mini_table_lib"
     COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
+  )
+  target_compile_options(upb_mini_table_lib PRIVATE
+    /Zc:preprocessor
   )
   if(gRPC_INSTALL)
     install(FILES ${CMAKE_CURRENT_BINARY_DIR}/upb_mini_table_lib.pdb
@@ -4501,7 +4589,6 @@ endif()
 
 
 add_library(upb_reflection_lib
-  src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c
   third_party/upb/upb/message/copy.c
   third_party/upb/upb/message/merge.c
   third_party/upb/upb/reflection/def_pool.c
@@ -4534,6 +4621,9 @@ if(WIN32 AND MSVC)
   set_target_properties(upb_reflection_lib PROPERTIES COMPILE_PDB_NAME "upb_reflection_lib"
     COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
   )
+  target_compile_options(upb_reflection_lib PRIVATE
+    /Zc:preprocessor
+  )
   if(gRPC_INSTALL)
     install(FILES ${CMAKE_CURRENT_BINARY_DIR}/upb_reflection_lib.pdb
       DESTINATION ${gRPC_INSTALL_LIBDIR} OPTIONAL
@@ -4557,6 +4647,7 @@ target_include_directories(upb_reflection_lib
 target_link_libraries(upb_reflection_lib
   ${_gRPC_ALLTARGETS_LIBRARIES}
   upb_mini_descriptor_lib
+  upb_descriptor_lib
   upb_wire_lib
 )
 
@@ -4587,6 +4678,9 @@ set_target_properties(upb_textformat_lib PROPERTIES
 if(WIN32 AND MSVC)
   set_target_properties(upb_textformat_lib PROPERTIES COMPILE_PDB_NAME "upb_textformat_lib"
     COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
+  )
+  target_compile_options(upb_textformat_lib PRIVATE
+    /Zc:preprocessor
   )
   if(gRPC_INSTALL)
     install(FILES ${CMAKE_CURRENT_BINARY_DIR}/upb_textformat_lib.pdb
@@ -4631,7 +4725,7 @@ add_library(upb_wire_lib
   third_party/upb/upb/wire/decode.c
   third_party/upb/upb/wire/encode.c
   third_party/upb/upb/wire/eps_copy_input_stream.c
-  third_party/upb/upb/wire/internal/decode_fast.c
+  third_party/upb/upb/wire/internal/decoder.c
   third_party/upb/upb/wire/reader.c
 )
 
@@ -4645,6 +4739,9 @@ set_target_properties(upb_wire_lib PROPERTIES
 if(WIN32 AND MSVC)
   set_target_properties(upb_wire_lib PROPERTIES COMPILE_PDB_NAME "upb_wire_lib"
     COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
+  )
+  target_compile_options(upb_wire_lib PRIVATE
+    /Zc:preprocessor
   )
   if(gRPC_INSTALL)
     install(FILES ${CMAKE_CURRENT_BINARY_DIR}/upb_wire_lib.pdb
@@ -4823,6 +4920,7 @@ endif()
 endif()
 
 add_library(grpc++
+  src/cpp/client/call_context_registry.cc
   src/cpp/client/call_credentials.cc
   src/cpp/client/channel_cc.cc
   src/cpp/client/channel_credentials.cc
@@ -5003,6 +5101,7 @@ foreach(_hdr
   include/grpc++/support/sync_stream.h
   include/grpc++/support/time.h
   include/grpcpp/alarm.h
+  include/grpcpp/call_context_types.h
   include/grpcpp/channel.h
   include/grpcpp/client_context.h
   include/grpcpp/completion_queue.h
@@ -5017,7 +5116,9 @@ foreach(_hdr
   include/grpcpp/generic/generic_stub_callback.h
   include/grpcpp/grpcpp.h
   include/grpcpp/health_check_service_interface.h
+  include/grpcpp/impl/allowed_call_context_types.h
   include/grpcpp/impl/call.h
+  include/grpcpp/impl/call_context_registry.h
   include/grpcpp/impl/call_op_set.h
   include/grpcpp/impl/call_op_set_interface.h
   include/grpcpp/impl/channel_argument_option.h
@@ -5574,6 +5675,7 @@ target_link_libraries(grpc++_test_util
 endif()
 
 add_library(grpc++_unsecure
+  src/cpp/client/call_context_registry.cc
   src/cpp/client/call_credentials.cc
   src/cpp/client/channel_cc.cc
   src/cpp/client/channel_credentials.cc
@@ -5745,6 +5847,7 @@ foreach(_hdr
   include/grpc++/support/sync_stream.h
   include/grpc++/support/time.h
   include/grpcpp/alarm.h
+  include/grpcpp/call_context_types.h
   include/grpcpp/channel.h
   include/grpcpp/client_context.h
   include/grpcpp/completion_queue.h
@@ -5759,7 +5862,9 @@ foreach(_hdr
   include/grpcpp/generic/generic_stub_callback.h
   include/grpcpp/grpcpp.h
   include/grpcpp/health_check_service_interface.h
+  include/grpcpp/impl/allowed_call_context_types.h
   include/grpcpp/impl/call.h
+  include/grpcpp/impl/call_context_registry.h
   include/grpcpp/impl/call_op_set.h
   include/grpcpp/impl/call_op_set_interface.h
   include/grpcpp/impl/channel_argument_option.h
@@ -6267,6 +6372,7 @@ foreach(_hdr
   include/grpc/byte_buffer.h
   include/grpc/byte_buffer_reader.h
   include/grpc/compression.h
+  include/grpc/context_types.h
   include/grpc/create_channel_from_endpoint.h
   include/grpc/credentials.h
   include/grpc/credentials_cpp.h
@@ -6408,7 +6514,6 @@ target_link_libraries(grpc_plugin_support
   absl::strings
   absl::synchronization
   absl::time
-  absl::optional
   absl::span
   absl::utility
   ${_gRPC_PROTOBUF_LIBRARIES}
@@ -10513,6 +10618,48 @@ target_link_libraries(cancel_callback_test
   absl::span
   absl::utility
   gpr
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
+add_executable(cds_test
+  test/core/load_balancing/cds_test.cc
+)
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(cds_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
+target_compile_features(cds_test PUBLIC cxx_std_17)
+target_include_directories(cds_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(cds_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  gtest
+  grpc_test_util
 )
 
 
@@ -17109,50 +17256,6 @@ target_link_libraries(fake_transport_security_test
 )
 
 
-endif()
-if(gRPC_BUILD_TESTS)
-if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
-
-  add_executable(fd_conservation_posix_test
-    test/core/iomgr/fd_conservation_posix_test.cc
-  )
-  if(WIN32 AND MSVC)
-    if(BUILD_SHARED_LIBS)
-      target_compile_definitions(fd_conservation_posix_test
-      PRIVATE
-        "GPR_DLL_IMPORTS"
-        "GRPC_DLL_IMPORTS"
-      )
-    endif()
-  endif()
-  target_compile_features(fd_conservation_posix_test PUBLIC cxx_std_17)
-  target_include_directories(fd_conservation_posix_test
-    PRIVATE
-      ${CMAKE_CURRENT_SOURCE_DIR}
-      ${CMAKE_CURRENT_SOURCE_DIR}/include
-      ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-      ${_gRPC_RE2_INCLUDE_DIR}
-      ${_gRPC_SSL_INCLUDE_DIR}
-      ${_gRPC_UPB_GENERATED_DIR}
-      ${_gRPC_UPB_GRPC_GENERATED_DIR}
-      ${_gRPC_UPB_INCLUDE_DIR}
-      ${_gRPC_XXHASH_INCLUDE_DIR}
-      ${_gRPC_ZLIB_INCLUDE_DIR}
-      third_party/googletest/googletest/include
-      third_party/googletest/googletest
-      third_party/googletest/googlemock/include
-      third_party/googletest/googlemock
-      ${_gRPC_PROTO_GENS_DIR}
-  )
-
-  target_link_libraries(fd_conservation_posix_test
-    ${_gRPC_ALLTARGETS_LIBRARIES}
-    gtest
-    grpc_test_util
-  )
-
-
-endif()
 endif()
 if(gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
@@ -31186,7 +31289,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(server_builder_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
-    grpc++
     grpc++_unsecure
     grpc_test_util_unsecure
   )
@@ -31261,7 +31363,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(server_builder_with_socket_mutator_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
-    grpc++
     grpc++_unsecure
     grpc_test_util_unsecure
   )
@@ -34262,6 +34363,50 @@ target_link_libraries(test_core_credentials_transport_tls_tls_credentials_test
 
 endif()
 if(gRPC_BUILD_TESTS)
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
+
+  add_executable(test_core_event_engine_posix_fd_conservation_posix_test
+    test/core/event_engine/posix/fd_conservation_posix_test.cc
+  )
+  if(WIN32 AND MSVC)
+    if(BUILD_SHARED_LIBS)
+      target_compile_definitions(test_core_event_engine_posix_fd_conservation_posix_test
+      PRIVATE
+        "GPR_DLL_IMPORTS"
+        "GRPC_DLL_IMPORTS"
+      )
+    endif()
+  endif()
+  target_compile_features(test_core_event_engine_posix_fd_conservation_posix_test PUBLIC cxx_std_17)
+  target_include_directories(test_core_event_engine_posix_fd_conservation_posix_test
+    PRIVATE
+      ${CMAKE_CURRENT_SOURCE_DIR}
+      ${CMAKE_CURRENT_SOURCE_DIR}/include
+      ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+      ${_gRPC_RE2_INCLUDE_DIR}
+      ${_gRPC_SSL_INCLUDE_DIR}
+      ${_gRPC_UPB_GENERATED_DIR}
+      ${_gRPC_UPB_GRPC_GENERATED_DIR}
+      ${_gRPC_UPB_INCLUDE_DIR}
+      ${_gRPC_XXHASH_INCLUDE_DIR}
+      ${_gRPC_ZLIB_INCLUDE_DIR}
+      third_party/googletest/googletest/include
+      third_party/googletest/googletest
+      third_party/googletest/googlemock/include
+      third_party/googletest/googlemock
+      ${_gRPC_PROTO_GENS_DIR}
+  )
+
+  target_link_libraries(test_core_event_engine_posix_fd_conservation_posix_test
+    ${_gRPC_ALLTARGETS_LIBRARIES}
+    gtest
+    grpc_test_util
+  )
+
+
+endif()
+endif()
+if(gRPC_BUILD_TESTS)
 
 add_executable(test_core_event_engine_posix_timer_heap_test
   src/core/channelz/channel_trace.cc
@@ -34492,6 +34637,50 @@ target_link_libraries(test_core_event_engine_slice_buffer_test
 )
 
 
+endif()
+if(gRPC_BUILD_TESTS)
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
+
+  add_executable(test_core_iomgr_fd_conservation_posix_test
+    test/core/iomgr/fd_conservation_posix_test.cc
+  )
+  if(WIN32 AND MSVC)
+    if(BUILD_SHARED_LIBS)
+      target_compile_definitions(test_core_iomgr_fd_conservation_posix_test
+      PRIVATE
+        "GPR_DLL_IMPORTS"
+        "GRPC_DLL_IMPORTS"
+      )
+    endif()
+  endif()
+  target_compile_features(test_core_iomgr_fd_conservation_posix_test PUBLIC cxx_std_17)
+  target_include_directories(test_core_iomgr_fd_conservation_posix_test
+    PRIVATE
+      ${CMAKE_CURRENT_SOURCE_DIR}
+      ${CMAKE_CURRENT_SOURCE_DIR}/include
+      ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+      ${_gRPC_RE2_INCLUDE_DIR}
+      ${_gRPC_SSL_INCLUDE_DIR}
+      ${_gRPC_UPB_GENERATED_DIR}
+      ${_gRPC_UPB_GRPC_GENERATED_DIR}
+      ${_gRPC_UPB_INCLUDE_DIR}
+      ${_gRPC_XXHASH_INCLUDE_DIR}
+      ${_gRPC_ZLIB_INCLUDE_DIR}
+      third_party/googletest/googletest/include
+      third_party/googletest/googletest
+      third_party/googletest/googlemock/include
+      third_party/googletest/googlemock
+      ${_gRPC_PROTO_GENS_DIR}
+  )
+
+  target_link_libraries(test_core_iomgr_fd_conservation_posix_test
+    ${_gRPC_ALLTARGETS_LIBRARIES}
+    gtest
+    grpc_test_util
+  )
+
+
+endif()
 endif()
 if(gRPC_BUILD_TESTS)
 
@@ -54595,7 +54784,7 @@ generate_pkgconfig(
   "absl_algorithm_container absl_any_invocable absl_base absl_bind_front absl_bits absl_btree absl_check absl_cleanup absl_config absl_cord absl_core_headers absl_flags absl_flags_marshalling absl_flat_hash_map absl_flat_hash_set absl_function_ref absl_hash absl_inlined_vector absl_log absl_log_globals absl_log_severity absl_memory absl_no_destructor absl_node_hash_map absl_optional absl_random_bit_gen_ref absl_random_distributions absl_random_random absl_span absl_status absl_statusor absl_str_format absl_string_view absl_strings absl_synchronization absl_time absl_type_traits absl_utility gpr"
   "libcares openssl re2 zlib"
   "-lgrpc"
-  "-laddress_sorting -lupb_textformat_lib -lupb_json_lib -lupb_reflection_lib -lupb_wire_lib -lupb_message_lib -lutf8_range_lib -lupb_mini_descriptor_lib -lupb_mini_table_lib -lupb_hash_lib -lupb_mem_lib -lupb_base_lib -lupb_lex_lib"
+  "-laddress_sorting -lupb_textformat_lib -lupb_json_lib -lupb_reflection_lib -lupb_wire_lib -lupb_message_lib -lutf8_range_lib -lupb_descriptor_lib -lupb_mini_descriptor_lib -lupb_mini_table_lib -lupb_hash_lib -lupb_mem_lib -lupb_base_lib -lupb_lex_lib"
   "grpc.pc")
 
 # grpc_unsecure .pc file
@@ -54606,7 +54795,7 @@ generate_pkgconfig(
   "absl_algorithm_container absl_any_invocable absl_base absl_bind_front absl_bits absl_btree absl_check absl_cleanup absl_config absl_cord absl_core_headers absl_flags absl_flags_marshalling absl_flat_hash_map absl_flat_hash_set absl_function_ref absl_hash absl_inlined_vector absl_log absl_log_globals absl_log_severity absl_memory absl_no_destructor absl_node_hash_map absl_optional absl_random_bit_gen_ref absl_random_distributions absl_random_random absl_span absl_status absl_statusor absl_str_format absl_string_view absl_strings absl_synchronization absl_time absl_type_traits absl_utility gpr"
   "libcares zlib"
   "-lgrpc_unsecure"
-  "-laddress_sorting -lupb_textformat_lib -lupb_reflection_lib -lupb_wire_lib -lupb_message_lib -lutf8_range_lib -lupb_mini_descriptor_lib -lupb_mini_table_lib -lupb_hash_lib -lupb_mem_lib -lupb_base_lib -lupb_lex_lib"
+  "-laddress_sorting -lupb_textformat_lib -lupb_reflection_lib -lupb_wire_lib -lupb_message_lib -lutf8_range_lib -lupb_descriptor_lib -lupb_mini_descriptor_lib -lupb_mini_table_lib -lupb_hash_lib -lupb_mem_lib -lupb_base_lib -lupb_lex_lib"
   "grpc_unsecure.pc")
 
 # grpc++ .pc file
@@ -54617,7 +54806,7 @@ generate_pkgconfig(
   "absl_absl_check absl_absl_log absl_algorithm_container absl_any_invocable absl_base absl_bind_front absl_bits absl_btree absl_check absl_cleanup absl_config absl_cord absl_core_headers absl_dynamic_annotations absl_flags absl_flags_marshalling absl_flat_hash_map absl_flat_hash_set absl_function_ref absl_hash absl_inlined_vector absl_layout absl_log absl_log_globals absl_log_severity absl_memory absl_no_destructor absl_node_hash_map absl_optional absl_prefetch absl_random_bit_gen_ref absl_random_distributions absl_random_random absl_span absl_status absl_statusor absl_str_format absl_string_view absl_strings absl_strings_internal absl_synchronization absl_time absl_type_traits absl_utility gpr grpc"
   "libcares openssl re2 zlib"
   "-lgrpc++"
-  "-laddress_sorting -lupb_textformat_lib -lupb_json_lib -lupb_reflection_lib -lupb_wire_lib -lupb_message_lib -lutf8_range_lib -lupb_mini_descriptor_lib -lupb_mini_table_lib -lupb_hash_lib -lupb_mem_lib -lupb_base_lib -lupb_lex_lib"
+  "-laddress_sorting -lupb_textformat_lib -lupb_json_lib -lupb_reflection_lib -lupb_wire_lib -lupb_message_lib -lutf8_range_lib -lupb_descriptor_lib -lupb_mini_descriptor_lib -lupb_mini_table_lib -lupb_hash_lib -lupb_mem_lib -lupb_base_lib -lupb_lex_lib"
   "grpc++.pc")
 
 # grpc++_unsecure .pc file
@@ -54628,7 +54817,7 @@ generate_pkgconfig(
   "absl_absl_check absl_absl_log absl_algorithm_container absl_any_invocable absl_base absl_bind_front absl_bits absl_btree absl_check absl_cleanup absl_config absl_cord absl_core_headers absl_dynamic_annotations absl_flags absl_flags_marshalling absl_flat_hash_map absl_flat_hash_set absl_function_ref absl_hash absl_inlined_vector absl_layout absl_log absl_log_globals absl_log_severity absl_memory absl_no_destructor absl_node_hash_map absl_optional absl_prefetch absl_random_bit_gen_ref absl_random_distributions absl_random_random absl_span absl_status absl_statusor absl_str_format absl_string_view absl_strings absl_strings_internal absl_synchronization absl_time absl_type_traits absl_utility gpr grpc_unsecure"
   "libcares zlib"
   "-lgrpc++_unsecure"
-  "-laddress_sorting -lupb_textformat_lib -lupb_reflection_lib -lupb_wire_lib -lupb_message_lib -lutf8_range_lib -lupb_mini_descriptor_lib -lupb_mini_table_lib -lupb_hash_lib -lupb_mem_lib -lupb_base_lib -lupb_lex_lib"
+  "-laddress_sorting -lupb_textformat_lib -lupb_reflection_lib -lupb_wire_lib -lupb_message_lib -lutf8_range_lib -lupb_descriptor_lib -lupb_mini_descriptor_lib -lupb_mini_table_lib -lupb_hash_lib -lupb_mem_lib -lupb_base_lib -lupb_lex_lib"
   "grpc++_unsecure.pc")
 
 if(gRPC_BUILD_GRPCPP_OTEL_PLUGIN)
@@ -54640,6 +54829,6 @@ if(gRPC_BUILD_GRPCPP_OTEL_PLUGIN)
     "absl_absl_check absl_absl_log absl_algorithm_container absl_any_invocable absl_base absl_bind_front absl_bits absl_btree absl_check absl_cleanup absl_config absl_cord absl_core_headers absl_dynamic_annotations absl_flags absl_flags_marshalling absl_flat_hash_map absl_flat_hash_set absl_function_ref absl_hash absl_inlined_vector absl_layout absl_log absl_log_globals absl_log_severity absl_memory absl_no_destructor absl_node_hash_map absl_optional absl_prefetch absl_random_bit_gen_ref absl_random_distributions absl_random_random absl_span absl_status absl_statusor absl_str_format absl_string_view absl_strings absl_strings_internal absl_synchronization absl_time absl_type_traits absl_utility gpr grpc grpc++ opentelemetry_api"
     "libcares openssl re2 zlib"
     "-lgrpcpp_otel_plugin"
-    "-laddress_sorting -lupb_textformat_lib -lupb_json_lib -lupb_reflection_lib -lupb_wire_lib -lupb_message_lib -lutf8_range_lib -lupb_mini_descriptor_lib -lupb_mini_table_lib -lupb_hash_lib -lupb_mem_lib -lupb_base_lib -lupb_lex_lib"
+    "-laddress_sorting -lupb_textformat_lib -lupb_json_lib -lupb_reflection_lib -lupb_wire_lib -lupb_message_lib -lutf8_range_lib -lupb_descriptor_lib -lupb_mini_descriptor_lib -lupb_mini_table_lib -lupb_hash_lib -lupb_mem_lib -lupb_base_lib -lupb_lex_lib"
     "grpcpp_otel_plugin.pc")
 endif()

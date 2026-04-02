@@ -299,9 +299,10 @@ CC_FILES=[
     'third_party/protobuf/upb/text/internal/encode.c',
     'third_party/protobuf/upb/util/def_to_proto.c',
     'third_party/protobuf/upb/wire/decode.c',
+    'third_party/protobuf/upb/wire/decode_fast/select.c',
     'third_party/protobuf/upb/wire/encode.c',
     'third_party/protobuf/upb/wire/eps_copy_input_stream.c',
-    'third_party/protobuf/upb/wire/internal/decode_fast.c',
+    'third_party/protobuf/upb/wire/internal/decoder.c',
     'third_party/protobuf/upb/wire/reader.c'
 ]
 

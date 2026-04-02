@@ -23,6 +23,7 @@ load(
     "grpc_clang_cl_settings",
     "grpc_filegroup",
     "grpc_generate_one_off_targets",
+    "grpc_ios_toolchains",
     "grpc_upb_proto_library",
     "grpc_upb_proto_reflection_library",
     "python_config_settings",
@@ -106,6 +107,10 @@ config_setting(
 )
 
 grpc_clang_cl_settings()
+
+grpc_ios_toolchains(
+    name = "python_3_11_ios_sim_arm64_workaround",
+)
 
 config_setting(
     name = "grpc_no_rls_flag",
@@ -275,11 +280,11 @@ config_setting(
 python_config_settings()
 
 # This should be updated along with build_handwritten.yaml
-g_stands_for = "glimmering"  # @unused
+g_stands_for = "graphic"  # @unused
 
 core_version = "53.0.0"  # @unused
 
-version = "1.79.0-dev"  # @unused
+version = "1.81.0-dev"  # @unused
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
@@ -322,6 +327,7 @@ GRPC_PUBLIC_HDRS = [
     "include/grpc/byte_buffer.h",
     "include/grpc/byte_buffer_reader.h",
     "include/grpc/compression.h",
+    "include/grpc/context_types.h",
     "include/grpc/create_channel_from_endpoint.h",
     "include/grpc/fork.h",
     "include/grpc/grpc.h",
@@ -366,6 +372,7 @@ GRPC_PUBLIC_EVENT_ENGINE_HDRS = [
 ]
 
 GRPCXX_SRCS = [
+    "src/cpp/client/call_context_registry.cc",
     "src/cpp/client/call_credentials.cc",
     "src/cpp/client/channel_cc.cc",
     "src/cpp/client/channel_credentials.cc",
@@ -470,6 +477,9 @@ GRPCXX_PUBLIC_HDRS = [
     "include/grpcpp/generic/generic_stub_callback.h",
     "include/grpcpp/grpcpp.h",
     "include/grpcpp/health_check_service_interface.h",
+    "include/grpcpp/impl/allowed_call_context_types.h",
+    "include/grpcpp/impl/call_context_registry.h",
+    "include/grpcpp/call_context_types.h",
     "include/grpcpp/impl/call_op_set_interface.h",
     "include/grpcpp/impl/call_op_set.h",
     "include/grpcpp/impl/call.h",
@@ -1932,6 +1942,7 @@ grpc_cc_library(
         "//src/core:iomgr_fwd",
         "//src/core:map",
         "//src/core:metadata_batch",
+        "//src/core:metrics",
         "//src/core:per_cpu",
         "//src/core:pipe",
         "//src/core:poll",
@@ -2684,6 +2695,7 @@ grpc_cc_library(
         "//src/core:json_reader",
         "//src/core:load_file",
         "//src/core:match",
+        "//src/core:no_destruct",
         "//src/core:ref_counted",
         "//src/core:resource_quota",
         "//src/core:slice",
@@ -2692,6 +2704,7 @@ grpc_cc_library(
         "//src/core:socket_mutator",
         "//src/core:status_helper",
         "//src/core:sync",
+        "//src/core:telemetry_label",
         "//src/core:thread_quota",
         "//src/core:time",
         "//src/core:useful",
@@ -2770,11 +2783,13 @@ grpc_cc_library(
         "//src/core:grpc_service_config",
         "//src/core:grpc_transport_chttp2_server",
         "//src/core:grpc_transport_inproc",
+        "//src/core:no_destruct",
         "//src/core:ref_counted",
         "//src/core:resource_quota",
         "//src/core:slice",
         "//src/core:socket_mutator",
         "//src/core:sync",
+        "//src/core:telemetry_label",
         "//src/core:thread_quota",
         "//src/core:time",
         "//src/core:useful",

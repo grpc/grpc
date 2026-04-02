@@ -1019,6 +1019,7 @@ grpc_cc_library(
     deps = [
         "promise_like",
         "//:gpr_platform",
+        "//:promise",
     ],
 )
 
@@ -1863,6 +1864,18 @@ grpc_cc_library(
         "memory_quota",
         "resource_quota",
         "//:gpr",
+    ],
+)
+
+grpc_cc_library(
+    name = "telemetry_label",
+    hdrs = [
+        "telemetry/telemetry_label.h",
+    ],
+    deps = [
+        "arena",
+        "//:gpr",
+        "//:grpc_public_hdrs",
     ],
 )
 
@@ -5757,6 +5770,7 @@ grpc_cc_library(
         "xds_http_filter",
         "xds_matcher",
         "xds_matcher_context",
+        "//:gpr",
         "//:grpc_base",
         "//:ref_counted_ptr",
     ],
@@ -6430,6 +6444,7 @@ grpc_cc_library(
         "match",
         "trie_lookup",
         "unique_type_name",
+        "//:gpr",
     ],
 )
 
@@ -6908,6 +6923,9 @@ grpc_cc_library(
     srcs = [
         "load_balancing/xds/cds.cc",
     ],
+    hdrs = [
+        "load_balancing/xds/cds.h",
+    ],
     external_deps = [
         "absl/log",
         "absl/status",
@@ -6936,6 +6954,7 @@ grpc_cc_library(
         "unique_type_name",
         "xds_cluster",
         "xds_common_types",
+        "xds_config",
         "xds_dependency_manager",
         "xds_health_status",
         "//:config",
@@ -7210,7 +7229,6 @@ grpc_cc_library(
         "channel_args",
         "delegating_helper",
         "down_cast",
-        "experiments",
         "grpc_check",
         "grpc_lb_policy_pick_first",
         "json",
@@ -8561,8 +8579,16 @@ grpc_cc_library(
         "grpc_check",
         "grpc_promise_endpoint",
         "slice",
+        ":header_assembler",
+        ":http2_status",
+        ":http2_transport",
         ":metadata_info",
+        ":ph2_stream",
+        ":slice_buffer",
         "//:chttp2_frame",
+        "//:debug_location",
+        "//:gpr_platform",
+        "//:hpack_parser",
     ],
 )
 
@@ -8810,6 +8836,7 @@ grpc_cc_library(
         "ref_counted",
         "resource_quota",
         "sleep",
+        "status_flag",
         "stream_data_queue",
         "sync",
         "time",
@@ -10879,6 +10906,7 @@ grpc_cc_library(
         "sync",
         "time",
         "//:call_tracer",
+        "//:channel_arg_names",
         "//:gpr",
     ],
 )

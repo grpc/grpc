@@ -22,14 +22,10 @@ static const upb_MiniTableField xds_annotations_v3_MigrateAnnotation__fields[1] 
 const upb_MiniTable xds__annotations__v3__MigrateAnnotation_msg_init = {
   NULL,
   &xds_annotations_v3_MigrateAnnotation__fields[0],
-  UPB_SIZE(16, 24), 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(8), 0,
+  UPB_SIZE(16, 24), 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "xds.annotations.v3.MigrateAnnotation",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x000800003f00000a, &upb_pss_1bt},
-  })
 };
 
 const upb_MiniTable* xds__annotations__v3__MigrateAnnotation_msg_init_ptr = &xds__annotations__v3__MigrateAnnotation_msg_init;
@@ -41,16 +37,10 @@ static const upb_MiniTableField xds_annotations_v3_FieldMigrateAnnotation__field
 const upb_MiniTable xds__annotations__v3__FieldMigrateAnnotation_msg_init = {
   NULL,
   &xds_annotations_v3_FieldMigrateAnnotation__fields[0],
-  UPB_SIZE(24, 40), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
+  UPB_SIZE(24, 40), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "xds.annotations.v3.FieldMigrateAnnotation",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x000800003f00000a, &upb_pss_1bt},
-    {0x001800003f000012, &upb_pss_1bt},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-  })
 };
 
 const upb_MiniTable* xds__annotations__v3__FieldMigrateAnnotation_msg_init_ptr = &xds__annotations__v3__FieldMigrateAnnotation_msg_init;
@@ -61,16 +51,10 @@ static const upb_MiniTableField xds_annotations_v3_FileMigrateAnnotation__fields
 const upb_MiniTable xds__annotations__v3__FileMigrateAnnotation_msg_init = {
   NULL,
   &xds_annotations_v3_FileMigrateAnnotation__fields[0],
-  UPB_SIZE(16, 24), 1, kUpb_ExtMode_NonExtendable, 0, UPB_FASTTABLE_MASK(24), 0,
+  UPB_SIZE(16, 24), 1, kUpb_ExtMode_NonExtendable, 0, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "xds.annotations.v3.FileMigrateAnnotation",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x000800003f000012, &upb_pss_1bt},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-  })
 };
 
 const upb_MiniTable* xds__annotations__v3__FileMigrateAnnotation_msg_init_ptr = &xds__annotations__v3__FileMigrateAnnotation_msg_init;

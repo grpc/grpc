@@ -37,7 +37,7 @@ PROTO_STEM = os.path.join(PYTHON_REL_PATH, "src", "proto")
 PYTHON_PROTO_TOP_LEVEL = os.path.join(PYTHON_REL_PATH, "src")
 
 
-class CommandError(object):
+class CommandError:
     pass
 
 
@@ -172,7 +172,7 @@ class TestAio(setuptools.Command):
             sys.exit("Test failure")
 
 
-class RunInterop(test.test):
+class RunInterop(setuptools.Command):
     description = "run interop test client/server"
     user_options = [
         ("args=", None, "pass-thru arguments for the client/server"),
@@ -225,7 +225,7 @@ class RunInterop(test.test):
         client.test_interoperability(client.parse_interop_client_args(sys.argv))
 
 
-class RunFork(test.test):
+class RunFork(setuptools.Command):
     description = "run fork test client"
     user_options = [("args=", "a", "pass-thru arguments for the client")]
 

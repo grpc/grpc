@@ -387,6 +387,7 @@ grpc_cc_test(
     deps = [
         "//:config",
         "//:envoy_extensions_transport_sockets_tls_upb",
+        "//:envoy_type_upb",
         "//:gpr",
         "//:grpc",
         "//:grpc_trace",
@@ -538,6 +539,7 @@ grpc_cc_test(
         "//:grpc_trace",
         "//:ref_counted_ptr",
         "//:xds_client",
+        "//src/core:composite_filter",
         "//src/core:error",
         "//src/core:gcp_authentication_filter",
         "//src/core:grpc_check",
