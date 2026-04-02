@@ -3874,6 +3874,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/container:flat_hash_map",
+        "absl/log",
         "absl/random",
         "absl/status:statusor",
         "absl/strings",
@@ -3885,6 +3886,7 @@ grpc_cc_library(
         "channel_args",
         "context",
         "down_cast",
+        "try_join",
         "filter_args",
         "for_each",
         "if",
@@ -3899,6 +3901,7 @@ grpc_cc_library(
         "xds_common_types",
         "xds_http_filter",
         "//:grpc_base",
+        "//:grpc_trace",
         "//:ref_counted_ptr",
     ],
 )
@@ -12064,5 +12067,7 @@ grpc_cc_library(
         "//:ref_counted_ptr",
     ],
 )
+
+grpc_generate_one_off_internal_targets()
 
 grpc_generate_one_off_internal_targets()

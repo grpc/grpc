@@ -147,6 +147,9 @@ event_engine_poller:
 fault_injection_filter:
   default: false
   description: Fault injection.
+ext_proc_filter:
+  default: false
+  description: External processing filter.
 fd_refcount:
   debug_only: true
   default: false

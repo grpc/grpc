@@ -78,6 +78,7 @@ extern TraceFlag event_engine_endpoint_trace;
 extern TraceFlag event_engine_endpoint_data_trace;
 extern TraceFlag event_engine_poller_trace;
 extern TraceFlag fault_injection_filter_trace;
+extern TraceFlag ext_proc_filter_trace;
 extern TraceFlag flowctl_trace;
 extern TraceFlag fork_trace;
 extern TraceFlag fuzzing_ee_timers_trace;
