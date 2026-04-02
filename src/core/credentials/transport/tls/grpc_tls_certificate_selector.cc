@@ -59,7 +59,8 @@ CertificateSelector::CreateSelectCertResult(
       [&](absl::string_view*) {
         // TODO(lwge): Support processing DER private key.
         status = absl::UnimplementedError(
-            "DER-format private key string is not supported.");
+            "CertificateSelector::CreateSelectCertResult does not support "
+            "DER-formatted private keys.");
       },
       [&](std::shared_ptr<PrivateKeySigner>* key_signer) {
         result.private_key = *key_signer;
@@ -70,7 +71,8 @@ CertificateSelector::CreateSelectCertResult(
   return result;
 #else
   return absl::FailedPreconditionError(
-      "Select cert result creation is not supported.");
+      "Select cert result creation is not supported with non-BoringSSL "
+      "builds.");
 #endif
 }
 
@@ -125,7 +127,8 @@ CertificateSelector::CreateSelectCertResult(
   return result;
 #else
   return absl::FailedPreconditionError(
-      "Select cert result creation is not supported");
+      "Select cert result creation is not supported with non-BoringSSL "
+      "builds.");
 #endif
 }
 

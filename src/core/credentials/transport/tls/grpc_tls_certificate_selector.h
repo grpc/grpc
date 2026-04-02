@@ -20,7 +20,7 @@
 
 #include <grpc/private_key_signer.h>
 #include <openssl/bio.h>
-#include <openssl/ssl.h>
+#include <openssl/base.h>
 
 #include <memory>
 #include <string>

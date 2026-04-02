@@ -301,7 +301,7 @@ typedef struct tsi_ssl_server_handshaker_factory
 tsi_result tsi_create_ssl_server_handshaker_factory(
     std::variant<std::vector<tsi_ssl_pem_key_cert_pair>,
                  std::shared_ptr<grpc_core::CertificateSelector>>
-        pem_key_cert,
+        pem_key_cert_pairs,
     const char* pem_client_root_certs, int force_client_auth,
     const char* cipher_suites, const char** alpn_protocols,
     uint16_t num_alpn_protocols, tsi_ssl_server_handshaker_factory** factory);
@@ -324,7 +324,9 @@ tsi_result tsi_create_ssl_server_handshaker_factory_ex(
 
 struct tsi_ssl_server_handshaker_options {
   // pem_key_cert_pairs is an array private key / certificate chains of the
-  // server, or a certificate selector.
+  // server, or a certificate selector. The array of key / certificate chains is
+  // to support SNI. The certificate selector will be in charge of this. So they
+  // are mutually exclusive.
   std::variant<std::vector<tsi_ssl_pem_key_cert_pair>,
                std::shared_ptr<grpc_core::CertificateSelector>>
       pem_key_cert_pairs;

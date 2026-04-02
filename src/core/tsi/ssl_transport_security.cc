@@ -524,7 +524,7 @@ absl::Status ProcessSelectCertResult(
   grpc_core::Match(
       result.private_key,
       [&](const bssl::UniquePtr<EVP_PKEY>& key) {
-        VLOG(2) << "Select cert result returns a static private key.";
+        VLOG(2) << "Select cert result returned a static private key.";
         if (!SSL_set_chain_and_key(handshaker->ssl, cert_chain.data(),
                                    cert_chain.size(), key.get(),
                                    /*privkey_method=*/nullptr)) {
@@ -536,7 +536,7 @@ absl::Status ProcessSelectCertResult(
       },
       [&](std::shared_ptr<grpc_core::PrivateKeySigner> signer)
           ABSL_NO_THREAD_SAFETY_ANALYSIS {
-            VLOG(2) << "Select cert result returns a private key signer.";
+            VLOG(2) << "Select cert result returned a private key signer.";
             handshaker->key_signer = std::move(signer);
             if (!SSL_set_chain_and_key(
                     handshaker->ssl, cert_chain.data(), cert_chain.size(),
@@ -581,7 +581,8 @@ ssl_select_cert_result_t SelectCertificateCallback(
   tsi_ssl_handshaker* handshaker = GetHandshaker(client_hello->ssl);
   // Sanity check. Should never happen.
   if (handshaker == nullptr) {
-    LOG(ERROR) << "Handshaker is nullptr";
+    LOG(ERROR) << "SelectCertificateCallback failed because handshaker is "
+                  "nullptr; this should never happen.";
     return ssl_select_cert_error;
   }
   // The async cert selection is finished.
@@ -597,7 +598,8 @@ ssl_select_cert_result_t SelectCertificateCallback(
   }
   // Sanity check. Should never happen.
   if (handshaker->certificate_selector == nullptr) {
-    LOG(ERROR) << "Certificate selector is nullptr.";
+    LOG(ERROR) << "SelectCertificateCallback failed because "
+                  "certficate_selector is nullptr; this should never happen.";
     return ssl_select_cert_error;
   }
   std::variant<
@@ -611,23 +613,24 @@ ssl_select_cert_result_t SelectCertificateCallback(
   // absl thread safety analysis because the use of MatchMutable.
   grpc_core::Match(
       result,
-      [&](const absl::StatusOr<grpc_core::CertificateSelector::SelectCertResult>&
-              select_cert_result) ABSL_NO_THREAD_SAFETY_ANALYSIS {
-        if (!select_cert_result.ok()) {
-          LOG(INFO) << "Sync select cert failed: "
-                    << select_cert_result.status();
-          handshaker->MaybeSetError(select_cert_result.status().ToString());
-          ssl_select_cert_result = ssl_select_cert_error;
-          return;
-        }
-        absl::Status status = ProcessSelectCertResult(
-            handshaker, *select_cert_result);
-        if (!status.ok()) {
-          LOG(INFO) << "Sync select cert failed: " << status;
-          handshaker->MaybeSetError(status.ToString());
-          ssl_select_cert_result = ssl_select_cert_error;
-        }
-      },
+      [&](const absl::StatusOr<
+          grpc_core::CertificateSelector::SelectCertResult>& select_cert_result)
+          ABSL_NO_THREAD_SAFETY_ANALYSIS {
+            if (!select_cert_result.ok()) {
+              LOG(INFO) << "Sync select cert failed: "
+                        << select_cert_result.status();
+              handshaker->MaybeSetError(select_cert_result.status().ToString());
+              ssl_select_cert_result = ssl_select_cert_error;
+              return;
+            }
+            absl::Status status =
+                ProcessSelectCertResult(handshaker, *select_cert_result);
+            if (!status.ok()) {
+              LOG(INFO) << "Sync select cert failed: " << status;
+              handshaker->MaybeSetError(status.ToString());
+              ssl_select_cert_result = ssl_select_cert_error;
+            }
+          },
       [&](std::shared_ptr<
           grpc_core::CertificateSelector::AsyncCertSelectionHandle>
               async_handle) ABSL_NO_THREAD_SAFETY_ANALYSIS {

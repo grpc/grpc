@@ -59,12 +59,14 @@ class TlsCertificateSelectorTest : public ::testing::Test {
     std::vector<std::string> cert_chain;
     BIO* bio = BIO_new_mem_buf(pem_cert_chain.data(), pem_cert_chain.size());
     uint8_t* cert_data = nullptr;
-    long cert_len;
+    long cert_len = 0;
     while (PEM_bytes_read_bio(&cert_data, &cert_len, nullptr, PEM_STRING_X509,
                               bio, nullptr, nullptr)) {
       cert_chain.push_back(
           std::string(reinterpret_cast<char*>(cert_data), cert_len));
       OPENSSL_free(cert_data);
+      cert_data = nullptr;
+      cert_len = 0;
     }
     BIO_free(bio);
     return cert_chain;
