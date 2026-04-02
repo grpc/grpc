@@ -54,16 +54,16 @@ CertificateSelector::CreateSelectCertResult(
   }
   result.cert_chain = std::move(raw_cert_chain);
   absl::Status status = absl::OkStatus();
-  MatchMutable(
-      &private_key,
-      [&](absl::string_view*) {
+  Match(
+      private_key,
+      [&](absl::string_view) {
         // TODO(lwge): Support processing DER private key.
         status = absl::UnimplementedError(
             "CertificateSelector::CreateSelectCertResult does not support "
             "DER-formatted private keys.");
       },
-      [&](std::shared_ptr<PrivateKeySigner>* key_signer) {
-        result.private_key = *key_signer;
+      [&](std::shared_ptr<PrivateKeySigner> key_signer) {
+        result.private_key = std::move(key_signer);
       });
   if (!status.ok()) {
     return status;
@@ -100,12 +100,12 @@ CertificateSelector::CreateSelectCertResult(
   }
   result.cert_chain = std::move(raw_cert_chain);
   absl::Status status = absl::OkStatus();
-  MatchMutable(
-      &private_key,
-      [&](absl::string_view* key) {
-        GRPC_CHECK_LE(key->size(), static_cast<size_t>(INT_MAX));
+  Match(
+      private_key,
+      [&](absl::string_view key) {
+        GRPC_CHECK_LE(key.size(), static_cast<size_t>(INT_MAX));
         bssl::UniquePtr<BIO> pem(
-            BIO_new_mem_buf(key->data(), static_cast<int>(key->size())));
+            BIO_new_mem_buf(key.data(), static_cast<int>(key.size())));
         if (pem == nullptr) {
           status = absl::InvalidArgumentError("Failed to create pem BIO.");
           return;
@@ -118,8 +118,8 @@ CertificateSelector::CreateSelectCertResult(
         }
         result.private_key = std::move(pkey);
       },
-      [&](std::shared_ptr<PrivateKeySigner>* key_signer) {
-        result.private_key = *key_signer;
+      [&](std::shared_ptr<PrivateKeySigner> key_signer) {
+        result.private_key = std::move(key_signer);
       });
   if (!status.ok()) {
     return status;
