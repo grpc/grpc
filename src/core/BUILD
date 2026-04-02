@@ -6133,7 +6133,6 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/strings",
-        "absl/strings:str_format",
     ],
     tags = ["nofixdeps"],
     deps = [
@@ -6142,6 +6141,7 @@ grpc_cc_library(
         "match",
         "validation_errors",
         "xds_server_grpc",
+        "//:gpr",
     ],
 )
 
@@ -6182,7 +6182,6 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/strings",
-        "absl/strings:str_format",
         "re2",
     ],
     tags = ["nofixdeps"],
@@ -6191,6 +6190,7 @@ grpc_cc_library(
         "match",
         "time",
         "xds_http_filter",
+        "//:gpr",
         "//:grpc_base",
         "//:xds_client",
     ],
@@ -6206,7 +6206,6 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/strings",
-        "absl/strings:str_format",
     ],
     tags = ["nofixdeps"],
     deps = [
@@ -6217,6 +6216,7 @@ grpc_cc_library(
         "xds_common_types",
         "xds_http_filter",
         "xds_route_config",
+        "//:gpr",
         "//:sockaddr_utils",
         "//:xds_client",
     ],
@@ -6238,6 +6238,7 @@ grpc_cc_library(
     deps = [
         "envoy_config_core_upb",
         "//:endpoint_addresses",
+        "//:gpr",
     ],
 )
 
@@ -6281,6 +6282,7 @@ grpc_cc_library(
         "validation_errors",
         "xds_server_grpc_interface",
         "//:config",
+        "//:gpr",
         "//:ref_counted_ptr",
         "//:xds_client",
     ],
@@ -6305,6 +6307,7 @@ grpc_cc_library(
         "json",
         "json_writer",
         "validation_errors",
+        "//:gpr",
     ],
 )
 
@@ -6317,8 +6320,6 @@ grpc_cc_library(
         "xds/grpc/xds_cluster.h",
     ],
     external_deps = [
-        "absl/container:flat_hash_map",
-        "absl/strings",
     ],
     tags = ["nofixdeps"],
     deps = [
@@ -6332,6 +6333,7 @@ grpc_cc_library(
         "xds_health_status",
         "xds_metadata",
         "xds_server_grpc",
+        "//:gpr",
         "//:xds_client",
     ],
 )
@@ -6347,7 +6349,6 @@ grpc_cc_library(
     external_deps = [
         "absl/base:core_headers",
         "absl/random",
-        "absl/strings",
     ],
     tags = ["nofixdeps"],
     deps = [
