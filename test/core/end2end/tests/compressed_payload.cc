@@ -124,6 +124,31 @@ class TestConfigurator {
     EXPECT_EQ(s.method(), "/foo");
   }
 
+  void CompressedBitWithIdentityTest() {
+    Init();
+    auto c =
+        test_.NewClientCall("/foo").Timeout(Duration::Seconds(30)).Create();
+    IncomingStatusOnClient server_status;
+    IncomingMetadata server_initial_metadata;
+    c.NewBatch(1)
+        .SendInitialMetadata({})
+        .SendMessage(std::string(1024, 'x'), GRPC_WRITE_INTERNAL_COMPRESS)
+        .SendCloseFromClient()
+        .RecvInitialMetadata(server_initial_metadata)
+        .RecvStatusOnClient(server_status);
+    auto s = test_.RequestCall(100);
+    test_.Expect(100, true);
+    test_.Step();
+    IncomingMessage client_message;
+    s.NewBatch(101).RecvMessage(client_message);
+    test_.Expect(101, false);
+    test_.Expect(1, true);
+    test_.Step();
+    EXPECT_EQ(server_status.status(), GRPC_STATUS_INTERNAL);
+    EXPECT_EQ(server_status.message(),
+              "Compression bit set but no encoding configured");
+  }
+
   void RequestWithPayload(
       uint32_t client_send_flags_bitmask,
       std::initializer_list<std::pair<absl::string_view, absl::string_view>>
@@ -477,6 +502,10 @@ CORE_END2END_TEST(Http2SingleHopTests,
       .DecompressInApp()
       .ExpectedAlgorithmFromServer(GRPC_COMPRESS_NONE)
       .RequestWithPayload(0, {});
+}
+
+CORE_END2END_TEST(Http2SingleHopTests, CompressedBitWithIdentityFails) {
+  TestConfigurator(*this).CompressedBitWithIdentityTest();
 }
 
 }  // namespace
