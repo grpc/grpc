@@ -1821,8 +1821,7 @@ void Server::ChannelData::AcceptStream(void* arg, Transport* /*transport*/,
   args.pollset_set_alternative = nullptr;
   args.server_transport_data = transport_server_data;
   args.send_deadline = Timestamp::InfFuture();
-  args.context_elements = nullptr;
-  args.context_propagator = nullptr;
+  args.arena_init_function = [](Arena*) {};
   grpc_call* call;
   grpc_error_handle error = grpc_call_create(&args, &call);
   grpc_call_stack* call_stack = grpc_call_get_call_stack(call);

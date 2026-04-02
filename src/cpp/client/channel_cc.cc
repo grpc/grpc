@@ -131,18 +131,21 @@ grpc::internal::Call Channel::CreateCallInternal(
   if (kRegistered) {
     auto* rc =
         static_cast<grpc_core::Channel::RegisteredCall*>(method.channel_tag());
-    c_call = grpc_core::Channel::FromC(c_channel_)
-                 ->CreateCall(
-                     context->propagate_from_call_,
-                     context->propagation_options_.c_bitmask(), cq->cq(),
-                     nullptr, rc->path.Ref(),
-                     rc->authority.has_value()
-                         ? std::optional<grpc_core::Slice>(rc->authority->Ref())
-                         : std::nullopt,
-                     grpc_core::Timestamp::FromTimespecRoundUp(
-                         context->raw_deadline()),
-                     /*registered_method=*/true, &context->context_elements_,
-                     impl::CallContextRegistry::Propagate);
+    c_call =
+        grpc_core::Channel::FromC(c_channel_)
+            ->CreateCall(
+                context->propagate_from_call_,
+                context->propagation_options_.c_bitmask(), cq->cq(), nullptr,
+                rc->path.Ref(),
+                rc->authority.has_value()
+                    ? std::optional<grpc_core::Slice>(rc->authority->Ref())
+                    : std::nullopt,
+                grpc_core::Timestamp::FromTimespecRoundUp(
+                    context->raw_deadline()),
+                /*registered_method=*/true, [context](grpc_core::Arena* arena) {
+                  impl::CallContextRegistry::Propagate(
+                      context->context_elements_, arena);
+                });
   } else {
     const ::std::string* host_str = nullptr;
     if (!context->authority_.empty()) {
@@ -167,8 +170,11 @@ grpc::internal::Call Channel::CreateCallInternal(
                                           grpc_core::CSliceRef(host_slice)),
                 grpc_core::Timestamp::FromTimespecRoundUp(
                     context->raw_deadline()),
-                /*registered_method=*/false, &context->context_elements_,
-                impl::CallContextRegistry::Propagate);
+                /*registered_method=*/false,
+                [context](grpc_core::Arena* arena) {
+                  impl::CallContextRegistry::Propagate(
+                      context->context_elements_, arena);
+                });
     grpc_slice_unref(method_slice);
     if (host_str != nullptr) {
       grpc_slice_unref(host_slice);

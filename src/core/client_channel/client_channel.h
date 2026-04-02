@@ -71,14 +71,12 @@ class ClientChannel : public Channel {
 
   void Orphaned() override;
 
-  grpc_call* CreateCall(grpc_call* parent_call, uint32_t propagation_mask,
-                        grpc_completion_queue* cq,
-                        grpc_pollset_set* /*pollset_set_alternative*/,
-                        Slice path, std::optional<Slice> authority,
-                        Timestamp deadline, bool registered_method,
-                        void*** context_elements,
-                        void (*context_propagator)(void**& context_elements,
-                                                   Arena* arena)) override;
+  grpc_call* CreateCall(
+      grpc_call* parent_call, uint32_t propagation_mask,
+      grpc_completion_queue* cq, grpc_pollset_set* /*pollset_set_alternative*/,
+      Slice path, std::optional<Slice> authority, Timestamp deadline,
+      bool registered_method,
+      absl::FunctionRef<void(Arena*)> arena_init_function) override;
 
   void StartCall(UnstartedCallHandler unstarted_handler) override;
 

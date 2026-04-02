@@ -62,13 +62,13 @@ class DirectChannel final : public Channel {
                         grpc_completion_queue* cq,
                         grpc_pollset_set* pollset_set_alternative, Slice path,
                         std::optional<Slice> authority, Timestamp deadline,
-                        bool registered_method, void*** context_elements,
-                        void (*context_propagator)(void**& context_elements,
-                                                   Arena* arena)) override;
+                        bool registered_method, absl::FunctionRef<void(Arena*)>
+                                                   arena_init_function) override;
   grpc_event_engine::experimental::EventEngine* event_engine() const override {
     return event_engine_.get();
   }
-  bool SupportsConnectivityWatcher() const override { return false; }
+  bool SupportsConnectivityWatcher() const override {
+    return false; }
   grpc_connectivity_state CheckConnectivityState(bool) override {
     Crash("CheckConnectivityState not supported");
   }

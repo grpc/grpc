@@ -1680,7 +1680,8 @@ void RlsLb::RlsRequest::StartCallLocked() {
       /*parent_call=*/nullptr, GRPC_PROPAGATE_DEFAULTS, /*cq=*/nullptr,
       lb_policy_->interested_parties(),
       Slice::FromStaticString(kRlsRequestPath), /*authority=*/std::nullopt,
-      deadline_, /*registered_method=*/true, nullptr, nullptr);
+      deadline_, /*registered_method=*/true,
+      /*arena_init_function=*/[](Arena*) {});
   grpc_op ops[6];
   memset(ops, 0, sizeof(ops));
   grpc_op* op = ops;

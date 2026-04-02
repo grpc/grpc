@@ -112,7 +112,8 @@ grpc_call* grpc_channel_create_call(grpc_channel* channel,
           ? std::optional<grpc_core::Slice>(grpc_core::CSliceRef(*host))
           : std::nullopt,
       grpc_core::Timestamp::FromTimespecRoundUp(deadline),
-      /*registered_method=*/false, nullptr, nullptr);
+      /*registered_method=*/false,
+      /*arena_init_function=*/[](grpc_core::Arena*) {});
 }
 
 void* grpc_channel_register_call(grpc_channel* channel, const char* method,
@@ -148,7 +149,8 @@ grpc_call* grpc_channel_create_registered_call(
           ? std::optional<grpc_core::Slice>(rc->authority->Ref())
           : std::nullopt,
       grpc_core::Timestamp::FromTimespecRoundUp(deadline),
-      /*registered_method=*/true, nullptr, nullptr);
+      /*registered_method=*/true,
+      /*arena_init_function=*/[](grpc_core::Arena*) {});
 }
 
 char* grpc_channel_get_target(grpc_channel* channel) {
