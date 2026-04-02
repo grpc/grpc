@@ -56,45 +56,16 @@ namespace {
 constexpr absl::string_view kTestCredsRelativePath = "src/core/tsi/test_creds/";
 const char kServerName[] = "foo.test.google.fr";
 
-class HandshakeHintsClient {
- public:
-  HandshakeHintsClient(absl::string_view cert_chain,
-                       absl::string_view private_key) {
-    auto result = CertificateSelector::CreateSelectCertificateResult(
-        cert_chain, private_key);
-    CHECK_OK(result);
-    cert_chain_ = std::move(result->cert_chain);
-  }
-
-  static std::string GetHandshakeHints(const SSL& ssl) {
-    bssl::ScopedCBB hints;
-    CHECK(CBB_init(hints.get(), 256));
-    CHECK(SSL_serialize_handshake_hints(&ssl, hints.get()));
-
-    const uint8_t* data = CBB_data(hints.get());
-    const size_t size = CBB_len(hints.get());
-    return std::string(reinterpret_cast<const char*>(data), size);
-  }
-
-  absl::StatusOr<std::string> GenerateHandshakeHints() { return ""; }
-
- private:
-  bssl::UniquePtr<SSL_CTX> ssl_ctx;
-  std::vector<bssl::UniquePtr<CRYPTO_BUFFER>> cert_chain_;
-  bssl::UniquePtr<EVP_PKEY> key_;
-};
-
 class SyncTestCertificateSelector : public CertificateSelector {
  public:
   SyncTestCertificateSelector(
       absl::string_view cert_chain,
       std::variant<absl::string_view, std::shared_ptr<PrivateKeySigner>>
           private_key,
-      bool expect_success = true, bool support_handshake_hints = false)
+      bool expect_success = true)
       : cert_chain_(cert_chain),
         private_key_(std::move(private_key)),
-        expect_success_(expect_success),
-        support_handshake_hints_(support_handshake_hints) {}
+        expect_success_(expect_success) {}
 
   std::variant<absl::StatusOr<SelectCertificateResult>,
                std::shared_ptr<AsyncCertificateSelectionHandle>>
@@ -106,8 +77,6 @@ class SyncTestCertificateSelector : public CertificateSelector {
     absl::StatusOr<SelectCertificateResult> result =
         CreateSelectCertificateResult(cert_chain_, private_key_);
     CHECK_OK(result);
-    if (support_handshake_hints_) {
-    }
     return result;
   }
 
@@ -119,7 +88,6 @@ class SyncTestCertificateSelector : public CertificateSelector {
   std::variant<absl::string_view, std::shared_ptr<PrivateKeySigner>>
       private_key_;
   bool expect_success_;
-  bool support_handshake_hints_;
 };
 
 class AsyncTestCertificateSelector : public CertificateSelector {
