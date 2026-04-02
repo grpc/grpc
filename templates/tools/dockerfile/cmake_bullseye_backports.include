@@ -1,0 +1,8 @@
+#=================
+# Use cmake 3.25 from archived debian 11 backports
+# should only be used for images based on debian 11
+
+RUN echo "deb http://archive.debian.org/debian bullseye-backports main" >> /etc/apt/sources.list
+
+# Use -t for higher priority
+RUN apt-get update && apt-get install -t bullseye-backports -y cmake
