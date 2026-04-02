@@ -33,6 +33,8 @@ namespace testing {
 namespace {
 
 constexpr absl::string_view kTestCredsRelativePath = "src/core/tsi/test_creds/";
+constexpr absl::string_view kInvalidPemBlock =
+    "-----BEGIN CERTIFICATE-----\ninvalid\n-----END CERTIFICATE-----";
 
 template <typename T>
 absl::Status GetStatus(const absl::StatusOr<T>& s) {
@@ -76,46 +78,57 @@ class TlsCertificateSelectorTest : public ::testing::Test {
   std::string private_key_;
 };
 
-TEST_F(TlsCertificateSelectorTest, CreateSelectCertResultFromPemSuccess) {
-  ASSERT_OK(
-      CertificateSelector::CreateSelectCertResult(cert_chain_, private_key_));
+TEST_F(TlsCertificateSelectorTest,
+       CreateSelectCertificateResultFromPemSuccess) {
+  ASSERT_OK(CertificateSelector::CreateSelectCertificateResult(cert_chain_,
+                                                               private_key_));
 }
 
 TEST_F(TlsCertificateSelectorTest,
-       CreateSelectCertResultFromPemFailedWithEmptyChain) {
-  ASSERT_THAT(CertificateSelector::CreateSelectCertResult("", private_key_),
-              StatusIs(absl::StatusCode::kInvalidArgument));
-}
-
-TEST_F(TlsCertificateSelectorTest,
-       CreateSelectCertResultFromPemFailedWithInvalidChain) {
+       CreateSelectCertificateResultFromPemFailedWithEmptyChain) {
   ASSERT_THAT(
-      CertificateSelector::CreateSelectCertResult("invalid", private_key_),
+      CertificateSelector::CreateSelectCertificateResult("", private_key_),
       StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 TEST_F(TlsCertificateSelectorTest,
-       CreateSelectCertResultFromPemFailedWithEmptyKey) {
-  ASSERT_THAT(CertificateSelector::CreateSelectCertResult(cert_chain_, ""),
+       CreateSelectCertificateResultFromPemFailedWithInvalidChain) {
+  ASSERT_THAT(CertificateSelector::CreateSelectCertificateResult("invalid",
+                                                                 private_key_),
               StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 TEST_F(TlsCertificateSelectorTest,
-       CreateSelectCertResultFromPemFailedWithInvalidKey) {
+       CreateSelectCertificateResultFromPemFailedWithInvalidBlockInChain) {
+  ASSERT_THAT(CertificateSelector::CreateSelectCertificateResult(
+                  absl::StrCat("invalid\n", kInvalidPemBlock), private_key_),
+              StatusIs(absl::StatusCode::kInvalidArgument));
+}
+
+TEST_F(TlsCertificateSelectorTest,
+       CreateSelectCertificateResultFromPemFailedWithEmptyKey) {
   ASSERT_THAT(
-      CertificateSelector::CreateSelectCertResult(cert_chain_, "invalid"),
+      CertificateSelector::CreateSelectCertificateResult(cert_chain_, ""),
       StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
-TEST_F(TlsCertificateSelectorTest, CreateSelectCertResultFromDerSuccess) {
+TEST_F(TlsCertificateSelectorTest,
+       CreateSelectCertificateResultFromPemFailedWithInvalidKey) {
+  ASSERT_THAT(CertificateSelector::CreateSelectCertificateResult(cert_chain_,
+                                                                 "invalid"),
+              StatusIs(absl::StatusCode::kInvalidArgument));
+}
+
+TEST_F(TlsCertificateSelectorTest,
+       CreateSelectCertificateResultFromDerSuccess) {
   std::shared_ptr<PrivateKeySigner> signer;
-  ASSERT_OK(CertificateSelector::CreateSelectCertResult(
+  ASSERT_OK(CertificateSelector::CreateSelectCertificateResult(
       ConvertCertChainToDer(cert_chain_), signer));
 }
 
 TEST_F(TlsCertificateSelectorTest,
-       CreateSelectCertResultFromDerStaticKeyUnimplemented) {
-  ASSERT_THAT(CertificateSelector::CreateSelectCertResult(
+       CreateSelectCertificateResultFromDerStaticKeyUnimplemented) {
+  ASSERT_THAT(CertificateSelector::CreateSelectCertificateResult(
                   ConvertCertChainToDer(cert_chain_), "key"),
               StatusIs(absl::StatusCode::kUnimplemented));
 }

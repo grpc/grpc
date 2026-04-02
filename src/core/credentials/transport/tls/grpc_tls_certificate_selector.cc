@@ -34,13 +34,12 @@
 
 namespace grpc_core {
 
-absl::StatusOr<CertificateSelector::SelectCertResult>
-CertificateSelector::CreateSelectCertResult(
+absl::StatusOr<CertificateSelector::SelectCertificateResult>
+CertificateSelector::CreateSelectCertificateResult(
     const std::vector<std::string>& cert_chain,
     std::variant<absl::string_view, std::shared_ptr<PrivateKeySigner>>
         private_key) {
 #if defined(OPENSSL_IS_BORINGSSL)
-  CertificateSelector::SelectCertResult result;
   std::vector<bssl::UniquePtr<CRYPTO_BUFFER>> raw_cert_chain;
   raw_cert_chain.reserve(cert_chain.size());
   for (absl::string_view cert : cert_chain) {
@@ -52,6 +51,7 @@ CertificateSelector::CreateSelectCertResult(
     }
     raw_cert_chain.push_back(std::move(raw_cert));
   }
+  CertificateSelector::SelectCertificateResult result;
   result.cert_chain = std::move(raw_cert_chain);
   absl::Status status = absl::OkStatus();
   Match(
@@ -59,7 +59,8 @@ CertificateSelector::CreateSelectCertResult(
       [&](absl::string_view) {
         // TODO(lwge): Support processing DER private key.
         status = absl::UnimplementedError(
-            "CertificateSelector::CreateSelectCertResult does not support "
+            "CertificateSelector::CreateSelectCertificateResult does not "
+            "support "
             "DER-formatted private keys.");
       },
       [&](std::shared_ptr<PrivateKeySigner> key_signer) {
@@ -76,13 +77,12 @@ CertificateSelector::CreateSelectCertResult(
 #endif
 }
 
-absl::StatusOr<CertificateSelector::SelectCertResult>
-CertificateSelector::CreateSelectCertResult(
+absl::StatusOr<CertificateSelector::SelectCertificateResult>
+CertificateSelector::CreateSelectCertificateResult(
     absl::string_view cert_chain,
     std::variant<absl::string_view, std::shared_ptr<PrivateKeySigner>>
         private_key) {
 #if defined(OPENSSL_IS_BORINGSSL)
-  CertificateSelector::SelectCertResult result;
   std::vector<bssl::UniquePtr<CRYPTO_BUFFER>> raw_cert_chain;
   bssl::UniquePtr<BIO> bio(
       BIO_new_mem_buf(cert_chain.data(), cert_chain.size()));
@@ -98,6 +98,7 @@ CertificateSelector::CreateSelectCertResult(
   if (raw_cert_chain.empty()) {
     return absl::InvalidArgumentError("Failed to parse cert chain");
   }
+  CertificateSelector::SelectCertificateResult result;
   result.cert_chain = std::move(raw_cert_chain);
   absl::Status status = absl::OkStatus();
   Match(
