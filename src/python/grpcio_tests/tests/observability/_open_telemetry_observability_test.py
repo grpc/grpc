@@ -1096,6 +1096,75 @@ class OpenTelemetryObservabilityTest(unittest.TestCase):
             ),
         )
 
+        span_ids = {span.get_span_context().span_id for span in spans}
+
+        root_client_span = next(
+            s
+            for s in spans
+            if s.name.startswith("Sent.")
+            and not s.parent
+        )
+        self.assertIsNotNone(root_client_span, "Root client span not found")
+
+        attempt_span = next(
+            s
+            for s in spans 
+            if s.name.startswith("Attempt.")
+            and (
+                s.parent.span_id == root_client_span.get_span_context().span_id
+            )
+        )
+        self.assertIsNotNone(attempt_span, "Attempt span not found")
+
+        propagating_server_span = next(
+            s
+            for s in spans 
+            if s.name.startswith("Recv.")
+            and (
+                s.parent.span_id == attempt_span.get_span_context().span_id
+            )
+        )
+        self.assertIsNotNone(
+            propagating_server_span, "Propagating server span not found"
+        )
+
+        propagating_client_span = next(
+            s
+            for s in spans 
+            if s.name.startswith("Sent.")
+            and (
+                s.parent.span_id ==
+                propagating_server_span.get_span_context().span_id
+            )
+        )
+        self.assertIsNotNone(
+            propagating_client_span, "Propagating client span not found"
+        )
+
+        propagating_attempt_span = next(
+            s
+            for s in spans 
+            if s.name.startswith("Attempt.")
+            and (
+                s.parent.span_id ==
+                propagating_client_span.get_span_context().span_id
+            )
+        )
+        self.assertIsNotNone(
+            propagating_attempt_span, "Propagating attempt span not found"
+        )
+
+        server_span = next(
+            s
+            for s in spans 
+            if s.name.startswith("Recv.")
+            and (
+                s.parent.span_id ==
+                propagating_attempt_span.get_span_context().span_id
+            )
+        )
+        self.assertIsNotNone(server_span, "Server span not found")
+
     def assert_eventually(
         self,
         predicate: Callable[[], bool],

@@ -63,7 +63,6 @@ GRPC_METHOD_LABEL = "grpc.method"
 GRPC_TARGET_LABEL = "grpc.target"
 GRPC_CLIENT_METRIC_PREFIX = "grpc.client"
 GRPC_OTHER_LABEL_VALUE = "other"
-TRACEPARENT_VERSION_ID = "00"
 _observability_lock: threading.RLock = threading.RLock()
 _OPEN_TELEMETRY_OBSERVABILITY: Optional["OpenTelemetryObservability"] = None
 
@@ -220,24 +219,10 @@ class _OpenTelemetryPlugin:
         is_sampled: bool,
         context: Optional[otel_context.Context] = None,
     ) -> otel_context.Context:
-        """Builds new Otel context from trace_id, span_id and sampling flag."
-
-        Uses `TextMapPropagator` instance when configured, otherwise constructs
-        `SpanContext` directly.
-        """
-        if self._text_map_propagator:
-            # Header formatting as per https://www.w3.org/TR/trace-context/#traceparent-header
-            traceparent = (
-                f"{TRACEPARENT_VERSION_ID}-{trace_id}-{span_id}"
-                f"-{is_sampled:02x}"
-            )
-            return self._text_map_propagator.extract(
-                carrier={"traceparent": traceparent}, context=context
-            )
-
+        """Builds new Otel context from trace_id, span_id and sampling flag."""
         span_context = trace.SpanContext(
-            trace_id=int(trace_id, 16),
-            span_id=int(span_id, 16),
+            trace_id=int(trace_id, 16) if trace_id else 0,
+            span_id=int(span_id, 16) if span_id else 0,
             is_remote=True,
             trace_flags=trace.TraceFlags(
                 trace.TraceFlags.SAMPLED
@@ -564,11 +549,11 @@ class OpenTelemetryObservability(grpc._observability.ObservabilityPlugin):
     def _generate_ids(self) -> Tuple[bytes, bytes]:
         """Generates trace ID and parent span ID
 
-        If there is an active OpenTelemetry span in the current context, its
-        trace ID is propagated.
+        If there is an active OpenTelemetry span in the current context (e.g.
+        nested RPC), its trace ID and span ID are propagated.
 
-        If there is no active span but tracing is enabled, a new trace ID is
-        generated.
+        If there is no active span (e.g. new RPC) and the tracing is enabled,
+        a new trace ID is generated, leaving the parent span ID empty.
 
         If tracing is disabled, returns a dummy trace ID and an empty parent
         span ID.
@@ -582,13 +567,12 @@ class OpenTelemetryObservability(grpc._observability.ObservabilityPlugin):
             context=self._plugins[0].get_trace_context()
         ).get_span_context()
         if current_span.is_valid:
-            generator = sdk_trace.RandomIdGenerator()
             trace_id = f"{current_span.trace_id:032x}".encode()
-            parent_span_id = f"{generator.generate_span_id():016x}".encode()
+            parent_span_id = f"{current_span.span_id:016x}".encode()
         elif self._should_enable_tracing():
             generator = sdk_trace.RandomIdGenerator()
             trace_id = f"{generator.generate_trace_id():032x}".encode()
-            parent_span_id = f"{generator.generate_span_id():016x}".encode()
+            parent_span_id = b""
         else:
             trace_id = b"TRACE_ID"
             parent_span_id = b""
