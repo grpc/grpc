@@ -38,6 +38,7 @@ processing requests via debug logs. Available tracers include:
   - event_engine_endpoint_data - Detailed dump of EventEngine endpoint TCP data.
   - event_engine_poller - EventEngine Poller events.
   - fault_injection_filter - Fault injection.
+  - ext_proc_filter - External processing filter.
   - flowctl - Http2 flow control.
   - fork - Fork support.
   - glb - gRPClb load balancer.
