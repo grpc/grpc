@@ -4054,8 +4054,14 @@ TEST_F(ConnectionScalingTest, QueuedRpcsFailWhenLastConnectionCloses) {
   rpcs.emplace_back(StartLongRunningRpc(stub.get()));
   // Wait for the connection attempt to start.
   hold->Wait();
-  // Shut down the server, which closes the existing connection.
-  servers_[0]->Shutdown();
+  // Have the server send a GOAWAY, which tells the subchannel to drop
+  // the existing connection.  We do this instead of shutting down the
+  // server, so that we don't terminate any of the initial set of RPCs,
+  // because that would lead to a race condition: the subchannel could
+  // see those RPC failures before it sees the disconnection, in which
+  // case it would start one of the queued RPCs on the connection, which
+  // would cause the RPC to fail with the wrong status message.
+  servers_[0]->StopListeningAndSendGoaways();
   // The two queued RPCs should have failed.
   for (size_t i = kMaxConcurrentStreams; i < kMaxConcurrentStreams + 2; ++i) {
     auto& rpc = rpcs[i];

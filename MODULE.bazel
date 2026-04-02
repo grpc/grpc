@@ -14,13 +14,17 @@
 
 module(
     name = "grpc",
-    version = "1.79.0-dev",
+    version = "1.81.0-dev",
     compatibility_level = 1,
     repo_name = "com_github_grpc_grpc",
 )
 
 # Regular dependencies
 # ====================
+
+# Upgrade version of rules_swift to avoid an error in BCR CI of not
+# finding switfc.exe on Windows with bazel 7.
+bazel_dep(name = "rules_swift", version = "2.5.0")
 
 # -- Abseil library.
 # Pinning version to be consistent with third_party/abseil-cpp
@@ -30,7 +34,8 @@ single_version_override(
     version = "20250512.1",
 )
 
-bazel_dep(name = "apple_support", version = "1.17.1", repo_name = "build_bazel_apple_support")
+bazel_dep(name = "platforms", version = "1.0.0")
+bazel_dep(name = "apple_support", version = "1.19.0", repo_name = "build_bazel_apple_support")
 bazel_dep(name = "bazel_skylib", version = "1.8.1")
 bazel_dep(name = "boringssl", version = "0.20241024.0")  # mismatched 20241211
 bazel_dep(name = "c-ares", version = "1.19.1", repo_name = "com_github_cares_cares")
@@ -42,14 +47,12 @@ bazel_dep(name = "googletest", version = "1.17.0", repo_name = "com_google_googl
 bazel_dep(name = "opencensus-cpp", version = "0.0.0-20230502-50eb5de.bcr.2", repo_name = "io_opencensus_cpp")
 bazel_dep(name = "openssl", version = "3.3.1.bcr.1")
 bazel_dep(name = "opentelemetry-cpp", version = "1.19.0", repo_name = "io_opentelemetry_cpp")
-bazel_dep(name = "platforms", version = "0.0.11")
 
 # --- Protobuf related packages.
-# Pinning to 31.1 to avoid xDs breakage until we can upgrade to Protobuf >= 33.0
-bazel_dep(name = "protobuf", version = "31.1", repo_name = "com_google_protobuf")
+bazel_dep(name = "protobuf", version = "33.5", repo_name = "com_google_protobuf")
 single_version_override(
     module_name = "protobuf",
-    version = "31.1",
+    version = "33.5",
 )
 
 bazel_dep(name = "protoc-gen-validate", version = "1.2.1.bcr.1", repo_name = "com_envoyproxy_protoc_gen_validate")  # Not needed directly
@@ -96,6 +99,8 @@ bazel_dep(name = "yaml-cpp", version = "0.9.0", dev_dependency = True)
 
 bazel_dep(name = "rules_python", version = "1.6.3")
 
+DEFAULT_PYTHON_VERSION = "3.11"
+
 PYTHON_VERSIONS = [
     "3.9",
     "3.10",
@@ -105,15 +110,22 @@ PYTHON_VERSIONS = [
     "3.14",
 ]
 
+# TODO(weizheyuan): figure out how it interacts with protobuf 31
+# system_python().
+#
+# Mark 3.11 as defaults to be consistent with WORKSPACE.
+# See also https://rules-python.readthedocs.io/en/latest/api/rules_python/python/extensions/python.html#python.toolchain
 python = use_extension("@rules_python//python/extensions:python.bzl", "python")
+python.defaults(python_version = DEFAULT_PYTHON_VERSION)
 
 [
-    python.toolchain(
-        is_default = python_version == PYTHON_VERSIONS[-1],
-        python_version = python_version,
-    )
+    python.toolchain(python_version = python_version)
     for python_version in PYTHON_VERSIONS
 ]
+
+use_repo(python, "python_3_11_aarch64-apple-darwin")
+
+register_toolchains("//:python_3_11_ios_sim_arm64_workaround")
 
 pip = use_extension("@rules_python//python/extensions:pip.bzl", "pip")
 
@@ -133,7 +145,7 @@ bazel_dep(name = "cython", version = "3.0.11-1")
 http_archive = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
 http_archive(
-    name = "typing_extensions",
+    name = "grpc_typing_extensions",
     build_file = "//third_party:typing_extensions.BUILD",
     integrity = "sha256-v29Ws22LyRVuUY6xzDehRihAgvpTUiAz93Ku++z9Ffw=",
     strip_prefix = "typing_extensions-4.12.2",

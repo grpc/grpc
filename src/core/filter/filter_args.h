@@ -110,6 +110,10 @@ class FilterArgs {
     return blackboard_->Get<T>(key);
   }
 
+  // Do not use unless you know what you're doing -- prefer to use
+  // GetState() instead!
+  const Blackboard* blackboard() const { return blackboard_; }
+
  private:
   friend class ChannelFilter;
 

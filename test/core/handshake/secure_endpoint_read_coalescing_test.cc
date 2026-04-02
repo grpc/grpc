@@ -17,6 +17,7 @@
 //
 
 #include <grpc/event_engine/event_engine.h>
+#include <grpc/event_engine/internal/memory_allocator_impl.h>
 #include <grpc/event_engine/slice.h>
 #include <grpc/event_engine/slice_buffer.h>
 #include <grpc/grpc.h>
@@ -37,10 +38,13 @@
 #include "src/core/util/orphanable.h"
 #include "test/core/test_util/mock_endpoint.h"
 #include "test/core/test_util/test_config.h"
+#include "test/core/test_util/test_memory_allocator.h"
 #include "gtest/gtest.h"
-#include "absl/status/status.h"
+#include "absl/strings/match.h"
+#include "absl/strings/string_view.h"
 #include "absl/synchronization/notification.h"
 
+using ::grpc_core::testing::TestMemoryAllocatorFactory;
 using grpc_event_engine::experimental::EventEngine;
 using grpc_event_engine::experimental::MockEndpointController;
 
@@ -111,6 +115,72 @@ class SecureEndpointReadCoalescingTest : public ::testing::Test {
   tsi_frame_protector* fake_protector_for_encryption_;
   std::unique_ptr<EventEngine::Endpoint> secure_ep_;
 };
+
+TEST_F(SecureEndpointReadCoalescingTest, UsesMemoryAllocatorFactoryIfProvided) {
+  TestMemoryAllocatorFactory test_factory;
+
+  ChannelArgs args =
+      ChannelArgs()
+          .SetObject(ResourceQuota::Default())
+          .Set(GRPC_ARG_EVENT_ENGINE_USE_MEMORY_ALLOCATOR_FACTORY,
+               ChannelArgs::Pointer(
+                   &test_factory,
+                   ChannelArgTypeTraits<TestMemoryAllocatorFactory>::VTable()));
+
+  std::shared_ptr<MockEndpointController> custom_ctrl =
+      MockEndpointController::Create(engine_);
+
+  tsi_frame_protector* test_protector =
+      tsi_create_fake_frame_protector(nullptr);
+  grpc_endpoint* wrapped_mock_ep = custom_ctrl->TakeCEndpoint();
+
+  auto secure_ep_grpc = grpc_secure_endpoint_create(
+      test_protector, nullptr, OrphanablePtr<grpc_endpoint>(wrapped_mock_ep),
+      nullptr, 0, args);
+
+  auto secure_ep =
+      grpc_event_engine::experimental::grpc_take_wrapped_event_engine_endpoint(
+          secure_ep_grpc.release());
+
+  EXPECT_TRUE(test_factory.create_called());
+  EXPECT_TRUE(
+      absl::StartsWith(test_factory.last_requested_name(), "secure_endpoint-"));
+
+  // Verify that the endpoint actually works for basic read unprotection.
+  std::string pt1 = "hello world";
+  std::string ct1 = Protect(fake_protector_for_encryption_, pt1);
+
+  custom_ctrl->TriggerReadEvent(
+      grpc_event_engine::experimental::Slice::FromCopiedString(ct1));
+
+  grpc_event_engine::experimental::SliceBuffer read_buffer;
+  EventEngine::Endpoint::ReadArgs read_args;
+  read_args.set_read_hint_bytes(pt1.size());
+
+  absl::Notification read_done;
+  absl::Status read_status;
+  bool immediate = secure_ep->Read(
+      [&](absl::Status s) {
+        read_status = s;
+        read_done.Notify();
+      },
+      &read_buffer, read_args);
+
+  if (!immediate) read_done.WaitForNotification();
+
+  EXPECT_TRUE(read_status.ok());
+  std::string result;
+  for (size_t i = 0; i < read_buffer.Count(); ++i) {
+    result.append(std::string(read_buffer.RefSlice(i).as_string_view()));
+  }
+  EXPECT_EQ(result, pt1);
+
+  // Read coalescing should have allocated user facing buffers using our
+  // test allocator impl.
+  EXPECT_NE(test_factory.last_created_impl(), nullptr);
+  EXPECT_EQ(test_factory.last_created_impl()->total_bytes_reserved(),
+            pt1.size());
+}
 
 TEST_F(SecureEndpointReadCoalescingTest, ReadCoalescingSatisfiesHint) {
   std::string pt1 = "hello ";

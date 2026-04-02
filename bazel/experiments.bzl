@@ -36,6 +36,7 @@ EXPERIMENT_ENABLES = {
     "fail_recv_metadata_on_deadline_exceeded": "fail_recv_metadata_on_deadline_exceeded",
     "free_large_allocator": "free_large_allocator",
     "fuse_filters": "fuse_filters",
+    "h2_max_deallocating_streams_headroom": "h2_max_deallocating_streams_headroom",
     "keep_alive_ping_timer_batch": "keep_alive_ping_timer_batch",
     "local_connector_secure": "local_connector_secure",
     "max_inflight_pings_strict_limit": "max_inflight_pings_strict_limit",
@@ -54,7 +55,6 @@ EXPERIMENT_ENABLES = {
     "promise_filter_send_cancel_metadata": "promise_filter_send_cancel_metadata",
     "retry_in_callv3": "retry_in_callv3",
     "return_preexisting_errors": "return_preexisting_errors",
-    "rr_wrr_connect_from_random_index": "rr_wrr_connect_from_random_index",
     "schedule_cancellation_over_write": "schedule_cancellation_over_write",
     "secure_endpoint_offload_large_reads": "event_engine_client,event_engine_listener,secure_endpoint_offload_large_reads",
     "secure_endpoint_offload_large_writes": "event_engine_client,event_engine_listener,secure_endpoint_offload_large_writes",
@@ -95,7 +95,6 @@ EXPERIMENTS = {
             "core_end2end_test": [
                 "buffer_list_deletion_prep",
                 "chaotic_good_send_supported_features",
-                "error_flatten",
                 "local_connector_secure",
                 "otel_export_telemetry_domains",
                 "pipelined_read_secure_endpoint",
@@ -111,9 +110,7 @@ EXPERIMENTS = {
                 "wildcard_ip_expansion_restriction",
             ],
             "cpp_end2end_test": [
-                "error_flatten",
                 "promise_based_http2_client_transport",
-                "subchannel_wrapper_cleanup_on_orphan",
             ],
             "cpp_lb_end2end_test": [
                 "subchannel_connection_scaling",
@@ -121,9 +118,6 @@ EXPERIMENTS = {
             "endpoint_test": [
                 "tcp_frame_size_tuning",
                 "tcp_rcv_lowat",
-            ],
-            "error_tests": [
-                "error_flatten",
             ],
             "flow_control_test": [
                 "multiping",
@@ -146,10 +140,6 @@ EXPERIMENTS = {
             "secure_endpoint_test": [
                 "pipelined_read_secure_endpoint",
             ],
-            "xds_end2end_test": [
-                "error_flatten",
-                "subchannel_wrapper_cleanup_on_orphan",
-            ],
         },
         "on": {
             "cancel_ares_query_test": [
@@ -158,15 +148,22 @@ EXPERIMENTS = {
             "core_end2end_test": [
                 "chaotic_good_connect_deadline",
                 "chaotic_good_framing_layer",
+                "error_flatten",
                 "event_engine_client",
                 "event_engine_dns_non_client_channel",
                 "event_engine_for_all_other_endpoints",
                 "event_engine_fork",
                 "event_engine_listener",
             ],
+            "cpp_end2end_test": [
+                "error_flatten",
+                "subchannel_wrapper_cleanup_on_orphan",
+            ],
             "cpp_lb_end2end_test": [
                 "pick_first_ready_to_connecting",
-                "rr_wrr_connect_from_random_index",
+            ],
+            "error_tests": [
+                "error_flatten",
             ],
             "event_engine_client_test": [
                 "event_engine_client",
@@ -179,7 +176,6 @@ EXPERIMENTS = {
             ],
             "lb_unit_test": [
                 "pick_first_ready_to_connecting",
-                "rr_wrr_connect_from_random_index",
             ],
             "promise_test": [
                 "sleep_use_non_owning_waker",
@@ -188,6 +184,8 @@ EXPERIMENTS = {
                 "event_engine_dns",
             ],
             "xds_end2end_test": [
+                "error_flatten",
+                "subchannel_wrapper_cleanup_on_orphan",
                 "xds_channel_filter_chain_per_route",
             ],
             "xds_test": [
@@ -205,7 +203,6 @@ EXPERIMENTS = {
             "core_end2end_test": [
                 "buffer_list_deletion_prep",
                 "chaotic_good_send_supported_features",
-                "error_flatten",
                 "local_connector_secure",
                 "otel_export_telemetry_domains",
                 "pipelined_read_secure_endpoint",
@@ -221,9 +218,7 @@ EXPERIMENTS = {
                 "wildcard_ip_expansion_restriction",
             ],
             "cpp_end2end_test": [
-                "error_flatten",
                 "promise_based_http2_client_transport",
-                "subchannel_wrapper_cleanup_on_orphan",
             ],
             "cpp_lb_end2end_test": [
                 "subchannel_connection_scaling",
@@ -231,9 +226,6 @@ EXPERIMENTS = {
             "endpoint_test": [
                 "tcp_frame_size_tuning",
                 "tcp_rcv_lowat",
-            ],
-            "error_tests": [
-                "error_flatten",
             ],
             "flow_control_test": [
                 "multiping",
@@ -256,10 +248,6 @@ EXPERIMENTS = {
             "secure_endpoint_test": [
                 "pipelined_read_secure_endpoint",
             ],
-            "xds_end2end_test": [
-                "error_flatten",
-                "subchannel_wrapper_cleanup_on_orphan",
-            ],
         },
         "on": {
             "cancel_ares_query_test": [
@@ -268,15 +256,22 @@ EXPERIMENTS = {
             "core_end2end_test": [
                 "chaotic_good_connect_deadline",
                 "chaotic_good_framing_layer",
+                "error_flatten",
                 "event_engine_client",
                 "event_engine_dns_non_client_channel",
                 "event_engine_for_all_other_endpoints",
                 "event_engine_fork",
                 "event_engine_listener",
             ],
+            "cpp_end2end_test": [
+                "error_flatten",
+                "subchannel_wrapper_cleanup_on_orphan",
+            ],
             "cpp_lb_end2end_test": [
                 "pick_first_ready_to_connecting",
-                "rr_wrr_connect_from_random_index",
+            ],
+            "error_tests": [
+                "error_flatten",
             ],
             "event_engine_client_test": [
                 "event_engine_client",
@@ -289,7 +284,6 @@ EXPERIMENTS = {
             ],
             "lb_unit_test": [
                 "pick_first_ready_to_connecting",
-                "rr_wrr_connect_from_random_index",
             ],
             "promise_test": [
                 "sleep_use_non_owning_waker",
@@ -298,6 +292,8 @@ EXPERIMENTS = {
                 "event_engine_dns",
             ],
             "xds_end2end_test": [
+                "error_flatten",
+                "subchannel_wrapper_cleanup_on_orphan",
                 "xds_channel_filter_chain_per_route",
             ],
             "xds_test": [
@@ -315,7 +311,6 @@ EXPERIMENTS = {
             "core_end2end_test": [
                 "buffer_list_deletion_prep",
                 "chaotic_good_send_supported_features",
-                "error_flatten",
                 "local_connector_secure",
                 "otel_export_telemetry_domains",
                 "pipelined_read_secure_endpoint",
@@ -331,9 +326,7 @@ EXPERIMENTS = {
                 "wildcard_ip_expansion_restriction",
             ],
             "cpp_end2end_test": [
-                "error_flatten",
                 "promise_based_http2_client_transport",
-                "subchannel_wrapper_cleanup_on_orphan",
             ],
             "cpp_lb_end2end_test": [
                 "subchannel_connection_scaling",
@@ -341,9 +334,6 @@ EXPERIMENTS = {
             "endpoint_test": [
                 "tcp_frame_size_tuning",
                 "tcp_rcv_lowat",
-            ],
-            "error_tests": [
-                "error_flatten",
             ],
             "flow_control_test": [
                 "multiping",
@@ -366,10 +356,6 @@ EXPERIMENTS = {
             "secure_endpoint_test": [
                 "pipelined_read_secure_endpoint",
             ],
-            "xds_end2end_test": [
-                "error_flatten",
-                "subchannel_wrapper_cleanup_on_orphan",
-            ],
         },
         "on": {
             "cancel_ares_query_test": [
@@ -378,15 +364,22 @@ EXPERIMENTS = {
             "core_end2end_test": [
                 "chaotic_good_connect_deadline",
                 "chaotic_good_framing_layer",
+                "error_flatten",
                 "event_engine_client",
                 "event_engine_dns_non_client_channel",
                 "event_engine_for_all_other_endpoints",
                 "event_engine_fork",
                 "event_engine_listener",
             ],
+            "cpp_end2end_test": [
+                "error_flatten",
+                "subchannel_wrapper_cleanup_on_orphan",
+            ],
             "cpp_lb_end2end_test": [
                 "pick_first_ready_to_connecting",
-                "rr_wrr_connect_from_random_index",
+            ],
+            "error_tests": [
+                "error_flatten",
             ],
             "event_engine_client_test": [
                 "event_engine_client",
@@ -399,7 +392,6 @@ EXPERIMENTS = {
             ],
             "lb_unit_test": [
                 "pick_first_ready_to_connecting",
-                "rr_wrr_connect_from_random_index",
             ],
             "promise_test": [
                 "sleep_use_non_owning_waker",
@@ -408,6 +400,8 @@ EXPERIMENTS = {
                 "event_engine_dns",
             ],
             "xds_end2end_test": [
+                "error_flatten",
+                "subchannel_wrapper_cleanup_on_orphan",
                 "xds_channel_filter_chain_per_route",
             ],
             "xds_test": [
