@@ -21,6 +21,7 @@
 
 #include <cstdint>
 #include <string>
+#include <type_traits>
 
 #include "src/core/channelz/channelz.h"
 #include "src/core/ext/transport/chttp2/transport/flow_control.h"
@@ -32,6 +33,7 @@
 #include "src/core/ext/transport/chttp2/transport/write_cycle.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/poll.h"
+#include "src/core/lib/slice/slice.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "absl/log/log.h"
 #include "absl/status/status.h"
@@ -115,6 +117,38 @@ class Http2ReadContext {
   Waker read_loop_waker_;
 };
 
+Http2Status ValidateIncomingConnectionPreface(
+    const absl::StatusOr<Slice>& status);
+
+template <typename T, typename Tracker>
+inline Http2Status ValidateMetadataFrameState(
+    T& frame, Stream& stream, Tracker& incoming_headers,
+    const uint32_t max_header_list_size) {
+  if (stream.IsStreamHalfClosedRemote()) {
+    return incoming_headers.ParseAndDiscardHeaders(
+        std::move(frame.payload), frame.end_headers, &stream,
+        Http2Status::Http2StreamError(
+            Http2ErrorCode::kStreamClosed,
+            std::string(RFC9113::kHalfClosedRemoteState)),
+        max_header_list_size);
+  }
+
+  if constexpr (std::is_same_v<std::decay_t<T>, Http2HeaderFrame>) {
+    if (incoming_headers.DidReceiveDuplicateMetadata(
+            stream.IsInitialMetadataReceived(),
+            stream.IsTrailingMetadataReceived())) {
+      return incoming_headers.ParseAndDiscardHeaders(
+          std::move(frame.payload), frame.end_headers, &stream,
+          Http2Status::Http2StreamError(
+              Http2ErrorCode::kInternalError,
+              std::string(GrpcErrors::kTooManyMetadata)),
+          max_header_list_size);
+    }
+  }
+
+  return Http2Status::Ok();
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 // Settings helpers
 
@@ -179,44 +213,7 @@ void MaybeAddTransportWindowUpdateFrame(
 
 void MaybeAddStreamWindowUpdateFrame(Stream& stream, FrameSender& frame_sender);
 
-///////////////////////////////////////////////////////////////////////////////
-// Header and Continuation frame processing helpers
-
-// This function is used to partially process a HEADER or CONTINUATION frame.
-// `PARTIAL PROCESSING` means reading the payload of a HEADER or CONTINUATION
-// and processing it with the HPACK decoder, and then discarding the payload.
-// This is done to keep the transports HPACK parser in sync with peers HPACK.
-// Scenarios where 'partial processing' is used:
 //
-// Case 1: Received a HEADER/CONTINUATION frame
-// 1. If the frame is invalid ('ParseHeaderFrame'/'ParseContinuationFrame'
-//    returns a non-OK status) then it is a connection error. In this case, we
-//    do NOT invoke 'partial processing' as the transport is about to be closed
-//    anyway.
-// 2. If ParseFramePayload returns a non-OK status, then it is a connection
-//    error. In this case, we do NOT invoke 'partial processing' as the
-//    transport is about to be closed anyway.
-// 3. If the frame is valid, but lookup stream fails, then we invoke 'partial
-//    processing' and pass the current payload through the HPACK decoder. This
-//    can happen if the stream was already closed.
-// 4. If the frame is valid, lookup stream succeeds and we fail while processing
-//    the frame (be it stream or connection error), we first parse the buffered
-//    payload (if any) in the stream through the HPACK decoder and then pass the
-//    current payload through the HPACK decoder.
-// Case 2: Stream close
-// 1. If the stream is being aborted by the upper layers or the transport hit
-//    a stream error on a stream while reading HEADER/CONTINUATION frames, we
-//    invoke 'partial processing' to parse the enqueued buffer (if any) in the
-//    stream to keep our HPACK state consistent with the peer right before
-//    closing the stream. This is done as the next time a HEADER/CONTINUATION
-//    frame is received from the peer, the stream lookup will start failing.
-// This function returns a connection error if HPACK parsing fails. Otherwise,
-// it returns the original status.
-Http2Status ParseAndDiscardHeaders(HPackParser& parser, SliceBuffer&& buffer,
-                                   HeaderAssembler::ParseHeaderArgs args,
-                                   Stream* stream,
-                                   Http2Status&& original_status);
-
 }  // namespace http2
 }  // namespace grpc_core
 

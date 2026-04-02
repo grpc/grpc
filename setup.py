@@ -67,9 +67,7 @@ if "linux" in sys.platform:
 if "openbsd" in sys.platform:
     CARES_INCLUDE += (os.path.join("third_party", "cares", "config_openbsd"),)
 RE2_INCLUDE = (os.path.join("third_party", "re2"),)
-SSL_INCLUDE = (
-    os.path.join("third_party", "boringssl-with-bazel", "src", "include"),
-)
+SSL_INCLUDE = (os.path.join("third_party", "boringssl-with-bazel", "include"),)
 UPB_INCLUDE = (os.path.join("third_party", "upb"),)
 UPB_GRPC_GENERATED_INCLUDE = (os.path.join("src", "core", "ext", "upb-gen"),)
 UPBDEFS_GRPC_GENERATED_INCLUDE = (
@@ -269,6 +267,9 @@ if EXTRA_ENV_COMPILE_ARGS is None:
         # We need to statically link the C++ Runtime, only the C runtime is
         # available dynamically
         EXTRA_ENV_COMPILE_ARGS += " /MT"
+        # Required to build upb from protobuf 33.x
+        # https://github.com/grpc/grpc/issues/41951
+        EXTRA_ENV_COMPILE_ARGS += " /Zc:preprocessor"
     elif "linux" in sys.platform:
         # GCC by defaults uses C17 so only C++17 needs to be specified.
         EXTRA_ENV_COMPILE_ARGS += " -std=c++17"
@@ -307,7 +308,20 @@ CYTHON_EXTENSION_PACKAGE_NAMES = ()
 
 CYTHON_EXTENSION_MODULE_NAMES = ("grpc._cython.cygrpc",)
 
-CYTHON_HELPER_C_FILES = ()
+GRPCIO_CC_SRCS = ()
+
+_PRIVATE_KEY_SIGNING_FILES = (
+    os.path.join(
+        PYTHON_STEM,
+        "grpc",
+        "_cython",
+        "_cygrpc",
+        "private_key_signing",
+        "private_key_signer_py_wrapper.cc",
+    ),
+)
+
+GRPCIO_CC_SRCS += _PRIVATE_KEY_SIGNING_FILES
 
 CORE_C_FILES = tuple(grpc_core_dependencies.CORE_SOURCE_FILES)
 if "win32" in sys.platform:
@@ -452,17 +466,6 @@ else:
     DEFINE_MACROS += (
         ("HAVE_CONFIG_H", 1),
         ("GRPC_ENABLE_FORK_SUPPORT", 1),
-        # Set runtime GRPC_ENABLE_FORK_SUPPORT setting in core to "off".
-        #
-        # By default, gRPC core GRPC_ENABLE_FORK_SUPPORT runtime config_var
-        # is "on" when it's compiled with GRPC_ENABLE_FORK_SUPPORT macro.
-        # However, in python GRPC_ENABLE_FORK_SUPPORT by default is "off".
-        # Compare config_vars.cc and fork_posix.pyx.pxi.
-        # This leads to an inconsistent and broken behavior.
-        #
-        # Important! This must by in sync with the default value for the
-        # GRPC_ENABLE_FORK_SUPPORT env var parsed in fork_posix.pyx.pxi
-        ("GRPC_ENABLE_FORK_SUPPORT_DEFAULT", "false"),
     )
 
 # Fix for multiprocessing support on Apple devices.
@@ -512,7 +515,7 @@ def cython_extensions_and_necessity():
             name=module_name,
             sources=(
                 [module_file]
-                + list(CYTHON_HELPER_C_FILES)
+                + list(GRPCIO_CC_SRCS)
                 + core_c_files
                 + asm_files
                 + ["third_party/abseil-cpp/absl/log/initialize.cc"]

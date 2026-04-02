@@ -47,6 +47,10 @@ const char* const additional_constraints_chaotic_good_connect_deadline = "{}";
 const char* const description_chaotic_good_framing_layer =
     "Enable the chaotic good framing layer.";
 const char* const additional_constraints_chaotic_good_framing_layer = "{}";
+const char* const description_chaotic_good_send_supported_features =
+    "Send supported features in chaotic good settings frames.";
+const char* const additional_constraints_chaotic_good_send_supported_features =
+    "{}";
 const char* const description_error_flatten =
     "Flatten errors to ordinary absl::Status form.";
 const char* const additional_constraints_error_flatten = "{}";
@@ -98,6 +102,10 @@ const char* const additional_constraints_free_large_allocator = "{}";
 const char* const description_fuse_filters =
     "If set, individual filters are merged into fused filters";
 const char* const additional_constraints_fuse_filters = "{}";
+const char* const description_h2_max_deallocating_streams_headroom =
+    "Separate allocated max concurrent streams.";
+const char* const additional_constraints_h2_max_deallocating_streams_headroom =
+    "{}";
 const char* const description_keep_alive_ping_timer_batch =
     "Avoid explicitly cancelling the keepalive timer. Instead adjust the "
     "callback to re-schedule itself to the next ping interval.";
@@ -170,11 +178,6 @@ const char* const additional_constraints_retry_in_callv3 = "{}";
 const char* const description_return_preexisting_errors =
     "Return errors that exist before the start of the call in RunHandler.";
 const char* const additional_constraints_return_preexisting_errors = "{}";
-const char* const description_rr_wrr_connect_from_random_index =
-    "RR and WRR LB policies start connecting from a random index in the "
-    "address list.";
-const char* const additional_constraints_rr_wrr_connect_from_random_index =
-    "{}";
 const char* const description_schedule_cancellation_over_write =
     "Allow cancellation op to be scheduled over a write";
 const char* const additional_constraints_schedule_cancellation_over_write =
@@ -272,8 +275,12 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"chaotic_good_framing_layer", description_chaotic_good_framing_layer,
      additional_constraints_chaotic_good_framing_layer, nullptr, 0, true,
      false},
+    {"chaotic_good_send_supported_features",
+     description_chaotic_good_send_supported_features,
+     additional_constraints_chaotic_good_send_supported_features, nullptr, 0,
+     false, true},
     {"error_flatten", description_error_flatten,
-     additional_constraints_error_flatten, nullptr, 0, false, false},
+     additional_constraints_error_flatten, nullptr, 0, true, false},
     {"event_engine_client", description_event_engine_client,
      additional_constraints_event_engine_client, nullptr, 0, true, false},
     {"event_engine_dns", description_event_engine_dns,
@@ -305,6 +312,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_free_large_allocator, nullptr, 0, false, true},
     {"fuse_filters", description_fuse_filters,
      additional_constraints_fuse_filters, nullptr, 0, false, false},
+    {"h2_max_deallocating_streams_headroom",
+     description_h2_max_deallocating_streams_headroom,
+     additional_constraints_h2_max_deallocating_streams_headroom, nullptr, 0,
+     false, true},
     {"keep_alive_ping_timer_batch", description_keep_alive_ping_timer_batch,
      additional_constraints_keep_alive_ping_timer_batch, nullptr, 0, false,
      true},
@@ -362,10 +373,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_retry_in_callv3, nullptr, 0, false, true},
     {"return_preexisting_errors", description_return_preexisting_errors,
      additional_constraints_return_preexisting_errors, nullptr, 0, false, true},
-    {"rr_wrr_connect_from_random_index",
-     description_rr_wrr_connect_from_random_index,
-     additional_constraints_rr_wrr_connect_from_random_index, nullptr, 0, true,
-     true},
     {"schedule_cancellation_over_write",
      description_schedule_cancellation_over_write,
      additional_constraints_schedule_cancellation_over_write, nullptr, 0, false,
@@ -398,7 +405,7 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"subchannel_wrapper_cleanup_on_orphan",
      description_subchannel_wrapper_cleanup_on_orphan,
      additional_constraints_subchannel_wrapper_cleanup_on_orphan, nullptr, 0,
-     false, true},
+     true, true},
     {"tcp_frame_size_tuning", description_tcp_frame_size_tuning,
      additional_constraints_tcp_frame_size_tuning, nullptr, 0, false, true},
     {"tcp_rcv_lowat", description_tcp_rcv_lowat,
@@ -457,6 +464,10 @@ const char* const additional_constraints_chaotic_good_connect_deadline = "{}";
 const char* const description_chaotic_good_framing_layer =
     "Enable the chaotic good framing layer.";
 const char* const additional_constraints_chaotic_good_framing_layer = "{}";
+const char* const description_chaotic_good_send_supported_features =
+    "Send supported features in chaotic good settings frames.";
+const char* const additional_constraints_chaotic_good_send_supported_features =
+    "{}";
 const char* const description_error_flatten =
     "Flatten errors to ordinary absl::Status form.";
 const char* const additional_constraints_error_flatten = "{}";
@@ -508,6 +519,10 @@ const char* const additional_constraints_free_large_allocator = "{}";
 const char* const description_fuse_filters =
     "If set, individual filters are merged into fused filters";
 const char* const additional_constraints_fuse_filters = "{}";
+const char* const description_h2_max_deallocating_streams_headroom =
+    "Separate allocated max concurrent streams.";
+const char* const additional_constraints_h2_max_deallocating_streams_headroom =
+    "{}";
 const char* const description_keep_alive_ping_timer_batch =
     "Avoid explicitly cancelling the keepalive timer. Instead adjust the "
     "callback to re-schedule itself to the next ping interval.";
@@ -580,11 +595,6 @@ const char* const additional_constraints_retry_in_callv3 = "{}";
 const char* const description_return_preexisting_errors =
     "Return errors that exist before the start of the call in RunHandler.";
 const char* const additional_constraints_return_preexisting_errors = "{}";
-const char* const description_rr_wrr_connect_from_random_index =
-    "RR and WRR LB policies start connecting from a random index in the "
-    "address list.";
-const char* const additional_constraints_rr_wrr_connect_from_random_index =
-    "{}";
 const char* const description_schedule_cancellation_over_write =
     "Allow cancellation op to be scheduled over a write";
 const char* const additional_constraints_schedule_cancellation_over_write =
@@ -682,8 +692,12 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"chaotic_good_framing_layer", description_chaotic_good_framing_layer,
      additional_constraints_chaotic_good_framing_layer, nullptr, 0, true,
      false},
+    {"chaotic_good_send_supported_features",
+     description_chaotic_good_send_supported_features,
+     additional_constraints_chaotic_good_send_supported_features, nullptr, 0,
+     false, true},
     {"error_flatten", description_error_flatten,
-     additional_constraints_error_flatten, nullptr, 0, false, false},
+     additional_constraints_error_flatten, nullptr, 0, true, false},
     {"event_engine_client", description_event_engine_client,
      additional_constraints_event_engine_client, nullptr, 0, true, false},
     {"event_engine_dns", description_event_engine_dns,
@@ -715,6 +729,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_free_large_allocator, nullptr, 0, false, true},
     {"fuse_filters", description_fuse_filters,
      additional_constraints_fuse_filters, nullptr, 0, false, false},
+    {"h2_max_deallocating_streams_headroom",
+     description_h2_max_deallocating_streams_headroom,
+     additional_constraints_h2_max_deallocating_streams_headroom, nullptr, 0,
+     false, true},
     {"keep_alive_ping_timer_batch", description_keep_alive_ping_timer_batch,
      additional_constraints_keep_alive_ping_timer_batch, nullptr, 0, false,
      true},
@@ -772,10 +790,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_retry_in_callv3, nullptr, 0, false, true},
     {"return_preexisting_errors", description_return_preexisting_errors,
      additional_constraints_return_preexisting_errors, nullptr, 0, false, true},
-    {"rr_wrr_connect_from_random_index",
-     description_rr_wrr_connect_from_random_index,
-     additional_constraints_rr_wrr_connect_from_random_index, nullptr, 0, true,
-     true},
     {"schedule_cancellation_over_write",
      description_schedule_cancellation_over_write,
      additional_constraints_schedule_cancellation_over_write, nullptr, 0, false,
@@ -808,7 +822,7 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"subchannel_wrapper_cleanup_on_orphan",
      description_subchannel_wrapper_cleanup_on_orphan,
      additional_constraints_subchannel_wrapper_cleanup_on_orphan, nullptr, 0,
-     false, true},
+     true, true},
     {"tcp_frame_size_tuning", description_tcp_frame_size_tuning,
      additional_constraints_tcp_frame_size_tuning, nullptr, 0, false, true},
     {"tcp_rcv_lowat", description_tcp_rcv_lowat,
@@ -867,6 +881,10 @@ const char* const additional_constraints_chaotic_good_connect_deadline = "{}";
 const char* const description_chaotic_good_framing_layer =
     "Enable the chaotic good framing layer.";
 const char* const additional_constraints_chaotic_good_framing_layer = "{}";
+const char* const description_chaotic_good_send_supported_features =
+    "Send supported features in chaotic good settings frames.";
+const char* const additional_constraints_chaotic_good_send_supported_features =
+    "{}";
 const char* const description_error_flatten =
     "Flatten errors to ordinary absl::Status form.";
 const char* const additional_constraints_error_flatten = "{}";
@@ -918,6 +936,10 @@ const char* const additional_constraints_free_large_allocator = "{}";
 const char* const description_fuse_filters =
     "If set, individual filters are merged into fused filters";
 const char* const additional_constraints_fuse_filters = "{}";
+const char* const description_h2_max_deallocating_streams_headroom =
+    "Separate allocated max concurrent streams.";
+const char* const additional_constraints_h2_max_deallocating_streams_headroom =
+    "{}";
 const char* const description_keep_alive_ping_timer_batch =
     "Avoid explicitly cancelling the keepalive timer. Instead adjust the "
     "callback to re-schedule itself to the next ping interval.";
@@ -990,11 +1012,6 @@ const char* const additional_constraints_retry_in_callv3 = "{}";
 const char* const description_return_preexisting_errors =
     "Return errors that exist before the start of the call in RunHandler.";
 const char* const additional_constraints_return_preexisting_errors = "{}";
-const char* const description_rr_wrr_connect_from_random_index =
-    "RR and WRR LB policies start connecting from a random index in the "
-    "address list.";
-const char* const additional_constraints_rr_wrr_connect_from_random_index =
-    "{}";
 const char* const description_schedule_cancellation_over_write =
     "Allow cancellation op to be scheduled over a write";
 const char* const additional_constraints_schedule_cancellation_over_write =
@@ -1092,8 +1109,12 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"chaotic_good_framing_layer", description_chaotic_good_framing_layer,
      additional_constraints_chaotic_good_framing_layer, nullptr, 0, true,
      false},
+    {"chaotic_good_send_supported_features",
+     description_chaotic_good_send_supported_features,
+     additional_constraints_chaotic_good_send_supported_features, nullptr, 0,
+     false, true},
     {"error_flatten", description_error_flatten,
-     additional_constraints_error_flatten, nullptr, 0, false, false},
+     additional_constraints_error_flatten, nullptr, 0, true, false},
     {"event_engine_client", description_event_engine_client,
      additional_constraints_event_engine_client, nullptr, 0, true, false},
     {"event_engine_dns", description_event_engine_dns,
@@ -1125,6 +1146,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_free_large_allocator, nullptr, 0, false, true},
     {"fuse_filters", description_fuse_filters,
      additional_constraints_fuse_filters, nullptr, 0, false, false},
+    {"h2_max_deallocating_streams_headroom",
+     description_h2_max_deallocating_streams_headroom,
+     additional_constraints_h2_max_deallocating_streams_headroom, nullptr, 0,
+     false, true},
     {"keep_alive_ping_timer_batch", description_keep_alive_ping_timer_batch,
      additional_constraints_keep_alive_ping_timer_batch, nullptr, 0, false,
      true},
@@ -1182,10 +1207,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_retry_in_callv3, nullptr, 0, false, true},
     {"return_preexisting_errors", description_return_preexisting_errors,
      additional_constraints_return_preexisting_errors, nullptr, 0, false, true},
-    {"rr_wrr_connect_from_random_index",
-     description_rr_wrr_connect_from_random_index,
-     additional_constraints_rr_wrr_connect_from_random_index, nullptr, 0, true,
-     true},
     {"schedule_cancellation_over_write",
      description_schedule_cancellation_over_write,
      additional_constraints_schedule_cancellation_over_write, nullptr, 0, false,
@@ -1218,7 +1239,7 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"subchannel_wrapper_cleanup_on_orphan",
      description_subchannel_wrapper_cleanup_on_orphan,
      additional_constraints_subchannel_wrapper_cleanup_on_orphan, nullptr, 0,
-     false, true},
+     true, true},
     {"tcp_frame_size_tuning", description_tcp_frame_size_tuning,
      additional_constraints_tcp_frame_size_tuning, nullptr, 0, false, true},
     {"tcp_rcv_lowat", description_tcp_rcv_lowat,

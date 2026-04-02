@@ -14,6 +14,8 @@
 // limitations under the License.
 //
 
+#include "src/core/load_balancing/xds/cds.h"
+
 #include <grpc/grpc_security.h>
 #include <grpc/impl/connectivity_state.h>
 #include <grpc/support/json.h>
@@ -66,6 +68,98 @@
 #include "absl/strings/string_view.h"
 
 namespace grpc_core {
+
+namespace {
+
+// We need at least one priority for each discovery mechanism, just so that we
+// have a child in which to create the xds_cluster_impl policy.  This ensures
+// that we properly handle the case of a discovery mechanism dropping 100% of
+// calls, the OnError() case, and the OnResourceDoesNotExist() case.
+const XdsEndpointResource::PriorityList& GetUpdatePriorityList(
+    const XdsEndpointResource* update) {
+  static const NoDestruct<XdsEndpointResource::PriorityList>
+      kPriorityListWithEmptyPriority(1);
+  if (update == nullptr || update->priorities.empty()) {
+    return *kPriorityListWithEmptyPriority;
+  }
+  return update->priorities;
+}
+
+}  // namespace
+
+void CdsChildNameState::Update(
+    const XdsConfig::ClusterConfig* old_cluster,
+    const XdsConfig::ClusterConfig::EndpointConfig& endpoint_config) {
+  // First, build some maps from locality to child number and the reverse
+  // from old_cluster and current state.
+  std::map<XdsLocalityName*, size_t /*child_number*/, XdsLocalityName::Less>
+      locality_child_map;
+  std::map<size_t, std::set<XdsLocalityName*, XdsLocalityName::Less>>
+      child_locality_map;
+  if (old_cluster != nullptr) {
+    auto* old_endpoint_config =
+        std::get_if<XdsConfig::ClusterConfig::EndpointConfig>(
+            &old_cluster->children);
+    if (old_endpoint_config != nullptr) {
+      const auto& prev_priority_list =
+          GetUpdatePriorityList(old_endpoint_config->endpoints.get());
+      for (size_t priority = 0; priority < prev_priority_list.size();
+           ++priority) {
+        size_t child_number = priority_child_numbers_[priority];
+        const auto& localities = prev_priority_list[priority].localities;
+        for (const auto& [locality_name, _] : localities) {
+          locality_child_map[locality_name] = child_number;
+          child_locality_map[child_number].insert(locality_name);
+        }
+      }
+    }
+  }
+  // Now construct new priority child numbers for the new cluster based on
+  // the maps constructed above.
+  std::vector<size_t> new_priority_child_numbers;
+  const XdsEndpointResource::PriorityList& priority_list =
+      GetUpdatePriorityList(endpoint_config.endpoints.get());
+  for (size_t priority = 0; priority < priority_list.size(); ++priority) {
+    const auto& localities = priority_list[priority].localities;
+    std::optional<size_t> child_number;
+    // If one of the localities in this priority already existed, reuse its
+    // child number.
+    for (const auto& [locality_name, _] : localities) {
+      if (!child_number.has_value()) {
+        auto it = locality_child_map.find(locality_name);
+        if (it != locality_child_map.end()) {
+          child_number = it->second;
+          locality_child_map.erase(it);
+          // Remove localities that *used* to be in this child number, so
+          // that we don't incorrectly reuse this child number for a
+          // subsequent priority.
+          for (XdsLocalityName* old_locality :
+               child_locality_map[*child_number]) {
+            locality_child_map.erase(old_locality);
+          }
+        }
+      } else {
+        // Remove all localities that are now in this child number, so
+        // that we don't accidentally reuse this child number for a
+        // subsequent priority.
+        locality_child_map.erase(locality_name);
+      }
+    }
+    // If we didn't find an existing child number, assign a new one.
+    if (!child_number.has_value()) {
+      for (child_number = next_available_child_number_;
+           child_locality_map.find(*child_number) != child_locality_map.end();
+           ++(*child_number)) {
+      }
+      next_available_child_number_ = *child_number + 1;
+      // Add entry so we know that the child number is in use.
+      // (Don't need to add the list of localities, since we won't use them.)
+      child_locality_map[*child_number];
+    }
+    new_priority_child_numbers.push_back(*child_number);
+  }
+  priority_child_numbers_ = std::move(new_priority_child_numbers);
+}
 
 namespace {
 
@@ -160,30 +254,9 @@ class CdsLb final : public LoadBalancingPolicy {
     }
   };
 
-  // State used to retain child policy names for the priority policy.
-  struct ChildNameState {
-    std::vector<size_t /*child_number*/> priority_child_numbers;
-    size_t next_available_child_number = 0;
-
-    void Reset() {
-      priority_child_numbers.clear();
-      next_available_child_number = 0;
-    }
-  };
-
   ~CdsLb() override;
 
   void ShutdownLocked() override;
-
-  // Computes child numbers for new_cluster, reusing child numbers
-  // from old_cluster and child_name_state_ in an intelligent
-  // way to avoid unnecessary churn.
-  ChildNameState ComputeChildNames(
-      const XdsConfig::ClusterConfig* old_cluster,
-      const XdsConfig::ClusterConfig& new_cluster,
-      const XdsConfig::ClusterConfig::EndpointConfig& endpoint_config) const;
-
-  std::string GetChildPolicyName(const std::string& cluster, size_t priority);
 
   Json CreateChildPolicyConfigForLeafCluster(
       const XdsConfig::ClusterConfig& new_cluster,
@@ -202,7 +275,7 @@ class CdsLb final : public LoadBalancingPolicy {
   // Cluster subscription, for dynamic clusters (e.g., RLS).
   RefCountedPtr<XdsDependencyManager::ClusterSubscription> subscription_;
 
-  ChildNameState child_name_state_;
+  CdsChildNameState child_name_state_;
 
   // Child LB policy.
   OrphanablePtr<LoadBalancingPolicy> child_policy_;
@@ -236,20 +309,6 @@ void CdsLb::ResetBackoffLocked() {
 
 void CdsLb::ExitIdleLocked() {
   if (child_policy_ != nullptr) child_policy_->ExitIdleLocked();
-}
-
-// We need at least one priority for each discovery mechanism, just so that we
-// have a child in which to create the xds_cluster_impl policy.  This ensures
-// that we properly handle the case of a discovery mechanism dropping 100% of
-// calls, the OnError() case, and the OnResourceDoesNotExist() case.
-const XdsEndpointResource::PriorityList& GetUpdatePriorityList(
-    const XdsEndpointResource* update) {
-  static const NoDestruct<XdsEndpointResource::PriorityList>
-      kPriorityListWithEmptyPriority(1);
-  if (update == nullptr || update->priorities.empty()) {
-    return *kPriorityListWithEmptyPriority;
-  }
-  return update->priorities;
 }
 
 std::string MakeChildPolicyName(absl::string_view cluster,
@@ -430,13 +489,12 @@ absl::Status CdsLb::UpdateLocked(UpdateArgs args) {
       // Leaf cluster.
       [&](const XdsConfig::ClusterConfig::EndpointConfig& endpoint_config) {
         // Compute new child numbers.
-        child_name_state_ = ComputeChildNames(
-            old_cluster_config, *new_cluster_config, endpoint_config);
+        child_name_state_.Update(old_cluster_config, endpoint_config);
         // Populate addresses and resolution_note for child policy.
         update_args.addresses = std::make_shared<PriorityEndpointIterator>(
             cluster_name_, new_cluster_config->cluster->use_http_connect,
             endpoint_config.endpoints,
-            child_name_state_.priority_child_numbers);
+            child_name_state_.priority_child_numbers());
         std::vector<absl::string_view> resolution_notes;
         if (!args.resolution_note.empty()) {
           resolution_notes.emplace_back(args.resolution_note);
@@ -504,86 +562,6 @@ absl::Status CdsLb::UpdateLocked(UpdateArgs args) {
   return child_policy_->UpdateLocked(std::move(update_args));
 }
 
-CdsLb::ChildNameState CdsLb::ComputeChildNames(
-    const XdsConfig::ClusterConfig* old_cluster,
-    const XdsConfig::ClusterConfig& new_cluster,
-    const XdsConfig::ClusterConfig::EndpointConfig& endpoint_config) const {
-  GRPC_CHECK(!std::holds_alternative<XdsConfig::ClusterConfig::AggregateConfig>(
-      new_cluster.children));
-  // First, build some maps from locality to child number and the reverse
-  // from old_cluster and child_name_state_.
-  std::map<XdsLocalityName*, size_t /*child_number*/, XdsLocalityName::Less>
-      locality_child_map;
-  std::map<size_t, std::set<XdsLocalityName*, XdsLocalityName::Less>>
-      child_locality_map;
-  if (old_cluster != nullptr) {
-    auto* old_endpoint_config =
-        std::get_if<XdsConfig::ClusterConfig::EndpointConfig>(
-            &old_cluster->children);
-    if (old_endpoint_config != nullptr) {
-      const auto& prev_priority_list =
-          GetUpdatePriorityList(old_endpoint_config->endpoints.get());
-      for (size_t priority = 0; priority < prev_priority_list.size();
-           ++priority) {
-        size_t child_number =
-            child_name_state_.priority_child_numbers[priority];
-        const auto& localities = prev_priority_list[priority].localities;
-        for (const auto& [locality_name, _] : localities) {
-          locality_child_map[locality_name] = child_number;
-          child_locality_map[child_number].insert(locality_name);
-        }
-      }
-    }
-  }
-  // Now construct new state containing priority child numbers for the new
-  // cluster based on the maps constructed above.
-  ChildNameState new_child_name_state;
-  new_child_name_state.next_available_child_number =
-      child_name_state_.next_available_child_number;
-  const XdsEndpointResource::PriorityList& priority_list =
-      GetUpdatePriorityList(endpoint_config.endpoints.get());
-  for (size_t priority = 0; priority < priority_list.size(); ++priority) {
-    const auto& localities = priority_list[priority].localities;
-    std::optional<size_t> child_number;
-    // If one of the localities in this priority already existed, reuse its
-    // child number.
-    for (const auto& [locality_name, _] : localities) {
-      if (!child_number.has_value()) {
-        auto it = locality_child_map.find(locality_name);
-        if (it != locality_child_map.end()) {
-          child_number = it->second;
-          locality_child_map.erase(it);
-          // Remove localities that *used* to be in this child number, so
-          // that we don't incorrectly reuse this child number for a
-          // subsequent priority.
-          for (XdsLocalityName* old_locality :
-               child_locality_map[*child_number]) {
-            locality_child_map.erase(old_locality);
-          }
-        }
-      } else {
-        // Remove all localities that are now in this child number, so
-        // that we don't accidentally reuse this child number for a
-        // subsequent priority.
-        locality_child_map.erase(locality_name);
-      }
-    }
-    // If we didn't find an existing child number, assign a new one.
-    if (!child_number.has_value()) {
-      for (child_number = new_child_name_state.next_available_child_number;
-           child_locality_map.find(*child_number) != child_locality_map.end();
-           ++(*child_number)) {
-      }
-      new_child_name_state.next_available_child_number = *child_number + 1;
-      // Add entry so we know that the child number is in use.
-      // (Don't need to add the list of localities, since we won't use them.)
-      child_locality_map[*child_number];
-    }
-    new_child_name_state.priority_child_numbers.push_back(*child_number);
-  }
-  return new_child_name_state;
-}
-
 Json CdsLb::CreateChildPolicyConfigForLeafCluster(
     const XdsConfig::ClusterConfig& new_cluster,
     const XdsConfig::ClusterConfig::EndpointConfig& endpoint_config,
@@ -609,9 +587,9 @@ Json CdsLb::CreateChildPolicyConfigForLeafCluster(
       GetUpdatePriorityList(endpoint_config.endpoints.get());
   for (size_t priority = 0; priority < priority_list.size(); ++priority) {
     // Add priority entry, with the appropriate child name.
-    std::string child_name =
-        MakeChildPolicyName(cluster_name_.as_string_view(),
-                            child_name_state_.priority_child_numbers[priority]);
+    std::string child_name = MakeChildPolicyName(
+        cluster_name_.as_string_view(),
+        child_name_state_.priority_child_numbers()[priority]);
     priority_priorities.emplace_back(Json::FromString(child_name));
     Json::Object child_config = {{"config", xds_lb_policy}};
     if (!is_logical_dns) {

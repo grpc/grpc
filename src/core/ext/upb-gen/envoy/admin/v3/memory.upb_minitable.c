@@ -28,20 +28,10 @@ static const upb_MiniTableField envoy_admin_v3_Memory__fields[6] = {
 const upb_MiniTable envoy__admin__v3__Memory_msg_init = {
   NULL,
   &envoy_admin_v3_Memory__fields[0],
-  56, 6, kUpb_ExtMode_NonExtendable, 6, UPB_FASTTABLE_MASK(56), 0,
+  56, 6, kUpb_ExtMode_NonExtendable, 6, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.admin.v3.Memory",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x000800003f000008, &upb_psv8_1bt},
-    {0x001000003f000010, &upb_psv8_1bt},
-    {0x001800003f000018, &upb_psv8_1bt},
-    {0x002000003f000020, &upb_psv8_1bt},
-    {0x002800003f000028, &upb_psv8_1bt},
-    {0x003000003f000030, &upb_psv8_1bt},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-  })
 };
 
 const upb_MiniTable* envoy__admin__v3__Memory_msg_init_ptr = &envoy__admin__v3__Memory_msg_init;

@@ -24,6 +24,7 @@
 #include <openssl/ec.h>
 #include <openssl/err.h>
 #include <openssl/evp.h>
+#include <openssl/obj_mac.h>
 #include <openssl/pem.h>
 #include <openssl/rsa.h>
 #include <openssl/ssl.h>
@@ -449,4 +450,27 @@ absl::StatusOr<std::string> ParseUriString(GENERAL_NAME* subject_alt_name) {
   OPENSSL_free(name);
   return ret;
 }
+
+absl::StatusOr<absl::string_view> ConvertKeyExchangeGroupToString(
+    grpc_tls_key_exchange_group group) {
+  switch (group) {
+    case GRPC_TLS_GROUP_SECP256R1:
+      return "P-256";
+    case GRPC_TLS_GROUP_X25519:
+      return "X25519";
+    case GRPC_TLS_GROUP_X25519_MLKEM768:
+#if defined(OPENSSL_IS_BORINGSSL) || OPENSSL_VERSION_NUMBER >= 0x30500000L
+      return "X25519MLKEM768";
+#else
+      return absl::InvalidArgumentError(
+          "X25519_MLKEM768 is not supported in this OpenSSL version with "
+          "SSL_CTX_set1_groups_list.");
+#endif
+    case GRPC_TLS_GROUP_UNSPECIFIED:
+      return absl::InvalidArgumentError("Unspecified key exchange group.");
+    default:
+      return absl::InvalidArgumentError("Unknown key exchange group.");
+  }
+}
+
 }  // namespace tsi

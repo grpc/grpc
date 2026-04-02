@@ -36,7 +36,7 @@ _SUCCESSFUL_CALLS = int(test_constants.RPC_CONCURRENCY * _SUCCESS_CALL_FRACTION)
 _UNSUCCESSFUL_CALLS = test_constants.RPC_CONCURRENCY - _SUCCESSFUL_CALLS
 
 
-class _State(object):
+class _State:
     def __init__(self):
         self.condition = threading.Condition()
         self.handlers_released = False
@@ -51,7 +51,7 @@ def _is_cancellation_event(event):
     )
 
 
-class _Handler(object):
+class _Handler:
     def __init__(self, state, completion_queue, rpc_event):
         self._state = state
         self._lock = threading.Lock()
@@ -114,7 +114,7 @@ def _serve(state, server, server_completion_queue, thread_pool):
     server_completion_queue.poll()
 
 
-class _QueueDriver(object):
+class _QueueDriver:
     def __init__(self, condition, completion_queue, due):
         self._condition = condition
         self._completion_queue = completion_queue
