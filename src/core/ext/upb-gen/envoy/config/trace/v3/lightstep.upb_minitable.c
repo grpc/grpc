@@ -34,16 +34,10 @@ static const upb_MiniTableField envoy_config_trace_v3_LightstepConfig__fields[4]
 const upb_MiniTable envoy__config__trace__v3__LightstepConfig_msg_init = {
   &envoy_config_trace_v3_LightstepConfig__submsgs[0],
   &envoy_config_trace_v3_LightstepConfig__fields[0],
-  UPB_SIZE(40, 64), 4, kUpb_ExtMode_NonExtendable, 4, UPB_FASTTABLE_MASK(24), 0,
+  UPB_SIZE(40, 64), 4, kUpb_ExtMode_NonExtendable, 4, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.config.trace.v3.LightstepConfig",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x001000003f00000a, &upb_pss_1bt},
-    {0x002000003f000012, &upb_pss_1bt},
-    {0x003000003f00001a, &upb_ppv4_1bt},
-  })
 };
 
 const upb_MiniTable* envoy__config__trace__v3__LightstepConfig_msg_init_ptr = &envoy__config__trace__v3__LightstepConfig_msg_init;

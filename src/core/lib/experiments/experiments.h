@@ -125,7 +125,8 @@ inline bool IsSleepPromiseExecCtxRemovalEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_SLEEP_USE_NON_OWNING_WAKER
 inline bool IsSleepUseNonOwningWakerEnabled() { return true; }
 inline bool IsSubchannelConnectionScalingEnabled() { return false; }
-inline bool IsSubchannelWrapperCleanupOnOrphanEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_SUBCHANNEL_WRAPPER_CLEANUP_ON_ORPHAN
+inline bool IsSubchannelWrapperCleanupOnOrphanEnabled() { return true; }
 inline bool IsTcpFrameSizeTuningEnabled() { return false; }
 inline bool IsTcpRcvLowatEnabled() { return false; }
 inline bool IsTsiFrameProtectorWithoutLocksEnabled() { return false; }
@@ -204,7 +205,8 @@ inline bool IsSleepPromiseExecCtxRemovalEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_SLEEP_USE_NON_OWNING_WAKER
 inline bool IsSleepUseNonOwningWakerEnabled() { return true; }
 inline bool IsSubchannelConnectionScalingEnabled() { return false; }
-inline bool IsSubchannelWrapperCleanupOnOrphanEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_SUBCHANNEL_WRAPPER_CLEANUP_ON_ORPHAN
+inline bool IsSubchannelWrapperCleanupOnOrphanEnabled() { return true; }
 inline bool IsTcpFrameSizeTuningEnabled() { return false; }
 inline bool IsTcpRcvLowatEnabled() { return false; }
 inline bool IsTsiFrameProtectorWithoutLocksEnabled() { return false; }
@@ -283,7 +285,8 @@ inline bool IsSleepPromiseExecCtxRemovalEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_SLEEP_USE_NON_OWNING_WAKER
 inline bool IsSleepUseNonOwningWakerEnabled() { return true; }
 inline bool IsSubchannelConnectionScalingEnabled() { return false; }
-inline bool IsSubchannelWrapperCleanupOnOrphanEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_SUBCHANNEL_WRAPPER_CLEANUP_ON_ORPHAN
+inline bool IsSubchannelWrapperCleanupOnOrphanEnabled() { return true; }
 inline bool IsTcpFrameSizeTuningEnabled() { return false; }
 inline bool IsTcpRcvLowatEnabled() { return false; }
 inline bool IsTsiFrameProtectorWithoutLocksEnabled() { return false; }

@@ -163,9 +163,6 @@ def _bazel_query_xml_tree(query: str) -> ET.Element:
     args = [
         "tools/bazel",
         "query",
-        # TODO(weizheyuan): Remove these 2 arguments once migration is finished.
-        "--enable_bzlmod",
-        "--noenable_workspace",
         "--noimplicit_deps",
         "--output",
         "xml",
@@ -683,6 +680,35 @@ def _prefix_to_strip(proto_src):
             return repo + EXTERNAL_LINKS[repo]
     if apparent_repo is None:
         return None
+
+
+# TODO: As of protobuf 33.x certain upb experimental features are not implemented properly
+# and gated behind config flag such as //upb:fasttable_enabled_setting.
+#
+# Our codegen tooling uses bazel query which doesn't resolve such conditional dependencies
+# properly, so we do manual pruning here as a temporary fix.
+#
+# Better solutions would be using more accurate resolution with `bazel cquery`,
+# and/or use protobuf's official cmake/libupb.cmake for our cmake builds.
+def _prune_upb_experimental_feature_rules(bazel_rules: BuildDict):
+    UPB_EXCLUDED_TARGETS = "//upb/wire/decode_fast"
+    UPB_EXCLUDED_TARGETS_EXCEPTIONS = [
+        "//upb/wire/decode_fast:select",
+        "//upb/wire/decode_fast:combinations",
+        "//upb/wire/decode_fast:data",
+    ]
+
+    def _should_include(rule_name):
+        if UPB_EXCLUDED_TARGETS not in rule_name:
+            return True
+        if any(rule_name.endswith(e) for e in UPB_EXCLUDED_TARGETS_EXCEPTIONS):
+            return True
+        return False
+
+    bazel_rules = {k: v for k, v in bazel_rules.items() if _should_include(k)}
+
+    for rule_name, rule in bazel_rules.items():
+        rule["deps"] = [dep for dep in rule["deps"] if _should_include(dep)]
 
 
 def _expand_upb_proto_library_rules(bazel_rules):
@@ -1212,6 +1238,11 @@ _BUILD_EXTRA_METADATA = {
         "build": "all",
         "_RENAME": "upb_mini_table_lib",
     },
+    "@com_google_protobuf//upb/reflection:descriptor_upb_proto": {
+        "language": "c",
+        "build": "all",
+        "_RENAME": "upb_descriptor_lib",
+    },
     "@com_google_protobuf//upb/reflection:reflection": {
         "language": "c",
         "build": "all",
@@ -1474,6 +1505,7 @@ for query in _BAZEL_DEPS_QUERIES:
 # to expand the UPB proto library bazel rules into the generated
 # .upb.h and .upb.c files.
 _expand_upb_proto_library_rules(bazel_rules)
+_prune_upb_experimental_feature_rules(bazel_rules)
 
 
 # Step 1.6: Add explicit protobuf dependency to grpc_proto_library rules

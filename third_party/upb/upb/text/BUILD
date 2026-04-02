@@ -5,6 +5,8 @@
 # license that can be found in the LICENSE file or at
 # https://developers.google.com/open-source/licenses/bsd
 
+load("@rules_cc//cc:cc_library.bzl", "cc_library")
+load("@rules_cc//cc:cc_test.bzl", "cc_test")
 load("//upb/bazel:build_defs.bzl", "UPB_DEFAULT_COPTS")
 
 package(default_applicable_licenses = ["//:license"])
@@ -23,14 +25,14 @@ cc_library(
     deps = [
         ":internal",
         "//upb/base",
-        "//upb:eps_copy_input_stream",
-        "//upb:message",
-        "//upb:port",
-        "//upb:reflection",
         "//upb/hash",
         "//upb/lex",
+        "//upb/message",
         "//upb/message:internal",
         "//upb/message:types",
+        "//upb/port",
+        "//upb/reflection",
+        "//upb/wire:eps_copy_input_stream",
     ],
 )
 
@@ -48,14 +50,14 @@ cc_library(
     deps = [
         ":internal",
         "//upb/base",
-        "//upb:message",
-        "//upb:mini_table",
-        "//upb:port",
         "//upb/lex",
+        "//upb/message",
         "//upb/message:internal",
         "//upb/message:iterator",
         "//upb/message:types",
+        "//upb/mini_table",
         "//upb/mini_table:internal",
+        "//upb/port",
     ],
 )
 
@@ -73,12 +75,12 @@ cc_library(
     deps = [
         "//third_party/utf8_range",
         "//upb/base",
-        "//upb:eps_copy_input_stream",
-        "//upb:message",
-        "//upb:port",
-        "//upb:wire_reader",
         "//upb/lex",
+        "//upb/message",
         "//upb/message:internal",
+        "//upb/port",
+        "//upb/wire:eps_copy_input_stream",
+        "//upb/wire:reader",
     ],
 )
 
@@ -90,15 +92,15 @@ cc_test(
     deps = [
         ":debug",
         "//upb/base",
-        "//upb:eps_copy_input_stream",
         "//upb/mem",
-        "//upb:message",
-        "//upb:mini_table",
-        "//upb:port",
-        "//upb:wire_reader",
+        "//upb/message",
         "//upb/message:internal",
+        "//upb/mini_table",
+        "//upb/port",
         "//upb/test:test_proto_upb_minitable",
         "//upb/test:test_upb_proto",
+        "//upb/wire:eps_copy_input_stream",
+        "//upb/wire:reader",
         "@abseil-cpp//absl/log:absl_log",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
