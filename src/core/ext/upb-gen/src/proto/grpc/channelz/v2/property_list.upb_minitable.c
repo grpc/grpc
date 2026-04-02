@@ -29,14 +29,10 @@ static const upb_MiniTableField grpc_channelz_v2_PropertyList__fields[1] = {
 const upb_MiniTable grpc__channelz__v2__PropertyList_msg_init = {
   &grpc_channelz_v2_PropertyList__submsgs[0],
   &grpc_channelz_v2_PropertyList__fields[0],
-  16, 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(8), 0,
+  16, 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "grpc.channelz.v2.PropertyList",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x000800003f00000a, &upb_prm_1bt_max64b},
-  })
 };
 
 const upb_MiniTable* grpc__channelz__v2__PropertyList_msg_init_ptr = &grpc__channelz__v2__PropertyList_msg_init;
@@ -52,14 +48,10 @@ static const upb_MiniTableField grpc_channelz_v2_PropertyList_Element__fields[2]
 const upb_MiniTable grpc__channelz__v2__PropertyList__Element_msg_init = {
   &grpc_channelz_v2_PropertyList_Element__submsgs[0],
   &grpc_channelz_v2_PropertyList_Element__fields[0],
-  UPB_SIZE(24, 40), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(8), 0,
+  UPB_SIZE(24, 40), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "grpc.channelz.v2.PropertyList.Element",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x001000003f00000a, &upb_pss_1bt},
-  })
 };
 
 const upb_MiniTable* grpc__channelz__v2__PropertyList__Element_msg_init_ptr = &grpc__channelz__v2__PropertyList__Element_msg_init;
@@ -75,16 +67,10 @@ static const upb_MiniTableField grpc_channelz_v2_PropertyGrid__fields[2] = {
 const upb_MiniTable grpc__channelz__v2__PropertyGrid_msg_init = {
   &grpc_channelz_v2_PropertyGrid__submsgs[0],
   &grpc_channelz_v2_PropertyGrid__fields[0],
-  UPB_SIZE(16, 24), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
+  UPB_SIZE(16, 24), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "grpc.channelz.v2.PropertyGrid",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x000800003f00000a, &upb_prs_1bt},
-    {0x001000003f000012, &upb_prm_1bt_max64b},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-  })
 };
 
 const upb_MiniTable* grpc__channelz__v2__PropertyGrid_msg_init_ptr = &grpc__channelz__v2__PropertyGrid_msg_init;
@@ -100,16 +86,10 @@ static const upb_MiniTableField grpc_channelz_v2_PropertyGrid_Row__fields[2] = {
 const upb_MiniTable grpc__channelz__v2__PropertyGrid__Row_msg_init = {
   &grpc_channelz_v2_PropertyGrid_Row__submsgs[0],
   &grpc_channelz_v2_PropertyGrid_Row__fields[0],
-  UPB_SIZE(24, 32), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
+  UPB_SIZE(24, 32), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "grpc.channelz.v2.PropertyGrid.Row",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x000800003f00000a, &upb_pss_1bt},
-    {0x001800003f000012, &upb_prm_1bt_max64b},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-  })
 };
 
 const upb_MiniTable* grpc__channelz__v2__PropertyGrid__Row_msg_init_ptr = &grpc__channelz__v2__PropertyGrid__Row_msg_init;
@@ -125,16 +105,10 @@ static const upb_MiniTableField grpc_channelz_v2_PropertyTable__fields[2] = {
 const upb_MiniTable grpc__channelz__v2__PropertyTable_msg_init = {
   &grpc_channelz_v2_PropertyTable__submsgs[0],
   &grpc_channelz_v2_PropertyTable__fields[0],
-  UPB_SIZE(16, 24), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
+  UPB_SIZE(16, 24), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "grpc.channelz.v2.PropertyTable",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x000800003f00000a, &upb_prs_1bt},
-    {0x001000003f000012, &upb_prm_1bt_max64b},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-  })
 };
 
 const upb_MiniTable* grpc__channelz__v2__PropertyTable_msg_init_ptr = &grpc__channelz__v2__PropertyTable_msg_init;
@@ -149,14 +123,10 @@ static const upb_MiniTableField grpc_channelz_v2_PropertyTable_Row__fields[1] = 
 const upb_MiniTable grpc__channelz__v2__PropertyTable__Row_msg_init = {
   &grpc_channelz_v2_PropertyTable_Row__submsgs[0],
   &grpc_channelz_v2_PropertyTable_Row__fields[0],
-  16, 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(8), 0,
+  16, 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "grpc.channelz.v2.PropertyTable.Row",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x000800003f00000a, &upb_prm_1bt_max64b},
-  })
 };
 
 const upb_MiniTable* grpc__channelz__v2__PropertyTable__Row_msg_init_ptr = &grpc__channelz__v2__PropertyTable__Row_msg_init;
@@ -182,26 +152,18 @@ static const upb_MiniTableField grpc_channelz_v2_PropertyValue__fields[9] = {
 const upb_MiniTable grpc__channelz__v2__PropertyValue_msg_init = {
   &grpc_channelz_v2_PropertyValue__submsgs[0],
   &grpc_channelz_v2_PropertyValue__fields[0],
-  UPB_SIZE(24, 32), 9, kUpb_ExtMode_NonExtendable, 9, UPB_FASTTABLE_MASK(120), 0,
+  UPB_SIZE(24, 32), 9, kUpb_ExtMode_NonExtendable, 9, UPB_FASTTABLE_MASK(56), 0,
 #ifdef UPB_TRACING_ENABLED
   "grpc.channelz.v2.PropertyValue",
 #endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x001000080100000a, &upb_pom_1bt_maxmaxb},
-    {0x0010000802010012, &upb_pom_1bt_maxmaxb},
-    {0x001000080300001a, &upb_pos_1bt},
-    {0x0010000804000020, &upb_pov8_1bt},
-    {0x0010000805000028, &upb_pov8_1bt},
-    {0x0010000806000031, &upb_pof8_1bt},
-    {0x0010000807000038, &upb_pob1_1bt},
-    {0x0010000808020042, &upb_pom_1bt_maxmaxb},
-    {0x001000080903004a, &upb_pom_1bt_maxmaxb},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0010000806000031, &upb_DecodeFast_Fixed64_Oneof_Tag1Byte},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
   })
 };

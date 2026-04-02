@@ -28,20 +28,10 @@ static const upb_MiniTableField grpc_lookup_v1_RouteLookupRequest__fields[4] = {
 const upb_MiniTable grpc__lookup__v1__RouteLookupRequest_msg_init = {
   &grpc_lookup_v1_RouteLookupRequest__submsgs[0],
   &grpc_lookup_v1_RouteLookupRequest__fields[0],
-  UPB_SIZE(32, 56), 4, kUpb_ExtMode_NonExtendable, 0, UPB_FASTTABLE_MASK(56), 0,
+  UPB_SIZE(32, 56), 4, kUpb_ExtMode_NonExtendable, 0, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "grpc.lookup.v1.RouteLookupRequest",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x001000003f00001a, &upb_pss_1bt},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x000800003f000028, &upb_psv4_1bt},
-    {0x002000003f000032, &upb_pss_1bt},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-  })
 };
 
 const upb_MiniTable* grpc__lookup__v1__RouteLookupRequest_msg_init_ptr = &grpc__lookup__v1__RouteLookupRequest_msg_init;
@@ -53,16 +43,10 @@ static const upb_MiniTableField grpc_lookup_v1_RouteLookupRequest_KeyMapEntry__f
 const upb_MiniTable grpc__lookup__v1__RouteLookupRequest__KeyMapEntry_msg_init = {
   NULL,
   &grpc_lookup_v1_RouteLookupRequest_KeyMapEntry__fields[0],
-  48, 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
+  48, 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "grpc.lookup.v1.RouteLookupRequest.KeyMapEntry",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x001000003f00000a, &upb_pss_1bt},
-    {0x002000003f000012, &upb_pss_1bt},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-  })
 };
 
 const upb_MiniTable* grpc__lookup__v1__RouteLookupRequest__KeyMapEntry_msg_init_ptr = &grpc__lookup__v1__RouteLookupRequest__KeyMapEntry_msg_init;
@@ -74,16 +58,10 @@ static const upb_MiniTableField grpc_lookup_v1_RouteLookupResponse__fields[2] = 
 const upb_MiniTable grpc__lookup__v1__RouteLookupResponse_msg_init = {
   NULL,
   &grpc_lookup_v1_RouteLookupResponse__fields[0],
-  UPB_SIZE(24, 32), 2, kUpb_ExtMode_NonExtendable, 0, UPB_FASTTABLE_MASK(24), 0,
+  UPB_SIZE(24, 32), 2, kUpb_ExtMode_NonExtendable, 0, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "grpc.lookup.v1.RouteLookupResponse",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x000800003f000012, &upb_pss_1bt},
-    {0x001800003f00001a, &upb_prs_1bt},
-  })
 };
 
 const upb_MiniTable* grpc__lookup__v1__RouteLookupResponse_msg_init_ptr = &grpc__lookup__v1__RouteLookupResponse_msg_init;

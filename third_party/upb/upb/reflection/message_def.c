@@ -76,6 +76,7 @@ struct upb_MessageDef {
   bool in_message_set;
   bool is_sorted;
   upb_WellKnown well_known_type;
+  UPB_DESC(SymbolVisibility) visibility;
 };
 
 static void assign_msg_wellknowntype(upb_MessageDef* m) {
@@ -323,6 +324,11 @@ upb_WellKnown upb_MessageDef_WellKnownType(const upb_MessageDef* m) {
   return m->well_known_type;
 }
 
+UPB_API UPB_DESC(SymbolVisibility)
+    upb_MessageDef_Visibility(const upb_MessageDef* m) {
+  return m->visibility;
+}
+
 bool _upb_MessageDef_InMessageSet(const upb_MessageDef* m) {
   return m->in_message_set;
 }
@@ -517,6 +523,26 @@ void _upb_MessageDef_LinkMiniTable(upb_DefBuilder* ctx,
 #endif
 }
 
+// Returns whether packable repeated fields in the message should be considered
+// packed by default. This is used only for the purpose of encoding
+// MiniDescriptors, so we just return true if there are more packed fields than
+// unpacked. This optimizes for smaller MiniDescriptors.
+static bool _upb_MessageDef_DefaultIsPacked(const upb_MessageDef* m) {
+  int packed = 0;
+  int unpacked = 0;
+  for (int i = 0; i < m->field_count; i++) {
+    const upb_FieldDef* f = upb_MessageDef_Field(m, i);
+    if (_upb_FieldDef_IsPackable(f)) {
+      if (upb_FieldDef_IsPacked(f)) {
+        ++packed;
+      } else {
+        ++unpacked;
+      }
+    }
+  }
+  return packed > unpacked;
+}
+
 static bool _upb_MessageDef_ValidateUtf8(const upb_MessageDef* m) {
   bool has_string = false;
   for (int i = 0; i < m->field_count; i++) {
@@ -536,8 +562,7 @@ static bool _upb_MessageDef_ValidateUtf8(const upb_MessageDef* m) {
 static uint64_t _upb_MessageDef_Modifiers(const upb_MessageDef* m) {
   uint64_t out = 0;
 
-  if (UPB_DESC(FeatureSet_repeated_field_encoding(m->resolved_features)) ==
-      UPB_DESC(FeatureSet_PACKED)) {
+  if (_upb_MessageDef_DefaultIsPacked(m)) {
     out |= kUpb_MessageModifier_DefaultIsPacked;
   }
 
@@ -744,6 +769,8 @@ static void create_msgdef(upb_DefBuilder* ctx, const char* prefix,
   m->nested_msg_count = n_msg;
   m->nested_msgs =
       _upb_MessageDefs_New(ctx, n_msg, msgs, m->resolved_features, m);
+
+  m->visibility = UPB_DESC(DescriptorProto_visibility)(msg_proto);
 }
 
 // Allocate and initialize an array of |n| message defs.

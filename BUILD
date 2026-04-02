@@ -327,6 +327,7 @@ GRPC_PUBLIC_HDRS = [
     "include/grpc/byte_buffer.h",
     "include/grpc/byte_buffer_reader.h",
     "include/grpc/compression.h",
+    "include/grpc/context_types.h",
     "include/grpc/create_channel_from_endpoint.h",
     "include/grpc/fork.h",
     "include/grpc/grpc.h",
@@ -371,6 +372,7 @@ GRPC_PUBLIC_EVENT_ENGINE_HDRS = [
 ]
 
 GRPCXX_SRCS = [
+    "src/cpp/client/call_context_registry.cc",
     "src/cpp/client/call_credentials.cc",
     "src/cpp/client/channel_cc.cc",
     "src/cpp/client/channel_credentials.cc",
@@ -475,6 +477,9 @@ GRPCXX_PUBLIC_HDRS = [
     "include/grpcpp/generic/generic_stub_callback.h",
     "include/grpcpp/grpcpp.h",
     "include/grpcpp/health_check_service_interface.h",
+    "include/grpcpp/impl/allowed_call_context_types.h",
+    "include/grpcpp/impl/call_context_registry.h",
+    "include/grpcpp/call_context_types.h",
     "include/grpcpp/impl/call_op_set_interface.h",
     "include/grpcpp/impl/call_op_set.h",
     "include/grpcpp/impl/call.h",
@@ -2111,6 +2116,8 @@ grpc_cc_library(
         "//src/core:grpc_check",
         "//src/core:http2_status",
         "//src/core:if",
+        "//src/core:inter_activity_latch",
+        "//src/core:inter_activity_pipe",
         "//src/core:iomgr_fwd",
         "//src/core:latch",
         "//src/core:latent_see",
@@ -2688,6 +2695,7 @@ grpc_cc_library(
         "//src/core:json_reader",
         "//src/core:load_file",
         "//src/core:match",
+        "//src/core:no_destruct",
         "//src/core:ref_counted",
         "//src/core:resource_quota",
         "//src/core:slice",
@@ -2696,6 +2704,7 @@ grpc_cc_library(
         "//src/core:socket_mutator",
         "//src/core:status_helper",
         "//src/core:sync",
+        "//src/core:telemetry_label",
         "//src/core:thread_quota",
         "//src/core:time",
         "//src/core:useful",
@@ -2774,11 +2783,13 @@ grpc_cc_library(
         "//src/core:grpc_service_config",
         "//src/core:grpc_transport_chttp2_server",
         "//src/core:grpc_transport_inproc",
+        "//src/core:no_destruct",
         "//src/core:ref_counted",
         "//src/core:resource_quota",
         "//src/core:slice",
         "//src/core:socket_mutator",
         "//src/core:sync",
+        "//src/core:telemetry_label",
         "//src/core:thread_quota",
         "//src/core:time",
         "//src/core:useful",
@@ -5287,6 +5298,16 @@ grpc_upb_proto_reflection_library(
 )
 
 grpc_upb_proto_library(
+    name = "envoy_extensions_common_matching_upb",
+    deps = ["@envoy_api//envoy/extensions/common/matching/v3:pkg"],
+)
+
+grpc_upb_proto_reflection_library(
+    name = "envoy_extensions_common_matching_upbdefs",
+    deps = ["@envoy_api//envoy/extensions/common/matching/v3:pkg"],
+)
+
+grpc_upb_proto_library(
     name = "envoy_extensions_clusters_aggregate_upb",
     deps = ["@envoy_api//envoy/extensions/clusters/aggregate/v3:pkg"],
 )
@@ -5299,6 +5320,26 @@ grpc_upb_proto_reflection_library(
 grpc_upb_proto_library(
     name = "envoy_extensions_filters_common_fault_upb",
     deps = ["@envoy_api//envoy/extensions/filters/common/fault/v3:pkg"],
+)
+
+grpc_upb_proto_library(
+    name = "envoy_extensions_filters_common_matcher_action_upb",
+    deps = ["@envoy_api//envoy/extensions/filters/common/matcher/action/v3:pkg"],
+)
+
+grpc_upb_proto_reflection_library(
+    name = "envoy_extensions_filters_common_matcher_action_upbdefs",
+    deps = ["@envoy_api//envoy/extensions/filters/common/matcher/action/v3:pkg"],
+)
+
+grpc_upb_proto_library(
+    name = "envoy_extensions_filters_http_composite_upb",
+    deps = ["@envoy_api//envoy/extensions/filters/http/composite/v3:pkg"],
+)
+
+grpc_upb_proto_reflection_library(
+    name = "envoy_extensions_filters_http_composite_upbdefs",
+    deps = ["@envoy_api//envoy/extensions/filters/http/composite/v3:pkg"],
 )
 
 grpc_upb_proto_library(
