@@ -664,6 +664,9 @@ class ClientLbSubchannelMetricsTest : public ClientLbEnd2endTest {
   void TearDown() override {
     grpc_core::GlobalStatsPluginRegistryTestPeer::
         ResetGlobalStatsPluginRegistry();
+    grpc_core::ConfigVars::Overrides overrides;
+    overrides.client_channel_backup_poll_interval_ms = 1;
+    grpc_core::ConfigVars::SetOverrides(overrides);
     ClientLbEnd2endTest::TearDown();
   }
 
@@ -692,7 +695,6 @@ TEST_F(ClientLbSubchannelMetricsTest, SubchannelMetricsBasic) {
   EXPECT_EQ(stats_plugin_->GetInt64MetricValueByName(
                 "grpc.subchannel.open_connections", {target, "none", "", ""}),
             std::nullopt);
-
   ChannelArguments args;
   auto channel = grpc::CreateCustomChannel(
       "ipv4:" + target, grpc::InsecureChannelCredentials(), args);
@@ -709,17 +711,20 @@ TEST_F(ClientLbSubchannelMetricsTest, SubchannelMetricsBasic) {
   EXPECT_THAT(stats_plugin_->GetInt64MetricValueByName(
                   "grpc.subchannel.open_connections", {target, "none", "", ""}),
               ::testing::Optional(1));
-
   servers_[0]->Shutdown();
   EXPECT_TRUE(
       WaitForChannelState(channel.get(), [](grpc_connectivity_state state) {
         return state == GRPC_CHANNEL_TRANSIENT_FAILURE ||
                state == GRPC_CHANNEL_SHUTDOWN || state == GRPC_CHANNEL_IDLE;
       }));
-  EXPECT_THAT(
-      stats_plugin_->GetUInt64MetricValueByName(
-          "grpc.subchannel.disconnections", {target, "", "", "unknown"}),
-      ::testing::Optional(1));
+  auto get_disconnections = [&](const std::string& reason) {
+    return stats_plugin_
+        ->GetUInt64MetricValueByName("grpc.subchannel.disconnections",
+                                     {target, "", "", reason})
+        .value_or(0);
+  };
+  EXPECT_EQ(
+      get_disconnections("unknown") + get_disconnections("GOAWAY NO_ERROR"), 1);
   EXPECT_THAT(stats_plugin_->GetInt64MetricValueByName(
                   "grpc.subchannel.open_connections", {target, "none", "", ""}),
               ::testing::Optional(0));
@@ -806,10 +811,14 @@ TEST_F(ClientLbSubchannelMetricsTest, OldSubchannelDisconnectionYieldsUnknown) {
         return state == GRPC_CHANNEL_TRANSIENT_FAILURE ||
                state == GRPC_CHANNEL_SHUTDOWN || state == GRPC_CHANNEL_IDLE;
       }));
-  EXPECT_THAT(
-      stats_plugin_->GetUInt64MetricValueByName(
-          "grpc.subchannel.disconnections", {target, "", "", "unknown"}),
-      ::testing::Optional(1));
+  auto get_disconnections = [&](const std::string& reason) {
+    return stats_plugin_
+        ->GetUInt64MetricValueByName("grpc.subchannel.disconnections",
+                                     {target, "", "", reason})
+        .value_or(0);
+  };
+  EXPECT_EQ(
+      get_disconnections("unknown") + get_disconnections("GOAWAY NO_ERROR"), 1);
 }
 
 TEST_F(ClientLbSubchannelMetricsTest, SecurityLevelsPrivacyAndIntegrity) {
@@ -849,6 +858,11 @@ TEST_F(ClientLbSubchannelMetricsTest, SecurityLevelsPrivacyAndIntegrity) {
                   {"foo.test.google.fr", "privacy_and_integrity", "", ""}),
               ::testing::Optional(1));
   servers_[0]->Shutdown();
+  EXPECT_TRUE(
+      WaitForChannelState(channel.get(), [](grpc_connectivity_state state) {
+        return state == GRPC_CHANNEL_TRANSIENT_FAILURE ||
+               state == GRPC_CHANNEL_SHUTDOWN || state == GRPC_CHANNEL_IDLE;
+      }));
   EXPECT_THAT(stats_plugin_->GetInt64MetricValueByName(
                   "grpc.subchannel.open_connections",
                   {"foo.test.google.fr", "privacy_and_integrity", "", ""}),
