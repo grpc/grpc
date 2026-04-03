@@ -131,6 +131,7 @@ grpc_cc_test(
         "//test/core/event_engine/fuzzing_event_engine:fuzzing_event_engine",
         "//test/core/event_engine/fuzzing_event_engine:fuzzing_event_engine_cc_proto",
         "//:grpc_security_base",
+        "//:iomgr_timer",
         "//src/core:metadata_batch",
         "//src/core:regional_access_boundary_fetcher",
         "//src/core:resource_quota",

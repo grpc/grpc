@@ -2951,12 +2951,14 @@ TEST_F(CredentialsTest,
 
 class ExternalAccountCredentialsTest : public ::testing::Test {
  protected:
-  void SetUp() override {
+  static void SetUpTestSuite() {
+    event_engine_ = std::make_shared<FuzzingEventEngine>(
+        FuzzingEventEngine::Options(), fuzzing_event_engine::Actions());
     grpc_timer_manager_set_start_threaded(false);
     grpc_init();
   }
 
-  void TearDown() override {
+  static void TearDownTestSuite() {
     event_engine_->FuzzingDone();
     event_engine_->TickUntilIdle();
     event_engine_->UnsetGlobalHooks();
@@ -2964,10 +2966,15 @@ class ExternalAccountCredentialsTest : public ::testing::Test {
     grpc_shutdown_blocking();
   }
 
-  std::shared_ptr<FuzzingEventEngine> event_engine_ =
-      std::make_shared<FuzzingEventEngine>(FuzzingEventEngine::Options(),
-                                           fuzzing_event_engine::Actions());
+  void SetUp() override {}
+
+  void TearDown() override { event_engine_->TickUntilIdle(); }
+
+  static std::shared_ptr<FuzzingEventEngine> event_engine_;
 };
+
+std::shared_ptr<FuzzingEventEngine>
+    ExternalAccountCredentialsTest::event_engine_ = nullptr;
 
 TEST_F(ExternalAccountCredentialsTest, Success) {
   ExecCtx exec_ctx;
@@ -4931,14 +4938,14 @@ TEST_F(GcpServiceAccountIdentityCredentialsTest, TokenInvalidExpiration) {
 
 class JwtTokenFileCallCredentialsTest : public ::testing::Test {
  protected:
-  void SetUp() override {
+  static void SetUpTestSuite() {
     event_engine_ = std::make_shared<FuzzingEventEngine>(
         FuzzingEventEngine::Options(), fuzzing_event_engine::Actions());
     grpc_timer_manager_set_start_threaded(false);
     grpc_init();
   }
 
-  void TearDown() override {
+  static void TearDownTestSuite() {
     event_engine_->FuzzingDone();
     event_engine_->TickUntilIdle();
     event_engine_->UnsetGlobalHooks();
@@ -4946,8 +4953,15 @@ class JwtTokenFileCallCredentialsTest : public ::testing::Test {
     grpc_shutdown_blocking();
   }
 
-  std::shared_ptr<FuzzingEventEngine> event_engine_;
+  void SetUp() override {}
+
+  void TearDown() override { event_engine_->TickUntilIdle(); }
+
+  static std::shared_ptr<FuzzingEventEngine> event_engine_;
 };
+
+std::shared_ptr<FuzzingEventEngine>
+    JwtTokenFileCallCredentialsTest::event_engine_ = nullptr;
 
 TEST_F(JwtTokenFileCallCredentialsTest, Basic) {
   auto token =
@@ -4993,57 +5007,24 @@ TEST_F(JwtTokenFileCallCredentialsTest, InvalidToken) {
   gpr_free(path);
 }
 
-// Global variables to coordinate request ordering
-grpc_closure* g_token_on_done = nullptr;
-grpc_closure g_email_wrapper_closure;
-grpc_closure* g_original_email_on_done = nullptr;
-
-void OnEmailDoneWrapper(void* /*arg*/, grpc_error_handle error) {
-  // Schedule token callback first (so it's deeper in the stack/queue if LIFO)
-  // Wait... if it is LIFO, the LAST scheduled runs FIRST.
-  // We want Email callback to run FIRST.
-  // So Email callback must be LAST scheduled.
-  
-  if (g_token_on_done != nullptr) {
-    grpc_core::Closure::Run(DEBUG_LOCATION, g_token_on_done, absl::OkStatus());
-    g_token_on_done = nullptr;
-  }
-  
-  // Run the original email callback last (so it runs first)
-  if (g_original_email_on_done != nullptr) {
-    grpc_core::Closure::Run(DEBUG_LOCATION, g_original_email_on_done, error);
-  }
-}
-
 int compute_engine_with_rab_httpcli_get_success_override(
-    const grpc_http_request* request, const URI& uri, Timestamp /*deadline*/,
+    const grpc_http_request* /*request*/, const URI& uri, Timestamp /*deadline*/,
     grpc_closure* on_done, grpc_http_response* response) {
   if (uri.path() ==
       "/computeMetadata/v1/instance/service-accounts/default/email") {
     *response = http_response(200, "foo@bar.com");
-    // Wrap the email callback to trigger token callback afterwards
-    g_original_email_on_done = on_done;
-    GRPC_CLOSURE_INIT(&g_email_wrapper_closure, OnEmailDoneWrapper, nullptr,
-                      grpc_schedule_on_exec_ctx);
-    ExecCtx::Run(DEBUG_LOCATION, &g_email_wrapper_closure, absl::OkStatus());
-    return 1;
   } else if (uri.path() ==
              "/computeMetadata/v1/instance/service-accounts/default/token") {
     *response = http_response(200, valid_oauth2_json_response);
-    // Delay token callback until email matches
-    g_token_on_done = on_done;
-    return 1;
   } else if (absl::StrContains(uri.path(), "allowedLocations")) {
     *response = http_response(200,
                               "{\"encodedLocations\": \"0x08\", "
                               "\"locations\": [\"europe-west1\"]}");
-    ExecCtx::Run(DEBUG_LOCATION, on_done, absl::OkStatus());
-    return 1;
   } else {
     *response = http_response(404, "");
-    ExecCtx::Run(DEBUG_LOCATION, on_done, absl::OkStatus());
-    return 1;
   }
+  ExecCtx::Run(DEBUG_LOCATION, on_done, absl::OkStatus());
+  return 1;
 }
 
 int compute_engine_with_rab_401_httpcli_get_override(
@@ -5066,8 +5047,6 @@ int compute_engine_with_rab_401_httpcli_get_override(
 
 TEST_F(CredentialsTest, TestComputeEngineCredsWithRabSuccess) {
   ExecCtx exec_ctx;
-  g_token_on_done = nullptr;
-  g_original_email_on_done = nullptr;
   std::string emd_cached = "authorization: Bearer ya29.AHES6ZRN3-HlhAPya30GnW_bHSb_, x-allowed-locations: 0x08";
   std::string emd_initial = "authorization: Bearer ya29.AHES6ZRN3-HlhAPya30GnW_bHSb_";
   grpc_call_credentials* creds =
@@ -5192,6 +5171,7 @@ TEST_F(CredentialsTest, TestComputeEngineCredsEmailFetchCancellation) {
   ExecCtx::Get()->Flush();
   HttpRequest::SetOverride(nullptr, nullptr, nullptr);
   grpc_pollset_destroy(pollset);
+  gpr_free(pollset);
 }
 
 TEST_F(CredentialsTest, TestComputeEngineCredsSuccess) {

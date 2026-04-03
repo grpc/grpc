@@ -323,10 +323,8 @@ void EmailFetcher::StartEmailFetch() {
   if (pending == nullptr) return;  // Already have RAB fetcher.
   if (*pending != nullptr) return;  // Email fetch already in progress.
   auto request = MakeOrphanable<EmailRequest>(WeakRef());
-  // We keep a temporary ref to start it, but transfer ownership to state_ first.
-  auto* request_ptr = request.get();
+  request->Start();
   state_ = std::move(request);
-  request_ptr->Start();
 }
 
 void EmailFetcher::Fetch(absl::string_view token,

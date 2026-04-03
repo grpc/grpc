@@ -38,6 +38,7 @@
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/sync.h"
 #include "src/core/util/http_client/httpcli.h"
+#include "src/core/lib/iomgr/timer_manager.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h"
 #include "test/core/test_util/test_config.h"
@@ -48,6 +49,22 @@ namespace grpc_core {
 
 class RegionalAccessBoundaryFetcherTest : public ::testing::Test {
  protected:
+  static void SetUpTestSuite() {
+    fuzzing_event_engine_ =
+        std::make_shared<grpc_event_engine::experimental::FuzzingEventEngine>(
+            grpc_event_engine::experimental::FuzzingEventEngine::Options(),
+            fuzzing_event_engine::Actions());
+    grpc_timer_manager_set_start_threaded(false);
+    grpc_init();
+  }
+
+  static void TearDownTestSuite() {
+    fuzzing_event_engine_->FuzzingDone();
+    fuzzing_event_engine_->TickUntilIdle();
+    fuzzing_event_engine_->UnsetGlobalHooks();
+    WaitForSingleOwner(std::move(fuzzing_event_engine_));
+    grpc_shutdown();
+  }
   using RegionalAccessBoundary = RegionalAccessBoundaryFetcher::RegionalAccessBoundary;
   static constexpr grpc_core::Duration kRegioanlAccessBoundarySoftCacheGraceDuration = grpc_core::Duration::Hours(1);
   bool has_cache() { grpc_core::MutexLock lock(&fetcher_->cache_mu_); return fetcher_->cache_.has_value(); }
@@ -82,10 +99,6 @@ class RegionalAccessBoundaryFetcherTest : public ::testing::Test {
   }
 
   void SetUp() override {
-    grpc_init();
-    fuzzing_event_engine_ = std::make_shared<grpc_event_engine::experimental::FuzzingEventEngine>(
-        grpc_event_engine::experimental::FuzzingEventEngine::Options(),
-        fuzzing_event_engine::Actions());
     fetcher_ = RegionalAccessBoundaryFetcher::Create(
         "https://googleapis.com", 
         fuzzing_event_engine_,
@@ -107,18 +120,17 @@ class RegionalAccessBoundaryFetcherTest : public ::testing::Test {
       grpc_core::ExecCtx exec_ctx;
       fetcher_.reset();
     }
-    fuzzing_event_engine_->FuzzingDone();
     fuzzing_event_engine_->TickUntilIdle();
-    fuzzing_event_engine_->UnsetGlobalHooks();
-    WaitForSingleOwner(std::move(fuzzing_event_engine_));
-    grpc_shutdown();
   }
 
   RefCountedPtr<RegionalAccessBoundaryFetcher> fetcher_;
   RefCountedPtr<Arena> arena_;
   ClientMetadataHandle metadata_;
-  std::shared_ptr<grpc_event_engine::experimental::FuzzingEventEngine> fuzzing_event_engine_;
+  static std::shared_ptr<grpc_event_engine::experimental::FuzzingEventEngine> fuzzing_event_engine_;
 };
+
+std::shared_ptr<grpc_event_engine::experimental::FuzzingEventEngine>
+    RegionalAccessBoundaryFetcherTest::fuzzing_event_engine_ = nullptr;
 
 namespace {
 
