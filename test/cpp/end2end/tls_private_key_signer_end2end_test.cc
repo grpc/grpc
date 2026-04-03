@@ -499,7 +499,7 @@ TEST_F(TlsPrivateKeyOffloadTest,
   options.set_root_cert_name("root");
   options.watch_identity_key_cert_pairs();
   options.set_identity_cert_name("identity");
-  // Skip the host name check intentionally so make sure the handshake succeeds.
+  // Skip the host name check so that the handshake can succeed.
   options.set_certificate_verifier(
       std::make_shared<experimental::NoOpCertificateVerifier>());
 
