@@ -23,11 +23,6 @@ import unittest
 
 from typeguard import install_import_hook
 
-# Fix the type hierarchy issue for HandlerCallDetails
-import grpc
-from grpc._cython import cygrpc
-# Register the cython class as a virtual subclass of the abstract base class
-grpc.HandlerCallDetails.register(cygrpc._HandlerCallDetails)
 
 # AIO
 install_import_hook('grpc.aio')

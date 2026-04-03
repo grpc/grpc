@@ -21,8 +21,12 @@ from grpc.aio._metadata import Metadata
 from grpc.aio._typing import MetadataKey
 from grpc.aio._typing import MetadataValue
 from grpc.experimental import aio
+from grpc._cython import cygrpc
 
 from tests.unit.framework.common import test_constants
+
+# Register the cython class as a virtual subclass of the abstract base class
+grpc.HandlerCallDetails.register(cygrpc._HandlerCallDetails)
 
 ADHOC_METHOD = "/test/AdHoc"
 
