@@ -18,9 +18,9 @@ import logging
 from typing import Callable
 import unittest
 
-from grpc.experimental import aio
 import grpc
 from grpc._cython import cygrpc
+from grpc.experimental import aio
 
 # Register the cython class as a virtual subclass of the abstract base class
 grpc.HandlerCallDetails.register(cygrpc._HandlerCallDetails)
