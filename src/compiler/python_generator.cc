@@ -466,10 +466,15 @@ bool PrivateGenerator::PrintStub(
           out->Print(method_dict, "self.$Method$ = cast(\n");
           IndentScope raii_first_attribute_indent(out);
           if (render_async) {
-            out->Print(method_dict, "grpc.aio.$MultiCallableReturnType$[\n");
-            out->Print(method_dict, "    $RequestModuleAndClass$,\n");
-            out->Print(method_dict, "    $ResponseModuleAndClass$,\n");
-            out->Print(method_dict, "],\n");
+            if (method->ClientStreaming()) {
+              // there is no proper generic typing for Stream*MultiCallable available yet
+              out->Print(method_dict, "grpc.aio.$MultiCallableReturnType$,");
+            } else {
+              out->Print(method_dict, "grpc.aio.$MultiCallableReturnType$[\n");
+              out->Print(method_dict, "    $RequestModuleAndClass$,\n");
+              out->Print(method_dict, "    $ResponseModuleAndClass$,\n");
+              out->Print(method_dict, "],\n");
+            }
           } else {
             out->Print(method_dict, "grpc.$MultiCallableReturnType$,\n");
           }
