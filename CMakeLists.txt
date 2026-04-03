@@ -2252,7 +2252,6 @@ add_library(grpc
   src/core/client_channel/client_channel_plugin.cc
   src/core/client_channel/client_channel_service_config.cc
   src/core/client_channel/direct_channel.cc
-  src/core/client_channel/dynamic_filters.cc
   src/core/client_channel/global_subchannel_pool.cc
   src/core/client_channel/lb_metadata.cc
   src/core/client_channel/load_balanced_call_destination.cc
@@ -2759,6 +2758,7 @@ add_library(grpc
   src/core/lib/channel/channel_stack_builder.cc
   src/core/lib/channel/channel_stack_builder_impl.cc
   src/core/lib/channel/connected_channel.cc
+  src/core/lib/channel/dynamic_filters.cc
   src/core/lib/channel/promise_based_filter.cc
   src/core/lib/compression/compression.cc
   src/core/lib/compression/compression_internal.cc
@@ -3441,7 +3441,6 @@ add_library(grpc_unsecure
   src/core/client_channel/client_channel_plugin.cc
   src/core/client_channel/client_channel_service_config.cc
   src/core/client_channel/direct_channel.cc
-  src/core/client_channel/dynamic_filters.cc
   src/core/client_channel/global_subchannel_pool.cc
   src/core/client_channel/lb_metadata.cc
   src/core/client_channel/load_balanced_call_destination.cc
@@ -3586,6 +3585,7 @@ add_library(grpc_unsecure
   src/core/lib/channel/channel_stack_builder.cc
   src/core/lib/channel/channel_stack_builder_impl.cc
   src/core/lib/channel/connected_channel.cc
+  src/core/lib/channel/dynamic_filters.cc
   src/core/lib/channel/promise_based_filter.cc
   src/core/lib/compression/compression.cc
   src/core/lib/compression/compression_internal.cc

@@ -14,11 +14,10 @@
 // limitations under the License.
 //
 
-#ifndef GRPC_SRC_CORE_CLIENT_CHANNEL_DYNAMIC_FILTERS_H
-#define GRPC_SRC_CORE_CLIENT_CHANNEL_DYNAMIC_FILTERS_H
+#ifndef GRPC_SRC_CORE_LIB_CHANNEL_DYNAMIC_FILTERS_H
+#define GRPC_SRC_CORE_LIB_CHANNEL_DYNAMIC_FILTERS_H
 
 #include <grpc/slice.h>
-#include <grpc/support/port_platform.h>
 
 #include <utility>
 #include <vector>
@@ -107,4 +106,4 @@ class DynamicFilters final : public FilterChain {
 
 }  // namespace grpc_core
 
-#endif  // GRPC_SRC_CORE_CLIENT_CHANNEL_DYNAMIC_FILTERS_H
+#endif  // GRPC_SRC_CORE_LIB_CHANNEL_DYNAMIC_FILTERS_H

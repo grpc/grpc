@@ -3782,6 +3782,45 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "dynamic_filters",
+    srcs = [
+        "lib/channel/dynamic_filters.cc",
+    ],
+    hdrs = [
+        "lib/channel/dynamic_filters.h",
+    ],
+    external_deps = [
+        "absl/log",
+        "absl/status:statusor",
+    ],
+    visibility = [
+        "//bazel:alt_grpc_base_legacy",
+    ],
+    deps = [
+        "arena",
+        "blackboard",
+        "filter_chain",
+        "channel_args",
+        "channel_fwd",
+        "channel_stack_type",
+        "closure",
+        "error",
+        "grpc_check",
+        "ref_counted",
+        "status_helper",
+        "time",
+        "time_precise",
+        "//:gpr",
+        "//:grpc_base",
+        "//:grpc_trace",
+        "//:iomgr",
+        "//:call_combiner",
+        "//:debug_location",
+        "//:ref_counted_ptr",
+    ],
+)
+
+grpc_cc_library(
     name = "resolved_address",
     hdrs = ["lib/iomgr/resolved_address.h"],
     deps = [

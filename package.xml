@@ -184,8 +184,6 @@
     <file baseinstalldir="/" name="src/core/client_channel/connector.h" role="src" />
     <file baseinstalldir="/" name="src/core/client_channel/direct_channel.cc" role="src" />
     <file baseinstalldir="/" name="src/core/client_channel/direct_channel.h" role="src" />
-    <file baseinstalldir="/" name="src/core/client_channel/dynamic_filters.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/client_channel/dynamic_filters.h" role="src" />
     <file baseinstalldir="/" name="src/core/client_channel/global_subchannel_pool.cc" role="src" />
     <file baseinstalldir="/" name="src/core/client_channel/global_subchannel_pool.h" role="src" />
     <file baseinstalldir="/" name="src/core/client_channel/lb_metadata.cc" role="src" />
@@ -1394,6 +1392,8 @@
     <file baseinstalldir="/" name="src/core/lib/channel/channel_stack_builder_impl.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/connected_channel.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/connected_channel.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/channel/dynamic_filters.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/channel/dynamic_filters.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/promise_based_filter.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/promise_based_filter.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/compression/compression.cc" role="src" />
