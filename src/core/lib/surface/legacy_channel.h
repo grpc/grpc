@@ -65,7 +65,8 @@ class LegacyChannel final : public Channel {
                         grpc_pollset_set* pollset_set_alternative, Slice path,
                         std::optional<Slice> authority, Timestamp deadline,
                         bool registered_method,
-                        absl::FunctionRef<void(Arena*)> arena_init_function) override;
+                        std::optional<absl::FunctionRef<void(Arena*)>>
+                            arena_init_function) override;
 
   void StartCall(UnstartedCallHandler) override {
     Crash("StartCall() not supported on LegacyChannel");

@@ -78,7 +78,7 @@ class Channel : public UnstartedCallDestination,
       grpc_completion_queue* cq, grpc_pollset_set* pollset_set_alternative,
       Slice path, std::optional<Slice> authority, Timestamp deadline,
       bool registered_method,
-      absl::FunctionRef<void(Arena*)> arena_init_function) = 0;
+      std::optional<absl::FunctionRef<void(Arena*)>> arena_init_function) = 0;
 
   virtual grpc_event_engine::experimental::EventEngine* event_engine()
       const = 0;
@@ -177,5 +177,13 @@ inline grpc_core::channelz::ChannelNode* grpc_channel_get_channelz_node(
 // ping); if the channel is not connected, posts a failed.
 void grpc_channel_ping(grpc_channel* channel, grpc_completion_queue* cq,
                        void* tag, void* reserved);
+
+grpc_call* grpc_channel_create_call_with_arena_init(
+    grpc_channel* channel, grpc_call* parent_call, uint32_t propagation_mask,
+    grpc_completion_queue* completion_queue, grpc_core::Slice method,
+    std::optional<grpc_core::Slice> authority, gpr_timespec deadline,
+    bool registered_method,
+    std::optional<absl::FunctionRef<void(grpc_core::Arena*)>>
+        arena_init_function);
 
 #endif  // GRPC_SRC_CORE_LIB_SURFACE_CHANNEL_H

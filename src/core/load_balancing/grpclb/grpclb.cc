@@ -880,7 +880,8 @@ GrpcLb::BalancerCallState::BalancerCallState(
       /*parent_call=*/nullptr, GRPC_PROPAGATE_DEFAULTS,
       /*cq=*/nullptr, grpclb_policy_->interested_parties(),
       Slice::FromStaticString("/grpc.lb.v1.LoadBalancer/BalanceLoad"),
-      /*authority=*/std::nullopt, deadline, /*registered_method=*/true, /*arena_init_function=*/[](Arena*){});
+      /*authority=*/std::nullopt, deadline, /*registered_method=*/true,
+      /*arena_init_function=*/std::nullopt);
   // Init the LB call request payload.
   upb::Arena arena;
   grpc_slice request_payload_slice = GrpcLbRequestCreate(

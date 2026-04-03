@@ -127,25 +127,20 @@ grpc::internal::Call Channel::CreateCallInternal(
     grpc::CompletionQueue* cq, size_t interceptor_pos) {
   const bool kRegistered = method.channel_tag() && context->authority().empty();
   grpc_call* c_call = nullptr;
-  grpc_core::ExecCtx exec_ctx;
   if (kRegistered) {
     auto* rc =
         static_cast<grpc_core::Channel::RegisteredCall*>(method.channel_tag());
-    c_call =
-        grpc_core::Channel::FromC(c_channel_)
-            ->CreateCall(
-                context->propagate_from_call_,
-                context->propagation_options_.c_bitmask(), cq->cq(), nullptr,
-                rc->path.Ref(),
-                rc->authority.has_value()
-                    ? std::optional<grpc_core::Slice>(rc->authority->Ref())
-                    : std::nullopt,
-                grpc_core::Timestamp::FromTimespecRoundUp(
-                    context->raw_deadline()),
-                /*registered_method=*/true, [context](grpc_core::Arena* arena) {
-                  impl::CallContextRegistry::Propagate(
-                      context->context_elements_, arena);
-                });
+    c_call = grpc_channel_create_call_with_arena_init(
+        c_channel_, context->propagate_from_call_,
+        context->propagation_options_.c_bitmask(), cq->cq(), rc->path.Ref(),
+        rc->authority.has_value()
+            ? std::optional<grpc_core::Slice>(rc->authority->Ref())
+            : std::nullopt,
+        context->raw_deadline(),
+        /*registered_method=*/true, [context](grpc_core::Arena* arena) {
+          impl::CallContextRegistry::Propagate(context->context_elements_,
+                                               arena);
+        });
   } else {
     const ::std::string* host_str = nullptr;
     if (!context->authority_.empty()) {
@@ -159,22 +154,18 @@ grpc::internal::Call Channel::CreateCallInternal(
     if (host_str != nullptr) {
       host_slice = grpc::SliceFromCopiedString(*host_str);
     }
-    c_call =
-        grpc_core::Channel::FromC(c_channel_)
-            ->CreateCall(
-                context->propagate_from_call_,
-                context->propagation_options_.c_bitmask(), cq->cq(), nullptr,
-                grpc_core::Slice(grpc_core::CSliceRef(method_slice)),
-                host_str == nullptr ? std::nullopt
-                                    : std::optional<grpc_core::Slice>(
-                                          grpc_core::CSliceRef(host_slice)),
-                grpc_core::Timestamp::FromTimespecRoundUp(
-                    context->raw_deadline()),
-                /*registered_method=*/false,
-                [context](grpc_core::Arena* arena) {
-                  impl::CallContextRegistry::Propagate(
-                      context->context_elements_, arena);
-                });
+    c_call = grpc_channel_create_call_with_arena_init(
+        c_channel_, context->propagate_from_call_,
+        context->propagation_options_.c_bitmask(), cq->cq(),
+        grpc_core::Slice(grpc_core::CSliceRef(method_slice)),
+        host_str == nullptr
+            ? std::nullopt
+            : std::optional<grpc_core::Slice>(grpc_core::CSliceRef(host_slice)),
+        context->raw_deadline(),
+        /*registered_method=*/false, [context](grpc_core::Arena* arena) {
+          impl::CallContextRegistry::Propagate(context->context_elements_,
+                                               arena);
+        });
     grpc_slice_unref(method_slice);
     if (host_str != nullptr) {
       grpc_slice_unref(host_slice);
