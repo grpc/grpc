@@ -35,6 +35,7 @@
 #include "src/core/credentials/call/json_util.h"
 #include "src/core/credentials/call/regional_access_boundary_fetcher.h"
 #include "src/core/credentials/transport/transport_credentials.h"
+#include "src/core/lib/promise/map.h"
 #include "src/core/lib/transport/status_conversion.h"
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/http_client/httpcli_ssl_credentials.h"
@@ -46,7 +47,6 @@
 #include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
-#include "src/core/lib/promise/map.h"
 #include "absl/strings/escaping.h"
 #include "absl/strings/match.h"
 #include "absl/strings/numbers.h"
@@ -79,10 +79,9 @@ namespace {
 class TokenWithRegionalAccessBoundary final
     : public TokenFetcherCredentials::Token {
  public:
-  TokenWithRegionalAccessBoundary(
-      grpc_core::Slice token, grpc_core::Timestamp expiration,
-      grpc_core::RefCountedPtr<RegionalAccessBoundaryFetcher>
-          regional_access_boundary_fetcher)
+  TokenWithRegionalAccessBoundary(Slice token, Timestamp expiration,
+                                  RefCountedPtr<RegionalAccessBoundaryFetcher>
+                                      regional_access_boundary_fetcher)
       : Token(std::move(token), expiration),
         regional_access_boundary_fetcher_(
             std::move(regional_access_boundary_fetcher)) {
@@ -96,7 +95,7 @@ class TokenWithRegionalAccessBoundary final
   }
 
  private:
-  grpc_core::RefCountedPtr<RegionalAccessBoundaryFetcher>
+  RefCountedPtr<RegionalAccessBoundaryFetcher>
       regional_access_boundary_fetcher_;
 };
 
@@ -449,7 +448,7 @@ void ExternalAccountCredentials::ExternalFetchRequest::FinishTokenFetch(
         result = MakeRefCounted<TokenFetcherCredentials::Token>(
             std::move(*token_value), Timestamp::Now() + token_lifetime);
       }
-     }
+    }
   }
   creds_->event_engine().Run([on_done = std::exchange(on_done_, nullptr),
                               result = std::move(result)]() mutable {
@@ -486,9 +485,11 @@ struct WorkloadIdentityPoolFields {
 // Expression to match:
 // //iam.googleapis.com/projects/<project>/locations/global/workloadIdentityPools/<pool-id>/providers/.+
 //
-// Returns the project and pool ID within the WorkloadIdentityPoolFields struct if the audience matches
-// the Workload Identity Pool format, otherwise returns std::nullopt.
-std::optional<WorkloadIdentityPoolFields> MatchWorkloadIdentityPoolAudience(absl::string_view audience) {
+// Returns the project and pool ID within the WorkloadIdentityPoolFields struct
+// if the audience matches the Workload Identity Pool format, otherwise returns
+// std::nullopt.
+std::optional<WorkloadIdentityPoolFields> MatchWorkloadIdentityPoolAudience(
+    absl::string_view audience) {
   // Match "//iam.googleapis.com/projects/"
   if (!absl::ConsumePrefix(&audience, "//iam.googleapis.com/projects/")) {
     return std::nullopt;
@@ -498,8 +499,8 @@ std::optional<WorkloadIdentityPoolFields> MatchWorkloadIdentityPoolAudience(absl
   if (location_pos == absl::string_view::npos) return std::nullopt;
   auto project = audience.substr(0, location_pos);
   if (project.empty()) return std::nullopt;
-  audience.remove_prefix(location_pos +
-                         sizeof("/locations/global/workloadIdentityPools/") - 1);
+  audience.remove_prefix(
+      location_pos + sizeof("/locations/global/workloadIdentityPools/") - 1);
   // Match "<pool-id>/providers/"
   auto provider_pos = audience.find("/providers/");
   if (provider_pos == absl::string_view::npos) return std::nullopt;
@@ -602,8 +603,7 @@ ExternalAccountCredentials::Create(
   }
   it = json.object().find("workforce_pool_user_project");
   if (it != json.object().end()) {
-    if (auto workforce_pool_id =
-            MatchWorkforcePoolAudience(options.audience);
+    if (auto workforce_pool_id = MatchWorkforcePoolAudience(options.audience);
         !workforce_pool_id.empty()) {
       options.workforce_pool_id = std::string(workforce_pool_id);
       options.workforce_pool_user_project = it->second.string();
@@ -709,9 +709,8 @@ ExternalAccountCredentials::ExternalAccountCredentials(
     std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine)
     : TokenFetcherCredentials(event_engine),
       options_(std::move(options)),
-      regional_access_boundary_fetcher_(
-          RegionalAccessBoundaryFetcher::Create(
-              BuildRegionalAccessBoundaryUrl(options_), std::move(event_engine))) {
+      regional_access_boundary_fetcher_(RegionalAccessBoundaryFetcher::Create(
+          BuildRegionalAccessBoundaryUrl(options_), std::move(event_engine))) {
   if (scopes.empty()) {
     scopes.push_back(GOOGLE_CLOUD_PLATFORM_DEFAULT_SCOPE);
   }

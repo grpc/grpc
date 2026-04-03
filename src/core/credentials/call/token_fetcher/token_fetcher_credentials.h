@@ -60,6 +60,7 @@ class TokenFetcherCredentials : public grpc_call_credentials {
    protected:
     // Returns the token's value.
     const Slice& token() const { return token_; }
+
    private:
     Slice token_;
     Timestamp expiration_;

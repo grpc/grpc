@@ -30,7 +30,7 @@ class JwtTokenFileCallCredentials::FileReader final
              absl::AnyInvocable<void(
                  absl::StatusOr<RefCountedPtr<TokenFetcherCredentials::Token>>)>
                  on_done)
-        : creds_(creds), on_done_(std::move(on_done)) {
+      : creds_(creds), on_done_(std::move(on_done)) {
     creds->event_engine().Run([self = RefAsSubclass<FileReader>()]() {
       ExecCtx exec_ctx;
       self->ReadFile();
