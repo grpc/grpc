@@ -316,6 +316,11 @@
       "event_engine_client",
       "event_engine_listener",
     ]
+- name: server_channel_refactor
+  description: Change v1 server to split channel stack from transport.
+  expiry: 2026/10/01
+  owner: roth@google.com
+  test_tags: ["core_end2end_test"]
 - name: skip_clear_peer_on_cancellation
   description: If set, skips clearing of peer string on call cancellation.
   expiry: 2026/05/01

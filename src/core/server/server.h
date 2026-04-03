@@ -439,18 +439,40 @@ class Server : public ServerInterface,
   class AllocatingRequestMatcherBatch;
   class AllocatingRequestMatcherRegistered;
 
+  class ChannelBroadcaster;
+
+  // Represents a connection from a client for the v1 stack.
+  class ServerChannel final : public ChannelForFilterStackCall {
+   public:
+    ServerChannel(const ChannelArgs& args, OrphanablePtr<Transport> transport);
+
+    Transport* transport() const { return transport_.get(); }
+
+    // Required by UnstartedCallDestination, but not used.
+    void StartCall(UnstartedCallHandler) override {}
+
+    void Orphaned() override {}
+
+   private:
+    OrphanablePtr<Transport> transport_;
+  };
+
   class ChannelData final {
    public:
     ChannelData() = default;
     ~ChannelData();
 
     void InitTransport(RefCountedPtr<Server> server,
-                       RefCountedPtr<Channel> channel, size_t cq_idx,
-                       Transport* transport, intptr_t channelz_socket_uuid);
+                       RefCountedPtr<ChannelForFilterStackCall> channel,
+                       RefCountedPtr<grpc_channel_stack> channel_stack,
+                       size_t cq_idx, Transport* transport,
+                       intptr_t channelz_socket_uuid);
 
     RefCountedPtr<Server> server() const { return server_; }
-    Channel* channel() const { return channel_.get(); }
+    ChannelForFilterStackCall* channel() const { return channel_.get(); }
     size_t cq_idx() const { return cq_idx_; }
+
+    grpc_channel_stack* channel_stack() const;
 
     // Filter vtable functions.
     static grpc_error_handle InitChannelElement(
@@ -468,7 +490,10 @@ class Server : public ServerInterface,
     static void FinishDestroy(void* arg, grpc_error_handle error);
 
     RefCountedPtr<Server> server_;
-    RefCountedPtr<Channel> channel_;
+    // TODO(roth): Change this to ServerTransport as part of removing the
+    // server_channel_refactor experiment.
+    RefCountedPtr<ChannelForFilterStackCall> channel_;
+    RefCountedPtr<grpc_channel_stack> channel_stack_;
     // The index into Server::cqs_ of the CQ used as a starting point for
     // where to publish new incoming calls.
     size_t cq_idx_;
@@ -616,7 +641,8 @@ class Server : public ServerInterface,
       size_t* cq_idx, grpc_completion_queue* cq_for_notification, void* tag,
       grpc_byte_buffer** optional_payload, RegisteredMethod* rm);
 
-  std::vector<RefCountedPtr<Channel>> GetChannelsLocked() const;
+  std::vector<RefCountedPtr<ChannelForFilterStackCall>> GetChannelsLocked()
+      const;
 
   // Take a shutdown ref for a request (increment by 2) and return if shutdown
   // has not been called.

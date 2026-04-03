@@ -25,6 +25,11 @@
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/channel_stack_builder.h"
 
+// Boolean channel arg indicating whether the transport should be owned
+// by the connected_channel filter.  Defaults to true.
+#define GRPC_ARG_CONNECTED_CHANNEL_TRANSPORT_OWNED \
+  "grpc.internal.connected_channel.transport_owned"
+
 extern const grpc_channel_filter grpc_connected_filter;
 
 bool grpc_add_connected_filter(grpc_core::ChannelStackBuilder* builder);

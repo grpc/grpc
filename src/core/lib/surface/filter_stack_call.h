@@ -355,15 +355,6 @@ class FilterStackCall final : public Call {
   gpr_atm recv_state_ = 0;
 };
 
-// Create a new call based on \a args.
-// Regardless of success or failure, always returns a valid new call into *call
-//
-grpc_error_handle grpc_call_create(grpc_call_create_args* args,
-                                   grpc_call** call);
-
-// Given the top call_element, get the call object.
-grpc_call* grpc_call_from_top_element(grpc_call_element* surface_element);
-
 }  // namespace grpc_core
 
 #endif  // GRPC_SRC_CORE_LIB_SURFACE_FILTER_STACK_CALL_H

@@ -77,6 +77,7 @@
 
 typedef struct connected_channel_channel_data {
   grpc_core::Transport* transport;
+  bool transport_owned;
 } channel_data;
 
 struct callback_state {
@@ -222,13 +223,16 @@ static grpc_error_handle connected_channel_init_channel_elem(
   channel_data* cd = static_cast<channel_data*>(elem->channel_data);
   GRPC_CHECK(args->is_last);
   cd->transport = args->channel_args.GetObject<grpc_core::Transport>();
+  cd->transport_owned =
+      args->channel_args.GetBool(GRPC_ARG_CONNECTED_CHANNEL_TRANSPORT_OWNED)
+          .value_or(true);
   return absl::OkStatus();
 }
 
 // Destructor for channel_data
 static void connected_channel_destroy_channel_elem(grpc_channel_element* elem) {
   channel_data* cd = static_cast<channel_data*>(elem->channel_data);
-  if (cd->transport) {
+  if (cd->transport != nullptr && cd->transport_owned) {
     cd->transport->Orphan();
   }
 }

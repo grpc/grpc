@@ -49,6 +49,8 @@
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_args_preconditioning.h"
+#include "src/core/lib/channel/channel_stack_builder_impl.h"
+#include "src/core/lib/channel/connected_channel.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/pollset_set.h"
@@ -69,6 +71,7 @@
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/surface/completion_queue.h"
+#include "src/core/lib/surface/filter_stack_call.h"
 #include "src/core/lib/surface/legacy_channel.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/error_utils.h"
@@ -968,25 +971,24 @@ class Server::AllocatingRequestMatcherRegistered
 };
 
 //
-// ChannelBroadcaster
+// Server::ChannelBroadcaster
 //
 
-namespace {
-
-class ChannelBroadcaster {
+class Server::ChannelBroadcaster {
  public:
   // This can have an empty constructor and destructor since we want to control
   // when the actual setup and shutdown broadcast take place.
 
   // Copies over the channels from the locked server.
-  void FillChannelsLocked(std::vector<RefCountedPtr<Channel>> channels) {
+  void FillChannelsLocked(
+      std::vector<RefCountedPtr<ChannelForFilterStackCall>> channels) {
     GRPC_DCHECK(channels_.empty());
     channels_ = std::move(channels);
   }
 
   // Broadcasts a shutdown on each channel.
   void BroadcastShutdown(bool send_goaway, grpc_error_handle force_disconnect) {
-    for (const RefCountedPtr<Channel>& channel : channels_) {
+    for (const RefCountedPtr<ChannelForFilterStackCall>& channel : channels_) {
       SendShutdown(channel.get(), send_goaway, force_disconnect);
     }
     channels_.clear();  // just for safety against double broadcast
@@ -1004,7 +1006,7 @@ class ChannelBroadcaster {
     delete a;
   }
 
-  static void SendShutdown(Channel* channel, bool send_goaway,
+  static void SendShutdown(ChannelForFilterStackCall* channel, bool send_goaway,
                            grpc_error_handle send_disconnect) {
     ShutdownCleanupArgs* sc = new ShutdownCleanupArgs;
     GRPC_CLOSURE_INIT(&sc->closure, ShutdownCleanup, sc,
@@ -1019,14 +1021,17 @@ class ChannelBroadcaster {
             : absl::OkStatus();
     sc->slice = grpc_slice_from_copied_string("Server shutdown");
     op->disconnect_with_error = send_disconnect;
-    elem = grpc_channel_stack_element(channel->channel_stack(), 0);
-    elem->filter->start_transport_op(elem, op);
+    if (!IsServerChannelRefactorEnabled()) {
+      elem = grpc_channel_stack_element(
+          DownCast<Channel*>(channel)->channel_stack(), 0);
+      elem->filter->start_transport_op(elem, op);
+      return;
+    }
+    DownCast<ServerChannel*>(channel)->transport()->PerformOp(op);
   }
 
-  std::vector<RefCountedPtr<Channel>> channels_;
+  std::vector<RefCountedPtr<ChannelForFilterStackCall>> channels_;
 };
-
-}  // namespace
 
 //
 // Server::TransportConnectivityWatcher
@@ -1347,19 +1352,69 @@ grpc_error_handle Server::SetupTransport(Transport* transport,
     stream_quota_->IncrementOpenChannels();
   } else {
     GRPC_CHECK(transport->filter_stack_transport() != nullptr);
-    absl::StatusOr<RefCountedPtr<Channel>> channel = LegacyChannel::Create(
-        "",
+    ChannelArgs connection_args =
         args.SetObject(transport).SetObject<channelz::BaseNode>(
-            transport->GetSocketNode()),
-        GRPC_SERVER_CHANNEL, blackboard);
-    if (!channel.ok()) {
-      return absl_status_to_grpc_error(channel.status());
+            transport->GetSocketNode());
+    ChannelData* chand = nullptr;
+    RefCountedPtr<grpc_channel_stack> channel_stack;
+    RefCountedPtr<ChannelForFilterStackCall> channel;
+    if (!IsServerChannelRefactorEnabled()) {
+      absl::StatusOr<RefCountedPtr<Channel>> legacy_channel =
+          LegacyChannel::Create("", connection_args, GRPC_SERVER_CHANNEL,
+                                blackboard);
+      if (!legacy_channel.ok()) {
+        return absl_status_to_grpc_error(legacy_channel.status());
+      }
+      GRPC_CHECK(*legacy_channel != nullptr);
+      grpc_channel_stack* channel_stack_ptr =
+          (*legacy_channel)->channel_stack();
+      GRPC_CHECK(channel_stack_ptr != nullptr);
+      chand = static_cast<ChannelData*>(
+          grpc_channel_stack_element(channel_stack_ptr, 0)->channel_data);
+      channel = std::move(*legacy_channel);
+    } else {
+      // TODO(roth): This should be global to the server instead of being
+      // constructed per connection.  Fix this when we add stats plugin
+      // support to the v3 stack.
+      std::shared_ptr<GlobalStatsPluginRegistry::StatsPluginGroup>
+          stats_plugin_group =
+              GlobalStatsPluginRegistry::GetStatsPluginsForServer(args);
+      connection_args = connection_args.SetObject(stats_plugin_group);
+      // Connected channel filter will not own transport.
+      connection_args =
+          connection_args.Set(GRPC_ARG_CONNECTED_CHANNEL_TRANSPORT_OWNED, 0);
+      // Construct channel stack.
+      ChannelStackBuilderImpl builder(
+          grpc_channel_stack_type_string(GRPC_SERVER_CHANNEL),
+          GRPC_SERVER_CHANNEL, connection_args);
+      builder.SetBlackboard(blackboard);
+      if (!CoreConfiguration::Get().channel_init().CreateStack(&builder)) {
+        return absl::InternalError("could not create filter stack");
+      }
+      absl::StatusOr<RefCountedPtr<grpc_channel_stack>> built_stack =
+          builder.Build();
+      if (!built_stack.ok()) {
+        auto status = built_stack.status();
+        LOG(ERROR) << "channel stack builder failed: " << status;
+        return status;
+      }
+      channel_stack = std::move(*built_stack);
+      *channel_stack->stats_plugin_group = std::move(stats_plugin_group);
+      // Construct server channel, which will own the transport.
+      channel = MakeRefCounted<ServerChannel>(
+          connection_args, OrphanablePtr<Transport>(transport));
+      global_stats().IncrementServerChannelsCreated();
+      // Handle channelz logging on destruction.
+      RefCountedPtr<channelz::ChannelNode> node;
+      if (channel->channelz_node() != nullptr) {
+        node = channel->channelz_node()->RefAsSubclass<channelz::ChannelNode>();
+      }
+      *channel_stack->on_destroy = [node = std::move(node)]() {
+        GRPC_CHANNELZ_LOG(node) << "Channel destroyed";
+      };
+      chand = static_cast<ChannelData*>(
+          grpc_channel_stack_element(channel_stack.get(), 0)->channel_data);
     }
-    GRPC_CHECK(*channel != nullptr);
-    auto* channel_stack = (*channel)->channel_stack();
-    GRPC_CHECK(channel_stack != nullptr);
-    ChannelData* chand = static_cast<ChannelData*>(
-        grpc_channel_stack_element(channel_stack, 0)->channel_data);
     // Set up CQs.
     size_t cq_idx;
     for (cq_idx = 0; cq_idx < cqs_.size(); cq_idx++) {
@@ -1374,11 +1429,9 @@ grpc_error_handle Server::SetupTransport(Transport* transport,
       channelz_socket_uuid = socket_node->uuid();
       socket_node->AddParent(channelz_node_.get());
     }
-
     // Initialize chand.
-    chand->InitTransport(Ref(), std::move(*channel), cq_idx, transport,
-                         channelz_socket_uuid);
-
+    chand->InitTransport(Ref(), std::move(channel), std::move(channel_stack),
+                         cq_idx, transport, channelz_socket_uuid);
     stream_quota_->IncrementOpenChannels();
   }
   return absl::OkStatus();
@@ -1498,11 +1551,13 @@ void Server::KillPendingWorkLocked(grpc_error_handle error) {
   }
 }
 
-std::vector<RefCountedPtr<Channel>> Server::GetChannelsLocked() const {
-  std::vector<RefCountedPtr<Channel>> channels;
+std::vector<RefCountedPtr<ChannelForFilterStackCall>>
+Server::GetChannelsLocked() const {
+  std::vector<RefCountedPtr<ChannelForFilterStackCall>> channels;
   channels.reserve(channels_.size());
   for (const ChannelData* chand : channels_) {
-    channels.push_back(chand->channel()->RefAsSubclass<Channel>());
+    channels.push_back(
+        chand->channel()->RefAsSubclass<ChannelForFilterStackCall>());
   }
   return channels;
 }
@@ -1706,7 +1761,7 @@ class Server::ChannelData::ConnectivityWatcher
     : public AsyncConnectivityStateWatcherInterface {
  public:
   explicit ConnectivityWatcher(ChannelData* chand)
-      : chand_(chand), channel_(chand_->channel_->RefAsSubclass<Channel>()) {}
+      : chand_(chand), channel_(chand_->channel_) {}
 
  private:
   void OnConnectivityStateChange(grpc_connectivity_state new_state,
@@ -1720,8 +1775,17 @@ class Server::ChannelData::ConnectivityWatcher
   }
 
   ChannelData* const chand_;
-  const RefCountedPtr<Channel> channel_;
+  const RefCountedPtr<ChannelForFilterStackCall> channel_;
 };
+
+//
+// Server::ServerChannel
+//
+
+Server::ServerChannel::ServerChannel(const ChannelArgs& args,
+                                     OrphanablePtr<Transport> transport)
+    : ChannelForFilterStackCall(/*target=*/"", args),
+      transport_(std::move(transport)) {}
 
 //
 // Server::ChannelData
@@ -1739,12 +1803,21 @@ Server::ChannelData::~ChannelData() {
   }
 }
 
-void Server::ChannelData::InitTransport(RefCountedPtr<Server> server,
-                                        RefCountedPtr<Channel> channel,
-                                        size_t cq_idx, Transport* transport,
-                                        intptr_t channelz_socket_uuid) {
+grpc_channel_stack* Server::ChannelData::channel_stack() const {
+  if (!IsServerChannelRefactorEnabled()) {
+    return DownCast<LegacyChannel*>(channel_.get())->channel_stack();
+  }
+  return channel_stack_.get();
+}
+
+void Server::ChannelData::InitTransport(
+    RefCountedPtr<Server> server,
+    RefCountedPtr<ChannelForFilterStackCall> channel,
+    RefCountedPtr<grpc_channel_stack> channel_stack, size_t cq_idx,
+    Transport* transport, intptr_t channelz_socket_uuid) {
   server_ = std::move(server);
   channel_ = std::move(channel);
+  channel_stack_ = std::move(channel_stack);
   cq_idx_ = cq_idx;
   channelz_socket_uuid_ = channelz_socket_uuid;
   // Publish channel.
@@ -1813,7 +1886,9 @@ void Server::ChannelData::AcceptStream(void* arg, Transport* /*transport*/,
   auto* chand = static_cast<Server::ChannelData*>(arg);
   // create a call
   grpc_call_create_args args;
-  args.channel = chand->channel_->RefAsSubclass<Channel>();
+  if (!IsServerChannelRefactorEnabled()) {
+    args.channel = chand->channel_->RefAsSubclass<Channel>();
+  }
   args.server = chand->server_.get();
   args.parent = nullptr;
   args.propagation_mask = 0;
@@ -1822,7 +1897,16 @@ void Server::ChannelData::AcceptStream(void* arg, Transport* /*transport*/,
   args.server_transport_data = transport_server_data;
   args.send_deadline = Timestamp::InfFuture();
   grpc_call* call;
-  grpc_error_handle error = grpc_call_create(&args, &call);
+  grpc_error_handle error;
+  if (IsServerChannelRefactorEnabled()) {
+    error = FilterStackCall::Create(
+        &args, chand->channel_, chand->channel_stack_.get(),
+        chand->server_->channel_args()
+            .GetObject<grpc_event_engine::experimental::EventEngine>(),
+        &call);
+  } else {
+    error = grpc_call_create(&args, &call);
+  }
   grpc_call_stack* call_stack = grpc_call_get_call_stack(call);
   GRPC_CHECK_NE(call_stack, nullptr);
   grpc_call_element* elem = grpc_call_stack_element(call_stack, 0);
@@ -1838,10 +1922,16 @@ void Server::ChannelData::FinishDestroy(void* arg,
                                         grpc_error_handle /*error*/) {
   auto* chand = static_cast<Server::ChannelData*>(arg);
   Server* server = chand->server_.get();
-  auto* channel_stack = chand->channel_->channel_stack();
+  if (!IsServerChannelRefactorEnabled()) {
+    auto* channel_stack = chand->channel_stack();
+    chand->channel_.reset();
+    server->Unref();
+    GRPC_CHANNEL_STACK_UNREF(channel_stack, "Server::ChannelData::Destroy");
+    return;
+  }
+  auto channel_stack = std::move(chand->channel_stack_);
   chand->channel_.reset();
   server->Unref();
-  GRPC_CHANNEL_STACK_UNREF(channel_stack, "Server::ChannelData::Destroy");
 }
 
 void Server::ChannelData::Destroy() {
@@ -1851,17 +1941,21 @@ void Server::ChannelData::Destroy() {
   list_position_.reset();
   server_->Ref().release();
   server_->MaybeFinishShutdown();
-  // Unreffed by FinishDestroy
-  GRPC_CHANNEL_STACK_REF(channel_->channel_stack(),
-                         "Server::ChannelData::Destroy");
   GRPC_CLOSURE_INIT(&finish_destroy_channel_closure_, FinishDestroy, this,
                     grpc_schedule_on_exec_ctx);
   GRPC_TRACE_LOG(server_channel, INFO) << "Disconnected client";
   grpc_transport_op* op =
       grpc_make_transport_op(&finish_destroy_channel_closure_);
   op->set_accept_stream = true;
-  grpc_channel_next_op(grpc_channel_stack_element(channel_->channel_stack(), 0),
-                       op);
+  if (!IsServerChannelRefactorEnabled()) {
+    // Unreffed by FinishDestroy
+    GRPC_CHANNEL_STACK_REF(channel_stack(), "Server::ChannelData::Destroy");
+    grpc_channel_next_op(grpc_channel_stack_element(channel_stack(), 0), op);
+    return;
+  }
+  // TODO(roth): Remove the down-cast as part of removing the
+  // server_channel_refactor experiment.
+  DownCast<ServerChannel*>(channel_.get())->transport()->PerformOp(op);
 }
 
 grpc_error_handle Server::ChannelData::InitChannelElement(
