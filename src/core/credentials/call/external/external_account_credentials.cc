@@ -671,6 +671,7 @@ ExternalAccountCredentials::Create(
   return creds;
 }
 namespace {
+
 std::string BuildRegionalAccessBoundaryUrl(
     const ExternalAccountCredentials::Options& options) {
   if (!options.service_account_impersonation_url.empty()) {
@@ -700,7 +701,8 @@ std::string BuildRegionalAccessBoundaryUrl(
   }
   return "";
 }
-}
+
+}  // namespace
 
 ExternalAccountCredentials::ExternalAccountCredentials(
     Options options, std::vector<std::string> scopes,

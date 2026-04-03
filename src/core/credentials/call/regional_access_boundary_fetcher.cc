@@ -76,10 +76,10 @@ RegionalAccessBoundaryFetcher::RegionalAccessBoundaryFetcher(
   CHECK(event_engine_ != nullptr);
 }
 
-void RegionalAccessBoundaryFetcher::OnFetchSuccess(Slice encoded_locations, std::vector<std::string> locations) {
+void RegionalAccessBoundaryFetcher::OnFetchSuccess(Slice encoded_locations) {
   grpc_core::MutexLock lock(&cache_mu_);
   if (shutdown_) return;
-  cache_ = {std::move(encoded_locations), std::move(locations),
+  cache_ = {std::move(encoded_locations),
             grpc_core::Timestamp::Now() +
                 kRegionalAccessBoundaryCacheDuration};
   backoff_.Reset();
@@ -213,7 +213,6 @@ void RegionalAccessBoundaryFetcher::Request::OnResponseWrapper(
 void RegionalAccessBoundaryFetcher::Request::OnResponse(grpc_error_handle error) {
   bool success = false;
   std::string encoded_locations;
-  std::vector<std::string> locations;
   if (error.ok() && response_.status == 200) {
     absl::StatusOr<Json> json = grpc_core::JsonParse(
         absl::string_view(response_.body, response_.body_length));
@@ -223,28 +222,17 @@ void RegionalAccessBoundaryFetcher::Request::OnResponse(grpc_error_handle error)
           it_encoded->second.type() == grpc_core::Json::Type::kString) {
         encoded_locations = it_encoded->second.string();
       }
-      auto it_locations = json->object().find("locations");
-      if (it_locations != json->object().end() &&
-          it_locations->second.type() == grpc_core::Json::Type::kArray) {
-        for (auto& loc : it_locations->second.array()) {
-          if (loc.type() == grpc_core::Json::Type::kString) {
-            locations.push_back(loc.string());
-          }
-        }
-      }
       if (!encoded_locations.empty()) {
         success = true;
       }
     }
   }
   if (success) {
-    fetcher_->OnFetchSuccess(Slice::FromCopiedString(encoded_locations), std::move(locations));
+    fetcher_->OnFetchSuccess(Slice::FromCopiedString(encoded_locations));
   } else {
     fetcher_->OnFetchFailure(
         Ref(), error, response_.status,
-        response_.body != nullptr
-            ? absl::string_view(response_.body, response_.body_length)
-            : absl::string_view());
+        absl::string_view(response_.body, response_.body_length));
   }
 }
 

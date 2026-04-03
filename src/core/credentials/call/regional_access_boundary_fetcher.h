@@ -65,13 +65,12 @@ class RegionalAccessBoundaryFetcher final : public DualRefCounted<RegionalAccess
 
   struct RegionalAccessBoundary {
     Slice encoded_locations;
-    std::vector<std::string> locations;
     grpc_core::Timestamp expiration;
   };
 
   class Request;
 
-  void OnFetchSuccess(Slice encoded_locations, std::vector<std::string> locations);
+  void OnFetchSuccess(Slice encoded_locations);
   void OnFetchFailure(grpc_core::RefCountedPtr<Request> req, grpc_error_handle error, int http_status, absl::string_view response_body);
 
   std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_;

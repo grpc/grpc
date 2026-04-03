@@ -4676,7 +4676,7 @@ TEST_F(ExternalAccountCredentialsTest, SuccessWithRab401) {
   HttpRequest::SetOverride(nullptr, nullptr, nullptr);
 }
 
-TEST_F(ExternalAccountCredentialsTest, SuccessWithRab500_NoHeader) {
+TEST_F(ExternalAccountCredentialsTest, SuccessWithRab500NoHeader) {
   ExecCtx exec_ctx;
   Json credential_source = Json::FromString("");
   TestExternalAccountCredentials::ServiceAccountImpersonation
@@ -4977,6 +4977,7 @@ TEST_F(JwtTokenFileCallCredentialsTest, FileDoesNotExist) {
       "");
   state->RunRequestMetadataTest(creds.get(), kTestUrlScheme, kTestAuthority,
                                 kTestPath);
+  event_engine_->TickUntilIdle();
   ExecCtx::Get()->Flush();
 }
 
@@ -4989,6 +4990,7 @@ TEST_F(JwtTokenFileCallCredentialsTest, InvalidToken) {
       absl::UnauthenticatedError("error parsing JWT token"), "");
   state->RunRequestMetadataTest(creds.get(), kTestUrlScheme, kTestAuthority,
                                 kTestPath);
+  event_engine_->TickUntilIdle();
   ExecCtx::Get()->Flush();
   gpr_free(path);
 }
@@ -5033,7 +5035,7 @@ int compute_engine_with_rab_httpcli_get_success_override(
     // Delay token callback until email matches
     g_token_on_done = on_done;
     return 1;
-  } else if (uri.path().find("allowedLocations") != std::string::npos) {
+  } else if (absl::StrContains(uri.path(), "allowedLocations")) {
     *response = http_response(200,
                               "{\"encodedLocations\": \"0x08\", "
                               "\"locations\": [\"europe-west1\"]}");
@@ -5055,7 +5057,7 @@ int compute_engine_with_rab_401_httpcli_get_override(
   } else if (uri.path() ==
              "/computeMetadata/v1/instance/service-accounts/default/token") {
     *response = http_response(200, valid_oauth2_json_response);
-  } else if (uri.path().find("allowedLocations") != std::string::npos) {
+  } else if (absl::StrContains(uri.path(), "allowedLocations")) {
     *response = http_response(401, "");
   } else {
     *response = http_response(404, "");
@@ -5107,11 +5109,11 @@ TEST_F(CredentialsTest, TestComputeEngineCredsWithRab401) {
   creds->Unref();
 }
 
-static std::atomic<int> g_email_fetch_count{0};
+std::atomic<int> g_email_fetch_count{0};
 int compute_engine_concurrent_fetch_override(
     const grpc_http_request* request, const URI& uri, Timestamp deadline,
     grpc_closure* on_done, grpc_http_response* response) {
-  if (uri.path().find("email") != std::string::npos) {
+  if (absl::StrContains(uri.path(), "email")) {
     g_email_fetch_count++;
   }
   return compute_engine_with_rab_httpcli_get_success_override(request, uri, deadline, on_done, response);

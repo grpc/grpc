@@ -114,8 +114,6 @@ class TokenFetcherCredentials : public grpc_call_credentials {
     // annotations.
     void Orphan() override ABSL_NO_THREAD_SAFETY_ANALYSIS;
 
-    friend class TokenFetcherCredentials;
-
     // Returns non-OK when we're in backoff.
     absl::Status status() const;
 

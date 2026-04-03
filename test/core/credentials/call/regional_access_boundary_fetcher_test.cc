@@ -131,7 +131,7 @@ TEST_F(RegionalAccessBoundaryFetcherTest, CacheMissTriggersFetch) {
 
 TEST_F(RegionalAccessBoundaryFetcherTest, CacheHitDoesNotTriggerFetch) {
   set_cache(RegionalAccessBoundary{
-      Slice::FromStaticString("us-west1"), {"us-west1"}, grpc_core::Timestamp::Now() + grpc_core::Duration::Seconds(7200)});
+      Slice::FromStaticString("us-west1"), grpc_core::Timestamp::Now() + grpc_core::Duration::Seconds(7200)});
   metadata_->Append("authorization", Slice::FromStaticString("Bearer token"), [](absl::string_view, const Slice&) { abort(); });
   fetcher_->Fetch("", *metadata_);
   EXPECT_FALSE(fetch_in_flight());
@@ -143,15 +143,12 @@ TEST_F(RegionalAccessBoundaryFetcherTest, CacheHitDoesNotTriggerFetch) {
 TEST_F(RegionalAccessBoundaryFetcherTest, ExpiredCacheTriggersFetch) {
   ExecCtx exec_ctx;
   set_cache(RegionalAccessBoundary{
-      Slice::FromStaticString("us-west1"), {"us-west1"}, grpc_core::Timestamp::Now() + grpc_core::Duration::Seconds(100)});
-  // Tick(grpc_core::Duration::Seconds(101));
+      Slice::FromStaticString("us-west1"), grpc_core::Timestamp::Now() + grpc_core::Duration::Seconds(100)});
   fuzzing_event_engine_->TickForDuration(grpc_core::Duration::Seconds(101));
   metadata_->Append("authorization", Slice::FromStaticString("Bearer token"), [](absl::string_view, const Slice&) { abort(); });
   fetcher_->Fetch("", *metadata_);
   EXPECT_TRUE(fetch_in_flight());
 }
-
-
 
 TEST_F(RegionalAccessBoundaryFetcherTest, InvalidUriParsing) {
   auto fetcher = RegionalAccessBoundaryFetcher::Create(
@@ -463,7 +460,7 @@ TEST_F(RegionalAccessBoundaryFetcherTest, BackoffResetsOnSuccess) {
   EXPECT_FALSE(fetch_in_flight());
   EXPECT_TRUE(has_cache());
   // 4. Invalidate cache to force new fetch.
-  set_cache(RegionalAccessBoundary{Slice::FromStaticString(""), {}, grpc_core::Timestamp::InfPast()});
+  set_cache(RegionalAccessBoundary{Slice::FromStaticString(""), grpc_core::Timestamp::InfPast()});
   // 5. Force another 500 error.
   HttpRequest::SetOverride(httpcli_get_500, nullptr, nullptr);
   auto metadata_fail = arena_->MakePooled<ClientMetadata>();
@@ -492,7 +489,7 @@ TEST_F(RegionalAccessBoundaryFetcherTest, CacheSoftExpirationTriggersRefresh) {
   HttpRequest::SetOverride(httpcli_get_valid_json, nullptr, nullptr);
   grpc_core::Timestamp now = grpc_core::Timestamp::Now();
   grpc_core::Timestamp soft_expired_timestamp = now + (kRegioanlAccessBoundarySoftCacheGraceDuration / 2);
-  set_cache(RegionalAccessBoundary{Slice::FromStaticString("us-east1"), {"us-east1"}, soft_expired_timestamp});
+  set_cache(RegionalAccessBoundary{Slice::FromStaticString("us-east1"), soft_expired_timestamp});
   // Verify our mock cache setup is correct
   EXPECT_TRUE(has_cache());
   EXPECT_FALSE(fetch_in_flight());
