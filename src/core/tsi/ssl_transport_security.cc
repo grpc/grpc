@@ -572,8 +572,9 @@ void OnSelectCertificateDone(
     next_result = async_result.first;
     next_args = std::move(async_result.second);
   }
-  // This means the result is not TSI_ASYNC and we are ready to flush.
-  if (next_args.has_value() && next_args->cb != nullptr) {
+  // If result is not TSI_ASYNC and there are args, we are ready to flush.
+  if (next_result != TSI_ASYNC && next_args.has_value() &&
+      next_args->cb != nullptr) {
     next_args->cb(next_result, next_args->user_data, next_args->bytes_to_send,
                   next_args->bytes_to_send_size, next_args->handshaker_result);
   }

@@ -33,6 +33,8 @@ namespace testing {
 namespace {
 
 constexpr absl::string_view kTestCredsRelativePath = "src/core/tsi/test_creds/";
+constexpr absl::string_view kServerCertFile = "server1.pem";
+constexpr absl::string_view kServerKeyFile = "server1.key";
 constexpr absl::string_view kInvalidPemBlock =
     "-----BEGIN CERTIFICATE-----\ninvalid\n-----END CERTIFICATE-----";
 
@@ -52,9 +54,9 @@ class TlsCertificateSelectorTest : public ::testing::Test {
  protected:
   TlsCertificateSelectorTest()
       : cert_chain_(GetFileContents(
-            absl::StrCat(kTestCredsRelativePath, "server1.pem"))),
+            absl::StrCat(kTestCredsRelativePath, kServerCertFile))),
         private_key_(GetFileContents(
-            absl::StrCat(kTestCredsRelativePath, "server1.key"))) {}
+            absl::StrCat(kTestCredsRelativePath, kServerKeyFile))) {}
 
   static std::vector<std::string> ConvertCertChainToDer(
       absl::string_view pem_cert_chain) {

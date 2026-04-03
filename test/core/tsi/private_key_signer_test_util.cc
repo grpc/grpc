@@ -45,6 +45,8 @@
 namespace grpc_core {
 namespace testing {
 
+#if defined(OPENSSL_IS_BORINGSSL)
+
 namespace {
 bssl::UniquePtr<EVP_PKEY> LoadPrivateKeyFromString(
     absl::string_view private_pem) {
@@ -182,6 +184,8 @@ void AsyncTestPrivateKeySigner::Cancel(
 }
 
 bool AsyncTestPrivateKeySigner::WasCancelled() { return was_cancelled_.load(); }
+
+#endif  // OPENSSL_IS_BORINGSSL
 
 }  // namespace testing
 }  // namespace grpc_core

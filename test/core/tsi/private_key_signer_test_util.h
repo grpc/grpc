@@ -23,7 +23,7 @@
 #include <openssl/ec.h>
 #include <openssl/evp.h>
 #include <openssl/rsa.h>
-#include <openssl/ssl.h>
+#include <openssl/base.h>
 
 #include <atomic>
 #include <memory>
@@ -33,6 +33,8 @@
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
+
+#if defined(OPENSSL_IS_BORINGSSL)
 
 namespace grpc_core {
 namespace testing {
@@ -82,6 +84,8 @@ class AsyncTestPrivateKeySigner final
   Mode mode_;
   std::atomic<bool> was_cancelled_{false};
 };
+
+#endif  // OPENSSL_IS_BORINGSSL
 
 }  // namespace testing
 }  // namespace grpc_core
