@@ -468,7 +468,7 @@ bool PrivateGenerator::PrintStub(
           if (render_async) {
             if (method->ClientStreaming()) {
               // there is no proper generic typing for Stream*MultiCallable available yet
-              out->Print(method_dict, "grpc.aio.$MultiCallableReturnType$,");
+              out->Print(method_dict, "grpc.aio.$MultiCallableReturnType$,\n");
             } else {
               out->Print(method_dict, "grpc.aio.$MultiCallableReturnType$[\n");
               out->Print(method_dict, "    $RequestModuleAndClass$,\n");
