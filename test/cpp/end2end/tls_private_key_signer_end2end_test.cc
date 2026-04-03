@@ -66,8 +66,7 @@ namespace testing {
 namespace {
 
 constexpr absl::string_view kMessage = "Hello";
-constexpr absl::string_view kCaPemPath =
-    "src/core/tsi/test_creds/ca.pem";
+constexpr absl::string_view kCaPemPath = "src/core/tsi/test_creds/ca.pem";
 constexpr absl::string_view kServerKey0Path =
     "src/core/tsi/test_creds/server0.key";
 constexpr absl::string_view kServerCert0Path =
