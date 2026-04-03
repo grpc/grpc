@@ -21,6 +21,7 @@
 #include <atomic>
 #include <memory>
 #include <string>
+#include <utility>
 
 #include "src/core/lib/iomgr/timer_manager.h"
 #include "src/core/tsi/ssl_transport_security.h"
@@ -210,17 +211,23 @@ class SslOffloadTsiTestFixture {
  public:
   SslOffloadTsiTestFixture(OffloadParty offload_party,
                            std::shared_ptr<PrivateKeySigner> signer,
-                           tsi_tls_version tls_version)
+                           tsi_tls_version tls_version,
+                           std::string sni_name = "")
       : offload_party_(offload_party),
         signer_(std::move(signer)),
-        tls_version_(tls_version) {
+        tls_version_(tls_version),
+        sni_name_(std::move(sni_name)) {
     tsi_test_fixture_init(&base_);
     base_.test_unused_bytes = true;
     base_.vtable = &kVtable;
     ca_cert_ = GetFileContents(absl::StrCat(kTestCredsRelativePath, "ca.pem"));
-    server_key_ =
+    server0_key_ =
+        GetFileContents(absl::StrCat(kTestCredsRelativePath, "server0.key"));
+    server0_cert_ =
+        GetFileContents(absl::StrCat(kTestCredsRelativePath, "server0.pem"));
+    server1_key_ =
         GetFileContents(absl::StrCat(kTestCredsRelativePath, "server1.key"));
-    server_cert_ =
+    server1_cert_ =
         GetFileContents(absl::StrCat(kTestCredsRelativePath, "server1.pem"));
     client_key_ =
         GetFileContents(absl::StrCat(kTestCredsRelativePath, "client.key"));
@@ -230,13 +237,23 @@ class SslOffloadTsiTestFixture {
       if (offload_party_ == OffloadParty::kClient) {
         signer_ = std::make_shared<SyncTestPrivateKeySigner>(client_key_);
       } else if (offload_party_ == OffloadParty::kServer) {
-        signer_ = std::make_shared<SyncTestPrivateKeySigner>(server_key_);
+        signer_ = std::make_shared<SyncTestPrivateKeySigner>(server0_key_);
       }
     }
-    server_pem_key_cert_pairs_.emplace_back(server_key_, server_cert_);
-    client_pem_key_cert_pairs_.emplace_back(client_key_, client_cert_);
-    server_pem_key_cert_pairs_with_signer_.emplace_back(signer_, server_cert_);
-    client_pem_key_cert_pairs_with_signer_.emplace_back(signer_, client_cert_);
+    if (offload_party_ == OffloadParty::kServer) {
+      // Use the given signer for the default server certificate.
+      server_pem_key_cert_pairs_.emplace_back(signer_, server0_cert_);
+      server_pem_key_cert_pairs_.emplace_back(
+          std::make_shared<SyncTestPrivateKeySigner>(server1_key_),
+          server1_cert_);
+      client_pem_key_cert_pair_ =
+          tsi_ssl_pem_key_cert_pair(client_key_, client_cert_);
+    } else {
+      server_pem_key_cert_pairs_.emplace_back(server0_key_, server0_cert_);
+      server_pem_key_cert_pairs_.emplace_back(server1_key_, server1_cert_);
+      client_pem_key_cert_pair_ =
+          tsi_ssl_pem_key_cert_pair(signer_, client_cert_);
+    }
   }
 
   void Run(bool expect_success, bool expect_success_on_client,
@@ -275,12 +292,7 @@ class SslOffloadTsiTestFixture {
         std::make_shared<tsi::RootCertInfo>(ca_cert_);
     client_options.min_tls_version = tls_version_;
     client_options.max_tls_version = tls_version_;
-    if (offload_party_ == OffloadParty::kClient) {
-      client_options.pem_key_cert_pair =
-          &client_pem_key_cert_pairs_with_signer_[0];
-    } else {
-      client_options.pem_key_cert_pair = &client_pem_key_cert_pairs_[0];
-    }
+    client_options.pem_key_cert_pair = &client_pem_key_cert_pair_;
     ASSERT_EQ(tsi_create_ssl_client_handshaker_factory_with_options(
                   &client_options, &client_handshaker_factory_),
               TSI_OK);
@@ -293,12 +305,7 @@ class SslOffloadTsiTestFixture {
         TSI_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY;
     server_options.min_tls_version = tls_version_;
     server_options.max_tls_version = tls_version_;
-    if (offload_party_ == OffloadParty::kServer) {
-      server_options.pem_key_cert_pairs =
-          server_pem_key_cert_pairs_with_signer_;
-    } else {
-      server_options.pem_key_cert_pairs = server_pem_key_cert_pairs_;
-    }
+    server_options.pem_key_cert_pairs = server_pem_key_cert_pairs_;
     ASSERT_EQ(tsi_create_ssl_server_handshaker_factory_with_options(
                   &server_options, &server_handshaker_factory_),
               TSI_OK);
@@ -307,8 +314,9 @@ class SslOffloadTsiTestFixture {
     tsi_handshaker* client_hs;
     tsi_handshaker* server_hs;
     ASSERT_EQ(tsi_ssl_client_handshaker_factory_create_handshaker(
-                  client_handshaker_factory_, nullptr, 0, 0, std::nullopt,
-                  &client_hs),
+                  client_handshaker_factory_,
+                  sni_name_.empty() ? nullptr : sni_name_.c_str(), 0, 0,
+                  std::nullopt, &client_hs),
               TSI_OK);
     ASSERT_EQ(tsi_ssl_server_handshaker_factory_create_handshaker(
                   server_handshaker_factory_, 0, 0, &server_hs),
@@ -347,17 +355,18 @@ class SslOffloadTsiTestFixture {
   tsi_ssl_server_handshaker_factory* server_handshaker_factory_ = nullptr;
   tsi_ssl_client_handshaker_factory* client_handshaker_factory_ = nullptr;
   std::string ca_cert_;
-  std::string server_key_;
-  std::string server_cert_;
+  std::string server0_key_;
+  std::string server0_cert_;
+  std::string server1_key_;
+  std::string server1_cert_;
   std::string client_key_;
   std::string client_cert_;
   std::vector<tsi_ssl_pem_key_cert_pair> server_pem_key_cert_pairs_;
-  std::vector<tsi_ssl_pem_key_cert_pair> client_pem_key_cert_pairs_;
-  std::vector<tsi_ssl_pem_key_cert_pair> server_pem_key_cert_pairs_with_signer_;
-  std::vector<tsi_ssl_pem_key_cert_pair> client_pem_key_cert_pairs_with_signer_;
+  tsi_ssl_pem_key_cert_pair client_pem_key_cert_pair_;
   OffloadParty offload_party_;
   std::shared_ptr<PrivateKeySigner> signer_;
   tsi_tls_version tls_version_;
+  std::string sni_name_;
   bool expect_success_ = false;
   bool expect_success_on_client_ = false;
 };
@@ -393,10 +402,22 @@ class PrivateKeyOffloadTest : public ::testing::TestWithParam<tsi_tls_version> {
       event_engine_;
 };
 
-// Verifies that server-side signing offload succeeds.
-TEST_P(PrivateKeyOffloadTest, OffloadOnServerSucceeds) {
+// Verifies that server-side signing offload succeeds without SNI.
+TEST_P(PrivateKeyOffloadTest, OffloadOnServerSucceedsWithoutSNI) {
   auto fixture = std::make_shared<SslOffloadTsiTestFixture>(
       OffloadParty::kServer, nullptr, GetParam());
+  fixture->Run(/*expect_success=*/true, /*expect_success_on_client*/ true,
+               event_engine_.get());
+}
+
+// Verifies that server-side signing offload succeeds with SNI match.
+TEST_P(PrivateKeyOffloadTest, OffloadOnServerSucceedsWithSNI) {
+  // This signer should not be invoked because SNI should match server1.key.
+  auto signer = std::make_shared<SyncTestPrivateKeySigner>(
+      GetFileContents(absl::StrCat(kTestCredsRelativePath, "server0.key")),
+      SyncTestPrivateKeySigner::Mode::kInvalidSignature);
+  auto fixture = std::make_shared<SslOffloadTsiTestFixture>(
+      OffloadParty::kServer, signer, GetParam(), "bar.test.google.fr");
   fixture->Run(/*expect_success=*/true, /*expect_success_on_client*/ true,
                event_engine_.get());
 }
@@ -487,7 +508,7 @@ TEST_P(PrivateKeyOffloadTest, OffloadFailsWithAsyncSignerErrorOnClient) {
 // server fails the handshake.
 TEST_P(PrivateKeyOffloadTest, OffloadFailsWithInvalidSignatureOnServer) {
   std::string server_key =
-      GetFileContents(absl::StrCat(kTestCredsRelativePath, "server0.key"));
+      GetFileContents(absl::StrCat(kTestCredsRelativePath, "server1.key"));
   auto fixture = std::make_shared<SslOffloadTsiTestFixture>(
       OffloadParty::kServer,
       std::make_shared<SyncTestPrivateKeySigner>(server_key), GetParam());
@@ -513,7 +534,7 @@ TEST_P(PrivateKeyOffloadTest, OffloadFailsWithInvalidSignatureOnClient) {
 // server fails the handshake.
 TEST_P(PrivateKeyOffloadTest, OffloadFailsWithAsyncInvalidSignatureOnServer) {
   std::string server_key =
-      GetFileContents(absl::StrCat(kTestCredsRelativePath, "server0.key"));
+      GetFileContents(absl::StrCat(kTestCredsRelativePath, "server1.key"));
   auto fixture = std::make_shared<SslOffloadTsiTestFixture>(
       OffloadParty::kServer,
       std::make_shared<AsyncTestPrivateKeySigner>(server_key, event_engine_),

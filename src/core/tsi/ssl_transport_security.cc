@@ -25,6 +25,7 @@
 
 #include <cstddef>
 #include <cstdlib>
+#include <map>
 #include <utility>
 
 // TODO(jboeuf): refactor inet_ntop into a portability header.
@@ -122,9 +123,6 @@ struct tsi_ssl_root_certs_store {
 struct tsi_ssl_handshaker_factory {
   const tsi_ssl_handshaker_factory_vtable* vtable;
   gpr_refcount refcount;
-#if defined(OPENSSL_IS_BORINGSSL)
-  std::shared_ptr<grpc_core::PrivateKeySigner> key_signer;
-#endif
 };
 
 static void tsi_ssl_handshaker_factory_unref(
@@ -138,6 +136,9 @@ struct tsi_ssl_client_handshaker_factory {
   grpc_core::RefCountedPtr<tsi::SslSessionLRUCache> session_cache;
   grpc_core::RefCountedPtr<TlsSessionKeyLogger> key_logger;
   std::shared_ptr<tsi::RootCertInfo> root_cert_info;
+#if defined(OPENSSL_IS_BORINGSSL)
+  std::shared_ptr<grpc_core::PrivateKeySigner> key_signer;
+#endif
 };
 
 struct tsi_ssl_server_handshaker_factory {
@@ -152,6 +153,9 @@ struct tsi_ssl_server_handshaker_factory {
   size_t alpn_protocol_list_length;
   grpc_core::RefCountedPtr<TlsSessionKeyLogger> key_logger;
   std::shared_ptr<tsi::RootCertInfo> root_cert_info;
+#if defined(OPENSSL_IS_BORINGSSL)
+  std::map<int, std::shared_ptr<grpc_core::PrivateKeySigner>> key_signers;
+#endif
 };
 
 // Tracks the arguments for a pending call to tsi_handshaker_next().
@@ -198,6 +202,7 @@ struct tsi_ssl_handshaker : public tsi_handshaker,
     *handshaker_next_args->error_ptr = std::move(error);
   }
 #if defined(OPENSSL_IS_BORINGSSL)
+  std::shared_ptr<grpc_core::PrivateKeySigner> key_signer;
   // The signed_bytes are populated when the signature process is completed if
   // the Private Key offload was successful. If there was an error during the
   // signature, the status will be returned.
@@ -443,8 +448,7 @@ enum ssl_private_key_result_t TlsPrivateKeySignWrapper(
     handshaker->MaybeSetError(algorithm.status().ToString());
     return ssl_private_key_failure;
   }
-  grpc_core::PrivateKeySigner* signer =
-      handshaker->factory_ref->key_signer.get();
+  grpc_core::PrivateKeySigner* signer = handshaker->key_signer.get();
   if (signer == nullptr) {
     handshaker->MaybeSetError("PrivateKeySigner is null");
     return ssl_private_key_failure;
@@ -2290,7 +2294,7 @@ static tsi_result ssl_handshaker_next_impl(tsi_ssl_handshaker* self)
       self->handshaker_next_args->received_bytes.clear();
     }
 #if defined(OPENSSL_IS_BORINGSSL)
-  } else if (self->factory_ref->key_signer != nullptr) {
+  } else if (self->key_signer != nullptr) {
     // During the PrivateKeyOffload signature, an empty call to
     // ssl_handshaker_do_handshake needs to be forced  after the async offload
     // has completed.
@@ -2416,24 +2420,18 @@ static tsi_result ssl_handshaker_next(
 static void ssl_handshaker_shutdown(tsi_handshaker* self) {
 #if defined(OPENSSL_IS_BORINGSSL)
   tsi_ssl_handshaker* impl = static_cast<tsi_ssl_handshaker*>(self);
-  std::shared_ptr<grpc_core::PrivateKeySigner::AsyncSigningHandle>
-      signing_handle;
   std::optional<HandshakerNextArgs> next_args;
   {
     grpc_core::MutexLock lock(&impl->mu);
     if (impl->ssl == nullptr) return;
     impl->is_shutdown = true;
-    if (impl->factory_ref->key_signer != nullptr &&
-        impl->signing_handle != nullptr) {
-      signing_handle = std::move(impl->signing_handle);
+    if (impl->key_signer != nullptr && impl->signing_handle != nullptr) {
+      impl->key_signer->Cancel(impl->signing_handle);
     }
     if (impl->handshaker_next_args.has_value()) {
       next_args = std::move(*impl->handshaker_next_args);
       impl->handshaker_next_args.reset();
     }
-  }
-  if (signing_handle != nullptr) {
-    impl->factory_ref->key_signer->Cancel(signing_handle);
   }
   if (next_args.has_value()) {
     grpc_event_engine::experimental::GetDefaultEventEngine()->Run(
@@ -2584,6 +2582,22 @@ static tsi_result create_tsi_ssl_handshaker(
       static_cast<unsigned char*>(gpr_zalloc(impl->outgoing_bytes_buffer_size));
   impl->vtable = &handshaker_vtable;
   impl->factory_ref = tsi_ssl_handshaker_factory_ref(factory);
+  if (is_client) {
+    tsi_ssl_client_handshaker_factory* client_factory =
+        reinterpret_cast<tsi_ssl_client_handshaker_factory*>(factory);
+    impl->key_signer = client_factory->key_signer;
+  } else {
+    tsi_ssl_server_handshaker_factory* server_factory =
+        reinterpret_cast<tsi_ssl_server_handshaker_factory*>(factory);
+    // By default we use the first SSL_CTX if there is no SNI in the ClientHello
+    // or there is no match. So we initialize the key signer of the handshaker
+    // to the first one if present.
+    if (server_factory->key_signers.find(0) !=
+        server_factory->key_signers.end()) {
+      impl->key_signer = server_factory->key_signers[0];
+    }
+  }
+
   *handshaker = impl;
 
   if (!SSL_set_ex_data(ssl, g_ssl_ex_handshaker_index, impl)) {
@@ -2764,6 +2778,9 @@ static int ssl_server_handshaker_factory_servername_callback(SSL* ssl,
     if (tsi_ssl_peer_matches_name(&impl->ssl_context_x509_subject_names[i],
                                   servername)) {
       SSL_set_SSL_CTX(ssl, impl->ssl_contexts[i]);
+      if (impl->key_signers.find(i) != impl->key_signers.end()) {
+        GetHandshaker(ssl)->key_signer = impl->key_signers[i];
+      }
       return SSL_TLSEXT_ERR_OK;
     }
   }
@@ -2920,7 +2937,7 @@ tsi_result tsi_create_ssl_client_handshaker_factory_with_options(
           [&](const std::shared_ptr<grpc_core::PrivateKeySigner>& key_signer) {
             // The Handshaker Factory will own a shared copy of the reference
             // passed through the options.
-            impl->base.key_signer = key_signer;
+            impl->key_signer = key_signer;
           });
     }
 #endif
@@ -3133,13 +3150,11 @@ tsi_result tsi_create_ssl_server_handshaker_factory_with_options(
       if (result != TSI_OK) break;
 
 #if defined(OPENSSL_IS_BORINGSSL)
-      if (impl->base.key_signer == nullptr) {
-        grpc_core::Match(
-            options->pem_key_cert_pairs[i].private_key,
-            [](const std::string&) {},
-            [&](const std::shared_ptr<grpc_core::PrivateKeySigner>&
-                    key_signer) { impl->base.key_signer = key_signer; });
-      }
+      grpc_core::Match(
+          options->pem_key_cert_pairs[i].private_key, [](const std::string&) {},
+          [&](const std::shared_ptr<grpc_core::PrivateKeySigner>& key_signer) {
+            impl->key_signers[i] = key_signer;
+          });
 #endif
 
       // TODO(elessar): Provide ability to disable session ticket keys.
