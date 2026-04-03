@@ -34,6 +34,8 @@
 #include <strsafe.h>
 #include <wchar.h>
 
+#undef StrCat
+
 #include "src/core/util/string.h"
 #include "src/core/util/tchar.h"
 
