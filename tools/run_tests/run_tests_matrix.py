@@ -611,7 +611,9 @@ if __name__ == "__main__":
 
     if args.filter_pr_tests:
         print("Looking for irrelevant tests to skip...")
-        relevant_jobs = filter_tests(jobs, args.base_branch)
+        print("[2026 Infra Fixit] run_tests_matrix.py: SKIPPING THE SKIP")
+        relevant_jobs = jobs
+        # relevant_jobs = filter_tests(jobs, args.base_branch)
         if len(relevant_jobs) == len(jobs):
             print("No tests will be skipped.")
         else:
