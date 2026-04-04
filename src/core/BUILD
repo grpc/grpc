@@ -5077,9 +5077,9 @@ grpc_cc_library(
         "json",
         "json_reader",
         "load_file",
+        "map",
         "metadata_batch",
         "ref_counted",
-        "map",
         "regional_access_boundary_fetcher",
         "slice",
         "slice_refcount",
@@ -5096,12 +5096,12 @@ grpc_cc_library(
         "//:grpc_trace",
         "//:httpcli",
         "//:iomgr",
-        "//src/core:default_event_engine",
         "//:orphanable",
         "//:promise",
         "//:ref_counted_ptr",
         "//:transport_auth_context",
         "//:uri",
+        "//src/core:default_event_engine",
     ],
 )
 
@@ -11373,7 +11373,6 @@ grpc_cc_library(
     deps = [
         "closure",
         "dual_ref_counted",
-        "//src/core:default_event_engine",
         "env",
         "error",
         "grpc_check",
@@ -11394,6 +11393,7 @@ grpc_cc_library(
         "//:ref_counted_ptr",
         "//:transport_auth_context",
         "//:uri",
+        "//src/core:default_event_engine",
     ],
 )
 
