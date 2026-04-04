@@ -156,6 +156,18 @@ static void test_grpc_parse_ipv6(const char* uri_text, const char* host,
   ASSERT_EQ(addr_in6->sin6_scope_id, scope_id);
 }
 
+// Test parsing invalid ipv4 addresses (valid uri_text but invalid ipv4 addr)
+static void test_grpc_parse_ipv4_invalid(const char* uri_text) {
+  grpc_core::ExecCtx exec_ctx;
+  absl::StatusOr<grpc_core::URI> uri = grpc_core::URI::Parse(uri_text);
+  if (!uri.ok()) {
+    LOG(ERROR) << uri.status();
+    ASSERT_TRUE(uri.ok());
+  }
+  grpc_resolved_address addr;
+  ASSERT_FALSE(grpc_parse_ipv4(*uri, &addr));
+}
+
 // Test parsing invalid ipv6 addresses (valid uri_text but invalid ipv6 addr)
 static void test_grpc_parse_ipv6_invalid(const char* uri_text) {
   grpc_core::ExecCtx exec_ctx;
@@ -183,7 +195,26 @@ TEST(ParseAddressTest, MainTest) {
       "ipv6:WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW45%"
       "25v6:45%25x$1*");
 
+  // Ports must be decimal-only and bounded.
+  test_grpc_parse_ipv4_invalid("ipv4:192.0.2.1:12345junk");
+  test_grpc_parse_ipv4_invalid("ipv4:192.0.2.1:+12345");
+  test_grpc_parse_ipv4_invalid("ipv4:192.0.2.1:-1");
+  test_grpc_parse_ipv6_invalid("ipv6:[2001:db8::1]:12345junk");
+  test_grpc_parse_ipv6_invalid("ipv6:[2001:db8::1]:+12345");
+  test_grpc_parse_ipv6_invalid("ipv6:[2001:db8::1]:-1");
+
   grpc_shutdown();
+}
+
+TEST(ParseAddressTest, GrpcStrhtonsRejectsMalformedPorts) {
+  ASSERT_EQ(grpc_ntohs(grpc_strhtons("http")), 80);
+  ASSERT_EQ(grpc_ntohs(grpc_strhtons("https")), 443);
+  ASSERT_EQ(grpc_ntohs(grpc_strhtons("65535")), 65535);
+
+  ASSERT_EQ(grpc_ntohs(grpc_strhtons("65536")), 0);
+  ASSERT_EQ(grpc_ntohs(grpc_strhtons("-1")), 0);
+  ASSERT_EQ(grpc_ntohs(grpc_strhtons("80xyz")), 0);
+  ASSERT_EQ(grpc_ntohs(grpc_strhtons(nullptr)), 0);
 }
 
 int main(int argc, char** argv) {
