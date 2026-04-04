@@ -23,7 +23,7 @@ lib_dir = File.join(File.dirname(this_dir), 'lib')
 $LOAD_PATH.unshift(lib_dir) unless $LOAD_PATH.include?(lib_dir)
 
 require 'grpc'
-require 'multi_json'
+require 'json'
 require 'route_guide_services_pb'
 
 include Routeguide
@@ -156,7 +156,7 @@ def main
   end
   raw_data = []
   File.open(ARGV[0]) do |f|
-    raw_data = MultiJson.load(f.read)
+    raw_data = JSON.parse(f.read)
   end
   run_record_route(stub, raw_data)
 end
