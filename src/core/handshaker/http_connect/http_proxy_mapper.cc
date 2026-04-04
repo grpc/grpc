@@ -77,10 +77,10 @@ bool ServerInCIDRRange(const grpc_resolved_address& server_address,
 
 bool ExactMatchOrSubdomain(absl::string_view host_name,
                            absl::string_view no_proxy_entry) {
-  //remove surrounding whitespace
+  // remove surrounding whitespace
   no_proxy_entry = absl::StripAsciiWhitespace(no_proxy_entry);
 
-  //match domain + subdomains
+  // match domain + subdomains
   if (!no_proxy_entry.empty() && no_proxy_entry[0] == '.') {
     absl::string_view domain = no_proxy_entry.substr(1);
 
