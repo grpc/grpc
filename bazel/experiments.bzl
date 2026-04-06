@@ -45,7 +45,6 @@ EXPERIMENT_ENABLES = {
     "multiping": "multiping",
     "otel_export_telemetry_domains": "otel_export_telemetry_domains",
     "pick_first_ignore_empty_updates": "pick_first_ignore_empty_updates",
-    "pick_first_ready_to_connecting": "pick_first_ready_to_connecting",
     "pipelined_read_secure_endpoint": "event_engine_client,event_engine_listener,pipelined_read_secure_endpoint",
     "pollset_alternative": "event_engine_client,event_engine_listener,pollset_alternative",
     "prioritize_finished_requests": "prioritize_finished_requests",
@@ -154,9 +153,6 @@ EXPERIMENTS = {
                 "error_flatten",
                 "subchannel_wrapper_cleanup_on_orphan",
             ],
-            "cpp_lb_end2end_test": [
-                "pick_first_ready_to_connecting",
-            ],
             "error_tests": [
                 "error_flatten",
             ],
@@ -168,9 +164,6 @@ EXPERIMENTS = {
             ],
             "event_engine_listener_test": [
                 "event_engine_listener",
-            ],
-            "lb_unit_test": [
-                "pick_first_ready_to_connecting",
             ],
             "resolver_component_tests_runner_invoker": [
                 "event_engine_dns",
@@ -256,9 +249,6 @@ EXPERIMENTS = {
                 "error_flatten",
                 "subchannel_wrapper_cleanup_on_orphan",
             ],
-            "cpp_lb_end2end_test": [
-                "pick_first_ready_to_connecting",
-            ],
             "error_tests": [
                 "error_flatten",
             ],
@@ -270,9 +260,6 @@ EXPERIMENTS = {
             ],
             "event_engine_listener_test": [
                 "event_engine_listener",
-            ],
-            "lb_unit_test": [
-                "pick_first_ready_to_connecting",
             ],
             "resolver_component_tests_runner_invoker": [
                 "event_engine_dns",
@@ -358,9 +345,6 @@ EXPERIMENTS = {
                 "error_flatten",
                 "subchannel_wrapper_cleanup_on_orphan",
             ],
-            "cpp_lb_end2end_test": [
-                "pick_first_ready_to_connecting",
-            ],
             "error_tests": [
                 "error_flatten",
             ],
@@ -372,9 +356,6 @@ EXPERIMENTS = {
             ],
             "event_engine_listener_test": [
                 "event_engine_listener",
-            ],
-            "lb_unit_test": [
-                "pick_first_ready_to_connecting",
             ],
             "resolver_component_tests_runner_invoker": [
                 "event_engine_dns",

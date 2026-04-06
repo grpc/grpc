@@ -476,9 +476,6 @@ const SSL_PRIVATE_KEY_METHOD TlsOffloadPrivateKeyMethod = {
 #if !defined(OPENSSL_IS_BORINGSSL) && !defined(OPENSSL_NO_ENGINE)
 static const char kSslEnginePrefix[] = "engine:";
 #endif
-#if OPENSSL_VERSION_NUMBER >= 0x30000000
-static const int kSslEcCurveNames[] = {NID_X9_62_prime256v1};
-#endif
 
 #if OPENSSL_VERSION_NUMBER < 0x10100000
 static gpr_mu* g_openssl_mutexes = nullptr;
@@ -1213,12 +1210,6 @@ static tsi_result populate_ssl_context(
     }
     SSL_CTX_set_options(context, SSL_OP_SINGLE_ECDH_USE);
     EC_KEY_free(ecdh);
-#else
-    if (!SSL_CTX_set1_groups(context, kSslEcCurveNames, 1)) {
-      LOG(ERROR) << "Could not set ephemeral ECDH key.";
-      return TSI_INTERNAL_ERROR;
-    }
-    SSL_CTX_set_options(context, SSL_OP_SINGLE_ECDH_USE);
 #endif
   }
   return TSI_OK;

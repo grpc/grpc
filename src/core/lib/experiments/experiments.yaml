@@ -142,7 +142,7 @@
   allow_in_fuzzing_config: false
 - name: event_engine_poller_for_python
   description: "Enable event engine poller in gRPC Python"
-  expiry: 2026/03/16
+  expiry: 2026/06/30
   owner: mlumish@google.com
   test_tags: []
   uses_polling: true
@@ -209,13 +209,6 @@
   description: Ignore empty resolutions in pick_first
   expiry: 2026/05/02
   owner: ctiller@google.com
-- name: pick_first_ready_to_connecting
-  description:
-    When the subchannel goes from READY to CONNECTING or TRANSIENT_FAILURE,
-    pick_first goes to CONNECTING and starts a new Happy Eyeballs pass.
-  expiry: 2026/05/01
-  owner: roth@google.com
-  test_tags: ["lb_unit_test", "cpp_lb_end2end_test"]
 - name: pipelined_read_secure_endpoint
   description: Enable pipelined reads for EventEngine secure endpoints
   expiry: 2026/03/15
