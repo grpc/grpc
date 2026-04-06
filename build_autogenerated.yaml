@@ -5515,7 +5515,6 @@ targets:
 - name: activity_test
   gtest: true
   build: test
-  run: false
   language: c++
   headers:
   - src/core/channelz/channel_trace.h
@@ -5712,48 +5711,6 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
-  uses_polling: false
-- name: address_sorting_test
-  gtest: true
-  build: test
-  language: c++
-  headers: []
-  src:
-  - test/cpp/naming/address_sorting_test.cc
-  deps:
-  - gtest
-  - grpc++_test_config
-  - grpc++_test_util
-  platforms:
-  - linux
-  - posix
-  - mac
-- name: address_sorting_test_unsecure
-  gtest: true
-  build: test
-  language: c++
-  headers:
-  - src/core/util/subprocess.h
-  - test/cpp/util/byte_buffer_proto_helper.h
-  - test/cpp/util/credentials.h
-  - test/cpp/util/string_ref_helper.h
-  - test/cpp/util/subprocess.h
-  src:
-  - src/core/util/subprocess_posix.cc
-  - src/core/util/subprocess_windows.cc
-  - test/cpp/naming/address_sorting_test.cc
-  - test/cpp/util/byte_buffer_proto_helper.cc
-  - test/cpp/util/string_ref_helper.cc
-  - test/cpp/util/subprocess.cc
-  deps:
-  - gtest
-  - grpc++_unsecure
-  - grpc_test_util_unsecure
-  - grpc++_test_config
-  platforms:
-  - linux
-  - posix
-  - mac
 - name: admin_services_end2end_test
   gtest: true
   build: test
@@ -6107,7 +6064,6 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
-  uses_polling: false
 - name: alloc_test
   gtest: true
   build: test
@@ -6118,7 +6074,6 @@ targets:
   deps:
   - gtest
   - grpc_test_util
-  uses_polling: false
 - name: alpn_test
   gtest: true
   build: test
@@ -6132,7 +6087,6 @@ targets:
 - name: alts_concurrent_connectivity_test
   gtest: true
   build: test
-  run: false
   language: c++
   headers:
   - test/core/end2end/cq_verifier.h
@@ -6321,7 +6275,6 @@ targets:
   deps:
   - gtest
   - grpc_test_util_unsecure
-  uses_polling: false
 - name: arena_test
   gtest: true
   build: test
@@ -6332,7 +6285,6 @@ targets:
   deps:
   - gtest
   - grpc_test_util_unsecure
-  uses_polling: false
 - name: async_end2end_test
   gtest: true
   build: test
@@ -6363,7 +6315,6 @@ targets:
   deps:
   - gtest
   - grpc_test_util
-  uses_polling: false
 - name: auth_property_iterator_test
   gtest: true
   build: test
@@ -6374,7 +6325,6 @@ targets:
   deps:
   - gtest
   - grpc++_test_util
-  uses_polling: false
 - name: authorization_matchers_test
   gtest: true
   build: test
@@ -6414,7 +6364,6 @@ targets:
   - gtest
   - absl/hash:hash
   - gpr
-  uses_polling: false
 - name: aws_request_signer_test
   gtest: true
   build: test
@@ -6454,7 +6403,6 @@ targets:
   deps:
   - gtest
   - grpc_test_util
-  uses_polling: false
 - name: bad_server_response_test
   gtest: true
   build: test
@@ -6463,72 +6411,6 @@ targets:
   - test/core/end2end/cq_verifier.h
   src:
   - test/core/end2end/bad_server_response_test.cc
-  - test/core/end2end/cq_verifier.cc
-  deps:
-  - gtest
-  - grpc_test_util
-- name: bad_ssl_alpn_test
-  gtest: true
-  build: test
-  language: c++
-  headers:
-  - src/core/util/subprocess.h
-  - test/core/end2end/cq_verifier.h
-  src:
-  - src/core/util/subprocess_posix.cc
-  - src/core/util/subprocess_windows.cc
-  - test/core/bad_ssl/bad_ssl_test.cc
-  - test/core/end2end/cq_verifier.cc
-  deps:
-  - gtest
-  - grpc_test_util
-  platforms:
-  - linux
-  - posix
-  - mac
-- name: bad_ssl_cert_test
-  gtest: true
-  build: test
-  language: c++
-  headers:
-  - src/core/util/subprocess.h
-  - test/core/end2end/cq_verifier.h
-  src:
-  - src/core/util/subprocess_posix.cc
-  - src/core/util/subprocess_windows.cc
-  - test/core/bad_ssl/bad_ssl_test.cc
-  - test/core/end2end/cq_verifier.cc
-  deps:
-  - gtest
-  - grpc_test_util
-  platforms:
-  - linux
-  - posix
-  - mac
-- name: bad_streaming_id_bad_client_test
-  gtest: true
-  build: test
-  language: c++
-  headers:
-  - test/core/bad_client/bad_client.h
-  - test/core/end2end/cq_verifier.h
-  src:
-  - test/core/bad_client/bad_client.cc
-  - test/core/bad_client/tests/bad_streaming_id.cc
-  - test/core/end2end/cq_verifier.cc
-  deps:
-  - gtest
-  - grpc_test_util
-- name: badreq_bad_client_test
-  gtest: true
-  build: test
-  language: c++
-  headers:
-  - test/core/bad_client/bad_client.h
-  - test/core/end2end/cq_verifier.h
-  src:
-  - test/core/bad_client/bad_client.cc
-  - test/core/bad_client/tests/badreq.cc
   - test/core/end2end/cq_verifier.cc
   deps:
   - gtest
@@ -6557,7 +6439,6 @@ targets:
   - linux
   - posix
   - mac
-  uses_polling: false
 - name: bin_decoder_test
   gtest: true
   build: test
@@ -6568,7 +6449,6 @@ targets:
   deps:
   - gtest
   - grpc_test_util
-  uses_polling: false
 - name: bin_encoder_test
   gtest: true
   build: test
@@ -6579,7 +6459,6 @@ targets:
   deps:
   - gtest
   - grpc_test_util
-  uses_polling: false
 - name: bitset_test
   gtest: true
   build: test
@@ -6595,7 +6474,6 @@ targets:
   - absl/base:core_headers
   - absl/log:check
   - absl/numeric:bits
-  uses_polling: false
 - name: blackboard_test
   gtest: true
   build: test
@@ -6776,7 +6654,6 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
-  uses_polling: false
 - name: buffer_list_test
   gtest: true
   build: test
@@ -6797,7 +6674,6 @@ targets:
   deps:
   - gtest
   - grpc++_test_util
-  uses_polling: false
 - name: c_slice_buffer_test
   gtest: true
   build: test
@@ -6808,7 +6684,6 @@ targets:
   deps:
   - gtest
   - grpc_test_util
-  uses_polling: false
 - name: call_arena_allocator_test
   gtest: true
   build: test
@@ -6823,7 +6698,6 @@ targets:
   - linux
   - posix
   - mac
-  uses_polling: false
 - name: call_credentials_test
   gtest: true
   build: test
@@ -6867,7 +6741,6 @@ targets:
   - gtest
   - protobuf
   - grpc_test_util
-  uses_polling: false
 - name: call_filters_test
   gtest: true
   build: test
@@ -7124,7 +6997,6 @@ targets:
   - absl/utility:utility
   - gpr
   - protobuf
-  uses_polling: false
 - name: call_finalization_test
   gtest: true
   build: test
@@ -7330,7 +7202,6 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
-  uses_polling: false
 - name: call_tracer_test
   gtest: true
   build: test
@@ -7343,7 +7214,6 @@ targets:
   deps:
   - gtest
   - grpc_test_util
-  uses_polling: false
 - name: call_utils_test
   gtest: true
   build: test
@@ -8236,7 +8106,6 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
-  uses_polling: false
 - name: cel_authorization_engine_test
   gtest: true
   build: test
@@ -8557,7 +8426,6 @@ targets:
   deps:
   - gtest
   - grpc_test_util
-  uses_polling: false
 - name: cf_engine_test
   gtest: true
   build: test
@@ -8628,7 +8496,6 @@ targets:
   deps:
   - gtest
   - grpc_test_util
-  uses_polling: false
 - name: channel_arguments_test
   gtest: true
   build: test
@@ -8640,7 +8507,6 @@ targets:
   - gtest
   - grpc++
   - grpc_test_util
-  uses_polling: false
 - name: channel_creds_registry_test
   gtest: true
   build: test
@@ -8727,7 +8593,6 @@ targets:
   - gtest
   - protobuf
   - grpc_test_util
-  uses_polling: false
 - name: channel_init_test
   gtest: true
   build: test
@@ -8738,7 +8603,6 @@ targets:
   deps:
   - gtest
   - grpc_test_util
-  uses_polling: false
 - name: channel_stack_builder_test
   gtest: true
   build: test
@@ -8759,7 +8623,6 @@ targets:
   deps:
   - gtest
   - grpc_test_util
-  uses_polling: false
 - name: channel_trace_test
   gtest: true
   build: test
@@ -8785,7 +8648,6 @@ targets:
   - gtest
   - grpc++
   - grpc_test_util
-  uses_polling: false
 - name: channelz_service_test
   gtest: true
   build: test
@@ -9247,7 +9109,6 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
-  uses_polling: false
 - name: cli_call_test
   gtest: true
   build: test
@@ -9302,7 +9163,6 @@ targets:
   - gtest
   - protobuf
   - grpc_test_util
-  uses_polling: false
 - name: client_authority_filter_test
   gtest: true
   build: test
@@ -9321,7 +9181,6 @@ targets:
   - gtest
   - protobuf
   - grpc_test_util
-  uses_polling: false
 - name: client_callback_end2end_test
   gtest: true
   build: test
@@ -9355,7 +9214,6 @@ targets:
   deps:
   - gtest
   - grpc_test_util
-  uses_polling: false
 - name: client_context_test_peer_test
   gtest: true
   build: test
@@ -9415,7 +9273,6 @@ targets:
 - name: client_lb_end2end_test
   gtest: true
   build: test
-  run: false
   language: c++
   headers:
   - src/cpp/server/orca/orca_service.h
@@ -9499,7 +9356,6 @@ targets:
   deps:
   - gtest
   - grpc_test_util
-  uses_polling: false
 - name: codegen_test_full
   gtest: true
   build: test
@@ -9511,7 +9367,6 @@ targets:
   - gtest
   - grpc++
   - grpc_test_util
-  uses_polling: false
 - name: codegen_test_minimal
   gtest: true
   build: test
@@ -9523,11 +9378,9 @@ targets:
   - gtest
   - grpc++
   - grpc_test_util
-  uses_polling: false
 - name: combiner_test
   gtest: true
   build: test
-  run: false
   language: c++
   headers: []
   src:
@@ -9554,7 +9407,6 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
-  uses_polling: false
 - name: completion_queue_threading_test
   gtest: true
   build: test
@@ -9587,7 +9439,6 @@ targets:
   deps:
   - gtest
   - grpc_test_util
-  uses_polling: false
 - name: concurrent_connectivity_test
   gtest: true
   build: test
@@ -9605,21 +9456,6 @@ targets:
   headers: []
   src:
   - test/core/surface/connection_context_test.cc
-  deps:
-  - gtest
-  - grpc_test_util
-  uses_polling: false
-- name: connection_prefix_bad_client_test
-  gtest: true
-  build: test
-  language: c++
-  headers:
-  - test/core/bad_client/bad_client.h
-  - test/core/end2end/cq_verifier.h
-  src:
-  - test/core/bad_client/bad_client.cc
-  - test/core/bad_client/tests/connection_prefix.cc
-  - test/core/end2end/cq_verifier.cc
   deps:
   - gtest
   - grpc_test_util
@@ -9840,7 +9676,6 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
-  uses_polling: false
 - name: core_configuration_test
   gtest: true
   build: test
@@ -9851,7 +9686,6 @@ targets:
   deps:
   - gtest
   - grpc
-  uses_polling: false
 - name: cpp_impl_of_test
   gtest: true
   build: test
@@ -9862,7 +9696,6 @@ targets:
   - test/core/util/cpp_impl_of_test.cc
   deps:
   - gtest
-  uses_polling: false
 - name: cpu_test
   gtest: true
   build: test
@@ -9873,7 +9706,6 @@ targets:
   deps:
   - gtest
   - grpc_test_util
-  uses_polling: false
 - name: crl_provider_test
   gtest: true
   build: test
@@ -9926,7 +9758,6 @@ targets:
   deps:
   - gtest
   - grpc_test_util
-  uses_polling: false
 - name: delegating_channel_test
   gtest: true
   build: test
@@ -9956,7 +9787,6 @@ targets:
   deps:
   - gtest
   - grpc_test_util
-  uses_polling: false
 - name: dns_fork_test
   gtest: true
   build: test
@@ -10005,7 +9835,6 @@ targets:
   deps:
   - gtest
   - gpr
-  uses_polling: false
 - name: dual_ref_counted_test
   gtest: true
   build: test
@@ -10046,2079 +9875,9 @@ targets:
   - absl/functional:any_invocable
   - absl/log:check
   - absl/strings:str_format
-  uses_polling: false
-- name: duplicate_header_bad_client_test
-  gtest: true
-  build: test
-  language: c++
-  headers:
-  - test/core/bad_client/bad_client.h
-  - test/core/end2end/cq_verifier.h
-  src:
-  - test/core/bad_client/bad_client.cc
-  - test/core/bad_client/tests/duplicate_header.cc
-  - test/core/end2end/cq_verifier.cc
-  deps:
-  - gtest
-  - grpc_test_util
-- name: end2end_chaotic_good_no_logging_test
-  gtest: true
-  build: test
-  run: false
-  language: c++
-  headers:
-  - src/core/ext/transport/chaotic_good/chaotic_good.h
-  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.h
-  - src/core/ext/transport/chaotic_good/client_transport.h
-  - src/core/ext/transport/chaotic_good/config.h
-  - src/core/ext/transport/chaotic_good/control_endpoint.h
-  - src/core/ext/transport/chaotic_good/data_endpoints.h
-  - src/core/ext/transport/chaotic_good/frame.h
-  - src/core/ext/transport/chaotic_good/frame_header.h
-  - src/core/ext/transport/chaotic_good/frame_transport.h
-  - src/core/ext/transport/chaotic_good/message_chunker.h
-  - src/core/ext/transport/chaotic_good/message_reassembly.h
-  - src/core/ext/transport/chaotic_good/pending_connection.h
-  - src/core/ext/transport/chaotic_good/scheduler.h
-  - src/core/ext/transport/chaotic_good/send_rate.h
-  - src/core/ext/transport/chaotic_good/serialize_little_endian.h
-  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
-  - src/core/ext/transport/chaotic_good/server_transport.h
-  - src/core/ext/transport/chaotic_good/tcp_frame_header.h
-  - src/core/ext/transport/chaotic_good/tcp_frame_transport.h
-  - src/core/ext/transport/chaotic_good/tcp_ztrace_collector.h
-  - src/core/ext/transport/chaotic_good/transport_context.h
-  - src/core/ext/transport/chaotic_good_legacy/chaotic_good_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.h
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/config.h
-  - src/core/ext/transport/chaotic_good_legacy/control_endpoint.h
-  - src/core/ext/transport/chaotic_good_legacy/data_endpoints.h
-  - src/core/ext/transport/chaotic_good_legacy/frame.h
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.h
-  - src/core/ext/transport/chaotic_good_legacy/legacy_ztrace_collector.h
-  - src/core/ext/transport/chaotic_good_legacy/message_chunker.h
-  - src/core/ext/transport/chaotic_good_legacy/message_reassembly.h
-  - src/core/ext/transport/chaotic_good_legacy/pending_connection.h
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.h
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.h
-  - src/core/lib/promise/event_engine_wakeup_scheduler.h
-  - src/core/lib/promise/join.h
-  - src/core/lib/promise/lock_based_mpsc.h
-  - src/core/lib/promise/switch.h
-  - src/core/lib/promise/wait_for_callback.h
-  - src/core/util/seq_bit_set.h
-  - test/core/call/batch_builder.h
-  - test/core/end2end/cq_verifier.h
-  - test/core/end2end/end2end_tests.h
-  - test/core/end2end/fixtures/h2_oauth2_common.h
-  - test/core/end2end/fixtures/h2_ssl_cred_reload_fixture.h
-  - test/core/end2end/fixtures/h2_ssl_tls_common.h
-  - test/core/end2end/fixtures/h2_tls_common.h
-  - test/core/end2end/fixtures/http_common_secure_fixtures.h
-  - test/core/end2end/fixtures/http_proxy_fixture.h
-  - test/core/end2end/fixtures/inproc_fixture.h
-  - test/core/end2end/fixtures/local_util.h
-  - test/core/end2end/fixtures/proxy.h
-  - test/core/end2end/fixtures/secure_fixture.h
-  - test/core/end2end/fixtures/sockpair_fixture.h
-  - test/core/end2end/tests/cancel_test_helpers.h
-  - test/core/event_engine/event_engine_test_utils.h
-  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
-  - test/core/test_util/fail_first_call_filter.h
-  - test/core/test_util/fake_stats_plugin.h
-  - test/core/test_util/fuzz_config_vars.h
-  - test/core/test_util/passthrough_endpoint.h
-  - test/core/test_util/postmortem.h
-  - test/core/test_util/scoped_env_var.h
-  - test/core/test_util/test_call_creds.h
-  - test/core/test_util/test_lb_policies.h
-  src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
-  - test/core/end2end/end2end_test_fuzzer.proto
-  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
-  - test/core/test_util/fuzz_config_vars.proto
-  - src/core/ext/transport/chaotic_good/chaotic_good.cc
-  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
-  - src/core/ext/transport/chaotic_good/client_transport.cc
-  - src/core/ext/transport/chaotic_good/control_endpoint.cc
-  - src/core/ext/transport/chaotic_good/data_endpoints.cc
-  - src/core/ext/transport/chaotic_good/frame.cc
-  - src/core/ext/transport/chaotic_good/frame_header.cc
-  - src/core/ext/transport/chaotic_good/scheduler.cc
-  - src/core/ext/transport/chaotic_good/send_rate.cc
-  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
-  - src/core/ext/transport/chaotic_good/server_transport.cc
-  - src/core/ext/transport/chaotic_good/tcp_frame_header.cc
-  - src/core/ext/transport/chaotic_good/tcp_frame_transport.cc
-  - src/core/ext/transport/chaotic_good/tcp_ztrace_collector.cc
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/control_endpoint.cc
-  - src/core/ext/transport/chaotic_good_legacy/data_endpoints.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  - src/core/util/seq_bit_set.cc
-  - test/core/call/batch_builder.cc
-  - test/core/end2end/cq_verifier.cc
-  - test/core/end2end/end2end_chaotic_good_config.cc
-  - test/core/end2end/end2end_test_suites.cc
-  - test/core/end2end/end2end_tests.cc
-  - test/core/end2end/fixtures/http_proxy_fixture.cc
-  - test/core/end2end/fixtures/local_util.cc
-  - test/core/end2end/fixtures/proxy.cc
-  - test/core/end2end/tests/no_logging.cc
-  - test/core/event_engine/event_engine_test_utils.cc
-  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
-  - test/core/test_util/fail_first_call_filter.cc
-  - test/core/test_util/fake_stats_plugin.cc
-  - test/core/test_util/fuzz_config_vars.cc
-  - test/core/test_util/passthrough_endpoint.cc
-  - test/core/test_util/test_call_creds.cc
-  - test/core/test_util/test_lb_policies.cc
-  - third_party/googletest/googlemock/src/gmock_main.cc
-  deps:
-  - gtest
-  - absl/log:log_entry
-  - absl/log:log_sink
-  - absl/log:log_sink_registry
-  - grpc_authorization_provider
-  - protobuf
-  - grpc_test_util
-  platforms:
-  - linux
-  - posix
-  - mac
-- name: end2end_chaotic_good_test
-  gtest: true
-  build: test
-  run: false
-  language: c++
-  headers:
-  - src/core/ext/transport/chaotic_good/chaotic_good.h
-  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.h
-  - src/core/ext/transport/chaotic_good/client_transport.h
-  - src/core/ext/transport/chaotic_good/config.h
-  - src/core/ext/transport/chaotic_good/control_endpoint.h
-  - src/core/ext/transport/chaotic_good/data_endpoints.h
-  - src/core/ext/transport/chaotic_good/frame.h
-  - src/core/ext/transport/chaotic_good/frame_header.h
-  - src/core/ext/transport/chaotic_good/frame_transport.h
-  - src/core/ext/transport/chaotic_good/message_chunker.h
-  - src/core/ext/transport/chaotic_good/message_reassembly.h
-  - src/core/ext/transport/chaotic_good/pending_connection.h
-  - src/core/ext/transport/chaotic_good/scheduler.h
-  - src/core/ext/transport/chaotic_good/send_rate.h
-  - src/core/ext/transport/chaotic_good/serialize_little_endian.h
-  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
-  - src/core/ext/transport/chaotic_good/server_transport.h
-  - src/core/ext/transport/chaotic_good/tcp_frame_header.h
-  - src/core/ext/transport/chaotic_good/tcp_frame_transport.h
-  - src/core/ext/transport/chaotic_good/tcp_ztrace_collector.h
-  - src/core/ext/transport/chaotic_good/transport_context.h
-  - src/core/ext/transport/chaotic_good_legacy/chaotic_good_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.h
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/config.h
-  - src/core/ext/transport/chaotic_good_legacy/control_endpoint.h
-  - src/core/ext/transport/chaotic_good_legacy/data_endpoints.h
-  - src/core/ext/transport/chaotic_good_legacy/frame.h
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.h
-  - src/core/ext/transport/chaotic_good_legacy/legacy_ztrace_collector.h
-  - src/core/ext/transport/chaotic_good_legacy/message_chunker.h
-  - src/core/ext/transport/chaotic_good_legacy/message_reassembly.h
-  - src/core/ext/transport/chaotic_good_legacy/pending_connection.h
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.h
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.h
-  - src/core/lib/promise/event_engine_wakeup_scheduler.h
-  - src/core/lib/promise/join.h
-  - src/core/lib/promise/lock_based_mpsc.h
-  - src/core/lib/promise/switch.h
-  - src/core/lib/promise/wait_for_callback.h
-  - src/core/util/seq_bit_set.h
-  - test/core/call/batch_builder.h
-  - test/core/end2end/cq_verifier.h
-  - test/core/end2end/end2end_tests.h
-  - test/core/end2end/fixtures/h2_oauth2_common.h
-  - test/core/end2end/fixtures/h2_ssl_cred_reload_fixture.h
-  - test/core/end2end/fixtures/h2_ssl_tls_common.h
-  - test/core/end2end/fixtures/h2_tls_common.h
-  - test/core/end2end/fixtures/http_common_secure_fixtures.h
-  - test/core/end2end/fixtures/http_proxy_fixture.h
-  - test/core/end2end/fixtures/inproc_fixture.h
-  - test/core/end2end/fixtures/local_util.h
-  - test/core/end2end/fixtures/proxy.h
-  - test/core/end2end/fixtures/secure_fixture.h
-  - test/core/end2end/fixtures/sockpair_fixture.h
-  - test/core/end2end/tests/cancel_test_helpers.h
-  - test/core/event_engine/event_engine_test_utils.h
-  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
-  - test/core/test_util/fail_first_call_filter.h
-  - test/core/test_util/fake_stats_plugin.h
-  - test/core/test_util/fuzz_config_vars.h
-  - test/core/test_util/passthrough_endpoint.h
-  - test/core/test_util/postmortem.h
-  - test/core/test_util/scoped_env_var.h
-  - test/core/test_util/test_call_creds.h
-  - test/core/test_util/test_lb_policies.h
-  src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
-  - test/core/end2end/end2end_test_fuzzer.proto
-  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
-  - test/core/test_util/fuzz_config_vars.proto
-  - src/core/ext/transport/chaotic_good/chaotic_good.cc
-  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
-  - src/core/ext/transport/chaotic_good/client_transport.cc
-  - src/core/ext/transport/chaotic_good/control_endpoint.cc
-  - src/core/ext/transport/chaotic_good/data_endpoints.cc
-  - src/core/ext/transport/chaotic_good/frame.cc
-  - src/core/ext/transport/chaotic_good/frame_header.cc
-  - src/core/ext/transport/chaotic_good/scheduler.cc
-  - src/core/ext/transport/chaotic_good/send_rate.cc
-  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
-  - src/core/ext/transport/chaotic_good/server_transport.cc
-  - src/core/ext/transport/chaotic_good/tcp_frame_header.cc
-  - src/core/ext/transport/chaotic_good/tcp_frame_transport.cc
-  - src/core/ext/transport/chaotic_good/tcp_ztrace_collector.cc
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/control_endpoint.cc
-  - src/core/ext/transport/chaotic_good_legacy/data_endpoints.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  - src/core/util/seq_bit_set.cc
-  - test/core/call/batch_builder.cc
-  - test/core/end2end/cq_verifier.cc
-  - test/core/end2end/end2end_chaotic_good_config.cc
-  - test/core/end2end/end2end_test_suites.cc
-  - test/core/end2end/end2end_tests.cc
-  - test/core/end2end/fixtures/http_proxy_fixture.cc
-  - test/core/end2end/fixtures/local_util.cc
-  - test/core/end2end/fixtures/proxy.cc
-  - test/core/end2end/tests/bad_ping.cc
-  - test/core/end2end/tests/binary_metadata.cc
-  - test/core/end2end/tests/call_creds.cc
-  - test/core/end2end/tests/call_host_override.cc
-  - test/core/end2end/tests/cancel_after_accept.cc
-  - test/core/end2end/tests/cancel_after_client_done.cc
-  - test/core/end2end/tests/cancel_after_invoke.cc
-  - test/core/end2end/tests/cancel_after_round_trip.cc
-  - test/core/end2end/tests/cancel_before_invoke.cc
-  - test/core/end2end/tests/cancel_in_a_vacuum.cc
-  - test/core/end2end/tests/cancel_with_status.cc
-  - test/core/end2end/tests/channelz.cc
-  - test/core/end2end/tests/client_streaming.cc
-  - test/core/end2end/tests/compressed_payload.cc
-  - test/core/end2end/tests/connection_scaling.cc
-  - test/core/end2end/tests/connectivity.cc
-  - test/core/end2end/tests/default_host.cc
-  - test/core/end2end/tests/disappearing_server.cc
-  - test/core/end2end/tests/empty_batch.cc
-  - test/core/end2end/tests/filter_causes_close.cc
-  - test/core/end2end/tests/filter_init_fails.cc
-  - test/core/end2end/tests/filtered_metadata.cc
-  - test/core/end2end/tests/graceful_server_shutdown.cc
-  - test/core/end2end/tests/grpc_authz.cc
-  - test/core/end2end/tests/high_initial_seqno.cc
-  - test/core/end2end/tests/hpack_size.cc
-  - test/core/end2end/tests/http2_stats.cc
-  - test/core/end2end/tests/invoke_large_request.cc
-  - test/core/end2end/tests/keepalive_timeout.cc
-  - test/core/end2end/tests/large_metadata.cc
-  - test/core/end2end/tests/max_concurrent_streams.cc
-  - test/core/end2end/tests/max_connection_age.cc
-  - test/core/end2end/tests/max_connection_idle.cc
-  - test/core/end2end/tests/max_message_length.cc
-  - test/core/end2end/tests/negative_deadline.cc
-  - test/core/end2end/tests/no_op.cc
-  - test/core/end2end/tests/payload.cc
-  - test/core/end2end/tests/ping.cc
-  - test/core/end2end/tests/ping_pong_streaming.cc
-  - test/core/end2end/tests/proxy_auth.cc
-  - test/core/end2end/tests/registered_call.cc
-  - test/core/end2end/tests/request_with_flags.cc
-  - test/core/end2end/tests/request_with_payload.cc
-  - test/core/end2end/tests/resource_quota_server.cc
-  - test/core/end2end/tests/retry.cc
-  - test/core/end2end/tests/retry_cancel_after_first_attempt_starts.cc
-  - test/core/end2end/tests/retry_cancel_during_delay.cc
-  - test/core/end2end/tests/retry_cancel_with_multiple_send_batches.cc
-  - test/core/end2end/tests/retry_cancellation.cc
-  - test/core/end2end/tests/retry_disabled.cc
-  - test/core/end2end/tests/retry_exceeds_buffer_size_in_delay.cc
-  - test/core/end2end/tests/retry_exceeds_buffer_size_in_initial_batch.cc
-  - test/core/end2end/tests/retry_exceeds_buffer_size_in_subsequent_batch.cc
-  - test/core/end2end/tests/retry_lb_drop.cc
-  - test/core/end2end/tests/retry_lb_fail.cc
-  - test/core/end2end/tests/retry_non_retriable_status.cc
-  - test/core/end2end/tests/retry_non_retriable_status_before_trailers.cc
-  - test/core/end2end/tests/retry_per_attempt_recv_timeout.cc
-  - test/core/end2end/tests/retry_per_attempt_recv_timeout_on_last_attempt.cc
-  - test/core/end2end/tests/retry_recv_initial_metadata.cc
-  - test/core/end2end/tests/retry_recv_message.cc
-  - test/core/end2end/tests/retry_recv_message_replay.cc
-  - test/core/end2end/tests/retry_recv_trailing_metadata_error.cc
-  - test/core/end2end/tests/retry_send_initial_metadata_refs.cc
-  - test/core/end2end/tests/retry_send_op_fails.cc
-  - test/core/end2end/tests/retry_send_recv_batch.cc
-  - test/core/end2end/tests/retry_server_pushback_delay.cc
-  - test/core/end2end/tests/retry_server_pushback_disabled.cc
-  - test/core/end2end/tests/retry_streaming.cc
-  - test/core/end2end/tests/retry_streaming_after_commit.cc
-  - test/core/end2end/tests/retry_streaming_succeeds_before_replay_finished.cc
-  - test/core/end2end/tests/retry_throttled.cc
-  - test/core/end2end/tests/retry_too_many_attempts.cc
-  - test/core/end2end/tests/retry_transparent_goaway.cc
-  - test/core/end2end/tests/retry_transparent_max_concurrent_streams.cc
-  - test/core/end2end/tests/retry_transparent_not_sent_on_wire.cc
-  - test/core/end2end/tests/retry_unref_before_finish.cc
-  - test/core/end2end/tests/retry_unref_before_recv.cc
-  - test/core/end2end/tests/server_finishes_request.cc
-  - test/core/end2end/tests/server_streaming.cc
-  - test/core/end2end/tests/shutdown_finishes_calls.cc
-  - test/core/end2end/tests/shutdown_finishes_tags.cc
-  - test/core/end2end/tests/simple_delayed_request.cc
-  - test/core/end2end/tests/simple_metadata.cc
-  - test/core/end2end/tests/simple_request.cc
-  - test/core/end2end/tests/streaming_error_response.cc
-  - test/core/end2end/tests/timeout_before_request_call.cc
-  - test/core/end2end/tests/trailing_metadata.cc
-  - test/core/end2end/tests/write_buffering.cc
-  - test/core/end2end/tests/write_buffering_at_end.cc
-  - test/core/event_engine/event_engine_test_utils.cc
-  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
-  - test/core/test_util/fail_first_call_filter.cc
-  - test/core/test_util/fake_stats_plugin.cc
-  - test/core/test_util/fuzz_config_vars.cc
-  - test/core/test_util/passthrough_endpoint.cc
-  - test/core/test_util/test_call_creds.cc
-  - test/core/test_util/test_lb_policies.cc
-  - third_party/googletest/googlemock/src/gmock_main.cc
-  deps:
-  - gtest
-  - absl/log:log_entry
-  - absl/log:log_sink
-  - absl/log:log_sink_registry
-  - grpc_authorization_provider
-  - protobuf
-  - grpc_test_util
-  platforms:
-  - linux
-  - posix
-  - mac
-- name: end2end_http2_no_logging_test
-  gtest: true
-  build: test
-  run: false
-  language: c++
-  headers:
-  - src/core/ext/transport/chaotic_good/chaotic_good.h
-  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.h
-  - src/core/ext/transport/chaotic_good/client_transport.h
-  - src/core/ext/transport/chaotic_good/config.h
-  - src/core/ext/transport/chaotic_good/control_endpoint.h
-  - src/core/ext/transport/chaotic_good/data_endpoints.h
-  - src/core/ext/transport/chaotic_good/frame.h
-  - src/core/ext/transport/chaotic_good/frame_header.h
-  - src/core/ext/transport/chaotic_good/frame_transport.h
-  - src/core/ext/transport/chaotic_good/message_chunker.h
-  - src/core/ext/transport/chaotic_good/message_reassembly.h
-  - src/core/ext/transport/chaotic_good/pending_connection.h
-  - src/core/ext/transport/chaotic_good/scheduler.h
-  - src/core/ext/transport/chaotic_good/send_rate.h
-  - src/core/ext/transport/chaotic_good/serialize_little_endian.h
-  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
-  - src/core/ext/transport/chaotic_good/server_transport.h
-  - src/core/ext/transport/chaotic_good/tcp_frame_header.h
-  - src/core/ext/transport/chaotic_good/tcp_frame_transport.h
-  - src/core/ext/transport/chaotic_good/tcp_ztrace_collector.h
-  - src/core/ext/transport/chaotic_good/transport_context.h
-  - src/core/ext/transport/chaotic_good_legacy/chaotic_good_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.h
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/config.h
-  - src/core/ext/transport/chaotic_good_legacy/control_endpoint.h
-  - src/core/ext/transport/chaotic_good_legacy/data_endpoints.h
-  - src/core/ext/transport/chaotic_good_legacy/frame.h
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.h
-  - src/core/ext/transport/chaotic_good_legacy/legacy_ztrace_collector.h
-  - src/core/ext/transport/chaotic_good_legacy/message_chunker.h
-  - src/core/ext/transport/chaotic_good_legacy/message_reassembly.h
-  - src/core/ext/transport/chaotic_good_legacy/pending_connection.h
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.h
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.h
-  - src/core/lib/promise/event_engine_wakeup_scheduler.h
-  - src/core/lib/promise/join.h
-  - src/core/lib/promise/lock_based_mpsc.h
-  - src/core/lib/promise/switch.h
-  - src/core/lib/promise/wait_for_callback.h
-  - src/core/util/seq_bit_set.h
-  - test/core/call/batch_builder.h
-  - test/core/end2end/cq_verifier.h
-  - test/core/end2end/end2end_tests.h
-  - test/core/end2end/fixtures/h2_oauth2_common.h
-  - test/core/end2end/fixtures/h2_ssl_cred_reload_fixture.h
-  - test/core/end2end/fixtures/h2_ssl_tls_common.h
-  - test/core/end2end/fixtures/h2_tls_common.h
-  - test/core/end2end/fixtures/http_common_secure_fixtures.h
-  - test/core/end2end/fixtures/http_proxy_fixture.h
-  - test/core/end2end/fixtures/inproc_fixture.h
-  - test/core/end2end/fixtures/local_util.h
-  - test/core/end2end/fixtures/proxy.h
-  - test/core/end2end/fixtures/secure_fixture.h
-  - test/core/end2end/fixtures/sockpair_fixture.h
-  - test/core/end2end/tests/cancel_test_helpers.h
-  - test/core/event_engine/event_engine_test_utils.h
-  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
-  - test/core/test_util/fail_first_call_filter.h
-  - test/core/test_util/fake_stats_plugin.h
-  - test/core/test_util/fuzz_config_vars.h
-  - test/core/test_util/passthrough_endpoint.h
-  - test/core/test_util/postmortem.h
-  - test/core/test_util/scoped_env_var.h
-  - test/core/test_util/test_call_creds.h
-  - test/core/test_util/test_lb_policies.h
-  src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
-  - test/core/end2end/end2end_test_fuzzer.proto
-  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
-  - test/core/test_util/fuzz_config_vars.proto
-  - src/core/ext/transport/chaotic_good/chaotic_good.cc
-  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
-  - src/core/ext/transport/chaotic_good/client_transport.cc
-  - src/core/ext/transport/chaotic_good/control_endpoint.cc
-  - src/core/ext/transport/chaotic_good/data_endpoints.cc
-  - src/core/ext/transport/chaotic_good/frame.cc
-  - src/core/ext/transport/chaotic_good/frame_header.cc
-  - src/core/ext/transport/chaotic_good/scheduler.cc
-  - src/core/ext/transport/chaotic_good/send_rate.cc
-  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
-  - src/core/ext/transport/chaotic_good/server_transport.cc
-  - src/core/ext/transport/chaotic_good/tcp_frame_header.cc
-  - src/core/ext/transport/chaotic_good/tcp_frame_transport.cc
-  - src/core/ext/transport/chaotic_good/tcp_ztrace_collector.cc
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/control_endpoint.cc
-  - src/core/ext/transport/chaotic_good_legacy/data_endpoints.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  - src/core/util/seq_bit_set.cc
-  - test/core/call/batch_builder.cc
-  - test/core/end2end/cq_verifier.cc
-  - test/core/end2end/end2end_http2_config.cc
-  - test/core/end2end/end2end_test_suites.cc
-  - test/core/end2end/end2end_tests.cc
-  - test/core/end2end/fixtures/http_proxy_fixture.cc
-  - test/core/end2end/fixtures/local_util.cc
-  - test/core/end2end/fixtures/proxy.cc
-  - test/core/end2end/tests/no_logging.cc
-  - test/core/event_engine/event_engine_test_utils.cc
-  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
-  - test/core/test_util/fail_first_call_filter.cc
-  - test/core/test_util/fake_stats_plugin.cc
-  - test/core/test_util/fuzz_config_vars.cc
-  - test/core/test_util/passthrough_endpoint.cc
-  - test/core/test_util/test_call_creds.cc
-  - test/core/test_util/test_lb_policies.cc
-  - third_party/googletest/googlemock/src/gmock_main.cc
-  deps:
-  - gtest
-  - absl/log:log_entry
-  - absl/log:log_sink
-  - absl/log:log_sink_registry
-  - grpc_authorization_provider
-  - protobuf
-  - grpc_test_util
-- name: end2end_http2_security_no_logging_test
-  gtest: true
-  build: test
-  run: false
-  language: c++
-  headers:
-  - src/core/ext/transport/chaotic_good/chaotic_good.h
-  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.h
-  - src/core/ext/transport/chaotic_good/client_transport.h
-  - src/core/ext/transport/chaotic_good/config.h
-  - src/core/ext/transport/chaotic_good/control_endpoint.h
-  - src/core/ext/transport/chaotic_good/data_endpoints.h
-  - src/core/ext/transport/chaotic_good/frame.h
-  - src/core/ext/transport/chaotic_good/frame_header.h
-  - src/core/ext/transport/chaotic_good/frame_transport.h
-  - src/core/ext/transport/chaotic_good/message_chunker.h
-  - src/core/ext/transport/chaotic_good/message_reassembly.h
-  - src/core/ext/transport/chaotic_good/pending_connection.h
-  - src/core/ext/transport/chaotic_good/scheduler.h
-  - src/core/ext/transport/chaotic_good/send_rate.h
-  - src/core/ext/transport/chaotic_good/serialize_little_endian.h
-  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
-  - src/core/ext/transport/chaotic_good/server_transport.h
-  - src/core/ext/transport/chaotic_good/tcp_frame_header.h
-  - src/core/ext/transport/chaotic_good/tcp_frame_transport.h
-  - src/core/ext/transport/chaotic_good/tcp_ztrace_collector.h
-  - src/core/ext/transport/chaotic_good/transport_context.h
-  - src/core/ext/transport/chaotic_good_legacy/chaotic_good_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.h
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/config.h
-  - src/core/ext/transport/chaotic_good_legacy/control_endpoint.h
-  - src/core/ext/transport/chaotic_good_legacy/data_endpoints.h
-  - src/core/ext/transport/chaotic_good_legacy/frame.h
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.h
-  - src/core/ext/transport/chaotic_good_legacy/legacy_ztrace_collector.h
-  - src/core/ext/transport/chaotic_good_legacy/message_chunker.h
-  - src/core/ext/transport/chaotic_good_legacy/message_reassembly.h
-  - src/core/ext/transport/chaotic_good_legacy/pending_connection.h
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.h
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.h
-  - src/core/lib/promise/event_engine_wakeup_scheduler.h
-  - src/core/lib/promise/join.h
-  - src/core/lib/promise/lock_based_mpsc.h
-  - src/core/lib/promise/switch.h
-  - src/core/lib/promise/wait_for_callback.h
-  - src/core/util/seq_bit_set.h
-  - test/core/call/batch_builder.h
-  - test/core/end2end/cq_verifier.h
-  - test/core/end2end/end2end_tests.h
-  - test/core/end2end/fixtures/h2_oauth2_common.h
-  - test/core/end2end/fixtures/h2_ssl_cred_reload_fixture.h
-  - test/core/end2end/fixtures/h2_ssl_tls_common.h
-  - test/core/end2end/fixtures/h2_tls_common.h
-  - test/core/end2end/fixtures/http_common_secure_fixtures.h
-  - test/core/end2end/fixtures/http_proxy_fixture.h
-  - test/core/end2end/fixtures/inproc_fixture.h
-  - test/core/end2end/fixtures/local_util.h
-  - test/core/end2end/fixtures/proxy.h
-  - test/core/end2end/fixtures/secure_fixture.h
-  - test/core/end2end/fixtures/sockpair_fixture.h
-  - test/core/end2end/tests/cancel_test_helpers.h
-  - test/core/event_engine/event_engine_test_utils.h
-  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
-  - test/core/test_util/fail_first_call_filter.h
-  - test/core/test_util/fake_stats_plugin.h
-  - test/core/test_util/fuzz_config_vars.h
-  - test/core/test_util/passthrough_endpoint.h
-  - test/core/test_util/postmortem.h
-  - test/core/test_util/scoped_env_var.h
-  - test/core/test_util/test_call_creds.h
-  - test/core/test_util/test_lb_policies.h
-  src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
-  - test/core/end2end/end2end_test_fuzzer.proto
-  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
-  - test/core/test_util/fuzz_config_vars.proto
-  - src/core/ext/transport/chaotic_good/chaotic_good.cc
-  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
-  - src/core/ext/transport/chaotic_good/client_transport.cc
-  - src/core/ext/transport/chaotic_good/control_endpoint.cc
-  - src/core/ext/transport/chaotic_good/data_endpoints.cc
-  - src/core/ext/transport/chaotic_good/frame.cc
-  - src/core/ext/transport/chaotic_good/frame_header.cc
-  - src/core/ext/transport/chaotic_good/scheduler.cc
-  - src/core/ext/transport/chaotic_good/send_rate.cc
-  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
-  - src/core/ext/transport/chaotic_good/server_transport.cc
-  - src/core/ext/transport/chaotic_good/tcp_frame_header.cc
-  - src/core/ext/transport/chaotic_good/tcp_frame_transport.cc
-  - src/core/ext/transport/chaotic_good/tcp_ztrace_collector.cc
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/control_endpoint.cc
-  - src/core/ext/transport/chaotic_good_legacy/data_endpoints.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  - src/core/util/seq_bit_set.cc
-  - test/core/call/batch_builder.cc
-  - test/core/end2end/cq_verifier.cc
-  - test/core/end2end/end2end_http2_security_config.cc
-  - test/core/end2end/end2end_test_suites.cc
-  - test/core/end2end/end2end_tests.cc
-  - test/core/end2end/fixtures/http_proxy_fixture.cc
-  - test/core/end2end/fixtures/local_util.cc
-  - test/core/end2end/fixtures/proxy.cc
-  - test/core/end2end/tests/no_logging.cc
-  - test/core/event_engine/event_engine_test_utils.cc
-  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
-  - test/core/test_util/fail_first_call_filter.cc
-  - test/core/test_util/fake_stats_plugin.cc
-  - test/core/test_util/fuzz_config_vars.cc
-  - test/core/test_util/passthrough_endpoint.cc
-  - test/core/test_util/test_call_creds.cc
-  - test/core/test_util/test_lb_policies.cc
-  - third_party/googletest/googlemock/src/gmock_main.cc
-  deps:
-  - gtest
-  - absl/log:log_entry
-  - absl/log:log_sink
-  - absl/log:log_sink_registry
-  - grpc_authorization_provider
-  - protobuf
-  - grpc_test_util
-- name: end2end_http2_security_test
-  gtest: true
-  build: test
-  run: false
-  language: c++
-  headers:
-  - src/core/ext/transport/chaotic_good/chaotic_good.h
-  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.h
-  - src/core/ext/transport/chaotic_good/client_transport.h
-  - src/core/ext/transport/chaotic_good/config.h
-  - src/core/ext/transport/chaotic_good/control_endpoint.h
-  - src/core/ext/transport/chaotic_good/data_endpoints.h
-  - src/core/ext/transport/chaotic_good/frame.h
-  - src/core/ext/transport/chaotic_good/frame_header.h
-  - src/core/ext/transport/chaotic_good/frame_transport.h
-  - src/core/ext/transport/chaotic_good/message_chunker.h
-  - src/core/ext/transport/chaotic_good/message_reassembly.h
-  - src/core/ext/transport/chaotic_good/pending_connection.h
-  - src/core/ext/transport/chaotic_good/scheduler.h
-  - src/core/ext/transport/chaotic_good/send_rate.h
-  - src/core/ext/transport/chaotic_good/serialize_little_endian.h
-  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
-  - src/core/ext/transport/chaotic_good/server_transport.h
-  - src/core/ext/transport/chaotic_good/tcp_frame_header.h
-  - src/core/ext/transport/chaotic_good/tcp_frame_transport.h
-  - src/core/ext/transport/chaotic_good/tcp_ztrace_collector.h
-  - src/core/ext/transport/chaotic_good/transport_context.h
-  - src/core/ext/transport/chaotic_good_legacy/chaotic_good_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.h
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/config.h
-  - src/core/ext/transport/chaotic_good_legacy/control_endpoint.h
-  - src/core/ext/transport/chaotic_good_legacy/data_endpoints.h
-  - src/core/ext/transport/chaotic_good_legacy/frame.h
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.h
-  - src/core/ext/transport/chaotic_good_legacy/legacy_ztrace_collector.h
-  - src/core/ext/transport/chaotic_good_legacy/message_chunker.h
-  - src/core/ext/transport/chaotic_good_legacy/message_reassembly.h
-  - src/core/ext/transport/chaotic_good_legacy/pending_connection.h
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.h
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.h
-  - src/core/lib/promise/event_engine_wakeup_scheduler.h
-  - src/core/lib/promise/join.h
-  - src/core/lib/promise/lock_based_mpsc.h
-  - src/core/lib/promise/switch.h
-  - src/core/lib/promise/wait_for_callback.h
-  - src/core/util/seq_bit_set.h
-  - test/core/call/batch_builder.h
-  - test/core/end2end/cq_verifier.h
-  - test/core/end2end/end2end_tests.h
-  - test/core/end2end/fixtures/h2_oauth2_common.h
-  - test/core/end2end/fixtures/h2_ssl_cred_reload_fixture.h
-  - test/core/end2end/fixtures/h2_ssl_tls_common.h
-  - test/core/end2end/fixtures/h2_tls_common.h
-  - test/core/end2end/fixtures/http_common_secure_fixtures.h
-  - test/core/end2end/fixtures/http_proxy_fixture.h
-  - test/core/end2end/fixtures/inproc_fixture.h
-  - test/core/end2end/fixtures/local_util.h
-  - test/core/end2end/fixtures/proxy.h
-  - test/core/end2end/fixtures/secure_fixture.h
-  - test/core/end2end/fixtures/sockpair_fixture.h
-  - test/core/end2end/tests/cancel_test_helpers.h
-  - test/core/event_engine/event_engine_test_utils.h
-  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
-  - test/core/test_util/fail_first_call_filter.h
-  - test/core/test_util/fake_stats_plugin.h
-  - test/core/test_util/fuzz_config_vars.h
-  - test/core/test_util/passthrough_endpoint.h
-  - test/core/test_util/postmortem.h
-  - test/core/test_util/scoped_env_var.h
-  - test/core/test_util/test_call_creds.h
-  - test/core/test_util/test_lb_policies.h
-  src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
-  - test/core/end2end/end2end_test_fuzzer.proto
-  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
-  - test/core/test_util/fuzz_config_vars.proto
-  - src/core/ext/transport/chaotic_good/chaotic_good.cc
-  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
-  - src/core/ext/transport/chaotic_good/client_transport.cc
-  - src/core/ext/transport/chaotic_good/control_endpoint.cc
-  - src/core/ext/transport/chaotic_good/data_endpoints.cc
-  - src/core/ext/transport/chaotic_good/frame.cc
-  - src/core/ext/transport/chaotic_good/frame_header.cc
-  - src/core/ext/transport/chaotic_good/scheduler.cc
-  - src/core/ext/transport/chaotic_good/send_rate.cc
-  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
-  - src/core/ext/transport/chaotic_good/server_transport.cc
-  - src/core/ext/transport/chaotic_good/tcp_frame_header.cc
-  - src/core/ext/transport/chaotic_good/tcp_frame_transport.cc
-  - src/core/ext/transport/chaotic_good/tcp_ztrace_collector.cc
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/control_endpoint.cc
-  - src/core/ext/transport/chaotic_good_legacy/data_endpoints.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  - src/core/util/seq_bit_set.cc
-  - test/core/call/batch_builder.cc
-  - test/core/end2end/cq_verifier.cc
-  - test/core/end2end/end2end_http2_security_config.cc
-  - test/core/end2end/end2end_test_suites.cc
-  - test/core/end2end/end2end_tests.cc
-  - test/core/end2end/fixtures/http_proxy_fixture.cc
-  - test/core/end2end/fixtures/local_util.cc
-  - test/core/end2end/fixtures/proxy.cc
-  - test/core/end2end/tests/bad_ping.cc
-  - test/core/end2end/tests/binary_metadata.cc
-  - test/core/end2end/tests/call_creds.cc
-  - test/core/end2end/tests/call_host_override.cc
-  - test/core/end2end/tests/cancel_after_accept.cc
-  - test/core/end2end/tests/cancel_after_client_done.cc
-  - test/core/end2end/tests/cancel_after_invoke.cc
-  - test/core/end2end/tests/cancel_after_round_trip.cc
-  - test/core/end2end/tests/cancel_before_invoke.cc
-  - test/core/end2end/tests/cancel_in_a_vacuum.cc
-  - test/core/end2end/tests/cancel_with_status.cc
-  - test/core/end2end/tests/channelz.cc
-  - test/core/end2end/tests/client_streaming.cc
-  - test/core/end2end/tests/compressed_payload.cc
-  - test/core/end2end/tests/connection_scaling.cc
-  - test/core/end2end/tests/connectivity.cc
-  - test/core/end2end/tests/default_host.cc
-  - test/core/end2end/tests/disappearing_server.cc
-  - test/core/end2end/tests/empty_batch.cc
-  - test/core/end2end/tests/filter_causes_close.cc
-  - test/core/end2end/tests/filter_init_fails.cc
-  - test/core/end2end/tests/filtered_metadata.cc
-  - test/core/end2end/tests/graceful_server_shutdown.cc
-  - test/core/end2end/tests/grpc_authz.cc
-  - test/core/end2end/tests/high_initial_seqno.cc
-  - test/core/end2end/tests/hpack_size.cc
-  - test/core/end2end/tests/http2_stats.cc
-  - test/core/end2end/tests/invoke_large_request.cc
-  - test/core/end2end/tests/keepalive_timeout.cc
-  - test/core/end2end/tests/large_metadata.cc
-  - test/core/end2end/tests/max_concurrent_streams.cc
-  - test/core/end2end/tests/max_connection_age.cc
-  - test/core/end2end/tests/max_connection_idle.cc
-  - test/core/end2end/tests/max_message_length.cc
-  - test/core/end2end/tests/negative_deadline.cc
-  - test/core/end2end/tests/no_op.cc
-  - test/core/end2end/tests/payload.cc
-  - test/core/end2end/tests/ping.cc
-  - test/core/end2end/tests/ping_pong_streaming.cc
-  - test/core/end2end/tests/proxy_auth.cc
-  - test/core/end2end/tests/registered_call.cc
-  - test/core/end2end/tests/request_with_flags.cc
-  - test/core/end2end/tests/request_with_payload.cc
-  - test/core/end2end/tests/resource_quota_server.cc
-  - test/core/end2end/tests/retry.cc
-  - test/core/end2end/tests/retry_cancel_after_first_attempt_starts.cc
-  - test/core/end2end/tests/retry_cancel_during_delay.cc
-  - test/core/end2end/tests/retry_cancel_with_multiple_send_batches.cc
-  - test/core/end2end/tests/retry_cancellation.cc
-  - test/core/end2end/tests/retry_disabled.cc
-  - test/core/end2end/tests/retry_exceeds_buffer_size_in_delay.cc
-  - test/core/end2end/tests/retry_exceeds_buffer_size_in_initial_batch.cc
-  - test/core/end2end/tests/retry_exceeds_buffer_size_in_subsequent_batch.cc
-  - test/core/end2end/tests/retry_lb_drop.cc
-  - test/core/end2end/tests/retry_lb_fail.cc
-  - test/core/end2end/tests/retry_non_retriable_status.cc
-  - test/core/end2end/tests/retry_non_retriable_status_before_trailers.cc
-  - test/core/end2end/tests/retry_per_attempt_recv_timeout.cc
-  - test/core/end2end/tests/retry_per_attempt_recv_timeout_on_last_attempt.cc
-  - test/core/end2end/tests/retry_recv_initial_metadata.cc
-  - test/core/end2end/tests/retry_recv_message.cc
-  - test/core/end2end/tests/retry_recv_message_replay.cc
-  - test/core/end2end/tests/retry_recv_trailing_metadata_error.cc
-  - test/core/end2end/tests/retry_send_initial_metadata_refs.cc
-  - test/core/end2end/tests/retry_send_op_fails.cc
-  - test/core/end2end/tests/retry_send_recv_batch.cc
-  - test/core/end2end/tests/retry_server_pushback_delay.cc
-  - test/core/end2end/tests/retry_server_pushback_disabled.cc
-  - test/core/end2end/tests/retry_streaming.cc
-  - test/core/end2end/tests/retry_streaming_after_commit.cc
-  - test/core/end2end/tests/retry_streaming_succeeds_before_replay_finished.cc
-  - test/core/end2end/tests/retry_throttled.cc
-  - test/core/end2end/tests/retry_too_many_attempts.cc
-  - test/core/end2end/tests/retry_transparent_goaway.cc
-  - test/core/end2end/tests/retry_transparent_max_concurrent_streams.cc
-  - test/core/end2end/tests/retry_transparent_not_sent_on_wire.cc
-  - test/core/end2end/tests/retry_unref_before_finish.cc
-  - test/core/end2end/tests/retry_unref_before_recv.cc
-  - test/core/end2end/tests/server_finishes_request.cc
-  - test/core/end2end/tests/server_streaming.cc
-  - test/core/end2end/tests/shutdown_finishes_calls.cc
-  - test/core/end2end/tests/shutdown_finishes_tags.cc
-  - test/core/end2end/tests/simple_delayed_request.cc
-  - test/core/end2end/tests/simple_metadata.cc
-  - test/core/end2end/tests/simple_request.cc
-  - test/core/end2end/tests/streaming_error_response.cc
-  - test/core/end2end/tests/timeout_before_request_call.cc
-  - test/core/end2end/tests/trailing_metadata.cc
-  - test/core/end2end/tests/write_buffering.cc
-  - test/core/end2end/tests/write_buffering_at_end.cc
-  - test/core/event_engine/event_engine_test_utils.cc
-  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
-  - test/core/test_util/fail_first_call_filter.cc
-  - test/core/test_util/fake_stats_plugin.cc
-  - test/core/test_util/fuzz_config_vars.cc
-  - test/core/test_util/passthrough_endpoint.cc
-  - test/core/test_util/test_call_creds.cc
-  - test/core/test_util/test_lb_policies.cc
-  - third_party/googletest/googlemock/src/gmock_main.cc
-  deps:
-  - gtest
-  - absl/log:log_entry
-  - absl/log:log_sink
-  - absl/log:log_sink_registry
-  - grpc_authorization_provider
-  - protobuf
-  - grpc_test_util
-- name: end2end_http2_test
-  gtest: true
-  build: test
-  run: false
-  language: c++
-  headers:
-  - src/core/ext/transport/chaotic_good/chaotic_good.h
-  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.h
-  - src/core/ext/transport/chaotic_good/client_transport.h
-  - src/core/ext/transport/chaotic_good/config.h
-  - src/core/ext/transport/chaotic_good/control_endpoint.h
-  - src/core/ext/transport/chaotic_good/data_endpoints.h
-  - src/core/ext/transport/chaotic_good/frame.h
-  - src/core/ext/transport/chaotic_good/frame_header.h
-  - src/core/ext/transport/chaotic_good/frame_transport.h
-  - src/core/ext/transport/chaotic_good/message_chunker.h
-  - src/core/ext/transport/chaotic_good/message_reassembly.h
-  - src/core/ext/transport/chaotic_good/pending_connection.h
-  - src/core/ext/transport/chaotic_good/scheduler.h
-  - src/core/ext/transport/chaotic_good/send_rate.h
-  - src/core/ext/transport/chaotic_good/serialize_little_endian.h
-  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
-  - src/core/ext/transport/chaotic_good/server_transport.h
-  - src/core/ext/transport/chaotic_good/tcp_frame_header.h
-  - src/core/ext/transport/chaotic_good/tcp_frame_transport.h
-  - src/core/ext/transport/chaotic_good/tcp_ztrace_collector.h
-  - src/core/ext/transport/chaotic_good/transport_context.h
-  - src/core/ext/transport/chaotic_good_legacy/chaotic_good_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.h
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/config.h
-  - src/core/ext/transport/chaotic_good_legacy/control_endpoint.h
-  - src/core/ext/transport/chaotic_good_legacy/data_endpoints.h
-  - src/core/ext/transport/chaotic_good_legacy/frame.h
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.h
-  - src/core/ext/transport/chaotic_good_legacy/legacy_ztrace_collector.h
-  - src/core/ext/transport/chaotic_good_legacy/message_chunker.h
-  - src/core/ext/transport/chaotic_good_legacy/message_reassembly.h
-  - src/core/ext/transport/chaotic_good_legacy/pending_connection.h
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.h
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.h
-  - src/core/lib/promise/event_engine_wakeup_scheduler.h
-  - src/core/lib/promise/join.h
-  - src/core/lib/promise/lock_based_mpsc.h
-  - src/core/lib/promise/switch.h
-  - src/core/lib/promise/wait_for_callback.h
-  - src/core/util/seq_bit_set.h
-  - test/core/call/batch_builder.h
-  - test/core/end2end/cq_verifier.h
-  - test/core/end2end/end2end_tests.h
-  - test/core/end2end/fixtures/h2_oauth2_common.h
-  - test/core/end2end/fixtures/h2_ssl_cred_reload_fixture.h
-  - test/core/end2end/fixtures/h2_ssl_tls_common.h
-  - test/core/end2end/fixtures/h2_tls_common.h
-  - test/core/end2end/fixtures/http_common_secure_fixtures.h
-  - test/core/end2end/fixtures/http_proxy_fixture.h
-  - test/core/end2end/fixtures/inproc_fixture.h
-  - test/core/end2end/fixtures/local_util.h
-  - test/core/end2end/fixtures/proxy.h
-  - test/core/end2end/fixtures/secure_fixture.h
-  - test/core/end2end/fixtures/sockpair_fixture.h
-  - test/core/end2end/tests/cancel_test_helpers.h
-  - test/core/event_engine/event_engine_test_utils.h
-  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
-  - test/core/test_util/fail_first_call_filter.h
-  - test/core/test_util/fake_stats_plugin.h
-  - test/core/test_util/fuzz_config_vars.h
-  - test/core/test_util/passthrough_endpoint.h
-  - test/core/test_util/postmortem.h
-  - test/core/test_util/scoped_env_var.h
-  - test/core/test_util/test_call_creds.h
-  - test/core/test_util/test_lb_policies.h
-  src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
-  - test/core/end2end/end2end_test_fuzzer.proto
-  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
-  - test/core/test_util/fuzz_config_vars.proto
-  - src/core/ext/transport/chaotic_good/chaotic_good.cc
-  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
-  - src/core/ext/transport/chaotic_good/client_transport.cc
-  - src/core/ext/transport/chaotic_good/control_endpoint.cc
-  - src/core/ext/transport/chaotic_good/data_endpoints.cc
-  - src/core/ext/transport/chaotic_good/frame.cc
-  - src/core/ext/transport/chaotic_good/frame_header.cc
-  - src/core/ext/transport/chaotic_good/scheduler.cc
-  - src/core/ext/transport/chaotic_good/send_rate.cc
-  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
-  - src/core/ext/transport/chaotic_good/server_transport.cc
-  - src/core/ext/transport/chaotic_good/tcp_frame_header.cc
-  - src/core/ext/transport/chaotic_good/tcp_frame_transport.cc
-  - src/core/ext/transport/chaotic_good/tcp_ztrace_collector.cc
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/control_endpoint.cc
-  - src/core/ext/transport/chaotic_good_legacy/data_endpoints.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  - src/core/util/seq_bit_set.cc
-  - test/core/call/batch_builder.cc
-  - test/core/end2end/cq_verifier.cc
-  - test/core/end2end/end2end_http2_config.cc
-  - test/core/end2end/end2end_test_suites.cc
-  - test/core/end2end/end2end_tests.cc
-  - test/core/end2end/fixtures/http_proxy_fixture.cc
-  - test/core/end2end/fixtures/local_util.cc
-  - test/core/end2end/fixtures/proxy.cc
-  - test/core/end2end/tests/bad_ping.cc
-  - test/core/end2end/tests/binary_metadata.cc
-  - test/core/end2end/tests/call_creds.cc
-  - test/core/end2end/tests/call_host_override.cc
-  - test/core/end2end/tests/cancel_after_accept.cc
-  - test/core/end2end/tests/cancel_after_client_done.cc
-  - test/core/end2end/tests/cancel_after_invoke.cc
-  - test/core/end2end/tests/cancel_after_round_trip.cc
-  - test/core/end2end/tests/cancel_before_invoke.cc
-  - test/core/end2end/tests/cancel_in_a_vacuum.cc
-  - test/core/end2end/tests/cancel_with_status.cc
-  - test/core/end2end/tests/channelz.cc
-  - test/core/end2end/tests/client_streaming.cc
-  - test/core/end2end/tests/compressed_payload.cc
-  - test/core/end2end/tests/connection_scaling.cc
-  - test/core/end2end/tests/connectivity.cc
-  - test/core/end2end/tests/default_host.cc
-  - test/core/end2end/tests/disappearing_server.cc
-  - test/core/end2end/tests/empty_batch.cc
-  - test/core/end2end/tests/filter_causes_close.cc
-  - test/core/end2end/tests/filter_init_fails.cc
-  - test/core/end2end/tests/filtered_metadata.cc
-  - test/core/end2end/tests/graceful_server_shutdown.cc
-  - test/core/end2end/tests/grpc_authz.cc
-  - test/core/end2end/tests/high_initial_seqno.cc
-  - test/core/end2end/tests/hpack_size.cc
-  - test/core/end2end/tests/http2_stats.cc
-  - test/core/end2end/tests/invoke_large_request.cc
-  - test/core/end2end/tests/keepalive_timeout.cc
-  - test/core/end2end/tests/large_metadata.cc
-  - test/core/end2end/tests/max_concurrent_streams.cc
-  - test/core/end2end/tests/max_connection_age.cc
-  - test/core/end2end/tests/max_connection_idle.cc
-  - test/core/end2end/tests/max_message_length.cc
-  - test/core/end2end/tests/negative_deadline.cc
-  - test/core/end2end/tests/no_op.cc
-  - test/core/end2end/tests/payload.cc
-  - test/core/end2end/tests/ping.cc
-  - test/core/end2end/tests/ping_pong_streaming.cc
-  - test/core/end2end/tests/proxy_auth.cc
-  - test/core/end2end/tests/registered_call.cc
-  - test/core/end2end/tests/request_with_flags.cc
-  - test/core/end2end/tests/request_with_payload.cc
-  - test/core/end2end/tests/resource_quota_server.cc
-  - test/core/end2end/tests/retry.cc
-  - test/core/end2end/tests/retry_cancel_after_first_attempt_starts.cc
-  - test/core/end2end/tests/retry_cancel_during_delay.cc
-  - test/core/end2end/tests/retry_cancel_with_multiple_send_batches.cc
-  - test/core/end2end/tests/retry_cancellation.cc
-  - test/core/end2end/tests/retry_disabled.cc
-  - test/core/end2end/tests/retry_exceeds_buffer_size_in_delay.cc
-  - test/core/end2end/tests/retry_exceeds_buffer_size_in_initial_batch.cc
-  - test/core/end2end/tests/retry_exceeds_buffer_size_in_subsequent_batch.cc
-  - test/core/end2end/tests/retry_lb_drop.cc
-  - test/core/end2end/tests/retry_lb_fail.cc
-  - test/core/end2end/tests/retry_non_retriable_status.cc
-  - test/core/end2end/tests/retry_non_retriable_status_before_trailers.cc
-  - test/core/end2end/tests/retry_per_attempt_recv_timeout.cc
-  - test/core/end2end/tests/retry_per_attempt_recv_timeout_on_last_attempt.cc
-  - test/core/end2end/tests/retry_recv_initial_metadata.cc
-  - test/core/end2end/tests/retry_recv_message.cc
-  - test/core/end2end/tests/retry_recv_message_replay.cc
-  - test/core/end2end/tests/retry_recv_trailing_metadata_error.cc
-  - test/core/end2end/tests/retry_send_initial_metadata_refs.cc
-  - test/core/end2end/tests/retry_send_op_fails.cc
-  - test/core/end2end/tests/retry_send_recv_batch.cc
-  - test/core/end2end/tests/retry_server_pushback_delay.cc
-  - test/core/end2end/tests/retry_server_pushback_disabled.cc
-  - test/core/end2end/tests/retry_streaming.cc
-  - test/core/end2end/tests/retry_streaming_after_commit.cc
-  - test/core/end2end/tests/retry_streaming_succeeds_before_replay_finished.cc
-  - test/core/end2end/tests/retry_throttled.cc
-  - test/core/end2end/tests/retry_too_many_attempts.cc
-  - test/core/end2end/tests/retry_transparent_goaway.cc
-  - test/core/end2end/tests/retry_transparent_max_concurrent_streams.cc
-  - test/core/end2end/tests/retry_transparent_not_sent_on_wire.cc
-  - test/core/end2end/tests/retry_unref_before_finish.cc
-  - test/core/end2end/tests/retry_unref_before_recv.cc
-  - test/core/end2end/tests/server_finishes_request.cc
-  - test/core/end2end/tests/server_streaming.cc
-  - test/core/end2end/tests/shutdown_finishes_calls.cc
-  - test/core/end2end/tests/shutdown_finishes_tags.cc
-  - test/core/end2end/tests/simple_delayed_request.cc
-  - test/core/end2end/tests/simple_metadata.cc
-  - test/core/end2end/tests/simple_request.cc
-  - test/core/end2end/tests/streaming_error_response.cc
-  - test/core/end2end/tests/timeout_before_request_call.cc
-  - test/core/end2end/tests/trailing_metadata.cc
-  - test/core/end2end/tests/write_buffering.cc
-  - test/core/end2end/tests/write_buffering_at_end.cc
-  - test/core/event_engine/event_engine_test_utils.cc
-  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
-  - test/core/test_util/fail_first_call_filter.cc
-  - test/core/test_util/fake_stats_plugin.cc
-  - test/core/test_util/fuzz_config_vars.cc
-  - test/core/test_util/passthrough_endpoint.cc
-  - test/core/test_util/test_call_creds.cc
-  - test/core/test_util/test_lb_policies.cc
-  - third_party/googletest/googlemock/src/gmock_main.cc
-  deps:
-  - gtest
-  - absl/log:log_entry
-  - absl/log:log_sink
-  - absl/log:log_sink_registry
-  - grpc_authorization_provider
-  - protobuf
-  - grpc_test_util
-- name: end2end_inproc_no_logging_test
-  gtest: true
-  build: test
-  run: false
-  language: c++
-  headers:
-  - src/core/ext/transport/chaotic_good/chaotic_good.h
-  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.h
-  - src/core/ext/transport/chaotic_good/client_transport.h
-  - src/core/ext/transport/chaotic_good/config.h
-  - src/core/ext/transport/chaotic_good/control_endpoint.h
-  - src/core/ext/transport/chaotic_good/data_endpoints.h
-  - src/core/ext/transport/chaotic_good/frame.h
-  - src/core/ext/transport/chaotic_good/frame_header.h
-  - src/core/ext/transport/chaotic_good/frame_transport.h
-  - src/core/ext/transport/chaotic_good/message_chunker.h
-  - src/core/ext/transport/chaotic_good/message_reassembly.h
-  - src/core/ext/transport/chaotic_good/pending_connection.h
-  - src/core/ext/transport/chaotic_good/scheduler.h
-  - src/core/ext/transport/chaotic_good/send_rate.h
-  - src/core/ext/transport/chaotic_good/serialize_little_endian.h
-  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
-  - src/core/ext/transport/chaotic_good/server_transport.h
-  - src/core/ext/transport/chaotic_good/tcp_frame_header.h
-  - src/core/ext/transport/chaotic_good/tcp_frame_transport.h
-  - src/core/ext/transport/chaotic_good/tcp_ztrace_collector.h
-  - src/core/ext/transport/chaotic_good/transport_context.h
-  - src/core/ext/transport/chaotic_good_legacy/chaotic_good_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.h
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/config.h
-  - src/core/ext/transport/chaotic_good_legacy/control_endpoint.h
-  - src/core/ext/transport/chaotic_good_legacy/data_endpoints.h
-  - src/core/ext/transport/chaotic_good_legacy/frame.h
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.h
-  - src/core/ext/transport/chaotic_good_legacy/legacy_ztrace_collector.h
-  - src/core/ext/transport/chaotic_good_legacy/message_chunker.h
-  - src/core/ext/transport/chaotic_good_legacy/message_reassembly.h
-  - src/core/ext/transport/chaotic_good_legacy/pending_connection.h
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.h
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.h
-  - src/core/lib/promise/event_engine_wakeup_scheduler.h
-  - src/core/lib/promise/join.h
-  - src/core/lib/promise/lock_based_mpsc.h
-  - src/core/lib/promise/switch.h
-  - src/core/lib/promise/wait_for_callback.h
-  - src/core/util/seq_bit_set.h
-  - test/core/call/batch_builder.h
-  - test/core/end2end/cq_verifier.h
-  - test/core/end2end/end2end_tests.h
-  - test/core/end2end/fixtures/h2_oauth2_common.h
-  - test/core/end2end/fixtures/h2_ssl_cred_reload_fixture.h
-  - test/core/end2end/fixtures/h2_ssl_tls_common.h
-  - test/core/end2end/fixtures/h2_tls_common.h
-  - test/core/end2end/fixtures/http_common_secure_fixtures.h
-  - test/core/end2end/fixtures/http_proxy_fixture.h
-  - test/core/end2end/fixtures/inproc_fixture.h
-  - test/core/end2end/fixtures/local_util.h
-  - test/core/end2end/fixtures/proxy.h
-  - test/core/end2end/fixtures/secure_fixture.h
-  - test/core/end2end/fixtures/sockpair_fixture.h
-  - test/core/end2end/tests/cancel_test_helpers.h
-  - test/core/event_engine/event_engine_test_utils.h
-  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
-  - test/core/test_util/fail_first_call_filter.h
-  - test/core/test_util/fake_stats_plugin.h
-  - test/core/test_util/fuzz_config_vars.h
-  - test/core/test_util/passthrough_endpoint.h
-  - test/core/test_util/postmortem.h
-  - test/core/test_util/scoped_env_var.h
-  - test/core/test_util/test_call_creds.h
-  - test/core/test_util/test_lb_policies.h
-  src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
-  - test/core/end2end/end2end_test_fuzzer.proto
-  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
-  - test/core/test_util/fuzz_config_vars.proto
-  - src/core/ext/transport/chaotic_good/chaotic_good.cc
-  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
-  - src/core/ext/transport/chaotic_good/client_transport.cc
-  - src/core/ext/transport/chaotic_good/control_endpoint.cc
-  - src/core/ext/transport/chaotic_good/data_endpoints.cc
-  - src/core/ext/transport/chaotic_good/frame.cc
-  - src/core/ext/transport/chaotic_good/frame_header.cc
-  - src/core/ext/transport/chaotic_good/scheduler.cc
-  - src/core/ext/transport/chaotic_good/send_rate.cc
-  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
-  - src/core/ext/transport/chaotic_good/server_transport.cc
-  - src/core/ext/transport/chaotic_good/tcp_frame_header.cc
-  - src/core/ext/transport/chaotic_good/tcp_frame_transport.cc
-  - src/core/ext/transport/chaotic_good/tcp_ztrace_collector.cc
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/control_endpoint.cc
-  - src/core/ext/transport/chaotic_good_legacy/data_endpoints.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  - src/core/util/seq_bit_set.cc
-  - test/core/call/batch_builder.cc
-  - test/core/end2end/cq_verifier.cc
-  - test/core/end2end/end2end_inproc_config.cc
-  - test/core/end2end/end2end_test_suites.cc
-  - test/core/end2end/end2end_tests.cc
-  - test/core/end2end/fixtures/http_proxy_fixture.cc
-  - test/core/end2end/fixtures/local_util.cc
-  - test/core/end2end/fixtures/proxy.cc
-  - test/core/end2end/tests/no_logging.cc
-  - test/core/event_engine/event_engine_test_utils.cc
-  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
-  - test/core/test_util/fail_first_call_filter.cc
-  - test/core/test_util/fake_stats_plugin.cc
-  - test/core/test_util/fuzz_config_vars.cc
-  - test/core/test_util/passthrough_endpoint.cc
-  - test/core/test_util/test_call_creds.cc
-  - test/core/test_util/test_lb_policies.cc
-  - third_party/googletest/googlemock/src/gmock_main.cc
-  deps:
-  - gtest
-  - absl/log:log_entry
-  - absl/log:log_sink
-  - absl/log:log_sink_registry
-  - grpc_authorization_provider
-  - protobuf
-  - grpc_test_util
-- name: end2end_inproc_test
-  gtest: true
-  build: test
-  run: false
-  language: c++
-  headers:
-  - src/core/ext/transport/chaotic_good/chaotic_good.h
-  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.h
-  - src/core/ext/transport/chaotic_good/client_transport.h
-  - src/core/ext/transport/chaotic_good/config.h
-  - src/core/ext/transport/chaotic_good/control_endpoint.h
-  - src/core/ext/transport/chaotic_good/data_endpoints.h
-  - src/core/ext/transport/chaotic_good/frame.h
-  - src/core/ext/transport/chaotic_good/frame_header.h
-  - src/core/ext/transport/chaotic_good/frame_transport.h
-  - src/core/ext/transport/chaotic_good/message_chunker.h
-  - src/core/ext/transport/chaotic_good/message_reassembly.h
-  - src/core/ext/transport/chaotic_good/pending_connection.h
-  - src/core/ext/transport/chaotic_good/scheduler.h
-  - src/core/ext/transport/chaotic_good/send_rate.h
-  - src/core/ext/transport/chaotic_good/serialize_little_endian.h
-  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
-  - src/core/ext/transport/chaotic_good/server_transport.h
-  - src/core/ext/transport/chaotic_good/tcp_frame_header.h
-  - src/core/ext/transport/chaotic_good/tcp_frame_transport.h
-  - src/core/ext/transport/chaotic_good/tcp_ztrace_collector.h
-  - src/core/ext/transport/chaotic_good/transport_context.h
-  - src/core/ext/transport/chaotic_good_legacy/chaotic_good_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.h
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/config.h
-  - src/core/ext/transport/chaotic_good_legacy/control_endpoint.h
-  - src/core/ext/transport/chaotic_good_legacy/data_endpoints.h
-  - src/core/ext/transport/chaotic_good_legacy/frame.h
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.h
-  - src/core/ext/transport/chaotic_good_legacy/legacy_ztrace_collector.h
-  - src/core/ext/transport/chaotic_good_legacy/message_chunker.h
-  - src/core/ext/transport/chaotic_good_legacy/message_reassembly.h
-  - src/core/ext/transport/chaotic_good_legacy/pending_connection.h
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.h
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.h
-  - src/core/lib/promise/event_engine_wakeup_scheduler.h
-  - src/core/lib/promise/join.h
-  - src/core/lib/promise/lock_based_mpsc.h
-  - src/core/lib/promise/switch.h
-  - src/core/lib/promise/wait_for_callback.h
-  - src/core/util/seq_bit_set.h
-  - test/core/call/batch_builder.h
-  - test/core/end2end/cq_verifier.h
-  - test/core/end2end/end2end_tests.h
-  - test/core/end2end/fixtures/h2_oauth2_common.h
-  - test/core/end2end/fixtures/h2_ssl_cred_reload_fixture.h
-  - test/core/end2end/fixtures/h2_ssl_tls_common.h
-  - test/core/end2end/fixtures/h2_tls_common.h
-  - test/core/end2end/fixtures/http_common_secure_fixtures.h
-  - test/core/end2end/fixtures/http_proxy_fixture.h
-  - test/core/end2end/fixtures/inproc_fixture.h
-  - test/core/end2end/fixtures/local_util.h
-  - test/core/end2end/fixtures/proxy.h
-  - test/core/end2end/fixtures/secure_fixture.h
-  - test/core/end2end/fixtures/sockpair_fixture.h
-  - test/core/end2end/tests/cancel_test_helpers.h
-  - test/core/event_engine/event_engine_test_utils.h
-  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
-  - test/core/test_util/fail_first_call_filter.h
-  - test/core/test_util/fake_stats_plugin.h
-  - test/core/test_util/fuzz_config_vars.h
-  - test/core/test_util/passthrough_endpoint.h
-  - test/core/test_util/postmortem.h
-  - test/core/test_util/scoped_env_var.h
-  - test/core/test_util/test_call_creds.h
-  - test/core/test_util/test_lb_policies.h
-  src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
-  - test/core/end2end/end2end_test_fuzzer.proto
-  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
-  - test/core/test_util/fuzz_config_vars.proto
-  - src/core/ext/transport/chaotic_good/chaotic_good.cc
-  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
-  - src/core/ext/transport/chaotic_good/client_transport.cc
-  - src/core/ext/transport/chaotic_good/control_endpoint.cc
-  - src/core/ext/transport/chaotic_good/data_endpoints.cc
-  - src/core/ext/transport/chaotic_good/frame.cc
-  - src/core/ext/transport/chaotic_good/frame_header.cc
-  - src/core/ext/transport/chaotic_good/scheduler.cc
-  - src/core/ext/transport/chaotic_good/send_rate.cc
-  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
-  - src/core/ext/transport/chaotic_good/server_transport.cc
-  - src/core/ext/transport/chaotic_good/tcp_frame_header.cc
-  - src/core/ext/transport/chaotic_good/tcp_frame_transport.cc
-  - src/core/ext/transport/chaotic_good/tcp_ztrace_collector.cc
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/control_endpoint.cc
-  - src/core/ext/transport/chaotic_good_legacy/data_endpoints.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  - src/core/util/seq_bit_set.cc
-  - test/core/call/batch_builder.cc
-  - test/core/end2end/cq_verifier.cc
-  - test/core/end2end/end2end_inproc_config.cc
-  - test/core/end2end/end2end_test_suites.cc
-  - test/core/end2end/end2end_tests.cc
-  - test/core/end2end/fixtures/http_proxy_fixture.cc
-  - test/core/end2end/fixtures/local_util.cc
-  - test/core/end2end/fixtures/proxy.cc
-  - test/core/end2end/tests/bad_ping.cc
-  - test/core/end2end/tests/binary_metadata.cc
-  - test/core/end2end/tests/call_creds.cc
-  - test/core/end2end/tests/call_host_override.cc
-  - test/core/end2end/tests/cancel_after_accept.cc
-  - test/core/end2end/tests/cancel_after_client_done.cc
-  - test/core/end2end/tests/cancel_after_invoke.cc
-  - test/core/end2end/tests/cancel_after_round_trip.cc
-  - test/core/end2end/tests/cancel_before_invoke.cc
-  - test/core/end2end/tests/cancel_in_a_vacuum.cc
-  - test/core/end2end/tests/cancel_with_status.cc
-  - test/core/end2end/tests/channelz.cc
-  - test/core/end2end/tests/client_streaming.cc
-  - test/core/end2end/tests/compressed_payload.cc
-  - test/core/end2end/tests/connection_scaling.cc
-  - test/core/end2end/tests/connectivity.cc
-  - test/core/end2end/tests/default_host.cc
-  - test/core/end2end/tests/disappearing_server.cc
-  - test/core/end2end/tests/empty_batch.cc
-  - test/core/end2end/tests/filter_causes_close.cc
-  - test/core/end2end/tests/filter_init_fails.cc
-  - test/core/end2end/tests/filtered_metadata.cc
-  - test/core/end2end/tests/graceful_server_shutdown.cc
-  - test/core/end2end/tests/grpc_authz.cc
-  - test/core/end2end/tests/high_initial_seqno.cc
-  - test/core/end2end/tests/hpack_size.cc
-  - test/core/end2end/tests/http2_stats.cc
-  - test/core/end2end/tests/invoke_large_request.cc
-  - test/core/end2end/tests/keepalive_timeout.cc
-  - test/core/end2end/tests/large_metadata.cc
-  - test/core/end2end/tests/max_concurrent_streams.cc
-  - test/core/end2end/tests/max_connection_age.cc
-  - test/core/end2end/tests/max_connection_idle.cc
-  - test/core/end2end/tests/max_message_length.cc
-  - test/core/end2end/tests/negative_deadline.cc
-  - test/core/end2end/tests/no_op.cc
-  - test/core/end2end/tests/payload.cc
-  - test/core/end2end/tests/ping.cc
-  - test/core/end2end/tests/ping_pong_streaming.cc
-  - test/core/end2end/tests/proxy_auth.cc
-  - test/core/end2end/tests/registered_call.cc
-  - test/core/end2end/tests/request_with_flags.cc
-  - test/core/end2end/tests/request_with_payload.cc
-  - test/core/end2end/tests/resource_quota_server.cc
-  - test/core/end2end/tests/retry.cc
-  - test/core/end2end/tests/retry_cancel_after_first_attempt_starts.cc
-  - test/core/end2end/tests/retry_cancel_during_delay.cc
-  - test/core/end2end/tests/retry_cancel_with_multiple_send_batches.cc
-  - test/core/end2end/tests/retry_cancellation.cc
-  - test/core/end2end/tests/retry_disabled.cc
-  - test/core/end2end/tests/retry_exceeds_buffer_size_in_delay.cc
-  - test/core/end2end/tests/retry_exceeds_buffer_size_in_initial_batch.cc
-  - test/core/end2end/tests/retry_exceeds_buffer_size_in_subsequent_batch.cc
-  - test/core/end2end/tests/retry_lb_drop.cc
-  - test/core/end2end/tests/retry_lb_fail.cc
-  - test/core/end2end/tests/retry_non_retriable_status.cc
-  - test/core/end2end/tests/retry_non_retriable_status_before_trailers.cc
-  - test/core/end2end/tests/retry_per_attempt_recv_timeout.cc
-  - test/core/end2end/tests/retry_per_attempt_recv_timeout_on_last_attempt.cc
-  - test/core/end2end/tests/retry_recv_initial_metadata.cc
-  - test/core/end2end/tests/retry_recv_message.cc
-  - test/core/end2end/tests/retry_recv_message_replay.cc
-  - test/core/end2end/tests/retry_recv_trailing_metadata_error.cc
-  - test/core/end2end/tests/retry_send_initial_metadata_refs.cc
-  - test/core/end2end/tests/retry_send_op_fails.cc
-  - test/core/end2end/tests/retry_send_recv_batch.cc
-  - test/core/end2end/tests/retry_server_pushback_delay.cc
-  - test/core/end2end/tests/retry_server_pushback_disabled.cc
-  - test/core/end2end/tests/retry_streaming.cc
-  - test/core/end2end/tests/retry_streaming_after_commit.cc
-  - test/core/end2end/tests/retry_streaming_succeeds_before_replay_finished.cc
-  - test/core/end2end/tests/retry_throttled.cc
-  - test/core/end2end/tests/retry_too_many_attempts.cc
-  - test/core/end2end/tests/retry_transparent_goaway.cc
-  - test/core/end2end/tests/retry_transparent_max_concurrent_streams.cc
-  - test/core/end2end/tests/retry_transparent_not_sent_on_wire.cc
-  - test/core/end2end/tests/retry_unref_before_finish.cc
-  - test/core/end2end/tests/retry_unref_before_recv.cc
-  - test/core/end2end/tests/server_finishes_request.cc
-  - test/core/end2end/tests/server_streaming.cc
-  - test/core/end2end/tests/shutdown_finishes_calls.cc
-  - test/core/end2end/tests/shutdown_finishes_tags.cc
-  - test/core/end2end/tests/simple_delayed_request.cc
-  - test/core/end2end/tests/simple_metadata.cc
-  - test/core/end2end/tests/simple_request.cc
-  - test/core/end2end/tests/streaming_error_response.cc
-  - test/core/end2end/tests/timeout_before_request_call.cc
-  - test/core/end2end/tests/trailing_metadata.cc
-  - test/core/end2end/tests/write_buffering.cc
-  - test/core/end2end/tests/write_buffering_at_end.cc
-  - test/core/event_engine/event_engine_test_utils.cc
-  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
-  - test/core/test_util/fail_first_call_filter.cc
-  - test/core/test_util/fake_stats_plugin.cc
-  - test/core/test_util/fuzz_config_vars.cc
-  - test/core/test_util/passthrough_endpoint.cc
-  - test/core/test_util/test_call_creds.cc
-  - test/core/test_util/test_lb_policies.cc
-  - third_party/googletest/googlemock/src/gmock_main.cc
-  deps:
-  - gtest
-  - absl/log:log_entry
-  - absl/log:log_sink
-  - absl/log:log_sink_registry
-  - grpc_authorization_provider
-  - protobuf
-  - grpc_test_util
-- name: end2end_ph2_no_logging_test
-  gtest: true
-  build: test
-  run: false
-  language: c++
-  headers:
-  - src/core/ext/transport/chaotic_good/chaotic_good.h
-  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.h
-  - src/core/ext/transport/chaotic_good/client_transport.h
-  - src/core/ext/transport/chaotic_good/config.h
-  - src/core/ext/transport/chaotic_good/control_endpoint.h
-  - src/core/ext/transport/chaotic_good/data_endpoints.h
-  - src/core/ext/transport/chaotic_good/frame.h
-  - src/core/ext/transport/chaotic_good/frame_header.h
-  - src/core/ext/transport/chaotic_good/frame_transport.h
-  - src/core/ext/transport/chaotic_good/message_chunker.h
-  - src/core/ext/transport/chaotic_good/message_reassembly.h
-  - src/core/ext/transport/chaotic_good/pending_connection.h
-  - src/core/ext/transport/chaotic_good/scheduler.h
-  - src/core/ext/transport/chaotic_good/send_rate.h
-  - src/core/ext/transport/chaotic_good/serialize_little_endian.h
-  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
-  - src/core/ext/transport/chaotic_good/server_transport.h
-  - src/core/ext/transport/chaotic_good/tcp_frame_header.h
-  - src/core/ext/transport/chaotic_good/tcp_frame_transport.h
-  - src/core/ext/transport/chaotic_good/tcp_ztrace_collector.h
-  - src/core/ext/transport/chaotic_good/transport_context.h
-  - src/core/ext/transport/chaotic_good_legacy/chaotic_good_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.h
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/config.h
-  - src/core/ext/transport/chaotic_good_legacy/control_endpoint.h
-  - src/core/ext/transport/chaotic_good_legacy/data_endpoints.h
-  - src/core/ext/transport/chaotic_good_legacy/frame.h
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.h
-  - src/core/ext/transport/chaotic_good_legacy/legacy_ztrace_collector.h
-  - src/core/ext/transport/chaotic_good_legacy/message_chunker.h
-  - src/core/ext/transport/chaotic_good_legacy/message_reassembly.h
-  - src/core/ext/transport/chaotic_good_legacy/pending_connection.h
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.h
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.h
-  - src/core/lib/promise/event_engine_wakeup_scheduler.h
-  - src/core/lib/promise/join.h
-  - src/core/lib/promise/lock_based_mpsc.h
-  - src/core/lib/promise/switch.h
-  - src/core/lib/promise/wait_for_callback.h
-  - src/core/util/seq_bit_set.h
-  - test/core/call/batch_builder.h
-  - test/core/end2end/cq_verifier.h
-  - test/core/end2end/end2end_tests.h
-  - test/core/end2end/fixtures/h2_oauth2_common.h
-  - test/core/end2end/fixtures/h2_ssl_cred_reload_fixture.h
-  - test/core/end2end/fixtures/h2_ssl_tls_common.h
-  - test/core/end2end/fixtures/h2_tls_common.h
-  - test/core/end2end/fixtures/http_common_secure_fixtures.h
-  - test/core/end2end/fixtures/http_proxy_fixture.h
-  - test/core/end2end/fixtures/inproc_fixture.h
-  - test/core/end2end/fixtures/local_util.h
-  - test/core/end2end/fixtures/proxy.h
-  - test/core/end2end/fixtures/secure_fixture.h
-  - test/core/end2end/fixtures/sockpair_fixture.h
-  - test/core/end2end/tests/cancel_test_helpers.h
-  - test/core/event_engine/event_engine_test_utils.h
-  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
-  - test/core/test_util/fail_first_call_filter.h
-  - test/core/test_util/fake_stats_plugin.h
-  - test/core/test_util/fuzz_config_vars.h
-  - test/core/test_util/passthrough_endpoint.h
-  - test/core/test_util/postmortem.h
-  - test/core/test_util/scoped_env_var.h
-  - test/core/test_util/test_call_creds.h
-  - test/core/test_util/test_lb_policies.h
-  src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
-  - test/core/end2end/end2end_test_fuzzer.proto
-  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
-  - test/core/test_util/fuzz_config_vars.proto
-  - src/core/ext/transport/chaotic_good/chaotic_good.cc
-  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
-  - src/core/ext/transport/chaotic_good/client_transport.cc
-  - src/core/ext/transport/chaotic_good/control_endpoint.cc
-  - src/core/ext/transport/chaotic_good/data_endpoints.cc
-  - src/core/ext/transport/chaotic_good/frame.cc
-  - src/core/ext/transport/chaotic_good/frame_header.cc
-  - src/core/ext/transport/chaotic_good/scheduler.cc
-  - src/core/ext/transport/chaotic_good/send_rate.cc
-  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
-  - src/core/ext/transport/chaotic_good/server_transport.cc
-  - src/core/ext/transport/chaotic_good/tcp_frame_header.cc
-  - src/core/ext/transport/chaotic_good/tcp_frame_transport.cc
-  - src/core/ext/transport/chaotic_good/tcp_ztrace_collector.cc
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/control_endpoint.cc
-  - src/core/ext/transport/chaotic_good_legacy/data_endpoints.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  - src/core/util/seq_bit_set.cc
-  - test/core/call/batch_builder.cc
-  - test/core/end2end/cq_verifier.cc
-  - test/core/end2end/end2end_ph2_config.cc
-  - test/core/end2end/end2end_test_suites.cc
-  - test/core/end2end/end2end_tests.cc
-  - test/core/end2end/fixtures/http_proxy_fixture.cc
-  - test/core/end2end/fixtures/local_util.cc
-  - test/core/end2end/fixtures/proxy.cc
-  - test/core/end2end/tests/no_logging.cc
-  - test/core/event_engine/event_engine_test_utils.cc
-  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
-  - test/core/test_util/fail_first_call_filter.cc
-  - test/core/test_util/fake_stats_plugin.cc
-  - test/core/test_util/fuzz_config_vars.cc
-  - test/core/test_util/passthrough_endpoint.cc
-  - test/core/test_util/test_call_creds.cc
-  - test/core/test_util/test_lb_policies.cc
-  - third_party/googletest/googlemock/src/gmock_main.cc
-  deps:
-  - gtest
-  - absl/log:log_entry
-  - absl/log:log_sink
-  - absl/log:log_sink_registry
-  - grpc_authorization_provider
-  - protobuf
-  - grpc_test_util
-- name: end2end_ph2_test
-  gtest: true
-  build: test
-  run: false
-  language: c++
-  headers:
-  - src/core/ext/transport/chaotic_good/chaotic_good.h
-  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.h
-  - src/core/ext/transport/chaotic_good/client_transport.h
-  - src/core/ext/transport/chaotic_good/config.h
-  - src/core/ext/transport/chaotic_good/control_endpoint.h
-  - src/core/ext/transport/chaotic_good/data_endpoints.h
-  - src/core/ext/transport/chaotic_good/frame.h
-  - src/core/ext/transport/chaotic_good/frame_header.h
-  - src/core/ext/transport/chaotic_good/frame_transport.h
-  - src/core/ext/transport/chaotic_good/message_chunker.h
-  - src/core/ext/transport/chaotic_good/message_reassembly.h
-  - src/core/ext/transport/chaotic_good/pending_connection.h
-  - src/core/ext/transport/chaotic_good/scheduler.h
-  - src/core/ext/transport/chaotic_good/send_rate.h
-  - src/core/ext/transport/chaotic_good/serialize_little_endian.h
-  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
-  - src/core/ext/transport/chaotic_good/server_transport.h
-  - src/core/ext/transport/chaotic_good/tcp_frame_header.h
-  - src/core/ext/transport/chaotic_good/tcp_frame_transport.h
-  - src/core/ext/transport/chaotic_good/tcp_ztrace_collector.h
-  - src/core/ext/transport/chaotic_good/transport_context.h
-  - src/core/ext/transport/chaotic_good_legacy/chaotic_good_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.h
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/config.h
-  - src/core/ext/transport/chaotic_good_legacy/control_endpoint.h
-  - src/core/ext/transport/chaotic_good_legacy/data_endpoints.h
-  - src/core/ext/transport/chaotic_good_legacy/frame.h
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.h
-  - src/core/ext/transport/chaotic_good_legacy/legacy_ztrace_collector.h
-  - src/core/ext/transport/chaotic_good_legacy/message_chunker.h
-  - src/core/ext/transport/chaotic_good_legacy/message_reassembly.h
-  - src/core/ext/transport/chaotic_good_legacy/pending_connection.h
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.h
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.h
-  - src/core/lib/promise/event_engine_wakeup_scheduler.h
-  - src/core/lib/promise/join.h
-  - src/core/lib/promise/lock_based_mpsc.h
-  - src/core/lib/promise/switch.h
-  - src/core/lib/promise/wait_for_callback.h
-  - src/core/util/seq_bit_set.h
-  - test/core/call/batch_builder.h
-  - test/core/end2end/cq_verifier.h
-  - test/core/end2end/end2end_tests.h
-  - test/core/end2end/fixtures/h2_oauth2_common.h
-  - test/core/end2end/fixtures/h2_ssl_cred_reload_fixture.h
-  - test/core/end2end/fixtures/h2_ssl_tls_common.h
-  - test/core/end2end/fixtures/h2_tls_common.h
-  - test/core/end2end/fixtures/http_common_secure_fixtures.h
-  - test/core/end2end/fixtures/http_proxy_fixture.h
-  - test/core/end2end/fixtures/inproc_fixture.h
-  - test/core/end2end/fixtures/local_util.h
-  - test/core/end2end/fixtures/proxy.h
-  - test/core/end2end/fixtures/secure_fixture.h
-  - test/core/end2end/fixtures/sockpair_fixture.h
-  - test/core/end2end/tests/cancel_test_helpers.h
-  - test/core/event_engine/event_engine_test_utils.h
-  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
-  - test/core/test_util/fail_first_call_filter.h
-  - test/core/test_util/fake_stats_plugin.h
-  - test/core/test_util/fuzz_config_vars.h
-  - test/core/test_util/passthrough_endpoint.h
-  - test/core/test_util/postmortem.h
-  - test/core/test_util/scoped_env_var.h
-  - test/core/test_util/test_call_creds.h
-  - test/core/test_util/test_lb_policies.h
-  src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
-  - test/core/end2end/end2end_test_fuzzer.proto
-  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
-  - test/core/test_util/fuzz_config_vars.proto
-  - src/core/ext/transport/chaotic_good/chaotic_good.cc
-  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
-  - src/core/ext/transport/chaotic_good/client_transport.cc
-  - src/core/ext/transport/chaotic_good/control_endpoint.cc
-  - src/core/ext/transport/chaotic_good/data_endpoints.cc
-  - src/core/ext/transport/chaotic_good/frame.cc
-  - src/core/ext/transport/chaotic_good/frame_header.cc
-  - src/core/ext/transport/chaotic_good/scheduler.cc
-  - src/core/ext/transport/chaotic_good/send_rate.cc
-  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
-  - src/core/ext/transport/chaotic_good/server_transport.cc
-  - src/core/ext/transport/chaotic_good/tcp_frame_header.cc
-  - src/core/ext/transport/chaotic_good/tcp_frame_transport.cc
-  - src/core/ext/transport/chaotic_good/tcp_ztrace_collector.cc
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/control_endpoint.cc
-  - src/core/ext/transport/chaotic_good_legacy/data_endpoints.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  - src/core/util/seq_bit_set.cc
-  - test/core/call/batch_builder.cc
-  - test/core/end2end/cq_verifier.cc
-  - test/core/end2end/end2end_ph2_config.cc
-  - test/core/end2end/end2end_test_suites.cc
-  - test/core/end2end/end2end_tests.cc
-  - test/core/end2end/fixtures/http_proxy_fixture.cc
-  - test/core/end2end/fixtures/local_util.cc
-  - test/core/end2end/fixtures/proxy.cc
-  - test/core/end2end/tests/bad_ping.cc
-  - test/core/end2end/tests/binary_metadata.cc
-  - test/core/end2end/tests/call_creds.cc
-  - test/core/end2end/tests/call_host_override.cc
-  - test/core/end2end/tests/cancel_after_accept.cc
-  - test/core/end2end/tests/cancel_after_client_done.cc
-  - test/core/end2end/tests/cancel_after_invoke.cc
-  - test/core/end2end/tests/cancel_after_round_trip.cc
-  - test/core/end2end/tests/cancel_before_invoke.cc
-  - test/core/end2end/tests/cancel_in_a_vacuum.cc
-  - test/core/end2end/tests/cancel_with_status.cc
-  - test/core/end2end/tests/channelz.cc
-  - test/core/end2end/tests/client_streaming.cc
-  - test/core/end2end/tests/compressed_payload.cc
-  - test/core/end2end/tests/connection_scaling.cc
-  - test/core/end2end/tests/connectivity.cc
-  - test/core/end2end/tests/default_host.cc
-  - test/core/end2end/tests/disappearing_server.cc
-  - test/core/end2end/tests/empty_batch.cc
-  - test/core/end2end/tests/filter_causes_close.cc
-  - test/core/end2end/tests/filter_init_fails.cc
-  - test/core/end2end/tests/filtered_metadata.cc
-  - test/core/end2end/tests/graceful_server_shutdown.cc
-  - test/core/end2end/tests/grpc_authz.cc
-  - test/core/end2end/tests/high_initial_seqno.cc
-  - test/core/end2end/tests/hpack_size.cc
-  - test/core/end2end/tests/http2_stats.cc
-  - test/core/end2end/tests/invoke_large_request.cc
-  - test/core/end2end/tests/keepalive_timeout.cc
-  - test/core/end2end/tests/large_metadata.cc
-  - test/core/end2end/tests/max_concurrent_streams.cc
-  - test/core/end2end/tests/max_connection_age.cc
-  - test/core/end2end/tests/max_connection_idle.cc
-  - test/core/end2end/tests/max_message_length.cc
-  - test/core/end2end/tests/negative_deadline.cc
-  - test/core/end2end/tests/no_op.cc
-  - test/core/end2end/tests/payload.cc
-  - test/core/end2end/tests/ping.cc
-  - test/core/end2end/tests/ping_pong_streaming.cc
-  - test/core/end2end/tests/proxy_auth.cc
-  - test/core/end2end/tests/registered_call.cc
-  - test/core/end2end/tests/request_with_flags.cc
-  - test/core/end2end/tests/request_with_payload.cc
-  - test/core/end2end/tests/resource_quota_server.cc
-  - test/core/end2end/tests/retry.cc
-  - test/core/end2end/tests/retry_cancel_after_first_attempt_starts.cc
-  - test/core/end2end/tests/retry_cancel_during_delay.cc
-  - test/core/end2end/tests/retry_cancel_with_multiple_send_batches.cc
-  - test/core/end2end/tests/retry_cancellation.cc
-  - test/core/end2end/tests/retry_disabled.cc
-  - test/core/end2end/tests/retry_exceeds_buffer_size_in_delay.cc
-  - test/core/end2end/tests/retry_exceeds_buffer_size_in_initial_batch.cc
-  - test/core/end2end/tests/retry_exceeds_buffer_size_in_subsequent_batch.cc
-  - test/core/end2end/tests/retry_lb_drop.cc
-  - test/core/end2end/tests/retry_lb_fail.cc
-  - test/core/end2end/tests/retry_non_retriable_status.cc
-  - test/core/end2end/tests/retry_non_retriable_status_before_trailers.cc
-  - test/core/end2end/tests/retry_per_attempt_recv_timeout.cc
-  - test/core/end2end/tests/retry_per_attempt_recv_timeout_on_last_attempt.cc
-  - test/core/end2end/tests/retry_recv_initial_metadata.cc
-  - test/core/end2end/tests/retry_recv_message.cc
-  - test/core/end2end/tests/retry_recv_message_replay.cc
-  - test/core/end2end/tests/retry_recv_trailing_metadata_error.cc
-  - test/core/end2end/tests/retry_send_initial_metadata_refs.cc
-  - test/core/end2end/tests/retry_send_op_fails.cc
-  - test/core/end2end/tests/retry_send_recv_batch.cc
-  - test/core/end2end/tests/retry_server_pushback_delay.cc
-  - test/core/end2end/tests/retry_server_pushback_disabled.cc
-  - test/core/end2end/tests/retry_streaming.cc
-  - test/core/end2end/tests/retry_streaming_after_commit.cc
-  - test/core/end2end/tests/retry_streaming_succeeds_before_replay_finished.cc
-  - test/core/end2end/tests/retry_throttled.cc
-  - test/core/end2end/tests/retry_too_many_attempts.cc
-  - test/core/end2end/tests/retry_transparent_goaway.cc
-  - test/core/end2end/tests/retry_transparent_max_concurrent_streams.cc
-  - test/core/end2end/tests/retry_transparent_not_sent_on_wire.cc
-  - test/core/end2end/tests/retry_unref_before_finish.cc
-  - test/core/end2end/tests/retry_unref_before_recv.cc
-  - test/core/end2end/tests/server_finishes_request.cc
-  - test/core/end2end/tests/server_streaming.cc
-  - test/core/end2end/tests/shutdown_finishes_calls.cc
-  - test/core/end2end/tests/shutdown_finishes_tags.cc
-  - test/core/end2end/tests/simple_delayed_request.cc
-  - test/core/end2end/tests/simple_metadata.cc
-  - test/core/end2end/tests/simple_request.cc
-  - test/core/end2end/tests/streaming_error_response.cc
-  - test/core/end2end/tests/timeout_before_request_call.cc
-  - test/core/end2end/tests/trailing_metadata.cc
-  - test/core/end2end/tests/write_buffering.cc
-  - test/core/end2end/tests/write_buffering_at_end.cc
-  - test/core/event_engine/event_engine_test_utils.cc
-  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
-  - test/core/test_util/fail_first_call_filter.cc
-  - test/core/test_util/fake_stats_plugin.cc
-  - test/core/test_util/fuzz_config_vars.cc
-  - test/core/test_util/passthrough_endpoint.cc
-  - test/core/test_util/test_call_creds.cc
-  - test/core/test_util/test_lb_policies.cc
-  - third_party/googletest/googlemock/src/gmock_main.cc
-  deps:
-  - gtest
-  - absl/log:log_entry
-  - absl/log:log_sink
-  - absl/log:log_sink_registry
-  - grpc_authorization_provider
-  - protobuf
-  - grpc_test_util
-- name: end2end_posix_no_logging_test
-  gtest: true
-  build: test
-  run: false
-  language: c++
-  headers:
-  - src/core/ext/transport/chaotic_good/chaotic_good.h
-  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.h
-  - src/core/ext/transport/chaotic_good/client_transport.h
-  - src/core/ext/transport/chaotic_good/config.h
-  - src/core/ext/transport/chaotic_good/control_endpoint.h
-  - src/core/ext/transport/chaotic_good/data_endpoints.h
-  - src/core/ext/transport/chaotic_good/frame.h
-  - src/core/ext/transport/chaotic_good/frame_header.h
-  - src/core/ext/transport/chaotic_good/frame_transport.h
-  - src/core/ext/transport/chaotic_good/message_chunker.h
-  - src/core/ext/transport/chaotic_good/message_reassembly.h
-  - src/core/ext/transport/chaotic_good/pending_connection.h
-  - src/core/ext/transport/chaotic_good/scheduler.h
-  - src/core/ext/transport/chaotic_good/send_rate.h
-  - src/core/ext/transport/chaotic_good/serialize_little_endian.h
-  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
-  - src/core/ext/transport/chaotic_good/server_transport.h
-  - src/core/ext/transport/chaotic_good/tcp_frame_header.h
-  - src/core/ext/transport/chaotic_good/tcp_frame_transport.h
-  - src/core/ext/transport/chaotic_good/tcp_ztrace_collector.h
-  - src/core/ext/transport/chaotic_good/transport_context.h
-  - src/core/ext/transport/chaotic_good_legacy/chaotic_good_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.h
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/config.h
-  - src/core/ext/transport/chaotic_good_legacy/control_endpoint.h
-  - src/core/ext/transport/chaotic_good_legacy/data_endpoints.h
-  - src/core/ext/transport/chaotic_good_legacy/frame.h
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.h
-  - src/core/ext/transport/chaotic_good_legacy/legacy_ztrace_collector.h
-  - src/core/ext/transport/chaotic_good_legacy/message_chunker.h
-  - src/core/ext/transport/chaotic_good_legacy/message_reassembly.h
-  - src/core/ext/transport/chaotic_good_legacy/pending_connection.h
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.h
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.h
-  - src/core/lib/promise/event_engine_wakeup_scheduler.h
-  - src/core/lib/promise/join.h
-  - src/core/lib/promise/lock_based_mpsc.h
-  - src/core/lib/promise/switch.h
-  - src/core/lib/promise/wait_for_callback.h
-  - src/core/util/seq_bit_set.h
-  - test/core/call/batch_builder.h
-  - test/core/end2end/cq_verifier.h
-  - test/core/end2end/end2end_tests.h
-  - test/core/end2end/fixtures/h2_oauth2_common.h
-  - test/core/end2end/fixtures/h2_ssl_cred_reload_fixture.h
-  - test/core/end2end/fixtures/h2_ssl_tls_common.h
-  - test/core/end2end/fixtures/h2_tls_common.h
-  - test/core/end2end/fixtures/http_common_secure_fixtures.h
-  - test/core/end2end/fixtures/http_proxy_fixture.h
-  - test/core/end2end/fixtures/inproc_fixture.h
-  - test/core/end2end/fixtures/local_util.h
-  - test/core/end2end/fixtures/proxy.h
-  - test/core/end2end/fixtures/secure_fixture.h
-  - test/core/end2end/fixtures/sockpair_fixture.h
-  - test/core/end2end/tests/cancel_test_helpers.h
-  - test/core/event_engine/event_engine_test_utils.h
-  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
-  - test/core/test_util/fail_first_call_filter.h
-  - test/core/test_util/fake_stats_plugin.h
-  - test/core/test_util/fuzz_config_vars.h
-  - test/core/test_util/passthrough_endpoint.h
-  - test/core/test_util/postmortem.h
-  - test/core/test_util/scoped_env_var.h
-  - test/core/test_util/test_call_creds.h
-  - test/core/test_util/test_lb_policies.h
-  src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
-  - test/core/end2end/end2end_test_fuzzer.proto
-  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
-  - test/core/test_util/fuzz_config_vars.proto
-  - src/core/ext/transport/chaotic_good/chaotic_good.cc
-  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
-  - src/core/ext/transport/chaotic_good/client_transport.cc
-  - src/core/ext/transport/chaotic_good/control_endpoint.cc
-  - src/core/ext/transport/chaotic_good/data_endpoints.cc
-  - src/core/ext/transport/chaotic_good/frame.cc
-  - src/core/ext/transport/chaotic_good/frame_header.cc
-  - src/core/ext/transport/chaotic_good/scheduler.cc
-  - src/core/ext/transport/chaotic_good/send_rate.cc
-  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
-  - src/core/ext/transport/chaotic_good/server_transport.cc
-  - src/core/ext/transport/chaotic_good/tcp_frame_header.cc
-  - src/core/ext/transport/chaotic_good/tcp_frame_transport.cc
-  - src/core/ext/transport/chaotic_good/tcp_ztrace_collector.cc
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/control_endpoint.cc
-  - src/core/ext/transport/chaotic_good_legacy/data_endpoints.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  - src/core/util/seq_bit_set.cc
-  - test/core/call/batch_builder.cc
-  - test/core/end2end/cq_verifier.cc
-  - test/core/end2end/end2end_posix_config.cc
-  - test/core/end2end/end2end_test_suites.cc
-  - test/core/end2end/end2end_tests.cc
-  - test/core/end2end/fixtures/http_proxy_fixture.cc
-  - test/core/end2end/fixtures/local_util.cc
-  - test/core/end2end/fixtures/proxy.cc
-  - test/core/end2end/tests/no_logging.cc
-  - test/core/event_engine/event_engine_test_utils.cc
-  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
-  - test/core/test_util/fail_first_call_filter.cc
-  - test/core/test_util/fake_stats_plugin.cc
-  - test/core/test_util/fuzz_config_vars.cc
-  - test/core/test_util/passthrough_endpoint.cc
-  - test/core/test_util/test_call_creds.cc
-  - test/core/test_util/test_lb_policies.cc
-  - third_party/googletest/googlemock/src/gmock_main.cc
-  deps:
-  - gtest
-  - absl/log:log_entry
-  - absl/log:log_sink
-  - absl/log:log_sink_registry
-  - grpc_authorization_provider
-  - protobuf
-  - grpc_test_util
-- name: end2end_posix_test
-  gtest: true
-  build: test
-  run: false
-  language: c++
-  headers:
-  - src/core/ext/transport/chaotic_good/chaotic_good.h
-  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.h
-  - src/core/ext/transport/chaotic_good/client_transport.h
-  - src/core/ext/transport/chaotic_good/config.h
-  - src/core/ext/transport/chaotic_good/control_endpoint.h
-  - src/core/ext/transport/chaotic_good/data_endpoints.h
-  - src/core/ext/transport/chaotic_good/frame.h
-  - src/core/ext/transport/chaotic_good/frame_header.h
-  - src/core/ext/transport/chaotic_good/frame_transport.h
-  - src/core/ext/transport/chaotic_good/message_chunker.h
-  - src/core/ext/transport/chaotic_good/message_reassembly.h
-  - src/core/ext/transport/chaotic_good/pending_connection.h
-  - src/core/ext/transport/chaotic_good/scheduler.h
-  - src/core/ext/transport/chaotic_good/send_rate.h
-  - src/core/ext/transport/chaotic_good/serialize_little_endian.h
-  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
-  - src/core/ext/transport/chaotic_good/server_transport.h
-  - src/core/ext/transport/chaotic_good/tcp_frame_header.h
-  - src/core/ext/transport/chaotic_good/tcp_frame_transport.h
-  - src/core/ext/transport/chaotic_good/tcp_ztrace_collector.h
-  - src/core/ext/transport/chaotic_good/transport_context.h
-  - src/core/ext/transport/chaotic_good_legacy/chaotic_good_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.h
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/config.h
-  - src/core/ext/transport/chaotic_good_legacy/control_endpoint.h
-  - src/core/ext/transport/chaotic_good_legacy/data_endpoints.h
-  - src/core/ext/transport/chaotic_good_legacy/frame.h
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.h
-  - src/core/ext/transport/chaotic_good_legacy/legacy_ztrace_collector.h
-  - src/core/ext/transport/chaotic_good_legacy/message_chunker.h
-  - src/core/ext/transport/chaotic_good_legacy/message_reassembly.h
-  - src/core/ext/transport/chaotic_good_legacy/pending_connection.h
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.h
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.h
-  - src/core/lib/promise/event_engine_wakeup_scheduler.h
-  - src/core/lib/promise/join.h
-  - src/core/lib/promise/lock_based_mpsc.h
-  - src/core/lib/promise/switch.h
-  - src/core/lib/promise/wait_for_callback.h
-  - src/core/util/seq_bit_set.h
-  - test/core/call/batch_builder.h
-  - test/core/end2end/cq_verifier.h
-  - test/core/end2end/end2end_tests.h
-  - test/core/end2end/fixtures/h2_oauth2_common.h
-  - test/core/end2end/fixtures/h2_ssl_cred_reload_fixture.h
-  - test/core/end2end/fixtures/h2_ssl_tls_common.h
-  - test/core/end2end/fixtures/h2_tls_common.h
-  - test/core/end2end/fixtures/http_common_secure_fixtures.h
-  - test/core/end2end/fixtures/http_proxy_fixture.h
-  - test/core/end2end/fixtures/inproc_fixture.h
-  - test/core/end2end/fixtures/local_util.h
-  - test/core/end2end/fixtures/proxy.h
-  - test/core/end2end/fixtures/secure_fixture.h
-  - test/core/end2end/fixtures/sockpair_fixture.h
-  - test/core/end2end/tests/cancel_test_helpers.h
-  - test/core/event_engine/event_engine_test_utils.h
-  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
-  - test/core/test_util/fail_first_call_filter.h
-  - test/core/test_util/fake_stats_plugin.h
-  - test/core/test_util/fuzz_config_vars.h
-  - test/core/test_util/passthrough_endpoint.h
-  - test/core/test_util/postmortem.h
-  - test/core/test_util/scoped_env_var.h
-  - test/core/test_util/test_call_creds.h
-  - test/core/test_util/test_lb_policies.h
-  src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
-  - test/core/end2end/end2end_test_fuzzer.proto
-  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
-  - test/core/test_util/fuzz_config_vars.proto
-  - src/core/ext/transport/chaotic_good/chaotic_good.cc
-  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
-  - src/core/ext/transport/chaotic_good/client_transport.cc
-  - src/core/ext/transport/chaotic_good/control_endpoint.cc
-  - src/core/ext/transport/chaotic_good/data_endpoints.cc
-  - src/core/ext/transport/chaotic_good/frame.cc
-  - src/core/ext/transport/chaotic_good/frame_header.cc
-  - src/core/ext/transport/chaotic_good/scheduler.cc
-  - src/core/ext/transport/chaotic_good/send_rate.cc
-  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
-  - src/core/ext/transport/chaotic_good/server_transport.cc
-  - src/core/ext/transport/chaotic_good/tcp_frame_header.cc
-  - src/core/ext/transport/chaotic_good/tcp_frame_transport.cc
-  - src/core/ext/transport/chaotic_good/tcp_ztrace_collector.cc
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/control_endpoint.cc
-  - src/core/ext/transport/chaotic_good_legacy/data_endpoints.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  - src/core/util/seq_bit_set.cc
-  - test/core/call/batch_builder.cc
-  - test/core/end2end/cq_verifier.cc
-  - test/core/end2end/end2end_posix_config.cc
-  - test/core/end2end/end2end_test_suites.cc
-  - test/core/end2end/end2end_tests.cc
-  - test/core/end2end/fixtures/http_proxy_fixture.cc
-  - test/core/end2end/fixtures/local_util.cc
-  - test/core/end2end/fixtures/proxy.cc
-  - test/core/end2end/tests/bad_ping.cc
-  - test/core/end2end/tests/binary_metadata.cc
-  - test/core/end2end/tests/call_creds.cc
-  - test/core/end2end/tests/call_host_override.cc
-  - test/core/end2end/tests/cancel_after_accept.cc
-  - test/core/end2end/tests/cancel_after_client_done.cc
-  - test/core/end2end/tests/cancel_after_invoke.cc
-  - test/core/end2end/tests/cancel_after_round_trip.cc
-  - test/core/end2end/tests/cancel_before_invoke.cc
-  - test/core/end2end/tests/cancel_in_a_vacuum.cc
-  - test/core/end2end/tests/cancel_with_status.cc
-  - test/core/end2end/tests/channelz.cc
-  - test/core/end2end/tests/client_streaming.cc
-  - test/core/end2end/tests/compressed_payload.cc
-  - test/core/end2end/tests/connection_scaling.cc
-  - test/core/end2end/tests/connectivity.cc
-  - test/core/end2end/tests/default_host.cc
-  - test/core/end2end/tests/disappearing_server.cc
-  - test/core/end2end/tests/empty_batch.cc
-  - test/core/end2end/tests/filter_causes_close.cc
-  - test/core/end2end/tests/filter_init_fails.cc
-  - test/core/end2end/tests/filtered_metadata.cc
-  - test/core/end2end/tests/graceful_server_shutdown.cc
-  - test/core/end2end/tests/grpc_authz.cc
-  - test/core/end2end/tests/high_initial_seqno.cc
-  - test/core/end2end/tests/hpack_size.cc
-  - test/core/end2end/tests/http2_stats.cc
-  - test/core/end2end/tests/invoke_large_request.cc
-  - test/core/end2end/tests/keepalive_timeout.cc
-  - test/core/end2end/tests/large_metadata.cc
-  - test/core/end2end/tests/max_concurrent_streams.cc
-  - test/core/end2end/tests/max_connection_age.cc
-  - test/core/end2end/tests/max_connection_idle.cc
-  - test/core/end2end/tests/max_message_length.cc
-  - test/core/end2end/tests/negative_deadline.cc
-  - test/core/end2end/tests/no_op.cc
-  - test/core/end2end/tests/payload.cc
-  - test/core/end2end/tests/ping.cc
-  - test/core/end2end/tests/ping_pong_streaming.cc
-  - test/core/end2end/tests/proxy_auth.cc
-  - test/core/end2end/tests/registered_call.cc
-  - test/core/end2end/tests/request_with_flags.cc
-  - test/core/end2end/tests/request_with_payload.cc
-  - test/core/end2end/tests/resource_quota_server.cc
-  - test/core/end2end/tests/retry.cc
-  - test/core/end2end/tests/retry_cancel_after_first_attempt_starts.cc
-  - test/core/end2end/tests/retry_cancel_during_delay.cc
-  - test/core/end2end/tests/retry_cancel_with_multiple_send_batches.cc
-  - test/core/end2end/tests/retry_cancellation.cc
-  - test/core/end2end/tests/retry_disabled.cc
-  - test/core/end2end/tests/retry_exceeds_buffer_size_in_delay.cc
-  - test/core/end2end/tests/retry_exceeds_buffer_size_in_initial_batch.cc
-  - test/core/end2end/tests/retry_exceeds_buffer_size_in_subsequent_batch.cc
-  - test/core/end2end/tests/retry_lb_drop.cc
-  - test/core/end2end/tests/retry_lb_fail.cc
-  - test/core/end2end/tests/retry_non_retriable_status.cc
-  - test/core/end2end/tests/retry_non_retriable_status_before_trailers.cc
-  - test/core/end2end/tests/retry_per_attempt_recv_timeout.cc
-  - test/core/end2end/tests/retry_per_attempt_recv_timeout_on_last_attempt.cc
-  - test/core/end2end/tests/retry_recv_initial_metadata.cc
-  - test/core/end2end/tests/retry_recv_message.cc
-  - test/core/end2end/tests/retry_recv_message_replay.cc
-  - test/core/end2end/tests/retry_recv_trailing_metadata_error.cc
-  - test/core/end2end/tests/retry_send_initial_metadata_refs.cc
-  - test/core/end2end/tests/retry_send_op_fails.cc
-  - test/core/end2end/tests/retry_send_recv_batch.cc
-  - test/core/end2end/tests/retry_server_pushback_delay.cc
-  - test/core/end2end/tests/retry_server_pushback_disabled.cc
-  - test/core/end2end/tests/retry_streaming.cc
-  - test/core/end2end/tests/retry_streaming_after_commit.cc
-  - test/core/end2end/tests/retry_streaming_succeeds_before_replay_finished.cc
-  - test/core/end2end/tests/retry_throttled.cc
-  - test/core/end2end/tests/retry_too_many_attempts.cc
-  - test/core/end2end/tests/retry_transparent_goaway.cc
-  - test/core/end2end/tests/retry_transparent_max_concurrent_streams.cc
-  - test/core/end2end/tests/retry_transparent_not_sent_on_wire.cc
-  - test/core/end2end/tests/retry_unref_before_finish.cc
-  - test/core/end2end/tests/retry_unref_before_recv.cc
-  - test/core/end2end/tests/server_finishes_request.cc
-  - test/core/end2end/tests/server_streaming.cc
-  - test/core/end2end/tests/shutdown_finishes_calls.cc
-  - test/core/end2end/tests/shutdown_finishes_tags.cc
-  - test/core/end2end/tests/simple_delayed_request.cc
-  - test/core/end2end/tests/simple_metadata.cc
-  - test/core/end2end/tests/simple_request.cc
-  - test/core/end2end/tests/streaming_error_response.cc
-  - test/core/end2end/tests/timeout_before_request_call.cc
-  - test/core/end2end/tests/trailing_metadata.cc
-  - test/core/end2end/tests/write_buffering.cc
-  - test/core/end2end/tests/write_buffering_at_end.cc
-  - test/core/event_engine/event_engine_test_utils.cc
-  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
-  - test/core/test_util/fail_first_call_filter.cc
-  - test/core/test_util/fake_stats_plugin.cc
-  - test/core/test_util/fuzz_config_vars.cc
-  - test/core/test_util/passthrough_endpoint.cc
-  - test/core/test_util/test_call_creds.cc
-  - test/core/test_util/test_lb_policies.cc
-  - third_party/googletest/googlemock/src/gmock_main.cc
-  deps:
-  - gtest
-  - absl/log:log_entry
-  - absl/log:log_sink
-  - absl/log:log_sink_registry
-  - grpc_authorization_provider
-  - protobuf
-  - grpc_test_util
 - name: end2end_test
   gtest: true
   build: test
-  run: false
   language: c++
   headers:
   - test/cpp/end2end/end2end_test_utils.h
@@ -12149,7 +9908,6 @@ targets:
   deps:
   - gtest
   - grpc_test_util
-  uses_polling: false
 - name: endpoint_config_test
   gtest: true
   build: test
@@ -12219,7 +9977,6 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
-  uses_polling: false
 - name: endpoint_pair_test
   gtest: true
   build: test
@@ -12242,7 +9999,6 @@ targets:
   deps:
   - gtest
   - grpc_test_util
-  uses_polling: false
 - name: error_details_test
   gtest: true
   build: test
@@ -12271,7 +10027,6 @@ targets:
   deps:
   - gtest
   - grpc_test_util
-  uses_polling: false
 - name: error_utils_test
   gtest: true
   build: test
@@ -12295,7 +10050,6 @@ targets:
   platforms:
   - linux
   - posix
-  uses_polling: false
 - name: evaluate_args_test
   gtest: true
   build: test
@@ -12317,7 +10071,6 @@ targets:
   deps:
   - gtest
   - grpc
-  uses_polling: false
 - name: event_poller_posix_test
   gtest: true
   build: test
@@ -12348,7 +10101,6 @@ targets:
   - linux
   - posix
   - mac
-  uses_polling: false
 - name: exception_test
   gtest: true
   build: test
@@ -12557,7 +10309,6 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
-  uses_polling: false
 - name: experiments_tag_test
   gtest: true
   build: test
@@ -12575,7 +10326,6 @@ targets:
   - gtest
   - absl/status:statusor
   - gpr
-  uses_polling: false
 - name: experiments_test
   gtest: true
   build: test
@@ -12592,7 +10342,6 @@ targets:
   deps:
   - gtest
   - gpr
-  uses_polling: false
 - name: factory_test
   gtest: true
   build: test
@@ -12605,7 +10354,6 @@ targets:
   deps:
   - gtest
   - grpc_test_util_unsecure
-  uses_polling: false
 - name: fake_resolver_test
   gtest: true
   build: test
@@ -12673,7 +10421,6 @@ targets:
   deps:
   - gtest
   - grpc_test_util
-  uses_polling: false
 - name: filter_fusion_test
   gtest: true
   build: test
@@ -13351,7 +11098,6 @@ targets:
   - grpc_unsecure
   - protobuf
   - grpc_test_util
-  uses_polling: false
 - name: flaky_network_test
   gtest: true
   build: test
@@ -13831,7 +11577,6 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
-  uses_polling: false
 - name: for_each_test
   gtest: true
   build: test
@@ -14059,7 +11804,6 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
-  uses_polling: false
 - name: fork_test
   gtest: true
   build: test
@@ -14074,7 +11818,6 @@ targets:
   - linux
   - posix
   - mac
-  uses_polling: false
 - name: format_request_test
   gtest: true
   build: test
@@ -14325,7 +12068,6 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
-  uses_polling: false
 - name: function_signature_test
   gtest: true
   build: test
@@ -14365,7 +12107,6 @@ targets:
   platforms:
   - linux
   - posix
-  uses_polling: false
 - name: fuzzing_event_engine_unittest
   gtest: true
   build: test
@@ -14400,7 +12141,6 @@ targets:
   - gtest
   - protobuf
   - grpc_test_util
-  uses_polling: false
 - name: generic_end2end_test
   gtest: true
   build: test
@@ -14430,7 +12170,6 @@ targets:
   deps:
   - gtest
   - grpc_test_util
-  uses_polling: false
 - name: goaway_server_test
   gtest: true
   build: test
@@ -14478,7 +12217,6 @@ targets:
   deps:
   - gtest
   - grpc_test_util
-  uses_polling: false
 - name: graceful_shutdown_test
   gtest: true
   build: test
@@ -14567,7 +12305,6 @@ targets:
   deps:
   - gtest
   - grpc_test_util
-  uses_polling: false
 - name: grpc_cli
   build: test
   run: false
@@ -14838,7 +12575,6 @@ targets:
 - name: grpclb_end2end_test
   gtest: true
   build: test
-  run: false
   language: c++
   headers:
   - test/core/test_util/test_call_creds.h
@@ -15013,7 +12749,6 @@ targets:
   deps:
   - gtest
   - grpc
-  uses_polling: false
 - name: handshake_server_with_readahead_handshaker_test
   gtest: true
   build: test
@@ -15030,20 +12765,6 @@ targets:
   - linux
   - posix
   - mac
-- name: head_of_line_blocking_bad_client_test
-  gtest: true
-  build: test
-  language: c++
-  headers:
-  - test/core/bad_client/bad_client.h
-  - test/core/end2end/cq_verifier.h
-  src:
-  - test/core/bad_client/bad_client.cc
-  - test/core/bad_client/tests/head_of_line_blocking.cc
-  - test/core/end2end/cq_verifier.cc
-  deps:
-  - gtest
-  - grpc_test_util
 - name: header_assembler_test
   gtest: true
   build: test
@@ -15063,20 +12784,6 @@ targets:
   deps:
   - gtest
   - protobuf
-  - grpc_test_util
-- name: headers_bad_client_test
-  gtest: true
-  build: test
-  language: c++
-  headers:
-  - test/core/bad_client/bad_client.h
-  - test/core/end2end/cq_verifier.h
-  src:
-  - test/core/bad_client/bad_client.cc
-  - test/core/bad_client/tests/headers.cc
-  - test/core/end2end/cq_verifier.cc
-  deps:
-  - gtest
   - grpc_test_util
 - name: health_service_end2end_test
   gtest: true
@@ -15111,7 +12818,6 @@ targets:
   deps:
   - gtest
   - grpc_test_util
-  uses_polling: false
 - name: host_port_test
   gtest: true
   build: test
@@ -15122,7 +12828,6 @@ targets:
   deps:
   - gtest
   - grpc_test_util
-  uses_polling: false
 - name: hpack_encoder_test
   gtest: true
   build: test
@@ -15134,7 +12839,6 @@ targets:
   deps:
   - gtest
   - grpc_test_util
-  uses_polling: false
 - name: hpack_parser_table_test
   gtest: true
   build: test
@@ -15145,7 +12849,6 @@ targets:
   deps:
   - gtest
   - grpc_test_util
-  uses_polling: false
 - name: hpack_parser_test
   gtest: true
   build: test
@@ -15156,7 +12859,6 @@ targets:
   deps:
   - gtest
   - grpc_test_util
-  uses_polling: false
 - name: http2_client
   build: test
   run: false
@@ -15194,7 +12896,6 @@ targets:
   - gtest
   - protobuf
   - grpc_test_util
-  uses_polling: false
 - name: http2_security_frame_test
   gtest: true
   build: test
@@ -15216,7 +12917,6 @@ targets:
   - gtest
   - protobuf
   - grpc_test_util
-  uses_polling: false
 - name: http2_server_transport_test
   gtest: true
   build: test
@@ -15246,7 +12946,6 @@ targets:
   - linux
   - posix
   - mac
-  uses_polling: false
 - name: http2_settings_test
   gtest: true
   build: test
@@ -15299,7 +12998,6 @@ targets:
   - gtest
   - protobuf
   - grpc_test_util
-  uses_polling: false
 - name: http_proxy_mapper_test
   gtest: true
   build: test
@@ -15311,7 +13009,6 @@ targets:
   deps:
   - gtest
   - grpc_test_util
-  uses_polling: false
 - name: httpcli_test
   gtest: true
   build: test
@@ -15382,7 +13079,6 @@ targets:
   - gtest
   - absl/base:config
   - absl/base:core_headers
-  uses_polling: false
 - name: if_list_test
   gtest: true
   build: test
@@ -15395,7 +13091,6 @@ targets:
   - gtest
   - absl/base:config
   - absl/base:core_headers
-  uses_polling: false
 - name: if_test
   gtest: true
   build: test
@@ -15581,7 +13276,6 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
-  uses_polling: false
 - name: incoming_metadata_tracker_test
   gtest: true
   build: test
@@ -16282,21 +13976,6 @@ targets:
   deps:
   - gtest
   - grpc_test_util
-  uses_polling: false
-- name: initial_settings_frame_bad_client_test
-  gtest: true
-  build: test
-  language: c++
-  headers:
-  - test/core/bad_client/bad_client.h
-  - test/core/end2end/cq_verifier.h
-  src:
-  - test/core/bad_client/bad_client.cc
-  - test/core/bad_client/tests/initial_settings_frame.cc
-  - test/core/end2end/cq_verifier.cc
-  deps:
-  - gtest
-  - grpc_test_util
 - name: insecure_credentials_test
   gtest: true
   build: test
@@ -16328,7 +14007,6 @@ targets:
   deps:
   - gtest
   - grpc_test_util
-  uses_polling: false
 - name: inter_activity_latch_test
   gtest: true
   build: test
@@ -16340,7 +14018,6 @@ targets:
   deps:
   - gtest
   - grpc
-  uses_polling: false
 - name: inter_activity_mutex_test
   gtest: true
   build: test
@@ -16548,7 +14225,6 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
-  uses_polling: false
 - name: interception_chain_test
   gtest: true
   build: test
@@ -16560,7 +14236,6 @@ targets:
   deps:
   - gtest
   - grpc
-  uses_polling: false
 - name: interceptor_list_test
   gtest: true
   build: test
@@ -16780,7 +14455,6 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
-  uses_polling: false
 - name: interop_client
   build: test
   run: false
@@ -16848,7 +14522,6 @@ targets:
   - linux
   - posix
   - windows
-  uses_polling: false
 - name: istio_echo_server_test
   gtest: true
   build: test
@@ -17054,7 +14727,6 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
-  uses_polling: false
 - name: json_object_loader_test
   gtest: true
   build: test
@@ -17065,7 +14737,6 @@ targets:
   deps:
   - gtest
   - grpc_test_util
-  uses_polling: false
 - name: json_test
   gtest: true
   build: test
@@ -17076,7 +14747,6 @@ targets:
   deps:
   - gtest
   - grpc_test_util
-  uses_polling: false
 - name: json_token_test
   gtest: true
   build: test
@@ -17087,7 +14757,6 @@ targets:
   deps:
   - gtest
   - grpc_test_util
-  uses_polling: false
 - name: jwt_util_test
   gtest: true
   build: test
@@ -17098,7 +14767,6 @@ targets:
   deps:
   - gtest
   - grpc_test_util
-  uses_polling: false
 - name: jwt_verifier_test
   gtest: true
   build: test
@@ -17109,7 +14777,6 @@ targets:
   deps:
   - gtest
   - grpc_test_util
-  uses_polling: false
 - name: lame_client_test
   gtest: true
   build: test
@@ -17320,7 +14987,6 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
-  uses_polling: false
 - name: latent_see_service_test
   gtest: true
   build: test
@@ -17578,7 +15244,6 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
-  uses_polling: false
 - name: latent_see_tool_test
   gtest: true
   build: test
@@ -17769,7 +15434,6 @@ targets:
   deps:
   - gtest
   - grpc_test_util
-  uses_polling: false
 - name: load_config_test
   gtest: true
   build: test
@@ -17780,7 +15444,6 @@ targets:
   deps:
   - gtest
   - grpc
-  uses_polling: false
 - name: load_file_test
   gtest: true
   build: test
@@ -17791,7 +15454,6 @@ targets:
   deps:
   - gtest
   - grpc_test_util
-  uses_polling: false
 - name: local_security_connector_test
   gtest: true
   build: test
@@ -18011,7 +15673,6 @@ targets:
   - linux
   - posix
   - mac
-  uses_polling: false
 - name: loop_test
   gtest: true
   build: test
@@ -18206,7 +15867,6 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
-  uses_polling: false
 - name: lru_cache_test
   gtest: true
   build: test
@@ -18383,7 +16043,6 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
-  uses_polling: false
 - name: map_pipe_test
   gtest: true
   build: test
@@ -18611,7 +16270,6 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
-  uses_polling: false
 - name: match_promise_test
   gtest: true
   build: test
@@ -18799,7 +16457,6 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
-  uses_polling: false
 - name: match_test
   gtest: true
   build: test
@@ -18813,7 +16470,6 @@ targets:
   - gtest
   - absl/base:config
   - absl/base:core_headers
-  uses_polling: false
 - name: matchers_test
   gtest: true
   build: test
@@ -18837,7 +16493,6 @@ targets:
   platforms:
   - linux
   - posix
-  uses_polling: false
 - name: memory_quota_test
   gtest: true
   build: test
@@ -18849,7 +16504,6 @@ targets:
   deps:
   - gtest
   - grpc_test_util_unsecure
-  uses_polling: false
 - name: memory_usage_test
   gtest: true
   build: test
@@ -18934,7 +16588,6 @@ targets:
   deps:
   - gtest
   - grpc_test_util
-  uses_polling: false
 - name: message_size_service_config_test
   gtest: true
   build: test
@@ -18967,7 +16620,6 @@ targets:
   deps:
   - gtest
   - grpc_test_util
-  uses_polling: false
 - name: minimal_stack_is_minimal_test
   gtest: true
   build: test
@@ -18978,7 +16630,6 @@ targets:
   deps:
   - gtest
   - grpc_test_util
-  uses_polling: false
 - name: miscompile_with_no_unique_address_test
   gtest: true
   build: test
@@ -18990,7 +16641,6 @@ targets:
   - gtest
   - absl/base:config
   - absl/base:core_headers
-  uses_polling: false
 - name: mock_stream_test
   gtest: true
   build: test
@@ -19041,7 +16691,6 @@ targets:
   - linux
   - posix
   - mac
-  uses_polling: false
 - name: no_destruct_test
   gtest: true
   build: test
@@ -19055,7 +16704,6 @@ targets:
   - gtest
   - absl/base:config
   - absl/base:core_headers
-  uses_polling: false
 - name: no_server_test
   gtest: true
   build: test
@@ -19096,7 +16744,6 @@ targets:
   deps:
   - gtest
   - gpr
-  uses_polling: false
 - name: num_external_connectivity_watchers_test
   gtest: true
   build: test
@@ -19304,7 +16951,6 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
-  uses_polling: false
 - name: oracle_event_engine_posix_test
   gtest: true
   build: test
@@ -19522,20 +17168,6 @@ targets:
   - opentelemetry-cpp::metrics
   - opentelemetry-cpp::trace
   - grpc++_test_util
-- name: out_of_bounds_bad_client_test
-  gtest: true
-  build: test
-  language: c++
-  headers:
-  - test/core/bad_client/bad_client.h
-  - test/core/end2end/cq_verifier.h
-  src:
-  - test/core/bad_client/bad_client.cc
-  - test/core/bad_client/tests/out_of_bounds.cc
-  - test/core/end2end/cq_verifier.cc
-  deps:
-  - gtest
-  - grpc_test_util
 - name: outlier_detection_lb_config_parser_test
   gtest: true
   build: test
@@ -19547,7 +17179,6 @@ targets:
   deps:
   - gtest
   - grpc_test_util
-  uses_polling: false
 - name: outlier_detection_test
   gtest: true
   build: test
@@ -19565,7 +17196,6 @@ targets:
   - gtest
   - protobuf
   - grpc_test_util
-  uses_polling: false
 - name: overload_test
   gtest: true
   build: test
@@ -19578,7 +17208,6 @@ targets:
   - gtest
   - absl/base:config
   - absl/base:core_headers
-  uses_polling: false
 - name: parse_address_test
   gtest: true
   build: test
@@ -19603,7 +17232,6 @@ targets:
   - linux
   - posix
   - mac
-  uses_polling: false
 - name: parsed_metadata_test
   gtest: true
   build: test
@@ -19629,7 +17257,6 @@ targets:
   deps:
   - gtest
   - grpc_test_util
-  uses_polling: false
 - name: party_mpsc_test
   gtest: true
   build: test
@@ -19645,7 +17272,6 @@ targets:
   - linux
   - posix
   - mac
-  uses_polling: false
 - name: party_test
   gtest: true
   build: test
@@ -19656,7 +17282,6 @@ targets:
   deps:
   - gtest
   - grpc_unsecure
-  uses_polling: false
 - name: percent_encoding_test
   gtest: true
   build: test
@@ -19667,11 +17292,9 @@ targets:
   deps:
   - gtest
   - grpc_test_util
-  uses_polling: false
 - name: periodic_update_test
   gtest: true
   build: test
-  run: false
   language: c++
   headers:
   - src/core/channelz/property_list.h
@@ -19775,7 +17398,6 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
-  uses_polling: false
 - name: pick_first_test
   gtest: true
   build: test
@@ -19796,7 +17418,6 @@ targets:
   - gtest
   - protobuf
   - grpc_test_util
-  uses_polling: false
 - name: ping_abuse_policy_test
   gtest: true
   build: test
@@ -19807,7 +17428,6 @@ targets:
   deps:
   - gtest
   - grpc_test_util
-  uses_polling: false
 - name: ping_callbacks_test
   gtest: true
   build: test
@@ -19819,7 +17439,6 @@ targets:
   deps:
   - gtest
   - grpc
-  uses_polling: false
 - name: ping_configuration_test
   gtest: true
   build: test
@@ -19830,7 +17449,6 @@ targets:
   deps:
   - gtest
   - grpc_test_util
-  uses_polling: false
 - name: ping_rate_policy_test
   gtest: true
   build: test
@@ -19841,7 +17459,6 @@ targets:
   deps:
   - gtest
   - grpc_test_util
-  uses_polling: false
 - name: pipe_test
   gtest: true
   build: test
@@ -19854,7 +17471,6 @@ targets:
   deps:
   - gtest
   - grpc
-  uses_polling: false
 - name: poll_test
   gtest: true
   build: test
@@ -20031,7 +17647,6 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
-  uses_polling: false
 - name: poller_fork_test
   gtest: true
   build: test
@@ -20201,7 +17816,6 @@ targets:
   - linux
   - posix
   - mac
-  uses_polling: false
 - name: pre_stop_hook_server_test
   gtest: true
   build: test
@@ -20546,7 +18160,6 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
-  uses_polling: false
 - name: private_key_offload_test
   gtest: true
   build: test
@@ -20761,7 +18374,6 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
-  uses_polling: false
 - name: promise_map_test
   gtest: true
   build: test
@@ -20947,7 +18559,6 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
-  uses_polling: false
 - name: promise_mutex_test
   gtest: true
   build: test
@@ -21329,7 +18940,6 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
-  uses_polling: false
 - name: property_list_test
   gtest: true
   build: test
@@ -21395,7 +19005,6 @@ targets:
   deps:
   - gtest
   - grpc++_test_util
-  uses_polling: false
 - name: proto_buffer_writer_test
   gtest: true
   build: test
@@ -21406,7 +19015,6 @@ targets:
   deps:
   - gtest
   - grpc++_test_util
-  uses_polling: false
 - name: proto_server_reflection_test
   gtest: true
   build: test
@@ -21442,7 +19050,6 @@ targets:
   - gtest
   - grpc++
   - grpc_test_util
-  uses_polling: false
 - name: qps_json_driver
   build: test
   run: false
@@ -21873,7 +19480,6 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
-  uses_polling: false
 - name: race_test
   gtest: true
   build: test
@@ -22054,7 +19660,6 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
-  uses_polling: false
 - name: random_early_detection_test
   gtest: true
   build: test
@@ -22071,7 +19676,6 @@ targets:
   - absl/random:bit_gen_ref
   - absl/random:distributions
   - absl/random:random
-  uses_polling: false
 - name: raw_end2end_test
   gtest: true
   build: test
@@ -22103,7 +19707,6 @@ targets:
   deps:
   - gtest
   - grpc_test_util
-  uses_polling: false
 - name: rbac_translator_test
   gtest: true
   build: test
@@ -22427,8 +20030,6 @@ targets:
   deps:
   - gtest
   - grpc_test_util
-  args:
-  - --resolver=ares
   platforms:
   - linux
   - posix
@@ -22456,8 +20057,6 @@ targets:
   deps:
   - gtest
   - grpc_test_util
-  args:
-  - --resolver=native
   platforms:
   - linux
   - posix
@@ -22502,7 +20101,6 @@ targets:
   deps:
   - gtest
   - grpc_test_util_unsecure
-  uses_polling: false
 - name: resource_tracker_test
   gtest: true
   build: test
@@ -22528,7 +20126,6 @@ targets:
   deps:
   - gtest
   - grpc_test_util
-  uses_polling: false
 - name: retry_throttle_test
   gtest: true
   build: test
@@ -22539,7 +20136,6 @@ targets:
   deps:
   - gtest
   - grpc_test_util
-  uses_polling: false
 - name: ring_buffer_test
   gtest: true
   build: test
@@ -22552,7 +20148,6 @@ targets:
   - gtest
   - absl/base:config
   - absl/base:core_headers
-  uses_polling: false
 - name: ring_hash_test
   gtest: true
   build: test
@@ -22571,11 +20166,9 @@ targets:
   - gtest
   - protobuf
   - grpc_test_util
-  uses_polling: false
 - name: rls_end2end_test
   gtest: true
   build: test
-  run: false
   language: c++
   headers:
   - test/core/event_engine/event_engine_test_utils.h
@@ -22616,7 +20209,6 @@ targets:
   deps:
   - gtest
   - grpc_test_util
-  uses_polling: false
 - name: round_robin_test
   gtest: true
   build: test
@@ -22634,7 +20226,6 @@ targets:
   - gtest
   - protobuf
   - grpc_test_util
-  uses_polling: false
 - name: secure_auth_context_test
   gtest: true
   build: test
@@ -22669,7 +20260,6 @@ targets:
 - name: secure_endpoint_test
   gtest: true
   build: test
-  run: false
   language: c++
   headers:
   - test/core/iomgr/endpoint_tests.h
@@ -22876,7 +20466,6 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
-  uses_polling: false
 - name: sequential_connectivity_test
   gtest: true
   build: test
@@ -22965,7 +20554,6 @@ targets:
   deps:
   - gtest
   - grpc_test_util
-  uses_polling: false
 - name: server_chttp2_test
   gtest: true
   build: test
@@ -22986,7 +20574,6 @@ targets:
   deps:
   - gtest
   - grpc_test_util
-  uses_polling: false
 - name: server_context_test_spouse_test
   gtest: true
   build: test
@@ -23037,20 +20624,6 @@ targets:
   deps:
   - gtest
   - grpc++_test_util
-- name: server_registered_method_bad_client_test
-  gtest: true
-  build: test
-  language: c++
-  headers:
-  - test/core/bad_client/bad_client.h
-  - test/core/end2end/cq_verifier.h
-  src:
-  - test/core/bad_client/bad_client.cc
-  - test/core/bad_client/tests/server_registered_method.cc
-  - test/core/end2end/cq_verifier.cc
-  deps:
-  - gtest
-  - grpc_test_util
 - name: server_request_call_test
   gtest: true
   build: test
@@ -23151,7 +20724,6 @@ targets:
   - gtest
   - protobuf
   - grpc_test_util
-  uses_polling: false
 - name: settings_timeout_test
   gtest: true
   build: test
@@ -23175,7 +20747,6 @@ targets:
   - gtest
   - absl/random:distributions
   - absl/random:random
-  uses_polling: false
 - name: shutdown_test
   gtest: true
   build: test
@@ -23194,20 +20765,6 @@ targets:
   deps:
   - gtest
   - grpc++_test_util
-- name: simple_request_bad_client_test
-  gtest: true
-  build: test
-  language: c++
-  headers:
-  - test/core/bad_client/bad_client.h
-  - test/core/end2end/cq_verifier.h
-  src:
-  - test/core/bad_client/bad_client.cc
-  - test/core/bad_client/tests/simple_request.cc
-  - test/core/end2end/cq_verifier.cc
-  deps:
-  - gtest
-  - grpc_test_util
 - name: single_set_ptr_test
   gtest: true
   build: test
@@ -23225,7 +20782,6 @@ targets:
   - gtest
   - absl/hash:hash
   - gpr
-  uses_polling: false
 - name: sleep_test
   gtest: true
   build: test
@@ -23238,7 +20794,6 @@ targets:
   deps:
   - gtest
   - grpc
-  uses_polling: false
 - name: slice_string_helpers_test
   gtest: true
   build: test
@@ -23264,7 +20819,6 @@ targets:
   - absl/container:flat_hash_map
   - absl/hash:hash
   - gpr
-  uses_polling: false
 - name: sockaddr_resolver_test
   gtest: true
   build: test
@@ -23312,7 +20866,6 @@ targets:
   - gtest
   - absl/base:config
   - absl/base:core_headers
-  uses_polling: false
 - name: spiffe_bundle_map_end2end_test
   gtest: true
   build: test
@@ -23374,7 +20927,6 @@ targets:
   deps:
   - gtest
   - grpc_test_util
-  uses_polling: false
 - name: ssl_transport_security_test
   gtest: true
   build: test
@@ -23433,7 +20985,6 @@ targets:
   - linux
   - posix
   - mac
-  uses_polling: false
 - name: stat_test
   gtest: true
   build: test
@@ -23444,7 +20995,6 @@ targets:
   deps:
   - gtest
   - grpc_test_util
-  uses_polling: false
 - name: static_stride_scheduler_test
   gtest: true
   build: test
@@ -23622,7 +21172,6 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
-  uses_polling: false
 - name: status_conversion_test
   gtest: true
   build: test
@@ -23633,7 +21182,6 @@ targets:
   deps:
   - gtest
   - grpc_test_util
-  uses_polling: false
 - name: status_flag_test
   gtest: true
   build: test
@@ -23811,7 +21359,6 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
-  uses_polling: false
 - name: status_helper_test
   gtest: true
   build: test
@@ -23822,7 +21369,6 @@ targets:
   deps:
   - gtest
   - grpc_test_util
-  uses_polling: false
 - name: status_test
   gtest: true
   build: test
@@ -23853,7 +21399,6 @@ targets:
   deps:
   - gtest
   - grpc_test_util
-  uses_polling: false
 - name: stream_data_queue_test
   gtest: true
   build: test
@@ -23911,7 +21456,6 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
-  uses_polling: false
 - name: stream_test
   gtest: true
   build: test
@@ -23922,7 +21466,6 @@ targets:
   deps:
   - gtest
   - grpc_test_util
-  uses_polling: false
 - name: streaming_throughput_test
   gtest: true
   build: test
@@ -23969,7 +21512,6 @@ targets:
   - gtest
   - grpc++
   - grpc_test_util
-  uses_polling: false
 - name: string_test
   gtest: true
   build: test
@@ -23980,7 +21522,6 @@ targets:
   deps:
   - gtest
   - grpc_test_util
-  uses_polling: false
 - name: subchannel_args_test
   gtest: true
   build: test
@@ -23991,7 +21532,6 @@ targets:
   deps:
   - gtest
   - grpc_test_util
-  uses_polling: false
 - name: subchannel_stream_limiter_test
   gtest: true
   build: test
@@ -24002,7 +21542,6 @@ targets:
   deps:
   - gtest
   - grpc_test_util
-  uses_polling: false
 - name: switch_test
   gtest: true
   build: test
@@ -24190,7 +21729,6 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
-  uses_polling: false
 - name: sync_test
   gtest: true
   build: test
@@ -24201,7 +21739,6 @@ targets:
   deps:
   - gtest
   - grpc_test_util
-  uses_polling: false
 - name: system_roots_test
   gtest: true
   build: test
@@ -24230,7 +21767,6 @@ targets:
   - absl/meta:type_traits
   - absl/numeric:bits
   - absl/utility:utility
-  uses_polling: false
 - name: tcp_client_posix_test
   gtest: true
   build: test
@@ -24259,7 +21795,6 @@ targets:
   - linux
   - posix
   - mac
-  uses_polling: false
 - name: tcp_posix_test
   gtest: true
   build: test
@@ -24299,7 +21834,6 @@ targets:
   deps:
   - gtest
   - grpc
-  uses_polling: false
 - name: test_core_credentials_transport_ssl_ssl_credentials_test
   gtest: true
   build: test
@@ -24515,7 +22049,6 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
-  uses_polling: false
 - name: test_core_event_engine_slice_buffer_test
   gtest: true
   build: test
@@ -24700,7 +22233,6 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
-  uses_polling: false
 - name: test_core_iomgr_fd_conservation_posix_test
   gtest: true
   build: test
@@ -24725,7 +22257,6 @@ targets:
   deps:
   - gtest
   - grpc_test_util
-  uses_polling: false
 - name: test_core_slice_slice_buffer_test
   gtest: true
   build: test
@@ -24736,7 +22267,6 @@ targets:
   deps:
   - gtest
   - grpc_test_util
-  uses_polling: false
 - name: test_core_slice_slice_test
   gtest: true
   build: test
@@ -24749,7 +22279,6 @@ targets:
   deps:
   - gtest
   - grpc
-  uses_polling: false
 - name: test_core_util_time_test
   gtest: true
   build: test
@@ -24765,7 +22294,6 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
-  uses_polling: false
 - name: test_cpp_client_credentials_test
   gtest: true
   build: test
@@ -24841,7 +22369,6 @@ targets:
   deps:
   - gtest
   - grpc++_test_util
-  uses_polling: false
 - name: test_cpp_util_time_test
   gtest: true
   build: test
@@ -24853,7 +22380,6 @@ targets:
   - gtest
   - grpc++_test_config
   - grpc++_test_util
-  uses_polling: false
 - name: test_timeout_test
   gtest: true
   build: test
@@ -24875,7 +22401,6 @@ targets:
   deps:
   - gtest
   - grpc_test_util
-  uses_polling: false
 - name: thread_manager_test
   gtest: true
   build: test
@@ -24898,7 +22423,6 @@ targets:
   - gtest
   - grpc
   - grpc_test_util_unsecure
-  uses_polling: false
 - name: thread_quota_test
   gtest: true
   build: test
@@ -25076,7 +22600,6 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
-  uses_polling: false
 - name: thread_stress_test
   gtest: true
   build: test
@@ -25152,7 +22675,6 @@ targets:
   deps:
   - gtest
   - grpc_test_util
-  uses_polling: false
 - name: timeout_encoding_test
   gtest: true
   build: test
@@ -25163,7 +22685,6 @@ targets:
   deps:
   - gtest
   - grpc_test_util
-  uses_polling: false
 - name: timer_list_test
   gtest: true
   build: test
@@ -25185,7 +22706,6 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
-  uses_polling: false
 - name: timer_manager_test
   gtest: true
   build: test
@@ -25196,11 +22716,9 @@ targets:
   deps:
   - gtest
   - grpc_test_util
-  uses_polling: false
 - name: timer_test
   gtest: true
   build: test
-  run: false
   language: c++
   headers: []
   src:
@@ -25273,7 +22791,6 @@ targets:
 - name: too_many_pings_test
   gtest: true
   build: test
-  run: false
   language: c++
   headers:
   - test/core/end2end/cq_verifier.h
@@ -25960,7 +23477,6 @@ targets:
   deps:
   - gtest
   - grpc_test_util
-  uses_polling: false
 - name: traced_buffer_list_test
   gtest: true
   build: test
@@ -25975,7 +23491,6 @@ targets:
   - linux
   - posix
   - mac
-  uses_polling: false
 - name: transport_security_common_api_test
   gtest: true
   build: test
@@ -26194,7 +23709,6 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
-  uses_polling: false
 - name: try_seq_metadata_test
   gtest: true
   build: test
@@ -26205,7 +23719,6 @@ targets:
   deps:
   - gtest
   - grpc
-  uses_polling: false
 - name: try_seq_test
   gtest: true
   build: test
@@ -26396,7 +23909,6 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
-  uses_polling: false
 - name: unique_ptr_with_bitset_test
   gtest: true
   build: test
@@ -26573,7 +24085,6 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
-  uses_polling: false
 - name: unique_type_name_test
   gtest: true
   build: test
@@ -26591,21 +24102,6 @@ targets:
   - absl/log:check
   - absl/numeric:bits
   - absl/strings:str_format
-  uses_polling: false
-- name: unknown_frame_bad_client_test
-  gtest: true
-  build: test
-  language: c++
-  headers:
-  - test/core/bad_client/bad_client.h
-  - test/core/end2end/cq_verifier.h
-  src:
-  - test/core/bad_client/bad_client.cc
-  - test/core/bad_client/tests/unknown_frame.cc
-  - test/core/end2end/cq_verifier.cc
-  deps:
-  - gtest
-  - grpc_test_util
 - name: uri_test
   gtest: true
   build: test
@@ -26630,7 +24126,6 @@ targets:
   - absl/base:core_headers
   - absl/log:check
   - absl/numeric:bits
-  uses_polling: false
 - name: uuid_v4_test
   gtest: true
   build: test
@@ -26641,7 +24136,6 @@ targets:
   deps:
   - gtest
   - grpc_test_util
-  uses_polling: false
 - name: validation_errors_test
   gtest: true
   build: test
@@ -26652,7 +24146,6 @@ targets:
   deps:
   - gtest
   - grpc_test_util
-  uses_polling: false
 - name: varint_test
   gtest: true
   build: test
@@ -26663,7 +24156,6 @@ targets:
   deps:
   - gtest
   - grpc_test_util
-  uses_polling: false
 - name: wait_for_callback_test
   gtest: true
   build: test
@@ -26857,7 +24349,6 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
-  uses_polling: false
 - name: wait_for_single_owner_test
   gtest: true
   build: test
@@ -26868,7 +24359,6 @@ targets:
   deps:
   - gtest
   - grpc
-  uses_polling: false
 - name: wakeup_fd_posix_test
   gtest: true
   build: test
@@ -26895,7 +24385,6 @@ targets:
   deps:
   - gtest
   - grpc_test_util
-  uses_polling: false
 - name: weighted_round_robin_test
   gtest: true
   build: test
@@ -26915,7 +24404,6 @@ targets:
   - gtest
   - protobuf
   - grpc_test_util
-  uses_polling: false
 - name: win_socket_test
   gtest: true
   build: test
@@ -26932,21 +24420,6 @@ targets:
   - linux
   - posix
   - windows
-  uses_polling: false
-- name: window_overflow_bad_client_test
-  gtest: true
-  build: test
-  language: c++
-  headers:
-  - test/core/bad_client/bad_client.h
-  - test/core/end2end/cq_verifier.h
-  src:
-  - test/core/bad_client/bad_client.cc
-  - test/core/bad_client/tests/window_overflow.cc
-  - test/core/end2end/cq_verifier.cc
-  deps:
-  - gtest
-  - grpc_test_util
 - name: windows_endpoint_test
   gtest: true
   build: test
@@ -26963,11 +24436,9 @@ targets:
   - linux
   - posix
   - windows
-  uses_polling: false
 - name: work_serializer_test
   gtest: true
   build: test
-  run: false
   language: c++
   headers:
   - test/core/event_engine/event_engine_test_utils.h
@@ -27186,7 +24657,6 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
-  uses_polling: false
 - name: writes_per_rpc_test
   gtest: true
   build: test
@@ -27332,7 +24802,6 @@ targets:
   - grpc++
   - protoc
   - grpc_test_util
-  uses_polling: false
 - name: xds_bootstrap_test
   gtest: true
   build: test
@@ -27344,7 +24813,6 @@ targets:
   deps:
   - gtest
   - grpc_test_util
-  uses_polling: false
 - name: xds_certificate_provider_test
   gtest: true
   build: test
@@ -27356,7 +24824,6 @@ targets:
   - gtest
   - absl/functional:overload
   - grpc_test_util
-  uses_polling: false
 - name: xds_client_test
   gtest: true
   build: test
@@ -27521,11 +24988,9 @@ targets:
   - absl/strings:internal
   - protobuf
   - grpc_test_util
-  uses_polling: false
 - name: xds_cluster_end2end_test
   gtest: true
   build: test
-  run: false
   language: c++
   headers:
   - test/core/test_util/fake_stats_plugin.h
@@ -27820,11 +25285,9 @@ targets:
   - absl/strings:internal
   - protobuf
   - grpc_test_util
-  uses_polling: false
 - name: xds_cluster_type_end2end_test
   gtest: true
   build: test
-  run: false
   language: c++
   headers:
   - test/core/test_util/scoped_env_var.h
@@ -28319,11 +25782,9 @@ targets:
   - grpc++
   - protoc
   - grpc_test_util
-  uses_polling: false
 - name: xds_composite_filter_end2end_test
   gtest: true
   build: test
-  run: false
   language: c++
   headers:
   - test/core/test_util/scoped_env_var.h
@@ -28481,7 +25942,6 @@ targets:
 - name: xds_core_end2end_test
   gtest: true
   build: test
-  run: false
   language: c++
   headers:
   - test/core/test_util/fake_stats_plugin.h
@@ -28839,7 +26299,6 @@ targets:
 - name: xds_enabled_server_end2end_test
   gtest: true
   build: test
-  run: false
   language: c++
   headers:
   - test/core/test_util/scoped_env_var.h
@@ -29077,7 +26536,6 @@ targets:
   - absl/strings:internal
   - protobuf
   - grpc_test_util
-  uses_polling: false
 - name: xds_fallback_end2end_test
   gtest: true
   build: test
@@ -29232,7 +26690,6 @@ targets:
 - name: xds_fault_injection_end2end_test
   gtest: true
   build: test
-  run: false
   language: c++
   headers:
   - test/cpp/end2end/counted_service.h
@@ -29384,7 +26841,6 @@ targets:
 - name: xds_gcp_authn_end2end_test
   gtest: true
   build: test
-  run: false
   language: c++
   headers:
   - test/cpp/end2end/counted_service.h
@@ -29830,7 +27286,6 @@ targets:
   - grpc++
   - protoc
   - grpc_test_util
-  uses_polling: false
 - name: xds_lb_policy_registry_test
   gtest: true
   build: test
@@ -29960,7 +27415,6 @@ targets:
   - grpc++
   - protoc
   - grpc_test_util
-  uses_polling: false
 - name: xds_listener_resource_type_test
   gtest: true
   build: test
@@ -30106,7 +27560,6 @@ targets:
   - grpc++
   - protoc
   - grpc_test_util
-  uses_polling: false
 - name: xds_matcher_parse_test
   gtest: true
   build: test
@@ -30320,7 +27773,6 @@ targets:
   - gtest
   - protobuf
   - grpc_test_util
-  uses_polling: false
 - name: xds_matcher_test
   gtest: true
   build: test
@@ -30331,7 +27783,6 @@ targets:
   deps:
   - gtest
   - grpc_test_util
-  uses_polling: false
 - name: xds_metadata_test
   gtest: true
   build: test
@@ -30410,11 +27861,9 @@ targets:
   - gtest
   - protobuf
   - grpc_test_util
-  uses_polling: false
 - name: xds_outlier_detection_end2end_test
   gtest: true
   build: test
-  run: false
   language: c++
   headers:
   - test/cpp/end2end/counted_service.h
@@ -30727,7 +28176,6 @@ targets:
   deps:
   - gtest
   - grpc_test_util
-  uses_polling: false
 - name: xds_override_host_test
   gtest: true
   build: test
@@ -30745,7 +28193,6 @@ targets:
   - gtest
   - protobuf
   - grpc_test_util
-  uses_polling: false
 - name: xds_pick_first_end2end_test
   gtest: true
   build: test
@@ -30904,7 +28351,6 @@ targets:
 - name: xds_ring_hash_end2end_test
   gtest: true
   build: test
-  run: false
   language: c++
   headers:
   - test/core/test_util/scoped_env_var.h
@@ -31332,11 +28778,9 @@ targets:
   - grpc++
   - protoc
   - grpc_test_util
-  uses_polling: false
 - name: xds_routing_end2end_test
   gtest: true
   build: test
-  run: false
   language: c++
   headers:
   - test/core/test_util/scoped_env_var.h
@@ -31497,11 +28941,9 @@ targets:
   deps:
   - gtest
   - grpc_test_util
-  uses_polling: false
 - name: xds_security_end2end_test
   gtest: true
   build: test
-  run: false
   language: c++
   headers:
   - test/core/test_util/audit_logging_utils.h
