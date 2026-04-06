@@ -6,8 +6,8 @@
 namespace Grpc\Testing;
 
 use Google\Protobuf\Internal\GPBType;
-use Google\Protobuf\Internal\RepeatedField;
 use Google\Protobuf\Internal\GPBUtil;
+use Google\Protobuf\RepeatedField;
 
 /**
  * Configurations for a test client.
@@ -42,9 +42,9 @@ class ClientConfigureRequest extends \Google\Protobuf\Internal\Message
      * @param array $data {
      *     Optional. Data for populating the Message object.
      *
-     *     @type array<int>|\Google\Protobuf\Internal\RepeatedField $types
+     *     @type int[] $types
      *           The types of RPCs the client sends.
-     *     @type array<\Grpc\Testing\ClientConfigureRequest\Metadata>|\Google\Protobuf\Internal\RepeatedField $metadata
+     *     @type \Grpc\Testing\ClientConfigureRequest\Metadata[] $metadata
      *           The collection of custom metadata to be attached to RPCs sent by the client.
      *     @type int $timeout_sec
      *           The deadline to use, in seconds, for all RPCs.  If unset or zero, the
@@ -60,7 +60,7 @@ class ClientConfigureRequest extends \Google\Protobuf\Internal\Message
      * The types of RPCs the client sends.
      *
      * Generated from protobuf field <code>repeated .grpc.testing.ClientConfigureRequest.RpcType types = 1;</code>
-     * @return \Google\Protobuf\Internal\RepeatedField
+     * @return RepeatedField<int>
      */
     public function getTypes()
     {
@@ -71,7 +71,7 @@ class ClientConfigureRequest extends \Google\Protobuf\Internal\Message
      * The types of RPCs the client sends.
      *
      * Generated from protobuf field <code>repeated .grpc.testing.ClientConfigureRequest.RpcType types = 1;</code>
-     * @param array<int>|\Google\Protobuf\Internal\RepeatedField $var
+     * @param int[] $var
      * @return $this
      */
     public function setTypes($var)
@@ -86,7 +86,7 @@ class ClientConfigureRequest extends \Google\Protobuf\Internal\Message
      * The collection of custom metadata to be attached to RPCs sent by the client.
      *
      * Generated from protobuf field <code>repeated .grpc.testing.ClientConfigureRequest.Metadata metadata = 2;</code>
-     * @return \Google\Protobuf\Internal\RepeatedField
+     * @return RepeatedField<\Grpc\Testing\ClientConfigureRequest\Metadata>
      */
     public function getMetadata()
     {
@@ -97,7 +97,7 @@ class ClientConfigureRequest extends \Google\Protobuf\Internal\Message
      * The collection of custom metadata to be attached to RPCs sent by the client.
      *
      * Generated from protobuf field <code>repeated .grpc.testing.ClientConfigureRequest.Metadata metadata = 2;</code>
-     * @param array<\Grpc\Testing\ClientConfigureRequest\Metadata>|\Google\Protobuf\Internal\RepeatedField $var
+     * @param \Grpc\Testing\ClientConfigureRequest\Metadata[] $var
      * @return $this
      */
     public function setMetadata($var)

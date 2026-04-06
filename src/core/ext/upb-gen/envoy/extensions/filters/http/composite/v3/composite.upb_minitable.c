@@ -41,14 +41,10 @@ static const upb_MiniTableField envoy_extensions_filters_http_composite_v3_Filte
 const upb_MiniTable envoy__extensions__filters__http__composite__v3__FilterChainConfiguration_msg_init = {
   &envoy_extensions_filters_http_composite_v3_FilterChainConfiguration__submsgs[0],
   &envoy_extensions_filters_http_composite_v3_FilterChainConfiguration__fields[0],
-  16, 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(8), 0,
+  16, 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.extensions.filters.http.composite.v3.FilterChainConfiguration",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x000800003f00000a, &upb_prm_1bt_maxmaxb},
-  })
 };
 
 const upb_MiniTable* envoy__extensions__filters__http__composite__v3__FilterChainConfiguration_msg_init_ptr = &envoy__extensions__filters__http__composite__v3__FilterChainConfiguration_msg_init;
@@ -64,14 +60,10 @@ static const upb_MiniTableField envoy_extensions_filters_http_composite_v3_Dynam
 const upb_MiniTable envoy__extensions__filters__http__composite__v3__DynamicConfig_msg_init = {
   &envoy_extensions_filters_http_composite_v3_DynamicConfig__submsgs[0],
   &envoy_extensions_filters_http_composite_v3_DynamicConfig__fields[0],
-  UPB_SIZE(24, 40), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(8), 0,
+  UPB_SIZE(24, 40), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.extensions.filters.http.composite.v3.DynamicConfig",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x001000003f00000a, &upb_pss_1bt},
-  })
 };
 
 const upb_MiniTable* envoy__extensions__filters__http__composite__v3__DynamicConfig_msg_init_ptr = &envoy__extensions__filters__http__composite__v3__DynamicConfig_msg_init;

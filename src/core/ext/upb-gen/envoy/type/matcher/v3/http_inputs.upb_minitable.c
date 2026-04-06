@@ -23,14 +23,10 @@ static const upb_MiniTableField envoy_type_matcher_v3_HttpRequestHeaderMatchInpu
 const upb_MiniTable envoy__type__matcher__v3__HttpRequestHeaderMatchInput_msg_init = {
   NULL,
   &envoy_type_matcher_v3_HttpRequestHeaderMatchInput__fields[0],
-  UPB_SIZE(16, 24), 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(8), 0,
+  UPB_SIZE(16, 24), 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.type.matcher.v3.HttpRequestHeaderMatchInput",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x000800003f00000a, &upb_pss_1bt},
-  })
 };
 
 const upb_MiniTable* envoy__type__matcher__v3__HttpRequestHeaderMatchInput_msg_init_ptr = &envoy__type__matcher__v3__HttpRequestHeaderMatchInput_msg_init;
@@ -41,14 +37,10 @@ static const upb_MiniTableField envoy_type_matcher_v3_HttpRequestTrailerMatchInp
 const upb_MiniTable envoy__type__matcher__v3__HttpRequestTrailerMatchInput_msg_init = {
   NULL,
   &envoy_type_matcher_v3_HttpRequestTrailerMatchInput__fields[0],
-  UPB_SIZE(16, 24), 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(8), 0,
+  UPB_SIZE(16, 24), 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.type.matcher.v3.HttpRequestTrailerMatchInput",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x000800003f00000a, &upb_pss_1bt},
-  })
 };
 
 const upb_MiniTable* envoy__type__matcher__v3__HttpRequestTrailerMatchInput_msg_init_ptr = &envoy__type__matcher__v3__HttpRequestTrailerMatchInput_msg_init;
@@ -59,14 +51,10 @@ static const upb_MiniTableField envoy_type_matcher_v3_HttpResponseHeaderMatchInp
 const upb_MiniTable envoy__type__matcher__v3__HttpResponseHeaderMatchInput_msg_init = {
   NULL,
   &envoy_type_matcher_v3_HttpResponseHeaderMatchInput__fields[0],
-  UPB_SIZE(16, 24), 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(8), 0,
+  UPB_SIZE(16, 24), 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.type.matcher.v3.HttpResponseHeaderMatchInput",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x000800003f00000a, &upb_pss_1bt},
-  })
 };
 
 const upb_MiniTable* envoy__type__matcher__v3__HttpResponseHeaderMatchInput_msg_init_ptr = &envoy__type__matcher__v3__HttpResponseHeaderMatchInput_msg_init;
@@ -77,14 +65,10 @@ static const upb_MiniTableField envoy_type_matcher_v3_HttpResponseTrailerMatchIn
 const upb_MiniTable envoy__type__matcher__v3__HttpResponseTrailerMatchInput_msg_init = {
   NULL,
   &envoy_type_matcher_v3_HttpResponseTrailerMatchInput__fields[0],
-  UPB_SIZE(16, 24), 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(8), 0,
+  UPB_SIZE(16, 24), 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.type.matcher.v3.HttpResponseTrailerMatchInput",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x000800003f00000a, &upb_pss_1bt},
-  })
 };
 
 const upb_MiniTable* envoy__type__matcher__v3__HttpResponseTrailerMatchInput_msg_init_ptr = &envoy__type__matcher__v3__HttpResponseTrailerMatchInput_msg_init;
@@ -95,14 +79,10 @@ static const upb_MiniTableField envoy_type_matcher_v3_HttpRequestQueryParamMatch
 const upb_MiniTable envoy__type__matcher__v3__HttpRequestQueryParamMatchInput_msg_init = {
   NULL,
   &envoy_type_matcher_v3_HttpRequestQueryParamMatchInput__fields[0],
-  UPB_SIZE(16, 24), 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(8), 0,
+  UPB_SIZE(16, 24), 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.type.matcher.v3.HttpRequestQueryParamMatchInput",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x000800003f00000a, &upb_pss_1bt},
-  })
 };
 
 const upb_MiniTable* envoy__type__matcher__v3__HttpRequestQueryParamMatchInput_msg_init_ptr = &envoy__type__matcher__v3__HttpRequestQueryParamMatchInput_msg_init;

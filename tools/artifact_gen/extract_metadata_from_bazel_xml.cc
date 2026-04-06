@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <algorithm>
 #include <fstream>
 #include <map>
 #include <optional>
@@ -425,6 +426,55 @@ class ArtifactGen {
           rules_[bazel_rule.name] = bazel_rule;
         }
       }
+    }
+  }
+
+  // TODO: Remove this protobuf 33.x specific logic.
+  // As of protobuf 33.x certain upb experimental features are 
+  // gated behind config flag such as //upb:fasttable_enabled_setting.
+  //
+  // Our codegen tooling uses bazel query which doesn't resolve such conditional dependencies
+  // properly, so we do manual pruning here as a temporary fix.
+  //
+  // Better solutions would be using more accurate resolution with `bazel cquery`,
+  // and/or use protobuf's official cmake/libupb.cmake for our cmake builds.
+  void PruneUpbExperimentalFeatures() {
+    constexpr char kUpbExcludedTargetsPattern[] = "//upb/wire/decode_fast";
+    // These targets are needed by upb_generator.
+    std::vector<std::string> kUpbExcludedTargetsExceptions = {
+      "@com_google_protobuf//upb/wire/decode_fast:select",
+      "@com_google_protobuf//upb/wire/decode_fast:combinations",
+      "@com_google_protobuf//upb/wire/decode_fast:data",
+    };
+    auto should_include = [&](absl::string_view rule) {
+
+      if(!absl::StrContains(rule, kUpbExcludedTargetsPattern)) {
+        return true;
+      }
+      LOG(INFO) << "checking experimental target: " << rule;
+      for (const std::string& e: kUpbExcludedTargetsExceptions) {
+        if (absl::EndsWith(rule, e)) {
+          return true;
+        }
+      }
+      return false;
+    };
+    auto it_rule = rules_.begin();
+    while (it_rule != rules_.end()) {
+      BazelRule& rule = it_rule->second;
+      if (!should_include(rule.name)) {
+        it_rule = rules_.erase(it_rule);
+        continue;
+      }
+      // Use index to avoid iterator invalidation.
+      for (int i = 0; i < rule.deps.size(); ) {
+        if (!should_include(rule.deps[i])) {
+          rule.deps.erase(rule.deps.begin() + i);
+        } else {
+          ++i;
+        }
+      }
+      ++it_rule;
     }
   }
 
@@ -1198,7 +1248,10 @@ nlohmann::json ExtractMetadataFromBazelXml() {
   for (auto target_query : absl::GetFlag(FLAGS_target_query)) {
     generator.LoadRulesXml(target_query);
   }
+
   generator.ExpandUpbProtoLibraryRules();
+  generator.PruneUpbExperimentalFeatures();
+
   generator.PatchGrpcProtoLibraryRules();
   generator.PatchDescriptorUpbProtoLibrary();
   generator.PopulateCcTests();

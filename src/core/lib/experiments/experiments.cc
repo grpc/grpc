@@ -132,10 +132,6 @@ const char* const additional_constraints_otel_export_telemetry_domains = "{}";
 const char* const description_pick_first_ignore_empty_updates =
     "Ignore empty resolutions in pick_first";
 const char* const additional_constraints_pick_first_ignore_empty_updates = "{}";
-const char* const description_pick_first_ready_to_connecting =
-    "When the subchannel goes from READY to CONNECTING or TRANSIENT_FAILURE, "
-    "pick_first goes to CONNECTING and starts a new Happy Eyeballs pass.";
-const char* const additional_constraints_pick_first_ready_to_connecting = "{}";
 const char* const description_pipelined_read_secure_endpoint =
     "Enable pipelined reads for EventEngine secure endpoints";
 const char* const additional_constraints_pipelined_read_secure_endpoint = "{}";
@@ -178,11 +174,6 @@ const char* const additional_constraints_retry_in_callv3 = "{}";
 const char* const description_return_preexisting_errors =
     "Return errors that exist before the start of the call in RunHandler.";
 const char* const additional_constraints_return_preexisting_errors = "{}";
-const char* const description_rr_wrr_connect_from_random_index =
-    "RR and WRR LB policies start connecting from a random index in the "
-    "address list.";
-const char* const additional_constraints_rr_wrr_connect_from_random_index =
-    "{}";
 const char* const description_schedule_cancellation_over_write =
     "Allow cancellation op to be scheduled over a write";
 const char* const additional_constraints_schedule_cancellation_over_write =
@@ -281,7 +272,7 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_chaotic_good_send_supported_features, nullptr, 0,
      false, true},
     {"error_flatten", description_error_flatten,
-     additional_constraints_error_flatten, nullptr, 0, false, false},
+     additional_constraints_error_flatten, nullptr, 0, true, false},
     {"event_engine_client", description_event_engine_client,
      additional_constraints_event_engine_client, nullptr, 0, true, false},
     {"event_engine_dns", description_event_engine_dns,
@@ -340,10 +331,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_pick_first_ignore_empty_updates,
      additional_constraints_pick_first_ignore_empty_updates, nullptr, 0, false,
      true},
-    {"pick_first_ready_to_connecting",
-     description_pick_first_ready_to_connecting,
-     additional_constraints_pick_first_ready_to_connecting, nullptr, 0, true,
-     true},
     {"pipelined_read_secure_endpoint",
      description_pipelined_read_secure_endpoint,
      additional_constraints_pipelined_read_secure_endpoint,
@@ -374,10 +361,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_retry_in_callv3, nullptr, 0, false, true},
     {"return_preexisting_errors", description_return_preexisting_errors,
      additional_constraints_return_preexisting_errors, nullptr, 0, false, true},
-    {"rr_wrr_connect_from_random_index",
-     description_rr_wrr_connect_from_random_index,
-     additional_constraints_rr_wrr_connect_from_random_index, nullptr, 0, true,
-     true},
     {"schedule_cancellation_over_write",
      description_schedule_cancellation_over_write,
      additional_constraints_schedule_cancellation_over_write, nullptr, 0, false,
@@ -410,7 +393,7 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"subchannel_wrapper_cleanup_on_orphan",
      description_subchannel_wrapper_cleanup_on_orphan,
      additional_constraints_subchannel_wrapper_cleanup_on_orphan, nullptr, 0,
-     false, true},
+     true, true},
     {"tcp_frame_size_tuning", description_tcp_frame_size_tuning,
      additional_constraints_tcp_frame_size_tuning, nullptr, 0, false, true},
     {"tcp_rcv_lowat", description_tcp_rcv_lowat,
@@ -550,10 +533,6 @@ const char* const additional_constraints_otel_export_telemetry_domains = "{}";
 const char* const description_pick_first_ignore_empty_updates =
     "Ignore empty resolutions in pick_first";
 const char* const additional_constraints_pick_first_ignore_empty_updates = "{}";
-const char* const description_pick_first_ready_to_connecting =
-    "When the subchannel goes from READY to CONNECTING or TRANSIENT_FAILURE, "
-    "pick_first goes to CONNECTING and starts a new Happy Eyeballs pass.";
-const char* const additional_constraints_pick_first_ready_to_connecting = "{}";
 const char* const description_pipelined_read_secure_endpoint =
     "Enable pipelined reads for EventEngine secure endpoints";
 const char* const additional_constraints_pipelined_read_secure_endpoint = "{}";
@@ -596,11 +575,6 @@ const char* const additional_constraints_retry_in_callv3 = "{}";
 const char* const description_return_preexisting_errors =
     "Return errors that exist before the start of the call in RunHandler.";
 const char* const additional_constraints_return_preexisting_errors = "{}";
-const char* const description_rr_wrr_connect_from_random_index =
-    "RR and WRR LB policies start connecting from a random index in the "
-    "address list.";
-const char* const additional_constraints_rr_wrr_connect_from_random_index =
-    "{}";
 const char* const description_schedule_cancellation_over_write =
     "Allow cancellation op to be scheduled over a write";
 const char* const additional_constraints_schedule_cancellation_over_write =
@@ -699,7 +673,7 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_chaotic_good_send_supported_features, nullptr, 0,
      false, true},
     {"error_flatten", description_error_flatten,
-     additional_constraints_error_flatten, nullptr, 0, false, false},
+     additional_constraints_error_flatten, nullptr, 0, true, false},
     {"event_engine_client", description_event_engine_client,
      additional_constraints_event_engine_client, nullptr, 0, true, false},
     {"event_engine_dns", description_event_engine_dns,
@@ -758,10 +732,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_pick_first_ignore_empty_updates,
      additional_constraints_pick_first_ignore_empty_updates, nullptr, 0, false,
      true},
-    {"pick_first_ready_to_connecting",
-     description_pick_first_ready_to_connecting,
-     additional_constraints_pick_first_ready_to_connecting, nullptr, 0, true,
-     true},
     {"pipelined_read_secure_endpoint",
      description_pipelined_read_secure_endpoint,
      additional_constraints_pipelined_read_secure_endpoint,
@@ -792,10 +762,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_retry_in_callv3, nullptr, 0, false, true},
     {"return_preexisting_errors", description_return_preexisting_errors,
      additional_constraints_return_preexisting_errors, nullptr, 0, false, true},
-    {"rr_wrr_connect_from_random_index",
-     description_rr_wrr_connect_from_random_index,
-     additional_constraints_rr_wrr_connect_from_random_index, nullptr, 0, true,
-     true},
     {"schedule_cancellation_over_write",
      description_schedule_cancellation_over_write,
      additional_constraints_schedule_cancellation_over_write, nullptr, 0, false,
@@ -828,7 +794,7 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"subchannel_wrapper_cleanup_on_orphan",
      description_subchannel_wrapper_cleanup_on_orphan,
      additional_constraints_subchannel_wrapper_cleanup_on_orphan, nullptr, 0,
-     false, true},
+     true, true},
     {"tcp_frame_size_tuning", description_tcp_frame_size_tuning,
      additional_constraints_tcp_frame_size_tuning, nullptr, 0, false, true},
     {"tcp_rcv_lowat", description_tcp_rcv_lowat,
@@ -968,10 +934,6 @@ const char* const additional_constraints_otel_export_telemetry_domains = "{}";
 const char* const description_pick_first_ignore_empty_updates =
     "Ignore empty resolutions in pick_first";
 const char* const additional_constraints_pick_first_ignore_empty_updates = "{}";
-const char* const description_pick_first_ready_to_connecting =
-    "When the subchannel goes from READY to CONNECTING or TRANSIENT_FAILURE, "
-    "pick_first goes to CONNECTING and starts a new Happy Eyeballs pass.";
-const char* const additional_constraints_pick_first_ready_to_connecting = "{}";
 const char* const description_pipelined_read_secure_endpoint =
     "Enable pipelined reads for EventEngine secure endpoints";
 const char* const additional_constraints_pipelined_read_secure_endpoint = "{}";
@@ -1014,11 +976,6 @@ const char* const additional_constraints_retry_in_callv3 = "{}";
 const char* const description_return_preexisting_errors =
     "Return errors that exist before the start of the call in RunHandler.";
 const char* const additional_constraints_return_preexisting_errors = "{}";
-const char* const description_rr_wrr_connect_from_random_index =
-    "RR and WRR LB policies start connecting from a random index in the "
-    "address list.";
-const char* const additional_constraints_rr_wrr_connect_from_random_index =
-    "{}";
 const char* const description_schedule_cancellation_over_write =
     "Allow cancellation op to be scheduled over a write";
 const char* const additional_constraints_schedule_cancellation_over_write =
@@ -1117,7 +1074,7 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_chaotic_good_send_supported_features, nullptr, 0,
      false, true},
     {"error_flatten", description_error_flatten,
-     additional_constraints_error_flatten, nullptr, 0, false, false},
+     additional_constraints_error_flatten, nullptr, 0, true, false},
     {"event_engine_client", description_event_engine_client,
      additional_constraints_event_engine_client, nullptr, 0, true, false},
     {"event_engine_dns", description_event_engine_dns,
@@ -1176,10 +1133,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_pick_first_ignore_empty_updates,
      additional_constraints_pick_first_ignore_empty_updates, nullptr, 0, false,
      true},
-    {"pick_first_ready_to_connecting",
-     description_pick_first_ready_to_connecting,
-     additional_constraints_pick_first_ready_to_connecting, nullptr, 0, true,
-     true},
     {"pipelined_read_secure_endpoint",
      description_pipelined_read_secure_endpoint,
      additional_constraints_pipelined_read_secure_endpoint,
@@ -1210,10 +1163,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_retry_in_callv3, nullptr, 0, false, true},
     {"return_preexisting_errors", description_return_preexisting_errors,
      additional_constraints_return_preexisting_errors, nullptr, 0, false, true},
-    {"rr_wrr_connect_from_random_index",
-     description_rr_wrr_connect_from_random_index,
-     additional_constraints_rr_wrr_connect_from_random_index, nullptr, 0, true,
-     true},
     {"schedule_cancellation_over_write",
      description_schedule_cancellation_over_write,
      additional_constraints_schedule_cancellation_over_write, nullptr, 0, false,
@@ -1246,7 +1195,7 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"subchannel_wrapper_cleanup_on_orphan",
      description_subchannel_wrapper_cleanup_on_orphan,
      additional_constraints_subchannel_wrapper_cleanup_on_orphan, nullptr, 0,
-     false, true},
+     true, true},
     {"tcp_frame_size_tuning", description_tcp_frame_size_tuning,
      additional_constraints_tcp_frame_size_tuning, nullptr, 0, false, true},
     {"tcp_rcv_lowat", description_tcp_rcv_lowat,

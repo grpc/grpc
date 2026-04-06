@@ -175,6 +175,14 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "pipelining_heuristic_selector",
+    hdrs = ["handshaker/security/pipelining_heuristic_selector.h"],
+    deps = [
+        "//:gpr_platform",
+    ],
+)
+
+grpc_cc_library(
     name = "event_engine_extensions",
     hdrs = [
         "lib/event_engine/extensions/blocking_dns.h",
@@ -518,11 +526,16 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "time_precise",
-    srcs = ["util/time_precise.cc"],
+    srcs = [
+        "util/time_precise.cc",
+    ],
     hdrs = [
         "util/time_precise.h",
     ],
-    external_deps = ["absl/log"],
+    external_deps = [
+        "absl/log",
+        "absl/base",
+    ],
     tags = [
         "nofixdeps",
     ],
@@ -1864,6 +1877,18 @@ grpc_cc_library(
         "memory_quota",
         "resource_quota",
         "//:gpr",
+    ],
+)
+
+grpc_cc_library(
+    name = "telemetry_label",
+    hdrs = [
+        "telemetry/telemetry_label.h",
+    ],
+    deps = [
+        "arena",
+        "//:gpr",
+        "//:grpc_public_hdrs",
     ],
 )
 
@@ -6121,7 +6146,6 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/strings",
-        "absl/strings:str_format",
     ],
     tags = ["nofixdeps"],
     deps = [
@@ -6130,6 +6154,7 @@ grpc_cc_library(
         "match",
         "validation_errors",
         "xds_server_grpc",
+        "//:gpr",
     ],
 )
 
@@ -6170,7 +6195,6 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/strings",
-        "absl/strings:str_format",
         "re2",
     ],
     tags = ["nofixdeps"],
@@ -6179,6 +6203,7 @@ grpc_cc_library(
         "match",
         "time",
         "xds_http_filter",
+        "//:gpr",
         "//:grpc_base",
         "//:xds_client",
     ],
@@ -6194,7 +6219,6 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/strings",
-        "absl/strings:str_format",
     ],
     tags = ["nofixdeps"],
     deps = [
@@ -6205,6 +6229,7 @@ grpc_cc_library(
         "xds_common_types",
         "xds_http_filter",
         "xds_route_config",
+        "//:gpr",
         "//:sockaddr_utils",
         "//:xds_client",
     ],
@@ -6226,6 +6251,7 @@ grpc_cc_library(
     deps = [
         "envoy_config_core_upb",
         "//:endpoint_addresses",
+        "//:gpr",
     ],
 )
 
@@ -6269,6 +6295,7 @@ grpc_cc_library(
         "validation_errors",
         "xds_server_grpc_interface",
         "//:config",
+        "//:gpr",
         "//:ref_counted_ptr",
         "//:xds_client",
     ],
@@ -6293,6 +6320,7 @@ grpc_cc_library(
         "json",
         "json_writer",
         "validation_errors",
+        "//:gpr",
     ],
 )
 
@@ -6305,8 +6333,6 @@ grpc_cc_library(
         "xds/grpc/xds_cluster.h",
     ],
     external_deps = [
-        "absl/container:flat_hash_map",
-        "absl/strings",
     ],
     tags = ["nofixdeps"],
     deps = [
@@ -6320,6 +6346,7 @@ grpc_cc_library(
         "xds_health_status",
         "xds_metadata",
         "xds_server_grpc",
+        "//:gpr",
         "//:xds_client",
     ],
 )
@@ -6335,7 +6362,6 @@ grpc_cc_library(
     external_deps = [
         "absl/base:core_headers",
         "absl/random",
-        "absl/strings",
     ],
     tags = ["nofixdeps"],
     deps = [
@@ -6864,6 +6890,9 @@ grpc_cc_library(
     srcs = [
         "load_balancing/xds/cds.cc",
     ],
+    hdrs = [
+        "load_balancing/xds/cds.h",
+    ],
     external_deps = [
         "absl/log",
         "absl/status",
@@ -6892,6 +6921,7 @@ grpc_cc_library(
         "unique_type_name",
         "xds_cluster",
         "xds_common_types",
+        "xds_config",
         "xds_dependency_manager",
         "xds_health_status",
         "//:config",
@@ -7166,7 +7196,6 @@ grpc_cc_library(
         "channel_args",
         "delegating_helper",
         "down_cast",
-        "experiments",
         "grpc_check",
         "grpc_lb_policy_pick_first",
         "json",

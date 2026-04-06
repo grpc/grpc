@@ -365,9 +365,10 @@ CC_FILES=[
     'third_party/protobuf/upb/reflection/oneof_def.c',
     'third_party/protobuf/upb/reflection/service_def.c',
     'third_party/protobuf/upb/wire/decode.c',
+    'third_party/protobuf/upb/wire/decode_fast/select.c',
     'third_party/protobuf/upb/wire/encode.c',
     'third_party/protobuf/upb/wire/eps_copy_input_stream.c',
-    'third_party/protobuf/upb/wire/internal/decode_fast.c',
+    'third_party/protobuf/upb/wire/internal/decoder.c',
     'third_party/protobuf/upb/wire/reader.c',
     'third_party/protobuf/upb_generator/c/names.cc',
     'third_party/protobuf/upb_generator/c/names_internal.cc',
@@ -375,7 +376,6 @@ CC_FILES=[
     'third_party/protobuf/upb_generator/common.cc',
     'third_party/protobuf/upb_generator/common/names.cc',
     'third_party/protobuf/upb_generator/file_layout.cc',
-    'third_party/protobuf/upb_generator/minitable/fasttable.cc',
     'third_party/protobuf/upb_generator/minitable/generator.cc',
     'third_party/protobuf/upb_generator/minitable/names.cc',
     'third_party/protobuf/upb_generator/minitable/names_internal.cc',
@@ -411,4 +411,4 @@ CC_INCLUDES=[
 ]
 PROTO_INCLUDE='third_party/protobuf'
 
-PROTOBUF_SUBMODULE_VERSION="74211c0dfc2777318ab53c2cd2c317a2ef9012de"
+PROTOBUF_SUBMODULE_VERSION="b6f9284da830b69be787732ffdaa35049d20a088"

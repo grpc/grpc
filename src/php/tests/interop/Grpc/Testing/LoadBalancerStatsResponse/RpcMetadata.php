@@ -6,8 +6,8 @@
 namespace Grpc\Testing\LoadBalancerStatsResponse;
 
 use Google\Protobuf\Internal\GPBType;
-use Google\Protobuf\Internal\RepeatedField;
 use Google\Protobuf\Internal\GPBUtil;
+use Google\Protobuf\RepeatedField;
 
 /**
  * Generated from protobuf message <code>grpc.testing.LoadBalancerStatsResponse.RpcMetadata</code>
@@ -28,7 +28,7 @@ class RpcMetadata extends \Google\Protobuf\Internal\Message
      * @param array $data {
      *     Optional. Data for populating the Message object.
      *
-     *     @type array<\Grpc\Testing\LoadBalancerStatsResponse\MetadataEntry>|\Google\Protobuf\Internal\RepeatedField $metadata
+     *     @type \Grpc\Testing\LoadBalancerStatsResponse\MetadataEntry[] $metadata
      *           metadata values for each rpc for the keys specified in
      *           LoadBalancerStatsRequest.metadata_keys.
      * }
@@ -43,7 +43,7 @@ class RpcMetadata extends \Google\Protobuf\Internal\Message
      * LoadBalancerStatsRequest.metadata_keys.
      *
      * Generated from protobuf field <code>repeated .grpc.testing.LoadBalancerStatsResponse.MetadataEntry metadata = 1;</code>
-     * @return \Google\Protobuf\Internal\RepeatedField
+     * @return RepeatedField<\Grpc\Testing\LoadBalancerStatsResponse\MetadataEntry>
      */
     public function getMetadata()
     {
@@ -55,7 +55,7 @@ class RpcMetadata extends \Google\Protobuf\Internal\Message
      * LoadBalancerStatsRequest.metadata_keys.
      *
      * Generated from protobuf field <code>repeated .grpc.testing.LoadBalancerStatsResponse.MetadataEntry metadata = 1;</code>
-     * @param array<\Grpc\Testing\LoadBalancerStatsResponse\MetadataEntry>|\Google\Protobuf\Internal\RepeatedField $var
+     * @param \Grpc\Testing\LoadBalancerStatsResponse\MetadataEntry[] $var
      * @return $this
      */
     public function setMetadata($var)
