@@ -602,19 +602,36 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
         alwayslink = 1,
     )
 
+    cc_binary(
+        name = "%s_BIN" % name,
+        deps = ["%s_TEST_LIBRARY" % name],
+        testonly = 1,
+        copts = GRPC_DEFAULT_COPTS + copts,
+        linkopts = if_not_windows(["-pthread"]) + if_windows(["-defaultlib:ws2_32.lib"]),
+        linkstatic = linkstatic,
+        exec_compatible_with = exec_compatible_with,
+        exec_properties = exec_properties,
+        data = data,
+    )
+
     for poller_config in expand_tests(name, srcs, core_deps, tags, args, exclude_pollers, uses_polling, uses_event_engine, flaky):
         if poller_config["srcs"] != srcs:
             fail("srcs changed")
         if poller_config["deps"] != core_deps:
             fail("deps changed: %r --> %r" % (deps, poller_config["deps"]))
-        cc_test(
+        sh_test(
             name = poller_config["name"],
-            deps = ["%s_TEST_LIBRARY" % name],
+            srcs = [":%s_BIN" % name],
             tags = poller_config["tags"],
             args = poller_config["args"],
             env = poller_config["env"],
             flaky = poller_config["flaky"],
-            **test_args
+            size = size,
+            timeout = timeout,
+            shard_count = shard_count,
+            data = data,
+            exec_compatible_with = exec_compatible_with,
+            exec_properties = exec_properties,
         )
 
 def grpc_cc_binary(name, srcs = [], deps = [], external_deps = [], args = [], data = [], testonly = False, linkshared = False, linkopts = [], tags = [], target_compatible_with = [], features = [], visibility = None):
