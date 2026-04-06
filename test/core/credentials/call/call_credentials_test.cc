@@ -1546,11 +1546,14 @@ TEST_F(CredentialsTest, TestJwtCredsWithInvalidRabUri) {
   std::string emd = absl::StrCat("authorization: ", expected_md_value);
   auto state = RequestMetadataState::NewInstance(absl::OkStatus(), emd);
   grpc_jwt_encode_and_sign_set_override(encode_and_sign_jwt_any_email);
+  HttpRequest::SetOverride(httpcli_get_valid_json_regional_access_boundary,
+                           nullptr, nullptr);
   state->RunRequestMetadataTest(creds, kTestUrlScheme, kTestAuthority,
                                 kTestPath);
   ExecCtx::Get()->Flush();
   creds->Unref();
   grpc_jwt_encode_and_sign_set_override(nullptr);
+  HttpRequest::SetOverride(nullptr, nullptr, nullptr);
 }
 
 TEST_F(CredentialsTest, TestJwtCredsSuccess) {
@@ -1559,18 +1562,25 @@ TEST_F(CredentialsTest, TestJwtCredsSuccess) {
   char* json_key_string = test_json_key_str();
   ExecCtx exec_ctx;
   std::string expected_md_value = absl::StrCat("Bearer ", test_signed_jwt);
-  std::string emd = absl::StrCat("authorization: ", expected_md_value);
+  std::string emd_without_rab =
+      absl::StrCat("authorization: ", expected_md_value);
+  std::string emd_with_rab =
+      absl::StrCat("authorization: ", expected_md_value, ", ",
+                   "x-allowed-locations: us-west1");
   grpc_call_credentials* creds =
       grpc_service_account_jwt_access_credentials_create(
           json_key_string, grpc_max_auth_token_lifetime(), nullptr);
+  HttpRequest::SetOverride(httpcli_get_valid_json_regional_access_boundary,
+                           nullptr, nullptr);
   // First request: jwt_encode_and_sign should be called.
-  auto state = RequestMetadataState::NewInstance(absl::OkStatus(), emd);
+  auto state =
+      RequestMetadataState::NewInstance(absl::OkStatus(), emd_without_rab);
   grpc_jwt_encode_and_sign_set_override(encode_and_sign_jwt_success);
   state->RunRequestMetadataTest(creds, kTestUrlScheme, kTestAuthority,
                                 kTestPath);
   ExecCtx::Get()->Flush();
   // Second request: the cached token should be served directly.
-  state = RequestMetadataState::NewInstance(absl::OkStatus(), emd);
+  state = RequestMetadataState::NewInstance(absl::OkStatus(), emd_with_rab);
   grpc_jwt_encode_and_sign_set_override(
       encode_and_sign_jwt_should_not_be_called);
   state->RunRequestMetadataTest(creds, kTestUrlScheme, kTestAuthority,
@@ -1578,7 +1588,7 @@ TEST_F(CredentialsTest, TestJwtCredsSuccess) {
   ExecCtx::Get()->Flush();
   // Third request: Different service url so jwt_encode_and_sign should be
   // called again (no caching).
-  state = RequestMetadataState::NewInstance(absl::OkStatus(), emd);
+  state = RequestMetadataState::NewInstance(absl::OkStatus(), emd_with_rab);
   grpc_jwt_encode_and_sign_set_override(encode_and_sign_jwt_success);
   state->RunRequestMetadataTest(creds, kTestUrlScheme, kTestOtherAuthority,
                                 kTestOtherPath);
@@ -1588,6 +1598,7 @@ TEST_F(CredentialsTest, TestJwtCredsSuccess) {
   creds->Unref();
   gpr_free(json_key_string);
   grpc_jwt_encode_and_sign_set_override(nullptr);
+  HttpRequest::SetOverride(nullptr, nullptr, nullptr);
 }
 
 TEST_F(CredentialsTest, TestJwtCredsSigningFailure) {
