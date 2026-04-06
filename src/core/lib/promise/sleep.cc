@@ -37,6 +37,9 @@ Sleep::~Sleep() {
 }
 
 Poll<absl::Status> Sleep::operator()() {
+  // Invalidate now so that we see a fresh version of the time.
+  // TODO(akshitpatel): the following can be safely removed when we remove
+  // ExecCtx.
   ExecCtx::Get()->InvalidateNow();
   const auto now = Timestamp::Now();
   // If the deadline is earlier than now we can just return.
