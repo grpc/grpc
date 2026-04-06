@@ -55,7 +55,7 @@ cdef class _ChannelArg:
       # python object wrapping it.
       self.c_argument.type = GRPC_ARG_POINTER
       self.c_argument.value.pointer.vtable = &default_vtable
-      self.c_argument.value.pointer.address = <void*>(<intptr_t>int(value))
+      self.c_argument.value.pointer.address = <void*>(<uintptr_t>int(value))
     else:
       raise TypeError(
           'Expected int, bytes, or behavior, got {}'.format(type(value)))
