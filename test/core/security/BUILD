@@ -144,8 +144,8 @@ grpc_cc_test(
     name = "grpc_tls_certificate_selector_test",
     srcs = ["grpc_tls_certificate_selector_test.cc"],
     data = [
-        "//src/core/tsi/test_creds:server1.key",
-        "//src/core/tsi/test_creds:server1.pem",
+        "//test/core/tsi/test_creds/crl_data:valid.key",
+        "//test/core/tsi/test_creds/crl_data:valid.pem",
     ],
     external_deps = [
         "gtest",

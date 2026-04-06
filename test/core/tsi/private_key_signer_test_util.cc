@@ -42,10 +42,10 @@
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 
+#if defined(OPENSSL_IS_BORINGSSL)
+
 namespace grpc_core {
 namespace testing {
-
-#if defined(OPENSSL_IS_BORINGSSL)
 
 namespace {
 bssl::UniquePtr<EVP_PKEY> LoadPrivateKeyFromString(
@@ -185,7 +185,7 @@ void AsyncTestPrivateKeySigner::Cancel(
 
 bool AsyncTestPrivateKeySigner::WasCancelled() { return was_cancelled_.load(); }
 
-#endif  // OPENSSL_IS_BORINGSSL
-
 }  // namespace testing
 }  // namespace grpc_core
+
+#endif  // OPENSSL_IS_BORINGSSL

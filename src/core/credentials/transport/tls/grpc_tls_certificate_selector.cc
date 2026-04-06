@@ -35,7 +35,7 @@
 namespace grpc_core {
 namespace {
 
-absl::StatusOr<std::vector<bssl::UniquePtr<CRYPTO_BUFFER>>> CreateRawCertChain(
+absl::StatusOr<std::vector<bssl::UniquePtr<CRYPTO_BUFFER>>> CreateRawCertChainFromDer(
     const std::vector<std::string>& cert_chain) {
   std::vector<bssl::UniquePtr<CRYPTO_BUFFER>> raw_cert_chain;
   raw_cert_chain.reserve(cert_chain.size());
@@ -51,7 +51,7 @@ absl::StatusOr<std::vector<bssl::UniquePtr<CRYPTO_BUFFER>>> CreateRawCertChain(
   return raw_cert_chain;
 }
 
-absl::StatusOr<std::vector<bssl::UniquePtr<CRYPTO_BUFFER>>> CreateRawCertChain(
+absl::StatusOr<std::vector<bssl::UniquePtr<CRYPTO_BUFFER>>> CreateRawCertChainFromPem(
     absl::string_view cert_chain) {
   std::vector<bssl::UniquePtr<CRYPTO_BUFFER>> raw_cert_chain;
   bssl::UniquePtr<BIO> bio(
@@ -80,7 +80,7 @@ CertificateSelector::CreateSelectCertificateResult(
         private_key) {
 #if defined(OPENSSL_IS_BORINGSSL)
   absl::StatusOr<std::vector<bssl::UniquePtr<CRYPTO_BUFFER>>> raw_cert_chain =
-      CreateRawCertChain(cert_chain);
+      CreateRawCertChainFromDer(cert_chain);
   if (!raw_cert_chain.ok()) {
     return raw_cert_chain.status();
   }
@@ -117,7 +117,7 @@ CertificateSelector::CreateSelectCertificateResult(
         private_key) {
 #if defined(OPENSSL_IS_BORINGSSL)
   absl::StatusOr<std::vector<bssl::UniquePtr<CRYPTO_BUFFER>>> raw_cert_chain =
-      CreateRawCertChain(cert_chain);
+      CreateRawCertChainFromPem(cert_chain);
   if (!raw_cert_chain.ok()) {
     return raw_cert_chain.status();
   }

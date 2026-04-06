@@ -19,7 +19,6 @@
 #define GRPC_SRC_CORE_CREDENTIALS_TRANSPORT_TLS_GRPC_TLS_CERTIFICATE_SELECTOR_H
 
 #include <grpc/private_key_signer.h>
-#include <openssl/base.h>
 #include <openssl/bio.h>
 
 #include <memory>

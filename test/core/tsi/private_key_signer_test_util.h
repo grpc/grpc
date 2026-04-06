@@ -23,7 +23,6 @@
 #include <openssl/ec.h>
 #include <openssl/evp.h>
 #include <openssl/rsa.h>
-#include <openssl/base.h>
 
 #include <atomic>
 #include <memory>
@@ -85,9 +84,9 @@ class AsyncTestPrivateKeySigner final
   std::atomic<bool> was_cancelled_{false};
 };
 
-#endif  // OPENSSL_IS_BORINGSSL
-
 }  // namespace testing
 }  // namespace grpc_core
+
+#endif  // OPENSSL_IS_BORINGSSL
 
 #endif  // GRPC_TEST_CORE_TSI_PRIVATE_KEY_SIGNER_TEST_UTIL_H
