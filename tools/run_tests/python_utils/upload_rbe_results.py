@@ -150,7 +150,10 @@ def _get_resultstore_data(api_key, invocation_id):
             else raw_resp.decode("utf-8", "ignore")
         )
         results = json.loads(decoded_resp)
-        all_actions.extend(results["actions"])
+        # ResultStore API may omit the 'actions' field if no actions are found
+        # (e.g., in highly cached small runs) or due to eventual consistency
+        # delays.
+        all_actions.extend(results.get("actions", []))
         if "nextPageToken" not in results:
             break
         page_token = results["nextPageToken"]
