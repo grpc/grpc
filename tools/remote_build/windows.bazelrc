@@ -18,7 +18,7 @@ build --jobs=100
 
 # Without this the build is broken on windows RBE with bazel 6.x+
 # TODO(jtattermusch): Remove the workaround.
-build --dynamic_mode=off
+# build --dynamic_mode=default
 
 # use double the default value for "moderate" and "long" timeout as seeing 
 # quite a few tests timeout
