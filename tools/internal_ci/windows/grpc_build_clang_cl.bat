@@ -41,7 +41,7 @@ if %i% geq %maxRetries% (
     exit /b 1
 )
 
-timeout /t 1
+timeout /t 3
 echo "!TIME!: Failed to install llvm, retrying..."
 goto :retry
 
