@@ -26,7 +26,10 @@ endlocal
 cd /d %~dp0\..\..\..
 
 echo "!TIME!: Preparing for the Windows build"
-call tools/internal_ci/helper_scripts/prepare_build_windows.bat || exit /b 1
+call powershell -File tools/internal_ci/helper_scripts/prepare_build_windows.ps1 || exit /b 1
+
+@rem Refresh the environment variables set by the powershell script
+call refreshenv
 
 @rem Install clang-cl with retry in case of network errors
 echo "!TIME!: Installing llvm"
