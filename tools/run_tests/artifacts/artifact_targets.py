@@ -74,7 +74,7 @@ def create_jobspec(
     timeout_seconds=30 * 60,
     use_workspace=False,
     cpu_cost=1.0,
-    verbose_success=False,
+    verbose_success=True,
 ):
     """Creates jobspec."""
     environ = environ.copy()
