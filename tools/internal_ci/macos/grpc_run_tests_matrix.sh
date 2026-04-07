@@ -27,9 +27,6 @@ source tools/internal_ci/helper_scripts/prepare_build_macos_rc
 source tools/internal_ci/helper_scripts/prepare_ccache_rc
 source tools/internal_ci/helper_scripts/prepare_ccache_symlinks_rc
 
-# Actively strip hardcoded -j, --jobs, and --inner_jobs flags injected by Kokoro .cfg files
-RUN_TESTS_FLAGS=$(echo "$RUN_TESTS_FLAGS" | sed -E 's/(-j|--jobs)[[:space:]]*[0-9]+//g' | sed -E 's/--inner_jobs[[:space:]]*[0-9]+//g')
-
 # Dynamically detect CPU cores and adjust RUN_TESTS_FLAGS to prevent over-subscription
 CPU_CORES=$(sysctl -n hw.ncpu)
 # We allow suites to run in parallel again because ccache handles the build load.

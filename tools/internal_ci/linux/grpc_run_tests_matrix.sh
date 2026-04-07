@@ -26,13 +26,6 @@ source tools/internal_ci/helper_scripts/prepare_build_linux_rc
 # configure ccache
 source tools/internal_ci/helper_scripts/prepare_ccache_rc
 
-# Actively strip hardcoded -j, --jobs, and --inner_jobs flags injected by Kokoro .cfg files
-RUN_TESTS_FLAGS=$(echo "$RUN_TESTS_FLAGS" | sed -E 's/(-j|--jobs)[[:space:]]*[0-9]+//g' | sed -E 's/--inner_jobs[[:space:]]*[0-9]+//g')
-
-# Dynamically detect CPU cores and adjust RUN_TESTS_FLAGS to prevent over-subscription
-CPU_CORES=$(nproc)
-export RUN_TESTS_FLAGS="--inner_jobs $CPU_CORES $RUN_TESTS_FLAGS"
-
 # If this is a PR using RUN_TESTS_FLAGS var, then add flags to filter tests
 if [ -n "$KOKORO_GITHUB_PULL_REQUEST_NUMBER" ] && [ -n "$RUN_TESTS_FLAGS" ]; then
   export RUN_TESTS_FLAGS="--filter_pr_tests --base_branch origin/$KOKORO_GITHUB_PULL_REQUEST_TARGET_BRANCH $RUN_TESTS_FLAGS"
