@@ -154,6 +154,7 @@ struct tsi_ssl_server_handshaker_factory {
   grpc_core::RefCountedPtr<TlsSessionKeyLogger> key_logger;
   std::shared_ptr<tsi::RootCertInfo> root_cert_info;
 #if defined(OPENSSL_IS_BORINGSSL)
+  // The key is the index of SSL_CONTEXT in `sll_contexts`.
   std::map<int, std::shared_ptr<grpc_core::PrivateKeySigner>> key_signers;
 #endif
 };
@@ -448,14 +449,13 @@ enum ssl_private_key_result_t TlsPrivateKeySignWrapper(
     handshaker->MaybeSetError(algorithm.status().ToString());
     return ssl_private_key_failure;
   }
-  grpc_core::PrivateKeySigner* signer = handshaker->key_signer.get();
-  if (signer == nullptr) {
+  if (handshaker->key_signer == nullptr) {
     handshaker->MaybeSetError("PrivateKeySigner is null");
     return ssl_private_key_failure;
   }
-  auto result =
-      signer->Sign(absl::string_view(reinterpret_cast<const char*>(in), in_len),
-                   *algorithm, done_callback);
+  auto result = handshaker->key_signer->Sign(
+      absl::string_view(reinterpret_cast<const char*>(in), in_len), *algorithm,
+      done_callback);
   // Handle synchronous return.
   return grpc_core::MatchMutable(
       &result,
