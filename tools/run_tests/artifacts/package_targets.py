@@ -52,7 +52,7 @@ def create_docker_jobspec(
         flake_retries=flake_retries,
         timeout_retries=timeout_retries,
         logfilename=os.path.abspath(
-            REPORT_BASE_PATH + "/reports/package.%s.log" % (name)
+            f"{REPORT_BASE_PATH}/reports/package.{name}.log"
         ),
     )
     return jobspec
@@ -80,7 +80,7 @@ def create_jobspec(
         cpu_cost=cpu_cost,
         shell=shell,
         logfilename=os.path.abspath(
-            REPORT_BASE_PATH + "/reports/package.%s.log" % (name)
+            f"{REPORT_BASE_PATH}/reports/package.{name}.log"
         ),
     )
     return jobspec

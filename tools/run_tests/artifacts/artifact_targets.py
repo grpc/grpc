@@ -63,7 +63,7 @@ def create_docker_jobspec(
         timeout_retries=timeout_retries,
         verbose_success=verbose_success,
         logfilename=os.path.abspath(
-            REPORT_BASE_PATH + "/reports/artifact.%s.log" % (name)
+            f"{REPORT_BASE_PATH}/reports/artifact.{name}.log"
         ),
     )
     return jobspec
@@ -104,7 +104,7 @@ def create_jobspec(
         cpu_cost=cpu_cost,
         verbose_success=verbose_success,
         logfilename=os.path.abspath(
-            REPORT_BASE_PATH + "/reports/artifact.%s.log" % (name)
+            f"{REPORT_BASE_PATH}/reports/artifact.{name}.log"
         ),
     )
     return jobspec

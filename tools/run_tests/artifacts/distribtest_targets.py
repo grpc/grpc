@@ -57,7 +57,7 @@ def create_docker_jobspec(
         flake_retries=flake_retries,
         timeout_retries=timeout_retries,
         logfilename=os.path.abspath(
-            REPORT_BASE_PATH + "/reports/distribtest.%s.log" % (name)
+            f"{REPORT_BASE_PATH}/reports/distribtest.{name}.log"
         ),
     )
     return jobspec
@@ -90,7 +90,7 @@ def create_jobspec(
         timeout_retries=timeout_retries,
         shell=shell,
         logfilename=os.path.abspath(
-            REPORT_BASE_PATH + "/reports/distribtest.%s.log" % (name)
+            f"{REPORT_BASE_PATH}/reports/distribtest.{name}.log"
         ),
     )
     return jobspec
