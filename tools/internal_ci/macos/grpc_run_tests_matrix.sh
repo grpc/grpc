@@ -27,11 +27,6 @@ source tools/internal_ci/helper_scripts/prepare_build_macos_rc
 source tools/internal_ci/helper_scripts/prepare_ccache_rc
 source tools/internal_ci/helper_scripts/prepare_ccache_symlinks_rc
 
-# Dynamically detect CPU cores and adjust RUN_TESTS_FLAGS to prevent over-subscription
-CPU_CORES=$(sysctl -n hw.ncpu)
-# We allow suites to run in parallel again because ccache handles the build load.
-export RUN_TESTS_FLAGS="--inner_jobs $CPU_CORES $RUN_TESTS_FLAGS"
-
 python3 -m pip install six==1.16.0
 tools/run_tests/run_tests_matrix.py $RUN_TESTS_FLAGS || FAILED="true"
 
