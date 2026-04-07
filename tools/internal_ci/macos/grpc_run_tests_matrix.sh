@@ -30,6 +30,8 @@ source tools/internal_ci/helper_scripts/prepare_ccache_symlinks_rc
 python3 -m pip install six==1.16.0
 tools/run_tests/run_tests_matrix.py $RUN_TESTS_FLAGS || FAILED="true"
 
+source tools/internal_ci/helper_scripts/print_ccache_stats.sh
+
 # kill port_server.py to prevent the build from freezing
 ps aux | grep port_server\\.py | awk '{print $2}' | xargs kill -9
 

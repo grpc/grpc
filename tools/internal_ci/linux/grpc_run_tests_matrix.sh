@@ -33,6 +33,8 @@ fi
 
 tools/run_tests/run_tests_matrix.py $RUN_TESTS_FLAGS || FAILED="true"
 
+source tools/internal_ci/helper_scripts/print_ccache_stats.sh
+
 echo 'Exiting gRPC main test script.'
 
 if [ "$FAILED" != "" ]
