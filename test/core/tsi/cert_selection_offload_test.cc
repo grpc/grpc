@@ -18,7 +18,6 @@
 #include <grpc/grpc.h>
 #include <grpc/private_key_signer.h>
 #include <openssl/bio.h>
-#include <openssl/mem.h>
 #include <openssl/pem.h>
 
 #include <atomic>
@@ -45,6 +44,7 @@
 
 #if defined(OPENSSL_IS_BORINGSSL)
 #include <openssl/bytestring.h>
+#include <openssl/mem.h>
 
 #include "src/core/credentials/transport/tls/grpc_tls_certificate_selector.h"
 #include "test/core/tsi/private_key_signer_test_util.h"
