@@ -23,7 +23,7 @@ set PATH=C:\tools\msys64\usr\bin;C:\Python39;C:\Program Files\CMake\bin;%PATH%
 @rem Print image ID of the windows kokoro image being used.
 cat C:\image_id.txt
 
-@rem install python 3.9
+@rem install python 3.9 with retry in case of network errors
 set /a i=0
 set /a maxRetries=3
 :retry
