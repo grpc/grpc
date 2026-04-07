@@ -24,6 +24,8 @@ import python_utils.jobset as jobset
 
 _LATEST_MANYLINUX = "manylinux2014"
 
+REPORT_BASE_PATH = os.getenv("GRPC_TEST_REPORT_BASE_DIR", os.path.abspath("."))
+
 
 def create_docker_jobspec(
     name,
@@ -60,6 +62,9 @@ def create_docker_jobspec(
         flake_retries=flake_retries,
         timeout_retries=timeout_retries,
         verbose_success=verbose_success,
+        logfilename=os.path.abspath(
+            REPORT_BASE_PATH + "/reports/artifact.%s.log" % (name)
+        ),
     )
     return jobspec
 
@@ -98,6 +103,9 @@ def create_jobspec(
         shell=shell,
         cpu_cost=cpu_cost,
         verbose_success=verbose_success,
+        logfilename=os.path.abspath(
+            REPORT_BASE_PATH + "/reports/artifact.%s.log" % (name)
+        ),
     )
     return jobspec
 
