@@ -18,9 +18,11 @@
 #include "src/core/credentials/transport/tls/grpc_tls_certificate_selector.h"
 
 #include <openssl/bio.h>
-#include <openssl/bytestring.h>
 #include <openssl/crypto.h>
 #include <openssl/pem.h>
+#if defined(OPENSSL_IS_BORINGSSL)
+#include <openssl/bytestring.h>
+#endif
 
 #include <cstdint>
 #include <memory>
@@ -35,6 +37,7 @@
 namespace grpc_core {
 namespace {
 
+#if defined(OPENSSL_IS_BORINGSSL)
 absl::StatusOr<std::vector<bssl::UniquePtr<CRYPTO_BUFFER>>> CreateRawCertChainFromDer(
     const std::vector<std::string>& cert_chain) {
   std::vector<bssl::UniquePtr<CRYPTO_BUFFER>> raw_cert_chain;
@@ -70,6 +73,7 @@ absl::StatusOr<std::vector<bssl::UniquePtr<CRYPTO_BUFFER>>> CreateRawCertChainFr
   }
   return raw_cert_chain;
 }
+#endif
 
 }  // namespace
 
