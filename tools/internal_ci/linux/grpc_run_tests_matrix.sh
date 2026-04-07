@@ -31,7 +31,7 @@ RUN_TESTS_FLAGS=$(echo "$RUN_TESTS_FLAGS" | sed -E 's/(-j|--jobs)[[:space:]]*[0-
 
 # Dynamically detect CPU cores and adjust RUN_TESTS_FLAGS to prevent over-subscription
 CPU_CORES=$(nproc)
-export RUN_TESTS_FLAGS="-j 1 --inner_jobs $CPU_CORES $RUN_TESTS_FLAGS"
+export RUN_TESTS_FLAGS="--inner_jobs $CPU_CORES $RUN_TESTS_FLAGS"
 
 # If this is a PR using RUN_TESTS_FLAGS var, then add flags to filter tests
 if [ -n "$KOKORO_GITHUB_PULL_REQUEST_NUMBER" ] && [ -n "$RUN_TESTS_FLAGS" ]; then

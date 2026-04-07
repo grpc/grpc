@@ -23,13 +23,17 @@ cd $(dirname $0)/../../..
 
 source tools/internal_ci/helper_scripts/prepare_build_macos_rc
 
+# configure ccache
+source tools/internal_ci/helper_scripts/prepare_ccache_rc
+source tools/internal_ci/helper_scripts/prepare_ccache_symlinks_rc
+
 # Actively strip hardcoded -j, --jobs, and --inner_jobs flags injected by Kokoro .cfg files
 RUN_TESTS_FLAGS=$(echo "$RUN_TESTS_FLAGS" | sed -E 's/(-j|--jobs)[[:space:]]*[0-9]+//g' | sed -E 's/--inner_jobs[[:space:]]*[0-9]+//g')
 
 # Dynamically detect CPU cores and adjust RUN_TESTS_FLAGS to prevent over-subscription
 CPU_CORES=$(sysctl -n hw.ncpu)
-# On macOS, we set -j 1 to avoid running heavy suites (like C and C++) in parallel on small VMs.
-export RUN_TESTS_FLAGS="-j 1 --inner_jobs $CPU_CORES $RUN_TESTS_FLAGS"
+# We allow suites to run in parallel again because ccache handles the build load.
+export RUN_TESTS_FLAGS="--inner_jobs $CPU_CORES $RUN_TESTS_FLAGS"
 
 python3 -m pip install six==1.16.0
 tools/run_tests/run_tests_matrix.py $RUN_TESTS_FLAGS || FAILED="true"

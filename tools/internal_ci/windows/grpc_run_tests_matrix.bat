@@ -42,7 +42,7 @@ call tools/internal_ci/helper_scripts/prepare_ccache.bat || exit /b 1
 
 @rem Actively strip hardcoded -j, --jobs, and --inner_jobs flags injected by Kokoro .cfg files
 @rem and dynamically append cores to prevent over-subscription.
-python3 -c "import os, re; flags = re.sub(r'(-j|--jobs)\s*\d+', '', os.environ.get('RUN_TESTS_FLAGS', '')); flags = re.sub(r'--inner_jobs\s*\d+', '', flags); open('set_flags.bat', 'w').write('set RUN_TESTS_FLAGS=-j 1 --inner_jobs %NUMBER_OF_PROCESSORS% ' + flags.strip())"
+python3 -c "import os, re; flags = re.sub(r'(-j|--jobs)\s*\d+', '', os.environ.get('RUN_TESTS_FLAGS', '')); flags = re.sub(r'--inner_jobs\s*\d+', '', flags); open('set_flags.bat', 'w').write('set RUN_TESTS_FLAGS=--inner_jobs %NUMBER_OF_PROCESSORS% ' + flags.strip())"
 call set_flags.bat
 
 @rem TODO(https://github.com/grpc/grpc/issues/28011): Remove once Windows Kokoro workers'
