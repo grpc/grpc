@@ -1774,6 +1774,13 @@ argp.add_argument(
     help="Perform all the build steps but don't run any tests.",
 )
 argp.add_argument(
+    "--build_verbose_success",
+    default=True,
+    action="store_const",
+    const=True,
+    help="Print the build output on success",
+)
+argp.add_argument(
     "--measure_cpu_costs",
     default=False,
     action="store_const",
@@ -1955,6 +1962,7 @@ post_tests_steps = list(
             environ=_build_step_environ(
                 build_config, extra_env=l.build_steps_environ()
             ),
+            verbose_success=args.build_verbose_success or False,
         )
         for l in languages
         for cmdline in l.post_tests_steps()

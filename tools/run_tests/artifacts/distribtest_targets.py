@@ -21,6 +21,8 @@ import sys
 sys.path.insert(0, os.path.abspath(".."))
 import python_utils.jobset as jobset
 
+REPORT_BASE_PATH = os.getenv("GRPC_TEST_REPORT_BASE_DIR", os.path.abspath("."))
+
 
 def create_docker_jobspec(
     name,
@@ -31,6 +33,7 @@ def create_docker_jobspec(
     timeout_retries=0,
     copy_rel_path=None,
     timeout_seconds=30 * 60,
+    verbose_success=True,
 ):
     """Creates jobspec for a task running under docker."""
     environ = environ.copy()
@@ -54,6 +57,9 @@ def create_docker_jobspec(
         timeout_seconds=timeout_seconds,
         flake_retries=flake_retries,
         timeout_retries=timeout_retries,
+        logfilename=os.path.abspath(
+            f"{REPORT_BASE_PATH}/reports/distribtest.{name}.log"
+        ),
     )
     return jobspec
 
@@ -67,6 +73,7 @@ def create_jobspec(
     timeout_retries=0,
     use_workspace=False,
     timeout_seconds=10 * 60,
+    verbose_success=True,
 ):
     """Creates jobspec."""
     environ = environ.copy()
@@ -84,6 +91,9 @@ def create_jobspec(
         flake_retries=flake_retries,
         timeout_retries=timeout_retries,
         shell=shell,
+        logfilename=os.path.abspath(
+            f"{REPORT_BASE_PATH}/reports/distribtest.{name}.log"
+        ),
     )
     return jobspec
 
