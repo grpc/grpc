@@ -53,6 +53,23 @@ def create_docker_jobspec(
     }
     if extra_docker_args is not None:
         docker_env["EXTRA_DOCKER_ARGS"] = extra_docker_args
+
+    ccache_enable = os.getenv("GRPC_BUILD_ENABLE_CCACHE", "")
+
+    if ccache_enable != "":
+        docker_env["GRPC_BUILD_ENABLE_CCACHE"] = ccache_enable
+        remote_cache = os.getenv("CCACHE_SECONDARY_STORAGE", "")
+        if remote_cache:
+            docker_env["CCACHE_SECONDARY_STORAGE"] = remote_cache
+        else:
+            print(
+                f"[FIXIT ERR] --- {ccache_enabled=}, but CCACHE_SECONDARY_STORAGE not set"
+            )
+
+        print(f"[FIXIT] --- Enabled ccache: {ccache_enable=}, {remote_cache=}")
+    else:
+        print("[FIXIT ERR] --- GRPC_BUILD_ENABLE_CCACHE not set")
+
     jobspec = jobset.JobSpec(
         cmdline=["tools/run_tests/dockerize/build_and_run_docker.sh"]
         + docker_args,
