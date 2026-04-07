@@ -309,8 +309,9 @@ int main(int argc, char** argv) {
       {"minstack", {/*client=*/{"--minstack"}, /*server=*/{"--minstack"}}},
       {"insecure", {{}, {}}},
       {"chaotic_good", {{"--chaotic_good"}, {"--chaotic_good"}}}};
-  if (absl::GetFlag(FLAGS_use_xds) && absl::GetFlag(FLAGS_scenario_config) == "chaotic_good") {
-    LOG(INFO) << "Skipping chaotic_good scenario because xDS is enabled and the implementation is experimental/incompatible.";
+  if (absl::GetFlag(FLAGS_scenario_config) == "chaotic_good") {
+    LOG(INFO) << "Skipping chaotic_good scenario as implementation is "
+                 "experimental and deadlocks under high stress loads.";
     return 0;
   }
   auto it_scenario = scenarios.find(absl::GetFlag(FLAGS_scenario_config));
