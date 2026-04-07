@@ -62,12 +62,12 @@ class OTelMetricExporter(otel_metrics_export.MetricExporter):
     def __init__(
         self,
         all_metrics: dict[str, List],
-        preferred_temporality: (
-            dict[type, otel_metrics_export.AggregationTemporality] | None
-        ) = None,
-        preferred_aggregation: (
-            dict[type, otel_metrics_view.Aggregation] | None
-        ) = None,
+        preferred_temporality: Optional[
+            dict[type, otel_metrics_export.AggregationTemporality]
+        ] = None,
+        preferred_aggregation: Optional[
+            dict[type, otel_metrics_view.Aggregation]
+        ] = None,
     ):
         super().__init__(
             preferred_temporality=preferred_temporality,
@@ -1099,16 +1099,13 @@ class OpenTelemetryObservabilityTest(unittest.TestCase):
         span_ids = {span.get_span_context().span_id for span in spans}
 
         root_client_span = next(
-            s
-            for s in spans
-            if s.name.startswith("Sent.")
-            and not s.parent
+            s for s in spans if s.name.startswith("Sent.") and not s.parent
         )
         self.assertIsNotNone(root_client_span, "Root client span not found")
 
         attempt_span = next(
             s
-            for s in spans 
+            for s in spans
             if s.name.startswith("Attempt.")
             and (
                 s.parent.span_id == root_client_span.get_span_context().span_id
@@ -1118,11 +1115,9 @@ class OpenTelemetryObservabilityTest(unittest.TestCase):
 
         propagating_server_span = next(
             s
-            for s in spans 
+            for s in spans
             if s.name.startswith("Recv.")
-            and (
-                s.parent.span_id == attempt_span.get_span_context().span_id
-            )
+            and (s.parent.span_id == attempt_span.get_span_context().span_id)
         )
         self.assertIsNotNone(
             propagating_server_span, "Propagating server span not found"
@@ -1130,11 +1125,11 @@ class OpenTelemetryObservabilityTest(unittest.TestCase):
 
         propagating_client_span = next(
             s
-            for s in spans 
+            for s in spans
             if s.name.startswith("Sent.")
             and (
-                s.parent.span_id ==
-                propagating_server_span.get_span_context().span_id
+                s.parent.span_id
+                == propagating_server_span.get_span_context().span_id
             )
         )
         self.assertIsNotNone(
@@ -1143,11 +1138,11 @@ class OpenTelemetryObservabilityTest(unittest.TestCase):
 
         propagating_attempt_span = next(
             s
-            for s in spans 
+            for s in spans
             if s.name.startswith("Attempt.")
             and (
-                s.parent.span_id ==
-                propagating_client_span.get_span_context().span_id
+                s.parent.span_id
+                == propagating_client_span.get_span_context().span_id
             )
         )
         self.assertIsNotNone(
@@ -1156,11 +1151,11 @@ class OpenTelemetryObservabilityTest(unittest.TestCase):
 
         server_span = next(
             s
-            for s in spans 
+            for s in spans
             if s.name.startswith("Recv.")
             and (
-                s.parent.span_id ==
-                propagating_attempt_span.get_span_context().span_id
+                s.parent.span_id
+                == propagating_attempt_span.get_span_context().span_id
             )
         )
         self.assertIsNotNone(server_span, "Server span not found")
