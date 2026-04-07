@@ -360,7 +360,7 @@ void SecureFrameQueue::Write(SliceBuffer buffer) {
   TcpDataFrameHeader{0, 0, frame_length}.Serialize(slice.data());
   if (header_padding != 0) {
     memset(slice.data() + TcpDataFrameHeader::kFrameHeaderSize, 0,
-           frame_padding);
+           header_padding);
   }
   all_frames_.Append(Slice(std::move(slice)));
   all_frames_.TakeAndAppend(buffer);
