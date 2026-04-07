@@ -309,7 +309,7 @@ class Job:
             )
             if not os.path.exists(logfile_dir):
                 os.makedirs(logfile_dir)
-            message("LOG", "Logging output to %s" % (self._spec.logfilename))
+            message("LOG", f"Logging output to {self._spec.logfilename}")
             self._logfile = open(self._spec.logfilename, "w+")
         else:
             # macOS: a series of quick os.unlink invocation might cause OS
