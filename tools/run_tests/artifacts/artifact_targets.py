@@ -24,6 +24,8 @@ import python_utils.jobset as jobset
 
 _LATEST_MANYLINUX = "manylinux2014"
 
+REPORT_BASE_PATH = os.getenv("GRPC_TEST_REPORT_BASE_DIR", os.path.abspath("."))
+
 
 def create_docker_jobspec(
     name,
@@ -51,6 +53,23 @@ def create_docker_jobspec(
     }
     if extra_docker_args is not None:
         docker_env["EXTRA_DOCKER_ARGS"] = extra_docker_args
+
+    ccache_enable = os.getenv("GRPC_BUILD_ENABLE_CCACHE", "")
+
+    if ccache_enable != "":
+        docker_env["GRPC_BUILD_ENABLE_CCACHE"] = ccache_enable
+        remote_cache = os.getenv("CCACHE_SECONDARY_STORAGE", "")
+        if remote_cache:
+            docker_env["CCACHE_SECONDARY_STORAGE"] = remote_cache
+        else:
+            print(
+                f"[FIXIT ERR] --- {ccache_enabled=}, but CCACHE_SECONDARY_STORAGE not set"
+            )
+
+        print(f"[FIXIT] --- Enabled ccache: {ccache_enable=}, {remote_cache=}")
+    else:
+        print("[FIXIT ERR] --- GRPC_BUILD_ENABLE_CCACHE not set")
+
     jobspec = jobset.JobSpec(
         cmdline=["tools/run_tests/dockerize/build_and_run_docker.sh"]
         + docker_args,
@@ -60,6 +79,9 @@ def create_docker_jobspec(
         flake_retries=flake_retries,
         timeout_retries=timeout_retries,
         verbose_success=verbose_success,
+        logfilename=os.path.abspath(
+            f"{REPORT_BASE_PATH}/reports/artifact.{name}.log"
+        ),
     )
     return jobspec
 
@@ -98,6 +120,9 @@ def create_jobspec(
         shell=shell,
         cpu_cost=cpu_cost,
         verbose_success=verbose_success,
+        logfilename=os.path.abspath(
+            f"{REPORT_BASE_PATH}/reports/artifact.{name}.log"
+        ),
     )
     return jobspec
 
