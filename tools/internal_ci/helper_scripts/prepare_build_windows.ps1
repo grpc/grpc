@@ -16,7 +16,7 @@ $ErrorActionPreference = "Stop"
 # Log messages with timestamp to allow timing command execution.
 function Write-Log($Message, $Level = "Info") {
     $timestamp = (Get-Date).ToString("HH:mm:ss")
-    $fullMessage = "$timestamp: $Message"
+    $fullMessage = "{$timestamp}: $Message"
 
     switch ($Level) {
         "Error"   { Write-Error $fullMessage }
