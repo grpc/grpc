@@ -58,8 +58,17 @@ nasm
 @rem Install ccache
 mkdir C:\ccache
 curl -sSL --fail -o C:\ccache\ccache.exe https://storage.googleapis.com/grpc-build-helper/ccache-4.8-windows-64/ccache.exe || goto :error
+@rem Copy it so ccache.exe can be used in non-cmake builds via %PATH%
+@rem discovery.
+@rem See also: https://ccache.dev/manual/4.11.3.html#_run_modes
+copy C:\ccache\ccache.exe C:\ccache\cl.exe
 set PATH=C:\ccache;%PATH%
 ccache --version
+
+@rem **TEST: check envvars.
+echo %PATH%
+echo %GRPC_BUILD_ENABLE_CCACHE%
+echo %CCACHE_SECONDARY_STORAGE%
 
 @rem Only install C# dependencies if we are running C# tests
 If "%PREPARE_BUILD_INSTALL_DEPS_CSHARP%" == "true" (
