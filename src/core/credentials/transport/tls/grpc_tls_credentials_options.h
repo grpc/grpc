@@ -73,6 +73,12 @@ struct grpc_tls_credentials_options
   }
   const std::optional<std::string>& sni_override() const { return sni_override_; }
   std::vector<grpc_tls_key_exchange_group> key_exchange_groups() const { return key_exchange_groups_; }
+  const std::string& exported_keying_material_label() const {
+    return exported_keying_material_label_;
+  }
+  size_t exported_keying_material_length() const {
+    return exported_keying_material_length_;
+  }
 
   // Setters for member fields.
   void set_cert_request_type(grpc_ssl_client_certificate_request_type cert_request_type) { cert_request_type_ = cert_request_type; }
@@ -95,6 +101,14 @@ struct grpc_tls_credentials_options
   // If set to nullopt, do not override. If set to empty string, disable sending SNI. Otherwise, override SNI
   void set_sni_override(std::optional<std::string> sni_override) { sni_override_ = std::move(sni_override); }
   void set_key_exchange_groups(std::vector<grpc_tls_key_exchange_group> key_exchange_groups) { key_exchange_groups_ = std::move(key_exchange_groups); }
+  void set_exported_keying_material_label(
+      std::string exported_keying_material_label) {
+    exported_keying_material_label_ = std::move(exported_keying_material_label);
+  }
+  void set_exported_keying_material_length(
+      size_t exported_keying_material_length) {
+    exported_keying_material_length_ = exported_keying_material_length;
+  }
 
   bool operator==(const grpc_tls_credentials_options& other) const {
     return cert_request_type_ == other.cert_request_type_ &&
@@ -112,7 +126,9 @@ struct grpc_tls_credentials_options
       (identity_certificate_provider_ == other.identity_certificate_provider_ || (identity_certificate_provider_ != nullptr && other.identity_certificate_provider_ != nullptr && identity_certificate_provider_->Compare(other.identity_certificate_provider_.get()) == 0)) &&
       (root_certificate_provider_ == other.root_certificate_provider_ || (root_certificate_provider_ != nullptr && other.root_certificate_provider_ != nullptr && root_certificate_provider_->Compare(other.root_certificate_provider_.get()) == 0)) &&
       sni_override_ == other.sni_override_ &&
-      key_exchange_groups_ == other.key_exchange_groups_;
+      key_exchange_groups_ == other.key_exchange_groups_ &&
+      exported_keying_material_label_ == other.exported_keying_material_label_ &&
+      exported_keying_material_length_ == other.exported_keying_material_length_;
   }
 
   grpc_tls_credentials_options(grpc_tls_credentials_options& other) :
@@ -131,7 +147,10 @@ struct grpc_tls_credentials_options
       identity_certificate_provider_(other.identity_certificate_provider_),
       root_certificate_provider_(other.root_certificate_provider_),
       sni_override_(other.sni_override_),
-      key_exchange_groups_(other.key_exchange_groups_)  {}
+      key_exchange_groups_(other.key_exchange_groups_),
+      exported_keying_material_label_(other.exported_keying_material_label_),
+      exported_keying_material_length_(
+          other.exported_keying_material_length_) {}
 
  private:
   grpc_ssl_client_certificate_request_type cert_request_type_ = GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE;
@@ -150,6 +169,8 @@ struct grpc_tls_credentials_options
   grpc_core::RefCountedPtr<grpc_tls_certificate_provider> root_certificate_provider_;
   std::optional<std::string> sni_override_;
   std::vector<grpc_tls_key_exchange_group> key_exchange_groups_;
+  std::string exported_keying_material_label_;
+  size_t exported_keying_material_length_ = 0;
 };
 
 #endif  // GRPC_SRC_CORE_CREDENTIALS_TRANSPORT_TLS_GRPC_TLS_CREDENTIALS_OPTIONS_H

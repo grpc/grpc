@@ -21,6 +21,7 @@
 #include <grpc/credentials.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_crl_provider.h>
+#include <grpc/grpc_security_constants.h>
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/port_platform.h>
@@ -303,6 +304,10 @@ grpc_core::RefCountedPtr<grpc_auth_context> grpc_ssl_peer_to_auth_context(
       grpc_auth_context_add_property(ctx.get(),
                                      GRPC_SSL_SESSION_REUSED_PROPERTY,
                                      prop->value.data, prop->value.length);
+    } else if (strcmp(prop->name, TSI_SSL_EXPORTED_KEYING_MATERIAL) == 0) {
+      grpc_auth_context_add_property(
+          ctx.get(), GRPC_SSL_EXPORTED_KEYING_MATERIAL_PROPERTY_NAME,
+          prop->value.data, prop->value.length);
     } else if (strcmp(prop->name, TSI_SECURITY_LEVEL_PEER_PROPERTY) == 0) {
       grpc_auth_context_add_property(
           ctx.get(), GRPC_TRANSPORT_SECURITY_LEVEL_PROPERTY_NAME,
@@ -426,6 +431,8 @@ grpc_security_status grpc_ssl_tsi_client_handshaker_factory_init(
     const char* crl_directory,
     std::shared_ptr<grpc_core::experimental::CrlProvider> crl_provider,
     const std::vector<grpc_tls_key_exchange_group>& key_exchange_groups,
+    const char* exported_keying_material_label,
+    size_t exported_keying_material_length,
     tsi_ssl_client_handshaker_factory** handshaker_factory) {
   const char* root_certs = nullptr;
   const tsi_ssl_root_certs_store* root_store = nullptr;
@@ -466,6 +473,10 @@ grpc_security_status grpc_ssl_tsi_client_handshaker_factory_init(
   options.crl_directory = crl_directory;
   options.crl_provider = std::move(crl_provider);
   options.key_exchange_groups = key_exchange_groups;
+  if (exported_keying_material_label != nullptr) {
+    options.exported_keying_material_label = exported_keying_material_label;
+  }
+  options.exported_keying_material_length = exported_keying_material_length;
   const tsi_result result =
       tsi_create_ssl_client_handshaker_factory_with_options(&options,
                                                             handshaker_factory);

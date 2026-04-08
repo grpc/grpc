@@ -39,6 +39,7 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/promise/promise.h"
+#include "src/core/lib/transport/transport.h"
 #include "src/core/transport/auth_context.h"
 #include "src/core/tsi/ssl_transport_security.h"
 #include "src/core/util/debug_location.h"
@@ -560,7 +561,10 @@ TlsChannelSecurityConnector::UpdateHandshakerFactoryLocked() {
       grpc_get_tsi_tls_version(options_->max_tls_version()), ssl_session_cache_,
       tls_session_key_logger_.get(), options_->crl_directory().c_str(),
       options_->crl_provider(), options_->key_exchange_groups(),
-      &client_handshaker_factory_);
+      options_->exported_keying_material_label().empty()
+          ? nullptr
+          : options_->exported_keying_material_label().c_str(),
+      options_->exported_keying_material_length(), &client_handshaker_factory_);
 }
 
 // -------------------server security connector-------------------

@@ -19,6 +19,8 @@
 #include "src/core/credentials/transport/tls/tls_security_connector.h"
 
 #include <grpc/credentials.h>
+#include <grpc/grpc_security.h>
+#include <grpc/grpc_security_constants.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
 #include <stdlib.h>
@@ -31,6 +33,7 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/transport/auth_context.h"
 #include "src/core/tsi/transport_security.h"
+#include "src/core/tsi/ssl_transport_security.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/unique_type_name.h"
@@ -748,6 +751,48 @@ TEST_F(TlsSecurityConnectorTest,
   ChannelArgs args;
   tls_connector->check_peer(peer, nullptr, args, &auth_context,
                             on_peer_checked);
+}
+
+TEST_F(TlsSecurityConnectorTest, EKMPropertyPropagatedToAuthContext) {
+  auto* sync_verifier = new SyncExternalVerifier(true);
+  ExternalCertificateVerifier core_external_verifier(sync_verifier->base());
+  RefCountedPtr<grpc_tls_credentials_options> options =
+      MakeRefCounted<grpc_tls_credentials_options>();
+  options->set_certificate_verifier(core_external_verifier.Ref());
+  RefCountedPtr<TlsCredentials> credential =
+      MakeRefCounted<TlsCredentials>(options);
+  ChannelArgs new_args;
+  RefCountedPtr<grpc_channel_security_connector> connector =
+      credential->create_security_connector(nullptr, kTargetName, &new_args);
+  EXPECT_NE(connector, nullptr);
+  TlsChannelSecurityConnector* tls_connector =
+      static_cast<TlsChannelSecurityConnector*>(connector.get());
+
+  tsi_peer peer;
+  GRPC_CHECK(tsi_construct_peer(2, &peer) == TSI_OK);
+  const char* alpn_value = "h2";
+  GRPC_CHECK(tsi_construct_string_peer_property(TSI_SSL_ALPN_SELECTED_PROTOCOL,
+                                                alpn_value, strlen(alpn_value),
+                                                &peer.properties[0]) == TSI_OK);
+  const char* ekm_value = "some_exported_keying_material";
+  GRPC_CHECK(tsi_construct_string_peer_property(
+                 TSI_SSL_EXPORTED_KEYING_MATERIAL, ekm_value, strlen(ekm_value),
+                 &peer.properties[1]) == TSI_OK);
+
+  RefCountedPtr<grpc_auth_context> auth_context;
+  ExecCtx exec_ctx;
+  grpc_closure* on_peer_checked = GRPC_CLOSURE_CREATE(
+      VerifyExpectedErrorCallback, nullptr, grpc_schedule_on_exec_ctx);
+  ChannelArgs args;
+  tls_connector->check_peer(peer, nullptr, args, &auth_context,
+                            on_peer_checked);
+
+  EXPECT_NE(auth_context, nullptr);
+  grpc_auth_property_iterator it = grpc_auth_context_find_properties_by_name(
+      auth_context.get(), GRPC_SSL_EXPORTED_KEYING_MATERIAL_PROPERTY_NAME);
+  const grpc_auth_property* prop = grpc_auth_property_iterator_next(&it);
+  EXPECT_NE(prop, nullptr);
+  EXPECT_EQ(absl::string_view(prop->value, prop->value_length), ekm_value);
 }
 
 //

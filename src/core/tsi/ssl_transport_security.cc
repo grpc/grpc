@@ -125,6 +125,8 @@ struct tsi_ssl_handshaker_factory {
 #if defined(OPENSSL_IS_BORINGSSL)
   std::shared_ptr<grpc_core::PrivateKeySigner> key_signer;
 #endif
+  std::string exported_keying_material_label;
+  size_t exported_keying_material_length;
 };
 
 static void tsi_ssl_handshaker_factory_unref(
@@ -218,6 +220,8 @@ struct tsi_ssl_handshaker_result {
   BIO* network_io;
   unsigned char* unused_bytes;
   size_t unused_bytes_size;
+  unsigned char* exported_keying_material;
+  size_t exported_keying_material_length;
 };
 struct tsi_ssl_frame_protector {
   tsi_frame_protector base;
@@ -1856,6 +1860,7 @@ static void tsi_ssl_handshaker_factory_init(
 
   factory->vtable = &handshaker_factory_vtable;
   gpr_ref_init(&factory->refcount, 1);
+  factory->exported_keying_material_length = 0;
 }
 
 // Gets the X509 cert chain in PEM format as a tsi_peer_property.
@@ -1916,6 +1921,7 @@ static tsi_result ssl_handshaker_result_extract_peer(
   if (alpn_selected != nullptr) new_property_count++;
   if (peer_chain != nullptr) new_property_count++;
   if (verified_root_cert != nullptr) new_property_count++;
+  if (impl->exported_keying_material != nullptr) new_property_count++;
   tsi_peer_property* new_properties = static_cast<tsi_peer_property*>(
       gpr_zalloc(sizeof(*new_properties) * new_property_count));
   for (size_t i = 0; i < peer->property_count; i++) {
@@ -1959,6 +1965,16 @@ static tsi_result ssl_handshaker_result_extract_peer(
       VLOG(2) << "Problem extracting subject from verified_root_cert. result: "
               << result;
     }
+    peer->property_count++;
+  }
+
+  if (impl->exported_keying_material != nullptr) {
+    result = tsi_construct_string_peer_property(
+        TSI_SSL_EXPORTED_KEYING_MATERIAL,
+        reinterpret_cast<const char*>(impl->exported_keying_material),
+        impl->exported_keying_material_length,
+        &peer->properties[peer->property_count]);
+    if (result != TSI_OK) return result;
     peer->property_count++;
   }
 
@@ -2033,6 +2049,7 @@ static void ssl_handshaker_result_destroy(tsi_handshaker_result* self) {
   SSL_free(impl->ssl);
   BIO_free(impl->network_io);
   gpr_free(impl->unused_bytes);
+  gpr_free(impl->exported_keying_material);
   gpr_free(impl);
 }
 
@@ -2057,6 +2074,28 @@ static tsi_result ssl_handshaker_result_create(tsi_ssl_handshaker* handshaker,
   tsi_ssl_handshaker_result* result =
       grpc_core::Zalloc<tsi_ssl_handshaker_result>();
   result->base.vtable = &handshaker_result_vtable;
+
+  // Export keying material if requested.
+  if (!handshaker->factory_ref->exported_keying_material_label.empty()) {
+    size_t ekm_len = handshaker->factory_ref->exported_keying_material_length;
+    if (ekm_len == 0) ekm_len = 32;
+
+    result->exported_keying_material =
+        static_cast<unsigned char*>(gpr_malloc(ekm_len));
+    result->exported_keying_material_length = ekm_len;
+
+    if (SSL_export_keying_material(
+            handshaker->ssl, result->exported_keying_material, ekm_len,
+            handshaker->factory_ref->exported_keying_material_label.c_str(),
+            handshaker->factory_ref->exported_keying_material_label.length(),
+            nullptr, 0, 0) != 1) {
+      LOG(ERROR) << "Failed to export keying material.";
+      gpr_free(result->exported_keying_material);
+      result->exported_keying_material = nullptr;
+      result->exported_keying_material_length = 0;
+    }
+  }
+
   // Transfer ownership of ssl and network_io to the handshaker result.
   result->ssl = handshaker->ssl;
   handshaker->ssl = nullptr;
@@ -2878,6 +2917,10 @@ tsi_result tsi_create_ssl_client_handshaker_factory_with_options(
   tsi_ssl_handshaker_factory_init(&impl->base);
   impl->base.vtable = &client_handshaker_factory_vtable;
   impl->ssl_context = ssl_context;
+  impl->base.exported_keying_material_label =
+      options->exported_keying_material_label;
+  impl->base.exported_keying_material_length =
+      options->exported_keying_material_length;
   if (options->session_cache != nullptr) {
     // Unref is called manually on factory destruction.
     impl->session_cache =
@@ -3076,6 +3119,10 @@ tsi_result tsi_create_ssl_server_handshaker_factory_with_options(
   impl = new tsi_ssl_server_handshaker_factory();
   tsi_ssl_handshaker_factory_init(&impl->base);
   impl->base.vtable = &server_handshaker_factory_vtable;
+  impl->base.exported_keying_material_label =
+      options->exported_keying_material_label;
+  impl->base.exported_keying_material_length =
+      options->exported_keying_material_length;
 
   impl->ssl_contexts = static_cast<SSL_CTX**>(
       gpr_zalloc(options->pem_key_cert_pairs.size() * sizeof(SSL_CTX*)));
