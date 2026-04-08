@@ -34,7 +34,6 @@ load("@com_google_protobuf//bazel:cc_proto_library.bzl", "cc_proto_library")
 load("@com_google_protobuf//bazel:upb_proto_library.bzl", "upb_proto_library", "upb_proto_reflection_library")
 load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
-load("@rules_cc//cc:cc_test.bzl", "cc_test")
 load("@rules_proto//proto:defs.bzl", "proto_library")
 load("@rules_python//python:defs.bzl", "py_binary")
 load("@rules_shell//shell:sh_binary.bzl", "sh_binary")
@@ -368,7 +367,7 @@ def expand_poller_config(name, srcs, deps, tags, args, exclude_pollers, uses_pol
             if poller in exclude_pollers:
                 continue
             poller_config.append({
-                "name": name + "@poller=" + poller,
+                "name": name + "_poller_" + poller,
                 "srcs": srcs,
                 "deps": deps,
                 "tags": (tags + EVENT_ENGINES["default"]["tags"] + [
@@ -401,7 +400,7 @@ def expand_poller_config(name, srcs, deps, tags, args, exclude_pollers, uses_pol
             })
         else:
             for engine_name, engine in EVENT_ENGINES.items():
-                test_name = name + "@engine=" + engine_name
+                test_name = name + "_engine_" + engine_name
                 test_tags = tags + engine["tags"] + ["bazel_only"]
                 test_args = args + ["--engine=" + engine_name]
                 if engine_name == "default":
@@ -512,7 +511,7 @@ def expand_tests(name, srcs, deps, tags, args, exclude_pollers, uses_polling, us
                 experiment_params["uses_polling"] = uses_polling and (experiment in experiment_pollers)
                 for config in expand_poller_config(**experiment_params):
                     config = dict(config)
-                    config["name"] = config["name"] + "@experiment=" + experiment
+                    config["name"] = config["name"] + "_experiment_" + experiment
                     env = dict(config["env"])
                     env["GRPC_EXPERIMENTS"] = experiment_enables[experiment]
                     env["GRPC_CI_EXPERIMENTS"] = "1"
@@ -530,7 +529,7 @@ def expand_tests(name, srcs, deps, tags, args, exclude_pollers, uses_polling, us
                 experiment_params["uses_polling"] = uses_polling and (experiment in experiment_pollers)
                 for config in expand_poller_config(**experiment_params):
                     config = dict(config)
-                    config["name"] = config["name"] + "@experiment=no_" + experiment
+                    config["name"] = config["name"] + "_experiment_no_" + experiment
                     env = dict(config["env"])
                     env["GRPC_EXPERIMENTS"] = "-" + experiment
                     env["GRPC_CI_EXPERIMENTS"] = "1"
@@ -604,19 +603,37 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
         alwayslink = 1,
     )
 
+    cc_binary(
+        name = "%s_BIN" % name,
+        deps = ["%s_TEST_LIBRARY" % name],
+        testonly = 1,
+        copts = GRPC_DEFAULT_COPTS + copts,
+        linkopts = if_not_windows(["-pthread"]) + if_windows(["-defaultlib:ws2_32.lib"]),
+        linkstatic = linkstatic,
+        exec_compatible_with = exec_compatible_with,
+        exec_properties = exec_properties,
+        data = data,
+        tags = tags,
+    )
+
     for poller_config in expand_tests(name, srcs, core_deps, tags, args, exclude_pollers, uses_polling, uses_event_engine, flaky):
         if poller_config["srcs"] != srcs:
             fail("srcs changed")
         if poller_config["deps"] != core_deps:
             fail("deps changed: %r --> %r" % (deps, poller_config["deps"]))
-        cc_test(
+        sh_test(
             name = poller_config["name"],
-            deps = ["%s_TEST_LIBRARY" % name],
+            srcs = [":%s_BIN" % name],
             tags = poller_config["tags"],
             args = poller_config["args"],
             env = poller_config["env"],
             flaky = poller_config["flaky"],
-            **test_args
+            size = size,
+            timeout = timeout,
+            shard_count = shard_count,
+            data = data,
+            exec_compatible_with = exec_compatible_with,
+            exec_properties = exec_properties,
         )
 
 def grpc_cc_binary(name, srcs = [], deps = [], external_deps = [], args = [], data = [], testonly = False, linkshared = False, linkopts = [], tags = [], target_compatible_with = [], features = [], visibility = None):
