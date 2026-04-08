@@ -128,7 +128,6 @@ export GRPC_PYTHON_BUILD_EXT_COMPILER_JOBS=${GRPC_PYTHON_BUILD_EXT_COMPILER_JOBS
 source tools/internal_ci/helper_scripts/prepare_ccache_symlinks_rc
 
 source tools/internal_ci/helper_scripts/print_ccache_stats.sh
-exit 0
 
 ############################
 # Perform build operations #
