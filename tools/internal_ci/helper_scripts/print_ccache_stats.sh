@@ -13,7 +13,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-set -ex
+echo "============TEST LOG: ${0} ==================================="
+echo "PATH: ${PATH}"
+echo "GRPC_BUILD_ENABLE_CCACHE: ${GRPC_BUILD_ENABLE_CCACHE}"
+echo "CCACHE_BINARY_PATH: ${CCACHE_BINARY_PATH}"
+echo "CCACHE_SECONDARY_STORAGE: ${CCACHE_SECONDARY_STORAGE}"
 if [ -x "$(command -v ccache)" ]
 then
   ccache --show-stats || true

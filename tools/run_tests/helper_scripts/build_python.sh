@@ -127,11 +127,7 @@ export GRPC_PYTHON_BUILD_EXT_COMPILER_JOBS=${GRPC_PYTHON_BUILD_EXT_COMPILER_JOBS
 # shellcheck disable=SC1091
 source tools/internal_ci/helper_scripts/prepare_ccache_symlinks_rc
 
-echo "============TEST LOG=========================================="
-echo "PATH: ${PATH}"
-echo "GRPC_BUILD_ENABLE_CCACHE: ${GRPC_BUILD_ENABLE_CCACHE}"
-echo "CCACHE_BINARY_PATH: ${CCACHE_BINARY_PATH}"
-echo "CCACHE_SECONDARY_STORAGE: ${CCACHE_SECONDARY_STORAGE}"
+source tools/internal_ci/helper_scripts/print_ccache_stats.sh
 exit 0
 
 ############################

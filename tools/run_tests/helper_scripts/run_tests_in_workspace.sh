@@ -19,6 +19,8 @@
 # newly created workspace)
 set -ex
 
+source tools/internal_ci/helper_scripts/print_ccache_stats.sh
+
 cd "$(dirname "$0")/../../.."
 repo_root="$(pwd)"
 export repo_root
@@ -30,7 +32,9 @@ git clone . "${WORKSPACE_NAME}"
 git submodule foreach 'cd "${repo_root}/${WORKSPACE_NAME}" \
     && git submodule update --init --reference ${repo_root}/${name} ${name}'
 
+
 echo "Running run_tests.py in workspace ${WORKSPACE_NAME}"
+
 python3 "${WORKSPACE_NAME}/tools/run_tests/run_tests.py" "$@"
 if [ -x "$(command -v ccache)" ]
 then

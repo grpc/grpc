@@ -29,6 +29,9 @@ cd "$(dirname "$0")/../../.."
 
 rm -rf ./tmp
 
+source tools/internal_ci/helper_scripts/print_ccache_stats.sh
+exit 0
+
 SYSTEM=$(uname | cut -f 1 -d_)
 if [ "$SYSTEM" == "Darwin" ]; then
   # work around https://github.com/rake-compiler/rake-compiler/issues/210

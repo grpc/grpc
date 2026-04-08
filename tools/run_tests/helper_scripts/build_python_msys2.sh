@@ -19,3 +19,4 @@ BUILD_PYTHON=$(realpath "$(dirname "$0")/build_python.sh")
 export MSYSTEM=$1
 shift 1
 bash --login "$BUILD_PYTHON" "$@"
+source tools/internal_ci/helper_scripts/print_ccache_stats.sh
