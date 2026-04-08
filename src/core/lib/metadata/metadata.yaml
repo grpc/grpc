@@ -1,0 +1,197 @@
+metadata_traits:
+- name: HttpPathMetadata
+  repeatable: false
+  storage: Slice
+- name: HttpAuthorityMetadata
+  repeatable: false
+  storage: Slice
+- name: HttpMethodMetadata
+  repeatable: false
+  storage: HttpMethodMetadata::ValueType
+- name: HttpStatusMetadata
+  repeatable: false
+  storage: uint32_t
+- name: HttpSchemeMetadata
+  parse_memento: return Parse(value.as_string_view(), on_error);
+  repeatable: false
+  storage: HttpSchemeMetadata::ValueType
+- enum:
+    members:
+    - kApplicationGrpc
+    - kEmpty
+    - kInvalid
+    underlying_type: uint8_t
+  name: ContentTypeMetadata
+  repeatable: false
+  storage: ContentTypeMetadata::ValueType
+- compression: KnownValueCompressor<ValueType, kTrailers>
+  display_value: if (x == kTrailers) return "trailers"; return "invalid";
+  encode: "GRPC_CHECK(x == kTrailers);\n    return StaticSlice::FromStaticString(\"\
+    trailers\");"
+  enum:
+    members:
+    - kTrailers
+    - kInvalid
+    underlying_type: uint8_t
+  name: TeMetadata
+  parse_memento: if (value == StaticSlice::FromStaticString("trailers")) return kTrailers;
+    return kInvalid;
+  repeatable: false
+  storage: TeMetadata::ValueType
+- name: GrpcEncodingMetadata
+  repeatable: false
+  storage: grpc_compression_algorithm
+- name: GrpcInternalEncodingRequest
+  repeatable: false
+  storage: grpc_compression_algorithm
+- display_value: return x.ToString();
+  encode: return x.ToSlice();
+  name: GrpcAcceptEncodingMetadata
+  parse_memento: return CompressionAlgorithmSet::FromString(value.as_string_view());
+  repeatable: false
+  storage: CompressionAlgorithmSet
+- display_value: "switch (x) {\n      case GRPC_STATUS_OK:\n        return \"OK\"\
+    ;\n      case GRPC_STATUS_CANCELLED:\n        return \"CANCELLED\";\n      case\
+    \ GRPC_STATUS_UNKNOWN:\n        return \"UNKNOWN\";\n      case GRPC_STATUS_INVALID_ARGUMENT:\n\
+    \        return \"INVALID_ARGUMENT\";\n      case GRPC_STATUS_DEADLINE_EXCEEDED:\n\
+    \        return \"DEADLINE_EXCEEDED\";\n      case GRPC_STATUS_NOT_FOUND:\n  \
+    \      return \"NOT_FOUND\";\n      case GRPC_STATUS_ALREADY_EXISTS:\n       \
+    \ return \"ALREADY_EXISTS\";\n      case GRPC_STATUS_PERMISSION_DENIED:\n    \
+    \    return \"PERMISSION_DENIED\";\n      case GRPC_STATUS_RESOURCE_EXHAUSTED:\n\
+    \        return \"RESOURCE_EXHAUSTED\";\n      case GRPC_STATUS_FAILED_PRECONDITION:\n\
+    \        return \"FAILED_PRECONDITION\";\n      case GRPC_STATUS_ABORTED:\n  \
+    \      return \"ABORTED\";\n      case GRPC_STATUS_OUT_OF_RANGE:\n        return\
+    \ \"OUT_OF_RANGE\";\n      case GRPC_STATUS_UNIMPLEMENTED:\n        return \"\
+    UNIMPLEMENTED\";\n      case GRPC_STATUS_INTERNAL:\n        return \"INTERNAL\"\
+    ;\n      case GRPC_STATUS_UNAVAILABLE:\n        return \"UNAVAILABLE\";\n    \
+    \  case GRPC_STATUS_DATA_LOSS:\n        return \"DATA_LOSS\";\n      case GRPC_STATUS_UNAUTHENTICATED:\n\
+    \        return \"UNAUTHENTICATED\";\n      default:\n        return absl::StrCat(\"\
+    UNKNOWN(\", static_cast<int>(x), \")\");"
+  encode: return Slice::FromInt64(x);
+  name: GrpcStatusMetadata
+  repeatable: false
+  storage: grpc_status_code
+- display_value: return x.ToString();
+  name: GrpcTimeoutMetadata
+  repeatable: false
+  storage: Timestamp
+- name: GrpcPreviousRpcAttemptsMetadata
+  repeatable: false
+  storage: uint32_t
+- display_value: return x.millis();
+  encode: return Slice::FromInt64(x.millis());
+  name: GrpcRetryPushbackMsMetadata
+  repeatable: false
+  storage: Duration
+- name: UserAgentMetadata
+  repeatable: false
+  storage: Slice
+- name: GrpcMessageMetadata
+  repeatable: false
+  storage: Slice
+- name: HostMetadata
+  repeatable: false
+  storage: Slice
+- name: EndpointLoadMetricsBinMetadata
+  repeatable: false
+  storage: Slice
+- name: GrpcServerStatsBinMetadata
+  repeatable: false
+  storage: Slice
+- name: GrpcTraceBinMetadata
+  repeatable: false
+  storage: Slice
+- name: GrpcTagsBinMetadata
+  repeatable: false
+  storage: Slice
+- display_value: return "<internal-lb-stats>";
+  encode: abort();
+  name: GrpcLbClientStatsMetadata
+  parse_memento: "error(\"not a valid value for grpclb_client_stats\", Slice());\n\
+    \    return nullptr;"
+  repeatable: false
+  storage: GrpcLbClientStats*
+- display_value: 'return absl::StrCat(x.name, ":", x.cost);
+
+    '
+  encode: 'auto slice = MutableSlice::CreateUninitialized(sizeof(double) + x.name.length());
+
+    memcpy(slice.data(), &x.cost, sizeof(double));
+
+    memcpy(slice.data() + sizeof(double), x.name.data(), x.name.length());
+
+    return Slice(std::move(slice));
+
+    '
+  name: LbCostBinMetadata
+  parse_memento: "if (value.length() < sizeof(double)) {\n  on_error(\"too short\"\
+    , value);\n  return {0, \"\"};\n}\nMementoType out;\nmemcpy(&out.cost, value.data(),\
+    \ sizeof(double));\nout.name = std::string(reinterpret_cast<const char*>(value.data())\
+    \ + sizeof(double), value.length() - sizeof(double));\nreturn out;\n"
+  repeatable: true
+  storage: LbCostBinMetadata::ValueType
+- name: LbTokenMetadata
+  repeatable: false
+  storage: Slice
+- name: XEnvoyPeerMetadata
+  repeatable: false
+  storage: Slice
+- name: XForwardedForMetadata
+  repeatable: false
+  storage: Slice
+- name: XForwardedHostMetadata
+  repeatable: false
+  storage: Slice
+- name: W3CTraceParentMetadata
+  repeatable: false
+  storage: Slice
+- enum:
+    members:
+    - kNotSentOnWire
+    - kNotSeenByServer
+    underlying_type: uint8_t
+  is_encodable: false
+  name: GrpcStreamNetworkState
+  repeatable: false
+  storage: GrpcStreamNetworkState::ValueType
+- is_encodable: false
+  name: PeerString
+  repeatable: false
+  storage: Slice
+- is_encodable: false
+  name: GrpcStatusContext
+  repeatable: true
+  storage: std::string
+- display_value: 'return x ? "true" : "false";'
+  is_encodable: false
+  name: GrpcStatusFromWire
+  repeatable: false
+  storage: bool
+- display_value: 'return x ? "true" : "false";'
+  is_encodable: false
+  name: GrpcCallWasCancelled
+  repeatable: false
+  storage: bool
+- is_encodable: false
+  name: WaitForReady
+  repeatable: false
+  storage: WaitForReady::ValueType
+- display_value: 'return x ? "true" : "false";'
+  is_encodable: false
+  name: IsTransparentRetry
+  repeatable: false
+  storage: bool
+- display_value: 'return x ? "true" : "false";'
+  is_encodable: false
+  name: GrpcTrailersOnly
+  repeatable: false
+  storage: bool
+- display_value: return "tarpit";
+  is_encodable: false
+  name: GrpcTarPit
+  repeatable: false
+  storage: Empty
+- is_encodable: false
+  name: GrpcRegisteredMethod
+  repeatable: false
+  storage: void*
