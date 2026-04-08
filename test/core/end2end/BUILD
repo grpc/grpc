@@ -13,7 +13,7 @@
 # limitations under the License.
 
 load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_proto_library", "grpc_cc_test", "grpc_internal_proto_library", "grpc_package")
-load("//test/core/end2end:grpc_core_end2end_test.bzl", "grpc_core_end2end_test_suite")
+load("//test/core/end2end:grpc_core_end2end_test.bzl", "grpc_core_end2end_test_suite", "grpc_core_end2end_test_suite_shared_lib")
 
 licenses(["notice"])
 
@@ -33,6 +33,8 @@ exports_files(
         "//bazel:core_end2end_tests",
     ],
 )
+
+grpc_core_end2end_test_suite_shared_lib()
 
 grpc_cc_library(
     name = "cq_verifier",

@@ -16,7 +16,7 @@
 Generate one e2e test & associated fuzzer
 """
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_test")
+load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test")
 load(
     "//test/core/test_util:grpc_fuzzer.bzl",
     "grpc_fuzz_test",
@@ -208,6 +208,35 @@ _TESTS = [
     "write_buffering_at_end",
 ]
 
+def grpc_core_end2end_test_suite_shared_lib():
+    grpc_cc_library(
+        name = "grpc_core_end2end_test_suite_shared_lib_test",
+        testonly = True,
+        srcs = [
+            "//test/core/end2end:tests/%s.cc" % t
+            for t in _TESTS
+        ],
+        external_deps = _EXTERNAL_DEPS + ["gtest_main"],
+        deps = _DEPS + [
+            "//test/core/end2end:end2end_test_lib_no_fuzztest_gtest",
+        ],
+        data = _DATA,
+    )
+
+    grpc_cc_library(
+        name = "grpc_core_end2end_test_suite_shared_lib_fuzzer",
+        testonly = True,
+        srcs = [
+            "//test/core/end2end:tests/%s.cc" % t
+            for t in _TESTS
+        ],
+        external_deps = _EXTERNAL_DEPS + ["fuzztest", "fuzztest_main"],
+        deps = _DEPS + [
+            "//test/core/end2end:end2end_test_lib_fuzztest_no_gtest",
+        ],
+        data = _DATA,
+    )
+
 def grpc_core_end2end_test_suite(
         name,
         config_src,
@@ -237,15 +266,8 @@ def grpc_core_end2end_test_suite(
 
     grpc_cc_test(
         name = name + "_test",
-        srcs = [config_src] + [
-            "//test/core/end2end:tests/%s.cc" % t
-            for t in _TESTS
-        ],
-        external_deps = _EXTERNAL_DEPS + ["gtest_main"],
-        deps = _DEPS + deps + [
-            "//test/core/end2end:end2end_test_lib_no_fuzztest_gtest",
-        ],
-        data = _DATA,
+        srcs = [config_src],
+        deps = deps + [":grpc_core_end2end_test_suite_shared_lib_test"],
         shard_count = shard_count,
         tags = tags + ["core_end2end_test"],
         flaky = flaky,
@@ -255,16 +277,11 @@ def grpc_core_end2end_test_suite(
     if enable_fuzzing:
         grpc_fuzz_test(
             name = name + "_fuzzer",
-            srcs = [config_src] + [
-                "//test/core/end2end:tests/%s.cc" % t
-                for t in _TESTS
-            ],
-            external_deps = _EXTERNAL_DEPS + ["fuzztest", "fuzztest_main"],
+            srcs = [config_src],
             shard_count = shard_count,
-            deps = _DEPS + deps + [
-                "//test/core/end2end:end2end_test_lib_fuzztest_no_gtest",
+            deps = deps + [
+                ":grpc_core_end2end_test_suite_shared_lib_fuzzer",
             ],
-            data = _DATA,
             **kwargs
         )
 
@@ -272,11 +289,9 @@ def grpc_core_end2end_test_suite(
         grpc_cc_test(
             name = name + "_no_logging_test",
             srcs = [config_src, "//test/core/end2end:tests/no_logging.cc"],
-            external_deps = _EXTERNAL_DEPS + ["gtest_main"],
-            deps = _DEPS + deps + [
-                "//test/core/end2end:end2end_test_lib_no_fuzztest_gtest",
+            deps = deps + [
+                ":grpc_core_end2end_test_suite_shared_lib_test",
             ],
-            data = _DATA,
             shard_count = shard_count,
             tags = tags + ["core_end2end_test", "grpc:fails-internally", "grpc:no-internal-poller"],
             flaky = flaky,
@@ -287,11 +302,9 @@ def grpc_core_end2end_test_suite(
         grpc_fuzz_test(
             name = name + "_no_logging_fuzzer",
             srcs = [config_src, "//test/core/end2end:tests/no_logging.cc"],
-            external_deps = _EXTERNAL_DEPS + ["fuzztest", "fuzztest_main"],
             shard_count = shard_count,
-            deps = _DEPS + deps + [
-                "//test/core/end2end:end2end_test_lib_fuzztest_no_gtest",
+            deps = deps + [
+                ":grpc_core_end2end_test_suite_shared_lib_fuzzer",
             ],
-            data = _DATA,
             **kwargs
         )
