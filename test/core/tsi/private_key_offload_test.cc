@@ -25,6 +25,7 @@
 
 #include "src/core/lib/iomgr/timer_manager.h"
 #include "src/core/tsi/ssl_transport_security.h"
+#include "src/core/tsi/transport_security.h"
 #include "src/core/util/wait_for_single_owner.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
 #include "test/core/test_util/test_config.h"
@@ -204,7 +205,6 @@ class AsyncTestPrivateKeySigner final
 enum class OffloadParty {
   kClient,
   kServer,
-  kNone,
 };
 
 class SslOffloadTsiTestFixture {
@@ -334,6 +334,9 @@ class SslOffloadTsiTestFixture {
       tsi_peer peer;
       EXPECT_EQ(tsi_handshaker_result_extract_peer(base_.client_result, &peer),
                 TSI_OK);
+      if (!sni_.empty()) {
+        EXPECT_EQ(tsi_ssl_peer_matches_name(&peer, sni_), 1);
+      }
       tsi_peer_destruct(&peer);
       EXPECT_EQ(tsi_handshaker_result_extract_peer(base_.server_result, &peer),
                 TSI_OK);

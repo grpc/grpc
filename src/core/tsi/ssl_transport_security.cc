@@ -25,7 +25,6 @@
 
 #include <cstddef>
 #include <cstdlib>
-#include <map>
 #include <utility>
 
 // TODO(jboeuf): refactor inet_ntop into a portability header.
@@ -141,6 +140,10 @@ struct tsi_ssl_client_handshaker_factory {
 #endif
 };
 
+// Wrapper of the SSL_CTX for use on the server side. In addition to the
+// SSL_CTX, it carries extra state that is needed for the server side SSL
+// handshake, e.g. the server name for checking whether this SSL_CTX
+// corresponds to a particular SNI.
 struct SslContext {
   SSL_CTX* ssl_ctx;
   tsi_peer x509_subject_name;
@@ -2719,8 +2722,7 @@ static void tsi_ssl_server_handshaker_factory_destroy(
   if (factory == nullptr) return;
   tsi_ssl_server_handshaker_factory* self =
       reinterpret_cast<tsi_ssl_server_handshaker_factory*>(factory);
-  size_t i;
-  for (i = 0; i < self->ssl_contexts.size(); i++) {
+  for (size_t i = 0; i < self->ssl_contexts.size(); i++) {
     if (self->ssl_contexts[i].ssl_ctx != nullptr) {
       SSL_CTX_free(self->ssl_contexts[i].ssl_ctx);
       tsi_peer_destruct(&self->ssl_contexts[i].x509_subject_name);
@@ -2775,13 +2777,12 @@ static int ssl_server_handshaker_factory_servername_callback(SSL* ssl,
                                                              void* arg) {
   tsi_ssl_server_handshaker_factory* impl =
       static_cast<tsi_ssl_server_handshaker_factory*>(arg);
-  size_t i = 0;
   const char* servername = SSL_get_servername(ssl, TLSEXT_NAMETYPE_host_name);
   if (servername == nullptr || strlen(servername) == 0) {
     return SSL_TLSEXT_ERR_NOACK;
   }
 
-  for (i = 0; i < impl->ssl_contexts.size(); i++) {
+  for (size_t i = 0; i < impl->ssl_contexts.size(); i++) {
     if (tsi_ssl_peer_matches_name(&impl->ssl_contexts[i].x509_subject_name,
                                   servername)) {
       SSL_set_SSL_CTX(ssl, impl->ssl_contexts[i].ssl_ctx);
@@ -3123,174 +3124,170 @@ tsi_result tsi_create_ssl_server_handshaker_factory_with_options(
   }
 
   for (i = 0; i < options->pem_key_cert_pairs.size(); i++) {
-    do {
-      SslContext ssl_context;
+    SslContext ssl_context;
 #if OPENSSL_VERSION_NUMBER >= 0x10100000
-      ssl_context.ssl_ctx = SSL_CTX_new(TLS_method());
+    ssl_context.ssl_ctx = SSL_CTX_new(TLS_method());
 #else
-      ssl_context.ssl_ctx = SSL_CTX_new(TLSv1_2_method());
+    ssl_context.ssl_ctx = SSL_CTX_new(TLSv1_2_method());
 #endif
 #if OPENSSL_VERSION_NUMBER >= 0x10101000 && !defined(LIBRESSL_VERSION_NUMBER)
-      SSL_CTX_set_options(ssl_context.ssl_ctx, SSL_OP_NO_RENEGOTIATION);
+    SSL_CTX_set_options(ssl_context.ssl_ctx, SSL_OP_NO_RENEGOTIATION);
 #endif
-      if (ssl_context.ssl_ctx == nullptr) {
-        tsi::LogSslErrorStack();
-        LOG(ERROR) << "Could not create ssl context.";
-        result = TSI_OUT_OF_RESOURCES;
-        break;
-      }
+    if (ssl_context.ssl_ctx == nullptr) {
+      tsi::LogSslErrorStack();
+      LOG(ERROR) << "Could not create ssl context.";
+      result = TSI_OUT_OF_RESOURCES;
+      break;
+    }
 
-      result = tsi_set_min_and_max_tls_versions(ssl_context.ssl_ctx,
-                                                options->min_tls_version,
-                                                options->max_tls_version);
-      if (result != TSI_OK) return result;
+    result = tsi_set_min_and_max_tls_versions(ssl_context.ssl_ctx,
+                                              options->min_tls_version,
+                                              options->max_tls_version);
+    if (result != TSI_OK) return result;
 
-      result = populate_ssl_context(
-          ssl_context.ssl_ctx, &options->pem_key_cert_pairs[i],
-          options->cipher_suites, options->key_exchange_groups);
-      if (result != TSI_OK) break;
+    result = populate_ssl_context(
+        ssl_context.ssl_ctx, &options->pem_key_cert_pairs[i],
+        options->cipher_suites, options->key_exchange_groups);
+    if (result != TSI_OK) break;
 
 #if defined(OPENSSL_IS_BORINGSSL)
-      grpc_core::Match(
-          options->pem_key_cert_pairs[i].private_key, [](const std::string&) {},
-          [&](const std::shared_ptr<grpc_core::PrivateKeySigner>& key_signer) {
-            ssl_context.key_signer = key_signer;
-          });
+    grpc_core::Match(
+        options->pem_key_cert_pairs[i].private_key, [](const std::string&) {},
+        [&](const std::shared_ptr<grpc_core::PrivateKeySigner>& key_signer) {
+          ssl_context.key_signer = key_signer;
+        });
 #endif
 
-      // TODO(elessar): Provide ability to disable session ticket keys.
+    // TODO(elessar): Provide ability to disable session ticket keys.
 
-      // Allow client cache sessions (it's needed for OpenSSL only).
-      int set_sid_ctx_result = SSL_CTX_set_session_id_context(
-          ssl_context.ssl_ctx, kSslSessionIdContext,
-          GPR_ARRAY_SIZE(kSslSessionIdContext));
-      if (set_sid_ctx_result == 0) {
-        LOG(ERROR) << "Failed to set session id context.";
-        result = TSI_INTERNAL_ERROR;
+    // Allow client cache sessions (it's needed for OpenSSL only).
+    int set_sid_ctx_result = SSL_CTX_set_session_id_context(
+        ssl_context.ssl_ctx, kSslSessionIdContext,
+        GPR_ARRAY_SIZE(kSslSessionIdContext));
+    if (set_sid_ctx_result == 0) {
+      LOG(ERROR) << "Failed to set session id context.";
+      result = TSI_INTERNAL_ERROR;
+      break;
+    }
+
+    if (options->session_ticket_key != nullptr) {
+      if (SSL_CTX_set_tlsext_ticket_keys(
+              ssl_context.ssl_ctx,
+              const_cast<char*>(options->session_ticket_key),
+              options->session_ticket_key_size) == 0) {
+        LOG(ERROR) << "Invalid STEK size.";
+        result = TSI_INVALID_ARGUMENT;
         break;
       }
-
-      if (options->session_ticket_key != nullptr) {
-        if (SSL_CTX_set_tlsext_ticket_keys(
-                ssl_context.ssl_ctx,
-                const_cast<char*>(options->session_ticket_key),
-                options->session_ticket_key_size) == 0) {
-          LOG(ERROR) << "Invalid STEK size.";
-          result = TSI_INVALID_ARGUMENT;
-          break;
-        }
+    }
+    if (options->root_cert_info != nullptr) {
+      Match(
+          *options->root_cert_info,
+          [&](const std::string& pem_root_certs) {
+            STACK_OF(X509_NAME)* root_names = nullptr;
+            result = ssl_ctx_load_verification_certs(
+                ssl_context.ssl_ctx, pem_root_certs.c_str(),
+                pem_root_certs.size(), nullptr);
+            if (result != TSI_OK) {
+              LOG(ERROR) << "Invalid verification certs.";
+            }
+            if (options->send_client_ca_list) {
+              SSL_CTX_set_client_CA_list(ssl_context.ssl_ctx, root_names);
+            }
+          },
+          [&](const grpc_core::SpiffeBundleMap& spiffe_bundle_map) {
+            X509_STORE* cert_store =
+                SSL_CTX_get_cert_store(ssl_context.ssl_ctx);
+            X509_STORE_set_flags(cert_store, X509_V_FLAG_PARTIAL_CHAIN |
+                                                 X509_V_FLAG_TRUSTED_FIRST);
+            const void* p = &spiffe_bundle_map;
+            void* map = const_cast<void*>(p);
+            SSL_CTX_set_ex_data(ssl_context.ssl_ctx,
+                                g_ssl_ctx_ex_spiffe_bundle_map_index, map);
+          });
+      if (result != TSI_OK) {
+        break;
       }
-      if (options->root_cert_info != nullptr) {
-        Match(
-            *options->root_cert_info,
-            [&](const std::string& pem_root_certs) {
-              STACK_OF(X509_NAME)* root_names = nullptr;
-              result = ssl_ctx_load_verification_certs(
-                  ssl_context.ssl_ctx, pem_root_certs.c_str(),
-                  pem_root_certs.size(), nullptr);
-              if (result != TSI_OK) {
-                LOG(ERROR) << "Invalid verification certs.";
-              }
-              if (options->send_client_ca_list) {
-                SSL_CTX_set_client_CA_list(ssl_context.ssl_ctx, root_names);
-              }
-            },
-            [&](const grpc_core::SpiffeBundleMap& spiffe_bundle_map) {
-              X509_STORE* cert_store =
-                  SSL_CTX_get_cert_store(ssl_context.ssl_ctx);
-              X509_STORE_set_flags(cert_store, X509_V_FLAG_PARTIAL_CHAIN |
-                                                   X509_V_FLAG_TRUSTED_FIRST);
-              const void* p = &spiffe_bundle_map;
-              void* map = const_cast<void*>(p);
-              SSL_CTX_set_ex_data(ssl_context.ssl_ctx,
-                                  g_ssl_ctx_ex_spiffe_bundle_map_index, map);
-            });
-        if (result != TSI_OK) {
-          break;
-        }
-      }
-      switch (options->client_certificate_request) {
-        case TSI_DONT_REQUEST_CLIENT_CERTIFICATE:
-          SSL_CTX_set_verify(ssl_context.ssl_ctx, SSL_VERIFY_NONE, nullptr);
-          break;
-        case TSI_REQUEST_CLIENT_CERTIFICATE_BUT_DONT_VERIFY:
-          SSL_CTX_set_verify(ssl_context.ssl_ctx, SSL_VERIFY_PEER, nullptr);
-          SSL_CTX_set_cert_verify_callback(ssl_context.ssl_ctx,
-                                           NullVerifyCallback, nullptr);
-          break;
-        case TSI_REQUEST_CLIENT_CERTIFICATE_AND_VERIFY:
-          SSL_CTX_set_verify(ssl_context.ssl_ctx, SSL_VERIFY_PEER, nullptr);
-          SSL_CTX_set_cert_verify_callback(ssl_context.ssl_ctx,
-                                           CustomVerificationFunction, nullptr);
-          break;
-        case TSI_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_BUT_DONT_VERIFY:
-          SSL_CTX_set_verify(ssl_context.ssl_ctx,
-                             SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT,
-                             nullptr);
-          SSL_CTX_set_cert_verify_callback(ssl_context.ssl_ctx,
-                                           NullVerifyCallback, nullptr);
-          break;
-        case TSI_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY:
-          SSL_CTX_set_verify(ssl_context.ssl_ctx,
-                             SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT,
-                             nullptr);
-          SSL_CTX_set_cert_verify_callback(ssl_context.ssl_ctx,
-                                           CustomVerificationFunction, nullptr);
-          break;
-      }
+    }
+    switch (options->client_certificate_request) {
+      case TSI_DONT_REQUEST_CLIENT_CERTIFICATE:
+        SSL_CTX_set_verify(ssl_context.ssl_ctx, SSL_VERIFY_NONE, nullptr);
+        break;
+      case TSI_REQUEST_CLIENT_CERTIFICATE_BUT_DONT_VERIFY:
+        SSL_CTX_set_verify(ssl_context.ssl_ctx, SSL_VERIFY_PEER, nullptr);
+        SSL_CTX_set_cert_verify_callback(ssl_context.ssl_ctx,
+                                         NullVerifyCallback, nullptr);
+        break;
+      case TSI_REQUEST_CLIENT_CERTIFICATE_AND_VERIFY:
+        SSL_CTX_set_verify(ssl_context.ssl_ctx, SSL_VERIFY_PEER, nullptr);
+        SSL_CTX_set_cert_verify_callback(ssl_context.ssl_ctx,
+                                         CustomVerificationFunction, nullptr);
+        break;
+      case TSI_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_BUT_DONT_VERIFY:
+        SSL_CTX_set_verify(ssl_context.ssl_ctx,
+                           SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT,
+                           nullptr);
+        SSL_CTX_set_cert_verify_callback(ssl_context.ssl_ctx,
+                                         NullVerifyCallback, nullptr);
+        break;
+      case TSI_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY:
+        SSL_CTX_set_verify(ssl_context.ssl_ctx,
+                           SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT,
+                           nullptr);
+        SSL_CTX_set_cert_verify_callback(ssl_context.ssl_ctx,
+                                         CustomVerificationFunction, nullptr);
+        break;
+    }
 
 #if OPENSSL_VERSION_NUMBER >= 0x10100000 && !defined(LIBRESSL_VERSION_NUMBER)
-      if (options->crl_provider != nullptr) {
-        SSL_CTX_set_ex_data(ssl_context.ssl_ctx,
-                            g_ssl_ctx_ex_crl_provider_index,
-                            options->crl_provider.get());
-      } else if (options->crl_directory != nullptr &&
-                 strcmp(options->crl_directory, "") != 0) {
-        X509_STORE* cert_store = SSL_CTX_get_cert_store(ssl_context.ssl_ctx);
-        X509_STORE_set_verify_cb(cert_store, verify_cb);
-        if (!X509_STORE_load_locations(cert_store, nullptr,
-                                       options->crl_directory)) {
-          LOG(ERROR) << "Failed to load CRL File from directory.";
-        } else {
-          X509_VERIFY_PARAM* param = X509_STORE_get0_param(cert_store);
-          X509_VERIFY_PARAM_set_flags(
-              param, X509_V_FLAG_CRL_CHECK | X509_V_FLAG_CRL_CHECK_ALL);
-        }
+    if (options->crl_provider != nullptr) {
+      SSL_CTX_set_ex_data(ssl_context.ssl_ctx, g_ssl_ctx_ex_crl_provider_index,
+                          options->crl_provider.get());
+    } else if (options->crl_directory != nullptr &&
+               strcmp(options->crl_directory, "") != 0) {
+      X509_STORE* cert_store = SSL_CTX_get_cert_store(ssl_context.ssl_ctx);
+      X509_STORE_set_verify_cb(cert_store, verify_cb);
+      if (!X509_STORE_load_locations(cert_store, nullptr,
+                                     options->crl_directory)) {
+        LOG(ERROR) << "Failed to load CRL File from directory.";
+      } else {
+        X509_VERIFY_PARAM* param = X509_STORE_get0_param(cert_store);
+        X509_VERIFY_PARAM_set_flags(
+            param, X509_V_FLAG_CRL_CHECK | X509_V_FLAG_CRL_CHECK_ALL);
       }
+    }
 #endif
 
-      result = tsi_ssl_extract_x509_subject_names_from_pem_cert(
-          options->pem_key_cert_pairs[i].cert_chain.c_str(),
-          &ssl_context.x509_subject_name);
-      if (result != TSI_OK) break;
+    result = tsi_ssl_extract_x509_subject_names_from_pem_cert(
+        options->pem_key_cert_pairs[i].cert_chain.c_str(),
+        &ssl_context.x509_subject_name);
+    if (result != TSI_OK) break;
 
-      SSL_CTX_set_tlsext_servername_callback(
-          ssl_context.ssl_ctx,
-          ssl_server_handshaker_factory_servername_callback);
-      SSL_CTX_set_tlsext_servername_arg(ssl_context.ssl_ctx, impl);
+    SSL_CTX_set_tlsext_servername_callback(
+        ssl_context.ssl_ctx, ssl_server_handshaker_factory_servername_callback);
+    SSL_CTX_set_tlsext_servername_arg(ssl_context.ssl_ctx, impl);
 #if TSI_OPENSSL_ALPN_SUPPORT
-      SSL_CTX_set_alpn_select_cb(ssl_context.ssl_ctx,
-                                 ServerHandshakerFactoryAlpnCallback, impl);
+    SSL_CTX_set_alpn_select_cb(ssl_context.ssl_ctx,
+                               ServerHandshakerFactoryAlpnCallback, impl);
 #endif  // TSI_OPENSSL_ALPN_SUPPORT
-      SSL_CTX_set_next_protos_advertised_cb(
-          ssl_context.ssl_ctx,
-          server_handshaker_factory_npn_advertised_callback, impl);
+    SSL_CTX_set_next_protos_advertised_cb(
+        ssl_context.ssl_ctx, server_handshaker_factory_npn_advertised_callback,
+        impl);
 
 #if OPENSSL_VERSION_NUMBER >= 0x10101000 && !defined(LIBRESSL_VERSION_NUMBER)
-      // Register factory at index
-      if (options->key_logger != nullptr) {
-        // Need to set factory at g_ssl_ctx_ex_factory_index
-        SSL_CTX_set_ex_data(ssl_context.ssl_ctx, g_ssl_ctx_ex_factory_index,
-                            impl);
-        // SSL_CTX_set_keylog_callback is set here to register callback
-        // when ssl/tls handshakes complete.
-        SSL_CTX_set_keylog_callback(
-            ssl_context.ssl_ctx,
-            ssl_keylogging_callback<tsi_ssl_server_handshaker_factory>);
-      }
+    // Register factory at index
+    if (options->key_logger != nullptr) {
+      // Need to set factory at g_ssl_ctx_ex_factory_index
+      SSL_CTX_set_ex_data(ssl_context.ssl_ctx, g_ssl_ctx_ex_factory_index,
+                          impl);
+      // SSL_CTX_set_keylog_callback is set here to register callback
+      // when ssl/tls handshakes complete.
+      SSL_CTX_set_keylog_callback(
+          ssl_context.ssl_ctx,
+          ssl_keylogging_callback<tsi_ssl_server_handshaker_factory>);
+    }
 #endif
-      impl->ssl_contexts.push_back(std::move(ssl_context));
-    } while (false);
+    impl->ssl_contexts.push_back(std::move(ssl_context));
 
     if (result != TSI_OK) {
       tsi_ssl_handshaker_factory_unref(&impl->base);
