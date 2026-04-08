@@ -1987,7 +1987,6 @@ post_tests_steps = list(
                 language_name=language_name,
                 cmdline=cmdline,
             ),
-            logfilename=_gen_logfile_name("post_build_steps", l, cmdline),
         )
         for language, language_name in zip(languages, language_names)
         for cmdline in language.post_tests_steps()
