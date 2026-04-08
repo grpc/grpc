@@ -27,6 +27,7 @@ cd cmake/build
 cmake \
   -DCMAKE_CXX_STANDARD=17 \
   -DGRPC_AS_SUBMODULE=ON \
+  -DgRPC_BUILD_TESTS=OFF \
   -Dprotobuf_INSTALL=OFF \
   -Dutf8_range_ENABLE_INSTALL=OFF \
   ../..

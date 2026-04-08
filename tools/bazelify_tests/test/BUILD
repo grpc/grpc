@@ -31,7 +31,7 @@ grpc_run_tests_harness_test(
     name = "runtests_c_linux_dbg_build_only",
     size = "enormous",
     args = [
-        "-l c -c dbg --build_only",
+        "-l c -c dbg --build_only --cmake_configure_extra_args=-DgRPC_BUILD_TESTS=OFF",
     ],
     docker_image_version = "tools/dockerfile/test/cxx_debian11_x64.current_version",
 )
@@ -40,7 +40,7 @@ grpc_run_tests_harness_test(
     name = "runtests_c_linux_opt_build_only",
     size = "enormous",
     args = [
-        "-l c -c opt --build_only",
+        "-l c -c opt --build_only --cmake_configure_extra_args=-DgRPC_BUILD_TESTS=OFF",
     ],
     docker_image_version = "tools/dockerfile/test/cxx_debian11_x64.current_version",
 )
@@ -49,7 +49,7 @@ grpc_run_tests_harness_test(
     name = "runtests_cpp_linux_dbg_build_only",
     size = "enormous",
     args = [
-        "-l c++ -c dbg --build_only",
+        "-l c++ -c dbg --build_only --cmake_configure_extra_args=-DgRPC_BUILD_TESTS=OFF",
     ],
     docker_image_version = "tools/dockerfile/test/cxx_debian11_x64.current_version",
 )
@@ -58,7 +58,7 @@ grpc_run_tests_harness_test(
     name = "runtests_cpp_linux_opt_build_only",
     size = "enormous",
     args = [
-        "-l c++ -c opt --build_only",
+        "-l c++ -c opt --build_only --cmake_configure_extra_args=-DgRPC_BUILD_TESTS=OFF",
     ],
     docker_image_version = "tools/dockerfile/test/cxx_debian11_x64.current_version",
 )
