@@ -60,8 +60,6 @@ EXPERIMENT_ENABLES = {
     "secure_endpoint_offload_large_writes": "event_engine_client,event_engine_listener,secure_endpoint_offload_large_writes",
     "secure_endpoint_read_coalescing": "event_engine_client,event_engine_listener,secure_endpoint_read_coalescing",
     "skip_clear_peer_on_cancellation": "skip_clear_peer_on_cancellation",
-    "sleep_promise_exec_ctx_removal": "sleep_promise_exec_ctx_removal",
-    "sleep_use_non_owning_waker": "sleep_use_non_owning_waker",
     "subchannel_connection_scaling": "subchannel_connection_scaling",
     "subchannel_wrapper_cleanup_on_orphan": "subchannel_wrapper_cleanup_on_orphan",
     "tcp_frame_size_tuning": "tcp_frame_size_tuning",
@@ -130,9 +128,6 @@ EXPERIMENTS = {
             "posix_endpoint_test": [
                 "pipelined_read_secure_endpoint",
             ],
-            "promise_test": [
-                "sleep_promise_exec_ctx_removal",
-            ],
             "resource_quota_test": [
                 "free_large_allocator",
                 "unconstrained_max_quota_buffer_size",
@@ -172,9 +167,6 @@ EXPERIMENTS = {
             ],
             "event_engine_listener_test": [
                 "event_engine_listener",
-            ],
-            "promise_test": [
-                "sleep_use_non_owning_waker",
             ],
             "resolver_component_tests_runner_invoker": [
                 "event_engine_dns",
@@ -234,9 +226,6 @@ EXPERIMENTS = {
             "posix_endpoint_test": [
                 "pipelined_read_secure_endpoint",
             ],
-            "promise_test": [
-                "sleep_promise_exec_ctx_removal",
-            ],
             "resource_quota_test": [
                 "free_large_allocator",
                 "unconstrained_max_quota_buffer_size",
@@ -276,9 +265,6 @@ EXPERIMENTS = {
             ],
             "event_engine_listener_test": [
                 "event_engine_listener",
-            ],
-            "promise_test": [
-                "sleep_use_non_owning_waker",
             ],
             "resolver_component_tests_runner_invoker": [
                 "event_engine_dns",
@@ -338,9 +324,6 @@ EXPERIMENTS = {
             "posix_endpoint_test": [
                 "pipelined_read_secure_endpoint",
             ],
-            "promise_test": [
-                "sleep_promise_exec_ctx_removal",
-            ],
             "resource_quota_test": [
                 "free_large_allocator",
                 "unconstrained_max_quota_buffer_size",
@@ -380,9 +363,6 @@ EXPERIMENTS = {
             ],
             "event_engine_listener_test": [
                 "event_engine_listener",
-            ],
-            "promise_test": [
-                "sleep_use_non_owning_waker",
             ],
             "resolver_component_tests_runner_invoker": [
                 "event_engine_dns",
