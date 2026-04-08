@@ -418,20 +418,14 @@ def targets():
             PythonArtifact("manylinux2014", "x64", "cp311-cp311"),
             PythonArtifact("manylinux2014", "x64", "cp312-cp312"),
             PythonArtifact("manylinux2014", "x64", "cp313-cp313"),
-            PythonArtifact(
-                "manylinux2014", "x64", "cp314-cp314", presubmit=True
-            ),
-            PythonArtifact("manylinux2014", "x86", "cp39-cp39", presubmit=True),
+            PythonArtifact("manylinux2014", "x64", "cp314-cp314"),
+            PythonArtifact("manylinux2014", "x86", "cp39-cp39"),
             PythonArtifact("manylinux2014", "x86", "cp310-cp310"),
             PythonArtifact("manylinux2014", "x86", "cp311-cp311"),
             PythonArtifact("manylinux2014", "x86", "cp312-cp312"),
             PythonArtifact("manylinux2014", "x86", "cp313-cp313"),
-            PythonArtifact(
-                "manylinux2014", "x86", "cp314-cp314", presubmit=True
-            ),
-            PythonArtifact(
-                "manylinux2014", "aarch64", "cp39-cp39", presubmit=True
-            ),
+            PythonArtifact("manylinux2014", "x86", "cp314-cp314"),
+            PythonArtifact("manylinux2014", "aarch64", "cp39-cp39"),
             PythonArtifact("manylinux2014", "aarch64", "cp310-cp310"),
             PythonArtifact("manylinux2014", "aarch64", "cp311-cp311"),
             PythonArtifact("manylinux2014", "aarch64", "cp312-cp312"),
@@ -439,7 +433,7 @@ def targets():
             PythonArtifact(
                 "manylinux2014", "aarch64", "cp314-cp314", presubmit=True
             ),
-            PythonArtifact("linux_extra", "armv7", "cp39-cp39", presubmit=True),
+            PythonArtifact("linux_extra", "armv7", "cp39-cp39"),
             PythonArtifact("linux_extra", "armv7", "cp310-cp310"),
             PythonArtifact("linux_extra", "armv7", "cp311-cp311"),
             PythonArtifact("linux_extra", "armv7", "cp312-cp312"),
@@ -447,15 +441,13 @@ def targets():
             PythonArtifact(
                 "linux_extra", "armv7", "cp314-cp314", presubmit=True
             ),
-            PythonArtifact("musllinux_1_2", "x64", "cp39-cp39", presubmit=True),
+            PythonArtifact("musllinux_1_2", "x64", "cp39-cp39"),
             PythonArtifact("musllinux_1_2", "x64", "cp310-cp310"),
             PythonArtifact("musllinux_1_2", "x64", "cp311-cp311"),
             PythonArtifact("musllinux_1_2", "x64", "cp312-cp312"),
             PythonArtifact("musllinux_1_2", "x64", "cp313-cp313"),
-            PythonArtifact(
-                "musllinux_1_2", "x64", "cp314-cp314", presubmit=True
-            ),
-            PythonArtifact("musllinux_1_2", "x86", "cp39-cp39", presubmit=True),
+            PythonArtifact("musllinux_1_2", "x64", "cp314-cp314"),
+            PythonArtifact("musllinux_1_2", "x86", "cp39-cp39"),
             PythonArtifact("musllinux_1_2", "x86", "cp310-cp310"),
             PythonArtifact("musllinux_1_2", "x86", "cp311-cp311"),
             PythonArtifact("musllinux_1_2", "x86", "cp312-cp312"),
@@ -463,23 +455,19 @@ def targets():
             PythonArtifact(
                 "musllinux_1_2", "x86", "cp314-cp314", presubmit=True
             ),
-            PythonArtifact(
-                "musllinux_1_2", "aarch64", "cp39-cp39", presubmit=True
-            ),
+            PythonArtifact("musllinux_1_2", "aarch64", "cp39-cp39"),
             PythonArtifact("musllinux_1_2", "aarch64", "cp310-cp310"),
             PythonArtifact("musllinux_1_2", "aarch64", "cp311-cp311"),
             PythonArtifact("musllinux_1_2", "aarch64", "cp312-cp312"),
             PythonArtifact("musllinux_1_2", "aarch64", "cp313-cp313"),
-            PythonArtifact(
-                "musllinux_1_2", "aarch64", "cp314-cp314", presubmit=True
-            ),
+            PythonArtifact("musllinux_1_2", "aarch64", "cp314-cp314"),
             PythonArtifact("macos", "x64", "python3.9", presubmit=True),
             PythonArtifact("macos", "x64", "python3.10"),
             PythonArtifact("macos", "x64", "python3.11"),
             PythonArtifact("macos", "x64", "python3.12"),
             PythonArtifact("macos", "x64", "python3.13"),
             PythonArtifact("macos", "x64", "python3.14", presubmit=True),
-            PythonArtifact("windows", "x86", "Python39_32bit", presubmit=True),
+            PythonArtifact("windows", "x86", "Python39_32bit"),
             PythonArtifact("windows", "x86", "Python310_32bit"),
             PythonArtifact("windows", "x86", "Python311_32bit"),
             PythonArtifact("windows", "x86", "Python312_32bit"),
@@ -490,16 +478,16 @@ def targets():
             PythonArtifact("windows", "x64", "Python311"),
             PythonArtifact("windows", "x64", "Python312"),
             PythonArtifact("windows", "x64", "Python313"),
-            PythonArtifact("windows", "x64", "Python314", presubmit=True),
+            PythonArtifact("windows", "x64", "Python314"),
             RubyArtifact("linux", "x86-mingw32", presubmit=True),
-            RubyArtifact("linux", "x64-mingw-ucrt", presubmit=True),
+            RubyArtifact("linux", "x64-mingw-ucrt"),
             RubyArtifact("linux", "x86_64-linux-gnu", presubmit=True),
-            RubyArtifact("linux", "x86_64-linux-musl", presubmit=True),
-            RubyArtifact("linux", "x86-linux-gnu", presubmit=True),
+            RubyArtifact("linux", "x86_64-linux-musl"),
+            RubyArtifact("linux", "x86-linux-gnu"),
             RubyArtifact("linux", "x86-linux-musl", presubmit=True),
             RubyArtifact("linux", "aarch64-linux-gnu", presubmit=True),
-            RubyArtifact("linux", "aarch64-linux-musl", presubmit=True),
-            RubyArtifact("linux", "x86_64-darwin", presubmit=True),
+            RubyArtifact("linux", "aarch64-linux-musl"),
+            RubyArtifact("linux", "x86_64-darwin"),
             RubyArtifact("linux", "arm64-darwin", presubmit=True),
             PHPArtifact("linux", "x64", presubmit=True),
             PHPArtifact("macos", "x64", presubmit=True),
