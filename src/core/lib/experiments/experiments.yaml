@@ -185,6 +185,18 @@
   expiry: 2026/05/10
   owner: akshitpatel@google.com
   test_tags: []
+- name: memory_optimization_01
+  description: Memory Optimization
+  expiry: 2027/01/16
+  owner: akshitpatel@google.com
+  test_tags: []
+  allow_in_fuzzing_config: false
+- name: memory_optimization_02
+  description: Memory Optimization 02
+  expiry: 2027/01/16
+  owner: akshitpatel@google.com
+  test_tags: []
+  allow_in_fuzzing_config: false
 - name: metadata_publish_to_app_tag
   description: Publish metadata to the app using the kPublishToApp metadata field.
   expiry: 2026/04/01
@@ -314,16 +326,6 @@
   expiry: 2026/05/01
   owner: vigneshbabu@google.com
   test_tags: []
-- name: sleep_promise_exec_ctx_removal
-  description: If set, polling the sleep promise does not rely on the ExecCtx.
-  expiry: 2026/06/01
-  owner: akshitpatel@google.com
-  test_tags: ["promise_test"]
-- name: sleep_use_non_owning_waker
-  description: If set, the sleep promise uses a non-owning waker.
-  expiry: 2026/04/01
-  owner: akshitpatel@google.com
-  test_tags: ["promise_test"]
 - name: subchannel_connection_scaling
   description: Subchannel connection scaling support.
   expiry: 2026/07/01
