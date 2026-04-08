@@ -201,12 +201,6 @@ const uint8_t required_experiments_secure_endpoint_read_coalescing[] = {
 const char* const description_skip_clear_peer_on_cancellation =
     "If set, skips clearing of peer string on call cancellation.";
 const char* const additional_constraints_skip_clear_peer_on_cancellation = "{}";
-const char* const description_sleep_promise_exec_ctx_removal =
-    "If set, polling the sleep promise does not rely on the ExecCtx.";
-const char* const additional_constraints_sleep_promise_exec_ctx_removal = "{}";
-const char* const description_sleep_use_non_owning_waker =
-    "If set, the sleep promise uses a non-owning waker.";
-const char* const additional_constraints_sleep_use_non_owning_waker = "{}";
 const char* const description_subchannel_connection_scaling =
     "Subchannel connection scaling support.";
 const char* const additional_constraints_subchannel_connection_scaling = "{}";
@@ -381,12 +375,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_skip_clear_peer_on_cancellation,
      additional_constraints_skip_clear_peer_on_cancellation, nullptr, 0, false,
      true},
-    {"sleep_promise_exec_ctx_removal",
-     description_sleep_promise_exec_ctx_removal,
-     additional_constraints_sleep_promise_exec_ctx_removal, nullptr, 0, false,
-     true},
-    {"sleep_use_non_owning_waker", description_sleep_use_non_owning_waker,
-     additional_constraints_sleep_use_non_owning_waker, nullptr, 0, true, true},
     {"subchannel_connection_scaling", description_subchannel_connection_scaling,
      additional_constraints_subchannel_connection_scaling, nullptr, 0, false,
      true},
@@ -602,12 +590,6 @@ const uint8_t required_experiments_secure_endpoint_read_coalescing[] = {
 const char* const description_skip_clear_peer_on_cancellation =
     "If set, skips clearing of peer string on call cancellation.";
 const char* const additional_constraints_skip_clear_peer_on_cancellation = "{}";
-const char* const description_sleep_promise_exec_ctx_removal =
-    "If set, polling the sleep promise does not rely on the ExecCtx.";
-const char* const additional_constraints_sleep_promise_exec_ctx_removal = "{}";
-const char* const description_sleep_use_non_owning_waker =
-    "If set, the sleep promise uses a non-owning waker.";
-const char* const additional_constraints_sleep_use_non_owning_waker = "{}";
 const char* const description_subchannel_connection_scaling =
     "Subchannel connection scaling support.";
 const char* const additional_constraints_subchannel_connection_scaling = "{}";
@@ -782,12 +764,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_skip_clear_peer_on_cancellation,
      additional_constraints_skip_clear_peer_on_cancellation, nullptr, 0, false,
      true},
-    {"sleep_promise_exec_ctx_removal",
-     description_sleep_promise_exec_ctx_removal,
-     additional_constraints_sleep_promise_exec_ctx_removal, nullptr, 0, false,
-     true},
-    {"sleep_use_non_owning_waker", description_sleep_use_non_owning_waker,
-     additional_constraints_sleep_use_non_owning_waker, nullptr, 0, true, true},
     {"subchannel_connection_scaling", description_subchannel_connection_scaling,
      additional_constraints_subchannel_connection_scaling, nullptr, 0, false,
      true},
@@ -1003,12 +979,6 @@ const uint8_t required_experiments_secure_endpoint_read_coalescing[] = {
 const char* const description_skip_clear_peer_on_cancellation =
     "If set, skips clearing of peer string on call cancellation.";
 const char* const additional_constraints_skip_clear_peer_on_cancellation = "{}";
-const char* const description_sleep_promise_exec_ctx_removal =
-    "If set, polling the sleep promise does not rely on the ExecCtx.";
-const char* const additional_constraints_sleep_promise_exec_ctx_removal = "{}";
-const char* const description_sleep_use_non_owning_waker =
-    "If set, the sleep promise uses a non-owning waker.";
-const char* const additional_constraints_sleep_use_non_owning_waker = "{}";
 const char* const description_subchannel_connection_scaling =
     "Subchannel connection scaling support.";
 const char* const additional_constraints_subchannel_connection_scaling = "{}";
@@ -1183,12 +1153,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_skip_clear_peer_on_cancellation,
      additional_constraints_skip_clear_peer_on_cancellation, nullptr, 0, false,
      true},
-    {"sleep_promise_exec_ctx_removal",
-     description_sleep_promise_exec_ctx_removal,
-     additional_constraints_sleep_promise_exec_ctx_removal, nullptr, 0, false,
-     true},
-    {"sleep_use_non_owning_waker", description_sleep_use_non_owning_waker,
-     additional_constraints_sleep_use_non_owning_waker, nullptr, 0, true, true},
     {"subchannel_connection_scaling", description_subchannel_connection_scaling,
      additional_constraints_subchannel_connection_scaling, nullptr, 0, false,
      true},

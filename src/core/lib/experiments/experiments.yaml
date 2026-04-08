@@ -314,16 +314,6 @@
   expiry: 2026/05/01
   owner: vigneshbabu@google.com
   test_tags: []
-- name: sleep_promise_exec_ctx_removal
-  description: If set, polling the sleep promise does not rely on the ExecCtx.
-  expiry: 2026/06/01
-  owner: akshitpatel@google.com
-  test_tags: ["promise_test"]
-- name: sleep_use_non_owning_waker
-  description: If set, the sleep promise uses a non-owning waker.
-  expiry: 2026/04/01
-  owner: akshitpatel@google.com
-  test_tags: ["promise_test"]
 - name: subchannel_connection_scaling
   description: Subchannel connection scaling support.
   expiry: 2026/07/01
