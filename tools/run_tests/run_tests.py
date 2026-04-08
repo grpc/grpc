@@ -46,6 +46,8 @@ gcp_utils_dir = os.path.abspath(
 )
 sys.path.append(gcp_utils_dir)
 
+REPORT_BASE_PATH = os.getenv("GRPC_TEST_REPORT_BASE_DIR", os.path.abspath("."))
+
 _ROOT = os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]), "../.."))
 os.chdir(_ROOT)
 
@@ -151,6 +153,9 @@ class Config:
                 self.timeout_multiplier * timeout_seconds
                 if timeout_seconds
                 else None
+            ),
+            logfilename=os.path.abspath(
+                f"{REPORT_BASE_PATH}/reports/config.{self.build_config}.log"
             ),
             flake_retries=4 if flaky or args.allow_flakes else 0,
             timeout_retries=1 if flaky or args.allow_flakes else 0,
@@ -1922,6 +1927,13 @@ if args.use_docker:
 
 _check_arch_option(args.arch)
 
+def _gen_logfile_name(prefix, language, cmdline):
+    name = os.path.basename(cmdline[0])
+    lang = language.__class__.__name__
+    return os.path.abspath(
+        f"{REPORT_BASE_PATH}/reports/{prefix}/{lang}/{name}.log"
+    )
+
 # collect pre-build steps (which get retried if they fail, e.g. to avoid
 # flakes on downloading dependencies etc.)
 build_steps = list(
@@ -1932,6 +1944,7 @@ build_steps = list(
                 build_config, extra_env=l.build_steps_environ()
             ),
             timeout_seconds=_PRE_BUILD_STEP_TIMEOUT_SECONDS,
+            logfilename=_gen_logfile_name("pre_build_steps", l, cmdline),
             flake_retries=2,
         )
         for l in languages
@@ -1947,6 +1960,7 @@ build_steps.extend(
             environ=_build_step_environ(
                 build_config, extra_env=l.build_steps_environ()
             ),
+            logfilename=_gen_logfile_name("build_steps", l, cmdline),
             timeout_seconds=None,
         )
         for l in languages
@@ -1962,6 +1976,7 @@ post_tests_steps = list(
             environ=_build_step_environ(
                 build_config, extra_env=l.build_steps_environ()
             ),
+            logfilename=_gen_logfile_name("post_build_steps", l, cmdline),
             verbose_success=args.build_verbose_success or False,
         )
         for l in languages
