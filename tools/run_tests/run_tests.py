@@ -500,18 +500,22 @@ class CLanguage:
         return []
 
     def build_steps(self):
+        extra_cmake_args = list(self._cmake_configure_extra_args)
+        if self.args.build_only:
+            extra_cmake_args.append("-DgRPC_BUILD_TESTS=OFF")
+
         if self.platform == "windows":
             return [
                 [
                     "tools\\run_tests\\helper_scripts\\build_cxx.bat",
                     "-DgRPC_BUILD_MSVC_MP_COUNT=%d" % self.args.jobs,
                 ]
-                + self._cmake_configure_extra_args
+                + extra_cmake_args
             ]
         else:
             return [
                 ["tools/run_tests/helper_scripts/build_cxx.sh"]
-                + self._cmake_configure_extra_args
+                + extra_cmake_args
             ]
 
     def build_steps_environ(self):
