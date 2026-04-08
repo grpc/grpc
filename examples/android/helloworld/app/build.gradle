@@ -32,7 +32,8 @@ android {
                 arguments '-Dprotobuf_INSTALL=OFF'
                 arguments '-Dutf8_range_ENABLE_INSTALL=OFF'
                 arguments '-DgRPC_BUILD_TESTS=OFF'
-                arguments '-DANDROID_LINKER_FLAGS=-Wl,-z,max-page-size=16384'
+                arguments '-DCMAKE_SHARED_LINKER_FLAGS=-Wl,-z,max-page-size=16384'
+                arguments '-DCMAKE_EXE_LINKER_FLAGS=-Wl,-z,max-page-size=16384'
                 version "3.22.1"
             }
         }
