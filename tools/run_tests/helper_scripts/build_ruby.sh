@@ -34,6 +34,11 @@ if [ "$SYSTEM" == "Darwin" ]; then
   # work around https://github.com/rake-compiler/rake-compiler/issues/210
   export GRPC_RUBY_TEST_ONLY_WORKAROUND_MAKE_INSTALL_BUG=true
 fi
+
+# Set up ccache symlinks so rake compile uses ccache
+source tools/internal_ci/helper_scripts/prepare_ccache_rc
+source tools/internal_ci/helper_scripts/prepare_ccache_symlinks_rc
+
 bundle exec rake compile
 
 # Log stuff and save a hash of the binary verify later at test runtime, in order
