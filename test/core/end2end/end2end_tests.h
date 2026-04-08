@@ -831,6 +831,8 @@ inline bool IsTestSampledInPr(const CoreTestConfiguration* config) {
     absl::BitGen bit_gen;
     if (absl::Uniform<int>(bit_gen, 0, 100) > 25) return false;
   }
+#else
+  (void)config;  // Avoid unused parameter warning.
 #endif  // GRPC_RUNNING_IN_PR
   return true;
 }
