@@ -192,7 +192,7 @@
   test_tags: []
   allow_in_fuzzing_config: false
 - name: memory_optimization_02
-  description: Memory Optimization
+  description: Memory Optimization 02
   expiry: 2027/01/16
   owner: akshitpatel@google.com
   test_tags: []
