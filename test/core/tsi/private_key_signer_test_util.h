@@ -19,7 +19,6 @@
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/private_key_signer.h>
-#include <openssl/digest.h>
 #include <openssl/ec.h>
 #include <openssl/evp.h>
 #include <openssl/rsa.h>
@@ -34,6 +33,7 @@
 #include "absl/strings/string_view.h"
 
 #if defined(OPENSSL_IS_BORINGSSL)
+#include <openssl/digest.h>
 
 namespace grpc_core {
 namespace testing {
