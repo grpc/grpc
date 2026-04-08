@@ -78,6 +78,10 @@
   default: false
 - name: max_inflight_pings_strict_limit
   default: true
+- name: memory_optimization_01
+  default: false
+- name: memory_optimization_02
+  default: false
 - name: metadata_publish_to_app_tag
   default: true
 - name: monitoring_experiment

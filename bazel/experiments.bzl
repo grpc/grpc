@@ -40,6 +40,8 @@ EXPERIMENT_ENABLES = {
     "keep_alive_ping_timer_batch": "keep_alive_ping_timer_batch",
     "local_connector_secure": "local_connector_secure",
     "max_inflight_pings_strict_limit": "max_inflight_pings_strict_limit",
+    "memory_optimization_01": "memory_optimization_01",
+    "memory_optimization_02": "memory_optimization_02",
     "metadata_publish_to_app_tag": "metadata_publish_to_app_tag",
     "monitoring_experiment": "monitoring_experiment",
     "multiping": "multiping",

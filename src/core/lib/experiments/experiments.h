@@ -98,6 +98,8 @@ inline bool IsKeepAlivePingTimerBatchEnabled() { return false; }
 inline bool IsLocalConnectorSecureEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_MAX_INFLIGHT_PINGS_STRICT_LIMIT
 inline bool IsMaxInflightPingsStrictLimitEnabled() { return true; }
+inline bool IsMemoryOptimization01Enabled() { return false; }
+inline bool IsMemoryOptimization02Enabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_METADATA_PUBLISH_TO_APP_TAG
 inline bool IsMetadataPublishToAppTagEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_MONITORING_EXPERIMENT
@@ -173,6 +175,8 @@ inline bool IsKeepAlivePingTimerBatchEnabled() { return false; }
 inline bool IsLocalConnectorSecureEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_MAX_INFLIGHT_PINGS_STRICT_LIMIT
 inline bool IsMaxInflightPingsStrictLimitEnabled() { return true; }
+inline bool IsMemoryOptimization01Enabled() { return false; }
+inline bool IsMemoryOptimization02Enabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_METADATA_PUBLISH_TO_APP_TAG
 inline bool IsMetadataPublishToAppTagEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_MONITORING_EXPERIMENT
@@ -248,6 +252,8 @@ inline bool IsKeepAlivePingTimerBatchEnabled() { return false; }
 inline bool IsLocalConnectorSecureEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_MAX_INFLIGHT_PINGS_STRICT_LIMIT
 inline bool IsMaxInflightPingsStrictLimitEnabled() { return true; }
+inline bool IsMemoryOptimization01Enabled() { return false; }
+inline bool IsMemoryOptimization02Enabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_METADATA_PUBLISH_TO_APP_TAG
 inline bool IsMetadataPublishToAppTagEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_MONITORING_EXPERIMENT
@@ -307,6 +313,8 @@ enum ExperimentIds {
   kExperimentIdKeepAlivePingTimerBatch,
   kExperimentIdLocalConnectorSecure,
   kExperimentIdMaxInflightPingsStrictLimit,
+  kExperimentIdMemoryOptimization01,
+  kExperimentIdMemoryOptimization02,
   kExperimentIdMetadataPublishToAppTag,
   kExperimentIdMonitoringExperiment,
   kExperimentIdMultiping,
@@ -430,6 +438,14 @@ inline bool IsLocalConnectorSecureEnabled() {
 #define GRPC_EXPERIMENT_IS_INCLUDED_MAX_INFLIGHT_PINGS_STRICT_LIMIT
 inline bool IsMaxInflightPingsStrictLimitEnabled() {
   return IsExperimentEnabled<kExperimentIdMaxInflightPingsStrictLimit>();
+}
+#define GRPC_EXPERIMENT_IS_INCLUDED_MEMORY_OPTIMIZATION_01
+inline bool IsMemoryOptimization01Enabled() {
+  return IsExperimentEnabled<kExperimentIdMemoryOptimization01>();
+}
+#define GRPC_EXPERIMENT_IS_INCLUDED_MEMORY_OPTIMIZATION_02
+inline bool IsMemoryOptimization02Enabled() {
+  return IsExperimentEnabled<kExperimentIdMemoryOptimization02>();
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_METADATA_PUBLISH_TO_APP_TAG
 inline bool IsMetadataPublishToAppTagEnabled() {

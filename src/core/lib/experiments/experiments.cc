@@ -117,6 +117,10 @@ const char* const additional_constraints_local_connector_secure = "{}";
 const char* const description_max_inflight_pings_strict_limit =
     "If set, the max inflight pings limit is strictly enforced.";
 const char* const additional_constraints_max_inflight_pings_strict_limit = "{}";
+const char* const description_memory_optimization_01 = "Memory Optimization";
+const char* const additional_constraints_memory_optimization_01 = "{}";
+const char* const description_memory_optimization_02 = "Memory Optimization 02";
+const char* const additional_constraints_memory_optimization_02 = "{}";
 const char* const description_metadata_publish_to_app_tag =
     "Publish metadata to the app using the kPublishToApp metadata field.";
 const char* const additional_constraints_metadata_publish_to_app_tag = "{}";
@@ -311,6 +315,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_max_inflight_pings_strict_limit,
      additional_constraints_max_inflight_pings_strict_limit, nullptr, 0, true,
      true},
+    {"memory_optimization_01", description_memory_optimization_01,
+     additional_constraints_memory_optimization_01, nullptr, 0, false, false},
+    {"memory_optimization_02", description_memory_optimization_02,
+     additional_constraints_memory_optimization_02, nullptr, 0, false, false},
     {"metadata_publish_to_app_tag", description_metadata_publish_to_app_tag,
      additional_constraints_metadata_publish_to_app_tag, nullptr, 0, true,
      true},
@@ -506,6 +514,10 @@ const char* const additional_constraints_local_connector_secure = "{}";
 const char* const description_max_inflight_pings_strict_limit =
     "If set, the max inflight pings limit is strictly enforced.";
 const char* const additional_constraints_max_inflight_pings_strict_limit = "{}";
+const char* const description_memory_optimization_01 = "Memory Optimization";
+const char* const additional_constraints_memory_optimization_01 = "{}";
+const char* const description_memory_optimization_02 = "Memory Optimization 02";
+const char* const additional_constraints_memory_optimization_02 = "{}";
 const char* const description_metadata_publish_to_app_tag =
     "Publish metadata to the app using the kPublishToApp metadata field.";
 const char* const additional_constraints_metadata_publish_to_app_tag = "{}";
@@ -700,6 +712,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_max_inflight_pings_strict_limit,
      additional_constraints_max_inflight_pings_strict_limit, nullptr, 0, true,
      true},
+    {"memory_optimization_01", description_memory_optimization_01,
+     additional_constraints_memory_optimization_01, nullptr, 0, false, false},
+    {"memory_optimization_02", description_memory_optimization_02,
+     additional_constraints_memory_optimization_02, nullptr, 0, false, false},
     {"metadata_publish_to_app_tag", description_metadata_publish_to_app_tag,
      additional_constraints_metadata_publish_to_app_tag, nullptr, 0, true,
      true},
@@ -895,6 +911,10 @@ const char* const additional_constraints_local_connector_secure = "{}";
 const char* const description_max_inflight_pings_strict_limit =
     "If set, the max inflight pings limit is strictly enforced.";
 const char* const additional_constraints_max_inflight_pings_strict_limit = "{}";
+const char* const description_memory_optimization_01 = "Memory Optimization";
+const char* const additional_constraints_memory_optimization_01 = "{}";
+const char* const description_memory_optimization_02 = "Memory Optimization 02";
+const char* const additional_constraints_memory_optimization_02 = "{}";
 const char* const description_metadata_publish_to_app_tag =
     "Publish metadata to the app using the kPublishToApp metadata field.";
 const char* const additional_constraints_metadata_publish_to_app_tag = "{}";
@@ -1089,6 +1109,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_max_inflight_pings_strict_limit,
      additional_constraints_max_inflight_pings_strict_limit, nullptr, 0, true,
      true},
+    {"memory_optimization_01", description_memory_optimization_01,
+     additional_constraints_memory_optimization_01, nullptr, 0, false, false},
+    {"memory_optimization_02", description_memory_optimization_02,
+     additional_constraints_memory_optimization_02, nullptr, 0, false, false},
     {"metadata_publish_to_app_tag", description_metadata_publish_to_app_tag,
      additional_constraints_metadata_publish_to_app_tag, nullptr, 0, true,
      true},
