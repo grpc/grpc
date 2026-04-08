@@ -66,6 +66,7 @@
 #include "src/core/tsi/ssl/session_cache/ssl_session_cache.h"
 #include "src/core/tsi/ssl_transport_security_utils.h"
 #include "src/core/tsi/ssl_types.h"
+#include "src/core/tsi/telemetry/handshaker_domain.h"
 #include "src/core/tsi/transport_security.h"
 #include "src/core/tsi/transport_security_interface.h"
 #include "src/core/util/env.h"
@@ -186,7 +187,9 @@ struct tsi_ssl_handshaker : public tsi_handshaker,
   size_t outgoing_bytes_buffer_size;
   tsi_ssl_handshaker_factory* factory_ref;
   grpc_core::Mutex mu;
+  bool record_metrics = false;
   bool is_shutdown ABSL_GUARDED_BY(mu) = false;
+  absl::Time handshaker_creation_time = absl::Now();
 
   // Will be set if there is a pending call to tsi_handshaker_next(),
   // or nullopt if not.
@@ -207,6 +210,21 @@ struct tsi_ssl_handshaker : public tsi_handshaker,
       signing_handle ABSL_GUARDED_BY(mu);
 #endif
 };
+
+void MaybeRecordHistogramResult(tsi_ssl_handshaker* self, tsi_result status) {
+  if (!self->record_metrics) {
+    return;
+  }
+  auto storage = HandshakerDomain::GetStorage(
+      grpc_core::GlobalCollectionScope(), status,
+      self->handshaker_next_args->error_ptr != nullptr
+          ? *self->handshaker_next_args->error_ptr
+          : "",
+      HandshakerDomain::Protocol::kSsl);
+  storage->Increment(
+      HandshakerDomain::kHandshakeDuration,
+      absl::ToInt64Microseconds(absl::Now() - self->handshaker_creation_time));
+}
 
 static std::pair<tsi_result, std::optional<HandshakerNextArgs>>
 ssl_handshaker_next_async(tsi_ssl_handshaker* self)
@@ -2269,6 +2287,7 @@ static tsi_result ssl_handshaker_next_impl(tsi_ssl_handshaker* self)
       while (status == TSI_DRAIN_BUFFER) {
         status = ssl_handshaker_write_output_buffer(self, &bytes_written);
         if (status != TSI_OK) {
+          MaybeRecordHistogramResult(self, status);
           return status;
         }
         status = ssl_handshaker_do_handshake(self);
@@ -2299,11 +2318,13 @@ static tsi_result ssl_handshaker_next_impl(tsi_ssl_handshaker* self)
   }
 
   if (status != TSI_OK) {
+    MaybeRecordHistogramResult(self, status);
     return status;
   }
   // Get bytes to send to the peer, if available.
   status = ssl_handshaker_write_output_buffer(self, &bytes_written);
   if (status != TSI_OK) {
+    MaybeRecordHistogramResult(self, status);
     return status;
   }
   self->handshaker_next_args->bytes_to_send = self->outgoing_bytes_buffer;
@@ -2347,6 +2368,7 @@ static tsi_result ssl_handshaker_next_impl(tsi_ssl_handshaker* self)
               SSL_CIPHER_get_name(cipher));
         }
       }
+      MaybeRecordHistogramResult(self, status);
     }
   }
   return status;
