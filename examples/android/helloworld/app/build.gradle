@@ -1,13 +1,13 @@
 apply plugin: 'com.android.application'
 
 android {
-    compileSdkVersion 35
+    compileSdkVersion 34
     ndkVersion "29.0.14206865"
     defaultConfig {
         applicationId "io.grpc.android.cpp.helloworldexample"
         minSdkVersion 21
         // noinspection ExpiredTargetSDKVersion
-        targetSdkVersion 35
+        targetSdkVersion 34
         versionCode 1
         versionName "1.0"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
