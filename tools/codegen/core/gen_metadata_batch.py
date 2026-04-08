@@ -53,6 +53,8 @@ with open("src/core/call/metadata_batch.h", "w") as H:
 #include "src/core/call/metadata_compression_traits.h"
 #include "src/core/call/parsed_metadata.h"
 #include "src/core/call/simple_slice_based_metadata.h"
+#include "src/core/call/metadata_unknown_map.h"
+#include "src/core/call/metadata_debug_string_builder.h"
 #include "src/core/lib/compression/compression_internal.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/promise/poll.h"
@@ -92,7 +94,13 @@ using MetadataParseErrorFn = absl::FunctionRef<void(absl::string_view, const Sli
         elif "value_type" in trait and trait["value_type"]:
             print(f"  using ValueType = {trait['value_type']};", file=H)
             print(f"  using MementoType = {trait['value_type']};", file=H)
-        else:
+        elif trait["name"] == "LbCostBinMetadata":
+            print("  struct ValueType { double cost; std::string name; };", file=H)
+            print("  using MementoType = ValueType;", file=H)
+        elif trait["name"] == "WaitForReady":
+            print("  struct ValueType { bool value = false; bool explicitly_set = false; };", file=H)
+            print("  using MementoType = ValueType;", file=H)
+        elif trait["name"] not in ("HttpSchemeMetadata", "HttpMethodMetadata"):
             storage_str = "uint32_t" if "::ValueType" in trait["storage"] else trait["storage"]
             print(f"  using ValueType = {storage_str};", file=H)
             print(f"  using MementoType = {storage_str};", file=H)
@@ -100,7 +108,31 @@ using MetadataParseErrorFn = absl::FunctionRef<void(absl::string_view, const Sli
         if "compression" in trait and trait["compression"]:
             print(f"  using CompressionTraits = {trait['compression']};", file=H)
 
-        print(f"  static absl::string_view key() {{ return \"{trait.get('key', trait['name'])}\"; }}", file=H)
+        if not trait.get("is_encodable", True):
+            print(f"  static absl::string_view DebugKey() {{ return \"{trait.get('key', trait['name'])}\"; }}", file=H)
+        else:
+            print(f"  static absl::string_view key() {{ return \"{trait.get('key', trait['name'])}\"; }}", file=H)
+        if trait["name"] == "HttpSchemeMetadata":
+            print("  enum class ValueType : uint32_t { kHttp, kHttps, kInvalid };", file=H)
+            print("  using MementoType = ValueType;", file=H)
+            print("  static constexpr auto kHttp = ValueType::kHttp;", file=H)
+            print("  static constexpr auto kHttps = ValueType::kHttps;", file=H)
+            print("  static constexpr auto kInvalid = ValueType::kInvalid;", file=H)
+            print("  static MementoType Parse(absl::string_view value, MetadataParseErrorFn on_error);", file=H)
+            print("  static StaticSlice Encode(ValueType x);", file=H)
+            print("  static const char* DisplayValue(ValueType x);", file=H)
+        elif trait["name"] == "HttpMethodMetadata":
+            print("  enum class ValueType : uint32_t { kPost, kGet, kPut, kInvalid };", file=H)
+            print("  using MementoType = ValueType;", file=H)
+            print("  static constexpr auto kPost = ValueType::kPost;", file=H)
+            print("  static constexpr auto kGet = ValueType::kGet;", file=H)
+            print("  static constexpr auto kPut = ValueType::kPut;", file=H)
+            print("  static constexpr auto kInvalid = ValueType::kInvalid;", file=H)
+            print("  static MementoType Parse(absl::string_view value, MetadataParseErrorFn on_error);", file=H)
+            print("  static StaticSlice Encode(ValueType x);", file=H)
+            print("  static const char* DisplayValue(ValueType x);", file=H)
+        elif trait["name"] == "ContentTypeMetadata":
+            print("  static MementoType Parse(absl::string_view value, MetadataParseErrorFn on_error);", file=H)
 
         if trait.get("storage", "") == "Slice":
             parse_fragment = trait.get("parse_memento", "return will_keep ? value.TakeUniquelyOwned() : value.TakeOwned();")
@@ -120,7 +152,8 @@ using MetadataParseErrorFn = absl::FunctionRef<void(absl::string_view, const Sli
 
         print(f"  static MementoType ParseMemento(Slice value, bool will_keep, MetadataParseErrorFn on_error) {{\n{parse_fragment}\n  }}", file=H)
         print(f"  static ValueType MementoToValue(MementoType x) {{ return x; }}", file=H)
-        print(f"  static auto Encode(const ValueType& x) {{\n{encode_fragment}\n  }}", file=H)
+        if trait_name != "HttpMethodMetadata":
+            print(f"  static auto Encode(const ValueType& x) {{\n{encode_fragment}\n  }}", file=H)
         print(f"  static auto DisplayValue(const ValueType& x) {{\n{display_fragment}\n  }}", file=H)
         print("};", file=H)
 
@@ -132,16 +165,6 @@ MetadataValueAsSlice(const Slice& slice) { return slice; }
 template <typename Which>
 absl::enable_if_t<!std::is_same<typename Which::ValueType, Slice>::value, Slice>
 MetadataValueAsSlice(typename Which::ValueType value) { return Slice(); }
-
-class UnknownMap {
- public:
-  void Append(absl::string_view, Slice) {}
-  void Remove(absl::string_view) {}
-  std::optional<absl::string_view> GetStringValue(absl::string_view, std::string*) const { return std::nullopt; }
-  void Clear() {}
-  bool empty() const { return true; }
-  size_t size() const { return 0; }
-};
 
 template <template <typename, typename> class Factory, typename... MetadataTraits>
 struct StatefulCompressor {};
@@ -296,7 +319,7 @@ struct grpc_metadata_batch {
     
     print("  template <template <typename, typename> class Factory> struct StatefulCompressor {};", file=H)
     print("};", file=H)
-    print("template <typename Trait> Slice MetadataValueAsSlice(const typename Trait::ValueType& value) { return Trait::Encode(value); }", file=H)
+    print("bool IsMetadataKeyAllowedInDebugOutput(absl::string_view key);", file=H)
     print("}  // namespace grpc_core", file=H)
     print("using grpc_metadata_batch = grpc_core::grpc_metadata_batch;", file=H)
     print("#endif  // GRPC_SRC_CORE_CALL_METADATA_BATCH_H", file=H)

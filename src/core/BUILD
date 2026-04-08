@@ -10708,6 +10708,8 @@ grpc_cc_library(
     hdrs = [
         "call/custom_metadata.h",
         "call/metadata_batch.h",
+        "call/metadata_unknown_map.h",
+        "call/metadata_debug_string_builder.h",
         "call/simple_slice_based_metadata.h",
     ],
     external_deps = [

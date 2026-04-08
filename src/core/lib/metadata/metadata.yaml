@@ -65,8 +65,7 @@ metadata_traits:
     UNIMPLEMENTED\";\n      case GRPC_STATUS_INTERNAL:\n        return \"INTERNAL\"\
     ;\n      case GRPC_STATUS_UNAVAILABLE:\n        return \"UNAVAILABLE\";\n    \
     \  case GRPC_STATUS_DATA_LOSS:\n        return \"DATA_LOSS\";\n      case GRPC_STATUS_UNAUTHENTICATED:\n\
-    \        return \"UNAUTHENTICATED\";\n      default:\n        return absl::StrCat(\"\
-    UNKNOWN(\", static_cast<int>(x), \")\");"
+    \        return \"UNAUTHENTICATED\";\n      default:\n        return \"<UNKNOWN>\";\n    }"
   encode: return Slice::FromInt64(x);
   name: GrpcStatusMetadata
   repeatable: false
@@ -107,7 +106,7 @@ metadata_traits:
 - display_value: return "<internal-lb-stats>";
   encode: abort();
   name: GrpcLbClientStatsMetadata
-  parse_memento: "error(\"not a valid value for grpclb_client_stats\", Slice());\n\
+  parse_memento: "on_error(\"not a valid value for grpclb_client_stats\", Slice());\n\
     \    return nullptr;"
   repeatable: false
   storage: GrpcLbClientStats*
