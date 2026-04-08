@@ -11,6 +11,7 @@
         android:theme="@style/Base.V7.Theme.AppCompat.Light" >
         <activity
             android:name=".HelloworldActivity"
+            android:exported="true"
             android:label="@string/app_name" >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
