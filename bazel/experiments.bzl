@@ -40,6 +40,7 @@ EXPERIMENT_ENABLES = {
     "keep_alive_ping_timer_batch": "keep_alive_ping_timer_batch",
     "local_connector_secure": "local_connector_secure",
     "max_inflight_pings_strict_limit": "max_inflight_pings_strict_limit",
+    "memory_optimization": "memory_optimization",
     "metadata_publish_to_app_tag": "metadata_publish_to_app_tag",
     "monitoring_experiment": "monitoring_experiment",
     "multiping": "multiping",
@@ -153,9 +154,11 @@ EXPERIMENTS = {
                 "event_engine_for_all_other_endpoints",
                 "event_engine_fork",
                 "event_engine_listener",
+                "memory_optimization",
             ],
             "cpp_end2end_test": [
                 "error_flatten",
+                "memory_optimization",
                 "subchannel_wrapper_cleanup_on_orphan",
             ],
             "error_tests": [
@@ -255,9 +258,11 @@ EXPERIMENTS = {
                 "event_engine_for_all_other_endpoints",
                 "event_engine_fork",
                 "event_engine_listener",
+                "memory_optimization",
             ],
             "cpp_end2end_test": [
                 "error_flatten",
+                "memory_optimization",
                 "subchannel_wrapper_cleanup_on_orphan",
             ],
             "error_tests": [
@@ -357,9 +362,11 @@ EXPERIMENTS = {
                 "event_engine_for_all_other_endpoints",
                 "event_engine_fork",
                 "event_engine_listener",
+                "memory_optimization",
             ],
             "cpp_end2end_test": [
                 "error_flatten",
+                "memory_optimization",
                 "subchannel_wrapper_cleanup_on_orphan",
             ],
             "error_tests": [
