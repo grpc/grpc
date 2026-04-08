@@ -211,8 +211,7 @@ class SslOffloadTsiTestFixture {
  public:
   SslOffloadTsiTestFixture(OffloadParty offload_party,
                            std::shared_ptr<PrivateKeySigner> signer,
-                           tsi_tls_version tls_version,
-                           std::string sni = "")
+                           tsi_tls_version tls_version, std::string sni = "")
       : offload_party_(offload_party),
         signer_(std::move(signer)),
         tls_version_(tls_version),
@@ -313,11 +312,11 @@ class SslOffloadTsiTestFixture {
     // Create handshakers.
     tsi_handshaker* client_hs;
     tsi_handshaker* server_hs;
-    ASSERT_EQ(tsi_ssl_client_handshaker_factory_create_handshaker(
-                  client_handshaker_factory_,
-                  sni_.empty() ? nullptr : sni_.c_str(), 0, 0,
-                  std::nullopt, &client_hs),
-              TSI_OK);
+    ASSERT_EQ(
+        tsi_ssl_client_handshaker_factory_create_handshaker(
+            client_handshaker_factory_, sni_.empty() ? nullptr : sni_.c_str(),
+            0, 0, std::nullopt, &client_hs),
+        TSI_OK);
     ASSERT_EQ(tsi_ssl_server_handshaker_factory_create_handshaker(
                   server_handshaker_factory_, 0, 0, &server_hs),
               TSI_OK);
