@@ -185,11 +185,17 @@
   expiry: 2026/05/10
   owner: akshitpatel@google.com
   test_tags: []
-- name: memory_optimization
+- name: memory_optimization_01
   description: Memory Optimization
   expiry: 2027/01/16
   owner: akshitpatel@google.com
-  test_tags: ["core_end2end_test", "cpp_end2end_test"]
+  test_tags: []
+  allow_in_fuzzing_config: false
+- name: memory_optimization_02
+  description: Memory Optimization
+  expiry: 2027/01/16
+  owner: akshitpatel@google.com
+  test_tags: []
   allow_in_fuzzing_config: false
 - name: metadata_publish_to_app_tag
   description: Publish metadata to the app using the kPublishToApp metadata field.
