@@ -15,8 +15,10 @@
 
 set -ex
 
+PS4='${BASH_SOURCE}:${LINENO}+ '
 BUILD_PYTHON=$(realpath "$(dirname "$0")/build_python.sh")
 export MSYSTEM=$1
 shift 1
 source tools/internal_ci/helper_scripts/print_ccache_stats.sh
+echo "PATH=${PATH}"
 bash --login "$BUILD_PYTHON" "$@"

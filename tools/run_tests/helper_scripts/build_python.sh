@@ -15,8 +15,10 @@
 
 set -ex
 
+echo "PS4=${PS4}"
 # change to grpc repo root
 cd "$(dirname "$0")/../../.."
+echo "PATH=${PATH}"
 
 ##########################
 # Portability operations #
