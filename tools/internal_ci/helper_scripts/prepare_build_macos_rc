@@ -158,7 +158,7 @@ then
 
   # Install Python 3.9 if it doesn't exist
   if [ ! -f "/usr/local/bin/python3.9" ]; then
-    time curl -O https://www.python.org/ftp/python/3.9.10/python-3.9.10-macosx10.9.pkg
+    time curl --connect-timeout 60 --max-time 1200 --retry 3 -O https://www.python.org/ftp/python/3.9.10/python-3.9.10-macosx10.9.pkg
     echo "732bc5c95ae127dfb6fb1bcf683509ad20c558152b63b8d5f651246f6bdfc8da  python-3.9.10-macosx10.9.pkg" > /tmp/python_installer_checksum.sha256
     shasum -c /tmp/python_installer_checksum.sha256
     time sudo installer -pkg ./python-3.9.10-macosx10.9.pkg -target /
@@ -166,7 +166,7 @@ then
 
   # Install Python 3.10 if it doesn't exist
   if [ ! -f "/usr/local/bin/python3.10" ]; then
-    time curl -O https://www.python.org/ftp/python/3.10.5/python-3.10.5-macos11.pkg
+    time curl --connect-timeout 60 --max-time 1200 --retry 3 -O https://www.python.org/ftp/python/3.10.5/python-3.10.5-macos11.pkg
     echo "568c69b4361af1faf0ae35c4cac7236c1a332f5c  python-3.10.5-macos11.pkg" > /tmp/python_installer_checksum.sha256
     shasum -c /tmp/python_installer_checksum.sha256
     time sudo installer -pkg ./python-3.10.5-macos11.pkg -target /
@@ -174,7 +174,7 @@ then
 
   # Install Python 3.11 if it doesn't exist
   if [ ! -f "/usr/local/bin/python3.11" ]; then
-    time curl -O https://www.python.org/ftp/python/3.11.0/python-3.11.0rc1-macos11.pkg
+    time curl --connect-timeout 60 --max-time 1200 --retry 3 -O https://www.python.org/ftp/python/3.11.0/python-3.11.0rc1-macos11.pkg
     echo "eec3f817797b1d61f48f29b96ac0443ea19f3170  python-3.11.0rc1-macos11.pkg" > /tmp/python_installer_checksum.sha256
     shasum -c /tmp/python_installer_checksum.sha256
     time sudo installer -pkg ./python-3.11.0rc1-macos11.pkg -target /
@@ -182,7 +182,7 @@ then
 
   # Install Python 3.12 if it doesn't exist
   if [ ! -f "/usr/local/bin/python3.12" ]; then
-    time curl -O https://www.python.org/ftp/python/3.12.0/python-3.12.0rc2-macos11.pkg
+    time curl --connect-timeout 60 --max-time 1200 --retry 3 -O https://www.python.org/ftp/python/3.12.0/python-3.12.0rc2-macos11.pkg
     echo "e5dc5511b604b501b892991d257d117bb5757437  python-3.12.0rc2-macos11.pkg" > /tmp/python_installer_checksum.sha256
     shasum -c /tmp/python_installer_checksum.sha256
     time sudo installer -pkg ./python-3.12.0rc2-macos11.pkg -target /
@@ -190,7 +190,7 @@ then
 
   # Install Python 3.13 if it doesn't exist
   if [ ! -f "/usr/local/bin/python3.13" ]; then
-    time curl -O https://www.python.org/ftp/python/3.13.0/python-3.13.0rc2-macos11.pkg
+    time curl --connect-timeout 60 --max-time 1200 --retry 3 -O https://www.python.org/ftp/python/3.13.0/python-3.13.0rc2-macos11.pkg
     echo "75579065f9ee5c25207353fbe0f79275123ff556  python-3.13.0rc2-macos11.pkg" > /tmp/python_installer_checksum.sha256
     shasum -c /tmp/python_installer_checksum.sha256
     time sudo installer -pkg ./python-3.13.0rc2-macos11.pkg -target /
@@ -198,7 +198,7 @@ then
 
   # Install Python 3.14 if it doesn't exist
   if [ ! -f "/usr/local/bin/python3.14" ]; then
-    time curl -O https://www.python.org/ftp/python/3.14.0/python-3.14.0rc1-macos11.pkg
+    time curl --connect-timeout 60 --max-time 1200 --retry 3 -O https://www.python.org/ftp/python/3.14.0/python-3.14.0rc1-macos11.pkg
     echo "05b17ddad5a7c3641d0ecfe5ccf3a97f89c1757e  python-3.14.0rc1-macos11.pkg" > /tmp/python_installer_checksum.sha256
     shasum -c /tmp/python_installer_checksum.sha256
     time sudo installer -pkg ./python-3.14.0rc1-macos11.pkg -target /
@@ -214,10 +214,10 @@ then
 
   # Installed versions should be kept in sync with
   # templates/tools/dockerfile/csharp_dotnetcli_deps.include
-  time curl -O https://download.visualstudio.microsoft.com/download/pr/e0fe8c99-e33c-4d75-bd4e-2478ed3ee35a/ff06e47afc7c13bdbbaa50a9713ac772/dotnet-sdk-3.1.415-osx-x64.pkg
+  time curl --connect-timeout 60 --max-time 1200 --retry 5 -O https://dotnetcli.azureedge.net/dotnet/Sdk/3.1.415/dotnet-sdk-3.1.415-osx-x64.pkg
   time sudo installer -pkg ./dotnet-sdk-3.1.415-osx-x64.pkg -target /
 
-  time curl -O https://download.visualstudio.microsoft.com/download/pr/14a45451-4cc9-48e1-af69-0aff75891d09/ff6e83986a2a9a535015fb3104a90a1b/dotnet-sdk-6.0.100-osx-x64.pkg
+  time curl --connect-timeout 60 --max-time 1200 --retry 5 -O https://download.visualstudio.microsoft.com/download/pr/14a45451-4cc9-48e1-af69-0aff75891d09/ff6e83986a2a9a535015fb3104a90a1b/dotnet-sdk-6.0.100-osx-x64.pkg
   time sudo installer -pkg ./dotnet-sdk-6.0.100-osx-x64.pkg -target /
 fi
 
