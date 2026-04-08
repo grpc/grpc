@@ -121,6 +121,8 @@ def _run():
                     continue
                 if name == "channel_multi_address" and not use_xds:
                     continue
+                if use_xds and scenario == "chaotic_good":
+                    continue
                 argv = (
                     ["bazel-bin/test/core/memory_usage/memory_usage_test"]
                     + benchmark_args
