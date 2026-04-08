@@ -209,6 +209,10 @@ std::vector<CoreTestConfiguration> End2endTestConfigs() {
                 SecurityPrimitives::ProviderType::FILE_PROVIDER,
                 SecurityPrimitives::VerifierType::EXTERNAL_ASYNC_VERIFIER);
           },
+          /*include_test_suites=*/"",
+          /*include_specific_tests=*/"",
+          /*exclude_specific_tests=*/"",
+          /*always_run_in_pr=*/true,
       },
       CoreTestConfiguration{
           // client: certificate watcher provider + hostname verifier

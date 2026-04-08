@@ -245,6 +245,10 @@ def grpc_core_end2end_test_suite(
         deps = _DEPS + deps + [
             "//test/core/end2end:end2end_test_lib_no_fuzztest_gtest",
         ],
+        defines = select({
+            ":grpc_running_in_pr": ["GRPC_RUNNING_IN_PR"],
+            "//conditions:default": [],
+        }),
         data = _DATA,
         shard_count = shard_count,
         tags = tags + ["core_end2end_test"],
@@ -276,6 +280,10 @@ def grpc_core_end2end_test_suite(
             deps = _DEPS + deps + [
                 "//test/core/end2end:end2end_test_lib_no_fuzztest_gtest",
             ],
+            defines = select({
+                ":grpc_running_in_pr": ["GRPC_RUNNING_IN_PR"],
+                "//conditions:default": [],
+            }),
             data = _DATA,
             shard_count = shard_count,
             tags = tags + ["core_end2end_test", "grpc:fails-internally", "grpc:no-internal-poller"],
