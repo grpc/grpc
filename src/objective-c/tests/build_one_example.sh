@@ -46,6 +46,8 @@ XCODEBUILD_FILTER_OUTPUT_SCRIPT="${TEST_PATH}/xcodebuild_filter_output.sh"
 
 if [ "$SCHEME" == "gRPC-Package" ]; then
   time xcodebuild \
+    CC="ccache $(xcrun -find clang)" \
+    CXX="ccache $(xcrun -find clang++)" \
     build \
     -scheme $SCHEME \
     -destination generic/platform=iOS 
@@ -56,6 +58,8 @@ if [ "$SCHEME" == "gRPC-Package" ]; then
     | "${XCODEBUILD_FILTER_OUTPUT_SCRIPT}"
 elif [ "$SCHEME" == "tvOS-sample" ]; then
   time xcodebuild \
+    CC="ccache $(xcrun -find clang)" \
+    CXX="ccache $(xcrun -find clang++)" \
     build \
     -workspace *.xcworkspace \
     -scheme $SCHEME \
@@ -67,6 +71,8 @@ elif [ "$SCHEME" == "tvOS-sample" ]; then
     | "${XCODEBUILD_FILTER_OUTPUT_SCRIPT}"
 else
   time xcodebuild \
+    CC="ccache $(xcrun -find clang)" \
+    CXX="ccache $(xcrun -find clang++)" \
     build \
     -workspace *.xcworkspace \
     -scheme $SCHEME \

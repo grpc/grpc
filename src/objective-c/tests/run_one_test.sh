@@ -75,6 +75,8 @@ HOST_PORT_REMOTE=grpc-test.sandbox.googleapis.com \
 GCC_OPTIMIZATION_LEVEL=s"
 
 time xcodebuild \
+    CC="ccache $(xcrun -find clang)" \
+    CXX="ccache $(xcrun -find clang++)" \
     -workspace Tests.xcworkspace \
     -scheme $SCHEME \
     -destination "${DESTINATION}" \
