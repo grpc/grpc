@@ -47,9 +47,8 @@ gcloud firebase test android run \
     --app app/build/outputs/apk/debug/app-debug.apk \
     --test app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk \
     --device model=panther,version=33,locale=en,orientation=portrait \
-    --device model=panther,version=34,locale=en,orientation=portrait \
-    --device model=shiba,version=35,locale=en,orientation=portrait \
-    --device model=shiba,version=36,locale=en,orientation=portrait
+    --device model=oriole,version=34,locale=en,orientation=portrait \
+    --device model=shiba,version=35,locale=en,orientation=portrait
 
 # Build hello world example
 cd "${REPO_ROOT}/examples/android/helloworld"
