@@ -1,13 +1,13 @@
 apply plugin: 'com.android.application'
 
 android {
-    compileSdkVersion 34
+    compileSdkVersion 26
     ndkVersion "29.0.14206865"
     defaultConfig {
         applicationId "io.grpc.android.interop.cpp"
         minSdkVersion 21
         // noinspection ExpiredTargetSDKVersion
-        targetSdkVersion 34
+        targetSdkVersion 26
         versionCode 1
         versionName "1.0"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
@@ -32,8 +32,6 @@ android {
                 arguments '-Dprotobuf_INSTALL=OFF'
                 arguments '-Dutf8_range_ENABLE_INSTALL=OFF'
                 arguments '-DgRPC_BUILD_TESTS=OFF'
-                arguments '-DCMAKE_SHARED_LINKER_FLAGS=-Wl,-z,max-page-size=16384'
-                arguments '-DCMAKE_EXE_LINKER_FLAGS=-Wl,-z,max-page-size=16384'
                 version "3.22.1"
             }
         }
