@@ -1963,7 +1963,7 @@ build_steps.extend(
                 build_config, extra_env=language.build_steps_environ()
             ),
             logfilename=_gen_logfile_name(
-                stage="pre_build_steps",
+                stage="build_steps",
                 language_name=language_name,
                 cmdline=cmdline,
             ),
