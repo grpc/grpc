@@ -184,7 +184,8 @@ class TlsPrivateKeyOffloadTest : public ::testing::Test {
 };
 
 void DoRpc(const std::string& server_addr,
-           const experimental::TlsChannelCredentialsOptions& tls_options) {
+           const experimental::TlsChannelCredentialsOptions& tls_options,
+           bool expect_sni_match = false) {
   ChannelArguments channel_args;
   channel_args.SetSslTargetNameOverride("foo.test.google.fr");
   std::shared_ptr<Channel> channel = grpc::CreateCustomChannel(
@@ -198,6 +199,18 @@ void DoRpc(const std::string& server_addr,
   ClientContext context;
   context.set_deadline(grpc_timeout_seconds_to_deadline(/*time_s=*/5));
   grpc::Status result = stub->Echo(&context, request, &response);
+  if (expect_sni_match) {
+    std::vector<grpc::string_ref> san_names =
+        context.auth_context()->FindPropertyValues(GRPC_X509_SAN_PROPERTY_NAME);
+    bool sni_match = false;
+    for (const auto& san : san_names) {
+      if (san.ends_with("test.google.fr")) {
+        sni_match = true;
+        break;
+      }
+    }
+    EXPECT_TRUE(sni_match);
+  }
   EXPECT_TRUE(result.ok()) << result.error_message().c_str() << ", "
                            << result.error_details().c_str();
   EXPECT_EQ(response.message(), kMessage);
