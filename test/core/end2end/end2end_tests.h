@@ -198,7 +198,7 @@ struct CoreTestConfiguration {
   absl::string_view include_specific_tests;
   absl::string_view exclude_specific_tests;
 
-  // On master, we run all tests for all relevant configs.  However, in
+  // On CI, we run all tests for all relevant configs.  However, in
   // PRs, to reduce test times, we run only a sampling of tests in
   // various configurations.
   //
