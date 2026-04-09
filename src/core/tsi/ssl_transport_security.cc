@@ -2678,6 +2678,7 @@ static tsi_result create_tsi_ssl_handshaker(
     size_t network_bio_buf_size, size_t ssl_bio_buf_size,
     std::optional<std::string> alpn_preferred_protocol_raw_list,
     std::shared_ptr<grpc_core::PrivateKeySigner> key_signer,
+    std::shared_ptr<grpc_core::CertificateSelector> certificate_selector,
     tsi_ssl_handshaker_factory* factory, tsi_handshaker** handshaker) {
   SSL* ssl = SSL_new(ctx);
   BIO* network_io = nullptr;
@@ -2787,11 +2788,7 @@ static tsi_result create_tsi_ssl_handshaker(
     grpc_core::MutexLock lock(&impl->mu);
     impl->key_signer = std::move(key_signer);
   }
-  if (!is_client) {
-    tsi_ssl_server_handshaker_factory* server_factory =
-        reinterpret_cast<tsi_ssl_server_handshaker_factory*>(factory);
-    impl->certificate_selector = server_factory->certificate_selector;
-  }
+  impl->certificate_selector = std::move(certificate_selector);
 #endif
 
   *handshaker = impl;
@@ -2844,7 +2841,7 @@ tsi_result tsi_ssl_client_handshaker_factory_create_handshaker(
   return create_tsi_ssl_handshaker(
       factory->ssl_context, 1, server_name_indication, network_bio_buf_size,
       ssl_bio_buf_size, alpn_preferred_protocol_list, factory->key_signer,
-      &factory->base, handshaker);
+      /*certificate_selector=*/nullptr, &factory->base, handshaker);
 }
 
 void tsi_ssl_client_handshaker_factory_unref(
@@ -2893,7 +2890,7 @@ tsi_result tsi_ssl_server_handshaker_factory_create_handshaker(
   return create_tsi_ssl_handshaker(
       factory->ssl_contexts[0].ssl_ctx, 0, nullptr, network_bio_buf_size,
       ssl_bio_buf_size, std::nullopt, factory->ssl_contexts[0].key_signer,
-      &factory->base, handshaker);
+      factory->certificate_selector, &factory->base, handshaker);
 }
 
 void tsi_ssl_server_handshaker_factory_unref(

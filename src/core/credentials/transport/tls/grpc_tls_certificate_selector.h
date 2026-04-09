@@ -51,15 +51,15 @@ class CertificateSelector {
 #endif
   };
 
-  // Returns a SelectCertificateResult with DER-encoded cert chains, and
-  // DER-encoded private key string or a signer.
+  // Returns a SelectCertificateResult given a DER-encoded certificate chain,
+  // and DER-encoded private key string or a signer.
   static absl::StatusOr<SelectCertificateResult> CreateSelectCertificateResult(
       const std::vector<std::string>& der_cert_chain,
       std::variant<absl::string_view, std::shared_ptr<PrivateKeySigner>>
           der_private_key);
 
-  // Returns a SelectCertificateResult with PEM-encoded cert chains, and
-  // PEM-encoded private key string or a signer.
+  // Returns a SelectCertificateResult given a PEM-encoded certificate chain,
+  // and PEM-encoded private key string or a signer.
   static absl::StatusOr<SelectCertificateResult> CreateSelectCertificateResult(
       absl::string_view pem_cert_chain,
       std::variant<absl::string_view, std::shared_ptr<PrivateKeySigner>>

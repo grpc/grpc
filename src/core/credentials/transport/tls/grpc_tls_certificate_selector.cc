@@ -40,7 +40,7 @@ namespace {
 
 #if defined(OPENSSL_IS_BORINGSSL)
 absl::StatusOr<std::vector<bssl::UniquePtr<CRYPTO_BUFFER>>>
-CreateRawCertChainFromDer(const std::vector<std::string>& der_cert_chain) {
+ParseCertificateChainFromDer(const std::vector<std::string>& der_cert_chain) {
   if (der_cert_chain.empty()) {
     return absl::InvalidArgumentError("The cert chain is empty.");
   }
@@ -59,7 +59,7 @@ CreateRawCertChainFromDer(const std::vector<std::string>& der_cert_chain) {
 }
 
 absl::StatusOr<std::vector<bssl::UniquePtr<CRYPTO_BUFFER>>>
-CreateRawCertChainFromPem(absl::string_view pem_cert_chain) {
+ParseCertificateChainFromPem(absl::string_view pem_cert_chain) {
   std::vector<bssl::UniquePtr<CRYPTO_BUFFER>> raw_cert_chain;
   bssl::UniquePtr<BIO> bio(
       BIO_new_mem_buf(pem_cert_chain.data(), pem_cert_chain.size()));
@@ -88,7 +88,7 @@ CertificateSelector::CreateSelectCertificateResult(
         der_private_key) {
 #if defined(OPENSSL_IS_BORINGSSL)
   absl::StatusOr<std::vector<bssl::UniquePtr<CRYPTO_BUFFER>>> raw_cert_chain =
-      CreateRawCertChainFromDer(der_cert_chain);
+      ParseCertificateChainFromDer(der_cert_chain);
   GRPC_RETURN_IF_ERROR(raw_cert_chain.status());
   CertificateSelector::SelectCertificateResult result;
   result.cert_chain = *std::move(raw_cert_chain);
@@ -127,7 +127,7 @@ CertificateSelector::CreateSelectCertificateResult(
         pem_private_key) {
 #if defined(OPENSSL_IS_BORINGSSL)
   absl::StatusOr<std::vector<bssl::UniquePtr<CRYPTO_BUFFER>>> raw_cert_chain =
-      CreateRawCertChainFromPem(pem_cert_chain);
+      ParseCertificateChainFromPem(pem_cert_chain);
   GRPC_RETURN_IF_ERROR(raw_cert_chain.status());
   CertificateSelector::SelectCertificateResult result;
   result.cert_chain = *std::move(raw_cert_chain);
