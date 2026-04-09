@@ -18,6 +18,14 @@
 
 set -ex
 
+# Create ccache wrapper scripts
+CCACHE_WRAPPER_DIR="$(mktemp -d)"
+printf '#!/bin/bash\nexec ccache "$(xcrun -find clang)" "$@"\n' > "${CCACHE_WRAPPER_DIR}/clang"
+printf '#!/bin/bash\nexec ccache "$(xcrun -find clang++)" "$@"\n' > "${CCACHE_WRAPPER_DIR}/clang++"
+chmod +x "${CCACHE_WRAPPER_DIR}/clang" "${CCACHE_WRAPPER_DIR}/clang++"
+trap "rm -rf ${CCACHE_WRAPPER_DIR}" EXIT
+
+
 cd $(dirname $0)
 
 BAZEL=../../../tools/bazel
@@ -75,8 +83,8 @@ HOST_PORT_REMOTE=grpc-test.sandbox.googleapis.com \
 GCC_OPTIMIZATION_LEVEL=s"
 
 time xcodebuild \
-    CC="ccache $(xcrun -find clang)" \
-    CXX="ccache $(xcrun -find clang++)" \
+    CC="${CCACHE_WRAPPER_DIR}/clang" \
+    CXX="${CCACHE_WRAPPER_DIR}/clang++" \
     -workspace Tests.xcworkspace \
     -scheme $SCHEME \
     -destination "${DESTINATION}" \
