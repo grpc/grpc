@@ -164,7 +164,7 @@ pip_install_dir() {
   local workdir
   workdir="$(pwd)"
   cd "$1"
-  "${VENV_PYTHON}" -m pip install --no-deps --no-build-isolation .
+  "${VENV_PYTHON}" -m pip install --no-deps --no-build-isolation . -vvv
   cd "${workdir}"
 }
 
@@ -187,6 +187,7 @@ then
 fi
 
 pip_install_dir "$ROOT"
+exit 1
 
 $VENV_PYTHON "$ROOT/tools/distrib/python/make_grpcio_tools.py"
 pip_install_dir_and_deps "$ROOT/tools/distrib/python/grpcio_tools"
