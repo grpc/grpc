@@ -1940,6 +1940,9 @@ _check_arch_option(args.arch)
 # into GCS by kokoro.
 def _gen_logfile_name(stage, language_name, cmdline):
     script = os.path.basename(cmdline[0])
+    # TODO(weizheyuan): Understand what else needs to be done
+    # (other than setting file name to sponge_log.log)
+    # for these logs to show up in sponge UI.
     return os.path.abspath(
         f"{REPORT_BASE_PATH}/reports/{language_name}_{platform_string()}_{build_config}/{stage}/{script}/sponge_log.log"
     )
