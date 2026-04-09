@@ -19,7 +19,7 @@ import logging
 import os
 import sys
 import time
-from typing import Any, Callable, Optional
+from typing import Any, Callable, Iterable, Optional
 import unittest
 
 import grpc_observability
@@ -98,7 +98,7 @@ class OTelMetricExporter(otel_metrics_export.MetricExporter):
 
 class OpenTelemetryObservabilityBase(AioTestBase):
     async def setUp(self):
-        self.all_metrics = collections.defaultdict(list)
+        self.all_metrics: dict[str, list[str]] = collections.defaultdict(list)
         otel_exporter = OTelMetricExporter(self.all_metrics)
         reader = otel_metrics_export.PeriodicExportingMetricReader(
             exporter=otel_exporter,
@@ -145,11 +145,13 @@ class OpenTelemetryObservabilityBase(AioTestBase):
             message=lambda: f"No metrics were exported",
         )
 
-    def _validate_all_metrics_names(self, metric_names: list[str]) -> None:
+    def _validate_all_metrics_names(self, metric_names: Iterable[str]) -> None:
         self._validate_server_metrics_names(metric_names)
         self._validate_client_metrics_names(metric_names)
 
-    def _validate_server_metrics_names(self, metric_names: list[str]) -> None:
+    def _validate_server_metrics_names(
+        self, metric_names: Iterable[str]
+    ) -> None:
         for base_metric in _open_telemetry_measures.base_metrics():
             if "grpc.server" in base_metric.name:
                 self.assertTrue(
@@ -160,7 +162,9 @@ class OpenTelemetryObservabilityBase(AioTestBase):
                     ),
                 )
 
-    def _validate_client_metrics_names(self, metric_names: list[str]) -> None:
+    def _validate_client_metrics_names(
+        self, metric_names: Iterable[str]
+    ) -> None:
         for base_metric in _open_telemetry_measures.base_metrics():
             if "grpc.client" in base_metric.name:
                 self.assertTrue(
@@ -172,11 +176,13 @@ class OpenTelemetryObservabilityBase(AioTestBase):
                 )
 
     def _validate_all_method_labels(
-        self, all_metrics: dict[str, Any], registered_method_name: str = ""
+        self,
+        all_metrics: dict[str, list[str]],
+        registered_method_name: str = "",
     ) -> None:
         client_method_values = set()
         server_method_values = set()
-        for metric_name, label_list in all_metrics:
+        for metric_name, label_list in all_metrics.items():
             for labels in label_list:
                 if GRPC_METHOD_LABEL in labels:
                     if "grpc.server" in metric_name:
@@ -210,7 +216,7 @@ class OpenTelemetryObservabilityUnregisteredMethodsTest(
 
         await self._validate_metrics_exist(self.all_metrics)
         self._validate_all_metrics_names(self.all_metrics.keys())
-        self._validate_all_method_labels(self.all_metrics.items())
+        self._validate_all_method_labels(self.all_metrics)
 
     async def test_record_unary_stream(self):
         self._server, self._port = await _test_server.start_server(
@@ -220,7 +226,7 @@ class OpenTelemetryObservabilityUnregisteredMethodsTest(
 
         await self._validate_metrics_exist(self.all_metrics)
         self._validate_all_metrics_names(self.all_metrics.keys())
-        self._validate_all_method_labels(self.all_metrics.items())
+        self._validate_all_method_labels(self.all_metrics)
 
     async def test_record_stream_unary(self):
         self._server, self._port = await _test_server.start_server(
@@ -230,7 +236,7 @@ class OpenTelemetryObservabilityUnregisteredMethodsTest(
 
         await self._validate_metrics_exist(self.all_metrics)
         self._validate_all_metrics_names(self.all_metrics.keys())
-        self._validate_all_method_labels(self.all_metrics.items())
+        self._validate_all_method_labels(self.all_metrics)
 
     async def test_record_stream_stream(self):
         self._server, self._port = await _test_server.start_server(
@@ -240,7 +246,7 @@ class OpenTelemetryObservabilityUnregisteredMethodsTest(
 
         await self._validate_metrics_exist(self.all_metrics)
         self._validate_all_metrics_names(self.all_metrics.keys())
-        self._validate_all_method_labels(self.all_metrics.items())
+        self._validate_all_method_labels(self.all_metrics)
 
 
 @unittest.skipIf(
@@ -261,7 +267,7 @@ class OpenTelemetryObservabilityRegisteredMethodsTest(
         await self._validate_metrics_exist(self.all_metrics)
         self._validate_all_metrics_names(self.all_metrics.keys())
         self._validate_all_method_labels(
-            self.all_metrics.items(), "test/UnaryUnary"
+            self.all_metrics, "test/UnaryUnary"
         )
 
     async def test_record_unary_stream(self):
@@ -275,7 +281,7 @@ class OpenTelemetryObservabilityRegisteredMethodsTest(
         await self._validate_metrics_exist(self.all_metrics)
         self._validate_all_metrics_names(self.all_metrics.keys())
         self._validate_all_method_labels(
-            self.all_metrics.items(), "test/UnaryStream"
+            self.all_metrics, "test/UnaryStream"
         )
 
     async def test_record_stream_unary(self):
@@ -289,7 +295,7 @@ class OpenTelemetryObservabilityRegisteredMethodsTest(
         await self._validate_metrics_exist(self.all_metrics)
         self._validate_all_metrics_names(self.all_metrics.keys())
         self._validate_all_method_labels(
-            self.all_metrics.items(), "test/StreamUnary"
+            self.all_metrics, "test/StreamUnary"
         )
 
     async def test_record_stream_stream(self):
@@ -303,7 +309,7 @@ class OpenTelemetryObservabilityRegisteredMethodsTest(
         await self._validate_metrics_exist(self.all_metrics)
         self._validate_all_metrics_names(self.all_metrics.keys())
         self._validate_all_method_labels(
-            self.all_metrics.items(), "test/StreamStream"
+            self.all_metrics, "test/StreamStream"
         )
 
 
