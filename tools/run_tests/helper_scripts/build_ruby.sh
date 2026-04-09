@@ -45,11 +45,6 @@ source tools/internal_ci/helper_scripts/prepare_ccache_symlinks_rc
 
 bundle exec rake compile
 
-# Verify ccache usage
-if [ -x "$(command -v ccache)" ]; then
-  ccache -s
-fi
-
 # Log stuff and save a hash of the binary verify later at test runtime, in order
 # to detect corruption.
 if [ "$SYSTEM" == "Darwin" ]; then
@@ -78,3 +73,8 @@ popd
 # unbreak subsequent make builds by restoring zconf.h (previously renamed by cmake build)
 # see https://github.com/madler/zlib/issues/133
 (cd third_party/zlib; git checkout zconf.h || cp zconf.h.included zconf.h)
+
+# Verify ccache usage
+if [ -x "$(command -v ccache)" ]; then
+  ccache -s
+fi
