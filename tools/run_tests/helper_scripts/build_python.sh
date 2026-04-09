@@ -108,6 +108,10 @@ echo "query --override_repository=${BAZEL_DEP_NAME}=${BAZEL_DEP_PATH}" >> "tools
 PYTHON=${1:-python2.7}
 VENV=${2:-$(venv "$PYTHON")}
 VENV_RELATIVE_PYTHON=${3:-$(venv_relative_python)}
+if [ "$(is_mingw)" ] || [ "$(is_darwin)" ]; then
+  echo "IS_MINGW"
+fi
+export PATH="/cygdrive/c/ccache:${PATH}"
 
 if [ "$(is_msys)" ]; then
   echo "MSYS doesn't directly provide the right compiler(s);"
