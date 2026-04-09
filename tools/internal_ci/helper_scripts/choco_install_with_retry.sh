@@ -35,6 +35,7 @@ for ((i=1; i<=MAX_RETRIES; i++)); do
     if [ $i -lt $MAX_RETRIES ]; then
       echo "Attempt $i to install $PACKAGE failed. Retrying..."
       sleep 3
+    fi
 done
 
 echo "All attempts to install $PACKAGE failed. Exiting..."
