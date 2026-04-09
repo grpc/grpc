@@ -65,6 +65,8 @@
 #include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
+#include "absl/strings/ascii.h"
+#include "absl/strings/numbers.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 
@@ -944,7 +946,21 @@ static bool inner_resolve_as_ip_literal_locked(
     *port = default_port;
   }
   grpc_resolved_address addr;
-  *hostport = grpc_core::JoinHostPort(*host, atoi(port->c_str()));
+  for (char c : *port) {
+    if (!absl::ascii_isdigit(c)) {
+      LOG(ERROR) << "Port is not a valid decimal number in " << name
+                 << " while attempting to resolve as ip literal.";
+      return false;
+    }
+  }
+  int parsed_port = 0;
+  if (!absl::SimpleAtoi(*port, &parsed_port) || parsed_port < 0 ||
+      parsed_port > 65535) {
+    LOG(ERROR) << "Port is out of range in " << name
+               << " while attempting to resolve as ip literal.";
+    return false;
+  }
+  *hostport = grpc_core::JoinHostPort(*host, parsed_port);
   if (grpc_parse_ipv4_hostport(hostport->c_str(), &addr,
                                false /* log errors */) ||
       grpc_parse_ipv6_hostport(hostport->c_str(), &addr,

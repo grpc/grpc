@@ -50,10 +50,29 @@
 #include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/status/status.h"
+#include "absl/strings/ascii.h"
+#include "absl/strings/numbers.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/strip.h"
 
 // IWYU pragma: no_include <arpa/inet.h>
+
+namespace {
+
+bool ParseNumericPort(absl::string_view port, uint16_t* out) {
+  if (port.empty()) return false;
+  for (char c : port) {
+    if (!absl::ascii_isdigit(c)) return false;
+  }
+  uint32_t parsed_port = 0;
+  if (!absl::SimpleAtoi(port, &parsed_port) || parsed_port > 65535) {
+    return false;
+  }
+  *out = static_cast<uint16_t>(parsed_port);
+  return true;
+}
+
+}  // namespace
 
 #ifdef GRPC_HAVE_UNIX_SOCKET
 
@@ -180,7 +199,9 @@ grpc_error_handle VSockaddrPopulate(absl::string_view path,
       reinterpret_cast<struct sockaddr_vm*>(resolved_addr->addr);
   vm->svm_family = AF_VSOCK;
   std::string s = std::string(path);
-  if (sscanf(s.c_str(), "%u:%u", &vm->svm_cid, &vm->svm_port) != 2) {
+  char trailing = '\0';
+  if (sscanf(s.c_str(), "%u:%u%c", &vm->svm_cid, &vm->svm_port,
+             &trailing) != 2) {
     return GRPC_ERROR_CREATE(
         absl::StrCat("Failed to parse vsock cid/port: ", s));
   }
@@ -235,13 +256,12 @@ bool grpc_parse_ipv4_hostport(absl::string_view hostport,
     if (log_errors) LOG(ERROR) << "no port given for ipv4 scheme";
     goto done;
   }
-  int port_num;
-  if (sscanf(port.c_str(), "%d", &port_num) != 1 || port_num < 0 ||
-      port_num > 65535) {
+  uint16_t port_num;
+  if (!ParseNumericPort(port, &port_num)) {
     if (log_errors) LOG(ERROR) << "invalid ipv4 port: '" << port << "'";
     goto done;
   }
-  in->sin_port = grpc_htons(static_cast<uint16_t>(port_num));
+  in->sin_port = grpc_htons(port_num);
   success = true;
 done:
   return success;
@@ -324,13 +344,12 @@ bool grpc_parse_ipv6_hostport(absl::string_view hostport,
     if (log_errors) LOG(ERROR) << "no port given for ipv6 scheme";
     goto done;
   }
-  int port_num;
-  if (sscanf(port.c_str(), "%d", &port_num) != 1 || port_num < 0 ||
-      port_num > 65535) {
+  uint16_t port_num;
+  if (!ParseNumericPort(port, &port_num)) {
     if (log_errors) LOG(ERROR) << "invalid ipv6 port: '" << port << "'";
     goto done;
   }
-  in6->sin6_port = grpc_htons(static_cast<uint16_t>(port_num));
+  in6->sin6_port = grpc_htons(port_num);
   success = true;
 done:
   return success;
@@ -368,12 +387,19 @@ bool grpc_parse_uri(const grpc_core::URI& uri,
 }
 
 uint16_t grpc_strhtons(const char* port) {
+  if (port == nullptr) {
+    return htons(0);
+  }
   if (strcmp(port, "http") == 0) {
     return htons(80);
   } else if (strcmp(port, "https") == 0) {
     return htons(443);
   }
-  return htons(static_cast<unsigned short>(atoi(port)));
+  uint16_t numeric_port;
+  if (!ParseNumericPort(port, &numeric_port)) {
+    return htons(0);
+  }
+  return htons(numeric_port);
 }
 
 namespace grpc_core {
