@@ -32,7 +32,8 @@ namespace grpc_core {
 namespace testing {
 namespace {
 
-constexpr absl::string_view kTestCredsRelativePath = "test/core/tsi/test_creds/crl_data/";
+constexpr absl::string_view kTestCredsRelativePath =
+    "test/core/tsi/test_creds/crl_data/";
 constexpr absl::string_view kServerCertFile = "valid.pem";
 constexpr absl::string_view kServerKeyFile = "valid.key";
 constexpr absl::string_view kInvalidPemBlock =
@@ -102,9 +103,10 @@ TEST_F(TlsCertificateSelectorTest,
 
 TEST_F(TlsCertificateSelectorTest,
        CreateSelectCertificateResultFromPemFailedWithInvalidBlockInChain) {
-  ASSERT_THAT(CertificateSelector::CreateSelectCertificateResult(
-                  absl::StrCat("invalid\n", kInvalidPemBlock), private_key_),
-              StatusIs(absl::StatusCode::kInvalidArgument));
+  ASSERT_THAT(
+      CertificateSelector::CreateSelectCertificateResult(
+          absl::StrCat(cert_chain_, "\n", kInvalidPemBlock), private_key_),
+      StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 TEST_F(TlsCertificateSelectorTest,
@@ -128,12 +130,14 @@ TEST_F(TlsCertificateSelectorTest,
       ConvertCertChainToDer(cert_chain_), signer));
 }
 
+#if defined(OPENSSL_IS_BORINGSSL)
 TEST_F(TlsCertificateSelectorTest,
        CreateSelectCertificateResultFromDerStaticKeyUnimplemented) {
   ASSERT_THAT(CertificateSelector::CreateSelectCertificateResult(
                   ConvertCertChainToDer(cert_chain_), "key"),
               StatusIs(absl::StatusCode::kUnimplemented));
 }
+#endif
 
 }  // namespace
 }  // namespace testing
