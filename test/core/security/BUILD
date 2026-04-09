@@ -146,6 +146,8 @@ grpc_cc_test(
     data = [
         "//test/core/tsi/test_creds/crl_data:valid.key",
         "//test/core/tsi/test_creds/crl_data:valid.pem",
+        "//test/core/tsi/test_creds/crl_data:valid_cert.der",
+        "//test/core/tsi/test_creds/crl_data:valid_key.der",
     ],
     external_deps = [
         "gtest",

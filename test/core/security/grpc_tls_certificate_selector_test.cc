@@ -34,8 +34,10 @@ namespace {
 
 constexpr absl::string_view kTestCredsRelativePath =
     "test/core/tsi/test_creds/crl_data/";
-constexpr absl::string_view kServerCertFile = "valid.pem";
-constexpr absl::string_view kServerKeyFile = "valid.key";
+constexpr absl::string_view kServerCertPemFile = "valid.pem";
+constexpr absl::string_view kServerKeyPemFile = "valid.key";
+constexpr absl::string_view kServerCertDerFile = "valid_cert.der";
+constexpr absl::string_view kServerKeyDerFile = "valid_key.der";
 constexpr absl::string_view kInvalidPemBlock =
     "-----BEGIN CERTIFICATE-----\ninvalid\n-----END CERTIFICATE-----";
 
@@ -54,90 +56,117 @@ MATCHER_P(StatusIs, status,
 class TlsCertificateSelectorTest : public ::testing::Test {
  protected:
   TlsCertificateSelectorTest()
-      : cert_chain_(GetFileContents(
-            absl::StrCat(kTestCredsRelativePath, kServerCertFile))),
-        private_key_(GetFileContents(
-            absl::StrCat(kTestCredsRelativePath, kServerKeyFile))) {}
+      : pem_cert_chain_(GetFileContents(
+            absl::StrCat(kTestCredsRelativePath, kServerCertPemFile))),
+        pem_private_key_(GetFileContents(
+            absl::StrCat(kTestCredsRelativePath, kServerKeyPemFile))),
+        der_cert_chain_({GetFileContents(
+            absl::StrCat(kTestCredsRelativePath, kServerCertDerFile))}),
+        der_private_key_(GetFileContents(
+            absl::StrCat(kTestCredsRelativePath, kServerKeyDerFile))) {}
 
-  static std::vector<std::string> ConvertCertChainToDer(
-      absl::string_view pem_cert_chain) {
-    std::vector<std::string> cert_chain;
-    BIO* bio = BIO_new_mem_buf(pem_cert_chain.data(), pem_cert_chain.size());
-    uint8_t* cert_data = nullptr;
-    long cert_len = 0;
-    while (PEM_bytes_read_bio(&cert_data, &cert_len, nullptr, PEM_STRING_X509,
-                              bio, nullptr, nullptr)) {
-      cert_chain.push_back(
-          std::string(reinterpret_cast<char*>(cert_data), cert_len));
-      OPENSSL_free(cert_data);
-      cert_data = nullptr;
-      cert_len = 0;
-    }
-    BIO_free(bio);
-    return cert_chain;
-  }
-
-  std::string cert_chain_;
-  std::string private_key_;
+  std::string pem_cert_chain_;
+  std::string pem_private_key_;
+  std::vector<std::string> der_cert_chain_;
+  std::string der_private_key_;
 };
 
 TEST_F(TlsCertificateSelectorTest,
        CreateSelectCertificateResultFromPemSuccess) {
-  ASSERT_OK(CertificateSelector::CreateSelectCertificateResult(cert_chain_,
-                                                               private_key_));
+  absl::StatusOr<CertificateSelector::SelectCertificateResult> result =
+      CertificateSelector::CreateSelectCertificateResult(pem_cert_chain_,
+                                                         pem_private_key_);
+  ASSERT_OK(result);
+  EXPECT_EQ(result->cert_chain.size(), 1);
+  // Should hold an EVP_PKEY ptr.
+  EXPECT_EQ(result->private_key.index(), 0);
+}
+
+TEST_F(TlsCertificateSelectorTest,
+       CreateSelectCertificateResultFromPemWithMultipleChainsSuccess) {
+  absl::StatusOr<CertificateSelector::SelectCertificateResult> result =
+      CertificateSelector::CreateSelectCertificateResult(
+          absl::StrCat(pem_cert_chain_, pem_cert_chain_), pem_private_key_);
+  ASSERT_OK(result);
+  EXPECT_EQ(result->cert_chain.size(), 2);
+  // Should hold an EVP_PKEY.
+  EXPECT_EQ(result->private_key.index(), 0);
 }
 
 TEST_F(TlsCertificateSelectorTest,
        CreateSelectCertificateResultFromPemFailedWithEmptyChain) {
   ASSERT_THAT(
-      CertificateSelector::CreateSelectCertificateResult("", private_key_),
+      CertificateSelector::CreateSelectCertificateResult("", pem_private_key_),
       StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 TEST_F(TlsCertificateSelectorTest,
        CreateSelectCertificateResultFromPemFailedWithInvalidChain) {
-  ASSERT_THAT(CertificateSelector::CreateSelectCertificateResult("invalid",
-                                                                 private_key_),
+  ASSERT_THAT(CertificateSelector::CreateSelectCertificateResult(
+                  "invalid", pem_private_key_),
               StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 TEST_F(TlsCertificateSelectorTest,
        CreateSelectCertificateResultFromPemFailedWithInvalidBlockInChain) {
-  ASSERT_THAT(
-      CertificateSelector::CreateSelectCertificateResult(
-          absl::StrCat(cert_chain_, "\n", kInvalidPemBlock), private_key_),
-      StatusIs(absl::StatusCode::kInvalidArgument));
+  ASSERT_THAT(CertificateSelector::CreateSelectCertificateResult(
+                  kInvalidPemBlock, pem_private_key_),
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 TEST_F(TlsCertificateSelectorTest,
        CreateSelectCertificateResultFromPemFailedWithEmptyKey) {
   ASSERT_THAT(
-      CertificateSelector::CreateSelectCertificateResult(cert_chain_, ""),
+      CertificateSelector::CreateSelectCertificateResult(pem_cert_chain_, ""),
       StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 TEST_F(TlsCertificateSelectorTest,
        CreateSelectCertificateResultFromPemFailedWithInvalidKey) {
-  ASSERT_THAT(CertificateSelector::CreateSelectCertificateResult(cert_chain_,
-                                                                 "invalid"),
+  ASSERT_THAT(CertificateSelector::CreateSelectCertificateResult(
+                  pem_cert_chain_, "invalid"),
               StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 TEST_F(TlsCertificateSelectorTest,
        CreateSelectCertificateResultFromDerSuccess) {
   std::shared_ptr<PrivateKeySigner> signer;
-  ASSERT_OK(CertificateSelector::CreateSelectCertificateResult(
-      ConvertCertChainToDer(cert_chain_), signer));
+  absl::StatusOr<CertificateSelector::SelectCertificateResult> result =
+      CertificateSelector::CreateSelectCertificateResult(der_cert_chain_,
+                                                         der_private_key_);
+  std::cerr << result.status();
+  ASSERT_OK(result);
+  EXPECT_FALSE(result->cert_chain.empty());
+  // Should hold an EVP_PKEY.
+  EXPECT_EQ(result->private_key.index(), 0);
 }
 
-#if defined(OPENSSL_IS_BORINGSSL)
 TEST_F(TlsCertificateSelectorTest,
-       CreateSelectCertificateResultFromDerStaticKeyUnimplemented) {
-  ASSERT_THAT(CertificateSelector::CreateSelectCertificateResult(
-                  ConvertCertChainToDer(cert_chain_), "key"),
-              StatusIs(absl::StatusCode::kUnimplemented));
+       CreateSelectCertificateResultFromDerWithSignerSuccess) {
+  std::shared_ptr<PrivateKeySigner> signer;
+  absl::StatusOr<CertificateSelector::SelectCertificateResult> result =
+      CertificateSelector::CreateSelectCertificateResult(der_cert_chain_,
+                                                         signer);
+  ASSERT_OK(result);
+  std::cerr << result.status().message() << std::endl;
+  EXPECT_FALSE(result->cert_chain.empty());
+  // Should hold a private key signer.
+  EXPECT_EQ(result->private_key.index(), 1);
 }
-#endif
+
+TEST_F(TlsCertificateSelectorTest,
+       CreateSelectCertificateResultFromDerFailedWithEmtpyChain) {
+  ASSERT_THAT(CertificateSelector::CreateSelectCertificateResult(
+                  std::vector<std::string>(), der_private_key_),
+              StatusIs(absl::StatusCode::kInvalidArgument));
+}
+
+TEST_F(TlsCertificateSelectorTest,
+       CreateSelectCertificateResultFromDerFailedWithInvalidKey) {
+  ASSERT_THAT(CertificateSelector::CreateSelectCertificateResult(
+                  der_cert_chain_, "invalid"),
+              StatusIs(absl::StatusCode::kInvalidArgument));
+}
 
 }  // namespace
 }  // namespace testing
