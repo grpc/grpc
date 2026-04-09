@@ -29,7 +29,7 @@ echo "!TIME!: Preparing for the Windows build"
 call tools/internal_ci/helper_scripts/prepare_build_windows.bat || exit /b 1
 
 @rem Install clang-cl with retry in case of network errors
-bash tools\internal_ci\helper_scripts\choco_install_with_retry.sh llvm --version=18.1.6 || exit /b 1
+bash "tools/internal_ci/helper_scripts/choco_install_with_retry.sh" llvm --version=18.1.6 || exit /b 1
 
 set BAZEL_LLVM="C:\Program Files\LLVM"
 clang-cl --version
