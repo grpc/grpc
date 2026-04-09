@@ -1868,6 +1868,7 @@ jobset.measure_cpu_costs = args.measure_cpu_costs
 run_config = _CONFIGS[args.config]
 build_config = run_config.build_config
 
+
 def _configure_languages():
     """Prepare language-specific tests based on --language
     argument.
@@ -1886,6 +1887,7 @@ def _configure_languages():
         print("Building multiple languages simultaneously is not supported!")
         sys.exit(1)
     return languages, language_names
+
 
 languages, language_names = _configure_languages()
 
@@ -1933,6 +1935,7 @@ if args.use_docker:
 
 _check_arch_option(args.arch)
 
+
 # Generate log files under /reports subfolder so it can be stored
 # into GCS by kokoro.
 def _gen_logfile_name(stage, language_name, cmdline):
@@ -1940,6 +1943,7 @@ def _gen_logfile_name(stage, language_name, cmdline):
     return os.path.abspath(
         f"{REPORT_BASE_PATH}/reports/{language_name}_{platform_string()}_{build_config}/{stage}/{script}/sponge_log.log"
     )
+
 
 # collect pre-build steps (which get retried if they fail, e.g. to avoid
 # flakes on downloading dependencies etc.)
