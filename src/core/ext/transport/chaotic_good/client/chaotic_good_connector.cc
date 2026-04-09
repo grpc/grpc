@@ -231,11 +231,7 @@ void ChaoticGoodConnector::Connect(const Args& args, Result* result,
         return TrySeq(
             ConnectChaoticGood(
                 resolved_addr, result_notifier_ptr->args.channel_args,
-                IsChaoticGoodConnectDeadlineEnabled()
-                    ? result_notifier_ptr->args.deadline
-                    : Timestamp::Now() +
-                          Duration::FromSecondsAsDouble(kTimeoutSecs),
-                std::move(client_settings)),
+                result_notifier_ptr->args.deadline, std::move(client_settings)),
             [resolved_addr,
              result_notifier_ptr](ConnectChaoticGoodResult result) {
               auto connector = MakeRefCounted<ConnectionCreator>(

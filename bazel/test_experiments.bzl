@@ -21,6 +21,7 @@ TEST_EXPERIMENT_ENABLES = {
     "test_experiment_2": "test_experiment_2",
     "test_experiment_3": "test_experiment_3",
     "test_experiment_4": "test_experiment_4",
+    "test_experiment_5": "test_experiment_5",
 }
 
 TEST_EXPERIMENT_POLLERS = [
@@ -32,7 +33,7 @@ TEST_EXPERIMENTS = {
         },
         "off": {
             "experiments_tag_test": [
-                "test_experiment_1",
+                "test_experiment_5",
             ],
         },
         "on": {
