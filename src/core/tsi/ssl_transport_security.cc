@@ -2600,7 +2600,9 @@ static tsi_result create_tsi_ssl_handshaker(
       static_cast<unsigned char*>(gpr_zalloc(impl->outgoing_bytes_buffer_size));
   impl->vtable = &handshaker_vtable;
   impl->factory_ref = tsi_ssl_handshaker_factory_ref(factory);
+#if defined(OPENSSL_IS_BORINGSSL)
   impl->key_signer = std::move(key_signer);
+#endif
 
   *handshaker = impl;
 
