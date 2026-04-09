@@ -21,7 +21,6 @@ EXPERIMENT_ENABLES = {
     "call_tracer_in_transport": "call_tracer_in_transport",
     "call_tracer_send_initial_metadata_is_an_annotation": "call_tracer_send_initial_metadata_is_an_annotation",
     "call_tracer_send_trailing_metadata_is_an_annotation": "call_tracer_send_trailing_metadata_is_an_annotation",
-    "chaotic_good_connect_deadline": "chaotic_good_connect_deadline",
     "chaotic_good_framing_layer": "chaotic_good_framing_layer",
     "chaotic_good_send_supported_features": "chaotic_good_send_supported_features",
     "error_flatten": "error_flatten",
@@ -142,7 +141,6 @@ EXPERIMENTS = {
                 "event_engine_dns",
             ],
             "core_end2end_test": [
-                "chaotic_good_connect_deadline",
                 "chaotic_good_framing_layer",
                 "error_flatten",
                 "event_engine_client",
@@ -238,7 +236,6 @@ EXPERIMENTS = {
                 "event_engine_dns",
             ],
             "core_end2end_test": [
-                "chaotic_good_connect_deadline",
                 "chaotic_good_framing_layer",
                 "error_flatten",
                 "event_engine_client",
@@ -334,7 +331,6 @@ EXPERIMENTS = {
                 "event_engine_dns",
             ],
             "core_end2end_test": [
-                "chaotic_good_connect_deadline",
                 "chaotic_good_framing_layer",
                 "error_flatten",
                 "event_engine_client",
