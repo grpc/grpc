@@ -89,7 +89,12 @@ If "%GRPC_CMAKE_GENERATOR%" == "Ninja" (
 
   cmake -G "%GRPC_CMAKE_GENERATOR%" -DCMAKE_C_COMPILER="cl.exe" -DCMAKE_CXX_COMPILER="cl.exe" -DgRPC_BUILD_GRPCPP_OTEL_PLUGIN=ON -DgRPC_ABSL_PROVIDER=package -DgRPC_BUILD_TESTS=ON -DCMAKE_BUILD_TYPE="%MSBUILD_CONFIG%" -DCMAKE_INSTALL_PREFIX="%INSTALL_PATH%" %* ../.. || goto :error
 
-  ninja -j%GRPC_RUN_TESTS_JOBS% buildtests_%GRPC_RUN_TESTS_CXX_LANGUAGE_SUFFIX% || goto :error
+  echo %* | find "-DgRPC_BUILD_TESTS=OFF" >nul
+  if %errorlevel% == 0 (
+    ninja -j%GRPC_RUN_TESTS_JOBS% || goto :error
+  ) else (
+    ninja -j%GRPC_RUN_TESTS_JOBS% buildtests_%GRPC_RUN_TESTS_CXX_LANGUAGE_SUFFIX% || goto :error
+  )
 
 ) else (
   @rem Use one of the Visual Studio generators.
@@ -119,7 +124,12 @@ If "%GRPC_CMAKE_GENERATOR%" == "Ninja" (
 
   @rem GRPC_RUN_TESTS_CXX_LANGUAGE_SUFFIX will be set to either "c" or "cxx"
   @rem Don't add -j option here because it will disable gRPC_BUILD_MSVC_MP_COUNT option
-  cmake --build . --target buildtests_%GRPC_RUN_TESTS_CXX_LANGUAGE_SUFFIX% --config %MSBUILD_CONFIG% || goto :error
+  echo %* | find "-DgRPC_BUILD_TESTS=OFF" >nul
+  if %errorlevel% == 0 (
+    cmake --build . --config %MSBUILD_CONFIG% || goto :error
+  ) else (
+    cmake --build . --target buildtests_%GRPC_RUN_TESTS_CXX_LANGUAGE_SUFFIX% --config %MSBUILD_CONFIG% || goto :error
+  )
 )
 
 endlocal
