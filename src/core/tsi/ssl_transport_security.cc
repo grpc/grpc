@@ -2950,7 +2950,8 @@ static int does_entry_match_name(absl::string_view entry,
 
 static int ssl_server_handshaker_factory_servername_callback(SSL* ssl,
                                                              int* /*ap*/,
-                                                             void* arg) {
+                                                             void* arg)
+    ABSL_EXCLUSIVE_LOCKS_REQUIRED(&tsi_ssl_handshaker::mu) {
   tsi_ssl_server_handshaker_factory* impl =
       static_cast<tsi_ssl_server_handshaker_factory*>(arg);
   const char* servername = SSL_get_servername(ssl, TLSEXT_NAMETYPE_host_name);
@@ -2963,11 +2964,7 @@ static int ssl_server_handshaker_factory_servername_callback(SSL* ssl,
       SSL_set_SSL_CTX(ssl, ssl_context.ssl_ctx);
 #if defined(OPENSSL_IS_BORINGSSL)
       if (ssl_context.key_signer != nullptr) {
-        tsi_ssl_handshaker* handshaker = GetHandshaker(ssl);
-        {
-          grpc_core::MutexLock lock(&handshaker->mu);
-          handshaker->key_signer = ssl_context.key_signer;
-        }
+        GetHandshaker(ssl)->key_signer = ssl_context.key_signer;
       }
 #endif
       return SSL_TLSEXT_ERR_OK;
