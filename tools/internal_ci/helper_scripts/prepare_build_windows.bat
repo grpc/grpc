@@ -24,23 +24,7 @@ set PATH=C:\tools\msys64\usr\bin;C:\Python39;C:\Program Files\CMake\bin;%PATH%
 cat C:\image_id.txt
 
 @rem install python 3.9 with retry in case of network errors
-set /a i=0
-set /a maxRetries=3
-:retry
-set /a i+=1
-choco install -y --no-progress python --version=3.9.13 && goto :success
-
-if %i% geq %maxRetries% (
-    echo "!TIME!: Failed to install python after %maxRetries% attempts."
-    exit /b 1
-)
-
-timeout /t 3
-echo "!TIME!: Failed to install python, retrying..."
-goto :retry
-
-:success
-echo "!TIME!: Successfully installed python"
+bash tools\internal_ci\helper_scripts\choco_install_with_retry.sh python --no-progress --version=3.9.13 || goto :error
 
 @rem create "python3" link that normally doesn't exist
 mklink C:\Python39\python3.exe C:\Python39\python.exe

@@ -29,24 +29,7 @@ echo "!TIME!: Preparing for the Windows build"
 call tools/internal_ci/helper_scripts/prepare_build_windows.bat || exit /b 1
 
 @rem Install clang-cl with retry in case of network errors
-echo "!TIME!: Installing llvm"
-set /a i=0
-set /a maxRetries=3
-:retry
-set /a i+=1
-choco install -y llvm --version=18.1.6 && goto :success
-
-if %i% geq %maxRetries% (
-    echo "!TIME!: Failed to install llvm after %maxRetries% attempts."
-    exit /b 1
-)
-
-timeout /t 3
-echo "!TIME!: Failed to install llvm, retrying..."
-goto :retry
-
-:success
-echo "!TIME!: Successfully installed llvm"
+bash tools\internal_ci\helper_scripts\choco_install_with_retry.sh llvm --version=18.1.6 || exit /b 1
 
 set BAZEL_LLVM="C:\Program Files\LLVM"
 clang-cl --version
