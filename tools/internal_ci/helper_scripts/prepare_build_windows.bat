@@ -26,6 +26,8 @@ cat C:\image_id.txt
 @rem install python 3.9 with retry in case of network errors
 bash tools\internal_ci\helper_scripts\choco_install_with_retry.sh python --no-progress --version=3.9.13 || goto :error
 
+dir C:\Python39
+
 @rem create "python3" link that normally doesn't exist
 mklink C:\Python39\python3.exe C:\Python39\python.exe
 

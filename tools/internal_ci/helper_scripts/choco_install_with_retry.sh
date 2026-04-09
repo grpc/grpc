@@ -24,13 +24,12 @@ fi
 
 PACKAGE=$1
 shift
-INSTALL_FLAGS="$@"
 MAX_RETRIES=3
 
 echo "Installing $PACKAGE using 'choco'"
 
 for ((i=1; i<=MAX_RETRIES; i++)); do
-    choco install "$PACKAGE" -y "$INSTALL_FLAGS" && exit 0
+    choco install "$PACKAGE" -y "$@" && exit 0
 
     if [ $i -lt $MAX_RETRIES ]; then
       echo "Attempt $i to install $PACKAGE failed. Retrying..."
