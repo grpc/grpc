@@ -1391,6 +1391,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/handshaker/proxy_mapper_registry.cc )
   s.files += %w( src/core/handshaker/proxy_mapper_registry.h )
   s.files += %w( src/core/handshaker/security/pipelined_secure_endpoint.cc )
+  s.files += %w( src/core/handshaker/security/pipelining_heuristic_selector.h )
   s.files += %w( src/core/handshaker/security/secure_endpoint.cc )
   s.files += %w( src/core/handshaker/security/secure_endpoint.h )
   s.files += %w( src/core/handshaker/security/security_handshaker.cc )

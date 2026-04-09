@@ -1384,6 +1384,7 @@ let package = Package(
         "src/core/handshaker/proxy_mapper_registry.cc",
         "src/core/handshaker/proxy_mapper_registry.h",
         "src/core/handshaker/security/pipelined_secure_endpoint.cc",
+        "src/core/handshaker/security/pipelining_heuristic_selector.h",
         "src/core/handshaker/security/secure_endpoint.cc",
         "src/core/handshaker/security/secure_endpoint.h",
         "src/core/handshaker/security/security_handshaker.cc",

@@ -303,6 +303,7 @@ grpc_cc_test(
         "//src/core/tsi/test_creds:client.pem",
         "//src/core/tsi/test_creds:client1.key",
         "//src/core/tsi/test_creds:server0.key",
+        "//src/core/tsi/test_creds:server0.pem",
         "//src/core/tsi/test_creds:server1.key",
         "//src/core/tsi/test_creds:server1.pem",
     ],
