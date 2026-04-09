@@ -87,53 +87,9 @@ EXPERIMENTS = {
         "dbg": {
         },
         "off": {
-            "chttp2_keepalive_tests": [
-                "subchannel_connection_scaling",
-            ],
             "core_end2end_test": [
-                "buffer_list_deletion_prep",
-                "chaotic_good_send_supported_features",
-                "local_connector_secure",
-                "otel_export_telemetry_domains",
-                "pipelined_read_secure_endpoint",
                 "pollset_alternative",
-                "promise_based_http2_client_transport",
-                "promise_filter_send_cancel_metadata",
-                "retry_in_callv3",
-                "secure_endpoint_offload_large_reads",
-                "secure_endpoint_offload_large_writes",
-                "secure_endpoint_read_coalescing",
-                "subchannel_connection_scaling",
                 "use_call_event_engine_in_completion_queue",
-                "wildcard_ip_expansion_restriction",
-            ],
-            "cpp_end2end_test": [
-                "promise_based_http2_client_transport",
-            ],
-            "cpp_lb_end2end_test": [
-                "subchannel_connection_scaling",
-            ],
-            "endpoint_test": [
-                "tcp_frame_size_tuning",
-                "tcp_rcv_lowat",
-            ],
-            "flow_control_test": [
-                "multiping",
-                "tcp_frame_size_tuning",
-                "tcp_rcv_lowat",
-            ],
-            "minimal_stack_test": [
-                "fuse_filters",
-            ],
-            "posix_endpoint_test": [
-                "pipelined_read_secure_endpoint",
-            ],
-            "resource_quota_test": [
-                "free_large_allocator",
-                "unconstrained_max_quota_buffer_size",
-            ],
-            "secure_endpoint_test": [
-                "pipelined_read_secure_endpoint",
             ],
         },
         "on": {
@@ -141,19 +97,11 @@ EXPERIMENTS = {
                 "event_engine_dns",
             ],
             "core_end2end_test": [
-                "error_flatten",
                 "event_engine_client",
                 "event_engine_dns_non_client_channel",
                 "event_engine_for_all_other_endpoints",
                 "event_engine_fork",
                 "event_engine_listener",
-            ],
-            "cpp_end2end_test": [
-                "error_flatten",
-                "subchannel_wrapper_cleanup_on_orphan",
-            ],
-            "error_tests": [
-                "error_flatten",
             ],
             "event_engine_client_test": [
                 "event_engine_client",
@@ -166,14 +114,6 @@ EXPERIMENTS = {
             ],
             "resolver_component_tests_runner_invoker": [
                 "event_engine_dns",
-            ],
-            "xds_end2end_test": [
-                "error_flatten",
-                "subchannel_wrapper_cleanup_on_orphan",
-                "xds_channel_filter_chain_per_route",
-            ],
-            "xds_test": [
-                "xds_channel_filter_chain_per_route",
             ],
         },
     },
@@ -181,53 +121,9 @@ EXPERIMENTS = {
         "dbg": {
         },
         "off": {
-            "chttp2_keepalive_tests": [
-                "subchannel_connection_scaling",
-            ],
             "core_end2end_test": [
-                "buffer_list_deletion_prep",
-                "chaotic_good_send_supported_features",
-                "local_connector_secure",
-                "otel_export_telemetry_domains",
-                "pipelined_read_secure_endpoint",
                 "pollset_alternative",
-                "promise_based_http2_client_transport",
-                "promise_filter_send_cancel_metadata",
-                "retry_in_callv3",
-                "secure_endpoint_offload_large_reads",
-                "secure_endpoint_offload_large_writes",
-                "secure_endpoint_read_coalescing",
-                "subchannel_connection_scaling",
                 "use_call_event_engine_in_completion_queue",
-                "wildcard_ip_expansion_restriction",
-            ],
-            "cpp_end2end_test": [
-                "promise_based_http2_client_transport",
-            ],
-            "cpp_lb_end2end_test": [
-                "subchannel_connection_scaling",
-            ],
-            "endpoint_test": [
-                "tcp_frame_size_tuning",
-                "tcp_rcv_lowat",
-            ],
-            "flow_control_test": [
-                "multiping",
-                "tcp_frame_size_tuning",
-                "tcp_rcv_lowat",
-            ],
-            "minimal_stack_test": [
-                "fuse_filters",
-            ],
-            "posix_endpoint_test": [
-                "pipelined_read_secure_endpoint",
-            ],
-            "resource_quota_test": [
-                "free_large_allocator",
-                "unconstrained_max_quota_buffer_size",
-            ],
-            "secure_endpoint_test": [
-                "pipelined_read_secure_endpoint",
             ],
         },
         "on": {
@@ -235,19 +131,11 @@ EXPERIMENTS = {
                 "event_engine_dns",
             ],
             "core_end2end_test": [
-                "error_flatten",
                 "event_engine_client",
                 "event_engine_dns_non_client_channel",
                 "event_engine_for_all_other_endpoints",
                 "event_engine_fork",
                 "event_engine_listener",
-            ],
-            "cpp_end2end_test": [
-                "error_flatten",
-                "subchannel_wrapper_cleanup_on_orphan",
-            ],
-            "error_tests": [
-                "error_flatten",
             ],
             "event_engine_client_test": [
                 "event_engine_client",
@@ -260,14 +148,6 @@ EXPERIMENTS = {
             ],
             "resolver_component_tests_runner_invoker": [
                 "event_engine_dns",
-            ],
-            "xds_end2end_test": [
-                "error_flatten",
-                "subchannel_wrapper_cleanup_on_orphan",
-                "xds_channel_filter_chain_per_route",
-            ],
-            "xds_test": [
-                "xds_channel_filter_chain_per_route",
             ],
         },
     },
