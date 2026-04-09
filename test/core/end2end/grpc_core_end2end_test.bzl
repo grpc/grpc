@@ -246,7 +246,7 @@ def grpc_core_end2end_test_suite(
             "//test/core/end2end:end2end_test_lib_no_fuzztest_gtest",
         ],
         defines = select({
-            ":grpc_running_in_pr": ["GRPC_RUNNING_IN_PR"],
+            "//test/core/end2end:grpc_running_in_pr": ["GRPC_RUNNING_IN_PR"],
             "//conditions:default": [],
         }),
         data = _DATA,
@@ -281,7 +281,7 @@ def grpc_core_end2end_test_suite(
                 "//test/core/end2end:end2end_test_lib_no_fuzztest_gtest",
             ],
             defines = select({
-                ":grpc_running_in_pr": ["GRPC_RUNNING_IN_PR"],
+                "//test/core/end2end:grpc_running_in_pr": ["GRPC_RUNNING_IN_PR"],
                 "//conditions:default": [],
             }),
             data = _DATA,

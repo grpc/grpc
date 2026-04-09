@@ -467,6 +467,7 @@ grpc_cc_test(
         "absl/log:log",
         "absl/memory",
         "absl/meta:type_traits",
+        "absl/random",
         "absl/strings",
         "gtest",
     ],
