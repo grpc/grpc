@@ -33,15 +33,15 @@ SYSTEM=$(uname | cut -f 1 -d_)
 if [ "$SYSTEM" == "Darwin" ]; then
   # work around https://github.com/rake-compiler/rake-compiler/issues/210
   export GRPC_RUBY_TEST_ONLY_WORKAROUND_MAKE_INSTALL_BUG=true
+
+  # Force Ruby's mkmf to use the compiler names from PATH (hitting the ccache symlinks)
+  export CC=clang
+  export CXX=clang++
 fi
 
 # Set up ccache symlinks so rake compile uses ccache
 source tools/internal_ci/helper_scripts/prepare_ccache_rc
 source tools/internal_ci/helper_scripts/prepare_ccache_symlinks_rc
-
-# Force Ruby's mkmf to use the compiler names from PATH (hitting the ccache symlinks)
-export CC=clang
-export CXX=clang++
 
 bundle exec rake compile
 
