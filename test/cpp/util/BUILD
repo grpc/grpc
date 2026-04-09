@@ -230,6 +230,7 @@ grpc_cc_test(
     srcs = [
         "grpc_tool_test.cc",
     ],
+    linkstatic = False,
     data = [
         "//src/core/tsi/test_creds:ca.pem",
         "//src/core/tsi/test_creds:server1.key",
