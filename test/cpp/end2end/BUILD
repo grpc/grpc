@@ -1750,3 +1750,23 @@ grpc_cc_test(
         "//test/cpp/util:test_util",
     ],
 )
+
+grpc_cc_test(
+    name = "cardinality_violation_test",
+    srcs = ["cardinality_violation_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    tags = [
+        "cpp_end2end_test",
+    ],
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//:grpc++",
+        "//src/proto/grpc/testing:echo_cc_grpc",
+        "//src/proto/grpc/testing:echo_messages_cc_proto",
+        "//test/core/test_util:grpc_test_util",
+        "//test/cpp/util:test_util",
+    ],
+)

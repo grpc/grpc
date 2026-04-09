@@ -54,7 +54,7 @@ class ProtoBufferReader : public grpc::protobuf::io::ZeroCopyInputStream {
     /// over the slices that make up a byte buffer
     if (!buffer->Valid() ||
         !grpc_byte_buffer_reader_init(&reader_, buffer->c_buffer())) {
-      status_ = Status(StatusCode::INTERNAL,
+      status_ = Status(StatusCode::UNIMPLEMENTED,
                        "Couldn't initialize byte buffer reader");
     }
   }
