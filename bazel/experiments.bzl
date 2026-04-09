@@ -141,7 +141,6 @@ EXPERIMENTS = {
                 "event_engine_dns",
             ],
             "core_end2end_test": [
-                "chaotic_good_framing_layer",
                 "error_flatten",
                 "event_engine_client",
                 "event_engine_dns_non_client_channel",
@@ -236,7 +235,6 @@ EXPERIMENTS = {
                 "event_engine_dns",
             ],
             "core_end2end_test": [
-                "chaotic_good_framing_layer",
                 "error_flatten",
                 "event_engine_client",
                 "event_engine_dns_non_client_channel",
@@ -331,7 +329,6 @@ EXPERIMENTS = {
                 "event_engine_dns",
             ],
             "core_end2end_test": [
-                "chaotic_good_framing_layer",
                 "error_flatten",
                 "event_engine_client",
                 "event_engine_dns_non_client_channel",
