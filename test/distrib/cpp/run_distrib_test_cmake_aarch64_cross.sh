@@ -61,6 +61,7 @@ cmake -DCMAKE_TOOLCHAIN_FILE=/tmp/toolchain.cmake \
       -DCMAKE_BUILD_TYPE=Release \
       -DCMAKE_CXX_STANDARD=17 \
       -DCMAKE_INSTALL_PREFIX=/tmp/install \
+      -DgRPC_BUILD_TESTS=OFF \
       ../..
 make "-j${GRPC_CPP_DISTRIBTEST_BUILD_COMPILER_JOBS}" install
 popd
