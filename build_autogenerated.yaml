@@ -8275,6 +8275,23 @@ targets:
   - absl/utility:utility
   - gpr
   uses_polling: false
+- name: cardinality_violation_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - src/proto/grpc/testing/echo.proto
+  - src/proto/grpc/testing/echo_messages.proto
+  - src/proto/grpc/testing/simple_messages.proto
+  - third_party/googleapis/google/api/http.proto
+  - third_party/googleapis/google/rpc/status.proto
+  - third_party/protoc-gen-validate/validate/validate.proto
+  - third_party/xds/xds/data/orca/v3/orca_load_report.proto
+  - test/cpp/end2end/cardinality_violation_test.cc
+  deps:
+  - gtest
+  - grpc++_test_util
 - name: cds_test
   gtest: true
   build: test
