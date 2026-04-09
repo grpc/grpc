@@ -29,7 +29,7 @@ source tools/internal_ci/helper_scripts/prepare_ccache_symlinks_rc
 
 python3 -m pip install six==1.16.0
 
-@rem Only build gRPC tests with cmake for PRs.
+# Only build gRPC tests with cmake for PRs.
 if not "%KOKORO_GITHUB_PULL_REQUEST_NUMBER%"=="" (
     set RUN_TESTS_FLAGS=%RUN_TESTS_FLAGS% --build_only --cmake_configure_extra_args="-DgRPC_BUILD_TESTS=OFF"
 )
