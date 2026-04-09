@@ -266,9 +266,7 @@ class OpenTelemetryObservabilityRegisteredMethodsTest(
 
         await self._validate_metrics_exist(self.all_metrics)
         self._validate_all_metrics_names(self.all_metrics.keys())
-        self._validate_all_method_labels(
-            self.all_metrics, "test/UnaryUnary"
-        )
+        self._validate_all_method_labels(self.all_metrics, "test/UnaryUnary")
 
     async def test_record_unary_stream(self):
         self._server, self._port = await _test_server.start_server(
@@ -280,9 +278,7 @@ class OpenTelemetryObservabilityRegisteredMethodsTest(
 
         await self._validate_metrics_exist(self.all_metrics)
         self._validate_all_metrics_names(self.all_metrics.keys())
-        self._validate_all_method_labels(
-            self.all_metrics, "test/UnaryStream"
-        )
+        self._validate_all_method_labels(self.all_metrics, "test/UnaryStream")
 
     async def test_record_stream_unary(self):
         self._server, self._port = await _test_server.start_server(
@@ -294,9 +290,7 @@ class OpenTelemetryObservabilityRegisteredMethodsTest(
 
         await self._validate_metrics_exist(self.all_metrics)
         self._validate_all_metrics_names(self.all_metrics.keys())
-        self._validate_all_method_labels(
-            self.all_metrics, "test/StreamUnary"
-        )
+        self._validate_all_method_labels(self.all_metrics, "test/StreamUnary")
 
     async def test_record_stream_stream(self):
         self._server, self._port = await _test_server.start_server(
@@ -308,9 +302,7 @@ class OpenTelemetryObservabilityRegisteredMethodsTest(
 
         await self._validate_metrics_exist(self.all_metrics)
         self._validate_all_metrics_names(self.all_metrics.keys())
-        self._validate_all_method_labels(
-            self.all_metrics, "test/StreamStream"
-        )
+        self._validate_all_method_labels(self.all_metrics, "test/StreamStream")
 
 
 if __name__ == "__main__":

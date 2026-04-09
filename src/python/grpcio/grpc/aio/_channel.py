@@ -511,9 +511,7 @@ class Channel(_base_channel.Channel):
         if not _registered_method:
             return 0
 
-        return self._channel.get_registered_call_handle(
-            _common.encode(method)
-        )
+        return self._channel.get_registered_call_handle(_common.encode(method))
 
     # pylint: disable=arguments-differ
     def unary_unary(
