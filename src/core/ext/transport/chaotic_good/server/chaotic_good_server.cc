@@ -680,9 +680,6 @@ void ChaoticGoodServerListener::Orphan() {
 
 absl::StatusOr<int> AddChaoticGoodPort(Server* server, std::string addr,
                                        const ChannelArgs& args) {
-  if (!IsChaoticGoodFramingLayerEnabled()) {
-    return chaotic_good_legacy::AddLegacyChaoticGoodPort(server, addr, args);
-  }
   if (absl::StartsWith(addr, "external:")) {
     auto listener =
         MakeOrphanable<chaotic_good::ChaoticGoodServerListener>(server, args);

@@ -292,10 +292,6 @@ PendingConnection ChaoticGoodConnector::ConnectionCreator::Connect(
 
 absl::StatusOr<grpc_channel*> CreateChaoticGoodChannel(
     std::string target, const ChannelArgs& args) {
-  if (!IsChaoticGoodFramingLayerEnabled()) {
-    return chaotic_good_legacy::CreateLegacyChaoticGoodChannel(target, args);
-  }
-
   // Create channel.
   auto r = ChannelCreate(
       target,

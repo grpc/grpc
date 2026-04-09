@@ -211,45 +211,42 @@ std::vector<CoreTestConfiguration> End2endTestConfigs() {
           }},
   };
 
-  if (IsChaoticGoodFramingLayerEnabled()) {
-    std::vector<CoreTestConfiguration> secure_config{
-        CoreTestConfiguration{
-            "ChaoticGoodSecureFullStack",
-            FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
-                FEATURE_MASK_DOES_NOT_SUPPORT_WRITE_BUFFERING |
-                FEATURE_MASK_IS_CALL_V3 | FEATURE_MASK_DOES_NOT_SUPPORT_RETRY,
-            "foo.test.google.fr",
-            [](const ChannelArgs& /*client_args*/,
-               const ChannelArgs& /*server_args*/) {
-              return std::make_unique<ChaoticGoodFixture<SslTlsFixture1_3>>();
-            }},
-        CoreTestConfiguration{
-            "ChaoticGoodSecureManyConnections",
-            FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
-                FEATURE_MASK_DOES_NOT_SUPPORT_RETRY |
-                FEATURE_MASK_DOES_NOT_SUPPORT_WRITE_BUFFERING |
-                FEATURE_MASK_IS_CALL_V3,
-            "foo.test.google.fr",
-            [](const ChannelArgs& /*client_args*/,
-               const ChannelArgs& /*server_args*/) {
-              return std::make_unique<ChaoticGoodSecureManyConnectionFixture>();
-            }},
-        CoreTestConfiguration{
-            "ChaoticGoodSecureSingleConnection",
-            FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
-                FEATURE_MASK_DOES_NOT_SUPPORT_RETRY |
-                FEATURE_MASK_DOES_NOT_SUPPORT_WRITE_BUFFERING |
-                FEATURE_MASK_IS_CALL_V3 | FEATURE_MASK_DO_NOT_GTEST,
-            "foo.test.google.fr",
-            [](const ChannelArgs& /*client_args*/,
-               const ChannelArgs& /*server_args*/) {
-              return std::make_unique<
-                  ChaoticGoodSecureSingleConnectionFixture>();
-            }},
-    };
-    for (auto& c : secure_config) {
-      config.emplace_back(std::move(c));
-    }
+  std::vector<CoreTestConfiguration> secure_config{
+      CoreTestConfiguration{
+          "ChaoticGoodSecureFullStack",
+          FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
+              FEATURE_MASK_DOES_NOT_SUPPORT_WRITE_BUFFERING |
+              FEATURE_MASK_IS_CALL_V3 | FEATURE_MASK_DOES_NOT_SUPPORT_RETRY,
+          "foo.test.google.fr",
+          [](const ChannelArgs& /*client_args*/,
+             const ChannelArgs& /*server_args*/) {
+            return std::make_unique<ChaoticGoodFixture<SslTlsFixture1_3>>();
+          }},
+      CoreTestConfiguration{
+          "ChaoticGoodSecureManyConnections",
+          FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
+              FEATURE_MASK_DOES_NOT_SUPPORT_RETRY |
+              FEATURE_MASK_DOES_NOT_SUPPORT_WRITE_BUFFERING |
+              FEATURE_MASK_IS_CALL_V3,
+          "foo.test.google.fr",
+          [](const ChannelArgs& /*client_args*/,
+             const ChannelArgs& /*server_args*/) {
+            return std::make_unique<ChaoticGoodSecureManyConnectionFixture>();
+          }},
+      CoreTestConfiguration{
+          "ChaoticGoodSecureSingleConnection",
+          FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
+              FEATURE_MASK_DOES_NOT_SUPPORT_RETRY |
+              FEATURE_MASK_DOES_NOT_SUPPORT_WRITE_BUFFERING |
+              FEATURE_MASK_IS_CALL_V3 | FEATURE_MASK_DO_NOT_GTEST,
+          "foo.test.google.fr",
+          [](const ChannelArgs& /*client_args*/,
+             const ChannelArgs& /*server_args*/) {
+            return std::make_unique<ChaoticGoodSecureSingleConnectionFixture>();
+          }},
+  };
+  for (auto& c : secure_config) {
+    config.emplace_back(std::move(c));
   }
   return config;
 }

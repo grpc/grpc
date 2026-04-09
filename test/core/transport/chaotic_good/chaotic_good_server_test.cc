@@ -166,9 +166,6 @@ class ChaoticGoodServerTest : public ::testing::TestWithParam<CredentialsType> {
 };
 
 TEST_P(ChaoticGoodServerTest, Connect) {
-  if (!IsChaoticGoodFramingLayerEnabled()) {
-    GTEST_SKIP() << "Chaotic Good framing layer is not enabled";
-  }
   GRPC_CLOSURE_INIT(&on_connecting_finished_, OnConnectingFinished, this,
                     grpc_schedule_on_exec_ctx);
   connector_->Connect(args_, &connecting_result_, &on_connecting_finished_);
@@ -178,9 +175,6 @@ TEST_P(ChaoticGoodServerTest, Connect) {
 }
 
 TEST_P(ChaoticGoodServerTest, ConnectAndShutdown) {
-  if (!IsChaoticGoodFramingLayerEnabled()) {
-    GTEST_SKIP() << "Chaotic Good framing layer is not enabled";
-  }
   Notification connect_finished;
   GRPC_CLOSURE_INIT(&on_connecting_finished_, OnConnectingFinished, this,
                     grpc_schedule_on_exec_ctx);

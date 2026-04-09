@@ -41,9 +41,6 @@ const char* const
 const char* const
     additional_constraints_call_tracer_send_trailing_metadata_is_an_annotation =
         "{}";
-const char* const description_chaotic_good_framing_layer =
-    "Enable the chaotic good framing layer.";
-const char* const additional_constraints_chaotic_good_framing_layer = "{}";
 const char* const description_chaotic_good_send_supported_features =
     "Send supported features in chaotic good settings frames.";
 const char* const additional_constraints_chaotic_good_send_supported_features =
@@ -256,9 +253,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_call_tracer_send_trailing_metadata_is_an_annotation,
      additional_constraints_call_tracer_send_trailing_metadata_is_an_annotation,
      nullptr, 0, false, true},
-    {"chaotic_good_framing_layer", description_chaotic_good_framing_layer,
-     additional_constraints_chaotic_good_framing_layer, nullptr, 0, true,
-     false},
     {"chaotic_good_send_supported_features",
      description_chaotic_good_send_supported_features,
      additional_constraints_chaotic_good_send_supported_features, nullptr, 0,
@@ -432,9 +426,6 @@ const char* const
 const char* const
     additional_constraints_call_tracer_send_trailing_metadata_is_an_annotation =
         "{}";
-const char* const description_chaotic_good_framing_layer =
-    "Enable the chaotic good framing layer.";
-const char* const additional_constraints_chaotic_good_framing_layer = "{}";
 const char* const description_chaotic_good_send_supported_features =
     "Send supported features in chaotic good settings frames.";
 const char* const additional_constraints_chaotic_good_send_supported_features =
@@ -647,9 +638,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_call_tracer_send_trailing_metadata_is_an_annotation,
      additional_constraints_call_tracer_send_trailing_metadata_is_an_annotation,
      nullptr, 0, false, true},
-    {"chaotic_good_framing_layer", description_chaotic_good_framing_layer,
-     additional_constraints_chaotic_good_framing_layer, nullptr, 0, true,
-     false},
     {"chaotic_good_send_supported_features",
      description_chaotic_good_send_supported_features,
      additional_constraints_chaotic_good_send_supported_features, nullptr, 0,
@@ -823,9 +811,6 @@ const char* const
 const char* const
     additional_constraints_call_tracer_send_trailing_metadata_is_an_annotation =
         "{}";
-const char* const description_chaotic_good_framing_layer =
-    "Enable the chaotic good framing layer.";
-const char* const additional_constraints_chaotic_good_framing_layer = "{}";
 const char* const description_chaotic_good_send_supported_features =
     "Send supported features in chaotic good settings frames.";
 const char* const additional_constraints_chaotic_good_send_supported_features =
@@ -1038,9 +1023,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_call_tracer_send_trailing_metadata_is_an_annotation,
      additional_constraints_call_tracer_send_trailing_metadata_is_an_annotation,
      nullptr, 0, false, true},
-    {"chaotic_good_framing_layer", description_chaotic_good_framing_layer,
-     additional_constraints_chaotic_good_framing_layer, nullptr, 0, true,
-     false},
     {"chaotic_good_send_supported_features",
      description_chaotic_good_send_supported_features,
      additional_constraints_chaotic_good_send_supported_features, nullptr, 0,
