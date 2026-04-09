@@ -1883,6 +1883,7 @@ let package = Package(
         "src/core/load_balancing/xds/xds_override_host.cc",
         "src/core/load_balancing/xds/xds_override_host.h",
         "src/core/load_balancing/xds/xds_wrr_locality.cc",
+        "src/core/mitigation_engine/mitigation_engine.h",
         "src/core/net/socket_mutator.cc",
         "src/core/net/socket_mutator.h",
         "src/core/plugin_registry/grpc_plugin_registry.cc",

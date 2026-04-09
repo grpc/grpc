@@ -104,7 +104,8 @@ void HpackParserFuzzer(const hpack_parser_fuzzer::Msg& msg) {
 
       parser->BeginFrame(
           &b, max_length, absolute_max_length, boundary, priority,
-          HPackParser::LogInfo{1, HPackParser::LogInfo::kHeaders, false});
+          HPackParser::LogInfo{1, HPackParser::LogInfo::kHeaders, false},
+          nullptr);
       int stop_buffering_ctr =
           std::max(-1, frame.stop_buffering_after_segments());
       for (int idx = 0; idx < frame.parse_size(); idx++) {

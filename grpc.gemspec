@@ -1886,6 +1886,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/load_balancing/xds/xds_override_host.cc )
   s.files += %w( src/core/load_balancing/xds/xds_override_host.h )
   s.files += %w( src/core/load_balancing/xds/xds_wrr_locality.cc )
+  s.files += %w( src/core/mitigation_engine/mitigation_engine.h )
   s.files += %w( src/core/net/socket_mutator.cc )
   s.files += %w( src/core/net/socket_mutator.h )
   s.files += %w( src/core/plugin_registry/grpc_plugin_registry.cc )
