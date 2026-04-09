@@ -107,14 +107,17 @@ cdef class _ChannelState:
 
 cdef class CallHandle:
 
-  def __cinit__(self, _ChannelState channel_state, object method):
+  def __cinit__(self, object channel, object method):
     self.method = method
     cpython.Py_INCREF(method)
     # Note that since we always pass None for host, we set the
     # second-to-last parameter of grpc_channel_register_call to a fixed
     # NULL value.
     self.c_call_handle = grpc_channel_register_call(
-      channel_state.c_channel, <const char *>method, NULL, NULL)
+      <grpc_channel*>cpython.PyLong_AsVoidPtr(channel),
+      <const char *>method,
+      NULL,
+      NULL)
 
   def __dealloc__(self):
     cpython.Py_DECREF(self.method)
@@ -579,5 +582,6 @@ cdef class Channel:
       The registered call handle pointer in the form of a Python Long. 
     """
     if method not in self._registered_call_handles:
-      self._registered_call_handles[method] = CallHandle(self._state, method)
+      self._registered_call_handles[method] = CallHandle(
+        cpython.PyLong_FromVoidPtr(self._state.c_channel), method)
     return self._registered_call_handles[method].call_handle

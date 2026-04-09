@@ -126,10 +126,9 @@ cdef class AioChannel:
           The registered call handle pointer as a Python Long.
         """
         if method not in self._registered_call_handles:
-            self._registered_call_handles[method] = cpython.PyLong_FromVoidPtr(
-                grpc_channel_register_call(
-                    self.channel, <const char*>method, NULL, NULL))
-        return self._registered_call_handles[method]
+            self._registered_call_handles[method] = CallHandle(
+                cpython.PyLong_FromVoidPtr(self.channel), method)
+        return self._registered_call_handles[method].call_handle
 
     def call(self,
              bytes method,
