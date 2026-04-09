@@ -614,7 +614,7 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
         if poller_config["deps"] != core_deps:
             fail("deps changed: %r --> %r" % (deps, poller_config["deps"]))
         sh_test(
-            name = poller_config["name"],
+            name = poller_config["name"] + ".exe",
             srcs = [":%s_bin" % name],
             tags = poller_config["tags"],
             args = poller_config["args"],
