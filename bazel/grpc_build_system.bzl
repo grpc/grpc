@@ -599,7 +599,7 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
         srcs = srcs,
         deps = core_deps,
         testonly = 1,
-        copts = GRPC_DEFAULT_COPTS + copts,
+        copts = copts,
         linkopts = if_not_windows(["-pthread"]) + if_windows(["-defaultlib:ws2_32.lib"]),
         linkstatic = linkstatic,
         exec_compatible_with = exec_compatible_with,
@@ -626,6 +626,10 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
             data = data,
             exec_compatible_with = exec_compatible_with,
             exec_properties = exec_properties,
+        )
+        native.alias(
+            name = poller_config["name"],
+            actual = ":" + poller_config["name"] + ".exe",
         )
 
 def grpc_cc_binary(name, srcs = [], deps = [], external_deps = [], args = [], data = [], testonly = False, linkshared = False, linkopts = [], tags = [], target_compatible_with = [], features = [], visibility = None):
