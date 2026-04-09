@@ -45,6 +45,11 @@ call tools/internal_ci/helper_scripts/prepare_ccache.bat || exit /b 1
 @rem   run_tests.py to fail to spawn test subprocesses.
 python3 tools/run_tests/start_port_server.py || exit /b 1
 
+@rem Only build gRPC tests with cmake for PRs.
+if not "%KOKORO_GITHUB_PULL_REQUEST_NUMBER%"=="" (
+    set RUN_TESTS_FLAGS=%RUN_TESTS_FLAGS% --build_only --cmake_configure_extra_args="-DgRPC_BUILD_TESTS=OFF"
+)
+
 python3 tools/run_tests/run_tests_matrix.py %RUN_TESTS_FLAGS%
 set RUNTESTS_EXITCODE=%errorlevel%
 
