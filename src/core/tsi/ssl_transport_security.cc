@@ -3320,7 +3320,6 @@ tsi_result tsi_create_ssl_server_handshaker_factory_with_options(
   impl->ssl_contexts.reserve(ssl_context_size);
   for (i = 0; i < ssl_context_size; i++) {
     SslContext& ssl_context = impl->ssl_contexts.emplace_back();
-    ;
 #if OPENSSL_VERSION_NUMBER >= 0x10100000
     ssl_context.ssl_ctx = SSL_CTX_new(TLS_method());
 #else
