@@ -145,11 +145,18 @@ struct tsi_ssl_client_handshaker_factory {
 // handshake, e.g. the server name for checking whether this SSL_CTX
 // corresponds to a particular SNI.
 struct SslContext {
-  SSL_CTX* ssl_ctx;
+  SSL_CTX* ssl_ctx = nullptr;
   tsi_peer x509_subject_name;
 #if defined(OPENSSL_IS_BORINGSSL)
   std::shared_ptr<grpc_core::PrivateKeySigner> key_signer;
 #endif
+
+  ~SslContext() {
+    if (ssl_ctx != nullptr) {
+      SSL_CTX_free(ssl_ctx);
+      tsi_peer_destruct(&x509_subject_name);
+    }
+  }
 };
 
 struct tsi_ssl_server_handshaker_factory {
@@ -2488,6 +2495,7 @@ static tsi_result create_tsi_ssl_handshaker(
     SSL_CTX* ctx, int is_client, const char* server_name_indication,
     size_t network_bio_buf_size, size_t ssl_bio_buf_size,
     std::optional<std::string> alpn_preferred_protocol_raw_list,
+    std::shared_ptr<grpc_core::PrivateKeySigner> key_signer,
     tsi_ssl_handshaker_factory* factory, tsi_handshaker** handshaker) {
   SSL* ssl = SSL_new(ctx);
   BIO* network_io = nullptr;
@@ -2592,25 +2600,7 @@ static tsi_result create_tsi_ssl_handshaker(
       static_cast<unsigned char*>(gpr_zalloc(impl->outgoing_bytes_buffer_size));
   impl->vtable = &handshaker_vtable;
   impl->factory_ref = tsi_ssl_handshaker_factory_ref(factory);
-#if defined(OPENSSL_IS_BORINGSSL)
-  if (is_client) {
-    tsi_ssl_client_handshaker_factory* client_factory =
-        reinterpret_cast<tsi_ssl_client_handshaker_factory*>(factory);
-    impl->key_signer = client_factory->key_signer;
-  } else {
-    tsi_ssl_server_handshaker_factory* server_factory =
-        reinterpret_cast<tsi_ssl_server_handshaker_factory*>(factory);
-    // If the client sends an SNI in the ClientHello message, the key_signer
-    // will be dynamically selected by
-    // `ssl_server_handshaker_factory_servername_callback`. In the event that
-    // the client does not send an SNI in the ClientHello or the SNI does not
-    // match any of the certificate, we use the default certificate and the
-    // signer that may come with it.
-    if (server_factory->ssl_contexts[0].key_signer != nullptr) {
-      impl->key_signer = server_factory->ssl_contexts[0].key_signer;
-    }
-  }
-#endif
+  impl->key_signer = std::move(key_signer);
 
   *handshaker = impl;
 
@@ -2661,8 +2651,8 @@ tsi_result tsi_ssl_client_handshaker_factory_create_handshaker(
       << "Creating SSL handshaker with SNI " << server_name_indication;
   return create_tsi_ssl_handshaker(
       factory->ssl_context, 1, server_name_indication, network_bio_buf_size,
-      ssl_bio_buf_size, alpn_preferred_protocol_list, &factory->base,
-      handshaker);
+      ssl_bio_buf_size, alpn_preferred_protocol_list, factory->key_signer,
+      &factory->base, handshaker);
 }
 
 void tsi_ssl_client_handshaker_factory_unref(
@@ -2706,9 +2696,12 @@ tsi_result tsi_ssl_server_handshaker_factory_create_handshaker(
   if (factory->ssl_contexts.empty()) return TSI_INVALID_ARGUMENT;
   // Create the handshaker with the first context. We will switch if needed
   // because of SNI in ssl_server_handshaker_factory_servername_callback.
-  return create_tsi_ssl_handshaker(factory->ssl_contexts[0].ssl_ctx, 0, nullptr,
-                                   network_bio_buf_size, ssl_bio_buf_size,
-                                   std::nullopt, &factory->base, handshaker);
+  // Likewise, we pass the private key signer corresponding to the first
+  // context.
+  return create_tsi_ssl_handshaker(
+      factory->ssl_contexts[0].ssl_ctx, 0, nullptr, network_bio_buf_size,
+      ssl_bio_buf_size, std::nullopt, factory->ssl_contexts[0].key_signer,
+      &factory->base, handshaker);
 }
 
 void tsi_ssl_server_handshaker_factory_unref(
@@ -2722,12 +2715,6 @@ static void tsi_ssl_server_handshaker_factory_destroy(
   if (factory == nullptr) return;
   tsi_ssl_server_handshaker_factory* self =
       reinterpret_cast<tsi_ssl_server_handshaker_factory*>(factory);
-  for (size_t i = 0; i < self->ssl_contexts.size(); i++) {
-    if (self->ssl_contexts[i].ssl_ctx != nullptr) {
-      SSL_CTX_free(self->ssl_contexts[i].ssl_ctx);
-      tsi_peer_destruct(&self->ssl_contexts[i].x509_subject_name);
-    }
-  }
   if (self->alpn_protocol_list != nullptr) gpr_free(self->alpn_protocol_list);
   delete self;
 }
@@ -2782,13 +2769,12 @@ static int ssl_server_handshaker_factory_servername_callback(SSL* ssl,
     return SSL_TLSEXT_ERR_NOACK;
   }
 
-  for (size_t i = 0; i < impl->ssl_contexts.size(); i++) {
-    if (tsi_ssl_peer_matches_name(&impl->ssl_contexts[i].x509_subject_name,
-                                  servername)) {
-      SSL_set_SSL_CTX(ssl, impl->ssl_contexts[i].ssl_ctx);
+  for (const auto& ssl_context : impl->ssl_contexts) {
+    if (tsi_ssl_peer_matches_name(&ssl_context.x509_subject_name, servername)) {
+      SSL_set_SSL_CTX(ssl, ssl_context.ssl_ctx);
 #if defined(OPENSSL_IS_BORINGSSL)
-      if (impl->ssl_contexts[i].key_signer != nullptr) {
-        GetHandshaker(ssl)->key_signer = impl->ssl_contexts[i].key_signer;
+      if (ssl_context.key_signer != nullptr) {
+        GetHandshaker(ssl)->key_signer = ssl_context.key_signer;
       }
 #endif
       return SSL_TLSEXT_ERR_OK;
@@ -3104,7 +3090,6 @@ tsi_result tsi_create_ssl_server_handshaker_factory_with_options(
   tsi_ssl_handshaker_factory_init(&impl->base);
   impl->base.vtable = &server_handshaker_factory_vtable;
 
-  impl->ssl_contexts.reserve(options->pem_key_cert_pairs.size());
   if (options->root_cert_info != nullptr) {
     impl->root_cert_info = options->root_cert_info;
   }
@@ -3123,8 +3108,10 @@ tsi_result tsi_create_ssl_server_handshaker_factory_with_options(
     impl->key_logger = options->key_logger->Ref();
   }
 
+  impl->ssl_contexts.reserve(options->pem_key_cert_pairs.size());
   for (i = 0; i < options->pem_key_cert_pairs.size(); i++) {
-    SslContext ssl_context;
+    SslContext& ssl_context = impl->ssl_contexts.emplace_back();
+    ;
 #if OPENSSL_VERSION_NUMBER >= 0x10100000
     ssl_context.ssl_ctx = SSL_CTX_new(TLS_method());
 #else
@@ -3287,7 +3274,6 @@ tsi_result tsi_create_ssl_server_handshaker_factory_with_options(
           ssl_keylogging_callback<tsi_ssl_server_handshaker_factory>);
     }
 #endif
-    impl->ssl_contexts.push_back(std::move(ssl_context));
 
     if (result != TSI_OK) {
       tsi_ssl_handshaker_factory_unref(&impl->base);
