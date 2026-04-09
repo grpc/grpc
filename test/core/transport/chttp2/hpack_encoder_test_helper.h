@@ -63,6 +63,7 @@ class HpackEncoderTestHelper {
     for (i = 0; i < output.count;) {
       first_frame = i == 0;
       grpc_slice* slice = &output.slices[i++];
+      if (GRPC_SLICE_LENGTH(*slice) == 0) continue;
 
       // Read gRPC frame header
       uint8_t* p = GRPC_SLICE_START_PTR(*slice);
