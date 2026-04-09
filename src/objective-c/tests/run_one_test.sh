@@ -92,3 +92,6 @@ time xcodebuild \
     test \
     "${XCODEBUILD_FLAGS}" \
     | "${XCODEBUILD_FILTER_OUTPUT_SCRIPT}"
+
+# Check ccache statistics
+ccache -s

@@ -90,3 +90,6 @@ else
     CODE_SIGNING_ALLOWED=NO \
     | "${XCODEBUILD_FILTER_OUTPUT_SCRIPT}"
 fi
+
+# Check ccache statistics
+ccache -s
