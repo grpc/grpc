@@ -578,6 +578,6 @@ cdef class Channel:
     Returns:
       The registered call handle pointer in the form of a Python Long. 
     """
-    if method not in self._registered_call_handles.keys():
+    if method not in self._registered_call_handles:
       self._registered_call_handles[method] = CallHandle(self._state, method)
     return self._registered_call_handles[method].call_handle

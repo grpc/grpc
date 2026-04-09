@@ -19,7 +19,7 @@ import logging
 import os
 import sys
 import time
-from typing import Any, Callable, List, Optional, Set
+from typing import Any, Callable, Optional
 import unittest
 
 import grpc_observability
@@ -55,7 +55,7 @@ class OTelMetricExporter(otel_metrics_export.MetricExporter):
 
     def __init__(
         self,
-        all_metrics: dict[str, List],
+        all_metrics: dict[str, list],
         preferred_temporality: (
             dict[type, otel_metrics_export.AggregationTemporality] | None
         ) = None,
@@ -145,11 +145,11 @@ class OpenTelemetryObservabilityBase(AioTestBase):
             message=lambda: f"No metrics were exported",
         )
 
-    def _validate_all_metrics_names(self, metric_names: Set[str]) -> None:
+    def _validate_all_metrics_names(self, metric_names: list[str]) -> None:
         self._validate_server_metrics_names(metric_names)
         self._validate_client_metrics_names(metric_names)
 
-    def _validate_server_metrics_names(self, metric_names: Set[str]) -> None:
+    def _validate_server_metrics_names(self, metric_names: list[str]) -> None:
         for base_metric in _open_telemetry_measures.base_metrics():
             if "grpc.server" in base_metric.name:
                 self.assertTrue(
@@ -160,7 +160,7 @@ class OpenTelemetryObservabilityBase(AioTestBase):
                     ),
                 )
 
-    def _validate_client_metrics_names(self, metric_names: Set[str]) -> None:
+    def _validate_client_metrics_names(self, metric_names: list[str]) -> None:
         for base_metric in _open_telemetry_measures.base_metrics():
             if "grpc.client" in base_metric.name:
                 self.assertTrue(
@@ -172,7 +172,7 @@ class OpenTelemetryObservabilityBase(AioTestBase):
                 )
 
     def _validate_all_method_labels(
-        self, all_metrics: dict[str, Any], registered_method_name: str = None
+        self, all_metrics: dict[str, Any], registered_method_name: str = ""
     ) -> None:
         client_method_values = set()
         server_method_values = set()

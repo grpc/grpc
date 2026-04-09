@@ -558,7 +558,7 @@ class UnaryUnaryCall(_UnaryResponseMixin, Call, _base_call.UnaryUnaryCall):
         request_serializer: Optional[SerializingFunction],
         response_deserializer: Optional[DeserializingFunction],
         loop: asyncio.AbstractEventLoop,
-        registered_call_handle: Optional[int] = None,
+        registered_call_handle: int = 0,
     ) -> None:
         super().__init__(
             channel.call(
@@ -628,7 +628,7 @@ class UnaryStreamCall(_StreamResponseMixin, Call, _base_call.UnaryStreamCall):
         request_serializer: Optional[SerializingFunction],
         response_deserializer: Optional[DeserializingFunction],
         loop: asyncio.AbstractEventLoop,
-        registered_call_handle: Optional[int] = None,
+        registered_call_handle: int = 0,
     ) -> None:
         super().__init__(
             channel.call(
@@ -691,7 +691,7 @@ class StreamUnaryCall(
         request_serializer: Optional[SerializingFunction],
         response_deserializer: Optional[DeserializingFunction],
         loop: asyncio.AbstractEventLoop,
-        registered_call_handle: Optional[int] = None,
+        registered_call_handle: int = 0,
     ) -> None:
         super().__init__(
             channel.call(
@@ -751,7 +751,7 @@ class StreamStreamCall(
         request_serializer: Optional[SerializingFunction],
         response_deserializer: Optional[DeserializingFunction],
         loop: asyncio.AbstractEventLoop,
-        registered_call_handle: Optional[int] = None,
+        registered_call_handle: int = 0,
     ) -> None:
         super().__init__(
             channel.call(

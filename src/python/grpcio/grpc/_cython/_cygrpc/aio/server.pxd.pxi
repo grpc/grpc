@@ -61,6 +61,13 @@ cdef class _MessageReceiver:
     cdef object _agen
 
 
+cdef class _MethodResolver:
+    cdef list _generic_handlers
+    cdef dict _registered_method_handlers
+
+    cpdef resolve_handler(self, _HandlerCallDetails handler_call_details)
+
+
 cdef enum AioServerStatus:
     AIO_SERVER_STATUS_UNKNOWN
     AIO_SERVER_STATUS_READY

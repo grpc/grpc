@@ -635,7 +635,7 @@ class InterceptedUnaryUnaryCall(
         request_serializer: Optional[SerializingFunction],
         response_deserializer: Optional[DeserializingFunction],
         loop: asyncio.AbstractEventLoop,
-        registered_call_handle: Optional[int] = None,
+        registered_call_handle: int = 0,
     ) -> None:
         self._loop = loop
         self._channel = channel
@@ -735,7 +735,7 @@ class InterceptedUnaryStreamCall(
         request_serializer: Optional[SerializingFunction],
         response_deserializer: Optional[DeserializingFunction],
         loop: asyncio.AbstractEventLoop,
-        registered_call_handle: Optional[int] = None,
+        registered_call_handle: int = 0,
     ) -> None:
         self._loop = loop
         self._channel = channel
@@ -858,7 +858,7 @@ class InterceptedStreamUnaryCall(
         request_serializer: Optional[SerializingFunction],
         response_deserializer: Optional[DeserializingFunction],
         loop: asyncio.AbstractEventLoop,
-        registered_call_handle: Optional[int] = None,
+        registered_call_handle: int = 0,
     ) -> None:
         self._loop = loop
         self._channel = channel
@@ -960,7 +960,7 @@ class InterceptedStreamStreamCall(
         request_serializer: Optional[SerializingFunction],
         response_deserializer: Optional[DeserializingFunction],
         loop: asyncio.AbstractEventLoop,
-        registered_call_handle: Optional[int] = None,
+        registered_call_handle: int = 0,
     ) -> None:
         self._loop = loop
         self._channel = channel

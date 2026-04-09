@@ -94,7 +94,7 @@ class _BaseMultiCallable:
     _interceptors: Optional[Sequence[ClientInterceptor]]
     _references: List[Any]
     _loop: asyncio.AbstractEventLoop
-    _registered_call_handle: Optional[int]
+    _registered_call_handle: int
 
     # pylint: disable=too-many-arguments
     def __init__(
@@ -106,7 +106,7 @@ class _BaseMultiCallable:
         interceptors: Optional[Sequence[ClientInterceptor]],
         references: List[Any],
         loop: asyncio.AbstractEventLoop,
-        _registered_call_handle: Optional[int] = None,
+        _registered_call_handle: int = 0,
     ) -> None:
         self._loop = loop
         self._channel = channel
@@ -491,7 +491,7 @@ class Channel(_base_channel.Channel):
             state = self.get_state(try_to_connect=True)
 
     def _get_registered_call_handle(
-        self, method: str, _registered_method: bool
+        self, method: str, _registered_method: Optional[bool]
     ) -> int:
         """
         Get the registered call handle for a registered method or None.
@@ -508,11 +508,12 @@ class Channel(_base_channel.Channel):
         Returns:
           The registered call handle pointer in the form of a Python Long.
         """
-        if _registered_method:
-            return self._channel.get_registered_call_handle(
-                _common.encode(method)
-            )
-        return None
+        if not _registered_method:
+            return 0
+
+        return self._channel.get_registered_call_handle(
+            _common.encode(method)
+        )
 
     # pylint: disable=arguments-differ
     def unary_unary(

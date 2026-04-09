@@ -367,12 +367,12 @@ def _is_async_handler(object handler):
     return inspect.isawaitable(handler) or inspect.iscoroutinefunction(handler) or inspect.isasyncgenfunction(handler)
 
 
-class _MethodResolver:
-    def __init__(self, list generic_handlers, dict registered_method_handlers):
+cdef class _MethodResolver:
+    def __cinit__(self, list generic_handlers, dict registered_method_handlers):
         self._generic_handlers = generic_handlers
         self._registered_method_handlers = registered_method_handlers
 
-    def resolve_handler(self, _HandlerCallDetails handler_call_details):
+    cpdef resolve_handler(self, _HandlerCallDetails handler_call_details):
         # Check registered handlers first
         method_handler = self._registered_method_handlers.get(
             handler_call_details.method, None
