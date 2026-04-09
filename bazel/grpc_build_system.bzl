@@ -34,6 +34,7 @@ load("@com_google_protobuf//bazel:cc_proto_library.bzl", "cc_proto_library")
 load("@com_google_protobuf//bazel:upb_proto_library.bzl", "upb_proto_library", "upb_proto_reflection_library")
 load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
+load("@rules_cc//cc:cc_test.bzl", "cc_test")
 load("@rules_proto//proto:defs.bzl", "proto_library")
 load("@rules_python//python:defs.bzl", "py_binary")
 load("@rules_shell//shell:sh_binary.bzl", "sh_binary")
@@ -594,18 +595,37 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
             **test_args
         )
 
+    cc_library(
+        name = "%s_TEST_LIBRARY" % name,
+        testonly = 1,
+        srcs = srcs,
+        deps = core_deps,
+        tags = tags,
+        alwayslink = 1,
+        target_compatible_with = select({
+            "//:windows": ["@platforms//:incompatible"],
+            "//:windows_clang": ["@platforms//:incompatible"],
+            "//conditions:default": [],
+            }),
+    )
+
     cc_binary(
         name = "%s_bin" % name,
         srcs = srcs,
         deps = core_deps,
         testonly = 1,
         copts = GRPC_DEFAULT_COPTS + copts,
-        linkopts = if_not_windows(["-pthread"]) + if_windows(["-defaultlib:ws2_32.lib"]),
+        linkopts = ["-defaultlib:ws2_32.lib"],
         linkstatic = linkstatic,
         exec_compatible_with = exec_compatible_with,
         exec_properties = exec_properties,
         data = data,
         tags = tags,
+        target_compatible_with = select({
+            "//:windows": [],
+            "//:windows_clang": [],
+            "//conditions:default": ["@platforms//:incompatible"],
+        }),
     )
 
     for poller_config in expand_tests(name, srcs, core_deps, tags, args, exclude_pollers, uses_polling, uses_event_engine, flaky):
@@ -613,6 +633,20 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
             fail("srcs changed")
         if poller_config["deps"] != core_deps:
             fail("deps changed: %r --> %r" % (deps, poller_config["deps"]))
+        cc_test(
+            name = poller_config["name"],
+            deps = ["%s_TEST_LIBRARY" % name],
+            tags = poller_config["tags"],
+            args = poller_config["args"],
+            env = poller_config["env"],
+            flaky = poller_config["flaky"],
+            target_compatible_with = select({
+                "//:windows": ["@platforms//:incompatible"],
+                "//:windows_clang": ["@platforms//:incompatible"],
+                "//conditions:default": [],
+            }),
+            **test_args
+        )
         sh_test(
             name = poller_config["name"] + ".exe",
             srcs = [":%s_bin" % name],
@@ -626,6 +660,11 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
             data = data,
             exec_compatible_with = exec_compatible_with,
             exec_properties = exec_properties,
+            target_compatible_with = select({
+                "//:windows": [],
+                "//:windows_clang": [],
+                "//conditions:default": ["@platforms//:incompatible"],
+            }),
         )
 
 def grpc_cc_binary(name, srcs = [], deps = [], external_deps = [], args = [], data = [], testonly = False, linkshared = False, linkopts = [], tags = [], target_compatible_with = [], features = [], visibility = None):
