@@ -30,6 +30,7 @@
 
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/match.h"
+#include "src/core/util/status_helper.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
@@ -38,11 +39,14 @@ namespace grpc_core {
 namespace {
 
 #if defined(OPENSSL_IS_BORINGSSL)
-absl::StatusOr<std::vector<bssl::UniquePtr<CRYPTO_BUFFER>>> CreateRawCertChainFromDer(
-    const std::vector<std::string>& cert_chain) {
+absl::StatusOr<std::vector<bssl::UniquePtr<CRYPTO_BUFFER>>>
+CreateRawCertChainFromDer(const std::vector<std::string>& der_cert_chain) {
+  if (der_cert_chain.empty()) {
+    return absl::InvalidArgumentError("The cert chain is empty.");
+  }
   std::vector<bssl::UniquePtr<CRYPTO_BUFFER>> raw_cert_chain;
-  raw_cert_chain.reserve(cert_chain.size());
-  for (absl::string_view cert : cert_chain) {
+  raw_cert_chain.reserve(der_cert_chain.size());
+  for (absl::string_view cert : der_cert_chain) {
     bssl::UniquePtr<CRYPTO_BUFFER> raw_cert(CRYPTO_BUFFER_new(
         reinterpret_cast<const uint8_t*>(cert.data()), cert.size(),
         /*pool=*/nullptr));
@@ -54,11 +58,11 @@ absl::StatusOr<std::vector<bssl::UniquePtr<CRYPTO_BUFFER>>> CreateRawCertChainFr
   return raw_cert_chain;
 }
 
-absl::StatusOr<std::vector<bssl::UniquePtr<CRYPTO_BUFFER>>> CreateRawCertChainFromPem(
-    absl::string_view cert_chain) {
+absl::StatusOr<std::vector<bssl::UniquePtr<CRYPTO_BUFFER>>>
+CreateRawCertChainFromPem(absl::string_view pem_cert_chain) {
   std::vector<bssl::UniquePtr<CRYPTO_BUFFER>> raw_cert_chain;
   bssl::UniquePtr<BIO> bio(
-      BIO_new_mem_buf(cert_chain.data(), cert_chain.size()));
+      BIO_new_mem_buf(pem_cert_chain.data(), pem_cert_chain.size()));
   uint8_t* cert_data = nullptr;
   long cert_len;
   while (PEM_bytes_read_bio(&cert_data, &cert_len, nullptr, PEM_STRING_X509,
@@ -79,26 +83,28 @@ absl::StatusOr<std::vector<bssl::UniquePtr<CRYPTO_BUFFER>>> CreateRawCertChainFr
 
 absl::StatusOr<CertificateSelector::SelectCertificateResult>
 CertificateSelector::CreateSelectCertificateResult(
-    const std::vector<std::string>& cert_chain,
+    const std::vector<std::string>& der_cert_chain,
     std::variant<absl::string_view, std::shared_ptr<PrivateKeySigner>>
-        private_key) {
+        der_private_key) {
 #if defined(OPENSSL_IS_BORINGSSL)
   absl::StatusOr<std::vector<bssl::UniquePtr<CRYPTO_BUFFER>>> raw_cert_chain =
-      CreateRawCertChainFromDer(cert_chain);
-  if (!raw_cert_chain.ok()) {
-    return raw_cert_chain.status();
-  }
+      CreateRawCertChainFromDer(der_cert_chain);
+  GRPC_RETURN_IF_ERROR(raw_cert_chain.status());
   CertificateSelector::SelectCertificateResult result;
   result.cert_chain = *std::move(raw_cert_chain);
   absl::Status status = absl::OkStatus();
   Match(
-      private_key,
-      [&](absl::string_view) {
-        // TODO(lwge): Support processing DER private key.
-        status = absl::UnimplementedError(
-            "CertificateSelector::CreateSelectCertificateResult does not "
-            "support "
-            "DER-formatted private keys.");
+      der_private_key,
+      [&](absl::string_view key) {
+        CBS cbs;
+        CBS_init(&cbs, reinterpret_cast<const uint8_t*>(key.data()),
+                 key.size());
+        bssl::UniquePtr<EVP_PKEY> pkey(EVP_parse_private_key(&cbs));
+        if (pkey == nullptr || CBS_len(&cbs) != 0) {
+          status = absl::InvalidArgumentError("Failed to parse private key.");
+          return;
+        }
+        result.private_key = std::move(pkey);
       },
       [&](std::shared_ptr<PrivateKeySigner> key_signer) {
         result.private_key = std::move(key_signer);
@@ -116,20 +122,18 @@ CertificateSelector::CreateSelectCertificateResult(
 
 absl::StatusOr<CertificateSelector::SelectCertificateResult>
 CertificateSelector::CreateSelectCertificateResult(
-    absl::string_view cert_chain,
+    absl::string_view pem_cert_chain,
     std::variant<absl::string_view, std::shared_ptr<PrivateKeySigner>>
-        private_key) {
+        pem_private_key) {
 #if defined(OPENSSL_IS_BORINGSSL)
   absl::StatusOr<std::vector<bssl::UniquePtr<CRYPTO_BUFFER>>> raw_cert_chain =
-      CreateRawCertChainFromPem(cert_chain);
-  if (!raw_cert_chain.ok()) {
-    return raw_cert_chain.status();
-  }
+      CreateRawCertChainFromPem(pem_cert_chain);
+  GRPC_RETURN_IF_ERROR(raw_cert_chain.status());
   CertificateSelector::SelectCertificateResult result;
   result.cert_chain = *std::move(raw_cert_chain);
   absl::Status status = absl::OkStatus();
   Match(
-      private_key,
+      pem_private_key,
       [&](absl::string_view key) {
         GRPC_CHECK_LE(key.size(), static_cast<size_t>(INT_MAX));
         bssl::UniquePtr<BIO> pem(

@@ -4608,6 +4608,7 @@ grpc_cc_library(
     deps = [
         "grpc_check",
         "match",
+        "status_helper",
         "//:grpc_public_hdrs",
     ],
 )

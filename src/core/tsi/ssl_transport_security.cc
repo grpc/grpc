@@ -2484,9 +2484,9 @@ static tsi_result ssl_handshaker_next_impl(tsi_ssl_handshaker* self)
 #if defined(OPENSSL_IS_BORINGSSL)
   } else if (self->key_signer != nullptr ||
              self->certificate_selector != nullptr) {
-    // During the PrivateKeyOffload signature or asynchronous certificate
-    // selection, an empty call to ssl_handshaker_do_handshake needs to be
-    // forced after the async offload has completed.
+    // After an asynchronous certificate selection offload or private key
+    // offload, another call to ssl_handshaker_do_handshake needs to be
+    // triggered to continue the SSL handshake.
     status = ssl_handshaker_do_handshake(self);
 #endif
   }
@@ -2782,10 +2782,17 @@ static tsi_result create_tsi_ssl_handshaker(
       static_cast<unsigned char*>(gpr_zalloc(impl->outgoing_bytes_buffer_size));
   impl->vtable = &handshaker_vtable;
   impl->factory_ref = tsi_ssl_handshaker_factory_ref(factory);
+#if defined(OPENSSL_IS_BORINGSSL)
   {
     grpc_core::MutexLock lock(&impl->mu);
     impl->key_signer = std::move(key_signer);
   }
+  if (!is_client) {
+    tsi_ssl_server_handshaker_factory* server_factory =
+        reinterpret_cast<tsi_ssl_server_handshaker_factory*>(factory);
+    impl->certificate_selector = server_factory->certificate_selector;
+  }
+#endif
 
   *handshaker = impl;
 
@@ -2959,7 +2966,11 @@ static int ssl_server_handshaker_factory_servername_callback(SSL* ssl,
       SSL_set_SSL_CTX(ssl, ssl_context.ssl_ctx);
 #if defined(OPENSSL_IS_BORINGSSL)
       if (ssl_context.key_signer != nullptr) {
-        GetHandshaker(ssl)->key_signer = ssl_context.key_signer;
+        tsi_ssl_handshaker* handshaker = GetHandshaker(ssl);
+        {
+          grpc_core::MutexLock lock(&handshaker->mu);
+          handshaker->key_signer = ssl_context.key_signer;
+        }
       }
 #endif
       return SSL_TLSEXT_ERR_OK;
@@ -3337,6 +3348,13 @@ tsi_result tsi_create_ssl_server_handshaker_factory_with_options(
       result = populate_ssl_context(ssl_context.ssl_ctx, &pem_key_cert_pairs[i],
                                     options->cipher_suites,
                                     options->key_exchange_groups);
+#if defined(OPENSSL_IS_BORINGSSL)
+      grpc_core::Match(
+          pem_key_cert_pairs[i].private_key, [](const std::string&) {},
+          [&](const std::shared_ptr<grpc_core::PrivateKeySigner>& key_signer) {
+            ssl_context.key_signer = key_signer;
+          });
+#endif
     } else {
 #if defined(OPENSSL_IS_BORINGSSL)
       // Skip the key cert pair.
@@ -3354,16 +3372,6 @@ tsi_result tsi_create_ssl_server_handshaker_factory_with_options(
 #endif
     }
     if (result != TSI_OK) break;
-
-#if defined(OPENSSL_IS_BORINGSSL)
-    if (certificate_selector == nullptr) {
-      grpc_core::Match(
-          pem_key_cert_pairs[i].private_key, [](const std::string&) {},
-          [&](const std::shared_ptr<grpc_core::PrivateKeySigner>& key_signer) {
-            ssl_context.key_signer = key_signer;
-          });
-    }
-#endif
 
     // TODO(elessar): Provide ability to disable session ticket keys.
 

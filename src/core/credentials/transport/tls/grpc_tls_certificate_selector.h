@@ -54,16 +54,16 @@ class CertificateSelector {
   // Returns a SelectCertificateResult with DER-encoded cert chains, and
   // DER-encoded private key string or a signer.
   static absl::StatusOr<SelectCertificateResult> CreateSelectCertificateResult(
-      const std::vector<std::string>& cert_chain,
+      const std::vector<std::string>& der_cert_chain,
       std::variant<absl::string_view, std::shared_ptr<PrivateKeySigner>>
-          private_key);
+          der_private_key);
 
   // Returns a SelectCertificateResult with PEM-encoded cert chains, and
   // PEM-encoded private key string or a signer.
   static absl::StatusOr<SelectCertificateResult> CreateSelectCertificateResult(
-      absl::string_view cert_chain,
+      absl::string_view pem_cert_chain,
       std::variant<absl::string_view, std::shared_ptr<PrivateKeySigner>>
-          private_key);
+          pem_private_key);
 
   // To cancel the async `SelectCertificate` call. Users must implement this for
   // correct cancellation behavior.
