@@ -128,7 +128,8 @@ def grpc_cc_library(
         data = [],
         tags = [],
         linkopts = [],
-        linkstatic = False):
+        linkstatic = False,
+        target_compatible_with = []):
     """An internal wrapper around cc_library.
 
     Args:
@@ -148,6 +149,7 @@ def grpc_cc_library(
       tags: Tags to apply to the rule.
       linkopts: Extra libraries to link.
       linkstatic: Whether to enable linkstatic on the cc_library.
+      target_compatible_with: Constraint values that must be present in the target platform
     """
     visibility = _update_visibility(visibility)
     copts = []
@@ -160,8 +162,13 @@ def grpc_cc_library(
     # TODO(ctiller): remove when fuzztest is completely C++17
     # (it leverages some C++20 extensions at the time of writing).
     # See b/391433873.
-    if "fuzztest" in external_deps and "grpc-fuzztest" not in tags:
-        tags = tags + ["grpc-fuzztest"]
+    if "fuzztest" in external_deps or "grpc-fuzztest" in tags:
+        if "grpc-fuzztest" not in tags:
+            tags = tags + ["grpc-fuzztest"]
+        target_compatible_with = target_compatible_with + select({
+            "//:windows": ["@platforms//:incompatible"],
+            "//conditions:default": [],
+        })
     cc_library(
         name = name,
         srcs = srcs,
@@ -194,6 +201,7 @@ def grpc_cc_library(
         data = data,
         tags = tags,
         linkstatic = linkstatic,
+        target_compatible_with = target_compatible_with,
     )
 
 def grpc_proto_plugin(name, srcs = [], deps = []):
