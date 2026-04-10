@@ -201,4 +201,33 @@ GlobalInstrumentsRegistryTestPeer::FindMetricDescriptorByName(
   return nullptr;
 }
 
+template <typename T>
+std::optional<T> FakeStatsPlugin::GetMetricValueByNameImpl(
+    absl::string_view name, absl::Span<const absl::string_view> labels) {
+  const auto* desc = instrument_detail::InstrumentIndex::Get().Find(name);
+  if (desc == nullptr) return std::nullopt;
+  const auto& names = desc->domain->label_names();
+  std::vector<std::string> keys;
+  keys.reserve(names.size());
+  for (const auto& l : names) {
+    keys.emplace_back(l.label());
+  }
+  std::vector<std::string> values(labels.begin(), labels.end());
+  DomainMetricsSink<T> sink(name, keys, values);
+  MetricsQuery()
+      .OnlyMetrics({std::string(name)})
+      .Run(GetCollectionScope(), sink);
+  return sink.captured_value();
+}
+
+std::optional<uint64_t> FakeStatsPlugin::GetUInt64MetricValueByName(
+    absl::string_view name, absl::Span<const absl::string_view> labels) {
+  return GetMetricValueByNameImpl<uint64_t>(name, labels);
+}
+
+std::optional<int64_t> FakeStatsPlugin::GetInt64MetricValueByName(
+    absl::string_view name, absl::Span<const absl::string_view> labels) {
+  return GetMetricValueByNameImpl<int64_t>(name, labels);
+}
+
 }  // namespace grpc_core
