@@ -68,6 +68,8 @@ template <class ResponseType>
 void UnaryRunHandlerHelper(
     const grpc::internal::MethodHandler::HandlerParameter&, ResponseType*,
     grpc::Status&);
+class Call;
+void CheckForExtraRequests(Call*, grpc::Status*, const char*);
 template <class ServiceType, class RequestType, class ResponseType,
           class BaseRequestType, class BaseResponseType>
 class RpcMethodHandler;
@@ -278,6 +280,11 @@ class CompletionQueue : private grpc::internal::GrpcLibrary {
   friend void grpc::internal::UnaryRunHandlerHelper(
       const grpc::internal::MethodHandler::HandlerParameter&, ResponseType*,
       grpc::Status&);
+  friend void grpc::internal::CheckForExtraRequests(grpc::internal::Call*,
+                                                    grpc::Status*, const char*);
+  template <class ServiceType, class RequestType, class ResponseType,
+            class BaseRequestType, class BaseResponseType>
+  friend class grpc::internal::RpcMethodHandler;
   template <class ServiceType, class RequestType, class ResponseType>
   friend class grpc::internal::ClientStreamingHandler;
   template <class ServiceType, class RequestType, class ResponseType>

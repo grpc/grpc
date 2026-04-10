@@ -31,6 +31,7 @@
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/test_config.h"
+#include "test/cpp/util/byte_buffer_proto_helper.h"
 #include "gtest/gtest.h"
 
 namespace grpc {
@@ -200,6 +201,38 @@ TEST_F(CardinalityViolationTest, ClientAsyncStreamingZeroResponses) {
   EXPECT_EQ(got_tag, tag(3));
   EXPECT_EQ(s.error_code(), StatusCode::UNIMPLEMENTED);
   delete writer;
+}
+
+TEST_F(CardinalityViolationTest, UnaryExtraRequest) {
+  EchoRequest request;
+  request.set_message("first payload");
+  auto request_buf = SerializeToByteBuffer(&request);
+  EchoRequest extra_request;
+  extra_request.set_message("second payload");
+  auto extra_buf = SerializeToByteBuffer(&extra_request);
+  GenericStub generic_stub(channel_);
+  ClientContext context;
+  auto stream = generic_stub.PrepareCall(
+      &context, "/grpc.testing.EchoTestService/Echo", cq_.get());
+  stream->StartCall(tag(1));
+  void* got_tag;
+  bool ok;
+  EXPECT_TRUE(cq_->Next(&got_tag, &ok));
+  EXPECT_EQ(got_tag, tag(1));
+  stream->Write(*request_buf, tag(2));
+  EXPECT_TRUE(cq_->Next(&got_tag, &ok));
+  EXPECT_EQ(got_tag, tag(2));
+  stream->Write(*extra_buf, tag(3));
+  EXPECT_TRUE(cq_->Next(&got_tag, &ok));
+  EXPECT_EQ(got_tag, tag(3));
+  stream->WritesDone(tag(4));
+  EXPECT_TRUE(cq_->Next(&got_tag, &ok));
+  EXPECT_EQ(got_tag, tag(4));
+  Status status;
+  stream->Finish(&status, tag(5));
+  EXPECT_TRUE(cq_->Next(&got_tag, &ok));
+  EXPECT_EQ(got_tag, tag(5));
+  EXPECT_EQ(status.error_code(), StatusCode::UNIMPLEMENTED);
 }
 
 }  // namespace

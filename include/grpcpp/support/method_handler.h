@@ -51,6 +51,21 @@ template <class Callable>
 #endif  // GRPC_ALLOW_EXCEPTIONS
 }
 
+inline void CheckForExtraRequests(grpc::internal::Call* call,
+                                  grpc::Status* status,
+                                  const char* error_message) {
+  if (!status->ok()) return;
+  grpc::internal::CallOpSet<grpc::internal::CallOpGenericRecvMessage> check_ops;
+  grpc::ByteBuffer dummy_msg;
+  check_ops.RecvMessage(&dummy_msg);
+  check_ops.AllowNoMessage();
+  check_ops.FillOps(call);
+  call->cq()->Pluck(&check_ops);
+  if (check_ops.got_message) {
+    *status = grpc::Status(grpc::StatusCode::UNIMPLEMENTED, error_message);
+  }
+}
+
 /// A helper function with reduced templating to do the common work needed to
 /// actually send the server response. Uses non-const parameter for Status since
 /// this should only ever be called from the end of the RunHandler method.
@@ -115,6 +130,9 @@ class RpcMethodHandler : public grpc::internal::MethodHandler {
                      static_cast<RequestType*>(param.request), &rsp);
       });
       static_cast<RequestType*>(param.request)->~RequestType();
+      CheckForExtraRequests(
+          param.call, &status,
+          "Cardinality violation: Unary method received extra request");
     }
     UnaryRunHandlerHelper(param, static_cast<BaseResponseType*>(&rsp), status);
   }
@@ -207,6 +225,9 @@ class ServerStreamingHandler : public grpc::internal::MethodHandler {
                      static_cast<RequestType*>(param.request), &writer);
       });
       static_cast<RequestType*>(param.request)->~RequestType();
+      CheckForExtraRequests(param.call, &status,
+                            "Cardinality violation: Server-streaming method "
+                            "received extra request");
     }
 
     grpc::internal::CallOpSet<grpc::internal::CallOpSendInitialMetadata,
