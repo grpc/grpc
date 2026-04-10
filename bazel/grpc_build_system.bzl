@@ -594,6 +594,7 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
             deps = core_deps,
             args = args,
             flaky = True,
+            defines = defines,
             **test_args
         )
 
@@ -619,6 +620,7 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
             args = poller_config["args"],
             env = poller_config["env"],
             flaky = poller_config["flaky"],
+            defines = defines,
             **test_args
         )
 

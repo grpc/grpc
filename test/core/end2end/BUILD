@@ -25,6 +25,11 @@ grpc_package(
     ],
 )
 
+config_setting(
+    name = "grpc_running_in_pr",
+    values = {"define": "grpc_running_in_pr=true"},
+)
+
 # grpc_core_end2end_test_suite() currently needs to consume the source for tests directly.
 exports_files(
     glob(["tests/**"]),
@@ -437,6 +442,7 @@ grpc_cc_test(
         "absl/log:log",
         "absl/memory",
         "absl/meta:type_traits",
+        "absl/random",
         "absl/strings",
         "fuzztest",
         "gtest",
