@@ -277,6 +277,10 @@ void tsi_ssl_client_handshaker_factory_unref(
 typedef struct tsi_ssl_server_handshaker_factory
     tsi_ssl_server_handshaker_factory;
 
+typedef std::variant<std::vector<tsi_ssl_pem_key_cert_pair>,
+                     std::shared_ptr<grpc_core::CertificateSelector>>
+    tsi_ssl_key_cert_pairs;
+
 // TO BE DEPRECATED.
 // Creates a server handshaker factory.
 // - pem_key_cert_pairs is an array private key / certificate chains of the
@@ -299,9 +303,7 @@ typedef struct tsi_ssl_server_handshaker_factory
 // - This method returns TSI_OK on success or TSI_INVALID_PARAMETER in the case
 //   where a parameter is invalid.
 tsi_result tsi_create_ssl_server_handshaker_factory(
-    std::variant<std::vector<tsi_ssl_pem_key_cert_pair>,
-                 std::shared_ptr<grpc_core::CertificateSelector>>
-        pem_key_cert_pairs,
+    tsi_ssl_key_cert_pairs pem_key_cert_pairs,
     const char* pem_client_root_certs, int force_client_auth,
     const char* cipher_suites, const char** alpn_protocols,
     uint16_t num_alpn_protocols, tsi_ssl_server_handshaker_factory** factory);
@@ -314,10 +316,7 @@ tsi_result tsi_create_ssl_server_handshaker_factory(
 //   authenticate with an SSL cert. Note that this option is ignored if
 //   pem_client_root_certs is NULL or pem_client_roots_certs_size is 0
 tsi_result tsi_create_ssl_server_handshaker_factory_ex(
-    std::variant<std::vector<tsi_ssl_pem_key_cert_pair>,
-                 std::shared_ptr<grpc_core::CertificateSelector>>
-        pem_key_cert,
-    const char* pem_client_root_certs,
+    tsi_ssl_key_cert_pairs pem_key_cert, const char* pem_client_root_certs,
     tsi_client_certificate_request_type client_certificate_request,
     const char* cipher_suites, const char** alpn_protocols,
     uint16_t num_alpn_protocols, tsi_ssl_server_handshaker_factory** factory);
@@ -327,9 +326,7 @@ struct tsi_ssl_server_handshaker_options {
   // server, or a certificate selector. The array of key / certificate chains is
   // to support SNI. The certificate selector will be in charge of this. So they
   // are mutually exclusive.
-  std::variant<std::vector<tsi_ssl_pem_key_cert_pair>,
-               std::shared_ptr<grpc_core::CertificateSelector>>
-      pem_key_cert_pairs;
+  tsi_ssl_key_cert_pairs pem_key_cert_pairs;
   // client_certificate_request, if set to non-zero will force the client to
   // authenticate with an SSL cert. Note that this option is ignored if
   // root_cert_info is NULL

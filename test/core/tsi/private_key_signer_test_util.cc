@@ -48,10 +48,11 @@ namespace grpc_core {
 namespace testing {
 
 namespace {
-bssl::UniquePtr<EVP_PKEY> LoadPrivateKeyFromString(
-    absl::string_view private_pem) {
+
+bssl::UniquePtr<EVP_PKEY> LoadPrivateKeyFromPemString(
+    absl::string_view pem_private_key) {
   bssl::UniquePtr<BIO> bio(
-      BIO_new_mem_buf(private_pem.data(), private_pem.size()));
+      BIO_new_mem_buf(pem_private_key.data(), pem_private_key.size()));
   return bssl::UniquePtr<EVP_PKEY>(
       PEM_read_bio_PrivateKey(bio.get(), nullptr, nullptr, nullptr));
 }
@@ -92,7 +93,7 @@ absl::StatusOr<std::string> SignWithBoringSSL(
       GetBoringSslAlgorithm(signature_algorithm);
   if (EVP_PKEY_id(private_key) !=
       SSL_get_signature_algorithm_key_type(boring_signature_algorithm)) {
-    fprintf(stderr, "Key type does not match signature algorithm.\n");
+    LOG(ERROR) << "Key type does not match signature algorithm.";
   }
 
   // Determine the hash.
@@ -127,8 +128,8 @@ absl::StatusOr<std::string> SignWithBoringSSL(
 }  // namespace
 
 SyncTestPrivateKeySigner::SyncTestPrivateKeySigner(
-    absl::string_view private_key, Mode mode)
-    : pkey_(LoadPrivateKeyFromString(private_key)), mode_(mode) {}
+    absl::string_view pem_private_key, Mode mode)
+    : pkey_(LoadPrivateKeyFromPemString(pem_private_key)), mode_(mode) {}
 
 std::variant<absl::StatusOr<std::string>,
              std::shared_ptr<PrivateKeySigner::AsyncSigningHandle>>
@@ -148,12 +149,12 @@ void SyncTestPrivateKeySigner::Cancel(
     std::shared_ptr<AsyncSigningHandle> /*handle*/) {}
 
 AsyncTestPrivateKeySigner::AsyncTestPrivateKeySigner(
-    absl::string_view private_key,
+    absl::string_view pem_private_key,
     std::shared_ptr<grpc_event_engine::experimental::FuzzingEventEngine>
         event_engine,
     Mode mode)
     : event_engine_(std::move(event_engine)),
-      pkey_(LoadPrivateKeyFromString(private_key)),
+      pkey_(LoadPrivateKeyFromPemString(pem_private_key)),
       mode_(mode) {}
 
 std::variant<absl::StatusOr<std::string>,

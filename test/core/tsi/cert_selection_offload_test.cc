@@ -59,23 +59,28 @@ const char kServerName[] = "foo.test.google.fr";
 class SyncTestCertificateSelector : public CertificateSelector {
  public:
   SyncTestCertificateSelector(
-      absl::string_view cert_chain,
+      absl::string_view pem_cert_chain,
       std::variant<absl::string_view, std::shared_ptr<PrivateKeySigner>>
-          private_key,
+          pem_private_key,
       bool expect_success = true)
-      : cert_chain_(cert_chain),
-        private_key_(std::move(private_key)),
+      : pem_cert_chain_(pem_cert_chain),
+        pem_private_key_(std::move(pem_private_key)),
         expect_success_(expect_success) {}
 
   std::variant<absl::StatusOr<SelectCertificateResult>,
                std::shared_ptr<AsyncCertificateSelectionHandle>>
-  SelectCertificate(const SelectCertificateInfo&,
+  SelectCertificate(const SelectCertificateInfo& info,
                     OnSelectCertificateComplete) override {
     if (!expect_success_) {
-      return absl::InternalError("Failed to select cert.");
+      return absl::InternalError(
+          "Failed to select cert when using SyncTestCertificateSelector.");
+    }
+    if (info.sni != kServerName) {
+      return absl::InvalidArgumentError(absl::StrFormat(
+          "Expected SNI to be %s, got %s", kServerName, info.sni));
     }
     absl::StatusOr<SelectCertificateResult> result =
-        CreateSelectCertificateResult(cert_chain_, private_key_);
+        CreateSelectCertificateResult(pem_cert_chain_, pem_private_key_);
     CHECK_OK(result);
     return result;
   }
@@ -84,42 +89,47 @@ class SyncTestCertificateSelector : public CertificateSelector {
       std::shared_ptr<AsyncCertificateSelectionHandle> /*handle*/) override {}
 
  private:
-  absl::string_view cert_chain_;
+  absl::string_view pem_cert_chain_;
   std::variant<absl::string_view, std::shared_ptr<PrivateKeySigner>>
-      private_key_;
+      pem_private_key_;
   bool expect_success_;
 };
 
 class AsyncTestCertificateSelector : public CertificateSelector {
  public:
   AsyncTestCertificateSelector(
-      absl::string_view cert_chain,
+      absl::string_view pem_cert_chain,
       std::variant<absl::string_view, std::shared_ptr<PrivateKeySigner>>
-          private_key,
+          pem_private_key,
       std::shared_ptr<grpc_event_engine::experimental::FuzzingEventEngine>
           event_engine,
       bool expect_success = true)
-      : cert_chain_(cert_chain),
-        private_key_(std::move(private_key)),
+      : pem_cert_chain_(pem_cert_chain),
+        pem_private_key_(std::move(pem_private_key)),
         event_engine_(std::move(event_engine)),
         expect_success_(expect_success) {}
 
   std::variant<absl::StatusOr<SelectCertificateResult>,
                std::shared_ptr<AsyncCertificateSelectionHandle>>
-  SelectCertificate(const SelectCertificateInfo&,
+  SelectCertificate(const SelectCertificateInfo& info,
                     OnSelectCertificateComplete on_complete) override {
     auto handle = std::make_shared<AsyncCertificateSelectionHandle>();
-    event_engine_->RunAfter(
-        Duration::Seconds(2),
-        [this, handle, on_complete = std::move(on_complete)]() mutable {
-          if (!expect_success_) {
-            std::move(on_complete)(
-                absl::InternalError("Failed to select cert."));
-            return;
-          }
-          std::move(on_complete)(
-              CreateSelectCertificateResult(cert_chain_, private_key_));
-        });
+    event_engine_->RunAfter(Duration::Seconds(2), [this, info, handle,
+                                                   on_complete = std::move(
+                                                       on_complete)]() mutable {
+      if (!expect_success_) {
+        std::move(on_complete)(absl::InternalError(
+            "Failed to select cert when using AsyncTestCertificateSelector"));
+        return;
+      }
+      if (info.sni != kServerName) {
+        std::move(on_complete)(absl::InvalidArgumentError(absl::StrFormat(
+            "Expected SNI to be %s, got %s", kServerName, info.sni)));
+        return;
+      }
+      std::move(on_complete)(
+          CreateSelectCertificateResult(pem_cert_chain_, pem_private_key_));
+    });
     return handle;
   }
 
@@ -131,9 +141,9 @@ class AsyncTestCertificateSelector : public CertificateSelector {
   bool WasCancelled() { return was_cancelled_.load(); }
 
  private:
-  absl::string_view cert_chain_;
+  absl::string_view pem_cert_chain_;
   std::variant<absl::string_view, std::shared_ptr<PrivateKeySigner>>
-      private_key_;
+      pem_private_key_;
   std::shared_ptr<grpc_event_engine::experimental::FuzzingEventEngine>
       event_engine_;
   bool expect_success_;

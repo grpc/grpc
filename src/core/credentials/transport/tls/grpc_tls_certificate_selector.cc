@@ -77,6 +77,34 @@ ParseCertificateChainFromPem(absl::string_view pem_cert_chain) {
   }
   return raw_cert_chain;
 }
+
+absl::StatusOr<bssl::UniquePtr<EVP_PKEY>> ParsePrivateKeyFromDer(
+    absl::string_view der_private_key) {
+  CBS cbs;
+  CBS_init(&cbs, reinterpret_cast<const uint8_t*>(der_private_key.data()),
+           der_private_key.size());
+  bssl::UniquePtr<EVP_PKEY> pkey(EVP_parse_private_key(&cbs));
+  if (pkey == nullptr || CBS_len(&cbs) != 0) {
+    return absl::InvalidArgumentError("Failed to parse private key.");
+  }
+  return pkey;
+}
+
+absl::StatusOr<bssl::UniquePtr<EVP_PKEY>> ParsePrivateKeyFromPem(
+    absl::string_view pem_private_key) {
+  GRPC_CHECK_LE(pem_private_key.size(), static_cast<size_t>(INT_MAX));
+  bssl::UniquePtr<BIO> pem(BIO_new_mem_buf(
+      pem_private_key.data(), static_cast<int>(pem_private_key.size())));
+  if (pem == nullptr) {
+    return absl::InvalidArgumentError("Failed to create pem BIO.");
+  }
+  bssl::UniquePtr<EVP_PKEY> pkey(PEM_read_bio_PrivateKey(
+      pem.get(), nullptr, nullptr, const_cast<char*>("")));
+  if (pkey == nullptr) {
+    return absl::InvalidArgumentError("Failed to read private key.");
+  }
+  return pkey;
+}
 #endif
 
 }  // namespace
@@ -91,21 +119,18 @@ CertificateSelector::CreateSelectCertificateResult(
       ParseCertificateChainFromDer(der_cert_chain);
   GRPC_RETURN_IF_ERROR(raw_cert_chain.status());
   CertificateSelector::SelectCertificateResult result;
-  result.cert_chain = *std::move(raw_cert_chain);
+  result.certificate_chain = *std::move(raw_cert_chain);
   absl::Status pkey_status = absl::OkStatus();
   Match(
       der_private_key,
       [&](absl::string_view key) {
-        CBS cbs;
-        CBS_init(&cbs, reinterpret_cast<const uint8_t*>(key.data()),
-                 key.size());
-        bssl::UniquePtr<EVP_PKEY> pkey(EVP_parse_private_key(&cbs));
-        if (pkey == nullptr || CBS_len(&cbs) != 0) {
-          pkey_status =
-              absl::InvalidArgumentError("Failed to parse private key.");
+        absl::StatusOr<bssl::UniquePtr<EVP_PKEY>> pkey =
+            ParsePrivateKeyFromDer(key);
+        if (!pkey.ok()) {
+          pkey_status = std::move(pkey).status();
           return;
         }
-        result.private_key = std::move(pkey);
+        result.private_key = *std::move(pkey);
       },
       [&](std::shared_ptr<PrivateKeySigner> key_signer) {
         result.private_key = std::move(key_signer);
@@ -129,26 +154,18 @@ CertificateSelector::CreateSelectCertificateResult(
       ParseCertificateChainFromPem(pem_cert_chain);
   GRPC_RETURN_IF_ERROR(raw_cert_chain.status());
   CertificateSelector::SelectCertificateResult result;
-  result.cert_chain = *std::move(raw_cert_chain);
+  result.certificate_chain = *std::move(raw_cert_chain);
   absl::Status pkey_status = absl::OkStatus();
   Match(
       pem_private_key,
       [&](absl::string_view key) {
-        GRPC_CHECK_LE(key.size(), static_cast<size_t>(INT_MAX));
-        bssl::UniquePtr<BIO> pem(
-            BIO_new_mem_buf(key.data(), static_cast<int>(key.size())));
-        if (pem == nullptr) {
-          pkey_status = absl::InvalidArgumentError("Failed to create pem BIO.");
+        absl::StatusOr<bssl::UniquePtr<EVP_PKEY>> pkey =
+            ParsePrivateKeyFromPem(key);
+        if (!pkey.ok()) {
+          pkey_status = std::move(pkey).status();
           return;
         }
-        bssl::UniquePtr<EVP_PKEY> pkey(PEM_read_bio_PrivateKey(
-            pem.get(), nullptr, nullptr, const_cast<char*>("")));
-        if (pkey == nullptr) {
-          pkey_status =
-              absl::InvalidArgumentError("Failed to read private key.");
-          return;
-        }
-        result.private_key = std::move(pkey);
+        result.private_key = *std::move(pkey);
       },
       [&](std::shared_ptr<PrivateKeySigner> key_signer) {
         result.private_key = std::move(key_signer);

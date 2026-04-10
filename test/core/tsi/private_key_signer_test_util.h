@@ -42,7 +42,7 @@ class SyncTestPrivateKeySigner final : public PrivateKeySigner {
  public:
   enum class Mode { kSuccess, kError, kInvalidSignature };
 
-  explicit SyncTestPrivateKeySigner(absl::string_view private_key,
+  explicit SyncTestPrivateKeySigner(absl::string_view pem_private_key,
                                     Mode mode = Mode::kSuccess);
 
   std::variant<absl::StatusOr<std::string>, std::shared_ptr<AsyncSigningHandle>>
@@ -63,7 +63,7 @@ class AsyncTestPrivateKeySigner final
   enum class Mode { kSuccess, kError, kCancellation };
 
   explicit AsyncTestPrivateKeySigner(
-      absl::string_view private_key,
+      absl::string_view pem_private_key,
       std::shared_ptr<grpc_event_engine::experimental::FuzzingEventEngine>
           event_engine,
       Mode mode = Mode::kSuccess);

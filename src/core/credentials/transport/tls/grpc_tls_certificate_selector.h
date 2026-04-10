@@ -45,7 +45,7 @@ class CertificateSelector {
   // TODO(lwge): This should be an opaque struct when moved to a public header.
   struct SelectCertificateResult {
 #if defined(OPENSSL_IS_BORINGSSL)
-    std::vector<bssl::UniquePtr<CRYPTO_BUFFER>> cert_chain;
+    std::vector<bssl::UniquePtr<CRYPTO_BUFFER>> certificate_chain;
     std::variant<bssl::UniquePtr<EVP_PKEY>, std::shared_ptr<PrivateKeySigner>>
         private_key;
 #endif
@@ -65,8 +65,9 @@ class CertificateSelector {
       std::variant<absl::string_view, std::shared_ptr<PrivateKeySigner>>
           pem_private_key);
 
-  // To cancel the async `SelectCertificate` call. Users must implement this for
-  // correct cancellation behavior.
+  // Handle to be passed to `Cancel`, to enable user to clean up any resources
+  // used during an asynchronous certificate selection operation that is
+  // cancelled.
   class AsyncCertificateSelectionHandle {
    public:
     virtual ~AsyncCertificateSelectionHandle() = default;
