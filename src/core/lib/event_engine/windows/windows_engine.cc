@@ -406,9 +406,13 @@ void WindowsEventEngine::OnConnectCompleted(
     // Cancel the deadline timer, to avoid having a dangling handle. It is OK
     // if this fails, meaning that the deadline timer has already fired,
     // because it won't cancel the connection attempt.
-    Cancel(state->timer_handle());
-    // Release refs held by the deadline timer.
-    state->AbortDeadlineTimer();
+    if(Cancel(state->timer_handle())) {
+      // Release refs held by the deadline timer.
+      // Only call this if we successfully cancel the deadline timer.
+      // Otherwise, we needto let the deadline timer run, and it will
+      // release the refs itself.
+      state->AbortDeadlineTimer();
+    }
     const auto& overlapped_result = state->socket()->write_info()->result();
     if (!overlapped_result.error_status.ok()) {
       state->socket()->Shutdown(DEBUG_LOCATION, "ConnectEx failure");
