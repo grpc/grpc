@@ -32,13 +32,16 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_join.h"
 
+#ifndef GPR_WINDOWS
+#include "fuzztest/fuzztest.h"
+#endif  // GPR_WINDOWS
+
 namespace grpc_core {
 
 std::vector<std::string> ExperimentConfigChoices();
 std::vector<std::string> TracerConfigChoices();
 
 #ifndef GPR_WINDOWS
-#include "fuzztest/fuzztest.h"
 
 inline auto AnyConfigVars() {
   auto optional_string = [](auto x) {
