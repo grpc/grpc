@@ -155,7 +155,7 @@ class Config:
                 else None
             ),
             logfilename=os.path.abspath(
-                f"{REPORT_BASE_PATH}/reports/{self.build_config}.sponge_log.log"
+                f"{REPORT_BASE_PATH}/reports/{self.build_config}/sponge_log.log"
             ),
             flake_retries=4 if flaky or args.allow_flakes else 0,
             timeout_retries=1 if flaky or args.allow_flakes else 0,
@@ -1334,6 +1334,9 @@ _LANGUAGES = {
     "clang-tidy": Sanity("clang_tidy_tests.yaml"),
 }
 
+# Inverse map from test suite object to language name.
+_LANGUAGE_NAMES = { name: language for language, name in _LANGUAGES.items() }
+
 _MSBUILD_CONFIG = {
     "dbg": "Debug",
     "opt": "Release",
@@ -1868,28 +1871,13 @@ jobset.measure_cpu_costs = args.measure_cpu_costs
 run_config = _CONFIGS[args.config]
 build_config = run_config.build_config
 
+languages = set(_LANGUAGES[l] for l in args.language)
+for l in languages:
+    l.configure(run_config, args)
 
-def _configure_languages():
-    """Prepare language-specific tests based on --language
-    argument.
-
-    Returns two lists with equal length:
-        language_names: a list of language names specified in --language.
-        languages: a list of test suite objects, each element corresponds to a name in `language_names`.
-    """
-    language_names = list(set(l for l in args.language))
-    languages = [_LANGUAGES[l] for l in language_names]
-
-    for l in languages:
-        l.configure(run_config, args)
-
-    if len(languages) != 1:
-        print("Building multiple languages simultaneously is not supported!")
-        sys.exit(1)
-    return languages, language_names
-
-
-languages, language_names = _configure_languages()
+if len(languages) != 1:
+    print("Building multiple languages simultaneously is not supported!")
+    sys.exit(1)
 
 # If --use_docker was used, respawn the run_tests.py script under a docker container
 # instead of continuing.
@@ -1960,12 +1948,12 @@ build_steps = list(
             timeout_seconds=_PRE_BUILD_STEP_TIMEOUT_SECONDS,
             logfilename=_gen_logfile_name(
                 stage="pre_build_steps",
-                language_name=language_name,
+                language_name=_LANGUAGE_NAMES[language],
                 cmdline=cmdline,
             ),
             flake_retries=2,
         )
-        for language, language_name in zip(languages, language_names)
+        for language in languages
         for cmdline in language.pre_build_steps()
     )
 )
@@ -1980,12 +1968,12 @@ build_steps.extend(
             ),
             logfilename=_gen_logfile_name(
                 stage="build_steps",
-                language_name=language_name,
+                language_name=_LANGUAGE_NAMES[language],
                 cmdline=cmdline,
             ),
             timeout_seconds=None,
         )
-        for language, language_name in zip(languages, language_names)
+        for language in languages
         for cmdline in language.build_steps()
     )
 )
