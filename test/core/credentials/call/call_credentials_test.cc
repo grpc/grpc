@@ -2982,14 +2982,14 @@ TEST_F(CredentialsTest,
 
 class ExternalAccountCredentialsTest : public ::testing::Test {
  protected:
-  static void SetUpTestSuite() {
+  void SetUp() override {
     event_engine_ = std::make_shared<FuzzingEventEngine>(
         FuzzingEventEngine::Options(), fuzzing_event_engine::Actions());
     grpc_timer_manager_set_start_threaded(false);
     grpc_init();
   }
 
-  static void TearDownTestSuite() {
+  void TearDown() override {
     event_engine_->FuzzingDone();
     event_engine_->TickUntilIdle();
     event_engine_->UnsetGlobalHooks();
@@ -2997,15 +2997,8 @@ class ExternalAccountCredentialsTest : public ::testing::Test {
     grpc_shutdown_blocking();
   }
 
-  void SetUp() override {}
-
-  void TearDown() override { event_engine_->TickUntilIdle(); }
-
-  static std::shared_ptr<FuzzingEventEngine> event_engine_;
+  std::shared_ptr<FuzzingEventEngine> event_engine_;
 };
-
-std::shared_ptr<FuzzingEventEngine>
-    ExternalAccountCredentialsTest::event_engine_ = nullptr;
 
 TEST_F(ExternalAccountCredentialsTest, Success) {
   ExecCtx exec_ctx;
@@ -4984,14 +4977,14 @@ TEST_F(GcpServiceAccountIdentityCredentialsTest, TokenInvalidExpiration) {
 
 class JwtTokenFileCallCredentialsTest : public ::testing::Test {
  protected:
-  static void SetUpTestSuite() {
+  void SetUp() override {
     event_engine_ = std::make_shared<FuzzingEventEngine>(
         FuzzingEventEngine::Options(), fuzzing_event_engine::Actions());
     grpc_timer_manager_set_start_threaded(false);
     grpc_init();
   }
 
-  static void TearDownTestSuite() {
+  void TearDown() override {
     event_engine_->FuzzingDone();
     event_engine_->TickUntilIdle();
     event_engine_->UnsetGlobalHooks();
@@ -4999,15 +4992,8 @@ class JwtTokenFileCallCredentialsTest : public ::testing::Test {
     grpc_shutdown_blocking();
   }
 
-  void SetUp() override {}
-
-  void TearDown() override { event_engine_->TickUntilIdle(); }
-
-  static std::shared_ptr<FuzzingEventEngine> event_engine_;
+  std::shared_ptr<FuzzingEventEngine> event_engine_;
 };
-
-std::shared_ptr<FuzzingEventEngine>
-    JwtTokenFileCallCredentialsTest::event_engine_ = nullptr;
 
 TEST_F(JwtTokenFileCallCredentialsTest, Basic) {
   auto token =

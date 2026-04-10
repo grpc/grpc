@@ -47,30 +47,17 @@ namespace grpc_core {
 
 class RegionalAccessBoundaryFetcherTest : public ::testing::Test {
  protected:
-  static void SetUpTestSuite() {
-    fuzzing_event_engine_ =
-        std::make_shared<grpc_event_engine::experimental::FuzzingEventEngine>(
-            grpc_event_engine::experimental::FuzzingEventEngine::Options(),
-            fuzzing_event_engine::Actions());
-    grpc_timer_manager_set_start_threaded(false);
-    grpc_init();
-  }
 
-  static void TearDownTestSuite() {
-    fuzzing_event_engine_->FuzzingDone();
-    fuzzing_event_engine_->TickUntilIdle();
-    fuzzing_event_engine_->UnsetGlobalHooks();
-    WaitForSingleOwner(std::move(fuzzing_event_engine_));
-    grpc_shutdown();
-  }
   using RegionalAccessBoundary =
       RegionalAccessBoundaryFetcher::RegionalAccessBoundary;
   static constexpr Duration kRegioanlAccessBoundarySoftCacheGraceDuration =
       Duration::Hours(1);
-  bool has_cache() {
-    MutexLock lock(&fetcher_->cache_mu_);
-    return fetcher_->cache_.has_value();
+  bool has_cache(RegionalAccessBoundaryFetcher* fetcher) {
+    MutexLock lock(&fetcher->cache_mu_);
+    return fetcher->cache_.has_value();
   }
+  bool has_cache() { return has_cache(fetcher_.get()); }
+
   std::string cached_encoded_locations() {
     MutexLock lock(&fetcher_->cache_mu_);
     return std::string(fetcher_->cache_->encoded_locations.as_string_view());
@@ -79,40 +66,39 @@ class RegionalAccessBoundaryFetcherTest : public ::testing::Test {
     MutexLock lock(&fetcher_->cache_mu_);
     fetcher_->cache_ = std::move(cache);
   }
-  bool fetch_in_flight() {
-    MutexLock lock(&fetcher_->cache_mu_);
-    return fetcher_->pending_request_ != nullptr;
-  }
-  Timestamp next_fetch_time() {
-    MutexLock lock(&fetcher_->cache_mu_);
-    return fetcher_->next_fetch_time_;
-  }
 
   bool fetch_in_flight(RegionalAccessBoundaryFetcher* fetcher) {
     MutexLock lock(&fetcher->cache_mu_);
     return fetcher->pending_request_ != nullptr;
+  }
+  bool fetch_in_flight() { return fetch_in_flight(fetcher_.get()); }
+
+  Timestamp next_fetch_time() {
+    MutexLock lock(&fetcher_->cache_mu_);
+    return fetcher_->next_fetch_time_;
   }
 
   WeakRefCountedPtr<RegionalAccessBoundaryFetcher> WeakFetcher() {
     return fetcher_->WeakRef();
   }
 
-  bool IsShutdown(RegionalAccessBoundaryFetcher* fetcher) {
+  bool is_shutdown(RegionalAccessBoundaryFetcher* fetcher) {
     MutexLock lock(&fetcher->cache_mu_);
     return fetcher->shutdown_;
   }
 
-  bool CheckPendingRequestIsNull(RegionalAccessBoundaryFetcher* fetcher) {
+  bool check_pending_request_is_null(RegionalAccessBoundaryFetcher* fetcher) {
     MutexLock lock(&fetcher->cache_mu_);
     return fetcher->pending_request_ == nullptr;
   }
 
-  bool HasCache(RegionalAccessBoundaryFetcher* fetcher) {
-    MutexLock lock(&fetcher->cache_mu_);
-    return fetcher->cache_.has_value();
-  }
-
   void SetUp() override {
+    fuzzing_event_engine_ =
+        std::make_shared<grpc_event_engine::experimental::FuzzingEventEngine>(
+            grpc_event_engine::experimental::FuzzingEventEngine::Options(),
+            fuzzing_event_engine::Actions());
+    grpc_timer_manager_set_start_threaded(false);
+    grpc_init();
     fetcher_ = RegionalAccessBoundaryFetcher::Create(
         "https://googleapis.com", fuzzing_event_engine_,
         BackOff::Options()
@@ -133,18 +119,21 @@ class RegionalAccessBoundaryFetcherTest : public ::testing::Test {
       ExecCtx exec_ctx;
       fetcher_.reset();
     }
+    fuzzing_event_engine_->FuzzingDone();
     fuzzing_event_engine_->TickUntilIdle();
+    fuzzing_event_engine_->UnsetGlobalHooks();
+    WaitForSingleOwner(std::move(fuzzing_event_engine_));
+    grpc_shutdown();
   }
 
   RefCountedPtr<RegionalAccessBoundaryFetcher> fetcher_;
   RefCountedPtr<Arena> arena_;
   ClientMetadataHandle metadata_;
-  static std::shared_ptr<grpc_event_engine::experimental::FuzzingEventEngine>
+  std::shared_ptr<grpc_event_engine::experimental::FuzzingEventEngine>
       fuzzing_event_engine_;
 };
 
-std::shared_ptr<grpc_event_engine::experimental::FuzzingEventEngine>
-    RegionalAccessBoundaryFetcherTest::fuzzing_event_engine_ = nullptr;
+
 
 namespace {
 
@@ -486,8 +475,8 @@ TEST_F(RegionalAccessBoundaryFetcherTest, ResponseAfterShutdownIgnored) {
   // Orphan the fetcher (simulating shutdown)
   fetcher_.reset();
   // Verify fetcher is shutdown but memory is valid
-  EXPECT_TRUE(IsShutdown(fetcher_raw));
-  EXPECT_TRUE(CheckPendingRequestIsNull(fetcher_raw));
+  EXPECT_TRUE(is_shutdown(fetcher_raw));
+  EXPECT_TRUE(check_pending_request_is_null(fetcher_raw));
   // Simulate a successful response arriving AFTER shutdown
   if (g_stalled_response != nullptr) {
     *g_stalled_response = http_response(
@@ -499,7 +488,7 @@ TEST_F(RegionalAccessBoundaryFetcherTest, ResponseAfterShutdownIgnored) {
   }
   ExecCtx::Get()->Flush();
   // Verify cache was NOT updated (it requires inspecting the zombie object)
-  EXPECT_FALSE(HasCache(fetcher_raw));
+  EXPECT_FALSE(has_cache(fetcher_raw));
 }
 
 TEST_F(RegionalAccessBoundaryFetcherTest, BackoffResetsOnSuccess) {

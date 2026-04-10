@@ -359,8 +359,7 @@ void EmailFetcher::OnEmailFetchError(grpc_error_handle error) {
   MutexLock lock(&mu_);
   if (std::holds_alternative<OrphanablePtr<EmailRequest>>(state_)) {
     LOG_EVERY_N_SEC(ERROR, 60) << "Regional Access Boundary fetch skipped due "
-                                  "to service account email "
-                                  "fetch failure: "
+                                  "to service account email fetch failure: "
                                << StatusToString(error);
     state_ = OrphanablePtr<EmailRequest>(
         nullptr);  // Reset to allow retry on next invocation.
