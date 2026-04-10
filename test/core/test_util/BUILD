@@ -522,6 +522,7 @@ grpc_cc_library(
     testonly = 1,
     srcs = ["fuzz_config_vars_helpers.cc"],
     hdrs = ["fuzz_config_vars_helpers.h"],
+    defines = ["GRPC_USE_FUZZTEST=1"],
     external_deps = [
         "absl/strings",
         "fuzztest",
