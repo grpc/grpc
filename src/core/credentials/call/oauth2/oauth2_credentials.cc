@@ -282,8 +282,8 @@ class grpc_compute_engine_token_fetcher_credentials
       : email_fetcher_(grpc_core::MakeRefCounted<grpc_core::EmailFetcher>()) {}
   explicit grpc_compute_engine_token_fetcher_credentials(
       std::vector<grpc_core::URI::QueryParam> query_params)
-      : query_params_(std::move(query_params)),
-        email_fetcher_(grpc_core::MakeRefCounted<grpc_core::EmailFetcher>()) {}
+      : email_fetcher_(grpc_core::MakeRefCounted<grpc_core::EmailFetcher>()),
+        query_params_(std::move(query_params)) {}
 
   std::string debug_string() override {
     return "GoogleComputeEngineTokenFetcherCredentials";

@@ -148,14 +148,32 @@ std::shared_ptr<grpc_event_engine::experimental::FuzzingEventEngine>
 
 namespace {
 
+grpc_closure* g_stalled_on_done = nullptr;
+grpc_http_response* g_stalled_response = nullptr;
+
+int httpcli_get_stalled(const grpc_http_request* request,
+                        const URI& uri, Timestamp deadline,
+                        grpc_closure* on_done, grpc_http_response* response);
+
 TEST_F(RegionalAccessBoundaryFetcherTest, CacheMissTriggersFetch) {
+  ExecCtx exec_ctx;
+  g_stalled_on_done = nullptr;
+  g_stalled_response = nullptr;
+  HttpRequest::SetOverride(httpcli_get_stalled, nullptr, nullptr);
   metadata_->Append("authorization", Slice::FromStaticString("Bearer token"),
                     [](absl::string_view, const Slice&) { abort(); });
   fetcher_->Fetch("", *metadata_);
   EXPECT_TRUE(fetch_in_flight());
+  // Clean up the stalled request to avoid leaks and timeouts in shutdown.
+  if (g_stalled_on_done != nullptr) {
+    ExecCtx::Run(DEBUG_LOCATION, g_stalled_on_done,
+                 absl::CancelledError("orphaned"));
+    ExecCtx::Get()->Flush();
+  }
 }
 
 TEST_F(RegionalAccessBoundaryFetcherTest, CacheHitDoesNotTriggerFetch) {
+  ExecCtx exec_ctx;
   set_cache(RegionalAccessBoundary{Slice::FromStaticString("us-west1"),
                                    Timestamp::Now() + Duration::Seconds(7200)});
   metadata_->Append("authorization", Slice::FromStaticString("Bearer token"),
@@ -170,6 +188,9 @@ TEST_F(RegionalAccessBoundaryFetcherTest, CacheHitDoesNotTriggerFetch) {
 
 TEST_F(RegionalAccessBoundaryFetcherTest, ExpiredCacheTriggersFetch) {
   ExecCtx exec_ctx;
+  g_stalled_on_done = nullptr;
+  g_stalled_response = nullptr;
+  HttpRequest::SetOverride(httpcli_get_stalled, nullptr, nullptr);
   set_cache(RegionalAccessBoundary{Slice::FromStaticString("us-west1"),
                                    Timestamp::Now() + Duration::Seconds(100)});
   fuzzing_event_engine_->TickForDuration(Duration::Seconds(101));
@@ -177,6 +198,12 @@ TEST_F(RegionalAccessBoundaryFetcherTest, ExpiredCacheTriggersFetch) {
                     [](absl::string_view, const Slice&) { abort(); });
   fetcher_->Fetch("", *metadata_);
   EXPECT_TRUE(fetch_in_flight());
+  // Clean up the stalled request to avoid leaks and timeouts in shutdown.
+  if (g_stalled_on_done != nullptr) {
+    ExecCtx::Run(DEBUG_LOCATION, g_stalled_on_done,
+                 absl::CancelledError("orphaned"));
+    ExecCtx::Get()->Flush();
+  }
 }
 
 TEST_F(RegionalAccessBoundaryFetcherTest, InvalidUriParsing) {
@@ -350,15 +377,6 @@ int httpcli_get_500(const grpc_http_request* /*request*/, const URI& /*uri*/,
   return 1;
 }
 
-int httpcli_get_404(const grpc_http_request* /*request*/, const URI& /*uri*/,
-                    Timestamp /*deadline*/, grpc_closure* on_done,
-                    grpc_http_response* response) {
-  g_mock_get_count++;
-  *response = http_response(404, "");
-  ExecCtx::Run(DEBUG_LOCATION, on_done, absl::OkStatus());
-  return 1;
-}
-
 TEST_F(RegionalAccessBoundaryFetcherTest, RetryableHttpErrors) {
   ExecCtx exec_ctx;
   g_mock_get_count = 0;
@@ -416,9 +434,6 @@ TEST_F(RegionalAccessBoundaryFetcherTest, CancelPendingFetch) {
   fetcher_.reset();
   EXPECT_FALSE(fetch_in_flight(fetcher.operator->()));
 }
-
-grpc_closure* g_stalled_on_done = nullptr;
-grpc_http_response* g_stalled_response = nullptr;
 
 int httpcli_get_stalled(const grpc_http_request* /*request*/,
                         const URI& /*uri*/, Timestamp /*deadline*/,
@@ -709,6 +724,12 @@ TEST_F(EmailFetcherTest, EarlyDestructionDoesNotCrash) {
   // Do NOT flush ExecCtx. We want the request to be in flight.
   // Now destroy the fetcher.
   email_fetcher_.reset();
+  // Clean up the stalled request to avoid leaks and timeouts in shutdown.
+  if (g_stalled_on_done != nullptr) {
+    ExecCtx::Run(DEBUG_LOCATION, g_stalled_on_done,
+                 absl::CancelledError("orphaned"));
+    ExecCtx::Get()->Flush();
+  }
 }
 
 }  // namespace

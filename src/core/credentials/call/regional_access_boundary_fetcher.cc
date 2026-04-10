@@ -133,8 +133,8 @@ void RegionalAccessBoundaryFetcher::Fetch(absl::string_view access_token,
     // - There is no pending fetch currently in flight.
     // - We are not currently in backoff after a failed fetch attempt.
     if ((!cache_.has_value() ||
-         (cache_->expiration - now) <=
-             kRegioanlAccessBoundarySoftCacheGraceDuration) &&
+         cache_->expiration <=
+             now + kRegioanlAccessBoundarySoftCacheGraceDuration) &&
         pending_request_ == nullptr && next_fetch_time_ <= now) {
       pending_request_ = MakeOrphanable<Request>(WeakRef(), access_token);
       pending_request_->Start();
@@ -256,7 +256,7 @@ class EmailFetcher::EmailRequest final
     request.hdrs = &header;
     auto uri =
         URI::Create("http", /*user_info=*/"", GRPC_COMPUTE_ENGINE_METADATA_HOST,
-                    kComputeEngineDefaultSaEmailPath, /*query_params=*/{},
+                    kComputeEngineDefaultSaEmailPath, /*query_parameter_pairs=*/{},
                     /*fragment=*/"");
     GRPC_CHECK(uri.ok());
     GRPC_CLOSURE_INIT(&closure_, OnResponseWrapper, this,

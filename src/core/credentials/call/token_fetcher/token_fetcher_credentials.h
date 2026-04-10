@@ -72,7 +72,7 @@ class TokenFetcherCredentials : public grpc_call_credentials {
 
   ArenaPromise<absl::StatusOr<ClientMetadataHandle>> GetRequestMetadata(
       ClientMetadataHandle initial_metadata,
-      const GetRequestMetadataArgs* args) override final;
+      const GetRequestMetadataArgs* args) final;
 
  protected:
   // Base class for fetch requests.
