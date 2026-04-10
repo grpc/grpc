@@ -59,5 +59,3 @@ fi
 mkdir -p "${ARTIFACTS_OUT}"
 
 cp pkg/*.gem "${ARTIFACTS_OUT}"/
-
-[ -x "$(command -v ccache)" ] && ccache --show-stats || true

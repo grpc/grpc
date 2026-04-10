@@ -28,9 +28,9 @@ GRPC_PROTOC_BUILD_COMPILER_JOBS=${GRPC_PROTOC_BUILD_COMPILER_JOBS:-2}
 
 make protoc plugins "-j${GRPC_PROTOC_BUILD_COMPILER_JOBS}"
 
+[ -x "$(command -v ccache)" ] && ccache --show-stats || true
+
 popd
 
 mkdir -p "${ARTIFACTS_OUT}"
 cp cmake/build/third_party/protobuf/protoc cmake/build/*_plugin "${ARTIFACTS_OUT}"/
-
-[ -x "$(command -v ccache)" ] && ccache --show-stats || true
