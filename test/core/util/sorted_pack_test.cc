@@ -23,6 +23,7 @@ using grpc_core::WithSortedPack;
 template <int I>
 struct Int {
   int value() const { return I; }
+  static constexpr size_t kRadixScore = I;
 };
 
 template <typename A, typename B>
