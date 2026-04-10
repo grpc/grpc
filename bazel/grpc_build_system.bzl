@@ -639,6 +639,7 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
             fail("srcs changed")
         if poller_config["deps"] != core_deps:
             fail("deps changed: %r --> %r" % (deps, poller_config["deps"]))
+
         # This target is marked as incompatible with windows. So it can only
         # be built on other non-windows platforms.
         cc_test(
@@ -656,6 +657,7 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
             }),
             **test_args
         )
+
         # Define a sh_test target for each poller_config. However, this target
         # is marked compatible only for windows platform. So it will not be
         # built in other platforms.
