@@ -26,11 +26,10 @@ EXPERIMENT_ENABLES = {
     "error_flatten": "error_flatten",
     "event_engine_client": "event_engine_client",
     "event_engine_dns": "event_engine_dns",
-    "event_engine_dns_non_client_channel": "event_engine_dns_non_client_channel",
     "event_engine_fork": "event_engine_fork",
     "event_engine_listener": "event_engine_listener",
     "event_engine_callback_cq": "event_engine_callback_cq,event_engine_client,event_engine_listener",
-    "event_engine_for_all_other_endpoints": "event_engine_client,event_engine_dns,event_engine_dns_non_client_channel,event_engine_for_all_other_endpoints,event_engine_listener",
+    "event_engine_for_all_other_endpoints": "event_engine_client,event_engine_dns,event_engine_for_all_other_endpoints,event_engine_listener",
     "event_engine_poller_for_python": "event_engine_poller_for_python",
     "fail_recv_metadata_on_deadline_exceeded": "fail_recv_metadata_on_deadline_exceeded",
     "free_large_allocator": "free_large_allocator",
@@ -74,7 +73,6 @@ EXPERIMENT_ENABLES = {
 EXPERIMENT_POLLERS = [
     "event_engine_client",
     "event_engine_dns",
-    "event_engine_dns_non_client_channel",
     "event_engine_fork",
     "event_engine_listener",
     "event_engine_for_all_other_endpoints",
@@ -98,7 +96,6 @@ EXPERIMENTS = {
             ],
             "core_end2end_test": [
                 "event_engine_client",
-                "event_engine_dns_non_client_channel",
                 "event_engine_for_all_other_endpoints",
                 "event_engine_fork",
                 "event_engine_listener",
@@ -132,7 +129,6 @@ EXPERIMENTS = {
             ],
             "core_end2end_test": [
                 "event_engine_client",
-                "event_engine_dns_non_client_channel",
                 "event_engine_for_all_other_endpoints",
                 "event_engine_fork",
                 "event_engine_listener",
@@ -211,7 +207,6 @@ EXPERIMENTS = {
             "core_end2end_test": [
                 "error_flatten",
                 "event_engine_client",
-                "event_engine_dns_non_client_channel",
                 "event_engine_for_all_other_endpoints",
                 "event_engine_fork",
                 "event_engine_listener",
