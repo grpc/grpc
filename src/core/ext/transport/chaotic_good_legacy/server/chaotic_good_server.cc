@@ -489,8 +489,7 @@ absl::StatusOr<int> AddLegacyChaoticGoodPort(Server* server, std::string addr,
   const std::string parsed_addr = URI::PercentDecode(addr);
   absl::StatusOr<std::vector<EventEngine::ResolvedAddress>> results =
       std::vector<EventEngine::ResolvedAddress>();
-  if (IsEventEngineDnsNonClientChannelEnabled() &&
-      !grpc_event_engine::experimental::
+  if (!grpc_event_engine::experimental::
           EventEngineExperimentDisabledForPython()) {
     absl::StatusOr<std::unique_ptr<EventEngine::DNSResolver>> ee_resolver =
         args.GetObjectRef<EventEngine>()->GetDNSResolver(

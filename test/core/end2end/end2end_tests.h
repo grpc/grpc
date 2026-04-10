@@ -909,8 +909,7 @@ inline bool IsTestSampledInPr(const CoreTestConfiguration* config) {
     }                                                                          \
     SKIP_IF_DISABLED_IN_CONFIG(config, #suite, #name);                         \
     SKIP_IF_NOT_SAMPLED_IN_PR(config);                                         \
-    if (IsEventEngineDnsNonClientChannelEnabled() &&                           \
-        !grpc_event_engine::experimental::                                     \
+    if (!grpc_event_engine::experimental::                                     \
             EventEngineExperimentDisabledForPython()) {                        \
       GTEST_SKIP() << "event_engine_dns_non_client_channel experiment breaks " \
                       "fuzzing currently";                                     \

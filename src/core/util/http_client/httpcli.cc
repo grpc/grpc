@@ -177,7 +177,6 @@ HttpRequest::HttpRequest(
       pollset_set_(grpc_pollset_set_create()),
       test_only_generate_response_(std::move(test_only_generate_response)),
       use_event_engine_dns_resolver_(
-          IsEventEngineDnsNonClientChannelEnabled() &&
           !grpc_event_engine::experimental::
               EventEngineExperimentDisabledForPython()),
       resolver_(!use_event_engine_dns_resolver_ ? GetDNSResolver() : nullptr),
