@@ -608,7 +608,7 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
             "//:windows": ["@platforms//:incompatible"],
             "//:windows_clang": ["@platforms//:incompatible"],
             "//conditions:default": [],
-            }),
+        }),
     )
 
     cc_binary(
