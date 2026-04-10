@@ -571,6 +571,13 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], defines = [], a
             EventEngine implementation differences
         target_compatible_with: Constraint values that must be present in the target platform
     """
+    if "fuzztest" in external_deps or "grpc-fuzztest" in tags:
+        if "grpc-fuzztest" not in tags:
+            tags = tags + ["grpc-fuzztest"]
+        target_compatible_with = target_compatible_with + select({
+            "//:windows": ["@platforms//:incompatible"],
+            "//conditions:default": [],
+        })
     core_deps = deps + _get_external_deps(external_deps) + ["//test/core/test_util:grpc_suppressions"]
 
     # Test args for all tests
