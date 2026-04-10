@@ -929,8 +929,8 @@ def _extract_cc_tests(bazel_rules: BuildDict) -> List[str]:
             and bazel_rule.get("generator_function") == "grpc_cc_test"
         ):
             test_name = bazel_rule["name"]
-            # Strip _BIN suffix to match test names
-            if test_name.endswith("_BIN"):
+            # Strip _bin suffix to match test names
+            if test_name.endswith("_bin"):
                 test_name = test_name[:-4]
                 # Add the stripped name to bazel_rules so it can be found later
                 bazel_rules[test_name] = bazel_rule

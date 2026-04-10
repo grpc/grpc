@@ -34,6 +34,7 @@ load("@com_google_protobuf//bazel:cc_proto_library.bzl", "cc_proto_library")
 load("@com_google_protobuf//bazel:upb_proto_library.bzl", "upb_proto_library", "upb_proto_reflection_library")
 load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
+load("@rules_cc//cc:cc_test.bzl", "cc_test")
 load("@rules_proto//proto:defs.bzl", "proto_library")
 load("@rules_python//python:defs.bzl", "py_binary")
 load("@rules_shell//shell:sh_binary.bzl", "sh_binary")
@@ -601,6 +602,32 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
         deps = core_deps,
         tags = tags,
         alwayslink = 1,
+        target_compatible_with = select({
+            "//:windows": ["@platforms//:incompatible"],
+            "//:windows_clang": ["@platforms//:incompatible"],
+            "//conditions:default": [],
+        }),
+    )
+
+    # Define a test binary on windows builds. This avoids defining a new target
+    # for each poller config on windows and saves expensive linkage time.
+    cc_binary(
+        name = "%s_bin" % name,
+        srcs = srcs,
+        deps = core_deps,
+        testonly = 1,
+        copts = GRPC_DEFAULT_COPTS + copts,
+        linkopts = ["-defaultlib:ws2_32.lib"],
+        linkstatic = linkstatic,
+        exec_compatible_with = exec_compatible_with,
+        exec_properties = exec_properties,
+        data = data,
+        tags = tags,
+        target_compatible_with = select({
+            "//:windows": [],
+            "//:windows_clang": [],
+            "//conditions:default": ["@platforms//:incompatible"],
+        }),
     )
 
     cc_binary(
@@ -621,9 +648,28 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
             fail("srcs changed")
         if poller_config["deps"] != core_deps:
             fail("deps changed: %r --> %r" % (deps, poller_config["deps"]))
+        # This target is marked as incompatible with windows. So it can only
+        # be built on other non-windows platforms.
+        cc_test(
+            name = poller_config["name"],
+            deps = ["%s_TEST_LIBRARY" % name],
+            tags = poller_config["tags"],
+            args = poller_config["args"],
+            env = poller_config["env"],
+            flaky = poller_config["flaky"],
+            target_compatible_with = select({
+                "//:windows": ["@platforms//:incompatible"],
+                "//:windows_clang": ["@platforms//:incompatible"],
+                "//conditions:default": [],
+            }),
+            **test_args
+        )
+        # Define a sh_test target for each poller_config. However, this target
+        # is marked compatible only for windows platform. So it will not be
+        # built in other platforms.
         sh_test(
-            name = "%s.exe" % poller_config["name"],
-            srcs = [":%s_BIN" % name],
+            name = poller_config["name"] + ".exe",
+            srcs = [":%s_bin" % name],
             tags = poller_config["tags"],
             args = poller_config["args"],
             env = poller_config["env"],
@@ -634,6 +680,11 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
             data = data,
             exec_compatible_with = exec_compatible_with,
             exec_properties = exec_properties,
+            target_compatible_with = select({
+                "//:windows": [],
+                "//:windows_clang": [],
+                "//conditions:default": ["@platforms//:incompatible"],
+            }),
         )
 
 def grpc_cc_binary(name, srcs = [], deps = [], external_deps = [], args = [], data = [], testonly = False, linkshared = False, linkopts = [], tags = [], target_compatible_with = [], features = [], visibility = None):
