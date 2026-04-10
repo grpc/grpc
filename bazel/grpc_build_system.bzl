@@ -597,6 +597,8 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
             **test_args
         )
 
+    # TODO(vigneshbabu) This target must be replaced with a cc_binary similar
+    # to the one used in a windows build.
     cc_library(
         name = "%s_TEST_LIBRARY" % name,
         testonly = 1,
@@ -642,6 +644,8 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
 
         # This target is marked as incompatible with windows. So it can only
         # be built on other non-windows platforms.
+        # TODO(vigneshbabu) - This target must be replaced with an sh_test
+        # similar to the windows builds.
         cc_test(
             name = poller_config["name"],
             deps = ["%s_TEST_LIBRARY" % name],

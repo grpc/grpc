@@ -244,7 +244,6 @@ grpc_cc_test(
         "absl/strings",
         "absl/log:check",
     ],
-    linkstatic = False,
     tags = [
         "grpc:internal-test-filter:-GrpcToolTest.CallCommandWithBadMetadata",
         "no_mac",
