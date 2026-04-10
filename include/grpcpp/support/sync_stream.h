@@ -366,6 +366,10 @@ class ClientWriter : public ClientWriterInterface<W> {
     finish_ops_.ClientRecvStatus(context_, &status);
     finish_ops_.FillOps(&call_);
     ABSL_CHECK(cq_.Pluck(&finish_ops_));
+    if (!finish_ops_.got_message && status.ok()) {
+      status = grpc::Status(grpc::StatusCode::UNIMPLEMENTED,
+                            "No message returned for client-streaming request");
+    }
     return status;
   }
 

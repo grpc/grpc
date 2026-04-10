@@ -20,6 +20,7 @@
 #include <grpcpp/channel.h>
 #include <grpcpp/client_context.h>
 #include <grpcpp/create_channel.h>
+#include <grpcpp/generic/async_generic_service.h>
 #include <grpcpp/generic/generic_stub.h>
 #include <grpcpp/security/credentials.h>
 #include <grpcpp/security/server_credentials.h>
@@ -35,6 +36,10 @@
 namespace grpc {
 namespace testing {
 namespace {
+
+inline void* tag(int i) {
+  return reinterpret_cast<void*>(static_cast<intptr_t>(i));
+}
 
 class TestServiceImpl : public EchoTestService::Service {
  public:
@@ -71,6 +76,8 @@ class CardinalityViolationTest : public ::testing::Test {
     ServerBuilder builder;
     builder.AddListeningPort("localhost:0", InsecureServerCredentials(), &port);
     builder.RegisterService(&service_);
+    builder.RegisterAsyncGenericService(&generic_service_);
+    cq_ = builder.AddCompletionQueue();
     server_ = builder.BuildAndStart();
 
     server_address_ << "localhost:" << port;
@@ -84,8 +91,10 @@ class CardinalityViolationTest : public ::testing::Test {
 
   std::shared_ptr<Channel> channel_;
   std::unique_ptr<Server> server_;
+  std::unique_ptr<ServerCompletionQueue> cq_;
   std::ostringstream server_address_;
   TestServiceImpl service_;
+  AsyncGenericService generic_service_;
 };
 
 // Verifies Server Case 1: For a Unary RPC, if no request message is sent by the
@@ -99,17 +108,17 @@ TEST_F(CardinalityViolationTest, UnaryZeroRequests) {
   std::unique_ptr<GenericClientAsyncReaderWriter> call =
       generic_stub.PrepareCall(&context, "/grpc.testing.EchoTestService/Echo",
                                &cq);
-  call->StartCall(reinterpret_cast<void*>(1));
+  call->StartCall(tag(1));
   void* got_tag;
   bool ok;
   EXPECT_TRUE(cq.Next(&got_tag, &ok));
-  EXPECT_EQ(got_tag, reinterpret_cast<void*>(1));
-  call->WritesDone(reinterpret_cast<void*>(2));
+  EXPECT_EQ(got_tag, tag(1));
+  call->WritesDone(tag(2));
   EXPECT_TRUE(cq.Next(&got_tag, &ok));
-  EXPECT_EQ(got_tag, reinterpret_cast<void*>(2));
-  call->Finish(&status, reinterpret_cast<void*>(3));
+  EXPECT_EQ(got_tag, tag(2));
+  call->Finish(&status, tag(3));
   EXPECT_TRUE(cq.Next(&got_tag, &ok));
-  EXPECT_EQ(got_tag, reinterpret_cast<void*>(3));
+  EXPECT_EQ(got_tag, tag(3));
   EXPECT_EQ(status.error_code(), StatusCode::UNIMPLEMENTED);
 }
 
@@ -121,18 +130,76 @@ TEST_F(CardinalityViolationTest, ServerStreamingZeroRequests) {
   std::unique_ptr<GenericClientAsyncReaderWriter> call =
       generic_stub.PrepareCall(
           &context, "/grpc.testing.EchoTestService/ResponseStream", &cq);
-  call->StartCall(reinterpret_cast<void*>(1));
+  call->StartCall(tag(1));
   void* got_tag;
   bool ok;
   EXPECT_TRUE(cq.Next(&got_tag, &ok));
-  EXPECT_EQ(got_tag, reinterpret_cast<void*>(1));
-  call->WritesDone(reinterpret_cast<void*>(2));
+  EXPECT_EQ(got_tag, tag(1));
+  call->WritesDone(tag(2));
   EXPECT_TRUE(cq.Next(&got_tag, &ok));
-  EXPECT_EQ(got_tag, reinterpret_cast<void*>(2));
-  call->Finish(&status, reinterpret_cast<void*>(3));
+  EXPECT_EQ(got_tag, tag(2));
+  call->Finish(&status, tag(3));
   EXPECT_TRUE(cq.Next(&got_tag, &ok));
-  EXPECT_EQ(got_tag, reinterpret_cast<void*>(3));
+  EXPECT_EQ(got_tag, tag(3));
   EXPECT_EQ(status.error_code(), StatusCode::UNIMPLEMENTED);
+}
+
+TEST_F(CardinalityViolationTest, ClientStreamingZeroResponses) {
+  ClientContext context;
+  EchoResponse response;
+  grpc::internal::RpcMethod method(
+      "/grpc.testing.EchoTestService/UnregisteredClientStreamingMethod",
+      grpc::internal::RpcMethod::CLIENT_STREAMING);
+  auto writer = grpc::internal::ClientWriterFactory<EchoRequest>::Create(
+      channel_.get(), method, &context, &response);
+  GenericServerContext server_context;
+  GenericServerAsyncReaderWriter stream(&server_context);
+  generic_service_.RequestCall(&server_context, &stream, cq_.get(), cq_.get(),
+                               tag(100));
+  void* got_tag;
+  bool ok;
+  EXPECT_TRUE(cq_->Next(&got_tag, &ok));
+  EXPECT_EQ(got_tag, tag(100));
+  stream.Finish(Status::OK, tag(101));
+  EXPECT_TRUE(cq_->Next(&got_tag, &ok));
+  EXPECT_EQ(got_tag, tag(101));
+  writer->WritesDone();
+  Status s = writer->Finish();
+  EXPECT_EQ(s.error_code(), StatusCode::UNIMPLEMENTED);
+  delete writer;
+}
+
+TEST_F(CardinalityViolationTest, ClientAsyncStreamingZeroResponses) {
+  ClientContext context;
+  EchoResponse response;
+  grpc::internal::RpcMethod method(
+      "/grpc.testing.EchoTestService/UnregisteredClientAsyncStreamingMethod",
+      grpc::internal::RpcMethod::CLIENT_STREAMING);
+  CompletionQueue client_cq;
+  auto writer = grpc::internal::ClientAsyncWriterFactory<EchoRequest>::Create(
+      channel_.get(), &client_cq, method, &context, &response, true, tag(1));
+  void* got_tag;
+  bool ok;
+  EXPECT_TRUE(client_cq.Next(&got_tag, &ok));
+  EXPECT_EQ(got_tag, tag(1));
+  GenericServerContext server_context;
+  GenericServerAsyncReaderWriter stream(&server_context);
+  generic_service_.RequestCall(&server_context, &stream, cq_.get(), cq_.get(),
+                               tag(100));
+  EXPECT_TRUE(cq_->Next(&got_tag, &ok));
+  EXPECT_EQ(got_tag, tag(100));
+  stream.Finish(Status::OK, tag(101));
+  EXPECT_TRUE(cq_->Next(&got_tag, &ok));
+  EXPECT_EQ(got_tag, tag(101));
+  writer->WritesDone(tag(2));
+  EXPECT_TRUE(client_cq.Next(&got_tag, &ok));
+  EXPECT_EQ(got_tag, tag(2));
+  Status s;
+  writer->Finish(&s, tag(3));
+  EXPECT_TRUE(client_cq.Next(&got_tag, &ok));
+  EXPECT_EQ(got_tag, tag(3));
+  EXPECT_EQ(s.error_code(), StatusCode::UNIMPLEMENTED);
+  delete writer;
 }
 
 }  // namespace
