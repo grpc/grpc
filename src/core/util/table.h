@@ -20,6 +20,7 @@
 
 #include <initializer_list>
 #include <new>
+#include <tuple>
 #include <type_traits>
 #include <utility>
 
@@ -29,127 +30,59 @@
 
 namespace grpc_core {
 
-// Meta-programming detail types to aid in building up a Table
 namespace table_detail {
 
-// A tuple-like type that contains manually constructed elements.
-template <typename, typename... Ts>
-struct Elements;
+template <size_t I, typename T, bool IsEmpty = std::is_empty<T>::value>
+struct TableLeaf;
 
-template <typename T, typename... Ts>
-struct Elements<absl::enable_if_t<!std::is_empty<T>::value>, T, Ts...>
-    : Elements<void, Ts...> {
+template <size_t I, typename T>
+struct TableLeaf<I, T, false> {
   struct alignas(T) Data {
     unsigned char bytes[sizeof(T)];
   };
   Data x;
-  Elements() {}
   T* ptr() { return reinterpret_cast<T*>(x.bytes); }
   const T* ptr() const { return reinterpret_cast<const T*>(x.bytes); }
 };
-template <typename T, typename... Ts>
-struct Elements<absl::enable_if_t<std::is_empty<T>::value>, T, Ts...>
-    : Elements<void, Ts...> {
+
+template <size_t I, typename T>
+struct TableLeaf<I, T, true> {
   T* ptr() { return reinterpret_cast<T*>(this); }
   const T* ptr() const { return reinterpret_cast<const T*>(this); }
 };
-template <>
-struct Elements<void> {};
 
-// Element accessor for Elements<>
-// Provides a static method f that returns a pointer to the value of element I
-// for Elements<Ts...>
-template <size_t I, typename... Ts>
-struct GetElem;
+template <typename IndexSequence, typename... Ts>
+struct ElementsImpl;
 
-template <typename T, typename... Ts>
-struct GetElem<0, T, Ts...> {
-  static T* f(Elements<void, T, Ts...>* e) { return e->ptr(); }
-  static const T* f(const Elements<void, T, Ts...>* e) { return e->ptr(); }
-};
+template <size_t... Is, typename... Ts>
+struct ElementsImpl<absl::index_sequence<Is...>, Ts...> : TableLeaf<Is, Ts>... {};
 
-template <size_t I, typename T, typename... Ts>
-struct GetElem<I, T, Ts...> {
-  static auto f(Elements<void, T, Ts...>* e)
-      -> decltype(GetElem<I - 1, Ts...>::f(e)) {
-    return GetElem<I - 1, Ts...>::f(e);
-  }
-  static auto f(const Elements<void, T, Ts...>* e)
-      -> decltype(GetElem<I - 1, Ts...>::f(e)) {
-    return GetElem<I - 1, Ts...>::f(e);
-  }
-};
+template <typename... Ts>
+using Elements = ElementsImpl<absl::make_index_sequence<sizeof...(Ts)>, Ts...>;
 
-// CountIncludedStruct is the backing for the CountIncluded function below.
-// Sets a member constant N to the number of times Needle is in Haystack.
-template <typename Needle, typename... Haystack>
-struct CountIncludedStruct;
+template <typename T, size_t I>
+struct IndexedType {};
 
-template <typename Needle, typename Straw, typename... RestOfHaystack>
-struct CountIncludedStruct<Needle, Straw, RestOfHaystack...> {
-  static constexpr size_t N =
-      static_cast<size_t>(std::is_same<Needle, Straw>::value) +
-      CountIncludedStruct<Needle, RestOfHaystack...>::N;
-};
-template <typename Needle>
-struct CountIncludedStruct<Needle> {
-  static constexpr size_t N = 0;
-};
-// Returns the number of times Needle is in Haystack.
-template <typename Needle, typename... Haystack>
-constexpr size_t CountIncluded() {
-  return CountIncludedStruct<Needle, Haystack...>::N;
-}
+template <typename IndexSequence, typename... Ts>
+struct IndexMapImpl;
 
-// IndexOfStruct is the backing for IndexOf below.
-// Set a member constant N to the index of Needle in Haystack.
-// Ignored should be void always, and is used for enable_if_t.
-template <typename Ignored, typename Needle, typename... Haystack>
-struct IndexOfStruct;
+template <size_t... Is, typename... Ts>
+struct IndexMapImpl<absl::index_sequence<Is...>, Ts...> : IndexedType<Ts, Is>... {};
 
-template <typename Needle, typename Straw, typename... RestOfHaystack>
-struct IndexOfStruct<absl::enable_if_t<std::is_same<Needle, Straw>::value>,
-                     Needle, Straw, RestOfHaystack...> {
-  // The first element is the one we're looking for. Done.
-  static constexpr size_t N = 0;
-};
-template <typename Needle, typename Straw, typename... RestOfHaystack>
-struct IndexOfStruct<absl::enable_if_t<!std::is_same<Needle, Straw>::value>,
-                     Needle, Straw, RestOfHaystack...> {
-  // The first element is not the one we're looking for, recurse looking at the
-  // tail, and sum the number of recursions.
-  static constexpr size_t N =
-      1 + IndexOfStruct<void, Needle, RestOfHaystack...>::N;
-};
-// Return the index of Needle in Haystack.
-// Guarded by CountIncluded to ensure that the return type is unambiguous.
-// If you got here from a compiler error using Table, it's likely that you've
-// used the type-based accessor/mutators, but the type you're using is repeated
-// more than once in the Table type arguments. Consider either using the indexed
-// accessor/mutator variants, or eliminating the ambiguity in type resolution.
-template <typename Needle, typename... Haystack>
-constexpr absl::enable_if_t<CountIncluded<Needle, Haystack...>() == 1, size_t>
-IndexOf() {
-  return IndexOfStruct<void, Needle, Haystack...>::N;
-}
+template <typename... Ts>
+using IndexMap = IndexMapImpl<absl::make_index_sequence<sizeof...(Ts)>, Ts...>;
 
-// TypeIndexStruct is the backing for TypeIndex below.
-// Sets member type Type to the type at index I in Ts.
-// Implemented as a simple type recursion.
-template <size_t I, typename... Ts>
-struct TypeIndexStruct;
+template <typename T, size_t I>
+constexpr size_t ResolveIndex(IndexedType<T, I>*) { return I; }
 
 template <typename T, typename... Ts>
-struct TypeIndexStruct<0, T, Ts...> {
-  using Type = T;
-};
-template <size_t I, typename T, typename... Ts>
-struct TypeIndexStruct<I, T, Ts...> : TypeIndexStruct<I - 1, Ts...> {};
-// TypeIndex is the type at index I in Ts.
-template <size_t I, typename... Ts>
-using TypeIndex = typename TypeIndexStruct<I, Ts...>::Type;
+constexpr size_t IndexOf() {
+  return ResolveIndex<T>(static_cast<IndexMap<Ts...>*>(nullptr));
+}
 
-// Helper to call the destructor of p if p is non-null.
+template <size_t I, typename... Ts>
+using TypeIndex = std::tuple_element_t<I, std::tuple<Ts...>>;
+
 template <typename T>
 void DestructIfNotNull(T* p) {
   if (p) p->~T();
@@ -199,7 +132,7 @@ class Table {
     // Since we may not be all clear, pass true for or_clear to have Move()
     // clear newly emptied fields.
     Move<true>(absl::make_index_sequence<sizeof...(Ts)>(),
-               std::forward<Table>(rhs));
+                std::forward<Table>(rhs));
     return *this;
   }
 
@@ -342,10 +275,7 @@ class Table {
   // the default) -- one bit for each type in Ts.
   using PresentBits = BitSet<sizeof...(Ts)>;
   // The tuple-like backing structure for Table.
-  using Elements = table_detail::Elements<void, Ts...>;
-  // Extractor from Elements
-  template <size_t I>
-  using GetElem = table_detail::GetElem<I, Ts...>;
+  using Elements = table_detail::Elements<Ts...>;
 
   // Given a T, return the unambiguous index of it within Ts.
   template <typename T>
@@ -357,14 +287,16 @@ class Table {
   // index I.
   template <size_t I>
   TypeIndex<I>* element_ptr() {
-    return GetElem<I>::f(&elements_);
+    using Leaf = table_detail::TableLeaf<I, TypeIndex<I>>;
+    return static_cast<Leaf*>(&elements_)->ptr();
   }
 
   // Given an index, return a point to the (maybe uninitialized!) data value at
   // index I.
   template <size_t I>
   const TypeIndex<I>* element_ptr() const {
-    return GetElem<I>::f(&elements_);
+    using Leaf = table_detail::TableLeaf<I, TypeIndex<I>>;
+    return static_cast<const Leaf*>(&elements_)->ptr();
   }
 
   // Set the present bit to value (if true - value is present/set, if false,
