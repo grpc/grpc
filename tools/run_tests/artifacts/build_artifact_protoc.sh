@@ -33,7 +33,4 @@ popd
 mkdir -p "${ARTIFACTS_OUT}"
 cp cmake/build/third_party/protobuf/protoc cmake/build/*_plugin "${ARTIFACTS_OUT}"/
 
-if [ -x "$(command -v ccache)" ]
-then
-  ccache --show-stats || true
-fi
+[ -x "$(command -v ccache)" ] && ccache --show-stats || true

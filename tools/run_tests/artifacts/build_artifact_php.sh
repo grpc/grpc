@@ -24,8 +24,3 @@ mkdir -p "${ARTIFACTS_OUT}"
 pear package
 
 cp -r grpc-*.tgz "${ARTIFACTS_OUT}"/
-
-if [ -x "$(command -v ccache)" ]
-then
-  ccache --show-stats || true
-fi
