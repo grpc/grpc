@@ -543,7 +543,7 @@ def expand_tests(name, srcs, deps, tags, args, exclude_pollers, uses_polling, us
                     experiment_config.append(config)
     return experiment_config
 
-def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data = [], uses_polling = True, size = "medium", timeout = None, tags = [], exec_compatible_with = [], exec_properties = {}, shard_count = None, flaky = None, copts = [], linkstatic = None, exclude_pollers = [], uses_event_engine = True):
+def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data = [], uses_polling = True, size = "medium", timeout = None, tags = [], exec_compatible_with = [], exec_properties = {}, shard_count = None, flaky = None, copts = [], linkstatic = None, exclude_pollers = [], uses_event_engine = True, defines = []):
     """A cc_test target for use in the gRPC repo.
 
     Args:
@@ -568,6 +568,7 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
         exclude_pollers: list of poller names to exclude for this set of tests.
         uses_event_engine: set to False if the test is not sensitive to
             EventEngine implementation differences
+        defines: cpp macro definitions.
     """
     core_deps = deps + _get_external_deps(external_deps) + ["//test/core/test_util:grpc_suppressions"]
 
@@ -592,6 +593,7 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
             deps = core_deps,
             args = args,
             flaky = True,
+            defines = defines,
             **test_args
         )
 
@@ -628,19 +630,6 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
             "//:windows_clang": [],
             "//conditions:default": ["@platforms//:incompatible"],
         }),
-    )
-
-    cc_binary(
-        name = "%s_BIN" % name,
-        deps = ["%s_TEST_LIBRARY" % name],
-        testonly = 1,
-        copts = GRPC_DEFAULT_COPTS + copts,
-        linkopts = if_not_windows(["-pthread"]) + if_windows(["-defaultlib:ws2_32.lib"]),
-        linkstatic = linkstatic,
-        exec_compatible_with = exec_compatible_with,
-        exec_properties = exec_properties,
-        data = data,
-        tags = tags,
     )
 
     for poller_config in expand_tests(name, srcs, core_deps, tags, args, exclude_pollers, uses_polling, uses_event_engine, flaky):
