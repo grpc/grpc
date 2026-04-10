@@ -173,11 +173,21 @@ absl::StatusOr<MessageHandle> ChannelCompression::DecompressMessage(
         is_client ? "CLIENT" : "SERVER", message->payload()->Length(),
         *args.max_recv_message_length));
   }
+  if ((message->flags() & GRPC_WRITE_INTERNAL_COMPRESS) &&
+      args.algorithm == GRPC_COMPRESS_NONE) {
+    return absl::Status(absl::StatusCode::kInternal,
+                        "Compression bit set but no encoding configured");
+  }
   // Check if decompression is enabled (if not, we can just pass the message
   // up).
   if (!enable_decompression_ ||
       (message->flags() & GRPC_WRITE_INTERNAL_COMPRESS) == 0) {
     return std::move(message);
+  }
+  if (!enabled_compression_algorithms().IsSet(args.algorithm)) {
+    return absl::UnimplementedError(
+        absl::StrCat("Compression algorithm not supported: ",
+                     CompressionAlgorithmAsString(args.algorithm)));
   }
   // Try to decompress the payload.
   SliceBuffer decompressed_slices;
