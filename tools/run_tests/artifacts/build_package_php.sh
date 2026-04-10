@@ -22,3 +22,8 @@ cd "$(dirname "$0")/../../.."
 # and we only collect them here to deliver them to the distribtest phase.
 mkdir -p artifacts/
 cp -r "${EXTERNAL_GIT_ROOT}"/input_artifacts/php_pecl_package_linux_*/* artifacts/ || true
+
+if [ -x "$(command -v ccache)" ]
+then
+  ccache --show-stats || true
+fi
