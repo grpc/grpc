@@ -16,6 +16,7 @@
 #define GRPC_SRC_CORE_CALL_METADATA_UNKNOWN_MAP_H
 
 #include <grpc/support/port_platform.h>
+#include <algorithm>
 #include <cstdint>
 #include <optional>
 #include <string>
@@ -28,10 +29,26 @@ namespace metadata_detail {
 
 class UnknownMap {
  public:
-  void Append(absl::string_view key, Slice value);
-  void Remove(absl::string_view key);
-  std::optional<absl::string_view> GetStringValue(absl::string_view key, std::string* buffer) const;
-  void Clear();
+  void Append(absl::string_view key, Slice value) {
+    unknown_.emplace_back(Slice::FromCopiedString(key), std::move(value));
+  }
+  void Remove(absl::string_view key) {
+    unknown_.erase(
+        std::remove_if(unknown_.begin(), unknown_.end(),
+                       [key](const std::pair<Slice, Slice>& p) {
+                         return p.first.as_string_view() == key;
+                       }),
+        unknown_.end());
+  }
+  std::optional<absl::string_view> GetStringValue(absl::string_view key, std::string* buffer) const {
+    for (const auto& p : unknown_) {
+      if (p.first.as_string_view() == key) {
+        return p.second.as_string_view();
+      }
+    }
+    return std::nullopt;
+  }
+  void Clear() { unknown_.clear(); }
   bool empty() const { return unknown_.empty(); }
   size_t size() const { return unknown_.size(); }
 

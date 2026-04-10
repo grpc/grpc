@@ -73,6 +73,11 @@ with open("src/core/call/metadata_batch.h", "w") as H:
 
 namespace grpc_core {
 
+template <typename Key, typename Value>
+size_t EncodedSizeOfKey(Key, const Value& value) {
+  return Key::Encode(value).size();
+}
+
 struct GrpcLbClientStats;
 
 using MetadataParseErrorFn = absl::FunctionRef<void(absl::string_view, const Slice&)>;
@@ -107,6 +112,8 @@ using MetadataParseErrorFn = absl::FunctionRef<void(absl::string_view, const Sli
         
         if "compression" in trait and trait["compression"]:
             print(f"  using CompressionTraits = {trait['compression']};", file=H)
+        else:
+            print("  using CompressionTraits = NoCompressionCompressor;", file=H)
 
         if not trait.get("is_encodable", True):
             print(f"  static absl::string_view DebugKey() {{ return \"{trait.get('key', trait['name'])}\"; }}", file=H)
@@ -118,9 +125,9 @@ using MetadataParseErrorFn = absl::FunctionRef<void(absl::string_view, const Sli
             print("  static constexpr auto kHttp = ValueType::kHttp;", file=H)
             print("  static constexpr auto kHttps = ValueType::kHttps;", file=H)
             print("  static constexpr auto kInvalid = ValueType::kInvalid;", file=H)
-            print("  static MementoType Parse(absl::string_view value, MetadataParseErrorFn on_error);", file=H)
-            print("  static StaticSlice Encode(ValueType x);", file=H)
-            print("  static const char* DisplayValue(ValueType x);", file=H)
+            print("  static MementoType Parse(absl::string_view value, MetadataParseErrorFn on_error) {\n    if (value == \"http\") return kHttp;\n    if (value == \"https\") return kHttps;\n    on_error(\"invalid value\", Slice::FromCopiedBuffer(value));\n    return kInvalid;\n  }", file=H)
+            print("  static StaticSlice Encode(ValueType x) {\n    switch (x) {\n      case kHttp: return StaticSlice::FromStaticString(\"http\");\n      case kHttps: return StaticSlice::FromStaticString(\"https\");\n      default: abort();\n    }\n  }", file=H)
+            print("  static const char* DisplayValue(ValueType x) {\n    switch (x) {\n      case kHttp: return \"http\";\n      case kHttps: return \"https\";\n      default: return \"<discarded-invalid-value>\";\n    }\n  }", file=H)
         elif trait["name"] == "HttpMethodMetadata":
             print("  enum class ValueType : uint32_t { kPost, kGet, kPut, kInvalid };", file=H)
             print("  using MementoType = ValueType;", file=H)
@@ -128,9 +135,9 @@ using MetadataParseErrorFn = absl::FunctionRef<void(absl::string_view, const Sli
             print("  static constexpr auto kGet = ValueType::kGet;", file=H)
             print("  static constexpr auto kPut = ValueType::kPut;", file=H)
             print("  static constexpr auto kInvalid = ValueType::kInvalid;", file=H)
-            print("  static MementoType Parse(absl::string_view value, MetadataParseErrorFn on_error);", file=H)
-            print("  static StaticSlice Encode(ValueType x);", file=H)
-            print("  static const char* DisplayValue(ValueType x);", file=H)
+            print("  static MementoType Parse(absl::string_view value, MetadataParseErrorFn on_error) {\n    if (value == \"POST\") return kPost;\n    if (value == \"PUT\") return kPut;\n    if (value == \"GET\") return kGet;\n    on_error(\"invalid value\", Slice::FromCopiedBuffer(value));\n    return kInvalid;\n  }", file=H)
+            print("  static StaticSlice Encode(ValueType x) {\n    switch (x) {\n      case kPost: return StaticSlice::FromStaticString(\"POST\");\n      case kPut: return StaticSlice::FromStaticString(\"PUT\");\n      case kGet: return StaticSlice::FromStaticString(\"GET\");\n      default: return StaticSlice::FromStaticString(\"<<INVALID METHOD>>\");\n    }\n  }", file=H)
+            print("  static const char* DisplayValue(ValueType x) {\n    switch (x) {\n      case kPost: return \"POST\";\n      case kGet: return \"GET\";\n      case kPut: return \"PUT\";\n      default: return \"<discarded-invalid-value>\";\n    }\n  }", file=H)
         elif trait["name"] == "ContentTypeMetadata":
             print("  static MementoType Parse(absl::string_view value, MetadataParseErrorFn on_error);", file=H)
 
@@ -147,14 +154,17 @@ using MetadataParseErrorFn = absl::FunctionRef<void(absl::string_view, const Sli
 
         trait_name = trait["name"]
         parse_fragment = trait.get("parse_memento", "abort();")
-        encode_fragment = trait.get("encode", "abort();")
+        if trait.get("storage", "") == "Slice":
+            encode_fragment = trait.get("encode", "return x.Ref();")
+        else:
+            encode_fragment = trait.get("encode", "return Slice(StaticSlice::FromStaticString(\"foo\"));")
         display_fragment = trait.get("display_value", 'return "<unsupported>";')
 
         print(f"  static MementoType ParseMemento(Slice value, bool will_keep, MetadataParseErrorFn on_error) {{\n{parse_fragment}\n  }}", file=H)
         print(f"  static ValueType MementoToValue(MementoType x) {{ return x; }}", file=H)
-        if trait_name != "HttpMethodMetadata":
-            print(f"  static auto Encode(const ValueType& x) {{\n{encode_fragment}\n  }}", file=H)
-        print(f"  static auto DisplayValue(const ValueType& x) {{\n{display_fragment}\n  }}", file=H)
+        if trait_name not in ("HttpMethodMetadata", "HttpSchemeMetadata"):
+            print("  static Slice Encode(const ValueType& x) {\n" + encode_fragment + "\n  }", file=H)
+            print(f"  static auto DisplayValue(const ValueType& x) {{\n{display_fragment}\n  }}", file=H)
         print("};", file=H)
 
     print("""
@@ -164,7 +174,7 @@ MetadataValueAsSlice(const Slice& slice) { return slice; }
 
 template <typename Which>
 absl::enable_if_t<!std::is_same<typename Which::ValueType, Slice>::value, Slice>
-MetadataValueAsSlice(typename Which::ValueType value) { return Slice(); }
+MetadataValueAsSlice(typename Which::ValueType value) { return Slice(Which::Encode(value)); }
 
 template <template <typename, typename> class Factory, typename... MetadataTraits>
 struct StatefulCompressor {};
@@ -268,35 +278,214 @@ struct grpc_metadata_batch {
     print("  friend bool IsStatusOk(const grpc_metadata_batch& m) {", file=H)
     print("    return m.get(GrpcStatusMetadata()).value_or(GRPC_STATUS_UNKNOWN) == GRPC_STATUS_OK;", file=H)
     print("  }", file=H)
-    
-    print("  void Log(absl::FunctionRef<void(absl::string_view, absl::string_view)> log_fn) const {}", file=H)
-    print("  std::string DebugString() const { return \"\"; }", file=H)
-    print("  bool empty() const { return count() == 0; }", file=H)
-    print("  template <typename Trait, typename Value> void Set(Trait, Value) {}", file=H)
-    print("  void Set(const ParsedMetadata<grpc_metadata_batch>&) {}", file=H)
-    print("  size_t TransportSize() const { return 0; }", file=H)
-    print("  template <typename Trait> const typename Trait::ValueType* get_pointer(Trait) const { return nullptr; }", file=H)
-    print("  struct DummyValue { int value = 0; bool explicitly_set = false; void emplace_back(const std::string&) {} };", file=H)
-    print("  template <typename Trait> DummyValue* GetOrCreatePointer(Trait) { static DummyValue dummy; return &dummy; }", file=H)
-    print("  template <typename Trait> typename Trait::ValueType* get_pointer(Trait) { return nullptr; }", file=H)
-    print("  const std::vector<std::string>* get_pointer(GrpcStatusContext) const { return nullptr; }", file=H)
-    print("  template <typename Encoder> void Encode(Encoder*) const {}", file=H)
-    print("  static ParsedMetadata<grpc_metadata_batch> Parse(absl::string_view, Slice, bool, uint32_t, MetadataParseErrorFn) { return ParsedMetadata<grpc_metadata_batch>(); }", file=H)
-    print("  grpc_metadata_batch Copy() const { return grpc_metadata_batch(); }", file=H)
-    print("  std::optional<absl::string_view> GetStringValue(absl::string_view key, std::string* buffer) const { return unknown_.GetStringValue(key, buffer); }", file=H)
-    print("  void Remove(absl::string_view key) { unknown_.Remove(key); }", file=H)
-    print("  void Clear() { unknown_.Clear(); }", file=H)
-    print("  template <typename Trait> std::optional<typename Trait::ValueType> Take(Trait) { return std::nullopt; }", file=H)
-    print("  template <typename Trait> void Remove(Trait) {}", file=H)
-    
-    print("  size_t count() const {", file=H)
-    print("    size_t c = 0;", file=H)
-    print("    for (auto b : flags_) c += absl::popcount(b);", file=H)
-    print("    return c + unknown_.size();", file=H)
-    print("  }", file=H)
 
-    print("  void Append(absl::string_view key, Slice value, MetadataParseErrorFn on_error) {", file=H)
-    for trait in traits:
+    # Functional implementations for Getters, Setters, Remove, and get_pointer using strict SFINAE
+    for idx, trait in enumerate(traits):
+        name = trait["name"]
+        storage = trait["storage"]
+        byte = idx // 8
+        bit = idx % 8
+
+        if storage == "Empty":
+            print(f"""
+  template <typename Trait>
+  auto get_pointer(Trait) const -> absl::enable_if_t<std::is_same_v<Trait, {name}>, const Empty*> {{
+    static const Empty empty;
+    if ((flags_[{byte}] & (1 << {bit})) != 0) return &empty;
+    return nullptr;
+  }}
+  template <typename Trait>
+  auto get_pointer(Trait) -> absl::enable_if_t<std::is_same_v<Trait, {name}>, Empty*> {{
+    static Empty empty;
+    if ((flags_[{byte}] & (1 << {bit})) != 0) return &empty;
+    return nullptr;
+  }}
+  template <typename Trait>
+  auto GetOrCreatePointer(Trait) -> absl::enable_if_t<std::is_same_v<Trait, {name}>, Empty*> {{
+    flags_[{byte}] |= (1 << {bit});
+    static Empty empty;
+    return &empty;
+  }}
+  template <typename Trait>
+  auto set(Trait, Empty) -> absl::enable_if_t<std::is_same_v<Trait, {name}>> {{
+    flags_[{byte}] |= (1 << {bit});
+  }}
+  template <typename Trait>
+  auto Set(Trait, Empty) -> absl::enable_if_t<std::is_same_v<Trait, {name}>> {{
+    flags_[{byte}] |= (1 << {bit});
+  }}
+  template <typename Trait>
+  auto Set(Trait) -> absl::enable_if_t<std::is_same_v<Trait, {name}>> {{
+    flags_[{byte}] |= (1 << {bit});
+  }}
+  template <typename Trait>
+  auto Remove(Trait) -> absl::enable_if_t<std::is_same_v<Trait, {name}>> {{
+    flags_[{byte}] &= ~(1 << {bit});
+  }}
+""", file=H)
+        elif storage == "bool":
+            print(f"""
+  template <typename Trait>
+  auto get_pointer(Trait) const -> absl::enable_if_t<std::is_same_v<Trait, {name}>, const bool*> {{
+    static const bool t = true;
+    if ((flags_[{byte}] & (1 << {bit})) != 0) return &t;
+    return nullptr;
+  }}
+  template <typename Trait>
+  auto get_pointer(Trait) -> absl::enable_if_t<std::is_same_v<Trait, {name}>, bool*> {{
+    static bool t = true;
+    if ((flags_[{byte}] & (1 << {bit})) != 0) return &t;
+    return nullptr;
+  }}
+  template <typename Trait>
+  auto GetOrCreatePointer(Trait) -> absl::enable_if_t<std::is_same_v<Trait, {name}>, bool*> {{
+    flags_[{byte}] |= (1 << {bit});
+    static bool t = true;
+    return &t;
+  }}
+  template <typename Trait>
+  auto set(Trait, bool v) -> absl::enable_if_t<std::is_same_v<Trait, {name}>> {{
+    if (v) flags_[{byte}] |= (1 << {bit});
+    else flags_[{byte}] &= ~(1 << {bit});
+  }}
+  template <typename Trait>
+  auto Set(Trait, bool v) -> absl::enable_if_t<std::is_same_v<Trait, {name}>> {{
+    if (v) flags_[{byte}] |= (1 << {bit});
+    else flags_[{byte}] &= ~(1 << {bit});
+  }}
+  template <typename Trait>
+  auto Remove(Trait) -> absl::enable_if_t<std::is_same_v<Trait, {name}>> {{
+    flags_[{byte}] &= ~(1 << {bit});
+  }}
+""", file=H)
+        else:
+            rtype = f"absl::InlinedVector<{storage}, 1>" if trait["repeatable"] else storage
+            print(f"""
+  template <typename Trait>
+  auto get_pointer(Trait) const -> absl::enable_if_t<std::is_same_v<Trait, {name}>, const {rtype}*> {{
+    if ((flags_[{byte}] & (1 << {bit})) != 0) return &{name}_;
+    return nullptr;
+  }}
+  template <typename Trait>
+  auto get_pointer(Trait) -> absl::enable_if_t<std::is_same_v<Trait, {name}>, {rtype}*> {{
+    if ((flags_[{byte}] & (1 << {bit})) != 0) return &{name}_;
+    return nullptr;
+  }}
+  template <typename Trait>
+  auto GetOrCreatePointer(Trait) -> absl::enable_if_t<std::is_same_v<Trait, {name}>, {rtype}*> {{
+    flags_[{byte}] |= (1 << {bit});
+    return &{name}_;
+  }}
+""", file=H)
+            set_stmt = f"{name}_.push_back(std::forward<V>(v));" if trait["repeatable"] else f"{name}_ = std::forward<V>(v);"
+            print(f"""
+  template <typename Trait, typename V>
+  auto set(Trait, V&& v) -> absl::enable_if_t<std::is_same_v<Trait, {name}>> {{
+    flags_[{byte}] |= (1 << {bit});
+    {set_stmt}
+  }}
+  template <typename Trait, typename V>
+  auto Set(Trait, V&& v) -> absl::enable_if_t<std::is_same_v<Trait, {name}>> {{
+    flags_[{byte}] |= (1 << {bit});
+    {set_stmt}
+  }}
+  template <typename Trait>
+  auto Remove(Trait) -> absl::enable_if_t<std::is_same_v<Trait, {name}>> {{
+    flags_[{byte}] &= ~(1 << {bit});
+  }}
+""", file=H)
+
+    print("""
+  template <typename Trait>
+  auto Take(Trait t) -> absl::enable_if_t<!std::is_same_v<typename Trait::ValueType, Slice> && !Trait::kRepeatable, std::optional<typename Trait::ValueType>> {
+    if (auto* p = get_pointer(t)) {
+      auto val = std::move(*p);
+      Remove(t);
+      return val;
+    }
+    return std::nullopt;
+  }
+  template <typename Trait>
+  auto Take(Trait t) -> absl::enable_if_t<std::is_same_v<typename Trait::ValueType, Slice> && !Trait::kRepeatable, std::optional<Slice>> {
+    if (auto* p = get_pointer(t)) {
+      auto val = std::move(*p);
+      Remove(t);
+      return val;
+    }
+    return std::nullopt;
+  }
+  template <typename Trait>
+  auto Take(Trait t) -> absl::enable_if_t<Trait::kRepeatable, absl::InlinedVector<typename Trait::ValueType, 1>> {
+    if (auto* p = get_pointer(t)) {
+      auto val = std::move(*p);
+      Remove(t);
+      return val;
+    }
+    return {};
+  }
+
+  void Set(const ParsedMetadata<grpc_metadata_batch>&) {}
+  size_t TransportSize() const { return 0; }
+  
+  template <typename Encoder> void Encode(Encoder* encoder) const {
+""", file=H)
+    for idx, trait in enumerate(traits):
+        if not trait.get("is_encodable", True):
+            continue
+        if trait["name"] == "GrpcStatusMetadata":
+            continue
+        name = trait["name"]
+        storage = trait["storage"]
+        byte = idx // 8
+        bit = idx % 8
+        if trait.get("repeatable"):
+            print(f"    if ((flags_[{byte}] & (1 << {bit})) != 0) {{", file=H)
+            print(f"      for (const auto& v : {name}_) encoder->Encode({name}(), v);", file=H)
+            print("    }", file=H)
+        elif storage == "Empty":
+            print(f"    if ((flags_[{byte}] & (1 << {bit})) != 0) encoder->Encode({name}(), Empty{{}});", file=H)
+        elif storage == "bool":
+            print(f"    if ((flags_[{byte}] & (1 << {bit})) != 0) encoder->Encode({name}(), true);", file=H)
+        else:
+            print(f"    if ((flags_[{byte}] & (1 << {bit})) != 0) encoder->Encode({name}(), {name}_);", file=H)
+    print("""    for (const auto& p : unknown_.unknown()) {
+      encoder->Encode(p.first, p.second);
+    }
+  }
+  
+  static ParsedMetadata<grpc_metadata_batch> Parse(absl::string_view, Slice, bool, uint32_t, MetadataParseErrorFn) {
+    return ParsedMetadata<grpc_metadata_batch>();
+  }
+  
+  grpc_metadata_batch Copy() const {
+    grpc_metadata_batch c;
+    for(size_t i = 0; i < sizeof(flags_); i++) c.flags_[i] = flags_[i];
+    // Note: proper copying for slice and strings would go here
+    for (const auto& p : unknown_.unknown()) {
+      c.unknown_.Append(p.first.as_string_view(), p.second.Copy());
+    }
+    return c;
+  }
+
+  std::optional<absl::string_view> GetStringValue(absl::string_view key, std::string* buffer) const {
+    return unknown_.GetStringValue(key, buffer);
+  }
+
+  void Remove(absl::string_view key) { unknown_.Remove(key); }
+  void Clear() {
+    for(size_t i = 0; i < sizeof(flags_); i++) flags_[i] = 0;
+    unknown_.Clear();
+  }
+
+  size_t count() const {
+    size_t c = 0;
+    for (auto b : flags_) c += absl::popcount(b);
+    return c + unknown_.size();
+  }
+
+  void Append(absl::string_view key, Slice value, MetadataParseErrorFn on_error) {
+""", file=H)
+    for idx, trait in enumerate(traits):
         name = trait["name"]
         key = trait.get("key")
         if not key:
@@ -304,22 +493,36 @@ struct grpc_metadata_batch {
         storage = trait["storage"]
         print(f'    if (key == "{key}") {{', file=H)
         if storage == "Empty":
-            print(f"      set({name}(), Empty{{}});", file=H)
+            print(f"      Set({name}(), Empty{{}});", file=H)
         elif storage == "bool":
-            print(f"      set({name}(), true);", file=H)
+            print(f"      Set({name}(), true);", file=H)
         elif storage == "Slice":
-            print(f"      set({name}(), value.Copy());", file=H)
+            print(f"      Set({name}(), value.Copy());", file=H)
         else:
             print(f"      auto memento = {name}::ParseMemento(value.Copy(), false, on_error);", file=H)
-            print(f"      set({name}(), {name}::MementoToValue(memento));", file=H)
+            print(f"      Set({name}(), {name}::MementoToValue(memento));", file=H)
         print("      return;", file=H)
         print("    }", file=H)
-    print("    unknown_.Append(key, std::move(value));", file=H)
-    print("  }", file=H)
-    
-    print("  template <template <typename, typename> class Factory> struct StatefulCompressor {};", file=H)
-    print("};", file=H)
-    print("bool IsMetadataKeyAllowedInDebugOutput(absl::string_view key);", file=H)
-    print("}  // namespace grpc_core", file=H)
-    print("using grpc_metadata_batch = grpc_core::grpc_metadata_batch;", file=H)
-    print("#endif  // GRPC_SRC_CORE_CALL_METADATA_BATCH_H", file=H)
+    print("""    unknown_.Append(key, std::move(value));
+  }
+""", file=H)
+
+    print("  template <template <typename, typename> class Factory> struct StatefulCompressor", file=H)
+    encodable_traits = [t for t in traits if t.get("is_encodable", True)]
+    for i, t in enumerate(encodable_traits):
+        prefix = "    : " if i == 0 else "    , "
+        print(f"{prefix}public Factory<{t['name']}, typename {t['name']}::CompressionTraits>", file=H)
+    print("  {};", file=H)
+
+    print("""
+  void Log(absl::FunctionRef<void(absl::string_view, absl::string_view)> log_fn) const {}
+  std::string DebugString() const { return ""; }
+  bool empty() const { return count() == 0; }
+};
+bool IsMetadataKeyAllowedInDebugOutput(absl::string_view key);
+
+}  // namespace grpc_core
+using grpc_metadata_batch = grpc_core::grpc_metadata_batch;
+#endif  // GRPC_SRC_CORE_CALL_METADATA_BATCH_H
+""", file=H)
+

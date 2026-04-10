@@ -1,17 +1,22 @@
 metadata_traits:
-- name: HttpPathMetadata
+- key: ":path"
+  name: HttpPathMetadata
   repeatable: false
   storage: Slice
-- name: HttpAuthorityMetadata
+- key: ":authority"
+  name: HttpAuthorityMetadata
   repeatable: false
   storage: Slice
-- name: HttpMethodMetadata
+- key: ":method"
+  name: HttpMethodMetadata
   repeatable: false
   storage: HttpMethodMetadata::ValueType
-- name: HttpStatusMetadata
+- key: ":status"
+  name: HttpStatusMetadata
   repeatable: false
   storage: uint32_t
-- name: HttpSchemeMetadata
+- key: ":scheme"
+  name: HttpSchemeMetadata
   parse_memento: return Parse(value.as_string_view(), on_error);
   repeatable: false
   storage: HttpSchemeMetadata::ValueType
@@ -21,31 +26,36 @@ metadata_traits:
     - kEmpty
     - kInvalid
     underlying_type: uint8_t
+  key: "content-type"
   name: ContentTypeMetadata
   repeatable: false
   storage: ContentTypeMetadata::ValueType
 - compression: KnownValueCompressor<ValueType, kTrailers>
   display_value: if (x == kTrailers) return "trailers"; return "invalid";
-  encode: "GRPC_CHECK(x == kTrailers);\n    return StaticSlice::FromStaticString(\"\
-    trailers\");"
+  encode: "GRPC_CHECK(x == kTrailers);\n    return Slice(StaticSlice::FromStaticString(\"\
+    trailers\"));"
   enum:
     members:
     - kTrailers
     - kInvalid
     underlying_type: uint8_t
+  key: "te"
   name: TeMetadata
   parse_memento: if (value == StaticSlice::FromStaticString("trailers")) return kTrailers;
     return kInvalid;
   repeatable: false
   storage: TeMetadata::ValueType
-- name: GrpcEncodingMetadata
+- key: "grpc-encoding"
+  name: GrpcEncodingMetadata
   repeatable: false
   storage: grpc_compression_algorithm
-- name: GrpcInternalEncodingRequest
+- key: "grpc-internal-encoding-request"
+  name: GrpcInternalEncodingRequest
   repeatable: false
   storage: grpc_compression_algorithm
 - display_value: return x.ToString();
   encode: return x.ToSlice();
+  key: "grpc-accept-encoding"
   name: GrpcAcceptEncodingMetadata
   parse_memento: return CompressionAlgorithmSet::FromString(value.as_string_view());
   repeatable: false
@@ -67,44 +77,56 @@ metadata_traits:
     \  case GRPC_STATUS_DATA_LOSS:\n        return \"DATA_LOSS\";\n      case GRPC_STATUS_UNAUTHENTICATED:\n\
     \        return \"UNAUTHENTICATED\";\n      default:\n        return \"<UNKNOWN>\";\n    }"
   encode: return Slice::FromInt64(x);
+  key: "grpc-status"
   name: GrpcStatusMetadata
   repeatable: false
   storage: grpc_status_code
 - display_value: return x.ToString();
+  key: "grpc-timeout"
   name: GrpcTimeoutMetadata
   repeatable: false
   storage: Timestamp
-- name: GrpcPreviousRpcAttemptsMetadata
+- key: "grpc-previous-rpc-attempts"
+  name: GrpcPreviousRpcAttemptsMetadata
   repeatable: false
   storage: uint32_t
 - display_value: return x.millis();
   encode: return Slice::FromInt64(x.millis());
+  key: "grpc-retry-pushback-ms"
   name: GrpcRetryPushbackMsMetadata
   repeatable: false
   storage: Duration
-- name: UserAgentMetadata
+- key: "user-agent"
+  name: UserAgentMetadata
   repeatable: false
   storage: Slice
-- name: GrpcMessageMetadata
+- key: "grpc-message"
+  name: GrpcMessageMetadata
   repeatable: false
   storage: Slice
-- name: HostMetadata
+- key: "host"
+  name: HostMetadata
   repeatable: false
   storage: Slice
-- name: EndpointLoadMetricsBinMetadata
+- key: "endpoint-load-metrics-bin"
+  name: EndpointLoadMetricsBinMetadata
   repeatable: false
   storage: Slice
-- name: GrpcServerStatsBinMetadata
+- key: "grpc-server-stats-bin"
+  name: GrpcServerStatsBinMetadata
   repeatable: false
   storage: Slice
-- name: GrpcTraceBinMetadata
+- key: "grpc-trace-bin"
+  name: GrpcTraceBinMetadata
   repeatable: false
   storage: Slice
-- name: GrpcTagsBinMetadata
+- key: "grpc-tags-bin"
+  name: GrpcTagsBinMetadata
   repeatable: false
   storage: Slice
 - display_value: return "<internal-lb-stats>";
   encode: abort();
+  key: "grpc-lb-client-stats"
   name: GrpcLbClientStatsMetadata
   parse_memento: "on_error(\"not a valid value for grpclb_client_stats\", Slice());\n\
     \    return nullptr;"
@@ -122,6 +144,7 @@ metadata_traits:
     return Slice(std::move(slice));
 
     '
+  key: "lb-cost-bin"
   name: LbCostBinMetadata
   parse_memento: "if (value.length() < sizeof(double)) {\n  on_error(\"too short\"\
     , value);\n  return {0, \"\"};\n}\nMementoType out;\nmemcpy(&out.cost, value.data(),\
@@ -129,19 +152,24 @@ metadata_traits:
     \ + sizeof(double), value.length() - sizeof(double));\nreturn out;\n"
   repeatable: true
   storage: LbCostBinMetadata::ValueType
-- name: LbTokenMetadata
+- key: "lb-token"
+  name: LbTokenMetadata
   repeatable: false
   storage: Slice
-- name: XEnvoyPeerMetadata
+- key: "x-envoy-peer"
+  name: XEnvoyPeerMetadata
   repeatable: false
   storage: Slice
-- name: XForwardedForMetadata
+- key: "x-forwarded-for"
+  name: XForwardedForMetadata
   repeatable: false
   storage: Slice
-- name: XForwardedHostMetadata
+- key: "x-forwarded-host"
+  name: XForwardedHostMetadata
   repeatable: false
   storage: Slice
-- name: W3CTraceParentMetadata
+- key: "traceparent"
+  name: W3CTraceParentMetadata
   repeatable: false
   storage: Slice
 - enum:
