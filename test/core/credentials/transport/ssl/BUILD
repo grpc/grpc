@@ -69,3 +69,22 @@ grpc_cc_test(
         "//test/core/test_util:grpc_test_util_base",
     ],
 )
+
+grpc_cc_test(
+    name = "ssl_security_connector_test",
+    srcs = ["ssl_security_connector_test.cc"],
+    data = [
+        "//src/core/tsi/test_creds:server1.key",
+        "//src/core/tsi/test_creds:server1.pem",
+    ],
+    external_deps = ["gtest"],
+    deps = [
+        "//:grpc",
+        "//:grpc_base",
+        "//:grpc_core_credentials_header",
+        "//:grpc_security_base",
+        "//src/core:grpc_ssl_credentials",
+        "//test/core/test_util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util_base",
+    ],
+)
