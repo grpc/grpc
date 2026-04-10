@@ -10177,11 +10177,13 @@ targets:
   - test/core/test_util/fail_first_call_filter.h
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/fuzz_config_vars.h
+  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/passthrough_endpoint.h
   - test/core/test_util/postmortem.h
   - test/core/test_util/scoped_env_var.h
   - test/core/test_util/test_call_creds.h
   - test/core/test_util/test_lb_policies.h
+  - third_party/utf8_range/utf8_validity.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
   - test/core/end2end/end2end_test_fuzzer.proto
@@ -10224,15 +10226,28 @@ targets:
   - test/core/test_util/fail_first_call_filter.cc
   - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/fuzz_config_vars.cc
+  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/passthrough_endpoint.cc
   - test/core/test_util/test_call_creds.cc
   - test/core/test_util/test_lb_policies.cc
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
+  - absl/base:dynamic_annotations
+  - absl/base:fast_type_id
+  - absl/base:nullability
+  - absl/base:prefetch
+  - absl/container:layout
+  - absl/container:node_hash_set
+  - absl/functional:overload
+  - absl/log:absl_check
+  - absl/log:absl_log
   - absl/log:log_entry
   - absl/log:log_sink
   - absl/log:log_sink_registry
+  - absl/numeric:int128
+  - absl/strings:internal
+  - absl/types:compare
   - grpc_authorization_provider
   - protobuf
   - grpc_test_util
@@ -10307,11 +10322,13 @@ targets:
   - test/core/test_util/fail_first_call_filter.h
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/fuzz_config_vars.h
+  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/passthrough_endpoint.h
   - test/core/test_util/postmortem.h
   - test/core/test_util/scoped_env_var.h
   - test/core/test_util/test_call_creds.h
   - test/core/test_util/test_lb_policies.h
+  - third_party/utf8_range/utf8_validity.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
   - test/core/end2end/end2end_test_fuzzer.proto
@@ -10443,15 +10460,28 @@ targets:
   - test/core/test_util/fail_first_call_filter.cc
   - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/fuzz_config_vars.cc
+  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/passthrough_endpoint.cc
   - test/core/test_util/test_call_creds.cc
   - test/core/test_util/test_lb_policies.cc
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
+  - absl/base:dynamic_annotations
+  - absl/base:fast_type_id
+  - absl/base:nullability
+  - absl/base:prefetch
+  - absl/container:layout
+  - absl/container:node_hash_set
+  - absl/functional:overload
+  - absl/log:absl_check
+  - absl/log:absl_log
   - absl/log:log_entry
   - absl/log:log_sink
   - absl/log:log_sink_registry
+  - absl/numeric:int128
+  - absl/strings:internal
+  - absl/types:compare
   - grpc_authorization_provider
   - protobuf
   - grpc_test_util
@@ -10526,11 +10556,13 @@ targets:
   - test/core/test_util/fail_first_call_filter.h
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/fuzz_config_vars.h
+  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/passthrough_endpoint.h
   - test/core/test_util/postmortem.h
   - test/core/test_util/scoped_env_var.h
   - test/core/test_util/test_call_creds.h
   - test/core/test_util/test_lb_policies.h
+  - third_party/utf8_range/utf8_validity.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
   - test/core/end2end/end2end_test_fuzzer.proto
@@ -10573,15 +10605,28 @@ targets:
   - test/core/test_util/fail_first_call_filter.cc
   - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/fuzz_config_vars.cc
+  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/passthrough_endpoint.cc
   - test/core/test_util/test_call_creds.cc
   - test/core/test_util/test_lb_policies.cc
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
+  - absl/base:dynamic_annotations
+  - absl/base:fast_type_id
+  - absl/base:nullability
+  - absl/base:prefetch
+  - absl/container:layout
+  - absl/container:node_hash_set
+  - absl/functional:overload
+  - absl/log:absl_check
+  - absl/log:absl_log
   - absl/log:log_entry
   - absl/log:log_sink
   - absl/log:log_sink_registry
+  - absl/numeric:int128
+  - absl/strings:internal
+  - absl/types:compare
   - grpc_authorization_provider
   - protobuf
   - grpc_test_util
@@ -10652,11 +10697,13 @@ targets:
   - test/core/test_util/fail_first_call_filter.h
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/fuzz_config_vars.h
+  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/passthrough_endpoint.h
   - test/core/test_util/postmortem.h
   - test/core/test_util/scoped_env_var.h
   - test/core/test_util/test_call_creds.h
   - test/core/test_util/test_lb_policies.h
+  - third_party/utf8_range/utf8_validity.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
   - test/core/end2end/end2end_test_fuzzer.proto
@@ -10699,15 +10746,28 @@ targets:
   - test/core/test_util/fail_first_call_filter.cc
   - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/fuzz_config_vars.cc
+  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/passthrough_endpoint.cc
   - test/core/test_util/test_call_creds.cc
   - test/core/test_util/test_lb_policies.cc
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
+  - absl/base:dynamic_annotations
+  - absl/base:fast_type_id
+  - absl/base:nullability
+  - absl/base:prefetch
+  - absl/container:layout
+  - absl/container:node_hash_set
+  - absl/functional:overload
+  - absl/log:absl_check
+  - absl/log:absl_log
   - absl/log:log_entry
   - absl/log:log_sink
   - absl/log:log_sink_registry
+  - absl/numeric:int128
+  - absl/strings:internal
+  - absl/types:compare
   - grpc_authorization_provider
   - protobuf
   - grpc_test_util
@@ -10778,11 +10838,13 @@ targets:
   - test/core/test_util/fail_first_call_filter.h
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/fuzz_config_vars.h
+  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/passthrough_endpoint.h
   - test/core/test_util/postmortem.h
   - test/core/test_util/scoped_env_var.h
   - test/core/test_util/test_call_creds.h
   - test/core/test_util/test_lb_policies.h
+  - third_party/utf8_range/utf8_validity.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
   - test/core/end2end/end2end_test_fuzzer.proto
@@ -10914,15 +10976,28 @@ targets:
   - test/core/test_util/fail_first_call_filter.cc
   - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/fuzz_config_vars.cc
+  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/passthrough_endpoint.cc
   - test/core/test_util/test_call_creds.cc
   - test/core/test_util/test_lb_policies.cc
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
+  - absl/base:dynamic_annotations
+  - absl/base:fast_type_id
+  - absl/base:nullability
+  - absl/base:prefetch
+  - absl/container:layout
+  - absl/container:node_hash_set
+  - absl/functional:overload
+  - absl/log:absl_check
+  - absl/log:absl_log
   - absl/log:log_entry
   - absl/log:log_sink
   - absl/log:log_sink_registry
+  - absl/numeric:int128
+  - absl/strings:internal
+  - absl/types:compare
   - grpc_authorization_provider
   - protobuf
   - grpc_test_util
@@ -10993,11 +11068,13 @@ targets:
   - test/core/test_util/fail_first_call_filter.h
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/fuzz_config_vars.h
+  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/passthrough_endpoint.h
   - test/core/test_util/postmortem.h
   - test/core/test_util/scoped_env_var.h
   - test/core/test_util/test_call_creds.h
   - test/core/test_util/test_lb_policies.h
+  - third_party/utf8_range/utf8_validity.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
   - test/core/end2end/end2end_test_fuzzer.proto
@@ -11129,15 +11206,28 @@ targets:
   - test/core/test_util/fail_first_call_filter.cc
   - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/fuzz_config_vars.cc
+  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/passthrough_endpoint.cc
   - test/core/test_util/test_call_creds.cc
   - test/core/test_util/test_lb_policies.cc
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
+  - absl/base:dynamic_annotations
+  - absl/base:fast_type_id
+  - absl/base:nullability
+  - absl/base:prefetch
+  - absl/container:layout
+  - absl/container:node_hash_set
+  - absl/functional:overload
+  - absl/log:absl_check
+  - absl/log:absl_log
   - absl/log:log_entry
   - absl/log:log_sink
   - absl/log:log_sink_registry
+  - absl/numeric:int128
+  - absl/strings:internal
+  - absl/types:compare
   - grpc_authorization_provider
   - protobuf
   - grpc_test_util
@@ -11208,11 +11298,13 @@ targets:
   - test/core/test_util/fail_first_call_filter.h
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/fuzz_config_vars.h
+  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/passthrough_endpoint.h
   - test/core/test_util/postmortem.h
   - test/core/test_util/scoped_env_var.h
   - test/core/test_util/test_call_creds.h
   - test/core/test_util/test_lb_policies.h
+  - third_party/utf8_range/utf8_validity.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
   - test/core/end2end/end2end_test_fuzzer.proto
@@ -11255,15 +11347,28 @@ targets:
   - test/core/test_util/fail_first_call_filter.cc
   - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/fuzz_config_vars.cc
+  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/passthrough_endpoint.cc
   - test/core/test_util/test_call_creds.cc
   - test/core/test_util/test_lb_policies.cc
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
+  - absl/base:dynamic_annotations
+  - absl/base:fast_type_id
+  - absl/base:nullability
+  - absl/base:prefetch
+  - absl/container:layout
+  - absl/container:node_hash_set
+  - absl/functional:overload
+  - absl/log:absl_check
+  - absl/log:absl_log
   - absl/log:log_entry
   - absl/log:log_sink
   - absl/log:log_sink_registry
+  - absl/numeric:int128
+  - absl/strings:internal
+  - absl/types:compare
   - grpc_authorization_provider
   - protobuf
   - grpc_test_util
@@ -11334,11 +11439,13 @@ targets:
   - test/core/test_util/fail_first_call_filter.h
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/fuzz_config_vars.h
+  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/passthrough_endpoint.h
   - test/core/test_util/postmortem.h
   - test/core/test_util/scoped_env_var.h
   - test/core/test_util/test_call_creds.h
   - test/core/test_util/test_lb_policies.h
+  - third_party/utf8_range/utf8_validity.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
   - test/core/end2end/end2end_test_fuzzer.proto
@@ -11470,15 +11577,28 @@ targets:
   - test/core/test_util/fail_first_call_filter.cc
   - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/fuzz_config_vars.cc
+  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/passthrough_endpoint.cc
   - test/core/test_util/test_call_creds.cc
   - test/core/test_util/test_lb_policies.cc
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
+  - absl/base:dynamic_annotations
+  - absl/base:fast_type_id
+  - absl/base:nullability
+  - absl/base:prefetch
+  - absl/container:layout
+  - absl/container:node_hash_set
+  - absl/functional:overload
+  - absl/log:absl_check
+  - absl/log:absl_log
   - absl/log:log_entry
   - absl/log:log_sink
   - absl/log:log_sink_registry
+  - absl/numeric:int128
+  - absl/strings:internal
+  - absl/types:compare
   - grpc_authorization_provider
   - protobuf
   - grpc_test_util
@@ -11549,11 +11669,13 @@ targets:
   - test/core/test_util/fail_first_call_filter.h
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/fuzz_config_vars.h
+  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/passthrough_endpoint.h
   - test/core/test_util/postmortem.h
   - test/core/test_util/scoped_env_var.h
   - test/core/test_util/test_call_creds.h
   - test/core/test_util/test_lb_policies.h
+  - third_party/utf8_range/utf8_validity.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
   - test/core/end2end/end2end_test_fuzzer.proto
@@ -11596,15 +11718,28 @@ targets:
   - test/core/test_util/fail_first_call_filter.cc
   - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/fuzz_config_vars.cc
+  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/passthrough_endpoint.cc
   - test/core/test_util/test_call_creds.cc
   - test/core/test_util/test_lb_policies.cc
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
+  - absl/base:dynamic_annotations
+  - absl/base:fast_type_id
+  - absl/base:nullability
+  - absl/base:prefetch
+  - absl/container:layout
+  - absl/container:node_hash_set
+  - absl/functional:overload
+  - absl/log:absl_check
+  - absl/log:absl_log
   - absl/log:log_entry
   - absl/log:log_sink
   - absl/log:log_sink_registry
+  - absl/numeric:int128
+  - absl/strings:internal
+  - absl/types:compare
   - grpc_authorization_provider
   - protobuf
   - grpc_test_util
@@ -11675,11 +11810,13 @@ targets:
   - test/core/test_util/fail_first_call_filter.h
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/fuzz_config_vars.h
+  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/passthrough_endpoint.h
   - test/core/test_util/postmortem.h
   - test/core/test_util/scoped_env_var.h
   - test/core/test_util/test_call_creds.h
   - test/core/test_util/test_lb_policies.h
+  - third_party/utf8_range/utf8_validity.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
   - test/core/end2end/end2end_test_fuzzer.proto
@@ -11811,15 +11948,28 @@ targets:
   - test/core/test_util/fail_first_call_filter.cc
   - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/fuzz_config_vars.cc
+  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/passthrough_endpoint.cc
   - test/core/test_util/test_call_creds.cc
   - test/core/test_util/test_lb_policies.cc
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
+  - absl/base:dynamic_annotations
+  - absl/base:fast_type_id
+  - absl/base:nullability
+  - absl/base:prefetch
+  - absl/container:layout
+  - absl/container:node_hash_set
+  - absl/functional:overload
+  - absl/log:absl_check
+  - absl/log:absl_log
   - absl/log:log_entry
   - absl/log:log_sink
   - absl/log:log_sink_registry
+  - absl/numeric:int128
+  - absl/strings:internal
+  - absl/types:compare
   - grpc_authorization_provider
   - protobuf
   - grpc_test_util
@@ -11890,11 +12040,13 @@ targets:
   - test/core/test_util/fail_first_call_filter.h
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/fuzz_config_vars.h
+  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/passthrough_endpoint.h
   - test/core/test_util/postmortem.h
   - test/core/test_util/scoped_env_var.h
   - test/core/test_util/test_call_creds.h
   - test/core/test_util/test_lb_policies.h
+  - third_party/utf8_range/utf8_validity.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
   - test/core/end2end/end2end_test_fuzzer.proto
@@ -11937,15 +12089,28 @@ targets:
   - test/core/test_util/fail_first_call_filter.cc
   - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/fuzz_config_vars.cc
+  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/passthrough_endpoint.cc
   - test/core/test_util/test_call_creds.cc
   - test/core/test_util/test_lb_policies.cc
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
+  - absl/base:dynamic_annotations
+  - absl/base:fast_type_id
+  - absl/base:nullability
+  - absl/base:prefetch
+  - absl/container:layout
+  - absl/container:node_hash_set
+  - absl/functional:overload
+  - absl/log:absl_check
+  - absl/log:absl_log
   - absl/log:log_entry
   - absl/log:log_sink
   - absl/log:log_sink_registry
+  - absl/numeric:int128
+  - absl/strings:internal
+  - absl/types:compare
   - grpc_authorization_provider
   - protobuf
   - grpc_test_util
@@ -12016,11 +12181,13 @@ targets:
   - test/core/test_util/fail_first_call_filter.h
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/fuzz_config_vars.h
+  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/passthrough_endpoint.h
   - test/core/test_util/postmortem.h
   - test/core/test_util/scoped_env_var.h
   - test/core/test_util/test_call_creds.h
   - test/core/test_util/test_lb_policies.h
+  - third_party/utf8_range/utf8_validity.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
   - test/core/end2end/end2end_test_fuzzer.proto
@@ -12152,15 +12319,28 @@ targets:
   - test/core/test_util/fail_first_call_filter.cc
   - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/fuzz_config_vars.cc
+  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/passthrough_endpoint.cc
   - test/core/test_util/test_call_creds.cc
   - test/core/test_util/test_lb_policies.cc
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
+  - absl/base:dynamic_annotations
+  - absl/base:fast_type_id
+  - absl/base:nullability
+  - absl/base:prefetch
+  - absl/container:layout
+  - absl/container:node_hash_set
+  - absl/functional:overload
+  - absl/log:absl_check
+  - absl/log:absl_log
   - absl/log:log_entry
   - absl/log:log_sink
   - absl/log:log_sink_registry
+  - absl/numeric:int128
+  - absl/strings:internal
+  - absl/types:compare
   - grpc_authorization_provider
   - protobuf
   - grpc_test_util
@@ -14979,8 +15159,10 @@ targets:
   - test/core/event_engine/event_engine_test_utils.h
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fuzz_config_vars.h
+  - test/core/test_util/fuzz_config_vars_helpers.h
   - test/core/test_util/postmortem.h
   - test/core/test_util/test_call_creds.h
+  - third_party/utf8_range/utf8_validity.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
   - test/core/end2end/end2end_test_fuzzer.proto
@@ -15023,9 +15205,22 @@ targets:
   - test/core/event_engine/event_engine_test_utils.cc
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fuzz_config_vars.cc
+  - test/core/test_util/fuzz_config_vars_helpers.cc
   - test/core/test_util/test_call_creds.cc
   deps:
   - gtest
+  - absl/base:dynamic_annotations
+  - absl/base:fast_type_id
+  - absl/base:nullability
+  - absl/base:prefetch
+  - absl/container:layout
+  - absl/container:node_hash_set
+  - absl/functional:overload
+  - absl/log:absl_check
+  - absl/log:absl_log
+  - absl/numeric:int128
+  - absl/strings:internal
+  - absl/types:compare
   - protobuf
   - grpc_test_util
 - name: h2_ssl_session_reuse_test
