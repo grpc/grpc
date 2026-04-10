@@ -1335,7 +1335,7 @@ _LANGUAGES = {
 }
 
 # Inverse map from test suite object to language name.
-_LANGUAGE_NAMES = { name: language for language, name in _LANGUAGES.items() }
+_LANGUAGE_NAMES = {name: language for language, name in _LANGUAGES.items()}
 
 _MSBUILD_CONFIG = {
     "dbg": "Debug",
