@@ -368,7 +368,7 @@ def expand_poller_config(name, srcs, deps, tags, args, exclude_pollers, uses_pol
             if poller in exclude_pollers:
                 continue
             poller_config.append({
-                "name": name + "_poller_" + poller,
+                "name": name + "@poller=" + poller,
                 "srcs": srcs,
                 "deps": deps,
                 "tags": (tags + EVENT_ENGINES["default"]["tags"] + [
@@ -401,7 +401,7 @@ def expand_poller_config(name, srcs, deps, tags, args, exclude_pollers, uses_pol
             })
         else:
             for engine_name, engine in EVENT_ENGINES.items():
-                test_name = name + "_engine_" + engine_name
+                test_name = name + "@engine=" + engine_name
                 test_tags = tags + engine["tags"] + ["bazel_only"]
                 test_args = args + ["--engine=" + engine_name]
                 if engine_name == "default":
@@ -512,7 +512,7 @@ def expand_tests(name, srcs, deps, tags, args, exclude_pollers, uses_polling, us
                 experiment_params["uses_polling"] = uses_polling and (experiment in experiment_pollers)
                 for config in expand_poller_config(**experiment_params):
                     config = dict(config)
-                    config["name"] = config["name"] + "_experiment_" + experiment
+                    config["name"] = config["name"] + "@experiment=" + experiment
                     env = dict(config["env"])
                     env["GRPC_EXPERIMENTS"] = experiment_enables[experiment]
                     env["GRPC_CI_EXPERIMENTS"] = "1"
@@ -530,7 +530,7 @@ def expand_tests(name, srcs, deps, tags, args, exclude_pollers, uses_polling, us
                 experiment_params["uses_polling"] = uses_polling and (experiment in experiment_pollers)
                 for config in expand_poller_config(**experiment_params):
                     config = dict(config)
-                    config["name"] = config["name"] + "_experiment_no_" + experiment
+                    config["name"] = config["name"] + "@experiment=no_" + experiment
                     env = dict(config["env"])
                     env["GRPC_EXPERIMENTS"] = "-" + experiment
                     env["GRPC_CI_EXPERIMENTS"] = "1"
@@ -604,6 +604,7 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
         deps = core_deps,
         tags = tags,
         alwayslink = 1,
+        defines = defines,
         target_compatible_with = select({
             "//:windows": ["@platforms//:incompatible"],
             "//:windows_clang": ["@platforms//:incompatible"],
@@ -625,6 +626,7 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
         exec_properties = exec_properties,
         data = data,
         tags = tags,
+        defines = defines,
         target_compatible_with = select({
             "//:windows": [],
             "//:windows_clang": [],
@@ -646,6 +648,7 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
             args = poller_config["args"],
             env = poller_config["env"],
             flaky = poller_config["flaky"],
+            defines = defines,
             target_compatible_with = select({
                 "//:windows": ["@platforms//:incompatible"],
                 "//:windows_clang": ["@platforms//:incompatible"],
