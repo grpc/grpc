@@ -35,23 +35,6 @@ constexpr bool ValidateAlignments() {
   return (IsValidAlignment(alignof(Ts)) && ...);
 }
 
-template <size_t TargetAlignment, typename InputList>
-struct FilterByAlignment;
-
-template <size_t TargetAlignment, typename T, typename... Rest>
-struct FilterByAlignment<TargetAlignment, Typelist<T, Rest...>> {
-  using Prev = typename FilterByAlignment<TargetAlignment, Typelist<Rest...>>::Result;
-  static constexpr bool kMatches = alignof(T) == TargetAlignment;
-  using Result = typename std::conditional<kMatches,
-                                           typename Prev::template PushFront<T>,
-                                           Prev>::type;
-};
-
-template <size_t TargetAlignment>
-struct FilterByAlignment<TargetAlignment, Typelist<>> {
-  using Result = Typelist<>;
-};
-
 template <typename L1, typename L2>
 struct Concat;
 
@@ -60,33 +43,50 @@ struct Concat<Typelist<T1s...>, Typelist<T2s...>> {
   using Result = Typelist<T1s..., T2s...>;
 };
 
-template <typename InputList, size_t... Alignments>
-struct MultiFilter;
+// Single-pass MultiPartition minimizes template instantiations to exactly O(N).
+template <typename L64, typename L32, typename L16, typename L8, typename L4, typename L2, typename L1, typename... Ts>
+struct MultiPartition;
 
-template <typename InputList, size_t A, size_t... Rest>
-struct MultiFilter<InputList, A, Rest...> {
-  using Result = typename Concat<
-      typename FilterByAlignment<A, InputList>::Result,
-      typename MultiFilter<InputList, Rest...>::Result>::Result;
+template <typename L64, typename L32, typename L16, typename L8, typename L4, typename L2, typename L1, typename T, typename... Rest>
+struct MultiPartition<L64, L32, L16, L8, L4, L2, L1, T, Rest...> {
+  using NextL64 = typename std::conditional<alignof(T) == 64, typename L64::template PushBack<T>, L64>::type;
+  using NextL32 = typename std::conditional<alignof(T) == 32, typename L32::template PushBack<T>, L32>::type;
+  using NextL16 = typename std::conditional<alignof(T) == 16, typename L16::template PushBack<T>, L16>::type;
+  using NextL8  = typename std::conditional<alignof(T) == 8,  typename L8::template PushBack<T>,  L8>::type;
+  using NextL4  = typename std::conditional<alignof(T) == 4,  typename L4::template PushBack<T>,  L4>::type;
+  using NextL2  = typename std::conditional<alignof(T) == 2,  typename L2::template PushBack<T>,  L2>::type;
+  using NextL1  = typename std::conditional<alignof(T) == 1,  typename L1::template PushBack<T>,  L1>::type;
+
+  using Result = typename MultiPartition<NextL64, NextL32, NextL16, NextL8, NextL4, NextL2, NextL1, Rest...>::Result;
 };
 
-template <typename InputList>
-struct MultiFilter<InputList> {
-  using Result = Typelist<>;
+template <typename L64, typename L32, typename L16, typename L8, typename L4, typename L2, typename L1>
+struct MultiPartition<L64, L32, L16, L8, L4, L2, L1> {
+  using Result = typename Concat<L64,
+                   typename Concat<L32,
+                     typename Concat<L16,
+                       typename Concat<L8,
+                         typename Concat<L4,
+                           typename Concat<L2, L1>::Result
+                         >::Result
+                       >::Result
+                     >::Result
+                   >::Result
+                 >::Result;
 };
 
 }  // namespace sorted_pack_detail
 
-// WithSortedPack: A minimal-instantiation, exact-alignment bucket sort.
+// WithSortedPack: A single-pass, exact-alignment bucket sort.
 template <template <typename...> class T,
           template <typename, typename> class Cmp, typename... Args>
 struct WithSortedPack {
   static_assert(sizeof...(Args) == 0 || sorted_pack_detail::ValidateAlignments<Args...>(),
                 "Unsupported alignment in WithSortedPack");
 
-  using SortedList = typename sorted_pack_detail::MultiFilter<
-      Typelist<Args...>,
-      64, 32, 16, 8, 4, 2, 1>::Result;
+  using SortedList = typename sorted_pack_detail::MultiPartition<
+      Typelist<>, Typelist<>, Typelist<>, Typelist<>,
+      Typelist<>, Typelist<>, Typelist<>, Args...>::Result;
 
   using Type = typename SortedList::template Instantiate<T>;
 };
