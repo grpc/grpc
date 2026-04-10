@@ -14495,7 +14495,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     test/core/test_util/fail_first_call_filter.cc
     test/core/test_util/fake_stats_plugin.cc
     test/core/test_util/fuzz_config_vars.cc
-    test/core/test_util/fuzz_config_vars_helpers.cc
     test/core/test_util/passthrough_endpoint.cc
     test/core/test_util/test_call_creds.cc
     test/core/test_util/test_lb_policies.cc
@@ -14533,21 +14532,9 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(end2end_chaotic_good_no_logging_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
-    absl::dynamic_annotations
-    absl::fast_type_id
-    absl::nullability
-    absl::prefetch
-    absl::layout
-    absl::node_hash_set
-    absl::overload
-    absl::absl_check
-    absl::absl_log
     absl::log_entry
     absl::log_sink
     absl::log_sink_registry
-    absl::int128
-    absl::strings_internal
-    absl::compare
     grpc_authorization_provider
     ${_gRPC_PROTOBUF_LIBRARIES}
     grpc_test_util
@@ -14702,7 +14689,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     test/core/test_util/fail_first_call_filter.cc
     test/core/test_util/fake_stats_plugin.cc
     test/core/test_util/fuzz_config_vars.cc
-    test/core/test_util/fuzz_config_vars_helpers.cc
     test/core/test_util/passthrough_endpoint.cc
     test/core/test_util/test_call_creds.cc
     test/core/test_util/test_lb_policies.cc
@@ -14740,21 +14726,9 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(end2end_chaotic_good_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
-    absl::dynamic_annotations
-    absl::fast_type_id
-    absl::nullability
-    absl::prefetch
-    absl::layout
-    absl::node_hash_set
-    absl::overload
-    absl::absl_check
-    absl::absl_log
     absl::log_entry
     absl::log_sink
     absl::log_sink_registry
-    absl::int128
-    absl::strings_internal
-    absl::compare
     grpc_authorization_provider
     ${_gRPC_PROTOBUF_LIBRARIES}
     grpc_test_util
@@ -14819,7 +14793,6 @@ add_executable(end2end_http2_no_logging_test
   test/core/test_util/fail_first_call_filter.cc
   test/core/test_util/fake_stats_plugin.cc
   test/core/test_util/fuzz_config_vars.cc
-  test/core/test_util/fuzz_config_vars_helpers.cc
   test/core/test_util/passthrough_endpoint.cc
   test/core/test_util/test_call_creds.cc
   test/core/test_util/test_lb_policies.cc
@@ -14857,21 +14830,9 @@ target_include_directories(end2end_http2_no_logging_test
 target_link_libraries(end2end_http2_no_logging_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::dynamic_annotations
-  absl::fast_type_id
-  absl::nullability
-  absl::prefetch
-  absl::layout
-  absl::node_hash_set
-  absl::overload
-  absl::absl_check
-  absl::absl_log
   absl::log_entry
   absl::log_sink
   absl::log_sink_registry
-  absl::int128
-  absl::strings_internal
-  absl::compare
   grpc_authorization_provider
   ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
@@ -14935,7 +14896,6 @@ add_executable(end2end_http2_security_no_logging_test
   test/core/test_util/fail_first_call_filter.cc
   test/core/test_util/fake_stats_plugin.cc
   test/core/test_util/fuzz_config_vars.cc
-  test/core/test_util/fuzz_config_vars_helpers.cc
   test/core/test_util/passthrough_endpoint.cc
   test/core/test_util/test_call_creds.cc
   test/core/test_util/test_lb_policies.cc
@@ -14973,21 +14933,9 @@ target_include_directories(end2end_http2_security_no_logging_test
 target_link_libraries(end2end_http2_security_no_logging_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::dynamic_annotations
-  absl::fast_type_id
-  absl::nullability
-  absl::prefetch
-  absl::layout
-  absl::node_hash_set
-  absl::overload
-  absl::absl_check
-  absl::absl_log
   absl::log_entry
   absl::log_sink
   absl::log_sink_registry
-  absl::int128
-  absl::strings_internal
-  absl::compare
   grpc_authorization_provider
   ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
@@ -15140,7 +15088,6 @@ add_executable(end2end_http2_security_test
   test/core/test_util/fail_first_call_filter.cc
   test/core/test_util/fake_stats_plugin.cc
   test/core/test_util/fuzz_config_vars.cc
-  test/core/test_util/fuzz_config_vars_helpers.cc
   test/core/test_util/passthrough_endpoint.cc
   test/core/test_util/test_call_creds.cc
   test/core/test_util/test_lb_policies.cc
@@ -15178,21 +15125,9 @@ target_include_directories(end2end_http2_security_test
 target_link_libraries(end2end_http2_security_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::dynamic_annotations
-  absl::fast_type_id
-  absl::nullability
-  absl::prefetch
-  absl::layout
-  absl::node_hash_set
-  absl::overload
-  absl::absl_check
-  absl::absl_log
   absl::log_entry
   absl::log_sink
   absl::log_sink_registry
-  absl::int128
-  absl::strings_internal
-  absl::compare
   grpc_authorization_provider
   ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
@@ -15345,7 +15280,6 @@ add_executable(end2end_http2_test
   test/core/test_util/fail_first_call_filter.cc
   test/core/test_util/fake_stats_plugin.cc
   test/core/test_util/fuzz_config_vars.cc
-  test/core/test_util/fuzz_config_vars_helpers.cc
   test/core/test_util/passthrough_endpoint.cc
   test/core/test_util/test_call_creds.cc
   test/core/test_util/test_lb_policies.cc
@@ -15383,21 +15317,9 @@ target_include_directories(end2end_http2_test
 target_link_libraries(end2end_http2_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::dynamic_annotations
-  absl::fast_type_id
-  absl::nullability
-  absl::prefetch
-  absl::layout
-  absl::node_hash_set
-  absl::overload
-  absl::absl_check
-  absl::absl_log
   absl::log_entry
   absl::log_sink
   absl::log_sink_registry
-  absl::int128
-  absl::strings_internal
-  absl::compare
   grpc_authorization_provider
   ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
@@ -15461,7 +15383,6 @@ add_executable(end2end_inproc_no_logging_test
   test/core/test_util/fail_first_call_filter.cc
   test/core/test_util/fake_stats_plugin.cc
   test/core/test_util/fuzz_config_vars.cc
-  test/core/test_util/fuzz_config_vars_helpers.cc
   test/core/test_util/passthrough_endpoint.cc
   test/core/test_util/test_call_creds.cc
   test/core/test_util/test_lb_policies.cc
@@ -15499,21 +15420,9 @@ target_include_directories(end2end_inproc_no_logging_test
 target_link_libraries(end2end_inproc_no_logging_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::dynamic_annotations
-  absl::fast_type_id
-  absl::nullability
-  absl::prefetch
-  absl::layout
-  absl::node_hash_set
-  absl::overload
-  absl::absl_check
-  absl::absl_log
   absl::log_entry
   absl::log_sink
   absl::log_sink_registry
-  absl::int128
-  absl::strings_internal
-  absl::compare
   grpc_authorization_provider
   ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
@@ -15666,7 +15575,6 @@ add_executable(end2end_inproc_test
   test/core/test_util/fail_first_call_filter.cc
   test/core/test_util/fake_stats_plugin.cc
   test/core/test_util/fuzz_config_vars.cc
-  test/core/test_util/fuzz_config_vars_helpers.cc
   test/core/test_util/passthrough_endpoint.cc
   test/core/test_util/test_call_creds.cc
   test/core/test_util/test_lb_policies.cc
@@ -15704,21 +15612,9 @@ target_include_directories(end2end_inproc_test
 target_link_libraries(end2end_inproc_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::dynamic_annotations
-  absl::fast_type_id
-  absl::nullability
-  absl::prefetch
-  absl::layout
-  absl::node_hash_set
-  absl::overload
-  absl::absl_check
-  absl::absl_log
   absl::log_entry
   absl::log_sink
   absl::log_sink_registry
-  absl::int128
-  absl::strings_internal
-  absl::compare
   grpc_authorization_provider
   ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
@@ -15782,7 +15678,6 @@ add_executable(end2end_ph2_no_logging_test
   test/core/test_util/fail_first_call_filter.cc
   test/core/test_util/fake_stats_plugin.cc
   test/core/test_util/fuzz_config_vars.cc
-  test/core/test_util/fuzz_config_vars_helpers.cc
   test/core/test_util/passthrough_endpoint.cc
   test/core/test_util/test_call_creds.cc
   test/core/test_util/test_lb_policies.cc
@@ -15820,21 +15715,9 @@ target_include_directories(end2end_ph2_no_logging_test
 target_link_libraries(end2end_ph2_no_logging_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::dynamic_annotations
-  absl::fast_type_id
-  absl::nullability
-  absl::prefetch
-  absl::layout
-  absl::node_hash_set
-  absl::overload
-  absl::absl_check
-  absl::absl_log
   absl::log_entry
   absl::log_sink
   absl::log_sink_registry
-  absl::int128
-  absl::strings_internal
-  absl::compare
   grpc_authorization_provider
   ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
@@ -15987,7 +15870,6 @@ add_executable(end2end_ph2_test
   test/core/test_util/fail_first_call_filter.cc
   test/core/test_util/fake_stats_plugin.cc
   test/core/test_util/fuzz_config_vars.cc
-  test/core/test_util/fuzz_config_vars_helpers.cc
   test/core/test_util/passthrough_endpoint.cc
   test/core/test_util/test_call_creds.cc
   test/core/test_util/test_lb_policies.cc
@@ -16025,21 +15907,9 @@ target_include_directories(end2end_ph2_test
 target_link_libraries(end2end_ph2_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::dynamic_annotations
-  absl::fast_type_id
-  absl::nullability
-  absl::prefetch
-  absl::layout
-  absl::node_hash_set
-  absl::overload
-  absl::absl_check
-  absl::absl_log
   absl::log_entry
   absl::log_sink
   absl::log_sink_registry
-  absl::int128
-  absl::strings_internal
-  absl::compare
   grpc_authorization_provider
   ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
@@ -16103,7 +15973,6 @@ add_executable(end2end_posix_no_logging_test
   test/core/test_util/fail_first_call_filter.cc
   test/core/test_util/fake_stats_plugin.cc
   test/core/test_util/fuzz_config_vars.cc
-  test/core/test_util/fuzz_config_vars_helpers.cc
   test/core/test_util/passthrough_endpoint.cc
   test/core/test_util/test_call_creds.cc
   test/core/test_util/test_lb_policies.cc
@@ -16141,21 +16010,9 @@ target_include_directories(end2end_posix_no_logging_test
 target_link_libraries(end2end_posix_no_logging_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::dynamic_annotations
-  absl::fast_type_id
-  absl::nullability
-  absl::prefetch
-  absl::layout
-  absl::node_hash_set
-  absl::overload
-  absl::absl_check
-  absl::absl_log
   absl::log_entry
   absl::log_sink
   absl::log_sink_registry
-  absl::int128
-  absl::strings_internal
-  absl::compare
   grpc_authorization_provider
   ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
@@ -16308,7 +16165,6 @@ add_executable(end2end_posix_test
   test/core/test_util/fail_first_call_filter.cc
   test/core/test_util/fake_stats_plugin.cc
   test/core/test_util/fuzz_config_vars.cc
-  test/core/test_util/fuzz_config_vars_helpers.cc
   test/core/test_util/passthrough_endpoint.cc
   test/core/test_util/test_call_creds.cc
   test/core/test_util/test_lb_policies.cc
@@ -16346,21 +16202,9 @@ target_include_directories(end2end_posix_test
 target_link_libraries(end2end_posix_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::dynamic_annotations
-  absl::fast_type_id
-  absl::nullability
-  absl::prefetch
-  absl::layout
-  absl::node_hash_set
-  absl::overload
-  absl::absl_check
-  absl::absl_log
   absl::log_entry
   absl::log_sink
   absl::log_sink_registry
-  absl::int128
-  absl::strings_internal
-  absl::compare
   grpc_authorization_provider
   ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
@@ -20481,7 +20325,6 @@ add_executable(h2_ssl_cert_test
   test/core/event_engine/event_engine_test_utils.cc
   test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fuzz_config_vars.cc
-  test/core/test_util/fuzz_config_vars_helpers.cc
   test/core/test_util/test_call_creds.cc
 )
 if(WIN32 AND MSVC)
@@ -20516,18 +20359,6 @@ target_include_directories(h2_ssl_cert_test
 target_link_libraries(h2_ssl_cert_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::dynamic_annotations
-  absl::fast_type_id
-  absl::nullability
-  absl::prefetch
-  absl::layout
-  absl::node_hash_set
-  absl::overload
-  absl::absl_check
-  absl::absl_log
-  absl::int128
-  absl::strings_internal
-  absl::compare
   ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
 )
