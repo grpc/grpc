@@ -368,7 +368,7 @@ def expand_poller_config(name, srcs, deps, tags, args, exclude_pollers, uses_pol
             if poller in exclude_pollers:
                 continue
             poller_config.append({
-                "name": name + "_poller_" + poller,
+                "name": name + "@poller=" + poller,
                 "srcs": srcs,
                 "deps": deps,
                 "tags": (tags + EVENT_ENGINES["default"]["tags"] + [
@@ -401,7 +401,7 @@ def expand_poller_config(name, srcs, deps, tags, args, exclude_pollers, uses_pol
             })
         else:
             for engine_name, engine in EVENT_ENGINES.items():
-                test_name = name + "_engine_" + engine_name
+                test_name = name + "@engine=" + engine_name
                 test_tags = tags + engine["tags"] + ["bazel_only"]
                 test_args = args + ["--engine=" + engine_name]
                 if engine_name == "default":
@@ -512,7 +512,7 @@ def expand_tests(name, srcs, deps, tags, args, exclude_pollers, uses_polling, us
                 experiment_params["uses_polling"] = uses_polling and (experiment in experiment_pollers)
                 for config in expand_poller_config(**experiment_params):
                     config = dict(config)
-                    config["name"] = config["name"] + "_experiment_" + experiment
+                    config["name"] = config["name"] + "@experiment=" + experiment
                     env = dict(config["env"])
                     env["GRPC_EXPERIMENTS"] = experiment_enables[experiment]
                     env["GRPC_CI_EXPERIMENTS"] = "1"
@@ -530,7 +530,7 @@ def expand_tests(name, srcs, deps, tags, args, exclude_pollers, uses_polling, us
                 experiment_params["uses_polling"] = uses_polling and (experiment in experiment_pollers)
                 for config in expand_poller_config(**experiment_params):
                     config = dict(config)
-                    config["name"] = config["name"] + "_experiment_no_" + experiment
+                    config["name"] = config["name"] + "@experiment=no_" + experiment
                     env = dict(config["env"])
                     env["GRPC_EXPERIMENTS"] = "-" + experiment
                     env["GRPC_CI_EXPERIMENTS"] = "1"
@@ -606,9 +606,11 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
             "//:windows": ["@platforms//:incompatible"],
             "//:windows_clang": ["@platforms//:incompatible"],
             "//conditions:default": [],
-            }),
+        }),
     )
 
+    # Define a test binary on windows builds. This avoids defining a new target
+    # for each poller config on windows and saves expensive linkage time.
     cc_binary(
         name = "%s_bin" % name,
         srcs = srcs,
@@ -633,6 +635,8 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
             fail("srcs changed")
         if poller_config["deps"] != core_deps:
             fail("deps changed: %r --> %r" % (deps, poller_config["deps"]))
+        # This target is marked as incompatible with windows. So it can only
+        # be built on other non-windows platforms.
         cc_test(
             name = poller_config["name"],
             deps = ["%s_TEST_LIBRARY" % name],
@@ -647,6 +651,9 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
             }),
             **test_args
         )
+        # Define a sh_test target for each poller_config. However, this target
+        # is marked compatible only for windows platform. So it will not be
+        # built in other platforms.
         sh_test(
             name = poller_config["name"] + ".exe",
             srcs = [":%s_bin" % name],
