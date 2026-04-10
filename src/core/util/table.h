@@ -55,7 +55,8 @@ template <typename IndexSequence, typename... Ts>
 struct ElementsImpl;
 
 template <size_t... Is, typename... Ts>
-struct ElementsImpl<absl::index_sequence<Is...>, Ts...> : TableLeaf<Is, Ts>... {};
+struct ElementsImpl<absl::index_sequence<Is...>, Ts...> : TableLeaf<Is, Ts>... {
+};
 
 template <typename... Ts>
 using Elements = ElementsImpl<absl::make_index_sequence<sizeof...(Ts)>, Ts...>;
@@ -67,13 +68,16 @@ template <typename IndexSequence, typename... Ts>
 struct IndexMapImpl;
 
 template <size_t... Is, typename... Ts>
-struct IndexMapImpl<absl::index_sequence<Is...>, Ts...> : IndexedType<Ts, Is>... {};
+struct IndexMapImpl<absl::index_sequence<Is...>, Ts...>
+    : IndexedType<Ts, Is>... {};
 
 template <typename... Ts>
 using IndexMap = IndexMapImpl<absl::make_index_sequence<sizeof...(Ts)>, Ts...>;
 
 template <typename T, size_t I>
-constexpr size_t ResolveIndex(IndexedType<T, I>*) { return I; }
+constexpr size_t ResolveIndex(IndexedType<T, I>*) {
+  return I;
+}
 
 template <typename T, typename... Ts>
 constexpr size_t IndexOf() {
@@ -132,7 +136,7 @@ class Table {
     // Since we may not be all clear, pass true for or_clear to have Move()
     // clear newly emptied fields.
     Move<true>(absl::make_index_sequence<sizeof...(Ts)>(),
-                std::forward<Table>(rhs));
+               std::forward<Table>(rhs));
     return *this;
   }
 
