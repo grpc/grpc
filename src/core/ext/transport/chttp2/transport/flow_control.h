@@ -291,7 +291,10 @@ class TransportFlowControl final {
 
     // Call this function when a transport-level WINDOW_UPDATE frame is received
     // from peer to increase remote window.
-    void RecvUpdate(uint32_t size) { tfc_->remote_window_ += size; }
+    void RecvUpdate(uint32_t size) {
+      GPR_DEBUG_ASSERT(tfc_->remote_window_ <= kMaxWindow - size);
+      tfc_->remote_window_ += size;
+    }
 
     // Finish the update and check whether we became stalled or unstalled.
     StallEdge Finish() {
@@ -553,7 +556,9 @@ class StreamFlowControl final {
 
     // Call this when a WINDOW_UPDATE frame is received from peer for this
     // stream, to increase send window.
-    void RecvUpdate(uint32_t size) { sfc_->remote_window_delta_ += size; }
+    void RecvUpdate(uint32_t size) {
+      sfc_->remote_window_delta_ += size;
+    }
 
     // Call this after sending a DATA frame for this stream, to decrease send
     // window based on `outgoing_frame_size`.
