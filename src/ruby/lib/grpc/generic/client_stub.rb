@@ -170,6 +170,9 @@ module GRPC
         c.merge_metadata_to_send(metadata)
         op = c.operation
         op.define_singleton_method(:execute) do
+          # Sync back the fully merged metadata (including anything added by
+          # merge_metadata_to_send) so that interceptors see the complete
+          # metadata context when the operation is executed lazily.
           updated_metadata = c.metadata_to_send.dup
           intercept_args[:metadata] = updated_metadata
           interception_context.intercept!(:request_response, intercept_args) do
@@ -249,6 +252,9 @@ module GRPC
         c.merge_metadata_to_send(metadata)
         op = c.operation
         op.define_singleton_method(:execute) do
+          # Sync back the fully merged metadata (including anything added by
+          # merge_metadata_to_send) so that interceptors see the complete
+          # metadata context when the operation is executed lazily.
           updated_metadata = c.metadata_to_send.dup
           intercept_args[:metadata] = updated_metadata
           interception_context.intercept!(:client_streamer, intercept_args) do
@@ -343,6 +349,9 @@ module GRPC
         c.merge_metadata_to_send(metadata)
         op = c.operation
         op.define_singleton_method(:execute) do
+          # Sync back the fully merged metadata (including anything added by
+          # merge_metadata_to_send) so that interceptors see the complete
+          # metadata context when the operation is executed lazily.
           updated_metadata = c.metadata_to_send.dup
           intercept_args[:metadata] = updated_metadata
           interception_context.intercept!(:server_streamer, intercept_args) do
@@ -467,6 +476,9 @@ module GRPC
         c.merge_metadata_to_send(metadata)
         op = c.operation
         op.define_singleton_method(:execute) do
+          # Sync back the fully merged metadata (including anything added by
+          # merge_metadata_to_send) so that interceptors see the complete
+          # metadata context when the operation is executed lazily.
           updated_metadata = c.metadata_to_send.dup
           intercept_args[:metadata] = updated_metadata
           interception_context.intercept!(:bidi_streamer, intercept_args) do
