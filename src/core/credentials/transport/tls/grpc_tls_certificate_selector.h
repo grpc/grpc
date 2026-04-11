@@ -81,15 +81,18 @@ class CertificateSelector {
   // Performs the cert selection based on `SelectCertificateInfo`.
   // Since the client is not required to provide the server name in the
   // ClientHello, the implementation should make a decision by itself on what to
-  // return. It should either return the result synchronously or an async handle
-  // to support cancellation. In the asynchronous case, the implementation is
-  // expected to invoke `OnSelectCertificateComplete` when the cert selection is
-  // done. Users should use the appropriate `CreateSelectCertificateResults`
-  // function to create the `SelectCertificateResult` struct.
+  // return.
+  // May return either synchronously or asynchronously.
+  // For synchronous returns, directly returns either the selected certificate
+  // or a failed status, and the callback will never be invoked.
+  // For asynchronous implementations, returns a handle for the asynchronous
+  // signing operation. The function argument on_complete must be called by
+  // the implementer when the async certificate selection operation is complete.
+  // on_complete must not be invoked synchronously within SelectCertificate().
   virtual std::variant<absl::StatusOr<SelectCertificateResult>,
                        std::shared_ptr<AsyncCertificateSelectionHandle>>
-  SelectCertificate(const SelectCertificateInfo&,
-                    OnSelectCertificateComplete) = 0;
+  SelectCertificate(const SelectCertificateInfo& info,
+                    OnSelectCertificateComplete on_complete) = 0;
 
   // Cancels the async select cert call corresponding to the handle.
   virtual void Cancel(std::shared_ptr<AsyncCertificateSelectionHandle>) = 0;
