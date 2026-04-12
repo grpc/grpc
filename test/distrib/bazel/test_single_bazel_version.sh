@@ -86,21 +86,12 @@ export OVERRIDE_BAZEL_WRAPPER_DOWNLOAD_DIR=/tmp
 
 ACTION_ENV_FLAG="--action_env=bazel_cache_invalidate=version_${VERSION}"
 
-# Provide read-only access to the main gRPC remote cache to massively speed up inner builds.
-# --remote_upload_local_results=false ensures we don't pollute the cache from inside the container.
-REMOTE_CACHE_FLAGS=(
-  "--remote_cache=grpcs://remotebuildexecution.googleapis.com"
-  "--remote_instance_name=projects/grpc-testing/instances/default_instance"
-  "--google_default_credentials"
-  "--remote_upload_local_results=false"
-)
-
 for TEST_SHARD in "${TEST_SHARDS[@]}"
 do
   SHARD_RAN=""
   if [ "${TEST_SHARD}" == "buildtest" ] ; then
     tools/bazel version | grep "$VERSION" || { echo "Detected bazel version did not match expected value of $VERSION" >/dev/stderr; exit 1; }
-    tools/bazel build "${ACTION_ENV_FLAG}" "${REMOTE_CACHE_FLAGS[@]}" --build_tag_filters='-experiment_variation' -- //... "${EXCLUDED_TARGETS[@]}" || FAILED_TESTS="${FAILED_TESTS}buildtest "
+    tools/bazel build "${ACTION_ENV_FLAG}" --build_tag_filters='-experiment_variation' -- //... "${EXCLUDED_TARGETS[@]}" || FAILED_TESTS="${FAILED_TESTS}buildtest "
     SHARD_RAN="true"
   fi
 
@@ -109,7 +100,7 @@ do
     pushd "test/distrib/bazel/${TEST_DIRECTORY}/"
     if [ "${TEST_SHARD}" == "distribtest_${TEST_DIRECTORY}" ] ; then
       tools/bazel version | grep "$VERSION" || { echo "Detected bazel version did not match expected value of $VERSION" >/dev/stderr; exit 1; }
-      tools/bazel test "${ACTION_ENV_FLAG}" "${REMOTE_CACHE_FLAGS[@]}" --test_output=all //:all || FAILED_TESTS="${FAILED_TESTS}distribtest_${TEST_DIRECTORY} "
+      tools/bazel test "${ACTION_ENV_FLAG}" --test_output=all //:all || FAILED_TESTS="${FAILED_TESTS}distribtest_${TEST_DIRECTORY} "
       SHARD_RAN="true"
     fi
     popd
