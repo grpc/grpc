@@ -460,6 +460,8 @@ absl::StatusOr<absl::string_view> ConvertKeyExchangeGroupToString(
       return "P-256";
     case GRPC_TLS_GROUP_SECP384R1:
       return "P-384";
+    case GRPC_TLS_GROUP_SECP521R1:
+      return "P-521";
     case GRPC_TLS_GROUP_X25519:
       return "X25519";
     case GRPC_TLS_GROUP_X25519_MLKEM768:

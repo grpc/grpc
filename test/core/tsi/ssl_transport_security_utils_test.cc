@@ -507,6 +507,8 @@ TEST(ConvertKeyExchangeGroupToStringTest, ValidCases) {
             "P-256");
   EXPECT_EQ(*tsi::ConvertKeyExchangeGroupToString(GRPC_TLS_GROUP_SECP384R1),
             "P-384");
+  EXPECT_EQ(*tsi::ConvertKeyExchangeGroupToString(GRPC_TLS_GROUP_SECP521R1),
+            "P-521");
   EXPECT_EQ(*tsi::ConvertKeyExchangeGroupToString(GRPC_TLS_GROUP_X25519),
             "X25519");
 #if defined(OPENSSL_IS_BORINGSSL)
