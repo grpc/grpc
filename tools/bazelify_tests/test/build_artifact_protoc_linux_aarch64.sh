@@ -16,9 +16,12 @@
 set -ex
 
 # compile/link options extracted from ProtocArtifact in tools/run_tests/artifacts/artifact_targets.py
-# NOTE: -Wl,-z,max-page-size=65536 is required because ARM64 Linux kernels may
-# use page sizes up to 64KB. Without this flag the protoc binary may segfault
-# (exit code 139) on such systems. See https://github.com/grpc/grpc/issues/38538.
+# NOTE: -Wl,-z,max-page-size=65536 is required because the manylinux2014
+# cross-compilation toolchain may produce binaries with 4KB page alignment,
+# but ARM64 Linux kernels (e.g. RHEL) can use 64KB pages. Without this flag
+# the protoc binary will segfault (exit code 139) on such systems.
+# See https://github.com/grpc/grpc/issues/38538
+# and https://github.com/pypa/manylinux/issues/735.
 export LDFLAGS="${LDFLAGS} -static-libgcc -static-libstdc++ -Wl,-z,max-page-size=65536 -s"
 # set build parallelism to fit the machine configuration of bazelified tests RBE pool.
 export GRPC_PROTOC_BUILD_COMPILER_JOBS=8

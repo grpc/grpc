@@ -348,10 +348,12 @@ class ProtocArtifact:
                     dockerfile_dir = (
                         "tools/dockerfile/grpc_artifact_manylinux2014_aarch64"
                     )
-                    # ARM64 Linux kernels may use page sizes of 4KB, 16KB, or 64KB.
-                    # Without explicitly setting max-page-size=65536, the protoc
-                    # binary may segfault (exit code 139) on kernels with larger
-                    # page sizes. See https://github.com/grpc/grpc/issues/38538.
+                    # The manylinux2014 cross-compilation toolchain may produce
+                    # binaries with 4KB page alignment, but ARM64 Linux kernels
+                    # (e.g. RHEL) can use 64KB pages. Without this flag the
+                    # protoc binary will segfault (exit code 139) on such systems.
+                    # See https://github.com/grpc/grpc/issues/38538
+                    # and https://github.com/pypa/manylinux/issues/735.
                     environ["LDFLAGS"] += " -Wl,-z,max-page-size=65536"
                 environ["LDFLAGS"] += " -static-libgcc -static-libstdc++ -s"
                 return create_docker_jobspec(
