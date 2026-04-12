@@ -1542,6 +1542,51 @@ TEST_P(SslTransportSecurityTest, TestKeyExchangeGroupMismatch) {
   DoHandshake();
 }
 
+// Regression tests for P-384/P-521 support via the key exchange groups API.
+// Prior to the fix, GRPC_TLS_GROUP_SECP384R1 and GRPC_TLS_GROUP_SECP521R1 did
+// not exist in the enum, and the BoringSSL default path only advertised P-256.
+TEST_P(SslTransportSecurityTest, TestP384KeyExchangeGroup) {
+  SetUpSslFixture(/*tls_version=*/std::get<0>(GetParam()),
+                  /*send_client_ca_list=*/std::get<1>(GetParam()));
+  ssl_fixture_->OverrideClientKeyExchangeGroups({GRPC_TLS_GROUP_SECP384R1});
+  ssl_fixture_->OverrideServerKeyExchangeGroups({GRPC_TLS_GROUP_SECP384R1});
+  DoHandshake();
+}
+
+TEST_P(SslTransportSecurityTest, TestP521KeyExchangeGroup) {
+  SetUpSslFixture(/*tls_version=*/std::get<0>(GetParam()),
+                  /*send_client_ca_list=*/std::get<1>(GetParam()));
+  ssl_fixture_->OverrideClientKeyExchangeGroups({GRPC_TLS_GROUP_SECP521R1});
+  ssl_fixture_->OverrideServerKeyExchangeGroups({GRPC_TLS_GROUP_SECP521R1});
+  DoHandshake();
+}
+
+// Verify behaviorally that the BoringSSL default (no explicit
+// key_exchange_groups on the client) now includes P-384 and P-521.
+// Without the fix, populate_ssl_context fell through to the legacy
+// SSL_CTX_set_tmp_ecdh path and only advertised P-256; a server
+// configured to require P-384 or P-521 would reject the handshake
+// in TLS 1.3 (which strictly enforces group negotiation).
+#if defined(OPENSSL_IS_BORINGSSL)
+TEST_P(SslTransportSecurityTest, BoringSSLDefaultGroupsIncludeP384) {
+  SetUpSslFixture(/*tls_version=*/std::get<0>(GetParam()),
+                  /*send_client_ca_list=*/std::get<1>(GetParam()));
+  // Only the server group is overridden; the client uses BoringSSL defaults.
+  // With the fix, the client default list is "P-256:P-384:P-521", so P-384
+  // is advertised and the handshake succeeds.
+  ssl_fixture_->OverrideServerKeyExchangeGroups({GRPC_TLS_GROUP_SECP384R1});
+  DoHandshake();
+}
+
+TEST_P(SslTransportSecurityTest, BoringSSLDefaultGroupsIncludeP521) {
+  SetUpSslFixture(/*tls_version=*/std::get<0>(GetParam()),
+                  /*send_client_ca_list=*/std::get<1>(GetParam()));
+  // Only the server group is overridden; the client uses BoringSSL defaults.
+  ssl_fixture_->OverrideServerKeyExchangeGroups({GRPC_TLS_GROUP_SECP521R1});
+  DoHandshake();
+}
+#endif  // defined(OPENSSL_IS_BORINGSSL)
+
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(&argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
