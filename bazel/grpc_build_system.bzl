@@ -128,8 +128,7 @@ def grpc_cc_library(
         data = [],
         tags = [],
         linkopts = [],
-        linkstatic = False,
-        target_compatible_with = []):
+        linkstatic = False):
     """An internal wrapper around cc_library.
 
     Args:
@@ -148,8 +147,6 @@ def grpc_cc_library(
       data: Data dependencies.
       tags: Tags to apply to the rule.
       linkopts: Extra libraries to link.
-      linkstatic: Whether to enable linkstatic on the cc_library.
-      target_compatible_with: Constraint values that must be present in the target platform
     """
     visibility = _update_visibility(visibility)
     copts = []
@@ -162,13 +159,13 @@ def grpc_cc_library(
     # TODO(ctiller): remove when fuzztest is completely C++17
     # (it leverages some C++20 extensions at the time of writing).
     # See b/391433873.
-    if "fuzztest" in external_deps or "grpc-fuzztest" in tags:
-        if "grpc-fuzztest" not in tags:
-            tags = tags + ["grpc-fuzztest"]
-        target_compatible_with = target_compatible_with + select({
-            "//:windows": ["@platforms//:incompatible"],
-            "//conditions:default": [],
-        })
+    # if "fuzztest" in external_deps or "grpc-fuzztest" in tags:
+    #     if "grpc-fuzztest" not in tags:
+    #         tags = tags + ["grpc-fuzztest"]
+    #     target_compatible_with = target_compatible_with + select({
+    #         "//:windows": ["@platforms//:incompatible"],
+    #         "//conditions:default": [],
+    #     })
     cc_library(
         name = name,
         srcs = srcs,
@@ -201,7 +198,6 @@ def grpc_cc_library(
         data = data,
         tags = tags,
         linkstatic = linkstatic,
-        target_compatible_with = target_compatible_with,
     )
 
 def grpc_proto_plugin(name, srcs = [], deps = []):
@@ -551,7 +547,7 @@ def expand_tests(name, srcs, deps, tags, args, exclude_pollers, uses_polling, us
                     experiment_config.append(config)
     return experiment_config
 
-def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], defines = [], args = [], data = [], uses_polling = True, size = "medium", timeout = None, tags = [], exec_compatible_with = [], exec_properties = {}, shard_count = None, flaky = None, copts = [], linkstatic = None, exclude_pollers = [], uses_event_engine = True, target_compatible_with = []):
+def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], defines = [], args = [], data = [], uses_polling = True, size = "medium", timeout = None, tags = [], exec_compatible_with = [], exec_properties = {}, shard_count = None, flaky = None, copts = [], linkstatic = None, exclude_pollers = [], uses_event_engine = True):
     """A cc_test target for use in the gRPC repo.
 
     Args:
@@ -577,8 +573,8 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], defines = [], a
         exclude_pollers: list of poller names to exclude for this set of tests.
         uses_event_engine: set to False if the test is not sensitive to
             EventEngine implementation differences
-        target_compatible_with: Constraint values that must be present in the target platform
     """
+
     # if "fuzztest" in external_deps or "grpc-fuzztest" in tags:
     #     if "grpc-fuzztest" not in tags:
     #         tags = tags + ["grpc-fuzztest"]
@@ -600,7 +596,7 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], defines = [], a
         "exec_properties": exec_properties,
         "shard_count": shard_count,
         "linkstatic": linkstatic,
-        "target_compatible_with": target_compatible_with,
+        # "target_compatible_with": target_compatible_with,
     }
 
     if "grpc-fuzzer" not in tags and "no_test_ios" not in tags:

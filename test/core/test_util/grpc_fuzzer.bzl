@@ -47,10 +47,6 @@ def grpc_fuzz_test(name, srcs = [], deps = [], shard_count = None, tags = [], da
             "no_windows",
             "bazel_only",
         ],
-        target_compatible_with = select({
-            "//:windows": ["@platforms//:incompatible"],
-            "//conditions:default": [],
-        }),
         deps = deps,
         uses_polling = False,
         data = data,
