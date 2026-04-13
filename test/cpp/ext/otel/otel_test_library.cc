@@ -228,9 +228,8 @@ OpenTelemetryPluginEnd2EndTest::MetricsCollectorThread::Stop() {
   thread_.join();
   return data_points_;
 }
-
 void OpenTelemetryPluginEnd2EndTest::Init(Options config) {
-  ChannelArguments channel_args;
+  ChannelArguments channel_args = config.channel_arguments;
   if (!config.labels_to_inject.empty()) {
     labels_to_inject_ = std::move(config.labels_to_inject);
     grpc_core::CoreConfiguration::RegisterEphemeralBuilder(
@@ -247,7 +246,7 @@ void OpenTelemetryPluginEnd2EndTest::Init(Options config) {
   grpc::ServerBuilder builder;
   int port;
   // Use IPv4 here because it's less flaky than IPv6 ("[::]:0") on Travis.
-  builder.AddListeningPort("0.0.0.0:0", grpc::InsecureServerCredentials(),
+  builder.AddListeningPort("0.0.0.0:0", config.server_credentials ? config.server_credentials : grpc::InsecureServerCredentials(),
                            &port);
   builder.RegisterService(&service_);
   for (auto& per_server_stats_plugin : config.per_server_stats_plugins) {
@@ -261,10 +260,11 @@ void OpenTelemetryPluginEnd2EndTest::Init(Options config) {
   for (auto& per_channel_stats_plugin : config.per_channel_stats_plugins) {
     per_channel_stats_plugin->AddToChannelArguments(&channel_args);
   }
+  auto channel_creds = config.channel_credentials ? config.channel_credentials : grpc::InsecureChannelCredentials();
   reader_ = BuildAndRegisterOpenTelemetryPlugin(std::move(config));
 
   auto channel = grpc::CreateCustomChannel(
-      server_address_, grpc::InsecureChannelCredentials(), channel_args);
+      server_address_, channel_creds, channel_args);
   stub_ = EchoTestService::NewStub(channel);
   generic_stub_ = std::make_unique<GenericStub>(std::move(channel));
 }

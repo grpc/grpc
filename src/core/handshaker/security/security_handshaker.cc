@@ -41,6 +41,7 @@
 #include "src/core/handshaker/handshaker_factory.h"
 #include "src/core/handshaker/handshaker_registry.h"
 #include "src/core/handshaker/security/secure_endpoint.h"
+#include "src/core/handshaker/security/security_telemetry.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/endpoint.h"
@@ -198,19 +199,15 @@ void SecurityHandshaker::HandshakeFailedLocked(absl::Status error) {
 }
 
 void SecurityHandshaker::Finish(absl::Status status) {
-  double duration_ms = (Timestamp::Now() - start_time_).millis();
-  auto* stats_plugin_group = args_->args.GetObject<GlobalStatsPluginRegistry::StatsPluginGroup>();
-  if (stats_plugin_group != nullptr) {
-    std::string status_str = status.ok() ? "OK" : absl::StatusCodeToString(status.code());
-    std::string error_details = status.ok() ? "NONE" : "AUTH_ERROR";
-    std::string protocol = std::string(connector_->type().name());
+  int64_t duration_us = (Timestamp::Now() - start_time_).millis() * 1000;
+  std::string status_str = status.ok() ? "OK" : absl::StatusCodeToString(status.code());
+  std::string error_details = status.ok() ? "NONE" : "AUTH_ERROR";
+  std::string protocol = std::string(connector_->type().name());
 
-    std::array<absl::string_view, 2> label_values = {status_str, protocol};
-    std::array<absl::string_view, 1> optional_values = {error_details};
+  auto storage = SecurityHandshakerDomain::GetStorage(
+      GlobalCollectionScope(), status_str, error_details, protocol);
+  storage->Increment(SecurityHandshakerDomain::kDuration, duration_us);
 
-    stats_plugin_group->RecordHistogram(
-        kMetricHandshakerDuration, duration_ms, label_values, optional_values);
-  }
   InvokeOnHandshakeDone(args_, std::move(on_handshake_done_),
                         std::move(status));
 }

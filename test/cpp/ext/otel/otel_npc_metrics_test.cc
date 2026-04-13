@@ -41,6 +41,7 @@
 #include "test/core/test_util/test_config.h"
 #include "test/cpp/end2end/test_service_impl.h"
 #include "test/cpp/ext/otel/otel_test_library.h"
+#include "test/cpp/util/test_credentials_provider.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "absl/functional/any_invocable.h"
@@ -701,6 +702,44 @@ TEST_F(OpenTelemetryPluginNPCMetricsTest, InstrumentsEnabledTest) {
           grpc_core::ChannelArgs());
   EXPECT_TRUE(stats_plugins->IsInstrumentEnabled(histogram_handle));
   EXPECT_FALSE(stats_plugins->IsInstrumentEnabled(counter_handle));
+}
+
+TEST_F(OpenTelemetryPluginNPCMetricsTest, RecordSecurityHandshakerDuration) {
+  grpc::ChannelArguments args;
+  Init(std::move(
+      Options()
+          .set_metric_names({"grpc.security.handshaker.duration"})
+          .set_channel_credentials(
+              GetCredentialsProvider()->GetChannelCredentials(
+                  kAltsCredentialsType, &args))
+          .set_server_credentials(
+              GetCredentialsProvider()->GetServerCredentials(
+                  kAltsCredentialsType))));
+  
+  SendRPC();
+  auto data = ReadCurrentMetricsData(
+      [](const absl::flat_hash_map<
+          std::string,
+          std::vector<opentelemetry::sdk::metrics::PointDataAttributes>>&
+             data) {
+        return data.find("grpc.security.handshaker.duration") == data.end();
+      });
+
+  auto it = data.find("grpc.security.handshaker.duration");
+  ASSERT_NE(it, data.end());
+  EXPECT_FALSE(it->second.empty());
+
+  // Verify labels
+  const auto& point = it->second[0];
+  const auto& attributes = point.attributes.GetAttributes();
+  
+  auto protocol_it = attributes.find("grpc.security.handshaker.protocol");
+  ASSERT_NE(protocol_it, attributes.end());
+  EXPECT_EQ(opentelemetry::nostd::get<std::string>(protocol_it->second), "alts");
+
+  auto status_it = attributes.find("grpc.security.handshaker.status");
+  ASSERT_NE(status_it, attributes.end());
+  EXPECT_EQ(opentelemetry::nostd::get<std::string>(status_it->second), "OK");
 }
 
 using OpenTelemetryPluginCallbackMetricsTest =

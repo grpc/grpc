@@ -143,6 +143,7 @@ grpc_cc_test(
     ],
     deps = [
         ":otel_test_library",
+        "//test/cpp/util:test_util",
         "//:call_tracer",
         "//:config",
         "//:grpc++",
@@ -177,7 +178,7 @@ grpc_cc_test(
     ],
 )
 
-grpc_cc_test(
+grpc_trace_bin_text_map_propagator_test = grpc_cc_test(
     name = "grpc_trace_bin_text_map_propagator_test",
     srcs = [
         "grpc_trace_bin_text_map_propagator_test.cc",

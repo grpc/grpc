@@ -2363,6 +2363,7 @@ grpc_cc_library(
         "//src/core:credentials/transport/transport_credentials.h",
         "//src/core:filter/auth/auth_filters.h",
         "//src/core:handshaker/security/secure_endpoint.h",
+        "//src/core:handshaker/security/security_telemetry.h",
         "//src/core:handshaker/security/security_handshaker.h",
     ],
     external_deps = [
@@ -2386,6 +2387,8 @@ grpc_cc_library(
         "gpr",
         "grpc_base",
         "//src/core:metrics",
+        "//src/core:instrument",
+        "//src/core:histogram",
         "grpc_core_credentials_header",
         "grpc_public_hdrs",
         "grpc_trace",

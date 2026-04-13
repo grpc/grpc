@@ -147,6 +147,8 @@ std::vector<std::string> FilterLabels(
     InstrumentLabelList domain_label_names,
     InstrumentLabelSet scope_labels_of_interest,
     absl::Span<const std::string> full_label_values) {
+  LOG(ERROR) << "FilterLabels: domain_label_names.size()=" << domain_label_names.size()
+             << " full_label_values.size()=" << full_label_values.size();
   std::vector<std::string> result;
   result.reserve(domain_label_names.size());
   for (size_t i = 0; i < domain_label_names.size(); ++i) {
