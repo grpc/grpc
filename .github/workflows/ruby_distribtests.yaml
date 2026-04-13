@@ -10,32 +10,42 @@ on:
 
 jobs:
   build_artifacts:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
-        target:
-          - ruby_native_gem_linux_x86_64-linux-gnu
-          - ruby_native_gem_linux_x86_64-linux-musl
-          - ruby_native_gem_linux_x86-linux-gnu
-          - ruby_native_gem_linux_x86-linux-musl
-          - ruby_native_gem_linux_aarch64-linux-gnu
-          - ruby_native_gem_linux_aarch64-linux-musl
-          - ruby_native_gem_linux_x86-mingw32
-          - ruby_native_gem_linux_x64-mingw-ucrt
-          - ruby_native_gem_linux_x86_64-darwin
-          - ruby_native_gem_linux_arm64-darwin
+        include:
+          - target: ruby_native_gem_linux_x86_64-linux-gnu
+            os: ubuntu-latest
+          - target: ruby_native_gem_linux_x86_64-linux-musl
+            os: ubuntu-latest
+          - target: ruby_native_gem_linux_x86-linux-gnu
+            os: ubuntu-latest
+          - target: ruby_native_gem_linux_x86-linux-musl
+            os: ubuntu-latest
+          - target: ruby_native_gem_linux_aarch64-linux-gnu
+            os: ubuntu-latest
+          - target: ruby_native_gem_linux_aarch64-linux-musl
+            os: ubuntu-latest
+          - target: ruby_native_gem_linux_x86-mingw32
+            os: ubuntu-latest
+          - target: ruby_native_gem_linux_x64-mingw-ucrt
+            os: ubuntu-latest
+          - target: ruby_native_gem_linux_x86_64-darwin
+            os: ubuntu-latest
+          - target: ruby_native_gem_linux_arm64-darwin
+            os: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
           submodules: recursive
+          fetch-depth: 0
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.10'
       - name: Build Artifact
         run: |
-          # We need to make sure we have prerequisites if needed, but task_runner usually handles docker
           tools/run_tests/task_runner.py -b ${{ matrix.target }}
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
@@ -62,6 +72,9 @@ jobs:
           - ruby_linux-musl_x64_alpine_version_ruby_3_2_package_type_binary
     steps:
       - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 0
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -72,11 +85,6 @@ jobs:
           path: input_artifacts/
       - name: Prepare input_artifacts directory structure
         run: |
-          # task_runner expects artifacts to be in a specific structure or flat in input_artifacts
-          # download-artifact creates directories for each artifact name if we use pattern or download all.
-          # Let's flatten them or move them to where task_runner expects them.
-          # In the Kokoro script, it did: cp -r artifacts/ruby_native_gem_*/* input_artifacts/
-          # So it expects the GEMS directly under input_artifacts/
           mkdir -p flattened_input_artifacts
           find input_artifacts/ -type f -name "*.gem" -exec cp {} flattened_input_artifacts/ \;
           rm -rf input_artifacts
@@ -84,7 +92,4 @@ jobs:
           ls -R input_artifacts
       - name: Run Distribtest
         run: |
-          # task_runner.py -b runs the jobspec.
-          # We need to make sure the jobspec knows where to find input artifacts.
-          # The jobspec for distribtest usually expects them in 'input_artifacts' directory relative to repo root.
           tools/run_tests/task_runner.py -b ${{ matrix.target }}

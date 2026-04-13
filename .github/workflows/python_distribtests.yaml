@@ -10,26 +10,38 @@ on:
 
 jobs:
   build_artifacts:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
-        target:
-          - python_manylinux2014_x64_cp39-cp39
-          - python_manylinux2014_x86_cp39-cp39
-          - python_linux_extra_armv7_cp39-cp39
-          - python_musllinux_1_2_x64_cp39-cp39
-          - python_musllinux_1_2_x86_cp39-cp39
-          - python_macos_x64_python3.9
-          - python_macos_x64_python3.14
-          - python_windows_x86_Python39_32bit
-          - python_windows_x86_Python314_32bit
-          - python_windows_x64_Python39
-          - python_windows_x64_Python314
+        include:
+          - target: python_manylinux2014_x64_cp39-cp39
+            os: ubuntu-latest
+          - target: python_manylinux2014_x86_cp39-cp39
+            os: ubuntu-latest
+          - target: python_linux_extra_armv7_cp39-cp39
+            os: ubuntu-latest
+          - target: python_musllinux_1_2_x64_cp39-cp39
+            os: ubuntu-latest
+          - target: python_musllinux_1_2_x86_cp39-cp39
+            os: ubuntu-latest
+          - target: python_macos_x64_python3.9
+            os: macos-latest
+          - target: python_macos_x64_python3.14
+            os: macos-latest
+          - target: python_windows_x86_Python39_32bit
+            os: windows-latest
+          - target: python_windows_x86_Python314_32bit
+            os: windows-latest
+          - target: python_windows_x64_Python39
+            os: windows-latest
+          - target: python_windows_x64_Python314
+            os: windows-latest
     steps:
       - uses: actions/checkout@v4
         with:
           submodules: recursive
+          fetch-depth: 0
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -59,6 +71,9 @@ jobs:
           - python_dev_linux_x86_bullseye
     steps:
       - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 0
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
