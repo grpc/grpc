@@ -41,7 +41,9 @@ jobs:
           submodules: recursive
           fetch-depth: 0
       - name: Install Bundler
-        run: sudo gem install bundler
+        run: |
+          gem install bundler --user-install
+          echo "$(ruby -e 'puts Gem.user_dir')/bin" >> $GITHUB_PATH
       - name: Build Artifact
         run: |
           tools/run_tests/task_runner.py -b ${{ matrix.target }}
