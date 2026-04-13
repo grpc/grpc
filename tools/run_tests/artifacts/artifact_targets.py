@@ -494,7 +494,7 @@ def targets():
             RubyArtifact("linux", "x86-mingw32", presubmit=True),
             RubyArtifact("linux", "x64-mingw-ucrt"),
             RubyArtifact("linux", "x86_64-linux-gnu", presubmit=True),
-            RubyArtifact("linux", "x86_64-linux-musl"),
+            RubyArtifact("linux", "x86_64-linux-musl", presubmit=True),
             RubyArtifact("linux", "x86-linux-gnu"),
             RubyArtifact("linux", "x86-linux-musl", presubmit=True),
             RubyArtifact("linux", "aarch64-linux-gnu", presubmit=True),
