@@ -378,6 +378,7 @@ class HandshakeQueue {
       if (outstanding_handshakes_ == max_outstanding_handshakes_) {
         // Max number already running, add to queue.
         gpr_ref(&client->refs);
+        std::cerr << "queued a client\n";
         queued_handshakes_.push_back(client);
         return;
       }
@@ -396,9 +397,10 @@ class HandshakeQueue {
         --outstanding_handshakes_;
         return;
       }
+      std::cerr << "HandshakeDone called" << std::endl;
       // Remove next entry from queue and start the handshake.
       client = queued_handshakes_.front();
-      gpr_unref(&client->refs);
+      alts_grpc_handshaker_client_unref(client);
       queued_handshakes_.pop_front();
     }
     continue_make_grpc_call(client, true /* is_start */);
