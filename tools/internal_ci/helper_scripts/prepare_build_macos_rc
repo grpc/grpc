@@ -66,6 +66,7 @@ brew config
 if $is_sonoma; then
   brew install cmake
   brew install gnupg
+  brew install ccache
   export PATH="/opt/homebrew/bin::${PATH}"
   cmake --version
 fi
