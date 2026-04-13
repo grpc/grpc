@@ -40,12 +40,8 @@ jobs:
         with:
           submodules: recursive
           fetch-depth: 0
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.10'
       - name: Install Bundler
-        run: gem install bundler
+        run: sudo gem install bundler
       - name: Build Artifact
         run: |
           tools/run_tests/task_runner.py -b ${{ matrix.target }}
