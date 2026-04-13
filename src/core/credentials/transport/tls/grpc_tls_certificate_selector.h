@@ -32,6 +32,7 @@
 
 namespace grpc_core {
 
+#if defined(OPENSSL_IS_BORINGSSL)
 // Performs server-side certificate selection during the handshake based on the
 // SNI. Users must implement the `SelectCertificate` and `Cancel` methods.
 // The implementation must be thread-safe, as `SelectCertificate` may be called
@@ -44,11 +45,9 @@ class CertificateSelector {
 
   // TODO(lwge): This should be an opaque struct when moved to a public header.
   struct SelectCertificateResult {
-#if defined(OPENSSL_IS_BORINGSSL)
     std::vector<bssl::UniquePtr<CRYPTO_BUFFER>> certificate_chain;
     std::variant<bssl::UniquePtr<EVP_PKEY>, std::shared_ptr<PrivateKeySigner>>
         private_key;
-#endif
   };
 
   // Returns a SelectCertificateResult given a DER-encoded certificate chain,
@@ -97,6 +96,8 @@ class CertificateSelector {
   // Cancels the async select cert call corresponding to the handle.
   virtual void Cancel(std::shared_ptr<AsyncCertificateSelectionHandle>) = 0;
 };
+
+#endif  // OPENSSL_IS_BORINGSSL
 
 }  // namespace grpc_core
 

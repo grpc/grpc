@@ -39,6 +39,7 @@ namespace grpc_core {
 namespace {
 
 #if defined(OPENSSL_IS_BORINGSSL)
+
 absl::StatusOr<std::vector<bssl::UniquePtr<CRYPTO_BUFFER>>>
 ParseCertificateChainFromDer(const std::vector<std::string>& der_cert_chain) {
   if (der_cert_chain.empty()) {
@@ -105,7 +106,6 @@ absl::StatusOr<bssl::UniquePtr<EVP_PKEY>> ParsePrivateKeyFromPem(
   }
   return pkey;
 }
-#endif
 
 }  // namespace
 
@@ -114,34 +114,28 @@ CertificateSelector::CreateSelectCertificateResult(
     const std::vector<std::string>& der_cert_chain,
     std::variant<absl::string_view, std::shared_ptr<PrivateKeySigner>>
         der_private_key) {
-#if defined(OPENSSL_IS_BORINGSSL)
   absl::StatusOr<std::vector<bssl::UniquePtr<CRYPTO_BUFFER>>> raw_cert_chain =
       ParseCertificateChainFromDer(der_cert_chain);
   GRPC_RETURN_IF_ERROR(raw_cert_chain.status());
-  CertificateSelector::SelectCertificateResult result;
+  SelectCertificateResult result;
   result.certificate_chain = *std::move(raw_cert_chain);
-  absl::Status pkey_status = absl::OkStatus();
-  Match(
-      der_private_key,
-      [&](absl::string_view key) {
+  absl::Status pkey_status;
+  MatchMutable(
+      &der_private_key,
+      [&](absl::string_view* key) {
         absl::StatusOr<bssl::UniquePtr<EVP_PKEY>> pkey =
-            ParsePrivateKeyFromDer(key);
+            ParsePrivateKeyFromDer(*key);
         if (!pkey.ok()) {
-          pkey_status = std::move(pkey).status();
+          pkey_status = pkey.status();
           return;
         }
         result.private_key = *std::move(pkey);
       },
-      [&](std::shared_ptr<PrivateKeySigner> key_signer) {
-        result.private_key = std::move(key_signer);
+      [&](std::shared_ptr<PrivateKeySigner>* key_signer) {
+        result.private_key = std::move(*key_signer);
       });
   GRPC_RETURN_IF_ERROR(pkey_status);
   return result;
-#else
-  return absl::FailedPreconditionError(
-      "Select cert result creation is not supported with non-BoringSSL "
-      "builds.");
-#endif
 }
 
 absl::StatusOr<CertificateSelector::SelectCertificateResult>
@@ -149,34 +143,30 @@ CertificateSelector::CreateSelectCertificateResult(
     absl::string_view pem_cert_chain,
     std::variant<absl::string_view, std::shared_ptr<PrivateKeySigner>>
         pem_private_key) {
-#if defined(OPENSSL_IS_BORINGSSL)
   absl::StatusOr<std::vector<bssl::UniquePtr<CRYPTO_BUFFER>>> raw_cert_chain =
       ParseCertificateChainFromPem(pem_cert_chain);
   GRPC_RETURN_IF_ERROR(raw_cert_chain.status());
-  CertificateSelector::SelectCertificateResult result;
+  SelectCertificateResult result;
   result.certificate_chain = *std::move(raw_cert_chain);
   absl::Status pkey_status = absl::OkStatus();
-  Match(
-      pem_private_key,
-      [&](absl::string_view key) {
+  MatchMutable(
+      &pem_private_key,
+      [&](absl::string_view* key) {
         absl::StatusOr<bssl::UniquePtr<EVP_PKEY>> pkey =
-            ParsePrivateKeyFromPem(key);
+            ParsePrivateKeyFromPem(*key);
         if (!pkey.ok()) {
-          pkey_status = std::move(pkey).status();
+          pkey_status = pkey.status();
           return;
         }
         result.private_key = *std::move(pkey);
       },
-      [&](std::shared_ptr<PrivateKeySigner> key_signer) {
-        result.private_key = std::move(key_signer);
+      [&](std::shared_ptr<PrivateKeySigner>* key_signer) {
+        result.private_key = std::move(*key_signer);
       });
   GRPC_RETURN_IF_ERROR(pkey_status);
   return result;
-#else
-  return absl::FailedPreconditionError(
-      "Select cert result creation is not supported with non-BoringSSL "
-      "builds.");
-#endif
 }
+
+#endif  // OPENSSL_IS_BORINGSSL
 
 }  // namespace grpc_core
