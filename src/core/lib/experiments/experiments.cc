@@ -41,9 +41,6 @@ const char* const
 const char* const
     additional_constraints_call_tracer_send_trailing_metadata_is_an_annotation =
         "{}";
-const char* const description_chaotic_good_connect_deadline =
-    "Use the deadline from the connect args in chaotic good connector";
-const char* const additional_constraints_chaotic_good_connect_deadline = "{}";
 const char* const description_chaotic_good_framing_layer =
     "Enable the chaotic good framing layer.";
 const char* const additional_constraints_chaotic_good_framing_layer = "{}";
@@ -259,9 +256,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_call_tracer_send_trailing_metadata_is_an_annotation,
      additional_constraints_call_tracer_send_trailing_metadata_is_an_annotation,
      nullptr, 0, false, true},
-    {"chaotic_good_connect_deadline", description_chaotic_good_connect_deadline,
-     additional_constraints_chaotic_good_connect_deadline, nullptr, 0, true,
-     true},
     {"chaotic_good_framing_layer", description_chaotic_good_framing_layer,
      additional_constraints_chaotic_good_framing_layer, nullptr, 0, true,
      false},
@@ -438,9 +432,6 @@ const char* const
 const char* const
     additional_constraints_call_tracer_send_trailing_metadata_is_an_annotation =
         "{}";
-const char* const description_chaotic_good_connect_deadline =
-    "Use the deadline from the connect args in chaotic good connector";
-const char* const additional_constraints_chaotic_good_connect_deadline = "{}";
 const char* const description_chaotic_good_framing_layer =
     "Enable the chaotic good framing layer.";
 const char* const additional_constraints_chaotic_good_framing_layer = "{}";
@@ -656,9 +647,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_call_tracer_send_trailing_metadata_is_an_annotation,
      additional_constraints_call_tracer_send_trailing_metadata_is_an_annotation,
      nullptr, 0, false, true},
-    {"chaotic_good_connect_deadline", description_chaotic_good_connect_deadline,
-     additional_constraints_chaotic_good_connect_deadline, nullptr, 0, true,
-     true},
     {"chaotic_good_framing_layer", description_chaotic_good_framing_layer,
      additional_constraints_chaotic_good_framing_layer, nullptr, 0, true,
      false},
@@ -835,9 +823,6 @@ const char* const
 const char* const
     additional_constraints_call_tracer_send_trailing_metadata_is_an_annotation =
         "{}";
-const char* const description_chaotic_good_connect_deadline =
-    "Use the deadline from the connect args in chaotic good connector";
-const char* const additional_constraints_chaotic_good_connect_deadline = "{}";
 const char* const description_chaotic_good_framing_layer =
     "Enable the chaotic good framing layer.";
 const char* const additional_constraints_chaotic_good_framing_layer = "{}";
@@ -1053,9 +1038,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_call_tracer_send_trailing_metadata_is_an_annotation,
      additional_constraints_call_tracer_send_trailing_metadata_is_an_annotation,
      nullptr, 0, false, true},
-    {"chaotic_good_connect_deadline", description_chaotic_good_connect_deadline,
-     additional_constraints_chaotic_good_connect_deadline, nullptr, 0, true,
-     true},
     {"chaotic_good_framing_layer", description_chaotic_good_framing_layer,
      additional_constraints_chaotic_good_framing_layer, nullptr, 0, true,
      false},

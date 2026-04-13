@@ -30,6 +30,10 @@
 # uses_polling: optional boolean (false if not specified) that indicates that
 #              this experiment should be tested with all different polling
 #              engines.
+# platforms: optional list of platforms (posix, windows, ios, all)
+#              that this experiment should be tested on. Defaults to [posix]
+#              if not specified. Tests specified in `test_tags` will only run on
+#              specified platforms with the experiment.
 #
 # Well known test tags:
 #   core_end2end_test:   all tests, fixtures in the core end2end suite
@@ -62,16 +66,11 @@
   expiry: 2026/06/01
   owner: ctiller@google.com
   test_tags: []
-- name: chaotic_good_connect_deadline
-  description: Use the deadline from the connect args in chaotic good connector
-  expiry: 2026/05/01
-  owner: ctiller@google.com
-  test_tags: [core_end2end_test]
 - name: chaotic_good_framing_layer
   description: Enable the chaotic good framing layer.
   expiry: 2026/05/01
-  owner: ctiller@google.com
-  test_tags: [core_end2end_test]
+  owner: aananthv@google.com
+  test_tags: []
   allow_in_fuzzing_config: false
 - name: chaotic_good_send_supported_features
   description: Send supported features in chaotic good settings frames.
@@ -90,6 +89,7 @@
   expiry: 2026/04/23
   owner: mlumish@google.com
   requires: ["event_engine_client", "event_engine_listener"]
+  platforms: ["all"]
 - name: event_engine_client
   description: Use EventEngine clients instead of iomgr's grpc_tcp_client
   expiry: 2026/04/23
@@ -97,6 +97,7 @@
   test_tags: ["core_end2end_test", "event_engine_client_test"]
   uses_polling: true
   allow_in_fuzzing_config: false
+  platforms: ["all"]
 - name: event_engine_dns
   description: If set, use EventEngine DNSResolver for client channel resolution
   expiry: 2026/04/23
@@ -105,6 +106,7 @@
     ["cancel_ares_query_test", "resolver_component_tests_runner_invoker"]
   allow_in_fuzzing_config: false
   uses_polling: true
+  platforms: ["all"]
 - name: event_engine_dns_non_client_channel
   description: If set, use EventEngine DNSResolver in other places besides client channel.
   expiry: 2026/04/23
@@ -112,6 +114,7 @@
   test_tags: ["core_end2end_test"]
   allow_in_fuzzing_config: false
   uses_polling: true
+  platforms: ["all"]
 - name: event_engine_for_all_other_endpoints
   description: Use EventEngine endpoints for all call sites, including direct uses of grpc_tcp_create.
   expiry: 2026/04/23
@@ -126,6 +129,7 @@
       "event_engine_dns",
       "event_engine_dns_non_client_channel",
     ]
+  platforms: ["all"]
 - name: event_engine_fork
   description: Enables event engine fork handling, including onfork events and file descriptor generations
   expiry: 2026/05/23
@@ -133,6 +137,7 @@
   test_tags: ["core_end2end_test", "event_engine_fork_test"]
   uses_polling: true
   allow_in_fuzzing_config: false
+  platforms: ["all"]
 - name: event_engine_listener
   description: Use EventEngine listeners instead of iomgr's grpc_tcp_server
   expiry: 2026/04/23
@@ -140,12 +145,14 @@
   test_tags: ["core_end2end_test", "event_engine_listener_test"]
   uses_polling: true
   allow_in_fuzzing_config: false
+  platforms: ["all"]
 - name: event_engine_poller_for_python
   description: "Enable event engine poller in gRPC Python"
   expiry: 2026/06/30
   owner: mlumish@google.com
   test_tags: []
   uses_polling: true
+  platforms: ["all"]
 - name: fail_recv_metadata_on_deadline_exceeded
   description: Fail recv initial metadata when the deadline is exceeded.
   expiry: 2026/05/01
@@ -238,6 +245,7 @@
   test_tags: ["core_end2end_test"]
   requires: ["event_engine_client", "event_engine_listener"]
   allow_in_fuzzing_config: false
+  platforms: ["all"]
 - name: prioritize_finished_requests
   description: Prioritize flushing out finished requests over other in-flight
     requests during transport writes.
@@ -367,6 +375,7 @@
   expiry: 2026/06/01
   owner: aananthv@google.com
   test_tags: ["core_end2end_test"]
+  platforms: ["all"]
 - name: wildcard_ip_expansion_restriction
   description:
     If set, adds optional restriction on when to expand wildcard IPs.
