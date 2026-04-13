@@ -235,6 +235,7 @@ task 'gem:native', [:plat] do |t, args|
       bundle update --all && \
       bundle exec rake clean && \
       export GRPC_RUBY_DEBUG_SYMBOLS_OUTPUT_DIR=#{debug_symbols_dir} && \
+      exit 1
       bundle exec rake native:#{plat} pkg/#{spec.full_name}-#{plat}.gem pkg/#{spec.full_name}.gem \
         RUBY_CC_VERSION=#{RakeCompilerDock.ruby_cc_version(*target_ruby_minor_versions)} \
         V=#{verbose} \
