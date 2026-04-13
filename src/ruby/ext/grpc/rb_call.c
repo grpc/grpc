@@ -49,7 +49,6 @@ static VALUE grpc_rb_sBatchResult;
  * grpc_metadata_array. */
 VALUE grpc_rb_cMdAry;
 
-
 /* id_metadata is name of the attribute used to access the metadata hash
  * received by the call and subsequently saved on it. */
 static ID id_metadata;
@@ -355,7 +354,6 @@ static VALUE grpc_rb_call_set_write_flag(VALUE self, VALUE write_flag) {
 
   return rb_ivar_set(self, id_write_flag, write_flag);
 }
-
 
 /* grpc_rb_md_ary_fill_hash_cb is the hash iteration callback used
    to fill grpc_metadata_array.
