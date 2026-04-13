@@ -328,4 +328,7 @@ then
 
 fi
 
-[ -x "$(command -v ccache)" ] && ccache --show-stats || true
+if [ -x "$(command -v ccache)" ]
+then
+  ccache --show-stats || true
+fi
