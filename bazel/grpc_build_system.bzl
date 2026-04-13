@@ -147,6 +147,7 @@ def grpc_cc_library(
       data: Data dependencies.
       tags: Tags to apply to the rule.
       linkopts: Extra libraries to link.
+      linkstatic: Whether to enable linkstatic on the cc_library.
     """
     visibility = _update_visibility(visibility)
     copts = []
