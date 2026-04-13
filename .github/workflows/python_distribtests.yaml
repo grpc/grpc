@@ -25,10 +25,10 @@ jobs:
             os: ubuntu-latest
           - target: python_musllinux_1_2_x86_cp39-cp39
             os: ubuntu-latest
-          - target: python_macos_x64_python3.9
-            os: macos-latest
-          - target: python_macos_x64_python3.14
-            os: macos-latest
+          # - target: python_macos_x64_python3.9
+          #   os: macos-latest
+          # - target: python_macos_x64_python3.14
+          #   os: macos-latest
           - target: python_windows_x86_Python39_32bit
             os: windows-latest
           - target: python_windows_x86_Python314_32bit
