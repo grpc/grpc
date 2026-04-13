@@ -21,6 +21,7 @@ import grpc
 from grpc_health.v1 import health_pb2 as _health_pb2
 from grpc_health.v1 import health_pb2_grpc as _health_pb2_grpc
 
+# Exposes AsyncHealthServicer as public API.
 from . import _async as aio  # pylint: disable=unused-import
 
 # The service name of the health checking servicer.
