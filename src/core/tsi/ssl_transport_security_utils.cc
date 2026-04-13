@@ -282,7 +282,7 @@ bool VerifyCrlCertIssuerNamesMatch(X509_CRL* crl, X509* cert) {
     return false;
   }
   X509_NAME* cert_issuer_name = X509_get_issuer_name(cert);
-  if (cert == nullptr) {
+  if (cert_issuer_name == nullptr) {
     return false;
   }
   X509_NAME* crl_issuer_name = X509_CRL_get_issuer(crl);
