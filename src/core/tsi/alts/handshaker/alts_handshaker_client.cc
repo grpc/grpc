@@ -377,6 +377,7 @@ class HandshakeQueue {
       grpc_core::MutexLock lock(&mu_);
       if (outstanding_handshakes_ == max_outstanding_handshakes_) {
         // Max number already running, add to queue.
+        gpr_ref(&client->refs);
         queued_handshakes_.push_back(client);
         return;
       }
@@ -397,6 +398,7 @@ class HandshakeQueue {
       }
       // Remove next entry from queue and start the handshake.
       client = queued_handshakes_.front();
+      gpr_unref(&client->refs);
       queued_handshakes_.pop_front();
     }
     continue_make_grpc_call(client, true /* is_start */);
