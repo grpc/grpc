@@ -1,0 +1,80 @@
+name: Python Distribution Tests
+
+on:
+  pull_request:
+    paths:
+      - 'src/python/**'
+      - 'tools/run_tests/artifacts/artifact_targets.py'
+      - 'tools/run_tests/artifacts/distribtest_targets.py'
+      - '.github/workflows/python_distribtests.yaml'
+
+jobs:
+  build_artifacts:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        target:
+          - python_manylinux2014_x64_cp39-cp39
+          - python_manylinux2014_x86_cp39-cp39
+          - python_linux_extra_armv7_cp39-cp39
+          - python_musllinux_1_2_x64_cp39-cp39
+          - python_musllinux_1_2_x86_cp39-cp39
+          - python_macos_x64_python3.9
+          - python_macos_x64_python3.14
+          - python_windows_x86_Python39_32bit
+          - python_windows_x86_Python314_32bit
+          - python_windows_x64_Python39
+          - python_windows_x64_Python314
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+      - name: Build Artifact
+        run: |
+          tools/run_tests/task_runner.py -b ${{ matrix.target }}
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.target }}
+          path: artifacts/
+
+  run_distribtests:
+    needs: build_artifacts
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        target:
+          - python_linux_x64_bullseye
+          - python_linux_x86_bullseye
+          - python_linux_aarch64_python39_buster
+          - python_linux_aarch64_alpine
+          - python_dev_linux_x64_alpine3.18
+          - python_dev_linux_x64_bullseye
+          - python_dev_linux_x86_bullseye
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+      - name: Download All Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: input_artifacts/
+      - name: Prepare input_artifacts directory structure
+        run: |
+          # Flatten the directory structure for downloaded artifacts
+          mkdir -p flattened_input_artifacts
+          find input_artifacts/ -type f \( -name "*.whl" -o -name "*.tar.gz" \) -exec cp {} flattened_input_artifacts/ \;
+          rm -rf input_artifacts
+          mv flattened_input_artifacts input_artifacts
+          ls -R input_artifacts
+      - name: Run Distribtest
+        run: |
+          tools/run_tests/task_runner.py -b ${{ matrix.target }}
