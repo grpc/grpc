@@ -190,7 +190,7 @@ task 'gem:native', [:plat] do |t, args|
     run_rake_compiler(plat, <<~EOT)
       #{prepare_ccache_cmd} && \
       gem update --system --no-document && \
-      bundle update --all && \
+      bundle install && \
       bundle exec rake clean && \
       bundle exec rake native:#{plat} pkg/#{spec.full_name}-#{plat}.gem pkg/#{spec.full_name}.gem \
         RUBY_CC_VERSION=#{RakeCompilerDock.ruby_cc_version(*target_ruby_minor_versions)} \
@@ -232,7 +232,7 @@ task 'gem:native', [:plat] do |t, args|
     run_rake_compiler(plat, <<~EOT)
       #{prepare_ccache_cmd} && \
       gem update --system --no-document && \
-      bundle update --all && \
+      bundle install && \
       bundle exec rake clean && \
       export GRPC_RUBY_DEBUG_SYMBOLS_OUTPUT_DIR=#{debug_symbols_dir} && \
       bundle exec rake native:#{plat} pkg/#{spec.full_name}-#{plat}.gem pkg/#{spec.full_name}.gem \
