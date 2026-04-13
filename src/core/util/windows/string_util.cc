@@ -22,6 +22,7 @@
 
 #ifdef GPR_WINDOWS
 
+#include <wchar.h>
 // Some platforms (namely msys) need wchar to be included BEFORE
 // anything else, especially strsafe.h.
 #include <grpc/support/alloc.h>
@@ -32,7 +33,6 @@
 #include <stdio.h>
 #include <string.h>
 #include <strsafe.h>
-#include <wchar.h>
 
 #include "src/core/util/string.h"
 #include "src/core/util/tchar.h"
