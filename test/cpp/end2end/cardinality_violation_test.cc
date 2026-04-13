@@ -80,9 +80,7 @@ class CardinalityViolationTest : public ::testing::Test {
     builder.RegisterAsyncGenericService(&generic_service_);
     cq_ = builder.AddCompletionQueue();
     server_ = builder.BuildAndStart();
-
     server_address_ << "localhost:" << port;
-
     channel_ = grpc::CreateCustomChannel(server_address_.str(),
                                          InsecureChannelCredentials(),
                                          ChannelArguments());
@@ -233,6 +231,43 @@ TEST_F(CardinalityViolationTest, UnaryExtraRequest) {
   EXPECT_TRUE(cq_->Next(&got_tag, &ok));
   EXPECT_EQ(got_tag, tag(5));
   EXPECT_EQ(status.error_code(), StatusCode::UNIMPLEMENTED);
+}
+
+TEST_F(CardinalityViolationTest, ClientStreamingExtraResponses) {
+  ClientContext context;
+  EchoResponse response;
+  grpc::internal::RpcMethod method(
+      "/grpc.testing.EchoTestService/UnregisteredClientStreamingMethod",
+      grpc::internal::RpcMethod::CLIENT_STREAMING);
+  auto writer = grpc::internal::ClientWriterFactory<EchoRequest>::Create(
+      channel_.get(), method, &context, &response);
+  GenericServerContext server_context;
+  GenericServerAsyncReaderWriter stream(&server_context);
+  generic_service_.RequestCall(&server_context, &stream, cq_.get(), cq_.get(),
+                               tag(100));
+  void* got_tag;
+  bool ok;
+  EXPECT_TRUE(cq_->Next(&got_tag, &ok));
+  EXPECT_EQ(got_tag, tag(100));
+  EchoResponse first_resp;
+  first_resp.set_message("first");
+  auto first_buf = SerializeToByteBuffer(&first_resp);
+  stream.Write(*first_buf, tag(101));
+  EXPECT_TRUE(cq_->Next(&got_tag, &ok));
+  EXPECT_EQ(got_tag, tag(101));
+  EchoResponse second_resp;
+  second_resp.set_message("second");
+  auto second_buf = SerializeToByteBuffer(&second_resp);
+  stream.Write(*second_buf, tag(102));
+  EXPECT_TRUE(cq_->Next(&got_tag, &ok));
+  EXPECT_EQ(got_tag, tag(102));
+  stream.Finish(Status::OK, tag(103));
+  EXPECT_TRUE(cq_->Next(&got_tag, &ok));
+  EXPECT_EQ(got_tag, tag(103));
+  writer->WritesDone();
+  Status s = writer->Finish();
+  EXPECT_EQ(s.error_code(), StatusCode::UNIMPLEMENTED);
+  delete writer;
 }
 
 }  // namespace

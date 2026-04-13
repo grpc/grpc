@@ -363,12 +363,24 @@ class ClientWriter : public ClientWriterInterface<W> {
     if (!context_->initial_metadata_received_) {
       finish_ops_.RecvInitialMetadata(context_);
     }
-    finish_ops_.ClientRecvStatus(context_, &status);
     finish_ops_.FillOps(&call_);
     ABSL_CHECK(cq_.Pluck(&finish_ops_));
+    grpc::internal::CallOpSet<grpc::internal::CallOpGenericRecvMessage,
+                              grpc::internal::CallOpClientRecvStatus>
+        check_ops;
+    grpc::ByteBuffer dummy;
+    check_ops.RecvMessage(&dummy);
+    check_ops.AllowNoMessage();
+    check_ops.ClientRecvStatus(context_, &status);
+    check_ops.FillOps(&call_);
+    ABSL_CHECK(cq_.Pluck(&check_ops));
     if (!finish_ops_.got_message && status.ok()) {
       status = grpc::Status(grpc::StatusCode::UNIMPLEMENTED,
                             "No message returned for client-streaming request");
+    } else if (check_ops.got_message) {
+      status = grpc::Status(grpc::StatusCode::UNIMPLEMENTED,
+                            "Cardinality violation: Client-Streaming method "
+                            "received extra response");
     }
     return status;
   }
