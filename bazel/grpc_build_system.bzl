@@ -159,13 +159,6 @@ def grpc_cc_library(
     # TODO(ctiller): remove when fuzztest is completely C++17
     # (it leverages some C++20 extensions at the time of writing).
     # See b/391433873.
-    # if "fuzztest" in external_deps or "grpc-fuzztest" in tags:
-    #     if "grpc-fuzztest" not in tags:
-    #         tags = tags + ["grpc-fuzztest"]
-    #     target_compatible_with = target_compatible_with + select({
-    #         "//:windows": ["@platforms//:incompatible"],
-    #         "//conditions:default": [],
-    #     })
     cc_library(
         name = name,
         srcs = srcs,
@@ -198,6 +191,7 @@ def grpc_cc_library(
         data = data,
         tags = tags,
         linkstatic = linkstatic,
+        target_compatible_with = if_windows(["@platforms//:incompatible"]),
     )
 
 def grpc_proto_plugin(name, srcs = [], deps = []):
