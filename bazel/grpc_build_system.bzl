@@ -162,6 +162,9 @@ def grpc_cc_library(
     # See b/391433873.
     if "fuzztest" in external_deps and "grpc-fuzztest" not in tags:
         tags = tags + ["grpc-fuzztest"]
+    target_compatible_with = []
+    if "fuzztest" in external_deps:
+        target_compatible_with = if_windows(["@platforms//:incompatible"])
     cc_library(
         name = name,
         srcs = srcs,
@@ -194,7 +197,7 @@ def grpc_cc_library(
         data = data,
         tags = tags,
         linkstatic = linkstatic,
-        target_compatible_with = if_windows(["@platforms//:incompatible"]),
+        target_compatible_with = target_compatible_with,
     )
 
 def grpc_proto_plugin(name, srcs = [], deps = []):
@@ -572,14 +575,6 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], defines = [], a
             EventEngine implementation differences
     """
 
-    # if "fuzztest" in external_deps or "grpc-fuzztest" in tags:
-    #     if "grpc-fuzztest" not in tags:
-    #         tags = tags + ["grpc-fuzztest"]
-    #     target_compatible_with = target_compatible_with + select({
-    #         "//:windows": ["@platforms//:incompatible"],
-    #         "//:windows_clang": ["@platforms//:incompatible"],
-    #         "//conditions:default": [],
-    #     })
     core_deps = deps + _get_external_deps(external_deps) + ["//test/core/test_util:grpc_suppressions"]
 
     # Test args for all tests
