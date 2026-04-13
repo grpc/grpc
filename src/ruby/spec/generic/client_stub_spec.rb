@@ -157,6 +157,14 @@ describe 'ClientStub' do  # rubocop:disable Metrics/BlockLength
       end
       expect(&blk).to_not raise_error
     end
+
+    it 'creates secure channel when only CallCredentials provided' do
+      call_creds = GRPC::Core::CallCredentials.new(proc { {} })
+      stub = GRPC::ClientStub.new(fake_host, call_creds)
+      # Verify the internal channel credentials are SSL (not insecure)
+      expect(stub.instance_variable_get(:@channel_creds)).to be_a(GRPC::Core::ChannelCredentials)
+      expect(stub.instance_variable_get(:@call_creds)).to eq(call_creds)
+    end
   end
 
   describe '#request_response', request_response: true do

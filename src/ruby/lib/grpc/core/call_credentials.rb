@@ -31,12 +31,18 @@ module GRPC
 
       def compose(*others)
         return self if others.empty?
-        others.each do |o|
+        valid_others = validate_credentials_list!(others)
+        CompositeCallCredentials.new([self] + valid_others)
+      end
+
+      private
+
+      def validate_credentials_list!(list)
+        list.flatten.each do |o|
           unless o.is_a?(CallCredentials) || o.is_a?(CompositeCallCredentials)
             fail TypeError, 'Argument to compose must be a CallCredentials'
           end
         end
-        CompositeCallCredentials.new([self] + others)
       end
     end
 
@@ -46,26 +52,20 @@ module GRPC
       # The inheritance is primarily for type checking in compose methods.
       # rubocop:disable Lint/MissingSuper
       def initialize(*creds)
-        @creds = creds.flatten
+        @creds = creds.flatten.uniq
       end
       # rubocop:enable Lint/MissingSuper
 
       def get_metadata(context)
-        metadata = {}
-        @creds.each do |c|
+        @creds.each_with_object({}) do |c, metadata|
           metadata.merge!(c.get_metadata(context))
         end
-        metadata
       end
 
       def compose(*others)
         return self if others.empty?
-        others.each do |o|
-          unless o.is_a?(CallCredentials) || o.is_a?(CompositeCallCredentials)
-            fail TypeError, 'Argument to compose must be a CallCredentials'
-          end
-        end
-        CompositeCallCredentials.new(@creds + others)
+        valid_others = validate_credentials_list!(others)
+        CompositeCallCredentials.new(@creds + valid_others)
       end
     end
 
@@ -87,27 +87,21 @@ module GRPC
         !key.nil? && !key.empty? && VALID_HEADER_KEY_PATTERN.match?(key)
       end
 
-      # Builds service URL in format: https://host/service (matches C core)
+      # Parses method path and builds service URL and method name
       # @param ssl_target [String] SSL target host (e.g., 'foo.test.google.fr')
       # @param method [String, nil] RPC method path (e.g., '/echo.EchoServer/Echo')
-      # @return [String] service URL (e.g., 'https://foo.test.google.fr/echo.EchoServer')
-      def self.build_service_url(ssl_target, method)
-        return "https://#{ssl_target}" if method.nil? || method.empty?
+      # @return [Array<String, String>] [service_url, method_name]
+      #   e.g., ['https://foo.test.google.fr/echo.EchoServer', 'Echo']
+      def self.parse_method_info(ssl_target, method)
+        return ["https://#{ssl_target}", nil] if method.nil? || method.empty?
 
-        # Method format: /service.Name/MethodName - extract up to last slash
+        # Method format: /service.Name/MethodName - extract service and method
         last_slash = method.rindex('/')
         service_path = last_slash&.positive? ? method[0, last_slash] : ''
-        "https://#{ssl_target}#{service_path}"
-      end
+        service_url = "https://#{ssl_target}#{service_path}"
+        method_name = last_slash ? method[(last_slash + 1)..] : nil
 
-      # Extracts method name from method path
-      # @param method [String, nil] RPC method path (e.g., '/echo.EchoServer/Echo')
-      # @return [String, nil] method name (e.g., 'Echo')
-      def self.extract_method_name(method)
-        return nil if method.nil? || method.empty?
-
-        last_slash = method.rindex('/')
-        last_slash ? method[(last_slash + 1)..] : nil
+        [service_url, method_name]
       end
 
       # Validates and merges credential metadata into request metadata
@@ -132,8 +126,7 @@ module GRPC
         return unless credentials
         return if channel_creds == :this_channel_is_insecure
 
-        service_url = build_service_url(ssl_target, method)
-        method_name = extract_method_name(method)
+        service_url, method_name = parse_method_info(ssl_target, method)
         context = { service_url: service_url, jwt_aud_uri: service_url, method_name: method_name }
 
         begin

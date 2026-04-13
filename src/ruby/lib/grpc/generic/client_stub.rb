@@ -82,10 +82,9 @@ module GRPC
     # when present, this is the default timeout used for calls
     #
     # @param host [String] the host the stub connects to
-    # @param creds [Core::ChannelCredentials|Symbol] the channel credentials, or
-    #     :this_channel_is_insecure, which explicitly indicates that the client
-    #     should be created with an insecure connection. Note: this argument is
-    #     ignored if the channel_override argument is provided.
+    # @param creds [Core::ChannelCredentials|Core::CallCredentials|Symbol]
+    #     ChannelCredentials, CallCredentials (creates default SSL channel), or
+    #     :this_channel_is_insecure. Ignored if channel_override is provided.
     # @param channel_override [Core::Channel] a pre-created channel
     # @param timeout [Number] the default timeout to use in requests
     # @param propagate_mask [Number] A bitwise combination of flags in
@@ -109,7 +108,7 @@ module GRPC
         @channel_creds = creds.channel_credentials
       elsif creds.is_a?(Core::CallCredentials)
         @call_creds = creds
-        @channel_creds = :this_channel_is_insecure
+        @channel_creds = Core::ChannelCredentials.new
       else
         @call_creds = nil
         @channel_creds = creds
@@ -169,18 +168,17 @@ module GRPC
       c = new_active_call(method, marshal, unmarshal,
                           deadline: deadline,
                           parent: parent)
-      # Apply credentials before setting up the operation
-      resolved_metadata = apply_credentials_to_metadata(metadata, credentials, method)
       interception_context = @interceptors.build_context
       intercept_args = {
         method: method,
         request: req,
         call: c.interceptable,
-        metadata: resolved_metadata
+        metadata: metadata
       }
       if return_op
         # return the operation view of the active_call; define #execute as a
         # new method for this instance that invokes #request_response.
+        resolved_metadata = apply_credentials_to_metadata(metadata.dup, credentials, method)
         c.merge_metadata_to_send(resolved_metadata)
         op = c.operation
         op.define_singleton_method(:execute) do
@@ -191,6 +189,7 @@ module GRPC
         op
       else
         interception_context.intercept!(:request_response, intercept_args) do
+          resolved_metadata = apply_credentials_to_metadata(metadata.dup, credentials, method)
           c.request_response(req, metadata: resolved_metadata)
         end
       end
@@ -247,17 +246,17 @@ module GRPC
       c = new_active_call(method, marshal, unmarshal,
                           deadline: deadline,
                           parent: parent)
-      resolved_metadata = apply_credentials_to_metadata(metadata, credentials, method)
       interception_context = @interceptors.build_context
       intercept_args = {
         method: method,
         requests: requests,
         call: c.interceptable,
-        metadata: resolved_metadata
+        metadata: metadata
       }
       if return_op
         # return the operation view of the active_call; define #execute as a
         # new method for this instance that invokes #client_streamer.
+        resolved_metadata = apply_credentials_to_metadata(metadata.dup, credentials, method)
         c.merge_metadata_to_send(resolved_metadata)
         op = c.operation
         op.define_singleton_method(:execute) do
@@ -268,6 +267,7 @@ module GRPC
         op
       else
         interception_context.intercept!(:client_streamer, intercept_args) do
+          resolved_metadata = apply_credentials_to_metadata(metadata.dup, credentials, method)
           c.client_streamer(requests, metadata: resolved_metadata)
         end
       end
@@ -339,17 +339,17 @@ module GRPC
       c = new_active_call(method, marshal, unmarshal,
                           deadline: deadline,
                           parent: parent)
-      resolved_metadata = apply_credentials_to_metadata(metadata, credentials, method)
       interception_context = @interceptors.build_context
       intercept_args = {
         method: method,
         request: req,
         call: c.interceptable,
-        metadata: resolved_metadata
+        metadata: metadata
       }
       if return_op
         # return the operation view of the active_call; define #execute
-        # as a new method for this instance that invokes #server_streamer
+        # as a new method for this instance that invokes #server_streamer.
+        resolved_metadata = apply_credentials_to_metadata(metadata.dup, credentials, method)
         c.merge_metadata_to_send(resolved_metadata)
         op = c.operation
         op.define_singleton_method(:execute) do
@@ -360,6 +360,7 @@ module GRPC
         op
       else
         interception_context.intercept!(:server_streamer, intercept_args) do
+          resolved_metadata = apply_credentials_to_metadata(metadata.dup, credentials, method)
           c.server_streamer(req, metadata: resolved_metadata, &blk)
         end
       end
@@ -461,17 +462,17 @@ module GRPC
       c = new_active_call(method, marshal, unmarshal,
                           deadline: deadline,
                           parent: parent)
-      resolved_metadata = apply_credentials_to_metadata(metadata, credentials, method)
       interception_context = @interceptors.build_context
       intercept_args = {
         method: method,
         requests: requests,
         call: c.interceptable,
-        metadata: resolved_metadata
+        metadata: metadata
       }
       if return_op
         # return the operation view of the active_call; define #execute
-        # as a new method for this instance that invokes #bidi_streamer
+        # as a new method for this instance that invokes #bidi_streamer.
+        resolved_metadata = apply_credentials_to_metadata(metadata.dup, credentials, method)
         c.merge_metadata_to_send(resolved_metadata)
         op = c.operation
         op.define_singleton_method(:execute) do
@@ -482,6 +483,7 @@ module GRPC
         op
       else
         interception_context.intercept!(:bidi_streamer, intercept_args) do
+          resolved_metadata = apply_credentials_to_metadata(metadata.dup, credentials, method)
           c.bidi_streamer(requests, metadata: resolved_metadata, &blk)
         end
       end
