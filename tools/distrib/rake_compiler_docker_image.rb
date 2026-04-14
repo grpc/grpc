@@ -33,11 +33,5 @@ def run_rake_compiler(platform, args)
   ENV['RCD_PLATFORM'] = platform
   ENV['RCD_IMAGE'] = docker_image_for_rake_compiler(platform)
   
-  if platform =~ /arm64-darwin/
-    ENV['DOCKER_DEFAULT_PLATFORM'] = 'linux/arm64'
-  else
-    ENV.delete('DOCKER_DEFAULT_PLATFORM')
-  end
-
   RakeCompilerDock.sh args
 end
