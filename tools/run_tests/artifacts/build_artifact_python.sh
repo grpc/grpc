@@ -20,6 +20,11 @@ PS4='+ $(date "+[%H:%M:%S %Z]")\011 '
 
 cd "$(dirname "$0")/../../.."
 
+echo $CCACHE_NOHASHDIR
+echo $CCACHE_SECONDARY_STORAGE
+
+exit 1
+
 export GRPC_PYTHON_BUILD_WITH_CYTHON=1
 export PYTHON=${PYTHON:-python}
 export AUDITWHEEL=${AUDITWHEEL:-auditwheel}

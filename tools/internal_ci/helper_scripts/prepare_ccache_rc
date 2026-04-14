@@ -20,3 +20,4 @@ export GRPC_BUILD_ENABLE_CCACHE=true
 
 # Redis instance housed in grpc-testing cloud project serves as the main compiler cache
 export CCACHE_SECONDARY_STORAGE=redis://10.76.145.84:6379
+export CCACHE_NOHASHDIR=true

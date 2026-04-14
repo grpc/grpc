@@ -26,38 +26,6 @@ source tools/internal_ci/helper_scripts/prepare_build_linux_rc
 # configure ccache
 source tools/internal_ci/helper_scripts/prepare_ccache_rc
 
-# Example for Debian/Ubuntu
-sudo apt-get update
-sudo apt-get install -y redis-tools
-
-echo "--- Inspecting Redis Database ---"
-# Basic connection test
-redis-cli -h 10.76.145.84 -p 6379 ping
-
-# Get general information and stats
-redis-cli -h 10.76.145.84 -p 6379 info
-
-# Get database size
-redis-cli -h 10.76.145.84 -p 6379 dbsize
-
-# List some keys (Avoid KEYS * in production on large databases)
-# Use SCAN for better performance on live instances
-redis-cli -h 10.76.145.84 -p 6379 scan 0 count 100
-
-# Get memory usage for a specific key (if you know one)
-# redis-cli -h 10.76.145.84 -p 6379 memory usage YOUR_KEY
-
-# To get the type of a key
-# redis-cli -h 10.76.145.84 -p 6379 type YOUR_KEY
-
-# To get the value of a String key
-# redis-cli -h 10.76.145.84 -p 6379 get YOUR_KEY
-
-# To get elements from a List key
-# redis-cli -h 10.76.145.84 -p 6379 lrange YOUR_KEY 0 -1
-echo "--- End of Redis Inspection ---"
-
-exit 1
 
 # Build all python linux artifacts (this step actually builds all the binary wheels and source archives)
 tools/run_tests/task_runner.py -f artifact linux python ${TASK_RUNNER_EXTRA_FILTERS} -j 12 -x build_artifacts/sponge_log.xml || BUILD_ARTIFACT_FAILED="true"
