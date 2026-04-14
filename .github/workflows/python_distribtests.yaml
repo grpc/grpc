@@ -28,8 +28,10 @@ jobs:
             os: ubuntu-latest
           - target: python_macos_x64_python3.9
             os: macos-latest
+            python-version: '3.9'
           - target: python_macos_x64_python3.14
             os: macos-latest
+            python-version: '3.14'
           - target: python_windows_x86_Python39_32bit
             os: windows-latest
           - target: python_windows_x86_Python314_32bit
@@ -46,7 +48,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.10'
+          python-version: ${{ matrix.python-version || '3.10' }}
       - name: Restore ccache
         uses: actions/cache@v4
         with:
