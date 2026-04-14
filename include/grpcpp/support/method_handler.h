@@ -56,8 +56,8 @@ inline void CheckForExtraRequests(grpc::internal::Call* call,
                                   const char* error_message) {
   if (!status->ok()) return;
   grpc::internal::CallOpSet<grpc::internal::CallOpGenericRecvMessage> check_ops;
-  grpc::ByteBuffer dummy_msg;
-  check_ops.RecvMessage(&dummy_msg);
+  grpc::ByteBuffer extra_msg;
+  check_ops.RecvMessage(&extra_msg);
   check_ops.AllowNoMessage();
   check_ops.FillOps(call);
   call->cq()->Pluck(&check_ops);

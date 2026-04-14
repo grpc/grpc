@@ -368,8 +368,8 @@ class ClientWriter : public ClientWriterInterface<W> {
     grpc::internal::CallOpSet<grpc::internal::CallOpGenericRecvMessage,
                               grpc::internal::CallOpClientRecvStatus>
         check_ops;
-    grpc::ByteBuffer dummy;
-    check_ops.RecvMessage(&dummy);
+    grpc::ByteBuffer extra_msg;
+    check_ops.RecvMessage(&extra_msg);
     check_ops.AllowNoMessage();
     check_ops.ClientRecvStatus(context_, &status);
     check_ops.FillOps(&call_);
