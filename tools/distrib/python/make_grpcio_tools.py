@@ -166,7 +166,10 @@ def protobuf_submodule_commit_hash():
 def _bazel_query(query):
     """Runs 'bazel query' to collect source file info."""
     print('Running "bazel query %s"' % query)
-    output = subprocess.check_output([BAZEL_DEPS, query])
+    if os.name == 'nt':
+        output = subprocess.check_output(["bash", BAZEL_DEPS, query])
+    else:
+        output = subprocess.check_output([BAZEL_DEPS, query])
     return output.decode("ascii").splitlines()
 
 
