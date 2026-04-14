@@ -53,6 +53,9 @@ jobs:
         with:
           submodules: recursive
           fetch-depth: 0
+      - name: Install gettext (macOS)
+        if: runner.os == 'macOS'
+        run: brew install gettext
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
