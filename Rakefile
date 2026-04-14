@@ -123,12 +123,15 @@ task 'dlls', [:plat] do |t, args|
   prepare_ccache_cmd += "export PATH=\"$PATH:/usr/local/bin\" && "
   prepare_ccache_cmd += "source tools/internal_ci/helper_scripts/prepare_ccache_symlinks_rc "
 
+  install_ccache_cmd = "if [ ! -x \"$(command -v ccache)\" ]; then if [ -x \"$(command -v apt-get)\" ]; then apt-get update && apt-get install -y ccache; elif [ -x \"$(command -v apk)\" ]; then apk update && apk add ccache; fi; fi"
+
   selected_build_configs.each do |opt|
     env_comp = "CC=#{opt[:cross]}-gcc "
     env_comp += "CXX=#{opt[:cross]}-g++ "
     env_comp += "LD=#{opt[:cross]}-gcc "
     env_comp += "LDXX=#{opt[:cross]}-g++ "
     run_rake_compiler(opt[:platform], <<~EOT)
+      #{install_ccache_cmd} && \
       #{prepare_ccache_cmd} && \
       gem update --system --no-document && \
       #{env} #{env_comp} make -j#{nproc_override} #{out} && \
@@ -155,6 +158,8 @@ task 'gem:native', [:plat] do |t, args|
   prepare_ccache_cmd += "export CCACHE_SECONDARY_STORAGE=\"#{ENV.fetch('CCACHE_SECONDARY_STORAGE', '')}\" && "
   prepare_ccache_cmd += "export PATH=\"$PATH:/usr/local/bin\" && "
   prepare_ccache_cmd += "source tools/internal_ci/helper_scripts/prepare_ccache_symlinks_rc "
+
+  install_ccache_cmd = "if [ ! -x \"$(command -v ccache)\" ]; then if [ -x \"$(command -v apt-get)\" ]; then apt-get update && apt-get install -y ccache; elif [ -x \"$(command -v apk)\" ]; then apk update && apk add ccache; fi; fi"
 
   supported_windows_platforms = ['x86-mingw32', 'x64-mingw32', 'x64-mingw-ucrt']
   supported_unix_platforms = [
@@ -188,6 +193,7 @@ task 'gem:native', [:plat] do |t, args|
 
   windows_platforms.each do |plat|
     run_rake_compiler(plat, <<~EOT)
+      #{install_ccache_cmd} && \
       #{prepare_ccache_cmd} && \
       gem update --system --no-document && \
       bundle update --all && \
@@ -230,6 +236,7 @@ task 'gem:native', [:plat] do |t, args|
       makefile_system_override = 'Darwin'
     end
     run_rake_compiler(plat, <<~EOT)
+      #{install_ccache_cmd} && \
       #{prepare_ccache_cmd} && \
       gem update --system --no-document && \
       bundle update --all && \
