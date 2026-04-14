@@ -70,18 +70,25 @@ jobs:
 
   run_distribtests:
     needs: build_artifacts
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
-        target:
-          - python_linux_x64_bullseye
-          - python_linux_x86_bullseye
-          - python_linux_aarch64_python39_buster
-          - python_linux_aarch64_alpine
-          - python_dev_linux_x64_alpine3.18
-          - python_dev_linux_x64_bullseye
-          - python_dev_linux_x86_bullseye
+        include:
+          - target: python_linux_x64_bullseye
+            os: ubuntu-latest
+          - target: python_linux_x86_bullseye
+            os: ubuntu-latest
+          - target: python_linux_aarch64_python39_buster
+            os: ubuntu-24.04-arm
+          - target: python_linux_aarch64_alpine
+            os: ubuntu-24.04-arm
+          - target: python_dev_linux_x64_alpine3.18
+            os: ubuntu-latest
+          - target: python_dev_linux_x64_bullseye
+            os: ubuntu-latest
+          - target: python_dev_linux_x86_bullseye
+            os: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
