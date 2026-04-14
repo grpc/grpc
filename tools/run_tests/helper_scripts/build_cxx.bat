@@ -91,8 +91,9 @@ If "%GRPC_CMAKE_GENERATOR%" == "Ninja" (
 
   echo "%*" | findstr /I "DgRPC_BUILD_TESTS=OFF" >nul
   if %errorlevel% equ 0 (
-    @rem Just build grpc++ and grpc_cli targets when gRPC_BUILD_TESTS is OFF.
-    ninja -j%GRPC_RUN_TESTS_JOBS% grpc++ grpc_cli || goto :error
+    @rem Just build grpc++ (TODO: and one other) targets when gRPC_BUILD_TESTS is OFF.
+    ninja -j%GRPC_RUN_TESTS_JOBS% grpc++ || goto :error
+    @rem ninja -j%GRPC_RUN_TESTS_JOBS% grpc++ grpc_cli || goto :error
   ) else (
     ninja -j%GRPC_RUN_TESTS_JOBS% buildtests_%GRPC_RUN_TESTS_CXX_LANGUAGE_SUFFIX% || goto :error
   )
@@ -127,9 +128,8 @@ If "%GRPC_CMAKE_GENERATOR%" == "Ninja" (
   @rem Don't add -j option here because it will disable gRPC_BUILD_MSVC_MP_COUNT option
   echo "%*" | findstr /I "DgRPC_BUILD_TESTS=OFF" >nul
   if %errorlevel% equ 0 (
-    @rem Just build grpc++ and grpc_cli targets when gRPC_BUILD_TESTS is OFF.
+    @rem Just build grpc++ (TODO: and one other) targets when gRPC_BUILD_TESTS is OFF.
     cmake --build . --target grpc++ --config %MSBUILD_CONFIG% || goto :error
-    @rem cmake --build . --target grpc_cli --config %MSBUILD_CONFIG% || goto :error
   ) else (
     cmake --build . --target buildtests_%GRPC_RUN_TESTS_CXX_LANGUAGE_SUFFIX% --config %MSBUILD_CONFIG% || goto :error
   )
