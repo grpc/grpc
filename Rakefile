@@ -120,6 +120,15 @@ task 'dlls', [:plat] do |t, args|
   # TODO(jtattermusch): deduplicate creation of prepare_ccache_cmd
   prepare_ccache_cmd = "export GRPC_BUILD_ENABLE_CCACHE=\"#{ENV.fetch('GRPC_BUILD_ENABLE_CCACHE', '')}\" && "
   prepare_ccache_cmd += "export CCACHE_SECONDARY_STORAGE=\"#{ENV.fetch('CCACHE_SECONDARY_STORAGE', '')}\" && "
+  prepare_ccache_cmd += "if ! command -v ccache &> /dev/null; then "
+  prepare_ccache_cmd += "  echo \"ccache not found, downloading static binary...\"; "
+  prepare_ccache_cmd += "  ARCH=$(uname -m); "
+  prepare_ccache_cmd += "  if curl -L -f https://github.com/ccache/ccache/releases/download/v4.13.3/ccache-4.13.3-linux-$ARCH.tar.xz | tar -xJ -C /tmp; then "
+  prepare_ccache_cmd += "    export PATH=\"$PATH:/tmp/ccache-4.13.3-linux-$ARCH\"; "
+  prepare_ccache_cmd += "  else "
+  prepare_ccache_cmd += "    echo \"Failed to download ccache, proceeding without it.\"; "
+  prepare_ccache_cmd += "  fi; "
+  prepare_ccache_cmd += "fi && "
   prepare_ccache_cmd += "export PATH=\"$PATH:/usr/local/bin\" && "
   prepare_ccache_cmd += "source tools/internal_ci/helper_scripts/prepare_ccache_symlinks_rc "
 
@@ -143,8 +152,7 @@ task 'gem:native', [:plat] do |t, args|
   verbose = ENV['V'] || '0'
 
   grpc_config = ENV['GRPC_CONFIG'] || 'opt'
-  #target_ruby_minor_versions = ['4.0', '3.4', '3.3', '3.2', '3.1']
-  target_ruby_minor_versions = ['4.0']
+  target_ruby_minor_versions = ['4.0', '3.4', '3.3', '3.2', '3.1']
   selected_plat = "#{args[:plat]}"
 
   # use env variable to set artifact build paralellism
@@ -154,6 +162,15 @@ task 'gem:native', [:plat] do |t, args|
   # and setup ccache symlinks as needed.
   prepare_ccache_cmd = "export GRPC_BUILD_ENABLE_CCACHE=\"#{ENV.fetch('GRPC_BUILD_ENABLE_CCACHE', '')}\" && "
   prepare_ccache_cmd += "export CCACHE_SECONDARY_STORAGE=\"#{ENV.fetch('CCACHE_SECONDARY_STORAGE', '')}\" && "
+  prepare_ccache_cmd += "if ! command -v ccache &> /dev/null; then "
+  prepare_ccache_cmd += "  echo \"ccache not found, downloading static binary...\"; "
+  prepare_ccache_cmd += "  ARCH=$(uname -m); "
+  prepare_ccache_cmd += "  if curl -L -f https://github.com/ccache/ccache/releases/download/v4.13.3/ccache-4.13.3-linux-$ARCH.tar.xz | tar -xJ -C /tmp; then "
+  prepare_ccache_cmd += "    export PATH=\"$PATH:/tmp/ccache-4.13.3-linux-$ARCH\"; "
+  prepare_ccache_cmd += "  else "
+  prepare_ccache_cmd += "    echo \"Failed to download ccache, proceeding without it.\"; "
+  prepare_ccache_cmd += "  fi; "
+  prepare_ccache_cmd += "fi && "
   prepare_ccache_cmd += "export PATH=\"$PATH:/usr/local/bin\" && "
   prepare_ccache_cmd += "source tools/internal_ci/helper_scripts/prepare_ccache_symlinks_rc "
 
@@ -236,14 +253,14 @@ task 'gem:native', [:plat] do |t, args|
       bundle update --all && \
       bundle exec rake clean && \
       export GRPC_RUBY_DEBUG_SYMBOLS_OUTPUT_DIR=#{debug_symbols_dir} && \
-      ccache --show-stats && \
+      (ccache --show-stats || true) && \
       bundle exec rake native:#{plat} pkg/#{spec.full_name}-#{plat}.gem pkg/#{spec.full_name}.gem \
         RUBY_CC_VERSION=#{RakeCompilerDock.ruby_cc_version(*target_ruby_minor_versions)} \
         V=#{verbose} \
         GRPC_CONFIG=#{grpc_config} \
         GRPC_RUBY_BUILD_PROCS=#{nproc_override} \
         SYSTEM=#{makefile_system_override} && \
-      ccache --show-stats
+      (ccache --show-stats || true)
     EOT
   end
   # Generate debug symbol packages to complement the native libraries we just built
