@@ -23,6 +23,13 @@ export PYTHON=${PYTHON:-python}
 export AUDITWHEEL=${AUDITWHEEL:-auditwheel}
 export PIP_BREAK_SYSTEM_PACKAGES=1
 
+if [ "$GRPC_BUILD_MAC" != "" ]; then
+  echo "Creating virtual environment for macOS build..."
+  "${PYTHON}" -m venv macos_venv
+  source macos_venv/bin/activate
+  export PYTHON=python
+fi
+
 # activate ccache if desired
 # shellcheck disable=SC1091
 source tools/internal_ci/helper_scripts/prepare_ccache_symlinks_rc
