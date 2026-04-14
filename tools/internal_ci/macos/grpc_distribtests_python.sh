@@ -25,6 +25,14 @@ export PREPARE_BUILD_INSTALL_DEPS_PYTHON=true
 source tools/internal_ci/helper_scripts/prepare_ccache_rc
 source tools/internal_ci/helper_scripts/prepare_build_macos_rc
 
+# ccache diagnostics
+echo "--- ccache diagnostics ---"
+ccache -V | grep -i "Configurable storage" || echo "CCACHE WARNING: No Redis support in this binary"
+nc -zv -w 5 10.76.145.84 6379 || echo "NETWORK ERROR: Cannot reach Redis at 10.76.145.84:6379"
+export CCACHE_LOGFILE=/tmpfs/ccache.log
+ccache -M 10G
+echo "--------------------------"
+
 # TODO(jtattermusch): cleanup this prepare build step (needed for python artifact build)
 # install cython for all python versions
 python3.9 -m pip install -U 'cython==3.1.1' setuptools==77.0.1 six==1.16.0 wheel --user
@@ -39,6 +47,13 @@ tools/run_tests/task_runner.py -f artifact macos python ${TASK_RUNNER_EXTRA_FILT
 
 # show ccache stats
 ccache -s || true
+
+# show ccache log if it exists
+if [ -f /tmpfs/ccache.log ]; then
+  echo "--- ccache.log (tail) ---"
+  tail -n 100 /tmpfs/ccache.log
+  echo "-------------------------"
+fi
 
 # the next step expects to find the artifacts from the previous step in the "input_artifacts" folder.
 rm -rf input_artifacts
