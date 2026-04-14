@@ -46,6 +46,8 @@ if [[ "$(ls "${GEM_SOURCE}/gems" | grep -c grpc)" != 1 ]]; then
   echo "Sanity check failed. Copied over more than one grpc gem into the gem source directory."
   exit 1
 fi;
+source "${EXTERNAL_GIT_ROOT}/tools/internal_ci/helper_scripts/prepare_ccache_symlinks_rc"
+
 gem install builder
 gem generate_index --directory "${GEM_SOURCE}"
 

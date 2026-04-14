@@ -17,7 +17,7 @@ FROM ubuntu:24.04
 # Install Git and basic packages.
 RUN apt-get update -y && apt-get install -y \
   curl gnupg2 \
-  gcc && apt-get clean
+  gcc ccache && apt-get clean
 
 #==================
 # Ruby dependencies
