@@ -66,7 +66,7 @@ jobs:
       - name: Build Artifact
         env:
           GRPC_BUILD_ENABLE_CCACHE: "true"
-          DOCKER_EXTRA_ARGS: "-v ${{ github.workspace }}/.ccache:/ccache_dir -e CCACHE_DIR=/ccache_dir -e CCACHE_REMOTE_STORAGE=redis://172.17.0.1:6379"
+          DOCKER_EXTRA_ARGS: "-v ${{ github.workspace }}/.ccache:/ccache_dir -e CCACHE_DIR=/ccache_dir -e CCACHE_SECONDARY_STORAGE=redis://172.17.0.1:6379"
         run: |
           tools/run_tests/task_runner.py -b ${{ matrix.target }}
       - name: Upload Artifacts
