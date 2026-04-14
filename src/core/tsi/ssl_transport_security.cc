@@ -503,7 +503,7 @@ static void verified_root_cert_free(void* /*parent*/, void* ptr,
 }
 
 static void init_openssl(void) {
-#if OPENSSL_VERSION_NUMBER >= 0x10100000
+#if OPENSSL_VERSION_NUMBER >= 0x10101000L
   OPENSSL_init_ssl(OPENSSL_INIT_NO_ATEXIT, nullptr);
   // Explicitly trigger OpenSSL cleanup via atexit ONLY after gRPC's core
   // teardown completes to prevent out-of-order provider reference releases.
@@ -529,6 +529,8 @@ static void init_openssl(void) {
     grpc_wait_for_shutdown_with_timeout(absl::Seconds(timeout_sec));
     OPENSSL_cleanup();
   });
+#elif OPENSSL_VERSION_NUMBER >= 0x10100000
+  OPENSSL_init_ssl(0, nullptr);
 #else
   SSL_library_init();
   SSL_load_error_strings();
