@@ -58,12 +58,32 @@ def _commandfile_spawn(self, command, **kwargs):
             # (can happen for extra long link commands)
             command_file.write(" \n".join(escaped_args))
         modified_command = command[:1] + ["@{}".format(command_filename)]
+        ccache_requested = os.environ.get(
+            "GRPC_BUILD_ENABLE_CCACHE", ""
+        ).lower() in ["true", "1"]
+        if ccache_requested and os.path.basename(
+            modified_command[0]
+        ).lower() in ["cl.exe", "cl"]:
+            if shutil.which("ccache"):
+                modified_command = ["ccache"] + modified_command
+                print("gRPC Windows Build: ccache intercepting -> " + " ".join(modified_command))
         try:
             _classic_spawn(self, modified_command, **kwargs)
         finally:
             shutil.rmtree(temporary_directory)
     else:
+        ccache_requested = os.environ.get(
+            "GRPC_BUILD_ENABLE_CCACHE", ""
+        ).lower() in ["true", "1"]
+        if ccache_requested and os.path.basename(command[0]).lower() in [
+            "cl.exe",
+            "cl",
+        ]:
+            if shutil.which("ccache"):
+                command = ["ccache"] + command
+                print("gRPC Windows Build: ccache intercepting -> " + " ".join(command))
         _classic_spawn(self, command, **kwargs)
+
 
 
 def monkeypatch_spawn():

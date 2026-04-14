@@ -17,5 +17,7 @@ set -ex
 
 BUILD_PYTHON=$(realpath "$(dirname "$0")/build_python.sh")
 export MSYSTEM=$1
+export MSYS2_PATH_TYPE=inherit
 shift 1
 bash --login "$BUILD_PYTHON" "$@"
+
