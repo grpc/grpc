@@ -15,5 +15,5 @@
 FROM ruby:3.2-alpine
 
 # Our test infrastructure demands bash
-RUN apk update && apk add bash build-base ccache
+RUN apk update && apk add bash build-base
 

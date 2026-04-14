@@ -15,7 +15,7 @@
 FROM ruby:4.0-alpine
 
 # Our test infrastructure demands bash
-RUN apk update && apk add bash build-base ccache
+RUN apk update && apk add bash build-base
 
 # TODO: Add test for x86 musl platform
 # FROM --platform=linux/386 ruby:3.4-alpine
