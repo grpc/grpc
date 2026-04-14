@@ -22,6 +22,7 @@ source $(dirname $0)/../../../tools/internal_ci/helper_scripts/move_src_tree_and
 cd $(dirname $0)/../../..
 
 export PREPARE_BUILD_INSTALL_DEPS_PYTHON=true
+source tools/internal_ci/helper_scripts/prepare_ccache_rc
 source tools/internal_ci/helper_scripts/prepare_build_macos_rc
 
 # TODO(jtattermusch): cleanup this prepare build step (needed for python artifact build)
@@ -35,6 +36,9 @@ python3.14 -m pip install -U 'cython==3.1.1' setuptools==77.0.1 six==1.16.0 whee
 
 # Build all python macos artifacts (this step actually builds all the binary wheels and source archives)
 tools/run_tests/task_runner.py -f artifact macos python ${TASK_RUNNER_EXTRA_FILTERS} -j 2 -x build_artifacts/sponge_log.xml || FAILED="true"
+
+# show ccache stats
+ccache -s || true
 
 # the next step expects to find the artifacts from the previous step in the "input_artifacts" folder.
 rm -rf input_artifacts
