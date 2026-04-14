@@ -21,6 +21,7 @@ cd "$(dirname "$0")/../../.."
 export GRPC_PYTHON_BUILD_WITH_CYTHON=1
 export PYTHON=${PYTHON:-python}
 export AUDITWHEEL=${AUDITWHEEL:-auditwheel}
+export CCACHE_LOGFILE=$(mktemp -d)/ccache.log
 
 # activate ccache if desired
 # shellcheck disable=SC1091
@@ -332,3 +333,5 @@ if [ -x "$(command -v ccache)" ]
 then
   ccache --show-stats || true
 fi
+
+cat ${CCACHE_LOGFILE}
