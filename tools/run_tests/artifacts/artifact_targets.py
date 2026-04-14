@@ -287,7 +287,7 @@ class RubyArtifact:
             [
                 "tools/run_tests/artifacts/build_artifact_ruby.sh",
                 self.gem_platform,
-                self.build_type
+                self.build_type,
             ],
             use_workspace=True,
             timeout_seconds=240 * 60,
