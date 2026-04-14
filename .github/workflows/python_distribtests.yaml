@@ -80,7 +80,7 @@ jobs:
           GRPC_BUILD_ENABLE_CCACHE: "true"
           DOCKER_EXTRA_ARGS: "-v ${{ github.workspace }}/.ccache:/ccache_dir -e CCACHE_DIR=/ccache_dir"
         run: |
-          tools/run_tests/task_runner.py -b ${{ matrix.target }}
+          python tools/run_tests/task_runner.py -b ${{ matrix.target }}
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
@@ -131,4 +131,4 @@ jobs:
           ls -R input_artifacts
       - name: Run Distribtest
         run: |
-          tools/run_tests/task_runner.py -b ${{ matrix.target }}
+          python tools/run_tests/task_runner.py -b ${{ matrix.target }}
