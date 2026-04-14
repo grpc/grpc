@@ -129,6 +129,7 @@ task 'dlls', [:plat] do |t, args|
   prepare_ccache_cmd += "    echo \"Failed to download ccache, proceeding without it.\"; "
   prepare_ccache_cmd += "  fi; "
   prepare_ccache_cmd += "fi && "
+  prepare_ccache_cmd += "export PATH=\"$PATH:/usr/local/bin\" && "
   prepare_ccache_cmd += "source tools/internal_ci/helper_scripts/prepare_ccache_symlinks_rc "
 
   selected_build_configs.each do |opt|
@@ -170,6 +171,7 @@ task 'gem:native', [:plat] do |t, args|
   prepare_ccache_cmd += "    echo \"Failed to download ccache, proceeding without it.\"; "
   prepare_ccache_cmd += "  fi; "
   prepare_ccache_cmd += "fi && "
+  prepare_ccache_cmd += "export PATH=\"$PATH:/usr/local/bin\" && "
   prepare_ccache_cmd += "source tools/internal_ci/helper_scripts/prepare_ccache_symlinks_rc "
 
   supported_windows_platforms = ['x86-mingw32', 'x64-mingw32', 'x64-mingw-ucrt']
