@@ -30,7 +30,7 @@ source tools/internal_ci/helper_scripts/prepare_build_linux_ruby_artifact_rc
 source tools/internal_ci/helper_scripts/prepare_ccache_rc
 
 # Resolve dependencies once before parallel builds
-export BUNDLE_PATH=bundle_local_gems
+export BUNDLE_PATH=bundle_local
 tools/run_tests/helper_scripts/bundle_install_wrapper.sh
 
 # Build all ruby linux artifacts (this step actually builds all the native and source gems)
