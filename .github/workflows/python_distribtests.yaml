@@ -54,14 +54,15 @@ jobs:
           submodules: recursive
           fetch-depth: 0
 
-      - name: Install gettext (macOS)
+      - name: Install Intel gettext (macOS)
         if: runner.os == 'macOS'
         run: |
-          brew install gettext
-          if [ "$(uname -m)" = "arm64" ]; then
-            sudo mkdir -p /usr/local/opt
-            sudo ln -s /opt/homebrew/opt/gettext /usr/local/opt/gettext
-          fi
+          # Install Intel Homebrew in /usr/local
+          sudo mkdir -p /usr/local
+          sudo chown -R $(whoami) /usr/local
+          curl -L https://github.com/Homebrew/brew/tarball/master | tar xz --strip 1 -C /usr/local
+          # Install x64 gettext using Intel Homebrew
+          arch -x86_64 /usr/local/bin/brew install gettext
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
