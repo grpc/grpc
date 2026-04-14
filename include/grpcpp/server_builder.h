@@ -224,6 +224,10 @@ class ServerBuilder {
   /// Set the attached buffer pool for this server
   ServerBuilder& SetResourceQuota(const grpc::ResourceQuota& resource_quota);
 
+  ServerBuilder& SetEventEngine(
+      std::shared_ptr<grpc_event_engine::experimental::EventEngine>
+          event_engine);
+
   ServerBuilder& SetOption(std::unique_ptr<grpc::ServerBuilderOption> option);
 
   /// Options for synchronous servers.
@@ -428,6 +432,8 @@ class ServerBuilder {
   grpc::AsyncGenericService* generic_service_{nullptr};
   std::unique_ptr<ContextAllocator> context_allocator_;
   grpc::CallbackGenericService* callback_generic_service_{nullptr};
+  std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_ =
+      nullptr;
 
   struct {
     bool is_set;

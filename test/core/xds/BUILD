@@ -23,7 +23,13 @@ load(
 load("//test/core/test_util:grpc_fuzzer.bzl", "grpc_fuzz_test")
 load("//test/cpp/microbenchmarks:grpc_benchmark_config.bzl", "HISTORY", "grpc_cc_benchmark")
 
-grpc_package(name = "test/core/xds")
+grpc_package(
+    name = "test/core/xds",
+    features = [
+        "layering_check",
+        "parse_headers",
+    ],
+)
 
 licenses(["notice"])
 
@@ -37,6 +43,7 @@ grpc_cc_test(
         "absl/strings",
         "absl/strings:str_format",
     ],
+    tags = ["xds_test"],
     uses_event_engine = False,
     uses_polling = False,
     deps = [
@@ -69,6 +76,7 @@ grpc_cc_test(
         "absl/log:check",
         "gtest",
     ],
+    tags = ["xds_test"],
     uses_event_engine = False,
     uses_polling = False,
     deps = [
@@ -92,6 +100,7 @@ grpc_cc_test(
         "absl/strings:str_format",
         "gtest",
     ],
+    tags = ["xds_test"],
     uses_event_engine = False,
     uses_polling = False,
     deps = [
@@ -117,6 +126,7 @@ grpc_cc_test(
         "absl/base:no_destructor",
         "absl/status",
     ],
+    tags = ["xds_test"],
     uses_event_engine = False,
     uses_polling = False,
     deps = [
@@ -143,6 +153,7 @@ grpc_cc_test(
         "absl/status",
         "absl/status:statusor",
     ],
+    tags = ["xds_test"],
     uses_event_engine = False,
     uses_polling = False,
     deps = [
@@ -186,6 +197,7 @@ grpc_cc_test(
         "@com_google_protobuf//upb/mem",
         "@com_google_protobuf//upb/reflection",
     ],
+    tags = ["xds_test"],
     uses_event_engine = False,
     uses_polling = False,
     deps = [
@@ -256,6 +268,7 @@ grpc_cc_test(
         "absl/time",
         "@com_google_protobuf//upb/reflection",
     ],
+    tags = ["xds_test"],
     uses_event_engine = True,
     uses_polling = False,
     deps = [
@@ -324,6 +337,7 @@ grpc_fuzz_test(
     deps = [
         ":xds_client_test_peer",
         ":xds_transport_fake",
+        "//:gpr_platform",
         "//:grpc",
         "//:iomgr_timer",
         "//:orphanable",
@@ -346,8 +360,10 @@ grpc_fuzz_test(
         "@envoy_api//envoy/config/endpoint/v3:pkg_cc_proto",
         "@envoy_api//envoy/config/listener/v3:pkg_cc_proto",
         "@envoy_api//envoy/config/route/v3:pkg_cc_proto",
+        "@envoy_api//envoy/extensions/filters/http/fault/v3:pkg_cc_proto",
         "@envoy_api//envoy/extensions/filters/http/router/v3:pkg_cc_proto",
         "@envoy_api//envoy/extensions/filters/network/http_connection_manager/v3:pkg_cc_proto",
+        "@envoy_api//envoy/extensions/transport_sockets/tls/v3:pkg_cc_proto",
         "@envoy_api//envoy/service/discovery/v3:pkg_cc_proto",
         "@com_google_protobuf//:protobuf",
     ],
@@ -365,10 +381,13 @@ grpc_cc_test(
         "@com_google_protobuf//upb/mem",
         "@com_google_protobuf//upb/reflection",
     ],
+    tags = ["xds_test"],
     uses_event_engine = False,
     uses_polling = False,
     deps = [
+        "//:config",
         "//:envoy_extensions_transport_sockets_tls_upb",
+        "//:envoy_type_upb",
         "//:gpr",
         "//:grpc",
         "//:grpc_trace",
@@ -384,11 +403,17 @@ grpc_cc_test(
         "//src/core:validation_errors",
         "//src/core:xds_common_types",
         "//test/core/test_util:grpc_test_util",
+        "//test/core/test_util:scoped_env_var",
         "//test/cpp/util:grpc_cli_utils",
         "@com_github_cncf_xds//udpa/type/v1:pkg_cc_proto",
         "@com_github_cncf_xds//xds/type/v3:pkg_cc_proto",
         "@com_google_protobuf//:struct_cc_proto",
         "@com_google_protobuf//:wrappers_cc_proto",
+        "@envoy_api//envoy/config/common/mutation_rules/v3:pkg_cc_proto",
+        "@envoy_api//envoy/config/core/v3:pkg_cc_proto",
+        "@envoy_api//envoy/extensions/grpc_service/call_credentials/access_token/v3:pkg_cc_proto",
+        "@envoy_api//envoy/extensions/grpc_service/channel_credentials/google_default/v3:pkg_cc_proto",
+        "@envoy_api//envoy/extensions/grpc_service/channel_credentials/insecure/v3:pkg_cc_proto",
         "@envoy_api//envoy/extensions/transport_sockets/tls/v3:pkg_cc_proto",
         "@envoy_api//envoy/type/matcher/v3:pkg_cc_proto",
     ],
@@ -403,6 +428,7 @@ grpc_cc_test(
         "absl/status:statusor",
         "absl/strings:str_format",
     ],
+    tags = ["xds_test"],
     uses_event_engine = False,
     uses_polling = False,
     deps = [
@@ -434,6 +460,7 @@ grpc_cc_benchmark(
         "//src/core:down_cast",
         "//src/core:grpc_matchers",
         "//src/core:grpc_xds_client",
+        "//src/core:xds_matcher",
         "//test/core/test_util:grpc_test_util",
     ],
 )
@@ -451,6 +478,7 @@ grpc_cc_test(
         "//src/core:down_cast",
         "//src/core:grpc_matchers",
         "//src/core:grpc_xds_client",
+        "//src/core:xds_matcher",
         "//test/core/test_util:grpc_test_util",
     ],
 )
@@ -463,6 +491,7 @@ grpc_cc_test(
         "@com_google_protobuf//upb/mem",
         "@com_google_protobuf//upb/reflection",
     ],
+    tags = ["xds_test"],
     uses_event_engine = False,
     uses_polling = False,
     deps = [
@@ -472,6 +501,8 @@ grpc_cc_test(
         "//src/core:grpc_xds_client",
         "//src/core:upb_utils",
         "//src/core:validation_errors",
+        "//src/core:xds_matcher",
+        "//src/core:xds_matcher_context",
         "//test/core/test_util:grpc_test_util",
         "@com_github_cncf_xds//xds/type/matcher/v3:pkg_cc_proto",
         "@com_github_cncf_xds//xds/type/v3:pkg_cc_proto",
@@ -495,6 +526,7 @@ grpc_cc_test(
         "@com_google_protobuf//upb/mem",
         "@com_google_protobuf//upb/reflection",
     ],
+    tags = ["xds_test"],
     uses_event_engine = False,
     uses_polling = False,
     deps = [
@@ -507,6 +539,7 @@ grpc_cc_test(
         "//:grpc_trace",
         "//:ref_counted_ptr",
         "//:xds_client",
+        "//src/core:composite_filter",
         "//src/core:error",
         "//src/core:gcp_authentication_filter",
         "//src/core:grpc_check",
@@ -527,7 +560,10 @@ grpc_cc_test(
         "@envoy_api//envoy/config/core/v3:pkg_cc_proto",
         "@envoy_api//envoy/config/rbac/v3:pkg_cc_proto",
         "@envoy_api//envoy/config/route/v3:pkg_cc_proto",
+        "@envoy_api//envoy/extensions/common/matching/v3:pkg_cc_proto",
         "@envoy_api//envoy/extensions/filters/common/fault/v3:pkg_cc_proto",
+        "@envoy_api//envoy/extensions/filters/common/matcher/action/v3:pkg_cc_proto",
+        "@envoy_api//envoy/extensions/filters/http/composite/v3:pkg_cc_proto",
         "@envoy_api//envoy/extensions/filters/http/fault/v3:pkg_cc_proto",
         "@envoy_api//envoy/extensions/filters/http/gcp_authn/v3:pkg_cc_proto",
         "@envoy_api//envoy/extensions/filters/http/rbac/v3:pkg_cc_proto",
@@ -552,6 +588,7 @@ grpc_cc_test(
         "@com_google_protobuf//upb/mem",
         "@com_google_protobuf//upb/reflection",
     ],
+    tags = ["xds_test"],
     uses_event_engine = False,
     uses_polling = False,
     deps = [
@@ -599,6 +636,7 @@ grpc_cc_test(
         "@com_google_protobuf//upb/mem",
         "@com_google_protobuf//upb/reflection",
     ],
+    tags = ["xds_test"],
     uses_event_engine = False,
     uses_polling = False,
     deps = [
@@ -643,6 +681,7 @@ grpc_cc_test(
         "absl/strings:str_format",
         "gtest",
     ],
+    tags = ["xds_test"],
     uses_event_engine = False,
     uses_polling = False,
     deps = [
@@ -693,6 +732,7 @@ grpc_cc_test(
         "@com_google_protobuf//upb/mem",
         "@com_google_protobuf//upb/reflection",
     ],
+    tags = ["xds_test"],
     uses_event_engine = False,
     uses_polling = False,
     deps = [
@@ -716,5 +756,31 @@ grpc_cc_test(
         "@envoy_api//envoy/config/core/v3:pkg_cc_proto",
         "@envoy_api//envoy/config/endpoint/v3:pkg_cc_proto",
         "@envoy_api//envoy/type/v3:pkg_cc_proto",
+    ],
+)
+
+grpc_cc_test(
+    name = "xds_routing_test",
+    srcs = ["xds_routing_test.cc"],
+    external_deps = [
+        "gtest",
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
+    ],
+    tags = ["xds_test"],
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//:grpc",
+        "//:grpc_base",
+        "//src/core:blackboard",
+        "//src/core:channel_args",
+        "//src/core:filter_chain",
+        "//src/core:grpc_xds_client",
+        "//src/core:unique_type_name",
+        "//src/core:xds_listener",
+        "//src/core:xds_route_config",
+        "//test/core/test_util:grpc_test_util",
     ],
 )

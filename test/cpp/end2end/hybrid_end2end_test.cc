@@ -28,6 +28,7 @@
 #include <memory>
 #include <thread>
 
+#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/util/env.h"
 #include "src/core/util/grpc_check.h"
@@ -35,6 +36,7 @@
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/test_config.h"
+#include "test/cpp/end2end/end2end_test_utils.h"
 #include "test/cpp/end2end/test_service_impl.h"
 #include "test/cpp/util/byte_buffer_proto_helper.h"
 #include "gtest/gtest.h"
@@ -231,12 +233,7 @@ class HybridEnd2endTest : public ::testing::TestWithParam<bool> {
  protected:
   HybridEnd2endTest() {}
 
-  static void SetUpTestSuite() {
-#if TARGET_OS_IPHONE
-    // Workaround Apple CFStream bug
-    grpc_core::SetEnv("grpc_cfstream", "0");
-#endif
-  }
+  static void SetUpTestSuite() {}
 
   void SetUp() override {
     inproc_ = (::testing::UnitTest::GetInstance()
@@ -301,10 +298,12 @@ class HybridEnd2endTest : public ::testing::TestWithParam<bool> {
   }
 
   void ResetStub() {
+    ChannelArguments args;
+    ApplyCommonChannelArguments(args);
     std::shared_ptr<Channel> channel =
         inproc_ ? server_->InProcessChannel(ChannelArguments())
-                : grpc::CreateChannel(server_address_.str(),
-                                      InsecureChannelCredentials());
+                : grpc::CreateCustomChannel(server_address_.str(),
+                                            InsecureChannelCredentials(), args);
     stub_ = grpc::testing::EchoTestService::NewStub(channel);
   }
 

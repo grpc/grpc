@@ -256,13 +256,26 @@ static bool alts_zero_copy_grpc_protector_read_frame_size(
   return read_frame_size(protected_slices, frame_size);
 }
 
+static void alts_zero_copy_grpc_protector_set_allocator(
+    tsi_zero_copy_grpc_protector* self,
+    tsi_zero_copy_grpc_protector_allocator_cb alloc_cb, void* user_data) {
+  alts_zero_copy_grpc_protector* impl =
+      reinterpret_cast<alts_zero_copy_grpc_protector*>(self);
+  // Set on both protect and unprotect protocols
+  alts_grpc_record_protocol_set_allocation_callback(impl->record_protocol,
+                                                    alloc_cb, user_data);
+  alts_grpc_record_protocol_set_allocation_callback(impl->unrecord_protocol,
+                                                    alloc_cb, user_data);
+}
+
 static const tsi_zero_copy_grpc_protector_vtable
     alts_zero_copy_grpc_protector_vtable = {
         alts_zero_copy_grpc_protector_protect,
         alts_zero_copy_grpc_protector_unprotect,
         alts_zero_copy_grpc_protector_destroy,
         alts_zero_copy_grpc_protector_max_frame_size,
-        alts_zero_copy_grpc_protector_read_frame_size};
+        alts_zero_copy_grpc_protector_read_frame_size,
+        alts_zero_copy_grpc_protector_set_allocator};
 
 tsi_result alts_zero_copy_grpc_protector_create(
     const grpc_core::GsecKeyFactoryInterface& key_factory, bool is_client,

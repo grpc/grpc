@@ -28,7 +28,7 @@ namespace {
 
 TEST(SingleSetPtrTest, NoOp) { SingleSetPtr<int>(); }
 
-TEST(SingleSetPtrTest, CanSet) {
+TEST(SingleSetPtrDeathTest, CanSet) {
   SingleSetPtr<int> p;
   EXPECT_FALSE(p.is_set());
   EXPECT_DEATH_IF_SUPPORTED({ LOG(ERROR) << *p; }, "");

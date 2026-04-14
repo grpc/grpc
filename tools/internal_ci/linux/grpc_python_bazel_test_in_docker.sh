@@ -25,9 +25,6 @@ python_bazel_tests/bazel_wrapper ${RESULTSTORE_RESULTS_FLAG} test ${BAZEL_FLAGS}
 python3 tools/run_tests/python_utils/bazel_report_helper.py --report_path python_bazel_tests_single_threaded_unary_streams
 python_bazel_tests_single_threaded_unary_streams/bazel_wrapper ${RESULTSTORE_RESULTS_FLAG} test --config=python_single_threaded_unary_stream ${BAZEL_FLAGS} ${TEST_TARGETS}
 
-python3 tools/run_tests/python_utils/bazel_report_helper.py --report_path python_bazel_tests_poller_engine
-python_bazel_tests_poller_engine/bazel_wrapper ${RESULTSTORE_RESULTS_FLAG} test --config=python_poller_engine ${BAZEL_FLAGS} ${TEST_TARGETS}
-
 python3 tools/run_tests/python_utils/bazel_report_helper.py --report_path python_bazel_tests_fork_support
 
 # TODO(https://github.com/grpc/grpc/issues/32207): Remove from this job once

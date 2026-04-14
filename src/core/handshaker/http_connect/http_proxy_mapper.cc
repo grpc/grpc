@@ -29,7 +29,7 @@
 #include <string>
 #include <utility>
 
-#include "src/core/handshaker/http_connect/http_connect_handshaker.h"
+#include "src/core/handshaker/http_connect/http_connect_client_handshaker.h"
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"

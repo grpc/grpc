@@ -32,6 +32,7 @@ struct FuzzingEnvironment {
   // configuration requests it.
   RefCountedPtr<ResourceQuota> resource_quota =
       MakeResourceQuota("fuzzing_quota");
+  std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine;
 };
 
 // Create ChannelArgs from a fuzzer configuration.

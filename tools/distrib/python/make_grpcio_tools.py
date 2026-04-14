@@ -66,7 +66,14 @@ EXTERNAL_LINKS = [
     ("@utf8_range//", "third_party/protobuf/third_party/utf8_range"),
 ]
 
-PROTOBUF_PROTO_PREFIX = "@com_google_protobuf//src/"
+PROTOBUF_PROTO_PREFIX = "@com_google_protobuf//"
+
+# Exclude conditional dependencies that are not needed by gRPC.
+# Required files can be found at third_party/protobuf/src/file_lists.cmake
+UPB_EXCLUDE_CC_FILES_PATTERN = "third_party/protobuf/upb/wire/decode_fast"
+UPB_EXCLUDE_CC_FILES_EXCEPTIONS = [
+    "third_party/protobuf/upb/wire/decode_fast/select.c",
+]
 
 # will be added to include path when building grpcio_tools
 CC_INCLUDES = [
@@ -80,7 +87,7 @@ CC_INCLUDES = [
 ]
 
 # include path for .proto files
-PROTO_INCLUDE = os.path.join("third_party", "protobuf", "src")
+PROTO_INCLUDE = os.path.join("third_party", "protobuf")
 
 # the target directory is relative to the grpcio_tools package root.
 GRPCIO_TOOLS_ROOT_PREFIX = "tools/distrib/python/grpcio_tools/"
@@ -92,6 +99,8 @@ COPY_FILES_SOURCE_TARGET_PAIRS = [
     ("src/compiler", "grpc_root/src/compiler"),
     ("third_party/abseil-cpp/absl", "third_party/abseil-cpp/absl"),
     ("third_party/protobuf/src", "third_party/protobuf/src"),
+    ("third_party/protobuf/go", "third_party/protobuf/go"),
+    ("third_party/protobuf/java", "third_party/protobuf/java"),
     ("third_party/protobuf/upb", "third_party/protobuf/upb"),
     (
         "third_party/protobuf/upb_generator",
@@ -137,6 +146,10 @@ BAZEL_DEPS_COMMON_PROTOS_QUERIES = [
     "@com_google_protobuf//:well_known_type_protos",
     # has both plugin.proto and descriptor.proto
     "@com_google_protobuf//:compiler_plugin_proto",
+    # language features protos
+    "@com_google_protobuf//:cpp_features_proto",
+    "@com_google_protobuf//:java_features_proto",
+    "@com_google_protobuf//:go_features_proto",
 ]
 
 
@@ -219,6 +232,17 @@ def _generate_deps_file_content():
             filepath = _bazel_name_to_file_path(name)
             if filepath:
                 cc_files.append(filepath)
+
+    # Exclude certain conditional dependencies that don't build properly
+    # from upb.
+    def _should_include(cc_file):
+        if UPB_EXCLUDE_CC_FILES_PATTERN not in cc_file:
+            return True
+        if cc_file in UPB_EXCLUDE_CC_FILES_EXCEPTIONS:
+            return True
+        return False
+
+    cc_files = [f for f in cc_files if _should_include(f)]
 
     # Collect list of .proto files that will be bundled in the grpcio_tools package.
     raw_proto_files = []

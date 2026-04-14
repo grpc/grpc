@@ -31,7 +31,7 @@ def ssl_session_cache_lru(capacity):
     return SSLSessionCache(_cygrpc.SSLSessionCacheLRU(capacity))
 
 
-class SSLSessionCache(object):
+class SSLSessionCache:
     """An encapsulation of a session cache used for TLS session resumption.
 
     Instances of this class can be passed to a Channel as values for the

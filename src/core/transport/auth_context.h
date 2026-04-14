@@ -120,6 +120,7 @@ struct grpc_auth_context
   void ensure_capacity();
   void add_property(const char* name, const char* value, size_t value_length);
   void add_cstring_property(const char* name, const char* value);
+  absl::string_view protocol() const { return protocol_; }
   void set_protocol(absl::string_view protocol);
   // Returns std::nullopt if auth context comparison is not supported.
   std::optional<bool> CompareAuthContext(const grpc_auth_context* other);

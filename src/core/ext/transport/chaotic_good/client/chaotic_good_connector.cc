@@ -212,6 +212,8 @@ auto ConnectChaoticGood(EventEngine::ResolvedAddress addr,
 
 void ChaoticGoodConnector::Connect(const Args& args, Result* result,
                                    grpc_closure* notify) {
+  // TODO(ctiller): Figure out a better value to use here.
+  result->max_concurrent_streams = std::numeric_limits<uint32_t>::max();
   auto event_engine = args.channel_args.GetObjectRef<EventEngine>();
   auto arena = SimpleArenaAllocator(0)->MakeArena();
   auto result_notifier = std::make_unique<ResultNotifier>(args, result, notify);
@@ -229,8 +231,7 @@ void ChaoticGoodConnector::Connect(const Args& args, Result* result,
         return TrySeq(
             ConnectChaoticGood(
                 resolved_addr, result_notifier_ptr->args.channel_args,
-                Timestamp::Now() + Duration::FromSecondsAsDouble(kTimeoutSecs),
-                std::move(client_settings)),
+                result_notifier_ptr->args.deadline, std::move(client_settings)),
             [resolved_addr,
              result_notifier_ptr](ConnectChaoticGoodResult result) {
               auto connector = MakeRefCounted<ConnectionCreator>(

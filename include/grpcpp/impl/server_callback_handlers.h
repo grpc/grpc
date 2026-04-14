@@ -144,7 +144,7 @@ class CallbackUnaryHandler : public grpc::internal::MethodHandler {
         finish_ops_.ServerSendStatus(&ctx_->trailing_metadata_, s);
       }
       finish_ops_.set_core_cq_tag(&finish_tag_);
-      call_.PerformOps(&finish_ops_);
+      finish_ops_.FillOps(&call_);
     }
 
     void SendInitialMetadata() override {
@@ -171,7 +171,7 @@ class CallbackUnaryHandler : public grpc::internal::MethodHandler {
       }
       ctx_->sent_initial_metadata_ = true;
       meta_ops_.set_core_cq_tag(&meta_tag_);
-      call_.PerformOps(&meta_ops_);
+      meta_ops_.FillOps(&call_);
     }
 
    private:
@@ -333,7 +333,7 @@ class CallbackClientStreamingHandler : public grpc::internal::MethodHandler {
         finish_ops_.ServerSendStatus(&ctx_->trailing_metadata_, s);
       }
       finish_ops_.set_core_cq_tag(&finish_tag_);
-      call_.PerformOps(&finish_ops_);
+      finish_ops_.FillOps(&call_);
     }
 
     void SendInitialMetadata() override {
@@ -358,13 +358,13 @@ class CallbackClientStreamingHandler : public grpc::internal::MethodHandler {
       }
       ctx_->sent_initial_metadata_ = true;
       meta_ops_.set_core_cq_tag(&meta_tag_);
-      call_.PerformOps(&meta_ops_);
+      meta_ops_.FillOps(&call_);
     }
 
     void Read(RequestType* req) override {
       this->Ref();
       read_ops_.RecvMessage(req);
-      call_.PerformOps(&read_ops_);
+      read_ops_.FillOps(&call_);
     }
 
    private:
@@ -536,7 +536,7 @@ class CallbackServerStreamingHandler : public grpc::internal::MethodHandler {
         ctx_->sent_initial_metadata_ = true;
       }
       finish_ops_.ServerSendStatus(&ctx_->trailing_metadata_, s);
-      call_.PerformOps(&finish_ops_);
+      finish_ops_.FillOps(&call_);
     }
 
     void SendInitialMetadata() override {
@@ -561,7 +561,7 @@ class CallbackServerStreamingHandler : public grpc::internal::MethodHandler {
       }
       ctx_->sent_initial_metadata_ = true;
       meta_ops_.set_core_cq_tag(&meta_tag_);
-      call_.PerformOps(&meta_ops_);
+      meta_ops_.FillOps(&call_);
     }
 
     void Write(const ResponseType* resp, grpc::WriteOptions options) override {
@@ -581,7 +581,7 @@ class CallbackServerStreamingHandler : public grpc::internal::MethodHandler {
       ABSL_CHECK(
           write_ops_.SendMessagePtr(resp, options, ctx_->memory_allocator())
               .ok());
-      call_.PerformOps(&write_ops_);
+      write_ops_.FillOps(&call_);
     }
 
     void WriteAndFinish(const ResponseType* resp, grpc::WriteOptions options,
@@ -752,7 +752,7 @@ class CallbackBidiHandler : public grpc::internal::MethodHandler {
         ctx_->sent_initial_metadata_ = true;
       }
       finish_ops_.ServerSendStatus(&ctx_->trailing_metadata_, s);
-      call_.PerformOps(&finish_ops_);
+      finish_ops_.FillOps(&call_);
     }
 
     void SendInitialMetadata() override {
@@ -777,7 +777,7 @@ class CallbackBidiHandler : public grpc::internal::MethodHandler {
       }
       ctx_->sent_initial_metadata_ = true;
       meta_ops_.set_core_cq_tag(&meta_tag_);
-      call_.PerformOps(&meta_ops_);
+      meta_ops_.FillOps(&call_);
     }
 
     void Write(const ResponseType* resp, grpc::WriteOptions options) override {
@@ -797,7 +797,7 @@ class CallbackBidiHandler : public grpc::internal::MethodHandler {
       ABSL_CHECK(
           write_ops_.SendMessagePtr(resp, options, ctx_->memory_allocator())
               .ok());
-      call_.PerformOps(&write_ops_);
+      write_ops_.FillOps(&call_);
     }
 
     void WriteAndFinish(const ResponseType* resp, grpc::WriteOptions options,
@@ -812,7 +812,7 @@ class CallbackBidiHandler : public grpc::internal::MethodHandler {
     void Read(RequestType* req) override {
       this->Ref();
       read_ops_.RecvMessage(req);
-      call_.PerformOps(&read_ops_);
+      read_ops_.FillOps(&call_);
     }
 
    private:

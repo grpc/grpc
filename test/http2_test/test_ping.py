@@ -17,7 +17,7 @@ import logging
 import http2_base_server
 
 
-class TestcasePing(object):
+class TestcasePing:
     """
     This test injects PING frames before and after header and data. Keeps count
     of outstanding ping response and asserts when the count is non-zero at the

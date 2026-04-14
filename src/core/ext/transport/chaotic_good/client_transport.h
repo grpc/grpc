@@ -89,6 +89,13 @@ class ChaoticGoodClientTransport final : public ClientTransport,
 
   void StartCall(CallHandler call_handler) override;
 
+  void StartWatch(RefCountedPtr<StateWatcher> watcher) override {
+    stream_dispatch_->StartWatch(std::move(watcher));
+  }
+  void StopWatch(RefCountedPtr<StateWatcher> watcher) override {
+    stream_dispatch_->StopWatch(std::move(watcher));
+  }
+
  private:
   struct Stream : public RefCounted<Stream> {
     explicit Stream(CallHandler call)
@@ -103,7 +110,9 @@ class ChaoticGoodClientTransport final : public ClientTransport,
 
   class StreamDispatch final : public FrameTransportSink {
    public:
-    explicit StreamDispatch(MpscSender<OutgoingFrame> outgoing_frames);
+    StreamDispatch(MpscSender<OutgoingFrame> outgoing_frames,
+                   std::shared_ptr<grpc_event_engine::experimental::EventEngine>
+                       event_engine);
 
     void OnIncomingFrame(IncomingFrame incoming_frame) override;
     void OnFrameTransportClosed(absl::Status status) override;
@@ -114,6 +123,9 @@ class ChaoticGoodClientTransport final : public ClientTransport,
         grpc_connectivity_state state,
         OrphanablePtr<ConnectivityStateWatcherInterface> watcher);
     void StopConnectivityWatch(ConnectivityStateWatcherInterface* watcher);
+
+    void StartWatch(RefCountedPtr<StateWatcher> watcher);
+    void StopWatch(RefCountedPtr<StateWatcher> watcher);
 
    private:
     template <typename T>
@@ -142,7 +154,9 @@ class ChaoticGoodClientTransport final : public ClientTransport,
     StreamMap stream_map_ ABSL_GUARDED_BY(mu_);
     ConnectivityStateTracker state_tracker_ ABSL_GUARDED_BY(mu_){
         "chaotic_good_client", GRPC_CHANNEL_READY};
+    RefCountedPtr<StateWatcher> watcher_ ABSL_GUARDED_BY(mu_);
     MpscSender<OutgoingFrame> outgoing_frames_;
+    std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_;
   };
 
   auto CallOutboundLoop(uint32_t stream_id, CallHandler call_handler);

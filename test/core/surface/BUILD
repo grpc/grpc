@@ -17,7 +17,13 @@ load("//test/cpp/microbenchmarks:grpc_benchmark_config.bzl", "grpc_cc_benchmark"
 
 licenses(["notice"])
 
-grpc_package(name = "test/core/surface")
+grpc_package(
+    name = "test/core/surface",
+    features = [
+        "layering_check",
+        "parse_headers",
+    ],
+)
 
 grpc_cc_benchmark(
     name = "bm_channel_init",
@@ -268,10 +274,12 @@ grpc_cc_test(
         "//:gpr",
         "//:grpc",
         "//:grpc_core_credentials_header",
+        "//:server",
         "//src/core:channel_args",
         "//src/core:event_engine_shim",
         "//src/core:event_engine_utils",
         "//src/core:grpc_fake_credentials",
+        "//src/core:metrics",
         "//src/core:useful",
         "//test/core/test_util:grpc_test_util",
     ],

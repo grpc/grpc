@@ -18,10 +18,13 @@
 #include "src/core/ext/transport/chttp2/transport/keepalive.h"
 
 #include <memory>
+#include <utility>
 
 #include "src/core/lib/promise/loop.h"
 #include "src/core/lib/promise/promise.h"
 #include "src/core/lib/promise/sleep.h"
+#include "src/core/lib/promise/try_seq.h"
+#include "src/core/util/time.h"
 #include "test/core/call/yodel/yodel_test.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
@@ -85,6 +88,17 @@ class MockKeepAliveInterface : public KeepAliveInterface {
   }
 };
 
+void MaybeSpawnKeepaliveLoop(KeepaliveManager& keepalive_manager,
+                             Party* party) {
+  if (keepalive_manager.IsKeepAliveLoopNeeded()) {
+    party->Spawn(
+        "KeepaliveLoop", [&]() { return keepalive_manager.KeepaliveLoop(); },
+        [](absl::Status status) {
+          LOG(INFO) << "KeepaliveLoop end with status: " << status;
+        });
+  }
+}
+
 class KeepaliveManagerTest : public YodelTest {
  protected:
   using YodelTest::YodelTest;
@@ -120,8 +134,7 @@ YODEL_TEST(KeepaliveManagerTest, TestKeepAlive) {
 
   KeepaliveManager keep_alive_system(std::move(keep_alive_interface),
                                      keepalive_timeout, keepalive_interval);
-  auto party = GetParty();
-  keep_alive_system.Spawn(party);
+  MaybeSpawnKeepaliveLoop(keep_alive_system, GetParty());
 
   WaitForAllPendingWork();
   event_engine()->TickUntilIdle();
@@ -129,8 +142,8 @@ YODEL_TEST(KeepaliveManagerTest, TestKeepAlive) {
 }
 
 YODEL_TEST(KeepaliveManagerTest, TestKeepAliveTimeout) {
-  // Simple test to simulate sending a keepalive ping and not receiving any data
-  // within the keepalive timeout. The test asserts that:
+  // Simple test to simulate sending a keepalive ping and not receiving any
+  // data within the keepalive timeout. The test asserts that:
   // 1. The keepalive timeout is triggered.
   // 2. The keepalive ping is sent.
   InitParty();
@@ -147,8 +160,7 @@ YODEL_TEST(KeepaliveManagerTest, TestKeepAliveTimeout) {
 
   KeepaliveManager keep_alive_system(std::move(keep_alive_interface),
                                      keepalive_timeout, keepalive_interval);
-  auto party = GetParty();
-  keep_alive_system.Spawn(party);
+  MaybeSpawnKeepaliveLoop(keep_alive_system, GetParty());
 
   WaitForAllPendingWork();
   event_engine()->TickUntilIdle();
@@ -158,7 +170,8 @@ YODEL_TEST(KeepaliveManagerTest, TestKeepAliveTimeout) {
 YODEL_TEST(KeepaliveManagerTest, TestKeepAliveWithData) {
   // Test to simulate reading of data at certain intervals. The test asserts
   // that:
-  // 1. The keepalive ping is not sent as long as there is data read within the
+  // 1. The keepalive ping is not sent as long as there is data read within
+  // the
   //    keepalive interval.
   InitParty();
   int end_after = 1;
@@ -175,21 +188,21 @@ YODEL_TEST(KeepaliveManagerTest, TestKeepAliveWithData) {
 
   KeepaliveManager keep_alive_system(std::move(keep_alive_interface),
                                      keepalive_timeout, keepalive_interval);
-  auto party = GetParty();
-  keep_alive_system.Spawn(party);
+  MaybeSpawnKeepaliveLoop(keep_alive_system, GetParty());
 
-  party->Spawn("ReadData", Loop([&read_loop_end_after, &keep_alive_system]() {
-                 keep_alive_system.GotData();
-                 return TrySeq(
-                     Sleep(Duration::Minutes(65)),
-                     [&read_loop_end_after]() mutable -> LoopCtl<absl::Status> {
-                       if (--read_loop_end_after == 0) {
-                         return absl::OkStatus();
-                       }
-                       return Continue();
-                     });
-               }),
-               [](auto) { LOG(INFO) << "ReadData end"; });
+  GetParty()->Spawn(
+      "ReadData", Loop([&read_loop_end_after, &keep_alive_system]() {
+        keep_alive_system.GotData();
+        return TrySeq(
+            Sleep(Duration::Minutes(65)),
+            [&read_loop_end_after]() mutable -> LoopCtl<absl::Status> {
+              if (--read_loop_end_after == 0) {
+                return absl::OkStatus();
+              }
+              return Continue();
+            });
+      }),
+      [](auto) { LOG(INFO) << "ReadData end"; });
 
   WaitForAllPendingWork();
   event_engine()->TickUntilIdle();
@@ -199,7 +212,8 @@ YODEL_TEST(KeepaliveManagerTest, TestKeepAliveWithData) {
 YODEL_TEST(KeepaliveManagerTest, TestKeepAliveTimeoutWithData) {
   // Test to simulate reading of data at certain intervals. The test asserts
   // that:
-  // 1. The keepalive ping is not sent as long as there is data read within the
+  // 1. The keepalive ping is not sent as long as there is data read within
+  // the
   //    keepalive interval.
   // 2. Keepalive timeout is triggered once no data is read within the
   //    keepalive timeout.
@@ -219,21 +233,21 @@ YODEL_TEST(KeepaliveManagerTest, TestKeepAliveTimeoutWithData) {
 
   KeepaliveManager keep_alive_system(std::move(keep_alive_interface),
                                      keepalive_timeout, keepalive_interval);
-  auto party = GetParty();
-  keep_alive_system.Spawn(party);
+  MaybeSpawnKeepaliveLoop(keep_alive_system, GetParty());
 
-  party->Spawn("ReadData", Loop([&read_loop_end_after, &keep_alive_system]() {
-                 keep_alive_system.GotData();
-                 return TrySeq(
-                     Sleep(Duration::Minutes(65)),
-                     [&read_loop_end_after]() mutable -> LoopCtl<absl::Status> {
-                       if (--read_loop_end_after == 0) {
-                         return absl::OkStatus();
-                       }
-                       return Continue();
-                     });
-               }),
-               [](auto) { LOG(INFO) << "ReadData end"; });
+  GetParty()->Spawn(
+      "ReadData", Loop([&read_loop_end_after, &keep_alive_system]() {
+        keep_alive_system.GotData();
+        return TrySeq(
+            Sleep(Duration::Minutes(65)),
+            [&read_loop_end_after]() mutable -> LoopCtl<absl::Status> {
+              if (--read_loop_end_after == 0) {
+                return absl::OkStatus();
+              }
+              return Continue();
+            });
+      }),
+      [](auto) { LOG(INFO) << "ReadData end"; });
 
   WaitForAllPendingWork();
   event_engine()->TickUntilIdle();

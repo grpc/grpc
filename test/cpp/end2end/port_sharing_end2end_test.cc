@@ -316,11 +316,6 @@ std::vector<TestScenario> CreateTestScenarios() {
   std::vector<TestScenario> scenarios;
   std::vector<std::string> credentials_types;
 
-#if TARGET_OS_IPHONE
-  // Workaround Apple CFStream bug
-  grpc_core::SetEnv("grpc_cfstream", "0");
-#endif
-
   credentials_types = GetCredentialsProvider()->GetSecureCredentialsTypeList();
   // Only allow insecure credentials type when it is registered with the
   // provider. User may create providers that do not have insecure.

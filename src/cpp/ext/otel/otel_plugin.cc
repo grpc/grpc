@@ -25,6 +25,7 @@
 #include <memory>
 #include <type_traits>
 #include <utility>
+#include <variant>
 
 #include "opentelemetry/metrics/async_instruments.h"
 #include "opentelemetry/metrics/meter.h"
@@ -485,7 +486,8 @@ class OpenTelemetryPluginImpl::CounterExporter final {
 
   void Export(opentelemetry::metrics::ObserverResult result) {
     Sink sink(std::get<opentelemetry::nostd::shared_ptr<
-                  opentelemetry::metrics::ObserverResultT<int64_t>>>(result));
+                  opentelemetry::metrics::ObserverResultT<int64_t>>>(result),
+              md_->shape);
     impl_->QueryMetrics({md_->name}, sink);
   }
 
@@ -493,34 +495,63 @@ class OpenTelemetryPluginImpl::CounterExporter final {
   class Sink final : public grpc_core::MetricsSink {
    public:
     explicit Sink(opentelemetry::nostd::shared_ptr<
-                  opentelemetry::metrics::ObserverResultT<int64_t>>
-                      observer)
-        : observer_(std::move(observer)) {}
-    void Counter(absl::Span<const std::string> label_keys,
+                      opentelemetry::metrics::ObserverResultT<int64_t>>
+                      observer,
+                  grpc_core::InstrumentMetadata::Shape shape)
+        : observer_(std::move(observer)), shape_(shape) {}
+    void Counter(grpc_core::InstrumentLabelList label_keys,
                  absl::Span<const std::string> label_values, absl::string_view,
                  uint64_t value) override {
+      GRPC_DCHECK(
+          std::holds_alternative<grpc_core::InstrumentMetadata::CounterShape>(
+              shape_));
+      std::vector<std::string> label_key_strings;
+      label_key_strings.reserve(label_keys.size());
+      for (const auto& label : label_keys) {
+        label_key_strings.push_back(std::string(label.label()));
+      }
       LOG(ERROR) << "Counter: " << value
-                 << " label_keys: " << absl::StrJoin(label_keys, ",")
+                 << " label_keys: " << absl::StrJoin(label_key_strings, ",")
                  << " label_values: " << absl::StrJoin(label_values, ",");
-      ExportedMetricKeyValueIterable labels_iterable(label_keys, label_values);
+      ExportedMetricKeyValueIterable labels_iterable(label_key_strings,
+                                                     label_values);
       observer_->Observe(value, labels_iterable);
     }
-    void Histogram(absl::Span<const std::string>, absl::Span<const std::string>,
-                   absl::string_view, grpc_core::HistogramBuckets,
+    void UpDownCounter(grpc_core::InstrumentLabelList label_keys,
+                       absl::Span<const std::string> label_values,
+                       absl::string_view, uint64_t value) override {
+      GRPC_DCHECK(std::holds_alternative<
+                  grpc_core::InstrumentMetadata::UpDownCounterShape>(shape_));
+      std::vector<std::string> label_key_strings;
+      label_key_strings.reserve(label_keys.size());
+      for (const auto& label : label_keys) {
+        label_key_strings.push_back(std::string(label.label()));
+      }
+      LOG(ERROR) << "UpDownCounter: " << value
+                 << " label_keys: " << absl::StrJoin(label_key_strings, ",")
+                 << " label_values: " << absl::StrJoin(label_values, ",");
+      ExportedMetricKeyValueIterable labels_iterable(label_key_strings,
+                                                     label_values);
+      observer_->Observe(value, labels_iterable);
+    }
+    void Histogram(grpc_core::InstrumentLabelList,
+                   absl::Span<const std::string>, absl::string_view,
+                   grpc_core::HistogramBuckets,
                    absl::Span<const uint64_t>) override {
       LOG(FATAL) << "Expected a counter, got a histogram";
     }
-    void DoubleGauge(absl::Span<const std::string>,
+    void DoubleGauge(grpc_core::InstrumentLabelList,
                      absl::Span<const std::string>, absl::string_view,
                      double) override {
       LOG(FATAL) << "Expected a counter, got a double gauge";
     }
-    void IntGauge(absl::Span<const std::string>, absl::Span<const std::string>,
+    void IntGauge(grpc_core::InstrumentLabelList, absl::Span<const std::string>,
                   absl::string_view, int64_t) override {
       LOG(FATAL) << "Expected a counter, got an int gauge";
     }
-    void UintGauge(absl::Span<const std::string>, absl::Span<const std::string>,
-                   absl::string_view, uint64_t) override {
+    void UintGauge(grpc_core::InstrumentLabelList,
+                   absl::Span<const std::string>, absl::string_view,
+                   uint64_t) override {
       LOG(FATAL) << "Expected a counter, got a uint gauge";
     }
 
@@ -528,6 +559,7 @@ class OpenTelemetryPluginImpl::CounterExporter final {
     const opentelemetry::nostd::shared_ptr<
         opentelemetry::metrics::ObserverResultT<int64_t>>
         observer_;
+    const grpc_core::InstrumentMetadata::Shape shape_;
   };
 
   OpenTelemetryPluginImpl* const impl_;
@@ -538,7 +570,6 @@ void OpenTelemetryPluginImpl::QueryMetrics(
     absl::Span<const absl::string_view> metrics, grpc_core::MetricsSink& sink) {
   grpc_core::MetricsQuery()
       .OnlyMetrics(std::vector<std::string>(metrics.begin(), metrics.end()))
-      .CollapseLabels(collapse_labels_)
       .Run(collection_scope_, sink);
 }
 
@@ -698,16 +729,25 @@ OpenTelemetryPluginImpl::OpenTelemetryPluginImpl(
           [&](const grpc_core::InstrumentMetadata::Description* description) {
             if (!metrics.contains(description->name)) return;
             for (const auto& label : description->domain->label_names()) {
-              if (!internal::IsOpenTelemetryLabelOptional(label) ||
-                  optional_label_keys.find(label) !=
+              if (!internal::IsOpenTelemetryLabelOptional(label.label()) ||
+                  optional_label_keys.find(label.label()) !=
                       optional_label_keys.end()) {
-                labels.insert(label);
+                labels.insert(std::string(label.label()));
               }
             }
             grpc_core::Match(
                 description->shape,
                 [&](grpc_core::InstrumentMetadata::CounterShape) {
                   auto instrument = meter->CreateInt64ObservableCounter(
+                      std::string(description->name),
+                      std::string(description->description),
+                      std::string(description->unit));
+                  exporter_callbacks_.push_back(
+                      std::make_unique<ExporterCallbackImpl<CounterExporter>>(
+                          instrument, this, description));
+                },
+                [&](grpc_core::InstrumentMetadata::UpDownCounterShape) {
+                  auto instrument = meter->CreateInt64ObservableUpDownCounter(
                       std::string(description->name),
                       std::string(description->description),
                       std::string(description->unit));
@@ -728,8 +768,11 @@ OpenTelemetryPluginImpl::OpenTelemetryPluginImpl(
                   LOG(FATAL) << "Histogram shape is not supported yet";
                 });
           });
-      std::vector<std::string> labels_vec(labels.begin(), labels.end());
-      collection_scope_ = grpc_core::CreateCollectionScope({}, labels_vec);
+      grpc_core::InstrumentLabelSet label_set;
+      for (const auto& label : labels) {
+        label_set.Set(grpc_core::InstrumentLabel(label));
+      }
+      collection_scope_ = grpc_core::CreateCollectionScope({}, label_set);
     }
     // Non-per-call metrics.
     grpc_core::GlobalInstrumentsRegistry::ForEach(

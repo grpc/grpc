@@ -18,6 +18,10 @@ licenses(["notice"])
 
 grpc_package(
     name = "test/cpp/sleuth",
+    features = [
+        "layering_check",
+        "parse_headers",
+    ],
     visibility = "public",
 )
 
@@ -46,6 +50,7 @@ grpc_cc_test(
         "gtest_main",
         "absl/strings",
     ],
+    tags = ["no_windows"],
     deps = [
         ":client",
         "//:grpc++",
@@ -79,6 +84,7 @@ grpc_cc_test(
         "gtest_main",
         "absl/status",
     ],
+    tags = ["no_windows"],
     deps = [
         ":tool",
         ":tool_test",
@@ -94,6 +100,7 @@ grpc_cc_test(
         "gtest",
         "gtest_main",
     ],
+    tags = ["no_windows"],
     deps = [
         ":channelz_tool",
         ":tool",
@@ -112,6 +119,7 @@ grpc_cc_test(
         "gtest",
         "gtest_main",
     ],
+    tags = ["no_windows"],
     deps = [
         ":info_tool",
         ":tool_test",
@@ -128,6 +136,7 @@ grpc_cc_test(
         "gtest",
         "gtest_main",
     ],
+    tags = ["no_windows"],
     deps = [
         ":latent_see_tool",
         ":tool_test",
@@ -138,7 +147,7 @@ grpc_cc_test(
 )
 
 grpc_cc_library(
-    name = "sleuth",
+    name = "sleuth_lib",
     srcs = ["sleuth.cc"],
     hdrs = ["sleuth.h"],
     external_deps = [
@@ -162,13 +171,17 @@ grpc_cc_library(
 grpc_cc_binary(
     name = "sleuth.so",
     linkshared = True,
+    target_compatible_with = select({
+        "@platforms//os:windows": ["@platforms//:incompatible"],
+        "//conditions:default": [],
+    }),
     deps = [
-        ":sleuth",
+        ":sleuth_lib",
     ],
 )
 
 grpc_cc_binary(
-    name = "sleuth_main",
+    name = "sleuth",
     srcs = ["sleuth_main.cc"],
     external_deps = [
         "absl/flags:parse",
@@ -177,7 +190,7 @@ grpc_cc_binary(
         "//bazel:sleuth",
     ],
     deps = [
-        ":sleuth",
+        ":sleuth_lib",
     ],
 )
 

@@ -24,6 +24,8 @@ import python_utils.jobset as jobset
 
 _LATEST_MANYLINUX = "manylinux2014"
 
+REPORT_BASE_PATH = os.getenv("GRPC_TEST_REPORT_BASE_DIR", os.path.abspath("."))
+
 
 def create_docker_jobspec(
     name,
@@ -60,6 +62,9 @@ def create_docker_jobspec(
         flake_retries=flake_retries,
         timeout_retries=timeout_retries,
         verbose_success=verbose_success,
+        logfilename=os.path.abspath(
+            f"{REPORT_BASE_PATH}/reports/artifact.{name}.log"
+        ),
     )
     return jobspec
 
@@ -98,6 +103,9 @@ def create_jobspec(
         shell=shell,
         cpu_cost=cpu_cost,
         verbose_success=verbose_success,
+        logfilename=os.path.abspath(
+            f"{REPORT_BASE_PATH}/reports/artifact.{name}.log"
+        ),
     )
     return jobspec
 
@@ -160,7 +168,7 @@ class PythonArtifact:
                 ),
                 "tools/run_tests/artifacts/build_artifact_python.sh",
                 environ=environ,
-                timeout_seconds=60 * 60 * 2,
+                timeout_seconds=60 * 60 * 4,
             )
         elif "manylinux" in self.platform:
             if self.arch == "x86":
@@ -191,8 +199,7 @@ class PythonArtifact:
                 % (self.platform, self.arch),
                 "tools/run_tests/artifacts/build_artifact_python.sh",
                 environ=environ,
-                timeout_seconds=60 * 60 * 2,
-                verbose_success=True,
+                timeout_seconds=60 * 60 * 4,
             )
         elif "musllinux" in self.platform:
             environ["PYTHON"] = "/opt/python/{}/bin/python".format(
@@ -242,7 +249,7 @@ class PythonArtifact:
                 self.name,
                 ["tools/run_tests/artifacts/build_artifact_python.sh"],
                 environ=environ,
-                timeout_seconds=60 * 60 * 2,
+                timeout_seconds=60 * 60 * 4,
                 use_workspace=True,
             )
 
@@ -485,14 +492,14 @@ def targets():
             PythonArtifact("windows", "x64", "Python313"),
             PythonArtifact("windows", "x64", "Python314", presubmit=True),
             RubyArtifact("linux", "x86-mingw32", presubmit=True),
-            RubyArtifact("linux", "x64-mingw-ucrt", presubmit=True),
+            RubyArtifact("linux", "x64-mingw-ucrt"),
             RubyArtifact("linux", "x86_64-linux-gnu", presubmit=True),
             RubyArtifact("linux", "x86_64-linux-musl", presubmit=True),
-            RubyArtifact("linux", "x86-linux-gnu", presubmit=True),
+            RubyArtifact("linux", "x86-linux-gnu"),
             RubyArtifact("linux", "x86-linux-musl", presubmit=True),
             RubyArtifact("linux", "aarch64-linux-gnu", presubmit=True),
-            RubyArtifact("linux", "aarch64-linux-musl", presubmit=True),
-            RubyArtifact("linux", "x86_64-darwin", presubmit=True),
+            RubyArtifact("linux", "aarch64-linux-musl"),
+            RubyArtifact("linux", "x86_64-darwin"),
             RubyArtifact("linux", "arm64-darwin", presubmit=True),
             PHPArtifact("linux", "x64", presubmit=True),
             PHPArtifact("macos", "x64", presubmit=True),

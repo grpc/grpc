@@ -454,6 +454,7 @@ ApiFuzzer::Result ApiFuzzer::CreateChannel(
   ExecCtx exec_ctx;
   testing::FuzzingEnvironment fuzzing_env;
   fuzzing_env.resource_quota = resource_quota();
+  fuzzing_env.event_engine = engine();
   ChannelArgs args = testing::CreateChannelArgsFromFuzzingConfiguration(
       create_channel.channel_args(), fuzzing_env);
   if (create_channel.inproc()) {
@@ -481,6 +482,7 @@ ApiFuzzer::Result ApiFuzzer::CreateServer(
     ExecCtx exec_ctx;
     testing::FuzzingEnvironment fuzzing_env;
     fuzzing_env.resource_quota = resource_quota();
+    fuzzing_env.event_engine = engine();
     ChannelArgs args = testing::CreateChannelArgsFromFuzzingConfiguration(
         create_server.channel_args(), fuzzing_env);
     server_ = grpc_server_create(args.ToC().get(), nullptr);

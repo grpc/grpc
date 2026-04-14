@@ -25,6 +25,7 @@
 #include <vector>
 
 #include "src/core/util/down_cast.h"
+#include "src/core/util/env.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/json/json_object_loader.h"
 #include "src/core/util/json/json_reader.h"
@@ -35,15 +36,44 @@
 #include "absl/status/statusor.h"
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
-#include "absl/strings/str_format.h"
-#include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
 
 namespace grpc_core {
 
+// TODO(roth): Remove this once the feature passes interop tests.
+bool XdsExtProcOnClientEnabled() {
+  auto value = GetEnv("GRPC_EXPERIMENTAL_XDS_EXT_PROC_ON_CLIENT");
+  if (!value.has_value()) return false;
+  bool parsed_value;
+  bool parse_succeeded = gpr_parse_bool_value(value->c_str(), &parsed_value);
+  return parse_succeeded && parsed_value;
+}
+
 //
 // GrpcXdsBootstrap::GrpcNode::Locality
 //
+
+std::string GrpcXdsBootstrap::GrpcNode::Locality::ToString() const {
+  std::string result = "{";
+  bool is_first = true;
+  if (!region.empty()) {
+    StrAppend(result, "region=");
+    StrAppend(result, region);
+    is_first = false;
+  }
+  if (!zone.empty()) {
+    StrAppend(result, is_first ? "zone=" : ", zone=");
+    StrAppend(result, zone);
+    is_first = false;
+  }
+  if (!sub_zone.empty()) {
+    StrAppend(result, is_first ? "sub_zone=" : ", sub_zone=");
+    StrAppend(result, sub_zone);
+    is_first = false;
+  }
+  StrAppend(result, "}");
+  return result;
+}
 
 const JsonLoaderInterface* GrpcXdsBootstrap::GrpcNode::Locality::JsonLoader(
     const JsonArgs&) {
@@ -59,6 +89,33 @@ const JsonLoaderInterface* GrpcXdsBootstrap::GrpcNode::Locality::JsonLoader(
 //
 // GrpcXdsBootstrap::GrpcNode
 //
+
+std::string GrpcXdsBootstrap::GrpcNode::ToString() const {
+  std::string result = "{";
+  bool is_first = true;
+  if (!id_.empty()) {
+    StrAppend(result, "id=");
+    StrAppend(result, id_);
+    is_first = false;
+  }
+  if (!cluster_.empty()) {
+    StrAppend(result, is_first ? "cluster=" : ", cluster=");
+    StrAppend(result, cluster_);
+    is_first = false;
+  }
+  if (!locality_.Empty()) {
+    StrAppend(result, is_first ? "locality=" : ", locality=");
+    StrAppend(result, locality_.ToString());
+    is_first = false;
+  }
+  if (!metadata_.empty()) {
+    StrAppend(result, is_first ? "metadata=" : ", metadata=");
+    StrAppend(result, JsonDump(Json::FromObject(metadata_)));
+    is_first = false;
+  }
+  StrAppend(result, "}");
+  return result;
+}
 
 const JsonLoaderInterface* GrpcXdsBootstrap::GrpcNode::JsonLoader(
     const JsonArgs&) {
@@ -76,6 +133,30 @@ const JsonLoaderInterface* GrpcXdsBootstrap::GrpcNode::JsonLoader(
 // GrpcXdsBootstrap::GrpcAuthority
 //
 
+std::string GrpcXdsBootstrap::GrpcAuthority::ToString() const {
+  std::string result = "{";
+  bool is_first = false;
+  if (!client_listener_resource_name_template_.empty()) {
+    StrAppend(result, "client_listener_resource_name_template=\"");
+    StrAppend(result, client_listener_resource_name_template_);
+    StrAppend(result, "\"");
+    is_first = false;
+  }
+  if (!servers_.empty()) {
+    StrAppend(result, is_first ? "servers=[" : ", servers=[");
+    bool is_first_server = true;
+    for (const auto& server : servers_) {
+      if (!is_first_server) StrAppend(result, ", ");
+      StrAppend(result, server.Key());
+      is_first_server = false;
+    }
+    StrAppend(result, "]");
+    is_first = false;
+  }
+  StrAppend(result, "}");
+  return result;
+}
+
 const JsonLoaderInterface* GrpcXdsBootstrap::GrpcAuthority::JsonLoader(
     const JsonArgs&) {
   static const auto* loader =
@@ -88,6 +169,47 @@ const JsonLoaderInterface* GrpcXdsBootstrap::GrpcAuthority::JsonLoader(
                          &GrpcAuthority::fallback_on_reachability_only_)
           .Finish();
   return loader;
+}
+
+//
+// GrpcXdsBootstrap::AllowedGrpcService
+//
+
+std::string GrpcXdsBootstrap::AllowedGrpcService::ToString() const {
+  std::string result = "{";
+  bool is_first = true;
+  if (channel_creds_config != nullptr) {
+    StrAppend(result, "channel_creds={type=");
+    StrAppend(result, channel_creds_config->type());
+    StrAppend(result, ", config=");
+    StrAppend(result, channel_creds_config->ToString());
+    StrAppend(result, "}");
+    is_first = false;
+  }
+  for (const auto& call_creds_config : call_creds_configs) {
+    StrAppend(result, is_first ? "call_creds={type=" : ", call_creds={type=");
+    StrAppend(result, call_creds_config->type());
+    StrAppend(result, ", config=");
+    StrAppend(result, call_creds_config->ToString());
+    StrAppend(result, "}");
+    is_first = false;
+  }
+  StrAppend(result, "}");
+  return result;
+}
+
+const JsonLoaderInterface* GrpcXdsBootstrap::AllowedGrpcService::JsonLoader(
+    const JsonArgs&) {
+  static const auto* loader = JsonObjectLoader<AllowedGrpcService>().Finish();
+  return loader;
+};
+
+void GrpcXdsBootstrap::AllowedGrpcService::JsonPostLoad(
+    const Json& json, const JsonArgs& args, ValidationErrors* errors) {
+  // Parse "channel_creds".
+  channel_creds_config = ParseXdsBootstrapChannelCreds(json, args, errors);
+  // Parse "call_creds".
+  call_creds_configs = ParseXdsBootstrapCallCreds(json, args, errors);
 }
 
 //
@@ -106,6 +228,7 @@ absl::StatusOr<std::unique_ptr<GrpcXdsBootstrap>> GrpcXdsBootstrap::Create(
    public:
     bool IsEnabled(absl::string_view key) const override {
       if (key == "federation") return XdsFederationEnabled();
+      if (key == "grpc_service") return XdsExtProcOnClientEnabled();
       return true;
     }
   };
@@ -130,6 +253,9 @@ const JsonLoaderInterface* GrpcXdsBootstrap::JsonLoader(const JsonArgs&) {
                          &GrpcXdsBootstrap::
                              client_default_listener_resource_name_template_,
                          "federation")
+          .OptionalField("allowed_grpc_services",
+                         &GrpcXdsBootstrap::allowed_grpc_services_,
+                         "grpc_service")
           .Finish();
   return loader;
 }
@@ -164,68 +290,69 @@ void GrpcXdsBootstrap::JsonPostLoad(const Json& /*json*/,
 }
 
 std::string GrpcXdsBootstrap::ToString() const {
-  std::vector<std::string> parts;
+  std::string result = "{servers=[";
+  bool is_first_server = false;
+  for (const auto& server : servers_) {
+    if (!is_first_server) StrAppend(result, ", ");
+    StrAppend(result, server.Key());
+    is_first_server = false;
+  }
+  StrAppend(result, "]");
   if (node_.has_value()) {
-    parts.push_back(
-        absl::StrFormat("node={\n"
-                        "  id=\"%s\",\n"
-                        "  cluster=\"%s\",\n"
-                        "  locality={\n"
-                        "    region=\"%s\",\n"
-                        "    zone=\"%s\",\n"
-                        "    sub_zone=\"%s\"\n"
-                        "  },\n"
-                        "  metadata=%s,\n"
-                        "},\n",
-                        node_->id(), node_->cluster(), node_->locality_region(),
-                        node_->locality_zone(), node_->locality_sub_zone(),
-                        JsonDump(Json::FromObject(node_->metadata()))));
+    StrAppend(result, ",\n  node=");
+    StrAppend(result, node_->ToString());
   }
-  std::vector<std::string> server_strings;
-  for (auto& server : servers_) {
-    server_strings.emplace_back(server.Key());
-  }
-  parts.push_back(absl::StrFormat("    servers=[\n%s\n],\n",
-                                  absl::StrJoin(server_strings, ",\n")));
   if (!client_default_listener_resource_name_template_.empty()) {
-    parts.push_back(absl::StrFormat(
-        "client_default_listener_resource_name_template=\"%s\",\n",
-        client_default_listener_resource_name_template_));
+    StrAppend(result, ",\n  client_default_listener_resource_name_template=\"");
+    StrAppend(result, client_default_listener_resource_name_template_);
+    StrAppend(result, "\"");
   }
   if (!server_listener_resource_name_template_.empty()) {
-    parts.push_back(
-        absl::StrFormat("server_listener_resource_name_template=\"%s\",\n",
-                        server_listener_resource_name_template_));
+    StrAppend(result, ",\n  server_listener_resource_name_template=\"");
+    StrAppend(result, server_listener_resource_name_template_);
+    StrAppend(result, "\"");
   }
-  parts.push_back("authorities={\n");
-  for (const auto& [name, authority] : authorities_) {
-    parts.push_back(absl::StrFormat("  %s={\n", name));
-    parts.push_back(
-        absl::StrFormat("    client_listener_resource_name_template=\"%s\",\n",
-                        authority.client_listener_resource_name_template()));
-    std::vector<std::string> server_strings;
-    for (const XdsServer* server : authority.servers()) {
-      server_strings.emplace_back(server->Key());
+  if (!authorities_.empty()) {
+    StrAppend(result, ",\n  authorities={");
+    bool is_first_authority = true;
+    for (const auto& [name, authority] : authorities_) {
+      StrAppend(result, is_first_authority ? ",\n    " : "\n    ");
+      StrAppend(result, name);
+      StrAppend(result, "=");
+      StrAppend(result, authority.ToString());
+      is_first_authority = false;
     }
-    if (!server_strings.empty()) {
-      parts.push_back(absl::StrFormat("    servers=[\n%s\n],\n",
-                                      absl::StrJoin(server_strings, ",\n")));
+    StrAppend(result, "\n  }");
+  }
+  if (!certificate_providers_.empty()) {
+    StrAppend(result, ",\n  certificate_providers={");
+    bool is_first_provider = true;
+    for (const auto& [name, plugin_definition] : certificate_providers_) {
+      StrAppend(result, is_first_provider ? ",\n    " : "\n    ");
+      StrAppend(result, name);
+      StrAppend(result, "={plugin_name=");
+      StrAppend(result, plugin_definition.plugin_name);
+      StrAppend(result, ", config=");
+      StrAppend(result, plugin_definition.config->ToString());
+      StrAppend(result, "}");
+      is_first_provider = false;
     }
-    parts.push_back("      },\n");
+    StrAppend(result, "\n  }");
   }
-  parts.push_back("}\n");
-  parts.push_back("certificate_providers={\n");
-  for (const auto& [name, plugin_definition] : certificate_providers_) {
-    parts.push_back(
-        absl::StrFormat("  %s={\n"
-                        "    plugin_name=%s\n"
-                        "    config=%s\n"
-                        "  },\n",
-                        name, plugin_definition.plugin_name,
-                        plugin_definition.config->ToString()));
+  if (!allowed_grpc_services_.empty()) {
+    StrAppend(result, ",\n  allowed_grpc_services={");
+    bool is_first_grpc_service = true;
+    for (const auto& [target_uri, creds] : allowed_grpc_services_) {
+      StrAppend(result, is_first_grpc_service ? ",\n    " : "\n    ");
+      StrAppend(result, target_uri);
+      StrAppend(result, "=");
+      StrAppend(result, creds.ToString());
+      is_first_grpc_service = false;
+    }
+    StrAppend(result, "\n  }");
   }
-  parts.push_back("}");
-  return absl::StrJoin(parts, "");
+  StrAppend(result, "\n}");
+  return result;
 }
 
 const XdsBootstrap::Authority* GrpcXdsBootstrap::LookupAuthority(

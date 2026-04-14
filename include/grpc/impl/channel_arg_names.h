@@ -384,6 +384,11 @@
  *  Note that this works only with the "ares" DNS resolver; it isn't supported
  *  by the "native" DNS resolver. Boolean valued. Defaults to false. */
 #define GRPC_ARG_DNS_ENABLE_SRV_QUERIES "grpc.dns_enable_srv_queries"
+/** The cap for max_connections_per_subchannel when set via service
+ *  config.  If the configured value is higher than this, it will be
+ *  capped at this value.  Defaults to 10. */
+#define GRPC_ARG_MAX_CONNECTIONS_PER_SUBCHANNEL_CAP \
+  "grpc.max_connections_per_subchannel_cap"
 /** If set, determines an upper bound on the number of milliseconds that the
  * c-ares based DNS resolver will wait on queries before cancelling them.
  * The default value is 120,000ms. Setting this to "0" will disable the
@@ -415,6 +420,11 @@
  *  Defaults to 250ms. */
 #define GRPC_ARG_HAPPY_EYEBALLS_CONNECTION_ATTEMPT_DELAY_MS \
   "grpc.happy_eyeballs_connection_attempt_delay_ms"
+/** If set, uses the provided EventEngine as the channel's event engine.
+ * TODO(aananthv): Remove GRPC_INTERNAL_ARG_EVENT_ENGINE once all usages are
+ * migrated to this arg.
+ */
+#define GRPC_ARG_EVENT_ENGINE "grpc.experimental.event_engine"
 /** It accepts a MemoryAllocatorFactory as input and If specified, it forces
  * the default event engine to use memory allocators created using the provided
  * factory. */
@@ -429,5 +439,7 @@
 /** If non-zero, allow security frames to be sent and received. */
 #define GRPC_ARG_SECURITY_FRAME_ALLOWED "grpc.security_frame_allowed"
 /** \} */
+/** If non-zero, enable TCP tracing and stats collection. */
+#define GRPC_ARG_TCP_TRACING_ENABLED "grpc.tcp_tracing_enabled"
 
 #endif /* GRPC_IMPL_CHANNEL_ARG_NAMES_H */

@@ -43,7 +43,7 @@ namespace grpc_core {
 
 class RetryFilter final {
  public:
-  static const grpc_channel_filter kVtable;
+  static const grpc_channel_filter kFilterVtable;
 
   static void UpdateBlackboard(const ServiceConfig& service_config,
                                const Blackboard* old_blackboard,
@@ -89,7 +89,7 @@ class RetryFilter final {
   static grpc_error_handle Init(grpc_channel_element* elem,
                                 grpc_channel_element_args* args) {
     GRPC_CHECK(args->is_last);
-    GRPC_CHECK(elem->filter == &kVtable);
+    GRPC_CHECK(elem->filter == &kFilterVtable);
     new (elem->channel_data) RetryFilter(*args);
     return absl::OkStatus();
   }

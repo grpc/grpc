@@ -307,7 +307,7 @@ void RegisterLegacyChannelIdleFilters(CoreConfiguration::Builder* builder) {
 
   builder->channel_init()
       ->RegisterV2Filter<LegacyMaxAgeFilter>(GRPC_SERVER_CHANNEL)
-      .FloatToTopIf(IsMaxAgeFilterFloatToTopEnabled())
+      .FloatToTop()
       .ExcludeFromMinimalStack()
       .If([](const ChannelArgs& channel_args) {
         return LegacyMaxAgeFilter::Config::FromChannelArgs(channel_args)

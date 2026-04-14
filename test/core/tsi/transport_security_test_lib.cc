@@ -84,7 +84,10 @@ static void handshaker_args_destroy(handshaker_args* args) {
   delete args;
 }
 
-static void do_handshaker_next(handshaker_args* args);
+static void do_handshaker_next(
+    handshaker_args* args,
+    grpc_event_engine::experimental::FuzzingEventEngine* event_engine =
+        nullptr);
 
 static void setup_handshakers(tsi_test_fixture* fixture) {
   GRPC_CHECK_NE(fixture, nullptr);
@@ -300,24 +303,26 @@ void tsi_test_frame_protector_receive_message_from_peer(
   gpr_free(message_buffer);
 }
 
-grpc_error_handle on_handshake_next_done(
-    tsi_result result, void* user_data, const unsigned char* bytes_to_send,
-    size_t bytes_to_send_size, tsi_handshaker_result* handshaker_result) {
+void on_handshake_next_done(tsi_result result, void* user_data,
+                            const unsigned char* bytes_to_send,
+                            size_t bytes_to_send_size,
+                            tsi_handshaker_result* handshaker_result) {
   handshaker_args* args = static_cast<handshaker_args*>(user_data);
   GRPC_CHECK_NE(args, nullptr);
   GRPC_CHECK_NE(args->fixture, nullptr);
   tsi_test_fixture* fixture = args->fixture;
-  grpc_error_handle error;
   // Read more data if we need to.
   if (result == TSI_INCOMPLETE_DATA) {
     GRPC_CHECK_EQ(bytes_to_send_size, 0u);
+    args->error = absl::OkStatus();
     notification_signal(fixture);
-    return error;
+    return;
   }
   if (result != TSI_OK) {
-    notification_signal(fixture);
-    return GRPC_ERROR_CREATE(
+    args->error = GRPC_ERROR_CREATE(
         absl::StrCat("Handshake failed (", tsi_result_to_string(result), ")"));
+    notification_signal(fixture);
+    return;
   }
   // Update handshaker result.
   if (handshaker_result != nullptr) {
@@ -335,16 +340,15 @@ grpc_error_handle on_handshake_next_done(
   if (handshaker_result != nullptr) {
     maybe_append_unused_bytes(args);
   }
+  args->error = absl::OkStatus();
   notification_signal(fixture);
-  return error;
 }
 
 static void on_handshake_next_done_wrapper(
     tsi_result result, void* user_data, const unsigned char* bytes_to_send,
     size_t bytes_to_send_size, tsi_handshaker_result* handshaker_result) {
-  handshaker_args* args = static_cast<handshaker_args*>(user_data);
-  args->error = on_handshake_next_done(result, user_data, bytes_to_send,
-                                       bytes_to_send_size, handshaker_result);
+  on_handshake_next_done(result, user_data, bytes_to_send, bytes_to_send_size,
+                         handshaker_result);
 }
 
 static bool is_handshake_finished_properly(handshaker_args* args) {
@@ -355,7 +359,9 @@ static bool is_handshake_finished_properly(handshaker_args* args) {
          (!args->is_client && fixture->server_result != nullptr);
 }
 
-static void do_handshaker_next(handshaker_args* args) {
+static void do_handshaker_next(
+    handshaker_args* args,
+    grpc_event_engine::experimental::FuzzingEventEngine* event_engine) {
   // Initialization.
   GRPC_CHECK_NE(args, nullptr);
   GRPC_CHECK_NE(args->fixture, nullptr);
@@ -383,17 +389,23 @@ static void do_handshaker_next(handshaker_args* args) {
         const_cast<const unsigned char**>(&bytes_to_send), &bytes_to_send_size,
         &handshaker_result, &on_handshake_next_done_wrapper, args);
     if (result != TSI_ASYNC) {
-      args->error = on_handshake_next_done(
-          result, args, bytes_to_send, bytes_to_send_size, handshaker_result);
+      on_handshake_next_done(result, args, bytes_to_send, bytes_to_send_size,
+                             handshaker_result);
       if (!args->error.ok()) {
         return;
+      }
+    } else if (result == TSI_ASYNC) {
+      if (event_engine != nullptr) {
+        event_engine->TickUntilIdle();
       }
     }
   } while (result == TSI_INCOMPLETE_DATA);
   notification_wait(fixture);
 }
 
-void tsi_test_do_handshake(tsi_test_fixture* fixture) {
+void tsi_test_do_handshake(
+    tsi_test_fixture* fixture,
+    grpc_event_engine::experimental::FuzzingEventEngine* event_engine) {
   // Initialization.
   setup_handshakers(fixture);
   handshaker_args* client_args =
@@ -404,11 +416,11 @@ void tsi_test_do_handshake(tsi_test_fixture* fixture) {
   do {
     client_args->transferred_data = false;
     server_args->transferred_data = false;
-    do_handshaker_next(client_args);
+    do_handshaker_next(client_args, event_engine);
     if (!client_args->error.ok()) {
       break;
     }
-    do_handshaker_next(server_args);
+    do_handshaker_next(server_args, event_engine);
     if (!server_args->error.ok()) {
       break;
     }

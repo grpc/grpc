@@ -22,6 +22,7 @@
 #include <grpc/slice_buffer.h>
 #include <grpc/support/port_platform.h>
 
+#include "src/core/tsi/transport_security_grpc.h"
 #include "src/core/tsi/transport_security_interface.h"
 
 ///
@@ -85,5 +86,14 @@ size_t alts_grpc_record_protocol_max_unprotected_data_size(
 /// all of its occupied memory.
 ///
 void alts_grpc_record_protocol_destroy(alts_grpc_record_protocol* self);
+
+///
+/// This method sets the allocation callback for the alts_grpc_record_protocol
+/// instance.
+///
+void alts_grpc_record_protocol_set_allocation_callback(
+    alts_grpc_record_protocol* self,
+    tsi_zero_copy_grpc_protector_allocator_cb allocator_cb,
+    void* allocator_user_data);
 
 #endif  // GRPC_SRC_CORE_TSI_ALTS_ZERO_COPY_FRAME_PROTECTOR_ALTS_GRPC_RECORD_PROTOCOL_H

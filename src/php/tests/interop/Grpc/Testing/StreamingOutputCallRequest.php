@@ -6,8 +6,8 @@
 namespace Grpc\Testing;
 
 use Google\Protobuf\Internal\GPBType;
-use Google\Protobuf\Internal\RepeatedField;
 use Google\Protobuf\Internal\GPBUtil;
+use Google\Protobuf\RepeatedField;
 
 /**
  * Server-streaming request.
@@ -61,7 +61,7 @@ class StreamingOutputCallRequest extends \Google\Protobuf\Internal\Message
      *           If response_type is RANDOM, the payload from each response in the stream
      *           might be of different types. This is to simulate a mixed type of payload
      *           stream.
-     *     @type array<\Grpc\Testing\ResponseParameters>|\Google\Protobuf\Internal\RepeatedField $response_parameters
+     *     @type \Grpc\Testing\ResponseParameters[] $response_parameters
      *           Configuration for each expected response message.
      *     @type \Grpc\Testing\Payload $payload
      *           Optional input payload sent along with the request.
@@ -112,7 +112,7 @@ class StreamingOutputCallRequest extends \Google\Protobuf\Internal\Message
      * Configuration for each expected response message.
      *
      * Generated from protobuf field <code>repeated .grpc.testing.ResponseParameters response_parameters = 2;</code>
-     * @return \Google\Protobuf\Internal\RepeatedField
+     * @return RepeatedField<\Grpc\Testing\ResponseParameters>
      */
     public function getResponseParameters()
     {
@@ -123,7 +123,7 @@ class StreamingOutputCallRequest extends \Google\Protobuf\Internal\Message
      * Configuration for each expected response message.
      *
      * Generated from protobuf field <code>repeated .grpc.testing.ResponseParameters response_parameters = 2;</code>
-     * @param array<\Grpc\Testing\ResponseParameters>|\Google\Protobuf\Internal\RepeatedField $var
+     * @param \Grpc\Testing\ResponseParameters[] $var
      * @return $this
      */
     public function setResponseParameters($var)

@@ -39,11 +39,11 @@ from typing import (
     Union,
 )
 
-import grpc  # pytype: disable=pyi-error
-from grpc import _common  # pytype: disable=pyi-error
-from grpc import _compression  # pytype: disable=pyi-error
-from grpc import _interceptor  # pytype: disable=pyi-error
-from grpc import _observability  # pytype: disable=pyi-error
+import grpc
+from grpc import _common
+from grpc import _compression
+from grpc import _interceptor
+from grpc import _observability
 from grpc._cython import cygrpc
 from grpc._typing import ArityAgnosticMethodHandler
 from grpc._typing import ChannelArgumentType
@@ -179,7 +179,7 @@ class _GenericMethod(_Method):
         return None
 
 
-class _RPCState(object):
+class _RPCState:
     context: contextvars.Context
     condition: threading.Condition
     due = Set[str]
@@ -482,7 +482,7 @@ class _Context(grpc.ServicerContext):
         pass
 
 
-class _RequestIterator(object):
+class _RequestIterator:
     _state: _RPCState
     _call: cygrpc.Call
     _request_deserializer: Optional[DeserializingFunction]
@@ -593,7 +593,7 @@ def _call_behavior(
     request_deserializer: Optional[DeserializingFunction],
     send_response_callback: Optional[Callable[[ResponseType], None]] = None,
 ) -> Tuple[Union[ResponseType, Iterator[ResponseType]], bool]:
-    from grpc import _create_servicer_context  # pytype: disable=pyi-error
+    from grpc import _create_servicer_context
 
     with _create_servicer_context(
         rpc_event, state, request_deserializer
@@ -1127,7 +1127,7 @@ class _ServerStage(enum.Enum):
     GRACE = "grace"
 
 
-class _ServerState(object):
+class _ServerState:
     lock: threading.RLock
     completion_queue: cygrpc.CompletionQueue
     server: cygrpc.Server

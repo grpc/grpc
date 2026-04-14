@@ -24,6 +24,7 @@
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/promise/promise.h"
+#include "src/core/lib/transport/status_conversion.h"
 
 namespace grpc_core {
 
@@ -299,6 +300,51 @@ TokenFetcherCredentials::GetRequestMetadata(
     (*queued_call->result)->AddTokenToClientInitialMetadata(*queued_call->md);
     return std::move(queued_call->md);
   };
+}
+
+//
+// HttpTokenFetcherCredentials
+//
+
+HttpTokenFetcherCredentials::HttpFetchRequest::HttpFetchRequest(
+    HttpTokenFetcherCredentials* creds, Timestamp deadline,
+    absl::AnyInvocable<void(absl::StatusOr<grpc_http_response>)> on_done)
+    : on_done_(std::move(on_done)) {
+  GRPC_CLOSURE_INIT(&on_http_response_, OnHttpResponse, this, nullptr);
+  Ref().release();  // Ref held by HTTP request callback.
+  http_request_ = creds->StartHttpRequest(creds->pollent(), deadline,
+                                          &response_, &on_http_response_);
+}
+
+void HttpTokenFetcherCredentials::HttpFetchRequest::Orphan() {
+  http_request_.reset();
+  Unref();
+}
+
+void HttpTokenFetcherCredentials::HttpFetchRequest::OnHttpResponse(
+    void* arg, grpc_error_handle error) {
+  RefCountedPtr<HttpFetchRequest> self(static_cast<HttpFetchRequest*>(arg));
+  if (!error.ok()) {
+    // TODO(roth): It shouldn't be necessary to explicitly set the
+    // status to UNAVAILABLE here.  Once the HTTP client code is
+    // migrated to stop using legacy grpc_error APIs to create
+    // statuses, we should be able to just propagate the status as-is.
+    self->on_done_(absl::UnavailableError(StatusToString(error)));
+    return;
+  }
+  if (self->response_.status != 200) {
+    grpc_status_code status_code =
+        grpc_http2_status_to_grpc_status(self->response_.status);
+    if (status_code != GRPC_STATUS_UNAVAILABLE) {
+      status_code = GRPC_STATUS_UNAUTHENTICATED;
+    }
+    self->on_done_(
+        absl::Status(static_cast<absl::StatusCode>(status_code),
+                     absl::StrCat("HTTP token fetch failed with status ",
+                                  self->response_.status)));
+    return;
+  }
+  self->on_done_(self->response_);
 }
 
 }  // namespace grpc_core

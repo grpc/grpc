@@ -22,6 +22,7 @@ import unittest
 
 import grpc
 from grpc.experimental import aio
+import typeguard
 
 from src.proto.grpc.testing import messages_pb2
 from src.proto.grpc.testing import test_pb2_grpc
@@ -47,7 +48,7 @@ _MAX_MESSAGE_LENGTH = 1024
 _ADDRESS_TOKEN_ERRNO = errno.EADDRINUSE, errno.ENOSR
 
 
-class _TestPointerWrapper(object):
+class _TestPointerWrapper:
     def __int__(self):
         return 123456
 
@@ -131,6 +132,7 @@ class TestChannelArgument(AioTestBase):
         server = aio.server(options=_TEST_CHANNEL_ARGS)
         await server.stop(None)
 
+    @typeguard.suppress_type_checks  # testing negative cases
     async def test_invalid_client_args(self):
         for invalid_arg in _INVALID_TEST_CHANNEL_ARGS:
             self.assertRaises(

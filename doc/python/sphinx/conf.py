@@ -16,48 +16,71 @@
 
 import os
 import sys
-PYTHON_FOLDER = os.path.join(os.path.dirname(os.path.realpath(__file__)), '..',
-                             '..', '..', 'src', 'python')
-sys.path.insert(0, os.path.join(PYTHON_FOLDER, 'grpcio'))
-sys.path.insert(0, os.path.join(PYTHON_FOLDER, 'grpcio_channelz'))
-sys.path.insert(0, os.path.join(PYTHON_FOLDER, 'grpcio_health_checking'))
-sys.path.insert(0, os.path.join(PYTHON_FOLDER, 'grpcio_reflection'))
-sys.path.insert(0, os.path.join(PYTHON_FOLDER, 'grpcio_status'))
-sys.path.insert(0, os.path.join(PYTHON_FOLDER, 'grpcio_testing'))
+
+# Add all packages to sys.path
+PYTHON_FOLDER = os.path.join(
+    os.path.dirname(os.path.realpath(__file__)),
+    "..",
+    "..",
+    "..",
+    "src",
+    "python",
+)
+ALL_PACKAGES = [
+    "grpcio",
+    "grpcio_admin",
+    "grpcio_channelz",
+    "grpcio_csds",
+    "grpcio_health_checking",
+    "grpcio_observability",
+    "grpcio_reflection",
+    "grpcio_status",
+    "grpcio_testing",
+]
+for pkg in ALL_PACKAGES:
+    # Use .append() instead of insert(0) to let Sphinx find the compiled
+    # Cython extensions from site-packages correctly
+    sys.path.append(os.path.join(PYTHON_FOLDER, pkg))
+
 
 # -- Project information -----------------------------------------------------
 
-project = 'gRPC Python'
-copyright = '2025, The gRPC Authors'
-author = 'The gRPC Authors'
+# See Sphinx configuration variables at
+# https://www.sphinx-doc.org/en/master/usage/configuration.html
+
+project = "gRPC Python"
+copyright = "2025, The gRPC Authors"
+author = "The gRPC Authors"
 
 # Import generated grpc_version after the path been modified
 import grpc_version
-version = '.'.join(grpc_version.VERSION.split('.')[:3])
+
 release = grpc_version.VERSION
-if 'dev' in grpc_version.VERSION:
-    branch = 'master'
+version = ".".join(release.split(".")[:3])
+if "dev" in release:
+    _branch = "master"
 else:
-    branch = 'v%s.%s.x' % tuple(grpc_version.VERSION.split('.')[:2])
+    _major, _minor = release.split(".")[:2]
+    _branch = f"v{_major}.{_minor}.x"
 
 # -- General configuration ---------------------------------------------------
 
-templates_path = ['_templates']
-source_suffix = ['.rst', '.md']
-master_doc = 'index'
-language = 'en'
-exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
+templates_path = ["_templates"]
+source_suffix = [".rst", ".md"]
+master_doc = "index"
+language = "en"
+exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 pygments_style = None
 
 # --- Extensions Configuration -----------------------------------------------
 
 extensions = [
-    'sphinx.ext.autodoc',
-    'sphinx.ext.viewcode',
-    'sphinx.ext.todo',
-    'sphinx.ext.napoleon',
-    'sphinx.ext.coverage',
-    'sphinx.ext.autodoc.typehints',
+    "sphinx.ext.autodoc",
+    "sphinx.ext.viewcode",
+    "sphinx.ext.todo",
+    "sphinx.ext.napoleon",
+    "sphinx.ext.coverage",
+    "sphinx.ext.autodoc.typehints",
 ]
 
 napoleon_google_docstring = True
@@ -65,41 +88,57 @@ napoleon_numpy_docstring = True
 napoleon_include_special_with_doc = True
 
 autodoc_default_options = {
-    'members': None,
+    "members": None,
 }
 
-autodoc_mock_imports = ["envoy"]
+autodoc_mock_imports = [
+    "envoy",
+]
 
-autodoc_typehints = 'description'
+autodoc_typehints = "description"
 
 # -- HTML Configuration -------------------------------------------------
 
-html_theme = 'alabaster'
+html_theme = "pydata_sphinx_theme"
+html_title = f"gRPC Python Docs v{version}"
 html_theme_options = {
-    'fixed_sidebar': True,
-    'page_width': 'auto',
-    'show_related': True,
-    'analytics_id': 'UA-60127042-1',
-    'description': grpc_version.VERSION,
-    'show_powered_by': False,
+    "navbar_center": [],
+    "header_links_before_dropdown": 15,
+    "secondary_sidebar_items": ["page-toc", "edit-this-page"],
+    "show_toc_level": 2,
 }
+
+html_theme_options["analytics"] = {
+    "google_analytics_id": "UA-60127042-1",
+}
+
+html_sidebars = {"**": ["sidebar-nav-bs"]}
+
 html_static_path = ["_static"]
+html_css_files = ["custom.css"]
 
 # -- Options for manual page output ------------------------------------------
 
-man_pages = [(master_doc, 'grpcio', 'grpcio Documentation', [author], 1)]
+man_pages = [(master_doc, "grpcio", "grpcio Documentation", [author], 1)]
 
 # -- Options for Texinfo output ----------------------------------------------
 
 texinfo_documents = [
-    (master_doc, 'grpcio', 'grpcio Documentation', author, 'grpcio',
-     'One line description of project.', 'Miscellaneous'),
+    (
+        master_doc,
+        "grpcio",
+        "grpcio Documentation",
+        author,
+        "grpcio",
+        "One line description of project.",
+        "Miscellaneous",
+    ),
 ]
 
 # -- Options for Epub output -------------------------------------------------
 
 epub_title = project
-epub_exclude_files = ['search.html']
+epub_exclude_files = ["search.html"]
 
 # -- Options for todo extension ----------------------------------------------
 
@@ -107,4 +146,7 @@ todo_include_todos = True
 
 # -- Options for substitutions -----------------------------------------------
 
-rst_epilog = '.. |channel_arg_names_link| replace:: https://github.com/grpc/grpc/blob/%s/include/grpc/impl/channel_arg_names.h' % branch
+rst_epilog = (
+    ".. |channel_arg_names_link| replace::"
+    f" https://github.com/grpc/grpc/blob/{_branch}/include/grpc/impl/channel_arg_names.h"
+)

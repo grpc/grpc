@@ -135,11 +135,9 @@ LoopCtl<absl::StatusOr<RefCountedPtr<UnstartedCallDestination>>> PickSubchannel(
                  "pick";
           return Continue{};
         }
-        // If the LB policy returned a call tracker, inform it that the
-        // call is starting and add it to context, so that we can notify
-        // it when the call finishes.
+        // If the LB policy returned a call tracker, add it to context, so
+        // that we can notify it when the call finishes.
         if (complete_pick->subchannel_call_tracker != nullptr) {
-          complete_pick->subchannel_call_tracker->Start();
           SetContext(complete_pick->subchannel_call_tracker.release());
         }
         // Apply metadata mutations, if any.

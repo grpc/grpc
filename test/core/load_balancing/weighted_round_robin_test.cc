@@ -202,7 +202,6 @@ class WeightedRoundRobinTest : public LoadBalancingPolicyTest {
       const auto& address = picks[i];
       auto& subchannel_call_tracker = subchannel_call_trackers[i];
       if (subchannel_call_tracker != nullptr) {
-        subchannel_call_tracker->Start();
         std::optional<BackendMetricData> backend_metric_data;
         auto it = backend_metrics.find(address);
         if (it != backend_metrics.end()) {

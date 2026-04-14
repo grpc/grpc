@@ -25,6 +25,7 @@
 #include <utility>
 #include <variant>
 
+#include "src/core/channelz/property_list.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/promise/if.h"
@@ -360,6 +361,15 @@ class Center : public InterceptorList<T> {
     }
   }
 
+  channelz::PropertyList ChannelzProperties() const {
+    return channelz::PropertyList()
+        .Set("refs", refs_)
+        .Set("state", ValueStateName(value_state_))
+        .Set("on_empty", on_empty_.DebugString())
+        .Set("on_full", on_full_.DebugString())
+        .Set("on_closed", on_closed_.DebugString());
+  }
+
  private:
   // State of value_.
   enum class ValueState : uint8_t {
@@ -458,6 +468,10 @@ class PipeSender {
       center_->MarkCancelled();
       center_.reset();
     }
+  }
+
+  channelz::PropertyList ChannelzProperties() {
+    return center_->ChannelzProperties();
   }
 
   void Swap(PipeSender<T>* other) { std::swap(center_, other->center_); }

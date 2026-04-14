@@ -90,9 +90,6 @@ struct grpc_tcp_server {
   // List of closures passed to shutdown_starting_add().
   grpc_closure_list shutdown_starting{nullptr, nullptr};
 
-  // List of closures passed to shutdown_ending_add().
-  grpc_closure_list shutdown_ending{nullptr, nullptr};
-
   // shutdown callback
   grpc_closure* shutdown_complete = nullptr;
 

@@ -42,6 +42,7 @@
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/transport/promise_endpoint.h"
 #include "src/core/server/server.h"
+#include "src/core/transport/auth_context.h"
 #include "src/core/util/shared_bit_gen.h"
 #include "src/core/util/sync.h"
 #include "src/core/util/time.h"
@@ -156,8 +157,10 @@ class ChaoticGoodServerListener final : public Server::ListenerInterface {
 
     void Orphaned() override;
 
-    PendingConnection RequestDataConnection() override;
-    void FinishDataConnection(absl::string_view id, PromiseEndpoint endpoint);
+    PendingConnection RequestDataConnection(
+        const ChannelArgs& handshake_result_args) override;
+    void FinishDataConnection(absl::string_view id, PromiseEndpoint endpoint,
+                              RefCountedPtr<grpc_auth_context> auth_context);
     Duration connection_timeout() const { return connect_timeout_; }
 
    private:
@@ -167,10 +170,11 @@ class ChaoticGoodServerListener final : public Server::ListenerInterface {
     struct PendingConnectionInfo {
       PromiseEndpointLatchPtr latch;
       grpc_event_engine::experimental::EventEngine::TaskHandle timeout;
+      RefCountedPtr<grpc_auth_context> control_endpoint_auth_context;
     };
 
     void ConnectionTimeout(absl::string_view id);
-    PromiseEndpointLatchPtr Extract(absl::string_view id);
+    std::optional<PendingConnectionInfo> Extract(absl::string_view id);
 
     Mutex mu_;
     absl::flat_hash_map<std::string, PendingConnectionInfo> pending_connections_

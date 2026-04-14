@@ -12,6 +12,7 @@
 
 #include "upb/base/descriptor_constants.h"
 #include "upb/mini_table/enum.h"
+#include "upb/mini_table/field.h"
 #include "upb/mini_table/internal/extension.h"
 #include "upb/mini_table/message.h"
 
@@ -30,6 +31,9 @@ upb_MiniTableExtension_CType(const upb_MiniTableExtension* e);
 UPB_API_INLINE uint32_t
 upb_MiniTableExtension_Number(const upb_MiniTableExtension* e);
 
+UPB_API_INLINE const upb_MiniTable* upb_MiniTableExtension_Extendee(
+    const upb_MiniTableExtension* e);
+
 UPB_API_INLINE const upb_MiniTable* upb_MiniTableExtension_GetSubMessage(
     const upb_MiniTableExtension* e);
 
@@ -41,6 +45,9 @@ UPB_API_INLINE bool upb_MiniTableExtension_SetSubMessage(
 
 UPB_API_INLINE bool upb_MiniTableExtension_SetSubEnum(
     upb_MiniTableExtension* e, const upb_MiniTableEnum* m);
+
+UPB_API_INLINE const upb_MiniTableField* upb_MiniTableExtension_ToField(
+    const upb_MiniTableExtension* e);
 
 #ifdef __cplusplus
 } /* extern "C" */

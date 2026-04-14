@@ -171,7 +171,7 @@ pip_install_dir_and_deps() {
 pip_install -U gevent
 
 pip_install --upgrade 'cython==3.1.1'
-pip_install --upgrade six 'protobuf>=6.31.1,<7.0.0'
+pip_install --upgrade six 'protobuf>=6.33.5,<7.0.0'
 
 if [ "$("$VENV_PYTHON" -c "import sys; print(sys.version_info[0])")" == "2" ]
 then
@@ -216,7 +216,7 @@ pip_install_dir "$ROOT/src/python/grpcio_status"
 
 # Build/install status proto mapping
 # build_xds_protos.py is invoked as part of generate_projects.sh
-pip_install_dir "$ROOT/tools/distrib/python/xds_protos"
+pip_install_dir "$ROOT/py_xds_protos"
 
 # Build/install csds
 pip_install_dir "$ROOT/src/python/grpcio_csds"

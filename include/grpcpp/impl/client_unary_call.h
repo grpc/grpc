@@ -66,7 +66,7 @@ class BlockingUnaryCallImpl {
               CallOpClientSendClose, CallOpClientRecvStatus>
         ops;
 
-    status_ = ops.SendMessagePtr(&request, /*allocator=*/nullptr);
+    status_ = ops.SendMessagePtr(&request, channel->memory_allocator());
     if (!status_.ok()) {
       return;
     }
@@ -77,7 +77,7 @@ class BlockingUnaryCallImpl {
     ops.AllowNoMessage();
     ops.ClientSendClose();
     ops.ClientRecvStatus(context, &status_);
-    call.PerformOps(&ops);
+    ops.FillOps(&call);
     cq.Pluck(&ops);
     // Some of the ops might fail. If the ops fail in the core layer, status
     // would reflect the error. But, if the ops fail in the C++ layer, the

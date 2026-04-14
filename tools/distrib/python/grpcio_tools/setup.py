@@ -186,6 +186,9 @@ if EXTRA_ENV_COMPILE_ARGS is None:
         # We need to statically link the C++ Runtime, only the C runtime is
         # available dynamically
         EXTRA_ENV_COMPILE_ARGS += " /MT"
+        # Required to build upb from protobuf 33.x
+        # https://github.com/grpc/grpc/issues/41951
+        EXTRA_ENV_COMPILE_ARGS += " /Zc:preprocessor"
     elif "linux" in sys.platform:
         # GCC by defaults uses C17 so only C++17 needs to be specified.
         EXTRA_ENV_COMPILE_ARGS += " -std=c++17"
@@ -252,6 +255,7 @@ CC_INCLUDES = [
     os.path.normpath(include_dir) for include_dir in protoc_lib_deps.CC_INCLUDES
 ]
 PROTO_INCLUDE = os.path.normpath(protoc_lib_deps.PROTO_INCLUDE)
+PROTO_PATH_PREFIX = os.path.normpath("google/protobuf")
 
 GRPC_PYTHON_TOOLS_PACKAGE = "grpc_tools"
 GRPC_PYTHON_PROTO_RESOURCES_NAME = "_proto"
@@ -276,10 +280,11 @@ def package_data():
     )
     proto_files = []
     for proto_file in PROTO_FILES:
+        proto_file_path = proto_file[proto_file.find(PROTO_PATH_PREFIX) :]
         source = os.path.join(PROTO_INCLUDE, proto_file)
-        target = os.path.join(proto_resources_path, proto_file)
+        target = os.path.join(proto_resources_path, proto_file_path)
         relative_target = os.path.join(
-            GRPC_PYTHON_PROTO_RESOURCES_NAME, proto_file
+            GRPC_PYTHON_PROTO_RESOURCES_NAME, proto_file_path
         )
         try:
             os.makedirs(os.path.dirname(target))
@@ -332,7 +337,7 @@ if __name__ == "__main__":
         ext_modules=extension_modules(),
         python_requires=f">={python_version.MIN_PYTHON_VERSION}",
         install_requires=[
-            "protobuf>=6.31.1,<7.0.0",
+            "protobuf>=6.33.5,<7.0.0",
             "grpcio>={version}".format(version=grpc_version.VERSION),
             "setuptools>=77.0.1",
         ],

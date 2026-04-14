@@ -15,7 +15,13 @@
 load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_package")
 load("//test/core/test_util:grpc_fuzzer.bzl", "grpc_fuzz_test")
 
-grpc_package(name = "test/core/handshake")
+grpc_package(
+    name = "test/core/handshake",
+    features = [
+        "layering_check",
+        "parse_headers",
+    ],
+)
 
 licenses(["notice"])
 
@@ -49,9 +55,14 @@ grpc_fuzz_test(
     external_deps = [
         "fuzztest",
         "fuzztest_main",
+        "gtest",
     ],
     deps = [
         "test_handshake",
+        "//:grpc",
+        "//:grpc_security_base",
+        "//:ref_counted_ptr",
+        "//:transport_auth_context",
         "//test/core/event_engine:event_engine_test_utils",
         "//test/core/event_engine/fuzzing_event_engine:fuzzing_event_engine_cc_proto",
         "//test/core/test_util:fuzzing_channel_args",
@@ -160,7 +171,7 @@ grpc_cc_test(
         "//:channel_arg_names",
         "//:gpr",
         "//:grpc",
-        "//:http_connect_handshaker",
+        "//:http_connect_client_handshaker",
         "//:parse_address",
         "//:sockaddr_utils",
         "//src/core:channel_args",
@@ -190,5 +201,35 @@ grpc_cc_test(
         "//test/core/iomgr:endpoint_tests",
         "//test/core/test_util:grpc_test_util",
         "//test/core/test_util:grpc_test_util_base",
+    ],
+)
+
+grpc_cc_test(
+    name = "secure_endpoint_read_coalescing_test",
+    srcs = ["secure_endpoint_read_coalescing_test.cc"],
+    external_deps = [
+        "absl/status",
+        "absl/strings",
+        "absl/strings:string_view",
+        "absl/synchronization",
+        "gtest",
+    ],
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//:grpc_security_base",
+        "//:iomgr",
+        "//:orphanable",
+        "//:tsi_base",
+        "//:tsi_fake_credentials",
+        "//src/core:channel_args",
+        "//src/core:default_event_engine",
+        "//src/core:event_engine_tcp_socket_utils",
+        "//src/core:experiments",
+        "//src/core:resource_quota",
+        "//src/core:slice",
+        "//test/core/test_util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util_base",
+        "//test/core/test_util:test_memory_allocator",
     ],
 )

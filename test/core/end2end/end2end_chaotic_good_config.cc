@@ -163,11 +163,14 @@ std::vector<CoreTestConfiguration> End2endTestConfigs() {
   }
 
   std::vector<CoreTestConfiguration> config{
+      // TODO(akshitpatel) : [PH2][P4] : Disabling retry for ChaoticGood tests
+      // for now as the retry tests are enabled for PH2. Eventually we should
+      // re-enable retry tests for ChaoticGood too.
       CoreTestConfiguration{
           "ChaoticGoodFullStack",
           FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
               FEATURE_MASK_DOES_NOT_SUPPORT_WRITE_BUFFERING |
-              FEATURE_MASK_IS_CALL_V3,
+              FEATURE_MASK_IS_CALL_V3 | FEATURE_MASK_DOES_NOT_SUPPORT_RETRY,
           nullptr,
           [](const ChannelArgs& /*client_args*/,
              const ChannelArgs& /*server_args*/) {
@@ -208,14 +211,13 @@ std::vector<CoreTestConfiguration> End2endTestConfigs() {
           }},
   };
 
-  if (IsEventEngineSecureEndpointEnabled() &&
-      IsChaoticGoodFramingLayerEnabled()) {
+  if (IsChaoticGoodFramingLayerEnabled()) {
     std::vector<CoreTestConfiguration> secure_config{
         CoreTestConfiguration{
             "ChaoticGoodSecureFullStack",
             FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
                 FEATURE_MASK_DOES_NOT_SUPPORT_WRITE_BUFFERING |
-                FEATURE_MASK_IS_CALL_V3,
+                FEATURE_MASK_IS_CALL_V3 | FEATURE_MASK_DOES_NOT_SUPPORT_RETRY,
             "foo.test.google.fr",
             [](const ChannelArgs& /*client_args*/,
                const ChannelArgs& /*server_args*/) {

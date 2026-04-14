@@ -42,7 +42,7 @@ void ValidationErrors::AddError(absl::string_view error) {
             << max_error_count_ << ")";
     return;
   }
-  field_errors_[key].emplace_back(error);
+  field_errors_[key].emplace(error);
 }
 
 bool ValidationErrors::FieldHasErrors() const {
@@ -64,7 +64,7 @@ std::string ValidationErrors::message(absl::string_view prefix) const {
                                        absl::StrJoin(field_errors, "; "), "]"));
     } else {
       errors.emplace_back(
-          absl::StrCat("field:", field, " error:", field_errors[0]));
+          absl::StrCat("field:", field, " error:", *field_errors.begin()));
     }
   }
   return absl::StrCat(prefix, ": [", absl::StrJoin(errors, "; "), "]");

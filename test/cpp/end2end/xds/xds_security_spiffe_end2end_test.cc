@@ -138,15 +138,15 @@ class FakeCertificateProvider final : public grpc_tls_certificate_provider {
             "No certificates available for cert_name \"", cert_name, "\""));
         distributor_->SetErrorForCert(cert_name, error, error);
       } else {
-        std::shared_ptr<RootCertInfo> root_cert_info;
+        std::shared_ptr<tsi::RootCertInfo> root_cert_info;
         std::optional<grpc_core::PemKeyCertPairList> pem_key_cert_pairs;
         if (root_being_watched) {
           if (it->second.spiffe_bundle_map.size() != 0) {
-            root_cert_info =
-                std::make_shared<RootCertInfo>(it->second.spiffe_bundle_map);
+            root_cert_info = std::make_shared<tsi::RootCertInfo>(
+                it->second.spiffe_bundle_map);
           } else {
-            root_cert_info =
-                std::make_shared<RootCertInfo>(it->second.root_certificate);
+            root_cert_info = std::make_shared<tsi::RootCertInfo>(
+                it->second.root_certificate);
           }
         }
         if (identity_being_watched) {
@@ -451,10 +451,6 @@ int main(int argc, char** argv) {
       "call,channel,client_channel,client_channel_call,client_channel_lb_call,"
       "handshaker";
   grpc_core::ConfigVars::SetOverrides(overrides);
-#if TARGET_OS_IPHONE
-  // Workaround Apple CFStream bug
-  grpc_core::SetEnv("grpc_cfstream", "0");
-#endif
   grpc::testing::FakeCertificateProvider::CertDataMapWrapper cert_data_map_1;
   grpc::testing::g_fake1_cert_data_map = &cert_data_map_1;
   grpc::testing::FakeCertificateProvider::CertDataMapWrapper cert_data_map_2;

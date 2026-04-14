@@ -18,8 +18,6 @@ import time
 from typing import Any, AnyStr, Dict, Iterable, List, Optional, Set, Union
 
 import grpc
-
-# pytype: disable=pyi-error
 from grpc_observability import _cyobservability
 from grpc_observability import _observability
 from grpc_observability import _open_telemetry_measures

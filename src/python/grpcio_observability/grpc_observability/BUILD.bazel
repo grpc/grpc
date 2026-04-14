@@ -16,7 +16,13 @@ load("@grpc_python_dependencies//:requirements.bzl", "requirement")
 load("@rules_python//python:defs.bzl", "py_library")
 load("//bazel:cython_library.bzl", "pyx_library")
 
-package(default_visibility = ["//visibility:private"])
+package(
+    default_visibility = ["//visibility:private"],
+    features = [
+        "layering_check",
+        "parse_headers",
+    ],
+)
 
 cc_library(
     name = "observability",
@@ -39,9 +45,12 @@ cc_library(
         "sampler.h",
         "server_call_tracer.h",
     ],
+    # TODO:(rishesh) - Remove this once the layering check for this file is fixed.
+    features = ["-layering_check"],
     includes = ["."],
     deps = [
         "//:grpc_base",
+        "//src/core:grpc_check",
     ],
 )
 
@@ -53,6 +62,7 @@ pyx_library(
     ],
     deps = [
         ":observability",
+        "//:call_tracer",
     ],
 )
 

@@ -42,6 +42,11 @@ class InterceptedChannel : public ChannelInterface {
     return channel_->GetState(try_to_connect);
   }
 
+  grpc_event_engine::experimental::MemoryAllocator* memory_allocator()
+      const override {
+    return channel_->memory_allocator();
+  }
+
  private:
   InterceptedChannel(ChannelInterface* channel, size_t pos)
       : channel_(channel), interceptor_pos_(pos) {}

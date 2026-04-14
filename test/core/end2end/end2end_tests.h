@@ -63,8 +63,10 @@
 #include "test/core/test_util/test_config.h"
 #include "gtest/gtest.h"
 #include "absl/functional/any_invocable.h"
+#include "absl/log/globals.h"
 #include "absl/memory/memory.h"
 #include "absl/meta/type_traits.h"
+#include "absl/random/random.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 
@@ -104,6 +106,36 @@
 #define FAIL_AUTH_CHECK_SERVER_ARG_NAME "fail_auth_check"
 
 #define GRPC_HTTP2_PH2_CLIENT_CHTTP2_SERVER_CONFIG "Ph2Client"
+#define GRPC_HTTP2_PH2_CLIENT_CHTTP2_SERVER_CONFIG_RETRY "Ph2ClientRetry"
+#define GRPC_HTTP2_PH2_CLIENT_CHTTP2_SERVER_CONFIG_FAKE_SECURITY \
+  "Ph2ClientFakeSecurityFullstack"
+#define GRPC_HTTP2_PH2_CLIENT_CHTTP2_SERVER_CONFIG_INSECURE_CREDENTIALS \
+  "Ph2ClientInsecureCredentials"
+#define GRPC_HTTP2_PH2_CLIENT_CHTTP2_SERVER_CONFIG_FULLSTACK_LOCAL_IPV4 \
+  "Ph2ClientFullstackLocalIpv4"
+#define GRPC_HTTP2_PH2_CLIENT_CHTTP2_SERVER_CONFIG_FULLSTACK_LOCAL_IPV6 \
+  "Ph2ClientFullstackLocalIpv6"
+#define GRPC_HTTP2_PH2_CLIENT_CHTTP2_SERVER_CONFIG_SSL_PROXY "Ph2ClientSslProxy"
+#define GRPC_HTTP2_PH2_CLIENT_CHTTP2_SERVER_CONFIG_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_TLS12 \
+  "Ph2ClientSimpleSslWithOauth2FullstackTls12"
+#define GRPC_HTTP2_PH2_CLIENT_CHTTP2_SERVER_CONFIG_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_TLS13 \
+  "Ph2ClientSimpleSslWithOauth2FullstackTls13"
+#define GRPC_HTTP2_PH2_CLIENT_CHTTP2_SERVER_CONFIG_SIMPLE_SSL_FULLSTACK_TLS12 \
+  "Ph2ClientSimpleSslFullstackTls12"
+#define GRPC_HTTP2_PH2_CLIENT_CHTTP2_SERVER_CONFIG_SIMPLE_SSL_FULLSTACK_TLS13 \
+  "Ph2ClientSimpleSslFullstackTls13"
+#define GRPC_HTTP2_PH2_CLIENT_CHTTP2_SERVER_CONFIG_SSL_CRED_RELOAD_TLS12 \
+  "Ph2ClientSslCredReloadTls12"
+#define GRPC_HTTP2_PH2_CLIENT_CHTTP2_SERVER_CONFIG_SSL_CRED_RELOAD_TLS13 \
+  "Ph2ClientSslCredReloadTls13"
+#define GRPC_HTTP2_PH2_CLIENT_CHTTP2_SERVER_CONFIG_CERT_WATCHER_PROVIDER_ASYNC_VERIFIER_TLS13 \
+  "Ph2ClientCertWatcherProviderAsyncVerifierTls13"
+#define GRPC_HTTP2_PH2_CLIENT_CHTTP2_SERVER_CONFIG_CERT_WATCHER_PROVIDER_SYNC_VERIFIER_TLS12 \
+  "Ph2ClientCertWatcherProviderSyncVerifierTls12"
+#define GRPC_HTTP2_PH2_CLIENT_CHTTP2_SERVER_CONFIG_SIMPLE_SSL_FULLSTACK \
+  "Ph2ClientSimpleSslFullstack"
+#define GRPC_HTTP2_PH2_CLIENT_CHTTP2_SERVER_CONFIG_STATIC_PROVIDER_ASYNC_VERIFIER_TLS13 \
+  "Ph2ClientStaticProviderAsyncVerifierTls13"
 
 namespace grpc_core {
 
@@ -165,6 +197,14 @@ struct CoreTestConfiguration {
   absl::string_view include_test_suites = "*";
   absl::string_view include_specific_tests;
   absl::string_view exclude_specific_tests;
+
+  // On CI, we run all tests for all relevant configs.  However, in
+  // PRs, to reduce test times, we run only a sampling of tests in
+  // various configurations.
+  //
+  // If this field is true, then we run all tests for this
+  // configuration.  Otherwise, we sample.
+  bool always_run_in_pr = false;
 };
 
 const CoreTestConfiguration* CoreTestConfigurationNamed(absl::string_view name);
@@ -721,7 +761,26 @@ inline auto MaybeAddNullConfig(
   return configs;
 }
 
-}  // namespace grpc_core
+// TODO(akshitpatel) : [PH2][P3] : Remove once all the PH2 E2E tests are fixed.
+inline void EnableLoggingForPH2Tests() {
+  if (IsPromiseBasedHttp2ClientTransportEnabled()) {
+    grpc_tracer_set_enabled("http2_ph2_transport", true);
+    absl::SetMinLogLevel(absl::LogSeverityAtLeast::kInfo);
+    absl::SetGlobalVLogLevel(2);
+  }
+}
+
+// TODO(akshitpatel) : [PH2][P3] : Remove once all the PH2 E2E tests are fixed.
+inline void DisableLoggingForPH2Tests() {
+  if (IsPromiseBasedHttp2ClientTransportEnabled()) {
+    absl::SetGlobalVLogLevel(-1);
+    grpc_tracer_set_enabled("http2_ph2_transport", false);
+  }
+}
+
+inline bool IsPromiseBasedTransportEnabled() {
+  return IsPromiseBasedHttp2ClientTransportEnabled();
+}
 
 // If this test fixture is being run under minstack, skip the test.
 #define SKIP_IF_MINSTACK()                                    \
@@ -736,22 +795,58 @@ inline auto MaybeAddNullConfig(
     GTEST_SKIP() << "Disabled for initial v3 testing";         \
   }
 
-inline bool IsTestEnabledInConfig(absl::string_view include_suite,
-                                  absl::string_view include_test,
-                                  absl::string_view exclude_test,
-                                  absl::string_view suite,
-                                  absl::string_view test) {
-  return (absl::StrContains((include_suite), "*") ||
-          absl::StrContains((include_suite), suite) ||
-          absl::StrContains(include_test, absl::StrCat(suite, ".", test))) &&
-         !absl::StrContains(exclude_test, absl::StrCat(suite, ".", test));
+inline bool IsTokenInList(absl::string_view list, absl::string_view token) {
+  if (list.empty()) return false;
+  size_t start = 0;
+  while (start < list.size()) {
+    size_t end = list.find('|', start);
+    if (end == std::string::npos) {
+      end = list.size();
+    }
+
+    if (list.substr(start, end - start) == token) {
+      return true;
+    }
+    start = end + 1;
+  }
+  return false;
 }
 
-#define SKIP_IF_DISABLED_IN_CONFIG(include_suite, include_test, exclude_test,  \
-                                   suite, test)                                \
-  if (!IsTestEnabledInConfig(include_suite, include_test, exclude_test, suite, \
-                             test)) {                                          \
-    GTEST_SKIP();                                                              \
+inline bool IsTestEnabledInConfig(const CoreTestConfiguration* config,
+                                  absl::string_view suite,
+                                  absl::string_view test) {
+  return (absl::StrContains(config->include_test_suites, "*") ||
+          IsTokenInList(config->include_test_suites, suite) ||
+          IsTokenInList(config->include_specific_tests,
+                        absl::StrCat(suite, ".", test))) &&
+         !IsTokenInList(config->exclude_specific_tests,
+                        absl::StrCat(suite, ".", test));
+}
+
+inline bool IsTestSampledInPr(const CoreTestConfiguration* config) {
+#ifdef GRPC_RUNNING_IN_PR
+  // If running in a PR and the config is not always run, then roll the dice.
+  // There is a 25% chance of any test running with this config.
+  if (!config->always_run_in_pr) {
+    absl::BitGen bit_gen;
+    if (absl::Uniform<int>(bit_gen, 0, 100) > 25) return false;
+  }
+#else
+  (void)config;  // Avoid unused parameter warning.
+#endif  // GRPC_RUNNING_IN_PR
+  return true;
+}
+
+}  // namespace grpc_core
+
+#define SKIP_IF_DISABLED_IN_CONFIG(config, suite, test) \
+  if (!IsTestEnabledInConfig(config, suite, test)) {    \
+    GTEST_SKIP() << "Test not enabled in config";       \
+  }
+
+#define SKIP_IF_NOT_SAMPLED_IN_PR(config)            \
+  if (!IsTestSampledInPr(config)) {                  \
+    GTEST_SKIP() << "Running in PR and not sampled"; \
   }
 
 #define SKIP_IF_LOCAL_TCP_CREDS()                                      \
@@ -781,9 +876,8 @@ inline bool IsTestEnabledInConfig(absl::string_view include_suite,
         (grpc_core::ConfigVars::Get().PollStrategy() == "poll")) {           \
       GTEST_SKIP() << "call-v3 not supported with poll poller";              \
     }                                                                        \
-    SKIP_IF_DISABLED_IN_CONFIG(                                              \
-        GetParam()->include_test_suites, GetParam()->include_specific_tests, \
-        GetParam()->exclude_specific_tests, #suite, #name);                  \
+    SKIP_IF_DISABLED_IN_CONFIG(GetParam(), #suite, #name);                   \
+    SKIP_IF_NOT_SAMPLED_IN_PR(GetParam());                                   \
     CoreEnd2endTest_##suite##_##name(GetParam(), nullptr, #suite).RunTest(); \
   }
 #endif
@@ -813,9 +907,8 @@ inline bool IsTestEnabledInConfig(absl::string_view include_suite,
         !IsEventEngineDnsEnabled()) {                                          \
       GTEST_SKIP() << "fuzzers need event engine";                             \
     }                                                                          \
-    SKIP_IF_DISABLED_IN_CONFIG(config->include_test_suites,                    \
-                               config->include_specific_tests,                 \
-                               config->exclude_specific_tests, #suite, #name); \
+    SKIP_IF_DISABLED_IN_CONFIG(config, #suite, #name);                         \
+    SKIP_IF_NOT_SAMPLED_IN_PR(config);                                         \
     if (IsEventEngineDnsNonClientChannelEnabled() &&                           \
         !grpc_event_engine::experimental::                                     \
             EventEngineExperimentDisabledForPython()) {                        \

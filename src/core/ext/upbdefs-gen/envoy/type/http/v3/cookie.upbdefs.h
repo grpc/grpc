@@ -27,6 +27,11 @@ UPB_INLINE const upb_MessageDef *envoy_type_http_v3_Cookie_getmsgdef(upb_DefPool
   return upb_DefPool_FindMessageByName(s, "envoy.type.http.v3.Cookie");
 }
 
+UPB_INLINE const upb_MessageDef *envoy_type_http_v3_CookieAttribute_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_type_http_v3_cookie_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.type.http.v3.CookieAttribute");
+}
+
 
 #ifdef __cplusplus
 }  /* extern "C" */

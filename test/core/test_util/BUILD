@@ -18,6 +18,10 @@ licenses(["notice"])
 
 grpc_package(
     name = "test/core/test_util",
+    features = [
+        "layering_check",
+        "parse_headers",
+    ],
     visibility = "public",
 )
 
@@ -117,6 +121,18 @@ grpc_cc_library(
         "//src/core:slice_refcount",
         "//src/core:time",
         "//src/core:useful",
+    ],
+)
+
+grpc_cc_library(
+    name = "test_memory_allocator",
+    testonly = 1,
+    hdrs = ["test_memory_allocator.h"],
+    external_deps = [
+        "absl/strings",
+    ],
+    deps = [
+        "//:grpc_base",
     ],
 )
 
@@ -263,7 +279,11 @@ grpc_cc_library(
     ],
     deps = [
         ":grpc_test_util",
+        "//:gpr",
         "//:grpc",
+        "//src/core:env",
+        "//src/core:error",
+        "//src/core:grpc_check",
         "//test/cpp/util:test_config",
     ],
 )
@@ -395,12 +415,15 @@ grpc_cc_library(
     external_deps = [
         "absl/status:statusor",
         "absl/strings",
+        "absl/log",
     ],
     deps = [
         "grpc_test_util_unsecure",
         "//:gpr",
         "//:grpc",
         "//:sockaddr_utils",
+        "//src/core:grpc_check",
+        "//src/core:grpc_sockaddr",
         "//src/core:resolved_address",
     ],
 )
@@ -427,7 +450,10 @@ grpc_cc_library(
     testonly = True,
     srcs = ["socket_use_after_close_detector.cc"],
     hdrs = ["socket_use_after_close_detector.h"],
-    external_deps = ["gtest"],
+    external_deps = [
+        "absl/log:log",
+        "gtest",
+    ],
     deps = [
         "grpc_test_util_unsecure",
         "//:gpr",
@@ -640,5 +666,51 @@ grpc_cc_library(
     ],
     deps = [
         "//src/core:postmortem",
+    ],
+)
+
+grpc_cc_library(
+    name = "xds_http_add_header_filter",
+    testonly = 1,
+    srcs = ["xds_http_add_header_filter.cc"],
+    hdrs = ["xds_http_add_header_filter.h"],
+    external_deps = [
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
+    ],
+    deps = [
+        "//:grpc_base",
+        "//src/core:json_object_loader",
+        "//src/core:xds_http_filter",
+    ],
+)
+
+grpc_cc_library(
+    name = "test_timeout",
+    testonly = True,
+    hdrs = ["test_timeout.h"],
+    external_deps = [
+    ],
+    deps = [
+        "//:grpc",
+        "//:grpc_base",
+        "//src/core:grpc_check",
+        "//src/core:time",
+    ],
+)
+
+grpc_cc_test(
+    name = "test_timeout_test",
+    srcs = ["test_timeout_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    tags = ["grpc:no-internal-poller"],
+    deps = [
+        ":test_timeout",
+        "//:grpc",
+        "//src/core:default_event_engine",
+        "//src/core:time",
     ],
 )

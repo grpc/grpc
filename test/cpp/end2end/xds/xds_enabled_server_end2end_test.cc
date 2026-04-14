@@ -996,10 +996,6 @@ int main(int argc, char** argv) {
       "call,channel,client_channel,client_channel_call,client_channel_lb_call,"
       "handshaker";
   grpc_core::ConfigVars::SetOverrides(overrides);
-#if TARGET_OS_IPHONE
-  // Workaround Apple CFStream bug
-  grpc_core::SetEnv("grpc_cfstream", "0");
-#endif
   grpc_init();
   const auto result = RUN_ALL_TESTS();
   grpc_shutdown();

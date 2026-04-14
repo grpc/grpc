@@ -22,6 +22,10 @@ load(
 
 package(
     default_visibility = ["//visibility:public"],
+    features = [
+        "layering_check",
+        "parse_headers",
+    ],
 )
 
 licenses(["notice"])
@@ -78,8 +82,9 @@ grpc_cc_library(
         "proto_parser_helper",
         "//:gpr_platform",
         "//:grpc++_config_proto",
-        "@com_google_protobuf//src/google/protobuf/compiler:code_generator",
-        "@com_google_protobuf//src/google/protobuf/compiler:plugin",
+        "@com_google_protobuf//src/google/protobuf/compiler/csharp:names",
+        "@com_google_protobuf//src/google/protobuf/compiler/objectivec:names",
+        "@com_google_protobuf//src/google/protobuf/compiler/php:names",
         "@com_google_protobuf//src/google/protobuf/io",
         "@com_google_protobuf//src/google/protobuf/io:printer",
     ],

@@ -27,6 +27,11 @@ UPB_INLINE const upb_MessageDef *envoy_extensions_clusters_aggregate_v3_ClusterC
   return upb_DefPool_FindMessageByName(s, "envoy.extensions.clusters.aggregate.v3.ClusterConfig");
 }
 
+UPB_INLINE const upb_MessageDef *envoy_extensions_clusters_aggregate_v3_AggregateClusterResource_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_extensions_clusters_aggregate_v3_cluster_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.extensions.clusters.aggregate.v3.AggregateClusterResource");
+}
+
 
 #ifdef __cplusplus
 }  /* extern "C" */

@@ -19,6 +19,7 @@
 #ifndef GRPCPP_IMPL_CHANNEL_INTERFACE_H
 #define GRPCPP_IMPL_CHANNEL_INTERFACE_H
 
+#include <grpc/event_engine/memory_allocator.h>
 #include <grpc/impl/connectivity_state.h>
 #include <grpcpp/impl/call.h>
 #include <grpcpp/support/status.h>
@@ -100,6 +101,11 @@ class ChannelInterface {
       if (!WaitForStateChange(state, deadline)) return false;
     }
     return true;
+  }
+
+  virtual grpc_event_engine::experimental::MemoryAllocator* memory_allocator()
+      const {
+    return nullptr;
   }
 
  private:

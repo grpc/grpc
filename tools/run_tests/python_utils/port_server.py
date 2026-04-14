@@ -14,20 +14,17 @@
 # limitations under the License.
 """Manage TCP ports for unit tests; started by run_tests.py"""
 
-from __future__ import print_function
-
 import argparse
 import errno
+from http.server import BaseHTTPRequestHandler
+from http.server import HTTPServer
 import platform
 import random
 import socket
+from socketserver import ThreadingMixIn
 import sys
 import threading
 import time
-
-from six.moves.BaseHTTPServer import BaseHTTPRequestHandler
-from six.moves.BaseHTTPServer import HTTPServer
-from six.moves.socketserver import ThreadingMixIn
 
 # increment this number whenever making a change to ensure that
 # the changes are picked up by running CI servers

@@ -42,6 +42,8 @@
 
 namespace grpc_core {
 
+bool XdsExtProcOnClientEnabled();
+
 class GrpcXdsBootstrap final : public XdsBootstrap {
  public:
   class GrpcNode final : public Node {
@@ -57,6 +59,8 @@ class GrpcXdsBootstrap final : public XdsBootstrap {
     }
     const Json::Object& metadata() const override { return metadata_; }
 
+    std::string ToString() const;
+
     static const JsonLoaderInterface* JsonLoader(const JsonArgs&);
 
    private:
@@ -64,6 +68,12 @@ class GrpcXdsBootstrap final : public XdsBootstrap {
       std::string region;
       std::string zone;
       std::string sub_zone;
+
+      bool Empty() const {
+        return region.empty() && zone.empty() && sub_zone.empty();
+      }
+
+      std::string ToString() const;
 
       static const JsonLoaderInterface* JsonLoader(const JsonArgs&);
     };
@@ -93,12 +103,25 @@ class GrpcXdsBootstrap final : public XdsBootstrap {
       return client_listener_resource_name_template_;
     }
 
+    std::string ToString() const;
+
     static const JsonLoaderInterface* JsonLoader(const JsonArgs&);
 
    private:
     std::vector<GrpcXdsServer> servers_;
     std::string client_listener_resource_name_template_;
     bool fallback_on_reachability_only_;
+  };
+
+  struct AllowedGrpcService {
+    RefCountedPtr<const ChannelCredsConfig> channel_creds_config;
+    std::vector<RefCountedPtr<const CallCredsConfig>> call_creds_configs;
+
+    std::string ToString() const;
+
+    static const JsonLoaderInterface* JsonLoader(const JsonArgs&);
+    void JsonPostLoad(const Json& json, const JsonArgs& args,
+                      ValidationErrors* errors);
   };
 
   // Creates bootstrap object from json_string.
@@ -135,6 +158,11 @@ class GrpcXdsBootstrap final : public XdsBootstrap {
       const {
     return certificate_providers_;
   }
+  const std::map<std::string, AllowedGrpcService>& allowed_grpc_services()
+      const {
+    return allowed_grpc_services_;
+  }
+
   const XdsHttpFilterRegistry& http_filter_registry() const {
     return http_filter_registry_;
   }
@@ -165,6 +193,8 @@ class GrpcXdsBootstrap final : public XdsBootstrap {
   std::string server_listener_resource_name_template_;
   std::map<std::string, GrpcAuthority> authorities_;
   CertificateProviderStore::PluginDefinitionMap certificate_providers_;
+  std::map<std::string, AllowedGrpcService> allowed_grpc_services_;
+
   XdsHttpFilterRegistry http_filter_registry_;
   XdsClusterSpecifierPluginRegistry cluster_specifier_plugin_registry_;
   XdsLbPolicyRegistry lb_policy_registry_;

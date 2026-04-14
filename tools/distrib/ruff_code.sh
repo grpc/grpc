@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Copyright 2025 The gRPC Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,7 +13,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-set -ex
+set -eux
+
+ACTION="${1:-}"
+[[ $ACTION == '' ]] || [[ $ACTION == '--fix' ]]
 
 # change to root directory
 cd "$(dirname "$0")/../.."
@@ -32,17 +35,12 @@ DIRS=(
    examples/python
 )
 
-VIRTUALENV=.venv-ruff
-python3 -m virtualenv $VIRTUALENV
-source $VIRTUALENV/bin/activate
-python3 --version
+VIRTUALENV=".venv-ci-ruff"
+python3 -m virtualenv "${VIRTUALENV}"
+source "${VIRTUALENV}/bin/activate"
+python -VV
 
 pip install ruff==0.12.2
+pip list
 
-# Check if --fix flag is provided
-RUFF_COMMAND="ruff check"
-if [[ "$1" == "--fix" ]]; then
-    RUFF_COMMAND="ruff check --fix"
-fi
-
-exec $RUFF_COMMAND "${DIRS[@]}"
+exec ruff check $ACTION "${DIRS[@]}"

@@ -170,8 +170,6 @@ class BackendMetricsLbPolicy : public LoadBalancingPolicy {
     explicit SubchannelCallTracker(LoadReportTracker* load_report_tracker)
         : load_report_tracker_(load_report_tracker) {}
 
-    void Start() override {}
-
     void Finish(FinishArgs args) override {
       load_report_tracker_->RecordPerRpcLoadReport(
           args.backend_metric_accessor->GetBackendMetricData());

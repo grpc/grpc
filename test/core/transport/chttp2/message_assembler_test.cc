@@ -50,12 +50,13 @@ void AppendEmptyMessage(SliceBuffer& payload) {
   AppendGrpcHeaderToSliceBuffer(payload, kFlags0, 0);
 }
 
-void AppendHeaderAndMessage(SliceBuffer& payload, absl::string_view str) {
-  AppendGrpcHeaderToSliceBuffer(payload, kFlags0, str.size());
+void AppendHeaderAndMessage(SliceBuffer& payload, absl::string_view str,
+                            const uint32_t flags = kFlags0) {
+  AppendGrpcHeaderToSliceBuffer(payload, flags, str.size());
   payload.Append(Slice::FromCopiedString(str));
 }
 
-void AppendHeaderAndPartialMessage(SliceBuffer& payload, const uint8_t flag,
+void AppendHeaderAndPartialMessage(SliceBuffer& payload, const uint32_t flag,
                                    const uint32_t length,
                                    absl::string_view str) {
   AppendGrpcHeaderToSliceBuffer(payload, flag, length);
@@ -73,7 +74,7 @@ void ExpectMessageNull(ValueOrHttp2Status<MessageHandle>&& result) {
 }
 
 void ExpectMessagePayload(ValueOrHttp2Status<MessageHandle>&& result,
-                          const size_t expect_length, const uint8_t flags) {
+                          const size_t expect_length, const uint32_t flags) {
   EXPECT_TRUE(result.IsOk());
   MessageHandle message = TakeValue(std::move(result));
   EXPECT_EQ(message->payload()->Length(), expect_length);
@@ -81,7 +82,7 @@ void ExpectMessagePayload(ValueOrHttp2Status<MessageHandle>&& result,
 }
 
 void ExpectMessagePayload(ValueOrHttp2Status<MessageHandle>&& result,
-                          const size_t expect_length, const uint8_t flags,
+                          const size_t expect_length, const uint32_t flags,
                           absl::string_view str) {
   EXPECT_TRUE(result.IsOk());
   MessageHandle message = TakeValue(std::move(result));
@@ -282,7 +283,7 @@ TEST(GrpcMessageAssemblerTest, FourMessageInThreeFrames) {
   EXPECT_TRUE(append3.IsOk());
 
   ValueOrHttp2Status<MessageHandle> result3 = assembler.ExtractMessage();
-  ExpectMessagePayload(std::move(result3), 2 * kStr1024.size(), kFlags5);
+  ExpectMessagePayload(std::move(result3), 2 * kStr1024.size(), kFlags0);
 
   ValueOrHttp2Status<MessageHandle> result4 = assembler.ExtractMessage();
   ExpectMessagePayload(std::move(result4), kStr1024.size(), kFlags0);
@@ -341,6 +342,62 @@ TEST(GrpcMessageAssemblerTest, ErrorIncompleteMessagePayload) {
   EXPECT_TRUE(result.IsOk());
   ValueOrHttp2Status<MessageHandle> result1 = assembler.ExtractMessage();
   EXPECT_FALSE(result1.IsOk());
+}
+
+TEST(GrpcMessageAssemblerTest, ValidateGrpcMessageHeaderFlags) {
+  GrpcMessageAssembler assembler;
+  constexpr absl::string_view kPayload = "Hello!";
+
+  // Default flags
+  {
+    SliceBuffer frame;
+    AppendHeaderAndMessage(frame, /*str=*/kPayload, /*flags=*/kFlags0);
+    Http2Status result = assembler.AppendNewDataFrame(frame, kNotEndStream);
+    EXPECT_TRUE(result.IsOk());
+    ExpectMessagePayload(assembler.ExtractMessage(), kPayload.size(),
+                         /*flags=*/kFlags0, kPayload);
+  }
+
+  // GRPC_WRITE_INTERNAL_COMPRESS flag
+  {
+    SliceBuffer frame;
+    // The flag will be converted to kWriteInternalCompress when sending on the
+    // wire and re-converted to GRPC_WRITE_INTERNAL_COMPRESS when received.
+    AppendHeaderAndMessage(frame, /*str=*/kPayload,
+                           /*flags=*/
+                           GRPC_WRITE_INTERNAL_COMPRESS);
+    Http2Status result = assembler.AppendNewDataFrame(frame, kNotEndStream);
+    EXPECT_TRUE(result.IsOk());
+    ExpectMessagePayload(assembler.ExtractMessage(), kPayload.size(),
+                         /*flags=*/GRPC_WRITE_INTERNAL_COMPRESS, kPayload);
+  }
+
+  // Invalid flags
+  {
+    SliceBuffer frame;
+    AppendHeaderAndMessage(frame, /*str=*/kPayload, /*flags=*/kFlags5);
+    Http2Status result = assembler.AppendNewDataFrame(frame, kNotEndStream);
+    EXPECT_TRUE(result.IsOk());
+    ExpectMessagePayload(assembler.ExtractMessage(), kPayload.size(),
+                         /*flags=*/kFlags0, kPayload);
+  }
+
+  {
+    SliceBuffer frame;
+    uint8_t* header = frame.AddTiny(kGrpcHeaderSizeInBytes);
+    header[0] = kFlags5;
+    const uint32_t length = kPayload.size();
+    header[1] = static_cast<uint8_t>(length >> 24);
+    header[2] = static_cast<uint8_t>(length >> 16);
+    header[3] = static_cast<uint8_t>(length >> 8);
+    header[4] = static_cast<uint8_t>(length);
+    frame.Append(Slice::FromCopiedString(kPayload));
+    Http2Status result = assembler.AppendNewDataFrame(frame, kNotEndStream);
+    EXPECT_TRUE(result.IsOk());
+
+    ValueOrHttp2Status<MessageHandle> message = assembler.ExtractMessage();
+    EXPECT_FALSE(message.IsOk());
+  }
 }
 
 ///////////////////////////////////////////////////////////////////////////////

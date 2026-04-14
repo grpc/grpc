@@ -197,7 +197,7 @@ TEST(Json, Keywords) {
                  "[true,false,null]");
 }
 
-void RunParseFailureTest(const char* input) {
+void RunParseFailureTest(absl::string_view input) {
   LOG(INFO) << "parsing string \"" << input << "\" - should fail";
   auto json = JsonParse(input);
   EXPECT_FALSE(json.ok()) << "input: \"" << input << "\"";
@@ -215,6 +215,9 @@ TEST(Json, InvalidInput) {
   RunParseFailureTest("[{},]");
   RunParseFailureTest("{\"field\": [],}");
   RunParseFailureTest("[[],]");
+  const char kInputWithNull[] = "{\"a\":1}\0{\"b\":2}";
+  RunParseFailureTest(
+      absl::string_view(kInputWithNull, sizeof(kInputWithNull)));
 }
 
 TEST(Json, UnterminatedString) { RunParseFailureTest("\"\\x"); }

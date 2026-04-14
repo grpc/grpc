@@ -33,11 +33,11 @@
 #include <vector>
 
 #include "src/core/lib/event_engine/shim.h"
+#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/surface/event_string.h"
-#include "src/core/telemetry/stats.h"
 #include "src/core/telemetry/stats_data.h"
 #include "src/core/util/atomic_utils.h"
 #include "src/core/util/debug_location.h"
@@ -908,11 +908,18 @@ static void cq_end_op_for_callback(
   }
 
   auto* functor = static_cast<grpc_completion_queue_functor*>(tag);
-  cqd->event_engine->Run(
-      [engine = cqd->event_engine, functor, ok = error.ok()]() {
-        grpc_core::ExecCtx exec_ctx;
-        (*functor->functor_run)(functor, ok);
-      });
+  if (grpc_core::IsUseCallEventEngineInCompletionQueueEnabled()) {
+    (*functor->functor_run)(functor, error.ok());
+  } else {
+    // While the experiment is rolling out, let us keep the cqd->event_engine
+    // field to prevent repeated calls to GetDefaultEventEngine() since it
+    // acquires a global lock.
+    cqd->event_engine->Run(
+        [engine = cqd->event_engine, functor, ok = error.ok()]() {
+          grpc_core::ExecCtx exec_ctx;
+          (*functor->functor_run)(functor, ok);
+        });
+  }
 }
 
 void grpc_cq_end_op(grpc_completion_queue* cq, void* tag,

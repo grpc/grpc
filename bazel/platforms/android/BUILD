@@ -12,6 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+package(features = [
+    "layering_check",
+    "parse_headers",
+])
+
 platform(
     name = "x86_64",
     constraint_values = [

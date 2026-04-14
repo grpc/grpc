@@ -29,16 +29,19 @@
 #include <algorithm>
 #include <condition_variable>
 #include <functional>
+#include <memory>
 #include <mutex>
 #include <sstream>
 #include <thread>
 
+#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/util/env.h"
 #include "src/core/util/grpc_check.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/test_config.h"
+#include "test/cpp/end2end/end2end_test_utils.h"
 #include "test/cpp/end2end/interceptors_util.h"
 #include "test/cpp/end2end/test_service_impl.h"
 #include "test/cpp/util/byte_buffer_proto_helper.h"
@@ -126,6 +129,7 @@ class ClientCallbackEnd2endTest
       std::unique_ptr<experimental::ClientInterceptorFactoryInterface>
           interceptor = nullptr) {
     ChannelArguments args;
+    ApplyCommonChannelArguments(args);
     auto channel_creds = GetCredentialsProvider()->GetChannelCredentials(
         GetParam().credentials_type, &args);
     auto interceptors = CreatePhonyClientInterceptors();
@@ -202,9 +206,10 @@ class ClientCallbackEnd2endTest
             if (with_binary_metadata) {
               EXPECT_EQ(
                   1u, cli_ctx.GetServerTrailingMetadata().count("custom-bin"));
-              EXPECT_EQ(val, ToString(cli_ctx.GetServerTrailingMetadata()
-                                          .find("custom-bin")
-                                          ->second));
+              auto [it, end] =
+                  cli_ctx.GetServerTrailingMetadata().equal_range("custom-bin");
+              ASSERT_NE(it, end);
+              EXPECT_EQ(val, ToString(it->second));
             }
             std::lock_guard<std::mutex> l(mu);
             done = true;
@@ -803,13 +808,15 @@ TEST_P(ClientCallbackEnd2endTest, UnaryReactor) {
     void OnReadInitialMetadataDone(bool ok) override {
       EXPECT_TRUE(ok);
       EXPECT_EQ(1u, cli_ctx_.GetServerInitialMetadata().count("key1"));
-      EXPECT_EQ(
-          "val1",
-          ToString(cli_ctx_.GetServerInitialMetadata().find("key1")->second));
+      auto [it1, end1] =
+          cli_ctx_.GetServerInitialMetadata().equal_range("key1");
+      ASSERT_NE(it1, end1);
+      EXPECT_EQ("val1", ToString(it1->second));
       EXPECT_EQ(1u, cli_ctx_.GetServerInitialMetadata().count("key2"));
-      EXPECT_EQ(
-          "val2",
-          ToString(cli_ctx_.GetServerInitialMetadata().find("key2")->second));
+      auto [it2, end2] =
+          cli_ctx_.GetServerInitialMetadata().equal_range("key2");
+      ASSERT_NE(it2, end2);
+      EXPECT_EQ("val2", ToString(it2->second));
       initial_metadata_done_ = true;
     }
     void OnDone(const Status& s) override {
@@ -869,13 +876,15 @@ TEST_P(ClientCallbackEnd2endTest, GenericUnaryReactor) {
     void OnReadInitialMetadataDone(bool ok) override {
       EXPECT_TRUE(ok);
       EXPECT_EQ(1u, cli_ctx_.GetServerInitialMetadata().count("key1"));
-      EXPECT_EQ(
-          "val1",
-          ToString(cli_ctx_.GetServerInitialMetadata().find("key1")->second));
+      auto [it1, end1] =
+          cli_ctx_.GetServerInitialMetadata().equal_range("key1");
+      ASSERT_NE(it1, end1);
+      EXPECT_EQ("val1", ToString(it1->second));
       EXPECT_EQ(1u, cli_ctx_.GetServerInitialMetadata().count("key2"));
-      EXPECT_EQ(
-          "val2",
-          ToString(cli_ctx_.GetServerInitialMetadata().find("key2")->second));
+      auto [it2, end2] =
+          cli_ctx_.GetServerInitialMetadata().equal_range("key2");
+      ASSERT_NE(it2, end2);
+      EXPECT_EQ("val2", ToString(it2->second));
       initial_metadata_done_ = true;
     }
     void OnDone(const Status& s) override {
@@ -1522,11 +1531,6 @@ TEST_P(ClientCallbackEnd2endTest,
 }
 
 std::vector<TestScenario> CreateTestScenarios(bool test_insecure) {
-#if TARGET_OS_IPHONE
-  // Workaround Apple CFStream bug
-  grpc_core::SetEnv("grpc_cfstream", "0");
-#endif
-
   std::vector<TestScenario> scenarios;
   std::vector<std::string> credentials_types{
       GetCredentialsProvider()->GetSecureCredentialsTypeList()};

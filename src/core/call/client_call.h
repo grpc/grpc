@@ -78,6 +78,7 @@ class ClientCall final
   void InternalUnref(const char*) override { WeakUnref(); }
 
   void Orphaned() override {
+    SourceDestructing();
     if (!saw_trailing_metadata_.load(std::memory_order_relaxed)) {
       CancelWithError(absl::CancelledError());
     }
@@ -118,6 +119,8 @@ class ClientCall final
     this->~ClientCall();
   }
 
+  void AddData(channelz::DataSink sink) override;
+
  private:
   struct UnorderedStart {
     absl::AnyInvocable<void()> start_pending_batch;
@@ -127,7 +130,7 @@ class ClientCall final
   void CommitBatch(const grpc_op* ops, size_t nops, void* notify_tag,
                    bool is_notify_tag_closure);
   template <typename Batch>
-  void ScheduleCommittedBatch(Batch batch);
+  void ScheduleCommittedBatch(Batch&& batch);
   Party::WakeupHold StartCall(const grpc_op& send_initial_metadata_op);
   // Attempt to start the call and send handler down the stack; returns true if
   // state was updated, false otherwise (with cur_state updated to the new

@@ -139,6 +139,9 @@ struct inproc_transport final : public grpc_core::FilterStackTransport {
   void DestroyStream(grpc_stream* gs,
                      grpc_closure* then_schedule_closure) override;
 
+  void StartWatch(grpc_core::RefCountedPtr<StateWatcher>) override {}
+  void StopWatch(grpc_core::RefCountedPtr<StateWatcher>) override {}
+
   void Orphan() override;
 
   void ref() {

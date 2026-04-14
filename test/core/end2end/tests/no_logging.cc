@@ -95,7 +95,9 @@ class VerifyLogNoiseLogSink : public absl::LogSink {
     // using INFO log level setting for production.
     static const auto* const allowed_logs_by_module = new std::map<
         absl::string_view, std::regex>(
-        {{"cq_verifier.cc", std::regex("^Verify .* for [0-9]+ms")},
+        {// test/core/end2end/cq_verifier.cc is a test file. This will not be
+         // present in the production code. Ignore.
+         {"cq_verifier.cc", std::regex(".*")},
          {"chaotic_good_server.cc",
           std::regex("Failed to bind some addresses for.*")},
          {"log.cc",
@@ -110,7 +112,7 @@ class VerifyLogNoiseLogSink : public absl::LogSink {
          {"config.cc", std::regex("gRPC experiments.*")},
          // logs from fixtures are never a production issue
          {"http_proxy_fixture.cc", std::regex(".*")},
-         {"http_connect_handshaker.cc",
+         {"http_connect_client_handshaker.cc",
           std::regex("HTTP proxy handshake with .* failed:.*")}});
 
     if (allow_non_error_logs_.load(std::memory_order_relaxed) &&

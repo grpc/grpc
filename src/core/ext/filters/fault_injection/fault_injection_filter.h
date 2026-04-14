@@ -17,11 +17,11 @@
 #ifndef GRPC_SRC_CORE_EXT_FILTERS_FAULT_INJECTION_FAULT_INJECTION_FILTER_H
 #define GRPC_SRC_CORE_EXT_FILTERS_FAULT_INJECTION_FAULT_INJECTION_FILTER_H
 
-#include <grpc/support/port_platform.h>
 #include <stddef.h>
 
 #include <memory>
 
+#include "src/core/filter/filter_args.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/promise_based_filter.h"
@@ -41,7 +41,37 @@ namespace grpc_core {
 class FaultInjectionFilter
     : public ImplementChannelFilter<FaultInjectionFilter> {
  public:
-  static const grpc_channel_filter kFilter;
+  // TODO(roth): The config structure here does not map cleanly to the
+  // xDS representation, and I suspect that we are not handling all of
+  // the edge cases correctly (e.g., abort_code=OK).  When we have time,
+  // restructure this.
+  struct Config : public FilterConfig {
+    static UniqueTypeName Type() {
+      return GRPC_UNIQUE_TYPE_NAME_HERE("fault_injection_filter_config");
+    }
+    UniqueTypeName type() const override { return Type(); }
+
+    bool Equals(const FilterConfig& other) const override;
+    std::string ToString() const override;
+
+    grpc_status_code abort_code = GRPC_STATUS_OK;
+    std::string abort_message = "Fault injected";
+    std::string abort_code_header;
+    std::string abort_percentage_header;
+    uint32_t abort_percentage_numerator = 0;
+    uint32_t abort_percentage_denominator = 100;
+
+    Duration delay;
+    std::string delay_header;
+    std::string delay_percentage_header;
+    uint32_t delay_percentage_numerator = 0;
+    uint32_t delay_percentage_denominator = 100;
+
+    // By default, the max allowed active faults are unlimited.
+    uint32_t max_faults = std::numeric_limits<uint32_t>::max();
+  };
+
+  static const grpc_channel_filter kFilterVtable;
 
   static absl::string_view TypeName() { return "fault_injection_filter"; }
 
@@ -61,16 +91,27 @@ class FaultInjectionFilter
     static inline const NoInterceptor OnClientToServerHalfClose;
     static inline const NoInterceptor OnServerToClientMessage;
     static inline const NoInterceptor OnFinalize;
+    channelz::PropertyList ChannelzProperties() {
+      return channelz::PropertyList();
+    }
   };
 
  private:
   class InjectionDecision;
+
   InjectionDecision MakeInjectionDecision(
       const ClientMetadata& initial_metadata);
 
-  // The relative index of instances of the same filter.
-  size_t index_;
+  // TODO(roth): Remove this method and these data members as part of
+  // removing the xds_channel_filter_chain_per_route experiment.
+  template <typename T>
+  InjectionDecision MakeInjectionDecision(
+      const ClientMetadata& initial_metadata, const T& config);
+  size_t index_;  // The relative index of instances of the same filter.
   const size_t service_config_parser_index_;
+
+  const RefCountedPtr<const Config> config_;
+
   Mutex mu_;
   absl::InsecureBitGen abort_rand_generator_ ABSL_GUARDED_BY(mu_);
   absl::InsecureBitGen delay_rand_generator_ ABSL_GUARDED_BY(mu_);

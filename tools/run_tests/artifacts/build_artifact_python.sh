@@ -13,6 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+PS4='+ $(date "+[%H:%M:%S %Z]")\011 '
 set -ex
 
 PS4='+ $(date "+[%H:%M:%S %Z]")\011 '
@@ -267,9 +268,9 @@ then
   # Build xds_protos source distribution
   # build_xds_protos.py is invoked as part of generate_projects.
   ${SETARCH_CMD} "${PYTHON}" -m build --no-isolation \
-    "tools/distrib/python/xds_protos"
+    "py_xds_protos"
 
-  cp -r tools/distrib/python/xds_protos/dist/* "$ARTIFACT_DIR"
+  cp -r py_xds_protos/dist/* "$ARTIFACT_DIR"
 
   # Build grpcio_testing source distribution
   # TODO(ssreenithi): find pyproject.toml/nox equivalent

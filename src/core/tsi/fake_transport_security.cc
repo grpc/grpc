@@ -396,7 +396,9 @@ static tsi_result fake_protector_unprotect(
   }
 
   // Now process the protected_bytes.
-  if (frame->needs_draining) return TSI_INTERNAL_ERROR;
+  if (*protected_frames_bytes_size == 0) {
+    return TSI_OK;
+  }
   result = tsi_fake_frame_decode(protected_frames_bytes,
                                  protected_frames_bytes_size, frame,
                                  /*error=*/nullptr);
@@ -543,6 +545,7 @@ static const tsi_zero_copy_grpc_protector_vtable
         fake_zero_copy_grpc_protector_destroy,
         fake_zero_copy_grpc_protector_max_frame_size,
         fake_zero_copy_grpc_protector_read_frame_size,
+        nullptr /* set_allocator */
 };
 
 // --- tsi_handshaker_result methods implementation. ---

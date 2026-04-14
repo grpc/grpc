@@ -15,7 +15,13 @@
 load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_package")
 load("//test/core/test_util:grpc_fuzzer.bzl", "grpc_fuzz_test")
 
-grpc_package(name = "test/core/channelz/zviz")
+grpc_package(
+    name = "test/core/channelz/zviz",
+    features = [
+        "layering_check",
+        "parse_headers",
+    ],
+)
 
 licenses(["notice"])
 
@@ -37,6 +43,7 @@ grpc_cc_library(
     testonly = True,
     hdrs = ["environment_fake.h"],
     external_deps = [
+        "absl/algorithm:container",
         "absl/container:flat_hash_map",
     ],
     deps = [

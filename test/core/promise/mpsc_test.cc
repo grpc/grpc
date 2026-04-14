@@ -14,8 +14,6 @@
 
 #include "src/core/lib/promise/mpsc.h"
 
-#include <grpc/support/log.h>
-
 #include <cstdint>
 #include <memory>
 #include <optional>
