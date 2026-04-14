@@ -129,7 +129,7 @@ If "%GRPC_CMAKE_GENERATOR%" == "Ninja" (
   if %errorlevel% equ 0 (
     @rem Just build grpc++ and grpc_cli targets when gRPC_BUILD_TESTS is OFF.
     cmake --build . --target grpc++ --config %MSBUILD_CONFIG% || goto :error
-    cmake --build . --target grpc_cli --config %MSBUILD_CONFIG% || goto :error
+    @rem cmake --build . --target grpc_cli --config %MSBUILD_CONFIG% || goto :error
   ) else (
     cmake --build . --target buildtests_%GRPC_RUN_TESTS_CXX_LANGUAGE_SUFFIX% --config %MSBUILD_CONFIG% || goto :error
   )

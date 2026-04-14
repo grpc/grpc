@@ -31,7 +31,7 @@ python3 -m pip install six==1.16.0
 
 # Only build gRPC tests with cmake for PRs.
 if [ -n "$KOKORO_GITHUB_PULL_REQUEST_NUMBER" ]; then
-    RUN_TESTS_FLAGS="$RUN_TESTS_FLAGS --extra_args --build_only --cmake_configure_extra_args=-DgRPC_BUILD_TESTS=OFF"
+    RUN_TESTS_FLAGS="$RUN_TESTS_FLAGS --build_only --extra_args --cmake_configure_extra_args=-DgRPC_BUILD_TESTS=OFF"
 fi
 
 tools/run_tests/run_tests_matrix.py $RUN_TESTS_FLAGS || FAILED="true"
