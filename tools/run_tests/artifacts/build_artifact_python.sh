@@ -13,7 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-PS4='+ $(date "+[%H:%M:%S %Z]")\011 '
 set -ex
 
 cd "$(dirname "$0")/../../.."
@@ -21,14 +20,6 @@ cd "$(dirname "$0")/../../.."
 export GRPC_PYTHON_BUILD_WITH_CYTHON=1
 export PYTHON=${PYTHON:-python}
 export AUDITWHEEL=${AUDITWHEEL:-auditwheel}
-export PIP_BREAK_SYSTEM_PACKAGES=1
-
-if [ "$GRPC_BUILD_MAC" != "" ]; then
-  echo "Creating virtual environment for macOS build..."
-  "${PYTHON}" -m venv macos_venv
-  source macos_venv/bin/activate
-  export PYTHON=python
-fi
 
 # activate ccache if desired
 # shellcheck disable=SC1091
