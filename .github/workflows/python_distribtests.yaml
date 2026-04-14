@@ -27,10 +27,10 @@ jobs:
           - target: python_musllinux_1_2_x86_cp39-cp39
             os: ubuntu-latest
           - target: python_macos_x64_python3.9
-            os: macos-latest
+            os: macos-13
             python-version: '3.9'
           - target: python_macos_x64_python3.14
-            os: macos-latest
+            os: macos-13
             python-version: '3.14'
           - target: python_windows_x86_Python39_32bit
             os: windows-latest
@@ -53,9 +53,7 @@ jobs:
         with:
           submodules: recursive
           fetch-depth: 0
-      - name: Install gettext (macOS)
-        if: runner.os == 'macOS'
-        run: brew install gettext
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
