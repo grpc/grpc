@@ -46,7 +46,17 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.10'
+      - name: Restore ccache
+        uses: actions/cache@v4
+        with:
+          path: .ccache
+          key: ccache-python-${{ matrix.target }}-${{ github.sha }}
+          restore-keys: |
+            ccache-python-${{ matrix.target }}-
       - name: Build Artifact
+        env:
+          GRPC_BUILD_ENABLE_CCACHE: "true"
+          DOCKER_EXTRA_ARGS: "-v ${{ github.workspace }}/.ccache:/ccache_dir -e CCACHE_DIR=/ccache_dir"
         run: |
           tools/run_tests/task_runner.py -b ${{ matrix.target }}
       - name: Upload Artifacts
