@@ -119,7 +119,8 @@ task 'dlls', [:plat] do |t, args|
   # and setup ccache symlinks as needed.
   # TODO(jtattermusch): deduplicate creation of prepare_ccache_cmd
   prepare_ccache_cmd = "export GRPC_BUILD_ENABLE_CCACHE=\"#{ENV.fetch('GRPC_BUILD_ENABLE_CCACHE', '')}\" && "
-  prepare_ccache_cmd += "export CCACHE_SECONDARY_STORAGE=\"#{ENV.fetch('CCACHE_SECONDARY_STORAGE', '')}\" && "
+
+  prepare_ccache_cmd += "export CCACHE_DIR=\"$(pwd)/.ccache\" && "
   prepare_ccache_cmd += "export PATH=\"$PATH:/usr/local/bin\" && "
   prepare_ccache_cmd += "source tools/internal_ci/helper_scripts/prepare_ccache_symlinks_rc "
 
@@ -152,7 +153,8 @@ task 'gem:native', [:plat] do |t, args|
   # propagate env variables with ccache configuration to the rake-compiler-dock docker container
   # and setup ccache symlinks as needed.
   prepare_ccache_cmd = "export GRPC_BUILD_ENABLE_CCACHE=\"#{ENV.fetch('GRPC_BUILD_ENABLE_CCACHE', '')}\" && "
-  prepare_ccache_cmd += "export CCACHE_SECONDARY_STORAGE=\"#{ENV.fetch('CCACHE_SECONDARY_STORAGE', '')}\" && "
+
+  prepare_ccache_cmd += "export CCACHE_DIR=\"$(pwd)/.ccache\" && "
   prepare_ccache_cmd += "export PATH=\"$PATH:/usr/local/bin\" && "
   prepare_ccache_cmd += "source tools/internal_ci/helper_scripts/prepare_ccache_symlinks_rc "
 

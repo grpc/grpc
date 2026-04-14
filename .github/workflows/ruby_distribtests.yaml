@@ -11,16 +11,7 @@ on:
 jobs:
   build_artifacts:
     runs-on: ${{ matrix.os }}
-    services:
-      redis:
-        image: redis
-        ports:
-          - 6379:6379
-        options: >-
-          --health-cmd "redis-cli ping"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
+
     strategy:
       fail-fast: false
       matrix:
@@ -71,9 +62,11 @@ jobs:
       - name: Build Artifact
         env:
           GRPC_BUILD_ENABLE_CCACHE: "true"
-          DOCKER_EXTRA_ARGS: "-v ${{ github.workspace }}/.ccache:/ccache_dir -e CCACHE_DIR=/ccache_dir -e CCACHE_SECONDARY_STORAGE=redis://172.17.0.1:6379"
+          DOCKER_EXTRA_ARGS: "-v ${{ github.workspace }}/.ccache:/ccache_dir -e CCACHE_DIR=/ccache_dir"
         run: |
+          mkdir -p .ccache
           tools/run_tests/task_runner.py -b ${{ matrix.target }}
+          sudo chown -R $USER:$USER .ccache || true
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
