@@ -27,7 +27,7 @@ echo "$CCACHE_SECONDARY_STORAGE"
 
 export CCACHE_BASEDIR=$PWD/..
 export CCACHE_DEBUG=true
-export CCACHE_LOGFILE=$PWD/reports/ccache_detailed.log
+export CCACHE_LOGFILE="$PWD/reports/ccache_detailed_$(uname -m)_$(lsb_release -is).log"
 export CCACHE_IGNOREOPTIONS="-I/tmp/build-env-*"
 
 export GRPC_PYTHON_BUILD_WITH_CYTHON=1
