@@ -54,6 +54,14 @@ jobs:
           submodules: recursive
           fetch-depth: 0
 
+      - name: Disable WSL (Windows)
+        if: runner.os == 'Windows'
+        shell: bash
+        run: |
+          mkdir -p dummy_wsl
+          cp /c/Windows/System32/attrib.exe dummy_wsl/wsl.exe
+          echo "$(pwd)/dummy_wsl" >> $GITHUB_PATH
+
       - name: Install Intel dependencies (macOS)
         if: runner.os == 'macOS'
         run: |
