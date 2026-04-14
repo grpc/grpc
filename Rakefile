@@ -120,15 +120,6 @@ task 'dlls', [:plat] do |t, args|
   # TODO(jtattermusch): deduplicate creation of prepare_ccache_cmd
   prepare_ccache_cmd = "export GRPC_BUILD_ENABLE_CCACHE=\"#{ENV.fetch('GRPC_BUILD_ENABLE_CCACHE', '')}\" && "
   prepare_ccache_cmd += "export CCACHE_SECONDARY_STORAGE=\"#{ENV.fetch('CCACHE_SECONDARY_STORAGE', '')}\" && "
-  prepare_ccache_cmd += "if ! command -v ccache &> /dev/null; then "
-  prepare_ccache_cmd += "  echo \"ccache not found, downloading static binary...\"; "
-  prepare_ccache_cmd += "  ARCH=$(uname -m); "
-  prepare_ccache_cmd += "  if curl -L -f https://github.com/ccache/ccache/releases/download/v4.13.3/ccache-4.13.3-linux-$ARCH.tar.xz | tar -xJ -C /tmp; then "
-  prepare_ccache_cmd += "    export PATH=\"$PATH:/tmp/ccache-4.13.3-linux-$ARCH\"; "
-  prepare_ccache_cmd += "  else "
-  prepare_ccache_cmd += "    echo \"Failed to download ccache, proceeding without it.\"; "
-  prepare_ccache_cmd += "  fi; "
-  prepare_ccache_cmd += "fi && "
   prepare_ccache_cmd += "export PATH=\"$PATH:/usr/local/bin\" && "
   prepare_ccache_cmd += "source tools/internal_ci/helper_scripts/prepare_ccache_symlinks_rc "
 
@@ -162,15 +153,6 @@ task 'gem:native', [:plat] do |t, args|
   # and setup ccache symlinks as needed.
   prepare_ccache_cmd = "export GRPC_BUILD_ENABLE_CCACHE=\"#{ENV.fetch('GRPC_BUILD_ENABLE_CCACHE', '')}\" && "
   prepare_ccache_cmd += "export CCACHE_SECONDARY_STORAGE=\"#{ENV.fetch('CCACHE_SECONDARY_STORAGE', '')}\" && "
-  prepare_ccache_cmd += "if ! command -v ccache &> /dev/null; then "
-  prepare_ccache_cmd += "  echo \"ccache not found, downloading static binary...\"; "
-  prepare_ccache_cmd += "  ARCH=$(uname -m); "
-  prepare_ccache_cmd += "  if curl -L -f https://github.com/ccache/ccache/releases/download/v4.13.3/ccache-4.13.3-linux-$ARCH.tar.xz | tar -xJ -C /tmp; then "
-  prepare_ccache_cmd += "    export PATH=\"$PATH:/tmp/ccache-4.13.3-linux-$ARCH\"; "
-  prepare_ccache_cmd += "  else "
-  prepare_ccache_cmd += "    echo \"Failed to download ccache, proceeding without it.\"; "
-  prepare_ccache_cmd += "  fi; "
-  prepare_ccache_cmd += "fi && "
   prepare_ccache_cmd += "export PATH=\"$PATH:/usr/local/bin\" && "
   prepare_ccache_cmd += "source tools/internal_ci/helper_scripts/prepare_ccache_symlinks_rc "
 
