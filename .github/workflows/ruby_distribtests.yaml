@@ -28,14 +28,7 @@ jobs:
             os: ubuntu-latest
           - target: ruby_native_gem_linux_aarch64-linux-musl
             os: ubuntu-latest
-          - target: ruby_native_gem_linux_x86-mingw32
-            os: ubuntu-latest
-          - target: ruby_native_gem_linux_x64-mingw-ucrt
-            os: ubuntu-latest
-          - target: ruby_native_gem_linux_x86_64-darwin
-            os: ubuntu-latest
-          - target: ruby_native_gem_linux_arm64-darwin
-            os: ubuntu-latest
+
     steps:
       - uses: actions/checkout@v4
         with:
