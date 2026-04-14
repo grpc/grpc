@@ -15,6 +15,10 @@
 PS4='+ $(date "+[%H:%M:%S %Z]")\011 '
 set -ex
 
+# activate ccache if desired
+# shellcheck disable=SC1091
+source tools/internal_ci/helper_scripts/prepare_ccache_symlinks_rc
+
 # the platform for which we wanna build the native gem
 GEM_PLATFORM="$1"
 
