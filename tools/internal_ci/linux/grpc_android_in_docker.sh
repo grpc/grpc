@@ -39,6 +39,16 @@ cd "${REPO_ROOT}/src/android/test/interop/"
     "-Pprotoc=${PROTOC}" \
     "-Pgrpc_cpp_plugin=${PLUGIN}"
 
+# Fail after 2 years to force update of Android versions
+if [ $(date +%Y%m%d) -ge 20280415 ]; then
+  echo "FAILED: Failing test to force an update of the android model and version that are being used every 2 years"
+  # The history of this file can be checked to learn how to update the versions
+  # Choose an appropriate model and version from this table.
+  echo "=== UNIQUE_FIREBASE_MODELS_LIST ==="
+  gcloud firebase test android models list
+  exit 1
+fi
+
 # TODO(jtattermusch): make it easier to run this test locally
 # under docker. The issue is that "gcloud firebase" requires being authenticated
 # with gcloud first (while on CI we can rely on GCE default credentials).
@@ -46,8 +56,9 @@ gcloud firebase test android run \
     --type instrumentation \
     --app app/build/outputs/apk/debug/app-debug.apk \
     --test app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk \
-    --device model=a10,version=29,locale=en,orientation=portrait \
-    --device model=oriole,version=32,locale=en,orientation=portrait
+    --device model=cheetah,version=33,locale=en,orientation=portrait \
+    --device model=akita,version=34,locale=en,orientation=portrait \
+    --device model=caiman,version=35,locale=en,orientation=portrait
 
 # Build hello world example
 cd "${REPO_ROOT}/examples/android/helloworld"
