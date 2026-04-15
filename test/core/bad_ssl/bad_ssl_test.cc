@@ -31,6 +31,8 @@
 
 #include <string>
 
+#include <gtest/gtest.h>
+
 #include "src/core/util/env.h"
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/host_port.h"
@@ -117,8 +119,11 @@ static void run_test(const char* target, size_t nops) {
   grpc_channel_credentials_release(ssl_creds);
 }
 
-int main(int argc, char** argv) {
-  char* me = argv[0];
+static int g_argc;
+static char** g_argv;
+
+TEST(BadSsl, BadSslRun) {
+  char* me = g_argv[0];
   char* lslash = strrchr(me, '/');
   char* lunder = strrchr(me, '_');
   char* tmp;
@@ -136,8 +141,8 @@ int main(int argc, char** argv) {
   } else {
     strcpy(root, ".");
   }
-  if (argc == 2) {
-    grpc_core::SetEnv("GRPC_DEFAULT_SSL_ROOTS_FILE_PATH", argv[1]);
+  if (g_argc == 2) {
+    grpc_core::SetEnv("GRPC_DEFAULT_SSL_ROOTS_FILE_PATH", g_argv[1]);
   }
   // figure out our test name
   tmp = lunder - 1;
@@ -162,5 +167,12 @@ int main(int argc, char** argv) {
   gpr_subprocess_interrupt(svr);
   status = gpr_subprocess_join(svr);
   gpr_subprocess_destroy(svr);
-  return status;
+  EXPECT_EQ(status, 0);
+}
+
+int main(int argc, char** argv) {
+  testing::InitGoogleTest(&argc, argv);
+  g_argc = argc;
+  g_argv = argv;
+  return RUN_ALL_TESTS();
 }
