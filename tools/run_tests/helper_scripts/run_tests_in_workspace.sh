@@ -23,6 +23,13 @@ cd "$(dirname "$0")/../../.."
 repo_root="$(pwd)"
 export repo_root
 
+echo "Checking if Redis is reachable..."
+if python3 -c "import socket; s = socket.socket(socket.AF_INET, socket.SOCK_STREAM); s.settimeout(2); exit(0) if s.connect_ex(('10.76.145.84', 6379)) == 0 else exit(1)"; then
+  echo "Redis is reachable on 10.76.145.84:6379"
+else
+  echo "Warning: Redis is not reachable on 10.76.145.84:6379"
+fi
+
 rm -rf "${WORKSPACE_NAME}"
 git clone . "${WORKSPACE_NAME}"
 # clone gRPC submodules, use data from locally cloned submodules where possible
