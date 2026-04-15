@@ -97,6 +97,7 @@ SslSessionLRUCache::Node* SslSessionLRUCache::FindLocked(
 }
 
 void SslSessionLRUCache::Put(const char* key, SslSessionPtr session) {
+  LOG(ERROR) << "[CACHE] SslSessionLRUCache::Put key: " << key;
   if (session == nullptr) {
     LOG(ERROR) << "Attempted to put null SSL session in session cache.";
     return;
@@ -123,6 +124,7 @@ void SslSessionLRUCache::Put(const char* key, SslSessionPtr session) {
 }
 
 SslSessionPtr SslSessionLRUCache::Get(const char* key) {
+  LOG(ERROR) << "[CACHE] SslSessionLRUCache::Get key: " << key;
   grpc_core::MutexLock lock(&lock_);
   // Key is only used for lookups.
   Node* node = FindLocked(key);
