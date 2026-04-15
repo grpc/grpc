@@ -156,7 +156,6 @@ task 'gem:native', [:plat, :build_type] do |t, args|
   prepare_ccache_cmd = "export GRPC_BUILD_ENABLE_CCACHE=\"#{ENV.fetch('GRPC_BUILD_ENABLE_CCACHE', '')}\" && "
   prepare_ccache_cmd += "export CCACHE_SECONDARY_STORAGE=\"#{ENV.fetch('CCACHE_SECONDARY_STORAGE', '')}\" && "
   prepare_ccache_cmd += "export PATH=\"$PATH:/usr/local/bin\" && "
-  prepare_ccache_cmd += "export CCACHE_LOGFILE=\"/usr/local/ccache.log\" && "
   prepare_ccache_cmd += "source tools/internal_ci/helper_scripts/prepare_ccache_symlinks_rc "
 
   supported_windows_platforms = ['x86-mingw32', 'x64-mingw32', 'x64-mingw-ucrt']
@@ -201,9 +200,7 @@ task 'gem:native', [:plat, :build_type] do |t, args|
         V=#{verbose} \
         GRPC_CONFIG=#{grpc_config} \
         GRPC_RUBY_BUILD_PROCS=#{nproc_override} && \
-      (ccache --show-stats || true) && \
-      cat /usr/local/ccache.log && \
-      rm -rf /usr/local/ccache.log
+      (ccache --show-stats || true)
     EOT
   end
 
@@ -249,9 +246,7 @@ task 'gem:native', [:plat, :build_type] do |t, args|
         GRPC_CONFIG=#{grpc_config} \
         GRPC_RUBY_BUILD_PROCS=#{nproc_override} \
         SYSTEM=#{makefile_system_override} && \
-      (ccache --show-stats || true) && \
-      cat /usr/local/ccache.log && \
-      rm -rf /usr/local/ccache.log
+      (ccache --show-stats || true)
     EOT
   end
   # Generate debug symbol packages to complement the native libraries we just built
