@@ -172,9 +172,7 @@ class RpcMethodHandler : public grpc::internal::MethodHandler {
     }
     UnaryRunHandlerHelper(param, static_cast<BaseResponseType*>(&rsp), status);
     if (pending_tag != nullptr) {
-      grpc_call_cancel(param.call->call(), nullptr);
-      gpr_timespec pluck_deadline = gpr_time_add(
-          gpr_now(GPR_CLOCK_REALTIME), gpr_time_from_millis(100, GPR_TIMESPAN));
+      gpr_timespec pluck_deadline = gpr_time_0(GPR_CLOCK_REALTIME);
       grpc_event ev = grpc_completion_queue_pluck(
           param.call->cq()->cq(), pending_tag, pluck_deadline, nullptr);
       if (ev.type != GRPC_QUEUE_TIMEOUT) {
@@ -294,9 +292,7 @@ class ServerStreamingHandler : public grpc::internal::MethodHandler {
     }
     param.call->cq()->Pluck(&ops);
     if (pending_tag != nullptr) {
-      grpc_call_cancel(param.call->call(), nullptr);
-      gpr_timespec pluck_deadline = gpr_time_add(
-          gpr_now(GPR_CLOCK_REALTIME), gpr_time_from_millis(100, GPR_TIMESPAN));
+      gpr_timespec pluck_deadline = gpr_time_0(GPR_CLOCK_REALTIME);
       grpc_event ev = grpc_completion_queue_pluck(
           param.call->cq()->cq(), pending_tag, pluck_deadline, nullptr);
       if (ev.type != GRPC_QUEUE_TIMEOUT) {
