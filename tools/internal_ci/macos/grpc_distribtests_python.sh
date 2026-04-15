@@ -25,12 +25,12 @@ export PREPARE_BUILD_INSTALL_DEPS_PYTHON=true
 source tools/internal_ci/helper_scripts/prepare_ccache_rc
 source tools/internal_ci/helper_scripts/prepare_build_macos_rc
 
-# ccache remote-only configuration
-echo "--- ccache remote config ---"
-export CCACHE_REMOTE_ONLY=true
+# ccache configuration
+echo "--- ccache config ---"
 export CCACHE_LOGFILE=/tmpfs/ccache.log
-ccache -V | grep -E "redis|http" || echo "CCACHE WARNING: Binary may lack required remote storage support"
-nc -zv 10.76.145.84 6379 || echo "NETWORK ERROR: Cannot reach Redis at 10.76.145.84:6379"
+# Ensure ccache uses a local directory
+export CCACHE_DIR=~/.ccache
+ccache -z  # Zero stats to track this run
 echo "--------------------------"
 
 # TODO(jtattermusch): cleanup this prepare build step (needed for python artifact build)
