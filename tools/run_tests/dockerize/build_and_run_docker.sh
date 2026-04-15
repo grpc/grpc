@@ -204,11 +204,6 @@ docker run \
   "${DOCKER_IMAGE_NAME}" \
   "${DOCKER_CMD_AND_ARGS[@]}" || DOCKER_EXIT_CODE=$?
 
-if [ -x "$(command -v ccache)" ]
-then
-  ccache --show-stats || true
-fi
-
 # Copy reports stored by the container (if any)
 if [ "${GRPC_TEST_REPORT_BASE_DIR}" != "" ]
 then

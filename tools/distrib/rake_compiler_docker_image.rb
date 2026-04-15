@@ -32,6 +32,5 @@ def run_rake_compiler(platform, args)
   ENV['RCD_RUBYVM'] = 'mri'
   ENV['RCD_PLATFORM'] = platform
   ENV['RCD_IMAGE'] = docker_image_for_rake_compiler(platform)
-  
   RakeCompilerDock.sh args
 end

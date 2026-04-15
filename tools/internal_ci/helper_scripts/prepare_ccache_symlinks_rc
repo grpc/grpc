@@ -46,23 +46,6 @@ then
       "aarch64-unknown-linux-gnueabi-g++"
       "armv7-unknown-linux-gnueabi-gcc"
       "armv7-unknown-linux-gnueabi-g++"
-
-      # TEST
-      #"x86_64-apple-darwin-clang"
-      #"aarch64-apple-darwin-clang"
-      "aarch64-linux-musl-gcc"
-      "x86_64-linux-gnu-gcc"
-      "i686-unknown-linux-musl-gcc"
-      "aarch64-linux-gnu-gcc"
-      "x86_64-unknown-linux-musl-gcc"
-      "i686-linux-gnu-gcc"
-
-      "aarch64-linux-musl-g++"
-      "x86_64-linux-gnu-g++"
-      "i686-unknown-linux-musl-g++"
-      "aarch64-linux-gnu-g++"
-      "x86_64-unknown-linux-musl-g++"
-      "i686-linux-gnu-g++"
     )
     CCACHE_BINARY_PATH="$(command -v ccache)"
     TEMP_CCACHE_BINDIR="$(mktemp -d)"
