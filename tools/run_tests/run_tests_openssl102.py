@@ -29,7 +29,8 @@ def main():
         "--compiler", "gcc10.2_openssl102"
     ]
     
-    # Removed sys.argv forwarding to prevent unintended CLI argument bleeding
+    if len(sys.argv) > 1:
+        cmdline.extend(sys.argv[1:])
 
     test_job = jobset.JobSpec(
         cmdline=cmdline,
