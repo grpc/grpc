@@ -357,31 +357,31 @@ def _create_portability_test_jobs(
 ):
     test_jobs = []
     # portability C x86
-    # test_jobs += _generate_jobs(
-    #     languages=["c"],
-    #     configs=["dbg"],
-    #     platforms=["linux"],
-    #     arch="x86",
-    #     compiler="default",
-    #     labels=["portability", "corelang"],
-    #     extra_args=extra_args,
-    #     inner_jobs=inner_jobs,
-    # )
+    test_jobs += _generate_jobs(
+        languages=["c"],
+        configs=["dbg"],
+        platforms=["linux"],
+        arch="x86",
+        compiler="default",
+        labels=["portability", "corelang"],
+        extra_args=extra_args,
+        inner_jobs=inner_jobs,
+    )
 
     # portability C and C++ on x64
     for compiler in [
-        # "gcc8",
+        "gcc8",
         # TODO(b/283304471): Tests using OpenSSL's engine APIs were broken and removed
         "gcc10.2_openssl102",
-        # "gcc10.2_openssl111",
-        # "gcc12_openssl309",
-        # "gcc14",
-        # "gcc_musl",
-        # "clang11",
-        # "clang19",
+        "gcc10.2_openssl111",
+        "gcc12_openssl309",
+        "gcc14",
+        "gcc_musl",
+        "clang11",
+        "clang19",
     ]:
         test_jobs += _generate_jobs(
-            languages=["c++"],
+            languages=["c", "c++"],
             configs=["dbg"],
             platforms=["linux"],
             arch="x64",
@@ -394,17 +394,17 @@ def _create_portability_test_jobs(
         )
 
     # portability C & C++ on Windows 64-bit
-    # test_jobs += _generate_jobs(
-    #     languages=["c", "c++"],
-    #     configs=["dbg"],
-    #     platforms=["windows"],
-    #     arch="default",
-    #     compiler="cmake_ninja_vs2022",
-    #     labels=["portability", "corelang"],
-    #     extra_args=extra_args,
-    #     inner_jobs=inner_jobs,
-    #     timeout_seconds=_CPP_RUNTESTS_TIMEOUT,
-    # )
+    test_jobs += _generate_jobs(
+        languages=["c", "c++"],
+        configs=["dbg"],
+        platforms=["windows"],
+        arch="default",
+        compiler="cmake_ninja_vs2022",
+        labels=["portability", "corelang"],
+        extra_args=extra_args,
+        inner_jobs=inner_jobs,
+        timeout_seconds=_CPP_RUNTESTS_TIMEOUT,
+    )
 
     # portability C and C++ on Windows with the "Visual Studio 2022" cmake
     # generator, i.e. not using Ninja (to verify that we can still build with msbuild)
@@ -421,26 +421,26 @@ def _create_portability_test_jobs(
     # )
 
     # C and C++ with no-exceptions on Linux
-    # test_jobs += _generate_jobs(
-    #     languages=["c", "c++"],
-    #     configs=["noexcept"],
-    #     platforms=["linux"],
-    #     labels=["portability", "corelang"],
-    #     extra_args=extra_args,
-    #     inner_jobs=inner_jobs,
-    #     timeout_seconds=_CPP_RUNTESTS_TIMEOUT,
-    # )
+    test_jobs += _generate_jobs(
+        languages=["c", "c++"],
+        configs=["noexcept"],
+        platforms=["linux"],
+        labels=["portability", "corelang"],
+        extra_args=extra_args,
+        inner_jobs=inner_jobs,
+        timeout_seconds=_CPP_RUNTESTS_TIMEOUT,
+    )
 
-    # test_jobs += _generate_jobs(
-    #     languages=["python"],
-    #     configs=["dbg"],
-    #     platforms=["linux"],
-    #     arch="default",
-    #     compiler="python_alpine",
-    #     labels=["portability", "multilang"],
-    #     extra_args=extra_args + ["--report_multi_target"],
-    #     inner_jobs=inner_jobs,
-    # )
+    test_jobs += _generate_jobs(
+        languages=["python"],
+        configs=["dbg"],
+        platforms=["linux"],
+        arch="default",
+        compiler="python_alpine",
+        labels=["portability", "multilang"],
+        extra_args=extra_args + ["--report_multi_target"],
+        inner_jobs=inner_jobs,
+    )
 
     return test_jobs
 
@@ -448,7 +448,7 @@ def _create_portability_test_jobs(
 def _allowed_labels():
     """Returns a list of existing job labels."""
     all_labels = set()
-    for job in _create_portability_test_jobs():
+    for job in _create_test_jobs() + _create_portability_test_jobs():
         for label in job.labels:
             all_labels.add(label)
     return sorted(all_labels)
@@ -590,7 +590,9 @@ if __name__ == "__main__":
     if args.extra_args:
         extra_args.extend(args.extra_args)
 
-    all_jobs = _create_portability_test_jobs(
+    all_jobs = _create_test_jobs(
+        extra_args=extra_args, inner_jobs=args.inner_jobs
+    ) + _create_portability_test_jobs(
         extra_args=extra_args, inner_jobs=args.inner_jobs
     )
 
