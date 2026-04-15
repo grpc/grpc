@@ -235,7 +235,120 @@ def _generate_jobs(
 
 def _create_test_jobs(extra_args=[], inner_jobs=_DEFAULT_INNER_JOBS):
     test_jobs = []
-    # Commented out all baseline tests
+    # sanity tests
+    test_jobs += _generate_jobs(
+        languages=["sanity", "clang-tidy"],
+        configs=["dbg"],
+        platforms=["linux"],
+        labels=["basictests"],
+        extra_args=extra_args + ["--report_multi_target"],
+        inner_jobs=inner_jobs,
+        # Important! When changing the timeout, verify individual test timeouts
+        # in run_tests.py Sanity are less than this.
+        # TODO(ac-patel): decrease when the job is optimized to only consider code diff.
+        timeout_seconds=datetime.timedelta(hours=1, minutes=25).total_seconds(),
+    )
+
+    # supported on all platforms.
+    test_jobs += _generate_jobs(
+        languages=["c"],
+        configs=["dbg", "opt"],
+        platforms=["linux", "macos", "windows"],
+        labels=["basictests", "corelang"],
+        extra_args=extra_args,  # don't use multi_target report because C has too many test cases
+        inner_jobs=inner_jobs,
+        timeout_seconds=_CPP_RUNTESTS_TIMEOUT,
+    )
+
+    # C# tests (both on .NET desktop/mono and .NET core)
+    test_jobs += _generate_jobs(
+        languages=["csharp"],
+        configs=["dbg", "opt"],
+        platforms=["linux", "macos", "windows"],
+        labels=["basictests", "multilang"],
+        extra_args=extra_args + ["--report_multi_target"],
+        inner_jobs=inner_jobs,
+    )
+
+    # ARM64 Linux C# tests
+    test_jobs += _generate_jobs(
+        languages=["csharp"],
+        configs=["dbg", "opt"],
+        platforms=["linux"],
+        arch="arm64",
+        compiler="default",
+        labels=["basictests_arm64"],
+        extra_args=extra_args + ["--report_multi_target"],
+        inner_jobs=inner_jobs,
+    )
+
+    test_jobs += _generate_jobs(
+        languages=["python"],
+        configs=["opt"],
+        platforms=["linux", "macos", "windows"],
+        iomgr_platforms=["native"],
+        labels=["basictests", "multilang"],
+        extra_args=extra_args + ["--report_multi_target"],
+        inner_jobs=inner_jobs,
+    )
+
+    # ARM64 Linux Python tests
+    test_jobs += _generate_jobs(
+        languages=["python"],
+        configs=["opt"],
+        platforms=["linux"],
+        arch="arm64",
+        compiler="default",
+        iomgr_platforms=["native"],
+        labels=["basictests_arm64"],
+        extra_args=extra_args + ["--report_multi_target"],
+        inner_jobs=inner_jobs,
+    )
+
+    # supported on linux and mac.
+    test_jobs += _generate_jobs(
+        languages=["c++"],
+        configs=["dbg", "opt"],
+        platforms=["linux", "macos"],
+        labels=["basictests", "corelang"],
+        extra_args=extra_args,  # don't use multi_target report because C++ has too many test cases
+        inner_jobs=inner_jobs,
+        timeout_seconds=_CPP_RUNTESTS_TIMEOUT,
+    )
+
+    test_jobs += _generate_jobs(
+        languages=["ruby", "php8"],
+        configs=["dbg", "opt"],
+        platforms=["linux", "macos"],
+        labels=["basictests", "multilang"],
+        extra_args=extra_args + ["--report_multi_target"],
+        inner_jobs=inner_jobs,
+        timeout_seconds=_RUBY_RUNTESTS_TIMEOUT,
+    )
+
+    # ARM64 Linux Ruby and PHP tests
+    test_jobs += _generate_jobs(
+        languages=["ruby", "php8"],
+        configs=["dbg", "opt"],
+        platforms=["linux"],
+        arch="arm64",
+        compiler="default",
+        labels=["basictests_arm64"],
+        extra_args=extra_args + ["--report_multi_target"],
+        inner_jobs=inner_jobs,
+    )
+
+    # supported on mac only.
+    test_jobs += _generate_jobs(
+        languages=["objc"],
+        configs=["opt"],
+        platforms=["macos"],
+        labels=["basictests", "multilang"],
+        extra_args=extra_args + ["--report_multi_target"],
+        inner_jobs=inner_jobs,
+        timeout_seconds=_OBJC_RUNTESTS_TIMEOUT,
+    )
+
     return test_jobs
 
 
@@ -243,17 +356,90 @@ def _create_portability_test_jobs(
     extra_args=[], inner_jobs=_DEFAULT_INNER_JOBS
 ):
     test_jobs = []
-    # Commented out others, only run_tests_c++_linux_dbg_native_x64_gcc10.2_openssl102
+    # portability C x86
     test_jobs += _generate_jobs(
-        languages=["c++"],
+        languages=["c"],
         configs=["dbg"],
         platforms=["linux"],
-        arch="x64",
-        compiler="gcc10.2_openssl102",
-        labels=["portability", "corelang", "openssl"],
+        arch="x86",
+        compiler="default",
+        labels=["portability", "corelang"],
+        extra_args=extra_args,
+        inner_jobs=inner_jobs,
+    )
+
+    # portability C and C++ on x64
+    for compiler in [
+        "gcc8",
+        # TODO(b/283304471): Tests using OpenSSL's engine APIs were broken and removed
+        "gcc10.2_openssl102",
+        "gcc10.2_openssl111",
+        "gcc12_openssl309",
+        "gcc14",
+        "gcc_musl",
+        "clang11",
+        "clang19",
+    ]:
+        test_jobs += _generate_jobs(
+            languages=["c", "c++"],
+            configs=["dbg"],
+            platforms=["linux"],
+            arch="x64",
+            compiler=compiler,
+            labels=["portability", "corelang"]
+            + (["openssl"] if "openssl" in compiler else []),
+            extra_args=extra_args,
+            inner_jobs=inner_jobs,
+            timeout_seconds=_CPP_RUNTESTS_TIMEOUT,
+        )
+
+    # portability C & C++ on Windows 64-bit
+    test_jobs += _generate_jobs(
+        languages=["c", "c++"],
+        configs=["dbg"],
+        platforms=["windows"],
+        arch="default",
+        compiler="cmake_ninja_vs2022",
+        labels=["portability", "corelang"],
         extra_args=extra_args,
         inner_jobs=inner_jobs,
         timeout_seconds=_CPP_RUNTESTS_TIMEOUT,
+    )
+
+    # portability C and C++ on Windows with the "Visual Studio 2022" cmake
+    # generator, i.e. not using Ninja (to verify that we can still build with msbuild)
+    # test_jobs += _generate_jobs(
+    #     languages=["c", "c++"],
+    #     configs=["dbg"],
+    #     platforms=["windows"],
+    #     arch="x64",
+    #     compiler="cmake_vs2022",
+    #     labels=["portability", "corelang"],
+    #     extra_args=extra_args,
+    #     inner_jobs=inner_jobs,
+    #     timeout_seconds=_CPP_RUNTESTS_TIMEOUT,
+    # )
+
+    # C and C++ with no-exceptions on Linux
+    test_jobs += _generate_jobs(
+        languages=["c", "c++"],
+        configs=["noexcept"],
+        platforms=["linux"],
+        labels=["portability", "corelang"],
+        extra_args=extra_args,
+        inner_jobs=inner_jobs,
+        timeout_seconds=_CPP_RUNTESTS_TIMEOUT,
+    )
+
+    test_jobs += _generate_jobs(
+        languages=["python"],
+        configs=["dbg"],
+        platforms=["linux"],
+        arch="default",
+        compiler="python_alpine",
+        labels=["portability", "multilang"],
+        extra_args=extra_args + ["--report_multi_target"],
+        inner_jobs=inner_jobs,
     )
 
     return test_jobs
