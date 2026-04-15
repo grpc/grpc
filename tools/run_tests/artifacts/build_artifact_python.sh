@@ -107,20 +107,15 @@ if [[ -n "$WHEEL_PLAT_NAME_FLAG" ]]; then
   WHEEL_PLAT_CONFIG_OPTION+=("-C--build-option=\"$WHEEL_PLAT_NAME_FLAG\"")
 fi
 
-# Force setuptools to use a shared temporary build directory for C/C++ compilation.
-# This is CRITICAL for ccache, as otherwise setuptools appends the python version
-# (e.g., build/temp.macosx-11.0-universal2-cpython-314), which changes the clang++ 
-# `-o` output path and causes a 100% ccache miss.
-cat <<EOF > setup.cfg
-[build]
-build-temp = build/temp.shared
-EOF
-
 # Build without setting explicit flags like --sdist or --wheel so that `build`
 # package first builds the sdist and use that as the source to build the wheel.
 # This is necessary as the file exclusions mentioned in pyproject.toml are
 # otherwise not respected when directly building the wheel.
-${SETARCH_CMD} "${PYTHON}" -m build "${WHEEL_PLAT_CONFIG_OPTION[@]}"
+# We pass --build-temp and --build-base explicitly to unify paths for ccache.
+${SETARCH_CMD} "${PYTHON}" -m build \
+  -C--build-option="--build-temp=build/temp.shared" \
+  -C--build-option="--build-base=build/base.shared" \
+  "${WHEEL_PLAT_CONFIG_OPTION[@]}"
 
 GRPCIO_STRIP_TEMPDIR=$(mktemp -d)
 GRPCIO_TAR_GZ_LIST=( dist/grpcio-*.tar.gz )
@@ -157,11 +152,15 @@ mv "${GRPCIO_STRIPPED_TAR_GZ}" "${GRPCIO_TAR_GZ}"
 
 # Build gRPC tools package source and binary distribution
 ${SETARCH_CMD} "${PYTHON}" -m build "tools/distrib/python/grpcio_tools" \
+  -C--build-option="--build-temp=build/temp.shared" \
+  -C--build-option="--build-base=build/base.shared" \
   "${WHEEL_PLAT_CONFIG_OPTION[@]}"
 
 if [ "$GRPC_BUILD_MAC" == "" ]; then
   "${PYTHON}" src/python/grpcio_observability/make_grpcio_observability.py
   ${SETARCH_CMD} "${PYTHON}" -m build "src/python/grpcio_observability" \
+    -C--build-option="--build-temp=build/temp.shared" \
+    -C--build-option="--build-base=build/base.shared" \
     "${WHEEL_PLAT_CONFIG_OPTION[@]}"
 fi
 
@@ -252,7 +251,9 @@ if [ "$GRPC_BUILD_MAC" == "" ]; then
 
   # Build grpcio_csm_observability distribution
   if [ "$GRPC_BUILD_MAC" == "" ]; then
-    ${SETARCH_CMD} "${PYTHON}" -m build "src/python/grpcio_csm_observability"
+    ${SETARCH_CMD} "${PYTHON}" -m build "src/python/grpcio_csm_observability" \
+      -C--build-option="--build-temp=build/temp.shared" \
+      -C--build-option="--build-base=build/base.shared"
     cp -r src/python/grpcio_csm_observability/dist/* "$ARTIFACT_DIR"
   fi
 fi
@@ -275,6 +276,8 @@ then
   # Build xds_protos source distribution
   # build_xds_protos.py is invoked as part of generate_projects.
   ${SETARCH_CMD} "${PYTHON}" -m build --no-isolation \
+    -C--build-option="--build-temp=build/temp.shared" \
+    -C--build-option="--build-base=build/base.shared" \
     "py_xds_protos"
 
   cp -r py_xds_protos/dist/* "$ARTIFACT_DIR"
@@ -282,7 +285,9 @@ then
   # Build grpcio_testing source distribution
   # TODO(ssreenithi): find pyproject.toml/nox equivalent
   ${SETARCH_CMD} "${PYTHON}" src/python/grpcio_testing/setup.py preprocess
-  ${SETARCH_CMD} "${PYTHON}" -m build src/python/grpcio_testing
+  ${SETARCH_CMD} "${PYTHON}" -m build src/python/grpcio_testing \
+    -C--build-option="--build-temp=build/temp.shared" \
+    -C--build-option="--build-base=build/base.shared"
   cp -r src/python/grpcio_testing/dist/* "$ARTIFACT_DIR"
 
   # Build grpcio_channelz source distribution
@@ -290,6 +295,8 @@ then
   ${SETARCH_CMD} "${PYTHON}" src/python/grpcio_channelz/setup.py \
       preprocess build_package_protos
   ${SETARCH_CMD} "${PYTHON}" -m build --no-isolation \
+    -C--build-option="--build-temp=build/temp.shared" \
+    -C--build-option="--build-base=build/base.shared" \
     "src/python/grpcio_channelz"
 
   cp -r src/python/grpcio_channelz/dist/* "$ARTIFACT_DIR"
@@ -299,6 +306,8 @@ then
   ${SETARCH_CMD} "${PYTHON}" src/python/grpcio_health_checking/setup.py \
       preprocess build_package_protos
   ${SETARCH_CMD} "${PYTHON}" -m build --no-isolation \
+    -C--build-option="--build-temp=build/temp.shared" \
+    -C--build-option="--build-base=build/base.shared" \
     "src/python/grpcio_health_checking"
 
   cp -r src/python/grpcio_health_checking/dist/* "$ARTIFACT_DIR"
@@ -308,6 +317,8 @@ then
   ${SETARCH_CMD} "${PYTHON}" src/python/grpcio_reflection/setup.py \
       preprocess build_package_protos
   ${SETARCH_CMD} "${PYTHON}" -m build --no-isolation \
+    -C--build-option="--build-temp=build/temp.shared" \
+    -C--build-option="--build-base=build/base.shared" \
     "src/python/grpcio_reflection"
 
   cp -r src/python/grpcio_reflection/dist/* "$ARTIFACT_DIR"
@@ -316,14 +327,18 @@ then
   # TODO(ssreenithi): find pyproject.toml/nox equivalent
   ${SETARCH_CMD} "${PYTHON}" src/python/grpcio_status/setup.py \
       preprocess
-  ${SETARCH_CMD} "${PYTHON}" -m build "src/python/grpcio_status"
+  ${SETARCH_CMD} "${PYTHON}" -m build "src/python/grpcio_status" \
+    -C--build-option="--build-temp=build/temp.shared" \
+    -C--build-option="--build-base=build/base.shared"
   cp -r src/python/grpcio_status/dist/* "$ARTIFACT_DIR"
 
   # Install xds-protos as a dependency of grpcio-csds
   "${PYTHON}" -m pip install xds-protos --no-index --find-links "file://$ARTIFACT_DIR/"
 
   # Build grpcio_csds source distribution
-  ${SETARCH_CMD} "${PYTHON}" -m build --no-isolation "src/python/grpcio_csds"
+  ${SETARCH_CMD} "${PYTHON}" -m build --no-isolation "src/python/grpcio_csds" \
+    -C--build-option="--build-temp=build/temp.shared" \
+    -C--build-option="--build-base=build/base.shared"
 
   cp -r src/python/grpcio_csds/dist/* "$ARTIFACT_DIR"
 
@@ -331,7 +346,9 @@ then
   # of Channelz and CSDS to be installed.
   "${PYTHON}" -m pip install grpcio-channelz --no-index --find-links "file://$ARTIFACT_DIR/"
   "${PYTHON}" -m pip install grpcio-csds --no-index --find-links "file://$ARTIFACT_DIR/"
-  ${SETARCH_CMD} "${PYTHON}" -m build --no-isolation "src/python/grpcio_admin"
+  ${SETARCH_CMD} "${PYTHON}" -m build --no-isolation "src/python/grpcio_admin" \
+    -C--build-option="--build-temp=build/temp.shared" \
+    -C--build-option="--build-base=build/base.shared"
 
   cp -r src/python/grpcio_admin/dist/* "$ARTIFACT_DIR"
 
