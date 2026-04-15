@@ -583,7 +583,7 @@ if __name__ == "__main__":
     if args.bq_result_table:
         extra_args.append("--bq_result_table")
         extra_args.append("%s" % args.bq_result_table)
-        extra_args.append("--measure_cpu_costs")
+        # extra_args.append("--measure_cpu_costs")
     extra_args.extend(
         f"--script_args={inner_arg}" for inner_arg in args.inner_jobs_extra_args
     )
