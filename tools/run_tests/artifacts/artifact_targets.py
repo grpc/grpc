@@ -268,6 +268,9 @@ class RubyArtifact:
         self.labels = ["artifact", "ruby", platform, gem_platform]
         if presubmit:
             self.labels.append("presubmit")
+            self.build_type = "presubmit"
+        else:
+            self.build_type = "continuous"
 
     def pre_build_jobspecs(self):
         return []
@@ -284,6 +287,7 @@ class RubyArtifact:
             [
                 "tools/run_tests/artifacts/build_artifact_ruby.sh",
                 self.gem_platform,
+                self.build_type,
             ],
             use_workspace=True,
             timeout_seconds=240 * 60,
