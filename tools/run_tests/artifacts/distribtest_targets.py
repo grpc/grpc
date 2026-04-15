@@ -513,7 +513,6 @@ def targets():
             "debian11",
             ruby_version="ruby_3_2",
             source=True,
-            presubmit=True,
         ),
         RubyDistribTest(
             "linux-gnu",
@@ -527,7 +526,6 @@ def targets():
             "x64",
             "debian11",
             ruby_version="ruby_3_2",
-            presubmit=True,
         ),
         RubyDistribTest(
             "linux-gnu",
@@ -556,7 +554,6 @@ def targets():
             "x64",
             "debian11",
             ruby_version="ruby_4_0",
-            presubmit=True,
         ),
         RubyDistribTest("linux-gnu", "x64", "ubuntu2204", presubmit=True),
         RubyDistribTest("linux-gnu", "x64", "ubuntu2404", presubmit=True),
@@ -572,7 +569,6 @@ def targets():
             "x64",
             "alpine",
             ruby_version="ruby_3_2",
-            presubmit=True,
         ),
         RubyDistribTest(
             "linux-musl",
@@ -593,7 +589,6 @@ def targets():
             "x64",
             "alpine",
             ruby_version="ruby_4_0",
-            presubmit=True,
         ),
         # PHP8
         PHP8DistribTest("linux", "x64", "debian12", presubmit=True),
