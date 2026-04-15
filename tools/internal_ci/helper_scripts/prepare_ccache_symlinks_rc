@@ -15,6 +15,8 @@
 
 # Source this rc script to create symlinks to ccache
 
+set -ex
+
 if [ "${GRPC_BUILD_ENABLE_CCACHE}" != "" ] && [ "${GRPC_BUILD_ENABLE_CCACHE}" != "false" ] && [ "${GRPC_BUILD_ENABLE_CCACHE}" != "0" ]
 then
   if [ -x "$(command -v ccache)" ]
@@ -27,25 +29,46 @@ then
       "clang++"
       "cc"
       "c++"
+      # ##############################################################
       # ruby artifacts: rake-compiler-dock crosscompilers
       # TODO(jtattermusch): ensure that the list of ruby crosscompilers stays up to date.
-      "x86_64-redhat-linux-gcc"
-      "x86_64-redhat-linux-g++"
-      "i686-redhat-linux-gcc"
-      "i686-redhat-linux-g++"
+      # MinGW builds.
       "x86_64-w64-mingw32-gcc"
       "x86_64-w64-mingw32-g++"
       "i686-w64-mingw32-gcc"
       "i686-w64-mingw32-g++"
+
+      # Darwin builds.
+      # TODO(weizheyuan): Properly install ccache in rake_{arm64,x86_64}-darwin docker images.
+      # and make proper setup in Rakefile.
       "x86_64-apple-darwin-clang"
       "x86_64-apple-darwin-clang++"
       "aarch64-apple-darwin-clang"
       "aarch64-apple-darwin-clang++"
+
+      # Linux builds.
+      "aarch64-linux-musl-gcc"
+      "x86_64-linux-gnu-gcc"
+      "i686-unknown-linux-musl-gcc"
+      "aarch64-linux-gnu-gcc"
+      "x86_64-unknown-linux-musl-gcc"
+      "i686-linux-gnu-gcc"
+
+      "aarch64-linux-musl-g++"
+      "x86_64-linux-gnu-g++"
+      "i686-unknown-linux-musl-g++"
+      "aarch64-linux-gnu-g++"
+      "x86_64-unknown-linux-musl-g++"
+      "i686-linux-gnu-g++"
+      # end of ruby artifacts: rake-compiler-dock crosscompilers
+      # ##############################################################
+
       # python artifacts: dockcross crosscompilers
       "aarch64-unknown-linux-gnueabi-gcc"
       "aarch64-unknown-linux-gnueabi-g++"
       "armv7-unknown-linux-gnueabi-gcc"
       "armv7-unknown-linux-gnueabi-g++"
+
     )
     CCACHE_BINARY_PATH="$(command -v ccache)"
     TEMP_CCACHE_BINDIR="$(mktemp -d)"
