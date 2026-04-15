@@ -55,14 +55,43 @@ inline void CheckForExtraRequests(grpc::internal::Call* call,
                                   grpc::Status* status,
                                   const char* error_message) {
   if (!status->ok()) return;
-  grpc::internal::CallOpSet<grpc::internal::CallOpGenericRecvMessage> check_ops;
-  grpc::ByteBuffer extra_msg;
-  check_ops.RecvMessage(&extra_msg);
-  check_ops.AllowNoMessage();
-  check_ops.FillOps(call);
-  call->cq()->Pluck(&check_ops);
-  if (check_ops.got_message) {
-    *status = grpc::Status(grpc::StatusCode::UNIMPLEMENTED, error_message);
+  grpc_byte_buffer** extra_msg = new grpc_byte_buffer*(nullptr);
+  class ExtraRequestsCheckTag : public grpc::internal::CompletionQueueTag {
+   public:
+    explicit ExtraRequestsCheckTag(grpc_byte_buffer** extra_msg)
+        : extra_msg_(extra_msg) {}
+    bool FinalizeResult(void** /*tag*/, bool* /*status*/) override {
+      if (*extra_msg_ != nullptr) grpc_byte_buffer_destroy(*extra_msg_);
+      delete extra_msg_;
+      delete this;
+      return false;
+    }
+
+   private:
+    grpc_byte_buffer** extra_msg_;
+  };
+  auto* tag = new ExtraRequestsCheckTag(extra_msg);
+  grpc_op op;
+  op.op = GRPC_OP_RECV_MESSAGE;
+  op.flags = 0;
+  op.reserved = nullptr;
+  op.data.recv_message.recv_message = extra_msg;
+  if (grpc_call_start_batch(call->call(), &op, 1, tag, nullptr) !=
+      GRPC_CALL_OK) {
+    delete extra_msg;
+    delete tag;
+    return;
+  }
+  gpr_timespec deadline = gpr_time_0(GPR_CLOCK_REALTIME);
+  grpc_event ev =
+      grpc_completion_queue_pluck(call->cq()->cq(), tag, deadline, nullptr);
+  if (ev.type != GRPC_QUEUE_TIMEOUT) {
+    if (*extra_msg != nullptr) {
+      *status = grpc::Status(grpc::StatusCode::UNIMPLEMENTED, error_message);
+      grpc_byte_buffer_destroy(*extra_msg);
+    }
+    delete extra_msg;
+    delete tag;
   }
 }
 
@@ -229,7 +258,6 @@ class ServerStreamingHandler : public grpc::internal::MethodHandler {
                             "Cardinality violation: Server-streaming method "
                             "received extra request");
     }
-
     grpc::internal::CallOpSet<grpc::internal::CallOpSendInitialMetadata,
                               grpc::internal::CallOpServerSendStatus>
         ops;
