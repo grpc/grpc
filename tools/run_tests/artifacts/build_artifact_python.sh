@@ -107,6 +107,15 @@ if [[ -n "$WHEEL_PLAT_NAME_FLAG" ]]; then
   WHEEL_PLAT_CONFIG_OPTION+=("-C--build-option=\"$WHEEL_PLAT_NAME_FLAG\"")
 fi
 
+# Force setuptools to use a shared temporary build directory for C/C++ compilation.
+# This is CRITICAL for ccache, as otherwise setuptools appends the python version
+# (e.g., build/temp.macosx-11.0-universal2-cpython-314), which changes the clang++ 
+# `-o` output path and causes a 100% ccache miss.
+cat <<EOF > setup.cfg
+[build]
+build-temp = build/temp.shared
+EOF
+
 # Build without setting explicit flags like --sdist or --wheel so that `build`
 # package first builds the sdist and use that as the source to build the wheel.
 # This is necessary as the file exclusions mentioned in pyproject.toml are
