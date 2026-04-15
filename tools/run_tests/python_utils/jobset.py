@@ -404,15 +404,10 @@ class Job:
             else:
                 self._state = _SUCCESS
                 measurement = ""
-                stdout_maybe_bytes = stdout()
-                if isinstance(stdout_maybe_bytes, bytes):
-                    stdout_str = stdout_maybe_bytes.decode("utf8", errors="replace")
-                else:
-                    stdout_str = stdout_maybe_bytes
                 if measure_cpu_costs:
                     m = re.search(
                         r"real\s+([0-9.]+)\nuser\s+([0-9.]+)\nsys\s+([0-9.]+)",
-                        stdout_str,
+                        (stdout()).decode("utf8", errors="replace"),
                     )
                     real = float(m.group(1))
                     user = float(m.group(2))
