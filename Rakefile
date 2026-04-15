@@ -139,15 +139,11 @@ task 'dlls', [:plat] do |t, args|
 end
 
 desc 'Build the native gem file under rake_compiler_dock. Optionally one can pass argument to build only native gem for a chosen platform.'
-task 'gem:native', [:plat, :build_type] do |t, args|
+task 'gem:native', [:plat] do |t, args|
   verbose = ENV['V'] || '0'
 
   grpc_config = ENV['GRPC_CONFIG'] || 'opt'
   target_ruby_minor_versions = ['4.0', '3.4', '3.3', '3.2', '3.1']
-  if args[:build_type] == 'presubmit'
-    # For presubmits, only build the earliest and latest versions
-    target_ruby_minor_versions = [target_ruby_minor_versions[0], target_ruby_minor_versions[-1]]
-  end
   selected_plat = "#{args[:plat]}"
 
   # use env variable to set artifact build paralellism

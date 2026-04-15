@@ -513,6 +513,7 @@ def targets():
             "debian11",
             ruby_version="ruby_3_2",
             source=True,
+            presubmit=True,
         ),
         RubyDistribTest(
             "linux-gnu",
@@ -526,12 +527,14 @@ def targets():
             "x64",
             "debian11",
             ruby_version="ruby_3_2",
+            presubmit=True,
         ),
         RubyDistribTest(
             "linux-gnu",
             "x64",
             "debian11",
             ruby_version="ruby_3_3",
+            presubmit=True,
         ),
         RubyDistribTest(
             "linux-gnu",
@@ -539,12 +542,14 @@ def targets():
             "debian11",
             ruby_version="ruby_3_3",
             protobuf_version="3.25",
+            presubmit=True,
         ),
         RubyDistribTest(
             "linux-gnu",
             "x64",
             "debian11",
             ruby_version="ruby_3_4",
+            presubmit=True,
         ),
         RubyDistribTest(
             "linux-gnu",
@@ -567,18 +572,21 @@ def targets():
             "x64",
             "alpine",
             ruby_version="ruby_3_2",
+            presubmit=True,
         ),
         RubyDistribTest(
             "linux-musl",
             "x64",
             "alpine",
             ruby_version="ruby_3_3",
+            presubmit=True,
         ),
         RubyDistribTest(
             "linux-musl",
             "x64",
             "alpine",
             ruby_version="ruby_3_4",
+            presubmit=True,
         ),
         RubyDistribTest(
             "linux-musl",
