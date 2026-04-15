@@ -36,7 +36,3 @@ echo "Running in workspace ${WORKSPACE_NAME}"
 cd "${WORKSPACE_NAME}"
 # shellcheck disable=SC2068
 $@
-if [ -x "$(command -v ccache)" ]
-then
-  ccache --show-stats || true
-fi
