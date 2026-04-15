@@ -31,8 +31,6 @@
 
 #include <string>
 
-#include <gtest/gtest.h>
-
 #include "src/core/util/env.h"
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/host_port.h"
@@ -40,6 +38,7 @@
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/test_config.h"
+#include "gtest/gtest.h"
 
 static void run_test(const char* target, size_t nops) {
   grpc_channel_credentials* ssl_creds =
