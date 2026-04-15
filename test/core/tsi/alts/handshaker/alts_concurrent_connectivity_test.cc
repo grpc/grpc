@@ -45,6 +45,7 @@
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/util/crash.h"
+#include "src/core/util/env.h"
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/host_port.h"
 #include "src/core/util/thd.h"
@@ -61,6 +62,9 @@
 #include "absl/strings/str_cat.h"
 
 namespace {
+
+const char kMaxConcurrentStreamsEnvironmentVariable[] =
+    "GRPC_ALTS_MAX_CONCURRENT_HANDSHAKES";
 
 void drain_cq(grpc_completion_queue* cq) {
   grpc_event ev;
@@ -385,6 +389,38 @@ TEST(AltsConcurrentConnectivityTest,
 // the overall connection deadline kicks in.
 TEST(AltsConcurrentConnectivityTest,
      TestHandshakeFailsFastWhenHandshakeServerHangsAfterAccepting) {
+  // fake_handshake_server emulates an insecure server, so send settings first.
+  // It will be unresponsive for the rest of the connection, though.
+  grpc_core::testing::FakeUdpAndTcpServer fake_handshake_server(
+      grpc_core::testing::FakeUdpAndTcpServer::AcceptMode::kEagerlySendSettings,
+      grpc_core::testing::FakeUdpAndTcpServer::CloseSocketUponCloseFromPeer);
+  // fake_backend_server emulates an ALTS based server, so wait for the client
+  // to send the first bytes.
+  grpc_core::testing::FakeUdpAndTcpServer fake_backend_server(
+      grpc_core::testing::FakeUdpAndTcpServer::AcceptMode::
+          kWaitForClientToSendFirstBytes,
+      grpc_core::testing::FakeUdpAndTcpServer::CloseSocketUponCloseFromPeer);
+  {
+    std::vector<std::unique_ptr<ConnectLoopRunner>> connect_loop_runners;
+    size_t num_concurrent_connects = 100;
+    VLOG(2) << "start performing concurrent expected-to-fail connects";
+    for (size_t i = 0; i < num_concurrent_connects; i++) {
+      connect_loop_runners.push_back(std::make_unique<ConnectLoopRunner>(
+          fake_backend_server.address(), fake_handshake_server.address(),
+          10 * grpc_test_slowdown_factor() /* per connect deadline seconds */,
+          2 /* loops */,
+          GRPC_CHANNEL_TRANSIENT_FAILURE /* expected connectivity states */,
+          100 /* reconnect_backoff_ms */));
+    }
+    connect_loop_runners.clear();
+    VLOG(2) << "done performing concurrent expected-to-fail connects";
+  }
+}
+
+TEST(
+    AltsConcurrentConnectivityTest,
+    TestHandshakeFailsFastWhenHandshakeServerHangsAfterAcceptingWithSmallHandshakeQueue) {
+  grpc_core::SetEnv(kMaxConcurrentStreamsEnvironmentVariable, "10");
   // fake_handshake_server emulates an insecure server, so send settings first.
   // It will be unresponsive for the rest of the connection, though.
   grpc_core::testing::FakeUdpAndTcpServer fake_handshake_server(
