@@ -32,6 +32,7 @@ then
       # ##############################################################
       # ruby artifacts: rake-compiler-dock crosscompilers
       # TODO(jtattermusch): ensure that the list of ruby crosscompilers stays up to date.
+
       # MinGW builds.
       "x86_64-w64-mingw32-gcc"
       "x86_64-w64-mingw32-g++"
