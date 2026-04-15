@@ -21,6 +21,7 @@ cd "$(dirname "$0")/../../.."
 export GRPC_PYTHON_BUILD_WITH_CYTHON=1
 export PYTHON=${PYTHON:-python}
 export AUDITWHEEL=${AUDITWHEEL:-auditwheel}
+export CCACHE_NOHASHDIR=true
 
 # activate ccache if desired
 # shellcheck disable=SC1091
