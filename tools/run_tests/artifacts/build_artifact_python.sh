@@ -25,10 +25,14 @@ echo $PWD
 echo "$CCACHE_NOHASHDIR"
 echo "$CCACHE_SECONDARY_STORAGE"
 
-export CCACHE_BASEDIR=$PWD/..
+export CCACHE_BASEDIR=$PWD
+export CCACHE_NOHASHDIR=true
+export CCACHE_IGNOREOPTIONS="-I/tmp/*"
+export CCACHE_COMPILERCHECK=content
+
 export CCACHE_DEBUG=true
-export CCACHE_LOGFILE="$PWD/reports/ccache_detailed_$(uname -m)_$(lsb_release -is).log"
-export CCACHE_IGNOREOPTIONS="-I/tmp/build-env-*"
+CCACHE_LOGFILE_SUFFIX="${ARTIFACTS_OUT//"artifacts/python_"/}"
+export CCACHE_LOGFILE="$PWD/reports/ccache_detailed_${CCACHE_LOGFILE_SUFFIX}.log"
 
 export GRPC_PYTHON_BUILD_WITH_CYTHON=1
 export PYTHON=${PYTHON:-python}
