@@ -310,7 +310,7 @@ class Job:
             if not os.path.exists(logfile_dir):
                 os.makedirs(logfile_dir)
             message("LOG", f"Logging output to {self._spec.logfilename}")
-            self._logfile = open(self._spec.logfilename, "w+")
+            self._logfile = open(self._spec.logfilename, "w+b")
         else:
             # macOS: a series of quick os.unlink invocation might cause OS
             # error during the creation of temporary file. By using
@@ -404,10 +404,15 @@ class Job:
             else:
                 self._state = _SUCCESS
                 measurement = ""
+                stdout_maybe_bytes = stdout()
+                if isinstance(stdout_maybe_bytes, bytes):
+                    stdout_str = stdout_maybe_bytes.decode("utf8", errors="replace")
+                else:
+                    stdout_str = stdout_maybe_bytes
                 if measure_cpu_costs:
                     m = re.search(
                         r"real\s+([0-9.]+)\nuser\s+([0-9.]+)\nsys\s+([0-9.]+)",
-                        (stdout()).decode("utf8", errors="replace"),
+                        stdout_str,
                     )
                     real = float(m.group(1))
                     user = float(m.group(2))
