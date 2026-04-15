@@ -528,7 +528,7 @@ class FinishedJsonObjectLoader final : public LoaderInterface {
 // Specialization for when the object has a JsonPostLoad function exposed.
 template <typename T, size_t kElemCount>
 class FinishedJsonObjectLoader<T, kElemCount,
-                               absl::void_t<decltype(&T::JsonPostLoad)>>
+                               std::void_t<decltype(&T::JsonPostLoad)>>
     final : public LoaderInterface {
  public:
   explicit FinishedJsonObjectLoader(const Vec<Element, kElemCount>& elements)
