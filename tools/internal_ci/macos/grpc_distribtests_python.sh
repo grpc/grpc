@@ -30,6 +30,9 @@ echo "--- ccache config ---"
 export CCACHE_LOGFILE=/tmpfs/ccache.log
 # Ensure ccache uses a local directory
 export CCACHE_DIR=~/.ccache
+# Ignore the current working directory when hashing (crucial for run_in_workspace.sh isolation)
+export CCACHE_NOHASHDIR=true
+export CCACHE_BASEDIR="${PWD}"
 ccache -z  # Zero stats to track this run
 echo "--------------------------"
 
@@ -44,7 +47,7 @@ python3.14 -m pip install -U 'cython==3.1.1' setuptools==77.0.1 six==1.16.0 whee
 
 # Build all python macos artifacts (this step actually builds all the binary wheels and source archives)
 # Use -j 1 to ensure that the second python version build can benefit from the ccache hits of the first one.
-tools/run_tests/task_runner.py -f artifact macos python ${TASK_RUNNER_EXTRA_FILTERS} -j 1 -x build_artifacts/sponge_log.xml || FAILED="true"
+tools/run_tests/task_runner.py -f artifact macos python ${TASK_RUNNER_EXTRA_FILTERS} -j 1 --inner_jobs 4 -x build_artifacts/sponge_log.xml || FAILED="true"
 
 # show ccache stats
 ccache -s || true
