@@ -1,2 +1,1 @@
-# TODO(weizheyuan): Investigate how to set up ccache for darwin builds.
 FROM ghcr.io/rake-compiler/rake-compiler-dock-image:1.11.1-mri-arm64-darwin
