@@ -26,11 +26,31 @@ endlocal
 cd /d %~dp0\..\..\..
 
 echo "!TIME!: Preparing for the Windows build"
-call tools/internal_ci/helper_scripts/prepare_build_windows.bat || exit /b 1
+call powershell -File tools/internal_ci/helper_scripts/prepare_build_windows.ps1 || exit /b 1
 
-@rem Install clang-cl
+@rem Refresh the environment variables set by the powershell script
+call refreshenv
+
+@rem Install clang-cl with retry in case of network errors
 echo "!TIME!: Installing llvm"
-choco install -y llvm --version=18.1.6
+set /a i=0
+set /a maxRetries=3
+:retry
+set /a i+=1
+choco install -y llvm --version=18.1.6 && goto :success
+
+if %i% geq %maxRetries% (
+    echo "!TIME!: Failed to install llvm after %maxRetries% attempts."
+    exit /b 1
+)
+
+timeout /t 1
+echo "!TIME!: Failed to install llvm, retrying..."
+goto :retry
+
+:success
+echo "!TIME!: Successfully installed llvm"
+
 set BAZEL_LLVM="C:\Program Files\LLVM"
 clang-cl --version
 

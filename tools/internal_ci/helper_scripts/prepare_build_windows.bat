@@ -24,7 +24,23 @@ set PATH=C:\tools\msys64\usr\bin;C:\Python39;C:\Program Files\CMake\bin;%PATH%
 cat C:\image_id.txt
 
 @rem install python 3.9
-choco install -y --no-progress python --version=3.9.13
+set /a i=0
+set /a maxRetries=3
+:retry
+set /a i+=1
+choco install -y --no-progress python --version=3.9.13 && goto :success
+
+if %i% geq %maxRetries% (
+    echo "!TIME!: Failed to install python after %maxRetries% attempts."
+    exit /b 1
+)
+
+timeout /t 1
+echo "!TIME!: Failed to install python, retrying..."
+goto :retry
+
+:success
+echo "!TIME!: Successfully installed python"
 
 @rem create "python3" link that normally doesn't exist
 mklink C:\Python39\python3.exe C:\Python39\python.exe
