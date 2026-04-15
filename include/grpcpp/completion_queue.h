@@ -281,7 +281,8 @@ class CompletionQueue : private grpc::internal::GrpcLibrary {
       const grpc::internal::MethodHandler::HandlerParameter&, ResponseType*,
       grpc::Status&);
   friend void* grpc::internal::CheckForExtraRequests(grpc::internal::Call*,
-                                                     grpc::Status*, const char*);
+                                                     grpc::Status*,
+                                                     const char*);
   template <class ServiceType, class RequestType, class ResponseType,
             class BaseRequestType, class BaseResponseType>
   friend class grpc::internal::RpcMethodHandler;

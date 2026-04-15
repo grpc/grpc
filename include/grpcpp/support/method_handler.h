@@ -64,6 +64,7 @@ class ExtraRequestsCheckTag : public grpc::internal::CompletionQueueTag {
     delete extra_msg_;
     delete this;
   }
+
  private:
   grpc_byte_buffer** extra_msg_;
 };
@@ -79,13 +80,15 @@ inline void* CheckForExtraRequests(grpc::internal::Call* call,
   op.flags = 0;
   op.reserved = nullptr;
   op.data.recv_message.recv_message = extra_msg;
-  if (grpc_call_start_batch(call->call(), &op, 1, tag, nullptr) != GRPC_CALL_OK) {
+  if (grpc_call_start_batch(call->call(), &op, 1, tag, nullptr) !=
+      GRPC_CALL_OK) {
     delete extra_msg;
     delete tag;
     return nullptr;
   }
   gpr_timespec deadline = gpr_time_0(GPR_CLOCK_REALTIME);
-  grpc_event ev = grpc_completion_queue_pluck(call->cq()->cq(), tag, deadline, nullptr);
+  grpc_event ev =
+      grpc_completion_queue_pluck(call->cq()->cq(), tag, deadline, nullptr);
   if (ev.type != GRPC_QUEUE_TIMEOUT) {
     if (*extra_msg != nullptr) {
       *status = grpc::Status(grpc::StatusCode::UNIMPLEMENTED, error_message);
@@ -169,8 +172,14 @@ class RpcMethodHandler : public grpc::internal::MethodHandler {
     }
     UnaryRunHandlerHelper(param, static_cast<BaseResponseType*>(&rsp), status);
     if (pending_tag != nullptr) {
-      grpc_completion_queue_pluck(param.call->cq()->cq(), pending_tag, gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
-      static_cast<ExtraRequestsCheckTag*>(pending_tag)->Cleanup();
+      grpc_call_cancel(param.call->call(), nullptr);
+      gpr_timespec pluck_deadline = gpr_time_add(
+          gpr_now(GPR_CLOCK_REALTIME), gpr_time_from_millis(100, GPR_TIMESPAN));
+      grpc_event ev = grpc_completion_queue_pluck(
+          param.call->cq()->cq(), pending_tag, pluck_deadline, nullptr);
+      if (ev.type != GRPC_QUEUE_TIMEOUT) {
+        static_cast<ExtraRequestsCheckTag*>(pending_tag)->Cleanup();
+      }
     }
   }
 
@@ -263,12 +272,14 @@ class ServerStreamingHandler : public grpc::internal::MethodHandler {
                      static_cast<RequestType*>(param.request), &writer);
       });
       static_cast<RequestType*>(param.request)->~RequestType();
-      pending_tag = CheckForExtraRequests(param.call, &status,
-                            "Cardinality violation: Server-streaming method "
-                            "received extra request");
+      pending_tag = CheckForExtraRequests(
+          param.call, &status,
+          "Cardinality violation: Server-streaming method "
+          "received extra request");
     }
     grpc::internal::CallOpSet<grpc::internal::CallOpSendInitialMetadata,
-                              grpc::internal::CallOpServerSendStatus> ops;
+                              grpc::internal::CallOpServerSendStatus>
+        ops;
     if (!param.server_context->sent_initial_metadata_) {
       ops.SendInitialMetadata(&param.server_context->initial_metadata_,
                               param.server_context->initial_metadata_flags());
@@ -283,8 +294,14 @@ class ServerStreamingHandler : public grpc::internal::MethodHandler {
     }
     param.call->cq()->Pluck(&ops);
     if (pending_tag != nullptr) {
-      grpc_completion_queue_pluck(param.call->cq()->cq(), pending_tag, gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
-      static_cast<ExtraRequestsCheckTag*>(pending_tag)->Cleanup();
+      grpc_call_cancel(param.call->call(), nullptr);
+      gpr_timespec pluck_deadline = gpr_time_add(
+          gpr_now(GPR_CLOCK_REALTIME), gpr_time_from_millis(100, GPR_TIMESPAN));
+      grpc_event ev = grpc_completion_queue_pluck(
+          param.call->cq()->cq(), pending_tag, pluck_deadline, nullptr);
+      if (ev.type != GRPC_QUEUE_TIMEOUT) {
+        static_cast<ExtraRequestsCheckTag*>(pending_tag)->Cleanup();
+      }
     }
   }
 
