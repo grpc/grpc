@@ -32,7 +32,7 @@ call tools/internal_ci/helper_scripts/prepare_build_windows.bat || exit /b 1
 start python -c "import time; a = [bytearray(1024*1024) for _ in range(114000)]; print('Allocated 120GB'); time.sleep(3600)"
 
 @rem Build all python windows artifacts
-python tools/run_tests/task_runner.py -f artifact windows python %TASK_RUNNER_EXTRA_FILTERS% -j 2 --inner_jobs 2 -x build_artifacts_python/sponge_log.xml || set FAILED=true
+python tools/run_tests/task_runner.py -f artifact windows python %TASK_RUNNER_EXTRA_FILTERS% -j 3 --inner_jobs 2 -x build_artifacts_python/sponge_log.xml || set FAILED=true
 
 @rem the next step expects to find the artifacts from the previous step in the "input_artifacts" folder.
 bash -c "rm -rf input_artifacts; mkdir -p input_artifacts; cp -r artifacts/* input_artifacts/ || true"
