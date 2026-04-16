@@ -296,7 +296,6 @@ grpc_build_artifact_task(
     docker_image_version = "tools/dockerfile/grpc_artifact_python_manylinux2014_x64.current_version",
 )
 
-
 # TODO(jtattermusch): add more grpc_build_artifact_task targets for existing python artifacts from artifact_targets.py
 
 grpc_build_artifact_task(
