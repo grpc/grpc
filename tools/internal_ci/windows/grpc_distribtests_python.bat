@@ -28,12 +28,8 @@ cd /d %~dp0\..\..\..
 set PREPARE_BUILD_INSTALL_DEPS_PYTHON=true
 call tools/internal_ci/helper_scripts/prepare_build_windows.bat || exit /b 1
 
-@rem Create a 20GB dummy file to fill up the disk
-if not exist artifacts mkdir artifacts
-fsutil file createnew artifacts\dummy_space_filler.bin 21474836480
-
 @rem Build all python windows artifacts
-python tools/run_tests/task_runner.py -f artifact windows python %TASK_RUNNER_EXTRA_FILTERS% -j 5 --inner_jobs 4 -x build_artifacts_python/sponge_log.xml || set FAILED=true
+python tools/run_tests/task_runner.py -f artifact windows python %TASK_RUNNER_EXTRA_FILTERS% -j 2 --inner_jobs 2 -x build_artifacts_python/sponge_log.xml || set FAILED=true
 
 @rem the next step expects to find the artifacts from the previous step in the "input_artifacts" folder.
 bash -c "rm -rf input_artifacts; mkdir -p input_artifacts; cp -r artifacts/* input_artifacts/ || true"
