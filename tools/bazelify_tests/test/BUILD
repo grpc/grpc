@@ -409,7 +409,7 @@ test_suite(
 # Python distribtests
 
 grpc_run_distribtest_test(
-    name = "distribtest_python_linux_x64_bullseye",
+    name = "distribtest_python_linux_x64_trixie",
     artifact_deps = [
         "package_python_linux",
     ],
@@ -420,7 +420,7 @@ grpc_run_distribtest_test(
 test_suite(
     name = "python_distribtests_linux",
     tests = [
-        ":distribtest_python_linux_x64_bullseye",
+        ":distribtest_python_linux_x64_trixie",
     ],
 )
 
