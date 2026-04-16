@@ -14,4 +14,4 @@
 
 FROM python:3.10-slim-bullseye
 
-RUN pip install virtualenv==16.7.9
+RUN pip install virtualenv

@@ -39,7 +39,7 @@ RUN wget https://www.python.org/ftp/python/3.10.14/Python-3.10.14.tar.xz \
 # Ensure python3 points to the new python 3.10
 RUN ln -sf /usr/local/bin/python3.10 /usr/local/bin/python3
 
-RUN python3 -m pip install virtualenv==16.7.9
+RUN python3 -m pip install virtualenv
 
 # docker is running on a 64-bit machine, so we need to
 # override "uname -m" to report i686 instead of x86_64, otherwise
