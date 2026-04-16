@@ -12,8 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM python:3.10-slim-bullseye
-
-RUN apt-get update && apt-get install -y build-essential
+FROM --platform=linux/386 python:3.10.20-trixie
 
 RUN pip install virtualenv==20.25.0
+
+# docker is running on a 64-bit machine, so we need to
+# override "uname -m" to report i686 instead of x86_64, otherwise
+# python will choose a wrong binary package to install.
+ENTRYPOINT ["linux32"]
