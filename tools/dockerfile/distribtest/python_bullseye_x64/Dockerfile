@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM debian:bullseye
+FROM python:3.10-slim-bullseye
 
-RUN apt-get update && apt-get install -y python3 python3-pip
-RUN python3 -m pip install virtualenv==16.7.9
+RUN pip install virtualenv==16.7.9

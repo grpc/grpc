@@ -285,17 +285,17 @@ grpc_build_artifact_task(
 # Python artifact build tasks
 
 grpc_build_artifact_task(
+    name = "artifact_python_linux_x64_manylinux2014_cp310",
+    build_script = "build_artifact_python_linux_x64_cp310.sh",
+    docker_image_version = "tools/dockerfile/grpc_artifact_python_manylinux2014_x64.current_version",
+)
+
+grpc_build_artifact_task(
     name = "artifact_python_linux_x64_manylinux2014_cp314",
     build_script = "build_artifact_python_linux_x64_cp314.sh",
     docker_image_version = "tools/dockerfile/grpc_artifact_python_manylinux2014_x64.current_version",
 )
 
-# Building 39 here since default Python version in testing image is 3.9.
-grpc_build_artifact_task(
-    name = "artifact_python_linux_x64_manylinux2014_cp39",
-    build_script = "build_artifact_python_linux_x64_cp39.sh",
-    docker_image_version = "tools/dockerfile/grpc_artifact_python_manylinux2014_x64.current_version",
-)
 
 # TODO(jtattermusch): add more grpc_build_artifact_task targets for existing python artifacts from artifact_targets.py
 
@@ -303,8 +303,8 @@ grpc_build_artifact_task(
     name = "package_python_linux",
     # TODO(jtattermusch): add more python artifacts once they are migrated from artifact_targets.py
     artifact_deps = [
+        "artifact_python_linux_x64_manylinux2014_cp310",
         "artifact_python_linux_x64_manylinux2014_cp314",
-        "artifact_python_linux_x64_manylinux2014_cp39",
     ],
     build_script = "build_package_python_linux.sh",
     docker_image_version = "tools/dockerfile/grpc_artifact_python_manylinux2014_x64.current_version",
@@ -437,8 +437,8 @@ test_suite(
         ":artifact_protoc_linux_aarch64_build_test",
         ":artifact_protoc_linux_x64_build_test",
         ":artifact_protoc_linux_x86_build_test",
+        ":artifact_python_linux_x64_manylinux2014_cp310_build_test",
         ":artifact_python_linux_x64_manylinux2014_cp314_build_test",
-        ":artifact_python_linux_x64_manylinux2014_cp39_build_test",
         ":package_csharp_linux_build_test",
         ":package_python_linux_build_test",
     ],
