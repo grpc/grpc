@@ -116,6 +116,12 @@ std::shared_ptr<tsi_ssl_root_certs_store> TlsCredentials::GetOrCreateRootStore(
   return cached_root_store_;
 }
 
+void TlsCredentials::ClearRootStoreCache() {
+  grpc_core::MutexLock lock(&root_store_mu_);
+  cached_root_store_.reset();
+  cached_root_store_pem_.clear();
+}
+
 bool TlsCredentials::HasCachedRootStoreForTesting() {
   grpc_core::MutexLock lock(&root_store_mu_);
   return cached_root_store_ != nullptr;

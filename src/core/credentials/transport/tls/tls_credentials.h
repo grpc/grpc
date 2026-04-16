@@ -61,6 +61,8 @@ class TlsCredentials final : public grpc_channel_credentials {
   std::shared_ptr<tsi_ssl_root_certs_store> GetOrCreateRootStore(
       const std::string& pem_root_certs);
 
+  void ClearRootStoreCache();
+
   bool HasCachedRootStoreForTesting();
 
  private:

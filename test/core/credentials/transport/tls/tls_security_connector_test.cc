@@ -63,6 +63,7 @@ constexpr absl::string_view kSpiffeBundlePath0 =
 constexpr absl::string_view kSpiffeBundlePath1 =
     "test/core/credentials/transport/tls/test_data/spiffe/test_bundles/"
     "spiffebundle2.json";
+constexpr const char* kCrlDirectory = "/tmp";
 
 long GetVerificationFlags(X509_STORE* store) {
 #if OPENSSL_VERSION_NUMBER >= 0x10100000
@@ -1389,6 +1390,79 @@ TEST_F(TlsSecurityConnectorTest, RootCertRotationProducesNewCertStore) {
             tls_connector2->RootStoreForTesting());
 #endif
   tsi_ssl_client_handshaker_factory_unref(retained_factory1);
+}
+
+TEST_F(TlsSecurityConnectorTest,
+       ConnectorsDoNotShareRootCertStoreWhenCrlDirectoryIsConfigured) {
+  RefCountedPtr<grpc_tls_certificate_distributor> distributor =
+      MakeRefCounted<grpc_tls_certificate_distributor>();
+  distributor->SetKeyMaterials(kRootCertName, root_cert_1_, std::nullopt);
+  RefCountedPtr<grpc_tls_certificate_provider> provider =
+      MakeRefCounted<TlsTestCertificateProvider>(distributor);
+  RefCountedPtr<grpc_tls_credentials_options> options =
+      MakeRefCounted<grpc_tls_credentials_options>();
+  options->set_root_certificate_provider(std::move(provider));
+  options->set_root_cert_name(kRootCertName);
+  options->set_crl_directory(kCrlDirectory);
+  RefCountedPtr<TlsCredentials> credential =
+      MakeRefCounted<TlsCredentials>(options);
+  ChannelArgs args1;
+  RefCountedPtr<grpc_channel_security_connector> connector1 =
+      credential->create_security_connector(nullptr, kTargetName, &args1);
+  ASSERT_NE(connector1, nullptr);
+  ChannelArgs args2;
+  RefCountedPtr<grpc_channel_security_connector> connector2 =
+      credential->create_security_connector(nullptr, kTargetName, &args2);
+  ASSERT_NE(connector2, nullptr);
+  auto* tls_connector1 =
+      static_cast<TlsChannelSecurityConnector*>(connector1.get());
+  auto* tls_connector2 =
+      static_cast<TlsChannelSecurityConnector*>(connector2.get());
+  tsi_ssl_client_handshaker_factory* factory1 =
+      tls_connector1->ClientHandshakerFactoryForTesting();
+  tsi_ssl_client_handshaker_factory* factory2 =
+      tls_connector2->ClientHandshakerFactoryForTesting();
+  ASSERT_NE(factory1, nullptr);
+  ASSERT_NE(factory2, nullptr);
+  X509_STORE* store1 =
+      tsi_ssl_client_handshaker_factory_get_cert_store(factory1);
+  X509_STORE* store2 =
+      tsi_ssl_client_handshaker_factory_get_cert_store(factory2);
+  ASSERT_NE(store1, nullptr);
+  ASSERT_NE(store2, nullptr);
+#if OPENSSL_VERSION_NUMBER >= 0x10100000
+  EXPECT_NE(store1, store2);
+#endif
+  EXPECT_EQ(tls_connector1->RootStoreForTesting(), nullptr);
+  EXPECT_EQ(tls_connector2->RootStoreForTesting(), nullptr);
+  EXPECT_FALSE(credential->HasCachedRootStoreForTesting());
+}
+
+TEST_F(TlsSecurityConnectorTest, PemRootCacheClearedWhenRootsRotateToSpiffe) {
+  RefCountedPtr<grpc_tls_certificate_distributor> distributor =
+      MakeRefCounted<grpc_tls_certificate_distributor>();
+  distributor->SetKeyMaterials(kRootCertName, root_cert_1_, std::nullopt);
+  RefCountedPtr<grpc_tls_certificate_provider> provider =
+      MakeRefCounted<TlsTestCertificateProvider>(distributor);
+  RefCountedPtr<grpc_tls_credentials_options> options =
+      MakeRefCounted<grpc_tls_credentials_options>();
+  options->set_root_certificate_provider(std::move(provider));
+  options->set_root_cert_name(kRootCertName);
+  RefCountedPtr<TlsCredentials> credential =
+      MakeRefCounted<TlsCredentials>(options);
+  ChannelArgs args;
+  RefCountedPtr<grpc_channel_security_connector> connector =
+      credential->create_security_connector(nullptr, kTargetName, &args);
+  ASSERT_NE(connector, nullptr);
+  auto* tls_connector = static_cast<TlsChannelSecurityConnector*>(connector.get());
+  EXPECT_TRUE(credential->HasCachedRootStoreForTesting());
+  EXPECT_EQ(tls_connector->RootCertInfoForTesting(), root_cert_1_);
+  distributor->SetKeyMaterials(kRootCertName, spiffe_bundle_map_0_,
+                               std::nullopt);
+  EXPECT_EQ(tls_connector->RootCertInfoForTesting(), spiffe_bundle_map_0_);
+  EXPECT_NE(tls_connector->ClientHandshakerFactoryForTesting(), nullptr);
+  EXPECT_EQ(tls_connector->RootStoreForTesting(), nullptr);
+  EXPECT_FALSE(credential->HasCachedRootStoreForTesting());
 }
 
 }  // namespace testing

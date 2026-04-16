@@ -554,21 +554,26 @@ TlsChannelSecurityConnector::UpdateHandshakerFactoryLocked() {
     pem_key_cert_pair = ConvertToTsiPemKeyCertPair(*pem_key_cert_pair_list_);
   }
   bool use_default_roots = options_->root_certificate_distributor() == nullptr;
+  auto* tls_creds = grpc_core::DownCast<TlsCredentials*>(mutable_channel_creds());
   // When using explicit PEM root certs, get a cached root store from the
   // credentials object so that all security connectors from the same
   // credentials share the same X509_STORE via X509_STORE_up_ref(), instead
   // of each connector independently parsing the PEM into a fresh X509_STORE.
   std::shared_ptr<tsi_ssl_root_certs_store> root_store_ref;
   const tsi_ssl_root_certs_store* root_store = nullptr;
+  bool use_cached_root_store = false;
 #if OPENSSL_VERSION_NUMBER >= 0x10100000
-  if (!use_default_roots && root_cert_info_ != nullptr) {
+  if (!use_default_roots && root_cert_info_ != nullptr &&
+      options_->crl_directory().empty()) {
     const std::string* pem = std::get_if<std::string>(root_cert_info_.get());
     if (pem != nullptr) {
-      auto* tls_creds = grpc_core::DownCast<TlsCredentials*>(
-          mutable_channel_creds());
       root_store_ref = tls_creds->GetOrCreateRootStore(*pem);
       root_store = root_store_ref.get();
+      use_cached_root_store = true;
     }
+  }
+  if (!use_cached_root_store) {
+    tls_creds->ClearRootStoreCache();
   }
 #endif
   grpc_security_status status = grpc_ssl_tsi_client_handshaker_factory_init(
@@ -580,7 +585,7 @@ TlsChannelSecurityConnector::UpdateHandshakerFactoryLocked() {
       tls_session_key_logger_.get(), options_->crl_directory().c_str(),
       options_->crl_provider(), options_->key_exchange_groups(),
       &client_handshaker_factory_, root_store);
-  if (status == GRPC_SECURITY_OK) {
+  if (status == GRPC_SECURITY_OK && use_cached_root_store) {
     root_store_ = std::move(root_store_ref);
   } else {
     root_store_.reset();
