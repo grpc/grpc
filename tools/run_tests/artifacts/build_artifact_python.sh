@@ -21,6 +21,7 @@ cd "$(dirname "$0")/../../.."
 export GRPC_PYTHON_BUILD_WITH_CYTHON=1
 export PYTHON=${PYTHON:-python}
 export AUDITWHEEL=${AUDITWHEEL:-auditwheel}
+export CCACHE_NOHASHDIR=true
 
 # activate ccache if desired
 # shellcheck disable=SC1091
@@ -111,7 +112,7 @@ fi
 # package first builds the sdist and use that as the source to build the wheel.
 # This is necessary as the file exclusions mentioned in pyproject.toml are
 # otherwise not respected when directly building the wheel.
-${SETARCH_CMD} "${PYTHON}" -m build "${WHEEL_PLAT_CONFIG_OPTION[@]}"
+${SETARCH_CMD} "${PYTHON}" -m build --no-isolation "${WHEEL_PLAT_CONFIG_OPTION[@]}"
 
 GRPCIO_STRIP_TEMPDIR=$(mktemp -d)
 GRPCIO_TAR_GZ_LIST=( dist/grpcio-*.tar.gz )
@@ -148,12 +149,12 @@ mv "${GRPCIO_STRIPPED_TAR_GZ}" "${GRPCIO_TAR_GZ}"
 
 # Build gRPC tools package source and binary distribution
 ${SETARCH_CMD} "${PYTHON}" -m build "tools/distrib/python/grpcio_tools" \
-  "${WHEEL_PLAT_CONFIG_OPTION[@]}"
+  --no-isolation "${WHEEL_PLAT_CONFIG_OPTION[@]}"
 
 if [ "$GRPC_BUILD_MAC" == "" ]; then
   "${PYTHON}" src/python/grpcio_observability/make_grpcio_observability.py
   ${SETARCH_CMD} "${PYTHON}" -m build "src/python/grpcio_observability" \
-    "${WHEEL_PLAT_CONFIG_OPTION[@]}"
+    --no-isolation "${WHEEL_PLAT_CONFIG_OPTION[@]}"
 fi
 
 
@@ -243,7 +244,7 @@ if [ "$GRPC_BUILD_MAC" == "" ]; then
 
   # Build grpcio_csm_observability distribution
   if [ "$GRPC_BUILD_MAC" == "" ]; then
-    ${SETARCH_CMD} "${PYTHON}" -m build "src/python/grpcio_csm_observability"
+    ${SETARCH_CMD} "${PYTHON}" -m build --no-isolation "src/python/grpcio_csm_observability"
     cp -r src/python/grpcio_csm_observability/dist/* "$ARTIFACT_DIR"
   fi
 fi
