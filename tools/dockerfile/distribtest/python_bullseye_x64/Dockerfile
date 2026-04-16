@@ -12,6 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM python:3.10-slim-bullseye
+FROM python:3.10.20-slim
 
-RUN pip install virtualenv
+RUN pip install virtualenv==20.25.0
