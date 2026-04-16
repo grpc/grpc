@@ -503,7 +503,21 @@ static void verified_root_cert_free(void* /*parent*/, void* ptr,
 }
 
 static void init_openssl(void) {
-#if OPENSSL_VERSION_NUMBER >= 0x10101000L
+#if OPENSSL_VERSION_NUMBER >= 0x30000000L
+  // OpenSSL 3.0+ handles initialization automatically.
+  // We only call this if we specifically need to set INIT flags.
+  OPENSSL_init_ssl(OPENSSL_INIT_NO_ATEXIT, nullptr);
+
+  std::atexit([]() {
+    // Wait for gRPC resources to clear
+    int timeout_sec = get_cleanup_timeout();
+    grpc_wait_for_shutdown_with_timeout(absl::Seconds(timeout_sec));
+
+    // In 3.0, we generally do NOT call OPENSSL_cleanup() manually.
+    // Instead, we ensure any Library Contexts we created are freed.
+    // If using the default context, let the library handle it.
+  });
+#elif OPENSSL_VERSION_NUMBER >= 0x10101000L
   OPENSSL_init_ssl(OPENSSL_INIT_NO_ATEXIT, nullptr);
   // Explicitly trigger OpenSSL cleanup via atexit ONLY after gRPC's core
   // teardown completes to prevent out-of-order provider reference releases.
