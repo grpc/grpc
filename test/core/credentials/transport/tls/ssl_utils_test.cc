@@ -588,7 +588,7 @@ TEST(SslUtilsTest, ClientHandshakerFactoryInitSuccess) {
                 /*ssl_session_cache=*/nullptr,
                 /*tls_session_key_logger=*/nullptr,
                 /*crl_directory=*/nullptr,
-                /*crl_provider=*/nullptr, &factory),
+                /*crl_provider=*/nullptr, /*key_exchange_algorithms=*/{}, &factory),
             GRPC_SECURITY_OK);
   ASSERT_NE(factory, nullptr);
   tsi_ssl_client_handshaker_factory_unref(factory);
@@ -606,7 +606,7 @@ TEST(SslUtilsTest, ClientHandshakerFactoryInitWithoutKeyCertPair) {
                 /*ssl_session_cache=*/nullptr,
                 /*tls_session_key_logger=*/nullptr,
                 /*crl_directory=*/nullptr,
-                /*crl_provider=*/nullptr, &factory),
+                /*crl_provider=*/nullptr, /*key_exchange_algorithms=*/{}, &factory),
             GRPC_SECURITY_OK);
   ASSERT_NE(factory, nullptr);
   tsi_ssl_client_handshaker_factory_unref(factory);
@@ -621,7 +621,7 @@ TEST(SslUtilsTest, ClientHandshakerFactoryInitSkipServerVerification) {
                 /*ssl_session_cache=*/nullptr,
                 /*tls_session_key_logger=*/nullptr,
                 /*crl_directory=*/nullptr,
-                /*crl_provider=*/nullptr, &factory),
+                /*crl_provider=*/nullptr, /*key_exchange_algorithms=*/{}, &factory),
             GRPC_SECURITY_OK);
   ASSERT_NE(factory, nullptr);
   tsi_ssl_client_handshaker_factory_unref(factory);
@@ -629,6 +629,10 @@ TEST(SslUtilsTest, ClientHandshakerFactoryInitSkipServerVerification) {
 
 TEST(SslUtilsTest, ClientHandshakerFactoryInitNoRootCertInfoAndNoSkipFails) {
   tsi_ssl_client_handshaker_factory* factory = nullptr;
+  grpc_security_status expected_status = GRPC_SECURITY_ERROR;
+  if (DefaultSslRootStore::GetPemRootCerts() != nullptr) {
+    expected_status = GRPC_SECURITY_OK;
+  }
   EXPECT_EQ(grpc_ssl_tsi_client_handshaker_factory_init(
                 /*key_cert_pair=*/nullptr, /*root_cert_info=*/nullptr,
                 /*skip_server_certificate_verification=*/false,
@@ -636,9 +640,14 @@ TEST(SslUtilsTest, ClientHandshakerFactoryInitNoRootCertInfoAndNoSkipFails) {
                 /*ssl_session_cache=*/nullptr,
                 /*tls_session_key_logger=*/nullptr,
                 /*crl_directory=*/nullptr,
-                /*crl_provider=*/nullptr, &factory),
-            GRPC_SECURITY_ERROR);
-  ASSERT_EQ(factory, nullptr);
+                /*crl_provider=*/nullptr, /*key_exchange_algorithms=*/{}, &factory),
+            expected_status);
+  if (expected_status == GRPC_SECURITY_OK) {
+    ASSERT_NE(factory, nullptr);
+    tsi_ssl_client_handshaker_factory_unref(factory);
+  } else {
+    ASSERT_EQ(factory, nullptr);
+  }
 }
 
 TEST(SslUtilsTest, ClientHandshakerFactoryInitBadRootCertFails) {
@@ -651,7 +660,7 @@ TEST(SslUtilsTest, ClientHandshakerFactoryInitBadRootCertFails) {
                 /*ssl_session_cache=*/nullptr,
                 /*tls_session_key_logger=*/nullptr,
                 /*crl_directory=*/nullptr,
-                /*crl_provider=*/nullptr, &factory),
+                /*crl_provider=*/nullptr, /*key_exchange_algorithms=*/{}, &factory),
             GRPC_SECURITY_ERROR);
   ASSERT_EQ(factory, nullptr);
 }
@@ -676,7 +685,7 @@ TEST(SslUtilsTest, ServerHandshakerFactoryInitSuccess) {
                 tsi_tls_version::TSI_TLS1_2, tsi_tls_version::TSI_TLS1_3,
                 /*tls_session_key_logger=*/nullptr,
                 /*crl_directory=*/nullptr, /*send_client_ca_list=*/true,
-                /*crl_provider=*/nullptr, &factory),
+                /*crl_provider=*/nullptr, /*key_exchange_algorithms=*/{}, &factory),
             GRPC_SECURITY_OK);
   ASSERT_NE(factory, nullptr);
   tsi_ssl_server_handshaker_factory_unref(factory);
@@ -698,7 +707,7 @@ TEST(SslUtilsTest, ServerHandshakerFactoryInitBadKeyCert) {
                 tsi_tls_version::TSI_TLS1_2, tsi_tls_version::TSI_TLS1_3,
                 /*tls_session_key_logger=*/nullptr,
                 /*crl_directory=*/nullptr, /*send_client_ca_list=*/true,
-                /*crl_provider=*/nullptr, &factory),
+                /*crl_provider=*/nullptr, /*key_exchange_algorithms=*/{}, &factory),
             GRPC_SECURITY_ERROR);
   ASSERT_EQ(factory, nullptr);
 }

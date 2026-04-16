@@ -185,6 +185,10 @@ class PemKeyCertPair {
            this->cert_chain() == other.cert_chain();
   }
 
+  bool operator!=(const PemKeyCertPair& other) const {
+    return !(*this == other);
+  }
+
   const PrivateKey& private_key() const { return private_key_; }
   const std::string& cert_chain() const { return cert_chain_; }
 
