@@ -131,7 +131,7 @@ const char* const description_otel_export_telemetry_domains =
     "Export telemetry domains in OpenTelemetry metrics.";
 const char* const additional_constraints_otel_export_telemetry_domains = "{}";
 const char* const description_pick_first_ignore_empty_updates =
-    "Ignore empty resolutions in pick_first";
+    "Ignore empty resolutions in pick_first (delete)";
 const char* const additional_constraints_pick_first_ignore_empty_updates = "{}";
 const char* const description_pipelined_read_secure_endpoint =
     "Enable pipelined reads for EventEngine secure endpoints";
@@ -163,7 +163,7 @@ const char* const description_promise_based_http2_server_transport =
 const char* const additional_constraints_promise_based_http2_server_transport =
     "{}";
 const char* const description_promise_based_inproc_transport =
-    "Use promises for the in-process transport.";
+    "Use call-v3 for the in-process transport.";
 const char* const additional_constraints_promise_based_inproc_transport = "{}";
 const char* const description_promise_batch_cleanup_on_cancel =
     "Fix completion queue tag handling during promise batch cancellation.";
@@ -529,7 +529,7 @@ const char* const description_otel_export_telemetry_domains =
     "Export telemetry domains in OpenTelemetry metrics.";
 const char* const additional_constraints_otel_export_telemetry_domains = "{}";
 const char* const description_pick_first_ignore_empty_updates =
-    "Ignore empty resolutions in pick_first";
+    "Ignore empty resolutions in pick_first (delete)";
 const char* const additional_constraints_pick_first_ignore_empty_updates = "{}";
 const char* const description_pipelined_read_secure_endpoint =
     "Enable pipelined reads for EventEngine secure endpoints";
@@ -561,7 +561,7 @@ const char* const description_promise_based_http2_server_transport =
 const char* const additional_constraints_promise_based_http2_server_transport =
     "{}";
 const char* const description_promise_based_inproc_transport =
-    "Use promises for the in-process transport.";
+    "Use call-v3 for the in-process transport.";
 const char* const additional_constraints_promise_based_inproc_transport = "{}";
 const char* const description_promise_batch_cleanup_on_cancel =
     "Fix completion queue tag handling during promise batch cancellation.";
@@ -927,7 +927,7 @@ const char* const description_otel_export_telemetry_domains =
     "Export telemetry domains in OpenTelemetry metrics.";
 const char* const additional_constraints_otel_export_telemetry_domains = "{}";
 const char* const description_pick_first_ignore_empty_updates =
-    "Ignore empty resolutions in pick_first";
+    "Ignore empty resolutions in pick_first (delete)";
 const char* const additional_constraints_pick_first_ignore_empty_updates = "{}";
 const char* const description_pipelined_read_secure_endpoint =
     "Enable pipelined reads for EventEngine secure endpoints";
@@ -959,7 +959,7 @@ const char* const description_promise_based_http2_server_transport =
 const char* const additional_constraints_promise_based_http2_server_transport =
     "{}";
 const char* const description_promise_based_inproc_transport =
-    "Use promises for the in-process transport.";
+    "Use call-v3 for the in-process transport.";
 const char* const additional_constraints_promise_based_inproc_transport = "{}";
 const char* const description_promise_batch_cleanup_on_cancel =
     "Fix completion queue tag handling during promise batch cancellation.";
