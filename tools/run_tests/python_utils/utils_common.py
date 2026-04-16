@@ -16,27 +16,27 @@ import os
 import sys
 
 
-def get_bool_env(env_var_name: str, default: bool = False) -> True:
+def get_bool_env(env_var_name: str, default: bool = False) -> bool:
+    val = os.getenv(env_var_name)
+    if val is None:
+        return default
     if default:
         # If True by default, check if explicitly disabled.
-        check_set = {"0", "f", "false", "n", "no"}
-    else:
-        # If False by default, check if explicitly enabled.
-        check_set = {"1", "t", "true", "y", "yes"}
-
-    return os.getenv(env_var_name) in check_set
+        return val.lower() not in {"0", "f", "false", "n", "no"}
+    # If False by default, check if explicitly enabled.
+    return val.lower() in {"1", "t", "true", "y", "yes"}
 
 
 def kokoro_build_initiator() -> str:
     return os.getenv("KOKORO_BUILD_INITIATOR", "")
 
 
-def kokoro_build_started_by_ci() -> True:
+def kokoro_build_started_by_ci() -> bool:
     # Kokoro has additional accounts, f.e. kokoro-dedicated.
     return kokoro_build_initiator().startswith("kokoro")
 
 
-def should_upload_results_on_ci() -> True:
+def should_upload_results_on_ci() -> bool:
     # Only upload results when initiated by the CI.
     #
     # Right now we differentiate by checking the KOKORO_BUILD_INITIATOR env var,
