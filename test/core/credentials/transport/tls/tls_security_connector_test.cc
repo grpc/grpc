@@ -1329,8 +1329,10 @@ TEST_F(TlsSecurityConnectorTest, MultipleConnectorsShareRootCertStore) {
   const long expected_flags =
       X509_V_FLAG_PARTIAL_CHAIN | X509_V_FLAG_TRUSTED_FIRST;
   EXPECT_EQ(GetVerificationFlags(store1) & expected_flags, expected_flags);
-#endif
   EXPECT_TRUE(credential->HasCachedRootStoreForTesting());
+#else
+  EXPECT_FALSE(credential->HasCachedRootStoreForTesting());
+#endif
 }
 
 // Verifies that root rotation updates the existing connector to a new
@@ -1362,11 +1364,20 @@ TEST_F(TlsSecurityConnectorTest, RootCertRotationProducesNewCertStore) {
   X509_STORE* old_store =
       tsi_ssl_client_handshaker_factory_get_cert_store(retained_factory1);
   ASSERT_NE(old_store, nullptr);
+#if OPENSSL_VERSION_NUMBER >= 0x10100000
   EXPECT_TRUE(credential->HasCachedRootStoreForTesting());
+#else
+  EXPECT_FALSE(credential->HasCachedRootStoreForTesting());
+#endif
   // Rotate root certs via the distributor.
   distributor->SetKeyMaterials(kRootCertName, root_cert_0_, std::nullopt);
+#if OPENSSL_VERSION_NUMBER >= 0x10100000
   EXPECT_TRUE(credential->HasCachedRootStoreForTesting());
   ASSERT_NE(tls_connector1->RootStoreForTesting(), nullptr);
+#else
+  EXPECT_FALSE(credential->HasCachedRootStoreForTesting());
+  EXPECT_EQ(tls_connector1->RootStoreForTesting(), nullptr);
+#endif
   X509_STORE* rotated_store =
       tsi_ssl_client_handshaker_factory_get_cert_store(
           tls_connector1->ClientHandshakerFactoryForTesting());
@@ -1385,11 +1396,14 @@ TEST_F(TlsSecurityConnectorTest, RootCertRotationProducesNewCertStore) {
   X509_STORE* store2 =
       tsi_ssl_client_handshaker_factory_get_cert_store(factory2);
   ASSERT_NE(store2, nullptr);
-  EXPECT_TRUE(credential->HasCachedRootStoreForTesting());
 #if OPENSSL_VERSION_NUMBER >= 0x10100000
+  EXPECT_TRUE(credential->HasCachedRootStoreForTesting());
   EXPECT_EQ(rotated_store, store2);
   EXPECT_EQ(tls_connector1->RootStoreForTesting(),
             tls_connector2->RootStoreForTesting());
+#else
+  EXPECT_FALSE(credential->HasCachedRootStoreForTesting());
+  EXPECT_EQ(tls_connector2->RootStoreForTesting(), nullptr);
 #endif
   tsi_ssl_client_handshaker_factory_unref(retained_factory1);
 }
@@ -1458,7 +1472,11 @@ TEST_F(TlsSecurityConnectorTest, PemRootCacheClearedWhenRootsRotateToSpiffe) {
   ASSERT_NE(connector, nullptr);
   auto* tls_connector =
       static_cast<TlsChannelSecurityConnector*>(connector.get());
+#if OPENSSL_VERSION_NUMBER >= 0x10100000
   EXPECT_TRUE(credential->HasCachedRootStoreForTesting());
+#else
+  EXPECT_FALSE(credential->HasCachedRootStoreForTesting());
+#endif
   EXPECT_EQ(tls_connector->RootCertInfoForTesting(), root_cert_1_);
   distributor->SetKeyMaterials(kRootCertName, spiffe_bundle_map_0_,
                                std::nullopt);
