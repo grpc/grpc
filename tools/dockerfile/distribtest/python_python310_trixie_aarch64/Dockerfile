@@ -15,4 +15,6 @@
 # this an aarch64 image, qemu emulator will be used to run the tests
 FROM --platform=linux/arm64 python:3.10.20-trixie
 
+RUN ln -sf /usr/local/bin/python3 /usr/bin/python3
+
 RUN python3 -m pip install virtualenv==20.25.0

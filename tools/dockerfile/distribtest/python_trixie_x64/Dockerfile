@@ -14,6 +14,6 @@
 
 FROM python:3.10.20-trixie
 
-RUN apt-get update && apt-get install -y python3-virtualenv
+RUN ln -sf /usr/local/bin/python3 /usr/bin/python3
 
 RUN python3 -m pip install virtualenv==20.25.0

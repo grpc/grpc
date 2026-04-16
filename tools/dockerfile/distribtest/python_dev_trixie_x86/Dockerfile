@@ -14,6 +14,8 @@
 
 FROM --platform=linux/386 python:3.10.20-trixie
 
+RUN ln -sf /usr/local/bin/python3 /usr/bin/python3
+
 RUN python3 -m pip install virtualenv==20.25.0
 
 # docker is running on a 64-bit machine, so we need to
