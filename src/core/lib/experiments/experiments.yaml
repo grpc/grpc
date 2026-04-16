@@ -284,7 +284,7 @@
 - name: promise_filter_send_cancel_metadata
   description: Enables sending all trailing metadata fields from server side promise-based filters
     upon stream cancellation.
-  expiry: 2026/04/01
+  expiry: 2026/05/01
   owner: akshitpatel@google.com
   test_tags: ["core_end2end_test"]
   allow_in_fuzzing_config: true
