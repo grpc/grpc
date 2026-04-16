@@ -24,5 +24,6 @@ cd $(dirname $0)/../../../..
 source tools/internal_ci/helper_scripts/prepare_build_linux_rc
 export DOCKERFILE_DIR=tools/dockerfile/test/bazel_arm64
 # propagate the UPLOAD_TEST_RESULTS env variable to the docker container
+# TODO(sergiitk): why none of the other architectures have this?
 export EXTRA_DOCKER_ARGS="-e=UPLOAD_TEST_RESULTS"
 exec tools/run_tests/dockerize/build_and_run_docker.sh "${BAZEL_SCRIPT}"
