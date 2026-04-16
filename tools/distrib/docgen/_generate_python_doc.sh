@@ -27,7 +27,7 @@ SOURCE_DIR="doc/python/sphinx"
 TARGET_DIR="doc/build"
 
 pip install -r tools/distrib/docgen/requirements.docs.lock
-tools/run_tests/run_tests.py -c opt -l python --compiler python3.9 --newline_on_success -j 8 --build_only
+tools/run_tests/run_tests.py -c opt -l python --compiler python3.10 --newline_on_success -j 8 --build_only
 # shellcheck disable=SC1091
 source py39/bin/activate
 pip install --upgrade Sphinx
