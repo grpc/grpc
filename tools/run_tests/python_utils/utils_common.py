@@ -17,18 +17,12 @@ import sys
 
 
 def get_bool_env(env_var_name: str, default: bool = False) -> bool:
-    val = os.getenv(env_var_name)
-    if val is None:
-        return default
-
-    if default:
-        # If True by default, check if explicitly disabled.
-        check_set = {"0", "f", "false", "n", "no"}
-    else:
-        # If False by default, check if explicitly enabled.
-        check_set = {"1", "t", "true", "y", "yes"}
-
-    return val.lower() in check_set
+    val = os.getenv(env_var_name, "").lower()
+    if val in {"1", "t", "true", "y", "yes"}:
+        return True
+    if val in {"0", "f", "false", "n", "no"}:
+        return False
+    return default
 
 
 def kokoro_build_initiator() -> str:
