@@ -56,8 +56,8 @@ bazel_c_cpp_tests/bazel_wrapper \
   "${BAZEL_REMOTE_CACHE_ARGS[@]}" \
   $BAZEL_FLAGS \
   --execution_log_json_file=${LOG_FILE} \
-  -- //test/core/util:dump_args_test
-#  -- //test/...
+  -- //test/...
+  #-- //test/core/util:dump_args_test
 
 echo "execution logs:"
 
