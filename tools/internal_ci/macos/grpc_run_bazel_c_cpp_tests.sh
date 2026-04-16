@@ -56,8 +56,7 @@ bazel_c_cpp_tests/bazel_wrapper \
   "${BAZEL_REMOTE_CACHE_ARGS[@]}" \
   $BAZEL_FLAGS \
   --execution_log_compact_file=${LOG_FILE} \
-  --remote_max_connections=100 \
-  --remote_max_concurrency_per_connection=1000 \
+  --remote_max_connections=1000 \
   -- //test/...
   #-- //test/core/util:dump_args_test
 
