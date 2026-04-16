@@ -34,7 +34,7 @@ KOKORO_IMAGE_VERSION="$(cat /VERSION)"
 #export GRPC_TEST_REPORT_BASE_DIR="/tmpfs/src/github/grpc"
 LOG_DIR=/tmpfs/src/github/grpc/reports
 mkdir -p ${LOG_DIR}
-LOG_FILE=${LOG_DIR}/exec.json
+LOG_FILE=${LOG_DIR}/exec.log
 
 BAZEL_REMOTE_CACHE_ARGS=(
   # Enable uploading to remote cache. Requires the "roles/remotebuildexecution.actionCacheWriter" permission.
@@ -55,7 +55,7 @@ bazel_c_cpp_tests/bazel_wrapper \
   --google_credentials="${KOKORO_GFILE_DIR}/GrpcTesting-d0eeee2db331.json" \
   "${BAZEL_REMOTE_CACHE_ARGS[@]}" \
   $BAZEL_FLAGS \
-  --execution_log_json_file=${LOG_FILE} \
+  --execution_log_compact_file=${LOG_FILE} \
   -- //test/...
   #-- //test/core/util:dump_args_test
 

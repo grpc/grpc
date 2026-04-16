@@ -25,7 +25,7 @@ source tools/internal_ci/helper_scripts/prepare_build_linux_rc
 
 LOG_DIR=/tmpfs/src/github/grpc/reports
 mkdir -p ${LOG_DIR}
-LOG_FILE=${LOG_DIR}/exec.json
+LOG_FILE=${LOG_DIR}/exec.log
 
 # make sure bazel is available
 tools/bazel version
@@ -46,6 +46,6 @@ bazel_rbe/bazel_wrapper \
   $BAZEL_FLAGS \
   --generate_json_trace_profile \
   --profile=bazel_rbe/profile.json \
-  --execution_log_json_file=${LOG_FILE} \
+  --execution_log_compact_file=${LOG_FILE} \
   "$@" \
   -- ${BAZEL_TESTS:-//test/...}
