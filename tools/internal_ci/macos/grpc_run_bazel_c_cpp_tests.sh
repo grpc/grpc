@@ -31,6 +31,11 @@ tools/bazel version
 # for kokoro mac workers, exact image version is store in a well-known location on disk
 KOKORO_IMAGE_VERSION="$(cat /VERSION)"
 
+#export GRPC_TEST_REPORT_BASE_DIR="/tmpfs/src/github/grpc"
+LOG_DIR=/tmpfs/src/github/grpc/reports
+mkdir -p ${LOG_DIR}
+LOG_FILE=${LOG_DIR}/exec.log
+
 BAZEL_REMOTE_CACHE_ARGS=(
   # Enable uploading to remote cache. Requires the "roles/remotebuildexecution.actionCacheWriter" permission.
   --remote_upload_local_results=true
@@ -50,7 +55,15 @@ bazel_c_cpp_tests/bazel_wrapper \
   --google_credentials="${KOKORO_GFILE_DIR}/GrpcTesting-d0eeee2db331.json" \
   "${BAZEL_REMOTE_CACHE_ARGS[@]}" \
   $BAZEL_FLAGS \
+  --execution_log_compact_file=${LOG_FILE} \
+  --remote_max_connections=1000 \
   -- //test/...
+  #-- //test/core/util:dump_args_test
+
+echo "execution logs:"
+
+cat ${LOG_FILE}
+exit 0
 
 # run end2end tests with GRPC_CFSTREAM=1
 
