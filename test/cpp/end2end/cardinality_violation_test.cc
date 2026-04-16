@@ -116,13 +116,19 @@ TEST_F(CardinalityViolationTest, UnaryZeroRequests) {
   call->StartCall(tag(1));
   void* got_tag;
   bool ok;
-  EXPECT_TRUE(cq.Next(&got_tag, &ok));
+  gpr_timespec deadline = gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
+                                       gpr_time_from_seconds(10, GPR_TIMESPAN));
+  EXPECT_EQ(cq.AsyncNext(&got_tag, &ok, deadline), CompletionQueue::GOT_EVENT);
   EXPECT_EQ(got_tag, tag(1));
   call->WritesDone(tag(2));
-  EXPECT_TRUE(cq.Next(&got_tag, &ok));
+  deadline = gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
+                          gpr_time_from_seconds(10, GPR_TIMESPAN));
+  EXPECT_EQ(cq.AsyncNext(&got_tag, &ok, deadline), CompletionQueue::GOT_EVENT);
   EXPECT_EQ(got_tag, tag(2));
   call->Finish(&status, tag(3));
-  EXPECT_TRUE(cq.Next(&got_tag, &ok));
+  deadline = gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
+                          gpr_time_from_seconds(10, GPR_TIMESPAN));
+  EXPECT_EQ(cq.AsyncNext(&got_tag, &ok, deadline), CompletionQueue::GOT_EVENT);
   EXPECT_EQ(got_tag, tag(3));
   EXPECT_EQ(status.error_code(), StatusCode::UNIMPLEMENTED);
 }
