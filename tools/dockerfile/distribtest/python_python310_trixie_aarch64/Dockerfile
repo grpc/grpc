@@ -13,6 +13,6 @@
 # limitations under the License.
 
 # this an aarch64 image, qemu emulator will be used to run the tests
-FROM arm64v8/python:3.10.20-trixie
+FROM --platform=linux/arm64 python:3.10.20-trixie
 
 RUN python3 -m pip install virtualenv==20.25.0
