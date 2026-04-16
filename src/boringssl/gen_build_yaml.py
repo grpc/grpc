@@ -13,6 +13,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# Extract metadata from boringssl's sources.json and generate yaml file
+# for code generation.
+# See also https://github.com/google/boringssl/blob/main/INCORPORATING.md#build-support.
+
 import json
 import os
 import sys
@@ -20,7 +24,9 @@ import yaml
 
 run_dir = os.path.dirname(sys.argv[0])
 sources_path = os.path.abspath(
-    os.path.join(run_dir, "../../third_party/boringssl-with-bazel/sources.json")
+    os.path.join(
+        run_dir, "../../third_party/boringssl-with-bazel/gen/sources.json"
+    )
 )
 try:
     with open(sources_path, "r") as s:
@@ -35,8 +41,23 @@ except IOError:
         sources = json.load(s)
 
 
+# Map the file location in sources.json to the relative path in gRPC repo.
 def map_dir(filename):
     return "third_party/boringssl-with-bazel/" + filename
+
+
+# Get all the asm/nasm source files from boringssl's upstream sources.json.
+# NASM files are consumed by windows build, and ASM files are used by linux/macos.
+def get_asm_outputs(files):
+    crypto_asm = []
+    crypto_nasm = []
+    for name, properties in files.items():
+        crypto_asm += properties.get("asm", list())  # end with .S
+        crypto_nasm += properties.get("nasm", list())  # end with .asm
+    return {
+        "crypto_asm": sorted(crypto_asm),
+        "crypto_nasm": sorted(crypto_nasm),
+    }
 
 
 class Grpc:
@@ -48,11 +69,7 @@ class Grpc:
 
     def WriteFiles(self, files):
         test_binaries = ["ssl_test", "crypto_test"]
-        asm_outputs = {
-            key: value
-            for key, value in files.items()
-            if any(f.endswith(".S") or f.endswith(".asm") for f in value)
-        }
+        asm_outputs = get_asm_outputs(files)
         self.yaml = {
             "#": "generated with src/boringssl/gen_build_yaml.py",
             "raw_boringssl_build_output_for_debugging": {
@@ -65,7 +82,10 @@ class Grpc:
                     "language": "c",
                     "secure": False,
                     "src": sorted(
-                        map_dir(f) for f in files["ssl"] + files["crypto"]
+                        map_dir(f)
+                        for f in files["ssl"]["srcs"]
+                        + files["crypto"]["srcs"]
+                        + files["bcm"]["srcs"]
                     ),
                     "asm_src": {
                         k: [map_dir(f) for f in value]
@@ -75,11 +95,11 @@ class Grpc:
                         map_dir(f)
                         # We want to include files['fips_fragments'], but not build them as objects.
                         # See https://boringssl-review.googlesource.com/c/boringssl/+/16946
-                        for f in files["ssl_headers"]
-                        + files["ssl_internal_headers"]
-                        + files["crypto_headers"]
-                        + files["crypto_internal_headers"]
-                        + files["fips_fragments"]
+                        for f in files["ssl"]["hdrs"]
+                        + files["ssl"]["internal_hdrs"]
+                        + files["crypto"]["hdrs"]
+                        + files["crypto"]["internal_hdrs"]
+                        + files["bcm"]["internal_hdrs"]
                     ),
                     "boringssl": True,
                     "defaults": "boringssl",
@@ -91,7 +111,10 @@ class Grpc:
                     "secure": False,
                     "boringssl": True,
                     "defaults": "boringssl",
-                    "src": [map_dir(f) for f in sorted(files["test_support"])],
+                    "src": [
+                        map_dir(f)
+                        for f in sorted(files["test_support"]["srcs"])
+                    ],
                 },
             ],
             "targets": [
@@ -101,7 +124,7 @@ class Grpc:
                     "run": False,
                     "secure": False,
                     "language": "c++",
-                    "src": sorted(map_dir(f) for f in files[test]),
+                    "src": sorted(map_dir(f) for f in files[test]["srcs"]),
                     "vs_proj_dir": "test/boringssl",
                     "boringssl": True,
                     "defaults": "boringssl",

@@ -5,6 +5,8 @@
 # license that can be found in the LICENSE file or at
 # https://developers.google.com/open-source/licenses/bsd
 
+load("@rules_cc//cc:cc_library.bzl", "cc_library")
+load("@rules_cc//cc:cc_test.bzl", "cc_test")
 load("//upb/bazel:build_defs.bzl", "UPB_DEFAULT_COPTS")
 
 package(default_applicable_licenses = ["//:license"])
@@ -23,9 +25,9 @@ cc_library(
     visibility = ["//visibility:public"],
     deps = [
         "//upb/base",
-        "//upb/mem",
-        "//upb:port",
         "//upb/base:internal",
+        "//upb/mem",
+        "//upb/port",
     ],
 )
 
@@ -35,7 +37,7 @@ cc_test(
     deps = [
         ":hash",
         "//upb/mem",
-        "//upb:port",
+        "//upb/port",
         "@abseil-cpp//absl/container:flat_hash_map",
         "@googletest//:gtest",
         "@googletest//:gtest_main",

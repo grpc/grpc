@@ -24,16 +24,10 @@ static const upb_MiniTableField udpa_annotations_FieldSecurityAnnotation__fields
 const upb_MiniTable udpa__annotations__FieldSecurityAnnotation_msg_init = {
   NULL,
   &udpa_annotations_FieldSecurityAnnotation__fields[0],
-  16, 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
+  16, 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "udpa.annotations.FieldSecurityAnnotation",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x000800003f000008, &upb_psb1_1bt},
-    {0x000900003f000010, &upb_psb1_1bt},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-  })
 };
 
 const upb_MiniTable* udpa__annotations__FieldSecurityAnnotation_msg_init_ptr = &udpa__annotations__FieldSecurityAnnotation_msg_init;

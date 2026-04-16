@@ -425,6 +425,7 @@ grpc_security_status grpc_ssl_tsi_client_handshaker_factory_init(
     tsi::TlsSessionKeyLoggerCache::TlsSessionKeyLogger* tls_session_key_logger,
     const char* crl_directory,
     std::shared_ptr<grpc_core::experimental::CrlProvider> crl_provider,
+    const std::vector<grpc_tls_key_exchange_group>& key_exchange_groups,
     tsi_ssl_client_handshaker_factory** handshaker_factory) {
   const char* root_certs = nullptr;
   const tsi_ssl_root_certs_store* root_store = nullptr;
@@ -464,6 +465,7 @@ grpc_security_status grpc_ssl_tsi_client_handshaker_factory_init(
   options.max_tls_version = max_tls_version;
   options.crl_directory = crl_directory;
   options.crl_provider = std::move(crl_provider);
+  options.key_exchange_groups = key_exchange_groups;
   const tsi_result result =
       tsi_create_ssl_client_handshaker_factory_with_options(&options,
                                                             handshaker_factory);
@@ -484,6 +486,7 @@ grpc_security_status grpc_ssl_tsi_server_handshaker_factory_init(
     tsi::TlsSessionKeyLoggerCache::TlsSessionKeyLogger* tls_session_key_logger,
     const char* crl_directory, bool send_client_ca_list,
     std::shared_ptr<grpc_core::experimental::CrlProvider> crl_provider,
+    const std::vector<grpc_tls_key_exchange_group>& key_exchange_groups,
     tsi_ssl_server_handshaker_factory** handshaker_factory) {
   size_t num_alpn_protocols = 0;
   const char** alpn_protocol_strings =
@@ -502,6 +505,7 @@ grpc_security_status grpc_ssl_tsi_server_handshaker_factory_init(
   options.crl_provider = std::move(crl_provider);
   options.send_client_ca_list = send_client_ca_list;
   options.root_cert_info = std::move(root_cert_info);
+  options.key_exchange_groups = key_exchange_groups;
   const tsi_result result =
       tsi_create_ssl_server_handshaker_factory_with_options(&options,
                                                             handshaker_factory);

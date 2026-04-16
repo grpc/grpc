@@ -74,6 +74,31 @@ Duration ParseDuration(const google_protobuf_Duration* proto_duration,
 }
 
 //
+// ParseFractionalPercent()
+//
+
+uint32_t ParseFractionalPercent(
+    const envoy_type_v3_FractionalPercent* fractional_percent) {
+  if (fractional_percent == nullptr) return 1000000;
+  uint32_t numerator =
+      envoy_type_v3_FractionalPercent_numerator(fractional_percent);
+  const auto denominator =
+      static_cast<envoy_type_v3_FractionalPercent_DenominatorType>(
+          envoy_type_v3_FractionalPercent_denominator(fractional_percent));
+  switch (denominator) {
+    case envoy_type_v3_FractionalPercent_MILLION:
+      break;
+    case envoy_type_v3_FractionalPercent_TEN_THOUSAND:
+      numerator *= 100;
+      break;
+    case envoy_type_v3_FractionalPercent_HUNDRED:
+    default:
+      numerator *= 10000;
+  }
+  return std::min(numerator, 1000000u);
+}
+
+//
 // ParseXdsAddress()
 //
 

@@ -64,16 +64,10 @@ static const upb_MiniTableField envoy_config_common_mutation_rules_v3_HeaderMuta
 const upb_MiniTable envoy__config__common__mutation_0rules__v3__HeaderMutation_msg_init = {
   &envoy_config_common_mutation_rules_v3_HeaderMutation__submsgs[0],
   &envoy_config_common_mutation_rules_v3_HeaderMutation__fields[0],
-  UPB_SIZE(24, 32), 3, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(24), 0,
+  UPB_SIZE(24, 32), 3, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.config.common.mutation_rules.v3.HeaderMutation",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x001000080100000a, &upb_pos_1bt},
-    {0x0010000802000012, &upb_pom_1bt_maxmaxb},
-    {0x001000080301001a, &upb_pom_1bt_max64b},
-  })
 };
 
 const upb_MiniTable* envoy__config__common__mutation_0rules__v3__HeaderMutation_msg_init_ptr = &envoy__config__common__mutation_0rules__v3__HeaderMutation_msg_init;

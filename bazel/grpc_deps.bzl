@@ -33,13 +33,11 @@ def grpc_deps():
     if "boringssl" not in native.existing_rules():
         http_archive(
             name = "boringssl",
-            # Use github mirror instead of https://boringssl.googlesource.com/boringssl
-            # to obtain a boringssl archive with consistent sha256
-            sha256 = "b717df72df0023933a729bac00fa422a222949cfa84eb8500f3a9af34441fb6e",
-            strip_prefix = "boringssl-c63fadbde60a2224c22189d14c4001bbd2a3a629",
+            sha256 = "bacdc92ab6ee2e1b1047638ca0c830247bdf6f62be55081be0e319cfa3478719",
+            strip_prefix = "boringssl-2b44a3701a4788e1ef866ddc7f143060a3d196c9",
             urls = [
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/google/boringssl/archive/c63fadbde60a2224c22189d14c4001bbd2a3a629.tar.gz",
-                "https://github.com/google/boringssl/archive/c63fadbde60a2224c22189d14c4001bbd2a3a629.tar.gz",
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/google/boringssl/archive/2b44a3701a4788e1ef866ddc7f143060a3d196c9.tar.gz",
+                "https://github.com/google/boringssl/archive/2b44a3701a4788e1ef866ddc7f143060a3d196c9.tar.gz",
             ],
         )
 
@@ -61,12 +59,11 @@ def grpc_deps():
     if "com_google_protobuf" not in native.existing_rules():
         http_archive(
             name = "com_google_protobuf",
-            sha256 = "d0e3a75876a81e1536028bb9cf9181382b198da4cc6fa6aef86879ef629ac807",
-            strip_prefix = "protobuf-74211c0dfc2777318ab53c2cd2c317a2ef9012de",
+            sha256 = "374166fe6f8f1178ef2d759262548eb7063bde83c2805f6db71c5fca87a9d87d",
+            strip_prefix = "protobuf-b6f9284da830b69be787732ffdaa35049d20a088",
             urls = [
-                # https://github.com/protocolbuffers/protobuf/commits/v31.1
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/protocolbuffers/protobuf/archive/74211c0dfc2777318ab53c2cd2c317a2ef9012de.tar.gz",
-                "https://github.com/protocolbuffers/protobuf/archive/74211c0dfc2777318ab53c2cd2c317a2ef9012de.tar.gz",
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/protocolbuffers/protobuf/archive/b6f9284da830b69be787732ffdaa35049d20a088.tar.gz",
+                "https://github.com/protocolbuffers/protobuf/archive/b6f9284da830b69be787732ffdaa35049d20a088.tar.gz",
             ],
             patches = [
                 "@com_github_grpc_grpc//third_party:protobuf.patch",
