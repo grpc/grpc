@@ -32863,7 +32863,6 @@ if(gRPC_BUILD_TESTS)
 
 add_executable(ssl_utils_test
   test/core/credentials/transport/tls/ssl_utils_test.cc
-  third_party/googletest/googlemock/src/gmock_main.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
