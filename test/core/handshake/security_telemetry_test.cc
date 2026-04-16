@@ -59,7 +59,7 @@ TEST(SecurityTelemetryTest, RecordAndQuery) {
   auto scope = CreateCollectionScope({}, {"grpc.security.handshaker.status",
                                           "grpc.security.handshaker.error_details",
                                           "grpc.security.handshaker.protocol"});
-  auto storage = SecurityHandshakerDomain::GetStorage(scope, "OK", "NONE", "TLS");
+  auto storage = HandshakeTelemetryDomain::GetStorage(scope, "OK", "NONE", "TLS");
   
   std::vector<std::string> label_keys = {"grpc.security.handshaker.status",
                                          "grpc.security.handshaker.error_details",
@@ -79,7 +79,7 @@ TEST(SecurityTelemetryTest, RecordAndQuery) {
   ::testing::Mock::VerifyAndClearExpectations(&sink);
 
   // Increment.
-  storage->Increment(SecurityHandshakerDomain::kDuration, 100);
+  storage->Increment(HandshakeTelemetryDomain::kDuration, 100);
 
   // Now should have 1 count.
   EXPECT_CALL(sink,

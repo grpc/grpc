@@ -204,9 +204,9 @@ void SecurityHandshaker::Finish(absl::Status status) {
   std::string error_details = status.ok() ? "NONE" : "AUTH_ERROR";
   std::string protocol = std::string(connector_->type().name());
 
-  auto storage = SecurityHandshakerDomain::GetStorage(
+  auto storage = HandshakeTelemetryDomain::GetStorage(
       GlobalCollectionScope(), status_str, error_details, protocol);
-  storage->Increment(SecurityHandshakerDomain::kDuration, duration_us);
+  storage->Increment(HandshakeTelemetryDomain::kDuration, duration_us);
 
   InvokeOnHandshakeDone(args_, std::move(on_handshake_done_),
                         std::move(status));

@@ -20,7 +20,7 @@
 
 namespace grpc_core {
 
-class SecurityHandshakerDomain final : public InstrumentDomain<SecurityHandshakerDomain> {
+class HandshakeTelemetryDomain final : public InstrumentDomain<HandshakeTelemetryDomain> {
  public:
   using Backend = LowContentionBackend;
   static constexpr absl::string_view kName = "security_handshaker";
