@@ -57,14 +57,14 @@ def should_upload_results_on_ci() -> bool:
     if get_bool_env("UPLOAD_TEST_RESULTS_FORCE"):
         print(
             "[TEST UPLOAD] Force-enabling test results upload"
-            f" for non-CI user {build_initiator=}",
+            f" for non-CI user {build_initiator!r}",
             file=sys.stderr,
         )
         return True
 
     print(
         "[TEST UPLOAD] Disabling test results upload for non-CI user"
-        f" {build_initiator=}. Enable with UPLOAD_TEST_RESULTS_FORCE=true",
+        f" {build_initiator!r}. Enable with UPLOAD_TEST_RESULTS_FORCE=true",
         file=sys.stderr,
     )
     return False
