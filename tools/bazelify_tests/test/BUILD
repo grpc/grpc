@@ -414,7 +414,7 @@ grpc_run_distribtest_test(
         "package_python_linux",
     ],
     build_script = "run_distribtest_python_linux.sh",
-    docker_image_version = "tools/dockerfile/distribtest/python_bullseye_x64.current_version",
+    docker_image_version = "tools/dockerfile/distribtest/python_trixie_x64.current_version",
 )
 
 test_suite(

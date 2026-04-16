@@ -12,6 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM python:3.10.20-slim
+FROM python:3.10.20-trixie
 
 RUN pip install virtualenv==20.25.0

@@ -484,8 +484,8 @@ def targets():
         CSharpDistribTest("windows", "x86", presubmit=True),
         CSharpDistribTest("windows", "x64", presubmit=True),
         # Python
-        PythonDistribTest("linux", "x64", "bullseye", presubmit=True),
-        PythonDistribTest("linux", "x86", "bullseye", presubmit=True),
+        PythonDistribTest("linux", "x64", "trixie", presubmit=True),
+        PythonDistribTest("linux", "x86", "trixie", presubmit=True),
         PythonDistribTest("linux", "x64", "fedora40"),
         PythonDistribTest("linux", "x64", "arch"),
         PythonDistribTest("linux", "x64", "alpine"),
@@ -498,10 +498,10 @@ def targets():
             "linux", "x64", "alpine3.18", source=True, presubmit=True
         ),
         PythonDistribTest(
-            "linux", "x64", "bullseye", source=True, presubmit=True
+            "linux", "x64", "trixie", source=True, presubmit=True
         ),
         PythonDistribTest(
-            "linux", "x86", "bullseye", source=True, presubmit=True
+            "linux", "x86", "trixie", source=True, presubmit=True
         ),
         PythonDistribTest("linux", "x64", "fedora40", source=True),
         PythonDistribTest("linux", "x64", "arch", source=True),

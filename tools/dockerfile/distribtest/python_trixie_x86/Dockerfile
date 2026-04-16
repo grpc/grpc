@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM --platform=linux/386 python:3.10.20-slim
+FROM --platform=linux/386 python:3.10.20-trixie
 
 RUN pip install virtualenv==20.25.0
 
