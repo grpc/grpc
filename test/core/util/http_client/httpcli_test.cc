@@ -128,8 +128,7 @@ class HttpRequestTest : public ::testing::Test {
 
   static void WaitForServerReady(const std::string& host_port,
                                  absl::Duration timeout) {
-    absl::Time start_time = absl::Now();
-    absl::Time deadline = start_time + timeout;
+    absl::Time deadline = absl::Now() + timeout;
 
     std::string host;
     std::string port;
