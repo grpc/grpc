@@ -59,11 +59,12 @@ class TlsCredentials final : public grpc_channel_credentials {
   // the same credentials share the same X509_STORE via X509_STORE_up_ref().
   // The returned store remains valid while the shared_ptr is held.
   std::shared_ptr<tsi_ssl_root_certs_store> GetOrCreateRootStore(
-      const std::string& pem_root_certs);
+      const std::string& pem_root_certs)
+      ABSL_LOCKS_EXCLUDED(root_store_mu_);
 
-  void ClearRootStoreCache();
+  void ClearRootStoreCache() ABSL_LOCKS_EXCLUDED(root_store_mu_);
 
-  bool HasCachedRootStoreForTesting();
+  bool HasCachedRootStoreForTesting() ABSL_LOCKS_EXCLUDED(root_store_mu_);
 
  private:
   int cmp_impl(const grpc_channel_credentials* other) const override;

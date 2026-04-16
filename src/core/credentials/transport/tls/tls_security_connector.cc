@@ -567,6 +567,8 @@ TlsChannelSecurityConnector::UpdateHandshakerFactoryLocked() {
       options_->crl_directory().empty()) {
     const std::string* pem = std::get_if<std::string>(root_cert_info_.get());
     if (pem != nullptr) {
+      // The TSI client handshaker factory assumes root_store is already
+      // configured for explicit PEM verification flags.
       root_store_ref = tls_creds->GetOrCreateRootStore(*pem);
       root_store = root_store_ref.get();
       use_cached_root_store = true;

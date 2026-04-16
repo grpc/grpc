@@ -72,7 +72,9 @@ tsi_ssl_root_certs_store* tsi_ssl_root_certs_store_create(
     const char* pem_roots);
 
 // Applies the verification flags needed for explicit PEM root verification.
-// Call before sharing the store across SSL_CTX instances.
+// Call before sharing the store across SSL_CTX instances when using this
+// store via tsi_ssl_client_handshaker_options::root_store, because the client
+// handshaker factory does not reapply these flags on the root_store path.
 void tsi_ssl_root_certs_store_configure_explicit_verification(
     tsi_ssl_root_certs_store* root_store);
 
