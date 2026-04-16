@@ -277,6 +277,14 @@ class RubyArtifact:
         if inner_jobs is not None:
             # set number of parallel jobs when building native extension
             environ["GRPC_RUBY_BUILD_PROCS"] = str(inner_jobs)
+
+        # determine build_type at runtime.
+        # By default, build all supported ruby versions ("continuous").
+        # If explicitly running in presubmit, build only a subset of versions to save time.
+        build_type = "continuous"
+        if os.environ.get("KOKORO_JOB_TYPE") == "PRESUBMIT":
+            build_type = "presubmit"
+
         # Ruby build uses docker internally and docker cannot be nested.
         # We are using a custom workspace instead.
         return create_jobspec(
@@ -284,6 +292,7 @@ class RubyArtifact:
             [
                 "tools/run_tests/artifacts/build_artifact_ruby.sh",
                 self.gem_platform,
+                build_type,
             ],
             use_workspace=True,
             timeout_seconds=240 * 60,
