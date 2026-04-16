@@ -26,6 +26,7 @@
 #include <utility>
 #include <vector>
 
+#include "src/core/util/grpc_check.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/ascii.h"
 #include "absl/strings/escaping.h"
@@ -80,10 +81,12 @@ std::string HMAC(const std::string& key, const std::string& msg) {
 #else
   size_t len = 0;
   unsigned char digest[EVP_MAX_MD_SIZE];
-  EVP_Q_mac(nullptr, kHmacName, nullptr, kSha256, nullptr,
-            reinterpret_cast<const unsigned char*>(key.c_str()), key.length(),
-            reinterpret_cast<const unsigned char*>(msg.c_str()), msg.length(),
-            digest, sizeof(digest), &len);
+  GRPC_CHECK_NE(EVP_Q_mac(nullptr, kHmacName, nullptr, kSha256, nullptr,
+                          reinterpret_cast<const unsigned char*>(key.c_str()),
+                          key.length(),
+                          reinterpret_cast<const unsigned char*>(msg.c_str()),
+                          msg.length(), digest, sizeof(digest), &len),
+                nullptr);
   return std::string(digest, digest + len);
 #endif
 }
