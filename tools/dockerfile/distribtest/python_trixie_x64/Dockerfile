@@ -14,4 +14,4 @@
 
 FROM python:3.10.20-trixie
 
-RUN pip install virtualenv==20.25.0
+RUN python3 -m pip install virtualenv==20.25.0
