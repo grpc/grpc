@@ -97,9 +97,6 @@ class CardinalityViolationTest : public ::testing::Test {
   AsyncGenericService generic_service_;
 };
 
-// Verifies Server Case 1: For a Unary RPC, if no request message is sent by the
-// client and the stream is half-closed, the server should report an
-// UNIMPLEMENTED status instead of an INTERNAL error.
 TEST_F(CardinalityViolationTest, UnaryZeroRequests) {
   const char* experiments = std::getenv("GRPC_EXPERIMENTS");
   if (experiments != nullptr &&
@@ -149,13 +146,19 @@ TEST_F(CardinalityViolationTest, ServerStreamingZeroRequests) {
   call->StartCall(tag(1));
   void* got_tag;
   bool ok;
-  EXPECT_TRUE(cq.Next(&got_tag, &ok));
+  gpr_timespec deadline = gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
+                                       gpr_time_from_seconds(10, GPR_TIMESPAN));
+  EXPECT_EQ(cq.AsyncNext(&got_tag, &ok, deadline), CompletionQueue::GOT_EVENT);
   EXPECT_EQ(got_tag, tag(1));
   call->WritesDone(tag(2));
-  EXPECT_TRUE(cq.Next(&got_tag, &ok));
+  deadline = gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
+                          gpr_time_from_seconds(10, GPR_TIMESPAN));
+  EXPECT_EQ(cq.AsyncNext(&got_tag, &ok, deadline), CompletionQueue::GOT_EVENT);
   EXPECT_EQ(got_tag, tag(2));
   call->Finish(&status, tag(3));
-  EXPECT_TRUE(cq.Next(&got_tag, &ok));
+  deadline = gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
+                          gpr_time_from_seconds(10, GPR_TIMESPAN));
+  EXPECT_EQ(cq.AsyncNext(&got_tag, &ok, deadline), CompletionQueue::GOT_EVENT);
   EXPECT_EQ(got_tag, tag(3));
   EXPECT_EQ(status.error_code(), StatusCode::UNIMPLEMENTED);
 }
@@ -174,10 +177,16 @@ TEST_F(CardinalityViolationTest, ClientStreamingZeroResponses) {
                                tag(100));
   void* got_tag;
   bool ok;
-  EXPECT_TRUE(cq_->Next(&got_tag, &ok));
+  gpr_timespec deadline = gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
+                                       gpr_time_from_seconds(10, GPR_TIMESPAN));
+  EXPECT_EQ(cq_->AsyncNext(&got_tag, &ok, deadline),
+            CompletionQueue::GOT_EVENT);
   EXPECT_EQ(got_tag, tag(100));
   stream.Finish(Status::OK, tag(101));
-  EXPECT_TRUE(cq_->Next(&got_tag, &ok));
+  deadline = gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
+                          gpr_time_from_seconds(10, GPR_TIMESPAN));
+  EXPECT_EQ(cq_->AsyncNext(&got_tag, &ok, deadline),
+            CompletionQueue::GOT_EVENT);
   EXPECT_EQ(got_tag, tag(101));
   writer->WritesDone();
   Status s = writer->Finish();
@@ -196,23 +205,38 @@ TEST_F(CardinalityViolationTest, ClientAsyncStreamingZeroResponses) {
       channel_.get(), &client_cq, method, &context, &response, true, tag(1));
   void* got_tag;
   bool ok;
-  EXPECT_TRUE(client_cq.Next(&got_tag, &ok));
+  gpr_timespec deadline = gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
+                                       gpr_time_from_seconds(10, GPR_TIMESPAN));
+  EXPECT_EQ(client_cq.AsyncNext(&got_tag, &ok, deadline),
+            CompletionQueue::GOT_EVENT);
   EXPECT_EQ(got_tag, tag(1));
   GenericServerContext server_context;
   GenericServerAsyncReaderWriter stream(&server_context);
   generic_service_.RequestCall(&server_context, &stream, cq_.get(), cq_.get(),
                                tag(100));
-  EXPECT_TRUE(cq_->Next(&got_tag, &ok));
+  deadline = gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
+                          gpr_time_from_seconds(10, GPR_TIMESPAN));
+  EXPECT_EQ(cq_->AsyncNext(&got_tag, &ok, deadline),
+            CompletionQueue::GOT_EVENT);
   EXPECT_EQ(got_tag, tag(100));
   stream.Finish(Status::OK, tag(101));
-  EXPECT_TRUE(cq_->Next(&got_tag, &ok));
+  deadline = gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
+                          gpr_time_from_seconds(10, GPR_TIMESPAN));
+  EXPECT_EQ(cq_->AsyncNext(&got_tag, &ok, deadline),
+            CompletionQueue::GOT_EVENT);
   EXPECT_EQ(got_tag, tag(101));
   writer->WritesDone(tag(2));
-  EXPECT_TRUE(client_cq.Next(&got_tag, &ok));
+  deadline = gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
+                          gpr_time_from_seconds(10, GPR_TIMESPAN));
+  EXPECT_EQ(client_cq.AsyncNext(&got_tag, &ok, deadline),
+            CompletionQueue::GOT_EVENT);
   EXPECT_EQ(got_tag, tag(2));
   Status s;
   writer->Finish(&s, tag(3));
-  EXPECT_TRUE(client_cq.Next(&got_tag, &ok));
+  deadline = gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
+                          gpr_time_from_seconds(10, GPR_TIMESPAN));
+  EXPECT_EQ(client_cq.AsyncNext(&got_tag, &ok, deadline),
+            CompletionQueue::GOT_EVENT);
   EXPECT_EQ(got_tag, tag(3));
   EXPECT_EQ(s.error_code(), StatusCode::UNIMPLEMENTED);
   delete writer;
@@ -232,20 +256,35 @@ TEST_F(CardinalityViolationTest, UnaryExtraRequest) {
   stream->StartCall(tag(1));
   void* got_tag;
   bool ok;
-  EXPECT_TRUE(cq_->Next(&got_tag, &ok));
+  gpr_timespec deadline = gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
+                                       gpr_time_from_seconds(10, GPR_TIMESPAN));
+  EXPECT_EQ(cq_->AsyncNext(&got_tag, &ok, deadline),
+            CompletionQueue::GOT_EVENT);
   EXPECT_EQ(got_tag, tag(1));
   stream->Write(*request_buf, tag(2));
-  EXPECT_TRUE(cq_->Next(&got_tag, &ok));
+  deadline = gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
+                          gpr_time_from_seconds(10, GPR_TIMESPAN));
+  EXPECT_EQ(cq_->AsyncNext(&got_tag, &ok, deadline),
+            CompletionQueue::GOT_EVENT);
   EXPECT_EQ(got_tag, tag(2));
   stream->Write(*extra_buf, tag(3));
-  EXPECT_TRUE(cq_->Next(&got_tag, &ok));
+  deadline = gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
+                          gpr_time_from_seconds(10, GPR_TIMESPAN));
+  EXPECT_EQ(cq_->AsyncNext(&got_tag, &ok, deadline),
+            CompletionQueue::GOT_EVENT);
   EXPECT_EQ(got_tag, tag(3));
   stream->WritesDone(tag(4));
-  EXPECT_TRUE(cq_->Next(&got_tag, &ok));
+  deadline = gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
+                          gpr_time_from_seconds(10, GPR_TIMESPAN));
+  EXPECT_EQ(cq_->AsyncNext(&got_tag, &ok, deadline),
+            CompletionQueue::GOT_EVENT);
   EXPECT_EQ(got_tag, tag(4));
   Status status;
   stream->Finish(&status, tag(5));
-  EXPECT_TRUE(cq_->Next(&got_tag, &ok));
+  deadline = gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
+                          gpr_time_from_seconds(10, GPR_TIMESPAN));
+  EXPECT_EQ(cq_->AsyncNext(&got_tag, &ok, deadline),
+            CompletionQueue::GOT_EVENT);
   EXPECT_EQ(got_tag, tag(5));
   EXPECT_EQ(status.error_code(), StatusCode::UNIMPLEMENTED);
 }
@@ -264,22 +303,34 @@ TEST_F(CardinalityViolationTest, ClientStreamingExtraResponses) {
                                tag(100));
   void* got_tag;
   bool ok;
-  EXPECT_TRUE(cq_->Next(&got_tag, &ok));
+  gpr_timespec deadline = gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
+                                       gpr_time_from_seconds(10, GPR_TIMESPAN));
+  EXPECT_EQ(cq_->AsyncNext(&got_tag, &ok, deadline),
+            CompletionQueue::GOT_EVENT);
   EXPECT_EQ(got_tag, tag(100));
   EchoResponse first_resp;
   first_resp.set_message("first");
   auto first_buf = SerializeToByteBuffer(&first_resp);
   stream.Write(*first_buf, tag(101));
-  EXPECT_TRUE(cq_->Next(&got_tag, &ok));
+  deadline = gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
+                          gpr_time_from_seconds(10, GPR_TIMESPAN));
+  EXPECT_EQ(cq_->AsyncNext(&got_tag, &ok, deadline),
+            CompletionQueue::GOT_EVENT);
   EXPECT_EQ(got_tag, tag(101));
   EchoResponse second_resp;
   second_resp.set_message("second");
   auto second_buf = SerializeToByteBuffer(&second_resp);
   stream.Write(*second_buf, tag(102));
-  EXPECT_TRUE(cq_->Next(&got_tag, &ok));
+  deadline = gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
+                          gpr_time_from_seconds(10, GPR_TIMESPAN));
+  EXPECT_EQ(cq_->AsyncNext(&got_tag, &ok, deadline),
+            CompletionQueue::GOT_EVENT);
   EXPECT_EQ(got_tag, tag(102));
   stream.Finish(Status::OK, tag(103));
-  EXPECT_TRUE(cq_->Next(&got_tag, &ok));
+  deadline = gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
+                          gpr_time_from_seconds(10, GPR_TIMESPAN));
+  EXPECT_EQ(cq_->AsyncNext(&got_tag, &ok, deadline),
+            CompletionQueue::GOT_EVENT);
   EXPECT_EQ(got_tag, tag(103));
   writer->WritesDone();
   Status s = writer->Finish();
