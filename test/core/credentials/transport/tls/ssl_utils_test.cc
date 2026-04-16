@@ -131,8 +131,8 @@ TEST(SslUtilsTest, SslHostMatchesName) {
                 TSI_X509_SUBJECT_COMMON_NAME_PEER_PROPERTY, "foo.bar.com",
                 &peer.properties[0]),
             TSI_OK);
-  EXPECT_EQ(grpc_ssl_host_matches_name(&peer, "foo.bar.com"), 1);
-  EXPECT_EQ(grpc_ssl_host_matches_name(&peer, "bad.bar.com"), 0);
+  EXPECT_TRUE(grpc_ssl_host_matches_name(&peer, "foo.bar.com"));
+  EXPECT_FALSE(grpc_ssl_host_matches_name(&peer, "bad.bar.com"));
   tsi_peer_destruct(&peer);
 }
 
@@ -152,7 +152,9 @@ TEST(SslUtilsTest, SslCheckAlpnFailure) {
   ASSERT_EQ(tsi_construct_string_peer_property_from_cstring(
                 TSI_SSL_ALPN_SELECTED_PROTOCOL, "bad", &peer.properties[0]),
             TSI_OK);
-  EXPECT_NE(grpc_ssl_check_alpn(&peer), absl::OkStatus());
+  absl::Status status = grpc_ssl_check_alpn(&peer);
+  EXPECT_EQ(status.code(), absl::StatusCode::kUnknown);
+  EXPECT_EQ(status.message(), "Cannot check peer: invalid ALPN value.");
   tsi_peer_destruct(&peer);
 }
 
@@ -174,7 +176,10 @@ TEST(SslUtilsTest, SslCheckPeerNameMismatch) {
                 TSI_X509_SUBJECT_COMMON_NAME_PEER_PROPERTY, "foo.bar.com",
                 &peer.properties[0]),
             TSI_OK);
-  EXPECT_NE(grpc_ssl_check_peer_name("bad.bar.com", &peer), absl::OkStatus());
+  absl::Status status = grpc_ssl_check_peer_name("bad.bar.com", &peer);
+  EXPECT_EQ(status.code(), absl::StatusCode::kUnknown);
+  EXPECT_EQ(status.message(),
+            "Peer name bad.bar.com is not in peer certificate");
   tsi_peer_destruct(&peer);
 }
 
