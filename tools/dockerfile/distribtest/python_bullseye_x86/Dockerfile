@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM i386/python:3.10-slim-bullseye
+FROM --platform=linux/386 python:3.10-slim-bullseye
 
 RUN pip install virtualenv==16.7.9
 
