@@ -20,11 +20,15 @@ def get_bool_env(env_var_name: str, default: bool = False) -> bool:
     val = os.getenv(env_var_name)
     if val is None:
         return default
+
     if default:
         # If True by default, check if explicitly disabled.
-        return val.lower() not in {"0", "f", "false", "n", "no"}
-    # If False by default, check if explicitly enabled.
-    return val.lower() in {"1", "t", "true", "y", "yes"}
+        check_set = {"0", "f", "false", "n", "no"}
+    else:
+        # If False by default, check if explicitly enabled.
+        check_set = {"1", "t", "true", "y", "yes"}
+
+    return val.lower() in check_set
 
 
 def kokoro_build_initiator() -> str:
@@ -40,7 +44,7 @@ def should_upload_results_on_ci() -> bool:
     # Only upload results when initiated by the CI.
     #
     # Right now we differentiate by checking the KOKORO_BUILD_INITIATOR env var,
-    # but it may be better to identify the github repo owner and skip the upload
+    # but it may be better to identify the GitHub repo owner and skip the upload
     # not "grpc" org, but a fork. We could use KOKORO_GITHUB_COMMIT_URL,
     # but how reliable is it for all types of jobs? Alternatively, we could
     # extract it from `git remote get-url`, but this needs to be tested too.
