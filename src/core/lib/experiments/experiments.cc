@@ -165,6 +165,9 @@ const char* const additional_constraints_promise_based_http2_server_transport =
 const char* const description_promise_based_inproc_transport =
     "Use promises for the in-process transport.";
 const char* const additional_constraints_promise_based_inproc_transport = "{}";
+const char* const description_promise_batch_cleanup_on_cancel =
+    "Fix completion queue tag handling during promise batch cancellation.";
+const char* const additional_constraints_promise_batch_cleanup_on_cancel = "{}";
 const char* const description_promise_filter_send_cancel_metadata =
     "Enables sending all trailing metadata fields from server side "
     "promise-based filters upon stream cancellation.";
@@ -349,6 +352,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_promise_based_inproc_transport,
      additional_constraints_promise_based_inproc_transport, nullptr, 0, false,
      false},
+    {"promise_batch_cleanup_on_cancel",
+     description_promise_batch_cleanup_on_cancel,
+     additional_constraints_promise_batch_cleanup_on_cancel, nullptr, 0, true,
+     true},
     {"promise_filter_send_cancel_metadata",
      description_promise_filter_send_cancel_metadata,
      additional_constraints_promise_filter_send_cancel_metadata, nullptr, 0,
@@ -556,6 +563,9 @@ const char* const additional_constraints_promise_based_http2_server_transport =
 const char* const description_promise_based_inproc_transport =
     "Use promises for the in-process transport.";
 const char* const additional_constraints_promise_based_inproc_transport = "{}";
+const char* const description_promise_batch_cleanup_on_cancel =
+    "Fix completion queue tag handling during promise batch cancellation.";
+const char* const additional_constraints_promise_batch_cleanup_on_cancel = "{}";
 const char* const description_promise_filter_send_cancel_metadata =
     "Enables sending all trailing metadata fields from server side "
     "promise-based filters upon stream cancellation.";
@@ -740,6 +750,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_promise_based_inproc_transport,
      additional_constraints_promise_based_inproc_transport, nullptr, 0, false,
      false},
+    {"promise_batch_cleanup_on_cancel",
+     description_promise_batch_cleanup_on_cancel,
+     additional_constraints_promise_batch_cleanup_on_cancel, nullptr, 0, true,
+     true},
     {"promise_filter_send_cancel_metadata",
      description_promise_filter_send_cancel_metadata,
      additional_constraints_promise_filter_send_cancel_metadata, nullptr, 0,
@@ -947,6 +961,9 @@ const char* const additional_constraints_promise_based_http2_server_transport =
 const char* const description_promise_based_inproc_transport =
     "Use promises for the in-process transport.";
 const char* const additional_constraints_promise_based_inproc_transport = "{}";
+const char* const description_promise_batch_cleanup_on_cancel =
+    "Fix completion queue tag handling during promise batch cancellation.";
+const char* const additional_constraints_promise_batch_cleanup_on_cancel = "{}";
 const char* const description_promise_filter_send_cancel_metadata =
     "Enables sending all trailing metadata fields from server side "
     "promise-based filters upon stream cancellation.";
@@ -1131,6 +1148,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_promise_based_inproc_transport,
      additional_constraints_promise_based_inproc_transport, nullptr, 0, false,
      false},
+    {"promise_batch_cleanup_on_cancel",
+     description_promise_batch_cleanup_on_cancel,
+     additional_constraints_promise_batch_cleanup_on_cancel, nullptr, 0, true,
+     true},
     {"promise_filter_send_cancel_metadata",
      description_promise_filter_send_cancel_metadata,
      additional_constraints_promise_filter_send_cancel_metadata, nullptr, 0,
