@@ -608,8 +608,8 @@ TEST_F(HttpRequestTest,
   http_request->Start();
   (void)http_request.release();  // request will be orphaned by CancelRequest
   exec_ctx.Flush();
-  PollUntil([&request_state]() {
-    return request_state.done; }, AbslDeadlineSeconds(60);
+  PollUntil([&request_state]() { return request_state.done; },
+            AbslDeadlineSeconds(60));
   grpc_core::HttpRequest::TestOnlySetOnHandshakeDoneIntercept(nullptr);
 }
 
