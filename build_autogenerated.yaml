@@ -23297,7 +23297,6 @@ targets:
   headers: []
   src:
   - test/core/credentials/transport/tls/ssl_utils_test.cc
-  - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
   - grpc_test_util
