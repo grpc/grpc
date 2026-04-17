@@ -47,7 +47,7 @@ def _commandfile_spawn(self, command, **kwargs):
     use_ccache = enable_ccache and has_ccache and command[0].endswith("cl.exe")
 
     if use_ccache:
-        command = [arg for arg in command if arg != "/Zc:preprocessor"]
+        #command = [arg for arg in command if arg != "/Zc:preprocessor"]
         # Workaround for ccache 4.8 not recognizing /Tp<file> or /Tc<file>
         new_command = []
         for arg in command:
@@ -55,6 +55,8 @@ def _commandfile_spawn(self, command, **kwargs):
                 new_command.extend(["/Tp", arg[3:]])
             elif arg.startswith("/Tc") and len(arg) > 3:
                 new_command.extend(["/Tc", arg[3:]])
+            elif arg == "/Zc:preprocessor":
+                new_command.extend(["--ccache-skip", "/Zc:preprocessor"])
             else:
                 new_command.append(arg)
         command = new_command
