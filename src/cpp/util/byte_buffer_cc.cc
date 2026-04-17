@@ -52,7 +52,7 @@ Status ByteBuffer::DumpToSingleSlice(Slice* slice) const {
   }
   grpc_byte_buffer_reader reader;
   if (!grpc_byte_buffer_reader_init(&reader, buffer_)) {
-    return Status(StatusCode::INTERNAL,
+    return Status(StatusCode::UNIMPLEMENTED,
                   "Couldn't initialize byte buffer reader");
   }
   grpc_slice s = grpc_byte_buffer_reader_readall(&reader);
@@ -68,7 +68,7 @@ Status ByteBuffer::Dump(std::vector<Slice>* slices) const {
   }
   grpc_byte_buffer_reader reader;
   if (!grpc_byte_buffer_reader_init(&reader, buffer_)) {
-    return Status(StatusCode::INTERNAL,
+    return Status(StatusCode::UNIMPLEMENTED,
                   "Couldn't initialize byte buffer reader");
   }
   grpc_slice s;

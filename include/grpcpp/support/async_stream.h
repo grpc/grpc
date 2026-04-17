@@ -444,6 +444,7 @@ class ClientAsyncWriter final : public ClientAsyncWriterInterface<W> {
       : channel_(channel), context_(context), call_(call), started_(start) {
     finish_ops_.RecvMessage(response);
     finish_ops_.AllowNoMessage();
+    finish_ops_.SetCheckCardinalityViolation(&finish_ops_.got_message);
     if (start) {
       StartCallInternal(tag);
     } else {

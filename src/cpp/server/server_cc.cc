@@ -443,6 +443,24 @@ class Server::SyncRequest final : public grpc::internal::CompletionQueueTag {
     interceptor_methods_.SetRecvInitialMetadata(&ctx_->ctx.client_metadata_);
 
     if (has_request_payload_) {
+      if (request_payload_ == nullptr) {
+        VLOG(2) << "Missing request message for Unary RPC.";
+        grpc::internal::CallOpSet<grpc::internal::CallOpSendInitialMetadata,
+                                  grpc::internal::CallOpServerSendStatus>
+            ops;
+        grpc::internal::UnknownMethodHandler::FillOps(
+            &ctx_->ctx,
+            "Cardinality violation: Unary method received zero requests", &ops);
+        ops.FillOps(wrapped_call_.get());
+        cq_.Pluck(&ops);
+        cq_.Shutdown();
+        grpc::PhonyTag ignored_tag;
+        GRPC_CHECK(cq_.Pluck(&ignored_tag) == false);
+        wrapped_call_.Destroy();
+        ctx_.Destroy();
+        delete this;
+        return;
+      }
       // Set interception point for RECV MESSAGE
       auto* handler = resources_ ? method_->handler()
                                  : server_->resource_exhausted_handler_.get();
