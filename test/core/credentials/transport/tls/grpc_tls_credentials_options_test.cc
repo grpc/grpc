@@ -618,6 +618,7 @@ TEST_F(GrpcTlsCredentialsOptionsTest, SetKeyExchangeGroups) {
       grpc_tls_key_exchange_group::GRPC_TLS_GROUP_X25519_MLKEM768,
       grpc_tls_key_exchange_group::GRPC_TLS_GROUP_X25519,
       grpc_tls_key_exchange_group::GRPC_TLS_GROUP_SECP256R1,
+      grpc_tls_key_exchange_group::GRPC_TLS_GROUP_SECP384R1,
   };
   grpc_tls_credentials_options_set_key_exchange_groups(
       options.get(), groups.data(), groups.size());
