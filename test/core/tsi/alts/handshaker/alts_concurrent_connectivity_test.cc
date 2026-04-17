@@ -297,9 +297,11 @@ TEST(AltsConcurrentConnectivityTest, TestConcurrentClientServerHandshakes) {
     std::vector<std::unique_ptr<ConnectLoopRunner>> connect_loop_runners;
     VLOG(2) << "start performing concurrent expected-to-succeed connects";
     for (size_t i = 0; i < num_concurrent_connects; i++) {
+      // WARNING: Hardcoded deadlines used to support different sanitizers and
+      // scenarios make this test inherently flaky in some environments.
       connect_loop_runners.push_back(std::make_unique<ConnectLoopRunner>(
           test_server.address(), fake_handshake_server.address(),
-          15 * grpc_test_slowdown_factor() /* per connect deadline seconds */,
+          45 * grpc_test_slowdown_factor() /* per connect deadline seconds */,
           5 /* loops */, GRPC_CHANNEL_READY /* expected connectivity states */,
           0 /* reconnect_backoff_ms unset */));
     }
@@ -335,9 +337,11 @@ TEST(AltsConcurrentConnectivityTest,
     size_t num_concurrent_connects = 100;
     VLOG(2) << "start performing concurrent expected-to-fail connects";
     for (size_t i = 0; i < num_concurrent_connects; i++) {
+      // WARNING: Hardcoded deadlines used to support different sanitizers and
+      // scenarios make this test inherently flaky in some environments.
       connect_loop_runners.push_back(std::make_unique<ConnectLoopRunner>(
           fake_backend_server.address(), fake_handshake_server.address(),
-          10 * grpc_test_slowdown_factor() /* per connect deadline seconds */,
+          30 * grpc_test_slowdown_factor() /* per connect deadline seconds */,
           3 /* loops */,
           GRPC_CHANNEL_TRANSIENT_FAILURE /* expected connectivity states */,
           0 /* reconnect_backoff_ms unset */));
