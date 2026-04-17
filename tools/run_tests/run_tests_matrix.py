@@ -391,6 +391,7 @@ def _create_portability_test_jobs(
             extra_args=extra_args,
             inner_jobs=inner_jobs,
             timeout_seconds=_CPP_RUNTESTS_TIMEOUT,
+            extra_envs={"GRPC_VERBOSITY": "DEBUG", "GRPC_TRACE": "tsi,ssl"},
         )
 
     # portability C & C++ on Windows 64-bit
