@@ -785,18 +785,30 @@ static tsi_result add_subject_alt_names_properties_to_peer(
       char ntop_buf[INET6_ADDRSTRLEN];
       int af;
 
+#if OPENSSL_VERSION_NUMBER >= 0x10100000L
       if (ASN1_STRING_length(subject_alt_name->d.iPAddress) == 4) {
         af = AF_INET;
       } else if (ASN1_STRING_length(subject_alt_name->d.iPAddress) == 16) {
         af = AF_INET6;
+#else
+      if (subject_alt_name->d.iPAddress->length == 4) {
+        af = AF_INET;
+      } else if (subject_alt_name->d.iPAddress->length == 16) {
+        af = AF_INET6;
+#endif
       } else {
         LOG(ERROR) << "SAN IP Address contained invalid IP";
         result = TSI_INTERNAL_ERROR;
         break;
       }
+#if OPENSSL_VERSION_NUMBER >= 0x10100000L
       const char* name =
           inet_ntop(af, ASN1_STRING_get0_data(subject_alt_name->d.iPAddress),
                     ntop_buf, INET6_ADDRSTRLEN);
+#else
+      const char* name = inet_ntop(af, subject_alt_name->d.iPAddress->data,
+                                   ntop_buf, INET6_ADDRSTRLEN);
+#endif
       if (name == nullptr) {
         LOG(ERROR) << "Could not get IP string from asn1 octet.";
         result = TSI_INTERNAL_ERROR;
