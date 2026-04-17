@@ -285,14 +285,14 @@ grpc_build_artifact_task(
 # Python artifact build tasks
 
 grpc_build_artifact_task(
-    name = "artifact_python_linux_x64_manylinux2014_cp310",
-    build_script = "build_artifact_python_linux_x64_cp310.sh",
+    name = "artifact_python_linux_x64_manylinux2014_cp314",
+    build_script = "build_artifact_python_linux_x64_cp314.sh",
     docker_image_version = "tools/dockerfile/grpc_artifact_python_manylinux2014_x64.current_version",
 )
 
 grpc_build_artifact_task(
-    name = "artifact_python_linux_x64_manylinux2014_cp314",
-    build_script = "build_artifact_python_linux_x64_cp314.sh",
+    name = "artifact_python_linux_x64_manylinux2014_cp310",
+    build_script = "build_artifact_python_linux_x64_cp310.sh",
     docker_image_version = "tools/dockerfile/grpc_artifact_python_manylinux2014_x64.current_version",
 )
 
