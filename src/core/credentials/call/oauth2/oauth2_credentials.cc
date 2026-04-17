@@ -38,6 +38,7 @@
 #include "src/core/call/metadata_batch.h"
 #include "src/core/credentials/call/json_util.h"
 #include "src/core/credentials/call/token_fetcher/token_fetcher_credentials.h"
+#include "src/core/credentials/call/utils/redact_utils.h"
 #include "src/core/credentials/transport/transport_credentials.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/error.h"
@@ -150,7 +151,9 @@ grpc_oauth2_token_fetcher_credentials_parse_server_response_body(
     grpc_core::Duration* token_lifetime) {
   auto json = grpc_core::JsonParse(body);
   if (!json.ok()) {
-    LOG(ERROR) << "Could not parse JSON from " << body << ": " << json.status();
+    LOG(ERROR) << "Could not parse JSON from "
+               << grpc_core::RedactSensitiveJsonFields(body) << ": "
+               << json.status();
     return GRPC_CREDENTIALS_ERROR;
   }
   if (json->type() != Json::Type::kObject) {
@@ -199,7 +202,7 @@ grpc_oauth2_token_fetcher_credentials_parse_server_response(
   absl::string_view body(response->body, response->body_length);
   if (response->status != 200) {
     LOG(ERROR) << "Call to http server ended with error " << response->status
-               << " [" << body << "]";
+               << " [" << grpc_core::RedactSensitiveJsonFields(body) << "]";
     return GRPC_CREDENTIALS_ERROR;
   }
   return grpc_oauth2_token_fetcher_credentials_parse_server_response_body(

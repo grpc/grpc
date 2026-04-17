@@ -114,3 +114,25 @@ grpc_cc_test(
         "@envoy_api//envoy/extensions/grpc_service/call_credentials/access_token/v3:pkg_cc_proto",
     ],
 )
+
+grpc_cc_test(
+    name = "redact_utils_test",
+    srcs = ["redact_utils_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//:config",
+        "//:gpr",
+        "//:grpc",
+        "//src/core:grpc_oauth2_credentials",
+        "//src/core:jwt_token_file_call_credentials",
+        "//src/core:redact_utils",
+        "//test/core/test_util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util_base",
+        "//test/core/test_util:test_call_creds",
+        "@envoy_api//envoy/extensions/grpc_service/call_credentials/access_token/v3:pkg_cc_proto",
+    ],
+)
