@@ -47,14 +47,27 @@ def _commandfile_spawn(self, command, **kwargs):
     use_ccache = enable_ccache and has_ccache and command[0].endswith("cl.exe")
 
     if use_ccache:
-        command = [arg for arg in command if arg != "/Zc:preprocessor"]
-        # Workaround for ccache 4.8 not recognizing /Tp<file> or /Tc<file>
+        # Workaround for ccache 4.8 not handling certain flags properly.
         new_command = []
         for arg in command:
+            # /Tp, /Tc:
+            #  ccache performs a preprocessor run to generate cachable
+            #  file, and /Tp /Tc flags seems to be repositioned such that
+            #  the msvc backend doesn't recognize it.
+            #  e.g. /SomeFlag /Tpfile.cc -> /Tp /SomeFlag file.cc
             if arg.startswith("/Tp") and len(arg) > 3:
-                new_command.extend(["/Tp", arg[3:]])
+                # Replace with the global variant. This is fine for
+                # setuptools build because it only builds one file at
+                # a time.
+                new_command.extend(["/TP", arg[3:]])
             elif arg.startswith("/Tc") and len(arg) > 3:
-                new_command.extend(["/Tc", arg[3:]])
+                new_command.extend(["/TP", arg[3:]])
+
+            # /Zc:preprocessor:
+            #  This is not supported by ccache but needed for protobuf 33.5
+            #  See also https://github.com/grpc/grpc/issues/41951
+            elif arg == "/Zc:preprocessor":
+                new_command.extend(["--ccache-skip", "/Zc:preprocessor"])
             else:
                 new_command.append(arg)
         command = new_command
