@@ -39,7 +39,10 @@ def _commandfile_spawn(self, command, **kwargs):
             # Remove /std:c11 option if this is a MSVC C++ complation
             command = [arg for arg in command if arg != "/std:c11"]
 
-    enable_ccache = os.environ.get("GRPC_BUILD_ENABLE_CCACHE", "").lower() in ["true", "1"]
+    enable_ccache = os.environ.get("GRPC_BUILD_ENABLE_CCACHE", "").lower() in [
+        "true",
+        "1",
+    ]
     has_ccache = shutil.which("ccache") is not None
     use_ccache = enable_ccache and has_ccache and command[0].endswith("cl.exe")
 
@@ -61,12 +64,14 @@ def _commandfile_spawn(self, command, **kwargs):
             # "line in command file contains 131071 or more characters" error
             # (can happen for extra long link commands)
             command_file.write(" \n".join(escaped_args))
-        
+
         if use_ccache:
-            modified_command = ["ccache"] + command[:1] + ["@{}".format(command_filename)]
+            modified_command = (
+                ["ccache"] + command[:1] + ["@{}".format(command_filename)]
+            )
         else:
             modified_command = command[:1] + ["@{}".format(command_filename)]
-            
+
         try:
             _classic_spawn(self, modified_command, **kwargs)
         finally:
