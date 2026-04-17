@@ -46,6 +46,9 @@ def _commandfile_spawn(self, command, **kwargs):
     has_ccache = shutil.which("ccache") is not None
     use_ccache = enable_ccache and has_ccache and command[0].endswith("cl.exe")
 
+    if use_ccache:
+        command = [arg for arg in command if arg != "/Zc:preprocessor"]
+
     command_length = sum([len(arg) for arg in command])
     if os.name == "nt" and command_length > MAX_COMMAND_LENGTH:
         # Even if this command doesn't support the @command_file, it will
