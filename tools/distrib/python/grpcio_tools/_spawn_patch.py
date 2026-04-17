@@ -39,6 +39,10 @@ def _commandfile_spawn(self, command, **kwargs):
             # Remove /std:c11 option if this is a MSVC C++ complation
             command = [arg for arg in command if arg != "/std:c11"]
 
+    enable_ccache = os.environ.get("GRPC_BUILD_ENABLE_CCACHE", "").lower() in ["true", "1"]
+    has_ccache = shutil.which("ccache") is not None
+    use_ccache = enable_ccache and has_ccache and command[0].endswith("cl.exe")
+
     command_length = sum([len(arg) for arg in command])
     if os.name == "nt" and command_length > MAX_COMMAND_LENGTH:
         # Even if this command doesn't support the @command_file, it will
@@ -57,13 +61,21 @@ def _commandfile_spawn(self, command, **kwargs):
             # "line in command file contains 131071 or more characters" error
             # (can happen for extra long link commands)
             command_file.write(" \n".join(escaped_args))
-        modified_command = command[:1] + ["@{}".format(command_filename)]
+        
+        if use_ccache:
+            modified_command = ["ccache"] + command[:1] + ["@{}".format(command_filename)]
+        else:
+            modified_command = command[:1] + ["@{}".format(command_filename)]
+            
         try:
             _classic_spawn(self, modified_command, **kwargs)
         finally:
             shutil.rmtree(temporary_directory)
     else:
-        _classic_spawn(self, command, **kwargs)
+        if use_ccache:
+            _classic_spawn(self, ["ccache"] + command, **kwargs)
+        else:
+            _classic_spawn(self, command, **kwargs)
 
 
 def monkeypatch_spawn():

@@ -28,6 +28,8 @@ cd /d %~dp0\..\..\..
 set PREPARE_BUILD_INSTALL_DEPS_PYTHON=true
 call tools/internal_ci/helper_scripts/prepare_build_windows.bat || exit /b 1
 
+call tools/internal_ci/helper_scripts/prepare_ccache.bat || exit /b 1
+
 @rem Build all python windows artifacts
 python tools/run_tests/task_runner.py -f artifact windows python %TASK_RUNNER_EXTRA_FILTERS% -j 3 --inner_jobs 2 -x build_artifacts_python/sponge_log.xml || set FAILED=true
 
@@ -44,6 +46,9 @@ bash -c "cp -r input_artifacts/python_*/* artifacts/ || true"
 
 @rem This step checks if any of the artifacts exceeds a per-file size limit.
 bash tools/internal_ci/helper_scripts/check_python_artifacts_size.sh
+
+@rem show ccache stats
+ccache --show-stats
 
 bash tools/internal_ci/helper_scripts/store_artifacts_from_moved_src_tree.sh
 
