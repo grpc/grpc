@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM python:3.10.20-trixie
+FROM python:3.10-trixie
 
 RUN ln -sf /usr/local/bin/python3 /usr/bin/python3
 
