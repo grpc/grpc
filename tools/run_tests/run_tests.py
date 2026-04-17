@@ -357,6 +357,7 @@ class CLanguage:
                     "GRPC_DEFAULT_SSL_ROOTS_FILE_PATH": _ROOT
                     + "/src/core/tsi/test_creds/ca.pem",
                     "GRPC_POLL_STRATEGY": polling_strategy,
+                    "GRPC_TRACE": "tsi,ssl",
                     "GRPC_VERBOSITY": "DEBUG",
                 }
                 resolver = os.environ.get("GRPC_DNS_RESOLVER", None)
