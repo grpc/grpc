@@ -111,7 +111,7 @@ out-of-the-box. You will need the following things to get started:
 
 * `protoc`: the protobuf compiler binary to generate PHP classes for your
 messages and service definition.
-* `grpc_php_plugin`: a plugin for `protoc` to generate the service stub
+* `grpc_php_plugin_binary`: a plugin for `protoc` to generate the service stub
 classes.
 * `protobuf.so`: the `protobuf` extension runtime library.
 
@@ -155,13 +155,13 @@ $ ./autogen.sh && ./configure && make
 $ [sudo] make install
 ```
 
-### `grpc_php_plugin` protoc plugin
+### `grpc_php_plugin_binary` protoc plugin
 
-You need the `grpc_php_plugin` to generate the PHP client stub classes. This
+You need the `grpc_php_plugin_binary` to generate the PHP client stub classes. This
 plugin works with the main `protoc` binary to generate classes that you can
 import into your project.
 
-You can build `grpc_php_plugin` with `cmake`:
+You can build `grpc_php_plugin_binary` with `cmake`:
 
 ```sh
 $ git clone -b RELEASE_TAG_HERE https://github.com/grpc/grpc
@@ -170,23 +170,23 @@ $ git submodule update --init
 $ mkdir -p cmake/build
 $ cd cmake/build
 $ cmake ../..
-$ make protoc grpc_php_plugin
+$ make protoc grpc_php_plugin_binary
 ```
 
-The commands above will make `protoc` and `grpc_php_plugin` available
-in `cmake/build/third_party/protobuf/protoc` and `cmake/build/grpc_php_plugin`.
+The commands above will make `protoc` and `grpc_php_plugin_binary` available
+in `cmake/build/third_party/protobuf/protoc` and `cmake/build/grpc_php_plugin_binary`.
 
-Alternatively, you can also build the `grpc_php_plugin` with `bazel`:
+Alternatively, you can also build the `grpc_php_plugin_binary` with `bazel`:
 
 ```sh
 $ bazel build @com_google_protobuf//:protoc
-$ bazel build src/compiler:grpc_php_plugin
+$ bazel build src/compiler:grpc_php_plugin_binary
 ```
 
 The `protoc` binary will be found in
 `bazel-bin/external/protobuf+/protoc`.
-The `grpc_php_plugin` binary will be found in
-`bazel-bin/src/compiler/grpc_php_plugin`.
+The `grpc_php_plugin_binary` binary will be found in
+`bazel-bin/src/compiler/grpc_php_plugin_binary`.
 
 Plugin may use the new feature of the new protobuf version, thus please also
 make sure that the protobuf version installed is compatible with the grpc
@@ -236,7 +236,7 @@ import into your project, with a command similar to the following:
 
 ```
 $ protoc -I=. echo.proto --php_out=. --grpc_out=. \
---plugin=protoc-gen-grpc=<path to grpc_php_plugin>
+--plugin=protoc-gen-grpc=<path to grpc_php_plugin_binary>
 ```
 
 ## Unit Tests

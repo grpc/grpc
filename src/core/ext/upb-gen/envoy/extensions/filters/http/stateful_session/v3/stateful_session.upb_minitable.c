@@ -30,16 +30,10 @@ static const upb_MiniTableField envoy_extensions_filters_http_stateful_session_v
 const upb_MiniTable envoy__extensions__filters__http__stateful_0session__v3__StatefulSession_msg_init = {
   &envoy_extensions_filters_http_stateful_session_v3_StatefulSession__submsgs[0],
   &envoy_extensions_filters_http_stateful_session_v3_StatefulSession__fields[0],
-  UPB_SIZE(24, 40), 3, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(24), 0,
+  UPB_SIZE(24, 40), 3, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.extensions.filters.http.stateful_session.v3.StatefulSession",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x000900003f000010, &upb_psb1_1bt},
-    {0x001000003f00001a, &upb_pss_1bt},
-  })
 };
 
 const upb_MiniTable* envoy__extensions__filters__http__stateful_0session__v3__StatefulSession_msg_init_ptr = &envoy__extensions__filters__http__stateful_0session__v3__StatefulSession_msg_init;
@@ -55,16 +49,10 @@ static const upb_MiniTableField envoy_extensions_filters_http_stateful_session_v
 const upb_MiniTable envoy__extensions__filters__http__stateful_0session__v3__StatefulSessionPerRoute_msg_init = {
   &envoy_extensions_filters_http_stateful_session_v3_StatefulSessionPerRoute__submsgs[0],
   &envoy_extensions_filters_http_stateful_session_v3_StatefulSessionPerRoute__fields[0],
-  UPB_SIZE(16, 24), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
+  UPB_SIZE(16, 24), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.extensions.filters.http.stateful_session.v3.StatefulSessionPerRoute",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0010000801000008, &upb_pob1_1bt},
-    {0x0010000802000012, &upb_pom_1bt_max64b},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-  })
 };
 
 const upb_MiniTable* envoy__extensions__filters__http__stateful_0session__v3__StatefulSessionPerRoute_msg_init_ptr = &envoy__extensions__filters__http__stateful_0session__v3__StatefulSessionPerRoute_msg_init;

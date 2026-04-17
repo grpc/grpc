@@ -334,6 +334,8 @@ grpc_cc_test(
         "time_test.cc",
     ],
     external_deps = [
+        "absl/base",
+        "absl/time",
         "gtest",
     ],
     uses_event_engine = False,
@@ -344,6 +346,7 @@ grpc_cc_test(
         "//:gpr",
         "//:grpc++",
         "//:grpc++_base",
+        "//src/core:time_precise",
         "//test/core/test_util:grpc_test_util",
     ],
 )

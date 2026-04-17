@@ -21,7 +21,6 @@ EXPERIMENT_ENABLES = {
     "call_tracer_in_transport": "call_tracer_in_transport",
     "call_tracer_send_initial_metadata_is_an_annotation": "call_tracer_send_initial_metadata_is_an_annotation",
     "call_tracer_send_trailing_metadata_is_an_annotation": "call_tracer_send_trailing_metadata_is_an_annotation",
-    "chaotic_good_connect_deadline": "chaotic_good_connect_deadline",
     "chaotic_good_framing_layer": "chaotic_good_framing_layer",
     "chaotic_good_send_supported_features": "chaotic_good_send_supported_features",
     "error_flatten": "error_flatten",
@@ -40,12 +39,13 @@ EXPERIMENT_ENABLES = {
     "keep_alive_ping_timer_batch": "keep_alive_ping_timer_batch",
     "local_connector_secure": "local_connector_secure",
     "max_inflight_pings_strict_limit": "max_inflight_pings_strict_limit",
+    "memory_optimization_01": "memory_optimization_01",
+    "memory_optimization_02": "memory_optimization_02",
     "metadata_publish_to_app_tag": "metadata_publish_to_app_tag",
     "monitoring_experiment": "monitoring_experiment",
     "multiping": "multiping",
     "otel_export_telemetry_domains": "otel_export_telemetry_domains",
     "pick_first_ignore_empty_updates": "pick_first_ignore_empty_updates",
-    "pick_first_ready_to_connecting": "pick_first_ready_to_connecting",
     "pipelined_read_secure_endpoint": "event_engine_client,event_engine_listener,pipelined_read_secure_endpoint",
     "pollset_alternative": "event_engine_client,event_engine_listener,pollset_alternative",
     "prioritize_finished_requests": "prioritize_finished_requests",
@@ -55,14 +55,11 @@ EXPERIMENT_ENABLES = {
     "promise_filter_send_cancel_metadata": "promise_filter_send_cancel_metadata",
     "retry_in_callv3": "retry_in_callv3",
     "return_preexisting_errors": "return_preexisting_errors",
-    "rr_wrr_connect_from_random_index": "rr_wrr_connect_from_random_index",
     "schedule_cancellation_over_write": "schedule_cancellation_over_write",
     "secure_endpoint_offload_large_reads": "event_engine_client,event_engine_listener,secure_endpoint_offload_large_reads",
     "secure_endpoint_offload_large_writes": "event_engine_client,event_engine_listener,secure_endpoint_offload_large_writes",
     "secure_endpoint_read_coalescing": "event_engine_client,event_engine_listener,secure_endpoint_read_coalescing",
     "skip_clear_peer_on_cancellation": "skip_clear_peer_on_cancellation",
-    "sleep_promise_exec_ctx_removal": "sleep_promise_exec_ctx_removal",
-    "sleep_use_non_owning_waker": "sleep_use_non_owning_waker",
     "subchannel_connection_scaling": "subchannel_connection_scaling",
     "subchannel_wrapper_cleanup_on_orphan": "subchannel_wrapper_cleanup_on_orphan",
     "tcp_frame_size_tuning": "tcp_frame_size_tuning",
@@ -90,66 +87,9 @@ EXPERIMENTS = {
         "dbg": {
         },
         "off": {
-            "chttp2_keepalive_tests": [
-                "subchannel_connection_scaling",
-            ],
             "core_end2end_test": [
-                "buffer_list_deletion_prep",
-                "chaotic_good_send_supported_features",
-                "error_flatten",
-                "local_connector_secure",
-                "otel_export_telemetry_domains",
-                "pipelined_read_secure_endpoint",
                 "pollset_alternative",
-                "promise_based_http2_client_transport",
-                "promise_filter_send_cancel_metadata",
-                "retry_in_callv3",
-                "secure_endpoint_offload_large_reads",
-                "secure_endpoint_offload_large_writes",
-                "secure_endpoint_read_coalescing",
-                "subchannel_connection_scaling",
                 "use_call_event_engine_in_completion_queue",
-                "wildcard_ip_expansion_restriction",
-            ],
-            "cpp_end2end_test": [
-                "error_flatten",
-                "promise_based_http2_client_transport",
-                "subchannel_wrapper_cleanup_on_orphan",
-            ],
-            "cpp_lb_end2end_test": [
-                "subchannel_connection_scaling",
-            ],
-            "endpoint_test": [
-                "tcp_frame_size_tuning",
-                "tcp_rcv_lowat",
-            ],
-            "error_tests": [
-                "error_flatten",
-            ],
-            "flow_control_test": [
-                "multiping",
-                "tcp_frame_size_tuning",
-                "tcp_rcv_lowat",
-            ],
-            "minimal_stack_test": [
-                "fuse_filters",
-            ],
-            "posix_endpoint_test": [
-                "pipelined_read_secure_endpoint",
-            ],
-            "promise_test": [
-                "sleep_promise_exec_ctx_removal",
-            ],
-            "resource_quota_test": [
-                "free_large_allocator",
-                "unconstrained_max_quota_buffer_size",
-            ],
-            "secure_endpoint_test": [
-                "pipelined_read_secure_endpoint",
-            ],
-            "xds_end2end_test": [
-                "error_flatten",
-                "subchannel_wrapper_cleanup_on_orphan",
             ],
         },
         "on": {
@@ -157,17 +97,11 @@ EXPERIMENTS = {
                 "event_engine_dns",
             ],
             "core_end2end_test": [
-                "chaotic_good_connect_deadline",
-                "chaotic_good_framing_layer",
                 "event_engine_client",
                 "event_engine_dns_non_client_channel",
                 "event_engine_for_all_other_endpoints",
                 "event_engine_fork",
                 "event_engine_listener",
-            ],
-            "cpp_lb_end2end_test": [
-                "pick_first_ready_to_connecting",
-                "rr_wrr_connect_from_random_index",
             ],
             "event_engine_client_test": [
                 "event_engine_client",
@@ -178,21 +112,8 @@ EXPERIMENTS = {
             "event_engine_listener_test": [
                 "event_engine_listener",
             ],
-            "lb_unit_test": [
-                "pick_first_ready_to_connecting",
-                "rr_wrr_connect_from_random_index",
-            ],
-            "promise_test": [
-                "sleep_use_non_owning_waker",
-            ],
             "resolver_component_tests_runner_invoker": [
                 "event_engine_dns",
-            ],
-            "xds_end2end_test": [
-                "xds_channel_filter_chain_per_route",
-            ],
-            "xds_test": [
-                "xds_channel_filter_chain_per_route",
             ],
         },
     },
@@ -200,66 +121,9 @@ EXPERIMENTS = {
         "dbg": {
         },
         "off": {
-            "chttp2_keepalive_tests": [
-                "subchannel_connection_scaling",
-            ],
             "core_end2end_test": [
-                "buffer_list_deletion_prep",
-                "chaotic_good_send_supported_features",
-                "error_flatten",
-                "local_connector_secure",
-                "otel_export_telemetry_domains",
-                "pipelined_read_secure_endpoint",
                 "pollset_alternative",
-                "promise_based_http2_client_transport",
-                "promise_filter_send_cancel_metadata",
-                "retry_in_callv3",
-                "secure_endpoint_offload_large_reads",
-                "secure_endpoint_offload_large_writes",
-                "secure_endpoint_read_coalescing",
-                "subchannel_connection_scaling",
                 "use_call_event_engine_in_completion_queue",
-                "wildcard_ip_expansion_restriction",
-            ],
-            "cpp_end2end_test": [
-                "error_flatten",
-                "promise_based_http2_client_transport",
-                "subchannel_wrapper_cleanup_on_orphan",
-            ],
-            "cpp_lb_end2end_test": [
-                "subchannel_connection_scaling",
-            ],
-            "endpoint_test": [
-                "tcp_frame_size_tuning",
-                "tcp_rcv_lowat",
-            ],
-            "error_tests": [
-                "error_flatten",
-            ],
-            "flow_control_test": [
-                "multiping",
-                "tcp_frame_size_tuning",
-                "tcp_rcv_lowat",
-            ],
-            "minimal_stack_test": [
-                "fuse_filters",
-            ],
-            "posix_endpoint_test": [
-                "pipelined_read_secure_endpoint",
-            ],
-            "promise_test": [
-                "sleep_promise_exec_ctx_removal",
-            ],
-            "resource_quota_test": [
-                "free_large_allocator",
-                "unconstrained_max_quota_buffer_size",
-            ],
-            "secure_endpoint_test": [
-                "pipelined_read_secure_endpoint",
-            ],
-            "xds_end2end_test": [
-                "error_flatten",
-                "subchannel_wrapper_cleanup_on_orphan",
             ],
         },
         "on": {
@@ -267,17 +131,11 @@ EXPERIMENTS = {
                 "event_engine_dns",
             ],
             "core_end2end_test": [
-                "chaotic_good_connect_deadline",
-                "chaotic_good_framing_layer",
                 "event_engine_client",
                 "event_engine_dns_non_client_channel",
                 "event_engine_for_all_other_endpoints",
                 "event_engine_fork",
                 "event_engine_listener",
-            ],
-            "cpp_lb_end2end_test": [
-                "pick_first_ready_to_connecting",
-                "rr_wrr_connect_from_random_index",
             ],
             "event_engine_client_test": [
                 "event_engine_client",
@@ -288,21 +146,8 @@ EXPERIMENTS = {
             "event_engine_listener_test": [
                 "event_engine_listener",
             ],
-            "lb_unit_test": [
-                "pick_first_ready_to_connecting",
-                "rr_wrr_connect_from_random_index",
-            ],
-            "promise_test": [
-                "sleep_use_non_owning_waker",
-            ],
             "resolver_component_tests_runner_invoker": [
                 "event_engine_dns",
-            ],
-            "xds_end2end_test": [
-                "xds_channel_filter_chain_per_route",
-            ],
-            "xds_test": [
-                "xds_channel_filter_chain_per_route",
             ],
         },
     },
@@ -316,7 +161,6 @@ EXPERIMENTS = {
             "core_end2end_test": [
                 "buffer_list_deletion_prep",
                 "chaotic_good_send_supported_features",
-                "error_flatten",
                 "local_connector_secure",
                 "otel_export_telemetry_domains",
                 "pipelined_read_secure_endpoint",
@@ -332,9 +176,7 @@ EXPERIMENTS = {
                 "wildcard_ip_expansion_restriction",
             ],
             "cpp_end2end_test": [
-                "error_flatten",
                 "promise_based_http2_client_transport",
-                "subchannel_wrapper_cleanup_on_orphan",
             ],
             "cpp_lb_end2end_test": [
                 "subchannel_connection_scaling",
@@ -342,9 +184,6 @@ EXPERIMENTS = {
             "endpoint_test": [
                 "tcp_frame_size_tuning",
                 "tcp_rcv_lowat",
-            ],
-            "error_tests": [
-                "error_flatten",
             ],
             "flow_control_test": [
                 "multiping",
@@ -357,9 +196,6 @@ EXPERIMENTS = {
             "posix_endpoint_test": [
                 "pipelined_read_secure_endpoint",
             ],
-            "promise_test": [
-                "sleep_promise_exec_ctx_removal",
-            ],
             "resource_quota_test": [
                 "free_large_allocator",
                 "unconstrained_max_quota_buffer_size",
@@ -367,27 +203,25 @@ EXPERIMENTS = {
             "secure_endpoint_test": [
                 "pipelined_read_secure_endpoint",
             ],
-            "xds_end2end_test": [
-                "error_flatten",
-                "subchannel_wrapper_cleanup_on_orphan",
-            ],
         },
         "on": {
             "cancel_ares_query_test": [
                 "event_engine_dns",
             ],
             "core_end2end_test": [
-                "chaotic_good_connect_deadline",
-                "chaotic_good_framing_layer",
+                "error_flatten",
                 "event_engine_client",
                 "event_engine_dns_non_client_channel",
                 "event_engine_for_all_other_endpoints",
                 "event_engine_fork",
                 "event_engine_listener",
             ],
-            "cpp_lb_end2end_test": [
-                "pick_first_ready_to_connecting",
-                "rr_wrr_connect_from_random_index",
+            "cpp_end2end_test": [
+                "error_flatten",
+                "subchannel_wrapper_cleanup_on_orphan",
+            ],
+            "error_tests": [
+                "error_flatten",
             ],
             "event_engine_client_test": [
                 "event_engine_client",
@@ -398,17 +232,12 @@ EXPERIMENTS = {
             "event_engine_listener_test": [
                 "event_engine_listener",
             ],
-            "lb_unit_test": [
-                "pick_first_ready_to_connecting",
-                "rr_wrr_connect_from_random_index",
-            ],
-            "promise_test": [
-                "sleep_use_non_owning_waker",
-            ],
             "resolver_component_tests_runner_invoker": [
                 "event_engine_dns",
             ],
             "xds_end2end_test": [
+                "error_flatten",
+                "subchannel_wrapper_cleanup_on_orphan",
                 "xds_channel_filter_chain_per_route",
             ],
             "xds_test": [

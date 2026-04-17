@@ -893,6 +893,12 @@
       )
     endif()
     % endif
+    ## upb from protobuf 33.x requires this flag to compile. See https://github.com/grpc/grpc/issues/41951
+    % if 'upb_' in lib.name:
+    target_compile_options(${lib.name} PRIVATE
+      /Zc:preprocessor
+    )
+    % endif
     if(gRPC_INSTALL)
       install(FILES <%text>${CMAKE_CURRENT_BINARY_DIR}/</%text>${lib.name}.pdb
         DESTINATION <%text>${gRPC_INSTALL_LIBDIR}</%text> OPTIONAL

@@ -502,6 +502,30 @@ INSTANTIATE_TEST_SUITE_P(FrameProtectorUtil, FlowTest,
 
 #endif  // OPENSSL_IS_BORINGSSL
 
+TEST(ConvertKeyExchangeGroupToStringTest, ValidCases) {
+  EXPECT_EQ(*tsi::ConvertKeyExchangeGroupToString(GRPC_TLS_GROUP_SECP256R1),
+            "P-256");
+  EXPECT_EQ(*tsi::ConvertKeyExchangeGroupToString(GRPC_TLS_GROUP_X25519),
+            "X25519");
+#if defined(OPENSSL_IS_BORINGSSL)
+  EXPECT_EQ(
+      *tsi::ConvertKeyExchangeGroupToString(GRPC_TLS_GROUP_X25519_MLKEM768),
+      "X25519MLKEM768");
+#else
+  EXPECT_EQ(tsi::ConvertKeyExchangeGroupToString(GRPC_TLS_GROUP_X25519_MLKEM768)
+                .status()
+                .code(),
+            absl::StatusCode::kInvalidArgument);
+#endif
+}
+
+TEST(ConvertKeyExchangeGroupToStringTest, InvalidCases) {
+  EXPECT_EQ(tsi::ConvertKeyExchangeGroupToString(GRPC_TLS_GROUP_UNSPECIFIED)
+                .status()
+                .code(),
+            absl::StatusCode::kInvalidArgument);
+}
+
 class CrlUtils : public ::testing::Test {
  public:
   static void SetUpTestSuite() {

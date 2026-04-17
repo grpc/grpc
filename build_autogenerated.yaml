@@ -146,6 +146,7 @@ libs:
   - include/grpc/byte_buffer_reader.h
   - include/grpc/census.h
   - include/grpc/compression.h
+  - include/grpc/context_types.h
   - include/grpc/create_channel_from_endpoint.h
   - include/grpc/credentials.h
   - include/grpc/credentials_cpp.h
@@ -514,8 +515,14 @@ libs:
   - src/core/ext/upb-gen/envoy/data/accesslog/v3/accesslog.upb_minitable.h
   - src/core/ext/upb-gen/envoy/extensions/clusters/aggregate/v3/cluster.upb.h
   - src/core/ext/upb-gen/envoy/extensions/clusters/aggregate/v3/cluster.upb_minitable.h
+  - src/core/ext/upb-gen/envoy/extensions/common/matching/v3/extension_matcher.upb.h
+  - src/core/ext/upb-gen/envoy/extensions/common/matching/v3/extension_matcher.upb_minitable.h
   - src/core/ext/upb-gen/envoy/extensions/filters/common/fault/v3/fault.upb.h
   - src/core/ext/upb-gen/envoy/extensions/filters/common/fault/v3/fault.upb_minitable.h
+  - src/core/ext/upb-gen/envoy/extensions/filters/common/matcher/action/v3/skip_action.upb.h
+  - src/core/ext/upb-gen/envoy/extensions/filters/common/matcher/action/v3/skip_action.upb_minitable.h
+  - src/core/ext/upb-gen/envoy/extensions/filters/http/composite/v3/composite.upb.h
+  - src/core/ext/upb-gen/envoy/extensions/filters/http/composite/v3/composite.upb_minitable.h
   - src/core/ext/upb-gen/envoy/extensions/filters/http/fault/v3/fault.upb.h
   - src/core/ext/upb-gen/envoy/extensions/filters/http/fault/v3/fault.upb_minitable.h
   - src/core/ext/upb-gen/envoy/extensions/filters/http/gcp_authn/v3/gcp_authn.upb.h
@@ -802,7 +809,10 @@ libs:
   - src/core/ext/upbdefs-gen/envoy/config/trace/v3/zipkin.upbdefs.h
   - src/core/ext/upbdefs-gen/envoy/data/accesslog/v3/accesslog.upbdefs.h
   - src/core/ext/upbdefs-gen/envoy/extensions/clusters/aggregate/v3/cluster.upbdefs.h
+  - src/core/ext/upbdefs-gen/envoy/extensions/common/matching/v3/extension_matcher.upbdefs.h
   - src/core/ext/upbdefs-gen/envoy/extensions/filters/common/fault/v3/fault.upbdefs.h
+  - src/core/ext/upbdefs-gen/envoy/extensions/filters/common/matcher/action/v3/skip_action.upbdefs.h
+  - src/core/ext/upbdefs-gen/envoy/extensions/filters/http/composite/v3/composite.upbdefs.h
   - src/core/ext/upbdefs-gen/envoy/extensions/filters/http/fault/v3/fault.upbdefs.h
   - src/core/ext/upbdefs-gen/envoy/extensions/filters/http/gcp_authn/v3/gcp_authn.upbdefs.h
   - src/core/ext/upbdefs-gen/envoy/extensions/filters/http/rbac/v3/rbac.upbdefs.h
@@ -897,6 +907,7 @@ libs:
   - src/core/ext/upbdefs-gen/xds/type/v3/typed_struct.upbdefs.h
   - src/core/filter/auth/auth_filters.h
   - src/core/filter/blackboard.h
+  - src/core/filter/composite/composite_filter.h
   - src/core/filter/filter_args.h
   - src/core/filter/filter_chain.h
   - src/core/handshaker/endpoint_info/endpoint_info_handshaker.h
@@ -908,6 +919,7 @@ libs:
   - src/core/handshaker/http_connect/xds_http_proxy_mapper.h
   - src/core/handshaker/proxy_mapper.h
   - src/core/handshaker/proxy_mapper_registry.h
+  - src/core/handshaker/security/pipelining_heuristic_selector.h
   - src/core/handshaker/security/secure_endpoint.h
   - src/core/handshaker/security/security_handshaker.h
   - src/core/handshaker/tcp_connect/tcp_connect_handshaker.h
@@ -1077,6 +1089,7 @@ libs:
   - src/core/lib/promise/if.h
   - src/core/lib/promise/inter_activity_latch.h
   - src/core/lib/promise/inter_activity_mutex.h
+  - src/core/lib/promise/inter_activity_pipe.h
   - src/core/lib/promise/interceptor_list.h
   - src/core/lib/promise/latch.h
   - src/core/lib/promise/loop.h
@@ -1173,6 +1186,7 @@ libs:
   - src/core/load_balancing/subchannel_interface.h
   - src/core/load_balancing/weighted_round_robin/static_stride_scheduler.h
   - src/core/load_balancing/weighted_target/weighted_target.h
+  - src/core/load_balancing/xds/cds.h
   - src/core/load_balancing/xds/xds_channel_args.h
   - src/core/load_balancing/xds/xds_override_host.h
   - src/core/net/socket_mutator.h
@@ -1328,6 +1342,7 @@ libs:
   - src/core/xds/grpc/xds_endpoint.h
   - src/core/xds/grpc/xds_endpoint_parser.h
   - src/core/xds/grpc/xds_health_status.h
+  - src/core/xds/grpc/xds_http_composite_filter.h
   - src/core/xds/grpc/xds_http_fault_filter.h
   - src/core/xds/grpc/xds_http_filter.h
   - src/core/xds/grpc/xds_http_filter_registry.h
@@ -1600,7 +1615,10 @@ libs:
   - src/core/ext/upb-gen/envoy/config/trace/v3/zipkin.upb_minitable.c
   - src/core/ext/upb-gen/envoy/data/accesslog/v3/accesslog.upb_minitable.c
   - src/core/ext/upb-gen/envoy/extensions/clusters/aggregate/v3/cluster.upb_minitable.c
+  - src/core/ext/upb-gen/envoy/extensions/common/matching/v3/extension_matcher.upb_minitable.c
   - src/core/ext/upb-gen/envoy/extensions/filters/common/fault/v3/fault.upb_minitable.c
+  - src/core/ext/upb-gen/envoy/extensions/filters/common/matcher/action/v3/skip_action.upb_minitable.c
+  - src/core/ext/upb-gen/envoy/extensions/filters/http/composite/v3/composite.upb_minitable.c
   - src/core/ext/upb-gen/envoy/extensions/filters/http/fault/v3/fault.upb_minitable.c
   - src/core/ext/upb-gen/envoy/extensions/filters/http/gcp_authn/v3/gcp_authn.upb_minitable.c
   - src/core/ext/upb-gen/envoy/extensions/filters/http/rbac/v3/rbac.upb_minitable.c
@@ -1779,7 +1797,10 @@ libs:
   - src/core/ext/upbdefs-gen/envoy/config/trace/v3/zipkin.upbdefs.c
   - src/core/ext/upbdefs-gen/envoy/data/accesslog/v3/accesslog.upbdefs.c
   - src/core/ext/upbdefs-gen/envoy/extensions/clusters/aggregate/v3/cluster.upbdefs.c
+  - src/core/ext/upbdefs-gen/envoy/extensions/common/matching/v3/extension_matcher.upbdefs.c
   - src/core/ext/upbdefs-gen/envoy/extensions/filters/common/fault/v3/fault.upbdefs.c
+  - src/core/ext/upbdefs-gen/envoy/extensions/filters/common/matcher/action/v3/skip_action.upbdefs.c
+  - src/core/ext/upbdefs-gen/envoy/extensions/filters/http/composite/v3/composite.upbdefs.c
   - src/core/ext/upbdefs-gen/envoy/extensions/filters/http/fault/v3/fault.upbdefs.c
   - src/core/ext/upbdefs-gen/envoy/extensions/filters/http/gcp_authn/v3/gcp_authn.upbdefs.c
   - src/core/ext/upbdefs-gen/envoy/extensions/filters/http/rbac/v3/rbac.upbdefs.c
@@ -1875,6 +1896,7 @@ libs:
   - src/core/filter/auth/client_auth_filter.cc
   - src/core/filter/auth/server_auth_filter.cc
   - src/core/filter/blackboard.cc
+  - src/core/filter/composite/composite_filter.cc
   - src/core/filter/fused_filters.cc
   - src/core/handshaker/endpoint_info/endpoint_info_handshaker.cc
   - src/core/handshaker/handshaker.cc
@@ -2232,6 +2254,7 @@ libs:
   - src/core/xds/grpc/xds_endpoint.cc
   - src/core/xds/grpc/xds_endpoint_parser.cc
   - src/core/xds/grpc/xds_health_status.cc
+  - src/core/xds/grpc/xds_http_composite_filter.cc
   - src/core/xds/grpc/xds_http_fault_filter.cc
   - src/core/xds/grpc/xds_http_filter.cc
   - src/core/xds/grpc/xds_http_filter_registry.cc
@@ -2387,6 +2410,7 @@ libs:
   - include/grpc/byte_buffer_reader.h
   - include/grpc/census.h
   - include/grpc/compression.h
+  - include/grpc/context_types.h
   - include/grpc/create_channel_from_endpoint.h
   - include/grpc/credentials.h
   - include/grpc/credentials_cpp.h
@@ -2638,6 +2662,7 @@ libs:
   - src/core/handshaker/http_connect/http_proxy_mapper.h
   - src/core/handshaker/proxy_mapper.h
   - src/core/handshaker/proxy_mapper_registry.h
+  - src/core/handshaker/security/pipelining_heuristic_selector.h
   - src/core/handshaker/security/secure_endpoint.h
   - src/core/handshaker/security/security_handshaker.h
   - src/core/handshaker/tcp_connect/tcp_connect_handshaker.h
@@ -2807,6 +2832,7 @@ libs:
   - src/core/lib/promise/if.h
   - src/core/lib/promise/inter_activity_latch.h
   - src/core/lib/promise/inter_activity_mutex.h
+  - src/core/lib/promise/inter_activity_pipe.h
   - src/core/lib/promise/interceptor_list.h
   - src/core/lib/promise/latch.h
   - src/core/lib/promise/loop.h
@@ -3612,10 +3638,21 @@ libs:
   - third_party/upb/upb/base/upcast.h
   - third_party/upb/upb/port/atomic.h
   - third_party/upb/upb/port/def.inc
+  - third_party/upb/upb/port/sanitizers.h
   - third_party/upb/upb/port/undef.inc
   - third_party/upb/upb/port/vsnprintf_compat.h
   src:
   - third_party/upb/upb/base/status.c
+  deps: []
+- name: upb_descriptor_lib
+  build: all
+  language: c
+  public_headers: []
+  headers:
+  - src/core/ext/upb-gen/google/protobuf/descriptor.upb.h
+  - third_party/upb/upb/reflection/descriptor_bootstrap.h
+  src:
+  - src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c
   deps: []
 - name: upb_hash_lib
   build: all
@@ -3656,6 +3693,7 @@ libs:
   - third_party/upb/upb/lex/unicode.h
   - third_party/upb/upb/port/atomic.h
   - third_party/upb/upb/port/def.inc
+  - third_party/upb/upb/port/sanitizers.h
   - third_party/upb/upb/port/undef.inc
   - third_party/upb/upb/port/vsnprintf_compat.h
   src:
@@ -3675,6 +3713,7 @@ libs:
   - third_party/upb/upb/mem/internal/arena.h
   - third_party/upb/upb/port/atomic.h
   - third_party/upb/upb/port/def.inc
+  - third_party/upb/upb/port/sanitizers.h
   - third_party/upb/upb/port/undef.inc
   - third_party/upb/upb/port/vsnprintf_compat.h
   src:
@@ -3726,14 +3765,25 @@ libs:
   - third_party/upb/upb/mini_descriptor/internal/modifiers.h
   - third_party/upb/upb/mini_descriptor/internal/wire_constants.h
   - third_party/upb/upb/mini_descriptor/link.h
+  - third_party/upb/upb/wire/decode_fast/combinations.h
+  - third_party/upb/upb/wire/decode_fast/data.h
+  - third_party/upb/upb/wire/decode_fast/select.h
+  - third_party/upb/upb/wire/eps_copy_input_stream.h
+  - third_party/upb/upb/wire/internal/reader.h
+  - third_party/upb/upb/wire/reader.h
+  - third_party/upb/upb/wire/types.h
   src:
   - third_party/upb/upb/mini_descriptor/build_enum.c
   - third_party/upb/upb/mini_descriptor/decode.c
   - third_party/upb/upb/mini_descriptor/internal/base92.c
   - third_party/upb/upb/mini_descriptor/internal/encode.c
   - third_party/upb/upb/mini_descriptor/link.c
+  - third_party/upb/upb/wire/decode_fast/select.c
+  - third_party/upb/upb/wire/eps_copy_input_stream.c
+  - third_party/upb/upb/wire/reader.c
   deps:
   - upb_mini_table_lib
+  - absl/strings:strings
 - name: upb_mini_table_lib
   build: all
   language: c
@@ -3766,7 +3816,6 @@ libs:
   language: c
   public_headers: []
   headers:
-  - src/core/ext/upb-gen/google/protobuf/descriptor.upb.h
   - third_party/upb/upb/message/copy.h
   - third_party/upb/upb/message/merge.h
   - third_party/upb/upb/reflection/common.h
@@ -3774,7 +3823,6 @@ libs:
   - third_party/upb/upb/reflection/def.hpp
   - third_party/upb/upb/reflection/def_pool.h
   - third_party/upb/upb/reflection/def_type.h
-  - third_party/upb/upb/reflection/descriptor_bootstrap.h
   - third_party/upb/upb/reflection/enum_def.h
   - third_party/upb/upb/reflection/enum_reserved_range.h
   - third_party/upb/upb/reflection/enum_value_def.h
@@ -3805,7 +3853,6 @@ libs:
   - third_party/upb/upb/reflection/oneof_def.h
   - third_party/upb/upb/reflection/service_def.h
   src:
-  - src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c
   - third_party/upb/upb/message/copy.c
   - third_party/upb/upb/message/merge.c
   - third_party/upb/upb/reflection/def_pool.c
@@ -3827,6 +3874,7 @@ libs:
   - third_party/upb/upb/reflection/service_def.c
   deps:
   - upb_mini_descriptor_lib
+  - upb_descriptor_lib
   - upb_wire_lib
 - name: upb_textformat_lib
   build: all
@@ -3852,17 +3900,17 @@ libs:
   - third_party/upb/upb/wire/encode.h
   - third_party/upb/upb/wire/eps_copy_input_stream.h
   - third_party/upb/upb/wire/internal/constants.h
-  - third_party/upb/upb/wire/internal/decode_fast.h
   - third_party/upb/upb/wire/internal/decoder.h
   - third_party/upb/upb/wire/internal/reader.h
   - third_party/upb/upb/wire/reader.h
   - third_party/upb/upb/wire/types.h
+  - third_party/upb/upb/wire/writer.h
   src:
   - third_party/upb/upb/message/internal/iterator.c
   - third_party/upb/upb/wire/decode.c
   - third_party/upb/upb/wire/encode.c
   - third_party/upb/upb/wire/eps_copy_input_stream.c
-  - third_party/upb/upb/wire/internal/decode_fast.c
+  - third_party/upb/upb/wire/internal/decoder.c
   - third_party/upb/upb/wire/reader.c
   deps:
   - utf8_range_lib
@@ -4010,6 +4058,7 @@ libs:
   - include/grpc++/support/sync_stream.h
   - include/grpc++/support/time.h
   - include/grpcpp/alarm.h
+  - include/grpcpp/call_context_types.h
   - include/grpcpp/channel.h
   - include/grpcpp/client_context.h
   - include/grpcpp/completion_queue.h
@@ -4024,7 +4073,9 @@ libs:
   - include/grpcpp/generic/generic_stub_callback.h
   - include/grpcpp/grpcpp.h
   - include/grpcpp/health_check_service_interface.h
+  - include/grpcpp/impl/allowed_call_context_types.h
   - include/grpcpp/impl/call.h
+  - include/grpcpp/impl/call_context_registry.h
   - include/grpcpp/impl/call_op_set.h
   - include/grpcpp/impl/call_op_set_interface.h
   - include/grpcpp/impl/channel_argument_option.h
@@ -4145,6 +4196,7 @@ libs:
   - include/grpcpp/version_info.h
   - include/grpcpp/xds_server_builder.h
   headers:
+  - src/core/telemetry/telemetry_label.h
   - src/core/xds/grpc/xds_enabled_server.h
   - src/cpp/client/client_stats_interceptor.h
   - src/cpp/client/create_channel_internal.h
@@ -4158,6 +4210,7 @@ libs:
   - src/cpp/server/thread_pool_interface.h
   - src/cpp/thread_manager/thread_manager.h
   src:
+  - src/cpp/client/call_context_registry.cc
   - src/cpp/client/call_credentials.cc
   - src/cpp/client/channel_cc.cc
   - src/cpp/client/channel_credentials.cc
@@ -4391,6 +4444,7 @@ libs:
   - include/grpc++/support/sync_stream.h
   - include/grpc++/support/time.h
   - include/grpcpp/alarm.h
+  - include/grpcpp/call_context_types.h
   - include/grpcpp/channel.h
   - include/grpcpp/client_context.h
   - include/grpcpp/completion_queue.h
@@ -4405,7 +4459,9 @@ libs:
   - include/grpcpp/generic/generic_stub_callback.h
   - include/grpcpp/grpcpp.h
   - include/grpcpp/health_check_service_interface.h
+  - include/grpcpp/impl/allowed_call_context_types.h
   - include/grpcpp/impl/call.h
+  - include/grpcpp/impl/call_context_registry.h
   - include/grpcpp/impl/call_op_set.h
   - include/grpcpp/impl/call_op_set_interface.h
   - include/grpcpp/impl/channel_argument_option.h
@@ -4525,6 +4581,7 @@ libs:
   - include/grpcpp/support/validate_service_config.h
   - include/grpcpp/version_info.h
   headers:
+  - src/core/telemetry/telemetry_label.h
   - src/cpp/client/client_stats_interceptor.h
   - src/cpp/client/create_channel_internal.h
   - src/cpp/server/backend_metric_recorder.h
@@ -4534,6 +4591,7 @@ libs:
   - src/cpp/server/thread_pool_interface.h
   - src/cpp/thread_manager/thread_manager.h
   src:
+  - src/cpp/client/call_context_registry.cc
   - src/cpp/client/call_credentials.cc
   - src/cpp/client/channel_cc.cc
   - src/cpp/client/channel_credentials.cc
@@ -4591,6 +4649,7 @@ libs:
   - include/grpc/byte_buffer.h
   - include/grpc/byte_buffer_reader.h
   - include/grpc/compression.h
+  - include/grpc/context_types.h
   - include/grpc/create_channel_from_endpoint.h
   - include/grpc/credentials.h
   - include/grpc/credentials_cpp.h
@@ -4720,6 +4779,7 @@ libs:
   - src/core/handshaker/handshaker_registry.h
   - src/core/handshaker/proxy_mapper.h
   - src/core/handshaker/proxy_mapper_registry.h
+  - src/core/handshaker/security/pipelining_heuristic_selector.h
   - src/core/handshaker/security/secure_endpoint.h
   - src/core/handshaker/security/security_handshaker.h
   - src/core/lib/address_utils/parse_address.h
@@ -4884,6 +4944,8 @@ libs:
   - src/core/lib/promise/exec_ctx_wakeup_scheduler.h
   - src/core/lib/promise/for_each.h
   - src/core/lib/promise/if.h
+  - src/core/lib/promise/inter_activity_latch.h
+  - src/core/lib/promise/inter_activity_pipe.h
   - src/core/lib/promise/interceptor_list.h
   - src/core/lib/promise/latch.h
   - src/core/lib/promise/loop.h
@@ -4897,6 +4959,7 @@ libs:
   - src/core/lib/promise/seq.h
   - src/core/lib/promise/status_flag.h
   - src/core/lib/promise/try_seq.h
+  - src/core/lib/promise/wait_set.h
   - src/core/lib/resource_quota/api.h
   - src/core/lib/resource_quota/arena.h
   - src/core/lib/resource_quota/memory_quota.h
@@ -5238,6 +5301,7 @@ libs:
   - src/core/lib/iomgr/wakeup_fd_posix.cc
   - src/core/lib/promise/activity.cc
   - src/core/lib/promise/party.cc
+  - src/core/lib/promise/wait_set.cc
   - src/core/lib/resource_quota/api.cc
   - src/core/lib/resource_quota/arena.cc
   - src/core/lib/resource_quota/memory_quota.cc
@@ -5429,7 +5493,6 @@ libs:
   - absl/strings:strings
   - absl/synchronization:synchronization
   - absl/time:time
-  - absl/types:optional
   - absl/types:span
   - absl/utility:utility
   - protobuf
@@ -5490,7 +5553,6 @@ targets:
 - name: activity_test
   gtest: true
   build: test
-  run: false
   language: c++
   headers:
   - src/core/channelz/channel_trace.h
@@ -5687,7 +5749,6 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
-  uses_polling: false
 - name: address_sorting_test
   gtest: true
   build: test
@@ -6082,7 +6143,6 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
-  uses_polling: false
 - name: alloc_test
   gtest: true
   build: test
@@ -6093,7 +6153,6 @@ targets:
   deps:
   - gtest
   - grpc_test_util
-  uses_polling: false
 - name: alpn_test
   gtest: true
   build: test
@@ -6107,7 +6166,6 @@ targets:
 - name: alts_concurrent_connectivity_test
   gtest: true
   build: test
-  run: false
   language: c++
   headers:
   - test/core/end2end/cq_verifier.h
@@ -6296,7 +6354,6 @@ targets:
   deps:
   - gtest
   - grpc_test_util_unsecure
-  uses_polling: false
 - name: arena_test
   gtest: true
   build: test
@@ -6307,7 +6364,6 @@ targets:
   deps:
   - gtest
   - grpc_test_util_unsecure
-  uses_polling: false
 - name: async_end2end_test
   gtest: true
   build: test
@@ -6338,7 +6394,6 @@ targets:
   deps:
   - gtest
   - grpc_test_util
-  uses_polling: false
 - name: auth_property_iterator_test
   gtest: true
   build: test
@@ -6349,7 +6404,6 @@ targets:
   deps:
   - gtest
   - grpc++_test_util
-  uses_polling: false
 - name: authorization_matchers_test
   gtest: true
   build: test
@@ -6389,7 +6443,6 @@ targets:
   - gtest
   - absl/hash:hash
   - gpr
-  uses_polling: false
 - name: aws_request_signer_test
   gtest: true
   build: test
@@ -6429,7 +6482,6 @@ targets:
   deps:
   - gtest
   - grpc_test_util
-  uses_polling: false
 - name: bad_server_response_test
   gtest: true
   build: test
@@ -6532,7 +6584,6 @@ targets:
   - linux
   - posix
   - mac
-  uses_polling: false
 - name: bin_decoder_test
   gtest: true
   build: test
@@ -6543,7 +6594,6 @@ targets:
   deps:
   - gtest
   - grpc_test_util
-  uses_polling: false
 - name: bin_encoder_test
   gtest: true
   build: test
@@ -6554,7 +6604,6 @@ targets:
   deps:
   - gtest
   - grpc_test_util
-  uses_polling: false
 - name: bitset_test
   gtest: true
   build: test
@@ -6570,7 +6619,6 @@ targets:
   - absl/base:core_headers
   - absl/log:check
   - absl/numeric:bits
-  uses_polling: false
 - name: blackboard_test
   gtest: true
   build: test
@@ -6751,7 +6799,6 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
-  uses_polling: false
 - name: buffer_list_test
   gtest: true
   build: test
@@ -6772,7 +6819,6 @@ targets:
   deps:
   - gtest
   - grpc++_test_util
-  uses_polling: false
 - name: c_slice_buffer_test
   gtest: true
   build: test
@@ -6783,7 +6829,6 @@ targets:
   deps:
   - gtest
   - grpc_test_util
-  uses_polling: false
 - name: call_arena_allocator_test
   gtest: true
   build: test
@@ -6798,7 +6843,6 @@ targets:
   - linux
   - posix
   - mac
-  uses_polling: false
 - name: call_credentials_test
   gtest: true
   build: test
@@ -6842,7 +6886,6 @@ targets:
   - gtest
   - protobuf
   - grpc_test_util
-  uses_polling: false
 - name: call_filters_test
   gtest: true
   build: test
@@ -7099,7 +7142,6 @@ targets:
   - absl/utility:utility
   - gpr
   - protobuf
-  uses_polling: false
 - name: call_finalization_test
   gtest: true
   build: test
@@ -7305,7 +7347,6 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
-  uses_polling: false
 - name: call_tracer_test
   gtest: true
   build: test
@@ -7318,7 +7359,6 @@ targets:
   deps:
   - gtest
   - grpc_test_util
-  uses_polling: false
 - name: call_utils_test
   gtest: true
   build: test
@@ -7555,6 +7595,8 @@ targets:
   - src/core/lib/promise/exec_ctx_wakeup_scheduler.h
   - src/core/lib/promise/for_each.h
   - src/core/lib/promise/if.h
+  - src/core/lib/promise/inter_activity_latch.h
+  - src/core/lib/promise/inter_activity_pipe.h
   - src/core/lib/promise/interceptor_list.h
   - src/core/lib/promise/latch.h
   - src/core/lib/promise/loop.h
@@ -7568,6 +7610,7 @@ targets:
   - src/core/lib/promise/seq.h
   - src/core/lib/promise/status_flag.h
   - src/core/lib/promise/try_seq.h
+  - src/core/lib/promise/wait_set.h
   - src/core/lib/resource_quota/api.h
   - src/core/lib/resource_quota/arena.h
   - src/core/lib/resource_quota/memory_quota.h
@@ -7873,6 +7916,7 @@ targets:
   - src/core/lib/iomgr/wakeup_fd_posix.cc
   - src/core/lib/promise/activity.cc
   - src/core/lib/promise/party.cc
+  - src/core/lib/promise/wait_set.cc
   - src/core/lib/resource_quota/api.cc
   - src/core/lib/resource_quota/arena.cc
   - src/core/lib/resource_quota/memory_quota.cc
@@ -8207,7 +8251,16 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
-  uses_polling: false
+- name: cds_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/load_balancing/cds_test.cc
+  deps:
+  - gtest
+  - grpc_test_util
 - name: cel_authorization_engine_test
   gtest: true
   build: test
@@ -8528,7 +8581,6 @@ targets:
   deps:
   - gtest
   - grpc_test_util
-  uses_polling: false
 - name: cf_engine_test
   gtest: true
   build: test
@@ -8599,7 +8651,6 @@ targets:
   deps:
   - gtest
   - grpc_test_util
-  uses_polling: false
 - name: channel_arguments_test
   gtest: true
   build: test
@@ -8611,7 +8662,6 @@ targets:
   - gtest
   - grpc++
   - grpc_test_util
-  uses_polling: false
 - name: channel_creds_registry_test
   gtest: true
   build: test
@@ -8698,7 +8748,6 @@ targets:
   - gtest
   - protobuf
   - grpc_test_util
-  uses_polling: false
 - name: channel_init_test
   gtest: true
   build: test
@@ -8709,7 +8758,6 @@ targets:
   deps:
   - gtest
   - grpc_test_util
-  uses_polling: false
 - name: channel_stack_builder_test
   gtest: true
   build: test
@@ -8730,7 +8778,6 @@ targets:
   deps:
   - gtest
   - grpc_test_util
-  uses_polling: false
 - name: channel_trace_test
   gtest: true
   build: test
@@ -8756,7 +8803,6 @@ targets:
   - gtest
   - grpc++
   - grpc_test_util
-  uses_polling: false
 - name: channelz_service_test
   gtest: true
   build: test
@@ -8862,7 +8908,6 @@ targets:
   - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good_legacy/server_transport.h
   - src/core/lib/promise/event_engine_wakeup_scheduler.h
-  - src/core/lib/promise/inter_activity_pipe.h
   - src/core/lib/promise/join.h
   - src/core/lib/promise/lock_based_mpsc.h
   - src/core/lib/promise/switch.h
@@ -9219,7 +9264,6 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
-  uses_polling: false
 - name: cli_call_test
   gtest: true
   build: test
@@ -9274,7 +9318,6 @@ targets:
   - gtest
   - protobuf
   - grpc_test_util
-  uses_polling: false
 - name: client_authority_filter_test
   gtest: true
   build: test
@@ -9293,7 +9336,6 @@ targets:
   - gtest
   - protobuf
   - grpc_test_util
-  uses_polling: false
 - name: client_callback_end2end_test
   gtest: true
   build: test
@@ -9327,7 +9369,6 @@ targets:
   deps:
   - gtest
   - grpc_test_util
-  uses_polling: false
 - name: client_context_test_peer_test
   gtest: true
   build: test
@@ -9387,7 +9428,6 @@ targets:
 - name: client_lb_end2end_test
   gtest: true
   build: test
-  run: false
   language: c++
   headers:
   - src/cpp/server/orca/orca_service.h
@@ -9471,7 +9511,6 @@ targets:
   deps:
   - gtest
   - grpc_test_util
-  uses_polling: false
 - name: codegen_test_full
   gtest: true
   build: test
@@ -9483,7 +9522,6 @@ targets:
   - gtest
   - grpc++
   - grpc_test_util
-  uses_polling: false
 - name: codegen_test_minimal
   gtest: true
   build: test
@@ -9495,11 +9533,9 @@ targets:
   - gtest
   - grpc++
   - grpc_test_util
-  uses_polling: false
 - name: combiner_test
   gtest: true
   build: test
-  run: false
   language: c++
   headers: []
   src:
@@ -9526,7 +9562,6 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
-  uses_polling: false
 - name: completion_queue_threading_test
   gtest: true
   build: test
@@ -9559,7 +9594,6 @@ targets:
   deps:
   - gtest
   - grpc_test_util
-  uses_polling: false
 - name: concurrent_connectivity_test
   gtest: true
   build: test
@@ -9580,7 +9614,6 @@ targets:
   deps:
   - gtest
   - grpc_test_util
-  uses_polling: false
 - name: connection_prefix_bad_client_test
   gtest: true
   build: test
@@ -9812,7 +9845,6 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
-  uses_polling: false
 - name: core_configuration_test
   gtest: true
   build: test
@@ -9823,7 +9855,6 @@ targets:
   deps:
   - gtest
   - grpc
-  uses_polling: false
 - name: cpp_impl_of_test
   gtest: true
   build: test
@@ -9834,7 +9865,6 @@ targets:
   - test/core/util/cpp_impl_of_test.cc
   deps:
   - gtest
-  uses_polling: false
 - name: cpu_test
   gtest: true
   build: test
@@ -9845,7 +9875,6 @@ targets:
   deps:
   - gtest
   - grpc_test_util
-  uses_polling: false
 - name: crl_provider_test
   gtest: true
   build: test
@@ -9898,7 +9927,6 @@ targets:
   deps:
   - gtest
   - grpc_test_util
-  uses_polling: false
 - name: delegating_channel_test
   gtest: true
   build: test
@@ -9928,7 +9956,6 @@ targets:
   deps:
   - gtest
   - grpc_test_util
-  uses_polling: false
 - name: dns_fork_test
   gtest: true
   build: test
@@ -9977,7 +10004,6 @@ targets:
   deps:
   - gtest
   - gpr
-  uses_polling: false
 - name: dual_ref_counted_test
   gtest: true
   build: test
@@ -10018,7 +10044,6 @@ targets:
   - absl/functional:any_invocable
   - absl/log:check
   - absl/strings:str_format
-  uses_polling: false
 - name: duplicate_header_bad_client_test
   gtest: true
   build: test
@@ -10075,7 +10100,6 @@ targets:
   - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good_legacy/server_transport.h
   - src/core/lib/promise/event_engine_wakeup_scheduler.h
-  - src/core/lib/promise/inter_activity_pipe.h
   - src/core/lib/promise/join.h
   - src/core/lib/promise/lock_based_mpsc.h
   - src/core/lib/promise/switch.h
@@ -10206,7 +10230,6 @@ targets:
   - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good_legacy/server_transport.h
   - src/core/lib/promise/event_engine_wakeup_scheduler.h
-  - src/core/lib/promise/inter_activity_pipe.h
   - src/core/lib/promise/join.h
   - src/core/lib/promise/lock_based_mpsc.h
   - src/core/lib/promise/switch.h
@@ -10426,7 +10449,6 @@ targets:
   - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good_legacy/server_transport.h
   - src/core/lib/promise/event_engine_wakeup_scheduler.h
-  - src/core/lib/promise/inter_activity_pipe.h
   - src/core/lib/promise/join.h
   - src/core/lib/promise/lock_based_mpsc.h
   - src/core/lib/promise/switch.h
@@ -10553,7 +10575,6 @@ targets:
   - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good_legacy/server_transport.h
   - src/core/lib/promise/event_engine_wakeup_scheduler.h
-  - src/core/lib/promise/inter_activity_pipe.h
   - src/core/lib/promise/join.h
   - src/core/lib/promise/lock_based_mpsc.h
   - src/core/lib/promise/switch.h
@@ -10680,7 +10701,6 @@ targets:
   - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good_legacy/server_transport.h
   - src/core/lib/promise/event_engine_wakeup_scheduler.h
-  - src/core/lib/promise/inter_activity_pipe.h
   - src/core/lib/promise/join.h
   - src/core/lib/promise/lock_based_mpsc.h
   - src/core/lib/promise/switch.h
@@ -10896,7 +10916,6 @@ targets:
   - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good_legacy/server_transport.h
   - src/core/lib/promise/event_engine_wakeup_scheduler.h
-  - src/core/lib/promise/inter_activity_pipe.h
   - src/core/lib/promise/join.h
   - src/core/lib/promise/lock_based_mpsc.h
   - src/core/lib/promise/switch.h
@@ -11112,7 +11131,6 @@ targets:
   - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good_legacy/server_transport.h
   - src/core/lib/promise/event_engine_wakeup_scheduler.h
-  - src/core/lib/promise/inter_activity_pipe.h
   - src/core/lib/promise/join.h
   - src/core/lib/promise/lock_based_mpsc.h
   - src/core/lib/promise/switch.h
@@ -11239,7 +11257,6 @@ targets:
   - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good_legacy/server_transport.h
   - src/core/lib/promise/event_engine_wakeup_scheduler.h
-  - src/core/lib/promise/inter_activity_pipe.h
   - src/core/lib/promise/join.h
   - src/core/lib/promise/lock_based_mpsc.h
   - src/core/lib/promise/switch.h
@@ -11455,7 +11472,6 @@ targets:
   - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good_legacy/server_transport.h
   - src/core/lib/promise/event_engine_wakeup_scheduler.h
-  - src/core/lib/promise/inter_activity_pipe.h
   - src/core/lib/promise/join.h
   - src/core/lib/promise/lock_based_mpsc.h
   - src/core/lib/promise/switch.h
@@ -11582,7 +11598,6 @@ targets:
   - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good_legacy/server_transport.h
   - src/core/lib/promise/event_engine_wakeup_scheduler.h
-  - src/core/lib/promise/inter_activity_pipe.h
   - src/core/lib/promise/join.h
   - src/core/lib/promise/lock_based_mpsc.h
   - src/core/lib/promise/switch.h
@@ -11798,7 +11813,6 @@ targets:
   - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good_legacy/server_transport.h
   - src/core/lib/promise/event_engine_wakeup_scheduler.h
-  - src/core/lib/promise/inter_activity_pipe.h
   - src/core/lib/promise/join.h
   - src/core/lib/promise/lock_based_mpsc.h
   - src/core/lib/promise/switch.h
@@ -11925,7 +11939,6 @@ targets:
   - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good_legacy/server_transport.h
   - src/core/lib/promise/event_engine_wakeup_scheduler.h
-  - src/core/lib/promise/inter_activity_pipe.h
   - src/core/lib/promise/join.h
   - src/core/lib/promise/lock_based_mpsc.h
   - src/core/lib/promise/switch.h
@@ -12102,7 +12115,6 @@ targets:
 - name: end2end_test
   gtest: true
   build: test
-  run: false
   language: c++
   headers:
   - test/cpp/end2end/end2end_test_utils.h
@@ -12133,7 +12145,6 @@ targets:
   deps:
   - gtest
   - grpc_test_util
-  uses_polling: false
 - name: endpoint_config_test
   gtest: true
   build: test
@@ -12203,7 +12214,6 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
-  uses_polling: false
 - name: endpoint_pair_test
   gtest: true
   build: test
@@ -12226,7 +12236,6 @@ targets:
   deps:
   - gtest
   - grpc_test_util
-  uses_polling: false
 - name: error_details_test
   gtest: true
   build: test
@@ -12255,7 +12264,6 @@ targets:
   deps:
   - gtest
   - grpc_test_util
-  uses_polling: false
 - name: error_utils_test
   gtest: true
   build: test
@@ -12279,7 +12287,6 @@ targets:
   platforms:
   - linux
   - posix
-  uses_polling: false
 - name: evaluate_args_test
   gtest: true
   build: test
@@ -12301,7 +12308,6 @@ targets:
   deps:
   - gtest
   - grpc
-  uses_polling: false
 - name: event_poller_posix_test
   gtest: true
   build: test
@@ -12332,7 +12338,6 @@ targets:
   - linux
   - posix
   - mac
-  uses_polling: false
 - name: exception_test
   gtest: true
   build: test
@@ -12541,7 +12546,6 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
-  uses_polling: false
 - name: experiments_tag_test
   gtest: true
   build: test
@@ -12559,7 +12563,6 @@ targets:
   - gtest
   - absl/status:statusor
   - gpr
-  uses_polling: false
 - name: experiments_test
   gtest: true
   build: test
@@ -12576,7 +12579,6 @@ targets:
   deps:
   - gtest
   - gpr
-  uses_polling: false
 - name: factory_test
   gtest: true
   build: test
@@ -12589,7 +12591,6 @@ targets:
   deps:
   - gtest
   - grpc_test_util_unsecure
-  uses_polling: false
 - name: fake_resolver_test
   gtest: true
   build: test
@@ -12657,7 +12658,6 @@ targets:
   deps:
   - gtest
   - grpc_test_util
-  uses_polling: false
 - name: filter_fusion_test
   gtest: true
   build: test
@@ -12895,6 +12895,8 @@ targets:
   - src/core/lib/promise/exec_ctx_wakeup_scheduler.h
   - src/core/lib/promise/for_each.h
   - src/core/lib/promise/if.h
+  - src/core/lib/promise/inter_activity_latch.h
+  - src/core/lib/promise/inter_activity_pipe.h
   - src/core/lib/promise/interceptor_list.h
   - src/core/lib/promise/latch.h
   - src/core/lib/promise/loop.h
@@ -12908,6 +12910,7 @@ targets:
   - src/core/lib/promise/seq.h
   - src/core/lib/promise/status_flag.h
   - src/core/lib/promise/try_seq.h
+  - src/core/lib/promise/wait_set.h
   - src/core/lib/resource_quota/api.h
   - src/core/lib/resource_quota/arena.h
   - src/core/lib/resource_quota/memory_quota.h
@@ -13213,6 +13216,7 @@ targets:
   - src/core/lib/iomgr/wakeup_fd_posix.cc
   - src/core/lib/promise/activity.cc
   - src/core/lib/promise/party.cc
+  - src/core/lib/promise/wait_set.cc
   - src/core/lib/resource_quota/api.cc
   - src/core/lib/resource_quota/arena.cc
   - src/core/lib/resource_quota/memory_quota.cc
@@ -13331,7 +13335,6 @@ targets:
   - grpc_unsecure
   - protobuf
   - grpc_test_util
-  uses_polling: false
 - name: flaky_network_test
   gtest: true
   build: test
@@ -13811,7 +13814,6 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
-  uses_polling: false
 - name: for_each_test
   gtest: true
   build: test
@@ -14039,7 +14041,6 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
-  uses_polling: false
 - name: fork_test
   gtest: true
   build: test
@@ -14054,7 +14055,6 @@ targets:
   - linux
   - posix
   - mac
-  uses_polling: false
 - name: format_request_test
   gtest: true
   build: test
@@ -14305,7 +14305,6 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
-  uses_polling: false
 - name: function_signature_test
   gtest: true
   build: test
@@ -14345,7 +14344,6 @@ targets:
   platforms:
   - linux
   - posix
-  uses_polling: false
 - name: fuzzing_event_engine_unittest
   gtest: true
   build: test
@@ -14380,7 +14378,6 @@ targets:
   - gtest
   - protobuf
   - grpc_test_util
-  uses_polling: false
 - name: generic_end2end_test
   gtest: true
   build: test
@@ -14410,7 +14407,6 @@ targets:
   deps:
   - gtest
   - grpc_test_util
-  uses_polling: false
 - name: goaway_server_test
   gtest: true
   build: test
@@ -14458,7 +14454,6 @@ targets:
   deps:
   - gtest
   - grpc_test_util
-  uses_polling: false
 - name: graceful_shutdown_test
   gtest: true
   build: test
@@ -14547,7 +14542,6 @@ targets:
   deps:
   - gtest
   - grpc_test_util
-  uses_polling: false
 - name: grpc_cli
   build: test
   run: false
@@ -14818,7 +14812,6 @@ targets:
 - name: grpclb_end2end_test
   gtest: true
   build: test
-  run: false
   language: c++
   headers:
   - test/core/test_util/test_call_creds.h
@@ -14886,7 +14879,6 @@ targets:
   - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good_legacy/server_transport.h
   - src/core/lib/promise/event_engine_wakeup_scheduler.h
-  - src/core/lib/promise/inter_activity_pipe.h
   - src/core/lib/promise/join.h
   - src/core/lib/promise/lock_based_mpsc.h
   - src/core/lib/promise/switch.h
@@ -14994,7 +14986,6 @@ targets:
   deps:
   - gtest
   - grpc
-  uses_polling: false
 - name: handshake_server_with_readahead_handshaker_test
   gtest: true
   build: test
@@ -15092,7 +15083,6 @@ targets:
   deps:
   - gtest
   - grpc_test_util
-  uses_polling: false
 - name: host_port_test
   gtest: true
   build: test
@@ -15103,7 +15093,6 @@ targets:
   deps:
   - gtest
   - grpc_test_util
-  uses_polling: false
 - name: hpack_encoder_test
   gtest: true
   build: test
@@ -15115,7 +15104,6 @@ targets:
   deps:
   - gtest
   - grpc_test_util
-  uses_polling: false
 - name: hpack_parser_table_test
   gtest: true
   build: test
@@ -15126,7 +15114,6 @@ targets:
   deps:
   - gtest
   - grpc_test_util
-  uses_polling: false
 - name: hpack_parser_test
   gtest: true
   build: test
@@ -15137,7 +15124,6 @@ targets:
   deps:
   - gtest
   - grpc_test_util
-  uses_polling: false
 - name: http2_client
   build: test
   run: false
@@ -15175,7 +15161,6 @@ targets:
   - gtest
   - protobuf
   - grpc_test_util
-  uses_polling: false
 - name: http2_security_frame_test
   gtest: true
   build: test
@@ -15197,7 +15182,6 @@ targets:
   - gtest
   - protobuf
   - grpc_test_util
-  uses_polling: false
 - name: http2_server_transport_test
   gtest: true
   build: test
@@ -15227,7 +15211,6 @@ targets:
   - linux
   - posix
   - mac
-  uses_polling: false
 - name: http2_settings_test
   gtest: true
   build: test
@@ -15280,7 +15263,6 @@ targets:
   - gtest
   - protobuf
   - grpc_test_util
-  uses_polling: false
 - name: http_proxy_mapper_test
   gtest: true
   build: test
@@ -15292,7 +15274,6 @@ targets:
   deps:
   - gtest
   - grpc_test_util
-  uses_polling: false
 - name: httpcli_test
   gtest: true
   build: test
@@ -15363,7 +15344,6 @@ targets:
   - gtest
   - absl/base:config
   - absl/base:core_headers
-  uses_polling: false
 - name: if_list_test
   gtest: true
   build: test
@@ -15376,7 +15356,6 @@ targets:
   - gtest
   - absl/base:config
   - absl/base:core_headers
-  uses_polling: false
 - name: if_test
   gtest: true
   build: test
@@ -15562,7 +15541,6 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
-  uses_polling: false
 - name: incoming_metadata_tracker_test
   gtest: true
   build: test
@@ -15821,6 +15799,8 @@ targets:
   - src/core/lib/promise/exec_ctx_wakeup_scheduler.h
   - src/core/lib/promise/for_each.h
   - src/core/lib/promise/if.h
+  - src/core/lib/promise/inter_activity_latch.h
+  - src/core/lib/promise/inter_activity_pipe.h
   - src/core/lib/promise/interceptor_list.h
   - src/core/lib/promise/latch.h
   - src/core/lib/promise/loop.h
@@ -15834,6 +15814,7 @@ targets:
   - src/core/lib/promise/seq.h
   - src/core/lib/promise/status_flag.h
   - src/core/lib/promise/try_seq.h
+  - src/core/lib/promise/wait_set.h
   - src/core/lib/resource_quota/api.h
   - src/core/lib/resource_quota/arena.h
   - src/core/lib/resource_quota/memory_quota.h
@@ -16142,6 +16123,7 @@ targets:
   - src/core/lib/iomgr/wakeup_fd_posix.cc
   - src/core/lib/promise/activity.cc
   - src/core/lib/promise/party.cc
+  - src/core/lib/promise/wait_set.cc
   - src/core/lib/resource_quota/api.cc
   - src/core/lib/resource_quota/arena.cc
   - src/core/lib/resource_quota/memory_quota.cc
@@ -16259,7 +16241,6 @@ targets:
   deps:
   - gtest
   - grpc_test_util
-  uses_polling: false
 - name: initial_settings_frame_bad_client_test
   gtest: true
   build: test
@@ -16305,7 +16286,6 @@ targets:
   deps:
   - gtest
   - grpc_test_util
-  uses_polling: false
 - name: inter_activity_latch_test
   gtest: true
   build: test
@@ -16317,7 +16297,6 @@ targets:
   deps:
   - gtest
   - grpc
-  uses_polling: false
 - name: inter_activity_mutex_test
   gtest: true
   build: test
@@ -16525,7 +16504,6 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
-  uses_polling: false
 - name: interception_chain_test
   gtest: true
   build: test
@@ -16537,7 +16515,6 @@ targets:
   deps:
   - gtest
   - grpc
-  uses_polling: false
 - name: interceptor_list_test
   gtest: true
   build: test
@@ -16757,7 +16734,6 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
-  uses_polling: false
 - name: interop_client
   build: test
   run: false
@@ -16825,7 +16801,6 @@ targets:
   - linux
   - posix
   - windows
-  uses_polling: false
 - name: istio_echo_server_test
   gtest: true
   build: test
@@ -17031,7 +17006,6 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
-  uses_polling: false
 - name: json_object_loader_test
   gtest: true
   build: test
@@ -17042,7 +17016,6 @@ targets:
   deps:
   - gtest
   - grpc_test_util
-  uses_polling: false
 - name: json_test
   gtest: true
   build: test
@@ -17053,7 +17026,6 @@ targets:
   deps:
   - gtest
   - grpc_test_util
-  uses_polling: false
 - name: json_token_test
   gtest: true
   build: test
@@ -17064,7 +17036,6 @@ targets:
   deps:
   - gtest
   - grpc_test_util
-  uses_polling: false
 - name: jwt_util_test
   gtest: true
   build: test
@@ -17075,7 +17046,6 @@ targets:
   deps:
   - gtest
   - grpc_test_util
-  uses_polling: false
 - name: jwt_verifier_test
   gtest: true
   build: test
@@ -17086,7 +17056,6 @@ targets:
   deps:
   - gtest
   - grpc_test_util
-  uses_polling: false
 - name: lame_client_test
   gtest: true
   build: test
@@ -17297,7 +17266,6 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
-  uses_polling: false
 - name: latent_see_service_test
   gtest: true
   build: test
@@ -17555,7 +17523,6 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
-  uses_polling: false
 - name: latent_see_tool_test
   gtest: true
   build: test
@@ -17607,7 +17574,6 @@ targets:
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb.h
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.h
   - src/core/lib/promise/event_engine_wakeup_scheduler.h
-  - src/core/lib/promise/inter_activity_pipe.h
   - src/core/lib/promise/join.h
   - src/core/lib/promise/lock_based_mpsc.h
   - src/core/lib/promise/switch.h
@@ -17747,7 +17713,6 @@ targets:
   deps:
   - gtest
   - grpc_test_util
-  uses_polling: false
 - name: load_config_test
   gtest: true
   build: test
@@ -17758,7 +17723,6 @@ targets:
   deps:
   - gtest
   - grpc
-  uses_polling: false
 - name: load_file_test
   gtest: true
   build: test
@@ -17769,7 +17733,6 @@ targets:
   deps:
   - gtest
   - grpc_test_util
-  uses_polling: false
 - name: local_security_connector_test
   gtest: true
   build: test
@@ -17989,7 +17952,6 @@ targets:
   - linux
   - posix
   - mac
-  uses_polling: false
 - name: loop_test
   gtest: true
   build: test
@@ -18184,7 +18146,6 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
-  uses_polling: false
 - name: lru_cache_test
   gtest: true
   build: test
@@ -18361,7 +18322,6 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
-  uses_polling: false
 - name: map_pipe_test
   gtest: true
   build: test
@@ -18589,7 +18549,6 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
-  uses_polling: false
 - name: match_promise_test
   gtest: true
   build: test
@@ -18777,7 +18736,6 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
-  uses_polling: false
 - name: match_test
   gtest: true
   build: test
@@ -18791,7 +18749,6 @@ targets:
   - gtest
   - absl/base:config
   - absl/base:core_headers
-  uses_polling: false
 - name: matchers_test
   gtest: true
   build: test
@@ -18815,7 +18772,6 @@ targets:
   platforms:
   - linux
   - posix
-  uses_polling: false
 - name: memory_quota_test
   gtest: true
   build: test
@@ -18827,7 +18783,6 @@ targets:
   deps:
   - gtest
   - grpc_test_util_unsecure
-  uses_polling: false
 - name: memory_usage_test
   gtest: true
   build: test
@@ -18912,7 +18867,6 @@ targets:
   deps:
   - gtest
   - grpc_test_util
-  uses_polling: false
 - name: message_size_service_config_test
   gtest: true
   build: test
@@ -18945,7 +18899,6 @@ targets:
   deps:
   - gtest
   - grpc_test_util
-  uses_polling: false
 - name: minimal_stack_is_minimal_test
   gtest: true
   build: test
@@ -18956,7 +18909,6 @@ targets:
   deps:
   - gtest
   - grpc_test_util
-  uses_polling: false
 - name: miscompile_with_no_unique_address_test
   gtest: true
   build: test
@@ -18968,7 +18920,6 @@ targets:
   - gtest
   - absl/base:config
   - absl/base:core_headers
-  uses_polling: false
 - name: mock_stream_test
   gtest: true
   build: test
@@ -19019,7 +18970,6 @@ targets:
   - linux
   - posix
   - mac
-  uses_polling: false
 - name: no_destruct_test
   gtest: true
   build: test
@@ -19033,7 +18983,6 @@ targets:
   - gtest
   - absl/base:config
   - absl/base:core_headers
-  uses_polling: false
 - name: no_server_test
   gtest: true
   build: test
@@ -19074,7 +19023,6 @@ targets:
   deps:
   - gtest
   - gpr
-  uses_polling: false
 - name: num_external_connectivity_watchers_test
   gtest: true
   build: test
@@ -19282,7 +19230,6 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
-  uses_polling: false
 - name: oracle_event_engine_posix_test
   gtest: true
   build: test
@@ -19525,7 +19472,6 @@ targets:
   deps:
   - gtest
   - grpc_test_util
-  uses_polling: false
 - name: outlier_detection_test
   gtest: true
   build: test
@@ -19543,7 +19489,6 @@ targets:
   - gtest
   - protobuf
   - grpc_test_util
-  uses_polling: false
 - name: overload_test
   gtest: true
   build: test
@@ -19556,7 +19501,6 @@ targets:
   - gtest
   - absl/base:config
   - absl/base:core_headers
-  uses_polling: false
 - name: parse_address_test
   gtest: true
   build: test
@@ -19581,7 +19525,6 @@ targets:
   - linux
   - posix
   - mac
-  uses_polling: false
 - name: parsed_metadata_test
   gtest: true
   build: test
@@ -19607,7 +19550,6 @@ targets:
   deps:
   - gtest
   - grpc_test_util
-  uses_polling: false
 - name: party_mpsc_test
   gtest: true
   build: test
@@ -19623,7 +19565,6 @@ targets:
   - linux
   - posix
   - mac
-  uses_polling: false
 - name: party_test
   gtest: true
   build: test
@@ -19634,7 +19575,6 @@ targets:
   deps:
   - gtest
   - grpc_unsecure
-  uses_polling: false
 - name: percent_encoding_test
   gtest: true
   build: test
@@ -19645,11 +19585,9 @@ targets:
   deps:
   - gtest
   - grpc_test_util
-  uses_polling: false
 - name: periodic_update_test
   gtest: true
   build: test
-  run: false
   language: c++
   headers:
   - src/core/channelz/property_list.h
@@ -19753,7 +19691,6 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
-  uses_polling: false
 - name: pick_first_test
   gtest: true
   build: test
@@ -19774,7 +19711,6 @@ targets:
   - gtest
   - protobuf
   - grpc_test_util
-  uses_polling: false
 - name: ping_abuse_policy_test
   gtest: true
   build: test
@@ -19785,7 +19721,6 @@ targets:
   deps:
   - gtest
   - grpc_test_util
-  uses_polling: false
 - name: ping_callbacks_test
   gtest: true
   build: test
@@ -19797,7 +19732,6 @@ targets:
   deps:
   - gtest
   - grpc
-  uses_polling: false
 - name: ping_configuration_test
   gtest: true
   build: test
@@ -19808,7 +19742,6 @@ targets:
   deps:
   - gtest
   - grpc_test_util
-  uses_polling: false
 - name: ping_rate_policy_test
   gtest: true
   build: test
@@ -19819,7 +19752,6 @@ targets:
   deps:
   - gtest
   - grpc_test_util
-  uses_polling: false
 - name: pipe_test
   gtest: true
   build: test
@@ -19832,7 +19764,6 @@ targets:
   deps:
   - gtest
   - grpc
-  uses_polling: false
 - name: poll_test
   gtest: true
   build: test
@@ -20009,7 +19940,6 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
-  uses_polling: false
 - name: poller_fork_test
   gtest: true
   build: test
@@ -20179,7 +20109,6 @@ targets:
   - linux
   - posix
   - mac
-  uses_polling: false
 - name: pre_stop_hook_server_test
   gtest: true
   build: test
@@ -20524,7 +20453,6 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
-  uses_polling: false
 - name: private_key_offload_test
   gtest: true
   build: test
@@ -20739,7 +20667,6 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
-  uses_polling: false
 - name: promise_map_test
   gtest: true
   build: test
@@ -20925,7 +20852,6 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
-  uses_polling: false
 - name: promise_mutex_test
   gtest: true
   build: test
@@ -21307,7 +21233,6 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
-  uses_polling: false
 - name: property_list_test
   gtest: true
   build: test
@@ -21373,7 +21298,6 @@ targets:
   deps:
   - gtest
   - grpc++_test_util
-  uses_polling: false
 - name: proto_buffer_writer_test
   gtest: true
   build: test
@@ -21384,7 +21308,6 @@ targets:
   deps:
   - gtest
   - grpc++_test_util
-  uses_polling: false
 - name: proto_server_reflection_test
   gtest: true
   build: test
@@ -21420,7 +21343,6 @@ targets:
   - gtest
   - grpc++
   - grpc_test_util
-  uses_polling: false
 - name: qps_json_driver
   build: test
   run: false
@@ -21472,7 +21394,6 @@ targets:
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb.h
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.h
   - src/core/lib/promise/event_engine_wakeup_scheduler.h
-  - src/core/lib/promise/inter_activity_pipe.h
   - src/core/lib/promise/join.h
   - src/core/lib/promise/lock_based_mpsc.h
   - src/core/lib/promise/switch.h
@@ -21601,7 +21522,6 @@ targets:
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb.h
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.h
   - src/core/lib/promise/event_engine_wakeup_scheduler.h
-  - src/core/lib/promise/inter_activity_pipe.h
   - src/core/lib/promise/join.h
   - src/core/lib/promise/lock_based_mpsc.h
   - src/core/lib/promise/switch.h
@@ -21853,7 +21773,6 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
-  uses_polling: false
 - name: race_test
   gtest: true
   build: test
@@ -22034,7 +21953,6 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
-  uses_polling: false
 - name: random_early_detection_test
   gtest: true
   build: test
@@ -22051,7 +21969,6 @@ targets:
   - absl/random:bit_gen_ref
   - absl/random:distributions
   - absl/random:random
-  uses_polling: false
 - name: raw_end2end_test
   gtest: true
   build: test
@@ -22083,7 +22000,6 @@ targets:
   deps:
   - gtest
   - grpc_test_util
-  uses_polling: false
 - name: rbac_translator_test
   gtest: true
   build: test
@@ -22407,8 +22323,6 @@ targets:
   deps:
   - gtest
   - grpc_test_util
-  args:
-  - --resolver=ares
   platforms:
   - linux
   - posix
@@ -22436,8 +22350,6 @@ targets:
   deps:
   - gtest
   - grpc_test_util
-  args:
-  - --resolver=native
   platforms:
   - linux
   - posix
@@ -22482,7 +22394,6 @@ targets:
   deps:
   - gtest
   - grpc_test_util_unsecure
-  uses_polling: false
 - name: resource_tracker_test
   gtest: true
   build: test
@@ -22508,7 +22419,6 @@ targets:
   deps:
   - gtest
   - grpc_test_util
-  uses_polling: false
 - name: retry_throttle_test
   gtest: true
   build: test
@@ -22519,7 +22429,6 @@ targets:
   deps:
   - gtest
   - grpc_test_util
-  uses_polling: false
 - name: ring_buffer_test
   gtest: true
   build: test
@@ -22532,7 +22441,6 @@ targets:
   - gtest
   - absl/base:config
   - absl/base:core_headers
-  uses_polling: false
 - name: ring_hash_test
   gtest: true
   build: test
@@ -22551,11 +22459,9 @@ targets:
   - gtest
   - protobuf
   - grpc_test_util
-  uses_polling: false
 - name: rls_end2end_test
   gtest: true
   build: test
-  run: false
   language: c++
   headers:
   - test/core/event_engine/event_engine_test_utils.h
@@ -22596,7 +22502,6 @@ targets:
   deps:
   - gtest
   - grpc_test_util
-  uses_polling: false
 - name: round_robin_test
   gtest: true
   build: test
@@ -22614,7 +22519,6 @@ targets:
   - gtest
   - protobuf
   - grpc_test_util
-  uses_polling: false
 - name: secure_auth_context_test
   gtest: true
   build: test
@@ -22649,7 +22553,6 @@ targets:
 - name: secure_endpoint_test
   gtest: true
   build: test
-  run: false
   language: c++
   headers:
   - test/core/iomgr/endpoint_tests.h
@@ -22856,7 +22759,6 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
-  uses_polling: false
 - name: sequential_connectivity_test
   gtest: true
   build: test
@@ -22905,7 +22807,6 @@ targets:
   - test/cpp/server/server_builder_test.cc
   deps:
   - gtest
-  - grpc++
   - grpc++_unsecure
   - grpc_test_util_unsecure
   platforms:
@@ -22928,7 +22829,6 @@ targets:
   - test/cpp/server/server_builder_with_socket_mutator_test.cc
   deps:
   - gtest
-  - grpc++
   - grpc++_unsecure
   - grpc_test_util_unsecure
   platforms:
@@ -22945,7 +22845,6 @@ targets:
   deps:
   - gtest
   - grpc_test_util
-  uses_polling: false
 - name: server_chttp2_test
   gtest: true
   build: test
@@ -22966,7 +22865,6 @@ targets:
   deps:
   - gtest
   - grpc_test_util
-  uses_polling: false
 - name: server_context_test_spouse_test
   gtest: true
   build: test
@@ -23131,7 +23029,6 @@ targets:
   - gtest
   - protobuf
   - grpc_test_util
-  uses_polling: false
 - name: settings_timeout_test
   gtest: true
   build: test
@@ -23155,7 +23052,6 @@ targets:
   - gtest
   - absl/random:distributions
   - absl/random:random
-  uses_polling: false
 - name: shutdown_test
   gtest: true
   build: test
@@ -23205,7 +23101,6 @@ targets:
   - gtest
   - absl/hash:hash
   - gpr
-  uses_polling: false
 - name: sleep_test
   gtest: true
   build: test
@@ -23218,7 +23113,6 @@ targets:
   deps:
   - gtest
   - grpc
-  uses_polling: false
 - name: slice_string_helpers_test
   gtest: true
   build: test
@@ -23244,7 +23138,6 @@ targets:
   - absl/container:flat_hash_map
   - absl/hash:hash
   - gpr
-  uses_polling: false
 - name: sockaddr_resolver_test
   gtest: true
   build: test
@@ -23292,7 +23185,6 @@ targets:
   - gtest
   - absl/base:config
   - absl/base:core_headers
-  uses_polling: false
 - name: spiffe_bundle_map_end2end_test
   gtest: true
   build: test
@@ -23354,7 +23246,6 @@ targets:
   deps:
   - gtest
   - grpc_test_util
-  uses_polling: false
 - name: ssl_transport_security_test
   gtest: true
   build: test
@@ -23413,7 +23304,6 @@ targets:
   - linux
   - posix
   - mac
-  uses_polling: false
 - name: stat_test
   gtest: true
   build: test
@@ -23424,7 +23314,6 @@ targets:
   deps:
   - gtest
   - grpc_test_util
-  uses_polling: false
 - name: static_stride_scheduler_test
   gtest: true
   build: test
@@ -23602,7 +23491,6 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
-  uses_polling: false
 - name: status_conversion_test
   gtest: true
   build: test
@@ -23613,7 +23501,6 @@ targets:
   deps:
   - gtest
   - grpc_test_util
-  uses_polling: false
 - name: status_flag_test
   gtest: true
   build: test
@@ -23791,7 +23678,6 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
-  uses_polling: false
 - name: status_helper_test
   gtest: true
   build: test
@@ -23802,7 +23688,6 @@ targets:
   deps:
   - gtest
   - grpc_test_util
-  uses_polling: false
 - name: status_test
   gtest: true
   build: test
@@ -23833,7 +23718,6 @@ targets:
   deps:
   - gtest
   - grpc_test_util
-  uses_polling: false
 - name: stream_data_queue_test
   gtest: true
   build: test
@@ -23891,7 +23775,6 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
-  uses_polling: false
 - name: stream_test
   gtest: true
   build: test
@@ -23902,7 +23785,6 @@ targets:
   deps:
   - gtest
   - grpc_test_util
-  uses_polling: false
 - name: streaming_throughput_test
   gtest: true
   build: test
@@ -23949,7 +23831,6 @@ targets:
   - gtest
   - grpc++
   - grpc_test_util
-  uses_polling: false
 - name: string_test
   gtest: true
   build: test
@@ -23960,7 +23841,6 @@ targets:
   deps:
   - gtest
   - grpc_test_util
-  uses_polling: false
 - name: subchannel_args_test
   gtest: true
   build: test
@@ -23971,7 +23851,6 @@ targets:
   deps:
   - gtest
   - grpc_test_util
-  uses_polling: false
 - name: subchannel_stream_limiter_test
   gtest: true
   build: test
@@ -23982,7 +23861,6 @@ targets:
   deps:
   - gtest
   - grpc_test_util
-  uses_polling: false
 - name: switch_test
   gtest: true
   build: test
@@ -24170,7 +24048,6 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
-  uses_polling: false
 - name: sync_test
   gtest: true
   build: test
@@ -24181,7 +24058,6 @@ targets:
   deps:
   - gtest
   - grpc_test_util
-  uses_polling: false
 - name: system_roots_test
   gtest: true
   build: test
@@ -24210,7 +24086,6 @@ targets:
   - absl/meta:type_traits
   - absl/numeric:bits
   - absl/utility:utility
-  uses_polling: false
 - name: tcp_client_posix_test
   gtest: true
   build: test
@@ -24239,7 +24114,6 @@ targets:
   - linux
   - posix
   - mac
-  uses_polling: false
 - name: tcp_posix_test
   gtest: true
   build: test
@@ -24279,7 +24153,6 @@ targets:
   deps:
   - gtest
   - grpc
-  uses_polling: false
 - name: test_core_credentials_transport_ssl_ssl_credentials_test
   gtest: true
   build: test
@@ -24495,7 +24368,6 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
-  uses_polling: false
 - name: test_core_event_engine_slice_buffer_test
   gtest: true
   build: test
@@ -24680,7 +24552,6 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
-  uses_polling: false
 - name: test_core_iomgr_fd_conservation_posix_test
   gtest: true
   build: test
@@ -24705,7 +24576,6 @@ targets:
   deps:
   - gtest
   - grpc_test_util
-  uses_polling: false
 - name: test_core_slice_slice_buffer_test
   gtest: true
   build: test
@@ -24716,7 +24586,6 @@ targets:
   deps:
   - gtest
   - grpc_test_util
-  uses_polling: false
 - name: test_core_slice_slice_test
   gtest: true
   build: test
@@ -24729,7 +24598,6 @@ targets:
   deps:
   - gtest
   - grpc
-  uses_polling: false
 - name: test_core_util_time_test
   gtest: true
   build: test
@@ -24745,7 +24613,6 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
-  uses_polling: false
 - name: test_cpp_client_credentials_test
   gtest: true
   build: test
@@ -24821,7 +24688,6 @@ targets:
   deps:
   - gtest
   - grpc++_test_util
-  uses_polling: false
 - name: test_cpp_util_time_test
   gtest: true
   build: test
@@ -24833,7 +24699,6 @@ targets:
   - gtest
   - grpc++_test_config
   - grpc++_test_util
-  uses_polling: false
 - name: test_timeout_test
   gtest: true
   build: test
@@ -24855,7 +24720,6 @@ targets:
   deps:
   - gtest
   - grpc_test_util
-  uses_polling: false
 - name: thread_manager_test
   gtest: true
   build: test
@@ -24878,7 +24742,6 @@ targets:
   - gtest
   - grpc
   - grpc_test_util_unsecure
-  uses_polling: false
 - name: thread_quota_test
   gtest: true
   build: test
@@ -25056,7 +24919,6 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
-  uses_polling: false
 - name: thread_stress_test
   gtest: true
   build: test
@@ -25132,7 +24994,6 @@ targets:
   deps:
   - gtest
   - grpc_test_util
-  uses_polling: false
 - name: timeout_encoding_test
   gtest: true
   build: test
@@ -25143,7 +25004,6 @@ targets:
   deps:
   - gtest
   - grpc_test_util
-  uses_polling: false
 - name: timer_list_test
   gtest: true
   build: test
@@ -25165,7 +25025,6 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
-  uses_polling: false
 - name: timer_manager_test
   gtest: true
   build: test
@@ -25176,11 +25035,9 @@ targets:
   deps:
   - gtest
   - grpc_test_util
-  uses_polling: false
 - name: timer_test
   gtest: true
   build: test
-  run: false
   language: c++
   headers: []
   src:
@@ -25253,7 +25110,6 @@ targets:
 - name: too_many_pings_test
   gtest: true
   build: test
-  run: false
   language: c++
   headers:
   - test/core/end2end/cq_verifier.h
@@ -25500,6 +25356,8 @@ targets:
   - src/core/lib/promise/exec_ctx_wakeup_scheduler.h
   - src/core/lib/promise/for_each.h
   - src/core/lib/promise/if.h
+  - src/core/lib/promise/inter_activity_latch.h
+  - src/core/lib/promise/inter_activity_pipe.h
   - src/core/lib/promise/interceptor_list.h
   - src/core/lib/promise/latch.h
   - src/core/lib/promise/loop.h
@@ -25513,6 +25371,7 @@ targets:
   - src/core/lib/promise/seq.h
   - src/core/lib/promise/status_flag.h
   - src/core/lib/promise/try_seq.h
+  - src/core/lib/promise/wait_set.h
   - src/core/lib/resource_quota/api.h
   - src/core/lib/resource_quota/arena.h
   - src/core/lib/resource_quota/memory_quota.h
@@ -25820,6 +25679,7 @@ targets:
   - src/core/lib/iomgr/wakeup_fd_posix.cc
   - src/core/lib/promise/activity.cc
   - src/core/lib/promise/party.cc
+  - src/core/lib/promise/wait_set.cc
   - src/core/lib/resource_quota/api.cc
   - src/core/lib/resource_quota/arena.cc
   - src/core/lib/resource_quota/memory_quota.cc
@@ -25936,7 +25796,6 @@ targets:
   deps:
   - gtest
   - grpc_test_util
-  uses_polling: false
 - name: traced_buffer_list_test
   gtest: true
   build: test
@@ -25951,7 +25810,6 @@ targets:
   - linux
   - posix
   - mac
-  uses_polling: false
 - name: transport_security_common_api_test
   gtest: true
   build: test
@@ -26170,7 +26028,6 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
-  uses_polling: false
 - name: try_seq_metadata_test
   gtest: true
   build: test
@@ -26181,7 +26038,6 @@ targets:
   deps:
   - gtest
   - grpc
-  uses_polling: false
 - name: try_seq_test
   gtest: true
   build: test
@@ -26372,7 +26228,6 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
-  uses_polling: false
 - name: unique_ptr_with_bitset_test
   gtest: true
   build: test
@@ -26549,7 +26404,6 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
-  uses_polling: false
 - name: unique_type_name_test
   gtest: true
   build: test
@@ -26567,7 +26421,6 @@ targets:
   - absl/log:check
   - absl/numeric:bits
   - absl/strings:str_format
-  uses_polling: false
 - name: unknown_frame_bad_client_test
   gtest: true
   build: test
@@ -26606,7 +26459,6 @@ targets:
   - absl/base:core_headers
   - absl/log:check
   - absl/numeric:bits
-  uses_polling: false
 - name: uuid_v4_test
   gtest: true
   build: test
@@ -26617,7 +26469,6 @@ targets:
   deps:
   - gtest
   - grpc_test_util
-  uses_polling: false
 - name: validation_errors_test
   gtest: true
   build: test
@@ -26628,7 +26479,6 @@ targets:
   deps:
   - gtest
   - grpc_test_util
-  uses_polling: false
 - name: varint_test
   gtest: true
   build: test
@@ -26639,7 +26489,6 @@ targets:
   deps:
   - gtest
   - grpc_test_util
-  uses_polling: false
 - name: wait_for_callback_test
   gtest: true
   build: test
@@ -26833,7 +26682,6 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
-  uses_polling: false
 - name: wait_for_single_owner_test
   gtest: true
   build: test
@@ -26844,7 +26692,6 @@ targets:
   deps:
   - gtest
   - grpc
-  uses_polling: false
 - name: wakeup_fd_posix_test
   gtest: true
   build: test
@@ -26871,7 +26718,6 @@ targets:
   deps:
   - gtest
   - grpc_test_util
-  uses_polling: false
 - name: weighted_round_robin_test
   gtest: true
   build: test
@@ -26891,7 +26737,6 @@ targets:
   - gtest
   - protobuf
   - grpc_test_util
-  uses_polling: false
 - name: win_socket_test
   gtest: true
   build: test
@@ -26908,7 +26753,6 @@ targets:
   - linux
   - posix
   - windows
-  uses_polling: false
 - name: window_overflow_bad_client_test
   gtest: true
   build: test
@@ -26939,11 +26783,9 @@ targets:
   - linux
   - posix
   - windows
-  uses_polling: false
 - name: work_serializer_test
   gtest: true
   build: test
-  run: false
   language: c++
   headers:
   - test/core/event_engine/event_engine_test_utils.h
@@ -27162,7 +27004,6 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
-  uses_polling: false
 - name: writes_per_rpc_test
   gtest: true
   build: test
@@ -27308,7 +27149,6 @@ targets:
   - grpc++
   - protoc
   - grpc_test_util
-  uses_polling: false
 - name: xds_bootstrap_test
   gtest: true
   build: test
@@ -27320,7 +27160,6 @@ targets:
   deps:
   - gtest
   - grpc_test_util
-  uses_polling: false
 - name: xds_certificate_provider_test
   gtest: true
   build: test
@@ -27332,7 +27171,6 @@ targets:
   - gtest
   - absl/functional:overload
   - grpc_test_util
-  uses_polling: false
 - name: xds_client_test
   gtest: true
   build: test
@@ -27497,11 +27335,9 @@ targets:
   - absl/strings:internal
   - protobuf
   - grpc_test_util
-  uses_polling: false
 - name: xds_cluster_end2end_test
   gtest: true
   build: test
-  run: false
   language: c++
   headers:
   - test/core/test_util/fake_stats_plugin.h
@@ -27796,11 +27632,9 @@ targets:
   - absl/strings:internal
   - protobuf
   - grpc_test_util
-  uses_polling: false
 - name: xds_cluster_type_end2end_test
   gtest: true
   build: test
-  run: false
   language: c++
   headers:
   - test/core/test_util/scoped_env_var.h
@@ -28295,11 +28129,166 @@ targets:
   - grpc++
   - protoc
   - grpc_test_util
-  uses_polling: false
+- name: xds_composite_filter_end2end_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/test_util/scoped_env_var.h
+  - test/core/test_util/xds_http_add_header_filter.h
+  - test/cpp/end2end/counted_service.h
+  - test/cpp/end2end/test_service_impl.h
+  - test/cpp/end2end/xds/xds_end2end_test_lib.h
+  - test/cpp/end2end/xds/xds_server.h
+  - test/cpp/end2end/xds/xds_utils.h
+  - test/cpp/util/tls_test_utils.h
+  - third_party/protoc-gen-validate/validate/validate.h
+  src:
+  - src/proto/grpc/testing/duplicate/echo_duplicate.proto
+  - src/proto/grpc/testing/echo.proto
+  - src/proto/grpc/testing/echo_messages.proto
+  - src/proto/grpc/testing/simple_messages.proto
+  - third_party/cel-spec/proto/cel/expr/checked.proto
+  - third_party/cel-spec/proto/cel/expr/syntax.proto
+  - third_party/envoy-api/envoy/annotations/deprecation.proto
+  - third_party/envoy-api/envoy/annotations/resource.proto
+  - third_party/envoy-api/envoy/config/accesslog/v3/accesslog.proto
+  - third_party/envoy-api/envoy/config/cluster/v3/circuit_breaker.proto
+  - third_party/envoy-api/envoy/config/cluster/v3/cluster.proto
+  - third_party/envoy-api/envoy/config/cluster/v3/filter.proto
+  - third_party/envoy-api/envoy/config/cluster/v3/outlier_detection.proto
+  - third_party/envoy-api/envoy/config/common/matcher/v3/matcher.proto
+  - third_party/envoy-api/envoy/config/common/mutation_rules/v3/mutation_rules.proto
+  - third_party/envoy-api/envoy/config/core/v3/address.proto
+  - third_party/envoy-api/envoy/config/core/v3/backoff.proto
+  - third_party/envoy-api/envoy/config/core/v3/base.proto
+  - third_party/envoy-api/envoy/config/core/v3/cel.proto
+  - third_party/envoy-api/envoy/config/core/v3/config_source.proto
+  - third_party/envoy-api/envoy/config/core/v3/event_service_config.proto
+  - third_party/envoy-api/envoy/config/core/v3/extension.proto
+  - third_party/envoy-api/envoy/config/core/v3/grpc_method_list.proto
+  - third_party/envoy-api/envoy/config/core/v3/grpc_service.proto
+  - third_party/envoy-api/envoy/config/core/v3/health_check.proto
+  - third_party/envoy-api/envoy/config/core/v3/http_service.proto
+  - third_party/envoy-api/envoy/config/core/v3/http_uri.proto
+  - third_party/envoy-api/envoy/config/core/v3/protocol.proto
+  - third_party/envoy-api/envoy/config/core/v3/proxy_protocol.proto
+  - third_party/envoy-api/envoy/config/core/v3/resolver.proto
+  - third_party/envoy-api/envoy/config/core/v3/socket_cmsg_headers.proto
+  - third_party/envoy-api/envoy/config/core/v3/socket_option.proto
+  - third_party/envoy-api/envoy/config/core/v3/substitution_format_string.proto
+  - third_party/envoy-api/envoy/config/core/v3/udp_socket_config.proto
+  - third_party/envoy-api/envoy/config/endpoint/v3/endpoint.proto
+  - third_party/envoy-api/envoy/config/endpoint/v3/endpoint_components.proto
+  - third_party/envoy-api/envoy/config/endpoint/v3/load_report.proto
+  - third_party/envoy-api/envoy/config/listener/v3/api_listener.proto
+  - third_party/envoy-api/envoy/config/listener/v3/listener.proto
+  - third_party/envoy-api/envoy/config/listener/v3/listener_components.proto
+  - third_party/envoy-api/envoy/config/listener/v3/quic_config.proto
+  - third_party/envoy-api/envoy/config/listener/v3/udp_listener_config.proto
+  - third_party/envoy-api/envoy/config/rbac/v3/rbac.proto
+  - third_party/envoy-api/envoy/config/route/v3/route.proto
+  - third_party/envoy-api/envoy/config/route/v3/route_components.proto
+  - third_party/envoy-api/envoy/config/route/v3/scoped_route.proto
+  - third_party/envoy-api/envoy/config/trace/v3/datadog.proto
+  - third_party/envoy-api/envoy/config/trace/v3/dynamic_ot.proto
+  - third_party/envoy-api/envoy/config/trace/v3/http_tracer.proto
+  - third_party/envoy-api/envoy/config/trace/v3/lightstep.proto
+  - third_party/envoy-api/envoy/config/trace/v3/opentelemetry.proto
+  - third_party/envoy-api/envoy/config/trace/v3/service.proto
+  - third_party/envoy-api/envoy/config/trace/v3/skywalking.proto
+  - third_party/envoy-api/envoy/config/trace/v3/trace.proto
+  - third_party/envoy-api/envoy/config/trace/v3/xray.proto
+  - third_party/envoy-api/envoy/config/trace/v3/zipkin.proto
+  - third_party/envoy-api/envoy/data/accesslog/v3/accesslog.proto
+  - third_party/envoy-api/envoy/extensions/common/matching/v3/extension_matcher.proto
+  - third_party/envoy-api/envoy/extensions/filters/common/matcher/action/v3/skip_action.proto
+  - third_party/envoy-api/envoy/extensions/filters/http/composite/v3/composite.proto
+  - third_party/envoy-api/envoy/extensions/filters/http/rbac/v3/rbac.proto
+  - third_party/envoy-api/envoy/extensions/filters/http/router/v3/router.proto
+  - third_party/envoy-api/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.proto
+  - third_party/envoy-api/envoy/service/discovery/v3/ads.proto
+  - third_party/envoy-api/envoy/service/discovery/v3/discovery.proto
+  - third_party/envoy-api/envoy/service/load_stats/v3/lrs.proto
+  - third_party/envoy-api/envoy/type/http/v3/cookie.proto
+  - third_party/envoy-api/envoy/type/http/v3/path_transformation.proto
+  - third_party/envoy-api/envoy/type/matcher/v3/address.proto
+  - third_party/envoy-api/envoy/type/matcher/v3/filter_state.proto
+  - third_party/envoy-api/envoy/type/matcher/v3/http_inputs.proto
+  - third_party/envoy-api/envoy/type/matcher/v3/metadata.proto
+  - third_party/envoy-api/envoy/type/matcher/v3/node.proto
+  - third_party/envoy-api/envoy/type/matcher/v3/number.proto
+  - third_party/envoy-api/envoy/type/matcher/v3/path.proto
+  - third_party/envoy-api/envoy/type/matcher/v3/regex.proto
+  - third_party/envoy-api/envoy/type/matcher/v3/status_code_input.proto
+  - third_party/envoy-api/envoy/type/matcher/v3/string.proto
+  - third_party/envoy-api/envoy/type/matcher/v3/struct.proto
+  - third_party/envoy-api/envoy/type/matcher/v3/value.proto
+  - third_party/envoy-api/envoy/type/metadata/v3/metadata.proto
+  - third_party/envoy-api/envoy/type/tracing/v3/custom_tag.proto
+  - third_party/envoy-api/envoy/type/v3/hash_policy.proto
+  - third_party/envoy-api/envoy/type/v3/http.proto
+  - third_party/envoy-api/envoy/type/v3/http_status.proto
+  - third_party/envoy-api/envoy/type/v3/percent.proto
+  - third_party/envoy-api/envoy/type/v3/range.proto
+  - third_party/envoy-api/envoy/type/v3/ratelimit_strategy.proto
+  - third_party/envoy-api/envoy/type/v3/ratelimit_unit.proto
+  - third_party/envoy-api/envoy/type/v3/semantic_version.proto
+  - third_party/envoy-api/envoy/type/v3/token_bucket.proto
+  - third_party/googleapis/google/api/annotations.proto
+  - third_party/googleapis/google/api/expr/v1alpha1/checked.proto
+  - third_party/googleapis/google/api/expr/v1alpha1/syntax.proto
+  - third_party/googleapis/google/api/http.proto
+  - third_party/googleapis/google/api/httpbody.proto
+  - third_party/googleapis/google/rpc/status.proto
+  - third_party/protoc-gen-validate/validate/validate.proto
+  - third_party/xds/udpa/annotations/migrate.proto
+  - third_party/xds/udpa/annotations/security.proto
+  - third_party/xds/udpa/annotations/sensitive.proto
+  - third_party/xds/udpa/annotations/status.proto
+  - third_party/xds/udpa/annotations/versioning.proto
+  - third_party/xds/xds/annotations/v3/migrate.proto
+  - third_party/xds/xds/annotations/v3/security.proto
+  - third_party/xds/xds/annotations/v3/sensitive.proto
+  - third_party/xds/xds/annotations/v3/status.proto
+  - third_party/xds/xds/annotations/v3/versioning.proto
+  - third_party/xds/xds/core/v3/authority.proto
+  - third_party/xds/xds/core/v3/cidr.proto
+  - third_party/xds/xds/core/v3/collection_entry.proto
+  - third_party/xds/xds/core/v3/context_params.proto
+  - third_party/xds/xds/core/v3/extension.proto
+  - third_party/xds/xds/core/v3/resource.proto
+  - third_party/xds/xds/core/v3/resource_locator.proto
+  - third_party/xds/xds/core/v3/resource_name.proto
+  - third_party/xds/xds/data/orca/v3/orca_load_report.proto
+  - third_party/xds/xds/type/matcher/v3/cel.proto
+  - third_party/xds/xds/type/matcher/v3/domain.proto
+  - third_party/xds/xds/type/matcher/v3/http_inputs.proto
+  - third_party/xds/xds/type/matcher/v3/ip.proto
+  - third_party/xds/xds/type/matcher/v3/matcher.proto
+  - third_party/xds/xds/type/matcher/v3/range.proto
+  - third_party/xds/xds/type/matcher/v3/regex.proto
+  - third_party/xds/xds/type/matcher/v3/string.proto
+  - third_party/xds/xds/type/v3/cel.proto
+  - third_party/xds/xds/type/v3/range.proto
+  - third_party/xds/xds/type/v3/typed_struct.proto
+  - test/core/test_util/xds_http_add_header_filter.cc
+  - test/cpp/end2end/test_service_impl.cc
+  - test/cpp/end2end/xds/xds_composite_filter_end2end_test.cc
+  - test/cpp/end2end/xds/xds_end2end_test_lib.cc
+  - test/cpp/end2end/xds/xds_server.cc
+  - test/cpp/end2end/xds/xds_utils.cc
+  - test/cpp/util/tls_test_utils.cc
+  deps:
+  - gtest
+  - grpc++_test_util
+  platforms:
+  - linux
+  - posix
+  - mac
 - name: xds_core_end2end_test
   gtest: true
   build: test
-  run: false
   language: c++
   headers:
   - test/core/test_util/fake_stats_plugin.h
@@ -28657,7 +28646,6 @@ targets:
 - name: xds_enabled_server_end2end_test
   gtest: true
   build: test
-  run: false
   language: c++
   headers:
   - test/core/test_util/scoped_env_var.h
@@ -28895,7 +28883,6 @@ targets:
   - absl/strings:internal
   - protobuf
   - grpc_test_util
-  uses_polling: false
 - name: xds_fallback_end2end_test
   gtest: true
   build: test
@@ -29050,7 +29037,6 @@ targets:
 - name: xds_fault_injection_end2end_test
   gtest: true
   build: test
-  run: false
   language: c++
   headers:
   - test/cpp/end2end/counted_service.h
@@ -29202,7 +29188,6 @@ targets:
 - name: xds_gcp_authn_end2end_test
   gtest: true
   build: test
-  run: false
   language: c++
   headers:
   - test/cpp/end2end/counted_service.h
@@ -29526,6 +29511,7 @@ targets:
   - third_party/envoy-api/envoy/annotations/deprecation.proto
   - third_party/envoy-api/envoy/annotations/resource.proto
   - third_party/envoy-api/envoy/config/accesslog/v3/accesslog.proto
+  - third_party/envoy-api/envoy/config/common/matcher/v3/matcher.proto
   - third_party/envoy-api/envoy/config/common/mutation_rules/v3/mutation_rules.proto
   - third_party/envoy-api/envoy/config/core/v3/address.proto
   - third_party/envoy-api/envoy/config/core/v3/backoff.proto
@@ -29561,7 +29547,10 @@ targets:
   - third_party/envoy-api/envoy/config/trace/v3/xray.proto
   - third_party/envoy-api/envoy/config/trace/v3/zipkin.proto
   - third_party/envoy-api/envoy/data/accesslog/v3/accesslog.proto
+  - third_party/envoy-api/envoy/extensions/common/matching/v3/extension_matcher.proto
   - third_party/envoy-api/envoy/extensions/filters/common/fault/v3/fault.proto
+  - third_party/envoy-api/envoy/extensions/filters/common/matcher/action/v3/skip_action.proto
+  - third_party/envoy-api/envoy/extensions/filters/http/composite/v3/composite.proto
   - third_party/envoy-api/envoy/extensions/filters/http/fault/v3/fault.proto
   - third_party/envoy-api/envoy/extensions/filters/http/gcp_authn/v3/gcp_authn.proto
   - third_party/envoy-api/envoy/extensions/filters/http/rbac/v3/rbac.proto
@@ -29644,7 +29633,6 @@ targets:
   - grpc++
   - protoc
   - grpc_test_util
-  uses_polling: false
 - name: xds_lb_policy_registry_test
   gtest: true
   build: test
@@ -29774,7 +29762,6 @@ targets:
   - grpc++
   - protoc
   - grpc_test_util
-  uses_polling: false
 - name: xds_listener_resource_type_test
   gtest: true
   build: test
@@ -29920,7 +29907,6 @@ targets:
   - grpc++
   - protoc
   - grpc_test_util
-  uses_polling: false
 - name: xds_matcher_parse_test
   gtest: true
   build: test
@@ -30134,7 +30120,6 @@ targets:
   - gtest
   - protobuf
   - grpc_test_util
-  uses_polling: false
 - name: xds_matcher_test
   gtest: true
   build: test
@@ -30145,7 +30130,6 @@ targets:
   deps:
   - gtest
   - grpc_test_util
-  uses_polling: false
 - name: xds_metadata_test
   gtest: true
   build: test
@@ -30224,11 +30208,9 @@ targets:
   - gtest
   - protobuf
   - grpc_test_util
-  uses_polling: false
 - name: xds_outlier_detection_end2end_test
   gtest: true
   build: test
-  run: false
   language: c++
   headers:
   - test/cpp/end2end/counted_service.h
@@ -30541,7 +30523,6 @@ targets:
   deps:
   - gtest
   - grpc_test_util
-  uses_polling: false
 - name: xds_override_host_test
   gtest: true
   build: test
@@ -30559,7 +30540,6 @@ targets:
   - gtest
   - protobuf
   - grpc_test_util
-  uses_polling: false
 - name: xds_pick_first_end2end_test
   gtest: true
   build: test
@@ -30718,7 +30698,6 @@ targets:
 - name: xds_ring_hash_end2end_test
   gtest: true
   build: test
-  run: false
   language: c++
   headers:
   - test/core/test_util/scoped_env_var.h
@@ -31146,11 +31125,9 @@ targets:
   - grpc++
   - protoc
   - grpc_test_util
-  uses_polling: false
 - name: xds_routing_end2end_test
   gtest: true
   build: test
-  run: false
   language: c++
   headers:
   - test/core/test_util/scoped_env_var.h
@@ -31311,11 +31288,9 @@ targets:
   deps:
   - gtest
   - grpc_test_util
-  uses_polling: false
 - name: xds_security_end2end_test
   gtest: true
   build: test
-  run: false
   language: c++
   headers:
   - test/core/test_util/audit_logging_utils.h
