@@ -76,10 +76,12 @@ if [ -n "$KOKORO_GITHUB_PULL_REQUEST_TARGET_BRANCH" ]; then
   sort "$IMPACTED_TARGETS_PATH" | uniq | grep -v '^//external' > "$FILTERED_TARGETS_PATH" || true
   
   NUM_IMPACTED=$(wc -l < "$FILTERED_TARGETS_PATH" | tr -d ' ')
-  echo "[$NUM_IMPACTED] Impacted targets found."
+  # Calculate total targets for comparison
+  TOTAL_TARGETS=$("${BAZEL_PATH}" query //... 2>/dev/null | wc -l | tr -d ' ')
+  echo "[$NUM_IMPACTED/$TOTAL_TARGETS] Impacted targets found."
   TARGET_ARGS="--target_pattern_file=$FILTERED_TARGETS_PATH"
 else
-  TARGET_ARGS="//test/..."
+  TARGET_ARGS="-- //test/..."
 fi
 # --- END OF BAZEL-DIFF INTEGRATION ---
 
@@ -94,7 +96,7 @@ if [ -z "$KOKORO_GITHUB_PULL_REQUEST_TARGET_BRANCH" ] || [ -s "$FILTERED_TARGETS
     --google_credentials="${KOKORO_GFILE_DIR}/GrpcTesting-d0eeee2db331.json" \
     "${BAZEL_REMOTE_CACHE_ARGS[@]}" \
     $BAZEL_FLAGS \
-    -- ${TARGET_ARGS}
+    ${TARGET_ARGS}
 else
   echo "Skipping main bazel tests because bazel-diff reported no impacted targets."
 fi
