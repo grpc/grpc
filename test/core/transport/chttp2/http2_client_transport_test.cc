@@ -72,8 +72,8 @@ using ::testing::StrictMock;
 
 constexpr absl::string_view kConnectionClosed = "Connection closed";
 constexpr absl::string_view kPeerString =
-    "PeerString: ipv4:127.0.0.1:12345, :path: "
-    "/demo.Service/Step, GrpcStatusFromWire: true";
+    ":path: /demo.Service/Step, PeerString: ipv4:127.0.0.1:12345, "
+    "GrpcStatusFromWire: true";
 
 using EventSequenceEndpoint = util::testing::EventSequenceEndpoint;
 
