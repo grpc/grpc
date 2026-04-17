@@ -186,4 +186,5 @@ fuzz-*.log
 third_party/**/MODULE.bazel
 MODULE.bazel.lock
 
+# openssl files
 openssl*/*
