@@ -67,7 +67,7 @@ void PythonOpenCensusCallTracer::RecordAnnotation(
   if (!context_.GetSpanContext().IsSampled()) {
     return;
   }
-  context_.AddSpanAnnotation(annotation);
+  context_.AddSpanEvent(annotation);
 }
 
 void PythonOpenCensusCallTracer::RecordAnnotation(
@@ -81,7 +81,8 @@ void PythonOpenCensusCallTracer::RecordAnnotation(
     // is being sampled by default.
     default:
       if (IsSampled()) {
-        context_.AddSpanAnnotation(annotation.ToString());
+        const auto annotation_str = annotation.ToString();
+        context_.AddSpanEvent(annotation_str);
       }
       break;
   }
@@ -103,6 +104,7 @@ PythonOpenCensusCallTracer::~PythonOpenCensusCallTracer() {
   }
 
   if (tracing_enabled_) {
+    context_.GetSpan().SetStatus(StatusCodeToString(status_code_));
     context_.EndSpan();
     if (IsSampled()) {
       RecordSpan(context_.GetSpan().ToCensusData());
@@ -211,13 +213,69 @@ void PythonOpenCensusCallTracer::PythonOpenCensusCallAttemptTracer::
 }
 
 void PythonOpenCensusCallTracer::PythonOpenCensusCallAttemptTracer::
-    RecordSendMessage(const grpc_core::Message& /*send_message*/) {
-  ++sent_message_count_;
+    RecordSendMessage(const grpc_core::Message& send_message) {
+  if (!context_.GetSpanContext().IsSampled()) {
+    return;
+  }
+  std::vector<std::pair<absl::string_view, absl::string_view>> attributes{};
+  attributes.reserve(2);
+  const auto sent_message_count_str = absl::StrCat(sent_message_count_++);
+  attributes.emplace_back("sequence-number", sent_message_count_str);
+  const auto message_size_str = absl::StrCat(send_message.payload()->Length());
+  attributes.emplace_back("message-size", message_size_str);
+  context_.AddSpanEvent("Outbound message", attributes);
 }
 
 void PythonOpenCensusCallTracer::PythonOpenCensusCallAttemptTracer::
-    RecordReceivedMessage(const grpc_core::Message& /*recv_message*/) {
-  ++recv_message_count_;
+    RecordSendCompressedMessage(
+        const grpc_core::Message& send_compressed_message) {
+  if (!context_.GetSpanContext().IsSampled()) {
+    return;
+  }
+  std::vector<std::pair<absl::string_view, absl::string_view>> attributes{};
+  attributes.reserve(2);
+  const auto sent_message_count_str = absl::StrCat(sent_message_count_ - 1);
+  attributes.emplace_back("sequence-number", sent_message_count_str);
+  const auto message_size_str =
+      absl::StrCat(send_compressed_message.payload()->Length());
+  attributes.emplace_back("message-size-compressed", message_size_str);
+  context_.AddSpanEvent("Outbound message compressed", attributes);
+}
+
+void PythonOpenCensusCallTracer::PythonOpenCensusCallAttemptTracer::
+    RecordReceivedMessage(const grpc_core::Message& recv_message) {
+  if (!context_.GetSpanContext().IsSampled()) {
+    return;
+  }
+  std::vector<std::pair<absl::string_view, absl::string_view>> attributes{};
+  attributes.reserve(2);
+  const auto recv_message_count_str = absl::StrCat(recv_message_count_++);
+  attributes.emplace_back("sequence-number", recv_message_count_str);
+  const auto message_size_str = absl::StrCat(recv_message.payload()->Length());
+  const bool is_compressed =
+      (recv_message.flags() & GRPC_WRITE_INTERNAL_COMPRESS) != 0;
+  attributes.emplace_back(
+      is_compressed ? "message-size-compressed" : "message-size",
+      message_size_str);
+  context_.AddSpanEvent(
+      is_compressed ? "Inbound compressed message" : "Inbound message",
+      attributes);
+}
+
+void PythonOpenCensusCallTracer::PythonOpenCensusCallAttemptTracer::
+    RecordReceivedDecompressedMessage(
+        const grpc_core::Message& recv_decompressed_message) {
+  if (!context_.GetSpanContext().IsSampled()) {
+    return;
+  }
+  std::vector<std::pair<absl::string_view, absl::string_view>> attributes{};
+  attributes.reserve(2);
+  const auto recv_message_count_str = absl::StrCat(recv_message_count_ - 1);
+  attributes.emplace_back("sequence-number", recv_message_count_str);
+  const auto message_size_str =
+      absl::StrCat(recv_decompressed_message.payload()->Length());
+  attributes.emplace_back("message-size", message_size_str);
+  context_.AddSpanEvent("Inbound message", attributes);
 }
 
 std::shared_ptr<grpc_core::TcpCallTracer> PythonOpenCensusCallTracer::
@@ -265,7 +323,7 @@ void PythonOpenCensusCallTracer::PythonOpenCensusCallAttemptTracer::
     labels_from_peer_ =
         parent_->labels_injector_.GetExchangeLabels(recv_trailing_metadata);
   }
-  auto status_code_ = status.code();
+  status_code_ = status.code();
   uint64_t elapsed_time = 0;
   if (recv_trailing_metadata != nullptr) {
     elapsed_time = GetElapsedTimeFromTrailingMetadata(recv_trailing_metadata);
@@ -349,13 +407,13 @@ void PythonOpenCensusCallTracer::PythonOpenCensusCallAttemptTracer::
   }
 
   if (parent_->tracing_enabled_) {
-    if (status_code_ != absl::StatusCode::kOk) {
-      context_.GetSpan().SetStatus(StatusCodeToString(status_code_));
-    }
+    context_.GetSpan().SetStatus(StatusCodeToString(status_code_));
     context_.EndSpan();
     if (IsSampled()) {
       RecordSpan(context_.GetSpan().ToCensusData());
     }
+    grpc_core::MutexLock lock(&parent_->mu_);
+    parent_->status_code_ = status_code_;
   }
 
   // After RecordEnd, Core will make no further usage of this CallAttemptTracer,
@@ -368,7 +426,7 @@ void PythonOpenCensusCallTracer::PythonOpenCensusCallAttemptTracer::
   if (!context_.GetSpanContext().IsSampled()) {
     return;
   }
-  context_.AddSpanAnnotation(annotation);
+  context_.AddSpanEvent(annotation);
 }
 
 void PythonOpenCensusCallTracer::PythonOpenCensusCallAttemptTracer::
@@ -388,7 +446,8 @@ void PythonOpenCensusCallTracer::PythonOpenCensusCallAttemptTracer::
     // is being sampled by default.
     default:
       if (IsSampled()) {
-        context_.AddSpanAnnotation(annotation.ToString());
+        const auto annotation_str = annotation.ToString();
+        context_.AddSpanEvent(annotation_str);
       }
       break;
   }
