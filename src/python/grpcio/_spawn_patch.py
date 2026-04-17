@@ -62,7 +62,7 @@ def _commandfile_spawn(self, command, **kwargs):
                 # a time.
                 new_command.extend(["/TP", arg[3:]])
             elif arg.startswith("/Tc") and len(arg) > 3:
-                new_command.extend(["/TP", arg[3:]])
+                new_command.extend(["/TC", arg[3:]])
             #   /Zc:preprocessor:
             #      This is not supported by ccache but needed for protobuf 33.5
             #      See also https://github.com/grpc/grpc/issues/41951
