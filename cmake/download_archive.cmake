@@ -18,10 +18,14 @@ file(MAKE_DIRECTORY ${_download_archive_TEMPORARY_DIR})
 # This is basically Bazel's http_archive.
 # Note that strip_prefix strips the directory path prefix of the extracted
 # archive content, and it may strip multiple directories.
-function(download_archive destination url hash strip_prefix)
+function(download_archive destination url fallback_url hash strip_prefix)
   # Fetch and validate
   set(_TEMPORARY_FILE ${_download_archive_TEMPORARY_DIR}/${strip_prefix}.tar.gz)
   message(STATUS "Downloading from ${url}, if failed, please try configuring again")
+  execute_process(COMMAND
+                  ${CMAKE_CURRENT_SOURCE_DIR}/download_with_fallback.sh ${url} ${fallback_url} ${_TEMPORARY_FILE} ${hash}
+                  WORKING_DIRECTORY ${_download_archive_TEMPORARY_DIR}
+                  OUTPUT_QUIET)
   file(DOWNLOAD ${url} ${_TEMPORARY_FILE}
        TIMEOUT 60
        EXPECTED_HASH SHA256=${hash}
