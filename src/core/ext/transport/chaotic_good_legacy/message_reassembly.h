@@ -36,6 +36,12 @@ class MessageReassembly {
         CancelledServerMetadataFromStatus(GRPC_STATUS_INTERNAL, msg));
   }
 
+  // Sets the maximum allowed incoming message size in bytes.
+  // Should reflect GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH for the channel.
+  void set_max_receive_message_length(size_t max) {
+    max_receive_message_length_ = max;
+  }
+
   template <typename Sink>
   auto PushFrameInto(MessageFrame frame, Sink& sink) {
     return If(
@@ -59,7 +65,7 @@ class MessageReassembly {
     } else if (frame.body.length() == 0) {
       FailCall(sink,
                "Received begin message for an empty message (not allowed)");
-    } else if (frame.body.length() > std::numeric_limits<size_t>::max() / 2) {
+    } else if (frame.body.length() > max_receive_message_length_) {
       FailCall(sink, "Received too large begin message");
     } else {
       GRPC_TRACE_LOG(chaotic_good, INFO)
@@ -105,6 +111,11 @@ class MessageReassembly {
   bool in_message_boundary() { return chunk_receiver_ == nullptr; }
 
  private:
+  // Maximum allowed incoming message size. Defaults to 4 GiB as a hard
+  // safety ceiling to prevent unbounded heap allocation; callers must lower
+  // this to GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH for the channel.
+  size_t max_receive_message_length_ = std::numeric_limits<uint32_t>::max();
+
   struct ChunkReceiver {
     size_t bytes_remaining;
     SliceBuffer incoming;
