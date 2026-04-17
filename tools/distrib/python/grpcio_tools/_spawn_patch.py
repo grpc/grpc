@@ -48,6 +48,16 @@ def _commandfile_spawn(self, command, **kwargs):
 
     if use_ccache:
         command = [arg for arg in command if arg != "/Zc:preprocessor"]
+        # Workaround for ccache 4.8 not recognizing /Tp<file> or /Tc<file>
+        new_command = []
+        for arg in command:
+            if arg.startswith("/Tp") and len(arg) > 3:
+                new_command.extend(["/Tp", arg[3:]])
+            elif arg.startswith("/Tc") and len(arg) > 3:
+                new_command.extend(["/Tc", arg[3:]])
+            else:
+                new_command.append(arg)
+        command = new_command
 
     command_length = sum([len(arg) for arg in command])
     if os.name == "nt" and command_length > MAX_COMMAND_LENGTH:
