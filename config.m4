@@ -1486,9 +1486,10 @@ if test "$PHP_GRPC" != "no"; then
     third_party/upb/upb/text/encode.c \
     third_party/upb/upb/text/internal/encode.c \
     third_party/upb/upb/wire/decode.c \
+    third_party/upb/upb/wire/decode_fast/select.c \
     third_party/upb/upb/wire/encode.c \
     third_party/upb/upb/wire/eps_copy_input_stream.c \
-    third_party/upb/upb/wire/internal/decode_fast.c \
+    third_party/upb/upb/wire/internal/decoder.c \
     third_party/upb/upb/wire/reader.c \
     third_party/utf8_range/utf8_range.c \
     , $ext_shared, , -fvisibility=hidden \
@@ -1829,6 +1830,7 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/upb/upb/text)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/upb/upb/text/internal)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/upb/upb/wire)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/upb/upb/wire/decode_fast)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/upb/upb/wire/internal)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/utf8_range)
 fi

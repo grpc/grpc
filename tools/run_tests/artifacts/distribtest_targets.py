@@ -21,6 +21,8 @@ import sys
 sys.path.insert(0, os.path.abspath(".."))
 import python_utils.jobset as jobset
 
+REPORT_BASE_PATH = os.getenv("GRPC_TEST_REPORT_BASE_DIR", os.path.abspath("."))
+
 
 def create_docker_jobspec(
     name,
@@ -54,6 +56,9 @@ def create_docker_jobspec(
         timeout_seconds=timeout_seconds,
         flake_retries=flake_retries,
         timeout_retries=timeout_retries,
+        logfilename=os.path.abspath(
+            f"{REPORT_BASE_PATH}/reports/distribtest.{name}.log"
+        ),
     )
     return jobspec
 
@@ -84,6 +89,9 @@ def create_jobspec(
         flake_retries=flake_retries,
         timeout_retries=timeout_retries,
         shell=shell,
+        logfilename=os.path.abspath(
+            f"{REPORT_BASE_PATH}/reports/distribtest.{name}.log"
+        ),
     )
     return jobspec
 
@@ -505,7 +513,6 @@ def targets():
             "debian11",
             ruby_version="ruby_3_2",
             source=True,
-            presubmit=True,
         ),
         RubyDistribTest(
             "linux-gnu",
@@ -519,14 +526,12 @@ def targets():
             "x64",
             "debian11",
             ruby_version="ruby_3_2",
-            presubmit=True,
         ),
         RubyDistribTest(
             "linux-gnu",
             "x64",
             "debian11",
             ruby_version="ruby_3_3",
-            presubmit=True,
         ),
         RubyDistribTest(
             "linux-gnu",
@@ -534,14 +539,12 @@ def targets():
             "debian11",
             ruby_version="ruby_3_3",
             protobuf_version="3.25",
-            presubmit=True,
         ),
         RubyDistribTest(
             "linux-gnu",
             "x64",
             "debian11",
             ruby_version="ruby_3_4",
-            presubmit=True,
         ),
         RubyDistribTest(
             "linux-gnu",
@@ -564,21 +567,18 @@ def targets():
             "x64",
             "alpine",
             ruby_version="ruby_3_2",
-            presubmit=True,
         ),
         RubyDistribTest(
             "linux-musl",
             "x64",
             "alpine",
             ruby_version="ruby_3_3",
-            presubmit=True,
         ),
         RubyDistribTest(
             "linux-musl",
             "x64",
             "alpine",
             ruby_version="ruby_3_4",
-            presubmit=True,
         ),
         RubyDistribTest(
             "linux-musl",

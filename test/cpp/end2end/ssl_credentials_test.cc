@@ -91,6 +91,7 @@ void DoRpc(const std::string& server_addr,
   ChannelArguments channel_args;
   channel_args.SetPointer(std::string(GRPC_SSL_SESSION_CACHE_ARG), cache);
   channel_args.SetSslTargetNameOverride("foo.test.google.fr");
+  channel_args.SetInt(GRPC_ARG_USE_LOCAL_SUBCHANNEL_POOL, 1);
 
   std::shared_ptr<Channel> channel = grpc::CreateCustomChannel(
       server_addr, grpc::SslCredentials(ssl_options), channel_args);

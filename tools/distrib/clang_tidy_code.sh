@@ -23,7 +23,8 @@ REPO_ROOT=$(pwd)
 
 # grep targets with manual tag, which is not included in a result of bazel build using ...
 # let's get a list of them using query command and pass it to gen_compilation_database.py
-export MANUAL_TARGETS=$(bazel query 'attr("tags", "manual", tests(//test/cpp/...))' | grep -v _on_ios)
+# Exclude all manuall targets with .exe suffix since they're supposed to be built only on windows.
+export MANUAL_TARGETS=$(bazel query 'attr("tags", "manual", tests(//test/cpp/...))' | grep -v _on_ios | grep -v "\.exe$")
 
 # generate a clang compilation database for all C/C++ sources in the repo.
 tools/distrib/gen_compilation_database.py \

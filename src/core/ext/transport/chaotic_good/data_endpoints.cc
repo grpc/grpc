@@ -90,20 +90,24 @@ OutputBuffers::Reader::PollReadNext() {
   while (true) {
     GRPC_LATENT_SEE_SCOPE("OutputBuffers::PollReadNext::loop");
     if (frames_.empty()) {
+      bool call_wakeup = false;
       if (!reading_) {
         reading_ = true;
-        output_buffers_->WakeupScheduler();
+        call_wakeup = true;
       }
       waker_ = GetContext<Activity>()->MakeNonOwningWaker();
       mu_.Unlock();
+      if (call_wakeup) {
+        output_buffers_->WakeupScheduler();
+      }
       return Pending{};
     }
     DCHECK(!reading_);
     auto frames = std::move(frames_);
     frames_.clear();
     send_rate_.DequeueFromReader(output_buffers_->clock_->Now());
-    output_buffers_->WakeupScheduler(/*async=*/true);
     mu_.Unlock();
+    output_buffers_->WakeupScheduler(/*async=*/true);
     return std::move(frames);
   }
 }
@@ -360,7 +364,7 @@ void SecureFrameQueue::Write(SliceBuffer buffer) {
   TcpDataFrameHeader{0, 0, frame_length}.Serialize(slice.data());
   if (header_padding != 0) {
     memset(slice.data() + TcpDataFrameHeader::kFrameHeaderSize, 0,
-           frame_padding);
+           header_padding);
   }
   all_frames_.Append(Slice(std::move(slice)));
   all_frames_.TakeAndAppend(buffer);

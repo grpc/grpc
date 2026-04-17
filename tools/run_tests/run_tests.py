@@ -1283,7 +1283,7 @@ class Sanity:
             # test suite's timeout, see _create_test_jobs in run_tests_matrix.py
             return [
                 self.config.job_spec(
-                    cmd["script"].split(),
+                    cmd["script"].split() + self.args.script_args,
                     timeout_seconds=80 * 60,
                     environ=environ,
                     cpu_cost=cmd.get("cpu_cost", 1),
@@ -1846,6 +1846,12 @@ argp.add_argument(
     default=[],
     action="append",
     help="Extra arguments that will be passed to the cmake configure command. Only works for C/C++.",
+)
+argp.add_argument(
+    "--script_args",
+    default=[],
+    action="append",
+    help="Extra arguments passed to test script. Currently only supported for sanity scripts. Can be used multiple times.",
 )
 args = argp.parse_args()
 

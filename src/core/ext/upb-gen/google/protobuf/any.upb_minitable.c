@@ -22,16 +22,10 @@ static const upb_MiniTableField google_protobuf_Any__fields[2] = {
 const upb_MiniTable google__protobuf__Any_msg_init = {
   NULL,
   &google_protobuf_Any__fields[0],
-  UPB_SIZE(24, 40), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
+  UPB_SIZE(24, 40), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "google.protobuf.Any",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x000800003f00000a, &upb_pss_1bt},
-    {0x001800003f000012, &upb_psb_1bt},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-  })
 };
 
 const upb_MiniTable* google__protobuf__Any_msg_init_ptr = &google__protobuf__Any_msg_init;
