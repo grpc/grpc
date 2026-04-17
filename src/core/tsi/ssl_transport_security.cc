@@ -504,20 +504,9 @@ static void verified_root_cert_free(void* /*parent*/, void* ptr,
 
 static void init_openssl(void) {
 #if OPENSSL_VERSION_NUMBER >= 0x30000000L
+// OpenSSL 3.0+ handles initialization automatically.
+// We don't need to register an atexit handler if we don't call OPENSSL_cleanup().
   OPENSSL_init_ssl(OPENSSL_INIT_NO_ATEXIT, nullptr);
-  std::atexit([]() {
-    std::optional<std::string> env =
-        grpc_core::GetEnv(GRPC_ARG_OPENSSL_CLEANUP_TIMEOUT_ENV);
-    int timeout_sec = 2;
-    if (env.has_value()) {
-      int parsed_timeout_sec = 0;
-      if (absl::SimpleAtoi(*env, &parsed_timeout_sec)) {
-        timeout_sec = parsed_timeout_sec;
-      }
-    }
-    grpc_wait_for_shutdown_with_timeout(absl::Seconds(timeout_sec));
-    // In 3.0, we generally do NOT call OPENSSL_cleanup() manually.
-  });
 #elif OPENSSL_VERSION_NUMBER >= 0x10101000L
   OPENSSL_init_ssl(OPENSSL_INIT_NO_ATEXIT, nullptr);
   std::atexit([]() {
