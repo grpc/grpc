@@ -72,13 +72,12 @@ if [ -n "$KOKORO_GITHUB_PULL_REQUEST_TARGET_BRANCH" ]; then
   # Get impacted targets
   java -jar /tmp/bazel-diff.jar get-impacted-targets -sh "$STARTING_HASHES_JSON" -fh "$FINAL_HASHES_JSON" -o "$IMPACTED_TARGETS_PATH" -w "$WORKSPACE_PATH"
   
-  # Remove external targets and duplicates
-  # Also filter to only include test targets to avoid trying to "test" source files or non-test targets.
+  # Filter to only include targets in //test/...
   # Use --skip_incompatible_explicit_targets to avoid failures from incompatible targets.
-  sort "$IMPACTED_TARGETS_PATH" | uniq | grep -v '^//external' > "$FILTERED_TARGETS_PATH" || true
+  grep '^//test/' "$IMPACTED_TARGETS_PATH" | sort | uniq > "$FILTERED_TARGETS_PATH" || true
   
   NUM_IMPACTED=$(wc -l < "$FILTERED_TARGETS_PATH" | tr -d ' ')
-  echo "[$NUM_IMPACTED] Impacted targets found."
+  echo "[$NUM_IMPACTED] Impacted test targets found in //test/..."
   TARGET_ARGS="--target_pattern_file=$FILTERED_TARGETS_PATH"
 else
   TARGET_ARGS="-- //test/..."
