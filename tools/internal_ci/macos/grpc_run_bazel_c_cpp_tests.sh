@@ -40,17 +40,58 @@ BAZEL_REMOTE_CACHE_ARGS=(
   --remote_default_exec_properties="grpc_cache_silo_key2=${KOKORO_IMAGE_VERSION}"
 )
 
+# --- START OF BAZEL-DIFF INTEGRATION ---
+FILTERED_TARGETS_PATH="/tmp/filtered_targets.txt"
+if [ -n "$KOKORO_GITHUB_PULL_REQUEST_TARGET_BRANCH" ]; then
+  echo "PR context detected: Using bazel-diff to determine impacted targets."
+  curl -Lo /tmp/bazel-diff.jar https://github.com/Tinder/bazel-diff/releases/latest/download/bazel-diff_deploy.jar
+  
+  WORKSPACE_PATH=$(git rev-parse --show-toplevel)
+  BAZEL_PATH="${WORKSPACE_PATH}/tools/bazel"
+  PREVIOUS_REV="origin/$KOKORO_GITHUB_PULL_REQUEST_TARGET_BRANCH"
+  FINAL_REV="HEAD"
+  
+  STARTING_HASHES_JSON="/tmp/starting_hashes.json"
+  FINAL_HASHES_JSON="/tmp/final_hashes.json"
+  IMPACTED_TARGETS_PATH="/tmp/impacted_targets.txt"
+
+  # Generate hashes for base revision
+  git -C "$WORKSPACE_PATH" checkout "$PREVIOUS_REV" --quiet
+  java -jar /tmp/bazel-diff.jar generate-hashes -w "$WORKSPACE_PATH" -b "$BAZEL_PATH" "$STARTING_HASHES_JSON"
+
+  # Generate hashes for PR revision
+  git -C "$WORKSPACE_PATH" checkout - --quiet # checkout previous branch (HEAD)
+  java -jar /tmp/bazel-diff.jar generate-hashes -w "$WORKSPACE_PATH" -b "$BAZEL_PATH" "$FINAL_HASHES_JSON"
+
+  # Get impacted targets
+  java -jar /tmp/bazel-diff.jar get-impacted-targets -sh "$STARTING_HASHES_JSON" -fh "$FINAL_HASHES_JSON" -o "$IMPACTED_TARGETS_PATH" -w "$WORKSPACE_PATH"
+  
+  # Remove external targets and duplicates
+  sort "$IMPACTED_TARGETS_PATH" | uniq | grep -v '^//external' > "$FILTERED_TARGETS_PATH" || true
+  
+  NUM_IMPACTED=$(wc -l < "$FILTERED_TARGETS_PATH" | tr -d ' ')
+  echo "[$NUM_IMPACTED] Impacted targets found."
+  TARGET_ARGS="--target_pattern_file=$FILTERED_TARGETS_PATH"
+else
+  TARGET_ARGS="//test/..."
+fi
+# --- END OF BAZEL-DIFF INTEGRATION ---
+
 python3 tools/run_tests/python_utils/bazel_report_helper.py --report_path bazel_c_cpp_tests
 
 # run all C/C++ tests
-bazel_c_cpp_tests/bazel_wrapper \
-  --output_base=.bazel_rbe \
-  --bazelrc=tools/remote_build/mac.bazelrc \
-  test \
-  --google_credentials="${KOKORO_GFILE_DIR}/GrpcTesting-d0eeee2db331.json" \
-  "${BAZEL_REMOTE_CACHE_ARGS[@]}" \
-  $BAZEL_FLAGS \
-  -- //test/...
+if [ -z "$KOKORO_GITHUB_PULL_REQUEST_TARGET_BRANCH" ] || [ -s "$FILTERED_TARGETS_PATH" ]; then
+  bazel_c_cpp_tests/bazel_wrapper \
+    --output_base=.bazel_rbe \
+    --bazelrc=tools/remote_build/mac.bazelrc \
+    test \
+    --google_credentials="${KOKORO_GFILE_DIR}/GrpcTesting-d0eeee2db331.json" \
+    "${BAZEL_REMOTE_CACHE_ARGS[@]}" \
+    $BAZEL_FLAGS \
+    -- ${TARGET_ARGS}
+else
+  echo "Skipping main bazel tests because bazel-diff reported no impacted targets."
+fi
 
 # run end2end tests with GRPC_CFSTREAM=1
 
