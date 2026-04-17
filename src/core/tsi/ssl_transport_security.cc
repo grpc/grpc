@@ -504,8 +504,9 @@ static void verified_root_cert_free(void* /*parent*/, void* ptr,
 
 static void init_openssl(void) {
 #if OPENSSL_VERSION_NUMBER >= 0x30000000L
-// OpenSSL 3.0+ handles initialization automatically.
-// We don't need to register an atexit handler if we don't call OPENSSL_cleanup().
+  // OpenSSL 3.0+ handles initialization automatically.
+  // We don't need to register an atexit handler if we don't call
+  // OPENSSL_cleanup().
   OPENSSL_init_ssl(OPENSSL_INIT_NO_ATEXIT, nullptr);
 #elif OPENSSL_VERSION_NUMBER >= 0x10101000L
   OPENSSL_init_ssl(OPENSSL_INIT_NO_ATEXIT, nullptr);

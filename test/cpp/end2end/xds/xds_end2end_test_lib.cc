@@ -905,7 +905,8 @@ std::string XdsEnd2endTest::MakeTlsHandshakeFailureRegex(
       "(Failed to connect to remote host: )?"
       // Tls handshake failure
       "Tls handshake failed \\(TSI_PROTOCOL_FAILURE\\): SSL_ERROR_SSL: "
-      "error:[0-9A-Fa-f]{8}:SSL routines:[^:]*:(CERTIFICATE_VERIFY_FAILED|certificate verify failed)"
+      "error:[0-9A-Fa-f]{8}:SSL "
+      "routines:[^:]*:(CERTIFICATE_VERIFY_FAILED|certificate verify failed)"
       // Detailed reason for certificate verify failure
       "(: .*)?");
 }
