@@ -55,6 +55,9 @@ if [ -n "$KOKORO_GITHUB_PULL_REQUEST_TARGET_BRANCH" ]; then
   FINAL_HASHES_JSON="/tmp/final_hashes.json"
   IMPACTED_TARGETS_PATH="/tmp/impacted_targets.txt"
 
+  # Stash any local changes (e.g. made by Kokoro setup) before switching branches
+  git -C "$WORKSPACE_PATH" stash || true
+
   # Generate hashes for base revision
   git -C "$WORKSPACE_PATH" checkout "$PREVIOUS_REV" --quiet
   java -jar /tmp/bazel-diff.jar generate-hashes -w "$WORKSPACE_PATH" -b "$BAZEL_PATH" "$STARTING_HASHES_JSON"
@@ -62,6 +65,9 @@ if [ -n "$KOKORO_GITHUB_PULL_REQUEST_TARGET_BRANCH" ]; then
   # Generate hashes for PR revision
   git -C "$WORKSPACE_PATH" checkout - --quiet # checkout previous branch (HEAD)
   java -jar /tmp/bazel-diff.jar generate-hashes -w "$WORKSPACE_PATH" -b "$BAZEL_PATH" "$FINAL_HASHES_JSON"
+
+  # Restore stashed changes
+  git -C "$WORKSPACE_PATH" stash pop || true
 
   # Get impacted targets
   java -jar /tmp/bazel-diff.jar get-impacted-targets -sh "$STARTING_HASHES_JSON" -fh "$FINAL_HASHES_JSON" -o "$IMPACTED_TARGETS_PATH" -w "$WORKSPACE_PATH"
