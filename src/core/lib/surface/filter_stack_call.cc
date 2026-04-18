@@ -111,6 +111,9 @@ grpc_error_handle FilterStackCall::Create(grpc_call_create_args* args,
   RefCountedPtr<Arena> arena = channel->call_arena_allocator()->MakeArena();
   arena->SetContext<grpc_event_engine::experimental::EventEngine>(
       args->channel->event_engine());
+  if (args->arena_init_function.has_value()) {
+    args->arena_init_function.value()(arena.get());
+  }
   call = new (arena->Alloc(call_alloc_size)) FilterStackCall(arena, *args);
   GRPC_DCHECK(FromC(call->c_ptr()) == call);
   GRPC_DCHECK(FromCallStack(call->call_stack()) == call);
