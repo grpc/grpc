@@ -61,6 +61,6 @@ gcloud firebase test android run \
 
 # Build hello world example
 cd "${REPO_ROOT}/examples/android/helloworld"
-./gradlew build \
+./gradlew assembleDebug \
     "-Pprotoc=${PROTOC}" \
     "-Pgrpc_cpp_plugin=${PLUGIN}"

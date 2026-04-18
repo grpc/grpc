@@ -31,10 +31,11 @@ android {
                 arguments '-Dhelloworld_GRPC_CPP_PLUGIN_EXECUTABLE=' + grpc_cpp_plugin
                 arguments '-Dprotobuf_INSTALL=OFF'
                 arguments '-Dutf8_range_ENABLE_INSTALL=OFF'
+                arguments '-DgRPC_BUILD_TESTS=OFF'
                 version "3.22.1"
             }
         }
-        ndk.abiFilters 'x86'
+        ndk { abiFilters 'arm64-v8a' }
     }
     buildTypes {
         debug {
