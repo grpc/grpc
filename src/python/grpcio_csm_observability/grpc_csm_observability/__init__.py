@@ -15,4 +15,10 @@ from grpc_csm_observability._csm_observability_plugin import (
     CsmOpenTelemetryPlugin,
 )
 
+try:
+    # pylint: disable=ungrouped-imports
+    from grpc_csm_observability._grpcio_metadata import __version__
+except ImportError:
+    __version__ = "dev0"
+
 __all__ = ("CsmOpenTelemetryPlugin",)

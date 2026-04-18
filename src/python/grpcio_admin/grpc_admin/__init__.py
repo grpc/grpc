@@ -16,6 +16,12 @@
 from grpc_channelz.v1 import channelz
 import grpc_csds
 
+try:
+    # pylint: disable=ungrouped-imports
+    from grpc_admin._grpcio_metadata import __version__
+except ImportError:
+    __version__ = "dev0"
+
 
 def add_admin_servicers(server):
     """Register admin servicers to a server.
