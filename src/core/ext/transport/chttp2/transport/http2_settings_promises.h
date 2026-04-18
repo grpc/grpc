@@ -23,6 +23,7 @@
 #include <grpc/support/port_platform.h>
 
 #include <algorithm>
+#include <cstddef>
 #include <cstdint>
 #include <optional>
 #include <string>
@@ -269,11 +270,11 @@ class SettingsPromiseManager final : public RefCounted<SettingsPromiseManager> {
     return settings_.ChannelzProperties().SetColumn(
         "Counters",
         channelz::PropertyList().Set("initial_window_size_increase_count",
-                                     initial_window_size_increase_count_));
+                                     num_peer_initial_window_size_increases_));
   }
 
   void IncrementInitialWindowSizeIncreaseCount() {
-    ++initial_window_size_increase_count_;
+    ++num_peer_initial_window_size_increases_;
   }
 
   bool IsSecurityFrameExpected() const {
@@ -430,8 +431,11 @@ class SettingsPromiseManager final : public RefCounted<SettingsPromiseManager> {
   };
   SettingsState state_;
 
-  // Counters
-  size_t initial_window_size_increase_count_ = 0;
+  // Number of times the peer has increased the initial window size. Currently,
+  // PH2 handles this by iterating over all the active streams to potentially
+  // make them writable. This is tracked via channelz in case it causes any
+  // performance issues in the future.
+  size_t num_peer_initial_window_size_increases_ = 0;
 };
 
 }  // namespace grpc_core
