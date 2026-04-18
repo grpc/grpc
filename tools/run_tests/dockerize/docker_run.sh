@@ -42,6 +42,8 @@ then
   ln -s "${EXTERNAL_GIT_ROOT}/${OUTPUT_DIR}" "${OUTPUT_DIR}"
 fi
 
+source tools/internal_ci/helper_scripts/print_ccache_stats.sh
+
 exit_code=0
 ${DOCKER_RUN_SCRIPT_COMMAND} || exit_code=$?
 

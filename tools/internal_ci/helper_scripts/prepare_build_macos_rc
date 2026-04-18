@@ -67,8 +67,13 @@ if $is_sonoma; then
   brew install cmake
   brew install gnupg
   brew install ccache
+  # TODO: test only
+  brew install redis
+
   export PATH="/opt/homebrew/bin::${PATH}"
   cmake --version
+  redis-cli --version
+  redis-cli -t 10 -h 10.76.145.84 ping
 fi
 
 # Add GCP credentials for BQ access

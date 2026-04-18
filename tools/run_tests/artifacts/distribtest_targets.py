@@ -33,6 +33,7 @@ def create_docker_jobspec(
     timeout_retries=0,
     copy_rel_path=None,
     timeout_seconds=30 * 60,
+    verbose_success=True,
 ):
     """Creates jobspec for a task running under docker."""
     environ = environ.copy()
@@ -72,6 +73,7 @@ def create_jobspec(
     timeout_retries=0,
     use_workspace=False,
     timeout_seconds=10 * 60,
+    verbose_success=True,
 ):
     """Creates jobspec."""
     environ = environ.copy()

@@ -15,8 +15,10 @@
 
 set -ex
 
+echo "PS4=${PS4}"
 # change to grpc repo root
 cd "$(dirname "$0")/../../.."
+echo "PATH=${PATH}"
 
 ##########################
 # Portability operations #
@@ -106,6 +108,10 @@ echo "query --override_repository=${BAZEL_DEP_NAME}=${BAZEL_DEP_PATH}" >> "tools
 PYTHON=${1:-python2.7}
 VENV=${2:-$(venv "$PYTHON")}
 VENV_RELATIVE_PYTHON=${3:-$(venv_relative_python)}
+if [ "$(is_mingw)" ]; then
+  echo "Using mingw, adding ccache to PATH"
+  export PATH="/c/ccache:${PATH}"
+fi
 
 if [ "$(is_msys)" ]; then
   echo "MSYS doesn't directly provide the right compiler(s);"
@@ -126,6 +132,8 @@ export GRPC_PYTHON_BUILD_EXT_COMPILER_JOBS=${GRPC_PYTHON_BUILD_EXT_COMPILER_JOBS
 # activate ccache if desired
 # shellcheck disable=SC1091
 source tools/internal_ci/helper_scripts/prepare_ccache_symlinks_rc
+
+source tools/internal_ci/helper_scripts/print_ccache_stats.sh
 
 ############################
 # Perform build operations #
@@ -156,7 +164,7 @@ pip_install_dir() {
   local workdir
   workdir="$(pwd)"
   cd "$1"
-  "${VENV_PYTHON}" -m pip install --no-deps --no-build-isolation .
+  "${VENV_PYTHON}" -m pip install --no-deps --no-build-isolation . -vvv
   cd "${workdir}"
 }
 
@@ -179,6 +187,7 @@ then
 fi
 
 pip_install_dir "$ROOT"
+exit 1
 
 $VENV_PYTHON "$ROOT/tools/distrib/python/make_grpcio_tools.py"
 pip_install_dir_and_deps "$ROOT/tools/distrib/python/grpcio_tools"

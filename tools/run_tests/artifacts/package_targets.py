@@ -30,6 +30,7 @@ def create_docker_jobspec(
     environ={},
     flake_retries=0,
     timeout_retries=0,
+    verbose_success=True,
 ):
     """Creates jobspec for a task running under docker."""
     environ = environ.copy()
@@ -67,6 +68,7 @@ def create_jobspec(
     flake_retries=0,
     timeout_retries=0,
     cpu_cost=1.0,
+    verbose_success=True,
 ):
     """Creates jobspec."""
     jobspec = jobset.JobSpec(

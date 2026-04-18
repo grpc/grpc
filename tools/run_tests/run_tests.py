@@ -46,6 +46,8 @@ gcp_utils_dir = os.path.abspath(
 )
 sys.path.append(gcp_utils_dir)
 
+REPORT_BASE_PATH = os.getenv("GRPC_TEST_REPORT_BASE_DIR", os.path.abspath("."))
+
 _ROOT = os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]), "../.."))
 os.chdir(_ROOT)
 
@@ -151,6 +153,9 @@ class Config:
                 self.timeout_multiplier * timeout_seconds
                 if timeout_seconds
                 else None
+            ),
+            logfilename=os.path.abspath(
+                f"{REPORT_BASE_PATH}/reports/{self.build_config}.sponge_log.log"
             ),
             flake_retries=4 if flaky or args.allow_flakes else 0,
             timeout_retries=1 if flaky or args.allow_flakes else 0,
@@ -1774,6 +1779,13 @@ argp.add_argument(
     help="Perform all the build steps but don't run any tests.",
 )
 argp.add_argument(
+    "--build_verbose_success",
+    default=True,
+    action="store_const",
+    const=True,
+    help="Print the build output on success",
+)
+argp.add_argument(
     "--measure_cpu_costs",
     default=False,
     action="store_const",
@@ -1869,13 +1881,19 @@ jobset.measure_cpu_costs = args.measure_cpu_costs
 run_config = _CONFIGS[args.config]
 build_config = run_config.build_config
 
-languages = set(_LANGUAGES[l] for l in args.language)
-for l in languages:
-    l.configure(run_config, args)
+def _configure_languages():
+    language_names = list(set(l for l in args.language))
+    languages = [_LANGUAGES[l] for l in language_names]
 
-if len(languages) != 1:
-    print("Building multiple languages simultaneously is not supported!")
-    sys.exit(1)
+    for l in languages:
+        l.configure(run_config, args)
+
+    if len(languages) != 1:
+        print("Building multiple languages simultaneously is not supported!")
+        sys.exit(1)
+    return languages, language_names
+
+languages, language_names = _configure_languages()
 
 # If --use_docker was used, respawn the run_tests.py script under a docker container
 # instead of continuing.
@@ -1921,6 +1939,12 @@ if args.use_docker:
 
 _check_arch_option(args.arch)
 
+def _gen_logfile_name(stage, language_name, cmdline):
+    script = os.path.basename(cmdline[0])
+    return os.path.abspath(
+        f"{REPORT_BASE_PATH}/reports/{language_name}-{build_config}/{stage}/{script}.sponge_log.log"
+    )
+
 # collect pre-build steps (which get retried if they fail, e.g. to avoid
 # flakes on downloading dependencies etc.)
 build_steps = list(
@@ -1928,13 +1952,18 @@ build_steps = list(
         jobset.JobSpec(
             cmdline,
             environ=_build_step_environ(
-                build_config, extra_env=l.build_steps_environ()
+                build_config, extra_env=language.build_steps_environ()
             ),
             timeout_seconds=_PRE_BUILD_STEP_TIMEOUT_SECONDS,
+            logfilename=_gen_logfile_name(
+                stage="pre_build_steps",
+                language_name=language_name,
+                cmdline=cmdline,
+            ),
             flake_retries=2,
         )
-        for l in languages
-        for cmdline in l.pre_build_steps()
+        for language, language_name in zip(languages, language_names)
+        for cmdline in language.pre_build_steps()
     )
 )
 
@@ -1944,12 +1973,17 @@ build_steps.extend(
         jobset.JobSpec(
             cmdline,
             environ=_build_step_environ(
-                build_config, extra_env=l.build_steps_environ()
+                build_config, extra_env=language.build_steps_environ()
+            ),
+            logfilename=_gen_logfile_name(
+                stage="pre_build_steps",
+                language_name=language_name,
+                cmdline=cmdline,
             ),
             timeout_seconds=None,
         )
-        for l in languages
-        for cmdline in l.build_steps()
+        for language, language_name in zip(languages, language_names)
+        for cmdline in language.build_steps()
     )
 )
 
@@ -1959,11 +1993,17 @@ post_tests_steps = list(
         jobset.JobSpec(
             cmdline,
             environ=_build_step_environ(
-                build_config, extra_env=l.build_steps_environ()
+                build_config, extra_env=language.build_steps_environ()
             ),
+            logfilename=_gen_logfile_name(
+                stage="post_build_steps",
+                language_name=language_name,
+                cmdline=cmdline,
+            ),
+            verbose_success=args.build_verbose_success or False,
         )
-        for l in languages
-        for cmdline in l.post_tests_steps()
+        for language, language_name in zip(languages, language_names)
+        for cmdline in language.post_tests_steps()
     )
 )
 runs_per_test = args.runs_per_test

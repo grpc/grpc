@@ -54,6 +54,8 @@ tools/run_tests/task_runner.py -f distribtest linux ruby ${TASK_RUNNER_EXTRA_FIL
 
 tools/internal_ci/helper_scripts/store_artifacts_from_moved_src_tree.sh
 
+source tools/internal_ci/helper_scripts/print_ccache_stats.sh
+
 if [ "$FAILED" != "" ]
 then
   exit 1

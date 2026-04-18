@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright 2016 gRPC authors.
+# Copyright 2026 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,12 +13,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-set -ex
-
-PS4='${BASH_SOURCE}:${LINENO}+ '
-BUILD_PYTHON=$(realpath "$(dirname "$0")/build_python.sh")
-export MSYSTEM=$1
-shift 1
-source tools/internal_ci/helper_scripts/print_ccache_stats.sh
-echo "PATH=${PATH}"
-bash --login "$BUILD_PYTHON" "$@"
+echo "============TEST LOG: ${0} ==================================="
+echo "PATH: ${PATH}"
+echo "GRPC_BUILD_ENABLE_CCACHE: ${GRPC_BUILD_ENABLE_CCACHE}"
+echo "CCACHE_BINARY_PATH: ${CCACHE_BINARY_PATH}"
+echo "CCACHE_SECONDARY_STORAGE: ${CCACHE_SECONDARY_STORAGE}"
+if [ -x "$(command -v ccache)" ]
+then
+  ccache --show-stats || true
+fi
