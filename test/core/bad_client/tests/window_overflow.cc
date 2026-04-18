@@ -14,6 +14,7 @@
 
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
+#include <gtest/gtest.h>
 #include <stdint.h>
 #include <string.h>
 

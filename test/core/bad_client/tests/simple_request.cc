@@ -14,6 +14,7 @@
 
 #include <grpc/grpc.h>
 #include <grpc/slice.h>
+#include <gtest/gtest.h>
 
 #include "src/core/server/server.h"
 #include "src/core/util/grpc_check.h"
