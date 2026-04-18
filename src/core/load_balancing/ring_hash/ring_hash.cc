@@ -69,6 +69,7 @@
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
+#include "src/core/lib/address_utils/parse_address.h"
 
 namespace grpc_core {
 
@@ -454,8 +455,15 @@ RingHash::Ring::Ring(RingHash* ring_hash, RingHashLbConfig* config) {
     if (hash_key.has_value()) {
       endpoint_weight.hash_key = std::string(*hash_key);
     } else {
+      auto uri = grpc_core::URI::Parse(endpoint.addresses().front());
+      CHECK(uri.ok()) << "Failed to parse URI: " << endpoint.addresses().front()
+                      << " with status: " << uri.status();
+                      grpc_resolved_address resolved_addr;
+      CHECK(grpc_parse_uri(*uri, &resolved_addr))
+          << "Failed to convert URI to resolved address: "
+          << endpoint.addresses().front();
       endpoint_weight.hash_key =
-          grpc_sockaddr_to_string(&endpoint.addresses().front(), false).value();
+          grpc_sockaddr_to_string(&resolved_addr, false).value();
     }
     // Weight should never be zero, but ignore it just in case, since
     // that value would screw up the ring-building algorithm.

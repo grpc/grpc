@@ -156,9 +156,8 @@ TEST_F(XdsEndpointTest, MinimumValidConfig) {
   EXPECT_EQ(locality.lb_weight, 1);
   ASSERT_EQ(locality.endpoints.size(), 1);
   const auto& address = locality.endpoints.front();
-  auto addr = grpc_sockaddr_to_string(&address.address(), /*normalize=*/false);
-  ASSERT_TRUE(addr.ok()) << addr.status();
-  EXPECT_EQ(*addr, "127.0.0.1:443");
+  auto addr = address.address();
+  EXPECT_EQ(addr, "ipv4:127.0.0.1:443");
   EXPECT_EQ(address.args(), ChannelArgs()
                                 .Set(GRPC_ARG_ADDRESS_WEIGHT, 1)
                                 .Set(GRPC_ARG_XDS_HEALTH_STATUS,
@@ -202,9 +201,8 @@ TEST_F(XdsEndpointTest, EndpointWeight) {
   EXPECT_EQ(locality.lb_weight, 1);
   ASSERT_EQ(locality.endpoints.size(), 1);
   const auto& address = locality.endpoints.front();
-  auto addr = grpc_sockaddr_to_string(&address.address(), /*normalize=*/false);
-  ASSERT_TRUE(addr.ok()) << addr.status();
-  EXPECT_EQ(*addr, "127.0.0.1:443");
+  auto addr = address.address();
+  EXPECT_EQ(addr, "ipv4:127.0.0.1:443");
   EXPECT_EQ(address.args(), ChannelArgs()
                                 .Set(GRPC_ARG_ADDRESS_WEIGHT, 3)
                                 .Set(GRPC_ARG_XDS_HEALTH_STATUS,
@@ -250,9 +248,8 @@ TEST_F(XdsEndpointTest, IgnoresLocalityWithNoWeight) {
   EXPECT_EQ(locality.lb_weight, 1);
   ASSERT_EQ(locality.endpoints.size(), 1);
   const auto& address = locality.endpoints.front();
-  auto addr = grpc_sockaddr_to_string(&address.address(), /*normalize=*/false);
-  ASSERT_TRUE(addr.ok()) << addr.status();
-  EXPECT_EQ(*addr, "127.0.0.1:443");
+  auto addr = address.address();
+  EXPECT_EQ(addr, "ipv4:127.0.0.1:443");
   EXPECT_EQ(address.args(), ChannelArgs()
                                 .Set(GRPC_ARG_ADDRESS_WEIGHT, 1)
                                 .Set(GRPC_ARG_XDS_HEALTH_STATUS,
@@ -299,9 +296,8 @@ TEST_F(XdsEndpointTest, IgnoresLocalityWithZeroWeight) {
   EXPECT_EQ(locality.lb_weight, 1);
   ASSERT_EQ(locality.endpoints.size(), 1);
   const auto& address = locality.endpoints.front();
-  auto addr = grpc_sockaddr_to_string(&address.address(), /*normalize=*/false);
-  ASSERT_TRUE(addr.ok()) << addr.status();
-  EXPECT_EQ(*addr, "127.0.0.1:443");
+  auto addr = address.address();
+  EXPECT_EQ(addr, "ipv4:127.0.0.1:443");
   EXPECT_EQ(address.args(), ChannelArgs()
                                 .Set(GRPC_ARG_ADDRESS_WEIGHT, 1)
                                 .Set(GRPC_ARG_XDS_HEALTH_STATUS,
@@ -522,13 +518,10 @@ TEST_F(XdsEndpointTest, MultipleAddressesPerEndpoint) {
   ASSERT_EQ(locality.endpoints.size(), 1);
   const auto& endpoint = locality.endpoints.front();
   ASSERT_EQ(endpoint.addresses().size(), 2);
-  auto addr =
-      grpc_sockaddr_to_string(&endpoint.addresses()[0], /*normalize=*/false);
-  ASSERT_TRUE(addr.ok()) << addr.status();
-  EXPECT_EQ(*addr, "127.0.0.1:443");
-  addr = grpc_sockaddr_to_string(&endpoint.addresses()[1], /*normalize=*/false);
-  ASSERT_TRUE(addr.ok()) << addr.status();
-  EXPECT_EQ(*addr, "127.0.0.1:444");
+  auto addr = endpoint.addresses()[0];
+  EXPECT_EQ(addr, "ipv4:127.0.0.1:443");
+  addr = endpoint.addresses()[1];
+  EXPECT_EQ(addr, "ipv4:127.0.0.1:444");
   EXPECT_EQ(endpoint.args(), ChannelArgs()
                                  .Set(GRPC_ARG_ADDRESS_WEIGHT, 1)
                                  .Set(GRPC_ARG_XDS_HEALTH_STATUS,
@@ -709,10 +702,8 @@ TEST_F(XdsEndpointTest, IgnoresMultipleAddressesPerEndpointWhenDisabled) {
   ASSERT_EQ(locality.endpoints.size(), 1);
   const auto& endpoint = locality.endpoints.front();
   ASSERT_EQ(endpoint.addresses().size(), 1);
-  auto addr =
-      grpc_sockaddr_to_string(&endpoint.addresses()[0], /*normalize=*/false);
-  ASSERT_TRUE(addr.ok()) << addr.status();
-  EXPECT_EQ(*addr, "127.0.0.1:443");
+  auto addr = endpoint.addresses()[0];
+  EXPECT_EQ(addr, "ipv4:127.0.0.1:443");
   EXPECT_EQ(endpoint.args(), ChannelArgs()
                                  .Set(GRPC_ARG_ADDRESS_WEIGHT, 1)
                                  .Set(GRPC_ARG_XDS_HEALTH_STATUS,
@@ -755,9 +746,8 @@ TEST_F(XdsEndpointTest, EndpointHostname) {
   EXPECT_EQ(locality.lb_weight, 1);
   ASSERT_EQ(locality.endpoints.size(), 1);
   const auto& address = locality.endpoints.front();
-  auto addr = grpc_sockaddr_to_string(&address.address(), /*normalize=*/false);
-  ASSERT_TRUE(addr.ok()) << addr.status();
-  EXPECT_EQ(*addr, "127.0.0.1:443");
+  auto addr = address.address();
+  EXPECT_EQ(addr, "ipv4:127.0.0.1:443");
   EXPECT_EQ(address.args(),
             ChannelArgs()
                 .Set(GRPC_ARG_ADDRESS_WEIGHT, 1)
@@ -1238,15 +1228,13 @@ TEST_F(XdsEndpointTest, EndpointHealthStatus) {
   EXPECT_EQ(locality.lb_weight, 1);
   ASSERT_EQ(locality.endpoints.size(), 2);
   const auto* address = &locality.endpoints[0];
-  auto addr = grpc_sockaddr_to_string(&address->address(), /*normalize=*/false);
-  ASSERT_TRUE(addr.ok()) << addr.status();
-  EXPECT_EQ(*addr, "127.0.0.1:443");
+  auto addr = address->address();
+  EXPECT_EQ(addr, "ipv4:127.0.0.1:443");
   EXPECT_EQ(address->args().GetInt(GRPC_ARG_XDS_HEALTH_STATUS),
             XdsHealthStatus::kUnknown);
   address = &locality.endpoints[1];
-  addr = grpc_sockaddr_to_string(&address->address(), /*normalize=*/false);
-  ASSERT_TRUE(addr.ok()) << addr.status();
-  EXPECT_EQ(*addr, "127.0.0.2:443");
+  addr = address->address();
+  EXPECT_EQ(addr, "ipv4:127.0.0.2:443");
   EXPECT_EQ(address->args().GetInt(GRPC_ARG_XDS_HEALTH_STATUS),
             XdsHealthStatus::kDraining);
 }
@@ -1296,9 +1284,8 @@ TEST_F(XdsEndpointTest, HttpProxyInEndpoint) {
   EXPECT_EQ(locality.lb_weight, 1);
   ASSERT_EQ(locality.endpoints.size(), 1);
   const auto& address = locality.endpoints.front();
-  auto addr = grpc_sockaddr_to_string(&address.address(), /*normalize=*/false);
-  ASSERT_TRUE(addr.ok()) << addr.status();
-  EXPECT_EQ(*addr, "127.0.0.1:443");
+  auto addr = address.address();
+  EXPECT_EQ(addr, "ipv4:127.0.0.1:443");
   EXPECT_EQ(address.args(), ChannelArgs()
                                 .Set(GRPC_ARG_ADDRESS_WEIGHT, 1)
                                 .Set(GRPC_ARG_XDS_HEALTH_STATUS,
@@ -1352,9 +1339,8 @@ TEST_F(XdsEndpointTest, HttpProxyInLocality) {
   EXPECT_EQ(locality.lb_weight, 1);
   ASSERT_EQ(locality.endpoints.size(), 1);
   const auto& address = locality.endpoints.front();
-  auto addr = grpc_sockaddr_to_string(&address.address(), /*normalize=*/false);
-  ASSERT_TRUE(addr.ok()) << addr.status();
-  EXPECT_EQ(*addr, "127.0.0.1:443");
+  auto addr = address.address();
+  EXPECT_EQ(addr, "ipv4:127.0.0.1:443");
   EXPECT_EQ(address.args(), ChannelArgs()
                                 .Set(GRPC_ARG_ADDRESS_WEIGHT, 1)
                                 .Set(GRPC_ARG_XDS_HEALTH_STATUS,
@@ -1415,9 +1401,8 @@ TEST_F(XdsEndpointTest, HttpProxyEndpointSupercedesLocality) {
   EXPECT_EQ(locality.lb_weight, 1);
   ASSERT_EQ(locality.endpoints.size(), 1);
   const auto& address = locality.endpoints.front();
-  auto addr = grpc_sockaddr_to_string(&address.address(), /*normalize=*/false);
-  ASSERT_TRUE(addr.ok()) << addr.status();
-  EXPECT_EQ(*addr, "127.0.0.1:443");
+  auto addr = address.address();
+  EXPECT_EQ(addr, "ipv4:127.0.0.1:443");
   EXPECT_EQ(address.args(), ChannelArgs()
                                 .Set(GRPC_ARG_ADDRESS_WEIGHT, 1)
                                 .Set(GRPC_ARG_XDS_HEALTH_STATUS,
@@ -1477,9 +1462,8 @@ TEST_F(XdsEndpointTest, HttpProxyIgnoredIfNotEnabled) {
   EXPECT_EQ(locality.lb_weight, 1);
   ASSERT_EQ(locality.endpoints.size(), 1);
   const auto& address = locality.endpoints.front();
-  auto addr = grpc_sockaddr_to_string(&address.address(), /*normalize=*/false);
-  ASSERT_TRUE(addr.ok()) << addr.status();
-  EXPECT_EQ(*addr, "127.0.0.1:443");
+  auto addr = address.address();
+  EXPECT_EQ(addr, "ipv4:127.0.0.1:443");
   EXPECT_EQ(address.args(), ChannelArgs()
                                 .Set(GRPC_ARG_ADDRESS_WEIGHT, 1)
                                 .Set(GRPC_ARG_XDS_HEALTH_STATUS,

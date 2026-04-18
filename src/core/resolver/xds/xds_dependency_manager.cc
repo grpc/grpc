@@ -605,7 +605,7 @@ void XdsDependencyManager::PopulateDnsUpdate(const std::string& dns_name,
   locality.name = MakeRefCounted<XdsLocalityName>("", "", "");
   locality.lb_weight = 1;
   if (result.addresses.ok()) {
-    std::vector<grpc_resolved_address> addresses;
+    std::vector<std::string> addresses;
     ChannelArgs address_args = result.addresses->front().args();
     for (const auto& address : *result.addresses) {
       GRPC_CHECK_EQ(address.addresses().size(), 1UL);

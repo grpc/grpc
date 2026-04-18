@@ -145,7 +145,7 @@ class BackendMetricsLbPolicy : public LoadBalancingPolicy {
         : ParentOwningDelegatingChannelControlHelper(std::move(parent)) {}
 
     RefCountedPtr<grpc_core::SubchannelInterface> CreateSubchannel(
-        const grpc_resolved_address& address,
+        const std::string& address,
         const grpc_core::ChannelArgs& per_address_args,
         const grpc_core::ChannelArgs& args) override {
       auto subchannel =

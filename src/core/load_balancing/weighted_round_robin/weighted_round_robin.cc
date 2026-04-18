@@ -265,7 +265,7 @@ class WeightedRoundRobin final : public LoadBalancingPolicy {
       };
 
       RefCountedPtr<SubchannelInterface> CreateSubchannel(
-          const grpc_resolved_address& address,
+          const std::string& address,
           const ChannelArgs& per_address_args,
           const ChannelArgs& args) override;
 
@@ -396,7 +396,7 @@ class WeightedRoundRobin final : public LoadBalancingPolicy {
   void ShutdownLocked() override;
 
   RefCountedPtr<EndpointWeight> GetOrCreateWeight(
-      const std::vector<grpc_resolved_address>& addresses);
+      const std::vector<std::string>& addresses);
 
   RefCountedPtr<WeightedRoundRobinConfig> config_;
 
@@ -797,7 +797,7 @@ absl::Status WeightedRoundRobin::UpdateLocked(UpdateArgs args) {
 
 RefCountedPtr<WeightedRoundRobin::EndpointWeight>
 WeightedRoundRobin::GetOrCreateWeight(
-    const std::vector<grpc_resolved_address>& addresses) {
+    const std::vector<std::string>& addresses) {
   EndpointAddressSet key(addresses);
   MutexLock lock(&endpoint_weight_map_mu_);
   auto it = endpoint_weight_map_.find(key);
@@ -831,7 +831,7 @@ void WeightedRoundRobin::WrrEndpointList::WrrEndpoint::OobWatcher::
 
 RefCountedPtr<SubchannelInterface>
 WeightedRoundRobin::WrrEndpointList::WrrEndpoint::CreateSubchannel(
-    const grpc_resolved_address& address, const ChannelArgs& per_address_args,
+    const std::string& address, const ChannelArgs& per_address_args,
     const ChannelArgs& args) {
   auto* wrr = policy<WeightedRoundRobin>();
   auto subchannel = wrr->channel_control_helper()->CreateSubchannel(

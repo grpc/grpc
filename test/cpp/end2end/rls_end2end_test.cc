@@ -1375,7 +1375,7 @@ TEST_F(RlsEnd2endTest, ConnectivityStateTransientFailure) {
                                     BuildRlsResponse({"invalid_target"}));
   CheckRpcSendFailure(
       DEBUG_LOCATION, StatusCode::UNAVAILABLE,
-      "empty address list (no address in fixed_address_lb policy)",
+      "empty address list",
       RpcOptions().set_metadata({{"key1", kTestValue}}));
   EXPECT_EQ(rls_server_->service_.request_count(), 1);
   EXPECT_EQ(rls_server_->service_.response_count(), 1);

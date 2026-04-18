@@ -71,9 +71,7 @@ class ClusterTypeTest : public XdsEnd2endTest {
       absl::StatusOr<grpc_core::URI> lb_uri =
           grpc_core::URI::Parse(grpc_core::LocalIpUri(port));
       GRPC_CHECK_OK(lb_uri);
-      grpc_resolved_address address;
-      GRPC_CHECK(grpc_parse_uri(*lb_uri, &address));
-      addresses.emplace_back(address, grpc_core::ChannelArgs());
+      addresses.emplace_back(lb_uri->ToString(), grpc_core::ChannelArgs());
     }
     return addresses;
   }

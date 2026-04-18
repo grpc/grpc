@@ -850,6 +850,7 @@ grpc_cc_test(
         "//src/core:grpc_fake_credentials",
         "//src/core:grpc_service_config",
         "//src/core:notification",
+        "//src/core:resolved_address",
         "//src/core:time",
         "//src/proto/grpc/channelz/v2:channelz_cc_proto",
         "//src/proto/grpc/channelz/v2:property_list_cc_proto",
