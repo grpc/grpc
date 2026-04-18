@@ -28,6 +28,9 @@ cd /d %~dp0\..\..\..
 set PREPARE_BUILD_INSTALL_DEPS_PYTHON=true
 call tools/internal_ci/helper_scripts/prepare_build_windows.bat || exit /b 1
 
+@rem Consume 6GB of RAM in the background to starve the build processes
+start python -c "import time; a = [bytearray(1024*1024) for _ in range(114000)]; print('Allocated 120GB'); time.sleep(3600)"
+
 @rem Build all python windows artifacts
 python tools/run_tests/task_runner.py -f artifact windows python %TASK_RUNNER_EXTRA_FILTERS% -j 3 --inner_jobs 2 -x build_artifacts_python/sponge_log.xml || set FAILED=true
 
