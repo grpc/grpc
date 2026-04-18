@@ -4595,6 +4595,30 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "grpc_tls_certificate_selector",
+    srcs = [
+        "credentials/transport/tls/grpc_tls_certificate_selector.cc",
+    ],
+    hdrs = [
+        "credentials/transport/tls/grpc_tls_certificate_selector.h",
+    ],
+    external_deps = [
+        "absl/status",
+        "absl/status:statusor",
+        "absl/functional:any_invocable",
+        "absl/strings",
+        "libcrypto",
+        "libssl",
+    ],
+    deps = [
+        "grpc_check",
+        "match",
+        "status_helper",
+        "//:grpc_public_hdrs",
+    ],
+)
+
+grpc_cc_library(
     name = "grpc_fake_credentials",
     srcs = [
         "credentials/transport/fake/fake_credentials.cc",
@@ -4886,6 +4910,7 @@ grpc_cc_library(
         "absl/functional:bind_front",
         "absl/log",
         "absl/status",
+        "absl/functional:any_invocable",
         "absl/status:statusor",
         "absl/strings",
         "libcrypto",
