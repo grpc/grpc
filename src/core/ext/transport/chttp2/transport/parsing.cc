@@ -582,7 +582,7 @@ static grpc_error_handle init_data_frame_parser(grpc_chttp2_transport* t) {
     return init_non_header_skip_frame_parser(t);
   }
   status =
-      grpc_chttp2_data_parser_begin_frame(t->incoming_frame_flags, s->id, s);
+      grpc_chttp2_data_parser_begin_frame(t, t->incoming_frame_flags, s->id, s);
 error_handler:
   if (status.ok()) {
     t->incoming_stream = s;
