@@ -370,7 +370,8 @@ std::vector<CoreTestConfiguration> End2endTestConfigs() {
           "Chttp2FullstackUdsAbstractNamespace",
           FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL | FEATURE_MASK_IS_HTTP2 |
               FEATURE_MASK_DO_NOT_FUZZ |
-              FEATURE_MASK_EXCLUDE_FROM_EXPERIMENT_RUNS,
+              FEATURE_MASK_EXCLUDE_FROM_EXPERIMENT_RUNS |
+              FEATURE_MASK_IS_FULLSTACK_UDS,
           nullptr,
           [](const ChannelArgs&, const ChannelArgs&) {
             gpr_timespec now = gpr_now(GPR_CLOCK_REALTIME);
@@ -385,7 +386,7 @@ std::vector<CoreTestConfiguration> End2endTestConfigs() {
       CoreTestConfiguration{
           "Chttp2FullstackUds",
           FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL | FEATURE_MASK_IS_HTTP2 |
-              FEATURE_MASK_DO_NOT_FUZZ,
+              FEATURE_MASK_DO_NOT_FUZZ | FEATURE_MASK_IS_FULLSTACK_UDS,
           nullptr,
           [](const ChannelArgs&, const ChannelArgs&) {
             gpr_timespec now = gpr_now(GPR_CLOCK_REALTIME);
