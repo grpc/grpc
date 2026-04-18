@@ -33,6 +33,9 @@
 #define GRPCPP_COMPLETION_QUEUE_H
 
 #include <grpc/grpc.h>
+#ifdef GPR_SUPPORT_CHANNELS_FROM_FD
+#include <grpc/grpc_posix.h>
+#endif
 #include <grpc/support/atm.h>
 #include <grpc/support/time.h>
 #include <grpcpp/impl/codegen/rpc_service_method.h>
@@ -237,6 +240,24 @@ class CompletionQueue : private grpc::internal::GrpcLibrary {
   /// Also note that applications must ensure that no work is enqueued on this
   /// completion queue after this method is called.
   void Shutdown();
+
+#ifdef GPR_SUPPORT_CHANNELS_FROM_FD
+  /// EXPERIMENTAL
+  /// Set a file descriptor that will be signaled via write() whenever an
+  /// event is enqueued to this completion queue. A single uint64_t value
+  /// of 1 is written, compatible with eventfd(2) and ordinary pipes.
+  ///
+  /// This allows integrating this completion queue into an external event
+  /// loop (epoll, poll, select) without a dedicated thread blocked on
+  /// Next(). Pass -1 to disable (the default).
+  ///
+  /// The fd must be non-blocking. Ownership is NOT transferred; the caller
+  /// must close it after this CompletionQueue is destroyed.
+  /// Must be called before the queue is polled. POSIX-only.
+  void SetNotifyFd(int fd) {
+    grpc_completion_queue_set_notify_fd(cq_, fd);
+  }
+#endif  // GPR_SUPPORT_CHANNELS_FROM_FD
 
   /// Returns a \em raw pointer to the underlying \a grpc_completion_queue
   /// instance.
