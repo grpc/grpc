@@ -282,8 +282,9 @@ AresResolver::AresResolver(
 AresResolver::~AresResolver() {
   GRPC_CHECK(fd_node_list_.empty());
   GRPC_CHECK(callback_map_.empty());
-  GRPC_CHECK_NE(channel_, nullptr);
-  ares_destroy(channel_);
+  if (channel_ != nullptr) {
+    ares_destroy(channel_);
+  }
 }
 
 void AresResolver::Orphan() {

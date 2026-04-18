@@ -505,6 +505,32 @@ grpc_cc_library(
 )
 
 grpc_cc_test(
+    name = "ares_resolver_fork_safety_test",
+    srcs = ["ares_resolver_fork_safety_test.cc"],
+    copts = ["-DGRPC_ENABLE_FORK_SUPPORT"],
+    external_deps = [
+        "gtest",
+        "absl/status",
+        "absl/status:statusor",
+    ],
+    tags = [
+        "no_windows",
+    ],
+    uses_event_engine = True,
+    uses_polling = True,
+    deps = [
+        ":dns_server",
+        "//:event_engine_base_hdrs",
+        "//:gpr_platform",
+        "//:grpc",
+        "//src/core:ares_resolver",
+        "//src/core:notification",
+        "//src/core:posix_event_engine",
+        "//test/core/test_util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
     name = "dns_fork_test",
     srcs = ["dns_fork_test.cc"],
     external_deps = [
