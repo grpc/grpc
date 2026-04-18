@@ -1420,6 +1420,20 @@ _BUILD_EXTRA_METADATA = {
         "_TYPE": "target",
         "_RENAME": "interop_server",
     },
+    "test/core/bad_ssl:bad_ssl_alpn_server": {
+        "language": "c++",
+        "build": "test",
+        "run": False,
+        "_TYPE": "target",
+        "_RENAME": "bad_ssl_alpn_server",
+    },
+    "test/core/bad_ssl:bad_ssl_cert_server": {
+        "language": "c++",
+        "build": "test",
+        "run": False,
+        "_TYPE": "target",
+        "_RENAME": "bad_ssl_cert_server",
+    },
     # TODO(stanleycheung): re-enable this after cmake support for otel is added
     # "test/cpp/interop:xds_interop_client": {
     #     "language": "c++",
