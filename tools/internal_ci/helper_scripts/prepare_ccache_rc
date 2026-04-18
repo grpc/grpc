@@ -18,5 +18,11 @@
 # Allow use of ccache in builds that support that.
 export GRPC_BUILD_ENABLE_CCACHE=true
 
+# Add sloppiness to increase ccache hit rate by ignoring certain variations
+export CCACHE_SLOPPINESS=file_macro,time_macros,include_file_mtime,include_file_ctime,random_seed
+
 # Redis instance housed in grpc-testing cloud project serves as the main compiler cache
-export CCACHE_SECONDARY_STORAGE=redis://10.76.145.84:6379
+# Internal GCP IP is not reachable from MACOS_EXTERNAL cluster.
+if [[ "$(uname)" != "Darwin" ]]; then
+  export CCACHE_SECONDARY_STORAGE=redis://10.76.145.84:6379
+fi
