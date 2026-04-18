@@ -24,10 +24,17 @@
 #include <grpc/grpc_security.h>
 #include <grpc/support/port_platform.h>
 
+#include <memory>
+#include <string>
+
+#include "absl/base/thread_annotations.h"
+
 #include "src/core/credentials/transport/security_connector.h"
 #include "src/core/credentials/transport/transport_credentials.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/tsi/ssl_transport_security.h"
 #include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/sync.h"
 #include "src/core/util/unique_type_name.h"
 
 class TlsCredentials final : public grpc_channel_credentials {
@@ -47,10 +54,26 @@ class TlsCredentials final : public grpc_channel_credentials {
 
   grpc_tls_credentials_options* options() const { return options_.get(); }
 
+  // Returns a cached tsi_ssl_root_certs_store for the given PEM root certs.
+  // Thread-safe. Caches the store so that multiple security connectors from
+  // the same credentials share the same X509_STORE via X509_STORE_up_ref().
+  // The returned store remains valid while the shared_ptr is held.
+  std::shared_ptr<tsi_ssl_root_certs_store> GetOrCreateRootStore(
+      const std::string& pem_root_certs)
+      ABSL_LOCKS_EXCLUDED(root_store_mu_);
+
+  void ClearRootStoreCache() ABSL_LOCKS_EXCLUDED(root_store_mu_);
+
+  bool HasCachedRootStoreForTesting() ABSL_LOCKS_EXCLUDED(root_store_mu_);
+
  private:
   int cmp_impl(const grpc_channel_credentials* other) const override;
 
   grpc_core::RefCountedPtr<grpc_tls_credentials_options> options_;
+  grpc_core::Mutex root_store_mu_;
+  std::shared_ptr<tsi_ssl_root_certs_store> cached_root_store_
+      ABSL_GUARDED_BY(root_store_mu_);
+  std::string cached_root_store_pem_ ABSL_GUARDED_BY(root_store_mu_);
 };
 
 class TlsServerCredentials final : public grpc_server_credentials {

@@ -25,6 +25,7 @@
 #include <grpc/support/port_platform.h>
 
 #include <map>
+#include <memory>
 #include <optional>
 #include <string>
 
@@ -104,6 +105,11 @@ class TlsChannelSecurityConnector final
     return root_cert_info_;
   }
 
+  const tsi_ssl_root_certs_store* RootStoreForTesting() {
+    MutexLock lock(&mu_);
+    return root_store_.get();
+  }
+
  private:
   // A watcher that watches certificate updates from
   // grpc_tls_certificate_distributor. It will never outlive
@@ -170,6 +176,7 @@ class TlsChannelSecurityConnector final
   std::optional<PemKeyCertPairList> pem_key_cert_pair_list_
       ABSL_GUARDED_BY(mu_);
   std::shared_ptr<tsi::RootCertInfo> root_cert_info_ ABSL_GUARDED_BY(mu_);
+  std::shared_ptr<tsi_ssl_root_certs_store> root_store_ ABSL_GUARDED_BY(mu_);
   std::map<grpc_closure* /*on_peer_checked*/, ChannelPendingVerifierRequest*>
       pending_verifier_requests_ ABSL_GUARDED_BY(verifier_request_map_mu_);
 };

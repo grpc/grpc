@@ -97,7 +97,35 @@ TlsCredentials::TlsCredentials(
     grpc_core::RefCountedPtr<grpc_tls_credentials_options> options)
     : options_(std::move(options)) {}
 
-TlsCredentials::~TlsCredentials() {}
+TlsCredentials::~TlsCredentials() = default;
+
+std::shared_ptr<tsi_ssl_root_certs_store> TlsCredentials::GetOrCreateRootStore(
+    const std::string& pem_root_certs) {
+  grpc_core::MutexLock lock(&root_store_mu_);
+  if (cached_root_store_ != nullptr &&
+      cached_root_store_pem_ == pem_root_certs) {
+    return cached_root_store_;
+  }
+  cached_root_store_.reset(tsi_ssl_root_certs_store_create(pem_root_certs.c_str()),
+                           tsi_ssl_root_certs_store_destroy);
+  if (cached_root_store_ != nullptr) {
+    tsi_ssl_root_certs_store_configure_explicit_verification(
+        cached_root_store_.get());
+    cached_root_store_pem_ = pem_root_certs;
+  }
+  return cached_root_store_;
+}
+
+void TlsCredentials::ClearRootStoreCache() {
+  grpc_core::MutexLock lock(&root_store_mu_);
+  cached_root_store_.reset();
+  cached_root_store_pem_.clear();
+}
+
+bool TlsCredentials::HasCachedRootStoreForTesting() {
+  grpc_core::MutexLock lock(&root_store_mu_);
+  return cached_root_store_ != nullptr;
+}
 
 grpc_core::RefCountedPtr<grpc_channel_security_connector>
 TlsCredentials::create_security_connector(
