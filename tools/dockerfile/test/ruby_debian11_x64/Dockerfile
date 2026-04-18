@@ -144,3 +144,6 @@ RUN echo 'ALL ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
 
 # Define the default command.
 CMD ["bash"]
+
+# Force rebuild to resolve manifest issue (amd64 missing)
+
