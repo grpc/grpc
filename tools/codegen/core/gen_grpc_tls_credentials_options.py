@@ -250,7 +250,24 @@ _DATA_MEMBERS = [
         setter_move_semantics=True,
         test_name="DifferentKeyExchangeGroups",
         test_value_1="{grpc_tls_key_exchange_group::GRPC_TLS_GROUP_X25519}",
-        test_value_2="{grpc_tls_key_exchange_group::GRPC_TLS_GROUP_X25519_MLKEM768}",
+        test_value_2=("{grpc_tls_key_exchange_group::GRPC_TLS_GROUP_X25519_MLKEM768}"),
+    ),
+    DataMember(
+        name="exported_keying_material_label",
+        type="std::string",
+        special_getter_return_type="const std::string&",
+        setter_move_semantics=True,
+        test_name="DifferentEkmLabel",
+        test_value_1='"label_1"',
+        test_value_2='"label_2"',
+    ),
+    DataMember(
+        name="exported_keying_material_length",
+        type="size_t",
+        default_initializer="0",
+        test_name="DifferentEkmLength",
+        test_value_1="32",
+        test_value_2="64",
     ),
 ]
 

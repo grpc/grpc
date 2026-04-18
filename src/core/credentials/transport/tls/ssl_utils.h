@@ -96,6 +96,8 @@ grpc_security_status grpc_ssl_tsi_client_handshaker_factory_init(
     const char* crl_directory,
     std::shared_ptr<grpc_core::experimental::CrlProvider> crl_provider,
     const std::vector<grpc_tls_key_exchange_group>& key_exchange_groups,
+    const char* exported_keying_material_label,
+    size_t exported_keying_material_length,
     tsi_ssl_client_handshaker_factory** handshaker_factory);
 
 grpc_security_status grpc_ssl_tsi_server_handshaker_factory_init(
