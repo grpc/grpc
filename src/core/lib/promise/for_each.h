@@ -76,7 +76,7 @@ enum class NextValueType {
 };
 
 template <typename T>
-struct NextValueTraits<T, absl::void_t<typename T::value_type>> {
+struct NextValueTraits<T, std::void_t<typename T::value_type>> {
   using Value = typename T::value_type;
 
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static NextValueType Type(const T& t) {
