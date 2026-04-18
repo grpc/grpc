@@ -95,8 +95,23 @@ class Server(_base_server.Server):
         service_name: str,
         method_handlers: Dict[str, grpc.RpcMethodHandler],
     ) -> None:
-        # TODO(xuanwn): Implement this for AsyncIO.
-        pass
+        """Registers method handlers for pre-registered methods.
+
+        This method is only safe to call before server is started.
+
+        If the same method has both generic and registered handler,
+        registered handler will take precedence.
+
+        Args:
+          service_name: The service name.
+          method_handlers: A dictionary that maps method names to corresponding
+            RpcMethodHandler.
+        """
+        method_to_handlers = {
+            _common.fully_qualified_method(service_name, method): method_handler
+            for method, method_handler in method_handlers.items()
+        }
+        self._server.add_registered_method_handlers(method_to_handlers)
 
     def add_insecure_port(self, address: str) -> int:
         """Opens an insecure port for accepting RPCs.
