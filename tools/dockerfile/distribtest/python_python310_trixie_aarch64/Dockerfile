@@ -1,4 +1,4 @@
-# Copyright 2015 gRPC authors.
+# Copyright 2021 The gRPC Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,10 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM debian:bullseye
+# this an aarch64 image, qemu emulator will be used to run the tests
+FROM --platform=linux/arm64 python:3.10-trixie
 
-RUN apt-get update && apt-get install -y python3 python3-pip
-RUN python3 -m pip install virtualenv==16.7.9
+RUN ln -sf /usr/local/bin/python3 /usr/bin/python3
 
-RUN apt-get install -y build-essential
-RUN apt-get install -y python3-dev
+RUN python3 -m pip install virtualenv==20.25.0

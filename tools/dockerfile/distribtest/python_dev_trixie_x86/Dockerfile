@@ -1,4 +1,4 @@
-# Copyright 2021 The gRPC Authors
+# Copyright 2015 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,7 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# this an aarch64 image, qemu emulator will be used to run the tests
-FROM arm64v8/python:3.9-buster
+FROM --platform=linux/386 python:3.10-trixie
 
-RUN python3 -m pip install virtualenv
+RUN apt-get update && apt-get install -y build-essential
+
+RUN ln -sf /usr/local/bin/python3 /usr/bin/python3
+
+RUN python3 -m pip install virtualenv==20.25.0
+
+# docker is running on a 64-bit machine, so we need to
+# override "uname -m" to report i686 instead of x86_64, otherwise
+# python will choose a wrong binary package to install.
+ENTRYPOINT ["linux32"]

@@ -808,13 +808,6 @@ class PythonLanguage:
 
         # TODO: Supported version range should be defined by a single
         # source of truth.
-        python39_config = _python_config_generator(
-            name="py39",
-            major="3",
-            minor="9",
-            bits=bits,
-            config_vars=config_vars,
-        )
         python310_config = _python_config_generator(
             name="py310",
             major="3",
@@ -859,26 +852,24 @@ class PythonLanguage:
 
         if args.compiler == "default":
             if os.name == "nt":
-                return (python39_config,)
+                return (python310_config,)
             elif os.uname()[0] == "Darwin":
                 # NOTE(rbellevi): Testing takes significantly longer on
                 # MacOS, so we restrict the number of interpreter versions
                 # tested.
-                return (python39_config,)
+                return (python310_config,)
             elif platform.machine() == "aarch64":
                 # Currently the python_debian11_default_arm64 docker image
-                # only has python3.9 installed (and that seems sufficient
+                # only has python3.10 installed (and that seems sufficient
                 # for arm64 testing)
-                return (python39_config,)
+                return (python310_config,)
             else:
                 # Default set tested on master. Test oldest and newest.
                 return (
-                    python39_config,
+                    python310_config,
                     python312_config,
                     python314_config,
                 )
-        elif args.compiler == "python3.9":
-            return (python39_config,)
         elif args.compiler == "python3.10":
             return (python310_config,)
         elif args.compiler == "python3.11":
@@ -897,7 +888,6 @@ class PythonLanguage:
             return (python311_config,)
         elif args.compiler == "all_the_cpythons":
             return (
-                python39_config,
                 python310_config,
                 python311_config,
                 python312_config,
@@ -1738,7 +1728,6 @@ argp.add_argument(
         "clang11",
         "clang19",
         # TODO: Automatically populate from supported version
-        "python3.9",
         "python3.10",
         "python3.11",
         "python3.12",
