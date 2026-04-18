@@ -87,20 +87,20 @@ def _serialized_request(request_event: cygrpc.BaseEvent) -> bytes:
     return request_event.batch_operations[0].message()
 
 
-def _application_code(code: grpc.StatusCode) -> cygrpc.StatusCode:
+def _application_code(code: grpc.StatusCode) -> cygrpc.StatusCodeType:
     cygrpc_code = _common.STATUS_CODE_TO_CYGRPC_STATUS_CODE.get(code)
     return cygrpc.StatusCode.unknown if cygrpc_code is None else cygrpc_code
 
 
-def _completion_code(state: _RPCState) -> cygrpc.StatusCode:
+def _completion_code(state: _RPCState) -> cygrpc.StatusCodeType:
     if state.code is None:
         return cygrpc.StatusCode.ok
     return _application_code(state.code)
 
 
 def _abortion_code(
-    state: _RPCState, code: cygrpc.StatusCode
-) -> cygrpc.StatusCode:
+    state: _RPCState, code: cygrpc.StatusCodeType
+) -> cygrpc.StatusCodeType:
     if state.code is None:
         return code
     return _application_code(state.code)
