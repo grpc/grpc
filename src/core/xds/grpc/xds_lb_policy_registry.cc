@@ -32,6 +32,7 @@
 #include "envoy/extensions/load_balancing_policies/ring_hash/v3/ring_hash.upb.h"
 #include "envoy/extensions/load_balancing_policies/wrr_locality/v3/wrr_locality.upb.h"
 #include "google/protobuf/wrappers.upb.h"
+#include "src/core/client_channel/client_channel_service_config.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/load_balancing/lb_policy_registry.h"
 #include "src/core/util/time.h"
@@ -134,6 +135,22 @@ class ClientSideWeightedRoundRobinLbPolicyConfigFactory final
         errors->AddError("value must be non-negative");
       }
       config["errorUtilizationPenalty"] = Json::FromNumber(value);
+    }
+    // metric_names_for_computing_utilization
+    if (internal::WrrCustomMetricsEnabled()) {
+      size_t size;
+      auto metric_names_for_computing_utilization =
+          envoy_extensions_load_balancing_policies_client_side_weighted_round_robin_v3_ClientSideWeightedRoundRobin_metric_names_for_computing_utilization(
+              resource, &size);
+      if (metric_names_for_computing_utilization != nullptr && size != 0) {
+        Json::Array metric_names;
+        for (size_t i = 0; i < size; ++i) {
+          metric_names.emplace_back(Json::FromString(
+              UpbStringToStdString(metric_names_for_computing_utilization[i])));
+        }
+        config["metricNamesForComputingUtilization"] =
+            Json::FromArray(std::move(metric_names));
+      }
     }
     return Json::Object{
         {"weighted_round_robin", Json::FromObject(std::move(config))}};

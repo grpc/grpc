@@ -39,6 +39,20 @@
 namespace grpc_core {
 namespace internal {
 
+bool ConnectionScalingEnabled();
+
+// TODO(rishesh): Remove this once the feature passes interop tests.
+bool WrrCustomMetricsEnabled();
+
+class ClientChannelJsonArgs final : public JsonArgs {
+ public:
+  bool IsEnabled(absl::string_view key) const override {
+    if (key == "connection_scaling") return ConnectionScalingEnabled();
+    if (key == "wrr_custom_metrics") return WrrCustomMetricsEnabled();
+    return true;
+  }
+};
+
 class ClientChannelGlobalParsedConfig final
     : public ServiceConfigParser::ParsedConfig {
  public:
