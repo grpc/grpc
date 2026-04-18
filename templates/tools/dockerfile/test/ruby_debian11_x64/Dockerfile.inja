@@ -18,7 +18,7 @@ FROM debian:11
 {% include "../../run_tests_python_deps.include" %}
 {% include "../../ruby_3_1_deps.include" %}
 {% include "../../rvm_mkdir_workaround.include" %}
-{% include "../../cmake.include" %}
+{% include "../../cmake_bullseye_backports.include" %}
 {% include "../../ccache.include" %}
 {% include "../../run_tests_addons.include" %}
 {% include "../../xds_interop_deps.include" %}
