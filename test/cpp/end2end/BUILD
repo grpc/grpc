@@ -1594,6 +1594,7 @@ grpc_cc_test(
         "//:grpc++_base",
         "//:grpc_base",
         "//:grpc_core_credentials_header",
+        "//:tsi_ssl_session_cache",
         "//src/proto/grpc/testing:echo_cc_grpc",
         "//src/proto/grpc/testing:echo_messages_cc_proto",
         "//test/core/test_util:grpc_test_util",
