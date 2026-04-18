@@ -158,6 +158,10 @@ message ResponseParameters {
   // implement the full compression tests by introspecting the call to verify
   // the response's compression status.
   BoolValue compressed = 3;
+  
+  // Whether to request the server to send the requesting peer's socket
+  // address in the response.
+  BoolValue fill_peer_socket_address = 4;
 }
 
 // Server-streaming request.
@@ -185,6 +189,9 @@ message StreamingOutputCallRequest {
 message StreamingOutputCallResponse {
   // Payload to increase response size.
   Payload payload = 1;
+  
+  // The peer's socket address if requested.
+  string peer_socket_address = 2;
 }
 
 // For reconnect interop test only.
