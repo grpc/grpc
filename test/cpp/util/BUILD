@@ -57,6 +57,8 @@ grpc_cc_library(
         "//:grpc++",
         "//:grpc++_config_proto",
         "//src/proto/grpc/reflection/v1alpha:reflection_proto",
+        "//third_party/absl/container:flat_hash_map",
+        "//third_party/absl/container:flat_hash_set",
     ],
 )
 
