@@ -14,9 +14,8 @@
 // limitations under the License.
 //
 
-#include "src/core/client_channel/dynamic_filters.h"
+#include "src/core/lib/channel/dynamic_filters.h"
 
-#include <grpc/support/port_platform.h>
 #include <stddef.h>
 
 #include <new>
