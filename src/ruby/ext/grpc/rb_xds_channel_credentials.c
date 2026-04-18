@@ -26,7 +26,6 @@
 #include <grpc/support/alloc.h>
 #include <string.h>
 
-#include "rb_call_credentials.h"
 #include "rb_channel_credentials.h"
 #include "rb_grpc.h"
 #include "rb_grpc_imports.generated.h"
@@ -151,38 +150,6 @@ static VALUE grpc_rb_xds_channel_credentials_init(VALUE self,
   return self;
 }
 
-// TODO: de-duplicate this code with the similar method in
-// rb_channel_credentials.c, after putting ChannelCredentials and
-// XdsChannelCredentials under a common parent class
-static VALUE grpc_rb_xds_channel_credentials_compose(int argc, VALUE* argv,
-                                                     VALUE self) {
-  grpc_channel_credentials* creds;
-  grpc_call_credentials* other;
-  grpc_channel_credentials* prev = NULL;
-  VALUE mark;
-  if (argc == 0) {
-    return self;
-  }
-  mark = rb_ary_new();
-  rb_ary_push(mark, self);
-  creds = grpc_rb_get_wrapped_xds_channel_credentials(self);
-  for (int i = 0; i < argc; i++) {
-    rb_ary_push(mark, argv[i]);
-    other = grpc_rb_get_wrapped_call_credentials(argv[i]);
-    creds = grpc_composite_channel_credentials_create(creds, other, NULL);
-    if (prev != NULL) {
-      grpc_channel_credentials_release(prev);
-    }
-    prev = creds;
-
-    if (creds == NULL) {
-      rb_raise(rb_eRuntimeError,
-               "Failed to compose channel and call credentials");
-    }
-  }
-  return grpc_rb_xds_wrap_channel_credentials(creds, mark);
-}
-
 void Init_grpc_xds_channel_credentials() {
   grpc_rb_cXdsChannelCredentials = rb_define_class_under(
       grpc_rb_mGrpcCore, "XdsChannelCredentials", rb_cObject);
@@ -196,8 +163,6 @@ void Init_grpc_xds_channel_credentials() {
                    grpc_rb_xds_channel_credentials_init, 1);
   rb_define_method(grpc_rb_cXdsChannelCredentials, "initialize_copy",
                    grpc_rb_cannot_init_copy, 1);
-  rb_define_method(grpc_rb_cXdsChannelCredentials, "compose",
-                   grpc_rb_xds_channel_credentials_compose, -1);
 
   id_fallback_creds = rb_intern("__fallback_creds");
 }
