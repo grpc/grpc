@@ -46,6 +46,21 @@ class SyncCertificateVerifier
   bool success_ = false;
 };
 
+class SyncCertificateVerifierNoStatusSet
+    : public grpc::experimental::ExternalCertificateVerifier {
+ public:
+  explicit SyncCertificateVerifierNoStatusSet() {}
+
+  ~SyncCertificateVerifierNoStatusSet() override {}
+
+  bool Verify(grpc::experimental::TlsCustomVerificationCheckRequest* request,
+              std::function<void(grpc::Status)> callback,
+              grpc::Status* sync_status) override;
+
+  void Cancel(grpc::experimental::TlsCustomVerificationCheckRequest*) override {
+  }
+};
+
 class AsyncCertificateVerifier
     : public grpc::experimental::ExternalCertificateVerifier {
  public:
