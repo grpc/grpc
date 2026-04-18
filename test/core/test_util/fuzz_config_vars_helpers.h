@@ -26,17 +26,22 @@
 #include <string>
 #include <vector>
 
-#include "fuzztest/fuzztest.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "test/core/test_util/fuzz_config_vars.pb.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_join.h"
 
+#ifdef GRPC_USE_FUZZTEST
+#include "fuzztest/fuzztest.h"
+#endif  // GRPC_USE_FUZZTEST
+
 namespace grpc_core {
 
 std::vector<std::string> ExperimentConfigChoices();
 std::vector<std::string> TracerConfigChoices();
+
+#ifdef GRPC_USE_FUZZTEST
 
 inline auto AnyConfigVars() {
   auto optional_string = [](auto x) {
@@ -64,6 +69,7 @@ inline auto AnyConfigVars() {
                        optional_string(::fuzztest::ElementOf(
                            std::vector<std::string>{"ares", "native"})));
 }
+#endif  // GRPC_USE_FUZZTEST
 
 }  // namespace grpc_core
 

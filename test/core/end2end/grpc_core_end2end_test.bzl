@@ -243,7 +243,7 @@ def grpc_core_end2end_test_suite(
         ],
         external_deps = _EXTERNAL_DEPS + ["gtest_main"],
         deps = _DEPS + deps + [
-            "//test/core/end2end:end2end_test_lib_no_fuzztest_gtest",
+            "//test/core/end2end:end2end_test_lib",
         ],
         defines = select({
             "//test/core/end2end:grpc_running_in_pr": ["GRPC_RUNNING_IN_PR"],
@@ -266,7 +266,7 @@ def grpc_core_end2end_test_suite(
             external_deps = _EXTERNAL_DEPS + ["fuzztest", "fuzztest_main"],
             shard_count = shard_count,
             deps = _DEPS + deps + [
-                "//test/core/end2end:end2end_test_lib_fuzztest_no_gtest",
+                "//test/core/end2end:end2end_test_lib",
             ],
             data = _DATA,
             **kwargs
@@ -278,7 +278,7 @@ def grpc_core_end2end_test_suite(
             srcs = [config_src, "//test/core/end2end:tests/no_logging.cc"],
             external_deps = _EXTERNAL_DEPS + ["gtest_main"],
             deps = _DEPS + deps + [
-                "//test/core/end2end:end2end_test_lib_no_fuzztest_gtest",
+                "//test/core/end2end:end2end_test_lib",
             ],
             defines = select({
                 "//test/core/end2end:grpc_running_in_pr": ["GRPC_RUNNING_IN_PR"],
@@ -298,7 +298,7 @@ def grpc_core_end2end_test_suite(
             external_deps = _EXTERNAL_DEPS + ["fuzztest", "fuzztest_main"],
             shard_count = shard_count,
             deps = _DEPS + deps + [
-                "//test/core/end2end:end2end_test_lib_fuzztest_no_gtest",
+                "//test/core/end2end:end2end_test_lib",
             ],
             data = _DATA,
             **kwargs
