@@ -45,6 +45,8 @@ const char* CompressionAlgorithmAsString(grpc_compression_algorithm algorithm) {
       return "deflate";
     case GRPC_COMPRESS_GZIP:
       return "gzip";
+    case GRPC_COMPRESS_ZSTD:
+      return "zstd";
     case GRPC_COMPRESS_ALGORITHMS_COUNT:
     default:
       return nullptr;
@@ -85,7 +87,7 @@ class CommaSeparatedLists {
  private:
   static constexpr size_t kNumLists = 1 << GRPC_COMPRESS_ALGORITHMS_COUNT;
   // Experimentally determined (tweak things until it runs).
-  static constexpr size_t kTextBufferSize = 86;
+  static constexpr size_t kTextBufferSize = 218;
   absl::string_view lists_[kNumLists];
   char text_buffer_[kTextBufferSize];
 };
@@ -101,6 +103,8 @@ std::optional<grpc_compression_algorithm> ParseCompressionAlgorithm(
     return GRPC_COMPRESS_DEFLATE;
   } else if (algorithm == "gzip") {
     return GRPC_COMPRESS_GZIP;
+  } else if (algorithm == "zstd") {
+    return GRPC_COMPRESS_ZSTD;
   } else {
     return std::nullopt;
   }

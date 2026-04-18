@@ -394,6 +394,7 @@ include(cmake/ssl.cmake)
 include(cmake/upb.cmake)
 include(cmake/xxhash.cmake)
 include(cmake/zlib.cmake)
+include(cmake/zstd.cmake)
 include(cmake/download_archive.cmake)
 
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
@@ -3169,6 +3170,7 @@ target_link_libraries(grpc
   upb_textformat_lib
   ${_gRPC_RE2_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
+  ${_gRPC_ZSTD_LIBRARIES}
   absl::algorithm_container
   absl::no_destructor
   absl::btree
@@ -3907,6 +3909,7 @@ target_link_libraries(grpc_unsecure
   ${_gRPC_ALLTARGETS_LIBRARIES}
   upb_textformat_lib
   ${_gRPC_ZLIB_LIBRARIES}
+  ${_gRPC_ZSTD_LIBRARIES}
   absl::algorithm_container
   absl::no_destructor
   absl::btree
@@ -6350,6 +6353,7 @@ target_link_libraries(grpc_authorization_provider
   upb_textformat_lib
   ${_gRPC_RE2_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
+  ${_gRPC_ZSTD_LIBRARIES}
   absl::no_destructor
   absl::btree
   absl::flat_hash_map
@@ -6483,6 +6487,7 @@ target_link_libraries(grpc_plugin_support
   ${_gRPC_ALLTARGETS_LIBRARIES}
   utf8_range_lib
   ${_gRPC_ZLIB_LIBRARIES}
+  ${_gRPC_ZSTD_LIBRARIES}
   absl::algorithm_container
   absl::base
   absl::config
@@ -10431,6 +10436,7 @@ target_link_libraries(call_utils_test
   gtest
   upb_textformat_lib
   ${_gRPC_ZLIB_LIBRARIES}
+  ${_gRPC_ZSTD_LIBRARIES}
   absl::no_destructor
   absl::btree
   absl::flat_hash_map
@@ -17693,6 +17699,7 @@ target_link_libraries(filter_fusion_test
   gtest
   upb_textformat_lib
   ${_gRPC_ZLIB_LIBRARIES}
+  ${_gRPC_ZSTD_LIBRARIES}
   absl::no_destructor
   absl::btree
   absl::flat_hash_map
@@ -22067,6 +22074,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     gtest
     upb_textformat_lib
     ${_gRPC_ZLIB_LIBRARIES}
+    ${_gRPC_ZSTD_LIBRARIES}
     absl::no_destructor
     absl::btree
     absl::flat_hash_map
@@ -36437,6 +36445,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     gtest
     upb_textformat_lib
     ${_gRPC_ZLIB_LIBRARIES}
+    ${_gRPC_ZSTD_LIBRARIES}
     absl::no_destructor
     absl::btree
     absl::flat_hash_map
