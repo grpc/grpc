@@ -72,6 +72,7 @@ def grpc_bad_ssl_tests():
             srcs = ["bad_ssl_test.cc"],
             external_deps = [
                 "absl/log:check",
+                "gtest",
             ],
             data = [
                 ":bad_ssl_%s_server" % t,
