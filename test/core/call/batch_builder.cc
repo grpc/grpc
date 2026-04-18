@@ -15,6 +15,7 @@
 #include "test/core/call/batch_builder.h"
 
 #include <grpc/byte_buffer_reader.h>
+#include <vector>
 
 #include "src/core/lib/compression/message_compress.h"
 
@@ -34,6 +35,18 @@ std::optional<std::string> FindInMetadataArray(const grpc_metadata_array& md,
     }
   }
   return std::nullopt;
+}
+
+std::optional<std::vector<std::string>> FindRepeatedInMetadataArray(
+    const grpc_metadata_array& md, absl::string_view key) {
+  std::vector<std::string> values;
+  for (size_t i = 0; i < md.count; i++) {
+    if (key == StringViewFromSlice(md.metadata[i].key)) {
+      values.push_back(std::string(StringViewFromSlice(md.metadata[i].value)));
+    }
+  }
+  if (values.empty()) return std::nullopt;
+  return values;
 }
 
 std::optional<std::string> IncomingMetadata::Get(absl::string_view key) const {
