@@ -372,10 +372,9 @@ class Server : public ServerInterface,
   // Sets up a transport.  Creates a channel stack and binds the transport to
   // the server.  Called from the listener when a new connection is accepted.
   // Takes ownership of a ref on resource_user from the caller.
-  grpc_error_handle SetupTransport(Transport* transport,
-                                   grpc_pollset* accepting_pollset,
-                                   const ChannelArgs& args,
-                                   const Blackboard* blackboard = nullptr)
+  grpc_error_handle SetupTransport(
+      Transport* transport, grpc_pollset* accepting_pollset,
+      const ChannelArgs& args, RefCountedPtr<Blackboard> blackboard = nullptr)
       ABSL_LOCKS_EXCLUDED(mu_global_);
 
   void RegisterCompletionQueue(grpc_completion_queue* cq);
@@ -661,7 +660,7 @@ class Server : public ServerInterface,
                                             ClientMetadataHandle md);
   auto MatchAndPublishCall(CallHandler call_handler);
   absl::StatusOr<RefCountedPtr<UnstartedCallDestination>> MakeCallDestination(
-      const ChannelArgs& args, const Blackboard* blackboard);
+      const ChannelArgs& args, RefCountedPtr<Blackboard> blackboard);
 
   ChannelArgs const channel_args_;
   RefCountedPtr<channelz::ServerNode> channelz_node_;
