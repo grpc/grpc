@@ -131,10 +131,10 @@ struct grpc_ares_ev_driver {
       ABSL_GUARDED_BY(&grpc_ares_request::mu);
 };
 
-// TODO(apolcyn): make grpc_ares_hostbyname_request a sub-class
+// TODO(apolcyn): make grpc_ares_getaddrinfo_request a sub-class
 // of GrpcAresQuery.
-typedef struct grpc_ares_hostbyname_request {
-  /// following members are set in create_hostbyname_request_locked
+typedef struct grpc_ares_getaddrinfo_request {
+  /// following members are set in create_getaddrinfo_request_locked
   ///
   /// the top-level request instance
   grpc_ares_request* parent_request;
@@ -144,9 +144,7 @@ typedef struct grpc_ares_hostbyname_request {
   uint16_t port;
   /// is it a grpclb address
   bool is_balancer;
-  /// for logging and errors: the query type ("A" or "AAAA")
-  const char* qtype;
-} grpc_ares_hostbyname_request;
+} grpc_ares_getaddrinfo_request;
 
 static void grpc_ares_request_ref_locked(grpc_ares_request* r)
     ABSL_EXCLUSIVE_LOCKS_REQUIRED(r->mu);
@@ -648,105 +646,93 @@ void grpc_ares_complete_request_locked(grpc_ares_request* r)
   grpc_core::ExecCtx::Run(DEBUG_LOCATION, r->on_done, r->error);
 }
 
-// Note that the returned object takes a reference to qtype, so
-// qtype must outlive it.
-static grpc_ares_hostbyname_request* create_hostbyname_request_locked(
+static grpc_ares_getaddrinfo_request* create_getaddrinfo_request_locked(
     grpc_ares_request* parent_request, const char* host, uint16_t port,
-    bool is_balancer, const char* qtype)
+    bool is_balancer)
     ABSL_EXCLUSIVE_LOCKS_REQUIRED(parent_request->mu) {
   GRPC_TRACE_VLOG(cares_resolver, 2)
       << "(c-ares resolver) request:" << parent_request
-      << " create_hostbyname_request_locked host:" << host << " port:" << port
-      << " is_balancer:" << is_balancer << " qtype:" << qtype;
-  grpc_ares_hostbyname_request* hr = new grpc_ares_hostbyname_request();
+      << " create_getaddrinfo_request_locked host:" << host << " port:" << port
+      << " is_balancer:" << is_balancer;
+  grpc_ares_getaddrinfo_request* hr = new grpc_ares_getaddrinfo_request();
   hr->parent_request = parent_request;
   hr->host = gpr_strdup(host);
   hr->port = port;
   hr->is_balancer = is_balancer;
-  hr->qtype = qtype;
   grpc_ares_request_ref_locked(parent_request);
   return hr;
 }
 
-static void destroy_hostbyname_request_locked(grpc_ares_hostbyname_request* hr)
+static void destroy_getaddrinfo_request_locked(grpc_ares_getaddrinfo_request* hr)
     ABSL_EXCLUSIVE_LOCKS_REQUIRED(hr->parent_request->mu) {
   grpc_ares_request_unref_locked(hr->parent_request);
   gpr_free(hr->host);
   delete hr;
 }
 
-static void on_hostbyname_done_locked(void* arg, int status, int /*timeouts*/,
-                                      struct hostent* hostent)
+static void on_getaddrinfo_done_locked(void* arg, int status, int /*timeouts*/,
+                                       struct ares_addrinfo* result)
     ABSL_NO_THREAD_SAFETY_ANALYSIS {
   // This callback is invoked from the c-ares library, so disable thread safety
   // analysis. Note that we are guaranteed to be holding r->mu, though.
-  grpc_ares_hostbyname_request* hr =
-      static_cast<grpc_ares_hostbyname_request*>(arg);
+  grpc_ares_getaddrinfo_request* hr =
+      static_cast<grpc_ares_getaddrinfo_request*>(arg);
   grpc_ares_request* r = hr->parent_request;
   if (status == ARES_SUCCESS) {
     GRPC_TRACE_VLOG(cares_resolver, 2)
         << "(c-ares resolver) request:" << r
-        << " on_hostbyname_done_locked qtype=" << hr->qtype
-        << " host=" << hr->host << " ARES_SUCCESS";
+        << " on_getaddrinfo_done_locked host=" << hr->host << " ARES_SUCCESS";
     std::unique_ptr<EndpointAddressesList>* address_list_ptr =
         hr->is_balancer ? r->balancer_addresses_out : r->addresses_out;
     if (*address_list_ptr == nullptr) {
       *address_list_ptr = std::make_unique<EndpointAddressesList>();
     }
     EndpointAddressesList& addresses = **address_list_ptr;
-    for (size_t i = 0; hostent->h_addr_list[i] != nullptr; ++i) {
+    for (struct ares_addrinfo_node* node = result->nodes; node != nullptr;
+         node = node->ai_next) {
       grpc_core::ChannelArgs args;
       if (hr->is_balancer) {
         args = args.Set(GRPC_ARG_DEFAULT_AUTHORITY, hr->host);
       }
       grpc_resolved_address address;
       memset(&address, 0, sizeof(address));
-      switch (hostent->h_addrtype) {
-        case AF_INET6: {
-          address.len = sizeof(struct sockaddr_in6);
-          auto* addr = reinterpret_cast<struct sockaddr_in6*>(&address.addr);
-          memcpy(&addr->sin6_addr, hostent->h_addr_list[i],
-                 sizeof(struct in6_addr));
-          addr->sin6_family = static_cast<unsigned char>(hostent->h_addrtype);
-          addr->sin6_port = hr->port;
-          char output[INET6_ADDRSTRLEN];
-          ares_inet_ntop(AF_INET6, &addr->sin6_addr, output, INET6_ADDRSTRLEN);
-          GRPC_TRACE_VLOG(cares_resolver, 2)
-              << "(c-ares resolver) request:" << r
-              << " c-ares resolver gets a AF_INET6 result: \n"
-              << "  addr: " << output << "\n  port: " << ntohs(hr->port)
-              << "\n  sin6_scope_id: " << addr->sin6_scope_id << "\n";
-          break;
-        }
-        case AF_INET: {
-          address.len = sizeof(struct sockaddr_in);
-          auto* addr = reinterpret_cast<struct sockaddr_in*>(&address.addr);
-          memcpy(&addr->sin_addr, hostent->h_addr_list[i],
-                 sizeof(struct in_addr));
-          addr->sin_family = static_cast<unsigned char>(hostent->h_addrtype);
-          addr->sin_port = hr->port;
-          char output[INET_ADDRSTRLEN];
-          ares_inet_ntop(AF_INET, &addr->sin_addr, output, INET_ADDRSTRLEN);
-          GRPC_TRACE_VLOG(cares_resolver, 2)
-              << "(c-ares resolver) request:" << r
-              << " c-ares resolver gets a AF_INET result: \n  addr: " << output
-              << "\n  port: " << ntohs(hr->port) << "\n";
-          break;
-        }
+      address.len = node->ai_addrlen;
+      memcpy(&address.addr, node->ai_addr, node->ai_addrlen);
+      // Set the port (ares_getaddrinfo doesn't set it from hints)
+      if (node->ai_family == AF_INET) {
+        auto* addr = reinterpret_cast<struct sockaddr_in*>(&address.addr);
+        addr->sin_port = hr->port;
+        char output[INET_ADDRSTRLEN];
+        ares_inet_ntop(AF_INET, &addr->sin_addr, output, INET_ADDRSTRLEN);
+        GRPC_TRACE_VLOG(cares_resolver, 2)
+            << "(c-ares resolver) request:" << r
+            << " c-ares resolver gets a AF_INET result: \n  addr: " << output
+            << "\n  port: " << ntohs(hr->port) << "\n";
+      } else if (node->ai_family == AF_INET6) {
+        auto* addr = reinterpret_cast<struct sockaddr_in6*>(&address.addr);
+        addr->sin6_port = hr->port;
+        char output[INET6_ADDRSTRLEN];
+        ares_inet_ntop(AF_INET6, &addr->sin6_addr, output, INET6_ADDRSTRLEN);
+        GRPC_TRACE_VLOG(cares_resolver, 2)
+            << "(c-ares resolver) request:" << r
+            << " c-ares resolver gets a AF_INET6 result: \n"
+            << "  addr: " << output << "\n  port: " << ntohs(hr->port)
+            << "\n  sin6_scope_id: " << addr->sin6_scope_id << "\n";
       }
       addresses.emplace_back(address, args);
     }
+    ares_freeaddrinfo(result);
   } else {
     std::string error_msg = absl::StrFormat(
-        "C-ares status is not ARES_SUCCESS qtype=%s name=%s is_balancer=%d: %s",
-        hr->qtype, hr->host, hr->is_balancer, ares_strerror(status));
+        "C-ares status is not ARES_SUCCESS name=%s is_balancer=%d: %s",
+        hr->host, hr->is_balancer, ares_strerror(status));
     GRPC_TRACE_VLOG(cares_resolver, 2)
         << "(c-ares resolver) request:" << r
-        << " on_hostbyname_done_locked: " << error_msg;
+        << " on_getaddrinfo_done_locked: " << error_msg;
     r->error = grpc_error_add_child(AresStatusToAbslStatus(status, error_msg),
                                     r->error);
   }
-  destroy_hostbyname_request_locked(hr);
+  destroy_getaddrinfo_request_locked(hr);
 }
 
 static void on_srv_query_done_locked(void* arg, int status, int /*timeouts*/,
@@ -768,17 +754,15 @@ static void on_srv_query_done_locked(void* arg, int status, int /*timeouts*/,
     if (parse_status == ARES_SUCCESS) {
       for (struct ares_srv_reply* srv_it = reply; srv_it != nullptr;
            srv_it = srv_it->next) {
-        if (grpc_ares_query_ipv6()) {
-          grpc_ares_hostbyname_request* hr = create_hostbyname_request_locked(
-              r, srv_it->host, htons(srv_it->port), true /* is_balancer */,
-              "AAAA");
-          ares_gethostbyname(r->ev_driver->channel, hr->host, AF_INET6,
-                             on_hostbyname_done_locked, hr);
-        }
-        grpc_ares_hostbyname_request* hr = create_hostbyname_request_locked(
-            r, srv_it->host, htons(srv_it->port), true /* is_balancer */, "A");
-        ares_gethostbyname(r->ev_driver->channel, hr->host, AF_INET,
-                           on_hostbyname_done_locked, hr);
+        grpc_ares_getaddrinfo_request* hr = create_getaddrinfo_request_locked(
+            r, srv_it->host, htons(srv_it->port), true /* is_balancer */);
+        struct ares_addrinfo_hints hints;
+        memset(&hints, 0, sizeof(hints));
+        hints.ai_family = AF_UNSPEC;  // Allow both IPv4 and IPv6
+        hints.ai_socktype = SOCK_STREAM;
+        hints.ai_flags = ARES_AI_NOSORT;  // We'll sort ourselves
+        ares_getaddrinfo(r->ev_driver->channel, hr->host, nullptr, &hints,
+                         on_getaddrinfo_done_locked, hr);
       }
     }
     if (reply != nullptr) {
@@ -1086,19 +1070,15 @@ static grpc_ares_request* grpc_dns_lookup_hostname_ares_impl(
     return r;
   }
   r->pending_queries = 1;
-  grpc_ares_hostbyname_request* hr = nullptr;
-  if (grpc_ares_query_ipv6()) {
-    hr = create_hostbyname_request_locked(r, host.c_str(),
-                                          grpc_strhtons(port.c_str()),
-                                          /*is_balancer=*/false, "AAAA");
-    ares_gethostbyname(r->ev_driver->channel, hr->host, AF_INET6,
-                       on_hostbyname_done_locked, hr);
-  }
-  hr = create_hostbyname_request_locked(r, host.c_str(),
-                                        grpc_strhtons(port.c_str()),
-                                        /*is_balancer=*/false, "A");
-  ares_gethostbyname(r->ev_driver->channel, hr->host, AF_INET,
-                     on_hostbyname_done_locked, hr);
+  grpc_ares_getaddrinfo_request* hr = create_getaddrinfo_request_locked(
+      r, host.c_str(), grpc_strhtons(port.c_str()), /*is_balancer=*/false);
+  struct ares_addrinfo_hints hints;
+  memset(&hints, 0, sizeof(hints));
+  hints.ai_family = AF_UNSPEC;  // Allow both IPv4 and IPv6
+  hints.ai_socktype = SOCK_STREAM;
+  hints.ai_flags = ARES_AI_NOSORT;  // We'll sort ourselves with RFC 6724
+  ares_getaddrinfo(r->ev_driver->channel, hr->host, nullptr, &hints,
+                   on_getaddrinfo_done_locked, hr);
   grpc_ares_ev_driver_start_locked(r->ev_driver);
   grpc_ares_request_unref_locked(r);
   return r;
