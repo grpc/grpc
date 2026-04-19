@@ -113,6 +113,16 @@ bool grpc_status_code_from_int(int status_int, grpc_status_code* status) {
   return true;
 }
 
+grpc_status_code grpc_status_code_clamp_to_valid(grpc_status_code status) {
+  return status < GRPC_STATUS_OK || status > GRPC_STATUS_UNAUTHENTICATED
+             ? GRPC_STATUS_UNKNOWN
+             : status;
+}
+
+absl::StatusCode grpc_status_code_to_absl_status_code(grpc_status_code status) {
+  return static_cast<absl::StatusCode>(grpc_status_code_clamp_to_valid(status));
+}
+
 namespace grpc_core {
 
 namespace internal {
