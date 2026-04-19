@@ -425,7 +425,9 @@ class Endpoint final {
   Endpoint& operator=(Endpoint&&) = delete;
   ~Endpoint() {
     ctx_->ztrace_collector->Append(EndpointCloseTrace{ctx_->id});
-    ctx_->reader->Drop();
+    if (ctx_->reader != nullptr) {
+      ctx_->reader->Drop();
+    }
   }
 
   void AddData(channelz::DataSink sink);
@@ -445,7 +447,7 @@ class Endpoint final {
     TransportContextPtr transport_ctx;
     RefCountedPtr<Arena> arena;
     Clock* clock;
-    RefCountedPtr<OutputBuffers::Reader> reader;
+    RefCountedPtr<OutputBuffers::Reader> reader = nullptr;
     Timestamp last_metrics_update = Timestamp::ProcessEpoch();
   };
 
