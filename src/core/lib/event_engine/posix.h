@@ -22,6 +22,7 @@
 
 #include "src/core/lib/event_engine/extensions/can_track_errors.h"
 #include "src/core/lib/event_engine/extensions/chaotic_good_extension.h"
+#include "src/core/lib/event_engine/extensions/receive_coalescing.h"
 #include "src/core/lib/event_engine/extensions/supports_fd.h"
 #include "src/core/lib/event_engine/query_extensions.h"
 
@@ -31,6 +32,7 @@ namespace grpc_event_engine::experimental {
 /// may implement to support additional chaotic good related functionality.
 class PosixEndpointWithChaoticGoodSupport
     : public ExtendedType<EventEngine::Endpoint, ChaoticGoodExtension,
+                          ReceiveCoalescingExtension,
                           EndpointSupportsFdExtension,
                           EndpointCanTrackErrorsExtension> {};
 
