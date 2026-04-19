@@ -212,6 +212,15 @@ int main(int argc, char** argv) {
   }
 
   grpc_channel_args args = {args_vec.size(), args_vec.data()};
+
+  std::string kChaoticGoodWireFormatPreferences(
+      grpc_core::chaotic_good::WireFormatPreferences());
+  if (absl::GetFlag(FLAGS_chaotic_good)) {
+    args_vec.push_back(grpc_channel_arg_string_create(
+        const_cast<char*>(GRPC_ARG_PREFERRED_TRANSPORT_PROTOCOLS),
+        const_cast<char*>(kChaoticGoodWireFormatPreferences.c_str())));
+  }
+
   server = grpc_server_create(&args, nullptr);
 
   if (absl::GetFlag(FLAGS_use_xds)) {
@@ -221,14 +230,6 @@ int main(int argc, char** argv) {
     if (config_fetcher != nullptr) {
       grpc_server_set_config_fetcher(server, config_fetcher);
     }
-  }
-
-  std::string kChaoticGoodWireFormatPreferences(
-      grpc_core::chaotic_good::WireFormatPreferences());
-  if (absl::GetFlag(FLAGS_chaotic_good)) {
-    args_vec.push_back(grpc_channel_arg_string_create(
-        const_cast<char*>(GRPC_ARG_PREFERRED_TRANSPORT_PROTOCOLS),
-        const_cast<char*>(kChaoticGoodWireFormatPreferences.c_str())));
   }
 
   MemStats before_server_create = MemStats::Snapshot();
