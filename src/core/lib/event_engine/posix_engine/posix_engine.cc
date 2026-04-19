@@ -834,7 +834,7 @@ absl::StatusOr<std::unique_ptr<EventEngine::Endpoint>>
 PosixEventEngine::CreatePosixEndpointFromFd(int fd,
                                             const EndpointConfig& config,
                                             MemoryAllocator memory_allocator) {
-  GRPC_DCHECK_GT(fd, 0);
+  GRPC_DCHECK_GE(fd, 0);
   if (poller_ == nullptr) {
     return absl::FailedPreconditionError("polling is not enabled");
   }
