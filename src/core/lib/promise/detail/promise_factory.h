@@ -204,7 +204,7 @@ PromiseFactoryImpl(Token, F& f, A&& arg) {
 // Given a callable() -> Promise<T>, promote it to a
 // PromiseFactory(A) -> Promise<T> by dropping the first argument.
 template <typename Token, typename A, typename F>
-GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline
     absl::enable_if_t<IsVoidCallable<ResultOf<F()>>::value,
                       PromiseLike<decltype(std::declval<F>()())>>
     PromiseFactoryImpl(Token, F&& f, A&&) {
@@ -214,7 +214,7 @@ GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION
 
 // Given a callable() -> Promise<T>, name it a PromiseFactory and use it.
 template <typename Token, typename F>
-GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline
     absl::enable_if_t<IsVoidCallable<ResultOf<F()>>::value,
                       PromiseLike<decltype(std::declval<F>()())>>
     PromiseFactoryImpl(Token, F&& f) {
