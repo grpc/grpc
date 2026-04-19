@@ -5,12 +5,13 @@ on:
     branches:
       - master
 
-permissions:
-  contents: write
+permissions: {}
 
 jobs:
   sync:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - name: Checkout
         uses: actions/checkout@v6
