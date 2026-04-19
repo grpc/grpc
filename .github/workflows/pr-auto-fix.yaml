@@ -22,7 +22,7 @@ jobs:
         with:
           format: YYYYWWd
       - name: Cache bazel
-        uses: actions/cache@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v5.0.3
+        uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.4
         env:
           cache-name: bazel-cache
         with:
@@ -38,7 +38,7 @@ jobs:
       # Cancel current runs if they're still running
       # (saves processing on fast pushes)
       - name: Cancel Previous Runs
-        uses: styfle/cancel-workflow-action@3155a141048f8f89c06b4cdae32e7853e97536bc # 0.13.0
+        uses: styfle/cancel-workflow-action@d07a454dad7609a92316b57b23c9ccfd4f59af66 # 0.13.1
         with:
           access_token: ${{ github.token }}
       # Allow opt-out for some users
