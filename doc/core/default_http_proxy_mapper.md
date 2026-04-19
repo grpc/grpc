@@ -48,13 +48,24 @@ again stopping at the first one that is set:
 
 If none of the above are set, then the previously found HTTP proxy is used.
 
-The format takes a comma-separated list of names, and if any of these names
-matches as a suffix of the server host (provided in the channel target), then
-the proxy will not be used for that target. For example, with a `grpc_proxy`
-setting of `proxy.google.com` and a `no_grpc_proxy` setting of `example.com,
-google.com`, channel targets such as `dns:///foo.google.com:50051` and
-`bar.example.com:1234` will not use the proxy, but `baz.googleapis.com:443`
-would still use the configured proxy `proxy.google.com`.
+As of [PR#41915](https://github.com/grpc/grpc/pull/41915), the matching
+  behavior was changed from naive suffix matching to boundary-aware domain
+  validation. Entries without a leading dot now require an exact match, and
+  entries with a leading dot match the domain and its subdomains.
+
+  -   If the entry starts with a dot (e.g., `.example.com`), it matches the
+      domain itself (`example.com`) and all of its subdomains
+      (`foo.example.com`, `bar.baz.example.com`).
+  -   If the entry does not start with a dot (e.g., `example.com`), it matches
+      only that exact hostname.
+
+  For example, with a `grpc_proxy` setting of `proxy.google.com` and a
+  `no_grpc_proxy` setting of `.google.com, example.com`:
+  
+  -   `dns:///foo.google.com:50051` — no proxy (subdomain of `.google.com`)
+  -   `example.com:1234` — no proxy (exact match)
+  -   `bar.example.com:443` — uses proxy (not an exact match for `example.com`)
+  -   `baz.googleapis.com:443` — uses proxy (not under `.google.com`)
 
 As of [PR#31119](https://github.com/grpc/grpc/pull/31119), CIDR blocks are also
 supported in the list of names. For example, a `no_proxy` setting of
