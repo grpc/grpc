@@ -570,8 +570,8 @@ class ClientLbEnd2endTest : public ::testing::Test {
       Channel* channel,
       absl::AnyInvocable<bool(grpc_connectivity_state)> predicate,
       bool try_to_connect = false, int timeout_seconds = 5) {
-    const gpr_timespec deadline =
-        grpc_timeout_seconds_to_deadline(timeout_seconds);
+    const gpr_timespec deadline = grpc_timeout_milliseconds_to_deadline(
+        timeout_seconds * 1000 * grpc_test_slowdown_factor());
     while (true) {
       grpc_connectivity_state state = channel->GetState(try_to_connect);
       if (predicate(state)) break;
@@ -697,7 +697,10 @@ TEST_F(ClientLbEnd2endTest, ChannelIdleness) {
   // After a period time not using the channel, the channel state should switch
   // to IDLE.
   LOG(INFO) << "*** WAITING FOR CHANNEL TO GO IDLE ***";
-  gpr_sleep_until(grpc_timeout_milliseconds_to_deadline(1200));
+  EXPECT_TRUE(WaitForChannelState(
+      channel.get(),
+      [](grpc_connectivity_state state) { return state == GRPC_CHANNEL_IDLE; },
+      false, /*timeout_seconds=*/3));
   EXPECT_EQ(channel->GetState(false), GRPC_CHANNEL_IDLE);
   // Sending a new RPC should awake the IDLE channel.
   LOG(INFO) << "*** SENDING ANOTHER RPC, CHANNEL SHOULD RECONNECT ***";
@@ -1137,8 +1140,9 @@ TEST_F(ClientLbEnd2endTest,
   hold1->Resume();
   LOG(INFO) << "=== WAITING FOR SECOND ATTEMPT";
   // This WaitForStateChange() call just makes sure we're doing some polling.
-  EXPECT_TRUE(channel->WaitForStateChange(GRPC_CHANNEL_CONNECTING,
-                                          grpc_timeout_seconds_to_deadline(1)));
+  EXPECT_TRUE(channel->WaitForStateChange(
+      GRPC_CHANNEL_CONNECTING, grpc_timeout_milliseconds_to_deadline(
+                                   1000 * grpc_test_slowdown_factor())));
   hold2->Wait();
   const gpr_timespec t1 = gpr_now(GPR_CLOCK_MONOTONIC);
   LOG(INFO) << "=== RESUMING SECOND ATTEMPT";
@@ -1518,7 +1522,8 @@ TEST_F(PickFirstTest, StaysIdleUponEmptyUpdate) {
   // should stay in state IDLE.
   response_generator.SetNextResolution({});
   EXPECT_FALSE(channel->WaitForStateChange(
-      GRPC_CHANNEL_IDLE, grpc_timeout_seconds_to_deadline(3)));
+      GRPC_CHANNEL_IDLE, grpc_timeout_milliseconds_to_deadline(
+                             3000 * grpc_test_slowdown_factor())));
   // Now bring the backend back up and send a non-empty resolver update,
   // and then try to send an RPC.  Channel should go back into state READY.
   StartServer(0);
@@ -1551,8 +1556,9 @@ TEST_F(PickFirstTest,
   // Now start a server on the last port.
   StartServers(1, {ports.back()});
   // Channel should remain in TRANSIENT_FAILURE until it transitions to READY.
-  EXPECT_TRUE(channel->WaitForStateChange(GRPC_CHANNEL_TRANSIENT_FAILURE,
-                                          grpc_timeout_seconds_to_deadline(4)));
+  EXPECT_TRUE(channel->WaitForStateChange(
+      GRPC_CHANNEL_TRANSIENT_FAILURE, grpc_timeout_milliseconds_to_deadline(
+                                          4000 * grpc_test_slowdown_factor())));
   EXPECT_EQ(GRPC_CHANNEL_READY, channel->GetState(false));
   CheckRpcSendOk(DEBUG_LOCATION, stub);
 }
@@ -1966,7 +1972,8 @@ TEST_F(RoundRobinTest, DoesNotFailRpcsUponDisconnection) {
   // Wait for first RPC to complete.
   LOG(INFO) << "=== WAITING FOR FIRST RPC TO COMPLETE ===";
   ASSERT_EQ(reinterpret_cast<void*>(1),
-            gpr_event_wait(&ev, grpc_timeout_seconds_to_deadline(1)));
+            gpr_event_wait(&ev, grpc_timeout_milliseconds_to_deadline(
+                                    1000 * grpc_test_slowdown_factor())));
   // Channel should now be READY.
   ASSERT_EQ(GRPC_CHANNEL_READY, channel->GetState(false));
   // Tell injector to intercept the next connection attempt.
@@ -1980,7 +1987,8 @@ TEST_F(RoundRobinTest, DoesNotFailRpcsUponDisconnection) {
     grpc_core::ExecCtx exec_ctx;
     grpc_core::Server::FromC(servers_[0]->server_->c_server())->SendGoaways();
   }
-  gpr_sleep_until(grpc_timeout_seconds_to_deadline(1));
+  gpr_sleep_until(grpc_timeout_milliseconds_to_deadline(
+      1000 * grpc_test_slowdown_factor()));
   servers_[0]->Shutdown();
   // Wait for next attempt to start.
   LOG(INFO) << "=== WAITING FOR RECONNECTION ATTEMPT ===";
@@ -2568,7 +2576,10 @@ class ClientLbInterceptTrailingMetadataTest : public ClientLbEnd2endTest {
   bool WaitForLbCallback() {
     grpc_core::MutexLock lock(&mu_);
     while (!trailer_intercepted_) {
-      if (cond_.WaitWithTimeout(&mu_, absl::Seconds(3))) return false;
+      if (cond_.WaitWithTimeout(
+              &mu_, absl::Seconds(3 * grpc_test_slowdown_factor()))) {
+        return false;
+      }
     }
     trailer_intercepted_ = false;
     return true;
@@ -3090,7 +3101,8 @@ TEST_F(OobBackendMetricTest, Basic) {
       report_seen = true;
       break;
     }
-    gpr_sleep_until(grpc_timeout_seconds_to_deadline(1));
+    gpr_sleep_until(grpc_timeout_milliseconds_to_deadline(
+        1000 * grpc_test_slowdown_factor()));
   }
   ASSERT_TRUE(report_seen);
   // Now update the utilization data on the server.
@@ -3122,7 +3134,8 @@ TEST_F(OobBackendMetricTest, Basic) {
         break;
       }
     }
-    gpr_sleep_until(grpc_timeout_seconds_to_deadline(1));
+    gpr_sleep_until(grpc_timeout_milliseconds_to_deadline(
+        1000 * grpc_test_slowdown_factor()));
   }
   ASSERT_TRUE(report_seen);
 }
