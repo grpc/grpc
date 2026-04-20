@@ -19,6 +19,7 @@ import time
 from typing import (
     Any,
     AnyStr,
+    Callable,
     Dict,
     Iterable,
     List,
@@ -43,9 +44,8 @@ from opentelemetry.metrics import Counter
 from opentelemetry.metrics import Histogram
 from opentelemetry.metrics import Meter
 from opentelemetry.sdk import trace as sdk_trace
-from opentelemetry.trace.propagation.tracecontext import (
-    TraceContextTextMapPropagator,
-)
+from opentelemetry.propagators.textmap import TextMapPropagator
+
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -109,7 +109,7 @@ class _OpenTelemetryPlugin:
     _metric_to_recorder: Dict[MetricsName, Union[Counter, Histogram]]
     _tracer: Optional[sdk_trace.Tracer]
     _trace_ctx_var: contextvars.ContextVar
-    _text_map_propagator: Optional[TraceContextTextMapPropagator]
+    _text_map_propagator: Optional[TextMapPropagator]
     _enabled_client_plugin_options: Optional[List[OpenTelemetryPluginOption]]
     _enabled_server_plugin_options: Optional[List[OpenTelemetryPluginOption]]
     identifier: str
@@ -267,11 +267,16 @@ class _OpenTelemetryPlugin:
         """
         # Build parent context locally to avoid race conditions when
         # concurrent RPCs are collecting traces
-        local_ctx = self._build_context(
-            trace_id=tracing_data.trace_id,
-            span_id=tracing_data.parent_span_id,
-            is_sampled=tracing_data.should_sample,
-        )
+        if (self._text_map_propagator and tracing_data.received_headers):
+            local_ctx = self._text_map_propagator.extract(
+                carrier=tracing_data.received_headers
+            )
+        else:
+            local_ctx = self._build_context(
+                trace_id=tracing_data.trace_id,
+                span_id=tracing_data.parent_span_id,
+                is_sampled=tracing_data.should_sample,
+            )
 
         # to prevent concurrent RPCs from overwriting shared state
         with self._tracer_lock:
@@ -314,6 +319,20 @@ class _OpenTelemetryPlugin:
                 )
         return labels_for_exchange
 
+    def get_client_propagation_headers(
+        self,
+        trace_id: str,
+        span_id: str,
+        is_sampled: bool
+    ) -> Dict[str, str]:
+        if not self._text_map_propagator:
+            return {}
+
+        carrier = {}
+        context = self._build_context(trace_id, span_id, is_sampled)
+        self._text_map_propagator.inject(carrier, context)
+        return carrier
+
     def get_server_exchange_labels(self) -> Dict[str, str]:
         """Get labels used for server side Metadata Exchange."""
         labels_for_exchange = {}
@@ -325,6 +344,13 @@ class _OpenTelemetryPlugin:
                     plugin_option.get_label_injector().get_labels_for_exchange()
                 )
         return labels_for_exchange
+
+    def get_propagation_fields(self):
+        """Returns the set of header names used by configured propagator."""
+        fields = set()
+        if self._text_map_propagator:
+            fields = self._text_map_propagator.fields
+        return fields
 
     def activate_client_plugin_options(self, target: bytes) -> None:
         """Activate client plugin options based on option settings."""
@@ -584,6 +610,7 @@ class OpenTelemetryObservability(grpc._observability.ObservabilityPlugin):
         trace_id, parent_span_id = self._generate_ids()
         self._maybe_activate_client_plugin_options(target)
         exchange_labels = self._get_client_exchange_labels()
+        propagation_headers_callable = self._make_propagation_headers_callable()
         enabled_optional_labels = set()
         for plugin in self._plugins:
             enabled_optional_labels.update(plugin.get_enabled_optional_labels())
@@ -594,6 +621,7 @@ class OpenTelemetryObservability(grpc._observability.ObservabilityPlugin):
             trace_id,
             self._get_identifier(),
             exchange_labels,
+            propagation_headers_callable,
             enabled_optional_labels,
             method_name in self._registered_methods,
             parent_span_id,
@@ -608,8 +636,9 @@ class OpenTelemetryObservability(grpc._observability.ObservabilityPlugin):
         capsule = None
         self._maybe_activate_server_plugin_options(xds)
         exchange_labels = self._get_server_exchange_labels()
+        propagation_fields = self._get_propagation_fields()
         capsule = _cyobservability.create_server_call_tracer_factory_capsule(
-            exchange_labels, self._get_identifier()
+            exchange_labels, propagation_fields, self._get_identifier()
         )
         return capsule
 
@@ -647,11 +676,40 @@ class OpenTelemetryObservability(grpc._observability.ObservabilityPlugin):
             client_exchange_labels.update(_plugin.get_client_exchange_labels())
         return client_exchange_labels
 
+    def _make_propagation_headers_callable(
+        self
+    ) -> Optional[Callable[[str, str, bool], Dict[str, str]]]:
+        plugins_with_propagator = [
+            p for p in self._plugins if p._text_map_propagator
+        ]
+        if not plugins_with_propagator:
+            return None
+
+        def _get_propagation_headers(
+            trace_id: str, span_id: str, is_sampled: bool
+        ) -> Dict[str, str]:
+            propagation_headers = {}
+            for _plugin in plugins_with_propagator:
+                propagation_headers.update(
+                    _plugin.get_client_propagation_headers(
+                        trace_id, span_id, is_sampled
+                    )
+                )
+            return propagation_headers
+
+        return _get_propagation_headers
+
     def _get_server_exchange_labels(self) -> Dict[str, AnyStr]:
         server_exchange_labels = {}
         for _plugin in self._plugins:
             server_exchange_labels.update(_plugin.get_server_exchange_labels())
         return server_exchange_labels
+
+    def _get_propagation_fields(self) -> List[str]:
+        fields = set()
+        for _plugin in self._plugins:
+            fields.update(_plugin.get_propagation_fields())
+        return fields
 
     def _maybe_activate_client_plugin_options(self, target: bytes) -> None:
         if not self._client_option_activated:

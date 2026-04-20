@@ -46,15 +46,24 @@ constexpr uint32_t
 PythonOpenCensusCallTracer::PythonOpenCensusCallTracer(
     const char* method, const char* target, const char* trace_id,
     const char* parent_span_id, const char* identifier,
-    const std::vector<Label>& exchange_labels, bool tracing_enabled,
+    const std::vector<Label>& exchange_labels,
+    GetPropagationHeadersCb get_propagation_headers_cb,
+    PyObject* py_callable, bool tracing_enabled,
     bool add_csm_optional_labels, bool registered_method)
     : method_(GetMethod(method)),
       target_(GetTarget(target)),
       tracing_enabled_(tracing_enabled),
       add_csm_optional_labels_(add_csm_optional_labels),
       labels_injector_(exchange_labels),
+      get_propagation_headers_cb_(get_propagation_headers_cb),
+      py_callable_(py_callable),
       identifier_(identifier),
       registered_method_(registered_method) {
+  if (py_callable_) {
+    PyGILState_STATE state = PyGILState_Ensure();
+    Py_INCREF(py_callable_);
+    PyGILState_Release(state);
+  }
   GenerateClientContext(absl::StrCat("Sent.", method_),
                         absl::string_view(trace_id),
                         absl::string_view(parent_span_id), &context_);
@@ -89,6 +98,12 @@ void PythonOpenCensusCallTracer::RecordAnnotation(
 }
 
 PythonOpenCensusCallTracer::~PythonOpenCensusCallTracer() {
+  if (py_callable_ != nullptr) {
+    PyGILState_STATE state = PyGILState_Ensure();
+    Py_DECREF(py_callable_);
+    PyGILState_Release(state);
+    py_callable_ = nullptr;
+  }
   if (PythonCensusStatsEnabled()) {
     context_.Labels().emplace_back(kClientMethod, method_);
     RecordIntMetric(kRpcClientRetriesPerCallMeasureName, retries_ - 1,
@@ -186,6 +201,19 @@ void PythonOpenCensusCallTracer::PythonOpenCensusCallAttemptTracer::
       send_initial_metadata->Set(
           grpc_core::GrpcTraceBinMetadata(),
           grpc_core::Slice::FromCopiedBuffer(tracing_buf, tracing_len));
+    }
+    if (parent_->get_propagation_headers_cb_ != nullptr &&
+        parent_->py_callable_ != nullptr) {
+      const auto& span_ctx = context_.GetSpanContext();
+      const auto propagation_headers = parent_->get_propagation_headers_cb_(
+          span_ctx.TraceId().c_str(), span_ctx.SpanId().c_str(),
+          span_ctx.IsSampled(), parent_->py_callable_);
+
+      for (const auto& header : propagation_headers) {
+        send_initial_metadata->Append(
+            header.key, grpc_core::Slice::FromCopiedString(header.value),
+            [](absl::string_view, const grpc_core::Slice&) {});
+      }
     }
   }
   if (!PythonCensusStatsEnabled()) {

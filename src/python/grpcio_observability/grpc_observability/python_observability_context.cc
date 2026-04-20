@@ -266,6 +266,12 @@ void Span::AddEvent(
   span_events_.emplace_back(event);
 }
 
+void Span::SetReceivedHeaders(std::vector<Label> received_headers)
+{
+  grpc_core::MutexLock lock(mu_.get());
+  received_headers_ = std::move(received_headers);
+}
+
 SpanCensusData Span::ToCensusData() const {
   grpc_core::MutexLock lock(mu_.get());
   SpanCensusData census_data;
@@ -284,6 +290,7 @@ SpanCensusData Span::ToCensusData() const {
   census_data.parent_span_id = parent_span_id_;
   census_data.status = status_;
   census_data.span_labels = span_labels_;
+  census_data.received_headers = received_headers_;
   census_data.span_events = span_events_;
   census_data.child_span_count = child_span_count_;
   return census_data;

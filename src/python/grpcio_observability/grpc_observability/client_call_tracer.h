@@ -22,6 +22,7 @@
 #include <string>
 
 #include "metadata_exchange.h"
+#include "observability_util.h"
 #include "python_observability_context.h"
 #include "src/core/telemetry/call_tracer.h"
 #include "absl/base/thread_annotations.h"
@@ -118,7 +119,9 @@ class PythonOpenCensusCallTracer : public grpc_core::ClientCallTracerInterface {
   explicit PythonOpenCensusCallTracer(
       const char* method, const char* target, const char* trace_id,
       const char* parent_span_id, const char* identifier,
-      const std::vector<Label>& exchange_labels, bool tracing_enabled,
+      const std::vector<Label>& exchange_labels,
+      GetPropagationHeadersCb get_propagation_headers_cb,
+      PyObject* py_callable, bool tracing_enabled,
       bool add_csm_optional_labels, bool registered_method);
   ~PythonOpenCensusCallTracer() override;
 
@@ -154,6 +157,8 @@ class PythonOpenCensusCallTracer : public grpc_core::ClientCallTracerInterface {
   bool add_csm_optional_labels_;
   mutable grpc_core::Mutex mu_;
   PythonLabelsInjector labels_injector_;
+  GetPropagationHeadersCb get_propagation_headers_cb_;
+  PyObject* py_callable_;
   std::string identifier_;
   const bool registered_method_;
   // Non-transparent attempts per call

@@ -21,6 +21,7 @@ import sys
 from typing import Any, Callable, List, Optional, Sequence, Set, Tuple
 import unittest
 
+import grpc
 import grpc_observability
 from grpc_observability import _open_telemetry_measures
 from opentelemetry.sdk import metrics as otel_metrics
@@ -29,6 +30,10 @@ from opentelemetry.sdk.metrics import export as otel_metrics_export
 from opentelemetry.sdk.metrics import view as otel_metrics_view
 from opentelemetry.sdk.trace import export as otel_trace_export
 from opentelemetry.sdk.trace.export import in_memory_span_exporter
+from opentelemetry.propagators.textmap import TextMapPropagator
+from opentelemetry.trace.propagation.tracecontext import (
+    TraceContextTextMapPropagator,
+)
 
 from tests_aio.observability import _test_server
 from tests_aio.unit._test_base import AioTestBase
@@ -94,12 +99,23 @@ class OTelMetricExporter(otel_metrics_export.MetricExporter):
                         )
 
 
-@unittest.skipIf(
-    os.name == "nt" or "darwin" in sys.platform,
-    "Observability is not supported in Windows and MacOS",
-)
-class OpenTelemetryObservabilityTest(AioTestBase):
-    async def setUp(self):
+class _MetadataCapturingServerInterceptor(grpc.aio.ServerInterceptor):
+    def __init__(self):
+        self.captured_metadata = []
+
+    async def intercept_service(self, continuation, handler_call_details):
+        self.captured_metadata.append(
+            dict(handler_call_details.invocation_metadata)
+        )
+        return await continuation(handler_call_details)
+
+
+class _ObservabilityMixin:
+    async def setUpMixin(
+        self,
+        interceptors: Optional[Sequence[grpc.aio.ServerInterceptor]] = None,
+        text_map_propagator: Optional[TextMapPropagator] = None
+    ):
         self.all_metrics = collections.defaultdict(list)
         otel_exporter = OTelMetricExporter(self.all_metrics)
         metric_reader = otel_metrics_export.PeriodicExportingMetricReader(
@@ -119,14 +135,169 @@ class OpenTelemetryObservabilityTest(AioTestBase):
         self._otel_plugin = grpc_observability.OpenTelemetryPlugin(
             meter_provider=self._meter_provider,
             tracer_provider=self._tracer_provider,
+            text_map_propagator=text_map_propagator,
         )
         self._otel_plugin.register_global()
-        self._server, self._port = await _test_server.start_server()
+        self._server, self._port = await _test_server.start_server(interceptors)
 
-    async def tearDown(self):
+    async def tearDownMixin(self):
         await self._server.stop(0)
         self._otel_plugin.deregister_global()
         self._meter_provider.shutdown(timeout_millis=1_000)
+
+    async def assert_eventually(
+        self,
+        predicate: Callable[[], bool],
+        *,
+        timeout: Optional[datetime.timedelta] = None,
+        message: Optional[Callable[[], str]] = None,
+    ) -> None:
+        message = message or (lambda: "Proposition did not evaluate to true")
+        timeout = timeout or datetime.timedelta(seconds=5)
+        end = datetime.datetime.now() + timeout
+        while datetime.datetime.now() < end:
+            if predicate():
+                break
+            await asyncio.sleep(0.5)
+        else:
+            self.fail(message() + " after " + str(timeout))
+
+    async def _validate_metrics_exist(
+        self, all_metrics: dict[str, Any]
+    ) -> None:
+        # Sleep here to make sure we have at least one export from
+        # OTel MetricExporter.
+        await self.assert_eventually(
+            lambda: len(all_metrics.keys()) > 1,
+            message=lambda: f"No metrics were exported",
+        )
+
+    def _validate_all_metrics_names(self, metric_names: Set[str]) -> None:
+        self._validate_server_metrics_names(metric_names)
+        self._validate_client_metrics_names(metric_names)
+
+    def _validate_server_metrics_names(self, metric_names: Set[str]) -> None:
+        for base_metric in _open_telemetry_measures.base_metrics():
+            if "grpc.server" in base_metric.name:
+                self.assertTrue(
+                    base_metric.name in metric_names,
+                    msg=(
+                        f"metric {base_metric.name} not found"
+                        f"in exported metrics: {metric_names}!"
+                    ),
+                )
+
+    def _validate_client_metrics_names(self, metric_names: Set[str]) -> None:
+        for base_metric in _open_telemetry_measures.base_metrics():
+            if "grpc.client" in base_metric.name:
+                self.assertTrue(
+                    base_metric.name in metric_names,
+                    msg=(
+                        f"metric {base_metric.name} not found"
+                        f"in exported metrics: {metric_names}!"
+                    ),
+                )
+
+    async def _validate_spans_exist(
+        self,
+        span_exporter: otel_trace_export.SpanExporter,
+        expected_count: int = 3,
+    ):
+        # Sleep here to make sure we have at least expected number of spans from
+        # OTel SpanExporter.
+        await self.assert_eventually(
+            lambda: len(span_exporter.get_finished_spans()) >= expected_count,
+            message=lambda: (
+                f"Expected at least {expected_count} spans, got "
+                f"{len(span_exporter.get_finished_spans())}"
+            ),
+        )
+
+    def _validate_spans(
+        self,
+        spans: Sequence[otel_trace.ReadableSpan],
+        expected_span_size: int,
+        expected_server_events: Sequence[Tuple[str, dict[str, str]]],
+        expected_attempt_events: Sequence[Tuple[str, dict[str, str]]],
+    ) -> None:
+        self.assertTrue(
+            expr=(len(spans) == expected_span_size),
+            msg=f"Expected span size {expected_span_size}, got: {len(spans)}!",
+        )
+
+        client_span = next(
+            (span for span in spans if span.name.startswith("Sent.")), None
+        )
+        self.assertIsNotNone(client_span)
+
+        attempt_span = next(
+            (span for span in spans if span.name.startswith("Attempt.")), None
+        )
+        self.assertIsNotNone(attempt_span)
+
+        server_span = next(
+            (span for span in spans if span.name.startswith("Recv.")), None
+        )
+        self.assertIsNotNone(server_span)
+
+        # validate span statuses
+        self.assertTrue(client_span.status.is_ok)
+        self.assertTrue(attempt_span.status.is_ok)
+        self.assertTrue(server_span.status.is_ok)
+
+        # validate mandatory attributes
+        attempt_attrs = dict(attempt_span.attributes)
+        self.assertIn("transparent-retry", attempt_attrs)
+        self.assertEqual(attempt_attrs["transparent-retry"], "0")
+        self.assertIn("previous-rpc-attempts", attempt_attrs)
+        self.assertEqual(attempt_attrs["previous-rpc-attempts"], "0")
+
+        # validate parent-child relationship
+        self.assertEqual(
+            client_span.get_span_context().trace_id,
+            attempt_span.get_span_context().trace_id,
+        )
+        self.assertEqual(
+            attempt_span.parent.span_id, client_span.get_span_context().span_id
+        )
+        self.assertEqual(
+            attempt_span.get_span_context().trace_id,
+            server_span.get_span_context().trace_id,
+        )
+        self.assertEqual(
+            server_span.parent.span_id, attempt_span.get_span_context().span_id
+        )
+
+        # validate server span traced events
+        server_span_events_packed = [
+            (ev.name, ev.attributes) for ev in server_span.events
+        ]
+        for expected_ev in expected_server_events:
+            self.assertTrue(
+                expr=(expected_ev in server_span_events_packed),
+                msg=f"Expected server event missing: {expected_ev}!",
+            )
+
+        # validate attempt span traced events
+        attempt_span_events_packed = [
+            (ev.name, ev.attributes) for ev in attempt_span.events
+        ]
+        for expected_ev in expected_attempt_events:
+            self.assertTrue(
+                expr=(expected_ev in attempt_span_events_packed),
+                msg=f"Expected attempt event missing: {expected_ev}!",
+            )
+
+@unittest.skipIf(
+    os.name == "nt" or "darwin" in sys.platform,
+    "Observability is not supported in Windows and MacOS",
+)
+class OpenTelemetryObservabilityWithoutPropagatorTest(_ObservabilityMixin, AioTestBase):
+    async def setUp(self):
+        await self.setUpMixin()
+
+    async def tearDown(self):
+        await self.tearDownMixin()
 
     async def test_metrics_unary_unary(self):
         await _test_server.unary_unary_call(port=self._port)
@@ -396,148 +567,85 @@ class OpenTelemetryObservabilityTest(AioTestBase):
             ],
         )
 
-    async def assert_eventually(
-        self,
-        predicate: Callable[[], bool],
-        *,
-        timeout: Optional[datetime.timedelta] = None,
-        message: Optional[Callable[[], str]] = None,
-    ) -> None:
-        message = message or (lambda: "Proposition did not evaluate to true")
-        timeout = timeout or datetime.timedelta(seconds=5)
-        end = datetime.datetime.now() + timeout
-        while datetime.datetime.now() < end:
-            if predicate():
-                break
-            await asyncio.sleep(0.5)
-        else:
-            self.fail(message() + " after " + str(timeout))
 
-    async def _validate_metrics_exist(
-        self, all_metrics: dict[str, Any]
-    ) -> None:
-        # Sleep here to make sure we have at least one export from
-        # OTel MetricExporter.
-        await self.assert_eventually(
-            lambda: len(all_metrics.keys()) > 1,
-            message=lambda: f"No metrics were exported",
+@unittest.skipIf(
+    os.name == "nt" or "darwin" in sys.platform,
+    "Observability is not supported in Windows and MacOS",
+)
+class OpenTelemetryObservabilityWithPropagatorTest(_ObservabilityMixin, AioTestBase):
+    async def setUp(self):
+        self.interceptor = _MetadataCapturingServerInterceptor()
+        await self.setUpMixin(
+            interceptors=(self.interceptor,),
+            text_map_propagator=TraceContextTextMapPropagator(),
         )
 
-    def _validate_all_metrics_names(self, metric_names: Set[str]) -> None:
-        self._validate_server_metrics_names(metric_names)
-        self._validate_client_metrics_names(metric_names)
+    async def tearDown(self):
+        await self.tearDownMixin()
 
-    def _validate_server_metrics_names(self, metric_names: Set[str]) -> None:
-        for base_metric in _open_telemetry_measures.base_metrics():
-            if "grpc.server" in base_metric.name:
-                self.assertTrue(
-                    base_metric.name in metric_names,
-                    msg=(
-                        f"metric {base_metric.name} not found"
-                        f"in exported metrics: {metric_names}!"
-                    ),
-                )
+    async def test_traces_unary_unary(self):
+        await _test_server.unary_unary_call(port=self._port)
 
-    def _validate_client_metrics_names(self, metric_names: Set[str]) -> None:
-        for base_metric in _open_telemetry_measures.base_metrics():
-            if "grpc.client" in base_metric.name:
-                self.assertTrue(
-                    base_metric.name in metric_names,
-                    msg=(
-                        f"metric {base_metric.name} not found"
-                        f"in exported metrics: {metric_names}!"
-                    ),
-                )
-
-    async def _validate_spans_exist(
-        self,
-        span_exporter: otel_trace_export.SpanExporter,
-        expected_count: int = 3,
-    ):
-        # Sleep here to make sure we have at least expected number of spans from
-        # OTel SpanExporter.
-        await self.assert_eventually(
-            lambda: len(span_exporter.get_finished_spans()) >= expected_count,
-            message=lambda: (
-                f"Expected at least {expected_count} spans, got "
-                f"{len(span_exporter.get_finished_spans())}"
-            ),
-        )
-
-    def _validate_spans(
-        self,
-        spans: Sequence[otel_trace.ReadableSpan],
-        expected_span_size: int,
-        expected_server_events: Sequence[Tuple[str, dict[str, str]]],
-        expected_attempt_events: Sequence[Tuple[str, dict[str, str]]],
-    ) -> None:
-        self.assertTrue(
-            expr=(len(spans) == expected_span_size),
-            msg=f"Expected span size {expected_span_size}, got: {len(spans)}!",
+        await self._validate_spans_exist(self._span_exporter)
+        spans = self._span_exporter.get_finished_spans()
+        self._validate_spans(
+            spans=spans,
+            expected_span_size=3,
+            expected_server_events=[
+                (
+                    "Outbound message",
+                    {"sequence-number": "0", "message-size": "3"},
+                ),
+                (
+                    "Inbound message",
+                    {"sequence-number": "0", "message-size": "3"},
+                ),
+            ],
+            expected_attempt_events=[
+                (
+                    "Outbound message",
+                    {"sequence-number": "0", "message-size": "3"},
+                ),
+                (
+                    "Inbound message",
+                    {"sequence-number": "0", "message-size": "3"},
+                ),
+            ],
         )
 
         client_span = next(
             (span for span in spans if span.name.startswith("Sent.")), None
         )
         self.assertIsNotNone(client_span)
-
-        attempt_span = next(
-            (span for span in spans if span.name.startswith("Attempt.")), None
+        expected_trace_id = format(
+            client_span.get_span_context().trace_id, "032x"
         )
-        self.assertIsNotNone(attempt_span)
 
-        server_span = next(
-            (span for span in spans if span.name.startswith("Recv.")), None
+        self.assertEqual(len(self.interceptor.captured_metadata), 1)
+        metadata = self.interceptor.captured_metadata[0]
+        self.assertIn(
+            "traceparent",
+            metadata,
+            msg=(
+                f"traceparent header not found in metadata: ",
+                f"{list(metadata.keys())}",
+            ),
         )
-        self.assertIsNotNone(server_span)
 
-        # validate span statuses
-        self.assertTrue(client_span.status.is_ok)
-        self.assertTrue(attempt_span.status.is_ok)
-        self.assertTrue(server_span.status.is_ok)
-
-        # validate mandatory attributes
-        attempt_attrs = dict(attempt_span.attributes)
-        self.assertIn("transparent-retry", attempt_attrs)
-        self.assertEqual(attempt_attrs["transparent-retry"], "0")
-        self.assertIn("previous-rpc-attempts", attempt_attrs)
-        self.assertEqual(attempt_attrs["previous-rpc-attempts"], "0")
-
-        # validate parent-child relationship
+        traceparent = metadata["traceparent"]
+        parts = traceparent.split("-")
         self.assertEqual(
-            client_span.get_span_context().trace_id,
-            attempt_span.get_span_context().trace_id,
+            len(parts), 4, msg=f"Invalid traceparent format: {traceparent}"
         )
+        self.assertEqual(parts[0], "00", msg="Expected traceparent version 00")
         self.assertEqual(
-            attempt_span.parent.span_id, client_span.get_span_context().span_id
+            parts[1],
+            expected_trace_id,
+            msg=(
+                f"TraceID mismatch: traceparent has {parts[1]}, ",
+                f"span has {expected_trace_id}",
+            ),
         )
-        self.assertEqual(
-            attempt_span.get_span_context().trace_id,
-            server_span.get_span_context().trace_id,
-        )
-        self.assertEqual(
-            server_span.parent.span_id, attempt_span.get_span_context().span_id
-        )
-
-        # validate server span traced events
-        server_span_events_packed = [
-            (ev.name, ev.attributes) for ev in server_span.events
-        ]
-        for expected_ev in expected_server_events:
-            self.assertTrue(
-                expr=(expected_ev in server_span_events_packed),
-                msg=f"Expected server event missing: {expected_ev}!",
-            )
-
-        # validate attempt span traced events
-        attempt_span_events_packed = [
-            (ev.name, ev.attributes) for ev in attempt_span.events
-        ]
-        for expected_ev in expected_attempt_events:
-            self.assertTrue(
-                expr=(expected_ev in attempt_span_events_packed),
-                msg=f"Expected attempt event missing: {expected_ev}!",
-            )
 
 
 if __name__ == "__main__":

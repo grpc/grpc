@@ -1015,8 +1015,6 @@ class OpenTelemetryObservabilityTest(unittest.TestCase):
             server_span.parent.span_id, attempt_span.get_span_context().span_id
         )
 
-    @unittest.expectedFailure
-    # TODO(Zgoda): Implement header injection with map propagator object
     def testTraceparentHeaderInjectedWithTextMapPropagator(self):
         interceptor = _MetadataCapturingServerInterceptor()
 

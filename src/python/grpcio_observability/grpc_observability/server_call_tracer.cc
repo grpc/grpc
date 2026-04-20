@@ -128,6 +128,20 @@ void PythonOpenCensusServerCallTracer::RecordReceivedInitialMetadata(
                     /*include_exchange_labels=*/false);
   }
 
+  // capture propagation headers for server side extraction in Python
+  if (tracing_enabled && !propagation_fields_.empty()) {
+    std::vector<Label> received_headers;
+    received_headers.reserve(propagation_fields_.size());
+    std::string buffer;
+    for (const auto& key : propagation_fields_) {
+      auto value = recv_initial_metadata->GetStringValue(key, &buffer);
+      if (value.has_value()) {
+        received_headers.emplace_back(key, std::string(*value));
+      }
+    }
+    context_.GetSpan().SetReceivedHeaders(received_headers);
+  }
+
   labels_from_peer_ = labels_injector_.GetExchangeLabels(recv_initial_metadata);
 }
 
@@ -352,7 +366,9 @@ PythonOpenCensusServerCallTracerFactory::CreateNewServerCallTracer(
   // the same DLL in Windows.
   (void)arena;
   (void)channel_args;
-  return new PythonOpenCensusServerCallTracer(exchange_labels_, identifier_);
+  return new PythonOpenCensusServerCallTracer(exchange_labels_,
+                                              propagation_fields_,
+                                              identifier_);
 }
 
 bool PythonOpenCensusServerCallTracerFactory::IsServerTraced(
@@ -363,7 +379,11 @@ bool PythonOpenCensusServerCallTracerFactory::IsServerTraced(
 
 PythonOpenCensusServerCallTracerFactory::
     PythonOpenCensusServerCallTracerFactory(
-        const std::vector<Label>& exchange_labels, const char* identifier)
-    : exchange_labels_(exchange_labels), identifier_(identifier) {}
+        const std::vector<Label>& exchange_labels,
+        const std::vector<std::string>& propagation_fields,
+        const char* identifier)
+    : exchange_labels_(exchange_labels),
+      propagation_fields_(propagation_fields),
+      identifier_(identifier) {}
 
 }  // namespace grpc_observability

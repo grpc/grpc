@@ -95,6 +95,9 @@ class TracingData:
       child_span_count: The number of child span associated with this span.
       span_labels: A dictionary that maps labels tags associated with this
        span to corresponding label value.
+      received_headers: A dictionary of propagation headers received from the
+       peer's initial metadata. Used by text map propagator to reconstruct trace
+       context.
       span_events: A dictionary that contains traced event data.
         Following keys are used:
 
@@ -116,6 +119,7 @@ class TracingData:
     should_sample: bool
     child_span_count: int
     span_labels: Mapping[str, Union[str, bytes]] = field(default_factory=dict)
+    received_headers: Dict[str, str] = field(default_factory=dict)
     span_events: List[
         Dict[str, Union[str, Mapping[str, Union[str, bytes]]]]
     ] = field(default_factory=list)
