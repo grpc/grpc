@@ -29,7 +29,6 @@ set PREPARE_BUILD_INSTALL_DEPS_PYTHON=true
 call tools/internal_ci/helper_scripts/prepare_build_windows.bat || exit /b 1
 
 call tools/internal_ci/helper_scripts/prepare_ccache.bat || exit /b 1
-set CCACHE_LOGFILE=T:\src\github\grpc\reports\ccache.log
 
 @rem Exclude these flags since ccache 4.8 doesn't seem to recognize them.
 set "CCACHE_IGNOREOPTIONS=/Zc:preprocessor /Tc /Tp /TP /TC"
