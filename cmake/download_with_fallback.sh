@@ -18,6 +18,8 @@ export fallback_url=$2
 export output_file=$3
 export hash=$4
 
+mkdir -p $(dirname "${output_file}")
+
 try_download() {
   local url=$1
   curl -L --fail "${url}" -o "${output_file}"
