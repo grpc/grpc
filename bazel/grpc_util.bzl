@@ -19,8 +19,8 @@ Contains generic helper utilities.
 
 _upper_segments_list = ["url", "http", "https"]
 
-def strip_extension(str):
-    return str.rpartition(".")[0]
+def strip_extension(str, sep = "."):
+    return str.rpartition(sep)[0]
 
 def capitalize(word):
     if word in _upper_segments_list:
