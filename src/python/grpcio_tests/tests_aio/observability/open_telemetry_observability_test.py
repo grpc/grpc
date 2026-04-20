@@ -98,7 +98,9 @@ class OTelMetricExporter(otel_metrics_export.MetricExporter):
 
 class OpenTelemetryObservabilityBase(AioTestBase):
     async def setUp(self):
-        self.all_metrics: dict[str, list[str]] = collections.defaultdict(list)
+        self.all_metrics: dict[str, list[dict[str, str]]] = (
+            collections.defaultdict(list)
+        )
         otel_exporter = OTelMetricExporter(self.all_metrics)
         reader = otel_metrics_export.PeriodicExportingMetricReader(
             exporter=otel_exporter,
@@ -177,7 +179,7 @@ class OpenTelemetryObservabilityBase(AioTestBase):
 
     def _validate_all_method_labels(
         self,
-        all_metrics: dict[str, list[str]],
+        all_metrics: dict[str, list[dict[str, str]]],
         registered_method_name: str = "",
     ) -> None:
         client_method_values = set()
