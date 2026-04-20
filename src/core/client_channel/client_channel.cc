@@ -897,10 +897,15 @@ void ClientChannel::Ping(grpc_completion_queue*, void*) {
 grpc_call* ClientChannel::CreateCall(
     grpc_call* parent_call, uint32_t propagation_mask,
     grpc_completion_queue* cq, grpc_pollset_set* /*pollset_set_alternative*/,
-    Slice path, std::optional<Slice> authority, Timestamp deadline, bool) {
+    Slice path, std::optional<Slice> authority, Timestamp deadline,
+    bool /*registered_method*/,
+    std::optional<absl::FunctionRef<void(Arena*)>> arena_init_function) {
   auto arena = call_arena_allocator()->MakeArena();
   arena->SetContext<grpc_event_engine::experimental::EventEngine>(
       event_engine());
+  if (arena_init_function.has_value()) {
+    arena_init_function.value()(arena.get());
+  }
   return MakeClientCall(parent_call, propagation_mask, cq, std::move(path),
                         std::move(authority), false, deadline,
                         compression_options(), std::move(arena), Ref());
