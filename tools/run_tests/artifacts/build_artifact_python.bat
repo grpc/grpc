@@ -27,6 +27,8 @@ python -m pip install -r requirements.txt --user
 
 @rem set GRPC_PYTHON_OVERRIDE_CYGWIN_DETECTION_FOR_27=1
 set GRPC_PYTHON_BUILD_WITH_CYTHON=1
+set CCACHE_NOHASHDIR=true
+set CCACHE_LOGFILE=T:\src\github\grpc\reports\ccache_%1_%2.log
 
 @rem Allow build_ext to build C/C++ files in parallel
 @rem by enabling a monkeypatch. It speeds up the build a lot.
