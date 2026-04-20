@@ -367,8 +367,7 @@ PythonOpenCensusServerCallTracerFactory::CreateNewServerCallTracer(
   (void)arena;
   (void)channel_args;
   return new PythonOpenCensusServerCallTracer(exchange_labels_,
-                                              propagation_fields_,
-                                              identifier_);
+                                              propagation_fields_, identifier_);
 }
 
 bool PythonOpenCensusServerCallTracerFactory::IsServerTraced(

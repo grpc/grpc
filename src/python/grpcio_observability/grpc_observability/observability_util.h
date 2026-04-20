@@ -71,9 +71,9 @@ void* CreateClientCallTracer(const char* method, const char* target,
                              bool add_csm_optional_labels,
                              bool registered_method);
 
-void* CreateServerCallTracerFactory(const std::vector<Label> exchange_labels,
-                                    const std::vector<std::string> propagation_fields,
-                                    const char* identifier);
+void* CreateServerCallTracerFactory(
+    const std::vector<Label> exchange_labels,
+    const std::vector<std::string> propagation_fields, const char* identifier);
 
 void NativeObservabilityInit();
 

@@ -63,9 +63,10 @@ class PythonOpenCensusServerCallTracer
   // Maximum size of server stats that are sent on the wire.
   static constexpr uint32_t kMaxServerStatsLen = 16;
 
-  PythonOpenCensusServerCallTracer(const std::vector<Label>& exchange_labels,
-                                   const std::vector<std::string>& propagation_fields,
-                                   std::string identifier)
+  PythonOpenCensusServerCallTracer(
+      const std::vector<Label>& exchange_labels,
+      const std::vector<std::string>& propagation_fields,
+      std::string identifier)
       : start_time_(absl::Now()),
         recv_message_count_(0),
         sent_message_count_(0),

@@ -47,9 +47,8 @@ PythonOpenCensusCallTracer::PythonOpenCensusCallTracer(
     const char* method, const char* target, const char* trace_id,
     const char* parent_span_id, const char* identifier,
     const std::vector<Label>& exchange_labels,
-    GetPropagationHeadersCb get_propagation_headers_cb,
-    PyObject* py_callable, bool tracing_enabled,
-    bool add_csm_optional_labels, bool registered_method)
+    GetPropagationHeadersCb get_propagation_headers_cb, PyObject* py_callable,
+    bool tracing_enabled, bool add_csm_optional_labels, bool registered_method)
     : method_(GetMethod(method)),
       target_(GetTarget(target)),
       tracing_enabled_(tracing_enabled),

@@ -17,8 +17,8 @@ from typing import AnyStr, Callable, Dict, Iterable, List, Optional
 from grpc_observability import _open_telemetry_observability
 from grpc_observability._observability import OptionalLabelType
 from opentelemetry.metrics import MeterProvider
-from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.propagators.textmap import TextMapPropagator
+from opentelemetry.sdk.trace import TracerProvider
 
 GRPC_METHOD_LABEL = "grpc.method"
 GRPC_TARGET_LABEL = "grpc.target"

@@ -114,9 +114,9 @@ void* CreateClientCallTracer(const char* method, const char* target,
   return client_call_tracer;
 }
 
-void* CreateServerCallTracerFactory(const std::vector<Label> exchange_labels,
-                                    const std::vector<std::string> propagation_fields,
-                                    const char* identifier) {
+void* CreateServerCallTracerFactory(
+    const std::vector<Label> exchange_labels,
+    const std::vector<std::string> propagation_fields, const char* identifier) {
   void* server_call_tracer_factory =
       new PythonOpenCensusServerCallTracerFactory(
           exchange_labels, propagation_fields, identifier);

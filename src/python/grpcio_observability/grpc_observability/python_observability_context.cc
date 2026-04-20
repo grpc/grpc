@@ -266,8 +266,7 @@ void Span::AddEvent(
   span_events_.emplace_back(event);
 }
 
-void Span::SetReceivedHeaders(std::vector<Label> received_headers)
-{
+void Span::SetReceivedHeaders(std::vector<Label> received_headers) {
   grpc_core::MutexLock lock(mu_.get());
   received_headers_ = std::move(received_headers);
 }

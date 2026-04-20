@@ -24,13 +24,13 @@ import unittest
 import grpc
 import grpc_observability
 from grpc_observability import _open_telemetry_measures
+from opentelemetry.propagators.textmap import TextMapPropagator
 from opentelemetry.sdk import metrics as otel_metrics
 from opentelemetry.sdk import trace as otel_trace
 from opentelemetry.sdk.metrics import export as otel_metrics_export
 from opentelemetry.sdk.metrics import view as otel_metrics_view
 from opentelemetry.sdk.trace import export as otel_trace_export
 from opentelemetry.sdk.trace.export import in_memory_span_exporter
-from opentelemetry.propagators.textmap import TextMapPropagator
 from opentelemetry.trace.propagation.tracecontext import (
     TraceContextTextMapPropagator,
 )
@@ -114,7 +114,7 @@ class _ObservabilityMixin:
     async def setUpMixin(
         self,
         interceptors: Optional[Sequence[grpc.aio.ServerInterceptor]] = None,
-        text_map_propagator: Optional[TextMapPropagator] = None
+        text_map_propagator: Optional[TextMapPropagator] = None,
     ):
         self.all_metrics = collections.defaultdict(list)
         otel_exporter = OTelMetricExporter(self.all_metrics)
@@ -288,11 +288,14 @@ class _ObservabilityMixin:
                 msg=f"Expected attempt event missing: {expected_ev}!",
             )
 
+
 @unittest.skipIf(
     os.name == "nt" or "darwin" in sys.platform,
     "Observability is not supported in Windows and MacOS",
 )
-class OpenTelemetryObservabilityWithoutPropagatorTest(_ObservabilityMixin, AioTestBase):
+class OpenTelemetryObservabilityWithoutPropagatorTest(
+    _ObservabilityMixin, AioTestBase
+):
     async def setUp(self):
         await self.setUpMixin()
 
@@ -572,7 +575,9 @@ class OpenTelemetryObservabilityWithoutPropagatorTest(_ObservabilityMixin, AioTe
     os.name == "nt" or "darwin" in sys.platform,
     "Observability is not supported in Windows and MacOS",
 )
-class OpenTelemetryObservabilityWithPropagatorTest(_ObservabilityMixin, AioTestBase):
+class OpenTelemetryObservabilityWithPropagatorTest(
+    _ObservabilityMixin, AioTestBase
+):
     async def setUp(self):
         self.interceptor = _MetadataCapturingServerInterceptor()
         await self.setUpMixin(
