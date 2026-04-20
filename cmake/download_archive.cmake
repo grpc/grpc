@@ -30,8 +30,7 @@ function(download_archive destination url fallback_url hash strip_prefix)
     execute_process(COMMAND
                     ${CMAKE_CURRENT_SOURCE_DIR}/download_with_fallback.sh ${url} ${fallback_url} ${_TEMPORARY_FILE} ${hash}
                     WORKING_DIRECTORY ${_download_archive_TEMPORARY_DIR}
-                    RESULT_VARIABLE _download_STATUS
-                    OUTPUT_QUIET)
+                    RESULT_VARIABLE _download_STATUS)
 
     if(_download_STATUS EQUAL 0)
       set(_download_SUCCESS TRUE)
