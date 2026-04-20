@@ -581,15 +581,16 @@ TEST(SslUtilsTest, ClientHandshakerFactoryInitSuccess) {
   key_cert_pair.private_key = client_key;
   key_cert_pair.cert_chain = client_cert;
   tsi_ssl_client_handshaker_factory* factory = nullptr;
-  EXPECT_EQ(grpc_ssl_tsi_client_handshaker_factory_init(
-                &key_cert_pair, root_cert_info,
-                /*skip_server_certificate_verification=*/false,
-                tsi_tls_version::TSI_TLS1_2, tsi_tls_version::TSI_TLS1_3,
-                /*ssl_session_cache=*/nullptr,
-                /*tls_session_key_logger=*/nullptr,
-                /*crl_directory=*/nullptr,
-                /*crl_provider=*/nullptr, /*key_exchange_algorithms=*/{}, &factory),
-            GRPC_SECURITY_OK);
+  EXPECT_EQ(
+      grpc_ssl_tsi_client_handshaker_factory_init(
+          &key_cert_pair, root_cert_info,
+          /*skip_server_certificate_verification=*/false,
+          tsi_tls_version::TSI_TLS1_2, tsi_tls_version::TSI_TLS1_3,
+          /*ssl_session_cache=*/nullptr,
+          /*tls_session_key_logger=*/nullptr,
+          /*crl_directory=*/nullptr,
+          /*crl_provider=*/nullptr, /*key_exchange_algorithms=*/{}, &factory),
+      GRPC_SECURITY_OK);
   ASSERT_NE(factory, nullptr);
   tsi_ssl_client_handshaker_factory_unref(factory);
 }
@@ -599,30 +600,32 @@ TEST(SslUtilsTest, ClientHandshakerFactoryInitWithoutKeyCertPair) {
       testing::GetFileContents("src/core/tsi/test_creds/ca.pem");
   auto root_cert_info = std::make_shared<tsi::RootCertInfo>(root_cert);
   tsi_ssl_client_handshaker_factory* factory = nullptr;
-  EXPECT_EQ(grpc_ssl_tsi_client_handshaker_factory_init(
-                /*key_cert_pair=*/nullptr, root_cert_info,
-                /*skip_server_certificate_verification=*/false,
-                tsi_tls_version::TSI_TLS1_2, tsi_tls_version::TSI_TLS1_3,
-                /*ssl_session_cache=*/nullptr,
-                /*tls_session_key_logger=*/nullptr,
-                /*crl_directory=*/nullptr,
-                /*crl_provider=*/nullptr, /*key_exchange_algorithms=*/{}, &factory),
-            GRPC_SECURITY_OK);
+  EXPECT_EQ(
+      grpc_ssl_tsi_client_handshaker_factory_init(
+          /*key_cert_pair=*/nullptr, root_cert_info,
+          /*skip_server_certificate_verification=*/false,
+          tsi_tls_version::TSI_TLS1_2, tsi_tls_version::TSI_TLS1_3,
+          /*ssl_session_cache=*/nullptr,
+          /*tls_session_key_logger=*/nullptr,
+          /*crl_directory=*/nullptr,
+          /*crl_provider=*/nullptr, /*key_exchange_algorithms=*/{}, &factory),
+      GRPC_SECURITY_OK);
   ASSERT_NE(factory, nullptr);
   tsi_ssl_client_handshaker_factory_unref(factory);
 }
 
 TEST(SslUtilsTest, ClientHandshakerFactoryInitSkipServerVerification) {
   tsi_ssl_client_handshaker_factory* factory = nullptr;
-  EXPECT_EQ(grpc_ssl_tsi_client_handshaker_factory_init(
-                /*key_cert_pair=*/nullptr, /*root_cert_info=*/nullptr,
-                /*skip_server_certificate_verification=*/true,
-                tsi_tls_version::TSI_TLS1_2, tsi_tls_version::TSI_TLS1_3,
-                /*ssl_session_cache=*/nullptr,
-                /*tls_session_key_logger=*/nullptr,
-                /*crl_directory=*/nullptr,
-                /*crl_provider=*/nullptr, /*key_exchange_algorithms=*/{}, &factory),
-            GRPC_SECURITY_OK);
+  EXPECT_EQ(
+      grpc_ssl_tsi_client_handshaker_factory_init(
+          /*key_cert_pair=*/nullptr, /*root_cert_info=*/nullptr,
+          /*skip_server_certificate_verification=*/true,
+          tsi_tls_version::TSI_TLS1_2, tsi_tls_version::TSI_TLS1_3,
+          /*ssl_session_cache=*/nullptr,
+          /*tls_session_key_logger=*/nullptr,
+          /*crl_directory=*/nullptr,
+          /*crl_provider=*/nullptr, /*key_exchange_algorithms=*/{}, &factory),
+      GRPC_SECURITY_OK);
   ASSERT_NE(factory, nullptr);
   tsi_ssl_client_handshaker_factory_unref(factory);
 }
@@ -633,15 +636,16 @@ TEST(SslUtilsTest, ClientHandshakerFactoryInitNoRootCertInfoAndNoSkipFails) {
   if (DefaultSslRootStore::GetPemRootCerts() != nullptr) {
     expected_status = GRPC_SECURITY_OK;
   }
-  EXPECT_EQ(grpc_ssl_tsi_client_handshaker_factory_init(
-                /*key_cert_pair=*/nullptr, /*root_cert_info=*/nullptr,
-                /*skip_server_certificate_verification=*/false,
-                tsi_tls_version::TSI_TLS1_2, tsi_tls_version::TSI_TLS1_3,
-                /*ssl_session_cache=*/nullptr,
-                /*tls_session_key_logger=*/nullptr,
-                /*crl_directory=*/nullptr,
-                /*crl_provider=*/nullptr, /*key_exchange_algorithms=*/{}, &factory),
-            expected_status);
+  EXPECT_EQ(
+      grpc_ssl_tsi_client_handshaker_factory_init(
+          /*key_cert_pair=*/nullptr, /*root_cert_info=*/nullptr,
+          /*skip_server_certificate_verification=*/false,
+          tsi_tls_version::TSI_TLS1_2, tsi_tls_version::TSI_TLS1_3,
+          /*ssl_session_cache=*/nullptr,
+          /*tls_session_key_logger=*/nullptr,
+          /*crl_directory=*/nullptr,
+          /*crl_provider=*/nullptr, /*key_exchange_algorithms=*/{}, &factory),
+      expected_status);
   if (expected_status == GRPC_SECURITY_OK) {
     ASSERT_NE(factory, nullptr);
     tsi_ssl_client_handshaker_factory_unref(factory);
@@ -653,15 +657,16 @@ TEST(SslUtilsTest, ClientHandshakerFactoryInitNoRootCertInfoAndNoSkipFails) {
 TEST(SslUtilsTest, ClientHandshakerFactoryInitBadRootCertFails) {
   auto root_cert_info = std::make_shared<tsi::RootCertInfo>("bad root cert");
   tsi_ssl_client_handshaker_factory* factory = nullptr;
-  EXPECT_EQ(grpc_ssl_tsi_client_handshaker_factory_init(
-                /*key_cert_pair=*/nullptr, root_cert_info,
-                /*skip_server_certificate_verification=*/false,
-                tsi_tls_version::TSI_TLS1_2, tsi_tls_version::TSI_TLS1_3,
-                /*ssl_session_cache=*/nullptr,
-                /*tls_session_key_logger=*/nullptr,
-                /*crl_directory=*/nullptr,
-                /*crl_provider=*/nullptr, /*key_exchange_algorithms=*/{}, &factory),
-            GRPC_SECURITY_ERROR);
+  EXPECT_EQ(
+      grpc_ssl_tsi_client_handshaker_factory_init(
+          /*key_cert_pair=*/nullptr, root_cert_info,
+          /*skip_server_certificate_verification=*/false,
+          tsi_tls_version::TSI_TLS1_2, tsi_tls_version::TSI_TLS1_3,
+          /*ssl_session_cache=*/nullptr,
+          /*tls_session_key_logger=*/nullptr,
+          /*crl_directory=*/nullptr,
+          /*crl_provider=*/nullptr, /*key_exchange_algorithms=*/{}, &factory),
+      GRPC_SECURITY_ERROR);
   ASSERT_EQ(factory, nullptr);
 }
 
@@ -679,14 +684,15 @@ TEST(SslUtilsTest, ServerHandshakerFactoryInitSuccess) {
   std::vector<tsi_ssl_pem_key_cert_pair> key_cert_pairs;
   key_cert_pairs.push_back(key_cert_pair);
   tsi_ssl_server_handshaker_factory* factory = nullptr;
-  EXPECT_EQ(grpc_ssl_tsi_server_handshaker_factory_init(
-                key_cert_pairs, root_cert_info,
-                GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE,
-                tsi_tls_version::TSI_TLS1_2, tsi_tls_version::TSI_TLS1_3,
-                /*tls_session_key_logger=*/nullptr,
-                /*crl_directory=*/nullptr, /*send_client_ca_list=*/true,
-                /*crl_provider=*/nullptr, /*key_exchange_algorithms=*/{}, &factory),
-            GRPC_SECURITY_OK);
+  EXPECT_EQ(
+      grpc_ssl_tsi_server_handshaker_factory_init(
+          key_cert_pairs, root_cert_info,
+          GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE, tsi_tls_version::TSI_TLS1_2,
+          tsi_tls_version::TSI_TLS1_3,
+          /*tls_session_key_logger=*/nullptr,
+          /*crl_directory=*/nullptr, /*send_client_ca_list=*/true,
+          /*crl_provider=*/nullptr, /*key_exchange_algorithms=*/{}, &factory),
+      GRPC_SECURITY_OK);
   ASSERT_NE(factory, nullptr);
   tsi_ssl_server_handshaker_factory_unref(factory);
 }
@@ -701,14 +707,15 @@ TEST(SslUtilsTest, ServerHandshakerFactoryInitBadKeyCert) {
   std::vector<tsi_ssl_pem_key_cert_pair> key_cert_pairs;
   key_cert_pairs.push_back(key_cert_pair);
   tsi_ssl_server_handshaker_factory* factory = nullptr;
-  EXPECT_EQ(grpc_ssl_tsi_server_handshaker_factory_init(
-                key_cert_pairs, root_cert_info,
-                GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE,
-                tsi_tls_version::TSI_TLS1_2, tsi_tls_version::TSI_TLS1_3,
-                /*tls_session_key_logger=*/nullptr,
-                /*crl_directory=*/nullptr, /*send_client_ca_list=*/true,
-                /*crl_provider=*/nullptr, /*key_exchange_algorithms=*/{}, &factory),
-            GRPC_SECURITY_ERROR);
+  EXPECT_EQ(
+      grpc_ssl_tsi_server_handshaker_factory_init(
+          key_cert_pairs, root_cert_info,
+          GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE, tsi_tls_version::TSI_TLS1_2,
+          tsi_tls_version::TSI_TLS1_3,
+          /*tls_session_key_logger=*/nullptr,
+          /*crl_directory=*/nullptr, /*send_client_ca_list=*/true,
+          /*crl_provider=*/nullptr, /*key_exchange_algorithms=*/{}, &factory),
+      GRPC_SECURITY_ERROR);
   ASSERT_EQ(factory, nullptr);
 }
 
