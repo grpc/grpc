@@ -27,7 +27,12 @@ python -m pip install -r requirements.txt --user
 
 @rem set GRPC_PYTHON_OVERRIDE_CYGWIN_DETECTION_FOR_27=1
 set GRPC_PYTHON_BUILD_WITH_CYTHON=1
+
+@rem ccache related flags.
+@rem
+@rem Don't include current working directory as a part of cache key.
 set CCACHE_NOHASHDIR=true
+@rem TODO(weizheyuan): delete this line once we understand why cache hit rate is low.
 set CCACHE_LOGFILE=T:\src\github\grpc\reports\ccache_%1_%2.log
 
 @rem Allow build_ext to build C/C++ files in parallel
