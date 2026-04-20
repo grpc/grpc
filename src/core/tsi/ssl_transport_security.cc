@@ -504,13 +504,11 @@ static void verified_root_cert_free(void* /*parent*/, void* ptr,
 
 static void init_openssl(void) {
 #if OPENSSL_VERSION_NUMBER >= 0x30000000L
-  // OpenSSL 3.0+ handles initialization and cleanup automatically.
-  // We pass OPENSSL_INIT_NO_ATEXIT to prevent OpenSSL from registering its own
-  // atexit handler, which can cause crashes if background threads are still
-  // active during process exit. Since we don't call OPENSSL_cleanup() manually
-  // in OpenSSL 3.0+ (as it's handled by the library), we don't need to register
-  // our own atexit handler to wait for gRPC shutdown either.
-  // See https://www.openssl.org/docs/man3.0/man3/OPENSSL_init_ssl.html
+  // In OpenSSL 3.0+, we pass OPENSSL_INIT_NO_ATEXIT to prevent OpenSSL from
+  // registering its own atexit handler, which can cause crashes if background
+  // threads are still active during process exit. Instead, we register our own
+  // atexit handler below that waits for gRPC shutdown. Note that we do NOT
+  // call OPENSSL_cleanup() for 3.0+ as it handles its own deinitialization.
   OPENSSL_init_ssl(OPENSSL_INIT_NO_ATEXIT, nullptr);
 #elif OPENSSL_VERSION_NUMBER >= 0x10101000L
   // Ensure OPENSSL global clean up happens after gRPC shutdown completes.
@@ -518,6 +516,12 @@ static void init_openssl(void) {
   // otherwise may happen before gRPC removes all references to OPENSSL. Below
   // exit handler is guaranteed to run after OPENSSL's.
   OPENSSL_init_ssl(0, nullptr);
+#else
+  SSL_library_init();
+  SSL_load_error_strings();
+  OpenSSL_add_all_algorithms();
+#endif
+#if OPENSSL_VERSION_NUMBER >= 0x10101000L
   std::atexit([]() {
     std::optional<std::string> env =
         grpc_core::GetEnv(GRPC_ARG_OPENSSL_CLEANUP_TIMEOUT_ENV);
@@ -534,12 +538,10 @@ static void init_openssl(void) {
       }
     }
     grpc_wait_for_shutdown_with_timeout(absl::Seconds(timeout_sec));
+#if OPENSSL_VERSION_NUMBER < 0x30000000L
     OPENSSL_cleanup();
+#endif
   });
-#else
-  SSL_library_init();
-  SSL_load_error_strings();
-  OpenSSL_add_all_algorithms();
 #endif
 #if OPENSSL_VERSION_NUMBER < 0x10100000
   if (!CRYPTO_get_locking_callback()) {
