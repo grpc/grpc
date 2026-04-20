@@ -36,6 +36,27 @@
 
 namespace grpc_core {
 
+namespace {
+
+size_t CheckedAddSizeT(size_t lhs, size_t rhs) {
+  if (lhs > SIZE_MAX - rhs) {
+    grpc_core::Crash("size_t overflow in string allocation");
+  }
+  return lhs + rhs;
+}
+
+size_t CheckedMulSizeT(size_t lhs, size_t rhs) {
+  if (lhs == 0 || rhs == 0) {
+    return 0;
+  }
+  if (rhs > SIZE_MAX / lhs) {
+    grpc_core::Crash("size_t overflow in string allocation");
+  }
+  return lhs * rhs;
+}
+
+}  // namespace
+
 void StrAppend(std::string& dst, absl::string_view s) {
   absl::StrAppend(&dst, s);
 }
@@ -50,10 +71,11 @@ char* gpr_strdup(const char* src) {
     return nullptr;
   }
 
-  len = strlen(src) + 1;
-  dst = static_cast<char*>(gpr_malloc(len));
+  len = strlen(src);
+  size_t alloc_size = grpc_core::CheckedAddSizeT(len, 1);
+  dst = static_cast<char*>(gpr_malloc(alloc_size));
 
-  memcpy(dst, src, len);
+  memcpy(dst, src, alloc_size);
 
   return dst;
 }
@@ -231,7 +253,7 @@ int gpr_parse_nonnegative_int(const char* value) {
 char* gpr_leftpad(const char* str, char flag, size_t length) {
   const size_t str_length = strlen(str);
   const size_t out_length = str_length > length ? str_length : length;
-  char* out = static_cast<char*>(gpr_malloc(out_length + 1));
+  char* out = static_cast<char*>(gpr_malloc(grpc_core::CheckedAddSizeT(out_length, 1)));
   memset(out, flag, out_length - str_length);
   memcpy(out + out_length - str_length, str, str_length);
   out[out_length] = 0;
@@ -249,11 +271,12 @@ char* gpr_strjoin_sep(const char** strs, size_t nstrs, const char* sep,
   size_t i;
   char* out;
   for (i = 0; i < nstrs; i++) {
-    out_length += strlen(strs[i]);
+    out_length = grpc_core::CheckedAddSizeT(out_length, strlen(strs[i]));
   }
-  out_length += 1;  // null terminator
+  out_length = grpc_core::CheckedAddSizeT(out_length, 1);  // null terminator
   if (nstrs > 0) {
-    out_length += sep_len * (nstrs - 1);  // separators
+    out_length = grpc_core::CheckedAddSizeT(
+      out_length, grpc_core::CheckedMulSizeT(sep_len, nstrs - 1));  // separators
   }
   out = static_cast<char*>(gpr_malloc(out_length));
   out_length = 0;

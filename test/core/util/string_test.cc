@@ -23,6 +23,7 @@
 #include <limits.h>
 #include <stddef.h>
 #include <string.h>
+#include <limits>
 
 #include "test/core/test_util/test_config.h"
 #include "gtest/gtest.h"
@@ -236,6 +237,14 @@ TEST(StringTest, Leftpad) {
   padded = gpr_leftpad("foo", '0', 5);
   ASSERT_STREQ("00foo", padded);
   gpr_free(padded);
+}
+
+TEST(StringTest, LeftpadOverflowDies) {
+#if GTEST_HAS_DEATH_TEST
+  size_t near_max = std::numeric_limits<size_t>::max() - 8;
+  ASSERT_DEATH(gpr_leftpad("x", ' ', near_max), "");
+  ASSERT_DEATH(gpr_leftpad("x", ' ', std::numeric_limits<size_t>::max()), "");
+#endif
 }
 
 TEST(StringTest, Stricmp) {
