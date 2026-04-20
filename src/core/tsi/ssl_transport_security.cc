@@ -504,12 +504,20 @@ static void verified_root_cert_free(void* /*parent*/, void* ptr,
 
 static void init_openssl(void) {
 #if OPENSSL_VERSION_NUMBER >= 0x30000000L
-  // OpenSSL 3.0+ handles initialization automatically.
-  // We don't need to register an atexit handler if we don't call
-  // OPENSSL_cleanup().
+  // OpenSSL 3.0+ handles initialization and cleanup automatically.
+  // We pass OPENSSL_INIT_NO_ATEXIT to prevent OpenSSL from registering its own
+  // atexit handler, which can cause crashes if background threads are still
+  // active during process exit. Since we don't call OPENSSL_cleanup() manually
+  // in OpenSSL 3.0+ (as it's handled by the library), we don't need to register
+  // our own atexit handler to wait for gRPC shutdown either.
+  // See https://www.openssl.org/docs/man3.0/man3/OPENSSL_init_ssl.html
   OPENSSL_init_ssl(OPENSSL_INIT_NO_ATEXIT, nullptr);
 #elif OPENSSL_VERSION_NUMBER >= 0x10101000L
-  OPENSSL_init_ssl(OPENSSL_INIT_NO_ATEXIT, nullptr);
+  // Ensure OPENSSL global clean up happens after gRPC shutdown completes.
+  // OPENSSL registers an exit handler to clean up global objects, which
+  // otherwise may happen before gRPC removes all references to OPENSSL. Below
+  // exit handler is guaranteed to run after OPENSSL's.
+  OPENSSL_init_ssl(0, nullptr);
   std::atexit([]() {
     std::optional<std::string> env =
         grpc_core::GetEnv(GRPC_ARG_OPENSSL_CLEANUP_TIMEOUT_ENV);
@@ -518,13 +526,16 @@ static void init_openssl(void) {
       int parsed_timeout_sec = 0;
       if (absl::SimpleAtoi(*env, &parsed_timeout_sec)) {
         timeout_sec = parsed_timeout_sec;
+      } else {
+        GRPC_TRACE_LOG(tsi, ERROR)
+            << "Invalid value [" << (*env) << "] for "
+            << GRPC_ARG_OPENSSL_CLEANUP_TIMEOUT_ENV
+            << " environment variable. Using default value of 2 seconds.";
       }
     }
     grpc_wait_for_shutdown_with_timeout(absl::Seconds(timeout_sec));
     OPENSSL_cleanup();
   });
-#elif OPENSSL_VERSION_NUMBER >= 0x10100000
-  OPENSSL_init_ssl(0, nullptr);
 #else
   SSL_library_init();
   SSL_load_error_strings();
