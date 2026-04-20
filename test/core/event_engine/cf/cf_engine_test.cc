@@ -185,10 +185,12 @@ TEST(CFEventEngineTest, TestResolveIPv6Remote) {
 
   dns_resolver.value()->LookupHostname(
       [&resolve_signal](auto result) {
-        EXPECT_TRUE(result.status().ok());
-        EXPECT_THAT(
-            ResolvedAddressesToStrings(result.value()),
-            testing::UnorderedElementsAre("[2607:f8b0:400a:801::1002]:80"));
+        EXPECT_TRUE(result.status().ok()) << result.status();
+        if (result.ok()) {
+          EXPECT_THAT(
+              ResolvedAddressesToStrings(result.value()),
+              testing::UnorderedElementsAre("[2607:f8b0:400a:801::1002]:80"));
+        }
 
         resolve_signal.Notify();
       },
