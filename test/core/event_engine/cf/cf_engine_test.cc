@@ -121,8 +121,7 @@ absl::StatusOr<std::vector<EventEngine::ResolvedAddress>> LookupWithRetry(
         },
         name, default_port);
     signal.WaitForNotification();
-    if (result.ok() ||
-        result.status().code() != absl::StatusCode::kNotFound) {
+    if (result.ok() || result.status().code() != absl::StatusCode::kNotFound) {
       break;
     }
   }
@@ -180,13 +179,15 @@ TEST(CFEventEngineTest, TestResolveIPv4Remote) {
   auto cf_engine = std::make_shared<CFEventEngine>();
   auto result = LookupWithRetry(cf_engine, "1.2.3.4.nip.io:80", "");
   ASSERT_TRUE(result.ok()) << result.status();
-  EXPECT_THAT(ResolvedAddressesToStrings(result.value()),
-              testing::IsSubsetOf({"1.2.3.4:80", "[64:ff9b::102:304]:80" /*NAT64*/}));
+  EXPECT_THAT(
+      ResolvedAddressesToStrings(result.value()),
+      testing::IsSubsetOf({"1.2.3.4:80", "[64:ff9b::102:304]:80" /*NAT64*/}));
 }
 
 TEST(CFEventEngineTest, TestResolveIPv6Remote) {
   auto cf_engine = std::make_shared<CFEventEngine>();
-  auto result = LookupWithRetry(cf_engine, "2607-f8b0-400a-801--1002.sslip.io.", "80");
+  auto result =
+      LookupWithRetry(cf_engine, "2607-f8b0-400a-801--1002.sslip.io.", "80");
   ASSERT_TRUE(result.ok()) << result.status();
   EXPECT_THAT(ResolvedAddressesToStrings(result.value()),
               testing::UnorderedElementsAre("[2607:f8b0:400a:801::1002]:80"));
