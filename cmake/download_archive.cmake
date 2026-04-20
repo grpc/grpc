@@ -30,12 +30,15 @@ function(download_archive destination url fallback_url hash strip_prefix)
     execute_process(COMMAND
                     ${CMAKE_CURRENT_SOURCE_DIR}/download_with_fallback.sh ${url} ${fallback_url} ${_TEMPORARY_FILE} ${hash}
                     WORKING_DIRECTORY ${_download_archive_TEMPORARY_DIR}
-                    RESULT_VARIABLE _download_STATUS)
+                    RESULT_VARIABLE _download_STATUS
+                    OUTPUT_VARIABLE _download_OUTPUT
+                    ERROR_VARIABLE _download_OUTPUT)
 
     if(_download_STATUS EQUAL 0)
       set(_download_SUCCESS TRUE)
     else()
       message(WARNING "Download failed (Attempt ${_download_ATTEMPT}): status code=${_download_STATUS}")
+      message(DEBUG "${_download_OUTPUT}")
       if(_download_ATTEMPT LESS _download_MAX_ATTEMPTS)
         message(STATUS "Retrying in 5 seconds...")
         execute_process(COMMAND ${CMAKE_COMMAND} -E sleep 5)
