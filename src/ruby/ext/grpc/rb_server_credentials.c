@@ -190,6 +190,17 @@ static VALUE grpc_rb_server_credentials_init(VALUE self, VALUE pem_root_certs,
     key_cert = rb_ary_entry(pem_key_certs, i);
     key = rb_hash_aref(key_cert, sym_private_key);
     cert = rb_hash_aref(key_cert, sym_cert_chain);
+
+    if (TYPE(key) != T_STRING) {
+      rb_raise(rb_eTypeError, "bad private_key: want <String>, got <%s>",
+               rb_obj_classname(key));
+    }
+
+    if (TYPE(cert) != T_STRING) {
+      rb_raise(rb_eTypeError, "bad cert: want <String>, got <%s>",
+               rb_obj_classname(cert));
+    }
+
     key_cert_pairs[i].private_key = RSTRING_PTR(key);
     key_cert_pairs[i].cert_chain = RSTRING_PTR(cert);
   }
