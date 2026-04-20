@@ -171,7 +171,7 @@ TEST(CFEventEngineTest, TestResolveLocalhost) {
 TEST(CFEventEngineTest, TestResolveRemote) {
   auto cf_engine = std::make_shared<CFEventEngine>();
   auto result = LookupWithRetry(cf_engine, "localtest.me:80", "443");
-  if (!result.ok()) GTEST_SKIP() << "External DNS unavailable: " << result.status();
+  ASSERT_TRUE(result.ok()) << result.status();
   EXPECT_THAT(ResolvedAddressesToStrings(result.value()),
               testing::UnorderedElementsAre("127.0.0.1:80", "[::1]:80"));
 }
@@ -179,7 +179,7 @@ TEST(CFEventEngineTest, TestResolveRemote) {
 TEST(CFEventEngineTest, TestResolveIPv4Remote) {
   auto cf_engine = std::make_shared<CFEventEngine>();
   auto result = LookupWithRetry(cf_engine, "1.2.3.4.nip.io:80", "");
-  if (!result.ok()) GTEST_SKIP() << "External DNS unavailable: " << result.status();
+  ASSERT_TRUE(result.ok()) << result.status();
   EXPECT_THAT(ResolvedAddressesToStrings(result.value()),
               testing::IsSubsetOf({"1.2.3.4:80", "[64:ff9b::102:304]:80" /*NAT64*/}));
 }
@@ -187,7 +187,7 @@ TEST(CFEventEngineTest, TestResolveIPv4Remote) {
 TEST(CFEventEngineTest, TestResolveIPv6Remote) {
   auto cf_engine = std::make_shared<CFEventEngine>();
   auto result = LookupWithRetry(cf_engine, "2607-f8b0-400a-801--1002.sslip.io.", "80");
-  if (!result.ok()) GTEST_SKIP() << "External DNS unavailable: " << result.status();
+  ASSERT_TRUE(result.ok()) << result.status();
   EXPECT_THAT(ResolvedAddressesToStrings(result.value()),
               testing::UnorderedElementsAre("[2607:f8b0:400a:801::1002]:80"));
 }
