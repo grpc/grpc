@@ -114,7 +114,8 @@ absl::StatusOr<std::vector<EventEngine::ResolvedAddress>> LookupWithRetry(
   absl::StatusOr<std::vector<EventEngine::ResolvedAddress>> result;
   for (int i = 0; i < max_attempts; ++i) {
     grpc_core::Notification signal;
-    engine->GetDNSResolver({}).value()->LookupHostname(
+    auto dns_resolver = engine->GetDNSResolver({}).value();
+    dns_resolver->LookupHostname(
         [&signal, &result](auto r) {
           result = std::move(r);
           signal.Notify();
