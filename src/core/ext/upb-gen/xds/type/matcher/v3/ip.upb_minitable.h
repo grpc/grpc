@@ -19,9 +19,7 @@ extern "C" {
 #endif
 
 extern const upb_MiniTable xds__type__matcher__v3__IPMatcher_msg_init;
-extern const upb_MiniTable* xds__type__matcher__v3__IPMatcher_msg_init_ptr;
 extern const upb_MiniTable xds__type__matcher__v3__IPMatcher__IPRangeMatcher_msg_init;
-extern const upb_MiniTable* xds__type__matcher__v3__IPMatcher__IPRangeMatcher_msg_init_ptr;
 
 extern const upb_MiniTableFile xds_type_matcher_v3_ip_proto_upb_file_layout;
 

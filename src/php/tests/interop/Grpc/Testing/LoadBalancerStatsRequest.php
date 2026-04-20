@@ -74,7 +74,7 @@ class LoadBalancerStatsRequest extends \Google\Protobuf\Internal\Message
      * @param int $var
      * @return $this
      */
-    public function setNumRpcs($var)
+    public function setNumRpcs(int $var)
     {
         GPBUtil::checkInt32($var);
         $this->num_rpcs = $var;
@@ -100,7 +100,7 @@ class LoadBalancerStatsRequest extends \Google\Protobuf\Internal\Message
      * @param int $var
      * @return $this
      */
-    public function setTimeoutSec($var)
+    public function setTimeoutSec(int $var)
     {
         GPBUtil::checkInt32($var);
         $this->timeout_sec = $var;
@@ -130,7 +130,7 @@ class LoadBalancerStatsRequest extends \Google\Protobuf\Internal\Message
      * @param string[] $var
      * @return $this
      */
-    public function setMetadataKeys($var)
+    public function setMetadataKeys(array|RepeatedField $var)
     {
         $arr = GPBUtil::checkRepeatedField($var, \Google\Protobuf\Internal\GPBType::STRING);
         $this->metadata_keys = $arr;
