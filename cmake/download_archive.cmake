@@ -21,15 +21,32 @@ file(MAKE_DIRECTORY ${_download_archive_TEMPORARY_DIR})
 function(download_archive destination url fallback_url hash strip_prefix)
   # Fetch and validate
   set(_TEMPORARY_FILE ${_download_archive_TEMPORARY_DIR}/${strip_prefix}.tar.gz)
-  message(STATUS "Downloading from ${url}, if failed, please try configuring again")
-  execute_process(COMMAND
-                  ${CMAKE_CURRENT_SOURCE_DIR}/download_with_fallback.sh ${url} ${fallback_url} ${_TEMPORARY_FILE} ${hash}
-                  WORKING_DIRECTORY ${_download_archive_TEMPORARY_DIR}
-                  OUTPUT_QUIET)
-  file(DOWNLOAD ${url} ${_TEMPORARY_FILE}
-       TIMEOUT 60
-       EXPECTED_HASH SHA256=${hash}
-       TLS_VERIFY ON)
+  set(_download_SUCCESS FALSE)
+  set(_download_ATTEMPT 0)
+  set(_download_MAX_ATTEMPTS 3)
+  while(NOT _download_SUCCESS AND _download_ATTEMPT LESS _download_MAX_ATTEMPTS)
+    math(EXPR _download_ATTEMPT "${_download_ATTEMPT} + 1")
+    message(STATUS "Downloading from ${url} (fallback: ${fallback_url}) (Attempt ${_download_ATTEMPT} of ${_download_MAX_ATTEMPTS})")
+    execute_process(COMMAND
+                    ${CMAKE_CURRENT_SOURCE_DIR}/download_with_fallback.sh ${url} ${fallback_url} ${_TEMPORARY_FILE} ${hash}
+                    WORKING_DIRECTORY ${_download_archive_TEMPORARY_DIR}
+                    RESULT_VARIABLE _download_STATUS
+                    OUTPUT_QUIET)
+
+    if(_download_STATUS EQUAL 0)
+      set(_download_SUCCESS TRUE)
+    else()
+      message(WARNING "Download failed (Attempt ${_download_ATTEMPT}): status code=${_download_STATUS}")
+      if(_download_ATTEMPT LESS _download_MAX_ATTEMPTS)
+        message(STATUS "Retrying in 5 seconds...")
+        execute_process(COMMAND ${CMAKE_COMMAND} -E sleep 5)
+      endif()
+    endif()
+  endwhile()
+
+  if(NOT _download_SUCCESS)
+    message(FATAL_ERROR "Failed to download from ${url} (fallback: ${fallback_url}) after ${_download_MAX_ATTEMPTS} attempts.")
+  endif()
   # Extract
   execute_process(COMMAND
                   ${CMAKE_COMMAND} -E tar xvf ${_TEMPORARY_FILE}

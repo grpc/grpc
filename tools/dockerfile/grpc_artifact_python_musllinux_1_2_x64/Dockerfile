@@ -29,7 +29,7 @@ RUN apk add openssl openssl-dev zstd zstd-dev hiredis-dev
 
 # Install ccache from source since ccache 3.x packaged with most linux distributions
 # does not support Redis backend for caching.
-RUN curl -sSL -o ccache.tar.gz https://github.com/ccache/ccache/releases/download/v4.11.3/ccache-4.11.3.tar.gz \
+RUN curl -sSL --fail --retry 5 -o ccache.tar.gz https://github.com/ccache/ccache/releases/download/v4.11.3/ccache-4.11.3.tar.gz \
     && tar -zxf ccache.tar.gz \
     && cd ccache-4.11.3 \
     && mkdir build && cd build \
