@@ -28,6 +28,11 @@ GRPC_PROTOC_BUILD_COMPILER_JOBS=${GRPC_PROTOC_BUILD_COMPILER_JOBS:-2}
 
 make protoc plugins "-j${GRPC_PROTOC_BUILD_COMPILER_JOBS}"
 
+if [ -x "$(command -v ccache)" ]
+then
+  ccache --show-stats || true
+fi
+
 popd
 
 mkdir -p "${ARTIFACTS_OUT}"
