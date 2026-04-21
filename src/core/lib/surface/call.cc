@@ -510,22 +510,36 @@ grpc_call_error grpc_call_start_batch(grpc_call* call, const grpc_op* ops,
     grpc_call_error err =
         grpc_core::Call::FromC(call)->StartBatch(ops, nops, tag, false);
     if (err == GRPC_CALL_ERROR_INVALID_METADATA) {
-      // For invalid metadata, instead of returning error we cancel the call
-      // with GRPC_STATUS_INTERNAL and post the completion queue tag to
-      // ensure the application knows the operation is "done" (even if it
-      // failed).
+      // Convert the synchronous validation error into a failed RPC so the
+      // application receives a normal completion rather than a raw error code.
+      // StartBatch's done_with_error path already rolled back all call state,
+      // so the call is clean and no tag has been posted yet.
       grpc_core::Call::FromC(call)->CancelWithStatus(GRPC_STATUS_INTERNAL,
                                                      "Invalid metadata");
-      // Set the status for RECV_STATUS_ON_CLIENT ops to GRPC_STATUS_INTERNAL
-      // so that the application gets the error status.
+      // Pre-fill the output buffers for any receive ops in this batch so the
+      // application sees a consistent error when it plucks the completion.
       for (size_t i = 0; i < nops; ++i) {
         if (ops[i].op == GRPC_OP_RECV_STATUS_ON_CLIENT) {
           if (ops[i].data.recv_status_on_client.status != nullptr) {
             *ops[i].data.recv_status_on_client.status = GRPC_STATUS_INTERNAL;
           }
+          if (ops[i].data.recv_status_on_client.status_details != nullptr) {
+            *ops[i].data.recv_status_on_client.status_details =
+                grpc_slice_from_static_string("Invalid metadata");
+          }
+          if (ops[i].data.recv_status_on_client.trailing_metadata != nullptr) {
+            grpc_metadata_array_init(
+                ops[i].data.recv_status_on_client.trailing_metadata);
+          }
+        } else if (ops[i].op == GRPC_OP_RECV_CLOSE_ON_SERVER) {
+          if (ops[i].data.recv_close_on_server.cancelled != nullptr) {
+            *ops[i].data.recv_close_on_server.cancelled = 1;
+          }
         }
       }
-      // post to cq to notify application
+      // Post an immediate completion to the CQ so the application's tag fires.
+      // An empty batch (nops=0) skips all state mutations and goes straight to
+      // grpc_cq_begin_op + ExecuteBatch, which completes synchronously.
       return grpc_core::Call::FromC(call)->StartBatch(nullptr, 0, tag, false);
     }
     return err;
