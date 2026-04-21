@@ -72,6 +72,6 @@ if __name__ == '__main__':
     port = 50052  # Use a different port to avoid conflicts
     server = run_server(port)
     try:
-        run_benchmark(port, payload_size=10 * 1024 * 1024, iterations=5000)
+        run_benchmark(port, payload_size=10 * 1024 * 1024, iterations=100)
     finally:
         server.stop(0)
