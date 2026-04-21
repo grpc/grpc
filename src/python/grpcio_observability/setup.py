@@ -38,6 +38,14 @@ import python_version
 
 _parallel_compile_patch.monkeypatch_compile_maybe()
 
+CLASSIFIERS = [
+    "Development Status :: 5 - Production/Stable",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+] + [
+    f"Programming Language :: Python :: {x}"
+    for x in python_version.SUPPORTED_PYTHON_VERSIONS
+]
 
 O11Y_CC_SRCS = [
     "client_call_tracer.cc",
@@ -310,6 +318,7 @@ def extension_modules():
 
 if __name__ == "__main__":
     setuptools.setup(
+        classifiers=CLASSIFIERS,
         ext_modules=extension_modules(),
         python_requires=f">={python_version.MIN_PYTHON_VERSION}",
         install_requires=[

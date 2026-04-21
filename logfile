@@ -1,0 +1,96 @@
+INFO: Running bazel wrapper (see //tools/bazel for details), bazel version 8.0.1 will be used instead of system-wide bazel installation.
+WARNING: The following configs were expanded more than once: [bzlmod]. For repeatable flags, repeats are counted twice and may lead to unexpected behavior.
+Computing main repo mapping: 
+WARNING: The following configs were expanded more than once: [bzlmod]. For repeatable flags, repeats are counted twice and may lead to unexpected behavior.
+Loading: 
+Loading: 0 packages loaded
+Analyzing: target //src/python/grpcio/grpc:grpcio (0 packages loaded, 0 targets configured)
+Analyzing: target //src/python/grpcio/grpc:grpcio (0 packages loaded, 0 targets configured)
+
+INFO: Analyzed target //src/python/grpcio/grpc:grpcio (0 packages loaded, 0 targets configured).
+DEBUG: Sandbox debug output for CppCompile @@abseil-cpp+//absl/base:log_severity:
+1775633707.479466207: src/main/tools/linux-sandbox.cc:165: calling pipe(2)...
+1775633707.479521127: src/main/tools/linux-sandbox.cc:177: Netns is 0
+1775633707.479528157: src/main/tools/linux-sandbox.cc:188: calling clone(2)...
+1775633707.480066337: src/main/tools/linux-sandbox.cc:204: linux-sandbox-pid1 has PID 451456
+1775633707.480102127: src/main/tools/linux-sandbox-pid1.cc:681: Pid1Main started
+1775633707.480442697: src/main/tools/linux-sandbox.cc:212: done manipulating pipes
+1775633707.480766537: src/main/tools/linux-sandbox-pid1.cc:264: bind mount: /usr/local/google/home/janiewicz/.cache/bazel/_bazel_janiewicz/9f67fe089a7e1462e9804de1ae3dfd12/sandbox/linux-sandbox/120/_hermetic_tmp -> /tmp
+1775633707.480828377: src/main/tools/linux-sandbox-pid1.cc:282: writable: /dev/shm
+1775633707.480867737: src/main/tools/linux-sandbox-pid1.cc:282: writable: /tmp
+1775633707.480909017: src/main/tools/linux-sandbox-pid1.cc:282: writable: /usr/local/google/home/janiewicz/.cache/bazel/_bazel_janiewicz/9f67fe089a7e1462e9804de1ae3dfd12/sandbox/linux-sandbox/120/execroot/_main
+1775633707.480950437: src/main/tools/linux-sandbox-pid1.cc:299: working dir: /usr/local/google/home/janiewicz/.cache/bazel/_bazel_janiewicz/9f67fe089a7e1462e9804de1ae3dfd12/sandbox/linux-sandbox/120/execroot/_main
+1775633707.482190077: src/main/tools/linux-sandbox-pid1.cc:373: remount ro: /
+1775633707.482228077: src/main/tools/linux-sandbox-pid1.cc:373: remount ro: /dev
+1775633707.482253707: src/main/tools/linux-sandbox-pid1.cc:373: remount ro: /dev/pts
+1775633707.482278217: src/main/tools/linux-sandbox-pid1.cc:373: remount rw: /dev/shm
+1775633707.482301557: src/main/tools/linux-sandbox-pid1.cc:373: remount ro: /dev/mqueue
+1775633707.482326477: src/main/tools/linux-sandbox-pid1.cc:373: remount ro: /dev/hugepages
+1775633707.482351987: src/main/tools/linux-sandbox-pid1.cc:373: remount ro: /run
+1775633707.482376427: src/main/tools/linux-sandbox-pid1.cc:373: remount ro: /run/rpc_pipefs
+1775633707.482401657: src/main/tools/linux-sandbox-pid1.cc:373: remount ro: /run/user/1600908
+1775633707.482431247: src/main/tools/linux-sandbox-pid1.cc:373: remount ro: /run/user/1600908/gvfs
+1775633707.482454867: src/main/tools/linux-sandbox-pid1.cc:373: remount ro: /run/user/1600908/doc
+1775633707.482514687: src/main/tools/linux-sandbox-pid1.cc:373: remount ro: /run/credentials/getty@tty1.service
+1775633707.482552707: src/main/tools/linux-sandbox-pid1.cc:373: remount ro: /run/credentials/serial-getty@ttyS0.service
+1775633707.482576467: src/main/tools/linux-sandbox-pid1.cc:373: remount ro: /run/credentials/getty@tty6.service
+1775633707.482605317: src/main/tools/linux-sandbox-pid1.cc:373: remount ro: /run/credentials/systemd-journald.service
+1775633707.482629357: src/main/tools/linux-sandbox-pid1.cc:373: remount ro: /sys
+1775633707.482653617: src/main/tools/linux-sandbox-pid1.cc:373: remount ro: /sys/firmware/efi/efivars
+1775633707.482681347: src/main/tools/linux-sandbox-pid1.cc:373: remount ro: /sys/kernel/security
+1775633707.482708887: src/main/tools/linux-sandbox-pid1.cc:373: remount ro: /sys/fs/cgroup
+1775633707.482735597: src/main/tools/linux-sandbox-pid1.cc:373: remount ro: /sys/fs/pstore
+1775633707.482763267: src/main/tools/linux-sandbox-pid1.cc:373: remount ro: /sys/fs/bpf
+1775633707.482788517: src/main/tools/linux-sandbox-pid1.cc:373: remount ro: /sys/fs/fuse/connections
+1775633707.482854707: src/main/tools/linux-sandbox-pid1.cc:373: remount ro: /sys/kernel/debug
+1775633707.482882377: src/main/tools/linux-sandbox-pid1.cc:373: remount ro: /sys/kernel/debug/tracing
+1775633707.482895627: src/main/tools/linux-sandbox-pid1.cc:395: remount(nullptr, /sys/kernel/debug/tracing, nullptr, 2101295, nullptr) failure (Permission denied) ignored
+1775633707.482906907: src/main/tools/linux-sandbox-pid1.cc:373: remount ro: /sys/kernel/tracing
+1775633707.482934207: src/main/tools/linux-sandbox-pid1.cc:373: remount ro: /sys/kernel/config
+1775633707.482960407: src/main/tools/linux-sandbox-pid1.cc:373: remount ro: /proc
+1775633707.482983657: src/main/tools/linux-sandbox-pid1.cc:373: remount ro: /proc/sys/fs/binfmt_misc
+1775633707.483016747: src/main/tools/linux-sandbox-pid1.cc:395: remount(nullptr, /proc/sys/fs/binfmt_misc, nullptr, 2101281, nullptr) failure (Operation not permitted) ignored
+1775633707.483027887: src/main/tools/linux-sandbox-pid1.cc:373: remount ro: /proc/sys/fs/binfmt_misc
+1775633707.483054267: src/main/tools/linux-sandbox-pid1.cc:373: remount rw: /tmp
+1775633707.483076807: src/main/tools/linux-sandbox-pid1.cc:373: remount ro: /boot
+1775633707.483099917: src/main/tools/linux-sandbox-pid1.cc:373: remount ro: /boot/efi
+1775633707.483123197: src/main/tools/linux-sandbox-pid1.cc:373: remount ro: /auto
+1775633707.483145657: src/main/tools/linux-sandbox-pid1.cc:373: remount ro: /home
+1775633707.483199887: src/main/tools/linux-sandbox-pid1.cc:373: remount ro: /google/bin
+1775633707.483224457: src/main/tools/linux-sandbox-pid1.cc:373: remount ro: /google/src
+1775633707.483246957: src/main/tools/linux-sandbox-pid1.cc:373: remount ro: /var/google/session/loasd/tmpfs
+1775633707.483272087: src/main/tools/linux-sandbox-pid1.cc:373: remount ro: /google/data
+1775633707.483294627: src/main/tools/linux-sandbox-pid1.cc:373: remount ro: /google/obj
+1775633707.483317887: src/main/tools/linux-sandbox-pid1.cc:373: remount rw: /tmp
+1775633707.483340237: src/main/tools/linux-sandbox-pid1.cc:373: remount rw: /dev/shm
+1775633707.483362497: src/main/tools/linux-sandbox-pid1.cc:373: remount rw: /tmp
+1775633707.483385297: src/main/tools/linux-sandbox-pid1.cc:373: remount rw: /usr/local/google/home/janiewicz/.cache/bazel/_bazel_janiewicz/9f67fe089a7e1462e9804de1ae3dfd12/sandbox/linux-sandbox/120/execroot/_main
+1775633707.483437307: src/main/tools/linux-sandbox-pid1.cc:373: remount rw: /usr/local/google/home/janiewicz/.cache/bazel/_bazel_janiewicz/9f67fe089a7e1462e9804de1ae3dfd12/sandbox/linux-sandbox/120/execroot/_main
+1775633707.483564397: src/main/tools/linux-sandbox-pid1.cc:482: calling fork...
+1775633707.483879567: src/main/tools/linux-sandbox-pid1.cc:519: child started with PID 2
+1775633707.484677477: src/main/tools/linux-sandbox-pid1.cc:536: wait returned pid=2, status=0x100
+1775633707.484693887: src/main/tools/linux-sandbox-pid1.cc:554: child exited normally with code 1
+1775633707.486641167: src/main/tools/linux-sandbox.cc:253: child exited normally with code 1
+
+Run this command to start an interactive shell in an identical sandboxed environment:
+(exec env - \
+    GRPC_BAZEL_RUNTIME=1 \
+    LD_LIBRARY_PATH=/usr/lib/mesa-diverted/x86_64-linux-gnu:/usr/lib/x86_64-linux-gnu/mesa:/usr/lib/x86_64-linux-gnu/dri:/usr/lib/x86_64-linux-gnu/gallium-pipe \
+    PATH=/usr/lib/google-golang/bin:/usr/local/buildtools/java/jdk/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin \
+    PWD=/proc/self/cwd \
+    TMPDIR=/tmp \
+  /usr/local/google/home/janiewicz/.cache/bazel/_bazel_janiewicz/install/3fd603d608c2d3b856ea3d982b11227c/linux-sandbox -t 15 -w /dev/shm -w /tmp -w /usr/local/google/home/janiewicz/.cache/bazel/_bazel_janiewicz/9f67fe089a7e1462e9804de1ae3dfd12/sandbox/linux-sandbox/120/execroot/_main -M /usr/local/google/home/janiewicz/.cache/bazel/_bazel_janiewicz/9f67fe089a7e1462e9804de1ae3dfd12/sandbox/linux-sandbox/120/_hermetic_tmp -m /tmp -S /usr/local/google/home/janiewicz/.cache/bazel/_bazel_janiewicz/9f67fe089a7e1462e9804de1ae3dfd12/sandbox/linux-sandbox/120/stats.out -D /usr/local/google/home/janiewicz/.cache/bazel/_bazel_janiewicz/9f67fe089a7e1462e9804de1ae3dfd12/sandbox/linux-sandbox/120/debug.out -- /bin/sh -i)
+ERROR: /usr/local/google/home/janiewicz/.cache/bazel/_bazel_janiewicz/9f67fe089a7e1462e9804de1ae3dfd12/external/abseil-cpp+/absl/base/BUILD.bazel:60:11: Compiling absl/base/log_severity.cc failed: (Exit 1): linux-sandbox failed: error executing CppCompile command 
+  (cd /usr/local/google/home/janiewicz/.cache/bazel/_bazel_janiewicz/9f67fe089a7e1462e9804de1ae3dfd12/sandbox/linux-sandbox/120/execroot/_main && \
+  exec env - \
+    GRPC_BAZEL_RUNTIME=1 \
+    LD_LIBRARY_PATH=/usr/lib/mesa-diverted/x86_64-linux-gnu:/usr/lib/x86_64-linux-gnu/mesa:/usr/lib/x86_64-linux-gnu/dri:/usr/lib/x86_64-linux-gnu/gallium-pipe \
+    PATH=/usr/lib/google-golang/bin:/usr/local/buildtools/java/jdk/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin \
+    PWD=/proc/self/cwd \
+    TMPDIR=/tmp \
+  /usr/local/google/home/janiewicz/.cache/bazel/_bazel_janiewicz/install/3fd603d608c2d3b856ea3d982b11227c/linux-sandbox -t 15 -w /dev/shm -w /tmp -w /usr/local/google/home/janiewicz/.cache/bazel/_bazel_janiewicz/9f67fe089a7e1462e9804de1ae3dfd12/sandbox/linux-sandbox/120/execroot/_main -M /usr/local/google/home/janiewicz/.cache/bazel/_bazel_janiewicz/9f67fe089a7e1462e9804de1ae3dfd12/sandbox/linux-sandbox/120/_hermetic_tmp -m /tmp -S /usr/local/google/home/janiewicz/.cache/bazel/_bazel_janiewicz/9f67fe089a7e1462e9804de1ae3dfd12/sandbox/linux-sandbox/120/stats.out -D /usr/local/google/home/janiewicz/.cache/bazel/_bazel_janiewicz/9f67fe089a7e1462e9804de1ae3dfd12/sandbox/linux-sandbox/120/debug.out -- '/usr/bin/ccache /usr/bin/x86_64-linux-gnu-gcc' -U_FORTIFY_SOURCE -fstack-protector -Wall -Wthread-safety -Wself-assign -Wunused-but-set-parameter -Wno-free-nonheap-object -fcolor-diagnostics -fno-omit-frame-pointer '-std=c++17' -MD -MF bazel-out/k8-fastbuild/bin/external/abseil-cpp+/absl/base/_objs/log_severity/log_severity.pic.d '-frandom-seed=bazel-out/k8-fastbuild/bin/external/abseil-cpp+/absl/base/_objs/log_severity/log_severity.pic.o' -fPIC -iquote external/abseil-cpp+ -iquote bazel-out/k8-fastbuild/bin/external/abseil-cpp+ -DGRPC_BAZEL_BUILD -DGRPC_PYTHON_BUILD '-std=c++17' -c external/abseil-cpp+/absl/base/log_severity.cc -o bazel-out/k8-fastbuild/bin/external/abseil-cpp+/absl/base/_objs/log_severity/log_severity.pic.o -fno-canonical-system-headers -Wno-builtin-macro-redefined '-D__DATE__="redacted"' '-D__TIMESTAMP__="redacted"' '-D__TIME__="redacted"')
+src/main/tools/linux-sandbox-pid1.cc:516: "execvp(/usr/bin/ccache /usr/bin/x86_64-linux-gnu-gcc, 0xaed72f0)": No such file or directory
+Target //src/python/grpcio/grpc:grpcio failed to build
+INFO: Elapsed time: 0.355s, Critical Path: 0.05s
+INFO: 64 processes: 64 internal.
+ERROR: Build did NOT complete successfully
