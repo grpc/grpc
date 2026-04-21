@@ -48,7 +48,7 @@ cdef class SendInitialMetadataOperation(Operation):
 
 cdef class SendMessageOperation(Operation):
 
-  def __cinit__(self, bytes message, int flags):
+  def __cinit__(self, object message, int flags):
     if message is None:
       self._message = b''
     else:
@@ -61,8 +61,15 @@ cdef class SendMessageOperation(Operation):
   cdef void c(self) except *:
     self.c_op.type = GRPC_OP_SEND_MESSAGE
     self.c_op.flags = self._flags
-    cdef grpc_slice message_slice = grpc_slice_from_copied_buffer(
-        self._message, len(self._message))
+    
+    cdef const unsigned char[:] view = self._message
+    cdef grpc_slice message_slice
+    if view.shape[0] > 0:
+      message_slice = grpc_slice_from_copied_buffer(
+          <const char *>&view[0], view.shape[0])
+    else:
+      message_slice = grpc_empty_slice()
+      
     self._c_message_byte_buffer = grpc_raw_byte_buffer_create(
         &message_slice, 1)
     grpc_slice_unref(message_slice)
@@ -162,19 +169,49 @@ cdef class ReceiveMessageOperation(Operation):
     cdef grpc_slice message_slice
     cdef size_t message_slice_length
     cdef list chunks = []
+    cdef grpc_slice first_slice
+    cdef bint has_next
+    cdef GrpcSliceView view
 
     if self._c_message_byte_buffer != NULL:
       message_reader_status = grpc_byte_buffer_reader_init(
           &message_reader, self._c_message_byte_buffer)
       if message_reader_status:
-        while grpc_byte_buffer_reader_next(&message_reader, &message_slice):
-          message_slice_length = grpc_slice_length(message_slice)
-          if message_slice_length > 0:
-            chunks.append((<char *>grpc_slice_start_ptr(message_slice))[:message_slice_length])
-          grpc_slice_unref(message_slice)
-
+        has_next = grpc_byte_buffer_reader_next(&message_reader, &message_slice)
+        if has_next:
+          first_slice = message_slice
+          has_next = grpc_byte_buffer_reader_next(&message_reader, &message_slice)
+          if not has_next:
+            message_slice_length = grpc_slice_length(first_slice)
+            if message_slice_length > 0:
+              view = GrpcSliceView()
+              view.set_slice(first_slice)
+              self._message = memoryview(view)
+            else:
+              self._message = b''
+            grpc_slice_unref(first_slice)
+          else:
+            view = GrpcSliceView()
+            view.set_slice(first_slice)
+            chunks.append(memoryview(view))
+            grpc_slice_unref(first_slice)
+            
+            view = GrpcSliceView()
+            view.set_slice(message_slice)
+            chunks.append(memoryview(view))
+            grpc_slice_unref(message_slice)
+            
+            while grpc_byte_buffer_reader_next(&message_reader, &message_slice):
+              view = GrpcSliceView()
+              view.set_slice(message_slice)
+              chunks.append(memoryview(view))
+              grpc_slice_unref(message_slice)
+            
+            self._message = chunks
+        else:
+          self._message = b''
+        
         grpc_byte_buffer_reader_destroy(&message_reader)
-        self._message = b"".join(chunks)
       else:
         self._message = None
       grpc_byte_buffer_destroy(self._c_message_byte_buffer)
