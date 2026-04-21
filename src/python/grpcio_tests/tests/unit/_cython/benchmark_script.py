@@ -43,8 +43,6 @@ def run_benchmark(port, payload_size, iterations):
     channel = grpc.insecure_channel(f'localhost:{port}', options=options)
     stub = channel.unary_unary(
         _METHOD,
-        request_serializer=lambda x: x,
-        response_deserializer=lambda x: x,
     )
     
     payload = b'x' * payload_size
