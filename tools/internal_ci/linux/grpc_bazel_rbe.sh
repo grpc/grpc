@@ -43,4 +43,4 @@ bazel_rbe/bazel_wrapper \
   --generate_json_trace_profile \
   --profile=bazel_rbe/profile.json \
   "$@" \
-  -- ${BAZEL_TESTS:-//test/...}
+  -- ${BAZEL_TESTS:-//test/core/end2end/...}
