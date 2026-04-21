@@ -33,11 +33,16 @@ cdef grpc_status_code get_status_code(object code) except *:
             return StatusCode.unknown
 
 
-cdef object deserialize(object deserializer, bytes raw_message):
+cdef object deserialize(object deserializer, object raw_message):
     """Perform deserialization on raw bytes.
 
     Failure to deserialize is a fatal error.
     """
+    if isinstance(raw_message, list):
+        raw_message = b"".join(raw_message)
+    elif isinstance(raw_message, memoryview):
+        raw_message = bytes(raw_message)
+
     if deserializer:
         return deserializer(raw_message)
     else:

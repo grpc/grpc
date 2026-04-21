@@ -85,3 +85,6 @@ cdef _initialize():
 
 
 _initialize()
+
+def _dummy_trigger():
+  return 52
