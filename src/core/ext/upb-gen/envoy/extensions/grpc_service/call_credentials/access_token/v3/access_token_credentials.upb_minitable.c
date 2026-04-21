@@ -22,14 +22,10 @@ static const upb_MiniTableField envoy_extensions_grpc_service_call_credentials_a
 const upb_MiniTable envoy__extensions__grpc_0service__call_0credentials__access_0token__v3__AccessTokenCredentials_msg_init = {
   NULL,
   &envoy_extensions_grpc_service_call_credentials_access_token_v3_AccessTokenCredentials__fields[0],
-  UPB_SIZE(16, 24), 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(8), 0,
+  UPB_SIZE(16, 24), 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.extensions.grpc_service.call_credentials.access_token.v3.AccessTokenCredentials",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x000800003f00000a, &upb_pss_1bt},
-  })
 };
 
 const upb_MiniTable* envoy__extensions__grpc_0service__call_0credentials__access_0token__v3__AccessTokenCredentials_msg_init_ptr = &envoy__extensions__grpc_0service__call_0credentials__access_0token__v3__AccessTokenCredentials_msg_init;

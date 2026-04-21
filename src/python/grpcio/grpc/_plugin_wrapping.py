@@ -15,7 +15,7 @@
 import collections
 import logging
 import threading
-from typing import Callable, Optional, Type
+from typing import Callable, Optional, Type, Union
 
 import grpc
 from grpc import _common
@@ -55,7 +55,7 @@ class _AuthMetadataPluginCallback(grpc.AuthMetadataPluginCallback):
 
     def __call__(
         self, metadata: MetadataType, error: Optional[Type[BaseException]]
-    ):
+    ) -> None:
         with self._state.lock:
             if self._state.exception is None:
                 if self._state.called:
@@ -96,7 +96,12 @@ class _Plugin:
             # Support versions predating contextvars.
             pass
 
-    def __call__(self, service_url: str, method_name: str, callback: Callable):
+    def __call__(
+        self,
+        service_url: Union[str, bytes],
+        method_name: Union[str, bytes],
+        callback: Callable,
+    ) -> None:
         context = _AuthMetadataContext(
             _common.decode(service_url), _common.decode(method_name)
         )

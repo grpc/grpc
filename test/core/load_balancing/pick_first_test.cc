@@ -1057,9 +1057,6 @@ TEST_F(PickFirstTest, GoesIdleWhenConnectionFailsThenCanReconnect) {
 }
 
 TEST_F(PickFirstTest, GoesConnectingWhenSelectedSubchannelGoesConnecting) {
-  if (!IsPickFirstReadyToConnectingEnabled()) {
-    GTEST_SKIP() << "requires pick_first_ready_to_connecting experiment";
-  }
   // Send an update containing two addresses.
   constexpr std::array<absl::string_view, 2> kAddresses = {
       "ipv4:127.0.0.1:443", "ipv4:127.0.0.1:444"};
@@ -1124,9 +1121,6 @@ TEST_F(PickFirstTest, GoesConnectingWhenSelectedSubchannelGoesConnecting) {
 
 TEST_F(PickFirstTest,
        GoesConnectingWhenSelectedSubchannelGoesTransientFailure) {
-  if (!IsPickFirstReadyToConnectingEnabled()) {
-    GTEST_SKIP() << "requires pick_first_ready_to_connecting experiment";
-  }
   // Send an update containing two addresses.
   constexpr std::array<absl::string_view, 2> kAddresses = {
       "ipv4:127.0.0.1:443", "ipv4:127.0.0.1:444"};
@@ -1232,8 +1226,6 @@ TEST_F(PickFirstTest, AddressUpdateRemovedSelectedAddress) {
   status = ApplyUpdate(BuildUpdate({kAddresses[1]}, MakePickFirstConfig(false)),
                        lb_policy());
   EXPECT_TRUE(status.ok()) << status;
-  // We should see a re-resolution request.
-  if (!IsPickFirstReadyToConnectingEnabled()) ExpectReresolutionRequest();
   // LB policy reports IDLE with a queueing picker.
   ExpectStateAndQueuingPicker(GRPC_CHANNEL_IDLE);
   // By checking the picker, we told the LB policy to trigger a new

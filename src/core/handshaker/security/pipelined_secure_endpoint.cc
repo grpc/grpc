@@ -34,6 +34,7 @@
 #include <utility>
 #include <vector>
 
+#include "src/core/handshaker/security/pipelining_heuristic_selector.h"
 #include "src/core/handshaker/security/secure_endpoint.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"
@@ -623,7 +624,8 @@ class PipelinedSecureEndpoint final : public EventEngine::Endpoint {
       // unprotected bytes directly to the transport read. Otherwise, we'll
       // return the bytes through the on_read callback once we're done reading
       // and unprotecting.
-      if (!pipelining_enabled_ && !unprotecting_.value()) {
+      if (!heuristic_selector_.IsPipeliningEnabled() &&
+          !unprotecting_.value()) {
         unprotecting_ = true;
         lock.Release();
         return StartNonPipelinedRead();
@@ -906,7 +908,8 @@ class PipelinedSecureEndpoint final : public EventEngine::Endpoint {
             args.set_read_hint_bytes(1);
           }
 
-          enable_pipelining = impl->pipelining_enabled_;
+          impl->heuristic_selector_.RecordRead(source_buffer->Length());
+          enable_pipelining = impl->heuristic_selector_.IsPipeliningEnabled();
         }
 
         // If pipelining is enabled, kick off the next read in another thread
@@ -944,7 +947,7 @@ class PipelinedSecureEndpoint final : public EventEngine::Endpoint {
               std::move(*impl->unprotected_data_buffer_);
           impl->unprotected_data_buffer_.reset();
           on_read = std::move(impl->on_read_);
-          if (!impl->pipelining_enabled_ &&
+          if (!impl->heuristic_selector_.IsPipeliningEnabled() &&
               impl->protected_data_buffer_ == nullptr) {
             // Since pipelining is disabled, the next read will be started in
             // the same thread as this one. Since there is no more data to
@@ -1082,7 +1085,8 @@ class PipelinedSecureEndpoint final : public EventEngine::Endpoint {
     std::unique_ptr<EventEngine::Endpoint> wrapped_ep_;
     std::shared_ptr<EventEngine> event_engine_;
     bool waiting_for_transport_read_ ABSL_GUARDED_BY(read_queue_mu_) = false;
-    bool pipelining_enabled_ ABSL_GUARDED_BY(read_queue_mu_) = false;
+    grpc_core::PipeliningHeuristicSelector heuristic_selector_
+        ABSL_GUARDED_BY(read_queue_mu_);
   };
 
   grpc_core::RefCountedPtr<Impl> impl_;

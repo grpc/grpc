@@ -454,6 +454,7 @@ ApiFuzzer::Result ApiFuzzer::CreateChannel(
   ExecCtx exec_ctx;
   testing::FuzzingEnvironment fuzzing_env;
   fuzzing_env.resource_quota = resource_quota();
+  fuzzing_env.event_engine = engine();
   ChannelArgs args = testing::CreateChannelArgsFromFuzzingConfiguration(
       create_channel.channel_args(), fuzzing_env);
   if (create_channel.inproc()) {
@@ -481,6 +482,7 @@ ApiFuzzer::Result ApiFuzzer::CreateServer(
     ExecCtx exec_ctx;
     testing::FuzzingEnvironment fuzzing_env;
     fuzzing_env.resource_quota = resource_quota();
+    fuzzing_env.event_engine = engine();
     ChannelArgs args = testing::CreateChannelArgsFromFuzzingConfiguration(
         create_server.channel_args(), fuzzing_env);
     server_ = grpc_server_create(args.ToC().get(), nullptr);
@@ -565,6 +567,39 @@ TEST(MyTestSuite, RunApiFuzzerRegression2) {
                  }
                }
              }
+           }
+      )pb"));
+}
+
+// Regression test for a fuzzer-discovered crash.
+// Sequence:
+// - Creates channel to "server".
+// - Creates call "test".
+// - Sends status 1 from server to fail the call.
+// - Creates channel.
+// - Queues a recv message op.
+// - Creates in-process channel.
+// Runs with CallV3 enabled.
+TEST(MyTestSuite, RunApiFuzzerRegression3) {
+  RunApiFuzzer(ParseTestProto(
+      R"pb(actions { create_channel { target: "server" } }
+           actions {
+             create_call {
+               method { value: "test" }
+               host { value: "test" }
+               timeout: 1978490146
+             }
+           }
+           actions {
+             queue_batch {
+               operations { send_status_from_server { status_code: 1 } }
+             }
+           }
+           actions { create_channel {} }
+           actions { queue_batch { operations { receive_message {} } } }
+           actions { create_channel { inproc: true } }
+           config_vars {
+             experiments: "-subchannel_connection_scaling,promise_based_http2_client_transport"
            }
       )pb"));
 }

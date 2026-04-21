@@ -305,6 +305,26 @@ class SslTransportSecurityTest
       expected_alpn_negotiated_protocol_ = expected_alpn_negotiated_protocol;
     }
 
+    void OverrideServerKeyExchangeGroups(
+        const std::vector<grpc_tls_key_exchange_group>& key_exchange_groups) {
+      server_key_exchange_groups_ = key_exchange_groups;
+    }
+
+    void OverrideClientKeyExchangeGroups(
+        const std::vector<grpc_tls_key_exchange_group>& key_exchange_groups) {
+      client_key_exchange_groups_ = key_exchange_groups;
+    }
+
+    void SetServerExpectsHandshakeFailure(
+        bool server_expects_handshake_failure) {
+      server_expects_handshake_failure_ = server_expects_handshake_failure;
+    }
+
+    void SetClientExpectsHandshakeFailure(
+        bool client_expects_handshake_failure) {
+      client_expects_handshake_failure_ = client_expects_handshake_failure;
+    }
+
    private:
     static void SetupHandshakers(tsi_test_fixture* fixture) {
       SslTsiTestFixture* ssl_fixture =
@@ -342,6 +362,10 @@ class SslTransportSecurityTest
       client_options.max_tls_version = ssl_fixture->tls_version_;
       client_options.skip_server_certificate_verification =
           key_cert_lib->skip_server_certificate_verification;
+      if (ssl_fixture->client_key_exchange_groups_.has_value()) {
+        client_options.key_exchange_groups =
+            ssl_fixture->client_key_exchange_groups_.value();
+      }
       ASSERT_EQ(tsi_create_ssl_client_handshaker_factory_with_options(
                     &client_options, &ssl_fixture->client_handshaker_factory_),
                 TSI_OK);
@@ -391,6 +415,10 @@ class SslTransportSecurityTest
           ssl_fixture->session_ticket_key_size_;
       server_options.min_tls_version = ssl_fixture->tls_version_;
       server_options.max_tls_version = ssl_fixture->tls_version_;
+      if (ssl_fixture->server_key_exchange_groups_.has_value()) {
+        server_options.key_exchange_groups =
+            ssl_fixture->server_key_exchange_groups_.value();
+      }
       ASSERT_EQ(tsi_create_ssl_server_handshaker_factory_with_options(
                     &server_options, &ssl_fixture->server_handshaker_factory_),
                 TSI_OK);
@@ -589,14 +617,17 @@ class SslTransportSecurityTest
       // For OpenSSL versions < 1.1, TLS 1.3 is not supported, so the
       // client-side handshake should succeed precisely when the server-side
       // handshake succeeds.
-      bool expect_server_success = !(key_cert_lib->use_bad_server_cert ||
-                                     (key_cert_lib->use_bad_client_cert &&
-                                      ssl_fixture->force_client_auth_));
+      bool expect_server_success =
+          !ssl_fixture->server_expects_handshake_failure_ &&
+          (!(key_cert_lib->use_bad_server_cert ||
+             (key_cert_lib->use_bad_client_cert &&
+              ssl_fixture->force_client_auth_)));
 #if OPENSSL_VERSION_NUMBER >= 0x10100000
       bool expect_client_success =
-          ssl_fixture->tls_version_ == tsi_tls_version::TSI_TLS1_2
-              ? expect_server_success
-              : !key_cert_lib->use_bad_server_cert;
+          !ssl_fixture->client_expects_handshake_failure_ &&
+          (ssl_fixture->tls_version_ == tsi_tls_version::TSI_TLS1_2
+               ? expect_server_success
+               : !key_cert_lib->use_bad_server_cert);
 #else
       bool expect_client_success = expect_server_success;
 #endif
@@ -671,8 +702,16 @@ class SslTransportSecurityTest
     std::optional<std::string> alpn_server_overriden_protocols_ = std::nullopt;
     std::optional<std::string> expected_alpn_negotiated_protocol_ =
         std::nullopt;
+    std::optional<std::vector<grpc_tls_key_exchange_group>>
+        client_key_exchange_groups_ = std::nullopt;
+    std::optional<std::vector<grpc_tls_key_exchange_group>>
+        server_key_exchange_groups_ = std::nullopt;
     tsi_ssl_server_handshaker_factory* server_handshaker_factory_ = nullptr;
     tsi_ssl_client_handshaker_factory* client_handshaker_factory_ = nullptr;
+    // This isn't required for existing tests, but helps new tests express their
+    // intent.
+    bool server_expects_handshake_failure_ = false;
+    bool client_expects_handshake_failure_ = false;
   };
 
   SslTransportSecurityTest() { grpc_init(); }
@@ -1466,6 +1505,40 @@ TEST_P(SslTransportSecurityTest, TestServerHandshakerOverrideALPN) {
   ssl_fixture_->OverrideHanshakerAlpnServerProtocols("bar,foo,toto");
   ssl_fixture_->SetExpectedAlpnNegotiatedProtocol("toto");
   ssl_fixture_->SetAlpnMode(ALPN_CLIENT_SERVER_OK);
+  DoHandshake();
+}
+
+TEST_P(SslTransportSecurityTest, TestKeyExchangeGroupSuccess) {
+  SetUpSslFixture(/*tls_version=*/std::get<0>(GetParam()),
+                  /*send_client_ca_list=*/std::get<1>(GetParam()));
+// The client default protocols set by the handshaker factory are [toto, baz].
+#ifdef OPENSSL_IS_BORINGSSL
+  ssl_fixture_->OverrideClientKeyExchangeGroups(
+      {GRPC_TLS_GROUP_X25519_MLKEM768, GRPC_TLS_GROUP_X25519});
+  ssl_fixture_->OverrideServerKeyExchangeGroups(
+      {GRPC_TLS_GROUP_X25519, GRPC_TLS_GROUP_X25519_MLKEM768});
+#else
+  ssl_fixture_->OverrideClientKeyExchangeGroups(
+      {GRPC_TLS_GROUP_SECP256R1, GRPC_TLS_GROUP_X25519});
+  ssl_fixture_->OverrideServerKeyExchangeGroups(
+      {GRPC_TLS_GROUP_X25519, GRPC_TLS_GROUP_SECP256R1});
+#endif
+  DoHandshake();
+}
+
+TEST_P(SslTransportSecurityTest, TestKeyExchangeGroupMismatch) {
+  auto tls_version = std::get<0>(GetParam());
+  SetUpSslFixture(tls_version,
+                  /*send_client_ca_list=*/std::get<1>(GetParam()));
+  // The client default protocols set by the handshaker factory are [toto, baz].
+  ssl_fixture_->OverrideClientKeyExchangeGroups({GRPC_TLS_GROUP_X25519});
+  ssl_fixture_->OverrideServerKeyExchangeGroups({GRPC_TLS_GROUP_SECP256R1});
+  // In TLS1.2, on key exchange group mismatch, it will fall back to an ECDHE
+  // ciphersuite, provided there is a matching one between the client and server
+  // TLS1.3 is stricter and requires a match, and will thus fail in this test
+  // case.
+  ssl_fixture_->SetServerExpectsHandshakeFailure(tls_version == TSI_TLS1_3);
+  ssl_fixture_->SetClientExpectsHandshakeFailure(tls_version == TSI_TLS1_3);
   DoHandshake();
 }
 

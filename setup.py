@@ -67,9 +67,7 @@ if "linux" in sys.platform:
 if "openbsd" in sys.platform:
     CARES_INCLUDE += (os.path.join("third_party", "cares", "config_openbsd"),)
 RE2_INCLUDE = (os.path.join("third_party", "re2"),)
-SSL_INCLUDE = (
-    os.path.join("third_party", "boringssl-with-bazel", "src", "include"),
-)
+SSL_INCLUDE = (os.path.join("third_party", "boringssl-with-bazel", "include"),)
 UPB_INCLUDE = (os.path.join("third_party", "upb"),)
 UPB_GRPC_GENERATED_INCLUDE = (os.path.join("src", "core", "ext", "upb-gen"),)
 UPBDEFS_GRPC_GENERATED_INCLUDE = (
@@ -269,6 +267,9 @@ if EXTRA_ENV_COMPILE_ARGS is None:
         # We need to statically link the C++ Runtime, only the C runtime is
         # available dynamically
         EXTRA_ENV_COMPILE_ARGS += " /MT"
+        # Required to build upb from protobuf 33.x
+        # https://github.com/grpc/grpc/issues/41951
+        EXTRA_ENV_COMPILE_ARGS += " /Zc:preprocessor"
     elif "linux" in sys.platform:
         # GCC by defaults uses C17 so only C++17 needs to be specified.
         EXTRA_ENV_COMPILE_ARGS += " -std=c++17"
