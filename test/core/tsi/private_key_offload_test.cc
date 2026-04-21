@@ -36,7 +36,6 @@
 #include "absl/synchronization/notification.h"
 
 #if defined(OPENSSL_IS_BORINGSSL)
-#if OPENSSL_VERSION_NUMBER >= 0x10100000
 #include "test/core/tsi/private_key_signer_test_util.h"
 
 namespace grpc_core {
@@ -452,7 +451,6 @@ INSTANTIATE_TEST_SUITE_P(PrivateKeyOffloadTest, PrivateKeyOffloadTest,
 }  // namespace testing
 }  // namespace grpc_core
 
-#endif  // OPENSSL_VERSION_NUMBER >= 0x10100000
 #endif  // OPENSSL_IS_BORINGSSL
 
 int main(int argc, char** argv) {
