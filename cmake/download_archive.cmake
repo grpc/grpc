@@ -26,19 +26,31 @@ function(download_archive destination url fallback_url hash strip_prefix)
   set(_download_MAX_ATTEMPTS 3)
   while(NOT _download_SUCCESS AND _download_ATTEMPT LESS _download_MAX_ATTEMPTS)
     math(EXPR _download_ATTEMPT "${_download_ATTEMPT} + 1")
-    message(STATUS "Downloading from ${url} (fallback: ${fallback_url}) (Attempt ${_download_ATTEMPT} of ${_download_MAX_ATTEMPTS})")
-    execute_process(COMMAND
-                    ${CMAKE_CURRENT_SOURCE_DIR}/download_with_fallback.sh ${url} ${fallback_url} ${_TEMPORARY_FILE} ${hash}
-                    WORKING_DIRECTORY ${_download_archive_TEMPORARY_DIR}
-                    RESULT_VARIABLE _download_STATUS
-                    OUTPUT_VARIABLE _download_OUTPUT
-                    ERROR_VARIABLE _download_OUTPUT)
+    message(STATUS "Downloading from ${url} (Attempt ${_download_ATTEMPT} of ${_download_MAX_ATTEMPTS})")
+    file(DOWNLOAD ${url} ${_TEMPORARY_FILE}
+         TIMEOUT 60
+         EXPECTED_HASH SHA256=${hash}
+         TLS_VERIFY ON
+         STATUS _download_STATUS)
 
-    if(_download_STATUS EQUAL 0)
+    list(GET _download_STATUS 0 _download_STATUS_CODE)
+
+    if (not _download_STATUS_CODE EQUAL 0)
+      message(STATUS "Downloading from fallback ${fallback_url} (Attempt ${_download_ATTEMPT} of ${_download_MAX_ATTEMPTS})")
+      file(DOWNLOAD ${fallback_url} ${_TEMPORARY_FILE}
+          TIMEOUT 60
+          EXPECTED_HASH SHA256=${hash}
+          TLS_VERIFY ON
+          STATUS _download_STATUS)
+
+      list(GET _download_STATUS 0 _download_STATUS_CODE)
+    endif()
+
+    if(_download_STATUS_CODE EQUAL 0)
       set(_download_SUCCESS TRUE)
     else()
-      message(WARNING "Download failed (Attempt ${_download_ATTEMPT}): status code=${_download_STATUS}")
-      message(DEBUG "${_download_OUTPUT}")
+      list(GET _download_STATUS 1 _download_STATUS_MESSAGE)
+      message(WARNING "Download failed (Attempt ${_download_ATTEMPT}): ${_download_STATUS_MESSAGE}")
       if(_download_ATTEMPT LESS _download_MAX_ATTEMPTS)
         message(STATUS "Retrying in 5 seconds...")
         execute_process(COMMAND ${CMAKE_COMMAND} -E sleep 5)
