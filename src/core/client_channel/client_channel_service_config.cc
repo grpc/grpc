@@ -35,8 +35,6 @@
 namespace grpc_core {
 namespace internal {
 
-namespace {
-
 bool ConnectionScalingEnabled() {
   auto value =
       GetEnv("GRPC_EXPERIMENTAL_MAX_CONCURRENT_STREAMS_CONNECTION_SCALING");
@@ -46,15 +44,13 @@ bool ConnectionScalingEnabled() {
   return parse_succeeded && parsed_value;
 }
 
-class ConnectionScalingJsonArgs final : public JsonArgs {
- public:
-  bool IsEnabled(absl::string_view key) const override {
-    if (key == "connection_scaling") return ConnectionScalingEnabled();
-    return true;
-  }
-};
-
-}  // namespace
+bool WrrCustomMetricsEnabled() {
+  auto value = GetEnv("GRPC_EXPERIMENTAL_WRR_CUSTOM_METRICS");
+  if (!value.has_value()) return false;
+  bool parsed_value;
+  bool parse_succeeded = gpr_parse_bool_value(value->c_str(), &parsed_value);
+  return parse_succeeded && parsed_value;
+}
 
 //
 // ClientChannelGlobalParsedConfig::HealthCheckConfig
@@ -178,14 +174,14 @@ ClientChannelServiceConfigParser::ParseGlobalParams(const ChannelArgs& /*args*/,
                                                     const Json& json,
                                                     ValidationErrors* errors) {
   return LoadFromJson<std::unique_ptr<ClientChannelGlobalParsedConfig>>(
-      json, ConnectionScalingJsonArgs(), errors);
+      json, ClientChannelJsonArgs(), errors);
 }
 
 std::unique_ptr<ServiceConfigParser::ParsedConfig>
 ClientChannelServiceConfigParser::ParsePerMethodParams(
     const ChannelArgs& /*args*/, const Json& json, ValidationErrors* errors) {
   return LoadFromJson<std::unique_ptr<ClientChannelMethodParsedConfig>>(
-      json, ConnectionScalingJsonArgs(), errors);
+      json, ClientChannelJsonArgs(), errors);
 }
 
 }  // namespace internal
