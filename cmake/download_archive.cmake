@@ -35,7 +35,7 @@ function(download_archive destination url fallback_url hash strip_prefix)
 
     list(GET _download_STATUS 0 _download_STATUS_CODE)
 
-    if (not _download_STATUS_CODE EQUAL 0)
+    if (NOT _download_STATUS_CODE EQUAL 0)
       message(STATUS "Downloading from fallback ${fallback_url} (Attempt ${_download_ATTEMPT} of ${_download_MAX_ATTEMPTS})")
       file(DOWNLOAD ${fallback_url} ${_TEMPORARY_FILE}
           TIMEOUT 60
