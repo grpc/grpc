@@ -93,6 +93,7 @@ TEST_F(TlsCertificateSelectorTest,
   EXPECT_NE(result->certificate_chain[0], nullptr);
   // Should hold an EVP_PKEY ptr.
   EXPECT_EQ(result->private_key.index(), 0);
+  EXPECT_NE(std::get<bssl::UniquePtr<EVP_PKEY>>(result->private_key), nullptr);
 }
 
 TEST_F(TlsCertificateSelectorTest,
