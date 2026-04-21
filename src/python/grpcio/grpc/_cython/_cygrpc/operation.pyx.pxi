@@ -62,6 +62,9 @@ cdef class SendMessageOperation(Operation):
     self.c_op.type = GRPC_OP_SEND_MESSAGE
     self.c_op.flags = self._flags
     
+    if isinstance(self._message, list):
+      self._message = b''.join(self._message)
+
     cdef const unsigned char[:] view = self._message
     cdef grpc_slice message_slice
     if view.shape[0] > 0:
