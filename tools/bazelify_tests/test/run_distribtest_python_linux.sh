@@ -25,4 +25,7 @@ ls -lR input_artifacts
 export EXTERNAL_GIT_ROOT="$(pwd)"
 mv input_artifacts/package_python_linux/* input_artifacts/ || true
 
+if [ -x /usr/local/bin/python3 ]; then
+  export PYTHON_BIN=/usr/local/bin/python3
+fi
 test/distrib/python/run_binary_distrib_test.sh

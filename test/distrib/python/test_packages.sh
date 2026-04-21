@@ -41,7 +41,7 @@ REFLECTION_ARCHIVES=("$EXTERNAL_GIT_ROOT"/input_artifacts/grpcio[_-]*reflection[
 TESTING_ARCHIVES=("$EXTERNAL_GIT_ROOT"/input_artifacts/grpcio[_-]*testing[-_0-9a-z.]*.tar.gz)
 
 VIRTUAL_ENV=$(mktemp -d)
-python3 -m virtualenv "$VIRTUAL_ENV"
+${PYTHON_BIN:-python3} -m virtualenv "$VIRTUAL_ENV"
 PYTHON=$VIRTUAL_ENV/bin/python
 "$PYTHON" -m pip install --upgrade six pip==25.2 wheel setuptools
 
