@@ -517,7 +517,7 @@ def expand_tests(name, srcs, deps, tags, args, exclude_pollers, uses_polling, us
                     env["GRPC_EXPERIMENTS"] = experiment_enables[experiment]
                     env["GRPC_CI_EXPERIMENTS"] = "1"
                     config["env"] = env
-                    tags = config["tags"] + ["experiment_variation"]
+                    tags = config["tags"] + ["manual"]
                     for tag in must_have_tags + enabled_tags:
                         if tag not in tags:
                             tags = tags + [tag]
@@ -535,7 +535,7 @@ def expand_tests(name, srcs, deps, tags, args, exclude_pollers, uses_polling, us
                     env["GRPC_EXPERIMENTS"] = "-" + experiment
                     env["GRPC_CI_EXPERIMENTS"] = "1"
                     config["env"] = env
-                    tags = config["tags"] + ["experiment_variation"]
+                    tags = config["tags"] + ["manual"]
                     for tag in must_have_tags + disabled_tags:
                         if tag not in tags:
                             tags = tags + [tag]
