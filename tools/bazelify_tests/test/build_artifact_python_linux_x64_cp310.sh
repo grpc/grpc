@@ -28,4 +28,4 @@ export GRPC_PYTHON_BUILD_EXT_COMPILER_JOBS=8
 
 mkdir -p artifacts
 
-ARTIFACTS_OUT=artifacts tools/run_tests/artifacts/build_artifact_python.sh
+scl enable devtoolset-10 -- ARTIFACTS_OUT=artifacts tools/run_tests/artifacts/build_artifact_python.sh
