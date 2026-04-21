@@ -92,7 +92,8 @@ GRPC_LLVM_WINDOWS_WARNING_FLAGS = GRPC_LLVM_WARNING_FLAGS + [
     "-Wno-format-nonliteral",
     "-Wno-inconsistent-missing-destructor-override",
     "-Wno-language-extension-token",
-    "-Wdollar-in-identifier-extension",
+    "-Wno-dollar-in-identifier-extension",
+    "-Wno-ignored-attributes",
 
     # xxhash offenses
     "-Wno-disabled-macro-expansion",
