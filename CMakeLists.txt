@@ -5408,6 +5408,8 @@ endif()
 
 if(gRPC_BUILD_CODEGEN)
 add_library(grpc++_reflection ${_gRPC_STATIC_WIN32}
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/health/v1/health.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/health/v1/health.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/reflection/v1/reflection.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/reflection/v1/reflection.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/reflection/v1/reflection.pb.h
@@ -29060,6 +29062,8 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(proto_server_reflection_test
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/health/v1/health.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/health/v1/health.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/duplicate/echo_duplicate.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/duplicate/echo_duplicate.pb.h

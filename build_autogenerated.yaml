@@ -4304,6 +4304,7 @@ libs:
   headers:
   - src/cpp/ext/proto_server_reflection.h
   src:
+  - src/proto/grpc/health/v1/health.proto
   - src/proto/grpc/reflection/v1/reflection.proto
   - src/proto/grpc/reflection/v1alpha/reflection.proto
   - src/cpp/ext/proto_server_reflection.cc
@@ -21317,6 +21318,7 @@ targets:
   - test/cpp/end2end/test_service_impl.h
   - test/cpp/util/proto_reflection_descriptor_database.h
   src:
+  - src/proto/grpc/health/v1/health.proto
   - src/proto/grpc/testing/duplicate/echo_duplicate.proto
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto

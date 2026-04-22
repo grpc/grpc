@@ -1051,6 +1051,7 @@ grpc_cc_test(
         "//:grpc++_public_hdrs",
         "//:grpc++_reflection",
         "//:grpc_public_hdrs",
+        "//src/proto/grpc/health/v1:health_cc_proto",
         "//src/proto/grpc/reflection/v1:reflection_proto",
         "//src/proto/grpc/reflection/v1:reflection_proto_cc_proto",
         "//src/proto/grpc/reflection/v1alpha:reflection_proto",
