@@ -503,25 +503,15 @@ static void verified_root_cert_free(void* /*parent*/, void* ptr,
 }
 
 static void init_openssl(void) {
-#if OPENSSL_VERSION_NUMBER >= 0x30000000L
-  // In OpenSSL 3.0+, we pass OPENSSL_INIT_NO_ATEXIT to prevent OpenSSL from
+#if OPENSSL_VERSION_NUMBER >= 0x10101000L
+  // In OpenSSL 1.1.1+, we pass OPENSSL_INIT_NO_ATEXIT to prevent OpenSSL from
   // registering its own atexit handler, which can cause crashes if background
   // threads are still active during process exit. Instead, we register our own
-  // atexit handler below that waits for gRPC shutdown. Note that we do NOT
-  // call OPENSSL_cleanup() for 3.0+ as it handles its own deinitialization.
+  // atexit handler below that waits for gRPC shutdown.
   OPENSSL_init_ssl(OPENSSL_INIT_NO_ATEXIT, nullptr);
-#elif OPENSSL_VERSION_NUMBER >= 0x10101000L
   // Ensure OPENSSL global clean up happens after gRPC shutdown completes.
   // OPENSSL registers an exit handler to clean up global objects, which
-  // otherwise may happen before gRPC removes all references to OPENSSL. Below
-  // exit handler is guaranteed to run after OPENSSL's.
-  OPENSSL_init_ssl(0, nullptr);
-#else
-  SSL_library_init();
-  SSL_load_error_strings();
-  OpenSSL_add_all_algorithms();
-#endif
-#if OPENSSL_VERSION_NUMBER >= 0x10101000L
+  // otherwise may happen before gRPC removes all references to OPENSSL.
   std::atexit([]() {
     std::optional<std::string> env =
         grpc_core::GetEnv(GRPC_ARG_OPENSSL_CLEANUP_TIMEOUT_ENV);
@@ -538,10 +528,21 @@ static void init_openssl(void) {
       }
     }
     grpc_wait_for_shutdown_with_timeout(absl::Seconds(timeout_sec));
+  // Note that we do NOT call OPENSSL_cleanup() for 3.0+ as it can cause double
+  // free crashes on deinitialization.
 #if OPENSSL_VERSION_NUMBER < 0x30000000L
     OPENSSL_cleanup();
 #endif
   });
+#elif OPENSSL_VERSION_NUMBER >= 0x10100000L
+  // OPENSSL_init_ssl was added in version 1.1.0. Deinitialization will happen
+  // audtomatically by the OpenSSL atexit function.
+  // See https://docs.openssl.org/3.0/man3/OPENSSL_init_ssl/.
+  OPENSSL_init_ssl(0, nullptr);
+#else
+  SSL_library_init();
+  SSL_load_error_strings();
+  OpenSSL_add_all_algorithms();
 #endif
 #if OPENSSL_VERSION_NUMBER < 0x10100000
   if (!CRYPTO_get_locking_callback()) {
