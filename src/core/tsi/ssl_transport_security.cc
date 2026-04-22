@@ -531,6 +531,7 @@ static void init_openssl(void) {
     }
 
     grpc_wait_for_shutdown_with_timeout(absl::Seconds(timeout_sec));
+    OPENSSL_cleanup();
   });
 #elif OPENSSL_VERSION_NUMBER >= 0x10100000
   OPENSSL_init_ssl(0, nullptr);
