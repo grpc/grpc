@@ -180,6 +180,10 @@ cdef class ReceiveMessageOperation(Operation):
       message_reader_status = grpc_byte_buffer_reader_init(
           &message_reader, self._c_message_byte_buffer)
       if message_reader_status:
+        # Peek-ahead pattern: read the first slice, then check if there's a
+        # second. Most gRPC messages fit in a single slice, so this avoids
+        # list.append() / len() / indexing overhead on the hot path by
+        # assigning the memoryview directly to self._message.
         has_next = grpc_byte_buffer_reader_next(&message_reader, &message_slice)
         if has_next:
           first_slice = message_slice
