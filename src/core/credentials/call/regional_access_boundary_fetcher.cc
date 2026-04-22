@@ -254,10 +254,10 @@ class EmailFetcher::EmailRequest final
     memset(&request, 0, sizeof(grpc_http_request));
     request.hdr_count = 1;
     request.hdrs = &header;
-    auto uri =
-        URI::Create("http", /*user_info=*/"", GRPC_COMPUTE_ENGINE_METADATA_HOST,
-                    kComputeEngineDefaultSaEmailPath, /*query_parameter_pairs=*/{},
-                    /*fragment=*/"");
+    auto uri = URI::Create(
+        "http", /*user_info=*/"", GRPC_COMPUTE_ENGINE_METADATA_HOST,
+        kComputeEngineDefaultSaEmailPath, /*query_parameter_pairs=*/{},
+        /*fragment=*/"");
     GRPC_CHECK(uri.ok());
     GRPC_CLOSURE_INIT(&closure_, OnResponseWrapper, this,
                       grpc_schedule_on_exec_ctx);

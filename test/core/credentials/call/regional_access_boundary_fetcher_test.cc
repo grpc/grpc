@@ -47,7 +47,6 @@ namespace grpc_core {
 
 class RegionalAccessBoundaryFetcherTest : public ::testing::Test {
  protected:
-
   using RegionalAccessBoundary =
       RegionalAccessBoundaryFetcher::RegionalAccessBoundary;
   static constexpr Duration kRegioanlAccessBoundarySoftCacheGraceDuration =
@@ -133,16 +132,14 @@ class RegionalAccessBoundaryFetcherTest : public ::testing::Test {
       fuzzing_event_engine_;
 };
 
-
-
 namespace {
 
 grpc_closure* g_stalled_on_done = nullptr;
 grpc_http_response* g_stalled_response = nullptr;
 
-int httpcli_get_stalled(const grpc_http_request* request,
-                        const URI& uri, Timestamp deadline,
-                        grpc_closure* on_done, grpc_http_response* response);
+int httpcli_get_stalled(const grpc_http_request* request, const URI& uri,
+                        Timestamp deadline, grpc_closure* on_done,
+                        grpc_http_response* response);
 
 TEST_F(RegionalAccessBoundaryFetcherTest, CacheMissTriggersFetch) {
   ExecCtx exec_ctx;
