@@ -342,6 +342,8 @@ class ServerClientMixin:
                     )
                 )
             elif client_result.type() == cygrpc.OperationType.receive_message:
+                # Single-slice messages should return memoryview (zero-copy)
+                self.assertIsInstance(client_result.message(), memoryview)
                 self.assertEqual(RESPONSE, bytes(client_result.message()))
             elif (
                 client_result.type()
@@ -375,6 +377,8 @@ class ServerClientMixin:
             self.assertNotIn(server_result.type(), found_server_op_types)
             found_server_op_types.add(server_result.type())
             if server_result.type() == cygrpc.OperationType.receive_message:
+                # Single-slice messages should return memoryview (zero-copy)
+                self.assertIsInstance(server_result.message(), memoryview)
                 self.assertEqual(REQUEST, bytes(server_result.message()))
             elif (
                 server_result.type()

@@ -58,6 +58,7 @@ GRPCIO_TESTS_UNIT = [
     "_session_cache_test.py",
     "_utilities_test.py",
     "_xds_credentials_test.py",
+    "_common_deserialize_test.py",
 ]
 
 py_library(
