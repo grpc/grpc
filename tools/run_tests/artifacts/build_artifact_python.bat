@@ -12,6 +12,8 @@
 @rem See the License for the specific language governing permissions and
 @rem limitations under the License.
 
+setlocal enableextensions
+
 @rem set path to python
 set PATH=C:\%1;C:\%1\scripts;%PATH%
 
@@ -44,16 +46,19 @@ set ARTIFACT_DIR=%cd%\%ARTIFACTS_OUT%
 @rem use short temp directory to avoid linker command file errors caused by
 @rem exceeding 131071 characters.
 set "GRPC_PYTHON_BUILD_USE_SHORT_TEMP_DIR_NAME=1"
+mkdir "T\tmp\%1_%2"
 
 @rem Build gRPC Python distribution
-python -m build --no-isolation || goto :error
+python -m build --no-isolation -C="--build-option=--bdist-dir=T\%1_%2" || goto :error
 
 @rem Set up gRPC Python tools
 python tools\distrib\python\make_grpcio_tools.py
 
+mkdir "T\tmp\%1_%2_tools"
+
 @rem Build grpcio-tools Python distribution
 pushd tools\distrib\python\grpcio_tools
-python -m build --no-isolation || goto :error
+python -m build --no-isolation -C="--build-option=--bdist-dir=T\%1_%2_tools" || goto :error
 popd
 
 @rem Ensure the generate artifacts are valid.
