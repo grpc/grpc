@@ -464,15 +464,15 @@ INSTANTIATE_TEST_SUITE_P(
 MATCHER_P2(AdjustedClockInRange, t1, t2,
            absl::StrFormat("time between %s and %s", t1.ToString().c_str(),
                            t2.ToString().c_str())) {
-  gpr_cycle_counter cycle_now = gpr_get_cycle_counter();
-  grpc_core::Timestamp cycle_time =
-      grpc_core::Timestamp::FromCycleCounterRoundDown(cycle_now);
-  grpc_core::Timestamp time_spec =
-      grpc_core::Timestamp::FromTimespecRoundDown(gpr_now(GPR_CLOCK_MONOTONIC));
-  grpc_core::Timestamp now = arg + (time_spec - cycle_time);
+  // arg comes from NowFromCycleCounter() which uses gpr_now(GPR_CLOCK_MONOTONIC),
+  // the same clock used to compute t1 and t2, so no TSC correction is needed.
+  // The original TSC adjustment here was only valid when NowFromCycleCounter()
+  // returned a cycle-counter-based timestamp (changed in #27467); applying it
+  // to a monotonic timestamp subtracts TSC drift and causes spurious failures
+  // on Linux machines where the CPU boosts after gpr_precise_clock_init().
   bool ok = true;
-  ok &= ::testing::ExplainMatchResult(::testing::Ge(t1), now, result_listener);
-  ok &= ::testing::ExplainMatchResult(::testing::Lt(t2), now, result_listener);
+  ok &= ::testing::ExplainMatchResult(::testing::Ge(t1), arg, result_listener);
+  ok &= ::testing::ExplainMatchResult(::testing::Lt(t2), arg, result_listener);
   return ok;
 }
 
