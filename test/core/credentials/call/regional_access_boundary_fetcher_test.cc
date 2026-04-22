@@ -49,7 +49,7 @@ class RegionalAccessBoundaryFetcherTest : public ::testing::Test {
  protected:
   using RegionalAccessBoundary =
       RegionalAccessBoundaryFetcher::RegionalAccessBoundary;
-  static constexpr Duration kRegioanlAccessBoundarySoftCacheGraceDuration =
+  static constexpr Duration kRegionalAccessBoundarySoftCacheGraceDuration =
       Duration::Hours(1);
   bool has_cache(RegionalAccessBoundaryFetcher* fetcher) {
     MutexLock lock(&fetcher->cache_mu_);
@@ -551,7 +551,7 @@ TEST_F(RegionalAccessBoundaryFetcherTest, CacheSoftExpirationTriggersRefresh) {
   HttpRequest::SetOverride(httpcli_get_valid_json, nullptr, nullptr);
   Timestamp now = Timestamp::Now();
   Timestamp soft_expired_timestamp =
-      now + (kRegioanlAccessBoundarySoftCacheGraceDuration / 2);
+      now + (kRegionalAccessBoundarySoftCacheGraceDuration / 2);
   set_cache(RegionalAccessBoundary{Slice::FromStaticString("us-east1"),
                                    soft_expired_timestamp});
   // Verify our mock cache setup is correct

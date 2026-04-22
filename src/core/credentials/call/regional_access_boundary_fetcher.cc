@@ -35,7 +35,7 @@ namespace grpc_core {
 
 namespace {
 constexpr absl::string_view kAllowedLocationsKey = "x-allowed-locations";
-constexpr Duration kRegioanlAccessBoundarySoftCacheGraceDuration =
+constexpr Duration kRegionalAccessBoundarySoftCacheGraceDuration =
     Duration::Hours(1);
 constexpr Duration kRegionalAccessBoundaryCacheDuration = Duration::Hours(6);
 constexpr absl::string_view kRegionalEndpoint = "rep.googleapis.com";
@@ -134,7 +134,7 @@ void RegionalAccessBoundaryFetcher::Fetch(absl::string_view access_token,
     // - We are not currently in backoff after a failed fetch attempt.
     if ((!cache_.has_value() ||
          cache_->expiration <=
-             now + kRegioanlAccessBoundarySoftCacheGraceDuration) &&
+             now + kRegionalAccessBoundarySoftCacheGraceDuration) &&
         pending_request_ == nullptr && next_fetch_time_ <= now) {
       pending_request_ = MakeOrphanable<Request>(WeakRef(), access_token);
       pending_request_->Start();
