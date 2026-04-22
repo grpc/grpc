@@ -130,6 +130,66 @@ const char* const additional_constraints_multiping = "{}";
 const char* const description_otel_export_telemetry_domains =
     "Export telemetry domains in OpenTelemetry metrics.";
 const char* const additional_constraints_otel_export_telemetry_domains = "{}";
+const char* const description_ph2_perf_01 =
+    "Different performance experiments for PH2 Transport";
+const char* const additional_constraints_ph2_perf_01 = "{}";
+const char* const description_ph2_perf_02 =
+    "Different performance experiments for PH2 Transport";
+const char* const additional_constraints_ph2_perf_02 = "{}";
+const char* const description_ph2_perf_03 =
+    "Different performance experiments for PH2 Transport";
+const char* const additional_constraints_ph2_perf_03 = "{}";
+const char* const description_ph2_perf_04 =
+    "Different performance experiments for PH2 Transport";
+const char* const additional_constraints_ph2_perf_04 = "{}";
+const char* const description_ph2_perf_05 =
+    "Different performance experiments for PH2 Transport";
+const char* const additional_constraints_ph2_perf_05 = "{}";
+const char* const description_ph2_perf_06 =
+    "Different performance experiments for PH2 Transport";
+const char* const additional_constraints_ph2_perf_06 = "{}";
+const char* const description_ph2_perf_07 =
+    "Different performance experiments for PH2 Transport";
+const char* const additional_constraints_ph2_perf_07 = "{}";
+const char* const description_ph2_perf_08 =
+    "Different performance experiments for PH2 Transport";
+const char* const additional_constraints_ph2_perf_08 = "{}";
+const char* const description_ph2_perf_09 =
+    "Different performance experiments for PH2 Transport";
+const char* const additional_constraints_ph2_perf_09 = "{}";
+const char* const description_ph2_perf_10 =
+    "Different performance experiments for PH2 Transport";
+const char* const additional_constraints_ph2_perf_10 = "{}";
+const char* const description_ph2_perf_11 =
+    "Different performance experiments for PH2 Transport";
+const char* const additional_constraints_ph2_perf_11 = "{}";
+const char* const description_ph2_perf_12 =
+    "Different performance experiments for PH2 Transport";
+const char* const additional_constraints_ph2_perf_12 = "{}";
+const char* const description_ph2_perf_13 =
+    "Different performance experiments for PH2 Transport";
+const char* const additional_constraints_ph2_perf_13 = "{}";
+const char* const description_ph2_perf_14 =
+    "Different performance experiments for PH2 Transport";
+const char* const additional_constraints_ph2_perf_14 = "{}";
+const char* const description_ph2_perf_15 =
+    "Different performance experiments for PH2 Transport";
+const char* const additional_constraints_ph2_perf_15 = "{}";
+const char* const description_ph2_perf_16 =
+    "Different performance experiments for PH2 Transport";
+const char* const additional_constraints_ph2_perf_16 = "{}";
+const char* const description_ph2_perf_17 =
+    "Different performance experiments for PH2 Transport";
+const char* const additional_constraints_ph2_perf_17 = "{}";
+const char* const description_ph2_perf_18 =
+    "Different performance experiments for PH2 Transport";
+const char* const additional_constraints_ph2_perf_18 = "{}";
+const char* const description_ph2_perf_19 =
+    "Different performance experiments for PH2 Transport";
+const char* const additional_constraints_ph2_perf_19 = "{}";
+const char* const description_ph2_perf_20 =
+    "Different performance experiments for PH2 Transport";
+const char* const additional_constraints_ph2_perf_20 = "{}";
 const char* const description_pick_first_ignore_empty_updates =
     "Ignore empty resolutions in pick_first (delete)";
 const char* const additional_constraints_pick_first_ignore_empty_updates = "{}";
@@ -326,6 +386,46 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"otel_export_telemetry_domains", description_otel_export_telemetry_domains,
      additional_constraints_otel_export_telemetry_domains, nullptr, 0, false,
      true},
+    {"ph2_perf_01", description_ph2_perf_01, additional_constraints_ph2_perf_01,
+     nullptr, 0, false, true},
+    {"ph2_perf_02", description_ph2_perf_02, additional_constraints_ph2_perf_02,
+     nullptr, 0, false, true},
+    {"ph2_perf_03", description_ph2_perf_03, additional_constraints_ph2_perf_03,
+     nullptr, 0, false, true},
+    {"ph2_perf_04", description_ph2_perf_04, additional_constraints_ph2_perf_04,
+     nullptr, 0, false, true},
+    {"ph2_perf_05", description_ph2_perf_05, additional_constraints_ph2_perf_05,
+     nullptr, 0, false, true},
+    {"ph2_perf_06", description_ph2_perf_06, additional_constraints_ph2_perf_06,
+     nullptr, 0, false, true},
+    {"ph2_perf_07", description_ph2_perf_07, additional_constraints_ph2_perf_07,
+     nullptr, 0, false, true},
+    {"ph2_perf_08", description_ph2_perf_08, additional_constraints_ph2_perf_08,
+     nullptr, 0, false, true},
+    {"ph2_perf_09", description_ph2_perf_09, additional_constraints_ph2_perf_09,
+     nullptr, 0, false, true},
+    {"ph2_perf_10", description_ph2_perf_10, additional_constraints_ph2_perf_10,
+     nullptr, 0, false, true},
+    {"ph2_perf_11", description_ph2_perf_11, additional_constraints_ph2_perf_11,
+     nullptr, 0, false, true},
+    {"ph2_perf_12", description_ph2_perf_12, additional_constraints_ph2_perf_12,
+     nullptr, 0, false, true},
+    {"ph2_perf_13", description_ph2_perf_13, additional_constraints_ph2_perf_13,
+     nullptr, 0, false, true},
+    {"ph2_perf_14", description_ph2_perf_14, additional_constraints_ph2_perf_14,
+     nullptr, 0, false, true},
+    {"ph2_perf_15", description_ph2_perf_15, additional_constraints_ph2_perf_15,
+     nullptr, 0, false, true},
+    {"ph2_perf_16", description_ph2_perf_16, additional_constraints_ph2_perf_16,
+     nullptr, 0, false, true},
+    {"ph2_perf_17", description_ph2_perf_17, additional_constraints_ph2_perf_17,
+     nullptr, 0, false, true},
+    {"ph2_perf_18", description_ph2_perf_18, additional_constraints_ph2_perf_18,
+     nullptr, 0, false, true},
+    {"ph2_perf_19", description_ph2_perf_19, additional_constraints_ph2_perf_19,
+     nullptr, 0, false, true},
+    {"ph2_perf_20", description_ph2_perf_20, additional_constraints_ph2_perf_20,
+     nullptr, 0, false, true},
     {"pick_first_ignore_empty_updates",
      description_pick_first_ignore_empty_updates,
      additional_constraints_pick_first_ignore_empty_updates, nullptr, 0, false,
@@ -528,6 +628,66 @@ const char* const additional_constraints_multiping = "{}";
 const char* const description_otel_export_telemetry_domains =
     "Export telemetry domains in OpenTelemetry metrics.";
 const char* const additional_constraints_otel_export_telemetry_domains = "{}";
+const char* const description_ph2_perf_01 =
+    "Different performance experiments for PH2 Transport";
+const char* const additional_constraints_ph2_perf_01 = "{}";
+const char* const description_ph2_perf_02 =
+    "Different performance experiments for PH2 Transport";
+const char* const additional_constraints_ph2_perf_02 = "{}";
+const char* const description_ph2_perf_03 =
+    "Different performance experiments for PH2 Transport";
+const char* const additional_constraints_ph2_perf_03 = "{}";
+const char* const description_ph2_perf_04 =
+    "Different performance experiments for PH2 Transport";
+const char* const additional_constraints_ph2_perf_04 = "{}";
+const char* const description_ph2_perf_05 =
+    "Different performance experiments for PH2 Transport";
+const char* const additional_constraints_ph2_perf_05 = "{}";
+const char* const description_ph2_perf_06 =
+    "Different performance experiments for PH2 Transport";
+const char* const additional_constraints_ph2_perf_06 = "{}";
+const char* const description_ph2_perf_07 =
+    "Different performance experiments for PH2 Transport";
+const char* const additional_constraints_ph2_perf_07 = "{}";
+const char* const description_ph2_perf_08 =
+    "Different performance experiments for PH2 Transport";
+const char* const additional_constraints_ph2_perf_08 = "{}";
+const char* const description_ph2_perf_09 =
+    "Different performance experiments for PH2 Transport";
+const char* const additional_constraints_ph2_perf_09 = "{}";
+const char* const description_ph2_perf_10 =
+    "Different performance experiments for PH2 Transport";
+const char* const additional_constraints_ph2_perf_10 = "{}";
+const char* const description_ph2_perf_11 =
+    "Different performance experiments for PH2 Transport";
+const char* const additional_constraints_ph2_perf_11 = "{}";
+const char* const description_ph2_perf_12 =
+    "Different performance experiments for PH2 Transport";
+const char* const additional_constraints_ph2_perf_12 = "{}";
+const char* const description_ph2_perf_13 =
+    "Different performance experiments for PH2 Transport";
+const char* const additional_constraints_ph2_perf_13 = "{}";
+const char* const description_ph2_perf_14 =
+    "Different performance experiments for PH2 Transport";
+const char* const additional_constraints_ph2_perf_14 = "{}";
+const char* const description_ph2_perf_15 =
+    "Different performance experiments for PH2 Transport";
+const char* const additional_constraints_ph2_perf_15 = "{}";
+const char* const description_ph2_perf_16 =
+    "Different performance experiments for PH2 Transport";
+const char* const additional_constraints_ph2_perf_16 = "{}";
+const char* const description_ph2_perf_17 =
+    "Different performance experiments for PH2 Transport";
+const char* const additional_constraints_ph2_perf_17 = "{}";
+const char* const description_ph2_perf_18 =
+    "Different performance experiments for PH2 Transport";
+const char* const additional_constraints_ph2_perf_18 = "{}";
+const char* const description_ph2_perf_19 =
+    "Different performance experiments for PH2 Transport";
+const char* const additional_constraints_ph2_perf_19 = "{}";
+const char* const description_ph2_perf_20 =
+    "Different performance experiments for PH2 Transport";
+const char* const additional_constraints_ph2_perf_20 = "{}";
 const char* const description_pick_first_ignore_empty_updates =
     "Ignore empty resolutions in pick_first (delete)";
 const char* const additional_constraints_pick_first_ignore_empty_updates = "{}";
@@ -724,6 +884,46 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"otel_export_telemetry_domains", description_otel_export_telemetry_domains,
      additional_constraints_otel_export_telemetry_domains, nullptr, 0, false,
      true},
+    {"ph2_perf_01", description_ph2_perf_01, additional_constraints_ph2_perf_01,
+     nullptr, 0, false, true},
+    {"ph2_perf_02", description_ph2_perf_02, additional_constraints_ph2_perf_02,
+     nullptr, 0, false, true},
+    {"ph2_perf_03", description_ph2_perf_03, additional_constraints_ph2_perf_03,
+     nullptr, 0, false, true},
+    {"ph2_perf_04", description_ph2_perf_04, additional_constraints_ph2_perf_04,
+     nullptr, 0, false, true},
+    {"ph2_perf_05", description_ph2_perf_05, additional_constraints_ph2_perf_05,
+     nullptr, 0, false, true},
+    {"ph2_perf_06", description_ph2_perf_06, additional_constraints_ph2_perf_06,
+     nullptr, 0, false, true},
+    {"ph2_perf_07", description_ph2_perf_07, additional_constraints_ph2_perf_07,
+     nullptr, 0, false, true},
+    {"ph2_perf_08", description_ph2_perf_08, additional_constraints_ph2_perf_08,
+     nullptr, 0, false, true},
+    {"ph2_perf_09", description_ph2_perf_09, additional_constraints_ph2_perf_09,
+     nullptr, 0, false, true},
+    {"ph2_perf_10", description_ph2_perf_10, additional_constraints_ph2_perf_10,
+     nullptr, 0, false, true},
+    {"ph2_perf_11", description_ph2_perf_11, additional_constraints_ph2_perf_11,
+     nullptr, 0, false, true},
+    {"ph2_perf_12", description_ph2_perf_12, additional_constraints_ph2_perf_12,
+     nullptr, 0, false, true},
+    {"ph2_perf_13", description_ph2_perf_13, additional_constraints_ph2_perf_13,
+     nullptr, 0, false, true},
+    {"ph2_perf_14", description_ph2_perf_14, additional_constraints_ph2_perf_14,
+     nullptr, 0, false, true},
+    {"ph2_perf_15", description_ph2_perf_15, additional_constraints_ph2_perf_15,
+     nullptr, 0, false, true},
+    {"ph2_perf_16", description_ph2_perf_16, additional_constraints_ph2_perf_16,
+     nullptr, 0, false, true},
+    {"ph2_perf_17", description_ph2_perf_17, additional_constraints_ph2_perf_17,
+     nullptr, 0, false, true},
+    {"ph2_perf_18", description_ph2_perf_18, additional_constraints_ph2_perf_18,
+     nullptr, 0, false, true},
+    {"ph2_perf_19", description_ph2_perf_19, additional_constraints_ph2_perf_19,
+     nullptr, 0, false, true},
+    {"ph2_perf_20", description_ph2_perf_20, additional_constraints_ph2_perf_20,
+     nullptr, 0, false, true},
     {"pick_first_ignore_empty_updates",
      description_pick_first_ignore_empty_updates,
      additional_constraints_pick_first_ignore_empty_updates, nullptr, 0, false,
@@ -926,6 +1126,66 @@ const char* const additional_constraints_multiping = "{}";
 const char* const description_otel_export_telemetry_domains =
     "Export telemetry domains in OpenTelemetry metrics.";
 const char* const additional_constraints_otel_export_telemetry_domains = "{}";
+const char* const description_ph2_perf_01 =
+    "Different performance experiments for PH2 Transport";
+const char* const additional_constraints_ph2_perf_01 = "{}";
+const char* const description_ph2_perf_02 =
+    "Different performance experiments for PH2 Transport";
+const char* const additional_constraints_ph2_perf_02 = "{}";
+const char* const description_ph2_perf_03 =
+    "Different performance experiments for PH2 Transport";
+const char* const additional_constraints_ph2_perf_03 = "{}";
+const char* const description_ph2_perf_04 =
+    "Different performance experiments for PH2 Transport";
+const char* const additional_constraints_ph2_perf_04 = "{}";
+const char* const description_ph2_perf_05 =
+    "Different performance experiments for PH2 Transport";
+const char* const additional_constraints_ph2_perf_05 = "{}";
+const char* const description_ph2_perf_06 =
+    "Different performance experiments for PH2 Transport";
+const char* const additional_constraints_ph2_perf_06 = "{}";
+const char* const description_ph2_perf_07 =
+    "Different performance experiments for PH2 Transport";
+const char* const additional_constraints_ph2_perf_07 = "{}";
+const char* const description_ph2_perf_08 =
+    "Different performance experiments for PH2 Transport";
+const char* const additional_constraints_ph2_perf_08 = "{}";
+const char* const description_ph2_perf_09 =
+    "Different performance experiments for PH2 Transport";
+const char* const additional_constraints_ph2_perf_09 = "{}";
+const char* const description_ph2_perf_10 =
+    "Different performance experiments for PH2 Transport";
+const char* const additional_constraints_ph2_perf_10 = "{}";
+const char* const description_ph2_perf_11 =
+    "Different performance experiments for PH2 Transport";
+const char* const additional_constraints_ph2_perf_11 = "{}";
+const char* const description_ph2_perf_12 =
+    "Different performance experiments for PH2 Transport";
+const char* const additional_constraints_ph2_perf_12 = "{}";
+const char* const description_ph2_perf_13 =
+    "Different performance experiments for PH2 Transport";
+const char* const additional_constraints_ph2_perf_13 = "{}";
+const char* const description_ph2_perf_14 =
+    "Different performance experiments for PH2 Transport";
+const char* const additional_constraints_ph2_perf_14 = "{}";
+const char* const description_ph2_perf_15 =
+    "Different performance experiments for PH2 Transport";
+const char* const additional_constraints_ph2_perf_15 = "{}";
+const char* const description_ph2_perf_16 =
+    "Different performance experiments for PH2 Transport";
+const char* const additional_constraints_ph2_perf_16 = "{}";
+const char* const description_ph2_perf_17 =
+    "Different performance experiments for PH2 Transport";
+const char* const additional_constraints_ph2_perf_17 = "{}";
+const char* const description_ph2_perf_18 =
+    "Different performance experiments for PH2 Transport";
+const char* const additional_constraints_ph2_perf_18 = "{}";
+const char* const description_ph2_perf_19 =
+    "Different performance experiments for PH2 Transport";
+const char* const additional_constraints_ph2_perf_19 = "{}";
+const char* const description_ph2_perf_20 =
+    "Different performance experiments for PH2 Transport";
+const char* const additional_constraints_ph2_perf_20 = "{}";
 const char* const description_pick_first_ignore_empty_updates =
     "Ignore empty resolutions in pick_first (delete)";
 const char* const additional_constraints_pick_first_ignore_empty_updates = "{}";
@@ -1122,6 +1382,46 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"otel_export_telemetry_domains", description_otel_export_telemetry_domains,
      additional_constraints_otel_export_telemetry_domains, nullptr, 0, false,
      true},
+    {"ph2_perf_01", description_ph2_perf_01, additional_constraints_ph2_perf_01,
+     nullptr, 0, false, true},
+    {"ph2_perf_02", description_ph2_perf_02, additional_constraints_ph2_perf_02,
+     nullptr, 0, false, true},
+    {"ph2_perf_03", description_ph2_perf_03, additional_constraints_ph2_perf_03,
+     nullptr, 0, false, true},
+    {"ph2_perf_04", description_ph2_perf_04, additional_constraints_ph2_perf_04,
+     nullptr, 0, false, true},
+    {"ph2_perf_05", description_ph2_perf_05, additional_constraints_ph2_perf_05,
+     nullptr, 0, false, true},
+    {"ph2_perf_06", description_ph2_perf_06, additional_constraints_ph2_perf_06,
+     nullptr, 0, false, true},
+    {"ph2_perf_07", description_ph2_perf_07, additional_constraints_ph2_perf_07,
+     nullptr, 0, false, true},
+    {"ph2_perf_08", description_ph2_perf_08, additional_constraints_ph2_perf_08,
+     nullptr, 0, false, true},
+    {"ph2_perf_09", description_ph2_perf_09, additional_constraints_ph2_perf_09,
+     nullptr, 0, false, true},
+    {"ph2_perf_10", description_ph2_perf_10, additional_constraints_ph2_perf_10,
+     nullptr, 0, false, true},
+    {"ph2_perf_11", description_ph2_perf_11, additional_constraints_ph2_perf_11,
+     nullptr, 0, false, true},
+    {"ph2_perf_12", description_ph2_perf_12, additional_constraints_ph2_perf_12,
+     nullptr, 0, false, true},
+    {"ph2_perf_13", description_ph2_perf_13, additional_constraints_ph2_perf_13,
+     nullptr, 0, false, true},
+    {"ph2_perf_14", description_ph2_perf_14, additional_constraints_ph2_perf_14,
+     nullptr, 0, false, true},
+    {"ph2_perf_15", description_ph2_perf_15, additional_constraints_ph2_perf_15,
+     nullptr, 0, false, true},
+    {"ph2_perf_16", description_ph2_perf_16, additional_constraints_ph2_perf_16,
+     nullptr, 0, false, true},
+    {"ph2_perf_17", description_ph2_perf_17, additional_constraints_ph2_perf_17,
+     nullptr, 0, false, true},
+    {"ph2_perf_18", description_ph2_perf_18, additional_constraints_ph2_perf_18,
+     nullptr, 0, false, true},
+    {"ph2_perf_19", description_ph2_perf_19, additional_constraints_ph2_perf_19,
+     nullptr, 0, false, true},
+    {"ph2_perf_20", description_ph2_perf_20, additional_constraints_ph2_perf_20,
+     nullptr, 0, false, true},
     {"pick_first_ignore_empty_updates",
      description_pick_first_ignore_empty_updates,
      additional_constraints_pick_first_ignore_empty_updates, nullptr, 0, false,

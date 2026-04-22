@@ -104,6 +104,26 @@ inline bool IsMetadataPublishToAppTagEnabled() { return true; }
 inline bool IsMonitoringExperimentEnabled() { return true; }
 inline bool IsMultipingEnabled() { return false; }
 inline bool IsOtelExportTelemetryDomainsEnabled() { return false; }
+inline bool IsPh2Perf01Enabled() { return false; }
+inline bool IsPh2Perf02Enabled() { return false; }
+inline bool IsPh2Perf03Enabled() { return false; }
+inline bool IsPh2Perf04Enabled() { return false; }
+inline bool IsPh2Perf05Enabled() { return false; }
+inline bool IsPh2Perf06Enabled() { return false; }
+inline bool IsPh2Perf07Enabled() { return false; }
+inline bool IsPh2Perf08Enabled() { return false; }
+inline bool IsPh2Perf09Enabled() { return false; }
+inline bool IsPh2Perf10Enabled() { return false; }
+inline bool IsPh2Perf11Enabled() { return false; }
+inline bool IsPh2Perf12Enabled() { return false; }
+inline bool IsPh2Perf13Enabled() { return false; }
+inline bool IsPh2Perf14Enabled() { return false; }
+inline bool IsPh2Perf15Enabled() { return false; }
+inline bool IsPh2Perf16Enabled() { return false; }
+inline bool IsPh2Perf17Enabled() { return false; }
+inline bool IsPh2Perf18Enabled() { return false; }
+inline bool IsPh2Perf19Enabled() { return false; }
+inline bool IsPh2Perf20Enabled() { return false; }
 inline bool IsPickFirstIgnoreEmptyUpdatesEnabled() { return false; }
 inline bool IsPipelinedReadSecureEndpointEnabled() { return false; }
 inline bool IsPollsetAlternativeEnabled() { return false; }
@@ -181,6 +201,26 @@ inline bool IsMetadataPublishToAppTagEnabled() { return true; }
 inline bool IsMonitoringExperimentEnabled() { return true; }
 inline bool IsMultipingEnabled() { return false; }
 inline bool IsOtelExportTelemetryDomainsEnabled() { return false; }
+inline bool IsPh2Perf01Enabled() { return false; }
+inline bool IsPh2Perf02Enabled() { return false; }
+inline bool IsPh2Perf03Enabled() { return false; }
+inline bool IsPh2Perf04Enabled() { return false; }
+inline bool IsPh2Perf05Enabled() { return false; }
+inline bool IsPh2Perf06Enabled() { return false; }
+inline bool IsPh2Perf07Enabled() { return false; }
+inline bool IsPh2Perf08Enabled() { return false; }
+inline bool IsPh2Perf09Enabled() { return false; }
+inline bool IsPh2Perf10Enabled() { return false; }
+inline bool IsPh2Perf11Enabled() { return false; }
+inline bool IsPh2Perf12Enabled() { return false; }
+inline bool IsPh2Perf13Enabled() { return false; }
+inline bool IsPh2Perf14Enabled() { return false; }
+inline bool IsPh2Perf15Enabled() { return false; }
+inline bool IsPh2Perf16Enabled() { return false; }
+inline bool IsPh2Perf17Enabled() { return false; }
+inline bool IsPh2Perf18Enabled() { return false; }
+inline bool IsPh2Perf19Enabled() { return false; }
+inline bool IsPh2Perf20Enabled() { return false; }
 inline bool IsPickFirstIgnoreEmptyUpdatesEnabled() { return false; }
 inline bool IsPipelinedReadSecureEndpointEnabled() { return false; }
 inline bool IsPollsetAlternativeEnabled() { return false; }
@@ -258,6 +298,26 @@ inline bool IsMetadataPublishToAppTagEnabled() { return true; }
 inline bool IsMonitoringExperimentEnabled() { return true; }
 inline bool IsMultipingEnabled() { return false; }
 inline bool IsOtelExportTelemetryDomainsEnabled() { return false; }
+inline bool IsPh2Perf01Enabled() { return false; }
+inline bool IsPh2Perf02Enabled() { return false; }
+inline bool IsPh2Perf03Enabled() { return false; }
+inline bool IsPh2Perf04Enabled() { return false; }
+inline bool IsPh2Perf05Enabled() { return false; }
+inline bool IsPh2Perf06Enabled() { return false; }
+inline bool IsPh2Perf07Enabled() { return false; }
+inline bool IsPh2Perf08Enabled() { return false; }
+inline bool IsPh2Perf09Enabled() { return false; }
+inline bool IsPh2Perf10Enabled() { return false; }
+inline bool IsPh2Perf11Enabled() { return false; }
+inline bool IsPh2Perf12Enabled() { return false; }
+inline bool IsPh2Perf13Enabled() { return false; }
+inline bool IsPh2Perf14Enabled() { return false; }
+inline bool IsPh2Perf15Enabled() { return false; }
+inline bool IsPh2Perf16Enabled() { return false; }
+inline bool IsPh2Perf17Enabled() { return false; }
+inline bool IsPh2Perf18Enabled() { return false; }
+inline bool IsPh2Perf19Enabled() { return false; }
+inline bool IsPh2Perf20Enabled() { return false; }
 inline bool IsPickFirstIgnoreEmptyUpdatesEnabled() { return false; }
 inline bool IsPipelinedReadSecureEndpointEnabled() { return false; }
 inline bool IsPollsetAlternativeEnabled() { return false; }
@@ -318,6 +378,26 @@ enum ExperimentIds {
   kExperimentIdMonitoringExperiment,
   kExperimentIdMultiping,
   kExperimentIdOtelExportTelemetryDomains,
+  kExperimentIdPh2Perf01,
+  kExperimentIdPh2Perf02,
+  kExperimentIdPh2Perf03,
+  kExperimentIdPh2Perf04,
+  kExperimentIdPh2Perf05,
+  kExperimentIdPh2Perf06,
+  kExperimentIdPh2Perf07,
+  kExperimentIdPh2Perf08,
+  kExperimentIdPh2Perf09,
+  kExperimentIdPh2Perf10,
+  kExperimentIdPh2Perf11,
+  kExperimentIdPh2Perf12,
+  kExperimentIdPh2Perf13,
+  kExperimentIdPh2Perf14,
+  kExperimentIdPh2Perf15,
+  kExperimentIdPh2Perf16,
+  kExperimentIdPh2Perf17,
+  kExperimentIdPh2Perf18,
+  kExperimentIdPh2Perf19,
+  kExperimentIdPh2Perf20,
   kExperimentIdPickFirstIgnoreEmptyUpdates,
   kExperimentIdPipelinedReadSecureEndpoint,
   kExperimentIdPollsetAlternative,
@@ -458,6 +538,86 @@ inline bool IsMultipingEnabled() {
 #define GRPC_EXPERIMENT_IS_INCLUDED_OTEL_EXPORT_TELEMETRY_DOMAINS
 inline bool IsOtelExportTelemetryDomainsEnabled() {
   return IsExperimentEnabled<kExperimentIdOtelExportTelemetryDomains>();
+}
+#define GRPC_EXPERIMENT_IS_INCLUDED_PH2_PERF_01
+inline bool IsPh2Perf01Enabled() {
+  return IsExperimentEnabled<kExperimentIdPh2Perf01>();
+}
+#define GRPC_EXPERIMENT_IS_INCLUDED_PH2_PERF_02
+inline bool IsPh2Perf02Enabled() {
+  return IsExperimentEnabled<kExperimentIdPh2Perf02>();
+}
+#define GRPC_EXPERIMENT_IS_INCLUDED_PH2_PERF_03
+inline bool IsPh2Perf03Enabled() {
+  return IsExperimentEnabled<kExperimentIdPh2Perf03>();
+}
+#define GRPC_EXPERIMENT_IS_INCLUDED_PH2_PERF_04
+inline bool IsPh2Perf04Enabled() {
+  return IsExperimentEnabled<kExperimentIdPh2Perf04>();
+}
+#define GRPC_EXPERIMENT_IS_INCLUDED_PH2_PERF_05
+inline bool IsPh2Perf05Enabled() {
+  return IsExperimentEnabled<kExperimentIdPh2Perf05>();
+}
+#define GRPC_EXPERIMENT_IS_INCLUDED_PH2_PERF_06
+inline bool IsPh2Perf06Enabled() {
+  return IsExperimentEnabled<kExperimentIdPh2Perf06>();
+}
+#define GRPC_EXPERIMENT_IS_INCLUDED_PH2_PERF_07
+inline bool IsPh2Perf07Enabled() {
+  return IsExperimentEnabled<kExperimentIdPh2Perf07>();
+}
+#define GRPC_EXPERIMENT_IS_INCLUDED_PH2_PERF_08
+inline bool IsPh2Perf08Enabled() {
+  return IsExperimentEnabled<kExperimentIdPh2Perf08>();
+}
+#define GRPC_EXPERIMENT_IS_INCLUDED_PH2_PERF_09
+inline bool IsPh2Perf09Enabled() {
+  return IsExperimentEnabled<kExperimentIdPh2Perf09>();
+}
+#define GRPC_EXPERIMENT_IS_INCLUDED_PH2_PERF_10
+inline bool IsPh2Perf10Enabled() {
+  return IsExperimentEnabled<kExperimentIdPh2Perf10>();
+}
+#define GRPC_EXPERIMENT_IS_INCLUDED_PH2_PERF_11
+inline bool IsPh2Perf11Enabled() {
+  return IsExperimentEnabled<kExperimentIdPh2Perf11>();
+}
+#define GRPC_EXPERIMENT_IS_INCLUDED_PH2_PERF_12
+inline bool IsPh2Perf12Enabled() {
+  return IsExperimentEnabled<kExperimentIdPh2Perf12>();
+}
+#define GRPC_EXPERIMENT_IS_INCLUDED_PH2_PERF_13
+inline bool IsPh2Perf13Enabled() {
+  return IsExperimentEnabled<kExperimentIdPh2Perf13>();
+}
+#define GRPC_EXPERIMENT_IS_INCLUDED_PH2_PERF_14
+inline bool IsPh2Perf14Enabled() {
+  return IsExperimentEnabled<kExperimentIdPh2Perf14>();
+}
+#define GRPC_EXPERIMENT_IS_INCLUDED_PH2_PERF_15
+inline bool IsPh2Perf15Enabled() {
+  return IsExperimentEnabled<kExperimentIdPh2Perf15>();
+}
+#define GRPC_EXPERIMENT_IS_INCLUDED_PH2_PERF_16
+inline bool IsPh2Perf16Enabled() {
+  return IsExperimentEnabled<kExperimentIdPh2Perf16>();
+}
+#define GRPC_EXPERIMENT_IS_INCLUDED_PH2_PERF_17
+inline bool IsPh2Perf17Enabled() {
+  return IsExperimentEnabled<kExperimentIdPh2Perf17>();
+}
+#define GRPC_EXPERIMENT_IS_INCLUDED_PH2_PERF_18
+inline bool IsPh2Perf18Enabled() {
+  return IsExperimentEnabled<kExperimentIdPh2Perf18>();
+}
+#define GRPC_EXPERIMENT_IS_INCLUDED_PH2_PERF_19
+inline bool IsPh2Perf19Enabled() {
+  return IsExperimentEnabled<kExperimentIdPh2Perf19>();
+}
+#define GRPC_EXPERIMENT_IS_INCLUDED_PH2_PERF_20
+inline bool IsPh2Perf20Enabled() {
+  return IsExperimentEnabled<kExperimentIdPh2Perf20>();
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_PICK_FIRST_IGNORE_EMPTY_UPDATES
 inline bool IsPickFirstIgnoreEmptyUpdatesEnabled() {
