@@ -64,6 +64,13 @@ GRPC_LLVM_WARNING_FLAGS = [
     "-Wno-ignored-attributes",
     "-Wno-unused-parameter",
     "-Wno-unused-result",
+
+    # TODO(weizheyuan): Understand why this didn't break
+    # our builds before but now does. Is it a compiler bug?
+    #
+    # An example offending file:
+    # https://github.com/grpc/grpc/blob/8f62888c32e83327375670e46325a9cb5b51bde1/test/cpp/interop/xds_interop_client.cc#L147
+    "-Wno-unused-variable",
 ]
 
 GRPC_LLVM_WINDOWS_WARNING_FLAGS = GRPC_LLVM_WARNING_FLAGS + [
