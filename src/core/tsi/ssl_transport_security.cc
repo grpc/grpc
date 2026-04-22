@@ -503,16 +503,16 @@ static void verified_root_cert_free(void* /*parent*/, void* ptr,
 }
 
 static void init_openssl(void) {
-#if OPENSSL_VERSION_NUMBER >= 0x10101000L
-  // In OpenSSL 1.1.1+, we pass OPENSSL_INIT_NO_ATEXIT to prevent OpenSSL from
-  // registering its own atexit handler, which can cause crashes if background
-  // threads are still active during process exit. Instead, we register our own
-  // atexit handler below that waits for gRPC shutdown.
+#if OPENSSL_VERSION_NUMBER >= 0x30000000L
   OPENSSL_init_ssl(OPENSSL_INIT_NO_ATEXIT, nullptr);
   // Ensure OPENSSL global clean up happens after gRPC shutdown completes.
   // OPENSSL registers an exit handler to clean up global objects, which
-  // otherwise may happen before gRPC removes all references to OPENSSL.
+  // otherwise may happen before gRPC removes all references to OPENSSL. Below
+  // exit handler is guaranteed to run after OPENSSL's.
   std::atexit([]() {
+    // Retrieve the OpenSSL cleanup timeout from the environment variable.
+    // This allows users to override the default cleanup timeout for OpenSSL
+    // resource deallocation during gRPC shutdown.
     std::optional<std::string> env =
         grpc_core::GetEnv(GRPC_ARG_OPENSSL_CLEANUP_TIMEOUT_ENV);
     int timeout_sec = 2;
@@ -527,18 +527,36 @@ static void init_openssl(void) {
             << " environment variable. Using default value of 2 seconds.";
       }
     }
+
     grpc_wait_for_shutdown_with_timeout(absl::Seconds(timeout_sec));
-  // Note that we do NOT call OPENSSL_cleanup() for 3.0+ as it can cause double
-  // free crashes on deinitialization.
-#if OPENSSL_VERSION_NUMBER < 0x30000000L
-    OPENSSL_cleanup();
-#endif
   });
-#elif OPENSSL_VERSION_NUMBER >= 0x10100000L
-  // OPENSSL_init_ssl was added in version 1.1.0. Deinitialization will happen
-  // audtomatically by the OpenSSL atexit function.
-  // See https://docs.openssl.org/3.0/man3/OPENSSL_init_ssl/.
+#elif OPENSSL_VERSION_NUMBER >= 0x10100000
   OPENSSL_init_ssl(0, nullptr);
+  // Ensure OPENSSL global clean up happens after gRPC shutdown completes.
+  // OPENSSL registers an exit handler to clean up global objects, which
+  // otherwise may happen before gRPC removes all references to OPENSSL. Below
+  // exit handler is guaranteed to run after OPENSSL's.
+  std::atexit([]() {
+    // Retrieve the OpenSSL cleanup timeout from the environment variable.
+    // This allows users to override the default cleanup timeout for OpenSSL
+    // resource deallocation during gRPC shutdown.
+    std::optional<std::string> env =
+        grpc_core::GetEnv(GRPC_ARG_OPENSSL_CLEANUP_TIMEOUT_ENV);
+    int timeout_sec = 2;
+    if (env.has_value()) {
+      int parsed_timeout_sec = 0;
+      if (absl::SimpleAtoi(*env, &parsed_timeout_sec)) {
+        timeout_sec = parsed_timeout_sec;
+      } else {
+        GRPC_TRACE_LOG(tsi, ERROR)
+            << "Invalid value [" << (*env) << "] for "
+            << GRPC_ARG_OPENSSL_CLEANUP_TIMEOUT_ENV
+            << " environment variable. Using default value of 2 seconds.";
+      }
+    }
+
+    grpc_wait_for_shutdown_with_timeout(absl::Seconds(timeout_sec));
+  });
 #else
   SSL_library_init();
   SSL_load_error_strings();
