@@ -1,5 +1,7 @@
 # bazelrc file
 
+common --experimental_downloader_config=bazel/downloader.cfg
+
 common:bzlmod --enable_bzlmod
 common:bzlmod --noenable_workspace
 
