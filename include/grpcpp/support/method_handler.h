@@ -88,13 +88,14 @@ inline void* CheckForExtraRequests(grpc::internal::Call* call,
     return nullptr;
   }
   gpr_timespec deadline = gpr_time_0(GPR_CLOCK_REALTIME);
-  LOG(INFO) << "CheckForExtraRequests: plucking with zero deadline";
+  ABSL_LOG(INFO) << "CheckForExtraRequests: plucking with zero deadline";
   grpc_event ev =
       grpc_completion_queue_pluck(call->cq()->cq(), tag, deadline, nullptr);
-  LOG(INFO) << "CheckForExtraRequests: pluck returned event type " << ev.type;
+  ABSL_LOG(INFO) << "CheckForExtraRequests: pluck returned event type "
+                 << ev.type;
   if (ev.type != GRPC_QUEUE_TIMEOUT) {
     if (*extra_msg != nullptr) {
-      LOG(INFO) << "CheckForExtraRequests: found extra message";
+      ABSL_LOG(INFO) << "CheckForExtraRequests: found extra message";
       *status = grpc::Status(grpc::StatusCode::UNIMPLEMENTED, error_message);
       grpc_byte_buffer_destroy(*extra_msg);
     }
@@ -102,7 +103,7 @@ inline void* CheckForExtraRequests(grpc::internal::Call* call,
     delete tag;
     return nullptr;
   }
-  LOG(INFO) << "CheckForExtraRequests: timed out, returning pending tag";
+  ABSL_LOG(INFO) << "CheckForExtraRequests: timed out, returning pending tag";
   return tag;
 }
 
@@ -177,12 +178,10 @@ class RpcMethodHandler : public grpc::internal::MethodHandler {
     }
     UnaryRunHandlerHelper(param, static_cast<BaseResponseType*>(&rsp), status);
     if (pending_tag != nullptr) {
-      gpr_timespec pluck_deadline = gpr_time_0(GPR_CLOCK_REALTIME);
-      grpc_event ev = grpc_completion_queue_pluck(
-          param.call->cq()->cq(), pending_tag, pluck_deadline, nullptr);
-      if (ev.type != GRPC_QUEUE_TIMEOUT) {
-        static_cast<ExtraRequestsCheckTag*>(pending_tag)->Cleanup();
-      }
+      grpc_call_cancel(param.call->call(), nullptr);
+      grpc_completion_queue_pluck(param.call->cq()->cq(), pending_tag,
+                                  gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
+      static_cast<ExtraRequestsCheckTag*>(pending_tag)->Cleanup();
     }
   }
 
@@ -297,12 +296,10 @@ class ServerStreamingHandler : public grpc::internal::MethodHandler {
     }
     param.call->cq()->Pluck(&ops);
     if (pending_tag != nullptr) {
-      gpr_timespec pluck_deadline = gpr_time_0(GPR_CLOCK_REALTIME);
-      grpc_event ev = grpc_completion_queue_pluck(
-          param.call->cq()->cq(), pending_tag, pluck_deadline, nullptr);
-      if (ev.type != GRPC_QUEUE_TIMEOUT) {
-        static_cast<ExtraRequestsCheckTag*>(pending_tag)->Cleanup();
-      }
+      grpc_call_cancel(param.call->call(), nullptr);
+      grpc_completion_queue_pluck(param.call->cq()->cq(), pending_tag,
+                                  gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
+      static_cast<ExtraRequestsCheckTag*>(pending_tag)->Cleanup();
     }
   }
 
