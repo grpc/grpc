@@ -505,10 +505,12 @@ static void verified_root_cert_free(void* /*parent*/, void* ptr,
 static void init_openssl(void) {
 #if OPENSSL_VERSION_NUMBER >= 0x30000000L
   OPENSSL_init_ssl(OPENSSL_INIT_NO_ATEXIT, nullptr);
-  // Ensure OPENSSL global clean up happens after gRPC shutdown completes.
-  // OPENSSL registers an exit handler to clean up global objects, which
-  // otherwise may happen before gRPC removes all references to OPENSSL. Below
-  // exit handler is guaranteed to run after OPENSSL's.
+  // OPENSSL_INIT_NO_ATEXIT prevents OpenSSL from registering its default exit
+  // handler for global cleanup. We need this because OpenSSL's cleanup might
+  // execute before gRPC completes its cleanup and removes all references to
+  // OpenSSL. We instead register our own exit handler below to control when
+  // OpenSSL global clean up happens. Documentation:
+  // https://www.openssl.org/docs/man3.0/man3/OPENSSL_init_ssl.html
   std::atexit([]() {
     // Retrieve the OpenSSL cleanup timeout from the environment variable.
     // This allows users to override the default cleanup timeout for OpenSSL
