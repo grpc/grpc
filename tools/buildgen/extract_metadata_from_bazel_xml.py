@@ -1463,6 +1463,20 @@ _BUILD_EXTRA_METADATA = {
         "_TYPE": "target",
         "_RENAME": "grpc_cli",
     },
+    "test/core/bad_ssl:bad_ssl_alpn_server": {
+        "language": "c++",
+        "build": "test",
+        "run": False,
+        "_TYPE": "target",
+        "_RENAME": "bad_ssl_alpn_server",
+    },
+    "test/core/bad_ssl:bad_ssl_cert_server": {
+        "language": "c++",
+        "build": "test",
+        "run": False,
+        "_TYPE": "target",
+        "_RENAME": "bad_ssl_cert_server",
+    },
     # TODO(jtattermusch): create_jwt and verify_jwt breaks distribtests because it depends on grpc_test_utils and thus requires tests to be built
     # For now it's ok to disable them as these binaries aren't very useful anyway.
     # 'test/core/security:create_jwt': { 'language': 'c', 'build': 'tool', '_TYPE': 'target', '_RENAME': 'grpc_create_jwt' },
