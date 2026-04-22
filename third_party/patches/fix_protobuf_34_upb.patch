@@ -1,0 +1,17 @@
+# https://github.com/protocolbuffers/protobuf/issues/26385
+diff --git a/./upb/port/def.inc b/../upb/upb/port/def.inc
+index c35ccea38..fa0537832 100644
+--- a/./upb/port/def.inc
++++ b/../upb/upb/port/def.inc
+@@ -562,7 +562,11 @@ Error, UINTPTR_MAX is undefined
+ //     }
+ //   }
+ 
++#if defined(__GNUC__)
++#define UPB_LINKARR_ATTR UPB_RETAIN
++#else
+ #define UPB_LINKARR_ATTR
++#endif
+ 
+ #define UPB_LINKARR_SENTINEL UPB_RETAIN __attribute__((weak, used))
+ 
