@@ -35,4 +35,4 @@ export ARTIFACTS_OUT=artifacts
 # the build. This differs from the main branch/legacy setup where artifact
 # builds are usually run inside specific Docker images (managed by run_tests.py)
 # that already have the correct environment enabled.
-scl enable devtoolset-10 -- tools/run_tests/artifacts/build_artifact_python.sh
+tools/run_tests/artifacts/build_artifact_python.sh
