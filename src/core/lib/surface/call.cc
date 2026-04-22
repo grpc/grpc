@@ -510,13 +510,9 @@ grpc_call_error grpc_call_start_batch(grpc_call* call, const grpc_op* ops,
     grpc_core::Call* call_obj = grpc_core::Call::FromC(call);
     grpc_call_error err = call_obj->StartBatch(ops, nops, tag, false);
     if (err == GRPC_CALL_ERROR_INVALID_METADATA) {
-      // Convert the synchronous validation error into a failed RPC so the
-      // application receives a normal completion rather than a raw error code.
-      // StartBatch's done_with_error path already rolled back all call state,
-      // so the call is clean and no tag has been posted yet.
+      // Convert the validation error into a failed RPC
       call_obj->CancelWithStatus(GRPC_STATUS_INTERNAL, "Invalid metadata");
-      // Pre-fill the output buffers for any receive ops in this batch so the
-      // application sees a consistent error when it plucks the completion.
+      // Pre-fill the output buffers for any receive ops in this batch
       for (size_t i = 0; i < nops; ++i) {
         switch (ops[i].op) {
           case GRPC_OP_RECV_STATUS_ON_CLIENT:
@@ -555,8 +551,6 @@ grpc_call_error grpc_call_start_batch(grpc_call* call, const grpc_op* ops,
         }
       }
       // Post an immediate completion to the CQ so the application's tag fires.
-      // An empty batch (nops=0) skips all state mutations and goes straight to
-      // grpc_cq_begin_op + ExecuteBatch, which completes synchronously.
       return call_obj->StartBatch(nullptr, 0, tag, false);
     }
     return err;
