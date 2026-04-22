@@ -121,12 +121,16 @@ const char* const additional_constraints_memory_optimization_02 = "{}";
 const char* const description_metadata_publish_to_app_tag =
     "Publish metadata to the app using the kPublishToApp metadata field.";
 const char* const additional_constraints_metadata_publish_to_app_tag = "{}";
-const char* const description_misc_01 = "Temp placeholder";
-const char* const additional_constraints_misc_01 = "{}";
-const char* const description_misc_02 = "Temp placeholder";
-const char* const additional_constraints_misc_02 = "{}";
-const char* const description_misc_03 = "Temp placeholder";
-const char* const additional_constraints_misc_03 = "{}";
+const char* const description_misc_1 = "Temp placeholder";
+const char* const additional_constraints_misc_1 = "{}";
+const char* const description_misc_2 = "Temp placeholder";
+const char* const additional_constraints_misc_2 = "{}";
+const char* const description_misc_3 = "Temp placeholder";
+const char* const additional_constraints_misc_3 = "{}";
+const char* const description_misc_4 = "Temp placeholder";
+const char* const additional_constraints_misc_4 = "{}";
+const char* const description_misc_5 = "Temp placeholder";
+const char* const additional_constraints_misc_5 = "{}";
 const char* const description_monitoring_experiment =
     "Placeholder experiment to prove/disprove our monitoring is working";
 const char* const additional_constraints_monitoring_experiment = "{}";
@@ -385,11 +389,15 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"metadata_publish_to_app_tag", description_metadata_publish_to_app_tag,
      additional_constraints_metadata_publish_to_app_tag, nullptr, 0, true,
      true},
-    {"misc_01", description_misc_01, additional_constraints_misc_01, nullptr, 0,
+    {"misc_1", description_misc_1, additional_constraints_misc_1, nullptr, 0,
      false, true},
-    {"misc_02", description_misc_02, additional_constraints_misc_02, nullptr, 0,
+    {"misc_2", description_misc_2, additional_constraints_misc_2, nullptr, 0,
      false, true},
-    {"misc_03", description_misc_03, additional_constraints_misc_03, nullptr, 0,
+    {"misc_3", description_misc_3, additional_constraints_misc_3, nullptr, 0,
+     false, true},
+    {"misc_4", description_misc_4, additional_constraints_misc_4, nullptr, 0,
+     false, true},
+    {"misc_5", description_misc_5, additional_constraints_misc_5, nullptr, 0,
      false, true},
     {"monitoring_experiment", description_monitoring_experiment,
      additional_constraints_monitoring_experiment, nullptr, 0, true, true},
@@ -631,12 +639,16 @@ const char* const additional_constraints_memory_optimization_02 = "{}";
 const char* const description_metadata_publish_to_app_tag =
     "Publish metadata to the app using the kPublishToApp metadata field.";
 const char* const additional_constraints_metadata_publish_to_app_tag = "{}";
-const char* const description_misc_01 = "Temp placeholder";
-const char* const additional_constraints_misc_01 = "{}";
-const char* const description_misc_02 = "Temp placeholder";
-const char* const additional_constraints_misc_02 = "{}";
-const char* const description_misc_03 = "Temp placeholder";
-const char* const additional_constraints_misc_03 = "{}";
+const char* const description_misc_1 = "Temp placeholder";
+const char* const additional_constraints_misc_1 = "{}";
+const char* const description_misc_2 = "Temp placeholder";
+const char* const additional_constraints_misc_2 = "{}";
+const char* const description_misc_3 = "Temp placeholder";
+const char* const additional_constraints_misc_3 = "{}";
+const char* const description_misc_4 = "Temp placeholder";
+const char* const additional_constraints_misc_4 = "{}";
+const char* const description_misc_5 = "Temp placeholder";
+const char* const additional_constraints_misc_5 = "{}";
 const char* const description_monitoring_experiment =
     "Placeholder experiment to prove/disprove our monitoring is working";
 const char* const additional_constraints_monitoring_experiment = "{}";
@@ -895,11 +907,15 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"metadata_publish_to_app_tag", description_metadata_publish_to_app_tag,
      additional_constraints_metadata_publish_to_app_tag, nullptr, 0, true,
      true},
-    {"misc_01", description_misc_01, additional_constraints_misc_01, nullptr, 0,
+    {"misc_1", description_misc_1, additional_constraints_misc_1, nullptr, 0,
      false, true},
-    {"misc_02", description_misc_02, additional_constraints_misc_02, nullptr, 0,
+    {"misc_2", description_misc_2, additional_constraints_misc_2, nullptr, 0,
      false, true},
-    {"misc_03", description_misc_03, additional_constraints_misc_03, nullptr, 0,
+    {"misc_3", description_misc_3, additional_constraints_misc_3, nullptr, 0,
+     false, true},
+    {"misc_4", description_misc_4, additional_constraints_misc_4, nullptr, 0,
+     false, true},
+    {"misc_5", description_misc_5, additional_constraints_misc_5, nullptr, 0,
      false, true},
     {"monitoring_experiment", description_monitoring_experiment,
      additional_constraints_monitoring_experiment, nullptr, 0, true, true},
@@ -1141,12 +1157,16 @@ const char* const additional_constraints_memory_optimization_02 = "{}";
 const char* const description_metadata_publish_to_app_tag =
     "Publish metadata to the app using the kPublishToApp metadata field.";
 const char* const additional_constraints_metadata_publish_to_app_tag = "{}";
-const char* const description_misc_01 = "Temp placeholder";
-const char* const additional_constraints_misc_01 = "{}";
-const char* const description_misc_02 = "Temp placeholder";
-const char* const additional_constraints_misc_02 = "{}";
-const char* const description_misc_03 = "Temp placeholder";
-const char* const additional_constraints_misc_03 = "{}";
+const char* const description_misc_1 = "Temp placeholder";
+const char* const additional_constraints_misc_1 = "{}";
+const char* const description_misc_2 = "Temp placeholder";
+const char* const additional_constraints_misc_2 = "{}";
+const char* const description_misc_3 = "Temp placeholder";
+const char* const additional_constraints_misc_3 = "{}";
+const char* const description_misc_4 = "Temp placeholder";
+const char* const additional_constraints_misc_4 = "{}";
+const char* const description_misc_5 = "Temp placeholder";
+const char* const additional_constraints_misc_5 = "{}";
 const char* const description_monitoring_experiment =
     "Placeholder experiment to prove/disprove our monitoring is working";
 const char* const additional_constraints_monitoring_experiment = "{}";
@@ -1405,11 +1425,15 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"metadata_publish_to_app_tag", description_metadata_publish_to_app_tag,
      additional_constraints_metadata_publish_to_app_tag, nullptr, 0, true,
      true},
-    {"misc_01", description_misc_01, additional_constraints_misc_01, nullptr, 0,
+    {"misc_1", description_misc_1, additional_constraints_misc_1, nullptr, 0,
      false, true},
-    {"misc_02", description_misc_02, additional_constraints_misc_02, nullptr, 0,
+    {"misc_2", description_misc_2, additional_constraints_misc_2, nullptr, 0,
      false, true},
-    {"misc_03", description_misc_03, additional_constraints_misc_03, nullptr, 0,
+    {"misc_3", description_misc_3, additional_constraints_misc_3, nullptr, 0,
+     false, true},
+    {"misc_4", description_misc_4, additional_constraints_misc_4, nullptr, 0,
+     false, true},
+    {"misc_5", description_misc_5, additional_constraints_misc_5, nullptr, 0,
      false, true},
     {"monitoring_experiment", description_monitoring_experiment,
      additional_constraints_monitoring_experiment, nullptr, 0, true, true},

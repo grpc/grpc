@@ -100,9 +100,11 @@ inline bool IsMemoryOptimization01Enabled() { return false; }
 inline bool IsMemoryOptimization02Enabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_METADATA_PUBLISH_TO_APP_TAG
 inline bool IsMetadataPublishToAppTagEnabled() { return true; }
-inline bool IsMisc01Enabled() { return false; }
-inline bool IsMisc02Enabled() { return false; }
-inline bool IsMisc03Enabled() { return false; }
+inline bool IsMisc1Enabled() { return false; }
+inline bool IsMisc2Enabled() { return false; }
+inline bool IsMisc3Enabled() { return false; }
+inline bool IsMisc4Enabled() { return false; }
+inline bool IsMisc5Enabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_MONITORING_EXPERIMENT
 inline bool IsMonitoringExperimentEnabled() { return true; }
 inline bool IsMultipingEnabled() { return false; }
@@ -200,9 +202,11 @@ inline bool IsMemoryOptimization01Enabled() { return false; }
 inline bool IsMemoryOptimization02Enabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_METADATA_PUBLISH_TO_APP_TAG
 inline bool IsMetadataPublishToAppTagEnabled() { return true; }
-inline bool IsMisc01Enabled() { return false; }
-inline bool IsMisc02Enabled() { return false; }
-inline bool IsMisc03Enabled() { return false; }
+inline bool IsMisc1Enabled() { return false; }
+inline bool IsMisc2Enabled() { return false; }
+inline bool IsMisc3Enabled() { return false; }
+inline bool IsMisc4Enabled() { return false; }
+inline bool IsMisc5Enabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_MONITORING_EXPERIMENT
 inline bool IsMonitoringExperimentEnabled() { return true; }
 inline bool IsMultipingEnabled() { return false; }
@@ -300,9 +304,11 @@ inline bool IsMemoryOptimization01Enabled() { return false; }
 inline bool IsMemoryOptimization02Enabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_METADATA_PUBLISH_TO_APP_TAG
 inline bool IsMetadataPublishToAppTagEnabled() { return true; }
-inline bool IsMisc01Enabled() { return false; }
-inline bool IsMisc02Enabled() { return false; }
-inline bool IsMisc03Enabled() { return false; }
+inline bool IsMisc1Enabled() { return false; }
+inline bool IsMisc2Enabled() { return false; }
+inline bool IsMisc3Enabled() { return false; }
+inline bool IsMisc4Enabled() { return false; }
+inline bool IsMisc5Enabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_MONITORING_EXPERIMENT
 inline bool IsMonitoringExperimentEnabled() { return true; }
 inline bool IsMultipingEnabled() { return false; }
@@ -384,9 +390,11 @@ enum ExperimentIds {
   kExperimentIdMemoryOptimization01,
   kExperimentIdMemoryOptimization02,
   kExperimentIdMetadataPublishToAppTag,
-  kExperimentIdMisc01,
-  kExperimentIdMisc02,
-  kExperimentIdMisc03,
+  kExperimentIdMisc1,
+  kExperimentIdMisc2,
+  kExperimentIdMisc3,
+  kExperimentIdMisc4,
+  kExperimentIdMisc5,
   kExperimentIdMonitoringExperiment,
   kExperimentIdMultiping,
   kExperimentIdOtelExportTelemetryDomains,
@@ -539,17 +547,25 @@ inline bool IsMemoryOptimization02Enabled() {
 inline bool IsMetadataPublishToAppTagEnabled() {
   return IsExperimentEnabled<kExperimentIdMetadataPublishToAppTag>();
 }
-#define GRPC_EXPERIMENT_IS_INCLUDED_MISC_01
-inline bool IsMisc01Enabled() {
-  return IsExperimentEnabled<kExperimentIdMisc01>();
+#define GRPC_EXPERIMENT_IS_INCLUDED_MISC_1
+inline bool IsMisc1Enabled() {
+  return IsExperimentEnabled<kExperimentIdMisc1>();
 }
-#define GRPC_EXPERIMENT_IS_INCLUDED_MISC_02
-inline bool IsMisc02Enabled() {
-  return IsExperimentEnabled<kExperimentIdMisc02>();
+#define GRPC_EXPERIMENT_IS_INCLUDED_MISC_2
+inline bool IsMisc2Enabled() {
+  return IsExperimentEnabled<kExperimentIdMisc2>();
 }
-#define GRPC_EXPERIMENT_IS_INCLUDED_MISC_03
-inline bool IsMisc03Enabled() {
-  return IsExperimentEnabled<kExperimentIdMisc03>();
+#define GRPC_EXPERIMENT_IS_INCLUDED_MISC_3
+inline bool IsMisc3Enabled() {
+  return IsExperimentEnabled<kExperimentIdMisc3>();
+}
+#define GRPC_EXPERIMENT_IS_INCLUDED_MISC_4
+inline bool IsMisc4Enabled() {
+  return IsExperimentEnabled<kExperimentIdMisc4>();
+}
+#define GRPC_EXPERIMENT_IS_INCLUDED_MISC_5
+inline bool IsMisc5Enabled() {
+  return IsExperimentEnabled<kExperimentIdMisc5>();
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_MONITORING_EXPERIMENT
 inline bool IsMonitoringExperimentEnabled() {
