@@ -224,6 +224,106 @@
   expiry: 2026/05/01
   owner: aadik@google.com
   test_tags: [core_end2end_test]
+- name: ph2_performance_experiment_01
+  description: Different performance experiments for PH2 Transport
+  expiry: 2026/08/22
+  owner: tjagtap@google.com
+  test_tags: []
+- name: ph2_performance_experiment_02
+  description: Different performance experiments for PH2 Transport
+  expiry: 2026/08/22
+  owner: tjagtap@google.com
+  test_tags: []
+- name: ph2_performance_experiment_03
+  description: Different performance experiments for PH2 Transport
+  expiry: 2026/08/22
+  owner: tjagtap@google.com
+  test_tags: []
+- name: ph2_performance_experiment_04
+  description: Different performance experiments for PH2 Transport
+  expiry: 2026/08/22
+  owner: tjagtap@google.com
+  test_tags: []
+- name: ph2_performance_experiment_05
+  description: Different performance experiments for PH2 Transport
+  expiry: 2026/08/22
+  owner: tjagtap@google.com
+  test_tags: []
+- name: ph2_performance_experiment_06
+  description: Different performance experiments for PH2 Transport
+  expiry: 2026/08/22
+  owner: tjagtap@google.com
+  test_tags: []
+- name: ph2_performance_experiment_07
+  description: Different performance experiments for PH2 Transport
+  expiry: 2026/08/22
+  owner: tjagtap@google.com
+  test_tags: []
+- name: ph2_performance_experiment_08
+  description: Different performance experiments for PH2 Transport
+  expiry: 2026/08/22
+  owner: tjagtap@google.com
+  test_tags: []
+- name: ph2_performance_experiment_09
+  description: Different performance experiments for PH2 Transport
+  expiry: 2026/08/22
+  owner: tjagtap@google.com
+  test_tags: []
+- name: ph2_performance_experiment_10
+  description: Different performance experiments for PH2 Transport
+  expiry: 2026/08/22
+  owner: tjagtap@google.com
+  test_tags: []
+- name: ph2_performance_experiment_11
+  description: Different performance experiments for PH2 Transport
+  expiry: 2026/08/22
+  owner: tjagtap@google.com
+  test_tags: []
+- name: ph2_performance_experiment_12
+  description: Different performance experiments for PH2 Transport
+  expiry: 2026/08/22
+  owner: tjagtap@google.com
+  test_tags: []
+- name: ph2_performance_experiment_13
+  description: Different performance experiments for PH2 Transport
+  expiry: 2026/08/22
+  owner: tjagtap@google.com
+  test_tags: []
+- name: ph2_performance_experiment_14
+  description: Different performance experiments for PH2 Transport
+  expiry: 2026/08/22
+  owner: tjagtap@google.com
+  test_tags: []
+- name: ph2_performance_experiment_15
+  description: Different performance experiments for PH2 Transport
+  expiry: 2026/08/22
+  owner: tjagtap@google.com
+  test_tags: []
+- name: ph2_performance_experiment_16
+  description: Different performance experiments for PH2 Transport
+  expiry: 2026/08/22
+  owner: tjagtap@google.com
+  test_tags: []
+- name: ph2_performance_experiment_17
+  description: Different performance experiments for PH2 Transport
+  expiry: 2026/08/22
+  owner: tjagtap@google.com
+  test_tags: []
+- name: ph2_performance_experiment_18
+  description: Different performance experiments for PH2 Transport
+  expiry: 2026/08/22
+  owner: tjagtap@google.com
+  test_tags: []
+- name: ph2_performance_experiment_19
+  description: Different performance experiments for PH2 Transport
+  expiry: 2026/08/22
+  owner: tjagtap@google.com
+  test_tags: []
+- name: ph2_performance_experiment_20
+  description: Different performance experiments for PH2 Transport
+  expiry: 2026/08/22
+  owner: tjagtap@google.com
+  test_tags: []
 - name: pick_first_ignore_empty_updates
   description: Ignore empty resolutions in pick_first (delete)
   expiry: 2026/05/02
