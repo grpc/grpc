@@ -421,6 +421,122 @@ class ServerClientMixin:
         del client_call
         del server_call
 
+    def _do_simple_echo(self, request_message, response_message):
+        """Helper: sends request_message from client, response_message from
+        server, and returns (client_received, server_received) raw messages."""
+        DEADLINE = time.time() + 5
+        METHOD = b"twinkies"
+
+        server_request_tag = object()
+        self.server.request_call(
+            self.server_completion_queue,
+            self.server_completion_queue,
+            server_request_tag,
+        )
+
+        client_call_tag = object()
+        client_call = self.client_channel.integrated_call(
+            0,
+            METHOD,
+            self.host_argument,
+            DEADLINE,
+            None,
+            None,
+            [
+                (
+                    [
+                        cygrpc.SendInitialMetadataOperation((), _EMPTY_FLAGS),
+                        cygrpc.SendMessageOperation(
+                            request_message, _EMPTY_FLAGS
+                        ),
+                        cygrpc.SendCloseFromClientOperation(_EMPTY_FLAGS),
+                        cygrpc.ReceiveInitialMetadataOperation(_EMPTY_FLAGS),
+                        cygrpc.ReceiveMessageOperation(_EMPTY_FLAGS),
+                        cygrpc.ReceiveStatusOnClientOperation(_EMPTY_FLAGS),
+                    ],
+                    client_call_tag,
+                ),
+            ],
+        )
+        client_event_future = test_utilities.SimpleFuture(
+            self.client_channel.next_call_event
+        )
+
+        request_event = self.server_completion_queue.poll(deadline=DEADLINE)
+        server_call = request_event.call
+
+        # Server receives, then sends response
+        server_recv_tag = object()
+        server_call.start_server_batch(
+            [cygrpc.ReceiveMessageOperation(_EMPTY_FLAGS)],
+            server_recv_tag,
+        )
+        server_recv_event = self.server_completion_queue.poll(deadline=DEADLINE)
+
+        server_received = None
+        for op in server_recv_event.batch_operations:
+            if op.type() == cygrpc.OperationType.receive_message:
+                server_received = op.message()
+
+        server_send_tag = object()
+        server_call.start_server_batch(
+            [
+                cygrpc.SendInitialMetadataOperation((), _EMPTY_FLAGS),
+                cygrpc.SendMessageOperation(response_message, _EMPTY_FLAGS),
+                cygrpc.ReceiveCloseOnServerOperation(_EMPTY_FLAGS),
+                cygrpc.SendStatusFromServerOperation(
+                    (), cygrpc.StatusCode.ok, "", _EMPTY_FLAGS
+                ),
+            ],
+            server_send_tag,
+        )
+        self.server_completion_queue.poll(deadline=DEADLINE)
+        client_event = client_event_future.result()
+
+        client_received = None
+        for op in client_event.batch_operations:
+            if op.type() == cygrpc.OperationType.receive_message:
+                client_received = op.message()
+
+        del client_call
+        del server_call
+        return client_received, server_received
+
+    def test_send_memoryview(self):
+        """Validates that SendMessageOperation accepts memoryview input."""
+        REQUEST = memoryview(b"memoryview request payload")
+        RESPONSE = b"normal response"
+        client_received, server_received = self._do_simple_echo(
+            REQUEST, RESPONSE
+        )
+        self.assertIsInstance(server_received, memoryview)
+        self.assertEqual(b"memoryview request payload", bytes(server_received))
+        self.assertIsInstance(client_received, memoryview)
+        self.assertEqual(RESPONSE, bytes(client_received))
+
+    def test_send_list_of_bytes(self):
+        """Validates that SendMessageOperation accepts list-of-bytes input
+        (as produced by ReceiveMessageOperation for multi-slice messages)."""
+        REQUEST = [b"chunk1", b"chunk2", b"chunk3"]
+        RESPONSE = b"response"
+        client_received, server_received = self._do_simple_echo(
+            REQUEST, RESPONSE
+        )
+        self.assertIsInstance(server_received, memoryview)
+        self.assertEqual(b"chunk1chunk2chunk3", bytes(server_received))
+
+    def test_empty_message_returns_bytes(self):
+        """Empty messages should return b'' (not memoryview), matching the
+        zero-length slice fast path in ReceiveMessageOperation."""
+        REQUEST = b""
+        RESPONSE = b""
+        client_received, server_received = self._do_simple_echo(
+            REQUEST, RESPONSE
+        )
+        # Empty messages should return b'', not memoryview
+        self.assertEqual(b"", client_received)
+        self.assertEqual(b"", server_received)
+
     def test_6522(self):
         DEADLINE = time.time() + 5
         DEADLINE_TOLERANCE = 0.25
