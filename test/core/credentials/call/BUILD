@@ -58,6 +58,7 @@ grpc_cc_test(
         "//src/core:grpc_google_default_credentials",
         "//src/core:grpc_iam_credentials",
         "//src/core:grpc_oauth2_credentials",
+        "//src/core:regional_access_boundary_fetcher",
         "//src/core:grpc_tls_credentials",
         "//src/core:httpcli_ssl_credentials",
         "//src/core:json_reader",
