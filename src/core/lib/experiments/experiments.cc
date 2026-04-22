@@ -121,6 +121,12 @@ const char* const additional_constraints_memory_optimization_02 = "{}";
 const char* const description_metadata_publish_to_app_tag =
     "Publish metadata to the app using the kPublishToApp metadata field.";
 const char* const additional_constraints_metadata_publish_to_app_tag = "{}";
+const char* const description_misc_01 = "Temp placeholder";
+const char* const additional_constraints_misc_01 = "{}";
+const char* const description_misc_02 = "Temp placeholder";
+const char* const additional_constraints_misc_02 = "{}";
+const char* const description_misc_03 = "Temp placeholder";
+const char* const additional_constraints_misc_03 = "{}";
 const char* const description_monitoring_experiment =
     "Placeholder experiment to prove/disprove our monitoring is working";
 const char* const additional_constraints_monitoring_experiment = "{}";
@@ -379,6 +385,12 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"metadata_publish_to_app_tag", description_metadata_publish_to_app_tag,
      additional_constraints_metadata_publish_to_app_tag, nullptr, 0, true,
      true},
+    {"misc_01", description_misc_01, additional_constraints_misc_01, nullptr, 0,
+     false, true},
+    {"misc_02", description_misc_02, additional_constraints_misc_02, nullptr, 0,
+     false, true},
+    {"misc_03", description_misc_03, additional_constraints_misc_03, nullptr, 0,
+     false, true},
     {"monitoring_experiment", description_monitoring_experiment,
      additional_constraints_monitoring_experiment, nullptr, 0, true, true},
     {"multiping", description_multiping, additional_constraints_multiping,
@@ -619,6 +631,12 @@ const char* const additional_constraints_memory_optimization_02 = "{}";
 const char* const description_metadata_publish_to_app_tag =
     "Publish metadata to the app using the kPublishToApp metadata field.";
 const char* const additional_constraints_metadata_publish_to_app_tag = "{}";
+const char* const description_misc_01 = "Temp placeholder";
+const char* const additional_constraints_misc_01 = "{}";
+const char* const description_misc_02 = "Temp placeholder";
+const char* const additional_constraints_misc_02 = "{}";
+const char* const description_misc_03 = "Temp placeholder";
+const char* const additional_constraints_misc_03 = "{}";
 const char* const description_monitoring_experiment =
     "Placeholder experiment to prove/disprove our monitoring is working";
 const char* const additional_constraints_monitoring_experiment = "{}";
@@ -877,6 +895,12 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"metadata_publish_to_app_tag", description_metadata_publish_to_app_tag,
      additional_constraints_metadata_publish_to_app_tag, nullptr, 0, true,
      true},
+    {"misc_01", description_misc_01, additional_constraints_misc_01, nullptr, 0,
+     false, true},
+    {"misc_02", description_misc_02, additional_constraints_misc_02, nullptr, 0,
+     false, true},
+    {"misc_03", description_misc_03, additional_constraints_misc_03, nullptr, 0,
+     false, true},
     {"monitoring_experiment", description_monitoring_experiment,
      additional_constraints_monitoring_experiment, nullptr, 0, true, true},
     {"multiping", description_multiping, additional_constraints_multiping,
@@ -1117,6 +1141,12 @@ const char* const additional_constraints_memory_optimization_02 = "{}";
 const char* const description_metadata_publish_to_app_tag =
     "Publish metadata to the app using the kPublishToApp metadata field.";
 const char* const additional_constraints_metadata_publish_to_app_tag = "{}";
+const char* const description_misc_01 = "Temp placeholder";
+const char* const additional_constraints_misc_01 = "{}";
+const char* const description_misc_02 = "Temp placeholder";
+const char* const additional_constraints_misc_02 = "{}";
+const char* const description_misc_03 = "Temp placeholder";
+const char* const additional_constraints_misc_03 = "{}";
 const char* const description_monitoring_experiment =
     "Placeholder experiment to prove/disprove our monitoring is working";
 const char* const additional_constraints_monitoring_experiment = "{}";
@@ -1375,6 +1405,12 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"metadata_publish_to_app_tag", description_metadata_publish_to_app_tag,
      additional_constraints_metadata_publish_to_app_tag, nullptr, 0, true,
      true},
+    {"misc_01", description_misc_01, additional_constraints_misc_01, nullptr, 0,
+     false, true},
+    {"misc_02", description_misc_02, additional_constraints_misc_02, nullptr, 0,
+     false, true},
+    {"misc_03", description_misc_03, additional_constraints_misc_03, nullptr, 0,
+     false, true},
     {"monitoring_experiment", description_monitoring_experiment,
      additional_constraints_monitoring_experiment, nullptr, 0, true, true},
     {"multiping", description_multiping, additional_constraints_multiping,

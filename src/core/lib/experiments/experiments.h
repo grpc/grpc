@@ -100,6 +100,9 @@ inline bool IsMemoryOptimization01Enabled() { return false; }
 inline bool IsMemoryOptimization02Enabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_METADATA_PUBLISH_TO_APP_TAG
 inline bool IsMetadataPublishToAppTagEnabled() { return true; }
+inline bool IsMisc01Enabled() { return false; }
+inline bool IsMisc02Enabled() { return false; }
+inline bool IsMisc03Enabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_MONITORING_EXPERIMENT
 inline bool IsMonitoringExperimentEnabled() { return true; }
 inline bool IsMultipingEnabled() { return false; }
@@ -197,6 +200,9 @@ inline bool IsMemoryOptimization01Enabled() { return false; }
 inline bool IsMemoryOptimization02Enabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_METADATA_PUBLISH_TO_APP_TAG
 inline bool IsMetadataPublishToAppTagEnabled() { return true; }
+inline bool IsMisc01Enabled() { return false; }
+inline bool IsMisc02Enabled() { return false; }
+inline bool IsMisc03Enabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_MONITORING_EXPERIMENT
 inline bool IsMonitoringExperimentEnabled() { return true; }
 inline bool IsMultipingEnabled() { return false; }
@@ -294,6 +300,9 @@ inline bool IsMemoryOptimization01Enabled() { return false; }
 inline bool IsMemoryOptimization02Enabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_METADATA_PUBLISH_TO_APP_TAG
 inline bool IsMetadataPublishToAppTagEnabled() { return true; }
+inline bool IsMisc01Enabled() { return false; }
+inline bool IsMisc02Enabled() { return false; }
+inline bool IsMisc03Enabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_MONITORING_EXPERIMENT
 inline bool IsMonitoringExperimentEnabled() { return true; }
 inline bool IsMultipingEnabled() { return false; }
@@ -375,6 +384,9 @@ enum ExperimentIds {
   kExperimentIdMemoryOptimization01,
   kExperimentIdMemoryOptimization02,
   kExperimentIdMetadataPublishToAppTag,
+  kExperimentIdMisc01,
+  kExperimentIdMisc02,
+  kExperimentIdMisc03,
   kExperimentIdMonitoringExperiment,
   kExperimentIdMultiping,
   kExperimentIdOtelExportTelemetryDomains,
@@ -526,6 +538,18 @@ inline bool IsMemoryOptimization02Enabled() {
 #define GRPC_EXPERIMENT_IS_INCLUDED_METADATA_PUBLISH_TO_APP_TAG
 inline bool IsMetadataPublishToAppTagEnabled() {
   return IsExperimentEnabled<kExperimentIdMetadataPublishToAppTag>();
+}
+#define GRPC_EXPERIMENT_IS_INCLUDED_MISC_01
+inline bool IsMisc01Enabled() {
+  return IsExperimentEnabled<kExperimentIdMisc01>();
+}
+#define GRPC_EXPERIMENT_IS_INCLUDED_MISC_02
+inline bool IsMisc02Enabled() {
+  return IsExperimentEnabled<kExperimentIdMisc02>();
+}
+#define GRPC_EXPERIMENT_IS_INCLUDED_MISC_03
+inline bool IsMisc03Enabled() {
+  return IsExperimentEnabled<kExperimentIdMisc03>();
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_MONITORING_EXPERIMENT
 inline bool IsMonitoringExperimentEnabled() {
