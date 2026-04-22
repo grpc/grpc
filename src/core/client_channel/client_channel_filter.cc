@@ -1115,6 +1115,8 @@ ClientChannelFilter::CreateLoadBalancedCall(
 
 void ClientChannelFilter::ReprocessQueuedResolverCalls() {
   for (CallData* calld : resolver_queued_calls_) {
+    // Invalidate now to prevent stale clock issues causing early timeouts.
+    ExecCtx::Get()->InvalidateNow();
     calld->RemoveCallFromResolverQueuedCallsLocked();
     calld->RetryCheckResolutionLocked();
   }
