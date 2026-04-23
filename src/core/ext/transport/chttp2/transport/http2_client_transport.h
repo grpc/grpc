@@ -395,10 +395,9 @@ class Http2ClientTransport final : public ClientTransport,
   template <typename Factory>
   void SpawnGuardedTransportParty(absl::string_view name, Factory&& factory) {
     general_party_->Spawn(
-        name, std::forward<Factory>(factory),
-        [self = RefAsSubclass<Http2ClientTransport>()](absl::Status status) {
+        name, std::forward<Factory>(factory), [this](absl::Status status) {
           if (!status.ok()) {
-            GRPC_UNUSED absl::Status error = self->HandleError(
+            GRPC_UNUSED absl::Status error = this->HandleError(
                 /*stream_id=*/std::nullopt, ToHttpOkOrConnError(status));
           }
         });

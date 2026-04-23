@@ -225,10 +225,6 @@ void Http2ClientTransport::Orphan() {
   SourceDestructing();
   MaybeSpawnCloseTransport(
       ToHttpOkOrConnError(absl::UnavailableError("Orphaned")));
-  {
-    MutexLock lock(&transport_mutex_);
-    endpoint_ = PromiseEndpoint();
-  }
   Unref();
   GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport::Orphan End";
 }
@@ -874,15 +870,34 @@ auto Http2ClientTransport::EndpointWrite(SliceBuffer&& output_buf) {
                          << output_buf_length;
 
   transport_write_context_.GetWriteCycle().BeginWrite(output_buf_length);
-  return Map(
-      endpoint_.Write(std::forward<SliceBuffer>(output_buf),
-                      TransportWriteContext::GetWriteArgs(settings_->peer())),
-      [this](absl::Status status) {
-        GRPC_HTTP2_CLIENT_DLOG
-            << "Http2ClientTransport::EndpointWrite complete with status = "
-            << status;
-        transport_write_context_.GetWriteCycle().EndWrite(status.ok());
-        return status;
+  LOG(INFO) << "Http2ClientTransport::EndpointWrite starting If";
+  return If(
+      [this]() {
+        MutexLock lock(&transport_mutex_);
+        return is_transport_closed_;
+      },
+      [this]() -> Poll<absl::Status> {
+        LOG(INFO) << "Http2ClientTransport::EndpointWrite: transport closed";
+        goaway_manager_.NotifyTransportClosed();
+        return absl::CancelledError("Transport closed");
+      },
+      [this, output_buf = std::move(output_buf)]() mutable {
+        LOG(INFO)
+            << "Http2ClientTransport::EndpointWrite: calling endpoint_.Write";
+        return Map(
+            endpoint_.Write(
+                std::move(output_buf),
+                TransportWriteContext::GetWriteArgs(settings_->peer())),
+            [this](absl::Status status) {
+              LOG(INFO) << "Http2ClientTransport::EndpointWrite: callback "
+                           "invoked with status="
+                        << status;
+              GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport::EndpointWrite "
+                                        "complete with status = "
+                                     << status;
+              transport_write_context_.GetWriteCycle().EndWrite(status.ok());
+              return status;
+            });
       });
 }
 
@@ -1615,6 +1630,7 @@ void Http2ClientTransport::CloseTransport() {
 
   transport_closed_latch_.Set();
   settings_->HandleTransportShutdown(event_engine_.get());
+  goaway_manager_.NotifyTransportClosed();
 
   // This is the only place where the general_party_ is reset.
   general_party_.reset();
@@ -1685,8 +1701,8 @@ void Http2ClientTransport::MaybeSpawnCloseTransport(Http2Status http2_status,
                              http2_status.GetAbslConnectionError().message()),
                          kLastIncomingStreamIdClient, /*immediate=*/true)),
                  // Failsafe to close the transport if goaway is not
-                 // sent within kGoawaySendTimeoutSeconds seconds.
-                 Sleep(Duration::Seconds(kGoawaySendTimeoutSeconds))),
+                 // sent within 100 milliseconds.
+                 Sleep(Duration::Milliseconds(100))),
             [self](auto) mutable {
               self->CloseTransport();
               return Empty{};

@@ -228,7 +228,10 @@ void Chttp2Connector::OnHandshakeDone(absl::StatusOr<HandshakerArgs*> result) {
                   (*result)->endpoint.release());
       if (event_engine_endpoint == nullptr) {
         LOG(ERROR) << "Failed to take endpoint.";
-        result = GRPC_ERROR_CREATE("Failed to take endpoint.");
+        result_->Reset();
+        NullThenSchedClosure(DEBUG_LOCATION, &notify_,
+                             GRPC_ERROR_CREATE("Failed to take endpoint."));
+        return;
       }
       // Create the PromiseEndpoint
       PromiseEndpoint promise_endpoint(std::move(event_engine_endpoint),

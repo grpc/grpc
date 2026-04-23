@@ -87,8 +87,9 @@ inline void* CheckForExtraRequests(grpc::internal::Call* call,
     delete tag;
     return nullptr;
   }
-  gpr_timespec deadline = gpr_time_0(GPR_CLOCK_REALTIME);
-  ABSL_LOG(INFO) << "CheckForExtraRequests: plucking with zero deadline";
+  gpr_timespec deadline = gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
+                                       gpr_time_from_millis(10, GPR_TIMESPAN));
+  ABSL_LOG(INFO) << "CheckForExtraRequests: plucking with 10ms deadline";
   grpc_event ev =
       grpc_completion_queue_pluck(call->cq()->cq(), tag, deadline, nullptr);
   ABSL_LOG(INFO) << "CheckForExtraRequests: pluck returned event type "
@@ -179,9 +180,16 @@ class RpcMethodHandler : public grpc::internal::MethodHandler {
     UnaryRunHandlerHelper(param, static_cast<BaseResponseType*>(&rsp), status);
     if (pending_tag != nullptr) {
       grpc_call_cancel(param.call->call(), nullptr);
-      grpc_completion_queue_pluck(param.call->cq()->cq(), pending_tag,
-                                  gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
-      static_cast<ExtraRequestsCheckTag*>(pending_tag)->Cleanup();
+      gpr_timespec pluck_deadline = gpr_time_add(
+          gpr_now(GPR_CLOCK_REALTIME), gpr_time_from_millis(100, GPR_TIMESPAN));
+      grpc_event ev = grpc_completion_queue_pluck(
+          param.call->cq()->cq(), pending_tag, pluck_deadline, nullptr);
+      if (ev.type != GRPC_QUEUE_TIMEOUT) {
+        static_cast<ExtraRequestsCheckTag*>(pending_tag)->Cleanup();
+      } else {
+        ABSL_LOG(ERROR)
+            << "CheckForExtraRequests cleanup timed out, leaking tag";
+      }
     }
   }
 
@@ -297,9 +305,16 @@ class ServerStreamingHandler : public grpc::internal::MethodHandler {
     param.call->cq()->Pluck(&ops);
     if (pending_tag != nullptr) {
       grpc_call_cancel(param.call->call(), nullptr);
-      grpc_completion_queue_pluck(param.call->cq()->cq(), pending_tag,
-                                  gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
-      static_cast<ExtraRequestsCheckTag*>(pending_tag)->Cleanup();
+      gpr_timespec pluck_deadline = gpr_time_add(
+          gpr_now(GPR_CLOCK_REALTIME), gpr_time_from_millis(100, GPR_TIMESPAN));
+      grpc_event ev = grpc_completion_queue_pluck(
+          param.call->cq()->cq(), pending_tag, pluck_deadline, nullptr);
+      if (ev.type != GRPC_QUEUE_TIMEOUT) {
+        static_cast<ExtraRequestsCheckTag*>(pending_tag)->Cleanup();
+      } else {
+        ABSL_LOG(ERROR)
+            << "CheckForExtraRequests cleanup timed out, leaking tag";
+      }
     }
   }
 
