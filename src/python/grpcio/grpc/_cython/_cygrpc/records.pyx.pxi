@@ -13,7 +13,7 @@
 # limitations under the License.
 import enum
 from typing import Literal
-
+from typing import TypeAlias
 
 cdef bytes _slice_bytes(grpc_slice slice):
   cdef void *start = grpc_slice_start_ptr(slice)
@@ -59,7 +59,7 @@ class WriteFlag:
   buffer_hint = GRPC_WRITE_BUFFER_HINT
   no_compress = GRPC_WRITE_NO_COMPRESS
 
-StatusCodeType = Literal[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]
+StatusCodeType: TypeAlias = int
 
 class StatusCode:
   ok: StatusCodeType = GRPC_STATUS_OK
