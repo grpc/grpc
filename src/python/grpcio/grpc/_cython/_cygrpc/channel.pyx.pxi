@@ -221,7 +221,7 @@ cdef void _call(
     _ChannelState channel_state, _CallState call_state,
     grpc_completion_queue *c_completion_queue, on_success, int flags, method,
     host, object deadline, CallCredentials credentials,
-    object operationses_and_user_tags, object metadata,
+    object operations_and_user_tags, object metadata,
     object context, object registered_call_handle) except *:
   """Invokes an RPC.
 
@@ -243,7 +243,7 @@ cdef void _call(
     deadline: A float for the deadline of the RPC, or None if the RPC is to have
       no deadline.
     credentials: A _CallCredentials for the RPC or None.
-    operationses_and_user_tags: A sequence of length-two sequences the first
+    operations_and_user_tags: A sequence of length-two sequences the first
       element of which is a sequence of Operations and the second element of
       which is an object to be used as a tag. A SendInitialMetadataOperation
       must be present in the first element of this value.
@@ -294,7 +294,7 @@ cdef void _call(
           call_state.delete_call()
           _raise_call_error_no_metadata(c_call_error)
       started_tags = set()
-      for operations, user_tag in operationses_and_user_tags:
+      for operations, user_tag in operations_and_user_tags:
         c_call_error, tag = _operate(call_state.c_call, operations, user_tag)
         if c_call_error == GRPC_CALL_OK:
           started_tags.add(tag)
@@ -333,7 +333,7 @@ cdef class IntegratedCall:
 
 cdef IntegratedCall _integrated_call(
     _ChannelState state, int flags, method, host, object deadline,
-    object metadata, CallCredentials credentials, operationses_and_user_tags,
+    object metadata, CallCredentials credentials, operations_and_user_tags,
     object context, object registered_call_handle):
   call_state = _CallState()
 
@@ -343,7 +343,7 @@ cdef IntegratedCall _integrated_call(
 
   _call(
       state, call_state, state.c_call_completion_queue, on_success, flags,
-      method, host, deadline, credentials, operationses_and_user_tags,
+      method, host, deadline, credentials, operations_and_user_tags,
       metadata, context, registered_call_handle)
 
   return IntegratedCall(state, call_state)
@@ -391,7 +391,7 @@ cdef class SegregatedCall:
 
 cdef SegregatedCall _segregated_call(
     _ChannelState state, int flags, method, host, object deadline,
-    object metadata, CallCredentials credentials, operationses_and_user_tags,
+    object metadata, CallCredentials credentials, operations_and_user_tags,
     object context, object registered_call_handle):
   cdef _CallState call_state = _CallState()
   cdef SegregatedCall segregated_call
@@ -409,7 +409,7 @@ cdef SegregatedCall _segregated_call(
   try:
     _call(
         state, call_state, c_completion_queue, on_success, flags, method, host,
-        deadline, credentials, operationses_and_user_tags, metadata,
+        deadline, credentials, operations_and_user_tags, metadata,
         context, registered_call_handle)
   except:
     _destroy_c_completion_queue(c_completion_queue)
