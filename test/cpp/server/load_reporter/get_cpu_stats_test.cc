@@ -44,11 +44,8 @@ TEST(GetCpuStatsTest, Ascending) {
   const size_t kRuns = 100;
   auto prev = grpc::load_reporter::GetCpuStatsImpl();
   for (size_t i = 0; i < kRuns; ++i) {
-#ifdef GPR_WINDOWS
-    // Windows counters can be jittery or have low resolution in a tight loop.
     gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
                                  gpr_time_from_millis(1, GPR_TIMESPAN)));
-#endif
     auto cur = grpc::load_reporter::GetCpuStatsImpl();
     ASSERT_LE(prev.first, cur.first)
         << "Busy time decreased at run " << i << ": " << prev.first << " -> "
