@@ -164,7 +164,6 @@ RegionalAccessBoundaryFetcher::Request::Request(
     WeakRefCountedPtr<RegionalAccessBoundaryFetcher> fetcher,
     absl::string_view access_token)
     : access_token_(access_token), fetcher_(std::move(fetcher)) {
-  memset(&response_, 0, sizeof(response_));
   pollent_ =
       grpc_polling_entity_create_from_pollset_set(grpc_pollset_set_create());
 }
@@ -175,10 +174,9 @@ RegionalAccessBoundaryFetcher::Request::~Request() {
 }
 
 void RegionalAccessBoundaryFetcher::Request::Start() {
-  grpc_http_request request;
-  memset(&request, 0, sizeof(request));
+  grpc_http_request request = {};
   grpc_http_header header = {const_cast<char*>("Authorization"),
-                             const_cast<char*>(access_token_.data())};
+                             const_cast<char*>(access_token_.c_str())};
   request.hdr_count = 1;
   request.hdrs = &header;
   // We pass this as arg to OnResponseWrapper. We must
@@ -210,11 +208,16 @@ void RegionalAccessBoundaryFetcher::Request::OnResponseWrapper(
 
 void RegionalAccessBoundaryFetcher::Request::OnResponse(
     grpc_error_handle error) {
+  auto fetcher = fetcher_->RefIfNonZero();
+  if (fetcher == nullptr) return;
   bool success = false;
   std::string encoded_locations;
+  absl::string_view response_body;
+  if (response_.body != nullptr) {
+    response_body = absl::string_view(response_.body, response_.body_length);
+  }
   if (error.ok() && response_.status == 200) {
-    absl::StatusOr<Json> json =
-        JsonParse(absl::string_view(response_.body, response_.body_length));
+    absl::StatusOr<Json> json = JsonParse(response_body);
     if (json.ok() && json->type() == Json::Type::kObject) {
       auto it_encoded = json->object().find("encodedLocations");
       if (it_encoded != json->object().end() &&
@@ -227,11 +230,9 @@ void RegionalAccessBoundaryFetcher::Request::OnResponse(
     }
   }
   if (success) {
-    fetcher_->OnFetchSuccess(Slice::FromCopiedString(encoded_locations));
+    fetcher->OnFetchSuccess(Slice::FromCopiedString(encoded_locations));
   } else {
-    fetcher_->OnFetchFailure(
-        Ref(), error, response_.status,
-        absl::string_view(response_.body, response_.body_length));
+    fetcher->OnFetchFailure(Ref(), error, response_.status, response_body);
   }
 }
 
@@ -240,7 +241,6 @@ class EmailFetcher::EmailRequest final
  public:
   explicit EmailRequest(WeakRefCountedPtr<EmailFetcher> fetcher)
       : fetcher_(std::move(fetcher)) {
-    memset(&response_, 0, sizeof(response_));
     pollent_ =
         grpc_polling_entity_create_from_pollset_set(grpc_pollset_set_create());
   }
@@ -253,8 +253,7 @@ class EmailFetcher::EmailRequest final
   void Start() {
     grpc_http_header header = {const_cast<char*>("Metadata-Flavor"),
                                const_cast<char*>("Google")};
-    grpc_http_request request;
-    memset(&request, 0, sizeof(grpc_http_request));
+    grpc_http_request request = {};
     request.hdr_count = 1;
     request.hdrs = &header;
     auto uri = URI::Create(
@@ -286,14 +285,19 @@ class EmailFetcher::EmailRequest final
   }
 
   void OnResponse(grpc_error_handle error) {
+    auto fetcher = fetcher_->RefIfNonZero();
+    if (fetcher == nullptr) return;
+    absl::string_view response_body;
+    if (response_.body != nullptr) {
+      response_body = absl::string_view(response_.body, response_.body_length);
+    }
     if (!error.ok()) {
-      fetcher_->OnEmailFetchError(error);
+      fetcher->OnEmailFetchError(error);
     } else if (response_.status != 200) {
-      fetcher_->OnEmailFetchError(GRPC_ERROR_CREATE(absl::StrCat(
+      fetcher->OnEmailFetchError(GRPC_ERROR_CREATE(absl::StrCat(
           "Failed to fetch service account email: HTTP ", response_.status)));
     } else {
-      fetcher_->OnEmailFetchComplete(
-          absl::string_view(response_.body, response_.body_length));
+      fetcher->OnEmailFetchComplete(response_body);
     }
   }
 
