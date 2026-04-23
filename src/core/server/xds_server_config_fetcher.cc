@@ -16,6 +16,8 @@
 //
 //
 
+#include "src/core/server/xds_server_config_fetcher.h"
+
 #include <grpc/credentials.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
@@ -101,10 +103,14 @@ using ReadDelayHandle = XdsClient::ReadDelayHandle;
 // annotations and save a bit of memory.
 struct FetcherState final : public RefCounted<FetcherState> {
   RefCountedPtr<GrpcXdsClient> xds_client;
+  RefCountedPtr<XdsResourceNameGenerator> resource_name_generator;
   WorkSerializer work_serializer;
 
-  explicit FetcherState(RefCountedPtr<GrpcXdsClient> xds_client_in)
+  FetcherState(
+      RefCountedPtr<GrpcXdsClient> xds_client_in,
+      RefCountedPtr<XdsResourceNameGenerator> resource_name_generator_in)
       : xds_client(std::move(xds_client_in)),
+        resource_name_generator(std::move(resource_name_generator_in)),
         work_serializer(
             grpc_event_engine::experimental::GetDefaultEventEngine()) {
     GRPC_CHECK(xds_client != nullptr);
@@ -119,8 +125,10 @@ struct FetcherState final : public RefCounted<FetcherState> {
 // listeners from the xDS control plane.
 class XdsServerConfigFetcher final : public ServerConfigFetcher {
  public:
-  XdsServerConfigFetcher(RefCountedPtr<GrpcXdsClient> xds_client,
-                         grpc_server_xds_status_notifier notifier);
+  XdsServerConfigFetcher(
+      RefCountedPtr<GrpcXdsClient> xds_client,
+      grpc_server_xds_status_notifier notifier,
+      RefCountedPtr<XdsResourceNameGenerator> resource_name_generator);
 
   ~XdsServerConfigFetcher() override {
     fetcher_state_.reset(DEBUG_LOCATION, "XdsServerConfigFetcher");
@@ -450,8 +458,10 @@ class XdsServerConfigFetcher::ListenerWatcher::XdsConnectionManager::
 
 XdsServerConfigFetcher::XdsServerConfigFetcher(
     RefCountedPtr<GrpcXdsClient> xds_client,
-    grpc_server_xds_status_notifier notifier)
-    : fetcher_state_(MakeRefCounted<FetcherState>(std::move(xds_client))),
+    grpc_server_xds_status_notifier notifier,
+    RefCountedPtr<XdsResourceNameGenerator> resource_name_generator)
+    : fetcher_state_(MakeRefCounted<FetcherState>(
+          std::move(xds_client), std::move(resource_name_generator))),
       serving_status_notifier_(notifier) {}
 
 void XdsServerConfigFetcher::StartWatch(
@@ -625,6 +635,10 @@ void XdsServerConfigFetcher::ListenerWatcher::MaybeUpdateConnectionManager(
 }
 
 std::string XdsServerConfigFetcher::ListenerWatcher::ResourceName() const {
+  if (fetcher_state_->resource_name_generator != nullptr) {
+    return fetcher_state_->resource_name_generator->GetResourceName(
+        listening_address_);
+  }
   absl::string_view resource_name_template =
       DownCast<const GrpcXdsBootstrap&>(fetcher_state_->xds_client->bootstrap())
           .server_listener_resource_name_template();
@@ -1347,15 +1361,19 @@ grpc_server_config_fetcher* grpc_server_config_fetcher_xds_create(
     LOG(ERROR) << "Failed to create xds client: " << xds_client.status();
     return nullptr;
   }
-  if (grpc_core::DownCast<const grpc_core::GrpcXdsBootstrap&>(
-          (*xds_client)->bootstrap())
-          .server_listener_resource_name_template()
-          .empty()) {
-    LOG(ERROR) << "server_listener_resource_name_template not provided in "
-                  "bootstrap file.";
-    return nullptr;
+  auto generator =
+      channel_args.GetObjectRef<grpc_core::XdsResourceNameGenerator>();
+  if (generator == nullptr) {
+    if (grpc_core::DownCast<const grpc_core::GrpcXdsBootstrap&>(
+            (*xds_client)->bootstrap())
+            .server_listener_resource_name_template()
+            .empty()) {
+      LOG(ERROR) << "server_listener_resource_name_template not provided in "
+                    "bootstrap file.";
+      return nullptr;
+    }
   }
   return (new grpc_core::XdsServerConfigFetcher(std::move(*xds_client),
-                                                notifier))
+                                                notifier, std::move(generator)))
       ->c_ptr();
 }
