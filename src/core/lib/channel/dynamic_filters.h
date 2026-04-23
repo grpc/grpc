@@ -48,6 +48,7 @@ class DynamicFilters final : public FilterChain {
    public:
     struct Args {
       RefCountedPtr<const DynamicFilters> channel_stack;
+      const void* server_transport_data;
       grpc_polling_entity* pollent;
       gpr_cycle_counter start_time;
       Timestamp deadline;
@@ -89,6 +90,7 @@ class DynamicFilters final : public FilterChain {
   };
 
   static RefCountedPtr<DynamicFilters> Create(
+      grpc_channel_stack_type channel_stack_type,
       const ChannelArgs& args, std::vector<FilterAndConfig> filters,
       const Blackboard* blackboard);
 

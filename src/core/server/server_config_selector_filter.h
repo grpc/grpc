@@ -66,6 +66,12 @@ class ServerConfigSelectorFilterV1 {
 
   void StartTransportOp(grpc_transport_op* op);
 
+  // Flag that this object gets stored in channel args as a raw pointer.
+  struct RawPointerChannelArgTag {};
+  static absl::string_view ChannelArgName() {
+    return "grpc.internal.server_config_selector_filter_v1";
+  }
+
  private:
   // The call data for this filter, which is the final filter in the top
   // filter stack.
@@ -79,55 +85,18 @@ class ServerConfigSelectorFilterV1 {
 
    private:
     grpc_call_stack* const owning_call_;
-    void* server_transport_data_;
+    const void* server_transport_data_;
     gpr_cycle_counter call_start_time_;
     Timestamp deadline_;
     Arena* const arena_;
     CallCombiner* const call_combiner_;
 
-    RefCountedPtr<const DynamicFilters> dynamic_filters_;
     RefCountedPtr<DynamicFilters::Call> dynamic_call_;
   };
 
   // The final filter in each dynamic filter stack.  Used to propagate
   // RPCs to the bottom filter stack.
   class ServerDynamicTerminationFilter;
-
-  // A call on the bottom filter stack.
-  // Implements the same interface as RefCounted<>.
-  class BottomCall {
-   public:
-    static RefCountedPtr<BottomCall> Create(Arena* arena);
-
-    // Don't instantiate directly; use Create() instead.
-    explicit BottomCall(RefCountedPtr<grpc_channel_stack> bottom_stack)
-        : bottom_stack_(std::move(bottom_stack)) {}
-
-    void StartTransportStreamOpBatch(grpc_transport_stream_op_batch* batch);
-
-    // Interface of RefCounted<>.
-    GRPC_MUST_USE_RESULT RefCountedPtr<BottomCall> Ref();
-    GRPC_MUST_USE_RESULT RefCountedPtr<BottomCall> Ref(
-        const DebugLocation& location, const char* reason);
-    // When refcount drops to 0, destroys itself and the associated call stack,
-    // but does NOT free the memory because it's in the call arena.
-    void Unref();
-    void Unref(const DebugLocation& location, const char* reason);
-
-   private:
-    // Allow RefCountedPtr<> to access IncrementRefCount().
-    template <typename T>
-    friend class RefCountedPtr;
-
-    // Interface of RefCounted<>.
-    void IncrementRefCount();
-    void IncrementRefCount(const DebugLocation& location, const char* reason);
-
-    grpc_call_stack* call_stack();
-
-// FIXME: is this needed?
-    RefCountedPtr<grpc_channel_stack> bottom_stack_;
-  };
 
   // Watcher for ServerConfigSelector.
   class ServerConfigSelectorWatcher
@@ -156,6 +125,11 @@ class ServerConfigSelectorFilterV1 {
     ServerConfigSelectorFilterV1* filter_;
   };
 
+  ServerConfigSelectorFilterV1(
+      RefCountedPtr<ServerConfigSelectorProvider>
+          server_config_selector_provider,
+      RefCountedPtr<const DynamicFilters> bottom_stack);
+
   // Builds filter chains in a newly delivered ServerConfigSelector
   // before we start to use that ServerConfigSelector for RPCs.
   void BuildDynamicFilterChains(ServerConfigSelector& config_selector);
@@ -163,18 +137,20 @@ class ServerConfigSelectorFilterV1 {
   // Gets the current ServerConfigSelector to use for an RPC.
   absl::StatusOr<RefCountedPtr<ServerConfigSelector>> GetConfigSelector();
 
-  // Constructs a BottomCall object.  Called when each RPC hits the last
-  // filter in the dynamic filter stack.
-  OrphanablePtr<BottomCall> MakeBottomCall(const grpc_call_element_args& args);
+  // Constructs a call object on the bottom stack.  Calls are propagated
+  // to this call object when they get to the bottom of the dynamic
+  // filter stack.
+  RefCountedPtr<DynamicFilters::Call> MakeBottomCall(
+      const grpc_call_element_args& args, absl::Status* error);
 
   // Initializes the filter.
   static absl::Status Init(grpc_channel_element* elem,
                            grpc_channel_element_args* args);
 
   grpc_channel_stack* top_stack_;
-  RefCountedPtr<grpc_channel_stack> bottom_stack_;
   const RefCountedPtr<ServerConfigSelectorProvider>
       server_config_selector_provider_;
+  RefCountedPtr<const DynamicFilters> bottom_stack_;
 
   // FIXME: use per-CPU sharding here to avoid lock contention
   Mutex mu_;

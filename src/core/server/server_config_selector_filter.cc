@@ -173,8 +173,9 @@ const grpc_channel_filter kServerConfigSelectorFilter =
 // ServerConfigSelectorFilterV1
 //
 
-#define GRPC_ARG_SERVER_CONFIG_SELECTOR_FILTER_V1 \
-  "grpc.internal.server_config_selector_filter_v1"
+// FIXME: move this somewhere public, so filters can use it when
+// registering themselves
+#define GRPC_ARG_BELOW_DYNAMIC_FILTERS "grpc.internal.below_dynamic_filters"
 
 absl::Status ServerConfigSelectorFilterV1::Init(
     grpc_channel_element* elem, grpc_channel_element_args* args) {
@@ -182,23 +183,27 @@ absl::Status ServerConfigSelectorFilterV1::Init(
   GRPC_CHECK(elem->filter == &kFilterVtable);
   // Get ConfigSelectorProvider from channel args.
   ServerConfigSelectorProvider* server_config_selector_provider =
-      args.GetObject<ServerConfigSelectorProvider>();
+      args->channel_args.GetObject<ServerConfigSelectorProvider>();
   if (server_config_selector_provider == nullptr) {
     return absl::UnknownError("No ServerConfigSelectorProvider object found");
   }
-
-// FIXME: build bottom channel stack
-
+  // Build bottom channel stack.
+  auto bottom_stack = DynamicFilters::Create(
+      GRPC_SERVER_CHANNEL,
+      args->channel_args.SetInt(GRPC_ARG_BELOW_DYNAMIC_FILTERS, 1),
+      /*filters=*/{}, /*blackboard=*/nullptr);
   // Instantiate filter.
   new (elem->channel_data) ServerConfigSelectorFilterV1(
-      server_config_selector_provider->Ref());
+      server_config_selector_provider->Ref(), std::move(bottom_stack));
   return absl::OkStatus();
 }
 
 ServerConfigSelectorFilterV1::ServerConfigSelectorFilterV1(
-    RefCountedPtr<ServerConfigSelectorProvider> server_config_selector_provider)
+    RefCountedPtr<ServerConfigSelectorProvider> server_config_selector_provider,
+    RefCountedPtr<const DynamicFilters> bottom_stack)
     : server_config_selector_provider_(
-          std::move(server_config_selector_provider)) {
+          std::move(server_config_selector_provider)),
+      bottom_stack_(std::move(bottom_stack)) {
   GRPC_CHECK(server_config_selector_provider_ != nullptr);
   auto server_config_selector_watcher =
       std::make_unique<ServerConfigSelectorWatcher>(Ref());
@@ -218,19 +223,30 @@ void ServerConfigSelectorFilterV1::StartTransportOp(grpc_transport_op* op) {
   // we don't know which dynamic stack to use, and (b) none of the
   // dynamic filters need to see transport ops anyway.
   grpc_channel_element* elem =
-      grpc_channel_stack_element(bottom_stack_.get(), 0);
+      grpc_channel_stack_element(bottom_stack_->channel_stack(), 0);
   elem->filter->start_transport_op(elem, op);
 }
 
 void ServerConfigSelectorFilterV1::BuildDynamicFilterChains(
     ServerConfigSelector& config_selector) {
 // FIXME: tell config selector to build filter chains
+// Note: builder needs to include ServerConfigSelectorFilterV1 object in
+// channel args
 }
 
 absl::StatusOr<RefCountedPtr<ServerConfigSelector>>
 ServerConfigSelectorFilterV1::GetConfigSelector() {
   MutexLock lock(&mu_);
   return config_selector_.value();
+}
+
+RefCountedPtr<DynamicFilters::Call>
+ServerConfigSelectorFilterV1::MakeBottomCall(
+    const grpc_call_element_args& args, absl::Status* error) {
+  DynamicFilters::Call::Args call_args = {
+      bottom_stack_, args.server_transport_data, /*pollent=*/nullptr,
+      args.start_time, args.deadline, args.arena, args.call_combiner};
+  return bottom_stack_->CreateCall(std::move(call_args), error);
 }
 
 const grpc_channel_filter ServerConfigSelectorFilterV1::kFilterVtable = {
@@ -301,7 +317,7 @@ absl::Status ServerConfigSelectorFilterV1::Call::Init(
   call_start_time_ = args->start_time;
   deadline_ = args->deadline;
   arena_ = args->arena;
-  call_combiner_ = args->call_combiner_;
+  call_combiner_ = args->call_combiner;
   return absl::OkStatus();
 }
 
@@ -313,6 +329,7 @@ void ServerConfigSelectorFilterV1::Call::StartTransportStreamOpBatch(
 // FIXME: need to support batch queueing in case we get batches in the wrong order
 // -- steal logic from client channel code
   if (batch->send_initial_metadata) {
+    // Get the config selector.
     auto config_selector = filter->GetConfigSelector();
     if (!config_selector.ok()) {
 // FIXME
@@ -320,6 +337,7 @@ void ServerConfigSelectorFilterV1::Call::StartTransportStreamOpBatch(
           batch, config_selector.status(), call_combiner_);
       return;
     }
+    // Use config selector to choose dynamic filter stack.
     auto dynamic_filter_stack = (*config_selector)->GetCallConfig(&md);
     if (!dynamic_filter_stack.ok()) {
 // FIXME
@@ -327,16 +345,14 @@ void ServerConfigSelectorFilterV1::Call::StartTransportStreamOpBatch(
           batch, dynamic_filter_stack.status(), call_combiner_);
       return;
     }
-// FIXME: create call stack for dynamic call
-    dynamic_filters_ =
+    // Create call object on dynamic filter stack.
+    auto dynamic_filters =
         dynamic_filter_stack->TakeAsSubclass<const DynamicFilters>();
-// FIXME: need to plumb server_transport_data_ down through dynamic filters
     DynamicFilters::Call::Args args = {
-      dynamic_filters_, /*pollent=*/nullptr, call_start_time_,
-      deadline_, arena_, call_combiner_,
-    };
+      dynamic_filters, server_transport_data_, /*pollent=*/nullptr,
+      call_start_time_, deadline_, arena_, call_combiner_};
     absl::Status error;
-    dynamic_call_ = dynamic_filters_->CreateCall(std::move(args), &error);
+    dynamic_call_ = dynamic_filters->CreateCall(std::move(args), &error);
     if (!error.ok()) {
 // FIXME
       grpc_transport_stream_op_batch_finish_with_failure(batch, error,
@@ -347,58 +363,94 @@ void ServerConfigSelectorFilterV1::Call::StartTransportStreamOpBatch(
 }
 
 //
-// ServerConfigSelectorFilterV1::BottomCall
+// ServerConfigSelectorFilterV1::ServerDynamicTerminationFilter
 //
 
-RefCountedPtr<ServerConfigSelectorFilterV1::BottomCall>
-ServerConfigSelectorFilterV1::BottomCall::Create(Arena* arena) {
-// FIXME: create call stack on bottom_stack_
-  return nullptr;
-}
+class ServerConfigSelectorFilterV1::ServerDynamicTerminationFilter {
+ public:
+  static const grpc_channel_filter kFilterVtable;
 
-grpc_call_stack* ServerConfigSelectorFilterV1::BottomCall::call_stack() {
-  return (grpc_call_stack*)(
-      (char*)(this) + GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(BottomCall)));
-}
+ private:
+  class Call {
+   public:
+    explicit Call(RefCountedPtr<DynamicFilters::Call> bottom_call_)
+        : bottom_call_(std::move(bottom_call)) {}
 
-void ServerConfigSelectorFilterV1::BottomCall::StartTransportStreamOpBatch(
-    grpc_transport_stream_op_batch* batch) {
-  grpc_call_element* top_elem = grpc_call_stack_element(call_stack(), 0);
-  GRPC_TRACE_LOG(channel, INFO)
-      << "OP[" << top_elem->filter->name << ":" << top_elem
-      << "]: " << grpc_transport_stream_op_batch_string(batch, false);
-  top_elem->filter->start_transport_stream_op_batch(top_elem, batch);
-}
+    void StartTransportStreamOpBatch(grpc_transport_stream_op_batch* batch) {
+      bottom_call_->StartTransportStreamOpBatch(batch);
+    }
 
-RefCountedPtr<ServerConfigSelectorFilterV1::BottomCall>
-ServerConfigSelectorFilterV1::BottomCall::Ref() {
-  IncrementRefCount();
-  return RefCountedPtr<ServerConfigSelectorFilterV1::BottomCall>(this);
-}
+   private:
+    RefCountedPtr<DynamicFilters::Call> bottom_call_;
+  };
 
-RefCountedPtr<ServerConfigSelectorFilterV1::BottomCall>
-ServerConfigSelectorFilterV1::BottomCall::Ref(
-    const DebugLocation& location, const char* reason) {
-  IncrementRefCount(location, reason);
-  return RefCountedPtr<ServerConfigSelectorFilterV1::BottomCall>(this);
-}
+  explicit ServerDynamicTerminationFilter(const ChannelArgs& args)
+      : config_selector_filter_(
+            args.GetObject<ServerConfigSelectorFilterV1>()) {}
 
-void ServerConfigSelectorFilterV1::BottomCall::Unref() {
-  GRPC_CALL_STACK_UNREF(call_stack(), "");
-}
+  ServerConfigSelectorFilterV1* config_selector_filter_;
+};
 
-void ServerConfigSelectorFilterV1::BottomCall::Unref(
-    const DebugLocation& /*location*/, const char* reason) {
-  GRPC_CALL_STACK_UNREF(call_stack(), reason);
-}
-
-void ServerConfigSelectorFilterV1::BottomCall::IncrementRefCount() {
-  GRPC_CALL_STACK_REF(call_stack(), "");
-}
-
-void ServerConfigSelectorFilterV1::BottomCall::IncrementRefCount(
-    const DebugLocation& /*location*/, const char* reason) {
-  GRPC_CALL_STACK_REF(call_stack(), reason);
-}
+const grpc_channel_filter
+ServerConfigSelectorFilterV1::ServerDynamicTerminationFilter::kFilterVtable = {
+  // start_transport_stream_op_batch
+  [](grpc_call_element* elem, grpc_transport_stream_op_batch* batch) {
+    auto* calld =
+        static_cast<ServerDynamicTerminationFilter::Call*>(elem->call_data);
+    calld->StartTransportStreamOpBatch(batch);
+  },
+  // start_transport_op
+  [](grpc_channel_element* elem, grpc_transport_op* op) {
+    auto* chand =
+        static_cast<ServerDynamicTerminationFilter*>(elem->channel_data);
+    chand->StartTransportOp(op);
+  },
+  // sizeof_call_data
+  sizeof(ServerDynamicTerminationFilter::Call),
+  // init_call_elem
+  [](grpc_call_element* elem, const grpc_call_element_args* args) {
+    auto* chand =
+        static_cast<ServerDynamicTerminationFilter*>(elem->channel_data);
+    auto* calld =
+        static_cast<ServerDynamicTerminationFilter::Call*>(elem->call_data);
+    absl::Status error;
+    new (calld) Call(chand->MakeBottomCall(*args, &error));
+    return error;
+  },
+  // set_pollset_or_pollset_set
+  [](grpc_call_element* elem, grpc_polling_entity* pollent) {
+  },
+  // destroy_call_elem
+  [](grpc_call_element* elem, const grpc_call_final_info* final_info,
+     grpc_closure* then_schedule_closure) {
+// FIXME: pass through then_schedule_closure and final_info?
+    auto* calld =
+        static_cast<ServerDynamicTerminationFilter::Call*>(elem->call_data);
+    calld->~Call();
+  },
+  // sizeof_channel_data
+  sizeof(ServerDynamicTerminationFilter),
+  // init_channel_elem
+  [](grpc_channel_element* elem, grpc_channel_element_args* args) {
+    GRPC_CHECK(args->is_last);
+    GRPC_CHECK(elem->filter == &ServerDynamicTerminationFilter::kFilterVtable);
+    new (elem->channel_data) ServerDynamicTerminationFilter(args->channel_args);
+    return absl::OkStatus();
+  },
+  // post_init_channel_elem
+  [](grpc_channel_stack* stk, grpc_channel_element* elem) {
+  },
+  // destroy_channel_elem
+  [](grpc_channel_element* elem) {
+    auto* chand =
+        static_cast<ServerDynamicTerminationFilter*>(elem->channel_data);
+    chand->~ServerDynamicTerminationFilter();
+  },
+  // get_channel_info
+  [](grpc_channel_element* elem, const grpc_channel_info* channel_info) {
+  },
+  // name
+  GRPC_UNIQUE_TYPE_NAME_HERE("server_dynamic_termination_filter"),
+};
 
 }  // namespace grpc_core

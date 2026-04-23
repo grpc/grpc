@@ -1434,8 +1434,8 @@ class LegacyFilterChainBuilder final : public FilterChainBuilder {
     } else {
       filters_.push_back({&DynamicTerminationFilter::kFilterVtable, nullptr});
     }
-    RefCountedPtr<DynamicFilters> dynamic_filters =
-        DynamicFilters::Create(channel_args_, std::move(filters_), blackboard_);
+    RefCountedPtr<DynamicFilters> dynamic_filters = DynamicFilters::Create(
+        GRPC_CLIENT_DYNAMIC, channel_args_, std::move(filters_), blackboard_);
     if (dynamic_filters == nullptr) {
       return absl::InternalError("error constructing dynamic filter stack");
     }
@@ -2133,9 +2133,9 @@ void ClientChannelFilter::CallData::RetryCheckResolutionLocked() {
 }
 
 void ClientChannelFilter::CallData::CreateDynamicCall() {
-  DynamicFilters::Call::Args args = {dynamic_filters_, pollent_,
-                                     call_start_time_, deadline_,
-                                     arena_,           call_combiner_};
+  DynamicFilters::Call::Args args = {
+      dynamic_filters_, /*server_transport_data=*/nullptr,  pollent_,
+      call_start_time_, deadline_, arena_,           call_combiner_};
   grpc_error_handle error;
   const DynamicFilters* channel_stack = args.channel_stack.get();
   GRPC_TRACE_LOG(client_channel_call, INFO)

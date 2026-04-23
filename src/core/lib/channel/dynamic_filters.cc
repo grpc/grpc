@@ -37,10 +37,6 @@
 #define CALL_TO_CALL_STACK(call)                                     \
   (grpc_call_stack*)((char*)(call) + GPR_ROUND_UP_TO_ALIGNMENT_SIZE( \
                                          sizeof(DynamicFilters::Call)))
-#define CALL_STACK_TO_CALL(callstack)                     \
-  (DynamicFilters::Call*)(((char*)(call_stack)) -         \
-                          GPR_ROUND_UP_TO_ALIGNMENT_SIZE( \
-                              sizeof(DynamicFilters::Call)))
 
 namespace grpc_core {
 
@@ -52,12 +48,12 @@ DynamicFilters::Call::Call(Args args, grpc_error_handle* error)
     : channel_stack_(std::move(args.channel_stack)) {
   grpc_call_stack* call_stack = CALL_TO_CALL_STACK(this);
   const grpc_call_element_args call_args = {
-      call_stack,         // call_stack
-      nullptr,            // server_transport_data
-      args.start_time,    // start_time
-      args.deadline,      // deadline
-      args.arena,         // arena
-      args.call_combiner  // call_combiner
+      call_stack,                  // call_stack
+      args.server_transport_data,  // server_transport_data
+      args.start_time,             // start_time
+      args.deadline,               // deadline
+      args.arena,                  // arena
+      args.call_combiner           // call_combiner
   };
   *error = grpc_call_stack_init(channel_stack_->channel_stack_.get(), 1,
                                 Destroy, this, &call_args);
@@ -136,9 +132,10 @@ void DynamicFilters::Call::IncrementRefCount(const DebugLocation& /*location*/,
 namespace {
 
 absl::StatusOr<RefCountedPtr<grpc_channel_stack>> CreateChannelStack(
+    grpc_channel_stack_type channel_stack_type,
     const ChannelArgs& args, std::vector<FilterAndConfig> filters,
     const Blackboard* blackboard) {
-  ChannelStackBuilderImpl builder("DynamicFilters", GRPC_CLIENT_DYNAMIC, args);
+  ChannelStackBuilderImpl builder("DynamicFilters", channel_stack_type, args);
   builder.SetBlackboard(blackboard);
   for (auto& [filter, config] : filters) {
     builder.AppendFilter(filter, std::move(config));
@@ -149,10 +146,12 @@ absl::StatusOr<RefCountedPtr<grpc_channel_stack>> CreateChannelStack(
 }  // namespace
 
 RefCountedPtr<DynamicFilters> DynamicFilters::Create(
+    grpc_channel_stack_type channel_stack_type,
     const ChannelArgs& args, std::vector<FilterAndConfig> filters,
     const Blackboard* blackboard) {
   // Attempt to create channel stack from requested filters.
-  auto p = CreateChannelStack(args, std::move(filters), blackboard);
+  auto p = CreateChannelStack(channel_stack_type, args, std::move(filters),
+                              blackboard);
   if (!p.ok()) {
     // Channel stack creation failed with requested filters.
     // Create with lame filter instead.
