@@ -29,16 +29,10 @@ static const upb_MiniTableField grpc_lb_v1_LoadBalanceRequest__fields[2] = {
 const upb_MiniTable grpc__lb__v1__LoadBalanceRequest_msg_init = {
   &grpc_lb_v1_LoadBalanceRequest__submsgs[0],
   &grpc_lb_v1_LoadBalanceRequest__fields[0],
-  UPB_SIZE(16, 24), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
+  UPB_SIZE(16, 24), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "grpc.lb.v1.LoadBalanceRequest",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x001000080100000a, &upb_pom_1bt_max64b},
-    {0x0010000802010012, &upb_pom_1bt_max128b},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-  })
 };
 
 const upb_MiniTable* grpc__lb__v1__LoadBalanceRequest_msg_init_ptr = &grpc__lb__v1__LoadBalanceRequest_msg_init;
@@ -49,14 +43,10 @@ static const upb_MiniTableField grpc_lb_v1_InitialLoadBalanceRequest__fields[1] 
 const upb_MiniTable grpc__lb__v1__InitialLoadBalanceRequest_msg_init = {
   NULL,
   &grpc_lb_v1_InitialLoadBalanceRequest__fields[0],
-  UPB_SIZE(16, 24), 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(8), 0,
+  UPB_SIZE(16, 24), 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "grpc.lb.v1.InitialLoadBalanceRequest",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x000800003f00000a, &upb_pss_1bt},
-  })
 };
 
 const upb_MiniTable* grpc__lb__v1__InitialLoadBalanceRequest_msg_init_ptr = &grpc__lb__v1__InitialLoadBalanceRequest_msg_init;
@@ -68,16 +58,10 @@ static const upb_MiniTableField grpc_lb_v1_ClientStatsPerToken__fields[2] = {
 const upb_MiniTable grpc__lb__v1__ClientStatsPerToken_msg_init = {
   NULL,
   &grpc_lb_v1_ClientStatsPerToken__fields[0],
-  UPB_SIZE(24, 32), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
+  UPB_SIZE(24, 32), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "grpc.lb.v1.ClientStatsPerToken",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x000800003f00000a, &upb_pss_1bt},
-    {0x001800003f000010, &upb_psv8_1bt},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-  })
 };
 
 const upb_MiniTable* grpc__lb__v1__ClientStatsPerToken_msg_init_ptr = &grpc__lb__v1__ClientStatsPerToken_msg_init;
@@ -98,28 +82,10 @@ static const upb_MiniTableField grpc_lb_v1_ClientStats__fields[6] = {
 const upb_MiniTable grpc__lb__v1__ClientStats_msg_init = {
   &grpc_lb_v1_ClientStats__submsgs[0],
   &grpc_lb_v1_ClientStats__fields[0],
-  UPB_SIZE(56, 64), 6, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(120), 0,
+  UPB_SIZE(56, 64), 6, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "grpc.lb.v1.ClientStats",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x001800003f000010, &upb_psv8_1bt},
-    {0x002000003f000018, &upb_psv8_1bt},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x002800003f000030, &upb_psv8_1bt},
-    {0x003000003f000038, &upb_psv8_1bt},
-    {0x003800003f010042, &upb_prm_1bt_max64b},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-  })
 };
 
 const upb_MiniTable* grpc__lb__v1__ClientStats_msg_init_ptr = &grpc__lb__v1__ClientStats_msg_init;
@@ -138,16 +104,10 @@ static const upb_MiniTableField grpc_lb_v1_LoadBalanceResponse__fields[3] = {
 const upb_MiniTable grpc__lb__v1__LoadBalanceResponse_msg_init = {
   &grpc_lb_v1_LoadBalanceResponse__submsgs[0],
   &grpc_lb_v1_LoadBalanceResponse__fields[0],
-  UPB_SIZE(16, 24), 3, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(24), 0,
+  UPB_SIZE(16, 24), 3, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "grpc.lb.v1.LoadBalanceResponse",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x001000080100000a, &upb_pom_1bt_max64b},
-    {0x0010000802010012, &upb_pom_1bt_max64b},
-    {0x001000080302001a, &upb_pom_1bt_max64b},
-  })
 };
 
 const upb_MiniTable* grpc__lb__v1__LoadBalanceResponse_msg_init_ptr = &grpc__lb__v1__LoadBalanceResponse_msg_init;
@@ -190,14 +150,10 @@ static const upb_MiniTableField grpc_lb_v1_ServerList__fields[1] = {
 const upb_MiniTable grpc__lb__v1__ServerList_msg_init = {
   &grpc_lb_v1_ServerList__submsgs[0],
   &grpc_lb_v1_ServerList__fields[0],
-  16, 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(8), 0,
+  16, 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "grpc.lb.v1.ServerList",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x000800003f00000a, &upb_prm_1bt_max64b},
-  })
 };
 
 const upb_MiniTable* grpc__lb__v1__ServerList_msg_init_ptr = &grpc__lb__v1__ServerList_msg_init;
@@ -211,20 +167,10 @@ static const upb_MiniTableField grpc_lb_v1_Server__fields[4] = {
 const upb_MiniTable grpc__lb__v1__Server_msg_init = {
   NULL,
   &grpc_lb_v1_Server__fields[0],
-  UPB_SIZE(32, 48), 4, kUpb_ExtMode_NonExtendable, 4, UPB_FASTTABLE_MASK(56), 0,
+  UPB_SIZE(32, 48), 4, kUpb_ExtMode_NonExtendable, 4, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "grpc.lb.v1.Server",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x001000003f00000a, &upb_psb_1bt},
-    {0x000c00003f000010, &upb_psv4_1bt},
-    {0x002000003f00001a, &upb_pss_1bt},
-    {0x000800003f000020, &upb_psb1_1bt},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-  })
 };
 
 const upb_MiniTable* grpc__lb__v1__Server_msg_init_ptr = &grpc__lb__v1__Server_msg_init;

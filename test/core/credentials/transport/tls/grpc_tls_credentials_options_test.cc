@@ -612,6 +612,18 @@ TEST_F(GrpcTlsCredentialsOptionsTest, CrlProviderWithServerCredentials) {
   EXPECT_NE(tls_connector->ServerHandshakerFactoryForTesting(), nullptr);
 }
 
+TEST_F(GrpcTlsCredentialsOptionsTest, SetKeyExchangeGroups) {
+  auto options = MakeRefCounted<grpc_tls_credentials_options>();
+  std::vector<grpc_tls_key_exchange_group> groups = {
+      grpc_tls_key_exchange_group::GRPC_TLS_GROUP_X25519_MLKEM768,
+      grpc_tls_key_exchange_group::GRPC_TLS_GROUP_X25519,
+      grpc_tls_key_exchange_group::GRPC_TLS_GROUP_SECP256R1,
+  };
+  grpc_tls_credentials_options_set_key_exchange_groups(
+      options.get(), groups.data(), groups.size());
+  EXPECT_EQ(options->key_exchange_groups(), groups);
+}
+
 }  // namespace testing
 
 }  // namespace grpc_core

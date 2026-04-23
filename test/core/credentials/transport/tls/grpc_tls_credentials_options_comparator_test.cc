@@ -182,6 +182,16 @@ TEST(TlsCredentialsOptionsComparatorTest, DifferentSniOverride) {
   delete options_1;
   delete options_2;
 }
+TEST(TlsCredentialsOptionsComparatorTest, DifferentKeyExchangeGroups) {
+  auto* options_1 = grpc_tls_credentials_options_create();
+  auto* options_2 = grpc_tls_credentials_options_create();
+  options_1->set_key_exchange_groups({grpc_tls_key_exchange_group::GRPC_TLS_GROUP_X25519});
+  options_2->set_key_exchange_groups({grpc_tls_key_exchange_group::GRPC_TLS_GROUP_X25519_MLKEM768});
+  EXPECT_FALSE(*options_1 == *options_2);
+  EXPECT_FALSE(*options_2 == *options_1);
+  delete options_1;
+  delete options_2;
+}
 
 } // namespace
 } // namespace grpc_core

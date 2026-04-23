@@ -140,6 +140,8 @@ using grpc_core::Json;
 
 #define GRPC_ARG_HTTP2_PING_ON_RST_STREAM_PERCENT \
   "grpc.http2.ping_on_rst_stream_percent"
+#define GRPC_ARG_HTTP2_MAX_DEALLOCATING_STREAMS \
+  "grpc.http2.max_deallocating_streams"
 
 static grpc_core::Duration g_default_client_keepalive_time =
     grpc_core::Duration::Infinity();
@@ -552,6 +554,11 @@ static void read_channel_args(grpc_chttp2_transport* t,
   t->max_concurrent_streams_reject_on_client =
       channel_args.GetBool(GRPC_ARG_MAX_CONCURRENT_STREAMS_REJECT_ON_CLIENT)
           .value_or(false);
+
+  t->max_deallocating_streams =
+      channel_args.GetInt(GRPC_ARG_HTTP2_MAX_DEALLOCATING_STREAMS)
+          .value_or(grpc_core::IsH2MaxDeallocatingStreamsHeadroomEnabled() ? 100
+                                                                           : 0);
 }
 
 static void init_keepalive_pings_if_enabled_locked(

@@ -24,16 +24,10 @@ static const upb_MiniTableField xds_annotations_v3_FieldSecurityAnnotation__fiel
 const upb_MiniTable xds__annotations__v3__FieldSecurityAnnotation_msg_init = {
   NULL,
   &xds_annotations_v3_FieldSecurityAnnotation__fields[0],
-  16, 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
+  16, 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "xds.annotations.v3.FieldSecurityAnnotation",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x000800003f000008, &upb_psb1_1bt},
-    {0x000900003f000010, &upb_psb1_1bt},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-  })
 };
 
 const upb_MiniTable* xds__annotations__v3__FieldSecurityAnnotation_msg_init_ptr = &xds__annotations__v3__FieldSecurityAnnotation_msg_init;
