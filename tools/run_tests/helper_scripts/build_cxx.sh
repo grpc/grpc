@@ -48,6 +48,7 @@ fi
 
 if [[ "$*" =~ "-DgRPC_BUILD_TESTS=OFF" ]] || [[ "${GRPC_SKIP_BUILD_TESTS}" == "true" ]]; then
 # Just build grpc++ target when gRPC_BUILD_TESTS is OFF (This is a temporary mitigation for gcc 7. Remove this once gcc 7 is removed from the supported compilers)
+# We also build grpc_cli to ensure linking happens and undefined symbols are caught.
 make -j"${GRPC_RUN_TESTS_JOBS}" "grpc++"
 else
 # GRPC_RUN_TESTS_CXX_LANGUAGE_SUFFIX will be set to either "c" or "cxx"
