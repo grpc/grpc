@@ -170,6 +170,41 @@ const grpc_channel_filter kServerConfigSelectorFilter =
                            FilterEndpoint::kServer>();
 
 //
+// ServerConfigSelectorFilterV1::DynamicFilterChainBuilder
+//
+
+// FilterChainBuilder impl to inject into ServerConfigSelector.
+class ServerConfigSelectorFilterV1::DynamicFilterChainBuilder final
+    : public FilterChainBuilder {
+ public:
+  explicit DynamicFilterChainBuilder(const ChannelArgs& channel_args)
+      : channel_args_(channel_args) {}
+
+  absl::StatusOr<RefCountedPtr<FilterChain>> Build() override {
+    filters_.push_back(
+        {&ServerDynamicTerminationFilter::kFilterVtable, nullptr});
+    RefCountedPtr<DynamicFilters> dynamic_filters = DynamicFilters::Create(
+        GRPC_CLIENT_DYNAMIC, channel_args_, std::move(filters_),
+        // FIXME: how do we plumb blackboard here?
+        /*blackboard=*/nullptr);
+    if (dynamic_filters == nullptr) {
+      return absl::InternalError("error constructing dynamic filter stack");
+    }
+    filters_.clear();
+    return dynamic_filters;
+  }
+
+ private:
+  void AddFilter(const FilterHandle& filter_handle,
+                 RefCountedPtr<const FilterConfig> config) override {
+    filter_handle.AddToBuilder(&filters_, std::move(config));
+  }
+
+  const ChannelArgs channel_args_;
+  std::vector<FilterAndConfig> filters_;
+};
+
+//
 // ServerConfigSelectorFilterV1
 //
 
@@ -194,14 +229,17 @@ absl::Status ServerConfigSelectorFilterV1::Init(
       /*filters=*/{}, /*blackboard=*/nullptr);
   // Instantiate filter.
   new (elem->channel_data) ServerConfigSelectorFilterV1(
-      server_config_selector_provider->Ref(), std::move(bottom_stack));
+      args->channel_args, server_config_selector_provider->Ref(),
+      std::move(bottom_stack));
   return absl::OkStatus();
 }
 
 ServerConfigSelectorFilterV1::ServerConfigSelectorFilterV1(
+    const ChannelArgs& args,
     RefCountedPtr<ServerConfigSelectorProvider> server_config_selector_provider,
     RefCountedPtr<const DynamicFilters> bottom_stack)
-    : server_config_selector_provider_(
+    : args_(args),
+      server_config_selector_provider_(
           std::move(server_config_selector_provider)),
       bottom_stack_(std::move(bottom_stack)) {
   GRPC_CHECK(server_config_selector_provider_ != nullptr);
@@ -229,9 +267,8 @@ void ServerConfigSelectorFilterV1::StartTransportOp(grpc_transport_op* op) {
 
 void ServerConfigSelectorFilterV1::BuildDynamicFilterChains(
     ServerConfigSelector& config_selector) {
-// FIXME: tell config selector to build filter chains
-// Note: builder needs to include ServerConfigSelectorFilterV1 object in
-// channel args
+  DynamicFilterChainBuilder builder(args_.SetObject(this));
+  config_selector.BuildFilterChains(builder);
 }
 
 absl::StatusOr<RefCountedPtr<ServerConfigSelector>>
@@ -338,16 +375,16 @@ void ServerConfigSelectorFilterV1::Call::StartTransportStreamOpBatch(
       return;
     }
     // Use config selector to choose dynamic filter stack.
-    auto dynamic_filter_stack = (*config_selector)->GetCallConfig(&md);
-    if (!dynamic_filter_stack.ok()) {
+    auto call_config = (*config_selector)->GetCallConfig(&md);
+    if (!call_config.ok()) {
 // FIXME
       grpc_transport_stream_op_batch_finish_with_failure(
-          batch, dynamic_filter_stack.status(), call_combiner_);
+          batch, call_config.status(), call_combiner_);
       return;
     }
     // Create call object on dynamic filter stack.
     auto dynamic_filters =
-        dynamic_filter_stack->TakeAsSubclass<const DynamicFilters>();
+        call_config->filter_chain.TakeAsSubclass<const DynamicFilters>();
     DynamicFilters::Call::Args args = {
       dynamic_filters, server_transport_data_, /*pollent=*/nullptr,
       call_start_time_, deadline_, arena_, call_combiner_};

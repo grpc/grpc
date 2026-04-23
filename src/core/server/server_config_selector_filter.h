@@ -98,6 +98,9 @@ class ServerConfigSelectorFilterV1 {
   // RPCs to the bottom filter stack.
   class ServerDynamicTerminationFilter;
 
+  // FilterChainBuilder impl to inject into ServerConfigSelector.
+  class DynamicFilterChainBuilder;
+
   // Watcher for ServerConfigSelector.
   class ServerConfigSelectorWatcher
       : public ServerConfigSelectorProvider::ServerConfigSelectorWatcher {
@@ -126,6 +129,7 @@ class ServerConfigSelectorFilterV1 {
   };
 
   ServerConfigSelectorFilterV1(
+      const ChannelArgs& args,
       RefCountedPtr<ServerConfigSelectorProvider>
           server_config_selector_provider,
       RefCountedPtr<const DynamicFilters> bottom_stack);
@@ -147,7 +151,8 @@ class ServerConfigSelectorFilterV1 {
   static absl::Status Init(grpc_channel_element* elem,
                            grpc_channel_element_args* args);
 
-  grpc_channel_stack* top_stack_;
+  grpc_channel_stack* top_stack_;  // FIXME: needed?
+  const ChannelArgs args_;
   const RefCountedPtr<ServerConfigSelectorProvider>
       server_config_selector_provider_;
   RefCountedPtr<const DynamicFilters> bottom_stack_;
