@@ -316,12 +316,11 @@ const grpc_channel_filter ServerConfigSelectorFilterV1::kFilterVtable = {
   [](grpc_call_element* elem, grpc_polling_entity* pollent) {
   },
   // destroy_call_elem
-  [](grpc_call_element* elem, const grpc_call_final_info* final_info,
+  [](grpc_call_element* elem, const grpc_call_final_info* /*final_info*/,
      grpc_closure* then_schedule_closure) {
-// FIXME: pass through then_schedule_closure and final_info?
     auto* calld =
         static_cast<ServerConfigSelectorFilterV1::Call*>(elem->call_data);
-    calld->~Call();
+    calld->Destroy(then_schedule_closure);
   },
   // sizeof_channel_data
   sizeof(ServerConfigSelectorFilterV1),
@@ -356,6 +355,17 @@ absl::Status ServerConfigSelectorFilterV1::Call::Init(
   arena_ = args->arena;
   call_combiner_ = args->call_combiner;
   return absl::OkStatus();
+}
+
+void ServerConfigSelectorFilterV1::Call::Destroy(
+    grpc_closure* then_schedule_closure) {
+  RefCountedPtr<DynamicFilters::Call> dynamic_call = std::move(dynamic_call_);
+  this->~Call();
+  if (dynamic_call != nullptr) {
+    dynamic_call->SetAfterCallStackDestroy(then_schedule_closure);
+  } else {
+    ExecCtx::Run(DEBUG_LOCATION, then_schedule_closure, absl::OkStatus());
+  }
 }
 
 void ServerConfigSelectorFilterV1::Call::StartTransportStreamOpBatch(
@@ -413,11 +423,23 @@ class ServerConfigSelectorFilterV1::ServerDynamicTerminationFilter {
     explicit Call(RefCountedPtr<DynamicFilters::Call> bottom_call_)
         : bottom_call_(std::move(bottom_call)) {}
 
+    void Destroy(grpc_closure* then_schedule_closure) {
+      RefCountedPtr<DynamicFilters::Call> bottom_call = std::move(bottom_call_);
+      this->~Call();
+      if (bottom_call != nullptr) {
+        bottom_call->SetAfterCallStackDestroy(then_schedule_closure);
+      } else {
+        ExecCtx::Run(DEBUG_LOCATION, then_schedule_closure, absl::OkStatus());
+      }
+    }
+
     void StartTransportStreamOpBatch(grpc_transport_stream_op_batch* batch) {
       bottom_call_->StartTransportStreamOpBatch(batch);
     }
 
    private:
+    ~Call() = default;
+
     RefCountedPtr<DynamicFilters::Call> bottom_call_;
   };
 
@@ -458,12 +480,11 @@ ServerConfigSelectorFilterV1::ServerDynamicTerminationFilter::kFilterVtable = {
   [](grpc_call_element* elem, grpc_polling_entity* pollent) {
   },
   // destroy_call_elem
-  [](grpc_call_element* elem, const grpc_call_final_info* final_info,
+  [](grpc_call_element* elem, const grpc_call_final_info* /*final_info*/,
      grpc_closure* then_schedule_closure) {
-// FIXME: pass through then_schedule_closure and final_info?
     auto* calld =
         static_cast<ServerDynamicTerminationFilter::Call*>(elem->call_data);
-    calld->~Call();
+    calld->Destroy(then_schedule_closure);
   },
   // sizeof_channel_data
   sizeof(ServerDynamicTerminationFilter),

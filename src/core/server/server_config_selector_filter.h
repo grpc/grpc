@@ -80,10 +80,14 @@ class ServerConfigSelectorFilterV1 {
     absl::Status Init(ServerConfigSelectorFilterV1* filter,
                       const grpc_call_element_args* args);
 
+    void Destroy(grpc_closure* then_schedule_closure);
+
     void StartTransportStreamOpBatch(ServerConfigSelectorFilterV1* filter,
                                      grpc_transport_stream_op_batch* batch);
 
    private:
+    ~Call() = default;
+
     grpc_call_stack* const owning_call_;
     const void* server_transport_data_;
     gpr_cycle_counter call_start_time_;
