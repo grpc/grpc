@@ -304,6 +304,9 @@ if [ -d "${FAILED_DIR}" ]; then
   for failed_file in "${FAILED_DIR}"/*; do
     if [ -e "$failed_file" ]; then
       filename=$(basename "$failed_file")
+      if [[ "$filename" == "STOP" ]]; then
+        continue
+      fi
       if [[ $filename == CHECK_FAILED_* ]]; then
         CHECK_FAILED=true
       else
