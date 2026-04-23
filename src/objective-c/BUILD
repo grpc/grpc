@@ -113,6 +113,7 @@ grpc_objc_library(
     ],
     deps = [
         ":grpc_objc_interface_legacy",
+        ":grpc_objc_interface_types",
     ],
 )
 
@@ -137,6 +138,7 @@ grpc_objc_library(
     deps = [
         ":grpc_objc_interface",
         ":grpc_objc_interface_legacy",
+        ":grpc_objc_interface_types",
         ":rx_library",
         ":rx_library_headers",
         "//:gpr",
@@ -198,9 +200,12 @@ grpc_objc_library(
     ],
     deps = [
         ":grpc_objc_client_core",
+        ":grpc_objc_interface",
+        ":grpc_objc_interface_legacy",
         ":proto_objc_rpc_legacy_header",
         ":proto_objc_rpc_v2",
         ":rx_library",
+        ":rx_library_headers",
         "@com_google_protobuf//:protobuf_objc",
     ],
 )
@@ -238,7 +243,11 @@ grpc_objc_library(
     deps = [
         ":grpc_objc_interface",
         ":grpc_objc_interface_legacy",
+        ":grpc_objc_interface_types",
         ":rx_library",
+        ":rx_library_headers",
+        "//:gpr",
+        "//:grpc_core_credentials_header",
         "//:grpc_objc",
     ],
 )
@@ -257,9 +266,14 @@ grpc_objc_library(
     ],
     deps = [
         ":grpc_objc_client_core_internal_testing",
+        ":grpc_objc_interface",
+        ":grpc_objc_interface_legacy",
+        ":grpc_objc_interface_types",
         ":proto_objc_rpc_legacy_header",
         ":proto_objc_rpc_v2",
         ":rx_library",
+        ":rx_library_headers",
+        "//:gpr",
         "@com_google_protobuf//:protobuf_objc",
     ],
 )
