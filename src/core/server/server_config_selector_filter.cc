@@ -212,26 +212,6 @@ ServerConfigSelectorFilterV1::ServerConfigSelectorFilterV1(
   }
 }
 
-void ServerConfigSelectorFilterV1::BuildDynamicFilterChains(
-    ServerConfigSelector& config_selector) {
-// FIXME: tell config selector to build filter chains
-}
-
-void ServerConfigSelectorFilterV1::StartTransportStreamOpBatch(
-    grpc_transport_stream_op_batch* batch) {
-  GRPC_LATENT_SEE_SCOPE(
-      "ServerConfigSelectorFilterV1::StartTransportStreamOpBatch");
-// FIXME: need to support batch queueing in case we get batches in the wrong order
-  if (batch->send_initial_metadata) {
-    auto config_selector = GetConfigSelector();
-    if (!config_selector.ok()) return config_selector.status();
-    auto dynamic_filter_stack = (*config_selector)->GetCallConfig(&md);
-    if (!dynamic_filter_stack.ok()) return dynamic_filter_stack.status();
-// FIXME: create call stack for dynamic call
-  }
-  return absl::OkStatus();
-}
-
 void ServerConfigSelectorFilterV1::StartTransportOp(grpc_transport_op* op) {
   // Propagate straight down to the bottom stack.
   // We don't bother sending this through the dynamic stack, because (a)
@@ -242,12 +222,25 @@ void ServerConfigSelectorFilterV1::StartTransportOp(grpc_transport_op* op) {
   elem->filter->start_transport_op(elem, op);
 }
 
+void ServerConfigSelectorFilterV1::BuildDynamicFilterChains(
+    ServerConfigSelector& config_selector) {
+// FIXME: tell config selector to build filter chains
+}
+
+absl::StatusOr<RefCountedPtr<ServerConfigSelector>>
+ServerConfigSelectorFilterV1::GetConfigSelector() {
+  MutexLock lock(&mu_);
+  return config_selector_.value();
+}
+
 const grpc_channel_filter ServerConfigSelectorFilterV1::kFilterVtable = {
   // start_transport_stream_op_batch
-  [](grpc_call_element* elem, grpc_transport_stream_op_batch* op) {
+  [](grpc_call_element* elem, grpc_transport_stream_op_batch* batch) {
     auto* chand =
         static_cast<ServerConfigSelectorFilterV1*>(elem->channel_data);
-    chand->StartTransportStreamOpBatch(op);
+    auto* calld =
+        static_cast<ServerConfigSelectorFilterV1::Call*>(elem->call_data);
+    calld->StartTransportStreamOpBatch(chand, batch);
   },
   // start_transport_op
   [](grpc_channel_element* elem, grpc_transport_op* op) {
@@ -256,10 +249,15 @@ const grpc_channel_filter ServerConfigSelectorFilterV1::kFilterVtable = {
     chand->StartTransportOp(op);
   },
   // sizeof_call_data
-  0,
+  sizeof(ServerConfigSelectorFilterV1::Call),
   // init_call_elem
   [](grpc_call_element* elem, const grpc_call_element_args* args) {
-    return absl::OkStatus();
+    auto* chand =
+        static_cast<ServerConfigSelectorFilterV1*>(elem->channel_data);
+    auto* calld =
+        static_cast<ServerConfigSelectorFilterV1::Call*>(elem->call_data);
+    new (calld) ServerConfigSelectorFilterV1::Call();
+    return calld->Init(chand, args);
   },
   // set_pollset_or_pollset_set
   [](grpc_call_element* elem, grpc_polling_entity* pollent) {
@@ -267,6 +265,10 @@ const grpc_channel_filter ServerConfigSelectorFilterV1::kFilterVtable = {
   // destroy_call_elem
   [](grpc_call_element* elem, const grpc_call_final_info* final_info,
      grpc_closure* then_schedule_closure) {
+// FIXME: pass through then_schedule_closure and final_info?
+    auto* calld =
+        static_cast<ServerConfigSelectorFilterV1::Call*>(elem->call_data);
+    calld->~Call();
   },
   // sizeof_channel_data
   sizeof(ServerConfigSelectorFilterV1),
@@ -287,6 +289,62 @@ const grpc_channel_filter ServerConfigSelectorFilterV1::kFilterVtable = {
   // name
   GRPC_UNIQUE_TYPE_NAME_HERE("server_config_selector_v1"),
 };
+
+//
+// ServerConfigSelectorFilterV1::Call
+//
+
+absl::Status ServerConfigSelectorFilterV1::Call::Init(
+    ServerConfigSelectorFilterV1* filter, const grpc_call_element_args* args) {
+  owning_call_ = args->call_stack;
+  server_transport_data_ = args->server_transport_data;
+  call_start_time_ = args->start_time;
+  deadline_ = args->deadline;
+  arena_ = args->arena;
+  call_combiner_ = args->call_combiner_;
+  return absl::OkStatus();
+}
+
+void ServerConfigSelectorFilterV1::Call::StartTransportStreamOpBatch(
+    ServerConfigSelectorFilterV1* filter,
+    grpc_transport_stream_op_batch* batch) {
+  GRPC_LATENT_SEE_SCOPE(
+      "ServerConfigSelectorFilterV1::Call::StartTransportStreamOpBatch");
+// FIXME: need to support batch queueing in case we get batches in the wrong order
+// -- steal logic from client channel code
+  if (batch->send_initial_metadata) {
+    auto config_selector = filter->GetConfigSelector();
+    if (!config_selector.ok()) {
+// FIXME
+      grpc_transport_stream_op_batch_finish_with_failure(
+          batch, config_selector.status(), call_combiner_);
+      return;
+    }
+    auto dynamic_filter_stack = (*config_selector)->GetCallConfig(&md);
+    if (!dynamic_filter_stack.ok()) {
+// FIXME
+      grpc_transport_stream_op_batch_finish_with_failure(
+          batch, dynamic_filter_stack.status(), call_combiner_);
+      return;
+    }
+// FIXME: create call stack for dynamic call
+    dynamic_filters_ =
+        dynamic_filter_stack->TakeAsSubclass<const DynamicFilters>();
+// FIXME: need to plumb server_transport_data_ down through dynamic filters
+    DynamicFilters::Call::Args args = {
+      dynamic_filters_, /*pollent=*/nullptr, call_start_time_,
+      deadline_, arena_, call_combiner_,
+    };
+    absl::Status error;
+    dynamic_call_ = dynamic_filters_->CreateCall(std::move(args), &error);
+    if (!error.ok()) {
+// FIXME
+      grpc_transport_stream_op_batch_finish_with_failure(batch, error,
+                                                         call_combiner_);
+      return;
+    }
+  }
+}
 
 //
 // ServerConfigSelectorFilterV1::BottomCall

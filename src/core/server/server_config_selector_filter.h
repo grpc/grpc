@@ -31,8 +31,7 @@ extern const grpc_channel_filter kServerConfigSelectorFilter;
 // filters needed for each connection.  However, when using dynamic
 // filters, the filters are split into 3 stacks:
 //
-// - The top filter stack, of type GRPC_SERVER_TOP_CHANNEL.  This filter
-//   is the final filter in that stack.
+// - The top filter stack, of type GRPC_SERVER_TOP_CHANNEL.
 //
 // - The dynamic filter stack, which is dynamically configured.
 //
@@ -47,9 +46,10 @@ extern const grpc_channel_filter kServerConfigSelectorFilter;
 // be set, and once in the GRPC_SERVER_TOP_CHANNEL stack with no such
 // condition.  This ensures that they are in the right place in both modes.
 //
-// The job of this filter is to use the ServerConfigSelector to choose
-// the right dynamic filter stack for each RPC and run the RPC through
-// that filter stack before sending it on to the bottom filter stack.
+// This filter is the final filter in the top filter stack.  Its job is to
+// use the ServerConfigSelector to choose the right dynamic filter stack
+// for each RPC and run the RPC through that filter stack before sending
+// it on to the bottom filter stack.
 //
 // This filter will get the ServerConfigSelectorProvider from channel
 // args and start a watch on it.  Whenever the watcher delivers a new
@@ -64,11 +64,31 @@ class ServerConfigSelectorFilterV1 {
 
   explicit ServerConfigSelectorFilterV1(const ChannelArgs& args);
 
-  void StartTransportStreamOpBatch(grpc_transport_stream_op_batch* batch);
-
   void StartTransportOp(grpc_transport_op* op);
 
  private:
+  // The call data for this filter, which is the final filter in the top
+  // filter stack.
+  class Call {
+   public:
+    absl::Status Init(ServerConfigSelectorFilterV1* filter,
+                      const grpc_call_element_args* args);
+
+    void StartTransportStreamOpBatch(ServerConfigSelectorFilterV1* filter,
+                                     grpc_transport_stream_op_batch* batch);
+
+   private:
+    grpc_call_stack* const owning_call_;
+    void* server_transport_data_;
+    gpr_cycle_counter call_start_time_;
+    Timestamp deadline_;
+    Arena* const arena_;
+    CallCombiner* const call_combiner_;
+
+    RefCountedPtr<const DynamicFilters> dynamic_filters_;
+    RefCountedPtr<DynamicFilters::Call> dynamic_call_;
+  };
+
   // The final filter in each dynamic filter stack.  Used to propagate
   // RPCs to the bottom filter stack.
   class ServerDynamicTerminationFilter;
@@ -141,7 +161,7 @@ class ServerConfigSelectorFilterV1 {
   void BuildDynamicFilterChains(ServerConfigSelector& config_selector);
 
   // Gets the current ServerConfigSelector to use for an RPC.
-  RefCountedPtr<ServerConfigSelector> GetConfigSelector();
+  absl::StatusOr<RefCountedPtr<ServerConfigSelector>> GetConfigSelector();
 
   // Constructs a BottomCall object.  Called when each RPC hits the last
   // filter in the dynamic filter stack.
