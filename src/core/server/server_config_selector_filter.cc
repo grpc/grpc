@@ -450,8 +450,7 @@ void ServerConfigSelectorFilterV1::Call::StartTransportStreamOpBatch(
         call_config->filter_chain.TakeAsSubclass<const DynamicFilters>();
     DynamicFilters::Call::Args args = {
         dynamic_filters,     server_transport_data_,
-        /*pollent=*/nullptr, call_start_time_,
-        deadline_,           arena_,
+        /*pollent=*/nullptr, call_start_time_,       deadline_, arena_,
         call_combiner_};
     absl::Status error;
     dynamic_call_ = dynamic_filters->CreateCall(std::move(args), &error);

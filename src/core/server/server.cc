@@ -1347,11 +1347,22 @@ grpc_error_handle Server::SetupTransport(Transport* transport,
     stream_quota_->IncrementOpenChannels();
   } else {
     GRPC_CHECK(transport->filter_stack_transport() != nullptr);
+    // If there is a ServerConfigSelectorProvider in channel args, then
+    // we are using dynamic filters.  That tells us to use
+    // GRPC_SERVER_TOP_CHANNEL instead of GRPC_SERVER_CHANNEL, so that
+    // we include only the top filters.  The last filter in this stack
+    // is ServerConfigSelectorFilter, which will handle creation of the
+    // dynamic and bottom stacks.
+    grpc_channel_stack_type channel_stack_type =
+        (IsXdsServerFilterChainPerRouteEnabled() &&
+         args.Contains(ServerConfigSelectorProvider::ChannelArgName()))
+            ? GRPC_SERVER_TOP_CHANNEL
+            : GRPC_SERVER_CHANNEL;
     absl::StatusOr<RefCountedPtr<Channel>> channel = LegacyChannel::Create(
         "",
         args.SetObject(transport).SetObject<channelz::BaseNode>(
             transport->GetSocketNode()),
-        GRPC_SERVER_CHANNEL, blackboard);
+        channel_stack_type, blackboard);
     if (!channel.ok()) {
       return absl_status_to_grpc_error(channel.status());
     }

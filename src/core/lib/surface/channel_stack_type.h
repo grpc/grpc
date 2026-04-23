@@ -19,7 +19,37 @@
 #ifndef GRPC_SRC_CORE_LIB_SURFACE_CHANNEL_STACK_TYPE_H
 #define GRPC_SRC_CORE_LIB_SURFACE_CHANNEL_STACK_TYPE_H
 
-#include <grpc/support/port_platform.h>
+// Normally (when dynamic filters are not used), the server creates a
+// single filter stack of type GRPC_SERVER_CHANNEL that contains all
+// necessary filters.
+//
+// However, when using dynamic filters are used (i.e., when there is a
+// ServerConfigSelectorProvider object in channel args), the filters are
+// split into 3 stacks:
+//
+// - The top filter stack, of type GRPC_SERVER_TOP_CHANNEL.
+//
+// - The dynamic filter stack, which is dynamically configured.
+//
+// - The bottom filter stack, of type GRPC_SERVER_CHANNEL, which will
+//   always have the GRPC_ARG_BELOW_DYNAMIC_FILTERS channel arg set.
+//
+// In this case, the server creates a filter stack of type
+// GRPC_SERVER_TOP_CHANNEL.  The last filter in this stack is
+// ServerConfigSelectorFilter, which is responsible for creating the
+// dynamic filter stacks and the bottom filter stack.  It will then use
+// the ServerConfigSelector to determine which dynamic filter stack to use
+// for each RPC.
+//
+// Note that we use the GRPC_SERVER_CHANNEL filter stack type for both the
+// single stack when dynamic filters are not used and for the bottom stack
+// when dynamic filters are used.  Therefore, filters that need to run above
+// dynamic filters should be registered twice:
+// 1. For channel stack type GRPC_SERVER_CHANNEL, with a restriction
+//    that this channel arg must NOT be set.
+// 2. For channel stack type GRPC_SERVER_TOP_CHANNEL.
+// This ensures that they are in the right place in both modes.
+#define GRPC_ARG_BELOW_DYNAMIC_FILTERS "grpc.internal.below_dynamic_filters"
 
 typedef enum {
   // normal top-half client channel with load-balancing, connection management
@@ -36,6 +66,8 @@ typedef enum {
   GRPC_CLIENT_DIRECT_CHANNEL,
   // server side channel
   GRPC_SERVER_CHANNEL,
+  // server top channel (above dynamic filters)
+  GRPC_SERVER_TOP_CHANNEL,
   // must be last
   GRPC_NUM_CHANNEL_STACK_TYPES
 } grpc_channel_stack_type;

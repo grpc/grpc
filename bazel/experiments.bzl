@@ -70,6 +70,7 @@ EXPERIMENT_ENABLES = {
     "use_call_event_engine_in_completion_queue": "use_call_event_engine_in_completion_queue",
     "wildcard_ip_expansion_restriction": "wildcard_ip_expansion_restriction",
     "xds_channel_filter_chain_per_route": "xds_channel_filter_chain_per_route",
+    "xds_server_filter_chain_per_route": "xds_server_filter_chain_per_route",
 }
 
 EXPERIMENT_POLLERS = [
@@ -203,6 +204,12 @@ EXPERIMENTS = {
             ],
             "secure_endpoint_test": [
                 "pipelined_read_secure_endpoint",
+            ],
+            "xds_end2end_test": [
+                "xds_server_filter_chain_per_route",
+            ],
+            "xds_test": [
+                "xds_server_filter_chain_per_route",
             ],
         },
         "on": {

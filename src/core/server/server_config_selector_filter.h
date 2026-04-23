@@ -26,10 +26,7 @@ extern const grpc_channel_filter kServerConfigSelectorFilter;
 
 // This filter handles injection of dynamic filters for server connections.
 //
-// Normally (when dynamic filters are not used), the server creates a
-// single filter stack of type GRPC_SERVER_CHANNEL that contains all
-// filters needed for each connection.  However, when using dynamic
-// filters, the filters are split into 3 stacks:
+// When using dynamic filters, the filters are split into 3 stacks:
 //
 // - The top filter stack, of type GRPC_SERVER_TOP_CHANNEL.
 //
@@ -37,14 +34,6 @@ extern const grpc_channel_filter kServerConfigSelectorFilter;
 //
 // - The bottom filter stack, of type GRPC_SERVER_CHANNEL, which will
 //   always have the GRPC_ARG_BELOW_DYNAMIC_FILTERS channel arg set.
-//
-// Note that we use the same filter stack type for both the single stack
-// when dynamic filters are not used and for the bottom stack when
-// dynamic filters are used.  Filters that need to run above dynamic
-// filters are registered twice: once in the GRPC_SERVER_CHANNEL stack
-// with a condition that the GRPC_ARG_BELOW_DYNAMIC_FILTERS arg must not
-// be set, and once in the GRPC_SERVER_TOP_CHANNEL stack with no such
-// condition.  This ensures that they are in the right place in both modes.
 //
 // This filter is the final filter in the top filter stack.  Its job is to
 // use the ServerConfigSelector to choose the right dynamic filter stack

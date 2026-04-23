@@ -23,10 +23,12 @@
 #include "src/core/handshaker/endpoint_info/endpoint_info_handshaker.h"
 #include "src/core/handshaker/http_connect/http_connect_client_handshaker.h"
 #include "src/core/handshaker/tcp_connect/tcp_connect_handshaker.h"
+#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/surface/lame_client.h"
 #include "src/core/server/server.h"
 #include "src/core/server/server_call_tracer_filter.h"
+#include "src/core/server/server_config_selector_filter.h"
 
 namespace grpc_event_engine {
 namespace experimental {
@@ -84,10 +86,37 @@ void RegisterBuiltins(CoreConfiguration::Builder* builder) {
   builder->channel_init()
       ->RegisterV2Filter<LameClientFilter>(GRPC_CLIENT_LAME_CHANNEL)
       .Terminal();
-  builder->channel_init()
-      ->RegisterFilter(GRPC_SERVER_CHANNEL, &Server::kServerTopFilter)
-      .SkipV3()
-      .BeforeAll();
+  if (!IsXdsServerFilterChainPerRouteEnabled()) {
+    builder->channel_init()
+        ->RegisterFilter(GRPC_SERVER_CHANNEL, &Server::kServerTopFilter)
+        .SkipV3()
+        .BeforeAll();
+  } else {
+    // Register server top filter twice:
+    // - For GRPC_SERVER_CHANNEL, only if GRPC_ARG_BELOW_DYNAMIC_FILTERS
+    //   is *not* set.  This covers the case where dynamic filters are
+    //   *not* used.
+    // - For GRPC_SERVER_TOP_CHANNEL.  This covers the case where
+    //   dynamic filters *are* used.
+    // See the comment in channel_stack_type.h for details.
+    builder->channel_init()
+        ->RegisterFilter(GRPC_SERVER_CHANNEL, &Server::kServerTopFilter)
+        .SkipV3()
+        .If([](const ChannelArgs& args) {
+          return !args.Contains(GRPC_ARG_BELOW_DYNAMIC_FILTERS);
+        })
+        .BeforeAll();
+    builder->channel_init()
+        ->RegisterFilter(GRPC_SERVER_TOP_CHANNEL, &Server::kServerTopFilter)
+        .SkipV3()
+        .BeforeAll();
+    // Also register the server config selector filter.
+    builder->channel_init()
+        ->RegisterFilter(GRPC_SERVER_TOP_CHANNEL,
+                         &ServerConfigSelectorFilterV1::kFilterVtable)
+        .SkipV3()
+        .Terminal();
+  }
 }
 
 }  // namespace
