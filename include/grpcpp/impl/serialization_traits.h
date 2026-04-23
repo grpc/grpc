@@ -54,7 +54,8 @@ namespace grpc {
 ///
 /// Deserialize is required to convert buffer into the message stored at
 /// msg. max_receive_message_size is passed in as a bound on the maximum
-/// number of message bytes Deserialize should accept.
+/// number of message bytes Deserialize should accept. Deserialize implementations
+/// are responsible for freeing the ByteBuffer by calling buffer->Clear().
 ///
 /// Both functions return a Status, allowing them to explain what went
 /// wrong if required.
