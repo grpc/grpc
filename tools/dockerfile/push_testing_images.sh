@@ -141,6 +141,7 @@ process_dockerfile() {
   if [ "${HOST_ARCH_ONLY}" != "" ]; then
     [[ "$(uname -m)" == aarch64 ]] && local is_host_arm=1 || local is_host_arm=0
     local is_docker_for_arm=0
+    local ARM_DOCKERFILE_DIR_ITEM
     for ARM_DOCKERFILE_DIR_ITEM in "${ARM_DOCKERFILE_DIRS[@]}"; do
       if [ "$DOCKERFILE_DIR" == "$ARM_DOCKERFILE_DIR_ITEM" ]; then
         is_docker_for_arm=1
