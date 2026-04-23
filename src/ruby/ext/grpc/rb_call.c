@@ -782,7 +782,7 @@ static VALUE grpc_run_batch_stack_build_result(run_batch_stack* st) {
                 grpc_rb_sStatus, UINT2NUM(st->recv_status),
                 (GRPC_SLICE_START_PTR(st->recv_status_details) == NULL
                      ? Qnil
-                     : grpc_rb_slice_to_ruby_string(st->recv_status_details)),
+                     : grpc_rb_slice_to_utf8_ruby_string(st->recv_status_details)),
                 grpc_rb_md_ary_to_h(&st->recv_trailing_metadata),
                 st->recv_status_debug_error_string == NULL
                     ? Qnil
