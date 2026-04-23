@@ -271,15 +271,8 @@ process_dockerfile() {
   fi
 }
 
-# Expand the globs into an array
-EXPANDED_DOCKERFILE_DIRS=()
-for DOCKERFILE_DIR in "${ALL_DOCKERFILE_DIRS[@]}"
-do
-  EXPANDED_DOCKERFILE_DIRS+=("${DOCKERFILE_DIR}")
-done
-
 # Run builds in parallel
-for DOCKERFILE_DIR in "${EXPANDED_DOCKERFILE_DIRS[@]}"
+for DOCKERFILE_DIR in "${ALL_DOCKERFILE_DIRS[@]}"
 do
   if [ -e "${FAILED_DIR}/STOP" ]; then
     break
