@@ -225,6 +225,10 @@ void Http2ClientTransport::Orphan() {
   SourceDestructing();
   MaybeSpawnCloseTransport(
       ToHttpOkOrConnError(absl::UnavailableError("Orphaned")));
+  {
+    MutexLock lock(&transport_mutex_);
+    endpoint_ = PromiseEndpoint();
+  }
   Unref();
   GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport::Orphan End";
 }

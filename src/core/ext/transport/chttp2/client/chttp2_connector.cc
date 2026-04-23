@@ -157,9 +157,20 @@ void Chttp2Connector::Connect(const Args& args, Result* result,
 void Chttp2Connector::Shutdown(grpc_error_handle error) {
   MutexLock lock(&mu_);
   shutdown_ = true;
+  if (timer_handle_.has_value()) {
+    event_engine_->Cancel(*timer_handle_);
+    timer_handle_.reset();
+  }
   if (handshake_mgr_ != nullptr) {
     // Handshaker will also shutdown the endpoint if it exists
     handshake_mgr_->Shutdown(error);
+  }
+}
+
+Chttp2Connector::~Chttp2Connector() {
+  MutexLock lock(&mu_);
+  if (timer_handle_.has_value()) {
+    event_engine_->Cancel(*timer_handle_);
   }
 }
 

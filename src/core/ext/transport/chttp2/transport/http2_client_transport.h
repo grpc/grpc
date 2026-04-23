@@ -182,22 +182,42 @@ class Http2ClientTransport final : public ClientTransport,
   // resolved or cancelled.
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto EndpointReadSlice(
       const size_t num_bytes) {
-    return Map(endpoint_.ReadSlice(num_bytes),
-               [this, num_bytes](absl::StatusOr<Slice>&& status) {
-                 OnEndpointRead(status.ok(), num_bytes);
-                 return std::move(status);
-               });
+    return If(
+        [this]() {
+          MutexLock lock(&transport_mutex_);
+          return is_transport_closed_;
+        },
+        []() -> Poll<absl::StatusOr<Slice>> {
+          return absl::CancelledError("Transport closed");
+        },
+        [this, num_bytes]() {
+          return Map(endpoint_.ReadSlice(num_bytes),
+                     [this, num_bytes](absl::StatusOr<Slice>&& status) {
+                       OnEndpointRead(status.ok(), num_bytes);
+                       return std::move(status);
+                     });
+        });
   }
 
   // Callers MUST ensure that the transport is not destroyed till the promise is
   // resolved or cancelled.
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto EndpointRead(
       const size_t num_bytes) {
-    return Map(endpoint_.Read(num_bytes),
-               [this, num_bytes](absl::StatusOr<SliceBuffer>&& status) {
-                 OnEndpointRead(status.ok(), num_bytes);
-                 return std::move(status);
-               });
+    return If(
+        [this]() {
+          MutexLock lock(&transport_mutex_);
+          return is_transport_closed_;
+        },
+        []() -> Poll<absl::StatusOr<SliceBuffer>> {
+          return absl::CancelledError("Transport closed");
+        },
+        [this, num_bytes]() {
+          return Map(endpoint_.Read(num_bytes),
+                     [this, num_bytes](absl::StatusOr<SliceBuffer>&& status) {
+                       OnEndpointRead(status.ok(), num_bytes);
+                       return std::move(status);
+                     });
+        });
   }
 
   void OnEndpointRead(const bool is_ok, const size_t num_bytes) {
