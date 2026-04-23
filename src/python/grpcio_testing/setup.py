@@ -71,11 +71,6 @@ except ImportError:
         "preprocess": _NoOpCommand,
     }
 
-CLASSIFIERS = [
-    "Programming Language :: Python",
-    "Programming Language :: Python :: 3",
-]
-
 if __name__ == "__main__":
     setuptools.setup(
         python_requires=f">={python_version.MIN_PYTHON_VERSION}",

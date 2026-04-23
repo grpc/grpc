@@ -26,7 +26,7 @@ description = "gRPC Python CSM observability package"
 readme = {file = "README.rst", content-type = "text/x-rst"}
 authors = [{name = "The gRPC Authors", email = "grpc-io@googlegroups.com"}]
 
-dynamic = ["dependencies", "version", "requires-python"]
+dynamic = ["dependencies", "version", "requires-python", "classifiers"]
 
 [project.urls]
 Homepage = "https://grpc.io"
