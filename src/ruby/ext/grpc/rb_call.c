@@ -53,10 +53,6 @@ VALUE grpc_rb_cMdAry;
  * of the credentials added to the call */
 static ID id_credentials;
 
-/* id_metadata is name of the attribute used to access the metadata hash
- * received by the call and subsequently saved on it. */
-static ID id_metadata;
-
 /* id_trailing_metadata is the name of the attribute used to access the trailing
  * metadata hash received by the call and subsequently saved on it. */
 static ID id_trailing_metadata;
@@ -285,30 +281,6 @@ static VALUE grpc_rb_call_set_status(VALUE self, VALUE status) {
   }
 
   return rb_ivar_set(self, id_status, status);
-}
-
-/*
-  call-seq:
-  metadata = call.metadata
-
-  Gets the metadata object saved the call.  */
-static VALUE grpc_rb_call_get_metadata(VALUE self) {
-  return rb_ivar_get(self, id_metadata);
-}
-
-/*
-  call-seq:
-  call.metadata = metadata
-
-  Saves the metadata hash on the call.  */
-static VALUE grpc_rb_call_set_metadata(VALUE self, VALUE metadata) {
-  if (!NIL_P(metadata) && TYPE(metadata) != T_HASH) {
-    rb_raise(rb_eTypeError, "bad metadata: got:<%s> want: <Hash>",
-             rb_obj_classname(metadata));
-    return Qnil;
-  }
-
-  return rb_ivar_set(self, id_metadata, metadata);
 }
 
 /*
@@ -1013,8 +985,6 @@ void Init_grpc_call() {
   rb_define_method(grpc_rb_cCall, "peer_cert", grpc_rb_call_get_peer_cert, 0);
   rb_define_method(grpc_rb_cCall, "status", grpc_rb_call_get_status, 0);
   rb_define_method(grpc_rb_cCall, "status=", grpc_rb_call_set_status, 1);
-  rb_define_method(grpc_rb_cCall, "metadata", grpc_rb_call_get_metadata, 0);
-  rb_define_method(grpc_rb_cCall, "metadata=", grpc_rb_call_set_metadata, 1);
   rb_define_method(grpc_rb_cCall, "trailing_metadata",
                    grpc_rb_call_get_trailing_metadata, 0);
   rb_define_method(grpc_rb_cCall,
@@ -1026,7 +996,6 @@ void Init_grpc_call() {
                    grpc_rb_call_set_credentials, 1);
 
   /* Ids used to support call attributes */
-  id_metadata = rb_intern("metadata");
   id_trailing_metadata = rb_intern("trailing_metadata");
   id_status = rb_intern("status");
   id_write_flag = rb_intern("write_flag");
