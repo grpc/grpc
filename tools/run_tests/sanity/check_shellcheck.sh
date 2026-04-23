@@ -24,6 +24,4 @@ DIRS=(
     'tools/run_tests'
 )
 
-for dir in "${DIRS[@]}"; do
-  find "$ROOT/$dir/" -name "*.sh" -type f -print0 | xargs -n1 -0 shellcheck
-done
+find "${DIRS[@]/#/$ROOT/}" -name "*.sh" -type f -print0 | xargs -0 -P 0 -n1 shellcheck

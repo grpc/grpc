@@ -44,15 +44,11 @@ pip install --upgrade astroid==2.15.8 pylint==2.17.7 "isort~=5.11"
 pip list
 
 EXIT=0
-for dir in "${DIRS[@]}"; do
-  pylint --rcfile=.pylintrc -rn "$dir" || EXIT=1
-done
+pylint --rcfile=.pylintrc -rn -j 0 "${DIRS[@]}" || EXIT=1
 
-for dir in "${TEST_DIRS[@]}"; do
-  pylint --rcfile=.pylintrc-tests -rn "$dir" || EXIT=1
-done
+pylint --rcfile=.pylintrc-tests -rn -j 0 "${TEST_DIRS[@]}" || EXIT=1
 
 find examples/python -iname "*.py" -not -name "*_pb2*.py" \
-  | xargs pylint --rcfile=.pylintrc-examples -rn
+  | xargs pylint --rcfile=.pylintrc-examples -rn -j 0 || EXIT=1
 
 exit $EXIT
