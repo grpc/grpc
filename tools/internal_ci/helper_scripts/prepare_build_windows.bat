@@ -29,9 +29,7 @@ if not exist C:\Python310\python.exe (
 )
 
 @rem create "python3" link that normally doesn't exist
-if not exist C:\Python310\python3.exe (
-  copy C:\Python310\python.exe C:\Python310\python3.exe
-)
+mklink C:\Python310\python3.exe C:\Python310\python.exe
 
 python --version
 python3 --version
