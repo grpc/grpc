@@ -17,7 +17,7 @@ set -ex
 
 GIT_ROOT="$(pwd)"
 
-cd test/bazel_build_out_of_tree/bzlmod_test
+cd test/bazel_build_out_of_tree/protobuf_34
 
 # Build the same targets as .bcr/presubmit.yml so we are more confident with
 # releases.
@@ -37,19 +37,3 @@ $GIT_ROOT/tools/bazel \
     "@grpc//:grpcpp_csds" \
     "@grpc//:grpcpp_orca_service" \
     "@grpc//examples/protos/..."
-
-# Adapted from tools/bazelify_tests/test/bazel_build_with_bzlmod_linux.sh
-# Some nobuild tests for bzlmod dependency check.
-$GIT_ROOT/tools/bazel \
-    build \
-    --nobuild \
-    -- \
-    "@grpc//:all" \
-    "-@grpc//:grpcpp_csm_observability"
-
-$GIT_ROOT/tools/bazel \
-    build \
-    --nobuild \
-    -- \
-    "@grpc//examples/cpp/..." \
-    "-@grpc//examples/cpp/csm/..."
