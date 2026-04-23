@@ -23,11 +23,15 @@ set PATH=C:\tools\msys64\usr\bin;C:\Python310;C:\Program Files\CMake\bin;%PATH%
 @rem Print image ID of the windows kokoro image being used.
 cat C:\image_id.txt
 
-@rem install python 3.10 with retry in case of network errors
-bash "tools/internal_ci/helper_scripts/choco_install_with_retry.sh" python --no-progress --version=3.10.11 || goto :error
+@rem install python 3.10 if not already present
+if not exist C:\Python310\python.exe (
+  bash "tools/internal_ci/helper_scripts/choco_install_with_retry.sh" python310 --no-progress || goto :error
+)
 
 @rem create "python3" link that normally doesn't exist
-mklink C:\Python310\python3.exe C:\Python310\python.exe
+if not exist C:\Python310\python3.exe (
+  mklink C:\Python310\python3.exe C:\Python310\python.exe
+)
 
 python --version
 python3 --version
