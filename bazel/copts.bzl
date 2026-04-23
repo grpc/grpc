@@ -71,6 +71,8 @@ GRPC_LLVM_WARNING_FLAGS = [
     # An example offending file:
     # https://github.com/grpc/grpc/blob/8f62888c32e83327375670e46325a9cb5b51bde1/test/cpp/interop/xds_interop_client.cc#L147
     "-Wno-unused-variable",
+    # test/cpp/qps/driver.cc:376
+    "-Wno-unused-but-set-variable",
 ]
 
 GRPC_LLVM_WINDOWS_WARNING_FLAGS = GRPC_LLVM_WARNING_FLAGS + [
