@@ -18,24 +18,37 @@
 
 # Ensure package to install is provided
 if [ -z "$1" ]; then
-    echo "Error: No package name provided to install with choco."
-    exit 1
+  echo "Error: No package name provided to install with choco."
+  exit 1
 fi
 
 PACKAGE=$1
 shift
-MAX_RETRIES=3
 
-echo "Installing $PACKAGE using 'choco'"
+MAX_RETRIES=4
+# Initial delay, will grow exponentially
+delay=5
+# Initial exit code.
+exit_code=1
 
-for ((i=1; i<=MAX_RETRIES; i++)); do
-    choco install "$PACKAGE" -y "$@" && exit 0
+PS4='+ $(date "+[%H:%M:%S %Z]")\011 '
+set -x
 
-    if [ $i -lt $MAX_RETRIES ]; then
-      echo "Attempt $i to install $PACKAGE failed. Retrying..."
-      sleep 3
-    fi
+echo "Installing '${PACKAGE} 'using 'choco'"
+
+for ((i = 1; i <= MAX_RETRIES; i++)); do
+  choco install "$PACKAGE" -y "$@"
+  exit_code=$?
+  (( exit_code == 0 )) && exit 0
+
+  if ((i < MAX_RETRIES)); then
+    echo "Attempt $i to install '${PACKAGE}' failed. Retrying in ${delay} seconds..."
+    sleep "${delay}"
+
+    # Exponential backoff.
+    delay=$(( delay * 5 ))
+  fi
 done
 
-echo "All attempts to install $PACKAGE failed. Exiting..."
-exit 1
+echo "All attempts to install '${PACKAGE}' failed. Exiting..."
+exit "${exit_code}"
