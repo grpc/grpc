@@ -169,7 +169,7 @@ module GRPC
     def intercept!(type, args = {})
       return yield if @interceptors.none?
 
-      i = @interceptors.pop
+      i = @interceptors.shift
       return yield unless i
 
       i.send(type, **args) do
