@@ -132,9 +132,8 @@ void DynamicFilters::Call::IncrementRefCount(const DebugLocation& /*location*/,
 namespace {
 
 absl::StatusOr<RefCountedPtr<grpc_channel_stack>> CreateChannelStack(
-    grpc_channel_stack_type channel_stack_type,
-    const ChannelArgs& args, std::vector<FilterAndConfig> filters,
-    const Blackboard* blackboard) {
+    grpc_channel_stack_type channel_stack_type, const ChannelArgs& args,
+    std::vector<FilterAndConfig> filters, const Blackboard* blackboard) {
   ChannelStackBuilderImpl builder("DynamicFilters", channel_stack_type, args);
   builder.SetBlackboard(blackboard);
   for (auto& [filter, config] : filters) {
@@ -146,9 +145,8 @@ absl::StatusOr<RefCountedPtr<grpc_channel_stack>> CreateChannelStack(
 }  // namespace
 
 RefCountedPtr<DynamicFilters> DynamicFilters::Create(
-    grpc_channel_stack_type channel_stack_type,
-    const ChannelArgs& args, std::vector<FilterAndConfig> filters,
-    const Blackboard* blackboard) {
+    grpc_channel_stack_type channel_stack_type, const ChannelArgs& args,
+    std::vector<FilterAndConfig> filters, const Blackboard* blackboard) {
   // Attempt to create channel stack from requested filters.
   auto p = CreateChannelStack(channel_stack_type, args, std::move(filters),
                               blackboard);

@@ -278,73 +278,76 @@ ServerConfigSelectorFilterV1::GetConfigSelector() {
 }
 
 RefCountedPtr<DynamicFilters::Call>
-ServerConfigSelectorFilterV1::MakeBottomCall(
-    const grpc_call_element_args& args, absl::Status* error) {
+ServerConfigSelectorFilterV1::MakeBottomCall(const grpc_call_element_args& args,
+                                             absl::Status* error) {
   DynamicFilters::Call::Args call_args = {
-      bottom_stack_, args.server_transport_data, /*pollent=*/nullptr,
-      args.start_time, args.deadline, args.arena, args.call_combiner};
+      bottom_stack_,       args.server_transport_data,
+      /*pollent=*/nullptr, args.start_time,
+      args.deadline,       args.arena,
+      args.call_combiner};
   return bottom_stack_->CreateCall(std::move(call_args), error);
 }
 
 const grpc_channel_filter ServerConfigSelectorFilterV1::kFilterVtable = {
-  // start_transport_stream_op_batch
-  [](grpc_call_element* elem, grpc_transport_stream_op_batch* batch) {
-    auto* chand =
-        static_cast<ServerConfigSelectorFilterV1*>(elem->channel_data);
-    auto* calld =
-        static_cast<ServerConfigSelectorFilterV1::Call*>(elem->call_data);
-    calld->StartTransportStreamOpBatch(chand, batch);
-  },
-  // start_transport_op
-  [](grpc_channel_element* elem, grpc_transport_op* op) {
-    auto* chand =
-        static_cast<ServerConfigSelectorFilterV1*>(elem->channel_data);
-    chand->StartTransportOp(op);
-  },
-  // sizeof_call_data
-  sizeof(ServerConfigSelectorFilterV1::Call),
-  // init_call_elem
-  [](grpc_call_element* elem, const grpc_call_element_args* args) {
-    auto* chand =
-        static_cast<ServerConfigSelectorFilterV1*>(elem->channel_data);
-    auto* calld =
-        static_cast<ServerConfigSelectorFilterV1::Call*>(elem->call_data);
-    new (calld) ServerConfigSelectorFilterV1::Call();
-    return calld->Init(chand, args);
-  },
-  // set_pollset_or_pollset_set
-  [](grpc_call_element* elem, grpc_polling_entity* pollent) {
-  },
-  // destroy_call_elem
-  [](grpc_call_element* elem, const grpc_call_final_info* /*final_info*/,
-     grpc_closure* then_schedule_closure) {
-    auto* calld =
-        static_cast<ServerConfigSelectorFilterV1::Call*>(elem->call_data);
-    calld->Destroy(then_schedule_closure);
-  },
-  // sizeof_channel_data
-  sizeof(ServerConfigSelectorFilterV1),
-  // init_channel_elem
-  ServerConfigSelectorFilterV1::Init,
-  // post_init_channel_elem
-  [](grpc_channel_stack* stk, grpc_channel_element* elem) {
-  },
-  // destroy_channel_elem
-  [](grpc_channel_element* elem) {
-    auto* chand =
-        static_cast<ServerConfigSelectorFilterV1*>(elem->channel_data);
-    chand->~ServerConfigSelectorFilterV1();
-  },
-  // get_channel_info
-  [](grpc_channel_element* elem, const grpc_channel_info* channel_info) {
-  },
-  // name
-  GRPC_UNIQUE_TYPE_NAME_HERE("server_config_selector_v1"),
+    // start_transport_stream_op_batch
+    [](grpc_call_element* elem, grpc_transport_stream_op_batch* batch) {
+      auto* chand =
+          static_cast<ServerConfigSelectorFilterV1*>(elem->channel_data);
+      auto* calld =
+          static_cast<ServerConfigSelectorFilterV1::Call*>(elem->call_data);
+      calld->StartTransportStreamOpBatch(chand, batch);
+    },
+    // start_transport_op
+    [](grpc_channel_element* elem, grpc_transport_op* op) {
+      auto* chand =
+          static_cast<ServerConfigSelectorFilterV1*>(elem->channel_data);
+      chand->StartTransportOp(op);
+    },
+    // sizeof_call_data
+    sizeof(ServerConfigSelectorFilterV1::Call),
+    // init_call_elem
+    [](grpc_call_element* elem, const grpc_call_element_args* args) {
+      auto* chand =
+          static_cast<ServerConfigSelectorFilterV1*>(elem->channel_data);
+      auto* calld =
+          static_cast<ServerConfigSelectorFilterV1::Call*>(elem->call_data);
+      new (calld) ServerConfigSelectorFilterV1::Call(args->call_combiner);
+      return calld->Init(chand, args);
+    },
+    // set_pollset_or_pollset_set
+    [](grpc_call_element* elem, grpc_polling_entity* pollent) {},
+    // destroy_call_elem
+    [](grpc_call_element* elem, const grpc_call_final_info* /*final_info*/,
+       grpc_closure* then_schedule_closure) {
+      auto* calld =
+          static_cast<ServerConfigSelectorFilterV1::Call*>(elem->call_data);
+      calld->Destroy(then_schedule_closure);
+    },
+    // sizeof_channel_data
+    sizeof(ServerConfigSelectorFilterV1),
+    // init_channel_elem
+    ServerConfigSelectorFilterV1::Init,
+    // post_init_channel_elem
+    [](grpc_channel_stack* stk, grpc_channel_element* elem) {},
+    // destroy_channel_elem
+    [](grpc_channel_element* elem) {
+      auto* chand =
+          static_cast<ServerConfigSelectorFilterV1*>(elem->channel_data);
+      chand->~ServerConfigSelectorFilterV1();
+    },
+    // get_channel_info
+    [](grpc_channel_element* elem, const grpc_channel_info* channel_info) {},
+    // name
+    GRPC_UNIQUE_TYPE_NAME_HERE("server_config_selector_v1"),
 };
 
 //
 // ServerConfigSelectorFilterV1::Call
 //
+
+ServerConfigSelectorFilterV1::Call::Call(CallCombiner* call_combiner)
+    : buffered_call_(call_combiner,
+                     &grpc_server_config_selector_filter_call_trace) {}
 
 absl::Status ServerConfigSelectorFilterV1::Call::Init(
     ServerConfigSelectorFilterV1* filter, const grpc_call_element_args* args) {
@@ -373,39 +376,100 @@ void ServerConfigSelectorFilterV1::Call::StartTransportStreamOpBatch(
     grpc_transport_stream_op_batch* batch) {
   GRPC_LATENT_SEE_SCOPE(
       "ServerConfigSelectorFilterV1::Call::StartTransportStreamOpBatch");
-// FIXME: need to support batch queueing in case we get batches in the wrong order
-// -- steal logic from client channel code
-  if (batch->send_initial_metadata) {
+  if (GRPC_TRACE_FLAG_ENABLED(server_config_selector_filter_call) &&
+      !GRPC_TRACE_FLAG_ENABLED(channel)) {
+    LOG(INFO) << "chand=" << filter << " calld=" << this
+              << ": batch started from above: "
+              << grpc_transport_stream_op_batch_string(batch, false);
+  }
+  // If we already have a dynamic call, pass the batch down to it.
+  // Note that once we have done so, we do not need to acquire the channel's
+  // resolution mutex, which is more efficient (especially for streaming calls).
+  if (dynamic_call_ != nullptr) {
+    GRPC_TRACE_LOG(server_config_selector_filter_call, INFO)
+        << "chand=" << filter << " calld=" << this
+        << ": starting batch on dynamic_call=" << dynamic_call_.get();
+    dynamic_call_->StartTransportStreamOpBatch(batch);
+    return;
+  }
+  // We do not yet have a dynamic call.
+  //
+  // If we've previously been cancelled, immediately fail any new batches.
+  if (GPR_UNLIKELY(!cancel_error_.ok())) {
+    GRPC_TRACE_LOG(server_config_selector_filter_call, INFO)
+        << "chand=" << filter << " calld=" << this
+        << ": failing batch with error: " << StatusToString(cancel_error_);
+    // Note: This will release the call combiner.
+    grpc_transport_stream_op_batch_finish_with_failure(batch, cancel_error_,
+                                                       call_combiner_);
+    return;
+  }
+  // Handle cancellation.
+  if (GPR_UNLIKELY(batch->cancel_stream)) {
+    // Stash a copy of cancel_error in our call data, so that we can use
+    // it for subsequent operations.  This ensures that if the call is
+    // cancelled before any batches are passed down (e.g., if the deadline
+    // is in the past when the call starts), we can return the right
+    // error to the caller when the first batch does get passed down.
+    cancel_error_ = batch->payload->cancel_stream.cancel_error;
+    GRPC_TRACE_LOG(server_config_selector_filter_call, INFO)
+        << "chand=" << filter << " calld=" << this
+        << ": recording cancel_error=" << StatusToString(cancel_error_);
+    // Fail all pending batches.
+    buffered_call_.Fail(cancel_error_, BufferedCall::NoYieldCallCombiner);
+    // Note: This will release the call combiner.
+    grpc_transport_stream_op_batch_finish_with_failure(batch, cancel_error_,
+                                                       call_combiner_);
+    return;
+  }
+  // Add the batch to the pending list.
+  buffered_call_.EnqueueBatch(batch);
+  // For batches containing a send_initial_metadata op, acquire the
+  // channel's resolution mutex to apply the service config to the call,
+  // after which we will create a dynamic call.
+  if (GPR_LIKELY(batch->send_initial_metadata)) {
+    GRPC_TRACE_LOG(server_config_selector_filter_call, INFO)
+        << "chand=" << filter << " calld=" << this
+        << ": grabbing ServerConfigSelector to find dynamic filter stack";
     // Get the config selector.
     auto config_selector = filter->GetConfigSelector();
     if (!config_selector.ok()) {
-// FIXME
-      grpc_transport_stream_op_batch_finish_with_failure(
-          batch, config_selector.status(), call_combiner_);
+      buffered_call_.Fail(config_selector.status(),
+                          BufferedCall::YieldCallCombiner);
       return;
     }
     // Use config selector to choose dynamic filter stack.
     auto call_config = (*config_selector)->GetCallConfig(&md);
     if (!call_config.ok()) {
-// FIXME
-      grpc_transport_stream_op_batch_finish_with_failure(
-          batch, call_config.status(), call_combiner_);
+      buffered_call_.Fail(call_config.status(),
+                          BufferedCall::YieldCallCombiner);
       return;
     }
     // Create call object on dynamic filter stack.
     auto dynamic_filters =
         call_config->filter_chain.TakeAsSubclass<const DynamicFilters>();
     DynamicFilters::Call::Args args = {
-      dynamic_filters, server_transport_data_, /*pollent=*/nullptr,
-      call_start_time_, deadline_, arena_, call_combiner_};
+        dynamic_filters,     server_transport_data_,
+        /*pollent=*/nullptr, call_start_time_,
+        deadline_,           arena_,
+        call_combiner_};
     absl::Status error;
     dynamic_call_ = dynamic_filters->CreateCall(std::move(args), &error);
     if (!error.ok()) {
-// FIXME
-      grpc_transport_stream_op_batch_finish_with_failure(batch, error,
-                                                         call_combiner_);
+      buffered_call_.Fail(error, BufferedCall::YieldCallCombiner);
       return;
     }
+    buffered_call_.Resume(
+        [dynamic_call = dynamic_call_](grpc_transport_stream_op_batch* batch) {
+          dynamic_call->StartTransportStreamOpBatch(batch);
+        });
+  } else {
+    // For all other batches, release the call combiner.
+    GRPC_TRACE_LOG(server_config_selector_filter_call, INFO)
+        << "chand=" << filter << " calld=" << this
+        << ": saved batch, yielding call combiner";
+    GRPC_CALL_COMBINER_STOP(call_combiner_,
+                            "batch does not include send_initial_metadata");
   }
 }
 
@@ -450,65 +514,65 @@ class ServerConfigSelectorFilterV1::ServerDynamicTerminationFilter {
   ServerConfigSelectorFilterV1* config_selector_filter_;
 };
 
-const grpc_channel_filter
-ServerConfigSelectorFilterV1::ServerDynamicTerminationFilter::kFilterVtable = {
-  // start_transport_stream_op_batch
-  [](grpc_call_element* elem, grpc_transport_stream_op_batch* batch) {
-    auto* calld =
-        static_cast<ServerDynamicTerminationFilter::Call*>(elem->call_data);
-    calld->StartTransportStreamOpBatch(batch);
-  },
-  // start_transport_op
-  [](grpc_channel_element* elem, grpc_transport_op* op) {
-    auto* chand =
-        static_cast<ServerDynamicTerminationFilter*>(elem->channel_data);
-    chand->StartTransportOp(op);
-  },
-  // sizeof_call_data
-  sizeof(ServerDynamicTerminationFilter::Call),
-  // init_call_elem
-  [](grpc_call_element* elem, const grpc_call_element_args* args) {
-    auto* chand =
-        static_cast<ServerDynamicTerminationFilter*>(elem->channel_data);
-    auto* calld =
-        static_cast<ServerDynamicTerminationFilter::Call*>(elem->call_data);
-    absl::Status error;
-    new (calld) Call(chand->MakeBottomCall(*args, &error));
-    return error;
-  },
-  // set_pollset_or_pollset_set
-  [](grpc_call_element* elem, grpc_polling_entity* pollent) {
-  },
-  // destroy_call_elem
-  [](grpc_call_element* elem, const grpc_call_final_info* /*final_info*/,
-     grpc_closure* then_schedule_closure) {
-    auto* calld =
-        static_cast<ServerDynamicTerminationFilter::Call*>(elem->call_data);
-    calld->Destroy(then_schedule_closure);
-  },
-  // sizeof_channel_data
-  sizeof(ServerDynamicTerminationFilter),
-  // init_channel_elem
-  [](grpc_channel_element* elem, grpc_channel_element_args* args) {
-    GRPC_CHECK(args->is_last);
-    GRPC_CHECK(elem->filter == &ServerDynamicTerminationFilter::kFilterVtable);
-    new (elem->channel_data) ServerDynamicTerminationFilter(args->channel_args);
-    return absl::OkStatus();
-  },
-  // post_init_channel_elem
-  [](grpc_channel_stack* stk, grpc_channel_element* elem) {
-  },
-  // destroy_channel_elem
-  [](grpc_channel_element* elem) {
-    auto* chand =
-        static_cast<ServerDynamicTerminationFilter*>(elem->channel_data);
-    chand->~ServerDynamicTerminationFilter();
-  },
-  // get_channel_info
-  [](grpc_channel_element* elem, const grpc_channel_info* channel_info) {
-  },
-  // name
-  GRPC_UNIQUE_TYPE_NAME_HERE("server_dynamic_termination_filter"),
+const grpc_channel_filter ServerConfigSelectorFilterV1::
+    ServerDynamicTerminationFilter::kFilterVtable = {
+        // start_transport_stream_op_batch
+        [](grpc_call_element* elem, grpc_transport_stream_op_batch* batch) {
+          auto* calld = static_cast<ServerDynamicTerminationFilter::Call*>(
+              elem->call_data);
+          calld->StartTransportStreamOpBatch(batch);
+        },
+        // start_transport_op
+        [](grpc_channel_element* elem, grpc_transport_op* op) {
+          auto* chand =
+              static_cast<ServerDynamicTerminationFilter*>(elem->channel_data);
+          chand->StartTransportOp(op);
+        },
+        // sizeof_call_data
+        sizeof(ServerDynamicTerminationFilter::Call),
+        // init_call_elem
+        [](grpc_call_element* elem, const grpc_call_element_args* args) {
+          auto* chand =
+              static_cast<ServerDynamicTerminationFilter*>(elem->channel_data);
+          auto* calld = static_cast<ServerDynamicTerminationFilter::Call*>(
+              elem->call_data);
+          absl::Status error;
+          new (calld) Call(chand->MakeBottomCall(*args, &error));
+          return error;
+        },
+        // set_pollset_or_pollset_set
+        [](grpc_call_element* elem, grpc_polling_entity* pollent) {},
+        // destroy_call_elem
+        [](grpc_call_element* elem, const grpc_call_final_info* /*final_info*/,
+           grpc_closure* then_schedule_closure) {
+          auto* calld = static_cast<ServerDynamicTerminationFilter::Call*>(
+              elem->call_data);
+          calld->Destroy(then_schedule_closure);
+        },
+        // sizeof_channel_data
+        sizeof(ServerDynamicTerminationFilter),
+        // init_channel_elem
+        [](grpc_channel_element* elem, grpc_channel_element_args* args) {
+          GRPC_CHECK(args->is_last);
+          GRPC_CHECK(elem->filter ==
+                     &ServerDynamicTerminationFilter::kFilterVtable);
+          new (elem->channel_data)
+              ServerDynamicTerminationFilter(args->channel_args);
+          return absl::OkStatus();
+        },
+        // post_init_channel_elem
+        [](grpc_channel_stack* stk, grpc_channel_element* elem) {},
+        // destroy_channel_elem
+        [](grpc_channel_element* elem) {
+          auto* chand =
+              static_cast<ServerDynamicTerminationFilter*>(elem->channel_data);
+          chand->~ServerDynamicTerminationFilter();
+        },
+        // get_channel_info
+        [](grpc_channel_element* elem, const grpc_channel_info* channel_info) {
+        },
+        // name
+        GRPC_UNIQUE_TYPE_NAME_HERE("server_dynamic_termination_filter"),
 };
 
 }  // namespace grpc_core

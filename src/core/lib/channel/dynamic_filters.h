@@ -90,9 +90,8 @@ class DynamicFilters final : public FilterChain {
   };
 
   static RefCountedPtr<DynamicFilters> Create(
-      grpc_channel_stack_type channel_stack_type,
-      const ChannelArgs& args, std::vector<FilterAndConfig> filters,
-      const Blackboard* blackboard);
+      grpc_channel_stack_type channel_stack_type, const ChannelArgs& args,
+      std::vector<FilterAndConfig> filters, const Blackboard* blackboard);
 
   explicit DynamicFilters(RefCountedPtr<grpc_channel_stack> channel_stack)
       : channel_stack_(std::move(channel_stack)) {}

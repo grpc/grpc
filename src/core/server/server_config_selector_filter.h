@@ -77,6 +77,8 @@ class ServerConfigSelectorFilterV1 {
   // filter stack.
   class Call {
    public:
+    explicit Call(CallCombiner* call_combiner);
+
     absl::Status Init(ServerConfigSelectorFilterV1* filter,
                       const grpc_call_element_args* args);
 
@@ -94,6 +96,8 @@ class ServerConfigSelectorFilterV1 {
     Timestamp deadline_;
     Arena* const arena_;
     CallCombiner* const call_combiner_;
+
+    BufferedCall buffered_call_;
 
     RefCountedPtr<DynamicFilters::Call> dynamic_call_;
   };

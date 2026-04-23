@@ -280,6 +280,9 @@ security_connector_refcount:
 server_channel:
   default: false
   description: Lightweight trace of significant server channel events.
+server_config_selector_filter_call:
+  default: false
+  description: Calls in the server config selector filter.
 slice_refcount:
   debug_only: true
   default: false

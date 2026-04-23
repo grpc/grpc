@@ -65,6 +65,7 @@ processing requests via debug logs. Available tracers include:
   - round_robin - Round robin load balancing policy.
   - secure_endpoint - Bytes flowing through encrypted channels.
   - server_channel - Lightweight trace of significant server channel events.
+  - server_config_selector_filter_call - Calls in the server config selector filter.
   - stateful_session_filter - Stateful session affinity.
   - subchannel - Connectivity state of subchannels.
   - subchannel_call - Call handling in the subchannel.

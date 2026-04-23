@@ -23,6 +23,8 @@
 #include "src/core/lib/iomgr/call_combiner.h"
 #include "absl/functional/any_invocable.h"
 
+// FIXME: move this to src/core/lib/channel
+
 // Max number of batches that can be pending on a call at any given
 // time.  This includes one batch for each of the following ops:
 //   recv_initial_metadata

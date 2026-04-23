@@ -2078,7 +2078,7 @@ void ClientChannelFilter::CallData::StartTransportStreamOpBatch(
   if (GPR_LIKELY(batch->send_initial_metadata)) {
     GRPC_TRACE_LOG(client_channel_call, INFO)
         << "chand=" << chand << " calld=" << calld
-        << ": grabbing resolution mutex to apply service ";
+        << ": grabbing resolution mutex to apply service config";
     // If we're still in IDLE, we need to start resolving.
     if (GPR_UNLIKELY(chand->CheckConnectivityState(false) ==
                      GRPC_CHANNEL_IDLE)) {
@@ -2134,8 +2134,10 @@ void ClientChannelFilter::CallData::RetryCheckResolutionLocked() {
 
 void ClientChannelFilter::CallData::CreateDynamicCall() {
   DynamicFilters::Call::Args args = {
-      dynamic_filters_, /*server_transport_data=*/nullptr,  pollent_,
-      call_start_time_, deadline_, arena_,           call_combiner_};
+      dynamic_filters_, /*server_transport_data=*/nullptr,
+      pollent_,         call_start_time_,
+      deadline_,        arena_,
+      call_combiner_};
   grpc_error_handle error;
   const DynamicFilters* channel_stack = args.channel_stack.get();
   GRPC_TRACE_LOG(client_channel_call, INFO)
