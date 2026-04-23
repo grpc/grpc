@@ -13,18 +13,10 @@
 # limitations under the License.
 """Setup module for the GRPC Python package's status mapping."""
 
-import os
-import sys
-
 import setuptools
 
-# Manually insert the source directory into the Python path for local module
-# imports to succeed
-sys.path.insert(0, os.path.abspath("."))
-
-
-import grpc_version
-import python_version
+import .grpc_version
+import .python_version
 
 
 class _NoOpCommand(setuptools.Command):
@@ -60,7 +52,7 @@ INSTALL_REQUIRES = (
 )
 
 try:
-    import status_commands as _status_commands
+    import .status_commands as _status_commands
 
     # we are in the build environment, otherwise the above import fails
     COMMAND_CLASS = {
