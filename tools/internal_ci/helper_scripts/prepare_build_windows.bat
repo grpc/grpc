@@ -24,7 +24,7 @@ set PATH=C:\tools\msys64\usr\bin;C:\Python310;C:\Program Files\CMake\bin;%PATH%
 cat C:\image_id.txt
 
 @rem install python 3.10 with retry in case of network errors
-bash "tools/internal_ci/helper_scripts/choco_install_with_retry.sh" python --no-progress --version=3.10.20 || goto :error
+bash "tools/internal_ci/helper_scripts/choco_install_with_retry.sh" python --no-progress --version=3.10.11 || goto :error
 
 @rem create "python3" link that normally doesn't exist
 mklink C:\Python310\python3.exe C:\Python310\python.exe
