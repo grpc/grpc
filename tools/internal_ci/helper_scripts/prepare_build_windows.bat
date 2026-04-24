@@ -51,6 +51,9 @@ if "%PYTHON_DIR%"=="" (
   )
 )
 
+@rem Add to path to ensure it's preferred
+set "PATH=%PYTHON_DIR%;%PATH%"
+
 @rem create "python3" link that normally doesn't exist
 if not exist "%PYTHON_DIR%\python3.exe" (
   mklink "%PYTHON_DIR%\python3.exe" "%PYTHON_DIR%\python.exe"
@@ -58,7 +61,6 @@ if not exist "%PYTHON_DIR%\python3.exe" (
 
 python --version
 python3 --version
-
 
 @rem If this is a PR using RUN_TESTS_FLAGS var, then add flags to filter tests
 if defined KOKORO_GITHUB_PULL_REQUEST_NUMBER if defined RUN_TESTS_FLAGS (
