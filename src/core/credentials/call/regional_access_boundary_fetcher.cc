@@ -212,7 +212,7 @@ void RegionalAccessBoundaryFetcher::Request::OnResponse(
   if (fetcher == nullptr) return;
   bool success = false;
   std::string encoded_locations;
-  absl::string_view response_body;
+  absl::string_view response_body = "";
   if (response_.body != nullptr) {
     response_body = absl::string_view(response_.body, response_.body_length);
   }
@@ -287,7 +287,7 @@ class EmailFetcher::EmailRequest final
   void OnResponse(grpc_error_handle error) {
     auto fetcher = fetcher_->RefIfNonZero();
     if (fetcher == nullptr) return;
-    absl::string_view response_body;
+    absl::string_view response_body = "";
     if (response_.body != nullptr) {
       response_body = absl::string_view(response_.body, response_.body_length);
     }
