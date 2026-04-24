@@ -17,6 +17,10 @@ FROM arm64v8/debian:11
 {% include "../../apt_get_basic.include" %}
 {% include "../../run_tests_addons.include" %}
 
+# Python test coverage requires libsqlite3, and it have
+# to be installed before Python.
+RUN apt-get update && apt-get install -y libsqlite3-dev
+
 {% include "../../compile_python_310.include" %}
 
 # TODO(sergiitk):  Should we updating gcp_api_libraries.include instead?
