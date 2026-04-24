@@ -12,6 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from cpython.ref cimport Py_INCREF, Py_DECREF
+
+cdef void py_decref_destroy(void* user_data) noexcept with gil:
+    Py_DECREF(<object>user_data)
+
 
 cdef class Operation:
 
@@ -67,9 +72,11 @@ cdef class SendMessageOperation(Operation):
 
     cdef const unsigned char[:] view = self._message
     cdef grpc_slice message_slice
+    cdef object message_obj = self._message
     if view.shape[0] > 0:
-      message_slice = grpc_slice_from_copied_buffer(
-          <const char *>&view[0], view.shape[0])
+      Py_INCREF(message_obj)
+      message_slice = grpc_slice_new_with_user_data(
+          <void*>&view[0], view.shape[0], py_decref_destroy, <void*>message_obj)
     else:
       message_slice = grpc_empty_slice()
       
