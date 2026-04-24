@@ -208,10 +208,6 @@ class ServerConfigSelectorFilterV1::DynamicFilterChainBuilder final
 // ServerConfigSelectorFilterV1
 //
 
-// FIXME: move this somewhere public, so filters can use it when
-// registering themselves
-#define GRPC_ARG_BELOW_DYNAMIC_FILTERS "grpc.internal.below_dynamic_filters"
-
 absl::Status ServerConfigSelectorFilterV1::Init(
     grpc_channel_element* elem, grpc_channel_element_args* args) {
   GRPC_CHECK(args->is_last);
@@ -427,6 +423,14 @@ void ServerConfigSelectorFilterV1::Call::StartTransportStreamOpBatch(
   // For batches containing a send_initial_metadata op, acquire the
   // channel's resolution mutex to apply the service config to the call,
   // after which we will create a dynamic call.
+// FIXME: this is wrong!  need to trigger this on recv_initial_metadata
+// instead...  and only on the way back *up* the stack, which means that
+// we're going to need to get the result back from below before we can
+// choose the dynamic filter stack, and *then* proactively start the
+// recv_initial_metadata op on the dynamic filter stack
+//
+// ALTERNATIVE: Maybe just write this as a v3 interceptor only, so that
+// the dynamic filters always get run as v3?
   if (GPR_LIKELY(batch->send_initial_metadata)) {
     GRPC_TRACE_LOG(server_config_selector_filter_call, INFO)
         << "chand=" << filter << " calld=" << this
