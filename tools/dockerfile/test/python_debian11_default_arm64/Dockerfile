@@ -91,13 +91,9 @@ RUN cd /tmp && \
 RUN python3.10 -m ensurepip && \
     python3.10 -m pip install coverage
 
-# six is required by the run_tests.py test harness
-RUN python3.10 -m pip install six
 
-# Google Cloud Platform API libraries
-# These are needed for uploading test results to BigQuery (e.g. by tools/run_tests scripts)
+# TODO(sergiitk):  Should we updating gcp_api_libraries.include instead?
 RUN python3.10 -m pip install --upgrade google-auth==1.23.0 google-api-python-client==1.12.8 oauth2client==4.1.0
-
 
 #=================
 # Install cmake
