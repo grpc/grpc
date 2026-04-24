@@ -217,7 +217,6 @@ cdef _next_call_event(
 
 
 # TODO(https://github.com/grpc/grpc/issues/14569): This could be a lot simpler.
-# Forced update for Bazel
 cdef void _call(
     _ChannelState channel_state, _CallState call_state,
     grpc_completion_queue *c_completion_queue, on_success, int flags, method,
