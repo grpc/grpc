@@ -101,6 +101,9 @@ class RegionalAccessBoundaryFetcher::Request final
   // destruction to avoid memory leaks from pending http requests.
   void Orphan() override;
 
+  using InternallyRefCounted<Request>::Ref;
+  using InternallyRefCounted<Request>::RefIfNonZero;
+
  private:
   static void OnResponseWrapper(void* arg, grpc_error_handle error);
   void OnResponse(grpc_error_handle error);
