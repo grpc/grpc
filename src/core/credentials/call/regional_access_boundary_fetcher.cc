@@ -125,7 +125,6 @@ void RegionalAccessBoundaryFetcher::Fetch(absl::string_view access_token,
   if (is_regional) {
     return;
   }
-  RefCountedPtr<Request> new_request_ref;
   {
     const Timestamp now = Timestamp::Now();
     MutexLock lock(&cache_mu_);
@@ -140,7 +139,7 @@ void RegionalAccessBoundaryFetcher::Fetch(absl::string_view access_token,
              now + kRegionalAccessBoundarySoftCacheGraceDuration) &&
         pending_request_ == nullptr && next_fetch_time_ <= now) {
       pending_request_ = MakeOrphanable<Request>(WeakRef(), access_token);
-      new_request_ref = pending_request_->Ref();
+      pending_request_->Start();
     }
     // If we have cached non-expired Regional Access Boundary data, use it.
     if (cache_.has_value() && cache_->expiration > now) {
@@ -151,9 +150,6 @@ void RegionalAccessBoundaryFetcher::Fetch(absl::string_view access_token,
                 << "Regional access boundary header could not be appended";
           });
     }
-  }
-  if (new_request_ref != nullptr) {
-    new_request_ref->Start();
   }
 }
 
@@ -322,7 +318,7 @@ EmailFetcher::EmailFetcher(
 EmailFetcher::~EmailFetcher() = default;
 
 void EmailFetcher::StartEmailFetch() {
-  RefCountedPtr<EmailRequest> request_ref;
+  OrphanablePtr<EmailRequest> request;
   {
     MutexLock lock(&mu_);
     if (Timestamp::Now() < next_fetch_earliest_time_) {
@@ -332,12 +328,11 @@ void EmailFetcher::StartEmailFetch() {
     auto* pending = std::get_if<OrphanablePtr<EmailRequest>>(&state_);
     if (pending == nullptr) return;   // Already have RAB fetcher.
     if (*pending != nullptr) return;  // Email fetch already in progress.
-    auto request = MakeOrphanable<EmailRequest>(WeakRef());
-    request_ref = request->Ref();
-    *pending = std::move(request);
+    request = MakeOrphanable<EmailRequest>(WeakRef());
+    *pending = request->RefAsSubclass<EmailRequest>();
   }
-  if (request_ref != nullptr) {
-    request_ref->Start();
+  if (request != nullptr) {
+    request->Start();
   }
 }
 
