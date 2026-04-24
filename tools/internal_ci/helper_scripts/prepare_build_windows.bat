@@ -59,6 +59,13 @@ if not exist "%PYTHON_DIR%\python3.exe" (
   mklink "%PYTHON_DIR%\python3.exe" "%PYTHON_DIR%\python.exe"
 )
 
+@rem create symlink to C:\Python310 if installed in Program Files
+if "%PYTHON_DIR%"=="C:\Program Files\Python310" (
+  if not exist "C:\Python310" (
+    mklink /d "C:\Python310" "C:\Program Files\Python310"
+  )
+)
+
 python --version
 python3 --version
 
