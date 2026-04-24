@@ -325,6 +325,10 @@ class XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
           http_filters);
   ~XdsServerConfigSelector() override = default;
 
+  void BuildFilterChains(FilterChainBuilder& builder) override {
+    // FIXME: implement
+  }
+
   absl::StatusOr<CallConfig> GetCallConfig(
       grpc_metadata_batch* metadata) override;
 
