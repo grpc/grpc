@@ -70,7 +70,7 @@ cdef class SendMessageOperation(Operation):
     if isinstance(self._message, list):
       self._message = b''.join(self._message)
 
-    cdef const unsigned char[:] view = self._message
+    cdef const unsigned char[::1] view = self._message
     cdef grpc_slice message_slice
     cdef object message_obj = self._message
     if view.shape[0] > 0:
