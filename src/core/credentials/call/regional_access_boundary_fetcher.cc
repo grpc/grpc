@@ -318,22 +318,17 @@ EmailFetcher::EmailFetcher(
 EmailFetcher::~EmailFetcher() = default;
 
 void EmailFetcher::StartEmailFetch() {
-  OrphanablePtr<EmailRequest> request;
-  {
-    MutexLock lock(&mu_);
-    if (Timestamp::Now() < next_fetch_earliest_time_) {
-      return;
-    }
-    // Check if we are in the initial/retryable state (null EmailRequest)
-    auto* pending = std::get_if<OrphanablePtr<EmailRequest>>(&state_);
-    if (pending == nullptr) return;   // Already have RAB fetcher.
-    if (*pending != nullptr) return;  // Email fetch already in progress.
-    request = MakeOrphanable<EmailRequest>(WeakRef());
-    *pending = request->RefAsSubclass<EmailRequest>();
+  MutexLock lock(&mu_);
+  if (Timestamp::Now() < next_fetch_earliest_time_) {
+    return;
   }
-  if (request != nullptr) {
-    request->Start();
-  }
+  // Check if we are in the initial/retryable state (null EmailRequest)
+  auto* pending = std::get_if<OrphanablePtr<EmailRequest>>(&state_);
+  if (pending == nullptr) return;   // Already have RAB fetcher.
+  if (*pending != nullptr) return;  // Email fetch already in progress.
+  auto request = MakeOrphanable<EmailRequest>(WeakRef());
+  request->Start();
+  state_ = std::move(request);
 }
 
 void EmailFetcher::Fetch(absl::string_view token,
@@ -379,4 +374,3 @@ void EmailFetcher::OnEmailFetchError(grpc_error_handle error) {
   }
 }
 }  // namespace grpc_core
-ce grpc_core
