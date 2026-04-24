@@ -70,8 +70,9 @@ void CFSocketListenerImpl::Shutdown() {
     CFSocketInvalidate(ipv6cfsock);
   }
   if (runloop_) {
-    CFRunLoopWakeUp(runloop_);
     CFRunLoopStop(runloop_);
+    CFRelease(runloop_);
+    runloop_ = nullptr;
   }
 }
 
@@ -178,7 +179,7 @@ absl::Status CFSocketListenerImpl::Start() {
         return;
       }
 
-      that->runloop_ = CFRunLoopGetCurrent();
+      that->runloop_ = (CFRunLoopRef)CFRetain(CFRunLoopGetCurrent());
       for (auto& [ipv6cfsock] : that->ipv6cfsocks_) {
         CFTypeUniqueRef<CFRunLoopSourceRef> ipv6cfsock_source =
             CFSocketCreateRunLoopSource(kCFAllocatorDefault, ipv6cfsock, 0);
