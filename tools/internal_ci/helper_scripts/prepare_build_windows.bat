@@ -32,7 +32,13 @@ if exist "C:\Program Files\Python310\python.exe" (
 )
 
 if "%PYTHON_DIR%"=="" (
-  bash "tools/internal_ci/helper_scripts/choco_install_with_retry.sh" python310 --no-progress || goto :error
+  @rem 1. Download from GCS
+  echo Downloading Python installer from GCS...
+  call gcloud storage cp gs://grpc-build-helper/python-3.10.11-amd64/python-3.10.11-amd64.exe python_installer.exe
+
+  @rem 2. Run the Installer and WAIT until the installation is 100% finished
+  echo Installing Python 3.10...
+  start /wait python_installer.exe /quiet InstallAllUsers=1 PrependPath=1 Include_test=0
 
   @rem After install, check where it went
   if exist "C:\Program Files\Python310\python.exe" (
@@ -46,7 +52,9 @@ if "%PYTHON_DIR%"=="" (
 )
 
 @rem Add to path to ensure it's preferred
+echo "PATH before adding %PYTHON_DIR%: %PATH%"
 set "PATH=%PYTHON_DIR%;%PATH%"
+echo "PATH after adding %PYTHON_DIR%: %PATH%"
 
 @rem create "python3" link that normally doesn't exist
 if not exist "%PYTHON_DIR%\python3.exe" (
@@ -55,6 +63,8 @@ if not exist "%PYTHON_DIR%\python3.exe" (
 
 python --version
 python3 --version
+
+exit /b 1
 
 @rem If this is a PR using RUN_TESTS_FLAGS var, then add flags to filter tests
 if defined KOKORO_GITHUB_PULL_REQUEST_NUMBER if defined RUN_TESTS_FLAGS (
@@ -67,10 +77,6 @@ if defined KOKORO_GITHUB_PULL_REQUEST_NUMBER if defined RUN_TESTS_FLAGS (
 netsh interface ip set dns "Local Area Connection 8" static 169.254.169.254 primary
 netsh interface ip add dnsservers "Local Area Connection 8" 8.8.8.8 index=2
 netsh interface ip add dnsservers "Local Area Connection 8" 8.8.4.4 index=3
-
-@rem Uninstall protoc so that it doesn't clash with C++ distribtests.
-@rem (on grpc-win2016 kokoro workers it can result in GOOGLE_PROTOBUF_MIN_PROTOC_VERSION violation)
-choco uninstall protoc -y --limit-output
 
 @rem Install nasm (required for boringssl assembly optimized build as boringssl no long supports yasm)
 @rem Downloading from GCS should be very reliables when on a GCP VM.
