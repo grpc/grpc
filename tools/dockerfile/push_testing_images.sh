@@ -29,6 +29,9 @@ cd $(dirname $0)/../..
 #  HOST_ARCH_ONLY: if set, script will build docker images with the same architecture as the machine running the script.
 #  ALWAYS_BUILD: if set, script will build docker images all the time.
 #  KEEP_GOING: if set, script will not stop in case of docker error
+#  MAX_CONCURRENCY: if set, specifies the number of concurrent docker builds (default: 8)
+
+MAX_CONCURRENCY=${MAX_CONCURRENCY:-8}
 
 # How to configure docker before running this script for the first time:
 # Configure docker:
@@ -108,24 +111,20 @@ then
   done
 fi
 
-failed_docker_list=()
-for DOCKERFILE_DIR in "${ALL_DOCKERFILE_DIRS[@]}"
-do
-  # Generate image name based on Dockerfile checksum. That works well as long
-  # as can count on dockerfiles being written in a way that changing the logical 
-  # contents of the docker image always changes the SHA (e.g. using "ADD file" 
-  # cmd in the dockerfile in not ok as contents of the added file will not be
-  # reflected in the SHA).
-  DOCKER_IMAGE_NAME=$(basename $DOCKERFILE_DIR)
+FAILED_DIR=$(mktemp -d)
+
+# Function to build and push a single Docker image
+process_dockerfile() {
+  local DOCKERFILE_DIR=$1
+  local DOCKER_IMAGE_NAME=$(basename $DOCKERFILE_DIR)
 
   if [ ! -e "$DOCKERFILE_DIR/Dockerfile" ]; then
-    continue
-  else
-    DOCKER_IMAGE_TAG=$(sha1sum $DOCKERFILE_DIR/Dockerfile | cut -f1 -d\ )
+    return 0
   fi
+  local DOCKER_IMAGE_TAG=$(sha1sum $DOCKERFILE_DIR/Dockerfile | cut -f1 -d\ )
 
   # Skip if DOCKERFILE_DIR is in EXCLUDE_DIRS
-  exclude=false
+  local exclude=false
   for exclude_dir in "${EXCLUDE_DIRS[@]}"; do
     if [[ "$DOCKERFILE_DIR" == "$exclude_dir" ]]; then
       exclude=true
@@ -133,65 +132,66 @@ do
     fi
   done
   if $exclude; then
-    continue
+    return 0
   fi
 
   echo "* Visiting ${DOCKERFILE_DIR}"
 
   # if HOST_ARCH_ONLY is set, skip if the docker image's arthiecture doesn't match with the host architecture
   if [ "${HOST_ARCH_ONLY}" != "" ]; then
-    [[ "$(uname -m)" == aarch64 ]] && is_host_arm=1 || is_host_arm=0
-    is_docker_for_arm=0
-    for ARM_DOCKERFILE_DIR in "${ARM_DOCKERFILE_DIRS[@]}"; do
-      if [ "$DOCKERFILE_DIR" == "$ARM_DOCKERFILE_DIR" ]; then
+    [[ "$(uname -m)" == aarch64 ]] && local is_host_arm=1 || local is_host_arm=0
+    local is_docker_for_arm=0
+    local ARM_DOCKERFILE_DIR_ITEM
+    for ARM_DOCKERFILE_DIR_ITEM in "${ARM_DOCKERFILE_DIRS[@]}"; do
+      if [ "$DOCKERFILE_DIR" == "$ARM_DOCKERFILE_DIR_ITEM" ]; then
         is_docker_for_arm=1
         break
       fi
     done
     if [ "$is_host_arm" != "$is_docker_for_arm" ]; then
       echo "Skipped due to the different architecture:" ${DOCKER_IMAGE_NAME}
-      continue
+      return 0
     fi
   fi
 
   if [[ -z "${LOCAL_ONLY_MODE}" && -z "${ALWAYS_BUILD}" ]]
   then
     # value obtained here corresponds to the "RepoDigests" from "docker image inspect", but without the need to actually pull the image
-    DOCKER_IMAGE_DIGEST_REMOTE=$(gcloud artifacts docker images describe "${ARTIFACT_REGISTRY_PREFIX}/${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG}" --format=json | jq -r '.image_summary.digest')
+    local DOCKER_IMAGE_DIGEST_REMOTE=$(gcloud artifacts docker images describe "${ARTIFACT_REGISTRY_PREFIX}/${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG}" --format=json | jq -r '.image_summary.digest')
 
     if [ "${DOCKER_IMAGE_DIGEST_REMOTE}" != "" ]
     then
       # skip building the image if it already exists in the destination registry
       echo "Docker image ${DOCKER_IMAGE_NAME} already exists in artifact registry at the right version (tag ${DOCKER_IMAGE_TAG})."
 
-      VERSION_FILE_OUT_OF_DATE=""
+      local VERSION_FILE_OUT_OF_DATE=""
       grep "^${ARTIFACT_REGISTRY_PREFIX}/${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG}@${DOCKER_IMAGE_DIGEST_REMOTE}$" ${DOCKERFILE_DIR}.current_version >/dev/null || VERSION_FILE_OUT_OF_DATE="true"
 
       if [ "${VERSION_FILE_OUT_OF_DATE}" == "" ]
       then
         echo "Version file for ${DOCKER_IMAGE_NAME} is in sync with info from artifact registry."
-        continue
+        return 0
       fi
 
       if [ "${CHECK_MODE}" != "" ]
       then
         echo "CHECK FAILED: Version file ${DOCKERFILE_DIR}.current_version is not in sync with info from artifact registry."
-        CHECK_FAILED=true
-        continue
+        echo "${DOCKER_IMAGE_NAME}" > "${FAILED_DIR}/CHECK_FAILED_${DOCKER_IMAGE_NAME}"
+        return 1
       fi
 
       # update info on what we consider to be the current version of the docker image (which will be used to run tests)
       # we consider the sha256 image digest info from the artifact registry to be the canonical one
       echo -n "${ARTIFACT_REGISTRY_PREFIX}/${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG}@${DOCKER_IMAGE_DIGEST_REMOTE}" >${DOCKERFILE_DIR}.current_version
 
-      continue
+      return 0
     fi
 
     if [ "${CHECK_MODE}" != "" ]
     then
       echo "CHECK FAILED: Docker image ${DOCKER_IMAGE_NAME} not found in artifact registry."
-      CHECK_FAILED=true
-      continue
+      echo "${DOCKER_IMAGE_NAME}" > "${FAILED_DIR}/CHECK_FAILED_${DOCKER_IMAGE_NAME}"
+      return 1
     fi
 
   else
@@ -200,19 +200,19 @@ do
 
   # if the .current_version file doesn't exist or it doesn't contain the right SHA checksum,
   # it is out of date and we will need to rebuild the docker image locally.
-  LOCAL_BUILD_REQUIRED=""
+  local LOCAL_BUILD_REQUIRED=""
   grep "^${ARTIFACT_REGISTRY_PREFIX}/${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG}@sha256:.*$" ${DOCKERFILE_DIR}.current_version >/dev/null || LOCAL_BUILD_REQUIRED=true
 
   # If the current version file has contains SHA checksum, but not the remote image digest,
   # it means the locally-built image hasn't been pushed to artifact registry yet.
-  DIGEST_MISSING_IN_CURRENT_VERSION_FILE=""
+  local DIGEST_MISSING_IN_CURRENT_VERSION_FILE=""
   grep "^${ARTIFACT_REGISTRY_PREFIX}/${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG}$" ${DOCKERFILE_DIR}.current_version >/dev/null && DIGEST_MISSING_IN_CURRENT_VERSION_FILE=true
 
   if [ "${LOCAL_BUILD_REQUIRED}" == "" ]
   then
     if [ "${ALWAYS_BUILD}" == "" ]; then
       echo "Dockerfile for ${DOCKER_IMAGE_NAME} hasn't changed. Will skip 'docker build'."
-      continue
+      return 0
     else
       echo "Dockerfile for ${DOCKER_IMAGE_NAME} hasn't changed but will do 'docker build' anyway."
     fi
@@ -221,14 +221,14 @@ do
   if [ "${CHECK_MODE}" != "" ] && [ "${DIGEST_MISSING_IN_CURRENT_VERSION_FILE}" != "" ]
   then
     echo "CHECK FAILED: Dockerfile for ${DOCKER_IMAGE_NAME} has changed and was built locally, but looks like it hasn't been pushed."
-    CHECK_FAILED=true
-    continue
+    echo "${DOCKER_IMAGE_NAME}" > "${FAILED_DIR}/CHECK_FAILED_${DOCKER_IMAGE_NAME}"
+    return 1
   fi
   if [ "${CHECK_MODE}" != "" ]
   then
     echo "CHECK FAILED: Dockerfile for ${DOCKER_IMAGE_NAME} has changed, but the ${DOCKERFILE_DIR}.current_version is not up to date."
-    CHECK_FAILED=true
-    continue
+    echo "${DOCKER_IMAGE_NAME}" > "${FAILED_DIR}/CHECK_FAILED_${DOCKER_IMAGE_NAME}"
+    return 1
   fi
 
   echo "Running 'docker build' for ${DOCKER_IMAGE_NAME}"
@@ -236,7 +236,7 @@ do
   # Building a docker image with two tags;
   # - one for image identification based on Dockerfile hash
   # - one to exclude it from the GCP Vulnerability Scanner
-  docker_exit_code=0
+  local docker_exit_code=0
   docker build \
     ${ALWAYS_BUILD:+--no-cache --pull} \
     -t ${ARTIFACT_REGISTRY_PREFIX}/${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG} \
@@ -244,9 +244,12 @@ do
     ${DOCKERFILE_DIR} || docker_exit_code=$?
   if [ "${docker_exit_code}" -ne 0 ]; then
     if [ -z "${KEEP_GOING}" ]; then
+      touch "${FAILED_DIR}/STOP"
+      echo "${DOCKER_IMAGE_NAME}" > "${FAILED_DIR}/FATAL_${DOCKER_IMAGE_NAME}"
       exit "${docker_exit_code}"
     else
-      failed_docker_list+=(${DOCKER_IMAGE_NAME})
+      echo "${DOCKER_IMAGE_NAME}" > "${FAILED_DIR}/${DOCKER_IMAGE_NAME}"
+      return 1
     fi
   fi
   echo "=========="
@@ -264,10 +267,56 @@ do
 
     # After successful push, the image's RepoDigest info will become available in "docker image inspect",
     # so we update the .current_version file with the repo digest.
-    DOCKER_IMAGE_DIGEST_REMOTE=$(docker image inspect "${ARTIFACT_REGISTRY_PREFIX}/${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG}" | jq -e -r ".[0].RepoDigests[] | select(contains(\"${ARTIFACT_REGISTRY_PREFIX}/${DOCKER_IMAGE_NAME}@\"))" | sed 's/^.*@sha256:/sha256:/')
-    echo -n "${ARTIFACT_REGISTRY_PREFIX}/${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG}@${DOCKER_IMAGE_DIGEST_REMOTE}" >${DOCKERFILE_DIR}.current_version
+    local DOCKER_IMAGE_DIGEST_REMOTE_AFTER_PUSH=$(docker image inspect "${ARTIFACT_REGISTRY_PREFIX}/${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG}" | jq -e -r ".[0].RepoDigests[] | select(contains(\"${ARTIFACT_REGISTRY_PREFIX}/${DOCKER_IMAGE_NAME}@\"))" | sed 's/^.*@sha256:/sha256:/')
+    echo -n "${ARTIFACT_REGISTRY_PREFIX}/${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG}@${DOCKER_IMAGE_DIGEST_REMOTE_AFTER_PUSH}" >${DOCKERFILE_DIR}.current_version
   fi
+}
+
+# Run builds in parallel
+for DOCKERFILE_DIR in "${ALL_DOCKERFILE_DIRS[@]}"
+do
+  if [ -e "${FAILED_DIR}/STOP" ]; then
+    break
+  fi
+
+  (
+    set -e
+    if ! process_dockerfile "${DOCKERFILE_DIR}"; then
+      if [ -z "${KEEP_GOING}" ]; then
+        touch "${FAILED_DIR}/STOP"
+      fi
+    fi
+  ) &
+
+  # Limit concurrency
+  while [ $(jobs -p | wc -l) -ge "$MAX_CONCURRENCY" ]; do
+    if [ -e "${FAILED_DIR}/STOP" ]; then
+      break 2
+    fi
+    sleep 1
+  done
 done
+
+# Wait for all background jobs to finish
+wait
+
+failed_docker_list=()
+if [ -d "${FAILED_DIR}" ]; then
+  for failed_file in "${FAILED_DIR}"/*; do
+    if [ -e "$failed_file" ]; then
+      filename=$(basename "$failed_file")
+      if [[ "$filename" == "STOP" ]]; then
+        continue
+      fi
+      if [[ $filename == CHECK_FAILED_* ]]; then
+        CHECK_FAILED=true
+      else
+        failed_docker_list+=("${filename#FATAL_}")
+      fi
+    fi
+  done
+  rm -rf "${FAILED_DIR}"
+fi
 
 if [ ${#failed_docker_list[@]} -gt 0 ]; then
   echo "Failed docker list"
