@@ -74,8 +74,8 @@ class RegionalAccessBoundaryFetcher final
   class Request;
 
   void OnFetchSuccess(Slice encoded_locations);
-  void OnFetchFailure(RefCountedPtr<Request> req, grpc_error_handle error,
-                      int http_status, absl::string_view response_body);
+  void OnFetchFailure(grpc_error_handle error, int http_status,
+                      absl::string_view response_body);
 
   std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_;
   const URI lookup_uri_;

@@ -90,8 +90,7 @@ void RegionalAccessBoundaryFetcher::OnFetchSuccess(Slice encoded_locations) {
 }
 
 void RegionalAccessBoundaryFetcher::OnFetchFailure(
-    RefCountedPtr<Request> req, grpc_error_handle error, int http_status,
-    absl::string_view response_body) {
+    grpc_error_handle error, int http_status, absl::string_view response_body) {
   MutexLock lock(&cache_mu_);
   if (shutdown_) return;
   LOG(WARNING) << "Regional access boundary request will be retried after "
@@ -208,6 +207,7 @@ void RegionalAccessBoundaryFetcher::Request::OnResponseWrapper(
 
 void RegionalAccessBoundaryFetcher::Request::OnResponse(
     grpc_error_handle error) {
+  auto self = Ref();
   auto fetcher = fetcher_->RefIfNonZero();
   if (fetcher == nullptr) return;
   bool success = false;
@@ -232,7 +232,7 @@ void RegionalAccessBoundaryFetcher::Request::OnResponse(
   if (success) {
     fetcher->OnFetchSuccess(Slice::FromCopiedString(encoded_locations));
   } else {
-    fetcher->OnFetchFailure(Ref(), error, response_.status, response_body);
+    fetcher->OnFetchFailure(error, response_.status, response_body);
   }
 }
 
