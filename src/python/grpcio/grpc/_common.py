@@ -15,7 +15,7 @@
 
 import logging
 import time
-from typing import Any, AnyStr, Callable, Optional, Union
+from typing import Any, Callable, Optional, Union
 
 import grpc
 from grpc._cython import cygrpc
@@ -64,13 +64,13 @@ _ERROR_MESSAGE_PORT_BINDING_FAILED = (
 )
 
 
-def encode(s: AnyStr) -> bytes:
+def encode(s: Union[str, bytes]) -> bytes:
     if isinstance(s, bytes):
         return s
     return s.encode("utf8")
 
 
-def decode(b: AnyStr) -> str:
+def decode(b: Union[str, bytes]) -> str:
     if isinstance(b, bytes):
         return b.decode("utf-8", "replace")
     return b
