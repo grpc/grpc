@@ -98,7 +98,10 @@ CORE_END2END_TEST(Http2FullstackSingleHopTests, SubchannelConnectionScaling) {
   auto s4 = RequestCall(801);
   Expect(801, true);
   Step();
-  EXPECT_NE(s1.GetPeer(), s4.GetPeer());
+  // UDS clients don't bind, so all connections share the listener address.
+  if (!(test_config()->feature_mask & FEATURE_MASK_IS_FULLSTACK_UDS)) {
+    EXPECT_NE(s1.GetPeer(), s4.GetPeer());
+  }
   // Clean up.
   c1.Cancel();
   c2.Cancel();
@@ -175,7 +178,10 @@ CORE_END2END_TEST(Http2FullstackSingleHopTests,
   // Third and fourth RPCs should be on the same connection, which is
   // different from the connection of the first two.
   EXPECT_EQ(s3.GetPeer(), s4.GetPeer());
-  EXPECT_NE(s1.GetPeer(), s3.GetPeer());
+  // UDS clients don't bind, so all connections share the listener address.
+  if (!(test_config()->feature_mask & FEATURE_MASK_IS_FULLSTACK_UDS)) {
+    EXPECT_NE(s1.GetPeer(), s3.GetPeer());
+  }
   // Start a 5th RPC, which will be queued.
   auto c5 = NewClientCall("/epsilon").Timeout(Duration::Seconds(1000)).Create();
   c5.NewBatch(901).SendInitialMetadata({});

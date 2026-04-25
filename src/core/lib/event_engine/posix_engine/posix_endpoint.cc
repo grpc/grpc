@@ -23,9 +23,7 @@
 #include <limits.h>
 
 #include <algorithm>
-#include <atomic>
 #include <cctype>
-#include <cstddef>
 #include <cstdint>
 #include <cstdlib>
 #include <memory>
@@ -64,7 +62,6 @@
 #include <sys/resource.h>      // IWYU pragma: keep
 #endif
 #include <netinet/in.h>  // IWYU pragma: keep
-#include <sys/un.h>      // IWYU pragma: keep
 
 #ifndef SOL_TCP
 #define SOL_TCP IPPROTO_TCP
@@ -1311,40 +1308,12 @@ PosixEndpointImpl::PosixEndpointImpl(EventHandle* handle,
     peer_address_ = *peer_address;
     // For Unix domain sockets, if clients don't bind to a path,
     // getpeername() returns only the address family (size ==
-    // sizeof(sa_family_t)), yielding a truncated URI like "unix:".  Build a
-    // unique peer address by appending a per-connection counter to the server's
-    // local path so that each accepted connection is distinguishable via
-    // GetPeer().
+    // sizeof(sa_family_t)), yielding a truncated URI like "unix:".  Use
+    // the server's local address as the peer address instead.
     if (peer_address_.size() == sizeof(sa_family_t) &&
         peer_address_.address()->sa_family == AF_UNIX &&
         local_address_.size() > sizeof(sa_family_t)) {
-      static std::atomic<uint64_t> uds_conn_id{0};
-      const uint64_t id = uds_conn_id.fetch_add(1, std::memory_order_relaxed);
-      const sockaddr_un* local_un =
-          reinterpret_cast<const sockaddr_un*>(local_address_.address());
-      sockaddr_un peer_un{};
-      peer_un.sun_family = AF_UNIX;
-      socklen_t peer_len;
-      if (local_un->sun_path[0] == '\0') {
-        // Abstract socket: name starts at sun_path[1], length from socklen_t.
-        size_t name_len =
-            local_address_.size() - offsetof(sockaddr_un, sun_path) - 1;
-        std::string name = absl::StrCat(
-            absl::string_view(local_un->sun_path + 1, name_len), "_", id);
-        size_t copy_len = std::min(name.size(), sizeof(peer_un.sun_path) - 1);
-        name.copy(peer_un.sun_path + 1, copy_len);
-        peer_len = static_cast<socklen_t>(offsetof(sockaddr_un, sun_path) + 1 +
-                                          copy_len);
-      } else {
-        std::string path = absl::StrCat(local_un->sun_path, "_", id);
-        size_t copy_len = std::min(path.size(), sizeof(peer_un.sun_path) - 1);
-        path.copy(peer_un.sun_path, copy_len);
-        peer_un.sun_path[copy_len] = '\0';
-        peer_len = static_cast<socklen_t>(offsetof(sockaddr_un, sun_path) +
-                                          copy_len + 1);
-      }
-      peer_address_ = EventEngine::ResolvedAddress(
-          reinterpret_cast<const sockaddr*>(&peer_un), peer_len);
+      peer_address_ = local_address_;
     }
   }
   target_length_ = static_cast<double>(options.tcp_read_chunk_size);
