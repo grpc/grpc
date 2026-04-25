@@ -43,9 +43,7 @@ Could not find <Python.h>. This could mean the following:
   * You're on Windows and your Python installation was somehow corrupted
     (check your environment variables or try re-installing?)
 """
-if sys.version_info[0] == 2:
-    PYTHON_REPRESENTATION = "python"
-elif sys.version_info[0] == 3:
+if sys.version_info[0] == 3:
     PYTHON_REPRESENTATION = "python3"
 else:
     raise NotImplementedError("Unsupported Python version: %s" % sys.version)

@@ -44,7 +44,7 @@ def compression_algorithm_to_metadata(compression: "grpc.Compression"):
     from grpc import _common  # pylint: disable=cyclic-import
 
     return (
-        _common.decode(cygrpc.GRPC_COMPRESSION_REQUEST_ALGORITHM_MD_KEY),
+        cygrpc.GRPC_COMPRESSION_REQUEST_ALGORITHM_MD_KEY,
         _compression_algorithm_to_metadata_value(compression),
     )
 

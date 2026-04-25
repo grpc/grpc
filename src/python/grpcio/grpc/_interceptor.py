@@ -27,7 +27,7 @@ from .typing import _DoneCallbackType
 from .typing import _RequestIterableType
 
 
-class _ServicePipeline(object):
+class _ServicePipeline:
     interceptors: Tuple[grpc.ServerInterceptor, ...]
 
     def __init__(self, interceptors: Sequence[grpc.ServerInterceptor]):

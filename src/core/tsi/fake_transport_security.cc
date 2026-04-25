@@ -396,7 +396,9 @@ static tsi_result fake_protector_unprotect(
   }
 
   // Now process the protected_bytes.
-  if (frame->needs_draining) return TSI_INTERNAL_ERROR;
+  if (*protected_frames_bytes_size == 0) {
+    return TSI_OK;
+  }
   result = tsi_fake_frame_decode(protected_frames_bytes,
                                  protected_frames_bytes_size, frame,
                                  /*error=*/nullptr);

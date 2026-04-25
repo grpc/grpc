@@ -38,6 +38,66 @@ namespace grpc_core {
 
 class XdsHttpFilterImpl {
  public:
+  virtual ~XdsHttpFilterImpl() = default;
+
+  // Returns the top-level filter config proto message name.
+  virtual absl::string_view ConfigProtoName() const = 0;
+
+  // Returns the override filter config proto message name.
+  // If empty, no override type is supported.
+  virtual absl::string_view OverrideConfigProtoName() const = 0;
+
+  // Loads the proto message into the upb symtab.
+  virtual void PopulateSymtab(upb_DefPool* symtab) const = 0;
+
+  // Adds the filter to the builder.
+  virtual void AddFilter(FilterChainBuilder& builder,
+                         RefCountedPtr<const FilterConfig> config) const = 0;
+
+  // Parses the top-level filter config.
+  virtual RefCountedPtr<const FilterConfig> ParseTopLevelConfig(
+      absl::string_view instance_name,
+      const XdsResourceType::DecodeContext& context,
+      const XdsExtension& extension, ValidationErrors* errors) const = 0;
+
+  // Parses an override config.
+  virtual RefCountedPtr<const FilterConfig> ParseOverrideConfig(
+      absl::string_view instance_name,
+      const XdsResourceType::DecodeContext& context,
+      const XdsExtension& extension, ValidationErrors* errors) const = 0;
+
+  // Returns a new filter config that takes into account any necessary
+  // overrides.  Base class returns the most specific filter config;
+  // subclasses can override if needed.
+  virtual RefCountedPtr<const FilterConfig> MergeConfigs(
+      RefCountedPtr<const FilterConfig> top_level_config,
+      RefCountedPtr<const FilterConfig> virtual_host_override_config,
+      RefCountedPtr<const FilterConfig> route_override_config,
+      RefCountedPtr<const FilterConfig> cluster_weight_override_config) const;
+
+  // Adds state to new_blackboard if needed for the specified filter
+  // config.  Copies existing state from old_blackboard as appropriate.
+  virtual void UpdateBlackboard(const FilterConfig& /*config*/,
+                                const Blackboard* /*old_blackboard*/,
+                                Blackboard* /*new_blackboard*/) const {}
+
+  // Returns true if the filter is supported on clients; false otherwise
+  virtual bool IsSupportedOnClients() const = 0;
+
+  // Returns true if the filter is supported on servers; false otherwise
+  virtual bool IsSupportedOnServers() const = 0;
+
+  // Returns true if the filter must be the last filter in the chain.
+  virtual bool IsTerminalFilter() const { return false; }
+
+  /////////////////////////////////////////////////////////////////////////////
+  //
+  // ALL INTERFACES BELOW ARE DEPRECATED
+  //
+  /////////////////////////////////////////////////////////////////////////////
+  // TODO(roth): Remove these once the server side is migrated to the new
+  // approach for passing xDS HTTP filter configs.
+
   // Service config data for the filter, returned by GenerateServiceConfig().
   struct ServiceConfigJsonEntry {
     // The top-level field name in the method config.
@@ -52,34 +112,20 @@ class XdsHttpFilterImpl {
     std::string element;
   };
 
-  virtual ~XdsHttpFilterImpl() = default;
-
-  // Returns the top-level filter config proto message name.
-  virtual absl::string_view ConfigProtoName() const = 0;
-
-  // Returns the override filter config proto message name.
-  // If empty, no override type is supported.
-  virtual absl::string_view OverrideConfigProtoName() const = 0;
-
-  // Loads the proto message into the upb symtab.
-  virtual void PopulateSymtab(upb_DefPool* symtab) const = 0;
-
   // Generates a Config from the xDS filter config proto.
   // Used for the top-level config in the HCM HTTP filter list.
   virtual std::optional<Json> GenerateFilterConfig(
       absl::string_view instance_name,
-      const XdsResourceType::DecodeContext& context, XdsExtension extension,
-      ValidationErrors* errors) const = 0;
+      const XdsResourceType::DecodeContext& context,
+      const XdsExtension& extension, ValidationErrors* errors) const = 0;
 
   // Generates a Config from the xDS filter config proto.
   // Used for the typed_per_filter_config override in VirtualHost and Route.
   virtual std::optional<Json> GenerateFilterConfigOverride(
       absl::string_view instance_name,
-      const XdsResourceType::DecodeContext& context, XdsExtension extension,
-      ValidationErrors* errors) const = 0;
+      const XdsResourceType::DecodeContext& context,
+      const XdsExtension& extension, ValidationErrors* errors) const = 0;
 
-  // Adds the filter to the builder.
-  virtual void AddFilter(FilterChainBuilder& builder) const = 0;
   // TODO(roth): Remove this once the legacy filter stack goes away.
   virtual const grpc_channel_filter* channel_filter() const = 0;
 
@@ -111,15 +157,6 @@ class XdsHttpFilterImpl {
   virtual void UpdateBlackboard(const Json& /*hcm_filter_config*/,
                                 const Blackboard* /*old_blackboard*/,
                                 Blackboard* /*new_blackboard*/) const {}
-
-  // Returns true if the filter is supported on clients; false otherwise
-  virtual bool IsSupportedOnClients() const = 0;
-
-  // Returns true if the filter is supported on servers; false otherwise
-  virtual bool IsSupportedOnServers() const = 0;
-
-  // Returns true if the filter must be the last filter in the chain.
-  virtual bool IsTerminalFilter() const { return false; }
 };
 
 }  // namespace grpc_core

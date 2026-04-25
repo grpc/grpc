@@ -203,3 +203,33 @@ grpc_cc_test(
         "//test/core/test_util:grpc_test_util_base",
     ],
 )
+
+grpc_cc_test(
+    name = "secure_endpoint_read_coalescing_test",
+    srcs = ["secure_endpoint_read_coalescing_test.cc"],
+    external_deps = [
+        "absl/status",
+        "absl/strings",
+        "absl/strings:string_view",
+        "absl/synchronization",
+        "gtest",
+    ],
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//:grpc_security_base",
+        "//:iomgr",
+        "//:orphanable",
+        "//:tsi_base",
+        "//:tsi_fake_credentials",
+        "//src/core:channel_args",
+        "//src/core:default_event_engine",
+        "//src/core:event_engine_tcp_socket_utils",
+        "//src/core:experiments",
+        "//src/core:resource_quota",
+        "//src/core:slice",
+        "//test/core/test_util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util_base",
+        "//test/core/test_util:test_memory_allocator",
+    ],
+)

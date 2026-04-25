@@ -16,6 +16,7 @@
 import unittest
 
 import grpc
+import grpc.experimental
 
 from src.proto.grpc.testing import test_pb2_grpc
 from tests.interop import _intraop_test_case
@@ -35,27 +36,120 @@ class SecureIntraopTest(_intraop_test_case.IntraopTestCase, unittest.TestCase):
         port = self.server.add_secure_port(
             "[::]:0",
             grpc.ssl_server_credentials(
-                [(resources.private_key(), resources.certificate_chain())]
+                [
+                    (
+                        resources.server_private_key(),
+                        resources.certificate_chain(),
+                    )
+                ]
             ),
         )
         self.server.start()
-        self.stub = test_pb2_grpc.TestServiceStub(
-            grpc.secure_channel(
-                "localhost:{}".format(port),
-                grpc.ssl_channel_credentials(
-                    resources.test_root_certificates()
-                ),
+        self.channel = grpc.secure_channel(
+            "localhost:{}".format(port),
+            grpc.ssl_channel_credentials(resources.test_root_certificates()),
+            (
                 (
-                    (
-                        "grpc.ssl_target_name_override",
-                        _SERVER_HOST_OVERRIDE,
-                    ),
+                    "grpc.ssl_target_name_override",
+                    _SERVER_HOST_OVERRIDE,
                 ),
-            )
+            ),
         )
+        self.stub = test_pb2_grpc.TestServiceStub(self.channel)
 
     def tearDown(self):
         self.server.stop(None)
+        self.channel.close()
+
+
+class SecureInteropWithSyncPrivateKeyOffloadingTest(
+    _intraop_test_case.IntraopTestCase, unittest.TestCase
+):
+
+    def setUp(self):
+        self.server = test_common.test_server()
+        test_pb2_grpc.add_TestServiceServicer_to_server(
+            service.TestService(), self.server
+        )
+        # Configure the server for mTLS so the client will do Private Key signing
+        port = self.server.add_secure_port(
+            "[::]:0",
+            grpc.ssl_server_credentials(
+                [
+                    (
+                        resources.server_private_key(),
+                        resources.certificate_chain(),
+                    )
+                ],
+                resources.test_root_certificates(),
+                require_client_auth=True,
+            ),
+        )
+        self.server.start()
+        self.channel = grpc.secure_channel(
+            "localhost:{}".format(port),
+            grpc.experimental.ssl_channel_credentials_with_custom_signer(
+                private_key_sign_fn=resources.sync_client_private_key_signer,
+                root_certificates=resources.test_root_certificates(),
+                certificate_chain=resources.client_certificate_chain(),
+            ),
+            (
+                (
+                    "grpc.ssl_target_name_override",
+                    _SERVER_HOST_OVERRIDE,
+                ),
+            ),
+        )
+        self.stub = test_pb2_grpc.TestServiceStub(self.channel)
+
+    def tearDown(self):
+        self.server.stop(None)
+        self.channel.close()
+
+
+class SecureInteropWithAsyncPrivateKeyOffloadingTest(
+    _intraop_test_case.IntraopTestCase, unittest.TestCase
+):
+
+    def setUp(self):
+        self.server = test_common.test_server()
+        test_pb2_grpc.add_TestServiceServicer_to_server(
+            service.TestService(), self.server
+        )
+        # Configure the server for mTLS so the client will do Private Key signing
+        port = self.server.add_secure_port(
+            "[::]:0",
+            grpc.ssl_server_credentials(
+                [
+                    (
+                        resources.server_private_key(),
+                        resources.certificate_chain(),
+                    )
+                ],
+                resources.test_root_certificates(),
+                require_client_auth=True,
+            ),
+        )
+        self.server.start()
+        self.channel = grpc.secure_channel(
+            "localhost:{}".format(port),
+            grpc.experimental.ssl_channel_credentials_with_custom_signer(
+                private_key_sign_fn=resources.async_client_private_key_signer,
+                root_certificates=resources.test_root_certificates(),
+                certificate_chain=resources.client_certificate_chain(),
+            ),
+            (
+                (
+                    "grpc.ssl_target_name_override",
+                    _SERVER_HOST_OVERRIDE,
+                ),
+            ),
+        )
+        self.stub = test_pb2_grpc.TestServiceStub(self.channel)
+
+    def tearDown(self):
+        self.server.stop(None)
+        self.channel.close()
 
 
 if __name__ == "__main__":

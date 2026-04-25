@@ -967,8 +967,7 @@ Server::Server(
   server_ = grpc_server_create(&channel_args, nullptr);
   grpc_server_set_config_fetcher(server_, server_config_fetcher);
 
-  if (server_rq != nullptr &&
-      grpc_core::IsTrackWritesInResourceQuotaEnabled()) {
+  if (server_rq != nullptr) {
     memory_allocator_ = grpc_core::ResourceQuota::FromC(server_rq)
                             ->memory_quota()
                             ->CreateMemoryAllocator("server writer endpoint");

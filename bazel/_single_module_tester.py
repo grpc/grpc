@@ -19,7 +19,7 @@ import sys
 import pkgutil
 import importlib.util
 
-class SingleLoader(object):
+class SingleLoader:
     def __init__(self, pattern: str, unittest_path: str):
         loader = unittest.TestLoader()
         self.suite = unittest.TestSuite()

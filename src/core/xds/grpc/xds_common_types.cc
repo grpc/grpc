@@ -17,6 +17,7 @@
 #include "src/core/xds/grpc/xds_common_types.h"
 
 #include "src/core/util/match.h"
+#include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
@@ -98,6 +99,56 @@ std::string CommonTlsContext::ToString() const {
 bool CommonTlsContext::Empty() const {
   return tls_certificate_provider_instance.Empty() &&
          certificate_validation_context.Empty();
+}
+
+//
+// HeaderMutationRules
+//
+
+bool HeaderMutationRules::IsMutationAllowed(
+    const std::string& header_name) const {
+  // Regardless of the mutation rules, we never allow certain headers.
+  if (absl::StartsWith(header_name, ":") ||
+      absl::StartsWith(header_name, "grpc-") || header_name == "host") {
+    return false;
+  }
+  // If true, all header mutations are disallowed, regardless of any other
+  // setting.
+  if (disallow_all) {
+    return false;
+  }
+  // If a header name matches this regex, then it will be disallowed
+  if (disallow_expression != nullptr &&
+      RE2::FullMatch(header_name, *disallow_expression)) {
+    return false;
+  }
+  // If a header name matches this regex and does not match disallow_expression,
+  // it will be allowed. If unset, then all headers not matching
+  // disallow_expression are allowed
+  if (allow_expression == nullptr ||
+      RE2::FullMatch(header_name, *allow_expression)) {
+    return true;
+  }
+  return false;
+}
+
+std::string HeaderMutationRules::ToString() const {
+  std::vector<std::string> contents;
+  if (disallow_all) {
+    contents.push_back("disallow_all=true");
+  }
+  if (disallow_is_error) {
+    contents.push_back("disallow_is_error=true");
+  }
+  if (allow_expression != nullptr) {
+    contents.push_back(
+        absl::StrCat("allow_expression=", allow_expression->pattern()));
+  }
+  if (disallow_expression != nullptr) {
+    contents.push_back(
+        absl::StrCat("disallow_expression=", disallow_expression->pattern()));
+  }
+  return absl::StrCat("{", absl::StrJoin(contents, ", "), "}");
 }
 
 }  // namespace grpc_core

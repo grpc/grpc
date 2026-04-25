@@ -17,6 +17,7 @@
 from __future__ import print_function
 
 import argparse
+import datetime
 import multiprocessing
 import os
 import sys
@@ -28,6 +29,7 @@ import python_utils.report_utils as report_utils
 _ROOT = os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]), "../.."))
 os.chdir(_ROOT)
 
+# TODO(sergiitk): convert these constants to timedelta to improve readability.
 _DEFAULT_RUNTESTS_TIMEOUT = 1 * 60 * 60
 
 # C/C++ tests can take long time
@@ -241,6 +243,10 @@ def _create_test_jobs(extra_args=[], inner_jobs=_DEFAULT_INNER_JOBS):
         labels=["basictests"],
         extra_args=extra_args + ["--report_multi_target"],
         inner_jobs=inner_jobs,
+        # Important! When changing the timeout, verify individual test timeouts
+        # in run_tests.py Sanity are less than this.
+        # TODO(ac-patel): decrease when the job is optimized to only consider code diff.
+        timeout_seconds=datetime.timedelta(hours=1, minutes=25).total_seconds(),
     )
 
     # supported on all platforms.

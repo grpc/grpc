@@ -184,7 +184,6 @@ grpc_cc_library(
         "//src/core:grpc_check",
         "//src/core:load_file",
         "//src/proto/grpc/reflection/v1alpha:reflection_proto",
-        "@com_google_protobuf//src/google/protobuf/compiler:importer",
     ],
 )
 

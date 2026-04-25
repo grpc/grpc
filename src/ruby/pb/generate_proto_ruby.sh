@@ -19,7 +19,7 @@ cd $(dirname $0)/../../..
 
 # protoc and grpc_*_plugin binaries can be obtained by running
 # $ bazel build @com_google_protobuf//:protoc //src/compiler:all
-PROTOC=bazel-bin/external/com_google_protobuf/protoc
+PROTOC=bazel-bin/external/protobuf+/protoc
 PLUGIN=protoc-gen-grpc=bazel-bin/src/compiler/grpc_ruby_plugin
 
 $PROTOC -I src/proto src/proto/grpc/health/v1/health.proto \

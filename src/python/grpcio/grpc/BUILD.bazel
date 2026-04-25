@@ -65,7 +65,7 @@ py_library(
         ":common",
         ":compression",
         ":interceptor",
-        "@typing_extensions",
+        "@grpc_typing_extensions//:typing_extensions",
     ],
 )
 

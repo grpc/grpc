@@ -43,7 +43,7 @@ class _Status(
     pass
 
 
-class _Object(object):
+class _Object:
     pass
 
 

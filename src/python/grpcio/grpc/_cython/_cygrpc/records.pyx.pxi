@@ -13,7 +13,6 @@
 # limitations under the License.
 import enum
 
-
 cdef bytes _slice_bytes(grpc_slice slice):
   cdef void *start = grpc_slice_start_ptr(slice)
   cdef size_t length = grpc_slice_length(slice)
@@ -59,7 +58,7 @@ class WriteFlag:
   no_compress = GRPC_WRITE_NO_COMPRESS
 
 
-class StatusCode:
+class StatusCode(enum.IntEnum):
   ok = GRPC_STATUS_OK
   cancelled = GRPC_STATUS_CANCELLED
   unknown = GRPC_STATUS_UNKNOWN
@@ -78,6 +77,8 @@ class StatusCode:
   unavailable = GRPC_STATUS_UNAVAILABLE
   data_loss = GRPC_STATUS_DATA_LOSS
 
+  def __reduce_ex__(self, proto):
+     return (int, (self.value,))
 
 class CallError:
   ok = GRPC_CALL_OK
@@ -113,7 +114,7 @@ GRPC_COMPRESSION_CHANNEL_DEFAULT_ALGORITHM= (
   _GRPC_COMPRESSION_CHANNEL_DEFAULT_ALGORITHM)
 
 GRPC_COMPRESSION_REQUEST_ALGORITHM_MD_KEY = (
-  _GRPC_COMPRESSION_REQUEST_ALGORITHM_MD_KEY)
+  _GRPC_COMPRESSION_REQUEST_ALGORITHM_MD_KEY).decode()
 
 class CompressionAlgorithm:
   none = GRPC_COMPRESS_NONE

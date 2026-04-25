@@ -157,7 +157,6 @@ grpc_cc_library(
         "//src/core:race",
         "//src/core:try_seq",
         "//test/core/promise:poll_matcher",
-        "@com_google_protobuf//:protobuf",
     ],
 )
 
@@ -322,6 +321,7 @@ grpc_fuzz_test(
     deps = [
         "//src/core:chaotic_good_config",
         "//src/core:chaotic_good_frame_cc_proto",
+        "//src/core:experiments",
     ],
 )
 

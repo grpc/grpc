@@ -48,7 +48,7 @@ _MAX_MESSAGE_LENGTH = 1024
 _ADDRESS_TOKEN_ERRNO = errno.EADDRINUSE, errno.ENOSR
 
 
-class _TestPointerWrapper(object):
+class _TestPointerWrapper:
     def __int__(self):
         return 123456
 
@@ -132,11 +132,8 @@ class TestChannelArgument(AioTestBase):
         server = aio.server(options=_TEST_CHANNEL_ARGS)
         await server.stop(None)
 
-    @typeguard.suppress_type_checks
+    @typeguard.suppress_type_checks  # testing negative cases
     async def test_invalid_client_args(self):
-        # This test works on invalid client_args which is expected
-        # to make typeguard fail, hence the decorator
-        # @typeguard.supress_type_checks is used
         for invalid_arg in _INVALID_TEST_CHANNEL_ARGS:
             self.assertRaises(
                 (ValueError, TypeError),

@@ -93,7 +93,7 @@ def _application_code(code: grpc.StatusCode) -> cygrpc.StatusCode:
     return cygrpc.StatusCode.unknown if cygrpc_code is None else cygrpc_code
 
 
-def _completion_code(state: _RPCState) -> int:
+def _completion_code(state: _RPCState) -> cygrpc.StatusCode:
     if state.code is None:
         return cygrpc.StatusCode.ok
     return _application_code(state.code)
@@ -180,7 +180,7 @@ class _GenericMethod(_Method):
         return None
 
 
-class _RPCState(object):
+class _RPCState:
     context: contextvars.Context
     condition: threading.Condition
     due: Set[str]
@@ -485,7 +485,7 @@ class _Context(grpc.ServicerContext):
         pass
 
 
-class _RequestIterator(object):
+class _RequestIterator:
     _state: _RPCState
     _call: cygrpc.Call
     _request_deserializer: Optional[DeserializingFunction]
@@ -1141,7 +1141,7 @@ class _ServerStage(enum.Enum):
     GRACE = "grace"
 
 
-class _ServerState(object):
+class _ServerState:
     lock: threading.RLock
     completion_queue: cygrpc.CompletionQueue
     server: cygrpc.Server

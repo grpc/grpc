@@ -24,7 +24,7 @@ from grpc.framework.foundation import future
 from tests.unit.framework.common import test_constants
 
 
-class _Callback(object):
+class _Callback:
     def __init__(self):
         self._condition = threading.Condition()
         self._value = None

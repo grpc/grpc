@@ -19,6 +19,7 @@
 #ifndef GRPC_TEST_CORE_TRANSPORT_CHTTP2_HTTP2_COMMON_TEST_INPUTS_H
 #define GRPC_TEST_CORE_TRANSPORT_CHTTP2_HTTP2_COMMON_TEST_INPUTS_H
 
+#include <grpc/grpc.h>
 #include <grpc/support/port_platform.h>
 
 #include <memory>
@@ -26,6 +27,9 @@
 
 #include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/ext/transport/chttp2/transport/http2_status.h"
+#include "test/core/test_util/postmortem.h"
+#include "test/core/transport/chttp2/http2_frame_test_helper.h"
+#include "test/core/transport/util/transport_test.h"
 #include "absl/strings/string_view.h"
 
 namespace grpc_core {
@@ -157,6 +161,72 @@ inline Http2ContinuationFrame GenerateContinuationFrame(
   buffer.Append(Slice::FromCopiedString(str));
   return Http2ContinuationFrame{stream_id, end_headers, std::move(buffer)};
 }
+
+class Http2TransportTest : public util::testing::TransportTest {
+ public:
+  explicit Http2TransportTest() {
+    grpc_tracer_set_enabled("http2_ph2_transport", true);
+  }
+
+  void SetUp() override {
+    endpoint_ = util::testing::EventSequenceEndpoint::Create(event_engine());
+  }
+  void TearDown() override {
+    endpoint_.reset();
+    event_engine()->TickUntilIdle();
+    event_engine()->UnsetGlobalHooks();
+  }
+
+ protected:
+  std::shared_ptr<util::testing::EventSequenceEndpoint> endpoint() const {
+    return endpoint_;
+  }
+
+  uint64_t VerifyPingFrameAndReturnOpaqueId(SliceBuffer& buffer,
+                                            const bool is_ack) const {
+    char out_buffer[kFrameHeaderSize + 1] = {};
+    // Extract the header (first 9 bytes)
+    buffer.CopyFirstNBytesIntoBuffer(kFrameHeaderSize, out_buffer);
+
+    // Verify it looks like a PING frame.
+    // Construct a PING frame with opaque=0 and compare the frame header.
+    transport::testing::EventEngineSlice expect_slice =
+        helper_.SerializedPingFrame(/*ack=*/is_ack, /*opaque=*/0);
+    char expect_buffer[kFrameHeaderSize + 1] = {};
+    SliceBuffer sb;
+    sb.Append(Slice(grpc_slice_copy(expect_slice.c_slice())));
+    sb.CopyFirstNBytesIntoBuffer(kFrameHeaderSize, expect_buffer);
+    EXPECT_EQ(absl::string_view(out_buffer, kFrameHeaderSize),
+              absl::string_view(expect_buffer, kFrameHeaderSize));
+
+    // Extract Opaque ID from payload
+    MutableSlice mutable_slice = buffer.JoinIntoSlice().TakeMutable();
+    uint8_t* opaque_id_ptr = mutable_slice.data();
+    return Read8b(opaque_id_ptr + kFrameHeaderSize);
+  }
+
+  ClientMetadataHandle TestInitialMetadata() {
+    ClientMetadataHandle md = Arena::MakePooledForOverwrite<ClientMetadata>();
+    md->Set(HttpPathMetadata(), Slice::FromStaticString("/demo.Service/Step"));
+    return md;
+  }
+
+  transport::testing::Http2FrameTestHelper helper_;
+  std::shared_ptr<util::testing::EventSequenceEndpoint> endpoint_;
+  PostMortem postmortem_;
+
+ private:
+  uint64_t Read8b(const uint8_t* input) const {
+    return static_cast<uint64_t>(input[0]) << 56 |
+           static_cast<uint64_t>(input[1]) << 48 |
+           static_cast<uint64_t>(input[2]) << 40 |
+           static_cast<uint64_t>(input[3]) << 32 |
+           static_cast<uint64_t>(input[4]) << 24 |
+           static_cast<uint64_t>(input[5]) << 16 |
+           static_cast<uint64_t>(input[6]) << 8 |
+           static_cast<uint64_t>(input[7]);
+  }
+};
 
 }  // namespace testing
 }  // namespace http2

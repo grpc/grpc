@@ -673,7 +673,7 @@ absl::StatusOr<std::string> ConvertListenSocket(
           v1_ref, CopyStdStringToUpbString(*name, arena.ptr()));
     }
   }
-  if (auto socket_props = GetPropertyList(entity, "socket", arena.ptr());
+  if (auto socket_props = GetPropertyList(entity, "listen_socket", arena.ptr());
       socket_props != nullptr) {
     if (auto local = StringFromPropertyList(socket_props, "local");
         local.has_value()) {

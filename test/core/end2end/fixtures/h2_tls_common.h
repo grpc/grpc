@@ -92,14 +92,20 @@ class TlsFixture : public SecureFixture {
             grpc_tls_identity_pairs_create();
         grpc_tls_identity_pairs_add_pair(client_pairs, private_key.c_str(),
                                          identity_cert.c_str());
-        client_provider_ = grpc_tls_certificate_provider_static_data_create(
-            root_cert.c_str(), client_pairs);
+        client_provider_ = grpc_tls_certificate_provider_in_memory_create();
+        grpc_tls_certificate_provider_in_memory_set_root_certificate(
+            client_provider_, root_cert.c_str());
+        grpc_tls_certificate_provider_in_memory_set_identity_certificate(
+            client_provider_, client_pairs);
         grpc_tls_identity_pairs* server_pairs =
             grpc_tls_identity_pairs_create();
         grpc_tls_identity_pairs_add_pair(server_pairs, private_key.c_str(),
                                          identity_cert.c_str());
-        server_provider_ = grpc_tls_certificate_provider_static_data_create(
-            root_cert.c_str(), server_pairs);
+        server_provider_ = grpc_tls_certificate_provider_in_memory_create();
+        grpc_tls_certificate_provider_in_memory_set_root_certificate(
+            server_provider_, root_cert.c_str());
+        grpc_tls_certificate_provider_in_memory_set_identity_certificate(
+            server_provider_, server_pairs);
         break;
       }
       case SecurityPrimitives::ProviderType::FILE_PROVIDER: {

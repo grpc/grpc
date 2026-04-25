@@ -57,7 +57,7 @@ class OpenTelemetryIntegrationTestInstrumentDomain final
           OpenTelemetryIntegrationTestInstrumentDomain> {
  public:
   using Backend = grpc_core::LowContentionBackend;
-  static constexpr auto kLabels = Labels("test_label.1", "test_optional.2");
+  GRPC_INSTRUMENT_DOMAIN_LABELS("test_label.1", "test_optional.2");
   static constexpr auto kName = "open_telemetry_test_instrument_domain";
 
   static inline const auto kTestMetric = RegisterCounter(
@@ -71,72 +71,52 @@ class OpenTelemetryIntegrationTestInstrumentDomain final
 template <typename T>
 std::vector<absl::string_view> RequiredLabelKeys() {
   std::vector<absl::string_view> result;
-  std::apply(
-      [&](auto&&... args) {
-        auto maybe_add_label = [&](absl::string_view label_key) {
-          if (!grpc::internal::IsOpenTelemetryLabelOptional(label_key)) {
-            result.push_back(label_key);
-          }
-        };
-        (maybe_add_label(args), ...);
-      },
-      T::kLabels);
+  for (const auto& label : T::Domain()->label_names()) {
+    if (!grpc::internal::IsOpenTelemetryLabelOptional(label.label())) {
+      result.push_back(label.label());
+    }
+  }
   return result;
 }
 
 template <typename T>
 std::vector<absl::string_view> OptionalLabelKeys() {
   std::vector<absl::string_view> result;
-  std::apply(
-      [&](auto&&... args) {
-        auto maybe_add_label = [&](absl::string_view label_key) {
-          if (grpc::internal::IsOpenTelemetryLabelOptional(label_key)) {
-            result.push_back(label_key);
-          }
-        };
-        (maybe_add_label(args), ...);
-      },
-      T::kLabels);
+  for (const auto& label : T::Domain()->label_names()) {
+    if (grpc::internal::IsOpenTelemetryLabelOptional(label.label())) {
+      result.push_back(label.label());
+    }
+  }
   return result;
 }
 
 template <typename T>
 std::vector<absl::string_view> RequiredLabelValues(
     const grpc_core::InstrumentStorage<T>& storage) {
-  auto label = storage.label();
+  auto labels = storage.label();
   std::vector<absl::string_view> result;
-  std::apply(
-      [&](auto&&... args) {
-        int n = 0;
-        auto maybe_add_label = [&](absl::string_view label_key) {
-          if (!grpc::internal::IsOpenTelemetryLabelOptional(label_key)) {
-            result.push_back(label[n]);
-          }
-          ++n;
-        };
-        (maybe_add_label(args), ...);
-      },
-      T::kLabels);
+  int i = 0;
+  for (const auto& label : T::Domain()->label_names()) {
+    if (!grpc::internal::IsOpenTelemetryLabelOptional(label.label())) {
+      result.push_back(labels[i]);
+    }
+    i++;
+  }
   return result;
 }
 
 template <typename T>
 std::vector<absl::string_view> OptionalLabelValues(
     const grpc_core::InstrumentStorage<T>& storage) {
-  auto label = storage.label();
+  auto labels = storage.label();
   std::vector<absl::string_view> result;
-  std::apply(
-      [&](auto&&... args) {
-        int n = 0;
-        auto maybe_add_label = [&](absl::string_view label_key) {
-          if (grpc::internal::IsOpenTelemetryLabelOptional(label_key)) {
-            result.push_back(label[n]);
-          }
-          ++n;
-        };
-        (maybe_add_label(args), ...);
-      },
-      T::kLabels);
+  int i = 0;
+  for (const auto& label : T::Domain()->label_names()) {
+    if (grpc::internal::IsOpenTelemetryLabelOptional(label.label())) {
+      result.push_back(labels[i]);
+    }
+    i++;
+  }
   return result;
 }
 
