@@ -1296,6 +1296,7 @@ PosixEndpointImpl::PosixEndpointImpl(EventHandle* handle,
   FileDescriptor fd = handle_->WrappedFd();
   GRPC_CHECK(options.resource_quota != nullptr);
   auto& posix_interface = poller_->posix_interface();
+  auto peer_addr_string = posix_interface.PeerAddressString(fd);
   mem_quota_ = options.resource_quota->memory_quota();
   memory_owner_ = mem_quota_->CreateMemoryOwner();
   self_reservation_ = memory_owner_.MakeReservation(sizeof(PosixEndpointImpl));
@@ -1306,15 +1307,6 @@ PosixEndpointImpl::PosixEndpointImpl(EventHandle* handle,
   auto peer_address = posix_interface.PeerAddress(fd);
   if (peer_address.ok()) {
     peer_address_ = *peer_address;
-  }
-  // For unbound UDS clients, getpeername() returns only the address family
-  // with an empty sun_path, yielding a truncated "unix:" URI. Fall back to
-  // the local (listener) address so peer() returns the socket the client
-  // connected to.
-  if (peer_address_.size() == sizeof(sa_family_t) &&
-      peer_address_.address()->sa_family == AF_UNIX &&
-      local_address_.size() > sizeof(sa_family_t)) {
-    peer_address_ = local_address_;
   }
   target_length_ = static_cast<double>(options.tcp_read_chunk_size);
   bytes_read_this_round_ = 0;
