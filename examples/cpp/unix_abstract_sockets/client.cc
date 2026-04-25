@@ -19,8 +19,13 @@
 #include <string>
 
 #include "examples/protos/helloworld.grpc.pb.h"
+#include "absl/flags/flag.h"
 #include "absl/flags/parse.h"
 #include "absl/log/initialize.h"
+
+ABSL_FLAG(std::string, socket_type, "abstract",
+          "Socket type to use: 'abstract' (Linux-only, no filesystem file) "
+          "or 'path' (filesystem socket, cross-platform)");
 
 using grpc::Channel;
 using grpc::ClientContext;
@@ -31,7 +36,7 @@ using helloworld::HelloRequest;
 
 class GreeterClient {
  public:
-  GreeterClient(std::shared_ptr<Channel> channel)
+  explicit GreeterClient(std::shared_ptr<Channel> channel)
       : stub_(Greeter::NewStub(channel)) {}
 
   std::string SayHello(const std::string& user) {
@@ -55,13 +60,25 @@ class GreeterClient {
 int main(int argc, char** argv) {
   absl::ParseCommandLine(argc, argv);
   absl::InitializeLog();
-  std::string target_str("unix-abstract:grpc%00abstract");
+
+  std::string socket_type = absl::GetFlag(FLAGS_socket_type);
+  std::string target;
+  if (socket_type == "path") {
+    // Path-based: connects to a socket file on the filesystem.
+    // The file must exist (server must be running).
+    target = "unix:/tmp/grpc_example.sock";
+  } else {
+    // Abstract: connects via kernel namespace — no file needed.
+    // Linux-only. Fails if server is not running (namespace entry disappears).
+    target = "unix-abstract:grpc%00abstract";
+  }
+
   GreeterClient greeter(
-      grpc::CreateChannel(target_str, grpc::InsecureChannelCredentials()));
-  std::string user("arst");
-  std::cout << "Sending '" << user << "' to " << target_str << " ... ";
-  std::string reply = greeter.SayHello(user);
-  std::cout << "Received: " << reply << std::endl;
+      grpc::CreateChannel(target, grpc::InsecureChannelCredentials()));
+
+  std::cout << "Connecting to: " << target << std::endl;
+  std::string reply = greeter.SayHello("hello from client");
+  std::cout << "Response: " << reply << std::endl;
 
   return 0;
 }
