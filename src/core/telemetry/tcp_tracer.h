@@ -28,6 +28,7 @@
 #include <string>
 #include <vector>
 
+#include "absl/strings/string_view.h"
 #include "absl/time/time.h"
 
 namespace grpc_core {
@@ -132,6 +133,8 @@ class TcpCallTracer {
       grpc_event_engine::experimental::internal::WriteEvent event,
       absl::Time time, size_t byte_offset,
       const std::vector<TcpEventMetric>& metrics) = 0;
+
+  virtual bool ForceMetricsUpdate() const { return false; }
 };
 
 class TcpConnectionTracer {
