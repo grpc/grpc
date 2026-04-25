@@ -509,6 +509,8 @@ grpc_call_error grpc_call_start_batch(grpc_call* call, const grpc_op* ops,
     grpc_core::ExecCtx exec_ctx;
     grpc_core::Call* call_obj = grpc_core::Call::FromC(call);
     grpc_call_error err = call_obj->StartBatch(ops, nops, tag, false);
+    // Capturing invalid metadata error and cancelling RPC rather than failing
+    // the batch which causes crash.
     if (err == GRPC_CALL_ERROR_INVALID_METADATA) {
       // Convert the validation error into a failed RPC
       call_obj->CancelWithStatus(GRPC_STATUS_INTERNAL, "Invalid metadata");
@@ -557,8 +559,8 @@ grpc_call_error grpc_call_start_batch(grpc_call* call, const grpc_op* ops,
       // Post a failed completion directly via the proper API — does not go
       // through StartBatch so does not depend on nops==0 handling, and
       // correctly surfaces success=false to the application.
-      call_obj->FailBatchImmediately(
-          tag, false, GRPC_ERROR_CREATE("Invalid metadata"));
+      call_obj->FailBatchImmediately(tag, false,
+                                     GRPC_ERROR_CREATE("Invalid metadata"));
       return GRPC_CALL_OK;
     }
     return err;
@@ -576,8 +578,8 @@ grpc_call_error grpc_call_start_batch_and_execute(grpc_call* call,
     // No output buffer pre-fill here: internal callers using this function
     // handle errors via the closure's error parameter, not by reading op
     // output fields directly.
-    call_obj->FailBatchImmediately(
-        closure, true, GRPC_ERROR_CREATE("Invalid metadata"));
+    call_obj->FailBatchImmediately(closure, true,
+                                   GRPC_ERROR_CREATE("Invalid metadata"));
     return GRPC_CALL_OK;
   }
   return err;
