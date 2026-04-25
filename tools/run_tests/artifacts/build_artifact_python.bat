@@ -27,6 +27,8 @@ python -m pip install -r requirements.txt --user
 
 @rem set GRPC_PYTHON_OVERRIDE_CYGWIN_DETECTION_FOR_27=1
 set GRPC_PYTHON_BUILD_WITH_CYTHON=1
+set CCACHE_NOHASHDIR=true
+set CCACHE_LOGFILE=T:\src\github\grpc\reports\ccache_%1_%2.log
 
 @rem Allow build_ext to build C/C++ files in parallel
 @rem by enabling a monkeypatch. It speeds up the build a lot.
@@ -44,14 +46,16 @@ set ARTIFACT_DIR=%cd%\%ARTIFACTS_OUT%
 set "GRPC_PYTHON_BUILD_USE_SHORT_TEMP_DIR_NAME=1"
 
 @rem Build gRPC Python distribution
-python -m build || goto :error
+python -m build --no-isolation --sdist || goto :error
+python -m build --no-isolation --wheel || goto :error
 
 @rem Set up gRPC Python tools
 python tools\distrib\python\make_grpcio_tools.py
 
 @rem Build grpcio-tools Python distribution
 pushd tools\distrib\python\grpcio_tools
-python -m build || goto :error
+python -m build --no-isolation --sdist || goto :error
+python -m build --no-isolation --wheel || goto :error
 popd
 
 @rem Ensure the generate artifacts are valid.
