@@ -243,7 +243,7 @@ static void test_too_many_metadata() {
   // Drain the CQ before inspecting output buffers — the completion must fire
   // before the status pointer is considered stable.
   g_state.cqv->Expect(grpc_core::CqVerifier::tag(1),
-                      grpc_core::CqVerifier::AnyStatus());
+                      false);
   g_state.cqv->Verify();
   GRPC_CHECK(g_state.status == GRPC_STATUS_INTERNAL);
   cleanup_test();
@@ -553,7 +553,7 @@ static void test_too_many_trailing_metadata() {
   // Drain the CQ before inspecting output buffers — the completion must fire
   // before the cancelled flag is considered stable.
   g_state.cqv->Expect(grpc_core::CqVerifier::tag(2),
-                      grpc_core::CqVerifier::AnyStatus());
+                      false);
   g_state.cqv->Verify();
   GRPC_CHECK(was_cancelled == 1);
   cleanup_test();
@@ -664,7 +664,7 @@ static void test_invalid_initial_metadata_reserved_key() {
   // Drain the CQ before inspecting output buffers — the completion must fire
   // before the status pointer is considered stable.
   g_state.cqv->Expect(grpc_core::CqVerifier::tag(1),
-                      grpc_core::CqVerifier::AnyStatus());
+                      false);
   g_state.cqv->Verify();
   GRPC_CHECK(g_state.status == GRPC_STATUS_INTERNAL);
   cleanup_test();

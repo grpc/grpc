@@ -213,18 +213,18 @@ bool ValidateMetadata(size_t count, grpc_metadata* metadata) {
 }
 
 void EndOpImmediately(grpc_completion_queue* cq, void* notify_tag,
-                      bool is_notify_tag_closure) {
+                      bool is_notify_tag_closure, grpc_error_handle error) {
   if (!is_notify_tag_closure) {
     GRPC_CHECK(grpc_cq_begin_op(cq, notify_tag));
     grpc_cq_end_op(
-        cq, notify_tag, absl::OkStatus(),
+        cq, notify_tag, std::move(error),
         [](void*, grpc_cq_completion* completion) { gpr_free(completion); },
         nullptr,
         static_cast<grpc_cq_completion*>(
             gpr_malloc(sizeof(grpc_cq_completion))));
   } else {
     Closure::Run(DEBUG_LOCATION, static_cast<grpc_closure*>(notify_tag),
-                 absl::OkStatus());
+                 std::move(error));
   }
 }
 
