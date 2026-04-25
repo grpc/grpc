@@ -52,12 +52,6 @@ install_import_hook('grpc._simple_stubs')
 install_import_hook('grpc._typing')
 install_import_hook('grpc._utilities')
 
-# Fix the type hierarchy issue for HandlerCallDetails
-import grpc
-from grpc._cython import cygrpc
-# Register the cython class as a virtual subclass of the abstract base class
-grpc.HandlerCallDetails.register(cygrpc._HandlerCallDetails)
-
 class SingleLoader:
     def __init__(
         self, target_module: str, test_patterns: Optional[list[str]] = None
