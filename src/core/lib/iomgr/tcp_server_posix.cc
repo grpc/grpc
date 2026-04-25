@@ -465,6 +465,16 @@ static void on_read(void* arg, grpc_error_handle err) {
       LOG(ERROR) << "Invalid address: " << addr_uri.status();
       goto error;
     }
+    // For unbound UDS clients, getpeername() returns only the address family
+    // with an empty sun_path, yielding a truncated "unix:" URI. Use the
+    // listener's URI instead so peer() returns the socket the client
+    // connected to.
+    if (addr_uri.value() == "unix:") {
+      auto listener_uri = grpc_sockaddr_to_uri(&sp->addr);
+      if (listener_uri.ok()) {
+        addr_uri = *listener_uri;
+      }
+    }
     GRPC_TRACE_LOG(tcp, INFO)
         << "SERVER_CONNECT: incoming connection: " << *addr_uri;
 
