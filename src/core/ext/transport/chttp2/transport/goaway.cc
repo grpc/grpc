@@ -18,6 +18,9 @@
 
 #include "src/core/ext/transport/chttp2/transport/goaway.h"
 
+#include <utility>
+
+#include "src/core/ext/transport/chttp2/transport/write_cycle.h"
 #include "src/core/util/grpc_check.h"
 
 namespace grpc_core {
@@ -57,14 +60,14 @@ std::optional<Http2Frame> GoawayManager::MaybeGetGoawayFrame() {
   return std::nullopt;
 }
 
-void GoawayManager::MaybeGetSerializedGoawayFrame(SliceBuffer& output_buf) {
+void GoawayManager::MaybeGetSerializedGoawayFrame(FrameSender& frame_sender) {
   GRPC_HTTP2_GOAWAY_LOG << "MaybeGetSerializedGoawayFrames: current state: "
                         << context_->GoawayStateToString(
                                context_->goaway_state);
 
   std::optional<Http2Frame> goaway_frame = MaybeGetGoawayFrame();
   if (goaway_frame.has_value()) {
-    Serialize(absl::Span<Http2Frame>(&goaway_frame.value(), 1), output_buf);
+    frame_sender.AddRegularFrame(std::move(goaway_frame.value()));
     GRPC_HTTP2_GOAWAY_LOG << "GOAWAY frame serialized.";
   }
 }
@@ -115,6 +118,18 @@ std::string GoawayManager::Context::GoawayStateToString(
     default:
       return "unknown";
   }
+}
+
+absl::Status GoawayManager::Context::TriggerWriteCycle() {
+  GRPC_HTTP2_GOAWAY_LOG << "TriggerWriteCycle: current state: "
+                        << GoawayStateToString(goaway_state);
+  absl::Status status = goaway_interface->TriggerWriteCycle();
+  if (!status.ok()) {
+    GRPC_HTTP2_GOAWAY_LOG << "TriggerWriteCycle failed with status: " << status;
+    goaway_state = GoawayState::kDone;
+  }
+
+  return status;
 }
 
 std::optional<Http2Frame> GoawayManager::TestOnlyMaybeGetGoawayFrame() {

@@ -73,6 +73,7 @@ size_t EncodedSizeOfKey(Key, const typename Key::ValueType& value) {
 // to name this in MetadataMap, but ultimately once the transition is done we
 // should not need to.
 struct GrpcTimeoutMetadata {
+  static constexpr bool kPublishToApp = false;
   static constexpr bool kRepeatable = false;
   static constexpr bool kTransferOnTrailersOnly = false;
   using ValueType = Timestamp;
@@ -90,6 +91,7 @@ struct GrpcTimeoutMetadata {
 
 // TE metadata trait.
 struct TeMetadata {
+  static constexpr bool kPublishToApp = false;
   static constexpr bool kRepeatable = false;
   static constexpr bool kTransferOnTrailersOnly = false;
   // HTTP2 says that TE can either be empty or "trailers".
@@ -120,6 +122,7 @@ inline size_t EncodedSizeOfKey(TeMetadata, TeMetadata::ValueType x) {
 
 // content-type metadata trait.
 struct ContentTypeMetadata {
+  static constexpr bool kPublishToApp = false;
   static constexpr bool kRepeatable = false;
   static constexpr bool kTransferOnTrailersOnly = true;
   // gRPC says that content-type can be application/grpc[;something]
@@ -149,6 +152,7 @@ struct ContentTypeMetadata {
 
 // scheme metadata trait.
 struct HttpSchemeMetadata {
+  static constexpr bool kPublishToApp = false;
   static constexpr bool kRepeatable = false;
   static constexpr bool kTransferOnTrailersOnly = false;
   enum ValueType : uint8_t {
@@ -179,6 +183,7 @@ size_t EncodedSizeOfKey(HttpSchemeMetadata, HttpSchemeMetadata::ValueType x);
 
 // method metadata trait.
 struct HttpMethodMetadata {
+  static constexpr bool kPublishToApp = false;
   static constexpr bool kRepeatable = false;
   static constexpr bool kTransferOnTrailersOnly = false;
   enum ValueType : uint8_t {
@@ -228,6 +233,7 @@ struct CompressionAlgorithmBasedMetadata {
 
 // grpc-encoding metadata trait.
 struct GrpcEncodingMetadata : public CompressionAlgorithmBasedMetadata {
+  static constexpr bool kPublishToApp = false;
   static constexpr bool kRepeatable = false;
   static constexpr bool kTransferOnTrailersOnly = false;
   using CompressionTraits =
@@ -237,6 +243,7 @@ struct GrpcEncodingMetadata : public CompressionAlgorithmBasedMetadata {
 
 // grpc-internal-encoding-request metadata trait.
 struct GrpcInternalEncodingRequest : public CompressionAlgorithmBasedMetadata {
+  static constexpr bool kPublishToApp = false;
   static constexpr bool kRepeatable = false;
   static constexpr bool kTransferOnTrailersOnly = false;
   using CompressionTraits = NoCompressionCompressor;
@@ -245,6 +252,7 @@ struct GrpcInternalEncodingRequest : public CompressionAlgorithmBasedMetadata {
 
 // grpc-accept-encoding metadata trait.
 struct GrpcAcceptEncodingMetadata {
+  static constexpr bool kPublishToApp = false;
   static constexpr bool kRepeatable = false;
   static constexpr bool kTransferOnTrailersOnly = false;
   static absl::string_view key() { return "grpc-accept-encoding"; }
@@ -264,6 +272,7 @@ struct GrpcAcceptEncodingMetadata {
 
 // user-agent metadata trait.
 struct UserAgentMetadata : public SimpleSliceBasedMetadata {
+  static constexpr bool kPublishToApp = true;
   static constexpr bool kRepeatable = false;
   static constexpr bool kTransferOnTrailersOnly = false;
   using CompressionTraits = StableValueCompressor;
@@ -272,6 +281,7 @@ struct UserAgentMetadata : public SimpleSliceBasedMetadata {
 
 // grpc-message metadata trait.
 struct GrpcMessageMetadata : public SimpleSliceBasedMetadata {
+  static constexpr bool kPublishToApp = false;
   static constexpr bool kRepeatable = false;
   static constexpr bool kTransferOnTrailersOnly = false;
   using CompressionTraits = NoCompressionCompressor;
@@ -280,6 +290,7 @@ struct GrpcMessageMetadata : public SimpleSliceBasedMetadata {
 
 // host metadata trait.
 struct HostMetadata : public SimpleSliceBasedMetadata {
+  static constexpr bool kPublishToApp = true;
   static constexpr bool kRepeatable = false;
   static constexpr bool kTransferOnTrailersOnly = false;
   using CompressionTraits = NoCompressionCompressor;
@@ -288,6 +299,7 @@ struct HostMetadata : public SimpleSliceBasedMetadata {
 
 // endpoint-load-metrics-bin metadata trait.
 struct EndpointLoadMetricsBinMetadata : public SimpleSliceBasedMetadata {
+  static constexpr bool kPublishToApp = false;
   static constexpr bool kRepeatable = false;
   static constexpr bool kTransferOnTrailersOnly = false;
   using CompressionTraits = NoCompressionCompressor;
@@ -296,6 +308,7 @@ struct EndpointLoadMetricsBinMetadata : public SimpleSliceBasedMetadata {
 
 // grpc-server-stats-bin metadata trait.
 struct GrpcServerStatsBinMetadata : public SimpleSliceBasedMetadata {
+  static constexpr bool kPublishToApp = false;
   static constexpr bool kRepeatable = false;
   static constexpr bool kTransferOnTrailersOnly = false;
   using CompressionTraits = NoCompressionCompressor;
@@ -304,6 +317,7 @@ struct GrpcServerStatsBinMetadata : public SimpleSliceBasedMetadata {
 
 // grpc-trace-bin metadata trait.
 struct GrpcTraceBinMetadata : public SimpleSliceBasedMetadata {
+  static constexpr bool kPublishToApp = false;
   static constexpr bool kRepeatable = false;
   static constexpr bool kTransferOnTrailersOnly = false;
   using CompressionTraits = FrequentKeyWithNoValueCompressionCompressor;
@@ -312,6 +326,7 @@ struct GrpcTraceBinMetadata : public SimpleSliceBasedMetadata {
 
 // grpc-tags-bin metadata trait.
 struct GrpcTagsBinMetadata : public SimpleSliceBasedMetadata {
+  static constexpr bool kPublishToApp = false;
   static constexpr bool kRepeatable = false;
   static constexpr bool kTransferOnTrailersOnly = false;
   using CompressionTraits = FrequentKeyWithNoValueCompressionCompressor;
@@ -320,14 +335,34 @@ struct GrpcTagsBinMetadata : public SimpleSliceBasedMetadata {
 
 // XEnvoyPeerMetadata
 struct XEnvoyPeerMetadata : public SimpleSliceBasedMetadata {
+  static constexpr bool kPublishToApp = false;
   static constexpr bool kRepeatable = false;
   static constexpr bool kTransferOnTrailersOnly = true;
   using CompressionTraits = StableValueCompressor;
   static absl::string_view key() { return "x-envoy-peer-metadata"; }
 };
 
+// x-forwarded-for metadata trait for HTTP connect.
+struct XForwardedForMetadata : public SimpleSliceBasedMetadata {
+  static constexpr bool kPublishToApp = true;
+  static constexpr bool kRepeatable = false;
+  static constexpr bool kTransferOnTrailersOnly = false;
+  using CompressionTraits = StableValueCompressor;
+  static absl::string_view key() { return "x-forwarded-for"; }
+};
+
+// x-forwarded-host metadata trait for HTTP connect.
+struct XForwardedHostMetadata : public SimpleSliceBasedMetadata {
+  static constexpr bool kPublishToApp = true;
+  static constexpr bool kRepeatable = false;
+  static constexpr bool kTransferOnTrailersOnly = false;
+  using CompressionTraits = StableValueCompressor;
+  static absl::string_view key() { return "x-forwarded-host"; }
+};
+
 // :authority metadata trait.
 struct HttpAuthorityMetadata : public SimpleSliceBasedMetadata {
+  static constexpr bool kPublishToApp = false;
   static constexpr bool kRepeatable = false;
   static constexpr bool kTransferOnTrailersOnly = false;
   using CompressionTraits = SmallSetOfValuesCompressor;
@@ -336,6 +371,7 @@ struct HttpAuthorityMetadata : public SimpleSliceBasedMetadata {
 
 // :path metadata trait.
 struct HttpPathMetadata : public SimpleSliceBasedMetadata {
+  static constexpr bool kPublishToApp = false;
   static constexpr bool kRepeatable = false;
   static constexpr bool kTransferOnTrailersOnly = false;
   using CompressionTraits = SmallSetOfValuesCompressor;
@@ -415,6 +451,7 @@ struct GrpcStatusMetadata {
     }
   }
   static auto DisplayMemento(MementoType x) { return DisplayValue(x); }
+  static constexpr bool kPublishToApp = false;
   static constexpr bool kRepeatable = false;
   static constexpr bool kTransferOnTrailersOnly = false;
   using CompressionTraits = SmallIntegralValuesCompressor<16>;
@@ -441,6 +478,7 @@ struct GrpcStatusMetadata {
 // grpc-previous-rpc-attempts metadata trait.
 struct GrpcPreviousRpcAttemptsMetadata
     : public SimpleIntBasedMetadata<uint32_t, 0> {
+  static constexpr bool kPublishToApp = true;
   static constexpr bool kRepeatable = false;
   static constexpr bool kTransferOnTrailersOnly = false;
   using CompressionTraits = NoCompressionCompressor;
@@ -449,6 +487,7 @@ struct GrpcPreviousRpcAttemptsMetadata
 
 // grpc-retry-pushback-ms metadata trait.
 struct GrpcRetryPushbackMsMetadata {
+  static constexpr bool kPublishToApp = true;
   static constexpr bool kRepeatable = false;
   static constexpr bool kTransferOnTrailersOnly = false;
   static absl::string_view key() { return "grpc-retry-pushback-ms"; }
@@ -467,6 +506,7 @@ struct GrpcRetryPushbackMsMetadata {
 // :status metadata trait.
 // TODO(ctiller): consider moving to uint16_t
 struct HttpStatusMetadata : public SimpleIntBasedMetadata<uint32_t, 0> {
+  static constexpr bool kPublishToApp = false;
   static constexpr bool kRepeatable = false;
   static constexpr bool kTransferOnTrailersOnly = true;
   using CompressionTraits = HttpStatusCompressor;
@@ -478,6 +518,7 @@ struct HttpStatusMetadata : public SimpleIntBasedMetadata<uint32_t, 0> {
 class GrpcLbClientStats;
 
 struct GrpcLbClientStatsMetadata {
+  static constexpr bool kPublishToApp = false;
   static constexpr bool kRepeatable = false;
   static constexpr bool kTransferOnTrailersOnly = false;
   static absl::string_view key() { return "grpclb_client_stats"; }
@@ -503,6 +544,7 @@ inline size_t EncodedSizeOfKey(GrpcLbClientStatsMetadata,
 
 // lb-token metadata
 struct LbTokenMetadata : public SimpleSliceBasedMetadata {
+  static constexpr bool kPublishToApp = true;
   static constexpr bool kRepeatable = false;
   static constexpr bool kTransferOnTrailersOnly = false;
   using CompressionTraits = NoCompressionCompressor;
@@ -511,6 +553,7 @@ struct LbTokenMetadata : public SimpleSliceBasedMetadata {
 
 // lb-cost-bin metadata
 struct LbCostBinMetadata {
+  static constexpr bool kPublishToApp = false;
   static constexpr bool kRepeatable = true;
   static constexpr bool kTransferOnTrailersOnly = false;
   static absl::string_view key() { return "lb-cost-bin"; }
@@ -531,6 +574,7 @@ struct LbCostBinMetadata {
 
 // traceparent metadata
 struct W3CTraceParentMetadata : public SimpleSliceBasedMetadata {
+  static constexpr bool kPublishToApp = true;
   static constexpr bool kRepeatable = false;
   static constexpr bool kTransferOnTrailersOnly = false;
   using CompressionTraits = NoCompressionCompressor;
@@ -1278,6 +1322,8 @@ MetadataValueAsSlice(typename Which::ValueType value) {
 // Encodable traits have the following signature:
 // // Traits for the "grpc-xyz" metadata field:
 // struct GrpcXyzMetadata {
+//   // Should this metadata be published to the application?
+//   static constexpr bool kPublishToApp = ...;
 //   // Can this metadata field be repeated?
 //   static constexpr bool kRepeatable = ...;
 //   // Should this metadata be transferred from server headers to trailers on
@@ -1652,7 +1698,8 @@ using grpc_metadata_batch_base = grpc_core::MetadataMap<
     grpc_core::GrpcServerStatsBinMetadata, grpc_core::GrpcTraceBinMetadata,
     grpc_core::GrpcTagsBinMetadata, grpc_core::GrpcLbClientStatsMetadata,
     grpc_core::LbCostBinMetadata, grpc_core::LbTokenMetadata,
-    grpc_core::XEnvoyPeerMetadata, grpc_core::W3CTraceParentMetadata,
+    grpc_core::XEnvoyPeerMetadata, grpc_core::XForwardedForMetadata,
+    grpc_core::XForwardedHostMetadata, grpc_core::W3CTraceParentMetadata,
     // Non-encodable things
     grpc_core::GrpcStreamNetworkState, grpc_core::PeerString,
     grpc_core::GrpcStatusContext, grpc_core::GrpcStatusFromWire,

@@ -19,6 +19,7 @@ from typing import Any, Dict, Optional, Sequence
 import grpc
 from grpc import _common
 from grpc import _compression
+from grpc import _observability
 from grpc._cython import cygrpc
 
 from . import _base_server
@@ -30,7 +31,14 @@ def _augment_channel_arguments(
     base_options: ChannelArgumentType, compression: Optional[grpc.Compression]
 ):
     compression_option = _compression.create_channel_option(compression)
-    return tuple(base_options) + compression_option
+    maybe_server_call_tracer_factory_option = (
+        _observability.create_server_call_tracer_factory_option(xds=False)
+    )
+    return (
+        tuple(base_options)
+        + compression_option
+        + maybe_server_call_tracer_factory_option
+    )
 
 
 class Server(_base_server.Server):
@@ -224,8 +232,8 @@ def server(
       maximum_concurrent_rpcs: The maximum number of concurrent RPCs this server
         will service before returning RESOURCE_EXHAUSTED status, or None to
         indicate no limit.
-      compression: An element of grpc.compression, e.g.
-        grpc.compression.Gzip. This compression algorithm will be used for the
+      compression: An element of grpc.Compression, e.g.
+        grpc.Compression.Gzip. This compression algorithm will be used for the
         lifetime of the server unless overridden by set_compression.
 
     Returns:

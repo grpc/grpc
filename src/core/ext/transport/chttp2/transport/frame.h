@@ -236,7 +236,7 @@ struct SerializeReturn {
 // Http2UnknownFrame.
 // It is expected that hdr.length == payload.Length().
 http2::ValueOrHttp2Status<Http2Frame> ParseFramePayload(
-    const Http2FrameHeader& hdr, SliceBuffer payload);
+    const Http2FrameHeader& hdr, SliceBuffer&& payload);
 
 // Serialize frame and append to out, leaves frames in an unknown state (may
 // move things out of frames)

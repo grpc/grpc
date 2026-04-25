@@ -294,6 +294,7 @@ void ChaoticGoodServerTransport::StreamDispatch::AddData(
     channelz::DataSink sink) {
   party_->ExportToChannelz("transport_party", sink);
   MutexLock lock(&mu_);
+  message_chunker_.AddData(sink);
   sink.AddData("transport_state",
                channelz::PropertyList()
                    .Set("stream_map_size", stream_map_.size())

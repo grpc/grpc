@@ -15,6 +15,8 @@
 #include "client_call_tracer.h"
 
 #include <grpc/slice.h>
+#include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 #include <stddef.h>
 
 #include <algorithm>
@@ -26,6 +28,7 @@
 #include "python_observability_context.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/slice/slice.h"
+#include "src/core/util/grpc_check.h"
 #include "absl/strings/str_cat.h"
 #include "absl/time/clock.h"
 
@@ -166,6 +169,13 @@ PythonOpenCensusCallTracer::PythonOpenCensusCallAttemptTracer::
 
 void PythonOpenCensusCallTracer::PythonOpenCensusCallAttemptTracer::
     RecordSendInitialMetadata(grpc_metadata_batch* send_initial_metadata) {
+  GRPC_CHECK(
+      !grpc_core::IsCallTracerSendInitialMetadataIsAnAnnotationEnabled());
+  MutateSendInitialMetadata(send_initial_metadata);
+}
+
+void PythonOpenCensusCallTracer::PythonOpenCensusCallAttemptTracer::
+    MutateSendInitialMetadata(grpc_metadata_batch* send_initial_metadata) {
   if (parent_->tracing_enabled_) {
     char tracing_buf[kMaxTraceContextLen];
     size_t tracing_len =
@@ -368,6 +378,12 @@ void PythonOpenCensusCallTracer::PythonOpenCensusCallAttemptTracer::
   }
 
   switch (annotation.type()) {
+    case grpc_core::CallTracerAnnotationInterface::AnnotationType::
+        kSendInitialMetadata:
+      // Python OpenCensus does not have any immutable tracing for send initial
+      // metadata. All work for send initial metadata is mutation, which is
+      // handled in MutateSendInitialMetadata.
+      break;
     // Annotations are expensive to create. We should only create it if the call
     // is being sampled by default.
     default:

@@ -17,7 +17,13 @@ load("//test/cpp/microbenchmarks:grpc_benchmark_config.bzl", "HISTORY", "grpc_cc
 
 licenses(["notice"])
 
-grpc_package(name = "test/cpp/microbenchmarks")
+grpc_package(
+    name = "test/cpp/microbenchmarks",
+    features = [
+        "layering_check",
+        "parse_headers",
+    ],
+)
 
 grpc_cc_benchmark(
     name = "noop-benchmark",

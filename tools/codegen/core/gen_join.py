@@ -41,6 +41,22 @@ struct JoinState<Traits, ${",".join(f"P{i}" for i in range(0,n))}> {
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION JoinState(const JoinState& other) = delete;
   JoinState& operator=(const JoinState& other) = delete;
   JoinState& operator=(JoinState&& other) = delete;
+  void ToProto(grpc_channelz_v2_Promise_CompositionKind kind, grpc_channelz_v2_Promise* promise_proto, upb_Arena* arena) const {
+    auto* join_promise = grpc_channelz_v2_Promise_mutable_join_promise(promise_proto, arena);
+    grpc_channelz_v2_Promise_Join_set_kind(join_promise, kind);
+    auto** branches = grpc_channelz_v2_Promise_Join_resize_branches(join_promise, ${n}, arena);
+    for (int i = 0; i < ${n}; i++) {
+        branches[i] = grpc_channelz_v2_Promise_JoinBranch_new(arena);
+    }
+% for i in range(0,n):
+    grpc_channelz_v2_Promise_JoinBranch_set_factory(branches[${i}], StdStringToUpbString(TypeName<P${i}>()));
+    if (ready.is_set(${i})) {
+      grpc_channelz_v2_Promise_JoinBranch_set_result(branches[${i}], StdStringToUpbString("ready"));
+    } else {
+      PromiseAsProto(promise${i}, grpc_channelz_v2_Promise_JoinBranch_mutable_polling_promise(branches[${i}], arena), arena);
+    }
+% endfor
+  }
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION JoinState(JoinState&& other) noexcept {
     GRPC_DCHECK(other.ready.none());
 % for i in range(0,n):
@@ -106,6 +122,10 @@ front_matter = """
 #include <tuple>
 #include <type_traits>
 #include <utility>
+
+#include "src/core/lib/promise/detail/promise_like.h"
+#include "src/core/util/upb_utils.h"
+#include "src/proto/grpc/channelz/v2/promise.upb.h"
 
 namespace grpc_core {
 namespace promise_detail {

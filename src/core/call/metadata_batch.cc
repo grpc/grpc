@@ -59,6 +59,8 @@ bool IsMetadataKeyAllowedInDebugOutput(absl::string_view key) {
   if (key == UserAgentMetadata::key()) return true;
   if (key == W3CTraceParentMetadata::key()) return true;
   if (key == XEnvoyPeerMetadata::key()) return true;
+  if (key == XForwardedForMetadata::key()) return true;
+  if (key == XForwardedHostMetadata::key()) return true;
   // go/keep-sorted end
   // go/keep-sorted start
   if (key == GrpcCallWasCancelled::DebugKey()) return true;

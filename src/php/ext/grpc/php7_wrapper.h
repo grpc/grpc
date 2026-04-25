@@ -149,4 +149,26 @@ static inline int php_grpc_zend_hash_del(HashTable *ht, char *key, int len) {
 #define PHP_GRPC_GET_WRAPPED_OBJECT(class_object, zv) \
   class_object##_from_obj(Z_OBJ_P((zv)))
 
+/* This macro is used to call a PHP callback function from a gRPC C thread.
+ * In PHP 8.3+, a new stack limit check was introduced. When gRPC calls back
+ * into PHP from a non-PHP thread, the engine's stack tracking often produces
+ * false positives (Infinite recursion error).
+ * This wrapper disables the check for the duration of the callback.
+ */
+#if PHP_VERSION_ID >= 80300
+#define PHP_GRPC_CALL_FUNCTION(fci, fci_cache) ({ \
+  size_t old_allowed = EG(max_allowed_stack_size); \
+  void *old_limit = EG(stack_limit); \
+  EG(max_allowed_stack_size) = 0; \
+  EG(stack_limit) = 0; \
+  int _res = zend_call_function(fci, fci_cache TSRMLS_CC); \
+  EG(max_allowed_stack_size) = old_allowed; \
+  EG(stack_limit) = old_limit; \
+  _res; \
+})
+#else
+#define PHP_GRPC_CALL_FUNCTION(fci, fci_cache) \
+  zend_call_function(fci, fci_cache TSRMLS_CC)
+#endif
+
 #endif /* PHP7_WRAPPER_GRPC_H */

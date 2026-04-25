@@ -58,7 +58,10 @@ std::string XdsListenerResource::HttpConnectionManager::ToString() const {
 
 std::string XdsListenerResource::HttpConnectionManager::HttpFilter::ToString()
     const {
-  return absl::StrCat("{name=", name, ", config=", config.ToString(), "}");
+  return absl::StrCat(
+      "{name=", name, ", config_proto_type=", config_proto_type,
+      ", config=", JsonDump(config), ", filter_config=",
+      filter_config == nullptr ? "null" : filter_config->ToString(), "}");
 }
 
 //

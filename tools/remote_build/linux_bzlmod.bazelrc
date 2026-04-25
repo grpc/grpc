@@ -17,8 +17,4 @@
 
 import %workspace%/tools/remote_build/include/test_config_common.bazelrc
 
-common --enable_bzlmod=true
-common --enable_workspace=false
-common --ignore_dev_dependency
-
 build --jobs=200

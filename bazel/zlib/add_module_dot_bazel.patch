@@ -1,0 +1,12 @@
+# Adopted from https://github.com/bazelbuild/bazel-central-registry/blob/6b0b4507e1679313a1f65fc94a2675dd8778f8a3/modules/zlib/1.3.1.bcr.5/patches/module_dot_bazel.patch
+--- /dev/null
++++ b/MODULE.bazel
+@@ -0,0 +1,8 @@
++module(
++    name = "zlib",
++    version = "1.3.1.bcr.5",
++    compatibility_level = 1,
++)
++bazel_dep(name = "platforms", version = "0.0.7")
++bazel_dep(name = "rules_cc", version = "0.0.8")
++bazel_dep(name = "rules_license", version = "1.0.0")

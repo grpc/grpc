@@ -24,7 +24,6 @@
 #include <grpc/support/port_platform.h>
 #include <grpc/support/time.h>
 #include <grpcpp/impl/call.h>
-#include <grpcpp/impl/call_hook.h>
 #include <grpcpp/impl/codegen/interceptor_common.h>
 #include <grpcpp/impl/completion_queue_tag.h>
 #include <grpcpp/impl/rpc_service_method.h>
@@ -57,9 +56,9 @@ class ServerInterceptorFactoryInterface;
 class ServerMetricRecorder;
 }  // namespace experimental
 
-class ServerInterface : public internal::CallHook {
+class ServerInterface {
  public:
-  ~ServerInterface() override {}
+  virtual ~ServerInterface() {}
 
   /// \a Shutdown does the following things:
   ///
@@ -160,9 +159,6 @@ class ServerInterface : public internal::CallHook {
 
   virtual grpc_server* server() = 0;
 
-  void PerformOpsOnCall(internal::CallOpSetInterface* ops,
-                        internal::Call* call) override = 0;
-
   class BaseAsyncRequest : public internal::CompletionQueueTag {
    public:
     BaseAsyncRequest(ServerInterface* server, grpc::ServerContext* context,
@@ -210,7 +206,7 @@ class ServerInterface : public internal::CallHook {
         return BaseAsyncRequest::FinalizeResult(tag, status);
       }
       call_wrapper_ = grpc::internal::Call(
-          call_, server_, call_cq_, server_->max_receive_message_size(),
+          call_, call_cq_, server_->max_receive_message_size(),
           context_->set_server_rpc_info(name_, type_,
                                         *server_->interceptor_creators()));
       return BaseAsyncRequest::FinalizeResult(tag, status);

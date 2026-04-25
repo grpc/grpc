@@ -19,10 +19,12 @@
 #ifndef GRPC_TEST_CORE_TSI_TRANSPORT_SECURITY_TEST_LIB_H
 #define GRPC_TEST_CORE_TSI_TRANSPORT_SECURITY_TEST_LIB_H
 
+#include <grpc/event_engine/event_engine.h>
 #include <grpc/support/sync.h>
 #include <openssl/x509v3.h>
 
 #include "src/core/tsi/transport_security_interface.h"
+#include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
 
 #define TSI_TEST_TINY_HANDSHAKE_BUFFER_SIZE 32
 #define TSI_TEST_SMALL_HANDSHAKE_BUFFER_SIZE 128
@@ -217,7 +219,9 @@ void tsi_test_frame_protector_receive_message_from_peer(
 // This method performs a full TSI handshake between a client and a server.
 // Note that the test library will implement the new TSI handshaker API to
 // perform handshakes.
-void tsi_test_do_handshake(tsi_test_fixture* fixture);
+void tsi_test_do_handshake(tsi_test_fixture* fixture,
+                           grpc_event_engine::experimental::FuzzingEventEngine*
+                               event_engine = nullptr);
 
 // This method performs a round trip test between the client and the server.
 // That is, the client sends a protected message to a server who receives the

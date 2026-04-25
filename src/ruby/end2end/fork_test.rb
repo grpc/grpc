@@ -34,7 +34,7 @@ def do_rpc(stub)
   stub.echo(Echo::EchoRequest.new(request: 'hello'), deadline: Time.now + 300)
 end
 
-def run_client(stub, child_port)
+def run_client(stub)
   do_rpc(stub)
   with_logging("parent: GRPC.prefork") { GRPC.prefork }
   pid = fork do
@@ -71,7 +71,7 @@ def main
   STDERR.puts "server running on port: #{child_port}"
   stub = Echo::EchoServer::Stub.new("localhost:#{child_port}", :this_channel_is_insecure)
   2.times do
-    run_client(stub, child_port)
+    run_client(stub)
   end
 end
 

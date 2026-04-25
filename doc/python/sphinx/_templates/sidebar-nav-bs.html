@@ -1,0 +1,29 @@
+{# Displays the TOC-subtree for pages nested under the currently active #}
+{# top-level TOCtree element. #}
+{# Overriding default sidebar-nav-bs.html with startdepth=0 to show all aux #}
+{# package pages in the sidebar #}
+{# Note: `startdepth=0` is the only custom change, rest of the definition is #}
+{# taken from
+https://github.com/pydata/pydata-sphinx-theme/blob/a892bfad42c83db158fcc3d658c6677d532094bf/src/pydata_sphinx_theme/theme/pydata_sphinx_theme/components/sidebar-nav-bs.html
+#}
+
+{%- if meta is defined and meta is not none and 'html_theme.show_nav_level' in meta -%}
+{%- set show_nav_level = meta['html_theme.show_nav_level'] -%}
+{%- else -%}
+{%- set show_nav_level = theme_show_nav_level -%}
+{%- endif -%}
+<nav class="bd-docs-nav bd-links" aria-label="{{ _('Section Navigation') }}">
+  <p class="bd-links__title" role="heading" aria-level="1">{{ _("Section Navigation") }}</p>
+  <div class="bd-toc-item navbar-nav">
+    {{- generate_toctree_html(
+    "sidebar",
+    startdepth=0,
+    show_nav_level=show_nav_level | int,
+    maxdepth=theme_navigation_depth | int,
+    collapse=theme_collapse_navigation | tobool,
+    includehidden=theme_sidebar_includehidden | tobool,
+    titles_only=True
+    )
+    -}}
+  </div>
+</nav>

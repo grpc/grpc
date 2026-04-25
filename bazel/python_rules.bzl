@@ -62,7 +62,7 @@ def _gen_py_aspect_impl(target, context):
     for p in target[ProtoInfo].direct_sources:
         protos.append(get_staged_proto_file(target.label, context, p))
 
-    includes = depset(direct = protos, transitive = [target[ProtoInfo].transitive_imports])
+    includes = depset(direct = protos, transitive = [target[ProtoInfo].transitive_sources])
     out_files = (declare_out_files(protos, context, _GENERATED_PROTO_FORMAT) +
                  declare_out_files(protos, context, _GENERATED_PROTO_STUB_FORMAT))
     generated_py_srcs = out_files

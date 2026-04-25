@@ -92,6 +92,49 @@ UPB_INLINE bool envoy_extensions_transport_sockets_tls_v3_GenericSecret_has_secr
   const upb_MiniTableField field = {1, UPB_SIZE(12, 16), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   return upb_Message_HasBaseField(UPB_UPCAST(msg), &field);
 }
+UPB_INLINE void envoy_extensions_transport_sockets_tls_v3_GenericSecret_clear_secrets(envoy_extensions_transport_sockets_tls_v3_GenericSecret* msg) {
+  const upb_MiniTableField field = {2, UPB_SIZE(16, 24), 0, 1, 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
+}
+UPB_INLINE size_t envoy_extensions_transport_sockets_tls_v3_GenericSecret_secrets_size(const envoy_extensions_transport_sockets_tls_v3_GenericSecret* msg) {
+  const upb_MiniTableField field = {2, UPB_SIZE(16, 24), 0, 1, 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_Map* map = upb_Message_GetMap(UPB_UPCAST(msg), &field);
+  return map ? _upb_Map_Size(map) : 0;
+}
+UPB_INLINE bool envoy_extensions_transport_sockets_tls_v3_GenericSecret_secrets_get(const envoy_extensions_transport_sockets_tls_v3_GenericSecret* msg, upb_StringView key, struct envoy_config_core_v3_DataSource** val) {
+  const upb_MiniTableField field = {2, UPB_SIZE(16, 24), 0, 1, 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__extensions__transport_0sockets__tls__v3__GenericSecret__SecretsEntry_msg_init);
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__core__v3__DataSource_msg_init);
+  const upb_Map* map = upb_Message_GetMap(UPB_UPCAST(msg), &field);
+  if (!map) return false;
+  return _upb_Map_Get(map, &key, 0, val, sizeof(*val));
+}
+UPB_INLINE bool envoy_extensions_transport_sockets_tls_v3_GenericSecret_secrets_next(const envoy_extensions_transport_sockets_tls_v3_GenericSecret* msg, upb_StringView* key, const struct envoy_config_core_v3_DataSource** val,
+                           size_t* iter) {
+  const upb_MiniTableField field = {2, UPB_SIZE(16, 24), 0, 1, 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__extensions__transport_0sockets__tls__v3__GenericSecret__SecretsEntry_msg_init);
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__core__v3__DataSource_msg_init);
+  const upb_Map* map = upb_Message_GetMap(UPB_UPCAST(msg), &field);
+  if (!map) return false;
+  upb_MessageValue k;
+  upb_MessageValue v;
+  if (!upb_Map_Next(map, &k, &v, iter)) return false;
+  memcpy(key, &k, sizeof(*key));
+  memcpy(val, &v, sizeof(*val));
+  return true;
+}
+UPB_INLINE const upb_Map* _envoy_extensions_transport_sockets_tls_v3_GenericSecret_secrets_upb_map(envoy_extensions_transport_sockets_tls_v3_GenericSecret* msg) {
+  const upb_MiniTableField field = {2, UPB_SIZE(16, 24), 0, 1, 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__extensions__transport_0sockets__tls__v3__GenericSecret__SecretsEntry_msg_init);
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__core__v3__DataSource_msg_init);
+  return upb_Message_GetMap(UPB_UPCAST(msg), &field);
+}
+UPB_INLINE upb_Map* _envoy_extensions_transport_sockets_tls_v3_GenericSecret_secrets_mutable_upb_map(envoy_extensions_transport_sockets_tls_v3_GenericSecret* msg, upb_Arena* a) {
+  const upb_MiniTableField field = {2, UPB_SIZE(16, 24), 0, 1, 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__extensions__transport_0sockets__tls__v3__GenericSecret__SecretsEntry_msg_init);
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__core__v3__DataSource_msg_init);
+  return _upb_Message_GetOrCreateMutableMap(UPB_UPCAST(msg), &field, 0, sizeof(struct envoy_config_core_v3_DataSource*), a);
+}
 
 UPB_INLINE void envoy_extensions_transport_sockets_tls_v3_GenericSecret_set_secret(envoy_extensions_transport_sockets_tls_v3_GenericSecret *msg, struct envoy_config_core_v3_DataSource* value) {
   const upb_MiniTableField field = {1, UPB_SIZE(12, 16), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
@@ -105,6 +148,27 @@ UPB_INLINE struct envoy_config_core_v3_DataSource* envoy_extensions_transport_so
     if (sub) envoy_extensions_transport_sockets_tls_v3_GenericSecret_set_secret(msg, sub);
   }
   return sub;
+}
+UPB_INLINE void envoy_extensions_transport_sockets_tls_v3_GenericSecret_secrets_clear(envoy_extensions_transport_sockets_tls_v3_GenericSecret* msg) {
+  const upb_MiniTableField field = {2, UPB_SIZE(16, 24), 0, 1, 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Map* map = (upb_Map*)upb_Message_GetMap(UPB_UPCAST(msg), &field);
+  if (!map) return;
+  _upb_Map_Clear(map);
+}
+UPB_INLINE bool envoy_extensions_transport_sockets_tls_v3_GenericSecret_secrets_set(envoy_extensions_transport_sockets_tls_v3_GenericSecret* msg, upb_StringView key, struct envoy_config_core_v3_DataSource* val, upb_Arena* a) {
+  const upb_MiniTableField field = {2, UPB_SIZE(16, 24), 0, 1, 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__extensions__transport_0sockets__tls__v3__GenericSecret__SecretsEntry_msg_init);
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__core__v3__DataSource_msg_init);
+  upb_Map* map = _upb_Message_GetOrCreateMutableMap(UPB_UPCAST(msg),
+                                                    &field, 0, sizeof(val), a);
+  return _upb_Map_Insert(map, &key, 0, &val, sizeof(val), a) !=
+         kUpb_MapInsertStatus_OutOfMemory;
+}
+UPB_INLINE bool envoy_extensions_transport_sockets_tls_v3_GenericSecret_secrets_delete(envoy_extensions_transport_sockets_tls_v3_GenericSecret* msg, upb_StringView key) {
+  const upb_MiniTableField field = {2, UPB_SIZE(16, 24), 0, 1, 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Map* map = (upb_Map*)upb_Message_GetMap(UPB_UPCAST(msg), &field);
+  if (!map) return false;
+  return _upb_Map_Delete(map, &key, 0, NULL);
 }
 
 /* envoy.extensions.transport_sockets.tls.v3.SdsSecretConfig */

@@ -18,6 +18,9 @@ licenses(["notice"])
 
 grpc_package(
     name = "test/cpp/end2end/xds",
+    features = [
+        "parse_headers",
+    ],
     visibility = "public",
 )  # Allows external users to implement end2end tests.
 
@@ -151,6 +154,12 @@ grpc_cc_test(
         "//src/core/tsi/test_creds:client.pem",
         "//src/core/tsi/test_creds:server1.key",
         "//src/core/tsi/test_creds:server1.pem",
+        "//src/core/tsi/test_creds:sni1.key",
+        "//src/core/tsi/test_creds:sni1.pem",
+        "//src/core/tsi/test_creds:sni2.key",
+        "//src/core/tsi/test_creds:sni2.pem",
+        "//src/core/tsi/test_creds:sni3.key",
+        "//src/core/tsi/test_creds:sni3.pem",
     ],
     external_deps = [
         "absl/log:check",
@@ -180,12 +189,14 @@ grpc_cc_test(
         "//:grpc++_xds_server",
         "//:grpc_base",
         "//:grpc_http_filters",
+        "//:grpc_resolver_fake",
         "//:ref_counted_ptr",
         "//src/core:certificate_provider_registry",
         "//src/core:env",
         "//src/core:grpc_audit_logging",
         "//src/core:grpc_check",
         "//src/core:grpc_fake_credentials",
+        "//src/core:grpc_lb_xds_channel_args",
         "//src/core:grpc_tls_credentials",
         "//src/core:sync",
         "//src/proto/grpc/testing:echo_cc_grpc",
@@ -515,6 +526,49 @@ grpc_cc_test(
         "@envoy_api//envoy/extensions/filters/http/gcp_authn/v3:pkg_cc_proto",
         "@envoy_api//envoy/extensions/filters/http/router/v3:pkg_cc_proto",
         "@envoy_api//envoy/extensions/filters/network/http_connection_manager/v3:pkg_cc_proto",
+    ],
+)
+
+grpc_cc_test(
+    name = "xds_composite_filter_end2end_test",
+    size = "large",
+    srcs = ["xds_composite_filter_end2end_test.cc"],
+    external_deps = [
+        "absl/strings",
+        "gtest",
+    ],
+    flaky = True,
+    linkstatic = True,  # Fixes dyld error on MacOS
+    tags = [
+        "no_test_ios",
+        "no_windows",
+        "xds_end2end_test",
+    ],  # TODO(jtattermusch): fix test on windows
+    deps = [
+        ":xds_end2end_test_lib",
+        "//:config_vars",
+        "//:gpr",
+        "//:grpc",
+        "//:grpc++",
+        "//:grpc_base",
+        "//:httpcli",
+        "//src/core:client_channel_backup_poller",
+        "//src/core:experiments",
+        "//src/core:grpc_xds_client",
+        "//src/core:json_object_loader",
+        "//src/core:xds_http_filter",
+        "//test/core/test_util:grpc_test_util",
+        "//test/core/test_util:scoped_env_var",
+        "//test/core/test_util:xds_http_add_header_filter",
+        "@com_github_cncf_xds//xds/type/matcher/v3:pkg_cc_proto",
+        "@com_github_cncf_xds//xds/type/v3:pkg_cc_proto",
+        "@envoy_api//envoy/config/core/v3:pkg_cc_proto",
+        "@envoy_api//envoy/extensions/common/matching/v3:pkg_cc_proto",
+        "@envoy_api//envoy/extensions/filters/common/matcher/action/v3:pkg_cc_proto",
+        "@envoy_api//envoy/extensions/filters/http/composite/v3:pkg_cc_proto",
+        "@envoy_api//envoy/extensions/filters/http/router/v3:pkg_cc_proto",
+        "@envoy_api//envoy/extensions/filters/network/http_connection_manager/v3:pkg_cc_proto",
+        "@envoy_api//envoy/type/matcher/v3:pkg_cc_proto",
     ],
 )
 

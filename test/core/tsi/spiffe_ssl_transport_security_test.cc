@@ -105,26 +105,36 @@ class SpiffeSslTransportSecurityTest
         auto server_map =
             grpc_core::SpiffeBundleMap::FromFile(server_spiffe_bundle_map_path);
         CHECK(server_map.ok());
-        server_spiffe_bundle_map_ = std::make_shared<RootCertInfo>(*server_map);
+        server_spiffe_bundle_map_ =
+            std::make_shared<tsi::RootCertInfo>(*server_map);
       }
       if (!client_spiffe_bundle_map_path.empty()) {
         auto client_map =
             grpc_core::SpiffeBundleMap::FromFile(client_spiffe_bundle_map_path);
         CHECK(client_map.ok());
-        client_spiffe_bundle_map_ = std::make_shared<RootCertInfo>(*client_map);
+        client_spiffe_bundle_map_ =
+            std::make_shared<tsi::RootCertInfo>(*client_map);
       }
+      // In TLS 1.3, the client-side handshake succeeds even if the client sends
+      // a bad certificate. In such a case, the server would fail the TLS
+      // handshake and send an alert to the client as the first application data
+      // message. In TLS 1.2, the client-side handshake will fail if the client
+      // sends a bad certificate.
+      //
+      // For OpenSSL versions < 1.1, TLS 1.3 is not supported, so the
+      // client-side handshake should succeed precisely when the server-side
+      // handshake succeeds. Thus, the expect_client_success_1_3_ is set to
+      // expect_client_success_1_2 in this case.
       expect_server_success_ = expect_server_success;
       expect_client_success_1_2_ = expect_client_success_1_2;
+#if OPENSSL_VERSION_NUMBER >= 0x10100000
       expect_client_success_1_3_ = expect_client_success_1_3;
+#else
+      expect_client_success_1_3_ = expect_client_success_1_2;
+#endif
 
-      server_pem_key_cert_pairs_ = static_cast<tsi_ssl_pem_key_cert_pair*>(
-          gpr_malloc(sizeof(tsi_ssl_pem_key_cert_pair)));
-      server_pem_key_cert_pairs_[0].private_key = server_key_.c_str();
-      server_pem_key_cert_pairs_[0].cert_chain = server_cert_.c_str();
-      client_pem_key_cert_pairs_ = static_cast<tsi_ssl_pem_key_cert_pair*>(
-          gpr_malloc(sizeof(tsi_ssl_pem_key_cert_pair)));
-      client_pem_key_cert_pairs_[0].private_key = client_key_.c_str();
-      client_pem_key_cert_pairs_[0].cert_chain = client_cert_.c_str();
+      server_pem_key_cert_pairs_.emplace_back(server_key_, server_cert_);
+      client_pem_key_cert_pairs_.emplace_back(client_key_, client_cert_);
     }
 
     void Run() {
@@ -133,9 +143,6 @@ class SpiffeSslTransportSecurityTest
     }
 
     ~SslTsiTestFixture() {
-      gpr_free(server_pem_key_cert_pairs_);
-      gpr_free(client_pem_key_cert_pairs_);
-
       tsi_ssl_server_handshaker_factory_unref(server_handshaker_factory_);
       tsi_ssl_client_handshaker_factory_unref(client_handshaker_factory_);
     }
@@ -150,12 +157,12 @@ class SpiffeSslTransportSecurityTest
     void SetupHandshakers() {
       // Create client handshaker factory.
       tsi_ssl_client_handshaker_options client_options;
-      client_options.pem_key_cert_pair = client_pem_key_cert_pairs_;
+      client_options.pem_key_cert_pair = &client_pem_key_cert_pairs_[0];
       if (client_spiffe_bundle_map_ != nullptr) {
         client_options.root_cert_info = client_spiffe_bundle_map_;
       } else {
         client_options.root_cert_info =
-            std::make_shared<RootCertInfo>(ca_certificates_);
+            std::make_shared<tsi::RootCertInfo>(ca_certificates_);
       }
       client_options.min_tls_version = GetParam();
       client_options.max_tls_version = GetParam();
@@ -165,12 +172,11 @@ class SpiffeSslTransportSecurityTest
       // Create server handshaker factory.
       tsi_ssl_server_handshaker_options server_options;
       server_options.pem_key_cert_pairs = server_pem_key_cert_pairs_;
-      server_options.num_key_cert_pairs = 1;
       if (server_spiffe_bundle_map_ != nullptr) {
         server_options.root_cert_info = server_spiffe_bundle_map_;
       } else {
         server_options.root_cert_info =
-            std::make_shared<RootCertInfo>(ca_certificates_);
+            std::make_shared<tsi::RootCertInfo>(ca_certificates_);
       }
       server_options.client_certificate_request =
           TSI_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY;
@@ -200,18 +206,9 @@ class SpiffeSslTransportSecurityTest
 
     void CheckHandshakerPeers() {
       bool expect_server_success = expect_server_success_;
-      bool expect_client_success = false;
-#if OPENSSL_VERSION_NUMBER >= 0x10100000
-      expect_client_success = GetParam() == tsi_tls_version::TSI_TLS1_2
-                                  ? expect_client_success_1_2_
-                                  : expect_client_success_1_3_;
-#else
-      //  If using OpenSSL version < 1.1, the CRL revocation won't
-      //  be enabled anyways, so we always expect the connection to
-      //  be successful.
-      expect_server_success = true;
-      expect_client_success = expect_server_success;
-#endif
+      bool expect_client_success = GetParam() == tsi_tls_version::TSI_TLS1_2
+                                       ? expect_client_success_1_2_
+                                       : expect_client_success_1_3_;
       tsi_peer peer;
       if (expect_client_success) {
         ASSERT_EQ(
@@ -242,8 +239,8 @@ class SpiffeSslTransportSecurityTest
     std::string ca_certificates_;
     tsi_ssl_server_handshaker_factory* server_handshaker_factory_;
     tsi_ssl_client_handshaker_factory* client_handshaker_factory_;
-    std::shared_ptr<RootCertInfo> server_spiffe_bundle_map_;
-    std::shared_ptr<RootCertInfo> client_spiffe_bundle_map_;
+    std::shared_ptr<tsi::RootCertInfo> server_spiffe_bundle_map_;
+    std::shared_ptr<tsi::RootCertInfo> client_spiffe_bundle_map_;
 
     std::string server_key_;
     std::string server_cert_;
@@ -252,8 +249,8 @@ class SpiffeSslTransportSecurityTest
     bool expect_server_success_;
     bool expect_client_success_1_2_;
     bool expect_client_success_1_3_;
-    tsi_ssl_pem_key_cert_pair* client_pem_key_cert_pairs_;
-    tsi_ssl_pem_key_cert_pair* server_pem_key_cert_pairs_;
+    std::vector<tsi_ssl_pem_key_cert_pair> client_pem_key_cert_pairs_;
+    std::vector<tsi_ssl_pem_key_cert_pair> server_pem_key_cert_pairs_;
   };
 };
 
@@ -410,15 +407,8 @@ TEST_P(SpiffeSslTransportSecurityTest, InvalidUTF8Fails) {
   auto* fixture_pass = new SslTsiTestFixture(
       kServerKeyPath, kServerCertPath, kInvalidUtf8SanKeyPath,
       kInvalidUtf8SanCertPath, "", "", kCaPemPath,
-  // OpenSSL3 and above will fail the handshake because of the invalid
-  // UTF-8 URI SAN.
-#if OPENSSL_VERSION_NUMBER >= 0x30000000L
-      /*expect_server_success=*/false,
-      /*expect_client_success_1_2=*/false,
-#else
       /*expect_server_success=*/true,
       /*expect_client_success_1_2=*/true,
-#endif
       /*expect_client_success_1_3=*/true);
   fixture_pass->Run();
   // Should fail SPIFFE verification because of multiple URI SANs.

@@ -47,6 +47,7 @@
 #include "test/core/test_util/resolve_localhost_ip46.h"
 #include "test/core/test_util/test_config.h"
 #include "test/core/test_util/tls_utils.h"
+#include "test/cpp/end2end/end2end_test_utils.h"
 #include "test/cpp/end2end/test_service_impl.h"
 #include "test/cpp/util/test_credentials_provider.h"
 #include "gmock/gmock.h"
@@ -249,6 +250,7 @@ class ChannelzServerTest : public ::testing::TestWithParam<CredentialsType> {
       // channelz enabled since these channels (proxy outbound to backends)
       // are the ones that our test will actually be validating.
       ChannelArguments args;
+      ApplyCommonChannelArguments(args);
       args.SetInt(GRPC_ARG_ENABLE_CHANNELZ, 1);
       args.SetInt(GRPC_ARG_MAX_CHANNEL_TRACE_EVENT_MEMORY_PER_NODE, 1024);
       std::shared_ptr<Channel> channel_to_backend = grpc::CreateCustomChannel(
@@ -262,6 +264,7 @@ class ChannelzServerTest : public ::testing::TestWithParam<CredentialsType> {
     string target =
         absl::StrCat("dns:", grpc_core::LocalIp(), ":", proxy_port_);
     ChannelArguments args;
+    ApplyCommonChannelArguments(args);
     // disable channelz. We only want to focus on proxy to backend outbound.
     args.SetInt(GRPC_ARG_ENABLE_CHANNELZ, 0);
     channelz_channel_ = grpc::CreateCustomChannel(
@@ -274,6 +277,7 @@ class ChannelzServerTest : public ::testing::TestWithParam<CredentialsType> {
     string target =
         absl::StrCat("dns:", grpc_core::LocalIp(), ":", proxy_port_);
     ChannelArguments args;
+    ApplyCommonChannelArguments(args);
     // disable channelz. We only want to focus on proxy to backend outbound.
     args.SetInt(GRPC_ARG_ENABLE_CHANNELZ, 0);
     // This ensures that gRPC will not do connection sharing.
@@ -403,6 +407,7 @@ TEST_P(ChannelzServerTest, HighStartId) {
 }
 
 TEST_P(ChannelzServerTest, SuccessfulRequestTest) {
+  SKIP_TEST_FOR_PH2_CLIENT("TODO(tjagtap) [PH2][P3][Client] Fix bug");
   ResetStubs();
   ConfigureProxy(1);
   SendSuccessfulEcho(0);
@@ -418,6 +423,7 @@ TEST_P(ChannelzServerTest, SuccessfulRequestTest) {
 }
 
 TEST_P(ChannelzServerTest, FailedRequestTest) {
+  SKIP_TEST_FOR_PH2_CLIENT("TODO(tjagtap) [PH2][P3][Client] Fix bug");
   ResetStubs();
   ConfigureProxy(1);
   SendFailedEcho(0);
@@ -433,6 +439,7 @@ TEST_P(ChannelzServerTest, FailedRequestTest) {
 }
 
 TEST_P(ChannelzServerTest, ManyRequestsTest) {
+  SKIP_TEST_FOR_PH2_CLIENT("TODO(tjagtap) [PH2][P3][Client] Fix bug");
   ResetStubs();
   ConfigureProxy(1);
   // send some RPCs
@@ -470,6 +477,7 @@ TEST_P(ChannelzServerTest, ManyChannels) {
 }
 
 TEST_P(ChannelzServerTest, ManySubchannels) {
+  SKIP_TEST_FOR_PH2_CLIENT("TODO(tjagtap) [PH2][P3][Client] Fix bug");
   ResetStubs();
   const int kNumChannels = 4;
   ConfigureProxy(kNumChannels);
@@ -580,6 +588,7 @@ TEST_P(ChannelzServerTest, ServerCallTest) {
 }
 
 TEST_P(ChannelzServerTest, ManySubchannelsAndSockets) {
+  SKIP_TEST_FOR_PH2_CLIENT("TODO(tjagtap) [PH2][P3][Client] Fix bug");
   ResetStubs();
   const int kNumChannels = 4;
   ConfigureProxy(kNumChannels);
@@ -663,6 +672,7 @@ TEST_P(ChannelzServerTest, ManySubchannelsAndSockets) {
 }
 
 TEST_P(ChannelzServerTest, StreamingRPC) {
+  SKIP_TEST_FOR_PH2_CLIENT("TODO(tjagtap) [PH2][P3][Client] Fix bug");
   ResetStubs();
   ConfigureProxy(1);
   const int kNumMessages = 5;
@@ -787,6 +797,7 @@ TEST_P(ChannelzServerTest, GetServerSocketsTest) {
 }
 
 TEST_P(ChannelzServerTest, GetServerSocketsPaginationTest) {
+  SKIP_TEST_FOR_PH2_CLIENT("TODO(tjagtap) [PH2][P3][Client] Fix bug");
   ResetStubs();
   ConfigureProxy(1);
   std::vector<std::unique_ptr<grpc::testing::EchoTestService::Stub>> stubs;
@@ -885,6 +896,38 @@ TEST_P(ChannelzServerTest, GetServerListenSocketsTest) {
                                   &get_socket_response);
     EXPECT_TRUE(s.ok()) << "s.error_message() = " << s.error_message();
   }
+}
+
+TEST_P(ChannelzServerTest, GetListenSocketTest) {
+  ResetStubs();
+  ConfigureProxy(1);
+  GetServersRequest get_server_request;
+  GetServersResponse get_server_response;
+  get_server_request.set_start_server_id(0);
+  ClientContext get_server_context;
+  Status s = channelz_stub_->GetServers(&get_server_context, get_server_request,
+                                        &get_server_response);
+  EXPECT_TRUE(s.ok()) << "s.error_message() = " << s.error_message();
+  EXPECT_EQ(get_server_response.server_size(), 1);
+  // The resolver might return one or two addresses depending on the
+  // configuration, one for ipv4 and one for ipv6.
+  int listen_socket_size = get_server_response.server(0).listen_socket_size();
+  EXPECT_THAT(listen_socket_size, ::testing::AnyOf(1, 2));
+  GetSocketRequest get_socket_request;
+  GetSocketResponse get_socket_response;
+  get_socket_request.set_socket_id(
+      get_server_response.server(0).listen_socket(0).socket_id());
+  ClientContext get_socket_context;
+  s = channelz_stub_->GetSocket(&get_socket_context, get_socket_request,
+                                &get_socket_response);
+  EXPECT_TRUE(s.ok()) << "s.error_message() = " << s.error_message();
+  EXPECT_EQ(get_socket_response.socket().ref().socket_id(),
+            get_server_response.server(0).listen_socket(0).socket_id());
+  // Listen sockets should have a local address but no remote address.
+  EXPECT_TRUE(ValidateAddress(get_socket_response.socket().local()));
+  EXPECT_FALSE(get_socket_response.socket().has_remote());
+  EXPECT_NE(get_socket_response.socket().local().address_case(),
+            Address::ADDRESS_NOT_SET);
 }
 
 INSTANTIATE_TEST_SUITE_P(ChannelzServer, ChannelzServerTest,

@@ -409,6 +409,11 @@ struct grpc_transport_stream_op_batch_payload {
     // This should be set for cancellations that result from malformed client
     // initial metadata.
     bool tarpit = false;
+    // Server-side only: If non-null, the transport sends this trailing
+    // metadata to the client.
+    // NOTE: This metadata bypasses subsequent filters and is sent directly
+    // to the client. Ensure it contains only fields intended for the client.
+    grpc_core::ServerMetadataHandle send_trailing_metadata = nullptr;
   } cancel_stream;
 };
 

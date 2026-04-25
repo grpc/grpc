@@ -23,6 +23,9 @@
 const grpc_completion_queue_attributes kCompletionQueueAttr = {
     GRPC_CQ_CURRENT_VERSION, GRPC_CQ_NEXT, GRPC_CQ_DEFAULT_POLLING, NULL};
 
+const char *kEnableCustomConcurrentCompletionQueue =
+    "GRPC_OBJC_ENABLE_CUSTOM_CONCURRENT_COMPLETION_QUEUE";
+
 @implementation GRPCCompletionQueue
 
 + (instancetype)completionQueue {
@@ -50,11 +53,18 @@ const grpc_completion_queue_attributes kCompletionQueueAttr = {
     // Start a loop on a concurrent queue to read events from the completion
     // queue and dispatch each.
     static dispatch_once_t initialization;
-    static dispatch_queue_t gDefaultConcurrentQueue;
+    static dispatch_queue_t concurrentDispatchQueue;
     dispatch_once(&initialization, ^{
-      gDefaultConcurrentQueue = dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0);
+      char *useCustomQueue = getenv(kEnableCustomConcurrentCompletionQueue);
+      if (useCustomQueue != nil && strcmp(useCustomQueue, "1") == 0) {
+        dispatch_queue_attr_t attr = dispatch_queue_attr_make_with_qos_class(
+            DISPATCH_QUEUE_CONCURRENT, QOS_CLASS_DEFAULT, 0);
+        concurrentDispatchQueue = dispatch_queue_create("grpc.completionQueue", attr);
+      } else {
+        concurrentDispatchQueue = dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0);
+      }
     });
-    dispatch_async(gDefaultConcurrentQueue, ^{
+    dispatch_async(concurrentDispatchQueue, ^{
       while (YES) {
         @autoreleasepool {
           // The following call blocks until an event is available.

@@ -35,6 +35,7 @@ from typing import (
     Union,
 )
 
+from grpc import _compression
 from grpc._cython import cygrpc as _cygrpc  # type: ignore # noqa: PGH003
 from grpc._runtime_protos import protos
 from grpc._runtime_protos import protos_and_services
@@ -336,10 +337,6 @@ class StatusCode(enum.Enum):
     UNAUTHENTICATED = (_cygrpc.StatusCode.unauthenticated, "unauthenticated")
 
 
-from grpc import (  # pylint: disable=wrong-import-position # noqa: E402
-    _compression,
-)
-
 #############################  gRPC Status  ################################
 
 
@@ -435,7 +432,7 @@ class Call(RpcContext, metaclass=abc.ABCMeta):
         This method blocks until the value is available.
 
         Returns:
-          The initial :term:`metadata`.
+          The initial :term:`metadata`, or None.
         """
         raise NotImplementedError()
 
@@ -446,7 +443,7 @@ class Call(RpcContext, metaclass=abc.ABCMeta):
         This method blocks until the value is available.
 
         Returns:
-          The trailing :term:`metadata`.
+          The trailing :term:`metadata`, or None.
         """
         raise NotImplementedError()
 
@@ -457,7 +454,7 @@ class Call(RpcContext, metaclass=abc.ABCMeta):
         This method blocks until the value is available.
 
         Returns:
-          The StatusCode value for the RPC.
+          The StatusCode value for the RPC, or None.
         """
         raise NotImplementedError()
 
@@ -468,7 +465,7 @@ class Call(RpcContext, metaclass=abc.ABCMeta):
         This method blocks until the value is available.
 
         Returns:
-          The details string of the RPC.
+          The details string of the RPC, or None.
         """
         raise NotImplementedError()
 
@@ -486,8 +483,8 @@ class ClientCallDetails(abc.ABC):
         the service-side of the RPC.
       credentials: An optional CallCredentials for the RPC.
       wait_for_ready: An optional flag to enable :term:`wait_for_ready` mechanism.
-      compression: An element of grpc.compression, e.g.
-        grpc.compression.Gzip.
+      compression: An element of grpc.Compression, e.g.
+        grpc.Compression.Gzip.
     """
 
     method: str
@@ -663,7 +660,7 @@ class StreamStreamClientInterceptor(abc.ABC):
 ############  Authentication & Authorization Interfaces & Classes  #############
 
 
-class ChannelCredentials(object):
+class ChannelCredentials:
     """An encapsulation of the data required to create a secure Channel.
 
     This class has no supported interface - it exists to define the type of its
@@ -673,10 +670,10 @@ class ChannelCredentials(object):
     """
 
     def __init__(self, credentials: CygrpcChannelCredentials):
-        self._credentials = credentials
+        self._credentials = credentials._cy_creds
 
 
-class CallCredentials(object):
+class CallCredentials:
     """An encapsulation of the data required to assert an identity over a call.
 
     A CallCredentials has to be used with secure Channel, otherwise the
@@ -690,7 +687,7 @@ class CallCredentials(object):
     """
 
     def __init__(self, credentials: CygrpcCallCredentials):
-        self._credentials = credentials
+        self._credentials = credentials._cy_creds
 
 
 class AuthMetadataContext(abc.ABC):
@@ -739,7 +736,7 @@ class AuthMetadataPlugin(abc.ABC):
         raise NotImplementedError()
 
 
-class ServerCredentials(object):
+class ServerCredentials:
     """An encapsulation of the data required to open a secure port on a Server.
 
     This class has no supported interface - it exists to define the type of its
@@ -747,10 +744,10 @@ class ServerCredentials(object):
     """
 
     def __init__(self, credentials: CygrpcServerCredentials):
-        self._credentials = credentials
+        self._credentials = credentials._cy_creds
 
 
-class ServerCertificateConfiguration(object):
+class ServerCertificateConfiguration:
     """A certificate configuration for use with an SSL-enabled Server.
 
     Instances of this class can be returned in the certificate configuration
@@ -764,7 +761,7 @@ class ServerCertificateConfiguration(object):
     def __init__(
         self, certificate_configuration: CygrpcServerCertificateConfig
     ):
-        self._certificate_configuration = certificate_configuration
+        self._certificate_configuration = certificate_configuration._cy_config
 
 
 ########################  Multi-Callable Interfaces  ###########################
@@ -794,8 +791,8 @@ class UnaryUnaryMultiCallable(abc.ABC):
           credentials: An optional CallCredentials for the RPC. Only valid for
             secure Channel.
           wait_for_ready: An optional flag to enable :term:`wait_for_ready` mechanism.
-          compression: An element of grpc.compression, e.g.
-            grpc.compression.Gzip.
+          compression: An element of grpc.Compression, e.g.
+            grpc.Compression.Gzip.
 
         Returns:
           The response value for the RPC.
@@ -828,8 +825,8 @@ class UnaryUnaryMultiCallable(abc.ABC):
           credentials: An optional CallCredentials for the RPC. Only valid for
             secure Channel.
           wait_for_ready: An optional flag to enable :term:`wait_for_ready` mechanism.
-          compression: An element of grpc.compression, e.g.
-            grpc.compression.Gzip.
+          compression: An element of grpc.Compression, e.g.
+            grpc.Compression.Gzip.
 
         Returns:
           The response value for the RPC and a Call value for the RPC.
@@ -862,8 +859,8 @@ class UnaryUnaryMultiCallable(abc.ABC):
           credentials: An optional CallCredentials for the RPC. Only valid for
             secure Channel.
           wait_for_ready: An optional flag to enable :term:`wait_for_ready` mechanism.
-          compression: An element of grpc.compression, e.g.
-            grpc.compression.Gzip.
+          compression: An element of grpc.Compression, e.g.
+            grpc.Compression.Gzip.
 
         Returns:
             An object that is both a Call for the RPC and a Future.
@@ -899,8 +896,8 @@ class UnaryStreamMultiCallable(abc.ABC):
           credentials: An optional CallCredentials for the RPC. Only valid for
             secure Channel.
           wait_for_ready: An optional flag to enable :term:`wait_for_ready` mechanism.
-          compression: An element of grpc.compression, e.g.
-            grpc.compression.Gzip.
+          compression: An element of grpc.Compression, e.g.
+            grpc.Compression.Gzip.
 
         Returns:
             An object that is a Call for the RPC, an iterator of response
@@ -936,8 +933,8 @@ class StreamUnaryMultiCallable(abc.ABC):
           credentials: An optional CallCredentials for the RPC. Only valid for
             secure Channel.
           wait_for_ready: An optional flag to enable :term:`wait_for_ready` mechanism.
-          compression: An element of grpc.compression, e.g.
-            grpc.compression.Gzip.
+          compression: An element of grpc.Compression, e.g.
+            grpc.Compression.Gzip.
 
         Returns:
           The response value for the RPC.
@@ -971,8 +968,8 @@ class StreamUnaryMultiCallable(abc.ABC):
           credentials: An optional CallCredentials for the RPC. Only valid for
             secure Channel.
           wait_for_ready: An optional flag to enable :term:`wait_for_ready` mechanism.
-          compression: An element of grpc.compression, e.g.
-            grpc.compression.Gzip.
+          compression: An element of grpc.Compression, e.g.
+            grpc.Compression.Gzip.
 
         Returns:
           The response value for the RPC and a Call object for the RPC.
@@ -1005,8 +1002,8 @@ class StreamUnaryMultiCallable(abc.ABC):
           credentials: An optional CallCredentials for the RPC. Only valid for
             secure Channel.
           wait_for_ready: An optional flag to enable :term:`wait_for_ready` mechanism.
-          compression: An element of grpc.compression, e.g.
-            grpc.compression.Gzip.
+          compression: An element of grpc.Compression, e.g.
+            grpc.Compression.Gzip.
 
         Returns:
             An object that is both a Call for the RPC and a Future.
@@ -1042,8 +1039,8 @@ class StreamStreamMultiCallable(abc.ABC):
           credentials: An optional CallCredentials for the RPC. Only valid for
             secure Channel.
           wait_for_ready: An optional flag to enable :term:`wait_for_ready` mechanism.
-          compression: An element of grpc.compression, e.g.
-            grpc.compression.Gzip.
+          compression: An element of grpc.Compression, e.g.
+            grpc.Compression.Gzip.
 
         Returns:
             An object that is a Call for the RPC, an iterator of response
@@ -1234,7 +1231,7 @@ class ServicerContext(RpcContext, metaclass=abc.ABCMeta):
         """Accesses the metadata sent by the client.
 
         Returns:
-          The invocation :term:`metadata`.
+          The invocation :term:`metadata`, or None.
         """
         raise NotImplementedError()
 
@@ -1279,7 +1276,7 @@ class ServicerContext(RpcContext, metaclass=abc.ABCMeta):
         """Gets the auth context for the call.
 
         Returns:
-          A map of strings to an iterable of bytes for each auth property.
+          A map of strings to an iterable of bytes for each auth property, or None.
         """
         raise NotImplementedError()
 
@@ -1287,8 +1284,8 @@ class ServicerContext(RpcContext, metaclass=abc.ABCMeta):
         """Set the compression algorithm to be used for the entire call.
 
         Args:
-          compression: An element of grpc.compression, e.g.
-            grpc.compression.Gzip.
+          compression: An element of grpc.Compression, e.g.
+            grpc.Compression.Gzip.
         """
         raise NotImplementedError()
 
@@ -1328,7 +1325,7 @@ class ServicerContext(RpcContext, metaclass=abc.ABCMeta):
         This is an EXPERIMENTAL API.
 
         Returns:
-          The trailing :term:`metadata` for the RPC.
+          The trailing :term:`metadata` for the RPC, or None.
         """
         raise NotImplementedError()
 
@@ -1401,7 +1398,7 @@ class ServicerContext(RpcContext, metaclass=abc.ABCMeta):
         This is an EXPERIMENTAL API.
 
         Returns:
-          The StatusCode value for the RPC.
+          The StatusCode value for the RPC, or None.
         """
         raise NotImplementedError()
 
@@ -1411,7 +1408,7 @@ class ServicerContext(RpcContext, metaclass=abc.ABCMeta):
         This is an EXPERIMENTAL API.
 
         Returns:
-          The details string of the RPC.
+          The details string of the RPC, or None.
         """
         raise NotImplementedError()
 
@@ -1582,7 +1579,7 @@ class Server(abc.ABC):
         raise NotImplementedError()
 
     def add_registered_method_handlers(  # noqa: B027
-        self, service_name: str, method_handlers: Dict[str, RpcMethodHandler]
+        self, service_name: str, method_handlers: Mapping[str, RpcMethodHandler]
     ) -> None:
         """Registers GenericRpcHandlers with this Server.
 
@@ -1857,8 +1854,10 @@ def ssl_channel_credentials(
       A ChannelCredentials for use with an SSL-enabled Channel.
     """
     return ChannelCredentials(
-        _cygrpc.SSLChannelCredentials(
-            root_certificates, private_key, certificate_chain
+        CygrpcChannelCredentials(
+            _cygrpc.SSLChannelCredentials(
+                root_certificates, private_key, certificate_chain
+            )
         )
     )
 
@@ -1880,7 +1879,9 @@ def xds_channel_credentials(
         else fallback_credentials
     )
     return ChannelCredentials(
-        _cygrpc.XDSChannelCredentials(fallback_credentials._credentials)
+        CygrpcChannelCredentials(
+            _cygrpc.XDSChannelCredentials(fallback_credentials._credentials)
+        )
     )
 
 
@@ -1934,10 +1935,12 @@ def composite_call_credentials(
       A CallCredentials object composed of the given CallCredentials objects.
     """
     return CallCredentials(
-        _cygrpc.CompositeCallCredentials(
-            tuple(
-                single_call_credentials._credentials
-                for single_call_credentials in call_credentials
+        CygrpcCallCredentials(
+            _cygrpc.CompositeCallCredentials(
+                tuple(
+                    single_call_credentials._credentials
+                    for single_call_credentials in call_credentials
+                )
             )
         )
     )
@@ -1957,12 +1960,14 @@ def composite_channel_credentials(
         CallCredentials objects.
     """
     return ChannelCredentials(
-        _cygrpc.CompositeChannelCredentials(
-            tuple(
-                single_call_credentials._credentials
-                for single_call_credentials in call_credentials
-            ),
-            channel_credentials._credentials,
+        CygrpcChannelCredentials(
+            _cygrpc.CompositeChannelCredentials(
+                tuple(
+                    single_call_credentials._credentials
+                    for single_call_credentials in call_credentials
+                ),
+                channel_credentials._credentials,
+            )
         )
     )
 
@@ -1997,13 +2002,15 @@ def ssl_server_credentials(
         error_msg = "Illegal to require client auth without providing root certificates!"
         raise ValueError(error_msg)
     return ServerCredentials(
-        _cygrpc.server_credentials_ssl(
-            root_certificates,
-            [
-                _cygrpc.SslPemKeyCertPair(key, pem)
-                for key, pem in private_key_certificate_chain_pairs
-            ],
-            require_client_auth,
+        CygrpcServerCredentials(
+            _cygrpc.server_credentials_ssl(
+                root_certificates,
+                [
+                    _cygrpc.SslPemKeyCertPair(key, pem)
+                    for key, pem in private_key_certificate_chain_pairs
+                ],
+                require_client_auth,
+            )
         )
     )
 
@@ -2019,7 +2026,9 @@ def xds_server_credentials(
         establish a secure connection via xDS. No default value is provided.
     """
     return ServerCredentials(
-        _cygrpc.xds_server_credentials(fallback_credentials._credentials)
+        CygrpcServerCredentials(
+            _cygrpc.xds_server_credentials(fallback_credentials._credentials)
+        )
     )
 
 
@@ -2031,7 +2040,9 @@ def insecure_server_credentials() -> ServerCredentials:
     Instead, it should be used to construct other credentials objects, e.g.
     with xds_server_credentials.
     """
-    return ServerCredentials(_cygrpc.insecure_server_credentials())
+    return ServerCredentials(
+        CygrpcServerCredentials(_cygrpc.insecure_server_credentials())
+    )
 
 
 def ssl_server_certificate_configuration(
@@ -2053,12 +2064,14 @@ def ssl_server_certificate_configuration(
     """
     if private_key_certificate_chain_pairs:
         return ServerCertificateConfiguration(
-            _cygrpc.server_certificate_config_ssl(
-                root_certificates,
-                [
-                    _cygrpc.SslPemKeyCertPair(key, pem)
-                    for key, pem in private_key_certificate_chain_pairs
-                ],
+            CygrpcServerCertificateConfig(
+                _cygrpc.server_certificate_config_ssl(
+                    root_certificates,
+                    [
+                        _cygrpc.SslPemKeyCertPair(key, pem)
+                        for key, pem in private_key_certificate_chain_pairs
+                    ],
+                )
             )
         )
     error_msg = "At least one private key-certificate chain pair is required!"
@@ -2093,10 +2106,12 @@ def dynamic_ssl_server_credentials(
       A ServerCredentials.
     """
     return ServerCredentials(
-        _cygrpc.server_credentials_ssl_dynamic_cert_config(
-            initial_certificate_configuration,
-            certificate_configuration_fetcher,
-            require_client_authentication,
+        CygrpcServerCredentials(
+            _cygrpc.server_credentials_ssl_dynamic_cert_config(
+                initial_certificate_configuration,
+                certificate_configuration_fetcher,
+                require_client_authentication,
+            )
         )
     )
 
@@ -2143,7 +2158,9 @@ def local_channel_credentials(
       A ChannelCredentials for use with a local Channel
     """
     return ChannelCredentials(
-        _cygrpc.channel_credentials_local(local_connect_type.value)
+        CygrpcChannelCredentials(
+            _cygrpc.channel_credentials_local(local_connect_type.value)
+        )
     )
 
 
@@ -2176,7 +2193,9 @@ def local_server_credentials(
       A ServerCredentials for use with a local Server
     """
     return ServerCredentials(
-        _cygrpc.server_credentials_local(local_connect_type.value)
+        CygrpcServerCredentials(
+            _cygrpc.server_credentials_local(local_connect_type.value)
+        )
     )
 
 
@@ -2201,7 +2220,9 @@ def alts_channel_credentials(
       A ChannelCredentials for use with an ALTS-enabled Channel
     """
     return ChannelCredentials(
-        _cygrpc.channel_credentials_alts(service_accounts or [])
+        CygrpcChannelCredentials(
+            _cygrpc.channel_credentials_alts(service_accounts or [])
+        )
     )
 
 
@@ -2216,11 +2237,13 @@ def alts_server_credentials() -> ServerCredentials:
     Returns:
       A ServerCredentials for use with an ALTS-enabled Server
     """
-    return ServerCredentials(_cygrpc.server_credentials_alts())
+    return ServerCredentials(
+        CygrpcServerCredentials(_cygrpc.server_credentials_alts())
+    )
 
 
 def compute_engine_channel_credentials(
-    call_credentials: Optional[CallCredentials] = None,
+    call_credentials: CallCredentials,
 ) -> ChannelCredentials:
     """Creates a compute engine channel credential.
 
@@ -2237,8 +2260,10 @@ def compute_engine_channel_credentials(
         msg = "call_credentials must not be None."
         raise ValueError(msg)
     return ChannelCredentials(
-        _cygrpc.channel_credentials_compute_engine(
-            call_credentials._credentials
+        CygrpcChannelCredentials(
+            _cygrpc.channel_credentials_compute_engine(
+                call_credentials._credentials
+            )
         )
     )
 
@@ -2379,8 +2404,8 @@ def server(
       maximum_concurrent_rpcs: The maximum number of concurrent RPCs this server
         will service before returning RESOURCE_EXHAUSTED status, or None to
         indicate no limit.
-      compression: An element of grpc.compression, e.g.
-        grpc.compression.Gzip. This compression algorithm will be used for the
+      compression: An element of grpc.Compression, e.g.
+        grpc.Compression.Gzip. This compression algorithm will be used for the
         lifetime of the server unless overridden.
       xds: If set to true, retrieves server configuration via xDS. This is an
         EXPERIMENTAL option.

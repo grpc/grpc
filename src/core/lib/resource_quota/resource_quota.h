@@ -53,6 +53,8 @@ class ResourceQuota : public RefCounted<ResourceQuota>,
 
   const RefCountedPtr<ThreadQuota>& thread_quota() { return thread_quota_; }
 
+  const RefCountedPtr<StreamQuota>& stream_quota() { return stream_quota_; }
+
   // The default global resource quota
   static ResourceQuotaRefPtr Default();
   static void TestOnlyResetDefaultResourceQuota();
@@ -66,6 +68,7 @@ class ResourceQuota : public RefCounted<ResourceQuota>,
   RefCountedPtr<channelz::ResourceQuotaNode> channelz_node_;
   MemoryQuotaRefPtr memory_quota_;
   RefCountedPtr<ThreadQuota> thread_quota_;
+  RefCountedPtr<StreamQuota> stream_quota_;
 };
 
 inline ResourceQuotaRefPtr MakeResourceQuota(std::string name) {

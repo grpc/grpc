@@ -35,13 +35,13 @@ from typing import (
     cast,
 )
 
-import grpc  # pytype: disable=pyi-error
-from grpc import _common  # pytype: disable=pyi-error
-from grpc import _compression  # pytype: disable=pyi-error
-from grpc import _grpcio_metadata  # pytype: disable=pyi-error
-from grpc import _observability  # pytype: disable=pyi-error
+import grpc
+from grpc import _common
+from grpc import _compression
+from grpc import _grpcio_metadata
+from grpc import _observability
 from grpc._cython import cygrpc
-import grpc.experimental  # pytype: disable=pyi-error
+import grpc.experimental
 from grpc.typing import ChannelArgumentType
 from grpc.typing import DeserializingFunction
 from grpc.typing import MetadataType
@@ -119,7 +119,7 @@ def _unknown_code_details(
     )
 
 
-class _RPCState(object):
+class _RPCState:
     condition: threading.Condition
     due: Set[cygrpc.OperationType]
     initial_metadata: Optional[MetadataType]
@@ -138,7 +138,7 @@ class _RPCState(object):
 
     def __init__(
         self,
-        due: Sequence[int],
+        due: Sequence[cygrpc.OperationType],
         initial_metadata: Optional[MetadataType],
         trailing_metadata: Optional[MetadataType],
         code: Optional[grpc.StatusCode],
@@ -1711,7 +1711,7 @@ class _InitialMetadataFlags(int):
         return self
 
 
-class _ChannelCallState(object):
+class _ChannelCallState:
     channel: cygrpc.Channel
     managed_calls: int
     threading: bool
@@ -1817,7 +1817,7 @@ def _channel_managed_call_management(state: _ChannelCallState):
     return create
 
 
-class _ChannelConnectivityState(object):
+class _ChannelConnectivityState:
     lock: threading.RLock
     channel: cygrpc.Channel
     polling: bool
@@ -2012,7 +2012,7 @@ def _augment_options(
         + compression_option
         + (
             (
-                _common.decode(cygrpc.ChannelArgKey.primary_user_agent_string),
+                cygrpc.ChannelArgKey.primary_user_agent_string.decode(),
                 _USER_AGENT,
             ),
         )

@@ -15,11 +15,12 @@
 import collections
 import logging
 import threading
-from typing import AnyStr, Callable, Optional
+from typing import Callable, Optional, Type, Union
 
 import grpc
 from grpc import _common
-from grpc._cython import cygrpc
+from grpc._cython import cygrpc  # type: ignore[reportMissingModuleSource]
+from grpc.typing import CygrpcCallCredentials
 from grpc.typing import MetadataType
 
 _LOGGER = logging.getLogger(__name__)
@@ -38,7 +39,7 @@ class _AuthMetadataContext(
     pass
 
 
-class _CallbackState(object):
+class _CallbackState:
     def __init__(self):
         self.lock = threading.Lock()
         self.called = False
@@ -53,7 +54,7 @@ class _AuthMetadataPluginCallback(grpc.AuthMetadataPluginCallback):
         self._state = state
         self._callback = callback
 
-    def __call__(self, metadata: MetadataType, error: Optional[BaseException]):
+    def __call__(self, metadata: MetadataType, error: Optional[BaseException]) -> None:
         with self._state.lock:
             if self._state.exception is None:
                 if self._state.called:
@@ -76,7 +77,7 @@ class _AuthMetadataPluginCallback(grpc.AuthMetadataPluginCallback):
             )
 
 
-class _Plugin(object):
+class _Plugin:
     _metadata_plugin: grpc.AuthMetadataPlugin
 
     def __init__(self, metadata_plugin: grpc.AuthMetadataPlugin):
@@ -95,8 +96,11 @@ class _Plugin(object):
             pass
 
     def __call__(
-        self, service_url: AnyStr, method_name: AnyStr, callback: Callable
-    ):
+        self,
+        service_url: Union[str, bytes],
+        method_name: Union[str, bytes],
+        callback: Callable,
+    ) -> None:
         context = _AuthMetadataContext(
             _common.decode(service_url), _common.decode(method_name)
         )
@@ -130,7 +134,9 @@ def metadata_plugin_call_credentials(
     else:
         effective_name = name
     return grpc.CallCredentials(
-        cygrpc.MetadataPluginCallCredentials(
-            _Plugin(metadata_plugin), _common.encode(effective_name)
+        CygrpcCallCredentials(
+            cygrpc.MetadataPluginCallCredentials(
+                _Plugin(metadata_plugin), _common.encode(effective_name)
+            )
         )
     )

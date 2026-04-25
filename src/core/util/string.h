@@ -26,7 +26,18 @@
 
 #include <string>
 
+#include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
+
 // String utility functions
+
+namespace grpc_core {
+
+// Simple wrapper for absl::StrAppend() that avoids inlining, which
+// helps avoid binary bloat.
+ABSL_ATTRIBUTE_NOINLINE void StrAppend(std::string& dst, absl::string_view s);
+
+}  // namespace grpc_core
 
 // Flags for gpr_dump function.
 #define GPR_DUMP_HEX 0x00000001

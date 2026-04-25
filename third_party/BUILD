@@ -2,7 +2,6 @@ load("@bazel_skylib//rules:common_settings.bzl", "bool_flag")
 
 exports_files([
     "gtest.BUILD",
-    "zlib.BUILD",
     "twisted.BUILD",
     "yaml.BUILD",
     "incremental.BUILD",

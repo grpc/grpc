@@ -23,6 +23,7 @@
 #include "src/core/channelz/ztrace_collector.h"
 #include "src/core/ext/transport/chaotic_good/tcp_frame_header.h"
 #include "src/core/lib/event_engine/utils.h"
+#include "absl/strings/str_join.h"
 
 namespace grpc_core::chaotic_good {
 namespace tcp_ztrace_collector_detail {
@@ -82,7 +83,7 @@ struct EndpointWriteMetricsTrace {
     return channelz::PropertyList()
         .Set("metadata_type",
              grpc_event_engine::experimental::WriteEventToString(write_event))
-        .Set("fathom_timestamp", timestamp)
+        .Set("fathom_timestamp", absl::FormatTime(timestamp))
         .Merge([this]() {
           channelz::PropertyList props;
           for (const auto& [name, value] : metrics) {
@@ -154,13 +155,15 @@ struct WriteLargeFrameHeaderTrace {
   uint64_t payload_tag;
   uint64_t payload_size;
   uint32_t chosen_endpoint;
+  uint32_t stream_id;
 
   channelz::PropertyList ChannelzProperties() const {
     return channelz::PropertyList()
         .Set("metadata_type", "WRITE_LARGE_HEADER")
         .Set("payload_tag", payload_tag)
         .Set("payload_size", payload_size)
-        .Set("chosen_endpoint", chosen_endpoint);
+        .Set("chosen_endpoint", chosen_endpoint)
+        .Set("stream_id", stream_id);
   }
 };
 
@@ -195,6 +198,18 @@ struct WriteBytesToControlChannelTrace {
     return channelz::PropertyList()
         .Set("metadata_type", "WRITE_CTL_BYTES")
         .Set("bytes", bytes);
+  }
+};
+
+struct ChunkStreamAssociationTrace {
+  int64_t stream_id;
+  uint64_t flow_id;
+
+  channelz::PropertyList ChannelzProperties() const {
+    return channelz::PropertyList()
+        .Set("metadata_type", "CHUNK_STREAM_ASSOCIATION")
+        .Set("stream_id", stream_id)
+        .Set("flow_id", flow_id);
   }
 };
 
@@ -241,8 +256,8 @@ using TcpZTraceCollector = channelz::ZTraceCollector<
     WriteLargeFrameHeaderTrace, EndpointWriteMetricsTrace,
     WriteBytesToEndpointTrace, FinishWriteBytesToEndpointTrace,
     WriteBytesToControlChannelTrace, FinishWriteBytesToControlChannelTrace,
-    TransportError<true>, TransportError<false>, OrphanTrace,
-    EndpointCloseTrace>;
+    ChunkStreamAssociationTrace, TransportError<true>, TransportError<false>,
+    OrphanTrace, EndpointCloseTrace>;
 
 }  // namespace grpc_core::chaotic_good
 

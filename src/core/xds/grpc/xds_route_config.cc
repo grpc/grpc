@@ -32,6 +32,17 @@
 namespace grpc_core {
 
 //
+// XdsRouteConfigResource::FilterConfigOverride
+//
+
+std::string XdsRouteConfigResource::FilterConfigOverride::ToString() const {
+  return absl::StrCat(
+      "{config_proto_type=", config_proto_type, ", config=", JsonDump(config),
+      ", filter_config=",
+      filter_config == nullptr ? "null" : filter_config->ToString(), "}");
+}
+
+//
 // XdsRouteConfigResource::RetryPolicy
 //
 
@@ -229,7 +240,7 @@ std::string XdsRouteConfigResource::Route::ToString() const {
 }
 
 //
-// XdsRouteConfigResource::Route
+// XdsRouteConfigResource::VirtualHost
 //
 
 std::string XdsRouteConfigResource::VirtualHost::ToString() const {

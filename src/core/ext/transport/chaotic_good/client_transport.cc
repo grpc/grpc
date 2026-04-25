@@ -285,6 +285,7 @@ void ChaoticGoodClientTransport::Orphan() {
 void ChaoticGoodClientTransport::AddData(channelz::DataSink sink) {
   // TODO(ctiller): add calls in stream dispatch
   party_->ExportToChannelz("transport_party", sink);
+  message_chunker_.AddData(sink);
 }
 
 auto ChaoticGoodClientTransport::CallOutboundLoop(uint32_t stream_id,

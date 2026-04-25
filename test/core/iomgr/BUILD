@@ -128,12 +128,16 @@ grpc_cc_test(
 grpc_cc_test(
     name = "fd_conservation_posix_test",
     srcs = ["fd_conservation_posix_test.cc"],
-    external_deps = ["absl/log:check"],
+    external_deps = [
+        "absl/log:check",
+        "gtest",
+    ],
     tags = ["no_windows"],
     deps = [
         "//:gpr",
         "//:grpc",
         "//:iomgr",
+        "//src/core:experiments",
         "//src/core:grpc_check",
         "//test/core/test_util:grpc_test_util",
         "//test/core/test_util:grpc_test_util_base",

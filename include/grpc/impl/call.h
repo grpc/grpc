@@ -25,4 +25,13 @@
 void grpc_call_run_in_event_engine(const grpc_call* call,
                                    absl::AnyInvocable<void()> cb);
 
+// Run a callback in the call's EventEngine creating a new ExecCtx for it. If
+// UseCallEventEngineInCompletionQueueEnabled is enabled, this will run the
+// callback in the call's EventEngine. Otherwise, it will run the callback
+// inline since the completion queue has already scheduled this thread in an
+// EventEngine.
+// Internal-only
+void grpc_call_run_cq_cb(const grpc_call* call,
+                         absl::AnyInvocable<void()>&& cb);
+
 #endif /* GRPC_IMPL_CALL_H */

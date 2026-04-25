@@ -729,6 +729,8 @@ class Server : public ServerInterface,
 
   // The last time we printed a shutdown progress message.
   gpr_timespec last_shutdown_message_time_;
+
+  StreamQuotaRefPtr stream_quota_;
 };
 
 }  // namespace grpc_core

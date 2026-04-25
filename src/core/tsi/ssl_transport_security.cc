@@ -18,11 +18,14 @@
 
 #include "src/core/tsi/ssl_transport_security.h"
 
+#include <grpc/private_key_signer.h>
 #include <grpc/support/port_platform.h>
 #include <limits.h>
 #include <string.h>
 
+#include <cstddef>
 #include <cstdlib>
+#include <utility>
 
 // TODO(jboeuf): refactor inet_ntop into a portability header.
 // Note: for whomever reads this and tries to refactor this, this
@@ -55,6 +58,8 @@
 
 #include "src/core/credentials/transport/tls/grpc_tls_crl_provider.h"
 #include "src/core/credentials/transport/tls/ssl_utils.h"
+#include "src/core/lib/event_engine/default_event_engine.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/surface/init.h"
 #include "src/core/tsi/ssl/key_logging/ssl_key_logging.h"
 #include "src/core/tsi/ssl/session_cache/ssl_session_cache.h"
@@ -62,17 +67,19 @@
 #include "src/core/tsi/ssl_types.h"
 #include "src/core/tsi/transport_security.h"
 #include "src/core/tsi/transport_security_interface.h"
-#include "src/core/util/crash.h"
 #include "src/core/util/env.h"
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/match.h"
+#include "src/core/util/ref_counted.h"
+#include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/sync.h"
 #include "src/core/util/useful.h"
+#include "absl/base/thread_annotations.h"
+#include "absl/functional/bind_front.h"
 #include "absl/log/log.h"
 #include "absl/strings/match.h"
 #include "absl/strings/numbers.h"
 #include "absl/strings/str_cat.h"
-#include "absl/strings/str_split.h"
 #include "absl/strings/string_view.h"
 
 // Name of the environment variable controlling OpenSSL cleanup timeout.
@@ -101,6 +108,9 @@ const size_t kMaxChainLength = 100;
 
 using TlsSessionKeyLogger = tsi::TlsSessionKeyLoggerCache::TlsSessionKeyLogger;
 
+using tsi::PrivateKey;
+using tsi::RootCertInfo;
+
 // --- Structure definitions. ---
 
 struct tsi_ssl_root_certs_store {
@@ -110,7 +120,13 @@ struct tsi_ssl_root_certs_store {
 struct tsi_ssl_handshaker_factory {
   const tsi_ssl_handshaker_factory_vtable* vtable;
   gpr_refcount refcount;
+#if defined(OPENSSL_IS_BORINGSSL)
+  std::shared_ptr<grpc_core::PrivateKeySigner> key_signer;
+#endif
 };
+
+static void tsi_ssl_handshaker_factory_unref(
+    tsi_ssl_handshaker_factory* factory);
 
 struct tsi_ssl_client_handshaker_factory {
   tsi_ssl_handshaker_factory base;
@@ -119,7 +135,7 @@ struct tsi_ssl_client_handshaker_factory {
   size_t alpn_protocol_list_length;
   grpc_core::RefCountedPtr<tsi::SslSessionLRUCache> session_cache;
   grpc_core::RefCountedPtr<TlsSessionKeyLogger> key_logger;
-  std::shared_ptr<RootCertInfo> root_cert_info;
+  std::shared_ptr<tsi::RootCertInfo> root_cert_info;
 };
 
 struct tsi_ssl_server_handshaker_factory {
@@ -133,18 +149,67 @@ struct tsi_ssl_server_handshaker_factory {
   unsigned char* alpn_protocol_list;
   size_t alpn_protocol_list_length;
   grpc_core::RefCountedPtr<TlsSessionKeyLogger> key_logger;
-  std::shared_ptr<RootCertInfo> root_cert_info;
+  std::shared_ptr<tsi::RootCertInfo> root_cert_info;
 };
 
-struct tsi_ssl_handshaker {
-  tsi_handshaker base;
+// Tracks the arguments for a pending call to tsi_handshaker_next().
+struct HandshakerNextArgs {
+  // Input args.
+  std::vector<uint8_t> received_bytes;
+  size_t original_received_bytes_size = 0;
+  tsi_handshaker_on_next_done_cb cb;
+  void* user_data;
+  std::string* error_ptr = nullptr;
+
+  // Output args.
+  const unsigned char* bytes_to_send = nullptr;
+  size_t bytes_to_send_size = 0;
+  tsi_handshaker_result* handshaker_result = nullptr;
+};
+
+struct tsi_ssl_handshaker : public tsi_handshaker,
+                            public grpc_core::RefCounted<tsi_ssl_handshaker> {
+  tsi_ssl_handshaker() = default;
+  ~tsi_ssl_handshaker() override {
+    SSL_free(ssl);
+    BIO_free(network_io);
+    gpr_free(outgoing_bytes_buffer);
+    tsi_ssl_handshaker_factory_unref(factory_ref);
+  }
+
   SSL* ssl;
   BIO* network_io;
   tsi_result result;
   unsigned char* outgoing_bytes_buffer;
   size_t outgoing_bytes_buffer_size;
   tsi_ssl_handshaker_factory* factory_ref;
+  grpc_core::Mutex mu;
+  bool is_shutdown ABSL_GUARDED_BY(mu) = false;
+
+  // Will be set if there is a pending call to tsi_handshaker_next(),
+  // or nullopt if not.
+  std::optional<HandshakerNextArgs> handshaker_next_args ABSL_GUARDED_BY(mu);
+  void MaybeSetError(std::string error) const
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(&mu) {
+    if (!handshaker_next_args.has_value()) return;
+    if (handshaker_next_args->error_ptr == nullptr) return;
+    *handshaker_next_args->error_ptr = std::move(error);
+  }
+#if defined(OPENSSL_IS_BORINGSSL)
+  // The signed_bytes are populated when the signature process is completed if
+  // the Private Key offload was successful. If there was an error during the
+  // signature, the status will be returned.
+  absl::StatusOr<std::string> signed_bytes ABSL_GUARDED_BY(mu) = "";
+  // The handle for an in-flight async signing operation.
+  std::shared_ptr<grpc_core::PrivateKeySigner::AsyncSigningHandle>
+      signing_handle ABSL_GUARDED_BY(mu);
+#endif
 };
+
+static std::pair<tsi_result, std::optional<HandshakerNextArgs>>
+ssl_handshaker_next_async(tsi_ssl_handshaker* self)
+    ABSL_EXCLUSIVE_LOCKS_REQUIRED(&tsi_ssl_handshaker::mu);
+
 struct tsi_ssl_handshaker_result {
   tsi_handshaker_result base;
   SSL* ssl;
@@ -163,9 +228,43 @@ struct tsi_ssl_frame_protector {
   // concurrently.
   gpr_mu mu;
 };
-// --- Library Initialization. ---
 
 namespace {
+
+// --- Library Initialization. ---
+
+#if defined(OPENSSL_IS_BORINGSSL)
+
+absl::StatusOr<grpc_core::PrivateKeySigner::SignatureAlgorithm>
+ToSignatureAlgorithmClass(uint16_t algorithm) {
+  switch (algorithm) {
+    case SSL_SIGN_RSA_PKCS1_SHA256:
+      return grpc_core::PrivateKeySigner::SignatureAlgorithm::kRsaPkcs1Sha256;
+    case SSL_SIGN_RSA_PKCS1_SHA384:
+      return grpc_core::PrivateKeySigner::SignatureAlgorithm::kRsaPkcs1Sha384;
+    case SSL_SIGN_RSA_PKCS1_SHA512:
+      return grpc_core::PrivateKeySigner::SignatureAlgorithm::kRsaPkcs1Sha512;
+    case SSL_SIGN_ECDSA_SECP256R1_SHA256:
+      return grpc_core::PrivateKeySigner::SignatureAlgorithm::
+          kEcdsaSecp256r1Sha256;
+    case SSL_SIGN_ECDSA_SECP384R1_SHA384:
+      return grpc_core::PrivateKeySigner::SignatureAlgorithm::
+          kEcdsaSecp384r1Sha384;
+    case SSL_SIGN_ECDSA_SECP521R1_SHA512:
+      return grpc_core::PrivateKeySigner::SignatureAlgorithm::
+          kEcdsaSecp521r1Sha512;
+    case SSL_SIGN_RSA_PSS_RSAE_SHA256:
+      return grpc_core::PrivateKeySigner::SignatureAlgorithm::kRsaPssRsaeSha256;
+    case SSL_SIGN_RSA_PSS_RSAE_SHA384:
+      return grpc_core::PrivateKeySigner::SignatureAlgorithm::kRsaPssRsaeSha384;
+    case SSL_SIGN_RSA_PSS_RSAE_SHA512:
+      return grpc_core::PrivateKeySigner::SignatureAlgorithm::kRsaPssRsaeSha512;
+  }
+  return absl::InvalidArgumentError("Unknown signature algorithm.");
+}
+
+#endif  // OPENSSL_IS_BORINGSSL
+
 // Builds the alpn protocol name list according to rfc 7301.
 // OpenSSL requires <const char**> for the input to the alpn methods.
 tsi_result BuildAlpnProtocolNameList(const char** alpn_protocols,
@@ -256,6 +355,122 @@ static int g_ssl_ctx_ex_crl_provider_index = -1;
 static int g_ssl_ctx_ex_spiffe_bundle_map_index = -1;
 static const unsigned char kSslSessionIdContext[] = {'g', 'r', 'p', 'c'};
 static int g_ssl_ex_verified_root_cert_index = -1;
+static int g_ssl_ex_handshaker_index = -1;
+
+#if defined(OPENSSL_IS_BORINGSSL)
+static tsi_ssl_handshaker* GetHandshaker(const SSL* ssl) {
+  if (ssl == nullptr) return nullptr;
+  GRPC_CHECK_NE(g_ssl_ex_handshaker_index, -1);
+  return static_cast<tsi_ssl_handshaker*>(
+      SSL_get_ex_data(ssl, g_ssl_ex_handshaker_index));
+}
+
+// Invoked by the private key signer when it runs asynchronously.
+void TlsOffloadSignDoneCallback(
+    grpc_core::RefCountedPtr<tsi_ssl_handshaker> handshaker,
+    absl::StatusOr<std::string> signed_data) {
+  grpc_core::ExecCtx exec_ctx;
+  std::optional<HandshakerNextArgs> next_args;
+  tsi_result result = TSI_INTERNAL_ERROR;
+  {
+    grpc_core::MutexLock lock(&handshaker->mu);
+    if (handshaker->is_shutdown) return;
+    handshaker->signed_bytes = std::move(signed_data);
+    handshaker->signing_handle.reset();
+    // Once the signed bytes are obtained, tell everything to resume the
+    // pending async operation.
+    auto async_result = ssl_handshaker_next_async(handshaker.get());
+    result = async_result.first;
+    next_args = std::move(async_result.second);
+  }
+  if (next_args.has_value() && next_args->cb != nullptr) {
+    next_args->cb(result, next_args->user_data, next_args->bytes_to_send,
+                  next_args->bytes_to_send_size, next_args->handshaker_result);
+  }
+}
+
+// Invoked by BoringSSL to get the result of the private key signing.
+enum ssl_private_key_result_t TlsPrivateKeyOffloadComplete(SSL* ssl,
+                                                           uint8_t* out,
+                                                           size_t* out_len,
+                                                           size_t max_out)
+    ABSL_EXCLUSIVE_LOCKS_REQUIRED(&tsi_ssl_handshaker::mu) {
+  auto* handshaker = GetHandshaker(ssl);
+  if (handshaker == nullptr) return ssl_private_key_failure;
+  if (!handshaker->signed_bytes.ok() || handshaker->signed_bytes->empty()) {
+    if (!handshaker->signed_bytes.ok()) {
+      handshaker->MaybeSetError(handshaker->signed_bytes.status().ToString());
+    }
+    return ssl_private_key_failure;
+  }
+  // Important bit is moving the signed data where it needs to go
+  const std::string& signed_data = *handshaker->signed_bytes;
+  if (signed_data.length() > max_out) {
+    // Result is too large.
+    handshaker->MaybeSetError("Result exceeds output limit");
+    return ssl_private_key_failure;
+  }
+  memcpy(out, signed_data.data(), signed_data.length());
+  *out_len = signed_data.length();
+  // Tell BoringSSL we're done
+  return ssl_private_key_success;
+}
+
+// Invoked by BoringSSL during the handshake to do private key signing.
+enum ssl_private_key_result_t TlsPrivateKeySignWrapper(
+    SSL* ssl, uint8_t* out, size_t* out_len, size_t max_out,
+    uint16_t signature_algorithm, const uint8_t* in, size_t in_len)
+    ABSL_EXCLUSIVE_LOCKS_REQUIRED(&tsi_ssl_handshaker::mu) {
+  tsi_ssl_handshaker* handshaker = GetHandshaker(ssl);
+  if (handshaker == nullptr) {
+    return ssl_private_key_failure;
+  }
+  if (handshaker->is_shutdown) {
+    handshaker->MaybeSetError("Handshaker is shuting down");
+    return ssl_private_key_failure;
+  }
+  // Create the completion callback by binding the current context.
+  auto done_callback =
+      absl::bind_front(TlsOffloadSignDoneCallback, handshaker->Ref());
+  // Call the user's sign function. It can be sync or async.
+  // When the user's sign function is async, the contract is that they MUST
+  // invoke the callback when complete in their implementation, and their impl
+  // MUST not block.
+  auto algorithm = ToSignatureAlgorithmClass(signature_algorithm);
+  if (!algorithm.ok()) {
+    handshaker->MaybeSetError(algorithm.status().ToString());
+    return ssl_private_key_failure;
+  }
+  grpc_core::PrivateKeySigner* signer =
+      handshaker->factory_ref->key_signer.get();
+  if (signer == nullptr) {
+    handshaker->MaybeSetError("PrivateKeySigner is null");
+    return ssl_private_key_failure;
+  }
+  auto result =
+      signer->Sign(absl::string_view(reinterpret_cast<const char*>(in), in_len),
+                   *algorithm, done_callback);
+  // Handle synchronous return.
+  return grpc_core::MatchMutable(
+      &result,
+      [&](absl::StatusOr<std::string>* status_or_string)
+          ABSL_NO_THREAD_SAFETY_ANALYSIS {
+            handshaker->signed_bytes = std::move(*status_or_string);
+            return TlsPrivateKeyOffloadComplete(ssl, out, out_len, max_out);
+          },
+      [&](std::shared_ptr<grpc_core::PrivateKeySigner::AsyncSigningHandle>*
+              async_handler) ABSL_NO_THREAD_SAFETY_ANALYSIS {
+        handshaker->signing_handle = std::move(*async_handler);
+        return ssl_private_key_retry;
+      });
+}
+
+const SSL_PRIVATE_KEY_METHOD TlsOffloadPrivateKeyMethod = {
+    TlsPrivateKeySignWrapper,
+    nullptr,  // decrypt not implemented for this use case
+    TlsPrivateKeyOffloadComplete};
+#endif  // defined(OPENSSL_IS_BORINGSSL)
+
 #if !defined(OPENSSL_IS_BORINGSSL) && !defined(OPENSSL_NO_ENGINE)
 static const char kSslEnginePrefix[] = "engine:";
 #endif
@@ -351,8 +566,11 @@ static void init_openssl(void) {
   g_ssl_ex_verified_root_cert_index = SSL_get_ex_new_index(
       0, nullptr, nullptr, nullptr, verified_root_cert_free);
   GRPC_CHECK_NE(g_ssl_ex_verified_root_cert_index, -1);
-}
 
+  g_ssl_ex_handshaker_index =
+      SSL_get_ex_new_index(0, nullptr, nullptr, nullptr, nullptr);
+  GRPC_CHECK_NE(g_ssl_ex_handshaker_index, -1);
+}
 // --- Ssl utils. ---
 
 // TODO(jboeuf): Remove when we are past the debugging phase with this code.
@@ -918,21 +1136,40 @@ static tsi_result populate_ssl_context(
     const char* cipher_list) {
   tsi_result result = TSI_OK;
   if (key_cert_pair != nullptr) {
-    if (key_cert_pair->cert_chain != nullptr) {
-      result = ssl_ctx_use_certificate_chain(context, key_cert_pair->cert_chain,
-                                             strlen(key_cert_pair->cert_chain));
+    if (!key_cert_pair->cert_chain.empty()) {
+      result = ssl_ctx_use_certificate_chain(
+          context, key_cert_pair->cert_chain.c_str(),
+          key_cert_pair->cert_chain.length());
       if (result != TSI_OK) {
         LOG(ERROR) << "Invalid cert chain file.";
         return result;
       }
     }
-    if (key_cert_pair->private_key != nullptr) {
-      result = ssl_ctx_use_private_key(context, key_cert_pair->private_key,
-                                       strlen(key_cert_pair->private_key));
-      if (result != TSI_OK || !SSL_CTX_check_private_key(context)) {
-        LOG(ERROR) << "Invalid private key.";
-        return result != TSI_OK ? result : TSI_INVALID_ARGUMENT;
-      }
+    result = grpc_core::Match(
+        key_cert_pair->private_key,
+        [&](const std::string& pem_root_certs) {
+          tsi_result result = TSI_OK;
+          result = ssl_ctx_use_private_key(context, pem_root_certs.data(),
+                                           pem_root_certs.length());
+          if (result != TSI_OK || !SSL_CTX_check_private_key(context)) {
+            LOG(ERROR) << "Invalid private key.";
+            return result != TSI_OK ? result : TSI_INVALID_ARGUMENT;
+          }
+          return result;
+        },
+        [&](const std::shared_ptr<grpc_core::PrivateKeySigner>& key_signer) {
+#if defined(OPENSSL_IS_BORINGSSL)
+          if (key_signer != nullptr) {
+            SSL_CTX_set_private_key_method(context,
+                                           &TlsOffloadPrivateKeyMethod);
+          }
+          return TSI_OK;
+#else
+          return TSI_UNIMPLEMENTED;
+#endif  // defined(OPENSSL_IS_BORINGSSL)
+        });
+    if (result != TSI_OK) {
+      return result;
     }
   }
   if ((cipher_list != nullptr) &&
@@ -1100,12 +1337,12 @@ static absl::StatusOr<X509_CRL*> GetCrlFromProvider(
   if (provider == nullptr) {
     return absl::InvalidArgumentError("CrlProvider is null.");
   }
-  absl::StatusOr<std::string> issuer_name = grpc_core::IssuerFromCert(cert);
+  absl::StatusOr<std::string> issuer_name = tsi::IssuerFromCert(cert);
   if (!issuer_name.ok()) {
     GRPC_TRACE_LOG(tsi, INFO) << "Could not get certificate issuer name";
     return absl::InvalidArgumentError(issuer_name.status().message());
   }
-  absl::StatusOr<std::string> akid = grpc_core::AkidFromCertificate(cert);
+  absl::StatusOr<std::string> akid = tsi::AkidFromCertificate(cert);
   std::string akid_to_use;
   if (!akid.ok()) {
     GRPC_TRACE_LOG(tsi, INFO)
@@ -1140,12 +1377,12 @@ static bool ValidateCrl(X509* cert, X509* issuer, X509_CRL* crl) {
   // RFC5280 6.3.3
   // 6.3.3a we do not support distribution points
   // 6.3.3b verify issuer and scope
-  valid = grpc_core::VerifyCrlCertIssuerNamesMatch(crl, cert);
+  valid = tsi::VerifyCrlCertIssuerNamesMatch(crl, cert);
   if (!valid) {
     VLOG(2) << "CRL and cert issuer names mismatched.";
     return valid;
   }
-  valid = grpc_core::HasCrlSignBit(issuer);
+  valid = tsi::HasCrlSignBit(issuer);
   if (!valid) {
     VLOG(2) << "CRL issuer not allowed to sign CRLs.";
     return valid;
@@ -1156,7 +1393,7 @@ static bool ValidateCrl(X509* cert, X509* issuer, X509_CRL* crl) {
   // 6.3.3f We only support direct CRLs so these paths are by definition the
   // same.
   // 6.3.3g Verify CRL Signature
-  valid = grpc_core::VerifyCrlSignature(crl, issuer);
+  valid = tsi::VerifyCrlSignature(crl, issuer);
   if (!valid) {
     VLOG(2) << "Crl signature check failed.";
   }
@@ -1287,7 +1524,7 @@ static absl::StatusOr<std::string> GetSpiffeUriFromCert(X509* cert) {
               "validation. Must "
               "have exactly one URI SAN that is the SPIFFE ID.");
         }
-        spiffe_uri = grpc_core::ParseUriString(subject_alt_name);
+        spiffe_uri = tsi::ParseUriString(subject_alt_name);
       }
     }
   }
@@ -1509,7 +1746,7 @@ static tsi_result ssl_protector_protect(tsi_frame_protector* self,
   tsi_ssl_frame_protector* impl =
       reinterpret_cast<tsi_ssl_frame_protector*>(self);
   gpr_mu_lock(&impl->mu);
-  tsi_result result = grpc_core::SslProtectorProtect(
+  tsi_result result = tsi::SslProtectorProtect(
       unprotected_bytes, impl->buffer_size, impl->buffer_offset, impl->buffer,
       impl->ssl, impl->network_io, unprotected_bytes_size,
       protected_output_frames, protected_output_frames_size);
@@ -1523,7 +1760,7 @@ static tsi_result ssl_protector_protect_flush(
   tsi_ssl_frame_protector* impl =
       reinterpret_cast<tsi_ssl_frame_protector*>(self);
   gpr_mu_lock(&impl->mu);
-  tsi_result result = grpc_core::SslProtectorProtectFlush(
+  tsi_result result = tsi::SslProtectorProtectFlush(
       impl->buffer_offset, impl->buffer, impl->ssl, impl->network_io,
       protected_output_frames, protected_output_frames_size,
       still_pending_size);
@@ -1538,7 +1775,7 @@ static tsi_result ssl_protector_unprotect(
   tsi_ssl_frame_protector* impl =
       reinterpret_cast<tsi_ssl_frame_protector*>(self);
   gpr_mu_lock(&impl->mu);
-  tsi_result result = grpc_core::SslProtectorUnprotect(
+  tsi_result result = tsi::SslProtectorUnprotect(
       protected_frames_bytes, impl->ssl, impl->network_io,
       protected_frames_bytes_size, unprotected_bytes, unprotected_bytes_size);
   gpr_mu_unlock(&impl->mu);
@@ -1791,13 +2028,13 @@ static const tsi_handshaker_result_vtable handshaker_result_vtable = {
     ssl_handshaker_result_destroy,
 };
 
-static tsi_result ssl_handshaker_result_create(
-    tsi_ssl_handshaker* handshaker, unsigned char* unused_bytes,
-    size_t unused_bytes_size, tsi_handshaker_result** handshaker_result,
-    std::string* error) {
-  if (handshaker == nullptr || handshaker_result == nullptr ||
-      (unused_bytes_size > 0 && unused_bytes == nullptr)) {
-    if (error != nullptr) *error = "invalid argument";
+static tsi_result ssl_handshaker_result_create(tsi_ssl_handshaker* handshaker,
+                                               unsigned char* unused_bytes,
+                                               size_t unused_bytes_size)
+    ABSL_EXCLUSIVE_LOCKS_REQUIRED(&tsi_ssl_handshaker::mu) {
+  if (handshaker == nullptr) return TSI_INVALID_ARGUMENT;
+  if (unused_bytes_size > 0 && unused_bytes == nullptr) {
+    handshaker->MaybeSetError("invalid argument");
     return TSI_INVALID_ARGUMENT;
   }
   tsi_ssl_handshaker_result* result =
@@ -1811,18 +2048,18 @@ static tsi_result ssl_handshaker_result_create(
   // Transfer ownership of |unused_bytes| to the handshaker result.
   result->unused_bytes = unused_bytes;
   result->unused_bytes_size = unused_bytes_size;
-  *handshaker_result = &result->base;
+  handshaker->handshaker_next_args->handshaker_result = &result->base;
   return TSI_OK;
 }
 
 // --- tsi_handshaker methods implementation. ---
 
 static tsi_result ssl_handshaker_get_bytes_to_send_to_peer(
-    tsi_ssl_handshaker* impl, unsigned char* bytes, size_t* bytes_size,
-    std::string* error) {
+    tsi_ssl_handshaker* impl, unsigned char* bytes, size_t* bytes_size)
+    ABSL_EXCLUSIVE_LOCKS_REQUIRED(&tsi_ssl_handshaker::mu) {
   int bytes_read_from_ssl = 0;
   if (bytes == nullptr || bytes_size == nullptr || *bytes_size > INT_MAX) {
-    if (error != nullptr) *error = "invalid argument";
+    impl->MaybeSetError("invalid argument");
     return TSI_INVALID_ARGUMENT;
   }
   GRPC_CHECK_LE(*bytes_size, static_cast<size_t>(INT_MAX));
@@ -1831,7 +2068,7 @@ static tsi_result ssl_handshaker_get_bytes_to_send_to_peer(
   if (bytes_read_from_ssl < 0) {
     *bytes_size = 0;
     if (!BIO_should_retry(impl->network_io)) {
-      if (error != nullptr) *error = "error reading from BIO";
+      impl->MaybeSetError("error reading from BIO");
       impl->result = TSI_INTERNAL_ERROR;
       return impl->result;
     } else {
@@ -1850,8 +2087,8 @@ static tsi_result ssl_handshaker_get_result(tsi_ssl_handshaker* impl) {
   return impl->result;
 }
 
-static tsi_result ssl_handshaker_do_handshake(tsi_ssl_handshaker* impl,
-                                              std::string* error) {
+static tsi_result ssl_handshaker_do_handshake(tsi_ssl_handshaker* impl)
+    ABSL_EXCLUSIVE_LOCKS_REQUIRED(&tsi_ssl_handshaker::mu) {
   if (ssl_handshaker_get_result(impl) != TSI_HANDSHAKE_IN_PROGRESS) {
     impl->result = TSI_OK;
     return impl->result;
@@ -1872,6 +2109,10 @@ static tsi_result ssl_handshaker_do_handshake(tsi_ssl_handshaker* impl,
         return TSI_OK;
       case SSL_ERROR_WANT_WRITE:
         return TSI_DRAIN_BUFFER;
+#if defined(OPENSSL_IS_BORINGSSL)
+      case SSL_ERROR_WANT_PRIVATE_KEY_OPERATION:
+        return TSI_ASYNC;
+#endif
       default: {
         char err_str[256];
         ERR_error_string_n(ERR_get_error(), err_str, sizeof(err_str));
@@ -1882,12 +2123,16 @@ static tsi_result ssl_handshaker_do_handshake(tsi_ssl_handshaker* impl,
           verify_result_str = absl::StrCat(": ", verify_err);
         }
         LOG(INFO) << "Handshake failed with error "
-                  << grpc_core::SslErrorString(ssl_result) << ": " << err_str
+                  << tsi::SslErrorString(ssl_result) << ": " << err_str
                   << verify_result_str;
-        if (error != nullptr) {
-          *error = absl::StrCat(grpc_core::SslErrorString(ssl_result), ": ",
-                                err_str, verify_result_str);
-        }
+        std::string signer_error;
+#if defined(OPENSSL_IS_BORINGSSL)
+        signer_error =
+            absl::StrCat(": ", impl->signed_bytes.status().ToString());
+#endif
+        impl->MaybeSetError(absl::StrCat(tsi::SslErrorString(ssl_result), ": ",
+                                         err_str, verify_result_str,
+                                         signer_error));
         impl->result = TSI_PROTOCOL_FAILURE;
         return impl->result;
       }
@@ -1896,11 +2141,11 @@ static tsi_result ssl_handshaker_do_handshake(tsi_ssl_handshaker* impl,
 }
 
 static tsi_result ssl_handshaker_process_bytes_from_peer(
-    tsi_ssl_handshaker* impl, const unsigned char* bytes, size_t* bytes_size,
-    std::string* error) {
+    tsi_ssl_handshaker* impl, const unsigned char* bytes, size_t* bytes_size)
+    ABSL_EXCLUSIVE_LOCKS_REQUIRED(&tsi_ssl_handshaker::mu) {
   int bytes_written_into_ssl_size = 0;
   if (bytes == nullptr || bytes_size == nullptr || *bytes_size > INT_MAX) {
-    if (error != nullptr) *error = "invalid argument";
+    impl->MaybeSetError("invalid argument");
     return TSI_INVALID_ARGUMENT;
   }
   GRPC_CHECK_LE(*bytes_size, static_cast<size_t>(INT_MAX));
@@ -1908,32 +2153,28 @@ static tsi_result ssl_handshaker_process_bytes_from_peer(
       BIO_write(impl->network_io, bytes, static_cast<int>(*bytes_size));
   if (bytes_written_into_ssl_size < 0) {
     LOG(ERROR) << "Could not write to memory BIO.";
-    if (error != nullptr) *error = "could not write to memory BIO";
+    impl->MaybeSetError("could not write to memory BIO");
     impl->result = TSI_INTERNAL_ERROR;
     return impl->result;
   }
   *bytes_size = static_cast<size_t>(bytes_written_into_ssl_size);
-  return ssl_handshaker_do_handshake(impl, error);
+  return ssl_handshaker_do_handshake(impl);
 }
 
 static void ssl_handshaker_destroy(tsi_handshaker* self) {
-  tsi_ssl_handshaker* impl = reinterpret_cast<tsi_ssl_handshaker*>(self);
-  SSL_free(impl->ssl);
-  BIO_free(impl->network_io);
-  gpr_free(impl->outgoing_bytes_buffer);
-  tsi_ssl_handshaker_factory_unref(impl->factory_ref);
-  gpr_free(impl);
+  tsi_ssl_handshaker* impl = static_cast<tsi_ssl_handshaker*>(self);
+  impl->Unref();
 }
 
 // Removes the bytes remaining in |impl->SSL|'s read BIO and writes them to
 // |bytes_remaining|.
 static tsi_result ssl_bytes_remaining(tsi_ssl_handshaker* impl,
                                       unsigned char** bytes_remaining,
-                                      size_t* bytes_remaining_size,
-                                      std::string* error) {
-  if (impl == nullptr || bytes_remaining == nullptr ||
-      bytes_remaining_size == nullptr) {
-    if (error != nullptr) *error = "invalid argument";
+                                      size_t* bytes_remaining_size)
+    ABSL_EXCLUSIVE_LOCKS_REQUIRED(&tsi_ssl_handshaker::mu) {
+  if (impl == nullptr) return TSI_INVALID_ARGUMENT;
+  if (bytes_remaining == nullptr || bytes_remaining_size == nullptr) {
+    impl->MaybeSetError("invalid argument");
     return TSI_INVALID_ARGUMENT;
   }
   // Attempt to read all of the bytes in SSL's read BIO. These bytes should
@@ -1951,9 +2192,8 @@ static tsi_result ssl_bytes_remaining(tsi_ssl_handshaker* impl,
         << "Failed to read the expected number of bytes from SSL object.";
     gpr_free(*bytes_remaining);
     *bytes_remaining = nullptr;
-    if (error != nullptr) {
-      *error = "Failed to read the expected number of bytes from SSL object.";
-    }
+    impl->MaybeSetError(
+        "Failed to read the expected number of bytes from SSL object.");
     return TSI_INTERNAL_ERROR;
   }
   *bytes_remaining_size = static_cast<size_t>(bytes_read);
@@ -1964,16 +2204,15 @@ static tsi_result ssl_bytes_remaining(tsi_ssl_handshaker* impl,
 // By doing that, we drain SSL bio buffer used to hold handshake data.
 // This API needs to be repeatedly called until all handshake data are
 // received from SSL.
-static tsi_result ssl_handshaker_write_output_buffer(tsi_handshaker* self,
-                                                     size_t* bytes_written,
-                                                     std::string* error) {
-  tsi_ssl_handshaker* impl = reinterpret_cast<tsi_ssl_handshaker*>(self);
+static tsi_result ssl_handshaker_write_output_buffer(tsi_ssl_handshaker* impl,
+                                                     size_t* bytes_written)
+    ABSL_EXCLUSIVE_LOCKS_REQUIRED(&tsi_ssl_handshaker::mu) {
   tsi_result status = TSI_OK;
   size_t offset = *bytes_written;
   do {
     size_t to_send_size = impl->outgoing_bytes_buffer_size - offset;
     status = ssl_handshaker_get_bytes_to_send_to_peer(
-        impl, impl->outgoing_bytes_buffer + offset, &to_send_size, error);
+        impl, impl->outgoing_bytes_buffer + offset, &to_send_size);
     offset += to_send_size;
     if (status == TSI_INCOMPLETE_DATA) {
       impl->outgoing_bytes_buffer_size *= 2;
@@ -1985,28 +2224,17 @@ static tsi_result ssl_handshaker_write_output_buffer(tsi_handshaker* self,
   return status;
 }
 
-static tsi_result ssl_handshaker_next(tsi_handshaker* self,
-                                      const unsigned char* received_bytes,
-                                      size_t received_bytes_size,
-                                      const unsigned char** bytes_to_send,
-                                      size_t* bytes_to_send_size,
-                                      tsi_handshaker_result** handshaker_result,
-                                      tsi_handshaker_on_next_done_cb /*cb*/,
-                                      void* /*user_data*/, std::string* error) {
-  // Input sanity check.
-  if ((received_bytes_size > 0 && received_bytes == nullptr) ||
-      bytes_to_send == nullptr || bytes_to_send_size == nullptr ||
-      handshaker_result == nullptr) {
-    if (error != nullptr) *error = "invalid argument";
-    return TSI_INVALID_ARGUMENT;
-  }
+static tsi_result ssl_handshaker_next_impl(tsi_ssl_handshaker* self)
+    ABSL_EXCLUSIVE_LOCKS_REQUIRED(&tsi_ssl_handshaker::mu) {
   // If there are received bytes, process them first.
-  tsi_ssl_handshaker* impl = reinterpret_cast<tsi_ssl_handshaker*>(self);
   tsi_result status = TSI_OK;
   size_t bytes_written = 0;
-  if (received_bytes_size > 0) {
-    unsigned char* remaining_bytes_to_write_to_openssl =
-        const_cast<unsigned char*>(received_bytes);
+  if (!self->handshaker_next_args->received_bytes.empty()) {
+    size_t received_bytes_size =
+        self->handshaker_next_args->received_bytes.size();
+    unsigned char* received_bytes =
+        self->handshaker_next_args->received_bytes.data();
+    unsigned char* remaining_bytes_to_write_to_openssl = received_bytes;
     size_t remaining_bytes_to_write_to_openssl_size = received_bytes_size;
     size_t number_bio_write_attempts = 0;
     while (remaining_bytes_to_write_to_openssl_size > 0 &&
@@ -2017,32 +2245,55 @@ static tsi_result ssl_handshaker_next(tsi_handshaker* self,
       size_t bytes_written_to_openssl =
           remaining_bytes_to_write_to_openssl_size;
       status = ssl_handshaker_process_bytes_from_peer(
-          impl, remaining_bytes_to_write_to_openssl, &bytes_written_to_openssl,
-          error);
+          self, remaining_bytes_to_write_to_openssl, &bytes_written_to_openssl);
       // As long as the BIO is full, drive the SSL handshake to consume bytes
       // from the BIO. If the SSL handshake returns any bytes, write them to
       // the peer.
       while (status == TSI_DRAIN_BUFFER) {
-        status =
-            ssl_handshaker_write_output_buffer(self, &bytes_written, error);
-        if (status != TSI_OK) return status;
-        status = ssl_handshaker_do_handshake(impl, error);
+        status = ssl_handshaker_write_output_buffer(self, &bytes_written);
+        if (status != TSI_OK) {
+          return status;
+        }
+        status = ssl_handshaker_do_handshake(self);
       }
       // Move the pointer to the first byte not yet successfully written to
       // the BIO.
       remaining_bytes_to_write_to_openssl_size -= bytes_written_to_openssl;
       remaining_bytes_to_write_to_openssl += bytes_written_to_openssl;
     }
+    // Update the received_bytes in handshaker_next_args.
+    if (remaining_bytes_to_write_to_openssl_size > 0) {
+      size_t bytes_to_remove =
+          self->handshaker_next_args->received_bytes.size() -
+          remaining_bytes_to_write_to_openssl_size;
+      self->handshaker_next_args->received_bytes.erase(
+          self->handshaker_next_args->received_bytes.begin(),
+          self->handshaker_next_args->received_bytes.begin() + bytes_to_remove);
+    } else {
+      self->handshaker_next_args->received_bytes.clear();
+    }
+#if defined(OPENSSL_IS_BORINGSSL)
+  } else if (self->factory_ref->key_signer != nullptr) {
+    // During the PrivateKeyOffload signature, an empty call to
+    // ssl_handshaker_do_handshake needs to be forced  after the async offload
+    // has completed.
+    status = ssl_handshaker_do_handshake(self);
+#endif
   }
-  if (status != TSI_OK) return status;
+
+  if (status != TSI_OK) {
+    return status;
+  }
   // Get bytes to send to the peer, if available.
-  status = ssl_handshaker_write_output_buffer(self, &bytes_written, error);
-  if (status != TSI_OK) return status;
-  *bytes_to_send = impl->outgoing_bytes_buffer;
-  *bytes_to_send_size = bytes_written;
+  status = ssl_handshaker_write_output_buffer(self, &bytes_written);
+  if (status != TSI_OK) {
+    return status;
+  }
+  self->handshaker_next_args->bytes_to_send = self->outgoing_bytes_buffer;
+  self->handshaker_next_args->bytes_to_send_size = bytes_written;
   // If handshake completes, create tsi_handshaker_result.
-  if (ssl_handshaker_get_result(impl) == TSI_HANDSHAKE_IN_PROGRESS) {
-    *handshaker_result = nullptr;
+  if (ssl_handshaker_get_result(self) == TSI_HANDSHAKE_IN_PROGRESS) {
+    self->handshaker_next_args->handshaker_result = nullptr;
   } else {
     // Any bytes that remain in |impl->ssl|'s read BIO after the handshake is
     // complete must be extracted and set to the unused bytes of the
@@ -2050,17 +2301,19 @@ static tsi_result ssl_handshaker_next(tsi_handshaker* self,
     // bytes from the peer that must be processed.
     unsigned char* unused_bytes = nullptr;
     size_t unused_bytes_size = 0;
-    status =
-        ssl_bytes_remaining(impl, &unused_bytes, &unused_bytes_size, error);
-    if (status != TSI_OK) return status;
-    if (unused_bytes_size > received_bytes_size) {
+    status = ssl_bytes_remaining(self, &unused_bytes, &unused_bytes_size);
+    if (status != TSI_OK) {
+      return status;
+    }
+    if (unused_bytes_size >
+        self->handshaker_next_args->original_received_bytes_size) {
       LOG(ERROR) << "More unused bytes than received bytes.";
       gpr_free(unused_bytes);
-      if (error != nullptr) *error = "More unused bytes than received bytes.";
+      self->MaybeSetError("More unused bytes than received bytes.");
       return TSI_INTERNAL_ERROR;
     }
-    status = ssl_handshaker_result_create(impl, unused_bytes, unused_bytes_size,
-                                          handshaker_result, error);
+    status =
+        ssl_handshaker_result_create(self, unused_bytes, unused_bytes_size);
     if (status == TSI_OK) {
       // Indicates that the handshake has completed and that a
       // handshaker_result has been created.
@@ -2068,7 +2321,8 @@ static tsi_result ssl_handshaker_next(tsi_handshaker* self,
       // Output Cipher information
       if (GRPC_TRACE_FLAG_ENABLED(tsi)) {
         tsi_ssl_handshaker_result* result =
-            reinterpret_cast<tsi_ssl_handshaker_result*>(*handshaker_result);
+            reinterpret_cast<tsi_ssl_handshaker_result*>(
+                self->handshaker_next_args->handshaker_result);
         auto cipher = SSL_get_current_cipher(result->ssl);
         if (cipher != nullptr) {
           GRPC_TRACE_LOG(tsi, INFO) << absl::StrFormat(
@@ -2081,6 +2335,104 @@ static tsi_result ssl_handshaker_next(tsi_handshaker* self,
   return status;
 }
 
+// Wrapper for ssl_handshaker_next_impl() when called from an async callback.
+// For example, this would be called from the key signer's callback.
+static std::pair<tsi_result, std::optional<HandshakerNextArgs>>
+ssl_handshaker_next_async(tsi_ssl_handshaker* self)
+    ABSL_EXCLUSIVE_LOCKS_REQUIRED(&tsi_ssl_handshaker::mu) {
+  if (self->is_shutdown || !self->handshaker_next_args.has_value()) {
+    return {TSI_HANDSHAKE_SHUTDOWN, std::nullopt};
+  }
+  tsi_result result = ssl_handshaker_next_impl(self);
+  if (result != TSI_ASYNC) {
+    // We now have a result to return to the caller via the callback.
+    std::optional<HandshakerNextArgs> args =
+        std::move(self->handshaker_next_args);
+    self->handshaker_next_args.reset();
+    return {result, std::move(args)};
+  }
+  return {TSI_ASYNC, std::nullopt};
+}
+
+// Entry point when the security handshaker calls tsi_handshaker_next().
+static tsi_result ssl_handshaker_next(
+    tsi_handshaker* self, const unsigned char* received_bytes,
+    size_t received_bytes_size, const unsigned char** bytes_to_send,
+    size_t* bytes_to_send_size, tsi_handshaker_result** handshaker_result,
+    tsi_handshaker_on_next_done_cb cb, void* user_data, std::string* error) {
+  // Input sanity check.
+  if ((received_bytes_size > 0 && received_bytes == nullptr) ||
+      bytes_to_send == nullptr || bytes_to_send_size == nullptr ||
+      handshaker_result == nullptr) {
+    if (error != nullptr) *error = "invalid argument";
+    return TSI_INVALID_ARGUMENT;
+  }
+  tsi_ssl_handshaker* impl = static_cast<tsi_ssl_handshaker*>(self);
+  grpc_core::MutexLock lock(&impl->mu);
+  if (impl->is_shutdown) {
+    if (error != nullptr) *error = "Handshaker shutdown";
+    return TSI_HANDSHAKE_SHUTDOWN;
+  }
+  // Store args in impl->handshaker_next_args.
+  impl->handshaker_next_args.emplace();
+  if (received_bytes_size > 0) {
+    impl->handshaker_next_args->received_bytes.assign(
+        received_bytes, received_bytes + received_bytes_size);
+  }
+  impl->handshaker_next_args->original_received_bytes_size =
+      received_bytes_size;
+  impl->handshaker_next_args->cb = cb;
+  impl->handshaker_next_args->user_data = user_data;
+  impl->handshaker_next_args->error_ptr = error;
+  // Now do the actual work.
+  tsi_result result = ssl_handshaker_next_impl(impl);
+  // If returning synchronously, propagate output and clear args.
+  if (result != TSI_ASYNC) {
+    *bytes_to_send = impl->handshaker_next_args->bytes_to_send;
+    *bytes_to_send_size = impl->handshaker_next_args->bytes_to_send_size;
+    *handshaker_result = impl->handshaker_next_args->handshaker_result;
+    impl->handshaker_next_args.reset();
+  }
+  return result;
+}
+
+static void ssl_handshaker_shutdown(tsi_handshaker* self) {
+#if defined(OPENSSL_IS_BORINGSSL)
+  tsi_ssl_handshaker* impl = static_cast<tsi_ssl_handshaker*>(self);
+  std::shared_ptr<grpc_core::PrivateKeySigner::AsyncSigningHandle>
+      signing_handle;
+  std::optional<HandshakerNextArgs> next_args;
+  {
+    grpc_core::MutexLock lock(&impl->mu);
+    if (impl->ssl == nullptr) return;
+    impl->is_shutdown = true;
+    if (impl->factory_ref->key_signer != nullptr &&
+        impl->signing_handle != nullptr) {
+      signing_handle = std::move(impl->signing_handle);
+    }
+    if (impl->handshaker_next_args.has_value()) {
+      next_args = std::move(*impl->handshaker_next_args);
+      impl->handshaker_next_args.reset();
+    }
+  }
+  if (signing_handle != nullptr) {
+    impl->factory_ref->key_signer->Cancel(signing_handle);
+  }
+  if (next_args.has_value()) {
+    grpc_event_engine::experimental::GetDefaultEventEngine()->Run(
+        [args = std::move(*next_args)]() mutable {
+          if (args.error_ptr != nullptr) {
+            *args.error_ptr = "Handshaker shutdown";
+          }
+          if (args.cb != nullptr) {
+            args.cb(TSI_HANDSHAKE_SHUTDOWN, args.user_data, nullptr, 0,
+                    args.handshaker_result);
+          }
+        });
+  }
+#endif  // defined(OPENSSL_IS_BORINGSSL)
+}
+
 static const tsi_handshaker_vtable handshaker_vtable = {
     nullptr,  // get_bytes_to_send_to_peer -- deprecated
     nullptr,  // process_bytes_from_peer   -- deprecated
@@ -2089,7 +2441,7 @@ static const tsi_handshaker_vtable handshaker_vtable = {
     nullptr,  // create_frame_protector    -- deprecated
     ssl_handshaker_destroy,
     ssl_handshaker_next,
-    nullptr,  // shutdown
+    ssl_handshaker_shutdown,
 };
 
 // --- tsi_ssl_handshaker_factory common methods. ---
@@ -2196,7 +2548,7 @@ static tsi_result create_tsi_ssl_handshaker(
     if (ssl_result != SSL_ERROR_WANT_READ) {
       LOG(ERROR)
           << "Unexpected error received from first SSL_do_handshake call: "
-          << grpc_core::SslErrorString(ssl_result);
+          << tsi::SslErrorString(ssl_result);
       SSL_free(ssl);
       BIO_free(network_io);
       return TSI_INTERNAL_ERROR;
@@ -2205,7 +2557,7 @@ static tsi_result create_tsi_ssl_handshaker(
     SSL_set_accept_state(ssl);
   }
 
-  impl = grpc_core::Zalloc<tsi_ssl_handshaker>();
+  impl = new tsi_ssl_handshaker();
   impl->ssl = ssl;
   impl->network_io = network_io;
   impl->result = TSI_HANDSHAKE_IN_PROGRESS;
@@ -2213,9 +2565,14 @@ static tsi_result create_tsi_ssl_handshaker(
       TSI_SSL_HANDSHAKER_OUTGOING_BUFFER_INITIAL_SIZE;
   impl->outgoing_bytes_buffer =
       static_cast<unsigned char*>(gpr_zalloc(impl->outgoing_bytes_buffer_size));
-  impl->base.vtable = &handshaker_vtable;
+  impl->vtable = &handshaker_vtable;
   impl->factory_ref = tsi_ssl_handshaker_factory_ref(factory);
-  *handshaker = &impl->base;
+  *handshaker = impl;
+
+  if (!SSL_set_ex_data(ssl, g_ssl_ex_handshaker_index, impl)) {
+    return TSI_INTERNAL_ERROR;
+  }
+
   return TSI_OK;
 }
 
@@ -2456,7 +2813,8 @@ tsi_result tsi_create_ssl_client_handshaker_factory(
   tsi_ssl_client_handshaker_options options;
   options.pem_key_cert_pair = pem_key_cert_pair;
   if (pem_root_certs != nullptr) {
-    options.root_cert_info = std::make_shared<RootCertInfo>(pem_root_certs);
+    options.root_cert_info =
+        std::make_shared<tsi::RootCertInfo>(pem_root_certs);
   }
   options.cipher_suites = cipher_suites;
   options.alpn_protocols = alpn_protocols;
@@ -2490,7 +2848,7 @@ tsi_result tsi_create_ssl_client_handshaker_factory_with_options(
   SSL_CTX_set_options(ssl_context, SSL_OP_NO_RENEGOTIATION);
 #endif
   if (ssl_context == nullptr) {
-    grpc_core::LogSslErrorStack();
+    tsi::LogSslErrorStack();
     LOG(ERROR) << "Could not create ssl context.";
     return TSI_INVALID_ARGUMENT;
   }
@@ -2536,6 +2894,18 @@ tsi_result tsi_create_ssl_client_handshaker_factory_with_options(
     result = populate_ssl_context(ssl_context, options->pem_key_cert_pair,
                                   options->cipher_suites);
     if (result != TSI_OK) break;
+
+#if defined(OPENSSL_IS_BORINGSSL)
+    if (options->pem_key_cert_pair != nullptr) {
+      grpc_core::Match(
+          options->pem_key_cert_pair->private_key, [](const std::string&) {},
+          [&](const std::shared_ptr<grpc_core::PrivateKeySigner>& key_signer) {
+            // The Handshaker Factory will own a shared copy of the reference
+            // passed through the options.
+            impl->base.key_signer = key_signer;
+          });
+    }
+#endif
 
 #if OPENSSL_VERSION_NUMBER >= 0x10100000
     // X509_STORE_up_ref is only available since OpenSSL 1.1.
@@ -2639,30 +3009,28 @@ static tsi_ssl_handshaker_factory_vtable server_handshaker_factory_vtable = {
     tsi_ssl_server_handshaker_factory_destroy};
 
 tsi_result tsi_create_ssl_server_handshaker_factory(
-    const tsi_ssl_pem_key_cert_pair* pem_key_cert_pairs,
-    size_t num_key_cert_pairs, const char* pem_client_root_certs,
-    int force_client_auth, const char* cipher_suites,
-    const char** alpn_protocols, uint16_t num_alpn_protocols,
-    tsi_ssl_server_handshaker_factory** factory) {
+    std::vector<tsi_ssl_pem_key_cert_pair> pem_key_cert_pairs,
+    const char* pem_client_root_certs, int force_client_auth,
+    const char* cipher_suites, const char** alpn_protocols,
+    uint16_t num_alpn_protocols, tsi_ssl_server_handshaker_factory** factory) {
   return tsi_create_ssl_server_handshaker_factory_ex(
-      pem_key_cert_pairs, num_key_cert_pairs, pem_client_root_certs,
+      pem_key_cert_pairs, pem_client_root_certs,
       force_client_auth ? TSI_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY
                         : TSI_DONT_REQUEST_CLIENT_CERTIFICATE,
       cipher_suites, alpn_protocols, num_alpn_protocols, factory);
 }
 
 tsi_result tsi_create_ssl_server_handshaker_factory_ex(
-    const tsi_ssl_pem_key_cert_pair* pem_key_cert_pairs,
-    size_t num_key_cert_pairs, const char* pem_client_root_certs,
+    std::vector<tsi_ssl_pem_key_cert_pair> pem_key_cert_pairs,
+    const char* pem_client_root_certs,
     tsi_client_certificate_request_type client_certificate_request,
     const char* cipher_suites, const char** alpn_protocols,
     uint16_t num_alpn_protocols, tsi_ssl_server_handshaker_factory** factory) {
   tsi_ssl_server_handshaker_options options;
   options.pem_key_cert_pairs = pem_key_cert_pairs;
-  options.num_key_cert_pairs = num_key_cert_pairs;
   if (pem_client_root_certs != nullptr) {
     options.root_cert_info =
-        std::make_shared<RootCertInfo>(pem_client_root_certs);
+        std::make_shared<tsi::RootCertInfo>(pem_client_root_certs);
   }
   options.client_certificate_request = client_certificate_request;
   options.cipher_suites = cipher_suites;
@@ -2683,8 +3051,7 @@ tsi_result tsi_create_ssl_server_handshaker_factory_with_options(
 
   if (factory == nullptr) return TSI_INVALID_ARGUMENT;
   *factory = nullptr;
-  if (options->num_key_cert_pairs == 0 ||
-      options->pem_key_cert_pairs == nullptr) {
+  if (options->pem_key_cert_pairs.empty()) {
     return TSI_INVALID_ARGUMENT;
   }
 
@@ -2693,15 +3060,15 @@ tsi_result tsi_create_ssl_server_handshaker_factory_with_options(
   impl->base.vtable = &server_handshaker_factory_vtable;
 
   impl->ssl_contexts = static_cast<SSL_CTX**>(
-      gpr_zalloc(options->num_key_cert_pairs * sizeof(SSL_CTX*)));
+      gpr_zalloc(options->pem_key_cert_pairs.size() * sizeof(SSL_CTX*)));
   impl->ssl_context_x509_subject_names = static_cast<tsi_peer*>(
-      gpr_zalloc(options->num_key_cert_pairs * sizeof(tsi_peer)));
+      gpr_zalloc(options->pem_key_cert_pairs.size() * sizeof(tsi_peer)));
   if (impl->ssl_contexts == nullptr ||
       impl->ssl_context_x509_subject_names == nullptr) {
     tsi_ssl_handshaker_factory_unref(&impl->base);
     return TSI_OUT_OF_RESOURCES;
   }
-  impl->ssl_context_count = options->num_key_cert_pairs;
+  impl->ssl_context_count = options->pem_key_cert_pairs.size();
   if (options->root_cert_info != nullptr) {
     impl->root_cert_info = options->root_cert_info;
   }
@@ -2720,7 +3087,7 @@ tsi_result tsi_create_ssl_server_handshaker_factory_with_options(
     impl->key_logger = options->key_logger->Ref();
   }
 
-  for (i = 0; i < options->num_key_cert_pairs; i++) {
+  for (i = 0; i < options->pem_key_cert_pairs.size(); i++) {
     do {
 #if OPENSSL_VERSION_NUMBER >= 0x10100000
       impl->ssl_contexts[i] = SSL_CTX_new(TLS_method());
@@ -2731,7 +3098,7 @@ tsi_result tsi_create_ssl_server_handshaker_factory_with_options(
       SSL_CTX_set_options(impl->ssl_contexts[i], SSL_OP_NO_RENEGOTIATION);
 #endif
       if (impl->ssl_contexts[i] == nullptr) {
-        grpc_core::LogSslErrorStack();
+        tsi::LogSslErrorStack();
         LOG(ERROR) << "Could not create ssl context.";
         result = TSI_OUT_OF_RESOURCES;
         break;
@@ -2746,6 +3113,16 @@ tsi_result tsi_create_ssl_server_handshaker_factory_with_options(
                                     &options->pem_key_cert_pairs[i],
                                     options->cipher_suites);
       if (result != TSI_OK) break;
+
+#if defined(OPENSSL_IS_BORINGSSL)
+      if (impl->base.key_signer == nullptr) {
+        grpc_core::Match(
+            options->pem_key_cert_pairs[i].private_key,
+            [](const std::string&) {},
+            [&](const std::shared_ptr<grpc_core::PrivateKeySigner>&
+                    key_signer) { impl->base.key_signer = key_signer; });
+      }
+#endif
 
       // TODO(elessar): Provide ability to disable session ticket keys.
 
@@ -2849,7 +3226,7 @@ tsi_result tsi_create_ssl_server_handshaker_factory_with_options(
 #endif
 
       result = tsi_ssl_extract_x509_subject_names_from_pem_cert(
-          options->pem_key_cert_pairs[i].cert_chain,
+          options->pem_key_cert_pairs[i].cert_chain.c_str(),
           &impl->ssl_context_x509_subject_names[i]);
       if (result != TSI_OK) break;
 
@@ -2931,15 +3308,17 @@ int tsi_ssl_peer_matches_name(const tsi_peer* peer, absl::string_view name) {
   return 0;  // Not found.
 }
 
-bool IsRootCertInfoEmpty(const RootCertInfo* root_cert_info) {
+namespace tsi {
+bool IsRootCertInfoEmpty(const tsi::RootCertInfo* root_cert_info) {
   if (root_cert_info == nullptr) return true;
-  return Match(
+  return grpc_core::Match(
       *root_cert_info,
       [&](const std::string& pem_root_certs) { return pem_root_certs.empty(); },
       [&](const grpc_core::SpiffeBundleMap& spiffe_bundle_map) {
         return spiffe_bundle_map.size() == 0;
       });
 }
+}  // namespace tsi
 
 // --- Testing support. ---
 const tsi_ssl_handshaker_factory_vtable* tsi_ssl_handshaker_factory_swap_vtable(

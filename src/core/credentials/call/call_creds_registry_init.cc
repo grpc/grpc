@@ -22,10 +22,12 @@
 #include <memory>
 #include <string>
 
+#include "envoy/extensions/grpc_service/call_credentials/access_token/v3/access_token_credentials.upb.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/credentials/call/call_credentials.h"
 #include "src/core/credentials/call/call_creds_registry.h"
 #include "src/core/credentials/call/jwt_token_file/jwt_token_file_call_credentials.h"
+#include "src/core/credentials/call/oauth2/oauth2_credentials.h"
 #include "src/core/util/down_cast.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/json/json_args.h"
@@ -41,14 +43,22 @@ class JwtTokenFileCallCredsFactory : public CallCredsFactory<> {
  public:
   absl::string_view type() const override { return Type(); }
 
-  RefCountedPtr<CallCredsConfig> ParseConfig(
+  RefCountedPtr<const CallCredsConfig> ParseConfig(
       const Json& config, const JsonArgs& args,
       ValidationErrors* errors) const override {
     return LoadFromJson<RefCountedPtr<Config>>(config, args, errors);
   }
 
+  absl::string_view proto_type() const override { return ""; }
+
+  RefCountedPtr<const CallCredsConfig> ParseProto(
+      absl::string_view /*serialized_proto*/,
+      ValidationErrors* /*errors*/) const override {
+    return nullptr;
+  }
+
   RefCountedPtr<grpc_call_credentials> CreateCallCreds(
-      RefCountedPtr<CallCredsConfig> base_config) const override {
+      RefCountedPtr<const CallCredsConfig> base_config) const override {
     auto* config = DownCast<const Config*>(base_config.get());
     return MakeRefCounted<JwtTokenFileCallCredentials>(config->path());
   }
@@ -57,6 +67,8 @@ class JwtTokenFileCallCredsFactory : public CallCredsFactory<> {
   class Config : public CallCredsConfig {
    public:
     absl::string_view type() const override { return Type(); }
+
+    absl::string_view proto_type() const override { return ""; }
 
     bool Equals(const CallCredsConfig& other) const override {
       auto& o = DownCast<const Config&>(other);
@@ -83,9 +95,81 @@ class JwtTokenFileCallCredsFactory : public CallCredsFactory<> {
   static absl::string_view Type() { return "jwt_token_file"; }
 };
 
+class AccessTokenCallCredsFactory : public CallCredsFactory<> {
+ public:
+  absl::string_view type() const override { return ""; }
+
+  RefCountedPtr<const CallCredsConfig> ParseConfig(
+      const Json& /*config*/, const JsonArgs& /*args*/,
+      ValidationErrors* /*errors*/) const override {
+    return nullptr;
+  }
+
+  absl::string_view proto_type() const override { return ProtoType(); }
+
+  RefCountedPtr<const CallCredsConfig> ParseProto(
+      absl::string_view serialized_proto,
+      ValidationErrors* errors) const override {
+    upb::Arena arena;
+    const auto* proto =
+        envoy_extensions_grpc_service_call_credentials_access_token_v3_AccessTokenCredentials_parse(
+            serialized_proto.data(), serialized_proto.size(), arena.ptr());
+    if (proto == nullptr) {
+      errors->AddError("could not parse call credentials config");
+      return nullptr;
+    }
+    absl::string_view token = UpbStringToAbsl(
+        envoy_extensions_grpc_service_call_credentials_access_token_v3_AccessTokenCredentials_token(
+            proto));
+    if (token.empty()) {
+      ValidationErrors::ScopedField field(errors, ".token");
+      errors->AddError("field not present");
+    }
+    return MakeRefCounted<Config>(token);
+  }
+
+  RefCountedPtr<grpc_call_credentials> CreateCallCreds(
+      RefCountedPtr<const CallCredsConfig> base_config) const override {
+    auto* config = DownCast<const Config*>(base_config.get());
+    return MakeRefCounted<grpc_access_token_credentials>(
+        config->token().c_str());
+  }
+
+ private:
+  class Config : public CallCredsConfig {
+   public:
+    explicit Config(absl::string_view token) : token_(token) {}
+
+    absl::string_view type() const override { return ""; }
+
+    absl::string_view proto_type() const override { return ProtoType(); }
+
+    bool Equals(const CallCredsConfig& other) const override {
+      auto& o = DownCast<const Config&>(other);
+      return token_ == o.token_;
+    }
+
+    std::string ToString() const override {
+      return absl::StrCat("{token=\"", token_, "\"}");
+    }
+
+    const std::string& token() const { return token_; }
+
+   private:
+    std::string token_;
+  };
+
+  static absl::string_view ProtoType() {
+    return "envoy.extensions.grpc_service.call_credentials.access_token"
+           ".v3.AccessTokenCredentials";
+  }
+};
+
 void RegisterDefaultCallCreds(CoreConfiguration::Builder* builder) {
   builder->call_creds_registry()->RegisterCallCredsFactory(
       std::make_unique<JwtTokenFileCallCredsFactory>());
+  builder->call_creds_registry()->RegisterCallCredsFactory(
+      std::make_unique<AccessTokenCallCredsFactory>());
 }
 
 }  // namespace grpc_core

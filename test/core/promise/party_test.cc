@@ -1078,7 +1078,16 @@ TEST_F(PartyTest, ThreadStressTestWithInnerSpawn) {
     // promise_complete notification before the next loop iteration can start.
     EXPECT_STREQ(execution_order[i].c_str(), expected_order[i].c_str());
   }
-  StressTestAsserts(start_times, end_times, kStressTestSleepMs);
+  // TODO(tjagtap) [PH2][P5]
+  // Asserts inside StressTestAsserts are flaking about 20% of time time for
+  // ASAN only. For other things it is passing. Either find a better way to
+  // check this, by writing a fresh test, OR avoid running this test with asan.
+  // Since there are some useful EXPECT statements in the above test, we are not
+  // deleting the test, we are just disably a time based assert. Asserting
+  // based on time is a really bad way to write tests because when the test
+  // environments are overloaded, we see a lot of failures. Fix this.
+  //
+  // StressTestAsserts(start_times, end_times, kStressTestSleepMs);
 }
 
 TEST_F(PartyTest, NestedWakeup) {

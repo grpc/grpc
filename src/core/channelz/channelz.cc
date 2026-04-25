@@ -63,14 +63,17 @@ namespace channelz {
 void DataSinkImplementation::AddData(absl::string_view name,
                                      std::unique_ptr<Data> data) {
   MutexLock lock(&mu_);
-  additional_info_.emplace(name, std::move(data));
+  additional_info_.emplace_back(Element{std::string(name), std::move(data)});
 }
 
-Json::Object DataSinkImplementation::Finalize(bool) {
+Json::Array DataSinkImplementation::Finalize(bool) {
   MutexLock lock(&mu_);
-  Json::Object out;
+  Json::Array out;
   for (auto& [name, additional_info] : additional_info_) {
-    out[name] = Json::FromObject(additional_info->ToJson());
+    Json::Object obj;
+    obj["name"] = Json::FromString(name);
+    obj["value"] = Json::FromObject(additional_info->ToJson());
+    out.push_back(Json::FromObject(std::move(obj)));
   }
   return out;
 }
@@ -119,10 +122,10 @@ std::string BaseNode::RenderJsonString() {
 void BaseNode::PopulateJsonFromDataSources(Json::Object& json) {
   auto info = AdditionalInfo();
   if (info.empty()) return;
-  json["additionalInfo"] = Json::FromObject(std::move(info));
+  json["additionalInfo"] = Json::FromArray(std::move(info));
 }
 
-Json::Object BaseNode::AdditionalInfo() {
+Json::Array BaseNode::AdditionalInfo() {
   auto done = std::make_shared<Notification>();
   auto sink_impl = std::make_shared<DataSinkImplementation>();
   {

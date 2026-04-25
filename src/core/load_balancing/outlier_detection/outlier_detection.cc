@@ -493,14 +493,6 @@ class OutlierDetectionLb::Picker::SubchannelCallTracker final
     endpoint_state_.reset(DEBUG_LOCATION, "SubchannelCallTracker");
   }
 
-  void Start() override {
-    // This tracker does not care about started calls only finished calls.
-    // Delegate if needed.
-    if (original_subchannel_call_tracker_ != nullptr) {
-      original_subchannel_call_tracker_->Start();
-    }
-  }
-
   void Finish(FinishArgs args) override {
     // Delegate if needed.
     if (original_subchannel_call_tracker_ != nullptr) {

@@ -17,6 +17,10 @@ load("//bazel:grpc_build_system.bzl", "grpc_py_binary")
 
 package(
     default_visibility = ["//visibility:public"],
+    features = [
+        "layering_check",
+        "parse_headers",
+    ],
 )
 
 licenses(["notice"])

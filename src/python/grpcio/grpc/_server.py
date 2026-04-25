@@ -40,11 +40,11 @@ from typing import (
     cast,
 )
 
-import grpc  # pytype: disable=pyi-error
-from grpc import _common  # pytype: disable=pyi-error
-from grpc import _compression  # pytype: disable=pyi-error
-from grpc import _interceptor  # pytype: disable=pyi-error
-from grpc import _observability  # pytype: disable=pyi-error
+import grpc
+from grpc import _common
+from grpc import _compression
+from grpc import _interceptor
+from grpc import _observability
 from grpc._cython import cygrpc
 from grpc.typing import ArityAgnosticMethodHandler
 from grpc.typing import ChannelArgumentType
@@ -93,7 +93,7 @@ def _application_code(code: grpc.StatusCode) -> cygrpc.StatusCode:
     return cygrpc.StatusCode.unknown if cygrpc_code is None else cygrpc_code
 
 
-def _completion_code(state: _RPCState) -> int:
+def _completion_code(state: _RPCState) -> cygrpc.StatusCode:
     if state.code is None:
         return cygrpc.StatusCode.ok
     return _application_code(state.code)
@@ -180,7 +180,7 @@ class _GenericMethod(_Method):
         return None
 
 
-class _RPCState(object):
+class _RPCState:
     context: contextvars.Context
     condition: threading.Condition
     due: Set[str]
@@ -485,7 +485,7 @@ class _Context(grpc.ServicerContext):
         pass
 
 
-class _RequestIterator(object):
+class _RequestIterator:
     _state: _RPCState
     _call: cygrpc.Call
     _request_deserializer: Optional[DeserializingFunction]
@@ -596,7 +596,7 @@ def _call_behavior(
     request_deserializer: Optional[DeserializingFunction],
     send_response_callback: Optional[Callable[[ResponseType], None]] = None,
 ) -> Tuple[Optional[Union[ResponseType, Iterator[ResponseType]]], bool]:
-    from grpc import _create_servicer_context  # pytype: disable=pyi-error
+    from grpc import _create_servicer_context
 
     with _create_servicer_context(
         rpc_event, state, request_deserializer
@@ -1141,7 +1141,7 @@ class _ServerStage(enum.Enum):
     GRACE = "grace"
 
 
-class _ServerState(object):
+class _ServerState:
     lock: threading.RLock
     completion_queue: cygrpc.CompletionQueue
     server: cygrpc.Server
@@ -1454,7 +1454,7 @@ class _Server(grpc.Server):
     def add_registered_method_handlers(
         self,
         service_name: str,
-        method_handlers: Dict[str, grpc.RpcMethodHandler],
+        method_handlers: Mapping[str, grpc.RpcMethodHandler],
     ) -> None:
         # Can't register method once server started.
         with self._state.lock:

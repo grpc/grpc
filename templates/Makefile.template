@@ -469,7 +469,7 @@
 
   # Setup boringssl dependency
 
-  ifeq ($(wildcard third_party/boringssl-with-bazel/src/include/openssl/ssl.h),)
+  ifeq ($(wildcard third_party/boringssl-with-bazel/include/openssl/ssl.h),)
   HAS_EMBEDDED_OPENSSL = false
   else
   HAS_EMBEDDED_OPENSSL = true
@@ -488,7 +488,7 @@
   OPENSSL_MERGE_LIBS += $(LIBDIR)/$(CONFIG)/libboringssl.a
   OPENSSL_MERGE_OBJS += $(LIBBORINGSSL_OBJS)
   # need to prefix these to ensure overriding system libraries
-  CPPFLAGS := -Ithird_party/boringssl-with-bazel/src/include $(CPPFLAGS)  
+  CPPFLAGS := -Ithird_party/boringssl-with-bazel/include $(CPPFLAGS)  
   ifeq ($(DISABLE_ALPN),true)
   CPPFLAGS += -DTSI_OPENSSL_ALPN_SUPPORT=0
   LIBS_SECURE = $(OPENSSL_LIBS)
