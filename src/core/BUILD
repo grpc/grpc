@@ -4383,6 +4383,7 @@ grpc_cc_library(
     ],
     deps = [
         "dual_ref_counted",
+        "filter_chain",
         "grpc_service_config",
         "metadata_batch",
         "ref_counted",
@@ -4405,6 +4406,7 @@ grpc_cc_library(
         "absl/base:core_headers",
         "absl/status",
         "absl/status:statusor",
+        "absl/strings",
     ],
     deps = [
         "arena",
@@ -4417,6 +4419,7 @@ grpc_cc_library(
         "grpc_server_config_selector",
         "grpc_service_config",
         "latent_see",
+        "observable",
         "metadata_batch",
         "status_helper",
         "sync",
