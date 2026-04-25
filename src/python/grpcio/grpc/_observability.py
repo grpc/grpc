@@ -285,11 +285,7 @@ def observability_deinit() -> None:
     _cygrpc.clear_server_call_tracer_factory()
 
 
-<<<<<<< HEAD
-def maybe_record_rpc_latency(state: RPCState) -> None:
-=======
 def maybe_record_rpc_latency(state: "_RPCState") -> None:
->>>>>>> @{-1}
     """Record the latency of the RPC, if the plugin is registered and stats is enabled.
 
     This method will be called at the end of each RPC.
