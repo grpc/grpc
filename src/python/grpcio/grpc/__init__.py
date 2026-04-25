@@ -24,6 +24,7 @@ from typing import (
     Any,
     Callable,
     Dict,
+    Generic,
     Iterable,
     Iterator,
     List,
@@ -767,7 +768,7 @@ class ServerCertificateConfiguration:
 ########################  Multi-Callable Interfaces  ###########################
 
 
-class UnaryUnaryMultiCallable(abc.ABC):
+class UnaryUnaryMultiCallable(abc.ABC, Generic[RequestType, ResponseType]):
     """Affords invoking a unary-unary RPC from client-side."""
 
     @abc.abstractmethod
@@ -872,7 +873,7 @@ class UnaryUnaryMultiCallable(abc.ABC):
         raise NotImplementedError()
 
 
-class UnaryStreamMultiCallable(abc.ABC):
+class UnaryStreamMultiCallable(abc.ABC, Generic[RequestType, ResponseType]):
     """Affords invoking a unary-stream RPC from client-side."""
 
     @abc.abstractmethod
@@ -908,7 +909,7 @@ class UnaryStreamMultiCallable(abc.ABC):
         raise NotImplementedError()
 
 
-class StreamUnaryMultiCallable(abc.ABC):
+class StreamUnaryMultiCallable(abc.ABC, Generic[RequestType, ResponseType]):
     """Affords invoking a stream-unary RPC from client-side."""
 
     @abc.abstractmethod
@@ -1015,7 +1016,7 @@ class StreamUnaryMultiCallable(abc.ABC):
         raise NotImplementedError()
 
 
-class StreamStreamMultiCallable(abc.ABC):
+class StreamStreamMultiCallable(abc.ABC, Generic[RequestType, ResponseType]):
     """Affords invoking a stream-stream RPC on client-side."""
 
     @abc.abstractmethod

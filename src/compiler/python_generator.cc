@@ -934,16 +934,15 @@ bool PrivateGenerator::PrintStubPyi(
     const grpc_generator::Service* service, grpc_generator::Printer* out) {
   StringMap dict;
   dict["Service"] = service->name();
-  out->Print(dict, "class $Service$Stub:\n");
+  out->Print(dict, "class $Service$Stub(object):\n");
   {
     IndentScope raii_class_indent(out);
-    out->Print(
-        "\"\"\"Stub for the $Service$ service.\n"
-        "\n"
-        "Missing associated documentation comment in .proto file.\n"
-        "\"\"\"\n");
+    StringVector service_comments = service->GetAllComments();
+    PrintAllComments(service_comments, out);
     out->Print("\n");
-    out->Print("def __init__(self, channel: Union[grpc.Channel, grpc.aio.Channel]) -> None: ...\n");
+    out->Print(
+        "def __init__(self, channel: Union[grpc.Channel, grpc.aio.Channel]) -> "
+        "None: ...\n");
 
     for (int i = 0; i < service->method_count(); ++i) {
       auto method = service->method(i);
@@ -980,8 +979,9 @@ bool PrivateGenerator::PrintStubPyi(
       }
       method_dict["MultiCallableType"] = multi_callable_type;
 
-      out->Print(method_dict,
-                 "$Method$: $MultiCallableType$[$RequestType$, $ResponseType$]\n");
+      out->Print(
+          method_dict,
+          "$Method$: $MultiCallableType$[$RequestType$, $ResponseType$]\n");
     }
   }
   return true;
@@ -992,14 +992,11 @@ bool PrivateGenerator::PrintServicerPyi(const grpc_generator::Service* service,
   StringMap service_dict;
   service_dict["Service"] = service->name();
   out->Print("\n");
-  out->Print(service_dict, "class $Service$Servicer:\n");
+  out->Print(service_dict, "class $Service$Servicer(object):\n");
   {
     IndentScope raii_class_indent(out);
-    out->Print(
-        "\"\"\"Servicer for the $Service$ service.\n"
-        "\n"
-        "Missing associated documentation comment in .proto file.\n"
-        "\"\"\"\n");
+    StringVector service_comments = service->GetAllComments();
+    PrintAllComments(service_comments, out);
 
     for (int i = 0; i < service->method_count(); ++i) {
       auto method = service->method(i);
@@ -1060,10 +1057,11 @@ bool PrivateGenerator::PrintAddServicerToServerPyi(
   StringMap service_dict;
   service_dict["Service"] = service->name();
   out->Print("\n");
-  out->Print(service_dict,
-             "def add_$Service$Servicer_to_server("
-             "servicer: $Service$Servicer, server: Union[grpc.Server, grpc.aio.Server]"
-             ") -> None: ...\n");
+  out->Print(
+      service_dict,
+      "def add_$Service$Servicer_to_server("
+      "servicer: $Service$Servicer, server: Union[grpc.Server, grpc.aio.Server]"
+      ") -> None: ...\n");
   return true;
 }
 
@@ -1074,9 +1072,11 @@ bool PrivateGenerator::PrintServiceClassPyi(
   dict["Service"] = service->name();
   out->Print("\n");
   out->Print("# This class is part of an EXPERIMENTAL API.\n");
-  out->Print(dict, "class $Service$:\n");
+  out->Print(dict, "class $Service$(object):\n");
   {
     IndentScope class_indent(out);
+    StringVector service_comments = service->GetAllComments();
+    PrintAllComments(service_comments, out);
     for (int i = 0; i < service->method_count(); ++i) {
       const auto& method = service->method(i);
       std::string request_module_and_class;
@@ -1124,21 +1124,23 @@ bool PrivateGenerator::PrintServiceClassPyi(
 
       out->Print("\n");
       out->Print("@staticmethod\n");
-      out->Print(method_dict,
-                 "def $Method$(\n");
+      out->Print(method_dict, "def $Method$(\n");
       {
         IndentScope args_indent(out);
         IndentScope args_double_indent(out);
         out->Print(method_dict, "$RequestParam$: $RequestParamType$,\n");
         out->Print("target: str,\n");
         out->Print("options: Sequence[Tuple[str, Union[str, bytes]]] = ...,\n");
-        out->Print("channel_credentials: Optional[grpc.ChannelCredentials] = ...,\n");
+        out->Print(
+            "channel_credentials: Optional[grpc.ChannelCredentials] = ...,\n");
         out->Print("call_credentials: Optional[grpc.CallCredentials] = ...,\n");
         out->Print("insecure: bool = ...,\n");
         out->Print("compression: Optional[grpc.Compression] = ...,\n");
         out->Print("wait_for_ready: Optional[bool] = ...,\n");
         out->Print("timeout: Optional[float] = ...,\n");
-        out->Print("metadata: Optional[Sequence[Tuple[str, Union[str, bytes]]]] = ...,\n");
+        out->Print(
+            "metadata: Optional[Sequence[Tuple[str, Union[str, bytes]]]] = "
+            "...,\n");
         out->Print(method_dict, ") -> $ReturnType$: ...\n");
       }
     }
@@ -1301,12 +1303,12 @@ bool PythonGrpcGenerator::Generate(const FileDescriptor* file,
   PrivateGenerator generator(extended_config, &pbfile);
   if (!success) return false;
   if (grpc_version == "grpc_2_0") {
-    return GenerateGrpc(context, generator, pb2_grpc_file_name, true) &&
-           GenerateGrpcPyi(context, generator, pb2_grpc_pyi_file_name);
+    return GenerateGrpcPyi(context, generator, pb2_grpc_pyi_file_name) &&
+           GenerateGrpc(context, generator, pb2_grpc_file_name, true);
   } else if (grpc_version == "grpc_1_0") {
-    return GenerateGrpc(context, generator, pb2_grpc_file_name, true) &&
-           GenerateGrpc(context, generator, pb2_file_name, false) &&
-           GenerateGrpcPyi(context, generator, pb2_grpc_pyi_file_name);
+    return GenerateGrpcPyi(context, generator, pb2_grpc_pyi_file_name) &&
+           GenerateGrpc(context, generator, pb2_grpc_file_name, true) &&
+           GenerateGrpc(context, generator, pb2_file_name, false);
   } else {
     *error = "Invalid grpc version '" + grpc_version + "'.";
     return false;
