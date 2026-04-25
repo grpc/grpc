@@ -1299,7 +1299,6 @@ PosixEndpointImpl::PosixEndpointImpl(EventHandle* handle,
   FileDescriptor fd = handle_->WrappedFd();
   GRPC_CHECK(options.resource_quota != nullptr);
   auto& posix_interface = poller_->posix_interface();
-  auto peer_addr_string = posix_interface.PeerAddressString(fd);
   mem_quota_ = options.resource_quota->memory_quota();
   memory_owner_ = mem_quota_->CreateMemoryOwner();
   self_reservation_ = memory_owner_.MakeReservation(sizeof(PosixEndpointImpl));
@@ -1311,38 +1310,38 @@ PosixEndpointImpl::PosixEndpointImpl(EventHandle* handle,
   if (peer_address.ok()) {
     peer_address_ = *peer_address;
     // For Unix domain sockets, if clients don't bind to a path,
-    // getpeername() returns only the address family (size <= sizeof(sa_family_t)),
-    // yielding a truncated URI like "unix:".  Build a unique peer address by
-    // appending a per-connection counter to the server's local path so that
-    // each accepted connection is distinguishable via GetPeer().
-    if (peer_address_.address()->sa_family == AF_UNIX &&
-        peer_address_.size() <= sizeof(sa_family_t) &&
-        local_address_.size() > 0) {
+    // getpeername() returns only the address family (size ==
+    // sizeof(sa_family_t)), yielding a truncated URI like "unix:".  Build a
+    // unique peer address by appending a per-connection counter to the server's
+    // local path so that each accepted connection is distinguishable via
+    // GetPeer().
+    if (peer_address_.size() == sizeof(sa_family_t) &&
+        peer_address_.address()->sa_family == AF_UNIX &&
+        local_address_.size() > sizeof(sa_family_t)) {
       static std::atomic<uint64_t> uds_conn_id{0};
-      uint64_t id = uds_conn_id.fetch_add(1, std::memory_order_relaxed);
+      const uint64_t id = uds_conn_id.fetch_add(1, std::memory_order_relaxed);
       const sockaddr_un* local_un =
           reinterpret_cast<const sockaddr_un*>(local_address_.address());
       sockaddr_un peer_un{};
       peer_un.sun_family = AF_UNIX;
-      int written;
       socklen_t peer_len;
       if (local_un->sun_path[0] == '\0') {
-        // Abstract socket: sun_path[0] is '\0', name starts at sun_path[1].
-        written =
-            snprintf(peer_un.sun_path + 1, sizeof(peer_un.sun_path) - 1,
-                     "%s_%" PRIu64, local_un->sun_path + 1, id);
-        peer_len = static_cast<socklen_t>(
-            offsetof(struct sockaddr_un, sun_path) + 1 +
-            std::min(written, static_cast<int>(sizeof(peer_un.sun_path) - 1)));
+        // Abstract socket: name starts at sun_path[1], length from socklen_t.
+        size_t name_len =
+            local_address_.size() - offsetof(sockaddr_un, sun_path) - 1;
+        std::string name = absl::StrCat(
+            absl::string_view(local_un->sun_path + 1, name_len), "_", id);
+        size_t copy_len = std::min(name.size(), sizeof(peer_un.sun_path) - 1);
+        name.copy(peer_un.sun_path + 1, copy_len);
+        peer_len = static_cast<socklen_t>(offsetof(sockaddr_un, sun_path) + 1 +
+                                          copy_len);
       } else {
-        // Path-based socket.
-        written = snprintf(peer_un.sun_path, sizeof(peer_un.sun_path),
-                           "%s_%" PRIu64, local_un->sun_path, id);
-        peer_len = static_cast<socklen_t>(
-            offsetof(struct sockaddr_un, sun_path) +
-            std::min(written,
-                     static_cast<int>(sizeof(peer_un.sun_path) - 1)) +
-            1);
+        std::string path = absl::StrCat(local_un->sun_path, "_", id);
+        size_t copy_len = std::min(path.size(), sizeof(peer_un.sun_path) - 1);
+        path.copy(peer_un.sun_path, copy_len);
+        peer_un.sun_path[copy_len] = '\0';
+        peer_len = static_cast<socklen_t>(offsetof(sockaddr_un, sun_path) +
+                                          copy_len + 1);
       }
       peer_address_ = EventEngine::ResolvedAddress(
           reinterpret_cast<const sockaddr*>(&peer_un), peer_len);

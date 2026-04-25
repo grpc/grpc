@@ -20,6 +20,8 @@
 #include <grpc/support/atm.h>
 #include <grpc/support/port_platform.h>
 
+#include <atomic>
+#include <cstdint>
 #include <utility>
 
 // FIXME: "posix" files shouldn't be depending on _GNU_SOURCE
@@ -465,16 +467,21 @@ static void on_read(void* arg, grpc_error_handle err) {
       LOG(ERROR) << "Invalid address: " << addr_uri.status();
       goto error;
     }
-    // For Unix domain sockets, if client don't bind to path
-    // getpeername() returns an empty sun_path producing a truncated URI like
-    // "unix:". Fall back to the listener address so that
-    // ServerContext::peer() returns the server's socket path instead.
-    if (grpc_is_unix_socket(&addr) && addr_uri.value() == "unix:") {
-      addr_uri = grpc_sockaddr_to_uri(&sp->addr);
-      if (!addr_uri.ok()) {
-        LOG(ERROR) << "Invalid listener address: " << addr_uri.status();
+    // For Unix domain sockets, if the client doesn't bind to a path,
+    // getpeername() returns an empty sun_path yielding "unix:".  Build a
+    // unique peer string by appending a per-connection counter to the
+    // listener URI so each accepted connection is distinguishable via
+    // GetPeer(), consistent with the EventEngine path in posix_endpoint.cc.
+    if (addr_uri.value() == "unix:") {
+      auto listener_uri = grpc_sockaddr_to_uri(&sp->addr);
+      if (!listener_uri.ok()) {
+        LOG(ERROR) << "Invalid listener address: " << listener_uri.status();
         goto error;
       }
+      static std::atomic<uint64_t> uds_conn_id{0};
+      addr_uri =
+          absl::StrCat(*listener_uri, "_",
+                       uds_conn_id.fetch_add(1, std::memory_order_relaxed));
     }
     GRPC_TRACE_LOG(tcp, INFO)
         << "SERVER_CONNECT: incoming connection: " << *addr_uri;

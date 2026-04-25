@@ -33,21 +33,17 @@
 #include "absl/log/log.h"
 #include "absl/strings/match.h"
 
+using testing::AnyOf;
 using testing::HasSubstr;
 using testing::StartsWith;
 
 namespace grpc_core {
 namespace {
 void CheckPeer(std::string peer_name, bool is_fullstack_uds) {
-  // For UDS fullstack configs, assert the full server socket path is present.
-  // This catches the regression where an unbound UDS client causes
-  // ServerContext::peer() to return a truncated "unix:" with no path.
-  // Also assert if the peer already starts with "unix:/" on any config, to
-  // catch wrong paths. Anonymous AF_UNIX socket pairs legitimately return
-  // "unix:" with no path and are excluded by the is_fullstack_uds=false path.
-  if (is_fullstack_uds || absl::StartsWith(peer_name, "unix:/")) {
-    EXPECT_THAT(peer_name, StartsWith("unix:/tmp/grpc_fullstack_test."));
-  }
+  if (!is_fullstack_uds && !absl::StartsWith(peer_name, "unix:/")) return;
+  EXPECT_THAT(peer_name,
+              AnyOf(StartsWith("unix:/tmp/grpc_fullstack_test."),
+                    StartsWith("unix-abstract:grpc_fullstack_test.")));
 }
 
 void SimpleRequestBody(CoreEnd2endTest& test) {
