@@ -315,7 +315,6 @@ class ServicerContext(Generic[RequestType, ResponseType], abc.ABC):
         Returns:
           A map of strings to an iterable of bytes for each auth property.
         """
-        raise NotImplementedError()
 
     def time_remaining(self) -> float:
         """Describes the length of allowed time remaining for the RPC.
@@ -345,7 +344,6 @@ class ServicerContext(Generic[RequestType, ResponseType], abc.ABC):
         Returns:
           The StatusCode value for the RPC.
         """
-        raise NotImplementedError()
 
     def details(self):
         """Accesses the value to be used as detail string upon RPC completion.
@@ -366,7 +364,6 @@ class ServicerContext(Generic[RequestType, ResponseType], abc.ABC):
           callback: A callable object will be called with the servicer context
             object as its only argument.
         """
-        raise NotImplementedError()
 
     def cancelled(self) -> bool:
         """Return True if the RPC is cancelled.
