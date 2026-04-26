@@ -14,10 +14,14 @@
 // limitations under the License.
 //
 
+#include "src/core/channelz/channelz.h"
+#include "src/core/server/server.h"
+
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/status.h>
 
 #include <memory>
+#include <set>
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/experiments/experiments.h"
@@ -29,6 +33,19 @@
 
 namespace grpc_core {
 namespace {
+
+// Returns the set of active connection UUIDs on the server via channelz.
+// Each accepted connection gets a unique intptr_t UUID regardless of transport
+// type (TCP or UDS), making this suitable for connection identity checks.
+std::set<intptr_t> GetServerSocketUuids(grpc_server* srv) {
+  channelz::ServerNode* node = Server::FromC(srv)->channelz_node();
+  if (node == nullptr) return {};
+  std::set<intptr_t> uuids;
+  for (const auto& [uuid, _] : node->child_sockets()) {
+    uuids.insert(uuid);
+  }
+  return uuids;
+}
 
 // TODO(roth): There are a bunch of other test cases covered in the C++
 // e2e tests that should be covered here as well (or maybe instead).
@@ -86,8 +103,7 @@ CORE_END2END_TEST(Http2FullstackSingleHopTests, SubchannelConnectionScaling) {
   Expect(601, true);
   Step();
   // Those three RPCs should all be on the same connection.
-  EXPECT_EQ(s1.GetPeer(), s2.GetPeer());
-  EXPECT_EQ(s1.GetPeer(), s3.GetPeer());
+  EXPECT_EQ(GetServerSocketUuids(server()).size(), 1u);
   // Start a 4th RPC, which should trigger a new connection.
   auto c4 = NewClientCall("/delta").Timeout(Duration::Seconds(1000)).Create();
   c4.NewBatch(701).SendInitialMetadata({});
@@ -98,16 +114,8 @@ CORE_END2END_TEST(Http2FullstackSingleHopTests, SubchannelConnectionScaling) {
   auto s4 = RequestCall(801);
   Expect(801, true);
   Step();
-  // TODO(roth): Due to https://github.com/grpc/grpc/issues/35006, if
-  // the peer is a UDS, it will essentially always be a constant string.
-  // We should either fix that issue or maybe change this test to use
-  // channelz instead.
-  // TODO(roth): The peer address also seems to be the same for
-  // unix-abstract: addresses.  Not sure why -- that needs investigation.
-  std::string s1_peer = s1.GetPeer().value_or("");
-  if (s1_peer != "unix:" && !absl::StartsWith(s1_peer, "unix-abstract:")) {
-    EXPECT_NE(s1.GetPeer(), s4.GetPeer());
-  }
+  // The 4th RPC should be on a new second connection.
+  EXPECT_EQ(GetServerSocketUuids(server()).size(), 2u);
   // Clean up.
   c1.Cancel();
   c2.Cancel();
@@ -160,7 +168,7 @@ CORE_END2END_TEST(Http2FullstackSingleHopTests,
   Expect(401, true);
   Step();
   // First two RPCs should be on the same connection.
-  EXPECT_EQ(s1.GetPeer(), s2.GetPeer());
+  EXPECT_EQ(GetServerSocketUuids(server()).size(), 1u);
   // Third RPC.
   auto c3 = NewClientCall("/gamma").Timeout(Duration::Seconds(1000)).Create();
   c3.NewBatch(501).SendInitialMetadata({});
@@ -181,19 +189,10 @@ CORE_END2END_TEST(Http2FullstackSingleHopTests,
   auto s4 = RequestCall(801);
   Expect(801, true);
   Step();
-  // Third and fourth RPCs should be on the same connection, which is
-  // different from the connection of the first two.
-  EXPECT_EQ(s3.GetPeer(), s4.GetPeer());
-  // TODO(roth): Due to https://github.com/grpc/grpc/issues/35006, if
-  // the peer is a UDS, it will essentially always be a constant string.
-  // We should either fix that issue or maybe change this test to use
-  // channelz instead.
-  // TODO(roth): The peer address also seems to be the same for
-  // unix-abstract: addresses.  Not sure why -- that needs investigation.
-  std::string s1_peer = s1.GetPeer().value_or("");
-  if (s1_peer != "unix:" && !absl::StartsWith(s1_peer, "unix-abstract:")) {
-    EXPECT_NE(s1.GetPeer(), s3.GetPeer());
-  }
+  // Third and fourth RPCs should be on a second connection, different from
+  // the first two.
+  auto uuids_after_4_rpcs = GetServerSocketUuids(server());
+  EXPECT_EQ(uuids_after_4_rpcs.size(), 2u);
   // Start a 5th RPC, which will be queued.
   auto c5 = NewClientCall("/epsilon").Timeout(Duration::Seconds(1000)).Create();
   c5.NewBatch(901).SendInitialMetadata({});
@@ -208,8 +207,8 @@ CORE_END2END_TEST(Http2FullstackSingleHopTests,
   Expect(901, true);         // Client sees 5th RPC start.
   Expect(1001, true);        // Server sees 5th RPC.
   Step();
-  // The 5th RPC should be sent on the first connection.
-  EXPECT_EQ(s5.GetPeer(), s1.GetPeer());
+  // The 5th RPC should reuse an existing connection, not open a new one.
+  EXPECT_EQ(GetServerSocketUuids(server()), uuids_after_4_rpcs);
   // Clean up.
   c2.Cancel();
   c3.Cancel();
