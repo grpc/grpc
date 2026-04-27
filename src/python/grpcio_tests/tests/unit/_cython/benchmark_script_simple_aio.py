@@ -1,6 +1,7 @@
 import asyncio
 import sys
 import time
+
 import grpc
 
 _METHOD = "/test.Benchmark/PingPong"
