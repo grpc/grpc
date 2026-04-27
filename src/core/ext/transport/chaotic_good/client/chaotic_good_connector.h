@@ -85,7 +85,9 @@ class ChaoticGoodConnector final : public SubchannelConnector {
     grpc_closure* notify;
 
     void Run(absl::Status status, DebugLocation location = {}) {
-      ExecCtx::Run(location, std::exchange(notify, nullptr), status);
+      if (notify == nullptr) return;
+      grpc_closure* cl = std::exchange(notify, nullptr);
+      EnsureRunInExecCtx([&]() { ExecCtx::Run(location, cl, status); });
     }
   };
 

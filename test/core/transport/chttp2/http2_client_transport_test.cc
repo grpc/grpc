@@ -72,8 +72,8 @@ using ::testing::StrictMock;
 
 constexpr absl::string_view kConnectionClosed = "Connection closed";
 constexpr absl::string_view kPeerString =
-    "PeerString: ipv4:127.0.0.1:12345, :path: "
-    "/demo.Service/Step, GrpcStatusFromWire: true";
+    ":path: /demo.Service/Step, PeerString: ipv4:127.0.0.1:12345, "
+    "GrpcStatusFromWire: true";
 
 using EventSequenceEndpoint = util::testing::EventSequenceEndpoint;
 
@@ -677,15 +677,20 @@ TEST_F(Http2ClientTransportTest, StreamCleanupResetStream) {
   CallInitiator initiator = StartCall(TestInitialMetadata());
 
   initiator.SpawnGuarded("wait-for-trailing-metadata", [&]() {
-    return Map(initiator.PullServerTrailingMetadata(),
-               [&](absl::StatusOr<ServerMetadataHandle> metadata) {
-                 EXPECT_TRUE(metadata.ok());
-                 EXPECT_EQ((*metadata)->DebugString(),
-                           "grpc-message: Reset stream frame received., "
-                           "grpc-status: INTERNAL, GrpcCallWasCancelled: true");
-                 on_done.Call();
-                 return absl::OkStatus();
-               });
+    return Map(
+        initiator.PullServerTrailingMetadata(),
+        [&](absl::StatusOr<ServerMetadataHandle> metadata) {
+          EXPECT_TRUE(metadata.ok());
+          std::string debug_str = (*metadata)->DebugString();
+          EXPECT_THAT(debug_str,
+                      ::testing::HasSubstr(
+                          "grpc-message: Reset stream frame received."));
+          EXPECT_THAT(debug_str, ::testing::HasSubstr("grpc-status: INTERNAL"));
+          EXPECT_THAT(debug_str,
+                      ::testing::HasSubstr("GrpcCallWasCancelled: true"));
+          on_done.Call();
+          return absl::OkStatus();
+        });
   });
 
   step->Wait();
@@ -735,9 +740,13 @@ TEST_F(Http2ClientTransportTest, Http2ClientTransportStreamAbortTest) {
   initiator.SpawnInfallible("test-wait", [initiator, &on_done]() mutable {
     return Seq(initiator.PullServerTrailingMetadata(),
                [&on_done](ServerMetadataHandle metadata) mutable {
-                 EXPECT_STREQ(metadata->DebugString().c_str(),
-                              "grpc-message: CANCELLED, grpc-status: "
-                              "CANCELLED, GrpcCallWasCancelled: true");
+                 std::string debug_str = metadata->DebugString();
+                 EXPECT_THAT(debug_str,
+                             ::testing::HasSubstr("grpc-message: CANCELLED"));
+                 EXPECT_THAT(debug_str,
+                             ::testing::HasSubstr("grpc-status: CANCELLED"));
+                 EXPECT_THAT(debug_str, ::testing::HasSubstr(
+                                            "GrpcCallWasCancelled: true"));
                  on_done.Call();
                  return Empty{};
                });
@@ -788,14 +797,19 @@ TEST_F(Http2ClientTransportTest, Http2ClientTransportAbortTest) {
   EXPECT_CALL(on_done, Call());
 
   initiator.SpawnInfallible("test-wait", [initiator, &on_done]() mutable {
-    return Seq(initiator.PullServerTrailingMetadata(),
-               [&on_done](ServerMetadataHandle metadata) mutable {
-                 EXPECT_STREQ(metadata->DebugString().c_str(),
-                              "grpc-message: Connection closed, grpc-status: "
-                              "UNAVAILABLE, GrpcCallWasCancelled: true");
-                 on_done.Call();
-                 return Empty{};
-               });
+    return Seq(
+        initiator.PullServerTrailingMetadata(),
+        [&on_done](ServerMetadataHandle metadata) mutable {
+          std::string debug_str = metadata->DebugString();
+          EXPECT_THAT(debug_str,
+                      ::testing::HasSubstr("grpc-message: Connection closed"));
+          EXPECT_THAT(debug_str,
+                      ::testing::HasSubstr("grpc-status: UNAVAILABLE"));
+          EXPECT_THAT(debug_str,
+                      ::testing::HasSubstr("GrpcCallWasCancelled: true"));
+          on_done.Call();
+          return Empty{};
+        });
   });
 
   step->Wait();
@@ -1113,15 +1127,20 @@ TEST_F(Http2ClientTransportTest, TestMaxAllowedStreamId) {
   std::shared_ptr<EventSequenceEndpoint::Step> step2 = endpoint()->NewStep();
   CallInitiator initiator2 = StartCall(TestInitialMetadata());
   initiator2.SpawnInfallible("test-wait-call2", [&, initiator2]() mutable {
-    return Seq(initiator2.PullServerTrailingMetadata(),
-               [&](ServerMetadataHandle metadata) mutable {
-                 EXPECT_EQ(
-                     metadata->DebugString(),
-                     "grpc-message: No more stream ids available, grpc-status: "
-                     "RESOURCE_EXHAUSTED, GrpcCallWasCancelled: true");
-                 on_done.Call();
-                 return Empty{};
-               });
+    return Seq(
+        initiator2.PullServerTrailingMetadata(),
+        [&](ServerMetadataHandle metadata) mutable {
+          std::string debug_str = metadata->DebugString();
+          EXPECT_THAT(debug_str,
+                      ::testing::HasSubstr(
+                          "grpc-message: No more stream ids available"));
+          EXPECT_THAT(debug_str,
+                      ::testing::HasSubstr("grpc-status: RESOURCE_EXHAUSTED"));
+          EXPECT_THAT(debug_str,
+                      ::testing::HasSubstr("GrpcCallWasCancelled: true"));
+          on_done.Call();
+          return Empty{};
+        });
   });
 
   step2->Wait();

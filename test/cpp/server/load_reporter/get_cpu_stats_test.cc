@@ -20,6 +20,7 @@
 
 #include <grpc/grpc.h>
 #include <grpc/support/port_platform.h>
+#include <grpc/support/time.h>
 
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/test_config.h"
@@ -35,16 +36,23 @@ TEST(GetCpuStatsTest, BusyNoLargerThanTotal) {
   auto p = grpc::load_reporter::GetCpuStatsImpl();
   uint64_t busy = p.first;
   uint64_t total = p.second;
-  ASSERT_LE(busy, total);
+  ASSERT_LE(busy, total) << "Busy time " << busy
+                         << " is larger than total time " << total;
 }
 
 TEST(GetCpuStatsTest, Ascending) {
   const size_t kRuns = 100;
   auto prev = grpc::load_reporter::GetCpuStatsImpl();
   for (size_t i = 0; i < kRuns; ++i) {
+    gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
+                                 gpr_time_from_millis(1, GPR_TIMESPAN)));
     auto cur = grpc::load_reporter::GetCpuStatsImpl();
-    ASSERT_LE(prev.first, cur.first);
-    ASSERT_LE(prev.second, cur.second);
+    ASSERT_LE(prev.first, cur.first)
+        << "Busy time decreased at run " << i << ": " << prev.first << " -> "
+        << cur.first;
+    ASSERT_LE(prev.second, cur.second)
+        << "Total time decreased at run " << i << ": " << prev.second << " -> "
+        << cur.second;
     prev = cur;
   }
 }

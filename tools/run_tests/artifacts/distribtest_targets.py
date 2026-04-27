@@ -491,7 +491,7 @@ def targets():
         PythonDistribTest("linux", "x64", "alpine"),
         PythonDistribTest("linux", "x64", "ubuntu2404"),
         PythonDistribTest(
-            "linux", "aarch64", "python39_buster", presubmit=True
+            "linux", "aarch64", "python310_bullseye", presubmit=True
         ),
         PythonDistribTest("linux", "aarch64", "alpine", presubmit=True),
         PythonDistribTest(
@@ -513,7 +513,6 @@ def targets():
             "debian11",
             ruby_version="ruby_3_2",
             source=True,
-            presubmit=True,
         ),
         RubyDistribTest(
             "linux-gnu",
@@ -527,14 +526,12 @@ def targets():
             "x64",
             "debian11",
             ruby_version="ruby_3_2",
-            presubmit=True,
         ),
         RubyDistribTest(
             "linux-gnu",
             "x64",
             "debian11",
             ruby_version="ruby_3_3",
-            presubmit=True,
         ),
         RubyDistribTest(
             "linux-gnu",
@@ -542,14 +539,12 @@ def targets():
             "debian11",
             ruby_version="ruby_3_3",
             protobuf_version="3.25",
-            presubmit=True,
         ),
         RubyDistribTest(
             "linux-gnu",
             "x64",
             "debian11",
             ruby_version="ruby_3_4",
-            presubmit=True,
         ),
         RubyDistribTest(
             "linux-gnu",
@@ -572,21 +567,18 @@ def targets():
             "x64",
             "alpine",
             ruby_version="ruby_3_2",
-            presubmit=True,
         ),
         RubyDistribTest(
             "linux-musl",
             "x64",
             "alpine",
             ruby_version="ruby_3_3",
-            presubmit=True,
         ),
         RubyDistribTest(
             "linux-musl",
             "x64",
             "alpine",
             ruby_version="ruby_3_4",
-            presubmit=True,
         ),
         RubyDistribTest(
             "linux-musl",
