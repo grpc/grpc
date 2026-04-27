@@ -344,6 +344,7 @@ class ServicerContext(Generic[RequestType, ResponseType], abc.ABC):
         Returns:
           The StatusCode value for the RPC.
         """
+        raise NotImplementedError()
 
     def details(self):
         """Accesses the value to be used as detail string upon RPC completion.
