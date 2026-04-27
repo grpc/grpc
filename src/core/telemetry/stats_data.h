@@ -27,6 +27,7 @@
 #include "src/core/util/no_destruct.h"
 #include "src/core/util/per_cpu.h"
 #include "absl/strings/string_view.h"
+#include "absl/log/log.h"
 
 namespace grpc_core {
 class GlobalStatsCollector;
@@ -440,7 +441,15 @@ class GlobalStatsCollector {
     data_.this_cpu().cq_pluck_creates.fetch_add(1, std::memory_order_relaxed);
   }
   void IncrementCqNextCreates() {
-    data_.this_cpu().cq_next_creates.fetch_add(1, std::memory_order_relaxed);
+    VLOG(2) << "This line crashes.";
+    //data_.this_cpu().cq_next_creates.fetch_add(1, std::memory_order_relaxed);
+    VLOG(2) << "1";
+    auto& this_cpu = data_.this_cpu();
+    VLOG(2) << "&this_cpu=" << & this_cpu;
+    auto& cq_next_creates = this_cpu.cq_next_creates;
+    VLOG(2) << "&cq_next_creates=" << &cq_next_creates;
+    cq_next_creates.fetch_add(1, std::memory_order_relaxed);
+    VLOG(2) << "Does not reach this line.";
   }
   void IncrementCqCallbackCreates() {
     data_.this_cpu().cq_callback_creates.fetch_add(1,

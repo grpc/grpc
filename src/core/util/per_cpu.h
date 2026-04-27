@@ -23,6 +23,8 @@
 #include <cstddef>
 #include <limits>
 #include <memory>
+#include <stdio.h>
+#include "absl/log/log.h"
 
 // Sharded collections of objects
 // This used to be per-cpu, now it's much less so - but still a way to limit
@@ -87,11 +89,26 @@ class PerCpuShardingHelper {
 template <typename T>
 class PerCpu {
  public:
+   static size_t Shards(PerCpuOptions options) {
+     size_t shards = options.Shards();
+     VLOG(2) << "ctor shards: " << shards;
+     printf("ctor shards: %lld\n", shards);
+     return shards;
+   }
   // Options are not defaulted to try and force consideration of what the
   // options specify.
-  explicit PerCpu(PerCpuOptions options) : shards_(options.Shards()) {}
+  explicit PerCpu(PerCpuOptions options) : shards_(Shards(options)) {
+    data_.reset(new T[shards_]);
+  }
 
-  T& this_cpu() { return data_[sharding_helper_.GetShardingBits() % shards_]; }
+  T& this_cpu() {
+    VLOG(2) << "shards_: " << shards_;
+    auto sharding_bits = sharding_helper_.GetShardingBits();
+    VLOG(2) << "sharding_bits: " << sharding_bits;
+    T& = data_[ sharding_bits % shards_];
+    VLOG(2) << "Doesn't reach this line.";
+    return T;
+  }
 
   T* begin() { return data_.get(); }
   T* end() { return data_.get() + shards_; }
@@ -101,7 +118,7 @@ class PerCpu {
  private:
   PerCpuShardingHelper sharding_helper_;
   const size_t shards_;
-  std::unique_ptr<T[]> data_{new T[shards_]};
+  std::unique_ptr<T[]> data_;//{new T[shards_]};
 };
 
 }  // namespace grpc_core
