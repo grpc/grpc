@@ -47,6 +47,7 @@
 #include "src/core/call/metadata_batch.h"
 #include "src/core/channelz/property_list.h"
 #include "src/core/lib/experiments/experiments.h"
+#include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/cancel_callback.h"
 #include "src/core/lib/promise/detail/promise_like.h"
@@ -422,11 +423,16 @@ auto InfallibleBatch(FalliblePart&& fallible_part, FinalPart&& final_part,
                                                         absl::OkStatus(), cq);
                                 }));
       },
-      [cq, notify_tag]() {
-        grpc_cq_end_op(
-            cq, notify_tag, absl::OkStatus(),
-            [](void*, grpc_cq_completion* completion) { delete completion; },
-            nullptr, new grpc_cq_completion);
+      [cq, notify_tag, is_notify_tag_closure]() {
+        if (!is_notify_tag_closure) {
+          grpc_cq_end_op(
+              cq, notify_tag, absl::OkStatus(),
+              [](void*, grpc_cq_completion* completion) { delete completion; },
+              nullptr, new grpc_cq_completion);
+        } else {
+          Closure::Run(DEBUG_LOCATION, static_cast<grpc_closure*>(notify_tag),
+                       absl::OkStatus());
+        }
       });
 }
 

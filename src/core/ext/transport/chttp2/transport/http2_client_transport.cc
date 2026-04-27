@@ -1628,6 +1628,11 @@ void Http2ClientTransport::BeginCloseStream(
 void Http2ClientTransport::CloseTransport() {
   GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport::CloseTransport";
 
+  {
+    MutexLock lock(&transport_mutex_);
+    is_transport_closed_ = true;
+  }
+
   transport_closed_latch_.Set();
   settings_->HandleTransportShutdown(event_engine_.get());
   goaway_manager_.NotifyTransportClosed();
@@ -1648,13 +1653,15 @@ void Http2ClientTransport::MaybeSpawnCloseTransport(Http2Status http2_status,
   // enqueued. Additionally this also prevents additional frames with non-zero
   // stream_ids from being processed by the read loop.
   ReleasableMutexLock lock(&transport_mutex_);
-  if (is_transport_closed_) {
+  if (is_transport_closed_ || is_closing_) {
     lock.Release();
     return;
   }
+  is_closing_ = true;
   GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport::MaybeSpawnCloseTransport "
                             "Initiating transport close";
-  is_transport_closed_ = true;
+  // Force NextStreamId() to fail for new streams.
+  next_stream_id_ = GetMaxAllowedStreamId() + 1;
   absl::flat_hash_map<uint32_t, RefCountedPtr<Stream>> stream_list =
       std::move(stream_list_);
   stream_list_.clear();
@@ -1796,6 +1803,10 @@ RefCountedPtr<channelz::SocketNode> Http2ClientTransport::GetSocketNode()
 // Stream Related Operations
 
 absl::StatusOr<uint32_t> Http2ClientTransport::NextStreamId() {
+  MutexLock lock(&transport_mutex_);
+  if (is_transport_closed_) {
+    return absl::UnavailableError("Transport is closed");
+  }
   if (next_stream_id_ > GetMaxAllowedStreamId()) {
     // TODO(tjagtap) : [PH2][P3] : Handle case if transport runs out of stream
     // ids
@@ -1811,23 +1822,20 @@ absl::StatusOr<uint32_t> Http2ClientTransport::NextStreamId() {
   // TODO(akshitpatel) : [PH2][P3] : There is a channel arg to delay
   // starting new streams instead of failing them. This needs to be
   // implemented.
-  {
-    // TODO(tjagtap) : [PH2][P1] : For a server we will have to do
-    // this for incoming streams only. If a server receives more
-    // streams from a client than is allowed by the clients settings,
-    // whether or not we should fail is debatable.
-    MutexLock lock(&transport_mutex_);
-    if (GetActiveStreamCountLocked() >=
-        settings_->peer().max_concurrent_streams()) {
-      return absl::ResourceExhaustedError("Reached max concurrent streams");
-    }
+  // TODO(tjagtap) : [PH2][P1] : For a server we will have to do
+  // this for incoming streams only. If a server receives more
+  // streams from a client than is allowed by the clients settings,
+  // whether or not we should fail is debatable.
+  if (GetActiveStreamCountLocked() >=
+      settings_->peer().max_concurrent_streams()) {
+    return absl::ResourceExhaustedError("Reached max concurrent streams");
   }
 
   // RFC9113 : Streams initiated by a client MUST use odd-numbered stream
   // identifiers.
   uint32_t new_stream_id = std::exchange(next_stream_id_, next_stream_id_ + 2);
   if (GPR_UNLIKELY(next_stream_id_ > GetMaxAllowedStreamId())) {
-    ReportDisconnection(
+    ReportDisconnectionLocked(
         absl::ResourceExhaustedError("Transport Stream IDs exhausted"),
         {},  // TODO(tjagtap) : [PH2][P2] : Report better disconnect info.
         "no_more_stream_ids");

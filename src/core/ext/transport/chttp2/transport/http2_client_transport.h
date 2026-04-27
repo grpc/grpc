@@ -676,6 +676,7 @@ class Http2ClientTransport final : public ClientTransport,
   uint32_t next_stream_id_;
   HPackCompressor encoder_;
   bool is_transport_closed_ ABSL_GUARDED_BY(transport_mutex_) = false;
+  bool is_closing_ ABSL_GUARDED_BY(transport_mutex_) = false;
   Latch<void> transport_closed_latch_;
 
   ConnectivityStateTracker state_tracker_ ABSL_GUARDED_BY(transport_mutex_){
