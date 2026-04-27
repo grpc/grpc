@@ -105,9 +105,9 @@ class PerCpu {
     VLOG(2) << "shards_: " << shards_;
     auto sharding_bits = sharding_helper_.GetShardingBits();
     VLOG(2) << "sharding_bits: " << sharding_bits;
-    T& = data_[ sharding_bits % shards_];
+    T& t = data_[ sharding_bits % shards_];
     VLOG(2) << "Doesn't reach this line.";
-    return T;
+    return t;
   }
 
   T* begin() { return data_.get(); }
