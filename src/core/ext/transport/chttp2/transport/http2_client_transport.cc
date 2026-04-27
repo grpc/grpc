@@ -1725,11 +1725,11 @@ bool Http2ClientTransport::CanCloseTransportLocked() const {
   GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport::CanCloseTransportLocked "
                             "GetActiveStreamCountLocked="
                          << GetActiveStreamCountLocked()
-                         << " PeekNextStreamId=" << PeekNextStreamId()
+                         << " PeekNextStreamId=" << next_stream_id_
                          << " GetMaxAllowedStreamId="
                          << GetMaxAllowedStreamId();
   return GetActiveStreamCountLocked() == 0 &&
-         PeekNextStreamId() > GetMaxAllowedStreamId();
+         next_stream_id_ > GetMaxAllowedStreamId();
 }
 
 Http2ClientTransport::~Http2ClientTransport() {

@@ -460,7 +460,10 @@ class Http2ClientTransport final : public ClientTransport,
 
   // Returns the next stream id without incrementing it. MUST be called from the
   // transport party.
-  uint32_t PeekNextStreamId() const { return next_stream_id_; }
+  uint32_t PeekNextStreamId() const {
+    MutexLock lock(&transport_mutex_);
+    return next_stream_id_;
+  }
 
   // Returns the last stream id sent by the transport. If no streams were sent,
   // returns 0. MUST be called from the transport party.
@@ -668,7 +671,7 @@ class Http2ClientTransport final : public ClientTransport,
 
   Http2FrameHeader current_frame_header_;
 
-  Mutex transport_mutex_;
+  mutable Mutex transport_mutex_;
 
   absl::flat_hash_map<uint32_t, RefCountedPtr<Stream>> stream_list_
       ABSL_GUARDED_BY(transport_mutex_);
