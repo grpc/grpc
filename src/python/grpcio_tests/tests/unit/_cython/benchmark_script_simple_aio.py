@@ -27,8 +27,8 @@ class GenericHandler(grpc.GenericRpcHandler):
 
 async def run_server(port):
     options = [
-        ('grpc.max_send_message_length', 60 * 1024 * 1024),
-        ('grpc.max_receive_message_length', 60 * 1024 * 1024),
+        ('grpc.max_send_message_length', 160 * 1024 * 1024),
+        ('grpc.max_receive_message_length', 160 * 1024 * 1024),
     ]
     server = grpc.aio.server(options=options)
     server.add_generic_rpc_handlers((GenericHandler(),))
@@ -38,8 +38,8 @@ async def run_server(port):
 
 async def run_benchmark(port, payload_size, iterations):
     options = [
-        ('grpc.max_send_message_length', 60 * 1024 * 1024),
-        ('grpc.max_receive_message_length', 60 * 1024 * 1024),
+        ('grpc.max_send_message_length', 160 * 1024 * 1024),
+        ('grpc.max_receive_message_length', 160 * 1024 * 1024),
     ]
     channel = grpc.aio.insecure_channel(f'localhost:{port}', options=options)
     try:
@@ -72,7 +72,7 @@ async def main():
     port = 50052
     server = await run_server(port)
     try:
-        await run_benchmark(port, payload_size=10 * 1024 * 1024, iterations=100)
+        await run_benchmark(port, payload_size=100 * 1024 * 1024, iterations=100)
     finally:
         await server.stop(0)
 
