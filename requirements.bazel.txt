@@ -43,7 +43,7 @@ chardet
 gevent~=25.8
 google-auth
 cryptography~=45.0
-googleapis-common-protos
+googleapis-common-protos>=1.73.0
 idna
 opentelemetry-api
 opentelemetry-exporter-prometheus
