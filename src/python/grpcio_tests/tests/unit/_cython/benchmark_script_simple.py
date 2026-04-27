@@ -23,8 +23,8 @@ _METHOD = "/test.Benchmark/PingPong"
 
 def run_server(port):
     options = [
-        ("grpc.max_send_message_length", 60 * 1024 * 1024),
-        ("grpc.max_receive_message_length", 60 * 1024 * 1024),
+        ("grpc.max_send_message_length", 160 * 1024 * 1024),
+        ("grpc.max_receive_message_length", 160 * 1024 * 1024),
     ]
     server = grpc.server(
         futures.ThreadPoolExecutor(max_workers=1), options=options
@@ -60,8 +60,8 @@ def run_server(port):
 
 def run_benchmark(port, payload_size, iterations):
     options = [
-        ("grpc.max_send_message_length", 60 * 1024 * 1024),
-        ("grpc.max_receive_message_length", 60 * 1024 * 1024),
+        ("grpc.max_send_message_length", 160 * 1024 * 1024),
+        ("grpc.max_receive_message_length", 160 * 1024 * 1024),
     ]
     channel = grpc.insecure_channel(f"localhost:{port}", options=options)
     stub = channel.unary_unary(
@@ -98,6 +98,6 @@ if __name__ == "__main__":
     port = 50052  # Use a different port to avoid conflicts
     server = run_server(port)
     try:
-        run_benchmark(port, payload_size=10 * 1024 * 1024, iterations=100)
+        run_benchmark(port, payload_size=100 * 1024 * 1024, iterations=100)
     finally:
         server.stop(0)
