@@ -73,7 +73,7 @@ void HPackEncoderTable::EvictOne() {
   GRPC_CHECK_GT(tail_remote_index_, 0u);
   GRPC_CHECK_GT(table_elems_, 0u);
   if (elem_size_.empty()) {
-    LOG(ERROR) << "HPackEncoderTable::EvictOne: elem_size_ is empty!";
+    LOG(grpc_core::LogSeverity::LOG_ERROR) << "HPackEncoderTable::EvictOne: elem_size_ is empty!";
     return;
   }
   auto removing_size = elem_size_[tail_remote_index_ % elem_size_.size()];
