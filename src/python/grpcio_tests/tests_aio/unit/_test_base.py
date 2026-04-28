@@ -18,7 +18,6 @@ import logging
 from typing import Callable
 import unittest
 
-from grpc._cython import cygrpc
 from grpc.experimental import aio
 
 __all__ = "AioTestBase"

@@ -17,7 +17,6 @@ import logging
 from typing import AsyncIterable, Union
 
 import grpc
-from grpc._cython import cygrpc
 from grpc.aio._metadata import Metadata
 from grpc.aio._typing import MetadataKey
 from grpc.aio._typing import MetadataValue
