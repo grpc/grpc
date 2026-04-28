@@ -224,6 +224,11 @@
   expiry: 2026/05/01
   owner: aadik@google.com
   test_tags: [core_end2end_test]
+- name: ph2_perf_01
+  description: Different performance experiments for PH2 Transport
+  expiry: 2026/08/22
+  owner: akshitpatel@google.com
+  test_tags: []
 - name: pick_first_ignore_empty_updates
   description: Ignore empty resolutions in pick_first (delete)
   expiry: 2026/05/02
