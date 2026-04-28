@@ -111,6 +111,9 @@ then
   done
 fi
 
+# Create a directory for storing logs
+mkdir -p reports
+
 FAILED_DIR=$(mktemp -d)
 
 # Function to build and push a single Docker image
@@ -288,7 +291,7 @@ do
   DOCKER_IMAGE_NAME=$(basename "$DOCKERFILE_DIR")
   LOG_FILE="reports/${DOCKER_IMAGE_NAME}/sponge_log.log"
 
-  mkdir -p "reports/${DOCKER_IMAGE_NAME}"
+  mkdir "reports/${DOCKER_IMAGE_NAME}"
 
   echo "Starting build for ${DOCKER_IMAGE_NAME} (Logs: ${LOG_FILE})..."
 
