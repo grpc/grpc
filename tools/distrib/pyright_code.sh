@@ -21,7 +21,7 @@ cd "$(dirname "$0")/../.."
 VIRTUALENV=.venv-pyright
 python3 -m virtualenv $VIRTUALENV
 source $VIRTUALENV/bin/activate
-python3 --version
+python3 -VV
 
 pip install pyright
 
