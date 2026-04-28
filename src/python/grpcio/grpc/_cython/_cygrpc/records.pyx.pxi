@@ -81,7 +81,7 @@ class StatusCode(enum.IntEnum):
   # via command "bazel test //src/python/..."
   # Making StatusCode inherit from enum.IntEnum
   # and resolves that and then this magic method below
-  # is added to fix pickle the StatusCode properly.
+  # is added to fix pickling of the StatusCode properly.
   # Removing this method below will make
   # grpcio_tests.tests_aio.unit.aio_rpc_error_test.TestAioRpcError.test_pickle
   # test fail.
