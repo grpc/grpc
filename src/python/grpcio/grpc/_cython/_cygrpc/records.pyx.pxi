@@ -77,6 +77,14 @@ class StatusCode(enum.IntEnum):
   unavailable = GRPC_STATUS_UNAVAILABLE
   data_loss = GRPC_STATUS_DATA_LOSS
 
+  # typeguard is not able to map StatusCode as int when run with tests
+  # via command "bazel test //src/python/..."
+  # Making StatusCode inherit from enum.IntEnum
+  # and resolves that and then this magic method below
+  # is added to fix pickle the StatusCode properly.
+  # Removing this method below will make
+  # grpcio_tests.tests_aio.unit.aio_rpc_error_test.TestAioRpcError.test_pickle
+  # test fail.
   def __reduce_ex__(self, proto):
      return (int, (self.value,))
 
