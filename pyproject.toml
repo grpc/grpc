@@ -81,6 +81,7 @@ exclude = [
     "**/grpc_root",
     "**/__pycache__",
     "**/.git",
+    "**/bazel-*",
     "src/python/grpcio/commands.py",
     "src/python/grpcio/_spawn_patch.py"
 ]
