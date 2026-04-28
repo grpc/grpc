@@ -368,20 +368,14 @@ void AresResolver::LookupHostname(
   callback_map_.emplace(++id_, std::move(callback));
   auto* resolver_arg = new HostnameQueryArg(this, id_, name, port);
   GRPC_CHECK_NE(channel_, nullptr);
-  if (AresIsIpv6LoopbackAvailable()) {
-    // Note that using AF_UNSPEC for both IPv6 and IPv4 queries does not work in
-    // all cases, e.g. for localhost:<> it only gets back the IPv6 result (i.e.
-    // ::1).
-    resolver_arg->pending_requests = 2;
-    ares_gethostbyname(channel_, std::string(host).c_str(), AF_INET,
-                       &AresResolver::OnHostbynameDoneLocked, resolver_arg);
-    ares_gethostbyname(channel_, std::string(host).c_str(), AF_INET6,
-                       &AresResolver::OnHostbynameDoneLocked, resolver_arg);
-  } else {
-    resolver_arg->pending_requests = 1;
-    ares_gethostbyname(channel_, std::string(host).c_str(), AF_INET,
-                       &AresResolver::OnHostbynameDoneLocked, resolver_arg);
-  }
+  struct ares_addrinfo_hints hints;
+  memset(&hints, 0, sizeof(hints));
+  hints.ai_family = AF_UNSPEC;  // Both IPv4 and IPv6
+  hints.ai_socktype = SOCK_STREAM;
+  hints.ai_flags = ARES_AI_NOSORT;  // We'll sort with RFC 6724
+  resolver_arg->pending_requests = 1;
+  ares_getaddrinfo(channel_, std::string(host).c_str(), nullptr, &hints,
+                   &AresResolver::OnGetaddrinfoLocked, resolver_arg);
   CheckSocketsLocked();
   MaybeStartTimerLocked();
 }
@@ -646,9 +640,9 @@ void AresResolver::OnAresBackupPollAlarm() {
   }
 }
 
-void AresResolver::OnHostbynameDoneLocked(void* arg, int status,
-                                          int /*timeouts*/,
-                                          struct hostent* hostent) {
+void AresResolver::OnGetaddrinfoLocked(void* arg, int status,
+                                       int /*timeouts*/,
+                                       struct ares_addrinfo* addrinfo) {
   auto* hostname_qa = static_cast<HostnameQueryArg*>(arg);
   GRPC_CHECK_GT(hostname_qa->pending_requests--, 0);
   auto* ares_resolver = hostname_qa->ares_resolver;
@@ -658,62 +652,52 @@ void AresResolver::OnHostbynameDoneLocked(void* arg, int status,
                         hostname_qa->query_name, ares_strerror(status));
     GRPC_TRACE_LOG(cares_resolver, INFO)
         << "(EventEngine c-ares resolver) resolver:" << ares_resolver
-        << " OnHostbynameDoneLocked: " << error_msg;
+        << " OnGetaddrinfoLocked: " << error_msg;
     hostname_qa->error_status = AresStatusToAbslStatus(status, error_msg);
   } else {
     GRPC_TRACE_LOG(cares_resolver, INFO)
         << "(EventEngine c-ares resolver) resolver:" << ares_resolver
-        << " OnHostbynameDoneLocked name=" << hostname_qa->query_name
+        << " OnGetaddrinfoLocked name=" << hostname_qa->query_name
         << " ARES_SUCCESS";
-    for (size_t i = 0; hostent->h_addr_list[i] != nullptr; i++) {
+    for (struct ares_addrinfo_node* node = addrinfo->nodes; node != nullptr;
+         node = node->ai_next) {
       if (hostname_qa->result.size() == kMaxRecordSize) {
         LOG(ERROR) << "A/AAAA response exceeds maximum record size of 65536";
         break;
       }
-      switch (hostent->h_addrtype) {
-        case AF_INET6: {
-          size_t addr_len = sizeof(struct sockaddr_in6);
-          struct sockaddr_in6 addr;
-          memset(&addr, 0, addr_len);
-          memcpy(&addr.sin6_addr, hostent->h_addr_list[i],
-                 sizeof(struct in6_addr));
-          addr.sin6_family = static_cast<unsigned char>(hostent->h_addrtype);
-          addr.sin6_port = htons(hostname_qa->port);
-          hostname_qa->result.emplace_back(
-              reinterpret_cast<const sockaddr*>(&addr), addr_len);
-          char output[INET6_ADDRSTRLEN];
-          ares_inet_ntop(AF_INET6, &addr.sin6_addr, output, INET6_ADDRSTRLEN);
-          GRPC_TRACE_LOG(cares_resolver, INFO)
-              << "(EventEngine c-ares resolver) resolver:" << ares_resolver
-              << " c-ares resolver gets a AF_INET6 result: \n  addr: " << output
-              << "\n  port: " << hostname_qa->port
-              << "\n  sin6_scope_id: " << addr.sin6_scope_id;
-          break;
-        }
-        case AF_INET: {
-          size_t addr_len = sizeof(struct sockaddr_in);
-          struct sockaddr_in addr;
-          memset(&addr, 0, addr_len);
-          memcpy(&addr.sin_addr, hostent->h_addr_list[i],
-                 sizeof(struct in_addr));
-          addr.sin_family = static_cast<unsigned char>(hostent->h_addrtype);
-          addr.sin_port = htons(hostname_qa->port);
-          hostname_qa->result.emplace_back(
-              reinterpret_cast<const sockaddr*>(&addr), addr_len);
-          char output[INET_ADDRSTRLEN];
-          ares_inet_ntop(AF_INET, &addr.sin_addr, output, INET_ADDRSTRLEN);
-          GRPC_TRACE_LOG(cares_resolver, INFO)
-              << "(EventEngine c-ares resolver) resolver:" << ares_resolver
-              << " c-ares resolver gets a AF_INET result: \n  addr: " << output
-              << "\n  port: " << hostname_qa->port;
-          break;
-        }
-        default:
-          grpc_core::Crash(
-              absl::StrFormat("resolver:%p Received invalid type of address %d",
-                              ares_resolver, hostent->h_addrtype));
+      // Copy the sockaddr and set the port
+      if (node->ai_family == AF_INET) {
+        struct sockaddr_in addr;
+        memcpy(&addr, node->ai_addr, node->ai_addrlen);
+        addr.sin_port = htons(hostname_qa->port);
+        hostname_qa->result.emplace_back(
+            reinterpret_cast<const sockaddr*>(&addr), node->ai_addrlen);
+        char output[INET_ADDRSTRLEN];
+        ares_inet_ntop(AF_INET, &addr.sin_addr, output, INET_ADDRSTRLEN);
+        GRPC_TRACE_LOG(cares_resolver, INFO)
+            << "(EventEngine c-ares resolver) resolver:" << ares_resolver
+            << " c-ares resolver gets a AF_INET result: \n  addr: " << output
+            << "\n  port: " << hostname_qa->port;
+      } else if (node->ai_family == AF_INET6) {
+        struct sockaddr_in6 addr;
+        memcpy(&addr, node->ai_addr, node->ai_addrlen);
+        addr.sin6_port = htons(hostname_qa->port);
+        hostname_qa->result.emplace_back(
+            reinterpret_cast<const sockaddr*>(&addr), node->ai_addrlen);
+        char output[INET6_ADDRSTRLEN];
+        ares_inet_ntop(AF_INET6, &addr.sin6_addr, output, INET6_ADDRSTRLEN);
+        GRPC_TRACE_LOG(cares_resolver, INFO)
+            << "(EventEngine c-ares resolver) resolver:" << ares_resolver
+            << " c-ares resolver gets a AF_INET6 result: \n  addr: " << output
+            << "\n  port: " << hostname_qa->port
+            << "\n  sin6_scope_id: " << addr.sin6_scope_id;
+      } else {
+        grpc_core::Crash(
+            absl::StrFormat("resolver:%p Received invalid type of address %d",
+                            ares_resolver, node->ai_family));
       }
     }
+    ares_freeaddrinfo(addrinfo);
   }
   if (hostname_qa->pending_requests == 0) {
     auto nh =
