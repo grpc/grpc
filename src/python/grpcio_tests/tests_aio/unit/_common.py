@@ -25,9 +25,6 @@ from grpc.experimental import aio
 
 from tests.unit.framework.common import test_constants
 
-# Register the cython class as a virtual subclass of the abstract base class
-grpc.HandlerCallDetails.register(cygrpc._HandlerCallDetails)
-
 ADHOC_METHOD = "/test/AdHoc"
 
 
