@@ -44,6 +44,9 @@ struct PrivateGenerator {
 
   std::pair<bool, std::string> GetGrpcServices();
 
+  // Returns a pair of (success, pyi_content) for generating type stub file.
+  std::pair<bool, std::string> GetGrpcServicesPyi();
+
  private:
   bool PrintPreamble(grpc_generator::Printer* out);
   bool PrintBetaPreamble(grpc_generator::Printer* out);
@@ -78,6 +81,20 @@ struct PrivateGenerator {
   // wrapping will not be changed.
   void PrintAllComments(std::vector<std::string> comments,
                         grpc_generator::Printer* out);
+
+  // Methods for generating .pyi type stub files
+  bool PrintPreamblePyi(grpc_generator::Printer* out);
+  bool PrintGAServicesPyi(grpc_generator::Printer* out);
+  bool PrintStubPyi(const std::string& package_qualified_service_name,
+                    const grpc_generator::Service* service,
+                    grpc_generator::Printer* out);
+  bool PrintServicerPyi(const grpc_generator::Service* service,
+                        grpc_generator::Printer* out);
+  bool PrintAddServicerToServerPyi(const grpc_generator::Service* service,
+                                   grpc_generator::Printer* out);
+  bool PrintServiceClassPyi(const std::string& package_qualified_service_name,
+                            const grpc_generator::Service* service,
+                            grpc_generator::Printer* out);
 };
 
 }  // namespace
