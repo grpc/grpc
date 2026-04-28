@@ -39,8 +39,8 @@ using testing::StartsWith;
 
 namespace grpc_core {
 namespace {
-void CheckPeer(std::string peer_name, bool is_fullstack_uds) {
-  if (!is_fullstack_uds && !absl::StartsWith(peer_name, "unix:/")) return;
+void CheckPeer(std::string peer_name) {
+  if (!absl::StartsWith(peer_name, "unix:/") && !absl::StartsWith(peer_name, "unix-abstract:")) return;
   EXPECT_THAT(peer_name,
               AnyOf(StartsWith("unix:/tmp/grpc_fullstack_test."),
                     StartsWith("unix-abstract:grpc_fullstack_test.")));
@@ -48,8 +48,6 @@ void CheckPeer(std::string peer_name, bool is_fullstack_uds) {
 
 void SimpleRequestBody(CoreEnd2endTest& test) {
   auto before = global_stats().Collect();
-  bool is_fullstack_uds =
-      test.test_config()->feature_mask & FEATURE_MASK_IS_FULLSTACK_UDS;
   auto c = test.NewClientCall("/foo").Timeout(Duration::Minutes(1)).Create();
   EXPECT_NE(c.GetPeer(), std::nullopt);
   IncomingStatusOnClient server_status;
@@ -63,9 +61,9 @@ void SimpleRequestBody(CoreEnd2endTest& test) {
   test.Expect(101, true);
   test.Step();
   EXPECT_NE(s.GetPeer(), std::nullopt);
-  CheckPeer(*s.GetPeer(), is_fullstack_uds);
+  CheckPeer(*s.GetPeer());
   EXPECT_NE(c.GetPeer(), std::nullopt);
-  CheckPeer(*c.GetPeer(), is_fullstack_uds);
+  CheckPeer(*c.GetPeer());
   IncomingCloseOnServer client_close;
   s.NewBatch(102)
       .SendInitialMetadata({})
