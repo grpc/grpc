@@ -34,11 +34,11 @@ if exist "C:\Program Files\Python310\python.exe" (
 if "%PYTHON_DIR%"=="" (
   @rem 1. Download from GCS
   echo Downloading Python installer from GCS...
-  call gcloud storage cp gs://grpc-build-helper/python-3.10.11-amd64/python-3.10.11-amd64.exe python_installer.exe
+  call gcloud storage cp gs://grpc-build-helper/python-3.10.11-amd64/python-3.10.11-amd64.exe python_installer.exe || goto :error
 
   @rem 2. Run the Installer and WAIT until the installation is 100% finished
   echo Installing Python 3.10...
-  start /wait python_installer.exe /quiet InstallAllUsers=1 PrependPath=1 Include_test=0
+  start /wait python_installer.exe /quiet InstallAllUsers=1 PrependPath=1 Include_test=0 || goto :error
 
   @rem After install, check where it went
   if exist "C:\Program Files\Python310\python.exe" (
@@ -56,7 +56,7 @@ set "PATH=%PYTHON_DIR%;%PATH%"
 
 @rem create "python3" link that normally doesn't exist
 if not exist "%PYTHON_DIR%\python3.exe" (
-  mklink "%PYTHON_DIR%\python3.exe" "%PYTHON_DIR%\python.exe"
+  mklink "%PYTHON_DIR%\python3.exe" "%PYTHON_DIR%\python.exe" || goto :error
 )
 
 @rem create symlink to C:\Python310 if installed in Program Files
