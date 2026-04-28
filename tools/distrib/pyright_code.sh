@@ -24,6 +24,6 @@ python3 -m virtualenv "${VIRTUALENV}"
 source "${VIRTUALENV}/bin/activate"
 python3 -VV
 
-pip install pyright
+pip install pyright==1.1.409
 
 exec pyright
