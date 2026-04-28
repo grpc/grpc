@@ -73,6 +73,7 @@ auto KeepaliveManager::TimeoutAndSendPing() {
 }
 auto KeepaliveManager::MaybeSendKeepAlivePing() {
   GRPC_HTTP2_KEEPALIVE_LOG << "KeepaliveManager::MaybeSendKeepAlivePing";
+  LOG(INFO) << "KeepaliveManager::MaybeSendKeepAlivePing";
   return AssertResultType<absl::Status>(
       TrySeq(If(
                  NeedToSendKeepAlivePing(),
