@@ -292,8 +292,7 @@ do
   fi
 
   # Skip if DOCKERFILE_DIR is in EXCLUDE_DIRS
-  local exclude=false
-  local exclude_dir
+  exclude=false
   for exclude_dir in "${EXCLUDE_DIRS[@]}"; do
     if [[ "$DOCKERFILE_DIR" == "$exclude_dir" ]]; then
       exclude=true
@@ -304,8 +303,8 @@ do
     continue
   fi
 
-  local DOCKER_IMAGE_NAME=$(basename "$DOCKERFILE_DIR")
-  local LOG_FILE="reports/${DOCKER_IMAGE_NAME}/sponge_log.log"
+  DOCKER_IMAGE_NAME=$(basename "$DOCKERFILE_DIR")
+  LOG_FILE="reports/${DOCKER_IMAGE_NAME}/sponge_log.log"
 
   mkdir -p "reports/${DOCKER_IMAGE_NAME}"
 
@@ -313,7 +312,7 @@ do
 
   (
     set -e
-    local START_TIME=$SECONDS
+    START_TIME=$SECONDS
     if process_dockerfile "${DOCKERFILE_DIR}" > "${LOG_FILE}" 2>&1; then
       echo "SUCCESS: Build for ${DOCKER_IMAGE_NAME} finished (took $((SECONDS - START_TIME))s)."
     else
