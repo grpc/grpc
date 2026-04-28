@@ -23,11 +23,11 @@
 #include "src/core/util/crash.h"
 #include "absl/log/log.h"
 
-using grpc::reflection::v1alpha::ErrorResponse;
-using grpc::reflection::v1alpha::ListServiceResponse;
-using grpc::reflection::v1alpha::ServerReflection;
-using grpc::reflection::v1alpha::ServerReflectionRequest;
-using grpc::reflection::v1alpha::ServerReflectionResponse;
+using grpc::reflection::v1::ErrorResponse;
+using grpc::reflection::v1::ListServiceResponse;
+using grpc::reflection::v1::ServerReflection;
+using grpc::reflection::v1::ServerReflectionRequest;
+using grpc::reflection::v1::ServerReflectionResponse;
 
 namespace grpc {
 
@@ -282,7 +282,7 @@ ProtoReflectionDescriptorDatabase::ParseFileDescriptorProtoResponse(
 }
 
 void ProtoReflectionDescriptorDatabase::AddFileFromResponse(
-    const grpc::reflection::v1alpha::FileDescriptorResponse& response) {
+    const grpc::reflection::v1::FileDescriptorResponse& response) {
   for (int i = 0; i < response.file_descriptor_proto_size(); ++i) {
     const protobuf::FileDescriptorProto file_proto =
         ParseFileDescriptorProtoResponse(response.file_descriptor_proto(i));
