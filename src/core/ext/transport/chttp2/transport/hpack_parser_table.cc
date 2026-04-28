@@ -46,6 +46,10 @@ void HPackTable::MementoRingBuffer::Put(Memento m) {
     ++num_entries_;
     return entries_.push_back(std::move(m));
   }
+  if (max_entries_ == 0) {
+    LOG(ERROR) << "HPackTable::MementoRingBuffer::Put: max_entries_ is zero!";
+    return;
+  }
   size_t index = (first_entry_ + num_entries_) % max_entries_;
   if (timestamp_index_ == kNoTimestamp) {
     timestamp_index_ = index;
