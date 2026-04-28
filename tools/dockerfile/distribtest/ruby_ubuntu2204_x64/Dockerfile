@@ -24,9 +24,9 @@ RUN gpg --keyserver hkp://keyserver.ubuntu.com --recv-keys 409B6B1796C275462A170
 RUN \curl -sSL https://get.rvm.io | bash -s stable
 
 # Install Ruby 3.2
-RUN /bin/bash -l -c "rvm install ruby-3.2.10"
-RUN /bin/bash -l -c "rvm use --default ruby-3.2.10"
+RUN /bin/bash -l -c "rvm install ruby-3.2.11"
+RUN /bin/bash -l -c "rvm use --default ruby-3.2.11"
 RUN /bin/bash -l -c "echo 'gem: --no-document' > ~/.gemrc"
 RUN /bin/bash -l -c "echo 'export PATH=/usr/local/rvm/bin:$PATH' >> ~/.bashrc"
-RUN /bin/bash -l -c "echo 'rvm --default use ruby-3.2.10' >> ~/.bashrc"
+RUN /bin/bash -l -c "echo 'rvm --default use ruby-3.2.11' >> ~/.bashrc"
 RUN /bin/bash -l -c "gem install bundler --no-document"

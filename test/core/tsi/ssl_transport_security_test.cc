@@ -1508,6 +1508,11 @@ TEST_P(SslTransportSecurityTest, TestServerHandshakerOverrideALPN) {
   DoHandshake();
 }
 
+// Configuring key exchange groups requires SSL_CTX_set1_groups_list(),
+// which was introduced in OpenSSL 1.1.1 (and is supported in BoringSSL).
+// Tests are gated to prevent failures on older OpenSSL 1.0.2/1.1.0
+// installations.
+#if OPENSSL_VERSION_NUMBER >= 0x10101000L
 TEST_P(SslTransportSecurityTest, TestKeyExchangeGroupSuccess) {
   SetUpSslFixture(/*tls_version=*/std::get<0>(GetParam()),
                   /*send_client_ca_list=*/std::get<1>(GetParam()));
@@ -1541,6 +1546,7 @@ TEST_P(SslTransportSecurityTest, TestKeyExchangeGroupMismatch) {
   ssl_fixture_->SetClientExpectsHandshakeFailure(tls_version == TSI_TLS1_3);
   DoHandshake();
 }
+#endif
 
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(&argc, argv);

@@ -41,7 +41,13 @@ REFLECTION_ARCHIVES=("$EXTERNAL_GIT_ROOT"/input_artifacts/grpcio[_-]*reflection[
 TESTING_ARCHIVES=("$EXTERNAL_GIT_ROOT"/input_artifacts/grpcio[_-]*testing[-_0-9a-z.]*.tar.gz)
 
 VIRTUAL_ENV=$(mktemp -d)
-python3 -m virtualenv "$VIRTUAL_ENV"
+# This is to execute "RBE Non-Bazel Tests" without failing.
+# PYTHON_BIN is set in tools/bazelify_tests/test/run_distribtest_python_linux.sh
+# and here we use PYTHON_BIN if set to ensure the virtual environment
+# is created with the intended Python interpreter.
+# This prevents virtualenv from defaulting to a system Python that might mismatch
+# the version of the wheels we are testing.
+${PYTHON_BIN:-python3} -m virtualenv "$VIRTUAL_ENV"
 PYTHON=$VIRTUAL_ENV/bin/python
 "$PYTHON" -m pip install --upgrade six pip==25.2 wheel setuptools
 

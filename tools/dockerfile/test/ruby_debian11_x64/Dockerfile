@@ -97,11 +97,11 @@ RUN \curl -sSL https://get.rvm.io | bash -s stable
 
 # Install Ruby 3.2
 RUN apt-get update && apt-get install -y procps && apt-get clean
-RUN /bin/bash -l -c "rvm install ruby-3.2.10"
-RUN /bin/bash -l -c "rvm use --default ruby-3.2.10"
+RUN /bin/bash -l -c "rvm install ruby-3.2.11"
+RUN /bin/bash -l -c "rvm use --default ruby-3.2.11"
 RUN /bin/bash -l -c "echo 'gem: --no-document' > ~/.gemrc"
 RUN /bin/bash -l -c "echo 'export PATH=/usr/local/rvm/bin:$PATH' >> ~/.bashrc"
-RUN /bin/bash -l -c "echo 'rvm --default use ruby-3.2.10' >> ~/.bashrc"
+RUN /bin/bash -l -c "echo 'rvm --default use ruby-3.2.11' >> ~/.bashrc"
 RUN /bin/bash -l -c "gem install bundler --no-document"
 
 # Workaround for rvm unable to find mkdir properly
@@ -119,7 +119,7 @@ RUN apt-get update && apt-get install -y cmake && apt-get clean
 
 # Install ccache from source since ccache 3.x packaged with most linux distributions
 # does not support Redis backend for caching.
-RUN curl -sSL -o ccache.tar.gz https://github.com/ccache/ccache/releases/download/v4.11.3/ccache-4.11.3.tar.gz \
+RUN curl -sSL --fail --retry 5 -o ccache.tar.gz https://github.com/ccache/ccache/releases/download/v4.11.3/ccache-4.11.3.tar.gz \
     && tar -zxf ccache.tar.gz \
     && cd ccache-4.11.3 \
     && mkdir build && cd build \
@@ -134,7 +134,7 @@ RUN mkdir /var/local/jenkins
 # Required by XDS interop test harness.
 RUN python3 -m pip install virtualenv==16.7.9
 
-# Passwordless sudo for all users
+# Passwordless sudo for all users.
 # Bazel docker sandbox and bazel RBE run scripts under docker
 # as a regular user, but sometimes we need to be
 # able to do something with root privileges.
