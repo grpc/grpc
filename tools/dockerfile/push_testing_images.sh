@@ -119,23 +119,8 @@ FAILED_DIR=$(mktemp -d)
 process_dockerfile() {
   local DOCKERFILE_DIR=$1
   local DOCKER_IMAGE_NAME=$(basename $DOCKERFILE_DIR)
-
-  if [ ! -e "$DOCKERFILE_DIR/Dockerfile" ]; then
-    return 0
-  fi
   local DOCKER_IMAGE_TAG=$(sha1sum $DOCKERFILE_DIR/Dockerfile | cut -f1 -d\ )
 
-  # Skip if DOCKERFILE_DIR is in EXCLUDE_DIRS
-  local exclude=false
-  for exclude_dir in "${EXCLUDE_DIRS[@]}"; do
-    if [[ "$DOCKERFILE_DIR" == "$exclude_dir" ]]; then
-      exclude=true
-      break
-    fi
-  done
-  if $exclude; then
-    return 0
-  fi
 
   local START_TIME=$SECONDS
 
@@ -243,14 +228,7 @@ process_dockerfile() {
     return 1
   fi
 
-  # Ensure reports directory exists ONLY for images that actually build
-  mkdir -p "reports/${DOCKER_IMAGE_NAME}"
-  local LOG_FILE="reports/${DOCKER_IMAGE_NAME}/sponge_log.log"
 
-  # fd 3 points to the main console. fd 1 and 2 (stdout/stderr) go to the log file.
-  exec 3>&1
-  echo "Starting build for ${DOCKER_IMAGE_NAME} (Logs: ${LOG_FILE})..." >&3
-  exec > "${LOG_FILE}" 2>&1
 
   echo "Running 'docker build' for ${DOCKER_IMAGE_NAME}"
   echo "=========="
@@ -264,7 +242,7 @@ process_dockerfile() {
     -t ${ARTIFACT_REGISTRY_PREFIX}/${DOCKER_IMAGE_NAME}:infrastructure-public-image-${DOCKER_IMAGE_TAG} \
     ${DOCKERFILE_DIR} || docker_exit_code=$?
   if [ "${docker_exit_code}" -ne 0 ]; then
-    echo "FAILED: Build for ${DOCKER_IMAGE_NAME} failed (took $((SECONDS - START_TIME))s)! (Check ${LOG_FILE})" >&3
+    echo "FAILED: Build for ${DOCKER_IMAGE_NAME} failed (took $((SECONDS - START_TIME))s)! (Check ${LOG_FILE})"
     if [ -z "${KEEP_GOING}" ]; then
       touch "${FAILED_DIR}/STOP"
       echo "${DOCKER_IMAGE_NAME}" > "${FAILED_DIR}/FATAL_${DOCKER_IMAGE_NAME}"
@@ -293,7 +271,7 @@ process_dockerfile() {
     echo -n "${ARTIFACT_REGISTRY_PREFIX}/${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG}@${DOCKER_IMAGE_DIGEST_REMOTE_AFTER_PUSH}" >${DOCKERFILE_DIR}.current_version
   fi
 
-  echo "SUCCESS: Build for ${DOCKER_IMAGE_NAME} finished (took $((SECONDS - START_TIME))s)." >&3
+  echo "SUCCESS: Build for ${DOCKER_IMAGE_NAME} finished (took $((SECONDS - START_TIME))s)."
 }
 
 # Run builds in parallel
@@ -303,9 +281,43 @@ do
     break
   fi
 
+  # Only process directories
+  if [ ! -d "${DOCKERFILE_DIR}" ]; then
+    continue
+  fi
+
+  # Check if it contains Dockerfile
+  if [ ! -e "${DOCKERFILE_DIR}/Dockerfile" ]; then
+    continue
+  fi
+
+  # Skip if DOCKERFILE_DIR is in EXCLUDE_DIRS
+  local exclude=false
+  local exclude_dir
+  for exclude_dir in "${EXCLUDE_DIRS[@]}"; do
+    if [[ "$DOCKERFILE_DIR" == "$exclude_dir" ]]; then
+      exclude=true
+      break
+    fi
+  done
+  if $exclude; then
+    continue
+  fi
+
+  local DOCKER_IMAGE_NAME=$(basename "$DOCKERFILE_DIR")
+  local LOG_FILE="reports/${DOCKER_IMAGE_NAME}/sponge_log.log"
+
+  mkdir -p "reports/${DOCKER_IMAGE_NAME}"
+
+  echo "Starting build for ${DOCKER_IMAGE_NAME} (Logs: ${LOG_FILE})..."
+
   (
     set -e
-    if ! process_dockerfile "${DOCKERFILE_DIR}"; then
+    local START_TIME=$SECONDS
+    if process_dockerfile "${DOCKERFILE_DIR}" > "${LOG_FILE}" 2>&1; then
+      echo "SUCCESS: Build for ${DOCKER_IMAGE_NAME} finished (took $((SECONDS - START_TIME))s)."
+    else
+      echo "FAILED: Build for ${DOCKER_IMAGE_NAME} failed (took $((SECONDS - START_TIME))s)! (Check ${LOG_FILE})"
       if [ -z "${KEEP_GOING}" ]; then
         touch "${FAILED_DIR}/STOP"
       fi
