@@ -20,8 +20,6 @@
 
 set -e
 
-mkdir -p reports
-
 cd $(dirname $0)/../..
 
 # Recognized env variables that can be used as params.
@@ -121,9 +119,6 @@ process_dockerfile() {
   local DOCKER_IMAGE_NAME=$(basename $DOCKERFILE_DIR)
   local DOCKER_IMAGE_TAG=$(sha1sum $DOCKERFILE_DIR/Dockerfile | cut -f1 -d\ )
 
-
-  local START_TIME=$SECONDS
-
   echo "* Visiting ${DOCKERFILE_DIR}"
 
   # if HOST_ARCH_ONLY is set, skip if the docker image's arthiecture doesn't match with the host architecture
@@ -139,7 +134,6 @@ process_dockerfile() {
     done
     if [ "$is_host_arm" != "$is_docker_for_arm" ]; then
       echo "Skipped due to the different architecture:" ${DOCKER_IMAGE_NAME}
-      echo "SKIPPED: ${DOCKER_IMAGE_NAME} due to architecture (took $((SECONDS - START_TIME))s)"
       return 0
     fi
   fi
@@ -160,7 +154,6 @@ process_dockerfile() {
       if [ "${VERSION_FILE_OUT_OF_DATE}" == "" ]
       then
         echo "Version file for ${DOCKER_IMAGE_NAME} is in sync with info from artifact registry."
-        echo "SKIPPED: ${DOCKER_IMAGE_NAME} already up to date (took $((SECONDS - START_TIME))s)"
         return 0
       fi
 
@@ -168,7 +161,6 @@ process_dockerfile() {
       then
         echo "CHECK FAILED: Version file ${DOCKERFILE_DIR}.current_version is not in sync with info from artifact registry."
         echo "${DOCKER_IMAGE_NAME}" > "${FAILED_DIR}/CHECK_FAILED_${DOCKER_IMAGE_NAME}"
-        echo "FAILED: ${DOCKER_IMAGE_NAME} version file out of sync (took $((SECONDS - START_TIME))s)"
         return 1
       fi
 
@@ -176,7 +168,6 @@ process_dockerfile() {
       # we consider the sha256 image digest info from the artifact registry to be the canonical one
       echo -n "${ARTIFACT_REGISTRY_PREFIX}/${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG}@${DOCKER_IMAGE_DIGEST_REMOTE}" >${DOCKERFILE_DIR}.current_version
 
-      echo "SKIPPED: ${DOCKER_IMAGE_NAME} already exists, updated version file (took $((SECONDS - START_TIME))s)"
       return 0
     fi
 
@@ -184,7 +175,6 @@ process_dockerfile() {
     then
       echo "CHECK FAILED: Docker image ${DOCKER_IMAGE_NAME} not found in artifact registry."
       echo "${DOCKER_IMAGE_NAME}" > "${FAILED_DIR}/CHECK_FAILED_${DOCKER_IMAGE_NAME}"
-      echo "FAILED: ${DOCKER_IMAGE_NAME} not found in registry during check (took $((SECONDS - START_TIME))s)"
       return 1
     fi
 
@@ -206,7 +196,6 @@ process_dockerfile() {
   then
     if [ "${ALWAYS_BUILD}" == "" ]; then
       echo "Dockerfile for ${DOCKER_IMAGE_NAME} hasn't changed. Will skip 'docker build'."
-      echo "SKIPPED: ${DOCKER_IMAGE_NAME} hasn't changed (took $((SECONDS - START_TIME))s)"
       return 0
     else
       echo "Dockerfile for ${DOCKER_IMAGE_NAME} hasn't changed but will do 'docker build' anyway."
@@ -217,18 +206,14 @@ process_dockerfile() {
   then
     echo "CHECK FAILED: Dockerfile for ${DOCKER_IMAGE_NAME} has changed and was built locally, but looks like it hasn't been pushed."
     echo "${DOCKER_IMAGE_NAME}" > "${FAILED_DIR}/CHECK_FAILED_${DOCKER_IMAGE_NAME}"
-    echo "FAILED: ${DOCKER_IMAGE_NAME} locally built but not pushed (took $((SECONDS - START_TIME))s)"
     return 1
   fi
   if [ "${CHECK_MODE}" != "" ]
   then
     echo "CHECK FAILED: Dockerfile for ${DOCKER_IMAGE_NAME} has changed, but the ${DOCKERFILE_DIR}.current_version is not up to date."
     echo "${DOCKER_IMAGE_NAME}" > "${FAILED_DIR}/CHECK_FAILED_${DOCKER_IMAGE_NAME}"
-    echo "FAILED: ${DOCKER_IMAGE_NAME} current_version not up to date (took $((SECONDS - START_TIME))s)"
     return 1
   fi
-
-
 
   echo "Running 'docker build' for ${DOCKER_IMAGE_NAME}"
   echo "=========="
@@ -242,7 +227,6 @@ process_dockerfile() {
     -t ${ARTIFACT_REGISTRY_PREFIX}/${DOCKER_IMAGE_NAME}:infrastructure-public-image-${DOCKER_IMAGE_TAG} \
     ${DOCKERFILE_DIR} || docker_exit_code=$?
   if [ "${docker_exit_code}" -ne 0 ]; then
-    echo "FAILED: Build for ${DOCKER_IMAGE_NAME} failed (took $((SECONDS - START_TIME))s)! (Check ${LOG_FILE})"
     if [ -z "${KEEP_GOING}" ]; then
       touch "${FAILED_DIR}/STOP"
       echo "${DOCKER_IMAGE_NAME}" > "${FAILED_DIR}/FATAL_${DOCKER_IMAGE_NAME}"
@@ -270,8 +254,6 @@ process_dockerfile() {
     local DOCKER_IMAGE_DIGEST_REMOTE_AFTER_PUSH=$(docker image inspect "${ARTIFACT_REGISTRY_PREFIX}/${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG}" | jq -e -r ".[0].RepoDigests[] | select(contains(\"${ARTIFACT_REGISTRY_PREFIX}/${DOCKER_IMAGE_NAME}@\"))" | sed 's/^.*@sha256:/sha256:/')
     echo -n "${ARTIFACT_REGISTRY_PREFIX}/${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG}@${DOCKER_IMAGE_DIGEST_REMOTE_AFTER_PUSH}" >${DOCKERFILE_DIR}.current_version
   fi
-
-  echo "SUCCESS: Build for ${DOCKER_IMAGE_NAME} finished (took $((SECONDS - START_TIME))s)."
 }
 
 # Run builds in parallel
