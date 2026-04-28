@@ -148,8 +148,7 @@ struct TakeValueExists {
   static constexpr bool value = false;
 };
 template <typename T>
-struct TakeValueExists<T,
-                       absl::void_t<decltype(TakeValue(std::declval<T>()))>> {
+struct TakeValueExists<T, std::void_t<decltype(TakeValue(std::declval<T>()))>> {
   static constexpr bool value = true;
 };
 // If there exists a function 'IsStatusOk(const T&) -> bool' then we assume that
