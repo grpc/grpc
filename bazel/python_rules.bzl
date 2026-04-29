@@ -13,6 +13,7 @@
 # limitations under the License.
 """Generates and compiles Python gRPC stubs from proto_library rules."""
 
+load("//bazel/private:proto_toolchain_helpers.bzl", "toolchains")
 load("@com_google_protobuf//bazel:py_proto_library.bzl", protobuf_py_proto_library = "py_proto_library")
 load("@rules_proto//proto:defs.bzl", "ProtoInfo")
 load("@rules_python//python:py_info.bzl", "PyInfo")
@@ -67,8 +68,6 @@ def _gen_py_aspect_impl(target, context):
                  declare_out_files(protos, context, _GENERATED_PROTO_STUB_FORMAT))
     generated_py_srcs = out_files
 
-    tools = [context.executable._protoc]
-
     out_dir = get_out_dir(protos, context)
 
     arguments = ([
@@ -85,9 +84,8 @@ def _gen_py_aspect_impl(target, context):
 
     context.actions.run(
         inputs = protos + includes.to_list(),
-        tools = tools,
         outputs = out_files,
-        executable = context.executable._protoc,
+        executable = toolchains.find_protoc(context, "_protoc"),
         arguments = arguments,
         mnemonic = "ProtocInvocation",
     )
@@ -112,16 +110,18 @@ _gen_py_aspect = aspect(
     attr_aspects = ["deps"],
     fragments = ["py"],
     attrs = {
+        "_protobuf_library": attr.label(
+            default = Label("@com_google_protobuf//:protobuf_python"),
+            providers = [PyInfo],
+        ),
+    } | toolchains.if_legacy_toolchain({
         "_protoc": attr.label(
             default = Label("@com_google_protobuf//:protoc"),
             executable = True,
             cfg = "exec",
         ),
-        "_protobuf_library": attr.label(
-            default = Label("@com_google_protobuf//:protobuf_python"),
-            providers = [PyInfo],
-        ),
-    },
+    }),
+    toolchains = toolchains.use_toolchain(toolchains.PROTO_TOOLCHAIN),
 )
 
 def _generate_py_impl(context):
@@ -167,18 +167,20 @@ _py_proto_library = rule(
             providers = [ProtoInfo],
             aspects = [_gen_py_aspect],
         ),
-        "_protoc": attr.label(
-            default = Label("@com_google_protobuf//:protoc"),
-            executable = True,
-            cfg = "exec",
-        ),
         "_protobuf_library": attr.label(
             default = Label("@com_google_protobuf//:protobuf_python"),
             providers = [PyInfo],
         ),
         "imports": attr.string_list(),
-    },
+    } | toolchains.if_legacy_toolchain({
+        "_protoc": attr.label(
+            default = Label("@com_google_protobuf//:protoc"),
+            executable = True,
+            cfg = "exec",
+        ),
+    }),
     implementation = _generate_py_impl,
+    toolchains = toolchains.use_toolchain(toolchains.PROTO_TOOLCHAIN),
 )
 
 def py_proto_library(name, deps, use_protobuf = True, **kwargs):
@@ -207,7 +209,7 @@ def _generate_pb2_grpc_src_impl(context):
     plugin_flags = ["grpc_2_0"] + context.attr.strip_prefixes
 
     arguments = []
-    tools = [context.executable._protoc, context.executable._grpc_plugin]
+    tools = [context.executable._grpc_plugin]
     out_dir = get_out_dir(protos, context)
     if out_dir.import_path:
         # is virtual imports
@@ -231,7 +233,7 @@ def _generate_pb2_grpc_src_impl(context):
         inputs = protos + includes,
         tools = tools,
         outputs = out_files,
-        executable = context.executable._protoc,
+        executable = toolchains.find_protoc(context, "_protoc"),
         arguments = arguments,
         mnemonic = "ProtocInvocation",
     )
@@ -288,17 +290,19 @@ _generate_pb2_grpc_src = rule(
             cfg = "exec",
             default = Label("//src/compiler:grpc_python_plugin"),
         ),
+        "grpc_library": attr.label(
+            default = Label("//src/python/grpcio/grpc:grpcio"),
+            providers = [PyInfo],
+        ),
+    } | toolchains.if_legacy_toolchain({
         "_protoc": attr.label(
             executable = True,
             cfg = "exec",
             default = Label("@com_google_protobuf//:protoc"),
         ),
-        "grpc_library": attr.label(
-            default = Label("//src/python/grpcio/grpc:grpcio"),
-            providers = [PyInfo],
-        ),
-    },
+    }),
     implementation = _generate_pb2_grpc_src_impl,
+    toolchains = toolchains.use_toolchain(toolchains.PROTO_TOOLCHAIN),
 )
 
 def py_grpc_library(
