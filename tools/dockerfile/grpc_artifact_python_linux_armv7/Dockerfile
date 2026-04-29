@@ -35,7 +35,6 @@ ADD install_python_for_wheel_crosscompilation.sh /scripts/install_python_for_whe
 # grep grpc_artifact_python_ tools/bazelify_tests/dockerimage_current_versions.bzl | grep -oP '(?<=docker://)[^"]+(?=")'
 # IMG=one_of_the_images_from_the_command_above
 # docker run --rm $IMG bash -c 'ls -l /opt/python/cp3{9,1}*' | sed -E 's#^[^/]+##'
-RUN /scripts/install_python_for_wheel_crosscompilation.sh "3.9.23" "3.9.23" /opt/python/cp39-cp39
 RUN /scripts/install_python_for_wheel_crosscompilation.sh "3.10.18" "3.10.18" /opt/python/cp310-cp310
 RUN /scripts/install_python_for_wheel_crosscompilation.sh "3.11.13" "3.11.13" /opt/python/cp311-cp311
 RUN /scripts/install_python_for_wheel_crosscompilation.sh "3.12.11" "3.12.11" /opt/python/cp312-cp312
@@ -51,7 +50,7 @@ ENV AUDITWHEEL_PLAT linux_armv7l
 # Install ccache from source since ccache 3.x packaged with most linux distributions
 # does not support Redis backend for caching.
 RUN unset CMAKE_TOOLCHAIN_FILE && unset AS AR CC CPP CXX LD STRIP OBJCOPY \
-    && curl -sSL -o ccache.tar.gz https://github.com/ccache/ccache/releases/download/v4.11.3/ccache-4.11.3.tar.gz \
+    && curl -sSL --fail --retry 5 -o ccache.tar.gz https://github.com/ccache/ccache/releases/download/v4.11.3/ccache-4.11.3.tar.gz \
     && tar -zxf ccache.tar.gz \
     && cd ccache-4.11.3 \
     && mkdir build && cd build \

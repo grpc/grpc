@@ -104,6 +104,7 @@ inline bool IsMetadataPublishToAppTagEnabled() { return true; }
 inline bool IsMonitoringExperimentEnabled() { return true; }
 inline bool IsMultipingEnabled() { return false; }
 inline bool IsOtelExportTelemetryDomainsEnabled() { return false; }
+inline bool IsPh2Perf01Enabled() { return false; }
 inline bool IsPickFirstIgnoreEmptyUpdatesEnabled() { return false; }
 inline bool IsPipelinedReadSecureEndpointEnabled() { return false; }
 inline bool IsPollsetAlternativeEnabled() { return false; }
@@ -111,6 +112,8 @@ inline bool IsPrioritizeFinishedRequestsEnabled() { return false; }
 inline bool IsPromiseBasedHttp2ClientTransportEnabled() { return false; }
 inline bool IsPromiseBasedHttp2ServerTransportEnabled() { return false; }
 inline bool IsPromiseBasedInprocTransportEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_PROMISE_BATCH_CLEANUP_ON_CANCEL
+inline bool IsPromiseBatchCleanupOnCancelEnabled() { return true; }
 inline bool IsPromiseFilterSendCancelMetadataEnabled() { return false; }
 inline bool IsRetryInCallv3Enabled() { return false; }
 inline bool IsReturnPreexistingErrorsEnabled() { return false; }
@@ -179,6 +182,7 @@ inline bool IsMetadataPublishToAppTagEnabled() { return true; }
 inline bool IsMonitoringExperimentEnabled() { return true; }
 inline bool IsMultipingEnabled() { return false; }
 inline bool IsOtelExportTelemetryDomainsEnabled() { return false; }
+inline bool IsPh2Perf01Enabled() { return false; }
 inline bool IsPickFirstIgnoreEmptyUpdatesEnabled() { return false; }
 inline bool IsPipelinedReadSecureEndpointEnabled() { return false; }
 inline bool IsPollsetAlternativeEnabled() { return false; }
@@ -186,6 +190,8 @@ inline bool IsPrioritizeFinishedRequestsEnabled() { return false; }
 inline bool IsPromiseBasedHttp2ClientTransportEnabled() { return false; }
 inline bool IsPromiseBasedHttp2ServerTransportEnabled() { return false; }
 inline bool IsPromiseBasedInprocTransportEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_PROMISE_BATCH_CLEANUP_ON_CANCEL
+inline bool IsPromiseBatchCleanupOnCancelEnabled() { return true; }
 inline bool IsPromiseFilterSendCancelMetadataEnabled() { return false; }
 inline bool IsRetryInCallv3Enabled() { return false; }
 inline bool IsReturnPreexistingErrorsEnabled() { return false; }
@@ -254,6 +260,7 @@ inline bool IsMetadataPublishToAppTagEnabled() { return true; }
 inline bool IsMonitoringExperimentEnabled() { return true; }
 inline bool IsMultipingEnabled() { return false; }
 inline bool IsOtelExportTelemetryDomainsEnabled() { return false; }
+inline bool IsPh2Perf01Enabled() { return false; }
 inline bool IsPickFirstIgnoreEmptyUpdatesEnabled() { return false; }
 inline bool IsPipelinedReadSecureEndpointEnabled() { return false; }
 inline bool IsPollsetAlternativeEnabled() { return false; }
@@ -261,6 +268,8 @@ inline bool IsPrioritizeFinishedRequestsEnabled() { return false; }
 inline bool IsPromiseBasedHttp2ClientTransportEnabled() { return false; }
 inline bool IsPromiseBasedHttp2ServerTransportEnabled() { return false; }
 inline bool IsPromiseBasedInprocTransportEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_PROMISE_BATCH_CLEANUP_ON_CANCEL
+inline bool IsPromiseBatchCleanupOnCancelEnabled() { return true; }
 inline bool IsPromiseFilterSendCancelMetadataEnabled() { return false; }
 inline bool IsRetryInCallv3Enabled() { return false; }
 inline bool IsReturnPreexistingErrorsEnabled() { return false; }
@@ -312,6 +321,7 @@ enum ExperimentIds {
   kExperimentIdMonitoringExperiment,
   kExperimentIdMultiping,
   kExperimentIdOtelExportTelemetryDomains,
+  kExperimentIdPh2Perf01,
   kExperimentIdPickFirstIgnoreEmptyUpdates,
   kExperimentIdPipelinedReadSecureEndpoint,
   kExperimentIdPollsetAlternative,
@@ -319,6 +329,7 @@ enum ExperimentIds {
   kExperimentIdPromiseBasedHttp2ClientTransport,
   kExperimentIdPromiseBasedHttp2ServerTransport,
   kExperimentIdPromiseBasedInprocTransport,
+  kExperimentIdPromiseBatchCleanupOnCancel,
   kExperimentIdPromiseFilterSendCancelMetadata,
   kExperimentIdRetryInCallv3,
   kExperimentIdReturnPreexistingErrors,
@@ -452,6 +463,10 @@ inline bool IsMultipingEnabled() {
 inline bool IsOtelExportTelemetryDomainsEnabled() {
   return IsExperimentEnabled<kExperimentIdOtelExportTelemetryDomains>();
 }
+#define GRPC_EXPERIMENT_IS_INCLUDED_PH2_PERF_01
+inline bool IsPh2Perf01Enabled() {
+  return IsExperimentEnabled<kExperimentIdPh2Perf01>();
+}
 #define GRPC_EXPERIMENT_IS_INCLUDED_PICK_FIRST_IGNORE_EMPTY_UPDATES
 inline bool IsPickFirstIgnoreEmptyUpdatesEnabled() {
   return IsExperimentEnabled<kExperimentIdPickFirstIgnoreEmptyUpdates>();
@@ -479,6 +494,10 @@ inline bool IsPromiseBasedHttp2ServerTransportEnabled() {
 #define GRPC_EXPERIMENT_IS_INCLUDED_PROMISE_BASED_INPROC_TRANSPORT
 inline bool IsPromiseBasedInprocTransportEnabled() {
   return IsExperimentEnabled<kExperimentIdPromiseBasedInprocTransport>();
+}
+#define GRPC_EXPERIMENT_IS_INCLUDED_PROMISE_BATCH_CLEANUP_ON_CANCEL
+inline bool IsPromiseBatchCleanupOnCancelEnabled() {
+  return IsExperimentEnabled<kExperimentIdPromiseBatchCleanupOnCancel>();
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_PROMISE_FILTER_SEND_CANCEL_METADATA
 inline bool IsPromiseFilterSendCancelMetadataEnabled() {

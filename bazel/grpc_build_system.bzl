@@ -31,7 +31,8 @@ load("@build_bazel_apple_support//rules:universal_binary.bzl", "universal_binary
 load("@build_bazel_rules_apple//apple:ios.bzl", "ios_unit_test")
 load("@build_bazel_rules_apple//apple/testing/default_runner:ios_test_runner.bzl", "ios_test_runner")
 load("@com_google_protobuf//bazel:cc_proto_library.bzl", "cc_proto_library")
-load("@com_google_protobuf//bazel:upb_proto_library.bzl", "upb_proto_library", "upb_proto_reflection_library")
+load("@com_google_protobuf//bazel:upb_c_proto_library.bzl", "upb_c_proto_library")
+load("@com_google_protobuf//bazel:upb_proto_reflection_library.bzl", "upb_proto_reflection_library")
 load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
 load("@rules_cc//cc:cc_test.bzl", "cc_test")
@@ -597,6 +598,8 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
             **test_args
         )
 
+    # TODO(vigneshbabu) This target must be replaced with a cc_binary similar
+    # to the one used in a windows build.
     cc_library(
         name = "%s_TEST_LIBRARY" % name,
         testonly = 1,
@@ -605,6 +608,33 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
         tags = tags,
         alwayslink = 1,
         defines = defines,
+        target_compatible_with = select({
+            "//:windows": ["@platforms//:incompatible"],
+            "//:windows_clang": ["@platforms//:incompatible"],
+            "//conditions:default": [],
+        }),
+    )
+
+    # Define a test binary on windows builds. This avoids defining a new target
+    # for each poller config on windows and saves expensive linkage time.
+    cc_binary(
+        name = "%s_bin" % name,
+        srcs = srcs,
+        deps = core_deps,
+        testonly = 1,
+        copts = GRPC_DEFAULT_COPTS + copts,
+        linkopts = ["-defaultlib:ws2_32.lib"],
+        linkstatic = linkstatic,
+        exec_compatible_with = exec_compatible_with,
+        exec_properties = exec_properties,
+        data = data,
+        tags = tags,
+        defines = defines,
+        target_compatible_with = select({
+            "//:windows": [],
+            "//:windows_clang": [],
+            "//conditions:default": ["@platforms//:incompatible"],
+        }),
     )
 
     for poller_config in expand_tests(name, srcs, core_deps, tags, args, exclude_pollers, uses_polling, uses_event_engine, flaky):
@@ -612,6 +642,11 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
             fail("srcs changed")
         if poller_config["deps"] != core_deps:
             fail("deps changed: %r --> %r" % (deps, poller_config["deps"]))
+
+        # This target is marked as incompatible with windows. So it can only
+        # be built on other non-windows platforms.
+        # TODO(vigneshbabu) - This target must be replaced with an sh_test
+        # similar to the windows builds.
         cc_test(
             name = poller_config["name"],
             deps = ["%s_TEST_LIBRARY" % name],
@@ -620,7 +655,35 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
             env = poller_config["env"],
             flaky = poller_config["flaky"],
             defines = defines,
+            target_compatible_with = select({
+                "//:windows": ["@platforms//:incompatible"],
+                "//:windows_clang": ["@platforms//:incompatible"],
+                "//conditions:default": [],
+            }),
             **test_args
+        )
+
+        # Define a sh_test target for each poller_config. However, this target
+        # is marked compatible only for windows platform. So it will not be
+        # built in other platforms.
+        sh_test(
+            name = poller_config["name"] + ".exe",
+            srcs = [":%s_bin" % name],
+            tags = poller_config["tags"],
+            args = poller_config["args"],
+            env = poller_config["env"],
+            flaky = poller_config["flaky"],
+            size = size,
+            timeout = timeout,
+            shard_count = shard_count,
+            data = data,
+            exec_compatible_with = exec_compatible_with,
+            exec_properties = exec_properties,
+            target_compatible_with = select({
+                "//:windows": [],
+                "//:windows_clang": [],
+                "//conditions:default": ["@platforms//:incompatible"],
+            }),
         )
 
 def grpc_cc_binary(name, srcs = [], deps = [], external_deps = [], args = [], data = [], testonly = False, linkshared = False, linkopts = [], tags = [], target_compatible_with = [], features = [], visibility = None):
@@ -827,7 +890,7 @@ def grpc_objc_library(
     )
 
 def grpc_upb_proto_library(name, deps):
-    upb_proto_library(name = name, deps = deps)
+    upb_c_proto_library(name = name, deps = deps)
 
 def grpc_upb_proto_reflection_library(name, deps):
     upb_proto_reflection_library(name = name, deps = deps)
