@@ -245,6 +245,10 @@ const char* const description_xds_channel_filter_chain_per_route =
     "xDS channels use a separate filter chain for each route.";
 const char* const additional_constraints_xds_channel_filter_chain_per_route =
     "{}";
+const char* const description_xds_server_filter_chain_per_route =
+    "xDS servers use a separate filter chain for each route.";
+const char* const additional_constraints_xds_server_filter_chain_per_route =
+    "{}";
 }  // namespace
 
 namespace grpc_core {
@@ -420,6 +424,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_xds_channel_filter_chain_per_route,
      additional_constraints_xds_channel_filter_chain_per_route, nullptr, 0,
      true, true},
+    {"xds_server_filter_chain_per_route",
+     description_xds_server_filter_chain_per_route,
+     additional_constraints_xds_server_filter_chain_per_route, nullptr, 0,
+     false, true},
 };
 
 }  // namespace grpc_core
@@ -648,6 +656,10 @@ const char* const description_xds_channel_filter_chain_per_route =
     "xDS channels use a separate filter chain for each route.";
 const char* const additional_constraints_xds_channel_filter_chain_per_route =
     "{}";
+const char* const description_xds_server_filter_chain_per_route =
+    "xDS servers use a separate filter chain for each route.";
+const char* const additional_constraints_xds_server_filter_chain_per_route =
+    "{}";
 }  // namespace
 
 namespace grpc_core {
@@ -823,6 +835,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_xds_channel_filter_chain_per_route,
      additional_constraints_xds_channel_filter_chain_per_route, nullptr, 0,
      true, true},
+    {"xds_server_filter_chain_per_route",
+     description_xds_server_filter_chain_per_route,
+     additional_constraints_xds_server_filter_chain_per_route, nullptr, 0,
+     false, true},
 };
 
 }  // namespace grpc_core
@@ -1051,6 +1067,10 @@ const char* const description_xds_channel_filter_chain_per_route =
     "xDS channels use a separate filter chain for each route.";
 const char* const additional_constraints_xds_channel_filter_chain_per_route =
     "{}";
+const char* const description_xds_server_filter_chain_per_route =
+    "xDS servers use a separate filter chain for each route.";
+const char* const additional_constraints_xds_server_filter_chain_per_route =
+    "{}";
 }  // namespace
 
 namespace grpc_core {
@@ -1226,6 +1246,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_xds_channel_filter_chain_per_route,
      additional_constraints_xds_channel_filter_chain_per_route, nullptr, 0,
      true, true},
+    {"xds_server_filter_chain_per_route",
+     description_xds_server_filter_chain_per_route,
+     additional_constraints_xds_server_filter_chain_per_route, nullptr, 0,
+     false, true},
 };
 
 }  // namespace grpc_core

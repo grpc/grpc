@@ -247,8 +247,10 @@ XdsRouting::PerRouteFilterChainBuilder::GetDefaultFilterChain() {
         config = filter_impl->MergeConfigs(filter_config.filter_config,
                                            std::move(vhost_override_config),
                                            nullptr, nullptr);
-        filter_impl->UpdateBlackboard(*config, old_blackboard_,
-                                      new_blackboard_);
+        if (new_blackboard_ != nullptr) {
+          filter_impl->UpdateBlackboard(*config, old_blackboard_,
+                                        new_blackboard_);
+        }
       }
       GRPC_TRACE_LOG(xds_resolver, INFO)
           << "  Adding filter=" << filter_config.name
@@ -283,7 +285,10 @@ XdsRouting::PerRouteFilterChainBuilder::BuildFilterChainForRoute(
       config = filter_impl->MergeConfigs(
           filter_config.filter_config, std::move(vhost_override_config),
           std::move(route_override_config), nullptr);
-      filter_impl->UpdateBlackboard(*config, old_blackboard_, new_blackboard_);
+      if (new_blackboard_ != nullptr) {
+        filter_impl->UpdateBlackboard(*config, old_blackboard_,
+                                      new_blackboard_);
+      }
     }
     GRPC_TRACE_LOG(xds_resolver, INFO)
         << "  Adding filter=" << filter_config.name
@@ -341,8 +346,10 @@ void XdsRouting::PerRouteFilterChainBuilder::
               filter_config.filter_config, std::move(vhost_override_config),
               std::move(route_override_config),
               std::move(cluster_weight_override_config));
-          filter_impl->UpdateBlackboard(*config, old_blackboard_,
-                                        new_blackboard_);
+          if (new_blackboard_ != nullptr) {
+            filter_impl->UpdateBlackboard(*config, old_blackboard_,
+                                          new_blackboard_);
+          }
         }
         GRPC_TRACE_LOG(xds_resolver, INFO)
             << "  Adding filter=" << filter_config.name << " config="

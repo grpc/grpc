@@ -22,6 +22,7 @@
 #include <memory>
 
 #include "src/core/call/metadata_batch.h"
+#include "src/core/filter/filter_chain.h"
 #include "src/core/service_config/service_config.h"
 #include "src/core/service_config/service_config_parser.h"
 #include "src/core/util/dual_ref_counted.h"
@@ -37,14 +38,22 @@ namespace grpc_core {
 // server-side call based on the received initial metadata.
 class ServerConfigSelector : public RefCounted<ServerConfigSelector> {
  public:
+  ~ServerConfigSelector() override = default;
+
+  // The server will call this when the provider returns a new
+  // ServerConfigSelector to initialize the filter chains that the
+  // ServerConfigSelector may need.
+  virtual void BuildFilterChains(FilterChainBuilder& builder) = 0;
+
   // Configuration to apply to an incoming call
+  // TODO(roth): When we remove the xds_server_filter_chain_per_route
+  // experiment, remove this struct and have GetCallConfig() return
+  // the filter chain directly.
   struct CallConfig {
     const ServiceConfigParser::ParsedConfigVector* method_configs = nullptr;
     RefCountedPtr<ServiceConfig> service_config;
+    absl::StatusOr<RefCountedPtr<const FilterChain>> filter_chain;
   };
-
-  ~ServerConfigSelector() override = default;
-
   // Returns the CallConfig to apply to a call based on the incoming \a metadata
   virtual absl::StatusOr<CallConfig> GetCallConfig(
       grpc_metadata_batch* metadata) = 0;
