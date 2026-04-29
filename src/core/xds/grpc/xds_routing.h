@@ -94,6 +94,7 @@ class XdsRouting final {
     // adding all of the xDS HTTP filters and right before building the
     // filter chain.  May be null if not needed.
     PerRouteFilterChainBuilder(
+        bool is_client,
         const std::vector<
             XdsListenerResource::HttpConnectionManager::HttpFilter>&
             hcm_filter_configs,
@@ -120,6 +121,15 @@ class XdsRouting final {
    private:
     absl::StatusOr<RefCountedPtr<const FilterChain>> GetDefaultFilterChain();
 
+    // Calls func for each filter in order.
+    // Handles proper ordering for client and server sides.
+    void ForEachFilter(
+        absl::FunctionRef<void(
+            const XdsHttpFilterImpl&,
+            const XdsListenerResource::HttpConnectionManager::HttpFilter&)>
+            func);
+
+    const bool is_client_;
     const std::vector<XdsListenerResource::HttpConnectionManager::HttpFilter>&
         hcm_filter_configs_;
     const XdsRouteConfigResource::VirtualHost& vhost_;

@@ -191,6 +191,7 @@ std::optional<absl::string_view> XdsRouting::GetHeaderValue(
 }
 
 XdsRouting::PerRouteFilterChainBuilder::PerRouteFilterChainBuilder(
+    bool is_client,
     const std::vector<XdsListenerResource::HttpConnectionManager::HttpFilter>&
         hcm_filter_configs,
     const XdsHttpFilterRegistry& http_filter_registry,
@@ -198,7 +199,8 @@ XdsRouting::PerRouteFilterChainBuilder::PerRouteFilterChainBuilder(
     FilterChainBuilder& builder,
     absl::AnyInvocable<void(FilterChainBuilder&)> add_last_filter,
     const Blackboard* old_blackboard, Blackboard* new_blackboard)
-    : hcm_filter_configs_(hcm_filter_configs),
+    : is_client_(is_client),
+      hcm_filter_configs_(hcm_filter_configs),
       vhost_(vhost),
       builder_(builder),
       add_last_filter_(std::move(add_last_filter)),
@@ -217,15 +219,31 @@ XdsRouting::PerRouteFilterChainBuilder::PerRouteFilterChainBuilder(
   }
 }
 
+void XdsRouting::PerRouteFilterChainBuilder::ForEachFilter(
+    absl::FunctionRef<void(
+        const XdsHttpFilterImpl&,
+        const XdsListenerResource::HttpConnectionManager::HttpFilter&)> func) {
+  if (is_client_) {
+    for (size_t i = 0; i < filter_impls_.size(); ++i) {
+      func(*filter_impls_[i], hcm_filter_configs_[i]);
+    }
+  } else {
+    GRPC_CHECK_GT(filter_impls_.size(), 0);
+    for (size_t i = filter_impls_.size() - 1; i >= 0; --i) {
+      func(*filter_impls_[i], hcm_filter_configs_[i]);
+    }
+  }
+}
+
 namespace {
 
 RefCountedPtr<const FilterConfig> GetOverrideConfig(
-    const XdsHttpFilterImpl* filter_impl,
+    const XdsHttpFilterImpl& filter_impl,
     const XdsRouteConfigResource::TypedPerFilterConfig& typed_per_filter_config,
     const std::string& name) {
   auto it = typed_per_filter_config.find(name);
   if (it == typed_per_filter_config.end()) return nullptr;
-  if (it->second.config_proto_type != filter_impl->OverrideConfigProtoName()) {
+  if (it->second.config_proto_type != filter_impl.OverrideConfigProtoName()) {
     return nullptr;
   }
   return it->second.filter_config;
@@ -237,24 +255,26 @@ absl::StatusOr<RefCountedPtr<const FilterChain>>
 XdsRouting::PerRouteFilterChainBuilder::GetDefaultFilterChain() {
   if (default_filter_chain_.ok() && *default_filter_chain_ == nullptr) {
     GRPC_TRACE_LOG(xds_resolver, INFO) << "Building default filter chain:";
-    for (size_t i = 0; i < filter_impls_.size(); ++i) {
-      auto* filter_impl = filter_impls_[i];
-      const auto& filter_config = hcm_filter_configs_[i];
-      RefCountedPtr<const FilterConfig> config;
-      if (filter_config.filter_config != nullptr) {
-        auto vhost_override_config = GetOverrideConfig(
-            filter_impl, vhost_.typed_per_filter_config, filter_config.name);
-        config = filter_impl->MergeConfigs(filter_config.filter_config,
-                                           std::move(vhost_override_config),
-                                           nullptr, nullptr);
-        filter_impl->UpdateBlackboard(*config, old_blackboard_,
-                                      new_blackboard_);
-      }
-      GRPC_TRACE_LOG(xds_resolver, INFO)
-          << "  Adding filter=" << filter_config.name
-          << " config=" << (config == nullptr ? "<null>" : config->ToString());
-      filter_impl->AddFilter(builder_, std::move(config));
-    }
+    ForEachFilter(
+        [&](const XdsHttpFilterImpl& filter_impl,
+            const XdsListenerResource::HttpConnectionManager::HttpFilter&
+                filter_config) {
+          RefCountedPtr<const FilterConfig> config;
+          if (filter_config.filter_config != nullptr) {
+            auto vhost_override_config = GetOverrideConfig(
+                filter_impl, vhost_.typed_per_filter_config,
+                filter_config.name);
+            config = filter_impl.MergeConfigs(filter_config.filter_config,
+                                              std::move(vhost_override_config),
+                                              nullptr, nullptr);
+            filter_impl.UpdateBlackboard(*config, old_blackboard_,
+                                         new_blackboard_);
+          }
+          GRPC_TRACE_LOG(xds_resolver, INFO)
+              << "  Adding filter=" << filter_config.name << " config="
+              << (config == nullptr ? "<null>" : config->ToString());
+          filter_impl.AddFilter(builder_, std::move(config));
+        });
     if (add_last_filter_ != nullptr) add_last_filter_(builder_);
     default_filter_chain_ = builder_.Build();
     GRPC_TRACE_LOG(xds_resolver, INFO)
@@ -271,25 +291,27 @@ XdsRouting::PerRouteFilterChainBuilder::BuildFilterChainForRoute(
   // If there are no per-route overrides, use the default filter chain.
   if (route.typed_per_filter_config.empty()) return GetDefaultFilterChain();
   // Otherwise, build a new filter chain for the route.
-  for (size_t i = 0; i < filter_impls_.size(); ++i) {
-    auto* filter_impl = filter_impls_[i];
-    const auto& filter_config = hcm_filter_configs_[i];
-    RefCountedPtr<const FilterConfig> config;
-    if (filter_config.filter_config != nullptr) {
-      auto vhost_override_config = GetOverrideConfig(
-          filter_impl, vhost_.typed_per_filter_config, filter_config.name);
-      auto route_override_config = GetOverrideConfig(
-          filter_impl, route.typed_per_filter_config, filter_config.name);
-      config = filter_impl->MergeConfigs(
-          filter_config.filter_config, std::move(vhost_override_config),
-          std::move(route_override_config), nullptr);
-      filter_impl->UpdateBlackboard(*config, old_blackboard_, new_blackboard_);
-    }
-    GRPC_TRACE_LOG(xds_resolver, INFO)
-        << "  Adding filter=" << filter_config.name
-        << " config=" << (config == nullptr ? "<null>" : config->ToString());
-    filter_impl->AddFilter(builder_, std::move(config));
-  }
+  ForEachFilter(
+      [&](const XdsHttpFilterImpl& filter_impl,
+          const XdsListenerResource::HttpConnectionManager::HttpFilter&
+              filter_config) {
+        RefCountedPtr<const FilterConfig> config;
+        if (filter_config.filter_config != nullptr) {
+          auto vhost_override_config = GetOverrideConfig(
+              filter_impl, vhost_.typed_per_filter_config, filter_config.name);
+          auto route_override_config = GetOverrideConfig(
+              filter_impl, route.typed_per_filter_config, filter_config.name);
+          config = filter_impl.MergeConfigs(
+              filter_config.filter_config, std::move(vhost_override_config),
+              std::move(route_override_config), nullptr);
+          filter_impl.UpdateBlackboard(*config, old_blackboard_,
+                                       new_blackboard_);
+        }
+        GRPC_TRACE_LOG(xds_resolver, INFO)
+            << "  Adding filter=" << filter_config.name << " config="
+            << (config == nullptr ? "<null>" : config->ToString());
+        filter_impl.AddFilter(builder_, std::move(config));
+      });
   if (add_last_filter_ != nullptr) add_last_filter_(builder_);
   absl::StatusOr<RefCountedPtr<const FilterChain>> route_filter_chain =
       builder_.Build();
@@ -325,30 +347,33 @@ void XdsRouting::PerRouteFilterChainBuilder::
       GRPC_TRACE_LOG(xds_resolver, INFO)
           << "Building filter chain for route:" << route.ToString()
           << " ClusterWeight:" << cluster_weight.ToString();
-      for (size_t i = 0; i < filter_impls_.size(); ++i) {
-        auto* filter_impl = filter_impls_[i];
-        const auto& filter_config = hcm_filter_configs_[i];
-        RefCountedPtr<const FilterConfig> config;
-        if (filter_config.filter_config != nullptr) {
-          auto vhost_override_config = GetOverrideConfig(
-              filter_impl, vhost_.typed_per_filter_config, filter_config.name);
-          auto route_override_config = GetOverrideConfig(
-              filter_impl, route.typed_per_filter_config, filter_config.name);
-          auto cluster_weight_override_config = GetOverrideConfig(
-              filter_impl, cluster_weight.typed_per_filter_config,
-              filter_config.name);
-          config = filter_impl->MergeConfigs(
-              filter_config.filter_config, std::move(vhost_override_config),
-              std::move(route_override_config),
-              std::move(cluster_weight_override_config));
-          filter_impl->UpdateBlackboard(*config, old_blackboard_,
-                                        new_blackboard_);
-        }
-        GRPC_TRACE_LOG(xds_resolver, INFO)
-            << "  Adding filter=" << filter_config.name << " config="
-            << (config == nullptr ? "<null>" : config->ToString());
-        filter_impl->AddFilter(builder_, std::move(config));
-      }
+      ForEachFilter(
+          [&](const XdsHttpFilterImpl& filter_impl,
+              const XdsListenerResource::HttpConnectionManager::HttpFilter&
+                  filter_config) {
+            RefCountedPtr<const FilterConfig> config;
+            if (filter_config.filter_config != nullptr) {
+              auto vhost_override_config = GetOverrideConfig(
+                  filter_impl, vhost_.typed_per_filter_config,
+                  filter_config.name);
+              auto route_override_config = GetOverrideConfig(
+                  filter_impl, route.typed_per_filter_config,
+                  filter_config.name);
+              auto cluster_weight_override_config = GetOverrideConfig(
+                  filter_impl, cluster_weight.typed_per_filter_config,
+                  filter_config.name);
+              config = filter_impl.MergeConfigs(
+                  filter_config.filter_config, std::move(vhost_override_config),
+                  std::move(route_override_config),
+                  std::move(cluster_weight_override_config));
+              filter_impl.UpdateBlackboard(*config, old_blackboard_,
+                                           new_blackboard_);
+            }
+            GRPC_TRACE_LOG(xds_resolver, INFO)
+                << "  Adding filter=" << filter_config.name << " config="
+                << (config == nullptr ? "<null>" : config->ToString());
+            filter_impl.AddFilter(builder_, std::move(config));
+          });
       if (add_last_filter_ != nullptr) add_last_filter_(builder_);
       auto filter_chain = builder_.Build();
       GRPC_TRACE_LOG(xds_resolver, INFO)
