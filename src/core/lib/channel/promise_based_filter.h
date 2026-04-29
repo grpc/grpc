@@ -1462,11 +1462,6 @@ class V3InterceptorToV2Bridge : public ChannelFilter, public Interceptor {
             }));
   }
 
- protected:
-  RefCountedPtr<UnstartedCallDestination> wrapped_destination() const {
-    return wrapped_destination_;  // From Interceptor class.
-  }
-
  private:
   // A custom UnstartedCallDestination that starts the call and returns
   // the resulting handler via a latch obtained from call context.
