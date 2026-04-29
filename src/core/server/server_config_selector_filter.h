@@ -50,7 +50,7 @@ extern const grpc_channel_filter kServerConfigSelectorFilter;
 class ServerConfigSelectorInterceptor final
     : public V3InterceptorToV2Bridge<ServerConfigSelectorInterceptor> {
  public:
-  static const grpc_channel_filter kFilterVtable;
+  static const grpc_channel_filter kFilter;
 
   static absl::string_view TypeName() { return "server_config_selector"; }
 

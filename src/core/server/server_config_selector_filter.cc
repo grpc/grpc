@@ -199,7 +199,7 @@ class ServerConfigSelectorInterceptor::Watcher final
 // ServerConfigSelectorInterceptor
 //
 
-const grpc_channel_filter ServerConfigSelectorInterceptor::kFilterVtable =
+const grpc_channel_filter ServerConfigSelectorInterceptor::kFilter =
     MakePromiseBasedFilter<
         ServerConfigSelectorInterceptor, FilterEndpoint::kClient,
         kFilterExaminesServerInitialMetadata | kFilterExaminesOutboundMessages |
