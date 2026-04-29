@@ -30,6 +30,8 @@
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
+using testing::IsSupersetOf;
+
 namespace grpc_core {
 namespace {
 
@@ -117,7 +119,7 @@ CORE_END2END_TEST(Http2FullstackSingleHopTests, SubchannelConnectionScaling) {
   // The 4th RPC should open a new connection; the original must still be alive.
   auto uuids_after_4_rpcs = GetServerSocketUuids(server());
   EXPECT_EQ(uuids_after_4_rpcs.size(), 2u);
-  EXPECT_THAT(uuids_after_4_rpcs, ::testing::IsSupersetOf(uuids_after_3_rpcs));
+  EXPECT_THAT(uuids_after_4_rpcs, IsSupersetOf(uuids_after_3_rpcs));
   // Clean up.
   c1.Cancel();
   c2.Cancel();
@@ -166,7 +168,7 @@ CORE_END2END_TEST(Http2FullstackSingleHopTests,
   c2.NewBatch(302).RecvStatusOnClient(server_status2);
   Expect(301, true);
   Step();
-  auto s2 = RequestCall(401);s
+  auto s2 = RequestCall(401);
   Expect(401, true);
   Step();
   // First two RPCs should be on the same connection.
@@ -196,7 +198,7 @@ CORE_END2END_TEST(Http2FullstackSingleHopTests,
   // the first two. The original connection must still be alive.
   auto uuids_after_4_rpcs = GetServerSocketUuids(server());
   EXPECT_EQ(uuids_after_4_rpcs.size(), 2u);
-  EXPECT_THAT(uuids_after_4_rpcs, ::testing::IsSupersetOf(uuids_after_2_rpcs));
+  EXPECT_THAT(uuids_after_4_rpcs, IsSupersetOf(uuids_after_2_rpcs));
   // Start a 5th RPC, which will be queued.
   auto c5 = NewClientCall("/epsilon").Timeout(Duration::Seconds(1000)).Create();
   c5.NewBatch(901).SendInitialMetadata({});
