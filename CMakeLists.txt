@@ -2931,6 +2931,7 @@ add_library(grpc
   src/core/lib/surface/event_string.cc
   src/core/lib/surface/filter_stack_call.cc
   src/core/lib/surface/init.cc
+  src/core/lib/surface/init_upb_msvc.c
   src/core/lib/surface/init_internally.cc
   src/core/lib/surface/lame_client.cc
   src/core/lib/surface/legacy_channel.cc
@@ -3753,6 +3754,7 @@ add_library(grpc_unsecure
   src/core/lib/surface/event_string.cc
   src/core/lib/surface/filter_stack_call.cc
   src/core/lib/surface/init.cc
+  src/core/lib/surface/init_upb_msvc.c
   src/core/lib/surface/init_internally.cc
   src/core/lib/surface/lame_client.cc
   src/core/lib/surface/legacy_channel.cc
