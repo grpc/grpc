@@ -41,8 +41,9 @@ namespace grpc_core {
 namespace {
 void CheckPeer(std::string peer_name) {
   if (!absl::StartsWith(peer_name, "unix:") &&
-      !absl::StartsWith(peer_name, "unix-abstract:"))
+      !absl::StartsWith(peer_name, "unix-abstract:")) {
     return;
+  }
   EXPECT_THAT(peer_name,
               AnyOf(StartsWith("unix:/tmp/grpc_fullstack_test."),
                     StartsWith("unix-abstract:grpc_fullstack_test.")));
