@@ -16,8 +16,10 @@
 #include <grpc/event_engine/endpoint_config.h>
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/event_engine/memory_allocator.h>
+#include <grpc/support/cpu.h>
 #include <grpc/support/port_platform.h>
 
+#include <algorithm>
 #include <atomic>
 #include <cstdint>
 #include <memory>
@@ -35,6 +37,7 @@
 #include "src/core/lib/iomgr/port.h"
 #include "src/core/util/orphanable.h"
 #include "src/core/util/sync.h"
+#include "src/core/util/useful.h"
 #include "absl/base/thread_annotations.h"
 #include "absl/container/flat_hash_map.h"
 #include "absl/container/inlined_vector.h"
@@ -100,6 +103,17 @@ class AsyncConnect {
 // All methods require an ExecCtx to already exist on the thread's stack.
 class PosixEventEngine final : public PosixEventEngineWithFdSupport {
  public:
+  struct Options {
+    // Number of connection shards to use.
+    int connection_shards;
+    // Number of threads to reserve for the thread pool.
+    int reserve_threads;
+    // Options struct is expected to grow to include more fields to
+    // configure the thread pool, poller etc.
+    Options()
+        : connection_shards(std::max(2 * gpr_cpu_num_cores(), 1u)),
+          reserve_threads(grpc_core::Clamp(gpr_cpu_num_cores(), 4u, 16u)) {}
+  };
   class PosixDNSResolver : public EventEngine::DNSResolver {
    public:
     explicit PosixDNSResolver(
@@ -116,7 +130,8 @@ class PosixEventEngine final : public PosixEventEngineWithFdSupport {
     grpc_core::OrphanablePtr<RefCountedDNSResolverInterface> dns_resolver_;
   };
 
-  static std::shared_ptr<PosixEventEngine> MakePosixEventEngine();
+  static std::shared_ptr<PosixEventEngine> MakePosixEventEngine(
+      Options options = Options{});
 
   ~PosixEventEngine() override;
 
@@ -162,6 +177,9 @@ class PosixEventEngine final : public PosixEventEngineWithFdSupport {
   TaskHandle RunAfter(Duration when,
                       absl::AnyInvocable<void()> closure) override;
   bool Cancel(TaskHandle handle) override;
+  // Cancels all pending timers and prevents any more timers from being
+  // scheduled. This method should be only called prior to EventEngine shutdown.
+  void CancelAllPendingTimers();
 
 #ifdef GRPC_POSIX_SOCKET_TCP
 
@@ -185,13 +203,16 @@ class PosixEventEngine final : public PosixEventEngineWithFdSupport {
   friend class AresResolverTest;
   struct ClosureData;
 
-  PosixEventEngine();
+  explicit PosixEventEngine(const Options& options);
+
+  bool CancelInternal(TaskHandle handle) ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
 #ifdef GRPC_POSIX_SOCKET_TCP
   // Constructs an EventEngine which has a shared ownership of the poller. Use
   // the MakeTestOnlyPosixEventEngine static method to call this. Its expected
   // to be used only in tests.
   explicit PosixEventEngine(
+      const Options& options,
       std::shared_ptr<grpc_event_engine::experimental::PosixEventPoller>
           poller);
 
@@ -249,6 +270,7 @@ class PosixEventEngine final : public PosixEventEngineWithFdSupport {
 #endif
 
   grpc_core::Mutex mu_;
+  bool disallow_new_timers_ ABSL_GUARDED_BY(mu_) = false;
   TaskHandleSet known_handles_ ABSL_GUARDED_BY(mu_);
   std::atomic<intptr_t> aba_token_{0};
 #if GRPC_ARES == 1 && defined(GRPC_POSIX_SOCKET_ARES_EV_DRIVER)

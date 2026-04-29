@@ -301,6 +301,8 @@ grpc_status_code PerformWaitingCall(grpc_channel* channel, grpc_server* server,
   // The call will end after this
   cqv.Verify(grpc_core::Duration::Seconds(60));
   // cleanup
+  LOG(INFO) << "RPC status: " << status << ": "
+            << grpc_core::Slice(details).as_string_view();
   grpc_slice_unref(details);
   grpc_metadata_array_destroy(&initial_metadata_recv);
   grpc_metadata_array_destroy(&trailing_metadata_recv);
@@ -309,6 +311,18 @@ grpc_status_code PerformWaitingCall(grpc_channel* channel, grpc_server* server,
   grpc_call_unref(c);
   grpc_call_unref(s);
   return status;
+}
+
+grpc_connectivity_state WaitForChannelToLeaveReady(grpc_channel* channel,
+                                                   grpc_completion_queue* cq) {
+  grpc_channel_watch_connectivity_state(channel, GRPC_CHANNEL_READY,
+                                        grpc_timeout_seconds_to_deadline(10),
+                                        cq, grpc_core::CqVerifier::tag(42));
+  grpc_core::CqVerifier cqv(cq);
+  cqv.Expect(grpc_core::CqVerifier::tag(42), true);
+  cqv.Verify(grpc_core::Duration::Seconds(60));
+  return grpc_channel_check_connectivity_state(channel,
+                                               /*try_to_connection=*/false);
 }
 
 // Shuts down and destroys the server.
@@ -492,6 +506,9 @@ TEST_F(KeepaliveThrottlingTest, NewSubchannelsUseUpdatedKeepaliveTime) {
     EXPECT_EQ(PerformWaitingCall(channel, i % 2 == 0 ? server1 : server2, cq),
               GRPC_STATUS_UNAVAILABLE);
     expected_keepalive_time_sec *= 2;
+    // Wait for the channel to report IDLE, so that we know it's seen
+    // the keepalive update.
+    EXPECT_EQ(WaitForChannelToLeaveReady(channel, cq), GRPC_CHANNEL_IDLE);
   }
   LOG(INFO) << "Client keepalive time " << expected_keepalive_time_sec
             << " should now be in sync with the server settings";

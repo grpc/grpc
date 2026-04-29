@@ -39,7 +39,11 @@
 #include "absl/strings/string_view.h"
 
 namespace grpc_core {
-
+// TODO(roth): Now that we've changed the TLS creds API to configure different
+// providers for root and identity certs, we no longer need to multiplex
+// multiple providers in an XdsCertificateProvider. Consider removing this code
+// and instead just passing down the relevant TLS creds configuration via a
+// channel arg.
 class XdsCertificateProvider final : public grpc_tls_certificate_provider {
  public:
   // ctor for client side

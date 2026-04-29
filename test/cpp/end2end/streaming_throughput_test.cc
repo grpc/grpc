@@ -166,8 +166,9 @@ static void Drainer(ClientReaderWriter<EchoRequest, EchoResponse>* reader) {
   }
 }
 
-// TODO(tjagtap) [PH2][P1][CPPE2E] Passes for CHTTP2. Fails 2/100 times for PH2
 TEST_F(End2endTest, StreamingThroughput) {
+  SKIP_TEST_FOR_PH2_CLIENT(
+      "TODO(tjagtap) [PH2][P3][Client][CPPE2E] Fails 2/100 times ");
   ResetStub();
   grpc::ClientContext context;
   auto stream = stub_->BidiStream(&context);

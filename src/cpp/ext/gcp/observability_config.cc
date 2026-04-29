@@ -53,7 +53,7 @@ absl::StatusOr<std::string> GetGcpObservabilityConfigContents() {
   std::string contents_str;
   auto path = grpc_core::GetEnv("GRPC_GCP_OBSERVABILITY_CONFIG_FILE");
   if (path.has_value() && !path.value().empty()) {
-    auto contents = grpc_core::LoadFile(*path, /*add_null_terminator=*/true);
+    auto contents = grpc_core::LoadFile(*path, /*add_null_terminator=*/false);
     if (!contents.ok()) {
       return absl::FailedPreconditionError(absl::StrCat(
           "error loading file ", *path, ": ", contents.status().ToString()));

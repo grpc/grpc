@@ -24,6 +24,8 @@ import python_utils.jobset as jobset
 
 _LATEST_MANYLINUX = "manylinux2014"
 
+REPORT_BASE_PATH = os.getenv("GRPC_TEST_REPORT_BASE_DIR", os.path.abspath("."))
+
 
 def create_docker_jobspec(
     name,
@@ -60,6 +62,9 @@ def create_docker_jobspec(
         flake_retries=flake_retries,
         timeout_retries=timeout_retries,
         verbose_success=verbose_success,
+        logfilename=os.path.abspath(
+            f"{REPORT_BASE_PATH}/reports/artifact.{name}.log"
+        ),
     )
     return jobspec
 
@@ -98,6 +103,9 @@ def create_jobspec(
         shell=shell,
         cpu_cost=cpu_cost,
         verbose_success=verbose_success,
+        logfilename=os.path.abspath(
+            f"{REPORT_BASE_PATH}/reports/artifact.{name}.log"
+        ),
     )
     return jobspec
 
@@ -160,7 +168,7 @@ class PythonArtifact:
                 ),
                 "tools/run_tests/artifacts/build_artifact_python.sh",
                 environ=environ,
-                timeout_seconds=60 * 60 * 2,
+                timeout_seconds=60 * 60 * 4,
             )
         elif "manylinux" in self.platform:
             if self.arch == "x86":
@@ -191,7 +199,7 @@ class PythonArtifact:
                 % (self.platform, self.arch),
                 "tools/run_tests/artifacts/build_artifact_python.sh",
                 environ=environ,
-                timeout_seconds=60 * 60 * 2,
+                timeout_seconds=60 * 60 * 4,
             )
         elif "musllinux" in self.platform:
             environ["PYTHON"] = "/opt/python/{}/bin/python".format(
@@ -241,7 +249,7 @@ class PythonArtifact:
                 self.name,
                 ["tools/run_tests/artifacts/build_artifact_python.sh"],
                 environ=environ,
-                timeout_seconds=60 * 60 * 2,
+                timeout_seconds=60 * 60 * 4,
                 use_workspace=True,
             )
 
@@ -269,6 +277,14 @@ class RubyArtifact:
         if inner_jobs is not None:
             # set number of parallel jobs when building native extension
             environ["GRPC_RUBY_BUILD_PROCS"] = str(inner_jobs)
+
+        # determine build_type at runtime.
+        # By default, build all supported ruby versions ("continuous").
+        # If explicitly running in presubmit, build only a subset of versions to save time.
+        build_type = "continuous"
+        if os.environ.get("KOKORO_JOB_TYPE") == "PRESUBMIT":
+            build_type = "presubmit"
+
         # Ruby build uses docker internally and docker cannot be nested.
         # We are using a custom workspace instead.
         return create_jobspec(
@@ -276,6 +292,7 @@ class RubyArtifact:
             [
                 "tools/run_tests/artifacts/build_artifact_ruby.sh",
                 self.gem_platform,
+                build_type,
             ],
             use_workspace=True,
             timeout_seconds=240 * 60,
@@ -405,16 +422,18 @@ def targets():
             ProtocArtifact("macos", "x64", presubmit=True),
             ProtocArtifact("windows", "x64", presubmit=True),
             ProtocArtifact("windows", "x86", presubmit=True),
-            PythonArtifact("manylinux2014", "x64", "cp39-cp39", presubmit=True),
-            PythonArtifact("manylinux2014", "x64", "cp310-cp310"),
+            PythonArtifact(
+                "manylinux2014", "x64", "cp310-cp310", presubmit=True
+            ),
             PythonArtifact("manylinux2014", "x64", "cp311-cp311"),
             PythonArtifact("manylinux2014", "x64", "cp312-cp312"),
             PythonArtifact("manylinux2014", "x64", "cp313-cp313"),
             PythonArtifact(
                 "manylinux2014", "x64", "cp314-cp314", presubmit=True
             ),
-            PythonArtifact("manylinux2014", "x86", "cp39-cp39", presubmit=True),
-            PythonArtifact("manylinux2014", "x86", "cp310-cp310"),
+            PythonArtifact(
+                "manylinux2014", "x86", "cp310-cp310", presubmit=True
+            ),
             PythonArtifact("manylinux2014", "x86", "cp311-cp311"),
             PythonArtifact("manylinux2014", "x86", "cp312-cp312"),
             PythonArtifact("manylinux2014", "x86", "cp313-cp313"),
@@ -422,33 +441,35 @@ def targets():
                 "manylinux2014", "x86", "cp314-cp314", presubmit=True
             ),
             PythonArtifact(
-                "manylinux2014", "aarch64", "cp39-cp39", presubmit=True
+                "manylinux2014", "aarch64", "cp310-cp310", presubmit=True
             ),
-            PythonArtifact("manylinux2014", "aarch64", "cp310-cp310"),
             PythonArtifact("manylinux2014", "aarch64", "cp311-cp311"),
             PythonArtifact("manylinux2014", "aarch64", "cp312-cp312"),
             PythonArtifact("manylinux2014", "aarch64", "cp313-cp313"),
             PythonArtifact(
                 "manylinux2014", "aarch64", "cp314-cp314", presubmit=True
             ),
-            PythonArtifact("linux_extra", "armv7", "cp39-cp39", presubmit=True),
-            PythonArtifact("linux_extra", "armv7", "cp310-cp310"),
+            PythonArtifact(
+                "linux_extra", "armv7", "cp310-cp310", presubmit=True
+            ),
             PythonArtifact("linux_extra", "armv7", "cp311-cp311"),
             PythonArtifact("linux_extra", "armv7", "cp312-cp312"),
             PythonArtifact("linux_extra", "armv7", "cp313-cp313"),
             PythonArtifact(
                 "linux_extra", "armv7", "cp314-cp314", presubmit=True
             ),
-            PythonArtifact("musllinux_1_2", "x64", "cp39-cp39", presubmit=True),
-            PythonArtifact("musllinux_1_2", "x64", "cp310-cp310"),
+            PythonArtifact(
+                "musllinux_1_2", "x64", "cp310-cp310", presubmit=True
+            ),
             PythonArtifact("musllinux_1_2", "x64", "cp311-cp311"),
             PythonArtifact("musllinux_1_2", "x64", "cp312-cp312"),
             PythonArtifact("musllinux_1_2", "x64", "cp313-cp313"),
             PythonArtifact(
                 "musllinux_1_2", "x64", "cp314-cp314", presubmit=True
             ),
-            PythonArtifact("musllinux_1_2", "x86", "cp39-cp39", presubmit=True),
-            PythonArtifact("musllinux_1_2", "x86", "cp310-cp310"),
+            PythonArtifact(
+                "musllinux_1_2", "x86", "cp310-cp310", presubmit=True
+            ),
             PythonArtifact("musllinux_1_2", "x86", "cp311-cp311"),
             PythonArtifact("musllinux_1_2", "x86", "cp312-cp312"),
             PythonArtifact("musllinux_1_2", "x86", "cp313-cp313"),
@@ -456,42 +477,38 @@ def targets():
                 "musllinux_1_2", "x86", "cp314-cp314", presubmit=True
             ),
             PythonArtifact(
-                "musllinux_1_2", "aarch64", "cp39-cp39", presubmit=True
+                "musllinux_1_2", "aarch64", "cp310-cp310", presubmit=True
             ),
-            PythonArtifact("musllinux_1_2", "aarch64", "cp310-cp310"),
             PythonArtifact("musllinux_1_2", "aarch64", "cp311-cp311"),
             PythonArtifact("musllinux_1_2", "aarch64", "cp312-cp312"),
             PythonArtifact("musllinux_1_2", "aarch64", "cp313-cp313"),
             PythonArtifact(
                 "musllinux_1_2", "aarch64", "cp314-cp314", presubmit=True
             ),
-            PythonArtifact("macos", "x64", "python3.9", presubmit=True),
-            PythonArtifact("macos", "x64", "python3.10"),
+            PythonArtifact("macos", "x64", "python3.10", presubmit=True),
             PythonArtifact("macos", "x64", "python3.11"),
             PythonArtifact("macos", "x64", "python3.12"),
             PythonArtifact("macos", "x64", "python3.13"),
             PythonArtifact("macos", "x64", "python3.14", presubmit=True),
-            PythonArtifact("windows", "x86", "Python39_32bit", presubmit=True),
-            PythonArtifact("windows", "x86", "Python310_32bit"),
+            PythonArtifact("windows", "x86", "Python310_32bit", presubmit=True),
             PythonArtifact("windows", "x86", "Python311_32bit"),
             PythonArtifact("windows", "x86", "Python312_32bit"),
             PythonArtifact("windows", "x86", "Python313_32bit"),
             PythonArtifact("windows", "x86", "Python314_32bit", presubmit=True),
-            PythonArtifact("windows", "x64", "Python39", presubmit=True),
-            PythonArtifact("windows", "x64", "Python310"),
+            PythonArtifact("windows", "x64", "Python310", presubmit=True),
             PythonArtifact("windows", "x64", "Python311"),
             PythonArtifact("windows", "x64", "Python312"),
             PythonArtifact("windows", "x64", "Python313"),
             PythonArtifact("windows", "x64", "Python314", presubmit=True),
             RubyArtifact("linux", "x86-mingw32", presubmit=True),
-            RubyArtifact("linux", "x64-mingw-ucrt", presubmit=True),
+            RubyArtifact("linux", "x64-mingw-ucrt"),
             RubyArtifact("linux", "x86_64-linux-gnu", presubmit=True),
             RubyArtifact("linux", "x86_64-linux-musl", presubmit=True),
-            RubyArtifact("linux", "x86-linux-gnu", presubmit=True),
+            RubyArtifact("linux", "x86-linux-gnu"),
             RubyArtifact("linux", "x86-linux-musl", presubmit=True),
             RubyArtifact("linux", "aarch64-linux-gnu", presubmit=True),
-            RubyArtifact("linux", "aarch64-linux-musl", presubmit=True),
-            RubyArtifact("linux", "x86_64-darwin", presubmit=True),
+            RubyArtifact("linux", "aarch64-linux-musl"),
+            RubyArtifact("linux", "x86_64-darwin"),
             RubyArtifact("linux", "arm64-darwin", presubmit=True),
             PHPArtifact("linux", "x64", presubmit=True),
             PHPArtifact("macos", "x64", presubmit=True),

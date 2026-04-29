@@ -41,6 +41,7 @@ extern void BuildClientChannelConfiguration(
     CoreConfiguration::Builder* builder);
 extern void SecurityRegisterHandshakerFactories(
     CoreConfiguration::Builder* builder);
+extern void RegisterAuthComparators(CoreConfiguration::Builder* builder);
 extern void RegisterClientAuthorityFilter(CoreConfiguration::Builder* builder);
 extern void RegisterLegacyChannelIdleFilters(
     CoreConfiguration::Builder* builder);

@@ -16,6 +16,7 @@
 //
 //
 
+#include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/impl/compression_types.h>
@@ -311,7 +312,19 @@ ChannelArguments ServerBuilder::BuildChannelArgs() {
                               authorization_provider_->c_provider(),
                               grpc_authorization_policy_provider_arg_vtable());
   }
+  if (event_engine_ != nullptr) {
+    args.SetPointerWithVtable(
+        GRPC_ARG_EVENT_ENGINE, &event_engine_,
+        grpc_event_engine::experimental::grpc_event_engine_arg_vtable());
+  }
   return args;
+}
+
+ServerBuilder& ServerBuilder::SetEventEngine(
+    std::shared_ptr<grpc_event_engine::experimental::EventEngine>
+        event_engine) {
+  event_engine_ = event_engine;
+  return *this;
 }
 
 std::unique_ptr<grpc::Server> ServerBuilder::BuildAndStart() {

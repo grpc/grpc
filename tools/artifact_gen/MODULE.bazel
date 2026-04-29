@@ -15,7 +15,7 @@
 bazel_dep(name = "pugixml", version = "1.15")
 bazel_dep(name = "abseil-cpp", version = "20240722.0")
 bazel_dep(name = "nlohmann_json", version = "3.11.3.bcr.1")
-bazel_dep(name = "yaml-cpp", version = "0.8.0")
+bazel_dep(name = "yaml-cpp", version = "0.9.0")
 
 http_archive = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 

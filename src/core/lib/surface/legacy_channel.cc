@@ -76,16 +76,6 @@ absl::StatusOr<RefCountedPtr<Channel>> LegacyChannel::Create(
   if (channel_stack_type == GRPC_SERVER_CHANNEL) {
     stats_plugin_group =
         GlobalStatsPluginRegistry::GetStatsPluginsForServer(args);
-    // Add per-server stats plugins.
-    auto* stats_plugin_list = args.GetPointer<
-        std::shared_ptr<std::vector<std::shared_ptr<StatsPlugin>>>>(
-        GRPC_ARG_EXPERIMENTAL_STATS_PLUGINS);
-    if (stats_plugin_list != nullptr) {
-      for (const auto& plugin : **stats_plugin_list) {
-        stats_plugin_group->AddStatsPlugin(plugin,
-                                           plugin->GetServerScopeConfig(args));
-      }
-    }
   } else {
     std::string authority = args.GetOwnedString(GRPC_ARG_DEFAULT_AUTHORITY)
                                 .value_or(CoreConfiguration::Get()
@@ -97,16 +87,6 @@ absl::StatusOr<RefCountedPtr<Channel>> LegacyChannel::Create(
                                                 endpoint_config);
     stats_plugin_group =
         GlobalStatsPluginRegistry::GetStatsPluginsForChannel(scope);
-    // Add per-channel stats plugins.
-    auto* stats_plugin_list = args.GetPointer<
-        std::shared_ptr<std::vector<std::shared_ptr<StatsPlugin>>>>(
-        GRPC_ARG_EXPERIMENTAL_STATS_PLUGINS);
-    if (stats_plugin_list != nullptr) {
-      for (const auto& plugin : **stats_plugin_list) {
-        stats_plugin_group->AddStatsPlugin(
-            plugin, plugin->GetChannelScopeConfig(scope));
-      }
-    }
   }
   args = args.SetObject(stats_plugin_group);
   ChannelStackBuilderImpl builder(

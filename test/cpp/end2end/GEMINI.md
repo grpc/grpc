@@ -47,9 +47,16 @@ Tests typically use helper methods like `BuildAndStartServer` and
 
 In the `BUILD` file, targets intended to be part of the core C++ end-to-end
 test suite are typically tagged with `"cpp_end2end_test"`.
+Reference for PH2 and cpp_end2end_test : src/core/lib/experiments/experiments.yaml
 
-We are temporarily using an additionl tag `"cpp_end2end_test_client_ph2"`
-to gradually enable the `"cpp_end2end_test"` suite for PH2 target by target.
-Once all targets are enabled for PH2, remove `"cpp_end2end_test_client_ph2"`,
-and add `"cpp_end2end_test"` tag to the PH2 experiment.
-ETA : 30-Jan-2026. Owner : tjagtap
+We have temporarily used SKIP_TEST_FOR_PH2_CLIENT and SKIP_TEST_FOR_PH2_SERVER
+to mark tests that are failing for PH2 experiment, and are WIP.
+ETA to finish : 30-Aug-2026. Owner : tjagtap
+For more information on PH2 refer file src/core/ext/transport/chttp2/GEMINI.md
+
+### Retry for PH2
+
+Retries have not yet been implemented for PH2.
+Hence, whenever PH2 experiment `IsPromiseBasedHttp2ClientTransportEnabled()`is
+enabled, we must disable retries. This is done with ApplyCommonChannelArguments.
+file : test/cpp/end2end/end2end_test_utils.h

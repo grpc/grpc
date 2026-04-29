@@ -266,7 +266,7 @@ def _pypy_pattern_function(major):
         raise ValueError("Unknown PyPy major version")
 
 
-class CLanguage(object):
+class CLanguage:
     def __init__(self, lang_suffix, test_lang):
         self.lang_suffix = lang_suffix
         self.platform = platform_string()
@@ -620,7 +620,7 @@ class CLanguage(object):
         return self.lang_suffix
 
 
-class Php8Language(object):
+class Php8Language:
     def configure(self, config, args):
         self.config = config
         self.args = args
@@ -664,7 +664,7 @@ class PythonConfig(
     """Tuple of commands (named s.t. 'what it says on the tin' applies)"""
 
 
-class PythonLanguage(object):
+class PythonLanguage:
     _TEST_SPECS_FILE = {
         "native": ["src/python/grpcio_tests/tests/tests.json"],
         "asyncio": ["src/python/grpcio_tests/tests_aio/tests.json"],
@@ -808,13 +808,6 @@ class PythonLanguage(object):
 
         # TODO: Supported version range should be defined by a single
         # source of truth.
-        python39_config = _python_config_generator(
-            name="py39",
-            major="3",
-            minor="9",
-            bits=bits,
-            config_vars=config_vars,
-        )
         python310_config = _python_config_generator(
             name="py310",
             major="3",
@@ -859,26 +852,24 @@ class PythonLanguage(object):
 
         if args.compiler == "default":
             if os.name == "nt":
-                return (python39_config,)
+                return (python310_config,)
             elif os.uname()[0] == "Darwin":
                 # NOTE(rbellevi): Testing takes significantly longer on
                 # MacOS, so we restrict the number of interpreter versions
                 # tested.
-                return (python39_config,)
+                return (python310_config,)
             elif platform.machine() == "aarch64":
                 # Currently the python_debian11_default_arm64 docker image
-                # only has python3.9 installed (and that seems sufficient
+                # only has python3.10 installed (and that seems sufficient
                 # for arm64 testing)
-                return (python39_config,)
+                return (python310_config,)
             else:
                 # Default set tested on master. Test oldest and newest.
                 return (
-                    python39_config,
+                    python310_config,
                     python312_config,
                     python314_config,
                 )
-        elif args.compiler == "python3.9":
-            return (python39_config,)
         elif args.compiler == "python3.10":
             return (python310_config,)
         elif args.compiler == "python3.11":
@@ -897,7 +888,6 @@ class PythonLanguage(object):
             return (python311_config,)
         elif args.compiler == "all_the_cpythons":
             return (
-                python39_config,
                 python310_config,
                 python311_config,
                 python312_config,
@@ -911,7 +901,7 @@ class PythonLanguage(object):
         return "python"
 
 
-class RubyLanguage(object):
+class RubyLanguage:
     def configure(self, config, args):
         self.config = config
         self.args = args
@@ -1041,7 +1031,7 @@ class RubyLanguage(object):
         return "ruby"
 
 
-class CSharpLanguage(object):
+class CSharpLanguage:
     def __init__(self):
         self.platform = platform_string()
 
@@ -1147,7 +1137,7 @@ class CSharpLanguage(object):
         return "csharp"
 
 
-class ObjCLanguage(object):
+class ObjCLanguage:
     def configure(self, config, args):
         self.config = config
         self.args = args
@@ -1255,7 +1245,7 @@ class ObjCLanguage(object):
         return "objc"
 
 
-class Sanity(object):
+class Sanity:
     def __init__(self, config_file):
         self.config_file = config_file
 
@@ -1278,10 +1268,13 @@ class Sanity(object):
                 # under docker we already have the right version of bazel
                 # so we can just disable the wrapper.
                 environ["DISABLE_BAZEL_WRAPPER"] = "true"
+
+            # Important! Individual job's timeout HAS NO EFFECT if greater than
+            # test suite's timeout, see _create_test_jobs in run_tests_matrix.py
             return [
                 self.config.job_spec(
-                    cmd["script"].split(),
-                    timeout_seconds=90 * 60,
+                    cmd["script"].split() + self.args.script_args,
+                    timeout_seconds=80 * 60,
                     environ=environ,
                     cpu_cost=cmd.get("cpu_cost", 1),
                 )
@@ -1480,7 +1473,7 @@ def _calculate_num_runs_failures(list_of_results):
     return num_runs, num_failures
 
 
-class BuildAndRunError(object):
+class BuildAndRunError:
     """Represents error type in _build_and_run."""
 
     BUILD = object()
@@ -1735,7 +1728,6 @@ argp.add_argument(
         "clang11",
         "clang19",
         # TODO: Automatically populate from supported version
-        "python3.9",
         "python3.10",
         "python3.11",
         "python3.12",
@@ -1843,6 +1835,12 @@ argp.add_argument(
     default=[],
     action="append",
     help="Extra arguments that will be passed to the cmake configure command. Only works for C/C++.",
+)
+argp.add_argument(
+    "--script_args",
+    default=[],
+    action="append",
+    help="Extra arguments passed to test script. Currently only supported for sanity scripts. Can be used multiple times.",
 )
 args = argp.parse_args()
 

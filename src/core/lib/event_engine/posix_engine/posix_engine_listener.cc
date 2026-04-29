@@ -273,9 +273,7 @@ absl::Status PosixEngineListenerImpl::HandleExternalConnection(
   (void)posix_interface.SetSocketNoSigpipeIfPossible(wrapped);
   auto peer_name = posix_interface.PeerAddressString(wrapped);
   if (!peer_name.ok()) {
-    if (grpc_core::IsGracefulExternalConnectionFailureEnabled()) {
-      posix_interface.Close(wrapped);
-    }
+    posix_interface.Close(wrapped);
     return absl::UnknownError(
         absl::StrCat("HandleExternalConnection: peer not connected: ",
                      peer_name.status().ToString()));

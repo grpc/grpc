@@ -124,6 +124,12 @@ class OpenCensusServerCallTracer : public grpc_core::ServerCallTracerInterface {
       grpc_metadata_batch* /*send_initial_metadata*/) override {}
 
   void RecordSendTrailingMetadata(
+      grpc_metadata_batch* send_trailing_metadata) override {
+    GRPC_CHECK(
+        !grpc_core::IsCallTracerSendTrailingMetadataIsAnAnnotationEnabled());
+    MutateSendTrailingMetadata(send_trailing_metadata);
+  }
+  void MutateSendTrailingMetadata(
       grpc_metadata_batch* send_trailing_metadata) override;
 
   void RecordSendMessage(const grpc_core::Message& send_message) override {
@@ -176,10 +182,13 @@ class OpenCensusServerCallTracer : public grpc_core::ServerCallTracerInterface {
 
   void RecordAnnotation(const Annotation& annotation) override {
     if (annotation.type() == grpc_core::CallTracerAnnotationInterface::
-                                 AnnotationType::kSendInitialMetadata) {
-      // Census does not have any immutable tracing for send initial metadata.
-      // All Census work for send initial metadata is mutation, which is handled
-      // in MutateSendInitialMetadata.
+                                 AnnotationType::kSendInitialMetadata ||
+        annotation.type() == grpc_core::CallTracerAnnotationInterface::
+                                 AnnotationType::kSendTrailingMetadata) {
+      // Census does not have any immutable tracing for send initial/trailing
+      // metadata. All Census work for send initial/trailing metadata is
+      // mutation, which is handled in MutateSendInitialMetadata/
+      // MutateSendTrailingMetadata.
       return;
     }
     if (!context_.Span().IsRecording()) {
@@ -243,7 +252,7 @@ void OpenCensusServerCallTracer::RecordReceivedInitialMetadata(
   }
 }
 
-void OpenCensusServerCallTracer::RecordSendTrailingMetadata(
+void OpenCensusServerCallTracer::MutateSendTrailingMetadata(
     grpc_metadata_batch* send_trailing_metadata) {
   // We need to record the time when the trailing metadata was sent to
   // mark the completeness of the request.

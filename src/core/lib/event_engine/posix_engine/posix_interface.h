@@ -161,6 +161,13 @@ class EventEnginePosixInterface {
       const FileDescriptor& fd);
   // Retrieves the peer address of a connected socket as a string.
   absl::StatusOr<std::string> PeerAddressString(const FileDescriptor& fd);
+  // Prepares listener socket options, but does not bind or listen.
+  absl::Status PrepareListenerSocketOptions(
+      const FileDescriptor& fd, const PosixTcpOptions& options,
+      const EventEngine::ResolvedAddress& address);
+  // Bind and listen on a listener socket.
+  absl::StatusOr<EventEngine::ResolvedAddress> BindListenerSocket(
+      const FileDescriptor& fd, const EventEngine::ResolvedAddress& address);
   // Prepares a listener socket with specified options and address binding.
   absl::StatusOr<EventEngine::ResolvedAddress> PrepareListenerSocket(
       const FileDescriptor& fd, const PosixTcpOptions& options,

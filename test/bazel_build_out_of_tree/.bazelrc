@@ -1,0 +1,7 @@
+common --enable_bzlmod
+common --enable_workspace=false
+# Disable cache
+common --repository_cache=
+common --lockfile_mode=off
+common --check_visibility=false
+build --verbose_failures

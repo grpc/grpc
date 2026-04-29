@@ -67,6 +67,7 @@ _DEPS = [
     "//src/core:channel_init",
     "//src/core:channel_stack_type",
     "//src/core:chaotic_good",
+    "//src/core:client_channel_internal_header",
     "//src/core:closure",
     "//src/core:error",
     "//src/core:experiments",
@@ -90,6 +91,7 @@ _DEPS = [
     "//test/core/test_util:fail_first_call_filter",
     "//test/core/test_util:fake_stats_plugin",
     "//test/core/test_util:grpc_test_util",
+    "//test/core/test_util:scoped_env_var",
     "//test/core/test_util:test_call_creds",
     "//test/core/test_util:test_lb_policies",
     "//test/core/test_util:passthrough_endpoint",
@@ -129,6 +131,7 @@ _TESTS = [
     "client_streaming",
     "compressed_payload",
     "connectivity",
+    "connection_scaling",
     "default_host",
     "disappearing_server",
     "empty_batch",
@@ -242,6 +245,10 @@ def grpc_core_end2end_test_suite(
         deps = _DEPS + deps + [
             "//test/core/end2end:end2end_test_lib_no_fuzztest_gtest",
         ],
+        defines = select({
+            "//test/core/end2end:grpc_running_in_pr": ["GRPC_RUNNING_IN_PR"],
+            "//conditions:default": [],
+        }),
         data = _DATA,
         shard_count = shard_count,
         tags = tags + ["core_end2end_test"],
@@ -273,6 +280,10 @@ def grpc_core_end2end_test_suite(
             deps = _DEPS + deps + [
                 "//test/core/end2end:end2end_test_lib_no_fuzztest_gtest",
             ],
+            defines = select({
+                "//test/core/end2end:grpc_running_in_pr": ["GRPC_RUNNING_IN_PR"],
+                "//conditions:default": [],
+            }),
             data = _DATA,
             shard_count = shard_count,
             tags = tags + ["core_end2end_test", "grpc:fails-internally", "grpc:no-internal-poller"],

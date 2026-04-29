@@ -139,11 +139,13 @@ task 'dlls', [:plat] do |t, args|
 end
 
 desc 'Build the native gem file under rake_compiler_dock. Optionally one can pass argument to build only native gem for a chosen platform.'
-task 'gem:native', [:plat] do |t, args|
+task 'gem:native', [:plat, :build_type] do |t, args|
   verbose = ENV['V'] || '0'
 
   grpc_config = ENV['GRPC_CONFIG'] || 'opt'
-  target_ruby_minor_versions = ['3.4', '3.3', '3.2', '3.1']
+  target_ruby_minor_versions = ['4.0', '3.4', '3.3', '3.2', '3.1']
+  # For presubmits, only build the earliest and latest versions
+  target_ruby_minor_versions = [target_ruby_minor_versions.first, target_ruby_minor_versions.last] if args[:build_type] == 'presubmit'
   selected_plat = "#{args[:plat]}"
 
   # use env variable to set artifact build paralellism
@@ -190,13 +192,15 @@ task 'gem:native', [:plat] do |t, args|
     run_rake_compiler(plat, <<~EOT)
       #{prepare_ccache_cmd} && \
       gem update --system --no-document && \
-      bundle update && \
+      bundle update --all && \
       bundle exec rake clean && \
+      (ccache --show-stats || true) && \
       bundle exec rake native:#{plat} pkg/#{spec.full_name}-#{plat}.gem pkg/#{spec.full_name}.gem \
         RUBY_CC_VERSION=#{RakeCompilerDock.ruby_cc_version(*target_ruby_minor_versions)} \
         V=#{verbose} \
         GRPC_CONFIG=#{grpc_config} \
-        GRPC_RUBY_BUILD_PROCS=#{nproc_override}
+        GRPC_RUBY_BUILD_PROCS=#{nproc_override} && \
+      (ccache --show-stats || true)
     EOT
   end
 
@@ -232,22 +236,25 @@ task 'gem:native', [:plat] do |t, args|
     run_rake_compiler(plat, <<~EOT)
       #{prepare_ccache_cmd} && \
       gem update --system --no-document && \
-      bundle update && \
+      bundle update --all && \
       bundle exec rake clean && \
       export GRPC_RUBY_DEBUG_SYMBOLS_OUTPUT_DIR=#{debug_symbols_dir} && \
+      (ccache --show-stats || true) && \
       bundle exec rake native:#{plat} pkg/#{spec.full_name}-#{plat}.gem pkg/#{spec.full_name}.gem \
         RUBY_CC_VERSION=#{RakeCompilerDock.ruby_cc_version(*target_ruby_minor_versions)} \
         V=#{verbose} \
         GRPC_CONFIG=#{grpc_config} \
         GRPC_RUBY_BUILD_PROCS=#{nproc_override} \
-        SYSTEM=#{makefile_system_override}
+        SYSTEM=#{makefile_system_override} && \
+      (ccache --show-stats || true)
     EOT
   end
   # Generate debug symbol packages to complement the native libraries we just built
   unix_platforms.each do |plat|
     unless unix_platforms_without_debug_symbols.include?(plat)
       `bash src/ruby/nativedebug/build_package.sh #{plat}`
-      `cp src/ruby/nativedebug/pkg/*.gem pkg/`
+      # Native debug gems uploaded to GCS, skip pkg/ to avoid RubyGems upload
+      # `cp src/ruby/nativedebug/pkg/*.gem pkg/`
     end
   end
 end

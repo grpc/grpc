@@ -35,13 +35,15 @@ python3 -VV
 sudo python3 -m pip install --upgrade pip==25.2
 # TODO(sergiitk): Unpin grpcio-tools when a version of xds-protos
 #   compatible with protobuf 4.X is uploaded to PyPi.
+# TODO(sergiitk): we need to migrate off of oauth2client: https://google-auth.readthedocs.io/en/latest/oauth2client-deprecation.html
 sudo python3 -m pip install --upgrade \
     grpcio-tools==1.74.0 \
     grpcio==1.74.0 \
     xds-protos==1.74.0 \
     google-api-python-client==2.179.0 \
     google-auth-httplib2==0.2.0 \
-    oauth2client==4.1.3
+    oauth2client==4.1.3 \
+    "pyOpenSSL>=23.2.0"
 python3 -m pip list
 
 # Prepare generated Python code.

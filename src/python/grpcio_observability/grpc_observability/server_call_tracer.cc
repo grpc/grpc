@@ -133,6 +133,13 @@ void PythonOpenCensusServerCallTracer::RecordReceivedInitialMetadata(
 
 void PythonOpenCensusServerCallTracer::RecordSendTrailingMetadata(
     grpc_metadata_batch* send_trailing_metadata) {
+  GRPC_CHECK(
+      !grpc_core::IsCallTracerSendTrailingMetadataIsAnAnnotationEnabled());
+  MutateSendTrailingMetadata(send_trailing_metadata);
+}
+
+void PythonOpenCensusServerCallTracer::MutateSendTrailingMetadata(
+    grpc_metadata_batch* send_trailing_metadata) {
   // We need to record the time when the trailing metadata was sent to
   // mark the completeness of the request.
   elapsed_time_ = absl::Now() - start_time_;
@@ -260,9 +267,12 @@ void PythonOpenCensusServerCallTracer::RecordAnnotation(
   switch (annotation.type()) {
     case grpc_core::CallTracerAnnotationInterface::AnnotationType::
         kSendInitialMetadata:
-      // Python OpenCensus does not have any immutable tracing for send initial
-      // metadata. All work for send initial metadata is mutation, which is
-      // handled in MutateSendInitialMetadata.
+    case grpc_core::CallTracerAnnotationInterface::AnnotationType::
+        kSendTrailingMetadata:
+      // Python OpenCensus does not have any immutable tracing for send initial/
+      // trailing metadata. All work for send initial/trailing metadata is
+      // mutation, which is handled in MutateSendInitialMetadata/
+      // MutateSendTrailingMetadata.
       break;
     // Annotations are expensive to create. We should only create it if the
     // call is being sampled by default.

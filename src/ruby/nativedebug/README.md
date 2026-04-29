@@ -17,6 +17,27 @@ for example, a lot of information will initially be missing.
 
 # Using grpc-native-debug
 
+## Download Location
+
+**Version 1.79.0+**: Download from GCS (exceeds RubyGems 500MB limit)
+
+```bash
+VERSION=1.79.1  # your grpc version
+PLATFORM=x86_64-linux  # or x86-linux
+
+# Download gem
+wget https://storage.googleapis.com/packages.grpc.io/grpc-ruby-native-debug-symbols/v${VERSION}/grpc-native-debug-${VERSION}-${PLATFORM}.gem
+
+# Verify checksum (recommended)
+wget https://storage.googleapis.com/packages.grpc.io/grpc-ruby-native-debug-symbols/v${VERSION}/checksums.txt
+sha256sum grpc-native-debug-${VERSION}-${PLATFORM}.gem | grep -f checksums.txt
+
+# Extract
+gem unpack grpc-native-debug-${VERSION}-${PLATFORM}.gem
+```
+
+**Older versions**: May be available on RubyGems (if under 500MB)
+
 ## Finding the correct grpc-native-debug gem
 
 Each `grpc-native-debug` gem is *one-to-one* with a `grpc` gem. Specifically:

@@ -30,6 +30,7 @@
 
 #include <string>
 #include <thread>
+#include <vector>
 
 #include "src/core/tsi/transport_security.h"
 #include "src/core/tsi/transport_security_interface.h"
@@ -89,20 +90,16 @@ typedef struct ssl_key_cert_lib {
   bool skip_server_certificate_verification;
   char* root_cert;
   tsi_ssl_root_certs_store* root_store;
-  tsi_ssl_pem_key_cert_pair* server_pem_key_cert_pairs;
-  tsi_ssl_pem_key_cert_pair* bad_server_pem_key_cert_pairs;
-  tsi_ssl_pem_key_cert_pair* leaf_signed_by_intermediate_key_cert_pairs;
+  std::vector<tsi_ssl_pem_key_cert_pair> server_pem_key_cert_pairs;
+  std::vector<tsi_ssl_pem_key_cert_pair> bad_server_pem_key_cert_pairs;
+  std::vector<tsi_ssl_pem_key_cert_pair>
+      leaf_signed_by_intermediate_key_cert_pairs;
   tsi_ssl_pem_key_cert_pair client_pem_key_cert_pair;
   tsi_ssl_pem_key_cert_pair bad_client_pem_key_cert_pair;
   uint16_t server_num_key_cert_pairs;
   uint16_t bad_server_num_key_cert_pairs;
   uint16_t leaf_signed_by_intermediate_num_key_cert_pairs;
 } ssl_key_cert_lib;
-
-static void ssl_test_pem_key_cert_pair_destroy(tsi_ssl_pem_key_cert_pair kp) {
-  gpr_free(const_cast<char*>(kp.private_key));
-  gpr_free(const_cast<char*>(kp.cert_chain));
-}
 
 static bool check_property(tsi_peer* peer, const char* property_name,
                            const char* property_value) {
@@ -118,7 +115,7 @@ static bool check_property(tsi_peer* peer, const char* property_name,
   return false;
 }
 
-static char* load_file(std::string path) {
+static char* load_file(const std::string& path) {
   std::string data = grpc_core::testing::GetFileContents(path);
   return gpr_strdup(data.c_str());
 }
@@ -161,7 +158,7 @@ class SslTransportSecurityTest
       base_.test_unused_bytes = true;
       base_.vtable = &kVtable;
       // Create ssl_key_cert_lib.
-      key_cert_lib_ = grpc_core::Zalloc<ssl_key_cert_lib>();
+      key_cert_lib_ = new ssl_key_cert_lib();
       key_cert_lib_->use_bad_server_cert = false;
       key_cert_lib_->use_bad_client_cert = false;
       key_cert_lib_->use_root_store = false;
@@ -173,44 +170,38 @@ class SslTransportSecurityTest
           SSL_TSI_TEST_BAD_SERVER_KEY_CERT_PAIRS_NUM;
       key_cert_lib_->leaf_signed_by_intermediate_num_key_cert_pairs =
           SSL_TSI_TEST_LEAF_SIGNED_BY_INTERMEDIATE_KEY_CERT_PAIRS_NUM;
-      key_cert_lib_->server_pem_key_cert_pairs =
-          static_cast<tsi_ssl_pem_key_cert_pair*>(
-              gpr_malloc(sizeof(tsi_ssl_pem_key_cert_pair) *
-                         key_cert_lib_->server_num_key_cert_pairs));
-      key_cert_lib_->bad_server_pem_key_cert_pairs =
-          static_cast<tsi_ssl_pem_key_cert_pair*>(
-              gpr_malloc(sizeof(tsi_ssl_pem_key_cert_pair) *
-                         key_cert_lib_->bad_server_num_key_cert_pairs));
-      key_cert_lib_->leaf_signed_by_intermediate_key_cert_pairs =
-          static_cast<tsi_ssl_pem_key_cert_pair*>(gpr_malloc(
-              sizeof(tsi_ssl_pem_key_cert_pair) *
-              key_cert_lib_->leaf_signed_by_intermediate_num_key_cert_pairs));
-      key_cert_lib_->server_pem_key_cert_pairs[0].private_key =
-          load_file(SSL_TSI_TEST_CREDENTIALS_DIR "server0.key");
-      key_cert_lib_->server_pem_key_cert_pairs[0].cert_chain =
-          load_file(SSL_TSI_TEST_CREDENTIALS_DIR "server0.pem");
-      key_cert_lib_->server_pem_key_cert_pairs[1].private_key =
-          load_file(SSL_TSI_TEST_CREDENTIALS_DIR "server1.key");
-      key_cert_lib_->server_pem_key_cert_pairs[1].cert_chain =
-          load_file(SSL_TSI_TEST_CREDENTIALS_DIR "server1.pem");
-      key_cert_lib_->bad_server_pem_key_cert_pairs[0].private_key =
-          load_file(SSL_TSI_TEST_CREDENTIALS_DIR "badserver.key");
-      key_cert_lib_->bad_server_pem_key_cert_pairs[0].cert_chain =
-          load_file(SSL_TSI_TEST_CREDENTIALS_DIR "badserver.pem");
+      key_cert_lib_->server_pem_key_cert_pairs.emplace_back(
+          grpc_core::testing::GetFileContents(SSL_TSI_TEST_CREDENTIALS_DIR
+                                              "server0.key"),
+          grpc_core::testing::GetFileContents(SSL_TSI_TEST_CREDENTIALS_DIR
+                                              "server0.pem"));
+      key_cert_lib_->server_pem_key_cert_pairs.emplace_back(
+          grpc_core::testing::GetFileContents(SSL_TSI_TEST_CREDENTIALS_DIR
+                                              "server1.key"),
+          grpc_core::testing::GetFileContents(SSL_TSI_TEST_CREDENTIALS_DIR
+                                              "server1.pem"));
+      key_cert_lib_->bad_server_pem_key_cert_pairs.emplace_back(
+          grpc_core::testing::GetFileContents(SSL_TSI_TEST_CREDENTIALS_DIR
+                                              "badserver.key"),
+          grpc_core::testing::GetFileContents(SSL_TSI_TEST_CREDENTIALS_DIR
+                                              "badserver.pem"));
       key_cert_lib_->client_pem_key_cert_pair.private_key =
-          load_file(SSL_TSI_TEST_CREDENTIALS_DIR "client.key");
+          grpc_core::testing::GetFileContents(SSL_TSI_TEST_CREDENTIALS_DIR
+                                              "client.key");
       key_cert_lib_->client_pem_key_cert_pair.cert_chain =
-          load_file(SSL_TSI_TEST_CREDENTIALS_DIR "client.pem");
+          grpc_core::testing::GetFileContents(SSL_TSI_TEST_CREDENTIALS_DIR
+                                              "client.pem");
       key_cert_lib_->bad_client_pem_key_cert_pair.private_key =
-          load_file(SSL_TSI_TEST_CREDENTIALS_DIR "badclient.key");
+          grpc_core::testing::GetFileContents(SSL_TSI_TEST_CREDENTIALS_DIR
+                                              "badclient.key");
       key_cert_lib_->bad_client_pem_key_cert_pair.cert_chain =
-          load_file(SSL_TSI_TEST_CREDENTIALS_DIR "badclient.pem");
-      key_cert_lib_->leaf_signed_by_intermediate_key_cert_pairs[0].private_key =
-          load_file(SSL_TSI_TEST_CREDENTIALS_DIR
-                    "leaf_signed_by_intermediate.key");
-      key_cert_lib_->leaf_signed_by_intermediate_key_cert_pairs[0].cert_chain =
-          load_file(SSL_TSI_TEST_CREDENTIALS_DIR
-                    "leaf_and_intermediate_chain.pem");
+          grpc_core::testing::GetFileContents(SSL_TSI_TEST_CREDENTIALS_DIR
+                                              "badclient.pem");
+      key_cert_lib_->bad_server_pem_key_cert_pairs.emplace_back(
+          grpc_core::testing::GetFileContents(
+              SSL_TSI_TEST_CREDENTIALS_DIR "leaf_signed_by_intermediate.key"),
+          grpc_core::testing::GetFileContents(
+              SSL_TSI_TEST_CREDENTIALS_DIR "leaf_and_intermediate_chain.pem"));
       key_cert_lib_->root_cert =
           load_file(SSL_TSI_TEST_CREDENTIALS_DIR "ca.pem");
       key_cert_lib_->root_store =
@@ -251,32 +242,9 @@ class SslTransportSecurityTest
       }
       gpr_free(alpn_lib_->client_alpn_protocols);
       gpr_free(alpn_lib_);
-      // Destroy ssl_key_cert_lib.
-      for (size_t i = 0; i < key_cert_lib_->server_num_key_cert_pairs; i++) {
-        ssl_test_pem_key_cert_pair_destroy(
-            key_cert_lib_->server_pem_key_cert_pairs[i]);
-      }
-      gpr_free(key_cert_lib_->server_pem_key_cert_pairs);
-      for (size_t i = 0; i < key_cert_lib_->bad_server_num_key_cert_pairs;
-           i++) {
-        ssl_test_pem_key_cert_pair_destroy(
-            key_cert_lib_->bad_server_pem_key_cert_pairs[i]);
-      }
-      gpr_free(key_cert_lib_->bad_server_pem_key_cert_pairs);
-      for (size_t i = 0;
-           i < key_cert_lib_->leaf_signed_by_intermediate_num_key_cert_pairs;
-           i++) {
-        ssl_test_pem_key_cert_pair_destroy(
-            key_cert_lib_->leaf_signed_by_intermediate_key_cert_pairs[i]);
-      }
-      gpr_free(key_cert_lib_->leaf_signed_by_intermediate_key_cert_pairs);
-      ssl_test_pem_key_cert_pair_destroy(
-          key_cert_lib_->client_pem_key_cert_pair);
-      ssl_test_pem_key_cert_pair_destroy(
-          key_cert_lib_->bad_client_pem_key_cert_pair);
       gpr_free(key_cert_lib_->root_cert);
       tsi_ssl_root_certs_store_destroy(key_cert_lib_->root_store);
-      gpr_free(key_cert_lib_);
+      delete key_cert_lib_;
       if (session_cache_ != nullptr) {
         tsi_ssl_session_cache_unref(session_cache_);
       }
@@ -337,6 +305,26 @@ class SslTransportSecurityTest
       expected_alpn_negotiated_protocol_ = expected_alpn_negotiated_protocol;
     }
 
+    void OverrideServerKeyExchangeGroups(
+        const std::vector<grpc_tls_key_exchange_group>& key_exchange_groups) {
+      server_key_exchange_groups_ = key_exchange_groups;
+    }
+
+    void OverrideClientKeyExchangeGroups(
+        const std::vector<grpc_tls_key_exchange_group>& key_exchange_groups) {
+      client_key_exchange_groups_ = key_exchange_groups;
+    }
+
+    void SetServerExpectsHandshakeFailure(
+        bool server_expects_handshake_failure) {
+      server_expects_handshake_failure_ = server_expects_handshake_failure;
+    }
+
+    void SetClientExpectsHandshakeFailure(
+        bool client_expects_handshake_failure) {
+      client_expects_handshake_failure_ = client_expects_handshake_failure;
+    }
+
    private:
     static void SetupHandshakers(tsi_test_fixture* fixture) {
       SslTsiTestFixture* ssl_fixture =
@@ -351,7 +339,7 @@ class SslTransportSecurityTest
       if (key_cert_lib->use_pem_root_certs &&
           key_cert_lib->root_cert != nullptr) {
         client_options.root_cert_info =
-            std::make_shared<RootCertInfo>(key_cert_lib->root_cert);
+            std::make_shared<tsi::RootCertInfo>(key_cert_lib->root_cert);
       }
       if (ssl_fixture->force_client_auth_) {
         client_options.pem_key_cert_pair =
@@ -374,6 +362,10 @@ class SslTransportSecurityTest
       client_options.max_tls_version = ssl_fixture->tls_version_;
       client_options.skip_server_certificate_verification =
           key_cert_lib->skip_server_certificate_verification;
+      if (ssl_fixture->client_key_exchange_groups_.has_value()) {
+        client_options.key_exchange_groups =
+            ssl_fixture->client_key_exchange_groups_.value();
+      }
       ASSERT_EQ(tsi_create_ssl_client_handshaker_factory_with_options(
                     &client_options, &ssl_fixture->client_handshaker_factory_),
                 TSI_OK);
@@ -400,21 +392,15 @@ class SslTransportSecurityTest
       if (key_cert_lib->use_cert_signed_by_intermediate_ca) {
         server_options.pem_key_cert_pairs =
             key_cert_lib->leaf_signed_by_intermediate_key_cert_pairs;
-        server_options.num_key_cert_pairs =
-            key_cert_lib->leaf_signed_by_intermediate_num_key_cert_pairs;
       } else {
         server_options.pem_key_cert_pairs =
             key_cert_lib->use_bad_server_cert
                 ? key_cert_lib->bad_server_pem_key_cert_pairs
                 : key_cert_lib->server_pem_key_cert_pairs;
-        server_options.num_key_cert_pairs =
-            key_cert_lib->use_bad_server_cert
-                ? key_cert_lib->bad_server_num_key_cert_pairs
-                : key_cert_lib->server_num_key_cert_pairs;
       }
       if (key_cert_lib->root_cert != nullptr) {
         server_options.root_cert_info =
-            std::make_shared<RootCertInfo>(key_cert_lib->root_cert);
+            std::make_shared<tsi::RootCertInfo>(key_cert_lib->root_cert);
       }
       if (ssl_fixture->force_client_auth_) {
         server_options.client_certificate_request =
@@ -429,6 +415,10 @@ class SslTransportSecurityTest
           ssl_fixture->session_ticket_key_size_;
       server_options.min_tls_version = ssl_fixture->tls_version_;
       server_options.max_tls_version = ssl_fixture->tls_version_;
+      if (ssl_fixture->server_key_exchange_groups_.has_value()) {
+        server_options.key_exchange_groups =
+            ssl_fixture->server_key_exchange_groups_.value();
+      }
       ASSERT_EQ(tsi_create_ssl_server_handshaker_factory_with_options(
                     &server_options, &ssl_fixture->server_handshaker_factory_),
                 TSI_OK);
@@ -627,14 +617,17 @@ class SslTransportSecurityTest
       // For OpenSSL versions < 1.1, TLS 1.3 is not supported, so the
       // client-side handshake should succeed precisely when the server-side
       // handshake succeeds.
-      bool expect_server_success = !(key_cert_lib->use_bad_server_cert ||
-                                     (key_cert_lib->use_bad_client_cert &&
-                                      ssl_fixture->force_client_auth_));
+      bool expect_server_success =
+          !ssl_fixture->server_expects_handshake_failure_ &&
+          (!(key_cert_lib->use_bad_server_cert ||
+             (key_cert_lib->use_bad_client_cert &&
+              ssl_fixture->force_client_auth_)));
 #if OPENSSL_VERSION_NUMBER >= 0x10100000
       bool expect_client_success =
-          ssl_fixture->tls_version_ == tsi_tls_version::TSI_TLS1_2
-              ? expect_server_success
-              : !key_cert_lib->use_bad_server_cert;
+          !ssl_fixture->client_expects_handshake_failure_ &&
+          (ssl_fixture->tls_version_ == tsi_tls_version::TSI_TLS1_2
+               ? expect_server_success
+               : !key_cert_lib->use_bad_server_cert);
 #else
       bool expect_client_success = expect_server_success;
 #endif
@@ -709,8 +702,16 @@ class SslTransportSecurityTest
     std::optional<std::string> alpn_server_overriden_protocols_ = std::nullopt;
     std::optional<std::string> expected_alpn_negotiated_protocol_ =
         std::nullopt;
+    std::optional<std::vector<grpc_tls_key_exchange_group>>
+        client_key_exchange_groups_ = std::nullopt;
+    std::optional<std::vector<grpc_tls_key_exchange_group>>
+        server_key_exchange_groups_ = std::nullopt;
     tsi_ssl_server_handshaker_factory* server_handshaker_factory_ = nullptr;
     tsi_ssl_client_handshaker_factory* client_handshaker_factory_ = nullptr;
+    // This isn't required for existing tests, but helps new tests express their
+    // intent.
+    bool server_expects_handshake_failure_ = false;
+    bool client_expects_handshake_failure_ = false;
   };
 
   SslTransportSecurityTest() { grpc_init(); }
@@ -1208,7 +1209,7 @@ TEST(SslTransportSecurityTest, TestClientHandshakerFactoryRefcounting) {
 
   tsi_ssl_client_handshaker_options options;
   if (cert_chain != nullptr) {
-    options.root_cert_info = std::make_shared<RootCertInfo>(cert_chain);
+    options.root_cert_info = std::make_shared<tsi::RootCertInfo>(cert_chain);
   }
   tsi_ssl_client_handshaker_factory* client_handshaker_factory;
   ASSERT_EQ(tsi_create_ssl_client_handshaker_factory_with_options(
@@ -1254,17 +1255,17 @@ TEST(SslTransportSecurityTest, TestServerHandshakerFactoryRefcounting) {
   int i;
   tsi_ssl_server_handshaker_factory* server_handshaker_factory;
   tsi_handshaker* handshaker[3];
-  const char* cert_chain =
-      load_file(SSL_TSI_TEST_CREDENTIALS_DIR "server0.pem");
+  std::string cert_chain = grpc_core::testing::GetFileContents(
+      SSL_TSI_TEST_CREDENTIALS_DIR "server0.pem");
   tsi_ssl_pem_key_cert_pair cert_pair;
 
   cert_pair.cert_chain = cert_chain;
-  cert_pair.private_key = load_file(SSL_TSI_TEST_CREDENTIALS_DIR "server0.key");
+  cert_pair.private_key = grpc_core::testing::GetFileContents(
+      SSL_TSI_TEST_CREDENTIALS_DIR "server0.key");
   tsi_ssl_server_handshaker_options options;
-  options.pem_key_cert_pairs = &cert_pair;
-  options.num_key_cert_pairs = 1;
-  if (cert_chain != nullptr) {
-    options.root_cert_info = std::make_shared<RootCertInfo>(cert_chain);
+  options.pem_key_cert_pairs = {cert_pair};
+  if (!cert_chain.empty()) {
+    options.root_cert_info = std::make_shared<tsi::RootCertInfo>(cert_chain);
   }
 
   ASSERT_EQ(tsi_create_ssl_server_handshaker_factory_with_options(
@@ -1293,8 +1294,6 @@ TEST(SslTransportSecurityTest, TestServerHandshakerFactoryRefcounting) {
 
   tsi_handshaker_destroy(handshaker[2]);
   ASSERT_TRUE(handshaker_factory_destructor_called);
-
-  ssl_test_pem_key_cert_pair_destroy(cert_pair);
 }
 
 // Attempting to create a handshaker factory with invalid parameters should fail
@@ -1305,7 +1304,7 @@ TEST(SslTransportSecurityTest, TestClientHandshakerFactoryBadParams) {
   tsi_ssl_client_handshaker_factory* client_handshaker_factory;
   tsi_ssl_client_handshaker_options options;
   if (cert_chain != nullptr) {
-    options.root_cert_info = std::make_shared<RootCertInfo>(cert_chain);
+    options.root_cert_info = std::make_shared<tsi::RootCertInfo>(cert_chain);
   }
   ASSERT_EQ(tsi_create_ssl_client_handshaker_factory_with_options(
                 &options, &client_handshaker_factory),
@@ -1508,6 +1507,46 @@ TEST_P(SslTransportSecurityTest, TestServerHandshakerOverrideALPN) {
   ssl_fixture_->SetAlpnMode(ALPN_CLIENT_SERVER_OK);
   DoHandshake();
 }
+
+// Configuring key exchange groups requires SSL_CTX_set1_groups_list(),
+// which was introduced in OpenSSL 1.1.1 (and is supported in BoringSSL).
+// Tests are gated to prevent failures on older OpenSSL 1.0.2/1.1.0
+// installations.
+#if OPENSSL_VERSION_NUMBER >= 0x10101000L
+TEST_P(SslTransportSecurityTest, TestKeyExchangeGroupSuccess) {
+  SetUpSslFixture(/*tls_version=*/std::get<0>(GetParam()),
+                  /*send_client_ca_list=*/std::get<1>(GetParam()));
+// The client default protocols set by the handshaker factory are [toto, baz].
+#ifdef OPENSSL_IS_BORINGSSL
+  ssl_fixture_->OverrideClientKeyExchangeGroups(
+      {GRPC_TLS_GROUP_X25519_MLKEM768, GRPC_TLS_GROUP_X25519});
+  ssl_fixture_->OverrideServerKeyExchangeGroups(
+      {GRPC_TLS_GROUP_X25519, GRPC_TLS_GROUP_X25519_MLKEM768});
+#else
+  ssl_fixture_->OverrideClientKeyExchangeGroups(
+      {GRPC_TLS_GROUP_SECP256R1, GRPC_TLS_GROUP_X25519});
+  ssl_fixture_->OverrideServerKeyExchangeGroups(
+      {GRPC_TLS_GROUP_X25519, GRPC_TLS_GROUP_SECP256R1});
+#endif
+  DoHandshake();
+}
+
+TEST_P(SslTransportSecurityTest, TestKeyExchangeGroupMismatch) {
+  auto tls_version = std::get<0>(GetParam());
+  SetUpSslFixture(tls_version,
+                  /*send_client_ca_list=*/std::get<1>(GetParam()));
+  // The client default protocols set by the handshaker factory are [toto, baz].
+  ssl_fixture_->OverrideClientKeyExchangeGroups({GRPC_TLS_GROUP_X25519});
+  ssl_fixture_->OverrideServerKeyExchangeGroups({GRPC_TLS_GROUP_SECP256R1});
+  // In TLS1.2, on key exchange group mismatch, it will fall back to an ECDHE
+  // ciphersuite, provided there is a matching one between the client and server
+  // TLS1.3 is stricter and requires a match, and will thus fail in this test
+  // case.
+  ssl_fixture_->SetServerExpectsHandshakeFailure(tls_version == TSI_TLS1_3);
+  ssl_fixture_->SetClientExpectsHandshakeFailure(tls_version == TSI_TLS1_3);
+  DoHandshake();
+}
+#endif
 
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(&argc, argv);

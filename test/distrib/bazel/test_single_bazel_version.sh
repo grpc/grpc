@@ -62,6 +62,12 @@ EXCLUDED_TARGETS=(
   "-//third_party/toolchains/rbe_windows_vs2022_bazel7/..."
   "-//third_party/toolchains:rbe_windows_default_toolchain_suite"
 
+  # A bunch of stuff in the CEL repo doesn't seem to work right in this
+  # context.  But we only use protos from here, and the rest of the
+  # build won't work if this doesn't, so it doesn't seem necessary to
+  # test it here.
+  "-//third_party/cel-spec/..."
+
   # Exclude bazelified tests as they contain some bazel hackery
   "-//tools/bazelify_tests/..."
 
@@ -85,7 +91,7 @@ do
   SHARD_RAN=""
   if [ "${TEST_SHARD}" == "buildtest" ] ; then
     tools/bazel version | grep "$VERSION" || { echo "Detected bazel version did not match expected value of $VERSION" >/dev/stderr; exit 1; }
-    tools/bazel build "${ACTION_ENV_FLAG}" --build_tag_filters='-experiment_variation' -- //... "${EXCLUDED_TARGETS[@]}" || FAILED_TESTS="${FAILED_TESTS}buildtest "
+    tools/bazel build "${ACTION_ENV_FLAG}" --build_tag_filters='-experiment_variation' -- :all "${EXCLUDED_TARGETS[@]}" || FAILED_TESTS="${FAILED_TESTS}buildtest "
     SHARD_RAN="true"
   fi
 

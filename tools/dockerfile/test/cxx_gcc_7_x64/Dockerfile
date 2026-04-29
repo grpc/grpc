@@ -62,7 +62,7 @@ RUN curl -sSL -o cmake-linux.sh https://github.com/Kitware/CMake/releases/downlo
 
 # Install ccache from source since ccache 3.x packaged with most linux distributions
 # does not support Redis backend for caching.
-RUN curl -sSL -o ccache.tar.gz https://github.com/ccache/ccache/releases/download/v4.5.1/ccache-4.5.1.tar.gz \
+RUN curl -sSL --fail --retry 5 -o ccache.tar.gz https://github.com/ccache/ccache/releases/download/v4.5.1/ccache-4.5.1.tar.gz \
     && tar -zxf ccache.tar.gz \
     && cd ccache-4.5.1 \
     && mkdir build && cd build \

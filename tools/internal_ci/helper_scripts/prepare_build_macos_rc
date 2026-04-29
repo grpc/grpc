@@ -15,13 +15,21 @@
 # Source this rc script to prepare the environment for macos builds
 
 # Print basic info about the mac worker
-echo "kokoro pool: \"$KOKORO_JOB_POOL\""
-echo "OS: $(sw_vers -productName) $(sw_vers -productVersion) $(sw_vers -buildVersion)"
-echo "CPU type: $(sysctl -n machdep.cpu.brand_string)"
+{ set +x; } 2>/dev/null
+echo "-- Kokoro worker info --"
+echo "Kokoro pool: ${KOKORO_JOB_POOL:-undefined}"
+if [[ -f /VERSION ]]; then
+  echo "Kokoro VM image: $(cat /VERSION)"
+fi
+echo "-- System --"
+echo "System: $(uname -a)"
+echo "Python: $(python3 -VV)"
+echo -e "-- OS --\n$(sw_vers -productName) $(sw_vers -productVersion) $(sw_vers -buildVersion)"
+echo "-- CPU --"
 echo "CPU: $(sysctl -n machdep.cpu.vendor) $(uname -m) Family $(sysctl -n machdep.cpu.family) Model $(sysctl -n machdep.cpu.brand_string)"
 echo "CPU Cores: $(sysctl -n hw.ncpu)"
-echo "Memory: $(sysctl -n hw.memsize)"
-echo "Kokoro image version: $(cat /VERSION)"
+echo -e "-- Memory --\n$(sysctl -n hw.memsize)"
+set -x
 
 # Info on disk usage and mounted volumes
 mount
@@ -58,6 +66,7 @@ brew config
 if $is_sonoma; then
   brew install cmake
   brew install gnupg
+  brew install ccache
   export PATH="/opt/homebrew/bin::${PATH}"
   cmake --version
 fi
@@ -146,14 +155,6 @@ then
   # python
   time pip install --user -r $DIR/requirements.macos.txt
   time pip install --user --upgrade virtualenv Mako tox setuptools==77.0.1 twisted
-
-  # Install Python 3.9 if it doesn't exist
-  if [ ! -f "/usr/local/bin/python3.9" ]; then
-    time curl -O https://www.python.org/ftp/python/3.9.10/python-3.9.10-macosx10.9.pkg
-    echo "732bc5c95ae127dfb6fb1bcf683509ad20c558152b63b8d5f651246f6bdfc8da  python-3.9.10-macosx10.9.pkg" > /tmp/python_installer_checksum.sha256
-    shasum -c /tmp/python_installer_checksum.sha256
-    time sudo installer -pkg ./python-3.9.10-macosx10.9.pkg -target /
-  fi
 
   # Install Python 3.10 if it doesn't exist
   if [ ! -f "/usr/local/bin/python3.10" ]; then
@@ -261,7 +262,7 @@ then
     rm composer-setup.php
 
     # Install PHP test dependencies.
-    php /tmp/composer.phar global require phpunit/phpunit:9.5.9
+    php /tmp/composer.phar global require phpunit/phpunit:9.5.9 --no-security-blocking
   else
     # Workaround for https://github.com/Homebrew/homebrew-core/issues/41081
     mkdir -p /usr/local/lib/php/pecl

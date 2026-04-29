@@ -116,7 +116,8 @@ TEST(CallUtils, OpHandlerImplToProto) {
   }
   {
     auto factory = []() { return []() { return Poll<int>(1); }; };
-    OpHandlerImpl<decltype(factory), GRPC_OP_SEND_MESSAGE> op_handler(factory);
+    OpHandlerImpl<decltype(factory), GRPC_OP_SEND_MESSAGE> op_handler(
+        std::move(factory));
     op_handler.ToProto(proto, arena.ptr());
     auto* custom = grpc_channelz_v2_Promise_custom_promise(proto);
     EXPECT_EQ(upb_to_sv(grpc_channelz_v2_Promise_Custom_type(custom)),

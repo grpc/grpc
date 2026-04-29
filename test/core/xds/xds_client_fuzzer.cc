@@ -16,6 +16,7 @@
 
 #include <google/protobuf/text_format.h>
 #include <grpc/grpc.h>
+#include <grpc/support/port_platform.h>
 
 #include <map>
 #include <memory>
@@ -24,6 +25,13 @@
 #include <string>
 #include <utility>
 
+#include "envoy/config/cluster/v3/cluster.pb.h"
+#include "envoy/config/listener/v3/listener.pb.h"
+#include "envoy/config/route/v3/route.pb.h"
+#include "envoy/extensions/filters/http/fault/v3/fault.pb.h"
+#include "envoy/extensions/filters/http/router/v3/router.pb.h"
+#include "envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.pb.h"
+#include "envoy/extensions/transport_sockets/tls/v3/tls.pb.h"
 #include "envoy/service/discovery/v3/discovery.pb.h"
 #include "fuzztest/fuzztest.h"
 #include "src/core/lib/iomgr/timer_manager.h"
@@ -685,7 +693,55 @@ static const char* kBasicSocketListener = R"pb(
   }
 )pb";
 
+// Force linker to not strip symbols necessary for runtime reflection.
+//
+// This class is used to solve the following error when parsing protobuf.Any
+// from textproto:
+//
+// ```
+// Could not find type
+// "type.googleapis.com/envoy.config.route.v3.RouteConfiguration" stored in
+// google.protobuf.Any
+// ```
+//
+// TODO(weizheyuan): Figure out why this is only affecting macOS builds.
+class ForceLinkMessageReflectionWorkaround {
+ private:
+  template <typename Message>
+  static void ForceLinkMessageReflection() {
+    // TODO(weizheyuan): Find a better solution than this.
+    //
+    // The officially recommended approach is to use
+    // google::protobuf::LinkMessageReflection<>, but it doesn't work for our
+    // macOS build.
+    //
+    // https://protobuf.dev/reference/cpp/api-docs/google.protobuf.message.
+    GRPC_UNUSED auto&& unused = Message::GetDescriptor()->full_name();
+  }
+
+ public:
+  ForceLinkMessageReflectionWorkaround() {
+    ForceLinkMessageReflection<envoy::config::listener::v3::Listener>();
+    ForceLinkMessageReflection<envoy::config::route::v3::RouteConfiguration>();
+    ForceLinkMessageReflection<envoy::config::cluster::v3::Cluster>();
+    ForceLinkMessageReflection<envoy::service::discovery::v3::Resource>();
+    ForceLinkMessageReflection<
+        envoy::config::endpoint::v3::ClusterLoadAssignment>();
+    ForceLinkMessageReflection<
+        envoy::extensions::filters::network::http_connection_manager::v3::
+            HttpConnectionManager>();
+    ForceLinkMessageReflection<
+        envoy::extensions::filters::http::fault::v3::HTTPFault>();
+    ForceLinkMessageReflection<
+        envoy::extensions::filters::http::router::v3::Router>();
+    ForceLinkMessageReflection<
+        envoy::extensions::transport_sockets::tls::v3::DownstreamTlsContext>();
+  }
+};
+
 auto ParseTestProto(const std::string& proto) {
+  // Make it static so the code is executed exactly once.
+  static ForceLinkMessageReflectionWorkaround link_message_reflection;
   xds_client_fuzzer::Msg msg;
   CHECK(google::protobuf::TextFormat::ParseFromString(proto, &msg));
   return msg;

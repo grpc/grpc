@@ -13,5 +13,5 @@
 # limitations under the License.
 
 module GrpcBuildConfig
-  CORE_WINDOWS_DLL = '/tmp/libs/opt/grpc-52.dll'
+  CORE_WINDOWS_DLL = '/tmp/libs/opt/grpc-53.dll'
 end

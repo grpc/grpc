@@ -790,6 +790,14 @@ async def _schedule_rpc_coro(object rpc_coro,
             _decode(rpc_state.method()),
         ))
         traceback.print_exc()
+    finally:
+        # All batches (both OK and NOK paths) are complete at this point. Explicitly
+        # release the call so that the server call tracer records completion metrics
+        # (duration, bytes) immediately rather than waiting for non-deterministic
+        # garbage collection of RPCState object
+        if rpc_state.call:
+            grpc_call_unref(rpc_state.call)
+            rpc_state.call = NULL
 
 
 async def _handle_rpc(list generic_handlers, tuple interceptors,
@@ -1005,7 +1013,7 @@ cdef class AioServer:
             rpc_tasks.add(rpc_task)
             rpc_task.add_done_callback(rpc_tasks.discard)
 
-            if self._limiter is not None:
+            if self._limiter is not None and not concurrency_exceeded:
                 self._limiter.decrease_once_finished(rpc_task)
 
     def _serving_task_crash_handler(self, object task):
