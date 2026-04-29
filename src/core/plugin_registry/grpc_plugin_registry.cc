@@ -23,10 +23,12 @@
 #include "src/core/handshaker/endpoint_info/endpoint_info_handshaker.h"
 #include "src/core/handshaker/http_connect/http_connect_client_handshaker.h"
 #include "src/core/handshaker/tcp_connect/tcp_connect_handshaker.h"
+#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/surface/lame_client.h"
 #include "src/core/server/server.h"
 #include "src/core/server/server_call_tracer_filter.h"
+#include "src/core/server/server_config_selector_filter.h"
 
 namespace grpc_event_engine {
 namespace experimental {
@@ -88,6 +90,13 @@ void RegisterBuiltins(CoreConfiguration::Builder* builder) {
       ->RegisterFilter(GRPC_SERVER_CHANNEL, &Server::kServerTopFilter)
       .SkipV3()
       .BeforeAll();
+  if (IsXdsServerFilterChainPerRouteEnabled()) {
+    builder->channel_init()
+        ->RegisterFilter<ServerConfigSelectorInterceptor>(GRPC_SERVER_CHANNEL)
+        .IfHasChannelArg(ServerConfigSelectorProvider::ChannelArgName())
+        // FIXME: needs to be after census filter?
+        .FloatToTop();
+  }
 }
 
 }  // namespace

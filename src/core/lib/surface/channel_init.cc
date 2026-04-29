@@ -111,12 +111,12 @@ ChannelInit::FilterRegistration& ChannelInit::FilterRegistration::IfNot(
 }
 
 ChannelInit::FilterRegistration&
-ChannelInit::FilterRegistration::IfHasChannelArg(const char* arg) {
+ChannelInit::FilterRegistration::IfHasChannelArg(absl::string_view arg) {
   return If([arg](const ChannelArgs& args) { return args.Contains(arg); });
 }
 
 ChannelInit::FilterRegistration& ChannelInit::FilterRegistration::IfChannelArg(
-    const char* arg, bool default_value) {
+    absl::string_view arg, bool default_value) {
   return If([arg, default_value](const ChannelArgs& args) {
     return args.GetBool(arg).value_or(default_value);
   });
