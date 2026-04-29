@@ -313,7 +313,7 @@ void ServerConfigSelectorInterceptor::InterceptCall(
        handler]() mutable {
         return TrySeq(
             handler.PullClientInitialMetadata(),
-            [handler, self](ClientMetadataHandle metadata) {
+            [handler, self](ClientMetadataHandle metadata) mutable {
               return Map(
                   self->config_selector_.Next(nullptr),
                   [self, handler = std::move(handler),
