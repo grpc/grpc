@@ -563,7 +563,7 @@ class ClientChannelFilter::SubchannelWrapper final
       GRPC_TRACE_LOG(client_channel, INFO)
           << "chand=" << parent_->chand_
           << ": connectivity change for subchannel wrapper " << parent_.get()
-          << "hopping into work_serializer";
+          << "; hopping into work_serializer";
       auto self = RefAsSubclass<WatcherWrapper>();
       parent_->chand_->work_serializer_->Run(
           [self, state, status]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(
@@ -576,7 +576,7 @@ class ClientChannelFilter::SubchannelWrapper final
       GRPC_TRACE_LOG(client_channel, INFO)
           << "chand=" << parent_->chand_
           << ": keepalive update for subchannel wrapper " << parent_.get()
-          << "hopping into work_serializer";
+          << "; hopping into work_serializer";
       auto self = RefAsSubclass<WatcherWrapper>();
       parent_->chand_->work_serializer_->Run(
           [self, new_keepalive_time]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(

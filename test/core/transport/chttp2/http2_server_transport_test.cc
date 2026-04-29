@@ -96,10 +96,10 @@ TEST_F(Http2ServerTransportTest, TestHttp2ServerTransportObjectCreation) {
   mock_endpoint.ExpectRead(
       {EventEngineSlice(
            grpc_slice_from_copied_string(GRPC_CHTTP2_CLIENT_CONNECT_STRING)),
-       helper_.EventEngineSliceFromHttp2SettingsFrameDefault(),
-       helper_.EventEngineSliceFromHttp2DataFrame(
+       helper_.SerializedDefaultClientSettingsFrame(),
+       helper_.SerializedDataFrame(
            /*payload=*/"Hello!", /*stream_id=*/9, /*end_stream=*/false),
-       helper_.EventEngineSliceFromHttp2DataFrame(
+       helper_.SerializedDataFrame(
            /*payload=*/"Bye!", /*stream_id=*/11, /*end_stream=*/true)},
       event_engine().get());
 
@@ -110,7 +110,8 @@ TEST_F(Http2ServerTransportTest, TestHttp2ServerTransportObjectCreation) {
   OrphanablePtr<Http2ServerTransport> server_transport =
       MakeOrphanable<Http2ServerTransport>(
           std::move(mock_endpoint.promise_endpoint), GetChannelArgs(),
-          event_engine());
+          event_engine(),
+          /*on_receive_settings=*/nullptr);
   server_transport->InitializeAndSpawnTransportLoops();
 
   EXPECT_EQ(server_transport->filter_stack_transport(), nullptr);

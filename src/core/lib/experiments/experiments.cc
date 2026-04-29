@@ -41,12 +41,13 @@ const char* const
 const char* const
     additional_constraints_call_tracer_send_trailing_metadata_is_an_annotation =
         "{}";
-const char* const description_chaotic_good_connect_deadline =
-    "Use the deadline from the connect args in chaotic good connector";
-const char* const additional_constraints_chaotic_good_connect_deadline = "{}";
 const char* const description_chaotic_good_framing_layer =
     "Enable the chaotic good framing layer.";
 const char* const additional_constraints_chaotic_good_framing_layer = "{}";
+const char* const description_chaotic_good_send_supported_features =
+    "Send supported features in chaotic good settings frames.";
+const char* const additional_constraints_chaotic_good_send_supported_features =
+    "{}";
 const char* const description_error_flatten =
     "Flatten errors to ordinary absl::Status form.";
 const char* const additional_constraints_error_flatten = "{}";
@@ -98,6 +99,10 @@ const char* const additional_constraints_free_large_allocator = "{}";
 const char* const description_fuse_filters =
     "If set, individual filters are merged into fused filters";
 const char* const additional_constraints_fuse_filters = "{}";
+const char* const description_h2_max_deallocating_streams_headroom =
+    "Separate allocated max concurrent streams.";
+const char* const additional_constraints_h2_max_deallocating_streams_headroom =
+    "{}";
 const char* const description_keep_alive_ping_timer_batch =
     "Avoid explicitly cancelling the keepalive timer. Instead adjust the "
     "callback to re-schedule itself to the next ping interval.";
@@ -109,6 +114,10 @@ const char* const additional_constraints_local_connector_secure = "{}";
 const char* const description_max_inflight_pings_strict_limit =
     "If set, the max inflight pings limit is strictly enforced.";
 const char* const additional_constraints_max_inflight_pings_strict_limit = "{}";
+const char* const description_memory_optimization_01 = "Memory Optimization";
+const char* const additional_constraints_memory_optimization_01 = "{}";
+const char* const description_memory_optimization_02 = "Memory Optimization 02";
+const char* const additional_constraints_memory_optimization_02 = "{}";
 const char* const description_metadata_publish_to_app_tag =
     "Publish metadata to the app using the kPublishToApp metadata field.";
 const char* const additional_constraints_metadata_publish_to_app_tag = "{}";
@@ -121,13 +130,12 @@ const char* const additional_constraints_multiping = "{}";
 const char* const description_otel_export_telemetry_domains =
     "Export telemetry domains in OpenTelemetry metrics.";
 const char* const additional_constraints_otel_export_telemetry_domains = "{}";
+const char* const description_ph2_perf_01 =
+    "Different performance experiments for PH2 Transport";
+const char* const additional_constraints_ph2_perf_01 = "{}";
 const char* const description_pick_first_ignore_empty_updates =
-    "Ignore empty resolutions in pick_first";
+    "Ignore empty resolutions in pick_first (delete)";
 const char* const additional_constraints_pick_first_ignore_empty_updates = "{}";
-const char* const description_pick_first_ready_to_connecting =
-    "When the subchannel goes from READY to CONNECTING or TRANSIENT_FAILURE, "
-    "pick_first goes to CONNECTING and starts a new Happy Eyeballs pass.";
-const char* const additional_constraints_pick_first_ready_to_connecting = "{}";
 const char* const description_pipelined_read_secure_endpoint =
     "Enable pipelined reads for EventEngine secure endpoints";
 const char* const additional_constraints_pipelined_read_secure_endpoint = "{}";
@@ -158,8 +166,11 @@ const char* const description_promise_based_http2_server_transport =
 const char* const additional_constraints_promise_based_http2_server_transport =
     "{}";
 const char* const description_promise_based_inproc_transport =
-    "Use promises for the in-process transport.";
+    "Use call-v3 for the in-process transport.";
 const char* const additional_constraints_promise_based_inproc_transport = "{}";
+const char* const description_promise_batch_cleanup_on_cancel =
+    "Fix completion queue tag handling during promise batch cancellation.";
+const char* const additional_constraints_promise_batch_cleanup_on_cancel = "{}";
 const char* const description_promise_filter_send_cancel_metadata =
     "Enables sending all trailing metadata fields from server side "
     "promise-based filters upon stream cancellation.";
@@ -170,11 +181,6 @@ const char* const additional_constraints_retry_in_callv3 = "{}";
 const char* const description_return_preexisting_errors =
     "Return errors that exist before the start of the call in RunHandler.";
 const char* const additional_constraints_return_preexisting_errors = "{}";
-const char* const description_rr_wrr_connect_from_random_index =
-    "RR and WRR LB policies start connecting from a random index in the "
-    "address list.";
-const char* const additional_constraints_rr_wrr_connect_from_random_index =
-    "{}";
 const char* const description_schedule_cancellation_over_write =
     "Allow cancellation op to be scheduled over a write";
 const char* const additional_constraints_schedule_cancellation_over_write =
@@ -202,12 +208,6 @@ const uint8_t required_experiments_secure_endpoint_read_coalescing[] = {
 const char* const description_skip_clear_peer_on_cancellation =
     "If set, skips clearing of peer string on call cancellation.";
 const char* const additional_constraints_skip_clear_peer_on_cancellation = "{}";
-const char* const description_sleep_promise_exec_ctx_removal =
-    "If set, polling the sleep promise does not rely on the ExecCtx.";
-const char* const additional_constraints_sleep_promise_exec_ctx_removal = "{}";
-const char* const description_sleep_use_non_owning_waker =
-    "If set, the sleep promise uses a non-owning waker.";
-const char* const additional_constraints_sleep_use_non_owning_waker = "{}";
 const char* const description_subchannel_connection_scaling =
     "Subchannel connection scaling support.";
 const char* const additional_constraints_subchannel_connection_scaling = "{}";
@@ -262,14 +262,15 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_call_tracer_send_trailing_metadata_is_an_annotation,
      additional_constraints_call_tracer_send_trailing_metadata_is_an_annotation,
      nullptr, 0, false, true},
-    {"chaotic_good_connect_deadline", description_chaotic_good_connect_deadline,
-     additional_constraints_chaotic_good_connect_deadline, nullptr, 0, true,
-     true},
     {"chaotic_good_framing_layer", description_chaotic_good_framing_layer,
      additional_constraints_chaotic_good_framing_layer, nullptr, 0, true,
      false},
+    {"chaotic_good_send_supported_features",
+     description_chaotic_good_send_supported_features,
+     additional_constraints_chaotic_good_send_supported_features, nullptr, 0,
+     false, true},
     {"error_flatten", description_error_flatten,
-     additional_constraints_error_flatten, nullptr, 0, false, false},
+     additional_constraints_error_flatten, nullptr, 0, true, false},
     {"event_engine_client", description_event_engine_client,
      additional_constraints_event_engine_client, nullptr, 0, true, false},
     {"event_engine_dns", description_event_engine_dns,
@@ -301,6 +302,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_free_large_allocator, nullptr, 0, false, true},
     {"fuse_filters", description_fuse_filters,
      additional_constraints_fuse_filters, nullptr, 0, false, false},
+    {"h2_max_deallocating_streams_headroom",
+     description_h2_max_deallocating_streams_headroom,
+     additional_constraints_h2_max_deallocating_streams_headroom, nullptr, 0,
+     false, true},
     {"keep_alive_ping_timer_batch", description_keep_alive_ping_timer_batch,
      additional_constraints_keep_alive_ping_timer_batch, nullptr, 0, false,
      true},
@@ -310,6 +315,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_max_inflight_pings_strict_limit,
      additional_constraints_max_inflight_pings_strict_limit, nullptr, 0, true,
      true},
+    {"memory_optimization_01", description_memory_optimization_01,
+     additional_constraints_memory_optimization_01, nullptr, 0, false, false},
+    {"memory_optimization_02", description_memory_optimization_02,
+     additional_constraints_memory_optimization_02, nullptr, 0, false, false},
     {"metadata_publish_to_app_tag", description_metadata_publish_to_app_tag,
      additional_constraints_metadata_publish_to_app_tag, nullptr, 0, true,
      true},
@@ -320,13 +329,11 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"otel_export_telemetry_domains", description_otel_export_telemetry_domains,
      additional_constraints_otel_export_telemetry_domains, nullptr, 0, false,
      true},
+    {"ph2_perf_01", description_ph2_perf_01, additional_constraints_ph2_perf_01,
+     nullptr, 0, false, true},
     {"pick_first_ignore_empty_updates",
      description_pick_first_ignore_empty_updates,
      additional_constraints_pick_first_ignore_empty_updates, nullptr, 0, false,
-     true},
-    {"pick_first_ready_to_connecting",
-     description_pick_first_ready_to_connecting,
-     additional_constraints_pick_first_ready_to_connecting, nullptr, 0, true,
      true},
     {"pipelined_read_secure_endpoint",
      description_pipelined_read_secure_endpoint,
@@ -350,6 +357,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_promise_based_inproc_transport,
      additional_constraints_promise_based_inproc_transport, nullptr, 0, false,
      false},
+    {"promise_batch_cleanup_on_cancel",
+     description_promise_batch_cleanup_on_cancel,
+     additional_constraints_promise_batch_cleanup_on_cancel, nullptr, 0, true,
+     true},
     {"promise_filter_send_cancel_metadata",
      description_promise_filter_send_cancel_metadata,
      additional_constraints_promise_filter_send_cancel_metadata, nullptr, 0,
@@ -358,10 +369,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_retry_in_callv3, nullptr, 0, false, true},
     {"return_preexisting_errors", description_return_preexisting_errors,
      additional_constraints_return_preexisting_errors, nullptr, 0, false, true},
-    {"rr_wrr_connect_from_random_index",
-     description_rr_wrr_connect_from_random_index,
-     additional_constraints_rr_wrr_connect_from_random_index, nullptr, 0, true,
-     true},
     {"schedule_cancellation_over_write",
      description_schedule_cancellation_over_write,
      additional_constraints_schedule_cancellation_over_write, nullptr, 0, false,
@@ -382,19 +389,13 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_skip_clear_peer_on_cancellation,
      additional_constraints_skip_clear_peer_on_cancellation, nullptr, 0, false,
      true},
-    {"sleep_promise_exec_ctx_removal",
-     description_sleep_promise_exec_ctx_removal,
-     additional_constraints_sleep_promise_exec_ctx_removal, nullptr, 0, false,
-     true},
-    {"sleep_use_non_owning_waker", description_sleep_use_non_owning_waker,
-     additional_constraints_sleep_use_non_owning_waker, nullptr, 0, true, true},
     {"subchannel_connection_scaling", description_subchannel_connection_scaling,
      additional_constraints_subchannel_connection_scaling, nullptr, 0, false,
      true},
     {"subchannel_wrapper_cleanup_on_orphan",
      description_subchannel_wrapper_cleanup_on_orphan,
      additional_constraints_subchannel_wrapper_cleanup_on_orphan, nullptr, 0,
-     false, true},
+     true, true},
     {"tcp_frame_size_tuning", description_tcp_frame_size_tuning,
      additional_constraints_tcp_frame_size_tuning, nullptr, 0, false, true},
     {"tcp_rcv_lowat", description_tcp_rcv_lowat,
@@ -443,12 +444,13 @@ const char* const
 const char* const
     additional_constraints_call_tracer_send_trailing_metadata_is_an_annotation =
         "{}";
-const char* const description_chaotic_good_connect_deadline =
-    "Use the deadline from the connect args in chaotic good connector";
-const char* const additional_constraints_chaotic_good_connect_deadline = "{}";
 const char* const description_chaotic_good_framing_layer =
     "Enable the chaotic good framing layer.";
 const char* const additional_constraints_chaotic_good_framing_layer = "{}";
+const char* const description_chaotic_good_send_supported_features =
+    "Send supported features in chaotic good settings frames.";
+const char* const additional_constraints_chaotic_good_send_supported_features =
+    "{}";
 const char* const description_error_flatten =
     "Flatten errors to ordinary absl::Status form.";
 const char* const additional_constraints_error_flatten = "{}";
@@ -500,6 +502,10 @@ const char* const additional_constraints_free_large_allocator = "{}";
 const char* const description_fuse_filters =
     "If set, individual filters are merged into fused filters";
 const char* const additional_constraints_fuse_filters = "{}";
+const char* const description_h2_max_deallocating_streams_headroom =
+    "Separate allocated max concurrent streams.";
+const char* const additional_constraints_h2_max_deallocating_streams_headroom =
+    "{}";
 const char* const description_keep_alive_ping_timer_batch =
     "Avoid explicitly cancelling the keepalive timer. Instead adjust the "
     "callback to re-schedule itself to the next ping interval.";
@@ -511,6 +517,10 @@ const char* const additional_constraints_local_connector_secure = "{}";
 const char* const description_max_inflight_pings_strict_limit =
     "If set, the max inflight pings limit is strictly enforced.";
 const char* const additional_constraints_max_inflight_pings_strict_limit = "{}";
+const char* const description_memory_optimization_01 = "Memory Optimization";
+const char* const additional_constraints_memory_optimization_01 = "{}";
+const char* const description_memory_optimization_02 = "Memory Optimization 02";
+const char* const additional_constraints_memory_optimization_02 = "{}";
 const char* const description_metadata_publish_to_app_tag =
     "Publish metadata to the app using the kPublishToApp metadata field.";
 const char* const additional_constraints_metadata_publish_to_app_tag = "{}";
@@ -523,13 +533,12 @@ const char* const additional_constraints_multiping = "{}";
 const char* const description_otel_export_telemetry_domains =
     "Export telemetry domains in OpenTelemetry metrics.";
 const char* const additional_constraints_otel_export_telemetry_domains = "{}";
+const char* const description_ph2_perf_01 =
+    "Different performance experiments for PH2 Transport";
+const char* const additional_constraints_ph2_perf_01 = "{}";
 const char* const description_pick_first_ignore_empty_updates =
-    "Ignore empty resolutions in pick_first";
+    "Ignore empty resolutions in pick_first (delete)";
 const char* const additional_constraints_pick_first_ignore_empty_updates = "{}";
-const char* const description_pick_first_ready_to_connecting =
-    "When the subchannel goes from READY to CONNECTING or TRANSIENT_FAILURE, "
-    "pick_first goes to CONNECTING and starts a new Happy Eyeballs pass.";
-const char* const additional_constraints_pick_first_ready_to_connecting = "{}";
 const char* const description_pipelined_read_secure_endpoint =
     "Enable pipelined reads for EventEngine secure endpoints";
 const char* const additional_constraints_pipelined_read_secure_endpoint = "{}";
@@ -560,8 +569,11 @@ const char* const description_promise_based_http2_server_transport =
 const char* const additional_constraints_promise_based_http2_server_transport =
     "{}";
 const char* const description_promise_based_inproc_transport =
-    "Use promises for the in-process transport.";
+    "Use call-v3 for the in-process transport.";
 const char* const additional_constraints_promise_based_inproc_transport = "{}";
+const char* const description_promise_batch_cleanup_on_cancel =
+    "Fix completion queue tag handling during promise batch cancellation.";
+const char* const additional_constraints_promise_batch_cleanup_on_cancel = "{}";
 const char* const description_promise_filter_send_cancel_metadata =
     "Enables sending all trailing metadata fields from server side "
     "promise-based filters upon stream cancellation.";
@@ -572,11 +584,6 @@ const char* const additional_constraints_retry_in_callv3 = "{}";
 const char* const description_return_preexisting_errors =
     "Return errors that exist before the start of the call in RunHandler.";
 const char* const additional_constraints_return_preexisting_errors = "{}";
-const char* const description_rr_wrr_connect_from_random_index =
-    "RR and WRR LB policies start connecting from a random index in the "
-    "address list.";
-const char* const additional_constraints_rr_wrr_connect_from_random_index =
-    "{}";
 const char* const description_schedule_cancellation_over_write =
     "Allow cancellation op to be scheduled over a write";
 const char* const additional_constraints_schedule_cancellation_over_write =
@@ -604,12 +611,6 @@ const uint8_t required_experiments_secure_endpoint_read_coalescing[] = {
 const char* const description_skip_clear_peer_on_cancellation =
     "If set, skips clearing of peer string on call cancellation.";
 const char* const additional_constraints_skip_clear_peer_on_cancellation = "{}";
-const char* const description_sleep_promise_exec_ctx_removal =
-    "If set, polling the sleep promise does not rely on the ExecCtx.";
-const char* const additional_constraints_sleep_promise_exec_ctx_removal = "{}";
-const char* const description_sleep_use_non_owning_waker =
-    "If set, the sleep promise uses a non-owning waker.";
-const char* const additional_constraints_sleep_use_non_owning_waker = "{}";
 const char* const description_subchannel_connection_scaling =
     "Subchannel connection scaling support.";
 const char* const additional_constraints_subchannel_connection_scaling = "{}";
@@ -664,14 +665,15 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_call_tracer_send_trailing_metadata_is_an_annotation,
      additional_constraints_call_tracer_send_trailing_metadata_is_an_annotation,
      nullptr, 0, false, true},
-    {"chaotic_good_connect_deadline", description_chaotic_good_connect_deadline,
-     additional_constraints_chaotic_good_connect_deadline, nullptr, 0, true,
-     true},
     {"chaotic_good_framing_layer", description_chaotic_good_framing_layer,
      additional_constraints_chaotic_good_framing_layer, nullptr, 0, true,
      false},
+    {"chaotic_good_send_supported_features",
+     description_chaotic_good_send_supported_features,
+     additional_constraints_chaotic_good_send_supported_features, nullptr, 0,
+     false, true},
     {"error_flatten", description_error_flatten,
-     additional_constraints_error_flatten, nullptr, 0, false, false},
+     additional_constraints_error_flatten, nullptr, 0, true, false},
     {"event_engine_client", description_event_engine_client,
      additional_constraints_event_engine_client, nullptr, 0, true, false},
     {"event_engine_dns", description_event_engine_dns,
@@ -703,6 +705,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_free_large_allocator, nullptr, 0, false, true},
     {"fuse_filters", description_fuse_filters,
      additional_constraints_fuse_filters, nullptr, 0, false, false},
+    {"h2_max_deallocating_streams_headroom",
+     description_h2_max_deallocating_streams_headroom,
+     additional_constraints_h2_max_deallocating_streams_headroom, nullptr, 0,
+     false, true},
     {"keep_alive_ping_timer_batch", description_keep_alive_ping_timer_batch,
      additional_constraints_keep_alive_ping_timer_batch, nullptr, 0, false,
      true},
@@ -712,6 +718,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_max_inflight_pings_strict_limit,
      additional_constraints_max_inflight_pings_strict_limit, nullptr, 0, true,
      true},
+    {"memory_optimization_01", description_memory_optimization_01,
+     additional_constraints_memory_optimization_01, nullptr, 0, false, false},
+    {"memory_optimization_02", description_memory_optimization_02,
+     additional_constraints_memory_optimization_02, nullptr, 0, false, false},
     {"metadata_publish_to_app_tag", description_metadata_publish_to_app_tag,
      additional_constraints_metadata_publish_to_app_tag, nullptr, 0, true,
      true},
@@ -722,13 +732,11 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"otel_export_telemetry_domains", description_otel_export_telemetry_domains,
      additional_constraints_otel_export_telemetry_domains, nullptr, 0, false,
      true},
+    {"ph2_perf_01", description_ph2_perf_01, additional_constraints_ph2_perf_01,
+     nullptr, 0, false, true},
     {"pick_first_ignore_empty_updates",
      description_pick_first_ignore_empty_updates,
      additional_constraints_pick_first_ignore_empty_updates, nullptr, 0, false,
-     true},
-    {"pick_first_ready_to_connecting",
-     description_pick_first_ready_to_connecting,
-     additional_constraints_pick_first_ready_to_connecting, nullptr, 0, true,
      true},
     {"pipelined_read_secure_endpoint",
      description_pipelined_read_secure_endpoint,
@@ -752,6 +760,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_promise_based_inproc_transport,
      additional_constraints_promise_based_inproc_transport, nullptr, 0, false,
      false},
+    {"promise_batch_cleanup_on_cancel",
+     description_promise_batch_cleanup_on_cancel,
+     additional_constraints_promise_batch_cleanup_on_cancel, nullptr, 0, true,
+     true},
     {"promise_filter_send_cancel_metadata",
      description_promise_filter_send_cancel_metadata,
      additional_constraints_promise_filter_send_cancel_metadata, nullptr, 0,
@@ -760,10 +772,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_retry_in_callv3, nullptr, 0, false, true},
     {"return_preexisting_errors", description_return_preexisting_errors,
      additional_constraints_return_preexisting_errors, nullptr, 0, false, true},
-    {"rr_wrr_connect_from_random_index",
-     description_rr_wrr_connect_from_random_index,
-     additional_constraints_rr_wrr_connect_from_random_index, nullptr, 0, true,
-     true},
     {"schedule_cancellation_over_write",
      description_schedule_cancellation_over_write,
      additional_constraints_schedule_cancellation_over_write, nullptr, 0, false,
@@ -784,19 +792,13 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_skip_clear_peer_on_cancellation,
      additional_constraints_skip_clear_peer_on_cancellation, nullptr, 0, false,
      true},
-    {"sleep_promise_exec_ctx_removal",
-     description_sleep_promise_exec_ctx_removal,
-     additional_constraints_sleep_promise_exec_ctx_removal, nullptr, 0, false,
-     true},
-    {"sleep_use_non_owning_waker", description_sleep_use_non_owning_waker,
-     additional_constraints_sleep_use_non_owning_waker, nullptr, 0, true, true},
     {"subchannel_connection_scaling", description_subchannel_connection_scaling,
      additional_constraints_subchannel_connection_scaling, nullptr, 0, false,
      true},
     {"subchannel_wrapper_cleanup_on_orphan",
      description_subchannel_wrapper_cleanup_on_orphan,
      additional_constraints_subchannel_wrapper_cleanup_on_orphan, nullptr, 0,
-     false, true},
+     true, true},
     {"tcp_frame_size_tuning", description_tcp_frame_size_tuning,
      additional_constraints_tcp_frame_size_tuning, nullptr, 0, false, true},
     {"tcp_rcv_lowat", description_tcp_rcv_lowat,
@@ -845,12 +847,13 @@ const char* const
 const char* const
     additional_constraints_call_tracer_send_trailing_metadata_is_an_annotation =
         "{}";
-const char* const description_chaotic_good_connect_deadline =
-    "Use the deadline from the connect args in chaotic good connector";
-const char* const additional_constraints_chaotic_good_connect_deadline = "{}";
 const char* const description_chaotic_good_framing_layer =
     "Enable the chaotic good framing layer.";
 const char* const additional_constraints_chaotic_good_framing_layer = "{}";
+const char* const description_chaotic_good_send_supported_features =
+    "Send supported features in chaotic good settings frames.";
+const char* const additional_constraints_chaotic_good_send_supported_features =
+    "{}";
 const char* const description_error_flatten =
     "Flatten errors to ordinary absl::Status form.";
 const char* const additional_constraints_error_flatten = "{}";
@@ -902,6 +905,10 @@ const char* const additional_constraints_free_large_allocator = "{}";
 const char* const description_fuse_filters =
     "If set, individual filters are merged into fused filters";
 const char* const additional_constraints_fuse_filters = "{}";
+const char* const description_h2_max_deallocating_streams_headroom =
+    "Separate allocated max concurrent streams.";
+const char* const additional_constraints_h2_max_deallocating_streams_headroom =
+    "{}";
 const char* const description_keep_alive_ping_timer_batch =
     "Avoid explicitly cancelling the keepalive timer. Instead adjust the "
     "callback to re-schedule itself to the next ping interval.";
@@ -913,6 +920,10 @@ const char* const additional_constraints_local_connector_secure = "{}";
 const char* const description_max_inflight_pings_strict_limit =
     "If set, the max inflight pings limit is strictly enforced.";
 const char* const additional_constraints_max_inflight_pings_strict_limit = "{}";
+const char* const description_memory_optimization_01 = "Memory Optimization";
+const char* const additional_constraints_memory_optimization_01 = "{}";
+const char* const description_memory_optimization_02 = "Memory Optimization 02";
+const char* const additional_constraints_memory_optimization_02 = "{}";
 const char* const description_metadata_publish_to_app_tag =
     "Publish metadata to the app using the kPublishToApp metadata field.";
 const char* const additional_constraints_metadata_publish_to_app_tag = "{}";
@@ -925,13 +936,12 @@ const char* const additional_constraints_multiping = "{}";
 const char* const description_otel_export_telemetry_domains =
     "Export telemetry domains in OpenTelemetry metrics.";
 const char* const additional_constraints_otel_export_telemetry_domains = "{}";
+const char* const description_ph2_perf_01 =
+    "Different performance experiments for PH2 Transport";
+const char* const additional_constraints_ph2_perf_01 = "{}";
 const char* const description_pick_first_ignore_empty_updates =
-    "Ignore empty resolutions in pick_first";
+    "Ignore empty resolutions in pick_first (delete)";
 const char* const additional_constraints_pick_first_ignore_empty_updates = "{}";
-const char* const description_pick_first_ready_to_connecting =
-    "When the subchannel goes from READY to CONNECTING or TRANSIENT_FAILURE, "
-    "pick_first goes to CONNECTING and starts a new Happy Eyeballs pass.";
-const char* const additional_constraints_pick_first_ready_to_connecting = "{}";
 const char* const description_pipelined_read_secure_endpoint =
     "Enable pipelined reads for EventEngine secure endpoints";
 const char* const additional_constraints_pipelined_read_secure_endpoint = "{}";
@@ -962,8 +972,11 @@ const char* const description_promise_based_http2_server_transport =
 const char* const additional_constraints_promise_based_http2_server_transport =
     "{}";
 const char* const description_promise_based_inproc_transport =
-    "Use promises for the in-process transport.";
+    "Use call-v3 for the in-process transport.";
 const char* const additional_constraints_promise_based_inproc_transport = "{}";
+const char* const description_promise_batch_cleanup_on_cancel =
+    "Fix completion queue tag handling during promise batch cancellation.";
+const char* const additional_constraints_promise_batch_cleanup_on_cancel = "{}";
 const char* const description_promise_filter_send_cancel_metadata =
     "Enables sending all trailing metadata fields from server side "
     "promise-based filters upon stream cancellation.";
@@ -974,11 +987,6 @@ const char* const additional_constraints_retry_in_callv3 = "{}";
 const char* const description_return_preexisting_errors =
     "Return errors that exist before the start of the call in RunHandler.";
 const char* const additional_constraints_return_preexisting_errors = "{}";
-const char* const description_rr_wrr_connect_from_random_index =
-    "RR and WRR LB policies start connecting from a random index in the "
-    "address list.";
-const char* const additional_constraints_rr_wrr_connect_from_random_index =
-    "{}";
 const char* const description_schedule_cancellation_over_write =
     "Allow cancellation op to be scheduled over a write";
 const char* const additional_constraints_schedule_cancellation_over_write =
@@ -1006,12 +1014,6 @@ const uint8_t required_experiments_secure_endpoint_read_coalescing[] = {
 const char* const description_skip_clear_peer_on_cancellation =
     "If set, skips clearing of peer string on call cancellation.";
 const char* const additional_constraints_skip_clear_peer_on_cancellation = "{}";
-const char* const description_sleep_promise_exec_ctx_removal =
-    "If set, polling the sleep promise does not rely on the ExecCtx.";
-const char* const additional_constraints_sleep_promise_exec_ctx_removal = "{}";
-const char* const description_sleep_use_non_owning_waker =
-    "If set, the sleep promise uses a non-owning waker.";
-const char* const additional_constraints_sleep_use_non_owning_waker = "{}";
 const char* const description_subchannel_connection_scaling =
     "Subchannel connection scaling support.";
 const char* const additional_constraints_subchannel_connection_scaling = "{}";
@@ -1066,14 +1068,15 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_call_tracer_send_trailing_metadata_is_an_annotation,
      additional_constraints_call_tracer_send_trailing_metadata_is_an_annotation,
      nullptr, 0, false, true},
-    {"chaotic_good_connect_deadline", description_chaotic_good_connect_deadline,
-     additional_constraints_chaotic_good_connect_deadline, nullptr, 0, true,
-     true},
     {"chaotic_good_framing_layer", description_chaotic_good_framing_layer,
      additional_constraints_chaotic_good_framing_layer, nullptr, 0, true,
      false},
+    {"chaotic_good_send_supported_features",
+     description_chaotic_good_send_supported_features,
+     additional_constraints_chaotic_good_send_supported_features, nullptr, 0,
+     false, true},
     {"error_flatten", description_error_flatten,
-     additional_constraints_error_flatten, nullptr, 0, false, false},
+     additional_constraints_error_flatten, nullptr, 0, true, false},
     {"event_engine_client", description_event_engine_client,
      additional_constraints_event_engine_client, nullptr, 0, true, false},
     {"event_engine_dns", description_event_engine_dns,
@@ -1105,6 +1108,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_free_large_allocator, nullptr, 0, false, true},
     {"fuse_filters", description_fuse_filters,
      additional_constraints_fuse_filters, nullptr, 0, false, false},
+    {"h2_max_deallocating_streams_headroom",
+     description_h2_max_deallocating_streams_headroom,
+     additional_constraints_h2_max_deallocating_streams_headroom, nullptr, 0,
+     false, true},
     {"keep_alive_ping_timer_batch", description_keep_alive_ping_timer_batch,
      additional_constraints_keep_alive_ping_timer_batch, nullptr, 0, false,
      true},
@@ -1114,6 +1121,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_max_inflight_pings_strict_limit,
      additional_constraints_max_inflight_pings_strict_limit, nullptr, 0, true,
      true},
+    {"memory_optimization_01", description_memory_optimization_01,
+     additional_constraints_memory_optimization_01, nullptr, 0, false, false},
+    {"memory_optimization_02", description_memory_optimization_02,
+     additional_constraints_memory_optimization_02, nullptr, 0, false, false},
     {"metadata_publish_to_app_tag", description_metadata_publish_to_app_tag,
      additional_constraints_metadata_publish_to_app_tag, nullptr, 0, true,
      true},
@@ -1124,13 +1135,11 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"otel_export_telemetry_domains", description_otel_export_telemetry_domains,
      additional_constraints_otel_export_telemetry_domains, nullptr, 0, false,
      true},
+    {"ph2_perf_01", description_ph2_perf_01, additional_constraints_ph2_perf_01,
+     nullptr, 0, false, true},
     {"pick_first_ignore_empty_updates",
      description_pick_first_ignore_empty_updates,
      additional_constraints_pick_first_ignore_empty_updates, nullptr, 0, false,
-     true},
-    {"pick_first_ready_to_connecting",
-     description_pick_first_ready_to_connecting,
-     additional_constraints_pick_first_ready_to_connecting, nullptr, 0, true,
      true},
     {"pipelined_read_secure_endpoint",
      description_pipelined_read_secure_endpoint,
@@ -1154,6 +1163,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_promise_based_inproc_transport,
      additional_constraints_promise_based_inproc_transport, nullptr, 0, false,
      false},
+    {"promise_batch_cleanup_on_cancel",
+     description_promise_batch_cleanup_on_cancel,
+     additional_constraints_promise_batch_cleanup_on_cancel, nullptr, 0, true,
+     true},
     {"promise_filter_send_cancel_metadata",
      description_promise_filter_send_cancel_metadata,
      additional_constraints_promise_filter_send_cancel_metadata, nullptr, 0,
@@ -1162,10 +1175,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_retry_in_callv3, nullptr, 0, false, true},
     {"return_preexisting_errors", description_return_preexisting_errors,
      additional_constraints_return_preexisting_errors, nullptr, 0, false, true},
-    {"rr_wrr_connect_from_random_index",
-     description_rr_wrr_connect_from_random_index,
-     additional_constraints_rr_wrr_connect_from_random_index, nullptr, 0, true,
-     true},
     {"schedule_cancellation_over_write",
      description_schedule_cancellation_over_write,
      additional_constraints_schedule_cancellation_over_write, nullptr, 0, false,
@@ -1186,19 +1195,13 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_skip_clear_peer_on_cancellation,
      additional_constraints_skip_clear_peer_on_cancellation, nullptr, 0, false,
      true},
-    {"sleep_promise_exec_ctx_removal",
-     description_sleep_promise_exec_ctx_removal,
-     additional_constraints_sleep_promise_exec_ctx_removal, nullptr, 0, false,
-     true},
-    {"sleep_use_non_owning_waker", description_sleep_use_non_owning_waker,
-     additional_constraints_sleep_use_non_owning_waker, nullptr, 0, true, true},
     {"subchannel_connection_scaling", description_subchannel_connection_scaling,
      additional_constraints_subchannel_connection_scaling, nullptr, 0, false,
      true},
     {"subchannel_wrapper_cleanup_on_orphan",
      description_subchannel_wrapper_cleanup_on_orphan,
      additional_constraints_subchannel_wrapper_cleanup_on_orphan, nullptr, 0,
-     false, true},
+     true, true},
     {"tcp_frame_size_tuning", description_tcp_frame_size_tuning,
      additional_constraints_tcp_frame_size_tuning, nullptr, 0, false, true},
     {"tcp_rcv_lowat", description_tcp_rcv_lowat,

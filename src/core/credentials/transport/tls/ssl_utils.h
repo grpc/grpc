@@ -41,6 +41,7 @@
 #include "src/core/tsi/transport_security_interface.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "absl/status/status.h"
+#include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 
 // --- Util ---
@@ -94,6 +95,7 @@ grpc_security_status grpc_ssl_tsi_client_handshaker_factory_init(
     tsi::TlsSessionKeyLoggerCache::TlsSessionKeyLogger* tls_session_key_logger,
     const char* crl_directory,
     std::shared_ptr<grpc_core::experimental::CrlProvider> crl_provider,
+    const std::vector<grpc_tls_key_exchange_group>& key_exchange_groups,
     tsi_ssl_client_handshaker_factory** handshaker_factory);
 
 grpc_security_status grpc_ssl_tsi_server_handshaker_factory_init(
@@ -104,6 +106,7 @@ grpc_security_status grpc_ssl_tsi_server_handshaker_factory_init(
     tsi::TlsSessionKeyLoggerCache::TlsSessionKeyLogger* tls_session_key_logger,
     const char* crl_directory, bool send_client_ca_list,
     std::shared_ptr<grpc_core::experimental::CrlProvider> crl_provider,
+    const std::vector<grpc_tls_key_exchange_group>& key_exchange_groups,
     tsi_ssl_server_handshaker_factory** handshaker_factory);
 
 // Exposed for testing only.

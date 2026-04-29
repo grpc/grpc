@@ -23,6 +23,7 @@
 #include "src/core/ext/transport/chaotic_good/tcp_frame_transport.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/event_engine/extensions/tcp_trace.h"
+#include "src/core/lib/experiments/experiments.h"
 #include "absl/container/flat_hash_set.h"
 
 namespace grpc_core {
@@ -203,6 +204,11 @@ class Config {
   void PrepareOutgoingSettings(chaotic_good_frame::Settings& settings) const {
     settings.set_alignment(decode_alignment_);
     settings.set_max_chunk_size(max_recv_chunk_size_);
+    if (IsChaoticGoodSendSupportedFeaturesEnabled()) {
+      for (auto feature : supported_features_) {
+        settings.add_supported_features(feature);
+      }
+    }
   }
 
   // Receive a settings frame from our peer and integrate its settings with our

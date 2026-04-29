@@ -398,11 +398,15 @@ void WindowsEventEngine::OnConnectCompleted(
       erased_handles =
           known_connection_handles_.erase(state->connection_handle());
     }
-    if (erased_handles != 1 || !Cancel(state->timer_handle())) {
+    if (erased_handles != 1) {
       GRPC_TRACE_LOG(event_engine, INFO)
           << "Not accepting connection since the deadline timer has fired";
       return;
     }
+    // Cancel the deadline timer, to avoid having a dangling handle. It is OK
+    // if this fails, meaning that the deadline timer has already fired,
+    // because it won't cancel the connection attempt.
+    Cancel(state->timer_handle());
     // Release refs held by the deadline timer.
     state->AbortDeadlineTimer();
     const auto& overlapped_result = state->socket()->write_info()->result();

@@ -88,7 +88,20 @@ _INTERESTING = {
 _SCENARIOS = {
     "default": [],
     "minstack": ["--scenario_config=minstack"],
-    "chaotic_good": ["--scenario_config=chaotic_good"],
+    # TODO(aananthv)(b/500562759): Figure out why chaotic good test cases are
+    # taking time.
+    # The reason for disabling:
+    # For the call Benchmark (server.cc and client.cc)
+    # Client: Uses Chaotic Good transport. It processes the --chaotic_good flag
+    # and adds the GRPC_ARG_PREFERRED_TRANSPORT_PROTOCOLS argument to args_vec
+    # before creating the channel.
+    #
+    # Server: Falls back to chttp2 (due to a bug). The server binary receives
+    # the --chaotic_good flag from the runner, but it pushes the
+    # GRPC_ARG_PREFERRED_TRANSPORT_PROTOCOLS argument to args_vec after it has
+    # already called grpc_server_create with the older snapshot of arguments.
+    #
+    # "chaotic_good": ["--scenario_config=chaotic_good"],
 }
 
 _BENCHMARKS = {

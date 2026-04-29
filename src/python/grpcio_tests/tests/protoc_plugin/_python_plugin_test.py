@@ -40,7 +40,7 @@ SERVICER_IDENTIFIER = "TestServiceServicer"
 ADD_SERVICER_TO_SERVER_IDENTIFIER = "add_TestServiceServicer_to_server"
 
 
-class _ServicerMethods(object):
+class _ServicerMethods:
     def __init__(self):
         self._condition = threading.Condition()
         self._paused = False

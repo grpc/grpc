@@ -615,12 +615,6 @@ void PickFirst::GoIdle() {
   UnsetSelectedSubchannel();
   // Drop the current subchannel list, if any.
   subchannel_list_.reset();
-  if (!IsPickFirstReadyToConnectingEnabled()) {
-    // Request a re-resolution.
-    // TODO(roth): We may want to request re-resolution in
-    // ExitIdleLocked() instead.
-    channel_control_helper()->RequestReresolution();
-  }
   // Enter idle.
   UpdateState(GRPC_CHANNEL_IDLE, absl::OkStatus(),
               MakeRefCounted<QueuePicker>(Ref(DEBUG_LOCATION, "QueuePicker")));
@@ -785,17 +779,14 @@ void PickFirst::SubchannelList::SubchannelData::SubchannelState::
   stats_plugins.AddCounter(kMetricDisconnections, 1,
                            {pick_first_->channel_control_helper()->GetTarget()},
                            {});
-  if (IsPickFirstReadyToConnectingEnabled()) {
-    // TODO(roth): We may want to request re-resolution in
-    // ExitIdleLocked() instead, at least if we go IDLE below.
-    pick_first_->channel_control_helper()->RequestReresolution();
-  }
+  // TODO(roth): We may want to request re-resolution in
+  // ExitIdleLocked() instead, at least if we go IDLE below.
+  pick_first_->channel_control_helper()->RequestReresolution();
   // If the subchannel went to CONNECTING or TRANSIENT_FAILURE, we go
   // back to CONNECTING and start a new Happy Eyeballs pass.
   // Otherwise, go IDLE.
-  if (IsPickFirstReadyToConnectingEnabled() &&
-      (new_state == GRPC_CHANNEL_CONNECTING ||
-       new_state == GRPC_CHANNEL_TRANSIENT_FAILURE)) {
+  if (new_state == GRPC_CHANNEL_CONNECTING ||
+      new_state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
     pick_first_->UpdateState(GRPC_CHANNEL_CONNECTING, absl::OkStatus(),
                              MakeRefCounted<QueuePicker>(nullptr));
     pick_first_->AttemptToConnectUsingLatestUpdateArgsLocked();

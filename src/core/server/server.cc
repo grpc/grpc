@@ -72,6 +72,7 @@
 #include "src/core/lib/surface/legacy_channel.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/error_utils.h"
+#include "src/core/telemetry/metrics.h"
 #include "src/core/telemetry/stats.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/debug_location.h"
@@ -1192,13 +1193,14 @@ Server::MakeCallDestination(const ChannelArgs& args,
 
 Server::Server(const ChannelArgs& args)
     : channelz::DataSource(CreateChannelzNode(args)),
-      channel_args_(args),
+      channel_args_(args.SetObject(
+          GlobalStatsPluginRegistry::GetStatsPluginsForServer(args))),
       channelz_node_(channelz::DataSource::channelz_node() == nullptr
                          ? nullptr
                          : channelz::DataSource::channelz_node()
                                ->RefAsSubclass<channelz::ServerNode>()),
-      server_call_tracer_factory_(ServerCallTracerFactory::Get(args)),
-      compression_options_(CompressionOptionsFromChannelArgs(args)),
+      server_call_tracer_factory_(ServerCallTracerFactory::Get(channel_args_)),
+      compression_options_(CompressionOptionsFromChannelArgs(channel_args_)),
       max_time_in_pending_queue_(Duration::Seconds(
           channel_args_
               .GetInt(GRPC_ARG_SERVER_MAX_UNREQUESTED_TIME_IN_SERVER_SECONDS)

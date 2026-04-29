@@ -228,7 +228,6 @@ grpc_cc_test(
         "//:orphanable",
         "//:ref_counted_ptr",
         "//src/core:channel_args",
-        "//src/core:experiments",
         "//src/core:grpc_lb_policy_round_robin",
         "//test/core/test_util:grpc_test_util",
     ],
@@ -345,6 +344,28 @@ grpc_cc_test(
         "//src/core:lb_policy",
         "//src/core:xds_config",
         "//src/core:xds_health_status",
+        "//test/core/test_util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "cds_test",
+    srcs = ["cds_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    tags = [
+        "lb_unit_test",
+    ],
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//:grpc_base",
+        "//:ref_counted_ptr",
+        "//src/core:grpc_lb_policy_cds",
+        "//src/core:xds_config",
         "//test/core/test_util:grpc_test_util",
     ],
 )

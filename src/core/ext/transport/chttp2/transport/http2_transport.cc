@@ -338,7 +338,7 @@ ProcessIncomingDataFrameFlowControl(Http2FrameHeader& frame_header,
       return action;
     } else {
       chttp2::StreamFlowControl::IncomingUpdateContext stream_fc(
-          &stream->flow_control);
+          &stream->GetStreamFlowControl());
       absl::Status fc_status = stream_fc.RecvData(frame_header.length);
       chttp2::FlowControlAction action = stream_fc.MakeAction();
       GRPC_HTTP2_COMMON_DLOG
@@ -369,7 +369,7 @@ bool ProcessIncomingWindowUpdateFrameFlowControl(
           << "ProcessIncomingWindowUpdateFrameFlowControl stream "
           << frame.stream_id << " increment " << frame.increment;
       chttp2::StreamFlowControl::OutgoingUpdateContext fc_update(
-          &stream->flow_control);
+          &stream->GetStreamFlowControl());
       fc_update.RecvUpdate(frame.increment);
     } else {
       // If stream id is non zero, and stream is nullptr, maybe the stream was
@@ -420,7 +420,7 @@ void MaybeAddStreamWindowUpdateFrame(Stream& stream,
                          << " CanSendWindowUpdateFrames="
                          << stream.CanSendWindowUpdateFrames();
   if (stream.CanSendWindowUpdateFrames()) {
-    const uint32_t increment = stream.flow_control.MaybeSendUpdate();
+    const uint32_t increment = stream.GetStreamFlowControl().MaybeSendUpdate();
     GRPC_HTTP2_COMMON_DLOG
         << "MaybeAddStreamWindowUpdateFrame MaybeSendUpdate { "
         << stream.GetStreamId() << ", " << increment << " }"
@@ -431,44 +431,6 @@ void MaybeAddStreamWindowUpdateFrame(Stream& stream,
           Http2WindowUpdateFrame{stream.GetStreamId(), increment});
     }
   }
-}
-
-// /////////////////////////////////////////////////////////////////////////////
-// Header and Continuation frame processing helpers
-
-Http2Status ParseAndDiscardHeaders(HPackParser& parser, SliceBuffer&& buffer,
-                                   HeaderAssembler::ParseHeaderArgs args,
-                                   Stream* stream,
-                                   Http2Status&& original_status) {
-  GRPC_HTTP2_COMMON_DLOG << "ParseAndDiscardHeaders buffer "
-                            "size: "
-                         << buffer.Length() << " args: " << args.DebugString()
-                         << " stream_id: "
-                         << (stream == nullptr ? 0 : stream->GetStreamId())
-                         << " original_status: "
-                         << original_status.DebugString();
-
-  if (stream != nullptr) {
-    // Parse all the data in the header assembler
-    Http2Status result = stream->header_assembler.ParseAndDiscardHeaders(
-        parser, args.is_initial_metadata, args.max_header_list_size_soft_limit,
-        args.max_header_list_size_hard_limit);
-    if (!result.IsOk()) {
-      GRPC_DCHECK(result.GetType() ==
-                  Http2Status::Http2ErrorType::kConnectionError);
-      LOG(ERROR) << "Connection Error: " << result;
-      return result;
-    }
-  }
-
-  if (buffer.Length() == 0) {
-    return std::move(original_status);
-  }
-
-  Http2Status status = HeaderAssembler::ParseHeader(
-      parser, std::move(buffer), /*grpc_metadata_batch=*/nullptr, args);
-
-  return (status.IsOk()) ? std::move(original_status) : std::move(status);
 }
 
 }  // namespace http2

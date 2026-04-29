@@ -575,7 +575,7 @@ class StreamStreamClientInterceptor(abc.ABC):
 ############  Authentication & Authorization Interfaces & Classes  #############
 
 
-class ChannelCredentials(object):
+class ChannelCredentials:
     """An encapsulation of the data required to create a secure Channel.
 
     This class has no supported interface - it exists to define the type of its
@@ -588,7 +588,7 @@ class ChannelCredentials(object):
         self._credentials = credentials
 
 
-class CallCredentials(object):
+class CallCredentials:
     """An encapsulation of the data required to assert an identity over a call.
 
     A CallCredentials has to be used with secure Channel, otherwise the
@@ -644,7 +644,7 @@ class AuthMetadataPlugin(abc.ABC):
         raise NotImplementedError()
 
 
-class ServerCredentials(object):
+class ServerCredentials:
     """An encapsulation of the data required to open a secure port on a Server.
 
     This class has no supported interface - it exists to define the type of its
@@ -655,7 +655,7 @@ class ServerCredentials(object):
         self._credentials = credentials
 
 
-class ServerCertificateConfiguration(object):
+class ServerCertificateConfiguration:
     """A certificate configuration for use with an SSL-enabled Server.
 
     Instances of this class can be returned in the certificate configuration

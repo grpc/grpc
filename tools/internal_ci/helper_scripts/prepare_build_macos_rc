@@ -66,6 +66,7 @@ brew config
 if $is_sonoma; then
   brew install cmake
   brew install gnupg
+  brew install ccache
   export PATH="/opt/homebrew/bin::${PATH}"
   cmake --version
 fi
@@ -154,14 +155,6 @@ then
   # python
   time pip install --user -r $DIR/requirements.macos.txt
   time pip install --user --upgrade virtualenv Mako tox setuptools==77.0.1 twisted
-
-  # Install Python 3.9 if it doesn't exist
-  if [ ! -f "/usr/local/bin/python3.9" ]; then
-    time curl -O https://www.python.org/ftp/python/3.9.10/python-3.9.10-macosx10.9.pkg
-    echo "732bc5c95ae127dfb6fb1bcf683509ad20c558152b63b8d5f651246f6bdfc8da  python-3.9.10-macosx10.9.pkg" > /tmp/python_installer_checksum.sha256
-    shasum -c /tmp/python_installer_checksum.sha256
-    time sudo installer -pkg ./python-3.9.10-macosx10.9.pkg -target /
-  fi
 
   # Install Python 3.10 if it doesn't exist
   if [ ! -f "/usr/local/bin/python3.10" ]; then

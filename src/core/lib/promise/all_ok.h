@@ -17,17 +17,14 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <tuple>
-#include <variant>
+#include <type_traits>
+#include <utility>
 
 #include "src/core/lib/promise/detail/join_state.h"
 #include "src/core/lib/promise/detail/promise_factory.h"
-#include "src/core/lib/promise/map.h"
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/promise/status_flag.h"
-#include "absl/meta/type_traits.h"
 #include "absl/status/status.h"
-#include "absl/status/statusor.h"
 
 namespace grpc_core {
 // AllOk promise combinator.
@@ -93,8 +90,9 @@ struct AllOkTraits {
 template <typename Result, typename... Promises>
 class AllOk {
  public:
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION explicit AllOk(Promises... promises)
-      : state_(std::move(promises)...) {}
+  template <typename... Args>
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION explicit AllOk(Args&&... args)
+      : state_(std::forward<Args>(args)...) {}
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto operator()() {
     return state_.PollOnce();
   }
@@ -114,18 +112,20 @@ class AllOk {
 // If any fail, cancel the rest and return the failure.
 // If all succeed, return Ok.
 template <typename Result, typename... Promises>
-GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline auto AllOk(Promises... promises) {
-  return promise_detail::AllOk<Result, Promises...>(std::move(promises)...);
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline auto AllOk(Promises&&... promises) {
+  return promise_detail::AllOk<Result, std::decay_t<Promises>...>(
+      std::forward<Promises>(promises)...);
 }
 
 // Construct a promise for each element of the set, then run them all.
 // If any fail, cancel the rest and return the failure.
 // If all succeed, return Ok.
 template <typename Result, typename Iter, typename FactoryFn>
-inline auto AllOkIter(Iter begin, Iter end, FactoryFn factory_fn) {
+inline auto AllOkIter(Iter begin, Iter end, FactoryFn&& factory_fn) {
   using Factory =
-      promise_detail::RepeatedPromiseFactory<decltype(*begin), FactoryFn>;
-  Factory factory(std::move(factory_fn));
+      promise_detail::RepeatedPromiseFactory<decltype(*begin),
+                                             std::decay_t<FactoryFn>>;
+  Factory factory(std::forward<FactoryFn>(factory_fn));
   using Promise = typename Factory::Promise;
   std::vector<Promise> promises;
   std::vector<bool> done;

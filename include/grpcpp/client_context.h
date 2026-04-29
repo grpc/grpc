@@ -36,6 +36,8 @@
 
 #include <grpc/impl/compression_types.h>
 #include <grpc/impl/propagation_bits.h>
+#include <grpcpp/impl/allowed_call_context_types.h>
+#include <grpcpp/impl/call_context_registry.h>
 #include <grpcpp/impl/create_auth_context.h>
 #include <grpcpp/impl/metadata_map.h>
 #include <grpcpp/impl/rpc_method.h>
@@ -275,6 +277,12 @@ class ClientContext {
     deadline_ = deadline_tp.raw_time();
   }
 
+  template <typename T>
+  void SetContext(T element) {
+    impl::CallContextRegistry::SetContext(std::move(element),
+                                          context_elements_);
+  }
+
   /// Trigger wait-for-ready or not on this request.
   /// See https://github.com/grpc/grpc/blob/master/doc/wait-for-ready.md.
   /// If set, if an RPC is made when a channel's connectivity state is
@@ -501,6 +509,7 @@ class ClientContext {
   std::multimap<std::string, std::string> send_initial_metadata_;
   mutable grpc::internal::MetadataMap recv_initial_metadata_;
   mutable grpc::internal::MetadataMap trailing_metadata_;
+  impl::CallContextRegistry::ElementList context_elements_ = nullptr;
 
   grpc_call* propagate_from_call_;
   PropagationOptions propagation_options_;

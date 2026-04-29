@@ -16,3 +16,13 @@
 
 cdef extern from "absl/log/initialize.h" namespace "absl":
   void InitializeLog() nogil
+
+cdef extern from "absl/base/log_severity.h" namespace "absl":
+  cpdef enum class LogSeverityAtLeast(int):
+    kInfo = 0
+    kWarning = 1
+    kError = 2
+    kFatal = 3
+
+cdef extern from "absl/log/globals.h" namespace "absl":
+  void SetStderrThreshold(LogSeverityAtLeast threshold) nogil

@@ -34,6 +34,7 @@
 #include "envoy/extensions/transport_sockets/tls/v3/tls.upb.h"
 #include "envoy/type/matcher/v3/regex.pb.h"
 #include "envoy/type/matcher/v3/string.pb.h"
+#include "envoy/type/v3/percent.upb.h"
 #include "google/protobuf/any.upb.h"
 #include "google/protobuf/duration.upb.h"
 #include "re2/re2.h"
@@ -176,6 +177,52 @@ TEST_F(DurationTest, ValuesTooHigh) {
             "field:nanos error:value must be in the range [0, 999999999]; "
             "field:seconds error:value must be in the range [0, 315576000000]]")
       << status;
+}
+
+//
+// ParseFractionalPercent() tests
+//
+
+using FractionalPercentTest = XdsCommonTypesTest;
+
+TEST_F(FractionalPercentTest, AlwaysIfUnset) {
+  EXPECT_EQ(1000000, ParseFractionalPercent(nullptr));
+}
+
+TEST_F(FractionalPercentTest, PerHundred) {
+  envoy_type_v3_FractionalPercent* proto =
+      envoy_type_v3_FractionalPercent_new(upb_arena_.ptr());
+  envoy_type_v3_FractionalPercent_set_numerator(proto, 30);
+  envoy_type_v3_FractionalPercent_set_denominator(
+      proto, envoy_type_v3_FractionalPercent_HUNDRED);
+  EXPECT_EQ(300000, ParseFractionalPercent(proto));
+}
+
+TEST_F(FractionalPercentTest, PerTenThousand) {
+  envoy_type_v3_FractionalPercent* proto =
+      envoy_type_v3_FractionalPercent_new(upb_arena_.ptr());
+  envoy_type_v3_FractionalPercent_set_numerator(proto, 30);
+  envoy_type_v3_FractionalPercent_set_denominator(
+      proto, envoy_type_v3_FractionalPercent_TEN_THOUSAND);
+  EXPECT_EQ(3000, ParseFractionalPercent(proto));
+}
+
+TEST_F(FractionalPercentTest, PerMillion) {
+  envoy_type_v3_FractionalPercent* proto =
+      envoy_type_v3_FractionalPercent_new(upb_arena_.ptr());
+  envoy_type_v3_FractionalPercent_set_numerator(proto, 30);
+  envoy_type_v3_FractionalPercent_set_denominator(
+      proto, envoy_type_v3_FractionalPercent_MILLION);
+  EXPECT_EQ(30, ParseFractionalPercent(proto));
+}
+
+TEST_F(FractionalPercentTest, ClampsValue) {
+  envoy_type_v3_FractionalPercent* proto =
+      envoy_type_v3_FractionalPercent_new(upb_arena_.ptr());
+  envoy_type_v3_FractionalPercent_set_numerator(proto, 105);
+  envoy_type_v3_FractionalPercent_set_denominator(
+      proto, envoy_type_v3_FractionalPercent_HUNDRED);
+  EXPECT_EQ(1000000, ParseFractionalPercent(proto));
 }
 
 //
@@ -1159,18 +1206,31 @@ TEST_F(ParseXdsGrpcServiceTest, InvalidHeaderKeyAndValue) {
   auto* header_value = grpc_service.add_initial_metadata();
   header_value->set_key("Foo");
   header_value->set_value("\x1f");
+  header_value = grpc_service.add_initial_metadata();
+  header_value->set_key("host");
+  header_value->set_value("x");
+  header_value = grpc_service.add_initial_metadata();
+  header_value->set_key(":path");
+  header_value->set_value("x");
+  header_value = grpc_service.add_initial_metadata();
+  header_value->set_key("grpc-foo");
+  header_value->set_value("x");
   auto* google_grpc = grpc_service.mutable_google_grpc();
   google_grpc->set_target_uri("dns:server.example.com");
   google_grpc->add_channel_credentials_plugin()->PackFrom(
       envoy::extensions::grpc_service::channel_credentials::insecure::v3::
           InsecureCredentials());
   auto xds_grpc_service = Parse(grpc_service);
-  EXPECT_EQ(xds_grpc_service.status(),
-            absl::InvalidArgumentError("validation failed: ["
-                                       "field:initial_metadata[0].key "
-                                       "error:Illegal header key; "
-                                       "field:initial_metadata[0].value "
-                                       "error:Illegal header value]"));
+  EXPECT_EQ(
+      xds_grpc_service.status(),
+      absl::InvalidArgumentError(
+          "validation failed: ["
+          "field:initial_metadata[0].key error:Illegal header key; "
+          "field:initial_metadata[0].value error:Illegal header value; "
+          "field:initial_metadata[1].key error:header \"host\" not allowed; "
+          "field:initial_metadata[2].key error:header \":path\" not allowed; "
+          "field:initial_metadata[3].key "
+          "error:header \"grpc-foo\" not allowed]"));
 }
 
 TEST_F(ParseXdsGrpcServiceTest, RawHeaderValueForBinaryHeader) {
@@ -1398,6 +1458,17 @@ TEST(HeaderMutationRulesTest, DisallowExpressionOverridesAllowExpression) {
   // "stuff" matches neither. Should be disallowed (because allow_expression is
   // set).
   EXPECT_FALSE(rules.IsMutationAllowed("stuff"));
+}
+
+TEST(HeaderMutationRulesTest, SomeHeadersNeverAllowed) {
+  HeaderMutationRules rules;
+  rules.allow_expression = std::make_unique<RE2>(".*");
+  EXPECT_TRUE(rules.IsMutationAllowed("foo"));
+  EXPECT_TRUE(rules.IsMutationAllowed("bar"));
+  // Still does not allow certain headers.
+  EXPECT_FALSE(rules.IsMutationAllowed("host"));
+  EXPECT_FALSE(rules.IsMutationAllowed(":path"));
+  EXPECT_FALSE(rules.IsMutationAllowed("grpc-foo"));
 }
 
 }  // namespace

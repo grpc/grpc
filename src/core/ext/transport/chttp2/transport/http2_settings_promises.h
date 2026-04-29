@@ -266,7 +266,14 @@ class SettingsPromiseManager final : public RefCounted<SettingsPromiseManager> {
   // ChannelZ and Security Frame Stuff
 
   channelz::PropertyGrid ChannelzProperties() const {
-    return settings_.ChannelzProperties();
+    return settings_.ChannelzProperties().SetColumn(
+        "Counters",
+        channelz::PropertyList().Set("initial_window_size_increase_count",
+                                     initial_window_size_increase_count_));
+  }
+
+  void IncrementInitialWindowSizeIncreaseCount() {
+    ++initial_window_size_increase_count_;
   }
 
   bool IsSecurityFrameExpected() const {
@@ -422,6 +429,9 @@ class SettingsPromiseManager final : public RefCounted<SettingsPromiseManager> {
     kReady,
   };
   SettingsState state_;
+
+  // Counters
+  size_t initial_window_size_increase_count_ = 0;
 };
 
 }  // namespace grpc_core
