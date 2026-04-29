@@ -250,7 +250,7 @@ class FilterChainImpl final : public FilterChain {
 class FilterChainBuilderImpl final : public FilterChainBuilder {
  public:
   FilterChainBuilderImpl(const ChannelArgs& channel_args,
-                         Blackboard* blackboard,
+                         const Blackboard* blackboard,
                          RefCountedPtr<UnstartedCallDestination> destination)
       : channel_args_(channel_args),
         blackboard_(blackboard),
@@ -295,12 +295,10 @@ void ServerConfigSelectorInterceptor::OnConfigSelectorUpdate(
     config_selector_.Set(config_selector.status());
     return;
   }
-  FilterChainBuilderImpl builder(
-      args_,
-      /*blackboard=*/nullptr,  // FIXME: plumb blackboard?
-      wrapped_destination());
   auto state = MakeRefCounted<ConfigSelectorState>();
   state->config_selector = std::move(*config_selector);
+  FilterChainBuilderImpl builder(
+      args_, state->config_selector->blackboard(), wrapped_destination());
   state->connection_state = state->config_selector->BuildFilterChains(builder);
   config_selector_.Set(std::move(state));
 }

@@ -325,6 +325,11 @@ class XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
           http_filters);
   ~XdsServerConfigSelector() override = default;
 
+  const Blackboard* blackboard() const override {
+    // FIXME: implement
+    return nullptr;
+  }
+
   std::unique_ptr<ConnectionState> BuildFilterChains(
       FilterChainBuilder& builder) override {
     // FIXME: implement

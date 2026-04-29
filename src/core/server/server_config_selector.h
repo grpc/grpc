@@ -44,6 +44,9 @@ class ServerConfigSelector : public RefCounted<ServerConfigSelector> {
     virtual ~ConnectionState() = default;
   };
 
+  // Returns the blackboard.
+  virtual const Blackboard* blackboard() const = 0;
+
   // The server will call this when the provider returns a new
   // ServerConfigSelector to initialize the filter chains that the
   // ServerConfigSelector may need.
