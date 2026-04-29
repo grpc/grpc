@@ -174,7 +174,7 @@ cdef class ReceiveMessageOperation(Operation):
           grpc_slice_unref(message_slice)
 
         grpc_byte_buffer_reader_destroy(&message_reader)
-        self._message = b"".join(chunks) 
+        self._message = b"".join(chunks)
       else:
         self._message = None
       grpc_byte_buffer_destroy(self._c_message_byte_buffer)

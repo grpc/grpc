@@ -17,7 +17,7 @@ set -ex
 
 GIT_ROOT="$(pwd)"
 
-cd test/bzlmod/
+cd test/bazel_build_out_of_tree/bzlmod_test
 
 # Build the same targets as .bcr/presubmit.yml so we are more confident with
 # releases.

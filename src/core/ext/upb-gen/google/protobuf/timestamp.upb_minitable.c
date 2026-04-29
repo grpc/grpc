@@ -22,16 +22,10 @@ static const upb_MiniTableField google_protobuf_Timestamp__fields[2] = {
 const upb_MiniTable google__protobuf__Timestamp_msg_init = {
   NULL,
   &google_protobuf_Timestamp__fields[0],
-  24, 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
+  24, 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "google.protobuf.Timestamp",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x001000003f000008, &upb_psv8_1bt},
-    {0x000800003f000010, &upb_psv4_1bt},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-  })
 };
 
 const upb_MiniTable* google__protobuf__Timestamp_msg_init_ptr = &google__protobuf__Timestamp_msg_init;

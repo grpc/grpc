@@ -494,7 +494,7 @@ inline void UnrefDestroy::operator()(const Arena* arena) const {
 namespace promise_detail {
 
 template <typename T>
-class Context<T, absl::void_t<decltype(ArenaContextType<T>::Destroy)>> {
+class Context<T, std::void_t<decltype(ArenaContextType<T>::Destroy)>> {
  public:
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static T* get() {
     return GetContext<Arena>()->GetContext<T>();

@@ -15,9 +15,8 @@ settings:
   core_version: 53.0.0
   csharp_major_version: 2
   g_stands_for: graphic
-  protobuf_version: 4.31.1
+  protobuf_version: 4.33.5
   supported_python_versions:
-  - '3.9'
   - '3.10'
   - '3.11'
   - '3.12'
@@ -136,7 +135,7 @@ configs:
 defaults:
   boringssl:
     CFLAGS: -g
-    CPPFLAGS: -Ithird_party/boringssl-with-bazel/src/include -fvisibility=hidden -DOPENSSL_NO_ASM
+    CPPFLAGS: -Ithird_party/boringssl-with-bazel/include -fvisibility=hidden -DOPENSSL_NO_ASM
       -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
     CXXFLAGS: -fno-exceptions
   cares:
