@@ -228,6 +228,8 @@ class XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager final
   }
 
  private:
+  class L4FilterChain;
+
   class RouteConfigWatcher;
   struct RdsUpdateState {
     RouteConfigWatcher* watcher;
@@ -272,6 +274,36 @@ class XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager final
   std::map<const XdsListenerResource::FilterChainData*,
            RefCountedPtr<XdsCertificateProvider>>
       certificate_providers_map_ ABSL_GUARDED_BY(mu_);
+
+  std::map<const XdsListenerResource::FilterChainData*, L4FilterChain>
+      l4_filter_chains_ ABSL_GUARDED_BY(mu_);
+};
+
+class XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
+    L4FilterChain final {
+ public:
+// FIXME: finish this
+
+ private:
+  class RouteConfigWatcher;
+  class XdsServerConfigSelector;
+
+  void OnRouteConfigUpdate(
+      absl::StatusOr<std::shared_ptr<const XdsRouteConfigResource>>
+          route_config);
+
+  RefCountedPtr<GrpcXdsClient> xds_client_;
+
+  RefCountedPtr<XdsCertificateProvider> certificate_provider_;
+
+  RouteConfigWatcher* watcher_ = nullptr;
+  absl::StatusOr<std::shared_ptr<const XdsRouteConfigResource>> route_config_ =
+      nullptr;
+
+  RefCountedPtr<const Blackboard> blackboard_;
+// FIXME: lifetime issues?
+  Observable<absl::StatusOr<RefCountedPtr<XdsServerConfigSelector>>>
+      config_selector_observable_;
 };
 
 // A watcher implementation for listening on RDS updates referenced to by a
