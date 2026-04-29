@@ -38,12 +38,17 @@ namespace grpc_core {
 // server-side call based on the received initial metadata.
 class ServerConfigSelector : public RefCounted<ServerConfigSelector> {
  public:
-  ~ServerConfigSelector() override = default;
+  // A base class for connection state.
+  class ConnectionState {
+   public:
+    virtual ~ConnectionState() = default;
+  };
 
   // The server will call this when the provider returns a new
   // ServerConfigSelector to initialize the filter chains that the
   // ServerConfigSelector may need.
-  virtual void BuildFilterChains(FilterChainBuilder& builder) = 0;
+  virtual std::unique_ptr<ConnectionState> BuildFilterChains(
+      FilterChainBuilder& builder) = 0;
 
   // Configuration to apply to an incoming call
   // TODO(roth): When we remove the xds_server_filter_chain_per_route
@@ -57,7 +62,7 @@ class ServerConfigSelector : public RefCounted<ServerConfigSelector> {
 
   // Returns the CallConfig to apply to a call based on the incoming \a metadata
   virtual absl::StatusOr<CallConfig> GetCallConfig(
-      grpc_metadata_batch* metadata) = 0;
+      const ConnectionState* state, grpc_metadata_batch* metadata) = 0;
 };
 
 // ServerConfigSelectorProvider allows for subscribers to watch for updates on

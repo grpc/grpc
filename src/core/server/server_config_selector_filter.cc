@@ -153,7 +153,8 @@ absl::Status ServerConfigSelectorFilter::Call::OnClientInitialMetadata(
       "ServerConfigSelectorFilter::Call::OnClientInitialMetadata");
   auto sel = filter->config_selector();
   if (!sel.ok()) return sel.status();
-  auto call_config = sel.value()->GetCallConfig(&md);
+  auto call_config =
+      sel.value()->GetCallConfig(/*connection_state=*/nullptr, &md);
   if (!call_config.ok()) {
     return absl::UnavailableError(StatusToString(call_config.status()));
   }
@@ -185,10 +186,7 @@ class ServerConfigSelectorInterceptor::Watcher final
   void OnServerConfigSelectorUpdate(
       absl::StatusOr<RefCountedPtr<ServerConfigSelector>> config_selector)
       override {
-    if (config_selector.ok()) {
-      interceptor_->BuildDynamicFilterChains(**config_selector);
-    }
-    interceptor_->config_selector_.Set(std::move(config_selector));
+    interceptor_->OnConfigSelectorUpdate(std::move(config_selector));
   }
 
  private:
@@ -230,11 +228,10 @@ ServerConfigSelectorInterceptor::ServerConfigSelectorInterceptor(
       WeakRef().TakeAsSubclass<ServerConfigSelectorInterceptor>());
   auto config_selector =
       server_config_selector_provider_->Watch(std::move(watcher));
-  if (config_selector.ok()) BuildDynamicFilterChains(**config_selector);
   // FIXME: possible race condition?
   // FIXME: maybe just use observable in provider instead of
   // callback-based watcher API?
-  config_selector_.Set(std::move(config_selector));
+  OnConfigSelectorUpdate(std::move(config_selector));
 }
 
 namespace {
@@ -292,13 +289,20 @@ class FilterChainBuilderImpl final : public FilterChainBuilder {
 
 }  // namespace
 
-void ServerConfigSelectorInterceptor::BuildDynamicFilterChains(
-    ServerConfigSelector& config_selector) {
+void ServerConfigSelectorInterceptor::OnConfigSelectorUpdate(
+    absl::StatusOr<RefCountedPtr<ServerConfigSelector>> config_selector) {
+  if (!config_selector.ok()) {
+    config_selector_.Set(config_selector.status());
+    return;
+  }
   FilterChainBuilderImpl builder(
       args_,
       /*blackboard=*/nullptr,  // FIXME: plumb blackboard?
       wrapped_destination());
-  config_selector.BuildFilterChains(builder);
+  auto state = MakeRefCounted<ConfigSelectorState>();
+  state->config_selector = std::move(*config_selector);
+  state->connection_state = state->config_selector->BuildFilterChains(builder);
+  config_selector_.Set(std::move(state));
 }
 
 // FIXME: add a new tracer here
@@ -318,18 +322,18 @@ void ServerConfigSelectorInterceptor::InterceptCall(
                   self->config_selector_.Next(nullptr),
                   [self, handler = std::move(handler),
                    metadata = std::move(metadata)](
-                      absl::StatusOr<RefCountedPtr<ServerConfigSelector>>
-                          config_selector) mutable {
-                    if (!config_selector.ok()) {
+                      absl::StatusOr<RefCountedPtr<ConfigSelectorState>>
+                          state) mutable {
+                    if (!state.ok()) {
                       GRPC_TRACE_LOG(channel, INFO)
                           << "[server_config_selector_interceptor "
                           << self.get() << "]: config selector is error: "
-                          << config_selector.status();
-                      return config_selector.status();
+                          << state.status();
+                      return state.status();
                     }
                     // Use config selector to choose dynamic filter stack.
-                    auto call_config =
-                        (*config_selector)->GetCallConfig(metadata.get());
+                    auto call_config = (*state)->config_selector->GetCallConfig(
+                        (*state)->connection_state.get(), metadata.get());
                     if (!call_config.ok()) {
                       GRPC_TRACE_LOG(channel, INFO)
                           << "[server_config_selector_interceptor "

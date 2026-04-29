@@ -65,11 +65,15 @@ class ServerConfigSelectorInterceptor final
  private:
   class Watcher;
 
+  struct ConfigSelectorState final : public RefCounted<ConfigSelectorState> {
+    RefCountedPtr<ServerConfigSelector> config_selector;
+    std::unique_ptr<ServerConfigSelector::ConnectionState> connection_state;
+  };
+
   void Orphaned() override {}
 
-  // Builds filter chains in a newly delivered ServerConfigSelector
-  // before we start to use that ServerConfigSelector for RPCs.
-  void BuildDynamicFilterChains(ServerConfigSelector& config_selector);
+  void OnConfigSelectorUpdate(
+      absl::StatusOr<RefCountedPtr<ServerConfigSelector>> config_selector);
 
   void InterceptCall(UnstartedCallHandler unstarted_call_handler) override;
 
@@ -77,7 +81,7 @@ class ServerConfigSelectorInterceptor final
   const RefCountedPtr<ServerConfigSelectorProvider>
       server_config_selector_provider_;
 
-  Observable<absl::StatusOr<RefCountedPtr<ServerConfigSelector>>>
+  Observable<absl::StatusOr<RefCountedPtr<ConfigSelectorState>>>
       config_selector_;
 };
 
