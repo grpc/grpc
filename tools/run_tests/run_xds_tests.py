@@ -3026,7 +3026,7 @@ def create_instance_template(
 
 def add_instance_group(gcp, zone, name, size):
     config = {
-        "resource_id": name,
+        "name": name,
         "instanceTemplate": gcp.instance_template.url,
         "targetSize": size,
         "namedPorts": [{"name": "grpc", "port": gcp.service_port}],
@@ -3047,7 +3047,7 @@ def add_instance_group(gcp, zone, name, size):
         .execute(num_retries=_GCP_API_RETRIES)
     )
     instance_group = InstanceGroup(
-        config["resource_id"], result["instanceGroup"], zone
+        config["name"], result["instanceGroup"], zone
     )
     gcp.instance_groups.append(instance_group)
     wait_for_instance_group_to_reach_expected_size(
