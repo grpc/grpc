@@ -289,9 +289,9 @@ do
   fi
 
   DOCKER_IMAGE_NAME=$(basename "$DOCKERFILE_DIR")
-  LOG_FILE="reports/${DOCKER_IMAGE_NAME}/sponge_log.log"
+  LOG_FILE="reports/${DOCKERFILE_DIR}/sponge_log.log"
 
-  mkdir "reports/${DOCKER_IMAGE_NAME}"
+  mkdir -p "reports/${DOCKERFILE_DIR}"
 
   echo "Starting build for ${DOCKER_IMAGE_NAME} (Logs: ${LOG_FILE})..."
 
