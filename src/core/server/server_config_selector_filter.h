@@ -34,27 +34,19 @@ extern const grpc_channel_filter kServerConfigSelectorFilter;
 
 // This filter handles injection of dynamic filters for server connections.
 //
-// When using dynamic filters, the filters are split into 3 stacks:
-//
-// - The top filter stack, of type GRPC_SERVER_TOP_CHANNEL.
-//
-// - The dynamic filter stack, which is dynamically configured.
-//
-// - The bottom filter stack, of type GRPC_SERVER_CHANNEL, which will
-//   always have the GRPC_ARG_BELOW_DYNAMIC_FILTERS channel arg set.
-//
-// This filter is the final filter in the top filter stack.  Its job is to
-// use the ServerConfigSelector to choose the right dynamic filter stack
-// for each RPC and run the RPC through that filter stack before sending
-// it on to the bottom filter stack.
-//
 // This filter will get the ServerConfigSelectorProvider from channel
 // args and start a watch on it.  Whenever the watcher delivers a new
 // ServerConfigSelector, the filter will ask the ServerConfigSelector to
-// build a filter stack for each dynamic filter chain.  The final filter
-// in each dynamic filter stack will forward to the bottom filter stack.
-// Then it swaps the new ServerConfigSelector into place so that it will
-// be used to choose which dynamic filter stack to use for each RPC.
+// build a filter stack for each dynamic filter chain.  Then it swaps the
+// new ServerConfigSelector into place so that it will be used to choose
+// which dynamic filter stack to use for each RPC.
+//
+// This is implemented as a v3 interceptor using V3InterceptorToV2Bridge
+// to run in v1 stacks.  However, it runs the dynamic filters as native
+// v3 filters (i.e., it creates a v3 interceptor chain for them), so they
+// cannot be implemented as v1 filters.  The call destination at the end
+// of each v3 interceptor chain is the wrapped call destination (i.e.,
+// the next filter in the server stack).
 class ServerConfigSelectorInterceptor final
     : public V3InterceptorToV2Bridge<ServerConfigSelectorInterceptor> {
  public:
