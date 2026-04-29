@@ -3819,6 +3819,7 @@ add_library(grpc_unsecure
   src/core/server/add_port.cc
   src/core/server/server.cc
   src/core/server/server_call_tracer_filter.cc
+  src/core/server/server_config_selector_filter.cc
   src/core/service_config/service_config_channel_arg_filter.cc
   src/core/service_config/service_config_impl.cc
   src/core/service_config/service_config_parser.cc
