@@ -32,21 +32,27 @@
  * incorrect array boundaries and heap corruption during extension
  * registration.
  *
+ * We use dllexport to prevent these symbols from being stripped by the linker.
  * These section names must match UPB_LINKARR_NAME(upb_AllExts, ...)
  */
 #pragma section("la_upb_AllExts$a", read)
 #pragma section("la_upb_AllExts$z", read)
 
-__declspec(allocate("la_upb_AllExts$a"), selectany)
+__declspec(allocate("la_upb_AllExts$a"), selectany, dllexport)
 const struct upb_MiniTableExtension __start_linkarr_upb_AllExts = {{0}};
 
-__declspec(allocate("la_upb_AllExts$z"), selectany)
+__declspec(allocate("la_upb_AllExts$z"), selectany, dllexport)
 const struct upb_MiniTableExtension __stop_linkarr_upb_AllExts = {{0}};
 
+/* Force the linker to include this object file by providing a symbol that we
+ * reference from init.cc.
+ */
+void grpc_upb_msvc_fix_force_reference(void) {}
+
 /* Provide a "master" constructor that runs and registers the extensions.
- * Since this constructor is initialized and selectany, it will be preferred
- * by the linker over the uninitialized ones in the upb headers, and it
- * correctly uses the boundaries defined above.
+ * By using the same pointer name as upb's generated code, we ensure that
+ * our definition (which is initialized and preferred by the linker) wins,
+ * or at least correctly uses the boundaries defined above.
  */
 extern const UPB_PRIVATE(upb_GeneratedExtensionListEntry)*
     UPB_PRIVATE(upb_generated_extension_list);
@@ -63,9 +69,12 @@ static void __cdecl upb_GeneratedRegistry_Constructor(void) {
 }
 
 #pragma section(".CRT$XCU", long, read)
-__declspec(allocate(".CRT$XCU"), selectany) void(__cdecl *
-                                                 upb_GeneratedRegistry_Constructor_ptr)(
-    void) = upb_GeneratedRegistry_Constructor;
+/* We use both a unique name and the standard upb name to be extra safe. */
+__declspec(allocate(".CRT$XCU"), selectany, dllexport)
+void (__cdecl * upb_GeneratedRegistry_Constructor_ptr)(void) = upb_GeneratedRegistry_Constructor;
+
+__declspec(allocate(".CRT$XCU"), selectany, dllexport)
+void (__cdecl * UPB_PRIVATE(upb_GeneratedRegistry_Constructor_))(void) = upb_GeneratedRegistry_Constructor;
 
 #include "upb/port/undef.inc"
 
