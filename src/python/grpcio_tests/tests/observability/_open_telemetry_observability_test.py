@@ -245,7 +245,7 @@ class OpenTelemetryObservabilityTest(unittest.TestCase):
             _test_server.unary_unary_call(port=port)
             _test_server.unary_unary_call(port=port)
 
-        self._validate_spans_exist(self._span_exporter)
+        self._validate_spans_exist(self._span_exporter, expected_count=6)
 
         # for each unary unary server call, 3 spans are created, which must be
         # validated separately
@@ -305,14 +305,15 @@ class OpenTelemetryObservabilityTest(unittest.TestCase):
             meter_provider=self._meter_provider,
         )
         otel_plugin.register_global()
+        try:
+            server, port = _test_server.start_server()
+            self._server = server
+            _test_server.unary_unary_call(port=port)
 
-        server, port = _test_server.start_server()
-        self._server = server
-        _test_server.unary_unary_call(port=port)
-
-        self._validate_metrics_exist(self.all_metrics)
-        self._validate_all_metrics_names(self.all_metrics.keys())
-        otel_plugin.deregister_global()
+            self._validate_metrics_exist(self.all_metrics)
+            self._validate_all_metrics_names(self.all_metrics.keys())
+        finally:
+            otel_plugin.deregister_global()
 
     def testTracesForUnaryUnaryCallWithGlobalInit(self):
         otel_plugin = grpc_observability.OpenTelemetryPlugin(
@@ -320,37 +321,38 @@ class OpenTelemetryObservabilityTest(unittest.TestCase):
             text_map_propagator=TraceContextTextMapPropagator(),
         )
         otel_plugin.register_global()
+        try:
+            server, port = _test_server.start_server()
+            self._server = server
+            _test_server.unary_unary_call(port=port)
 
-        server, port = _test_server.start_server()
-        self._server = server
-        _test_server.unary_unary_call(port=port)
-
-        self._validate_spans_exist(self._span_exporter)
-        self._validate_spans(
-            spans=self._span_exporter.get_finished_spans(),
-            expected_span_size=3,
-            expected_server_events=[
-                (
-                    "Outbound message",
-                    {"sequence-number": "0", "message-size": "3"},
-                ),
-                (
-                    "Inbound message",
-                    {"sequence-number": "0", "message-size": "3"},
-                ),
-            ],
-            expected_attempt_events=[
-                (
-                    "Outbound message",
-                    {"sequence-number": "0", "message-size": "3"},
-                ),
-                (
-                    "Inbound message",
-                    {"sequence-number": "0", "message-size": "3"},
-                ),
-            ],
-        )
-        otel_plugin.deregister_global()
+            self._validate_spans_exist(self._span_exporter)
+            self._validate_spans(
+                spans=self._span_exporter.get_finished_spans(),
+                expected_span_size=3,
+                expected_server_events=[
+                    (
+                        "Outbound message",
+                        {"sequence-number": "0", "message-size": "3"},
+                    ),
+                    (
+                        "Inbound message",
+                        {"sequence-number": "0", "message-size": "3"},
+                    ),
+                ],
+                expected_attempt_events=[
+                    (
+                        "Outbound message",
+                        {"sequence-number": "0", "message-size": "3"},
+                    ),
+                    (
+                        "Inbound message",
+                        {"sequence-number": "0", "message-size": "3"},
+                    ),
+                ],
+            )
+        finally:
+            otel_plugin.deregister_global()
 
     def testCallGlobalInitThrowErrorWhenGlobalCalled(self):
         otel_plugin = grpc_observability.OpenTelemetryPlugin(
@@ -358,13 +360,15 @@ class OpenTelemetryObservabilityTest(unittest.TestCase):
         )
         otel_plugin.register_global()
         try:
-            otel_plugin.register_global()
-        except RuntimeError as exp:
-            self.assertIn(
-                "gPRC Python observability was already initialized", str(exp)
-            )
-
-        otel_plugin.deregister_global()
+            try:
+                otel_plugin.register_global()
+            except RuntimeError as exp:
+                self.assertIn(
+                    "gPRC Python observability was already initialized",
+                    str(exp),
+                )
+        finally:
+            otel_plugin.deregister_global()
 
     def testCallGlobalInitThrowErrorWhenContextManagerCalled(self):
         with grpc_observability.OpenTelemetryPlugin(
@@ -387,15 +391,18 @@ class OpenTelemetryObservabilityTest(unittest.TestCase):
         )
         otel_plugin.register_global()
         try:
-            with grpc_observability.OpenTelemetryPlugin(
-                meter_provider=self._meter_provider
-            ):
-                pass
-        except RuntimeError as exp:
-            self.assertIn(
-                "gPRC Python observability was already initialized", str(exp)
-            )
-        otel_plugin.deregister_global()
+            try:
+                with grpc_observability.OpenTelemetryPlugin(
+                    meter_provider=self._meter_provider
+                ):
+                    pass
+            except RuntimeError as exp:
+                self.assertIn(
+                    "gPRC Python observability was already initialized",
+                    str(exp),
+                )
+        finally:
+            otel_plugin.deregister_global()
 
     def testContextManagerThrowErrorWhenContextManagerCalled(self):
         with grpc_observability.OpenTelemetryPlugin(
@@ -1076,7 +1083,7 @@ class OpenTelemetryObservabilityTest(unittest.TestCase):
                 ],
             )
 
-        self._validate_spans_exist(self._span_exporter)
+        self._validate_spans_exist(self._span_exporter, expected_count=6)
         spans = self._span_exporter.get_finished_spans()
 
         # Expect 6 spans: Sent/Attempt/Recv for original RPC +
@@ -1205,13 +1212,18 @@ class OpenTelemetryObservabilityTest(unittest.TestCase):
                 )
 
     def _validate_spans_exist(
-        self, span_exporter: otel_trace_export.SpanExporter
+        self,
+        span_exporter: otel_trace_export.SpanExporter,
+        expected_count: int = 3,
     ):
-        # Sleep here to make sure we have at least one export from
+        # Sleep here to make sure we have at least expected number of spans from
         # OTel SpanExporter.
         self.assert_eventually(
-            lambda: len(span_exporter.get_finished_spans()) > 1,
-            message=lambda: f"No traces were exported",
+            lambda: len(span_exporter.get_finished_spans()) >= expected_count,
+            message=lambda: (
+                f"Expected at least {expected_count} spans, got "
+                f"{len(span_exporter.get_finished_spans())}"
+            ),
         )
 
     def _validate_spans(
