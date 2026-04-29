@@ -240,10 +240,12 @@ Span Span::StartSpan(absl::string_view name, absl::string_view trace_id) {
 }
 
 void Span::SetStatus(absl::string_view status) {
+  grpc_core::MutexLock lock(mu_.get());
   status_ = std::string(status);
 }
 
 void Span::AddAttribute(absl::string_view key, absl::string_view value) {
+  grpc_core::MutexLock lock(mu_.get());
   span_labels_.emplace_back(std::string(key), std::string(value));
 }
 
@@ -260,10 +262,12 @@ void Span::AddEvent(
   // class directly.
   event.time_stamp =
       absl::FormatTime("%Y-%m-%d %H:%M:%E3S", absl::Now(), absl::UTCTimeZone());
+  grpc_core::MutexLock lock(mu_.get());
   span_events_.emplace_back(event);
 }
 
 SpanCensusData Span::ToCensusData() const {
+  grpc_core::MutexLock lock(mu_.get());
   SpanCensusData census_data;
   absl::TimeZone utc = absl::UTCTimeZone();
   census_data.name = name_;
