@@ -61,6 +61,9 @@ ParseCertificateChainFromDer(const std::vector<std::string>& der_cert_chain) {
 
 absl::StatusOr<std::vector<bssl::UniquePtr<CRYPTO_BUFFER>>>
 ParseCertificateChainFromPem(absl::string_view pem_cert_chain) {
+  if (pem_cert_chain.empty()) {
+    return absl::InvalidArgumentError("The cert chain is empty.");
+  }
   std::vector<bssl::UniquePtr<CRYPTO_BUFFER>> raw_cert_chain;
   bssl::UniquePtr<BIO> bio(
       BIO_new_mem_buf(pem_cert_chain.data(), pem_cert_chain.size()));
@@ -74,7 +77,7 @@ ParseCertificateChainFromPem(absl::string_view pem_cert_chain) {
     OPENSSL_free(cert_data);
   }
   if (raw_cert_chain.empty()) {
-    return absl::InvalidArgumentError("Failed to parse cert chain");
+    return absl::InvalidArgumentError("Failed to parse cert chain.");
   }
   return raw_cert_chain;
 }
@@ -107,6 +110,30 @@ absl::StatusOr<bssl::UniquePtr<EVP_PKEY>> ParsePrivateKeyFromPem(
   return pkey;
 }
 
+// The type of the given private key string must match the parser.
+absl::Status CreatePrivateKey(
+    std::variant<absl::string_view, std::shared_ptr<PrivateKeySigner>>
+        private_key,
+    CertificateSelector::SelectCertificateResult& result,
+    absl::AnyInvocable<
+        absl::StatusOr<bssl::UniquePtr<EVP_PKEY>>(absl::string_view)>
+        parser) {
+  return MatchMutable(
+      &private_key,
+      [&](absl::string_view* key) {
+        absl::StatusOr<bssl::UniquePtr<EVP_PKEY>> pkey = parser(*key);
+        if (!pkey.ok()) {
+          return pkey.status();
+        }
+        result.private_key = *std::move(pkey);
+        return absl::OkStatus();
+      },
+      [&](std::shared_ptr<PrivateKeySigner>* key_signer) {
+        result.private_key = std::move(*key_signer);
+        return absl::OkStatus();
+      });
+}
+
 }  // namespace
 
 absl::StatusOr<CertificateSelector::SelectCertificateResult>
@@ -119,22 +146,8 @@ CertificateSelector::CreateSelectCertificateResult(
   GRPC_RETURN_IF_ERROR(raw_cert_chain.status());
   SelectCertificateResult result;
   result.certificate_chain = *std::move(raw_cert_chain);
-  absl::Status pkey_status;
-  MatchMutable(
-      &der_private_key,
-      [&](absl::string_view* key) {
-        absl::StatusOr<bssl::UniquePtr<EVP_PKEY>> pkey =
-            ParsePrivateKeyFromDer(*key);
-        if (!pkey.ok()) {
-          pkey_status = pkey.status();
-          return;
-        }
-        result.private_key = *std::move(pkey);
-      },
-      [&](std::shared_ptr<PrivateKeySigner>* key_signer) {
-        result.private_key = std::move(*key_signer);
-      });
-  GRPC_RETURN_IF_ERROR(pkey_status);
+  GRPC_RETURN_IF_ERROR(
+      CreatePrivateKey(der_private_key, result, ParsePrivateKeyFromDer));
   return result;
 }
 
@@ -148,22 +161,8 @@ CertificateSelector::CreateSelectCertificateResult(
   GRPC_RETURN_IF_ERROR(raw_cert_chain.status());
   SelectCertificateResult result;
   result.certificate_chain = *std::move(raw_cert_chain);
-  absl::Status pkey_status = absl::OkStatus();
-  MatchMutable(
-      &pem_private_key,
-      [&](absl::string_view* key) {
-        absl::StatusOr<bssl::UniquePtr<EVP_PKEY>> pkey =
-            ParsePrivateKeyFromPem(*key);
-        if (!pkey.ok()) {
-          pkey_status = pkey.status();
-          return;
-        }
-        result.private_key = *std::move(pkey);
-      },
-      [&](std::shared_ptr<PrivateKeySigner>* key_signer) {
-        result.private_key = std::move(*key_signer);
-      });
-  GRPC_RETURN_IF_ERROR(pkey_status);
+  GRPC_RETURN_IF_ERROR(
+      CreatePrivateKey(pem_private_key, result, ParsePrivateKeyFromPem));
   return result;
 }
 

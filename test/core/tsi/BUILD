@@ -317,6 +317,7 @@ grpc_cc_test(
         "libcrypto",
     ],
     deps = [
+        ":private_key_signer_test_util",
         ":transport_security_test_lib",
         "//:event_engine_base_hdrs",
         "//:gpr",
@@ -329,7 +330,6 @@ grpc_cc_test(
         "//test/core/event_engine/fuzzing_event_engine",
         "//test/core/event_engine/fuzzing_event_engine:fuzzing_event_engine_cc_proto",
         "//test/core/test_util:grpc_test_util",
-        "//test/core/tsi:private_key_signer_test_util",
     ],
 )
 

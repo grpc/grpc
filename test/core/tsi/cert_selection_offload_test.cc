@@ -113,32 +113,47 @@ class AsyncTestCertificateSelector : public CertificateSelector {
                std::shared_ptr<AsyncCertificateSelectionHandle>>
   SelectCertificate(const SelectCertificateInfo& info,
                     OnSelectCertificateComplete on_complete) override {
-    auto handle = std::make_shared<AsyncCertificateSelectionHandle>();
-    event_engine_->RunAfter(Duration::Seconds(2), [this, info, handle,
-                                                   on_complete = std::move(
-                                                       on_complete)]() mutable {
-      if (!expect_success_) {
-        std::move(on_complete)(absl::InternalError(
-            "Failed to select cert when using AsyncTestCertificateSelector"));
-        return;
-      }
-      if (info.sni != kServerName) {
-        std::move(on_complete)(absl::InvalidArgumentError(absl::StrFormat(
-            "Expected SNI to be %s, got %s", kServerName, info.sni)));
-        return;
-      }
-      std::move(on_complete)(
-          CreateSelectCertificateResult(pem_cert_chain_, pem_private_key_));
-    });
-    return handle;
+    event_engine_->RunAfter(
+        Duration::Seconds(2),
+        [this, info, on_complete = std::move(on_complete)]() mutable {
+          {
+            absl::MutexLock lock(&mu_);
+            if (was_cancelled_) return;
+          }
+          was_done_ = true;
+          if (!expect_success_) {
+            on_complete(
+                absl::InternalError("Failed to select cert when using "
+                                    "AsyncTestCertificateSelector"));
+            return;
+          }
+          if (info.sni != kServerName) {
+            on_complete(absl::InvalidArgumentError(absl::StrFormat(
+                "Expected SNI to be %s, got %s", kServerName, info.sni)));
+            return;
+          }
+          on_complete(
+              CreateSelectCertificateResult(pem_cert_chain_, pem_private_key_));
+        });
+    return std::make_shared<AsyncCertificateSelectionHandle>();
   }
 
   void Cancel(
       std::shared_ptr<AsyncCertificateSelectionHandle> /*handle*/) override {
-    was_cancelled_.store(true);
+    absl::MutexLock lock(&mu_);
+    if (was_cancelled_) {
+      return;
+    } else {
+      was_cancelled_ = true;
+    }
   }
 
-  bool WasCancelled() { return was_cancelled_.load(); }
+  bool WasCancelled() {
+    absl::MutexLock lock(&mu_);
+    return was_cancelled_;
+  }
+
+  bool WasDone() { return was_done_; }
 
  private:
   absl::string_view pem_cert_chain_;
@@ -147,7 +162,9 @@ class AsyncTestCertificateSelector : public CertificateSelector {
   std::shared_ptr<grpc_event_engine::experimental::FuzzingEventEngine>
       event_engine_;
   bool expect_success_;
-  std::atomic<bool> was_cancelled_{false};
+  absl::Mutex mu_;
+  bool was_cancelled_ = false;
+  bool was_done_ = false;
 };
 
 class SslCertSelectorTsiTestFixture {
@@ -213,6 +230,11 @@ class SslCertSelectorTsiTestFixture {
   bool CertSelectionCancelled() {
     return reinterpret_cast<AsyncTestCertificateSelector*>(cert_selector_.get())
         ->WasCancelled();
+  }
+
+  bool CertSelectionDone() {
+    return reinterpret_cast<AsyncTestCertificateSelector*>(cert_selector_.get())
+        ->WasDone();
   }
 
   void Shutdown() {
@@ -409,17 +431,34 @@ TEST_P(CertSelectionOffloadTest, AsyncCertSelectionFails) {
   fixture->Run(/*expect_success=*/false, event_engine_.get());
 }
 
-TEST_P(CertSelectionOffloadTest, AsyncCertSelectionCancelled) {
+TEST_P(CertSelectionOffloadTest, AsyncCertSelectionCancelledBeforeFinished) {
   SslCertSelectorTsiTestFixture::FixtureOptions options;
   options.is_cert_selection_async = true;
   options.expect_cert_selection_success = true;
   options.tls_version = GetParam();
   auto fixture =
       std::make_shared<SslCertSelectorTsiTestFixture>(options, event_engine_);
+  // The shutdown of the fixture happens before the async cert selection.
   event_engine_->RunAfter(Duration::Seconds(1),
                           [&fixture] { fixture->Shutdown(); });
   fixture->Run(/*expect_success=*/false, event_engine_.get());
   EXPECT_TRUE(fixture->CertSelectionCancelled());
+  EXPECT_FALSE(fixture->CertSelectionDone());
+}
+
+TEST_P(CertSelectionOffloadTest, AsyncCertSelectionCancelledAfterFinished) {
+  SslCertSelectorTsiTestFixture::FixtureOptions options;
+  options.is_cert_selection_async = true;
+  options.expect_cert_selection_success = true;
+  options.tls_version = GetParam();
+  auto fixture =
+      std::make_shared<SslCertSelectorTsiTestFixture>(options, event_engine_);
+  // The shutdown of the fixture happens after the async cert selection.
+  event_engine_->RunAfter(Duration::Seconds(3),
+                          [&fixture] { fixture->Shutdown(); });
+  fixture->Run(/*expect_success=*/false, event_engine_.get());
+  EXPECT_TRUE(fixture->CertSelectionCancelled());
+  EXPECT_TRUE(fixture->CertSelectionDone());
 }
 
 TEST_P(CertSelectionOffloadTest, AsyncCertSelectionWithSyncSignerSucceeds) {

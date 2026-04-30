@@ -34,6 +34,10 @@ namespace grpc_core {
 namespace testing {
 namespace {
 
+using ::testing::ElementsAre;
+using ::testing::Ne;
+using ::testing::VariantWith;
+
 constexpr absl::string_view kTestCredsRelativePath =
     "test/core/tsi/test_creds/crl_data/";
 constexpr absl::string_view kServerCertPemFile = "valid.pem";
@@ -42,16 +46,6 @@ constexpr absl::string_view kServerCertDerFile = "valid_cert.der";
 constexpr absl::string_view kServerKeyDerFile = "valid_key.der";
 constexpr absl::string_view kInvalidPemBlock =
     "-----BEGIN CERTIFICATE-----\ninvalid\n-----END CERTIFICATE-----";
-
-template <typename T>
-absl::Status GetStatus(const absl::StatusOr<T>& s) {
-  return s.status();
-}
-
-MATCHER_P(StatusIs, status,
-          absl::StrCat(".status() is ", ::testing::PrintToString(status))) {
-  return GetStatus(arg).code() == status;
-}
 
 class TestPrivateKeySigner final : public PrivateKeySigner {
  public:
@@ -89,11 +83,10 @@ TEST_F(TlsCertificateSelectorTest,
       CertificateSelector::CreateSelectCertificateResult(pem_cert_chain_,
                                                          pem_private_key_);
   ASSERT_EQ(result.status(), absl::OkStatus());
-  EXPECT_EQ(result->certificate_chain.size(), 1);
-  EXPECT_NE(result->certificate_chain[0], nullptr);
+  EXPECT_THAT(result->certificate_chain, ElementsAre(Ne(nullptr)));
   // Should hold an EVP_PKEY ptr.
-  EXPECT_EQ(result->private_key.index(), 0);
-  EXPECT_NE(std::get<bssl::UniquePtr<EVP_PKEY>>(result->private_key), nullptr);
+  EXPECT_THAT(result->private_key,
+              VariantWith<bssl::UniquePtr<EVP_PKEY>>(Ne(nullptr)));
 }
 
 TEST_F(TlsCertificateSelectorTest,
@@ -102,12 +95,10 @@ TEST_F(TlsCertificateSelectorTest,
       CertificateSelector::CreateSelectCertificateResult(
           absl::StrCat(pem_cert_chain_, pem_cert_chain_), pem_private_key_);
   ASSERT_EQ(result.status(), absl::OkStatus());
-  EXPECT_EQ(result->certificate_chain.size(), 2);
-  EXPECT_NE(result->certificate_chain[0], nullptr);
-  EXPECT_NE(result->certificate_chain[1], nullptr);
+  EXPECT_THAT(result->certificate_chain, ElementsAre(Ne(nullptr), Ne(nullptr)));
   // Should hold an EVP_PKEY.
-  EXPECT_EQ(result->private_key.index(), 0);
-  EXPECT_NE(std::get<bssl::UniquePtr<EVP_PKEY>>(result->private_key), nullptr);
+  EXPECT_THAT(result->private_key,
+              VariantWith<bssl::UniquePtr<EVP_PKEY>>(Ne(nullptr)));
 }
 
 TEST_F(TlsCertificateSelectorTest,
@@ -116,11 +107,10 @@ TEST_F(TlsCertificateSelectorTest,
       CertificateSelector::CreateSelectCertificateResult(
           absl::StrCat("nonsense\n", pem_cert_chain_), pem_private_key_);
   ASSERT_EQ(result.status(), absl::OkStatus());
-  EXPECT_EQ(result->certificate_chain.size(), 1);
-  EXPECT_NE(result->certificate_chain[0], nullptr);
+  EXPECT_THAT(result->certificate_chain, ElementsAre(Ne(nullptr)));
   // Should hold an EVP_PKEY.
-  EXPECT_EQ(result->private_key.index(), 0);
-  EXPECT_NE(std::get<bssl::UniquePtr<EVP_PKEY>>(result->private_key), nullptr);
+  EXPECT_THAT(result->private_key,
+              VariantWith<bssl::UniquePtr<EVP_PKEY>>(Ne(nullptr)));
 }
 
 TEST_F(TlsCertificateSelectorTest,
@@ -129,11 +119,10 @@ TEST_F(TlsCertificateSelectorTest,
       CertificateSelector::CreateSelectCertificateResult(
           absl::StrCat(pem_cert_chain_, "\nnonsense"), pem_private_key_);
   ASSERT_EQ(result.status(), absl::OkStatus());
-  EXPECT_EQ(result->certificate_chain.size(), 1);
-  EXPECT_NE(result->certificate_chain[0], nullptr);
+  EXPECT_THAT(result->certificate_chain, ElementsAre(Ne(nullptr)));
   // Should hold an EVP_PKEY.
-  EXPECT_EQ(result->private_key.index(), 0);
-  EXPECT_NE(std::get<bssl::UniquePtr<EVP_PKEY>>(result->private_key), nullptr);
+  EXPECT_THAT(result->private_key,
+              VariantWith<bssl::UniquePtr<EVP_PKEY>>(Ne(nullptr)));
 }
 
 TEST_F(TlsCertificateSelectorTest,
@@ -144,46 +133,53 @@ TEST_F(TlsCertificateSelectorTest,
           pem_private_key_);
   ASSERT_EQ(result.status(), absl::OkStatus());
   // The 3rd PEM block will be ignored because of the invalid one in the middle.
-  EXPECT_EQ(result->certificate_chain.size(), 1);
-  EXPECT_NE(result->certificate_chain[0], nullptr);
+  EXPECT_THAT(result->certificate_chain, ElementsAre(Ne(nullptr)));
   // Should hold an EVP_PKEY.
-  EXPECT_EQ(result->private_key.index(), 0);
-  EXPECT_NE(std::get<bssl::UniquePtr<EVP_PKEY>>(result->private_key), nullptr);
+  EXPECT_THAT(result->private_key,
+              VariantWith<bssl::UniquePtr<EVP_PKEY>>(Ne(nullptr)));
 }
 
 TEST_F(TlsCertificateSelectorTest,
        CreateSelectCertificateResultFromPemFailedWithEmptyChain) {
-  ASSERT_THAT(
-      CertificateSelector::CreateSelectCertificateResult("", pem_private_key_),
-      StatusIs(absl::StatusCode::kInvalidArgument));
+  absl::StatusOr<CertificateSelector::SelectCertificateResult> result =
+      CertificateSelector::CreateSelectCertificateResult("", pem_private_key_);
+  EXPECT_EQ(result.status().code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(result.status().message(), "The cert chain is empty.");
 }
 
 TEST_F(TlsCertificateSelectorTest,
        CreateSelectCertificateResultFromPemFailedWithInvalidChain) {
-  ASSERT_THAT(CertificateSelector::CreateSelectCertificateResult(
-                  "invalid", pem_private_key_),
-              StatusIs(absl::StatusCode::kInvalidArgument));
+  absl::StatusOr<CertificateSelector::SelectCertificateResult> result =
+      CertificateSelector::CreateSelectCertificateResult("invalid",
+                                                         pem_private_key_);
+  EXPECT_EQ(result.status().code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(result.status().message(), "Failed to parse cert chain.");
 }
 
 TEST_F(TlsCertificateSelectorTest,
        CreateSelectCertificateResultFromPemFailedWithInvalidBlockInChain) {
-  ASSERT_THAT(CertificateSelector::CreateSelectCertificateResult(
-                  kInvalidPemBlock, pem_private_key_),
-              StatusIs(absl::StatusCode::kInvalidArgument));
+  absl::StatusOr<CertificateSelector::SelectCertificateResult> result =
+      CertificateSelector::CreateSelectCertificateResult(kInvalidPemBlock,
+                                                         pem_private_key_);
+  EXPECT_EQ(result.status().code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(result.status().message(), "Failed to parse cert chain.");
 }
 
 TEST_F(TlsCertificateSelectorTest,
        CreateSelectCertificateResultFromPemFailedWithEmptyKey) {
-  ASSERT_THAT(
-      CertificateSelector::CreateSelectCertificateResult(pem_cert_chain_, ""),
-      StatusIs(absl::StatusCode::kInvalidArgument));
+  absl::StatusOr<CertificateSelector::SelectCertificateResult> result =
+      CertificateSelector::CreateSelectCertificateResult(pem_cert_chain_, "");
+  EXPECT_EQ(result.status().code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(result.status().message(), "Failed to read private key.");
 }
 
 TEST_F(TlsCertificateSelectorTest,
        CreateSelectCertificateResultFromPemFailedWithInvalidKey) {
-  ASSERT_THAT(CertificateSelector::CreateSelectCertificateResult(
-                  pem_cert_chain_, "invalid"),
-              StatusIs(absl::StatusCode::kInvalidArgument));
+  absl::StatusOr<CertificateSelector::SelectCertificateResult> result =
+      CertificateSelector::CreateSelectCertificateResult(pem_cert_chain_,
+                                                         "invalid");
+  EXPECT_EQ(result.status().code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(result.status().message(), "Failed to read private key.");
 }
 
 TEST_F(TlsCertificateSelectorTest,
@@ -193,11 +189,10 @@ TEST_F(TlsCertificateSelectorTest,
       CertificateSelector::CreateSelectCertificateResult(der_cert_chain_,
                                                          der_private_key_);
   ASSERT_EQ(result.status(), absl::OkStatus());
-  EXPECT_EQ(result->certificate_chain.size(), 1);
-  EXPECT_NE(result->certificate_chain[0], nullptr);
+  EXPECT_THAT(result->certificate_chain, ElementsAre(Ne(nullptr)));
   // Should hold an EVP_PKEY.
-  EXPECT_EQ(result->private_key.index(), 0);
-  EXPECT_NE(std::get<bssl::UniquePtr<EVP_PKEY>>(result->private_key), nullptr);
+  EXPECT_THAT(result->private_key,
+              VariantWith<bssl::UniquePtr<EVP_PKEY>>(Ne(nullptr)));
 }
 
 TEST_F(TlsCertificateSelectorTest,
@@ -208,26 +203,29 @@ TEST_F(TlsCertificateSelectorTest,
       CertificateSelector::CreateSelectCertificateResult(der_cert_chain_,
                                                          signer);
   ASSERT_EQ(result.status(), absl::OkStatus());
-  EXPECT_EQ(result->certificate_chain.size(), 1);
-  EXPECT_NE(result->certificate_chain[0], nullptr);
+  EXPECT_THAT(result->certificate_chain, ElementsAre(Ne(nullptr)));
   // Should hold a private key signer.
-  EXPECT_EQ(result->private_key.index(), 1);
-  EXPECT_NE(std::get<std::shared_ptr<PrivateKeySigner>>(result->private_key),
-            nullptr);
+  EXPECT_THAT(
+      result->private_key,
+      VariantWith<std::shared_ptr<grpc_core::PrivateKeySigner>>(Ne(nullptr)));
 }
 
 TEST_F(TlsCertificateSelectorTest,
        CreateSelectCertificateResultFromDerFailedWithEmtpyChain) {
-  ASSERT_THAT(CertificateSelector::CreateSelectCertificateResult(
-                  std::vector<std::string>(), der_private_key_),
-              StatusIs(absl::StatusCode::kInvalidArgument));
+  absl::StatusOr<CertificateSelector::SelectCertificateResult> result =
+      CertificateSelector::CreateSelectCertificateResult(
+          std::vector<std::string>(), der_private_key_);
+  EXPECT_EQ(result.status().code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(result.status().message(), "The cert chain is empty.");
 }
 
 TEST_F(TlsCertificateSelectorTest,
        CreateSelectCertificateResultFromDerFailedWithInvalidKey) {
-  ASSERT_THAT(CertificateSelector::CreateSelectCertificateResult(
-                  der_cert_chain_, "invalid"),
-              StatusIs(absl::StatusCode::kInvalidArgument));
+  absl::StatusOr<CertificateSelector::SelectCertificateResult> result =
+      CertificateSelector::CreateSelectCertificateResult(der_cert_chain_,
+                                                         "invalid");
+  EXPECT_EQ(result.status().code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(result.status().message(), "Failed to parse private key.");
 }
 
 }  // namespace
