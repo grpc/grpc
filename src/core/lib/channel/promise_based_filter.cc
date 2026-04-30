@@ -496,6 +496,9 @@ void BaseCallData::SendMessage::Done(const ServerMetadata& metadata,
     case State::kPushedToPipe:
       push_.reset();
       next_.reset();
+      if (batch_.is_captured()) {
+        batch_.CancelWith(StatusFromMetadata(metadata), flusher);
+      }
       state_ = State::kCancelledButNotYetPolled;
       if (base_->is_current()) base_->ForceImmediateRepoll();
       break;
