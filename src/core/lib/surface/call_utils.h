@@ -47,6 +47,7 @@
 #include "src/core/call/metadata_batch.h"
 #include "src/core/channelz/property_list.h"
 #include "src/core/lib/experiments/experiments.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/cancel_callback.h"
 #include "src/core/lib/promise/detail/promise_like.h"
@@ -401,6 +402,26 @@ class WaitForCqEndOp {
   }
 };
 
+inline void CompleteBatchOp(grpc_completion_queue* cq, void* notify_tag,
+                            bool is_notify_tag_closure, absl::Status&& status) {
+  // Notifies the upper layer that a Batch op is completed:
+  // - If notify_tag is a closure, executes it directly to propagate completion.
+  // - Otherwise, uses the completion queue (grpc_cq_end_op) to notify.
+  // Note: CommitBatch calls grpc_cq_begin_op() only if notify_tag is not a
+  // closure.
+  if (IsPromiseBatchCleanupOnCancelEnabled() && is_notify_tag_closure) {
+    EnsureRunInExecCtx([notify_tag, status = std::move(status)]() mutable {
+      ExecCtx::Run(DEBUG_LOCATION, static_cast<grpc_closure*>(notify_tag),
+                   std::move(status));
+    });
+  } else {
+    grpc_cq_end_op(
+        cq, notify_tag, std::forward<absl::Status>(status),
+        [](void*, grpc_cq_completion* completion) { delete completion; },
+        nullptr, new grpc_cq_completion);
+  }
+}
+
 template <typename FalliblePart, typename FinalPart>
 auto InfallibleBatch(FalliblePart&& fallible_part, FinalPart&& final_part,
                      bool is_notify_tag_closure, void* notify_tag,
@@ -422,11 +443,9 @@ auto InfallibleBatch(FalliblePart&& fallible_part, FinalPart&& final_part,
                                                         absl::OkStatus(), cq);
                                 }));
       },
-      [cq, notify_tag]() {
-        grpc_cq_end_op(
-            cq, notify_tag, absl::OkStatus(),
-            [](void*, grpc_cq_completion* completion) { delete completion; },
-            nullptr, new grpc_cq_completion);
+      [cq, notify_tag, is_notify_tag_closure]() {
+        CompleteBatchOp(cq, notify_tag, is_notify_tag_closure,
+                        absl::OkStatus());
       });
 }
 
@@ -448,11 +467,9 @@ auto FallibleBatch(FalliblePart&& fallible_part, bool is_notify_tag_closure,
                                         StatusCast<absl::Status>(r), cq);
                 }));
       },
-      [cq]() {
-        grpc_cq_end_op(
-            cq, nullptr, absl::CancelledError(),
-            [](void*, grpc_cq_completion* completion) { delete completion; },
-            nullptr, new grpc_cq_completion);
+      [cq, notify_tag, is_notify_tag_closure]() {
+        CompleteBatchOp(cq, notify_tag, is_notify_tag_closure,
+                        absl::CancelledError());
       });
 }
 

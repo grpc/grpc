@@ -516,6 +516,7 @@
     # Download the archive via HTTP, validate the checksum, and extract to ${external_proto_library.destination}.
     download_archive(
       <%text>${CMAKE_CURRENT_SOURCE_DIR}</%text>/${external_proto_library.destination}
+      https://storage.googleapis.com/grpc-bazel-mirror/${download_url.removeprefix("https://")}
       ${download_url}
       ${external_proto_library.hash}
       ${external_proto_library.strip_prefix}
@@ -528,7 +529,7 @@
     set(_gRPC_ALLTARGETS_LIBRARIES <%text>${_gRPC_ALLTARGETS_LIBRARIES}</%text> ws2_32 crypt32)
     set(_gRPC_STATIC_WIN32 STATIC)
   endif()
-    
+
   if(BUILD_SHARED_LIBS AND WIN32)
 
   # Currently for shared lib on Windows (i.e. a DLL) certain bits of source code
