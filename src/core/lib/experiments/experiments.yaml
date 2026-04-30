@@ -219,6 +219,16 @@
   expiry: 2027/01/16
   owner: akshitpatel@google.com
   test_tags: [flow_control_test]
+- name: optimization_01
+  description: Optimization 
+  expiry: 2027/01/16
+  owner: tjagtap@google.com
+  test_tags: []
+- name: optimization_02
+  description: Optimization 
+  expiry: 2027/01/16
+  owner: tjagtap@google.com
+  test_tags: []
 - name: otel_export_telemetry_domains
   description: Export telemetry domains in OpenTelemetry metrics.
   expiry: 2026/05/01

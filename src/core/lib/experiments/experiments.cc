@@ -127,6 +127,10 @@ const char* const additional_constraints_monitoring_experiment = "{}";
 const char* const description_multiping =
     "Allow more than one ping to be in flight at a time by default.";
 const char* const additional_constraints_multiping = "{}";
+const char* const description_optimization_01 = "Optimization";
+const char* const additional_constraints_optimization_01 = "{}";
+const char* const description_optimization_02 = "Optimization";
+const char* const additional_constraints_optimization_02 = "{}";
 const char* const description_otel_export_telemetry_domains =
     "Export telemetry domains in OpenTelemetry metrics.";
 const char* const additional_constraints_otel_export_telemetry_domains = "{}";
@@ -326,6 +330,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_monitoring_experiment, nullptr, 0, true, true},
     {"multiping", description_multiping, additional_constraints_multiping,
      nullptr, 0, false, true},
+    {"optimization_01", description_optimization_01,
+     additional_constraints_optimization_01, nullptr, 0, false, true},
+    {"optimization_02", description_optimization_02,
+     additional_constraints_optimization_02, nullptr, 0, false, true},
     {"otel_export_telemetry_domains", description_otel_export_telemetry_domains,
      additional_constraints_otel_export_telemetry_domains, nullptr, 0, false,
      true},
@@ -530,6 +538,10 @@ const char* const additional_constraints_monitoring_experiment = "{}";
 const char* const description_multiping =
     "Allow more than one ping to be in flight at a time by default.";
 const char* const additional_constraints_multiping = "{}";
+const char* const description_optimization_01 = "Optimization";
+const char* const additional_constraints_optimization_01 = "{}";
+const char* const description_optimization_02 = "Optimization";
+const char* const additional_constraints_optimization_02 = "{}";
 const char* const description_otel_export_telemetry_domains =
     "Export telemetry domains in OpenTelemetry metrics.";
 const char* const additional_constraints_otel_export_telemetry_domains = "{}";
@@ -729,6 +741,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_monitoring_experiment, nullptr, 0, true, true},
     {"multiping", description_multiping, additional_constraints_multiping,
      nullptr, 0, false, true},
+    {"optimization_01", description_optimization_01,
+     additional_constraints_optimization_01, nullptr, 0, false, true},
+    {"optimization_02", description_optimization_02,
+     additional_constraints_optimization_02, nullptr, 0, false, true},
     {"otel_export_telemetry_domains", description_otel_export_telemetry_domains,
      additional_constraints_otel_export_telemetry_domains, nullptr, 0, false,
      true},
@@ -933,6 +949,10 @@ const char* const additional_constraints_monitoring_experiment = "{}";
 const char* const description_multiping =
     "Allow more than one ping to be in flight at a time by default.";
 const char* const additional_constraints_multiping = "{}";
+const char* const description_optimization_01 = "Optimization";
+const char* const additional_constraints_optimization_01 = "{}";
+const char* const description_optimization_02 = "Optimization";
+const char* const additional_constraints_optimization_02 = "{}";
 const char* const description_otel_export_telemetry_domains =
     "Export telemetry domains in OpenTelemetry metrics.";
 const char* const additional_constraints_otel_export_telemetry_domains = "{}";
@@ -1132,6 +1152,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_monitoring_experiment, nullptr, 0, true, true},
     {"multiping", description_multiping, additional_constraints_multiping,
      nullptr, 0, false, true},
+    {"optimization_01", description_optimization_01,
+     additional_constraints_optimization_01, nullptr, 0, false, true},
+    {"optimization_02", description_optimization_02,
+     additional_constraints_optimization_02, nullptr, 0, false, true},
     {"otel_export_telemetry_domains", description_otel_export_telemetry_domains,
      additional_constraints_otel_export_telemetry_domains, nullptr, 0, false,
      true},
