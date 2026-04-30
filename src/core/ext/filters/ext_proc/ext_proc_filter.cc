@@ -46,6 +46,8 @@ absl::Status (*g_test_ext_proc_server_initial_metadata_modifier)(
 absl::Status (*g_test_ext_proc_server_trailing_metadata_modifier)(
     grpc_metadata_batch*) = nullptr;
 absl::Status (*g_test_ext_proc_message_modifier)(MessageHandle*) = nullptr;
+absl::Status (*g_test_ext_proc_server_to_client_message_modifier)(
+    MessageHandle*) = nullptr;
 
 std::string ExtProcFilter::ProcessingMode::ToString() const {
   std::vector<std::string> parts;
@@ -203,11 +205,26 @@ auto ExtProcFilter::ServerToClient(CallHandler handler,
                   [self, handler, initiator]() mutable {
                     return Seq(
                         ForEach(MessagesFrom(initiator),
-                                [handler](MessageHandle message) mutable {
+                                [handler, initiator](MessageHandle message) mutable -> StatusFlag {
                                   GRPC_TRACE_LOG(ext_proc_filter, INFO)
                                       << "ExtProc: ServerToClient message "
                                          "intercepted:\n"
                                       << message->DebugString();
+                                  absl::Status status;
+                                  if (g_test_ext_proc_server_to_client_message_modifier !=
+                                      nullptr) {
+                                    status =
+                                        g_test_ext_proc_server_to_client_message_modifier(
+                                            &message);
+                                  }
+                                  if (!status.ok()) {
+                                    auto error_md = ServerMetadataFromStatus(status);
+                                    error_md->Set(GrpcCallWasCancelled(), true);
+                                    handler.SpawnPushServerTrailingMetadata(
+                                        std::move(error_md));
+                                    initiator.SpawnCancel();
+                                    return Failure{};
+                                  }
                                   handler.SpawnPushMessage(std::move(message));
                                   return Success{};
                                 }),

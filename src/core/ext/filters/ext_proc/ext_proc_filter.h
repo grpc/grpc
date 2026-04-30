@@ -134,6 +134,8 @@ extern absl::Status (*g_test_ext_proc_server_initial_metadata_modifier)(
 extern absl::Status (*g_test_ext_proc_server_trailing_metadata_modifier)(
     grpc_metadata_batch*);
 extern absl::Status (*g_test_ext_proc_message_modifier)(MessageHandle*);
+extern absl::Status (*g_test_ext_proc_server_to_client_message_modifier)(
+    MessageHandle*);
 
 }  // namespace grpc_core
 

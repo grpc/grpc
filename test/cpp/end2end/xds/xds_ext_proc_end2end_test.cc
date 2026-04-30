@@ -275,6 +275,32 @@ TEST_P(XdsExtProcEnd2endTest, ServerInitialMetadataHookFailure) {
   EXPECT_EQ(status.error_message(), "injected initial error");
 }
 
+TEST_P(XdsExtProcEnd2endTest, ServerToClientMessageHookFailure) {
+  grpc_core::g_test_ext_proc_server_to_client_message_modifier =
+      [](grpc_core::MessageHandle* /*message*/) {
+        return absl::InvalidArgumentError("injected s2c message error");
+      };
+
+  CreateAndStartBackends(1, /*xds_enabled=*/false);
+  SetListenerAndRouteConfiguration(
+      balancer_.get(), BuildListenerWithExtProcFilter(),
+      default_route_config_);
+
+  Cluster ext_proc_cluster = default_cluster_;
+  ext_proc_cluster.set_name(std::string(kExtProcClusterName));
+  balancer_->ads_service()->SetCdsResource(ext_proc_cluster);
+  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
+
+  Status status = SendRpc();
+  
+  grpc_core::g_test_ext_proc_server_to_client_message_modifier = nullptr;
+
+  EXPECT_FALSE(status.ok());
+  EXPECT_EQ(status.error_code(), grpc::StatusCode::INVALID_ARGUMENT);
+  EXPECT_EQ(status.error_message(), "injected s2c message error");
+}
+
 }  // namespace
 }  // namespace testing
 }  // namespace grpc
