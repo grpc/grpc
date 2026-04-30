@@ -259,7 +259,7 @@ class CallSpine final : public Party, public channelz::DataSource {
 
   void SpawnPushServerToClientMessage(MessageHandle msg) {
     server_to_client_serializer()->Spawn(
-        [msg = std::move(msg), self = RefAsSubclass<CallSpine>()]() mutable {
+        [msg = std::move(msg), self = this]() mutable {
           return self->CancelIfFails(
               self->PushServerToClientMessage(std::move(msg)));
         });
@@ -267,7 +267,7 @@ class CallSpine final : public Party, public channelz::DataSource {
 
   void SpawnPushClientToServerMessage(MessageHandle msg) {
     client_to_server_serializer()->Spawn(
-        [msg = std::move(msg), self = RefAsSubclass<CallSpine>()]() mutable {
+        [msg = std::move(msg), self = this]() mutable {
           return self->CancelIfFails(
               self->PushClientToServerMessage(std::move(msg)));
         });

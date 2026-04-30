@@ -1978,39 +1978,40 @@ auto Http2ClientTransport::CallOutboundLoop(RefCountedPtr<Stream> stream) {
   GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport::CallOutboundLoop";
   GRPC_DCHECK(stream != nullptr);
 
-  auto send_message = [this, stream](MessageHandle&& message) mutable {
+  auto send_message = [this, stream_ptr = stream.get()](
+                          MessageHandle&& message) mutable {
     return TrySeq(
-        stream->EnqueueMessage(std::move(message)),
-        [this, stream](const StreamWritabilityUpdate result) mutable {
+        stream_ptr->EnqueueMessage(std::move(message)),
+        [this, stream_ptr](const StreamWritabilityUpdate result) mutable {
           GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport::CallOutboundLoop "
                                     "Enqueued Message";
-          return MaybeAddStreamToWritableStreamList(std::move(stream), result);
+          return MaybeAddStreamToWritableStreamList(stream_ptr->Ref(), result);
         });
   };
 
-  auto send_initial_metadata =
-      [this, stream](ClientMetadataHandle&& metadata) mutable {
-        absl::StatusOr<StreamWritabilityUpdate> enqueue_result =
-            stream->EnqueueInitialMetadata(
-                std::forward<ClientMetadataHandle>(metadata));
-        if (GPR_UNLIKELY(!enqueue_result.ok())) {
-          return enqueue_result.status();
-        }
-        GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport CallOutboundLoop "
-                                  "Enqueued Initial Metadata";
-        return MaybeAddStreamToWritableStreamList(std::move(stream),
-                                                  enqueue_result.value());
-      };
-
-  auto send_half_closed = [this, stream]() mutable {
+  auto send_initial_metadata = [this, stream_ptr = stream.get()](
+                                   ClientMetadataHandle&& metadata) mutable {
     absl::StatusOr<StreamWritabilityUpdate> enqueue_result =
-        stream->EnqueueHalfClosed();
+        stream_ptr->EnqueueInitialMetadata(
+            std::forward<ClientMetadataHandle>(metadata));
+    if (GPR_UNLIKELY(!enqueue_result.ok())) {
+      return enqueue_result.status();
+    }
+    GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport CallOutboundLoop "
+                              "Enqueued Initial Metadata";
+    return MaybeAddStreamToWritableStreamList(stream_ptr->Ref(),
+                                              enqueue_result.value());
+  };
+
+  auto send_half_closed = [this, stream_ptr = stream.get()]() mutable {
+    absl::StatusOr<StreamWritabilityUpdate> enqueue_result =
+        stream_ptr->EnqueueHalfClosed();
     if (GPR_UNLIKELY(!enqueue_result.ok())) {
       return enqueue_result.status();
     }
     GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport CallOutboundLoop "
                               "Enqueued Half Closed";
-    return MaybeAddStreamToWritableStreamList(std::move(stream),
+    return MaybeAddStreamToWritableStreamList(stream_ptr->Ref(),
                                               enqueue_result.value());
   };
 
@@ -2048,7 +2049,7 @@ auto Http2ClientTransport::CallOutboundLoop(RefCountedPtr<Stream> stream) {
 void Http2ClientTransport::StartCall(CallHandler call_handler) {
   GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport::StartCall Begin";
 
-  call_handler.SpawnGuarded(
+  call_handler.SpawnGuardedUntilCallCompletes(
       "OutboundLoop",
       [self = RefAsSubclass<Http2ClientTransport>(), call_handler]() mutable {
         std::optional<RefCountedPtr<Stream>> stream =
@@ -2088,30 +2089,24 @@ void Http2ClientTransport::MaybeSpawnPingTimeout(
     std::optional<uint64_t> opaque_data) {
   if (opaque_data.has_value()) {
     SpawnGuardedTransportParty(
-        "PingTimeout", [self = RefAsSubclass<Http2ClientTransport>(),
-                        opaque_data = *opaque_data]() {
-          return self->ping_manager_->TimeoutPromise(opaque_data);
-        });
+        "PingTimeout",
+        UntilTransportClosed(ping_manager_->TimeoutPromise(*opaque_data)));
   }
 }
 void Http2ClientTransport::MaybeSpawnDelayedPing(
     std::optional<Duration> delayed_ping_wait) {
   if (delayed_ping_wait.has_value()) {
     SpawnGuardedTransportParty(
-        "DelayedPing", [self = RefAsSubclass<Http2ClientTransport>(),
-                        wait = *delayed_ping_wait]() {
-          GRPC_HTTP2_PING_LOG << "Scheduling delayed ping after wait=" << wait;
-          return self->ping_manager_->DelayedPingPromise(wait);
-        });
+        "DelayedPing", UntilTransportClosed(ping_manager_->DelayedPingPromise(
+                           *delayed_ping_wait)));
   }
 }
 
 void Http2ClientTransport::MaybeSpawnKeepaliveLoop() {
   if (keepalive_manager_->IsKeepAliveLoopNeeded()) {
     SpawnGuardedTransportParty(
-        "KeepaliveLoop", [self = RefAsSubclass<Http2ClientTransport>()]() {
-          return self->keepalive_manager_->KeepaliveLoop();
-        });
+        "KeepaliveLoop",
+        UntilTransportClosed(keepalive_manager_->KeepaliveLoop()));
   }
 }
 
