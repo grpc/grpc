@@ -1336,7 +1336,6 @@ class V3InterceptorToV2Bridge : public ChannelFilter, public Interceptor {
     // Now return a promise that does all the things.
     // We use a wrapper lambda with PipeOwnerCleanup to ensure Shutdown is
     // called when the promise is destroyed, breaking any reference cycles.
-    auto pipe_owner_copy = pipe_owner;
     auto promise = Race(
         // We need to start polling the initiator for server trailing
         // metadata immediately, since the v3 interceptor may generate a
@@ -1347,7 +1346,7 @@ class V3InterceptorToV2Bridge : public ChannelFilter, public Interceptor {
         // until the initiator returns trailing metadata above.
         TrySeq(
             state->call_handler_latch.Wait(),
-            [pipe_owner = std::move(pipe_owner_copy),
+            [pipe_owner = pipe_owner,
              call_args = std::move(call_args),
              next_promise_factory = std::move(next_promise_factory)](
                 CallHandler handler) mutable {
