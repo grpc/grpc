@@ -82,7 +82,7 @@ _FLAKY_TESTS = [
             "//src/python/grpcio/grpc:grpcio",
             "//src/python/grpcio_tests/tests/unit:resources",
             "//src/python/grpcio_tests/tests/unit/framework/common",
-            "@typing_extensions",
+            "@grpc_typing_extensions//:typing_extensions",
             requirement("typeguard"),
         ],
     )
