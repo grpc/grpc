@@ -44,6 +44,8 @@ EXPERIMENT_ENABLES = {
     "metadata_publish_to_app_tag": "metadata_publish_to_app_tag",
     "monitoring_experiment": "monitoring_experiment",
     "multiping": "multiping",
+    "optimization_01": "optimization_01",
+    "optimization_02": "optimization_02",
     "otel_export_telemetry_domains": "otel_export_telemetry_domains",
     "ph2_optimization": "ph2_optimization",
     "ph2_perf_01": "ph2_perf_01",

@@ -68,13 +68,13 @@
   test_tags: []
 - name: chaotic_good_framing_layer
   description: Enable the chaotic good framing layer.
-  expiry: 2026/09/01
+  expiry: 2026/05/01
   owner: aananthv@google.com
   test_tags: []
   allow_in_fuzzing_config: false
 - name: chaotic_good_send_supported_features
   description: Send supported features in chaotic good settings frames.
-  expiry: 2026/09/01
+  expiry: 2026/05/01
   owner: aananthv@google.com
   test_tags: [core_end2end_test]
 - name: error_flatten
@@ -189,7 +189,7 @@
   test_tags: ["core_end2end_test"]
 - name: max_inflight_pings_strict_limit
   description: If set, the max inflight pings limit is strictly enforced.
-  expiry: 2026/06/10
+  expiry: 2026/05/10
   owner: akshitpatel@google.com
   test_tags: []
 - name: memory_optimization_01
@@ -216,9 +216,21 @@
   test_tags: []
 - name: multiping
   description: Allow more than one ping to be in flight at a time by default.
-  expiry: 2027/01/16
+  expiry: 2026/05/01
   owner: akshitpatel@google.com
   test_tags: [flow_control_test]
+- name: optimization_01
+  description: Transport Optimization
+  expiry: 2027/01/16
+  owner: tjagtap@google.com
+  test_tags: []
+  allow_in_fuzzing_config: false
+- name: optimization_02
+  description: Transport Optimization
+  expiry: 2027/01/16
+  owner: tjagtap@google.com
+  test_tags: []
+  allow_in_fuzzing_config: false
 - name: otel_export_telemetry_domains
   description: Export telemetry domains in OpenTelemetry metrics.
   expiry: 2026/05/01
@@ -301,7 +313,7 @@
   allow_in_fuzzing_config: true
 - name: retry_in_callv3
   description: Support retries with call-v3
-  expiry: 2027/01/16
+  expiry: 2026/05/01
   owner: akshitpatel@google.com
   test_tags: [core_end2end_test]
 - name: return_preexisting_errors
@@ -383,7 +395,7 @@
   test_tags: []
 - name: unconstrained_max_quota_buffer_size
   description: Discard the cap on the max free pool size for one memory allocator
-  expiry: 2026/09/01
+  expiry: 2026/05/01
   owner: snohria@google.com
   test_tags: [resource_quota_test]
 - name: use_call_event_engine_in_completion_queue
