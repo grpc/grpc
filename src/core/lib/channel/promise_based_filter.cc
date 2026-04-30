@@ -495,6 +495,16 @@ void BaseCallData::SendMessage::Done(const ServerMetadata& metadata,
     case State::kPushedToPipe:
       push_.reset();
       next_.reset();
+      if (batch_.is_captured()) {
+        std::string temp;
+        batch_.CancelWith(
+            absl::Status(
+                static_cast<absl::StatusCode>(
+                    metadata.get(GrpcStatusMetadata())
+                        .value_or(GRPC_STATUS_UNKNOWN)),
+                metadata.GetStringValue("grpc-message", &temp).value_or("")),
+            flusher);
+      }
       state_ = State::kCancelledButNotYetPolled;
       if (base_->is_current()) base_->ForceImmediateRepoll();
       break;
