@@ -602,10 +602,15 @@ const char* grpc_call_error_to_string(grpc_call_error error) {
 
 void grpc_call_run_in_event_engine(const grpc_call* call,
                                    absl::AnyInvocable<void()> cb) {
-  grpc_core::Call::FromC(call)
-      ->arena()
-      ->GetContext<grpc_event_engine::experimental::EventEngine>()
-      ->Run(std::move(cb));
+  if (call == nullptr) {
+    grpc_event_engine::experimental::GetDefaultEventEngine()->Run(
+        std::move(cb));
+  } else {
+    grpc_core::Call::FromC(call)
+        ->arena()
+        ->GetContext<grpc_event_engine::experimental::EventEngine>()
+        ->Run(std::move(cb));
+  }
 }
 
 void grpc_call_run_cq_cb(const grpc_call* call,
