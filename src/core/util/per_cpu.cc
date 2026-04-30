@@ -18,6 +18,8 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/util/useful.h"
+#include "absl/log/log.h"
+#include <stdio.h>
 
 namespace grpc_core {
 
@@ -30,6 +32,9 @@ size_t PerCpuOptions::Shards() {
 }
 
 size_t PerCpuOptions::ShardsForCpuCount(size_t cpu_count) {
+  VLOG(2) << "cpu_count: " << cpu_count;
+  VLOG(2) << "cpus_per_shard_: " << cpus_per_shard_;
+  VLOG(2) << "max_shards_: " << max_shards_;
   return Clamp<size_t>(cpu_count / cpus_per_shard_, 1, max_shards_);
 }
 

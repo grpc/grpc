@@ -3559,7 +3559,7 @@ grpc_cc_library(
     name = "stats_data",
     srcs = ["telemetry/stats_data.cc"],
     hdrs = ["telemetry/stats_data.h"],
-    external_deps = ["absl/strings"],
+    external_deps = ["absl/strings", "absl/log"],
     deps = [
         "histogram_view",
         "no_destruct",
@@ -3570,6 +3570,7 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "per_cpu",
+    external_deps = ["absl/log"],
     srcs = [
         "util/per_cpu.cc",
     ],
