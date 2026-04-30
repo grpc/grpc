@@ -41,6 +41,8 @@
 namespace grpc_core {
 
 absl::Status (*g_test_ext_proc_metadata_modifier)(grpc_metadata_batch*) = nullptr;
+absl::Status (*g_test_ext_proc_server_trailing_metadata_modifier)(
+    grpc_metadata_batch*) = nullptr;
 absl::Status (*g_test_ext_proc_message_modifier)(MessageHandle*) = nullptr;
 
 std::string ExtProcFilter::ProcessingMode::ToString() const {
@@ -145,6 +147,18 @@ auto ExtProcFilter::ServerTrailingMetadata(CallHandler handler,
                GRPC_TRACE_LOG(ext_proc_filter, INFO)
                    << "ExtProc: ServerTrailingMetadata received:\n"
                    << md->DebugString();
+               absl::Status status;
+               if (g_test_ext_proc_server_trailing_metadata_modifier !=
+                   nullptr) {
+                 status =
+                     g_test_ext_proc_server_trailing_metadata_modifier(md.get());
+               }
+               if (!status.ok()) {
+                 md->Set(GrpcStatusMetadata(),
+                         static_cast<grpc_status_code>(status.code()));
+                 md->Set(GrpcMessageMetadata(),
+                         grpc_core::Slice::FromCopiedString(status.message()));
+               }
                handler.SpawnPushServerTrailingMetadata(std::move(md));
                return absl::OkStatus();
              });
