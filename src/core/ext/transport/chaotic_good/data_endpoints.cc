@@ -743,7 +743,7 @@ auto Endpoint::PullDataPayload(RefCountedPtr<EndpointContext> ctx) {
         }
         // TODO(pragunsaxena): consider returning tcp tracer instead of this
         // boolean to keep parity with the chttp2 transport.
-        return std::make_pair(std::move(buffer), tcp_tracer_enabled);
+        return std::pair{std::move(buffer), tcp_tracer_enabled};
       });
 }
 
@@ -762,7 +762,7 @@ auto Endpoint::WriteLoop(RefCountedPtr<EndpointContext> ctx) {
                  Map(ctx->secure_frame_queue->Next(),
                      [](SliceBuffer x)
                          -> ValueOrFailure<std::pair<SliceBuffer, bool>> {
-                       return std::make_pair(std::move(x), false);
+                       return std::pair{std::move(x), false};
                      }))),
         [ctx, metrics_collector](std::pair<SliceBuffer, bool> result) {
           SliceBuffer& buffer = result.first;
