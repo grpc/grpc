@@ -27,6 +27,7 @@
 #include <string>
 
 #include "src/core/credentials/transport/tls/grpc_tls_certificate_distributor.h"
+#include "src/core/credentials/transport/tls/grpc_tls_certificate_selector.h"
 #include "src/core/credentials/transport/tls/ssl_utils.h"
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/ref_counted.h"

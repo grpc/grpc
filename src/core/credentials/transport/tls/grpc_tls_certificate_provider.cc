@@ -29,6 +29,7 @@
 #include <variant>
 #include <vector>
 
+#include "grpc_tls_certificate_selector.h"
 #include "src/core/credentials/transport/tls/spiffe_utils.h"
 #include "src/core/credentials/transport/tls/ssl_utils.h"
 #include "src/core/lib/debug/trace.h"
@@ -182,7 +183,7 @@ FileWatcherCertificateProvider::FileWatcherCertificateProvider(
     }
     info.root_being_watched = root_being_watched;
     if (!info.identity_being_watched && identity_being_watched &&
-        !pem_key_cert_pairs_.empty()) {
+        !IsPemKeyCertPairListEmpty(pem_key_cert_pairs_)) {
       pem_key_cert_pairs = pem_key_cert_pairs_;
     }
     info.identity_being_watched = identity_being_watched;
@@ -233,14 +234,19 @@ absl::Status FileWatcherCertificateProvider::ValidateCredentials() const {
   if (!status.ok()) {
     return status;
   }
-  for (const PemKeyCertPair& pair : pem_key_cert_pairs_) {
-    absl::Status status =
-        ValidatePemKeyCertPair(pair.cert_chain(), pair.private_key());
-    if (!status.ok()) {
-      return status;
+  return Match(pem_key_cert_pairs_, [](const std::vector<PemKeyCertPair>& pem_pairs) {
+    for (const PemKeyCertPair& pair : pem_pairs) {
+      absl::Status status =
+          ValidatePemKeyCertPair(pair.cert_chain(), pair.private_key());
+      if (!status.ok()) {
+        return status;
+      }
     }
-  }
-  return absl::OkStatus();
+    return absl::OkStatus();
+  }, [](const std::shared_ptr<CertificateSelector>& cert_selector){
+    // We should never be able to get this from files.
+    return absl::InternalError("Invalid pem key cert pairs");
+  });
 }
 
 void FileWatcherCertificateProvider::ForceUpdate() {
@@ -274,7 +280,8 @@ void FileWatcherCertificateProvider::ForceUpdate() {
     root_cert_info_ = std::move(root_cert_info);
   }
   const bool identity_cert_changed =
-      (!pem_key_cert_pairs.has_value() && !pem_key_cert_pairs_.empty()) ||
+      (!pem_key_cert_pairs.has_value() &&
+       !IsPemKeyCertPairListEmpty(pem_key_cert_pairs_)) ||
       (pem_key_cert_pairs.has_value() &&
        pem_key_cert_pairs_ != *pem_key_cert_pairs);
   if (identity_cert_changed) {
@@ -299,7 +306,8 @@ void FileWatcherCertificateProvider::ForceUpdate() {
       if (info.root_being_watched && root_changed) {
         root_to_report = root_cert_info_.ok() ? *root_cert_info_ : nullptr;
       }
-      if (info.identity_being_watched && !pem_key_cert_pairs_.empty() &&
+      if (info.identity_being_watched &&
+          !IsPemKeyCertPairListEmpty(pem_key_cert_pairs_) &&
           identity_cert_changed) {
         identity_to_report = pem_key_cert_pairs_;
       }
@@ -312,7 +320,8 @@ void FileWatcherCertificateProvider::ForceUpdate() {
           info.root_being_watched &&
           (!root_cert_info_.ok() || *root_cert_info_ == nullptr);
       const bool report_identity_error =
-          info.identity_being_watched && pem_key_cert_pairs_.empty();
+          info.identity_being_watched &&
+          IsPemKeyCertPairListEmpty(pem_key_cert_pairs_);
       if (report_root_error || report_identity_error) {
         distributor_->SetErrorForCert(
             cert_name, report_root_error ? root_cert_error : absl::OkStatus(),
@@ -386,7 +395,7 @@ FileWatcherCertificateProvider::ReadIdentityKeyCertPairFromFiles(
     }
     std::string private_key(key_slice->as_string_view());
     std::string cert_chain(cert_slice->as_string_view());
-    PemKeyCertPairList identity_pairs;
+    std::vector<PemKeyCertPair> identity_pairs;
     identity_pairs.emplace_back(private_key, cert_chain);
     // Checking the last modification of identity files before reading.
     time_t identity_key_ts_after =
@@ -431,7 +440,7 @@ InMemoryCertificateProvider::InMemoryCertificateProvider()
     }
     info.root_being_watched = root_being_watched;
     if (!info.identity_being_watched && identity_being_watched &&
-        !pem_key_cert_pairs_.empty()) {
+        !IsPemKeyCertPairListEmpty(pem_key_cert_pairs_)) {
       pem_key_cert_pairs = pem_key_cert_pairs_;
     }
     info.identity_being_watched = identity_being_watched;
@@ -488,7 +497,8 @@ absl::Status InMemoryCertificateProvider::Update(
         root_to_report =
             root_certificates_.ok() ? *root_certificates_ : nullptr;
       }
-      if (info.identity_being_watched && !pem_key_cert_pairs_.empty() &&
+      if (info.identity_being_watched &&
+          !IsPemKeyCertPairListEmpty(pem_key_cert_pairs_) &&
           identity_cert_changed) {
         identity_to_report = pem_key_cert_pairs_;
       }
@@ -501,7 +511,8 @@ absl::Status InMemoryCertificateProvider::Update(
           info.root_being_watched &&
           (!root_certificates_.ok() || *root_certificates_ == nullptr);
       const bool report_identity_error =
-          info.identity_being_watched && pem_key_cert_pairs_.empty();
+          info.identity_being_watched &&
+          IsPemKeyCertPairListEmpty(pem_key_cert_pairs_);
       if (report_root_error || report_identity_error) {
         distributor_->SetErrorForCert(
             cert_name, report_root_error ? root_cert_error : absl::OkStatus(),
@@ -521,14 +532,21 @@ absl::Status InMemoryCertificateProvider::ValidateCredentials() const {
   if (!status.ok()) {
     return status;
   }
-  for (const PemKeyCertPair& pair : pem_key_cert_pairs_) {
-    absl::Status status =
-        ValidatePemKeyCertPair(pair.cert_chain(), pair.private_key());
-    if (!status.ok()) {
-      return status;
+  return Match(pem_key_cert_pairs_, [](const std::vector<PemKeyCertPair>& pem_pairs) {
+    for (const PemKeyCertPair& pair : pem_pairs) {
+      absl::Status status =
+          ValidatePemKeyCertPair(pair.cert_chain(), pair.private_key());
+      if (!status.ok()) {
+        return status;
+      }
     }
-  }
-  return absl::OkStatus();
+    return absl::OkStatus();
+  }, [](const std::shared_ptr<CertificateSelector>& cert_selector){
+    if (cert_selector == nullptr) {
+      return absl::InvalidArgumentError("Certificiate selector is nullptr");
+    }
+    return absl::OkStatus();
+  });
 }
 
 absl::Status InMemoryCertificateProvider::UpdateRoot(

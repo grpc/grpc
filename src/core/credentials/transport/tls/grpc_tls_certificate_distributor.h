@@ -35,7 +35,7 @@
 #include "absl/base/thread_annotations.h"
 
 struct grpc_tls_identity_pairs {
-  grpc_core::PemKeyCertPairList pem_key_cert_pairs;
+  std::vector<grpc_core::PemKeyCertPair> pem_key_cert_pairs;
 };
 
 // TLS certificate distributor.

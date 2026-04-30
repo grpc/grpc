@@ -34,6 +34,7 @@
 #include <vector>
 
 #include "src/core/credentials/transport/security_connector.h"
+#include "src/core/credentials/transport/tls/grpc_tls_certificate_selector.h"
 #include "src/core/credentials/transport/tls/spiffe_utils.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/tsi/ssl/key_logging/ssl_key_logging.h"
@@ -99,7 +100,7 @@ grpc_security_status grpc_ssl_tsi_client_handshaker_factory_init(
     tsi_ssl_client_handshaker_factory** handshaker_factory);
 
 grpc_security_status grpc_ssl_tsi_server_handshaker_factory_init(
-    std::vector<tsi_ssl_pem_key_cert_pair> key_cert_pairs,
+    tsi_ssl_key_cert_pairs key_cert_pairs,
     std::shared_ptr<tsi::RootCertInfo> root_cert_info,
     grpc_ssl_client_certificate_request_type client_certificate_request,
     tsi_tls_version min_tls_version, tsi_tls_version max_tls_version,
@@ -193,7 +194,12 @@ class PemKeyCertPair {
   std::string cert_chain_;
 };
 
-using PemKeyCertPairList = std::vector<PemKeyCertPair>;
+using PemKeyCertPairList = std::variant<std::vector<PemKeyCertPair>,
+                                        std::shared_ptr<CertificateSelector>>;
+
+// Checks whether `std::vector<PemKeyCertPair>` in the variant is empty, or the
+// `CertficateSelector` is nullptr.
+bool IsPemKeyCertPairListEmpty(const PemKeyCertPairList& key_cert_pairs);
 
 }  // namespace grpc_core
 

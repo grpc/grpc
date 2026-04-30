@@ -22,6 +22,7 @@
 
 #include "src/core/tsi/ssl_transport_security.h"
 #include "src/core/util/grpc_check.h"
+#include "ssl_utils.h"
 #include "absl/status/status.h"
 
 bool grpc_tls_certificate_distributor::CertificateInfo::AreRootsEmpty() {
@@ -49,7 +50,8 @@ void grpc_tls_certificate_distributor::SetKeyMaterials(
       } else if (watcher_it->second.identity_cert_name.has_value()) {
         auto& identity_cert_info =
             certificate_info_map_[*watcher_it->second.identity_cert_name];
-        if (!identity_cert_info.pem_key_cert_pairs.empty()) {
+        if (!grpc_core::IsPemKeyCertPairListEmpty(
+                identity_cert_info.pem_key_cert_pairs)) {
           pem_key_cert_pairs_to_report = identity_cert_info.pem_key_cert_pairs;
         }
       }
@@ -97,7 +99,7 @@ bool grpc_tls_certificate_distributor::HasKeyCertPairs(
   grpc_core::MutexLock lock(&mu_);
   const auto it = certificate_info_map_.find(identity_cert_name);
   return it != certificate_info_map_.end() &&
-         !it->second.pem_key_cert_pairs.empty();
+         !grpc_core::IsPemKeyCertPairListEmpty(it->second.pem_key_cert_pairs);
 };
 
 void grpc_tls_certificate_distributor::SetErrorForCert(
@@ -213,7 +215,7 @@ void grpc_tls_certificate_distributor::WatchTlsCertificates(
       cert_info.identity_cert_watchers.insert(watcher_ptr);
       identity_error = cert_info.identity_cert_error;
       // Empty credentials will be treated as no updates.
-      if (!cert_info.pem_key_cert_pairs.empty()) {
+      if (!grpc_core::IsPemKeyCertPairListEmpty(cert_info.pem_key_cert_pairs)) {
         updated_identity_pairs = cert_info.pem_key_cert_pairs;
       }
     }
