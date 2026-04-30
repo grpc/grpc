@@ -130,6 +130,8 @@ const char* const additional_constraints_multiping = "{}";
 const char* const description_otel_export_telemetry_domains =
     "Export telemetry domains in OpenTelemetry metrics.";
 const char* const additional_constraints_otel_export_telemetry_domains = "{}";
+const char* const description_ph2_optimization = "PH2 Optimization";
+const char* const additional_constraints_ph2_optimization = "{}";
 const char* const description_ph2_perf_01 =
     "Different performance experiments for PH2 Transport";
 const char* const additional_constraints_ph2_perf_01 = "{}";
@@ -329,6 +331,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"otel_export_telemetry_domains", description_otel_export_telemetry_domains,
      additional_constraints_otel_export_telemetry_domains, nullptr, 0, false,
      true},
+    {"ph2_optimization", description_ph2_optimization,
+     additional_constraints_ph2_optimization, nullptr, 0, false, false},
     {"ph2_perf_01", description_ph2_perf_01, additional_constraints_ph2_perf_01,
      nullptr, 0, false, true},
     {"pick_first_ignore_empty_updates",
@@ -533,6 +537,8 @@ const char* const additional_constraints_multiping = "{}";
 const char* const description_otel_export_telemetry_domains =
     "Export telemetry domains in OpenTelemetry metrics.";
 const char* const additional_constraints_otel_export_telemetry_domains = "{}";
+const char* const description_ph2_optimization = "PH2 Optimization";
+const char* const additional_constraints_ph2_optimization = "{}";
 const char* const description_ph2_perf_01 =
     "Different performance experiments for PH2 Transport";
 const char* const additional_constraints_ph2_perf_01 = "{}";
@@ -732,6 +738,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"otel_export_telemetry_domains", description_otel_export_telemetry_domains,
      additional_constraints_otel_export_telemetry_domains, nullptr, 0, false,
      true},
+    {"ph2_optimization", description_ph2_optimization,
+     additional_constraints_ph2_optimization, nullptr, 0, false, false},
     {"ph2_perf_01", description_ph2_perf_01, additional_constraints_ph2_perf_01,
      nullptr, 0, false, true},
     {"pick_first_ignore_empty_updates",
@@ -936,6 +944,8 @@ const char* const additional_constraints_multiping = "{}";
 const char* const description_otel_export_telemetry_domains =
     "Export telemetry domains in OpenTelemetry metrics.";
 const char* const additional_constraints_otel_export_telemetry_domains = "{}";
+const char* const description_ph2_optimization = "PH2 Optimization";
+const char* const additional_constraints_ph2_optimization = "{}";
 const char* const description_ph2_perf_01 =
     "Different performance experiments for PH2 Transport";
 const char* const additional_constraints_ph2_perf_01 = "{}";
@@ -1135,6 +1145,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"otel_export_telemetry_domains", description_otel_export_telemetry_domains,
      additional_constraints_otel_export_telemetry_domains, nullptr, 0, false,
      true},
+    {"ph2_optimization", description_ph2_optimization,
+     additional_constraints_ph2_optimization, nullptr, 0, false, false},
     {"ph2_perf_01", description_ph2_perf_01, additional_constraints_ph2_perf_01,
      nullptr, 0, false, true},
     {"pick_first_ignore_empty_updates",
