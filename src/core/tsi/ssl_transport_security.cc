@@ -2794,10 +2794,7 @@ static tsi_result create_tsi_ssl_handshaker(
   impl->factory_ref = tsi_ssl_handshaker_factory_ref(factory);
   impl->has_certificate_selector = has_certificate_selector;
 #if defined(OPENSSL_IS_BORINGSSL)
-  {
-    grpc_core::MutexLock lock(&impl->mu);
     impl->key_signer = std::move(key_signer);
-  }
 #endif
 
   *handshaker = impl;
@@ -2847,11 +2844,17 @@ tsi_result tsi_ssl_client_handshaker_factory_create_handshaker(
     tsi_handshaker** handshaker) {
   GRPC_TRACE_LOG(tsi, INFO)
       << "Creating SSL handshaker with SNI " << server_name_indication;
+#if defined(OPENSSL_IS_BORINGSSL)
   return create_tsi_ssl_handshaker(
-      factory->ssl_context, /*is_client=*/true, server_name_indication,
-      network_bio_buf_size, ssl_bio_buf_size, alpn_preferred_protocol_list,
-      factory->key_signer, /*has_certificate_selector=*/false, &factory->base,
-      handshaker);
+      factory->ssl_context, 1, server_name_indication, network_bio_buf_size,
+      ssl_bio_buf_size, alpn_preferred_protocol_list, factory->key_signer, /*has_certificate_selector=*/false,
+      &factory->base, handshaker);
+#else
+  return create_tsi_ssl_handshaker(
+      factory->ssl_context, 1, server_name_indication, network_bio_buf_size,
+      ssl_bio_buf_size, alpn_preferred_protocol_list, /*key_signer=*/nullptr, /*has_certificate_selector=*/false,
+      &factory->base, handshaker);
+#endif
 }
 
 void tsi_ssl_client_handshaker_factory_unref(
@@ -2893,16 +2896,21 @@ tsi_result tsi_ssl_server_handshaker_factory_create_handshaker(
     tsi_ssl_server_handshaker_factory* factory, size_t network_bio_buf_size,
     size_t ssl_bio_buf_size, tsi_handshaker** handshaker) {
   if (factory->ssl_contexts.empty()) return TSI_INVALID_ARGUMENT;
+#if defined(OPENSSL_IS_BORINGSSL)
   // Create the handshaker with the first context. We will switch if needed
   // because of SNI in ssl_server_handshaker_factory_servername_callback.
   // Likewise, we pass the private key signer corresponding to the first
   // context.
   return create_tsi_ssl_handshaker(
-      factory->ssl_contexts[0].ssl_ctx, /*is_client=*/false, nullptr,
-      network_bio_buf_size, ssl_bio_buf_size, std::nullopt,
-      factory->ssl_contexts[0].key_signer,
-      /*has_certificate_selector=*/factory->certificate_selector != nullptr,
+      factory->ssl_contexts[0].ssl_ctx, 0, nullptr, network_bio_buf_size,
+      ssl_bio_buf_size, std::nullopt, factory->ssl_contexts[0].key_signer, /*has_certificate_selector=*/factory->certificate_selector != nullptr,
       &factory->base, handshaker);
+#else
+  return create_tsi_ssl_handshaker(factory->ssl_contexts[0].ssl_ctx, 0, nullptr,
+                                   network_bio_buf_size, ssl_bio_buf_size,
+                                   std::nullopt, /*key_signer=*/nullptr,/*has_certificate_selector=*/false,
+                                   &factory->base, handshaker);
+#endif
 }
 
 void tsi_ssl_server_handshaker_factory_unref(

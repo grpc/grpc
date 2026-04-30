@@ -90,20 +90,24 @@ OutputBuffers::Reader::PollReadNext() {
   while (true) {
     GRPC_LATENT_SEE_SCOPE("OutputBuffers::PollReadNext::loop");
     if (frames_.empty()) {
+      bool call_wakeup = false;
       if (!reading_) {
         reading_ = true;
-        output_buffers_->WakeupScheduler();
+        call_wakeup = true;
       }
       waker_ = GetContext<Activity>()->MakeNonOwningWaker();
       mu_.Unlock();
+      if (call_wakeup) {
+        output_buffers_->WakeupScheduler();
+      }
       return Pending{};
     }
     DCHECK(!reading_);
     auto frames = std::move(frames_);
     frames_.clear();
     send_rate_.DequeueFromReader(output_buffers_->clock_->Now());
-    output_buffers_->WakeupScheduler(/*async=*/true);
     mu_.Unlock();
+    output_buffers_->WakeupScheduler(/*async=*/true);
     return std::move(frames);
   }
 }
@@ -360,7 +364,7 @@ void SecureFrameQueue::Write(SliceBuffer buffer) {
   TcpDataFrameHeader{0, 0, frame_length}.Serialize(slice.data());
   if (header_padding != 0) {
     memset(slice.data() + TcpDataFrameHeader::kFrameHeaderSize, 0,
-           frame_padding);
+           header_padding);
   }
   all_frames_.Append(Slice(std::move(slice)));
   all_frames_.TakeAndAppend(buffer);
@@ -691,7 +695,7 @@ auto Endpoint::PullDataPayload(RefCountedPtr<EndpointContext> ctx) {
       ctx->reader->Next(),
       [ctx](
           ValueOrFailure<std::vector<OutputBuffers::QueuedFrame>> queued_frames)
-          -> ValueOrFailure<SliceBuffer> {
+          -> ValueOrFailure<std::pair<SliceBuffer, bool>> {
         if (!queued_frames.ok()) return Failure{};
         GRPC_TRACE_LOG(chaotic_good, INFO)
             << "CHAOTIC_GOOD: " << ctx->reader.get() << " "
@@ -704,6 +708,7 @@ auto Endpoint::PullDataPayload(RefCountedPtr<EndpointContext> ctx) {
         GRPC_LATENT_SEE_SCOPE("SerializePayload");
         // Frame everything into a slice buffer.
         SliceBuffer buffer;
+        bool tcp_tracer_enabled = false;
         const size_t header_padding = DataConnectionPadding(
             TcpDataFrameHeader::kFrameHeaderSize, ctx->encode_alignment);
         const size_t header_size =
@@ -716,6 +721,9 @@ auto Endpoint::PullDataPayload(RefCountedPtr<EndpointContext> ctx) {
         auto padding = Slice(std::move(padding_mut));
         for (size_t i = 0; i < queued_frames->size(); ++i) {
           auto& queued_frame = (*queued_frames)[i];
+          if (queued_frame.frame->call_tracer != nullptr) {
+            tcp_tracer_enabled = true;
+          }
           auto& frame = absl::ConvertVariantTo<FrameInterface&>(
               queued_frame.frame->payload);
           auto hdr = header_frames.TakeFirstNoInline(header_size);
@@ -733,7 +741,9 @@ auto Endpoint::PullDataPayload(RefCountedPtr<EndpointContext> ctx) {
             buffer.AppendIndexed(padding.RefSubSlice(0, frame_padding));
           }
         }
-        return std::move(buffer);
+        // TODO(pragunsaxena): consider returning tcp tracer instead of this
+        // boolean to keep parity with the chttp2 transport.
+        return std::pair{std::move(buffer), tcp_tracer_enabled};
       });
 }
 
@@ -750,10 +760,13 @@ auto Endpoint::WriteLoop(RefCountedPtr<EndpointContext> ctx) {
             "DataEndpointPullPayload",
             Race(PullDataPayload(ctx),
                  Map(ctx->secure_frame_queue->Next(),
-                     [](SliceBuffer x) -> ValueOrFailure<SliceBuffer> {
-                       return std::move(x);
+                     [](SliceBuffer x)
+                         -> ValueOrFailure<std::pair<SliceBuffer, bool>> {
+                       return std::pair{std::move(x), false};
                      }))),
-        [ctx, metrics_collector](SliceBuffer buffer) {
+        [ctx, metrics_collector](std::pair<SliceBuffer, bool> result) {
+          SliceBuffer& buffer = result.first;
+          bool tcp_tracer_enabled = result.second;
           ctx->ztrace_collector->Append(
               WriteBytesToEndpointTrace{buffer.Length(), ctx->id});
           PromiseEndpoint::WriteArgs write_args;
@@ -761,7 +774,8 @@ auto Endpoint::WriteLoop(RefCountedPtr<EndpointContext> ctx) {
           static const Duration kMetricsUpdateInterval = Duration::Milliseconds(
               ConfigVars::Get().ChaoticGoodMetricsUpdateIntervalMs());
           if (metrics_collector != nullptr &&
-              now - ctx->last_metrics_update > kMetricsUpdateInterval) {
+              (tcp_tracer_enabled ||
+               now - ctx->last_metrics_update > kMetricsUpdateInterval)) {
             ctx->last_metrics_update = now;
             write_args.set_metrics_sink(metrics_collector->MakeWriteEventSink(
                 buffer.Length(), ctx->reader, ctx->ztrace_collector));
