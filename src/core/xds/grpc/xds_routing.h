@@ -124,9 +124,9 @@ class XdsRouting final {
     // Calls func for each filter in order.
     // Handles proper ordering for client and server sides.
     void ForEachFilter(
-        absl::FunctionRef<void(
-            const XdsHttpFilterImpl&,
-            const XdsListenerResource::HttpConnectionManager::HttpFilter&)>
+        absl::FunctionRef<
+            void(const XdsHttpFilterImpl&,
+                 const XdsListenerResource::HttpConnectionManager::HttpFilter&)>
             func);
 
     const bool is_client_;

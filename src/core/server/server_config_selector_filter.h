@@ -57,10 +57,10 @@ class ServerConfigSelectorInterceptor final
   static absl::StatusOr<RefCountedPtr<ServerConfigSelectorInterceptor>> Create(
       const ChannelArgs& args, ChannelFilter::Args filter_args);
 
-  ServerConfigSelectorInterceptor(
-      const ChannelArgs& args, ChannelFilter::Args filter_args,
-      RefCountedPtr<ServerConfigSelectorProvider>
-      server_config_selector_provider);
+  ServerConfigSelectorInterceptor(const ChannelArgs& args,
+                                  ChannelFilter::Args filter_args,
+                                  RefCountedPtr<ServerConfigSelectorProvider>
+                                      server_config_selector_provider);
 
  private:
   class Watcher;

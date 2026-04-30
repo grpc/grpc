@@ -1129,30 +1129,32 @@ absl::StatusOr<ChannelArgs> XdsServerConfigFetcher::ListenerWatcher::
   }
   // Create ServerConfigSelectorProvider.
   RefCountedPtr<ServerConfigSelectorProvider> server_config_selector_provider =
-    Match(
-      filter_chain->http_connection_manager.route_config,
-      // RDS resource name
-      [&](const std::string& rds_name) -> RefCountedPtr<ServerConfigSelectorProvider> {
-        absl::StatusOr<std::shared_ptr<const XdsRouteConfigResource>>
-            initial_resource;
-        {
-          MutexLock lock(&mu_);
-          initial_resource = rds_map_[rds_name].rds_update.value();
-        }
-        return MakeRefCounted<DynamicXdsServerConfigSelectorProvider>(
+      Match(
+          filter_chain->http_connection_manager.route_config,
+          // RDS resource name
+          [&](const std::string& rds_name)
+              -> RefCountedPtr<ServerConfigSelectorProvider> {
+            absl::StatusOr<std::shared_ptr<const XdsRouteConfigResource>>
+                initial_resource;
+            {
+              MutexLock lock(&mu_);
+              initial_resource = rds_map_[rds_name].rds_update.value();
+            }
+            return MakeRefCounted<DynamicXdsServerConfigSelectorProvider>(
                 xds_client_.Ref(DEBUG_LOCATION,
                                 "DynamicXdsServerConfigSelectorProvider"),
                 rds_name, std::move(initial_resource),
                 filter_chain->http_connection_manager.http_filters);
-      },
-      // inline RouteConfig
-      [&](const std::shared_ptr<const XdsRouteConfigResource>& route_config) -> RefCountedPtr<ServerConfigSelectorProvider> {
-        return MakeRefCounted<StaticXdsServerConfigSelectorProvider>(
+          },
+          // inline RouteConfig
+          [&](const std::shared_ptr<const XdsRouteConfigResource>& route_config)
+              -> RefCountedPtr<ServerConfigSelectorProvider> {
+            return MakeRefCounted<StaticXdsServerConfigSelectorProvider>(
                 xds_client_.Ref(DEBUG_LOCATION,
                                 "StaticXdsServerConfigSelectorProvider"),
                 route_config,
                 filter_chain->http_connection_manager.http_filters);
-      });
+          });
   args = args.SetObject(std::move(server_config_selector_provider));
   // Add XdsCertificateProvider if credentials are xDS.
   auto* server_creds = args.GetObject<grpc_server_credentials>();
@@ -1237,8 +1239,8 @@ XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
 
 absl::StatusOr<ServerConfigSelector::CallConfig>
 XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
-    XdsServerConfigSelector::GetCallConfig(
-        const ConnectionState* state, grpc_metadata_batch* metadata) {
+    XdsServerConfigSelector::GetCallConfig(const ConnectionState* state,
+                                           grpc_metadata_batch* metadata) {
   CallConfig call_config;
   if (metadata->get_pointer(HttpPathMetadata()) == nullptr) {
     return absl::InternalError("no path found");

@@ -260,7 +260,7 @@ class FilterChainBuilderImpl final : public FilterChainBuilder {
     if (builder_ == nullptr) InitBuilder();
     auto top_of_stack_destination = builder_->Build(destination_);
     if (!top_of_stack_destination.ok()) {
-// FIXME: use MaybeRewriteIllegalStatusCode() throughout?
+      // FIXME: use MaybeRewriteIllegalStatusCode() throughout?
       return MaybeRewriteIllegalStatusCode(top_of_stack_destination.status(),
                                            "channel construction");
     }
@@ -297,8 +297,8 @@ void ServerConfigSelectorInterceptor::OnConfigSelectorUpdate(
   }
   auto state = MakeRefCounted<ConfigSelectorState>();
   state->config_selector = std::move(*config_selector);
-  FilterChainBuilderImpl builder(
-      args_, state->config_selector->blackboard(), wrapped_destination());
+  FilterChainBuilderImpl builder(args_, state->config_selector->blackboard(),
+                                 wrapped_destination());
   state->connection_state = state->config_selector->BuildFilterChains(builder);
   config_selector_.Set(std::move(state));
 }
@@ -325,8 +325,8 @@ void ServerConfigSelectorInterceptor::InterceptCall(
                     if (!state.ok()) {
                       GRPC_TRACE_LOG(channel, INFO)
                           << "[server_config_selector_interceptor "
-                          << self.get() << "]: config selector is error: "
-                          << state.status();
+                          << self.get()
+                          << "]: config selector is error: " << state.status();
                       return state.status();
                     }
                     // Use config selector to choose dynamic filter stack.

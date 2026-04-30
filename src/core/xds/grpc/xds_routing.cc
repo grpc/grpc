@@ -220,9 +220,10 @@ XdsRouting::PerRouteFilterChainBuilder::PerRouteFilterChainBuilder(
 }
 
 void XdsRouting::PerRouteFilterChainBuilder::ForEachFilter(
-    absl::FunctionRef<void(
-        const XdsHttpFilterImpl&,
-        const XdsListenerResource::HttpConnectionManager::HttpFilter&)> func) {
+    absl::FunctionRef<
+        void(const XdsHttpFilterImpl&,
+             const XdsListenerResource::HttpConnectionManager::HttpFilter&)>
+        func) {
   if (is_client_) {
     for (size_t i = 0; i < filter_impls_.size(); ++i) {
       func(*filter_impls_[i], hcm_filter_configs_[i]);
@@ -261,9 +262,9 @@ XdsRouting::PerRouteFilterChainBuilder::GetDefaultFilterChain() {
                 filter_config) {
           RefCountedPtr<const FilterConfig> config;
           if (filter_config.filter_config != nullptr) {
-            auto vhost_override_config = GetOverrideConfig(
-                filter_impl, vhost_.typed_per_filter_config,
-                filter_config.name);
+            auto vhost_override_config =
+                GetOverrideConfig(filter_impl, vhost_.typed_per_filter_config,
+                                  filter_config.name);
             config = filter_impl.MergeConfigs(filter_config.filter_config,
                                               std::move(vhost_override_config),
                                               nullptr, nullptr);
@@ -353,12 +354,12 @@ void XdsRouting::PerRouteFilterChainBuilder::
                   filter_config) {
             RefCountedPtr<const FilterConfig> config;
             if (filter_config.filter_config != nullptr) {
-              auto vhost_override_config = GetOverrideConfig(
-                  filter_impl, vhost_.typed_per_filter_config,
-                  filter_config.name);
-              auto route_override_config = GetOverrideConfig(
-                  filter_impl, route.typed_per_filter_config,
-                  filter_config.name);
+              auto vhost_override_config =
+                  GetOverrideConfig(filter_impl, vhost_.typed_per_filter_config,
+                                    filter_config.name);
+              auto route_override_config =
+                  GetOverrideConfig(filter_impl, route.typed_per_filter_config,
+                                    filter_config.name);
               auto cluster_weight_override_config = GetOverrideConfig(
                   filter_impl, cluster_weight.typed_per_filter_config,
                   filter_config.name);
