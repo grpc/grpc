@@ -2794,7 +2794,7 @@ static tsi_result create_tsi_ssl_handshaker(
   impl->factory_ref = tsi_ssl_handshaker_factory_ref(factory);
   impl->has_certificate_selector = has_certificate_selector;
 #if defined(OPENSSL_IS_BORINGSSL)
-    impl->key_signer = std::move(key_signer);
+  impl->key_signer = std::move(key_signer);
 #endif
 
   *handshaker = impl;
@@ -2847,13 +2847,13 @@ tsi_result tsi_ssl_client_handshaker_factory_create_handshaker(
 #if defined(OPENSSL_IS_BORINGSSL)
   return create_tsi_ssl_handshaker(
       factory->ssl_context, 1, server_name_indication, network_bio_buf_size,
-      ssl_bio_buf_size, alpn_preferred_protocol_list, factory->key_signer, /*has_certificate_selector=*/false,
-      &factory->base, handshaker);
+      ssl_bio_buf_size, alpn_preferred_protocol_list, factory->key_signer,
+      /*has_certificate_selector=*/false, &factory->base, handshaker);
 #else
   return create_tsi_ssl_handshaker(
       factory->ssl_context, 1, server_name_indication, network_bio_buf_size,
-      ssl_bio_buf_size, alpn_preferred_protocol_list, /*key_signer=*/nullptr, /*has_certificate_selector=*/false,
-      &factory->base, handshaker);
+      ssl_bio_buf_size, alpn_preferred_protocol_list, /*key_signer=*/nullptr,
+      /*has_certificate_selector=*/false, &factory->base, handshaker);
 #endif
 }
 
@@ -2903,13 +2903,14 @@ tsi_result tsi_ssl_server_handshaker_factory_create_handshaker(
   // context.
   return create_tsi_ssl_handshaker(
       factory->ssl_contexts[0].ssl_ctx, 0, nullptr, network_bio_buf_size,
-      ssl_bio_buf_size, std::nullopt, factory->ssl_contexts[0].key_signer, /*has_certificate_selector=*/factory->certificate_selector != nullptr,
+      ssl_bio_buf_size, std::nullopt, factory->ssl_contexts[0].key_signer,
+      /*has_certificate_selector=*/factory->certificate_selector != nullptr,
       &factory->base, handshaker);
 #else
-  return create_tsi_ssl_handshaker(factory->ssl_contexts[0].ssl_ctx, 0, nullptr,
-                                   network_bio_buf_size, ssl_bio_buf_size,
-                                   std::nullopt, /*key_signer=*/nullptr,/*has_certificate_selector=*/false,
-                                   &factory->base, handshaker);
+  return create_tsi_ssl_handshaker(
+      factory->ssl_contexts[0].ssl_ctx, 0, nullptr, network_bio_buf_size,
+      ssl_bio_buf_size, std::nullopt, /*key_signer=*/nullptr,
+      /*has_certificate_selector=*/false, &factory->base, handshaker);
 #endif
 }
 

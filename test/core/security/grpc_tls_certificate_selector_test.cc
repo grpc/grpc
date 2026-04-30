@@ -205,9 +205,8 @@ TEST_F(TlsCertificateSelectorTest,
   ASSERT_EQ(result.status(), absl::OkStatus());
   EXPECT_THAT(result->certificate_chain, ElementsAre(Ne(nullptr)));
   // Should hold a private key signer.
-  EXPECT_THAT(
-      result->private_key,
-      VariantWith<std::shared_ptr<grpc_core::PrivateKeySigner>>(Ne(nullptr)));
+  EXPECT_THAT(result->private_key,
+              VariantWith<std::shared_ptr<PrivateKeySigner>>(Ne(nullptr)));
 }
 
 TEST_F(TlsCertificateSelectorTest,
