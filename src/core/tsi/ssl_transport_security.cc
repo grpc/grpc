@@ -2846,12 +2846,12 @@ tsi_result tsi_ssl_client_handshaker_factory_create_handshaker(
       << "Creating SSL handshaker with SNI " << server_name_indication;
 #if defined(OPENSSL_IS_BORINGSSL)
   return create_tsi_ssl_handshaker(
-      factory->ssl_context, 1, server_name_indication, network_bio_buf_size,
+      factory->ssl_context, true, server_name_indication, network_bio_buf_size,
       ssl_bio_buf_size, alpn_preferred_protocol_list, factory->key_signer,
       /*has_certificate_selector=*/false, &factory->base, handshaker);
 #else
   return create_tsi_ssl_handshaker(
-      factory->ssl_context, 1, server_name_indication, network_bio_buf_size,
+      factory->ssl_context, true, server_name_indication, network_bio_buf_size,
       ssl_bio_buf_size, alpn_preferred_protocol_list, /*key_signer=*/nullptr,
       /*has_certificate_selector=*/false, &factory->base, handshaker);
 #endif
@@ -2902,13 +2902,13 @@ tsi_result tsi_ssl_server_handshaker_factory_create_handshaker(
   // Likewise, we pass the private key signer corresponding to the first
   // context.
   return create_tsi_ssl_handshaker(
-      factory->ssl_contexts[0].ssl_ctx, 0, nullptr, network_bio_buf_size,
+      factory->ssl_contexts[0].ssl_ctx, false, nullptr, network_bio_buf_size,
       ssl_bio_buf_size, std::nullopt, factory->ssl_contexts[0].key_signer,
       /*has_certificate_selector=*/factory->certificate_selector != nullptr,
       &factory->base, handshaker);
 #else
   return create_tsi_ssl_handshaker(
-      factory->ssl_contexts[0].ssl_ctx, 0, nullptr, network_bio_buf_size,
+      factory->ssl_contexts[0].ssl_ctx, false, nullptr, network_bio_buf_size,
       ssl_bio_buf_size, std::nullopt, /*key_signer=*/nullptr,
       /*has_certificate_selector=*/false, &factory->base, handshaker);
 #endif

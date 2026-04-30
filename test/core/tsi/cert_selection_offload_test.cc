@@ -117,7 +117,7 @@ class AsyncTestCertificateSelector : public CertificateSelector {
         Duration::Seconds(2),
         [this, info, on_complete = std::move(on_complete)]() mutable {
           {
-            absl::MutexLock lock(&mu_);
+            MutexLock lock(&mu_);
             if (was_cancelled_) return;
           }
           was_done_ = true;
@@ -140,7 +140,7 @@ class AsyncTestCertificateSelector : public CertificateSelector {
 
   void Cancel(
       std::shared_ptr<AsyncCertificateSelectionHandle> /*handle*/) override {
-    absl::MutexLock lock(&mu_);
+    MutexLock lock(&mu_);
     if (was_cancelled_) {
       return;
     } else {
@@ -149,7 +149,7 @@ class AsyncTestCertificateSelector : public CertificateSelector {
   }
 
   bool WasCancelled() {
-    absl::MutexLock lock(&mu_);
+    MutexLock lock(&mu_);
     return was_cancelled_;
   }
 
@@ -162,7 +162,7 @@ class AsyncTestCertificateSelector : public CertificateSelector {
   std::shared_ptr<grpc_event_engine::experimental::FuzzingEventEngine>
       event_engine_;
   bool expect_success_;
-  absl::Mutex mu_;
+  Mutex mu_;
   bool was_cancelled_ = false;
   bool was_done_ = false;
 };
