@@ -306,7 +306,7 @@ class OpenTelemetryObservabilityTest(AioTestBase):
     async def test_traces_stream_stream(self):
         await _test_server.stream_stream_call(port=self._port)
 
-        await self._validate_metrics_exist(self.all_metrics)
+        await self._validate_spans_exist(self._span_exporter)
         self._validate_spans(
             spans=self._span_exporter.get_finished_spans(),
             expected_span_size=3,
@@ -450,13 +450,18 @@ class OpenTelemetryObservabilityTest(AioTestBase):
                 )
 
     async def _validate_spans_exist(
-        self, span_exporter: otel_trace_export.SpanExporter
+        self,
+        span_exporter: otel_trace_export.SpanExporter,
+        expected_count: int = 3,
     ):
-        # Sleep here to make sure we have at least one export from
+        # Sleep here to make sure we have at least expected number of spans from
         # OTel SpanExporter.
         await self.assert_eventually(
-            lambda: len(span_exporter.get_finished_spans()) > 1,
-            message=lambda: f"No traces were exported",
+            lambda: len(span_exporter.get_finished_spans()) >= expected_count,
+            message=lambda: (
+                f"Expected at least {expected_count} spans, got "
+                f"{len(span_exporter.get_finished_spans())}"
+            ),
         )
 
     def _validate_spans(
