@@ -20,6 +20,7 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/config/core_configuration.h"
+#include "src/core/ext/filters/channel_idle/legacy_channel_idle_filter.h"
 #include "src/core/handshaker/endpoint_info/endpoint_info_handshaker.h"
 #include "src/core/handshaker/http_connect/http_connect_client_handshaker.h"
 #include "src/core/handshaker/tcp_connect/tcp_connect_handshaker.h"
@@ -95,7 +96,7 @@ void RegisterBuiltins(CoreConfiguration::Builder* builder) {
         ->RegisterFilter<ServerConfigSelectorInterceptor>(GRPC_SERVER_CHANNEL)
         .IfHasChannelArg(ServerConfigSelectorProvider::ChannelArgName())
         // FIXME: needs to be after census filter?
-        .FloatToTop();
+        .After({LegacyMaxAgeFilter::kFilter.name});
   }
 }
 
