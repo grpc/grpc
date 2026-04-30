@@ -129,6 +129,8 @@ class ExtProcFilter final : public V3InterceptorToV2Bridge<ExtProcFilter> {
 };
 
 extern absl::Status (*g_test_ext_proc_metadata_modifier)(grpc_metadata_batch*);
+extern absl::Status (*g_test_ext_proc_server_initial_metadata_modifier)(
+    grpc_metadata_batch*);
 extern absl::Status (*g_test_ext_proc_server_trailing_metadata_modifier)(
     grpc_metadata_batch*);
 extern absl::Status (*g_test_ext_proc_message_modifier)(MessageHandle*);

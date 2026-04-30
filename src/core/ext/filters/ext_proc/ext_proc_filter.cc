@@ -41,6 +41,8 @@
 namespace grpc_core {
 
 absl::Status (*g_test_ext_proc_metadata_modifier)(grpc_metadata_batch*) = nullptr;
+absl::Status (*g_test_ext_proc_server_initial_metadata_modifier)(
+    grpc_metadata_batch*) = nullptr;
 absl::Status (*g_test_ext_proc_server_trailing_metadata_modifier)(
     grpc_metadata_batch*) = nullptr;
 absl::Status (*g_test_ext_proc_message_modifier)(MessageHandle*) = nullptr;
@@ -180,18 +182,43 @@ auto ExtProcFilter::ServerToClient(CallHandler handler,
               GRPC_TRACE_LOG(ext_proc_filter, INFO)
                   << "ExtProc: ServerToClient initial metadata content:\n"
                   << (*md)->DebugString();
-              handler.SpawnPushServerInitialMetadata(std::move(*md));
-              return Seq(
-                  ForEach(
-                      MessagesFrom(initiator),
-                      [handler](MessageHandle message) mutable {
-                        GRPC_TRACE_LOG(ext_proc_filter, INFO)
-                            << "ExtProc: ServerToClient message intercepted:\n"
-                            << message->DebugString();
-                        handler.SpawnPushMessage(std::move(message));
-                        return Success{};
-                      }),
-                  self->ServerTrailingMetadata(handler, initiator));
+              absl::Status status;
+              if (g_test_ext_proc_server_initial_metadata_modifier != nullptr) {
+                status =
+                    g_test_ext_proc_server_initial_metadata_modifier((*md).get());
+              }
+              if (!status.ok()) {
+                // Unblock the parent call's ServerInitialMetadata wait to avoid
+                // WakeupAsync crashes in V3InterceptorToV2Bridge.
+                handler.SpawnPushServerInitialMetadata(std::move(*md));
+                // Push the error as trailing metadata to fail the call cleanly.
+                auto error_md = ServerMetadataFromStatus(status);
+                error_md->Set(GrpcCallWasCancelled(), true);
+                handler.SpawnPushServerTrailingMetadata(std::move(error_md));
+              } else {
+                handler.SpawnPushServerInitialMetadata(std::move(*md));
+              }
+              return If(
+                  status.ok(),
+                  [self, handler, initiator]() mutable {
+                    return Seq(
+                        ForEach(MessagesFrom(initiator),
+                                [handler](MessageHandle message) mutable {
+                                  GRPC_TRACE_LOG(ext_proc_filter, INFO)
+                                      << "ExtProc: ServerToClient message "
+                                         "intercepted:\n"
+                                      << message->DebugString();
+                                  handler.SpawnPushMessage(std::move(message));
+                                  return Success{};
+                                }),
+                        self->ServerTrailingMetadata(handler, initiator));
+                  },
+                  [initiator]() mutable {
+                    return Seq([initiator]() mutable {
+                      initiator.SpawnCancel();
+                      return absl::OkStatus();
+                    });
+                  });
             },
             [self, handler, initiator]() mutable {
               GRPC_TRACE_LOG(ext_proc_filter, INFO)
