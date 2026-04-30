@@ -152,13 +152,13 @@ TEST_F(RoundRobinTest, StartsConnectingFromRandomIndex) {
   };
   // On each address list update, we choose a random index to start
   // connecting from rather than using index 0.  However, the random
-  // index might happen to be 0 on any given attempt.  We try 10 times
-  // to get one that is non-zero.
+  // index might happen to be 0 on any given attempt.  We try 30 times
+  // to get one that is non-zero (probability of failure is (1/3)^30).
   // Note that we send the same address list on every update.  But since
   // we never told the subchannels to actually change their state when
   // they were asked to connect, they will continue to report IDLE, so
   // each successive update will re-request connection attempts.
-  for (size_t i = 0; i < 10; ++i) {
+  for (size_t i = 0; i < 30; ++i) {
     connect_order.clear();
     EXPECT_EQ(ApplyUpdate(BuildUpdate(kAddresses, nullptr), lb_policy()),
               absl::OkStatus());
