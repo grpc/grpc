@@ -71,8 +71,8 @@
 #include "src/core/util/debug_location.h"
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/match.h"
-#include "src/core/util/time.h"
 #include "src/core/util/ref_counted.h"
+#include "src/core/util/time.h"
 #include "absl/container/inlined_vector.h"
 #include "absl/functional/function_ref.h"
 #include "absl/log/log.h"
@@ -1328,10 +1328,9 @@ class V3InterceptorToV2Bridge : public ChannelFilter, public Interceptor {
         // until the initiator returns trailing metadata above.
         TrySeq(
             state->call_handler_latch.Wait(),
-            [pipe_owner = pipe_owner,
-             call_args = std::move(call_args),
-             next_promise_factory = std::move(next_promise_factory)](
-                CallHandler handler) mutable {
+            [pipe_owner = pipe_owner, call_args = std::move(call_args),
+             next_promise_factory =
+                 std::move(next_promise_factory)](CallHandler handler) mutable {
               pipe_owner->handler = handler;
               auto initiator = *pipe_owner->initiator;
               // Intercept all pipes from v2 API.
@@ -1480,12 +1479,11 @@ class V3InterceptorToV2Bridge : public ChannelFilter, public Interceptor {
               handler.SpawnGuarded(
                   "pull_client_initial_metadata",
                   [handler, pipe_owner]() mutable {
-                    return TrySeq(
-                        handler.PullClientInitialMetadata(),
-                        [pipe_owner](ClientMetadataHandle metadata) {
-                          pipe_owner->client_initial_metadata.Set(
-                              std::move(metadata));
-                        });
+                    return TrySeq(handler.PullClientInitialMetadata(),
+                                  [pipe_owner](ClientMetadataHandle metadata) {
+                                    pipe_owner->client_initial_metadata.Set(
+                                        std::move(metadata));
+                                  });
                   });
               // A wrapper for next_promise_factory that does the
               // following:
@@ -1505,29 +1503,29 @@ class V3InterceptorToV2Bridge : public ChannelFilter, public Interceptor {
               return Seq(
                   pipe_owner->client_initial_metadata.Wait(),
                   [next_promise_factory = std::move(next_promise_factory),
-                   call_args = std::move(call_args),
-                   handler, pipe_owner](ClientMetadataHandle metadata) mutable {
+                   call_args = std::move(call_args), handler,
+                   pipe_owner](ClientMetadataHandle metadata) mutable {
                     call_args.client_initial_metadata = std::move(metadata);
-                    return Seq(
-                        next_promise_factory(std::move(call_args)),
-                        [handler, pipe_owner](ServerMetadataHandle metadata) mutable
-                            -> Poll<ServerMetadataHandle> {
-                          handler.SpawnPushServerTrailingMetadata(
-                              std::move(metadata));
-                          // We always lose the race.
-                          return Pending{};
-                        });
+                    return Seq(next_promise_factory(std::move(call_args)),
+                               [handler, pipe_owner](
+                                   ServerMetadataHandle metadata) mutable
+                                   -> Poll<ServerMetadataHandle> {
+                                 handler.SpawnPushServerTrailingMetadata(
+                                     std::move(metadata));
+                                 // We always lose the race.
+                                 return Pending{};
+                               });
                   });
             }));
-    return [cleanup = PipeOwnerCleanup(std::move(pipe_owner)),
-            promise =
-                std::move(promise)]() mutable -> Poll<ServerMetadataHandle> {
-      auto r = promise();
-      if (r.ready()) {
-        cleanup.pipe_owner->Shutdown();
-      }
-      return r;
-    };
+    return
+        [cleanup = PipeOwnerCleanup(std::move(pipe_owner)),
+         promise = std::move(promise)]() mutable -> Poll<ServerMetadataHandle> {
+          auto r = promise();
+          if (r.ready()) {
+            cleanup.pipe_owner->Shutdown();
+          }
+          return r;
+        };
   }
 
  protected:
@@ -1536,7 +1534,7 @@ class V3InterceptorToV2Bridge : public ChannelFilter, public Interceptor {
   }
 
  private:
- // A custom UnstartedCallDestination that starts the call and returns
+  // A custom UnstartedCallDestination that starts the call and returns
   // the resulting handler via a latch obtained from call context.
   class CallDestinationToNextV2Filter final : public UnstartedCallDestination {
    public:
