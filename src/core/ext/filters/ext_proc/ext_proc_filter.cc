@@ -40,7 +40,7 @@
 
 namespace grpc_core {
 
-void (*g_test_ext_proc_metadata_modifier)(grpc_metadata_batch*) = nullptr;
+absl::Status (*g_test_ext_proc_metadata_modifier)(grpc_metadata_batch*) = nullptr;
 absl::Status (*g_test_ext_proc_message_modifier)(MessageHandle*) = nullptr;
 
 std::string ExtProcFilter::ProcessingMode::ToString() const {
@@ -226,20 +226,26 @@ void ExtProcFilter::InterceptCall(UnstartedCallHandler unstarted_call_handler) {
           GRPC_TRACE_LOG(ext_proc_filter, INFO)
               << "ExtProc: Client initial metadata received:\n"
               << metadata->DebugString();
+          absl::Status status;
           if (g_test_ext_proc_metadata_modifier != nullptr) {
-            g_test_ext_proc_metadata_modifier(metadata.get());
+            status = g_test_ext_proc_metadata_modifier(metadata.get());
           }
-          CallInitiator initiator =
-              self->MakeChildCall(std::move(metadata), handler.arena()->Ref());
-          handler.AddChildCall(initiator);
-          initiator.SpawnGuarded(
-              "server_to_client", [self, handler, initiator]() mutable {
-                GRPC_TRACE_LOG(ext_proc_filter, INFO)
-                    << "ExtProc: server_to_client task started";
-                return self->ServerToClient(handler, initiator);
-              });
+          return If(
+              status.ok(),
+              [self, handler, metadata = std::move(metadata)]() mutable {
+                CallInitiator initiator = self->MakeChildCall(
+                    std::move(metadata), handler.arena()->Ref());
+                handler.AddChildCall(initiator);
+                initiator.SpawnGuarded(
+                    "server_to_client", [self, handler, initiator]() mutable {
+                      GRPC_TRACE_LOG(ext_proc_filter, INFO)
+                          << "ExtProc: server_to_client task started";
+                      return self->ServerToClient(handler, initiator);
+                    });
 
-          return self->ClientToServer(handler, initiator);
+                return self->ClientToServer(handler, initiator);
+              },
+              [status]() { return status; });
         });
   });
 }

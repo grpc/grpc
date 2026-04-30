@@ -114,6 +114,7 @@ TEST_P(XdsExtProcEnd2endTest, ModificationHook) {
   grpc_core::g_test_ext_proc_metadata_modifier = [](grpc_metadata_batch* metadata) {
     metadata->Append("x-ext-proc-test", grpc_core::Slice::FromCopiedString("modified"),
                      [](absl::string_view, const grpc_core::Slice&) {});
+    return absl::OkStatus();
   };
 
   // Set xDS resources.
@@ -191,6 +192,31 @@ TEST_P(XdsExtProcEnd2endTest, MessageFailureHook) {
   Status status = SendRpc();
   
   grpc_core::g_test_ext_proc_message_modifier = nullptr;
+
+  EXPECT_FALSE(status.ok());
+  EXPECT_EQ(status.error_code(), grpc::StatusCode::INVALID_ARGUMENT);
+  EXPECT_EQ(status.error_message(), "injected error");
+}
+
+TEST_P(XdsExtProcEnd2endTest, ClientInitialMetadataHookFailure) {
+  grpc_core::g_test_ext_proc_metadata_modifier = [](grpc_metadata_batch* /*metadata*/) {
+    return absl::InvalidArgumentError("injected error");
+  };
+
+  CreateAndStartBackends(1, /*xds_enabled=*/false);
+  SetListenerAndRouteConfiguration(
+      balancer_.get(), BuildListenerWithExtProcFilter(),
+      default_route_config_);
+
+  Cluster ext_proc_cluster = default_cluster_;
+  ext_proc_cluster.set_name(std::string(kExtProcClusterName));
+  balancer_->ads_service()->SetCdsResource(ext_proc_cluster);
+  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
+
+  Status status = SendRpc();
+  
+  grpc_core::g_test_ext_proc_metadata_modifier = nullptr;
 
   EXPECT_FALSE(status.ok());
   EXPECT_EQ(status.error_code(), grpc::StatusCode::INVALID_ARGUMENT);

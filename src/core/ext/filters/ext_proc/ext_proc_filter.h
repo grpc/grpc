@@ -128,7 +128,7 @@ class ExtProcFilter final : public V3InterceptorToV2Bridge<ExtProcFilter> {
   RefCountedPtr<const Config> config_;
 };
 
-extern void (*g_test_ext_proc_metadata_modifier)(grpc_metadata_batch*);
+extern absl::Status (*g_test_ext_proc_metadata_modifier)(grpc_metadata_batch*);
 extern absl::Status (*g_test_ext_proc_message_modifier)(MessageHandle*);
 
 }  // namespace grpc_core
