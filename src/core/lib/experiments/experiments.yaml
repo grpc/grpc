@@ -231,7 +231,7 @@
   test_tags: []
 - name: pick_first_ignore_empty_updates
   description: Ignore empty resolutions in pick_first (delete)
-  expiry: 2026/05/02
+  expiry: 2026/10/01
   owner: roth@google.com
 - name: pipelined_read_secure_endpoint
   description: Enable pipelined reads for EventEngine secure endpoints
