@@ -1217,7 +1217,16 @@ static tsi_result populate_ssl_context(
     return TSI_FAILED_PRECONDITION;
 #endif  // OPENSSL_VERSION_NUMBER >= 0x10100000
   } else {
-#if OPENSSL_VERSION_NUMBER < 0x30000000L
+#if OPENSSL_VERSION_NUMBER >= 0x10101000L
+    // Default to standard ECDHE groups when none are explicitly configured.
+    // Using SSL_CTX_set1_groups_list ensures the supported_groups extension
+    // in ClientHello includes all curves, not just the tmp_ecdh single curve.
+    if (!SSL_CTX_set1_groups_list(context, "P-256:P-384:P-521")) {
+      LOG(ERROR) << "Could not set default key exchange groups.";
+      return TSI_INTERNAL_ERROR;
+    }
+    SSL_CTX_set_options(context, SSL_OP_SINGLE_ECDH_USE);
+#elif OPENSSL_VERSION_NUMBER < 0x30000000L
     EC_KEY* ecdh = EC_KEY_new_by_curve_name(NID_X9_62_prime256v1);
     if (!SSL_CTX_set_tmp_ecdh(context, ecdh)) {
       LOG(ERROR) << "Could not set ephemeral ECDH key.";
