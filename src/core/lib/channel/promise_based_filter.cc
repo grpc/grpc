@@ -64,6 +64,7 @@ class FakeActivity final : public Activity {
  private:
   Activity* const wake_activity_;
 };
+}  // namespace
 
 absl::Status StatusFromMetadata(const ServerMetadata& md) {
   auto status_code = md.get(GrpcStatusMetadata()).value_or(GRPC_STATUS_UNKNOWN);
@@ -76,7 +77,6 @@ absl::Status StatusFromMetadata(const ServerMetadata& md) {
                    message == nullptr ? "" : message->as_string_view()),
       StatusIntProperty::kRpcStatus, status_code);
 }
-}  // namespace
 
 ///////////////////////////////////////////////////////////////////////////////
 // BaseCallData
@@ -1174,7 +1174,7 @@ class ClientCallData::PollContext {
                       std::exchange(
                           self_->recv_initial_metadata_->original_on_ready,
                           nullptr),
-                      absl::CancelledError(),
+                      StatusFromMetadata(*md),
                       "wake_inside_combiner:recv_initial_metadata_ready");
               }
             }

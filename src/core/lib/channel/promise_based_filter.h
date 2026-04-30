@@ -111,6 +111,8 @@ class ChannelFilter {
 
 namespace promise_filter_detail {
 
+absl::Status StatusFromMetadata(const ServerMetadata& md);
+
 // Determine if a list of interceptors has any that need to asynchronously error
 // the promise. If so, we need to allocate a latch for the generated promise for
 // the original promise stack polyfill code that's generated.
@@ -1251,14 +1253,16 @@ class V3InterceptorToV2Bridge : public ChannelFilter, public Interceptor {
     std::optional<CallInitiator> initiator;
     std::optional<CallHandler> handler;
 
-    void Shutdown() {
+    void Shutdown(absl::Status error = absl::CancelledError()) {
       if (std::exchange(shutdown_, true)) return;
       client_to_server_messages.sender.MarkClosed();
       server_to_client_messages.sender.MarkClosed();
       server_initial_metadata.Set(std::nullopt);
       client_initial_metadata.Set(nullptr);
       if (initiator.has_value()) {
-        initiator->Cancel();
+        if (!error.ok()) {
+          initiator->Cancel(error);
+        }
         initiator.reset();
       }
       handler.reset();
@@ -1522,7 +1526,8 @@ class V3InterceptorToV2Bridge : public ChannelFilter, public Interceptor {
          promise = std::move(promise)]() mutable -> Poll<ServerMetadataHandle> {
           auto r = promise();
           if (r.ready()) {
-            cleanup.pipe_owner->Shutdown();
+            cleanup.pipe_owner->Shutdown(
+                promise_filter_detail::StatusFromMetadata(*r.value()));
           }
           return r;
         };
