@@ -32,12 +32,12 @@
 
 namespace grpc_core {
 
-#if defined(OPENSSL_IS_BORINGSSL)
 // Performs server-side certificate selection during the handshake based on the
 // SNI. Users must implement the `SelectCertificate` and `Cancel` methods.
 // The implementation must be thread-safe, as `SelectCertificate` may be called
 // for multiple TLS handshakes at the same time.
 class CertificateSelector {
+#if defined(OPENSSL_IS_BORINGSSL)
  public:
   struct SelectCertificateInfo {
     std::string sni;
@@ -95,9 +95,8 @@ class CertificateSelector {
 
   // Cancels the async select cert call corresponding to the handle.
   virtual void Cancel(std::shared_ptr<AsyncCertificateSelectionHandle>) = 0;
-};
-
 #endif  // OPENSSL_IS_BORINGSSL
+};
 
 }  // namespace grpc_core
 
