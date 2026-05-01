@@ -15,7 +15,7 @@
 
 import asyncio
 import sys
-from typing import Any, Iterable, List, Optional, Sequence
+from typing import Any, Generic, Iterable, List, Optional, Sequence, TypeVar
 
 import grpc
 from grpc import _common
@@ -48,12 +48,14 @@ from ._typing import ResponseType
 from ._typing import SerializingFunction
 from ._utils import _timeout_to_deadline
 
+InterceptorT = TypeVar("InterceptorT", bound="ClientInterceptor")
+
 _USER_AGENT = "grpc-python-asyncio/{}".format(_grpcio_metadata.__version__)
 
 if sys.version_info[1] < 7:
 
     def _all_tasks() -> Iterable[asyncio.Task]:
-        return asyncio.Task.all_tasks()  # pylint: disable=no-member
+        return asyncio.Task.all_tasks()  # pylint: disable=no-member #type: ignore
 
 else:
 
@@ -80,7 +82,7 @@ def _augment_channel_arguments(
     )
 
 
-class _BaseMultiCallable:
+class _BaseMultiCallable(Generic[InterceptorT]):
     """Base class of all multi callable objects.
 
     Handles the initialization logic and stores common attributes.
@@ -91,8 +93,10 @@ class _BaseMultiCallable:
     _method: bytes
     _request_serializer: Optional[SerializingFunction]
     _response_deserializer: Optional[DeserializingFunction]
-    _interceptors: Optional[Sequence[ClientInterceptor]]
+    _interceptors: Optional[Sequence[InterceptorT]]
     _references: List[Any]
+
+
     _loop: asyncio.AbstractEventLoop
 
     # pylint: disable=too-many-arguments
@@ -102,7 +106,7 @@ class _BaseMultiCallable:
         method: bytes,
         request_serializer: Optional[SerializingFunction],
         response_deserializer: Optional[DeserializingFunction],
-        interceptors: Optional[Sequence[ClientInterceptor]],
+        interceptors: Optional[Sequence[InterceptorT]],
         references: List[Any],
         loop: asyncio.AbstractEventLoop,
     ) -> None:
@@ -128,9 +132,9 @@ class _BaseMultiCallable:
         ):
             metadata = Metadata.from_tuple(tuple(metadata))
         if compression:
-            metadata = Metadata(
-                *_compression.augment_metadata(metadata, compression)
-            )
+            augmented_metadata = _compression.augment_metadata(metadata, compression)
+            if augmented_metadata:
+              metadata = Metadata(*augmented_metadata)
         return metadata
 
 
@@ -426,11 +430,11 @@ class Channel(_base_channel.Channel):
             if candidate is not None and isinstance(candidate, _base_call.Call):
                 if hasattr(candidate, "_channel"):
                     # For intercepted Call object
-                    if candidate._channel is not self._channel:
+                    if candidate._channel is not self._channel: # type: ignore # noqa: PGH003
                         continue
                 elif hasattr(candidate, "_cython_call"):
                     # For normal Call object
-                    if candidate._cython_call._channel is not self._channel:
+                    if candidate._cython_call._channel is not self._channel:  # type: ignore # noqa: PGH003
                         continue
                 else:
                     # Unidentified Call object
@@ -481,7 +485,7 @@ class Channel(_base_channel.Channel):
 
     # TODO(xuanwn): Implement this method after we have
     # observability for Asyncio.
-    def _get_registered_call_handle(self, method: str) -> int:
+    def _get_registered_call_handle(self, method: str) -> int:  # type: ignore # noqa: PGH003
         pass
 
     # TODO(xuanwn): Implement _registered_method after we have
