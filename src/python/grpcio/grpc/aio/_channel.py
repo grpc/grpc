@@ -56,7 +56,7 @@ if sys.version_info[1] < 7:
 
     def _all_tasks() -> Iterable[asyncio.Task]:
         return (
-            asyncio.Task.all_tasks()  # pylint: disable=no-member #type: ignore
+            asyncio.Task.all_tasks()  # pylint: disable=no-member # pyright: ignore[reportAttributeAccessIssue]
         )
 
 else:
