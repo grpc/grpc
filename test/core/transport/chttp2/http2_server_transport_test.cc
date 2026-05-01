@@ -111,7 +111,7 @@ TEST_F(Http2ServerTransportTest, TestHttp2ServerTransportObjectCreation) {
       MakeOrphanable<Http2ServerTransport>(
           std::move(mock_endpoint.promise_endpoint), GetChannelArgs(),
           event_engine(),
-          /*on_receive_settings=*/nullptr);
+          /*on_receive_settings=*/nullptr, /*on_close_callback=*/nullptr);
   server_transport->InitializeAndSpawnTransportLoops();
 
   EXPECT_EQ(server_transport->filter_stack_transport(), nullptr);

@@ -26,6 +26,7 @@
 
 #include <functional>
 
+#include "src/core/ext/transport/chttp2/transport/http2_server_transport.h"
 #include "src/core/ext/transport/chttp2/transport/internal.h"
 #include "src/core/handshaker/handshaker.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -131,7 +132,8 @@ class NewChttp2ServerListener : public Server::ListenerInterface {
     // Set by HandshakingState before the handshaking begins and set to a valid
     // transport when handshaking is done successfully.
     std::variant<OrphanablePtr<HandshakingState>,
-                 RefCountedPtr<grpc_chttp2_transport>>
+                 RefCountedPtr<grpc_chttp2_transport>,
+                 RefCountedPtr<http2::Http2ServerTransport>>
         state_;
     grpc_closure on_close_;
     bool shutdown_ = false;
