@@ -2628,7 +2628,11 @@ Pod::Spec.new do |s|
                       'third_party/zlib/crc32.h',
                       'third_party/zlib/deflate.c',
                       'third_party/zlib/deflate.h',
+                      'third_party/zlib/gzclose.c',
                       'third_party/zlib/gzguts.h',
+                      'third_party/zlib/gzlib.c',
+                      'third_party/zlib/gzread.c',
+                      'third_party/zlib/gzwrite.c',
                       'third_party/zlib/infback.c',
                       'third_party/zlib/inffast.c',
                       'third_party/zlib/inffast.h',
@@ -4021,5 +4025,8 @@ Pod::Spec.new do |s|
     set -e
     find src/core -type f \\( -path '*.h' -or -path '*.cc' \\) -print0 | xargs -0 -L1 sed -E -i'.grpc_back' 's;#include <openssl/(.*)>;#if COCOAPODS==1\\\n  #include <openssl_grpc/\\1>\\\n#else\\\n  #include <openssl/\\1>\\\n#endif;g'
     find src/core/ -type f -name '*.grpc_back' -print0 | xargs -0 rm
+    # Run ./configure to update zconf.h
+    cd third_party/zlib
+    ./configure
   END_OF_COMMAND
 end

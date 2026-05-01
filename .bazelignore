@@ -21,6 +21,7 @@ third_party/re2
 third_party/upb
 third_party/utf8_range
 third_party/xds
+third_party/zlib
 
 test/distrib/bazel/cpp
 test/distrib/bazel/python
