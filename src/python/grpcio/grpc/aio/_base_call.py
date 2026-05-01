@@ -114,7 +114,7 @@ class Call(RpcContext, metaclass=ABCMeta):
         """
 
     @abstractmethod
-    async def details(self) -> str:
+    async def details(self) -> Optional[str]:
         """Accesses the details sent by the server.
 
         Returns:
@@ -135,7 +135,7 @@ class Call(RpcContext, metaclass=ABCMeta):
         """
 
     @abstractmethod
-    async def debug_error_string(self) -> str:
+    async def debug_error_string(self) -> Optional[str]:
         """Accesses the debug error string sent by the server.
 
         Returns:

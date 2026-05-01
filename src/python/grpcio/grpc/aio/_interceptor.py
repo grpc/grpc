@@ -459,21 +459,21 @@ class InterceptedCall:
 
         return await call.code()
 
-    async def details(self) -> str:
+    async def details(self) -> Optional[str]:
         try:
             call = await self._interceptors_task
         except AioRpcError as err:
-            return err.details() or ""
+            return err.details()
         except asyncio.CancelledError:
             return _LOCAL_CANCELLATION_DETAILS
 
         return await call.details()
 
-    async def debug_error_string(self) -> str:
+    async def debug_error_string(self) -> Optional[str]:
         try:
             call = await self._interceptors_task
         except AioRpcError as err:
-            return err.debug_error_string() or ""
+            return err.debug_error_string()
         except asyncio.CancelledError:
             return ""
 
@@ -522,7 +522,9 @@ class _InterceptedStreamResponseMixin(Generic[ResponseType]):
                 self._wait_for_interceptor_task_response_iterator()
             )
         try:
-            return await self._response_aiter.__anext__()
+            if isinstance(self._response_aiter, AsyncGenerator):
+                return await self._response_aiter.__anext__()
+            return cygrpc.EOF
         except StopAsyncIteration:
             return cygrpc.EOF
 
@@ -1103,7 +1105,7 @@ class UnaryUnaryCallResponse(_base_call.UnaryUnaryCall, Generic[ResponseType]):
     async def code(self) -> grpc.StatusCode:
         return grpc.StatusCode.OK
 
-    async def details(self) -> str:
+    async def details(self) -> Optional[str]:
         return ""
 
     async def debug_error_string(self) -> Optional[str]:
@@ -1177,7 +1179,7 @@ class _StreamCallResponseIterator(Generic[ResponseType]):
             return grpc.StatusCode.OK
         return await self._call.code()
 
-    async def details(self) -> str:
+    async def details(self) -> Optional[str]:
         if self._call is None:
             return ""
         return await self._call.details()
