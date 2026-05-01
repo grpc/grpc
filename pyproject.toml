@@ -71,7 +71,7 @@ where = ["src/python/grpcio"]
 
 [tool.pyright]
 include = [
-    "src/python/grpcio/grpc/aio/_base_server.py"
+    "src/python/grpcio/grpc/aio/_metadata.py"
 ]
 
 typeCheckingMode = "basic"
