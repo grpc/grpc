@@ -695,17 +695,18 @@ class InterceptedUnaryUnaryCall(
             request: RequestType,
         ) -> Union[UnaryUnaryCall, UnaryUnaryCallResponse]:
 
-            def continuation(
-                details: ClientCallDetails,
-                req: RequestType
-            ) -> _base_call.UnaryUnaryCall:
-                result = _run_interceptor(interceptors[1:], details, req)
-                if isinstance(result, _base_call.UnaryUnaryCall):
-                    return result
-                raise RuntimeError("Interceptor chain returned a Response instead of a Call")
-
-
             if interceptors:
+
+                async def continuation(
+                    details: ClientCallDetails,
+                    req: RequestType
+                ) -> _base_call.UnaryUnaryCall:
+                    result = await _run_interceptor(interceptors[1:], details, req)
+                    if isinstance(result, _base_call.UnaryUnaryCall):
+                        return result
+                    raise RuntimeError("Interceptor chain returned a Response instead of a Call")
+
+
                 call_or_response = await interceptors[0].intercept_unary_unary(
                     continuation, client_call_details, request
                 )
