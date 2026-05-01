@@ -639,7 +639,7 @@ class UnaryStreamCall(
         )
         self._init_stream_response_mixin(self._send_unary_request_task)
 
-    async def _send_unary_request(self) -> Optional[ResponseType]:
+    async def _send_unary_request(self) -> None:
         serialized_request = _common.serialize(
             self._request, self._request_serializer
         )
