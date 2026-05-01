@@ -511,15 +511,19 @@ class _InterceptedStreamResponseMixin(Generic[ResponseType]):
                 self._wait_for_interceptor_task_response_iterator()
             )
         try:
-            return await self._response_aiter.asend(None)
+            if isinstance(self._response_aiter, AsyncGenerator):
+                return await self._response_aiter.asend(None)
+            return cygrpc.EOF
         except StopAsyncIteration:
             return cygrpc.EOF
 
 
-class _InterceptedStreamRequestMixin:
+class _InterceptedStreamRequestMixin(Generic[RequestType]):
     _write_to_iterator_async_gen: Optional[AsyncIterable[RequestType]]
     _write_to_iterator_queue: Optional[asyncio.Queue]
     _status_code_task: Optional[asyncio.Task]
+    _interceptors_task: asyncio.Task[Any]
+    _loop: asyncio.AbstractEventLoop
 
     _FINISH_ITERATOR_SENTINEL = object()
 
@@ -543,6 +547,9 @@ class _InterceptedStreamRequestMixin:
     async def _proxy_writes_as_request_iterator(self):
         await self._interceptors_task
 
+        if self._write_to_iterator_queue is None:
+            return
+
         while True:
             value = await self._write_to_iterator_queue.get()
             if (
@@ -562,6 +569,9 @@ class _InterceptedStreamRequestMixin:
         # of abrupt termination of the call.
         if self._status_code_task is None:
             self._status_code_task = self._loop.create_task(call.code())
+
+        if self._write_to_iterator_queue is None:
+            return
 
         await asyncio.wait(
             (
