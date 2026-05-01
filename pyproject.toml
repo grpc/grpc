@@ -86,6 +86,10 @@ exclude = [
     "src/python/grpcio/_spawn_patch.py"
 ]
 
+extraPaths = [
+    "src/grpc/_cython"
+]
+
 [[tool.pyright.executionEnvironments]]
 root = "src/python/grpcio"
 
