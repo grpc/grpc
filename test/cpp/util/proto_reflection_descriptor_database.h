@@ -24,7 +24,7 @@
 #include <mutex>
 #include <vector>
 
-#include "src/proto/grpc/reflection/v1alpha/reflection.grpc.pb.h"
+#include "src/proto/grpc/reflection/v1/reflection.grpc.pb.h"
 #include "absl/container/flat_hash_map.h"
 #include "absl/container/flat_hash_set.h"
 
@@ -36,7 +36,7 @@ namespace grpc {
 class ProtoReflectionDescriptorDatabase : public protobuf::DescriptorDatabase {
  public:
   explicit ProtoReflectionDescriptorDatabase(
-      std::unique_ptr<reflection::v1alpha::ServerReflection::Stub> stub);
+      std::unique_ptr<reflection::v1::ServerReflection::Stub> stub);
 
   explicit ProtoReflectionDescriptorDatabase(
       const std::shared_ptr<grpc::ChannelInterface>& channel);
@@ -79,25 +79,25 @@ class ProtoReflectionDescriptorDatabase : public protobuf::DescriptorDatabase {
 
  private:
   typedef ClientReaderWriter<
-      grpc::reflection::v1alpha::ServerReflectionRequest,
-      grpc::reflection::v1alpha::ServerReflectionResponse>
+      grpc::reflection::v1::ServerReflectionRequest,
+      grpc::reflection::v1::ServerReflectionResponse>
       ClientStream;
 
   protobuf::FileDescriptorProto ParseFileDescriptorProtoResponse(
       const std::string& byte_fd_proto);
 
   void AddFileFromResponse(
-      const grpc::reflection::v1alpha::FileDescriptorResponse& response);
+      const grpc::reflection::v1::FileDescriptorResponse& response);
 
   std::shared_ptr<ClientStream> GetStream();
 
   bool DoOneRequest(
-      const grpc::reflection::v1alpha::ServerReflectionRequest& request,
-      grpc::reflection::v1alpha::ServerReflectionResponse& response);
+      const grpc::reflection::v1::ServerReflectionRequest& request,
+      grpc::reflection::v1::ServerReflectionResponse& response);
 
   std::shared_ptr<ClientStream> stream_;
   grpc::ClientContext ctx_;
-  std::unique_ptr<grpc::reflection::v1alpha::ServerReflection::Stub> stub_;
+  std::unique_ptr<grpc::reflection::v1::ServerReflection::Stub> stub_;
   absl::flat_hash_set<std::string> known_files_;
   absl::flat_hash_set<string> missing_symbols_;
   absl::flat_hash_map<string, absl::flat_hash_set<int>> missing_extensions_;
