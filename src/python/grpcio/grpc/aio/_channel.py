@@ -48,7 +48,7 @@ from ._typing import ResponseType
 from ._typing import SerializingFunction
 from ._utils import _timeout_to_deadline
 
-InterceptorT = TypeVar("InterceptorT", bound="ClientInterceptor")
+InterceptorT = TypeVar("InterceptorT", bound=ClientInterceptor)
 
 _USER_AGENT = "grpc-python-asyncio/{}".format(_grpcio_metadata.__version__)
 
