@@ -32,6 +32,7 @@
 
 #include "src/core/call/metadata_batch.h"
 #include "src/core/call/security_context.h"
+#include "src/core/call/status_util.h"
 #include "src/core/credentials/transport/transport_credentials.h"
 #include "src/core/filter/auth/auth_filters.h"  // IWYU pragma: keep
 #include "src/core/lib/channel/channel_args.h"
@@ -165,7 +166,8 @@ void ServerAuthFilter::RunApplicationCode::OnMdProcessingDone(
       error_details = "Authentication metadata processing failed.";
     }
     state->client_metadata = grpc_error_set_int(
-        absl::Status(static_cast<absl::StatusCode>(status), error_details),
+        absl::Status(grpc_status_code_to_absl_status_code(status),
+                     error_details),
         StatusIntProperty::kRpcStatus, status);
   }
 
