@@ -70,15 +70,15 @@ class ServerConfigSelectorInterceptor final
     std::unique_ptr<ServerConfigSelector::ConnectionState> connection_state;
   };
 
-  void Orphaned() override {}
+  void Orphaned() override;
 
   void OnConfigSelectorUpdate(
       absl::StatusOr<RefCountedPtr<ServerConfigSelector>> config_selector);
 
   void InterceptCall(UnstartedCallHandler unstarted_call_handler) override;
 
-  const ChannelArgs args_;
-  const RefCountedPtr<ServerConfigSelectorProvider>
+  ChannelArgs args_;
+  RefCountedPtr<ServerConfigSelectorProvider>
       server_config_selector_provider_;
 
   Observable<absl::StatusOr<RefCountedPtr<ConfigSelectorState>>>

@@ -1128,6 +1128,7 @@ absl::StatusOr<ChannelArgs> XdsServerConfigFetcher::ListenerWatcher::
         MakeRefCounted<XdsChannelStackModifier>(std::move(filters)));
   }
   // Create ServerConfigSelectorProvider.
+  // FIXME: skip this if there are no filters
   RefCountedPtr<ServerConfigSelectorProvider> server_config_selector_provider =
       Match(
           filter_chain->http_connection_manager.route_config,

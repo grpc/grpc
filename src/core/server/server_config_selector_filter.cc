@@ -199,7 +199,7 @@ class ServerConfigSelectorInterceptor::Watcher final
 
 const grpc_channel_filter ServerConfigSelectorInterceptor::kFilter =
     MakePromiseBasedFilter<
-        ServerConfigSelectorInterceptor, FilterEndpoint::kClient,
+        ServerConfigSelectorInterceptor, FilterEndpoint::kServer,
         kFilterExaminesServerInitialMetadata | kFilterExaminesOutboundMessages |
             kFilterExaminesInboundMessages | kFilterExaminesCallContext>();
 
@@ -303,6 +303,12 @@ void ServerConfigSelectorInterceptor::OnConfigSelectorUpdate(
   config_selector_.Set(std::move(state));
 }
 
+void ServerConfigSelectorInterceptor::Orphaned() {
+  args_ = ChannelArgs();
+  server_config_selector_provider_.reset();
+  config_selector_.Set(absl::CancelledError("shutting down"));
+}
+
 // FIXME: add a new tracer here
 
 void ServerConfigSelectorInterceptor::InterceptCall(
@@ -310,7 +316,7 @@ void ServerConfigSelectorInterceptor::InterceptCall(
   // Consume the call coming to us from the client side.
   CallHandler handler = Consume(std::move(unstarted_call_handler));
   handler.SpawnGuarded(
-      "choose_filter_chain",
+      "choose_dynamic_filter_chain",
       [self = RefAsSubclass<ServerConfigSelectorInterceptor>(),
        handler]() mutable {
         return TrySeq(
@@ -360,7 +366,7 @@ void ServerConfigSelectorInterceptor::InterceptCall(
                     // Start call on selected filter chain.
                     GRPC_TRACE_LOG(channel, INFO)
                         << "[server_config_selector_interceptor " << self.get()
-                        << "]: starting call on filter chain";
+                        << "]: starting call on dynamic filter chain";
                     auto& filter_chain = DownCast<const FilterChainImpl&>(
                         **call_config->filter_chain);
                     auto [initiator, unstarted_handler] = MakeCallPair(
