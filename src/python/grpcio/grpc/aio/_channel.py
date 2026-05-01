@@ -55,7 +55,9 @@ _USER_AGENT = "grpc-python-asyncio/{}".format(_grpcio_metadata.__version__)
 if sys.version_info[1] < 7:
 
     def _all_tasks() -> Iterable[asyncio.Task]:
-        return asyncio.Task.all_tasks()  # pylint: disable=no-member #type: ignore
+        return (
+            asyncio.Task.all_tasks()  # pylint: disable=no-member #type: ignore
+        )
 
 else:
 
@@ -96,7 +98,6 @@ class _BaseMultiCallable(Generic[InterceptorT]):
     _interceptors: Optional[Sequence[InterceptorT]]
     _references: List[Any]
 
-
     _loop: asyncio.AbstractEventLoop
 
     # pylint: disable=too-many-arguments
@@ -132,7 +133,9 @@ class _BaseMultiCallable(Generic[InterceptorT]):
         ):
             metadata = Metadata.from_tuple(tuple(metadata))
         if compression:
-            augmented_metadata = _compression.augment_metadata(metadata, compression)
+            augmented_metadata = _compression.augment_metadata(
+                metadata, compression
+            )
             if augmented_metadata:
                 metadata = Metadata(*augmented_metadata)
         return metadata
@@ -430,7 +433,7 @@ class Channel(_base_channel.Channel):
             if candidate is not None and isinstance(candidate, _base_call.Call):
                 if hasattr(candidate, "_channel"):
                     # For intercepted Call object
-                    if candidate._channel is not self._channel: # type: ignore # noqa: PGH003
+                    if candidate._channel is not self._channel:  # type: ignore # noqa: PGH003
                         continue
                 elif hasattr(candidate, "_cython_call"):
                     # For normal Call object
