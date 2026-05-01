@@ -56,7 +56,7 @@ ParseCertificateChainFromDer(const std::vector<std::string>& der_cert_chain) {
     }
     raw_cert_chain.push_back(std::move(raw_cert));
   }
-  return raw_cert_chain;
+  return std::move(raw_cert_chain);
 }
 
 absl::StatusOr<std::vector<bssl::UniquePtr<CRYPTO_BUFFER>>>
@@ -79,7 +79,7 @@ ParseCertificateChainFromPem(absl::string_view pem_cert_chain) {
   if (raw_cert_chain.empty()) {
     return absl::InvalidArgumentError("Failed to parse cert chain.");
   }
-  return raw_cert_chain;
+  return std::move(raw_cert_chain);
 }
 
 absl::StatusOr<bssl::UniquePtr<EVP_PKEY>> ParsePrivateKeyFromDer(
@@ -91,7 +91,7 @@ absl::StatusOr<bssl::UniquePtr<EVP_PKEY>> ParsePrivateKeyFromDer(
   if (pkey == nullptr || CBS_len(&cbs) != 0) {
     return absl::InvalidArgumentError("Failed to parse private key.");
   }
-  return pkey;
+  return std::move(pkey);
 }
 
 absl::StatusOr<bssl::UniquePtr<EVP_PKEY>> ParsePrivateKeyFromPem(
@@ -107,7 +107,7 @@ absl::StatusOr<bssl::UniquePtr<EVP_PKEY>> ParsePrivateKeyFromPem(
   if (pkey == nullptr) {
     return absl::InvalidArgumentError("Failed to read private key.");
   }
-  return pkey;
+  return std::move(pkey);
 }
 
 // The type of the given private key string must match the parser.
@@ -148,7 +148,7 @@ CertificateSelector::CreateSelectCertificateResult(
   result.certificate_chain = *std::move(raw_cert_chain);
   GRPC_RETURN_IF_ERROR(
       CreatePrivateKey(der_private_key, result, ParsePrivateKeyFromDer));
-  return result;
+  return std::move(result);
 }
 
 absl::StatusOr<CertificateSelector::SelectCertificateResult>
@@ -163,7 +163,7 @@ CertificateSelector::CreateSelectCertificateResult(
   result.certificate_chain = *std::move(raw_cert_chain);
   GRPC_RETURN_IF_ERROR(
       CreatePrivateKey(pem_private_key, result, ParsePrivateKeyFromPem));
-  return result;
+  return std::move(result);
 }
 
 }  // namespace grpc_core
