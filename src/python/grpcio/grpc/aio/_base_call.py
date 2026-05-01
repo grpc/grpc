@@ -156,6 +156,7 @@ class UnaryUnaryCall(
           The response message of the RPC.
         """
 
+
 class UnaryStreamCall(
     Generic[RequestType, ResponseType], Call, metaclass=ABCMeta
 ):
