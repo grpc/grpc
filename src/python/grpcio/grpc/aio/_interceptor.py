@@ -522,7 +522,9 @@ class _InterceptedStreamResponseMixin(Generic[ResponseType]):
                 self._wait_for_interceptor_task_response_iterator()
             )
         try:
-            if isinstance(self._response_aiter, AsyncGenerator):
+            if self._response_aiter is not None and isinstance(
+                self._response_aiter, AsyncGenerator
+            ):
                 return await self._response_aiter.__anext__()
             return cygrpc.EOF
         except StopAsyncIteration:
