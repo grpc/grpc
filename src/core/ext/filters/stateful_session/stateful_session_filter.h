@@ -22,7 +22,6 @@
 
 #include <utility>
 
-#include "src/core/ext/filters/stateful_session/stateful_session_service_config_parser.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/promise_based_filter.h"
@@ -118,12 +117,6 @@ class StatefulSessionFilter
     }
 
    private:
-    // TODO(roth): Remove these when removing the
-    // xds_channel_filter_chain_per_route experiment.
-    template <typename T>
-    void OnClientInitialMetadataImpl(ClientMetadata& md, const T& config);
-    const StatefulSessionMethodParsedConfig::CookieConfig* cookie_config_;
-
     XdsOverrideHostAttribute* override_host_attribute_;
     absl::string_view cluster_name_;
     absl::string_view cookie_address_list_;
@@ -132,13 +125,6 @@ class StatefulSessionFilter
   };
 
  private:
-  // TODO(roth): Remove these fields when removing the
-  // xds_channel_filter_chain_per_route experiment.
-  // The relative index of instances of the same filter.
-  const size_t index_;
-  // Index of the service config parser.
-  const size_t service_config_parser_index_;
-
   const RefCountedPtr<const Config> config_;
 };
 
