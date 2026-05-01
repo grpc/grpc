@@ -37599,7 +37599,7 @@ add_executable(v3_bridge_test
   src/core/util/validation_errors.cc
   src/core/util/wait_for_single_owner.cc
   src/core/util/work_serializer.cc
-  test/core/lib/channel/v3_bridge_test.cc
+  test/core/channel/v3_bridge_test.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)

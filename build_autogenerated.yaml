@@ -27129,7 +27129,7 @@ targets:
   - src/core/util/validation_errors.cc
   - src/core/util/wait_for_single_owner.cc
   - src/core/util/work_serializer.cc
-  - test/core/lib/channel/v3_bridge_test.cc
+  - test/core/channel/v3_bridge_test.cc
   deps:
   - gtest
   - upb_textformat_lib

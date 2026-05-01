@@ -36,7 +36,7 @@ class EarlyFailureInterceptor
     : public V3InterceptorToV2Bridge<EarlyFailureInterceptor> {
  public:
   void InterceptCall(UnstartedCallHandler unstarted_call_handler) override {
-    auto arena = GetContext<Arena>();
+    GetContext<Arena>();
     // Start the call and fail it immediately.
     auto handler = unstarted_call_handler.StartCall();
     handler.PushServerTrailingMetadata(
