@@ -64,6 +64,7 @@ class FakeActivity final : public Activity {
  private:
   Activity* const wake_activity_;
 };
+}  // namespace
 
 absl::Status StatusFromMetadata(const ServerMetadata& md) {
   auto status_code = md.get(GrpcStatusMetadata()).value_or(GRPC_STATUS_UNKNOWN);
@@ -76,7 +77,6 @@ absl::Status StatusFromMetadata(const ServerMetadata& md) {
                    message == nullptr ? "" : message->as_string_view()),
       StatusIntProperty::kRpcStatus, status_code);
 }
-}  // namespace
 
 ///////////////////////////////////////////////////////////////////////////////
 // BaseCallData
@@ -268,7 +268,6 @@ void BaseCallData::CapturedBatch::CancelWith(grpc_error_handle error,
                                              Flusher* releaser) {
   auto* batch = std::exchange(batch_, nullptr);
   GRPC_CHECK_NE(batch, nullptr);
-  LOG(INFO) << "BaseCallData::CapturedBatch::CancelWith: ";
   uintptr_t& refcnt = *RefCountField(batch);
   if (refcnt == 0) {
     // refcnt==0 ==> cancelled
@@ -497,7 +496,14 @@ void BaseCallData::SendMessage::Done(const ServerMetadata& metadata,
       push_.reset();
       next_.reset();
       if (batch_.is_captured()) {
-        batch_.CancelWith(StatusFromMetadata(metadata), flusher);
+        std::string temp;
+        batch_.CancelWith(
+            absl::Status(
+                static_cast<absl::StatusCode>(
+                    metadata.get(GrpcStatusMetadata())
+                        .value_or(GRPC_STATUS_UNKNOWN)),
+                metadata.GetStringValue("grpc-message", &temp).value_or("")),
+            flusher);
       }
       state_ = State::kCancelledButNotYetPolled;
       if (base_->is_current()) base_->ForceImmediateRepoll();
@@ -1168,7 +1174,7 @@ class ClientCallData::PollContext {
                       std::exchange(
                           self_->recv_initial_metadata_->original_on_ready,
                           nullptr),
-                      absl::CancelledError(),
+                      StatusFromMetadata(*md),
                       "wake_inside_combiner:recv_initial_metadata_ready");
               }
             }
@@ -1207,7 +1213,6 @@ class ClientCallData::PollContext {
                       "wake_inside_combiner:recv_initial_metadata_ready");
               }
             }
-            LOG(INFO) << "!!!! self_->send_initial_state_: " << static_cast<int>(self_->send_initial_state_);
             if (self_->send_initial_state_ == SendInitialState::kQueued) {
               self_->send_initial_state_ = SendInitialState::kCancelled;
               self_->send_initial_metadata_batch_.CancelWith(

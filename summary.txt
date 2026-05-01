@@ -1,0 +1,12 @@
+Analysis of XdsExtProcEnd2endTest.MessageFailureHook/V3 Hang:
+
+1.  **Symptom**: The RPC hangs during execution, and grpc_shutdown() hangs at the end of the test.
+2.  **Root Cause 1 (RPC Hang)**: SendMessage::Done failed to release transport batches in the kPushedToPipe state during early termination. This left the batch refcount > 0, preventing forwarding and callbacks.
+3.  **Root Cause 2 (Shutdown Hang)**: A strong reference cycle was pinning the Arena in memory: Arena -> Filter -> Pipes -> PipeOwner -> V3 Call -> Arena. This prevented the EventEngine from being destroyed during shutdown.
+4.  **Solution (Applied)**:
+    - **In promise_based_filter.cc**: SendMessage::Done now explicitly cancels the batch in kPushedToPipe.
+    - **In promise_based_filter.h**: V3InterceptorToV2Bridge now uses a RAII helper (PipeOwnerCleanup) that explicitly cancels the V3 child call and breaks the reference cycle on any promise exit path (success, error, or cancellation).
+5.  **Build Status**: Compilation errors in the bridge (ordering and lambda captures) have been resolved.
+
+The current Buildrabbit error (INVALID_ARGUMENT: Must specify either 'base.current_directory' or 'base.workspace_id.workspace_name') is an infrastructure issue. Please ensure you are in the workspace root and retry the command:
+`blaze test //test/core/lib/channel:v3_bridge_test`
