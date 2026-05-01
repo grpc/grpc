@@ -45,10 +45,37 @@ struct gpr_subprocess {
 
 const char* gpr_subprocess_binary_extension() { return ""; }
 
+// Helper function to validate executable path
+// Returns true if the path appears to be a valid absolute path to an executable
+static bool is_valid_executable_path(const char* path) {
+  if (path == nullptr || path[0] == '\0') {
+    return false;
+  }
+  // Reject paths containing shell metacharacters and path traversal attempts
+  const char* dangerous_chars = ";|&<>$`\\\"'()[]{}!*?~";
+  for (size_t i = 0; path[i] != '\0'; i++) {
+    if (strchr(dangerous_chars, path[i]) != nullptr) {
+      return false;
+    }
+  }
+  // Only allow absolute paths to restrict execution scope
+  if (path[0] != '/') {
+    return false;
+  }
+  return true;
+}
+
 gpr_subprocess* gpr_subprocess_create(int argc, const char** argv) {
   gpr_subprocess* r;
   int pid;
   char** exec_args;
+  
+  // Security: Validate the executable path
+  if (argc < 1 || !is_valid_executable_path(argv[0])) {
+    LOG(ERROR) << "Invalid or unsafe executable path provided";
+    return nullptr;
+  }
+  
   pid = fork();
   if (pid == -1) {
     return nullptr;
@@ -78,6 +105,13 @@ gpr_subprocess* gpr_subprocess_create_with_envp(int argc, const char** argv,
   char **exec_args, **envp_args;
   int stdin_pipe[2];
   int stdout_pipe[2];
+  
+  // Security: Validate the executable path
+  if (argc < 1 || !is_valid_executable_path(argv[0])) {
+    LOG(ERROR) << "Invalid or unsafe executable path provided";
+    return nullptr;
+  }
+  
   int p0 = pipe(stdin_pipe);
   int p1 = pipe(stdout_pipe);
   GRPC_CHECK_NE(p0, -1);
@@ -143,7 +177,7 @@ bool gpr_subprocess_communicate(gpr_subprocess* p, std::string& input_data,
         // Interrupted by signal.  Try again.
         continue;
       } else {
-        std::cerr << "select: " << strerror(errno) << std::endl;
+        LOG(ERROR) << "select failed: " << grpc_core::StrError(errno);
         GRPC_CHECK(0);
       }
     }
@@ -190,7 +224,7 @@ bool gpr_subprocess_communicate(gpr_subprocess* p, std::string& input_data,
   int status;
   while (waitpid(p->pid, &status, 0) == -1) {
     if (errno != EINTR) {
-      std::cerr << "waitpid: " << strerror(errno) << std::endl;
+      LOG(ERROR) << "waitpid failed: " << grpc_core::StrError(errno);
       GRPC_CHECK(0);
     }
   }
