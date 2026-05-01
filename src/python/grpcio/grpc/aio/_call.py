@@ -18,7 +18,6 @@ from collections.abc import AsyncIterable
 from collections.abc import Iterable
 import enum
 from functools import partial
-import inspect
 import logging
 import traceback
 from typing import (
