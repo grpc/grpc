@@ -483,6 +483,18 @@ class InterceptedCall:
         call = await self._interceptors_task
         return await call.wait_for_connection()
 
+    @property
+    def _done_writing_flag(self) -> bool:
+        if not self._interceptors_task.done():
+            return False
+
+        try:
+            call = self._interceptors_task.result()
+        except (AioRpcError, asyncio.CancelledError):
+            return True
+
+        return getattr(call, "_done_writing_flag", True)
+
 
 class _InterceptedUnaryResponseMixin:
     _interceptors_task: asyncio.Task[Any]
@@ -1210,6 +1222,12 @@ class UnaryStreamCallResponseIterator(
         # async iterator. So this path should not be reached.
         raise NotImplementedError()
 
+    @property
+    def _done_writing_flag(self) -> bool:
+        if self._call is None:
+            return False
+        return getattr(self._call, "_done_writing_flag", True)
+
 
 class StreamStreamCallResponseIterator(
     _StreamCallResponseIterator, _base_call.StreamStreamCall
@@ -1237,4 +1255,4 @@ class StreamStreamCallResponseIterator(
     def _done_writing_flag(self) -> bool:
         if self._call is None:
             return False
-        return self._call._done_writing_flag
+        return getattr(self._call, "_done_writing_flag", True)

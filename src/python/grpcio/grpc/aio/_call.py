@@ -404,7 +404,7 @@ class _StreamResponseMixin(Call, Generic[ResponseType]):
 
 class _StreamRequestMixin(Call):
     _metadata_sent: asyncio.Event
-    _done_writing_flag: bool
+    _done_writing_flag_state: bool
     _async_request_poller: Optional[asyncio.Task]
     _request_style: _APIStyle
 
@@ -412,7 +412,7 @@ class _StreamRequestMixin(Call):
         self, request_iterator: Optional[RequestIterableType]
     ):
         self._metadata_sent = asyncio.Event()
-        self._done_writing_flag = False
+        self._done_writing_flag_state = False
 
         # If user passes in an async iterator, create a consumer Task.
         if request_iterator is not None:
@@ -427,6 +427,10 @@ class _StreamRequestMixin(Call):
     def _raise_for_different_style(self, style: _APIStyle):
         if self._request_style is not style:
             raise cygrpc.UsageError(_API_STYLE_ERROR)
+
+    @property
+    def _done_writing_flag(self) -> bool:
+        return self._done_writing_flag_state
 
     def cancel(self) -> bool:
         if super().cancel():
@@ -483,7 +487,7 @@ class _StreamRequestMixin(Call):
     async def _write(self, request: RequestType) -> None:
         if self.done():
             raise asyncio.InvalidStateError(_RPC_ALREADY_FINISHED_DETAILS)
-        if self._done_writing_flag:
+        if self._done_writing_flag_state:
             raise asyncio.InvalidStateError(_RPC_HALF_CLOSED_DETAILS)
         if not self._metadata_sent.is_set():
             await self._metadata_sent.wait()
@@ -507,9 +511,9 @@ class _StreamRequestMixin(Call):
         if self.done():
             # If the RPC is finished, do nothing.
             return
-        if not self._done_writing_flag:
+        if not self._done_writing_flag_state:
             # If the done writing is not sent before, try to send it.
-            self._done_writing_flag = True
+            self._done_writing_flag_state = True
             try:
                 await self._cython_call.send_receive_close()
             except asyncio.CancelledError:
@@ -610,6 +614,10 @@ class UnaryStreamCall(
 
     _request: RequestType
     _send_unary_request_task: asyncio.Task
+
+    @property
+    def _done_writing_flag(self) -> bool:
+        return True
 
     # pylint: disable=too-many-arguments
     def __init__(
