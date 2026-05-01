@@ -62,7 +62,8 @@ cdef void _raise_call_error(c_call_error, metadata) except *:
   raise ValueError(_call_error(c_call_error, metadata))
 
 
-cdef _destroy_c_completion_queue(grpc_completion_queue *c_completion_queue):
+cdef void _destroy_c_completion_queue(
+    grpc_completion_queue *c_completion_queue) noexcept nogil:
   grpc_completion_queue_shutdown(c_completion_queue)
   grpc_completion_queue_destroy(c_completion_queue)
 
@@ -445,6 +446,9 @@ cdef _close(Channel channel, grpc_status_code code, object details,
     drain_calls):
   cdef _ChannelState state = channel._state
   cdef _CallState call_state
+  cdef grpc_completion_queue* c_call_cq
+  cdef grpc_completion_queue* c_conn_cq
+  cdef grpc_channel* c_channel
   encoded_details = _encode(details)
   with state.condition:
     if state.open:
@@ -471,11 +475,22 @@ cdef _close(Channel channel, grpc_status_code code, object details,
         while state.connectivity_due:
           state.condition.wait()
 
-      _destroy_c_completion_queue(state.c_call_completion_queue)
-      _destroy_c_completion_queue(state.c_connectivity_completion_queue)
-      grpc_channel_destroy(state.c_channel)
+      # grpc_channel_destroy can synchronously run ~PosixEventEngine ->
+      # Quiesce when this channel_stack holds the last
+      # shared_ptr<EventEngine> (channel_stack.cc:221), and grpc_shutdown can
+      # do similar global teardown. Both must release the GIL: an EventEngine
+      # worker may be inside cygrpc._destroy's `with gil:`
+      # (credentials.pyx.pxi) running Python __del__ code, and Quiesce will
+      # wait for that worker to exit.
+      c_call_cq = state.c_call_completion_queue
+      c_conn_cq = state.c_connectivity_completion_queue
+      c_channel = state.c_channel
       state.c_channel = NULL
-      grpc_shutdown()
+      with nogil:
+        _destroy_c_completion_queue(c_call_cq)
+        _destroy_c_completion_queue(c_conn_cq)
+        grpc_channel_destroy(c_channel)
+        grpc_shutdown()
       state.condition.notify_all()
     else:
       # Another call to close already completed in the past or is currently
