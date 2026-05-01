@@ -459,21 +459,21 @@ class InterceptedCall:
 
         return await call.code()
 
-    async def details(self) -> Optional[str]:
+    async def details(self) -> str:
         try:
             call = await self._interceptors_task
         except AioRpcError as err:
-            return err.details()
+            return err.details() or ""
         except asyncio.CancelledError:
             return _LOCAL_CANCELLATION_DETAILS
 
         return await call.details()
 
-    async def debug_error_string(self) -> Optional[str]:
+    async def debug_error_string(self) -> str:
         try:
             call = await self._interceptors_task
         except AioRpcError as err:
-            return err.debug_error_string()
+            return err.debug_error_string() or ""
         except asyncio.CancelledError:
             return ""
 
@@ -522,9 +522,7 @@ class _InterceptedStreamResponseMixin(Generic[ResponseType]):
                 self._wait_for_interceptor_task_response_iterator()
             )
         try:
-            if isinstance(self._response_aiter, AsyncGenerator):
-                return await self._response_aiter.asend(None)
-            return cygrpc.EOF
+            return await self._response_aiter.__anext__()
         except StopAsyncIteration:
             return cygrpc.EOF
 
@@ -1155,7 +1153,8 @@ class _StreamCallResponseIterator(Generic[ResponseType]):
 
     def add_done_callback(self, callback) -> None:
         if self._call is None:
-            raise NotImplementedError()
+            callback(self)
+            return
         self._call.add_done_callback(callback)
 
     def time_remaining(self) -> Optional[float]:

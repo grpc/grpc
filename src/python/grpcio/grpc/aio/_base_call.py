@@ -161,8 +161,8 @@ class UnaryStreamCall(
     Generic[RequestType, ResponseType], Call, metaclass=ABCMeta
 ):
     @property
-    def _done_writing_flag(self):
-        """The _done_writing_flag property."""
+    def _done_writing_flag(self) -> bool:
+        """Indicates whether the client is done sending messages."""
         return self.__done_writing_flag
 
     @_done_writing_flag.setter
@@ -230,12 +230,12 @@ class StreamStreamCall(
     Generic[RequestType, ResponseType], Call, metaclass=ABCMeta
 ):
     @property
-    def _done_writing_flag(self):
-        """The _done_writing_flag property."""
+    def _done_writing_flag(self) -> bool:
+        """Indicates whether the client is done sending messages."""
         return self.__done_writing_flag
 
     @_done_writing_flag.setter
-    def _done_writing_flag(self, value):
+    def _done_writing_flag(self, value: bool) -> None:
         self.__done_writing_flag = value
 
     @abstractmethod
