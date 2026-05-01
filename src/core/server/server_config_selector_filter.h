@@ -78,8 +78,7 @@ class ServerConfigSelectorInterceptor final
   void InterceptCall(UnstartedCallHandler unstarted_call_handler) override;
 
   ChannelArgs args_;
-  RefCountedPtr<ServerConfigSelectorProvider>
-      server_config_selector_provider_;
+  RefCountedPtr<ServerConfigSelectorProvider> server_config_selector_provider_;
 
   Observable<absl::StatusOr<RefCountedPtr<ConfigSelectorState>>>
       config_selector_;
