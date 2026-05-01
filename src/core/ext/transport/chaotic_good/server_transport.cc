@@ -372,8 +372,15 @@ absl::Status ChaoticGoodServerTransport::StreamDispatch::AddStream(
       << "CHAOTIC_GOOD " << this << " NewStream " << stream_id
       << " last_seen_new_stream_id_=" << last_seen_new_stream_id_;
   auto it = stream_map_.find(stream_id);
-  if (stream_id <= last_seen_new_stream_id_) {
-    return absl::InternalError("Stream id is not increasing");
+  if (state_tracker_.state() == GRPC_CHANNEL_SHUTDOWN) {
+    return absl::InternalError("Transport closed");
+  }
+  if (stream_id <= 0) {
+    return absl::InternalError("Invalid stream id");
+  } else {
+    // TODO(vigneshbabu): Create an experiment that enforces that stream ids
+    // are always increasing.
+    last_seen_new_stream_id_ = stream_id;
   }
   if (it != stream_map_.end()) {
     return absl::InternalError("Stream already exists");
