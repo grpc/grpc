@@ -61,6 +61,9 @@ from ._utils import _timeout_to_deadline
 
 _LOCAL_CANCELLATION_DETAILS = "Locally cancelled by application!"
 
+_FINISH_ITERATOR_SENTINEL = object()
+_FINISH_ITERATOR_SENTINEL_T: TypeAlias = object
+
 
 class ServerInterceptor(metaclass=ABCMeta):
     """Affords intercepting incoming RPCs on the service-side.
@@ -526,8 +529,6 @@ class _InterceptedStreamRequestMixin(Generic[RequestType]):
     _interceptors_task: asyncio.Task[Any]
     _loop: asyncio.AbstractEventLoop
 
-    _FINISH_ITERATOR_SENTINEL = object()
-    _FINISH_ITERATOR_SENTINEL_T: TypeAlias = object
 
     def _init_stream_request_mixin(
         self, request_iterator: Optional[RequestIterableType]
@@ -556,7 +557,7 @@ class _InterceptedStreamRequestMixin(Generic[RequestType]):
             value = await self._write_to_iterator_queue.get()
             if (
                 value
-                is _InterceptedStreamRequestMixin._FINISH_ITERATOR_SENTINEL
+                is _FINISH_ITERATOR_SENTINEL
             ):
                 break
             yield value
@@ -624,7 +625,7 @@ class _InterceptedStreamRequestMixin(Generic[RequestType]):
             raise asyncio.InvalidStateError(_RPC_ALREADY_FINISHED_DETAILS)
 
         await self._write_to_iterator_queue_interruptible(
-            _InterceptedStreamRequestMixin._FINISH_ITERATOR_SENTINEL, call
+            _FINISH_ITERATOR_SENTINEL, call
         )
 
 
