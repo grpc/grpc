@@ -33,16 +33,19 @@
 #include "absl/log/log.h"
 #include "absl/strings/match.h"
 
+using testing::AnyOf;
 using testing::HasSubstr;
 using testing::StartsWith;
 
 namespace grpc_core {
 namespace {
-void CheckPeer(std::string peer_name) {
-  // If the peer name is a uds path, then check if it is filled
-  if (absl::StartsWith(peer_name, "unix:/")) {
-    EXPECT_THAT(peer_name, StartsWith("unix:/tmp/grpc_fullstack_test."));
+void CheckPeer(CoreEnd2endTest& test, std::string peer_name) {
+  if (!(test.test_config()->feature_mask & FEATURE_MASK_SUPPORTS_NAMED_UDS)) {
+    return;
   }
+  EXPECT_THAT(peer_name,
+              AnyOf(StartsWith("unix:/tmp/grpc_fullstack_test."),
+                    StartsWith("unix-abstract:grpc_fullstack_test.")));
 }
 
 void SimpleRequestBody(CoreEnd2endTest& test) {
@@ -60,9 +63,9 @@ void SimpleRequestBody(CoreEnd2endTest& test) {
   test.Expect(101, true);
   test.Step();
   EXPECT_NE(s.GetPeer(), std::nullopt);
-  CheckPeer(*s.GetPeer());
+  CheckPeer(test, *s.GetPeer());
   EXPECT_NE(c.GetPeer(), std::nullopt);
-  CheckPeer(*c.GetPeer());
+  CheckPeer(test, *c.GetPeer());
   IncomingCloseOnServer client_close;
   s.NewBatch(102)
       .SendInitialMetadata({})
