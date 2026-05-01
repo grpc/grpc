@@ -24,6 +24,7 @@
 #include <grpcpp/security/credentials.h>
 #include <grpcpp/security/server_credentials.h>
 #include <grpcpp/security/tls_certificate_provider.h>
+#include <grpcpp/security/tls_certificate_verifier.h>
 #include <grpcpp/security/tls_credentials_options.h>
 #include <grpcpp/security/tls_private_key_signer.h>
 #include <grpcpp/server.h>
@@ -66,6 +67,10 @@ namespace {
 
 constexpr absl::string_view kMessage = "Hello";
 constexpr absl::string_view kCaPemPath = "src/core/tsi/test_creds/ca.pem";
+constexpr absl::string_view kServerKey0Path =
+    "src/core/tsi/test_creds/server0.key";
+constexpr absl::string_view kServerCert0Path =
+    "src/core/tsi/test_creds/server0.pem";
 constexpr absl::string_view kServerKeyPath =
     "src/core/tsi/test_creds/server1.key";
 constexpr absl::string_view kServerCertPath =
@@ -179,7 +184,8 @@ class TlsPrivateKeyOffloadTest : public ::testing::Test {
 };
 
 void DoRpc(const std::string& server_addr,
-           const experimental::TlsChannelCredentialsOptions& tls_options) {
+           const experimental::TlsChannelCredentialsOptions& tls_options,
+           bool expect_sni_match = false) {
   ChannelArguments channel_args;
   channel_args.SetSslTargetNameOverride("foo.test.google.fr");
   std::shared_ptr<Channel> channel = grpc::CreateCustomChannel(
@@ -193,6 +199,18 @@ void DoRpc(const std::string& server_addr,
   ClientContext context;
   context.set_deadline(grpc_timeout_seconds_to_deadline(/*time_s=*/5));
   grpc::Status result = stub->Echo(&context, request, &response);
+  if (expect_sni_match) {
+    std::vector<grpc::string_ref> san_names =
+        context.auth_context()->FindPropertyValues(GRPC_X509_SAN_PROPERTY_NAME);
+    bool sni_match = false;
+    for (const auto& san : san_names) {
+      if (san.ends_with("test.google.fr")) {
+        sni_match = true;
+        break;
+      }
+    }
+    EXPECT_TRUE(sni_match);
+  }
   EXPECT_TRUE(result.ok()) << result.error_message().c_str() << ", "
                            << result.error_details().c_str();
   EXPECT_EQ(response.message(), kMessage);
@@ -387,8 +405,12 @@ class AsyncTestPrivateKeySigner final
 
 // Verifies that the server can successfully offload signing to an asynchronous
 // custom signer.
-TEST_F(TlsPrivateKeyOffloadTest, OffloadWithCustomKeySignerAsync) {
+TEST_F(TlsPrivateKeyOffloadTest, OffloadWithCustomKeySignerAsyncWithSniMatch) {
   server_addr_ = absl::StrCat("localhost:", grpc_pick_unused_port_or_die());
+  std::string server_key_0 =
+      grpc_core::testing::GetFileContents(std::string(kServerKey0Path));
+  std::string server_cert_0 =
+      grpc_core::testing::GetFileContents(std::string(kServerCert0Path));
   std::string server_key =
       grpc_core::testing::GetFileContents(std::string(kServerKeyPath));
   std::string server_cert =
@@ -399,6 +421,13 @@ TEST_F(TlsPrivateKeyOffloadTest, OffloadWithCustomKeySignerAsync) {
   std::vector<experimental::IdentityKeyOrSignerCertPair>
       server_identity_key_cert_pairs;
   signer_ = std::make_shared<AsyncTestPrivateKeySigner>(server_key);
+  // The bad signer should not be used with correct SNI matching.
+  std::shared_ptr<experimental::PrivateKeySigner> bad_signer =
+      std::make_shared<AsyncTestPrivateKeySigner>(
+          server_key_0, AsyncTestPrivateKeySigner::Mode::kError);
+  server_identity_key_cert_pairs.emplace_back(
+      grpc::experimental::IdentityKeyOrSignerCertPair{bad_signer,
+                                                      server_cert_0});
   server_identity_key_cert_pairs.emplace_back(
       grpc::experimental::IdentityKeyOrSignerCertPair{signer_, server_cert});
   auto server_certificate_provider =
@@ -431,6 +460,60 @@ TEST_F(TlsPrivateKeyOffloadTest, OffloadWithCustomKeySignerAsync) {
   options.watch_identity_key_cert_pairs();
   options.set_identity_cert_name("identity");
   options.set_check_call_host(false);
+
+  DoRpc(server_addr_, options);
+}
+
+// Verifies that the server can successfully offload signing to an asynchronous
+// custom signer.
+TEST_F(TlsPrivateKeyOffloadTest,
+       OffloadWithCustomKeySignerAsyncWithoutSniMatch) {
+  server_addr_ = absl::StrCat("localhost:", grpc_pick_unused_port_or_die());
+  std::string server_key_0 =
+      grpc_core::testing::GetFileContents(std::string(kServerKey0Path));
+  std::string server_cert_0 =
+      grpc_core::testing::GetFileContents(std::string(kServerCert0Path));
+  std::string ca_cert =
+      grpc_core::testing::GetFileContents(std::string(kCaPemPath));
+
+  // SNI doesn't match so the default certificate will be used.
+  std::vector<experimental::IdentityKeyOrSignerCertPair>
+      server_identity_key_cert_pairs;
+  signer_ = std::make_shared<AsyncTestPrivateKeySigner>(server_key_0);
+  server_identity_key_cert_pairs.emplace_back(
+      grpc::experimental::IdentityKeyOrSignerCertPair{signer_, server_cert_0});
+  auto server_certificate_provider =
+      std::make_shared<experimental::InMemoryCertificateProvider>();
+  ASSERT_TRUE(server_certificate_provider
+                  ->UpdateIdentityKeyCertPair(server_identity_key_cert_pairs)
+                  .ok());
+  ASSERT_TRUE(server_certificate_provider->UpdateRoot(ca_cert).ok());
+
+  StartServer(server_certificate_provider);
+
+  std::string client_key =
+      grpc_core::testing::GetFileContents(std::string(kClientKeyPath));
+  std::string client_cert =
+      grpc_core::testing::GetFileContents(std::string(kClientCertPath));
+  auto client_certificate_provider =
+      std::make_shared<experimental::InMemoryCertificateProvider>();
+  std::vector<experimental::IdentityKeyCertPair> identity_key_cert_pairs;
+  identity_key_cert_pairs.emplace_back(
+      experimental::IdentityKeyCertPair{client_key, client_cert});
+  ASSERT_TRUE(client_certificate_provider
+                  ->UpdateIdentityKeyCertPair(identity_key_cert_pairs)
+                  .ok());
+  ASSERT_TRUE(client_certificate_provider->UpdateRoot(ca_cert).ok());
+
+  grpc::experimental::TlsChannelCredentialsOptions options;
+  options.set_certificate_provider(client_certificate_provider);
+  options.watch_root_certs();
+  options.set_root_cert_name("root");
+  options.watch_identity_key_cert_pairs();
+  options.set_identity_cert_name("identity");
+  // Skip the host name check so that the handshake can succeed.
+  options.set_certificate_verifier(
+      std::make_shared<experimental::NoOpCertificateVerifier>());
 
   DoRpc(server_addr_, options);
 }
