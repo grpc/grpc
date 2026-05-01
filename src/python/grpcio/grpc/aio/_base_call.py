@@ -166,7 +166,7 @@ class UnaryStreamCall(
         return self.__done_writing_flag
 
     @_done_writing_flag.setter
-    def _done_writing_flag(self, value):
+    def _done_writing_flag(self, value: bool) -> None:
         self.__done_writing_flag = value
 
     @abstractmethod
