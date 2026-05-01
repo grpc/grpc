@@ -930,7 +930,7 @@ class InterceptedStreamUnaryCall(
             return StreamUnaryCall(
                 request_iterator,
                 _timeout_to_deadline(client_call_details.timeout),
-                client_call_details.metadata,
+                client_call_details.metadata or Metadata(),
                 client_call_details.credentials,
                 client_call_details.wait_for_ready,
                 self._channel,
@@ -1048,7 +1048,7 @@ class InterceptedStreamStreamCall(
             self._last_returned_call_from_interceptors = StreamStreamCall(
                 request_iterator,
                 _timeout_to_deadline(client_call_details.timeout),
-                client_call_details.metadata,
+                client_call_details.metadata or Metadata(),
                 client_call_details.credentials,
                 client_call_details.wait_for_ready,
                 self._channel,
@@ -1070,7 +1070,7 @@ class InterceptedStreamStreamCall(
         raise NotImplementedError()
 
 
-class UnaryUnaryCallResponse(_base_call.UnaryUnaryCall):
+class UnaryUnaryCallResponse(_base_call.UnaryUnaryCall, Generic[ResponseType]):
     """Final UnaryUnaryCall class finished with a response."""
 
     _response: ResponseType
@@ -1119,7 +1119,7 @@ class UnaryUnaryCallResponse(_base_call.UnaryUnaryCall):
         pass
 
 
-class _StreamCallResponseIterator:
+class _StreamCallResponseIterator(Generic[ResponseType]):
     _call: Optional[Union[_base_call.UnaryStreamCall, _base_call.StreamStreamCall]]
     _response_iterator: AsyncIterable[ResponseType]
 
@@ -1225,4 +1225,6 @@ class StreamStreamCallResponseIterator(
 
     @property
     def _done_writing_flag(self) -> bool:
+        if self._call is None:
+            return False
         return self._call._done_writing_flag
