@@ -1120,51 +1120,73 @@ class UnaryUnaryCallResponse(_base_call.UnaryUnaryCall):
 
 
 class _StreamCallResponseIterator:
-    _call: Union[_base_call.UnaryStreamCall, _base_call.StreamStreamCall]
+    _call: Optional[Union[_base_call.UnaryStreamCall, _base_call.StreamStreamCall]]
     _response_iterator: AsyncIterable[ResponseType]
 
     def __init__(
         self,
-        call: Union[_base_call.UnaryStreamCall, _base_call.StreamStreamCall],
+        call: Optional[Union[_base_call.UnaryStreamCall, _base_call.StreamStreamCall]],
         response_iterator: AsyncIterable[ResponseType],
     ) -> None:
         self._response_iterator = response_iterator
         self._call = call
 
     def cancel(self) -> bool:
+        if self._call is None:
+            return False
         return self._call.cancel()
 
     def cancelled(self) -> bool:
+        if self._call is None:
+            return False
         return self._call.cancelled()
 
     def done(self) -> bool:
+        if self._call is None:
+            return True
         return self._call.done()
 
     def add_done_callback(self, callback) -> None:
+        if self._call is None:
+            raise NotImplementedError()
         self._call.add_done_callback(callback)
 
     def time_remaining(self) -> Optional[float]:
+        if self._call is None:
+            raise NotImplementedError()
         return self._call.time_remaining()
 
     async def initial_metadata(self) -> Optional[Metadata]:
+        if self._call is None:
+            return None
         return await self._call.initial_metadata()
 
     async def trailing_metadata(self) -> Optional[Metadata]:
+        if self._call is None:
+            return None
         return await self._call.trailing_metadata()
 
     async def code(self) -> grpc.StatusCode:
+        if self._call is None:
+            return grpc.StatusCode.OK
         return await self._call.code()
 
     async def details(self) -> str:
+        if self._call is None:
+            return ""
         return await self._call.details()
 
     async def debug_error_string(self) -> Optional[str]:
+        if self._call is None:
+            return None
         return await self._call.debug_error_string()
 
     def __aiter__(self):
         return self._response_iterator.__aiter__()
 
     async def wait_for_connection(self) -> None:
+        if self._call is None:
+            return
         return await self._call.wait_for_connection()
 
 
