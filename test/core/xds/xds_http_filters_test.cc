@@ -1013,6 +1013,113 @@ TEST_P(XdsRbacFilterConfigTest, AllPermissionTypes) {
             "}}}}");
 }
 
+TEST_P(XdsRbacFilterConfigTest, AtMaxPermissionDepth) {
+  RBAC rbac;
+  auto* rules = rbac.mutable_rules();
+  rules->set_action(rules->ALLOW);
+  auto& policy = (*rules->mutable_policies())["policy_name"];
+  // We want to make sure that all of "and", "or", and "not" track
+  // depth, so we're including them all here.  We will start out with a
+  // single "and" and a single "or" and then use "not" for the rest.
+  auto* permission = policy.add_permissions();
+  permission = permission->mutable_and_rules()->add_rules();
+  permission = permission->mutable_or_rules()->add_rules();
+  for (size_t i = 0; i < 14; ++i) {
+    permission = permission->mutable_not_rule();
+  }
+  permission->set_any(true);
+  auto config = GenerateConfig(rbac);
+  ASSERT_TRUE(errors_.ok()) << errors_.status(
+      absl::StatusCode::kInvalidArgument, "unexpected errors");
+  ASSERT_TRUE(config.has_value());
+  EXPECT_EQ(JsonDump(*config),
+            "{\"rules\":{"
+            "\"action\":0,"
+            "\"policies\":{"
+            "\"policy_name\":{"
+            "\"permissions\":["
+            "{\"andRules\":{\"rules\":["
+            "{\"orRules\":{\"rules\":["
+            "{\"notRule\":"
+            "{\"notRule\":"
+            "{\"notRule\":"
+            "{\"notRule\":"
+            "{\"notRule\":"
+            "{\"notRule\":"
+            "{\"notRule\":"
+            "{\"notRule\":"
+            "{\"notRule\":"
+            "{\"notRule\":"
+            "{\"notRule\":"
+            "{\"notRule\":"
+            "{\"notRule\":"
+            "{\"notRule\":"
+            "{\"any\":true}"
+            "}"
+            "}"
+            "}"
+            "}"
+            "}"
+            "}"
+            "}"
+            "}"
+            "}"
+            "}"
+            "}"
+            "}"
+            "}"
+            "}"
+            "]}}"
+            "]}}"
+            "],"
+            "\"principals\":[]"
+            "}}}}");
+}
+
+TEST_P(XdsRbacFilterConfigTest, ExceedsMaxPermissionDepth) {
+  RBAC rbac;
+  auto* rules = rbac.mutable_rules();
+  rules->set_action(rules->ALLOW);
+  auto& policy = (*rules->mutable_policies())["policy_name"];
+  // We want to make sure that all of "and", "or", and "not" track
+  // depth, so we're including them all here.  We will start out with a
+  // single "and" and a single "or" and then use "not" for the rest.
+  auto* permission = policy.add_permissions();
+  permission = permission->mutable_and_rules()->add_rules();
+  permission = permission->mutable_or_rules()->add_rules();
+  for (size_t i = 0; i < 15; ++i) {
+    permission = permission->mutable_not_rule();
+  }
+  permission->set_any(true);
+  auto config = GenerateConfig(rbac);
+  absl::Status status = errors_.status(absl::StatusCode::kInvalidArgument,
+                                       "errors validating filter config");
+  EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(
+      status.message(),
+      absl::StrCat("errors validating filter config: [field:", FieldPrefix(),
+                   ".rules.policies[policy_name]"
+                   ".permissions[0].and_permission.rules[0]"
+                   ".or_permission.rules[0]"
+                   ".not_rule"
+                   ".not_rule"
+                   ".not_rule"
+                   ".not_rule"
+                   ".not_rule"
+                   ".not_rule"
+                   ".not_rule"
+                   ".not_rule"
+                   ".not_rule"
+                   ".not_rule"
+                   ".not_rule"
+                   ".not_rule"
+                   ".not_rule"
+                   ".not_rule"
+                   ".not_rule "
+                   "error:exceeded max recursion depth]"))
+      << status;
+}
+
 TEST_P(XdsRbacFilterConfigTest, AllPrincipalTypes) {
   RBAC rbac;
   auto* rules = rbac.mutable_rules();
@@ -1096,6 +1203,113 @@ TEST_P(XdsRbacFilterConfigTest, AllPrincipalTypes) {
             "{\"orIds\":{\"ids\":[{\"any\":true}]}}"
             "]"
             "}}}}");
+}
+
+TEST_P(XdsRbacFilterConfigTest, AtMaxPrincipalDepth) {
+  RBAC rbac;
+  auto* rules = rbac.mutable_rules();
+  rules->set_action(rules->ALLOW);
+  auto& policy = (*rules->mutable_policies())["policy_name"];
+  // We want to make sure that all of "and", "or", and "not" track
+  // depth, so we're including them all here.  We will start out with a
+  // single "and" and a single "or" and then use "not" for the rest.
+  auto* principal = policy.add_principals();
+  principal = principal->mutable_and_ids()->add_ids();
+  principal = principal->mutable_or_ids()->add_ids();
+  for (size_t i = 0; i < 14; ++i) {
+    principal = principal->mutable_not_id();
+  }
+  principal->set_any(true);
+  auto config = GenerateConfig(rbac);
+  ASSERT_TRUE(errors_.ok()) << errors_.status(
+      absl::StatusCode::kInvalidArgument, "unexpected errors");
+  ASSERT_TRUE(config.has_value());
+  EXPECT_EQ(JsonDump(*config),
+            "{\"rules\":{"
+            "\"action\":0,"
+            "\"policies\":{"
+            "\"policy_name\":{"
+            "\"permissions\":[],"
+            "\"principals\":["
+            "{\"andIds\":{\"ids\":["
+            "{\"orIds\":{\"ids\":["
+            "{\"notId\":"
+            "{\"notId\":"
+            "{\"notId\":"
+            "{\"notId\":"
+            "{\"notId\":"
+            "{\"notId\":"
+            "{\"notId\":"
+            "{\"notId\":"
+            "{\"notId\":"
+            "{\"notId\":"
+            "{\"notId\":"
+            "{\"notId\":"
+            "{\"notId\":"
+            "{\"notId\":"
+            "{\"any\":true}"
+            "}"
+            "}"
+            "}"
+            "}"
+            "}"
+            "}"
+            "}"
+            "}"
+            "}"
+            "}"
+            "}"
+            "}"
+            "}"
+            "}"
+            "]}}"
+            "]}}"
+            "]"
+            "}}}}");
+}
+
+TEST_P(XdsRbacFilterConfigTest, ExceedsMaxPrincipalDepth) {
+  RBAC rbac;
+  auto* rules = rbac.mutable_rules();
+  rules->set_action(rules->ALLOW);
+  auto& policy = (*rules->mutable_policies())["policy_name"];
+  // We want to make sure that all of "and", "or", and "not" track
+  // depth, so we're including them all here.  We will start out with a
+  // single "and" and a single "or" and then use "not" for the rest.
+  auto* principal = policy.add_principals();
+  principal = principal->mutable_and_ids()->add_ids();
+  principal = principal->mutable_or_ids()->add_ids();
+  for (size_t i = 0; i < 15; ++i) {
+    principal = principal->mutable_not_id();
+  }
+  principal->set_any(true);
+  auto config = GenerateConfig(rbac);
+  absl::Status status = errors_.status(absl::StatusCode::kInvalidArgument,
+                                       "errors validating filter config");
+  EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(
+      status.message(),
+      absl::StrCat("errors validating filter config: [field:", FieldPrefix(),
+                   ".rules.policies[policy_name]"
+                   ".principals[0].and_ids.ids[0]"
+                   ".or_ids.ids[0]"
+                   ".not_id"
+                   ".not_id"
+                   ".not_id"
+                   ".not_id"
+                   ".not_id"
+                   ".not_id"
+                   ".not_id"
+                   ".not_id"
+                   ".not_id"
+                   ".not_id"
+                   ".not_id"
+                   ".not_id"
+                   ".not_id"
+                   ".not_id"
+                   ".not_id "
+                   "error:exceeded max recursion depth]"))
+      << status;
 }
 
 TEST_P(XdsRbacFilterConfigTest, AuditLoggingOptionsIgnoredWithFeatureDisabled) {
