@@ -18,9 +18,9 @@ from abc import ABCMeta
 from abc import abstractmethod
 import asyncio
 import collections
-from collections.abc import AsyncIterable
 import functools
 from typing import (
+    TYPE_CHECKING,
     Any,
     AsyncGenerator,
     Awaitable,
@@ -33,6 +33,10 @@ from typing import (
     TypeAlias,
     Union,
 )
+
+if TYPE_CHECKING:
+    from collections.abc import AsyncIterable
+    from collections.abc import AsyncIterator
 
 import grpc
 from grpc._cython import cygrpc
@@ -490,7 +494,7 @@ class _InterceptedUnaryResponseMixin:
 
 class _InterceptedStreamResponseMixin(Generic[ResponseType]):
     _interceptors_task: asyncio.Task[Any]
-    _response_aiter: Optional[AsyncIterable[ResponseType]]
+    _response_aiter: AsyncIterator[ResponseType] | None
 
     def _init_stream_response_mixin(self) -> None:
         # Is initialized later, otherwise if the iterator is not finally
@@ -499,12 +503,12 @@ class _InterceptedStreamResponseMixin(Generic[ResponseType]):
 
     async def _wait_for_interceptor_task_response_iterator(
         self,
-    ) -> AsyncGenerator[ResponseType, None]:
+    ) -> AsyncIterator[ResponseType]:
         call = await self._interceptors_task
         async for response in call:
             yield response
 
-    def __aiter__(self) -> AsyncIterable[ResponseType]:
+    def __aiter__(self) -> AsyncIterator[ResponseType]:
         if self._response_aiter is None:
             self._response_aiter = (
                 self._wait_for_interceptor_task_response_iterator()
@@ -701,9 +705,8 @@ class InterceptedUnaryUnaryCall(
                     )
                     if isinstance(result, _base_call.UnaryUnaryCall):
                         return result
-                    raise RuntimeError(
-                        "Interceptor chain returned a Response instead of a Call"
-                    )
+                    error = "Interceptor chain returned a Response instead of a Call"
+                    raise RuntimeError(error)
 
                 call_or_response = await interceptors[0].intercept_unary_unary(
                     continuation, client_call_details, request
@@ -1189,7 +1192,7 @@ class _StreamCallResponseIterator(Generic[ResponseType]):
 
     async def wait_for_connection(self) -> None:
         if self._call is None:
-            return
+            return None
         return await self._call.wait_for_connection()
 
 
