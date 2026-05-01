@@ -138,8 +138,17 @@ class Interceptor : public UnstartedCallDestination {
   }
 
   // Pass through this call to the next filter.
+  // TODO(roth): Evaluate whether this is actually something we should
+  // support.
   void PassThrough(UnstartedCallHandler unstarted_call_handler) {
     wrapped_destination_->StartCall(std::move(unstarted_call_handler));
+  }
+
+  // Provides access to the wrapped call destination (i.e., the next
+  // thing to call after this interceptor).  For use with Consume() when
+  // the interceptor needs to create its own interception chain.
+  RefCountedPtr<UnstartedCallDestination> wrapped_destination() const {
+    return wrapped_destination_;  // From Interceptor class.
   }
 
  private:

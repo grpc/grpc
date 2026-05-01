@@ -22,6 +22,7 @@
 #include <utility>
 
 #include "src/core/call/metadata_batch.h"
+#include "src/core/call/status_util.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/promise_based_filter.h"
 #include "src/core/lib/event_engine/event_engine_context.h"
@@ -43,6 +44,10 @@
 #include "absl/status/statusor.h"
 
 namespace grpc_core {
+
+//
+// ServerConfigSelectorFilter
+//
 
 namespace {
 
@@ -148,7 +153,8 @@ absl::Status ServerConfigSelectorFilter::Call::OnClientInitialMetadata(
       "ServerConfigSelectorFilter::Call::OnClientInitialMetadata");
   auto sel = filter->config_selector();
   if (!sel.ok()) return sel.status();
-  auto call_config = sel.value()->GetCallConfig(&md);
+  auto call_config =
+      sel.value()->GetCallConfig(/*connection_state=*/nullptr, &md);
   if (!call_config.ok()) {
     return absl::UnavailableError(StatusToString(call_config.status()));
   }
@@ -164,5 +170,214 @@ absl::Status ServerConfigSelectorFilter::Call::OnClientInitialMetadata(
 const grpc_channel_filter kServerConfigSelectorFilter =
     MakePromiseBasedFilter<ServerConfigSelectorFilter,
                            FilterEndpoint::kServer>();
+
+//
+// ServerConfigSelectorInterceptor::Watcher
+//
+
+// Watcher for ServerConfigSelector.
+class ServerConfigSelectorInterceptor::Watcher final
+    : public ServerConfigSelectorProvider::ServerConfigSelectorWatcher {
+ public:
+  explicit Watcher(
+      WeakRefCountedPtr<ServerConfigSelectorInterceptor> interceptor)
+      : interceptor_(std::move(interceptor)) {}
+
+  void OnServerConfigSelectorUpdate(
+      absl::StatusOr<RefCountedPtr<ServerConfigSelector>> config_selector)
+      override {
+    interceptor_->OnConfigSelectorUpdate(std::move(config_selector));
+  }
+
+ private:
+  WeakRefCountedPtr<ServerConfigSelectorInterceptor> interceptor_;
+};
+
+//
+// ServerConfigSelectorInterceptor
+//
+
+const grpc_channel_filter ServerConfigSelectorInterceptor::kFilter =
+    MakePromiseBasedFilter<
+        ServerConfigSelectorInterceptor, FilterEndpoint::kServer,
+        kFilterExaminesServerInitialMetadata | kFilterExaminesOutboundMessages |
+            kFilterExaminesInboundMessages | kFilterExaminesCallContext>();
+
+absl::StatusOr<RefCountedPtr<ServerConfigSelectorInterceptor>>
+ServerConfigSelectorInterceptor::Create(const ChannelArgs& args,
+                                        ChannelFilter::Args filter_args) {
+  // Get ConfigSelectorProvider from channel args.
+  auto server_config_selector_provider =
+      args.GetObjectRef<ServerConfigSelectorProvider>();
+  if (server_config_selector_provider == nullptr) {
+    return absl::UnknownError("No ServerConfigSelectorProvider object found");
+  }
+  return MakeRefCounted<ServerConfigSelectorInterceptor>(
+      args, std::move(filter_args), std::move(server_config_selector_provider));
+}
+
+ServerConfigSelectorInterceptor::ServerConfigSelectorInterceptor(
+    const ChannelArgs& args, ChannelFilter::Args filter_args,
+    RefCountedPtr<ServerConfigSelectorProvider> server_config_selector_provider)
+    : args_(args),
+      server_config_selector_provider_(
+          std::move(server_config_selector_provider)),
+      config_selector_(nullptr) {
+  // Start watch for ServerConfigSelector.
+  auto watcher = std::make_unique<Watcher>(
+      WeakRef().TakeAsSubclass<ServerConfigSelectorInterceptor>());
+  auto config_selector =
+      server_config_selector_provider_->Watch(std::move(watcher));
+  // FIXME: possible race condition?
+  // FIXME: maybe just use observable in provider instead of
+  // callback-based watcher API?
+  OnConfigSelectorUpdate(std::move(config_selector));
+}
+
+namespace {
+
+class FilterChainImpl final : public FilterChain {
+ public:
+  explicit FilterChainImpl(RefCountedPtr<UnstartedCallDestination> destination)
+      : destination_(std::move(destination)) {}
+
+  UnstartedCallDestination* destination() const { return destination_.get(); }
+
+ private:
+  RefCountedPtr<UnstartedCallDestination> destination_;
+};
+
+class FilterChainBuilderImpl final : public FilterChainBuilder {
+ public:
+  FilterChainBuilderImpl(const ChannelArgs& channel_args,
+                         const Blackboard* blackboard,
+                         RefCountedPtr<UnstartedCallDestination> destination)
+      : channel_args_(channel_args),
+        blackboard_(blackboard),
+        destination_(std::move(destination)) {}
+
+  absl::StatusOr<RefCountedPtr<FilterChain>> Build() override {
+    if (builder_ == nullptr) InitBuilder();
+    auto top_of_stack_destination = builder_->Build(destination_);
+    if (!top_of_stack_destination.ok()) {
+      // FIXME: use MaybeRewriteIllegalStatusCode() throughout?
+      return MaybeRewriteIllegalStatusCode(top_of_stack_destination.status(),
+                                           "channel construction");
+    }
+    builder_.reset();
+    return MakeRefCounted<FilterChainImpl>(
+        std::move(*top_of_stack_destination));
+  }
+
+ private:
+  void AddFilter(const FilterHandle& filter_handle,
+                 RefCountedPtr<const FilterConfig> config) override {
+    if (builder_ == nullptr) InitBuilder();
+    filter_handle.AddToBuilder(builder_.get(), std::move(config));
+  }
+
+  void InitBuilder() {
+    builder_ =
+        std::make_unique<InterceptionChainBuilder>(channel_args_, blackboard_);
+  }
+
+  const ChannelArgs channel_args_;
+  const Blackboard* blackboard_;
+  const RefCountedPtr<UnstartedCallDestination> destination_;
+  std::unique_ptr<InterceptionChainBuilder> builder_;
+};
+
+}  // namespace
+
+void ServerConfigSelectorInterceptor::OnConfigSelectorUpdate(
+    absl::StatusOr<RefCountedPtr<ServerConfigSelector>> config_selector) {
+  if (!config_selector.ok()) {
+    config_selector_.Set(config_selector.status());
+    return;
+  }
+  auto state = MakeRefCounted<ConfigSelectorState>();
+  state->config_selector = std::move(*config_selector);
+  FilterChainBuilderImpl builder(args_, state->config_selector->blackboard(),
+                                 wrapped_destination());
+  state->connection_state = state->config_selector->BuildFilterChains(builder);
+  config_selector_.Set(std::move(state));
+}
+
+void ServerConfigSelectorInterceptor::Orphaned() {
+  args_ = ChannelArgs();
+  server_config_selector_provider_.reset();
+  config_selector_.Set(absl::CancelledError("shutting down"));
+}
+
+// FIXME: add a new tracer here
+
+void ServerConfigSelectorInterceptor::InterceptCall(
+    UnstartedCallHandler unstarted_call_handler) {
+  // Consume the call coming to us from the client side.
+  CallHandler handler = Consume(std::move(unstarted_call_handler));
+  handler.SpawnGuarded(
+      "choose_dynamic_filter_chain",
+      [self = RefAsSubclass<ServerConfigSelectorInterceptor>(),
+       handler]() mutable {
+        return TrySeq(
+            handler.PullClientInitialMetadata(),
+            [handler, self](ClientMetadataHandle metadata) mutable {
+              return Map(
+                  self->config_selector_.Next(nullptr),
+                  [self, handler = std::move(handler),
+                   metadata = std::move(metadata)](
+                      absl::StatusOr<RefCountedPtr<ConfigSelectorState>>
+                          state) mutable {
+                    if (!state.ok()) {
+                      GRPC_TRACE_LOG(channel, INFO)
+                          << "[server_config_selector_interceptor "
+                          << self.get()
+                          << "]: config selector is error: " << state.status();
+                      return state.status();
+                    }
+                    // Use config selector to choose dynamic filter stack.
+                    auto call_config = (*state)->config_selector->GetCallConfig(
+                        (*state)->connection_state.get(), metadata.get());
+                    if (!call_config.ok()) {
+                      GRPC_TRACE_LOG(channel, INFO)
+                          << "[server_config_selector_interceptor "
+                          << self.get() << "]: config selector returned error: "
+                          << call_config.status();
+                      return call_config.status();
+                    }
+                    // FIXME: remove this once we switch to per-route
+                    // filter chains
+                    auto* service_config_call_data =
+                        GetContext<Arena>()->New<ServiceConfigCallData>(
+                            GetContext<Arena>());
+                    service_config_call_data->SetServiceConfig(
+                        std::move(call_config->service_config),
+                        call_config->method_configs);
+                    // Get filter chain.
+                    if (!call_config->filter_chain.ok()) {
+                      GRPC_TRACE_LOG(channel, INFO)
+                          << "[server_config_selector_interceptor "
+                          << self.get()
+                          << "]: config selector returned failure for filter "
+                             "chain: "
+                          << call_config->filter_chain.status();
+                      return call_config->filter_chain.status();
+                    }
+                    // Start call on selected filter chain.
+                    GRPC_TRACE_LOG(channel, INFO)
+                        << "[server_config_selector_interceptor " << self.get()
+                        << "]: starting call on dynamic filter chain";
+                    auto& filter_chain = DownCast<const FilterChainImpl&>(
+                        **call_config->filter_chain);
+                    auto [initiator, unstarted_handler] = MakeCallPair(
+                        std::move(metadata), GetContext<Arena>()->Ref());
+                    filter_chain.destination()->StartCall(
+                        std::move(unstarted_handler));
+                    ForwardCall(handler, initiator);
+                    return absl::OkStatus();
+                  });
+            });
+      });
+}
 
 }  // namespace grpc_core
