@@ -744,7 +744,7 @@ class InterceptedUnaryStreamCall(
 
     _loop: asyncio.AbstractEventLoop
     _channel: cygrpc.AioChannel
-    _last_returned_call_from_interceptors = Optional[_base_call.UnaryStreamCall]
+    _last_returned_call_from_interceptors: Optional[_base_call.UnaryStreamCall]
 
     # pylint: disable=too-many-arguments
     def __init__(
@@ -961,7 +961,7 @@ class InterceptedStreamStreamCall(
 
     _loop: asyncio.AbstractEventLoop
     _channel: cygrpc.AioChannel
-    _last_returned_call_from_interceptors = Optional[
+    _last_returned_call_from_interceptors: Optional[
         _base_call.StreamStreamCall
     ]
 
