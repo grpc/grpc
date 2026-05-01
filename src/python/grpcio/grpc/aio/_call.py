@@ -536,7 +536,9 @@ class _StreamRequestMixin(Call):
             await self._raise_for_status()
 
 
-class UnaryUnaryCall(_UnaryResponseMixin, Call, _base_call.UnaryUnaryCall, Generic[RequestType]):
+class UnaryUnaryCall(
+    _UnaryResponseMixin, Call, _base_call.UnaryUnaryCall, Generic[RequestType]
+):
     """Object for managing unary-unary RPC calls.
 
     Returned when an instance of `UnaryUnaryMultiCallable` object is called.
@@ -599,7 +601,9 @@ class UnaryUnaryCall(_UnaryResponseMixin, Call, _base_call.UnaryUnaryCall, Gener
             await self._raise_for_status()
 
 
-class UnaryStreamCall(_StreamResponseMixin, Call, _base_call.UnaryStreamCall, Generic[RequestType]):
+class UnaryStreamCall(
+    _StreamResponseMixin, Call, _base_call.UnaryStreamCall, Generic[RequestType]
+):
     """Object for managing unary-stream RPC calls.
 
     Returned when an instance of `UnaryStreamMultiCallable` object is called.
