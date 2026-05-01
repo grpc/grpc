@@ -495,6 +495,10 @@ void BaseCallData::SendMessage::Done(const ServerMetadata& metadata,
     case State::kPushedToPipe:
       push_.reset();
       next_.reset();
+      // Ensure captured transport batches are released if the call terminates
+      // while a message is in-flight. This prevents deadlocks where the
+      // transport never receives the batch, leaving the RPC hanging for
+      // metadata.
       if (batch_.is_captured()) {
         std::string temp;
         batch_.CancelWith(
