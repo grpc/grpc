@@ -1306,17 +1306,15 @@ class V3InterceptorToV2Bridge : public ChannelFilter, public Interceptor {
               // Step 2: Spawn a promise to pull messages from the v3
               // handler and push them into an inter-activity pipe to
               // return them to the v2 activity.
-              handler.SpawnGuarded(
-                  "pull_client_to_server_message",
-                  [handler, pipe_owner]() mutable {
-                    return ForEach(
-                        MessagesFrom(handler),
-                        [pipe_owner](MessageHandle message) {
-                          return Map(
-                              pipe_owner->client_to_server_messages.sender.Push(
-                                  std::move(message)),
-                              [](bool x) { return StatusFlag(x); });
-                        });
+              pipe_owner->handler()->SpawnGuarded(
+                  "pull_client_to_server_message", [pipe_owner]() mutable {
+                    return ForEach(MessagesFrom(*pipe_owner->handler()),
+                                   [pipe_owner](MessageHandle message) {
+                                     return Map(
+                                         pipe_owner->client_to_server_messages()
+                                             .sender.Push(std::move(message)),
+                                         [](bool x) { return StatusFlag(x); });
+                                   });
                   });
               call_args.client_to_server_messages->InterceptAndMap(
                   [pipe_owner](MessageHandle message) mutable {
@@ -1327,7 +1325,7 @@ class V3InterceptorToV2Bridge : public ChannelFilter, public Interceptor {
                     // Step 3: Here in the v2 activity, read the message
                     // from the inter-activity pipe and return it.
                     return Map(
-                        pipe_owner->client_to_server_messages.receiver.Next(),
+                        pipe_owner->client_to_server_messages().receiver.Next(),
                         [](InterActivityPipe<MessageHandle, 1>::NextResult
                                message) -> std::optional<MessageHandle> {
                           if (!message.has_value()) return std::nullopt;
@@ -1353,14 +1351,13 @@ class V3InterceptorToV2Bridge : public ChannelFilter, public Interceptor {
               // Step 2: Spawn a promise to pull the metadata from the
               // v3 initiator and use an inter-activity latch to
               // return it to the v2 activity.
-              initiator.SpawnGuarded(
-                  "pull_server_initial_metadata",
-                  [initiator, pipe_owner]() mutable {
+              pipe_owner->initiator().SpawnGuarded(
+                  "pull_server_initial_metadata", [pipe_owner]() mutable {
                     return TrySeq(
-                        initiator.PullServerInitialMetadata(),
+                        pipe_owner->initiator().PullServerInitialMetadata(),
                         [pipe_owner](
                             std::optional<ServerMetadataHandle> metadata) {
-                          pipe_owner->server_initial_metadata.Set(
+                          pipe_owner->server_initial_metadata().Set(
                               std::move(metadata));
                         });
                   });
@@ -1375,7 +1372,7 @@ class V3InterceptorToV2Bridge : public ChannelFilter, public Interceptor {
                     }
                     // Step 3: Here in the v2 activity, read from the
                     // inter-activity latch and return the metadata.
-                    return pipe_owner->server_initial_metadata.Wait();
+                    return pipe_owner->server_initial_metadata().Wait();
                   });
               // We handle server-to-client messages the same as
               // client-to-server messages, except in the opposite
@@ -1396,17 +1393,15 @@ class V3InterceptorToV2Bridge : public ChannelFilter, public Interceptor {
               // Step 2: Spawn a promise to pull messages from the v3
               // initiator and push them into an inter-activity pipe to
               // return them to the v2 activity.
-              initiator.SpawnGuarded(
-                  "pull_server_to_client_message",
-                  [initiator, pipe_owner]() mutable {
-                    return ForEach(
-                        MessagesFrom(initiator),
-                        [pipe_owner](MessageHandle message) {
-                          return Map(
-                              pipe_owner->server_to_client_messages.sender.Push(
-                                  std::move(message)),
-                              [](bool x) { return StatusFlag(x); });
-                        });
+              pipe_owner->initiator().SpawnGuarded(
+                  "pull_server_to_client_message", [pipe_owner]() mutable {
+                    return ForEach(MessagesFrom(pipe_owner->initiator()),
+                                   [pipe_owner](MessageHandle message) {
+                                     return Map(
+                                         pipe_owner->server_to_client_messages()
+                                             .sender.Push(std::move(message)),
+                                         [](bool x) { return StatusFlag(x); });
+                                   });
                   });
               call_args.server_to_client_messages->InterceptAndMap(
                   [pipe_owner](MessageHandle message) mutable {
@@ -1419,7 +1414,7 @@ class V3InterceptorToV2Bridge : public ChannelFilter, public Interceptor {
                     // Step 3: Here in the v2 activity, read from the
                     // inter-activity pipe and return the messages.
                     return Map(
-                        pipe_owner->server_to_client_messages.receiver.Next(),
+                        pipe_owner->server_to_client_messages().receiver.Next(),
                         [](InterActivityPipe<MessageHandle, 1>::NextResult
                                message) -> std::optional<MessageHandle> {
                           if (!message.has_value()) return std::nullopt;
@@ -1429,14 +1424,14 @@ class V3InterceptorToV2Bridge : public ChannelFilter, public Interceptor {
               // In the v3 handler's activity, pull client initial
               // metadata. Use an inter-acitivity latch to get it back
               // to the v2 activity.
-              handler.SpawnGuarded(
-                  "pull_client_initial_metadata",
-                  [handler, pipe_owner]() mutable {
-                    return TrySeq(handler.PullClientInitialMetadata(),
-                                  [pipe_owner](ClientMetadataHandle metadata) {
-                                    pipe_owner->client_initial_metadata.Set(
-                                        std::move(metadata));
-                                  });
+              pipe_owner->handler()->SpawnGuarded(
+                  "pull_client_initial_metadata", [pipe_owner]() mutable {
+                    return TrySeq(
+                        pipe_owner->handler()->PullClientInitialMetadata(),
+                        [pipe_owner](ClientMetadataHandle metadata) {
+                          pipe_owner->client_initial_metadata().Set(
+                              std::move(metadata));
+                        });
                   });
               // A wrapper for next_promise_factory that does the following:
               // - Pulls client initial metadata from the V3 handler via the
@@ -1449,20 +1444,21 @@ class V3InterceptorToV2Bridge : public ChannelFilter, public Interceptor {
               // promise above. That promise will always complete at the end of
               // the call, so we always return pending here.
               return Seq(
-                  pipe_owner->client_initial_metadata.Wait(),
+                  pipe_owner->client_initial_metadata().Wait(),
                   [next_promise_factory = std::move(next_promise_factory),
-                   call_args = std::move(call_args), handler,
+                   call_args = std::move(call_args),
                    pipe_owner](ClientMetadataHandle metadata) mutable {
                     call_args.client_initial_metadata = std::move(metadata);
-                    return Seq(next_promise_factory(std::move(call_args)),
-                               [handler, pipe_owner](
-                                   ServerMetadataHandle metadata) mutable
-                                   -> Poll<ServerMetadataHandle> {
-                                 handler.SpawnPushServerTrailingMetadata(
-                                     std::move(metadata));
-                                 // We always lose the race.
-                                 return Pending{};
-                               });
+                    return Seq(
+                        next_promise_factory(std::move(call_args)),
+                        [pipe_owner](ServerMetadataHandle metadata) mutable
+                            -> Poll<ServerMetadataHandle> {
+                          pipe_owner->handler()
+                              ->SpawnPushServerTrailingMetadata(
+                                  std::move(metadata));
+                          // We always lose the race.
+                          return Pending{};
+                        });
                   });
             }));
     // We use OrphanablePtr to ensure Shutdown is called when the promise is
@@ -1513,34 +1509,57 @@ class V3InterceptorToV2Bridge : public ChannelFilter, public Interceptor {
    public:
     explicit PipeOwner(CallInitiator initiator) : initiator_(initiator) {}
 
-    void Orphan() override { this->Unref(); }
+    void Orphan() override {
+      Shutdown();
+      this->Unref();
+    }
 
     void Shutdown(absl::Status error = absl::CancelledError()) {
-      if (std::exchange(shutdown_, true)) return;
-      client_to_server_messages.sender.MarkClosed();
-      server_to_client_messages.sender.MarkClosed();
-      server_initial_metadata.Set(std::nullopt);
-      client_initial_metadata.Set(nullptr);
-      if (std::exchange(initiator_started_, false)) {
-        if (!error.ok()) {
-          initiator_.Cancel(error);
-        }
+      if (!std::exchange(initiator_started_, false)) return;
+      // When initiator_started_ is true, all of the other data members are
+      // active. When it is false, they are closed or reset.
+      client_to_server_messages_.sender.MarkClosed();
+      server_to_client_messages_.sender.MarkClosed();
+      if (!server_initial_metadata_.IsSet()) {
+        server_initial_metadata_.Set(std::nullopt);
+      }
+      if (!client_initial_metadata_.IsSet()) {
+        client_initial_metadata_.Set(nullptr);
+      }
+      if (!error.ok()) {
+        initiator_.Cancel(error);
       }
       handler_.reset();
     }
 
-    InterActivityLatch<ClientMetadataHandle> client_initial_metadata;
-    InterActivityPipe<MessageHandle, 1> client_to_server_messages;
-    InterActivityLatch<std::optional<ServerMetadataHandle>>
-        server_initial_metadata;
-    InterActivityPipe<MessageHandle, 1> server_to_client_messages;
+    InterActivityLatch<ClientMetadataHandle>& client_initial_metadata() {
+      return client_initial_metadata_;
+    }
+    InterActivityPipe<MessageHandle, 1>& client_to_server_messages() {
+      return client_to_server_messages_;
+    }
+    InterActivityLatch<std::optional<ServerMetadataHandle>>&
+    server_initial_metadata() {
+      return server_initial_metadata_;
+    }
+    InterActivityPipe<MessageHandle, 1>& server_to_client_messages() {
+      return server_to_client_messages_;
+    }
 
     CallInitiator& initiator() { return initiator_; }
-    // The handler is optional because it might not be set if the call fails
-    // before the interceptor returns it.
+    // The handler represents the server side of the V3 interceptor.
+    // It is optional because it might not be set if the call fails
+    // before the interceptor returns it. Additionally, CallHandler is not
+    // default-constructible, so we use std::optional to manage its lifetime.
     std::optional<CallHandler>& handler() { return handler_; }
 
    private:
+    InterActivityLatch<ClientMetadataHandle> client_initial_metadata_;
+    InterActivityPipe<MessageHandle, 1> client_to_server_messages_;
+    InterActivityLatch<std::optional<ServerMetadataHandle>>
+        server_initial_metadata_;
+    InterActivityPipe<MessageHandle, 1> server_to_client_messages_;
+
     // The initiator represents the client side of the V3 interceptor.
     CallInitiator initiator_;
     bool initiator_started_ = true;
@@ -1548,7 +1567,6 @@ class V3InterceptorToV2Bridge : public ChannelFilter, public Interceptor {
     // CallHandler is not default-constructible, so we use std::optional to
     // manage its lifetime.
     std::optional<CallHandler> handler_;
-    bool shutdown_ = false;
   };
 };
 
