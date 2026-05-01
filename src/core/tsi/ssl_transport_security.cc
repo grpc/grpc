@@ -120,12 +120,14 @@ const size_t kMaxChainLength = 100;
 #define TSI_SSL_MAX_PROTECTION_OVERHEAD 100
 
 using TlsSessionKeyLogger = tsi::TlsSessionKeyLoggerCache::TlsSessionKeyLogger;
+#if defined(OPENSSL_IS_BORINGSSL)
 using SelectCertificateInfo =
     grpc_core::CertificateSelector::SelectCertificateInfo;
 using SelectCertificateResult =
     grpc_core::CertificateSelector::SelectCertificateResult;
 using AsyncCertificateSelectionHandle =
     grpc_core::CertificateSelector::AsyncCertificateSelectionHandle;
+#endif
 using tsi::PrivateKey;
 using tsi::RootCertInfo;
 
@@ -2792,8 +2794,8 @@ static tsi_result create_tsi_ssl_handshaker(
       static_cast<unsigned char*>(gpr_zalloc(impl->outgoing_bytes_buffer_size));
   impl->vtable = &handshaker_vtable;
   impl->factory_ref = tsi_ssl_handshaker_factory_ref(factory);
-  impl->has_certificate_selector = has_certificate_selector;
 #if defined(OPENSSL_IS_BORINGSSL)
+  impl->has_certificate_selector = has_certificate_selector;
   impl->key_signer = std::move(key_signer);
 #endif
 
@@ -3478,11 +3480,7 @@ tsi_result tsi_create_ssl_server_handshaker_factory_with_options(
       },
       [&](const std::shared_ptr<grpc_core::CertificateSelector>&
               cert_selector) {
-#if !defined(OPENSSL_IS_BORINGSSL)
-        VLOG(2) << "CertificateSelector is not supported with this SSL "
-                   "implementation.";
-        result = TSI_UNIMPLEMENTED;
-#endif
+#if defined(OPENSSL_IS_BORINGSSL)
         if (cert_selector == nullptr) {
           return TSI_INVALID_ARGUMENT;
         }
@@ -3496,6 +3494,11 @@ tsi_result tsi_create_ssl_server_handshaker_factory_with_options(
         SSL_CTX_set_select_certificate_cb(ssl_context.ssl_ctx,
                                           SelectCertificateCallback);
         return TSI_OK;
+#else
+        VLOG(2) << "CertificateSelector is not supported with this SSL "
+                   "implementation.";
+        return TSI_UNIMPLEMENTED;
+#endif
       });
   if (result != TSI_OK) {
     tsi_ssl_handshaker_factory_unref(&impl->base);
