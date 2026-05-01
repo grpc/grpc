@@ -32,6 +32,7 @@ from typing import (
     MutableSequence,
     Optional,
     Sequence,
+    TypeAlias,
     Union,
 )
 
@@ -526,6 +527,7 @@ class _InterceptedStreamRequestMixin(Generic[RequestType]):
     _loop: asyncio.AbstractEventLoop
 
     _FINISH_ITERATOR_SENTINEL = object()
+    _FINISH_ITERATOR_SENTINEL_T: TypeAlias = object
 
     def _init_stream_request_mixin(
         self, request_iterator: Optional[RequestIterableType]
@@ -561,7 +563,7 @@ class _InterceptedStreamRequestMixin(Generic[RequestType]):
 
     async def _write_to_iterator_queue_interruptible(
         self,
-        request: RequestType,
+        request: Union[RequestType, _FINISH_ITERATOR_SENTINEL_T],
         call: _base_call.Call,
     ):
         # Write the specified 'request' to the request iterator queue using the
