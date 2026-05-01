@@ -35,10 +35,10 @@
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 
+#if defined(OPENSSL_IS_BORINGSSL)
+
 namespace grpc_core {
 namespace {
-
-#if defined(OPENSSL_IS_BORINGSSL)
 
 absl::StatusOr<std::vector<bssl::UniquePtr<CRYPTO_BUFFER>>>
 ParseCertificateChainFromDer(const std::vector<std::string>& der_cert_chain) {
