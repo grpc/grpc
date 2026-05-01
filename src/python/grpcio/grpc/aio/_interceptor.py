@@ -19,12 +19,17 @@ from abc import abstractmethod
 import asyncio
 import collections
 import functools
+from collections.abc import AsyncIterable
 from typing import (
+    Any,
+    AsyncGenerator,
     AsyncIterable,
     AsyncIterator,
     Awaitable,
     Callable,
+    Generic,
     List,
+    MutableSequence,
     Optional,
     Sequence,
     Union,
@@ -309,7 +314,7 @@ class InterceptedCall:
     """
 
     _interceptors_task: asyncio.Task
-    _pending_add_done_callbacks: Sequence[DoneCallbackType]
+    _pending_add_done_callbacks: MutableSequence[DoneCallbackType]
 
     def __init__(self, interceptors_task: asyncio.Task) -> None:
         self._interceptors_task = interceptors_task
@@ -443,7 +448,7 @@ class InterceptedCall:
 
         return await call.code()
 
-    async def details(self) -> str:
+    async def details(self) -> Optional[str]:
         try:
             call = await self._interceptors_task
         except AioRpcError as err:
@@ -469,13 +474,16 @@ class InterceptedCall:
 
 
 class _InterceptedUnaryResponseMixin:
+    _interceptors_task: asyncio.Task[Any]
+
     def __await__(self):
         call = yield from self._interceptors_task.__await__()
         response = yield from call.__await__()
         return response
 
 
-class _InterceptedStreamResponseMixin:
+class _InterceptedStreamResponseMixin(Generic[ResponseType]):
+    _interceptors_task: asyncio.Task[Any]
     _response_aiter: Optional[AsyncIterable[ResponseType]]
 
     def _init_stream_response_mixin(self) -> None:
@@ -485,12 +493,12 @@ class _InterceptedStreamResponseMixin:
 
     async def _wait_for_interceptor_task_response_iterator(
         self,
-    ) -> ResponseType:
+    ) -> AsyncGenerator[ResponseType, None]:
         call = await self._interceptors_task
         async for response in call:
             yield response
 
-    def __aiter__(self) -> AsyncIterator[ResponseType]:
+    def __aiter__(self) -> AsyncIterable[ResponseType]:
         if self._response_aiter is None:
             self._response_aiter = (
                 self._wait_for_interceptor_task_response_iterator()
