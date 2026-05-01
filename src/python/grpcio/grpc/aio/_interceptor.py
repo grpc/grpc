@@ -140,11 +140,11 @@ class UnaryUnaryClientInterceptor(ClientInterceptor, metaclass=ABCMeta):
     async def intercept_unary_unary(
         self,
         continuation: Callable[
-            [ClientCallDetails, RequestType], UnaryUnaryCall
+            [ClientCallDetails, RequestType], Awaitable[_base_call.UnaryUnaryCall]
         ],
         client_call_details: ClientCallDetails,
         request: RequestType,
-    ) -> Union[UnaryUnaryCall, ResponseType]:
+    ) -> Union[_base_call.UnaryUnaryCall, ResponseType]:
         """Intercepts a unary-unary invocation asynchronously.
 
         Args:
@@ -176,11 +176,11 @@ class UnaryStreamClientInterceptor(ClientInterceptor, metaclass=ABCMeta):
     async def intercept_unary_stream(
         self,
         continuation: Callable[
-            [ClientCallDetails, RequestType], UnaryStreamCall
+            [ClientCallDetails, RequestType], Awaitable[_base_call.UnaryStreamCall]
         ],
         client_call_details: ClientCallDetails,
         request: RequestType,
-    ) -> Union[ResponseIterableType, UnaryStreamCall]:
+    ) -> Union[ResponseIterableType, _base_call.UnaryStreamCall]:
         """Intercepts a unary-stream invocation asynchronously.
 
         The function could return the call object or an asynchronous
@@ -216,11 +216,11 @@ class StreamUnaryClientInterceptor(ClientInterceptor, metaclass=ABCMeta):
     async def intercept_stream_unary(
         self,
         continuation: Callable[
-            [ClientCallDetails, RequestType], StreamUnaryCall
+            [ClientCallDetails, RequestType], Awaitable[_base_call.StreamUnaryCall]
         ],
         client_call_details: ClientCallDetails,
         request_iterator: RequestIterableType,
-    ) -> StreamUnaryCall:
+    ) -> _base_call.StreamUnaryCall:
         """Intercepts a stream-unary invocation asynchronously.
 
         Within the interceptor the usage of the call methods like `write` or
@@ -258,11 +258,11 @@ class StreamStreamClientInterceptor(ClientInterceptor, metaclass=ABCMeta):
     async def intercept_stream_stream(
         self,
         continuation: Callable[
-            [ClientCallDetails, RequestType], StreamStreamCall
+            [ClientCallDetails, RequestType], Awaitable[_base_call.StreamStreamCall]
         ],
         client_call_details: ClientCallDetails,
         request_iterator: RequestIterableType,
-    ) -> Union[ResponseIterableType, StreamStreamCall]:
+    ) -> Union[ResponseIterableType, _base_call.StreamStreamCall]:
         """Intercepts a stream-stream invocation asynchronously.
 
         Within the interceptor the usage of the call methods like `write` or
@@ -686,17 +686,15 @@ class InterceptedUnaryUnaryCall(
         request: RequestType,
         request_serializer: Optional[SerializingFunction],
         response_deserializer: Optional[DeserializingFunction],
-    ) -> Union[UnaryUnaryCall, UnaryUnaryCallResponse]:
+    ) -> Union[_base_call.UnaryUnaryCall, UnaryUnaryCallResponse]:
         """Run the RPC call wrapped in interceptors"""
 
         async def _run_interceptor(
             interceptors: List[UnaryUnaryClientInterceptor],
             client_call_details: ClientCallDetails,
             request: RequestType,
-        ) -> Union[UnaryUnaryCall, UnaryUnaryCallResponse]:
-
+        ) -> Union[_base_call.UnaryUnaryCall, UnaryUnaryCallResponse]:
             if interceptors:
-
                 async def continuation(
                     details: ClientCallDetails,
                     req: RequestType
@@ -717,7 +715,7 @@ class InterceptedUnaryUnaryCall(
             return UnaryUnaryCall(
                 request,
                 _timeout_to_deadline(client_call_details.timeout),
-                client_call_details.metadata,
+                client_call_details.metadata or Metadata(),
                 client_call_details.credentials,
                 client_call_details.wait_for_ready,
                 self._channel,
@@ -794,14 +792,14 @@ class InterceptedUnaryStreamCall(
         request: RequestType,
         request_serializer: Optional[SerializingFunction],
         response_deserializer: Optional[DeserializingFunction],
-    ) -> Union[UnaryStreamCall, UnaryStreamCallResponseIterator]:
+    ) -> Union[_base_call.UnaryStreamCall, UnaryStreamCallResponseIterator]:
         """Run the RPC call wrapped in interceptors"""
 
         async def _run_interceptor(
             interceptors: List[UnaryStreamClientInterceptor],
             client_call_details: ClientCallDetails,
             request: RequestType,
-        ) -> Union[UnaryStreamCall, UnaryStreamCallResponseIterator]:
+        ) -> Union[_base_call.UnaryStreamCall, UnaryStreamCallResponseIterator]:
             if interceptors:
                 continuation = functools.partial(
                     _run_interceptor, interceptors[1:]
@@ -913,7 +911,7 @@ class InterceptedStreamUnaryCall(
         request_iterator: RequestIterableType,
         request_serializer: Optional[SerializingFunction],
         response_deserializer: Optional[DeserializingFunction],
-    ) -> StreamUnaryCall:
+    ) -> _base_call.StreamUnaryCall:
         """Run the RPC call wrapped in interceptors"""
 
         async def _run_interceptor(
@@ -1014,14 +1012,14 @@ class InterceptedStreamStreamCall(
         request_iterator: RequestIterableType,
         request_serializer: Optional[SerializingFunction],
         response_deserializer: Optional[DeserializingFunction],
-    ) -> Union[StreamStreamCall, StreamStreamCallResponseIterator]:
+    ) -> Union[_base_call.StreamStreamCall, StreamStreamCallResponseIterator]:
         """Run the RPC call wrapped in interceptors"""
 
         async def _run_interceptor(
             interceptors: List[StreamStreamClientInterceptor],
             client_call_details: ClientCallDetails,
             request_iterator: RequestIterableType,
-        ) -> Union[StreamStreamCall, StreamStreamCallResponseIterator]:
+        ) -> Union[_base_call.StreamStreamCall, StreamStreamCallResponseIterator]:
             if interceptors:
                 continuation = functools.partial(
                     _run_interceptor, interceptors[1:]
