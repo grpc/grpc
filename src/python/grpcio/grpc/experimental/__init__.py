@@ -25,6 +25,7 @@ import warnings
 
 import grpc
 from grpc._cython import cygrpc as _cygrpc
+from grpc.typing import CygrpcChannelCredentials
 
 _EXPERIMENTAL_APIS_USED = set()
 
@@ -48,7 +49,7 @@ class UsageError(Exception):
 # It's important that there be a single insecure credentials object so that its
 # hash is deterministic and can be used for indexing in the simple stubs cache.
 _insecure_channel_credentials = grpc.ChannelCredentials(
-    _cygrpc.channel_credentials_insecure()
+    CygrpcChannelCredentials(_cygrpc.channel_credentials_insecure())
 )
 
 
