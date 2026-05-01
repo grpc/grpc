@@ -60,7 +60,7 @@ class XdsHttpFaultFilter final : public XdsHttpFilterImpl {
         "old-style filter config APIs not supported");
   }
   absl::StatusOr<ServiceConfigJsonEntry> GenerateServiceConfig(
-      const Json& hcm_filter_config) const override {
+      const Json& /*hcm_filter_config*/) const override {
     return absl::UnimplementedError(
         "old-style filter config APIs not supported");
   }
