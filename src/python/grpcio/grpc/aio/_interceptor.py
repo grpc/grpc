@@ -523,7 +523,7 @@ class _InterceptedStreamResponseMixin(Generic[ResponseType]):
             )
         try:
             if isinstance(self._response_aiter, AsyncGenerator):
-                return await self._response_aiter.asend(None)
+                return await self._response_aiter.__anext__()
             return cygrpc.EOF
         except StopAsyncIteration:
             return cygrpc.EOF
@@ -1105,7 +1105,7 @@ class UnaryUnaryCallResponse(_base_call.UnaryUnaryCall, Generic[ResponseType]):
     async def code(self) -> grpc.StatusCode:
         return grpc.StatusCode.OK
 
-    async def details(self) -> str:
+    async def details(self) -> Optional[str]:
         return ""
 
     async def debug_error_string(self) -> Optional[str]:
@@ -1155,7 +1155,8 @@ class _StreamCallResponseIterator(Generic[ResponseType]):
 
     def add_done_callback(self, callback) -> None:
         if self._call is None:
-            raise NotImplementedError()
+            callback(self)
+            return
         self._call.add_done_callback(callback)
 
     def time_remaining(self) -> Optional[float]:
@@ -1178,7 +1179,7 @@ class _StreamCallResponseIterator(Generic[ResponseType]):
             return grpc.StatusCode.OK
         return await self._call.code()
 
-    async def details(self) -> str:
+    async def details(self) -> Optional[str]:
         if self._call is None:
             return ""
         return await self._call.details()
