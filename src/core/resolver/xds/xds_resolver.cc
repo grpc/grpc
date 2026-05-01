@@ -195,9 +195,9 @@ class XdsResolver final : public Resolver {
       };
 
       XdsRouteConfigResource::Route route;
+      RefCountedPtr<ServiceConfig> method_config;
       absl::StatusOr<RefCountedPtr<const FilterChain>> filter_chain;
       std::vector<ClusterWeightState> weighted_cluster_state;
-      RefCountedPtr<ServiceConfig> method_config;
 
       explicit RouteEntry(const XdsRouteConfigResource::Route& r) : route(r) {}
     };
@@ -524,7 +524,6 @@ XdsResolver::RouteConfigData::CreateMethodConfig(
         absl::StrFormat("    \"timeout\": \"%s\"",
                         route_action.max_stream_duration->ToJsonString()));
   }
-  ChannelArgs args = resolver->args_;
   // Construct service config.
   if (!fields.empty()) {
     std::string json = absl::StrCat(
@@ -537,7 +536,7 @@ XdsResolver::RouteConfigData::CreateMethodConfig(
         absl::StrJoin(fields, ",\n"),
         "\n  } ]\n"
         "}");
-    return ServiceConfigImpl::Create(args, json.c_str());
+    return ServiceConfigImpl::Create(resolver->args_, json.c_str());
   }
   return nullptr;
 }
