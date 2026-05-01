@@ -673,6 +673,7 @@ class InterceptedUnaryUnaryCall(
         )
         super().__init__(interceptors_task)
 
+
     # pylint: disable=too-many-arguments
     async def _invoke(
         self,
@@ -693,14 +694,21 @@ class InterceptedUnaryUnaryCall(
             client_call_details: ClientCallDetails,
             request: RequestType,
         ) -> Union[UnaryUnaryCall, UnaryUnaryCallResponse]:
+
+            def continuation(
+                details: ClientCallDetails,
+                req: RequestType
+            ) -> _base_call.UnaryUnaryCall:
+                result = _run_interceptor(interceptors[1:], details, req)
+                if isinstance(result, _base_call.UnaryUnaryCall):
+                    return result
+                raise RuntimeError("Interceptor chain returned a Response instead of a Call")
+
+
             if interceptors:
-                continuation = functools.partial(
-                    _run_interceptor, interceptors[1:]
-                )
                 call_or_response = await interceptors[0].intercept_unary_unary(
                     continuation, client_call_details, request
                 )
-
                 if isinstance(call_or_response, _base_call.UnaryUnaryCall):
                     return call_or_response
                 return UnaryUnaryCallResponse(call_or_response)
@@ -724,6 +732,7 @@ class InterceptedUnaryUnaryCall(
         return await _run_interceptor(
             list(interceptors), client_call_details, request
         )
+
 
     def time_remaining(self) -> Optional[float]:
         raise NotImplementedError()
