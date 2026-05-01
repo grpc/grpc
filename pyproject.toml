@@ -70,6 +70,9 @@ where = ["src/python/grpcio"]
 ]
 
 [tool.pyright]
+# This silences the "Import could not be resolved" errors
+# This done to avoid like "error: "cygrpc" is unknown import symbol"
+reportAttributeAccessIssue = "none"
 include = [
     "src/python/grpcio/grpc/aio/_call.py"
 ]
@@ -86,9 +89,6 @@ exclude = [
     "src/python/grpcio/_spawn_patch.py"
 ]
 
-extraPaths = [
-    "src/grpc/_cython"
-]
 
 [[tool.pyright.executionEnvironments]]
 root = "src/python/grpcio"
