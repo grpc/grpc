@@ -166,6 +166,6 @@ CertificateSelector::CreateSelectCertificateResult(
   return result;
 }
 
-#endif  // OPENSSL_IS_BORINGSSL
-
 }  // namespace grpc_core
+
+#endif  // OPENSSL_IS_BORINGSSL
