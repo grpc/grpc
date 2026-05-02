@@ -842,7 +842,10 @@ def _stream_response_in_pool(
                 )
                 if proceed:
                     _send_message_callback_to_blocking_iterator_adapter(
-                        rpc_event, state, send_response, cast(Any, response_iterator)
+                        rpc_event,
+                        state,
+                        send_response,
+                        cast(Any, response_iterator),
                     )
     except Exception:  # pylint: disable=broad-except
         traceback.print_exc()
@@ -893,7 +896,8 @@ def _handle_unary_unary(
         rpc_event, state, method_handler.request_deserializer
     )
     thread_pool = _select_thread_pool_for_behavior(
-        cast(ArityAgnosticMethodHandler, method_handler.unary_unary), default_thread_pool
+        cast(ArityAgnosticMethodHandler, method_handler.unary_unary),
+        default_thread_pool,
     )
     return thread_pool.submit(
         state.context.run,
@@ -917,7 +921,8 @@ def _handle_unary_stream(
         rpc_event, state, method_handler.request_deserializer
     )
     thread_pool = _select_thread_pool_for_behavior(
-        cast(ArityAgnosticMethodHandler, method_handler.unary_stream), default_thread_pool
+        cast(ArityAgnosticMethodHandler, method_handler.unary_stream),
+        default_thread_pool,
     )
     return thread_pool.submit(
         state.context.run,
@@ -941,7 +946,8 @@ def _handle_stream_unary(
         state, rpc_event.call, method_handler.request_deserializer
     )
     thread_pool = _select_thread_pool_for_behavior(
-        cast(ArityAgnosticMethodHandler, method_handler.stream_unary), default_thread_pool
+        cast(ArityAgnosticMethodHandler, method_handler.stream_unary),
+        default_thread_pool,
     )
     return thread_pool.submit(
         state.context.run,
@@ -965,7 +971,8 @@ def _handle_stream_stream(
         state, rpc_event.call, method_handler.request_deserializer
     )
     thread_pool = _select_thread_pool_for_behavior(
-        cast(ArityAgnosticMethodHandler, method_handler.stream_stream), default_thread_pool
+        cast(ArityAgnosticMethodHandler, method_handler.stream_stream),
+        default_thread_pool,
     )
     return thread_pool.submit(
         state.context.run,

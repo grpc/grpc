@@ -319,7 +319,6 @@ class Status(abc.ABC):
         """The trailing :term:`metadata` in the RPC."""
 
 
-
 #############################  gRPC Exceptions  ################################
 
 
