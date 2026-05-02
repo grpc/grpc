@@ -602,11 +602,11 @@ def _call_behavior(
         try:
             response_or_iterator = None
             if send_response_callback is not None:
-                response_or_iterator = cast(Any, behavior)(
+                response_or_iterator = cast("Any", behavior)(
                     argument, context, send_response_callback
                 )
             else:
-                response_or_iterator = cast(Any, behavior)(argument, context)
+                response_or_iterator = cast("Any", behavior)(argument, context)
             return response_or_iterator, True
         except Exception as exception:  # pylint: disable=broad-except
             with state.condition:
@@ -845,7 +845,7 @@ def _stream_response_in_pool(
                         rpc_event,
                         state,
                         send_response,
-                        cast(Any, response_iterator),
+                        cast("Any", response_iterator),
                     )
     except Exception:  # pylint: disable=broad-except
         traceback.print_exc()
@@ -896,7 +896,7 @@ def _handle_unary_unary(
         rpc_event, state, method_handler.request_deserializer
     )
     thread_pool = _select_thread_pool_for_behavior(
-        cast(ArityAgnosticMethodHandler, method_handler.unary_unary),
+        cast("ArityAgnosticMethodHandler", method_handler.unary_unary),
         default_thread_pool,
     )
     return thread_pool.submit(
@@ -904,7 +904,7 @@ def _handle_unary_unary(
         _unary_response_in_pool,
         rpc_event,
         state,
-        cast(ArityAgnosticMethodHandler, method_handler.unary_unary),
+        cast("ArityAgnosticMethodHandler", method_handler.unary_unary),
         unary_request,
         method_handler.request_deserializer,
         method_handler.response_serializer,
@@ -921,7 +921,7 @@ def _handle_unary_stream(
         rpc_event, state, method_handler.request_deserializer
     )
     thread_pool = _select_thread_pool_for_behavior(
-        cast(ArityAgnosticMethodHandler, method_handler.unary_stream),
+        cast("ArityAgnosticMethodHandler", method_handler.unary_stream),
         default_thread_pool,
     )
     return thread_pool.submit(
@@ -929,7 +929,7 @@ def _handle_unary_stream(
         _stream_response_in_pool,
         rpc_event,
         state,
-        cast(ArityAgnosticMethodHandler, method_handler.unary_stream),
+        cast("ArityAgnosticMethodHandler", method_handler.unary_stream),
         unary_request,
         method_handler.request_deserializer,
         method_handler.response_serializer,
@@ -946,7 +946,7 @@ def _handle_stream_unary(
         state, rpc_event.call, method_handler.request_deserializer
     )
     thread_pool = _select_thread_pool_for_behavior(
-        cast(ArityAgnosticMethodHandler, method_handler.stream_unary),
+        cast("ArityAgnosticMethodHandler", method_handler.stream_unary),
         default_thread_pool,
     )
     return thread_pool.submit(
@@ -954,7 +954,7 @@ def _handle_stream_unary(
         _unary_response_in_pool,
         rpc_event,
         state,
-        cast(ArityAgnosticMethodHandler, method_handler.stream_unary),
+        cast("ArityAgnosticMethodHandler", method_handler.stream_unary),
         lambda: request_iterator,
         method_handler.request_deserializer,
         method_handler.response_serializer,
@@ -971,7 +971,7 @@ def _handle_stream_stream(
         state, rpc_event.call, method_handler.request_deserializer
     )
     thread_pool = _select_thread_pool_for_behavior(
-        cast(ArityAgnosticMethodHandler, method_handler.stream_stream),
+        cast("ArityAgnosticMethodHandler", method_handler.stream_stream),
         default_thread_pool,
     )
     return thread_pool.submit(
@@ -979,7 +979,7 @@ def _handle_stream_stream(
         _stream_response_in_pool,
         rpc_event,
         state,
-        cast(ArityAgnosticMethodHandler, method_handler.stream_stream),
+        cast("ArityAgnosticMethodHandler", method_handler.stream_stream),
         lambda: request_iterator,
         method_handler.request_deserializer,
         method_handler.response_serializer,
