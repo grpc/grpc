@@ -214,7 +214,6 @@ class ServicerContext(Generic[RequestType, ResponseType], abc.ABC):
           Exception: An exception is always raised to signal the abortion the
             RPC to the gRPC runtime.
         """
-        raise NotImplementedError()
 
     @abc.abstractmethod
     def set_trailing_metadata(self, trailing_metadata: MetadataType) -> None:
@@ -324,7 +323,6 @@ class ServicerContext(Generic[RequestType, ResponseType], abc.ABC):
           remaining for the RPC to complete before it is considered to have
           timed out, or None if no deadline was specified for the RPC.
         """
-        raise NotImplementedError()
 
     def trailing_metadata(self):
         """Access value to be used as trailing metadata upon RPC completion.
@@ -376,7 +374,6 @@ class ServicerContext(Generic[RequestType, ResponseType], abc.ABC):
         Returns:
           A bool indicates whether the RPC is cancelled or not.
         """
-        raise NotImplementedError()
 
     def done(self) -> bool:
         """Return True if the RPC is done.
@@ -388,4 +385,3 @@ class ServicerContext(Generic[RequestType, ResponseType], abc.ABC):
         Returns:
           A bool indicates if the RPC is done.
         """
-        raise NotImplementedError()
