@@ -84,6 +84,7 @@ grpc_cc_test(
     external_deps = [
         "absl/log:check",
         "gtest",
+        "libcrypto",
     ],
     deps = [
         "//:config_vars",

@@ -34,6 +34,7 @@
 #include "src/core/credentials/transport/tls/grpc_tls_certificate_verifier.h"
 #include "src/core/credentials/transport/tls/grpc_tls_credentials_options.h"
 #include "src/core/credentials/transport/tls/ssl_utils.h"
+#include "src/core/credentials/transport/tls/tls_credentials.h"
 #include "src/core/credentials/transport/transport_credentials.h"
 #include "src/core/handshaker/security/security_handshaker.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -42,6 +43,7 @@
 #include "src/core/transport/auth_context.h"
 #include "src/core/tsi/ssl_transport_security.h"
 #include "src/core/util/debug_location.h"
+#include "src/core/util/down_cast.h"
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/host_port.h"
 #include "src/core/util/status_helper.h"
@@ -552,7 +554,31 @@ TlsChannelSecurityConnector::UpdateHandshakerFactoryLocked() {
     pem_key_cert_pair = ConvertToTsiPemKeyCertPair(*pem_key_cert_pair_list_);
   }
   bool use_default_roots = options_->root_certificate_distributor() == nullptr;
-  return grpc_ssl_tsi_client_handshaker_factory_init(
+  auto* tls_creds = grpc_core::DownCast<TlsCredentials*>(mutable_channel_creds());
+  // When using explicit PEM root certs, get a cached root store from the
+  // credentials object so that all security connectors from the same
+  // credentials share the same X509_STORE via X509_STORE_up_ref(), instead
+  // of each connector independently parsing the PEM into a fresh X509_STORE.
+  std::shared_ptr<tsi_ssl_root_certs_store> root_store_ref;
+  const tsi_ssl_root_certs_store* root_store = nullptr;
+  bool use_cached_root_store = false;
+#if OPENSSL_VERSION_NUMBER >= 0x10100000
+  if (!use_default_roots && root_cert_info_ != nullptr &&
+      options_->crl_directory().empty()) {
+    const std::string* pem = std::get_if<std::string>(root_cert_info_.get());
+    if (pem != nullptr) {
+      // The TSI client handshaker factory assumes root_store is already
+      // configured for explicit PEM verification flags.
+      root_store_ref = tls_creds->GetOrCreateRootStore(*pem);
+      root_store = root_store_ref.get();
+      use_cached_root_store = true;
+    }
+  }
+  if (!use_cached_root_store) {
+    tls_creds->ClearRootStoreCache();
+  }
+#endif
+  grpc_security_status status = grpc_ssl_tsi_client_handshaker_factory_init(
       pem_key_cert_pair.empty() ? nullptr : &pem_key_cert_pair[0],
       use_default_roots ? nullptr : root_cert_info_,
       skip_server_certificate_verification,
@@ -560,7 +586,13 @@ TlsChannelSecurityConnector::UpdateHandshakerFactoryLocked() {
       grpc_get_tsi_tls_version(options_->max_tls_version()), ssl_session_cache_,
       tls_session_key_logger_.get(), options_->crl_directory().c_str(),
       options_->crl_provider(), options_->key_exchange_groups(),
-      &client_handshaker_factory_);
+      &client_handshaker_factory_, root_store);
+  if (status == GRPC_SECURITY_OK && use_cached_root_store) {
+    root_store_ = std::move(root_store_ref);
+  } else {
+    root_store_.reset();
+  }
+  return status;
 }
 
 // -------------------server security connector-------------------

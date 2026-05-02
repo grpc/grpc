@@ -426,9 +426,10 @@ grpc_security_status grpc_ssl_tsi_client_handshaker_factory_init(
     const char* crl_directory,
     std::shared_ptr<grpc_core::experimental::CrlProvider> crl_provider,
     const std::vector<grpc_tls_key_exchange_group>& key_exchange_groups,
-    tsi_ssl_client_handshaker_factory** handshaker_factory) {
+    tsi_ssl_client_handshaker_factory** handshaker_factory,
+    const tsi_ssl_root_certs_store* root_store) {
   const char* root_certs = nullptr;
-  const tsi_ssl_root_certs_store* root_store = nullptr;
+  const tsi_ssl_root_certs_store* root_store_to_use = root_store;
   tsi_ssl_client_handshaker_options options;
   bool roots_are_configured = root_cert_info != nullptr;
   if (!roots_are_configured && !skip_server_certificate_verification) {
@@ -441,7 +442,7 @@ grpc_security_status grpc_ssl_tsi_client_handshaker_factory_init(
       LOG(ERROR) << "Could not get default pem root certs.";
       return GRPC_SECURITY_ERROR;
     }
-    root_store = grpc_core::DefaultSslRootStore::GetRootStore();
+    root_store_to_use = grpc_core::DefaultSslRootStore::GetRootStore();
     options.root_cert_info = std::make_shared<tsi::RootCertInfo>(root_certs);
   } else {
     options.root_cert_info = std::move(root_cert_info);
@@ -450,7 +451,7 @@ grpc_security_status grpc_ssl_tsi_client_handshaker_factory_init(
       pem_key_cert_pair != nullptr &&
       !grpc_core::IsPrivateKeyEmpty(pem_key_cert_pair->private_key) &&
       !pem_key_cert_pair->cert_chain.empty();
-  options.root_store = root_store;
+  options.root_store = root_store_to_use;
   options.alpn_protocols =
       grpc_fill_alpn_protocol_strings(&options.num_alpn_protocols);
   if (has_key_cert_pair) {

@@ -21,6 +21,7 @@
 #include <grpc/credentials.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
+#include <openssl/x509.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -30,6 +31,7 @@
 #include "src/core/credentials/transport/tls/tls_credentials.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/transport/auth_context.h"
+#include "src/core/tsi/ssl_transport_security.h"
 #include "src/core/tsi/transport_security.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/grpc_check.h"
@@ -49,6 +51,7 @@
 
 namespace grpc_core {
 namespace testing {
+namespace {
 
 constexpr const char* kRootCertName = "root_cert_name";
 constexpr const char* kIdentityCertName = "identity_cert_name";
@@ -60,6 +63,19 @@ constexpr absl::string_view kSpiffeBundlePath0 =
 constexpr absl::string_view kSpiffeBundlePath1 =
     "test/core/credentials/transport/tls/test_data/spiffe/test_bundles/"
     "spiffebundle2.json";
+// This test only checks the non-empty crl_directory path, not filesystem CRL
+// loading.
+constexpr const char* kFakeCrlDirectory = "/nonexistent/crl/dir";
+
+long GetVerificationFlags(X509_STORE* store) {
+#if OPENSSL_VERSION_NUMBER >= 0x10100000
+  return X509_VERIFY_PARAM_get_flags(X509_STORE_get0_param(store));
+#else
+  return X509_VERIFY_PARAM_get_flags(store->param);
+#endif
+}
+
+}  // namespace
 
 class TlsSecurityConnectorTest : public ::testing::Test {
  protected:
@@ -1258,6 +1274,216 @@ TEST_F(TlsSecurityConnectorTest,
   EXPECT_NE(tls_connector->ServerHandshakerFactoryForTesting(), nullptr);
   EXPECT_EQ(tls_connector->RootCertInfoForTesting(), spiffe_bundle_map_0_);
   EXPECT_EQ(tls_connector->KeyCertPairListForTesting(), identity_pairs_0_);
+}
+
+// Verifies that multiple security connectors created from the same
+// TlsCredentials with explicit PEM root certs share the same X509_STORE
+// via X509_STORE_up_ref(), instead of each connector independently parsing
+// the PEM into a fresh X509_STORE. This is a regression test for
+// https://github.com/grpc/grpc/issues/42129.
+TEST_F(TlsSecurityConnectorTest, MultipleConnectorsShareRootCertStore) {
+  RefCountedPtr<grpc_tls_certificate_distributor> distributor =
+      MakeRefCounted<grpc_tls_certificate_distributor>();
+  distributor->SetKeyMaterials(kRootCertName, root_cert_1_, std::nullopt);
+  RefCountedPtr<grpc_tls_certificate_provider> provider =
+      MakeRefCounted<TlsTestCertificateProvider>(distributor);
+  RefCountedPtr<grpc_tls_credentials_options> options =
+      MakeRefCounted<grpc_tls_credentials_options>();
+  options->set_root_certificate_provider(std::move(provider));
+  options->set_root_cert_name(kRootCertName);
+  RefCountedPtr<TlsCredentials> credential =
+      MakeRefCounted<TlsCredentials>(options);
+  EXPECT_FALSE(credential->HasCachedRootStoreForTesting());
+  // Create two security connectors from the same credentials.
+  ChannelArgs args1;
+  RefCountedPtr<grpc_channel_security_connector> connector1 =
+      credential->create_security_connector(nullptr, kTargetName, &args1);
+  ASSERT_NE(connector1, nullptr);
+  ChannelArgs args2;
+  RefCountedPtr<grpc_channel_security_connector> connector2 =
+      credential->create_security_connector(nullptr, kTargetName, &args2);
+  ASSERT_NE(connector2, nullptr);
+  auto* tls_connector1 =
+      static_cast<TlsChannelSecurityConnector*>(connector1.get());
+  auto* tls_connector2 =
+      static_cast<TlsChannelSecurityConnector*>(connector2.get());
+  // Both should have handshaker factories.
+  tsi_ssl_client_handshaker_factory* factory1 =
+      tls_connector1->ClientHandshakerFactoryForTesting();
+  tsi_ssl_client_handshaker_factory* factory2 =
+      tls_connector2->ClientHandshakerFactoryForTesting();
+  ASSERT_NE(factory1, nullptr);
+  ASSERT_NE(factory2, nullptr);
+  // The factories should be different (each connector has its own).
+  EXPECT_NE(factory1, factory2);
+  // But they should share the same X509_STORE (root cert store), meaning the
+  // PEM was parsed once and shared via X509_STORE_up_ref().
+  X509_STORE* store1 =
+      tsi_ssl_client_handshaker_factory_get_cert_store(factory1);
+  X509_STORE* store2 =
+      tsi_ssl_client_handshaker_factory_get_cert_store(factory2);
+  ASSERT_NE(store1, nullptr);
+  ASSERT_NE(store2, nullptr);
+#if OPENSSL_VERSION_NUMBER >= 0x10100000
+  EXPECT_EQ(store1, store2);
+  const long expected_flags =
+      X509_V_FLAG_PARTIAL_CHAIN | X509_V_FLAG_TRUSTED_FIRST;
+  EXPECT_EQ(GetVerificationFlags(store1) & expected_flags, expected_flags);
+  EXPECT_TRUE(credential->HasCachedRootStoreForTesting());
+#else
+  EXPECT_FALSE(credential->HasCachedRootStoreForTesting());
+#endif
+}
+
+// Verifies that root rotation updates the existing connector to a new
+// X509_STORE and that new connectors converge on the latest store.
+TEST_F(TlsSecurityConnectorTest, RootCertRotationProducesNewCertStore) {
+  RefCountedPtr<grpc_tls_certificate_distributor> distributor =
+      MakeRefCounted<grpc_tls_certificate_distributor>();
+  distributor->SetKeyMaterials(kRootCertName, root_cert_1_, std::nullopt);
+  RefCountedPtr<grpc_tls_certificate_provider> provider =
+      MakeRefCounted<TlsTestCertificateProvider>(distributor);
+  RefCountedPtr<grpc_tls_credentials_options> options =
+      MakeRefCounted<grpc_tls_credentials_options>();
+  options->set_root_certificate_provider(std::move(provider));
+  options->set_root_cert_name(kRootCertName);
+  RefCountedPtr<TlsCredentials> credential =
+      MakeRefCounted<TlsCredentials>(options);
+  // Create a connector with the initial root certs.
+  ChannelArgs args1;
+  RefCountedPtr<grpc_channel_security_connector> connector1 =
+      credential->create_security_connector(nullptr, kTargetName, &args1);
+  ASSERT_NE(connector1, nullptr);
+  auto* tls_connector1 =
+      static_cast<TlsChannelSecurityConnector*>(connector1.get());
+  tsi_ssl_client_handshaker_factory* factory1 =
+      tls_connector1->ClientHandshakerFactoryForTesting();
+  ASSERT_NE(factory1, nullptr);
+  tsi_ssl_client_handshaker_factory* retained_factory1 =
+      tsi_ssl_client_handshaker_factory_ref(factory1);
+  X509_STORE* old_store =
+      tsi_ssl_client_handshaker_factory_get_cert_store(retained_factory1);
+  ASSERT_NE(old_store, nullptr);
+#if OPENSSL_VERSION_NUMBER >= 0x10100000
+  EXPECT_TRUE(credential->HasCachedRootStoreForTesting());
+#else
+  EXPECT_FALSE(credential->HasCachedRootStoreForTesting());
+#endif
+  // Rotate root certs via the distributor.
+  distributor->SetKeyMaterials(kRootCertName, root_cert_0_, std::nullopt);
+#if OPENSSL_VERSION_NUMBER >= 0x10100000
+  EXPECT_TRUE(credential->HasCachedRootStoreForTesting());
+  ASSERT_NE(tls_connector1->RootStoreForTesting(), nullptr);
+#else
+  EXPECT_FALSE(credential->HasCachedRootStoreForTesting());
+  EXPECT_EQ(tls_connector1->RootStoreForTesting(), nullptr);
+#endif
+  X509_STORE* rotated_store =
+      tsi_ssl_client_handshaker_factory_get_cert_store(
+          tls_connector1->ClientHandshakerFactoryForTesting());
+  ASSERT_NE(rotated_store, nullptr);
+  EXPECT_NE(old_store, rotated_store);
+  // Create a second connector which picks up the new root certs.
+  ChannelArgs args2;
+  RefCountedPtr<grpc_channel_security_connector> connector2 =
+      credential->create_security_connector(nullptr, kTargetName, &args2);
+  ASSERT_NE(connector2, nullptr);
+  auto* tls_connector2 =
+      static_cast<TlsChannelSecurityConnector*>(connector2.get());
+  tsi_ssl_client_handshaker_factory* factory2 =
+      tls_connector2->ClientHandshakerFactoryForTesting();
+  ASSERT_NE(factory2, nullptr);
+  X509_STORE* store2 =
+      tsi_ssl_client_handshaker_factory_get_cert_store(factory2);
+  ASSERT_NE(store2, nullptr);
+#if OPENSSL_VERSION_NUMBER >= 0x10100000
+  EXPECT_TRUE(credential->HasCachedRootStoreForTesting());
+  EXPECT_EQ(rotated_store, store2);
+  EXPECT_EQ(tls_connector1->RootStoreForTesting(),
+            tls_connector2->RootStoreForTesting());
+#else
+  EXPECT_FALSE(credential->HasCachedRootStoreForTesting());
+  EXPECT_EQ(tls_connector2->RootStoreForTesting(), nullptr);
+#endif
+  tsi_ssl_client_handshaker_factory_unref(retained_factory1);
+}
+
+TEST_F(TlsSecurityConnectorTest,
+       ConnectorsDoNotShareRootCertStoreWhenCrlDirectoryIsConfigured) {
+  RefCountedPtr<grpc_tls_certificate_distributor> distributor =
+      MakeRefCounted<grpc_tls_certificate_distributor>();
+  distributor->SetKeyMaterials(kRootCertName, root_cert_1_, std::nullopt);
+  RefCountedPtr<grpc_tls_certificate_provider> provider =
+      MakeRefCounted<TlsTestCertificateProvider>(distributor);
+  RefCountedPtr<grpc_tls_credentials_options> options =
+      MakeRefCounted<grpc_tls_credentials_options>();
+  options->set_root_certificate_provider(std::move(provider));
+  options->set_root_cert_name(kRootCertName);
+  options->set_crl_directory(kFakeCrlDirectory);
+  RefCountedPtr<TlsCredentials> credential =
+      MakeRefCounted<TlsCredentials>(options);
+  ChannelArgs args1;
+  RefCountedPtr<grpc_channel_security_connector> connector1 =
+      credential->create_security_connector(nullptr, kTargetName, &args1);
+  ASSERT_NE(connector1, nullptr);
+  ChannelArgs args2;
+  RefCountedPtr<grpc_channel_security_connector> connector2 =
+      credential->create_security_connector(nullptr, kTargetName, &args2);
+  ASSERT_NE(connector2, nullptr);
+  auto* tls_connector1 =
+      static_cast<TlsChannelSecurityConnector*>(connector1.get());
+  auto* tls_connector2 =
+      static_cast<TlsChannelSecurityConnector*>(connector2.get());
+  tsi_ssl_client_handshaker_factory* factory1 =
+      tls_connector1->ClientHandshakerFactoryForTesting();
+  tsi_ssl_client_handshaker_factory* factory2 =
+      tls_connector2->ClientHandshakerFactoryForTesting();
+  ASSERT_NE(factory1, nullptr);
+  ASSERT_NE(factory2, nullptr);
+  X509_STORE* store1 =
+      tsi_ssl_client_handshaker_factory_get_cert_store(factory1);
+  X509_STORE* store2 =
+      tsi_ssl_client_handshaker_factory_get_cert_store(factory2);
+  ASSERT_NE(store1, nullptr);
+  ASSERT_NE(store2, nullptr);
+#if OPENSSL_VERSION_NUMBER >= 0x10100000
+  EXPECT_NE(store1, store2);
+#endif
+  EXPECT_EQ(tls_connector1->RootStoreForTesting(), nullptr);
+  EXPECT_EQ(tls_connector2->RootStoreForTesting(), nullptr);
+  EXPECT_FALSE(credential->HasCachedRootStoreForTesting());
+}
+
+TEST_F(TlsSecurityConnectorTest, PemRootCacheClearedWhenRootsRotateToSpiffe) {
+  RefCountedPtr<grpc_tls_certificate_distributor> distributor =
+      MakeRefCounted<grpc_tls_certificate_distributor>();
+  distributor->SetKeyMaterials(kRootCertName, root_cert_1_, std::nullopt);
+  RefCountedPtr<grpc_tls_certificate_provider> provider =
+      MakeRefCounted<TlsTestCertificateProvider>(distributor);
+  RefCountedPtr<grpc_tls_credentials_options> options =
+      MakeRefCounted<grpc_tls_credentials_options>();
+  options->set_root_certificate_provider(std::move(provider));
+  options->set_root_cert_name(kRootCertName);
+  RefCountedPtr<TlsCredentials> credential =
+      MakeRefCounted<TlsCredentials>(options);
+  ChannelArgs args;
+  RefCountedPtr<grpc_channel_security_connector> connector =
+      credential->create_security_connector(nullptr, kTargetName, &args);
+  ASSERT_NE(connector, nullptr);
+  auto* tls_connector =
+      static_cast<TlsChannelSecurityConnector*>(connector.get());
+#if OPENSSL_VERSION_NUMBER >= 0x10100000
+  EXPECT_TRUE(credential->HasCachedRootStoreForTesting());
+#else
+  EXPECT_FALSE(credential->HasCachedRootStoreForTesting());
+#endif
+  EXPECT_EQ(tls_connector->RootCertInfoForTesting(), root_cert_1_);
+  distributor->SetKeyMaterials(kRootCertName, spiffe_bundle_map_0_,
+                               std::nullopt);
+  EXPECT_EQ(tls_connector->RootCertInfoForTesting(), spiffe_bundle_map_0_);
+  EXPECT_NE(tls_connector->ClientHandshakerFactoryForTesting(), nullptr);
+  EXPECT_EQ(tls_connector->RootStoreForTesting(), nullptr);
+  EXPECT_FALSE(credential->HasCachedRootStoreForTesting());
 }
 
 }  // namespace testing

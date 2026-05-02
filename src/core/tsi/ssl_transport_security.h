@@ -71,6 +71,13 @@ typedef struct tsi_ssl_root_certs_store tsi_ssl_root_certs_store;
 tsi_ssl_root_certs_store* tsi_ssl_root_certs_store_create(
     const char* pem_roots);
 
+// Applies the verification flags needed for explicit PEM root verification.
+// Call before sharing the store across SSL_CTX instances when using this
+// store via tsi_ssl_client_handshaker_options::root_store, because the client
+// handshaker factory does not reapply these flags on the root_store path.
+void tsi_ssl_root_certs_store_configure_explicit_verification(
+    tsi_ssl_root_certs_store* root_store);
+
 // Destroys the tsi_ssl_root_certs_store object.
 void tsi_ssl_root_certs_store_destroy(tsi_ssl_root_certs_store* self);
 
@@ -263,6 +270,10 @@ tsi_ssl_client_handshaker_factory* tsi_ssl_client_handshaker_factory_ref(
 // Decrements reference count of the handshaker factory. Handshaker factory will
 // be destroyed once no references exist.
 void tsi_ssl_client_handshaker_factory_unref(
+    tsi_ssl_client_handshaker_factory* factory);
+
+// Returns the X509_STORE from the factory's SSL_CTX. For testing only.
+X509_STORE* tsi_ssl_client_handshaker_factory_get_cert_store(
     tsi_ssl_client_handshaker_factory* factory);
 
 // --- tsi_ssl_server_handshaker_factory object ---

@@ -1747,6 +1747,13 @@ tsi_ssl_root_certs_store* tsi_ssl_root_certs_store_create(
   return root_store;
 }
 
+void tsi_ssl_root_certs_store_configure_explicit_verification(
+    tsi_ssl_root_certs_store* root_store) {
+  if (root_store == nullptr) return;
+  X509_STORE_set_flags(root_store->store,
+                       X509_V_FLAG_PARTIAL_CHAIN | X509_V_FLAG_TRUSTED_FIRST);
+}
+
 void tsi_ssl_root_certs_store_destroy(tsi_ssl_root_certs_store* self) {
   if (self == nullptr) return;
   X509_STORE_free(self->store);
@@ -2668,6 +2675,12 @@ void tsi_ssl_client_handshaker_factory_unref(
     tsi_ssl_client_handshaker_factory* factory) {
   if (factory == nullptr) return;
   tsi_ssl_handshaker_factory_unref(&factory->base);
+}
+
+X509_STORE* tsi_ssl_client_handshaker_factory_get_cert_store(
+    tsi_ssl_client_handshaker_factory* factory) {
+  if (factory == nullptr || factory->ssl_context == nullptr) return nullptr;
+  return SSL_CTX_get_cert_store(factory->ssl_context);
 }
 
 tsi_ssl_client_handshaker_factory* tsi_ssl_client_handshaker_factory_ref(
