@@ -49,6 +49,21 @@ describe 'Client Interceptors' do
           expect(stub.an_rpc(request)).to be_a(EchoMsg)
         end
       end
+
+      it 'can modify outgoing metadata with return_op', server: true do
+        expect(interceptor).to receive(:request_response)
+          .once.and_call_original
+
+        run_services_on_server(@server, services: [service]) do
+          stub = build_insecure_stub(EchoStub, opts: interceptors_opts)
+          expect_any_instance_of(GRPC::ActiveCall).to receive(:request_response)
+            .with(request, metadata: { 'foo' => 'bar_from_request_response' })
+            .once.and_call_original
+          op = stub.an_rpc(request, return_op: true)
+          result = op.execute
+          expect(result).to be_a(EchoMsg)
+        end
+      end
     end
 
     context 'with a client streaming call' do
@@ -76,6 +91,22 @@ describe 'Client Interceptors' do
             .with(requests, metadata: { 'foo' => 'bar_from_client_streamer' })
             .once.and_call_original
           expect(stub.a_client_streaming_rpc(requests)).to be_a(EchoMsg)
+        end
+      end
+
+      it 'can modify outgoing metadata with return_op', server: true do
+        expect(interceptor).to receive(:client_streamer)
+          .once.and_call_original
+
+        run_services_on_server(@server, services: [service]) do
+          stub = build_insecure_stub(EchoStub, opts: interceptors_opts)
+          requests = [EchoMsg.new, EchoMsg.new]
+          expect_any_instance_of(GRPC::ActiveCall).to receive(:client_streamer)
+            .with(requests, metadata: { 'foo' => 'bar_from_client_streamer' })
+            .once.and_call_original
+          op = stub.a_client_streaming_rpc(requests, return_op: true)
+          result = op.execute
+          expect(result).to be_a(EchoMsg)
         end
       end
     end
@@ -113,6 +144,24 @@ describe 'Client Interceptors' do
           end
         end
       end
+
+      it 'can modify outgoing metadata with return_op', server: true do
+        expect(interceptor).to receive(:server_streamer)
+          .once.and_call_original
+
+        run_services_on_server(@server, services: [service]) do
+          stub = build_insecure_stub(EchoStub, opts: interceptors_opts)
+          request = EchoMsg.new
+          expect_any_instance_of(GRPC::ActiveCall).to receive(:server_streamer)
+            .with(request, metadata: { 'foo' => 'bar_from_server_streamer' })
+            .once.and_call_original
+          op = stub.a_server_streaming_rpc(request, return_op: true)
+          responses = op.execute
+          responses.each do |r|
+            expect(r).to be_a(EchoMsg)
+          end
+        end
+      end
     end
 
     context 'with a bidi call' do
@@ -143,6 +192,24 @@ describe 'Client Interceptors' do
             .with(requests, metadata: { 'foo' => 'bar_from_bidi_streamer' })
             .once.and_call_original
           responses = stub.a_bidi_rpc(requests)
+          responses.each do |r|
+            expect(r).to be_a(EchoMsg)
+          end
+        end
+      end
+
+      it 'can modify outgoing metadata with return_op', server: true do
+        expect(interceptor).to receive(:bidi_streamer)
+          .once.and_call_original
+
+        run_services_on_server(@server, services: [service]) do
+          stub = build_insecure_stub(EchoStub, opts: interceptors_opts)
+          requests = [EchoMsg.new, EchoMsg.new]
+          expect_any_instance_of(GRPC::ActiveCall).to receive(:bidi_streamer)
+            .with(requests, metadata: { 'foo' => 'bar_from_bidi_streamer' })
+            .once.and_call_original
+          op = stub.a_bidi_rpc(requests, return_op: true)
+          responses = op.execute
           responses.each do |r|
             expect(r).to be_a(EchoMsg)
           end
