@@ -37,6 +37,7 @@ from typing import (
     Set,
     Tuple,
     Union,
+    cast,
 )
 
 import grpc
@@ -182,7 +183,7 @@ class _GenericMethod(_Method):
 class _RPCState:
     context: contextvars.Context
     condition: threading.Condition
-    due = Set[str]
+    due: Set[str]
     request: Any
     client: str
     initial_metadata_allowed: bool
@@ -468,14 +469,14 @@ class _Context(grpc.ServicerContext):
         with self._state.condition:
             self._state.code = code
 
-    def code(self) -> grpc.StatusCode:
+    def code(self) -> Optional[grpc.StatusCode]:
         return self._state.code
 
     def set_details(self, details: str) -> None:
         with self._state.condition:
             self._state.details = _common.encode(details)
 
-    def details(self) -> bytes:
+    def details(self) -> Optional[bytes]:
         return self._state.details
 
     def _finalize_state(self) -> None:
@@ -592,7 +593,7 @@ def _call_behavior(
     argument: Any,
     request_deserializer: Optional[DeserializingFunction],
     send_response_callback: Optional[Callable[[ResponseType], None]] = None,
-) -> Tuple[Union[ResponseType, Iterator[ResponseType]], bool]:
+) -> Tuple[Optional[Union[ResponseType, Iterator[ResponseType]]], bool]:
     from grpc import _create_servicer_context
 
     with _create_servicer_context(
@@ -601,11 +602,11 @@ def _call_behavior(
         try:
             response_or_iterator = None
             if send_response_callback is not None:
-                response_or_iterator = behavior(
+                response_or_iterator = cast(Any, behavior)(
                     argument, context, send_response_callback
                 )
             else:
-                response_or_iterator = behavior(argument, context)
+                response_or_iterator = cast(Any, behavior)(argument, context)
             return response_or_iterator, True
         except Exception as exception:  # pylint: disable=broad-except
             with state.condition:
@@ -647,7 +648,7 @@ def _take_response_from_response_iterator(
     rpc_event: cygrpc.BaseEvent,
     state: _RPCState,
     response_iterator: Iterator[ResponseType],
-) -> Tuple[ResponseType, bool]:
+) -> Tuple[Optional[ResponseType], bool]:
     try:
         return next(response_iterator), True
     except StopIteration:
@@ -841,7 +842,7 @@ def _stream_response_in_pool(
                 )
                 if proceed:
                     _send_message_callback_to_blocking_iterator_adapter(
-                        rpc_event, state, send_response, response_iterator
+                        rpc_event, state, send_response, cast(Any, response_iterator)
                     )
     except Exception:  # pylint: disable=broad-except
         traceback.print_exc()
@@ -856,7 +857,7 @@ def _is_rpc_state_active(state: _RPCState) -> bool:
 def _send_message_callback_to_blocking_iterator_adapter(
     rpc_event: cygrpc.BaseEvent,
     state: _RPCState,
-    send_response_callback: Callable[[ResponseType], None],
+    send_response_callback: Callable[[Optional[ResponseType]], None],
     response_iterator: Iterator[ResponseType],
 ) -> None:
     while True:
@@ -892,14 +893,14 @@ def _handle_unary_unary(
         rpc_event, state, method_handler.request_deserializer
     )
     thread_pool = _select_thread_pool_for_behavior(
-        method_handler.unary_unary, default_thread_pool
+        cast(ArityAgnosticMethodHandler, method_handler.unary_unary), default_thread_pool
     )
     return thread_pool.submit(
         state.context.run,
         _unary_response_in_pool,
         rpc_event,
         state,
-        method_handler.unary_unary,
+        cast(ArityAgnosticMethodHandler, method_handler.unary_unary),
         unary_request,
         method_handler.request_deserializer,
         method_handler.response_serializer,
@@ -916,14 +917,14 @@ def _handle_unary_stream(
         rpc_event, state, method_handler.request_deserializer
     )
     thread_pool = _select_thread_pool_for_behavior(
-        method_handler.unary_stream, default_thread_pool
+        cast(ArityAgnosticMethodHandler, method_handler.unary_stream), default_thread_pool
     )
     return thread_pool.submit(
         state.context.run,
         _stream_response_in_pool,
         rpc_event,
         state,
-        method_handler.unary_stream,
+        cast(ArityAgnosticMethodHandler, method_handler.unary_stream),
         unary_request,
         method_handler.request_deserializer,
         method_handler.response_serializer,
@@ -940,14 +941,14 @@ def _handle_stream_unary(
         state, rpc_event.call, method_handler.request_deserializer
     )
     thread_pool = _select_thread_pool_for_behavior(
-        method_handler.stream_unary, default_thread_pool
+        cast(ArityAgnosticMethodHandler, method_handler.stream_unary), default_thread_pool
     )
     return thread_pool.submit(
         state.context.run,
         _unary_response_in_pool,
         rpc_event,
         state,
-        method_handler.stream_unary,
+        cast(ArityAgnosticMethodHandler, method_handler.stream_unary),
         lambda: request_iterator,
         method_handler.request_deserializer,
         method_handler.response_serializer,
@@ -964,14 +965,14 @@ def _handle_stream_stream(
         state, rpc_event.call, method_handler.request_deserializer
     )
     thread_pool = _select_thread_pool_for_behavior(
-        method_handler.stream_stream, default_thread_pool
+        cast(ArityAgnosticMethodHandler, method_handler.stream_stream), default_thread_pool
     )
     return thread_pool.submit(
         state.context.run,
         _stream_response_in_pool,
         rpc_event,
         state,
-        method_handler.stream_stream,
+        cast(ArityAgnosticMethodHandler, method_handler.stream_stream),
         lambda: request_iterator,
         method_handler.request_deserializer,
         method_handler.response_serializer,
