@@ -20,56 +20,12 @@
 #include <type_traits>
 #include <utility>
 
-#include "src/core/util/construct_destruct.h"
+#include "absl/base/no_destructor.h"
 
 namespace grpc_core {
 
-// NoDestruct<T> is a wrapper around an object of type T that:
-// - stores the value inline - no heap allocation
-// - is non-copyable
-// - is eagerly constructed (i.e. the constructor is called when NoDestruct is
-//   constructed)
-// - *NEVER* calls ~T()
-// It's useful in cases where no ordering can be assumed between destructors of
-// objects that need to refer to each other - such as at program destruction
-// time.
-// Examples:
-//  // globally available object:
-//  static NoDestruct<Foo> g_foo(1, "foo", 2.0);
-//  // used as:
-//  g_foo->DoSomething();
-//  // singleton function:
-//  Bar* BarSingleton() {
-//   static NoDestruct<Bar> bar(1, "bar", 2.0);
-//   return &*bar;
-//  }
-// The globally available version is constructed at program startup, and the
-// singleton version is constructed at the first call to BarSingleton().
-// Neither Foo nor Bar instance will be destructed.
 template <typename T>
-class NoDestruct {
- public:
-  template <typename... Args>
-  explicit NoDestruct(Args&&... args) {
-    static_assert(std::is_trivially_destructible<NoDestruct<T>>::value,
-                  "NoDestruct must be trivially destructible");
-    Construct(reinterpret_cast<T*>(&space_), std::forward<Args>(args)...);
-  }
-  NoDestruct(const NoDestruct&) = delete;
-  NoDestruct& operator=(const NoDestruct&) = delete;
-  ~NoDestruct() = default;
-
-  T* operator->() { return get(); }
-  const T* operator->() const { return get(); }
-  T& operator*() { return *get(); }
-  const T& operator*() const { return *get(); }
-
-  T* get() { return reinterpret_cast<T*>(&space_); }
-  const T* get() const { return reinterpret_cast<const T*>(&space_); }
-
- private:
-  alignas(T) char space_[sizeof(T)];
-};
+using NoDestruct = absl::NoDestructor<T>;
 
 // Helper for when a program desires a single *process wide* instance of a
 // default constructed T to be always available.
@@ -78,17 +34,11 @@ class NoDestruct {
 template <typename T>
 class NoDestructSingleton {
  public:
-  static T* Get() { return &*value_; }
-
- private:
-  NoDestructSingleton() = delete;
-  ~NoDestructSingleton() = delete;
-
-  static NoDestruct<T> value_;
+  static T* Get() {
+    static absl::NoDestructor<T> value;
+    return value.get();
+  }
 };
-
-template <typename T>
-NoDestruct<T> NoDestructSingleton<T>::value_;
 
 }  // namespace grpc_core
 
