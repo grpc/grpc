@@ -31,6 +31,15 @@ import python_version
 # in tools/buildgen/generate_projects.sh.
 XDS_PROTOS_GENCODE_GRPC_VERSION = "1.74.0"
 
+CLASSIFIERS = [
+    "Development Status :: 5 - Production/Stable",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+] + [
+    f"Programming Language :: Python :: {x}"
+    for x in python_version.SUPPORTED_PYTHON_VERSIONS
+]
+
 INSTALL_REQUIRES = [
     f"grpcio>={XDS_PROTOS_GENCODE_GRPC_VERSION}",
     "protobuf>=6.31.1,<7.0.0",
@@ -41,6 +50,7 @@ SETUP_REQUIRES = INSTALL_REQUIRES + [
 
 if __name__ == "__main__":
     setuptools.setup(
+        classifiers=CLASSIFIERS,
         python_requires=f">={python_version.MIN_PYTHON_VERSION}",
         install_requires=INSTALL_REQUIRES,
         setup_requires=SETUP_REQUIRES,

@@ -43,6 +43,15 @@ class _NoOpCommand(setuptools.Command):
         pass
 
 
+CLASSIFIERS = [
+    "Development Status :: 5 - Production/Stable",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+] + [
+    f"Programming Language :: Python :: {x}"
+    for x in python_version.SUPPORTED_PYTHON_VERSIONS
+]
+
 INSTALL_REQUIRES = (
     "protobuf>=6.33.5,<7.0.0",
     "grpcio>={version}".format(version=grpc_version.VERSION),
@@ -61,11 +70,6 @@ except ImportError:
         # wire up commands to no-op not to break the external dependencies
         "preprocess": _NoOpCommand,
     }
-
-CLASSIFIERS = [
-    "Programming Language :: Python",
-    "Programming Language :: Python :: 3",
-]
 
 if __name__ == "__main__":
     setuptools.setup(
