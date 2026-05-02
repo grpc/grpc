@@ -120,6 +120,7 @@ libs:
   - absl/base:config
   - absl/base:core_headers
   - absl/base:log_severity
+  - absl/base:no_destructor
   - absl/cleanup:cleanup
   - absl/flags:flag
   - absl/flags:marshalling
@@ -2287,7 +2288,6 @@ libs:
   - re2
   - z
   - absl/algorithm:container
-  - absl/base:no_destructor
   - absl/container:btree
   - absl/container:flat_hash_map
   - absl/container:flat_hash_set
@@ -3483,7 +3483,6 @@ libs:
   - upb_textformat_lib
   - z
   - absl/algorithm:container
-  - absl/base:no_destructor
   - absl/container:btree
   - absl/container:flat_hash_map
   - absl/container:flat_hash_set
@@ -3632,6 +3631,7 @@ libs:
   public_headers: []
   headers:
   - third_party/upb/upb/base/descriptor_constants.h
+  - third_party/upb/upb/base/error_handler.h
   - third_party/upb/upb/base/status.h
   - third_party/upb/upb/base/status.hpp
   - third_party/upb/upb/base/string_view.h
@@ -3734,11 +3734,9 @@ libs:
   - third_party/upb/upb/message/internal/map.h
   - third_party/upb/upb/message/internal/map_sorter.h
   - third_party/upb/upb/message/internal/message.h
-  - third_party/upb/upb/message/internal/tagged_ptr.h
   - third_party/upb/upb/message/map.h
   - third_party/upb/upb/message/map_gencode_util.h
   - third_party/upb/upb/message/message.h
-  - third_party/upb/upb/message/tagged_ptr.h
   - third_party/upb/upb/message/value.h
   src:
   - third_party/upb/upb/message/accessors.c
@@ -3769,6 +3767,7 @@ libs:
   - third_party/upb/upb/wire/decode_fast/data.h
   - third_party/upb/upb/wire/decode_fast/select.h
   - third_party/upb/upb/wire/eps_copy_input_stream.h
+  - third_party/upb/upb/wire/internal/eps_copy_input_stream.h
   - third_party/upb/upb/wire/internal/reader.h
   - third_party/upb/upb/wire/reader.h
   - third_party/upb/upb/wire/types.h
@@ -3796,10 +3795,12 @@ libs:
   - third_party/upb/upb/mini_table/extension_registry.h
   - third_party/upb/upb/mini_table/field.h
   - third_party/upb/upb/mini_table/file.h
+  - third_party/upb/upb/mini_table/generated_registry.h
   - third_party/upb/upb/mini_table/internal/enum.h
   - third_party/upb/upb/mini_table/internal/extension.h
   - third_party/upb/upb/mini_table/internal/field.h
   - third_party/upb/upb/mini_table/internal/file.h
+  - third_party/upb/upb/mini_table/internal/generated_registry.h
   - third_party/upb/upb/mini_table/internal/message.h
   - third_party/upb/upb/mini_table/internal/size_log2.h
   - third_party/upb/upb/mini_table/internal/sub.h
@@ -3807,6 +3808,7 @@ libs:
   - third_party/upb/upb/mini_table/sub.h
   src:
   - third_party/upb/upb/mini_table/extension_registry.c
+  - third_party/upb/upb/mini_table/generated_registry.c
   - third_party/upb/upb/mini_table/internal/message.c
   - third_party/upb/upb/mini_table/message.c
   deps:
@@ -3901,6 +3903,7 @@ libs:
   - third_party/upb/upb/wire/eps_copy_input_stream.h
   - third_party/upb/upb/wire/internal/constants.h
   - third_party/upb/upb/wire/internal/decoder.h
+  - third_party/upb/upb/wire/internal/eps_copy_input_stream.h
   - third_party/upb/upb/wire/internal/reader.h
   - third_party/upb/upb/wire/reader.h
   - third_party/upb/upb/wire/types.h
@@ -5400,7 +5403,6 @@ libs:
   - upb_textformat_lib
   - re2
   - z
-  - absl/base:no_destructor
   - absl/container:btree
   - absl/container:flat_hash_map
   - absl/container:flat_hash_set
@@ -5467,6 +5469,7 @@ libs:
   - absl/base:config
   - absl/base:core_headers
   - absl/base:dynamic_annotations
+  - absl/base:no_destructor
   - absl/base:prefetch
   - absl/cleanup:cleanup
   - absl/container:btree
@@ -5493,6 +5496,7 @@ libs:
   - absl/strings:strings
   - absl/synchronization:synchronization
   - absl/time:time
+  - absl/types:optional
   - absl/types:span
   - absl/utility:utility
   - protobuf
@@ -7150,7 +7154,6 @@ targets:
   deps:
   - gtest
   - upb_textformat_lib
-  - absl/base:no_destructor
   - absl/container:btree
   - absl/container:flat_hash_map
   - absl/container:inlined_vector
@@ -8023,7 +8026,6 @@ targets:
   - gtest
   - upb_textformat_lib
   - z
-  - absl/base:no_destructor
   - absl/container:btree
   - absl/container:flat_hash_map
   - absl/container:inlined_vector
@@ -13323,7 +13325,6 @@ targets:
   - gtest
   - upb_textformat_lib
   - z
-  - absl/base:no_destructor
   - absl/container:btree
   - absl/container:flat_hash_map
   - absl/container:inlined_vector
@@ -16234,7 +16235,6 @@ targets:
   - gtest
   - upb_textformat_lib
   - z
-  - absl/base:no_destructor
   - absl/container:btree
   - absl/container:flat_hash_map
   - absl/container:inlined_vector
@@ -18997,7 +18997,6 @@ targets:
   build: test
   language: c++
   headers:
-  - src/core/util/construct_destruct.h
   - src/core/util/no_destruct.h
   src:
   - test/core/util/no_destruct_test.cc
@@ -19005,6 +19004,7 @@ targets:
   - gtest
   - absl/base:config
   - absl/base:core_headers
+  - absl/base:no_destructor
 - name: no_server_test
   gtest: true
   build: test
@@ -22322,7 +22322,6 @@ targets:
   deps:
   - gtest
   - upb_textformat_lib
-  - absl/base:no_destructor
   - absl/container:btree
   - absl/container:flat_hash_map
   - absl/container:inlined_vector
@@ -25789,7 +25788,6 @@ targets:
   - gtest
   - upb_textformat_lib
   - z
-  - absl/base:no_destructor
   - absl/container:btree
   - absl/container:flat_hash_map
   - absl/container:inlined_vector

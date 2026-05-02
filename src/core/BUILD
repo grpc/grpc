@@ -771,9 +771,11 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "no_destruct",
+    external_deps = [
+        "absl/base:no_destructor",
+    ],
     public_hdrs = ["util/no_destruct.h"],
     deps = [
-        "construct_destruct",
         "//:gpr_platform",
     ],
 )

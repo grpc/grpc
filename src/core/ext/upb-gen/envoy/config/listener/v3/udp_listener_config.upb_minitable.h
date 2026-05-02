@@ -19,9 +19,7 @@ extern "C" {
 #endif
 
 extern const upb_MiniTable envoy__config__listener__v3__UdpListenerConfig_msg_init;
-extern const upb_MiniTable* envoy__config__listener__v3__UdpListenerConfig_msg_init_ptr;
 extern const upb_MiniTable envoy__config__listener__v3__ActiveRawUdpListenerConfig_msg_init;
-extern const upb_MiniTable* envoy__config__listener__v3__ActiveRawUdpListenerConfig_msg_init_ptr;
 
 extern const upb_MiniTableFile envoy_config_listener_v3_udp_listener_config_proto_upb_file_layout;
 

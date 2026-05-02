@@ -10,9 +10,7 @@
 #define CEL_EXPR_CHECKED_PROTO_UPB_H__UPB_H_
 
 #include "upb/generated_code_support.h"
-
 #include "cel/expr/checked.upb_minitable.h"
-
 #include "cel/expr/syntax.upb_minitable.h"
 #include "google/protobuf/empty.upb_minitable.h"
 #include "google/protobuf/struct.upb_minitable.h"
@@ -23,18 +21,50 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+typedef struct cel_expr_CheckedExpr {
+  upb_Message UPB_PRIVATE(base);
+} cel_expr_CheckedExpr;
 
-typedef struct cel_expr_CheckedExpr { upb_Message UPB_PRIVATE(base); } cel_expr_CheckedExpr;
-typedef struct cel_expr_Type { upb_Message UPB_PRIVATE(base); } cel_expr_Type;
-typedef struct cel_expr_Type_ListType { upb_Message UPB_PRIVATE(base); } cel_expr_Type_ListType;
-typedef struct cel_expr_Type_MapType { upb_Message UPB_PRIVATE(base); } cel_expr_Type_MapType;
-typedef struct cel_expr_Type_FunctionType { upb_Message UPB_PRIVATE(base); } cel_expr_Type_FunctionType;
-typedef struct cel_expr_Type_AbstractType { upb_Message UPB_PRIVATE(base); } cel_expr_Type_AbstractType;
-typedef struct cel_expr_Decl { upb_Message UPB_PRIVATE(base); } cel_expr_Decl;
-typedef struct cel_expr_Decl_IdentDecl { upb_Message UPB_PRIVATE(base); } cel_expr_Decl_IdentDecl;
-typedef struct cel_expr_Decl_FunctionDecl { upb_Message UPB_PRIVATE(base); } cel_expr_Decl_FunctionDecl;
-typedef struct cel_expr_Decl_FunctionDecl_Overload { upb_Message UPB_PRIVATE(base); } cel_expr_Decl_FunctionDecl_Overload;
-typedef struct cel_expr_Reference { upb_Message UPB_PRIVATE(base); } cel_expr_Reference;
+typedef struct cel_expr_Type {
+  upb_Message UPB_PRIVATE(base);
+} cel_expr_Type;
+
+typedef struct cel_expr_Type_ListType {
+  upb_Message UPB_PRIVATE(base);
+} cel_expr_Type_ListType;
+
+typedef struct cel_expr_Type_MapType {
+  upb_Message UPB_PRIVATE(base);
+} cel_expr_Type_MapType;
+
+typedef struct cel_expr_Type_FunctionType {
+  upb_Message UPB_PRIVATE(base);
+} cel_expr_Type_FunctionType;
+
+typedef struct cel_expr_Type_AbstractType {
+  upb_Message UPB_PRIVATE(base);
+} cel_expr_Type_AbstractType;
+
+typedef struct cel_expr_Decl {
+  upb_Message UPB_PRIVATE(base);
+} cel_expr_Decl;
+
+typedef struct cel_expr_Decl_IdentDecl {
+  upb_Message UPB_PRIVATE(base);
+} cel_expr_Decl_IdentDecl;
+
+typedef struct cel_expr_Decl_FunctionDecl {
+  upb_Message UPB_PRIVATE(base);
+} cel_expr_Decl_FunctionDecl;
+
+typedef struct cel_expr_Decl_FunctionDecl_Overload {
+  upb_Message UPB_PRIVATE(base);
+} cel_expr_Decl_FunctionDecl_Overload;
+
+typedef struct cel_expr_Reference {
+  upb_Message UPB_PRIVATE(base);
+} cel_expr_Reference;
+
 struct cel_expr_Constant;
 struct cel_expr_Expr;
 struct cel_expr_SourceInfo;
@@ -60,61 +90,70 @@ typedef enum {
 
 
 /* cel.expr.CheckedExpr */
-
 UPB_INLINE cel_expr_CheckedExpr* cel_expr_CheckedExpr_new(upb_Arena* arena) {
   return (cel_expr_CheckedExpr*)_upb_Message_New(&cel__expr__CheckedExpr_msg_init, arena);
 }
-UPB_INLINE cel_expr_CheckedExpr* cel_expr_CheckedExpr_parse(const char* buf, size_t size, upb_Arena* arena) {
+UPB_INLINE cel_expr_CheckedExpr* cel_expr_CheckedExpr_parse(const char* buf, size_t size,
+                                        upb_Arena* arena) {
   cel_expr_CheckedExpr* ret = cel_expr_CheckedExpr_new(arena);
   if (!ret) return NULL;
-  if (upb_Decode(buf, size, UPB_UPCAST(ret), &cel__expr__CheckedExpr_msg_init, NULL, 0, arena) !=
-      kUpb_DecodeStatus_Ok) {
-    return NULL;
-  }
-  return ret;
-}
-UPB_INLINE cel_expr_CheckedExpr* cel_expr_CheckedExpr_parse_ex(const char* buf, size_t size,
-                           const upb_ExtensionRegistry* extreg,
-                           int options, upb_Arena* arena) {
-  cel_expr_CheckedExpr* ret = cel_expr_CheckedExpr_new(arena);
-  if (!ret) return NULL;
-  if (upb_Decode(buf, size, UPB_UPCAST(ret), &cel__expr__CheckedExpr_msg_init, extreg, options,
+  if (upb_Decode(buf, size, UPB_UPCAST(ret), &cel__expr__CheckedExpr_msg_init, NULL, 0,
                  arena) != kUpb_DecodeStatus_Ok) {
     return NULL;
   }
   return ret;
 }
-UPB_INLINE char* cel_expr_CheckedExpr_serialize(const cel_expr_CheckedExpr* msg, upb_Arena* arena, size_t* len) {
+UPB_INLINE cel_expr_CheckedExpr* cel_expr_CheckedExpr_parse_ex(
+    const char* buf, size_t size, const upb_ExtensionRegistry* extreg,
+    int options, upb_Arena* arena) {
+  cel_expr_CheckedExpr* ret = cel_expr_CheckedExpr_new(arena);
+  if (!ret) return NULL;
+  if (upb_Decode(buf, size, UPB_UPCAST(ret), &cel__expr__CheckedExpr_msg_init, extreg,
+                 options, arena) != kUpb_DecodeStatus_Ok) {
+    return NULL;
+  }
+  return ret;
+}
+UPB_INLINE char* cel_expr_CheckedExpr_serialize(const cel_expr_CheckedExpr* msg,
+                                      upb_Arena* arena, size_t* len) {
   char* ptr;
   (void)upb_Encode(UPB_UPCAST(msg), &cel__expr__CheckedExpr_msg_init, 0, arena, &ptr, len);
   return ptr;
 }
-UPB_INLINE char* cel_expr_CheckedExpr_serialize_ex(const cel_expr_CheckedExpr* msg, int options,
-                                 upb_Arena* arena, size_t* len) {
+UPB_INLINE char* cel_expr_CheckedExpr_serialize_ex(const cel_expr_CheckedExpr* msg,
+                                         int options, upb_Arena* arena,
+                                         size_t* len) {
   char* ptr;
   (void)upb_Encode(UPB_UPCAST(msg), &cel__expr__CheckedExpr_msg_init, options, arena, &ptr, len);
   return ptr;
 }
 UPB_INLINE void cel_expr_CheckedExpr_clear_reference_map(cel_expr_CheckedExpr* msg) {
-  const upb_MiniTableField field = {2, UPB_SIZE(12, 32), 0, 0, 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {2, UPB_SIZE(12, 32), 0, UPB_SIZE(15, 16), 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE size_t cel_expr_CheckedExpr_reference_map_size(const cel_expr_CheckedExpr* msg) {
-  const upb_MiniTableField field = {2, UPB_SIZE(12, 32), 0, 0, 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {2, UPB_SIZE(12, 32), 0, UPB_SIZE(15, 16), 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&cel__expr__CheckedExpr__ReferenceMapEntry_msg_init);
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&cel__expr__Reference_msg_init);
   const upb_Map* map = upb_Message_GetMap(UPB_UPCAST(msg), &field);
   return map ? _upb_Map_Size(map) : 0;
 }
-UPB_INLINE bool cel_expr_CheckedExpr_reference_map_get(const cel_expr_CheckedExpr* msg, int64_t key, cel_expr_Reference** val) {
-  const upb_MiniTableField field = {2, UPB_SIZE(12, 32), 0, 0, 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+
+UPB_INLINE bool cel_expr_CheckedExpr_reference_map_get(const cel_expr_CheckedExpr* msg,
+                                      int64_t key, cel_expr_Reference** val) {
+  const upb_MiniTableField field = {2, UPB_SIZE(12, 32), 0, UPB_SIZE(15, 16), 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&cel__expr__CheckedExpr__ReferenceMapEntry_msg_init);
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&cel__expr__Reference_msg_init);
   const upb_Map* map = upb_Message_GetMap(UPB_UPCAST(msg), &field);
   if (!map) return false;
-  return _upb_Map_Get(map, &key, sizeof(key), val, sizeof(*val));
+  return _upb_Map_Get(map, &key, sizeof(int64_t), val, sizeof(cel_expr_Reference*));
 }
-UPB_INLINE bool cel_expr_CheckedExpr_reference_map_next(const cel_expr_CheckedExpr* msg, int64_t* key, const cel_expr_Reference** val,
-                           size_t* iter) {
-  const upb_MiniTableField field = {2, UPB_SIZE(12, 32), 0, 0, 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+
+UPB_INLINE bool cel_expr_CheckedExpr_reference_map_next(const cel_expr_CheckedExpr* msg,
+                                       int64_t* key,
+                                       const cel_expr_Reference** val,
+                                       size_t* iter) {
+  const upb_MiniTableField field = {2, UPB_SIZE(12, 32), 0, UPB_SIZE(15, 16), 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&cel__expr__CheckedExpr__ReferenceMapEntry_msg_init);
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&cel__expr__Reference_msg_init);
   const upb_Map* map = upb_Message_GetMap(UPB_UPCAST(msg), &field);
@@ -126,38 +165,51 @@ UPB_INLINE bool cel_expr_CheckedExpr_reference_map_next(const cel_expr_CheckedEx
   memcpy(val, &v, sizeof(*val));
   return true;
 }
+
+// and ~ a upb_Map for mutable.
+//
 UPB_INLINE const upb_Map* _cel_expr_CheckedExpr_reference_map_upb_map(cel_expr_CheckedExpr* msg) {
-  const upb_MiniTableField field = {2, UPB_SIZE(12, 32), 0, 0, 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {2, UPB_SIZE(12, 32), 0, UPB_SIZE(15, 16), 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&cel__expr__CheckedExpr__ReferenceMapEntry_msg_init);
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&cel__expr__Reference_msg_init);
   return upb_Message_GetMap(UPB_UPCAST(msg), &field);
 }
-UPB_INLINE upb_Map* _cel_expr_CheckedExpr_reference_map_mutable_upb_map(cel_expr_CheckedExpr* msg, upb_Arena* a) {
-  const upb_MiniTableField field = {2, UPB_SIZE(12, 32), 0, 0, 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+
+UPB_INLINE upb_Map* _cel_expr_CheckedExpr_reference_map_mutable_upb_map(
+    cel_expr_CheckedExpr* msg, upb_Arena* a) {
+  const upb_MiniTableField field = {2, UPB_SIZE(12, 32), 0, UPB_SIZE(15, 16), 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&cel__expr__CheckedExpr__ReferenceMapEntry_msg_init);
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&cel__expr__Reference_msg_init);
-  return _upb_Message_GetOrCreateMutableMap(UPB_UPCAST(msg), &field, sizeof(int64_t), sizeof(cel_expr_Reference*), a);
+  return _upb_Message_GetOrCreateMutableMap(UPB_UPCAST(msg), &field,
+                                            sizeof(int64_t), sizeof(cel_expr_Reference*), a);
 }
 UPB_INLINE void cel_expr_CheckedExpr_clear_type_map(cel_expr_CheckedExpr* msg) {
-  const upb_MiniTableField field = {3, UPB_SIZE(16, 40), 0, 1, 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {3, UPB_SIZE(16, 40), 0, UPB_SIZE(13, 15), 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE size_t cel_expr_CheckedExpr_type_map_size(const cel_expr_CheckedExpr* msg) {
-  const upb_MiniTableField field = {3, UPB_SIZE(16, 40), 0, 1, 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {3, UPB_SIZE(16, 40), 0, UPB_SIZE(13, 15), 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&cel__expr__CheckedExpr__TypeMapEntry_msg_init);
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&cel__expr__Type_msg_init);
   const upb_Map* map = upb_Message_GetMap(UPB_UPCAST(msg), &field);
   return map ? _upb_Map_Size(map) : 0;
 }
-UPB_INLINE bool cel_expr_CheckedExpr_type_map_get(const cel_expr_CheckedExpr* msg, int64_t key, cel_expr_Type** val) {
-  const upb_MiniTableField field = {3, UPB_SIZE(16, 40), 0, 1, 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+
+UPB_INLINE bool cel_expr_CheckedExpr_type_map_get(const cel_expr_CheckedExpr* msg,
+                                      int64_t key, cel_expr_Type** val) {
+  const upb_MiniTableField field = {3, UPB_SIZE(16, 40), 0, UPB_SIZE(13, 15), 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&cel__expr__CheckedExpr__TypeMapEntry_msg_init);
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&cel__expr__Type_msg_init);
   const upb_Map* map = upb_Message_GetMap(UPB_UPCAST(msg), &field);
   if (!map) return false;
-  return _upb_Map_Get(map, &key, sizeof(key), val, sizeof(*val));
+  return _upb_Map_Get(map, &key, sizeof(int64_t), val, sizeof(cel_expr_Type*));
 }
-UPB_INLINE bool cel_expr_CheckedExpr_type_map_next(const cel_expr_CheckedExpr* msg, int64_t* key, const cel_expr_Type** val,
-                           size_t* iter) {
-  const upb_MiniTableField field = {3, UPB_SIZE(16, 40), 0, 1, 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+
+UPB_INLINE bool cel_expr_CheckedExpr_type_map_next(const cel_expr_CheckedExpr* msg,
+                                       int64_t* key,
+                                       const cel_expr_Type** val,
+                                       size_t* iter) {
+  const upb_MiniTableField field = {3, UPB_SIZE(16, 40), 0, UPB_SIZE(13, 15), 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&cel__expr__CheckedExpr__TypeMapEntry_msg_init);
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&cel__expr__Type_msg_init);
   const upb_Map* map = upb_Message_GetMap(UPB_UPCAST(msg), &field);
@@ -169,50 +221,56 @@ UPB_INLINE bool cel_expr_CheckedExpr_type_map_next(const cel_expr_CheckedExpr* m
   memcpy(val, &v, sizeof(*val));
   return true;
 }
+
+// and ~ a upb_Map for mutable.
+//
 UPB_INLINE const upb_Map* _cel_expr_CheckedExpr_type_map_upb_map(cel_expr_CheckedExpr* msg) {
-  const upb_MiniTableField field = {3, UPB_SIZE(16, 40), 0, 1, 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {3, UPB_SIZE(16, 40), 0, UPB_SIZE(13, 15), 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&cel__expr__CheckedExpr__TypeMapEntry_msg_init);
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&cel__expr__Type_msg_init);
   return upb_Message_GetMap(UPB_UPCAST(msg), &field);
 }
-UPB_INLINE upb_Map* _cel_expr_CheckedExpr_type_map_mutable_upb_map(cel_expr_CheckedExpr* msg, upb_Arena* a) {
-  const upb_MiniTableField field = {3, UPB_SIZE(16, 40), 0, 1, 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+
+UPB_INLINE upb_Map* _cel_expr_CheckedExpr_type_map_mutable_upb_map(
+    cel_expr_CheckedExpr* msg, upb_Arena* a) {
+  const upb_MiniTableField field = {3, UPB_SIZE(16, 40), 0, UPB_SIZE(13, 15), 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&cel__expr__CheckedExpr__TypeMapEntry_msg_init);
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&cel__expr__Type_msg_init);
-  return _upb_Message_GetOrCreateMutableMap(UPB_UPCAST(msg), &field, sizeof(int64_t), sizeof(cel_expr_Type*), a);
+  return _upb_Message_GetOrCreateMutableMap(UPB_UPCAST(msg), &field,
+                                            sizeof(int64_t), sizeof(cel_expr_Type*), a);
 }
 UPB_INLINE void cel_expr_CheckedExpr_clear_expr(cel_expr_CheckedExpr* msg) {
-  const upb_MiniTableField field = {4, UPB_SIZE(20, 48), 64, 2, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {4, UPB_SIZE(20, 48), 64, UPB_SIZE(11, 14), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE const struct cel_expr_Expr* cel_expr_CheckedExpr_expr(const cel_expr_CheckedExpr* msg) {
   const struct cel_expr_Expr* default_val = NULL;
   const struct cel_expr_Expr* ret;
-  const upb_MiniTableField field = {4, UPB_SIZE(20, 48), 64, 2, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {4, UPB_SIZE(20, 48), 64, UPB_SIZE(11, 14), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&cel__expr__Expr_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
 }
 UPB_INLINE bool cel_expr_CheckedExpr_has_expr(const cel_expr_CheckedExpr* msg) {
-  const upb_MiniTableField field = {4, UPB_SIZE(20, 48), 64, 2, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {4, UPB_SIZE(20, 48), 64, UPB_SIZE(11, 14), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   return upb_Message_HasBaseField(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE void cel_expr_CheckedExpr_clear_source_info(cel_expr_CheckedExpr* msg) {
-  const upb_MiniTableField field = {5, UPB_SIZE(24, 56), 65, 3, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {5, UPB_SIZE(24, 56), 65, UPB_SIZE(9, 13), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE const struct cel_expr_SourceInfo* cel_expr_CheckedExpr_source_info(const cel_expr_CheckedExpr* msg) {
   const struct cel_expr_SourceInfo* default_val = NULL;
   const struct cel_expr_SourceInfo* ret;
-  const upb_MiniTableField field = {5, UPB_SIZE(24, 56), 65, 3, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {5, UPB_SIZE(24, 56), 65, UPB_SIZE(9, 13), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&cel__expr__SourceInfo_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
 }
 UPB_INLINE bool cel_expr_CheckedExpr_has_source_info(const cel_expr_CheckedExpr* msg) {
-  const upb_MiniTableField field = {5, UPB_SIZE(24, 56), 65, 3, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {5, UPB_SIZE(24, 56), 65, UPB_SIZE(9, 13), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   return upb_Message_HasBaseField(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE void cel_expr_CheckedExpr_clear_expr_version(cel_expr_CheckedExpr* msg) {
@@ -229,53 +287,68 @@ UPB_INLINE upb_StringView cel_expr_CheckedExpr_expr_version(const cel_expr_Check
 }
 
 UPB_INLINE void cel_expr_CheckedExpr_reference_map_clear(cel_expr_CheckedExpr* msg) {
-  const upb_MiniTableField field = {2, UPB_SIZE(12, 32), 0, 0, 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {2, UPB_SIZE(12, 32), 0, UPB_SIZE(15, 16), 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&cel__expr__CheckedExpr__ReferenceMapEntry_msg_init);
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&cel__expr__Reference_msg_init);
   upb_Map* map = (upb_Map*)upb_Message_GetMap(UPB_UPCAST(msg), &field);
   if (!map) return;
   _upb_Map_Clear(map);
 }
-UPB_INLINE bool cel_expr_CheckedExpr_reference_map_set(cel_expr_CheckedExpr* msg, int64_t key, cel_expr_Reference* val, upb_Arena* a) {
-  const upb_MiniTableField field = {2, UPB_SIZE(12, 32), 0, 0, 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+
+UPB_INLINE bool cel_expr_CheckedExpr_reference_map_set(cel_expr_CheckedExpr* msg, int64_t key,
+                                      cel_expr_Reference* val, upb_Arena* a) {
+  const upb_MiniTableField field = {2, UPB_SIZE(12, 32), 0, UPB_SIZE(15, 16), 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&cel__expr__CheckedExpr__ReferenceMapEntry_msg_init);
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&cel__expr__Reference_msg_init);
-  upb_Map* map = _upb_Message_GetOrCreateMutableMap(UPB_UPCAST(msg),
-                                                    &field, sizeof(key), sizeof(val), a);
+  upb_Map* map = _upb_Message_GetOrCreateMutableMap(
+      UPB_UPCAST(msg), &field, sizeof(key), sizeof(val), a);
   return _upb_Map_Insert(map, &key, sizeof(key), &val, sizeof(val), a) !=
          kUpb_MapInsertStatus_OutOfMemory;
 }
+
 UPB_INLINE bool cel_expr_CheckedExpr_reference_map_delete(cel_expr_CheckedExpr* msg, int64_t key) {
-  const upb_MiniTableField field = {2, UPB_SIZE(12, 32), 0, 0, 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {2, UPB_SIZE(12, 32), 0, UPB_SIZE(15, 16), 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&cel__expr__CheckedExpr__ReferenceMapEntry_msg_init);
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&cel__expr__Reference_msg_init);
   upb_Map* map = (upb_Map*)upb_Message_GetMap(UPB_UPCAST(msg), &field);
   if (!map) return false;
   return _upb_Map_Delete(map, &key, sizeof(key), NULL);
 }
 UPB_INLINE void cel_expr_CheckedExpr_type_map_clear(cel_expr_CheckedExpr* msg) {
-  const upb_MiniTableField field = {3, UPB_SIZE(16, 40), 0, 1, 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {3, UPB_SIZE(16, 40), 0, UPB_SIZE(13, 15), 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&cel__expr__CheckedExpr__TypeMapEntry_msg_init);
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&cel__expr__Type_msg_init);
   upb_Map* map = (upb_Map*)upb_Message_GetMap(UPB_UPCAST(msg), &field);
   if (!map) return;
   _upb_Map_Clear(map);
 }
-UPB_INLINE bool cel_expr_CheckedExpr_type_map_set(cel_expr_CheckedExpr* msg, int64_t key, cel_expr_Type* val, upb_Arena* a) {
-  const upb_MiniTableField field = {3, UPB_SIZE(16, 40), 0, 1, 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+
+UPB_INLINE bool cel_expr_CheckedExpr_type_map_set(cel_expr_CheckedExpr* msg, int64_t key,
+                                      cel_expr_Type* val, upb_Arena* a) {
+  const upb_MiniTableField field = {3, UPB_SIZE(16, 40), 0, UPB_SIZE(13, 15), 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&cel__expr__CheckedExpr__TypeMapEntry_msg_init);
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&cel__expr__Type_msg_init);
-  upb_Map* map = _upb_Message_GetOrCreateMutableMap(UPB_UPCAST(msg),
-                                                    &field, sizeof(key), sizeof(val), a);
+  upb_Map* map = _upb_Message_GetOrCreateMutableMap(
+      UPB_UPCAST(msg), &field, sizeof(key), sizeof(val), a);
   return _upb_Map_Insert(map, &key, sizeof(key), &val, sizeof(val), a) !=
          kUpb_MapInsertStatus_OutOfMemory;
 }
+
 UPB_INLINE bool cel_expr_CheckedExpr_type_map_delete(cel_expr_CheckedExpr* msg, int64_t key) {
-  const upb_MiniTableField field = {3, UPB_SIZE(16, 40), 0, 1, 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {3, UPB_SIZE(16, 40), 0, UPB_SIZE(13, 15), 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&cel__expr__CheckedExpr__TypeMapEntry_msg_init);
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&cel__expr__Type_msg_init);
   upb_Map* map = (upb_Map*)upb_Message_GetMap(UPB_UPCAST(msg), &field);
   if (!map) return false;
   return _upb_Map_Delete(map, &key, sizeof(key), NULL);
 }
-UPB_INLINE void cel_expr_CheckedExpr_set_expr(cel_expr_CheckedExpr *msg, struct cel_expr_Expr* value) {
-  const upb_MiniTableField field = {4, UPB_SIZE(20, 48), 64, 2, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+UPB_INLINE void cel_expr_CheckedExpr_set_expr(cel_expr_CheckedExpr* msg, struct cel_expr_Expr* value) {
+  const upb_MiniTableField field = {4, UPB_SIZE(20, 48), 64, UPB_SIZE(11, 14), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&cel__expr__Expr_msg_init);
-  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message*)msg, &field, &value);
 }
-UPB_INLINE struct cel_expr_Expr* cel_expr_CheckedExpr_mutable_expr(cel_expr_CheckedExpr* msg, upb_Arena* arena) {
+UPB_INLINE struct cel_expr_Expr* cel_expr_CheckedExpr_mutable_expr(
+    cel_expr_CheckedExpr* msg, upb_Arena* arena) {
   struct cel_expr_Expr* sub = (struct cel_expr_Expr*)cel_expr_CheckedExpr_expr(msg);
   if (sub == NULL) {
     sub = (struct cel_expr_Expr*)_upb_Message_New(&cel__expr__Expr_msg_init, arena);
@@ -283,12 +356,13 @@ UPB_INLINE struct cel_expr_Expr* cel_expr_CheckedExpr_mutable_expr(cel_expr_Chec
   }
   return sub;
 }
-UPB_INLINE void cel_expr_CheckedExpr_set_source_info(cel_expr_CheckedExpr *msg, struct cel_expr_SourceInfo* value) {
-  const upb_MiniTableField field = {5, UPB_SIZE(24, 56), 65, 3, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+UPB_INLINE void cel_expr_CheckedExpr_set_source_info(cel_expr_CheckedExpr* msg, struct cel_expr_SourceInfo* value) {
+  const upb_MiniTableField field = {5, UPB_SIZE(24, 56), 65, UPB_SIZE(9, 13), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&cel__expr__SourceInfo_msg_init);
-  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message*)msg, &field, &value);
 }
-UPB_INLINE struct cel_expr_SourceInfo* cel_expr_CheckedExpr_mutable_source_info(cel_expr_CheckedExpr* msg, upb_Arena* arena) {
+UPB_INLINE struct cel_expr_SourceInfo* cel_expr_CheckedExpr_mutable_source_info(
+    cel_expr_CheckedExpr* msg, upb_Arena* arena) {
   struct cel_expr_SourceInfo* sub = (struct cel_expr_SourceInfo*)cel_expr_CheckedExpr_source_info(msg);
   if (sub == NULL) {
     sub = (struct cel_expr_SourceInfo*)_upb_Message_New(&cel__expr__SourceInfo_msg_init, arena);
@@ -296,43 +370,45 @@ UPB_INLINE struct cel_expr_SourceInfo* cel_expr_CheckedExpr_mutable_source_info(
   }
   return sub;
 }
-UPB_INLINE void cel_expr_CheckedExpr_set_expr_version(cel_expr_CheckedExpr *msg, upb_StringView value) {
+UPB_INLINE void cel_expr_CheckedExpr_set_expr_version(cel_expr_CheckedExpr* msg, upb_StringView value) {
   const upb_MiniTableField field = {6, UPB_SIZE(28, 16), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
-  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message*)msg, &field, &value);
 }
 
 /* cel.expr.Type */
-
 UPB_INLINE cel_expr_Type* cel_expr_Type_new(upb_Arena* arena) {
   return (cel_expr_Type*)_upb_Message_New(&cel__expr__Type_msg_init, arena);
 }
-UPB_INLINE cel_expr_Type* cel_expr_Type_parse(const char* buf, size_t size, upb_Arena* arena) {
+UPB_INLINE cel_expr_Type* cel_expr_Type_parse(const char* buf, size_t size,
+                                        upb_Arena* arena) {
   cel_expr_Type* ret = cel_expr_Type_new(arena);
   if (!ret) return NULL;
-  if (upb_Decode(buf, size, UPB_UPCAST(ret), &cel__expr__Type_msg_init, NULL, 0, arena) !=
-      kUpb_DecodeStatus_Ok) {
-    return NULL;
-  }
-  return ret;
-}
-UPB_INLINE cel_expr_Type* cel_expr_Type_parse_ex(const char* buf, size_t size,
-                           const upb_ExtensionRegistry* extreg,
-                           int options, upb_Arena* arena) {
-  cel_expr_Type* ret = cel_expr_Type_new(arena);
-  if (!ret) return NULL;
-  if (upb_Decode(buf, size, UPB_UPCAST(ret), &cel__expr__Type_msg_init, extreg, options,
+  if (upb_Decode(buf, size, UPB_UPCAST(ret), &cel__expr__Type_msg_init, NULL, 0,
                  arena) != kUpb_DecodeStatus_Ok) {
     return NULL;
   }
   return ret;
 }
-UPB_INLINE char* cel_expr_Type_serialize(const cel_expr_Type* msg, upb_Arena* arena, size_t* len) {
+UPB_INLINE cel_expr_Type* cel_expr_Type_parse_ex(
+    const char* buf, size_t size, const upb_ExtensionRegistry* extreg,
+    int options, upb_Arena* arena) {
+  cel_expr_Type* ret = cel_expr_Type_new(arena);
+  if (!ret) return NULL;
+  if (upb_Decode(buf, size, UPB_UPCAST(ret), &cel__expr__Type_msg_init, extreg,
+                 options, arena) != kUpb_DecodeStatus_Ok) {
+    return NULL;
+  }
+  return ret;
+}
+UPB_INLINE char* cel_expr_Type_serialize(const cel_expr_Type* msg,
+                                      upb_Arena* arena, size_t* len) {
   char* ptr;
   (void)upb_Encode(UPB_UPCAST(msg), &cel__expr__Type_msg_init, 0, arena, &ptr, len);
   return ptr;
 }
-UPB_INLINE char* cel_expr_Type_serialize_ex(const cel_expr_Type* msg, int options,
-                                 upb_Arena* arena, size_t* len) {
+UPB_INLINE char* cel_expr_Type_serialize_ex(const cel_expr_Type* msg,
+                                         int options, upb_Arena* arena,
+                                         size_t* len) {
   char* ptr;
   (void)upb_Encode(UPB_UPCAST(msg), &cel__expr__Type_msg_init, options, arena, &ptr, len);
   return ptr;
@@ -353,30 +429,32 @@ typedef enum {
   cel_expr_Type_type_kind_abstract_type = 14,
   cel_expr_Type_type_kind_NOT_SET = 0
 } cel_expr_Type_type_kind_oneofcases;
-UPB_INLINE cel_expr_Type_type_kind_oneofcases cel_expr_Type_type_kind_case(const cel_expr_Type* msg) {
-  const upb_MiniTableField field = {1, UPB_SIZE(12, 16), -9, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+
+UPB_INLINE cel_expr_Type_type_kind_oneofcases
+cel_expr_Type_type_kind_case(const cel_expr_Type* msg) {
+  const upb_MiniTableField field = {1, UPB_SIZE(12, 16), -9, UPB_SIZE(39, 40), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   return (cel_expr_Type_type_kind_oneofcases)upb_Message_WhichOneofFieldNumber(
       UPB_UPCAST(msg), &field);
 }
 UPB_INLINE void cel_expr_Type_clear_type_kind(cel_expr_Type* msg) {
-  const upb_MiniTableField field = {1, UPB_SIZE(12, 16), -9, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {1, UPB_SIZE(12, 16), -9, UPB_SIZE(39, 40), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   upb_Message_ClearOneof(UPB_UPCAST(msg), &cel__expr__Type_msg_init, &field);
 }
 UPB_INLINE void cel_expr_Type_clear_dyn(cel_expr_Type* msg) {
-  const upb_MiniTableField field = {1, UPB_SIZE(12, 16), -9, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {1, UPB_SIZE(12, 16), -9, UPB_SIZE(39, 40), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE const struct google_protobuf_Empty* cel_expr_Type_dyn(const cel_expr_Type* msg) {
   const struct google_protobuf_Empty* default_val = NULL;
   const struct google_protobuf_Empty* ret;
-  const upb_MiniTableField field = {1, UPB_SIZE(12, 16), -9, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {1, UPB_SIZE(12, 16), -9, UPB_SIZE(39, 40), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&google__protobuf__Empty_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
 }
 UPB_INLINE bool cel_expr_Type_has_dyn(const cel_expr_Type* msg) {
-  const upb_MiniTableField field = {1, UPB_SIZE(12, 16), -9, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {1, UPB_SIZE(12, 16), -9, UPB_SIZE(39, 40), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   return upb_Message_HasBaseField(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE void cel_expr_Type_clear_null(cel_expr_Type* msg) {
@@ -444,54 +522,54 @@ UPB_INLINE bool cel_expr_Type_has_well_known(const cel_expr_Type* msg) {
   return upb_Message_HasBaseField(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE void cel_expr_Type_clear_list_type(cel_expr_Type* msg) {
-  const upb_MiniTableField field = {6, UPB_SIZE(12, 16), -9, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {6, UPB_SIZE(12, 16), -9, UPB_SIZE(25, 27), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE const cel_expr_Type_ListType* cel_expr_Type_list_type(const cel_expr_Type* msg) {
   const cel_expr_Type_ListType* default_val = NULL;
   const cel_expr_Type_ListType* ret;
-  const upb_MiniTableField field = {6, UPB_SIZE(12, 16), -9, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {6, UPB_SIZE(12, 16), -9, UPB_SIZE(25, 27), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&cel__expr__Type__ListType_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
 }
 UPB_INLINE bool cel_expr_Type_has_list_type(const cel_expr_Type* msg) {
-  const upb_MiniTableField field = {6, UPB_SIZE(12, 16), -9, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {6, UPB_SIZE(12, 16), -9, UPB_SIZE(25, 27), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   return upb_Message_HasBaseField(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE void cel_expr_Type_clear_map_type(cel_expr_Type* msg) {
-  const upb_MiniTableField field = {7, UPB_SIZE(12, 16), -9, 2, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {7, UPB_SIZE(12, 16), -9, UPB_SIZE(23, 26), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE const cel_expr_Type_MapType* cel_expr_Type_map_type(const cel_expr_Type* msg) {
   const cel_expr_Type_MapType* default_val = NULL;
   const cel_expr_Type_MapType* ret;
-  const upb_MiniTableField field = {7, UPB_SIZE(12, 16), -9, 2, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {7, UPB_SIZE(12, 16), -9, UPB_SIZE(23, 26), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&cel__expr__Type__MapType_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
 }
 UPB_INLINE bool cel_expr_Type_has_map_type(const cel_expr_Type* msg) {
-  const upb_MiniTableField field = {7, UPB_SIZE(12, 16), -9, 2, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {7, UPB_SIZE(12, 16), -9, UPB_SIZE(23, 26), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   return upb_Message_HasBaseField(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE void cel_expr_Type_clear_function(cel_expr_Type* msg) {
-  const upb_MiniTableField field = {8, UPB_SIZE(12, 16), -9, 3, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {8, UPB_SIZE(12, 16), -9, UPB_SIZE(21, 25), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE const cel_expr_Type_FunctionType* cel_expr_Type_function(const cel_expr_Type* msg) {
   const cel_expr_Type_FunctionType* default_val = NULL;
   const cel_expr_Type_FunctionType* ret;
-  const upb_MiniTableField field = {8, UPB_SIZE(12, 16), -9, 3, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {8, UPB_SIZE(12, 16), -9, UPB_SIZE(21, 25), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&cel__expr__Type__FunctionType_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
 }
 UPB_INLINE bool cel_expr_Type_has_function(const cel_expr_Type* msg) {
-  const upb_MiniTableField field = {8, UPB_SIZE(12, 16), -9, 3, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {8, UPB_SIZE(12, 16), -9, UPB_SIZE(21, 25), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   return upb_Message_HasBaseField(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE void cel_expr_Type_clear_message_type(cel_expr_Type* msg) {
@@ -527,63 +605,64 @@ UPB_INLINE bool cel_expr_Type_has_type_param(const cel_expr_Type* msg) {
   return upb_Message_HasBaseField(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE void cel_expr_Type_clear_type(cel_expr_Type* msg) {
-  const upb_MiniTableField field = {11, UPB_SIZE(12, 16), -9, 4, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {11, UPB_SIZE(12, 16), -9, UPB_SIZE(13, 18), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE const cel_expr_Type* cel_expr_Type_type(const cel_expr_Type* msg) {
   const cel_expr_Type* default_val = NULL;
   const cel_expr_Type* ret;
-  const upb_MiniTableField field = {11, UPB_SIZE(12, 16), -9, 4, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {11, UPB_SIZE(12, 16), -9, UPB_SIZE(13, 18), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&cel__expr__Type_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
 }
 UPB_INLINE bool cel_expr_Type_has_type(const cel_expr_Type* msg) {
-  const upb_MiniTableField field = {11, UPB_SIZE(12, 16), -9, 4, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {11, UPB_SIZE(12, 16), -9, UPB_SIZE(13, 18), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   return upb_Message_HasBaseField(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE void cel_expr_Type_clear_error(cel_expr_Type* msg) {
-  const upb_MiniTableField field = {12, UPB_SIZE(12, 16), -9, 5, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {12, UPB_SIZE(12, 16), -9, UPB_SIZE(11, 17), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE const struct google_protobuf_Empty* cel_expr_Type_error(const cel_expr_Type* msg) {
   const struct google_protobuf_Empty* default_val = NULL;
   const struct google_protobuf_Empty* ret;
-  const upb_MiniTableField field = {12, UPB_SIZE(12, 16), -9, 5, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {12, UPB_SIZE(12, 16), -9, UPB_SIZE(11, 17), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&google__protobuf__Empty_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
 }
 UPB_INLINE bool cel_expr_Type_has_error(const cel_expr_Type* msg) {
-  const upb_MiniTableField field = {12, UPB_SIZE(12, 16), -9, 5, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {12, UPB_SIZE(12, 16), -9, UPB_SIZE(11, 17), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   return upb_Message_HasBaseField(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE void cel_expr_Type_clear_abstract_type(cel_expr_Type* msg) {
-  const upb_MiniTableField field = {14, UPB_SIZE(12, 16), -9, 6, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {14, UPB_SIZE(12, 16), -9, UPB_SIZE(9, 16), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE const cel_expr_Type_AbstractType* cel_expr_Type_abstract_type(const cel_expr_Type* msg) {
   const cel_expr_Type_AbstractType* default_val = NULL;
   const cel_expr_Type_AbstractType* ret;
-  const upb_MiniTableField field = {14, UPB_SIZE(12, 16), -9, 6, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {14, UPB_SIZE(12, 16), -9, UPB_SIZE(9, 16), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&cel__expr__Type__AbstractType_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
 }
 UPB_INLINE bool cel_expr_Type_has_abstract_type(const cel_expr_Type* msg) {
-  const upb_MiniTableField field = {14, UPB_SIZE(12, 16), -9, 6, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {14, UPB_SIZE(12, 16), -9, UPB_SIZE(9, 16), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   return upb_Message_HasBaseField(UPB_UPCAST(msg), &field);
 }
 
-UPB_INLINE void cel_expr_Type_set_dyn(cel_expr_Type *msg, struct google_protobuf_Empty* value) {
-  const upb_MiniTableField field = {1, UPB_SIZE(12, 16), -9, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+UPB_INLINE void cel_expr_Type_set_dyn(cel_expr_Type* msg, struct google_protobuf_Empty* value) {
+  const upb_MiniTableField field = {1, UPB_SIZE(12, 16), -9, UPB_SIZE(39, 40), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&google__protobuf__Empty_msg_init);
-  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message*)msg, &field, &value);
 }
-UPB_INLINE struct google_protobuf_Empty* cel_expr_Type_mutable_dyn(cel_expr_Type* msg, upb_Arena* arena) {
+UPB_INLINE struct google_protobuf_Empty* cel_expr_Type_mutable_dyn(
+    cel_expr_Type* msg, upb_Arena* arena) {
   struct google_protobuf_Empty* sub = (struct google_protobuf_Empty*)cel_expr_Type_dyn(msg);
   if (sub == NULL) {
     sub = (struct google_protobuf_Empty*)_upb_Message_New(&google__protobuf__Empty_msg_init, arena);
@@ -591,28 +670,29 @@ UPB_INLINE struct google_protobuf_Empty* cel_expr_Type_mutable_dyn(cel_expr_Type
   }
   return sub;
 }
-UPB_INLINE void cel_expr_Type_set_null(cel_expr_Type *msg, int32_t value) {
+UPB_INLINE void cel_expr_Type_set_null(cel_expr_Type* msg, int32_t value) {
   const upb_MiniTableField field = {2, UPB_SIZE(12, 16), -9, kUpb_NoSub, 5, (int)kUpb_FieldMode_Scalar | (int)kUpb_LabelFlags_IsAlternate | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
-  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message*)msg, &field, &value);
 }
-UPB_INLINE void cel_expr_Type_set_primitive(cel_expr_Type *msg, int32_t value) {
+UPB_INLINE void cel_expr_Type_set_primitive(cel_expr_Type* msg, int32_t value) {
   const upb_MiniTableField field = {3, UPB_SIZE(12, 16), -9, kUpb_NoSub, 5, (int)kUpb_FieldMode_Scalar | (int)kUpb_LabelFlags_IsAlternate | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
-  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message*)msg, &field, &value);
 }
-UPB_INLINE void cel_expr_Type_set_wrapper(cel_expr_Type *msg, int32_t value) {
+UPB_INLINE void cel_expr_Type_set_wrapper(cel_expr_Type* msg, int32_t value) {
   const upb_MiniTableField field = {4, UPB_SIZE(12, 16), -9, kUpb_NoSub, 5, (int)kUpb_FieldMode_Scalar | (int)kUpb_LabelFlags_IsAlternate | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
-  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message*)msg, &field, &value);
 }
-UPB_INLINE void cel_expr_Type_set_well_known(cel_expr_Type *msg, int32_t value) {
+UPB_INLINE void cel_expr_Type_set_well_known(cel_expr_Type* msg, int32_t value) {
   const upb_MiniTableField field = {5, UPB_SIZE(12, 16), -9, kUpb_NoSub, 5, (int)kUpb_FieldMode_Scalar | (int)kUpb_LabelFlags_IsAlternate | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
-  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message*)msg, &field, &value);
 }
-UPB_INLINE void cel_expr_Type_set_list_type(cel_expr_Type *msg, cel_expr_Type_ListType* value) {
-  const upb_MiniTableField field = {6, UPB_SIZE(12, 16), -9, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+UPB_INLINE void cel_expr_Type_set_list_type(cel_expr_Type* msg, cel_expr_Type_ListType* value) {
+  const upb_MiniTableField field = {6, UPB_SIZE(12, 16), -9, UPB_SIZE(25, 27), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&cel__expr__Type__ListType_msg_init);
-  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message*)msg, &field, &value);
 }
-UPB_INLINE struct cel_expr_Type_ListType* cel_expr_Type_mutable_list_type(cel_expr_Type* msg, upb_Arena* arena) {
+UPB_INLINE struct cel_expr_Type_ListType* cel_expr_Type_mutable_list_type(
+    cel_expr_Type* msg, upb_Arena* arena) {
   struct cel_expr_Type_ListType* sub = (struct cel_expr_Type_ListType*)cel_expr_Type_list_type(msg);
   if (sub == NULL) {
     sub = (struct cel_expr_Type_ListType*)_upb_Message_New(&cel__expr__Type__ListType_msg_init, arena);
@@ -620,12 +700,13 @@ UPB_INLINE struct cel_expr_Type_ListType* cel_expr_Type_mutable_list_type(cel_ex
   }
   return sub;
 }
-UPB_INLINE void cel_expr_Type_set_map_type(cel_expr_Type *msg, cel_expr_Type_MapType* value) {
-  const upb_MiniTableField field = {7, UPB_SIZE(12, 16), -9, 2, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+UPB_INLINE void cel_expr_Type_set_map_type(cel_expr_Type* msg, cel_expr_Type_MapType* value) {
+  const upb_MiniTableField field = {7, UPB_SIZE(12, 16), -9, UPB_SIZE(23, 26), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&cel__expr__Type__MapType_msg_init);
-  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message*)msg, &field, &value);
 }
-UPB_INLINE struct cel_expr_Type_MapType* cel_expr_Type_mutable_map_type(cel_expr_Type* msg, upb_Arena* arena) {
+UPB_INLINE struct cel_expr_Type_MapType* cel_expr_Type_mutable_map_type(
+    cel_expr_Type* msg, upb_Arena* arena) {
   struct cel_expr_Type_MapType* sub = (struct cel_expr_Type_MapType*)cel_expr_Type_map_type(msg);
   if (sub == NULL) {
     sub = (struct cel_expr_Type_MapType*)_upb_Message_New(&cel__expr__Type__MapType_msg_init, arena);
@@ -633,12 +714,13 @@ UPB_INLINE struct cel_expr_Type_MapType* cel_expr_Type_mutable_map_type(cel_expr
   }
   return sub;
 }
-UPB_INLINE void cel_expr_Type_set_function(cel_expr_Type *msg, cel_expr_Type_FunctionType* value) {
-  const upb_MiniTableField field = {8, UPB_SIZE(12, 16), -9, 3, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+UPB_INLINE void cel_expr_Type_set_function(cel_expr_Type* msg, cel_expr_Type_FunctionType* value) {
+  const upb_MiniTableField field = {8, UPB_SIZE(12, 16), -9, UPB_SIZE(21, 25), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&cel__expr__Type__FunctionType_msg_init);
-  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message*)msg, &field, &value);
 }
-UPB_INLINE struct cel_expr_Type_FunctionType* cel_expr_Type_mutable_function(cel_expr_Type* msg, upb_Arena* arena) {
+UPB_INLINE struct cel_expr_Type_FunctionType* cel_expr_Type_mutable_function(
+    cel_expr_Type* msg, upb_Arena* arena) {
   struct cel_expr_Type_FunctionType* sub = (struct cel_expr_Type_FunctionType*)cel_expr_Type_function(msg);
   if (sub == NULL) {
     sub = (struct cel_expr_Type_FunctionType*)_upb_Message_New(&cel__expr__Type__FunctionType_msg_init, arena);
@@ -646,20 +728,21 @@ UPB_INLINE struct cel_expr_Type_FunctionType* cel_expr_Type_mutable_function(cel
   }
   return sub;
 }
-UPB_INLINE void cel_expr_Type_set_message_type(cel_expr_Type *msg, upb_StringView value) {
+UPB_INLINE void cel_expr_Type_set_message_type(cel_expr_Type* msg, upb_StringView value) {
   const upb_MiniTableField field = {9, UPB_SIZE(12, 16), -9, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
-  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message*)msg, &field, &value);
 }
-UPB_INLINE void cel_expr_Type_set_type_param(cel_expr_Type *msg, upb_StringView value) {
+UPB_INLINE void cel_expr_Type_set_type_param(cel_expr_Type* msg, upb_StringView value) {
   const upb_MiniTableField field = {10, UPB_SIZE(12, 16), -9, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
-  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message*)msg, &field, &value);
 }
-UPB_INLINE void cel_expr_Type_set_type(cel_expr_Type *msg, cel_expr_Type* value) {
-  const upb_MiniTableField field = {11, UPB_SIZE(12, 16), -9, 4, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+UPB_INLINE void cel_expr_Type_set_type(cel_expr_Type* msg, cel_expr_Type* value) {
+  const upb_MiniTableField field = {11, UPB_SIZE(12, 16), -9, UPB_SIZE(13, 18), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&cel__expr__Type_msg_init);
-  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message*)msg, &field, &value);
 }
-UPB_INLINE struct cel_expr_Type* cel_expr_Type_mutable_type(cel_expr_Type* msg, upb_Arena* arena) {
+UPB_INLINE struct cel_expr_Type* cel_expr_Type_mutable_type(
+    cel_expr_Type* msg, upb_Arena* arena) {
   struct cel_expr_Type* sub = (struct cel_expr_Type*)cel_expr_Type_type(msg);
   if (sub == NULL) {
     sub = (struct cel_expr_Type*)_upb_Message_New(&cel__expr__Type_msg_init, arena);
@@ -667,12 +750,13 @@ UPB_INLINE struct cel_expr_Type* cel_expr_Type_mutable_type(cel_expr_Type* msg, 
   }
   return sub;
 }
-UPB_INLINE void cel_expr_Type_set_error(cel_expr_Type *msg, struct google_protobuf_Empty* value) {
-  const upb_MiniTableField field = {12, UPB_SIZE(12, 16), -9, 5, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+UPB_INLINE void cel_expr_Type_set_error(cel_expr_Type* msg, struct google_protobuf_Empty* value) {
+  const upb_MiniTableField field = {12, UPB_SIZE(12, 16), -9, UPB_SIZE(11, 17), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&google__protobuf__Empty_msg_init);
-  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message*)msg, &field, &value);
 }
-UPB_INLINE struct google_protobuf_Empty* cel_expr_Type_mutable_error(cel_expr_Type* msg, upb_Arena* arena) {
+UPB_INLINE struct google_protobuf_Empty* cel_expr_Type_mutable_error(
+    cel_expr_Type* msg, upb_Arena* arena) {
   struct google_protobuf_Empty* sub = (struct google_protobuf_Empty*)cel_expr_Type_error(msg);
   if (sub == NULL) {
     sub = (struct google_protobuf_Empty*)_upb_Message_New(&google__protobuf__Empty_msg_init, arena);
@@ -680,12 +764,13 @@ UPB_INLINE struct google_protobuf_Empty* cel_expr_Type_mutable_error(cel_expr_Ty
   }
   return sub;
 }
-UPB_INLINE void cel_expr_Type_set_abstract_type(cel_expr_Type *msg, cel_expr_Type_AbstractType* value) {
-  const upb_MiniTableField field = {14, UPB_SIZE(12, 16), -9, 6, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+UPB_INLINE void cel_expr_Type_set_abstract_type(cel_expr_Type* msg, cel_expr_Type_AbstractType* value) {
+  const upb_MiniTableField field = {14, UPB_SIZE(12, 16), -9, UPB_SIZE(9, 16), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&cel__expr__Type__AbstractType_msg_init);
-  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message*)msg, &field, &value);
 }
-UPB_INLINE struct cel_expr_Type_AbstractType* cel_expr_Type_mutable_abstract_type(cel_expr_Type* msg, upb_Arena* arena) {
+UPB_INLINE struct cel_expr_Type_AbstractType* cel_expr_Type_mutable_abstract_type(
+    cel_expr_Type* msg, upb_Arena* arena) {
   struct cel_expr_Type_AbstractType* sub = (struct cel_expr_Type_AbstractType*)cel_expr_Type_abstract_type(msg);
   if (sub == NULL) {
     sub = (struct cel_expr_Type_AbstractType*)_upb_Message_New(&cel__expr__Type__AbstractType_msg_init, arena);
@@ -695,65 +780,68 @@ UPB_INLINE struct cel_expr_Type_AbstractType* cel_expr_Type_mutable_abstract_typ
 }
 
 /* cel.expr.Type.ListType */
-
 UPB_INLINE cel_expr_Type_ListType* cel_expr_Type_ListType_new(upb_Arena* arena) {
   return (cel_expr_Type_ListType*)_upb_Message_New(&cel__expr__Type__ListType_msg_init, arena);
 }
-UPB_INLINE cel_expr_Type_ListType* cel_expr_Type_ListType_parse(const char* buf, size_t size, upb_Arena* arena) {
+UPB_INLINE cel_expr_Type_ListType* cel_expr_Type_ListType_parse(const char* buf, size_t size,
+                                        upb_Arena* arena) {
   cel_expr_Type_ListType* ret = cel_expr_Type_ListType_new(arena);
   if (!ret) return NULL;
-  if (upb_Decode(buf, size, UPB_UPCAST(ret), &cel__expr__Type__ListType_msg_init, NULL, 0, arena) !=
-      kUpb_DecodeStatus_Ok) {
-    return NULL;
-  }
-  return ret;
-}
-UPB_INLINE cel_expr_Type_ListType* cel_expr_Type_ListType_parse_ex(const char* buf, size_t size,
-                           const upb_ExtensionRegistry* extreg,
-                           int options, upb_Arena* arena) {
-  cel_expr_Type_ListType* ret = cel_expr_Type_ListType_new(arena);
-  if (!ret) return NULL;
-  if (upb_Decode(buf, size, UPB_UPCAST(ret), &cel__expr__Type__ListType_msg_init, extreg, options,
+  if (upb_Decode(buf, size, UPB_UPCAST(ret), &cel__expr__Type__ListType_msg_init, NULL, 0,
                  arena) != kUpb_DecodeStatus_Ok) {
     return NULL;
   }
   return ret;
 }
-UPB_INLINE char* cel_expr_Type_ListType_serialize(const cel_expr_Type_ListType* msg, upb_Arena* arena, size_t* len) {
+UPB_INLINE cel_expr_Type_ListType* cel_expr_Type_ListType_parse_ex(
+    const char* buf, size_t size, const upb_ExtensionRegistry* extreg,
+    int options, upb_Arena* arena) {
+  cel_expr_Type_ListType* ret = cel_expr_Type_ListType_new(arena);
+  if (!ret) return NULL;
+  if (upb_Decode(buf, size, UPB_UPCAST(ret), &cel__expr__Type__ListType_msg_init, extreg,
+                 options, arena) != kUpb_DecodeStatus_Ok) {
+    return NULL;
+  }
+  return ret;
+}
+UPB_INLINE char* cel_expr_Type_ListType_serialize(const cel_expr_Type_ListType* msg,
+                                      upb_Arena* arena, size_t* len) {
   char* ptr;
   (void)upb_Encode(UPB_UPCAST(msg), &cel__expr__Type__ListType_msg_init, 0, arena, &ptr, len);
   return ptr;
 }
-UPB_INLINE char* cel_expr_Type_ListType_serialize_ex(const cel_expr_Type_ListType* msg, int options,
-                                 upb_Arena* arena, size_t* len) {
+UPB_INLINE char* cel_expr_Type_ListType_serialize_ex(const cel_expr_Type_ListType* msg,
+                                         int options, upb_Arena* arena,
+                                         size_t* len) {
   char* ptr;
   (void)upb_Encode(UPB_UPCAST(msg), &cel__expr__Type__ListType_msg_init, options, arena, &ptr, len);
   return ptr;
 }
 UPB_INLINE void cel_expr_Type_ListType_clear_elem_type(cel_expr_Type_ListType* msg) {
-  const upb_MiniTableField field = {1, UPB_SIZE(12, 16), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {1, UPB_SIZE(12, 16), 64, UPB_SIZE(3, 4), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE const cel_expr_Type* cel_expr_Type_ListType_elem_type(const cel_expr_Type_ListType* msg) {
   const cel_expr_Type* default_val = NULL;
   const cel_expr_Type* ret;
-  const upb_MiniTableField field = {1, UPB_SIZE(12, 16), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {1, UPB_SIZE(12, 16), 64, UPB_SIZE(3, 4), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&cel__expr__Type_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
 }
 UPB_INLINE bool cel_expr_Type_ListType_has_elem_type(const cel_expr_Type_ListType* msg) {
-  const upb_MiniTableField field = {1, UPB_SIZE(12, 16), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {1, UPB_SIZE(12, 16), 64, UPB_SIZE(3, 4), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   return upb_Message_HasBaseField(UPB_UPCAST(msg), &field);
 }
 
-UPB_INLINE void cel_expr_Type_ListType_set_elem_type(cel_expr_Type_ListType *msg, cel_expr_Type* value) {
-  const upb_MiniTableField field = {1, UPB_SIZE(12, 16), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+UPB_INLINE void cel_expr_Type_ListType_set_elem_type(cel_expr_Type_ListType* msg, cel_expr_Type* value) {
+  const upb_MiniTableField field = {1, UPB_SIZE(12, 16), 64, UPB_SIZE(3, 4), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&cel__expr__Type_msg_init);
-  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message*)msg, &field, &value);
 }
-UPB_INLINE struct cel_expr_Type* cel_expr_Type_ListType_mutable_elem_type(cel_expr_Type_ListType* msg, upb_Arena* arena) {
+UPB_INLINE struct cel_expr_Type* cel_expr_Type_ListType_mutable_elem_type(
+    cel_expr_Type_ListType* msg, upb_Arena* arena) {
   struct cel_expr_Type* sub = (struct cel_expr_Type*)cel_expr_Type_ListType_elem_type(msg);
   if (sub == NULL) {
     sub = (struct cel_expr_Type*)_upb_Message_New(&cel__expr__Type_msg_init, arena);
@@ -763,82 +851,85 @@ UPB_INLINE struct cel_expr_Type* cel_expr_Type_ListType_mutable_elem_type(cel_ex
 }
 
 /* cel.expr.Type.MapType */
-
 UPB_INLINE cel_expr_Type_MapType* cel_expr_Type_MapType_new(upb_Arena* arena) {
   return (cel_expr_Type_MapType*)_upb_Message_New(&cel__expr__Type__MapType_msg_init, arena);
 }
-UPB_INLINE cel_expr_Type_MapType* cel_expr_Type_MapType_parse(const char* buf, size_t size, upb_Arena* arena) {
+UPB_INLINE cel_expr_Type_MapType* cel_expr_Type_MapType_parse(const char* buf, size_t size,
+                                        upb_Arena* arena) {
   cel_expr_Type_MapType* ret = cel_expr_Type_MapType_new(arena);
   if (!ret) return NULL;
-  if (upb_Decode(buf, size, UPB_UPCAST(ret), &cel__expr__Type__MapType_msg_init, NULL, 0, arena) !=
-      kUpb_DecodeStatus_Ok) {
-    return NULL;
-  }
-  return ret;
-}
-UPB_INLINE cel_expr_Type_MapType* cel_expr_Type_MapType_parse_ex(const char* buf, size_t size,
-                           const upb_ExtensionRegistry* extreg,
-                           int options, upb_Arena* arena) {
-  cel_expr_Type_MapType* ret = cel_expr_Type_MapType_new(arena);
-  if (!ret) return NULL;
-  if (upb_Decode(buf, size, UPB_UPCAST(ret), &cel__expr__Type__MapType_msg_init, extreg, options,
+  if (upb_Decode(buf, size, UPB_UPCAST(ret), &cel__expr__Type__MapType_msg_init, NULL, 0,
                  arena) != kUpb_DecodeStatus_Ok) {
     return NULL;
   }
   return ret;
 }
-UPB_INLINE char* cel_expr_Type_MapType_serialize(const cel_expr_Type_MapType* msg, upb_Arena* arena, size_t* len) {
+UPB_INLINE cel_expr_Type_MapType* cel_expr_Type_MapType_parse_ex(
+    const char* buf, size_t size, const upb_ExtensionRegistry* extreg,
+    int options, upb_Arena* arena) {
+  cel_expr_Type_MapType* ret = cel_expr_Type_MapType_new(arena);
+  if (!ret) return NULL;
+  if (upb_Decode(buf, size, UPB_UPCAST(ret), &cel__expr__Type__MapType_msg_init, extreg,
+                 options, arena) != kUpb_DecodeStatus_Ok) {
+    return NULL;
+  }
+  return ret;
+}
+UPB_INLINE char* cel_expr_Type_MapType_serialize(const cel_expr_Type_MapType* msg,
+                                      upb_Arena* arena, size_t* len) {
   char* ptr;
   (void)upb_Encode(UPB_UPCAST(msg), &cel__expr__Type__MapType_msg_init, 0, arena, &ptr, len);
   return ptr;
 }
-UPB_INLINE char* cel_expr_Type_MapType_serialize_ex(const cel_expr_Type_MapType* msg, int options,
-                                 upb_Arena* arena, size_t* len) {
+UPB_INLINE char* cel_expr_Type_MapType_serialize_ex(const cel_expr_Type_MapType* msg,
+                                         int options, upb_Arena* arena,
+                                         size_t* len) {
   char* ptr;
   (void)upb_Encode(UPB_UPCAST(msg), &cel__expr__Type__MapType_msg_init, options, arena, &ptr, len);
   return ptr;
 }
 UPB_INLINE void cel_expr_Type_MapType_clear_key_type(cel_expr_Type_MapType* msg) {
-  const upb_MiniTableField field = {1, UPB_SIZE(12, 16), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {1, UPB_SIZE(12, 16), 64, 6, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE const cel_expr_Type* cel_expr_Type_MapType_key_type(const cel_expr_Type_MapType* msg) {
   const cel_expr_Type* default_val = NULL;
   const cel_expr_Type* ret;
-  const upb_MiniTableField field = {1, UPB_SIZE(12, 16), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {1, UPB_SIZE(12, 16), 64, 6, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&cel__expr__Type_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
 }
 UPB_INLINE bool cel_expr_Type_MapType_has_key_type(const cel_expr_Type_MapType* msg) {
-  const upb_MiniTableField field = {1, UPB_SIZE(12, 16), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {1, UPB_SIZE(12, 16), 64, 6, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   return upb_Message_HasBaseField(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE void cel_expr_Type_MapType_clear_value_type(cel_expr_Type_MapType* msg) {
-  const upb_MiniTableField field = {2, UPB_SIZE(16, 24), 65, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {2, UPB_SIZE(16, 24), 65, UPB_SIZE(4, 5), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE const cel_expr_Type* cel_expr_Type_MapType_value_type(const cel_expr_Type_MapType* msg) {
   const cel_expr_Type* default_val = NULL;
   const cel_expr_Type* ret;
-  const upb_MiniTableField field = {2, UPB_SIZE(16, 24), 65, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {2, UPB_SIZE(16, 24), 65, UPB_SIZE(4, 5), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&cel__expr__Type_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
 }
 UPB_INLINE bool cel_expr_Type_MapType_has_value_type(const cel_expr_Type_MapType* msg) {
-  const upb_MiniTableField field = {2, UPB_SIZE(16, 24), 65, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {2, UPB_SIZE(16, 24), 65, UPB_SIZE(4, 5), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   return upb_Message_HasBaseField(UPB_UPCAST(msg), &field);
 }
 
-UPB_INLINE void cel_expr_Type_MapType_set_key_type(cel_expr_Type_MapType *msg, cel_expr_Type* value) {
-  const upb_MiniTableField field = {1, UPB_SIZE(12, 16), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+UPB_INLINE void cel_expr_Type_MapType_set_key_type(cel_expr_Type_MapType* msg, cel_expr_Type* value) {
+  const upb_MiniTableField field = {1, UPB_SIZE(12, 16), 64, 6, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&cel__expr__Type_msg_init);
-  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message*)msg, &field, &value);
 }
-UPB_INLINE struct cel_expr_Type* cel_expr_Type_MapType_mutable_key_type(cel_expr_Type_MapType* msg, upb_Arena* arena) {
+UPB_INLINE struct cel_expr_Type* cel_expr_Type_MapType_mutable_key_type(
+    cel_expr_Type_MapType* msg, upb_Arena* arena) {
   struct cel_expr_Type* sub = (struct cel_expr_Type*)cel_expr_Type_MapType_key_type(msg);
   if (sub == NULL) {
     sub = (struct cel_expr_Type*)_upb_Message_New(&cel__expr__Type_msg_init, arena);
@@ -846,12 +937,13 @@ UPB_INLINE struct cel_expr_Type* cel_expr_Type_MapType_mutable_key_type(cel_expr
   }
   return sub;
 }
-UPB_INLINE void cel_expr_Type_MapType_set_value_type(cel_expr_Type_MapType *msg, cel_expr_Type* value) {
-  const upb_MiniTableField field = {2, UPB_SIZE(16, 24), 65, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+UPB_INLINE void cel_expr_Type_MapType_set_value_type(cel_expr_Type_MapType* msg, cel_expr_Type* value) {
+  const upb_MiniTableField field = {2, UPB_SIZE(16, 24), 65, UPB_SIZE(4, 5), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&cel__expr__Type_msg_init);
-  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message*)msg, &field, &value);
 }
-UPB_INLINE struct cel_expr_Type* cel_expr_Type_MapType_mutable_value_type(cel_expr_Type_MapType* msg, upb_Arena* arena) {
+UPB_INLINE struct cel_expr_Type* cel_expr_Type_MapType_mutable_value_type(
+    cel_expr_Type_MapType* msg, upb_Arena* arena) {
   struct cel_expr_Type* sub = (struct cel_expr_Type*)cel_expr_Type_MapType_value_type(msg);
   if (sub == NULL) {
     sub = (struct cel_expr_Type*)_upb_Message_New(&cel__expr__Type_msg_init, arena);
@@ -861,64 +953,67 @@ UPB_INLINE struct cel_expr_Type* cel_expr_Type_MapType_mutable_value_type(cel_ex
 }
 
 /* cel.expr.Type.FunctionType */
-
 UPB_INLINE cel_expr_Type_FunctionType* cel_expr_Type_FunctionType_new(upb_Arena* arena) {
   return (cel_expr_Type_FunctionType*)_upb_Message_New(&cel__expr__Type__FunctionType_msg_init, arena);
 }
-UPB_INLINE cel_expr_Type_FunctionType* cel_expr_Type_FunctionType_parse(const char* buf, size_t size, upb_Arena* arena) {
+UPB_INLINE cel_expr_Type_FunctionType* cel_expr_Type_FunctionType_parse(const char* buf, size_t size,
+                                        upb_Arena* arena) {
   cel_expr_Type_FunctionType* ret = cel_expr_Type_FunctionType_new(arena);
   if (!ret) return NULL;
-  if (upb_Decode(buf, size, UPB_UPCAST(ret), &cel__expr__Type__FunctionType_msg_init, NULL, 0, arena) !=
-      kUpb_DecodeStatus_Ok) {
-    return NULL;
-  }
-  return ret;
-}
-UPB_INLINE cel_expr_Type_FunctionType* cel_expr_Type_FunctionType_parse_ex(const char* buf, size_t size,
-                           const upb_ExtensionRegistry* extreg,
-                           int options, upb_Arena* arena) {
-  cel_expr_Type_FunctionType* ret = cel_expr_Type_FunctionType_new(arena);
-  if (!ret) return NULL;
-  if (upb_Decode(buf, size, UPB_UPCAST(ret), &cel__expr__Type__FunctionType_msg_init, extreg, options,
+  if (upb_Decode(buf, size, UPB_UPCAST(ret), &cel__expr__Type__FunctionType_msg_init, NULL, 0,
                  arena) != kUpb_DecodeStatus_Ok) {
     return NULL;
   }
   return ret;
 }
-UPB_INLINE char* cel_expr_Type_FunctionType_serialize(const cel_expr_Type_FunctionType* msg, upb_Arena* arena, size_t* len) {
+UPB_INLINE cel_expr_Type_FunctionType* cel_expr_Type_FunctionType_parse_ex(
+    const char* buf, size_t size, const upb_ExtensionRegistry* extreg,
+    int options, upb_Arena* arena) {
+  cel_expr_Type_FunctionType* ret = cel_expr_Type_FunctionType_new(arena);
+  if (!ret) return NULL;
+  if (upb_Decode(buf, size, UPB_UPCAST(ret), &cel__expr__Type__FunctionType_msg_init, extreg,
+                 options, arena) != kUpb_DecodeStatus_Ok) {
+    return NULL;
+  }
+  return ret;
+}
+UPB_INLINE char* cel_expr_Type_FunctionType_serialize(const cel_expr_Type_FunctionType* msg,
+                                      upb_Arena* arena, size_t* len) {
   char* ptr;
   (void)upb_Encode(UPB_UPCAST(msg), &cel__expr__Type__FunctionType_msg_init, 0, arena, &ptr, len);
   return ptr;
 }
-UPB_INLINE char* cel_expr_Type_FunctionType_serialize_ex(const cel_expr_Type_FunctionType* msg, int options,
-                                 upb_Arena* arena, size_t* len) {
+UPB_INLINE char* cel_expr_Type_FunctionType_serialize_ex(const cel_expr_Type_FunctionType* msg,
+                                         int options, upb_Arena* arena,
+                                         size_t* len) {
   char* ptr;
   (void)upb_Encode(UPB_UPCAST(msg), &cel__expr__Type__FunctionType_msg_init, options, arena, &ptr, len);
   return ptr;
 }
 UPB_INLINE void cel_expr_Type_FunctionType_clear_result_type(cel_expr_Type_FunctionType* msg) {
-  const upb_MiniTableField field = {1, UPB_SIZE(12, 16), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {1, UPB_SIZE(12, 16), 64, 6, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE const cel_expr_Type* cel_expr_Type_FunctionType_result_type(const cel_expr_Type_FunctionType* msg) {
   const cel_expr_Type* default_val = NULL;
   const cel_expr_Type* ret;
-  const upb_MiniTableField field = {1, UPB_SIZE(12, 16), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {1, UPB_SIZE(12, 16), 64, 6, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&cel__expr__Type_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
 }
 UPB_INLINE bool cel_expr_Type_FunctionType_has_result_type(const cel_expr_Type_FunctionType* msg) {
-  const upb_MiniTableField field = {1, UPB_SIZE(12, 16), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {1, UPB_SIZE(12, 16), 64, 6, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   return upb_Message_HasBaseField(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE void cel_expr_Type_FunctionType_clear_arg_types(cel_expr_Type_FunctionType* msg) {
-  const upb_MiniTableField field = {2, UPB_SIZE(16, 24), 0, 1, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {2, UPB_SIZE(16, 24), 0, UPB_SIZE(4, 5), 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
 }
-UPB_INLINE const cel_expr_Type* const* cel_expr_Type_FunctionType_arg_types(const cel_expr_Type_FunctionType* msg, size_t* size) {
-  const upb_MiniTableField field = {2, UPB_SIZE(16, 24), 0, 1, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+UPB_INLINE const cel_expr_Type* const* cel_expr_Type_FunctionType_arg_types(const cel_expr_Type_FunctionType* msg,
+                                                  size_t* size) {
+  const upb_MiniTableField field = {2, UPB_SIZE(16, 24), 0, UPB_SIZE(4, 5), 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&cel__expr__Type_msg_init);
   const upb_Array* arr = upb_Message_GetArray(UPB_UPCAST(msg), &field);
   if (arr) {
@@ -929,8 +1024,11 @@ UPB_INLINE const cel_expr_Type* const* cel_expr_Type_FunctionType_arg_types(cons
     return NULL;
   }
 }
-UPB_INLINE const upb_Array* _cel_expr_Type_FunctionType_arg_types_upb_array(const cel_expr_Type_FunctionType* msg, size_t* size) {
-  const upb_MiniTableField field = {2, UPB_SIZE(16, 24), 0, 1, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+
+//
+UPB_INLINE const upb_Array* _cel_expr_Type_FunctionType_arg_types_upb_array(
+    const cel_expr_Type_FunctionType* msg, size_t* size) {
+  const upb_MiniTableField field = {2, UPB_SIZE(16, 24), 0, UPB_SIZE(4, 5), 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&cel__expr__Type_msg_init);
   const upb_Array* arr = upb_Message_GetArray(UPB_UPCAST(msg), &field);
   if (size) {
@@ -938,8 +1036,10 @@ UPB_INLINE const upb_Array* _cel_expr_Type_FunctionType_arg_types_upb_array(cons
   }
   return arr;
 }
-UPB_INLINE upb_Array* _cel_expr_Type_FunctionType_arg_types_mutable_upb_array(cel_expr_Type_FunctionType* msg, size_t* size, upb_Arena* arena) {
-  const upb_MiniTableField field = {2, UPB_SIZE(16, 24), 0, 1, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+
+UPB_INLINE upb_Array* _cel_expr_Type_FunctionType_arg_types_mutable_upb_array(
+    cel_expr_Type_FunctionType* msg, size_t* size, upb_Arena* arena) {
+  const upb_MiniTableField field = {2, UPB_SIZE(16, 24), 0, UPB_SIZE(4, 5), 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&cel__expr__Type_msg_init);
   upb_Array* arr = upb_Message_GetOrCreateMutableArray(UPB_UPCAST(msg),
                                                        &field, arena);
@@ -949,12 +1049,13 @@ UPB_INLINE upb_Array* _cel_expr_Type_FunctionType_arg_types_mutable_upb_array(ce
   return arr;
 }
 
-UPB_INLINE void cel_expr_Type_FunctionType_set_result_type(cel_expr_Type_FunctionType *msg, cel_expr_Type* value) {
-  const upb_MiniTableField field = {1, UPB_SIZE(12, 16), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+UPB_INLINE void cel_expr_Type_FunctionType_set_result_type(cel_expr_Type_FunctionType* msg, cel_expr_Type* value) {
+  const upb_MiniTableField field = {1, UPB_SIZE(12, 16), 64, 6, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&cel__expr__Type_msg_init);
-  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message*)msg, &field, &value);
 }
-UPB_INLINE struct cel_expr_Type* cel_expr_Type_FunctionType_mutable_result_type(cel_expr_Type_FunctionType* msg, upb_Arena* arena) {
+UPB_INLINE struct cel_expr_Type* cel_expr_Type_FunctionType_mutable_result_type(
+    cel_expr_Type_FunctionType* msg, upb_Arena* arena) {
   struct cel_expr_Type* sub = (struct cel_expr_Type*)cel_expr_Type_FunctionType_result_type(msg);
   if (sub == NULL) {
     sub = (struct cel_expr_Type*)_upb_Message_New(&cel__expr__Type_msg_init, arena);
@@ -962,8 +1063,9 @@ UPB_INLINE struct cel_expr_Type* cel_expr_Type_FunctionType_mutable_result_type(
   }
   return sub;
 }
-UPB_INLINE cel_expr_Type** cel_expr_Type_FunctionType_mutable_arg_types(cel_expr_Type_FunctionType* msg, size_t* size) {
-  upb_MiniTableField field = {2, UPB_SIZE(16, 24), 0, 1, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+UPB_INLINE cel_expr_Type** cel_expr_Type_FunctionType_mutable_arg_types(cel_expr_Type_FunctionType* msg,
+                                              size_t* size) {
+  upb_MiniTableField field = {2, UPB_SIZE(16, 24), 0, UPB_SIZE(4, 5), 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&cel__expr__Type_msg_init);
   upb_Array* arr = upb_Message_GetMutableArray(UPB_UPCAST(msg), &field);
   if (arr) {
@@ -974,13 +1076,18 @@ UPB_INLINE cel_expr_Type** cel_expr_Type_FunctionType_mutable_arg_types(cel_expr
     return NULL;
   }
 }
-UPB_INLINE cel_expr_Type** cel_expr_Type_FunctionType_resize_arg_types(cel_expr_Type_FunctionType* msg, size_t size, upb_Arena* arena) {
-  upb_MiniTableField field = {2, UPB_SIZE(16, 24), 0, 1, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  return (cel_expr_Type**)upb_Message_ResizeArrayUninitialized(UPB_UPCAST(msg),
-                                                   &field, size, arena);
+
+UPB_INLINE cel_expr_Type** cel_expr_Type_FunctionType_resize_arg_types(cel_expr_Type_FunctionType* msg,
+                                             size_t size,
+                                             upb_Arena* arena) {
+  upb_MiniTableField field = {2, UPB_SIZE(16, 24), 0, UPB_SIZE(4, 5), 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&cel__expr__Type_msg_init);
+  return (cel_expr_Type**)upb_Message_ResizeArrayUninitialized(
+      UPB_UPCAST(msg), &field, size, arena);
 }
-UPB_INLINE struct cel_expr_Type* cel_expr_Type_FunctionType_add_arg_types(cel_expr_Type_FunctionType* msg, upb_Arena* arena) {
-  upb_MiniTableField field = {2, UPB_SIZE(16, 24), 0, 1, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+UPB_INLINE struct cel_expr_Type* cel_expr_Type_FunctionType_add_arg_types(
+    cel_expr_Type_FunctionType* msg, upb_Arena* arena) {
+  upb_MiniTableField field = {2, UPB_SIZE(16, 24), 0, UPB_SIZE(4, 5), 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&cel__expr__Type_msg_init);
   upb_Array* arr = upb_Message_GetOrCreateMutableArray(
       UPB_UPCAST(msg), &field, arena);
@@ -988,7 +1095,8 @@ UPB_INLINE struct cel_expr_Type* cel_expr_Type_FunctionType_add_arg_types(cel_ex
                   arr, arr->UPB_PRIVATE(size) + 1, arena)) {
     return NULL;
   }
-  struct cel_expr_Type* sub = (struct cel_expr_Type*)_upb_Message_New(&cel__expr__Type_msg_init, arena);
+  struct cel_expr_Type* sub =
+      (struct cel_expr_Type*)_upb_Message_New(&cel__expr__Type_msg_init, arena);
   if (!arr || !sub) return NULL;
   UPB_PRIVATE(_upb_Array_Set)
   (arr, arr->UPB_PRIVATE(size) - 1, &sub, sizeof(sub));
@@ -996,37 +1104,39 @@ UPB_INLINE struct cel_expr_Type* cel_expr_Type_FunctionType_add_arg_types(cel_ex
 }
 
 /* cel.expr.Type.AbstractType */
-
 UPB_INLINE cel_expr_Type_AbstractType* cel_expr_Type_AbstractType_new(upb_Arena* arena) {
   return (cel_expr_Type_AbstractType*)_upb_Message_New(&cel__expr__Type__AbstractType_msg_init, arena);
 }
-UPB_INLINE cel_expr_Type_AbstractType* cel_expr_Type_AbstractType_parse(const char* buf, size_t size, upb_Arena* arena) {
+UPB_INLINE cel_expr_Type_AbstractType* cel_expr_Type_AbstractType_parse(const char* buf, size_t size,
+                                        upb_Arena* arena) {
   cel_expr_Type_AbstractType* ret = cel_expr_Type_AbstractType_new(arena);
   if (!ret) return NULL;
-  if (upb_Decode(buf, size, UPB_UPCAST(ret), &cel__expr__Type__AbstractType_msg_init, NULL, 0, arena) !=
-      kUpb_DecodeStatus_Ok) {
-    return NULL;
-  }
-  return ret;
-}
-UPB_INLINE cel_expr_Type_AbstractType* cel_expr_Type_AbstractType_parse_ex(const char* buf, size_t size,
-                           const upb_ExtensionRegistry* extreg,
-                           int options, upb_Arena* arena) {
-  cel_expr_Type_AbstractType* ret = cel_expr_Type_AbstractType_new(arena);
-  if (!ret) return NULL;
-  if (upb_Decode(buf, size, UPB_UPCAST(ret), &cel__expr__Type__AbstractType_msg_init, extreg, options,
+  if (upb_Decode(buf, size, UPB_UPCAST(ret), &cel__expr__Type__AbstractType_msg_init, NULL, 0,
                  arena) != kUpb_DecodeStatus_Ok) {
     return NULL;
   }
   return ret;
 }
-UPB_INLINE char* cel_expr_Type_AbstractType_serialize(const cel_expr_Type_AbstractType* msg, upb_Arena* arena, size_t* len) {
+UPB_INLINE cel_expr_Type_AbstractType* cel_expr_Type_AbstractType_parse_ex(
+    const char* buf, size_t size, const upb_ExtensionRegistry* extreg,
+    int options, upb_Arena* arena) {
+  cel_expr_Type_AbstractType* ret = cel_expr_Type_AbstractType_new(arena);
+  if (!ret) return NULL;
+  if (upb_Decode(buf, size, UPB_UPCAST(ret), &cel__expr__Type__AbstractType_msg_init, extreg,
+                 options, arena) != kUpb_DecodeStatus_Ok) {
+    return NULL;
+  }
+  return ret;
+}
+UPB_INLINE char* cel_expr_Type_AbstractType_serialize(const cel_expr_Type_AbstractType* msg,
+                                      upb_Arena* arena, size_t* len) {
   char* ptr;
   (void)upb_Encode(UPB_UPCAST(msg), &cel__expr__Type__AbstractType_msg_init, 0, arena, &ptr, len);
   return ptr;
 }
-UPB_INLINE char* cel_expr_Type_AbstractType_serialize_ex(const cel_expr_Type_AbstractType* msg, int options,
-                                 upb_Arena* arena, size_t* len) {
+UPB_INLINE char* cel_expr_Type_AbstractType_serialize_ex(const cel_expr_Type_AbstractType* msg,
+                                         int options, upb_Arena* arena,
+                                         size_t* len) {
   char* ptr;
   (void)upb_Encode(UPB_UPCAST(msg), &cel__expr__Type__AbstractType_msg_init, options, arena, &ptr, len);
   return ptr;
@@ -1044,11 +1154,12 @@ UPB_INLINE upb_StringView cel_expr_Type_AbstractType_name(const cel_expr_Type_Ab
   return ret;
 }
 UPB_INLINE void cel_expr_Type_AbstractType_clear_parameter_types(cel_expr_Type_AbstractType* msg) {
-  const upb_MiniTableField field = {2, UPB_SIZE(8, 24), 0, 0, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {2, UPB_SIZE(8, 24), 0, 3, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
 }
-UPB_INLINE const cel_expr_Type* const* cel_expr_Type_AbstractType_parameter_types(const cel_expr_Type_AbstractType* msg, size_t* size) {
-  const upb_MiniTableField field = {2, UPB_SIZE(8, 24), 0, 0, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+UPB_INLINE const cel_expr_Type* const* cel_expr_Type_AbstractType_parameter_types(const cel_expr_Type_AbstractType* msg,
+                                                  size_t* size) {
+  const upb_MiniTableField field = {2, UPB_SIZE(8, 24), 0, 3, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&cel__expr__Type_msg_init);
   const upb_Array* arr = upb_Message_GetArray(UPB_UPCAST(msg), &field);
   if (arr) {
@@ -1059,8 +1170,11 @@ UPB_INLINE const cel_expr_Type* const* cel_expr_Type_AbstractType_parameter_type
     return NULL;
   }
 }
-UPB_INLINE const upb_Array* _cel_expr_Type_AbstractType_parameter_types_upb_array(const cel_expr_Type_AbstractType* msg, size_t* size) {
-  const upb_MiniTableField field = {2, UPB_SIZE(8, 24), 0, 0, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+
+//
+UPB_INLINE const upb_Array* _cel_expr_Type_AbstractType_parameter_types_upb_array(
+    const cel_expr_Type_AbstractType* msg, size_t* size) {
+  const upb_MiniTableField field = {2, UPB_SIZE(8, 24), 0, 3, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&cel__expr__Type_msg_init);
   const upb_Array* arr = upb_Message_GetArray(UPB_UPCAST(msg), &field);
   if (size) {
@@ -1068,8 +1182,10 @@ UPB_INLINE const upb_Array* _cel_expr_Type_AbstractType_parameter_types_upb_arra
   }
   return arr;
 }
-UPB_INLINE upb_Array* _cel_expr_Type_AbstractType_parameter_types_mutable_upb_array(cel_expr_Type_AbstractType* msg, size_t* size, upb_Arena* arena) {
-  const upb_MiniTableField field = {2, UPB_SIZE(8, 24), 0, 0, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+
+UPB_INLINE upb_Array* _cel_expr_Type_AbstractType_parameter_types_mutable_upb_array(
+    cel_expr_Type_AbstractType* msg, size_t* size, upb_Arena* arena) {
+  const upb_MiniTableField field = {2, UPB_SIZE(8, 24), 0, 3, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&cel__expr__Type_msg_init);
   upb_Array* arr = upb_Message_GetOrCreateMutableArray(UPB_UPCAST(msg),
                                                        &field, arena);
@@ -1079,12 +1195,13 @@ UPB_INLINE upb_Array* _cel_expr_Type_AbstractType_parameter_types_mutable_upb_ar
   return arr;
 }
 
-UPB_INLINE void cel_expr_Type_AbstractType_set_name(cel_expr_Type_AbstractType *msg, upb_StringView value) {
+UPB_INLINE void cel_expr_Type_AbstractType_set_name(cel_expr_Type_AbstractType* msg, upb_StringView value) {
   const upb_MiniTableField field = {1, UPB_SIZE(12, 8), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
-  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message*)msg, &field, &value);
 }
-UPB_INLINE cel_expr_Type** cel_expr_Type_AbstractType_mutable_parameter_types(cel_expr_Type_AbstractType* msg, size_t* size) {
-  upb_MiniTableField field = {2, UPB_SIZE(8, 24), 0, 0, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+UPB_INLINE cel_expr_Type** cel_expr_Type_AbstractType_mutable_parameter_types(cel_expr_Type_AbstractType* msg,
+                                              size_t* size) {
+  upb_MiniTableField field = {2, UPB_SIZE(8, 24), 0, 3, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&cel__expr__Type_msg_init);
   upb_Array* arr = upb_Message_GetMutableArray(UPB_UPCAST(msg), &field);
   if (arr) {
@@ -1095,13 +1212,18 @@ UPB_INLINE cel_expr_Type** cel_expr_Type_AbstractType_mutable_parameter_types(ce
     return NULL;
   }
 }
-UPB_INLINE cel_expr_Type** cel_expr_Type_AbstractType_resize_parameter_types(cel_expr_Type_AbstractType* msg, size_t size, upb_Arena* arena) {
-  upb_MiniTableField field = {2, UPB_SIZE(8, 24), 0, 0, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  return (cel_expr_Type**)upb_Message_ResizeArrayUninitialized(UPB_UPCAST(msg),
-                                                   &field, size, arena);
+
+UPB_INLINE cel_expr_Type** cel_expr_Type_AbstractType_resize_parameter_types(cel_expr_Type_AbstractType* msg,
+                                             size_t size,
+                                             upb_Arena* arena) {
+  upb_MiniTableField field = {2, UPB_SIZE(8, 24), 0, 3, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&cel__expr__Type_msg_init);
+  return (cel_expr_Type**)upb_Message_ResizeArrayUninitialized(
+      UPB_UPCAST(msg), &field, size, arena);
 }
-UPB_INLINE struct cel_expr_Type* cel_expr_Type_AbstractType_add_parameter_types(cel_expr_Type_AbstractType* msg, upb_Arena* arena) {
-  upb_MiniTableField field = {2, UPB_SIZE(8, 24), 0, 0, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+UPB_INLINE struct cel_expr_Type* cel_expr_Type_AbstractType_add_parameter_types(
+    cel_expr_Type_AbstractType* msg, upb_Arena* arena) {
+  upb_MiniTableField field = {2, UPB_SIZE(8, 24), 0, 3, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&cel__expr__Type_msg_init);
   upb_Array* arr = upb_Message_GetOrCreateMutableArray(
       UPB_UPCAST(msg), &field, arena);
@@ -1109,7 +1231,8 @@ UPB_INLINE struct cel_expr_Type* cel_expr_Type_AbstractType_add_parameter_types(
                   arr, arr->UPB_PRIVATE(size) + 1, arena)) {
     return NULL;
   }
-  struct cel_expr_Type* sub = (struct cel_expr_Type*)_upb_Message_New(&cel__expr__Type_msg_init, arena);
+  struct cel_expr_Type* sub =
+      (struct cel_expr_Type*)_upb_Message_New(&cel__expr__Type_msg_init, arena);
   if (!arr || !sub) return NULL;
   UPB_PRIVATE(_upb_Array_Set)
   (arr, arr->UPB_PRIVATE(size) - 1, &sub, sizeof(sub));
@@ -1117,37 +1240,39 @@ UPB_INLINE struct cel_expr_Type* cel_expr_Type_AbstractType_add_parameter_types(
 }
 
 /* cel.expr.Decl */
-
 UPB_INLINE cel_expr_Decl* cel_expr_Decl_new(upb_Arena* arena) {
   return (cel_expr_Decl*)_upb_Message_New(&cel__expr__Decl_msg_init, arena);
 }
-UPB_INLINE cel_expr_Decl* cel_expr_Decl_parse(const char* buf, size_t size, upb_Arena* arena) {
+UPB_INLINE cel_expr_Decl* cel_expr_Decl_parse(const char* buf, size_t size,
+                                        upb_Arena* arena) {
   cel_expr_Decl* ret = cel_expr_Decl_new(arena);
   if (!ret) return NULL;
-  if (upb_Decode(buf, size, UPB_UPCAST(ret), &cel__expr__Decl_msg_init, NULL, 0, arena) !=
-      kUpb_DecodeStatus_Ok) {
-    return NULL;
-  }
-  return ret;
-}
-UPB_INLINE cel_expr_Decl* cel_expr_Decl_parse_ex(const char* buf, size_t size,
-                           const upb_ExtensionRegistry* extreg,
-                           int options, upb_Arena* arena) {
-  cel_expr_Decl* ret = cel_expr_Decl_new(arena);
-  if (!ret) return NULL;
-  if (upb_Decode(buf, size, UPB_UPCAST(ret), &cel__expr__Decl_msg_init, extreg, options,
+  if (upb_Decode(buf, size, UPB_UPCAST(ret), &cel__expr__Decl_msg_init, NULL, 0,
                  arena) != kUpb_DecodeStatus_Ok) {
     return NULL;
   }
   return ret;
 }
-UPB_INLINE char* cel_expr_Decl_serialize(const cel_expr_Decl* msg, upb_Arena* arena, size_t* len) {
+UPB_INLINE cel_expr_Decl* cel_expr_Decl_parse_ex(
+    const char* buf, size_t size, const upb_ExtensionRegistry* extreg,
+    int options, upb_Arena* arena) {
+  cel_expr_Decl* ret = cel_expr_Decl_new(arena);
+  if (!ret) return NULL;
+  if (upb_Decode(buf, size, UPB_UPCAST(ret), &cel__expr__Decl_msg_init, extreg,
+                 options, arena) != kUpb_DecodeStatus_Ok) {
+    return NULL;
+  }
+  return ret;
+}
+UPB_INLINE char* cel_expr_Decl_serialize(const cel_expr_Decl* msg,
+                                      upb_Arena* arena, size_t* len) {
   char* ptr;
   (void)upb_Encode(UPB_UPCAST(msg), &cel__expr__Decl_msg_init, 0, arena, &ptr, len);
   return ptr;
 }
-UPB_INLINE char* cel_expr_Decl_serialize_ex(const cel_expr_Decl* msg, int options,
-                                 upb_Arena* arena, size_t* len) {
+UPB_INLINE char* cel_expr_Decl_serialize_ex(const cel_expr_Decl* msg,
+                                         int options, upb_Arena* arena,
+                                         size_t* len) {
   char* ptr;
   (void)upb_Encode(UPB_UPCAST(msg), &cel__expr__Decl_msg_init, options, arena, &ptr, len);
   return ptr;
@@ -1157,13 +1282,15 @@ typedef enum {
   cel_expr_Decl_decl_kind_function = 3,
   cel_expr_Decl_decl_kind_NOT_SET = 0
 } cel_expr_Decl_decl_kind_oneofcases;
-UPB_INLINE cel_expr_Decl_decl_kind_oneofcases cel_expr_Decl_decl_kind_case(const cel_expr_Decl* msg) {
-  const upb_MiniTableField field = {2, UPB_SIZE(12, 32), -9, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+
+UPB_INLINE cel_expr_Decl_decl_kind_oneofcases
+cel_expr_Decl_decl_kind_case(const cel_expr_Decl* msg) {
+  const upb_MiniTableField field = {2, UPB_SIZE(12, 32), -9, UPB_SIZE(6, 7), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   return (cel_expr_Decl_decl_kind_oneofcases)upb_Message_WhichOneofFieldNumber(
       UPB_UPCAST(msg), &field);
 }
 UPB_INLINE void cel_expr_Decl_clear_decl_kind(cel_expr_Decl* msg) {
-  const upb_MiniTableField field = {2, UPB_SIZE(12, 32), -9, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {2, UPB_SIZE(12, 32), -9, UPB_SIZE(6, 7), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   upb_Message_ClearOneof(UPB_UPCAST(msg), &cel__expr__Decl_msg_init, &field);
 }
 UPB_INLINE void cel_expr_Decl_clear_name(cel_expr_Decl* msg) {
@@ -1179,50 +1306,51 @@ UPB_INLINE upb_StringView cel_expr_Decl_name(const cel_expr_Decl* msg) {
   return ret;
 }
 UPB_INLINE void cel_expr_Decl_clear_ident(cel_expr_Decl* msg) {
-  const upb_MiniTableField field = {2, UPB_SIZE(12, 32), -9, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {2, UPB_SIZE(12, 32), -9, UPB_SIZE(6, 7), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE const cel_expr_Decl_IdentDecl* cel_expr_Decl_ident(const cel_expr_Decl* msg) {
   const cel_expr_Decl_IdentDecl* default_val = NULL;
   const cel_expr_Decl_IdentDecl* ret;
-  const upb_MiniTableField field = {2, UPB_SIZE(12, 32), -9, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {2, UPB_SIZE(12, 32), -9, UPB_SIZE(6, 7), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&cel__expr__Decl__IdentDecl_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
 }
 UPB_INLINE bool cel_expr_Decl_has_ident(const cel_expr_Decl* msg) {
-  const upb_MiniTableField field = {2, UPB_SIZE(12, 32), -9, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {2, UPB_SIZE(12, 32), -9, UPB_SIZE(6, 7), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   return upb_Message_HasBaseField(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE void cel_expr_Decl_clear_function(cel_expr_Decl* msg) {
-  const upb_MiniTableField field = {3, UPB_SIZE(12, 32), -9, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {3, UPB_SIZE(12, 32), -9, UPB_SIZE(4, 6), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE const cel_expr_Decl_FunctionDecl* cel_expr_Decl_function(const cel_expr_Decl* msg) {
   const cel_expr_Decl_FunctionDecl* default_val = NULL;
   const cel_expr_Decl_FunctionDecl* ret;
-  const upb_MiniTableField field = {3, UPB_SIZE(12, 32), -9, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {3, UPB_SIZE(12, 32), -9, UPB_SIZE(4, 6), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&cel__expr__Decl__FunctionDecl_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
 }
 UPB_INLINE bool cel_expr_Decl_has_function(const cel_expr_Decl* msg) {
-  const upb_MiniTableField field = {3, UPB_SIZE(12, 32), -9, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {3, UPB_SIZE(12, 32), -9, UPB_SIZE(4, 6), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   return upb_Message_HasBaseField(UPB_UPCAST(msg), &field);
 }
 
-UPB_INLINE void cel_expr_Decl_set_name(cel_expr_Decl *msg, upb_StringView value) {
+UPB_INLINE void cel_expr_Decl_set_name(cel_expr_Decl* msg, upb_StringView value) {
   const upb_MiniTableField field = {1, 16, 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
-  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message*)msg, &field, &value);
 }
-UPB_INLINE void cel_expr_Decl_set_ident(cel_expr_Decl *msg, cel_expr_Decl_IdentDecl* value) {
-  const upb_MiniTableField field = {2, UPB_SIZE(12, 32), -9, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+UPB_INLINE void cel_expr_Decl_set_ident(cel_expr_Decl* msg, cel_expr_Decl_IdentDecl* value) {
+  const upb_MiniTableField field = {2, UPB_SIZE(12, 32), -9, UPB_SIZE(6, 7), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&cel__expr__Decl__IdentDecl_msg_init);
-  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message*)msg, &field, &value);
 }
-UPB_INLINE struct cel_expr_Decl_IdentDecl* cel_expr_Decl_mutable_ident(cel_expr_Decl* msg, upb_Arena* arena) {
+UPB_INLINE struct cel_expr_Decl_IdentDecl* cel_expr_Decl_mutable_ident(
+    cel_expr_Decl* msg, upb_Arena* arena) {
   struct cel_expr_Decl_IdentDecl* sub = (struct cel_expr_Decl_IdentDecl*)cel_expr_Decl_ident(msg);
   if (sub == NULL) {
     sub = (struct cel_expr_Decl_IdentDecl*)_upb_Message_New(&cel__expr__Decl__IdentDecl_msg_init, arena);
@@ -1230,12 +1358,13 @@ UPB_INLINE struct cel_expr_Decl_IdentDecl* cel_expr_Decl_mutable_ident(cel_expr_
   }
   return sub;
 }
-UPB_INLINE void cel_expr_Decl_set_function(cel_expr_Decl *msg, cel_expr_Decl_FunctionDecl* value) {
-  const upb_MiniTableField field = {3, UPB_SIZE(12, 32), -9, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+UPB_INLINE void cel_expr_Decl_set_function(cel_expr_Decl* msg, cel_expr_Decl_FunctionDecl* value) {
+  const upb_MiniTableField field = {3, UPB_SIZE(12, 32), -9, UPB_SIZE(4, 6), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&cel__expr__Decl__FunctionDecl_msg_init);
-  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message*)msg, &field, &value);
 }
-UPB_INLINE struct cel_expr_Decl_FunctionDecl* cel_expr_Decl_mutable_function(cel_expr_Decl* msg, upb_Arena* arena) {
+UPB_INLINE struct cel_expr_Decl_FunctionDecl* cel_expr_Decl_mutable_function(
+    cel_expr_Decl* msg, upb_Arena* arena) {
   struct cel_expr_Decl_FunctionDecl* sub = (struct cel_expr_Decl_FunctionDecl*)cel_expr_Decl_function(msg);
   if (sub == NULL) {
     sub = (struct cel_expr_Decl_FunctionDecl*)_upb_Message_New(&cel__expr__Decl__FunctionDecl_msg_init, arena);
@@ -1245,73 +1374,75 @@ UPB_INLINE struct cel_expr_Decl_FunctionDecl* cel_expr_Decl_mutable_function(cel
 }
 
 /* cel.expr.Decl.IdentDecl */
-
 UPB_INLINE cel_expr_Decl_IdentDecl* cel_expr_Decl_IdentDecl_new(upb_Arena* arena) {
   return (cel_expr_Decl_IdentDecl*)_upb_Message_New(&cel__expr__Decl__IdentDecl_msg_init, arena);
 }
-UPB_INLINE cel_expr_Decl_IdentDecl* cel_expr_Decl_IdentDecl_parse(const char* buf, size_t size, upb_Arena* arena) {
+UPB_INLINE cel_expr_Decl_IdentDecl* cel_expr_Decl_IdentDecl_parse(const char* buf, size_t size,
+                                        upb_Arena* arena) {
   cel_expr_Decl_IdentDecl* ret = cel_expr_Decl_IdentDecl_new(arena);
   if (!ret) return NULL;
-  if (upb_Decode(buf, size, UPB_UPCAST(ret), &cel__expr__Decl__IdentDecl_msg_init, NULL, 0, arena) !=
-      kUpb_DecodeStatus_Ok) {
-    return NULL;
-  }
-  return ret;
-}
-UPB_INLINE cel_expr_Decl_IdentDecl* cel_expr_Decl_IdentDecl_parse_ex(const char* buf, size_t size,
-                           const upb_ExtensionRegistry* extreg,
-                           int options, upb_Arena* arena) {
-  cel_expr_Decl_IdentDecl* ret = cel_expr_Decl_IdentDecl_new(arena);
-  if (!ret) return NULL;
-  if (upb_Decode(buf, size, UPB_UPCAST(ret), &cel__expr__Decl__IdentDecl_msg_init, extreg, options,
+  if (upb_Decode(buf, size, UPB_UPCAST(ret), &cel__expr__Decl__IdentDecl_msg_init, NULL, 0,
                  arena) != kUpb_DecodeStatus_Ok) {
     return NULL;
   }
   return ret;
 }
-UPB_INLINE char* cel_expr_Decl_IdentDecl_serialize(const cel_expr_Decl_IdentDecl* msg, upb_Arena* arena, size_t* len) {
+UPB_INLINE cel_expr_Decl_IdentDecl* cel_expr_Decl_IdentDecl_parse_ex(
+    const char* buf, size_t size, const upb_ExtensionRegistry* extreg,
+    int options, upb_Arena* arena) {
+  cel_expr_Decl_IdentDecl* ret = cel_expr_Decl_IdentDecl_new(arena);
+  if (!ret) return NULL;
+  if (upb_Decode(buf, size, UPB_UPCAST(ret), &cel__expr__Decl__IdentDecl_msg_init, extreg,
+                 options, arena) != kUpb_DecodeStatus_Ok) {
+    return NULL;
+  }
+  return ret;
+}
+UPB_INLINE char* cel_expr_Decl_IdentDecl_serialize(const cel_expr_Decl_IdentDecl* msg,
+                                      upb_Arena* arena, size_t* len) {
   char* ptr;
   (void)upb_Encode(UPB_UPCAST(msg), &cel__expr__Decl__IdentDecl_msg_init, 0, arena, &ptr, len);
   return ptr;
 }
-UPB_INLINE char* cel_expr_Decl_IdentDecl_serialize_ex(const cel_expr_Decl_IdentDecl* msg, int options,
-                                 upb_Arena* arena, size_t* len) {
+UPB_INLINE char* cel_expr_Decl_IdentDecl_serialize_ex(const cel_expr_Decl_IdentDecl* msg,
+                                         int options, upb_Arena* arena,
+                                         size_t* len) {
   char* ptr;
   (void)upb_Encode(UPB_UPCAST(msg), &cel__expr__Decl__IdentDecl_msg_init, options, arena, &ptr, len);
   return ptr;
 }
 UPB_INLINE void cel_expr_Decl_IdentDecl_clear_type(cel_expr_Decl_IdentDecl* msg) {
-  const upb_MiniTableField field = {1, UPB_SIZE(12, 32), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {1, UPB_SIZE(12, 32), 64, UPB_SIZE(9, 10), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE const cel_expr_Type* cel_expr_Decl_IdentDecl_type(const cel_expr_Decl_IdentDecl* msg) {
   const cel_expr_Type* default_val = NULL;
   const cel_expr_Type* ret;
-  const upb_MiniTableField field = {1, UPB_SIZE(12, 32), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {1, UPB_SIZE(12, 32), 64, UPB_SIZE(9, 10), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&cel__expr__Type_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
 }
 UPB_INLINE bool cel_expr_Decl_IdentDecl_has_type(const cel_expr_Decl_IdentDecl* msg) {
-  const upb_MiniTableField field = {1, UPB_SIZE(12, 32), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {1, UPB_SIZE(12, 32), 64, UPB_SIZE(9, 10), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   return upb_Message_HasBaseField(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE void cel_expr_Decl_IdentDecl_clear_value(cel_expr_Decl_IdentDecl* msg) {
-  const upb_MiniTableField field = {2, UPB_SIZE(16, 40), 65, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {2, UPB_SIZE(16, 40), 65, UPB_SIZE(7, 9), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE const struct cel_expr_Constant* cel_expr_Decl_IdentDecl_value(const cel_expr_Decl_IdentDecl* msg) {
   const struct cel_expr_Constant* default_val = NULL;
   const struct cel_expr_Constant* ret;
-  const upb_MiniTableField field = {2, UPB_SIZE(16, 40), 65, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {2, UPB_SIZE(16, 40), 65, UPB_SIZE(7, 9), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&cel__expr__Constant_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
 }
 UPB_INLINE bool cel_expr_Decl_IdentDecl_has_value(const cel_expr_Decl_IdentDecl* msg) {
-  const upb_MiniTableField field = {2, UPB_SIZE(16, 40), 65, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {2, UPB_SIZE(16, 40), 65, UPB_SIZE(7, 9), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   return upb_Message_HasBaseField(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE void cel_expr_Decl_IdentDecl_clear_doc(cel_expr_Decl_IdentDecl* msg) {
@@ -1327,12 +1458,13 @@ UPB_INLINE upb_StringView cel_expr_Decl_IdentDecl_doc(const cel_expr_Decl_IdentD
   return ret;
 }
 
-UPB_INLINE void cel_expr_Decl_IdentDecl_set_type(cel_expr_Decl_IdentDecl *msg, cel_expr_Type* value) {
-  const upb_MiniTableField field = {1, UPB_SIZE(12, 32), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+UPB_INLINE void cel_expr_Decl_IdentDecl_set_type(cel_expr_Decl_IdentDecl* msg, cel_expr_Type* value) {
+  const upb_MiniTableField field = {1, UPB_SIZE(12, 32), 64, UPB_SIZE(9, 10), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&cel__expr__Type_msg_init);
-  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message*)msg, &field, &value);
 }
-UPB_INLINE struct cel_expr_Type* cel_expr_Decl_IdentDecl_mutable_type(cel_expr_Decl_IdentDecl* msg, upb_Arena* arena) {
+UPB_INLINE struct cel_expr_Type* cel_expr_Decl_IdentDecl_mutable_type(
+    cel_expr_Decl_IdentDecl* msg, upb_Arena* arena) {
   struct cel_expr_Type* sub = (struct cel_expr_Type*)cel_expr_Decl_IdentDecl_type(msg);
   if (sub == NULL) {
     sub = (struct cel_expr_Type*)_upb_Message_New(&cel__expr__Type_msg_init, arena);
@@ -1340,12 +1472,13 @@ UPB_INLINE struct cel_expr_Type* cel_expr_Decl_IdentDecl_mutable_type(cel_expr_D
   }
   return sub;
 }
-UPB_INLINE void cel_expr_Decl_IdentDecl_set_value(cel_expr_Decl_IdentDecl *msg, struct cel_expr_Constant* value) {
-  const upb_MiniTableField field = {2, UPB_SIZE(16, 40), 65, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+UPB_INLINE void cel_expr_Decl_IdentDecl_set_value(cel_expr_Decl_IdentDecl* msg, struct cel_expr_Constant* value) {
+  const upb_MiniTableField field = {2, UPB_SIZE(16, 40), 65, UPB_SIZE(7, 9), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&cel__expr__Constant_msg_init);
-  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message*)msg, &field, &value);
 }
-UPB_INLINE struct cel_expr_Constant* cel_expr_Decl_IdentDecl_mutable_value(cel_expr_Decl_IdentDecl* msg, upb_Arena* arena) {
+UPB_INLINE struct cel_expr_Constant* cel_expr_Decl_IdentDecl_mutable_value(
+    cel_expr_Decl_IdentDecl* msg, upb_Arena* arena) {
   struct cel_expr_Constant* sub = (struct cel_expr_Constant*)cel_expr_Decl_IdentDecl_value(msg);
   if (sub == NULL) {
     sub = (struct cel_expr_Constant*)_upb_Message_New(&cel__expr__Constant_msg_init, arena);
@@ -1353,53 +1486,56 @@ UPB_INLINE struct cel_expr_Constant* cel_expr_Decl_IdentDecl_mutable_value(cel_e
   }
   return sub;
 }
-UPB_INLINE void cel_expr_Decl_IdentDecl_set_doc(cel_expr_Decl_IdentDecl *msg, upb_StringView value) {
+UPB_INLINE void cel_expr_Decl_IdentDecl_set_doc(cel_expr_Decl_IdentDecl* msg, upb_StringView value) {
   const upb_MiniTableField field = {3, UPB_SIZE(20, 16), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
-  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message*)msg, &field, &value);
 }
 
 /* cel.expr.Decl.FunctionDecl */
-
 UPB_INLINE cel_expr_Decl_FunctionDecl* cel_expr_Decl_FunctionDecl_new(upb_Arena* arena) {
   return (cel_expr_Decl_FunctionDecl*)_upb_Message_New(&cel__expr__Decl__FunctionDecl_msg_init, arena);
 }
-UPB_INLINE cel_expr_Decl_FunctionDecl* cel_expr_Decl_FunctionDecl_parse(const char* buf, size_t size, upb_Arena* arena) {
+UPB_INLINE cel_expr_Decl_FunctionDecl* cel_expr_Decl_FunctionDecl_parse(const char* buf, size_t size,
+                                        upb_Arena* arena) {
   cel_expr_Decl_FunctionDecl* ret = cel_expr_Decl_FunctionDecl_new(arena);
   if (!ret) return NULL;
-  if (upb_Decode(buf, size, UPB_UPCAST(ret), &cel__expr__Decl__FunctionDecl_msg_init, NULL, 0, arena) !=
-      kUpb_DecodeStatus_Ok) {
-    return NULL;
-  }
-  return ret;
-}
-UPB_INLINE cel_expr_Decl_FunctionDecl* cel_expr_Decl_FunctionDecl_parse_ex(const char* buf, size_t size,
-                           const upb_ExtensionRegistry* extreg,
-                           int options, upb_Arena* arena) {
-  cel_expr_Decl_FunctionDecl* ret = cel_expr_Decl_FunctionDecl_new(arena);
-  if (!ret) return NULL;
-  if (upb_Decode(buf, size, UPB_UPCAST(ret), &cel__expr__Decl__FunctionDecl_msg_init, extreg, options,
+  if (upb_Decode(buf, size, UPB_UPCAST(ret), &cel__expr__Decl__FunctionDecl_msg_init, NULL, 0,
                  arena) != kUpb_DecodeStatus_Ok) {
     return NULL;
   }
   return ret;
 }
-UPB_INLINE char* cel_expr_Decl_FunctionDecl_serialize(const cel_expr_Decl_FunctionDecl* msg, upb_Arena* arena, size_t* len) {
+UPB_INLINE cel_expr_Decl_FunctionDecl* cel_expr_Decl_FunctionDecl_parse_ex(
+    const char* buf, size_t size, const upb_ExtensionRegistry* extreg,
+    int options, upb_Arena* arena) {
+  cel_expr_Decl_FunctionDecl* ret = cel_expr_Decl_FunctionDecl_new(arena);
+  if (!ret) return NULL;
+  if (upb_Decode(buf, size, UPB_UPCAST(ret), &cel__expr__Decl__FunctionDecl_msg_init, extreg,
+                 options, arena) != kUpb_DecodeStatus_Ok) {
+    return NULL;
+  }
+  return ret;
+}
+UPB_INLINE char* cel_expr_Decl_FunctionDecl_serialize(const cel_expr_Decl_FunctionDecl* msg,
+                                      upb_Arena* arena, size_t* len) {
   char* ptr;
   (void)upb_Encode(UPB_UPCAST(msg), &cel__expr__Decl__FunctionDecl_msg_init, 0, arena, &ptr, len);
   return ptr;
 }
-UPB_INLINE char* cel_expr_Decl_FunctionDecl_serialize_ex(const cel_expr_Decl_FunctionDecl* msg, int options,
-                                 upb_Arena* arena, size_t* len) {
+UPB_INLINE char* cel_expr_Decl_FunctionDecl_serialize_ex(const cel_expr_Decl_FunctionDecl* msg,
+                                         int options, upb_Arena* arena,
+                                         size_t* len) {
   char* ptr;
   (void)upb_Encode(UPB_UPCAST(msg), &cel__expr__Decl__FunctionDecl_msg_init, options, arena, &ptr, len);
   return ptr;
 }
 UPB_INLINE void cel_expr_Decl_FunctionDecl_clear_overloads(cel_expr_Decl_FunctionDecl* msg) {
-  const upb_MiniTableField field = {1, UPB_SIZE(8, 24), 0, 0, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {1, UPB_SIZE(8, 24), 0, 6, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
 }
-UPB_INLINE const cel_expr_Decl_FunctionDecl_Overload* const* cel_expr_Decl_FunctionDecl_overloads(const cel_expr_Decl_FunctionDecl* msg, size_t* size) {
-  const upb_MiniTableField field = {1, UPB_SIZE(8, 24), 0, 0, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+UPB_INLINE const cel_expr_Decl_FunctionDecl_Overload* const* cel_expr_Decl_FunctionDecl_overloads(const cel_expr_Decl_FunctionDecl* msg,
+                                                  size_t* size) {
+  const upb_MiniTableField field = {1, UPB_SIZE(8, 24), 0, 6, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&cel__expr__Decl__FunctionDecl__Overload_msg_init);
   const upb_Array* arr = upb_Message_GetArray(UPB_UPCAST(msg), &field);
   if (arr) {
@@ -1410,8 +1546,11 @@ UPB_INLINE const cel_expr_Decl_FunctionDecl_Overload* const* cel_expr_Decl_Funct
     return NULL;
   }
 }
-UPB_INLINE const upb_Array* _cel_expr_Decl_FunctionDecl_overloads_upb_array(const cel_expr_Decl_FunctionDecl* msg, size_t* size) {
-  const upb_MiniTableField field = {1, UPB_SIZE(8, 24), 0, 0, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+
+//
+UPB_INLINE const upb_Array* _cel_expr_Decl_FunctionDecl_overloads_upb_array(
+    const cel_expr_Decl_FunctionDecl* msg, size_t* size) {
+  const upb_MiniTableField field = {1, UPB_SIZE(8, 24), 0, 6, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&cel__expr__Decl__FunctionDecl__Overload_msg_init);
   const upb_Array* arr = upb_Message_GetArray(UPB_UPCAST(msg), &field);
   if (size) {
@@ -1419,8 +1558,10 @@ UPB_INLINE const upb_Array* _cel_expr_Decl_FunctionDecl_overloads_upb_array(cons
   }
   return arr;
 }
-UPB_INLINE upb_Array* _cel_expr_Decl_FunctionDecl_overloads_mutable_upb_array(cel_expr_Decl_FunctionDecl* msg, size_t* size, upb_Arena* arena) {
-  const upb_MiniTableField field = {1, UPB_SIZE(8, 24), 0, 0, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+
+UPB_INLINE upb_Array* _cel_expr_Decl_FunctionDecl_overloads_mutable_upb_array(
+    cel_expr_Decl_FunctionDecl* msg, size_t* size, upb_Arena* arena) {
+  const upb_MiniTableField field = {1, UPB_SIZE(8, 24), 0, 6, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&cel__expr__Decl__FunctionDecl__Overload_msg_init);
   upb_Array* arr = upb_Message_GetOrCreateMutableArray(UPB_UPCAST(msg),
                                                        &field, arena);
@@ -1442,8 +1583,9 @@ UPB_INLINE upb_StringView cel_expr_Decl_FunctionDecl_doc(const cel_expr_Decl_Fun
   return ret;
 }
 
-UPB_INLINE cel_expr_Decl_FunctionDecl_Overload** cel_expr_Decl_FunctionDecl_mutable_overloads(cel_expr_Decl_FunctionDecl* msg, size_t* size) {
-  upb_MiniTableField field = {1, UPB_SIZE(8, 24), 0, 0, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+UPB_INLINE cel_expr_Decl_FunctionDecl_Overload** cel_expr_Decl_FunctionDecl_mutable_overloads(cel_expr_Decl_FunctionDecl* msg,
+                                              size_t* size) {
+  upb_MiniTableField field = {1, UPB_SIZE(8, 24), 0, 6, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&cel__expr__Decl__FunctionDecl__Overload_msg_init);
   upb_Array* arr = upb_Message_GetMutableArray(UPB_UPCAST(msg), &field);
   if (arr) {
@@ -1454,13 +1596,18 @@ UPB_INLINE cel_expr_Decl_FunctionDecl_Overload** cel_expr_Decl_FunctionDecl_muta
     return NULL;
   }
 }
-UPB_INLINE cel_expr_Decl_FunctionDecl_Overload** cel_expr_Decl_FunctionDecl_resize_overloads(cel_expr_Decl_FunctionDecl* msg, size_t size, upb_Arena* arena) {
-  upb_MiniTableField field = {1, UPB_SIZE(8, 24), 0, 0, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  return (cel_expr_Decl_FunctionDecl_Overload**)upb_Message_ResizeArrayUninitialized(UPB_UPCAST(msg),
-                                                   &field, size, arena);
+
+UPB_INLINE cel_expr_Decl_FunctionDecl_Overload** cel_expr_Decl_FunctionDecl_resize_overloads(cel_expr_Decl_FunctionDecl* msg,
+                                             size_t size,
+                                             upb_Arena* arena) {
+  upb_MiniTableField field = {1, UPB_SIZE(8, 24), 0, 6, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&cel__expr__Decl__FunctionDecl__Overload_msg_init);
+  return (cel_expr_Decl_FunctionDecl_Overload**)upb_Message_ResizeArrayUninitialized(
+      UPB_UPCAST(msg), &field, size, arena);
 }
-UPB_INLINE struct cel_expr_Decl_FunctionDecl_Overload* cel_expr_Decl_FunctionDecl_add_overloads(cel_expr_Decl_FunctionDecl* msg, upb_Arena* arena) {
-  upb_MiniTableField field = {1, UPB_SIZE(8, 24), 0, 0, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+UPB_INLINE struct cel_expr_Decl_FunctionDecl_Overload* cel_expr_Decl_FunctionDecl_add_overloads(
+    cel_expr_Decl_FunctionDecl* msg, upb_Arena* arena) {
+  upb_MiniTableField field = {1, UPB_SIZE(8, 24), 0, 6, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&cel__expr__Decl__FunctionDecl__Overload_msg_init);
   upb_Array* arr = upb_Message_GetOrCreateMutableArray(
       UPB_UPCAST(msg), &field, arena);
@@ -1468,49 +1615,52 @@ UPB_INLINE struct cel_expr_Decl_FunctionDecl_Overload* cel_expr_Decl_FunctionDec
                   arr, arr->UPB_PRIVATE(size) + 1, arena)) {
     return NULL;
   }
-  struct cel_expr_Decl_FunctionDecl_Overload* sub = (struct cel_expr_Decl_FunctionDecl_Overload*)_upb_Message_New(&cel__expr__Decl__FunctionDecl__Overload_msg_init, arena);
+  struct cel_expr_Decl_FunctionDecl_Overload* sub =
+      (struct cel_expr_Decl_FunctionDecl_Overload*)_upb_Message_New(&cel__expr__Decl__FunctionDecl__Overload_msg_init, arena);
   if (!arr || !sub) return NULL;
   UPB_PRIVATE(_upb_Array_Set)
   (arr, arr->UPB_PRIVATE(size) - 1, &sub, sizeof(sub));
   return sub;
 }
-UPB_INLINE void cel_expr_Decl_FunctionDecl_set_doc(cel_expr_Decl_FunctionDecl *msg, upb_StringView value) {
+UPB_INLINE void cel_expr_Decl_FunctionDecl_set_doc(cel_expr_Decl_FunctionDecl* msg, upb_StringView value) {
   const upb_MiniTableField field = {2, UPB_SIZE(12, 8), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
-  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message*)msg, &field, &value);
 }
 
 /* cel.expr.Decl.FunctionDecl.Overload */
-
 UPB_INLINE cel_expr_Decl_FunctionDecl_Overload* cel_expr_Decl_FunctionDecl_Overload_new(upb_Arena* arena) {
   return (cel_expr_Decl_FunctionDecl_Overload*)_upb_Message_New(&cel__expr__Decl__FunctionDecl__Overload_msg_init, arena);
 }
-UPB_INLINE cel_expr_Decl_FunctionDecl_Overload* cel_expr_Decl_FunctionDecl_Overload_parse(const char* buf, size_t size, upb_Arena* arena) {
+UPB_INLINE cel_expr_Decl_FunctionDecl_Overload* cel_expr_Decl_FunctionDecl_Overload_parse(const char* buf, size_t size,
+                                        upb_Arena* arena) {
   cel_expr_Decl_FunctionDecl_Overload* ret = cel_expr_Decl_FunctionDecl_Overload_new(arena);
   if (!ret) return NULL;
-  if (upb_Decode(buf, size, UPB_UPCAST(ret), &cel__expr__Decl__FunctionDecl__Overload_msg_init, NULL, 0, arena) !=
-      kUpb_DecodeStatus_Ok) {
-    return NULL;
-  }
-  return ret;
-}
-UPB_INLINE cel_expr_Decl_FunctionDecl_Overload* cel_expr_Decl_FunctionDecl_Overload_parse_ex(const char* buf, size_t size,
-                           const upb_ExtensionRegistry* extreg,
-                           int options, upb_Arena* arena) {
-  cel_expr_Decl_FunctionDecl_Overload* ret = cel_expr_Decl_FunctionDecl_Overload_new(arena);
-  if (!ret) return NULL;
-  if (upb_Decode(buf, size, UPB_UPCAST(ret), &cel__expr__Decl__FunctionDecl__Overload_msg_init, extreg, options,
+  if (upb_Decode(buf, size, UPB_UPCAST(ret), &cel__expr__Decl__FunctionDecl__Overload_msg_init, NULL, 0,
                  arena) != kUpb_DecodeStatus_Ok) {
     return NULL;
   }
   return ret;
 }
-UPB_INLINE char* cel_expr_Decl_FunctionDecl_Overload_serialize(const cel_expr_Decl_FunctionDecl_Overload* msg, upb_Arena* arena, size_t* len) {
+UPB_INLINE cel_expr_Decl_FunctionDecl_Overload* cel_expr_Decl_FunctionDecl_Overload_parse_ex(
+    const char* buf, size_t size, const upb_ExtensionRegistry* extreg,
+    int options, upb_Arena* arena) {
+  cel_expr_Decl_FunctionDecl_Overload* ret = cel_expr_Decl_FunctionDecl_Overload_new(arena);
+  if (!ret) return NULL;
+  if (upb_Decode(buf, size, UPB_UPCAST(ret), &cel__expr__Decl__FunctionDecl__Overload_msg_init, extreg,
+                 options, arena) != kUpb_DecodeStatus_Ok) {
+    return NULL;
+  }
+  return ret;
+}
+UPB_INLINE char* cel_expr_Decl_FunctionDecl_Overload_serialize(const cel_expr_Decl_FunctionDecl_Overload* msg,
+                                      upb_Arena* arena, size_t* len) {
   char* ptr;
   (void)upb_Encode(UPB_UPCAST(msg), &cel__expr__Decl__FunctionDecl__Overload_msg_init, 0, arena, &ptr, len);
   return ptr;
 }
-UPB_INLINE char* cel_expr_Decl_FunctionDecl_Overload_serialize_ex(const cel_expr_Decl_FunctionDecl_Overload* msg, int options,
-                                 upb_Arena* arena, size_t* len) {
+UPB_INLINE char* cel_expr_Decl_FunctionDecl_Overload_serialize_ex(const cel_expr_Decl_FunctionDecl_Overload* msg,
+                                         int options, upb_Arena* arena,
+                                         size_t* len) {
   char* ptr;
   (void)upb_Encode(UPB_UPCAST(msg), &cel__expr__Decl__FunctionDecl__Overload_msg_init, options, arena, &ptr, len);
   return ptr;
@@ -1528,11 +1678,12 @@ UPB_INLINE upb_StringView cel_expr_Decl_FunctionDecl_Overload_overload_id(const 
   return ret;
 }
 UPB_INLINE void cel_expr_Decl_FunctionDecl_Overload_clear_params(cel_expr_Decl_FunctionDecl_Overload* msg) {
-  const upb_MiniTableField field = {2, UPB_SIZE(12, 48), 0, 0, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {2, UPB_SIZE(12, 48), 0, 15, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
 }
-UPB_INLINE const cel_expr_Type* const* cel_expr_Decl_FunctionDecl_Overload_params(const cel_expr_Decl_FunctionDecl_Overload* msg, size_t* size) {
-  const upb_MiniTableField field = {2, UPB_SIZE(12, 48), 0, 0, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+UPB_INLINE const cel_expr_Type* const* cel_expr_Decl_FunctionDecl_Overload_params(const cel_expr_Decl_FunctionDecl_Overload* msg,
+                                                  size_t* size) {
+  const upb_MiniTableField field = {2, UPB_SIZE(12, 48), 0, 15, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&cel__expr__Type_msg_init);
   const upb_Array* arr = upb_Message_GetArray(UPB_UPCAST(msg), &field);
   if (arr) {
@@ -1543,8 +1694,11 @@ UPB_INLINE const cel_expr_Type* const* cel_expr_Decl_FunctionDecl_Overload_param
     return NULL;
   }
 }
-UPB_INLINE const upb_Array* _cel_expr_Decl_FunctionDecl_Overload_params_upb_array(const cel_expr_Decl_FunctionDecl_Overload* msg, size_t* size) {
-  const upb_MiniTableField field = {2, UPB_SIZE(12, 48), 0, 0, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+
+//
+UPB_INLINE const upb_Array* _cel_expr_Decl_FunctionDecl_Overload_params_upb_array(
+    const cel_expr_Decl_FunctionDecl_Overload* msg, size_t* size) {
+  const upb_MiniTableField field = {2, UPB_SIZE(12, 48), 0, 15, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&cel__expr__Type_msg_init);
   const upb_Array* arr = upb_Message_GetArray(UPB_UPCAST(msg), &field);
   if (size) {
@@ -1552,8 +1706,10 @@ UPB_INLINE const upb_Array* _cel_expr_Decl_FunctionDecl_Overload_params_upb_arra
   }
   return arr;
 }
-UPB_INLINE upb_Array* _cel_expr_Decl_FunctionDecl_Overload_params_mutable_upb_array(cel_expr_Decl_FunctionDecl_Overload* msg, size_t* size, upb_Arena* arena) {
-  const upb_MiniTableField field = {2, UPB_SIZE(12, 48), 0, 0, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+
+UPB_INLINE upb_Array* _cel_expr_Decl_FunctionDecl_Overload_params_mutable_upb_array(
+    cel_expr_Decl_FunctionDecl_Overload* msg, size_t* size, upb_Arena* arena) {
+  const upb_MiniTableField field = {2, UPB_SIZE(12, 48), 0, 15, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&cel__expr__Type_msg_init);
   upb_Array* arr = upb_Message_GetOrCreateMutableArray(UPB_UPCAST(msg),
                                                        &field, arena);
@@ -1566,7 +1722,8 @@ UPB_INLINE void cel_expr_Decl_FunctionDecl_Overload_clear_type_params(cel_expr_D
   const upb_MiniTableField field = {3, UPB_SIZE(16, 56), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
 }
-UPB_INLINE upb_StringView const* cel_expr_Decl_FunctionDecl_Overload_type_params(const cel_expr_Decl_FunctionDecl_Overload* msg, size_t* size) {
+UPB_INLINE upb_StringView const* cel_expr_Decl_FunctionDecl_Overload_type_params(const cel_expr_Decl_FunctionDecl_Overload* msg,
+                                                  size_t* size) {
   const upb_MiniTableField field = {3, UPB_SIZE(16, 56), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   const upb_Array* arr = upb_Message_GetArray(UPB_UPCAST(msg), &field);
   if (arr) {
@@ -1577,7 +1734,10 @@ UPB_INLINE upb_StringView const* cel_expr_Decl_FunctionDecl_Overload_type_params
     return NULL;
   }
 }
-UPB_INLINE const upb_Array* _cel_expr_Decl_FunctionDecl_Overload_type_params_upb_array(const cel_expr_Decl_FunctionDecl_Overload* msg, size_t* size) {
+
+//
+UPB_INLINE const upb_Array* _cel_expr_Decl_FunctionDecl_Overload_type_params_upb_array(
+    const cel_expr_Decl_FunctionDecl_Overload* msg, size_t* size) {
   const upb_MiniTableField field = {3, UPB_SIZE(16, 56), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   const upb_Array* arr = upb_Message_GetArray(UPB_UPCAST(msg), &field);
   if (size) {
@@ -1585,7 +1745,9 @@ UPB_INLINE const upb_Array* _cel_expr_Decl_FunctionDecl_Overload_type_params_upb
   }
   return arr;
 }
-UPB_INLINE upb_Array* _cel_expr_Decl_FunctionDecl_Overload_type_params_mutable_upb_array(cel_expr_Decl_FunctionDecl_Overload* msg, size_t* size, upb_Arena* arena) {
+
+UPB_INLINE upb_Array* _cel_expr_Decl_FunctionDecl_Overload_type_params_mutable_upb_array(
+    cel_expr_Decl_FunctionDecl_Overload* msg, size_t* size, upb_Arena* arena) {
   const upb_MiniTableField field = {3, UPB_SIZE(16, 56), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   upb_Array* arr = upb_Message_GetOrCreateMutableArray(UPB_UPCAST(msg),
                                                        &field, arena);
@@ -1595,20 +1757,20 @@ UPB_INLINE upb_Array* _cel_expr_Decl_FunctionDecl_Overload_type_params_mutable_u
   return arr;
 }
 UPB_INLINE void cel_expr_Decl_FunctionDecl_Overload_clear_result_type(cel_expr_Decl_FunctionDecl_Overload* msg) {
-  const upb_MiniTableField field = {4, UPB_SIZE(20, 64), 64, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {4, UPB_SIZE(20, 64), 64, UPB_SIZE(10, 11), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE const cel_expr_Type* cel_expr_Decl_FunctionDecl_Overload_result_type(const cel_expr_Decl_FunctionDecl_Overload* msg) {
   const cel_expr_Type* default_val = NULL;
   const cel_expr_Type* ret;
-  const upb_MiniTableField field = {4, UPB_SIZE(20, 64), 64, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {4, UPB_SIZE(20, 64), 64, UPB_SIZE(10, 11), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&cel__expr__Type_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
 }
 UPB_INLINE bool cel_expr_Decl_FunctionDecl_Overload_has_result_type(const cel_expr_Decl_FunctionDecl_Overload* msg) {
-  const upb_MiniTableField field = {4, UPB_SIZE(20, 64), 64, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {4, UPB_SIZE(20, 64), 64, UPB_SIZE(10, 11), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   return upb_Message_HasBaseField(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE void cel_expr_Decl_FunctionDecl_Overload_clear_is_instance_function(cel_expr_Decl_FunctionDecl_Overload* msg) {
@@ -1636,12 +1798,13 @@ UPB_INLINE upb_StringView cel_expr_Decl_FunctionDecl_Overload_doc(const cel_expr
   return ret;
 }
 
-UPB_INLINE void cel_expr_Decl_FunctionDecl_Overload_set_overload_id(cel_expr_Decl_FunctionDecl_Overload *msg, upb_StringView value) {
+UPB_INLINE void cel_expr_Decl_FunctionDecl_Overload_set_overload_id(cel_expr_Decl_FunctionDecl_Overload* msg, upb_StringView value) {
   const upb_MiniTableField field = {1, UPB_SIZE(24, 16), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
-  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message*)msg, &field, &value);
 }
-UPB_INLINE cel_expr_Type** cel_expr_Decl_FunctionDecl_Overload_mutable_params(cel_expr_Decl_FunctionDecl_Overload* msg, size_t* size) {
-  upb_MiniTableField field = {2, UPB_SIZE(12, 48), 0, 0, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+UPB_INLINE cel_expr_Type** cel_expr_Decl_FunctionDecl_Overload_mutable_params(cel_expr_Decl_FunctionDecl_Overload* msg,
+                                              size_t* size) {
+  upb_MiniTableField field = {2, UPB_SIZE(12, 48), 0, 15, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&cel__expr__Type_msg_init);
   upb_Array* arr = upb_Message_GetMutableArray(UPB_UPCAST(msg), &field);
   if (arr) {
@@ -1652,13 +1815,18 @@ UPB_INLINE cel_expr_Type** cel_expr_Decl_FunctionDecl_Overload_mutable_params(ce
     return NULL;
   }
 }
-UPB_INLINE cel_expr_Type** cel_expr_Decl_FunctionDecl_Overload_resize_params(cel_expr_Decl_FunctionDecl_Overload* msg, size_t size, upb_Arena* arena) {
-  upb_MiniTableField field = {2, UPB_SIZE(12, 48), 0, 0, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  return (cel_expr_Type**)upb_Message_ResizeArrayUninitialized(UPB_UPCAST(msg),
-                                                   &field, size, arena);
+
+UPB_INLINE cel_expr_Type** cel_expr_Decl_FunctionDecl_Overload_resize_params(cel_expr_Decl_FunctionDecl_Overload* msg,
+                                             size_t size,
+                                             upb_Arena* arena) {
+  upb_MiniTableField field = {2, UPB_SIZE(12, 48), 0, 15, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&cel__expr__Type_msg_init);
+  return (cel_expr_Type**)upb_Message_ResizeArrayUninitialized(
+      UPB_UPCAST(msg), &field, size, arena);
 }
-UPB_INLINE struct cel_expr_Type* cel_expr_Decl_FunctionDecl_Overload_add_params(cel_expr_Decl_FunctionDecl_Overload* msg, upb_Arena* arena) {
-  upb_MiniTableField field = {2, UPB_SIZE(12, 48), 0, 0, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+UPB_INLINE struct cel_expr_Type* cel_expr_Decl_FunctionDecl_Overload_add_params(
+    cel_expr_Decl_FunctionDecl_Overload* msg, upb_Arena* arena) {
+  upb_MiniTableField field = {2, UPB_SIZE(12, 48), 0, 15, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&cel__expr__Type_msg_init);
   upb_Array* arr = upb_Message_GetOrCreateMutableArray(
       UPB_UPCAST(msg), &field, arena);
@@ -1666,13 +1834,15 @@ UPB_INLINE struct cel_expr_Type* cel_expr_Decl_FunctionDecl_Overload_add_params(
                   arr, arr->UPB_PRIVATE(size) + 1, arena)) {
     return NULL;
   }
-  struct cel_expr_Type* sub = (struct cel_expr_Type*)_upb_Message_New(&cel__expr__Type_msg_init, arena);
+  struct cel_expr_Type* sub =
+      (struct cel_expr_Type*)_upb_Message_New(&cel__expr__Type_msg_init, arena);
   if (!arr || !sub) return NULL;
   UPB_PRIVATE(_upb_Array_Set)
   (arr, arr->UPB_PRIVATE(size) - 1, &sub, sizeof(sub));
   return sub;
 }
-UPB_INLINE upb_StringView* cel_expr_Decl_FunctionDecl_Overload_mutable_type_params(cel_expr_Decl_FunctionDecl_Overload* msg, size_t* size) {
+UPB_INLINE upb_StringView* cel_expr_Decl_FunctionDecl_Overload_mutable_type_params(cel_expr_Decl_FunctionDecl_Overload* msg,
+                                              size_t* size) {
   upb_MiniTableField field = {3, UPB_SIZE(16, 56), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   upb_Array* arr = upb_Message_GetMutableArray(UPB_UPCAST(msg), &field);
   if (arr) {
@@ -1683,12 +1853,16 @@ UPB_INLINE upb_StringView* cel_expr_Decl_FunctionDecl_Overload_mutable_type_para
     return NULL;
   }
 }
-UPB_INLINE upb_StringView* cel_expr_Decl_FunctionDecl_Overload_resize_type_params(cel_expr_Decl_FunctionDecl_Overload* msg, size_t size, upb_Arena* arena) {
+
+UPB_INLINE upb_StringView* cel_expr_Decl_FunctionDecl_Overload_resize_type_params(cel_expr_Decl_FunctionDecl_Overload* msg,
+                                             size_t size,
+                                             upb_Arena* arena) {
   upb_MiniTableField field = {3, UPB_SIZE(16, 56), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  return (upb_StringView*)upb_Message_ResizeArrayUninitialized(UPB_UPCAST(msg),
-                                                   &field, size, arena);
+  return (upb_StringView*)upb_Message_ResizeArrayUninitialized(
+      UPB_UPCAST(msg), &field, size, arena);
 }
-UPB_INLINE bool cel_expr_Decl_FunctionDecl_Overload_add_type_params(cel_expr_Decl_FunctionDecl_Overload* msg, upb_StringView val, upb_Arena* arena) {
+UPB_INLINE bool cel_expr_Decl_FunctionDecl_Overload_add_type_params(cel_expr_Decl_FunctionDecl_Overload* msg, upb_StringView val,
+                                      upb_Arena* arena) {
   upb_MiniTableField field = {3, UPB_SIZE(16, 56), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   upb_Array* arr = upb_Message_GetOrCreateMutableArray(
       UPB_UPCAST(msg), &field, arena);
@@ -1700,12 +1874,13 @@ UPB_INLINE bool cel_expr_Decl_FunctionDecl_Overload_add_type_params(cel_expr_Dec
   (arr, arr->UPB_PRIVATE(size) - 1, &val, sizeof(val));
   return true;
 }
-UPB_INLINE void cel_expr_Decl_FunctionDecl_Overload_set_result_type(cel_expr_Decl_FunctionDecl_Overload *msg, cel_expr_Type* value) {
-  const upb_MiniTableField field = {4, UPB_SIZE(20, 64), 64, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+UPB_INLINE void cel_expr_Decl_FunctionDecl_Overload_set_result_type(cel_expr_Decl_FunctionDecl_Overload* msg, cel_expr_Type* value) {
+  const upb_MiniTableField field = {4, UPB_SIZE(20, 64), 64, UPB_SIZE(10, 11), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&cel__expr__Type_msg_init);
-  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message*)msg, &field, &value);
 }
-UPB_INLINE struct cel_expr_Type* cel_expr_Decl_FunctionDecl_Overload_mutable_result_type(cel_expr_Decl_FunctionDecl_Overload* msg, upb_Arena* arena) {
+UPB_INLINE struct cel_expr_Type* cel_expr_Decl_FunctionDecl_Overload_mutable_result_type(
+    cel_expr_Decl_FunctionDecl_Overload* msg, upb_Arena* arena) {
   struct cel_expr_Type* sub = (struct cel_expr_Type*)cel_expr_Decl_FunctionDecl_Overload_result_type(msg);
   if (sub == NULL) {
     sub = (struct cel_expr_Type*)_upb_Message_New(&cel__expr__Type_msg_init, arena);
@@ -1713,47 +1888,49 @@ UPB_INLINE struct cel_expr_Type* cel_expr_Decl_FunctionDecl_Overload_mutable_res
   }
   return sub;
 }
-UPB_INLINE void cel_expr_Decl_FunctionDecl_Overload_set_is_instance_function(cel_expr_Decl_FunctionDecl_Overload *msg, bool value) {
+UPB_INLINE void cel_expr_Decl_FunctionDecl_Overload_set_is_instance_function(cel_expr_Decl_FunctionDecl_Overload* msg, bool value) {
   const upb_MiniTableField field = {5, 9, 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
-  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message*)msg, &field, &value);
 }
-UPB_INLINE void cel_expr_Decl_FunctionDecl_Overload_set_doc(cel_expr_Decl_FunctionDecl_Overload *msg, upb_StringView value) {
+UPB_INLINE void cel_expr_Decl_FunctionDecl_Overload_set_doc(cel_expr_Decl_FunctionDecl_Overload* msg, upb_StringView value) {
   const upb_MiniTableField field = {6, 32, 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
-  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message*)msg, &field, &value);
 }
 
 /* cel.expr.Reference */
-
 UPB_INLINE cel_expr_Reference* cel_expr_Reference_new(upb_Arena* arena) {
   return (cel_expr_Reference*)_upb_Message_New(&cel__expr__Reference_msg_init, arena);
 }
-UPB_INLINE cel_expr_Reference* cel_expr_Reference_parse(const char* buf, size_t size, upb_Arena* arena) {
+UPB_INLINE cel_expr_Reference* cel_expr_Reference_parse(const char* buf, size_t size,
+                                        upb_Arena* arena) {
   cel_expr_Reference* ret = cel_expr_Reference_new(arena);
   if (!ret) return NULL;
-  if (upb_Decode(buf, size, UPB_UPCAST(ret), &cel__expr__Reference_msg_init, NULL, 0, arena) !=
-      kUpb_DecodeStatus_Ok) {
-    return NULL;
-  }
-  return ret;
-}
-UPB_INLINE cel_expr_Reference* cel_expr_Reference_parse_ex(const char* buf, size_t size,
-                           const upb_ExtensionRegistry* extreg,
-                           int options, upb_Arena* arena) {
-  cel_expr_Reference* ret = cel_expr_Reference_new(arena);
-  if (!ret) return NULL;
-  if (upb_Decode(buf, size, UPB_UPCAST(ret), &cel__expr__Reference_msg_init, extreg, options,
+  if (upb_Decode(buf, size, UPB_UPCAST(ret), &cel__expr__Reference_msg_init, NULL, 0,
                  arena) != kUpb_DecodeStatus_Ok) {
     return NULL;
   }
   return ret;
 }
-UPB_INLINE char* cel_expr_Reference_serialize(const cel_expr_Reference* msg, upb_Arena* arena, size_t* len) {
+UPB_INLINE cel_expr_Reference* cel_expr_Reference_parse_ex(
+    const char* buf, size_t size, const upb_ExtensionRegistry* extreg,
+    int options, upb_Arena* arena) {
+  cel_expr_Reference* ret = cel_expr_Reference_new(arena);
+  if (!ret) return NULL;
+  if (upb_Decode(buf, size, UPB_UPCAST(ret), &cel__expr__Reference_msg_init, extreg,
+                 options, arena) != kUpb_DecodeStatus_Ok) {
+    return NULL;
+  }
+  return ret;
+}
+UPB_INLINE char* cel_expr_Reference_serialize(const cel_expr_Reference* msg,
+                                      upb_Arena* arena, size_t* len) {
   char* ptr;
   (void)upb_Encode(UPB_UPCAST(msg), &cel__expr__Reference_msg_init, 0, arena, &ptr, len);
   return ptr;
 }
-UPB_INLINE char* cel_expr_Reference_serialize_ex(const cel_expr_Reference* msg, int options,
-                                 upb_Arena* arena, size_t* len) {
+UPB_INLINE char* cel_expr_Reference_serialize_ex(const cel_expr_Reference* msg,
+                                         int options, upb_Arena* arena,
+                                         size_t* len) {
   char* ptr;
   (void)upb_Encode(UPB_UPCAST(msg), &cel__expr__Reference_msg_init, options, arena, &ptr, len);
   return ptr;
@@ -1774,7 +1951,8 @@ UPB_INLINE void cel_expr_Reference_clear_overload_id(cel_expr_Reference* msg) {
   const upb_MiniTableField field = {3, UPB_SIZE(12, 32), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
 }
-UPB_INLINE upb_StringView const* cel_expr_Reference_overload_id(const cel_expr_Reference* msg, size_t* size) {
+UPB_INLINE upb_StringView const* cel_expr_Reference_overload_id(const cel_expr_Reference* msg,
+                                                  size_t* size) {
   const upb_MiniTableField field = {3, UPB_SIZE(12, 32), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   const upb_Array* arr = upb_Message_GetArray(UPB_UPCAST(msg), &field);
   if (arr) {
@@ -1785,7 +1963,10 @@ UPB_INLINE upb_StringView const* cel_expr_Reference_overload_id(const cel_expr_R
     return NULL;
   }
 }
-UPB_INLINE const upb_Array* _cel_expr_Reference_overload_id_upb_array(const cel_expr_Reference* msg, size_t* size) {
+
+//
+UPB_INLINE const upb_Array* _cel_expr_Reference_overload_id_upb_array(
+    const cel_expr_Reference* msg, size_t* size) {
   const upb_MiniTableField field = {3, UPB_SIZE(12, 32), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   const upb_Array* arr = upb_Message_GetArray(UPB_UPCAST(msg), &field);
   if (size) {
@@ -1793,7 +1974,9 @@ UPB_INLINE const upb_Array* _cel_expr_Reference_overload_id_upb_array(const cel_
   }
   return arr;
 }
-UPB_INLINE upb_Array* _cel_expr_Reference_overload_id_mutable_upb_array(cel_expr_Reference* msg, size_t* size, upb_Arena* arena) {
+
+UPB_INLINE upb_Array* _cel_expr_Reference_overload_id_mutable_upb_array(
+    cel_expr_Reference* msg, size_t* size, upb_Arena* arena) {
   const upb_MiniTableField field = {3, UPB_SIZE(12, 32), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   upb_Array* arr = upb_Message_GetOrCreateMutableArray(UPB_UPCAST(msg),
                                                        &field, arena);
@@ -1803,28 +1986,29 @@ UPB_INLINE upb_Array* _cel_expr_Reference_overload_id_mutable_upb_array(cel_expr
   return arr;
 }
 UPB_INLINE void cel_expr_Reference_clear_value(cel_expr_Reference* msg) {
-  const upb_MiniTableField field = {4, UPB_SIZE(16, 40), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {4, UPB_SIZE(16, 40), 64, UPB_SIZE(3, 4), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE const struct cel_expr_Constant* cel_expr_Reference_value(const cel_expr_Reference* msg) {
   const struct cel_expr_Constant* default_val = NULL;
   const struct cel_expr_Constant* ret;
-  const upb_MiniTableField field = {4, UPB_SIZE(16, 40), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {4, UPB_SIZE(16, 40), 64, UPB_SIZE(3, 4), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&cel__expr__Constant_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
 }
 UPB_INLINE bool cel_expr_Reference_has_value(const cel_expr_Reference* msg) {
-  const upb_MiniTableField field = {4, UPB_SIZE(16, 40), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {4, UPB_SIZE(16, 40), 64, UPB_SIZE(3, 4), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   return upb_Message_HasBaseField(UPB_UPCAST(msg), &field);
 }
 
-UPB_INLINE void cel_expr_Reference_set_name(cel_expr_Reference *msg, upb_StringView value) {
+UPB_INLINE void cel_expr_Reference_set_name(cel_expr_Reference* msg, upb_StringView value) {
   const upb_MiniTableField field = {1, UPB_SIZE(20, 16), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
-  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message*)msg, &field, &value);
 }
-UPB_INLINE upb_StringView* cel_expr_Reference_mutable_overload_id(cel_expr_Reference* msg, size_t* size) {
+UPB_INLINE upb_StringView* cel_expr_Reference_mutable_overload_id(cel_expr_Reference* msg,
+                                              size_t* size) {
   upb_MiniTableField field = {3, UPB_SIZE(12, 32), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   upb_Array* arr = upb_Message_GetMutableArray(UPB_UPCAST(msg), &field);
   if (arr) {
@@ -1835,12 +2019,16 @@ UPB_INLINE upb_StringView* cel_expr_Reference_mutable_overload_id(cel_expr_Refer
     return NULL;
   }
 }
-UPB_INLINE upb_StringView* cel_expr_Reference_resize_overload_id(cel_expr_Reference* msg, size_t size, upb_Arena* arena) {
+
+UPB_INLINE upb_StringView* cel_expr_Reference_resize_overload_id(cel_expr_Reference* msg,
+                                             size_t size,
+                                             upb_Arena* arena) {
   upb_MiniTableField field = {3, UPB_SIZE(12, 32), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  return (upb_StringView*)upb_Message_ResizeArrayUninitialized(UPB_UPCAST(msg),
-                                                   &field, size, arena);
+  return (upb_StringView*)upb_Message_ResizeArrayUninitialized(
+      UPB_UPCAST(msg), &field, size, arena);
 }
-UPB_INLINE bool cel_expr_Reference_add_overload_id(cel_expr_Reference* msg, upb_StringView val, upb_Arena* arena) {
+UPB_INLINE bool cel_expr_Reference_add_overload_id(cel_expr_Reference* msg, upb_StringView val,
+                                      upb_Arena* arena) {
   upb_MiniTableField field = {3, UPB_SIZE(12, 32), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   upb_Array* arr = upb_Message_GetOrCreateMutableArray(
       UPB_UPCAST(msg), &field, arena);
@@ -1852,12 +2040,13 @@ UPB_INLINE bool cel_expr_Reference_add_overload_id(cel_expr_Reference* msg, upb_
   (arr, arr->UPB_PRIVATE(size) - 1, &val, sizeof(val));
   return true;
 }
-UPB_INLINE void cel_expr_Reference_set_value(cel_expr_Reference *msg, struct cel_expr_Constant* value) {
-  const upb_MiniTableField field = {4, UPB_SIZE(16, 40), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+UPB_INLINE void cel_expr_Reference_set_value(cel_expr_Reference* msg, struct cel_expr_Constant* value) {
+  const upb_MiniTableField field = {4, UPB_SIZE(16, 40), 64, UPB_SIZE(3, 4), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&cel__expr__Constant_msg_init);
-  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message*)msg, &field, &value);
 }
-UPB_INLINE struct cel_expr_Constant* cel_expr_Reference_mutable_value(cel_expr_Reference* msg, upb_Arena* arena) {
+UPB_INLINE struct cel_expr_Constant* cel_expr_Reference_mutable_value(
+    cel_expr_Reference* msg, upb_Arena* arena) {
   struct cel_expr_Constant* sub = (struct cel_expr_Constant*)cel_expr_Reference_value(msg);
   if (sub == NULL) {
     sub = (struct cel_expr_Constant*)_upb_Message_New(&cel__expr__Constant_msg_init, arena);
@@ -1867,9 +2056,9 @@ UPB_INLINE struct cel_expr_Constant* cel_expr_Reference_mutable_value(cel_expr_R
 }
 
 #ifdef __cplusplus
-}  /* extern "C" */
+              } /* extern "C" */
 #endif
 
 #include "upb/port/undef.inc"
 
-#endif  /* CEL_EXPR_CHECKED_PROTO_UPB_H__UPB_H_ */
+#endif /* CEL_EXPR_CHECKED_PROTO_UPB_H__UPB_H_ */

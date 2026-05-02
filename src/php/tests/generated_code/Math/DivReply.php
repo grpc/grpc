@@ -52,7 +52,7 @@ class DivReply extends \Google\Protobuf\Internal\Message
      * @param int|string $var
      * @return $this
      */
-    public function setQuotient($var)
+    public function setQuotient(int|string $var)
     {
         GPBUtil::checkInt64($var);
         $this->quotient = $var;
@@ -74,7 +74,7 @@ class DivReply extends \Google\Protobuf\Internal\Message
      * @param int|string $var
      * @return $this
      */
-    public function setRemainder($var)
+    public function setRemainder(int|string $var)
     {
         GPBUtil::checkInt64($var);
         $this->remainder = $var;
