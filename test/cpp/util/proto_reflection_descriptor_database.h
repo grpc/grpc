@@ -47,13 +47,13 @@ class ProtoReflectionDescriptorDatabase : public protobuf::DescriptorDatabase {
   //
   // Find a file by file name.  Fills in *output and returns true if found.
   // Otherwise, returns false, leaving the contents of *output undefined.
-  bool FindFileByName(const string& filename,
+  bool FindFileByName(absl::string_view filename,
                       protobuf::FileDescriptorProto* output) override;
 
   // Find the file that declares the given fully-qualified symbol name.
   // If found, fills in *output and returns true, otherwise returns false
   // and leaves *output undefined.
-  bool FindFileContainingSymbol(const string& symbol_name,
+  bool FindFileContainingSymbol(absl::string_view symbol_name,
                                 protobuf::FileDescriptorProto* output) override;
 
   // Find the file which defines an extension extending the given message type
@@ -61,7 +61,7 @@ class ProtoReflectionDescriptorDatabase : public protobuf::DescriptorDatabase {
   // otherwise returns false and leaves *output undefined.  containing_type
   // must be a fully-qualified type name.
   bool FindFileContainingExtension(
-      const string& containing_type, int field_number,
+      absl::string_view containing_type, int field_number,
       protobuf::FileDescriptorProto* output) override;
 
   // Finds the tag numbers used by all known extensions of
@@ -71,7 +71,7 @@ class ProtoReflectionDescriptorDatabase : public protobuf::DescriptorDatabase {
   // FindFileContainingExtension will return true on all of the found
   // numbers. Returns true if the search was successful, otherwise
   // returns false and leaves output unchanged.
-  bool FindAllExtensionNumbers(const string& extendee_type,
+  bool FindAllExtensionNumbers(absl::string_view extendee_type,
                                std::vector<int>* output) override;
 
   // Provide a list of full names of registered services

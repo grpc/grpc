@@ -104,8 +104,16 @@ static void do_basic_init(void) {
   grpc_client_channel_global_init_backup_polling();
 }
 
+#ifdef GPR_WINDOWS
+extern "C" void grpc_upb_msvc_fix_force_reference(void);
+#endif
+
 void grpc_init(void) {
   gpr_once_init(&g_basic_init, do_basic_init);
+
+#ifdef GPR_WINDOWS
+  grpc_upb_msvc_fix_force_reference();
+#endif
 
   grpc_core::MutexLock lock(g_init_mu);
   if (++g_initializations == 1) {

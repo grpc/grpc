@@ -19,7 +19,6 @@ extern "C" {
 #endif
 
 extern const upb_MiniTable xds__core__v3__Authority_msg_init;
-extern const upb_MiniTable* xds__core__v3__Authority_msg_init_ptr;
 
 extern const upb_MiniTableFile xds_core_v3_authority_proto_upb_file_layout;
 

@@ -57,13 +57,15 @@ def grpc_deps():
         )
 
     if "com_google_protobuf" not in native.existing_rules():
+        # TODO(weizheyuan): Revert this to v34.1
+        # used for testing only
         http_archive(
             name = "com_google_protobuf",
-            sha256 = "374166fe6f8f1178ef2d759262548eb7063bde83c2805f6db71c5fca87a9d87d",
-            strip_prefix = "protobuf-b6f9284da830b69be787732ffdaa35049d20a088",
+            #sha256 = "fd17f600acc0e2317e7dfa271b0c968501108d9910b572b06302cba997992dd5",
+            strip_prefix = "protobuf-6ebddba9bb2cdde56f53fe64d439505102af68d6",
             urls = [
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/protocolbuffers/protobuf/archive/b6f9284da830b69be787732ffdaa35049d20a088.tar.gz",
-                "https://github.com/protocolbuffers/protobuf/archive/b6f9284da830b69be787732ffdaa35049d20a088.tar.gz",
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/protocolbuffers/protobuf/archive/6ebddba9bb2cdde56f53fe64d439505102af68d6.tar.gz",
+                "https://github.com/protocolbuffers/protobuf/archive/6ebddba9bb2cdde56f53fe64d439505102af68d6.tar.gz",
             ],
             patches = [
                 "@com_github_grpc_grpc//third_party:protobuf.patch",

@@ -14,6 +14,8 @@
 
 #include "src/core/ext/transport/chttp2/transport/hpack_encoder_table.h"
 
+#include <absl/log/log.h>
+
 #include <grpc/support/port_platform.h>
 
 #include <algorithm>
@@ -72,6 +74,10 @@ void HPackEncoderTable::EvictOne() {
   tail_remote_index_++;
   GRPC_CHECK_GT(tail_remote_index_, 0u);
   GRPC_CHECK_GT(table_elems_, 0u);
+  if (elem_size_.empty()) {
+    LOG(ERROR) << "HPackEncoderTable::EvictOne: elem_size_ is empty!";
+    return;
+  }
   auto removing_size = elem_size_[tail_remote_index_ % elem_size_.size()];
   GRPC_CHECK(table_size_ >= removing_size);
   table_size_ -= removing_size;

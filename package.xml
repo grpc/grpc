@@ -3305,6 +3305,7 @@
     <file baseinstalldir="/" name="third_party/re2/util/utf.h" role="src" />
     <file baseinstalldir="/" name="third_party/re2/util/util.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/base/descriptor_constants.h" role="src" />
+    <file baseinstalldir="/" name="third_party/upb/upb/base/error_handler.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/base/internal/endian.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/base/internal/log2.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/base/status.c" role="src" />
@@ -3354,7 +3355,6 @@
     <file baseinstalldir="/" name="third_party/upb/upb/message/internal/map_sorter.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/message/internal/message.c" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/message/internal/message.h" role="src" />
-    <file baseinstalldir="/" name="third_party/upb/upb/message/internal/tagged_ptr.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/message/internal/types.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/message/map.c" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/message/map.h" role="src" />
@@ -3364,7 +3364,6 @@
     <file baseinstalldir="/" name="third_party/upb/upb/message/merge.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/message/message.c" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/message/message.h" role="src" />
-    <file baseinstalldir="/" name="third_party/upb/upb/message/tagged_ptr.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/message/value.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/mini_descriptor/build_enum.c" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/mini_descriptor/build_enum.h" role="src" />
@@ -3386,10 +3385,13 @@
     <file baseinstalldir="/" name="third_party/upb/upb/mini_table/extension_registry.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/mini_table/field.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/mini_table/file.h" role="src" />
+    <file baseinstalldir="/" name="third_party/upb/upb/mini_table/generated_registry.c" role="src" />
+    <file baseinstalldir="/" name="third_party/upb/upb/mini_table/generated_registry.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/mini_table/internal/enum.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/mini_table/internal/extension.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/mini_table/internal/field.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/mini_table/internal/file.h" role="src" />
+    <file baseinstalldir="/" name="third_party/upb/upb/mini_table/internal/generated_registry.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/mini_table/internal/message.c" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/mini_table/internal/message.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/mini_table/internal/size_log2.h" role="src" />
@@ -3472,6 +3474,7 @@
     <file baseinstalldir="/" name="third_party/upb/upb/wire/internal/constants.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/wire/internal/decoder.c" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/wire/internal/decoder.h" role="src" />
+    <file baseinstalldir="/" name="third_party/upb/upb/wire/internal/eps_copy_input_stream.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/wire/internal/reader.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/wire/reader.c" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/wire/reader.h" role="src" />

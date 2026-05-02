@@ -19,7 +19,6 @@ extern "C" {
 #endif
 
 extern const upb_MiniTable envoy__annotations__ResourceAnnotation_msg_init;
-extern const upb_MiniTable* envoy__annotations__ResourceAnnotation_msg_init_ptr;
 extern const upb_MiniTableExtension envoy_annotations_resource_ext;
 
 extern const upb_MiniTableFile envoy_annotations_resource_proto_upb_file_layout;

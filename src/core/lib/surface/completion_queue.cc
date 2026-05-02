@@ -15,6 +15,7 @@
 // limitations under the License.
 //
 //
+#include <absl/log/log.h>
 #include "src/core/lib/surface/completion_queue.h"
 
 #include <grpc/event_engine/event_engine.h>
@@ -593,6 +594,7 @@ grpc_completion_queue* grpc_completion_queue_create_internal(
 
   grpc_core::ExecCtx exec_ctx;
 
+  LOG(ERROR) << "grpc_completion_queue_create_internal: allocating with vtable->data_size=" << vtable->data_size << " and poller_vtable->size()=" << poller_vtable->size();
   cq = static_cast<grpc_completion_queue*>(
       gpr_zalloc(sizeof(grpc_completion_queue) + vtable->data_size +
                  poller_vtable->size()));
