@@ -183,6 +183,19 @@ TEST(ParseAddressTest, MainTest) {
       "ipv6:WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW45%"
       "25v6:45%25x$1*");
 
+  grpc_resolved_address addr;
+  EXPECT_FALSE(grpc_parse_ipv4_hostport("192.0.2.1:12345x", &addr, false));
+  EXPECT_FALSE(grpc_parse_ipv4_hostport("192.0.2.1:+12345", &addr, false));
+  EXPECT_FALSE(
+      grpc_parse_ipv6_hostport("[2001:db8::1]:12345x", &addr, false));
+  EXPECT_FALSE(
+      grpc_parse_ipv6_hostport("[2001:db8::1]:+12345", &addr, false));
+  EXPECT_EQ(grpc_ntohs(grpc_strhtons("http")), 80);
+  EXPECT_EQ(grpc_ntohs(grpc_strhtons("https")), 443);
+  EXPECT_EQ(grpc_ntohs(grpc_strhtons("12345")), 12345);
+  EXPECT_EQ(grpc_ntohs(grpc_strhtons("70000")), 0);
+  EXPECT_EQ(grpc_ntohs(grpc_strhtons("12345x")), 0);
+
   grpc_shutdown();
 }
 
