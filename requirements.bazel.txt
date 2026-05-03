@@ -43,13 +43,13 @@ chardet
 gevent~=25.8
 google-auth
 cryptography~=45.0
-googleapis-common-protos
+googleapis-common-protos>=1.73.0
 idna
 opentelemetry-api
 opentelemetry-exporter-prometheus
 opentelemetry-resourcedetector-gcp
 opentelemetry-sdk
-protobuf==6.33.5 # Pinning to the version corresponding to third_party/protobuf v33.5
+protobuf==7.34.1 # Pinning to the version corresponding to third_party/protobuf v34.1
 pyyaml  # for DNS test
 requests
 setuptools>=77.0.1
