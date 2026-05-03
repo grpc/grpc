@@ -26,6 +26,7 @@
 
 #include "src/core/config/config_vars.h"
 #include "src/cpp/ext/proto_server_reflection.h"
+#include "src/proto/grpc/health/v1/health.pb.h"
 
 namespace grpc {
 namespace reflection {
@@ -35,7 +36,13 @@ ProtoServerReflectionPlugin::ProtoServerReflectionPlugin()
       reflection_service_v1alpha_(
           std::make_shared<ProtoServerReflection>(backend_)),
       reflection_service_v1_(
-          std::make_shared<ProtoServerReflectionV1>(backend_)) {}
+          std::make_shared<ProtoServerReflectionV1>(backend_)) {
+  // Force registration of the generated health proto file descriptors so the
+  // reflection plugin can describe grpc.health.v1.Health when it is enabled.
+  // Referencing any descriptor from health.pb.cc registers the entire file
+  // descriptor, including the Health service descriptors.
+  (void)grpc::health::v1::HealthCheckRequest::descriptor();
+}
 
 std::string ProtoServerReflectionPlugin::name() {
   return "proto_server_reflection";

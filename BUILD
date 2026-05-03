@@ -2867,6 +2867,7 @@ grpc_cc_library(
         "config_vars",
         "grpc++",
         "grpc++_config_proto",
+        "//src/proto/grpc/health/v1:health_cc_proto",
         "//src/proto/grpc/reflection/v1:reflection_proto",
         "//src/proto/grpc/reflection/v1alpha:reflection_proto",
     ],
