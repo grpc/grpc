@@ -44,7 +44,7 @@ traffic destined to listed hosts from going through the proxy determined above,
 again stopping at the first one that is set:
 
 1.  `no_grpc_proxy` environment variable
-2.  `no_proxy`environment variable
+2.  `no_proxy` environment variable
 
 If none of the above are set, then the previously found HTTP proxy is used.
 
