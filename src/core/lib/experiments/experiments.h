@@ -104,6 +104,7 @@ inline bool IsMetadataPublishToAppTagEnabled() { return true; }
 inline bool IsMonitoringExperimentEnabled() { return true; }
 inline bool IsMultipingEnabled() { return false; }
 inline bool IsOtelExportTelemetryDomainsEnabled() { return false; }
+inline bool IsPh2Perf01Enabled() { return false; }
 inline bool IsPickFirstIgnoreEmptyUpdatesEnabled() { return false; }
 inline bool IsPipelinedReadSecureEndpointEnabled() { return false; }
 inline bool IsPollsetAlternativeEnabled() { return false; }
@@ -181,6 +182,7 @@ inline bool IsMetadataPublishToAppTagEnabled() { return true; }
 inline bool IsMonitoringExperimentEnabled() { return true; }
 inline bool IsMultipingEnabled() { return false; }
 inline bool IsOtelExportTelemetryDomainsEnabled() { return false; }
+inline bool IsPh2Perf01Enabled() { return false; }
 inline bool IsPickFirstIgnoreEmptyUpdatesEnabled() { return false; }
 inline bool IsPipelinedReadSecureEndpointEnabled() { return false; }
 inline bool IsPollsetAlternativeEnabled() { return false; }
@@ -258,6 +260,7 @@ inline bool IsMetadataPublishToAppTagEnabled() { return true; }
 inline bool IsMonitoringExperimentEnabled() { return true; }
 inline bool IsMultipingEnabled() { return false; }
 inline bool IsOtelExportTelemetryDomainsEnabled() { return false; }
+inline bool IsPh2Perf01Enabled() { return false; }
 inline bool IsPickFirstIgnoreEmptyUpdatesEnabled() { return false; }
 inline bool IsPipelinedReadSecureEndpointEnabled() { return false; }
 inline bool IsPollsetAlternativeEnabled() { return false; }
@@ -318,6 +321,7 @@ enum ExperimentIds {
   kExperimentIdMonitoringExperiment,
   kExperimentIdMultiping,
   kExperimentIdOtelExportTelemetryDomains,
+  kExperimentIdPh2Perf01,
   kExperimentIdPickFirstIgnoreEmptyUpdates,
   kExperimentIdPipelinedReadSecureEndpoint,
   kExperimentIdPollsetAlternative,
@@ -458,6 +462,10 @@ inline bool IsMultipingEnabled() {
 #define GRPC_EXPERIMENT_IS_INCLUDED_OTEL_EXPORT_TELEMETRY_DOMAINS
 inline bool IsOtelExportTelemetryDomainsEnabled() {
   return IsExperimentEnabled<kExperimentIdOtelExportTelemetryDomains>();
+}
+#define GRPC_EXPERIMENT_IS_INCLUDED_PH2_PERF_01
+inline bool IsPh2Perf01Enabled() {
+  return IsExperimentEnabled<kExperimentIdPh2Perf01>();
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_PICK_FIRST_IGNORE_EMPTY_UPDATES
 inline bool IsPickFirstIgnoreEmptyUpdatesEnabled() {

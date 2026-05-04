@@ -120,7 +120,7 @@ void DoRpc(const std::string& server_addr,
 }
 
 TEST_F(SslCredentialsTest, SequentialResumption) {
-  server_addr_ = absl::StrCat("localhost:",
+  server_addr_ = absl::StrCat("127.0.0.1:",
                               std::to_string(grpc_pick_unused_port_or_die()));
   absl::Notification notification;
   server_thread_ = new std::thread([&]() { RunServer(&notification); });
@@ -146,7 +146,7 @@ TEST_F(SslCredentialsTest, SequentialResumption) {
 }
 
 TEST_F(SslCredentialsTest, ConcurrentResumption) {
-  server_addr_ = absl::StrCat("localhost:",
+  server_addr_ = absl::StrCat("127.0.0.1:",
                               std::to_string(grpc_pick_unused_port_or_die()));
   absl::Notification notification;
   server_thread_ = new std::thread([&]() { RunServer(&notification); });
@@ -179,7 +179,7 @@ TEST_F(SslCredentialsTest, ConcurrentResumption) {
 }
 
 TEST_F(SslCredentialsTest, ResumptionFailsDueToNoCapacityInCache) {
-  server_addr_ = absl::StrCat("localhost:",
+  server_addr_ = absl::StrCat("127.0.0.1:",
                               std::to_string(grpc_pick_unused_port_or_die()));
   absl::Notification notification;
   server_thread_ = new std::thread([&]() { RunServer(&notification); });

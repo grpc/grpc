@@ -6494,6 +6494,17 @@ targets:
   deps:
   - gtest
   - grpc_test_util
+- name: bad_ssl_alpn_server
+  build: test
+  run: false
+  language: c++
+  headers:
+  - test/core/bad_ssl/server_common.h
+  src:
+  - test/core/bad_ssl/server_common.cc
+  - test/core/bad_ssl/servers/alpn.cc
+  deps:
+  - grpc_test_util
 - name: bad_ssl_alpn_test
   gtest: true
   build: test
@@ -6513,6 +6524,17 @@ targets:
   - linux
   - posix
   - mac
+- name: bad_ssl_cert_server
+  build: test
+  run: false
+  language: c++
+  headers:
+  - test/core/bad_ssl/server_common.h
+  src:
+  - test/core/bad_ssl/server_common.cc
+  - test/core/bad_ssl/servers/cert.cc
+  deps:
+  - grpc_test_util
 - name: bad_ssl_cert_test
   gtest: true
   build: test

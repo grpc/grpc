@@ -17,7 +17,6 @@ settings:
   g_stands_for: graphic
   protobuf_version: 4.33.5
   supported_python_versions:
-  - '3.9'
   - '3.10'
   - '3.11'
   - '3.12'
