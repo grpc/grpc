@@ -330,7 +330,10 @@ DATA_ENDPOINTS_TEST(CanReadSecurityFrame) {
       "read",
       [&data_endpoints]() {
         return Race(data_endpoints.Read(12345).Await(),
-                    Map(Sleep(Duration::Minutes(1)),
+                    // FuzzedEventEngine injects random delays up to 30 seconds
+                    // between tasks. Sleep for a long enough time to ensure all
+                    // background event engine tasks are completed.
+                    Map(Sleep(Duration::Hours(1)),
                         [](absl::Status status) -> absl::StatusOr<SliceBuffer> {
                           EXPECT_TRUE(status.ok()) << status;
                           return absl::CancelledError("test");

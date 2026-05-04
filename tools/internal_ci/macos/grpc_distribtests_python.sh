@@ -26,7 +26,6 @@ source tools/internal_ci/helper_scripts/prepare_build_macos_rc
 
 # TODO(jtattermusch): cleanup this prepare build step (needed for python artifact build)
 # install cython for all python versions
-python3.9 -m pip install -U 'cython==3.1.1' setuptools==77.0.1 six==1.16.0 wheel --user
 python3.10 -m pip install -U 'cython==3.1.1' setuptools==77.0.1 six==1.16.0 wheel --user
 python3.11 -m pip install -U 'cython==3.1.1' setuptools==77.0.1 six==1.16.0 wheel --user
 python3.12 -m pip install -U 'cython==3.1.1' setuptools==77.0.1 six==1.16.0 wheel --user --break-system-packages

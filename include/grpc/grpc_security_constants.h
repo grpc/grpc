@@ -145,6 +145,18 @@ typedef enum { UDS = 0, LOCAL_TCP } grpc_local_connect_type;
 /** The TLS versions that are supported by the SSL stack. **/
 typedef enum { TLS1_2, TLS1_3 } grpc_tls_version;
 
+/** TLS key exchange groups. */
+typedef enum {
+  /** Unspecified key exchange group. */
+  GRPC_TLS_GROUP_UNSPECIFIED,
+  /** secp256r1 ECDH key exchange. */
+  GRPC_TLS_GROUP_SECP256R1,
+  /** X25519 ECDH key exchange. */
+  GRPC_TLS_GROUP_X25519,
+  /** X25519_MLKEM768 hybrid key exchange. Post-quantum cryptography. */
+  GRPC_TLS_GROUP_X25519_MLKEM768,
+} grpc_tls_key_exchange_group;
+
 #ifdef __cplusplus
 }
 #endif

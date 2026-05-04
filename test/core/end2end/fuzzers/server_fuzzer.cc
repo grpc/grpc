@@ -42,6 +42,7 @@
 namespace grpc_core {
 namespace testing {
 
+using grpc_event_engine::experimental::EventEngine;
 using grpc_event_engine::experimental::FuzzingEventEngine;
 
 class ServerFuzzer final : public BasicFuzzer {
@@ -51,7 +52,10 @@ class ServerFuzzer final : public BasicFuzzer {
       absl::FunctionRef<void(FuzzingEventEngine*, grpc_server*, int,
                              const ChannelArgs&)>
           server_setup)
-      : BasicFuzzer(msg.event_engine_actions()) {
+      : BasicFuzzer(msg.event_engine_actions()),
+        server_(grpc_server_create(
+            ChannelArgs().SetObject<EventEngine>(engine()).ToC().get(),
+            nullptr)) {
     ExecCtx exec_ctx;
     grpc_server_register_completion_queue(server_, cq(), nullptr);
     // TODO(ctiller): add more registered methods (one for POST, one for PUT)
@@ -64,7 +68,8 @@ class ServerFuzzer final : public BasicFuzzer {
                 CreateChannelArgsFromFuzzingConfiguration(
                     msg.channel_args(), FuzzingEnvironment{resource_quota()})
                     .ToC()
-                    .get()));
+                    .get())
+            .SetObject<EventEngine>(engine()));
     grpc_server_start(server_);
     for (const auto& input : msg.network_input()) {
       UpdateMinimumRunTime(ScheduleConnection(
@@ -92,7 +97,7 @@ class ServerFuzzer final : public BasicFuzzer {
   grpc_server* server() override { return server_; }
   grpc_channel* channel() override { return nullptr; }
 
-  grpc_server* server_ = grpc_server_create(nullptr, nullptr);
+  grpc_server* server_;
 };
 
 void RunServerFuzzer(const fuzzer_input::Msg& msg,

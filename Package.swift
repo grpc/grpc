@@ -23,7 +23,7 @@ let package = Package(
   ],
 
   dependencies: [
-    .package(url: "https://github.com/firebase/abseil-cpp-SwiftPM.git", "0.20240722.0"..<"0.20240723.0"),
+    .package(url: "https://github.com/firebase/abseil-cpp-SwiftPM.git", "0.20250512.1"..<"0.20250512.2"),
     .package(url: "https://github.com/firebase/boringssl-SwiftPM.git", "0.32.0"..<"0.33.0"),
   ],
 
@@ -1382,6 +1382,7 @@ let package = Package(
         "src/core/handshaker/proxy_mapper_registry.cc",
         "src/core/handshaker/proxy_mapper_registry.h",
         "src/core/handshaker/security/pipelined_secure_endpoint.cc",
+        "src/core/handshaker/security/pipelining_heuristic_selector.h",
         "src/core/handshaker/security/secure_endpoint.cc",
         "src/core/handshaker/security/secure_endpoint.h",
         "src/core/handshaker/security/security_handshaker.cc",
@@ -1875,6 +1876,7 @@ let package = Package(
         "src/core/load_balancing/weighted_target/weighted_target.cc",
         "src/core/load_balancing/weighted_target/weighted_target.h",
         "src/core/load_balancing/xds/cds.cc",
+        "src/core/load_balancing/xds/cds.h",
         "src/core/load_balancing/xds/xds_channel_args.h",
         "src/core/load_balancing/xds/xds_cluster_impl.cc",
         "src/core/load_balancing/xds/xds_cluster_manager.cc",
@@ -2365,6 +2367,7 @@ let package = Package(
         "third_party/upb/upb/message/value.h",
         "third_party/upb/upb/port/atomic.h",
         "third_party/upb/upb/port/def.inc",
+        "third_party/upb/upb/port/sanitizers.h",
         "third_party/upb/upb/port/undef.inc",
         "third_party/upb/upb/port/vsnprintf_compat.h",
         "third_party/upb/upb/text/encode.c",
