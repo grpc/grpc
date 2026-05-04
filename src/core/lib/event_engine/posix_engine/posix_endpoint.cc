@@ -279,6 +279,14 @@ void PosixEndpointImpl::FinishEstimate() {
   } else {
     target_length_ = 0.99 * target_length_ + 0.01 * bytes_read_this_round_;
   }
+  // Clamp target_length_ to [min_read_chunk_size_, max_read_chunk_size_].
+  // Without this, target_length_ grows unboundedly under sustained load,
+  // causing memory proportional to (num_connections * peak_message_size).
+  // max_read_chunk_size_ is the intended upper bound per
+  // GRPC_ARG_TCP_MAX_READ_CHUNK_SIZE but was never applied to the estimator.
+  target_length_ = grpc_core::Clamp(target_length_,
+                                    static_cast<double>(min_read_chunk_size_),
+                                    static_cast<double>(max_read_chunk_size_));
   bytes_read_this_round_ = 0;
 }
 
