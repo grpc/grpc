@@ -20,10 +20,12 @@
 #include <grpcpp/channel.h>
 #include <grpcpp/client_context.h>
 #include <grpcpp/create_channel.h>
+#include <grpcpp/security/server_credentials.h>
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
 
 #include <memory>
+#include <string>
 
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/postmortem.h"
@@ -117,6 +119,24 @@ void DoRpc(const std::string& server_addr,
   } else {
     EXPECT_EQ("false", ToString(properties[0]));
   }
+}
+
+TEST_F(SslCredentialsTest, InvalidServerCredentials) {
+  std::string root_cert = grpc_core::testing::GetFileContents(kCaCertPath);
+  grpc::SslServerCredentialsOptions::PemKeyCertPair key_cert_pair = {
+      grpc_core::testing::GetFileContents(kServerKeyPath), "invalid"};
+  grpc::SslServerCredentialsOptions ssl_options;
+  ssl_options.pem_key_cert_pairs.push_back(key_cert_pair);
+  ssl_options.pem_root_certs = root_cert;
+  ssl_options.force_client_auth = true;
+
+  grpc::ServerBuilder builder;
+  TestServiceImpl service_;
+
+  builder.AddListeningPort(server_addr_,
+                           grpc::SslServerCredentials(ssl_options));
+  builder.RegisterService("foo.test.google.fr", &service_);
+  EXPECT_EQ(builder.BuildAndStart(), nullptr);
 }
 
 TEST_F(SslCredentialsTest, SequentialResumption) {
