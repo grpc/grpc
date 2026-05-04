@@ -86,7 +86,6 @@ exclude = [
     "src/python/grpcio/_spawn_patch.py"
 ]
 
-
 [[tool.pyright.executionEnvironments]]
 root = "src/python/grpcio"
 
