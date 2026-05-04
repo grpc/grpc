@@ -1,5 +1,9 @@
 # bazelrc file
 
+# This is experimental on both 8.0.1 and 7.4.1
+# Once we upgrade to >=8.2 we should use --downloader_config instead.
+common --experimental_downloader_config=bazel/downloader.cfg
+
 common:bzlmod --enable_bzlmod
 common:bzlmod --noenable_workspace
 
