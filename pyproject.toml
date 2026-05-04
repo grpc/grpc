@@ -71,7 +71,8 @@ where = ["src/python/grpcio"]
 
 [tool.pyright]
 include = [
-    "src/python/grpcio/grpc/aio/_call.py"
+    "src/python/grpcio/grpc/aio/_call.py",
+    "src/python/grpcio/grpc/aio/_base_server.py"
 ]
 
 typeCheckingMode = "basic"
@@ -85,7 +86,6 @@ exclude = [
     "src/python/grpcio/commands.py",
     "src/python/grpcio/_spawn_patch.py"
 ]
-
 
 [[tool.pyright.executionEnvironments]]
 root = "src/python/grpcio"
