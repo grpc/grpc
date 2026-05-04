@@ -20,8 +20,6 @@ Invoke as: tools/codegen/core/gen_experiments.py
 Experiment definitions are in src/core/lib/experiments/experiments.yaml
 """
 
-from __future__ import print_function
-
 import argparse
 import os
 import sys
