@@ -125,7 +125,7 @@ cdef class _ServicerContext:
         self._loop = loop
 
     async def read(self):
-        cdef bytes raw_message
+        cdef object raw_message
         self._rpc_state.raise_for_termination()
 
         raw_message = await _receive_message(self._rpc_state, self._loop)
@@ -531,7 +531,7 @@ async def _handle_unary_unary_rpc(object method_handler,
                                   RPCState rpc_state,
                                   object loop):
     # Receives request message
-    cdef bytes request_raw = await _receive_message(rpc_state, loop)
+    cdef object request_raw = await _receive_message(rpc_state, loop)
     if request_raw is None:
         # The RPC was cancelled immediately after start on client side.
         return
@@ -565,7 +565,7 @@ async def _handle_unary_stream_rpc(object method_handler,
                                    RPCState rpc_state,
                                    object loop):
     # Receives request message
-    cdef bytes request_raw = await _receive_message(rpc_state, loop)
+    cdef object request_raw = await _receive_message(rpc_state, loop)
     if request_raw is None:
         return
 
