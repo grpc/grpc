@@ -37,7 +37,6 @@ from typing import (
     Set,
     Tuple,
     Union,
-    cast,
 )
 
 import grpc
@@ -589,7 +588,7 @@ def _unary_request(
 def _call_behavior(
     rpc_event: cygrpc.BaseEvent,
     state: _RPCState,
-    behavior: ArityAgnosticMethodHandler,
+    behavior: Optional[ArityAgnosticMethodHandler],
     argument: Any,
     request_deserializer: Optional[DeserializingFunction],
     send_response_callback: Optional[Callable[[ResponseType], None]] = None,
@@ -601,12 +600,12 @@ def _call_behavior(
     ) as context:
         try:
             response_or_iterator = None
-            if send_response_callback is not None:
-                response_or_iterator = cast("Any", behavior)(
+            if behavior is not None and send_response_callback is not None:
+                response_or_iterator = behavior(
                     argument, context, send_response_callback
                 )
-            else:
-                response_or_iterator = cast("Any", behavior)(argument, context)
+            elif behavior is not None:
+                response_or_iterator = behavior(argument, context)
             return response_or_iterator, True
         except Exception as exception:  # pylint: disable=broad-except
             with state.condition:
@@ -845,7 +844,7 @@ def _stream_response_in_pool(
                         rpc_event,
                         state,
                         send_response,
-                        cast("Any", response_iterator),
+                        response_iterator
                     )
     except Exception:  # pylint: disable=broad-except
         traceback.print_exc()
@@ -876,10 +875,10 @@ def _send_message_callback_to_blocking_iterator_adapter(
 
 
 def _select_thread_pool_for_behavior(
-    behavior: ArityAgnosticMethodHandler,
+    behavior: Optional[ArityAgnosticMethodHandler],
     default_thread_pool: futures.ThreadPoolExecutor,
 ) -> futures.ThreadPoolExecutor:
-    if hasattr(behavior, "experimental_thread_pool") and isinstance(
+    if behavior is not None and hasattr(behavior, "experimental_thread_pool") and isinstance(
         behavior.experimental_thread_pool, futures.ThreadPoolExecutor
     ):
         return behavior.experimental_thread_pool
@@ -896,19 +895,24 @@ def _handle_unary_unary(
         rpc_event, state, method_handler.request_deserializer
     )
     thread_pool = _select_thread_pool_for_behavior(
-        cast("ArityAgnosticMethodHandler", method_handler.unary_unary),
+        method_handler.unary_unary,
         default_thread_pool,
     )
-    return thread_pool.submit(
-        state.context.run,
-        _unary_response_in_pool,
-        rpc_event,
-        state,
-        cast("ArityAgnosticMethodHandler", method_handler.unary_unary),
-        unary_request,
-        method_handler.request_deserializer,
-        method_handler.response_serializer,
-    )
+    if method_handler.unary_unary is not None:
+        return thread_pool.submit(
+            state.context.run,
+            _unary_response_in_pool,
+            rpc_event,
+            state,
+            method_handler.unary_unary,
+            unary_request,
+            method_handler.request_deserializer,
+            method_handler.response_serializer,
+        )
+
+    no_op_future = futures.Future()
+    no_op_future.set_result(None)
+    return no_op_future;
 
 
 def _handle_unary_stream(
@@ -921,19 +925,23 @@ def _handle_unary_stream(
         rpc_event, state, method_handler.request_deserializer
     )
     thread_pool = _select_thread_pool_for_behavior(
-        cast("ArityAgnosticMethodHandler", method_handler.unary_stream),
+        method_handler.unary_stream,
         default_thread_pool,
     )
-    return thread_pool.submit(
-        state.context.run,
-        _stream_response_in_pool,
-        rpc_event,
-        state,
-        cast("ArityAgnosticMethodHandler", method_handler.unary_stream),
-        unary_request,
-        method_handler.request_deserializer,
-        method_handler.response_serializer,
-    )
+    if method_handler.unary_stream is not None:
+        return thread_pool.submit(
+            state.context.run,
+            _stream_response_in_pool,
+            rpc_event,
+            state,
+            method_handler.unary_stream,
+            unary_request,
+            method_handler.request_deserializer,
+            method_handler.response_serializer,
+        )
+    no_op_future = futures.Future()
+    no_op_future.set_result(None)
+    return no_op_future;
 
 
 def _handle_stream_unary(
@@ -946,19 +954,24 @@ def _handle_stream_unary(
         state, rpc_event.call, method_handler.request_deserializer
     )
     thread_pool = _select_thread_pool_for_behavior(
-        cast("ArityAgnosticMethodHandler", method_handler.stream_unary),
+        method_handler.stream_unary,
         default_thread_pool,
     )
-    return thread_pool.submit(
-        state.context.run,
-        _unary_response_in_pool,
-        rpc_event,
-        state,
-        cast("ArityAgnosticMethodHandler", method_handler.stream_unary),
-        lambda: request_iterator,
-        method_handler.request_deserializer,
-        method_handler.response_serializer,
-    )
+    if method_handler.stream_unary is not None:
+        return thread_pool.submit(
+            state.context.run,
+            _unary_response_in_pool,
+            rpc_event,
+            state,
+            method_handler.stream_unary,
+            lambda: request_iterator,
+            method_handler.request_deserializer,
+            method_handler.response_serializer,
+        )
+
+    no_op_future = futures.Future()
+    no_op_future.set_result(None)
+    return no_op_future;
 
 
 def _handle_stream_stream(
@@ -971,19 +984,23 @@ def _handle_stream_stream(
         state, rpc_event.call, method_handler.request_deserializer
     )
     thread_pool = _select_thread_pool_for_behavior(
-        cast("ArityAgnosticMethodHandler", method_handler.stream_stream),
+        method_handler.stream_stream,
         default_thread_pool,
     )
-    return thread_pool.submit(
-        state.context.run,
-        _stream_response_in_pool,
-        rpc_event,
-        state,
-        cast("ArityAgnosticMethodHandler", method_handler.stream_stream),
-        lambda: request_iterator,
-        method_handler.request_deserializer,
-        method_handler.response_serializer,
-    )
+    if method_handler.stream_stream is not None:
+        return thread_pool.submit(
+            state.context.run,
+            _stream_response_in_pool,
+            rpc_event,
+            state,
+            method_handler.stream_stream,
+            lambda: request_iterator,
+            method_handler.request_deserializer,
+            method_handler.response_serializer,
+        )
+    no_op_future = futures.Future()
+    no_op_future.set_result(None)
+    return no_op_future;
 
 
 def _find_method_handler(

@@ -1355,22 +1355,22 @@ class RpcMethodHandler(abc.ABC):
     byte strings produced by this object's business logic should be transmitted on the
     wire as they are."""
 
-    unary_unary: Optional[Any]
+    unary_unary: Optional[UnaryUnaryMultiCallable]
     """The application-specific business logic as a callable value that takes a request value and a
     ServicerContext object and returns a response value. Only non-None if both request_streaming and
     response_streaming are False."""
 
-    unary_stream: Optional[Any]
+    unary_stream: Optional[UnaryStreamMultiCallable]
     """The application-specific business logic as a callable value that takes a request value and a
     ServicerContext object and returns an iterator of response values. Only non-None if
     request_streaming is False and response_streaming is True."""
 
-    stream_unary: Optional[Any]
+    stream_unary: Optional[StreamUnaryMultiCallable]
     """The application-specific business logic as a callable value that takes an iterator of request
     values and a ServicerContext object and returns a response value. Only non-None if
     request_streaming is True and response_streaming is False."""
 
-    stream_stream: Optional[Any]
+    stream_stream: Optional[StreamStreamMultiCallable]
     """The application-specific business logic as a callable value that takes an iterator of request
     values and a ServicerContext object and returns an iterator of response values. Only non-None if
     request_streaming and response_streaming are both True."""
