@@ -16,7 +16,9 @@ module(
 )
 
 bazel_dep(name = "grpc")
+bazel_dep(name = "protobuf", version = "34.1")
+
 local_path_override(
     module_name = "grpc",
-    path = "../../",
+    path = "../../../",
 )

@@ -313,7 +313,7 @@ absl::StatusOr<RefCountedPtr<GrpcXdsClient>> GrpcXdsClient::GetOrCreate(
                                               certificate_provider_store),
       certificate_provider_store,
       GetStatsPluginGroupForKeyAndChannelArgs(key, args));
-  g_xds_client_map->emplace(xds_client->key(), xds_client.get());
+  g_xds_client_map->insert_or_assign(xds_client->key(), xds_client.get());
   GRPC_TRACE_LOG(xds_client, INFO) << "[xds_client " << xds_client.get()
                                    << "] Created xDS client for key " << key;
   return xds_client;

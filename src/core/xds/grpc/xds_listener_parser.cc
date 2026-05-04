@@ -44,6 +44,7 @@
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/host_port.h"
 #include "src/core/util/match.h"
+#include "src/core/util/string.h"
 #include "src/core/util/upb_utils.h"
 #include "src/core/util/validation_errors.h"
 #include "src/core/xds/grpc/xds_common_types.h"
@@ -55,8 +56,6 @@
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
-#include "absl/strings/str_format.h"
-#include "absl/strings/str_join.h"
 
 namespace grpc_core {
 
@@ -82,53 +81,92 @@ struct FilterChain {
 };
 
 std::string FilterChain::FilterChainMatch::ToString() const {
-  std::vector<std::string> contents;
+  std::string result = "{";
+  bool is_first = true;
   if (destination_port != 0) {
-    contents.push_back(absl::StrCat("destination_port=", destination_port));
+    StrAppend(result, "destination_port=");
+    StrAppend(result, std::to_string(destination_port));
+    is_first = false;
   }
   if (!prefix_ranges.empty()) {
-    std::vector<std::string> prefix_ranges_content;
-    prefix_ranges_content.reserve(prefix_ranges.size());
+    if (!is_first) StrAppend(result, ", ");
+    StrAppend(result, "prefix_ranges={");
+    bool first_range = true;
     for (const auto& range : prefix_ranges) {
-      prefix_ranges_content.push_back(range.ToString());
+      if (!first_range) StrAppend(result, ", ");
+      StrAppend(result, range.ToString());
+      first_range = false;
     }
-    contents.push_back(absl::StrCat(
-        "prefix_ranges={", absl::StrJoin(prefix_ranges_content, ", "), "}"));
+    StrAppend(result, "}");
+    is_first = false;
   }
   if (source_type == XdsListenerResource::FilterChainMap::ConnectionSourceType::
                          kSameIpOrLoopback) {
-    contents.push_back("source_type=SAME_IP_OR_LOOPBACK");
+    if (!is_first) StrAppend(result, ", ");
+    StrAppend(result, "source_type=SAME_IP_OR_LOOPBACK");
+    is_first = false;
   } else if (source_type == XdsListenerResource::FilterChainMap::
                                 ConnectionSourceType::kExternal) {
-    contents.push_back("source_type=EXTERNAL");
+    if (!is_first) StrAppend(result, ", ");
+    StrAppend(result, "source_type=EXTERNAL");
+    is_first = false;
   }
   if (!source_prefix_ranges.empty()) {
-    std::vector<std::string> source_prefix_ranges_content;
-    source_prefix_ranges_content.reserve(source_prefix_ranges.size());
+    if (!is_first) StrAppend(result, ", ");
+    StrAppend(result, "source_prefix_ranges={");
+    bool first_range = true;
     for (const auto& range : source_prefix_ranges) {
-      source_prefix_ranges_content.push_back(range.ToString());
+      if (!first_range) StrAppend(result, ", ");
+      StrAppend(result, range.ToString());
+      first_range = false;
     }
-    contents.push_back(
-        absl::StrCat("source_prefix_ranges={",
-                     absl::StrJoin(source_prefix_ranges_content, ", "), "}"));
+    StrAppend(result, "}");
+    is_first = false;
   }
   if (!source_ports.empty()) {
-    contents.push_back(
-        absl::StrCat("source_ports={", absl::StrJoin(source_ports, ", "), "}"));
+    if (!is_first) StrAppend(result, ", ");
+    StrAppend(result, "source_ports={");
+    bool first_port = true;
+    for (uint32_t port : source_ports) {
+      if (!first_port) StrAppend(result, ", ");
+      StrAppend(result, std::to_string(port));
+      first_port = false;
+    }
+    StrAppend(result, "}");
+    is_first = false;
   }
   if (!server_names.empty()) {
-    contents.push_back(
-        absl::StrCat("server_names={", absl::StrJoin(server_names, ", "), "}"));
+    if (!is_first) StrAppend(result, ", ");
+    StrAppend(result, "server_names={");
+    bool first_name = true;
+    for (const auto& name : server_names) {
+      if (!first_name) StrAppend(result, ", ");
+      StrAppend(result, name);
+      first_name = false;
+    }
+    StrAppend(result, "}");
+    is_first = false;
   }
   if (!transport_protocol.empty()) {
-    contents.push_back(absl::StrCat("transport_protocol=", transport_protocol));
+    if (!is_first) StrAppend(result, ", ");
+    StrAppend(result, "transport_protocol=");
+    StrAppend(result, transport_protocol);
+    is_first = false;
   }
   if (!application_protocols.empty()) {
-    contents.push_back(absl::StrCat("application_protocols={",
-                                    absl::StrJoin(application_protocols, ", "),
-                                    "}"));
+    if (!is_first) StrAppend(result, ", ");
+    StrAppend(result, "application_protocols={");
+    bool first_protocol = true;
+    for (const auto& protocol : application_protocols) {
+      if (!first_protocol) StrAppend(result, ", ");
+      StrAppend(result, protocol);
+      first_protocol = false;
+    }
+    StrAppend(result, "}");
+    is_first = false;
   }
-  return absl::StrCat("{", absl::StrJoin(contents, ", "), "}");
+  StrAppend(result, "}");
+  return result;
 }
 
 void MaybeLogHttpConnectionManager(
