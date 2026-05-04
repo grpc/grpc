@@ -122,9 +122,6 @@ struct tsi_ssl_root_certs_store {
 struct tsi_ssl_handshaker_factory {
   const tsi_ssl_handshaker_factory_vtable* vtable;
   gpr_refcount refcount;
-#if defined(OPENSSL_IS_BORINGSSL)
-  std::shared_ptr<grpc_core::PrivateKeySigner> key_signer;
-#endif
 };
 
 static void tsi_ssl_handshaker_factory_unref(
@@ -138,6 +135,28 @@ struct tsi_ssl_client_handshaker_factory {
   grpc_core::RefCountedPtr<tsi::SslSessionLRUCache> session_cache;
   grpc_core::RefCountedPtr<TlsSessionKeyLogger> key_logger;
   std::shared_ptr<tsi::RootCertInfo> root_cert_info;
+#if defined(OPENSSL_IS_BORINGSSL)
+  std::shared_ptr<grpc_core::PrivateKeySigner> key_signer;
+#endif
+};
+
+// Wrapper of the SSL_CTX for use on the server side. In addition to the
+// SSL_CTX, it carries extra state that is needed for the server side SSL
+// handshake, e.g. the server name for checking whether this SSL_CTX
+// corresponds to a particular SNI.
+struct SslContext {
+  SSL_CTX* ssl_ctx = nullptr;
+  tsi_peer x509_subject_name;
+#if defined(OPENSSL_IS_BORINGSSL)
+  std::shared_ptr<grpc_core::PrivateKeySigner> key_signer;
+#endif
+
+  ~SslContext() {
+    if (ssl_ctx != nullptr) {
+      SSL_CTX_free(ssl_ctx);
+      tsi_peer_destruct(&x509_subject_name);
+    }
+  }
 };
 
 struct tsi_ssl_server_handshaker_factory {
@@ -145,9 +164,7 @@ struct tsi_ssl_server_handshaker_factory {
   // The tsi_peer array contains the subject names of the server certificates
   // associated with the contexts at the same index.
   tsi_ssl_handshaker_factory base;
-  SSL_CTX** ssl_contexts;
-  tsi_peer* ssl_context_x509_subject_names;
-  size_t ssl_context_count;
+  std::vector<SslContext> ssl_contexts;
   unsigned char* alpn_protocol_list;
   size_t alpn_protocol_list_length;
   grpc_core::RefCountedPtr<TlsSessionKeyLogger> key_logger;
@@ -198,6 +215,7 @@ struct tsi_ssl_handshaker : public tsi_handshaker,
     *handshaker_next_args->error_ptr = std::move(error);
   }
 #if defined(OPENSSL_IS_BORINGSSL)
+  std::shared_ptr<grpc_core::PrivateKeySigner> key_signer;
   // The signed_bytes are populated when the signature process is completed if
   // the Private Key offload was successful. If there was an error during the
   // signature, the status will be returned.
@@ -443,15 +461,13 @@ enum ssl_private_key_result_t TlsPrivateKeySignWrapper(
     handshaker->MaybeSetError(algorithm.status().ToString());
     return ssl_private_key_failure;
   }
-  grpc_core::PrivateKeySigner* signer =
-      handshaker->factory_ref->key_signer.get();
-  if (signer == nullptr) {
+  if (handshaker->key_signer == nullptr) {
     handshaker->MaybeSetError("PrivateKeySigner is null");
     return ssl_private_key_failure;
   }
-  auto result =
-      signer->Sign(absl::string_view(reinterpret_cast<const char*>(in), in_len),
-                   *algorithm, done_callback);
+  auto result = handshaker->key_signer->Sign(
+      absl::string_view(reinterpret_cast<const char*>(in), in_len), *algorithm,
+      done_callback);
   // Handle synchronous return.
   return grpc_core::MatchMutable(
       &result,
@@ -2290,7 +2306,7 @@ static tsi_result ssl_handshaker_next_impl(tsi_ssl_handshaker* self)
       self->handshaker_next_args->received_bytes.clear();
     }
 #if defined(OPENSSL_IS_BORINGSSL)
-  } else if (self->factory_ref->key_signer != nullptr) {
+  } else if (self->key_signer != nullptr) {
     // During the PrivateKeyOffload signature, an empty call to
     // ssl_handshaker_do_handshake needs to be forced  after the async offload
     // has completed.
@@ -2423,8 +2439,7 @@ static void ssl_handshaker_shutdown(tsi_handshaker* self) {
     grpc_core::MutexLock lock(&impl->mu);
     if (impl->ssl == nullptr) return;
     impl->is_shutdown = true;
-    if (impl->factory_ref->key_signer != nullptr &&
-        impl->signing_handle != nullptr) {
+    if (impl->key_signer != nullptr && impl->signing_handle != nullptr) {
       signing_handle = std::move(impl->signing_handle);
     }
     if (impl->handshaker_next_args.has_value()) {
@@ -2433,7 +2448,7 @@ static void ssl_handshaker_shutdown(tsi_handshaker* self) {
     }
   }
   if (signing_handle != nullptr) {
-    impl->factory_ref->key_signer->Cancel(signing_handle);
+    impl->key_signer->Cancel(signing_handle);
   }
   if (next_args.has_value()) {
     grpc_event_engine::experimental::GetDefaultEventEngine()->Run(
@@ -2480,6 +2495,7 @@ static tsi_result create_tsi_ssl_handshaker(
     SSL_CTX* ctx, int is_client, const char* server_name_indication,
     size_t network_bio_buf_size, size_t ssl_bio_buf_size,
     std::optional<std::string> alpn_preferred_protocol_raw_list,
+    std::shared_ptr<grpc_core::PrivateKeySigner> key_signer,
     tsi_ssl_handshaker_factory* factory, tsi_handshaker** handshaker) {
   SSL* ssl = SSL_new(ctx);
   BIO* network_io = nullptr;
@@ -2584,6 +2600,10 @@ static tsi_result create_tsi_ssl_handshaker(
       static_cast<unsigned char*>(gpr_zalloc(impl->outgoing_bytes_buffer_size));
   impl->vtable = &handshaker_vtable;
   impl->factory_ref = tsi_ssl_handshaker_factory_ref(factory);
+#if defined(OPENSSL_IS_BORINGSSL)
+  impl->key_signer = std::move(key_signer);
+#endif
+
   *handshaker = impl;
 
   if (!SSL_set_ex_data(ssl, g_ssl_ex_handshaker_index, impl)) {
@@ -2631,10 +2651,17 @@ tsi_result tsi_ssl_client_handshaker_factory_create_handshaker(
     tsi_handshaker** handshaker) {
   GRPC_TRACE_LOG(tsi, INFO)
       << "Creating SSL handshaker with SNI " << server_name_indication;
+#if defined(OPENSSL_IS_BORINGSSL)
   return create_tsi_ssl_handshaker(
       factory->ssl_context, 1, server_name_indication, network_bio_buf_size,
-      ssl_bio_buf_size, alpn_preferred_protocol_list, &factory->base,
-      handshaker);
+      ssl_bio_buf_size, alpn_preferred_protocol_list, factory->key_signer,
+      &factory->base, handshaker);
+#else
+  return create_tsi_ssl_handshaker(
+      factory->ssl_context, 1, server_name_indication, network_bio_buf_size,
+      ssl_bio_buf_size, alpn_preferred_protocol_list, /*key_signer=*/nullptr,
+      &factory->base, handshaker);
+#endif
 }
 
 void tsi_ssl_client_handshaker_factory_unref(
@@ -2675,12 +2702,22 @@ static int client_handshaker_factory_npn_callback(
 tsi_result tsi_ssl_server_handshaker_factory_create_handshaker(
     tsi_ssl_server_handshaker_factory* factory, size_t network_bio_buf_size,
     size_t ssl_bio_buf_size, tsi_handshaker** handshaker) {
-  if (factory->ssl_context_count == 0) return TSI_INVALID_ARGUMENT;
+  if (factory->ssl_contexts.empty()) return TSI_INVALID_ARGUMENT;
+#if defined(OPENSSL_IS_BORINGSSL)
   // Create the handshaker with the first context. We will switch if needed
   // because of SNI in ssl_server_handshaker_factory_servername_callback.
-  return create_tsi_ssl_handshaker(factory->ssl_contexts[0], 0, nullptr,
+  // Likewise, we pass the private key signer corresponding to the first
+  // context.
+  return create_tsi_ssl_handshaker(
+      factory->ssl_contexts[0].ssl_ctx, 0, nullptr, network_bio_buf_size,
+      ssl_bio_buf_size, std::nullopt, factory->ssl_contexts[0].key_signer,
+      &factory->base, handshaker);
+#else
+  return create_tsi_ssl_handshaker(factory->ssl_contexts[0].ssl_ctx, 0, nullptr,
                                    network_bio_buf_size, ssl_bio_buf_size,
-                                   std::nullopt, &factory->base, handshaker);
+                                   std::nullopt, /*key_signer=*/nullptr,
+                                   &factory->base, handshaker);
+#endif
 }
 
 void tsi_ssl_server_handshaker_factory_unref(
@@ -2694,17 +2731,6 @@ static void tsi_ssl_server_handshaker_factory_destroy(
   if (factory == nullptr) return;
   tsi_ssl_server_handshaker_factory* self =
       reinterpret_cast<tsi_ssl_server_handshaker_factory*>(factory);
-  size_t i;
-  for (i = 0; i < self->ssl_context_count; i++) {
-    if (self->ssl_contexts[i] != nullptr) {
-      SSL_CTX_free(self->ssl_contexts[i]);
-      tsi_peer_destruct(&self->ssl_context_x509_subject_names[i]);
-    }
-  }
-  if (self->ssl_contexts != nullptr) gpr_free(self->ssl_contexts);
-  if (self->ssl_context_x509_subject_names != nullptr) {
-    gpr_free(self->ssl_context_x509_subject_names);
-  }
   if (self->alpn_protocol_list != nullptr) gpr_free(self->alpn_protocol_list);
   delete self;
 }
@@ -2754,16 +2780,19 @@ static int ssl_server_handshaker_factory_servername_callback(SSL* ssl,
                                                              void* arg) {
   tsi_ssl_server_handshaker_factory* impl =
       static_cast<tsi_ssl_server_handshaker_factory*>(arg);
-  size_t i = 0;
   const char* servername = SSL_get_servername(ssl, TLSEXT_NAMETYPE_host_name);
   if (servername == nullptr || strlen(servername) == 0) {
     return SSL_TLSEXT_ERR_NOACK;
   }
 
-  for (i = 0; i < impl->ssl_context_count; i++) {
-    if (tsi_ssl_peer_matches_name(&impl->ssl_context_x509_subject_names[i],
-                                  servername)) {
-      SSL_set_SSL_CTX(ssl, impl->ssl_contexts[i]);
+  for (const auto& ssl_context : impl->ssl_contexts) {
+    if (tsi_ssl_peer_matches_name(&ssl_context.x509_subject_name, servername)) {
+      SSL_set_SSL_CTX(ssl, ssl_context.ssl_ctx);
+#if defined(OPENSSL_IS_BORINGSSL)
+      if (ssl_context.key_signer != nullptr) {
+        GetHandshaker(ssl)->key_signer = ssl_context.key_signer;
+      }
+#endif
       return SSL_TLSEXT_ERR_OK;
     }
   }
@@ -2920,7 +2949,7 @@ tsi_result tsi_create_ssl_client_handshaker_factory_with_options(
           [&](const std::shared_ptr<grpc_core::PrivateKeySigner>& key_signer) {
             // The Handshaker Factory will own a shared copy of the reference
             // passed through the options.
-            impl->base.key_signer = key_signer;
+            impl->key_signer = key_signer;
           });
     }
 #endif
@@ -3045,7 +3074,7 @@ tsi_result tsi_create_ssl_server_handshaker_factory_ex(
     const char* cipher_suites, const char** alpn_protocols,
     uint16_t num_alpn_protocols, tsi_ssl_server_handshaker_factory** factory) {
   tsi_ssl_server_handshaker_options options;
-  options.pem_key_cert_pairs = pem_key_cert_pairs;
+  options.pem_key_cert_pairs = std::move(pem_key_cert_pairs);
   if (pem_client_root_certs != nullptr) {
     options.root_cert_info =
         std::make_shared<tsi::RootCertInfo>(pem_client_root_certs);
@@ -3077,16 +3106,6 @@ tsi_result tsi_create_ssl_server_handshaker_factory_with_options(
   tsi_ssl_handshaker_factory_init(&impl->base);
   impl->base.vtable = &server_handshaker_factory_vtable;
 
-  impl->ssl_contexts = static_cast<SSL_CTX**>(
-      gpr_zalloc(options->pem_key_cert_pairs.size() * sizeof(SSL_CTX*)));
-  impl->ssl_context_x509_subject_names = static_cast<tsi_peer*>(
-      gpr_zalloc(options->pem_key_cert_pairs.size() * sizeof(tsi_peer)));
-  if (impl->ssl_contexts == nullptr ||
-      impl->ssl_context_x509_subject_names == nullptr) {
-    tsi_ssl_handshaker_factory_unref(&impl->base);
-    return TSI_OUT_OF_RESOURCES;
-  }
-  impl->ssl_context_count = options->pem_key_cert_pairs.size();
   if (options->root_cert_info != nullptr) {
     impl->root_cert_info = options->root_cert_info;
   }
@@ -3105,175 +3124,171 @@ tsi_result tsi_create_ssl_server_handshaker_factory_with_options(
     impl->key_logger = options->key_logger->Ref();
   }
 
+  impl->ssl_contexts.reserve(options->pem_key_cert_pairs.size());
   for (i = 0; i < options->pem_key_cert_pairs.size(); i++) {
-    do {
+    SslContext& ssl_context = impl->ssl_contexts.emplace_back();
 #if OPENSSL_VERSION_NUMBER >= 0x10100000
-      impl->ssl_contexts[i] = SSL_CTX_new(TLS_method());
+    ssl_context.ssl_ctx = SSL_CTX_new(TLS_method());
 #else
-      impl->ssl_contexts[i] = SSL_CTX_new(TLSv1_2_method());
+    ssl_context.ssl_ctx = SSL_CTX_new(TLSv1_2_method());
 #endif
 #if OPENSSL_VERSION_NUMBER >= 0x10101000 && !defined(LIBRESSL_VERSION_NUMBER)
-      SSL_CTX_set_options(impl->ssl_contexts[i], SSL_OP_NO_RENEGOTIATION);
+    SSL_CTX_set_options(ssl_context.ssl_ctx, SSL_OP_NO_RENEGOTIATION);
 #endif
-      if (impl->ssl_contexts[i] == nullptr) {
-        tsi::LogSslErrorStack();
-        LOG(ERROR) << "Could not create ssl context.";
-        result = TSI_OUT_OF_RESOURCES;
-        break;
-      }
+    if (ssl_context.ssl_ctx == nullptr) {
+      tsi::LogSslErrorStack();
+      LOG(ERROR) << "Could not create ssl context.";
+      result = TSI_OUT_OF_RESOURCES;
+      break;
+    }
 
-      result = tsi_set_min_and_max_tls_versions(impl->ssl_contexts[i],
-                                                options->min_tls_version,
-                                                options->max_tls_version);
-      if (result != TSI_OK) return result;
+    result = tsi_set_min_and_max_tls_versions(ssl_context.ssl_ctx,
+                                              options->min_tls_version,
+                                              options->max_tls_version);
+    if (result != TSI_OK) return result;
 
-      result = populate_ssl_context(
-          impl->ssl_contexts[i], &options->pem_key_cert_pairs[i],
-          options->cipher_suites, options->key_exchange_groups);
-      if (result != TSI_OK) break;
+    result = populate_ssl_context(
+        ssl_context.ssl_ctx, &options->pem_key_cert_pairs[i],
+        options->cipher_suites, options->key_exchange_groups);
+    if (result != TSI_OK) break;
 
 #if defined(OPENSSL_IS_BORINGSSL)
-      if (impl->base.key_signer == nullptr) {
-        grpc_core::Match(
-            options->pem_key_cert_pairs[i].private_key,
-            [](const std::string&) {},
-            [&](const std::shared_ptr<grpc_core::PrivateKeySigner>&
-                    key_signer) { impl->base.key_signer = key_signer; });
-      }
+    grpc_core::Match(
+        options->pem_key_cert_pairs[i].private_key, [](const std::string&) {},
+        [&](const std::shared_ptr<grpc_core::PrivateKeySigner>& key_signer) {
+          ssl_context.key_signer = key_signer;
+        });
 #endif
 
-      // TODO(elessar): Provide ability to disable session ticket keys.
+    // TODO(elessar): Provide ability to disable session ticket keys.
 
-      // Allow client cache sessions (it's needed for OpenSSL only).
-      int set_sid_ctx_result = SSL_CTX_set_session_id_context(
-          impl->ssl_contexts[i], kSslSessionIdContext,
-          GPR_ARRAY_SIZE(kSslSessionIdContext));
-      if (set_sid_ctx_result == 0) {
-        LOG(ERROR) << "Failed to set session id context.";
-        result = TSI_INTERNAL_ERROR;
+    // Allow client cache sessions (it's needed for OpenSSL only).
+    int set_sid_ctx_result = SSL_CTX_set_session_id_context(
+        ssl_context.ssl_ctx, kSslSessionIdContext,
+        GPR_ARRAY_SIZE(kSslSessionIdContext));
+    if (set_sid_ctx_result == 0) {
+      LOG(ERROR) << "Failed to set session id context.";
+      result = TSI_INTERNAL_ERROR;
+      break;
+    }
+
+    if (options->session_ticket_key != nullptr) {
+      if (SSL_CTX_set_tlsext_ticket_keys(
+              ssl_context.ssl_ctx,
+              const_cast<char*>(options->session_ticket_key),
+              options->session_ticket_key_size) == 0) {
+        LOG(ERROR) << "Invalid STEK size.";
+        result = TSI_INVALID_ARGUMENT;
         break;
       }
-
-      if (options->session_ticket_key != nullptr) {
-        if (SSL_CTX_set_tlsext_ticket_keys(
-                impl->ssl_contexts[i],
-                const_cast<char*>(options->session_ticket_key),
-                options->session_ticket_key_size) == 0) {
-          LOG(ERROR) << "Invalid STEK size.";
-          result = TSI_INVALID_ARGUMENT;
-          break;
-        }
+    }
+    if (options->root_cert_info != nullptr) {
+      Match(
+          *options->root_cert_info,
+          [&](const std::string& pem_root_certs) {
+            STACK_OF(X509_NAME)* root_names = nullptr;
+            result = ssl_ctx_load_verification_certs(
+                ssl_context.ssl_ctx, pem_root_certs.c_str(),
+                pem_root_certs.size(), nullptr);
+            if (result != TSI_OK) {
+              LOG(ERROR) << "Invalid verification certs.";
+            }
+            if (options->send_client_ca_list) {
+              SSL_CTX_set_client_CA_list(ssl_context.ssl_ctx, root_names);
+            }
+          },
+          [&](const grpc_core::SpiffeBundleMap& spiffe_bundle_map) {
+            X509_STORE* cert_store =
+                SSL_CTX_get_cert_store(ssl_context.ssl_ctx);
+            X509_STORE_set_flags(cert_store, X509_V_FLAG_PARTIAL_CHAIN |
+                                                 X509_V_FLAG_TRUSTED_FIRST);
+            const void* p = &spiffe_bundle_map;
+            void* map = const_cast<void*>(p);
+            SSL_CTX_set_ex_data(ssl_context.ssl_ctx,
+                                g_ssl_ctx_ex_spiffe_bundle_map_index, map);
+          });
+      if (result != TSI_OK) {
+        break;
       }
-      if (options->root_cert_info != nullptr) {
-        Match(
-            *options->root_cert_info,
-            [&](const std::string& pem_root_certs) {
-              STACK_OF(X509_NAME)* root_names = nullptr;
-              result = ssl_ctx_load_verification_certs(
-                  impl->ssl_contexts[i], pem_root_certs.c_str(),
-                  pem_root_certs.size(), nullptr);
-              if (result != TSI_OK) {
-                LOG(ERROR) << "Invalid verification certs.";
-              }
-              if (options->send_client_ca_list) {
-                SSL_CTX_set_client_CA_list(impl->ssl_contexts[i], root_names);
-              }
-            },
-            [&](const grpc_core::SpiffeBundleMap& spiffe_bundle_map) {
-              X509_STORE* cert_store =
-                  SSL_CTX_get_cert_store(impl->ssl_contexts[i]);
-              X509_STORE_set_flags(cert_store, X509_V_FLAG_PARTIAL_CHAIN |
-                                                   X509_V_FLAG_TRUSTED_FIRST);
-              const void* p = &spiffe_bundle_map;
-              void* map = const_cast<void*>(p);
-              SSL_CTX_set_ex_data(impl->ssl_contexts[i],
-                                  g_ssl_ctx_ex_spiffe_bundle_map_index, map);
-            });
-        if (result != TSI_OK) {
-          break;
-        }
-      }
-      switch (options->client_certificate_request) {
-        case TSI_DONT_REQUEST_CLIENT_CERTIFICATE:
-          SSL_CTX_set_verify(impl->ssl_contexts[i], SSL_VERIFY_NONE, nullptr);
-          break;
-        case TSI_REQUEST_CLIENT_CERTIFICATE_BUT_DONT_VERIFY:
-          SSL_CTX_set_verify(impl->ssl_contexts[i], SSL_VERIFY_PEER, nullptr);
-          SSL_CTX_set_cert_verify_callback(impl->ssl_contexts[i],
-                                           NullVerifyCallback, nullptr);
-          break;
-        case TSI_REQUEST_CLIENT_CERTIFICATE_AND_VERIFY:
-          SSL_CTX_set_verify(impl->ssl_contexts[i], SSL_VERIFY_PEER, nullptr);
-          SSL_CTX_set_cert_verify_callback(impl->ssl_contexts[i],
-                                           CustomVerificationFunction, nullptr);
-          break;
-        case TSI_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_BUT_DONT_VERIFY:
-          SSL_CTX_set_verify(impl->ssl_contexts[i],
-                             SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT,
-                             nullptr);
-          SSL_CTX_set_cert_verify_callback(impl->ssl_contexts[i],
-                                           NullVerifyCallback, nullptr);
-          break;
-        case TSI_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY:
-          SSL_CTX_set_verify(impl->ssl_contexts[i],
-                             SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT,
-                             nullptr);
-          SSL_CTX_set_cert_verify_callback(impl->ssl_contexts[i],
-                                           CustomVerificationFunction, nullptr);
-          break;
-      }
+    }
+    switch (options->client_certificate_request) {
+      case TSI_DONT_REQUEST_CLIENT_CERTIFICATE:
+        SSL_CTX_set_verify(ssl_context.ssl_ctx, SSL_VERIFY_NONE, nullptr);
+        break;
+      case TSI_REQUEST_CLIENT_CERTIFICATE_BUT_DONT_VERIFY:
+        SSL_CTX_set_verify(ssl_context.ssl_ctx, SSL_VERIFY_PEER, nullptr);
+        SSL_CTX_set_cert_verify_callback(ssl_context.ssl_ctx,
+                                         NullVerifyCallback, nullptr);
+        break;
+      case TSI_REQUEST_CLIENT_CERTIFICATE_AND_VERIFY:
+        SSL_CTX_set_verify(ssl_context.ssl_ctx, SSL_VERIFY_PEER, nullptr);
+        SSL_CTX_set_cert_verify_callback(ssl_context.ssl_ctx,
+                                         CustomVerificationFunction, nullptr);
+        break;
+      case TSI_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_BUT_DONT_VERIFY:
+        SSL_CTX_set_verify(ssl_context.ssl_ctx,
+                           SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT,
+                           nullptr);
+        SSL_CTX_set_cert_verify_callback(ssl_context.ssl_ctx,
+                                         NullVerifyCallback, nullptr);
+        break;
+      case TSI_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY:
+        SSL_CTX_set_verify(ssl_context.ssl_ctx,
+                           SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT,
+                           nullptr);
+        SSL_CTX_set_cert_verify_callback(ssl_context.ssl_ctx,
+                                         CustomVerificationFunction, nullptr);
+        break;
+    }
 
 #if OPENSSL_VERSION_NUMBER >= 0x10100000 && !defined(LIBRESSL_VERSION_NUMBER)
-      if (options->crl_provider != nullptr) {
-        SSL_CTX_set_ex_data(impl->ssl_contexts[i],
-                            g_ssl_ctx_ex_crl_provider_index,
-                            options->crl_provider.get());
-      } else if (options->crl_directory != nullptr &&
-                 strcmp(options->crl_directory, "") != 0) {
-        X509_STORE* cert_store = SSL_CTX_get_cert_store(impl->ssl_contexts[i]);
-        X509_STORE_set_verify_cb(cert_store, verify_cb);
-        if (!X509_STORE_load_locations(cert_store, nullptr,
-                                       options->crl_directory)) {
-          LOG(ERROR) << "Failed to load CRL File from directory.";
-        } else {
-          X509_VERIFY_PARAM* param = X509_STORE_get0_param(cert_store);
-          X509_VERIFY_PARAM_set_flags(
-              param, X509_V_FLAG_CRL_CHECK | X509_V_FLAG_CRL_CHECK_ALL);
-        }
+    if (options->crl_provider != nullptr) {
+      SSL_CTX_set_ex_data(ssl_context.ssl_ctx, g_ssl_ctx_ex_crl_provider_index,
+                          options->crl_provider.get());
+    } else if (options->crl_directory != nullptr &&
+               strcmp(options->crl_directory, "") != 0) {
+      X509_STORE* cert_store = SSL_CTX_get_cert_store(ssl_context.ssl_ctx);
+      X509_STORE_set_verify_cb(cert_store, verify_cb);
+      if (!X509_STORE_load_locations(cert_store, nullptr,
+                                     options->crl_directory)) {
+        LOG(ERROR) << "Failed to load CRL File from directory.";
+      } else {
+        X509_VERIFY_PARAM* param = X509_STORE_get0_param(cert_store);
+        X509_VERIFY_PARAM_set_flags(
+            param, X509_V_FLAG_CRL_CHECK | X509_V_FLAG_CRL_CHECK_ALL);
       }
+    }
 #endif
 
-      result = tsi_ssl_extract_x509_subject_names_from_pem_cert(
-          options->pem_key_cert_pairs[i].cert_chain.c_str(),
-          &impl->ssl_context_x509_subject_names[i]);
-      if (result != TSI_OK) break;
+    result = tsi_ssl_extract_x509_subject_names_from_pem_cert(
+        options->pem_key_cert_pairs[i].cert_chain.c_str(),
+        &ssl_context.x509_subject_name);
+    if (result != TSI_OK) break;
 
-      SSL_CTX_set_tlsext_servername_callback(
-          impl->ssl_contexts[i],
-          ssl_server_handshaker_factory_servername_callback);
-      SSL_CTX_set_tlsext_servername_arg(impl->ssl_contexts[i], impl);
+    SSL_CTX_set_tlsext_servername_callback(
+        ssl_context.ssl_ctx, ssl_server_handshaker_factory_servername_callback);
+    SSL_CTX_set_tlsext_servername_arg(ssl_context.ssl_ctx, impl);
 #if TSI_OPENSSL_ALPN_SUPPORT
-      SSL_CTX_set_alpn_select_cb(impl->ssl_contexts[i],
-                                 ServerHandshakerFactoryAlpnCallback, impl);
+    SSL_CTX_set_alpn_select_cb(ssl_context.ssl_ctx,
+                               ServerHandshakerFactoryAlpnCallback, impl);
 #endif  // TSI_OPENSSL_ALPN_SUPPORT
-      SSL_CTX_set_next_protos_advertised_cb(
-          impl->ssl_contexts[i],
-          server_handshaker_factory_npn_advertised_callback, impl);
+    SSL_CTX_set_next_protos_advertised_cb(
+        ssl_context.ssl_ctx, server_handshaker_factory_npn_advertised_callback,
+        impl);
 
 #if OPENSSL_VERSION_NUMBER >= 0x10101000 && !defined(LIBRESSL_VERSION_NUMBER)
-      // Register factory at index
-      if (options->key_logger != nullptr) {
-        // Need to set factory at g_ssl_ctx_ex_factory_index
-        SSL_CTX_set_ex_data(impl->ssl_contexts[i], g_ssl_ctx_ex_factory_index,
-                            impl);
-        // SSL_CTX_set_keylog_callback is set here to register callback
-        // when ssl/tls handshakes complete.
-        SSL_CTX_set_keylog_callback(
-            impl->ssl_contexts[i],
-            ssl_keylogging_callback<tsi_ssl_server_handshaker_factory>);
-      }
+    // Register factory at index
+    if (options->key_logger != nullptr) {
+      // Need to set factory at g_ssl_ctx_ex_factory_index
+      SSL_CTX_set_ex_data(ssl_context.ssl_ctx, g_ssl_ctx_ex_factory_index,
+                          impl);
+      // SSL_CTX_set_keylog_callback is set here to register callback
+      // when ssl/tls handshakes complete.
+      SSL_CTX_set_keylog_callback(
+          ssl_context.ssl_ctx,
+          ssl_keylogging_callback<tsi_ssl_server_handshaker_factory>);
+    }
 #endif
-    } while (false);
 
     if (result != TSI_OK) {
       tsi_ssl_handshaker_factory_unref(&impl->base);
