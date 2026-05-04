@@ -1327,7 +1327,6 @@ Pod::Spec.new do |s|
                       'src/core/transport/auth_context_comparator_registry.h',
                       'src/core/transport/endpoint_transport.h',
                       'src/core/transport/endpoint_transport_client_channel_factory.h',
-                      'src/core/transport/session_endpoint.cc',
                       'src/core/transport/session_endpoint.h',
                       'src/core/tsi/alts/crypt/gsec.h',
                       'src/core/tsi/alts/frame_protector/alts_counter.h',
