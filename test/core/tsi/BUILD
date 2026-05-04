@@ -83,6 +83,7 @@ grpc_cc_test(
     name = "ssl_transport_security_utils_test",
     srcs = ["ssl_transport_security_utils_test.cc"],
     data = [
+        "//:etc/roots.pem",
         "//test/core/tsi/test_creds/crl_data:ca.pem",
         "//test/core/tsi/test_creds/crl_data:ca_with_akid.pem",
         "//test/core/tsi/test_creds/crl_data:crl_with_akid.crl",
