@@ -43,8 +43,11 @@ namespace chaotic_good {
 absl::Status ReadProto(SliceBuffer payload,
                        google::protobuf::MessageLite& msg) {
   auto payload_slice = payload.JoinIntoSlice();
-  const bool ok =
-      msg.ParseFromArray(payload_slice.data(), payload_slice.length());
+  if (payload_slice.length() > std::numeric_limits<int32_t>::max()) {
+    return absl::InternalError("Payload too large to parse as protobuf");
+  }
+  const bool ok = msg.ParseFromArray(
+      payload_slice.data(), static_cast<int32_t>(payload_slice.length()));
   return ok ? absl::OkStatus() : absl::InternalError("Protobuf parse error");
 }
 
