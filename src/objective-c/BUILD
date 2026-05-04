@@ -206,7 +206,7 @@ grpc_objc_library(
 )
 
 apple_resource_bundle(
-    # The choice of name is signicant here, since it determines the bundle name.
+    # The choice of name is significant here, since it determines the bundle name.
     name = "gRPCCertificates",
     resources = ["//:etc/roots.pem"],
 )
