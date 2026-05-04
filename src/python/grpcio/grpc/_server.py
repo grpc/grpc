@@ -600,12 +600,11 @@ def _call_behavior(
     ) as context:
         try:
             response_or_iterator = None
-            if behavior is not None and send_response_callback is not None:
-                response_or_iterator = behavior(
-                    argument, context, send_response_callback
-                )
-            elif behavior is not None:
-                response_or_iterator = behavior(argument, context)
+            if behavior is not None:
+                args = [argument, context]
+                if send_response_callback is not None:
+                    args.append(send_response_callback)
+                response_or_iterator = behavior(*args)
             return response_or_iterator, True
         except Exception as exception:  # pylint: disable=broad-except
             with state.condition:
@@ -839,7 +838,7 @@ def _stream_response_in_pool(
                 response_iterator, proceed = _call_behavior(
                     rpc_event, state, behavior, argument, request_deserializer
                 )
-                if proceed:
+                if proceed and isinstance(response_iterator, Iterator):
                     _send_message_callback_to_blocking_iterator_adapter(
                         rpc_event,
                         state,
