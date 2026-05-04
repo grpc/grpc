@@ -46,6 +46,10 @@ then
     mkdir -p protoc_macos_x64
     touch protoc_macos_x64/protoc
     touch protoc_macos_x64/grpc_csharp_plugin
+
+    mkdir -p protoc_macos_aarch64
+    touch protoc_macos_aarch64/protoc
+    touch protoc_macos_aarch64/grpc_csharp_plugin
 fi
 
 if [[ "$(uname)" != "WindowsNT" ]]
