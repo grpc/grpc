@@ -840,10 +840,7 @@ def _stream_response_in_pool(
                 )
                 if proceed and isinstance(response_iterator, Iterator):
                     _send_message_callback_to_blocking_iterator_adapter(
-                        rpc_event,
-                        state,
-                        send_response,
-                        response_iterator
+                        rpc_event, state, send_response, response_iterator
                     )
     except Exception:  # pylint: disable=broad-except
         traceback.print_exc()
@@ -877,8 +874,12 @@ def _select_thread_pool_for_behavior(
     behavior: Optional[ArityAgnosticMethodHandler],
     default_thread_pool: futures.ThreadPoolExecutor,
 ) -> futures.ThreadPoolExecutor:
-    if behavior is not None and hasattr(behavior, "experimental_thread_pool") and isinstance(
-        behavior.experimental_thread_pool, futures.ThreadPoolExecutor
+    if (
+        behavior is not None
+        and hasattr(behavior, "experimental_thread_pool")
+        and isinstance(
+            behavior.experimental_thread_pool, futures.ThreadPoolExecutor
+        )
     ):
         return behavior.experimental_thread_pool
     return default_thread_pool
