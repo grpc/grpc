@@ -807,6 +807,36 @@ TEST_F(Http2ReadContextTest, PauseAndWake) {
                "SetPause Pause Wake _ . EndRead Wake EndWrite ");
 }
 
+TEST(Http2CommonTransportTest, TestTarpitDuration) {
+  // Verify that TarpitDuration generates random values within bounds across
+  // many runs.
+  int min_duration_ms = 10;
+  int max_duration_ms = 30;
+  for (int i = 0; i < 1000; ++i) {
+    const Duration current_duration =
+        TarpitDuration(min_duration_ms, max_duration_ms);
+    EXPECT_GE(current_duration, Duration::Milliseconds(min_duration_ms));
+    EXPECT_LE(current_duration, Duration::Milliseconds(max_duration_ms));
+  }
+
+  // Verify that TarpitDuration returns exactly min when bounds are equal.
+  const int exact_duration_ms = 15;
+  for (int i = 0; i < 50; ++i) {
+    const Duration duration =
+        TarpitDuration(exact_duration_ms, exact_duration_ms);
+    EXPECT_EQ(duration, Duration::Milliseconds(exact_duration_ms));
+  }
+
+  // Verify that TarpitDuration gracefully handles bad inputs without
+  // crashing.
+  min_duration_ms = 30;
+  max_duration_ms = 10;
+  for (int i = 0; i < 50; ++i) {
+    const Duration current_duration =
+        TarpitDuration(min_duration_ms, max_duration_ms);
+    EXPECT_EQ(current_duration, Duration::Milliseconds(min_duration_ms));
+  }
+}
 }  // namespace testing
 
 }  // namespace http2
