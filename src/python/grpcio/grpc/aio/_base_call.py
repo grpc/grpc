@@ -114,7 +114,7 @@ class Call(RpcContext, metaclass=ABCMeta):
         """
 
     @abstractmethod
-    async def details(self) -> str:
+    async def details(self) -> Optional[str]:
         """Accesses the details sent by the server.
 
         Returns:
@@ -132,6 +132,14 @@ class Call(RpcContext, metaclass=ABCMeta):
         failure.
 
         This method is recommended for building retry mechanisms.
+        """
+
+    @abstractmethod
+    async def debug_error_string(self) -> Optional[str]:
+        """Accesses the debug error string sent by the server.
+
+        Returns:
+          The debug error string received.
         """
 
 
@@ -152,6 +160,11 @@ class UnaryUnaryCall(
 class UnaryStreamCall(
     Generic[RequestType, ResponseType], Call, metaclass=ABCMeta
 ):
+    @property
+    @abstractmethod
+    def _done_writing_flag(self) -> bool:
+        """Indicates whether the client is done sending messages."""
+
     @abstractmethod
     def __aiter__(self) -> AsyncIterator[ResponseType]:
         """Returns the async iterator representation that yields messages.
@@ -212,6 +225,11 @@ class StreamUnaryCall(
 class StreamStreamCall(
     Generic[RequestType, ResponseType], Call, metaclass=ABCMeta
 ):
+    @property
+    @abstractmethod
+    def _done_writing_flag(self) -> bool:
+        """Indicates whether the client is done sending messages."""
+
     @abstractmethod
     def __aiter__(self) -> AsyncIterator[ResponseType]:
         """Returns the async iterator representation that yields messages.

@@ -14,9 +14,10 @@
 """Invocation-side implementation of gRPC Asyncio Python."""
 
 import asyncio
+from collections.abc import AsyncIterable
+from collections.abc import Iterable
 import enum
 from functools import partial
-import inspect
 import logging
 import traceback
 from typing import (
@@ -124,7 +125,7 @@ class AioRpcError(grpc.RpcError):
         """
         return self._details
 
-    def initial_metadata(self) -> Metadata:
+    def initial_metadata(self) -> Optional[Metadata]:
         """Accesses the initial metadata sent by the server.
 
         Returns:
@@ -132,7 +133,7 @@ class AioRpcError(grpc.RpcError):
         """
         return self._initial_metadata
 
-    def trailing_metadata(self) -> Metadata:
+    def trailing_metadata(self) -> Optional[Metadata]:
         """Accesses the trailing metadata sent by the server.
 
         Returns:
@@ -140,7 +141,7 @@ class AioRpcError(grpc.RpcError):
         """
         return self._trailing_metadata
 
-    def debug_error_string(self) -> str:
+    def debug_error_string(self) -> Optional[str]:
         """Accesses the debug error string sent by the server.
 
         Returns:
@@ -260,10 +261,10 @@ class Call:
         cygrpc_code = (await self._cython_call.status()).code()
         return _common.CYGRPC_STATUS_CODE_TO_STATUS_CODE[cygrpc_code]
 
-    async def details(self) -> str:
+    async def details(self) -> Optional[str]:
         return (await self._cython_call.status()).details()
 
-    async def debug_error_string(self) -> str:
+    async def debug_error_string(self) -> Optional[str]:
         return (await self._cython_call.status()).debug_error_string()
 
     async def _raise_for_status(self) -> None:
@@ -334,8 +335,8 @@ class _UnaryResponseMixin(Call, Generic[ResponseType]):
             return response
 
 
-class _StreamResponseMixin(Call):
-    _message_aiter: AsyncIterator[ResponseType]
+class _StreamResponseMixin(Call, Generic[ResponseType]):
+    _message_aiter: Optional[AsyncIterator[ResponseType]]
     _preparation: asyncio.Task
     _response_style: _APIStyle
 
@@ -356,7 +357,7 @@ class _StreamResponseMixin(Call):
             return True
         return False
 
-    async def _fetch_stream_responses(self) -> ResponseType:
+    async def _fetch_stream_responses(self) -> AsyncIterator[ResponseType]:
         message = await self._read()
         while message is not cygrpc.EOF:
             yield message
@@ -403,7 +404,7 @@ class _StreamResponseMixin(Call):
 
 class _StreamRequestMixin(Call):
     _metadata_sent: asyncio.Event
-    _done_writing_flag: bool
+    _done_writing_flag_state: bool
     _async_request_poller: Optional[asyncio.Task]
     _request_style: _APIStyle
 
@@ -411,7 +412,7 @@ class _StreamRequestMixin(Call):
         self, request_iterator: Optional[RequestIterableType]
     ):
         self._metadata_sent = asyncio.Event()
-        self._done_writing_flag = False
+        self._done_writing_flag_state = False
 
         # If user passes in an async iterator, create a consumer Task.
         if request_iterator is not None:
@@ -427,6 +428,10 @@ class _StreamRequestMixin(Call):
         if self._request_style is not style:
             raise cygrpc.UsageError(_API_STYLE_ERROR)
 
+    @property
+    def _done_writing_flag(self) -> bool:
+        return self._done_writing_flag_state
+
     def cancel(self) -> bool:
         if super().cancel():
             if self._async_request_poller is not None:
@@ -441,9 +446,7 @@ class _StreamRequestMixin(Call):
         self, request_iterator: RequestIterableType
     ) -> None:
         try:
-            if inspect.isasyncgen(request_iterator) or hasattr(
-                request_iterator, "__aiter__"
-            ):
+            if isinstance(request_iterator, AsyncIterable):
                 async for request in request_iterator:
                     try:
                         await self._write(request)
@@ -456,7 +459,7 @@ class _StreamRequestMixin(Call):
                             rpc_error,
                         )
                         return
-            else:
+            elif isinstance(request_iterator, Iterable):
                 for request in request_iterator:
                     try:
                         await self._write(request)
@@ -484,7 +487,7 @@ class _StreamRequestMixin(Call):
     async def _write(self, request: RequestType) -> None:
         if self.done():
             raise asyncio.InvalidStateError(_RPC_ALREADY_FINISHED_DETAILS)
-        if self._done_writing_flag:
+        if self._done_writing_flag_state:
             raise asyncio.InvalidStateError(_RPC_HALF_CLOSED_DETAILS)
         if not self._metadata_sent.is_set():
             await self._metadata_sent.wait()
@@ -508,9 +511,9 @@ class _StreamRequestMixin(Call):
         if self.done():
             # If the RPC is finished, do nothing.
             return
-        if not self._done_writing_flag:
+        if not self._done_writing_flag_state:
             # If the done writing is not sent before, try to send it.
-            self._done_writing_flag = True
+            self._done_writing_flag_state = True
             try:
                 await self._cython_call.send_receive_close()
             except asyncio.CancelledError:
@@ -536,7 +539,9 @@ class _StreamRequestMixin(Call):
             await self._raise_for_status()
 
 
-class UnaryUnaryCall(_UnaryResponseMixin, Call, _base_call.UnaryUnaryCall):
+class UnaryUnaryCall(
+    _UnaryResponseMixin, Call, _base_call.UnaryUnaryCall, Generic[RequestType]
+):
     """Object for managing unary-unary RPC calls.
 
     Returned when an instance of `UnaryUnaryMultiCallable` object is called.
@@ -599,7 +604,9 @@ class UnaryUnaryCall(_UnaryResponseMixin, Call, _base_call.UnaryUnaryCall):
             await self._raise_for_status()
 
 
-class UnaryStreamCall(_StreamResponseMixin, Call, _base_call.UnaryStreamCall):
+class UnaryStreamCall(
+    _StreamResponseMixin, Call, _base_call.UnaryStreamCall, Generic[RequestType]
+):
     """Object for managing unary-stream RPC calls.
 
     Returned when an instance of `UnaryStreamMultiCallable` object is called.
@@ -607,6 +614,10 @@ class UnaryStreamCall(_StreamResponseMixin, Call, _base_call.UnaryStreamCall):
 
     _request: RequestType
     _send_unary_request_task: asyncio.Task
+
+    @property
+    def _done_writing_flag(self) -> bool:
+        return True
 
     # pylint: disable=too-many-arguments
     def __init__(
@@ -636,7 +647,7 @@ class UnaryStreamCall(_StreamResponseMixin, Call, _base_call.UnaryStreamCall):
         )
         self._init_stream_response_mixin(self._send_unary_request_task)
 
-    async def _send_unary_request(self) -> ResponseType:
+    async def _send_unary_request(self) -> Optional[ResponseType]:
         serialized_request = _common.serialize(
             self._request, self._request_serializer
         )
