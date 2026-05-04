@@ -419,8 +419,10 @@ TEST_P(TypedPerFilterConfigTest, Basic) {
   const auto& filter_config = it->second;
   EXPECT_EQ(filter_config.config_proto_type,
             "envoy.extensions.filters.http.fault.v3.HTTPFault");
-  EXPECT_EQ(JsonDump(filter_config.config),
-            "{\"abortCode\":\"PERMISSION_DENIED\"}");
+  ASSERT_NE(filter_config.filter_config, nullptr);
+  EXPECT_EQ(filter_config.filter_config->ToString(),
+            "{abort_code=PERMISSION_DENIED, abort_message=\"Fault injected\", "
+            "max_faults=4294967295}");
 }
 
 TEST_P(TypedPerFilterConfigTest, EmptyName) {
@@ -530,8 +532,10 @@ TEST_P(TypedPerFilterConfigTest, FilterConfigWrapper) {
   const auto& filter_config = it->second;
   EXPECT_EQ(filter_config.config_proto_type,
             "envoy.extensions.filters.http.fault.v3.HTTPFault");
-  EXPECT_EQ(JsonDump(filter_config.config),
-            "{\"abortCode\":\"PERMISSION_DENIED\"}");
+  ASSERT_NE(filter_config.filter_config, nullptr);
+  EXPECT_EQ(filter_config.filter_config->ToString(),
+            "{abort_code=PERMISSION_DENIED, abort_message=\"Fault injected\", "
+            "max_faults=4294967295}");
 }
 
 TEST_P(TypedPerFilterConfigTest, FilterConfigWrapperInTypedStruct) {
