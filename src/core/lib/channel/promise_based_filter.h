@@ -1278,7 +1278,7 @@ class V3InterceptorToV2Bridge : public ChannelFilter, public Interceptor {
         // We need to start polling the initiator for server trailing
         // metadata immediately, since the v3 interceptor may generate a
         // failure before any of the other promises resolve.
-        initiator.PullServerTrailingMetadata(),
+        pipe_owner->initiator().PullServerTrailingMetadata(),
         // This promise does the rest of the things, but it will always
         // return pending, because the promise can't actually finish
         // until the initiator returns trailing metadata above.
@@ -1287,7 +1287,7 @@ class V3InterceptorToV2Bridge : public ChannelFilter, public Interceptor {
             [pipe_owner, call_args = std::move(call_args),
              next_promise_factory =
                  std::move(next_promise_factory)](CallHandler handler) mutable {
-              pipe_owner->set_handler(handler);
+              pipe_owner->set_handler(std::move(handler));
               // Intercept all pipes from v2 API.
               //
               // For client-to-server messages, we do the following:
@@ -1498,13 +1498,14 @@ class V3InterceptorToV2Bridge : public ChannelFilter, public Interceptor {
 
   class PipeOwner : public Orphanable {
    public:
-    explicit PipeOwner(CallInitiator initiator) : initiator_(initiator) {}
+    explicit PipeOwner(CallInitiator initiator)
+        : initiator_(std::move(initiator)) {}
 
     void Orphan() override { Shutdown(); }
 
     void Shutdown(absl::Status error = absl::CancelledError()) {
       if (!std::exchange(shutdown_, false)) return;
-      // When initiator_started_ is true, all of the other data members are
+      // When shutdown_ is true, all of the other data members are
       // active. When it is false, they are closed or reset.
       client_to_server_messages_.sender.MarkClosed();
       server_to_client_messages_.sender.MarkClosed();
@@ -1514,8 +1515,11 @@ class V3InterceptorToV2Bridge : public ChannelFilter, public Interceptor {
       if (!client_initial_metadata_.IsSet()) {
         client_initial_metadata_.Set(nullptr);
       }
-      if (!error.ok()) {
-        initiator_.Cancel(error);
+      if (initiator_.has_value()) {
+        if (!error.ok()) {
+          initiator_->Cancel(error);
+        }
+        initiator_.reset();
       }
       handler_.reset();
     }
@@ -1534,8 +1538,13 @@ class V3InterceptorToV2Bridge : public ChannelFilter, public Interceptor {
       return server_to_client_messages_;
     }
 
-    CallInitiator& initiator() { return initiator_; }
+    CallInitiator& initiator() { return *initiator_; }
+    // The handler represents the server side of the V3 interceptor.
+    // It is optional because it might not be set if the call fails
+    // before the interceptor returns it. Additionally, CallHandler is not
+    // default-constructible, so we use std::optional to manage its lifetime.
     void set_handler(CallHandler handler) { handler_ = std::move(handler); }
+
     // Must not be called until after set_handler() is called.
     CallHandler& handler() { return handler_.value(); }
 
@@ -1547,7 +1556,10 @@ class V3InterceptorToV2Bridge : public ChannelFilter, public Interceptor {
     InterActivityPipe<MessageHandle, 1> server_to_client_messages_;
 
     // The initiator represents the client side of the V3 interceptor.
-    CallInitiator initiator_;
+    // We make initiator optional to break a reference cycle:
+    // Arena -> PipeOwner -> initiator -> Shared State -> Arena.
+    // By resetting initiator in Shutdown(), we break this cycle.
+    std::optional<CallInitiator> initiator_;
     bool shutdown_ = true;
     // The handler represents the server side of the V3 interceptor.
     // CallHandler is not default-constructible, so we use std::optional to
