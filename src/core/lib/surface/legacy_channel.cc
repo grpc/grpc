@@ -68,6 +68,8 @@ absl::StatusOr<RefCountedPtr<Channel>> LegacyChannel::Create(
     auto channel_args_mutator =
         grpc_channel_args_get_client_channel_creation_mutator();
     if (channel_args_mutator != nullptr) {
+      // TODO(snohria): Differentiate the default channel args for virtual
+      // channels.
       args = channel_args_mutator(target.c_str(), args, channel_stack_type);
     }
   }
