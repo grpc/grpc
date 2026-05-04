@@ -1217,7 +1217,17 @@ static tsi_result populate_ssl_context(
     return TSI_FAILED_PRECONDITION;
 #endif  // OPENSSL_VERSION_NUMBER >= 0x10100000
   } else {
-#if OPENSSL_VERSION_NUMBER < 0x30000000L
+#if defined(OPENSSL_IS_BORINGSSL)
+    // BoringSSL's OPENSSL_VERSION_NUMBER (~0x1010107f) is less than 0x30000000,
+    // but it supports SSL_CTX_set1_groups_list. Without this branch it would
+    // fall into the legacy SSL_CTX_set_tmp_ecdh path and only advertise P-256,
+    // causing TLS handshakes with P-384/P-521 certificates to fail.
+    if (!SSL_CTX_set1_groups_list(context, "P-256:P-384:P-521")) {
+      LOG(ERROR) << "Could not set ECDH curves.";
+      return TSI_INTERNAL_ERROR;
+    }
+    SSL_CTX_set_options(context, SSL_OP_SINGLE_ECDH_USE);
+#elif OPENSSL_VERSION_NUMBER < 0x30000000L
     EC_KEY* ecdh = EC_KEY_new_by_curve_name(NID_X9_62_prime256v1);
     if (!SSL_CTX_set_tmp_ecdh(context, ecdh)) {
       LOG(ERROR) << "Could not set ephemeral ECDH key.";
