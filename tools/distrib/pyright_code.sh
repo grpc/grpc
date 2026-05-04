@@ -1,4 +1,5 @@
-# Copyright 2021 The gRPC Authors
+#!/bin/bash
+# Copyright 2026 The gRPC Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,7 +13,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# this an aarch64 image, qemu emulator will be used to run the tests
-FROM arm64v8/python:3.9-buster
+PS4='+ $(date "+[%H:%M:%S %Z]")\011 '
+set -ex
 
-RUN python3 -m pip install virtualenv
+# change to root directory
+cd "$(dirname "$0")/../.."
+
+VIRTUALENV=".venv-pyright"
+python3 -m virtualenv "${VIRTUALENV}"
+source "${VIRTUALENV}/bin/activate"
+python3 -VV
+
+pip install pyright==1.1.409
+
+exec pyright

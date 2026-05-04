@@ -1,4 +1,4 @@
-# Copyright 2015 gRPC authors.
+# Copyright 2021 The gRPC Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,16 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM opensuse/leap:latest
-
-RUN zypper --non-interactive install python3
-RUN zypper --non-interactive install python3-pip
-
-# "which" command required by python's run_distrib_test.sh
-RUN zypper --non-interactive install which
-
-# Without this, pip won't be able to connect to
-# https://pypi.python.org/simple/
-RUN zypper --non-interactive install ca-certificates-mozilla
+# this an aarch64 image, qemu emulator will be used to run the tests
+FROM --platform=linux/arm64 python:3.10-bullseye
 
 RUN python3 -m pip install virtualenv
