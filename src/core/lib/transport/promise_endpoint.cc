@@ -58,6 +58,7 @@ PromiseEndpoint::GetLocalAddress() const {
 void PromiseEndpoint::ReadState::Complete(absl::Status status,
                                           const size_t num_bytes_requested) {
   GRPC_LATENT_SEE_SCOPE("PromiseEndpoint::ReadState::Complete");
+  mu_.Lock();
   while (true) {
     if (!status.ok()) {
       // Invalidates all previous reads.
@@ -66,6 +67,7 @@ void PromiseEndpoint::ReadState::Complete(absl::Status status,
       result = status;
       auto w = std::move(waker);
       complete.store(true, std::memory_order_release);
+      mu_.Unlock();
       w.Wakeup();
       return;
     }
@@ -89,12 +91,14 @@ void PromiseEndpoint::ReadState::Complete(absl::Status status,
         status = absl::UnavailableError("Endpoint closed during read.");
         continue;
       }
+      mu_.Unlock();
       if (ep->Read(
               [self = Ref(), num_bytes_requested](absl::Status status) {
                 ExecCtx exec_ctx;
                 self->Complete(std::move(status), num_bytes_requested);
               },
               &pending_buffer, read_args)) {
+        mu_.Lock();
         continue;
       }
       return;
@@ -102,6 +106,7 @@ void PromiseEndpoint::ReadState::Complete(absl::Status status,
     result = status;
     auto w = std::move(waker);
     complete.store(true, std::memory_order_release);
+    mu_.Unlock();
     w.Wakeup();
     return;
   }

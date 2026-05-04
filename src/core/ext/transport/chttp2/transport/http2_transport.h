@@ -60,7 +60,7 @@ namespace http2 {
 #define GRPC_HTTP2_COMMON_DLOG \
   DLOG_IF(INFO, GRPC_TRACE_FLAG_ENABLED(http2_ph2_transport))
 
-constexpr uint32_t kGoawaySendTimeoutSeconds = 5u;
+constexpr uint32_t kGoawaySendTimeoutSeconds = 1u;
 
 struct CloseStreamArgs {
   bool close_reads;

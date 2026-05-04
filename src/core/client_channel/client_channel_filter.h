@@ -367,6 +367,11 @@ class ClientChannelFilter::LoadBalancedCall final
   void RetryPickLocked()
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(&ClientChannelFilter::lb_mu_);
 
+  // Fails all pending batches on the call.
+  void Fail(absl::Status error) {
+    buffered_call_.Fail(error, BufferedCall::NoYieldCallCombiner);
+  }
+
   RefCountedPtr<Subchannel::Call> subchannel_call() const {
     return subchannel_call_;
   }
