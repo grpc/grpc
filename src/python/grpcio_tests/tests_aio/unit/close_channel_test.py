@@ -132,6 +132,60 @@ class TestCloseChannel(AioTestBase):
             self.assertFalse(call1.cancelled())
             self.assertTrue(call2.cancelled())
 
+    async def test_close_channel_with_delayed_handler(self):
+        class _DelayedHandlerServicer(test_pb2_grpc.TestServiceServicer):
+            def __init__(self):
+                self.messages_received = 0
+                self.handler_exited = asyncio.Event()
+
+            async def FullDuplexCall(self, request_async_iterator, context):
+                async for request in request_async_iterator:
+                    self.messages_received += 1
+                    yield messages_pb2.StreamingOutputCallResponse()
+                try:
+                    await asyncio.sleep(2)
+                finally:
+                    self.handler_exited.set()
+
+        server = aio.server()
+        servicer = _DelayedHandlerServicer()
+        test_pb2_grpc.add_TestServiceServicer_to_server(servicer, server)
+        port = server.add_insecure_port("[::]:0")
+        await server.start()
+        server_target = f"localhost:{port}"
+
+        try:
+            channel = aio.insecure_channel(server_target)
+            stub = test_pb2_grpc.TestServiceStub(channel)
+            call = stub.FullDuplexCall()
+
+            await call.write(messages_pb2.StreamingOutputCallRequest())
+
+            await call.read()
+
+            await call.done_writing()
+
+            await channel.close(grace=0.5)
+        finally:
+            await server.stop(None)
+
+        await asyncio.sleep(0.1)
+        current = asyncio.current_task()
+        pending = []
+        for t in asyncio.all_tasks():
+            if t.done() or t is current:
+                continue
+            name = getattr(t.get_coro(), "__qualname__", "")
+            if "_server_main_loop" in name:
+                continue
+            pending.append(t)
+
+        self.assertEqual(
+            len(pending),
+            0,
+            f"Leaked tasks: {[getattr(t.get_coro(), '__qualname__', str(t)) for t in pending]}",
+        )
+
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG)
