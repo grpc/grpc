@@ -175,7 +175,7 @@ class TlsCertSelectionOffloadTest : public ::testing::Test {
   std::string server_cert_;
   TlsChannelCredentialsOptions channel_options_;
   TestServiceImpl service_;
-  std::unique_ptr<Server> server_ = nullptr;
+  std::unique_ptr<Server> server_;
   std::unique_ptr<std::thread> server_thread_;
   std::string server_addr_;
 };
