@@ -1,0 +1,8 @@
+#=================
+#  Create wrapper for apt-get
+
+RUN /bin/bash -c 'cat << "EOF" > /usr/local/bin/apt-get-install-retry
+{% include "../../../tools/internal_ci/helper_scripts/apt_get_install_with_retry.sh" %}
+EOF
+' \
+&& chmod +x /usr/local/bin/apt-get-install-retry
