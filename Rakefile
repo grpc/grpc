@@ -143,7 +143,7 @@ task 'gem:native', [:plat, :build_type] do |t, args|
   verbose = ENV['V'] || '0'
 
   grpc_config = ENV['GRPC_CONFIG'] || 'opt'
-  target_ruby_minor_versions = ['4.0', '3.4', '3.3', '3.2', '3.1']
+  target_ruby_minor_versions = ['4.0', '3.4', '3.3', '3.2']
   # For presubmits, only build the earliest and latest versions
   target_ruby_minor_versions = [target_ruby_minor_versions.first, target_ruby_minor_versions.last] if args[:build_type] == 'presubmit'
   selected_plat = "#{args[:plat]}"

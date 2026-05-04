@@ -23,6 +23,7 @@
 #include <limits>
 #include <optional>
 #include <queue>
+#include <type_traits>
 #include <vector>
 
 #include "src/core/ext/transport/chttp2/transport/transport_common.h"
@@ -48,7 +49,7 @@ struct HasGetStreamId {
 template <typename StreamPtr>
 struct HasGetStreamId<
     StreamPtr,
-    absl::void_t<decltype(std::declval<StreamPtr>()->GetStreamId())>> {
+    std::void_t<decltype(std::declval<StreamPtr>()->GetStreamId())>> {
   static constexpr bool value =
       std::is_same_v<decltype(std::declval<StreamPtr>()->GetStreamId()),
                      uint32_t>;
