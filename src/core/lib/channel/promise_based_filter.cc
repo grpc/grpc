@@ -81,6 +81,61 @@ absl::Status StatusFromMetadata(const ServerMetadata& md) {
 ///////////////////////////////////////////////////////////////////////////////
 // BaseCallData
 
+class BaseCallData::WeakWakerHandle final : public Wakeable {
+ public:
+  explicit WeakWakerHandle(BaseCallData* base) : base_(base) {}
+
+  void Ref() { refs_.fetch_add(1, std::memory_order_relaxed); }
+
+  void DropActivity() {
+    mu_.Lock();
+    base_ = nullptr;
+    mu_.Unlock();
+    Unref();
+  }
+
+  void Wakeup(WakeupMask wakeup_mask) override {
+    WakeupGeneric(wakeup_mask);
+  }
+
+  void WakeupAsync(WakeupMask wakeup_mask) override {
+    WakeupGeneric(wakeup_mask);
+  }
+
+  void Drop(WakeupMask) override { Unref(); }
+
+  std::string ActivityDebugTag(WakeupMask) const override {
+    MutexLock lock(&mu_);
+    return base_ == nullptr ? "<unknown>" : base_->DebugTag();
+  }
+
+ private:
+  void WakeupGeneric(WakeupMask wakeup_mask) {
+    mu_.Lock();
+    if (base_ != nullptr) {
+      auto* call_stack = base_->call_stack();
+      GRPC_CALL_STACK_REF(call_stack, "waker");
+      auto* base = base_;
+      mu_.Unlock();
+      base->Wakeup(wakeup_mask);
+      GRPC_CALL_STACK_UNREF(call_stack, "waker");
+    } else {
+      mu_.Unlock();
+    }
+    Unref();
+  }
+
+  void Unref() {
+    if (1 == refs_.fetch_sub(1, std::memory_order_acq_rel)) {
+      delete this;
+    }
+  }
+
+  std::atomic<size_t> refs_{2};
+  mutable Mutex mu_;
+  BaseCallData* base_ ABSL_GUARDED_BY(mu_);
+};
+
 BaseCallData::BaseCallData(
     grpc_call_element* elem, const grpc_call_element_args* args, uint8_t flags,
     absl::FunctionRef<Interceptor*()> make_send_interceptor,
@@ -110,6 +165,9 @@ BaseCallData::BaseCallData(
               : nullptr) {}
 
 BaseCallData::~BaseCallData() {
+  if (handle_ != nullptr) {
+    handle_->DropActivity();
+  }
   FakeActivity(this).Run([this] {
     if (send_message_ != nullptr) {
       send_message_->~SendMessage();
@@ -129,7 +187,14 @@ void BaseCallData::Orphan() { abort(); }
 
 // For now we don't care about owning/non-owning wakers, instead just share
 // implementation.
-Waker BaseCallData::MakeNonOwningWaker() { return MakeOwningWaker(); }
+Waker BaseCallData::MakeNonOwningWaker() {
+  if (handle_ == nullptr) {
+    handle_ = new WeakWakerHandle(this);
+  } else {
+    handle_->Ref();
+  }
+  return Waker(handle_, 0);
+}
 
 Waker BaseCallData::MakeOwningWaker() {
   GRPC_CALL_STACK_REF(call_stack_, "waker");
@@ -495,6 +560,20 @@ void BaseCallData::SendMessage::Done(const ServerMetadata& metadata,
     case State::kPushedToPipe:
       push_.reset();
       next_.reset();
+      // Ensure captured transport batches are released if the call terminates
+      // while a message is in-flight. This prevents deadlocks where the
+      // transport never receives the batch, leaving the RPC hanging for
+      // metadata.
+      if (batch_.is_captured()) {
+        std::string temp;
+        batch_.CancelWith(
+            absl::Status(
+                static_cast<absl::StatusCode>(
+                    metadata.get(GrpcStatusMetadata())
+                        .value_or(GRPC_STATUS_UNKNOWN)),
+                metadata.GetStringValue("grpc-message", &temp).value_or("")),
+            flusher);
+      }
       state_ = State::kCancelledButNotYetPolled;
       if (base_->is_current()) base_->ForceImmediateRepoll();
       break;
@@ -1164,7 +1243,7 @@ class ClientCallData::PollContext {
                       std::exchange(
                           self_->recv_initial_metadata_->original_on_ready,
                           nullptr),
-                      absl::CancelledError(),
+                      StatusFromMetadata(*md),
                       "wake_inside_combiner:recv_initial_metadata_ready");
               }
             }
