@@ -94,9 +94,7 @@ class BaseCallData::WeakWakerHandle final : public Wakeable {
     Unref();
   }
 
-  void Wakeup(WakeupMask wakeup_mask) override {
-    WakeupGeneric(wakeup_mask);
-  }
+  void Wakeup(WakeupMask wakeup_mask) override { WakeupGeneric(wakeup_mask); }
 
   void WakeupAsync(WakeupMask wakeup_mask) override {
     WakeupGeneric(wakeup_mask);
