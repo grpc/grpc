@@ -71,6 +71,7 @@ where = ["src/python/grpcio"]
 
 [tool.pyright]
 include = [
+    "src/python/grpcio/grpc/_server.py",
     "src/python/grpcio/grpc/aio/_base_server.py"
 ]
 
