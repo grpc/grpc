@@ -63,6 +63,7 @@ grpc_cc_test(
         "//src/core:json_reader",
         "//src/core:jwt_token_file_call_credentials",
         "//src/core:map",
+        "//src/core:regional_access_boundary_fetcher",
         "//src/core:seq",
         "//src/core:time",
         "//src/core:unique_type_name",
@@ -112,5 +113,30 @@ grpc_cc_test(
         "//test/core/test_util:grpc_test_util_base",
         "//test/core/test_util:test_call_creds",
         "@envoy_api//envoy/extensions/grpc_service/call_credentials/access_token/v3:pkg_cc_proto",
+    ],
+)
+
+grpc_cc_test(
+    name = "regional_access_boundary_fetcher_test",
+    srcs = ["regional_access_boundary_fetcher_test.cc"],
+    external_deps = [
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
+        "gtest",
+    ],
+    deps = [
+        "//:gpr",
+        "//:grpc_security_base",
+        "//:httpcli",
+        "//:iomgr_timer",
+        "//src/core:arena",
+        "//src/core:arena_promise",
+        "//src/core:metadata_batch",
+        "//src/core:regional_access_boundary_fetcher",
+        "//src/core:resource_quota",
+        "//test/core/event_engine/fuzzing_event_engine",
+        "//test/core/event_engine/fuzzing_event_engine:fuzzing_event_engine_cc_proto",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
