@@ -1096,6 +1096,7 @@ include/grpcpp/support/sync_stream.h \
 include/grpcpp/support/time.h \
 include/grpcpp/support/validate_service_config.h \
 include/grpcpp/version_info.h \
+include/grpcpp/virtual_channel.h \
 include/grpcpp/xds_server_builder.h \
 src/core/call/call_arena_allocator.cc \
 src/core/call/call_arena_allocator.h \
@@ -1200,6 +1201,8 @@ src/core/client_channel/subchannel_stream_client.cc \
 src/core/client_channel/subchannel_stream_client.h \
 src/core/client_channel/subchannel_stream_limiter.cc \
 src/core/client_channel/subchannel_stream_limiter.h \
+src/core/client_channel/virtual_channel.cc \
+src/core/client_channel/virtual_channel.h \
 src/core/config/config_vars.cc \
 src/core/config/config_vars.h \
 src/core/config/config_vars_non_generated.cc \
@@ -2357,6 +2360,7 @@ src/core/handshaker/proxy_mapper.h \
 src/core/handshaker/proxy_mapper_registry.cc \
 src/core/handshaker/proxy_mapper_registry.h \
 src/core/handshaker/security/pipelined_secure_endpoint.cc \
+src/core/handshaker/security/pipelining_heuristic_selector.h \
 src/core/handshaker/security/secure_endpoint.cc \
 src/core/handshaker/security/secure_endpoint.h \
 src/core/handshaker/security/security_handshaker.cc \
@@ -2940,6 +2944,8 @@ src/core/transport/auth_context_comparator_registry.h \
 src/core/transport/endpoint_transport.h \
 src/core/transport/endpoint_transport_client_channel_factory.cc \
 src/core/transport/endpoint_transport_client_channel_factory.h \
+src/core/transport/session_endpoint.cc \
+src/core/transport/session_endpoint.h \
 src/core/tsi/alts/crypt/aes_gcm.cc \
 src/core/tsi/alts/crypt/gsec.cc \
 src/core/tsi/alts/crypt/gsec.h \

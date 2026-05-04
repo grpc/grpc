@@ -13,7 +13,7 @@ Gem::Specification.new do |s|
   s.description   = 'Send RPCs from Ruby using GRPC'
   s.license       = 'Apache-2.0'
 
-  s.required_ruby_version = '>= 3.1'
+  s.required_ruby_version = '>= 3.2'
 
   s.files = %w( Makefile .yardopts )
   s.files += %w( etc/roots.pem )
@@ -1390,6 +1390,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/handshaker/proxy_mapper_registry.cc )
   s.files += %w( src/core/handshaker/proxy_mapper_registry.h )
   s.files += %w( src/core/handshaker/security/pipelined_secure_endpoint.cc )
+  s.files += %w( src/core/handshaker/security/pipelining_heuristic_selector.h )
   s.files += %w( src/core/handshaker/security/secure_endpoint.cc )
   s.files += %w( src/core/handshaker/security/secure_endpoint.h )
   s.files += %w( src/core/handshaker/security/security_handshaker.cc )

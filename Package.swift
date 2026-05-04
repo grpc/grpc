@@ -23,7 +23,7 @@ let package = Package(
   ],
 
   dependencies: [
-    .package(url: "https://github.com/firebase/abseil-cpp-SwiftPM.git", "0.20240722.0"..<"0.20240723.0"),
+    .package(url: "https://github.com/firebase/abseil-cpp-SwiftPM.git", "0.20250512.1"..<"0.20250512.2"),
     .package(url: "https://github.com/firebase/boringssl-SwiftPM.git", "0.32.0"..<"0.33.0"),
   ],
 
@@ -1383,6 +1383,7 @@ let package = Package(
         "src/core/handshaker/proxy_mapper_registry.cc",
         "src/core/handshaker/proxy_mapper_registry.h",
         "src/core/handshaker/security/pipelined_secure_endpoint.cc",
+        "src/core/handshaker/security/pipelining_heuristic_selector.h",
         "src/core/handshaker/security/secure_endpoint.cc",
         "src/core/handshaker/security/secure_endpoint.h",
         "src/core/handshaker/security/security_handshaker.cc",
