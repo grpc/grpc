@@ -889,7 +889,7 @@ def _handle_unary_unary(
     state: _RPCState,
     method_handler: grpc.RpcMethodHandler,
     default_thread_pool: futures.ThreadPoolExecutor,
-) -> futures.Future:
+) -> Optional[futures.Future]:
     unary_request = _unary_request(
         rpc_event, state, method_handler.request_deserializer
     )
@@ -909,9 +909,7 @@ def _handle_unary_unary(
             method_handler.response_serializer,
         )
 
-    no_op_future = futures.Future()
-    no_op_future.set_result(None)
-    return no_op_future;
+    return None
 
 
 def _handle_unary_stream(
@@ -919,7 +917,7 @@ def _handle_unary_stream(
     state: _RPCState,
     method_handler: grpc.RpcMethodHandler,
     default_thread_pool: futures.ThreadPoolExecutor,
-) -> futures.Future:
+) -> Optional[futures.Future]:
     unary_request = _unary_request(
         rpc_event, state, method_handler.request_deserializer
     )
@@ -938,9 +936,7 @@ def _handle_unary_stream(
             method_handler.request_deserializer,
             method_handler.response_serializer,
         )
-    no_op_future = futures.Future()
-    no_op_future.set_result(None)
-    return no_op_future;
+    return None
 
 
 def _handle_stream_unary(
@@ -948,7 +944,7 @@ def _handle_stream_unary(
     state: _RPCState,
     method_handler: grpc.RpcMethodHandler,
     default_thread_pool: futures.ThreadPoolExecutor,
-) -> futures.Future:
+) -> Optional[futures.Future]:
     request_iterator = _RequestIterator(
         state, rpc_event.call, method_handler.request_deserializer
     )
@@ -968,9 +964,7 @@ def _handle_stream_unary(
             method_handler.response_serializer,
         )
 
-    no_op_future = futures.Future()
-    no_op_future.set_result(None)
-    return no_op_future;
+    return None
 
 
 def _handle_stream_stream(
@@ -978,7 +972,7 @@ def _handle_stream_stream(
     state: _RPCState,
     method_handler: grpc.RpcMethodHandler,
     default_thread_pool: futures.ThreadPoolExecutor,
-) -> futures.Future:
+) -> Optional[futures.Future]:
     request_iterator = _RequestIterator(
         state, rpc_event.call, method_handler.request_deserializer
     )
@@ -997,9 +991,7 @@ def _handle_stream_stream(
             method_handler.request_deserializer,
             method_handler.response_serializer,
         )
-    no_op_future = futures.Future()
-    no_op_future.set_result(None)
-    return no_op_future;
+    return None
 
 
 def _find_method_handler(
@@ -1056,7 +1048,7 @@ def _handle_with_method_handler(
     state: _RPCState,
     method_handler: grpc.RpcMethodHandler,
     thread_pool: futures.ThreadPoolExecutor,
-) -> futures.Future:
+) -> Optional[futures.Future]:
     with state.condition:
         rpc_event.call.start_server_batch(
             (cygrpc.ReceiveCloseOnServerOperation(_EMPTY_FLAGS),),
