@@ -152,6 +152,7 @@ void CToMetadata(grpc_metadata* metadata, size_t count, grpc_metadata_batch* b);
 const char* GrpcOpTypeName(grpc_op_type op);
 
 bool ValidateMetadata(size_t count, grpc_metadata* metadata);
+void PreFillReceiveOpsForInvalidMetadata(const grpc_op* ops, size_t nops);
 void EndOpImmediately(grpc_completion_queue* cq, void* notify_tag,
                       bool is_notify_tag_closure,
                       grpc_error_handle error = absl::OkStatus());

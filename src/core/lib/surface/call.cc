@@ -77,6 +77,7 @@
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/call_test_only.h"
+#include "src/core/lib/surface/call_utils.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/completion_queue.h"
 #include "src/core/lib/surface/validate_metadata.h"
@@ -519,43 +520,7 @@ grpc_call_error grpc_call_start_batch(grpc_call* call, const grpc_op* ops,
       // registered with the transport — CancelWithStatus will not fill them.
       // Needed because language wrappers (e.g. Python) read output fields
       // regardless of the success flag in the CQ completion.
-      for (size_t i = 0; i < nops; ++i) {
-        switch (ops[i].op) {
-          case GRPC_OP_RECV_STATUS_ON_CLIENT:
-            if (ops[i].data.recv_status_on_client.status != nullptr) {
-              *ops[i].data.recv_status_on_client.status = GRPC_STATUS_INTERNAL;
-            }
-            if (ops[i].data.recv_status_on_client.status_details != nullptr) {
-              *ops[i].data.recv_status_on_client.status_details =
-                  grpc_slice_from_static_string("Invalid metadata");
-            }
-            if (ops[i].data.recv_status_on_client.trailing_metadata !=
-                nullptr) {
-              grpc_metadata_array_init(
-                  ops[i].data.recv_status_on_client.trailing_metadata);
-            }
-            break;
-          case GRPC_OP_RECV_CLOSE_ON_SERVER:
-            if (ops[i].data.recv_close_on_server.cancelled != nullptr) {
-              *ops[i].data.recv_close_on_server.cancelled = 1;
-            }
-            break;
-          case GRPC_OP_RECV_INITIAL_METADATA:
-            if (ops[i].data.recv_initial_metadata.recv_initial_metadata !=
-                nullptr) {
-              grpc_metadata_array_init(
-                  ops[i].data.recv_initial_metadata.recv_initial_metadata);
-            }
-            break;
-          case GRPC_OP_RECV_MESSAGE:
-            if (ops[i].data.recv_message.recv_message != nullptr) {
-              *ops[i].data.recv_message.recv_message = nullptr;
-            }
-            break;
-          default:
-            break;
-        }
-      }
+      grpc_core::PreFillReceiveOpsForInvalidMetadata(ops, nops);
       // Post a failed completion directly via the proper API — does not go
       // through StartBatch so does not depend on nops==0 handling, and
       // correctly surfaces success=false to the application.

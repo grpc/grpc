@@ -228,4 +228,43 @@ void EndOpImmediately(grpc_completion_queue* cq, void* notify_tag,
   }
 }
 
+void PreFillReceiveOpsForInvalidMetadata(const grpc_op* ops, size_t nops) {
+  for (size_t i = 0; i < nops; ++i) {
+    switch (ops[i].op) {
+      case GRPC_OP_RECV_STATUS_ON_CLIENT:
+        if (ops[i].data.recv_status_on_client.status != nullptr) {
+          *ops[i].data.recv_status_on_client.status = GRPC_STATUS_INTERNAL;
+        }
+        if (ops[i].data.recv_status_on_client.status_details != nullptr) {
+          *ops[i].data.recv_status_on_client.status_details =
+              grpc_slice_from_static_string("Invalid metadata");
+        }
+        if (ops[i].data.recv_status_on_client.trailing_metadata != nullptr) {
+          grpc_metadata_array_init(
+              ops[i].data.recv_status_on_client.trailing_metadata);
+        }
+        break;
+      case GRPC_OP_RECV_CLOSE_ON_SERVER:
+        if (ops[i].data.recv_close_on_server.cancelled != nullptr) {
+          *ops[i].data.recv_close_on_server.cancelled = 1;
+        }
+        break;
+      case GRPC_OP_RECV_INITIAL_METADATA:
+        if (ops[i].data.recv_initial_metadata.recv_initial_metadata !=
+            nullptr) {
+          grpc_metadata_array_init(
+              ops[i].data.recv_initial_metadata.recv_initial_metadata);
+        }
+        break;
+      case GRPC_OP_RECV_MESSAGE:
+        if (ops[i].data.recv_message.recv_message != nullptr) {
+          *ops[i].data.recv_message.recv_message = nullptr;
+        }
+        break;
+      default:
+        break;
+    }
+  }
+}
+
 }  // namespace grpc_core
