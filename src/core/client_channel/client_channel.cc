@@ -838,7 +838,8 @@ void ClientChannel::AddConnectivityWatcher(
 
 void ClientChannel::RemoveConnectivityWatcher(
     AsyncConnectivityStateWatcherInterface* watcher) {
-  auto self = RefAsSubclass<ClientChannel>();  // Held by callback.
+  WeakRefCountedPtr<ClientChannel> self =
+      WeakRefAsSubclass<ClientChannel>();  // Held by callback.
   work_serializer_->Run(
       [self, watcher]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(*self->work_serializer_) {
         self->state_tracker_.RemoveWatcher(watcher);
