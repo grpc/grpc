@@ -63,15 +63,15 @@ class PythonOpenCensusCallTracer : public grpc_core::ClientCallTracerInterface {
     }
     void MutateSendTrailingMetadata(
         grpc_metadata_batch* /*send_trailing_metadata*/) override {}
-    void RecordSendMessage(const grpc_core::Message& /*send_message*/) override;
+    void RecordSendMessage(const grpc_core::Message& send_message) override;
     void RecordSendCompressedMessage(
-        const grpc_core::Message& /*send_compressed_message*/) override {}
+        const grpc_core::Message& send_compressed_message) override;
     void RecordReceivedInitialMetadata(
         grpc_metadata_batch* /*recv_initial_metadata*/) override;
     void RecordReceivedMessage(
         const grpc_core::Message& /*recv_message*/) override;
     void RecordReceivedDecompressedMessage(
-        const grpc_core::Message& /*recv_decompressed_message*/) override {}
+        const grpc_core::Message& recv_decompressed_message) override;
     void RecordReceivedTrailingMetadata(
         absl::Status status, grpc_metadata_batch* recv_trailing_metadata,
         const grpc_transport_stream_stats* transport_stream_stats) override;
@@ -100,7 +100,7 @@ class PythonOpenCensusCallTracer : public grpc_core::ClientCallTracerInterface {
     uint64_t recv_message_count_ = 0;
     uint64_t sent_message_count_ = 0;
     // End status code
-    absl::StatusCode status_code_;
+    absl::StatusCode status_code_ = absl::StatusCode::kOk;
     // Avoid std::map to avoid per-call allocations.
     std::array<grpc_core::RefCountedStringValue,
                static_cast<size_t>(OptionalLabelKey::kSize)>
@@ -139,6 +139,7 @@ class PythonOpenCensusCallTracer : public grpc_core::ClientCallTracerInterface {
       bool is_transparent_retry) override;
 
   void RecordAnnotation(absl::string_view annotation) override;
+
   void RecordAnnotation(const Annotation& annotation) override;
 
  private:
@@ -163,6 +164,7 @@ class PythonOpenCensusCallTracer : public grpc_core::ClientCallTracerInterface {
   absl::Duration retry_delay_ ABSL_GUARDED_BY(&mu_);
   absl::Time time_at_last_attempt_end_ ABSL_GUARDED_BY(&mu_);
   uint64_t num_active_rpcs_ ABSL_GUARDED_BY(&mu_) = 0;
+  absl::StatusCode status_code_ ABSL_GUARDED_BY(&mu_) = absl::StatusCode::kOk;
 };
 
 }  // namespace grpc_observability

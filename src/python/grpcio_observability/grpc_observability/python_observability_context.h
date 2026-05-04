@@ -21,12 +21,15 @@
 
 #include <algorithm>
 #include <atomic>
+#include <memory>
 #include <string>
 #include <vector>
 
 #include "constants.h"
 #include "sampler.h"
 #include "src/core/lib/channel/channel_stack.h"
+#include "src/core/util/sync.h"
+#include "absl/base/thread_annotations.h"
 #include "absl/strings/string_view.h"
 #include "absl/strings/strip.h"
 #include "absl/time/clock.h"
@@ -107,9 +110,10 @@ struct Measurement {
   bool include_exchange_labels;
 };
 
-struct Annotation {
+struct Event {
+  std::string name;
+  std::vector<Label> attributes;
   std::string time_stamp;
-  std::string description;
 };
 
 struct SpanCensusData {
@@ -121,7 +125,7 @@ struct SpanCensusData {
   std::string parent_span_id;
   std::string status;
   std::vector<Label> span_labels;
-  std::vector<Annotation> span_annotations;
+  std::vector<Event> span_events;
   int64_t child_span_count;
   bool should_sample;
 };
@@ -164,14 +168,21 @@ class Span final {
  public:
   explicit Span(const std::string& name, const std::string& parent_span_id,
                 absl::Time start_time, const SpanContext& context)
-      : name_(name),
+      : mu_(std::make_unique<grpc_core::Mutex>()),
+        name_(name),
         parent_span_id_(parent_span_id),
         start_time_(start_time),
         context_(context) {}
 
-  void End() { end_time_ = absl::Now(); }
+  void End() {
+    grpc_core::MutexLock lock(mu_.get());
+    end_time_ = absl::Now();
+  }
 
-  void IncreaseChildSpanCount() { ++child_span_count_; }
+  void IncreaseChildSpanCount() {
+    grpc_core::MutexLock lock(mu_.get());
+    ++child_span_count_;
+  }
 
   static Span StartSpan(absl::string_view name, const Span* parent);
 
@@ -188,7 +199,11 @@ class Span final {
 
   void AddAttribute(absl::string_view key, absl::string_view value);
 
-  void AddAnnotation(absl::string_view description);
+  void AddEvent(absl::string_view name);
+
+  void AddEvent(
+      absl::string_view name,
+      std::vector<std::pair<absl::string_view, absl::string_view>> attributes);
 
   SpanCensusData ToCensusData() const;
 
@@ -197,15 +212,17 @@ class Span final {
     return ProbabilitySampler::Get().ShouldSample(trace_id);
   }
 
+  // heap-allocated to keep Span object moveable
+  mutable std::unique_ptr<grpc_core::Mutex> mu_;
   std::string name_;
   std::string parent_span_id_;
   absl::Time start_time_;
-  absl::Time end_time_;
-  std::string status_;
-  std::vector<Label> span_labels_;
-  std::vector<Annotation> span_annotations_;
+  absl::Time end_time_ ABSL_GUARDED_BY(mu_);
+  std::string status_ ABSL_GUARDED_BY(mu_);
+  std::vector<Label> span_labels_ ABSL_GUARDED_BY(mu_);
+  std::vector<Event> span_events_ ABSL_GUARDED_BY(mu_);
   SpanContext context_;
-  uint64_t child_span_count_ = 0;
+  uint64_t child_span_count_ ABSL_GUARDED_BY(mu_) = 0;
 };
 
 // PythonCensusContext is associated with each clientCallTracer,
@@ -243,8 +260,12 @@ class PythonCensusContext {
     span_.AddAttribute(key, attribute);
   }
 
-  void AddSpanAnnotation(absl::string_view description) {
-    span_.AddAnnotation(description);
+  void AddSpanEvent(absl::string_view name) { AddSpanEvent(name, {}); }
+
+  void AddSpanEvent(
+      absl::string_view name,
+      std::vector<std::pair<absl::string_view, absl::string_view>> attributes) {
+    span_.AddEvent(name, attributes);
   }
 
   void IncreaseChildSpanCount() { span_.IncreaseChildSpanCount(); }

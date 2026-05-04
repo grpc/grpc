@@ -240,23 +240,34 @@ Span Span::StartSpan(absl::string_view name, absl::string_view trace_id) {
 }
 
 void Span::SetStatus(absl::string_view status) {
+  grpc_core::MutexLock lock(mu_.get());
   status_ = std::string(status);
 }
 
 void Span::AddAttribute(absl::string_view key, absl::string_view value) {
+  grpc_core::MutexLock lock(mu_.get());
   span_labels_.emplace_back(std::string(key), std::string(value));
 }
 
-void Span::AddAnnotation(absl::string_view description) {
+void Span::AddEvent(
+    absl::string_view name,
+    std::vector<std::pair<absl::string_view, absl::string_view>> attributes) {
+  Event event{};
+  event.name = std::string(name);
+  event.attributes.reserve(attributes.size());
+  for (const auto& [key, value] : attributes) {
+    event.attributes.emplace_back(std::string(key), std::string(value));
+  }
   // Need a string format which can be converted to Python datetime.datetime
   // class directly.
-  std::string time_stamp =
+  event.time_stamp =
       absl::FormatTime("%Y-%m-%d %H:%M:%E3S", absl::Now(), absl::UTCTimeZone());
-  span_annotations_.emplace_back(
-      Annotation{time_stamp, std::string(description)});
+  grpc_core::MutexLock lock(mu_.get());
+  span_events_.emplace_back(event);
 }
 
 SpanCensusData Span::ToCensusData() const {
+  grpc_core::MutexLock lock(mu_.get());
   SpanCensusData census_data;
   absl::TimeZone utc = absl::UTCTimeZone();
   census_data.name = name_;
@@ -273,7 +284,7 @@ SpanCensusData Span::ToCensusData() const {
   census_data.parent_span_id = parent_span_id_;
   census_data.status = status_;
   census_data.span_labels = span_labels_;
-  census_data.span_annotations = span_annotations_;
+  census_data.span_events = span_events_;
   census_data.child_span_count = child_span_count_;
   return census_data;
 }
