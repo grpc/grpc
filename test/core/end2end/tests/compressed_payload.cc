@@ -26,10 +26,16 @@
 #include <string>
 #include <utility>
 
+#include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
+#include "src/core/ext/transport/chttp2/transport/frame_data.h"
+#include "src/core/ext/transport/chttp2/transport/internal.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/resource_quota/arena.h"
 #include "src/core/util/bitset.h"
 #include "src/core/util/time.h"
 #include "test/core/end2end/end2end_tests.h"
+#include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "absl/strings/string_view.h"
 
@@ -44,6 +50,17 @@ class TestConfigurator {
       grpc_compression_algorithm algorithm) {
     server_args_ =
         server_args_.Set(GRPC_COMPRESSION_CHANNEL_ENABLED_ALGORITHMS_BITSET,
+                         BitSet<GRPC_COMPRESS_ALGORITHMS_COUNT>()
+                             .SetAll(true)
+                             .Set(algorithm, false)
+                             .ToInt<uint32_t>());
+    return *this;
+  }
+
+  TestConfigurator& DisableAlgorithmAtClient(
+      grpc_compression_algorithm algorithm) {
+    client_args_ =
+        client_args_.Set(GRPC_COMPRESSION_CHANNEL_ENABLED_ALGORITHMS_BITSET,
                          BitSet<GRPC_COMPRESS_ALGORITHMS_COUNT>()
                              .SetAll(true)
                              .Set(algorithm, false)
@@ -147,6 +164,33 @@ class TestConfigurator {
     EXPECT_EQ(server_status.status(), GRPC_STATUS_INTERNAL);
     EXPECT_EQ(server_status.message(),
               "Compression bit set but no encoding configured");
+  }
+
+  void ClientUnsupportedAlgorithmTest() {
+    Init();
+    auto c = test_.NewClientCall("/foo").Timeout(Duration::Minutes(1)).Create();
+    IncomingStatusOnClient server_status;
+    IncomingMetadata server_initial_metadata;
+    c.NewBatch(1)
+        .SendInitialMetadata({})
+        .SendCloseFromClient()
+        .RecvInitialMetadata(server_initial_metadata)
+        .RecvStatusOnClient(server_status);
+    auto s = test_.RequestCall(100);
+    test_.Expect(100, true);
+    test_.Step();
+    IncomingCloseOnServer client_close;
+    s.NewBatch(101).SendInitialMetadata({}).RecvCloseOnServer(client_close);
+    s.NewBatch(102).SendMessage(std::string(1024, 'y'));
+    test_.Expect(102, true);
+    test_.Step();
+    test_.Expect(1, true);
+    test_.Expect(101, true);
+    test_.Step();
+    EXPECT_EQ(server_status.status(), GRPC_STATUS_INTERNAL);
+    EXPECT_THAT(
+        server_status.message(),
+        ::testing::HasSubstr("Compression algorithm 'gzip' is disabled."));
   }
 
   void RequestWithPayload(
@@ -506,6 +550,37 @@ CORE_END2END_TEST(Http2SingleHopTests,
 
 CORE_END2END_TEST(Http2SingleHopTests, CompressedBitWithIdentityFails) {
   TestConfigurator(*this).CompressedBitWithIdentityTest();
+}
+
+CORE_END2END_TEST(Http2SingleHopTests, ClientUnsupportedAlgorithmFails) {
+  TestConfigurator(*this)
+      .DisableAlgorithmAtClient(GRPC_COMPRESS_GZIP)
+      .ServerDefaultAlgorithm(GRPC_COMPRESS_GZIP)
+      .ClientUnsupportedAlgorithmTest();
+}
+
+TEST(CardinalityTest, StreamingAllowsMultipleDataFrames) {
+  ExecCtx exec_ctx;
+  auto arena = SimpleArenaAllocator()->MakeArena();
+  auto* s = static_cast<grpc_chttp2_stream*>(
+      arena->Alloc(sizeof(grpc_chttp2_stream)));
+  memset((void*)s, 0, sizeof(grpc_chttp2_stream));
+  s->id = 101;
+  grpc_slice_buffer_init(&s->frame_storage);
+  uint8_t frame1[] = {0, 0, 0, 0, 4, 'm', 's', 'g', '1'};
+  grpc_slice slice1 =
+      grpc_slice_from_copied_buffer((const char*)frame1, sizeof(frame1));
+  uint8_t frame2[] = {0, 0, 0, 0, 4, 'm', 's', 'g', '2'};
+  grpc_slice slice2 =
+      grpc_slice_from_copied_buffer((const char*)frame2, sizeof(frame2));
+  LOG(INFO) << "--- Sending first frame ---";
+  auto err1 = grpc_chttp2_data_parser_parse(nullptr, nullptr, s, slice1, 0);
+  ASSERT_TRUE(err1.ok()) << err1.ToString();
+  LOG(INFO) << "--- Sending second frame ---";
+  auto err2 = grpc_chttp2_data_parser_parse(nullptr, nullptr, s, slice2, 0);
+  EXPECT_TRUE(err2.ok()) << "Streaming RPC should allow multiple DATA frames!";
+  grpc_slice_unref(slice1);
+  grpc_slice_unref(slice2);
 }
 
 }  // namespace
