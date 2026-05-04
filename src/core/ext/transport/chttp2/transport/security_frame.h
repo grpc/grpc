@@ -235,7 +235,7 @@ class SecurityFrameHandler final : public RefCounted<SecurityFrameHandler> {
     // Do not ever LOG the payload. It has a security key.
     return absl::StrFormat(
         "SecurityFrameHandler{endpoint_extension_=%s, sleep_state_=%s, "
-        "payload_length=%d, transport_closed_=%s}",
+        "payload_length=%zu, transport_closed_=%s}",
         endpoint_extension_ == nullptr ? "null" : "non-null", sleep_state_str,
         payload_.Length(), transport_closed_ ? "true" : "false");
   }
