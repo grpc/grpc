@@ -128,6 +128,20 @@ void PythonOpenCensusServerCallTracer::RecordReceivedInitialMetadata(
                     /*include_exchange_labels=*/false);
   }
 
+  // capture propagation headers for server side extraction in Python
+  if (tracing_enabled && !propagation_fields_.empty()) {
+    std::vector<Label> received_headers;
+    received_headers.reserve(propagation_fields_.size());
+    std::string buffer;
+    for (const auto& key : propagation_fields_) {
+      auto value = recv_initial_metadata->GetStringValue(key, &buffer);
+      if (value.has_value()) {
+        received_headers.emplace_back(key, std::string(*value));
+      }
+    }
+    context_.GetSpan().SetReceivedHeaders(received_headers);
+  }
+
   labels_from_peer_ = labels_injector_.GetExchangeLabels(recv_initial_metadata);
 }
 
@@ -156,30 +170,66 @@ void PythonOpenCensusServerCallTracer::MutateSendTrailingMetadata(
 
 void PythonOpenCensusServerCallTracer::RecordSendMessage(
     const grpc_core::Message& send_message) {
-  RecordAnnotation(absl::StrFormat("Send message: %ld bytes",
-                                   send_message.payload()->Length()));
-  ++sent_message_count_;
+  if (!context_.GetSpanContext().IsSampled()) {
+    return;
+  }
+  std::vector<std::pair<absl::string_view, absl::string_view>> attributes{};
+  attributes.reserve(2);
+  const auto sent_message_count_str = absl::StrCat(sent_message_count_++);
+  attributes.emplace_back("sequence-number", sent_message_count_str);
+  const auto message_size_str = absl::StrCat(send_message.payload()->Length());
+  attributes.emplace_back("message-size", message_size_str);
+  context_.AddSpanEvent("Outbound message", attributes);
 }
 
 void PythonOpenCensusServerCallTracer::RecordSendCompressedMessage(
     const grpc_core::Message& send_compressed_message) {
-  RecordAnnotation(
-      absl::StrFormat("Send compressed message: %ld bytes",
-                      send_compressed_message.payload()->Length()));
+  if (!context_.GetSpanContext().IsSampled()) {
+    return;
+  }
+  std::vector<std::pair<absl::string_view, absl::string_view>> attributes{};
+  attributes.reserve(2);
+  const auto sent_message_count_str = absl::StrCat(sent_message_count_ - 1);
+  attributes.emplace_back("sequence-number", sent_message_count_str);
+  const auto message_size_str =
+      absl::StrCat(send_compressed_message.payload()->Length());
+  attributes.emplace_back("message-size-compressed", message_size_str);
+  context_.AddSpanEvent("Outbound message compressed", attributes);
 }
 
 void PythonOpenCensusServerCallTracer::RecordReceivedMessage(
     const grpc_core::Message& recv_message) {
-  RecordAnnotation(absl::StrFormat("Received message: %ld bytes",
-                                   recv_message.payload()->Length()));
-  ++recv_message_count_;
+  if (!context_.GetSpanContext().IsSampled()) {
+    return;
+  }
+  std::vector<std::pair<absl::string_view, absl::string_view>> attributes{};
+  attributes.reserve(2);
+  const auto recv_message_count_str = absl::StrCat(recv_message_count_++);
+  attributes.emplace_back("sequence-number", recv_message_count_str);
+  const auto message_size_str = absl::StrCat(recv_message.payload()->Length());
+  bool is_compressed =
+      (recv_message.flags() & GRPC_WRITE_INTERNAL_COMPRESS) != 0;
+  attributes.emplace_back(
+      is_compressed ? "message-size-compressed" : "message-size",
+      message_size_str);
+  context_.AddSpanEvent(
+      is_compressed ? "Inbound compressed message" : "Inbound message",
+      attributes);
 }
 
 void PythonOpenCensusServerCallTracer::RecordReceivedDecompressedMessage(
     const grpc_core::Message& recv_decompressed_message) {
-  RecordAnnotation(
-      absl::StrFormat("Received decompressed message: %ld bytes",
-                      recv_decompressed_message.payload()->Length()));
+  if (!context_.GetSpanContext().IsSampled()) {
+    return;
+  }
+  std::vector<std::pair<absl::string_view, absl::string_view>> attributes{};
+  attributes.reserve(2);
+  const auto recv_message_count_str = absl::StrCat(recv_message_count_ - 1);
+  attributes.emplace_back("sequence-number", recv_message_count_str);
+  const auto message_size_str =
+      absl::StrCat(recv_decompressed_message.payload()->Length());
+  attributes.emplace_back("message-size", message_size_str);
+  context_.AddSpanEvent("Inbound message", attributes);
 }
 
 void PythonOpenCensusServerCallTracer::RecordCancel(
@@ -229,6 +279,7 @@ void PythonOpenCensusServerCallTracer::RecordEnd(
                     registered_method_, /*include_exchange_labels=*/true);
   }
   if (PythonCensusTracingEnabled()) {
+    context_.GetSpan().SetStatus(StatusCodeToString(final_info->final_status));
     context_.EndSpan();
     if (IsSampled()) {
       RecordSpan(context_.GetSpan().ToCensusData());
@@ -255,7 +306,7 @@ void PythonOpenCensusServerCallTracer::RecordAnnotation(
   if (!context_.GetSpanContext().IsSampled()) {
     return;
   }
-  context_.AddSpanAnnotation(annotation);
+  context_.AddSpanEvent(annotation);
 }
 
 void PythonOpenCensusServerCallTracer::RecordAnnotation(
@@ -278,7 +329,8 @@ void PythonOpenCensusServerCallTracer::RecordAnnotation(
     // call is being sampled by default.
     default:
       if (IsSampled()) {
-        context_.AddSpanAnnotation(annotation.ToString());
+        const auto annotation_str = annotation.ToString();
+        context_.AddSpanEvent(annotation_str);
       }
       break;
   }
@@ -314,7 +366,8 @@ PythonOpenCensusServerCallTracerFactory::CreateNewServerCallTracer(
   // the same DLL in Windows.
   (void)arena;
   (void)channel_args;
-  return new PythonOpenCensusServerCallTracer(exchange_labels_, identifier_);
+  return new PythonOpenCensusServerCallTracer(exchange_labels_,
+                                              propagation_fields_, identifier_);
 }
 
 bool PythonOpenCensusServerCallTracerFactory::IsServerTraced(
@@ -325,7 +378,11 @@ bool PythonOpenCensusServerCallTracerFactory::IsServerTraced(
 
 PythonOpenCensusServerCallTracerFactory::
     PythonOpenCensusServerCallTracerFactory(
-        const std::vector<Label>& exchange_labels, const char* identifier)
-    : exchange_labels_(exchange_labels), identifier_(identifier) {}
+        const std::vector<Label>& exchange_labels,
+        const std::vector<std::string>& propagation_fields,
+        const char* identifier)
+    : exchange_labels_(exchange_labels),
+      propagation_fields_(propagation_fields),
+      identifier_(identifier) {}
 
 }  // namespace grpc_observability
