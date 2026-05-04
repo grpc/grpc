@@ -21,6 +21,7 @@
 
 #include "src/core/lib/channel/promise_based_filter.h"
 #include "src/core/telemetry/call_tracer.h"
+#include "src/core/telemetry/instrument.h"
 #include "src/core/telemetry/metrics.h"
 #include "src/core/telemetry/tcp_tracer.h"
 #include "src/core/util/ref_counted.h"
@@ -275,6 +276,13 @@ class FakeStatsPlugin : public StatsPlugin {
               Crash("unknown instrument type");
           }
         });
+    InstrumentLabelSet labels;
+    InstrumentMetadata::ForEachInstrument([&](const auto* desc) {
+      for (const auto& l : desc->domain->label_names()) {
+        labels.Set(l);
+      }
+    });
+    collection_scope_ = CreateCollectionScope({}, labels);
   }
 
   RefCountedPtr<CollectionScope> GetCollectionScope() const override {
@@ -339,6 +347,7 @@ class FakeStatsPlugin : public StatsPlugin {
     if (iter == double_counters_.end()) return;
     iter->second.Add(value, label_values, optional_values);
   }
+
   void RecordHistogram(
       GlobalInstrumentsRegistry::GlobalInstrumentHandle handle, uint64_t value,
       absl::Span<const absl::string_view> label_values,
@@ -418,6 +427,7 @@ class FakeStatsPlugin : public StatsPlugin {
     }
     return iter->second.GetValue(label_values, optional_values);
   }
+
   std::optional<std::vector<uint64_t>> GetUInt64HistogramValue(
       GlobalInstrumentsRegistry::GlobalInstrumentHandle handle,
       absl::Span<const absl::string_view> label_values,
@@ -472,7 +482,93 @@ class FakeStatsPlugin : public StatsPlugin {
     return iter->second.GetValue(label_values, optional_values);
   }
 
+  std::optional<uint64_t> GetUInt64MetricValueByName(
+      absl::string_view name, absl::Span<const absl::string_view> labels);
+
+  std::optional<int64_t> GetInt64MetricValueByName(
+      absl::string_view name, absl::Span<const absl::string_view> labels);
+
  private:
+  template <typename T>
+  std::optional<T> GetMetricValueByNameImpl(
+      absl::string_view name, absl::Span<const absl::string_view> labels);
+  template <typename T>
+  class DomainMetricsSink final : public MetricsSink {
+   public:
+    explicit DomainMetricsSink(absl::string_view target_name,
+                               absl::Span<const std::string> label_keys,
+                               absl::Span<const std::string> label_values)
+        : target_name_(target_name) {
+      for (size_t i = 0; i < label_keys.size(); ++i) {
+        target_labels_.emplace(label_keys[i], label_values[i]);
+      }
+    }
+
+    void Counter(InstrumentLabelList label_keys,
+                 absl::Span<const std::string> label_values,
+                 absl::string_view name, uint64_t value) override {
+      RecordValue(label_keys, label_values, name, value);
+    }
+
+    void UpDownCounter(InstrumentLabelList label_keys,
+                       absl::Span<const std::string> label_values,
+                       absl::string_view name, uint64_t value) override {
+      RecordValue(label_keys, label_values, name, value);
+    }
+
+    void Histogram(InstrumentLabelList /*label_keys*/,
+                   absl::Span<const std::string> /*label_values*/,
+                   absl::string_view /*name*/, HistogramBuckets /*bounds*/,
+                   absl::Span<const uint64_t> /*counts*/) override {}
+    void DoubleGauge(InstrumentLabelList /*label_keys*/,
+                     absl::Span<const std::string> /*label_values*/,
+                     absl::string_view /*name*/, double /*value*/) override {}
+    void IntGauge(InstrumentLabelList /*label_keys*/,
+                  absl::Span<const std::string> /*label_values*/,
+                  absl::string_view /*name*/, int64_t /*value*/) override {}
+    void UintGauge(InstrumentLabelList /*label_keys*/,
+                   absl::Span<const std::string> /*label_values*/,
+                   absl::string_view /*name*/, uint64_t /*value*/) override {}
+
+    std::optional<T> captured_value() const { return captured_value_; }
+
+   private:
+    void RecordValue(InstrumentLabelList label_keys,
+                     absl::Span<const std::string> label_values,
+                     absl::string_view name, uint64_t value) {
+      if (name != target_name_) return;
+      if (!MatchLabels(label_keys, label_values)) return;
+      captured_value_ = static_cast<T>(value);
+    }
+
+    bool MatchLabels(const InstrumentLabelList& label_keys,
+                     absl::Span<const std::string> label_values) const {
+      if (label_keys.size() != target_labels_.size() ||
+          label_values.size() != target_labels_.size()) {
+        LOG(ERROR) << "MatchLabels size mismatch: label_keys="
+                   << label_keys.size()
+                   << " label_values=" << label_values.size()
+                   << " target=" << target_labels_.size();
+        return false;
+      }
+      for (size_t i = 0; i < label_keys.size(); ++i) {
+        auto it = target_labels_.find(label_keys[i].label());
+        if (it == target_labels_.end()) return false;
+        const std::string& expected = it->second;
+        const std::string& actual = label_values[i];
+        if (expected != actual) {
+          LOG(ERROR) << "MatchLabels failed for key: " << label_keys[i].label()
+                     << " expected: " << expected << " actual: " << actual;
+          return false;
+        }
+      }
+      return true;
+    }
+
+    absl::string_view target_name_;
+    absl::flat_hash_map<std::string, std::string> target_labels_;
+    std::optional<T> captured_value_;
+  };
   class Reporter : public CallbackMetricReporter {
    public:
     explicit Reporter(FakeStatsPlugin& plugin) : plugin_(plugin) {}
@@ -698,6 +794,8 @@ class GlobalInstrumentsRegistryTestPeer {
   FindUInt64CounterHandleByName(absl::string_view name);
   static std::optional<GlobalInstrumentsRegistry::GlobalInstrumentHandle>
   FindDoubleCounterHandleByName(absl::string_view name);
+  static std::optional<GlobalInstrumentsRegistry::GlobalInstrumentHandle>
+  FindInt64UpDownCounterHandleByName(absl::string_view name);
   static std::optional<GlobalInstrumentsRegistry::GlobalInstrumentHandle>
   FindUInt64HistogramHandleByName(absl::string_view name);
   static std::optional<GlobalInstrumentsRegistry::GlobalInstrumentHandle>
