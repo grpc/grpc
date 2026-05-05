@@ -23,6 +23,7 @@
 #include <grpc/grpc_security_constants.h>
 #include <grpc/private_key_signer.h>
 #include <grpc/support/port_platform.h>
+#include <openssl/ssl.h>
 #include <openssl/x509.h>
 
 #include <memory>
@@ -263,6 +264,11 @@ tsi_ssl_client_handshaker_factory* tsi_ssl_client_handshaker_factory_ref(
 // Decrements reference count of the handshaker factory. Handshaker factory will
 // be destroyed once no references exist.
 void tsi_ssl_client_handshaker_factory_unref(
+    tsi_ssl_client_handshaker_factory* factory);
+
+// Returns the SSL_CTX from the factory. For testing only -- used to assert
+// that two factories share (or do not share) the underlying SSL_CTX.
+SSL_CTX* tsi_ssl_client_handshaker_factory_get_ssl_ctx(
     tsi_ssl_client_handshaker_factory* factory);
 
 // --- tsi_ssl_server_handshaker_factory object ---
