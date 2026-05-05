@@ -1094,7 +1094,7 @@ class WeightedRoundRobinFactory final : public LoadBalancingPolicyFactory {
   absl::StatusOr<RefCountedPtr<LoadBalancingPolicy::Config>>
   ParseLoadBalancingConfig(const Json& json) const override {
     return LoadFromJson<RefCountedPtr<WeightedRoundRobinConfig>>(
-        json, internal::ClientChannelJsonArgs(),
+        json, JsonArgs(),
         "errors validating weighted_round_robin LB policy config");
   }
 };
