@@ -231,6 +231,11 @@ std::string YodelTest::RandomMetadataValue(absl::string_view key) {
   if (key == "te") {
     return "trailers";
   }
+  if (key == ":path") {
+    return "/" + RandomString(1, 127,
+                              "abcdefghijklmnopqrstuvwxyz"
+                              "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_/");
+  }
   static const NoDestruct<std::string> kChars{[]() {
     std::string out;
     for (char c = 32; c < 127; c++) out.push_back(c);

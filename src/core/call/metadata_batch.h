@@ -376,6 +376,18 @@ struct HttpPathMetadata : public SimpleSliceBasedMetadata {
   static constexpr bool kTransferOnTrailersOnly = false;
   using CompressionTraits = SmallSetOfValuesCompressor;
   static absl::string_view key() { return ":path"; }
+  static MementoType ParseMemento(Slice value,
+                                  bool will_keep_past_request_lifetime,
+                                  MetadataParseErrorFn on_error) {
+    if (grpc_core::IsOptimization04Enabled()) {
+      if (!value.as_string_view().starts_with('/')) {
+        on_error("path must start with '/'", value);
+        return Slice();
+      }
+    }
+    return SimpleSliceBasedMetadata::ParseMemento(
+        std::move(value), will_keep_past_request_lifetime, on_error);
+  }
 };
 
 // We separate SimpleIntBasedMetadata into two pieces: one that does not
