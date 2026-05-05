@@ -579,7 +579,7 @@ Http2Status Http2ClientTransport::ProcessIncomingFrame(
   }
 
   const bool should_trigger_write = ProcessIncomingWindowUpdateFrameFlowControl(
-      frame, flow_control_, stream.get());
+      frame, flow_control_, stream == nullptr ? nullptr : stream.get());
 
   if (should_trigger_write) {
     return ToHttpOkOrConnError(TriggerWriteCycle());
