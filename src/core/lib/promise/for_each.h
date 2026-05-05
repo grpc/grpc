@@ -19,6 +19,7 @@
 #include <stdint.h>
 
 #include <string>
+#include <type_traits>
 #include <utility>
 
 #include "src/core/lib/debug/trace.h"
@@ -124,10 +125,10 @@ class ForEach {
  public:
   using Result = decltype(Done<ActionResult>::Make(false));
 
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION ForEach(Reader reader, Action action,
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION ForEach(Reader&& reader, Action&& action,
                                                DebugLocation whence = {})
-      : reader_(std::move(reader)),
-        action_factory_(std::move(action)),
+      : reader_(std::forward<Reader>(reader)),
+        action_factory_(std::forward<Action>(action)),
         whence_(whence) {
     Construct(&reader_next_, reader_.Next());
   }
@@ -164,10 +165,33 @@ class ForEach {
     return PollAction();
   }
 
+  void ToProto(grpc_channelz_v2_Promise* promise_proto,
+               upb_Arena* arena) const {
+    auto* for_each_promise =
+        grpc_channelz_v2_Promise_mutable_for_each_promise(promise_proto, arena);
+
+    grpc_channelz_v2_Promise_ForEach_set_reader_factory(
+        for_each_promise, StdStringToUpbString(TypeName<Reader>()));
+    grpc_channelz_v2_Promise_ForEach_set_action_factory(
+        for_each_promise, StdStringToUpbString(TypeName<ActionFactory>()));
+    if (reading_next_) {
+      PromiseAsProto(reader_next_,
+                     grpc_channelz_v2_Promise_ForEach_mutable_reader_promise(
+                         for_each_promise, arena),
+                     arena);
+    } else {
+      PromiseAsProto(in_action_.promise,
+                     grpc_channelz_v2_Promise_ForEach_mutable_action_promise(
+                         for_each_promise, arena),
+                     arena);
+    }
+  }
+
  private:
   struct InAction {
-    InAction(ActionPromise promise, ReaderResult result)
-        : promise(std::move(promise)), result(std::move(result)) {}
+    InAction(ActionPromise&& promise, ReaderResult&& result)
+        : promise(std::forward<ActionPromise>(promise)),
+          result(std::forward<ReaderResult>(result)) {}
     ActionPromise promise;
     ReaderResult result;
   };
@@ -240,9 +264,9 @@ class ForEach {
 template <typename Reader, typename Action>
 GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline for_each_detail::ForEach<Reader,
                                                                      Action>
-ForEach(Reader reader, Action action, DebugLocation whence = {}) {
-  return for_each_detail::ForEach<Reader, Action>(std::move(reader),
-                                                  std::move(action), whence);
+ForEach(Reader&& reader, Action&& action, DebugLocation whence = {}) {
+  return for_each_detail::ForEach<std::decay_t<Reader>, std::decay_t<Action>>(
+      std::forward<Reader>(reader), std::forward<Action>(action), whence);
 }
 
 }  // namespace grpc_core

@@ -5,7 +5,7 @@ import grpc
 import demo_pb2 as demo__pb2
 
 
-class GRPCDemoStub(object):
+class GRPCDemoStub:
     """`service` 是用来给gRPC服务定义方法的, 格式固定, 类似于Golang中定义一个接口
     `service` is used to define methods for gRPC services in a fixed format, similar to defining
     an interface in Golang
@@ -39,7 +39,7 @@ class GRPCDemoStub(object):
                 )
 
 
-class GRPCDemoServicer(object):
+class GRPCDemoServicer:
     """`service` 是用来给gRPC服务定义方法的, 格式固定, 类似于Golang中定义一个接口
     `service` is used to define methods for gRPC services in a fixed format, similar to defining
     an interface in Golang
@@ -111,7 +111,7 @@ def add_GRPCDemoServicer_to_server(servicer, server):
 
 
  # This class is part of an EXPERIMENTAL API.
-class GRPCDemo(object):
+class GRPCDemo:
     """`service` 是用来给gRPC服务定义方法的, 格式固定, 类似于Golang中定义一个接口
     `service` is used to define methods for gRPC services in a fixed format, similar to defining
     an interface in Golang

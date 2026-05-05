@@ -28,7 +28,7 @@ class TcpTelemetryDomain final : public InstrumentDomain<TcpTelemetryDomain> {
   static constexpr absl::string_view kName = "tcp_connection_metrics";
   GRPC_INSTRUMENT_DOMAIN_LABELS("network.local.address", "network.local.port",
                                 "network.remote.address", "network.remote.port",
-                                "is_control_endpoint");
+                                "is_control_endpoint", "is_client");
 
   static inline const auto kMinRtt =
       RegisterHistogram<ExponentialHistogramShape>(

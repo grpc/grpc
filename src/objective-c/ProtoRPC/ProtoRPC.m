@@ -109,6 +109,14 @@
   [_call cancel];
 }
 
+- (void)receiveNextMessage {
+  [_call receiveNextMessage];
+}
+
+- (void)receiveNextMessages:(NSUInteger)numberOfMessages {
+  [_call receiveNextMessages:numberOfMessages];
+}
+
 @end
 
 @interface GRPCStreamingProtoCall () <GRPCResponseHandler>
@@ -219,7 +227,6 @@
   GRPCCall2 *copiedCall;
   @synchronized(self) {
     copiedCall = _call;
-    _call = nil;
   }
   [copiedCall finish];
 }

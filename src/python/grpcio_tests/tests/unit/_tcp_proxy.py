@@ -38,7 +38,7 @@ def _init_proxy_socket(gateway_address, gateway_port):
     return proxy_socket
 
 
-class TcpProxy(object):
+class TcpProxy:
     """Proxies a TCP connection between one client and one server."""
 
     def __init__(self, bind_address, gateway_address, gateway_port):

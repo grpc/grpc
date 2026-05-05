@@ -31,7 +31,7 @@ cdef class AioChannel:
         if options is None:
             options = ()
         cdef _ChannelArgs channel_args = _ChannelArgs(options)
-        self._target = target
+        self.target = target
         self.loop = loop
         self._status = AIO_CHANNEL_STATUS_READY
 

@@ -86,7 +86,7 @@ def _blocking_unary(stub):
     _validate_payload_type_and_length(response, messages_pb2.COMPRESSABLE, size)
 
 
-class _Pipe(object):
+class _Pipe:
     def __init__(self):
         self._condition = threading.Condition()
         self._values = []
@@ -124,7 +124,7 @@ class _Pipe(object):
         self.close()
 
 
-class _ChildProcess(object):
+class _ChildProcess:
     def __init__(self, task, args=None):
         if args is None:
             args = ()

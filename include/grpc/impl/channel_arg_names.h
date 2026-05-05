@@ -420,6 +420,11 @@
  *  Defaults to 250ms. */
 #define GRPC_ARG_HAPPY_EYEBALLS_CONNECTION_ATTEMPT_DELAY_MS \
   "grpc.happy_eyeballs_connection_attempt_delay_ms"
+/** If set, uses the provided EventEngine as the channel's event engine.
+ * TODO(aananthv): Remove GRPC_INTERNAL_ARG_EVENT_ENGINE once all usages are
+ * migrated to this arg.
+ */
+#define GRPC_ARG_EVENT_ENGINE "grpc.experimental.event_engine"
 /** It accepts a MemoryAllocatorFactory as input and If specified, it forces
  * the default event engine to use memory allocators created using the provided
  * factory. */

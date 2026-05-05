@@ -34,7 +34,7 @@ _STREAM_UNARY = "StreamUnary"
 _STREAM_STREAM = "StreamStream"
 
 
-class _TestTrigger(object):
+class _TestTrigger:
     def __init__(self, total_call_count):
         self._total_call_count = total_call_count
         self._pending_calls = 0

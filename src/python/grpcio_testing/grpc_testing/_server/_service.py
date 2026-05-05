@@ -17,7 +17,7 @@ import copy
 import grpc
 
 
-class _RequestIterator(object):
+class _RequestIterator:
     def __init__(self, rpc, handler):
         self._rpc = rpc
         self._handler = handler

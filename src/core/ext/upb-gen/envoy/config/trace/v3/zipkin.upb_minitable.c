@@ -40,28 +40,10 @@ static const upb_MiniTableField envoy_config_trace_v3_ZipkinConfig__fields[9] = 
 const upb_MiniTable envoy__config__trace__v3__ZipkinConfig_msg_init = {
   &envoy_config_trace_v3_ZipkinConfig__submsgs[0],
   &envoy_config_trace_v3_ZipkinConfig__fields[0],
-  UPB_SIZE(56, 88), 9, kUpb_ExtMode_NonExtendable, 9, UPB_FASTTABLE_MASK(120), 0,
+  UPB_SIZE(56, 88), 9, kUpb_ExtMode_NonExtendable, 9, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.config.trace.v3.ZipkinConfig",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x001800003f00000a, &upb_pss_1bt},
-    {0x002800003f000012, &upb_pss_1bt},
-    {0x000900003f000018, &upb_psb1_1bt},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x000c00003f000028, &upb_psv4_1bt},
-    {0x003800003f000032, &upb_pss_1bt},
-    {0x000a00003f000038, &upb_psb1_1bt},
-    {0x001000003f000040, &upb_psv4_1bt},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-  })
 };
 
 const upb_MiniTable* envoy__config__trace__v3__ZipkinConfig_msg_init_ptr = &envoy__config__trace__v3__ZipkinConfig_msg_init;

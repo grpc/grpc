@@ -590,6 +590,7 @@ cdef extern from "grpc/credentials.h":
     pass
 
   grpc_tls_credentials_options *grpc_tls_credentials_options_create() nogil
+  void grpc_tls_credentials_options_destroy(grpc_tls_credentials_options* options) nogil
 
   ctypedef struct grpc_tls_certificate_provider:
     # We don't care about the internals (and in fact don't know them)
@@ -608,6 +609,7 @@ cdef extern from "grpc/credentials.h":
     pass
 
   grpc_tls_identity_pairs *grpc_tls_identity_pairs_create() nogil
+  void grpc_tls_identity_pairs_destroy(grpc_tls_identity_pairs* pairs) nogil
 
   void grpc_tls_identity_pairs_add_pair(
     grpc_tls_identity_pairs *pairs,

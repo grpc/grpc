@@ -28,16 +28,10 @@ static const upb_MiniTableField xds_service_orca_v3_OrcaLoadReportRequest__field
 const upb_MiniTable xds__service__orca__v3__OrcaLoadReportRequest_msg_init = {
   &xds_service_orca_v3_OrcaLoadReportRequest__submsgs[0],
   &xds_service_orca_v3_OrcaLoadReportRequest__fields[0],
-  UPB_SIZE(24, 32), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
+  UPB_SIZE(24, 32), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "xds.service.orca.v3.OrcaLoadReportRequest",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x001800003f000012, &upb_prs_1bt},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-  })
 };
 
 const upb_MiniTable* xds__service__orca__v3__OrcaLoadReportRequest_msg_init_ptr = &xds__service__orca__v3__OrcaLoadReportRequest_msg_init;

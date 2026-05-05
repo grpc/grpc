@@ -163,8 +163,9 @@ class ExtensionInjectingEventEngine : public EventEngine {
 
 class SimulatedTransport : public RefCounted<SimulatedTransport> {
  public:
-  SimulatedTransport()
-      : security_frame_handler_(MakeRefCounted<SecurityFrameHandler>()) {
+  explicit SimulatedTransport(bool is_client)
+      : security_frame_handler_(MakeRefCounted<SecurityFrameHandler>()),
+        transport_write_context_(is_client) {
     event_engine_ =
         std::make_shared<ExtensionInjectingEventEngine>(&mock_extension_);
     EXPECT_TRUE(security_frame_handler_->Initialize(event_engine_).is_set);
@@ -237,16 +238,16 @@ class SimulatedTransport : public RefCounted<SimulatedTransport> {
 
 }  // namespace testing
 
-class SecurityFrameHandlerTest : public ::testing::Test {
+class SecurityFrameHandlerTest : public ::testing::TestWithParam<bool> {
  public:
   SecurityFrameHandlerTest() {
-    transport_write_context_.StartWriteCycle();
-
-    // Flush connection preface
-    MaybeFlushWriteBuffer();
+    transport = MakeRefCounted<testing::SimulatedTransport>(
+        /*is_client=*/GetParam());
   }
 
  protected:
+  RefCountedPtr<testing::SimulatedTransport> transport;
+
   RefCountedPtr<Party> MakeParty(testing::SimulatedTransport* transport) {
     auto arena = SimpleArenaAllocator()->MakeArena();
     arena->SetContext<grpc_event_engine::experimental::EventEngine>(
@@ -255,23 +256,11 @@ class SecurityFrameHandlerTest : public ::testing::Test {
   }
 
   WriteCycle& GetWriteCycle() {
-    return transport_write_context_.GetWriteCycle();
+    return transport->transport_write_context_.GetWriteCycle();
   }
-
- private:
-  void MaybeFlushWriteBuffer() {
-    if (transport_write_context_.GetWriteCycle().CanSerializeRegularFrames()) {
-      bool unused = false;
-      SliceBuffer serialized =
-          transport_write_context_.GetWriteCycle().SerializeRegularFrames(
-              {unused});
-    }
-  }
-  TransportWriteContext transport_write_context_;
 };
 
-TEST_F(SecurityFrameHandlerTest, SendFrameCallbackFactoryTest) {
-  auto transport = MakeRefCounted<testing::SimulatedTransport>();
+TEST_P(SecurityFrameHandlerTest, SendFrameCallbackFactoryTest) {
   auto callback = transport->security_frame_handler_->SendFrameCallbackFactory(
       transport->event_engine_);
 
@@ -296,9 +285,8 @@ TEST_F(SecurityFrameHandlerTest, SendFrameCallbackFactoryTest) {
               ::testing::HasSubstr("payload_length=9"));
 }
 
-TEST_F(SecurityFrameHandlerTest, ProcessPayloadTest) {
+TEST_P(SecurityFrameHandlerTest, ProcessPayloadTest) {
   ExecCtx exec_ctx;
-  auto transport = MakeRefCounted<testing::SimulatedTransport>();
   SliceBuffer payload1;
   payload1.Append(Slice::FromCopiedString("Hello"));
   transport->ProcessHttp2SecurityFrame(std::move(payload1));
@@ -319,10 +307,8 @@ TEST_F(SecurityFrameHandlerTest, ProcessPayloadTest) {
             "World");
 }
 
-TEST_F(SecurityFrameHandlerTest, OnTransportClosedPreventsSending) {
+TEST_P(SecurityFrameHandlerTest, OnTransportClosedPreventsSending) {
   ExecCtx exec_ctx;
-  RefCountedPtr<testing::SimulatedTransport> transport =
-      MakeRefCounted<testing::SimulatedTransport>();
   EXPECT_THAT(transport->security_frame_handler_->TestOnlyDebugString(),
               ::testing::HasSubstr("payload_length=0"));
   EXPECT_THAT(transport->security_frame_handler_->TestOnlyDebugString(),
@@ -339,10 +325,9 @@ TEST_F(SecurityFrameHandlerTest, OnTransportClosedPreventsSending) {
               ::testing::HasSubstr("transport_closed_=true"));
 }
 
-TEST_F(SecurityFrameHandlerTest,
+TEST_P(SecurityFrameHandlerTest,
        MaybeAppendSecurityFrameDoesNothingIfNotScheduled) {
   ExecCtx exec_ctx;
-  auto transport = MakeRefCounted<testing::SimulatedTransport>();
   transport->output_buffer.Append(Slice::FromCopiedString("existing"));
   EXPECT_EQ(transport->security_frame_handler_->TestOnlySleepState(),
             SecurityFrameHandler::SleepState::kWaitingForFrame);
@@ -359,7 +344,7 @@ TEST_F(SecurityFrameHandlerTest,
             SecurityFrameHandler::SleepState::kTransportClosed);
 }
 
-TEST_F(SecurityFrameHandlerTest, ExtensionNullTest) {
+TEST_P(SecurityFrameHandlerTest, ExtensionNullTest) {
   // Check if member functions of SecurityFrameHandler are safe to call when
   // endpoint_extension_ is null.
   auto handler = MakeRefCounted<SecurityFrameHandler>();
@@ -388,8 +373,7 @@ TEST_F(SecurityFrameHandlerTest, ExtensionNullTest) {
   handler->OnTransportClosed();
 }
 
-TEST_F(SecurityFrameHandlerTest, MaybeAppendSecurityFrameWithPayload) {
-  auto transport = MakeRefCounted<testing::SimulatedTransport>();
+TEST_P(SecurityFrameHandlerTest, MaybeAppendSecurityFrameWithPayload) {
   transport->output_buffer.Append(Slice::FromCopiedString("existing"));
   EXPECT_EQ(transport->security_frame_handler_->TestOnlySleepState(),
             SecurityFrameHandler::SleepState::kWaitingForFrame);
@@ -399,7 +383,7 @@ TEST_F(SecurityFrameHandlerTest, MaybeAppendSecurityFrameWithPayload) {
   party->Spawn(
       "AppendFrame",
       Seq(transport->security_frame_handler_->WaitForSecurityFrameSending(),
-          [&transport]() {
+          [this]() {
             EXPECT_EQ(transport->security_frame_handler_->TestOnlySleepState(),
                       SecurityFrameHandler::SleepState::kWriteOneFrame);
             EXPECT_THAT(
@@ -452,9 +436,7 @@ TEST_F(SecurityFrameHandlerTest, MaybeAppendSecurityFrameWithPayload) {
   n.WaitForNotification();
 }
 
-TEST_F(SecurityFrameHandlerTest, SimulatorTest) {
-  RefCountedPtr<testing::SimulatedTransport> transport =
-      MakeRefCounted<testing::SimulatedTransport>();
+TEST_P(SecurityFrameHandlerTest, SimulatorTest) {
   EXPECT_EQ(transport->security_frame_handler_->TestOnlySleepState(),
             SecurityFrameHandler::SleepState::kWaitingForFrame);
   transport->output_buffer.Append(Slice::FromCopiedString("Init"));
@@ -559,6 +541,8 @@ TEST_F(SecurityFrameHandlerTest, SimulatorTest) {
   n1.WaitForNotification();
   LOG(INFO) << "SimulatorTest: End";
 }
+
+INSTANTIATE_TEST_SUITE_P(IsClient, SecurityFrameHandlerTest, ::testing::Bool());
 
 }  // namespace http2
 }  // namespace grpc_core

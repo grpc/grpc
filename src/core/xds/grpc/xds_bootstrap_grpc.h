@@ -59,6 +59,8 @@ class GrpcXdsBootstrap final : public XdsBootstrap {
     }
     const Json::Object& metadata() const override { return metadata_; }
 
+    std::string ToString() const;
+
     static const JsonLoaderInterface* JsonLoader(const JsonArgs&);
 
    private:
@@ -66,6 +68,12 @@ class GrpcXdsBootstrap final : public XdsBootstrap {
       std::string region;
       std::string zone;
       std::string sub_zone;
+
+      bool Empty() const {
+        return region.empty() && zone.empty() && sub_zone.empty();
+      }
+
+      std::string ToString() const;
 
       static const JsonLoaderInterface* JsonLoader(const JsonArgs&);
     };
@@ -95,6 +103,8 @@ class GrpcXdsBootstrap final : public XdsBootstrap {
       return client_listener_resource_name_template_;
     }
 
+    std::string ToString() const;
+
     static const JsonLoaderInterface* JsonLoader(const JsonArgs&);
 
    private:
@@ -106,6 +116,8 @@ class GrpcXdsBootstrap final : public XdsBootstrap {
   struct AllowedGrpcService {
     RefCountedPtr<const ChannelCredsConfig> channel_creds_config;
     std::vector<RefCountedPtr<const CallCredsConfig>> call_creds_configs;
+
+    std::string ToString() const;
 
     static const JsonLoaderInterface* JsonLoader(const JsonArgs&);
     void JsonPostLoad(const Json& json, const JsonArgs& args,

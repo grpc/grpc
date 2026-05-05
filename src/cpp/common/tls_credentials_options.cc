@@ -127,6 +127,15 @@ void TlsCredentialsOptions::set_max_tls_version(grpc_tls_version tls_version) {
   grpc_tls_credentials_options_set_max_tls_version(options, tls_version);
 }
 
+void TlsCredentialsOptions::set_key_exchange_groups(
+    const std::vector<grpc_tls_key_exchange_group>& key_exchange_groups) {
+  grpc_tls_credentials_options* options = mutable_c_credentials_options();
+  GRPC_CHECK_NE(options, nullptr);
+  grpc_tls_credentials_options_set_key_exchange_groups(
+      c_credentials_options_, key_exchange_groups.data(),
+      key_exchange_groups.size());
+}
+
 grpc_tls_credentials_options* TlsCredentialsOptions::c_credentials_options()
     const {
   if (legacy_certificate_provider_ != nullptr) {

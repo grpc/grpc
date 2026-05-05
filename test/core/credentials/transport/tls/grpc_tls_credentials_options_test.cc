@@ -48,7 +48,7 @@ RefCountedPtr<grpc_tls_certificate_provider> CreateTestingCertificateProvider(
     const PemKeyCertPairList& pem_key_cert_pairs) {
   auto provider = MakeRefCounted<InMemoryCertificateProvider>();
   EXPECT_TRUE(
-      provider->UpdateRoot(std::make_shared<RootCertInfo>(root_cert_info))
+      provider->UpdateRoot(std::make_shared<tsi::RootCertInfo>(root_cert_info))
           .ok());
   EXPECT_TRUE(provider->UpdateIdentityKeyCertPair(pem_key_cert_pairs).ok());
   return provider;
@@ -610,6 +610,18 @@ TEST_F(GrpcTlsCredentialsOptionsTest, CrlProviderWithServerCredentials) {
   TlsServerSecurityConnector* tls_connector =
       static_cast<TlsServerSecurityConnector*>(connector.get());
   EXPECT_NE(tls_connector->ServerHandshakerFactoryForTesting(), nullptr);
+}
+
+TEST_F(GrpcTlsCredentialsOptionsTest, SetKeyExchangeGroups) {
+  auto options = MakeRefCounted<grpc_tls_credentials_options>();
+  std::vector<grpc_tls_key_exchange_group> groups = {
+      grpc_tls_key_exchange_group::GRPC_TLS_GROUP_X25519_MLKEM768,
+      grpc_tls_key_exchange_group::GRPC_TLS_GROUP_X25519,
+      grpc_tls_key_exchange_group::GRPC_TLS_GROUP_SECP256R1,
+  };
+  grpc_tls_credentials_options_set_key_exchange_groups(
+      options.get(), groups.data(), groups.size());
+  EXPECT_EQ(options->key_exchange_groups(), groups);
 }
 
 }  // namespace testing

@@ -39,11 +39,20 @@ if(gRPC_SSL_PROVIDER STREQUAL "module")
         endif()
       endif()
     endif()
-
+    # Silence a false positive warning in gcc 7, see https://github.com/grpc/grpc/issues/41869.
+    # There's no dedicated warning flag for this. Had to demote all warnings with -Wno-error.
+    if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+      # Check if the version is 7.x
+      if (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 7.0 AND
+          CMAKE_CXX_COMPILER_VERSION VERSION_LESS 8.0)
+          message(STATUS "Detected GCC 7: Applying bitfield-width workaround for BoringSSL")
+          add_compile_options(-Wno-error)
+      endif()
+    endif()
     add_subdirectory(${BORINGSSL_ROOT_DIR} third_party/boringssl-with-bazel)
     if(TARGET ssl)
       set(_gRPC_SSL_LIBRARIES ssl crypto)
-      set(_gRPC_SSL_INCLUDE_DIR ${BORINGSSL_ROOT_DIR}/src/include)
+      set(_gRPC_SSL_INCLUDE_DIR ${BORINGSSL_ROOT_DIR}/include)
       if(gRPC_INSTALL AND _gRPC_INSTALL_SUPPORTED_FROM_MODULE)
         install(TARGETS ssl crypto EXPORT gRPCTargets
           RUNTIME DESTINATION ${gRPC_INSTALL_BINDIR}

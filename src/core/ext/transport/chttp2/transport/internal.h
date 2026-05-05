@@ -533,6 +533,7 @@ struct grpc_chttp2_transport final : public grpc_core::FilterStackTransport,
   grpc_core::Duration keepalive_timeout;
   /// number of stream objects currently allocated by this transport
   std::atomic<size_t> streams_allocated{0};
+  uint32_t max_deallocating_streams = 0;
   /// keep-alive state machine state
   grpc_chttp2_keepalive_state keepalive_state;
   // Soft limit on max header size.

@@ -26,16 +26,10 @@ static const upb_MiniTableField google_api_Http__fields[2] = {
 const upb_MiniTable google__api__Http_msg_init = {
   &google_api_Http__submsgs[0],
   &google_api_Http__fields[0],
-  UPB_SIZE(16, 24), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
+  UPB_SIZE(16, 24), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "google.api.Http",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x001000003f00000a, &upb_prm_1bt_max128b},
-    {0x000800003f000010, &upb_psb1_1bt},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-  })
 };
 
 const upb_MiniTable* google__api__Http_msg_init_ptr = &google__api__Http_msg_init;
@@ -60,28 +54,10 @@ static const upb_MiniTableField google_api_HttpRule__fields[10] = {
 const upb_MiniTable google__api__HttpRule_msg_init = {
   &google_api_HttpRule__submsgs[0],
   &google_api_HttpRule__fields[0],
-  UPB_SIZE(48, 88), 10, kUpb_ExtMode_NonExtendable, 8, UPB_FASTTABLE_MASK(120), 0,
+  UPB_SIZE(48, 88), 10, kUpb_ExtMode_NonExtendable, 8, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "google.api.HttpRule",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x001000003f00000a, &upb_pss_1bt},
-    {0x0040000802000012, &upb_pos_1bt},
-    {0x004000080300001a, &upb_pos_1bt},
-    {0x0040000804000022, &upb_pos_1bt},
-    {0x004000080500002a, &upb_pos_1bt},
-    {0x0040000806000032, &upb_pos_1bt},
-    {0x002000003f00003a, &upb_pss_1bt},
-    {0x0040000808000042, &upb_pom_1bt_max64b},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x005000003f01005a, &upb_prm_1bt_max128b},
-    {0x003000003f000062, &upb_pss_1bt},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-  })
 };
 
 const upb_MiniTable* google__api__HttpRule_msg_init_ptr = &google__api__HttpRule_msg_init;
@@ -93,16 +69,10 @@ static const upb_MiniTableField google_api_CustomHttpPattern__fields[2] = {
 const upb_MiniTable google__api__CustomHttpPattern_msg_init = {
   NULL,
   &google_api_CustomHttpPattern__fields[0],
-  UPB_SIZE(24, 40), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
+  UPB_SIZE(24, 40), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "google.api.CustomHttpPattern",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x000800003f00000a, &upb_pss_1bt},
-    {0x001800003f000012, &upb_pss_1bt},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-  })
 };
 
 const upb_MiniTable* google__api__CustomHttpPattern_msg_init_ptr = &google__api__CustomHttpPattern_msg_init;

@@ -105,13 +105,15 @@ class SpiffeSslTransportSecurityTest
         auto server_map =
             grpc_core::SpiffeBundleMap::FromFile(server_spiffe_bundle_map_path);
         CHECK(server_map.ok());
-        server_spiffe_bundle_map_ = std::make_shared<RootCertInfo>(*server_map);
+        server_spiffe_bundle_map_ =
+            std::make_shared<tsi::RootCertInfo>(*server_map);
       }
       if (!client_spiffe_bundle_map_path.empty()) {
         auto client_map =
             grpc_core::SpiffeBundleMap::FromFile(client_spiffe_bundle_map_path);
         CHECK(client_map.ok());
-        client_spiffe_bundle_map_ = std::make_shared<RootCertInfo>(*client_map);
+        client_spiffe_bundle_map_ =
+            std::make_shared<tsi::RootCertInfo>(*client_map);
       }
       // In TLS 1.3, the client-side handshake succeeds even if the client sends
       // a bad certificate. In such a case, the server would fail the TLS
@@ -131,14 +133,8 @@ class SpiffeSslTransportSecurityTest
       expect_client_success_1_3_ = expect_client_success_1_2;
 #endif
 
-      server_pem_key_cert_pairs_ = static_cast<tsi_ssl_pem_key_cert_pair*>(
-          gpr_malloc(sizeof(tsi_ssl_pem_key_cert_pair)));
-      server_pem_key_cert_pairs_[0].private_key = server_key_.c_str();
-      server_pem_key_cert_pairs_[0].cert_chain = server_cert_.c_str();
-      client_pem_key_cert_pairs_ = static_cast<tsi_ssl_pem_key_cert_pair*>(
-          gpr_malloc(sizeof(tsi_ssl_pem_key_cert_pair)));
-      client_pem_key_cert_pairs_[0].private_key = client_key_.c_str();
-      client_pem_key_cert_pairs_[0].cert_chain = client_cert_.c_str();
+      server_pem_key_cert_pairs_.emplace_back(server_key_, server_cert_);
+      client_pem_key_cert_pairs_.emplace_back(client_key_, client_cert_);
     }
 
     void Run() {
@@ -147,9 +143,6 @@ class SpiffeSslTransportSecurityTest
     }
 
     ~SslTsiTestFixture() {
-      gpr_free(server_pem_key_cert_pairs_);
-      gpr_free(client_pem_key_cert_pairs_);
-
       tsi_ssl_server_handshaker_factory_unref(server_handshaker_factory_);
       tsi_ssl_client_handshaker_factory_unref(client_handshaker_factory_);
     }
@@ -164,12 +157,12 @@ class SpiffeSslTransportSecurityTest
     void SetupHandshakers() {
       // Create client handshaker factory.
       tsi_ssl_client_handshaker_options client_options;
-      client_options.pem_key_cert_pair = client_pem_key_cert_pairs_;
+      client_options.pem_key_cert_pair = &client_pem_key_cert_pairs_[0];
       if (client_spiffe_bundle_map_ != nullptr) {
         client_options.root_cert_info = client_spiffe_bundle_map_;
       } else {
         client_options.root_cert_info =
-            std::make_shared<RootCertInfo>(ca_certificates_);
+            std::make_shared<tsi::RootCertInfo>(ca_certificates_);
       }
       client_options.min_tls_version = GetParam();
       client_options.max_tls_version = GetParam();
@@ -179,12 +172,11 @@ class SpiffeSslTransportSecurityTest
       // Create server handshaker factory.
       tsi_ssl_server_handshaker_options server_options;
       server_options.pem_key_cert_pairs = server_pem_key_cert_pairs_;
-      server_options.num_key_cert_pairs = 1;
       if (server_spiffe_bundle_map_ != nullptr) {
         server_options.root_cert_info = server_spiffe_bundle_map_;
       } else {
         server_options.root_cert_info =
-            std::make_shared<RootCertInfo>(ca_certificates_);
+            std::make_shared<tsi::RootCertInfo>(ca_certificates_);
       }
       server_options.client_certificate_request =
           TSI_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY;
@@ -247,8 +239,8 @@ class SpiffeSslTransportSecurityTest
     std::string ca_certificates_;
     tsi_ssl_server_handshaker_factory* server_handshaker_factory_;
     tsi_ssl_client_handshaker_factory* client_handshaker_factory_;
-    std::shared_ptr<RootCertInfo> server_spiffe_bundle_map_;
-    std::shared_ptr<RootCertInfo> client_spiffe_bundle_map_;
+    std::shared_ptr<tsi::RootCertInfo> server_spiffe_bundle_map_;
+    std::shared_ptr<tsi::RootCertInfo> client_spiffe_bundle_map_;
 
     std::string server_key_;
     std::string server_cert_;
@@ -257,8 +249,8 @@ class SpiffeSslTransportSecurityTest
     bool expect_server_success_;
     bool expect_client_success_1_2_;
     bool expect_client_success_1_3_;
-    tsi_ssl_pem_key_cert_pair* client_pem_key_cert_pairs_;
-    tsi_ssl_pem_key_cert_pair* server_pem_key_cert_pairs_;
+    std::vector<tsi_ssl_pem_key_cert_pair> client_pem_key_cert_pairs_;
+    std::vector<tsi_ssl_pem_key_cert_pair> server_pem_key_cert_pairs_;
   };
 };
 

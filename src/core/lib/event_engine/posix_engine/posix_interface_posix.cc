@@ -1067,7 +1067,11 @@ bool EventEnginePosixInterface::IsCorrectGeneration(
 absl::StatusOr<std::pair<FileDescriptor, FileDescriptor> >
 EventEnginePosixInterface::Pipe() {
   int pipefd[2];
+#if defined(GPR_ANDROID)
+  int r = pipe2(pipefd, 0);
+#else
   int r = pipe(pipefd);
+#endif  // GPR_ANDROID
   if (0 != r) {
     return absl::Status(absl::StatusCode::kInternal,
                         absl::StrCat("pipe: ", grpc_core::StrError(errno)));
