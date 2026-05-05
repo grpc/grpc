@@ -518,13 +518,6 @@ def targets():
             "linux-gnu",
             "x64",
             "debian11",
-            ruby_version="ruby_3_1",
-            presubmit=True,
-        ),
-        RubyDistribTest(
-            "linux-gnu",
-            "x64",
-            "debian11",
             ruby_version="ruby_3_2",
         ),
         RubyDistribTest(
@@ -555,13 +548,6 @@ def targets():
         ),
         RubyDistribTest("linux-gnu", "x64", "ubuntu2204", presubmit=True),
         RubyDistribTest("linux-gnu", "x64", "ubuntu2404", presubmit=True),
-        RubyDistribTest(
-            "linux-musl",
-            "x64",
-            "alpine",
-            ruby_version="ruby_3_1",
-            presubmit=True,
-        ),
         RubyDistribTest(
             "linux-musl",
             "x64",

@@ -38,7 +38,6 @@
 
 #include "src/core/call/metadata_batch.h"
 #include "src/core/channelz/channelz.h"
-#include "src/core/filter/blackboard.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
@@ -61,7 +60,6 @@
 #include "src/core/util/cpp_impl_of.h"
 #include "src/core/util/dual_ref_counted.h"
 #include "src/core/util/orphanable.h"
-#include "src/core/util/per_cpu.h"
 #include "src/core/util/random_early_detection.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/sync.h"
@@ -89,9 +87,6 @@ class ServerConfigFetcher
     virtual absl::StatusOr<grpc_core::ChannelArgs>
     UpdateChannelArgsForConnection(const grpc_core::ChannelArgs& args,
                                    grpc_endpoint* tcp) = 0;
-
-    virtual void UpdateBlackboard(const Blackboard* old_blackboard,
-                                  Blackboard* new_blackboard) = 0;
   };
 
   class WatcherInterface {
@@ -253,10 +248,6 @@ class Server : public ServerInterface,
     void RemoveLogicalConnection(
         ListenerInterface::LogicalConnection* connection);
 
-    grpc_error_handle SetupTransport(Transport* transport,
-                                     grpc_pollset* accepting_pollset,
-                                     const ChannelArgs& args);
-
     const MemoryQuotaRefPtr& memory_quota() const { return memory_quota_; }
 
     const ConnectionQuotaRefPtr& connection_quota() const {
@@ -293,11 +284,6 @@ class Server : public ServerInterface,
       grpc_core::Timestamp timestamp;
     };
 
-    struct BlackboardShard {
-      Mutex mu;
-      RefCountedPtr<Blackboard> blackboard ABSL_GUARDED_BY(&mu);
-    };
-
     void DrainConnectionsLocked() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
     void OnDrainGraceTimer();
@@ -315,7 +301,6 @@ class Server : public ServerInterface,
     OrphanablePtr<ListenerInterface> listener_;
     grpc_closure destroy_done_;
     ConfigFetcherWatcher* config_fetcher_watcher_ = nullptr;
-    PerCpu<BlackboardShard> blackboards_;
     Mutex mu_;  // We could share this mutex with Listener implementations. It's
                 // a tradeoff between increased memory requirement and more
                 // granular critical regions.
@@ -374,8 +359,7 @@ class Server : public ServerInterface,
   // Takes ownership of a ref on resource_user from the caller.
   grpc_error_handle SetupTransport(Transport* transport,
                                    grpc_pollset* accepting_pollset,
-                                   const ChannelArgs& args,
-                                   const Blackboard* blackboard = nullptr)
+                                   const ChannelArgs& args)
       ABSL_LOCKS_EXCLUDED(mu_global_);
 
   void RegisterCompletionQueue(grpc_completion_queue* cq);
@@ -661,7 +645,7 @@ class Server : public ServerInterface,
                                             ClientMetadataHandle md);
   auto MatchAndPublishCall(CallHandler call_handler);
   absl::StatusOr<RefCountedPtr<UnstartedCallDestination>> MakeCallDestination(
-      const ChannelArgs& args, const Blackboard* blackboard);
+      const ChannelArgs& args);
 
   ChannelArgs const channel_args_;
   RefCountedPtr<channelz::ServerNode> channelz_node_;
