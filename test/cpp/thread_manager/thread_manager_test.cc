@@ -177,6 +177,18 @@ TEST_P(ThreadManagerTest, TestThreadQuota) {
   }
 }
 
+TEST_P(ThreadManagerTest, TestMaxActiveThreadsSoFar) {
+  for (auto& tm : thread_manager_) {
+    int max_active = tm->GetMaxActiveThreadsSoFar();
+    // Should have at least started with min_pollers
+    EXPECT_GE(max_active, GetParam().min_pollers);
+    // Should never exceed thread_limit if one is set
+    if (GetParam().thread_limit > 0) {
+      EXPECT_LE(max_active, GetParam().thread_limit);
+    }
+  }
+}
+
 }  // namespace
 }  // namespace grpc
 
