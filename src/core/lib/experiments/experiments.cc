@@ -131,6 +131,12 @@ const char* const description_optimization_01 = "Optimization";
 const char* const additional_constraints_optimization_01 = "{}";
 const char* const description_optimization_02 = "Optimization";
 const char* const additional_constraints_optimization_02 = "{}";
+const char* const description_optimization_03 = "Optimization";
+const char* const additional_constraints_optimization_03 = "{}";
+const char* const description_optimization_04 = "Optimization";
+const char* const additional_constraints_optimization_04 = "{}";
+const char* const description_optimization_05 = "Optimization";
+const char* const additional_constraints_optimization_05 = "{}";
 const char* const description_otel_export_telemetry_domains =
     "Export telemetry domains in OpenTelemetry metrics.";
 const char* const additional_constraints_otel_export_telemetry_domains = "{}";
@@ -334,6 +340,12 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_optimization_01, nullptr, 0, false, true},
     {"optimization_02", description_optimization_02,
      additional_constraints_optimization_02, nullptr, 0, false, true},
+    {"optimization_03", description_optimization_03,
+     additional_constraints_optimization_03, nullptr, 0, false, true},
+    {"optimization_04", description_optimization_04,
+     additional_constraints_optimization_04, nullptr, 0, false, true},
+    {"optimization_05", description_optimization_05,
+     additional_constraints_optimization_05, nullptr, 0, false, true},
     {"otel_export_telemetry_domains", description_otel_export_telemetry_domains,
      additional_constraints_otel_export_telemetry_domains, nullptr, 0, false,
      true},
@@ -542,6 +554,12 @@ const char* const description_optimization_01 = "Optimization";
 const char* const additional_constraints_optimization_01 = "{}";
 const char* const description_optimization_02 = "Optimization";
 const char* const additional_constraints_optimization_02 = "{}";
+const char* const description_optimization_03 = "Optimization";
+const char* const additional_constraints_optimization_03 = "{}";
+const char* const description_optimization_04 = "Optimization";
+const char* const additional_constraints_optimization_04 = "{}";
+const char* const description_optimization_05 = "Optimization";
+const char* const additional_constraints_optimization_05 = "{}";
 const char* const description_otel_export_telemetry_domains =
     "Export telemetry domains in OpenTelemetry metrics.";
 const char* const additional_constraints_otel_export_telemetry_domains = "{}";
@@ -745,6 +763,12 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_optimization_01, nullptr, 0, false, true},
     {"optimization_02", description_optimization_02,
      additional_constraints_optimization_02, nullptr, 0, false, true},
+    {"optimization_03", description_optimization_03,
+     additional_constraints_optimization_03, nullptr, 0, false, true},
+    {"optimization_04", description_optimization_04,
+     additional_constraints_optimization_04, nullptr, 0, false, true},
+    {"optimization_05", description_optimization_05,
+     additional_constraints_optimization_05, nullptr, 0, false, true},
     {"otel_export_telemetry_domains", description_otel_export_telemetry_domains,
      additional_constraints_otel_export_telemetry_domains, nullptr, 0, false,
      true},
@@ -953,6 +977,12 @@ const char* const description_optimization_01 = "Optimization";
 const char* const additional_constraints_optimization_01 = "{}";
 const char* const description_optimization_02 = "Optimization";
 const char* const additional_constraints_optimization_02 = "{}";
+const char* const description_optimization_03 = "Optimization";
+const char* const additional_constraints_optimization_03 = "{}";
+const char* const description_optimization_04 = "Optimization";
+const char* const additional_constraints_optimization_04 = "{}";
+const char* const description_optimization_05 = "Optimization";
+const char* const additional_constraints_optimization_05 = "{}";
 const char* const description_otel_export_telemetry_domains =
     "Export telemetry domains in OpenTelemetry metrics.";
 const char* const additional_constraints_otel_export_telemetry_domains = "{}";
@@ -1156,6 +1186,12 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_optimization_01, nullptr, 0, false, true},
     {"optimization_02", description_optimization_02,
      additional_constraints_optimization_02, nullptr, 0, false, true},
+    {"optimization_03", description_optimization_03,
+     additional_constraints_optimization_03, nullptr, 0, false, true},
+    {"optimization_04", description_optimization_04,
+     additional_constraints_optimization_04, nullptr, 0, false, true},
+    {"optimization_05", description_optimization_05,
+     additional_constraints_optimization_05, nullptr, 0, false, true},
     {"otel_export_telemetry_domains", description_otel_export_telemetry_domains,
      additional_constraints_otel_export_telemetry_domains, nullptr, 0, false,
      true},
