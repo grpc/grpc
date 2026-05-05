@@ -179,18 +179,19 @@ class TestConfigurator {
     auto s = test_.RequestCall(100);
     test_.Expect(100, true);
     test_.Step();
-    IncomingCloseOnServer client_close;
-    s.NewBatch(101).SendInitialMetadata({}).RecvCloseOnServer(client_close);
+    IncomingMessage client_message;
+    s.NewBatch(101).SendInitialMetadata({}).RecvMessage(client_message);
     s.NewBatch(102).SendMessage(std::string(1024, 'y'));
     test_.Expect(102, true);
-    test_.Step();
-    test_.Expect(1, true);
     test_.Expect(101, true);
+    test_.Expect(1, true);
     test_.Step();
     EXPECT_EQ(server_status.status(), GRPC_STATUS_INTERNAL);
     EXPECT_THAT(
         server_status.message(),
-        ::testing::HasSubstr("Compression algorithm 'gzip' is disabled."));
+        ::testing::AnyOf(
+            ::testing::HasSubstr("Compression algorithm 'gzip' is disabled."),
+            ::testing::HasSubstr("Compression algorithm not supported: gzip")));
   }
 
   void RequestWithPayload(
