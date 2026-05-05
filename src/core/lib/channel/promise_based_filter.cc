@@ -115,7 +115,7 @@ class BaseCallData::WeakWakerHandle final : public Wakeable {
       GRPC_CALL_STACK_REF(call_stack, "waker");
       auto* base = base_;
       mu_.Unlock();
-      base->Wakeup(wakeup_mask);
+      base->WakeupNonOwning(wakeup_mask);
       GRPC_CALL_STACK_UNREF(call_stack, "waker");
     } else {
       mu_.Unlock();
@@ -204,6 +204,14 @@ void BaseCallData::Wakeup(WakeupMask) {
     auto* self = static_cast<BaseCallData*>(p);
     self->OnWakeup();
     self->Drop(0);
+  };
+  auto* closure = GRPC_CLOSURE_CREATE(wakeup, this, nullptr);
+  GRPC_CALL_COMBINER_START(call_combiner_, closure, absl::OkStatus(), "wakeup");
+}
+void BaseCallData::WakeupNonOwning(WakeupMask) {
+  auto wakeup = [](void* p, grpc_error_handle) {
+    auto* self = static_cast<BaseCallData*>(p);
+    self->OnWakeup();
   };
   auto* closure = GRPC_CLOSURE_CREATE(wakeup, this, nullptr);
   GRPC_CALL_COMBINER_START(call_combiner_, closure, absl::OkStatus(), "wakeup");
