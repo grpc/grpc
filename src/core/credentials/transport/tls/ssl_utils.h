@@ -195,6 +195,11 @@ class PemKeyCertPair {
 
 using PemKeyCertPairList = std::vector<PemKeyCertPair>;
 
+// Converts a PemKeyCertPairList to the flat vector expected by TSI factory
+// init. CHECKs that each pair has a non-empty private key and cert chain.
+std::vector<tsi_ssl_pem_key_cert_pair> ConvertToTsiPemKeyCertPair(
+    const PemKeyCertPairList& cert_pair_list);
+
 }  // namespace grpc_core
 
 #endif  // GRPC_SRC_CORE_CREDENTIALS_TRANSPORT_TLS_SSL_UTILS_H
