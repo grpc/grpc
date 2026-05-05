@@ -28,20 +28,10 @@ static const upb_MiniTableField envoy_extensions_filters_http_ext_proc_v3_Proces
 const upb_MiniTable envoy__extensions__filters__http__ext_0proc__v3__ProcessingMode_msg_init = {
   NULL,
   &envoy_extensions_filters_http_ext_proc_v3_ProcessingMode__fields[0],
-  32, 6, kUpb_ExtMode_NonExtendable, 6, UPB_FASTTABLE_MASK(56), 0,
+  32, 6, kUpb_ExtMode_NonExtendable, 6, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.extensions.filters.http.ext_proc.v3.ProcessingMode",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x000800003f000008, &upb_psv4_1bt},
-    {0x000c00003f000010, &upb_psv4_1bt},
-    {0x001000003f000018, &upb_psv4_1bt},
-    {0x001400003f000020, &upb_psv4_1bt},
-    {0x001800003f000028, &upb_psv4_1bt},
-    {0x001c00003f000030, &upb_psv4_1bt},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-  })
 };
 
 const upb_MiniTable* envoy__extensions__filters__http__ext_0proc__v3__ProcessingMode_msg_init_ptr = &envoy__extensions__filters__http__ext_0proc__v3__ProcessingMode_msg_init;

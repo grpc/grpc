@@ -77,44 +77,10 @@ static const upb_MiniTableField envoy_extensions_filters_http_ext_proc_v3_Extern
 const upb_MiniTable envoy__extensions__filters__http__ext_0proc__v3__ExternalProcessor_msg_init = {
   &envoy_extensions_filters_http_ext_proc_v3_ExternalProcessor__submsgs[0],
   &envoy_extensions_filters_http_ext_proc_v3_ExternalProcessor__fields[0],
-  UPB_SIZE(96, 168), 24, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(248), 0,
+  UPB_SIZE(96, 168), 24, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.extensions.filters.http.ext_proc.v3.ExternalProcessor",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x000a00003f000010, &upb_psb1_1bt},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x003800003f00002a, &upb_prs_1bt},
-    {0x004000003f000032, &upb_prs_1bt},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x001800003f000042, &upb_pss_1bt},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x000b00003f000058, &upb_psb1_1bt},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x000c00003f000070, &upb_psb1_1bt},
-    {0x000d00003f000078, &upb_psb1_1bt},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x000e00003f000188, &upb_psb1_2bt},
-    {0x001000003f000190, &upb_psv4_2bt},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x000f00003f0001a8, &upb_psb1_2bt},
-    {0x008800003f0a01b2, &upb_prm_2bt_maxmaxb},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-  })
 };
 
 const upb_MiniTable* envoy__extensions__filters__http__ext_0proc__v3__ExternalProcessor_msg_init_ptr = &envoy__extensions__filters__http__ext_0proc__v3__ExternalProcessor_msg_init;
@@ -166,16 +132,10 @@ static const upb_MiniTableField envoy_extensions_filters_http_ext_proc_v3_Metada
 const upb_MiniTable envoy__extensions__filters__http__ext_0proc__v3__MetadataOptions__MetadataNamespaces_msg_init = {
   NULL,
   &envoy_extensions_filters_http_ext_proc_v3_MetadataOptions_MetadataNamespaces__fields[0],
-  UPB_SIZE(16, 24), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
+  UPB_SIZE(16, 24), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.extensions.filters.http.ext_proc.v3.MetadataOptions.MetadataNamespaces",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x000800003f00000a, &upb_prs_1bt},
-    {0x001000003f000012, &upb_prs_1bt},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-  })
 };
 
 const upb_MiniTable* envoy__extensions__filters__http__ext_0proc__v3__MetadataOptions__MetadataNamespaces_msg_init_ptr = &envoy__extensions__filters__http__ext_0proc__v3__MetadataOptions__MetadataNamespaces_msg_init;
@@ -211,16 +171,10 @@ static const upb_MiniTableField envoy_extensions_filters_http_ext_proc_v3_ExtPro
 const upb_MiniTable envoy__extensions__filters__http__ext_0proc__v3__ExtProcPerRoute_msg_init = {
   &envoy_extensions_filters_http_ext_proc_v3_ExtProcPerRoute__submsgs[0],
   &envoy_extensions_filters_http_ext_proc_v3_ExtProcPerRoute__fields[0],
-  UPB_SIZE(16, 24), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
+  UPB_SIZE(16, 24), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.extensions.filters.http.ext_proc.v3.ExtProcPerRoute",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0010000801000008, &upb_pob1_1bt},
-    {0x0010000802000012, &upb_pom_1bt_max128b},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-  })
 };
 
 const upb_MiniTable* envoy__extensions__filters__http__ext_0proc__v3__ExtProcPerRoute_msg_init_ptr = &envoy__extensions__filters__http__ext_0proc__v3__ExtProcPerRoute_msg_init;
@@ -248,20 +202,10 @@ static const upb_MiniTableField envoy_extensions_filters_http_ext_proc_v3_ExtPro
 const upb_MiniTable envoy__extensions__filters__http__ext_0proc__v3__ExtProcOverrides_msg_init = {
   &envoy_extensions_filters_http_ext_proc_v3_ExtProcOverrides__submsgs[0],
   &envoy_extensions_filters_http_ext_proc_v3_ExtProcOverrides__fields[0],
-  UPB_SIZE(48, 80), 9, kUpb_ExtMode_NonExtendable, 9, UPB_FASTTABLE_MASK(56), 0,
+  UPB_SIZE(48, 80), 9, kUpb_ExtMode_NonExtendable, 9, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.extensions.filters.http.ext_proc.v3.ExtProcOverrides",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x000900003f000010, &upb_psb1_1bt},
-    {0x001800003f00001a, &upb_prs_1bt},
-    {0x002000003f000022, &upb_prs_1bt},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x003800003f03003a, &upb_prm_1bt_maxmaxb},
-  })
 };
 
 const upb_MiniTable* envoy__extensions__filters__http__ext_0proc__v3__ExtProcOverrides_msg_init_ptr = &envoy__extensions__filters__http__ext_0proc__v3__ExtProcOverrides_msg_init;
