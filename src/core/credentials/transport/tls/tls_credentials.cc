@@ -30,9 +30,11 @@
 
 #include "src/core/credentials/transport/tls/grpc_tls_certificate_verifier.h"
 #include "src/core/credentials/transport/tls/grpc_tls_credentials_options.h"
+#include "src/core/credentials/transport/tls/ssl_utils.h"
 #include "src/core/credentials/transport/tls/tls_security_connector.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/tsi/ssl/session_cache/ssl_session_cache.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/useful.h"
 #include "absl/log/log.h"
 
@@ -97,7 +99,96 @@ TlsCredentials::TlsCredentials(
     grpc_core::RefCountedPtr<grpc_tls_credentials_options> options)
     : options_(std::move(options)) {}
 
-TlsCredentials::~TlsCredentials() {}
+TlsCredentials::~TlsCredentials() {
+  if (cached_factory_ != nullptr) {
+    tsi_ssl_client_handshaker_factory_unref(cached_factory_);
+  }
+}
+
+bool TlsCredentials::CacheMatchesLocked(
+    const std::shared_ptr<tsi::RootCertInfo>& root_cert_info,
+    const std::optional<grpc_core::PemKeyCertPairList>& identity_certs,
+    tsi_ssl_session_cache* ssl_session_cache) const {
+  // root_cert_info is compared by shared_ptr identity: distributors hand out
+  // the same shared_ptr to all simultaneous subscribers, and rotation
+  // produces a new instance, so identity is sufficient and avoids a value
+  // compare on potentially-large PEM/SPIFFE bundles.
+  return cached_factory_ != nullptr &&
+         cached_root_cert_info_.get() == root_cert_info.get() &&
+         cached_identity_certs_ == identity_certs &&
+         cached_session_cache_ == ssl_session_cache;
+}
+
+std::pair<grpc_security_status, tsi_ssl_client_handshaker_factory*>
+TlsCredentials::GetOrCreateCachedClientHandshakerFactory(
+    const std::shared_ptr<tsi::RootCertInfo>& root_cert_info,
+    const std::optional<grpc_core::PemKeyCertPairList>& identity_certs,
+    tsi_ssl_session_cache* ssl_session_cache,
+    tsi::TlsSessionKeyLoggerCache::TlsSessionKeyLogger* key_logger) {
+  // Phase 1: under the lock, return on cache hit or claim creator role.
+  {
+    grpc_core::MutexLock lock(&factory_cache_mu_);
+    while (factory_creation_in_progress_) {
+      factory_cache_cv_.Wait(&factory_cache_mu_);
+      if (CacheMatchesLocked(root_cert_info, identity_certs,
+                             ssl_session_cache)) {
+        GRPC_DCHECK_EQ(cached_key_logger_, key_logger);
+        return {GRPC_SECURITY_OK,
+                tsi_ssl_client_handshaker_factory_ref(cached_factory_)};
+      }
+    }
+    if (CacheMatchesLocked(root_cert_info, identity_certs,
+                           ssl_session_cache)) {
+      GRPC_DCHECK_EQ(cached_key_logger_, key_logger);
+      return {GRPC_SECURITY_OK,
+              tsi_ssl_client_handshaker_factory_ref(cached_factory_)};
+    }
+    factory_creation_in_progress_ = true;
+  }
+
+  // Phase 2: build the factory with no lock held so unrelated callers are
+  // not serialized.
+  std::vector<tsi_ssl_pem_key_cert_pair> pem_pairs;
+  if (identity_certs.has_value()) {
+    pem_pairs = grpc_core::ConvertToTsiPemKeyCertPair(*identity_certs);
+  }
+  tsi_ssl_client_handshaker_factory* new_factory = nullptr;
+  grpc_security_status status = grpc_ssl_tsi_client_handshaker_factory_init(
+      pem_pairs.empty() ? nullptr : &pem_pairs[0], root_cert_info,
+      !options_->verify_server_cert(),
+      grpc_get_tsi_tls_version(options_->min_tls_version()),
+      grpc_get_tsi_tls_version(options_->max_tls_version()), ssl_session_cache,
+      key_logger, options_->crl_directory().c_str(), options_->crl_provider(),
+      options_->key_exchange_groups(), &new_factory);
+
+  // Phase 3: publish or roll back.
+  grpc_core::MutexLock lock(&factory_cache_mu_);
+  factory_creation_in_progress_ = false;
+  // On failure leave the cache unchanged. SignalAll wakes the next creator
+  // exactly once because the while-loop above re-checks
+  // factory_creation_in_progress_ under the lock; only one waiter claims
+  // the role at a time.
+  if (status == GRPC_SECURITY_OK && new_factory != nullptr) {
+    if (cached_factory_ != nullptr) {
+      tsi_ssl_client_handshaker_factory_unref(cached_factory_);
+    }
+    cached_factory_ = new_factory;  // credential takes ownership of 1 ref.
+    cached_root_cert_info_ = root_cert_info;
+    cached_identity_certs_ = identity_certs;
+    cached_session_cache_ = ssl_session_cache;
+    cached_key_logger_ = key_logger;
+    factory_cache_cv_.SignalAll();
+    return {GRPC_SECURITY_OK,
+            tsi_ssl_client_handshaker_factory_ref(cached_factory_)};
+  }
+  factory_cache_cv_.SignalAll();
+  return {status, nullptr};
+}
+
+bool TlsCredentials::HasCachedClientHandshakerFactoryForTesting() {
+  grpc_core::MutexLock lock(&factory_cache_mu_);
+  return cached_factory_ != nullptr;
+}
 
 grpc_core::RefCountedPtr<grpc_channel_security_connector>
 TlsCredentials::create_security_connector(
