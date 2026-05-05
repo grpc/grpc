@@ -173,6 +173,11 @@ Call::ParentCall* Call::parent_call() {
 }
 
 absl::Status Call::InitParent(Call* parent, uint32_t propagation_mask) {
+  // Virtual RPCs: Provide a link back to the parent session arena to fetch
+  // context.
+  auto* parent_ctx = arena()->New<ParentCallContext>();
+  parent_ctx->arena = parent->arena()->Ref();
+  arena_->SetContext<ParentCallContext>(parent_ctx);
   child_ = arena()->New<ChildCall>(parent);
 
   parent->InternalRef("child");

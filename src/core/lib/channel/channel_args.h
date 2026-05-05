@@ -55,6 +55,8 @@
 
 namespace grpc_core {
 
+class Arena;
+
 // Define a traits object for vtable lookup - allows us to integrate with
 // existing code easily (just define the trait!) and allows some magic in
 // ChannelArgs to automatically derive a vtable from a T*.
@@ -298,6 +300,11 @@ struct ChannelArgNameTraits {
 template <typename T>
 struct ChannelArgNameTraits<std::shared_ptr<T>> {
   static absl::string_view ChannelArgName() { return T::ChannelArgName(); }
+};
+template <>
+struct ChannelArgTypeTraits<Arena> {
+  static const grpc_arg_pointer_vtable* VTable();
+  static void* TakeUnownedPointer(Arena* p) { return p; }
 };
 // Specialization for the EventEngine
 template <>

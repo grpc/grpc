@@ -30,6 +30,7 @@
 #include <memory>
 #include <utility>
 
+#include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/event_engine_shims/endpoint.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -241,8 +242,7 @@ class SessionEndpointImpl {
         Ref();
         if (shutdown_ref_.fetch_sub(1, std::memory_order_acq_rel) ==
             kShutdownBit + 1) {
-          grpc_call_cancel_internal(call_);
-          Unref();
+          CompleteShutdown();
         }
         break;
       }
@@ -251,7 +251,27 @@ class SessionEndpointImpl {
     Unref();
   }
 
+  void SetGracefulShutdown() {
+    if (!ShutdownRef()) return;
+    graceful_shutdown_ = true;
+    ShutdownUnref();
+  }
+
+  void ClearCall() { call_cleared_.store(true, std::memory_order_release); }
+
  private:
+  void CompleteShutdown() {
+    if (graceful_shutdown_ || call_cleared_.load(std::memory_order_acquire)) {
+      // Just drop our refs so the call can finish normally.
+      call_cleared_.store(true, std::memory_order_release);
+      Unref();
+    } else {
+      call_cleared_.store(true, std::memory_order_release);
+      grpc_call_cancel_internal(call_);
+      Unref();
+    }
+  }
+
   bool ShutdownRef() {
     int64_t curr = shutdown_ref_.load(std::memory_order_acquire);
     while (true) {
@@ -269,12 +289,12 @@ class SessionEndpointImpl {
   void ShutdownUnref() {
     if (shutdown_ref_.fetch_sub(1, std::memory_order_acq_rel) ==
         kShutdownBit + 1) {
-      grpc_call_cancel_internal(call_);
-      Unref();
+      CompleteShutdown();
     }
   }
 
   grpc_call* const call_;
+  std::atomic<bool> call_cleared_{false};
   const bool is_client_;
 
   std::atomic<int64_t> refs_{1};
@@ -286,6 +306,7 @@ class SessionEndpointImpl {
 
   SessionEndpointTag write_tag_;
   std::atomic<bool> write_in_progress_{false};
+  bool graceful_shutdown_ = false;
 };
 
 grpc_endpoint* SessionEndpoint::Create(grpc_call* call, bool is_client) {
@@ -304,6 +325,10 @@ bool SessionEndpoint::Read(absl::AnyInvocable<void(absl::Status)> on_read,
                            ReadArgs /*args*/) {
   return impl_->Read(std::move(on_read), buffer);
 }
+
+void SessionEndpoint::SetGracefulShutdown() { impl_->SetGracefulShutdown(); }
+
+void SessionEndpoint::ClearCall() { impl_->ClearCall(); }
 
 bool SessionEndpoint::Write(absl::AnyInvocable<void(absl::Status)> on_writable,
                             grpc_event_engine::experimental::SliceBuffer* data,

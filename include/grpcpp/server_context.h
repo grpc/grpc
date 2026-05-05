@@ -42,6 +42,7 @@
 
 #include <atomic>
 #include <cassert>
+#include <cstdint>
 #include <map>
 #include <memory>
 #include <type_traits>
@@ -109,6 +110,22 @@ class GenericCallbackServerContext;
 
 namespace internal {
 class Call;
+
+// Opaque interface to be implemented in server_context.cc
+void ServerContextSetSessionContext(grpc_call* call, uint16_t id, void* ptr);
+void* ServerContextGetSessionContext(grpc_call* call, uint16_t id);
+uint16_t ServerContextRegisterSessionContext(void (*destroy)(void*));
+
+template <typename T>
+struct SessionContextType {
+  static uint16_t id() {
+    static const uint16_t id =
+        ServerContextRegisterSessionContext([](void* element) {
+          delete static_cast<std::shared_ptr<T>*>(element);
+        });
+    return id;
+  }
+};
 }  // namespace internal
 
 namespace testing {
@@ -306,6 +323,25 @@ class ServerContextBase {
   /// EXPERIMENTAL API
   /// Returns the call's authority.
   grpc::string_ref ExperimentalGetAuthority() const;
+
+  /// Set the session context. This is an experimental API.
+  template <typename T>
+  void SetSessionContext(std::shared_ptr<T> context) {
+    uint16_t id = internal::SessionContextType<T>::id();
+    internal::ServerContextSetSessionContext(
+        call_.call, id, new std::shared_ptr<T>(std::move(context)));
+  }
+
+  /// Get the session context. This is an experimental API.
+  template <typename T>
+  std::shared_ptr<T> GetSessionContext() const {
+    uint16_t id = internal::SessionContextType<T>::id();
+    void* ptr = internal::ServerContextGetSessionContext(call_.call, id);
+    if (ptr != nullptr) {
+      return *static_cast<std::shared_ptr<T>*>(ptr);
+    }
+    return nullptr;
+  }
 
  protected:
   /// Async only. Has to be called before the rpc starts.
