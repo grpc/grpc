@@ -48,7 +48,7 @@ class ClientChannelJsonArgs final : public JsonArgs {
  public:
   bool IsEnabled(absl::string_view key) const override {
     if (key == "connection_scaling") return ConnectionScalingEnabled();
-    if (key == "wrr_custom_metrics") return WrrCustomMetricsEnabled();
+
     return true;
   }
 };

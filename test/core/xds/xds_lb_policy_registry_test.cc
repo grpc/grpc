@@ -37,6 +37,7 @@
 #include "src/core/load_balancing/lb_policy.h"
 #include "src/core/load_balancing/lb_policy_factory.h"
 #include "src/core/util/crash.h"
+#include "src/core/util/env.h"
 #include "src/core/util/json/json_writer.h"
 #include "src/core/util/orphanable.h"
 #include "src/core/util/ref_counted_ptr.h"
@@ -162,6 +163,37 @@ TEST(ClientSideWeightedRoundRobinTest, FieldsExplicitlySet) {
             "\"weightExpirationPeriod\":\"3.000000000s\","
             "\"weightUpdatePeriod\":\"4.000000000s\""
             "}}");
+}
+
+TEST(ClientSideWeightedRoundRobinTest, WrrCustomMetricsEnabled) {
+  SetEnv("GRPC_EXPERIMENTAL_WRR_CUSTOM_METRICS", "true");
+  ClientSideWeightedRoundRobin wrr;
+  wrr.add_metric_names_for_computing_utilization("cpu_usage");
+  LoadBalancingPolicyProto policy;
+  policy.add_policies()
+      ->mutable_typed_extension_config()
+      ->mutable_typed_config()
+      ->PackFrom(wrr);
+  auto result = ConvertXdsPolicy(policy);
+  UnsetEnv("GRPC_EXPERIMENTAL_WRR_CUSTOM_METRICS");
+  ASSERT_TRUE(result.ok()) << result.status();
+  EXPECT_EQ(*result,
+            "{\"weighted_round_robin\":{"
+            "\"metricNamesForComputingUtilization\":[\"cpu_usage\"]"
+            "}}");
+}
+
+TEST(ClientSideWeightedRoundRobinTest, WrrCustomMetricsDisabled) {
+  ClientSideWeightedRoundRobin wrr;
+  wrr.add_metric_names_for_computing_utilization("cpu_usage");
+  LoadBalancingPolicyProto policy;
+  policy.add_policies()
+      ->mutable_typed_extension_config()
+      ->mutable_typed_config()
+      ->PackFrom(wrr);
+  auto result = ConvertXdsPolicy(policy);
+  ASSERT_TRUE(result.ok()) << result.status();
+  EXPECT_EQ(*result, "{\"weighted_round_robin\":{}}");
 }
 
 TEST(ClientSideWeightedRoundRobinTest, InvalidValues) {

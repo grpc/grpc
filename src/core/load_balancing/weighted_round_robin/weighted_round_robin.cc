@@ -231,15 +231,12 @@ class WeightedRoundRobinConfig final : public LoadBalancingPolicy::Config {
             .OptionalField(
                 "errorUtilizationPenalty",
                 &WeightedRoundRobinConfig::error_utilization_penalty_)
-            .OptionalField("metricNamesForComputingUtilization",
-                           &WeightedRoundRobinConfig::
-                               metric_names_for_computing_utilization_,
-                           "wrr_custom_metrics")
             .Finish();
     return loader;
   }
 
-  void JsonPostLoad(const Json&, const JsonArgs&, ValidationErrors* errors) {
+  void JsonPostLoad(const Json& json, const JsonArgs& args,
+                    ValidationErrors* errors) {
     // Impose lower bound of 100ms on weightUpdatePeriod.
     weight_update_period_ =
         std::max(weight_update_period_, Duration::Milliseconds(100));
@@ -247,24 +244,41 @@ class WeightedRoundRobinConfig final : public LoadBalancingPolicy::Config {
       ValidationErrors::ScopedField field(errors, ".errorUtilizationPenalty");
       errors->AddError("must be non-negative");
     }
-    // To avoid any string manipulation during every RPC path,
-    // we pre-parse metric_names_for_computing_utilization_ in advance.
-    for (const auto& metric_name : metric_names_for_computing_utilization_) {
-      if (metric_name == "cpu_utilization") {
-        parsed_custom_metrics_.push_back({ParsedMetric::Type::kCpu, ""});
-      } else if (metric_name == "mem_utilization") {
-        parsed_custom_metrics_.push_back({ParsedMetric::Type::kMem, ""});
-      } else if (metric_name == "application_utilization") {
-        parsed_custom_metrics_.push_back(
-            {ParsedMetric::Type::kApplication, ""});
-      } else if (absl::StartsWith(metric_name, "named_metrics.")) {
-        parsed_custom_metrics_.push_back(
-            {ParsedMetric::Type::kNamedMetric,
-             std::string(absl::StripPrefix(metric_name, "named_metrics."))});
-      } else if (absl::StartsWith(metric_name, "utilization.")) {
-        parsed_custom_metrics_.push_back(
-            {ParsedMetric::Type::kUtilization,
-             std::string(absl::StripPrefix(metric_name, "utilization."))});
+    if (internal::WrrCustomMetricsEnabled()) {
+      std::optional<std::vector<std::string>>
+          metric_names_for_computing_utilization =
+              LoadJsonObjectField<std::vector<std::string>>(
+                  json.object(), args, "metricNamesForComputingUtilization",
+                  errors, /*required=*/false);
+      if (metric_names_for_computing_utilization.has_value()) {
+        size_t i = 0;
+        for (const auto& metric_name :
+             *metric_names_for_computing_utilization) {
+          if (metric_name == "cpu_utilization") {
+            parsed_custom_metrics_.push_back({ParsedMetric::Type::kCpu, ""});
+          } else if (metric_name == "mem_utilization") {
+            parsed_custom_metrics_.push_back({ParsedMetric::Type::kMem, ""});
+          } else if (metric_name == "application_utilization") {
+            parsed_custom_metrics_.push_back(
+                {ParsedMetric::Type::kApplication, ""});
+          } else if (absl::StartsWith(metric_name, "named_metrics.")) {
+            parsed_custom_metrics_.push_back(
+                {ParsedMetric::Type::kNamedMetric,
+                 std::string(
+                     absl::StripPrefix(metric_name, "named_metrics."))});
+          } else if (absl::StartsWith(metric_name, "utilization.")) {
+            parsed_custom_metrics_.push_back(
+                {ParsedMetric::Type::kUtilization,
+                 std::string(absl::StripPrefix(metric_name, "utilization."))});
+          } else {
+            ValidationErrors::ScopedField field(
+                errors,
+                absl::StrCat(".metricNamesForComputingUtilization[", i, "]"));
+            errors->AddError(
+                absl::StrCat("unsupported metric name \"", metric_name, "\""));
+          }
+          i++;
+        }
       }
     }
   }
@@ -276,7 +290,7 @@ class WeightedRoundRobinConfig final : public LoadBalancingPolicy::Config {
   Duration weight_update_period_ = Duration::Seconds(1);
   Duration weight_expiration_period_ = Duration::Minutes(3);
   float error_utilization_penalty_ = 1.0;
-  std::vector<std::string> metric_names_for_computing_utilization_;
+
   std::vector<ParsedMetric> parsed_custom_metrics_;
 };
 

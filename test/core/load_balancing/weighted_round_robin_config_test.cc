@@ -21,6 +21,7 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/service_config/service_config.h"
 #include "src/core/service_config/service_config_impl.h"
+#include "src/core/util/env.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "test/core/test_util/test_config.h"
 #include "gtest/gtest.h"
@@ -93,6 +94,59 @@ TEST(WeightedRoundRobinConfigTest, InvalidValues) {
           "errors validating service config: [field:loadBalancingConfig "
           "error:errors validating weighted_round_robin LB policy config: ["
           "field:errorUtilizationPenalty error:must be non-negative]]"));
+}
+
+TEST(WeightedRoundRobinConfigTest, UnsupportedMetricNames) {
+  SetEnv("GRPC_EXPERIMENTAL_WRR_CUSTOM_METRICS", "true");
+  const char* service_config_json =
+      "{\n"
+      "  \"loadBalancingConfig\":[{\n"
+      "    \"weighted_round_robin\":{\n"
+      "      \"metricNamesForComputingUtilization\": [\"invalid_metric\"]\n"
+      "    }\n"
+      "  }]\n"
+      "}\n";
+  auto service_config =
+      ServiceConfigImpl::Create(ChannelArgs(), service_config_json);
+  UnsetEnv("GRPC_EXPERIMENTAL_WRR_CUSTOM_METRICS");
+  ASSERT_FALSE(service_config.ok());
+  EXPECT_EQ(
+      service_config.status(),
+      absl::InvalidArgumentError(
+          "errors validating service config: [field:loadBalancingConfig "
+          "error:errors validating weighted_round_robin LB policy config: ["
+          "field:metricNamesForComputingUtilization[0] error:unsupported "
+          "metric name \"invalid_metric\"]]"));
+}
+
+TEST(WeightedRoundRobinConfigTest, ValidMetricNamesEnabled) {
+  SetEnv("GRPC_EXPERIMENTAL_WRR_CUSTOM_METRICS", "true");
+  const char* service_config_json =
+      "{\n"
+      "  \"loadBalancingConfig\":[{\n"
+      "    \"weighted_round_robin\":{\n"
+      "      \"metricNamesForComputingUtilization\": [\"cpu_utilization\"]\n"
+      "    }\n"
+      "  }]\n"
+      "}\n";
+  auto service_config =
+      ServiceConfigImpl::Create(ChannelArgs(), service_config_json);
+  UnsetEnv("GRPC_EXPERIMENTAL_WRR_CUSTOM_METRICS");
+  ASSERT_TRUE(service_config.ok()) << service_config.status();
+}
+
+TEST(WeightedRoundRobinConfigTest, MetricNamesDisabled) {
+  const char* service_config_json =
+      "{\n"
+      "  \"loadBalancingConfig\":[{\n"
+      "    \"weighted_round_robin\":{\n"
+      "      \"metricNamesForComputingUtilization\": [\"cpu_utilization\"]\n"
+      "    }\n"
+      "  }]\n"
+      "}\n";
+  auto service_config =
+      ServiceConfigImpl::Create(ChannelArgs(), service_config_json);
+  ASSERT_TRUE(service_config.ok()) << service_config.status();
 }
 
 }  // namespace

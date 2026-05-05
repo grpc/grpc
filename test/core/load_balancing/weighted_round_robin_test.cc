@@ -181,7 +181,8 @@ class WeightedRoundRobinTest : public LoadBalancingPolicyTest {
   static BackendMetricData MakeBackendMetricData(
       double app_utilization, double qps, double eps,
       double cpu_utilization = 0, double mem_utilization = 0,
-      std::map<absl::string_view, double> named_metrics = {}) {
+      std::map<absl::string_view, double> named_metrics = {},
+      std::map<absl::string_view, double> utilization = {}) {
     BackendMetricData b;
     b.cpu_utilization = cpu_utilization;
     b.mem_utilization = mem_utilization;
@@ -189,6 +190,7 @@ class WeightedRoundRobinTest : public LoadBalancingPolicyTest {
     b.qps = qps;
     b.eps = eps;
     b.named_metrics = std::move(named_metrics);
+    b.utilization = std::move(utilization);
     return b;
   }
 
@@ -226,6 +228,7 @@ class WeightedRoundRobinTest : public LoadBalancingPolicyTest {
           backend_metric_data->application_utilization =
               it->second.application_utilization;
           backend_metric_data->named_metrics = it->second.named_metrics;
+          backend_metric_data->utilization = it->second.utilization;
         }
         FakeMetadata metadata({});
         FakeBackendMetricAccessor backend_metric_accessor(
@@ -565,6 +568,32 @@ TEST_F(WeightedRoundRobinTest, WrrCustomMetricEnabledNamedMetric) {
                               /*qps=*/100.0, /*eps=*/0.0,
                               /*cpu_utilization=*/0.0,
                               /*mem_utilization=*/0.0, {{"foo", 0.1}})}},
+      {{kAddresses[0], 1}, {kAddresses[1], 9}, {kAddresses[2], 5}});
+}
+
+TEST_F(WeightedRoundRobinTest, WrrCustomMetricEnabledUtilizationMetric) {
+  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_WRR_CUSTOM_METRICS");
+  const std::array<absl::string_view, 3> kAddresses = {
+      "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442", "ipv4:127.0.0.1:443"};
+  std::vector<std::string> metric_names = {"utilization.foo"};
+  auto picker = SendInitialUpdateAndWaitForConnected(
+      kAddresses,
+      ConfigBuilder().SetMetricNamesForComputingUtilization(metric_names));
+  ASSERT_NE(picker, nullptr);
+  // Addr 0: foo=0.9
+  // Addr 1: foo=0.1
+  WaitForWeightedRoundRobinPicks(
+      &picker,
+      {{kAddresses[0],
+        MakeBackendMetricData(/*app_utilization=*/0,
+                              /*qps=*/100.0, /*eps=*/0.0,
+                              /*cpu_utilization=*/0.0,
+                              /*mem_utilization=*/0.0, {}, {{"foo", 0.9}})},
+       {kAddresses[1],
+        MakeBackendMetricData(/*app_utilization=*/0,
+                              /*qps=*/100.0, /*eps=*/0.0,
+                              /*cpu_utilization=*/0.0,
+                              /*mem_utilization=*/0.0, {}, {{"foo", 0.1}})}},
       {{kAddresses[0], 1}, {kAddresses[1], 9}, {kAddresses[2], 5}});
 }
 
