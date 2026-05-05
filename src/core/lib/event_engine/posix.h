@@ -23,6 +23,7 @@
 #include "src/core/lib/event_engine/extensions/can_track_errors.h"
 #include "src/core/lib/event_engine/extensions/chaotic_good_extension.h"
 #include "src/core/lib/event_engine/extensions/supports_fd.h"
+#include "src/core/lib/event_engine/extensions/supports_timer.h"
 #include "src/core/lib/event_engine/query_extensions.h"
 
 namespace grpc_event_engine::experimental {
@@ -49,7 +50,8 @@ class PosixListenerWithFdSupport
 /// Defines an interface that posix EventEngines may implement to
 /// support additional file descriptor related functionality.
 class PosixEventEngineWithFdSupport
-    : public ExtendedType<EventEngine, EventEngineSupportsFdExtension> {};
+    : public ExtendedType<EventEngine, EventEngineSupportsFdExtension,
+                          EventEngineSupportsTimerExtension> {};
 
 }  // namespace grpc_event_engine::experimental
 
