@@ -86,6 +86,11 @@ class BaseArenaContextTraits {
   }
 };
 
+template <typename T>
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline void DestroyArenaContext(void* p) {
+  ArenaContextType<T>::Destroy(static_cast<T*>(p));
+}
+
 // Traits for a specific context type.
 template <typename T>
 class ArenaContextTraits : public BaseArenaContextTraits {
@@ -95,11 +100,6 @@ class ArenaContextTraits : public BaseArenaContextTraits {
     return *lazy_id;
   }
 };
-
-template <typename T>
-GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline void DestroyArenaContext(void* p) {
-  ArenaContextType<T>::Destroy(static_cast<T*>(p));
-}
 
 template <typename T, typename SfinaeVoid = void>
 struct GetContextId {
