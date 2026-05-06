@@ -1152,14 +1152,15 @@ auto Server::MatchAndPublishCall(CallHandler call_handler) {
 }
 
 absl::StatusOr<RefCountedPtr<UnstartedCallDestination>>
-Server::MakeCallDestination(const ChannelArgs& args) {
+Server::MakeCallDestination(const ChannelArgs& args,
+                            grpc_channel_stack_type channel_stack_type) {
   InterceptionChainBuilder builder(args);
   // TODO(ctiller): find a way to avoid adding a server ref per call
   builder.AddOnClientInitialMetadata([self = Ref()](ClientMetadata& md) {
     self->SetRegisteredMethodOnMetadata(md);
   });
   CoreConfiguration::Get().channel_init().AddToInterceptionChainBuilder(
-      GRPC_SERVER_CHANNEL, builder);
+      channel_stack_type, builder);
   return builder.Build(
       MakeCallDestinationFromHandlerFunction([this](CallHandler handler) {
         return MatchAndPublishCall(std::move(handler));
@@ -1289,6 +1290,13 @@ void Server::Start() {
 grpc_error_handle Server::SetupTransport(Transport* transport,
                                          grpc_pollset* accepting_pollset,
                                          const ChannelArgs& args) {
+  return SetupTransport(transport, accepting_pollset, args,
+                        GRPC_SERVER_CHANNEL);
+}
+
+grpc_error_handle Server::SetupTransport(
+    Transport* transport, grpc_pollset* accepting_pollset,
+    const ChannelArgs& args, grpc_channel_stack_type channel_stack_type) {
   GRPC_LATENT_SEE_SCOPE("Server::SetupTransport");
   // Create channel.
   global_stats().IncrementServerChannelsCreated();
@@ -1300,7 +1308,8 @@ grpc_error_handle Server::SetupTransport(Transport* transport,
     OrphanablePtr<ServerTransport> t(transport->server_transport());
     auto destination = MakeCallDestination(
         args.SetObject(transport).SetObject<channelz::BaseNode>(
-            transport->GetSocketNode()));
+            transport->GetSocketNode()),
+        channel_stack_type);
     if (!destination.ok()) {
       return absl_status_to_grpc_error(destination.status());
     }
@@ -1324,7 +1333,7 @@ grpc_error_handle Server::SetupTransport(Transport* transport,
         "",
         args.SetObject(transport).SetObject<channelz::BaseNode>(
             transport->GetSocketNode()),
-        GRPC_SERVER_CHANNEL);
+        channel_stack_type);
     if (!channel.ok()) {
       return absl_status_to_grpc_error(channel.status());
     }

@@ -3483,10 +3483,12 @@ grpc_cc_library(
     hdrs = ["lib/transport/bdp_estimator.h"],
     external_deps = [
         "absl/log",
+        "absl/random",
         "absl/strings",
     ],
     deps = [
         "grpc_check",
+        "shared_bit_gen",
         "time",
         "//:gpr",
         "//:grpc_support_time",
