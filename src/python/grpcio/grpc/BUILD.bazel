@@ -85,6 +85,9 @@ py_library(
 py_library(
     name = "aio",
     srcs = glob(["aio/**/*.py"]),
+    deps = [
+        "@grpc_typing_extensions//:typing_extensions",
+    ],
 )
 
 py_library(

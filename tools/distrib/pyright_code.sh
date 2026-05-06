@@ -1,4 +1,5 @@
-# Copyright 2024 gRPC authors.
+#!/bin/bash
+# Copyright 2026 The gRPC Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,11 +13,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM debian:11
+PS4='+ $(date "+[%H:%M:%S %Z]")\011 '
+set -ex
 
-{% include "../../apt_get_basic.include" %}
-{% include "../../ruby_3_1_deps.include" %}
-{% include "../../rvm_mkdir_workaround.include" %}
+# change to root directory
+cd "$(dirname "$0")/../.."
 
-# Define the default command.
-CMD ["bash"]
+VIRTUALENV=".venv-pyright"
+python3 -m virtualenv "${VIRTUALENV}"
+source "${VIRTUALENV}/bin/activate"
+python3 -VV
+
+pip install pyright==1.1.409
+
+exec pyright

@@ -226,6 +226,7 @@ Pod::Spec.new do |s|
                       'include/grpcpp/support/time.h',
                       'include/grpcpp/support/validate_service_config.h',
                       'include/grpcpp/version_info.h',
+                      'include/grpcpp/virtual_channel.h',
                       'include/grpcpp/xds_server_builder.h'
   end
 
@@ -337,6 +338,8 @@ Pod::Spec.new do |s|
                       'src/core/client_channel/subchannel_pool_interface.h',
                       'src/core/client_channel/subchannel_stream_client.h',
                       'src/core/client_channel/subchannel_stream_limiter.h',
+                      'src/core/client_channel/virtual_channel.cc',
+                      'src/core/client_channel/virtual_channel.h',
                       'src/core/config/config_vars.h',
                       'src/core/config/core_configuration.h',
                       'src/core/config/load_config.h',
@@ -1324,6 +1327,8 @@ Pod::Spec.new do |s|
                       'src/core/transport/auth_context_comparator_registry.h',
                       'src/core/transport/endpoint_transport.h',
                       'src/core/transport/endpoint_transport_client_channel_factory.h',
+                      'src/core/transport/session_endpoint.cc',
+                      'src/core/transport/session_endpoint.h',
                       'src/core/tsi/alts/crypt/gsec.h',
                       'src/core/tsi/alts/frame_protector/alts_counter.h',
                       'src/core/tsi/alts/frame_protector/alts_crypter.h',
@@ -1767,6 +1772,7 @@ Pod::Spec.new do |s|
                               'src/core/client_channel/subchannel_pool_interface.h',
                               'src/core/client_channel/subchannel_stream_client.h',
                               'src/core/client_channel/subchannel_stream_limiter.h',
+                              'src/core/client_channel/virtual_channel.h',
                               'src/core/config/config_vars.h',
                               'src/core/config/core_configuration.h',
                               'src/core/config/load_config.h',
@@ -2754,6 +2760,7 @@ Pod::Spec.new do |s|
                               'src/core/transport/auth_context_comparator_registry.h',
                               'src/core/transport/endpoint_transport.h',
                               'src/core/transport/endpoint_transport_client_channel_factory.h',
+                              'src/core/transport/session_endpoint.h',
                               'src/core/tsi/alts/crypt/gsec.h',
                               'src/core/tsi/alts/frame_protector/alts_counter.h',
                               'src/core/tsi/alts/frame_protector/alts_crypter.h',

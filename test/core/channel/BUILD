@@ -144,6 +144,21 @@ grpc_cc_test(
     ],
 )
 
+grpc_cc_test(
+    name = "v3_bridge_test",
+    srcs = ["v3_bridge_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    deps = [
+        "//:debug_location",
+        "//:grpc_base",
+        "//src/core:arena",
+        "//src/core:wait_for_single_owner",
+        "//test/core/promise:poll_matcher",
+    ],
+)
+
 grpc_fuzz_test(
     name = "union_with_test",
     srcs = ["union_with_test.cc"],

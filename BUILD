@@ -915,6 +915,15 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "virtual_channel",
+    hdrs = ["include/grpcpp/virtual_channel.h"],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "grpc++_public_hdrs",
+    ],
+)
+
+grpc_cc_library(
     name = "grpc_common",
     defines = select({
         "grpc_no_rls": ["GRPC_NO_RLS"],
@@ -1369,6 +1378,21 @@ grpc_cc_library(
         "gpr_platform",
         "gpr_public_hdrs",
         "grpc_core_credentials_header",
+    ],
+)
+
+grpc_cc_library(
+    name = "generic_stub_session_hdrs",
+    hdrs = ["include/grpcpp/impl/generic_stub_session.h"],
+    tags = [
+        "nofixdeps",
+    ],
+    visibility = [
+        "//test/core/transport/chttp2:__pkg__",
+    ],
+    deps = [
+        "grpc++_public_hdrs",
+        "//:grpc_public_hdrs",
     ],
 )
 
@@ -2678,6 +2702,7 @@ grpc_cc_library(
         "resource_quota_api",
         "server",
         "transport_auth_context",
+        ":virtual_channel",
         "//src/core:arena",
         "//src/core:channel_args",
         "//src/core:channel_fwd",
@@ -2715,6 +2740,7 @@ grpc_cc_library(
         "//src/core:thread_quota",
         "//src/core:time",
         "//src/core:useful",
+        "//src/core:virtual_channel",
         "@com_google_protobuf//:any_cc_proto",
     ],
 )
@@ -2777,6 +2803,7 @@ grpc_cc_library(
         "resource_quota_api",
         "server",
         "transport_auth_context",
+        ":virtual_channel",
         "//src/core:arena",
         "//src/core:channel_args",
         "//src/core:channel_init",
@@ -2802,6 +2829,7 @@ grpc_cc_library(
         "//src/core:thread_quota",
         "//src/core:time",
         "//src/core:useful",
+        "//src/core:virtual_channel",
         "@com_google_protobuf//:any_cc_proto",
     ],
 )
@@ -4100,6 +4128,7 @@ grpc_cc_library(
         "//src/core:connectivity_state",
         "//src/core:construct_destruct",
         "//src/core:context",
+        "//src/core:direct_channel",
         "//src/core:dual_ref_counted",
         "//src/core:error",
         "//src/core:error_utils",
@@ -4110,7 +4139,9 @@ grpc_cc_library(
         "//src/core:grpc_backend_metric_data",
         "//src/core:grpc_channel_idle_filter",
         "//src/core:grpc_check",
+        "//src/core:grpc_promise_endpoint",
         "//src/core:grpc_service_config",
+        "//src/core:http2_client_transport",
         "//src/core:idle_filter_state",
         "//src/core:init_internally",
         "//src/core:interception_chain",
@@ -4123,6 +4154,7 @@ grpc_cc_library(
         "//src/core:loop",
         "//src/core:map",
         "//src/core:memory_quota",
+        "//src/core:message",
         "//src/core:metadata",
         "//src/core:metadata_batch",
         "//src/core:metrics",

@@ -25,12 +25,15 @@
 #include <grpcpp/support/channel_arguments.h>
 #include <grpcpp/support/client_interceptor.h>
 #include <grpcpp/support/config.h>
+#include <grpcpp/virtual_channel.h>
 
 #include <memory>
 #include <string>
 #include <utility>
 #include <vector>
 
+#include "src/core/client_channel/virtual_channel.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/cpp/client/create_channel_internal.h"
 
 namespace grpc {
@@ -58,6 +61,25 @@ std::shared_ptr<grpc::Channel> CreateCustomChannel(
 }
 
 namespace experimental {
+std::shared_ptr<grpc::Channel> CreateVirtualChannel(grpc::internal::Call call) {
+  return CreateVirtualChannel(call, grpc::ChannelArguments());
+}
+
+std::shared_ptr<grpc::Channel> CreateVirtualChannel(
+    grpc::internal::Call call, const grpc::ChannelArguments& args) {
+  grpc_core::ExecCtx exec_ctx;
+  grpc_core::ChannelArgs core_args =
+      grpc_core::ChannelArgs::FromC(args.c_channel_args());
+
+  auto core_channel = grpc_core::VirtualChannel::Create(call.call(), core_args);
+  GRPC_CHECK(core_channel.ok());
+
+  return grpc::CreateChannelInternal(
+      "", core_channel->release()->c_ptr(),
+      std::vector<std::unique_ptr<
+          grpc::experimental::ClientInterceptorFactoryInterface>>());
+}
+
 /// Create a new \em custom \a Channel pointing to \a target with \a
 /// interceptors being invoked per call.
 ///

@@ -71,6 +71,8 @@
 #include "src/core/util/debug_location.h"
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/match.h"
+#include "src/core/util/orphanable.h"
+#include "src/core/util/ref_counted.h"
 #include "src/core/util/time.h"
 #include "absl/container/inlined_vector.h"
 #include "absl/functional/function_ref.h"
@@ -1913,9 +1915,12 @@ class BaseCallData : public Activity,
   std::string LogTag() const;
 
  private:
+  class WeakWakerHandle;
+
   // Wakeable implementation.
   void Wakeup(WakeupMask) final;
   void WakeupAsync(WakeupMask) final { Crash("not implemented"); }
+  void WakeupNonOwning(WakeupMask);
   void Drop(WakeupMask) final;
 
   virtual void OnWakeup() = 0;
@@ -1927,6 +1932,7 @@ class BaseCallData : public Activity,
   const Timestamp deadline_;
   CallFinalization finalization_;
   std::atomic<grpc_polling_entity*> pollent_{nullptr};
+  WeakWakerHandle* handle_ = nullptr;
   Pipe<ServerMetadataHandle>* const server_initial_metadata_pipe_;
   SendMessage* const send_message_;
   ReceiveMessage* const receive_message_;
