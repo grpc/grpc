@@ -16,9 +16,11 @@
 
 #include "src/core/load_balancing/xds/cds.h"
 
+#include <cstring>
 #include <vector>
 
 #include "src/core/resolver/xds/xds_config.h"
+#include "src/core/util/env.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "test/core/test_util/test_config.h"
 #include "gmock/gmock.h"
@@ -28,12 +30,12 @@ namespace grpc_core {
 namespace testing {
 namespace {
 
+static RefCountedPtr<XdsLocalityName> MakeLocality(std::string sub_zone) {
+  return MakeRefCounted<XdsLocalityName>("foo", "bar", sub_zone);
+}
+
 class CdsChildNameStateTest : public ::testing::Test {
  protected:
-  static RefCountedPtr<XdsLocalityName> MakeLocality(std::string sub_zone) {
-    return MakeRefCounted<XdsLocalityName>("foo", "bar", sub_zone);
-  }
-
   static std::shared_ptr<const XdsEndpointResource> MakeEndpointResource(
       const std::vector<std::vector<std::string /*sub_zone*/>>& priorities) {
     auto endpoint_resource = std::make_shared<XdsEndpointResource>();
@@ -137,6 +139,76 @@ TEST_F(CdsChildNameStateTest, LocalityMovingBetweenPrioritiesSuboptimal) {
   state.Update(&old_cluster, MakeEndpointConfig(endpoint_resource));
   EXPECT_THAT(state.priority_child_numbers(), ::testing::ElementsAre(1, 2));
   EXPECT_THAT(state.next_available_child_number(), 3);
+}
+
+class PriorityEndpointIteratorTest : public CdsChildNameStateTest {};
+
+TEST_F(PriorityEndpointIteratorTest, NormalizedWeights) {
+  SetEnv("GRPC_EXPERIMENTAL_PF_WEIGHTED_SHUFFLING", "true");
+  auto endpoint_resource = std::make_shared<XdsEndpointResource>();
+  XdsEndpointResource::Priority priority;
+  auto locality_name1 = MakeLocality("subzone1");
+  auto& locality1 = priority.localities[locality_name1.get()];
+  locality1.name = locality_name1;
+  locality1.lb_weight = 10;
+  grpc_resolved_address addr;
+  memset(&addr, 0, sizeof(addr));
+  addr.len = sizeof(struct sockaddr_in);
+  ((struct sockaddr_in*)addr.addr)->sin_family = AF_INET;
+  locality1.endpoints.push_back(EndpointAddresses(
+      {addr}, ChannelArgs().Set(GRPC_ARG_ADDRESS_WEIGHT, 100)));
+  locality1.endpoints.push_back(EndpointAddresses(
+      {addr}, ChannelArgs().Set(GRPC_ARG_ADDRESS_WEIGHT, 100)));
+  auto locality_name2 = MakeLocality("subzone2");
+  auto& locality2 = priority.localities[locality_name2.get()];
+  locality2.name = locality_name2;
+  locality2.lb_weight = 10;
+  locality2.endpoints.push_back(EndpointAddresses(
+      {addr}, ChannelArgs().Set(GRPC_ARG_ADDRESS_WEIGHT, 100)));
+  endpoint_resource->priorities.push_back(std::move(priority));
+  std::vector<size_t> priority_child_numbers = {0};
+  PriorityEndpointIterator iterator(RefCountedStringValue("cluster_foo"),
+                                    /*use_http_connect=*/true,
+                                    endpoint_resource, priority_child_numbers);
+  std::vector<uint32_t> resolved_weights;
+  iterator.ForEach([&](const EndpointAddresses& endpoint) {
+    resolved_weights.push_back(
+        endpoint.args().GetInt(GRPC_ARG_ADDRESS_WEIGHT).value_or(0));
+  });
+  ASSERT_EQ(resolved_weights.size(), 3);
+  EXPECT_EQ(resolved_weights[0], 536870912);
+  EXPECT_EQ(resolved_weights[1], 536870912);
+  EXPECT_EQ(resolved_weights[2], 1073741824);
+  UnsetEnv("GRPC_EXPERIMENTAL_PF_WEIGHTED_SHUFFLING");
+}
+
+TEST_F(PriorityEndpointIteratorTest, OldWeightsWhenDisabled) {
+  SetEnv("GRPC_EXPERIMENTAL_PF_WEIGHTED_SHUFFLING", "false");
+  auto endpoint_resource = std::make_shared<XdsEndpointResource>();
+  XdsEndpointResource::Priority priority;
+  auto locality_name1 = MakeLocality("subzone1");
+  auto& locality1 = priority.localities[locality_name1.get()];
+  locality1.name = locality_name1;
+  locality1.lb_weight = 10;
+  grpc_resolved_address addr;
+  memset(&addr, 0, sizeof(addr));
+  addr.len = sizeof(struct sockaddr_in);
+  ((struct sockaddr_in*)addr.addr)->sin_family = AF_INET;
+  locality1.endpoints.push_back(EndpointAddresses(
+      {addr}, ChannelArgs().Set(GRPC_ARG_ADDRESS_WEIGHT, 100)));
+  endpoint_resource->priorities.push_back(std::move(priority));
+  std::vector<size_t> priority_child_numbers = {0};
+  PriorityEndpointIterator iterator(RefCountedStringValue("cluster_foo"),
+                                    /*use_http_connect=*/true,
+                                    endpoint_resource, priority_child_numbers);
+  std::vector<uint32_t> resolved_weights;
+  iterator.ForEach([&](const EndpointAddresses& endpoint) {
+    resolved_weights.push_back(
+        endpoint.args().GetInt(GRPC_ARG_ADDRESS_WEIGHT).value_or(0));
+  });
+  ASSERT_EQ(resolved_weights.size(), 1);
+  EXPECT_EQ(resolved_weights[0], 1000);
+  UnsetEnv("GRPC_EXPERIMENTAL_PF_WEIGHTED_SHUFFLING");
 }
 
 }  // namespace
