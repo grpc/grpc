@@ -419,18 +419,6 @@ XdsResolver::RouteConfigData::GetRouteForRequest(
   return &routes_[*route_index];
 }
 
-RefCountedPtr<const FilterConfig> GetOverrideConfig(
-    const XdsHttpFilterImpl* filter_impl,
-    const XdsRouteConfigResource::TypedPerFilterConfig& typed_per_filter_config,
-    const std::string& name) {
-  auto it = typed_per_filter_config.find(name);
-  if (it == typed_per_filter_config.end()) return nullptr;
-  if (it->second.config_proto_type != filter_impl->OverrideConfigProtoName()) {
-    return nullptr;
-  }
-  return it->second.filter_config;
-}
-
 void XdsResolver::RouteConfigData::BuildFilterChains(
     const XdsConfig& xds_config,
     const XdsHttpFilterRegistry& http_filter_registry,
