@@ -1874,6 +1874,7 @@ grpc_cc_library(
     ],
     deps = [
         "construct_destruct",
+        "no_destruct",
         "context",
         "event_engine_memory_allocator",
         "memory_quota",

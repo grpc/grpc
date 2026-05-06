@@ -39,6 +39,7 @@
 #include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/util/alloc.h"
 #include "src/core/util/construct_destruct.h"
+#include "src/core/util/no_destruct.h"
 
 namespace grpc_core {
 
@@ -55,7 +56,9 @@ class BaseArenaContextTraits {
  public:
   // Count of number of contexts that have been allocated.
   static uint16_t NumContexts() {
-    return static_cast<uint16_t>(RegisteredTraits().size());
+    // TODO(weizheyuan): How do we fix this?
+    const uint16_t num_contexts = static_cast<uint16_t>(RegisteredTraits().size());
+    return num_contexts < 16? 16 : num_contexts;
   }
 
   // Number of bytes required to store the context pointers on an arena.
@@ -87,20 +90,16 @@ class BaseArenaContextTraits {
 template <typename T>
 class ArenaContextTraits : public BaseArenaContextTraits {
  public:
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static uint16_t id() { return id_; }
-
- private:
-  static const uint16_t id_;
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static uint16_t id() {
+    static NoDestruct<uint16_t> lazy_id{BaseArenaContextTraits::MakeId(DestroyArenaContext<T>)};
+    return *lazy_id;
+  }
 };
 
 template <typename T>
 GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline void DestroyArenaContext(void* p) {
   ArenaContextType<T>::Destroy(static_cast<T*>(p));
 }
-
-template <typename T>
-const uint16_t ArenaContextTraits<T>::id_ =
-    BaseArenaContextTraits::MakeId(DestroyArenaContext<T>);
 
 template <typename T, typename SfinaeVoid = void>
 struct GetContextId {
