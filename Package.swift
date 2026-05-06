@@ -1873,6 +1873,7 @@ let package = Package(
         "src/core/load_balancing/weighted_round_robin/static_stride_scheduler.cc",
         "src/core/load_balancing/weighted_round_robin/static_stride_scheduler.h",
         "src/core/load_balancing/weighted_round_robin/weighted_round_robin.cc",
+        "src/core/load_balancing/weighted_round_robin/weighted_round_robin.h",
         "src/core/load_balancing/weighted_target/weighted_target.cc",
         "src/core/load_balancing/weighted_target/weighted_target.h",
         "src/core/load_balancing/xds/cds.cc",

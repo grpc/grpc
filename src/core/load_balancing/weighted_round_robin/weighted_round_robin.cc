@@ -14,6 +14,8 @@
 // limitations under the License.
 //
 
+#include "src/core/load_balancing/weighted_round_robin/weighted_round_robin.h"
+
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/impl/connectivity_state.h>
 #include <grpc/support/port_platform.h>
@@ -62,6 +64,7 @@
 #include "src/core/util/ref_counted.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/shared_bit_gen.h"
+#include "src/core/util/string.h"
 #include "src/core/util/sync.h"
 #include "src/core/util/time.h"
 #include "src/core/util/validation_errors.h"
@@ -77,6 +80,14 @@
 #include "absl/strings/string_view.h"
 
 namespace grpc_core {
+
+bool WrrCustomMetricsEnabled() {
+  auto value = GetEnv("GRPC_EXPERIMENTAL_WRR_CUSTOM_METRICS");
+  if (!value.has_value()) return false;
+  bool parsed_value;
+  bool parse_succeeded = gpr_parse_bool_value(value->c_str(), &parsed_value);
+  return parse_succeeded && parsed_value;
+}
 
 namespace {
 
@@ -131,18 +142,6 @@ const auto kMetricEndpointWeights =
         .OptionalLabels(kMetricLabelLocality, kMetricLabelBackendService)
         .Build();
 
-struct ParsedMetric {
-  enum class Type {
-    kCpu,
-    kMem,
-    kApplication,
-    kNamedMetric,
-    kUtilization,
-  };
-  Type type;
-  std::string name;
-};
-
 double GetUtilization(const BackendMetricData& backend_metric_data,
                       const std::vector<ParsedMetric>& parsed_custom_metrics) {
   double utilization = 0;
@@ -189,110 +188,80 @@ double GetUtilization(const BackendMetricData& backend_metric_data,
   }
   return utilization;
 }
+}  // namespace
 
-// Config for WRR policy.
-class WeightedRoundRobinConfig final : public LoadBalancingPolicy::Config {
- public:
-  WeightedRoundRobinConfig() = default;
+absl::string_view WeightedRoundRobinConfig::name() const {
+  return "weighted_round_robin";
+}
 
-  WeightedRoundRobinConfig(const WeightedRoundRobinConfig&) = delete;
-  WeightedRoundRobinConfig& operator=(const WeightedRoundRobinConfig&) = delete;
+const JsonLoaderInterface* WeightedRoundRobinConfig::JsonLoader(
+    const JsonArgs&) {
+  static const auto* loader =
+      JsonObjectLoader<WeightedRoundRobinConfig>()
+          .OptionalField("enableOobLoadReport",
+                         &WeightedRoundRobinConfig::enable_oob_load_report_)
+          .OptionalField("oobReportingPeriod",
+                         &WeightedRoundRobinConfig::oob_reporting_period_)
+          .OptionalField("blackoutPeriod",
+                         &WeightedRoundRobinConfig::blackout_period_)
+          .OptionalField("weightUpdatePeriod",
+                         &WeightedRoundRobinConfig::weight_update_period_)
+          .OptionalField("weightExpirationPeriod",
+                         &WeightedRoundRobinConfig::weight_expiration_period_)
+          .OptionalField("errorUtilizationPenalty",
+                         &WeightedRoundRobinConfig::error_utilization_penalty_)
+          .Finish();
+  return loader;
+}
 
-  WeightedRoundRobinConfig(WeightedRoundRobinConfig&&) = delete;
-  WeightedRoundRobinConfig& operator=(WeightedRoundRobinConfig&&) = delete;
-
-  absl::string_view name() const override { return kWeightedRoundRobin; }
-
-  bool enable_oob_load_report() const { return enable_oob_load_report_; }
-  Duration oob_reporting_period() const { return oob_reporting_period_; }
-  Duration blackout_period() const { return blackout_period_; }
-  Duration weight_update_period() const { return weight_update_period_; }
-  Duration weight_expiration_period() const {
-    return weight_expiration_period_;
+void WeightedRoundRobinConfig::JsonPostLoad(const Json& json,
+                                            const JsonArgs& args,
+                                            ValidationErrors* errors) {
+  // Impose lower bound of 100ms on weightUpdatePeriod.
+  weight_update_period_ =
+      std::max(weight_update_period_, Duration::Milliseconds(100));
+  if (error_utilization_penalty_ < 0) {
+    ValidationErrors::ScopedField field(errors, ".errorUtilizationPenalty");
+    errors->AddError("must be non-negative");
   }
-  float error_utilization_penalty() const { return error_utilization_penalty_; }
-  const std::vector<ParsedMetric>& parsed_custom_metrics() const {
-    return parsed_custom_metrics_;
-  }
-
-  static const JsonLoaderInterface* JsonLoader(const JsonArgs&) {
-    static const auto* loader =
-        JsonObjectLoader<WeightedRoundRobinConfig>()
-            .OptionalField("enableOobLoadReport",
-                           &WeightedRoundRobinConfig::enable_oob_load_report_)
-            .OptionalField("oobReportingPeriod",
-                           &WeightedRoundRobinConfig::oob_reporting_period_)
-            .OptionalField("blackoutPeriod",
-                           &WeightedRoundRobinConfig::blackout_period_)
-            .OptionalField("weightUpdatePeriod",
-                           &WeightedRoundRobinConfig::weight_update_period_)
-            .OptionalField("weightExpirationPeriod",
-                           &WeightedRoundRobinConfig::weight_expiration_period_)
-            .OptionalField(
-                "errorUtilizationPenalty",
-                &WeightedRoundRobinConfig::error_utilization_penalty_)
-            .Finish();
-    return loader;
-  }
-
-  void JsonPostLoad(const Json& json, const JsonArgs& args,
-                    ValidationErrors* errors) {
-    // Impose lower bound of 100ms on weightUpdatePeriod.
-    weight_update_period_ =
-        std::max(weight_update_period_, Duration::Milliseconds(100));
-    if (error_utilization_penalty_ < 0) {
-      ValidationErrors::ScopedField field(errors, ".errorUtilizationPenalty");
-      errors->AddError("must be non-negative");
-    }
-    if (internal::WrrCustomMetricsEnabled()) {
-      std::optional<std::vector<std::string>>
-          metric_names_for_computing_utilization =
-              LoadJsonObjectField<std::vector<std::string>>(
-                  json.object(), args, "metricNamesForComputingUtilization",
-                  errors, /*required=*/false);
-      if (metric_names_for_computing_utilization.has_value()) {
-        size_t i = 0;
-        for (const auto& metric_name :
-             *metric_names_for_computing_utilization) {
-          if (metric_name == "cpu_utilization") {
-            parsed_custom_metrics_.push_back({ParsedMetric::Type::kCpu, ""});
-          } else if (metric_name == "mem_utilization") {
-            parsed_custom_metrics_.push_back({ParsedMetric::Type::kMem, ""});
-          } else if (metric_name == "application_utilization") {
-            parsed_custom_metrics_.push_back(
-                {ParsedMetric::Type::kApplication, ""});
-          } else if (absl::StartsWith(metric_name, "named_metrics.")) {
-            parsed_custom_metrics_.push_back(
-                {ParsedMetric::Type::kNamedMetric,
-                 std::string(
-                     absl::StripPrefix(metric_name, "named_metrics."))});
-          } else if (absl::StartsWith(metric_name, "utilization.")) {
-            parsed_custom_metrics_.push_back(
-                {ParsedMetric::Type::kUtilization,
-                 std::string(absl::StripPrefix(metric_name, "utilization."))});
-          } else {
-            ValidationErrors::ScopedField field(
-                errors,
-                absl::StrCat(".metricNamesForComputingUtilization[", i, "]"));
-            errors->AddError(
-                absl::StrCat("unsupported metric name \"", metric_name, "\""));
-          }
-          i++;
+  if (WrrCustomMetricsEnabled()) {
+    std::optional<std::vector<std::string>>
+        metric_names_for_computing_utilization =
+            LoadJsonObjectField<std::vector<std::string>>(
+                json.object(), args, "metricNamesForComputingUtilization",
+                errors, /*required=*/false);
+    if (metric_names_for_computing_utilization.has_value()) {
+      size_t i = 0;
+      for (const auto& metric_name : *metric_names_for_computing_utilization) {
+        if (metric_name == "cpu_utilization") {
+          parsed_custom_metrics_.push_back({ParsedMetric::Type::kCpu, ""});
+        } else if (metric_name == "mem_utilization") {
+          parsed_custom_metrics_.push_back({ParsedMetric::Type::kMem, ""});
+        } else if (metric_name == "application_utilization") {
+          parsed_custom_metrics_.push_back(
+              {ParsedMetric::Type::kApplication, ""});
+        } else if (absl::StartsWith(metric_name, "named_metrics.")) {
+          parsed_custom_metrics_.push_back(
+              {ParsedMetric::Type::kNamedMetric,
+               std::string(absl::StripPrefix(metric_name, "named_metrics."))});
+        } else if (absl::StartsWith(metric_name, "utilization.")) {
+          parsed_custom_metrics_.push_back(
+              {ParsedMetric::Type::kUtilization,
+               std::string(absl::StripPrefix(metric_name, "utilization."))});
+        } else {
+          ValidationErrors::ScopedField field(
+              errors,
+              absl::StrCat(".metricNamesForComputingUtilization[", i, "]"));
+          errors->AddError(
+              absl::StrCat("unsupported metric name \"", metric_name, "\""));
         }
+        --i;
       }
     }
   }
+}
 
- private:
-  bool enable_oob_load_report_ = false;
-  Duration oob_reporting_period_ = Duration::Seconds(10);
-  Duration blackout_period_ = Duration::Seconds(10);
-  Duration weight_update_period_ = Duration::Seconds(1);
-  Duration weight_expiration_period_ = Duration::Minutes(3);
-  float error_utilization_penalty_ = 1.0;
-
-  std::vector<ParsedMetric> parsed_custom_metrics_;
-};
+namespace {
 
 // WRR LB policy
 class WeightedRoundRobin final : public LoadBalancingPolicy {

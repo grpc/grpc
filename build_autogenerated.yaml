@@ -1185,6 +1185,7 @@ libs:
   - src/core/load_balancing/rls/rls.h
   - src/core/load_balancing/subchannel_interface.h
   - src/core/load_balancing/weighted_round_robin/static_stride_scheduler.h
+  - src/core/load_balancing/weighted_round_robin/weighted_round_robin.h
   - src/core/load_balancing/weighted_target/weighted_target.h
   - src/core/load_balancing/xds/cds.h
   - src/core/load_balancing/xds/xds_channel_args.h
@@ -2923,6 +2924,7 @@ libs:
   - src/core/load_balancing/rls/rls.h
   - src/core/load_balancing/subchannel_interface.h
   - src/core/load_balancing/weighted_round_robin/static_stride_scheduler.h
+  - src/core/load_balancing/weighted_round_robin/weighted_round_robin.h
   - src/core/load_balancing/weighted_target/weighted_target.h
   - src/core/net/socket_mutator.h
   - src/core/resolver/dns/c_ares/dns_resolver_ares.h
@@ -26758,6 +26760,7 @@ targets:
   language: c++
   headers:
   - test/core/test_util/fake_stats_plugin.h
+  - test/core/test_util/scoped_env_var.h
   src:
   - test/core/load_balancing/weighted_round_robin_config_test.cc
   - test/core/test_util/fake_stats_plugin.cc

@@ -37,12 +37,12 @@
 #include "src/core/load_balancing/lb_policy.h"
 #include "src/core/load_balancing/lb_policy_factory.h"
 #include "src/core/util/crash.h"
-#include "src/core/util/env.h"
 #include "src/core/util/json/json_writer.h"
 #include "src/core/util/orphanable.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/validation_errors.h"
 #include "src/core/xds/grpc/xds_bootstrap_grpc.h"
+#include "test/core/test_util/scoped_env_var.h"
 #include "test/core/test_util/test_config.h"
 #include "upb/mem/arena.hpp"
 #include "upb/reflection/def.hpp"
@@ -166,7 +166,7 @@ TEST(ClientSideWeightedRoundRobinTest, FieldsExplicitlySet) {
 }
 
 TEST(ClientSideWeightedRoundRobinTest, WrrCustomMetricsEnabled) {
-  SetEnv("GRPC_EXPERIMENTAL_WRR_CUSTOM_METRICS", "true");
+  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_WRR_CUSTOM_METRICS");
   ClientSideWeightedRoundRobin wrr;
   wrr.add_metric_names_for_computing_utilization("cpu_usage");
   LoadBalancingPolicyProto policy;
@@ -175,7 +175,6 @@ TEST(ClientSideWeightedRoundRobinTest, WrrCustomMetricsEnabled) {
       ->mutable_typed_config()
       ->PackFrom(wrr);
   auto result = ConvertXdsPolicy(policy);
-  UnsetEnv("GRPC_EXPERIMENTAL_WRR_CUSTOM_METRICS");
   ASSERT_TRUE(result.ok()) << result.status();
   EXPECT_EQ(*result,
             "{\"weighted_round_robin\":{"

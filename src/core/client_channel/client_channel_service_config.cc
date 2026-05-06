@@ -56,14 +56,6 @@ class ConnectionScalingJsonArgs final : public JsonArgs {
 
 }  // namespace
 
-bool WrrCustomMetricsEnabled() {
-  auto value = GetEnv("GRPC_EXPERIMENTAL_WRR_CUSTOM_METRICS");
-  if (!value.has_value()) return false;
-  bool parsed_value;
-  bool parse_succeeded = gpr_parse_bool_value(value->c_str(), &parsed_value);
-  return parse_succeeded && parsed_value;
-}
-
 //
 // ClientChannelGlobalParsedConfig::HealthCheckConfig
 //

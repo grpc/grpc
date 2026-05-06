@@ -39,9 +39,6 @@
 namespace grpc_core {
 namespace internal {
 
-// TODO(rishesh): Remove this once the feature passes interop tests.
-bool WrrCustomMetricsEnabled();
-
 class ClientChannelGlobalParsedConfig final
     : public ServiceConfigParser::ParsedConfig {
  public:

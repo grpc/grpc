@@ -35,6 +35,7 @@
 #include "src/core/client_channel/client_channel_service_config.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/load_balancing/lb_policy_registry.h"
+#include "src/core/load_balancing/weighted_round_robin/weighted_round_robin.h"
 #include "src/core/util/time.h"
 #include "src/core/util/validation_errors.h"
 #include "src/core/xds/grpc/xds_common_types.h"
@@ -137,7 +138,7 @@ class ClientSideWeightedRoundRobinLbPolicyConfigFactory final
       config["errorUtilizationPenalty"] = Json::FromNumber(value);
     }
     // metric_names_for_computing_utilization
-    if (internal::WrrCustomMetricsEnabled()) {
+    if (WrrCustomMetricsEnabled()) {
       size_t size;
       auto metric_names_for_computing_utilization =
           envoy_extensions_load_balancing_policies_client_side_weighted_round_robin_v3_ClientSideWeightedRoundRobin_metric_names_for_computing_utilization(
