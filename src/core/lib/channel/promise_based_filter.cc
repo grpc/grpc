@@ -64,7 +64,6 @@ class FakeActivity final : public Activity {
  private:
   Activity* const wake_activity_;
 };
-}  // namespace
 
 absl::Status StatusFromMetadata(const ServerMetadata& md) {
   auto status_code = md.get(GrpcStatusMetadata()).value_or(GRPC_STATUS_UNKNOWN);
@@ -77,6 +76,7 @@ absl::Status StatusFromMetadata(const ServerMetadata& md) {
                    message == nullptr ? "" : message->as_string_view()),
       StatusIntProperty::kRpcStatus, status_code);
 }
+}  // namespace
 
 ///////////////////////////////////////////////////////////////////////////////
 // BaseCallData
@@ -495,16 +495,6 @@ void BaseCallData::SendMessage::Done(const ServerMetadata& metadata,
     case State::kPushedToPipe:
       push_.reset();
       next_.reset();
-      if (batch_.is_captured()) {
-        std::string temp;
-        batch_.CancelWith(
-            absl::Status(
-                static_cast<absl::StatusCode>(
-                    metadata.get(GrpcStatusMetadata())
-                        .value_or(GRPC_STATUS_UNKNOWN)),
-                metadata.GetStringValue("grpc-message", &temp).value_or("")),
-            flusher);
-      }
       state_ = State::kCancelledButNotYetPolled;
       if (base_->is_current()) base_->ForceImmediateRepoll();
       break;
@@ -1174,7 +1164,7 @@ class ClientCallData::PollContext {
                       std::exchange(
                           self_->recv_initial_metadata_->original_on_ready,
                           nullptr),
-                      StatusFromMetadata(*md),
+                      absl::CancelledError(),
                       "wake_inside_combiner:recv_initial_metadata_ready");
               }
             }
