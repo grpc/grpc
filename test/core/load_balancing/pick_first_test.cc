@@ -35,6 +35,7 @@
 #include "src/core/resolver/endpoint_addresses.h"
 #include "src/core/telemetry/metrics.h"
 #include "src/core/util/debug_location.h"
+#include "src/core/util/env.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/orphanable.h"
 #include "src/core/util/ref_counted_ptr.h"
@@ -1501,6 +1502,36 @@ TEST_F(PickFirstTest, WithShuffle) {
   std::vector<absl::string_view> addresses_on_another_try;
   GetOrderAddressesArePicked(kAddresses, &addresses_on_another_try);
   EXPECT_EQ(addresses_on_another_try, addresses_after_update);
+}
+
+TEST_F(PickFirstTest, WithWeightedShuffle) {
+  SetEnv("GRPC_EXPERIMENTAL_PF_WEIGHTED_SHUFFLING", "true");
+  constexpr std::array<absl::string_view, 3> kAddresses = {
+      "ipv4:127.0.0.1:443", "ipv4:127.0.0.1:444", "ipv4:127.0.0.1:445"};
+  std::vector<EndpointAddresses> endpoints;
+  endpoints.push_back(
+      EndpointAddresses(MakeEndpointAddresses({kAddresses[0]}).addresses(),
+                        ChannelArgs().Set(GRPC_ARG_ADDRESS_WEIGHT, 1000)));
+  endpoints.push_back(
+      EndpointAddresses(MakeEndpointAddresses({kAddresses[1]}).addresses(),
+                        ChannelArgs().Set(GRPC_ARG_ADDRESS_WEIGHT, 1)));
+  endpoints.push_back(
+      EndpointAddresses(MakeEndpointAddresses({kAddresses[2]}).addresses(),
+                        ChannelArgs().Set(GRPC_ARG_ADDRESS_WEIGHT, 1)));
+  size_t first_address_picked_count = 0;
+  constexpr size_t kRuns = 10;
+  for (size_t i = 0; i < kRuns; ++i) {
+    absl::Status status = ApplyUpdate(
+        BuildUpdate(endpoints, MakePickFirstConfig(true)), lb_policy());
+    EXPECT_TRUE(status.ok()) << status;
+    std::vector<absl::string_view> addresses_after_update;
+    GetOrderAddressesArePicked(kAddresses, &addresses_after_update);
+    if (addresses_after_update.front() == kAddresses[0]) {
+      first_address_picked_count++;
+    }
+  }
+  EXPECT_GE(first_address_picked_count, 9);
+  UnsetEnv("GRPC_EXPERIMENTAL_PF_WEIGHTED_SHUFFLING");
 }
 
 TEST_F(PickFirstTest, ShufflingDisabled) {
