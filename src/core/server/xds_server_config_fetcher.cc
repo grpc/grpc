@@ -1277,8 +1277,10 @@ XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
     call_config.service_config = route.method_config;
   }
   // Populate filter chain.
-  call_config.filter_chain =
-      DownCast<const XdsConnectionState*>(state)->filter_chain();
+  if (IsXdsServerFilterChainPerRouteEnabled()) {
+    call_config.filter_chain =
+        DownCast<const XdsConnectionState*>(state)->filter_chain();
+  }
   return call_config;
 }
 
