@@ -282,7 +282,7 @@ python_config_settings()
 # This should be updated along with build_handwritten.yaml
 g_stands_for = "graphic"  # @unused
 
-core_version = "53.0.0"  # @unused
+core_version = "54.0.0"  # @unused
 
 version = "1.81.0-dev"  # @unused
 
