@@ -103,6 +103,8 @@ inline bool IsMetadataPublishToAppTagEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_MONITORING_EXPERIMENT
 inline bool IsMonitoringExperimentEnabled() { return true; }
 inline bool IsMultipingEnabled() { return false; }
+inline bool IsOptimization01Enabled() { return false; }
+inline bool IsOptimization02Enabled() { return false; }
 inline bool IsOtelExportTelemetryDomainsEnabled() { return false; }
 inline bool IsPh2Perf01Enabled() { return false; }
 inline bool IsPickFirstIgnoreEmptyUpdatesEnabled() { return false; }
@@ -181,6 +183,8 @@ inline bool IsMetadataPublishToAppTagEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_MONITORING_EXPERIMENT
 inline bool IsMonitoringExperimentEnabled() { return true; }
 inline bool IsMultipingEnabled() { return false; }
+inline bool IsOptimization01Enabled() { return false; }
+inline bool IsOptimization02Enabled() { return false; }
 inline bool IsOtelExportTelemetryDomainsEnabled() { return false; }
 inline bool IsPh2Perf01Enabled() { return false; }
 inline bool IsPickFirstIgnoreEmptyUpdatesEnabled() { return false; }
@@ -259,6 +263,8 @@ inline bool IsMetadataPublishToAppTagEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_MONITORING_EXPERIMENT
 inline bool IsMonitoringExperimentEnabled() { return true; }
 inline bool IsMultipingEnabled() { return false; }
+inline bool IsOptimization01Enabled() { return false; }
+inline bool IsOptimization02Enabled() { return false; }
 inline bool IsOtelExportTelemetryDomainsEnabled() { return false; }
 inline bool IsPh2Perf01Enabled() { return false; }
 inline bool IsPickFirstIgnoreEmptyUpdatesEnabled() { return false; }
@@ -320,6 +326,8 @@ enum ExperimentIds {
   kExperimentIdMetadataPublishToAppTag,
   kExperimentIdMonitoringExperiment,
   kExperimentIdMultiping,
+  kExperimentIdOptimization01,
+  kExperimentIdOptimization02,
   kExperimentIdOtelExportTelemetryDomains,
   kExperimentIdPh2Perf01,
   kExperimentIdPickFirstIgnoreEmptyUpdates,
@@ -458,6 +466,14 @@ inline bool IsMonitoringExperimentEnabled() {
 #define GRPC_EXPERIMENT_IS_INCLUDED_MULTIPING
 inline bool IsMultipingEnabled() {
   return IsExperimentEnabled<kExperimentIdMultiping>();
+}
+#define GRPC_EXPERIMENT_IS_INCLUDED_OPTIMIZATION_01
+inline bool IsOptimization01Enabled() {
+  return IsExperimentEnabled<kExperimentIdOptimization01>();
+}
+#define GRPC_EXPERIMENT_IS_INCLUDED_OPTIMIZATION_02
+inline bool IsOptimization02Enabled() {
+  return IsExperimentEnabled<kExperimentIdOptimization02>();
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_OTEL_EXPORT_TELEMETRY_DOMAINS
 inline bool IsOtelExportTelemetryDomainsEnabled() {

@@ -13,7 +13,7 @@ Gem::Specification.new do |s|
   s.description   = 'Send RPCs from Ruby using GRPC'
   s.license       = 'Apache-2.0'
 
-  s.required_ruby_version = '>= 3.1'
+  s.required_ruby_version = '>= 3.2'
 
   s.files = %w( Makefile .yardopts )
   s.files += %w( etc/roots.pem )
@@ -1972,6 +1972,8 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/transport/endpoint_transport.h )
   s.files += %w( src/core/transport/endpoint_transport_client_channel_factory.cc )
   s.files += %w( src/core/transport/endpoint_transport_client_channel_factory.h )
+  s.files += %w( src/core/transport/session_endpoint.cc )
+  s.files += %w( src/core/transport/session_endpoint.h )
   s.files += %w( src/core/tsi/alts/crypt/aes_gcm.cc )
   s.files += %w( src/core/tsi/alts/crypt/gsec.cc )
   s.files += %w( src/core/tsi/alts/crypt/gsec.h )

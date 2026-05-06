@@ -23,7 +23,7 @@ let package = Package(
   ],
 
   dependencies: [
-    .package(url: "https://github.com/firebase/abseil-cpp-SwiftPM.git", "0.20240722.0"..<"0.20240723.0"),
+    .package(url: "https://github.com/firebase/abseil-cpp-SwiftPM.git", "0.20250512.1"..<"0.20250512.2"),
     .package(url: "https://github.com/firebase/boringssl-SwiftPM.git", "0.32.0"..<"0.33.0"),
   ],
 
@@ -1969,6 +1969,8 @@ let package = Package(
         "src/core/transport/endpoint_transport.h",
         "src/core/transport/endpoint_transport_client_channel_factory.cc",
         "src/core/transport/endpoint_transport_client_channel_factory.h",
+        "src/core/transport/session_endpoint.cc",
+        "src/core/transport/session_endpoint.h",
         "src/core/tsi/alts/crypt/aes_gcm.cc",
         "src/core/tsi/alts/crypt/gsec.cc",
         "src/core/tsi/alts/crypt/gsec.h",
