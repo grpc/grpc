@@ -16,7 +16,6 @@
 
 #include "src/core/load_balancing/xds/cds.h"
 
-#include <cstring>
 #include <vector>
 
 #include "src/core/resolver/xds/xds_config.h"
@@ -30,12 +29,12 @@ namespace grpc_core {
 namespace testing {
 namespace {
 
-static RefCountedPtr<XdsLocalityName> MakeLocality(std::string sub_zone) {
-  return MakeRefCounted<XdsLocalityName>("foo", "bar", sub_zone);
-}
-
 class CdsChildNameStateTest : public ::testing::Test {
  protected:
+  static RefCountedPtr<XdsLocalityName> MakeLocality(std::string sub_zone) {
+    return MakeRefCounted<XdsLocalityName>("foo", "bar", sub_zone);
+  }
+
   static std::shared_ptr<const XdsEndpointResource> MakeEndpointResource(
       const std::vector<std::vector<std::string /*sub_zone*/>>& priorities) {
     auto endpoint_resource = std::make_shared<XdsEndpointResource>();
@@ -151,8 +150,7 @@ TEST_F(PriorityEndpointIteratorTest, NormalizedWeights) {
   auto& locality1 = priority.localities[locality_name1.get()];
   locality1.name = locality_name1;
   locality1.lb_weight = 10;
-  grpc_resolved_address addr;
-  memset(&addr, 0, sizeof(addr));
+  grpc_resolved_address addr{};
   addr.len = sizeof(struct sockaddr_in);
   ((struct sockaddr_in*)addr.addr)->sin_family = AF_INET;
   locality1.endpoints.push_back(EndpointAddresses(
@@ -190,8 +188,7 @@ TEST_F(PriorityEndpointIteratorTest, OldWeightsWhenDisabled) {
   auto& locality1 = priority.localities[locality_name1.get()];
   locality1.name = locality_name1;
   locality1.lb_weight = 10;
-  grpc_resolved_address addr;
-  memset(&addr, 0, sizeof(addr));
+  grpc_resolved_address addr{};
   addr.len = sizeof(struct sockaddr_in);
   ((struct sockaddr_in*)addr.addr)->sin_family = AF_INET;
   locality1.endpoints.push_back(EndpointAddresses(
