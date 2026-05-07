@@ -71,7 +71,10 @@ def generate_run_tests_portability_tests(name):
             #
             # See build_cxx.sh for details on make targets built when
             # -DgRPC_BUILD_TESTS=OFF is set.
+
+            # TODO(weizheyuan): Remove GCC 8 tests per OSS policy (https://github.com/google/oss-policies-info/blob/main/foundational-cxx-support-matrix.md)
             ["gcc_8", "--cmake_configure_extra_args=-DCMAKE_CXX_STANDARD=17 --cmake_configure_extra_args=-DgRPC_BUILD_TESTS=OFF", "tools/dockerfile/test/cxx_gcc_8_x64.current_version"],
+            ["gcc_10", "--cmake_configure_extra_args=-DCMAKE_CXX_STANDARD=17 --cmake_configure_extra_args=-DgRPC_BUILD_TESTS=OFF", "tools/dockerfile/test/cxx_gcc_10_x64.current_version"],
             ["gcc_14_cxx20", "--cmake_configure_extra_args=-DCMAKE_CXX_STANDARD=20", "tools/dockerfile/test/cxx_gcc_14_x64.current_version"],
             ["gcc10.2_openssl102", "--cmake_configure_extra_args=-DCMAKE_CXX_STANDARD=17 --cmake_configure_extra_args=-DgRPC_SSL_PROVIDER=package", "tools/dockerfile/test/cxx_debian11_openssl102_x64.current_version"],
             ["gcc10.2_openssl111", "--cmake_configure_extra_args=-DCMAKE_CXX_STANDARD=17 --cmake_configure_extra_args=-DgRPC_SSL_PROVIDER=package", "tools/dockerfile/test/cxx_debian11_openssl111_x64.current_version"],
