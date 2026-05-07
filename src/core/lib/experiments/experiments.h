@@ -70,9 +70,6 @@ inline bool IsCallTracerSendTrailingMetadataIsAnAnnotationEnabled() {
 #define GRPC_EXPERIMENT_IS_INCLUDED_CHAOTIC_GOOD_FRAMING_LAYER
 inline bool IsChaoticGoodFramingLayerEnabled() { return true; }
 inline bool IsChaoticGoodSendSupportedFeaturesEnabled() { return false; }
-inline bool IsClientInitialMetadataOutstandingTokenRefactorEnabled() {
-  return false;
-}
 #define GRPC_EXPERIMENT_IS_INCLUDED_ERROR_FLATTEN
 inline bool IsErrorFlattenEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_CLIENT
@@ -101,6 +98,7 @@ inline bool IsLocalConnectorSecureEnabled() { return false; }
 inline bool IsMaxInflightPingsStrictLimitEnabled() { return true; }
 inline bool IsMemoryOptimization01Enabled() { return false; }
 inline bool IsMemoryOptimization02Enabled() { return false; }
+inline bool IsMetadataOutstandingTokenRefactorEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_METADATA_PUBLISH_TO_APP_TAG
 inline bool IsMetadataPublishToAppTagEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_MONITORING_EXPERIMENT
@@ -153,9 +151,6 @@ inline bool IsCallTracerSendTrailingMetadataIsAnAnnotationEnabled() {
 #define GRPC_EXPERIMENT_IS_INCLUDED_CHAOTIC_GOOD_FRAMING_LAYER
 inline bool IsChaoticGoodFramingLayerEnabled() { return true; }
 inline bool IsChaoticGoodSendSupportedFeaturesEnabled() { return false; }
-inline bool IsClientInitialMetadataOutstandingTokenRefactorEnabled() {
-  return false;
-}
 #define GRPC_EXPERIMENT_IS_INCLUDED_ERROR_FLATTEN
 inline bool IsErrorFlattenEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_CLIENT
@@ -184,6 +179,7 @@ inline bool IsLocalConnectorSecureEnabled() { return false; }
 inline bool IsMaxInflightPingsStrictLimitEnabled() { return true; }
 inline bool IsMemoryOptimization01Enabled() { return false; }
 inline bool IsMemoryOptimization02Enabled() { return false; }
+inline bool IsMetadataOutstandingTokenRefactorEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_METADATA_PUBLISH_TO_APP_TAG
 inline bool IsMetadataPublishToAppTagEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_MONITORING_EXPERIMENT
@@ -236,9 +232,6 @@ inline bool IsCallTracerSendTrailingMetadataIsAnAnnotationEnabled() {
 #define GRPC_EXPERIMENT_IS_INCLUDED_CHAOTIC_GOOD_FRAMING_LAYER
 inline bool IsChaoticGoodFramingLayerEnabled() { return true; }
 inline bool IsChaoticGoodSendSupportedFeaturesEnabled() { return false; }
-inline bool IsClientInitialMetadataOutstandingTokenRefactorEnabled() {
-  return false;
-}
 #define GRPC_EXPERIMENT_IS_INCLUDED_ERROR_FLATTEN
 inline bool IsErrorFlattenEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_CLIENT
@@ -267,6 +260,7 @@ inline bool IsLocalConnectorSecureEnabled() { return false; }
 inline bool IsMaxInflightPingsStrictLimitEnabled() { return true; }
 inline bool IsMemoryOptimization01Enabled() { return false; }
 inline bool IsMemoryOptimization02Enabled() { return false; }
+inline bool IsMetadataOutstandingTokenRefactorEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_METADATA_PUBLISH_TO_APP_TAG
 inline bool IsMetadataPublishToAppTagEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_MONITORING_EXPERIMENT
@@ -314,7 +308,6 @@ enum ExperimentIds {
   kExperimentIdCallTracerSendTrailingMetadataIsAnAnnotation,
   kExperimentIdChaoticGoodFramingLayer,
   kExperimentIdChaoticGoodSendSupportedFeatures,
-  kExperimentIdClientInitialMetadataOutstandingTokenRefactor,
   kExperimentIdErrorFlatten,
   kExperimentIdEventEngineClient,
   kExperimentIdEventEngineDns,
@@ -333,6 +326,7 @@ enum ExperimentIds {
   kExperimentIdMaxInflightPingsStrictLimit,
   kExperimentIdMemoryOptimization01,
   kExperimentIdMemoryOptimization02,
+  kExperimentIdMetadataOutstandingTokenRefactor,
   kExperimentIdMetadataPublishToAppTag,
   kExperimentIdMonitoringExperiment,
   kExperimentIdMultiping,
@@ -392,11 +386,6 @@ inline bool IsChaoticGoodFramingLayerEnabled() {
 #define GRPC_EXPERIMENT_IS_INCLUDED_CHAOTIC_GOOD_SEND_SUPPORTED_FEATURES
 inline bool IsChaoticGoodSendSupportedFeaturesEnabled() {
   return IsExperimentEnabled<kExperimentIdChaoticGoodSendSupportedFeatures>();
-}
-#define GRPC_EXPERIMENT_IS_INCLUDED_CLIENT_INITIAL_METADATA_OUTSTANDING_TOKEN_REFACTOR
-inline bool IsClientInitialMetadataOutstandingTokenRefactorEnabled() {
-  return IsExperimentEnabled<
-      kExperimentIdClientInitialMetadataOutstandingTokenRefactor>();
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_ERROR_FLATTEN
 inline bool IsErrorFlattenEnabled() {
@@ -469,6 +458,10 @@ inline bool IsMemoryOptimization01Enabled() {
 #define GRPC_EXPERIMENT_IS_INCLUDED_MEMORY_OPTIMIZATION_02
 inline bool IsMemoryOptimization02Enabled() {
   return IsExperimentEnabled<kExperimentIdMemoryOptimization02>();
+}
+#define GRPC_EXPERIMENT_IS_INCLUDED_METADATA_OUTSTANDING_TOKEN_REFACTOR
+inline bool IsMetadataOutstandingTokenRefactorEnabled() {
+  return IsExperimentEnabled<kExperimentIdMetadataOutstandingTokenRefactor>();
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_METADATA_PUBLISH_TO_APP_TAG
 inline bool IsMetadataPublishToAppTagEnabled() {

@@ -48,12 +48,6 @@ const char* const description_chaotic_good_send_supported_features =
     "Send supported features in chaotic good settings frames.";
 const char* const additional_constraints_chaotic_good_send_supported_features =
     "{}";
-const char* const
-    description_client_initial_metadata_outstanding_token_refactor =
-        "Refactor ClientInitialMetadataOutstandingToken.";
-const char* const
-    additional_constraints_client_initial_metadata_outstanding_token_refactor =
-        "{}";
 const char* const description_error_flatten =
     "Flatten errors to ordinary absl::Status form.";
 const char* const additional_constraints_error_flatten = "{}";
@@ -124,6 +118,10 @@ const char* const description_memory_optimization_01 = "Memory Optimization";
 const char* const additional_constraints_memory_optimization_01 = "{}";
 const char* const description_memory_optimization_02 = "Memory Optimization 02";
 const char* const additional_constraints_memory_optimization_02 = "{}";
+const char* const description_metadata_outstanding_token_refactor =
+    "Refactor ClientInitialMetadataOutstandingToken.";
+const char* const additional_constraints_metadata_outstanding_token_refactor =
+    "{}";
 const char* const description_metadata_publish_to_app_tag =
     "Publish metadata to the app using the kPublishToApp metadata field.";
 const char* const additional_constraints_metadata_publish_to_app_tag = "{}";
@@ -279,10 +277,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_chaotic_good_send_supported_features,
      additional_constraints_chaotic_good_send_supported_features, nullptr, 0,
      false, true},
-    {"client_initial_metadata_outstanding_token_refactor",
-     description_client_initial_metadata_outstanding_token_refactor,
-     additional_constraints_client_initial_metadata_outstanding_token_refactor,
-     nullptr, 0, false, true},
     {"error_flatten", description_error_flatten,
      additional_constraints_error_flatten, nullptr, 0, true, false},
     {"event_engine_client", description_event_engine_client,
@@ -333,6 +327,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_memory_optimization_01, nullptr, 0, false, false},
     {"memory_optimization_02", description_memory_optimization_02,
      additional_constraints_memory_optimization_02, nullptr, 0, false, false},
+    {"metadata_outstanding_token_refactor",
+     description_metadata_outstanding_token_refactor,
+     additional_constraints_metadata_outstanding_token_refactor, nullptr, 0,
+     false, true},
     {"metadata_publish_to_app_tag", description_metadata_publish_to_app_tag,
      additional_constraints_metadata_publish_to_app_tag, nullptr, 0, true,
      true},
@@ -469,12 +467,6 @@ const char* const description_chaotic_good_send_supported_features =
     "Send supported features in chaotic good settings frames.";
 const char* const additional_constraints_chaotic_good_send_supported_features =
     "{}";
-const char* const
-    description_client_initial_metadata_outstanding_token_refactor =
-        "Refactor ClientInitialMetadataOutstandingToken.";
-const char* const
-    additional_constraints_client_initial_metadata_outstanding_token_refactor =
-        "{}";
 const char* const description_error_flatten =
     "Flatten errors to ordinary absl::Status form.";
 const char* const additional_constraints_error_flatten = "{}";
@@ -545,6 +537,10 @@ const char* const description_memory_optimization_01 = "Memory Optimization";
 const char* const additional_constraints_memory_optimization_01 = "{}";
 const char* const description_memory_optimization_02 = "Memory Optimization 02";
 const char* const additional_constraints_memory_optimization_02 = "{}";
+const char* const description_metadata_outstanding_token_refactor =
+    "Refactor ClientInitialMetadataOutstandingToken.";
+const char* const additional_constraints_metadata_outstanding_token_refactor =
+    "{}";
 const char* const description_metadata_publish_to_app_tag =
     "Publish metadata to the app using the kPublishToApp metadata field.";
 const char* const additional_constraints_metadata_publish_to_app_tag = "{}";
@@ -700,10 +696,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_chaotic_good_send_supported_features,
      additional_constraints_chaotic_good_send_supported_features, nullptr, 0,
      false, true},
-    {"client_initial_metadata_outstanding_token_refactor",
-     description_client_initial_metadata_outstanding_token_refactor,
-     additional_constraints_client_initial_metadata_outstanding_token_refactor,
-     nullptr, 0, false, true},
     {"error_flatten", description_error_flatten,
      additional_constraints_error_flatten, nullptr, 0, true, false},
     {"event_engine_client", description_event_engine_client,
@@ -754,6 +746,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_memory_optimization_01, nullptr, 0, false, false},
     {"memory_optimization_02", description_memory_optimization_02,
      additional_constraints_memory_optimization_02, nullptr, 0, false, false},
+    {"metadata_outstanding_token_refactor",
+     description_metadata_outstanding_token_refactor,
+     additional_constraints_metadata_outstanding_token_refactor, nullptr, 0,
+     false, true},
     {"metadata_publish_to_app_tag", description_metadata_publish_to_app_tag,
      additional_constraints_metadata_publish_to_app_tag, nullptr, 0, true,
      true},
@@ -890,12 +886,6 @@ const char* const description_chaotic_good_send_supported_features =
     "Send supported features in chaotic good settings frames.";
 const char* const additional_constraints_chaotic_good_send_supported_features =
     "{}";
-const char* const
-    description_client_initial_metadata_outstanding_token_refactor =
-        "Refactor ClientInitialMetadataOutstandingToken.";
-const char* const
-    additional_constraints_client_initial_metadata_outstanding_token_refactor =
-        "{}";
 const char* const description_error_flatten =
     "Flatten errors to ordinary absl::Status form.";
 const char* const additional_constraints_error_flatten = "{}";
@@ -966,6 +956,10 @@ const char* const description_memory_optimization_01 = "Memory Optimization";
 const char* const additional_constraints_memory_optimization_01 = "{}";
 const char* const description_memory_optimization_02 = "Memory Optimization 02";
 const char* const additional_constraints_memory_optimization_02 = "{}";
+const char* const description_metadata_outstanding_token_refactor =
+    "Refactor ClientInitialMetadataOutstandingToken.";
+const char* const additional_constraints_metadata_outstanding_token_refactor =
+    "{}";
 const char* const description_metadata_publish_to_app_tag =
     "Publish metadata to the app using the kPublishToApp metadata field.";
 const char* const additional_constraints_metadata_publish_to_app_tag = "{}";
@@ -1121,10 +1115,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_chaotic_good_send_supported_features,
      additional_constraints_chaotic_good_send_supported_features, nullptr, 0,
      false, true},
-    {"client_initial_metadata_outstanding_token_refactor",
-     description_client_initial_metadata_outstanding_token_refactor,
-     additional_constraints_client_initial_metadata_outstanding_token_refactor,
-     nullptr, 0, false, true},
     {"error_flatten", description_error_flatten,
      additional_constraints_error_flatten, nullptr, 0, true, false},
     {"event_engine_client", description_event_engine_client,
@@ -1175,6 +1165,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_memory_optimization_01, nullptr, 0, false, false},
     {"memory_optimization_02", description_memory_optimization_02,
      additional_constraints_memory_optimization_02, nullptr, 0, false, false},
+    {"metadata_outstanding_token_refactor",
+     description_metadata_outstanding_token_refactor,
+     additional_constraints_metadata_outstanding_token_refactor, nullptr, 0,
+     false, true},
     {"metadata_publish_to_app_tag", description_metadata_publish_to_app_tag,
      additional_constraints_metadata_publish_to_app_tag, nullptr, 0, true,
      true},
