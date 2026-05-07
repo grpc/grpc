@@ -44,6 +44,7 @@ RUN apk update && apk add \
 RUN git config --global --add safe.directory '*'
 RUN git config --global protocol.file.allow always
 
+
 # Google Cloud Platform API libraries
 # These are needed for uploading test results to BigQuery (e.g. by tools/run_tests scripts)
 RUN python3 -m pip install --break-system-packages --upgrade google-auth==1.24.0 google-api-python-client==1.12.8 oauth2client==4.1.0

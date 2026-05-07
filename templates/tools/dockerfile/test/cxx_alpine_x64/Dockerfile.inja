@@ -47,8 +47,6 @@ RUN python3 -m pip install --break-system-packages --upgrade --ignore-installed 
 # Some cxx tests depend on the twisted package
 RUN python3 -m pip install --break-system-packages twisted
 
-
-{% include "../../cxx_test_deps.include" %}
 {% include "../../ccache.include" %}
 {% include "../../run_tests_addons.include" %}
 
