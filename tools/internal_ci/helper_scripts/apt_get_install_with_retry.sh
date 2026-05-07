@@ -13,8 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Installs a given package using choco with some retry attempts in case of
-# network errors
 
 # Ensure package to install is provided
 if [ $# -eq 0 ]; then
@@ -36,11 +34,12 @@ set -x
 
 echo "Installing '${PACKAGES} 'using 'apt-get'"
 
-apt-get update && \
+apt-get update
 for i in $(seq 1 $MAX_RETRIES); do \
   echo Running apt-get install...
   if apt-get install -y ${PACKAGES}; then \
     echo "apt-get succeeded on attempt $i."; \
+    apt-get update; \
     break; \
   else \
     echo "apt-get failed on attempt $i. Waiting $(($delay**$i)) seconds before retrying..."; \
