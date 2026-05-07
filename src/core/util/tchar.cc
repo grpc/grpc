@@ -31,11 +31,11 @@ TcharString CharToTchar(std::string input) {
 }
 
 std::string TcharToChar(TcharString input) {
-  int needed =
-      WideCharToMultiByte(CP_UTF8, 0, input.c_str(), -1, NULL, 0, NULL, NULL);
+  int needed = WideCharToMultiByte(CP_UTF8, 0, input.c_str(), input.size(),
+                                   NULL, 0, NULL, NULL);
   if (needed <= 0) return std::string();
   std::string ret(needed, '\0');
-  WideCharToMultiByte(CP_UTF8, 0, input.c_str(), -1,
+  WideCharToMultiByte(CP_UTF8, 0, input.c_str(), input.size(),
                       const_cast<LPSTR>(ret.data()), needed, NULL, NULL);
   return ret;
 }
