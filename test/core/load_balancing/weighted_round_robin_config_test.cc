@@ -23,6 +23,7 @@
 #include "src/core/load_balancing/weighted_round_robin/weighted_round_robin.h"
 #include "src/core/service_config/service_config.h"
 #include "src/core/service_config/service_config_impl.h"
+#include "src/core/util/down_cast.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "test/core/test_util/scoped_env_var.h"
 #include "test/core/test_util/test_config.h"
@@ -134,8 +135,7 @@ TEST(WeightedRoundRobinConfigTest, ValidMetricNamesEnabled) {
       ServiceConfigImpl::Create(ChannelArgs(), service_config_json);
   ASSERT_TRUE(service_config.ok()) << service_config.status();
   EXPECT_NE(*service_config, nullptr);
-
-  auto global_config = static_cast<internal::ClientChannelGlobalParsedConfig*>(
+  auto global_config = DownCast<internal::ClientChannelGlobalParsedConfig*>(
       (*service_config)
           ->GetGlobalParsedConfig(
               internal::ClientChannelServiceConfigParser::ParserIndex()));
@@ -143,11 +143,11 @@ TEST(WeightedRoundRobinConfigTest, ValidMetricNamesEnabled) {
   auto lb_config = global_config->parsed_lb_config();
   ASSERT_NE(lb_config, nullptr);
   ASSERT_EQ(lb_config->name(), "weighted_round_robin");
-
-  auto* wrr_config = static_cast<WeightedRoundRobinConfig*>(lb_config.get());
+  auto* wrr_config = DownCast<WeightedRoundRobinConfig*>(lb_config.get());
   const auto& custom_metrics = wrr_config->parsed_custom_metrics();
   ASSERT_EQ(custom_metrics.size(), 1);
-  EXPECT_EQ(custom_metrics[0].type, ParsedMetric::Type::kCpu);
+  EXPECT_EQ(custom_metrics[0].type,
+            WeightedRoundRobinConfig::ParsedMetric::Type::kCpu);
   EXPECT_EQ(custom_metrics[0].name, "");
 }
 
@@ -164,8 +164,7 @@ TEST(WeightedRoundRobinConfigTest, MetricNamesDisabled) {
       ServiceConfigImpl::Create(ChannelArgs(), service_config_json);
   ASSERT_TRUE(service_config.ok()) << service_config.status();
   EXPECT_NE(*service_config, nullptr);
-
-  auto global_config = static_cast<internal::ClientChannelGlobalParsedConfig*>(
+  auto global_config = DownCast<internal::ClientChannelGlobalParsedConfig*>(
       (*service_config)
           ->GetGlobalParsedConfig(
               internal::ClientChannelServiceConfigParser::ParserIndex()));
@@ -173,8 +172,7 @@ TEST(WeightedRoundRobinConfigTest, MetricNamesDisabled) {
   auto lb_config = global_config->parsed_lb_config();
   ASSERT_NE(lb_config, nullptr);
   ASSERT_EQ(lb_config->name(), "weighted_round_robin");
-
-  auto* wrr_config = static_cast<WeightedRoundRobinConfig*>(lb_config.get());
+  auto* wrr_config = DownCast<WeightedRoundRobinConfig*>(lb_config.get());
   EXPECT_TRUE(wrr_config->parsed_custom_metrics().empty());
 }
 

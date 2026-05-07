@@ -143,30 +143,31 @@ const auto kMetricEndpointWeights =
         .Build();
 
 double GetUtilization(const BackendMetricData& backend_metric_data,
-                      const std::vector<ParsedMetric>& parsed_custom_metrics) {
+                      const std::vector<WeightedRoundRobinConfig::ParsedMetric>&
+                          parsed_custom_metrics) {
   double utilization = 0;
   bool custom_metric_found = false;
   if (!parsed_custom_metrics.empty()) {
     for (const auto& metric : parsed_custom_metrics) {
       double value = 0;
       switch (metric.type) {
-        case ParsedMetric::Type::kCpu:
+        case WeightedRoundRobinConfig::ParsedMetric::Type::kCpu:
           value = backend_metric_data.cpu_utilization;
           break;
-        case ParsedMetric::Type::kMem:
+        case WeightedRoundRobinConfig::ParsedMetric::Type::kMem:
           value = backend_metric_data.mem_utilization;
           break;
-        case ParsedMetric::Type::kApplication:
+        case WeightedRoundRobinConfig::ParsedMetric::Type::kApplication:
           value = backend_metric_data.application_utilization;
           break;
-        case ParsedMetric::Type::kNamedMetric: {
+        case WeightedRoundRobinConfig::ParsedMetric::Type::kNamedMetric: {
           auto it = backend_metric_data.named_metrics.find(metric.name);
           if (it != backend_metric_data.named_metrics.end()) {
             value = it->second;
           }
           break;
         }
-        case ParsedMetric::Type::kUtilization: {
+        case WeightedRoundRobinConfig::ParsedMetric::Type::kUtilization: {
           auto it = backend_metric_data.utilization.find(metric.name);
           if (it != backend_metric_data.utilization.end()) {
             value = it->second;
@@ -191,7 +192,7 @@ double GetUtilization(const BackendMetricData& backend_metric_data,
 }  // namespace
 
 absl::string_view WeightedRoundRobinConfig::name() const {
-  return "weighted_round_robin";
+  return kWeightedRoundRobin;
 }
 
 const JsonLoaderInterface* WeightedRoundRobinConfig::JsonLoader(
@@ -234,19 +235,21 @@ void WeightedRoundRobinConfig::JsonPostLoad(const Json& json,
       size_t i = 0;
       for (const auto& metric_name : *metric_names_for_computing_utilization) {
         if (metric_name == "cpu_utilization") {
-          parsed_custom_metrics_.push_back({ParsedMetric::Type::kCpu, ""});
+          parsed_custom_metrics_.push_back(
+              {WeightedRoundRobinConfig::ParsedMetric::Type::kCpu, ""});
         } else if (metric_name == "mem_utilization") {
-          parsed_custom_metrics_.push_back({ParsedMetric::Type::kMem, ""});
+          parsed_custom_metrics_.push_back(
+              {WeightedRoundRobinConfig::ParsedMetric::Type::kMem, ""});
         } else if (metric_name == "application_utilization") {
           parsed_custom_metrics_.push_back(
-              {ParsedMetric::Type::kApplication, ""});
+              {WeightedRoundRobinConfig::ParsedMetric::Type::kApplication, ""});
         } else if (absl::StartsWith(metric_name, "named_metrics.")) {
           parsed_custom_metrics_.push_back(
-              {ParsedMetric::Type::kNamedMetric,
+              {WeightedRoundRobinConfig::ParsedMetric::Type::kNamedMetric,
                std::string(absl::StripPrefix(metric_name, "named_metrics."))});
         } else if (absl::StartsWith(metric_name, "utilization.")) {
           parsed_custom_metrics_.push_back(
-              {ParsedMetric::Type::kUtilization,
+              {WeightedRoundRobinConfig::ParsedMetric::Type::kUtilization,
                std::string(absl::StripPrefix(metric_name, "utilization."))});
         } else {
           ValidationErrors::ScopedField field(
@@ -255,7 +258,7 @@ void WeightedRoundRobinConfig::JsonPostLoad(const Json& json,
           errors->AddError(
               absl::StrCat("unsupported metric name \"", metric_name, "\""));
         }
-        --i;
+        ++i;
       }
     }
   }

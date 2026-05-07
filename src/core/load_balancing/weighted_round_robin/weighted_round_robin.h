@@ -30,22 +30,22 @@
 
 namespace grpc_core {
 
-struct ParsedMetric {
-  enum class Type {
-    kCpu,
-    kMem,
-    kApplication,
-    kNamedMetric,
-    kUtilization,
-  };
-  Type type;
-  std::string name;
-};
-
 bool WrrCustomMetricsEnabled();
 
 class WeightedRoundRobinConfig final : public LoadBalancingPolicy::Config {
  public:
+  struct ParsedMetric {
+    enum class Type {
+      kCpu,
+      kMem,
+      kApplication,
+      kNamedMetric,
+      kUtilization,
+    };
+    Type type;
+    std::string name;
+  };
+
   WeightedRoundRobinConfig() = default;
 
   WeightedRoundRobinConfig(const WeightedRoundRobinConfig&) = delete;
