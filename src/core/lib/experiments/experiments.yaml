@@ -77,6 +77,11 @@
   expiry: 2026/09/01
   owner: aananthv@google.com
   test_tags: [core_end2end_test]
+- name: client_initial_metadata_outstanding_token_refactor
+  description: Refactor ClientInitialMetadataOutstandingToken.
+  expiry: 2026/09/01
+  owner: akshitpatel@google.com
+  test_tags: []
 - name: error_flatten
   description: Flatten errors to ordinary absl::Status form.
   expiry: 2026/06/01

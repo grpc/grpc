@@ -48,6 +48,12 @@ const char* const description_chaotic_good_send_supported_features =
     "Send supported features in chaotic good settings frames.";
 const char* const additional_constraints_chaotic_good_send_supported_features =
     "{}";
+const char* const
+    description_client_initial_metadata_outstanding_token_refactor =
+        "Refactor ClientInitialMetadataOutstandingToken.";
+const char* const
+    additional_constraints_client_initial_metadata_outstanding_token_refactor =
+        "{}";
 const char* const description_error_flatten =
     "Flatten errors to ordinary absl::Status form.";
 const char* const additional_constraints_error_flatten = "{}";
@@ -273,6 +279,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_chaotic_good_send_supported_features,
      additional_constraints_chaotic_good_send_supported_features, nullptr, 0,
      false, true},
+    {"client_initial_metadata_outstanding_token_refactor",
+     description_client_initial_metadata_outstanding_token_refactor,
+     additional_constraints_client_initial_metadata_outstanding_token_refactor,
+     nullptr, 0, false, true},
     {"error_flatten", description_error_flatten,
      additional_constraints_error_flatten, nullptr, 0, true, false},
     {"event_engine_client", description_event_engine_client,
@@ -459,6 +469,12 @@ const char* const description_chaotic_good_send_supported_features =
     "Send supported features in chaotic good settings frames.";
 const char* const additional_constraints_chaotic_good_send_supported_features =
     "{}";
+const char* const
+    description_client_initial_metadata_outstanding_token_refactor =
+        "Refactor ClientInitialMetadataOutstandingToken.";
+const char* const
+    additional_constraints_client_initial_metadata_outstanding_token_refactor =
+        "{}";
 const char* const description_error_flatten =
     "Flatten errors to ordinary absl::Status form.";
 const char* const additional_constraints_error_flatten = "{}";
@@ -684,6 +700,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_chaotic_good_send_supported_features,
      additional_constraints_chaotic_good_send_supported_features, nullptr, 0,
      false, true},
+    {"client_initial_metadata_outstanding_token_refactor",
+     description_client_initial_metadata_outstanding_token_refactor,
+     additional_constraints_client_initial_metadata_outstanding_token_refactor,
+     nullptr, 0, false, true},
     {"error_flatten", description_error_flatten,
      additional_constraints_error_flatten, nullptr, 0, true, false},
     {"event_engine_client", description_event_engine_client,
@@ -870,6 +890,12 @@ const char* const description_chaotic_good_send_supported_features =
     "Send supported features in chaotic good settings frames.";
 const char* const additional_constraints_chaotic_good_send_supported_features =
     "{}";
+const char* const
+    description_client_initial_metadata_outstanding_token_refactor =
+        "Refactor ClientInitialMetadataOutstandingToken.";
+const char* const
+    additional_constraints_client_initial_metadata_outstanding_token_refactor =
+        "{}";
 const char* const description_error_flatten =
     "Flatten errors to ordinary absl::Status form.";
 const char* const additional_constraints_error_flatten = "{}";
@@ -1095,6 +1121,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_chaotic_good_send_supported_features,
      additional_constraints_chaotic_good_send_supported_features, nullptr, 0,
      false, true},
+    {"client_initial_metadata_outstanding_token_refactor",
+     description_client_initial_metadata_outstanding_token_refactor,
+     additional_constraints_client_initial_metadata_outstanding_token_refactor,
+     nullptr, 0, false, true},
     {"error_flatten", description_error_flatten,
      additional_constraints_error_flatten, nullptr, 0, true, false},
     {"event_engine_client", description_event_engine_client,

@@ -23,6 +23,7 @@ EXPERIMENT_ENABLES = {
     "call_tracer_send_trailing_metadata_is_an_annotation": "call_tracer_send_trailing_metadata_is_an_annotation",
     "chaotic_good_framing_layer": "chaotic_good_framing_layer",
     "chaotic_good_send_supported_features": "chaotic_good_send_supported_features",
+    "client_initial_metadata_outstanding_token_refactor": "client_initial_metadata_outstanding_token_refactor",
     "error_flatten": "error_flatten",
     "event_engine_client": "event_engine_client",
     "event_engine_dns": "event_engine_dns",

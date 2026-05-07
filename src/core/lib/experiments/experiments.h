@@ -70,6 +70,9 @@ inline bool IsCallTracerSendTrailingMetadataIsAnAnnotationEnabled() {
 #define GRPC_EXPERIMENT_IS_INCLUDED_CHAOTIC_GOOD_FRAMING_LAYER
 inline bool IsChaoticGoodFramingLayerEnabled() { return true; }
 inline bool IsChaoticGoodSendSupportedFeaturesEnabled() { return false; }
+inline bool IsClientInitialMetadataOutstandingTokenRefactorEnabled() {
+  return false;
+}
 #define GRPC_EXPERIMENT_IS_INCLUDED_ERROR_FLATTEN
 inline bool IsErrorFlattenEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_CLIENT
@@ -150,6 +153,9 @@ inline bool IsCallTracerSendTrailingMetadataIsAnAnnotationEnabled() {
 #define GRPC_EXPERIMENT_IS_INCLUDED_CHAOTIC_GOOD_FRAMING_LAYER
 inline bool IsChaoticGoodFramingLayerEnabled() { return true; }
 inline bool IsChaoticGoodSendSupportedFeaturesEnabled() { return false; }
+inline bool IsClientInitialMetadataOutstandingTokenRefactorEnabled() {
+  return false;
+}
 #define GRPC_EXPERIMENT_IS_INCLUDED_ERROR_FLATTEN
 inline bool IsErrorFlattenEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_CLIENT
@@ -230,6 +236,9 @@ inline bool IsCallTracerSendTrailingMetadataIsAnAnnotationEnabled() {
 #define GRPC_EXPERIMENT_IS_INCLUDED_CHAOTIC_GOOD_FRAMING_LAYER
 inline bool IsChaoticGoodFramingLayerEnabled() { return true; }
 inline bool IsChaoticGoodSendSupportedFeaturesEnabled() { return false; }
+inline bool IsClientInitialMetadataOutstandingTokenRefactorEnabled() {
+  return false;
+}
 #define GRPC_EXPERIMENT_IS_INCLUDED_ERROR_FLATTEN
 inline bool IsErrorFlattenEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_CLIENT
@@ -305,6 +314,7 @@ enum ExperimentIds {
   kExperimentIdCallTracerSendTrailingMetadataIsAnAnnotation,
   kExperimentIdChaoticGoodFramingLayer,
   kExperimentIdChaoticGoodSendSupportedFeatures,
+  kExperimentIdClientInitialMetadataOutstandingTokenRefactor,
   kExperimentIdErrorFlatten,
   kExperimentIdEventEngineClient,
   kExperimentIdEventEngineDns,
@@ -382,6 +392,11 @@ inline bool IsChaoticGoodFramingLayerEnabled() {
 #define GRPC_EXPERIMENT_IS_INCLUDED_CHAOTIC_GOOD_SEND_SUPPORTED_FEATURES
 inline bool IsChaoticGoodSendSupportedFeaturesEnabled() {
   return IsExperimentEnabled<kExperimentIdChaoticGoodSendSupportedFeatures>();
+}
+#define GRPC_EXPERIMENT_IS_INCLUDED_CLIENT_INITIAL_METADATA_OUTSTANDING_TOKEN_REFACTOR
+inline bool IsClientInitialMetadataOutstandingTokenRefactorEnabled() {
+  return IsExperimentEnabled<
+      kExperimentIdClientInitialMetadataOutstandingTokenRefactor>();
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_ERROR_FLATTEN
 inline bool IsErrorFlattenEnabled() {
