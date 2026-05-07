@@ -81,12 +81,11 @@ namespace grpc_core {
 class ServerConfigFetcher
     : public CppImplOf<ServerConfigFetcher, grpc_server_config_fetcher> {
  public:
-  class ConnectionManager
-      : public grpc_core::DualRefCounted<ConnectionManager> {
+  class ConnectionManager : public DualRefCounted<ConnectionManager> {
    public:
-    virtual absl::StatusOr<grpc_core::ChannelArgs>
-    UpdateChannelArgsForConnection(const grpc_core::ChannelArgs& args,
-                                   grpc_endpoint* tcp) = 0;
+    // FIXME: remove tcp arg?
+    virtual absl::StatusOr<ChannelArgs> UpdateChannelArgsForConnection(
+        const ChannelArgs& args, grpc_endpoint* tcp) = 0;
   };
 
   class WatcherInterface {
@@ -96,9 +95,9 @@ class ServerConfigFetcher
     // config is available. Implementations should update the connection manager
     // and start serving if not already serving.
     virtual void UpdateConnectionManager(
-        grpc_core::RefCountedPtr<ConnectionManager> manager) = 0;
+        RefCountedPtr<ConnectionManager> manager) = 0;
     // Implementations should stop serving when this is called. Serving should
-    // only resume when UpdateConfig() is invoked.
+    // only resume when UpdateConnectionManager() is invoked.
     virtual void StopServing() = 0;
   };
 

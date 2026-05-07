@@ -79,6 +79,7 @@ class ServerConfigSelectorInterceptor final
 
   ChannelArgs args_;
   RefCountedPtr<ServerConfigSelectorProvider> server_config_selector_provider_;
+  std::shared_ptr<Watcher> watcher_;
 
   Observable<absl::StatusOr<RefCountedPtr<ConfigSelectorState>>>
       config_selector_;

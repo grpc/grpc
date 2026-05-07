@@ -6775,6 +6775,7 @@ grpc_cc_library(
     name = "grpc_xds_server_config_fetcher",
     srcs = [
         "server/xds_server_config_fetcher.cc",
+        "server/xds_server_config_fetcher_legacy.cc",
     ],
     external_deps = [
         "absl/base:core_headers",
