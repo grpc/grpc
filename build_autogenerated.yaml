@@ -1232,6 +1232,7 @@ libs:
   - src/core/transport/auth_context_comparator_registry.h
   - src/core/transport/endpoint_transport.h
   - src/core/transport/endpoint_transport_client_channel_factory.h
+  - src/core/transport/session_endpoint.h
   - src/core/tsi/alts/crypt/gsec.h
   - src/core/tsi/alts/frame_protector/alts_counter.h
   - src/core/tsi/alts/frame_protector/alts_crypter.h
@@ -2174,6 +2175,7 @@ libs:
   - src/core/telemetry/tcp_tracer.cc
   - src/core/transport/auth_context.cc
   - src/core/transport/endpoint_transport_client_channel_factory.cc
+  - src/core/transport/session_endpoint.cc
   - src/core/tsi/alts/crypt/aes_gcm.cc
   - src/core/tsi/alts/crypt/gsec.cc
   - src/core/tsi/alts/frame_protector/alts_counter.cc
@@ -2961,6 +2963,7 @@ libs:
   - src/core/transport/auth_context_comparator_registry.h
   - src/core/transport/endpoint_transport.h
   - src/core/transport/endpoint_transport_client_channel_factory.h
+  - src/core/transport/session_endpoint.h
   - src/core/tsi/alts/handshaker/transport_security_common_api.h
   - src/core/tsi/fake_transport_security.h
   - src/core/tsi/local_transport_security.h
@@ -3443,6 +3446,7 @@ libs:
   - src/core/telemetry/tcp_tracer.cc
   - src/core/transport/auth_context.cc
   - src/core/transport/endpoint_transport_client_channel_factory.cc
+  - src/core/transport/session_endpoint.cc
   - src/core/tsi/alts/handshaker/transport_security_common_api.cc
   - src/core/tsi/fake_transport_security.cc
   - src/core/tsi/local_transport_security.cc
@@ -4199,7 +4203,6 @@ libs:
   headers:
   - src/core/client_channel/virtual_channel.h
   - src/core/telemetry/telemetry_label.h
-  - src/core/transport/session_endpoint.h
   - src/core/xds/grpc/xds_enabled_server.h
   - src/cpp/client/client_stats_interceptor.h
   - src/cpp/client/create_channel_internal.h
@@ -4214,7 +4217,6 @@ libs:
   - src/cpp/thread_manager/thread_manager.h
   src:
   - src/core/client_channel/virtual_channel.cc
-  - src/core/transport/session_endpoint.cc
   - src/cpp/client/call_context_registry.cc
   - src/cpp/client/call_credentials.cc
   - src/cpp/client/channel_cc.cc
@@ -4589,7 +4591,6 @@ libs:
   headers:
   - src/core/client_channel/virtual_channel.h
   - src/core/telemetry/telemetry_label.h
-  - src/core/transport/session_endpoint.h
   - src/cpp/client/client_stats_interceptor.h
   - src/cpp/client/create_channel_internal.h
   - src/cpp/server/backend_metric_recorder.h
@@ -4600,7 +4601,6 @@ libs:
   - src/cpp/thread_manager/thread_manager.h
   src:
   - src/core/client_channel/virtual_channel.cc
-  - src/core/transport/session_endpoint.cc
   - src/cpp/client/call_context_registry.cc
   - src/cpp/client/call_credentials.cc
   - src/cpp/client/channel_cc.cc
@@ -23044,10 +23044,8 @@ targets:
   build: test
   language: c++
   headers:
-  - src/core/transport/session_endpoint.h
   - test/core/end2end/cq_verifier.h
   src:
-  - src/core/transport/session_endpoint.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/transport/session_endpoint_test.cc
   deps:

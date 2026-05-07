@@ -2914,6 +2914,7 @@ grpc_cc_library(
         "posix_event_engine_tcp_socket_utils",
         "socket_mutator",
         "status_helper",
+        "strerror",
         "//:event_engine_base_hdrs",
         "//:gpr",
     ],
@@ -3001,6 +3002,7 @@ grpc_cc_library(
         "posix_event_engine_timer",
         "posix_event_engine_timer_manager",
         "ref_counted_dns_resolver_interface",
+        "strerror",
         "sync",
         "useful",
         "//:event_engine_base_hdrs",
@@ -3483,10 +3485,12 @@ grpc_cc_library(
     hdrs = ["lib/transport/bdp_estimator.h"],
     external_deps = [
         "absl/log",
+        "absl/random",
         "absl/strings",
     ],
     deps = [
         "grpc_check",
+        "shared_bit_gen",
         "time",
         "//:gpr",
         "//:grpc_support_time",
