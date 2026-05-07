@@ -16,7 +16,7 @@
 
 # Ensure package to install is provided
 if [ $# -eq 0 ]; then
-  echo "Error: No package name provided to install with choco."
+  echo "Error: No package name provided to install with apt-get."
   exit 1
 fi
 
@@ -25,28 +25,25 @@ shift $#
 
 MAX_RETRIES=4
 # Initial delay, will grow exponentially
-delay=5
-# Initial exit code.
-exit_code=1
+delay=3
+
 
 PS4='+ $(date "+[%H:%M:%S %Z]")\011 '
 set -x
 
-echo "Installing '${PACKAGES} 'using 'apt-get'"
+echo "Installing packages '${PACKAGES}' using 'apt-get'"
 
-apt-get update
-for i in $(seq 1 $MAX_RETRIES); do \
-  echo Running apt-get install...
-  if apt-get install -y ${PACKAGES}; then \
-    echo "apt-get succeeded on attempt $i."; \
-    apt-get update; \
-    break; \
-  else \
-    echo "apt-get failed on attempt $i. Waiting $(($delay**$i)) seconds before retrying..."; \
-    sleep $(($delay**$i)); \
-    if [ "$i" -eq "$MAX_RETRIES" ]; then \
-      echo "Max retries reached ($MAX_RETRIES). apt-get failed permanently."; \
-      exit 1; \
-    fi \
-  fi \
+for i in $(seq 1 $MAX_RETRIES); do
+  echo "Running apt-get update and install (attempt $i)..."
+  if apt-get update && apt-get install -y ${PACKAGES}; then
+    echo "apt-get succeeded on attempt $i.";
+    break;
+  else
+    echo "apt-get failed on attempt $i. Waiting $(($delay**$i)) seconds before retrying...";
+    sleep $(($delay**$i));
+    if [ "$i" -eq "$MAX_RETRIES" ]; then
+      echo "Max retries reached ($MAX_RETRIES). apt-get failed permanently.";
+      exit 1;
+    fi
+  fi
 done
