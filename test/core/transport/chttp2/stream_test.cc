@@ -37,17 +37,22 @@ namespace grpc_core {
 namespace http2 {
 namespace testing {
 
+using grpc_event_engine::experimental::EventEngine;
+
 TEST(StreamTest, Minimal) {
   ExecCtx exec_ctx;
-  chttp2::TransportFlowControl tfc("test", false, nullptr);
+  chttp2::TransportFlowControl tfc(/*name=*/"test", /*enable_bdp_probe=*/false,
+                                   /*memory_owner=*/nullptr);
   RefCountedPtr<Arena> arena = SimpleArenaAllocator()->MakeArena();
-  arena->SetContext<grpc_event_engine::experimental::EventEngine>(
+  arena->SetContext<EventEngine>(
       grpc_event_engine::experimental::GetDefaultEventEngine().get());
   CallInitiatorAndHandler call_pair = MakeCallPair(
       Arena::MakePooledForOverwrite<ClientMetadata>(), std::move(arena));
   RefCountedPtr<Stream> stream =
       MakeRefCounted<Stream>(call_pair.handler.StartCall(), tfc);
-  stream->InitializeStream(123u, true, true);
+  stream->InitializeClientStream(
+      /*stream_id=*/123u, /*allow_true_binary_metadata_peer=*/true,
+      /*allow_true_binary_metadata_acked=*/true);
   EXPECT_EQ(stream->GetStreamId(), 123u);
 }
 

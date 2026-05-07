@@ -61,7 +61,7 @@ composite_call_credentials = grpc.composite_call_credentials
 composite_channel_credentials = grpc.composite_channel_credentials
 
 
-class Channel(object):
+class Channel:
     """A channel to a remote host through which RPCs may be conducted.
 
     Only the "subscribe" and "unsubscribe" methods are supported for application
@@ -132,7 +132,7 @@ def secure_channel(host, port, channel_credentials):
     return Channel(channel)
 
 
-class StubOptions(object):
+class StubOptions:
     """A value encapsulating the various options for creation of a Stub.
 
     This class and its instances have no supported interface - it exists to define
@@ -248,7 +248,7 @@ ServerCredentials = grpc.ServerCredentials
 ssl_server_credentials = grpc.ssl_server_credentials
 
 
-class ServerOptions(object):
+class ServerOptions:
     """A value encapsulating the various options for creation of a Server.
 
     This class and its instances have no supported interface - it exists to define

@@ -183,9 +183,9 @@ class Http2ClientTransport final : public ClientTransport,
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto EndpointReadSlice(
       const size_t num_bytes) {
     return Map(endpoint_.ReadSlice(num_bytes),
-               [this, num_bytes](absl::StatusOr<Slice> status) {
+               [this, num_bytes](absl::StatusOr<Slice>&& status) {
                  OnEndpointRead(status.ok(), num_bytes);
-                 return status;
+                 return std::move(status);
                });
   }
 
@@ -194,9 +194,9 @@ class Http2ClientTransport final : public ClientTransport,
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto EndpointRead(
       const size_t num_bytes) {
     return Map(endpoint_.Read(num_bytes),
-               [this, num_bytes](absl::StatusOr<SliceBuffer> status) {
+               [this, num_bytes](absl::StatusOr<SliceBuffer>&& status) {
                  OnEndpointRead(status.ok(), num_bytes);
-                 return status;
+                 return std::move(status);
                });
   }
 
@@ -243,11 +243,6 @@ class Http2ClientTransport final : public ClientTransport,
 
   Http2Status ProcessMetadata(RefCountedPtr<Stream> stream);
 
-  Http2Status ParseAndDiscardHeaders(SliceBuffer&& buffer, bool is_end_headers,
-                                     Stream* stream,
-                                     Http2Status&& original_status,
-                                     DebugLocation whence = {});
-
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Http2Status
   ProcessOneIncomingFrame(Http2Frame&& frame) {
     GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport::ProcessOneIncomingFrame";
@@ -257,6 +252,9 @@ class Http2ClientTransport final : public ClientTransport,
         },
         std::forward<Http2Frame>(frame));
   }
+
+  template <typename T>
+  Http2Status ProcessIncomingMetadata(T&& frame);
 
   auto ReadAndProcessOneFrame();
 
@@ -328,8 +326,6 @@ class Http2ClientTransport final : public ClientTransport,
     return false;
   }
 
-  absl::Status InitializeStream(Stream& stream);
-
   //////////////////////////////////////////////////////////////////////////////
   // Spawn Helpers and Promise Helpers
 
@@ -395,24 +391,12 @@ class Http2ClientTransport final : public ClientTransport,
                           std::forward<OnDone>(on_done));
   }
 
-  // Runs on the call party.
-  std::optional<RefCountedPtr<Stream>> MakeStream(CallHandler call_handler);
-
-  // This function MUST be idempotent.
-  void CloseStream(Stream& stream, CloseStreamArgs args,
-                   DebugLocation whence = {});
-
-  void BeginCloseStream(RefCountedPtr<Stream> stream,
-                        std::optional<uint32_t> reset_stream_error_code,
-                        ServerMetadataHandle&& metadata,
-                        DebugLocation whence = {});
-
   //////////////////////////////////////////////////////////////////////////////
   // Settings
 
+  void EnforceLatestIncomingSettings();
   auto WaitForSettingsTimeoutOnDone();
   void MaybeSpawnWaitForSettingsTimeout();
-  void EnforceLatestIncomingSettings();
 
   //////////////////////////////////////////////////////////////////////////////
   // Flow Control and BDP
@@ -422,6 +406,12 @@ class Http2ClientTransport final : public ClientTransport,
                               Stream* stream);
 
   void MaybeGetWindowUpdateFrames(FrameSender& frame_sender);
+
+  // On receiving an increase in the initial_window size, update the writability
+  // for all active streams. This may un-stall streams that are stalled due to
+  // lack of flow control tokens. This is needed as the stream flow control
+  // tokens are calculated based on the initial window size.
+  absl::Status UpdateAllStreamsWritability();
 
   auto FlowControlPeriodicUpdateLoop();
 
@@ -490,25 +480,25 @@ class Http2ClientTransport final : public ClientTransport,
   //////////////////////////////////////////////////////////////////////////////
   // Stream Operations
 
-  // This function MUST run on the transport party.
-  void CloseTransport();
+  absl::Status InitializeStream(Stream& stream);
 
-  void MaybeSpawnCloseTransport(Http2Status http2_status,
-                                DebugLocation whence = {});
+  // Runs on the call party.
+  std::optional<RefCountedPtr<Stream>> MakeStream(CallHandler call_handler);
 
-  uint32_t GetMaxAllowedStreamId() const;
+  void BeginCloseStream(RefCountedPtr<Stream> stream,
+                        std::optional<uint32_t> reset_stream_error_code,
+                        ServerMetadataHandle&& metadata,
+                        DebugLocation whence = {});
 
-  void SetMaxAllowedStreamId(uint32_t max_allowed_stream_id);
-
-  bool CanCloseTransportLocked() const
-      ABSL_EXCLUSIVE_LOCKS_REQUIRED(transport_mutex_);
+  // This function MUST be idempotent.
+  void CloseStream(Stream& stream, CloseStreamArgs args,
+                   DebugLocation whence = {});
 
   //////////////////////////////////////////////////////////////////////////////
   // Ping Keepalive and Goaway
 
   void MaybeSpawnPingTimeout(std::optional<uint64_t> opaque_data);
   void MaybeSpawnDelayedPing(std::optional<Duration> delayed_ping_wait);
-  void MaybeSpawnKeepaliveLoop();
 
   auto SendPing(absl::AnyInvocable<void()> on_initiate, bool important) {
     return ping_manager_->RequestPing(std::move(on_initiate), important);
@@ -516,7 +506,6 @@ class Http2ClientTransport final : public ClientTransport,
 
   auto WaitForPingAck() { return ping_manager_->WaitForPingAck(); }
 
-  // Ping Helper functions
   Duration NextAllowedPingInterval() {
     MutexLock lock(&transport_mutex_);
     return (!keepalive_permit_without_calls_ &&
@@ -527,8 +516,22 @@ class Http2ClientTransport final : public ClientTransport,
 
   absl::Status AckPing(uint64_t opaque_data);
 
+  void MaybeSpawnKeepaliveLoop();
+
+  uint32_t GetMaxAllowedStreamId() const;
+  void SetMaxAllowedStreamId(uint32_t max_allowed_stream_id);
+
   //////////////////////////////////////////////////////////////////////////////
   // Error Path and Close Path
+
+  void MaybeSpawnCloseTransport(Http2Status http2_status,
+                                DebugLocation whence = {});
+
+  bool CanCloseTransportLocked() const
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(transport_mutex_);
+
+  // This function MUST run on the transport party.
+  void CloseTransport();
 
   // Handles the error status and returns the corresponding absl status. Absl
   // Status is returned so that the error can be gracefully handled
@@ -653,7 +656,6 @@ class Http2ClientTransport final : public ClientTransport,
 
   uint32_t next_stream_id_;
   HPackCompressor encoder_;
-  HPackParser parser_;
   bool is_transport_closed_ ABSL_GUARDED_BY(transport_mutex_) = false;
   Latch<void> transport_closed_latch_;
 
@@ -679,7 +681,6 @@ class Http2ClientTransport final : public ClientTransport,
   std::optional<PingManager> ping_manager_;
   std::optional<KeepaliveManager> keepalive_manager_;
 
-  // Flags
   bool keepalive_permit_without_calls_;
 
   GoawayManager goaway_manager_;

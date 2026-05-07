@@ -90,6 +90,13 @@ class FrameProtector : public RefCounted<FrameProtector> {
                           ->memory_quota()
                           ->CreateMemoryOwner()),
         self_reservation_(memory_owner_.MakeReservation(sizeof(*this))) {
+    auto* factory = args.GetPointer<
+        grpc_event_engine::experimental::MemoryAllocatorFactory>(
+        GRPC_ARG_EVENT_ENGINE_USE_MEMORY_ALLOCATOR_FACTORY);
+    if (factory != nullptr) {
+      user_facing_allocator_ = factory->CreateMemoryAllocator(
+          absl::StrFormat("secure_endpoint-%p", this));
+    }
     GRPC_TRACE_LOG(secure_endpoint, INFO)
         << "FrameProtector: " << this << " protector: " << protector_
         << " zero_copy_protector: " << zero_copy_protector_
@@ -110,8 +117,7 @@ class FrameProtector : public RefCounted<FrameProtector> {
       write_staging_buffer_ =
           memory_owner_.MakeSlice(MemoryRequest(STAGING_BUFFER_SIZE));
     } else {
-      read_staging_buffer_ =
-          memory_owner_.MakeSlice(MemoryRequest(STAGING_BUFFER_SIZE));
+      read_staging_buffer_ = AllocateReadBuffer(STAGING_BUFFER_SIZE);
       write_staging_buffer_ =
           memory_owner_.MakeSlice(MemoryRequest(STAGING_BUFFER_SIZE));
     }
@@ -148,6 +154,13 @@ class FrameProtector : public RefCounted<FrameProtector> {
         CSliceUnref(first);
       }
     }
+  }
+
+  grpc_slice AllocateReadBuffer(size_t size) {
+    if (user_facing_allocator_.has_value()) {
+      return user_facing_allocator_->MakeSlice(MemoryRequest(size));
+    }
+    return memory_owner_.MakeSlice(MemoryRequest(size));
   }
 
   void MaybePostReclaimer() {
@@ -190,8 +203,7 @@ class FrameProtector : public RefCounted<FrameProtector> {
       // bytes when we do a FlushReadStagingBuffer.
       GRPC_CHECK(read_buffer_->length >= required_read_bytes_);
     } else {
-      read_staging_buffer_ =
-          memory_owner_.MakeSlice(MemoryRequest(STAGING_BUFFER_SIZE));
+      read_staging_buffer_ = AllocateReadBuffer(STAGING_BUFFER_SIZE);
     }
     *cur = GRPC_SLICE_START_PTR(read_staging_buffer_);
     *end = GRPC_SLICE_END_PTR(read_staging_buffer_);
@@ -323,14 +335,12 @@ class FrameProtector : public RefCounted<FrameProtector> {
             read_buffer_len + GRPC_SLICE_LENGTH(read_staging_buffer_)) {
           CSliceUnref(read_staging_buffer_);
           size_t size_to_request = required_read_bytes_ - read_buffer_len;
-          read_staging_buffer_ =
-              memory_owner_.MakeSlice(MemoryRequest(size_to_request));
+          read_staging_buffer_ = AllocateReadBuffer(size_to_request);
         }
       } else if (required_read_bytes_ == 0) {
         if (GRPC_SLICE_IS_EMPTY(read_staging_buffer_)) {
           CSliceUnref(read_staging_buffer_);
-          read_staging_buffer_ =
-              memory_owner_.MakeSlice(MemoryRequest(STAGING_BUFFER_SIZE));
+          read_staging_buffer_ = AllocateReadBuffer(STAGING_BUFFER_SIZE);
         }
       }
       uint8_t* cur = GRPC_SLICE_START_PTR(read_staging_buffer_);
@@ -560,6 +570,9 @@ class FrameProtector : public RefCounted<FrameProtector> {
   void Shutdown() {
     shutdown_ = true;
     memory_owner_.Reset();
+    if (user_facing_allocator_.has_value()) {
+      user_facing_allocator_->Reset();
+    }
   }
 
  private:
@@ -578,6 +591,9 @@ class FrameProtector : public RefCounted<FrameProtector> {
   grpc_slice write_staging_buffer_ ABSL_GUARDED_BY(write_mu_);
   grpc_event_engine::experimental::SliceBuffer output_buffer_;
   MemoryOwner memory_owner_;
+  // Allocator for memory that is eventually returned to the user (e.g. read
+  // buffers).
+  std::optional<MemoryAllocator> user_facing_allocator_ = std::nullopt;
   MemoryAllocator::Reservation self_reservation_;
   std::atomic<bool> has_posted_reclaimer_{false};
   int min_progress_size_ = 1;

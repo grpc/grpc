@@ -109,7 +109,7 @@ def _packagify(directory):
             init_file.write(b"")
 
 
-class _ServicerMethods(object):
+class _ServicerMethods:
     def __init__(self, payload_pb2, responses_pb2):
         self._condition = threading.Condition()
         self._paused = False

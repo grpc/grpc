@@ -28,16 +28,10 @@ static const upb_MiniTableField xds_type_matcher_v3_CelMatcher__fields[2] = {
 const upb_MiniTable xds__type__matcher__v3__CelMatcher_msg_init = {
   &xds_type_matcher_v3_CelMatcher__submsgs[0],
   &xds_type_matcher_v3_CelMatcher__fields[0],
-  UPB_SIZE(24, 40), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
+  UPB_SIZE(24, 40), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "xds.type.matcher.v3.CelMatcher",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x001000003f000012, &upb_pss_1bt},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-  })
 };
 
 const upb_MiniTable* xds__type__matcher__v3__CelMatcher_msg_init_ptr = &xds__type__matcher__v3__CelMatcher_msg_init;

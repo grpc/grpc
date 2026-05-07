@@ -118,7 +118,7 @@ def _unknown_code_details(
     )
 
 
-class _RPCState(object):
+class _RPCState:
     condition: threading.Condition
     due: Set[cygrpc.OperationType]
     initial_metadata: Optional[MetadataType]
@@ -959,7 +959,7 @@ class _MultiThreadedRendezvous(
 def _start_unary_request(
     request: Any,
     timeout: Optional[float],
-    request_serializer: SerializingFunction,
+    request_serializer: Optional[SerializingFunction],
 ) -> Tuple[Optional[float], Optional[bytes], Optional[grpc.RpcError]]:
     deadline = _deadline(timeout)
     serialized_request = _common.serialize(request, request_serializer)
@@ -1686,7 +1686,7 @@ class _InitialMetadataFlags(int):
         return self
 
 
-class _ChannelCallState(object):
+class _ChannelCallState:
     channel: cygrpc.Channel
     managed_calls: int
     threading: bool
@@ -1792,9 +1792,9 @@ def _channel_managed_call_management(state: _ChannelCallState):
     return create
 
 
-class _ChannelConnectivityState(object):
+class _ChannelConnectivityState:
     lock: threading.RLock
-    channel: grpc.Channel
+    channel: cygrpc.Channel
     polling: bool
     connectivity: grpc.ChannelConnectivity
     try_to_connect: bool
@@ -1809,7 +1809,7 @@ class _ChannelConnectivityState(object):
     ]
     delivering: bool
 
-    def __init__(self, channel: grpc.Channel):
+    def __init__(self, channel: cygrpc.Channel):
         self.lock = threading.RLock()
         self.channel = channel
         self.polling = False
@@ -1979,7 +1979,7 @@ def _augment_options(
         + compression_option
         + (
             (
-                cygrpc.ChannelArgKey.primary_user_agent_string,
+                cygrpc.ChannelArgKey.primary_user_agent_string.decode(),
                 _USER_AGENT,
             ),
         )

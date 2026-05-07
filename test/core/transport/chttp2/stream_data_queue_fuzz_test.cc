@@ -231,11 +231,11 @@ class StreamDataQueueFuzzTest : public YodelTest {
       header_assembler_.InitializeStream(stream_id, allow_true_binary_metadata);
     }
     void operator()(Http2HeaderFrame frame) {
-      auto status = header_assembler_.AppendHeaderFrame(frame);
+      auto status = header_assembler_.AppendFrame(frame);
       EXPECT_TRUE(status.IsOk());
     }
     void operator()(Http2ContinuationFrame frame) {
-      auto status = header_assembler_.AppendContinuationFrame(frame);
+      auto status = header_assembler_.AppendFrame(frame);
       EXPECT_TRUE(status.IsOk());
     }
     void operator()(Http2DataFrame frame) {

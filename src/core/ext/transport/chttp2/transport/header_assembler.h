@@ -76,9 +76,9 @@ constexpr absl::string_view kAssemblerHpackError =
 class HeaderAssembler {
  public:
   // Call this for each incoming HTTP2 Header frame.
-  // If AppendHeaderFrame returns an OK status, the payload will be consumed.
+  // If AppendFrame returns an OK status, the payload will be consumed.
   // Else, the payload will be left in the frame.
-  Http2Status AppendHeaderFrame(Http2HeaderFrame& frame) {
+  Http2Status AppendFrame(Http2HeaderFrame& frame) {
     // Validate input frame
     GRPC_DCHECK_GT(frame.stream_id, 0u)
         << "RFC9113 : HEADERS frames MUST be associated with a stream.";
@@ -103,12 +103,12 @@ class HeaderAssembler {
 
     // Manage payload
     frame.payload.MoveFirstNBytesIntoSliceBuffer(current_len, buffer_);
-    ASSEMBLER_LOG << "HeaderAssembler::AppendHeaderFrame " << current_len
+    ASSEMBLER_LOG << "HeaderAssembler::AppendFrame HEADERS " << current_len
                   << " Bytes.";
 
     // Manage if last frame
     if (frame.end_headers) {
-      ASSEMBLER_LOG << "HeaderAssembler::AppendHeaderFrame end_headers";
+      ASSEMBLER_LOG << "HeaderAssembler::AppendFrame HEADERS end_headers";
       is_ready_ = true;
     }
 
@@ -116,21 +116,21 @@ class HeaderAssembler {
   }
 
   // Call this for each incoming HTTP2 Continuation frame.
-  // If AppendContinuationFrame returns an OK status, the payload will be
+  // If AppendFrame returns an OK status, the payload will be
   // consumed. Else, the payload will be left in the frame.
-  Http2Status AppendContinuationFrame(Http2ContinuationFrame& frame) {
+  Http2Status AppendFrame(Http2ContinuationFrame& frame) {
     // Validate Assembler state
     GRPC_DCHECK(header_in_progress_);
 
     // Manage payload
     const size_t current_len = frame.payload.Length();
     frame.payload.MoveFirstNBytesIntoSliceBuffer(current_len, buffer_);
-    ASSEMBLER_LOG << "HeaderAssembler::AppendContinuationFrame " << current_len
+    ASSEMBLER_LOG << "HeaderAssembler::AppendFrame CONTINUATION " << current_len
                   << " Bytes.";
 
     // Manage if last frame
     if (frame.end_headers) {
-      ASSEMBLER_LOG << "HeaderAssembler::AppendContinuationFrame end_headers";
+      ASSEMBLER_LOG << "HeaderAssembler::AppendFrame CONTINUATION end_headers";
       is_ready_ = true;
     }
 

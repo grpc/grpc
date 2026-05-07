@@ -42,9 +42,9 @@ class Http2FrameTestHelper {
     return Http2Settings::max_initial_window_size() - 1;
   }
 
-  EventEngineSlice EventEngineSliceFromHttp2DataFrame(
-      std::string_view payload, const uint32_t stream_id = 1,
-      const bool end_stream = false) const {
+  EventEngineSlice SerializedDataFrame(std::string_view payload,
+                                       const uint32_t stream_id = 1,
+                                       const bool end_stream = false) const {
     SliceBuffer buffer;
     AppendGrpcHeaderToSliceBuffer(buffer, 0, payload.size());
     buffer.Append(Slice::FromCopiedString(payload));
@@ -52,21 +52,22 @@ class Http2FrameTestHelper {
         Http2DataFrame{stream_id, end_stream, std::move(buffer)});
   }
 
-  EventEngineSlice EventEngineSliceFromEmptyHttp2DataFrame(
+  EventEngineSlice SerializedEmptyDataFrame(
       const uint32_t stream_id = 1, const bool end_stream = false) const {
     SliceBuffer buffer;
     return EventEngineSliceFromHttp2Frame(
         Http2DataFrame{stream_id, end_stream, std::move(buffer)});
   }
 
-  EventEngineSlice EventEngineSliceFromHttp2HeaderFrame(
-      std::string_view payload, const uint32_t stream_id = 1,
-      const bool end_headers = true, const bool end_stream = false) const {
+  EventEngineSlice SerializedHeaderFrame(std::string_view payload,
+                                         const uint32_t stream_id = 1,
+                                         const bool end_headers = true,
+                                         const bool end_stream = false) const {
     return EventEngineSliceFromHttp2Frame(Http2HeaderFrame{
         stream_id, end_headers, end_stream, SliceBufferFromString(payload)});
   }
 
-  EventEngineSlice EventEngineSliceFromHttp2RstStreamFrame(
+  EventEngineSlice SerializedRstStreamFrame(
       const uint32_t stream_id = 1,
       const uint32_t error_code =
           static_cast<uint32_t>(http2::Http2ErrorCode::kConnectError)) const {
@@ -74,17 +75,17 @@ class Http2FrameTestHelper {
         Http2RstStreamFrame{stream_id, error_code});
   }
 
-  EventEngineSlice EventEngineSliceFromHttp2SettingsFrameAck() const {
+  EventEngineSlice SerializedSettingsFrameAck() const {
     return EventEngineSliceFromHttp2Frame(Http2SettingsFrame{true, {}});
   }
 
-  EventEngineSlice EventEngineSliceFromHttp2SettingsFrame(
+  EventEngineSlice SerializedSettingsFrame(
       std::vector<Http2SettingsFrame::Setting> settings) const {
     return EventEngineSliceFromHttp2Frame(
         Http2SettingsFrame{false, std::move(settings)});
   }
 
-  EventEngineSlice EventEngineSliceFromHttp2SettingsFrameClientDefault() const {
+  EventEngineSlice SerializedDefaultClientSettingsFrame() const {
     std::vector<Http2SettingsFrame::Setting> settings;
     settings.push_back({Http2Settings::kEnablePushWireId, 0});
     settings.push_back({Http2Settings::kMaxConcurrentStreamsWireId, 0u});
@@ -97,7 +98,7 @@ class Http2FrameTestHelper {
         Http2SettingsFrame{false, std::move(settings)});
   }
 
-  EventEngineSlice EventEngineSliceFromHttp2SettingsFrameServerDefault() const {
+  EventEngineSlice SerializedDefaultServerSettingsFrame() const {
     std::vector<Http2SettingsFrame::Setting> settings;
     settings.push_back({Http2Settings::kMaxHeaderListSizeWireId,
                         DEFAULT_MAX_HEADER_LIST_SIZE});
@@ -108,35 +109,34 @@ class Http2FrameTestHelper {
         Http2SettingsFrame{false, std::move(settings)});
   }
 
-  EventEngineSlice EventEngineSliceFromHttp2PingFrame(
+  EventEngineSlice SerializedPingFrame(
       const bool ack = false,
       const uint64_t opaque = 0x123456789abcdef0) const {
     return EventEngineSliceFromHttp2Frame(Http2PingFrame{ack, opaque});
   }
 
-  EventEngineSlice EventEngineSliceFromHttp2GoawayFrame(
-      std::string_view debug_data, const uint32_t last_stream_id = 0,
-      const uint32_t error_code = 0) const {
+  EventEngineSlice SerializedGoawayFrame(std::string_view debug_data,
+                                         const uint32_t last_stream_id = 0,
+                                         const uint32_t error_code = 0) const {
     return EventEngineSliceFromHttp2Frame(Http2GoawayFrame{
         last_stream_id, error_code, Slice::FromCopiedString(debug_data)});
   }
 
-  EventEngineSlice EventEngineSliceFromHttp2WindowUpdateFrame(
+  EventEngineSlice SerializedWindowUpdateFrame(
       const uint32_t stream_id = 1,
       const uint32_t increment = 0x12345678) const {
     return EventEngineSliceFromHttp2Frame(
         Http2WindowUpdateFrame{stream_id, increment});
   }
 
-  EventEngineSlice EventEngineSliceFromHttp2ContinuationFrame(
+  EventEngineSlice SerializedContinuationFrame(
       std::string_view payload, const uint32_t stream_id = 1,
       const bool end_headers = true) const {
     return EventEngineSliceFromHttp2Frame(Http2ContinuationFrame{
         stream_id, end_headers, SliceBufferFromString(payload)});
   }
 
-  EventEngineSlice EventEngineSliceFromHttp2SecurityFrame(
-      std::string_view payload) const {
+  EventEngineSlice SerializedSecurityFrame(std::string_view payload) const {
     return EventEngineSliceFromHttp2Frame(
         Http2SecurityFrame{SliceBufferFromString(payload)});
   }

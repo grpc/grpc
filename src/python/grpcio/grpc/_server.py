@@ -179,7 +179,7 @@ class _GenericMethod(_Method):
         return None
 
 
-class _RPCState(object):
+class _RPCState:
     context: contextvars.Context
     condition: threading.Condition
     due = Set[str]
@@ -482,7 +482,7 @@ class _Context(grpc.ServicerContext):
         pass
 
 
-class _RequestIterator(object):
+class _RequestIterator:
     _state: _RPCState
     _call: cygrpc.Call
     _request_deserializer: Optional[DeserializingFunction]
@@ -1127,7 +1127,7 @@ class _ServerStage(enum.Enum):
     GRACE = "grace"
 
 
-class _ServerState(object):
+class _ServerState:
     lock: threading.RLock
     completion_queue: cygrpc.CompletionQueue
     server: cygrpc.Server

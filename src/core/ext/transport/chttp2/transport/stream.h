@@ -80,19 +80,25 @@ class Stream : public RefCounted<Stream> {
             /*queue_size*/ kStreamQueueSize)) {}
 
   explicit Stream(CallInitiator call_initiator,
-                  chttp2::TransportFlowControl& transport_flow_control)
+                  chttp2::TransportFlowControl& transport_flow_control,
+                  const uint32_t stream_id,
+                  const bool allow_true_binary_metadata_peer,
+                  const bool allow_true_binary_metadata_acked)
       : header_assembler_(/*is_client*/ false),
         flow_control_(&transport_flow_control),
         call_(std::move(call_initiator)),
         is_write_closed_(false),
-        stream_id_(kInvalidStreamId),
+        stream_id_(stream_id),
         stream_state_(HttpStreamState::kIdle),
         did_receive_initial_metadata_(false),
         did_receive_trailing_metadata_(false),
         did_push_server_trailing_metadata_(false),
         data_queue_(MakeRefCounted<StreamDataQueue<ClientMetadataHandle>>(
             std::get<CallInitiator>(call_).arena(), /*is_client*/ false,
-            /*queue_size*/ kStreamQueueSize)) {}
+            /*queue_size*/ kStreamQueueSize)) {
+    InitializeStream(allow_true_binary_metadata_peer,
+                     allow_true_binary_metadata_acked);
+  }
 
   Stream(const Stream&) = delete;
   Stream(Stream&&) = delete;
@@ -104,17 +110,19 @@ class Stream : public RefCounted<Stream> {
   // is that we will be creating two new disassemblers for every dequeue call.
   // The upside is that we save 8 bytes per call. Decide based on benchmark
   // results.
-  void InitializeStream(const uint32_t stream_id,
-                        const bool allow_true_binary_metadata_peer,
-                        const bool allow_true_binary_metadata_acked) {
+  void InitializeClientStream(const uint32_t stream_id,
+                              const bool allow_true_binary_metadata_peer,
+                              const bool allow_true_binary_metadata_acked) {
+    GRPC_DCHECK(std::holds_alternative<CallHandler>(call_))
+        << "Client Only Function";
     GRPC_DCHECK_NE(stream_id, 0u);
     GRPC_DCHECK_EQ(this->stream_id_, 0u);
-    GRPC_HTTP2_STREAM_LOG << "Stream::InitializeStream stream_id=" << stream_id;
+    GRPC_HTTP2_STREAM_LOG << "Stream::InitializeClientStream stream_id="
+                          << stream_id;
     if (GPR_LIKELY(this->stream_id_ == 0)) {
       this->stream_id_ = stream_id;
-      header_assembler_.InitializeStream(stream_id,
-                                         allow_true_binary_metadata_acked);
-      data_queue_->SetStreamId(stream_id, allow_true_binary_metadata_peer);
+      InitializeStream(allow_true_binary_metadata_peer,
+                       allow_true_binary_metadata_acked);
     }
   }
 
@@ -166,7 +174,7 @@ class Stream : public RefCounted<Stream> {
                                         state == HttpStreamState::kClosed));
   }
 
-  auto ReceivedFlowControlWindowUpdate(const uint32_t stream_fc_tokens) {
+  auto UpdateStreamWritability(const int64_t stream_fc_tokens) {
     return data_queue_->ReceivedFlowControlWindowUpdate(stream_fc_tokens);
   }
 
@@ -335,6 +343,16 @@ class Stream : public RefCounted<Stream> {
   }
 
  private:
+  void InitializeStream(const bool allow_true_binary_metadata_peer,
+                        const bool allow_true_binary_metadata_acked) {
+    GRPC_HTTP2_STREAM_LOG << "Stream::InitializeStream stream_id="
+                          << stream_id_;
+    GRPC_DCHECK_GE(stream_id_, 0u);
+    header_assembler_.InitializeStream(stream_id_,
+                                       allow_true_binary_metadata_acked);
+    data_queue_->SetStreamId(stream_id_, allow_true_binary_metadata_peer);
+  }
+
   GrpcMessageAssembler assembler_;
   HeaderAssembler header_assembler_;
   chttp2::StreamFlowControl flow_control_;
