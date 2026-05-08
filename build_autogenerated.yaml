@@ -1186,6 +1186,7 @@ libs:
   - src/core/load_balancing/rls/rls.h
   - src/core/load_balancing/subchannel_interface.h
   - src/core/load_balancing/weighted_round_robin/static_stride_scheduler.h
+  - src/core/load_balancing/weighted_round_robin/weighted_round_robin.h
   - src/core/load_balancing/weighted_target/weighted_target.h
   - src/core/load_balancing/xds/cds.h
   - src/core/load_balancing/xds/xds_channel_args.h
@@ -1233,6 +1234,7 @@ libs:
   - src/core/transport/auth_context_comparator_registry.h
   - src/core/transport/endpoint_transport.h
   - src/core/transport/endpoint_transport_client_channel_factory.h
+  - src/core/transport/message_size_service_config.h
   - src/core/transport/session_endpoint.h
   - src/core/tsi/alts/crypt/gsec.h
   - src/core/tsi/alts/frame_protector/alts_counter.h
@@ -2176,6 +2178,7 @@ libs:
   - src/core/telemetry/tcp_tracer.cc
   - src/core/transport/auth_context.cc
   - src/core/transport/endpoint_transport_client_channel_factory.cc
+  - src/core/transport/message_size_service_config.cc
   - src/core/transport/session_endpoint.cc
   - src/core/tsi/alts/crypt/aes_gcm.cc
   - src/core/tsi/alts/crypt/gsec.cc
@@ -2925,6 +2928,7 @@ libs:
   - src/core/load_balancing/rls/rls.h
   - src/core/load_balancing/subchannel_interface.h
   - src/core/load_balancing/weighted_round_robin/static_stride_scheduler.h
+  - src/core/load_balancing/weighted_round_robin/weighted_round_robin.h
   - src/core/load_balancing/weighted_target/weighted_target.h
   - src/core/net/socket_mutator.h
   - src/core/resolver/dns/c_ares/dns_resolver_ares.h
@@ -2963,6 +2967,7 @@ libs:
   - src/core/transport/auth_context_comparator_registry.h
   - src/core/transport/endpoint_transport.h
   - src/core/transport/endpoint_transport_client_channel_factory.h
+  - src/core/transport/message_size_service_config.h
   - src/core/transport/session_endpoint.h
   - src/core/tsi/alts/handshaker/transport_security_common_api.h
   - src/core/tsi/fake_transport_security.h
@@ -3446,6 +3451,7 @@ libs:
   - src/core/telemetry/tcp_tracer.cc
   - src/core/transport/auth_context.cc
   - src/core/transport/endpoint_transport_client_channel_factory.cc
+  - src/core/transport/message_size_service_config.cc
   - src/core/transport/session_endpoint.cc
   - src/core/tsi/alts/handshaker/transport_security_common_api.cc
   - src/core/tsi/fake_transport_security.cc
@@ -26754,6 +26760,7 @@ targets:
   language: c++
   headers:
   - test/core/test_util/fake_stats_plugin.h
+  - test/core/test_util/scoped_env_var.h
   src:
   - test/core/load_balancing/weighted_round_robin_config_test.cc
   - test/core/test_util/fake_stats_plugin.cc
@@ -26769,6 +26776,7 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/load_balancing/lb_policy_test_lib.h
   - test/core/test_util/fake_stats_plugin.h
+  - test/core/test_util/scoped_env_var.h
   src:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
   - test/core/event_engine/event_engine_test_utils.cc

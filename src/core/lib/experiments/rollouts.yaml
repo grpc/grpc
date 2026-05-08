@@ -80,6 +80,8 @@
   default: false
 - name: memory_optimization_02
   default: false
+- name: message_size_refactoring
+  default: false
 - name: metadata_publish_to_app_tag
   default: true
 - name: monitoring_experiment

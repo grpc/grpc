@@ -204,6 +204,11 @@
   owner: akshitpatel@google.com
   test_tags: []
   allow_in_fuzzing_config: false
+- name: message_size_refactoring
+  owner: vigneshbabu@google.com
+  description: Refactoring the message size config parsing.
+  expiry: 2026/09/01
+  test_tags: []
 - name: metadata_publish_to_app_tag
   description: Publish metadata to the app using the kPublishToApp metadata field.
   expiry: 2026/04/01

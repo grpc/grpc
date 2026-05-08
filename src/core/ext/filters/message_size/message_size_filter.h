@@ -24,63 +24,14 @@
 #include <memory>
 #include <optional>
 
-#include "src/core/config/core_configuration.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/promise_based_filter.h"
-#include "src/core/lib/promise/arena_promise.h"
-#include "src/core/lib/transport/transport.h"
-#include "src/core/service_config/service_config_parser.h"
-#include "src/core/util/json/json.h"
-#include "src/core/util/json/json_args.h"
-#include "src/core/util/json/json_object_loader.h"
-#include "src/core/util/validation_errors.h"
+#include "src/core/transport/message_size_service_config.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 
 namespace grpc_core {
-
-class MessageSizeParsedConfig : public ServiceConfigParser::ParsedConfig {
- public:
-  std::optional<uint32_t> max_send_size() const { return max_send_size_; }
-  std::optional<uint32_t> max_recv_size() const { return max_recv_size_; }
-
-  MessageSizeParsedConfig() = default;
-
-  MessageSizeParsedConfig(std::optional<uint32_t> max_send_size,
-                          std::optional<uint32_t> max_recv_size)
-      : max_send_size_(max_send_size), max_recv_size_(max_recv_size) {}
-
-  static const MessageSizeParsedConfig* GetFromCallContext(
-      Arena* arena, size_t service_config_parser_index);
-
-  static MessageSizeParsedConfig GetFromChannelArgs(const ChannelArgs& args);
-
-  static const JsonLoaderInterface* JsonLoader(const JsonArgs&);
-
- private:
-  std::optional<uint32_t> max_send_size_;
-  std::optional<uint32_t> max_recv_size_;
-};
-
-class MessageSizeParser : public ServiceConfigParser::Parser {
- public:
-  absl::string_view name() const override { return parser_name(); }
-
-  std::unique_ptr<ServiceConfigParser::ParsedConfig> ParsePerMethodParams(
-      const ChannelArgs& /*args*/, const Json& json,
-      ValidationErrors* errors) override;
-
-  static void Register(CoreConfiguration::Builder* builder);
-
-  static size_t ParserIndex();
-
- private:
-  static absl::string_view parser_name() { return "message_size"; }
-};
-
-std::optional<uint32_t> GetMaxRecvSizeFromChannelArgs(const ChannelArgs& args);
-std::optional<uint32_t> GetMaxSendSizeFromChannelArgs(const ChannelArgs& args);
 
 class ServerMessageSizeFilter final
     : public ImplementChannelFilter<ServerMessageSizeFilter> {

@@ -98,6 +98,7 @@ inline bool IsLocalConnectorSecureEnabled() { return false; }
 inline bool IsMaxInflightPingsStrictLimitEnabled() { return true; }
 inline bool IsMemoryOptimization01Enabled() { return false; }
 inline bool IsMemoryOptimization02Enabled() { return false; }
+inline bool IsMessageSizeRefactoringEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_METADATA_PUBLISH_TO_APP_TAG
 inline bool IsMetadataPublishToAppTagEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_MONITORING_EXPERIMENT
@@ -178,6 +179,7 @@ inline bool IsLocalConnectorSecureEnabled() { return false; }
 inline bool IsMaxInflightPingsStrictLimitEnabled() { return true; }
 inline bool IsMemoryOptimization01Enabled() { return false; }
 inline bool IsMemoryOptimization02Enabled() { return false; }
+inline bool IsMessageSizeRefactoringEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_METADATA_PUBLISH_TO_APP_TAG
 inline bool IsMetadataPublishToAppTagEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_MONITORING_EXPERIMENT
@@ -258,6 +260,7 @@ inline bool IsLocalConnectorSecureEnabled() { return false; }
 inline bool IsMaxInflightPingsStrictLimitEnabled() { return true; }
 inline bool IsMemoryOptimization01Enabled() { return false; }
 inline bool IsMemoryOptimization02Enabled() { return false; }
+inline bool IsMessageSizeRefactoringEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_METADATA_PUBLISH_TO_APP_TAG
 inline bool IsMetadataPublishToAppTagEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_MONITORING_EXPERIMENT
@@ -323,6 +326,7 @@ enum ExperimentIds {
   kExperimentIdMaxInflightPingsStrictLimit,
   kExperimentIdMemoryOptimization01,
   kExperimentIdMemoryOptimization02,
+  kExperimentIdMessageSizeRefactoring,
   kExperimentIdMetadataPublishToAppTag,
   kExperimentIdMonitoringExperiment,
   kExperimentIdMultiping,
@@ -454,6 +458,10 @@ inline bool IsMemoryOptimization01Enabled() {
 #define GRPC_EXPERIMENT_IS_INCLUDED_MEMORY_OPTIMIZATION_02
 inline bool IsMemoryOptimization02Enabled() {
   return IsExperimentEnabled<kExperimentIdMemoryOptimization02>();
+}
+#define GRPC_EXPERIMENT_IS_INCLUDED_MESSAGE_SIZE_REFACTORING
+inline bool IsMessageSizeRefactoringEnabled() {
+  return IsExperimentEnabled<kExperimentIdMessageSizeRefactoring>();
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_METADATA_PUBLISH_TO_APP_TAG
 inline bool IsMetadataPublishToAppTagEnabled() {
