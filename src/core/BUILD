@@ -8445,6 +8445,7 @@ grpc_cc_library(
         "ext/transport/chttp2/transport/http2_settings_promises.h",
     ],
     external_deps = [
+        "absl/container:flat_hash_map",
         "absl/functional:any_invocable",
         "absl/log",
         "absl/log:check",
