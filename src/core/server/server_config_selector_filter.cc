@@ -225,11 +225,7 @@ ServerConfigSelectorInterceptor::ServerConfigSelectorInterceptor(
   // Start watch for ServerConfigSelector.
   watcher_ = std::make_unique<Watcher>(
       WeakRef().TakeAsSubclass<ServerConfigSelectorInterceptor>());
-  auto config_selector = server_config_selector_provider_->Watch(watcher_);
-  // FIXME: possible race condition?
-  // FIXME: maybe just use observable in provider instead of
-  // callback-based watcher API?
-  OnConfigSelectorUpdate(std::move(config_selector));
+  server_config_selector_provider_->Watch(watcher_);
 }
 
 void ServerConfigSelectorInterceptor::Orphaned() {

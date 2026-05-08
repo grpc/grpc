@@ -76,6 +76,9 @@ class ServerConfigSelectorProvider
   class ServerConfigSelectorWatcher {
    public:
     virtual ~ServerConfigSelectorWatcher() = default;
+
+    // Calls to this function will be automatically serialized (i.e.,
+    // there will only be one call into this function at any given time).
     virtual void OnServerConfigSelectorUpdate(
         absl::StatusOr<RefCountedPtr<ServerConfigSelector>> update) = 0;
   };

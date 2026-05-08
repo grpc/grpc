@@ -406,7 +406,7 @@ class XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
   }
 
   absl::StatusOr<RefCountedPtr<ServerConfigSelector>> Watch(
-      std::shared<ServerConfigSelectorWatcher> watcher) override {
+      std::shared_ptr<ServerConfigSelectorWatcher> watcher) override {
     GRPC_CHECK(watcher_ == nullptr);
     watcher_ = std::move(watcher);
     if (!static_resource_.ok()) {
