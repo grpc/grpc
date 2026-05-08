@@ -282,7 +282,7 @@ python_config_settings()
 # This should be updated along with build_handwritten.yaml
 g_stands_for = "graphic"  # @unused
 
-core_version = "53.0.0"  # @unused
+core_version = "54.0.0"  # @unused
 
 version = "1.81.0-dev"  # @unused
 
@@ -4704,6 +4704,7 @@ grpc_cc_library(
         "//src/core:latch",
         "//src/core:latent_see",
         "//src/core:map",
+        "//src/core:message_size_service_config",
         "//src/core:metadata_batch",
         "//src/core:percent_encoding",
         "//src/core:pipe",
@@ -5176,6 +5177,7 @@ grpc_cc_library(
         "//src/core:json",
         "//src/core:match",
         "//src/core:memory_quota",
+        "//src/core:message_size_service_config",
         "//src/core:metadata",
         "//src/core:metadata_batch",
         "//src/core:metadata_info",

@@ -61,7 +61,7 @@ struct IsVoidCallable {
   static constexpr bool value = false;
 };
 template <typename F>
-struct IsVoidCallable<F, absl::void_t<decltype(std::declval<F>()())>> {
+struct IsVoidCallable<F, std::void_t<decltype(std::declval<F>()())>> {
   static constexpr bool value = true;
 };
 
@@ -71,21 +71,21 @@ struct ResultOfT;
 
 template <typename F, typename... Args>
 struct ResultOfT<F(Args...),
-                 absl::void_t<decltype(std::declval<RemoveCVRef<F>>()(
+                 std::void_t<decltype(std::declval<RemoveCVRef<F>>()(
                      std::declval<Args>()...))>> {
   using T = decltype(std::declval<RemoveCVRef<F>>()(std::declval<Args>()...));
 };
 
 template <typename F, typename... Args>
-struct ResultOfT<F(Args...)&,
-                 absl::void_t<decltype(std::declval<RemoveCVRef<F>>()(
+struct ResultOfT<F(Args...) &,
+                 std::void_t<decltype(std::declval<RemoveCVRef<F>>()(
                      std::declval<Args>()...))>> {
   using T = decltype(std::declval<RemoveCVRef<F>>()(std::declval<Args>()...));
 };
 
 template <typename F, typename... Args>
-struct ResultOfT<const F(Args...)&,
-                 absl::void_t<decltype(std::declval<RemoveCVRef<F>>()(
+struct ResultOfT<const F(Args...) &,
+                 std::void_t<decltype(std::declval<RemoveCVRef<F>>()(
                      std::declval<Args>()...))>> {
   using T = decltype(std::declval<RemoveCVRef<F>>()(std::declval<Args>()...));
 };

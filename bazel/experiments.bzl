@@ -41,6 +41,7 @@ EXPERIMENT_ENABLES = {
     "max_inflight_pings_strict_limit": "max_inflight_pings_strict_limit",
     "memory_optimization_01": "memory_optimization_01",
     "memory_optimization_02": "memory_optimization_02",
+    "message_size_refactoring": "message_size_refactoring",
     "metadata_publish_to_app_tag": "metadata_publish_to_app_tag",
     "monitoring_experiment": "monitoring_experiment",
     "multiping": "multiping",
