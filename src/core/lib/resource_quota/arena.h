@@ -31,6 +31,8 @@
 
 #include <atomic>
 #include <cstddef>
+#include <cstdio>
+#include <cstdint>
 #include <iosfwd>
 #include <memory>
 #include <utility>
@@ -39,6 +41,7 @@
 #include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/util/alloc.h"
 #include "src/core/util/construct_destruct.h"
+#include "src/core/util/no_destruct.h"
 
 namespace grpc_core {
 
@@ -53,9 +56,43 @@ namespace arena_detail {
 // via ArenaContextTraits at static initialization time).
 class BaseArenaContextTraits {
  public:
+  using Destroyer = void(*)(void*);
   // Count of number of contexts that have been allocated.
+  class Traits {
+    public:
+    static inline constexpr int kMaxNumOfContexts = 1024;
+    bool SetDestroyerOnce(uint16_t id, Destroyer destroyer) {
+        // Called exactly once
+        Destroyer expected = nullptr;
+        return destroyers_[id].compare_exchange_strong(expected, destroyer,
+                                              std::memory_order_acq_rel,
+                                              std::memory_order_acquire);
+    }
+    Destroyer GetDestroyer(uint16_t id) {
+      return destroyers_[id].load(std::memory_order_acquire);
+    }
+
+    // Not thread safe, meant to be called from global static initialzier only.
+    uint16_t MakeId() {
+      if (next_id_ >= kMaxNumOfContexts) {
+        printf("The number of instantiated ArenaContextTraits<T> is larger than limit (%d), exiting.", kMaxNumOfContexts);
+        exit(1);
+      }
+      return next_id_++;
+    }
+    uint16_t Size() const {
+      return next_id_;
+    }
+
+    private:
+    // Pre-allocate because std::atomic is neither copyable or movable.
+    std::vector<std::atomic<Destroyer>> destroyers_{kMaxNumOfContexts};
+    // only incremented before main() function. So it's fine to be non atomic.
+    uint16_t next_id_ = 0;
+  };
+
   static uint16_t NumContexts() {
-    return static_cast<uint16_t>(RegisteredTraits().size());
+    return static_cast<uint16_t>(RegisteredTraits().Size());
   }
 
   // Number of bytes required to store the context pointers on an arena.
@@ -64,33 +101,23 @@ class BaseArenaContextTraits {
   // Call the registered destruction function for a context.
   static void Destroy(uint16_t id, void* ptr) {
     if (ptr == nullptr) return;
-    RegisteredTraits()[id](ptr);
+    if (auto destroyer = RegisteredTraits().GetDestroyer(id); destroyer != nullptr){
+        destroyer(ptr);
+    }
+  }
+  static Traits& RegisteredTraits() {
+    static NoDestruct<Traits> registered_traits;
+    return *registered_traits;
   }
 
  protected:
   // Allocate a new context id and register the destruction function.
-  static uint16_t MakeId(void (*destroy)(void* ptr)) {
-    auto& traits = RegisteredTraits();
-    const uint16_t id = static_cast<uint16_t>(traits.size());
-    traits.push_back(destroy);
-    return id;
+  // Only meant to be called before main() function.
+  static uint16_t MakeId() {
+    return RegisteredTraits().MakeId();
   }
 
  private:
-  static std::vector<void (*)(void*)>& RegisteredTraits() {
-    static NoDestruct<std::vector<void (*)(void*)>> registered_traits;
-    return *registered_traits;
-  }
-};
-
-// Traits for a specific context type.
-template <typename T>
-class ArenaContextTraits : public BaseArenaContextTraits {
- public:
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static uint16_t id() { return id_; }
-
- private:
-  static const uint16_t id_;
 };
 
 template <typename T>
@@ -98,9 +125,14 @@ GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline void DestroyArenaContext(void* p) {
   ArenaContextType<T>::Destroy(static_cast<T*>(p));
 }
 
+// Traits for a specific context type.
 template <typename T>
-const uint16_t ArenaContextTraits<T>::id_ =
-    BaseArenaContextTraits::MakeId(DestroyArenaContext<T>);
+class ArenaContextTraits : public BaseArenaContextTraits {
+ public:
+  // Only declaration here. The explict instantiation is inside
+  // arena.cc.
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static uint16_t id();
+};
 
 template <typename T, typename SfinaeVoid = void>
 struct GetContextId {
@@ -311,7 +343,15 @@ class Arena final : public RefCounted<Arena, NonPolymorphicRefCount,
 
   template <typename T>
   void SetContext(T* context) {
-    void*& slot = contexts()[arena_detail::ArenaContextTraits<T>::id()];
+
+    using Destroyer = arena_detail::BaseArenaContextTraits::Destroyer;
+    uint16_t id = arena_detail::ArenaContextTraits<T>::id();
+    auto& traits = arena_detail::BaseArenaContextTraits::RegisteredTraits();
+    void*& slot = contexts()[id];
+
+    Destroyer destroyer = &arena_detail::DestroyArenaContext<T>;
+    traits.SetDestroyerOnce(id, destroyer);
+
     if (slot != nullptr) {
       ArenaContextType<T>::Destroy(static_cast<T*>(slot));
     }
