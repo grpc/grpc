@@ -27,7 +27,48 @@
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/util/alloc.h"
 #include "absl/log/log.h"
+
+// Forward declarations.
+
+struct census_context;
+namespace grpc_event_engine::experimental{
+  class EventEngine;
+}
+
 namespace grpc_core {
+  class BackendMetricProvider;
+  class Call;
+  class CallSpan;
+  class CallTracer;
+  class SecurityContext;
+  class ServiceConfigCallData;
+  class SubchannelCallTrackerInterface;
+
+  struct TelemetryLabel;
+  struct V3InterceptorToV2State;
+
+  // Test-only, see arena_test.cc
+  struct Foo;
+}
+namespace grpc_core::channelz {
+  class CallNode;
+}
+namespace grpc_core::lb_policy_detail {
+class SubchannelCallTrackerInterface;
+}
+
+namespace grpc_core {
+
+namespace arena_detail {
+
+// Explicit instantiation
+template <typename T>
+uint16_t ArenaContextTraits<T>::id() {
+    static NoDestruct<uint16_t> lazy_id{BaseArenaContextTraits::MakeId()};
+    return *lazy_id;
+}
+
+}
 
 namespace {
 
@@ -156,5 +197,56 @@ RefCountedPtr<ArenaFactory> SimpleArenaAllocator(size_t initial_size,
   };
   return MakeRefCounted<Allocator>(initial_size, std::move(allocator));
 }
+
+namespace arena_detail {
+
+template class ArenaContextTraits<struct census_context>;
+template class ArenaContextTraits<grpc_event_engine::experimental::EventEngine>;
+template class ArenaContextTraits<grpc_core::BackendMetricProvider>;
+template class ArenaContextTraits<grpc_core::Call>;
+template class ArenaContextTraits<grpc_core::CallSpan>;
+template class ArenaContextTraits<grpc_core::CallTracer>;
+template class ArenaContextTraits<grpc_core::SecurityContext>;
+template class ArenaContextTraits<grpc_core::ServiceConfigCallData>;
+template class ArenaContextTraits<grpc_core::TelemetryLabel>;
+template class ArenaContextTraits<grpc_core::V3InterceptorToV2State>;
+template class ArenaContextTraits<grpc_core::channelz::CallNode>;
+template class ArenaContextTraits<grpc_core::lb_policy_detail::SubchannelCallTrackerInterface>;
+
+template class ArenaContextTraits<grpc_core::Foo>;
+
+struct ArenaContextTraitsInitializer {
+  ArenaContextTraitsInitializer() {
+    // Force initialization and allocation of ids.
+    ArenaContextTraits<struct census_context>::id();
+    ArenaContextTraits<grpc_event_engine::experimental::EventEngine>::id();
+    ArenaContextTraits<grpc_core::BackendMetricProvider>::id();
+    ArenaContextTraits<grpc_core::Call>::id();
+    ArenaContextTraits<grpc_core::CallSpan>::id();
+    ArenaContextTraits<grpc_core::CallTracer>::id();
+    ArenaContextTraits<grpc_core::SecurityContext>::id();
+    ArenaContextTraits<grpc_core::ServiceConfigCallData>::id();
+    ArenaContextTraits<grpc_core::TelemetryLabel>::id();
+    ArenaContextTraits<grpc_core::V3InterceptorToV2State>::id();
+    ArenaContextTraits<grpc_core::channelz::CallNode>::id();
+    ArenaContextTraits<grpc_core::lb_policy_detail::SubchannelCallTrackerInterface>::id();
+    ArenaContextTraits<grpc_core::Foo>::id();
+  }
+};
+
+// Must be at the bottom of this file (because MSVC init_seg() affect all subsequent
+// objects).
+namespace {
+#if defined(__GNUC__) || defined(__clang__) 
+__attribute__((init_priority(101))) ArenaContextTraitsInitializer context_traits_initializer;
+#elif defined(_MSC_VER)
+#pragma init_seg(lib)
+ArenaContextTraitsInitializer context_traits_initializer;
+#else
+ArenaContextTraitsInitializer context_traits_initializer;
+#endif
+} // namespace
+
+} // namespace arena_detail
 
 }  // namespace grpc_core
