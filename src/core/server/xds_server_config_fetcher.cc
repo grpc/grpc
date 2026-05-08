@@ -267,12 +267,10 @@ class XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
       WeakRefCountedPtr<FilterChainMatchManager> filter_chain_match_manager,
       const XdsListenerResource::FilterChainData& filter_chain_data);
 
-  void Orphan() override
-      ABSL_EXCLUSIVE_LOCKS_REQUIRED(*filter_chain_match_manager_->config_fetcher_->work_serializer_);
+  void Orphan() override ABSL_EXCLUSIVE_LOCKS_REQUIRED(
+      *filter_chain_match_manager_->config_fetcher_->work_serializer_);
 
-  bool HasRouteConfig() const {
-    return config_selector_provider_ != nullptr;
-  }
+  bool HasRouteConfig() const { return config_selector_provider_ != nullptr; }
 
   absl::StatusOr<ChannelArgs> UpdateChannelArgsForConnection(
       const ChannelArgs& args) const;
@@ -285,20 +283,23 @@ class XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
   void OnRouteConfigChanged(
       absl::StatusOr<std::shared_ptr<const XdsRouteConfigResource>>
           route_config)
-      ABSL_EXCLUSIVE_LOCKS_REQUIRED(*filter_chain_match_manager_->config_fetcher_->work_serializer_);
-  void OnAmbientError(absl::Status status)
-      ABSL_EXCLUSIVE_LOCKS_REQUIRED(*filter_chain_match_manager_->config_fetcher_->work_serializer_);
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(
+          *filter_chain_match_manager_->config_fetcher_->work_serializer_);
+  void OnAmbientError(absl::Status status) ABSL_EXCLUSIVE_LOCKS_REQUIRED(
+      *filter_chain_match_manager_->config_fetcher_->work_serializer_);
 
   void UpdateServerConfigSelector(
       absl::StatusOr<std::shared_ptr<const XdsRouteConfigResource>>
           route_config)
-      ABSL_EXCLUSIVE_LOCKS_REQUIRED(*filter_chain_match_manager_->config_fetcher_->work_serializer_);
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(
+          *filter_chain_match_manager_->config_fetcher_->work_serializer_);
 
   absl::StatusOr<RefCountedPtr<ServerConfigSelector>>
   CreateServerConfigSelector(
       absl::StatusOr<std::shared_ptr<const XdsRouteConfigResource>>
           route_config)
-      ABSL_EXCLUSIVE_LOCKS_REQUIRED(*filter_chain_match_manager_->config_fetcher_->work_serializer_);
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(
+          *filter_chain_match_manager_->config_fetcher_->work_serializer_);
 
   WeakRefCountedPtr<FilterChainMatchManager> filter_chain_match_manager_;
 
@@ -445,29 +446,26 @@ std::string ListenerResourceName(absl::string_view resource_name_template,
 void XdsServerConfigFetcher::StartWatch(
     std::string listening_address,
     std::unique_ptr<ServerConfigFetcher::WatcherInterface> watcher) {
-  work_serializer_->Run(
-      [self = RefAsSubclass<XdsServerConfigFetcher>(),
-       listening_address = std::move(listening_address),
-       watcher = std::move(watcher)]() mutable {
-        std::string resource_name = ListenerResourceName(
-            DownCast<const GrpcXdsBootstrap&>(self->xds_client_->bootstrap())
-                .server_listener_resource_name_template(),
-            listening_address);
-        GRPC_TRACE_LOG(xds_server_config_fetcher, INFO)
-            << "[XdsServerConfigFetcher " << self.get()
-            << "]: starting watch for LDS resource " << resource_name;
-        ServerConfigFetcher::WatcherInterface* watcher_ptr = watcher.get();
-        auto listener_watcher = MakeRefCounted<ListenerWatcher>(
-            self->RefAsSubclass<XdsServerConfigFetcher>(
-                DEBUG_LOCATION, "ListenerWatcher"),
-            std::move(watcher), self->serving_status_notifier_,
-            listening_address);
-        auto* listener_watcher_ptr = listener_watcher.get();
-        XdsListenerResourceType::StartWatch(
-            self->xds_client_.get(), resource_name,
-            std::move(listener_watcher));
-        self->listener_watchers_.emplace(watcher_ptr, listener_watcher_ptr);
-      });
+  work_serializer_->Run([self = RefAsSubclass<XdsServerConfigFetcher>(),
+                         listening_address = std::move(listening_address),
+                         watcher = std::move(watcher)]() mutable {
+    std::string resource_name = ListenerResourceName(
+        DownCast<const GrpcXdsBootstrap&>(self->xds_client_->bootstrap())
+            .server_listener_resource_name_template(),
+        listening_address);
+    GRPC_TRACE_LOG(xds_server_config_fetcher, INFO)
+        << "[XdsServerConfigFetcher " << self.get()
+        << "]: starting watch for LDS resource " << resource_name;
+    ServerConfigFetcher::WatcherInterface* watcher_ptr = watcher.get();
+    auto listener_watcher = MakeRefCounted<ListenerWatcher>(
+        self->RefAsSubclass<XdsServerConfigFetcher>(DEBUG_LOCATION,
+                                                    "ListenerWatcher"),
+        std::move(watcher), self->serving_status_notifier_, listening_address);
+    auto* listener_watcher_ptr = listener_watcher.get();
+    XdsListenerResourceType::StartWatch(self->xds_client_.get(), resource_name,
+                                        std::move(listener_watcher));
+    self->listener_watchers_.emplace(watcher_ptr, listener_watcher_ptr);
+  });
 }
 
 void XdsServerConfigFetcher::CancelWatch(
@@ -483,9 +481,9 @@ void XdsServerConfigFetcher::CancelWatch(
         GRPC_TRACE_LOG(xds_server_config_fetcher, INFO)
             << "[XdsServerConfigFetcher " << self.get()
             << "]: cancelling watch for LDS resource " << resource_name;
-        XdsListenerResourceType::CancelWatch(
-            self->xds_client_.get(), resource_name,
-            it->second, /*delay_unsubscription=*/false);
+        XdsListenerResourceType::CancelWatch(self->xds_client_.get(),
+                                             resource_name, it->second,
+                                             /*delay_unsubscription=*/false);
         self->listener_watchers_.erase(it);
       });
 }
@@ -515,51 +513,50 @@ void XdsServerConfigFetcher::ListenerWatcher::OnResourceChanged(
   config_fetcher_->work_serializer_->Run(
       [self = RefAsSubclass<ListenerWatcher>(), listener = std::move(listener),
        read_delay_handle = std::move(read_delay_handle)]()
-        ABSL_EXCLUSIVE_LOCKS_REQUIRED(*config_fetcher_->work_serializer_)
-        mutable {
-        if (!listener.ok()) {
-          self->OnFatalError(absl::Status(
-              listener.status().code(),
-              absl::StrCat("LDS resource: ", listener.status().message())));
-          return;
-        }
-        GRPC_TRACE_LOG(xds_server_config_fetcher, INFO)
-            << "[ListenerWatcher " << self.get()
-            << "] Received LDS update from xds client "
-            << self->config_fetcher_->xds_client_.get() << ": "
-            << (*listener)->ToString();
-        auto* tcp_listener =
-            std::get_if<XdsListenerResource::TcpListener>(
+          ABSL_EXCLUSIVE_LOCKS_REQUIRED(
+              *config_fetcher_->work_serializer_) mutable {
+            if (!listener.ok()) {
+              self->OnFatalError(absl::Status(
+                  listener.status().code(),
+                  absl::StrCat("LDS resource: ", listener.status().message())));
+              return;
+            }
+            GRPC_TRACE_LOG(xds_server_config_fetcher, INFO)
+                << "[ListenerWatcher " << self.get()
+                << "] Received LDS update from xds client "
+                << self->config_fetcher_->xds_client_.get() << ": "
+                << (*listener)->ToString();
+            auto* tcp_listener = std::get_if<XdsListenerResource::TcpListener>(
                 &(*listener)->listener);
-        if (tcp_listener == nullptr) {
-          self->OnFatalError(absl::FailedPreconditionError(
-              "LDS resource is not a TCP listener"));
-          return;
-        }
-        if (tcp_listener->address != self->listening_address_) {
-          self->OnFatalError(absl::FailedPreconditionError(
-              "Address in LDS update does not match listening address"));
-          return;
-        }
-        if (self->filter_chain_match_manager_ != nullptr &&
-            tcp_listener->filter_chain_map ==
-            self->filter_chain_match_manager_->filter_chain_map() &&
-            tcp_listener->default_filter_chain ==
-            self->filter_chain_match_manager_->default_filter_chain()) {
-          GRPC_TRACE_LOG(xds_server_config_fetcher, INFO)
-              << "[ListenerWatcher " << self.get()
-              << "]: ignoring unchanged LDS resource for "
-              << self->listening_address_;
-          return;
-        }
-        self->pending_filter_chain_match_manager_ =
-            MakeRefCounted<FilterChainMatchManager>(
-                self->config_fetcher_.Ref(
-                    DEBUG_LOCATION, "FilterChainMatchManager"),
-                self, tcp_listener->filter_chain_map,
-                tcp_listener->default_filter_chain);
-        self->pending_filter_chain_match_manager_->Start();
-      });
+            if (tcp_listener == nullptr) {
+              self->OnFatalError(absl::FailedPreconditionError(
+                  "LDS resource is not a TCP listener"));
+              return;
+            }
+            if (tcp_listener->address != self->listening_address_) {
+              self->OnFatalError(absl::FailedPreconditionError(
+                  "Address in LDS update does not match listening address"));
+              return;
+            }
+            if (self->filter_chain_match_manager_ != nullptr &&
+                tcp_listener->filter_chain_map ==
+                    self->filter_chain_match_manager_->filter_chain_map() &&
+                tcp_listener->default_filter_chain ==
+                    self->filter_chain_match_manager_->default_filter_chain()) {
+              GRPC_TRACE_LOG(xds_server_config_fetcher, INFO)
+                  << "[ListenerWatcher " << self.get()
+                  << "]: ignoring unchanged LDS resource for "
+                  << self->listening_address_;
+              return;
+            }
+            self->pending_filter_chain_match_manager_ =
+                MakeRefCounted<FilterChainMatchManager>(
+                    self->config_fetcher_.Ref(DEBUG_LOCATION,
+                                              "FilterChainMatchManager"),
+                    self, tcp_listener->filter_chain_map,
+                    tcp_listener->default_filter_chain);
+            self->pending_filter_chain_match_manager_->Start();
+          });
 }
 
 void XdsServerConfigFetcher::ListenerWatcher::OnAmbientError(
@@ -570,8 +567,7 @@ void XdsServerConfigFetcher::ListenerWatcher::OnAmbientError(
       << listening_address_ << ": " << status;
 }
 
-void XdsServerConfigFetcher::ListenerWatcher::OnFatalError(
-    absl::Status status)
+void XdsServerConfigFetcher::ListenerWatcher::OnFatalError(absl::Status status)
     ABSL_EXCLUSIVE_LOCKS_REQUIRED(*config_fetcher_->work_serializer_) {
   pending_filter_chain_match_manager_.reset();
   if (filter_chain_match_manager_ != nullptr) {
@@ -595,15 +591,15 @@ void XdsServerConfigFetcher::ListenerWatcher::
     PendingFilterChainMatchManagerReady(
         XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager*
             filter_chain_match_manager)
-    ABSL_EXCLUSIVE_LOCKS_REQUIRED(*config_fetcher_->work_serializer_) {
+        ABSL_EXCLUSIVE_LOCKS_REQUIRED(*config_fetcher_->work_serializer_) {
   if (pending_filter_chain_match_manager_ != filter_chain_match_manager) {
     // This FilterChainMatchManager is no longer the current pending resource.
     // It should get cleaned up eventually. Ignore this update.
     return;
   }
   GRPC_TRACE_LOG(xds_server_config_fetcher, INFO)
-      << "[ListenerWatcher " << this
-      << "]: promoting FilterChainMatchManager " << filter_chain_match_manager;
+      << "[ListenerWatcher " << this << "]: promoting FilterChainMatchManager "
+      << filter_chain_match_manager;
   bool first_good_update = filter_chain_match_manager_ == nullptr;
   // Promote the pending FilterChainMatchManager
   filter_chain_match_manager_ = std::move(pending_filter_chain_match_manager_);
@@ -648,8 +644,8 @@ void XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::Start() {
         auto l4_filter_chain = MakeOrphanable<L4FilterChain>(
             WeakRefAsSubclass<FilterChainMatchManager>(), filter_chain_data);
         if (!l4_filter_chain->HasRouteConfig()) ready = false;
-        l4_filter_chains_.emplace(
-            &filter_chain_data, std::move(l4_filter_chain));
+        l4_filter_chains_.emplace(&filter_chain_data,
+                                  std::move(l4_filter_chain));
       });
   // If all L4 filter chains had inline RouteConfigs, then promote this
   // FilterChainMatchManager immediately.
@@ -664,7 +660,7 @@ void XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::Start() {
 void XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
     ForEachFilterChain(
         absl::FunctionRef<void(const XdsListenerResource::FilterChainData&)> cb)
-    const {
+        const {
   // A given FilterChainData object may appear more than once in the map,
   // but we want to invoke the callback exactly once for each
   // FilterChainData object.  Therefore, we start by constructing a set
@@ -695,15 +691,15 @@ void XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
   config_fetcher_->work_serializer_->Run(
       [self = WeakRefAsSubclass<FilterChainMatchManager>()]()
           ABSL_EXCLUSIVE_LOCKS_REQUIRED(*config_fetcher_->work_serializer_) {
-        GRPC_TRACE_LOG(xds_server_config_fetcher, INFO)
-            << "[FilterChainMatchManager " << self.get() << "]: orphaned";
-        self->listener_watcher_.reset();
-      });
+            GRPC_TRACE_LOG(xds_server_config_fetcher, INFO)
+                << "[FilterChainMatchManager " << self.get() << "]: orphaned";
+            self->listener_watcher_.reset();
+          });
 }
 
 void XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
     MaybePromote()
-    ABSL_EXCLUSIVE_LOCKS_REQUIRED(*config_fetcher_->work_serializer_) {
+        ABSL_EXCLUSIVE_LOCKS_REQUIRED(*config_fetcher_->work_serializer_) {
   if (listener_watcher_ == nullptr) return;  // Already promoted.
   RefCountedPtr<ListenerWatcher> listener_watcher;
   // Check if all L4 filter chains have their route configs.
@@ -897,8 +893,8 @@ absl::StatusOr<ChannelArgs> XdsServerConfigFetcher::ListenerWatcher::
     return absl::InternalError("could not find L4FilterChain");
   }
   GRPC_TRACE_LOG(xds_server_config_fetcher, INFO)
-      << "[FilterChainMatchManager " << this
-      << "]: selected L4 filter chain " << it->second.get();
+      << "[FilterChainMatchManager " << this << "]: selected L4 filter chain "
+      << it->second.get();
   return it->second->UpdateChannelArgsForConnection(args);
 }
 
@@ -906,7 +902,8 @@ absl::StatusOr<ChannelArgs> XdsServerConfigFetcher::ListenerWatcher::
 // XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::L4FilterChain::XdsServerConfigSelectorProvider
 //
 
-class XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::L4FilterChain::XdsServerConfigSelectorProvider final
+class XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
+    L4FilterChain::XdsServerConfigSelectorProvider final
     : public ServerConfigSelectorProvider {
  public:
   XdsServerConfigSelectorProvider(
@@ -919,15 +916,13 @@ class XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::L4Filter
       absl::StatusOr<RefCountedPtr<ServerConfigSelector>> config_selector) {
     if (GRPC_TRACE_FLAG_ENABLED(xds_server_config_fetcher)) {
       if (config_selector.ok()) {
-        LOG(INFO)
-            << "[XdsServerConfigSelectorProvider " << this
-            << "]: sending new XdsServerConfigSelector "
-            << config_selector->get();
+        LOG(INFO) << "[XdsServerConfigSelectorProvider " << this
+                  << "]: sending new XdsServerConfigSelector "
+                  << config_selector->get();
       } else {
-        LOG(INFO)
-            << "[XdsServerConfigSelectorProvider " << this
-            << "]: sending new XdsServerConfigSelector "
-            << config_selector.status();
+        LOG(INFO) << "[XdsServerConfigSelectorProvider " << this
+                  << "]: sending new XdsServerConfigSelector "
+                  << config_selector.status();
       }
     }
     config_selector_ = std::move(config_selector);
@@ -985,7 +980,8 @@ class XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::L4Filter
 // XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::L4FilterChain::RouteConfigWatcher
 //
 
-class XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::L4FilterChain::RouteConfigWatcher final
+class XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
+    L4FilterChain::RouteConfigWatcher final
     : public XdsRouteConfigResourceType::WatcherInterface {
  public:
   explicit RouteConfigWatcher(RefCountedPtr<L4FilterChain> l4_filter_chain)
@@ -995,26 +991,31 @@ class XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::L4Filter
       absl::StatusOr<std::shared_ptr<const XdsRouteConfigResource>>
           route_config,
       RefCountedPtr<ReadDelayHandle> read_delay_handle) override {
-    l4_filter_chain_->filter_chain_match_manager_->config_fetcher_->work_serializer_->Run(
-        [l4_filter_chain = l4_filter_chain_,
-         route_config = std::move(route_config),
-         read_delay_handle = std::move(read_delay_handle)]()
-            ABSL_EXCLUSIVE_LOCKS_REQUIRED(*l4_filter_chain_->filter_chain_match_manager_->config_fetcher_->work_serializer_)
-            mutable {
-          l4_filter_chain->OnRouteConfigChanged(std::move(route_config));
-        });
+    l4_filter_chain_->filter_chain_match_manager_->config_fetcher_
+        ->work_serializer_->Run(
+            [l4_filter_chain = l4_filter_chain_,
+             route_config = std::move(route_config),
+             read_delay_handle = std::move(read_delay_handle)]()
+                ABSL_EXCLUSIVE_LOCKS_REQUIRED(
+                    *l4_filter_chain_->filter_chain_match_manager_
+                         ->config_fetcher_->work_serializer_) mutable {
+                  l4_filter_chain->OnRouteConfigChanged(
+                      std::move(route_config));
+                });
   }
 
   void OnAmbientError(
       absl::Status status,
       RefCountedPtr<ReadDelayHandle> read_delay_handle) override {
-    l4_filter_chain_->filter_chain_match_manager_->config_fetcher_->work_serializer_->Run(
-        [l4_filter_chain = l4_filter_chain_, status = std::move(status),
-         read_delay_handle = std::move(read_delay_handle)]()
-            ABSL_EXCLUSIVE_LOCKS_REQUIRED(*l4_filter_chain_->filter_chain_match_manager_->config_fetcher_->work_serializer_)
-            mutable {
-          l4_filter_chain->OnAmbientError(std::move(status));
-        });
+    l4_filter_chain_->filter_chain_match_manager_->config_fetcher_
+        ->work_serializer_->Run(
+            [l4_filter_chain = l4_filter_chain_, status = std::move(status),
+             read_delay_handle = std::move(read_delay_handle)]()
+                ABSL_EXCLUSIVE_LOCKS_REQUIRED(
+                    *l4_filter_chain_->filter_chain_match_manager_
+                         ->config_fetcher_->work_serializer_) mutable {
+                  l4_filter_chain->OnAmbientError(std::move(status));
+                });
   }
 
  private:
@@ -1071,15 +1072,15 @@ CreateCertificateProviderForFilterChain(
       filter_chain.downstream_tls_context.require_client_certificate);
 }
 
-XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::L4FilterChain::L4FilterChain(
-    WeakRefCountedPtr<FilterChainMatchManager> filter_chain_match_manager,
-    const XdsListenerResource::FilterChainData& filter_chain_data)
+XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
+    L4FilterChain::L4FilterChain(
+        WeakRefCountedPtr<FilterChainMatchManager> filter_chain_match_manager,
+        const XdsListenerResource::FilterChainData& filter_chain_data)
     : filter_chain_match_manager_(std::move(filter_chain_match_manager)),
       filter_chain_data_(filter_chain_data),
-      certificate_provider_(
-          CreateCertificateProviderForFilterChain(
-              filter_chain_data,
-              filter_chain_match_manager_->config_fetcher_->xds_client_->certificate_provider_store())) {
+      certificate_provider_(CreateCertificateProviderForFilterChain(
+          filter_chain_data, filter_chain_match_manager_->config_fetcher_
+                                 ->xds_client_->certificate_provider_store())) {
   GRPC_TRACE_LOG(xds_server_config_fetcher, INFO)
       << "[L4FilterChain " << this << "]: created";
   auto& hcm = filter_chain_data_.http_connection_manager;
@@ -1104,8 +1105,9 @@ XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::L4FilterChain:
       });
 }
 
-void XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::L4FilterChain::Orphan()
-    ABSL_EXCLUSIVE_LOCKS_REQUIRED(*filter_chain_match_manager_->config_fetcher_->work_serializer_) {
+void XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
+    L4FilterChain::Orphan() ABSL_EXCLUSIVE_LOCKS_REQUIRED(
+        *filter_chain_match_manager_->config_fetcher_->work_serializer_) {
   GRPC_TRACE_LOG(xds_server_config_fetcher, INFO)
       << "[L4FilterChain " << this << "]: orphaned";
   if (watcher_ != nullptr) {
@@ -1130,25 +1132,27 @@ absl::StatusOr<ChannelArgs> XdsServerConfigFetcher::ListenerWatcher::
 }
 
 absl::StatusOr<RefCountedPtr<ServerConfigSelector>>
-XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::L4FilterChain::CreateServerConfigSelector(
-    absl::StatusOr<std::shared_ptr<const XdsRouteConfigResource>>
-        route_config)
-    ABSL_EXCLUSIVE_LOCKS_REQUIRED(*filter_chain_match_manager_->config_fetcher_->work_serializer_) {
+XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
+    L4FilterChain::CreateServerConfigSelector(
+        absl::StatusOr<std::shared_ptr<const XdsRouteConfigResource>>
+            route_config)
+        ABSL_EXCLUSIVE_LOCKS_REQUIRED(
+            *filter_chain_match_manager_->config_fetcher_->work_serializer_) {
   if (!route_config.ok()) return route_config.status();
   return XdsServerConfigSelector::Create(
       DownCast<const GrpcXdsBootstrap&>(
           filter_chain_match_manager_->config_fetcher_->xds_client_
-          ->bootstrap())
+              ->bootstrap())
           .http_filter_registry(),
-      *route_config, 
-      filter_chain_data_.http_connection_manager.http_filters);
+      *route_config, filter_chain_data_.http_connection_manager.http_filters);
 }
 
-void
-XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::L4FilterChain::UpdateServerConfigSelector(
-    absl::StatusOr<std::shared_ptr<const XdsRouteConfigResource>>
-        route_config)
-    ABSL_EXCLUSIVE_LOCKS_REQUIRED(*filter_chain_match_manager_->config_fetcher_->work_serializer_) {
+void XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
+    L4FilterChain::UpdateServerConfigSelector(
+        absl::StatusOr<std::shared_ptr<const XdsRouteConfigResource>>
+            route_config)
+        ABSL_EXCLUSIVE_LOCKS_REQUIRED(
+            *filter_chain_match_manager_->config_fetcher_->work_serializer_) {
   GRPC_TRACE_LOG(xds_server_config_fetcher, INFO)
       << "[L4FilterChain " << this << "]: creating new XdsServerConfigSelector";
   absl::StatusOr<RefCountedPtr<ServerConfigSelector>> config_selector =
@@ -1157,10 +1161,9 @@ XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::L4FilterChain:
     GRPC_TRACE_LOG(xds_server_config_fetcher, INFO)
         << "[L4FilterChain " << this
         << "]: initial update; creating new XdsServerConfigSelectorProvider";
-    config_selector_provider_ =
-        MakeRefCounted<XdsServerConfigSelectorProvider>(
-            filter_chain_match_manager_->config_fetcher_->work_serializer_,
-            std::move(config_selector));
+    config_selector_provider_ = MakeRefCounted<XdsServerConfigSelectorProvider>(
+        filter_chain_match_manager_->config_fetcher_->work_serializer_,
+        std::move(config_selector));
   } else {
     // Provider already exists, so just update it.
     config_selector_provider_->SetServerConfigSelector(
@@ -1170,9 +1173,10 @@ XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::L4FilterChain:
 
 void XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
     L4FilterChain::OnRouteConfigChanged(
-      absl::StatusOr<std::shared_ptr<const XdsRouteConfigResource>>
-          route_config)
-    ABSL_EXCLUSIVE_LOCKS_REQUIRED(*filter_chain_match_manager_->config_fetcher_->work_serializer_) {
+        absl::StatusOr<std::shared_ptr<const XdsRouteConfigResource>>
+            route_config)
+        ABSL_EXCLUSIVE_LOCKS_REQUIRED(
+            *filter_chain_match_manager_->config_fetcher_->work_serializer_) {
   GRPC_TRACE_LOG(xds_server_config_fetcher, INFO)
       << "[L4FilterChain " << this << "]: received RDS update";
   UpdateServerConfigSelector(std::move(route_config));
@@ -1191,9 +1195,9 @@ void XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
 // XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::L4FilterChain::XdsServerConfigSelector
 //
 
-absl::StatusOr<
-    RefCountedPtr<XdsServerConfigFetcher::ListenerWatcher::
-                      FilterChainMatchManager::L4FilterChain::XdsServerConfigSelector>>
+absl::StatusOr<RefCountedPtr<
+    XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
+        L4FilterChain::XdsServerConfigSelector>>
 XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
     L4FilterChain::XdsServerConfigSelector::Create(
         const XdsHttpFilterRegistry& http_filter_registry,
@@ -1257,8 +1261,8 @@ XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
 
 absl::StatusOr<ServerConfigSelector::CallConfig>
 XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
-    L4FilterChain::XdsServerConfigSelector::GetCallConfig(const ConnectionState* state,
-                                           grpc_metadata_batch* metadata) {
+    L4FilterChain::XdsServerConfigSelector::GetCallConfig(
+        const ConnectionState* state, grpc_metadata_batch* metadata) {
   CallConfig call_config;
   if (metadata->get_pointer(HttpPathMetadata()) == nullptr) {
     return absl::InternalError("no path found");
