@@ -78,6 +78,10 @@ python -m grpc_tools.protoc \
 cd /var/local/jenkins/grpc/
 bazel build test/cpp/interop:xds_interop_client
 
+# Link ephemeral reports dir to Kokoro's workspace volume for artifact collection
+mkdir -p /var/local/jenkins/grpc/reports
+ln -s /var/local/jenkins/grpc/reports /var/local/git/grpc/reports
+
 # Run legacy ping_pong test. All tests are migrated to
 # https://github.com/grpc/psm-interop
 GRPC_VERBOSITY=debug GRPC_TRACE=xds_client,xds_resolver,xds_cluster_manager_lb,cds_lb,xds_cluster_resolver_lb,priority_lb,xds_cluster_impl_lb,weighted_target_lb \
