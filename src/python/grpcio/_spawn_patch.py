@@ -30,6 +30,16 @@ MAX_COMMAND_LENGTH = 8191
 _classic_spawn = ccompiler.CCompiler.spawn
 
 
+def escape_arg(arg):
+    # Escape single backslash with double backslash
+    arg = arg.replace("\\", "\\\\")
+
+    # Escape double quotes with a backslash
+    arg = arg.replace('"', '\\"')
+
+    return f'"{arg}"'
+
+
 def _commandfile_spawn(self, command, **kwargs):
     if os.name == "nt":
         if any(arg.startswith("/Tc") for arg in command):
@@ -83,9 +93,7 @@ def _commandfile_spawn(self, command, **kwargs):
             os.path.join(temporary_directory, "command")
         )
         with open(command_filename, "w") as command_file:
-            escaped_args = [
-                '"' + arg.replace("\\", "\\\\") + '"' for arg in command[1:]
-            ]
+            escaped_args = map(escape_arg, command[1:])
             # add each arg on a separate line to avoid hitting the
             # "line in command file contains 131071 or more characters" error
             # (can happen for extra long link commands)
