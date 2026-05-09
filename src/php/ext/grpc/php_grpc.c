@@ -64,7 +64,7 @@ zend_module_entry grpc_module_entry = {
   PHP_MINIT(grpc),
   PHP_MSHUTDOWN(grpc),
   PHP_RINIT(grpc),
-  NULL,
+  PHP_RSHUTDOWN(grpc),
   PHP_MINFO(grpc),
   PHP_GRPC_VERSION,
   PHP_MODULE_GLOBALS(grpc),
@@ -520,6 +520,7 @@ PHP_MINIT_FUNCTION(grpc) {
   grpc_init_timeval(TSRMLS_C);
   grpc_init_channel_credentials(TSRMLS_C);
   grpc_init_call_credentials(TSRMLS_C);
+  grpc_php_call_credentials_module_init();
   grpc_init_server_credentials(TSRMLS_C);
   return SUCCESS;
 }
@@ -541,6 +542,12 @@ PHP_MSHUTDOWN_FUNCTION(grpc) {
     grpc_shutdown();
     GRPC_G(initialized) = 0;
   }
+  grpc_php_call_credentials_module_shutdown();
+  return SUCCESS;
+}
+
+PHP_RSHUTDOWN_FUNCTION(grpc) {
+  grpc_php_call_credentials_request_shutdown();
   return SUCCESS;
 }
 /* }}} */

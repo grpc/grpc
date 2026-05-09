@@ -28,11 +28,118 @@
 
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
+#include <grpc/support/sync.h>
 
 #include "call.h"
 
 zend_class_entry *grpc_ce_call_credentials;
 PHP_GRPC_DECLARE_OBJECT_HANDLER(call_credentials_ce_handlers)
+
+static gpr_mu grpc_php_call_credentials_registry_mu;
+static plugin_state *grpc_php_call_credentials_registry_head = NULL;
+static int grpc_php_call_credentials_registry_initialized = 0;
+
+void grpc_php_call_credentials_module_init(void) {
+  if (!grpc_php_call_credentials_registry_initialized) {
+    gpr_mu_init(&grpc_php_call_credentials_registry_mu);
+    grpc_php_call_credentials_registry_head = NULL;
+    grpc_php_call_credentials_registry_initialized = 1;
+  }
+}
+
+void grpc_php_call_credentials_module_shutdown(void) {
+  if (grpc_php_call_credentials_registry_initialized) {
+    gpr_mu_destroy(&grpc_php_call_credentials_registry_mu);
+    grpc_php_call_credentials_registry_head = NULL;
+    grpc_php_call_credentials_registry_initialized = 0;
+  }
+}
+
+static void plugin_state_register(plugin_state *state) {
+  gpr_mu_lock(&grpc_php_call_credentials_registry_mu);
+  state->prev = NULL;
+  state->next = grpc_php_call_credentials_registry_head;
+  if (grpc_php_call_credentials_registry_head != NULL) {
+    grpc_php_call_credentials_registry_head->prev = state;
+  }
+  grpc_php_call_credentials_registry_head = state;
+  gpr_mu_unlock(&grpc_php_call_credentials_registry_mu);
+}
+
+static void plugin_state_unregister(plugin_state *state) {
+  gpr_mu_lock(&grpc_php_call_credentials_registry_mu);
+  if (state->prev != NULL) {
+    state->prev->next = state->next;
+  } else if (grpc_php_call_credentials_registry_head == state) {
+    grpc_php_call_credentials_registry_head = state->next;
+  }
+  if (state->next != NULL) {
+    state->next->prev = state->prev;
+  }
+  state->prev = NULL;
+  state->next = NULL;
+  gpr_mu_unlock(&grpc_php_call_credentials_registry_mu);
+}
+
+static int plugin_state_detach_locked(plugin_state *state,
+                                      zend_fcall_info **out_fci,
+                                      zend_fcall_info_cache **out_fci_cache,
+                                      zval *out_function_name,
+                                      zend_bool *out_function_name_addref) {
+  *out_fci = state->fci;
+  *out_fci_cache = state->fci_cache;
+  *out_function_name_addref = state->function_name_added_ref;
+  if (state->function_name_added_ref && state->fci != NULL) {
+    *out_function_name = state->fci->function_name;
+  }
+  state->fci = NULL;
+  state->fci_cache = NULL;
+  state->function_name_added_ref = 0;
+  return *out_fci != NULL || *out_fci_cache != NULL;
+}
+
+static void plugin_state_release_detached(zend_fcall_info *fci,
+                                          zend_fcall_info_cache *fci_cache,
+                                          zval *function_name,
+                                          zend_bool function_name_addref) {
+  if (function_name_addref) {
+    zval_ptr_dtor(function_name);
+  }
+  if (fci != NULL) free(fci);
+  if (fci_cache != NULL) free(fci_cache);
+}
+
+void grpc_php_call_credentials_request_shutdown(void) {
+  if (!grpc_php_call_credentials_registry_initialized) {
+    return;
+  }
+
+  while (1) {
+    zend_fcall_info *fci = NULL;
+    zend_fcall_info_cache *fci_cache = NULL;
+    zval function_name;
+    zend_bool addref = 0;
+    int found = 0;
+
+    gpr_mu_lock(&grpc_php_call_credentials_registry_mu);
+    for (plugin_state *s = grpc_php_call_credentials_registry_head; s != NULL;
+         s = s->next) {
+      gpr_mu_lock(&s->mu);
+      if (!s->invalidated) {
+        plugin_state_detach_locked(s, &fci, &fci_cache, &function_name, &addref);
+        s->invalidated = 1;
+        gpr_mu_unlock(&s->mu);
+        found = 1;
+        break;
+      }
+      gpr_mu_unlock(&s->mu);
+    }
+    gpr_mu_unlock(&grpc_php_call_credentials_registry_mu);
+
+    if (!found) break;
+    plugin_state_release_detached(fci, fci_cache, &function_name, addref);
+  }
+}
 
 /* Frees and destroys an instance of wrapped_grpc_call_credentials */
 PHP_GRPC_FREE_WRAPPED_FUNC_START(wrapped_grpc_call_credentials)
@@ -121,10 +228,16 @@ PHP_METHOD(CallCredentials, createFromPlugin) {
   plugin_state *state;
   state = (plugin_state *)malloc(sizeof(plugin_state));
   memset(state, 0, sizeof(plugin_state));
+  gpr_mu_init(&state->mu);
 
-  /* save the user provided PHP callback function */
+  /* save the user provided PHP callback function. Addref the callable so it
+   * stays alive while we reference it; the matching dtor runs in
+   * plugin_destroy_state or in the PHP_RSHUTDOWN sweep, whichever comes first. */
   state->fci = fci;
   state->fci_cache = fci_cache;
+  Z_TRY_ADDREF(fci->function_name);
+  state->function_name_added_ref = 1;
+  plugin_state_register(state);
 
   grpc_metadata_credentials_plugin plugin;
   plugin.get_metadata = plugin_get_metadata;
@@ -139,7 +252,7 @@ PHP_METHOD(CallCredentials, createFromPlugin) {
   RETURN_DESTROY_ZVAL(creds_object);
 }
 
-/* Callback function for plugin creds API */
+/* Callback function for plugin creds API*/
 int plugin_get_metadata(
     void *ptr, grpc_auth_metadata_context context,
     grpc_credentials_plugin_metadata_cb cb, void *user_data,
@@ -149,6 +262,20 @@ int plugin_get_metadata(
   TSRMLS_FETCH();
 
   plugin_state *state = (plugin_state *)ptr;
+
+  *num_creds_md = 0;
+  *status = GRPC_STATUS_OK;
+  *error_details = NULL;
+
+  gpr_mu_lock(&state->mu);
+  if (state->invalidated || state->fci == NULL || state->fci_cache == NULL) {
+    *status = GRPC_STATUS_UNAVAILABLE;
+    *error_details = gpr_strdup(
+        "PHP plugin credentials callback was invoked after its owning PHP "
+        "request had ended");
+    gpr_mu_unlock(&state->mu);
+    return true;
+  }
 
   /* prepare to call the user callback function with info from the
    * grpc_auth_metadata_context */
@@ -167,10 +294,6 @@ int plugin_get_metadata(
 
   /* call the user callback function */
   PHP_GRPC_CALL_FUNCTION(state->fci, state->fci_cache);
-
-  *num_creds_md = 0;
-  *status = GRPC_STATUS_OK;
-  *error_details = NULL;
 
   bool should_return = false;
   grpc_metadata_array metadata;
@@ -192,6 +315,7 @@ int plugin_get_metadata(
     PHP_GRPC_FREE_STD_ZVAL(retval);
   }
   if (should_return) {
+    gpr_mu_unlock(&state->mu);
     return true;
   }
 
@@ -212,15 +336,30 @@ int plugin_get_metadata(
   }
 
   grpc_metadata_array_destroy(&metadata);
+  gpr_mu_unlock(&state->mu);
   return true;  // Synchronous return.
 }
 
-/* Cleanup function for plugin creds API */
+/* Cleanup function for plugin creds API*/
 void plugin_destroy_state(void *ptr) {
   plugin_state *state = (plugin_state *)ptr;
-  free(state->fci);
-  free(state->fci_cache);
+  plugin_state_unregister(state);
+
+  zend_fcall_info *fci = NULL;
+  zend_fcall_info_cache *fci_cache = NULL;
+  zval function_name;
+  zend_bool addref = 0;
+
+  gpr_mu_lock(&state->mu);
+  if (!state->invalidated) {
+    plugin_state_detach_locked(state, &fci, &fci_cache, &function_name, &addref);
+    state->invalidated = 1;
+  }
+  gpr_mu_unlock(&state->mu);
+  gpr_mu_destroy(&state->mu);
   free(state);
+
+  plugin_state_release_detached(fci, fci_cache, &function_name, addref);
 }
 
 ZEND_BEGIN_ARG_INFO_EX(arginfo_createComposite, 0, 0, 2)
