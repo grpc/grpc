@@ -382,9 +382,7 @@ class CheckingResultHandler : public ResultHandler {
       std::vector<GrpcLBAddress>* out) {
     for (size_t i = 0; i < addresses.size(); i++) {
       const grpc_core::EndpointAddresses& addr = addresses[i];
-      std::string str =
-          grpc_sockaddr_to_string(&addr.address(), true /* normalize */)
-              .value();
+      std::string str = addr.address();
       LOG(INFO) << str;
       out->emplace_back(GrpcLBAddress(std::move(str), is_balancer));
     }

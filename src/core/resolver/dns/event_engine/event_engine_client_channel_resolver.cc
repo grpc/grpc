@@ -27,6 +27,7 @@
 #include <utility>
 #include <vector>
 
+#include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/event_engine/resolved_address_internal.h"
@@ -316,7 +317,13 @@ void EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
     } else {
       addresses_.reserve(addresses_.size() + new_addresses->size());
       for (const auto& addr : *new_addresses) {
-        addresses_.emplace_back(CreateGRPCResolvedAddress(addr), ChannelArgs());
+        grpc_resolved_address resolved_addr = CreateGRPCResolvedAddress(addr);
+        auto uri = grpc_sockaddr_to_uri(&resolved_addr);
+        if (!uri.ok()) {
+          errors_.AddError(uri.status().message());
+          continue;
+        }
+        addresses_.emplace_back(*uri, ChannelArgs());
       }
     }
     result = OnResolvedLocked();
@@ -406,7 +413,13 @@ void EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
     auto srv_channel_args =
         ChannelArgs().Set(GRPC_ARG_DEFAULT_AUTHORITY, authority);
     for (const auto& addr : *new_balancer_addresses) {
-      balancer_addresses_.emplace_back(CreateGRPCResolvedAddress(addr),
+      grpc_resolved_address resolved_addr = CreateGRPCResolvedAddress(addr);
+      auto uri = grpc_sockaddr_to_uri(&resolved_addr);
+      if (!uri.ok()) {
+        errors_.AddError(uri.status().message());
+        continue;
+      }
+      balancer_addresses_.emplace_back(*uri,
                                        srv_channel_args);
     }
   }

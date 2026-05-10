@@ -27,7 +27,6 @@
 #include <vector>
 
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/iomgr/resolved_address.h"
 #include "absl/functional/function_ref.h"
 
 // A channel arg key prefix used for args that are intended to be used
@@ -54,11 +53,10 @@ class EndpointAddresses final {
  public:
   // For backward compatibility.
   // TODO(roth): Remove when callers have been updated.
-  EndpointAddresses(const grpc_resolved_address& address,
-                    const ChannelArgs& args);
+  EndpointAddresses(const std::string& address, const ChannelArgs& args);
 
   // addresses must not be empty.
-  EndpointAddresses(std::vector<grpc_resolved_address> addresses,
+  EndpointAddresses(std::vector<std::string> addresses,
                     const ChannelArgs& args);
 
   // Copyable.
@@ -83,9 +81,9 @@ class EndpointAddresses final {
 
   // For backward compatibility only.
   // TODO(roth): Remove when all callers have been updated.
-  const grpc_resolved_address& address() const { return addresses_[0]; }
+  const std::string& address() const { return addresses_[0]; }
 
-  const std::vector<grpc_resolved_address>& addresses() const {
+  const std::vector<std::string>& addresses() const {
     return addresses_;
   }
   const ChannelArgs& args() const { return args_; }
@@ -96,21 +94,21 @@ class EndpointAddresses final {
   std::string ToString() const;
 
  private:
-  std::vector<grpc_resolved_address> addresses_;
+  std::vector<std::string> addresses_;
   ChannelArgs args_;
 };
 
 using EndpointAddressesList = std::vector<EndpointAddresses>;
 
-struct ResolvedAddressLessThan {
-  bool operator()(const grpc_resolved_address& addr1,
-                  const grpc_resolved_address& addr2) const;
+struct StringLessThan {
+  bool operator()(const std::string& str1,
+                  const std::string& str2) const;
 };
 
 class EndpointAddressSet final {
  public:
   explicit EndpointAddressSet(
-      const std::vector<grpc_resolved_address>& addresses)
+      const std::vector<std::string>& addresses)
       : addresses_(addresses.begin(), addresses.end()) {}
 
   bool operator==(const EndpointAddressSet& other) const;
@@ -119,7 +117,7 @@ class EndpointAddressSet final {
   std::string ToString() const;
 
  private:
-  std::set<grpc_resolved_address, ResolvedAddressLessThan> addresses_;
+  std::set<std::string, StringLessThan> addresses_;
 };
 
 // An iterator interface for endpoints.

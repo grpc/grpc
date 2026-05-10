@@ -169,8 +169,7 @@ grpc_core::EndpointAddressesList BuildLbAddrInputs(
     const std::vector<TestAddress>& test_addrs) {
   grpc_core::EndpointAddressesList addresses;
   for (const auto& addr : test_addrs) {
-    addresses.emplace_back(TestAddressToGrpcResolvedAddress(addr),
-                           grpc_core::ChannelArgs());
+    addresses.emplace_back(addr.dest_addr, grpc_core::ChannelArgs());
   }
   return addresses;
 }
@@ -179,9 +178,7 @@ void VerifyLbAddrOutputs(const grpc_core::EndpointAddressesList& addresses,
                          std::vector<std::string> expected_addrs) {
   EXPECT_EQ(addresses.size(), expected_addrs.size());
   for (size_t i = 0; i < addresses.size(); ++i) {
-    std::string ip_addr_str =
-        grpc_sockaddr_to_string(&addresses[i].address(), false /* normalize */)
-            .value();
+    std::string ip_addr_str = addresses[i].address();
     EXPECT_EQ(expected_addrs[i], ip_addr_str);
   }
 }

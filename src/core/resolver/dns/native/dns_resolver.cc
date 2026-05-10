@@ -24,6 +24,7 @@
 #include <vector>
 
 #include "src/core/config/core_configuration.h"
+#include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/resolve_address.h"
@@ -118,7 +119,13 @@ void NativeClientChannelDNSResolver::OnResolved(
   if (addresses_or.ok()) {
     EndpointAddressesList addresses;
     for (auto& addr : *addresses_or) {
-      addresses.emplace_back(addr, ChannelArgs());
+      auto uri = grpc_sockaddr_to_uri(&addr);
+      if (!uri.ok()) {
+        result.addresses = absl::UnavailableError(absl::StrCat(
+            "Failed to convert address to URI: ", uri.status().ToString()));
+        break;
+      }
+      addresses.emplace_back(*uri, ChannelArgs());
     }
     result.addresses = std::move(addresses);
   } else {

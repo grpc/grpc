@@ -154,7 +154,7 @@ std::optional<EndpointAddresses> EndpointAddressesParse(
     }
   }
   // endpoint
-  std::vector<grpc_resolved_address> addresses;
+  std::vector<std::string> addresses;
   absl::string_view hostname;
   {
     ValidationErrors::ScopedField field(errors, ".endpoint");
@@ -168,7 +168,14 @@ std::optional<EndpointAddresses> EndpointAddressesParse(
       ValidationErrors::ScopedField field(errors, ".address");
       auto address = ParseXdsAddress(
           envoy_config_endpoint_v3_Endpoint_address(endpoint), errors);
-      if (address.has_value()) addresses.push_back(*address);
+      if (address.has_value()) {
+        auto uri = grpc_sockaddr_to_uri(&*address);
+        if (uri.ok()) {
+          addresses.push_back(*uri);
+        } else {
+          errors->AddError(uri.status().message());
+        }
+      }
     }
     if (XdsDualstackEndpointsEnabled()) {
       size_t size;
@@ -182,7 +189,14 @@ std::optional<EndpointAddresses> EndpointAddressesParse(
             envoy_config_endpoint_v3_Endpoint_AdditionalAddress_address(
                 additional_addresses[i]),
             errors);
-        if (address.has_value()) addresses.push_back(*address);
+        if (address.has_value()) {
+          auto uri = grpc_sockaddr_to_uri(&*address);
+          if (uri.ok()) {
+            addresses.push_back(*uri);
+          } else {
+            errors->AddError(uri.status().message());
+          }
+        }
       }
     }
     hostname =
@@ -212,20 +226,30 @@ struct ParsedLocality {
   XdsEndpointResource::Priority::Locality locality;
 };
 
-struct ResolvedAddressLessThan {
-  bool operator()(const grpc_resolved_address& a1,
-                  const grpc_resolved_address& a2) const {
-    if (a1.len != a2.len) return a1.len < a2.len;
-    return memcmp(a1.addr, a2.addr, a1.len) < 0;
+struct StringLessThan {
+  bool operator()(const std::string& str1,
+                  const std::string& str2) const {
+    auto uri_a = grpc_core::URI::Parse(str1);
+    auto uri_b = grpc_core::URI::Parse(str2);
+    if (!uri_a.ok() || !uri_b.ok()) {
+      return str1 < str2;
+    }
+    grpc_resolved_address addr_a;
+    grpc_resolved_address addr_b;
+    if (!grpc_parse_uri(*uri_a, &addr_a) || !grpc_parse_uri(*uri_b, &addr_b)) {
+      return str1 < str2;
+    }
+    if (addr_a.len != addr_b.len) return addr_a.len < addr_b.len;
+    return memcmp(addr_a.addr, addr_b.addr, addr_a.len) < 0;
   }
 };
-using ResolvedAddressSet =
-    std::set<grpc_resolved_address, ResolvedAddressLessThan>;
+using AddressSet =
+    std::set<std::string, StringLessThan>;
 
 std::optional<ParsedLocality> LocalityParse(
     const XdsResourceType::DecodeContext& context,
     const envoy_config_endpoint_v3_LocalityLbEndpoints* locality_lb_endpoints,
-    ResolvedAddressSet* address_set, ValidationErrors* errors) {
+    AddressSet* address_set, ValidationErrors* errors) {
   const size_t original_error_size = errors->size();
   ParsedLocality parsed_locality;
   // load_balancing_weight
@@ -282,8 +306,7 @@ std::optional<ParsedLocality> LocalityParse(
         bool inserted = address_set->insert(address).second;
         if (!inserted) {
           errors->AddError(absl::StrCat(
-              "duplicate endpoint address \"",
-              grpc_sockaddr_to_uri(&address).value_or("<unknown>"), "\""));
+              "duplicate endpoint address \"", address, "\""));
         }
       }
       parsed_locality.locality.endpoints.push_back(std::move(*endpoint));
@@ -356,7 +379,7 @@ absl::StatusOr<std::shared_ptr<const XdsEndpointResource>> EdsResourceParse(
   // endpoints
   {
     ValidationErrors::ScopedField field(&errors, "endpoints");
-    ResolvedAddressSet address_set;
+    AddressSet address_set;
     size_t locality_size;
     const envoy_config_endpoint_v3_LocalityLbEndpoints* const* endpoints =
         envoy_config_endpoint_v3_ClusterLoadAssignment_endpoints(

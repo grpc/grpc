@@ -38,12 +38,12 @@
 
 namespace grpc_core {
 
-EndpointAddresses::EndpointAddresses(const grpc_resolved_address& address,
+EndpointAddresses::EndpointAddresses(const std::string& address,
                                      const ChannelArgs& args)
     : addresses_(1, address), args_(args) {}
 
 EndpointAddresses::EndpointAddresses(
-    std::vector<grpc_resolved_address> addresses, const ChannelArgs& args)
+    std::vector<std::string> addresses, const ChannelArgs& args)
     : addresses_(std::move(addresses)), args_(args) {
   GRPC_CHECK(!addresses_.empty());
 }
@@ -72,10 +72,7 @@ EndpointAddresses& EndpointAddresses::operator=(
 int EndpointAddresses::Cmp(const EndpointAddresses& other) const {
   for (size_t i = 0; i < addresses_.size(); ++i) {
     if (other.addresses_.size() == i) return 1;
-    if (addresses_[i].len > other.addresses_[i].len) return 1;
-    if (addresses_[i].len < other.addresses_[i].len) return -1;
-    int retval =
-        memcmp(addresses_[i].addr, other.addresses_[i].addr, addresses_[i].len);
+    int retval = addresses_[i].compare(other.addresses_[i]);
     if (retval != 0) return retval;
   }
   if (other.addresses_.size() > addresses_.size()) return -1;
@@ -83,25 +80,18 @@ int EndpointAddresses::Cmp(const EndpointAddresses& other) const {
 }
 
 std::string EndpointAddresses::ToString() const {
-  std::vector<std::string> addr_strings;
-  for (const auto& address : addresses_) {
-    auto addr_str = grpc_sockaddr_to_string(&address, false);
-    addr_strings.push_back(addr_str.ok() ? std::move(*addr_str)
-                                         : addr_str.status().ToString());
-  }
   std::vector<std::string> parts = {
-      absl::StrCat("addrs=[", absl::StrJoin(addr_strings, ", "), "]")};
+      absl::StrCat("addrs=[", absl::StrJoin(addresses_, ", "), "]")};
   if (args_ != ChannelArgs()) {
     parts.emplace_back(absl::StrCat("args=", args_.ToString()));
   }
   return absl::StrJoin(parts, " ");
 }
 
-bool ResolvedAddressLessThan::operator()(
-    const grpc_resolved_address& addr1,
-    const grpc_resolved_address& addr2) const {
-  if (addr1.len < addr2.len) return true;
-  return memcmp(addr1.addr, addr2.addr, addr1.len) < 0;
+bool StringLessThan::operator()(
+    const std::string& str1,
+    const std::string& str2) const {
+  return str1 < str2;
 }
 
 bool EndpointAddressSet::operator==(const EndpointAddressSet& other) const {
@@ -109,8 +99,7 @@ bool EndpointAddressSet::operator==(const EndpointAddressSet& other) const {
   auto other_it = other.addresses_.begin();
   for (auto it = addresses_.begin(); it != addresses_.end(); ++it) {
     GRPC_CHECK(other_it != other.addresses_.end());
-    if (it->len != other_it->len ||
-        memcmp(it->addr, other_it->addr, it->len) != 0) {
+    if (*it != *other_it) {
       return false;
     }
     ++other_it;
@@ -122,9 +111,7 @@ bool EndpointAddressSet::operator<(const EndpointAddressSet& other) const {
   auto other_it = other.addresses_.begin();
   for (auto it = addresses_.begin(); it != addresses_.end(); ++it) {
     if (other_it == other.addresses_.end()) return false;
-    if (it->len < other_it->len) return true;
-    if (it->len > other_it->len) return false;
-    int r = memcmp(it->addr, other_it->addr, it->len);
+    int r = it->compare(*other_it);
     if (r != 0) return r < 0;
     ++other_it;
   }
@@ -132,13 +119,7 @@ bool EndpointAddressSet::operator<(const EndpointAddressSet& other) const {
 }
 
 std::string EndpointAddressSet::ToString() const {
-  std::vector<std::string> parts;
-  parts.reserve(addresses_.size());
-  for (const auto& address : addresses_) {
-    parts.push_back(
-        grpc_sockaddr_to_string(&address, false).value_or("<unknown>"));
-  }
-  return absl::StrCat("{", absl::StrJoin(parts, ", "), "}");
+  return absl::StrCat("{", absl::StrJoin(addresses_, ", "), "}");
 }
 
 }  // namespace grpc_core

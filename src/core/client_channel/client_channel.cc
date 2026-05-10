@@ -52,7 +52,7 @@
 #include "src/core/config/core_configuration.h"
 #include "src/core/credentials/transport/transport_credentials.h"
 #include "src/core/ext/filters/channel_idle/legacy_channel_idle_filter.h"
-#include "src/core/lib/address_utils/sockaddr_utils.h"
+#include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
@@ -83,6 +83,7 @@
 #include "src/core/util/debug_location.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/sync.h"
+#include "src/core/util/uri.h"
 #include "src/core/util/useful.h"
 #include "src/core/util/work_serializer.h"
 #include "absl/cleanup/cleanup.h"
@@ -470,7 +471,7 @@ class ClientChannel::ClientChannelControlHelper
   }
 
   RefCountedPtr<SubchannelInterface> CreateSubchannel(
-      const grpc_resolved_address& address, const ChannelArgs& per_address_args,
+      const std::string& address, const ChannelArgs& per_address_args,
       const ChannelArgs& args) override
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(*client_channel_->work_serializer_) {
     // If shutting down, do nothing.
@@ -490,9 +491,19 @@ class ClientChannel::ClientChannelControlHelper
         args, per_address_args, client_channel_->subchannel_pool_,
         client_channel_->default_authority_);
     // Create subchannel.
+    auto uri = grpc_core::URI::Parse(address);
+    if (!uri.ok()) {
+      LOG(ERROR) << "Failed to parse address URI: " << address;
+      return nullptr;
+    }
+    grpc_resolved_address resolved_address;
+    if (!grpc_parse_uri(*uri, &resolved_address)) {
+      LOG(ERROR) << "Failed to parse address URI: " << address;
+      return nullptr;
+    }
     RefCountedPtr<Subchannel> subchannel =
         client_channel_->client_channel_factory_->CreateSubchannel(
-            address, subchannel_args);
+            resolved_address, subchannel_args);
     if (subchannel == nullptr) return nullptr;
     // Make sure the subchannel has updated keepalive time.
     subchannel->ThrottleKeepaliveTime(client_channel_->keepalive_time_);

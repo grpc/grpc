@@ -512,19 +512,17 @@ class LoadBalancingPolicyTest : public ::testing::Test {
     }
 
     RefCountedPtr<SubchannelInterface> CreateSubchannel(
-        const grpc_resolved_address& address,
+        const std::string& address,
         const ChannelArgs& /*per_address_args*/,
         const ChannelArgs& args) override {
       // TODO(roth): Need to use per_address_args here.
-      SubchannelKey key(
-          address, args.RemoveAllKeysWithPrefix(GRPC_ARG_NO_SUBCHANNEL_PREFIX));
+      SubchannelKey key(MakeAddress(address), args.RemoveAllKeysWithPrefix(
+                                              GRPC_ARG_NO_SUBCHANNEL_PREFIX));
       auto it = test_->subchannel_pool_.find(key);
       if (it == test_->subchannel_pool_.end()) {
-        auto address_uri = grpc_sockaddr_to_uri(&address);
-        GRPC_CHECK(address_uri.ok());
         it = test_->subchannel_pool_
                  .emplace(std::piecewise_construct, std::forward_as_tuple(key),
-                          std::forward_as_tuple(std::move(*address_uri), test_))
+                          std::forward_as_tuple(std::move(address), test_))
                  .first;
       }
       return it->second.CreateSubchannel();
@@ -715,11 +713,11 @@ class LoadBalancingPolicyTest : public ::testing::Test {
     return address;
   }
 
-  std::vector<grpc_resolved_address> MakeAddressList(
+  std::vector<std::string> MakeAddressList(
       absl::Span<const absl::string_view> addresses) {
-    std::vector<grpc_resolved_address> addrs;
+    std::vector<std::string> addrs;
     for (const absl::string_view& address : addresses) {
-      addrs.emplace_back(MakeAddress(address));
+      addrs.emplace_back(std::string(address));
     }
     return addrs;
   }
@@ -747,7 +745,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
       absl::Span<const absl::string_view> addresses) {
     std::vector<EndpointAddresses> endpoints;
     for (const absl::string_view address : addresses) {
-      endpoints.emplace_back(MakeAddress(address), ChannelArgs());
+      endpoints.emplace_back(std::string(address), ChannelArgs());
     }
     return endpoints;
   }
@@ -1165,8 +1163,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
       endpoint_subchannels.emplace_back();
       endpoint_subchannels.back().reserve(endpoint.addresses().size());
       for (size_t i = 0; i < endpoint.addresses().size(); ++i) {
-        const grpc_resolved_address& address = endpoint.addresses()[i];
-        std::string address_str = grpc_sockaddr_to_uri(&address).value();
+        std::string address_str = endpoint.addresses()[i];
         auto* subchannel = FindSubchannel(address_str);
         EXPECT_NE(subchannel, nullptr)
             << address_str << "\n"

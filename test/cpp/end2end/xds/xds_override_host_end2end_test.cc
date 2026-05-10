@@ -789,8 +789,9 @@ TEST_P(OverrideHostTest, MultipleAddressesPerEndpoint) {
 class OverrideHostLoadReportingTest : public OverrideHostTest {
  protected:
   std::string ConstructCookieValueForEndpoint(size_t idx) const {
-    return absl::Base64Escape(absl::StrCat("127.0.0.1:", backends_[idx]->port(),
-                                           ";", kDefaultClusterName));
+    return absl::Base64Escape(
+        absl::StrCat("ipv4:127.0.0.1:", backends_[idx]->port(), ";",
+                     kDefaultClusterName));
   }
 };
 

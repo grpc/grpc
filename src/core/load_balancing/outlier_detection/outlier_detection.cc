@@ -379,19 +379,21 @@ class OutlierDetectionLb final : public LoadBalancingPolicy {
     bool counting_enabled_;
   };
 
-  class Helper final
-      : public ParentOwningDelegatingChannelControlHelper<OutlierDetectionLb> {
-   public:
-    explicit Helper(RefCountedPtr<OutlierDetectionLb> outlier_detection_policy)
-        : ParentOwningDelegatingChannelControlHelper(
-              std::move(outlier_detection_policy)) {}
+class Helper final
+    : public ParentOwningDelegatingChannelControlHelper<OutlierDetectionLb> {
+ public:
+  explicit Helper(RefCountedPtr<OutlierDetectionLb> outlier_detection_policy)
+      : ParentOwningDelegatingChannelControlHelper(
+            std::move(outlier_detection_policy)) {}
 
-    RefCountedPtr<SubchannelInterface> CreateSubchannel(
-        const grpc_resolved_address& address,
-        const ChannelArgs& per_address_args, const ChannelArgs& args) override;
-    void UpdateState(grpc_connectivity_state state, const absl::Status& status,
-                     RefCountedPtr<SubchannelPicker> picker) override;
-  };
+  RefCountedPtr<SubchannelInterface> CreateSubchannel(
+      const std::string& address, const ChannelArgs& per_address_args,
+      const ChannelArgs& args) override;
+  void UpdateState(grpc_connectivity_state state, const absl::Status& status,
+                   // ignored.  The child will be re-created and will report
+                   // its own new picker.
+                   RefCountedPtr<SubchannelPicker> picker) override;
+};
 
   class EjectionTimer final : public InternallyRefCounted<EjectionTimer> {
    public:
@@ -433,8 +435,8 @@ class OutlierDetectionLb final : public LoadBalancingPolicy {
   RefCountedPtr<SubchannelPicker> picker_;
   std::map<EndpointAddressSet, RefCountedPtr<EndpointState>>
       endpoint_state_map_;
-  std::map<grpc_resolved_address, RefCountedPtr<SubchannelState>,
-           ResolvedAddressLessThan>
+  std::map<std::string, RefCountedPtr<SubchannelState>,
+           StringLessThan>
       subchannel_state_map_;
   OrphanablePtr<EjectionTimer> ejection_timer_;
 };
@@ -634,11 +636,11 @@ absl::Status OutlierDetectionLb::UpdateLocked(UpdateArgs args) {
   // Update subchannel and endpoint maps.
   if (args.addresses.ok()) {
     std::set<EndpointAddressSet> current_endpoints;
-    std::set<grpc_resolved_address, ResolvedAddressLessThan> current_addresses;
+    std::set<std::string, StringLessThan> current_addresses;
     (*args.addresses)->ForEach([&](const EndpointAddresses& endpoint) {
       EndpointAddressSet key(endpoint.addresses());
       current_endpoints.emplace(key);
-      for (const grpc_resolved_address& address : endpoint.addresses()) {
+      for (const std::string& address : endpoint.addresses()) {
         current_addresses.emplace(address);
       }
       // Find the entry in the endpoint map.
@@ -651,14 +653,12 @@ absl::Status OutlierDetectionLb::UpdateLocked(UpdateArgs args) {
         // Start by getting a pointer to the entry for each address in the
         // subchannel map, creating the entry if needed.
         std::set<SubchannelState*> subchannels;
-        for (const grpc_resolved_address& address : endpoint.addresses()) {
+        for (const std::string& address : endpoint.addresses()) {
           auto it2 = subchannel_state_map_.find(address);
           if (it2 == subchannel_state_map_.end()) {
             if (GRPC_TRACE_FLAG_ENABLED(outlier_detection_lb)) {
-              std::string address_str = grpc_sockaddr_to_string(&address, false)
-                                            .value_or("<unknown>");
               LOG(INFO) << "[outlier_detection_lb " << this
-                        << "] adding address entry for " << address_str;
+                        << "] adding address entry for " << address;
             }
             it2 = subchannel_state_map_
                       .emplace(address, MakeRefCounted<SubchannelState>())
@@ -683,10 +683,8 @@ absl::Status OutlierDetectionLb::UpdateLocked(UpdateArgs args) {
       auto& [address, subchannel_state] = *it;
       if (current_addresses.find(address) == current_addresses.end()) {
         if (GRPC_TRACE_FLAG_ENABLED(outlier_detection_lb)) {
-          std::string address_str =
-              grpc_sockaddr_to_string(&address, false).value_or("<unknown>");
           LOG(INFO) << "[outlier_detection_lb " << this
-                    << "] removing subchannel map entry " << address_str;
+                    << "] removing subchannel map entry " << address;
         }
         // Don't hold a ref to the corresponding EndpointState object,
         // because there could be subchannel wrappers keeping this alive
@@ -748,7 +746,7 @@ OrphanablePtr<LoadBalancingPolicy> OutlierDetectionLb::CreateChildPolicyLocked(
   LoadBalancingPolicy::Args lb_policy_args;
   lb_policy_args.work_serializer = work_serializer();
   lb_policy_args.args = args;
-  lb_policy_args.channel_control_helper = std::make_unique<Helper>(
+  lb_policy_args.channel_control_helper = std::make_unique<OutlierDetectionLb::Helper>(
       RefAsSubclass<OutlierDetectionLb>(DEBUG_LOCATION, "Helper"));
   OrphanablePtr<LoadBalancingPolicy> lb_policy =
       MakeOrphanable<ChildPolicyHandler>(std::move(lb_policy_args),
@@ -769,7 +767,7 @@ OrphanablePtr<LoadBalancingPolicy> OutlierDetectionLb::CreateChildPolicyLocked(
 //
 
 RefCountedPtr<SubchannelInterface> OutlierDetectionLb::Helper::CreateSubchannel(
-    const grpc_resolved_address& address, const ChannelArgs& per_address_args,
+    const std::string& address, const ChannelArgs& per_address_args,
     const ChannelArgs& args) {
   if (parent()->shutting_down_) return nullptr;
   RefCountedPtr<SubchannelState> subchannel_state;
@@ -777,13 +775,9 @@ RefCountedPtr<SubchannelInterface> OutlierDetectionLb::Helper::CreateSubchannel(
   if (it != parent()->subchannel_state_map_.end()) {
     subchannel_state = it->second->Ref();
   }
-  if (GRPC_TRACE_FLAG_ENABLED(outlier_detection_lb)) {
-    std::string address_str =
-        grpc_sockaddr_to_string(&address, false).value_or("<unknown>");
-    LOG(INFO) << "[outlier_detection_lb " << parent()
-              << "] creating subchannel for " << address_str
-              << ", subchannel state " << subchannel_state.get();
-  }
+  GRPC_TRACE_LOG(outlier_detection_lb, INFO)
+      << "[outlier_detection_lb " << parent() << "] creating subchannel for "
+      << address << ", subchannel state " << subchannel_state.get();
   auto subchannel = MakeRefCounted<SubchannelWrapper>(
       parent()->work_serializer(), subchannel_state,
       parent()->channel_control_helper()->CreateSubchannel(
