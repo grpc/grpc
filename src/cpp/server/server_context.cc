@@ -41,11 +41,10 @@
 #include <grpcpp/support/string_ref.h>
 
 #include <atomic>
+#include <cstdint>
 #include <cstdlib>
 #include <functional>
 #include <map>
-#include <memory>
-#include <new>
 #include <string>
 #include <utility>
 #include <vector>
@@ -60,6 +59,134 @@
 #include "absl/log/log.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/string_view.h"
+
+namespace grpc {
+namespace internal {
+
+class SessionContextRegistry {
+ public:
+  static uint16_t Register(void (*destroy)(void*)) {
+    grpc_core::MutexLock lock(*mu());
+    uint16_t id = destroy_functions()->size();
+    destroy_functions()->push_back(destroy);
+    return id;
+  }
+
+  static uint16_t Count() {
+    grpc_core::MutexLock lock(*mu());
+    return destroy_functions()->size();
+  }
+
+  static void DestroyElement(uint16_t id, void* element) {
+    void (*destroy)(void*) = nullptr;
+    {
+      grpc_core::MutexLock lock(*mu());
+      if (id < destroy_functions()->size()) {
+        destroy = (*destroy_functions())[id];
+      }
+    }
+    if (destroy != nullptr && element != nullptr) {
+      destroy(element);
+    }
+  }
+
+ private:
+  static grpc_core::Mutex* mu() {
+    static grpc_core::Mutex* mu = new grpc_core::Mutex();
+    return mu;
+  }
+  static std::vector<void (*)(void*)>* destroy_functions() {
+    static std::vector<void (*)(void*)>* functions =
+        new std::vector<void (*)(void*)>();
+    return functions;
+  }
+};
+
+struct SessionContextList {
+  void** elements = nullptr;
+  uint16_t num_elements = 0;
+  grpc_core::Mutex mu;
+
+  ~SessionContextList() {
+    grpc_core::MutexLock lock(mu);
+    for (uint16_t i = 0; i < num_elements; ++i) {
+      if (elements[i] != nullptr) {
+        SessionContextRegistry::DestroyElement(i, elements[i]);
+      }
+    }
+    delete[] elements;
+  }
+};
+
+uint16_t ServerContextRegisterSessionContext(void (*destroy)(void*)) {
+  return SessionContextRegistry::Register(destroy);
+}
+
+void ServerContextSetSessionContext(grpc_call* call, uint16_t id, void* ptr) {
+  if (call == nullptr) {
+    if (ptr != nullptr) {
+      SessionContextRegistry::DestroyElement(id, ptr);
+    }
+    return;
+  }
+  grpc_core::Arena* arena = grpc_call_get_arena(call);
+  auto* list = arena->GetContext<SessionContextList>();
+  if (list == nullptr) {
+    list = arena->New<SessionContextList>();
+    arena->SetContext<SessionContextList>(list);
+  }
+
+  grpc_core::MutexLock lock(list->mu);
+  if (id >= list->num_elements) {
+    uint16_t new_num = SessionContextRegistry::Count();
+    if (id >= new_num) new_num = id + 1;
+    void** new_elements = new void*[new_num]();
+    for (uint16_t i = 0; i < list->num_elements; ++i) {
+      new_elements[i] = list->elements[i];
+    }
+    delete[] list->elements;
+    list->elements = new_elements;
+    list->num_elements = new_num;
+  }
+  if (list->elements[id] != nullptr) {
+    SessionContextRegistry::DestroyElement(id, list->elements[id]);
+  }
+  list->elements[id] = ptr;
+}
+
+void* ServerContextGetSessionContext(grpc_call* call, uint16_t id) {
+  if (call == nullptr) return nullptr;
+  grpc_core::Arena* arena = grpc_call_get_arena(call);
+  auto* list = arena->GetContext<SessionContextList>();
+  if (list != nullptr && id < list->num_elements &&
+      list->elements[id] != nullptr) {
+    return list->elements[id];
+  }
+
+  auto* parent_call_context = arena->GetContext<grpc_core::ParentCallContext>();
+  if (parent_call_context != nullptr && parent_call_context->arena != nullptr) {
+    auto* parent_list =
+        parent_call_context->arena->GetContext<SessionContextList>();
+    if (parent_list != nullptr && id < parent_list->num_elements &&
+        parent_list->elements[id] != nullptr) {
+      return parent_list->elements[id];
+    }
+  }
+
+  return nullptr;
+}
+
+}  // namespace internal
+}  // namespace grpc
+
+namespace grpc_core {
+template <>
+struct ArenaContextType<grpc::internal::SessionContextList> {
+  static void Destroy(grpc::internal::SessionContextList* p) {
+    p->~SessionContextList();
+  }
+};
+}  // namespace grpc_core
 
 namespace grpc {
 
