@@ -67,7 +67,7 @@ describe 'Client Interceptors' do
 
       it 'can remove outgoing metadata with return_op', server: true do
         deleting_interceptor = Class.new(GRPC::ClientInterceptor) do
-          def request_response(request:, call:, method:, metadata: {})
+          def request_response(metadata: {}, **)
             metadata.delete('to-delete')
             yield
           end
@@ -239,7 +239,7 @@ describe 'Client Interceptors' do
 
       it 'can remove outgoing metadata with return_op', server: true do
         deleting_interceptor = Class.new(GRPC::ClientInterceptor) do
-          def bidi_streamer(requests:, call:, method:, metadata: {})
+          def bidi_streamer(metadata: {}, **)
             metadata.delete('to-delete')
             yield
           end

@@ -419,19 +419,19 @@ module GRPC
 
     private
 
-    # Merges caller metadata into c.metadata_to_send and exposes that live
-    # hash to interceptors via intercept_args[:metadata], so interceptors
-    # can add or remove keys in place and the mutations propagate to the
-    # wire without a redundant merge. Wraps the call in the interception
-    # chain; when return_op is true, the chain is deferred into the op's
-    # execute singleton method. The block is the underlying ActiveCall
-    # invocation and is invoked inside intercept!.
-    def intercept_and_invoke(c, type, intercept_args, return_op, &block)
-      c.merge_metadata_to_send(intercept_args[:metadata])
-      intercept_args[:metadata] = c.metadata_to_send
+    # Merges caller metadata into active_call.metadata_to_send and exposes
+    # that live hash to interceptors via intercept_args[:metadata], so
+    # interceptors can add or remove keys in place and the mutations
+    # propagate to the wire without a redundant merge. Wraps the call in
+    # the interception chain; when return_op is true, the chain is
+    # deferred into the op's execute singleton method. The block is the
+    # underlying ActiveCall invocation and is invoked inside intercept!.
+    def intercept_and_invoke(active_call, type, intercept_args, return_op, &block)
+      active_call.merge_metadata_to_send(intercept_args[:metadata])
+      intercept_args[:metadata] = active_call.metadata_to_send
       interception_context = @interceptors.build_context
       if return_op
-        op = c.operation
+        op = active_call.operation
         op.define_singleton_method(:execute) do
           interception_context.intercept!(type, intercept_args, &block)
         end
