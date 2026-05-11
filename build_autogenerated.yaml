@@ -9445,6 +9445,18 @@ targets:
   - linux
   - posix
   - mac
+- name: client_initial_metadata_outstanding_token_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/lib/promise/join.h
+  - test/core/promise/test_wakeup_schedulers.h
+  src:
+  - test/core/transport/client_initial_metadata_outstanding_token_test.cc
+  deps:
+  - gtest
+  - grpc
 - name: client_interceptors_end2end_test
   gtest: true
   build: test
