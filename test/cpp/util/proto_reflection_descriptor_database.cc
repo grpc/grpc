@@ -60,8 +60,8 @@ ProtoReflectionDescriptorDatabase::~ProtoReflectionDescriptorDatabase() {
   }
 }
 
-bool ProtoReflectionDescriptorDatabase::FindFileByName(
-    const string& filename, protobuf::FileDescriptorProto* output) {
+bool ProtoReflectionDescriptorDatabase::FindFileByNameImpl(
+    absl::string_view filename, protobuf::FileDescriptorProto* output) {
   if (cached_db_.FindFileByName(filename, output)) {
     return true;
   }
@@ -103,8 +103,8 @@ bool ProtoReflectionDescriptorDatabase::FindFileByName(
   return cached_db_.FindFileByName(filename, output);
 }
 
-bool ProtoReflectionDescriptorDatabase::FindFileContainingSymbol(
-    const string& symbol_name, protobuf::FileDescriptorProto* output) {
+bool ProtoReflectionDescriptorDatabase::FindFileContainingSymbolImpl(
+    absl::string_view symbol_name, protobuf::FileDescriptorProto* output) {
   if (cached_db_.FindFileContainingSymbol(symbol_name, output)) {
     return true;
   }
@@ -146,8 +146,8 @@ bool ProtoReflectionDescriptorDatabase::FindFileContainingSymbol(
   return cached_db_.FindFileContainingSymbol(symbol_name, output);
 }
 
-bool ProtoReflectionDescriptorDatabase::FindFileContainingExtension(
-    const string& containing_type, int field_number,
+bool ProtoReflectionDescriptorDatabase::FindFileContainingExtensionImpl(
+    absl::string_view containing_type, int field_number,
     protobuf::FileDescriptorProto* output) {
   if (cached_db_.FindFileContainingExtension(containing_type, field_number,
                                              output)) {
@@ -204,8 +204,8 @@ bool ProtoReflectionDescriptorDatabase::FindFileContainingExtension(
                                                 output);
 }
 
-bool ProtoReflectionDescriptorDatabase::FindAllExtensionNumbers(
-    const string& extendee_type, std::vector<int>* output) {
+bool ProtoReflectionDescriptorDatabase::FindAllExtensionNumbersImpl(
+    absl::string_view extendee_type, std::vector<int>* output) {
   if (cached_extension_numbers_.find(extendee_type) !=
       cached_extension_numbers_.end()) {
     *output = cached_extension_numbers_[extendee_type];
