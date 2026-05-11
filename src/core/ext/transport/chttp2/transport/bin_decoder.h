@@ -53,5 +53,4 @@ grpc_slice grpc_chttp2_base64_decode_with_length(const grpc_slice& input,
 // Infer the length of decoded data from encoded data.
 size_t grpc_chttp2_base64_infer_length_after_decode(const grpc_slice& slice);
 
-
 #endif  // GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_BIN_DECODER_H
