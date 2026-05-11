@@ -371,6 +371,7 @@ def _create_portability_test_jobs(
     # portability C and C++ on x64
     for compiler in [
         "gcc8",
+        "gcc10",
         # TODO(b/283304471): Tests using OpenSSL's engine APIs were broken and removed
         "gcc10.2_openssl102",
         "gcc10.2_openssl111",
@@ -378,6 +379,7 @@ def _create_portability_test_jobs(
         "gcc14",
         "gcc_musl",
         "clang11",
+        "clang14",
         "clang19",
     ]:
         test_jobs += _generate_jobs(

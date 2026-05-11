@@ -1,4 +1,4 @@
-# Copyright 2015 gRPC authors.
+# Copyright 2021 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,30 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM alpine:3.21
+FROM gcc:10
 
-# Install Git and basic packages.
-RUN apk update && apk add \
-  autoconf \
-  automake \
-  bash \
-  bzip2 \
-  build-base \
-  cmake \
-  curl \
-  gcc \
-  git \
-  libtool \
-  linux-headers \
-  make \
-  perl \
-  strace \
-  python3 \
-  py3-pip \
-  unzip \
-  wget \
-  zip
-
+RUN apt-get update && apt-get install -y curl git time wget zip && apt-get clean
 #=================
 # Setup git to access working directory across docker boundary.
 # This avoids the "fatal: detected dubious ownership in repository XYZ"
@@ -44,9 +23,21 @@ RUN apk update && apk add \
 RUN git config --global --add safe.directory '*'
 RUN git config --global protocol.file.allow always
 
+#====================
+# run_tests.py python dependencies
+
+# Basic python dependencies to be able to run tools/run_tests python scripts
+# These dependencies are not sufficient to build gRPC Python, gRPC Python
+# deps are defined elsewhere (e.g. python_deps.include)
+RUN apt-get update && apt-get install -y \
+  python3 \
+  python3-pip \
+  python3-setuptools \
+  python3-yaml \
+  && apt-get clean
 
 # use pinned version of pip to avoid sudden breakages
-RUN python3 -m pip install --break-system-packages --upgrade pip==19.3.1
+RUN python3 -m pip install --upgrade pip==19.3.1
 
 # TODO(jtattermusch): currently six is needed for tools/run_tests scripts
 # but since our python2 usage is deprecated, we should get rid of it.
@@ -54,12 +45,17 @@ RUN python3 -m pip install six==1.16.0
 
 # Google Cloud Platform API libraries
 # These are needed for uploading test results to BigQuery (e.g. by tools/run_tests scripts)
-RUN python3 -m pip install --upgrade google-auth==1.24.0 google-api-python-client==1.12.8 oauth2client==4.1.0
+RUN python3 -m pip install --upgrade google-auth==1.23.0 google-api-python-client==1.12.8 oauth2client==4.1.0
 
-RUN python3 -m pip install --upgrade --ignore-installed PyYAML==6.0.1 --user
 
 # Some cxx tests depend on the twisted package
 RUN python3 -m pip install twisted
+
+#=================
+# Install cmake using the install script.
+RUN curl -sSL -o cmake-linux.sh https://github.com/Kitware/CMake/releases/download/v3.16.1/cmake-3.16.1-Linux-x86_64.sh \
+    && sh cmake-linux.sh -- --skip-license --prefix=/usr \
+    && rm cmake-linux.sh
 
 #=================
 # Install ccache
@@ -77,7 +73,6 @@ RUN curl -sSL --fail --retry 5 -o ccache.tar.gz https://github.com/ccache/ccache
 
 
 RUN mkdir /var/local/jenkins
-
 
 
 # Define the default command.
