@@ -31,8 +31,8 @@
 
 #include <atomic>
 #include <cstddef>
-#include <cstdio>
 #include <cstdint>
+#include <cstdio>
 #include <iosfwd>
 #include <memory>
 #include <utility>
@@ -56,17 +56,17 @@ namespace arena_detail {
 // via ArenaContextTraits at static initialization time).
 class BaseArenaContextTraits {
  public:
-  using Destroyer = void(*)(void*);
+  using Destroyer = void (*)(void*);
   // Count of number of contexts that have been allocated.
   class Traits {
-    public:
+   public:
     static inline constexpr int kMaxNumOfContexts = 1024;
     bool SetDestroyerOnce(uint16_t id, Destroyer destroyer) {
-        // Called exactly once
-        Destroyer expected = nullptr;
-        return destroyers_[id].compare_exchange_strong(expected, destroyer,
-                                              std::memory_order_acq_rel,
-                                              std::memory_order_acquire);
+      // Called exactly once
+      Destroyer expected = nullptr;
+      return destroyers_[id].compare_exchange_strong(expected, destroyer,
+                                                     std::memory_order_acq_rel,
+                                                     std::memory_order_acquire);
     }
     Destroyer GetDestroyer(uint16_t id) {
       return destroyers_[id].load(std::memory_order_acquire);
@@ -75,16 +75,17 @@ class BaseArenaContextTraits {
     // Not thread safe, meant to be called from global static initialzier only.
     uint16_t MakeId() {
       if (next_id_ >= kMaxNumOfContexts) {
-        printf("The number of instantiated ArenaContextTraits<T> is larger than limit (%d), exiting.", kMaxNumOfContexts);
+        printf(
+            "The number of instantiated ArenaContextTraits<T> is larger than "
+            "limit (%d), exiting.",
+            kMaxNumOfContexts);
         exit(1);
       }
       return next_id_++;
     }
-    uint16_t Size() const {
-      return next_id_;
-    }
+    uint16_t Size() const { return next_id_; }
 
-    private:
+   private:
     // Pre-allocate because std::atomic is neither copyable or movable.
     std::vector<std::atomic<Destroyer>> destroyers_{kMaxNumOfContexts};
     // only incremented before main() function. So it's fine to be non atomic.
@@ -101,8 +102,9 @@ class BaseArenaContextTraits {
   // Call the registered destruction function for a context.
   static void Destroy(uint16_t id, void* ptr) {
     if (ptr == nullptr) return;
-    if (auto destroyer = RegisteredTraits().GetDestroyer(id); destroyer != nullptr){
-        destroyer(ptr);
+    if (auto destroyer = RegisteredTraits().GetDestroyer(id);
+        destroyer != nullptr) {
+      destroyer(ptr);
     }
   }
   static Traits& RegisteredTraits() {
@@ -113,9 +115,7 @@ class BaseArenaContextTraits {
  protected:
   // Allocate a new context id and register the destruction function.
   // Only meant to be called before main() function.
-  static uint16_t MakeId() {
-    return RegisteredTraits().MakeId();
-  }
+  static uint16_t MakeId() { return RegisteredTraits().MakeId(); }
 
  private:
 };
@@ -343,7 +343,6 @@ class Arena final : public RefCounted<Arena, NonPolymorphicRefCount,
 
   template <typename T>
   void SetContext(T* context) {
-
     using Destroyer = arena_detail::BaseArenaContextTraits::Destroyer;
     uint16_t id = arena_detail::ArenaContextTraits<T>::id();
     auto& traits = arena_detail::BaseArenaContextTraits::RegisteredTraits();
