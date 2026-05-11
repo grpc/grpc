@@ -30,6 +30,14 @@ py_test(
     imports = ["../.."],
     main = "_fork_interop_test.py",
     python_version = "PY3",
+    # Serialize execution across the host. The fork test spawns a server
+    # subprocess that binds a local TCP port, then forks child processes
+    # that connect to it. Running multiple sandboxes concurrently shares
+    # the host's network namespace and Python runfiles tree, which under
+    # high parallelism causes unrelated flakes (port collisions
+    # with SIGKILLed leftover servers, partially-initialized Python
+    # import races).
+    tags = ["exclusive"],
     deps = [
         ":native_debug",
         "//src/proto/grpc/testing:empty_py_pb2",
