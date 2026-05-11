@@ -43,6 +43,10 @@ module GRPC
     include Core::TimeConsts
     include Core::CallOps
     extend Forwardable
+    # metadata_to_send is the live hash of client metadata that will be sent
+    # on the next call. Client interceptors may mutate it in place (add or
+    # delete keys) before the underlying RPC method is invoked; mutations after
+    # metadata has been sent (i.e. once metadata_sent is true) have no effect.
     attr_reader :deadline, :metadata_sent, :metadata_to_send, :peer, :peer_cert
     def_delegators :@call, :cancel, :cancel_with_status, :metadata,
                    :write_flag, :write_flag=, :trailing_metadata, :status

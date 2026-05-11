@@ -170,13 +170,12 @@ module GRPC
         c.merge_metadata_to_send(metadata)
         op = c.operation
         op.define_singleton_method(:execute) do
-          # Sync back the fully merged metadata (including anything added by
-          # merge_metadata_to_send) so that interceptors see the complete
-          # metadata context when the operation is executed lazily.
-          updated_metadata = c.metadata_to_send.dup
-          intercept_args[:metadata] = updated_metadata
+          # Expose the live metadata_to_send hash so interceptors see the
+          # fully merged metadata and can add or remove keys in place before
+          # the request is sent.
+          intercept_args[:metadata] = c.metadata_to_send
           interception_context.intercept!(:request_response, intercept_args) do
-            c.request_response(req, metadata: updated_metadata)
+            c.request_response(req)
           end
         end
         op
@@ -252,13 +251,12 @@ module GRPC
         c.merge_metadata_to_send(metadata)
         op = c.operation
         op.define_singleton_method(:execute) do
-          # Sync back the fully merged metadata (including anything added by
-          # merge_metadata_to_send) so that interceptors see the complete
-          # metadata context when the operation is executed lazily.
-          updated_metadata = c.metadata_to_send.dup
-          intercept_args[:metadata] = updated_metadata
+          # Expose the live metadata_to_send hash so interceptors see the
+          # fully merged metadata and can add or remove keys in place before
+          # the request is sent.
+          intercept_args[:metadata] = c.metadata_to_send
           interception_context.intercept!(:client_streamer, intercept_args) do
-            c.client_streamer(requests, metadata: updated_metadata)
+            c.client_streamer(requests)
           end
         end
         op
@@ -349,13 +347,12 @@ module GRPC
         c.merge_metadata_to_send(metadata)
         op = c.operation
         op.define_singleton_method(:execute) do
-          # Sync back the fully merged metadata (including anything added by
-          # merge_metadata_to_send) so that interceptors see the complete
-          # metadata context when the operation is executed lazily.
-          updated_metadata = c.metadata_to_send.dup
-          intercept_args[:metadata] = updated_metadata
+          # Expose the live metadata_to_send hash so interceptors see the
+          # fully merged metadata and can add or remove keys in place before
+          # the request is sent.
+          intercept_args[:metadata] = c.metadata_to_send
           interception_context.intercept!(:server_streamer, intercept_args) do
-            c.server_streamer(req, metadata: updated_metadata, &blk)
+            c.server_streamer(req, &blk)
           end
         end
         op
@@ -476,13 +473,12 @@ module GRPC
         c.merge_metadata_to_send(metadata)
         op = c.operation
         op.define_singleton_method(:execute) do
-          # Sync back the fully merged metadata (including anything added by
-          # merge_metadata_to_send) so that interceptors see the complete
-          # metadata context when the operation is executed lazily.
-          updated_metadata = c.metadata_to_send.dup
-          intercept_args[:metadata] = updated_metadata
+          # Expose the live metadata_to_send hash so interceptors see the
+          # fully merged metadata and can add or remove keys in place before
+          # the request is sent.
+          intercept_args[:metadata] = c.metadata_to_send
           interception_context.intercept!(:bidi_streamer, intercept_args) do
-            c.bidi_streamer(requests, metadata: updated_metadata, &blk)
+            c.bidi_streamer(requests, &blk)
           end
         end
         op

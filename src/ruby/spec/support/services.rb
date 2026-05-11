@@ -60,6 +60,7 @@ class EchoService
   def a_client_streaming_rpc(call)
     # iterate through requests so call can complete
     call.output_metadata.update(@trailing_metadata)
+    @received_md << call.metadata unless call.metadata.nil?
     call.each_remote_read.each do |r|
       GRPC.logger.info(r)
     end
@@ -68,11 +69,13 @@ class EchoService
 
   def a_server_streaming_rpc(_req, call)
     call.output_metadata.update(@trailing_metadata)
+    @received_md << call.metadata unless call.metadata.nil?
     [EchoMsg.new, EchoMsg.new]
   end
 
   def a_bidi_rpc(requests, call)
     call.output_metadata.update(@trailing_metadata)
+    @received_md << call.metadata unless call.metadata.nil?
     requests.each do |r|
       GRPC.logger.info(r)
     end

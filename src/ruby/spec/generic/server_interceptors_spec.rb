@@ -49,7 +49,7 @@ describe 'Server Interceptors' do
         run_services_on_server(@server, services: [service]) do
           stub = build_insecure_stub(EchoStub)
           expect_any_instance_of(GRPC::ActiveCall).to(
-            receive(:request_response).with(request, metadata: client_metadata)
+            receive(:request_response).with(request)
               .once.and_call_original
           )
           op = stub.an_rpc(request, client_call_opts)
@@ -84,7 +84,7 @@ describe 'Server Interceptors' do
         run_services_on_server(@server, services: [service]) do
           stub = build_insecure_stub(EchoStub)
           expect_any_instance_of(GRPC::ActiveCall).to(
-            receive(:client_streamer).with(requests, metadata: client_metadata)
+            receive(:client_streamer).with(requests)
               .once.and_call_original
           )
           op = stub.a_client_streaming_rpc(requests, client_call_opts)
@@ -122,7 +122,7 @@ describe 'Server Interceptors' do
         run_services_on_server(@server, services: [service]) do
           stub = build_insecure_stub(EchoStub)
           expect_any_instance_of(GRPC::ActiveCall).to(
-            receive(:server_streamer).with(request, metadata: client_metadata)
+            receive(:server_streamer).with(request)
               .once.and_call_original
           )
           op = stub.a_server_streaming_rpc(request, client_call_opts)
@@ -162,7 +162,7 @@ describe 'Server Interceptors' do
         run_services_on_server(@server, services: [service]) do
           stub = build_insecure_stub(EchoStub)
           expect_any_instance_of(GRPC::ActiveCall).to(
-            receive(:bidi_streamer).with(requests, metadata: client_metadata)
+            receive(:bidi_streamer).with(requests)
               .once.and_call_original
           )
           op = stub.a_bidi_rpc(requests, client_call_opts)
