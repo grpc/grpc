@@ -24,48 +24,12 @@ pyx_library(
     deps = ["@com_google_absl//absl/debugging:failure_signal_handler"],
 )
 
-# On non-macOS platforms, run the fork test in parallel (no exclusive tag)
 py_test(
     name = "fork_test",
     srcs = glob(["*.py"]),
     imports = ["../.."],
     main = "_fork_interop_test.py",
     python_version = "PY3",
-    target_compatible_with = select({
-        "//:mac": ["@platforms//:incompatible"],
-        "//conditions:default": [],
-    }),
-    deps = [
-        ":native_debug",
-        "//src/proto/grpc/testing:empty_py_pb2",
-        "//src/proto/grpc/testing:py_messages_proto",
-        "//src/proto/grpc/testing:test_py_pb2_grpc",
-        "//src/python/grpcio/grpc:grpcio",
-        "//src/python/grpcio_tests/tests/interop:service",
-        "//src/python/grpcio_tests/tests/unit:test_common",
-    ],
-)
-
-# On macOS, run the fork test exclusively (sequentially) to prevent local CPU starvation and port-sharing flakes.
-#
-# Serialize execution across the host. The fork test spawns a server
-# subprocess that binds a local TCP port, then forks child processes
-# that connect to it. Running multiple sandboxes concurrently shares
-# the host's network namespace and Python runfiles tree, which under
-# high parallelism causes unrelated flakes (port collisions
-# with SIGKILLed leftover servers, partially-initialized Python
-# import races).
-py_test(
-    name = "fork_test_mac",
-    srcs = glob(["*.py"]),
-    imports = ["../.."],
-    main = "_fork_interop_test.py",
-    python_version = "PY3",
-    tags = ["exclusive"],
-    target_compatible_with = select({
-        "//:mac": [],
-        "//conditions:default": ["@platforms//:incompatible"],
-    }),
     deps = [
         ":native_debug",
         "//src/proto/grpc/testing:empty_py_pb2",

@@ -99,6 +99,6 @@ python_bazel_tests_fork_support/bazel_wrapper \
   --google_credentials="${KOKORO_GFILE_DIR}/GrpcTesting-d0eeee2db331.json" \
   "${BAZEL_REMOTE_CACHE_ARGS[@]}" \
   --config=fork_support \
-  --runs_per_test=16 \
+  --runs_per_test=1 \
   ${BAZEL_FLAGS} \
   //src/python/grpcio_tests/tests/fork:fork_test
