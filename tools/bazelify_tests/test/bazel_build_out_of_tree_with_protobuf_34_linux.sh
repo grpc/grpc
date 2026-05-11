@@ -36,5 +36,7 @@ $GIT_ROOT/tools/bazel \
     "@grpc//:grpcpp_channelz" \
     "@grpc//:grpcpp_csds" \
     "@grpc//:grpcpp_orca_service" \
-    "@grpc//examples/protos/..." \
-    "@grpc//test/cpp/util:grpc++_proto_reflection_desc_db" # for protobuf 33/34 compatibility
+    "@grpc//examples/protos/..."
+
+# Protobuf 33/34 compatibility.
+$GIT_ROOT/tools/bazel build "@grpc//test/cpp/util:grpc++_proto_reflection_desc_db"
