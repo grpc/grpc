@@ -34,6 +34,11 @@
 
 #include "absl/functional/any_invocable.h"
 
+struct grpc_endpoint;
+namespace grpc_core {
+class Transport;
+}
+
 namespace grpc {
 
 class Server;
@@ -42,7 +47,12 @@ class Server;
 namespace internal {
 
 // Forward declarations
-void BindSessionToInnerServer(grpc_call* call, grpc::Server* inner_server);
+void BindSessionToInnerServer(grpc_call* call, grpc::Server* inner_server,
+                              grpc_core::Transport** out_transport,
+                              grpc_endpoint** out_endpoint);
+void InitiateSessionGracefulShutdown(
+    grpc_core::Transport* transport, grpc_endpoint* endpoint,
+    absl::AnyInvocable<void(absl::Status)> on_shutdown);
 template <class Request, class Response>
 class CallbackUnaryHandler;
 template <class Request, class Response>
@@ -223,6 +233,8 @@ class ServerCallbackSession : public internal::ServerCallbackCall {
   virtual void Finish(grpc::Status s) = 0;
   virtual void SendInitialMetadata() = 0;
   virtual void BindInnerServer(grpc::Server* inner_server) = 0;
+  virtual void InitiateGracefulShutdown(
+      absl::AnyInvocable<void(absl::Status)> on_shutdown) = 0;
 
  protected:
   template <class Reactor>
@@ -827,6 +839,27 @@ class ServerSessionReactor : public internal::ServerReactor {
     session->Finish(std::move(s));
   }
 
+  /// Initiate a graceful shutdown of a SESSION_RPC.
+  ///
+  /// This will send a GOAWAY frame to the client, telling it to finish active
+  /// virtual RPCs on this session and stop opening new ones. The provided
+  /// callback will be invoked with the final status of the inner transport
+  /// when it completely shuts down (drains).
+  void InitiateGracefulShutdown(
+      absl::AnyInvocable<void(absl::Status)> on_shutdown)
+      ABSL_LOCKS_EXCLUDED(session_mu_) {
+    ServerCallbackSession* session = session_.load(std::memory_order_acquire);
+    if (session == nullptr) {
+      grpc::internal::MutexLock l(&session_mu_);
+      session = session_.load(std::memory_order_relaxed);
+      if (session == nullptr) {
+        backlog_.graceful_shutdown_wanted_callback = std::move(on_shutdown);
+        return;
+      }
+    }
+    session->InitiateGracefulShutdown(std::move(on_shutdown));
+  }
+
   /// The following notifications are exactly like ServerBidiReactor.
   virtual void OnSendInitialMetadataDone(bool /*ok*/) {}
   void OnDone() override = 0;
@@ -843,6 +876,10 @@ class ServerSessionReactor : public internal::ServerReactor {
     if (GPR_UNLIKELY(backlog_.send_initial_metadata_wanted)) {
       session->SendInitialMetadata();
     }
+    if (GPR_UNLIKELY(backlog_.graceful_shutdown_wanted_callback != nullptr)) {
+      session->InitiateGracefulShutdown(
+          std::move(backlog_.graceful_shutdown_wanted_callback));
+    }
     if (GPR_UNLIKELY(backlog_.finish_wanted)) {
       session->Finish(std::move(backlog_.status_wanted));
     }
@@ -855,6 +892,7 @@ class ServerSessionReactor : public internal::ServerReactor {
   struct PreBindBacklog {
     bool send_initial_metadata_wanted = false;
     bool finish_wanted = false;
+    absl::AnyInvocable<void(absl::Status)> graceful_shutdown_wanted_callback;
     grpc::Status status_wanted;
   };
 
