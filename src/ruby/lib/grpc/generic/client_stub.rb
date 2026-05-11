@@ -304,8 +304,8 @@ module GRPC
         call: c.interceptable,
         metadata: metadata
       }
-      intercept_and_invoke(c, :server_streamer, intercept_args, return_op) do
-        c.server_streamer(req, &blk)
+      intercept_and_invoke(c, :server_streamer, intercept_args, return_op) do |&runtime_blk|
+        c.server_streamer(req, &runtime_blk || blk)
       end
     end
 
@@ -412,8 +412,8 @@ module GRPC
         call: c.interceptable,
         metadata: metadata
       }
-      intercept_and_invoke(c, :bidi_streamer, intercept_args, return_op) do
-        c.bidi_streamer(requests, &blk)
+      intercept_and_invoke(c, :bidi_streamer, intercept_args, return_op) do |&runtime_blk|
+        c.bidi_streamer(requests, &runtime_blk || blk)
       end
     end
 
@@ -432,8 +432,13 @@ module GRPC
       interception_context = @interceptors.build_context
       if return_op
         op = active_call.operation
-        op.define_singleton_method(:execute) do
-          interception_context.intercept!(type, intercept_args, &block)
+        # Forward any block passed to op.execute through to the underlying
+        # streaming call; server_streamer / bidi_streamer use it to yield
+        # responses. Unary calls ignore the forwarded block.
+        op.define_singleton_method(:execute) do |&exec_blk|
+          interception_context.intercept!(type, intercept_args) do
+            block.call(&exec_blk)
+          end
         end
         op
       else

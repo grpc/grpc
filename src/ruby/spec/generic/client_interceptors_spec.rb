@@ -183,6 +183,18 @@ describe 'Client Interceptors' do
             .to eq('bar_from_server_streamer')
         end
       end
+
+      it 'forwards a block passed to op.execute', server: true do
+        run_services_on_server(@server, services: [service]) do
+          stub = build_insecure_stub(EchoStub)
+          request = EchoMsg.new
+          received = []
+          op = stub.a_server_streaming_rpc(request, return_op: true)
+          op.execute { |r| received << r }
+          expect(received.length).to eq(2)
+          received.each { |r| expect(r).to be_a(EchoMsg) }
+        end
+      end
     end
 
     context 'with a bidi call' do
@@ -256,6 +268,18 @@ describe 'Client Interceptors' do
           op.execute.each { |r| expect(r).to be_a(EchoMsg) }
           expect(echo_service.received_md[0]).not_to have_key('to-delete')
           expect(echo_service.received_md[0]['to-keep']).to eq('y')
+        end
+      end
+
+      it 'forwards a block passed to op.execute', server: true do
+        run_services_on_server(@server, services: [service]) do
+          stub = build_insecure_stub(EchoStub)
+          requests = [EchoMsg.new, EchoMsg.new]
+          received = []
+          op = stub.a_bidi_rpc(requests, return_op: true)
+          op.execute { |r| received << r }
+          expect(received.length).to eq(2)
+          received.each { |r| expect(r).to be_a(EchoMsg) }
         end
       end
     end
