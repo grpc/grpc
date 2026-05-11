@@ -131,7 +131,7 @@ class ArenaContextTraits : public BaseArenaContextTraits {
  public:
   // Only declaration here. The explict instantiation is inside
   // arena.cc.
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static uint16_t id();
+  static uint16_t id();
 };
 
 template <typename T, typename SfinaeVoid = void>
