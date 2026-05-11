@@ -157,32 +157,14 @@ module GRPC
                           deadline: deadline,
                           parent: parent,
                           credentials: credentials)
-      interception_context = @interceptors.build_context
       intercept_args = {
         method: method,
         request: req,
         call: c.interceptable,
         metadata: metadata
       }
-      if return_op
-        # return the operation view of the active_call; define #execute as a
-        # new method for this instance that invokes #request_response.
-        c.merge_metadata_to_send(metadata)
-        op = c.operation
-        op.define_singleton_method(:execute) do
-          # Expose the live metadata_to_send hash so interceptors see the
-          # fully merged metadata and can add or remove keys in place before
-          # the request is sent.
-          intercept_args[:metadata] = c.metadata_to_send
-          interception_context.intercept!(:request_response, intercept_args) do
-            c.request_response(req)
-          end
-        end
-        op
-      else
-        interception_context.intercept!(:request_response, intercept_args) do
-          c.request_response(req, metadata: metadata)
-        end
+      intercept_and_invoke(c, :request_response, intercept_args, return_op) do
+        c.request_response(req)
       end
     end
 
@@ -238,32 +220,14 @@ module GRPC
                           deadline: deadline,
                           parent: parent,
                           credentials: credentials)
-      interception_context = @interceptors.build_context
       intercept_args = {
         method: method,
         requests: requests,
         call: c.interceptable,
         metadata: metadata
       }
-      if return_op
-        # return the operation view of the active_call; define #execute as a
-        # new method for this instance that invokes #client_streamer.
-        c.merge_metadata_to_send(metadata)
-        op = c.operation
-        op.define_singleton_method(:execute) do
-          # Expose the live metadata_to_send hash so interceptors see the
-          # fully merged metadata and can add or remove keys in place before
-          # the request is sent.
-          intercept_args[:metadata] = c.metadata_to_send
-          interception_context.intercept!(:client_streamer, intercept_args) do
-            c.client_streamer(requests)
-          end
-        end
-        op
-      else
-        interception_context.intercept!(:client_streamer, intercept_args) do
-          c.client_streamer(requests, metadata: metadata)
-        end
+      intercept_and_invoke(c, :client_streamer, intercept_args, return_op) do
+        c.client_streamer(requests)
       end
     end
 
@@ -334,32 +298,14 @@ module GRPC
                           deadline: deadline,
                           parent: parent,
                           credentials: credentials)
-      interception_context = @interceptors.build_context
       intercept_args = {
         method: method,
         request: req,
         call: c.interceptable,
         metadata: metadata
       }
-      if return_op
-        # return the operation view of the active_call; define #execute
-        # as a new method for this instance that invokes #server_streamer
-        c.merge_metadata_to_send(metadata)
-        op = c.operation
-        op.define_singleton_method(:execute) do
-          # Expose the live metadata_to_send hash so interceptors see the
-          # fully merged metadata and can add or remove keys in place before
-          # the request is sent.
-          intercept_args[:metadata] = c.metadata_to_send
-          interception_context.intercept!(:server_streamer, intercept_args) do
-            c.server_streamer(req, &blk)
-          end
-        end
-        op
-      else
-        interception_context.intercept!(:server_streamer, intercept_args) do
-          c.server_streamer(req, metadata: metadata, &blk)
-        end
+      intercept_and_invoke(c, :server_streamer, intercept_args, return_op) do
+        c.server_streamer(req, &blk)
       end
     end
 
@@ -460,36 +406,40 @@ module GRPC
                           deadline: deadline,
                           parent: parent,
                           credentials: credentials)
-      interception_context = @interceptors.build_context
       intercept_args = {
         method: method,
         requests: requests,
         call: c.interceptable,
         metadata: metadata
       }
-      if return_op
-        # return the operation view of the active_call; define #execute
-        # as a new method for this instance that invokes #bidi_streamer
-        c.merge_metadata_to_send(metadata)
-        op = c.operation
-        op.define_singleton_method(:execute) do
-          # Expose the live metadata_to_send hash so interceptors see the
-          # fully merged metadata and can add or remove keys in place before
-          # the request is sent.
-          intercept_args[:metadata] = c.metadata_to_send
-          interception_context.intercept!(:bidi_streamer, intercept_args) do
-            c.bidi_streamer(requests, &blk)
-          end
-        end
-        op
-      else
-        interception_context.intercept!(:bidi_streamer, intercept_args) do
-          c.bidi_streamer(requests, metadata: metadata, &blk)
-        end
+      intercept_and_invoke(c, :bidi_streamer, intercept_args, return_op) do
+        c.bidi_streamer(requests, &blk)
       end
     end
 
     private
+
+    # Merges caller metadata into c.metadata_to_send and exposes that live
+    # hash to interceptors via intercept_args[:metadata], so interceptors
+    # can add or remove keys in place and the mutations propagate to the
+    # wire without a redundant merge. Wraps the call in the interception
+    # chain; when return_op is true, the chain is deferred into the op's
+    # execute singleton method. The block is the underlying ActiveCall
+    # invocation and is invoked inside intercept!.
+    def intercept_and_invoke(c, type, intercept_args, return_op, &block)
+      c.merge_metadata_to_send(intercept_args[:metadata])
+      intercept_args[:metadata] = c.metadata_to_send
+      interception_context = @interceptors.build_context
+      if return_op
+        op = c.operation
+        op.define_singleton_method(:execute) do
+          interception_context.intercept!(type, intercept_args, &block)
+        end
+        op
+      else
+        interception_context.intercept!(type, intercept_args, &block)
+      end
+    end
 
     # Creates a new active stub
     #

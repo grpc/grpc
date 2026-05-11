@@ -41,12 +41,12 @@ describe 'Client Interceptors' do
         expect(interceptor).to receive(:request_response)
           .once.and_call_original
 
-        run_services_on_server(@server, services: [service]) do
+        echo_service = EchoService.new
+        run_services_on_server(@server, services: [echo_service]) do
           stub = build_insecure_stub(EchoStub, opts: interceptors_opts)
-          expect_any_instance_of(GRPC::ActiveCall).to receive(:request_response)
-            .with(request, metadata: { 'foo' => 'bar_from_request_response' })
-            .once.and_call_original
           expect(stub.an_rpc(request)).to be_a(EchoMsg)
+          expect(echo_service.received_md[0]['foo'])
+            .to eq('bar_from_request_response')
         end
       end
 
@@ -105,13 +105,13 @@ describe 'Client Interceptors' do
         expect(interceptor).to receive(:client_streamer)
           .once.and_call_original
 
-        run_services_on_server(@server, services: [service]) do
+        echo_service = EchoService.new
+        run_services_on_server(@server, services: [echo_service]) do
           stub = build_insecure_stub(EchoStub, opts: interceptors_opts)
           requests = [EchoMsg.new, EchoMsg.new]
-          expect_any_instance_of(GRPC::ActiveCall).to receive(:client_streamer)
-            .with(requests, metadata: { 'foo' => 'bar_from_client_streamer' })
-            .once.and_call_original
           expect(stub.a_client_streaming_rpc(requests)).to be_a(EchoMsg)
+          expect(echo_service.received_md[0]['foo'])
+            .to eq('bar_from_client_streamer')
         end
       end
 
@@ -153,16 +153,16 @@ describe 'Client Interceptors' do
         expect(interceptor).to receive(:server_streamer)
           .once.and_call_original
 
-        run_services_on_server(@server, services: [service]) do
+        echo_service = EchoService.new
+        run_services_on_server(@server, services: [echo_service]) do
           stub = build_insecure_stub(EchoStub, opts: interceptors_opts)
           request = EchoMsg.new
-          expect_any_instance_of(GRPC::ActiveCall).to receive(:server_streamer)
-            .with(request, metadata: { 'foo' => 'bar_from_server_streamer' })
-            .once.and_call_original
           responses = stub.a_server_streaming_rpc(request)
           responses.each do |r|
             expect(r).to be_a(EchoMsg)
           end
+          expect(echo_service.received_md[0]['foo'])
+            .to eq('bar_from_server_streamer')
         end
       end
 
@@ -206,16 +206,16 @@ describe 'Client Interceptors' do
         expect(interceptor).to receive(:bidi_streamer)
           .once.and_call_original
 
-        run_services_on_server(@server, services: [service]) do
+        echo_service = EchoService.new
+        run_services_on_server(@server, services: [echo_service]) do
           stub = build_insecure_stub(EchoStub, opts: interceptors_opts)
           requests = [EchoMsg.new, EchoMsg.new]
-          expect_any_instance_of(GRPC::ActiveCall).to receive(:bidi_streamer)
-            .with(requests, metadata: { 'foo' => 'bar_from_bidi_streamer' })
-            .once.and_call_original
           responses = stub.a_bidi_rpc(requests)
           responses.each do |r|
             expect(r).to be_a(EchoMsg)
           end
+          expect(echo_service.received_md[0]['foo'])
+            .to eq('bar_from_bidi_streamer')
         end
       end
 
