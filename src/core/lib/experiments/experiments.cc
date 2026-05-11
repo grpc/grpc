@@ -103,6 +103,9 @@ const char* const description_h2_max_deallocating_streams_headroom =
     "Separate allocated max concurrent streams.";
 const char* const additional_constraints_h2_max_deallocating_streams_headroom =
     "{}";
+const char* const description_inproc_cancel_stream =
+    "If set, cancel inproc stream inside the transport mutex.";
+const char* const additional_constraints_inproc_cancel_stream = "{}";
 const char* const description_keep_alive_ping_timer_batch =
     "Avoid explicitly cancelling the keepalive timer. Instead adjust the "
     "callback to re-schedule itself to the next ping interval.";
@@ -317,6 +320,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_h2_max_deallocating_streams_headroom,
      additional_constraints_h2_max_deallocating_streams_headroom, nullptr, 0,
      false, true},
+    {"inproc_cancel_stream", description_inproc_cancel_stream,
+     additional_constraints_inproc_cancel_stream, nullptr, 0, true, true},
     {"keep_alive_ping_timer_batch", description_keep_alive_ping_timer_batch,
      additional_constraints_keep_alive_ping_timer_batch, nullptr, 0, false,
      true},
@@ -527,6 +532,9 @@ const char* const description_h2_max_deallocating_streams_headroom =
     "Separate allocated max concurrent streams.";
 const char* const additional_constraints_h2_max_deallocating_streams_headroom =
     "{}";
+const char* const description_inproc_cancel_stream =
+    "If set, cancel inproc stream inside the transport mutex.";
+const char* const additional_constraints_inproc_cancel_stream = "{}";
 const char* const description_keep_alive_ping_timer_batch =
     "Avoid explicitly cancelling the keepalive timer. Instead adjust the "
     "callback to re-schedule itself to the next ping interval.";
@@ -741,6 +749,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_h2_max_deallocating_streams_headroom,
      additional_constraints_h2_max_deallocating_streams_headroom, nullptr, 0,
      false, true},
+    {"inproc_cancel_stream", description_inproc_cancel_stream,
+     additional_constraints_inproc_cancel_stream, nullptr, 0, true, true},
     {"keep_alive_ping_timer_batch", description_keep_alive_ping_timer_batch,
      additional_constraints_keep_alive_ping_timer_batch, nullptr, 0, false,
      true},
@@ -951,6 +961,9 @@ const char* const description_h2_max_deallocating_streams_headroom =
     "Separate allocated max concurrent streams.";
 const char* const additional_constraints_h2_max_deallocating_streams_headroom =
     "{}";
+const char* const description_inproc_cancel_stream =
+    "If set, cancel inproc stream inside the transport mutex.";
+const char* const additional_constraints_inproc_cancel_stream = "{}";
 const char* const description_keep_alive_ping_timer_batch =
     "Avoid explicitly cancelling the keepalive timer. Instead adjust the "
     "callback to re-schedule itself to the next ping interval.";
@@ -1165,6 +1178,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_h2_max_deallocating_streams_headroom,
      additional_constraints_h2_max_deallocating_streams_headroom, nullptr, 0,
      false, true},
+    {"inproc_cancel_stream", description_inproc_cancel_stream,
+     additional_constraints_inproc_cancel_stream, nullptr, 0, true, true},
     {"keep_alive_ping_timer_batch", description_keep_alive_ping_timer_batch,
      additional_constraints_keep_alive_ping_timer_batch, nullptr, 0, false,
      true},
