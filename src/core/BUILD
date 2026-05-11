@@ -5300,6 +5300,7 @@ grpc_cc_library(
         "//:grpc_base",
         "//:parse_address",
         "//:sockaddr_utils",
+        "//:uri",
     ],
 )
 

@@ -202,22 +202,22 @@ TEST_F(AuthorizationMatchersTest,
 }
 
 TEST_F(AuthorizationMatchersTest, PathAuthorizationMatcherSuccessfulMatch) {
-  args_.AddPairToMetadata(":path", "expected/path");
+  args_.AddPairToMetadata(":path", "/expected/path");
   EvaluateArgs args = args_.MakeEvaluateArgs();
   PathAuthorizationMatcher matcher(
       StringMatcher::Create(StringMatcher::Type::kExact,
-                            /*matcher=*/"expected/path",
+                            /*matcher=*/"/expected/path",
                             /*case_sensitive=*/false)
           .value());
   EXPECT_TRUE(matcher.Matches(args));
 }
 
 TEST_F(AuthorizationMatchersTest, PathAuthorizationMatcherFailedMatch) {
-  args_.AddPairToMetadata(":path", "different/path");
+  args_.AddPairToMetadata(":path", "/different/path");
   EvaluateArgs args = args_.MakeEvaluateArgs();
   PathAuthorizationMatcher matcher(
       StringMatcher::Create(StringMatcher::Type::kExact,
-                            /*matcher=*/"expected/path",
+                            /*matcher=*/"/expected/path",
                             /*case_sensitive=*/false)
           .value());
   EXPECT_FALSE(matcher.Matches(args));
@@ -228,7 +228,77 @@ TEST_F(AuthorizationMatchersTest,
   EvaluateArgs args = args_.MakeEvaluateArgs();
   PathAuthorizationMatcher matcher(
       StringMatcher::Create(StringMatcher::Type::kExact,
-                            /*matcher=*/"expected/path",
+                            /*matcher=*/"/expected/path",
+                            /*case_sensitive=*/false)
+          .value());
+  EXPECT_FALSE(matcher.Matches(args));
+}
+
+// CVE-2026-33186 sibling: a deny rule on "/admin.Service/Method" must match
+// the canonicalized form of every non-canonical :path that would route to
+// the same handler. The four bypass shapes exercised below were demonstrated
+// by the C++ instance of CVE-2026-33186 against this matcher.
+
+TEST_F(AuthorizationMatchersTest,
+       PathAuthorizationMatcherCanonicalizesMissingLeadingSlash) {
+  args_.AddPairToMetadata(":path", "admin.Service/Method");
+  EvaluateArgs args = args_.MakeEvaluateArgs();
+  PathAuthorizationMatcher matcher(
+      StringMatcher::Create(StringMatcher::Type::kExact,
+                            /*matcher=*/"/admin.Service/Method",
+                            /*case_sensitive=*/false)
+          .value());
+  EXPECT_TRUE(matcher.Matches(args));
+}
+
+TEST_F(AuthorizationMatchersTest,
+       PathAuthorizationMatcherCollapsesConsecutiveSlashes) {
+  args_.AddPairToMetadata(":path", "//admin.Service/Method");
+  EvaluateArgs args = args_.MakeEvaluateArgs();
+  PathAuthorizationMatcher matcher(
+      StringMatcher::Create(StringMatcher::Type::kExact,
+                            /*matcher=*/"/admin.Service/Method",
+                            /*case_sensitive=*/false)
+          .value());
+  EXPECT_TRUE(matcher.Matches(args));
+}
+
+TEST_F(AuthorizationMatchersTest,
+       PathAuthorizationMatcherResolvesDotSegmentTraversal) {
+  args_.AddPairToMetadata(":path", "/public.Service/../admin.Service/Method");
+  EvaluateArgs args = args_.MakeEvaluateArgs();
+  PathAuthorizationMatcher matcher(
+      StringMatcher::Create(StringMatcher::Type::kExact,
+                            /*matcher=*/"/admin.Service/Method",
+                            /*case_sensitive=*/false)
+          .value());
+  EXPECT_TRUE(matcher.Matches(args));
+}
+
+TEST_F(AuthorizationMatchersTest,
+       PathAuthorizationMatcherDecodesPercentEncodedPrefix) {
+  // "%61" is the percent-encoded ASCII 'a'. Without decoding, the rule prefix
+  // "/admin.Service/" does not match "/%61dmin.Service/Method".
+  args_.AddPairToMetadata(":path", "/%61dmin.Service/Method");
+  EvaluateArgs args = args_.MakeEvaluateArgs();
+  PathAuthorizationMatcher matcher(
+      StringMatcher::Create(StringMatcher::Type::kExact,
+                            /*matcher=*/"/admin.Service/Method",
+                            /*case_sensitive=*/false)
+          .value());
+  EXPECT_TRUE(matcher.Matches(args));
+}
+
+TEST_F(AuthorizationMatchersTest,
+       PathAuthorizationMatcherRejectsTraversalAboveRoot) {
+  // A :path that resolves above the root cannot be represented as a
+  // path-absolute. The matcher must return false rather than passing the raw
+  // bytes through.
+  args_.AddPairToMetadata(":path", "/../etc/passwd");
+  EvaluateArgs args = args_.MakeEvaluateArgs();
+  PathAuthorizationMatcher matcher(
+      StringMatcher::Create(StringMatcher::Type::kSafeRegex,
+                            /*matcher=*/".*",
                             /*case_sensitive=*/false)
           .value());
   EXPECT_FALSE(matcher.Matches(args));

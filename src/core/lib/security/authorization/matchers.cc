@@ -22,12 +22,83 @@
 
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
+#include "src/core/util/uri.h"
 #include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 
 namespace grpc_core {
+
+namespace {
+
+// Canonicalize a request :path value before comparing it against an
+// authorization policy rule.
+//
+// Background. The HTTP/2 :path pseudo-header MUST take the "path-absolute"
+// form (RFC 3986 §3.3) for http/https URIs (RFC 9113 §8.3.1). xDS RBAC
+// rules are validated at config-ingest time (xds_route_config_parser.cc)
+// against the same canonical shape. At request time the gRPC C++ matcher
+// previously compared raw byte sequences, which let a client defeat a deny
+// rule by sending any of the following non-canonical variants:
+//
+//   * "package.Service/Method"      (missing leading slash)
+//   * "//package.Service/Method"    (consecutive slashes)
+//   * "/x/../package.Service/Method" (dot-segment traversal)
+//   * "/%70ackage.Service/Method"   (percent-encoded prefix character)
+//
+// The grpc-Go fix for the same defect (CVE-2026-33186, fixed in v1.79.3)
+// rejects non-canonical :path at the HPACK pseudo-header layer. Here we
+// apply the equivalent normalization at the RBAC matcher so the matcher
+// sees a canonical path regardless of the client's framing.
+//
+// Returns false when the input cannot be reduced to a path-absolute form
+// (empty after decode, or dot-segment traversal escapes the root).
+bool CanonicalizePathForAuthorization(absl::string_view raw,
+                                      std::string* out) {
+  if (raw.empty()) {
+    return false;
+  }
+  std::string decoded = URI::PercentDecode(raw);
+  if (decoded.empty()) {
+    return false;
+  }
+  if (decoded.front() != '/') {
+    decoded.insert(decoded.begin(), '/');
+  }
+  // Walk segments, applying RFC 3986 §5.2.4 dot-segment removal and
+  // collapsing consecutive slashes in one pass.
+  std::vector<absl::string_view> segments;
+  size_t i = 1;  // skip the leading slash
+  while (i <= decoded.size()) {
+    size_t j = decoded.find('/', i);
+    if (j == std::string::npos) j = decoded.size();
+    absl::string_view seg(decoded.data() + i, j - i);
+    if (seg.empty() || seg == ".") {
+      // empty segment (collapse //) or current-directory marker — skip
+    } else if (seg == "..") {
+      if (segments.empty()) {
+        // Traversal above root is not representable as a path-absolute.
+        return false;
+      }
+      segments.pop_back();
+    } else {
+      segments.push_back(seg);
+    }
+    i = j + 1;
+  }
+  std::string result;
+  result.reserve(decoded.size());
+  for (absl::string_view seg : segments) {
+    result.push_back('/');
+    result.append(seg.data(), seg.size());
+  }
+  if (result.empty()) result.push_back('/');
+  *out = std::move(result);
+  return true;
+}
+
+}  // namespace
 
 std::unique_ptr<AuthorizationMatcher> AuthorizationMatcher::Create(
     Rbac::Permission permission) {
@@ -224,10 +295,14 @@ bool ReqServerNameAuthorizationMatcher::Matches(const EvaluateArgs&) const {
 
 bool PathAuthorizationMatcher::Matches(const EvaluateArgs& args) const {
   absl::string_view path = args.GetPath();
-  if (!path.empty()) {
-    return matcher_.Match(path);
+  if (path.empty()) {
+    return false;
   }
-  return false;
+  std::string canonical;
+  if (!CanonicalizePathForAuthorization(path, &canonical)) {
+    return false;
+  }
+  return matcher_.Match(canonical);
 }
 
 bool PolicyAuthorizationMatcher::Matches(const EvaluateArgs& args) const {
