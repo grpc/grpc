@@ -610,7 +610,9 @@ def _call_behavior(
             # If server handlers don't return a response or iterator, treat
             # as an error and raise an exception.
             if response_or_iterator is None:
-                raise Exception(context.code(), context.details())
+                raise Exception(
+                    context.code(), context.details()
+                )  # noqa: TRY002, TRY301
 
             return response_or_iterator, True
         except Exception as exception:  # pylint: disable=broad-except
