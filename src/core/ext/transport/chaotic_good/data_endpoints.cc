@@ -383,6 +383,10 @@ void SecureFrameQueue::Write(SliceBuffer buffer) {
 
 InputQueue::ReadTicket InputQueue::Read(uint64_t payload_tag) {
   MutexLock lock(&mu_);
+  if (!closed_error_.ok()) {
+    return ReadTicket(MakeRefCounted<Completion>(payload_tag, closed_error_),
+                      nullptr);
+  }
   if (read_requested_.Set(payload_tag)) {
     return ReadTicket(
         MakeRefCounted<Completion>(
@@ -462,6 +466,7 @@ void InputQueue::SetClosed(absl::Status status) {
   }
   if (status.ok()) status = absl::UnavailableError("transport closed");
   closed_error_ = std::move(status);
+  absl::Status error_to_propagate = closed_error_;
   auto completions = std::move(completions_);
   completions_.clear();
   Waker await_closed = std::move(await_closed_);
@@ -470,6 +475,8 @@ void InputQueue::SetClosed(absl::Status status) {
   for (auto& [tag, completion] : completions) {
     completion->mu.Lock();
     if (!completion->ready) {
+      completion->result = error_to_propagate;
+      completion->ready = true;
       auto waker = std::move(completion->waker);
       completion->mu.Unlock();
       waker.Wakeup();

@@ -29,6 +29,7 @@
 #include <grpcpp/support/status.h>
 
 #include "absl/log/absl_check.h"
+#include "absl/status/status.h"
 
 namespace grpc {
 namespace internal {

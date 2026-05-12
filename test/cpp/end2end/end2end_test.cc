@@ -258,8 +258,23 @@ class Proxy : public grpc::testing::EchoTestService::Service {
 
   Status Echo(ServerContext* server_context, const EchoRequest* request,
               EchoResponse* response) override {
+    const gpr_timespec deadline = server_context->raw_deadline();
+    LOG(INFO) << "Proxy::Echo server_context deadline: " << deadline.tv_sec
+              << "." << deadline.tv_nsec
+              << " clock_type: " << deadline.clock_type;
+    if (gpr_time_cmp(deadline, gpr_inf_future(deadline.clock_type)) == 0) {
+      LOG(INFO) << "Proxy::Echo server_context has INFINITE deadline";
+    }
     std::unique_ptr<ClientContext> client_context =
         ClientContext::FromServerContext(*server_context);
+    const gpr_timespec client_deadline = client_context->raw_deadline();
+    LOG(INFO) << "Proxy::Echo client_context deadline: "
+              << client_deadline.tv_sec << "." << client_deadline.tv_nsec
+              << " clock_type: " << client_deadline.clock_type;
+    if (gpr_time_cmp(client_deadline,
+                     gpr_inf_future(client_deadline.clock_type)) == 0) {
+      LOG(INFO) << "Proxy::Echo client_context has INFINITE deadline";
+    }
     return stub_->Echo(client_context.get(), *request, response);
   }
 
@@ -1618,11 +1633,16 @@ TEST_P(ProxyEnd2endTest, EchoDeadline) {
   std::chrono::system_clock::time_point deadline =
       std::chrono::system_clock::now() + std::chrono::seconds(100);
   context.set_deadline(deadline);
-  Status s = stub_->Echo(&context, request, &response);
-  EXPECT_EQ(response.message(), request.message());
-  EXPECT_TRUE(s.ok());
   gpr_timespec sent_deadline;
   Timepoint2Timespec(deadline, &sent_deadline);
+  LOG(INFO) << "Test EchoDeadline sent_deadline: " << sent_deadline.tv_sec
+            << "." << sent_deadline.tv_nsec;
+  Status s = stub_->Echo(&context, request, &response);
+  LOG(INFO)
+      << "Test EchoDeadline received response.param().request_deadline(): "
+      << response.param().request_deadline();
+  EXPECT_EQ(response.message(), request.message());
+  EXPECT_TRUE(s.ok());
   // We want to allow some reasonable error given:
   // - request_deadline() only has 1sec resolution so the best we can do is +-1
   // - if sent_deadline.tv_nsec is very close to the next second's boundary we
