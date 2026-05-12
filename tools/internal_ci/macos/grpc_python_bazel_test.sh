@@ -84,8 +84,8 @@ python_bazel_tests_single_threaded_unary_streams/bazel_wrapper \
   test \
   --google_credentials="${KOKORO_GFILE_DIR}/GrpcTesting-d0eeee2db331.json" \
   --config=python_single_threaded_unary_stream \
-  "${BAZEL_REMOTE_CACHE_ARGS[@]}" \
   ${BAZEL_FLAGS} \
+  "${BAZEL_REMOTE_CACHE_ARGS[@]}" \
   -- \
   ${TEST_TARGETS}
 
@@ -102,4 +102,5 @@ python_bazel_tests_fork_support/bazel_wrapper \
   --runs_per_test=16 \
   ${BAZEL_FLAGS} \
   "${BAZEL_REMOTE_CACHE_ARGS[@]}" \
+  -- \
   //src/python/grpcio_tests/tests/fork:fork_test
