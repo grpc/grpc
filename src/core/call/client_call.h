@@ -56,6 +56,8 @@ class ClientCall final
     : public Call,
       public DualRefCounted<ClientCall, NonPolymorphicRefCount,
                             UnrefCallDestroy> {
+  friend class VirtualChannel;
+
  public:
   ClientCall(grpc_call* parent_call, uint32_t propagation_mask,
              grpc_completion_queue* cq, Slice path,
@@ -71,6 +73,10 @@ class ClientCall final
   }
   grpc_call_error StartBatch(const grpc_op* ops, size_t nops, void* notify_tag,
                              bool is_notify_tag_closure) override;
+  void FailBatchImmediately(void* notify_tag, bool is_notify_tag_closure,
+                            grpc_error_handle error) override {
+    EndOpImmediately(cq_, notify_tag, is_notify_tag_closure, std::move(error));
+  }
 
   void ExternalRef() override { Ref().release(); }
   void ExternalUnref() override { Unref(); }

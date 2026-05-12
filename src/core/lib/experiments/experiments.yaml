@@ -68,13 +68,13 @@
   test_tags: []
 - name: chaotic_good_framing_layer
   description: Enable the chaotic good framing layer.
-  expiry: 2026/05/01
+  expiry: 2026/09/01
   owner: aananthv@google.com
   test_tags: []
   allow_in_fuzzing_config: false
 - name: chaotic_good_send_supported_features
   description: Send supported features in chaotic good settings frames.
-  expiry: 2026/05/01
+  expiry: 2026/09/01
   owner: aananthv@google.com
   test_tags: [core_end2end_test]
 - name: error_flatten
@@ -161,7 +161,7 @@
   allow_in_fuzzing_config: false
 - name: free_large_allocator
   description: If set, return all free bytes from a "big" allocator
-  expiry: 2026/03/30
+  expiry: 2026/09/30
   owner: alishananda@google.com
   test_tags: [resource_quota_test]
 - name: fuse_filters
@@ -174,6 +174,11 @@
   description: Separate allocated max concurrent streams.
   expiry: 2026/09/01
   owner: snohria@google.com
+  test_tags: []
+- name: inproc_cancel_stream
+  description: If set, cancel inproc stream inside the transport mutex.
+  expiry: 2026/08/01
+  owner: akshitpatel@google.com
   test_tags: []
 - name: keep_alive_ping_timer_batch
   description:
@@ -189,7 +194,7 @@
   test_tags: ["core_end2end_test"]
 - name: max_inflight_pings_strict_limit
   description: If set, the max inflight pings limit is strictly enforced.
-  expiry: 2026/05/10
+  expiry: 2026/06/10
   owner: akshitpatel@google.com
   test_tags: []
 - name: memory_optimization_01
@@ -204,6 +209,16 @@
   owner: akshitpatel@google.com
   test_tags: []
   allow_in_fuzzing_config: false
+- name: message_size_refactoring
+  owner: vigneshbabu@google.com
+  description: Refactoring the message size config parsing.
+  expiry: 2026/09/01
+  test_tags: []
+- name: metadata_outstanding_token_refactor
+  description: Refactor ClientInitialMetadataOutstandingToken.
+  expiry: 2026/09/01
+  owner: akshitpatel@google.com
+  test_tags: []
 - name: metadata_publish_to_app_tag
   description: Publish metadata to the app using the kPublishToApp metadata field.
   expiry: 2026/04/01
@@ -216,12 +231,32 @@
   test_tags: []
 - name: multiping
   description: Allow more than one ping to be in flight at a time by default.
-  expiry: 2026/05/01
+  expiry: 2027/01/16
   owner: akshitpatel@google.com
   test_tags: [flow_control_test]
+- name: optimization_01
+  description: Optimization 
+  expiry: 2027/01/16
+  owner: tjagtap@google.com
+  test_tags: []
+- name: optimization_02
+  description: Optimization 
+  expiry: 2027/01/16
+  owner: tjagtap@google.com
+  test_tags: []
+- name: optimization_03
+  description: Optimization
+  expiry: 2027/01/16
+  owner: alishananda@google.com
+  test_tags: []
+- name: optimization_04
+  description: Optimization
+  expiry: 2027/01/16
+  owner: alishananda@google.com
+  test_tags: []
 - name: otel_export_telemetry_domains
   description: Export telemetry domains in OpenTelemetry metrics.
-  expiry: 2026/05/01
+  expiry: 2026/07/01
   owner: aadik@google.com
   test_tags: [core_end2end_test]
 - name: ph2_perf_01
@@ -231,11 +266,11 @@
   test_tags: []
 - name: pick_first_ignore_empty_updates
   description: Ignore empty resolutions in pick_first (delete)
-  expiry: 2026/05/02
+  expiry: 2026/10/01
   owner: roth@google.com
 - name: pipelined_read_secure_endpoint
   description: Enable pipelined reads for EventEngine secure endpoints
-  expiry: 2026/03/15
+  expiry: 2026/09/15
   owner: alishananda@google.com
   test_tags: ["core_end2end_test", "secure_endpoint_test", "posix_endpoint_test"]
   requires: ["event_engine_client", "event_engine_listener"]
@@ -295,7 +330,7 @@
   allow_in_fuzzing_config: true
 - name: retry_in_callv3
   description: Support retries with call-v3
-  expiry: 2026/05/01
+  expiry: 2027/01/16
   owner: akshitpatel@google.com
   test_tags: [core_end2end_test]
 - name: return_preexisting_errors
@@ -310,7 +345,7 @@
   test_tags: []
 - name: secure_endpoint_offload_large_reads
   description: If a large read needs to be decrypted, use a separate thread.
-  expiry: 2026/06/01
+  expiry: 2026/09/01
   owner: alishananda@google.com
   test_tags: ["core_end2end_test"]
   requires:
@@ -320,7 +355,7 @@
     ]
 - name: secure_endpoint_offload_large_writes
   description: If a large read write to be encrypted, use a separate thread.
-  expiry: 2026/06/01
+  expiry: 2026/09/01
   owner: alishananda@google.com
   test_tags: ["core_end2end_test"]
   requires:
@@ -377,7 +412,7 @@
   test_tags: []
 - name: unconstrained_max_quota_buffer_size
   description: Discard the cap on the max free pool size for one memory allocator
-  expiry: 2026/05/01
+  expiry: 2026/09/01
   owner: snohria@google.com
   test_tags: [resource_quota_test]
 - name: use_call_event_engine_in_completion_queue

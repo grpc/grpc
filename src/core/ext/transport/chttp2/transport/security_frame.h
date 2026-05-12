@@ -119,8 +119,15 @@ class SecurityFrameHandler final : public RefCounted<SecurityFrameHandler> {
   void ProcessPayload(SliceBuffer&& payload) {
     GRPC_HTTP2_SECURITY_FRAME_DLOG << "SecurityFrameHandler::ProcessPayload";
     if (endpoint_extension_ != nullptr) {
-      MutexLock lock(&mutex_);
-      if (!transport_closed_) {
+      bool should_receive = false;
+      {
+        MutexLock lock(&mutex_);
+        should_receive = !transport_closed_;
+      }
+      // Since transport_closed_ is only changed from the transport party, we
+      // can safely assume that the value of transport_closed_ will not change
+      // between the above check and endpoint_extension_->ReceiveFrame.
+      if (should_receive) {
         endpoint_extension_->ReceiveFrame(std::move(payload));
       }
     }
@@ -235,7 +242,7 @@ class SecurityFrameHandler final : public RefCounted<SecurityFrameHandler> {
     // Do not ever LOG the payload. It has a security key.
     return absl::StrFormat(
         "SecurityFrameHandler{endpoint_extension_=%s, sleep_state_=%s, "
-        "payload_length=%d, transport_closed_=%s}",
+        "payload_length=%zu, transport_closed_=%s}",
         endpoint_extension_ == nullptr ? "null" : "non-null", sleep_state_str,
         payload_.Length(), transport_closed_ ? "true" : "false");
   }

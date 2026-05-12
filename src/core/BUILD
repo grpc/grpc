@@ -2914,6 +2914,7 @@ grpc_cc_library(
         "posix_event_engine_tcp_socket_utils",
         "socket_mutator",
         "status_helper",
+        "strerror",
         "//:event_engine_base_hdrs",
         "//:gpr",
     ],
@@ -3001,6 +3002,7 @@ grpc_cc_library(
         "posix_event_engine_timer",
         "posix_event_engine_timer_manager",
         "ref_counted_dns_resolver_interface",
+        "strerror",
         "sync",
         "useful",
         "//:event_engine_base_hdrs",
@@ -3483,10 +3485,12 @@ grpc_cc_library(
     hdrs = ["lib/transport/bdp_estimator.h"],
     external_deps = [
         "absl/log",
+        "absl/random",
         "absl/strings",
     ],
     deps = [
         "grpc_check",
+        "shared_bit_gen",
         "time",
         "//:gpr",
         "//:grpc_support_time",
@@ -5519,15 +5523,9 @@ grpc_cc_library(
         "channel_fwd",
         "channel_stack_type",
         "context",
-        "grpc_service_config",
-        "json",
-        "json_args",
-        "json_object_loader",
-        "latch",
         "latent_see",
+        "message_size_service_config",
         "metadata_batch",
-        "race",
-        "service_config_parser",
         "slice",
         "slice_buffer",
         "validation_errors",
@@ -6518,6 +6516,7 @@ grpc_cc_library(
         "channel_args_endpoint_config",
         "channel_creds_registry",
         "channel_fwd",
+        "client_channel_service_config",
         "closure",
         "composite_filter",
         "connectivity_state",
@@ -6589,6 +6588,7 @@ grpc_cc_library(
         "grpc_fault_injection_filter",
         "grpc_lb_policy_pick_first",
         "grpc_lb_policy_ring_hash",
+        "grpc_lb_policy_weighted_round_robin",
         "grpc_lb_xds_channel_args",
         "grpc_matchers",
         "grpc_outlier_detection_header",
@@ -7460,6 +7460,9 @@ grpc_cc_library(
     srcs = [
         "load_balancing/weighted_round_robin/weighted_round_robin.cc",
     ],
+    hdrs = [
+        "load_balancing/weighted_round_robin/weighted_round_robin.h",
+    ],
     external_deps = [
         "absl/base:core_headers",
         "absl/log",
@@ -7471,7 +7474,9 @@ grpc_cc_library(
     ],
     deps = [
         "channel_args",
+        "client_channel_service_config",
         "connectivity_state",
+        "env",
         "experiments",
         "grpc_backend_metric_data",
         "grpc_check",
@@ -8441,6 +8446,7 @@ grpc_cc_library(
         "ext/transport/chttp2/transport/http2_settings_promises.h",
     ],
     external_deps = [
+        "absl/container:flat_hash_map",
         "absl/functional:any_invocable",
         "absl/log",
         "absl/log:check",
@@ -9114,7 +9120,9 @@ grpc_cc_library(
         "event_engine_utils",
         "grpc_check",
         "grpc_insecure_credentials",
+        "grpc_promise_endpoint",
         "handshaker_registry",
+        "http2_server_transport",
         "iomgr_fwd",
         "match",
         "memory_quota",
@@ -9126,6 +9134,7 @@ grpc_cc_library(
         "time",
         "unique_type_name",
         "//:channel_arg_names",
+        "//:channel_create",
         "//:channelz",
         "//:chttp2_legacy_frame",
         "//:config",
@@ -9224,6 +9233,7 @@ grpc_cc_library(
         "absl/random:bit_gen_ref",
         "absl/status",
         "absl/status:statusor",
+        "absl/strings",
     ],
     deps = [
         "arena",
@@ -11560,6 +11570,35 @@ grpc_cc_library(
     ],
 )
 
+grpc_cc_library(
+    name = "message_size_service_config",
+    srcs = [":transport/message_size_service_config.cc"],
+    hdrs = ["//src/core:transport/message_size_service_config.h"],
+    external_deps = [
+        "absl/log",
+        "absl/status:statusor",
+        "absl/strings",
+        "absl/strings:str_format",
+    ],
+    deps = [
+        "arena",
+        "channel_args",
+        "channel_fwd",
+        "channel_stack_type",
+        "context",
+        "grpc_service_config",
+        "json",
+        "json_args",
+        "json_object_loader",
+        "service_config_parser",
+        "validation_errors",
+        "//:channel_arg_names",
+        "//:config",
+        "//:gpr",
+        "//:grpc_public_hdrs",
+    ],
+)
+
 ### UPB Targets
 
 grpc_upb_proto_library(
@@ -11953,5 +11992,70 @@ WELL_KNOWN_PROTO_TARGETS = [
 ]
 
 grpc_add_well_known_proto_upb_targets(targets = WELL_KNOWN_PROTO_TARGETS)
+
+grpc_cc_library(
+    name = "session_endpoint",
+    srcs = ["transport/session_endpoint.cc"],
+    hdrs = ["transport/session_endpoint.h"],
+    external_deps = [
+        "absl/functional:any_invocable",
+        "absl/status",
+        "absl/strings:string_view",
+    ],
+    deps = [
+        "arena",
+        "channel_args",
+        "closure",
+        "error",
+        "grpc_check",
+        "latent_see",
+        "map",
+        "message",
+        "slice_buffer",
+        "//:exec_ctx",
+        "//:gpr_platform",
+        "//:grpc_base",
+        "//:grpc_public_hdrs",
+        "//:iomgr",
+    ],
+)
+
+grpc_cc_library(
+    name = "virtual_channel",
+    srcs = [
+        "client_channel/virtual_channel.cc",
+    ],
+    hdrs = [
+        "client_channel/virtual_channel.h",
+    ],
+    external_deps = [
+        "absl/status",
+        "absl/status:statusor",
+    ],
+    deps = [
+        "1999",
+        "activity",
+        "call_spine",
+        "channel_args",
+        "channel_stack_type",
+        "direct_channel",
+        "grpc_promise_endpoint",
+        "http2_client_transport",
+        "map",
+        "message",
+        "slice_buffer",
+        ":default_event_engine",
+        ":session_endpoint",
+        "//:channel",
+        "//:channel_arg_names",
+        "//:channel_create",
+        "//:config",
+        "//:gpr",
+        "//:grpc_base",
+        "//:grpc_transport_chttp2",
+        "//:promise",
+        "//:ref_counted_ptr",
+    ],
+)
 
 grpc_generate_one_off_internal_targets()
