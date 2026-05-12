@@ -63,9 +63,9 @@ namespace arena_detail {
 
 // Explicit instantiation
 template <typename T>
-uint16_t ArenaContextTraits<T>::id() {
-  static NoDestruct<uint16_t> lazy_id{BaseArenaContextTraits::MakeId()};
-  return *lazy_id;
+uint16_t IdAssigner<T>::id() {
+  static uint16_t lazy_id = RegisteredTraits().AssignId();
+  return lazy_id;
 }
 
 }  // namespace arena_detail
@@ -200,39 +200,39 @@ RefCountedPtr<ArenaFactory> SimpleArenaAllocator(size_t initial_size,
 
 namespace arena_detail {
 
-template class ArenaContextTraits<struct census_context>;
-template class ArenaContextTraits<grpc_event_engine::experimental::EventEngine>;
-template class ArenaContextTraits<grpc_core::BackendMetricProvider>;
-template class ArenaContextTraits<grpc_core::Call>;
-template class ArenaContextTraits<grpc_core::CallSpan>;
-template class ArenaContextTraits<grpc_core::CallTracer>;
-template class ArenaContextTraits<grpc_core::SecurityContext>;
-template class ArenaContextTraits<grpc_core::ServiceConfigCallData>;
-template class ArenaContextTraits<grpc_core::TelemetryLabel>;
-template class ArenaContextTraits<grpc_core::V3InterceptorToV2State>;
-template class ArenaContextTraits<grpc_core::channelz::CallNode>;
-template class ArenaContextTraits<
+template class IdAssigner<struct census_context>;
+template class IdAssigner<grpc_event_engine::experimental::EventEngine>;
+template class IdAssigner<grpc_core::BackendMetricProvider>;
+template class IdAssigner<grpc_core::Call>;
+template class IdAssigner<grpc_core::CallSpan>;
+template class IdAssigner<grpc_core::CallTracer>;
+template class IdAssigner<grpc_core::SecurityContext>;
+template class IdAssigner<grpc_core::ServiceConfigCallData>;
+template class IdAssigner<grpc_core::TelemetryLabel>;
+template class IdAssigner<grpc_core::V3InterceptorToV2State>;
+template class IdAssigner<grpc_core::channelz::CallNode>;
+template class IdAssigner<
     grpc_core::lb_policy_detail::SubchannelCallTrackerInterface>;
 
-template class ArenaContextTraits<grpc_core::Foo>;
+template class IdAssigner<grpc_core::Foo>;
 
 struct ArenaContextTraitsInitializer {
   ArenaContextTraitsInitializer() {
     // Force initialization and allocation of ids.
-    ArenaContextTraits<struct census_context>::id();
-    ArenaContextTraits<grpc_event_engine::experimental::EventEngine>::id();
-    ArenaContextTraits<grpc_core::BackendMetricProvider>::id();
-    ArenaContextTraits<grpc_core::Call>::id();
-    ArenaContextTraits<grpc_core::CallSpan>::id();
-    ArenaContextTraits<grpc_core::CallTracer>::id();
-    ArenaContextTraits<grpc_core::SecurityContext>::id();
-    ArenaContextTraits<grpc_core::ServiceConfigCallData>::id();
-    ArenaContextTraits<grpc_core::TelemetryLabel>::id();
-    ArenaContextTraits<grpc_core::V3InterceptorToV2State>::id();
-    ArenaContextTraits<grpc_core::channelz::CallNode>::id();
-    ArenaContextTraits<
+    IdAssigner<struct census_context>::id();
+    IdAssigner<grpc_event_engine::experimental::EventEngine>::id();
+    IdAssigner<grpc_core::BackendMetricProvider>::id();
+    IdAssigner<grpc_core::Call>::id();
+    IdAssigner<grpc_core::CallSpan>::id();
+    IdAssigner<grpc_core::CallTracer>::id();
+    IdAssigner<grpc_core::SecurityContext>::id();
+    IdAssigner<grpc_core::ServiceConfigCallData>::id();
+    IdAssigner<grpc_core::TelemetryLabel>::id();
+    IdAssigner<grpc_core::V3InterceptorToV2State>::id();
+    IdAssigner<grpc_core::channelz::CallNode>::id();
+    IdAssigner<
         grpc_core::lb_policy_detail::SubchannelCallTrackerInterface>::id();
-    ArenaContextTraits<grpc_core::Foo>::id();
+    IdAssigner<grpc_core::Foo>::id();
   }
 };
 

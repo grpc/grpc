@@ -31,17 +31,16 @@
 
 #include <atomic>
 #include <cstddef>
-#include <cstdint>
-#include <cstdio>
 #include <iosfwd>
 #include <memory>
+#include <mutex>
 #include <utility>
 
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/util/alloc.h"
 #include "src/core/util/construct_destruct.h"
-#include "src/core/util/no_destruct.h"
+#include "absl/base/thread_annotations.h"
 
 namespace grpc_core {
 
@@ -52,46 +51,71 @@ struct ArenaContextType;
 
 namespace arena_detail {
 
+// Helper class that allocates a slot in global Trait instance and returns the
+// assigned type id.
+//
+// We do a bit of two-phase inititialization because MSVC seems to handle
+// initialization order a bit different from clang/gcc and can cause program
+// crash. See https://github.com/grpc/grpc/issues/42236.
+//
+// - The id assignment logic goes to arena.cc, this involves all the memory
+// allocation
+//   and is guaranteed to happen before main() function through compiler
+//   directives. These symobls don't depend on concrete definition of T (but
+//   does require forward declaration) and can be linked into grpc library.
+// - The destoyer pointers are populated exactly-once upon the first use of
+//   ArenaContextTraits<T>::id(), which typically happens when calling
+//   SetContext<T>. This part requires client code to provide implementation of
+//   ArenaContextType therefore must be header-only. Each binary may not use all
+//   of the slots, in which case the destroyer pointer will be null.
+template <typename T>
+class IdAssigner {
+ public:
+  // Declaration only. The implementation goes to arena.cc
+  // and requires explicit instantiation.
+  static uint16_t id();
+};
+
+class Traits {
+ public:
+  using Destroyer = void (*)(void*);
+  using SizeT = std::vector<Destroyer>::size_type;
+
+  Destroyer GetDestroyer(uint16_t id) {
+    grpc_core::MutexLock lock(&mutex_);
+    return registered_traits_[id];
+  }
+  void SetDestroyer(uint16_t id, Destroyer destroy) {
+    grpc_core::MutexLock lock(&mutex_);
+    registered_traits_[id] = destroy;
+  }
+  SizeT Size() const {
+    grpc_core::MutexLock lock(&mutex_);
+    return registered_traits_.size();
+  }
+  uint16_t AssignId() {
+    grpc_core::MutexLock lock(&mutex_);
+    uint16_t id = static_cast<uint16_t>(registered_traits_.size());
+    // Populated later from ArenaContextTraits<T>::id();
+    registered_traits_.push_back(nullptr);
+    return id;
+  }
+
+ private:
+  mutable grpc_core::Mutex mutex_;
+  std::vector<Destroyer> registered_traits_ ABSL_GUARDED_BY(mutex_);
+};
+
+inline Traits& RegisteredTraits() {
+  static NoDestruct<Traits> registered_traits;
+  return *registered_traits;
+}
+
 // Tracks all registered arena context types (these should only be registered
 // via ArenaContextTraits at static initialization time).
 class BaseArenaContextTraits {
  public:
-  using Destroyer = void (*)(void*);
   // Count of number of contexts that have been allocated.
-  class Traits {
-   public:
-    static inline constexpr int kMaxNumOfContexts = 1024;
-    bool SetDestroyerOnce(uint16_t id, Destroyer destroyer) {
-      // Called exactly once
-      Destroyer expected = nullptr;
-      return destroyers_[id].compare_exchange_strong(expected, destroyer,
-                                                     std::memory_order_acq_rel,
-                                                     std::memory_order_acquire);
-    }
-    Destroyer GetDestroyer(uint16_t id) {
-      return destroyers_[id].load(std::memory_order_acquire);
-    }
-
-    // Not thread safe, meant to be called from global static initialzier only.
-    uint16_t MakeId() {
-      if (next_id_ >= kMaxNumOfContexts) {
-        printf(
-            "The number of instantiated ArenaContextTraits<T> is larger than "
-            "limit (%d), exiting.",
-            kMaxNumOfContexts);
-        exit(1);
-      }
-      return next_id_++;
-    }
-    uint16_t Size() const { return next_id_; }
-
-   private:
-    // Pre-allocate because std::atomic is neither copyable or movable.
-    std::vector<std::atomic<Destroyer>> destroyers_{kMaxNumOfContexts};
-    // only incremented before main() function. So it's fine to be non atomic.
-    uint16_t next_id_ = 0;
-  };
-
   static uint16_t NumContexts() {
     return static_cast<uint16_t>(RegisteredTraits().Size());
   }
@@ -102,22 +126,9 @@ class BaseArenaContextTraits {
   // Call the registered destruction function for a context.
   static void Destroy(uint16_t id, void* ptr) {
     if (ptr == nullptr) return;
-    if (auto destroyer = RegisteredTraits().GetDestroyer(id);
-        destroyer != nullptr) {
-      destroyer(ptr);
-    }
+    auto destroyer = RegisteredTraits().GetDestroyer(id);
+    if (destroyer != nullptr) destroyer(ptr);
   }
-  static Traits& RegisteredTraits() {
-    static NoDestruct<Traits> registered_traits;
-    return *registered_traits;
-  }
-
- protected:
-  // Allocate a new context id and register the destruction function.
-  // Only meant to be called before main() function.
-  static uint16_t MakeId() { return RegisteredTraits().MakeId(); }
-
- private:
 };
 
 template <typename T>
@@ -127,11 +138,16 @@ GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline void DestroyArenaContext(void* p) {
 
 // Traits for a specific context type.
 template <typename T>
-class ArenaContextTraits : public BaseArenaContextTraits {
+class ArenaContextTraits {
  public:
-  // Only declaration here. The explict instantiation is inside
-  // arena.cc.
-  static uint16_t id();
+  static uint16_t id() {
+    static uint16_t id_value = []() {
+      uint16_t id = IdAssigner<T>::id();
+      RegisteredTraits().SetDestroyer(id, DestroyArenaContext<T>);
+      return id;
+    }();
+    return id_value;
+  }
 };
 
 template <typename T, typename SfinaeVoid = void>
@@ -343,14 +359,7 @@ class Arena final : public RefCounted<Arena, NonPolymorphicRefCount,
 
   template <typename T>
   void SetContext(T* context) {
-    using Destroyer = arena_detail::BaseArenaContextTraits::Destroyer;
-    uint16_t id = arena_detail::ArenaContextTraits<T>::id();
-    auto& traits = arena_detail::BaseArenaContextTraits::RegisteredTraits();
-    void*& slot = contexts()[id];
-
-    Destroyer destroyer = &arena_detail::DestroyArenaContext<T>;
-    traits.SetDestroyerOnce(id, destroyer);
-
+    void*& slot = contexts()[arena_detail::ArenaContextTraits<T>::id()];
     if (slot != nullptr) {
       ArenaContextType<T>::Destroy(static_cast<T*>(slot));
     }
