@@ -18,7 +18,7 @@
 
 # shellcheck disable=SC2103
 
-PS4='+ [$(date "+%H:%M:%S %Z") ${BASH_SOURCE[0]}]\011 '
+PS4='+ $(date "+[%H:%M:%S %Z]")\011 '
 set -ex
 
 cd "$(dirname "$0")/../../.."
