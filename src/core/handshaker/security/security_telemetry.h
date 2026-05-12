@@ -20,17 +20,35 @@
 
 namespace grpc_core {
 
-class HandshakeTelemetryDomain final : public InstrumentDomain<HandshakeTelemetryDomain> {
+class ClientHandshakeTelemetryDomain final
+    : public InstrumentDomain<ClientHandshakeTelemetryDomain> {
  public:
   using Backend = LowContentionBackend;
-  static constexpr absl::string_view kName = "security_handshaker";
+  static constexpr absl::string_view kName = "client_security_handshaker";
   GRPC_INSTRUMENT_DOMAIN_LABELS("grpc.security.handshaker.status",
-                                "grpc.security.handshaker.error_details",
-                                "grpc.security.handshaker.protocol");
+                                "grpc.target",
+                                "grpc.security.handshaker.protocol",
+                                "grpc.security.handshaker.resumed");
 
-  static inline const auto kDuration = RegisterHistogram<ExponentialHistogramShape>(
-      "grpc.security.handshaker.duration",
-      "Duration of security handshake", "us", 1e6, 20);
+  static inline const auto kDuration =
+      RegisterHistogram<ExponentialHistogramShape>(
+          "grpc.security.client.handshaker.duration",
+          "Duration of client-side security handshake", "us", 1e6, 20);
+};
+
+class ServerHandshakeTelemetryDomain final
+    : public InstrumentDomain<ServerHandshakeTelemetryDomain> {
+ public:
+  using Backend = LowContentionBackend;
+  static constexpr absl::string_view kName = "server_security_handshaker";
+  GRPC_INSTRUMENT_DOMAIN_LABELS("grpc.security.handshaker.status",
+                                "grpc.security.handshaker.protocol",
+                                "grpc.security.handshaker.resumed");
+
+  static inline const auto kDuration =
+      RegisterHistogram<ExponentialHistogramShape>(
+          "grpc.security.server.handshaker.duration",
+          "Duration of server-side security handshake", "us", 1e6, 20);
 };
 
 }  // namespace grpc_core

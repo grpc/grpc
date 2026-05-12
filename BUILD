@@ -2417,6 +2417,7 @@ grpc_cc_library(
         "//src/core:metrics",
         "//src/core:instrument",
         "//src/core:histogram",
+        "//src/core:client_channel_args",
         "grpc_core_credentials_header",
         "grpc_public_hdrs",
         "grpc_trace",

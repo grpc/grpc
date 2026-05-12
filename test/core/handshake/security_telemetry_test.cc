@@ -55,40 +55,65 @@ class MockMetricsSink : public MetricsSink {
               (override));
 };
 
-TEST(SecurityTelemetryTest, RecordAndQuery) {
+TEST(ClientSecurityTelemetryTest, RecordAndQuery) {
   auto scope = CreateCollectionScope({}, {"grpc.security.handshaker.status",
-                                          "grpc.security.handshaker.error_details",
-                                          "grpc.security.handshaker.protocol"});
-  auto storage = HandshakeTelemetryDomain::GetStorage(scope, "OK", "NONE", "TLS");
+                                          "grpc.target",
+                                          "grpc.security.handshaker.protocol",
+                                          "grpc.security.handshaker.resumed"});
+  auto storage = ClientHandshakeTelemetryDomain::GetStorage(scope, "OK", "dns:///localhost:50051", "TLS", "false");
   
-  std::vector<std::string> label_keys = {"grpc.security.handshaker.status",
-                                         "grpc.security.handshaker.error_details",
-                                         "grpc.security.handshaker.protocol"};
-  std::vector<std::string> label_values = {"OK", "NONE", "TLS"};
+  std::vector<std::string> label_values = {"OK", "dns:///localhost:50051", "TLS", "false"};
 
   ::testing::StrictMock<MockMetricsSink> sink;
   
-  // Initially should be 0 or empty counts.
   EXPECT_CALL(sink,
               Histogram(::testing::_,
                         ::testing::ElementsAreArray(label_values),
-                        "grpc.security.handshaker.duration", ::testing::_, ::testing::_))
+                        "grpc.security.client.handshaker.duration", ::testing::_, ::testing::_))
       .Times(1);
   
-  MetricsQuery().OnlyMetrics({"grpc.security.handshaker.duration"}).Run(scope, sink);
+  MetricsQuery().OnlyMetrics({"grpc.security.client.handshaker.duration"}).Run(scope, sink);
   ::testing::Mock::VerifyAndClearExpectations(&sink);
 
-  // Increment.
-  storage->Increment(HandshakeTelemetryDomain::kDuration, 100);
+  storage->Increment(ClientHandshakeTelemetryDomain::kDuration, 100);
 
-  // Now should have 1 count.
   EXPECT_CALL(sink,
               Histogram(::testing::_,
                         ::testing::ElementsAreArray(label_values),
-                        "grpc.security.handshaker.duration", ::testing::_, ::testing::_))
+                        "grpc.security.client.handshaker.duration", ::testing::_, ::testing::_))
       .Times(1);
   
-  MetricsQuery().OnlyMetrics({"grpc.security.handshaker.duration"}).Run(scope, sink);
+  MetricsQuery().OnlyMetrics({"grpc.security.client.handshaker.duration"}).Run(scope, sink);
+}
+
+TEST(ServerSecurityTelemetryTest, RecordAndQuery) {
+  auto scope = CreateCollectionScope({}, {"grpc.security.handshaker.status",
+                                          "grpc.security.handshaker.protocol",
+                                          "grpc.security.handshaker.resumed"});
+  auto storage = ServerHandshakeTelemetryDomain::GetStorage(scope, "OK", "TLS", "false");
+  
+  std::vector<std::string> label_values = {"OK", "TLS", "false"};
+
+  ::testing::StrictMock<MockMetricsSink> sink;
+  
+  EXPECT_CALL(sink,
+              Histogram(::testing::_,
+                        ::testing::ElementsAreArray(label_values),
+                        "grpc.security.server.handshaker.duration", ::testing::_, ::testing::_))
+      .Times(1);
+  
+  MetricsQuery().OnlyMetrics({"grpc.security.server.handshaker.duration"}).Run(scope, sink);
+  ::testing::Mock::VerifyAndClearExpectations(&sink);
+
+  storage->Increment(ServerHandshakeTelemetryDomain::kDuration, 100);
+
+  EXPECT_CALL(sink,
+              Histogram(::testing::_,
+                        ::testing::ElementsAreArray(label_values),
+                        "grpc.security.server.handshaker.duration", ::testing::_, ::testing::_))
+      .Times(1);
+  
+  MetricsQuery().OnlyMetrics({"grpc.security.server.handshaker.duration"}).Run(scope, sink);
 }
 
 }  // namespace
@@ -98,4 +123,3 @@ int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
 }
-
