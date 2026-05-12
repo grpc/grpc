@@ -204,8 +204,18 @@ void SecurityHandshaker::Finish(absl::Status status) {
   std::string error_details = status.ok() ? "NONE" : "AUTH_ERROR";
   std::string protocol = std::string(connector_->type().name());
 
+  std::shared_ptr<GlobalStatsPluginRegistry::StatsPluginGroup> stats_plugin_group;
+  if (args_ != nullptr) {
+    stats_plugin_group =
+        args_->args
+            .GetObjectRef<GlobalStatsPluginRegistry::StatsPluginGroup>();
+  }
+  auto scope = stats_plugin_group != nullptr
+                   ? stats_plugin_group->GetCollectionScope()
+                   : GlobalCollectionScope();
+
   auto storage = HandshakeTelemetryDomain::GetStorage(
-      GlobalCollectionScope(), status_str, error_details, protocol);
+      std::move(scope), status_str, error_details, protocol);
   storage->Increment(HandshakeTelemetryDomain::kDuration, duration_us);
 
   InvokeOnHandshakeDone(args_, std::move(on_handshake_done_),
