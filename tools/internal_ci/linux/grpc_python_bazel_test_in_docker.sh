@@ -26,6 +26,7 @@ python_bazel_tests/bazel_wrapper \
     ${RESULTSTORE_RESULTS_FLAG} \
     test \
     ${BAZEL_FLAGS} \
+    -- \
     ${TEST_TARGETS}
 
 # All tests with python_single_threaded_unary_stream
@@ -33,8 +34,9 @@ python3 tools/run_tests/python_utils/bazel_report_helper.py --report_path python
 python_bazel_tests_single_threaded_unary_streams/bazel_wrapper \
     ${RESULTSTORE_RESULTS_FLAG} \
     test \
-    --config=python_single_threaded_unary_stream \
     ${BAZEL_FLAGS} \
+    --config=python_single_threaded_unary_stream \
+    -- \
     ${TEST_TARGETS}
 
 # Fork tests
@@ -42,7 +44,8 @@ python3 tools/run_tests/python_utils/bazel_report_helper.py --report_path python
 python_bazel_tests_fork_support/bazel_wrapper \
     ${RESULTSTORE_RESULTS_FLAG} \
     test \
+    ${BAZEL_FLAGS} \
     --config=fork_support \
     --runs_per_test=16 \
-    ${BAZEL_FLAGS} \
+    -- \
     //src/python/grpcio_tests/tests/fork:fork_test
