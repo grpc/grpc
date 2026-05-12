@@ -29,6 +29,7 @@
 #include "src/core/server/server.h"
 #include "src/core/transport/session_endpoint.h"
 #include "absl/log/log.h"
+#include "absl/status/status.h"
 
 namespace grpc {
 namespace internal {
