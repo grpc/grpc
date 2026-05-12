@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-PS4='+ $(date "+[%H:%M:%S %Z]") [${BASH_SOURCE[0]}]\011 '
+PS4='+ [$(date "+%H:%M:%S %Z") ${BASH_SOURCE[0]}]\011 '
 set -ex
 
 # avoid slow finalization after the script has exited.
@@ -63,6 +63,8 @@ python3 -m pip install -r requirements.bazel.lock
 TEST_TARGETS="//src/python/..."
 BAZEL_FLAGS="${BAZEL_FLAGS:-} --test_output=errors --config=python"
 
+# IMPORTANT: the order of flags in bazel_wrapper calls is significant!
+
 python3 tools/run_tests/python_utils/bazel_report_helper.py --report_path python_bazel_tests
 # Run standard Python Bazel tests
 python_bazel_tests/bazel_wrapper \
@@ -83,9 +85,9 @@ python_bazel_tests_single_threaded_unary_streams/bazel_wrapper \
   --bazelrc=tools/remote_build/mac.bazelrc \
   test \
   --google_credentials="${KOKORO_GFILE_DIR}/GrpcTesting-d0eeee2db331.json" \
-  --config=python_single_threaded_unary_stream \
   ${BAZEL_FLAGS} \
   "${BAZEL_REMOTE_CACHE_ARGS[@]}" \
+  --config=python_single_threaded_unary_stream \
   -- \
   ${TEST_TARGETS}
 
@@ -98,9 +100,9 @@ python_bazel_tests_fork_support/bazel_wrapper \
   --bazelrc=tools/remote_build/mac.bazelrc \
   test \
   --google_credentials="${KOKORO_GFILE_DIR}/GrpcTesting-d0eeee2db331.json" \
-  --config=fork_support \
-  --runs_per_test=16 \
   ${BAZEL_FLAGS} \
   "${BAZEL_REMOTE_CACHE_ARGS[@]}" \
+  --config=fork_support \
+  --runs_per_test=16 \
   -- \
   //src/python/grpcio_tests/tests/fork:fork_test

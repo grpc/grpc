@@ -13,7 +13,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-PS4='+ $(date "+[%H:%M:%S %Z]") [${BASH_SOURCE[0]}]\011 '
+# TODO(sergiitk): why are we not executing it on RBE?
+
+PS4='+ [$(date "+%H:%M:%S %Z") ${BASH_SOURCE[0]}]\011 '
 set -ex
 
 RESULTSTORE_RESULTS_FLAG="--bazelrc=tools/remote_build/include/test_locally_with_resultstore_results.bazelrc"
