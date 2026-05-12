@@ -157,22 +157,6 @@ class OpenTelemetryPluginEnd2EndTest : public ::testing::Test {
       return *this;
     }
 
-    Options& set_channel_credentials(
-        std::shared_ptr<ChannelCredentials> creds) {
-      channel_credentials = std::move(creds);
-      return *this;
-    }
-    Options& set_server_credentials(
-        std::shared_ptr<ServerCredentials> creds) {
-      server_credentials = std::move(creds);
-      return *this;
-    }
-
-    Options& set_channel_arguments(ChannelArguments args) {
-      channel_arguments = std::move(args);
-      return *this;
-    }
-
     std::vector<absl::string_view> metric_names;
     // TODO(yashykt): opentelemetry::sdk::resource::Resource doesn't have a copy
     // assignment operator so wrapping it in a unique_ptr till it is fixed.
@@ -204,9 +188,6 @@ class OpenTelemetryPluginEnd2EndTest : public ::testing::Test {
         per_channel_stats_plugins;
     std::vector<std::shared_ptr<grpc::experimental::OpenTelemetryPlugin>>
         per_server_stats_plugins;
-    std::shared_ptr<ChannelCredentials> channel_credentials;
-    std::shared_ptr<ServerCredentials> server_credentials;
-    ChannelArguments channel_arguments;
   };
 
   class MetricsCollectorThread {

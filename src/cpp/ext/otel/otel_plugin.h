@@ -511,17 +511,13 @@ class OpenTelemetryPluginImpl
     return plugin_options_;
   }
 
-  static constexpr int kOptionalLabelsSizeLimit = 64;
-  using OptionalLabelsBitSet = std::bitset<kOptionalLabelsSizeLimit>;
-
   template <typename ValueType>
   struct CallbackGaugeState {
     // It's possible to set values for multiple sets of labels at the same time
     // in a single callback. Key is a vector of label values and enabled
     // optional label values.
     using Cache = absl::flat_hash_map<std::vector<std::string>, ValueType>;
-    grpc_core::GlobalInstrumentsRegistry::GlobalInstrumentDescriptor descriptor;
-    OptionalLabelsBitSet optional_labels_bits;
+    grpc_core::GlobalInstrumentsRegistry::InstrumentID id;
     opentelemetry::nostd::shared_ptr<
         opentelemetry::metrics::ObservableInstrument>
         instrument;
@@ -546,6 +542,8 @@ class OpenTelemetryPluginImpl
   // Instruments for per-call metrics.
   ClientMetrics client_;
   ServerMetrics server_;
+  static constexpr int kOptionalLabelsSizeLimit = 64;
+  using OptionalLabelsBitSet = std::bitset<kOptionalLabelsSizeLimit>;
   OptionalLabelsBitSet per_call_optional_label_bits_;
   // Instruments for non-per-call metrics.
   struct Disabled {};
