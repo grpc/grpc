@@ -64,7 +64,7 @@ and the underlying endpoint.
 *   PH2 is compatible with the Call V3 Stack.
 *   PH2 utilizes the gRPC promise framework (`src/core/lib/promise`) for asynchronous operations.
 *   **Status:** Under Development.
-*   **Rollout:** Expected to begin in July 2026.
+*   **Rollout:** Expected to begin in November 2026.
 *   **Experiments:**
     *   Client: `IsPromiseBasedHttp2ClientTransportEnabled()`.
     *   Server: `IsPromiseBasedHttp2ServerTransportEnabled()`.
@@ -111,12 +111,13 @@ and the underlying endpoint.
 *   Helper classes for PH2 writes:
     *   `stream_data_queue.h` Stores gRPC messages and Metadata from the CallV3 stack for each stream in a queue.
     *   `writable_streams.h` Track streams that have some data to send to the peer and have available flow control tokens.
+    *   `write_cycle.{h,cc}` tracks frames and quota for each write cycle.
 *   Settings Helper : `http2_settings_promises.h`
 *   Flow Control Helper : `flow_control_manager.h`
 *   Stream : `stream.h` representation of each HTTP2 stream in the HTTP2 transport.
 *   GoAway : `goaway.{h,cc}` for implementation of HTTP2 GOAWAY
 *   Metadata: `incoming_metadata_tracker.h`
-*   Security : `security_frame.h`
+*   Security Frame : `security_frame.h`
 
 ## 3. Common Files (Shared by CHTTP2 and PH2)
 
@@ -200,6 +201,8 @@ Key test files include:
     *   `test/core/transport/chttp2/writable_streams_test.cc`
     *   `test/core/transport/chttp2/incoming_metadata_tracker_test.cc`
     *   `test/core/transport/chttp2/http2_security_frame_test.cc`
+    *   `test/core/transport/chttp2/write_cycle_test.cc`
+    *   `test/core/transport/chttp2/stream_test.cc`
 
 *   **Common Component Tests:**
     *   `test/core/transport/chttp2/flow_control_fuzzer.cc`

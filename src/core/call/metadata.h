@@ -229,7 +229,7 @@ struct StatusCastImpl<ServerMetadataHandle, absl::Status&> {
 template <typename T>
 struct StatusCastImpl<
     ServerMetadataHandle, T,
-    absl::void_t<decltype(&StatusCastImpl<absl::Status, T>::Cast)>> {
+    std::void_t<decltype(&StatusCastImpl<absl::Status, T>::Cast)>> {
   static ServerMetadataHandle Cast(const T& m) {
     return ServerMetadataFromStatus(StatusCast<absl::Status>(m));
   }
