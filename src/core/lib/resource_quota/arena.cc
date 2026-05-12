@@ -28,6 +28,7 @@
 #include "src/core/util/alloc.h"
 #include "absl/log/log.h"
 
+//////////////////////////////////////
 // Forward declarations.
 
 struct census_context;
@@ -42,7 +43,6 @@ class CallSpan;
 class CallTracer;
 class SecurityContext;
 class ServiceConfigCallData;
-class SubchannelCallTrackerInterface;
 
 struct TelemetryLabel;
 struct V3InterceptorToV2State;
@@ -56,6 +56,9 @@ class CallNode;
 namespace grpc_core::lb_policy_detail {
 class SubchannelCallTrackerInterface;
 }
+
+// End of forward declarations
+//////////////////////////////////////
 
 namespace grpc_core {
 
