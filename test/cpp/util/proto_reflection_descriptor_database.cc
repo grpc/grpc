@@ -60,7 +60,7 @@ ProtoReflectionDescriptorDatabase::~ProtoReflectionDescriptorDatabase() {
   }
 }
 
-bool ProtoReflectionDescriptorDatabase::FindFileByNameImpl(
+bool ProtoReflectionDescriptorDatabase::FindFileByName(
     ProtoReflectionDescriptorDatabase::StringArg filename,
     protobuf::FileDescriptorProto* output) {
   if (cached_db_.FindFileByName(filename, output)) {
@@ -104,7 +104,7 @@ bool ProtoReflectionDescriptorDatabase::FindFileByNameImpl(
   return cached_db_.FindFileByName(filename, output);
 }
 
-bool ProtoReflectionDescriptorDatabase::FindFileContainingSymbolImpl(
+bool ProtoReflectionDescriptorDatabase::FindFileContainingSymbol(
     ProtoReflectionDescriptorDatabase::StringArg symbol_name,
     protobuf::FileDescriptorProto* output) {
   if (cached_db_.FindFileContainingSymbol(symbol_name, output)) {
@@ -148,7 +148,7 @@ bool ProtoReflectionDescriptorDatabase::FindFileContainingSymbolImpl(
   return cached_db_.FindFileContainingSymbol(symbol_name, output);
 }
 
-bool ProtoReflectionDescriptorDatabase::FindFileContainingExtensionImpl(
+bool ProtoReflectionDescriptorDatabase::FindFileContainingExtension(
     ProtoReflectionDescriptorDatabase::StringArg containing_type,
     int field_number, protobuf::FileDescriptorProto* output) {
   if (cached_db_.FindFileContainingExtension(containing_type, field_number,
@@ -206,7 +206,7 @@ bool ProtoReflectionDescriptorDatabase::FindFileContainingExtensionImpl(
                                                 output);
 }
 
-bool ProtoReflectionDescriptorDatabase::FindAllExtensionNumbersImpl(
+bool ProtoReflectionDescriptorDatabase::FindAllExtensionNumbers(
     ProtoReflectionDescriptorDatabase::StringArg extendee_type,
     std::vector<int>* output) {
   if (cached_extension_numbers_.find(extendee_type) !=
