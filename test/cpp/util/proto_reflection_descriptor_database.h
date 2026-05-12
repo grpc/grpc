@@ -79,6 +79,9 @@ class ProtoReflectionDescriptorDatabase final
     : public proto_reflection_detail::ProtobufDestriptorDatabase<
           ProtoReflectionDescriptorDatabase> {
  public:
+  using Base = proto_reflection_detail::ProtobufDestriptorDatabase<
+      ProtoReflectionDescriptorDatabase>;
+  using StringArg = Base::StringArg;
   explicit ProtoReflectionDescriptorDatabase(
       std::unique_ptr<reflection::v1alpha::ServerReflection::Stub> stub);
 
@@ -91,20 +94,20 @@ class ProtoReflectionDescriptorDatabase final
   //
   // Find a file by file name.  Fills in *output and returns true if found.
   // Otherwise, returns false, leaving the contents of *output undefined.
-  bool FindFileByNameImpl(absl::string_view filename,
+  bool FindFileByNameImpl(StringArg filename,
                           protobuf::FileDescriptorProto* output);
 
   // Find the file that declares the given fully-qualified symbol name.
   // If found, fills in *output and returns true, otherwise returns false
   // and leaves *output undefined.
-  bool FindFileContainingSymbolImpl(absl::string_view symbol_name,
+  bool FindFileContainingSymbolImpl(StringArg symbol_name,
                                     protobuf::FileDescriptorProto* output);
 
   // Find the file which defines an extension extending the given message type
   // with the given field number.  If found, fills in *output and returns true,
   // otherwise returns false and leaves *output undefined.  containing_type
   // must be a fully-qualified type name.
-  bool FindFileContainingExtensionImpl(absl::string_view containing_type,
+  bool FindFileContainingExtensionImpl(StringArg containing_type,
                                        int field_number,
                                        protobuf::FileDescriptorProto* output);
 
@@ -115,7 +118,7 @@ class ProtoReflectionDescriptorDatabase final
   // FindFileContainingExtension will return true on all of the found
   // numbers. Returns true if the search was successful, otherwise
   // returns false and leaves output unchanged.
-  bool FindAllExtensionNumbersImpl(absl::string_view extendee_type,
+  bool FindAllExtensionNumbersImpl(StringArg extendee_type,
                                    std::vector<int>* output);
 
   // Provide a list of full names of registered services
