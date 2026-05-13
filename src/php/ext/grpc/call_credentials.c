@@ -85,25 +85,30 @@ static int plugin_state_detach_locked(plugin_state *state,
                                       zend_fcall_info **out_fci,
                                       zend_fcall_info_cache **out_fci_cache,
                                       zval *out_function_name,
-                                      zend_bool *out_function_name_addref) {
+                                      zend_bool *out_callable_refs_added) {
   *out_fci = state->fci;
   *out_fci_cache = state->fci_cache;
-  *out_function_name_addref = state->function_name_added_ref;
-  if (state->function_name_added_ref && state->fci != NULL) {
+  if (state->callable_refs_added && state->fci != NULL) {
     *out_function_name = state->fci->function_name;
+    *out_callable_refs_added = 1;
+  } else {
+    *out_callable_refs_added = 0;
   }
   state->fci = NULL;
   state->fci_cache = NULL;
-  state->function_name_added_ref = 0;
+  state->callable_refs_added = 0;
   return *out_fci != NULL || *out_fci_cache != NULL;
 }
 
 static void plugin_state_release_detached(zend_fcall_info *fci,
                                           zend_fcall_info_cache *fci_cache,
                                           zval *function_name,
-                                          zend_bool function_name_addref) {
-  if (function_name_addref) {
+                                          zend_bool callable_refs_added) {
+  if (callable_refs_added) {
     zval_ptr_dtor(function_name);
+    if (fci != NULL && fci->object != NULL) {
+      OBJ_RELEASE(fci->object);
+    }
   }
   if (fci != NULL) free(fci);
   if (fci_cache != NULL) free(fci_cache);
@@ -118,6 +123,7 @@ void grpc_php_call_credentials_request_shutdown(void) {
     zend_fcall_info *fci = NULL;
     zend_fcall_info_cache *fci_cache = NULL;
     zval function_name;
+    ZVAL_UNDEF(&function_name);
     zend_bool addref = 0;
     int found = 0;
 
@@ -230,13 +236,26 @@ PHP_METHOD(CallCredentials, createFromPlugin) {
   memset(state, 0, sizeof(plugin_state));
   gpr_mu_init(&state->mu);
 
-  /* save the user provided PHP callback function. Addref the callable so it
-   * stays alive while we reference it; the matching dtor runs in
-   * plugin_destroy_state or in the PHP_RSHUTDOWN sweep, whichever comes first. */
+  /* Save the user-provided PHP callback. Addref every piece of the callable
+   * we will dereference later, so the user dropping their references doesn't
+   * free them out from under us:
+   *   - fci->function_name: the callable zval (closure / string name / array)
+   *   - fci->object:        the bound instance for object-method callables
+   *                         like [$obj, 'method']. Without this addref the
+   *                         instance can be GC'd while the plugin state is
+   *                         still alive, leading to a method dispatch on a
+   *                         freed zend_object.
+   * The two refs are atomic with respect to each other and are released as a
+   * unit in plugin_state_release_detached. The matching release runs in
+   * plugin_destroy_state or in the PHP_RSHUTDOWN sweep, whichever comes
+   * first. */
   state->fci = fci;
   state->fci_cache = fci_cache;
   Z_TRY_ADDREF(fci->function_name);
-  state->function_name_added_ref = 1;
+  if (fci->object != NULL) {
+    GC_ADDREF(fci->object);
+  }
+  state->callable_refs_added = 1;
   plugin_state_register(state);
 
   grpc_metadata_credentials_plugin plugin;
@@ -348,6 +367,7 @@ void plugin_destroy_state(void *ptr) {
   zend_fcall_info *fci = NULL;
   zend_fcall_info_cache *fci_cache = NULL;
   zval function_name;
+  ZVAL_UNDEF(&function_name);
   zend_bool addref = 0;
 
   gpr_mu_lock(&state->mu);

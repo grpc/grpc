@@ -46,7 +46,7 @@ typedef struct plugin_state {
   zend_fcall_info_cache *fci_cache;
   gpr_mu mu;
   zend_bool invalidated;
-  zend_bool function_name_added_ref;
+  zend_bool callable_refs_added;
   struct plugin_state *next;
   struct plugin_state *prev;
 } plugin_state;
