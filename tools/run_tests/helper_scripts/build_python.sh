@@ -138,7 +138,7 @@ else
   $PYTHON -m pip install --user virtualenv==20.34.0
   # Skip wheel and setuptools and manually install later. Otherwise we might
   # not find cython module while building grpcio.
-  $PYTHON -m virtualenv --no-wheel --no-setuptools "$VENV"
+  $PYTHON -m virtualenv --reset-app-data --no-wheel --no-setuptools "$VENV"
   VENV_PYTHON="$(pwd)/$VENV/$VENV_RELATIVE_PYTHON"
 fi
 
