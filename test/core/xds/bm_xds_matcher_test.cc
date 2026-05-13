@@ -30,7 +30,7 @@ namespace {
 
 const int kSizeLow = 1;
 const int kSizeHigh = 512;
-const int kRangeMultiplier = 4;
+const int kRangeMultiplier = 8;
 
 // A concrete implementation of MatchContext for testing purposes.
 class TestMatchContext : public XdsMatcher::MatchContext {
