@@ -875,7 +875,7 @@ class PythonLanguage:
                 return (
                     python310_config,
                     python312_config,
-                    python314_config,
+                    python315_config,
                 )
         elif args.compiler == "python3.10":
             return (python310_config,)
@@ -902,6 +902,7 @@ class PythonLanguage:
                 python312_config,
                 python313_config,
                 python314_config,
+                python315_config,
             )
         else:
             raise Exception("Compiler %s not supported." % args.compiler)
@@ -1742,6 +1743,7 @@ argp.add_argument(
         "python3.12",
         "python3.13",
         "python3.14",
+        "python3.15",
         "pypy",
         "pypy3",
         "python_alpine",
