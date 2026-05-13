@@ -271,6 +271,45 @@ DATA_ENDPOINTS_TEST(CanRead) {
   WaitForAllPendingWork();
 }
 
+DATA_ENDPOINTS_TEST(ReadFailsWhenClosed) {
+  util::testing::MockPromiseEndpoint ep(1234);
+  auto close_ep = ep.ExpectDelayedReadClose(
+      absl::AbortedError("connection lost"), event_engine().get());
+  chaotic_good::DataEndpoints data_endpoints(
+      Endpoints(std::move(ep.promise_endpoint)),
+      MakeRefCounted<chaotic_good::TransportContext>(
+          event_engine(), MakeTestChannelzSocketNode()),
+      64, 64, std::make_shared<chaotic_good::TcpZTraceCollector>(), false,
+      "spanrr", Time1Clock());
+  bool read_completed = false;
+  SpawnTestSeqWithoutContext(
+      "read", data_endpoints.Read(5).Await(),
+      [&read_completed](absl::StatusOr<SliceBuffer> result) {
+        EXPECT_FALSE(result.ok());
+        EXPECT_EQ(result.status().code(), absl::StatusCode::kAborted);
+        EXPECT_THAT(result.status().message(),
+                    ::testing::HasSubstr("connection lost"));
+        read_completed = true;
+      });
+  close_ep();
+  WaitForAllPendingWork();
+  EXPECT_TRUE(read_completed);
+
+  // Further reads will fail immediately since the transport is closed.
+  read_completed = false;
+  SpawnTestSeqWithoutContext(
+      "read", data_endpoints.Read(6).Await(),
+      [&read_completed](absl::StatusOr<SliceBuffer> result) {
+        EXPECT_FALSE(result.ok());
+        EXPECT_EQ(result.status().code(), absl::StatusCode::kAborted);
+        EXPECT_THAT(result.status().message(),
+                    ::testing::HasSubstr("connection lost"));
+        read_completed = true;
+      });
+  WaitForAllPendingWork();
+  EXPECT_TRUE(read_completed);
+}
+
 DATA_ENDPOINTS_TEST(CanWriteSecurityFrame) {
   util::testing::MockPromiseEndpoint ep(1234);
   auto* transport_framing_endpoint_extension = ep.endpoint->AddExtension<

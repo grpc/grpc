@@ -49,6 +49,8 @@ EXPERIMENT_ENABLES = {
     "multiping": "multiping",
     "optimization_01": "optimization_01",
     "optimization_02": "optimization_02",
+    "optimization_03": "optimization_03",
+    "optimization_04": "optimization_04",
     "otel_export_telemetry_domains": "otel_export_telemetry_domains",
     "ph2_perf_01": "ph2_perf_01",
     "pick_first_ignore_empty_updates": "pick_first_ignore_empty_updates",

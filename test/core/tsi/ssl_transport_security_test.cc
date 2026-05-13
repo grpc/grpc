@@ -1361,6 +1361,37 @@ TEST(SslTransportSecurityTest, ExtractX509SubjectNames) {
   tsi_peer_destruct(&peer);
 }
 
+TEST(SslTransportSecurityTest,
+     ExtractX509SubjectNamesMalformedIpAddressSanFailsGracefully) {
+  // This certificate contains a subjectAltName extension with an iPAddress of
+  // length 5 bytes (rather than 4 or 16 bytes). This causes
+  // add_subject_alt_names_properties_to_peer() to fail, which should result in
+  // a clean error return rather than triggering process abort.
+  std::string cert =
+      "-----BEGIN CERTIFICATE-----\n"
+      "MIIC3zCCAcegAwIBAgIUKMYmbfEcNkln+NB2bntR6854MpswDQYJKoZIhvcNAQEL\n"
+      "BQAwDzENMAsGA1UEAwwEZXZpbDAeFw0yNjA1MTAyMjIzMThaFw0yNjA1MTEyMjIz\n"
+      "MThaMA8xDTALBgNVBAMMBGV2aWwwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEK\n"
+      "AoIBAQDJunMBKb/jsFIIxBeiEoniP5vQRGY65NDPmRPpZ3Ow423IHMDkITve7wzU\n"
+      "A8pr8+CuwNt9BRRL/6lzXKa7f9DdYEXAtqeuQRrgmSMGAJeayQjgwe7Z2zUaMGNv\n"
+      "92WiSNUBMu2O+6gOQqPaVw5NlcYPvccWawddeFuSmY/RlIUjQrCS3SWLLHaykSeQ\n"
+      "gXmwdaBhtmz+EOVcNMrMk3eMsQMeF0gef6gqeHy8/plITyh2/x/sf8O8QPidAbCB\n"
+      "8mLgUKT9jWSx4v/CVy3d3QuEmeDz111WoT+EWIMMNlNxVH9ZKhXKINLlsh81zgXO\n"
+      "QC5OVvdPVHG5gSFpuWzkN0MsW7KtAgMBAAGjMzAxMBAGA1UdEQQJMAeHBQECAwQF\n"
+      "MB0GA1UdDgQWBBTv0tHsQgZ8fdz5wq3EQF839GmvpzANBgkqhkiG9w0BAQsFAAOC\n"
+      "AQEArl2g0+d5FT7CZgKWecSiT4cBYCQfblB8pu0lTebOIz9qTUjkmo44SFTQvG2T\n"
+      "6Pztk4iPIGfrXSHeqTZchfuOVTuWV5RcKcGO73cShfzbnAX70eLnxCqUwwv41a5Y\n"
+      "nJYgEzZoSuaoXd2S3wfNWBROFvDoBoZd8/61xTTCG2026eVpzOya6tgAPPitzz0k\n"
+      "Bs4ONyXtnJSueO/Aoajo7eflDkYicgOoDq0C1oNICfdvgV1A+bODwMF01uqQvqGy\n"
+      "T0FCfB2EfpqgvvhXHLhk1wlHilsRyFNt/gmvgHP1AKvFq8lQOi9R0ZETXLkRxs57\n"
+      "9wpUdmSKwssGfTXAD5PfyRB3Qw==\n"
+      "-----END CERTIFICATE-----\n";
+  tsi_peer peer;
+  EXPECT_EQ(
+      tsi_ssl_extract_x509_subject_names_from_pem_cert(cert.c_str(), &peer),
+      TSI_INTERNAL_ERROR);
+}
+
 TEST(SslTransportSecurityTest, ExtractCertChain) {
   std::string cert =
       GetFileContents(absl::StrCat(kSslTsiTestCredentialsDir, "server1.pem"));
