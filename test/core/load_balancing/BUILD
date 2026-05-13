@@ -445,9 +445,13 @@ grpc_cc_test(
         "//:grpc_service_config_impl",
         "//:ref_counted_ptr",
         "//src/core:channel_args",
+        "//src/core:client_channel_service_config",
+        "//src/core:down_cast",
+        "//src/core:grpc_lb_policy_weighted_round_robin",
         "//src/core:grpc_service_config",
         "//test/core/test_util:fake_stats_plugin",
         "//test/core/test_util:grpc_test_util",
+        "//test/core/test_util:scoped_env_var",
     ],
 )
 
@@ -485,6 +489,7 @@ grpc_cc_test(
         "//test/core/event_engine:event_engine_test_utils",
         "//test/core/test_util:fake_stats_plugin",
         "//test/core/test_util:grpc_test_util",
+        "//test/core/test_util:scoped_env_var",
     ],
 )
 

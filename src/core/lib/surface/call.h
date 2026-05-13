@@ -98,6 +98,12 @@ class Call : public CppImplOf<Call, grpc_call>,
   virtual grpc_call_error StartBatch(const grpc_op* ops, size_t nops,
                                      void* notify_tag,
                                      bool is_notify_tag_closure) = 0;
+  // Posts an immediate failed completion for notify_tag without going through
+  // the transport. Used when a batch is rejected before any state is committed
+  // (e.g. invalid metadata), so the caller still receives a CQ event.
+  virtual void FailBatchImmediately(void* notify_tag,
+                                    bool is_notify_tag_closure,
+                                    grpc_error_handle error) = 0;
   virtual bool failed_before_recv_message() const = 0;
   virtual bool is_trailers_only() const = 0;
   virtual absl::string_view GetServerAuthority() const = 0;

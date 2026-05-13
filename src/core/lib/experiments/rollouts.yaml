@@ -70,6 +70,8 @@
   default: false
 - name: fuse_filters
   default: false
+- name: inproc_cancel_stream
+  default: true
 - name: keep_alive_ping_timer_batch
   default: false
 - name: local_connector_secure
@@ -79,6 +81,10 @@
 - name: memory_optimization_01
   default: false
 - name: memory_optimization_02
+  default: false
+- name: message_size_refactoring
+  default: false
+- name: metadata_outstanding_token_refactor
   default: false
 - name: metadata_publish_to_app_tag
   default: true

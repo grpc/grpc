@@ -884,7 +884,12 @@ static void close_transport_locked(grpc_chttp2_transport* t,
     connectivity_state_set(t, GRPC_CHANNEL_SHUTDOWN, absl::Status(),
                            "close_transport");
     // TODO(roth, ctiller): Provide better disconnect info here.
-    t->NotifyStateWatcherOnDisconnectLocked(t->closed_with_error, {});
+    grpc_core::Transport::StateWatcher::DisconnectInfo disconnect_info;
+    if (t->sent_goaway_state == GRPC_CHTTP2_FINAL_GOAWAY_SENT) {
+      disconnect_info.reason = grpc_core::Transport::StateWatcher::kGoaway;
+    }
+    t->NotifyStateWatcherOnDisconnectLocked(t->closed_with_error,
+                                            disconnect_info);
     if (t->keepalive_ping_timeout_handle != TaskHandle::kInvalid) {
       t->event_engine->Cancel(std::exchange(t->keepalive_ping_timeout_handle,
                                             TaskHandle::kInvalid));
