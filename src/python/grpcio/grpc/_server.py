@@ -612,9 +612,9 @@ def _call_behavior(
             if (
                 response_or_iterator is None
                 and context.code() is not None
-                # and context.code() is not grpc.StatusCode.OK
+                and context.code() is not grpc.StatusCode.OK
             ):
-                raise Exception( # noqa: TRY002, TRY301
+                raise Exception(  # noqa: TRY002, TRY301
                     context.code(), context.details()
                 )
 
