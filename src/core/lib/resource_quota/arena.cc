@@ -214,8 +214,7 @@ template class IdAssigner<ServiceConfigCallData>;
 template class IdAssigner<TelemetryLabel>;
 template class IdAssigner<V3InterceptorToV2State>;
 template class IdAssigner<channelz::CallNode>;
-template class IdAssigner<
-    lb_policy_detail::SubchannelCallTrackerInterface>;
+template class IdAssigner<lb_policy_detail::SubchannelCallTrackerInterface>;
 
 template class IdAssigner<Foo>;
 
@@ -233,8 +232,7 @@ struct ArenaContextTraitsInitializer {
     IdAssigner<TelemetryLabel>::id();
     IdAssigner<V3InterceptorToV2State>::id();
     IdAssigner<channelz::CallNode>::id();
-    IdAssigner<
-        lb_policy_detail::SubchannelCallTrackerInterface>::id();
+    IdAssigner<lb_policy_detail::SubchannelCallTrackerInterface>::id();
     IdAssigner<Foo>::id();
   }
 };
