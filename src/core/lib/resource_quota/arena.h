@@ -76,6 +76,7 @@ class IdAssigner {
   static uint16_t id();
 };
 
+// Thread-safe array of context object traits.
 class Traits {
  public:
   using Destroyer = void (*)(void*);
