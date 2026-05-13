@@ -170,18 +170,24 @@ PHP_METHOD(ChannelCredentials, createSsl) {
     return;
   }
 
-  php_grpc_int hashkey_len = root_certs_length + private_key_length + cert_chain_length;
+  php_grpc_int hashkey_len = root_certs_length + private_key_length + cert_chain_length + 2;
   char *hashkey = emalloc(hashkey_len + 1);
-  hashkey[0] = '\0';
+  size_t offset = 0;
   if (root_certs_length > 0) {
-    strcat(hashkey, pem_root_certs);
+    memcpy(hashkey + offset, pem_root_certs, root_certs_length);
+    offset += root_certs_length;
   }
+  hashkey[offset++] = '\0';
   if (private_key_length > 0) {
-    strcat(hashkey, pem_key_cert_pair.private_key);
+    memcpy(hashkey + offset, pem_key_cert_pair.private_key, private_key_length);
+    offset += private_key_length;
   }
+  hashkey[offset++] = '\0';
   if (cert_chain_length > 0) {
-    strcat(hashkey, pem_key_cert_pair.cert_chain);
+    memcpy(hashkey + offset, pem_key_cert_pair.cert_chain, cert_chain_length);
+    offset += cert_chain_length;
   }
+  hashkey[offset] = '\0';
 
   char *hashstr = malloc(41);
   generate_sha1_str(hashstr, hashkey, hashkey_len);
