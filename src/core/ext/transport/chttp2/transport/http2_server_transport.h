@@ -311,12 +311,6 @@ class Http2ServerTransport final : public ServerTransport,
   // down towards the endpoint.
   auto CallOutboundLoop(RefCountedPtr<Stream> stream);
 
-  // TODO(akshitpatel) : [PH2][P0] : Delete when implementing write loop.
-  auto WriteFromQueue();
-
-  // TODO(akshitpatel) : [PH2][P0] : Delete when implementing write loop.
-  auto WriteLoop();
-
   // Force triggers a transport write cycle
   absl::Status TriggerWriteCycle(DebugLocation whence = {}) {
     GRPC_HTTP2_SERVER_DLOG

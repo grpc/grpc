@@ -1023,26 +1023,6 @@ absl::Status Http2ServerTransport::DequeueStreamFrames(
   return absl::OkStatus();
 }
 
-auto Http2ServerTransport::WriteFromQueue() {
-  GRPC_HTTP2_SERVER_DLOG << "Http2ServerTransport WriteFromQueue Factory";
-  return []() -> Poll<absl::Status> {
-    // TODO(tjagtap) : [PH2][P2] : Implement this.
-    // Read from the mpsc queue and write it to endpoint
-    GRPC_HTTP2_SERVER_DLOG << "Http2ServerTransport WriteFromQueue Promise";
-    return Pending{};
-  };
-}
-
-auto Http2ServerTransport::WriteLoop() {
-  GRPC_HTTP2_SERVER_DLOG << "Http2ServerTransport WriteLoop Factory";
-  return AssertResultType<absl::Status>(Loop([this]() {
-    return TrySeq(WriteFromQueue(), []() -> LoopCtl<absl::Status> {
-      GRPC_HTTP2_SERVER_DLOG << "Http2ServerTransport WriteLoop Continue";
-      return Continue();
-    });
-  }));
-}
-
 //////////////////////////////////////////////////////////////////////////////
 // Spawn Helpers and Promise Helpers
 
@@ -2116,10 +2096,6 @@ void Http2ServerTransport::SpawnTransportLoops() {
   // For Server, read happens before write. So ReadLoop is spawned first.
   // MultiplexerLoop is spawned after the first read.
   SpawnGuardedTransportParty("ReadLoop", UntilTransportClosed(ReadLoop()));
-
-  // TODO(tjagtap) : [PH2][P0] : Spawn MultiplexerLoop after 1st read completes.
-  // TODO(tjagtap) : [PH2][P0] : Remove this when MultiplexerLoop is implemented
-  SpawnGuardedTransportParty("WriteLoop", WriteLoop());
 
   GRPC_HTTP2_SERVER_DLOG << "Http2ServerTransport::SpawnTransportLoops End";
 }
