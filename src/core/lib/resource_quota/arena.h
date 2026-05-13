@@ -140,7 +140,7 @@ GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline void DestroyArenaContext(void* p) {
 template <typename T>
 class ArenaContextTraits {
  public:
-  static uint16_t id() {
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static uint16_t id() {
     static uint16_t id_value = []() {
       uint16_t id = IdAssigner<T>::id();
       RegisteredTraits().SetDestroyer(id, DestroyArenaContext<T>);
