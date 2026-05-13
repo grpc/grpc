@@ -234,7 +234,9 @@ PHP_METHOD(ChannelCredentials, createComposite) {
   if (cred1->hashstr != NULL) {
     php_grpc_int cred1_len = strlen(cred1->hashstr);
     cred1_hashstr = malloc(cred1_len+1);
-    strcpy(cred1_hashstr, cred1->hashstr);
+    if (cred1_hashstr != NULL) {
+      strcpy(cred1_hashstr, cred1->hashstr);
+    }
   }
   zval *creds_object =
     grpc_php_wrap_channel_credentials(creds, cred1_hashstr, true TSRMLS_CC);
