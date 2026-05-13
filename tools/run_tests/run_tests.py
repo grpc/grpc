@@ -843,6 +843,13 @@ class PythonLanguage:
             bits=bits,
             config_vars=config_vars,
         )
+        python315_config = _python_config_generator(
+            name="py315",
+            major="3",
+            minor="15",
+            bits=bits,
+            config_vars=config_vars,
+        )
         pypy27_config = _pypy_config_generator(
             name="pypy", major="2", config_vars=config_vars
         )
@@ -880,6 +887,8 @@ class PythonLanguage:
             return (python313_config,)
         elif args.compiler == "python3.14":
             return (python314_config,)
+        elif args.compiler == "python3.15":
+            return (python315_config,)
         elif args.compiler == "pypy":
             return (pypy27_config,)
         elif args.compiler == "pypy3":
