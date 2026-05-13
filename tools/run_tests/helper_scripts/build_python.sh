@@ -135,7 +135,7 @@ if [[ "$(inside_venv)" ]]; then
   VENV_PYTHON="$PYTHON"
 else
   # Instantiate the virtualenv from the Python version passed in.
-  $PYTHON -m pip install --user virtualenv==20.30.0
+  $PYTHON -m pip install --user virtualenv==20.34.0
   # Skip wheel and setuptools and manually install later. Otherwise we might
   # not find cython module while building grpcio.
   $PYTHON -m virtualenv --no-wheel --no-setuptools "$VENV"
