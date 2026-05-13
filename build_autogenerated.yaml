@@ -14770,7 +14770,7 @@ targets:
   language: c++
   headers: []
   src:
-  - test/core/security/grpc_tls_certificate_selector_test.cc
+  - test/core/credentials/transport/tls/grpc_tls_certificate_selector_test.cc
   deps:
   - gtest
   - grpc_test_util

@@ -20019,7 +20019,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(grpc_tls_certificate_selector_test
-  test/core/security/grpc_tls_certificate_selector_test.cc
+  test/core/credentials/transport/tls/grpc_tls_certificate_selector_test.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
