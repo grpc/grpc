@@ -82,19 +82,19 @@ class Traits {
   using SizeT = std::vector<Destroyer>::size_type;
 
   Destroyer GetDestroyer(uint16_t id) {
-    grpc_core::MutexLock lock(&mutex_);
+    MutexLock lock(&mutex_);
     return registered_traits_[id];
   }
   void SetDestroyer(uint16_t id, Destroyer destroy) {
-    grpc_core::MutexLock lock(&mutex_);
+    MutexLock lock(&mutex_);
     registered_traits_[id] = destroy;
   }
   SizeT Size() const {
-    grpc_core::MutexLock lock(&mutex_);
+    MutexLock lock(&mutex_);
     return registered_traits_.size();
   }
   uint16_t AssignId() {
-    grpc_core::MutexLock lock(&mutex_);
+    MutexLock lock(&mutex_);
     uint16_t id = static_cast<uint16_t>(registered_traits_.size());
     // Populated later from ArenaContextTraits<T>::id();
     registered_traits_.push_back(nullptr);
@@ -102,7 +102,7 @@ class Traits {
   }
 
  private:
-  mutable grpc_core::Mutex mutex_;
+  mutable Mutex mutex_;
   std::vector<Destroyer> registered_traits_ ABSL_GUARDED_BY(mutex_);
 };
 

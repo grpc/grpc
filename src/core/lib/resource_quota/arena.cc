@@ -205,37 +205,37 @@ namespace arena_detail {
 
 template class IdAssigner<struct census_context>;
 template class IdAssigner<grpc_event_engine::experimental::EventEngine>;
-template class IdAssigner<grpc_core::BackendMetricProvider>;
-template class IdAssigner<grpc_core::Call>;
-template class IdAssigner<grpc_core::CallSpan>;
-template class IdAssigner<grpc_core::CallTracer>;
-template class IdAssigner<grpc_core::SecurityContext>;
-template class IdAssigner<grpc_core::ServiceConfigCallData>;
-template class IdAssigner<grpc_core::TelemetryLabel>;
-template class IdAssigner<grpc_core::V3InterceptorToV2State>;
-template class IdAssigner<grpc_core::channelz::CallNode>;
+template class IdAssigner<BackendMetricProvider>;
+template class IdAssigner<Call>;
+template class IdAssigner<CallSpan>;
+template class IdAssigner<CallTracer>;
+template class IdAssigner<SecurityContext>;
+template class IdAssigner<ServiceConfigCallData>;
+template class IdAssigner<TelemetryLabel>;
+template class IdAssigner<V3InterceptorToV2State>;
+template class IdAssigner<channelz::CallNode>;
 template class IdAssigner<
-    grpc_core::lb_policy_detail::SubchannelCallTrackerInterface>;
+    lb_policy_detail::SubchannelCallTrackerInterface>;
 
-template class IdAssigner<grpc_core::Foo>;
+template class IdAssigner<Foo>;
 
 struct ArenaContextTraitsInitializer {
   ArenaContextTraitsInitializer() {
     // Force initialization and allocation of ids.
     IdAssigner<struct census_context>::id();
     IdAssigner<grpc_event_engine::experimental::EventEngine>::id();
-    IdAssigner<grpc_core::BackendMetricProvider>::id();
-    IdAssigner<grpc_core::Call>::id();
-    IdAssigner<grpc_core::CallSpan>::id();
-    IdAssigner<grpc_core::CallTracer>::id();
-    IdAssigner<grpc_core::SecurityContext>::id();
-    IdAssigner<grpc_core::ServiceConfigCallData>::id();
-    IdAssigner<grpc_core::TelemetryLabel>::id();
-    IdAssigner<grpc_core::V3InterceptorToV2State>::id();
-    IdAssigner<grpc_core::channelz::CallNode>::id();
+    IdAssigner<BackendMetricProvider>::id();
+    IdAssigner<Call>::id();
+    IdAssigner<CallSpan>::id();
+    IdAssigner<CallTracer>::id();
+    IdAssigner<SecurityContext>::id();
+    IdAssigner<ServiceConfigCallData>::id();
+    IdAssigner<TelemetryLabel>::id();
+    IdAssigner<V3InterceptorToV2State>::id();
+    IdAssigner<channelz::CallNode>::id();
     IdAssigner<
-        grpc_core::lb_policy_detail::SubchannelCallTrackerInterface>::id();
-    IdAssigner<grpc_core::Foo>::id();
+        lb_policy_detail::SubchannelCallTrackerInterface>::id();
+    IdAssigner<Foo>::id();
   }
 };
 
