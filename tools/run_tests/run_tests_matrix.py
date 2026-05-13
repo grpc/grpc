@@ -389,7 +389,7 @@ def _create_portability_test_jobs(
             arch="x64",
             compiler=compiler,
             labels=["portability", "corelang"]
-            + (["openssl"] if "openssl" in compiler else []),
+            + (["openssl"] if "openssl" in compiler else [compiler]),
             extra_args=extra_args,
             inner_jobs=inner_jobs,
             timeout_seconds=_CPP_RUNTESTS_TIMEOUT,
@@ -599,13 +599,18 @@ if __name__ == "__main__":
     )
 
     jobs = []
+    # Change this for testing purpose
     for job in all_jobs:
-        if not args.filter or all(
-            filter in job.labels for filter in args.filter
-        ):
+        #if not args.filter or all(
+        #    filter in job.labels for filter in args.filter
+        #):
+        compilers_under_test = set(['gcc10', 'clang14', 'gcc_musl'])
+        intersect = compilers_under_test & set(job.labels)
+        if len(intersect) > 0:
             if not any(
                 exclude_label in job.labels for exclude_label in args.exclude
             ):
+                print(f'job: {job.shortname} matched labels: {intersect}')
                 jobs.append(job)
 
     if not jobs:
