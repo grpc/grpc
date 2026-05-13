@@ -284,7 +284,7 @@ g_stands_for = "graphic"  # @unused
 
 core_version = "54.0.0"  # @unused
 
-version = "1.81.0-dev"  # @unused
+version = "1.81.0-pre1"  # @unused
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
