@@ -52,7 +52,7 @@ class SingleLoader:
         loader = unittest.TestLoader()
         loader.testNamePatterns = test_patterns
         self.suite = unittest.TestSuite()
-        suites = []
+        tests = []
 
         for importer, module_name, is_package in pkgutil.walk_packages([unittest_path]):
             if target_module in module_name:
@@ -61,14 +61,14 @@ class SingleLoader:
                     if spec is not None:
                         module = importlib.util.module_from_spec(spec)
                         spec.loader.exec_module(module)
-                        suites.append(loader.loadTestsFromModule(module))
+                        tests.append(loader.loadTestsFromModule(module))
                 except Exception as e:
                     raise AssertionError(f"Error loading module {module_name}: {e}")
         
-        if len(suites) != 1:
-            raise AssertionError("Expected only 1 test module.  Found{}".format(suites))
+        if len(tests) != 1:
+            raise AssertionError("Expected only 1 test module.  Found{}".format(tests))
 
-        self.suite.addTest(suites[0])
+        self.suite.addTest(tests[0])
 
 
 def _convert_select_pattern(pattern):
@@ -105,7 +105,7 @@ def _arg_parser() -> argparse.ArgumentParser:
 
 def main():
     if len(sys.argv) < 3:
-        print(f"USAGE: {sys.argv[0]} TARGET_MODULE UNITTEST_PATH[TEST_ARGS]", file=sys.stderr)
+        print(f"USAGE: {sys.argv[0]} TARGET_MODULE UNITTEST_PATH", file=sys.stderr)
         sys.exit(1)
 
     # Remove the current wrapper script from the args.

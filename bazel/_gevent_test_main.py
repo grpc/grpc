@@ -68,18 +68,23 @@ signal.signal(signal.SIGTERM, debug)
 
 
 class SingleLoader:
-    def __init__(self, pattern: str):
+    def __init__(self, target_module: str, unittest_path: str):
         loader = unittest.TestLoader()
         self.suite = unittest.TestSuite()
         tests = []
-        for importer, module_name, is_package in pkgutil.walk_packages([os.path.dirname(os.path.relpath(__file__))]):
-            if pattern in module_name:
-                spec = importer.find_spec(module_name)
-                module = importlib.util.module_from_spec(spec)
-                spec.loader.exec_module(module)
-                tests.append(loader.loadTestsFromModule(module))
+        for importer, module_name, is_package in pkgutil.walk_packages([unittest_path]):
+            if target_module in module_name:
+                try:
+                    spec = importer.find_spec(module_name)
+                    if spec is not None:
+                        module = importlib.util.module_from_spec(spec)
+                        spec.loader.exec_module(module)
+                        tests.append(loader.loadTestsFromModule(module))
+                except Exception as e:
+                    raise AssertionError(f"Error loading module {module_name}: {e}")
         if len(tests) != 1:
             raise AssertionError("Expected only 1 test module. Found {}".format(tests))
+        
         self.suite.addTest(tests[0])
 
 
@@ -88,12 +93,14 @@ class SingleLoader:
 
 if __name__ == "__main__":
 
-    if len(sys.argv) != 2:
-        print(f"USAGE: {sys.argv[0]} TARGET_MODULE", file=sys.stderr)
+    if len(sys.argv) < 3:
+        print(f"USAGE: {sys.argv[0]} TARGET_MODULE UNITTES_PATH", file=sys.stderr)
+        sys.exit(1)
 
     target_module = sys.argv[1]
+    unittest_path = sys.argv[2]
 
-    loader = SingleLoader(target_module)
+    loader = SingleLoader(target_module, unittest_path)
     runner = unittest.TextTestRunner()
 
     result = gevent.spawn(runner.run, loader.suite)
