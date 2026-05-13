@@ -33,7 +33,6 @@
 #include <cstddef>
 #include <iosfwd>
 #include <memory>
-#include <mutex>
 #include <utility>
 
 #include "src/core/lib/promise/context.h"
