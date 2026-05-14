@@ -20,13 +20,11 @@ if [ $# -eq 0 ]; then
   exit 1
 fi
 
-PACKAGES=$@
-shift $#
+PACKAGES="$*"
 
 MAX_RETRIES=4
 # Initial delay, will grow exponentially
 delay=3
-
 
 PS4="+ \$(date +[%H:%M:%S_%Z]) "
 set -euo pipefail
@@ -39,11 +37,12 @@ for i in $(seq 1 $MAX_RETRIES); do
     echo "apt-get succeeded on attempt ${i}.";
     break;
   else
-    echo "apt-get failed on attempt ${i}. Waiting $(($delay**$i)) seconds before retrying..."
-    sleep $(($delay**$i));
     if [ "${i}" -eq "${MAX_RETRIES}" ]; then
       echo "Max retries reached (${MAX_RETRIES}). apt-get failed permanently." >&2
       exit 1;
     fi
+    
+    echo "apt-get failed on attempt ${i}. Waiting $(($delay**$i)) seconds before retrying..."
+    sleep $(($delay**$i));
   fi
 done

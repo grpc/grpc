@@ -19,7 +19,7 @@ FROM python:3.10-bullseye
 #=================
 #  Create wrapper for apt-get
 
-RUN /bin/bash -c 'cat << "EOF" > /usr/local/bin/apt-get-install-retry
+COPY <<-"EOF" /usr/local/bin/apt-get-install-retry
 #!/usr/bin/env bash
 # Copyright 2026 The gRPC Authors
 #
@@ -71,8 +71,7 @@ for i in $(seq 1 $MAX_RETRIES); do
 done
 
 EOF
-' \
-&& chmod +x /usr/local/bin/apt-get-install-retry
+RUN chmod +x /usr/local/bin/apt-get-install-retry
 
 
 # Basic C core dependencies
