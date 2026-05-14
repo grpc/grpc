@@ -67,8 +67,10 @@ if $is_sonoma; then
   # ==> Pouring ca-certificates--2026-05-14.all.bottle.tar.gz
   # Error: undefined method '[]' for nil
 
+  export HOMEBREW_NO_INSTALL_FROM_API=1
   brew cleanup
 
+  brew tap homebrew/core --force
   brew tap-new local/homebrew-pinned
   brew extract --version=2026-03-19 ca-certificates local/homebrew-pinned
   brew install ca-certificates local/homebrew-pinned/ca-certificates@2026.03.19
