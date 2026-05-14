@@ -69,10 +69,10 @@ if $is_sonoma; then
 
   brew cleanup
 
-  brew tap-new local/pinned-packages
-  brew extract --version=2026-03-19 ca-certificates local/pinned-packages
-  brew install ca-certificates local/pinned-packages/ca-certificates@2026-03-19
-  brew pin ca-certificates@2026-03-19
+  brew tap-new local/homebrew-pinned
+  brew extract --version=2026-03-19 ca-certificates local/homebrew-pinned
+  brew install ca-certificates local/homebrew-pinned/ca-certificates@2026.03.19
+  brew pin ca-certificates@2026.03.19
 
   brew install cmake
   brew install gnupg
