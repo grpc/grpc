@@ -68,7 +68,11 @@ if $is_sonoma; then
   # Error: undefined method '[]' for nil
 
   brew cleanup
-  brew install ca-certificates
+
+  brew tap-new local/pinned-packages
+  brew extract --version=2026-03-19 ca-certificates local/pinned-packages
+  brew install ca-certificates local/pinned-packages/ca-certificates@2026-03-19
+  brew pin ca-certificates@2026-03-19
 
   brew install cmake
   brew install gnupg
