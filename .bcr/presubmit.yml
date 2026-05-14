@@ -7,7 +7,6 @@ matrix:
     - ubuntu2204
     - ubuntu2404
   bazel:
-    - 7.x
     - 8.x
 
 tasks:
