@@ -9309,6 +9309,8 @@ grpc_cc_library(
         "chaotic_good_tcp_frame_transport",
         "event_engine_extensions",
         "experiments",
+        "//:channel_arg_names",
+        "//:grpc_types",
     ],
 )
 
@@ -9428,9 +9430,10 @@ grpc_cc_library(
         "absl/cleanup",
         "absl/container:inlined_vector",
         "absl/flags:flag",
+        "absl/log",
+        "absl/status",
         "absl/strings",
         "absl/time",
-        "absl/log",
     ],
     deps = [
         "1999",
@@ -9549,6 +9552,11 @@ grpc_cc_library(
     hdrs = [
         "ext/transport/chaotic_good/tcp_frame_transport.h",
     ],
+    external_deps = [
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
+    ],
     deps = [
         "chaotic_good_control_endpoint",
         "chaotic_good_data_endpoints",
@@ -9566,8 +9574,10 @@ grpc_cc_library(
         "loop",
         "race",
         "seq",
+        "slice",
         "transport_framing_endpoint_extension",
         "try_seq",
+        "//:grpc_types",
     ],
 )
 
@@ -9602,6 +9612,7 @@ grpc_cc_library(
         "absl/random:bit_gen_ref",
         "absl/status",
         "absl/status:statusor",
+        "absl/strings",
     ],
     deps = [
         "activity",
@@ -9660,6 +9671,7 @@ grpc_cc_library(
         "absl/random:bit_gen_ref",
         "absl/status",
         "absl/status:statusor",
+        "absl/strings",
     ],
     deps = [
         "1999",
@@ -9720,6 +9732,7 @@ grpc_cc_library(
         "absl/random:bit_gen_ref",
         "absl/status",
         "absl/status:statusor",
+        "absl/strings",
     ],
     deps = [
         "activity",
@@ -9794,6 +9807,7 @@ grpc_cc_library(
         "absl/random:bit_gen_ref",
         "absl/status",
         "absl/status:statusor",
+        "absl/strings",
     ],
     deps = [
         "activity",
