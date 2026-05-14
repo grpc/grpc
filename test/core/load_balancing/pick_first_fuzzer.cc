@@ -132,6 +132,12 @@ class Fuzzer {
       case pick_first_fuzzer::Action::ACTION_TYPE_NOT_SET:
         break;
     }
+    // Subchannel notifications are queued asynchronously on the WorkSerializer.
+    // Therefore, num_subchannels_connecting_ can become zero prematurely.
+    // Draining the event engine ensures notifications are fully processed.
+    // This allows the LB policy to request new connections.
+    event_engine_->TickUntilIdle();
+
     // When the LB policy is reporting TF state, we should always be trying
     // to connect to at least one subchannel, if there are any not in state
     // TF.  Note that we check this only if we've received a new picker since
@@ -833,7 +839,7 @@ auto ParseTestProto(const std::string& proto) {
 
 void Fuzz(const pick_first_fuzzer::Msg& message) {
   Fuzzer fuzzer(message.fuzzing_event_engine_actions());
-  for (const auto& action : message.actions()) {
+  for (const pick_first_fuzzer::Action& action : message.actions()) {
     fuzzer.Act(action);
   }
   fuzzer.CheckCanBecomeReady();
@@ -955,6 +961,155 @@ TEST(PickFirstFuzzer, TwoSubchannelsWithSameAddress) {
       }
     }
     actions { tick { ms: 1 } }
+  )pb"));
+}
+
+TEST(PickFirstFuzzer, FuzzRegression) {
+  // Reproducer test case extracted from the failing fuzz run.
+  // Verifies subchannel connection monitoring during asynchronous state
+  // updates.
+  Fuzz(ParseTestProto(R"pb(
+    actions { create_lb_policy { channel_args { args { i: 0 } } } }
+    actions { exit_idle {} }
+    actions { do_pick {} }
+    actions {
+      update {
+        endpoint_list {
+          endpoints {
+            addresses { uri: "\364\217\277\277KKKKKK" }
+            addresses { localhost_port: -1330494582 }
+            addresses { localhost_port: 2101471063 }
+            addresses { localhost_port: 760300208 }
+            addresses { uri: "E" }
+            channel_args {
+              args {
+                key: "\343\241\247"
+                resource_quota {}
+              }
+              args { str: "\356\200\200" }
+              args {
+                key: "\362\231\255\257"
+                resource_quota {}
+              }
+            }
+          }
+          endpoints {
+            addresses { localhost_port: 251305187 }
+            addresses { localhost_port: 33554432 }
+            addresses { localhost_port: 0 }
+            addresses { uri: ".\343\263\236" }
+            addresses { uri: "\361\270\226\234" }
+            addresses { uri: "\353\236\223" }
+            addresses { localhost_port: 0 }
+            channel_args {}
+          }
+          endpoints {
+            addresses { uri: "\351\274\250" }
+            addresses {}
+            addresses { uri: "\355\237\277" }
+            channel_args {
+              args { key: "\361\200\203\201\001" i: 3158745049847955780 }
+            }
+          }
+          endpoints { channel_args {} }
+          endpoints {
+            addresses { localhost_port: 103798740 }
+            addresses { uri: "" }
+            addresses { localhost_port: -2018243013 }
+            channel_args {
+              args { resource_quota {} }
+              args { key: "G" i: 0 }
+            }
+          }
+        }
+        config_json {
+          fields {
+            key: ""
+            value { string_value: "" }
+          }
+          fields {
+            key: "\001"
+            value { list_value {} }
+          }
+        }
+        channel_args {
+          args {
+            key: "\363\236\264\200[[[[[[[[[[[["
+            resource_quota {}
+          }
+          args { i: 1 }
+          args {
+            key: "\000000p\355\237\277 ck_fist0000\350\257\2570\00100"
+            i: -2130528459626611673
+          }
+          args { resource_quota {} }
+        }
+      }
+    }
+    actions {
+      subchannel_connectivity_notification {
+        address { localhost_port: 0 }
+        channel_args {}
+        state: TRANSIENT_FAILURE
+      }
+    }
+    actions { do_pick {} }
+    actions {
+      update {
+        endpoint_error { code: 3 message: "\351\257\234\356\200\200" }
+        config_json {}
+      }
+    }
+    actions {
+      subchannel_connectivity_notification {
+        address { localhost_port: 0 }
+        channel_args {}
+        status {}
+      }
+    }
+    actions { tick { ms: 1977325889410054547 } }
+    actions {
+      subchannel_connectivity_notification {
+        address { localhost_port: 0 }
+        channel_args {}
+        state: CONNECTING
+        status {}
+      }
+    }
+    actions {
+      subchannel_connectivity_notification {
+        address { localhost_port: 0 }
+        channel_args { args {} }
+        state: TRANSIENT_FAILURE
+        status { code: -1037760837 message: "\355\237\277\001" }
+      }
+    }
+    fuzzing_event_engine_actions {
+      run_delay: 1
+      run_delay: 0
+      run_delay: 0
+      assign_ports: 4294967295
+      assign_ports: 4294967295
+      connections { write_size: 3650453713 write_size: 2147483647 }
+      endpoint_metrics {}
+      endpoint_metrics { key: 1 name: "w" }
+      endpoint_metrics { name: "\356\200\200" }
+      returned_endpoint_metrics {
+        write_id: 3805616060
+        delay_us: 1611
+        event: 4202644292
+        returned_endpoint_metrics { key: 1106763615 value: 9048410502711594259 }
+        returned_endpoint_metrics { value: 9223372036854775807 }
+      }
+      returned_endpoint_metrics {
+        delay_us: 3262379673
+        event: 1
+        returned_endpoint_metrics {
+          key: 1358378611
+          value: -7646341239520137378
+        }
+      }
+    }
   )pb"));
 }
 
