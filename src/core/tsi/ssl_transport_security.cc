@@ -894,9 +894,11 @@ static tsi_result peer_from_x509(X509* cert, int include_certificate_type,
   if (subject_alt_names != nullptr) {
     sk_GENERAL_NAME_pop_free(subject_alt_names, GENERAL_NAME_free);
   }
-  if (result != TSI_OK) tsi_peer_destruct(peer);
-
-  GRPC_CHECK((int)peer->property_count == current_insert_index);
+  if (result != TSI_OK) {
+    tsi_peer_destruct(peer);
+  } else {
+    GRPC_CHECK((int)peer->property_count == current_insert_index);
+  }
   return result;
 }
 
