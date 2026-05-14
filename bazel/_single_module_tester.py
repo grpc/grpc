@@ -46,7 +46,7 @@ class SingleLoader:
 if __name__ == "__main__":
 
     if len(sys.argv) != 3:
-        print(f"USAGE: {sys.argv[0]} TARGET_MODULE", file=sys.stderr)
+        print(f"USAGE: {sys.argv[0]} TARGET_MODULE UNITTEST_PATH", file=sys.stderr)
         sys.exit(1)
 
 

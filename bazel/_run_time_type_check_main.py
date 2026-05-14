@@ -66,7 +66,7 @@ class SingleLoader:
                     raise AssertionError(f"Error loading module {module_name}: {e}")
         
         if len(tests) != 1:
-            raise AssertionError("Expected only 1 test module. Found{}".format(tests))
+            raise AssertionError("Expected only 1 test module. Found {}".format(tests))
 
         self.suite.addTest(tests[0])
 
@@ -105,7 +105,7 @@ def _arg_parser() -> argparse.ArgumentParser:
 
 def main():
     if len(sys.argv) < 3:
-        print(f"USAGE: {sys.argv[0]} TARGET_MODULE UNITTEST_PATH", file=sys.stderr)
+        print(f"USAGE: {sys.argv[0]} TARGET_MODULE UNITTEST_PATH [TEST_ARGS]", file=sys.stderr)
         sys.exit(1)
 
     # Remove the current wrapper script from the args.
