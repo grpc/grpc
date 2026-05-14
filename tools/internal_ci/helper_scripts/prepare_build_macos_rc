@@ -56,7 +56,7 @@ fi
 
 # Disable HOMEBREW update to avoid new updates which potentially have problems.
 # Brew packages installed when Kokoro image was built tend to have less conflict.
-export HOMEBREW_NO_AUTO_UPDATE=1
+# export HOMEBREW_NO_AUTO_UPDATE=1
 
 # Dump the brew configuration for debugging just in case. Check "Core tap HEAD" field
 # because it should be the same as below unless it's been updated.
@@ -67,7 +67,8 @@ if $is_sonoma; then
   # ==> Pouring ca-certificates--2026-05-14.all.bottle.tar.gz
   # Error: undefined method '[]' for nil
 
-  brew cleanup
+  # brew update
+  # brew cleanup
   brew install ca-certificates
 
   brew install cmake
