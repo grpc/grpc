@@ -165,6 +165,21 @@ describe 'ClientStub' do  # rubocop:disable Metrics/BlockLength
       expect(stub.instance_variable_get(:@channel_creds)).to be_a(GRPC::Core::ChannelCredentials)
       expect(stub.instance_variable_get(:@call_creds)).to eq(call_creds)
     end
+
+    context 'with CompositeChannelCredentials (pure Ruby path)' do
+      it 'splits CompositeChannelCredentials into channel + call creds' do
+        skip 'CompositeChannelCredentials requires pure Ruby toggle ON' \
+          unless GRPC::PURE_RUBY_CALL_CREDENTIALS_ENABLED
+        require 'grpc/core/call_credentials'
+        require 'grpc/core/channel_credentials'
+        chan_creds = GRPC::Core::ChannelCredentials.new
+        call_creds = GRPC::Core::CallCredentials.new(proc { {} })
+        composite = chan_creds.compose(call_creds)
+        stub = GRPC::ClientStub.new(fake_host, composite)
+        expect(stub.instance_variable_get(:@channel_creds)).to eq(chan_creds)
+        expect(stub.instance_variable_get(:@call_creds)).to eq(call_creds)
+      end
+    end
   end
 
   describe '#request_response', request_response: true do

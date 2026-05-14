@@ -39,9 +39,8 @@ module GRPC
 
       def validate_credentials_list!(list)
         list.flatten.each do |o|
-          unless o.is_a?(CallCredentials) || o.is_a?(CompositeCallCredentials)
-            fail TypeError, 'Argument to compose must be a CallCredentials'
-          end
+          fail TypeError, "Argument to compose must be a CallCredentials, got #{o.class}" \
+            unless o.is_a?(CallCredentials)
         end
       end
     end
@@ -66,77 +65,6 @@ module GRPC
         return self if others.empty?
         valid_others = validate_credentials_list!(others)
         CompositeCallCredentials.new(@creds + valid_others)
-      end
-    end
-
-    # Internal utilities for credential management
-    # @api private
-    module CallCredentialsHelper
-      # Valid header key pattern per gRPC spec: lowercase letters, digits, hyphen, underscore, dot
-      VALID_HEADER_KEY_PATTERN = /\A[a-z0-9\-_.]+\z/
-
-      # Resolves credentials from multiple sources
-      def self.resolve(channel_call_creds, call_credentials)
-        return channel_call_creds.compose(call_credentials) if channel_call_creds && call_credentials
-
-        channel_call_creds || call_credentials
-      end
-
-      # Validates that a metadata key is legal per gRPC spec
-      def self.valid_header_key?(key)
-        !key.nil? && !key.empty? && VALID_HEADER_KEY_PATTERN.match?(key)
-      end
-
-      # Parses method path and builds service URL and method name
-      # @param ssl_target [String] SSL target host (e.g., 'foo.test.google.fr')
-      # @param method [String, nil] RPC method path (e.g., '/echo.EchoServer/Echo')
-      # @return [Array<String, String>] [service_url, method_name]
-      #   e.g., ['https://foo.test.google.fr/echo.EchoServer', 'Echo']
-      def self.parse_method_info(ssl_target, method)
-        return ["https://#{ssl_target}", nil] if method.nil? || method.empty?
-
-        # Method format: /service.Name/MethodName - extract service and method
-        last_slash = method.rindex('/')
-        service_path = last_slash&.positive? ? method[0, last_slash] : ''
-        service_url = "https://#{ssl_target}#{service_path}"
-        method_name = last_slash ? method[(last_slash + 1)..] : nil
-
-        [service_url, method_name]
-      end
-
-      # Validates and merges credential metadata into request metadata
-      def self.merge_creds_metadata!(creds_metadata, metadata)
-        return if creds_metadata.nil?
-
-        unless creds_metadata.is_a?(Hash)
-          fail GRPC::Unavailable, "Call credentials must return Hash or nil, got #{creds_metadata.class}"
-        end
-
-        creds_metadata.each do |k, v|
-          key_str = k.to_s
-          unless valid_header_key?(key_str)
-            fail GRPC::Unavailable, "Illegal metadata: '#{key_str}' is an invalid header key"
-          end
-          metadata[key_str] = v.is_a?(Array) ? v.map(&:to_s) : v.to_s
-        end
-      end
-
-      # Applies credentials to request metadata
-      def self.apply(credentials, metadata, ssl_target, channel_creds, method = nil)
-        return unless credentials
-        return if channel_creds == :this_channel_is_insecure
-
-        service_url, method_name = parse_method_info(ssl_target, method)
-        context = { service_url: service_url, jwt_aud_uri: service_url, method_name: method_name }
-
-        begin
-          creds_metadata = credentials.get_metadata(context)
-          merge_creds_metadata!(creds_metadata, metadata)
-        rescue GRPC::BadStatus
-          raise
-        rescue StandardError => e
-          fail GRPC::Unavailable, "Call credentials failed: #{e.message}"
-        end
       end
     end
   end

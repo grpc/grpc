@@ -16,36 +16,28 @@
 
 module GRPC
   module Core
-    class ChannelCredentials
+    # Provides shared #compose logic for channel credential classes.
+    # @api private
+    module ChannelCredentialsComposable
       def compose(*others)
         return self if others.empty?
+
         others.each do |o|
-          unless o.is_a?(CallCredentials) || o.is_a?(CompositeCallCredentials)
-            fail TypeError, 'Argument to compose must be a CallCredentials'
-          end
+          fail TypeError, "Argument to compose must be a CallCredentials, got #{o.class}" \
+            unless o.is_a?(CallCredentials)
         end
-        if others.size == 1
-          CompositeChannelCredentials.new(self, others.first)
-        else
-          CompositeChannelCredentials.new(self, CompositeCallCredentials.new(others))
-        end
+
+        call_creds = others.size == 1 ? others.first : CompositeCallCredentials.new(others)
+        CompositeChannelCredentials.new(self, call_creds)
       end
     end
 
+    class ChannelCredentials
+      include ChannelCredentialsComposable
+    end
+
     class XdsChannelCredentials
-      def compose(*others)
-        return self if others.empty?
-        others.each do |o|
-          unless o.is_a?(CallCredentials) || o.is_a?(CompositeCallCredentials)
-            fail TypeError, 'Argument to compose must be a CallCredentials'
-          end
-        end
-        if others.size == 1
-          CompositeChannelCredentials.new(self, others.first)
-        else
-          CompositeChannelCredentials.new(self, CompositeCallCredentials.new(others))
-        end
-      end
+      include ChannelCredentialsComposable
     end
 
     class CompositeChannelCredentials
@@ -58,11 +50,12 @@ module GRPC
 
       def compose(*others)
         return self if others.empty?
+
         others.each do |o|
-          unless o.is_a?(CallCredentials) || o.is_a?(CompositeCallCredentials)
-            fail TypeError, 'Argument to compose must be a CallCredentials'
-          end
+          fail TypeError, "Argument to compose must be a CallCredentials, got #{o.class}" \
+            unless o.is_a?(CallCredentials)
         end
+
         if @call_credentials
           CompositeChannelCredentials.new(@channel_credentials, @call_credentials.compose(*others))
         else
