@@ -24,11 +24,14 @@ fi
 echo "-- System --"
 echo "System: $(uname -a)"
 echo "Python: $(python3 -VV)"
+echo "Bash: $(bash --version)"
 echo -e "-- OS --\n$(sw_vers -productName) $(sw_vers -productVersion) $(sw_vers -buildVersion)"
 echo "-- CPU --"
 echo "CPU: $(sysctl -n machdep.cpu.vendor) $(uname -m) Family $(sysctl -n machdep.cpu.family) Model $(sysctl -n machdep.cpu.brand_string)"
 echo "CPU Cores: $(sysctl -n hw.ncpu)"
 echo -e "-- Memory --\n$(sysctl -n hw.memsize)"
+# Reset verbosity and add timestamps.
+PS4='+ $(date "+[%H:%M:%S %Z]")\011 '
 set -x
 
 # Info on disk usage and mounted volumes
@@ -56,7 +59,7 @@ fi
 
 # Disable HOMEBREW update to avoid new updates which potentially have problems.
 # Brew packages installed when Kokoro image was built tend to have less conflict.
-# export HOMEBREW_NO_AUTO_UPDATE=1
+export HOMEBREW_NO_AUTO_UPDATE=1
 
 # Dump the brew configuration for debugging just in case. Check "Core tap HEAD" field
 # because it should be the same as below unless it's been updated.
@@ -64,18 +67,40 @@ fi
 brew config
 
 if $is_sonoma; then
-  # ==> Pouring ca-certificates--2026-05-14.all.bottle.tar.gz
-  # Error: undefined method '[]' for nil
+#   # ==> Pouring ca-certificates--2026-05-14.all.bottle.tar.gz
+#   # Error: undefined method '[]' for nil
 
-  # brew update
-  # brew cleanup
-  brew install ca-certificates
+#   # brew update
+#   # brew cleanup
+#   brew install ca-certificates
 
-  brew install cmake
-  brew install gnupg
-  brew install ccache
-  export PATH="/opt/homebrew/bin::${PATH}"
+#   brew install cmake
+#   brew install gnupg
+#   brew install ccache
+  set +e
+
   cmake --version
+  which cmake
+
+  gpg --version
+  which gpg
+
+  which ccache
+  gpg --version
+
+  export PATH="/opt/homebrew/bin:${PATH}"
+  ls -la opt/homebrew/bin
+
+  cmake --version
+  which cmake
+
+  gpg --version
+  which gpg
+
+  which ccache
+  gpg --version
+
+  set -e
 fi
 
 # Add GCP credentials for BQ access
@@ -223,10 +248,13 @@ fi
 if [ "${PREPARE_BUILD_INSTALL_DEPS_PHP}" == "true" ]
 then
   time brew install php@8.1 || true
-  if [ -e "/usr/local/opt/php@8.1/" ]; then
-    PHP_PATH="/usr/local/opt/php@8.1/"
+  if [ -e "/usr/local/opt/php@8.1" ]; then
+    PHP_PATH="/usr/local/opt/php@8.1"
   elif [ -e "/opt/homebrew/opt/php@8.1" ]; then
     PHP_PATH="/opt/homebrew/opt/php@8.1"
+  elif [ -e "/usr/local/Cellar/php/8.5.0" ]; then
+    # are we ok with PHP 8.5?
+    PHP_PATH="/usr/local/Cellar/php/8.5.0"
   else
     echo "Error: Unable to check php install path" >&2
     exit 1
