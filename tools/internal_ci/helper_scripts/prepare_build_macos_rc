@@ -70,13 +70,15 @@ if $is_sonoma; then
 #   # ==> Pouring ca-certificates--2026-05-14.all.bottle.tar.gz
 #   # Error: undefined method '[]' for nil
 
-#   # brew update
-#   # brew cleanup
-#   brew install ca-certificates
+  sudo brew update
+  sudo brew cleanup
+  sudo brew install ca-certificates
 
-#   brew install cmake
-#   brew install gnupg
-#   brew install ccache
+  sudo brew install cmake
+  sudo brew install gnupg
+  sudo brew install ccache
+  ls -la /opt/homebrew/bin
+
   set +e
 
   cmake --version
@@ -89,7 +91,6 @@ if $is_sonoma; then
   gpg --version
 
   export PATH="/opt/homebrew/bin:${PATH}"
-  ls -la opt/homebrew/bin
 
   cmake --version
   which cmake
@@ -252,9 +253,6 @@ then
     PHP_PATH="/usr/local/opt/php@8.1"
   elif [ -e "/opt/homebrew/opt/php@8.1" ]; then
     PHP_PATH="/opt/homebrew/opt/php@8.1"
-  elif [ -e "/usr/local/Cellar/php/8.5.0" ]; then
-    # are we ok with PHP 8.5?
-    PHP_PATH="/usr/local/Cellar/php/8.5.0"
   else
     echo "Error: Unable to check php install path" >&2
     exit 1
