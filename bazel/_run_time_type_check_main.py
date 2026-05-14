@@ -66,7 +66,7 @@ class SingleLoader:
                     raise AssertionError(f"Error loading module {module_name}: {e}")
         
         if len(tests) != 1:
-            raise AssertionError("Expected only 1 test module.  Found{}".format(tests))
+            raise AssertionError("Expected only 1 test module. Found{}".format(tests))
 
         self.suite.addTest(tests[0])
 
@@ -124,7 +124,7 @@ def main():
 
     test_patterns = test_kwargs.pop("testNamePatterns")
 
-    loader = SingleLoader(target_module, unittest_path,test_patterns=test_patterns)
+    loader = SingleLoader(target_module, unittest_path, test_patterns=test_patterns)
     runner = unittest.TextTestRunner(**test_kwargs)
 
     result = runner.run(loader.suite)
