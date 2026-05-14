@@ -601,16 +601,16 @@ if __name__ == "__main__":
     jobs = []
     # Change this for testing purpose
     for job in all_jobs:
-        #if not args.filter or all(
+        # if not args.filter or all(
         #    filter in job.labels for filter in args.filter
-        #):
-        compilers_under_test = set(['clang14'])
+        # ):
+        compilers_under_test = set(["clang14"])
         intersect = compilers_under_test & set(job.labels)
         if len(intersect) > 0:
             if not any(
                 exclude_label in job.labels for exclude_label in args.exclude
             ):
-                print(f'job: {job.shortname} matched labels: {intersect}')
+                print(f"job: {job.shortname} matched labels: {intersect}")
                 jobs.append(job)
 
     if not jobs:
