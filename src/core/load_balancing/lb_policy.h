@@ -121,7 +121,6 @@ class BackendMetricAccessor {
   virtual const BackendMetricData* GetBackendMetricData() = 0;
 };
 
-
 class SubchannelCallTrackerInterface {
  public:
   virtual ~SubchannelCallTrackerInterface() = default;
@@ -144,12 +143,12 @@ class SubchannelCallTrackerInterface {
   };
   virtual void Finish(FinishArgs args) = 0;
 };
-}
-
+}  // namespace lb_policy_detail
 
 class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
  public:
-  using SubchannelCallTrackerInterface = lb_policy_detail::SubchannelCallTrackerInterface;
+  using SubchannelCallTrackerInterface =
+      lb_policy_detail::SubchannelCallTrackerInterface;
   using MetadataInterface = lb_policy_detail::MetadataInterface;
   using BackendMetricAccessor = lb_policy_detail::BackendMetricAccessor;
   /// Interface for accessing per-call state.

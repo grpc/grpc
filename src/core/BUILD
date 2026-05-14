@@ -1868,7 +1868,10 @@ grpc_cc_library(
     hdrs = [
         "lib/resource_quota/arena.h",
     ],
-    external_deps = ["absl/log"],
+    external_deps = [
+        "absl/log",
+        "absl/base:core_headers",
+    ],
     visibility = [
         "//bazel:alt_grpc_base_legacy",
     ],
@@ -1878,6 +1881,7 @@ grpc_cc_library(
         "context",
         "event_engine_memory_allocator",
         "memory_quota",
+        "no_destruct",
         "resource_quota",
         "//:gpr",
     ],

@@ -35,7 +35,7 @@ template <typename T>
 class NoDestructSingleton {
  public:
   static T* Get() {
-    static absl::NoDestructor<T> value;
+    static NoDestruct<T> value;
     return value.get();
   }
 };
