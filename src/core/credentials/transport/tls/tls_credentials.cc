@@ -119,7 +119,7 @@ bool TlsCredentials::CacheMatchesLocked(
          cached_session_cache_ == ssl_session_cache;
 }
 
-std::pair<grpc_security_status, tsi_ssl_client_handshaker_factory*>
+TlsCredentials::HandshakerFactoryResult
 TlsCredentials::GetOrCreateCachedClientHandshakerFactory(
     const std::shared_ptr<tsi::RootCertInfo>& root_cert_info,
     const std::optional<grpc_core::PemKeyCertPairList>& identity_certs,

@@ -26,7 +26,6 @@
 
 #include <memory>
 #include <optional>
-#include <utility>
 
 #include "src/core/credentials/transport/security_connector.h"
 #include "src/core/credentials/transport/tls/ssl_utils.h"
@@ -56,6 +55,11 @@ class TlsCredentials final : public grpc_channel_credentials {
 
   grpc_tls_credentials_options* options() const { return options_.get(); }
 
+  struct HandshakerFactoryResult {
+    grpc_security_status status;
+    tsi_ssl_client_handshaker_factory* factory;
+  };
+
   // Returns a refcounted tsi_ssl_client_handshaker_factory keyed by
   // (root_cert_info identity, identity_certs, ssl_session_cache). Other
   // factory inputs (TLS version bounds, verify_server_cert, CRL config, key
@@ -75,8 +79,7 @@ class TlsCredentials final : public grpc_channel_credentials {
   // Returns (GRPC_SECURITY_OK, +1-ref'd factory) on success. On failure
   // returns the underlying status and a null factory; the cache is left
   // unchanged so concurrent waiters retry serially.
-  std::pair<grpc_security_status, tsi_ssl_client_handshaker_factory*>
-  GetOrCreateCachedClientHandshakerFactory(
+  HandshakerFactoryResult GetOrCreateCachedClientHandshakerFactory(
       const std::shared_ptr<tsi::RootCertInfo>& root_cert_info,
       const std::optional<grpc_core::PemKeyCertPairList>& identity_certs,
       tsi_ssl_session_cache* ssl_session_cache,
