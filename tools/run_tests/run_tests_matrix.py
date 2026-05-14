@@ -604,7 +604,7 @@ if __name__ == "__main__":
         #if not args.filter or all(
         #    filter in job.labels for filter in args.filter
         #):
-        compilers_under_test = set(['gcc10', 'clang14', 'gcc_musl'])
+        compilers_under_test = set(['gcc_musl'])
         intersect = compilers_under_test & set(job.labels)
         if len(intersect) > 0:
             if not any(
