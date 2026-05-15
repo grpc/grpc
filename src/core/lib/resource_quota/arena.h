@@ -31,8 +31,6 @@
 
 #include <atomic>
 #include <cstddef>
-#include <cstdio>
-#include <cstdint>
 #include <iosfwd>
 #include <memory>
 #include <utility>
@@ -117,41 +115,7 @@ inline Traits& RegisteredTraits() {
 // via ArenaContextTraits at static initialization time).
 class BaseArenaContextTraits {
  public:
-  using Destroyer = void(*)(void*);
   // Count of number of contexts that have been allocated.
-  class Traits {
-    public:
-    static inline constexpr int kMaxNumOfContexts = 1024;
-    bool SetDestroyerOnce(uint16_t id, Destroyer destroyer) {
-        // Called exactly once
-        Destroyer expected = nullptr;
-        return destroyers_[id].compare_exchange_strong(expected, destroyer,
-                                              std::memory_order_acq_rel,
-                                              std::memory_order_acquire);
-    }
-    Destroyer GetDestroyer(uint16_t id) {
-      return destroyers_[id].load(std::memory_order_acquire);
-    }
-
-    // Not thread safe, meant to be called from global static initialzier only.
-    uint16_t MakeId() {
-      if (next_id_ >= kMaxNumOfContexts) {
-        printf("The number of instantiated ArenaContextTraits<T> is larger than limit (%d), exiting.", kMaxNumOfContexts);
-        exit(1);
-      }
-      return next_id_++;
-    }
-    uint16_t Size() const {
-      return next_id_;
-    }
-
-    private:
-    // Pre-allocate because std::atomic is neither copyable or movable.
-    std::vector<std::atomic<Destroyer>> destroyers_{kMaxNumOfContexts};
-    // only incremented before main() function. So it's fine to be non atomic.
-    uint16_t next_id_ = 0;
-  };
-
   static uint16_t NumContexts() {
     return static_cast<uint16_t>(RegisteredTraits().Size());
   }
@@ -395,15 +359,7 @@ class Arena final : public RefCounted<Arena, NonPolymorphicRefCount,
 
   template <typename T>
   void SetContext(T* context) {
-
-    using Destroyer = arena_detail::BaseArenaContextTraits::Destroyer;
-    uint16_t id = arena_detail::ArenaContextTraits<T>::id();
-    auto& traits = arena_detail::BaseArenaContextTraits::RegisteredTraits();
-    void*& slot = contexts()[id];
-
-    Destroyer destroyer = &arena_detail::DestroyArenaContext<T>;
-    traits.SetDestroyerOnce(id, destroyer);
-
+    void*& slot = contexts()[arena_detail::ArenaContextTraits<T>::id()];
     if (slot != nullptr) {
       ArenaContextType<T>::Destroy(static_cast<T*>(slot));
     }
