@@ -52,7 +52,10 @@ opentelemetry-api
 opentelemetry-exporter-prometheus
 opentelemetry-resourcedetector-gcp
 opentelemetry-sdk
-protobuf==7.34.1 # Pinning to the version corresponding to third_party/protobuf v34.1
+
+# third_party/protobuf (and grpcio-tools) is using protobuf 34.x which is newer than python 7.34, have to use runtime >=7.35.0 to make tests pass.
+protobuf==7.35.0rc2
+
 pyyaml  # for DNS test
 requests
 setuptools>=77.0.1
