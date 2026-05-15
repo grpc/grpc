@@ -14,7 +14,7 @@
 
 FROM gcc:10
 
-RUN apt-get update && apt-get install -y curl git time wget zip && apt-get clean
+RUN apt-get update && apt-get install -y curl git time zip && apt-get clean
 {% include "../../git_avoid_dubious_ownership_error.include" %}
 {% include "../../run_tests_python_deps.include" %}
 {% include "../../cxx_test_deps.include" %}
