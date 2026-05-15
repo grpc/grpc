@@ -14,7 +14,7 @@ settings:
   '#10': See the expand_version.py for all the quirks here
   core_version: 54.0.0
   csharp_major_version: 2
-  g_stands_for: graphic
+  g_stands_for: glacier
   protobuf_version: 4.33.5
   supported_python_versions:
   - '3.10'
@@ -22,7 +22,7 @@ settings:
   - '3.12'
   - '3.13'
   - '3.14'
-  version: 1.81.0-dev
+  version: 1.82.0-dev
 configs:
   asan:
     CC: clang

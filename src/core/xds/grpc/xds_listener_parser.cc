@@ -559,10 +559,16 @@ std::optional<FilterChain::FilterChainMatch> FilterChainMatchParse(
     }
   }
   // source_type
-  filter_chain_match.source_type =
-      static_cast<XdsListenerResource::FilterChainMap::ConnectionSourceType>(
-          envoy_config_listener_v3_FilterChainMatch_source_type(
-              filter_chain_match_proto));
+  int32_t source_type = envoy_config_listener_v3_FilterChainMatch_source_type(
+      filter_chain_match_proto);
+  if (source_type < 0 || source_type > 2) {
+    ValidationErrors::ScopedField field(errors, ".source_type");
+    errors->AddError("invalid value");
+  } else {
+    filter_chain_match.source_type =
+        static_cast<XdsListenerResource::FilterChainMap::ConnectionSourceType>(
+            source_type);
+  }
   // source_prefix_ranges
   auto* source_prefix_ranges =
       envoy_config_listener_v3_FilterChainMatch_source_prefix_ranges(

@@ -29,6 +29,7 @@
 #include <grpcpp/support/status.h>
 
 #include "absl/log/absl_check.h"
+#include "absl/status/status.h"
 
 namespace grpc {
 namespace internal {
@@ -1048,7 +1049,14 @@ class CallbackSessionHandler : public grpc::internal::MethodHandler {
     }
 
     void BindInnerServer(grpc::Server* inner_server) override {
-      grpc::internal::BindSessionToInnerServer(call_.call(), inner_server);
+      grpc::internal::BindSessionToInnerServer(call_.call(), inner_server,
+                                               &transport_, &endpoint_);
+    }
+
+    void InitiateGracefulShutdown(
+        absl::AnyInvocable<void(absl::Status)> on_shutdown) override {
+      grpc::internal::InitiateSessionGracefulShutdown(transport_, endpoint_,
+                                                      std::move(on_shutdown));
     }
 
    private:
@@ -1109,6 +1117,8 @@ class CallbackSessionHandler : public grpc::internal::MethodHandler {
 
     grpc::CallbackServerContext* const ctx_;
     grpc::internal::Call call_;
+    grpc_core::Transport* transport_ = nullptr;
+    grpc_endpoint* endpoint_ = nullptr;
     MessageHolder<RequestType, grpc::ByteBuffer>* const allocator_state_;
     std::function<void()> call_requester_;
     grpc::Server* inner_server_;

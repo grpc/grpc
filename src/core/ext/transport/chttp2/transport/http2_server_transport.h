@@ -105,7 +105,8 @@ class Http2ServerTransport final : public ServerTransport,
       PromiseEndpoint endpoint, const ChannelArgs& channel_args,
       std::shared_ptr<grpc_event_engine::experimental::EventEngine>
           event_engine,
-      absl::AnyInvocable<void(absl::StatusOr<uint32_t>)> on_receive_settings);
+      absl::AnyInvocable<void(absl::StatusOr<uint32_t>)> on_receive_settings,
+      grpc_closure* on_close_callback);
 
   Http2ServerTransport(const Http2ServerTransport&) = delete;
   Http2ServerTransport& operator=(const Http2ServerTransport&) = delete;
@@ -309,12 +310,6 @@ class Http2ServerTransport final : public ServerTransport,
   // Returns a promise to fetch data from the CallInitiator and pass it further
   // down towards the endpoint.
   auto CallOutboundLoop(RefCountedPtr<Stream> stream);
-
-  // TODO(akshitpatel) : [PH2][P0] : Delete when implementing write loop.
-  auto WriteFromQueue();
-
-  // TODO(akshitpatel) : [PH2][P0] : Delete when implementing write loop.
-  auto WriteLoop();
 
   // Force triggers a transport write cycle
   absl::Status TriggerWriteCycle(DebugLocation whence = {}) {
@@ -705,6 +700,7 @@ class Http2ServerTransport final : public ServerTransport,
   HPackCompressor encoder_;
   bool is_transport_closed_ ABSL_GUARDED_BY(transport_mutex_) = false;
   Latch<void> transport_closed_latch_;
+  grpc_closure* on_close_callback_;
 
   ConnectivityStateTracker state_tracker_ ABSL_GUARDED_BY(transport_mutex_){
       "http2_server", GRPC_CHANNEL_READY};
