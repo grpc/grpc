@@ -1,4 +1,4 @@
-# Copyright 2021 gRPC authors.
+# Copyright 2026 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
 
 FROM gcc:10
 
-RUN apt-get update && apt-get install -y curl git time wget zip && apt-get clean
+RUN apt-get update && apt-get install -y curl git time zip && apt-get clean
 #=================
 # Setup git to access working directory across docker boundary.
 # This avoids the "fatal: detected dubious ownership in repository XYZ"
