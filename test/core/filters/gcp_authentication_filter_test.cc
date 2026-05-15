@@ -81,8 +81,7 @@ class GcpAuthenticationFilterTest : public FilterTest<GcpAuthenticationFilter> {
   }
 
   ChannelArgs MakeChannelArgs(
-      absl::string_view service_config_json, absl::string_view cluster,
-      absl::string_view filter_instance_name,
+      absl::string_view cluster, absl::string_view filter_instance_name,
       std::unique_ptr<XdsMetadataValue> audience_metadata) {
     auto xds_config = MakeXdsConfig(cluster, filter_instance_name,
                                     std::move(audience_metadata));
@@ -100,14 +99,8 @@ class GcpAuthenticationFilterTest : public FilterTest<GcpAuthenticationFilter> {
 TEST_F(GcpAuthenticationFilterTest, CreateSucceeds) {
   constexpr absl::string_view kClusterName = "foo";
   constexpr absl::string_view kFilterInstanceName = "gcp_authn_filter";
-  constexpr absl::string_view kServiceConfigJson =
-      "{\n"
-      "  \"gcp_authentication\": [\n"
-      "    {\"filter_instance_name\": \"gcp_authn_filter\"}\n"
-      "  ]\n"
-      "}";
-  auto channel_args = MakeChannelArgs(kServiceConfigJson, kClusterName,
-                                      kFilterInstanceName, nullptr);
+  auto channel_args =
+      MakeChannelArgs(kClusterName, kFilterInstanceName, nullptr);
   auto filter_config = MakeFilterConfig(kFilterInstanceName);
   auto blackboard = MakeBlackboard(kFilterInstanceName);
   auto filter = GcpAuthenticationFilter::Create(
@@ -128,12 +121,6 @@ TEST_F(GcpAuthenticationFilterTest, CreateFailsWithoutFilterConfig) {
 }
 
 TEST_F(GcpAuthenticationFilterTest, CreateFailsXdsConfigNotFoundInChannelArgs) {
-  constexpr absl::string_view kServiceConfigJson =
-      "{\n"
-      "  \"gcp_authentication\": [\n"
-      "    {\"filter_instance_name\": \"gcp_authn_filter\"}\n"
-      "  ]\n"
-      "}";
   auto filter_config = MakeFilterConfig("gcp_authn_filter");
   auto filter = GcpAuthenticationFilter::Create(
       ChannelArgs(), ChannelFilter::Args(/*instance_id=*/0, filter_config));
@@ -145,14 +132,8 @@ TEST_F(GcpAuthenticationFilterTest, CreateFailsXdsConfigNotFoundInChannelArgs) {
 TEST_F(GcpAuthenticationFilterTest, FailsCallIfNoXdsClusterAttribute) {
   constexpr absl::string_view kClusterName = "foo";
   constexpr absl::string_view kFilterInstanceName = "gcp_authn_filter";
-  constexpr absl::string_view kServiceConfigJson =
-      "{\n"
-      "  \"gcp_authentication\": [\n"
-      "    {\"filter_instance_name\": \"gcp_authn_filter\"}\n"
-      "  ]\n"
-      "}";
-  auto channel_args = MakeChannelArgs(kServiceConfigJson, kClusterName,
-                                      kFilterInstanceName, nullptr);
+  auto channel_args =
+      MakeChannelArgs(kClusterName, kFilterInstanceName, nullptr);
   auto filter_config = MakeFilterConfig(kFilterInstanceName);
   auto blackboard = MakeBlackboard(kFilterInstanceName);
   Call call(MakeChannel(channel_args, filter_config, blackboard.get()).value());
@@ -170,15 +151,9 @@ TEST_F(GcpAuthenticationFilterTest, FailsCallIfNoXdsClusterAttribute) {
 TEST_F(GcpAuthenticationFilterTest, NoOpIfClusterAttributeHasWrongPrefix) {
   constexpr absl::string_view kClusterName = "foo";
   constexpr absl::string_view kFilterInstanceName = "gcp_authn_filter";
-  constexpr absl::string_view kServiceConfigJson =
-      "{\n"
-      "  \"gcp_authentication\": [\n"
-      "    {\"filter_instance_name\": \"gcp_authn_filter\"}\n"
-      "  ]\n"
-      "}";
   constexpr absl::string_view kAudience = "bar";
   auto channel_args = MakeChannelArgs(
-      kServiceConfigJson, kClusterName, kFilterInstanceName,
+      kClusterName, kFilterInstanceName,
       std::make_unique<XdsGcpAuthnAudienceMetadataValue>(kAudience));
   auto filter_config = MakeFilterConfig(kFilterInstanceName);
   auto blackboard = MakeBlackboard(kFilterInstanceName);
@@ -199,14 +174,8 @@ TEST_F(GcpAuthenticationFilterTest, NoOpIfClusterAttributeHasWrongPrefix) {
 TEST_F(GcpAuthenticationFilterTest, FailsCallIfClusterNotPresentInXdsConfig) {
   constexpr absl::string_view kClusterName = "foo";
   constexpr absl::string_view kFilterInstanceName = "gcp_authn_filter";
-  constexpr absl::string_view kServiceConfigJson =
-      "{\n"
-      "  \"gcp_authentication\": [\n"
-      "    {\"filter_instance_name\": \"gcp_authn_filter\"}\n"
-      "  ]\n"
-      "}";
-  auto channel_args = MakeChannelArgs(kServiceConfigJson, /*cluster=*/"",
-                                      kFilterInstanceName, nullptr);
+  auto channel_args =
+      MakeChannelArgs(/*cluster=*/"", kFilterInstanceName, nullptr);
   auto filter_config = MakeFilterConfig(kFilterInstanceName);
   auto blackboard = MakeBlackboard(kFilterInstanceName);
   Call call(MakeChannel(channel_args, filter_config, blackboard.get()).value());
@@ -228,12 +197,6 @@ TEST_F(GcpAuthenticationFilterTest, FailsCallIfClusterNotPresentInXdsConfig) {
 TEST_F(GcpAuthenticationFilterTest, FailsCallIfClusterNotOkayInXdsConfig) {
   constexpr absl::string_view kClusterName = "foo";
   constexpr absl::string_view kFilterInstanceName = "gcp_authn_filter";
-  constexpr absl::string_view kServiceConfigJson =
-      "{\n"
-      "  \"gcp_authentication\": [\n"
-      "    {\"filter_instance_name\": \"gcp_authn_filter\"}\n"
-      "  ]\n"
-      "}";
   auto channel_args = ChannelArgs().SetObject(
       MakeXdsConfigWithCluster(kClusterName, absl::UnavailableError("nope")));
   auto filter_config = MakeFilterConfig(kFilterInstanceName);
@@ -258,12 +221,6 @@ TEST_F(GcpAuthenticationFilterTest,
        FailsCallIfClusterResourceMissingInXdsConfig) {
   constexpr absl::string_view kClusterName = "foo";
   constexpr absl::string_view kFilterInstanceName = "gcp_authn_filter";
-  constexpr absl::string_view kServiceConfigJson =
-      "{\n"
-      "  \"gcp_authentication\": [\n"
-      "    {\"filter_instance_name\": \"gcp_authn_filter\"}\n"
-      "  ]\n"
-      "}";
   auto channel_args = ChannelArgs().SetObject(MakeXdsConfigWithCluster(
       kClusterName, XdsConfig::ClusterConfig(nullptr, nullptr, "")));
   auto filter_config = MakeFilterConfig(kFilterInstanceName);
@@ -288,14 +245,8 @@ TEST_F(GcpAuthenticationFilterTest,
 TEST_F(GcpAuthenticationFilterTest, NoOpIfClusterHasNoAudience) {
   constexpr absl::string_view kClusterName = "foo";
   constexpr absl::string_view kFilterInstanceName = "gcp_authn_filter";
-  constexpr absl::string_view kServiceConfigJson =
-      "{\n"
-      "  \"gcp_authentication\": [\n"
-      "    {\"filter_instance_name\": \"gcp_authn_filter\"}\n"
-      "  ]\n"
-      "}";
-  auto channel_args = MakeChannelArgs(kServiceConfigJson, kClusterName,
-                                      kFilterInstanceName, nullptr);
+  auto channel_args =
+      MakeChannelArgs(kClusterName, kFilterInstanceName, nullptr);
   auto filter_config = MakeFilterConfig(kFilterInstanceName);
   auto blackboard = MakeBlackboard(kFilterInstanceName);
   Call call(MakeChannel(channel_args, filter_config, blackboard.get()).value());
@@ -316,14 +267,8 @@ TEST_F(GcpAuthenticationFilterTest, NoOpIfClusterHasNoAudience) {
 TEST_F(GcpAuthenticationFilterTest, FailsCallIfAudienceMetadataWrongType) {
   constexpr absl::string_view kClusterName = "foo";
   constexpr absl::string_view kFilterInstanceName = "gcp_authn_filter";
-  constexpr absl::string_view kServiceConfigJson =
-      "{\n"
-      "  \"gcp_authentication\": [\n"
-      "    {\"filter_instance_name\": \"gcp_authn_filter\"}\n"
-      "  ]\n"
-      "}";
   auto channel_args =
-      MakeChannelArgs(kServiceConfigJson, kClusterName, kFilterInstanceName,
+      MakeChannelArgs(kClusterName, kFilterInstanceName,
                       std::make_unique<XdsStructMetadataValue>(Json()));
   auto filter_config = MakeFilterConfig(kFilterInstanceName);
   auto blackboard = MakeBlackboard(kFilterInstanceName);
@@ -347,15 +292,9 @@ TEST_F(GcpAuthenticationFilterTest, FailsCallIfAudienceMetadataWrongType) {
 TEST_F(GcpAuthenticationFilterTest, SetsCallCredsIfClusterHasAudience) {
   constexpr absl::string_view kClusterName = "foo";
   constexpr absl::string_view kFilterInstanceName = "gcp_authn_filter";
-  constexpr absl::string_view kServiceConfigJson =
-      "{\n"
-      "  \"gcp_authentication\": [\n"
-      "    {\"filter_instance_name\": \"gcp_authn_filter\"}\n"
-      "  ]\n"
-      "}";
   constexpr absl::string_view kAudience = "bar";
   auto channel_args = MakeChannelArgs(
-      kServiceConfigJson, kClusterName, kFilterInstanceName,
+      kClusterName, kFilterInstanceName,
       std::make_unique<XdsGcpAuthnAudienceMetadataValue>(kAudience));
   auto filter_config = MakeFilterConfig(kFilterInstanceName);
   auto blackboard = MakeBlackboard(kFilterInstanceName);
