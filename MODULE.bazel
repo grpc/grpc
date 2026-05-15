@@ -50,9 +50,14 @@ bazel_dep(name = "opentelemetry-cpp", version = "1.19.0", repo_name = "io_opente
 
 # --- Protobuf related packages.
 bazel_dep(name = "protobuf", version = "34.1", repo_name = "com_google_protobuf")
-single_version_override(
+archive_override(
     module_name = "protobuf",
-    version = "34.1",
+    integrity = "sha256-k7TXH3XPvcczdrGW2ulzUsFSdu/cuJIGVbcBBjazH4I=",
+    strip_prefix = "protobuf-7153ad6febec788275e85e0ae4076f5d1deae1c7",
+    urls = [
+        "https://storage.googleapis.com/grpc-bazel-mirror/github.com/protocolbuffers/protobuf/archive/7153ad6febec788275e85e0ae4076f5d1deae1c7.tar.gz",
+        "https://github.com/protocolbuffers/protobuf/archive/7153ad6febec788275e85e0ae4076f5d1deae1c7.tar.gz",
+    ],
 )
 
 bazel_dep(name = "protoc-gen-validate", version = "1.2.1.bcr.1", repo_name = "com_envoyproxy_protoc_gen_validate")  # Not needed directly
