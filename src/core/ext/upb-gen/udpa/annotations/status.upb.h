@@ -107,15 +107,15 @@ UPB_INLINE void udpa_annotations_StatusAnnotation_set_package_version_status(udp
 }
 
 UPB_INLINE bool udpa_annotations_has_file_status(const struct google_protobuf_FileOptions* msg) {
-  return upb_Message_HasExtension((upb_Message*)msg, &udpa_annotations_file_status_ext);
+  return upb_Message_HasExtension((upb_Message*)msg, udpa_annotations_file_status_ext);
 }
 
 UPB_INLINE void udpa_annotations_clear_file_status(struct google_protobuf_FileOptions* msg) {
-  upb_Message_ClearExtension((upb_Message*)msg, &udpa_annotations_file_status_ext);
+  upb_Message_ClearExtension((upb_Message*)msg, udpa_annotations_file_status_ext);
 }
 UPB_INLINE const udpa_annotations_StatusAnnotation*
 udpa_annotations_file_status(const struct google_protobuf_FileOptions* msg) {
-  const upb_MiniTableExtension* ext = &udpa_annotations_file_status_ext;
+  const upb_MiniTableExtension* ext = udpa_annotations_file_status_ext;
   UPB_ASSUME(upb_MiniTableField_IsScalar(&ext->UPB_PRIVATE(field)));
   UPB_ASSUME(UPB_PRIVATE(_upb_MiniTableField_GetRep)(
                  &ext->UPB_PRIVATE(field)) == UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte));
@@ -128,7 +128,7 @@ udpa_annotations_file_status(const struct google_protobuf_FileOptions* msg) {
 UPB_INLINE void udpa_annotations_set_file_status(struct google_protobuf_FileOptions* msg,
                                         const udpa_annotations_StatusAnnotation* val,
                                         upb_Arena* arena) {
-  const upb_MiniTableExtension* ext = &udpa_annotations_file_status_ext;
+  const upb_MiniTableExtension* ext = udpa_annotations_file_status_ext;
   UPB_ASSUME(upb_MiniTableField_IsScalar(&ext->UPB_PRIVATE(field)));
   UPB_ASSUME(UPB_PRIVATE(_upb_MiniTableField_GetRep)(
                  &ext->UPB_PRIVATE(field)) == UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte));

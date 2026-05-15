@@ -101,15 +101,15 @@ UPB_INLINE void udpa_annotations_FieldSecurityAnnotation_set_configure_for_untru
 }
 
 UPB_INLINE bool udpa_annotations_has_security(const struct google_protobuf_FieldOptions* msg) {
-  return upb_Message_HasExtension((upb_Message*)msg, &udpa_annotations_security_ext);
+  return upb_Message_HasExtension((upb_Message*)msg, udpa_annotations_security_ext);
 }
 
 UPB_INLINE void udpa_annotations_clear_security(struct google_protobuf_FieldOptions* msg) {
-  upb_Message_ClearExtension((upb_Message*)msg, &udpa_annotations_security_ext);
+  upb_Message_ClearExtension((upb_Message*)msg, udpa_annotations_security_ext);
 }
 UPB_INLINE const udpa_annotations_FieldSecurityAnnotation*
 udpa_annotations_security(const struct google_protobuf_FieldOptions* msg) {
-  const upb_MiniTableExtension* ext = &udpa_annotations_security_ext;
+  const upb_MiniTableExtension* ext = udpa_annotations_security_ext;
   UPB_ASSUME(upb_MiniTableField_IsScalar(&ext->UPB_PRIVATE(field)));
   UPB_ASSUME(UPB_PRIVATE(_upb_MiniTableField_GetRep)(
                  &ext->UPB_PRIVATE(field)) == UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte));
@@ -122,7 +122,7 @@ udpa_annotations_security(const struct google_protobuf_FieldOptions* msg) {
 UPB_INLINE void udpa_annotations_set_security(struct google_protobuf_FieldOptions* msg,
                                         const udpa_annotations_FieldSecurityAnnotation* val,
                                         upb_Arena* arena) {
-  const upb_MiniTableExtension* ext = &udpa_annotations_security_ext;
+  const upb_MiniTableExtension* ext = udpa_annotations_security_ext;
   UPB_ASSUME(upb_MiniTableField_IsScalar(&ext->UPB_PRIVATE(field)));
   UPB_ASSUME(UPB_PRIVATE(_upb_MiniTableField_GetRep)(
                  &ext->UPB_PRIVATE(field)) == UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte));

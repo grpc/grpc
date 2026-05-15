@@ -960,35 +960,39 @@ const upb_MiniTableEnum validate__KnownRegex_enum_init = {
     },
 };
 
-UPB_LINKARR_APPEND(upb_AllExts)
-const upb_MiniTableExtension validate_disabled_ext = {
+static const upb_MiniTableExtension validate_disabled_ext_obj = {
   {1071, 0, 0, UPB_SIZE(3, 4), 8, (int)kUpb_FieldMode_Scalar | (int)kUpb_LabelFlags_IsExtension | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
   {.UPB_PRIVATE(submsg) = NULL},
   &google__protobuf__MessageOptions_msg_init,
 
 };
 UPB_LINKARR_APPEND(upb_AllExts)
-const upb_MiniTableExtension validate_ignored_ext = {
+const upb_MiniTableExtension* validate_disabled_ext = &validate_disabled_ext_obj;
+  static const upb_MiniTableExtension validate_ignored_ext_obj = {
   {1072, 0, 0, UPB_SIZE(3, 4), 8, (int)kUpb_FieldMode_Scalar | (int)kUpb_LabelFlags_IsExtension | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
   {.UPB_PRIVATE(submsg) = NULL},
   &google__protobuf__MessageOptions_msg_init,
 
 };
 UPB_LINKARR_APPEND(upb_AllExts)
-const upb_MiniTableExtension validate_required_ext = {
+const upb_MiniTableExtension* validate_ignored_ext = &validate_ignored_ext_obj;
+  static const upb_MiniTableExtension validate_required_ext_obj = {
   {1071, 0, 0, UPB_SIZE(3, 4), 8, (int)kUpb_FieldMode_Scalar | (int)kUpb_LabelFlags_IsExtension | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
   {.UPB_PRIVATE(submsg) = NULL},
   &google__protobuf__OneofOptions_msg_init,
 
 };
 UPB_LINKARR_APPEND(upb_AllExts)
-const upb_MiniTableExtension validate_rules_ext = {
+const upb_MiniTableExtension* validate_required_ext = &validate_required_ext_obj;
+  static const upb_MiniTableExtension validate_rules_ext_obj = {
   {1071, 0, 0, UPB_SIZE(3, 4), 11, (int)kUpb_FieldMode_Scalar | (int)kUpb_LabelFlags_IsExtension | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   {.UPB_PRIVATE(submsg) = &validate__FieldRules_msg_init},
   &google__protobuf__FieldOptions_msg_init,
 
 };
-static const upb_MiniTable *messages_layout[23] = {
+UPB_LINKARR_APPEND(upb_AllExts)
+const upb_MiniTableExtension* validate_rules_ext = &validate_rules_ext_obj;
+  static const upb_MiniTable *messages_layout[23] = {
   &validate__FieldRules_msg_init,
   &validate__FloatRules_msg_init,
   &validate__DoubleRules_msg_init,
@@ -1020,13 +1024,13 @@ static const upb_MiniTableEnum *enums_layout[1] = {
 
 
 static const upb_MiniTableExtension *extensions_layout[4] = {
-  &validate_disabled_ext,
-  &validate_ignored_ext,
-  &validate_required_ext,
-  &validate_rules_ext,
+  &validate_disabled_ext_obj,
+  &validate_ignored_ext_obj,
+  &validate_required_ext_obj,
+  &validate_rules_ext_obj,
 };
 
-UPB_LINKARR_DECLARE(upb_AllExts, const upb_MiniTableExtension);
+UPB_LINKARR_DECLARE(upb_AllExts, const upb_MiniTableExtension*);
 UPB_CONSTRUCTOR(upb_GeneratedRegistry_Constructor, validate_validate_proto_ext_constructor) {
   static bool finished = false;
   if (finished) return;

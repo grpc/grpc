@@ -7192,15 +7192,15 @@ UPB_INLINE struct google_protobuf_Duration* validate_TimestampRules_mutable_with
 }
 
 UPB_INLINE bool validate_has_disabled(const struct google_protobuf_MessageOptions* msg) {
-  return upb_Message_HasExtension((upb_Message*)msg, &validate_disabled_ext);
+  return upb_Message_HasExtension((upb_Message*)msg, validate_disabled_ext);
 }
 
 UPB_INLINE void validate_clear_disabled(struct google_protobuf_MessageOptions* msg) {
-  upb_Message_ClearExtension((upb_Message*)msg, &validate_disabled_ext);
+  upb_Message_ClearExtension((upb_Message*)msg, validate_disabled_ext);
 }
 UPB_INLINE bool
 validate_disabled(const struct google_protobuf_MessageOptions* msg) {
-  const upb_MiniTableExtension* ext = &validate_disabled_ext;
+  const upb_MiniTableExtension* ext = validate_disabled_ext;
   UPB_ASSUME(upb_MiniTableField_IsScalar(&ext->UPB_PRIVATE(field)));
   UPB_ASSUME(UPB_PRIVATE(_upb_MiniTableField_GetRep)(
                  &ext->UPB_PRIVATE(field)) == kUpb_FieldRep_1Byte);
@@ -7213,7 +7213,7 @@ validate_disabled(const struct google_protobuf_MessageOptions* msg) {
 UPB_INLINE void validate_set_disabled(struct google_protobuf_MessageOptions* msg,
                                         bool val,
                                         upb_Arena* arena) {
-  const upb_MiniTableExtension* ext = &validate_disabled_ext;
+  const upb_MiniTableExtension* ext = validate_disabled_ext;
   UPB_ASSUME(upb_MiniTableField_IsScalar(&ext->UPB_PRIVATE(field)));
   UPB_ASSUME(UPB_PRIVATE(_upb_MiniTableField_GetRep)(
                  &ext->UPB_PRIVATE(field)) == kUpb_FieldRep_1Byte);
@@ -7221,15 +7221,15 @@ UPB_INLINE void validate_set_disabled(struct google_protobuf_MessageOptions* msg
   UPB_ASSERT(ok);
 }
 UPB_INLINE bool validate_has_ignored(const struct google_protobuf_MessageOptions* msg) {
-  return upb_Message_HasExtension((upb_Message*)msg, &validate_ignored_ext);
+  return upb_Message_HasExtension((upb_Message*)msg, validate_ignored_ext);
 }
 
 UPB_INLINE void validate_clear_ignored(struct google_protobuf_MessageOptions* msg) {
-  upb_Message_ClearExtension((upb_Message*)msg, &validate_ignored_ext);
+  upb_Message_ClearExtension((upb_Message*)msg, validate_ignored_ext);
 }
 UPB_INLINE bool
 validate_ignored(const struct google_protobuf_MessageOptions* msg) {
-  const upb_MiniTableExtension* ext = &validate_ignored_ext;
+  const upb_MiniTableExtension* ext = validate_ignored_ext;
   UPB_ASSUME(upb_MiniTableField_IsScalar(&ext->UPB_PRIVATE(field)));
   UPB_ASSUME(UPB_PRIVATE(_upb_MiniTableField_GetRep)(
                  &ext->UPB_PRIVATE(field)) == kUpb_FieldRep_1Byte);
@@ -7242,7 +7242,7 @@ validate_ignored(const struct google_protobuf_MessageOptions* msg) {
 UPB_INLINE void validate_set_ignored(struct google_protobuf_MessageOptions* msg,
                                         bool val,
                                         upb_Arena* arena) {
-  const upb_MiniTableExtension* ext = &validate_ignored_ext;
+  const upb_MiniTableExtension* ext = validate_ignored_ext;
   UPB_ASSUME(upb_MiniTableField_IsScalar(&ext->UPB_PRIVATE(field)));
   UPB_ASSUME(UPB_PRIVATE(_upb_MiniTableField_GetRep)(
                  &ext->UPB_PRIVATE(field)) == kUpb_FieldRep_1Byte);
@@ -7250,15 +7250,15 @@ UPB_INLINE void validate_set_ignored(struct google_protobuf_MessageOptions* msg,
   UPB_ASSERT(ok);
 }
 UPB_INLINE bool validate_has_required(const struct google_protobuf_OneofOptions* msg) {
-  return upb_Message_HasExtension((upb_Message*)msg, &validate_required_ext);
+  return upb_Message_HasExtension((upb_Message*)msg, validate_required_ext);
 }
 
 UPB_INLINE void validate_clear_required(struct google_protobuf_OneofOptions* msg) {
-  upb_Message_ClearExtension((upb_Message*)msg, &validate_required_ext);
+  upb_Message_ClearExtension((upb_Message*)msg, validate_required_ext);
 }
 UPB_INLINE bool
 validate_required(const struct google_protobuf_OneofOptions* msg) {
-  const upb_MiniTableExtension* ext = &validate_required_ext;
+  const upb_MiniTableExtension* ext = validate_required_ext;
   UPB_ASSUME(upb_MiniTableField_IsScalar(&ext->UPB_PRIVATE(field)));
   UPB_ASSUME(UPB_PRIVATE(_upb_MiniTableField_GetRep)(
                  &ext->UPB_PRIVATE(field)) == kUpb_FieldRep_1Byte);
@@ -7271,7 +7271,7 @@ validate_required(const struct google_protobuf_OneofOptions* msg) {
 UPB_INLINE void validate_set_required(struct google_protobuf_OneofOptions* msg,
                                         bool val,
                                         upb_Arena* arena) {
-  const upb_MiniTableExtension* ext = &validate_required_ext;
+  const upb_MiniTableExtension* ext = validate_required_ext;
   UPB_ASSUME(upb_MiniTableField_IsScalar(&ext->UPB_PRIVATE(field)));
   UPB_ASSUME(UPB_PRIVATE(_upb_MiniTableField_GetRep)(
                  &ext->UPB_PRIVATE(field)) == kUpb_FieldRep_1Byte);
@@ -7279,15 +7279,15 @@ UPB_INLINE void validate_set_required(struct google_protobuf_OneofOptions* msg,
   UPB_ASSERT(ok);
 }
 UPB_INLINE bool validate_has_rules(const struct google_protobuf_FieldOptions* msg) {
-  return upb_Message_HasExtension((upb_Message*)msg, &validate_rules_ext);
+  return upb_Message_HasExtension((upb_Message*)msg, validate_rules_ext);
 }
 
 UPB_INLINE void validate_clear_rules(struct google_protobuf_FieldOptions* msg) {
-  upb_Message_ClearExtension((upb_Message*)msg, &validate_rules_ext);
+  upb_Message_ClearExtension((upb_Message*)msg, validate_rules_ext);
 }
 UPB_INLINE const validate_FieldRules*
 validate_rules(const struct google_protobuf_FieldOptions* msg) {
-  const upb_MiniTableExtension* ext = &validate_rules_ext;
+  const upb_MiniTableExtension* ext = validate_rules_ext;
   UPB_ASSUME(upb_MiniTableField_IsScalar(&ext->UPB_PRIVATE(field)));
   UPB_ASSUME(UPB_PRIVATE(_upb_MiniTableField_GetRep)(
                  &ext->UPB_PRIVATE(field)) == UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte));
@@ -7300,7 +7300,7 @@ validate_rules(const struct google_protobuf_FieldOptions* msg) {
 UPB_INLINE void validate_set_rules(struct google_protobuf_FieldOptions* msg,
                                         const validate_FieldRules* val,
                                         upb_Arena* arena) {
-  const upb_MiniTableExtension* ext = &validate_rules_ext;
+  const upb_MiniTableExtension* ext = validate_rules_ext;
   UPB_ASSUME(upb_MiniTableField_IsScalar(&ext->UPB_PRIVATE(field)));
   UPB_ASSUME(UPB_PRIVATE(_upb_MiniTableField_GetRep)(
                  &ext->UPB_PRIVATE(field)) == UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte));

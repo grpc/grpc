@@ -289,15 +289,15 @@ UPB_INLINE void xds_annotations_v3_StatusAnnotation_set_package_version_status(x
 }
 
 UPB_INLINE bool xds_annotations_v3_has_file_status(const struct google_protobuf_FileOptions* msg) {
-  return upb_Message_HasExtension((upb_Message*)msg, &xds_annotations_v3_file_status_ext);
+  return upb_Message_HasExtension((upb_Message*)msg, xds_annotations_v3_file_status_ext);
 }
 
 UPB_INLINE void xds_annotations_v3_clear_file_status(struct google_protobuf_FileOptions* msg) {
-  upb_Message_ClearExtension((upb_Message*)msg, &xds_annotations_v3_file_status_ext);
+  upb_Message_ClearExtension((upb_Message*)msg, xds_annotations_v3_file_status_ext);
 }
 UPB_INLINE const xds_annotations_v3_FileStatusAnnotation*
 xds_annotations_v3_file_status(const struct google_protobuf_FileOptions* msg) {
-  const upb_MiniTableExtension* ext = &xds_annotations_v3_file_status_ext;
+  const upb_MiniTableExtension* ext = xds_annotations_v3_file_status_ext;
   UPB_ASSUME(upb_MiniTableField_IsScalar(&ext->UPB_PRIVATE(field)));
   UPB_ASSUME(UPB_PRIVATE(_upb_MiniTableField_GetRep)(
                  &ext->UPB_PRIVATE(field)) == UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte));
@@ -310,7 +310,7 @@ xds_annotations_v3_file_status(const struct google_protobuf_FileOptions* msg) {
 UPB_INLINE void xds_annotations_v3_set_file_status(struct google_protobuf_FileOptions* msg,
                                         const xds_annotations_v3_FileStatusAnnotation* val,
                                         upb_Arena* arena) {
-  const upb_MiniTableExtension* ext = &xds_annotations_v3_file_status_ext;
+  const upb_MiniTableExtension* ext = xds_annotations_v3_file_status_ext;
   UPB_ASSUME(upb_MiniTableField_IsScalar(&ext->UPB_PRIVATE(field)));
   UPB_ASSUME(UPB_PRIVATE(_upb_MiniTableField_GetRep)(
                  &ext->UPB_PRIVATE(field)) == UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte));
@@ -327,15 +327,15 @@ UPB_INLINE struct xds_annotations_v3_FileStatusAnnotation* xds_annotations_v3_mu
   return sub;
 }
 UPB_INLINE bool xds_annotations_v3_has_message_status(const struct google_protobuf_MessageOptions* msg) {
-  return upb_Message_HasExtension((upb_Message*)msg, &xds_annotations_v3_message_status_ext);
+  return upb_Message_HasExtension((upb_Message*)msg, xds_annotations_v3_message_status_ext);
 }
 
 UPB_INLINE void xds_annotations_v3_clear_message_status(struct google_protobuf_MessageOptions* msg) {
-  upb_Message_ClearExtension((upb_Message*)msg, &xds_annotations_v3_message_status_ext);
+  upb_Message_ClearExtension((upb_Message*)msg, xds_annotations_v3_message_status_ext);
 }
 UPB_INLINE const xds_annotations_v3_MessageStatusAnnotation*
 xds_annotations_v3_message_status(const struct google_protobuf_MessageOptions* msg) {
-  const upb_MiniTableExtension* ext = &xds_annotations_v3_message_status_ext;
+  const upb_MiniTableExtension* ext = xds_annotations_v3_message_status_ext;
   UPB_ASSUME(upb_MiniTableField_IsScalar(&ext->UPB_PRIVATE(field)));
   UPB_ASSUME(UPB_PRIVATE(_upb_MiniTableField_GetRep)(
                  &ext->UPB_PRIVATE(field)) == UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte));
@@ -348,7 +348,7 @@ xds_annotations_v3_message_status(const struct google_protobuf_MessageOptions* m
 UPB_INLINE void xds_annotations_v3_set_message_status(struct google_protobuf_MessageOptions* msg,
                                         const xds_annotations_v3_MessageStatusAnnotation* val,
                                         upb_Arena* arena) {
-  const upb_MiniTableExtension* ext = &xds_annotations_v3_message_status_ext;
+  const upb_MiniTableExtension* ext = xds_annotations_v3_message_status_ext;
   UPB_ASSUME(upb_MiniTableField_IsScalar(&ext->UPB_PRIVATE(field)));
   UPB_ASSUME(UPB_PRIVATE(_upb_MiniTableField_GetRep)(
                  &ext->UPB_PRIVATE(field)) == UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte));
@@ -365,15 +365,15 @@ UPB_INLINE struct xds_annotations_v3_MessageStatusAnnotation* xds_annotations_v3
   return sub;
 }
 UPB_INLINE bool xds_annotations_v3_has_field_status(const struct google_protobuf_FieldOptions* msg) {
-  return upb_Message_HasExtension((upb_Message*)msg, &xds_annotations_v3_field_status_ext);
+  return upb_Message_HasExtension((upb_Message*)msg, xds_annotations_v3_field_status_ext);
 }
 
 UPB_INLINE void xds_annotations_v3_clear_field_status(struct google_protobuf_FieldOptions* msg) {
-  upb_Message_ClearExtension((upb_Message*)msg, &xds_annotations_v3_field_status_ext);
+  upb_Message_ClearExtension((upb_Message*)msg, xds_annotations_v3_field_status_ext);
 }
 UPB_INLINE const xds_annotations_v3_FieldStatusAnnotation*
 xds_annotations_v3_field_status(const struct google_protobuf_FieldOptions* msg) {
-  const upb_MiniTableExtension* ext = &xds_annotations_v3_field_status_ext;
+  const upb_MiniTableExtension* ext = xds_annotations_v3_field_status_ext;
   UPB_ASSUME(upb_MiniTableField_IsScalar(&ext->UPB_PRIVATE(field)));
   UPB_ASSUME(UPB_PRIVATE(_upb_MiniTableField_GetRep)(
                  &ext->UPB_PRIVATE(field)) == UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte));
@@ -386,7 +386,7 @@ xds_annotations_v3_field_status(const struct google_protobuf_FieldOptions* msg) 
 UPB_INLINE void xds_annotations_v3_set_field_status(struct google_protobuf_FieldOptions* msg,
                                         const xds_annotations_v3_FieldStatusAnnotation* val,
                                         upb_Arena* arena) {
-  const upb_MiniTableExtension* ext = &xds_annotations_v3_field_status_ext;
+  const upb_MiniTableExtension* ext = xds_annotations_v3_field_status_ext;
   UPB_ASSUME(upb_MiniTableField_IsScalar(&ext->UPB_PRIVATE(field)));
   UPB_ASSUME(UPB_PRIVATE(_upb_MiniTableField_GetRep)(
                  &ext->UPB_PRIVATE(field)) == UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte));

@@ -84,15 +84,15 @@ UPB_INLINE void xds_annotations_v3_VersioningAnnotation_set_previous_message_typ
 }
 
 UPB_INLINE bool xds_annotations_v3_has_versioning(const struct google_protobuf_MessageOptions* msg) {
-  return upb_Message_HasExtension((upb_Message*)msg, &xds_annotations_v3_versioning_ext);
+  return upb_Message_HasExtension((upb_Message*)msg, xds_annotations_v3_versioning_ext);
 }
 
 UPB_INLINE void xds_annotations_v3_clear_versioning(struct google_protobuf_MessageOptions* msg) {
-  upb_Message_ClearExtension((upb_Message*)msg, &xds_annotations_v3_versioning_ext);
+  upb_Message_ClearExtension((upb_Message*)msg, xds_annotations_v3_versioning_ext);
 }
 UPB_INLINE const xds_annotations_v3_VersioningAnnotation*
 xds_annotations_v3_versioning(const struct google_protobuf_MessageOptions* msg) {
-  const upb_MiniTableExtension* ext = &xds_annotations_v3_versioning_ext;
+  const upb_MiniTableExtension* ext = xds_annotations_v3_versioning_ext;
   UPB_ASSUME(upb_MiniTableField_IsScalar(&ext->UPB_PRIVATE(field)));
   UPB_ASSUME(UPB_PRIVATE(_upb_MiniTableField_GetRep)(
                  &ext->UPB_PRIVATE(field)) == UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte));
@@ -105,7 +105,7 @@ xds_annotations_v3_versioning(const struct google_protobuf_MessageOptions* msg) 
 UPB_INLINE void xds_annotations_v3_set_versioning(struct google_protobuf_MessageOptions* msg,
                                         const xds_annotations_v3_VersioningAnnotation* val,
                                         upb_Arena* arena) {
-  const upb_MiniTableExtension* ext = &xds_annotations_v3_versioning_ext;
+  const upb_MiniTableExtension* ext = xds_annotations_v3_versioning_ext;
   UPB_ASSUME(upb_MiniTableField_IsScalar(&ext->UPB_PRIVATE(field)));
   UPB_ASSUME(UPB_PRIVATE(_upb_MiniTableField_GetRep)(
                  &ext->UPB_PRIVATE(field)) == UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte));

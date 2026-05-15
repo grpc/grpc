@@ -35,23 +35,24 @@ const upb_MiniTable envoy__annotations__ResourceAnnotation_msg_init = {
   })
 };
 
-UPB_LINKARR_APPEND(upb_AllExts)
-const upb_MiniTableExtension envoy_annotations_resource_ext = {
+static const upb_MiniTableExtension envoy_annotations_resource_ext_obj = {
   {265073217, 0, 0, UPB_SIZE(3, 4), 11, (int)kUpb_FieldMode_Scalar | (int)kUpb_LabelFlags_IsExtension | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   {.UPB_PRIVATE(submsg) = &envoy__annotations__ResourceAnnotation_msg_init},
   &google__protobuf__ServiceOptions_msg_init,
 
 };
-static const upb_MiniTable *messages_layout[1] = {
+UPB_LINKARR_APPEND(upb_AllExts)
+const upb_MiniTableExtension* envoy_annotations_resource_ext = &envoy_annotations_resource_ext_obj;
+  static const upb_MiniTable *messages_layout[1] = {
   &envoy__annotations__ResourceAnnotation_msg_init,
 };
 
 
 static const upb_MiniTableExtension *extensions_layout[1] = {
-  &envoy_annotations_resource_ext,
+  &envoy_annotations_resource_ext_obj,
 };
 
-UPB_LINKARR_DECLARE(upb_AllExts, const upb_MiniTableExtension);
+UPB_LINKARR_DECLARE(upb_AllExts, const upb_MiniTableExtension*);
 UPB_CONSTRUCTOR(upb_GeneratedRegistry_Constructor, envoy_annotations_resource_proto_ext_constructor) {
   static bool finished = false;
   if (finished) return;

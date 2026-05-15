@@ -15,19 +15,20 @@
 #include "upb/port/def.inc"
 
 extern const UPB_PRIVATE(upb_GeneratedExtensionListEntry)* UPB_PRIVATE(upb_generated_extension_list);
-UPB_LINKARR_APPEND(upb_AllExts)
-const upb_MiniTableExtension udpa_annotations_sensitive_ext = {
+static const upb_MiniTableExtension udpa_annotations_sensitive_ext_obj = {
   {76569463, 0, 0, UPB_SIZE(3, 4), 8, (int)kUpb_FieldMode_Scalar | (int)kUpb_LabelFlags_IsExtension | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
   {.UPB_PRIVATE(submsg) = NULL},
   &google__protobuf__FieldOptions_msg_init,
 
 };
-
+UPB_LINKARR_APPEND(upb_AllExts)
+const upb_MiniTableExtension* udpa_annotations_sensitive_ext = &udpa_annotations_sensitive_ext_obj;
+  
 static const upb_MiniTableExtension *extensions_layout[1] = {
-  &udpa_annotations_sensitive_ext,
+  &udpa_annotations_sensitive_ext_obj,
 };
 
-UPB_LINKARR_DECLARE(upb_AllExts, const upb_MiniTableExtension);
+UPB_LINKARR_DECLARE(upb_AllExts, const upb_MiniTableExtension*);
 UPB_CONSTRUCTOR(upb_GeneratedRegistry_Constructor, udpa_annotations_sensitive_proto_ext_constructor) {
   static bool finished = false;
   if (finished) return;

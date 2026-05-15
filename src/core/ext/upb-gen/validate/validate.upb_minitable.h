@@ -41,10 +41,10 @@ extern const upb_MiniTable validate__MapRules_msg_init;
 extern const upb_MiniTable validate__AnyRules_msg_init;
 extern const upb_MiniTable validate__DurationRules_msg_init;
 extern const upb_MiniTable validate__TimestampRules_msg_init;
-extern const upb_MiniTableExtension validate_disabled_ext;
-extern const upb_MiniTableExtension validate_ignored_ext;
-extern const upb_MiniTableExtension validate_required_ext;
-extern const upb_MiniTableExtension validate_rules_ext;
+extern const upb_MiniTableExtension* validate_disabled_ext;
+extern const upb_MiniTableExtension* validate_ignored_ext;
+extern const upb_MiniTableExtension* validate_required_ext;
+extern const upb_MiniTableExtension* validate_rules_ext;
 
 extern const upb_MiniTableEnum validate__KnownRegex_enum_init;
 extern const upb_MiniTableFile validate_validate_proto_upb_file_layout;

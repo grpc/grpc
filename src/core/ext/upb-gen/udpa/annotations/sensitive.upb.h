@@ -23,15 +23,15 @@ struct google_protobuf_FieldOptions;
 
 
 UPB_INLINE bool udpa_annotations_has_sensitive(const struct google_protobuf_FieldOptions* msg) {
-  return upb_Message_HasExtension((upb_Message*)msg, &udpa_annotations_sensitive_ext);
+  return upb_Message_HasExtension((upb_Message*)msg, udpa_annotations_sensitive_ext);
 }
 
 UPB_INLINE void udpa_annotations_clear_sensitive(struct google_protobuf_FieldOptions* msg) {
-  upb_Message_ClearExtension((upb_Message*)msg, &udpa_annotations_sensitive_ext);
+  upb_Message_ClearExtension((upb_Message*)msg, udpa_annotations_sensitive_ext);
 }
 UPB_INLINE bool
 udpa_annotations_sensitive(const struct google_protobuf_FieldOptions* msg) {
-  const upb_MiniTableExtension* ext = &udpa_annotations_sensitive_ext;
+  const upb_MiniTableExtension* ext = udpa_annotations_sensitive_ext;
   UPB_ASSUME(upb_MiniTableField_IsScalar(&ext->UPB_PRIVATE(field)));
   UPB_ASSUME(UPB_PRIVATE(_upb_MiniTableField_GetRep)(
                  &ext->UPB_PRIVATE(field)) == kUpb_FieldRep_1Byte);
@@ -44,7 +44,7 @@ udpa_annotations_sensitive(const struct google_protobuf_FieldOptions* msg) {
 UPB_INLINE void udpa_annotations_set_sensitive(struct google_protobuf_FieldOptions* msg,
                                         bool val,
                                         upb_Arena* arena) {
-  const upb_MiniTableExtension* ext = &udpa_annotations_sensitive_ext;
+  const upb_MiniTableExtension* ext = udpa_annotations_sensitive_ext;
   UPB_ASSUME(upb_MiniTableField_IsScalar(&ext->UPB_PRIVATE(field)));
   UPB_ASSUME(UPB_PRIVATE(_upb_MiniTableField_GetRep)(
                  &ext->UPB_PRIVATE(field)) == kUpb_FieldRep_1Byte);

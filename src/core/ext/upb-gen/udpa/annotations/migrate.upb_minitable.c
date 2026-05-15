@@ -80,42 +80,47 @@ const upb_MiniTable udpa__annotations__FileMigrateAnnotation_msg_init = {
   })
 };
 
-UPB_LINKARR_APPEND(upb_AllExts)
-const upb_MiniTableExtension udpa_annotations_message_migrate_ext = {
+static const upb_MiniTableExtension udpa_annotations_message_migrate_ext_obj = {
   {171962766, 0, 0, UPB_SIZE(3, 4), 11, (int)kUpb_FieldMode_Scalar | (int)kUpb_LabelFlags_IsExtension | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   {.UPB_PRIVATE(submsg) = &udpa__annotations__MigrateAnnotation_msg_init},
   &google__protobuf__MessageOptions_msg_init,
 
 };
 UPB_LINKARR_APPEND(upb_AllExts)
-const upb_MiniTableExtension udpa_annotations_field_migrate_ext = {
+const upb_MiniTableExtension* udpa_annotations_message_migrate_ext = &udpa_annotations_message_migrate_ext_obj;
+  static const upb_MiniTableExtension udpa_annotations_field_migrate_ext_obj = {
   {171962766, 0, 0, UPB_SIZE(3, 4), 11, (int)kUpb_FieldMode_Scalar | (int)kUpb_LabelFlags_IsExtension | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   {.UPB_PRIVATE(submsg) = &udpa__annotations__FieldMigrateAnnotation_msg_init},
   &google__protobuf__FieldOptions_msg_init,
 
 };
 UPB_LINKARR_APPEND(upb_AllExts)
-const upb_MiniTableExtension udpa_annotations_enum_migrate_ext = {
+const upb_MiniTableExtension* udpa_annotations_field_migrate_ext = &udpa_annotations_field_migrate_ext_obj;
+  static const upb_MiniTableExtension udpa_annotations_enum_migrate_ext_obj = {
   {171962766, 0, 0, UPB_SIZE(3, 4), 11, (int)kUpb_FieldMode_Scalar | (int)kUpb_LabelFlags_IsExtension | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   {.UPB_PRIVATE(submsg) = &udpa__annotations__MigrateAnnotation_msg_init},
   &google__protobuf__EnumOptions_msg_init,
 
 };
 UPB_LINKARR_APPEND(upb_AllExts)
-const upb_MiniTableExtension udpa_annotations_enum_value_migrate_ext = {
+const upb_MiniTableExtension* udpa_annotations_enum_migrate_ext = &udpa_annotations_enum_migrate_ext_obj;
+  static const upb_MiniTableExtension udpa_annotations_enum_value_migrate_ext_obj = {
   {171962766, 0, 0, UPB_SIZE(3, 4), 11, (int)kUpb_FieldMode_Scalar | (int)kUpb_LabelFlags_IsExtension | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   {.UPB_PRIVATE(submsg) = &udpa__annotations__MigrateAnnotation_msg_init},
   &google__protobuf__EnumValueOptions_msg_init,
 
 };
 UPB_LINKARR_APPEND(upb_AllExts)
-const upb_MiniTableExtension udpa_annotations_file_migrate_ext = {
+const upb_MiniTableExtension* udpa_annotations_enum_value_migrate_ext = &udpa_annotations_enum_value_migrate_ext_obj;
+  static const upb_MiniTableExtension udpa_annotations_file_migrate_ext_obj = {
   {171962766, 0, 0, UPB_SIZE(3, 4), 11, (int)kUpb_FieldMode_Scalar | (int)kUpb_LabelFlags_IsExtension | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   {.UPB_PRIVATE(submsg) = &udpa__annotations__FileMigrateAnnotation_msg_init},
   &google__protobuf__FileOptions_msg_init,
 
 };
-static const upb_MiniTable *messages_layout[3] = {
+UPB_LINKARR_APPEND(upb_AllExts)
+const upb_MiniTableExtension* udpa_annotations_file_migrate_ext = &udpa_annotations_file_migrate_ext_obj;
+  static const upb_MiniTable *messages_layout[3] = {
   &udpa__annotations__MigrateAnnotation_msg_init,
   &udpa__annotations__FieldMigrateAnnotation_msg_init,
   &udpa__annotations__FileMigrateAnnotation_msg_init,
@@ -123,14 +128,14 @@ static const upb_MiniTable *messages_layout[3] = {
 
 
 static const upb_MiniTableExtension *extensions_layout[5] = {
-  &udpa_annotations_message_migrate_ext,
-  &udpa_annotations_field_migrate_ext,
-  &udpa_annotations_enum_migrate_ext,
-  &udpa_annotations_enum_value_migrate_ext,
-  &udpa_annotations_file_migrate_ext,
+  &udpa_annotations_message_migrate_ext_obj,
+  &udpa_annotations_field_migrate_ext_obj,
+  &udpa_annotations_enum_migrate_ext_obj,
+  &udpa_annotations_enum_value_migrate_ext_obj,
+  &udpa_annotations_file_migrate_ext_obj,
 };
 
-UPB_LINKARR_DECLARE(upb_AllExts, const upb_MiniTableExtension);
+UPB_LINKARR_DECLARE(upb_AllExts, const upb_MiniTableExtension*);
 UPB_CONSTRUCTOR(upb_GeneratedRegistry_Constructor, udpa_annotations_migrate_proto_ext_constructor) {
   static bool finished = false;
   if (finished) return;

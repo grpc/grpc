@@ -84,15 +84,15 @@ UPB_INLINE void envoy_annotations_ResourceAnnotation_set_type(envoy_annotations_
 }
 
 UPB_INLINE bool envoy_annotations_has_resource(const struct google_protobuf_ServiceOptions* msg) {
-  return upb_Message_HasExtension((upb_Message*)msg, &envoy_annotations_resource_ext);
+  return upb_Message_HasExtension((upb_Message*)msg, envoy_annotations_resource_ext);
 }
 
 UPB_INLINE void envoy_annotations_clear_resource(struct google_protobuf_ServiceOptions* msg) {
-  upb_Message_ClearExtension((upb_Message*)msg, &envoy_annotations_resource_ext);
+  upb_Message_ClearExtension((upb_Message*)msg, envoy_annotations_resource_ext);
 }
 UPB_INLINE const envoy_annotations_ResourceAnnotation*
 envoy_annotations_resource(const struct google_protobuf_ServiceOptions* msg) {
-  const upb_MiniTableExtension* ext = &envoy_annotations_resource_ext;
+  const upb_MiniTableExtension* ext = envoy_annotations_resource_ext;
   UPB_ASSUME(upb_MiniTableField_IsScalar(&ext->UPB_PRIVATE(field)));
   UPB_ASSUME(UPB_PRIVATE(_upb_MiniTableField_GetRep)(
                  &ext->UPB_PRIVATE(field)) == UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte));
@@ -105,7 +105,7 @@ envoy_annotations_resource(const struct google_protobuf_ServiceOptions* msg) {
 UPB_INLINE void envoy_annotations_set_resource(struct google_protobuf_ServiceOptions* msg,
                                         const envoy_annotations_ResourceAnnotation* val,
                                         upb_Arena* arena) {
-  const upb_MiniTableExtension* ext = &envoy_annotations_resource_ext;
+  const upb_MiniTableExtension* ext = envoy_annotations_resource_ext;
   UPB_ASSUME(upb_MiniTableField_IsScalar(&ext->UPB_PRIVATE(field)));
   UPB_ASSUME(UPB_PRIVATE(_upb_MiniTableField_GetRep)(
                  &ext->UPB_PRIVATE(field)) == UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte));
