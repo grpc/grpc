@@ -1,4 +1,4 @@
-# Copyright 2021 gRPC authors.
+# Copyright 2026 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
 
 FROM silkeh/clang:14-bullseye
 
-RUN apt update && apt -y upgrade && apt install -y build-essential curl git time wget zip && apt clean
+RUN apt update && apt -y upgrade && apt install -y build-essential curl git time zip && apt clean
 #=================
 # Setup git to access working directory across docker boundary.
 # This avoids the "fatal: detected dubious ownership in repository XYZ"
