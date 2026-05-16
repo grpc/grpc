@@ -21,6 +21,8 @@
 #include <utility>
 
 #include "src/core/call/call_arena_allocator.h"
+#include "src/core/call/interception_chain.h"
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/channel_stack_builder_impl.h"
 #include "src/core/lib/channel/promise_based_filter.h"
@@ -28,6 +30,7 @@
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "test/core/test_util/test_config.h"
 #include "gtest/gtest.h"
+#include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 
 namespace grpc_core {
@@ -453,6 +456,75 @@ TEST(ChannelInitTest, CanCreateFilterWithCall) {
   (*stack)->StartCall(std::move(call.handler));
   EXPECT_EQ(p, 1);
   EXPECT_EQ(handled, 1);
+}
+
+template <int Id>
+class OrderRecordingFilter {
+ public:
+  static absl::string_view TypeName() {
+    static const auto* name =
+        new std::string(absl::StrCat("OrderRecordingFilter", Id));
+    return *name;
+  }
+
+  static absl::StatusOr<std::unique_ptr<OrderRecordingFilter<Id>>> Create(
+      const ChannelArgs& args, ChannelFilter::Args /*filter_args*/) {
+    auto* log = args.GetPointer<std::vector<int>>("v3_filter_creation_order");
+    if (log != nullptr) log->push_back(Id);
+    return std::make_unique<OrderRecordingFilter<Id>>();
+  }
+
+  static const grpc_channel_filter kFilter;
+
+  class Call {
+   public:
+    static inline const NoInterceptor OnClientInitialMetadata;
+    static inline const NoInterceptor OnServerInitialMetadata;
+    static inline const NoInterceptor OnServerTrailingMetadata;
+    static inline const NoInterceptor OnClientToServerMessage;
+    static inline const NoInterceptor OnClientToServerHalfClose;
+    static inline const NoInterceptor OnServerToClientMessage;
+    static inline const NoInterceptor OnFinalize;
+    channelz::PropertyList ChannelzProperties() {
+      return channelz::PropertyList().Set("filter_id", Id);
+    }
+  };
+};
+
+template <int Id>
+const grpc_channel_filter OrderRecordingFilter<Id>::kFilter = {
+    nullptr, nullptr, 0,       nullptr,
+    nullptr, nullptr, 0,       nullptr,
+    nullptr, nullptr, nullptr, GRPC_UNIQUE_TYPE_NAME_HERE("OrderRecordingFilter")};
+
+TEST(ChannelInitTest, V3ServerStackUsesReverseOrderOfV1Stack) {
+  grpc::testing::TestGrpcScope g;
+  ChannelInit::Builder b;
+
+  b.RegisterFilter<OrderRecordingFilter<1>>(GRPC_CLIENT_CHANNEL)
+      .Before<OrderRecordingFilter<2>>();
+  b.RegisterFilter<OrderRecordingFilter<2>>(GRPC_CLIENT_CHANNEL)
+      .Before<OrderRecordingFilter<3>>();
+  b.RegisterFilter<OrderRecordingFilter<3>>(GRPC_CLIENT_CHANNEL);
+  b.RegisterFilter<OrderRecordingFilter<1>>(GRPC_SERVER_CHANNEL)
+      .Before<OrderRecordingFilter<2>>();
+  b.RegisterFilter<OrderRecordingFilter<2>>(GRPC_SERVER_CHANNEL)
+      .Before<OrderRecordingFilter<3>>();
+  b.RegisterFilter<OrderRecordingFilter<3>>(GRPC_SERVER_CHANNEL);
+  auto init = b.Build();
+
+  auto creation_order = [&](grpc_channel_stack_type type) {
+    std::vector<int> order;
+    InterceptionChainBuilder builder(ChannelArgs().Set(
+        "v3_filter_creation_order", ChannelArgs::UnownedPointer(&order)));
+    init.AddToInterceptionChainBuilder(type, builder);
+    return order;
+  };
+
+  EXPECT_EQ(creation_order(GRPC_CLIENT_CHANNEL),
+            (std::vector<int>{1, 2, 3}));
+  EXPECT_EQ(creation_order(GRPC_SERVER_CHANNEL),
+            (std::vector<int>{3, 2, 1}));
 }
 
 }  // namespace
