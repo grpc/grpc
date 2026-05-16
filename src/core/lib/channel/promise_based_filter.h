@@ -2270,10 +2270,10 @@ struct ChannelFilterWithFlagsMethods {
                                       grpc_channel_stack_filter_instance_number,
                                       args->config, args->blackboard));
     if (!status.ok()) {
-      new (elem->channel_data) F*(nullptr);
+      new (elem->channel_data) ChannelFilter*(nullptr);
       return absl_status_to_grpc_error(status.status());
     }
-    new (elem->channel_data) F*(status->release());
+    new (elem->channel_data) ChannelFilter*(status->release());
     return absl::OkStatus();
   }
 
