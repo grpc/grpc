@@ -202,7 +202,8 @@ struct tsi_ssl_handshaker : public tsi_handshaker,
   unsigned char* outgoing_bytes_buffer;
   size_t outgoing_bytes_buffer_size;
   tsi_ssl_handshaker_factory* factory_ref;
-  std::shared_ptr<grpc_core::GlobalStatsPluginRegistry::StatsPluginGroup> stats_plugin_group;
+  std::shared_ptr<grpc_core::GlobalStatsPluginRegistry::StatsPluginGroup>
+      stats_plugin_group;
   grpc_core::Mutex mu;
   bool is_shutdown ABSL_GUARDED_BY(mu) = false;
 
@@ -2500,7 +2501,8 @@ static tsi_result create_tsi_ssl_handshaker(
     std::optional<std::string> alpn_preferred_protocol_raw_list,
     std::shared_ptr<grpc_core::PrivateKeySigner> key_signer,
     tsi_ssl_handshaker_factory* factory,
-    std::shared_ptr<grpc_core::GlobalStatsPluginRegistry::StatsPluginGroup> stats_plugin_group,
+    std::shared_ptr<grpc_core::GlobalStatsPluginRegistry::StatsPluginGroup>
+        stats_plugin_group,
     tsi_handshaker** handshaker) {
   SSL* ssl = SSL_new(ctx);
   BIO* network_io = nullptr;
@@ -2655,7 +2657,8 @@ tsi_result tsi_ssl_client_handshaker_factory_create_handshaker(
     size_t ssl_bio_buf_size,
     std::optional<std::string> alpn_preferred_protocol_list,
     tsi_handshaker** handshaker,
-    std::shared_ptr<grpc_core::GlobalStatsPluginRegistry::StatsPluginGroup> stats_plugin_group) {
+    std::shared_ptr<grpc_core::GlobalStatsPluginRegistry::StatsPluginGroup>
+        stats_plugin_group) {
   GRPC_TRACE_LOG(tsi, INFO)
       << "Creating SSL handshaker with SNI " << server_name_indication;
 #if defined(OPENSSL_IS_BORINGSSL)
@@ -2709,7 +2712,8 @@ static int client_handshaker_factory_npn_callback(
 tsi_result tsi_ssl_server_handshaker_factory_create_handshaker(
     tsi_ssl_server_handshaker_factory* factory, size_t network_bio_buf_size,
     size_t ssl_bio_buf_size, tsi_handshaker** handshaker,
-    std::shared_ptr<grpc_core::GlobalStatsPluginRegistry::StatsPluginGroup> stats_plugin_group) {
+    std::shared_ptr<grpc_core::GlobalStatsPluginRegistry::StatsPluginGroup>
+        stats_plugin_group) {
   if (factory->ssl_contexts.empty()) return TSI_INVALID_ARGUMENT;
 #if defined(OPENSSL_IS_BORINGSSL)
   // Create the handshaker with the first context. We will switch if needed
@@ -2721,10 +2725,10 @@ tsi_result tsi_ssl_server_handshaker_factory_create_handshaker(
       ssl_bio_buf_size, std::nullopt, factory->ssl_contexts[0].key_signer,
       &factory->base, std::move(stats_plugin_group), handshaker);
 #else
-  return create_tsi_ssl_handshaker(factory->ssl_contexts[0].ssl_ctx, 0, nullptr,
-                                   network_bio_buf_size, ssl_bio_buf_size,
-                                   std::nullopt, /*key_signer=*/nullptr,
-                                   &factory->base, std::move(stats_plugin_group), handshaker);
+  return create_tsi_ssl_handshaker(
+      factory->ssl_contexts[0].ssl_ctx, 0, nullptr, network_bio_buf_size,
+      ssl_bio_buf_size, std::nullopt, /*key_signer=*/nullptr, &factory->base,
+      std::move(stats_plugin_group), handshaker);
 #endif
 }
 
