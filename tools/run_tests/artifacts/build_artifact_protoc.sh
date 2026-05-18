@@ -21,7 +21,10 @@ cd "$(dirname "$0")/../../.."
 mkdir -p cmake/build
 pushd cmake/build
 
-cmake -DgRPC_BUILD_TESTS=OFF -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_STANDARD=17 ../..
+cmake -DgRPC_BUILD_TESTS=OFF -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_STANDARD=17 \
+      -DCMAKE_EXE_LINKER_FLAGS="${LDFLAGS}" \
+      -DCMAKE_SHARED_LINKER_FLAGS="${LDFLAGS}" \
+      ../..
 
 # Use externally provided env to determine build parallelism, otherwise use default.
 GRPC_PROTOC_BUILD_COMPILER_JOBS=${GRPC_PROTOC_BUILD_COMPILER_JOBS:-2}
