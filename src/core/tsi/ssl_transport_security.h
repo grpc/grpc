@@ -32,6 +32,7 @@
 #include "src/core/tsi/ssl/key_logging/ssl_key_logging.h"
 #include "src/core/tsi/ssl_transport_security_utils.h"
 #include "src/core/tsi/transport_security_interface.h"
+#include "src/core/telemetry/metrics.h"
 #include "absl/strings/string_view.h"
 
 // Value for the TSI_CERTIFICATE_TYPE_PEER_PROPERTY property for X509 certs.
@@ -254,7 +255,8 @@ tsi_result tsi_ssl_client_handshaker_factory_create_handshaker(
     const char* server_name_indication, size_t network_bio_buf_size,
     size_t ssl_bio_buf_size,
     std::optional<std::string> alpn_preferred_protocol_list,
-    tsi_handshaker** handshaker);
+    tsi_handshaker** handshaker,
+    std::shared_ptr<grpc_core::GlobalStatsPluginRegistry::StatsPluginGroup> stats_plugin_group = nullptr);
 
 // Increments reference count of the client handshaker factory.
 tsi_ssl_client_handshaker_factory* tsi_ssl_client_handshaker_factory_ref(
@@ -416,7 +418,8 @@ tsi_result tsi_create_ssl_server_handshaker_factory_with_options(
 //  where a parameter is invalid.
 tsi_result tsi_ssl_server_handshaker_factory_create_handshaker(
     tsi_ssl_server_handshaker_factory* factory, size_t network_bio_buf_size,
-    size_t ssl_bio_buf_size, tsi_handshaker** handshaker);
+    size_t ssl_bio_buf_size, tsi_handshaker** handshaker,
+    std::shared_ptr<grpc_core::GlobalStatsPluginRegistry::StatsPluginGroup> stats_plugin_group = nullptr);
 
 // Decrements reference count of the handshaker factory. Handshaker factory will
 // be destroyed once no references exist.
@@ -462,6 +465,11 @@ tsi_result tsi_ssl_get_cert_chain_contents(STACK_OF(X509) * peer_chain,
 
 namespace tsi {
 bool IsRootCertInfoEmpty(const RootCertInfo* root_cert_info);
+
+// Exposed for testing only.
+std::shared_ptr<grpc_core::GlobalStatsPluginRegistry::StatsPluginGroup>
+tsi_ssl_handshaker_get_stats_plugin_group_for_testing(
+    tsi_handshaker* handshaker);
 }  // namespace tsi
 
 #endif  // GRPC_SRC_CORE_TSI_SSL_TRANSPORT_SECURITY_H

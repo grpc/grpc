@@ -4648,6 +4648,7 @@ grpc_cc_library(
         "//src/core:grpc_transport_chttp2_alpn",
         "//src/core:load_file",
         "//src/core:match",
+        "//src/core:metrics",
         "//src/core:ref_counted",
         "//src/core:slice",
         "//src/core:spiffe_utils",

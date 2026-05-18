@@ -37,6 +37,7 @@
 #include "src/core/credentials/transport/transport_credentials.h"
 #include "src/core/handshaker/security/security_handshaker.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/telemetry/metrics.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/promise/promise.h"
 #include "src/core/transport/auth_context.h"
@@ -363,11 +364,13 @@ void TlsChannelSecurityConnector::add_handshakers(
                                    ? target_name_.c_str()
                                    : overridden_target_name_.c_str();
     }
+    auto stats_plugin_group = args.GetObjectRef<grpc_core::GlobalStatsPluginRegistry::StatsPluginGroup>();
     tsi_result result = tsi_ssl_client_handshaker_factory_create_handshaker(
         client_handshaker_factory_, server_name_indication,
         /*network_bio_buf_size=*/0,
         /*ssl_bio_buf_size=*/0,
-        args.GetOwnedString(GRPC_ARG_TRANSPORT_PROTOCOLS), &tsi_hs);
+        args.GetOwnedString(GRPC_ARG_TRANSPORT_PROTOCOLS), &tsi_hs,
+        std::move(stats_plugin_group));
     if (result != TSI_OK) {
       LOG(ERROR) << "Handshaker creation failed with error "
                  << tsi_result_to_string(result);
@@ -648,10 +651,11 @@ void TlsServerSecurityConnector::add_handshakers(
   MutexLock lock(&mu_);
   tsi_handshaker* tsi_hs = nullptr;
   if (server_handshaker_factory_ != nullptr) {
+    auto stats_plugin_group = args.GetObjectRef<grpc_core::GlobalStatsPluginRegistry::StatsPluginGroup>();
     // Instantiate TSI handshaker.
     tsi_result result = tsi_ssl_server_handshaker_factory_create_handshaker(
         server_handshaker_factory_, /*network_bio_buf_size=*/0,
-        /*ssl_bio_buf_size=*/0, &tsi_hs);
+        /*ssl_bio_buf_size=*/0, &tsi_hs, std::move(stats_plugin_group));
     if (result != TSI_OK) {
       LOG(ERROR) << "Handshaker creation failed with error "
                  << tsi_result_to_string(result);

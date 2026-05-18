@@ -1503,6 +1503,43 @@ TEST_P(SslTransportSecurityTest, TestKeyExchangeGroupMismatch) {
 }
 #endif
 
+TEST(SslTransportSecurityTest, SslHandshakerStatsPluginGroupIsSet) {
+  // 1. Create StatsPluginGroup
+  auto stats_plugin_group = std::make_shared<
+      grpc_core::GlobalStatsPluginRegistry::StatsPluginGroup>();
+  stats_plugin_group->Finish();
+
+  // 2. Create client handshaker factory
+  tsi_ssl_client_handshaker_options client_options;
+  std::string root_cert =
+      testing::GetFileContents("src/core/tsi/test_creds/ca.pem");
+  client_options.root_cert_info =
+      std::make_shared<tsi::RootCertInfo>(root_cert);
+  tsi_ssl_client_handshaker_factory* client_factory = nullptr;
+  ASSERT_EQ(tsi_create_ssl_client_handshaker_factory_with_options(
+                &client_options, &client_factory),
+            TSI_OK);
+
+  // 3. Create client handshaker passing the stats_plugin_group
+  tsi_handshaker* client_handshaker = nullptr;
+  ASSERT_EQ(tsi_ssl_client_handshaker_factory_create_handshaker(
+                client_factory, "foo.test.google.com.au",
+                /*network_bio_buf_size=*/0,
+                /*ssl_bio_buf_size=*/0, std::nullopt, &client_handshaker,
+                stats_plugin_group),
+            TSI_OK);
+
+  // 4. Verify it was stored in the handshaker
+  auto retrieved_group =
+      tsi::tsi_ssl_handshaker_get_stats_plugin_group_for_testing(
+          client_handshaker);
+  EXPECT_EQ(retrieved_group, stats_plugin_group);
+
+  // 5. Clean up
+  tsi_handshaker_destroy(client_handshaker);
+  tsi_ssl_client_handshaker_factory_unref(client_factory);
+}
+
 }  // namespace
 }  // namespace testing
 }  // namespace grpc_core
