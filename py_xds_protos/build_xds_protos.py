@@ -66,7 +66,6 @@ VALIDATE_ROOT = os.path.join("third_party", "protoc-gen-validate")
 OPENCENSUS_PROTO_ROOT = os.path.join(
     "third_party", "opencensus-proto", "src"
 )
-OPENTELEMETRY_PROTO_ROOT = os.path.join("third_party", "opentelemetry")
 WELL_KNOWN_PROTOS_INCLUDE = _get_resource_file_name("grpc_tools", "_proto")
 
 OUTPUT_PATH = WORK_DIR
@@ -110,7 +109,6 @@ COMPILE_PROTO_ONLY = [
     "--proto_path={}".format(VALIDATE_ROOT),
     "--proto_path={}".format(WELL_KNOWN_PROTOS_INCLUDE),
     "--proto_path={}".format(OPENCENSUS_PROTO_ROOT),
-    "--proto_path={}".format(OPENTELEMETRY_PROTO_ROOT),
     "--python_out={}".format(OUTPUT_PATH),
 ]
 COMPILE_BOTH = COMPILE_PROTO_ONLY + ["--grpc_python_out={}".format(OUTPUT_PATH)]
@@ -174,7 +172,6 @@ def main():
     compile_protos(GOOGLEAPIS_ROOT, os.path.join("google", "type"))
     compile_protos(VALIDATE_ROOT, "validate")
     compile_protos(OPENCENSUS_PROTO_ROOT)
-    compile_protos(OPENTELEMETRY_PROTO_ROOT)
     compile_protos(CEL_PROTO_ROOT, "cel")
 
     # Generate __init__.py files for all modules
@@ -186,7 +183,6 @@ def main():
         "udpa",
         "validate",
         "xds",
-        "opentelemetry",
         "cel",
     ]:
         for root, _, _ in os.walk(os.path.join(WORK_DIR, proto_root_module)):
