@@ -33,7 +33,6 @@
 #include "src/core/lib/promise/loop.h"
 #include "src/core/lib/promise/mpsc.h"
 #include "src/core/lib/promise/party.h"
-#include "src/core/lib/promise/race.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/transport/promise_endpoint.h"
 #include "src/core/util/seq_bit_set.h"
@@ -415,8 +414,7 @@ class SecureFrameQueue
 class Endpoint final {
  public:
   Endpoint(uint32_t id, uint32_t encode_alignment, uint32_t decode_alignment,
-           uint32_t max_receive_message_length, Clock* clock,
-           RefCountedPtr<OutputBuffers> output_buffers,
+           Clock* clock, RefCountedPtr<OutputBuffers> output_buffers,
            RefCountedPtr<InputQueue> input_queues,
            PendingConnection pending_connection, bool enable_tracing,
            TransportContextPtr ctx,
@@ -437,7 +435,6 @@ class Endpoint final {
     uint32_t id;
     uint32_t encode_alignment;
     uint32_t decode_alignment;
-    uint32_t max_receive_message_length;
     bool enable_tracing;
     // TODO(ctiller): Inline members into EndpointContext.
     RefCountedPtr<OutputBuffers> output_buffers;
@@ -471,7 +468,6 @@ class DataEndpoints final : public channelz::DataSource {
   explicit DataEndpoints(std::vector<PendingConnection> endpoints,
                          TransportContextPtr ctx, uint32_t encode_alignment,
                          uint32_t decode_alignment,
-                         uint32_t max_receive_message_length,
                          std::shared_ptr<TcpZTraceCollector> ztrace_collector,
                          bool enable_tracing, std::string scheduler_config,
                          data_endpoints_detail::Clock* clock = DefaultClock());

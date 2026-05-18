@@ -28,7 +28,6 @@
 
 #include "src/core/call/metadata.h"
 #include "src/core/call/metadata_batch.h"
-#include "src/core/ext/transport/chaotic_good/config.h"
 #include "src/core/ext/transport/chaotic_good/frame.h"
 #include "src/core/ext/transport/chaotic_good/frame_header.h"
 #include "src/core/ext/transport/chaotic_good/server_transport.h"
@@ -75,7 +74,6 @@
 #include "absl/random/bit_gen_ref.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
-#include "absl/strings/str_cat.h"
 
 namespace grpc_core {
 namespace chaotic_good {
@@ -485,18 +483,6 @@ auto ChaoticGoodServerListener::ActiveConnection::HandshakingState::
             frame_header = absl::InternalError("Unexpected stream id");
           }
         }
-
-        // TODO(aananthv): Maybe do not construct Config twice (once here and
-        // once after we read the settings frame).
-        Config config{self->connection_->args()};
-        if (frame_header.ok() && frame_header->header.payload_length >
-                                     config.max_receive_message_length()) {
-          frame_header = absl::ResourceExhaustedError(absl::StrCat(
-              "SERVER handshake: Received message larger than max (",
-              frame_header->header.payload_length, " vs. ",
-              config.max_receive_message_length(), ")"));
-        }
-
         return If(
             frame_header.ok(),
             [self, &frame_header]() {
