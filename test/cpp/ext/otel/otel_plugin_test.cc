@@ -1343,6 +1343,76 @@ TEST_F(OpenTelemetryPluginEnd2EndTest, RegisterMultipleStatsPluginsPerServer) {
                                        ::testing::Eq(1)))))))));
 }
 
+TEST_F(OpenTelemetryPluginEnd2EndTest, ClientHandshakerDuration) {
+  Init(std::move(Options().set_metric_names(
+      {grpc::OpenTelemetryPluginBuilder::
+           kClientHandshakerDurationInstrumentName})));
+  SendRPC();
+  const char* kMetricName = "grpc.security.client.handshaker.duration";
+  auto data = ReadCurrentMetricsData(
+      [&](const absl::flat_hash_map<
+          std::string,
+          std::vector<opentelemetry::sdk::metrics::PointDataAttributes>>&
+              data) { return !data.contains(kMetricName); });
+  ASSERT_EQ(data[kMetricName].size(), 1);
+  auto point_data =
+      std::get_if<opentelemetry::sdk::metrics::HistogramPointData>(
+          &data[kMetricName][0].point_data);
+  ASSERT_NE(point_data, nullptr);
+  ASSERT_EQ(point_data->count_, 1);
+  const auto& attributes = data[kMetricName][0].attributes.GetAttributes();
+  EXPECT_EQ(attributes.size(), 4);
+  const auto* status_value =
+      std::get_if<std::string>(&attributes.at("grpc.security.handshaker.status"));
+  ASSERT_NE(status_value, nullptr);
+  EXPECT_EQ(*status_value, "OK");
+  const auto* target_value =
+      std::get_if<std::string>(&attributes.at("grpc.target"));
+  ASSERT_NE(target_value, nullptr);
+  EXPECT_EQ(*target_value, canonical_server_address_);
+  const auto* protocol_value =
+      std::get_if<std::string>(&attributes.at("grpc.security.handshaker.protocol"));
+  ASSERT_NE(protocol_value, nullptr);
+  EXPECT_EQ(*protocol_value, "insecure");
+  const auto* resumed_value =
+      std::get_if<std::string>(&attributes.at("grpc.security.handshaker.resumed"));
+  ASSERT_NE(resumed_value, nullptr);
+  EXPECT_EQ(*resumed_value, "false");
+}
+
+TEST_F(OpenTelemetryPluginEnd2EndTest, ServerHandshakerDuration) {
+  Init(std::move(Options().set_metric_names(
+      {grpc::OpenTelemetryPluginBuilder::
+           kServerHandshakerDurationInstrumentName})));
+  SendRPC();
+  const char* kMetricName = "grpc.security.server.handshaker.duration";
+  auto data = ReadCurrentMetricsData(
+      [&](const absl::flat_hash_map<
+          std::string,
+          std::vector<opentelemetry::sdk::metrics::PointDataAttributes>>&
+              data) { return !data.contains(kMetricName); });
+  ASSERT_EQ(data[kMetricName].size(), 1);
+  auto point_data =
+      std::get_if<opentelemetry::sdk::metrics::HistogramPointData>(
+          &data[kMetricName][0].point_data);
+  ASSERT_NE(point_data, nullptr);
+  ASSERT_EQ(point_data->count_, 1);
+  const auto& attributes = data[kMetricName][0].attributes.GetAttributes();
+  EXPECT_EQ(attributes.size(), 3);
+  const auto* status_value =
+      std::get_if<std::string>(&attributes.at("grpc.security.handshaker.status"));
+  ASSERT_NE(status_value, nullptr);
+  EXPECT_EQ(*status_value, "OK");
+  const auto* protocol_value =
+      std::get_if<std::string>(&attributes.at("grpc.security.handshaker.protocol"));
+  ASSERT_NE(protocol_value, nullptr);
+  EXPECT_EQ(*protocol_value, "insecure");
+  const auto* resumed_value =
+      std::get_if<std::string>(&attributes.at("grpc.security.handshaker.resumed"));
+  ASSERT_NE(resumed_value, nullptr);
+  EXPECT_EQ(*resumed_value, "false");
+}
+
 }  // namespace
 }  // namespace testing
 }  // namespace grpc

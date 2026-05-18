@@ -65,6 +65,7 @@
 #include "absl/base/attributes.h"
 #include "absl/functional/any_invocable.h"
 #include "absl/status/status.h"
+#include "absl/strings/ascii.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 
@@ -211,7 +212,7 @@ void SecurityHandshaker::HandshakeFailedLocked(absl::Status error) {
 void SecurityHandshaker::Finish(absl::Status status) {
   int64_t duration_us = (Timestamp::Now() - start_time_).millis() * 1000;
   std::string status_str = status.ok() ? "OK" : absl::StatusCodeToString(status.code());
-  std::string protocol = std::string(connector_->type().name());
+  std::string protocol = absl::AsciiStrToLower(connector_->type().name());
 
   std::string resumed = "false";
   if (auth_context_ != nullptr) {
@@ -229,6 +230,9 @@ void SecurityHandshaker::Finish(absl::Status status) {
     stats_plugin_group =
         args_->args
             .GetObjectRef<GlobalStatsPluginRegistry::StatsPluginGroup>();
+    if (stats_plugin_group == nullptr && !connector_->is_client()) {
+      stats_plugin_group = GlobalStatsPluginRegistry::GetStatsPluginsForServer(args_->args);
+    }
   }
   auto scope = stats_plugin_group != nullptr
                    ? stats_plugin_group->GetCollectionScope()
@@ -239,10 +243,20 @@ void SecurityHandshaker::Finish(absl::Status status) {
     auto storage = ClientHandshakeTelemetryDomain::GetStorage(
         std::move(scope), status_str, target, protocol, resumed);
     storage->Increment(ClientHandshakeTelemetryDomain::kDuration, duration_us);
+    if (stats_plugin_group != nullptr) {
+      stats_plugin_group->RecordHistogram(
+          kMetricClientHandshakerDuration, duration_us / 1000.0,
+          {status_str, target, protocol, resumed}, {});
+    }
   } else {
     auto storage = ServerHandshakeTelemetryDomain::GetStorage(
         std::move(scope), status_str, protocol, resumed);
     storage->Increment(ServerHandshakeTelemetryDomain::kDuration, duration_us);
+    if (stats_plugin_group != nullptr) {
+      stats_plugin_group->RecordHistogram(
+          kMetricServerHandshakerDuration, duration_us / 1000.0,
+          {status_str, protocol, resumed}, {});
+    }
   }
 
   InvokeOnHandshakeDone(args_, std::move(on_handshake_done_),

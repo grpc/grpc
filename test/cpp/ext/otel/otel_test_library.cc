@@ -253,15 +253,15 @@ void OpenTelemetryPluginEnd2EndTest::Init(Options config) {
   for (auto& per_server_stats_plugin : config.per_server_stats_plugins) {
     per_server_stats_plugin->AddToServerBuilder(&builder);
   }
+  for (auto& per_channel_stats_plugin : config.per_channel_stats_plugins) {
+    per_channel_stats_plugin->AddToChannelArguments(&channel_args);
+  }
+  reader_ = BuildAndRegisterOpenTelemetryPlugin(std::move(config));
   server_ = builder.BuildAndStart();
   ASSERT_NE(nullptr, server_);
   ASSERT_NE(0, port);
   server_address_ = absl::StrCat("localhost:", port);
   canonical_server_address_ = absl::StrCat("dns:///", server_address_);
-  for (auto& per_channel_stats_plugin : config.per_channel_stats_plugins) {
-    per_channel_stats_plugin->AddToChannelArguments(&channel_args);
-  }
-  reader_ = BuildAndRegisterOpenTelemetryPlugin(std::move(config));
 
   auto channel = grpc::CreateCustomChannel(
       server_address_, grpc::InsecureChannelCredentials(), channel_args);
