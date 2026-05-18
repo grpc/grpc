@@ -1479,6 +1479,7 @@ static void XXH_free(void* p) { free(p); }
  */
 static void* XXH_memcpy(void* dest, const void* src, size_t size)
 {
+    if (dest == NULL || src == NULL || size == 0) return dest;
     return memcpy(dest,src,size);
 }
 
