@@ -40,6 +40,7 @@
 namespace grpc_core {
 namespace {
 
+// TODO(lwge): Consider moving these into a util library.
 absl::StatusOr<std::vector<bssl::UniquePtr<CRYPTO_BUFFER>>>
 ParseCertificateChainFromDer(const std::vector<std::string>& der_cert_chain) {
   if (der_cert_chain.empty()) {
