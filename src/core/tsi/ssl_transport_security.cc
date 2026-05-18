@@ -235,8 +235,8 @@ struct tsi_ssl_handshaker : public tsi_handshaker,
     if (handshaker_next_args->error_ptr == nullptr) return;
     *handshaker_next_args->error_ptr = std::move(error);
   }
+  bool is_client = false;
 #if defined(OPENSSL_IS_BORINGSSL)
-  bool has_certificate_selector = false;
   std::shared_ptr<AsyncCertificateSelectionHandle> cert_selection_handle
       ABSL_GUARDED_BY(mu);
   // Will be set if the certificate selector is used and the asynchronous cert
@@ -599,17 +599,35 @@ void OnSelectCertificateDone(
   }
 }
 
+grpc_core::CertificateSelector* GetCertificateSelector(
+    tsi_ssl_handshaker* handshaker) {
+  if (handshaker->is_client) {
+    return nullptr;
+  }
+  return reinterpret_cast<tsi_ssl_server_handshaker_factory*>(
+             handshaker->factory_ref)
+      ->certificate_selector.get();
+}
+
 // Invoked by BoringSSL to get the result of cert selection.
 ssl_select_cert_result_t SelectCertificateCallback(
     const SSL_CLIENT_HELLO* client_hello)
     ABSL_EXCLUSIVE_LOCKS_REQUIRED(&tsi_ssl_handshaker::mu) {
   tsi_ssl_handshaker* handshaker = GetHandshaker(client_hello->ssl);
   // Sanity check. Should never happen.
-  if (handshaker == nullptr || client_hello == nullptr ||
-      !handshaker->has_certificate_selector) {
+  if (handshaker == nullptr || client_hello == nullptr) {
     std::string error =
-        "SelectCertificateCallback failed because handshaker, client_hello or "
-        "certificate selector is nullptr; this should never happen.";
+        "SelectCertificateCallback failed because handshaker or client_hello "
+        "is nullptr; this should never happen.";
+    handshaker->MaybeSetError(error);
+    return ssl_select_cert_error;
+  }
+  grpc_core::CertificateSelector* cert_selector =
+      GetCertificateSelector(handshaker);
+  if (cert_selector == nullptr) {
+    std::string error =
+        "SelectCertificateCallback failed because certificate selector "
+        "is nullptr; this should never happen.";
     handshaker->MaybeSetError(error);
     return ssl_select_cert_error;
   }
@@ -628,12 +646,9 @@ ssl_select_cert_result_t SelectCertificateCallback(
   // when the callback is invoked asynchronously.
   std::variant<absl::StatusOr<SelectCertificateResult>,
                std::shared_ptr<AsyncCertificateSelectionHandle>>
-      result =
-          reinterpret_cast<tsi_ssl_server_handshaker_factory*>(
-              handshaker->factory_ref)
-              ->certificate_selector->SelectCertificate(
-                  PrepareSelectCertificateInfo(client_hello),
-                  absl::bind_front(OnSelectCertificateDone, handshaker->Ref()));
+      result = cert_selector->SelectCertificate(
+          PrepareSelectCertificateInfo(client_hello),
+          absl::bind_front(OnSelectCertificateDone, handshaker->Ref()));
   // The outer function guarantees the mutex lock, and we have to disable the
   // absl thread safety analysis because the use of MatchMutable.
   return grpc_core::MatchMutable(
@@ -2485,7 +2500,8 @@ static tsi_result ssl_handshaker_next_impl(tsi_ssl_handshaker* self)
       self->handshaker_next_args->received_bytes.clear();
     }
 #if defined(OPENSSL_IS_BORINGSSL)
-  } else if (self->key_signer != nullptr || self->has_certificate_selector) {
+  } else if (self->key_signer != nullptr ||
+             GetCertificateSelector(self) != nullptr) {
     // After an asynchronous certificate selection offload or private key
     // offload, another call to ssl_handshaker_do_handshake needs to be
     // triggered to continue the SSL handshake.
@@ -2622,7 +2638,7 @@ static void ssl_handshaker_shutdown(tsi_handshaker* self) {
     if (impl->signing_handle != nullptr && impl->key_signer != nullptr) {
       signing_handle = std::move(impl->signing_handle);
     }
-    if (impl->has_certificate_selector &&
+    if (GetCertificateSelector(impl) != nullptr &&
         impl->cert_selection_handle != nullptr) {
       cert_selection_handle = std::move(impl->cert_selection_handle);
     }
@@ -2691,8 +2707,7 @@ static tsi_result create_tsi_ssl_handshaker(
     size_t network_bio_buf_size, size_t ssl_bio_buf_size,
     std::optional<std::string> alpn_preferred_protocol_raw_list,
     std::shared_ptr<grpc_core::PrivateKeySigner> key_signer,
-    bool has_certificate_selector, tsi_ssl_handshaker_factory* factory,
-    tsi_handshaker** handshaker) {
+    tsi_ssl_handshaker_factory* factory, tsi_handshaker** handshaker) {
   SSL* ssl = SSL_new(ctx);
   BIO* network_io = nullptr;
   BIO* ssl_io = nullptr;
@@ -2796,8 +2811,8 @@ static tsi_result create_tsi_ssl_handshaker(
       static_cast<unsigned char*>(gpr_zalloc(impl->outgoing_bytes_buffer_size));
   impl->vtable = &handshaker_vtable;
   impl->factory_ref = tsi_ssl_handshaker_factory_ref(factory);
+  impl->is_client = is_client;
 #if defined(OPENSSL_IS_BORINGSSL)
-  impl->has_certificate_selector = has_certificate_selector;
   impl->key_signer = std::move(key_signer);
 #endif
 
@@ -2848,17 +2863,10 @@ tsi_result tsi_ssl_client_handshaker_factory_create_handshaker(
     tsi_handshaker** handshaker) {
   GRPC_TRACE_LOG(tsi, INFO)
       << "Creating SSL handshaker with SNI " << server_name_indication;
-#if defined(OPENSSL_IS_BORINGSSL)
   return create_tsi_ssl_handshaker(
-      factory->ssl_context, true, server_name_indication, network_bio_buf_size,
-      ssl_bio_buf_size, alpn_preferred_protocol_list, factory->key_signer,
-      /*has_certificate_selector=*/false, &factory->base, handshaker);
-#else
-  return create_tsi_ssl_handshaker(
-      factory->ssl_context, true, server_name_indication, network_bio_buf_size,
-      ssl_bio_buf_size, alpn_preferred_protocol_list, /*key_signer=*/nullptr,
-      /*has_certificate_selector=*/false, &factory->base, handshaker);
-#endif
+      factory->ssl_context, /*is_client=*/true, server_name_indication,
+      network_bio_buf_size, ssl_bio_buf_size, alpn_preferred_protocol_list,
+      factory->key_signer, &factory->base, handshaker);
 }
 
 void tsi_ssl_client_handshaker_factory_unref(
@@ -2900,22 +2908,14 @@ tsi_result tsi_ssl_server_handshaker_factory_create_handshaker(
     tsi_ssl_server_handshaker_factory* factory, size_t network_bio_buf_size,
     size_t ssl_bio_buf_size, tsi_handshaker** handshaker) {
   if (factory->ssl_contexts.empty()) return TSI_INVALID_ARGUMENT;
-#if defined(OPENSSL_IS_BORINGSSL)
   // Create the handshaker with the first context. We will switch if needed
   // because of SNI in ssl_server_handshaker_factory_servername_callback.
   // Likewise, we pass the private key signer corresponding to the first
   // context.
   return create_tsi_ssl_handshaker(
-      factory->ssl_contexts[0].ssl_ctx, false, nullptr, network_bio_buf_size,
-      ssl_bio_buf_size, std::nullopt, factory->ssl_contexts[0].key_signer,
-      /*has_certificate_selector=*/factory->certificate_selector != nullptr,
-      &factory->base, handshaker);
-#else
-  return create_tsi_ssl_handshaker(
-      factory->ssl_contexts[0].ssl_ctx, false, nullptr, network_bio_buf_size,
-      ssl_bio_buf_size, std::nullopt, /*key_signer=*/nullptr,
-      /*has_certificate_selector=*/false, &factory->base, handshaker);
-#endif
+      factory->ssl_contexts[0].ssl_ctx, /*is_client=*/false, nullptr,
+      network_bio_buf_size, ssl_bio_buf_size, std::nullopt,
+      factory->ssl_contexts[0].key_signer, &factory->base, handshaker);
 }
 
 void tsi_ssl_server_handshaker_factory_unref(
@@ -3285,7 +3285,7 @@ tsi_result tsi_create_ssl_server_handshaker_factory_ex(
                                                                factory);
 }
 
-tsi_result tsi_configure_server_ssl_context(
+tsi_result configure_server_ssl_context(
     const tsi_ssl_server_handshaker_options* options,
     const tsi_ssl_pem_key_cert_pair* pem_key_cert_pair,
     tsi_ssl_server_handshaker_factory* impl, SslContext& ssl_context) {
@@ -3472,7 +3472,7 @@ tsi_result tsi_create_ssl_server_handshaker_factory_with_options(
         impl->ssl_contexts.reserve(pem_key_cert_pairs.size());
         for (size_t i = 0; i < pem_key_cert_pairs.size(); ++i) {
           SslContext& ssl_context = impl->ssl_contexts.emplace_back();
-          tsi_result result = tsi_configure_server_ssl_context(
+          tsi_result result = configure_server_ssl_context(
               options, &pem_key_cert_pairs[i], impl, ssl_context);
           if (result != TSI_OK) {
             return result;
@@ -3487,7 +3487,7 @@ tsi_result tsi_create_ssl_server_handshaker_factory_with_options(
           return TSI_INVALID_ARGUMENT;
         }
         SslContext& ssl_context = impl->ssl_contexts.emplace_back();
-        tsi_result result = tsi_configure_server_ssl_context(
+        tsi_result result = configure_server_ssl_context(
             options, /*pem_key_cert_pair=*/nullptr, impl, ssl_context);
         if (result != TSI_OK) {
           return result;
