@@ -15,8 +15,6 @@
 #ifndef GRPC_SRC_CORE_EXT_TRANSPORT_CHAOTIC_GOOD_TCP_FRAME_TRANSPORT_H
 #define GRPC_SRC_CORE_EXT_TRANSPORT_CHAOTIC_GOOD_TCP_FRAME_TRANSPORT_H
 
-#include <grpc/impl/grpc_types.h>
-
 #include <vector>
 
 #include "src/core/ext/transport/chaotic_good/control_endpoint.h"
@@ -46,7 +44,6 @@ class TcpFrameTransport final : public FrameTransport,
     uint32_t inlined_payload_size_threshold = 8 * 1024;
     std::string scheduler_config = "spanrr";
     bool enable_tracing = false;
-    uint32_t max_receive_message_length = GRPC_DEFAULT_MAX_RECV_MESSAGE_LENGTH;
   };
 
   TcpFrameTransport(Options options, PromiseEndpoint control_endpoint,
