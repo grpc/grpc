@@ -1519,6 +1519,14 @@ TEST(SslTransportSecurityTest, MapSslErrorToTlsTelemetryStatusTest) {
             tsi::TlsTelemetryStatus::CERTIFICATE_AUTHORITY_INVALID);
   EXPECT_EQ(tsi::MapSslErrorToTlsTelemetryStatus(SSL_ERROR_NONE, 0, X509_V_ERR_CERT_REJECTED),
             tsi::TlsTelemetryStatus::CERTIFICATE_VERIFICATION_FAILED);
+  EXPECT_EQ(tsi::MapSslErrorToTlsTelemetryStatus(SSL_ERROR_NONE, 0, X509_V_ERR_UNABLE_TO_GET_CRL),
+            tsi::TlsTelemetryStatus::CRL_NOT_FOUND);
+  EXPECT_EQ(tsi::MapSslErrorToTlsTelemetryStatus(SSL_ERROR_NONE, 0, X509_V_ERR_CRL_HAS_EXPIRED),
+            tsi::TlsTelemetryStatus::CRL_EXPIRED);
+  EXPECT_EQ(tsi::MapSslErrorToTlsTelemetryStatus(SSL_ERROR_NONE, 0, X509_V_ERR_CRL_NOT_YET_VALID),
+            tsi::TlsTelemetryStatus::CRL_EXPIRED);
+  EXPECT_EQ(tsi::MapSslErrorToTlsTelemetryStatus(SSL_ERROR_NONE, 0, X509_V_ERR_CRL_SIGNATURE_FAILURE),
+            tsi::TlsTelemetryStatus::CRL_SIGNATURE_FAILURE);
 
   // Test PEER_CONNECTION_CLOSED
   EXPECT_EQ(tsi::MapSslErrorToTlsTelemetryStatus(SSL_ERROR_ZERO_RETURN, 0, X509_V_OK),
@@ -1554,6 +1562,14 @@ TEST(SslTransportSecurityTest, MapSslErrorToTlsTelemetryStatusTest) {
   // Handshake timeout
   EXPECT_EQ(tsi::MapSslErrorToTlsTelemetryStatus(SSL_ERROR_SSL, ERR_PACK(ERR_LIB_SSL, SSL_R_READ_TIMEOUT_EXPIRED), X509_V_OK),
             tsi::TlsTelemetryStatus::HANDSHAKE_TIMEOUT);
+  // Client certificate required but missing
+  EXPECT_EQ(tsi::MapSslErrorToTlsTelemetryStatus(SSL_ERROR_SSL, ERR_PACK(ERR_LIB_SSL, SSL_R_PEER_DID_NOT_RETURN_A_CERTIFICATE), X509_V_OK),
+            tsi::TlsTelemetryStatus::PEER_CERTIFICATE_REQUIRED_BUT_MISSING);
+  // Internal system errors
+  EXPECT_EQ(tsi::MapSslErrorToTlsTelemetryStatus(SSL_ERROR_SSL, ERR_PACK(ERR_LIB_SSL, ERR_R_MALLOC_FAILURE), X509_V_OK),
+            tsi::TlsTelemetryStatus::INTERNAL_SYSTEM_ERROR);
+  EXPECT_EQ(tsi::MapSslErrorToTlsTelemetryStatus(SSL_ERROR_SSL, ERR_PACK(ERR_LIB_SSL, ERR_R_INTERNAL_ERROR), X509_V_OK),
+            tsi::TlsTelemetryStatus::INTERNAL_SYSTEM_ERROR);
   // Unknown / generic SSL error
   EXPECT_EQ(tsi::MapSslErrorToTlsTelemetryStatus(SSL_ERROR_SSL, ERR_PACK(ERR_LIB_SSL, 9999), X509_V_OK),
             tsi::TlsTelemetryStatus::UNKNOWN_FAILURE);

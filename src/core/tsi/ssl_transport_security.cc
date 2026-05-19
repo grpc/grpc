@@ -3378,10 +3378,16 @@ static std::optional<TlsTelemetryStatus> MapVerifyResultToTlsTelemetryStatus(
       return TlsTelemetryStatus::CERTIFICATE_HOSTNAME_MISMATCH;
     case X509_V_ERR_CERT_REJECTED:
       return TlsTelemetryStatus::CERTIFICATE_VERIFICATION_FAILED;
+    case X509_V_ERR_UNABLE_TO_GET_CRL:
+      return TlsTelemetryStatus::CRL_NOT_FOUND;
+    case X509_V_ERR_CRL_HAS_EXPIRED:
+    case X509_V_ERR_CRL_NOT_YET_VALID:
+      return TlsTelemetryStatus::CRL_EXPIRED;
+    case X509_V_ERR_CRL_SIGNATURE_FAILURE:
+      return TlsTelemetryStatus::CRL_SIGNATURE_FAILURE;
     case X509_V_ERR_INVALID_CA:
     case X509_V_ERR_INVALID_NON_CA:
     case X509_V_ERR_INVALID_PURPOSE:
-    case X509_V_ERR_CRL_SIGNATURE_FAILURE:
     case X509_V_ERR_ERROR_IN_CERT_NOT_BEFORE_FIELD:
     case X509_V_ERR_ERROR_IN_CERT_NOT_AFTER_FIELD:
       return TlsTelemetryStatus::CERTIFICATE_MALFORMED;
@@ -3485,6 +3491,21 @@ TlsTelemetryStatus MapSslErrorToTlsTelemetryStatus(int ssl_error,
       // Certificate malformed
       case SSL_R_DECODE_ERROR:
         return TlsTelemetryStatus::CERTIFICATE_MALFORMED;
+
+      // Client Certificate required but missing
+      case SSL_R_PEER_DID_NOT_RETURN_A_CERTIFICATE:
+      case SSL_R_NO_CERTIFICATES_RETURNED:
+      case SSL_R_NO_CERTIFICATE_SET:
+      case SSL_R_NO_CERTIFICATE_ASSIGNED:
+      case SSL_R_SSLV3_ALERT_NO_CERTIFICATE:
+      case SSL_R_TLSV1_ALERT_CERTIFICATE_REQUIRED:
+        return TlsTelemetryStatus::PEER_CERTIFICATE_REQUIRED_BUT_MISSING;
+
+      // Internal / Resource failures
+      case ERR_R_MALLOC_FAILURE:
+      case ERR_R_INTERNAL_ERROR:
+      case ERR_R_OVERFLOW:
+        return TlsTelemetryStatus::INTERNAL_SYSTEM_ERROR;
 
       default:
         break;
