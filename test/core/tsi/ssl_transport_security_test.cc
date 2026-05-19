@@ -1517,6 +1517,8 @@ TEST(SslTransportSecurityTest, MapSslErrorToTlsTelemetryStatusTest) {
             tsi::TlsTelemetryStatus::CERTIFICATE_NOT_YET_VALID);
   EXPECT_EQ(tsi::MapSslErrorToTlsTelemetryStatus(SSL_ERROR_NONE, 0, X509_V_ERR_DEPTH_ZERO_SELF_SIGNED_CERT),
             tsi::TlsTelemetryStatus::CERTIFICATE_AUTHORITY_INVALID);
+  EXPECT_EQ(tsi::MapSslErrorToTlsTelemetryStatus(SSL_ERROR_NONE, 0, X509_V_ERR_CERT_REJECTED),
+            tsi::TlsTelemetryStatus::CERTIFICATE_VERIFICATION_FAILED);
 
   // Test PEER_CONNECTION_CLOSED
   EXPECT_EQ(tsi::MapSslErrorToTlsTelemetryStatus(SSL_ERROR_ZERO_RETURN, 0, X509_V_OK),

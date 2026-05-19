@@ -3358,40 +3358,46 @@ bool IsRootCertInfoEmpty(const tsi::RootCertInfo* root_cert_info) {
       });
 }
 
+static std::optional<TlsTelemetryStatus> MapVerifyResultToTlsTelemetryStatus(
+    long verify_result) {
+  if (verify_result == X509_V_OK) return std::nullopt;
+  switch (verify_result) {
+    case X509_V_ERR_CERT_REVOKED:
+      return TlsTelemetryStatus::CERTIFICATE_REVOKED;
+    case X509_V_ERR_CERT_HAS_EXPIRED:
+      return TlsTelemetryStatus::CERTIFICATE_EXPIRED;
+    case X509_V_ERR_CERT_NOT_YET_VALID:
+      return TlsTelemetryStatus::CERTIFICATE_NOT_YET_VALID;
+    case X509_V_ERR_UNABLE_TO_GET_ISSUER_CERT:
+    case X509_V_ERR_UNABLE_TO_GET_ISSUER_CERT_LOCALLY:
+    case X509_V_ERR_DEPTH_ZERO_SELF_SIGNED_CERT:
+    case X509_V_ERR_SELF_SIGNED_CERT_IN_CHAIN:
+    case X509_V_ERR_UNABLE_TO_VERIFY_LEAF_SIGNATURE:
+      return TlsTelemetryStatus::CERTIFICATE_AUTHORITY_INVALID;
+    case X509_V_ERR_HOSTNAME_MISMATCH:
+      return TlsTelemetryStatus::CERTIFICATE_HOSTNAME_MISMATCH;
+    case X509_V_ERR_CERT_REJECTED:
+      return TlsTelemetryStatus::CERTIFICATE_VERIFICATION_FAILED;
+    case X509_V_ERR_INVALID_CA:
+    case X509_V_ERR_INVALID_NON_CA:
+    case X509_V_ERR_INVALID_PURPOSE:
+    case X509_V_ERR_CRL_SIGNATURE_FAILURE:
+    case X509_V_ERR_ERROR_IN_CERT_NOT_BEFORE_FIELD:
+    case X509_V_ERR_ERROR_IN_CERT_NOT_AFTER_FIELD:
+      return TlsTelemetryStatus::CERTIFICATE_MALFORMED;
+    case X509_V_ERR_CERT_SIGNATURE_FAILURE:
+      return TlsTelemetryStatus::SIGNATURE_VERIFICATION_FAILED;
+    default:
+      return TlsTelemetryStatus::CERTIFICATE_VERIFICATION_FAILED;
+  }
+}
+
 TlsTelemetryStatus MapSslErrorToTlsTelemetryStatus(int ssl_error,
                                                    unsigned long err_code,
                                                    long verify_result) {
   if (ssl_error == SSL_ERROR_NONE) {
-    if (verify_result != X509_V_OK) {
-      switch (verify_result) {
-        case X509_V_ERR_CERT_REVOKED:
-          return TlsTelemetryStatus::CERTIFICATE_REVOKED;
-        case X509_V_ERR_CERT_HAS_EXPIRED:
-          return TlsTelemetryStatus::CERTIFICATE_EXPIRED;
-        case X509_V_ERR_CERT_NOT_YET_VALID:
-          return TlsTelemetryStatus::CERTIFICATE_NOT_YET_VALID;
-        case X509_V_ERR_UNABLE_TO_GET_ISSUER_CERT:
-        case X509_V_ERR_UNABLE_TO_GET_ISSUER_CERT_LOCALLY:
-        case X509_V_ERR_DEPTH_ZERO_SELF_SIGNED_CERT:
-        case X509_V_ERR_SELF_SIGNED_CERT_IN_CHAIN:
-        case X509_V_ERR_UNABLE_TO_VERIFY_LEAF_SIGNATURE:
-          return TlsTelemetryStatus::CERTIFICATE_AUTHORITY_INVALID;
-        case X509_V_ERR_HOSTNAME_MISMATCH:
-          return TlsTelemetryStatus::CERTIFICATE_HOSTNAME_MISMATCH;
-        case X509_V_ERR_CERT_REJECTED:
-        case X509_V_ERR_INVALID_CA:
-        case X509_V_ERR_INVALID_NON_CA:
-        case X509_V_ERR_INVALID_PURPOSE:
-        case X509_V_ERR_CRL_SIGNATURE_FAILURE:
-        case X509_V_ERR_ERROR_IN_CERT_NOT_BEFORE_FIELD:
-        case X509_V_ERR_ERROR_IN_CERT_NOT_AFTER_FIELD:
-          return TlsTelemetryStatus::CERTIFICATE_MALFORMED;
-        case X509_V_ERR_CERT_SIGNATURE_FAILURE:
-          return TlsTelemetryStatus::SIGNATURE_VERIFICATION_FAILED;
-        default:
-          return TlsTelemetryStatus::CERTIFICATE_VERIFICATION_FAILED;
-      }
-    }
+    auto status = MapVerifyResultToTlsTelemetryStatus(verify_result);
+    if (status.has_value()) return *status;
     return TlsTelemetryStatus::SUCCESS;
   }
 
@@ -3470,38 +3476,11 @@ TlsTelemetryStatus MapSslErrorToTlsTelemetryStatus(int ssl_error,
         return TlsTelemetryStatus::HANDSHAKE_TIMEOUT;
 
       // Certificate verification failures
-      case SSL_R_CERTIFICATE_VERIFY_FAILED:
-        if (verify_result != X509_V_OK) {
-          switch (verify_result) {
-            case X509_V_ERR_CERT_REVOKED:
-              return TlsTelemetryStatus::CERTIFICATE_REVOKED;
-            case X509_V_ERR_CERT_HAS_EXPIRED:
-              return TlsTelemetryStatus::CERTIFICATE_EXPIRED;
-            case X509_V_ERR_CERT_NOT_YET_VALID:
-              return TlsTelemetryStatus::CERTIFICATE_NOT_YET_VALID;
-            case X509_V_ERR_UNABLE_TO_GET_ISSUER_CERT:
-            case X509_V_ERR_UNABLE_TO_GET_ISSUER_CERT_LOCALLY:
-            case X509_V_ERR_DEPTH_ZERO_SELF_SIGNED_CERT:
-            case X509_V_ERR_SELF_SIGNED_CERT_IN_CHAIN:
-            case X509_V_ERR_UNABLE_TO_VERIFY_LEAF_SIGNATURE:
-              return TlsTelemetryStatus::CERTIFICATE_AUTHORITY_INVALID;
-            case X509_V_ERR_HOSTNAME_MISMATCH:
-              return TlsTelemetryStatus::CERTIFICATE_HOSTNAME_MISMATCH;
-            case X509_V_ERR_CERT_REJECTED:
-            case X509_V_ERR_INVALID_CA:
-            case X509_V_ERR_INVALID_NON_CA:
-            case X509_V_ERR_INVALID_PURPOSE:
-            case X509_V_ERR_CRL_SIGNATURE_FAILURE:
-            case X509_V_ERR_ERROR_IN_CERT_NOT_BEFORE_FIELD:
-            case X509_V_ERR_ERROR_IN_CERT_NOT_AFTER_FIELD:
-              return TlsTelemetryStatus::CERTIFICATE_MALFORMED;
-            case X509_V_ERR_CERT_SIGNATURE_FAILURE:
-              return TlsTelemetryStatus::SIGNATURE_VERIFICATION_FAILED;
-            default:
-              return TlsTelemetryStatus::CERTIFICATE_VERIFICATION_FAILED;
-          }
-        }
+      case SSL_R_CERTIFICATE_VERIFY_FAILED: {
+        auto status = MapVerifyResultToTlsTelemetryStatus(verify_result);
+        if (status.has_value()) return *status;
         return TlsTelemetryStatus::CERTIFICATE_VERIFICATION_FAILED;
+      }
 
       // Certificate malformed
       case SSL_R_DECODE_ERROR:
