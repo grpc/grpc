@@ -1,4 +1,4 @@
-from typing import Any, Optional
+from typing import Any
 
 EOF: Any
 
@@ -16,8 +16,8 @@ class AioRpcStatus(Exception):
         self,
         code: int,
         details: str,
-        trailing_metadata: Optional[tuple],
-        debug_error_string: Optional[str],
+        trailing_metadata: tuple | None,
+        debug_error_string: str | None,
     ) -> None: ...
     def code(self) -> int: ...
     def details(self) -> str: ...
@@ -30,15 +30,15 @@ class AioChannel:
         self,
         target: bytes,
         options: tuple,
-        credentials: Optional[ChannelCredentials],
+        credentials: ChannelCredentials | None,
         loop: Any,
     ) -> None: ...
     def call(
         self,
         method: bytes,
-        deadline: Optional[float],
+        deadline: float | None,
         python_call_credentials: Any,
-        wait_for_ready: Optional[bool],
+        wait_for_ready: bool | None,
     ) -> _AioCall: ...
 
 class _AioCall:
@@ -47,13 +47,13 @@ class _AioCall:
     def __init__(
         self,
         channel: AioChannel,
-        deadline: Optional[float],
+        deadline: float | None,
         method: bytes,
-        call_credentials: Optional[CallCredentials],
-        wait_for_ready: Optional[bool],
+        call_credentials: CallCredentials | None,
+        wait_for_ready: bool | None,
     ) -> None: ...
     def add_done_callback(self, callback: Any) -> None: ...
-    def time_remaining(self) -> Optional[float]: ...
+    def time_remaining(self) -> float | None: ...
     def cancel(self, details: str) -> None: ...
     def done(self) -> bool: ...
     def cancelled(self) -> bool: ...
@@ -66,7 +66,7 @@ class _AioCall:
         self,
         request: bytes,
         outbound_initial_metadata: tuple,
-        context: Optional[Any] = ...,
+        context: Any | None = ...,
     ) -> bytes: ...
     async def receive_serialized_message(self) -> Any: ...
     async def send_serialized_message(self, message: bytes) -> None: ...
@@ -75,17 +75,17 @@ class _AioCall:
         self,
         request: bytes,
         outbound_initial_metadata: tuple,
-        context: Optional[Any] = ...,
+        context: Any | None = ...,
     ) -> None: ...
     async def stream_unary(
         self,
         outbound_initial_metadata: tuple,
         metadata_sent_observer: Any,
-        context: Optional[Any] = ...,
+        context: Any | None = ...,
     ) -> bytes: ...
     async def initiate_stream_stream(
         self,
         outbound_initial_metadata: tuple,
         metadata_sent_observer: Any,
-        context: Optional[Any] = ...,
+        context: Any | None = ...,
     ) -> None: ...
