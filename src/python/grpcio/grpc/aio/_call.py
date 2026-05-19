@@ -402,7 +402,7 @@ class _StreamResponseMixin(Call, Generic[ResponseType]):
         return response_message
 
 
-class _StreamRequestMixin(Call):
+class _StreamRequestMixin(Call, Generic[RequestType]):
     _metadata_sent: asyncio.Event
     _done_writing_flag: bool
     _async_request_poller: Optional[asyncio.Task]
@@ -660,7 +660,7 @@ class UnaryStreamCall(
 
 # pylint: disable=too-many-ancestors
 class StreamUnaryCall(
-    _StreamRequestMixin, _UnaryResponseMixin, Call, _base_call.StreamUnaryCall
+    _StreamRequestMixin[RequestType], _UnaryResponseMixin, Call, _base_call.StreamUnaryCall[RequestType, ResponseType]
 ):
     """Object for managing stream-unary RPC calls.
 
@@ -711,7 +711,7 @@ class StreamUnaryCall(
 
 
 class StreamStreamCall(
-    _StreamRequestMixin, _StreamResponseMixin, Call, _base_call.StreamStreamCall
+    _StreamRequestMixin[RequestType], _StreamResponseMixin, Call, _base_call.StreamStreamCall[RequestType, ResponseType]
 ):
     """Object for managing stream-stream RPC calls.
 
