@@ -1138,13 +1138,9 @@ src/core/ext/filters/channel_idle/legacy_channel_idle_filter.h \
 src/core/ext/filters/fault_injection/GEMINI.md \
 src/core/ext/filters/fault_injection/fault_injection_filter.cc \
 src/core/ext/filters/fault_injection/fault_injection_filter.h \
-src/core/ext/filters/fault_injection/fault_injection_service_config_parser.cc \
-src/core/ext/filters/fault_injection/fault_injection_service_config_parser.h \
 src/core/ext/filters/gcp_authentication/GEMINI.md \
 src/core/ext/filters/gcp_authentication/gcp_authentication_filter.cc \
 src/core/ext/filters/gcp_authentication/gcp_authentication_filter.h \
-src/core/ext/filters/gcp_authentication/gcp_authentication_service_config_parser.cc \
-src/core/ext/filters/gcp_authentication/gcp_authentication_service_config_parser.h \
 src/core/ext/filters/http/GEMINI.md \
 src/core/ext/filters/http/client/GEMINI.md \
 src/core/ext/filters/http/client/http_client_filter.cc \
@@ -1171,8 +1167,6 @@ src/core/ext/filters/rbac/rbac_service_config_parser.h \
 src/core/ext/filters/stateful_session/GEMINI.md \
 src/core/ext/filters/stateful_session/stateful_session_filter.cc \
 src/core/ext/filters/stateful_session/stateful_session_filter.h \
-src/core/ext/filters/stateful_session/stateful_session_service_config_parser.cc \
-src/core/ext/filters/stateful_session/stateful_session_service_config_parser.h \
 src/core/ext/transport/README.md \
 src/core/ext/transport/chaotic_good/GEMINI.md \
 src/core/ext/transport/chaotic_good_legacy/GEMINI.md \
