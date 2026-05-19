@@ -44,6 +44,7 @@
 #include "src/core/util/crash.h"
 #include "src/core/util/fork.h"
 #include "src/core/util/grpc_check.h"
+#include "src/core/util/strerror.h"
 #include "src/core/util/sync.h"
 #include "src/core/util/useful.h"
 #include "absl/base/no_destructor.h"
@@ -255,7 +256,7 @@ void AsyncConnect::Start(EventEngine::Duration timeout) {
   fd_->NotifyOnWrite(on_writable_);
 }
 
-AsyncConnect ::~AsyncConnect() { delete on_writable_; }
+AsyncConnect::~AsyncConnect() { delete on_writable_; }
 
 void AsyncConnect::OnTimeoutExpired(absl::Status status) {
   bool done = false;
@@ -383,13 +384,13 @@ void AsyncConnect::OnWritable(absl::Status status)
       return;
     case ECONNREFUSED:
       // This error shouldn't happen for anything other than connect().
-      status = absl::FailedPreconditionError(std::strerror(so_error));
+      status = absl::FailedPreconditionError(grpc_core::StrError(so_error));
       break;
     default:
       // We don't really know which syscall triggered the problem here, so
       // punt by reporting getsockopt().
-      status = absl::FailedPreconditionError(
-          absl::StrCat("getsockopt(SO_ERROR): ", std::strerror(so_error)));
+      status = absl::FailedPreconditionError(absl::StrCat(
+          "getsockopt(SO_ERROR): ", grpc_core::StrError(so_error)));
       break;
   }
 }
@@ -807,7 +808,7 @@ PosixEventEngine::CreateEndpointFromUnconnectedFdInternal(
     Run([on_connect = std::move(on_connect),
          ep = absl::FailedPreconditionError(absl::StrCat(
              "connect failed: ", "addr: ", addr_uri.value(),
-             " error: ", std::strerror(connect_errno)))]() mutable {
+             " error: ", grpc_core::StrError(connect_errno)))]() mutable {
       on_connect(std::move(ep));
     });
     return EventEngine::ConnectionHandle::kInvalid;

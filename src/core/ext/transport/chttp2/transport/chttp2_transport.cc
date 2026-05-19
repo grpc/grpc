@@ -97,6 +97,7 @@
 #include "src/core/lib/transport/status_conversion.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/lib/transport/transport_framing_endpoint_extension.h"
+#include "src/core/mitigation_engine/mitigation_engine.h"
 #include "src/core/telemetry/call_tracer.h"
 #include "src/core/telemetry/context_list_entry.h"
 #include "src/core/telemetry/default_tcp_tracer.h"
@@ -736,7 +737,12 @@ grpc_chttp2_transport::grpc_chttp2_transport(
           channel_args.GetBool(GRPC_ARG_HTTP2_BDP_PROBE).value_or(true),
           &memory_owner),
       deframe_state(is_client ? GRPC_DTS_FH_0 : GRPC_DTS_CLIENT_PREFIX_0),
-      is_client(is_client) {
+      is_client(is_client),
+      mitigation_engine([&]() {
+        auto* provider =
+            channel_args.GetObject<grpc_core::MitigationEngineProvider>();
+        return provider == nullptr ? nullptr : provider->GetEngine();
+      }()) {
   context_list = new grpc_core::ContextList();
 
   if (channel_args.GetBool(GRPC_ARG_TCP_TRACING_ENABLED).value_or(false) &&
@@ -884,7 +890,12 @@ static void close_transport_locked(grpc_chttp2_transport* t,
     connectivity_state_set(t, GRPC_CHANNEL_SHUTDOWN, absl::Status(),
                            "close_transport");
     // TODO(roth, ctiller): Provide better disconnect info here.
-    t->NotifyStateWatcherOnDisconnectLocked(t->closed_with_error, {});
+    grpc_core::Transport::StateWatcher::DisconnectInfo disconnect_info;
+    if (t->sent_goaway_state == GRPC_CHTTP2_FINAL_GOAWAY_SENT) {
+      disconnect_info.reason = grpc_core::Transport::StateWatcher::kGoaway;
+    }
+    t->NotifyStateWatcherOnDisconnectLocked(t->closed_with_error,
+                                            disconnect_info);
     if (t->keepalive_ping_timeout_handle != TaskHandle::kInvalid) {
       t->event_engine->Cancel(std::exchange(t->keepalive_ping_timeout_handle,
                                             TaskHandle::kInvalid));

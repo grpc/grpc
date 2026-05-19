@@ -22,7 +22,7 @@
 Pod::Spec.new do |s|
   s.name     = 'gRPC-C++'
   # TODO (mxyan): use version that match gRPC version when pod is stabilized
-  version = '1.81.0-dev'
+  version = '1.82.0-dev'
   s.version  = version
   s.summary  = 'gRPC C++ library'
   s.homepage = 'https://grpc.io'
@@ -439,6 +439,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/transport/chttp2/transport/hpack_parser.h',
                       'src/core/ext/transport/chttp2/transport/hpack_parser_table.h',
                       'src/core/ext/transport/chttp2/transport/http2_client_transport.h',
+                      'src/core/ext/transport/chttp2/transport/http2_server_transport.h',
                       'src/core/ext/transport/chttp2/transport/http2_settings.h',
                       'src/core/ext/transport/chttp2/transport/http2_settings_manager.h',
                       'src/core/ext/transport/chttp2/transport/http2_settings_promises.h',
@@ -1279,10 +1280,12 @@ Pod::Spec.new do |s|
                       'src/core/load_balancing/rls/rls.h',
                       'src/core/load_balancing/subchannel_interface.h',
                       'src/core/load_balancing/weighted_round_robin/static_stride_scheduler.h',
+                      'src/core/load_balancing/weighted_round_robin/weighted_round_robin.h',
                       'src/core/load_balancing/weighted_target/weighted_target.h',
                       'src/core/load_balancing/xds/cds.h',
                       'src/core/load_balancing/xds/xds_channel_args.h',
                       'src/core/load_balancing/xds/xds_override_host.h',
+                      'src/core/mitigation_engine/mitigation_engine.h',
                       'src/core/net/socket_mutator.h',
                       'src/core/resolver/dns/c_ares/dns_resolver_ares.h',
                       'src/core/resolver/dns/c_ares/grpc_ares_ev_driver.h',
@@ -1327,7 +1330,7 @@ Pod::Spec.new do |s|
                       'src/core/transport/auth_context_comparator_registry.h',
                       'src/core/transport/endpoint_transport.h',
                       'src/core/transport/endpoint_transport_client_channel_factory.h',
-                      'src/core/transport/session_endpoint.cc',
+                      'src/core/transport/message_size_service_config.h',
                       'src/core/transport/session_endpoint.h',
                       'src/core/tsi/alts/crypt/gsec.h',
                       'src/core/tsi/alts/frame_protector/alts_counter.h',
@@ -1872,6 +1875,7 @@ Pod::Spec.new do |s|
                               'src/core/ext/transport/chttp2/transport/hpack_parser.h',
                               'src/core/ext/transport/chttp2/transport/hpack_parser_table.h',
                               'src/core/ext/transport/chttp2/transport/http2_client_transport.h',
+                              'src/core/ext/transport/chttp2/transport/http2_server_transport.h',
                               'src/core/ext/transport/chttp2/transport/http2_settings.h',
                               'src/core/ext/transport/chttp2/transport/http2_settings_manager.h',
                               'src/core/ext/transport/chttp2/transport/http2_settings_promises.h',
@@ -2712,10 +2716,12 @@ Pod::Spec.new do |s|
                               'src/core/load_balancing/rls/rls.h',
                               'src/core/load_balancing/subchannel_interface.h',
                               'src/core/load_balancing/weighted_round_robin/static_stride_scheduler.h',
+                              'src/core/load_balancing/weighted_round_robin/weighted_round_robin.h',
                               'src/core/load_balancing/weighted_target/weighted_target.h',
                               'src/core/load_balancing/xds/cds.h',
                               'src/core/load_balancing/xds/xds_channel_args.h',
                               'src/core/load_balancing/xds/xds_override_host.h',
+                              'src/core/mitigation_engine/mitigation_engine.h',
                               'src/core/net/socket_mutator.h',
                               'src/core/resolver/dns/c_ares/dns_resolver_ares.h',
                               'src/core/resolver/dns/c_ares/grpc_ares_ev_driver.h',
@@ -2760,6 +2766,7 @@ Pod::Spec.new do |s|
                               'src/core/transport/auth_context_comparator_registry.h',
                               'src/core/transport/endpoint_transport.h',
                               'src/core/transport/endpoint_transport_client_channel_factory.h',
+                              'src/core/transport/message_size_service_config.h',
                               'src/core/transport/session_endpoint.h',
                               'src/core/tsi/alts/crypt/gsec.h',
                               'src/core/tsi/alts/frame_protector/alts_counter.h',

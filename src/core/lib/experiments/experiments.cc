@@ -103,6 +103,9 @@ const char* const description_h2_max_deallocating_streams_headroom =
     "Separate allocated max concurrent streams.";
 const char* const additional_constraints_h2_max_deallocating_streams_headroom =
     "{}";
+const char* const description_inproc_cancel_stream =
+    "If set, cancel inproc stream inside the transport mutex.";
+const char* const additional_constraints_inproc_cancel_stream = "{}";
 const char* const description_keep_alive_ping_timer_batch =
     "Avoid explicitly cancelling the keepalive timer. Instead adjust the "
     "callback to re-schedule itself to the next ping interval.";
@@ -118,6 +121,13 @@ const char* const description_memory_optimization_01 = "Memory Optimization";
 const char* const additional_constraints_memory_optimization_01 = "{}";
 const char* const description_memory_optimization_02 = "Memory Optimization 02";
 const char* const additional_constraints_memory_optimization_02 = "{}";
+const char* const description_message_size_refactoring =
+    "Refactoring the message size config parsing.";
+const char* const additional_constraints_message_size_refactoring = "{}";
+const char* const description_metadata_outstanding_token_refactor =
+    "Refactor ClientInitialMetadataOutstandingToken.";
+const char* const additional_constraints_metadata_outstanding_token_refactor =
+    "{}";
 const char* const description_metadata_publish_to_app_tag =
     "Publish metadata to the app using the kPublishToApp metadata field.";
 const char* const additional_constraints_metadata_publish_to_app_tag = "{}";
@@ -131,6 +141,10 @@ const char* const description_optimization_01 = "Optimization";
 const char* const additional_constraints_optimization_01 = "{}";
 const char* const description_optimization_02 = "Optimization";
 const char* const additional_constraints_optimization_02 = "{}";
+const char* const description_optimization_03 = "Optimization";
+const char* const additional_constraints_optimization_03 = "{}";
+const char* const description_optimization_04 = "Optimization";
+const char* const additional_constraints_optimization_04 = "{}";
 const char* const description_otel_export_telemetry_domains =
     "Export telemetry domains in OpenTelemetry metrics.";
 const char* const additional_constraints_otel_export_telemetry_domains = "{}";
@@ -310,6 +324,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_h2_max_deallocating_streams_headroom,
      additional_constraints_h2_max_deallocating_streams_headroom, nullptr, 0,
      false, true},
+    {"inproc_cancel_stream", description_inproc_cancel_stream,
+     additional_constraints_inproc_cancel_stream, nullptr, 0, true, true},
     {"keep_alive_ping_timer_batch", description_keep_alive_ping_timer_batch,
      additional_constraints_keep_alive_ping_timer_batch, nullptr, 0, false,
      true},
@@ -323,6 +339,12 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_memory_optimization_01, nullptr, 0, false, false},
     {"memory_optimization_02", description_memory_optimization_02,
      additional_constraints_memory_optimization_02, nullptr, 0, false, false},
+    {"message_size_refactoring", description_message_size_refactoring,
+     additional_constraints_message_size_refactoring, nullptr, 0, false, true},
+    {"metadata_outstanding_token_refactor",
+     description_metadata_outstanding_token_refactor,
+     additional_constraints_metadata_outstanding_token_refactor, nullptr, 0,
+     false, true},
     {"metadata_publish_to_app_tag", description_metadata_publish_to_app_tag,
      additional_constraints_metadata_publish_to_app_tag, nullptr, 0, true,
      true},
@@ -331,9 +353,13 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"multiping", description_multiping, additional_constraints_multiping,
      nullptr, 0, false, true},
     {"optimization_01", description_optimization_01,
-     additional_constraints_optimization_01, nullptr, 0, false, true},
+     additional_constraints_optimization_01, nullptr, 0, true, true},
     {"optimization_02", description_optimization_02,
-     additional_constraints_optimization_02, nullptr, 0, false, true},
+     additional_constraints_optimization_02, nullptr, 0, true, true},
+    {"optimization_03", description_optimization_03,
+     additional_constraints_optimization_03, nullptr, 0, false, true},
+    {"optimization_04", description_optimization_04,
+     additional_constraints_optimization_04, nullptr, 0, false, true},
     {"otel_export_telemetry_domains", description_otel_export_telemetry_domains,
      additional_constraints_otel_export_telemetry_domains, nullptr, 0, false,
      true},
@@ -514,6 +540,9 @@ const char* const description_h2_max_deallocating_streams_headroom =
     "Separate allocated max concurrent streams.";
 const char* const additional_constraints_h2_max_deallocating_streams_headroom =
     "{}";
+const char* const description_inproc_cancel_stream =
+    "If set, cancel inproc stream inside the transport mutex.";
+const char* const additional_constraints_inproc_cancel_stream = "{}";
 const char* const description_keep_alive_ping_timer_batch =
     "Avoid explicitly cancelling the keepalive timer. Instead adjust the "
     "callback to re-schedule itself to the next ping interval.";
@@ -529,6 +558,13 @@ const char* const description_memory_optimization_01 = "Memory Optimization";
 const char* const additional_constraints_memory_optimization_01 = "{}";
 const char* const description_memory_optimization_02 = "Memory Optimization 02";
 const char* const additional_constraints_memory_optimization_02 = "{}";
+const char* const description_message_size_refactoring =
+    "Refactoring the message size config parsing.";
+const char* const additional_constraints_message_size_refactoring = "{}";
+const char* const description_metadata_outstanding_token_refactor =
+    "Refactor ClientInitialMetadataOutstandingToken.";
+const char* const additional_constraints_metadata_outstanding_token_refactor =
+    "{}";
 const char* const description_metadata_publish_to_app_tag =
     "Publish metadata to the app using the kPublishToApp metadata field.";
 const char* const additional_constraints_metadata_publish_to_app_tag = "{}";
@@ -542,6 +578,10 @@ const char* const description_optimization_01 = "Optimization";
 const char* const additional_constraints_optimization_01 = "{}";
 const char* const description_optimization_02 = "Optimization";
 const char* const additional_constraints_optimization_02 = "{}";
+const char* const description_optimization_03 = "Optimization";
+const char* const additional_constraints_optimization_03 = "{}";
+const char* const description_optimization_04 = "Optimization";
+const char* const additional_constraints_optimization_04 = "{}";
 const char* const description_otel_export_telemetry_domains =
     "Export telemetry domains in OpenTelemetry metrics.";
 const char* const additional_constraints_otel_export_telemetry_domains = "{}";
@@ -721,6 +761,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_h2_max_deallocating_streams_headroom,
      additional_constraints_h2_max_deallocating_streams_headroom, nullptr, 0,
      false, true},
+    {"inproc_cancel_stream", description_inproc_cancel_stream,
+     additional_constraints_inproc_cancel_stream, nullptr, 0, true, true},
     {"keep_alive_ping_timer_batch", description_keep_alive_ping_timer_batch,
      additional_constraints_keep_alive_ping_timer_batch, nullptr, 0, false,
      true},
@@ -734,6 +776,12 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_memory_optimization_01, nullptr, 0, false, false},
     {"memory_optimization_02", description_memory_optimization_02,
      additional_constraints_memory_optimization_02, nullptr, 0, false, false},
+    {"message_size_refactoring", description_message_size_refactoring,
+     additional_constraints_message_size_refactoring, nullptr, 0, false, true},
+    {"metadata_outstanding_token_refactor",
+     description_metadata_outstanding_token_refactor,
+     additional_constraints_metadata_outstanding_token_refactor, nullptr, 0,
+     false, true},
     {"metadata_publish_to_app_tag", description_metadata_publish_to_app_tag,
      additional_constraints_metadata_publish_to_app_tag, nullptr, 0, true,
      true},
@@ -742,9 +790,13 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"multiping", description_multiping, additional_constraints_multiping,
      nullptr, 0, false, true},
     {"optimization_01", description_optimization_01,
-     additional_constraints_optimization_01, nullptr, 0, false, true},
+     additional_constraints_optimization_01, nullptr, 0, true, true},
     {"optimization_02", description_optimization_02,
-     additional_constraints_optimization_02, nullptr, 0, false, true},
+     additional_constraints_optimization_02, nullptr, 0, true, true},
+    {"optimization_03", description_optimization_03,
+     additional_constraints_optimization_03, nullptr, 0, false, true},
+    {"optimization_04", description_optimization_04,
+     additional_constraints_optimization_04, nullptr, 0, false, true},
     {"otel_export_telemetry_domains", description_otel_export_telemetry_domains,
      additional_constraints_otel_export_telemetry_domains, nullptr, 0, false,
      true},
@@ -925,6 +977,9 @@ const char* const description_h2_max_deallocating_streams_headroom =
     "Separate allocated max concurrent streams.";
 const char* const additional_constraints_h2_max_deallocating_streams_headroom =
     "{}";
+const char* const description_inproc_cancel_stream =
+    "If set, cancel inproc stream inside the transport mutex.";
+const char* const additional_constraints_inproc_cancel_stream = "{}";
 const char* const description_keep_alive_ping_timer_batch =
     "Avoid explicitly cancelling the keepalive timer. Instead adjust the "
     "callback to re-schedule itself to the next ping interval.";
@@ -940,6 +995,13 @@ const char* const description_memory_optimization_01 = "Memory Optimization";
 const char* const additional_constraints_memory_optimization_01 = "{}";
 const char* const description_memory_optimization_02 = "Memory Optimization 02";
 const char* const additional_constraints_memory_optimization_02 = "{}";
+const char* const description_message_size_refactoring =
+    "Refactoring the message size config parsing.";
+const char* const additional_constraints_message_size_refactoring = "{}";
+const char* const description_metadata_outstanding_token_refactor =
+    "Refactor ClientInitialMetadataOutstandingToken.";
+const char* const additional_constraints_metadata_outstanding_token_refactor =
+    "{}";
 const char* const description_metadata_publish_to_app_tag =
     "Publish metadata to the app using the kPublishToApp metadata field.";
 const char* const additional_constraints_metadata_publish_to_app_tag = "{}";
@@ -953,6 +1015,10 @@ const char* const description_optimization_01 = "Optimization";
 const char* const additional_constraints_optimization_01 = "{}";
 const char* const description_optimization_02 = "Optimization";
 const char* const additional_constraints_optimization_02 = "{}";
+const char* const description_optimization_03 = "Optimization";
+const char* const additional_constraints_optimization_03 = "{}";
+const char* const description_optimization_04 = "Optimization";
+const char* const additional_constraints_optimization_04 = "{}";
 const char* const description_otel_export_telemetry_domains =
     "Export telemetry domains in OpenTelemetry metrics.";
 const char* const additional_constraints_otel_export_telemetry_domains = "{}";
@@ -1132,6 +1198,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_h2_max_deallocating_streams_headroom,
      additional_constraints_h2_max_deallocating_streams_headroom, nullptr, 0,
      false, true},
+    {"inproc_cancel_stream", description_inproc_cancel_stream,
+     additional_constraints_inproc_cancel_stream, nullptr, 0, true, true},
     {"keep_alive_ping_timer_batch", description_keep_alive_ping_timer_batch,
      additional_constraints_keep_alive_ping_timer_batch, nullptr, 0, false,
      true},
@@ -1145,6 +1213,12 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_memory_optimization_01, nullptr, 0, false, false},
     {"memory_optimization_02", description_memory_optimization_02,
      additional_constraints_memory_optimization_02, nullptr, 0, false, false},
+    {"message_size_refactoring", description_message_size_refactoring,
+     additional_constraints_message_size_refactoring, nullptr, 0, false, true},
+    {"metadata_outstanding_token_refactor",
+     description_metadata_outstanding_token_refactor,
+     additional_constraints_metadata_outstanding_token_refactor, nullptr, 0,
+     false, true},
     {"metadata_publish_to_app_tag", description_metadata_publish_to_app_tag,
      additional_constraints_metadata_publish_to_app_tag, nullptr, 0, true,
      true},
@@ -1153,9 +1227,13 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"multiping", description_multiping, additional_constraints_multiping,
      nullptr, 0, false, true},
     {"optimization_01", description_optimization_01,
-     additional_constraints_optimization_01, nullptr, 0, false, true},
+     additional_constraints_optimization_01, nullptr, 0, true, true},
     {"optimization_02", description_optimization_02,
-     additional_constraints_optimization_02, nullptr, 0, false, true},
+     additional_constraints_optimization_02, nullptr, 0, true, true},
+    {"optimization_03", description_optimization_03,
+     additional_constraints_optimization_03, nullptr, 0, false, true},
+    {"optimization_04", description_optimization_04,
+     additional_constraints_optimization_04, nullptr, 0, false, true},
     {"otel_export_telemetry_domains", description_otel_export_telemetry_domains,
      additional_constraints_otel_export_telemetry_domains, nullptr, 0, false,
      true},

@@ -280,11 +280,11 @@ config_setting(
 python_config_settings()
 
 # This should be updated along with build_handwritten.yaml
-g_stands_for = "graphic"  # @unused
+g_stands_for = "glacier"  # @unused
 
-core_version = "53.0.0"  # @unused
+core_version = "54.0.0"  # @unused
 
-version = "1.81.0-dev"  # @unused
+version = "1.82.0-dev"  # @unused
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
@@ -1947,7 +1947,9 @@ grpc_cc_library(
         "stats",
         "transport_auth_context",
         "//src/core:activity",
+        "//src/core:arena",
         "//src/core:arena_promise",
+        "//src/core:call_spine",
         "//src/core:cancel_callback",
         "//src/core:channel_args",
         "//src/core:channel_args_preconditioning",
@@ -1966,6 +1968,7 @@ grpc_cc_library(
         "//src/core:interception_chain",
         "//src/core:iomgr_fwd",
         "//src/core:map",
+        "//src/core:message",
         "//src/core:metadata_batch",
         "//src/core:metrics",
         "//src/core:pipe",
@@ -1975,6 +1978,7 @@ grpc_cc_library(
         "//src/core:resolved_address",
         "//src/core:seq",
         "//src/core:server_interface",
+        "//src/core:session_endpoint",
         "//src/core:shared_bit_gen",
         "//src/core:slice",
         "//src/core:slice_buffer",
@@ -2698,6 +2702,7 @@ grpc_cc_library(
         "resource_quota_api",
         "server",
         "transport_auth_context",
+        ":grpc_transport_chttp2",
         ":virtual_channel",
         "//src/core:arena",
         "//src/core:channel_args",
@@ -2726,6 +2731,7 @@ grpc_cc_library(
         "//src/core:no_destruct",
         "//src/core:ref_counted",
         "//src/core:resource_quota",
+        "//src/core:session_endpoint",
         "//src/core:slice",
         "//src/core:slice_buffer",
         "//src/core:slice_refcount",
@@ -2803,6 +2809,7 @@ grpc_cc_library(
         "//src/core:arena",
         "//src/core:channel_args",
         "//src/core:channel_init",
+        "//src/core:channel_stack_type",
         "//src/core:closure",
         "//src/core:default_event_engine",
         "//src/core:error",
@@ -2818,6 +2825,7 @@ grpc_cc_library(
         "//src/core:no_destruct",
         "//src/core:ref_counted",
         "//src/core:resource_quota",
+        "//src/core:session_endpoint",
         "//src/core:slice",
         "//src/core:socket_mutator",
         "//src/core:sync",
@@ -4696,6 +4704,7 @@ grpc_cc_library(
         "//src/core:latch",
         "//src/core:latent_see",
         "//src/core:map",
+        "//src/core:message_size_service_config",
         "//src/core:metadata_batch",
         "//src/core:percent_encoding",
         "//src/core:pipe",
@@ -4948,6 +4957,7 @@ grpc_cc_library(
         "//src/core:grpc_check",
         "//src/core:hpack_constants",
         "//src/core:metadata_batch",
+        "//src/core:mitigation_engine",
         "//src/core:ref_counted",
         "//src/core:slice",
         "//src/core:status_helper",
@@ -4988,6 +4998,7 @@ grpc_cc_library(
         "//src/core:match",
         "//src/core:metadata_batch",
         "//src/core:metadata_info",
+        "//src/core:mitigation_engine",
         "//src/core:parsed_metadata",
         "//src/core:random_early_detection",
         "//src/core:slice",
@@ -5168,9 +5179,11 @@ grpc_cc_library(
         "//src/core:json",
         "//src/core:match",
         "//src/core:memory_quota",
+        "//src/core:message_size_service_config",
         "//src/core:metadata",
         "//src/core:metadata_batch",
         "//src/core:metadata_info",
+        "//src/core:mitigation_engine",
         "//src/core:notification",
         "//src/core:ping_abuse_policy",
         "//src/core:ping_callbacks",
