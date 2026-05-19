@@ -111,8 +111,10 @@ inline bool IsMultipingEnabled() { return false; }
 inline bool IsOptimization01Enabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_OPTIMIZATION_02
 inline bool IsOptimization02Enabled() { return true; }
-inline bool IsOptimization03Enabled() { return false; }
-inline bool IsOptimization04Enabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_OPTIMIZATION_03
+inline bool IsOptimization03Enabled() { return true; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_OPTIMIZATION_04
+inline bool IsOptimization04Enabled() { return true; }
 inline bool IsOtelExportTelemetryDomainsEnabled() { return false; }
 inline bool IsPh2Perf01Enabled() { return false; }
 inline bool IsPickFirstIgnoreEmptyUpdatesEnabled() { return false; }
@@ -197,8 +199,10 @@ inline bool IsMultipingEnabled() { return false; }
 inline bool IsOptimization01Enabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_OPTIMIZATION_02
 inline bool IsOptimization02Enabled() { return true; }
-inline bool IsOptimization03Enabled() { return false; }
-inline bool IsOptimization04Enabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_OPTIMIZATION_03
+inline bool IsOptimization03Enabled() { return true; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_OPTIMIZATION_04
+inline bool IsOptimization04Enabled() { return true; }
 inline bool IsOtelExportTelemetryDomainsEnabled() { return false; }
 inline bool IsPh2Perf01Enabled() { return false; }
 inline bool IsPickFirstIgnoreEmptyUpdatesEnabled() { return false; }
@@ -283,8 +287,10 @@ inline bool IsMultipingEnabled() { return false; }
 inline bool IsOptimization01Enabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_OPTIMIZATION_02
 inline bool IsOptimization02Enabled() { return true; }
-inline bool IsOptimization03Enabled() { return false; }
-inline bool IsOptimization04Enabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_OPTIMIZATION_03
+inline bool IsOptimization03Enabled() { return true; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_OPTIMIZATION_04
+inline bool IsOptimization04Enabled() { return true; }
 inline bool IsOtelExportTelemetryDomainsEnabled() { return false; }
 inline bool IsPh2Perf01Enabled() { return false; }
 inline bool IsPickFirstIgnoreEmptyUpdatesEnabled() { return false; }

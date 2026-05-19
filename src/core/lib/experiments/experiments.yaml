@@ -252,7 +252,7 @@
 - name: optimization_04
   description: Optimization
   expiry: 2027/01/16
-  owner: alishananda@google.com
+  owner: vigneshbabu@google.com
   test_tags: []
 - name: otel_export_telemetry_domains
   description: Export telemetry domains in OpenTelemetry metrics.
