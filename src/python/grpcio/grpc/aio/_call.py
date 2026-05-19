@@ -536,7 +536,9 @@ class _StreamRequestMixin(Call, Generic[RequestType]):
 
 
 class UnaryUnaryCall(
-    _UnaryResponseMixin[ResponseType], Call, _base_call.UnaryUnaryCall[RequestType, ResponseType]
+    _UnaryResponseMixin[ResponseType],
+    Call,
+    _base_call.UnaryUnaryCall[RequestType, ResponseType],
 ):
     """Object for managing unary-unary RPC calls.
 
@@ -601,7 +603,9 @@ class UnaryUnaryCall(
 
 
 class UnaryStreamCall(
-    _StreamResponseMixin[ResponseType], Call, _base_call.UnaryStreamCall[RequestType, ResponseType]
+    _StreamResponseMixin[ResponseType],
+    Call,
+    _base_call.UnaryStreamCall[RequestType, ResponseType],
 ):
     """Object for managing unary-stream RPC calls.
 
@@ -660,7 +664,10 @@ class UnaryStreamCall(
 
 # pylint: disable=too-many-ancestors
 class StreamUnaryCall(
-    _StreamRequestMixin[RequestType], _UnaryResponseMixin, Call, _base_call.StreamUnaryCall[RequestType, ResponseType]
+    _StreamRequestMixin[RequestType],
+    _UnaryResponseMixin,
+    Call,
+    _base_call.StreamUnaryCall[RequestType, ResponseType],
 ):
     """Object for managing stream-unary RPC calls.
 
@@ -711,7 +718,10 @@ class StreamUnaryCall(
 
 
 class StreamStreamCall(
-    _StreamRequestMixin[RequestType], _StreamResponseMixin, Call, _base_call.StreamStreamCall[RequestType, ResponseType]
+    _StreamRequestMixin[RequestType],
+    _StreamResponseMixin,
+    Call,
+    _base_call.StreamStreamCall[RequestType, ResponseType],
 ):
     """Object for managing stream-stream RPC calls.
 
