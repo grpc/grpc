@@ -904,9 +904,9 @@ class CallbackBidiHandler : public grpc::internal::MethodHandler {
 };
 
 template <class RequestType>
-class CallbackSessionHandler : public grpc::internal::MethodHandler {
- public:
-  explicit CallbackSessionHandler(
+class CallbackSessionHandlerImpl : public grpc::internal::MethodHandler {
+ protected:
+  explicit CallbackSessionHandlerImpl(
       std::function<ServerSessionReactor*(grpc::CallbackServerContext*,
                                           const RequestType*)>
           get_reactor,
@@ -915,6 +915,7 @@ class CallbackSessionHandler : public grpc::internal::MethodHandler {
     ABSL_CHECK(service_ != nullptr && service_->is_virtual_service_);
   }
 
+ public:
   void RunHandler(const HandlerParameter& param) final {
     // Arena allocate a controller structure (that includes request/response)
     grpc_call_ref(param.call->call());
@@ -1060,7 +1061,7 @@ class CallbackSessionHandler : public grpc::internal::MethodHandler {
     }
 
    private:
-    friend class CallbackSessionHandler<RequestType>;
+    friend class CallbackSessionHandlerImpl<RequestType>;
 
     ServerCallbackSessionImpl(
         grpc::CallbackServerContext* ctx, grpc::internal::Call* call,

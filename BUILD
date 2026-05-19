@@ -920,6 +920,16 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "server_session",
+    hdrs = ["include/grpcpp/server_session.h"],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "grpc++_public_hdrs",
+        "grpc_public_hdrs",
+    ],
+)
+
+grpc_cc_library(
     name = "grpc_common",
     defines = select({
         "grpc_no_rls": ["GRPC_NO_RLS"],
@@ -2701,6 +2711,7 @@ grpc_cc_library(
         "ref_counted_ptr",
         "resource_quota_api",
         "server",
+        "server_session",
         "transport_auth_context",
         ":grpc_transport_chttp2",
         ":virtual_channel",

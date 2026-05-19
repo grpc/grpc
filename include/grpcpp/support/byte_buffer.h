@@ -40,7 +40,7 @@ class CallbackUnaryHandler;
 template <class RequestType, class ResponseType>
 class CallbackServerStreamingHandler;
 template <class RequestType>
-class CallbackSessionHandler;
+class CallbackSessionHandlerImpl;
 template <class RequestType>
 void* UnaryDeserializeHelper(grpc_byte_buffer*, grpc::Status*, RequestType*);
 template <class ServiceType, class RequestType, class ResponseType>
@@ -176,7 +176,7 @@ class ByteBuffer final {
   template <class RequestType, class ResponseType>
   friend class internal::CallbackServerStreamingHandler;
   template <class RequestType>
-  friend class internal::CallbackSessionHandler;
+  friend class internal::CallbackSessionHandlerImpl;
   template <StatusCode code>
   friend class internal::ErrorMethodHandler;
   template <class R>

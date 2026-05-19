@@ -35,7 +35,7 @@ class ServerInterface;
 
 namespace internal {
 template <class RequestType>
-class CallbackSessionHandler;
+class CallbackSessionHandlerImpl;
 class Call;
 class ServerAsyncStreamingInterface {
  public:
@@ -229,7 +229,7 @@ class Service {
   friend class Server;
   friend class ServerInterface;
   template <class RequestType>
-  friend class internal::CallbackSessionHandler;
+  friend class internal::CallbackSessionHandlerImpl;
   ServerInterface* server_;
   bool is_virtual_service_ = false;
   std::vector<std::unique_ptr<internal::RpcServiceMethod>> methods_;
