@@ -175,6 +175,11 @@
   expiry: 2026/09/01
   owner: snohria@google.com
   test_tags: []
+- name: inproc_cancel_stream
+  description: If set, cancel inproc stream inside the transport mutex.
+  expiry: 2026/08/01
+  owner: akshitpatel@google.com
+  test_tags: []
 - name: keep_alive_ping_timer_batch
   description:
     Avoid explicitly cancelling the keepalive timer. Instead adjust the callback to re-schedule
@@ -209,6 +214,11 @@
   description: Refactoring the message size config parsing.
   expiry: 2026/09/01
   test_tags: []
+- name: metadata_outstanding_token_refactor
+  description: Refactor ClientInitialMetadataOutstandingToken.
+  expiry: 2026/09/01
+  owner: akshitpatel@google.com
+  test_tags: []
 - name: metadata_publish_to_app_tag
   description: Publish metadata to the app using the kPublishToApp metadata field.
   expiry: 2026/04/01
@@ -234,9 +244,19 @@
   expiry: 2027/01/16
   owner: tjagtap@google.com
   test_tags: []
+- name: optimization_03
+  description: Optimization
+  expiry: 2027/01/16
+  owner: alishananda@google.com
+  test_tags: []
+- name: optimization_04
+  description: Optimization
+  expiry: 2027/01/16
+  owner: alishananda@google.com
+  test_tags: []
 - name: otel_export_telemetry_domains
   description: Export telemetry domains in OpenTelemetry metrics.
-  expiry: 2026/05/01
+  expiry: 2026/07/01
   owner: aadik@google.com
   test_tags: [core_end2end_test]
 - name: ph2_perf_01
@@ -407,8 +427,3 @@
   expiry: 2026/07/01
   owner: alishananda@google.com
   test_tags: ["core_end2end_test"]
-- name: xds_channel_filter_chain_per_route
-  description: xDS channels use a separate filter chain for each route.
-  expiry: 2026/06/01
-  owner: roth@google.com
-  test_tags: ["xds_end2end_test", "xds_test"]

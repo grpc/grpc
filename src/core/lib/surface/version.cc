@@ -24,4 +24,4 @@
 
 const char* grpc_version_string(void) { return "54.0.0"; }
 
-const char* grpc_g_stands_for(void) { return "graphic"; }
+const char* grpc_g_stands_for(void) { return "glacier"; }
