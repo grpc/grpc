@@ -1,3 +1,5 @@
+# Backporting to 33.5
+# Original commit: https://github.com/protocolbuffers/protobuf/commit/29476e1a91dc3dfbc10a8d4a5bce998896452258
 diff --git a/upb_generator/c/names.cc b/upb_generator/c/names.cc
 index ddca7d7fa6210..5dcf1eeec3d3e 100644
 --- a/upb_generator/c/names.cc
