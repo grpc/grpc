@@ -462,6 +462,36 @@ tsi_result tsi_ssl_get_cert_chain_contents(STACK_OF(X509) * peer_chain,
 
 namespace tsi {
 bool IsRootCertInfoEmpty(const RootCertInfo* root_cert_info);
+
+enum class TlsTelemetryStatus {
+  UNKNOWN_FAILURE,  
+  SUCCESS,
+  // Peer certificate verification failures.
+  CERTIFICATE_VERIFICATION_FAILED,
+  CERTIFICATE_REVOKED,
+  CERTIFICATE_EXPIRED,
+  CERTIFICATE_NOT_YET_VALID,
+  CERTIFICATE_AUTHORITY_INVALID,
+  // TLS negotiation mismatch failures
+  CERTIFICATE_HOSTNAME_MISMATCH,
+  CERTIFICATE_MALFORMED,
+  CIPHER_SUITE_MISMATCH,
+  PROTOCOL_VERSION_UNSUPPORTED,
+  INAPPROPRIATE_FALLBACK,
+  NO_APPLICATION_PROTOCOL,
+  // Cryptograpic failures
+  SIGNATURE_VERIFICATION_FAILED,
+  DECRYPTION_FAILED,
+  KEY_EXCHANGE_FAILURE,
+  // Other failures
+  UNEXPECTED_MESSAGE,
+  HANDSHAKE_TIMEOUT,
+  PEER_CONNECTION_CLOSED
+};
+
+TlsTelemetryStatus MapSslErrorToTlsTelemetryStatus(int ssl_error,
+                                                   unsigned long err_code,
+                                                   long verify_result);
 }  // namespace tsi
 
 #endif  // GRPC_SRC_CORE_TSI_SSL_TRANSPORT_SECURITY_H

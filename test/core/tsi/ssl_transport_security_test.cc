@@ -1503,6 +1503,60 @@ TEST_P(SslTransportSecurityTest, TestKeyExchangeGroupMismatch) {
 }
 #endif
 
+TEST(SslTransportSecurityTest, MapSslErrorToTlsTelemetryStatusTest) {
+  // Test SUCCESS
+  EXPECT_EQ(tsi::MapSslErrorToTlsTelemetryStatus(SSL_ERROR_NONE, 0, X509_V_OK),
+            tsi::TlsTelemetryStatus::SUCCESS);
+
+  // Test Peer certificate verification failures
+  EXPECT_EQ(tsi::MapSslErrorToTlsTelemetryStatus(SSL_ERROR_NONE, 0, X509_V_ERR_CERT_REVOKED),
+            tsi::TlsTelemetryStatus::CERTIFICATE_REVOKED);
+  EXPECT_EQ(tsi::MapSslErrorToTlsTelemetryStatus(SSL_ERROR_NONE, 0, X509_V_ERR_CERT_HAS_EXPIRED),
+            tsi::TlsTelemetryStatus::CERTIFICATE_EXPIRED);
+  EXPECT_EQ(tsi::MapSslErrorToTlsTelemetryStatus(SSL_ERROR_NONE, 0, X509_V_ERR_CERT_NOT_YET_VALID),
+            tsi::TlsTelemetryStatus::CERTIFICATE_NOT_YET_VALID);
+  EXPECT_EQ(tsi::MapSslErrorToTlsTelemetryStatus(SSL_ERROR_NONE, 0, X509_V_ERR_DEPTH_ZERO_SELF_SIGNED_CERT),
+            tsi::TlsTelemetryStatus::CERTIFICATE_AUTHORITY_INVALID);
+
+  // Test PEER_CONNECTION_CLOSED
+  EXPECT_EQ(tsi::MapSslErrorToTlsTelemetryStatus(SSL_ERROR_ZERO_RETURN, 0, X509_V_OK),
+            tsi::TlsTelemetryStatus::PEER_CONNECTION_CLOSED);
+  EXPECT_EQ(tsi::MapSslErrorToTlsTelemetryStatus(SSL_ERROR_SYSCALL, 0, X509_V_OK),
+            tsi::TlsTelemetryStatus::PEER_CONNECTION_CLOSED);
+
+  // Test SSL_ERROR_SSL reason code mappings
+  // Cipher suite mismatch
+  EXPECT_EQ(tsi::MapSslErrorToTlsTelemetryStatus(SSL_ERROR_SSL, ERR_PACK(ERR_LIB_SSL, SSL_R_NO_CIPHER_MATCH), X509_V_OK),
+            tsi::TlsTelemetryStatus::CIPHER_SUITE_MISMATCH);
+  // Protocol version unsupported
+  EXPECT_EQ(tsi::MapSslErrorToTlsTelemetryStatus(SSL_ERROR_SSL, ERR_PACK(ERR_LIB_SSL, SSL_R_UNSUPPORTED_PROTOCOL), X509_V_OK),
+            tsi::TlsTelemetryStatus::PROTOCOL_VERSION_UNSUPPORTED);
+  // Inappropriate fallback
+  EXPECT_EQ(tsi::MapSslErrorToTlsTelemetryStatus(SSL_ERROR_SSL, ERR_PACK(ERR_LIB_SSL, SSL_R_INAPPROPRIATE_FALLBACK), X509_V_OK),
+            tsi::TlsTelemetryStatus::INAPPROPRIATE_FALLBACK);
+  // No application protocol
+  EXPECT_EQ(tsi::MapSslErrorToTlsTelemetryStatus(SSL_ERROR_SSL, ERR_PACK(ERR_LIB_SSL, SSL_R_NO_APPLICATION_PROTOCOL), X509_V_OK),
+            tsi::TlsTelemetryStatus::NO_APPLICATION_PROTOCOL);
+  // Signature verification failed
+  EXPECT_EQ(tsi::MapSslErrorToTlsTelemetryStatus(SSL_ERROR_SSL, ERR_PACK(ERR_LIB_SSL, SSL_R_BAD_SIGNATURE), X509_V_OK),
+            tsi::TlsTelemetryStatus::SIGNATURE_VERIFICATION_FAILED);
+  // Decryption failed
+  EXPECT_EQ(tsi::MapSslErrorToTlsTelemetryStatus(SSL_ERROR_SSL, ERR_PACK(ERR_LIB_SSL, SSL_R_DECRYPTION_FAILED), X509_V_OK),
+            tsi::TlsTelemetryStatus::DECRYPTION_FAILED);
+  // Key exchange failure
+  EXPECT_EQ(tsi::MapSslErrorToTlsTelemetryStatus(SSL_ERROR_SSL, ERR_PACK(ERR_LIB_SSL, SSL_R_WRONG_CURVE), X509_V_OK),
+            tsi::TlsTelemetryStatus::KEY_EXCHANGE_FAILURE);
+  // Unexpected message
+  EXPECT_EQ(tsi::MapSslErrorToTlsTelemetryStatus(SSL_ERROR_SSL, ERR_PACK(ERR_LIB_SSL, SSL_R_UNEXPECTED_MESSAGE), X509_V_OK),
+            tsi::TlsTelemetryStatus::UNEXPECTED_MESSAGE);
+  // Handshake timeout
+  EXPECT_EQ(tsi::MapSslErrorToTlsTelemetryStatus(SSL_ERROR_SSL, ERR_PACK(ERR_LIB_SSL, SSL_R_READ_TIMEOUT_EXPIRED), X509_V_OK),
+            tsi::TlsTelemetryStatus::HANDSHAKE_TIMEOUT);
+  // Unknown / generic SSL error
+  EXPECT_EQ(tsi::MapSslErrorToTlsTelemetryStatus(SSL_ERROR_SSL, ERR_PACK(ERR_LIB_SSL, 9999), X509_V_OK),
+            tsi::TlsTelemetryStatus::UNKNOWN_FAILURE);
+}
+
 }  // namespace
 }  // namespace testing
 }  // namespace grpc_core
