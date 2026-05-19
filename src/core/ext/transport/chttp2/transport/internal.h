@@ -231,6 +231,9 @@ typedef enum {
   GRPC_CHTTP2_KEEPALIVE_STATE_DISABLED,
 } grpc_chttp2_keepalive_state;
 
+constexpr uint16_t kMaxNoopDataFrames = 16384u;
+constexpr uint16_t kMaxNoopContinuationFrames = 128u;
+
 struct grpc_chttp2_transport final : public grpc_core::FilterStackTransport,
                                      public grpc_core::KeepsGrpcInitialized {
   grpc_chttp2_transport(const grpc_core::ChannelArgs& channel_args,
@@ -473,6 +476,8 @@ struct grpc_chttp2_transport final : public grpc_core::FilterStackTransport,
   uint8_t incoming_frame_flags = 0;
   uint8_t header_eof = 0;
   bool is_first_frame = true;
+  uint16_t noop_continuation_frames = 0u;
+  uint16_t noop_data_frames = 0u;
   uint32_t expect_continuation_stream_id = 0;
   uint32_t incoming_frame_size = 0;
 

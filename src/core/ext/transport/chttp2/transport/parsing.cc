@@ -24,6 +24,7 @@
 #include <string.h>
 
 #include <atomic>
+#include <cstdint>
 #include <initializer_list>
 #include <limits>
 #include <memory>
@@ -441,6 +442,22 @@ static grpc_error_handle init_frame_parser(grpc_chttp2_transport* t,
           "grpc_chttp2_stream %08x",
           t->expect_continuation_stream_id, t->incoming_stream_id));
     }
+    if (GPR_UNLIKELY(grpc_core::IsOptimization02Enabled() &&
+                     t->incoming_frame_size == 0u &&
+                     (t->incoming_frame_flags &
+                      GRPC_CHTTP2_DATA_FLAG_END_HEADERS) == 0u)) {
+      t->noop_continuation_frames++;
+      if (GPR_UNLIKELY(t->noop_continuation_frames >=
+                       kMaxNoopContinuationFrames)) {
+        return grpc_error_set_int(
+            GRPC_ERROR_CREATE(
+                "Too many zero length continuation frames without "
+                "end_headers flag set"),
+            grpc_core::StatusIntProperty::kHttp2Error,
+            static_cast<intptr_t>(Http2ErrorCode::kInternalError));
+      }
+    }
+
     return init_header_frame_parser(t, 1, requests_started);
   }
   switch (t->incoming_frame_type) {
@@ -558,20 +575,32 @@ static grpc_error_handle init_data_frame_parser(grpc_chttp2_transport* t) {
   }
   grpc_chttp2_stream* s =
       grpc_chttp2_parsing_lookup_stream(t, t->incoming_stream_id);
-  absl::Status status;
-  grpc_core::chttp2::FlowControlAction action;
-  if (s == nullptr) {
-    grpc_core::chttp2::TransportFlowControl::IncomingUpdateContext upd(
-        &t->flow_control);
-    status = upd.RecvData(t->incoming_frame_size);
-    action = upd.MakeAction();
-  } else {
-    grpc_core::chttp2::StreamFlowControl::IncomingUpdateContext upd(
-        &s->flow_control);
-    status = upd.RecvData(t->incoming_frame_size);
-    action = upd.MakeAction();
+  absl::Status status = absl::OkStatus();
+  if (!grpc_core::IsOptimization01Enabled() || t->incoming_frame_size > 0u) {
+    // Received data frame with size 0 can happen when the peer wants to send an
+    // END_STREAM. It is a legitimate data frame.
+    grpc_core::chttp2::FlowControlAction action;
+    if (s == nullptr) {
+      grpc_core::chttp2::TransportFlowControl::IncomingUpdateContext upd(
+          &t->flow_control);
+      status = upd.RecvData(t->incoming_frame_size);
+      action = upd.MakeAction();
+    } else {
+      grpc_core::chttp2::StreamFlowControl::IncomingUpdateContext upd(
+          &s->flow_control);
+      status = upd.RecvData(t->incoming_frame_size);
+      action = upd.MakeAction();
+    }
+    grpc_chttp2_act_on_flowctl_action(action, t, s);
+  } else if (grpc_core::IsOptimization02Enabled() &&
+             t->incoming_frame_size == 0u &&
+             (t->incoming_frame_flags & GRPC_CHTTP2_DATA_FLAG_END_STREAM) ==
+                 0u) {
+    t->noop_data_frames++;
+    if (t->noop_data_frames >= kMaxNoopDataFrames) {
+      return GRPC_ERROR_CREATE("Too many zero length data frames");
+    }
   }
-  grpc_chttp2_act_on_flowctl_action(action, t, s);
   if (!status.ok()) {
     goto error_handler;
   }
@@ -617,6 +646,7 @@ static grpc_error_handle init_header_frame_parser(grpc_chttp2_transport* t,
 
   if (is_eoh) {
     t->expect_continuation_stream_id = 0;
+    t->noop_continuation_frames = 0;
   } else {
     t->expect_continuation_stream_id = t->incoming_stream_id;
   }

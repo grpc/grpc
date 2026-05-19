@@ -501,6 +501,7 @@ static void read_channel_args(grpc_chttp2_transport* t,
           .GetDurationFromIntMillis(GRPC_ARG_HTTP_TARPIT_MAX_DURATION_MS)
           .value_or(grpc_core::Duration::Seconds(1))
           .millis();
+  GRPC_CHECK(t->min_tarpit_duration_ms <= t->max_tarpit_duration_ms);
   t->max_header_list_size_soft_limit =
       grpc_core::GetSoftLimitFromChannelArgs(channel_args);
 
