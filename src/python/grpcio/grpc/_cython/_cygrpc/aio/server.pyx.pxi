@@ -377,13 +377,13 @@ cdef class _MethodResolver:
         method_handler = self._registered_method_handlers.get(
             handler_call_details.method, None
         )
-        if method_handler:
+        if method_handler is not None:
             return method_handler
 
         # Fall back to generic handlers
         for generic_handler in self._generic_handlers:
             method_handler = generic_handler.service(handler_call_details)
-            if method_handler:
+            if method_handler is not None:
                 return method_handler
         return None
 
@@ -1036,89 +1036,112 @@ cdef class AioServer:
         await future
         return rpc_state
 
+    def _make_request_call_future(self, object method_bytes):
+        """ Crete a future that resolves with the next incoming call.
 
-    async def _call_handler_loop(self, set rpc_tasks,
-                                 bytes method=None):
-        """ Request and handle calls in a loop.
-
-        When `method` is provided, handles registered calls for that specific
-        method. Otherwise handles generic (unregistered) calls.
+        When `method_bytes` is provided creates a future for the assiociated
+        registered method. Otherwise creates a future for  generic 
+        (unregistered) method.
         """
+        if method_bytes is not None:
+            return self._loop.create_task(
+                self._request_registered_call(method_bytes)
+            )
+        else:
+            return self._loop.create_task(self._request_call())
+
+
+    async def _server_main_loop(self,
+                                object server_started):
         cdef RPCState rpc_state
         cdef str method_name
+
+        self._server.start(backup_queue=False)
+        server_started.set_result(True)
+        rpc_tasks = set()
 
         method_resolver = _MethodResolver(
             self._generic_handlers,
             self._registered_method_handlers
         )
 
-        while True:
-            # When shutdown begins, no more new connections.
-            if self._status != AIO_SERVER_STATUS_RUNNING:
-                break
+        pending_futures = {}
 
-            concurrency_exceeded = False
-            if self._limiter is not None:
-                self._limiter.check_before_request_call()
-                concurrency_exceeded = self._limiter.limiter_concurrency_exceeded
-
-            # Accepts new request from Core
-            if method:
-                rpc_state = await self._request_registered_call(method)
-                method_name = method.decode()
-            else:
-                rpc_state = await self._request_call()
-                method_name = rpc_state.method().decode()
-
-            # Creates the dedicated RPC coroutine. If we schedule it right now,
-            # there is no guarantee if the cancellation listening coroutine is
-            # ready or not. So, we should control the ordering by scheduling
-            # the coroutine onto event loop inside of the cancellation
-            # coroutine.
-            rpc_coro = _handle_rpc(method_name,
-                                   method_resolver,
-                                   self._interceptors,
-                                   rpc_state,
-                                   self._loop,
-                                   concurrency_exceeded)
-
-            # Fires off a task that listens on the cancellation from client.
-            rpc_task = self._loop.create_task(
-                _schedule_rpc_coro(
-                    rpc_coro,
-                    rpc_state,
-                    self._loop,
-                    method_name,
-                ),
-                name="rpc_task",
-            )
-
-            # loop.create_task only holds a weakref to the task.
-            # Maintain reference to tasks to avoid garbage collection.
-            rpc_tasks.add(rpc_task)
-            rpc_task.add_done_callback(rpc_tasks.discard)
-
-            if self._limiter is not None and not concurrency_exceeded:
-                self._limiter.decrease_once_finished(rpc_task)
-
-
-    async def _server_main_loop(self,
-                                object server_started):
-        self._server.start(backup_queue=False)
-        server_started.set_result(True)
-        rpc_tasks = set()
-
-        coros = []
-
-        # Request a call for each registered method so we can handle any of them
         for method in self._registered_method_handlers:
-            coros.append(
-                self._call_handler_loop(rpc_tasks, str_to_bytes(method))
-            )
-        # Also request a call for non registered method
-        coros.append(self._call_handler_loop(rpc_tasks))
+            method_bytes = str_to_bytes(method)
+            fut = self._make_request_call_future(method_bytes)
+            pending_futures[fut] = method_bytes
 
-        await asyncio.gather(*coros)
+        generic_fut = self._make_request_call_future(None)
+        pending_futures[generic_fut] = None
+
+        try:
+            while True:
+                # When shutdown begins, no more new connections.
+                if self._status != AIO_SERVER_STATUS_RUNNING:
+                    break
+
+                done, _ = await asyncio.wait(
+                    pending_futures.keys(),
+                    return_when=asyncio.FIRST_COMPLETED,
+                )
+
+                for completed in done:
+                    concurrency_exceeded = False
+                    if self._limiter is not None:
+                        self._limiter.check_before_request_call()
+                        concurrency_exceeded = self._limiter.limiter_concurrency_exceeded
+
+                    method_bytes = pending_futures.pop(completed)
+                    rpc_state = completed.result()
+
+                    if method_bytes is not None:
+                        method_name = method_bytes.decode()
+                    else:
+                        method_name = rpc_state.method().decode()
+
+                    # Creates the dedicated RPC coroutine. If we schedule it right now,
+                    # there is no guarantee if the cancellation listening coroutine is
+                    # ready or not. So, we should control the ordering by scheduling
+                    # the coroutine onto event loop inside of the cancellation
+                    # coroutine.
+                    rpc_coro = _handle_rpc(method_name,
+                                           method_resolver,
+                                           self._interceptors,
+                                           rpc_state,
+                                           self._loop,
+                                           concurrency_exceeded)
+
+                    # Fires off a task that listens on the cancellation from client.
+                    rpc_task = self._loop.create_task(
+                        _schedule_rpc_coro(
+                            rpc_coro,
+                            rpc_state,
+                            self._loop,
+                            method_name,
+                        ),
+                        name="rpc_task",
+                    )
+
+                    # loop.create_task only holds a weakref to the task.
+                    # Maintain reference to tasks to avoid garbage collection.
+                    rpc_tasks.add(rpc_task)
+                    rpc_task.add_done_callback(rpc_tasks.discard)
+
+                    if self._limiter is not None and not concurrency_exceeded:
+                        self._limiter.decrease_once_finished(rpc_task)
+
+                    if self._status == AIO_SERVER_STATUS_RUNNING:
+                        new_fut = self._make_request_call_future(method_bytes)
+                        pending_futures[new_fut] = method_bytes
+        finally:
+            for fut in pending_futures:
+                if not fut.done():
+                    fut.cancel()
+            if pending_futures:
+                await asyncio.gather(
+                    *pending_futures.keys(), return_exceptions=True
+                )
 
 
     def _serving_task_crash_handler(self, object task):
