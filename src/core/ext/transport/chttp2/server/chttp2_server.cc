@@ -77,6 +77,7 @@
 #include "src/core/lib/transport/error_utils.h"
 #include "src/core/lib/transport/promise_endpoint.h"
 #include "src/core/lib/transport/transport.h"
+#include "src/core/mitigation_engine/mitigation_engine.h"
 #include "src/core/server/server.h"
 #include "src/core/util/debug_location.h"
 #include "src/core/util/grpc_check.h"
@@ -621,10 +622,20 @@ void NewChttp2ServerListener::OnAccept(
   NewChttp2ServerListener* self = static_cast<NewChttp2ServerListener*>(arg);
   OrphanablePtr<grpc_endpoint> endpoint(tcp);
   AcceptorPtr acceptor(server_acceptor);
+  absl::string_view peer = grpc_endpoint_get_peer(endpoint.get());
   if (!self->listener_state_->connection_quota()->AllowIncomingConnection(
-          self->listener_state_->memory_quota(),
-          grpc_endpoint_get_peer(endpoint.get()))) {
+          self->listener_state_->memory_quota(), peer)) {
     return;
+  }
+  RefCountedPtr<MitigationEngine> mitigation_engine = self->mitigation_engine();
+  if (mitigation_engine != nullptr) {
+    auto action = mitigation_engine->EvaluateIncomingConnection(peer);
+    if (action == MitigationEngine::Action::kCloseConnection) {
+      LOG_EVERY_N_SEC(INFO, 60)
+          << "Mitigation engine rejected connection from " << peer;
+      self->listener_state_->connection_quota()->ReleaseConnections(1);
+      return;
+    }
   }
   {
     // The ref for the tcp_server need to be taken in the critical region
