@@ -87,8 +87,8 @@ class AioRpcError(grpc.RpcError):
     def __init__(
         self,
         code: grpc.StatusCode,
-        initial_metadata: Metadata,
-        trailing_metadata: Metadata,
+        initial_metadata: Optional[Metadata],
+        trailing_metadata: Optional[Metadata],
         details: Optional[str] = None,
         debug_error_string: Optional[str] = None,
     ) -> None:
