@@ -52,11 +52,11 @@ bazel_dep(name = "opentelemetry-cpp", version = "1.19.0", repo_name = "io_opente
 bazel_dep(name = "protobuf", version = "33.5", repo_name = "com_google_protobuf")
 single_version_override(
     module_name = "protobuf",
-    version = "33.5",
     patch_strip = 1,
     patches = [
         "//bazel:protobuf/fix_name_conflict.patch",
     ],
+    version = "33.5",
 )
 
 bazel_dep(name = "protoc-gen-validate", version = "1.2.1.bcr.1", repo_name = "com_envoyproxy_protoc_gen_validate")  # Not needed directly
