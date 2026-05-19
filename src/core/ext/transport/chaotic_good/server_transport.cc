@@ -49,7 +49,6 @@
 #include "absl/random/random.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
-#include "absl/strings/str_cat.h"
 
 namespace grpc_core {
 namespace chaotic_good {
@@ -335,18 +334,12 @@ void ChaoticGoodServerTransport::StreamDispatch::OnFrameTransportClosed(
                           absl::UnavailableError("transport closed"),
                           "transport closed");
   lock.Release();
-
-  if (!status.ok()) {
-    status =
-        absl::Status(status.code(), absl::StrCat("SERVER: ", status.message()));
-  }
   for (auto& pair : stream_map) {
     auto stream = std::move(pair.second);
     auto& call = stream->call;
-    call.SpawnInfallible("cancel",
-                         [stream = std::move(stream), status]() mutable {
-                           stream->call.Cancel(status);
-                         });
+    call.SpawnInfallible("cancel", [stream = std::move(stream)]() mutable {
+      stream->call.Cancel();
+    });
   }
 }
 

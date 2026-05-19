@@ -107,8 +107,10 @@ inline bool IsMetadataPublishToAppTagEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_MONITORING_EXPERIMENT
 inline bool IsMonitoringExperimentEnabled() { return true; }
 inline bool IsMultipingEnabled() { return false; }
-inline bool IsOptimization01Enabled() { return false; }
-inline bool IsOptimization02Enabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_OPTIMIZATION_01
+inline bool IsOptimization01Enabled() { return true; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_OPTIMIZATION_02
+inline bool IsOptimization02Enabled() { return true; }
 inline bool IsOptimization03Enabled() { return false; }
 inline bool IsOptimization04Enabled() { return false; }
 inline bool IsOtelExportTelemetryDomainsEnabled() { return false; }
@@ -193,8 +195,10 @@ inline bool IsMetadataPublishToAppTagEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_MONITORING_EXPERIMENT
 inline bool IsMonitoringExperimentEnabled() { return true; }
 inline bool IsMultipingEnabled() { return false; }
-inline bool IsOptimization01Enabled() { return false; }
-inline bool IsOptimization02Enabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_OPTIMIZATION_01
+inline bool IsOptimization01Enabled() { return true; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_OPTIMIZATION_02
+inline bool IsOptimization02Enabled() { return true; }
 inline bool IsOptimization03Enabled() { return false; }
 inline bool IsOptimization04Enabled() { return false; }
 inline bool IsOtelExportTelemetryDomainsEnabled() { return false; }
@@ -279,8 +283,10 @@ inline bool IsMetadataPublishToAppTagEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_MONITORING_EXPERIMENT
 inline bool IsMonitoringExperimentEnabled() { return true; }
 inline bool IsMultipingEnabled() { return false; }
-inline bool IsOptimization01Enabled() { return false; }
-inline bool IsOptimization02Enabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_OPTIMIZATION_01
+inline bool IsOptimization01Enabled() { return true; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_OPTIMIZATION_02
+inline bool IsOptimization02Enabled() { return true; }
 inline bool IsOptimization03Enabled() { return false; }
 inline bool IsOptimization04Enabled() { return false; }
 inline bool IsOtelExportTelemetryDomainsEnabled() { return false; }

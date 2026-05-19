@@ -15,11 +15,6 @@
 #ifndef GRPC_SRC_CORE_EXT_TRANSPORT_CHAOTIC_GOOD_CONFIG_H
 #define GRPC_SRC_CORE_EXT_TRANSPORT_CHAOTIC_GOOD_CONFIG_H
 
-#include <grpc/impl/channel_arg_names.h>
-#include <grpc/impl/grpc_types.h>
-
-#include <cstdint>
-#include <limits>
 #include <vector>
 
 #include "src/core/ext/transport/chaotic_good/chaotic_good_frame.pb.h"
@@ -77,13 +72,6 @@ class Config {
                .value_or(inline_payload_size_threshold_));
     tracing_enabled_ =
         channel_args.GetBool(GRPC_ARG_TCP_TRACING_ENABLED).value_or(false);
-    int max_recv_size = channel_args.GetInt(GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH)
-                            .value_or(GRPC_DEFAULT_MAX_RECV_MESSAGE_LENGTH);
-    if (max_recv_size < 0) {
-      max_receive_message_length_ = std::numeric_limits<uint32_t>::max();
-    } else {
-      max_receive_message_length_ = static_cast<uint32_t>(max_recv_size);
-    }
   }
 
   Config(const Config&) = delete;
@@ -168,7 +156,6 @@ class Config {
     options.inlined_payload_size_threshold = inline_payload_size_threshold_;
     options.scheduler_config = scheduler_config_;
     options.enable_tracing = tracing_enabled_;
-    options.max_receive_message_length = max_receive_message_length_;
     return options;
   }
 
@@ -192,15 +179,12 @@ class Config {
   uint32_t inline_payload_size_threshold() const {
     return inline_payload_size_threshold_;
   }
-  uint32_t max_receive_message_length() const {
-    return max_receive_message_length_;
-  }
 
   std::string ToString() const {
-    return absl::StrCat(GRPC_DUMP_ARGS(
-        tracing_enabled_, encode_alignment_, decode_alignment_,
-        max_send_chunk_size_, max_recv_chunk_size_,
-        inline_payload_size_threshold_, max_receive_message_length_));
+    return absl::StrCat(GRPC_DUMP_ARGS(tracing_enabled_, encode_alignment_,
+                                       decode_alignment_, max_send_chunk_size_,
+                                       max_recv_chunk_size_,
+                                       inline_payload_size_threshold_));
   }
 
   template <typename Sink>
@@ -247,7 +231,6 @@ class Config {
   uint32_t max_send_chunk_size_ = 1024 * 1024;
   uint32_t max_recv_chunk_size_ = 1024 * 1024;
   uint32_t inline_payload_size_threshold_ = 8 * 1024;
-  uint32_t max_receive_message_length_ = GRPC_DEFAULT_MAX_RECV_MESSAGE_LENGTH;
   std::string scheduler_config_;
   std::vector<PendingConnection> pending_data_endpoints_;
   absl::flat_hash_set<chaotic_good_frame::Settings::Features>
