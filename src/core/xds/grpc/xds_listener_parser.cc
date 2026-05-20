@@ -306,17 +306,15 @@ XdsListenerResource::HttpConnectionManager HttpConnectionManagerParse(
         auto& entry = http_connection_manager.http_filters.back();
         entry.name = std::string(name);
         entry.config_proto_type = filter_impl->ConfigProtoName();
-        if (!is_client || !IsXdsChannelFilterChainPerRouteEnabled()) {
+        if (!is_client) {
           std::optional<Json> filter_config = filter_impl->GenerateFilterConfig(
               name, context, *extension, errors);
           if (filter_config.has_value()) {
             entry.config = std::move(*filter_config);
           }
         }
-        if (IsXdsChannelFilterChainPerRouteEnabled()) {
-          entry.filter_config = filter_impl->ParseTopLevelConfig(
-              name, context, *extension, errors);
-        }
+        entry.filter_config =
+            filter_impl->ParseTopLevelConfig(name, context, *extension, errors);
       }
     }
     if (errors->size() == original_error_size &&
@@ -559,10 +557,16 @@ std::optional<FilterChain::FilterChainMatch> FilterChainMatchParse(
     }
   }
   // source_type
-  filter_chain_match.source_type =
-      static_cast<XdsListenerResource::FilterChainMap::ConnectionSourceType>(
-          envoy_config_listener_v3_FilterChainMatch_source_type(
-              filter_chain_match_proto));
+  int32_t source_type = envoy_config_listener_v3_FilterChainMatch_source_type(
+      filter_chain_match_proto);
+  if (source_type < 0 || source_type > 2) {
+    ValidationErrors::ScopedField field(errors, ".source_type");
+    errors->AddError("invalid value");
+  } else {
+    filter_chain_match.source_type =
+        static_cast<XdsListenerResource::FilterChainMap::ConnectionSourceType>(
+            source_type);
+  }
   // source_prefix_ranges
   auto* source_prefix_ranges =
       envoy_config_listener_v3_FilterChainMatch_source_prefix_ranges(
