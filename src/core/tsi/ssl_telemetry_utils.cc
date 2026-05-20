@@ -23,8 +23,6 @@
 #include <openssl/ssl.h>
 #include <openssl/x509.h>
 
-#include <optional>
-
 namespace grpc_core {
 
 namespace {
