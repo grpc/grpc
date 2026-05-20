@@ -228,7 +228,7 @@ def _handle_event(
             state.rpc_end_time = time.perf_counter()
             _observability.maybe_record_rpc_latency(state)
             callbacks.extend(state.callbacks)
-            state.callbacks = None
+            state.callbacks = []
     return callbacks
 
 
@@ -401,9 +401,13 @@ class _InactiveRpcError(grpc.RpcError, grpc.Call, grpc.Future):
         return self._state.code
 
     def details(self) -> Optional[str]:
+        if self._state.details is None:
+            return None
         return _common.decode(self._state.details)
 
     def debug_error_string(self) -> Optional[str]:
+        if self._state.debug_error_string is None:
+            return None
         return _common.decode(self._state.debug_error_string)
 
     def _repr(self) -> str:
@@ -830,6 +834,8 @@ class _MultiThreadedRendezvous(
                 return self._state.details is not None
 
             _common.wait(self._state.condition.wait, _done)
+            if self._state.details is None:
+                return None
             return _common.decode(self._state.details)
 
     def debug_error_string(self) -> Optional[str]:
@@ -839,6 +845,8 @@ class _MultiThreadedRendezvous(
                 return self._state.debug_error_string is not None
 
             _common.wait(self._state.condition.wait, _done)
+            if self._state.debug_error_string is None:
+                return None
             return _common.decode(self._state.debug_error_string)
 
     def cancelled(self) -> bool:
