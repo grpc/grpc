@@ -44,6 +44,7 @@ from grpc._typing import ChannelArgumentType
 from grpc._typing import DeserializingFunction
 from grpc._typing import IntegratedCallFactory
 from grpc._typing import MetadataType
+from collections.abc import MutableSequence
 from grpc._typing import NullaryCallbackType
 from grpc._typing import ResponseType
 from grpc._typing import SerializingFunction
@@ -260,7 +261,7 @@ def _consume_request_iterator(
     request_iterator: Iterator,
     state: _RPCState,
     call: Union[cygrpc.IntegratedCall, cygrpc.SegregatedCall],
-    request_serializer: SerializingFunction,
+    request_serializer: Optional[SerializingFunction],
     event_handler: Optional[UserTag],
 ) -> None:
     """Consume a request supplied by the user."""
@@ -1381,7 +1382,7 @@ class _UnaryStreamMultiCallable(grpc.UnaryStreamMultiCallable):
             wait_for_ready
         )
         if serialized_request is None:
-            raise rendezvous  # pylint: disable-msg=raising-bad-type
+            raise rendezvous  # pylint: disable-msg=raising-bad-type # pyright: ignore[reportGeneralTypeIssues]
         augmented_metadata = _compression.augment_metadata(
             metadata, compression
         )
