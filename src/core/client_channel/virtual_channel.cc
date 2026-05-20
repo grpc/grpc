@@ -70,9 +70,8 @@ absl::StatusOr<RefCountedPtr<Channel>> VirtualChannel::Create(
   auto legacy_endpoint = SessionEndpoint::Create(call, true);
   auto transport = grpc_create_chttp2_transport(
       args, OrphanablePtr<grpc_endpoint>(legacy_endpoint), true);
-  // TODO(snohria): Implement a new channel type for virtual channels.
   auto channel = ChannelCreate("virtual_target", args,
-                               GRPC_CLIENT_DIRECT_CHANNEL, transport);
+                               GRPC_CLIENT_VIRTUAL_CHANNEL, transport);
   if (!channel.ok()) {
     return channel.status();
   }

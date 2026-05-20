@@ -48,6 +48,8 @@ class Http2Settings {
     kGrpcAllowSecurityFrameWireId = 65029,
   };
 
+  constexpr static uint8_t kNumSettings = 9u;
+
   void Diff(bool is_first_send, const Http2Settings& old_setting,
             absl::FunctionRef<void(uint16_t key, uint32_t value)> cb) const;
   GRPC_MUST_USE_RESULT http2::Http2ErrorCode Apply(uint16_t key,
@@ -122,6 +124,23 @@ class Http2Settings {
   static uint32_t min_preferred_receive_crypto_message_size() { return 16384u; }
   static uint32_t max_preferred_receive_crypto_message_size() {
     return 2147483647u;
+  }
+
+  static bool IsKnownSettingId(const uint16_t id) {
+    switch (id) {
+      case kHeaderTableSizeWireId:
+      case kEnablePushWireId:
+      case kMaxConcurrentStreamsWireId:
+      case kInitialWindowSizeWireId:
+      case kMaxFrameSizeWireId:
+      case kMaxHeaderListSizeWireId:
+      case kGrpcAllowTrueBinaryMetadataWireId:
+      case kGrpcPreferredReceiveCryptoFrameSizeWireId:
+      case kGrpcAllowSecurityFrameWireId:
+        return true;
+      default:
+        return false;
+    }
   }
 
   static std::string WireIdToName(uint16_t wire_id);

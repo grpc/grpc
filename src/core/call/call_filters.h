@@ -276,7 +276,7 @@ struct CallConstructor {
 
 template <typename FilterType>
 struct CallConstructor<FilterType,
-                       absl::void_t<decltype(typename FilterType::Call(
+                       std::void_t<decltype(typename FilterType::Call(
                            static_cast<FilterType*>(nullptr)))>> {
   static void Construct(void* call_data, FilterType* channel) {
     new (call_data) typename FilterType::Call(channel);
