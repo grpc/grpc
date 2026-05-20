@@ -370,7 +370,8 @@ int ServerHandshakerFactoryAlpnCallback(SSL* /*ssl*/, const unsigned char** out,
 
 tsi::TlsTelemetryHandshakeResult MapVerifyResultToTlsTelemetryHandshakeResult(
     long verify_result) {
-  if (verify_result == X509_V_OK) return tsi::TlsTelemetryHandshakeResult::SUCCESS;
+  if (verify_result == X509_V_OK)
+    return tsi::TlsTelemetryHandshakeResult::SUCCESS;
   switch (verify_result) {
     case X509_V_ERR_CERT_REVOKED:
       return tsi::TlsTelemetryHandshakeResult::CERTIFICATE_REVOKED;
@@ -3398,11 +3399,8 @@ bool IsRootCertInfoEmpty(const tsi::RootCertInfo* root_cert_info) {
       });
 }
 
-
-
-TlsTelemetryHandshakeResult MapSslErrorToTlsTelemetryHandshakeResult(int ssl_error,
-                                                                   unsigned long err_code,
-                                                                   long verify_result) {
+TlsTelemetryHandshakeResult MapSslErrorToTlsTelemetryHandshakeResult(
+    int ssl_error, unsigned long err_code, long verify_result) {
   if (ssl_error == SSL_ERROR_NONE) {
     return MapVerifyResultToTlsTelemetryHandshakeResult(verify_result);
   }
@@ -3504,7 +3502,8 @@ TlsTelemetryHandshakeResult MapSslErrorToTlsTelemetryHandshakeResult(int ssl_err
       case SSL_R_NO_CERTIFICATE_ASSIGNED:
       case SSL_R_SSLV3_ALERT_NO_CERTIFICATE:
       case SSL_R_TLSV1_ALERT_CERTIFICATE_REQUIRED:
-        return TlsTelemetryHandshakeResult::PEER_CERTIFICATE_REQUIRED_BUT_MISSING;
+        return TlsTelemetryHandshakeResult::
+            PEER_CERTIFICATE_REQUIRED_BUT_MISSING;
 
       // Internal / Resource failures
       case ERR_R_MALLOC_FAILURE:
