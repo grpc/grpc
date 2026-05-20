@@ -40,7 +40,7 @@ PROJECT_NAME           = "GRPC C++"
 # could be handy for archiving the generated documentation or if some version
 # control system is used.
 
-PROJECT_NUMBER         = 1.81.0-dev
+PROJECT_NUMBER         = 1.82.0-dev
 
 # Using the PROJECT_BRIEF tag one can provide an optional one line description
 # for a project that appears at the top of each page and should give viewer a
@@ -1329,12 +1329,8 @@ src/core/ext/filters/channel_idle/legacy_channel_idle_filter.cc \
 src/core/ext/filters/channel_idle/legacy_channel_idle_filter.h \
 src/core/ext/filters/fault_injection/fault_injection_filter.cc \
 src/core/ext/filters/fault_injection/fault_injection_filter.h \
-src/core/ext/filters/fault_injection/fault_injection_service_config_parser.cc \
-src/core/ext/filters/fault_injection/fault_injection_service_config_parser.h \
 src/core/ext/filters/gcp_authentication/gcp_authentication_filter.cc \
 src/core/ext/filters/gcp_authentication/gcp_authentication_filter.h \
-src/core/ext/filters/gcp_authentication/gcp_authentication_service_config_parser.cc \
-src/core/ext/filters/gcp_authentication/gcp_authentication_service_config_parser.h \
 src/core/ext/filters/http/client/http_client_filter.cc \
 src/core/ext/filters/http/client/http_client_filter.h \
 src/core/ext/filters/http/client_authority_filter.cc \
@@ -1352,8 +1348,6 @@ src/core/ext/filters/rbac/rbac_service_config_parser.cc \
 src/core/ext/filters/rbac/rbac_service_config_parser.h \
 src/core/ext/filters/stateful_session/stateful_session_filter.cc \
 src/core/ext/filters/stateful_session/stateful_session_filter.h \
-src/core/ext/filters/stateful_session/stateful_session_service_config_parser.cc \
-src/core/ext/filters/stateful_session/stateful_session_service_config_parser.h \
 src/core/ext/transport/chttp2/alpn/alpn.cc \
 src/core/ext/transport/chttp2/alpn/alpn.h \
 src/core/ext/transport/chttp2/chttp2_plugin.cc \
@@ -1406,6 +1400,8 @@ src/core/ext/transport/chttp2/transport/hpack_parser_table.cc \
 src/core/ext/transport/chttp2/transport/hpack_parser_table.h \
 src/core/ext/transport/chttp2/transport/http2_client_transport.cc \
 src/core/ext/transport/chttp2/transport/http2_client_transport.h \
+src/core/ext/transport/chttp2/transport/http2_server_transport.cc \
+src/core/ext/transport/chttp2/transport/http2_server_transport.h \
 src/core/ext/transport/chttp2/transport/http2_settings.cc \
 src/core/ext/transport/chttp2/transport/http2_settings.h \
 src/core/ext/transport/chttp2/transport/http2_settings_manager.cc \
@@ -2846,6 +2842,7 @@ src/core/load_balancing/subchannel_interface.h \
 src/core/load_balancing/weighted_round_robin/static_stride_scheduler.cc \
 src/core/load_balancing/weighted_round_robin/static_stride_scheduler.h \
 src/core/load_balancing/weighted_round_robin/weighted_round_robin.cc \
+src/core/load_balancing/weighted_round_robin/weighted_round_robin.h \
 src/core/load_balancing/weighted_target/weighted_target.cc \
 src/core/load_balancing/weighted_target/weighted_target.h \
 src/core/load_balancing/xds/cds.cc \
@@ -2856,6 +2853,7 @@ src/core/load_balancing/xds/xds_cluster_manager.cc \
 src/core/load_balancing/xds/xds_override_host.cc \
 src/core/load_balancing/xds/xds_override_host.h \
 src/core/load_balancing/xds/xds_wrr_locality.cc \
+src/core/mitigation_engine/mitigation_engine.h \
 src/core/net/socket_mutator.cc \
 src/core/net/socket_mutator.h \
 src/core/plugin_registry/grpc_plugin_registry.cc \
@@ -2943,6 +2941,8 @@ src/core/transport/auth_context_comparator_registry.h \
 src/core/transport/endpoint_transport.h \
 src/core/transport/endpoint_transport_client_channel_factory.cc \
 src/core/transport/endpoint_transport_client_channel_factory.h \
+src/core/transport/message_size_service_config.cc \
+src/core/transport/message_size_service_config.h \
 src/core/transport/session_endpoint.cc \
 src/core/transport/session_endpoint.h \
 src/core/tsi/alts/crypt/aes_gcm.cc \

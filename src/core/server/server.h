@@ -362,6 +362,14 @@ class Server : public ServerInterface,
                                    const ChannelArgs& args)
       ABSL_LOCKS_EXCLUDED(mu_global_);
 
+  // Variant of SetupTransport that allows for specifying the channel stack
+  // type.
+  grpc_error_handle SetupTransport(Transport* transport,
+                                   grpc_pollset* accepting_pollset,
+                                   const ChannelArgs& args,
+                                   grpc_channel_stack_type channel_stack_type)
+      ABSL_LOCKS_EXCLUDED(mu_global_);
+
   void RegisterCompletionQueue(grpc_completion_queue* cq);
 
   // Functions to specify that a specific registered method or the unregistered
@@ -645,7 +653,7 @@ class Server : public ServerInterface,
                                             ClientMetadataHandle md);
   auto MatchAndPublishCall(CallHandler call_handler);
   absl::StatusOr<RefCountedPtr<UnstartedCallDestination>> MakeCallDestination(
-      const ChannelArgs& args);
+      const ChannelArgs& args, grpc_channel_stack_type channel_stack_type);
 
   ChannelArgs const channel_args_;
   RefCountedPtr<channelz::ServerNode> channelz_node_;
