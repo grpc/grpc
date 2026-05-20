@@ -20,7 +20,6 @@ import grpc
 from grpc.aio._metadata import Metadata
 from grpc.aio._typing import MetadataKey
 from grpc.aio._typing import MetadataValue
-from grpc.aio._typing import MetadatumType
 from grpc.experimental import aio
 
 from tests.unit.framework.common import test_constants

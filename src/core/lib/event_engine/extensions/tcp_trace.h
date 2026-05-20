@@ -24,9 +24,6 @@
 
 namespace grpc_event_engine::experimental {
 
-/** If non-zero, enable TCP tracing and stats collection. */
-#define GRPC_ARG_TCP_TRACING_ENABLED "grpc.tcp_tracing_enabled"
-
 class TcpTraceExtension {
  public:
   virtual ~TcpTraceExtension() = default;

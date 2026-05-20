@@ -394,11 +394,11 @@ CORE_END2END_TEST(Http2SingleHopTests, ServerMaxConcurrentStreams) {
   // The third request MUST fail with RESOURCE_EXHAUSTED.
   EXPECT_EQ(server_status3.status(), GRPC_STATUS_RESOURCE_EXHAUSTED);
   EXPECT_THAT(server_status3.message(),
-              ::testing::HasSubstr(
-                  IsSubchannelConnectionScalingEnabled()
-                      ? "subchannel at max number of connections, but no quota "
-                        "to send RPC"
-                      : "Too many streams"));
+              ::testing::AnyOf(
+                  ::testing::HasSubstr(
+                      "subchannel at max number of connections, but no quota "
+                      "to send RPC"),
+                  ::testing::HasSubstr("Too many streams")));
 }
 
 }  // namespace

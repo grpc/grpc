@@ -12,10 +12,13 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+PS4='+ $(date "+[%H:%M:%S %Z]")\011 '
 set -ex
 
 # the platform for which we wanna build the native gem
 GEM_PLATFORM="$1"
+# the type of build job this is running in ("presubmit" or "continuous")
+BUILD_TYPE="$2"
 
 SYSTEM=$(uname | cut -f 1 -d_)
 
@@ -47,7 +50,7 @@ gem list || true
 export BUNDLE_PATH=bundle_local_gems
 tools/run_tests/helper_scripts/bundle_install_wrapper.sh
 
-bundle exec rake "gem:native[${GEM_PLATFORM}]"
+bundle exec rake "gem:native[${GEM_PLATFORM},${BUILD_TYPE}]"
 
 if [ "$SYSTEM" == "Darwin" ] ; then
   # TODO: consider rewriting this to pass shellcheck

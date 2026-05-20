@@ -363,7 +363,11 @@ std::vector<CoreTestConfiguration> End2endTestConfigs() {
           [](const ChannelArgs& /*client_args*/,
              const ChannelArgs& /*server_args*/) {
             return std::make_unique<InsecureFixture>();
-          }},
+          },
+          /*include_test_suites=*/"",
+          /*include_specific_tests=*/"",
+          /*exclude_specific_tests=*/"",
+          /*always_run_in_pr=*/true},
       CoreTestConfiguration{
           /*name=*/"Chttp2FullstackCompression",
           /*feature_mask=*/FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
@@ -402,7 +406,11 @@ std::vector<CoreTestConfiguration> End2endTestConfigs() {
           /*create_fixture=*/
           [](const ChannelArgs& client_args, const ChannelArgs& server_args) {
             return std::make_unique<ProxyFixture>(client_args, server_args);
-          }},
+          },
+          /*include_test_suites=*/"",
+          /*include_specific_tests=*/"",
+          /*exclude_specific_tests=*/"",
+          /*always_run_in_pr=*/true},
       CoreTestConfiguration{
           /*name=*/"Chttp2HttpProxy",
           /*feature_mask=*/FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |

@@ -30,7 +30,7 @@
 #include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/ext/transport/chttp2/transport/http2_settings.h"
 #include "src/core/ext/transport/chttp2/transport/http2_settings_promises.h"
-#include "src/core/lib/event_engine/default_event_engine.h"
+#include "src/core/ext/transport/chttp2/transport/write_cycle.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/promise/party.h"
 #include "src/core/lib/promise/poll.h"
@@ -57,7 +57,15 @@ namespace testing {
 
 using EventEngineSlice = grpc_event_engine::experimental::Slice;
 
-class SettingsPromiseManagerTest : public ::testing::Test {
+class SettingsPromiseManagerTest : public ::testing::TestWithParam<bool> {
+ public:
+  SettingsPromiseManagerTest()
+      : transport_write_context_(/*is_client=*/GetParam()) {
+    transport_write_context_.StartWriteCycle();
+    // Discard the connection preface
+    MaybeFlushWriteBuffer();
+  }
+
  protected:
   RefCountedPtr<Party> MakeParty() {
     auto arena = SimpleArenaAllocator()->MakeArena();
@@ -66,9 +74,23 @@ class SettingsPromiseManagerTest : public ::testing::Test {
     return Party::Make(std::move(arena));
   }
 
+  http2::WriteCycle& GetWriteCycle() {
+    return transport_write_context_.GetWriteCycle();
+  }
+
  private:
+  void MaybeFlushWriteBuffer() {
+    if (transport_write_context_.GetWriteCycle().CanSerializeRegularFrames()) {
+      bool unused;
+      SliceBuffer discard =
+          transport_write_context_.GetWriteCycle().SerializeRegularFrames(
+              {unused});
+    }
+  }
+
   std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_ =
       grpc_event_engine::experimental::GetDefaultEventEngine();
+  http2::TransportWriteContext transport_write_context_;
 };
 
 constexpr uint32_t kSettingsShortTimeout = 500;
@@ -114,7 +136,7 @@ void AppendSettingsFrame(SliceBuffer& buf,
   Serialize(absl::Span<Http2Frame>(&frame, 1), buf);
 }
 
-TEST_F(SettingsPromiseManagerTest, NoTimeoutOneSetting) {
+TEST_P(SettingsPromiseManagerTest, NoTimeoutOneSetting) {
   // First start the timer and then immediately send the ACK
   // Check that the status must always be OK.
   auto party = MakeParty();
@@ -136,7 +158,7 @@ TEST_F(SettingsPromiseManagerTest, NoTimeoutOneSetting) {
   notification.WaitForNotification();
 }
 
-TEST_F(SettingsPromiseManagerTest, NoTimeoutThreeSettings) {
+TEST_P(SettingsPromiseManagerTest, NoTimeoutThreeSettings) {
   // Starting the timer and sending the ACK immediately three times in a row.
   // Check that the status must always be OK.
   auto party = MakeParty();
@@ -162,7 +184,7 @@ TEST_F(SettingsPromiseManagerTest, NoTimeoutThreeSettings) {
   notification.WaitForNotification();
 }
 
-TEST_F(SettingsPromiseManagerTest, NoTimeoutThreeSettingsDelayed) {
+TEST_P(SettingsPromiseManagerTest, NoTimeoutThreeSettingsDelayed) {
   // Starting the timer and sending the ACK immediately three times in a row.
   // Check that the status must always be OK.
   auto party = MakeParty();
@@ -188,7 +210,7 @@ TEST_F(SettingsPromiseManagerTest, NoTimeoutThreeSettingsDelayed) {
   notification.WaitForNotification();
 }
 
-TEST_F(SettingsPromiseManagerTest, NoTimeoutOneSettingRareOrder) {
+TEST_P(SettingsPromiseManagerTest, NoTimeoutOneSettingRareOrder) {
   // Emulating the case where we receive the ACK before we even spawn the timer.
   // This could happen if our write promise gets blocked on a very large write
   // and the RTT is low and peer responsiveness is high.
@@ -213,7 +235,7 @@ TEST_F(SettingsPromiseManagerTest, NoTimeoutOneSettingRareOrder) {
   notification.WaitForNotification();
 }
 
-TEST_F(SettingsPromiseManagerTest, NoTimeoutThreeSettingsRareOrder) {
+TEST_P(SettingsPromiseManagerTest, NoTimeoutThreeSettingsRareOrder) {
   // Emulating the case where we receive the ACK before we even spawn the timer.
   // This could happen if our write promise gets blocked on a very large write
   // and the RTT is low and peer responsiveness is high.
@@ -242,7 +264,7 @@ TEST_F(SettingsPromiseManagerTest, NoTimeoutThreeSettingsRareOrder) {
   notification.WaitForNotification();
 }
 
-TEST_F(SettingsPromiseManagerTest, NoTimeoutThreeSettingsMixedOrder) {
+TEST_P(SettingsPromiseManagerTest, NoTimeoutThreeSettingsMixedOrder) {
   auto party = MakeParty();
   SettingsPromiseManager manager(/*on_receive_settings=*/nullptr);
   ExecCtx exec_ctx;
@@ -268,7 +290,7 @@ TEST_F(SettingsPromiseManagerTest, NoTimeoutThreeSettingsMixedOrder) {
   notification.WaitForNotification();
 }
 
-TEST_F(SettingsPromiseManagerTest, TimeoutOneSetting) {
+TEST_P(SettingsPromiseManagerTest, TimeoutOneSetting) {
   // Testing one timeout test
   // Also ensuring that receiving the ACK after the timeout does not crash or
   // leak memory.
@@ -295,7 +317,7 @@ TEST_F(SettingsPromiseManagerTest, TimeoutOneSetting) {
   notification2.WaitForNotification();
 }
 
-TEST(SettingsPromiseManagerTest1, MaybeGetSettingsAndSettingsAckFramesIdle) {
+TEST_P(SettingsPromiseManagerTest, MaybeGetSettingsAndSettingsAckFramesIdle) {
   // Tests that in idle state, first call to
   // MaybeGetSettingsAndSettingsAckFrames sends initial settings, and second
   // call does nothing.
@@ -309,23 +331,37 @@ TEST(SettingsPromiseManagerTest1, MaybeGetSettingsAndSettingsAckFramesIdle) {
   // MaybeGetSettingsAndSettingsAckFrames appends to it and does not overwrite
   // it, i.e. the original contents of output_buf are not erased.
   output_buf.Append(Slice::FromCopiedString("hello"));
-  timeout_manager->MaybeGetSettingsAndSettingsAckFrames(transport_flow_control,
-                                                        output_buf);
+  {
+    http2::FrameSender frame_sender = GetWriteCycle().GetFrameSender();
+    timeout_manager->MaybeGetSettingsAndSettingsAckFrames(
+        transport_flow_control, frame_sender);
+    if (GetWriteCycle().CanSerializeRegularFrames()) {
+      bool should_reset = false;
+      output_buf.Append(GetWriteCycle().SerializeRegularFrames({should_reset}));
+    }
+  }
   EXPECT_TRUE(timeout_manager->ShouldSpawnWaitForSettingsTimeout());
   timeout_manager->TestOnlyTimeoutWaiterSpawned();
   ASSERT_THAT(output_buf.JoinIntoString(), ::testing::StartsWith("hello"));
   EXPECT_GT(output_buf.Length(), 5);
   output_buf.Clear();
   output_buf.Append(Slice::FromCopiedString("hello"));
-  timeout_manager->MaybeGetSettingsAndSettingsAckFrames(transport_flow_control,
-                                                        output_buf);
+  {
+    http2::FrameSender frame_sender = GetWriteCycle().GetFrameSender();
+    timeout_manager->MaybeGetSettingsAndSettingsAckFrames(
+        transport_flow_control, frame_sender);
+    if (GetWriteCycle().CanSerializeRegularFrames()) {
+      bool should_reset = false;
+      output_buf.Append(GetWriteCycle().SerializeRegularFrames({should_reset}));
+    }
+  }
   EXPECT_FALSE(timeout_manager->ShouldSpawnWaitForSettingsTimeout());
   EXPECT_EQ(output_buf.Length(), 5);
   EXPECT_EQ(output_buf.JoinIntoString(), "hello");
 }
 
-TEST(SettingsPromiseManagerTest1,
-     MaybeGetSettingsAndSettingsAckFramesMultipleAcks) {
+TEST_P(SettingsPromiseManagerTest,
+       MaybeGetSettingsAndSettingsAckFramesMultipleAcks) {
   // If multiple settings frames are received then multiple ACKs should be sent.
   chttp2::TransportFlowControl transport_flow_control(
       /*name=*/"TestFlowControl", /*enable_bdp_probe=*/false,
@@ -333,8 +369,15 @@ TEST(SettingsPromiseManagerTest1,
   RefCountedPtr<SettingsPromiseManager> timeout_manager =
       MakeRefCounted<SettingsPromiseManager>(/*on_receive_settings=*/nullptr);
   SliceBuffer output_buf;
-  timeout_manager->MaybeGetSettingsAndSettingsAckFrames(transport_flow_control,
-                                                        output_buf);
+  {
+    http2::FrameSender frame_sender = GetWriteCycle().GetFrameSender();
+    timeout_manager->MaybeGetSettingsAndSettingsAckFrames(
+        transport_flow_control, frame_sender);
+    if (GetWriteCycle().CanSerializeRegularFrames()) {
+      bool should_reset = false;
+      output_buf.Append(GetWriteCycle().SerializeRegularFrames({should_reset}));
+    }
+  }
   EXPECT_TRUE(timeout_manager->ShouldSpawnWaitForSettingsTimeout());
   timeout_manager->TestOnlyTimeoutWaiterSpawned();
   output_buf.Clear();
@@ -343,8 +386,16 @@ TEST(SettingsPromiseManagerTest1,
         {{Http2Settings::kMaxConcurrentStreamsWireId, 100}});
   }
 
-  timeout_manager->MaybeGetSettingsAndSettingsAckFrames(transport_flow_control,
-                                                        output_buf);
+  {
+    http2::FrameSender frame_sender = GetWriteCycle().GetFrameSender();
+    timeout_manager->MaybeGetSettingsAndSettingsAckFrames(
+        transport_flow_control, frame_sender);
+    if (GetWriteCycle().CanSerializeRegularFrames()) {
+      bool should_reset = false;
+      output_buf.Append(GetWriteCycle().SerializeRegularFrames({should_reset}));
+    }
+  }
+
   EXPECT_FALSE(timeout_manager->ShouldSpawnWaitForSettingsTimeout());
 
   SliceBuffer expected_buf;
@@ -355,8 +406,8 @@ TEST(SettingsPromiseManagerTest1,
   EXPECT_EQ(output_buf.JoinIntoString(), expected_buf.JoinIntoString());
 }
 
-TEST(SettingsPromiseManagerTest1,
-     MaybeGetSettingsAndSettingsAckFramesAfterAckAndChange) {
+TEST_P(SettingsPromiseManagerTest,
+       MaybeGetSettingsAndSettingsAckFramesAfterAckAndChange) {
   // Tests that after initial settings are sent and ACKed, no frame is sent. If
   // settings are changed, a new SETTINGS frame with diff is sent.
   chttp2::TransportFlowControl transport_flow_control(
@@ -369,8 +420,15 @@ TEST(SettingsPromiseManagerTest1,
   bool should_spawn_security_frame_loop = false;
 
   // Initial settings
-  timeout_manager->MaybeGetSettingsAndSettingsAckFrames(transport_flow_control,
-                                                        output_buf);
+  {
+    http2::FrameSender frame_sender = GetWriteCycle().GetFrameSender();
+    timeout_manager->MaybeGetSettingsAndSettingsAckFrames(
+        transport_flow_control, frame_sender);
+    if (GetWriteCycle().CanSerializeRegularFrames()) {
+      bool should_reset = false;
+      output_buf.Append(GetWriteCycle().SerializeRegularFrames({should_reset}));
+    }
+  }
   EXPECT_TRUE(timeout_manager->ShouldSpawnWaitForSettingsTimeout());
   timeout_manager->TestOnlyTimeoutWaiterSpawned();
   EXPECT_GT(output_buf.Length(), 0);
@@ -386,8 +444,15 @@ TEST(SettingsPromiseManagerTest1,
   output_buf.Clear();
 
   // No changes to local settings, but expecting a peer settings ACK frame.
-  timeout_manager->MaybeGetSettingsAndSettingsAckFrames(transport_flow_control,
-                                                        output_buf);
+  {
+    http2::FrameSender frame_sender = GetWriteCycle().GetFrameSender();
+    timeout_manager->MaybeGetSettingsAndSettingsAckFrames(
+        transport_flow_control, frame_sender);
+    if (GetWriteCycle().CanSerializeRegularFrames()) {
+      bool should_reset = false;
+      output_buf.Append(GetWriteCycle().SerializeRegularFrames({should_reset}));
+    }
+  }
   EXPECT_FALSE(timeout_manager->ShouldSpawnWaitForSettingsTimeout());
   EXPECT_EQ(output_buf.Length(), 9);
   SliceBuffer expected_buf;
@@ -401,8 +466,15 @@ TEST(SettingsPromiseManagerTest1,
   expected_buf.Clear();
   // Change settings
   timeout_manager->mutable_local().SetMaxFrameSize(kSetMaxFrameSize);
-  timeout_manager->MaybeGetSettingsAndSettingsAckFrames(transport_flow_control,
-                                                        output_buf);
+  {
+    http2::FrameSender frame_sender = GetWriteCycle().GetFrameSender();
+    timeout_manager->MaybeGetSettingsAndSettingsAckFrames(
+        transport_flow_control, frame_sender);
+    if (GetWriteCycle().CanSerializeRegularFrames()) {
+      bool should_reset = false;
+      output_buf.Append(GetWriteCycle().SerializeRegularFrames({should_reset}));
+    }
+  }
   EXPECT_TRUE(timeout_manager->ShouldSpawnWaitForSettingsTimeout());
   timeout_manager->TestOnlyTimeoutWaiterSpawned();
   // Check settings frame
@@ -416,13 +488,21 @@ TEST(SettingsPromiseManagerTest1,
   // The Diff will be zero, in this case a new SETTINGS frame must not be sent.
   timeout_manager->mutable_local().SetMaxFrameSize(kSetMaxFrameSize);
   output_buf.Clear();
-  timeout_manager->MaybeGetSettingsAndSettingsAckFrames(transport_flow_control,
-                                                        output_buf);
+  {
+    http2::FrameSender frame_sender = GetWriteCycle().GetFrameSender();
+    timeout_manager->MaybeGetSettingsAndSettingsAckFrames(
+        transport_flow_control, frame_sender);
+    if (GetWriteCycle().CanSerializeRegularFrames()) {
+      bool should_reset = false;
+      output_buf.Append(GetWriteCycle().SerializeRegularFrames({should_reset}));
+    }
+  }
   EXPECT_FALSE(timeout_manager->ShouldSpawnWaitForSettingsTimeout());
   EXPECT_EQ(output_buf.Length(), 0);
 }
 
-TEST(SettingsPromiseManagerTest1, MaybeGetSettingsAndSettingsAckFramesWithAck) {
+TEST_P(SettingsPromiseManagerTest,
+       MaybeGetSettingsAndSettingsAckFramesWithAck) {
   // Tests that if we need to send initial settings and also ACK received
   // settings, both frames are sent.
   chttp2::TransportFlowControl transport_flow_control(
@@ -437,8 +517,15 @@ TEST(SettingsPromiseManagerTest1, MaybeGetSettingsAndSettingsAckFramesWithAck) {
   output_buf.Append(Slice::FromCopiedString("hello"));
   timeout_manager->BufferPeerSettings(
       {{Http2Settings::kMaxConcurrentStreamsWireId, 100}});
-  timeout_manager->MaybeGetSettingsAndSettingsAckFrames(transport_flow_control,
-                                                        output_buf);
+  {
+    http2::FrameSender frame_sender = GetWriteCycle().GetFrameSender();
+    timeout_manager->MaybeGetSettingsAndSettingsAckFrames(
+        transport_flow_control, frame_sender);
+    if (GetWriteCycle().CanSerializeRegularFrames()) {
+      bool should_reset = false;
+      output_buf.Append(GetWriteCycle().SerializeRegularFrames({should_reset}));
+    }
+  }
   EXPECT_TRUE(timeout_manager->ShouldSpawnWaitForSettingsTimeout());
   timeout_manager->TestOnlyTimeoutWaiterSpawned();
   Http2SettingsFrame expected_settings;
@@ -454,7 +541,7 @@ TEST(SettingsPromiseManagerTest1, MaybeGetSettingsAndSettingsAckFramesWithAck) {
   EXPECT_EQ(output_buf.JoinIntoString(), expected_buf.JoinIntoString());
 }
 
-TEST_F(SettingsPromiseManagerTest, OnReceiveSettingsCalled) {
+TEST_P(SettingsPromiseManagerTest, OnReceiveSettingsCalled) {
   ExecCtx exec_ctx;
   Notification notification;
   std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine =
@@ -473,7 +560,7 @@ TEST_F(SettingsPromiseManagerTest, OnReceiveSettingsCalled) {
   notification.WaitForNotification();
 }
 
-TEST_F(SettingsPromiseManagerTest, IsFirstPeerSettingsAppliedTest) {
+TEST_P(SettingsPromiseManagerTest, IsFirstPeerSettingsAppliedTest) {
   bool should_spawn_security_frame_loop = false;
   SettingsPromiseManager manager(/*on_receive_settings=*/nullptr);
   EXPECT_FALSE(manager.IsFirstPeerSettingsApplied());
@@ -486,7 +573,7 @@ TEST_F(SettingsPromiseManagerTest, IsFirstPeerSettingsAppliedTest) {
   EXPECT_TRUE(manager.IsFirstPeerSettingsApplied());
 }
 
-TEST_F(SettingsPromiseManagerTest, IsSecurityFrameExpectedTest) {
+TEST_P(SettingsPromiseManagerTest, IsSecurityFrameExpectedTest) {
   SettingsPromiseManager manager(/*on_receive_settings=*/nullptr);
   bool should_spawn_security_frame_loop = false;
 
@@ -513,7 +600,7 @@ TEST_F(SettingsPromiseManagerTest, IsSecurityFrameExpectedTest) {
   EXPECT_FALSE(manager.IsSecurityFrameExpected());
 }
 
-TEST_F(SettingsPromiseManagerTest, ShouldSpawnSecurityFrameLoopTest) {
+TEST_P(SettingsPromiseManagerTest, ShouldSpawnSecurityFrameLoopTest) {
   SettingsPromiseManager manager(/*on_receive_settings=*/nullptr);
   bool should_spawn_security_frame_loop = false;
 
@@ -525,7 +612,7 @@ TEST_F(SettingsPromiseManagerTest, ShouldSpawnSecurityFrameLoopTest) {
   EXPECT_FALSE(should_spawn_security_frame_loop);
 }
 
-TEST_F(SettingsPromiseManagerTest, ShouldSpawnSecurityFrameLoopTrueTest) {
+TEST_P(SettingsPromiseManagerTest, ShouldSpawnSecurityFrameLoopTrueTest) {
   SettingsPromiseManager manager(/*on_receive_settings=*/nullptr);
   bool should_spawn_security_frame_loop = false;
 
@@ -539,7 +626,7 @@ TEST_F(SettingsPromiseManagerTest, ShouldSpawnSecurityFrameLoopTrueTest) {
   EXPECT_TRUE(should_spawn_security_frame_loop);
 }
 
-TEST_F(SettingsPromiseManagerTest, ShouldSpawnSecurityFrameLoopFalseTest) {
+TEST_P(SettingsPromiseManagerTest, ShouldSpawnSecurityFrameLoopFalseTest) {
   SettingsPromiseManager manager(/*on_receive_settings=*/nullptr);
   bool should_spawn_security_frame_loop = false;
 
@@ -552,7 +639,7 @@ TEST_F(SettingsPromiseManagerTest, ShouldSpawnSecurityFrameLoopFalseTest) {
   EXPECT_FALSE(should_spawn_security_frame_loop);
 }
 
-TEST_F(SettingsPromiseManagerTest, ShouldSpawnSecurityFrameLoopOnlyOnceTest) {
+TEST_P(SettingsPromiseManagerTest, ShouldSpawnSecurityFrameLoopOnlyOnceTest) {
   SettingsPromiseManager manager(/*on_receive_settings=*/nullptr);
   bool should_spawn_security_frame_loop = false;
 
@@ -574,6 +661,9 @@ TEST_F(SettingsPromiseManagerTest, ShouldSpawnSecurityFrameLoopOnlyOnceTest) {
             Http2ErrorCode::kNoError);
   EXPECT_FALSE(should_spawn_security_frame_loop);
 }
+
+INSTANTIATE_TEST_SUITE_P(IsClient, SettingsPromiseManagerTest,
+                         ::testing::Bool());
 
 }  // namespace testing
 

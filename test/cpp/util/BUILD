@@ -184,7 +184,6 @@ grpc_cc_library(
         "//src/core:grpc_check",
         "//src/core:load_file",
         "//src/proto/grpc/reflection/v1alpha:reflection_proto",
-        "@com_google_protobuf//src/google/protobuf/compiler:importer",
     ],
 )
 
@@ -335,6 +334,8 @@ grpc_cc_test(
         "time_test.cc",
     ],
     external_deps = [
+        "absl/base",
+        "absl/time",
         "gtest",
     ],
     uses_event_engine = False,
@@ -345,6 +346,7 @@ grpc_cc_test(
         "//:gpr",
         "//:grpc++",
         "//:grpc++_base",
+        "//src/core:time_precise",
         "//test/core/test_util:grpc_test_util",
     ],
 )

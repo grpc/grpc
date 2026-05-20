@@ -263,3 +263,13 @@ package_group(
     name = "transport_common",
     packages = [],
 )
+
+package_group(
+    name = "posix_engine",
+    packages = [],
+)
+
+package_group(
+    name = "wait_for_single_owner",
+    packages = [],
+)

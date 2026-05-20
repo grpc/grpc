@@ -10,7 +10,6 @@ The security handshakers are responsible for establishing a secure connection be
 
 - **`security_handshaker.h` / `security_handshaker.cc`**: Defines the `SecurityHandshaker` class, which is the base class for all security handshakers.
 - **`secure_endpoint.h` / `secure_endpoint.cc`**: Defines the `SecureEndpoint` class, which is a wrapper around a `grpc_endpoint` that provides a secure channel.
-- **`legacy_secure_endpoint.cc`**: An older implementation of `SecureEndpoint`.
 - **`pipelined_secure_endpoint.cc`**: A `SecureEndpoint` implementation that supports pipelining.
 
 ## Notes

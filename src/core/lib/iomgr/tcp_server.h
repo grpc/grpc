@@ -78,8 +78,6 @@ typedef struct grpc_tcp_server_vtable {
   grpc_tcp_server* (*ref)(grpc_tcp_server* s);
   void (*shutdown_starting_add)(grpc_tcp_server* s,
                                 grpc_closure* shutdown_starting);
-  void (*shutdown_ending_add)(grpc_tcp_server* s,
-                              grpc_closure* shutdown_ending);
   void (*unref)(grpc_tcp_server* s);
   void (*shutdown_listeners)(grpc_tcp_server* s);
   int (*pre_allocated_fd)(grpc_tcp_server* s);
@@ -136,11 +134,6 @@ grpc_tcp_server* grpc_tcp_server_ref(grpc_tcp_server* s);
 // grpc_tcp_server_ref() from it has no effect.
 void grpc_tcp_server_shutdown_starting_add(grpc_tcp_server* s,
                                            grpc_closure* shutdown_starting);
-
-// shutdown_ending is called when ref count has reached zero and the server
-// has just been destroyed. Calling grpc_tcp_server_ref() from it has no effect.
-void grpc_tcp_server_shutdown_ending_add(grpc_tcp_server* s,
-                                         grpc_closure* shutdown_ending);
 
 // If the refcount drops to zero, enqueue calls on exec_ctx to
 // shutdown_listeners and delete s.

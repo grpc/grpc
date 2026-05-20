@@ -167,7 +167,7 @@ def AreExperimentsOrdered(experiments):
     return True
 
 
-class ExperimentDefinition(object):
+class ExperimentDefinition:
     def __init__(self, attributes):
         self._error = False
         if "name" not in attributes:
@@ -211,6 +211,12 @@ class ExperimentDefinition(object):
 
         if "test_tags" in attributes:
             self._test_tags = attributes["test_tags"]
+
+        self._platforms = ["posix"]
+        if "platforms" in attributes:
+            self._platforms = attributes["platforms"]
+            if isinstance(self._platforms, str):
+                self._platforms = [self._platforms]
 
         for requirement in attributes.get("requires", []):
             self._requires.add(requirement)
@@ -313,11 +319,15 @@ class ExperimentDefinition(object):
     def allow_in_fuzzing_config(self):
         return self._allow_in_fuzzing_config
 
+    @property
+    def platforms(self):
+        return self._platforms
+
     def additional_constraints(self, platform):
         return self._additional_constraints.get(platform, {})
 
 
-class ExperimentsCompiler(object):
+class ExperimentsCompiler:
     def __init__(
         self,
         defaults,
@@ -676,6 +686,8 @@ class ExperimentsCompiler(object):
 
         for platform in self._platforms_define.keys():
             for _, exp in self._experiment_definitions.items():
+                if "all" not in exp.platforms and platform not in exp.platforms:
+                    continue
                 for tag in exp.test_tags:
                     # Search through default values for all platforms.
                     default = exp.default(platform)

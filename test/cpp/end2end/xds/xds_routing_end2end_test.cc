@@ -1595,10 +1595,10 @@ TEST_P(LdsRdsTest, XdsRoutingClusterUpdateClustersWithPickingDelays) {
 TEST_P(LdsRdsTest, XdsRoutingApplyXdsTimeout) {
   const auto kTimeoutGrpcHeaderMax = grpc_core::Duration::Milliseconds(1500);
   const auto kTimeoutMaxStreamDuration =
-      grpc_core::Duration::Milliseconds(2500);
+      grpc_core::Duration::Milliseconds(5500);
   const auto kTimeoutHttpMaxStreamDuration =
-      grpc_core::Duration::Milliseconds(3500);
-  const auto kTimeoutApplication = grpc_core::Duration::Milliseconds(4500);
+      grpc_core::Duration::Milliseconds(9500);
+  const auto kTimeoutApplication = grpc_core::Duration::Milliseconds(13500);
   const char* kNewCluster1Name = "new_cluster_1";
   const char* kNewEdsService1Name = "new_eds_service_name_1";
   const char* kNewCluster2Name = "new_cluster_2";

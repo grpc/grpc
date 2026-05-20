@@ -52,8 +52,8 @@ class UnaryUnaryMultiCallable(Generic[RequestType, ResponseType], abc.ABC):
           credentials: An optional CallCredentials for the RPC. Only valid for
             secure Channel.
           wait_for_ready: An optional flag to enable :term:`wait_for_ready` mechanism.
-          compression: An element of grpc.compression, e.g.
-            grpc.compression.Gzip.
+          compression: An element of grpc.Compression, e.g.
+            grpc.Compression.Gzip.
 
         Returns:
           A UnaryUnaryCall object.
@@ -90,8 +90,8 @@ class UnaryStreamMultiCallable(Generic[RequestType, ResponseType], abc.ABC):
           credentials: An optional CallCredentials for the RPC. Only valid for
             secure Channel.
           wait_for_ready: An optional flag to enable :term:`wait_for_ready` mechanism.
-          compression: An element of grpc.compression, e.g.
-            grpc.compression.Gzip.
+          compression: An element of grpc.Compression, e.g.
+            grpc.Compression.Gzip.
 
         Returns:
           A UnaryStreamCall object.
@@ -128,8 +128,8 @@ class StreamUnaryMultiCallable(abc.ABC):
           credentials: An optional CallCredentials for the RPC. Only valid for
             secure Channel.
           wait_for_ready: An optional flag to enable :term:`wait_for_ready` mechanism.
-          compression: An element of grpc.compression, e.g.
-            grpc.compression.Gzip.
+          compression: An element of grpc.Compression, e.g.
+            grpc.Compression.Gzip.
 
         Returns:
           A StreamUnaryCall object.
@@ -166,8 +166,8 @@ class StreamStreamMultiCallable(abc.ABC):
           credentials: An optional CallCredentials for the RPC. Only valid for
             secure Channel.
           wait_for_ready: An optional flag to enable :term:`wait_for_ready` mechanism.
-          compression: An element of grpc.compression, e.g.
-            grpc.compression.Gzip.
+          compression: An element of grpc.Compression, e.g.
+            grpc.Compression.Gzip.
 
         Returns:
           A StreamStreamCall object.

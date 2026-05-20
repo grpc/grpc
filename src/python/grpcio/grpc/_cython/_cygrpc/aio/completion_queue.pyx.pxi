@@ -21,14 +21,8 @@ cdef float _POLL_AWAKE_INTERVAL_S = 0.2
 # loop.add_reader method.
 cdef bint _has_fd_monitoring = True
 
-IF UNAME_SYSNAME == "Windows":
-    cdef void _unified_socket_write(int fd) noexcept nogil:
-        win_socket_send(<WIN_SOCKET>fd, b"1", 1, 0)
-ELSE:
-    from posix cimport unistd
-
-    cdef void _unified_socket_write(int fd) noexcept nogil:
-        unistd.write(fd, b"1", 1)
+cdef void _unified_socket_write(int fd) noexcept nogil:
+    _unified_socket_write_impl(fd)
 
 
 def _handle_callback_wrapper(CallbackWrapper callback_wrapper, int success):
@@ -151,7 +145,13 @@ cdef class PollerCompletionQueue(BaseCompletionQueue):
         cdef bytes data
         if _has_fd_monitoring:
             # If fd monitoring is working, clean the socket without blocking.
-            data = self._read_socket.recv(1)
+            try:
+                # In case of multiple loops, the read socket might be read by multiple threads.
+                # But only one of them will read the 1 byte sent by the poller thread.
+                # So, we need to handle the case where the socket is already empty.
+                data = self._read_socket.recv(1)
+            except BlockingIOError:
+                pass
         cdef grpc_event event
         cdef CallbackContext *context
 

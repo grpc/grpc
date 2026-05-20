@@ -49,7 +49,7 @@ class CaseResult(
         None.
     """
 
-    class Kind(object):
+    class Kind:
         UNTESTED = "untested"
         RUNNING = "running"
         ERROR = "error"
@@ -265,7 +265,7 @@ class CoverageResult(AugmentedResult):
         self.coverage_context = None
 
 
-class _Colors(object):
+class _Colors:
     """Namespaced constants for terminal color magic numbers."""
 
     HEADER = "\033[95m"

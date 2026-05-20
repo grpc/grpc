@@ -18,7 +18,7 @@ Pod::Spec.new do |s|
   repo_root = '../../../..'
   bazel_exec_root = "#{repo_root}/bazel-bin"
 
-  protoc = "#{bazel_exec_root}/external/com_google_protobuf/protoc"
+  protoc = "#{bazel_exec_root}/external/protobuf+/protoc"
   well_known_types_dir = "#{repo_root}/third_party/protobuf/src"
   plugin = "#{bazel_exec_root}/src/compiler/grpc_objective_c_plugin_binary"
 

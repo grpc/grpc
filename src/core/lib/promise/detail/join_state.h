@@ -29,6 +29,8 @@
 #include "src/core/util/bitset.h"
 #include "src/core/util/construct_destruct.h"
 #include "src/core/util/grpc_check.h"
+#include "src/core/util/upb_utils.h"
+#include "src/proto/grpc/channelz/v2/promise.upb.h"
 #include "absl/log/log.h"
 
 namespace grpc_core {
@@ -61,6 +63,42 @@ struct JoinState<Traits, P0, P1> {
       delete;
   JoinState& operator=(const JoinState& other) = delete;
   JoinState& operator=(JoinState&& other) = delete;
+  void ToProto(grpc_channelz_v2_Promise_CompositionKind kind,
+               grpc_channelz_v2_Promise* promise_proto,
+               upb_Arena* arena) const {
+    auto* join_promise =
+        grpc_channelz_v2_Promise_mutable_join_promise(promise_proto, arena);
+    grpc_channelz_v2_Promise_Join_set_kind(join_promise, kind);
+    auto** branches =
+        grpc_channelz_v2_Promise_Join_resize_branches(join_promise, 2, arena);
+    for (int i = 0; i < 2; i++) {
+      branches[i] = grpc_channelz_v2_Promise_JoinBranch_new(arena);
+    }
+    grpc_channelz_v2_Promise_JoinBranch_set_factory(
+        branches[0], StdStringToUpbString(TypeName<P0>()));
+    if (ready.is_set(0)) {
+      grpc_channelz_v2_Promise_JoinBranch_set_result(
+          branches[0], StdStringToUpbString("ready"));
+    } else {
+      PromiseAsProto(
+          promise0,
+          grpc_channelz_v2_Promise_JoinBranch_mutable_polling_promise(
+              branches[0], arena),
+          arena);
+    }
+    grpc_channelz_v2_Promise_JoinBranch_set_factory(
+        branches[1], StdStringToUpbString(TypeName<P1>()));
+    if (ready.is_set(1)) {
+      grpc_channelz_v2_Promise_JoinBranch_set_result(
+          branches[1], StdStringToUpbString("ready"));
+    } else {
+      PromiseAsProto(
+          promise1,
+          grpc_channelz_v2_Promise_JoinBranch_mutable_polling_promise(
+              branches[1], arena),
+          arena);
+    }
+  }
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION JoinState(JoinState&& other) noexcept {
     GRPC_DCHECK(other.ready.none());
     Construct(&promise0, std::move(other.promise0));
@@ -164,6 +202,54 @@ struct JoinState<Traits, P0, P1, P2> {
       delete;
   JoinState& operator=(const JoinState& other) = delete;
   JoinState& operator=(JoinState&& other) = delete;
+  void ToProto(grpc_channelz_v2_Promise_CompositionKind kind,
+               grpc_channelz_v2_Promise* promise_proto,
+               upb_Arena* arena) const {
+    auto* join_promise =
+        grpc_channelz_v2_Promise_mutable_join_promise(promise_proto, arena);
+    grpc_channelz_v2_Promise_Join_set_kind(join_promise, kind);
+    auto** branches =
+        grpc_channelz_v2_Promise_Join_resize_branches(join_promise, 3, arena);
+    for (int i = 0; i < 3; i++) {
+      branches[i] = grpc_channelz_v2_Promise_JoinBranch_new(arena);
+    }
+    grpc_channelz_v2_Promise_JoinBranch_set_factory(
+        branches[0], StdStringToUpbString(TypeName<P0>()));
+    if (ready.is_set(0)) {
+      grpc_channelz_v2_Promise_JoinBranch_set_result(
+          branches[0], StdStringToUpbString("ready"));
+    } else {
+      PromiseAsProto(
+          promise0,
+          grpc_channelz_v2_Promise_JoinBranch_mutable_polling_promise(
+              branches[0], arena),
+          arena);
+    }
+    grpc_channelz_v2_Promise_JoinBranch_set_factory(
+        branches[1], StdStringToUpbString(TypeName<P1>()));
+    if (ready.is_set(1)) {
+      grpc_channelz_v2_Promise_JoinBranch_set_result(
+          branches[1], StdStringToUpbString("ready"));
+    } else {
+      PromiseAsProto(
+          promise1,
+          grpc_channelz_v2_Promise_JoinBranch_mutable_polling_promise(
+              branches[1], arena),
+          arena);
+    }
+    grpc_channelz_v2_Promise_JoinBranch_set_factory(
+        branches[2], StdStringToUpbString(TypeName<P2>()));
+    if (ready.is_set(2)) {
+      grpc_channelz_v2_Promise_JoinBranch_set_result(
+          branches[2], StdStringToUpbString("ready"));
+    } else {
+      PromiseAsProto(
+          promise2,
+          grpc_channelz_v2_Promise_JoinBranch_mutable_polling_promise(
+              branches[2], arena),
+          arena);
+    }
+  }
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION JoinState(JoinState&& other) noexcept {
     GRPC_DCHECK(other.ready.none());
     Construct(&promise0, std::move(other.promise0));
@@ -304,6 +390,66 @@ struct JoinState<Traits, P0, P1, P2, P3> {
       delete;
   JoinState& operator=(const JoinState& other) = delete;
   JoinState& operator=(JoinState&& other) = delete;
+  void ToProto(grpc_channelz_v2_Promise_CompositionKind kind,
+               grpc_channelz_v2_Promise* promise_proto,
+               upb_Arena* arena) const {
+    auto* join_promise =
+        grpc_channelz_v2_Promise_mutable_join_promise(promise_proto, arena);
+    grpc_channelz_v2_Promise_Join_set_kind(join_promise, kind);
+    auto** branches =
+        grpc_channelz_v2_Promise_Join_resize_branches(join_promise, 4, arena);
+    for (int i = 0; i < 4; i++) {
+      branches[i] = grpc_channelz_v2_Promise_JoinBranch_new(arena);
+    }
+    grpc_channelz_v2_Promise_JoinBranch_set_factory(
+        branches[0], StdStringToUpbString(TypeName<P0>()));
+    if (ready.is_set(0)) {
+      grpc_channelz_v2_Promise_JoinBranch_set_result(
+          branches[0], StdStringToUpbString("ready"));
+    } else {
+      PromiseAsProto(
+          promise0,
+          grpc_channelz_v2_Promise_JoinBranch_mutable_polling_promise(
+              branches[0], arena),
+          arena);
+    }
+    grpc_channelz_v2_Promise_JoinBranch_set_factory(
+        branches[1], StdStringToUpbString(TypeName<P1>()));
+    if (ready.is_set(1)) {
+      grpc_channelz_v2_Promise_JoinBranch_set_result(
+          branches[1], StdStringToUpbString("ready"));
+    } else {
+      PromiseAsProto(
+          promise1,
+          grpc_channelz_v2_Promise_JoinBranch_mutable_polling_promise(
+              branches[1], arena),
+          arena);
+    }
+    grpc_channelz_v2_Promise_JoinBranch_set_factory(
+        branches[2], StdStringToUpbString(TypeName<P2>()));
+    if (ready.is_set(2)) {
+      grpc_channelz_v2_Promise_JoinBranch_set_result(
+          branches[2], StdStringToUpbString("ready"));
+    } else {
+      PromiseAsProto(
+          promise2,
+          grpc_channelz_v2_Promise_JoinBranch_mutable_polling_promise(
+              branches[2], arena),
+          arena);
+    }
+    grpc_channelz_v2_Promise_JoinBranch_set_factory(
+        branches[3], StdStringToUpbString(TypeName<P3>()));
+    if (ready.is_set(3)) {
+      grpc_channelz_v2_Promise_JoinBranch_set_result(
+          branches[3], StdStringToUpbString("ready"));
+    } else {
+      PromiseAsProto(
+          promise3,
+          grpc_channelz_v2_Promise_JoinBranch_mutable_polling_promise(
+              branches[3], arena),
+          arena);
+    }
+  }
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION JoinState(JoinState&& other) noexcept {
     GRPC_DCHECK(other.ready.none());
     Construct(&promise0, std::move(other.promise0));
@@ -480,6 +626,78 @@ struct JoinState<Traits, P0, P1, P2, P3, P4> {
       delete;
   JoinState& operator=(const JoinState& other) = delete;
   JoinState& operator=(JoinState&& other) = delete;
+  void ToProto(grpc_channelz_v2_Promise_CompositionKind kind,
+               grpc_channelz_v2_Promise* promise_proto,
+               upb_Arena* arena) const {
+    auto* join_promise =
+        grpc_channelz_v2_Promise_mutable_join_promise(promise_proto, arena);
+    grpc_channelz_v2_Promise_Join_set_kind(join_promise, kind);
+    auto** branches =
+        grpc_channelz_v2_Promise_Join_resize_branches(join_promise, 5, arena);
+    for (int i = 0; i < 5; i++) {
+      branches[i] = grpc_channelz_v2_Promise_JoinBranch_new(arena);
+    }
+    grpc_channelz_v2_Promise_JoinBranch_set_factory(
+        branches[0], StdStringToUpbString(TypeName<P0>()));
+    if (ready.is_set(0)) {
+      grpc_channelz_v2_Promise_JoinBranch_set_result(
+          branches[0], StdStringToUpbString("ready"));
+    } else {
+      PromiseAsProto(
+          promise0,
+          grpc_channelz_v2_Promise_JoinBranch_mutable_polling_promise(
+              branches[0], arena),
+          arena);
+    }
+    grpc_channelz_v2_Promise_JoinBranch_set_factory(
+        branches[1], StdStringToUpbString(TypeName<P1>()));
+    if (ready.is_set(1)) {
+      grpc_channelz_v2_Promise_JoinBranch_set_result(
+          branches[1], StdStringToUpbString("ready"));
+    } else {
+      PromiseAsProto(
+          promise1,
+          grpc_channelz_v2_Promise_JoinBranch_mutable_polling_promise(
+              branches[1], arena),
+          arena);
+    }
+    grpc_channelz_v2_Promise_JoinBranch_set_factory(
+        branches[2], StdStringToUpbString(TypeName<P2>()));
+    if (ready.is_set(2)) {
+      grpc_channelz_v2_Promise_JoinBranch_set_result(
+          branches[2], StdStringToUpbString("ready"));
+    } else {
+      PromiseAsProto(
+          promise2,
+          grpc_channelz_v2_Promise_JoinBranch_mutable_polling_promise(
+              branches[2], arena),
+          arena);
+    }
+    grpc_channelz_v2_Promise_JoinBranch_set_factory(
+        branches[3], StdStringToUpbString(TypeName<P3>()));
+    if (ready.is_set(3)) {
+      grpc_channelz_v2_Promise_JoinBranch_set_result(
+          branches[3], StdStringToUpbString("ready"));
+    } else {
+      PromiseAsProto(
+          promise3,
+          grpc_channelz_v2_Promise_JoinBranch_mutable_polling_promise(
+              branches[3], arena),
+          arena);
+    }
+    grpc_channelz_v2_Promise_JoinBranch_set_factory(
+        branches[4], StdStringToUpbString(TypeName<P4>()));
+    if (ready.is_set(4)) {
+      grpc_channelz_v2_Promise_JoinBranch_set_result(
+          branches[4], StdStringToUpbString("ready"));
+    } else {
+      PromiseAsProto(
+          promise4,
+          grpc_channelz_v2_Promise_JoinBranch_mutable_polling_promise(
+              branches[4], arena),
+          arena);
+    }
+  }
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION JoinState(JoinState&& other) noexcept {
     GRPC_DCHECK(other.ready.none());
     Construct(&promise0, std::move(other.promise0));
@@ -692,6 +910,90 @@ struct JoinState<Traits, P0, P1, P2, P3, P4, P5> {
       delete;
   JoinState& operator=(const JoinState& other) = delete;
   JoinState& operator=(JoinState&& other) = delete;
+  void ToProto(grpc_channelz_v2_Promise_CompositionKind kind,
+               grpc_channelz_v2_Promise* promise_proto,
+               upb_Arena* arena) const {
+    auto* join_promise =
+        grpc_channelz_v2_Promise_mutable_join_promise(promise_proto, arena);
+    grpc_channelz_v2_Promise_Join_set_kind(join_promise, kind);
+    auto** branches =
+        grpc_channelz_v2_Promise_Join_resize_branches(join_promise, 6, arena);
+    for (int i = 0; i < 6; i++) {
+      branches[i] = grpc_channelz_v2_Promise_JoinBranch_new(arena);
+    }
+    grpc_channelz_v2_Promise_JoinBranch_set_factory(
+        branches[0], StdStringToUpbString(TypeName<P0>()));
+    if (ready.is_set(0)) {
+      grpc_channelz_v2_Promise_JoinBranch_set_result(
+          branches[0], StdStringToUpbString("ready"));
+    } else {
+      PromiseAsProto(
+          promise0,
+          grpc_channelz_v2_Promise_JoinBranch_mutable_polling_promise(
+              branches[0], arena),
+          arena);
+    }
+    grpc_channelz_v2_Promise_JoinBranch_set_factory(
+        branches[1], StdStringToUpbString(TypeName<P1>()));
+    if (ready.is_set(1)) {
+      grpc_channelz_v2_Promise_JoinBranch_set_result(
+          branches[1], StdStringToUpbString("ready"));
+    } else {
+      PromiseAsProto(
+          promise1,
+          grpc_channelz_v2_Promise_JoinBranch_mutable_polling_promise(
+              branches[1], arena),
+          arena);
+    }
+    grpc_channelz_v2_Promise_JoinBranch_set_factory(
+        branches[2], StdStringToUpbString(TypeName<P2>()));
+    if (ready.is_set(2)) {
+      grpc_channelz_v2_Promise_JoinBranch_set_result(
+          branches[2], StdStringToUpbString("ready"));
+    } else {
+      PromiseAsProto(
+          promise2,
+          grpc_channelz_v2_Promise_JoinBranch_mutable_polling_promise(
+              branches[2], arena),
+          arena);
+    }
+    grpc_channelz_v2_Promise_JoinBranch_set_factory(
+        branches[3], StdStringToUpbString(TypeName<P3>()));
+    if (ready.is_set(3)) {
+      grpc_channelz_v2_Promise_JoinBranch_set_result(
+          branches[3], StdStringToUpbString("ready"));
+    } else {
+      PromiseAsProto(
+          promise3,
+          grpc_channelz_v2_Promise_JoinBranch_mutable_polling_promise(
+              branches[3], arena),
+          arena);
+    }
+    grpc_channelz_v2_Promise_JoinBranch_set_factory(
+        branches[4], StdStringToUpbString(TypeName<P4>()));
+    if (ready.is_set(4)) {
+      grpc_channelz_v2_Promise_JoinBranch_set_result(
+          branches[4], StdStringToUpbString("ready"));
+    } else {
+      PromiseAsProto(
+          promise4,
+          grpc_channelz_v2_Promise_JoinBranch_mutable_polling_promise(
+              branches[4], arena),
+          arena);
+    }
+    grpc_channelz_v2_Promise_JoinBranch_set_factory(
+        branches[5], StdStringToUpbString(TypeName<P5>()));
+    if (ready.is_set(5)) {
+      grpc_channelz_v2_Promise_JoinBranch_set_result(
+          branches[5], StdStringToUpbString("ready"));
+    } else {
+      PromiseAsProto(
+          promise5,
+          grpc_channelz_v2_Promise_JoinBranch_mutable_polling_promise(
+              branches[5], arena),
+          arena);
+    }
+  }
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION JoinState(JoinState&& other) noexcept {
     GRPC_DCHECK(other.ready.none());
     Construct(&promise0, std::move(other.promise0));
@@ -940,6 +1242,102 @@ struct JoinState<Traits, P0, P1, P2, P3, P4, P5, P6> {
       delete;
   JoinState& operator=(const JoinState& other) = delete;
   JoinState& operator=(JoinState&& other) = delete;
+  void ToProto(grpc_channelz_v2_Promise_CompositionKind kind,
+               grpc_channelz_v2_Promise* promise_proto,
+               upb_Arena* arena) const {
+    auto* join_promise =
+        grpc_channelz_v2_Promise_mutable_join_promise(promise_proto, arena);
+    grpc_channelz_v2_Promise_Join_set_kind(join_promise, kind);
+    auto** branches =
+        grpc_channelz_v2_Promise_Join_resize_branches(join_promise, 7, arena);
+    for (int i = 0; i < 7; i++) {
+      branches[i] = grpc_channelz_v2_Promise_JoinBranch_new(arena);
+    }
+    grpc_channelz_v2_Promise_JoinBranch_set_factory(
+        branches[0], StdStringToUpbString(TypeName<P0>()));
+    if (ready.is_set(0)) {
+      grpc_channelz_v2_Promise_JoinBranch_set_result(
+          branches[0], StdStringToUpbString("ready"));
+    } else {
+      PromiseAsProto(
+          promise0,
+          grpc_channelz_v2_Promise_JoinBranch_mutable_polling_promise(
+              branches[0], arena),
+          arena);
+    }
+    grpc_channelz_v2_Promise_JoinBranch_set_factory(
+        branches[1], StdStringToUpbString(TypeName<P1>()));
+    if (ready.is_set(1)) {
+      grpc_channelz_v2_Promise_JoinBranch_set_result(
+          branches[1], StdStringToUpbString("ready"));
+    } else {
+      PromiseAsProto(
+          promise1,
+          grpc_channelz_v2_Promise_JoinBranch_mutable_polling_promise(
+              branches[1], arena),
+          arena);
+    }
+    grpc_channelz_v2_Promise_JoinBranch_set_factory(
+        branches[2], StdStringToUpbString(TypeName<P2>()));
+    if (ready.is_set(2)) {
+      grpc_channelz_v2_Promise_JoinBranch_set_result(
+          branches[2], StdStringToUpbString("ready"));
+    } else {
+      PromiseAsProto(
+          promise2,
+          grpc_channelz_v2_Promise_JoinBranch_mutable_polling_promise(
+              branches[2], arena),
+          arena);
+    }
+    grpc_channelz_v2_Promise_JoinBranch_set_factory(
+        branches[3], StdStringToUpbString(TypeName<P3>()));
+    if (ready.is_set(3)) {
+      grpc_channelz_v2_Promise_JoinBranch_set_result(
+          branches[3], StdStringToUpbString("ready"));
+    } else {
+      PromiseAsProto(
+          promise3,
+          grpc_channelz_v2_Promise_JoinBranch_mutable_polling_promise(
+              branches[3], arena),
+          arena);
+    }
+    grpc_channelz_v2_Promise_JoinBranch_set_factory(
+        branches[4], StdStringToUpbString(TypeName<P4>()));
+    if (ready.is_set(4)) {
+      grpc_channelz_v2_Promise_JoinBranch_set_result(
+          branches[4], StdStringToUpbString("ready"));
+    } else {
+      PromiseAsProto(
+          promise4,
+          grpc_channelz_v2_Promise_JoinBranch_mutable_polling_promise(
+              branches[4], arena),
+          arena);
+    }
+    grpc_channelz_v2_Promise_JoinBranch_set_factory(
+        branches[5], StdStringToUpbString(TypeName<P5>()));
+    if (ready.is_set(5)) {
+      grpc_channelz_v2_Promise_JoinBranch_set_result(
+          branches[5], StdStringToUpbString("ready"));
+    } else {
+      PromiseAsProto(
+          promise5,
+          grpc_channelz_v2_Promise_JoinBranch_mutable_polling_promise(
+              branches[5], arena),
+          arena);
+    }
+    grpc_channelz_v2_Promise_JoinBranch_set_factory(
+        branches[6], StdStringToUpbString(TypeName<P6>()));
+    if (ready.is_set(6)) {
+      grpc_channelz_v2_Promise_JoinBranch_set_result(
+          branches[6], StdStringToUpbString("ready"));
+    } else {
+      PromiseAsProto(
+          promise6,
+          grpc_channelz_v2_Promise_JoinBranch_mutable_polling_promise(
+              branches[6], arena),
+          arena);
+    }
+  }
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION JoinState(JoinState&& other) noexcept {
     GRPC_DCHECK(other.ready.none());
     Construct(&promise0, std::move(other.promise0));
@@ -1224,6 +1622,114 @@ struct JoinState<Traits, P0, P1, P2, P3, P4, P5, P6, P7> {
       delete;
   JoinState& operator=(const JoinState& other) = delete;
   JoinState& operator=(JoinState&& other) = delete;
+  void ToProto(grpc_channelz_v2_Promise_CompositionKind kind,
+               grpc_channelz_v2_Promise* promise_proto,
+               upb_Arena* arena) const {
+    auto* join_promise =
+        grpc_channelz_v2_Promise_mutable_join_promise(promise_proto, arena);
+    grpc_channelz_v2_Promise_Join_set_kind(join_promise, kind);
+    auto** branches =
+        grpc_channelz_v2_Promise_Join_resize_branches(join_promise, 8, arena);
+    for (int i = 0; i < 8; i++) {
+      branches[i] = grpc_channelz_v2_Promise_JoinBranch_new(arena);
+    }
+    grpc_channelz_v2_Promise_JoinBranch_set_factory(
+        branches[0], StdStringToUpbString(TypeName<P0>()));
+    if (ready.is_set(0)) {
+      grpc_channelz_v2_Promise_JoinBranch_set_result(
+          branches[0], StdStringToUpbString("ready"));
+    } else {
+      PromiseAsProto(
+          promise0,
+          grpc_channelz_v2_Promise_JoinBranch_mutable_polling_promise(
+              branches[0], arena),
+          arena);
+    }
+    grpc_channelz_v2_Promise_JoinBranch_set_factory(
+        branches[1], StdStringToUpbString(TypeName<P1>()));
+    if (ready.is_set(1)) {
+      grpc_channelz_v2_Promise_JoinBranch_set_result(
+          branches[1], StdStringToUpbString("ready"));
+    } else {
+      PromiseAsProto(
+          promise1,
+          grpc_channelz_v2_Promise_JoinBranch_mutable_polling_promise(
+              branches[1], arena),
+          arena);
+    }
+    grpc_channelz_v2_Promise_JoinBranch_set_factory(
+        branches[2], StdStringToUpbString(TypeName<P2>()));
+    if (ready.is_set(2)) {
+      grpc_channelz_v2_Promise_JoinBranch_set_result(
+          branches[2], StdStringToUpbString("ready"));
+    } else {
+      PromiseAsProto(
+          promise2,
+          grpc_channelz_v2_Promise_JoinBranch_mutable_polling_promise(
+              branches[2], arena),
+          arena);
+    }
+    grpc_channelz_v2_Promise_JoinBranch_set_factory(
+        branches[3], StdStringToUpbString(TypeName<P3>()));
+    if (ready.is_set(3)) {
+      grpc_channelz_v2_Promise_JoinBranch_set_result(
+          branches[3], StdStringToUpbString("ready"));
+    } else {
+      PromiseAsProto(
+          promise3,
+          grpc_channelz_v2_Promise_JoinBranch_mutable_polling_promise(
+              branches[3], arena),
+          arena);
+    }
+    grpc_channelz_v2_Promise_JoinBranch_set_factory(
+        branches[4], StdStringToUpbString(TypeName<P4>()));
+    if (ready.is_set(4)) {
+      grpc_channelz_v2_Promise_JoinBranch_set_result(
+          branches[4], StdStringToUpbString("ready"));
+    } else {
+      PromiseAsProto(
+          promise4,
+          grpc_channelz_v2_Promise_JoinBranch_mutable_polling_promise(
+              branches[4], arena),
+          arena);
+    }
+    grpc_channelz_v2_Promise_JoinBranch_set_factory(
+        branches[5], StdStringToUpbString(TypeName<P5>()));
+    if (ready.is_set(5)) {
+      grpc_channelz_v2_Promise_JoinBranch_set_result(
+          branches[5], StdStringToUpbString("ready"));
+    } else {
+      PromiseAsProto(
+          promise5,
+          grpc_channelz_v2_Promise_JoinBranch_mutable_polling_promise(
+              branches[5], arena),
+          arena);
+    }
+    grpc_channelz_v2_Promise_JoinBranch_set_factory(
+        branches[6], StdStringToUpbString(TypeName<P6>()));
+    if (ready.is_set(6)) {
+      grpc_channelz_v2_Promise_JoinBranch_set_result(
+          branches[6], StdStringToUpbString("ready"));
+    } else {
+      PromiseAsProto(
+          promise6,
+          grpc_channelz_v2_Promise_JoinBranch_mutable_polling_promise(
+              branches[6], arena),
+          arena);
+    }
+    grpc_channelz_v2_Promise_JoinBranch_set_factory(
+        branches[7], StdStringToUpbString(TypeName<P7>()));
+    if (ready.is_set(7)) {
+      grpc_channelz_v2_Promise_JoinBranch_set_result(
+          branches[7], StdStringToUpbString("ready"));
+    } else {
+      PromiseAsProto(
+          promise7,
+          grpc_channelz_v2_Promise_JoinBranch_mutable_polling_promise(
+              branches[7], arena),
+          arena);
+    }
+  }
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION JoinState(JoinState&& other) noexcept {
     GRPC_DCHECK(other.ready.none());
     Construct(&promise0, std::move(other.promise0));
@@ -1543,6 +2049,126 @@ struct JoinState<Traits, P0, P1, P2, P3, P4, P5, P6, P7, P8> {
       delete;
   JoinState& operator=(const JoinState& other) = delete;
   JoinState& operator=(JoinState&& other) = delete;
+  void ToProto(grpc_channelz_v2_Promise_CompositionKind kind,
+               grpc_channelz_v2_Promise* promise_proto,
+               upb_Arena* arena) const {
+    auto* join_promise =
+        grpc_channelz_v2_Promise_mutable_join_promise(promise_proto, arena);
+    grpc_channelz_v2_Promise_Join_set_kind(join_promise, kind);
+    auto** branches =
+        grpc_channelz_v2_Promise_Join_resize_branches(join_promise, 9, arena);
+    for (int i = 0; i < 9; i++) {
+      branches[i] = grpc_channelz_v2_Promise_JoinBranch_new(arena);
+    }
+    grpc_channelz_v2_Promise_JoinBranch_set_factory(
+        branches[0], StdStringToUpbString(TypeName<P0>()));
+    if (ready.is_set(0)) {
+      grpc_channelz_v2_Promise_JoinBranch_set_result(
+          branches[0], StdStringToUpbString("ready"));
+    } else {
+      PromiseAsProto(
+          promise0,
+          grpc_channelz_v2_Promise_JoinBranch_mutable_polling_promise(
+              branches[0], arena),
+          arena);
+    }
+    grpc_channelz_v2_Promise_JoinBranch_set_factory(
+        branches[1], StdStringToUpbString(TypeName<P1>()));
+    if (ready.is_set(1)) {
+      grpc_channelz_v2_Promise_JoinBranch_set_result(
+          branches[1], StdStringToUpbString("ready"));
+    } else {
+      PromiseAsProto(
+          promise1,
+          grpc_channelz_v2_Promise_JoinBranch_mutable_polling_promise(
+              branches[1], arena),
+          arena);
+    }
+    grpc_channelz_v2_Promise_JoinBranch_set_factory(
+        branches[2], StdStringToUpbString(TypeName<P2>()));
+    if (ready.is_set(2)) {
+      grpc_channelz_v2_Promise_JoinBranch_set_result(
+          branches[2], StdStringToUpbString("ready"));
+    } else {
+      PromiseAsProto(
+          promise2,
+          grpc_channelz_v2_Promise_JoinBranch_mutable_polling_promise(
+              branches[2], arena),
+          arena);
+    }
+    grpc_channelz_v2_Promise_JoinBranch_set_factory(
+        branches[3], StdStringToUpbString(TypeName<P3>()));
+    if (ready.is_set(3)) {
+      grpc_channelz_v2_Promise_JoinBranch_set_result(
+          branches[3], StdStringToUpbString("ready"));
+    } else {
+      PromiseAsProto(
+          promise3,
+          grpc_channelz_v2_Promise_JoinBranch_mutable_polling_promise(
+              branches[3], arena),
+          arena);
+    }
+    grpc_channelz_v2_Promise_JoinBranch_set_factory(
+        branches[4], StdStringToUpbString(TypeName<P4>()));
+    if (ready.is_set(4)) {
+      grpc_channelz_v2_Promise_JoinBranch_set_result(
+          branches[4], StdStringToUpbString("ready"));
+    } else {
+      PromiseAsProto(
+          promise4,
+          grpc_channelz_v2_Promise_JoinBranch_mutable_polling_promise(
+              branches[4], arena),
+          arena);
+    }
+    grpc_channelz_v2_Promise_JoinBranch_set_factory(
+        branches[5], StdStringToUpbString(TypeName<P5>()));
+    if (ready.is_set(5)) {
+      grpc_channelz_v2_Promise_JoinBranch_set_result(
+          branches[5], StdStringToUpbString("ready"));
+    } else {
+      PromiseAsProto(
+          promise5,
+          grpc_channelz_v2_Promise_JoinBranch_mutable_polling_promise(
+              branches[5], arena),
+          arena);
+    }
+    grpc_channelz_v2_Promise_JoinBranch_set_factory(
+        branches[6], StdStringToUpbString(TypeName<P6>()));
+    if (ready.is_set(6)) {
+      grpc_channelz_v2_Promise_JoinBranch_set_result(
+          branches[6], StdStringToUpbString("ready"));
+    } else {
+      PromiseAsProto(
+          promise6,
+          grpc_channelz_v2_Promise_JoinBranch_mutable_polling_promise(
+              branches[6], arena),
+          arena);
+    }
+    grpc_channelz_v2_Promise_JoinBranch_set_factory(
+        branches[7], StdStringToUpbString(TypeName<P7>()));
+    if (ready.is_set(7)) {
+      grpc_channelz_v2_Promise_JoinBranch_set_result(
+          branches[7], StdStringToUpbString("ready"));
+    } else {
+      PromiseAsProto(
+          promise7,
+          grpc_channelz_v2_Promise_JoinBranch_mutable_polling_promise(
+              branches[7], arena),
+          arena);
+    }
+    grpc_channelz_v2_Promise_JoinBranch_set_factory(
+        branches[8], StdStringToUpbString(TypeName<P8>()));
+    if (ready.is_set(8)) {
+      grpc_channelz_v2_Promise_JoinBranch_set_result(
+          branches[8], StdStringToUpbString("ready"));
+    } else {
+      PromiseAsProto(
+          promise8,
+          grpc_channelz_v2_Promise_JoinBranch_mutable_polling_promise(
+              branches[8], arena),
+          arena);
+    }
+  }
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION JoinState(JoinState&& other) noexcept {
     GRPC_DCHECK(other.ready.none());
     Construct(&promise0, std::move(other.promise0));

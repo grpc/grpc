@@ -129,7 +129,7 @@ absl::Status SendValidatePayload(absl::string_view data,
                                                   read_store_buf);
     EventEngine::Endpoint::ReadArgs args;
     args.set_read_hint_bytes(num_bytes_remaining);
-    if (receive_endpoint->Read(read_cb, &read_slice_buf, std::move(args))) {
+    if (receive_endpoint->Read(read_cb, &read_slice_buf, args)) {
       read_cb(absl::OkStatus());
     }
   };
@@ -137,7 +137,7 @@ absl::Status SendValidatePayload(absl::string_view data,
   EventEngine::Endpoint::ReadArgs args;
   args.set_read_hint_bytes(
       (read_hint_bytes == -1 ? num_bytes_written : read_hint_bytes));
-  if (receive_endpoint->Read(read_cb, &read_slice_buf, std::move(args))) {
+  if (receive_endpoint->Read(read_cb, &read_slice_buf, args)) {
     read_cb(absl::OkStatus());
   }
   // Start asynchronous writing at the send_endpoint.

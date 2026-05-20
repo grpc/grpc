@@ -63,7 +63,7 @@ namespace grpc_core {
 
 absl::StatusOr<RefCountedPtr<Channel>> LegacyChannel::Create(
     std::string target, ChannelArgs args,
-    grpc_channel_stack_type channel_stack_type, const Blackboard* blackboard) {
+    grpc_channel_stack_type channel_stack_type) {
   if (grpc_channel_stack_type_is_client(channel_stack_type)) {
     auto channel_args_mutator =
         grpc_channel_args_get_client_channel_creation_mutator();
@@ -76,16 +76,6 @@ absl::StatusOr<RefCountedPtr<Channel>> LegacyChannel::Create(
   if (channel_stack_type == GRPC_SERVER_CHANNEL) {
     stats_plugin_group =
         GlobalStatsPluginRegistry::GetStatsPluginsForServer(args);
-    // Add per-server stats plugins.
-    auto* stats_plugin_list = args.GetPointer<
-        std::shared_ptr<std::vector<std::shared_ptr<StatsPlugin>>>>(
-        GRPC_ARG_EXPERIMENTAL_STATS_PLUGINS);
-    if (stats_plugin_list != nullptr) {
-      for (const auto& plugin : **stats_plugin_list) {
-        stats_plugin_group->AddStatsPlugin(plugin,
-                                           plugin->GetServerScopeConfig(args));
-      }
-    }
   } else {
     std::string authority = args.GetOwnedString(GRPC_ARG_DEFAULT_AUTHORITY)
                                 .value_or(CoreConfiguration::Get()
@@ -97,23 +87,12 @@ absl::StatusOr<RefCountedPtr<Channel>> LegacyChannel::Create(
                                                 endpoint_config);
     stats_plugin_group =
         GlobalStatsPluginRegistry::GetStatsPluginsForChannel(scope);
-    // Add per-channel stats plugins.
-    auto* stats_plugin_list = args.GetPointer<
-        std::shared_ptr<std::vector<std::shared_ptr<StatsPlugin>>>>(
-        GRPC_ARG_EXPERIMENTAL_STATS_PLUGINS);
-    if (stats_plugin_list != nullptr) {
-      for (const auto& plugin : **stats_plugin_list) {
-        stats_plugin_group->AddStatsPlugin(
-            plugin, plugin->GetChannelScopeConfig(scope));
-      }
-    }
   }
   args = args.SetObject(stats_plugin_group);
   ChannelStackBuilderImpl builder(
       grpc_channel_stack_type_string(channel_stack_type), channel_stack_type,
       args);
   builder.SetTarget(target.c_str());
-  builder.SetBlackboard(blackboard);
   if (!CoreConfiguration::Get().channel_init().CreateStack(&builder)) {
     return nullptr;
   }

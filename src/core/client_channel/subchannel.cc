@@ -1750,8 +1750,6 @@ class NewSubchannel::ConnectionStateWatcher final
       // connection attempt.
       subchannel->RetryQueuedRpcsLocked();
     }
-    // Reset backoff.
-    subchannel->backoff_.Reset();
   }
 
   void OnPeerMaxConcurrentStreamsUpdate(
@@ -2264,6 +2262,8 @@ bool NewSubchannel::PublishTransportLocked() {
         connecting_result_.max_concurrent_streams);
   }
   connecting_result_.Reset();
+  // Reset backoff.
+  backoff_.Reset();
   // Publish.
   GRPC_TRACE_LOG(subchannel, INFO)
       << "subchannel " << this << " " << key_.ToString()
@@ -2323,11 +2323,24 @@ RefCountedPtr<UnstartedCallDestination> NewSubchannel::call_destination() {
   return connected_subchannel->unstarted_call_destination();
 }
 
+namespace {
+bool g_test_only_always_send_calls_to_transport = false;
+}  // namespace
+
+void TestOnlySetSubchannelAlwaysSendCallsToTransport(bool enabled) {
+  g_test_only_always_send_calls_to_transport = enabled;
+}
+
 RefCountedPtr<NewSubchannel::ConnectedSubchannel>
 NewSubchannel::ChooseConnectionLocked() {
   // Try to find a connection with quota available for the RPC.
   for (auto& connection : connections_) {
     if (connection->GetQuotaForRpc()) return connection;
+  }
+  // TODO(roth): This is an ugly hack for the chttp2 streams_not_seen test.
+  // Find a better way to do this.
+  if (g_test_only_always_send_calls_to_transport && !connections_.empty()) {
+    return connections_[0];
   }
   // If we didn't find a connection for the RPC, we'll queue it.
   // Trigger a new connection attempt if we need to scale up the number
@@ -2344,6 +2357,7 @@ NewSubchannel::ChooseConnectionLocked() {
 
 void NewSubchannel::RetryQueuedRpcs() {
   MutexLock lock(&mu_);
+  if (shutdown_) return;
   RetryQueuedRpcsLocked();
 }
 

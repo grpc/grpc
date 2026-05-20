@@ -41,3 +41,10 @@ pip_parse(
         "3.11": "@com_google_protobuf//python:requirements_311.txt",
     },
 )
+
+load("@rules_python//python:repositories.bzl", "python_register_toolchains")
+
+python_register_toolchains(
+    name = "python_3_11",
+    python_version = "3.11",
+)

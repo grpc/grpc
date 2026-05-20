@@ -24,16 +24,10 @@ static const upb_MiniTableField grpc_channelz_v2_QueryEntitiesRequest__fields[3]
 const upb_MiniTable grpc__channelz__v2__QueryEntitiesRequest_msg_init = {
   NULL,
   &grpc_channelz_v2_QueryEntitiesRequest__fields[0],
-  UPB_SIZE(32, 40), 3, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(24), 0,
+  UPB_SIZE(32, 40), 3, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "grpc.channelz.v2.QueryEntitiesRequest",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x000800003f00000a, &upb_pss_1bt},
-    {0x001800003f000010, &upb_psv8_1bt},
-    {0x002000003f000018, &upb_psv8_1bt},
-  })
 };
 
 const upb_MiniTable* grpc__channelz__v2__QueryEntitiesRequest_msg_init_ptr = &grpc__channelz__v2__QueryEntitiesRequest_msg_init;
@@ -49,16 +43,10 @@ static const upb_MiniTableField grpc_channelz_v2_QueryEntitiesResponse__fields[2
 const upb_MiniTable grpc__channelz__v2__QueryEntitiesResponse_msg_init = {
   &grpc_channelz_v2_QueryEntitiesResponse__submsgs[0],
   &grpc_channelz_v2_QueryEntitiesResponse__fields[0],
-  UPB_SIZE(16, 24), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
+  UPB_SIZE(16, 24), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "grpc.channelz.v2.QueryEntitiesResponse",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x001000003f00000a, &upb_prm_1bt_maxmaxb},
-    {0x000800003f000010, &upb_psb1_1bt},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-  })
 };
 
 const upb_MiniTable* grpc__channelz__v2__QueryEntitiesResponse_msg_init_ptr = &grpc__channelz__v2__QueryEntitiesResponse_msg_init;
@@ -69,14 +57,10 @@ static const upb_MiniTableField grpc_channelz_v2_GetEntityRequest__fields[1] = {
 const upb_MiniTable grpc__channelz__v2__GetEntityRequest_msg_init = {
   NULL,
   &grpc_channelz_v2_GetEntityRequest__fields[0],
-  16, 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(8), 0,
+  16, 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "grpc.channelz.v2.GetEntityRequest",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x000800003f000008, &upb_psv8_1bt},
-  })
 };
 
 const upb_MiniTable* grpc__channelz__v2__GetEntityRequest_msg_init_ptr = &grpc__channelz__v2__GetEntityRequest_msg_init;
@@ -111,16 +95,10 @@ static const upb_MiniTableField grpc_channelz_v2_QueryTraceRequest__fields[3] = 
 const upb_MiniTable grpc__channelz__v2__QueryTraceRequest_msg_init = {
   &grpc_channelz_v2_QueryTraceRequest__submsgs[0],
   &grpc_channelz_v2_QueryTraceRequest__fields[0],
-  UPB_SIZE(32, 40), 3, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
+  UPB_SIZE(32, 40), 3, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "grpc.channelz.v2.QueryTraceRequest",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x001800003f000008, &upb_psv8_1bt},
-    {0x000800003f000012, &upb_pss_1bt},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-  })
 };
 
 const upb_MiniTable* grpc__channelz__v2__QueryTraceRequest_msg_init_ptr = &grpc__channelz__v2__QueryTraceRequest_msg_init;
@@ -133,16 +111,10 @@ static const upb_MiniTableField grpc_channelz_v2_QueryTraceRequest_QueryArgValue
 const upb_MiniTable grpc__channelz__v2__QueryTraceRequest__QueryArgValue_msg_init = {
   NULL,
   &grpc_channelz_v2_QueryTraceRequest_QueryArgValue__fields[0],
-  UPB_SIZE(24, 32), 3, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(24), 0,
+  UPB_SIZE(24, 32), 3, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "grpc.channelz.v2.QueryTraceRequest.QueryArgValue",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0010000801000008, &upb_pov8_1bt},
-    {0x0010000802000012, &upb_pos_1bt},
-    {0x0010000803000018, &upb_pob1_1bt},
-  })
 };
 
 const upb_MiniTable* grpc__channelz__v2__QueryTraceRequest__QueryArgValue_msg_init_ptr = &grpc__channelz__v2__QueryTraceRequest__QueryArgValue_msg_init;
@@ -158,14 +130,10 @@ static const upb_MiniTableField grpc_channelz_v2_QueryTraceRequest_ArgsEntry__fi
 const upb_MiniTable grpc__channelz__v2__QueryTraceRequest__ArgsEntry_msg_init = {
   &grpc_channelz_v2_QueryTraceRequest_ArgsEntry__submsgs[0],
   &grpc_channelz_v2_QueryTraceRequest_ArgsEntry__fields[0],
-  48, 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(8), 0,
+  48, 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "grpc.channelz.v2.QueryTraceRequest.ArgsEntry",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x001000003f00000a, &upb_pss_1bt},
-  })
 };
 
 const upb_MiniTable* grpc__channelz__v2__QueryTraceRequest__ArgsEntry_msg_init_ptr = &grpc__channelz__v2__QueryTraceRequest__ArgsEntry_msg_init;
@@ -181,16 +149,10 @@ static const upb_MiniTableField grpc_channelz_v2_QueryTraceResponse__fields[2] =
 const upb_MiniTable grpc__channelz__v2__QueryTraceResponse_msg_init = {
   &grpc_channelz_v2_QueryTraceResponse__submsgs[0],
   &grpc_channelz_v2_QueryTraceResponse__fields[0],
-  24, 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
+  24, 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "grpc.channelz.v2.QueryTraceResponse",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x000800003f00000a, &upb_prm_1bt_maxmaxb},
-    {0x001000003f000010, &upb_psv8_1bt},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-  })
 };
 
 const upb_MiniTable* grpc__channelz__v2__QueryTraceResponse_msg_init_ptr = &grpc__channelz__v2__QueryTraceResponse_msg_init;
