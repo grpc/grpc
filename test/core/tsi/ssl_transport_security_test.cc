@@ -1184,12 +1184,11 @@ TEST(SslTransportSecurityTest, TestClientHandshakerFactoryRefcounting) {
   tsi_handshaker* handshaker[3];
 
   for (i = 0; i < 3; ++i) {
-    ASSERT_EQ(
-        tsi_ssl_client_handshaker_factory_create_handshaker(
-            client_handshaker_factory, "google.com", 0, 0,
-            /*alpn_preferred_protocol_list=*/std::nullopt,
-            /*stats_plugin_group=*/nullptr, &handshaker[i]),
-        TSI_OK);
+    ASSERT_EQ(tsi_ssl_client_handshaker_factory_create_handshaker(
+                  client_handshaker_factory, "google.com", 0, 0,
+                  /*alpn_preferred_protocol_list=*/std::nullopt,
+                  /*stats_plugin_group=*/nullptr, &handshaker[i]),
+              TSI_OK);
   }
 
   client_handshaker_factory =
@@ -1529,8 +1528,8 @@ TEST(SslTransportSecurityTest, SslHandshakerStatsPluginGroupIsSet) {
   ASSERT_EQ(tsi_ssl_client_handshaker_factory_create_handshaker(
                 client_factory, "foo.test.google.com.au",
                 /*network_bio_buf_size=*/0,
-                /*ssl_bio_buf_size=*/0, std::nullopt,
-                stats_plugin_group, &client_handshaker),
+                /*ssl_bio_buf_size=*/0, std::nullopt, stats_plugin_group,
+                &client_handshaker),
             TSI_OK);
 
   // 4. Verify it was stored in the handshaker

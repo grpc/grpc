@@ -2656,7 +2656,8 @@ tsi_result tsi_ssl_client_handshaker_factory_create_handshaker(
     const char* server_name_indication, size_t network_bio_buf_size,
     size_t ssl_bio_buf_size,
     std::optional<std::string> alpn_preferred_protocol_list,
-    std::shared_ptr<grpc_core::GlobalStatsPluginRegistry::StatsPluginGroup> stats_plugin_group,
+    std::shared_ptr<grpc_core::GlobalStatsPluginRegistry::StatsPluginGroup>
+        stats_plugin_group,
     tsi_handshaker** handshaker) {
   GRPC_TRACE_LOG(tsi, INFO)
       << "Creating SSL handshaker with SNI " << server_name_indication;
@@ -2711,7 +2712,8 @@ static int client_handshaker_factory_npn_callback(
 tsi_result tsi_ssl_server_handshaker_factory_create_handshaker(
     tsi_ssl_server_handshaker_factory* factory, size_t network_bio_buf_size,
     size_t ssl_bio_buf_size,
-    std::shared_ptr<grpc_core::GlobalStatsPluginRegistry::StatsPluginGroup> stats_plugin_group,
+    std::shared_ptr<grpc_core::GlobalStatsPluginRegistry::StatsPluginGroup>
+        stats_plugin_group,
     tsi_handshaker** handshaker) {
   if (factory->ssl_contexts.empty()) return TSI_INVALID_ARGUMENT;
 #if defined(OPENSSL_IS_BORINGSSL)
