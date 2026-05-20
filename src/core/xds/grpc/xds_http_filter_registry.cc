@@ -113,8 +113,6 @@ RefCountedPtr<const FilterConfig> XdsHttpRouterFilter::ParseOverrideConfig(
 namespace {
 
 bool XdsCompositeFilterEnabled() {
-  // This experiment is a prereq.
-  if (!IsXdsChannelFilterChainPerRouteEnabled()) return false;
   auto value = GetEnv("GRPC_EXPERIMENTAL_XDS_COMPOSITE_FILTER");
   if (!value.has_value()) return false;
   bool parsed_value;

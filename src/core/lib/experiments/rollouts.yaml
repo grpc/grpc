@@ -70,6 +70,8 @@
   default: false
 - name: fuse_filters
   default: false
+- name: inproc_cancel_stream
+  default: true
 - name: keep_alive_ping_timer_batch
   default: false
 - name: local_connector_secure
@@ -80,9 +82,21 @@
   default: false
 - name: memory_optimization_02
   default: false
+- name: message_size_refactoring
+  default: false
+- name: metadata_outstanding_token_refactor
+  default: false
 - name: metadata_publish_to_app_tag
   default: true
 - name: monitoring_experiment
+  default: true
+- name: optimization_01
+  default: true
+- name: optimization_02
+  default: true
+- name: optimization_03
+  default: true
+- name: optimization_04
   default: true
 - name: ph2_perf_01
   default: false
@@ -114,5 +128,3 @@
   default: false
 - name: use_call_event_engine_in_completion_queue
   default: false
-- name: xds_channel_filter_chain_per_route
-  default: true

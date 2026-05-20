@@ -21,6 +21,7 @@
 #include "src/core/ext/transport/chaotic_good/control_endpoint.h"
 #include "src/core/ext/transport/chaotic_good/frame_transport.h"
 #include "src/core/ext/transport/chaotic_good/serialize_little_endian.h"
+#include "src/core/ext/transport/chaotic_good/tcp_frame_header.h"
 #include "src/core/ext/transport/chaotic_good/tcp_ztrace_collector.h"
 #include "src/core/ext/transport/chaotic_good/transport_context.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
@@ -30,7 +31,11 @@
 #include "src/core/lib/promise/race.h"
 #include "src/core/lib/promise/seq.h"
 #include "src/core/lib/promise/try_seq.h"
+#include "src/core/lib/slice/slice.h"
 #include "src/core/lib/transport/transport_framing_endpoint_extension.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/str_cat.h"
 
 namespace grpc_core {
 namespace chaotic_good {
@@ -55,8 +60,8 @@ TcpFrameTransport::TcpFrameTransport(
       control_endpoint_(std::move(control_endpoint), ctx, ztrace_collector_),
       data_endpoints_(std::move(pending_data_endpoints), ctx,
                       options.encode_alignment, options.decode_alignment,
-                      ztrace_collector_, options.enable_tracing,
-                      options.scheduler_config),
+                      options.max_receive_message_length, ztrace_collector_,
+                      options.enable_tracing, options.scheduler_config),
       options_(options) {
   auto* transport_framing_endpoint_extension =
       GetTransportFramingEndpointExtension(
@@ -143,17 +148,23 @@ auto TcpFrameTransport::ReadFrameBytes() {
   return Loop([this]() {
     return TrySeq(
         control_endpoint_.ReadSlice(TcpFrameHeader::kFrameHeaderSize),
-        [this](Slice read_buffer) {
+        [this](Slice read_buffer) -> absl::StatusOr<TcpFrameHeader> {
           auto frame_header =
               TcpFrameHeader::Parse(reinterpret_cast<const uint8_t*>(
                   GRPC_SLICE_START_PTR(read_buffer.c_slice())));
+          if (!frame_header.ok()) return frame_header.status();
+          if (frame_header->header.payload_length >
+              options_.max_receive_message_length) {
+            return absl::ResourceExhaustedError(
+                absl::StrCat("Received message larger than max (",
+                             frame_header->header.payload_length, " vs. ",
+                             options_.max_receive_message_length, ")"));
+          }
           GRPC_TRACE_LOG(chaotic_good, INFO)
               << "CHAOTIC_GOOD: ReadHeader from:"
               << ResolvedAddressToString(control_endpoint_.GetPeerAddress())
                      .value_or("<<unknown peer address>>")
-              << " "
-              << (frame_header.ok() ? frame_header->ToString()
-                                    : frame_header.status().ToString());
+              << " " << frame_header->ToString();
           return frame_header;
         },
         [this](TcpFrameHeader frame_header) {
