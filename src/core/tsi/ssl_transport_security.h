@@ -495,6 +495,13 @@ enum class TlsTelemetryResult {
   INTERNAL_SYSTEM_ERROR
 };
 
+// Maps different kinds of handshake/SSL/TLS errors to a unified TlsTelemetryResult.
+//
+// - ssl_error: the return code from SSL_get_error().
+// - err_code: the packed error code from the OpenSSL error queue (ERR_get_error()).
+// - verify_result: the certificate verification result from SSL_get_verify_result().
+//
+// - Returns the corresponding TlsTelemetryResult mapping for the failures.
 TlsTelemetryResult MapSslErrorToTlsTelemetryResult(int ssl_error,
                                                    unsigned long err_code,
                                                    long verify_result);

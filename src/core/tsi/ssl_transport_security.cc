@@ -367,6 +367,46 @@ int ServerHandshakerFactoryAlpnCallback(SSL* /*ssl*/, const unsigned char** out,
                                            factory->alpn_protocol_list_length);
 }
 #endif  // TSI_OPENSSL_ALPN_SUPPORT
+
+tsi::TlsTelemetryResult MapVerifyResultToTlsTelemetryResult(
+    long verify_result) {
+  if (verify_result == X509_V_OK) return tsi::TlsTelemetryResult::SUCCESS;
+  switch (verify_result) {
+    case X509_V_ERR_CERT_REVOKED:
+      return tsi::TlsTelemetryResult::CERTIFICATE_REVOKED;
+    case X509_V_ERR_CERT_HAS_EXPIRED:
+      return tsi::TlsTelemetryResult::CERTIFICATE_EXPIRED;
+    case X509_V_ERR_CERT_NOT_YET_VALID:
+      return tsi::TlsTelemetryResult::CERTIFICATE_NOT_YET_VALID;
+    case X509_V_ERR_UNABLE_TO_GET_ISSUER_CERT:
+    case X509_V_ERR_UNABLE_TO_GET_ISSUER_CERT_LOCALLY:
+    case X509_V_ERR_DEPTH_ZERO_SELF_SIGNED_CERT:
+    case X509_V_ERR_SELF_SIGNED_CERT_IN_CHAIN:
+    case X509_V_ERR_UNABLE_TO_VERIFY_LEAF_SIGNATURE:
+      return tsi::TlsTelemetryResult::CERTIFICATE_AUTHORITY_INVALID;
+    case X509_V_ERR_HOSTNAME_MISMATCH:
+      return tsi::TlsTelemetryResult::CERTIFICATE_HOSTNAME_MISMATCH;
+    case X509_V_ERR_CERT_REJECTED:
+      return tsi::TlsTelemetryResult::CERTIFICATE_VERIFICATION_FAILED;
+    case X509_V_ERR_UNABLE_TO_GET_CRL:
+      return tsi::TlsTelemetryResult::CRL_NOT_FOUND;
+    case X509_V_ERR_CRL_HAS_EXPIRED:
+    case X509_V_ERR_CRL_NOT_YET_VALID:
+      return tsi::TlsTelemetryResult::CRL_EXPIRED;
+    case X509_V_ERR_CRL_SIGNATURE_FAILURE:
+      return tsi::TlsTelemetryResult::CRL_SIGNATURE_FAILURE;
+    case X509_V_ERR_INVALID_CA:
+    case X509_V_ERR_INVALID_NON_CA:
+    case X509_V_ERR_INVALID_PURPOSE:
+    case X509_V_ERR_ERROR_IN_CERT_NOT_BEFORE_FIELD:
+    case X509_V_ERR_ERROR_IN_CERT_NOT_AFTER_FIELD:
+      return tsi::TlsTelemetryResult::CERTIFICATE_MALFORMED;
+    case X509_V_ERR_CERT_SIGNATURE_FAILURE:
+      return tsi::TlsTelemetryResult::SIGNATURE_VERIFICATION_FAILED;
+    default:
+      return tsi::TlsTelemetryResult::CERTIFICATE_VERIFICATION_FAILED;
+  }
+}
 }  // namespace
 
 static gpr_once g_init_openssl_once = GPR_ONCE_INIT;
@@ -3358,45 +3398,7 @@ bool IsRootCertInfoEmpty(const tsi::RootCertInfo* root_cert_info) {
       });
 }
 
-static TlsTelemetryResult MapVerifyResultToTlsTelemetryResult(
-    long verify_result) {
-  if (verify_result == X509_V_OK) return TlsTelemetryResult::SUCCESS;
-  switch (verify_result) {
-    case X509_V_ERR_CERT_REVOKED:
-      return TlsTelemetryResult::CERTIFICATE_REVOKED;
-    case X509_V_ERR_CERT_HAS_EXPIRED:
-      return TlsTelemetryResult::CERTIFICATE_EXPIRED;
-    case X509_V_ERR_CERT_NOT_YET_VALID:
-      return TlsTelemetryResult::CERTIFICATE_NOT_YET_VALID;
-    case X509_V_ERR_UNABLE_TO_GET_ISSUER_CERT:
-    case X509_V_ERR_UNABLE_TO_GET_ISSUER_CERT_LOCALLY:
-    case X509_V_ERR_DEPTH_ZERO_SELF_SIGNED_CERT:
-    case X509_V_ERR_SELF_SIGNED_CERT_IN_CHAIN:
-    case X509_V_ERR_UNABLE_TO_VERIFY_LEAF_SIGNATURE:
-      return TlsTelemetryResult::CERTIFICATE_AUTHORITY_INVALID;
-    case X509_V_ERR_HOSTNAME_MISMATCH:
-      return TlsTelemetryResult::CERTIFICATE_HOSTNAME_MISMATCH;
-    case X509_V_ERR_CERT_REJECTED:
-      return TlsTelemetryResult::CERTIFICATE_VERIFICATION_FAILED;
-    case X509_V_ERR_UNABLE_TO_GET_CRL:
-      return TlsTelemetryResult::CRL_NOT_FOUND;
-    case X509_V_ERR_CRL_HAS_EXPIRED:
-    case X509_V_ERR_CRL_NOT_YET_VALID:
-      return TlsTelemetryResult::CRL_EXPIRED;
-    case X509_V_ERR_CRL_SIGNATURE_FAILURE:
-      return TlsTelemetryResult::CRL_SIGNATURE_FAILURE;
-    case X509_V_ERR_INVALID_CA:
-    case X509_V_ERR_INVALID_NON_CA:
-    case X509_V_ERR_INVALID_PURPOSE:
-    case X509_V_ERR_ERROR_IN_CERT_NOT_BEFORE_FIELD:
-    case X509_V_ERR_ERROR_IN_CERT_NOT_AFTER_FIELD:
-      return TlsTelemetryResult::CERTIFICATE_MALFORMED;
-    case X509_V_ERR_CERT_SIGNATURE_FAILURE:
-      return TlsTelemetryResult::SIGNATURE_VERIFICATION_FAILED;
-    default:
-      return TlsTelemetryResult::CERTIFICATE_VERIFICATION_FAILED;
-  }
-}
+
 
 TlsTelemetryResult MapSslErrorToTlsTelemetryResult(int ssl_error,
                                                    unsigned long err_code,
@@ -3495,7 +3497,7 @@ TlsTelemetryResult MapSslErrorToTlsTelemetryResult(int ssl_error,
       case SSL_R_DECODE_ERROR:
         return TlsTelemetryResult::CERTIFICATE_MALFORMED;
 
-      // Client Certificate required but missing
+      // Peer Certificate required but missing
       case SSL_R_PEER_DID_NOT_RETURN_A_CERTIFICATE:
       case SSL_R_NO_CERTIFICATES_RETURNED:
       case SSL_R_NO_CERTIFICATE_SET:
