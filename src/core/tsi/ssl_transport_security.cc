@@ -370,9 +370,9 @@ int ServerHandshakerFactoryAlpnCallback(SSL* /*ssl*/, const unsigned char** out,
 
 tsi::TlsTelemetryHandshakeResult MapVerifyResultToTlsTelemetryHandshakeResult(
     long verify_result) {
-  if (verify_result == X509_V_OK)
-    return tsi::TlsTelemetryHandshakeResult::SUCCESS;
   switch (verify_result) {
+    case X509_V_OK:
+      return tsi::TlsTelemetryHandshakeResult::SUCCESS;
     case X509_V_ERR_CERT_REVOKED:
       return tsi::TlsTelemetryHandshakeResult::CERTIFICATE_REVOKED;
     case X509_V_ERR_CERT_HAS_EXPIRED:
