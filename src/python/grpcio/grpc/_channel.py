@@ -1914,7 +1914,7 @@ def _spawn_delivery(
 # NOTE(https://github.com/grpc/grpc/issues/3064): We'd rather not poll.
 def _poll_connectivity(
     state: _ChannelConnectivityState,
-    channel: grpc.Channel,
+    channel: cygrpc.Channel,
     initial_try_to_connect: bool,
 ) -> None:
     try_to_connect = initial_try_to_connect
