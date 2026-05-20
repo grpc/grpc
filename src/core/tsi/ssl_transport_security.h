@@ -463,7 +463,7 @@ tsi_result tsi_ssl_get_cert_chain_contents(STACK_OF(X509) * peer_chain,
 namespace tsi {
 bool IsRootCertInfoEmpty(const RootCertInfo* root_cert_info);
 
-enum class TlsTelemetryResult {
+enum class TlsTelemetryHandshakeResult {
   UNKNOWN_FAILURE,  
   SUCCESS,
   // Peer certificate verification failures.
@@ -495,16 +495,16 @@ enum class TlsTelemetryResult {
   INTERNAL_SYSTEM_ERROR
 };
 
-// Maps different kinds of handshake/SSL/TLS errors to a unified TlsTelemetryResult.
+// Maps different kinds of handshake/SSL/TLS errors to a unified TlsTelemetryHandshakeResult.
 //
 // - ssl_error: the return code from SSL_get_error().
 // - err_code: the packed error code from the OpenSSL error queue (ERR_get_error()).
 // - verify_result: the certificate verification result from SSL_get_verify_result().
 //
-// - Returns the corresponding TlsTelemetryResult mapping for the failures.
-TlsTelemetryResult MapSslErrorToTlsTelemetryResult(int ssl_error,
-                                                   unsigned long err_code,
-                                                   long verify_result);
+// - Returns the corresponding TlsTelemetryHandshakeResult mapping for the failures.
+TlsTelemetryHandshakeResult MapSslErrorToTlsTelemetryHandshakeResult(int ssl_error,
+                                                                   unsigned long err_code,
+                                                                   long verify_result);
 }  // namespace tsi
 
 #endif  // GRPC_SRC_CORE_TSI_SSL_TRANSPORT_SECURITY_H
