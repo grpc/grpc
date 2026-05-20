@@ -102,6 +102,7 @@ class ServerConfigSelectorFilter final
   };
 
   RefCountedPtr<ServerConfigSelectorProvider> server_config_selector_provider_;
+  std::shared_ptr<ServerConfigSelectorWatcher> watcher_;
   Mutex mu_;
   std::optional<absl::StatusOr<RefCountedPtr<ServerConfigSelector>>>
       config_selector_ ABSL_GUARDED_BY(mu_);
@@ -124,10 +125,8 @@ ServerConfigSelectorFilter::ServerConfigSelectorFilter(
     : server_config_selector_provider_(
           std::move(server_config_selector_provider)) {
   GRPC_CHECK(server_config_selector_provider_ != nullptr);
-  auto server_config_selector_watcher =
-      std::make_unique<ServerConfigSelectorWatcher>(Ref());
-  auto config_selector = server_config_selector_provider_->Watch(
-      std::move(server_config_selector_watcher));
+  watcher_ = std::make_shared<ServerConfigSelectorWatcher>(Ref());
+  auto config_selector = server_config_selector_provider_->Watch(watcher_);
   MutexLock lock(&mu_);
   // It's possible for the watcher to have already updated config_selector_
   if (!config_selector_.has_value()) {
@@ -137,7 +136,7 @@ ServerConfigSelectorFilter::ServerConfigSelectorFilter(
 
 void ServerConfigSelectorFilter::Orphan() {
   if (server_config_selector_provider_ != nullptr) {
-    server_config_selector_provider_->CancelWatch();
+    server_config_selector_provider_->CancelWatch(std::move(watcher_));
   }
   Unref();
 }
