@@ -94,6 +94,10 @@
   default: true
 - name: optimization_02
   default: true
+- name: optimization_03
+  default: true
+- name: optimization_04
+  default: true
 - name: ph2_perf_01
   default: false
 - name: pollset_alternative

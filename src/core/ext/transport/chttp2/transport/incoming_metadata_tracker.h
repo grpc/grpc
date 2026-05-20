@@ -154,6 +154,9 @@ class IncomingMetadataTracker {
   void UpdateState(const Http2ContinuationFrame& frame) {
     GRPC_CHECK(incoming_header_in_progress_);
     GRPC_CHECK_EQ(frame.stream_id, incoming_header_stream_id_);
+    if (frame.end_headers && incoming_header_in_progress_) {
+      tracker_.OnEndHeaders();
+    }
     incoming_header_in_progress_ = !frame.end_headers;
   }
 
@@ -197,6 +200,9 @@ class IncomingMetadataTracker {
         ", incoming_header_stream_id : ", incoming_header_stream_id_, "}");
   }
 
+  Http2FrameCountTracker& mutable_tracker() { return tracker_; }
+  const Http2FrameCountTracker& tracker() const { return tracker_; }
+
  private:
   // Initialized only once at the time of transport creation.
   // Should remain constant for the lifetime of the transport.
@@ -209,6 +215,7 @@ class IncomingMetadataTracker {
   uint32_t max_header_list_size_soft_limit_ =
       DEFAULT_MAX_HEADER_LIST_SIZE_SOFT_LIMIT;
   HPackParser parser_;
+  Http2FrameCountTracker tracker_;
 };
 
 }  // namespace http2
