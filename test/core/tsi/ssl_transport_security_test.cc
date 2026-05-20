@@ -17,6 +17,7 @@
 //
 
 #include "src/core/tsi/ssl_transport_security.h"
+#include "src/core/tsi/ssl_telemetry_utils.h"
 
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>

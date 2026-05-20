@@ -4605,6 +4605,28 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "ssl_telemetry_utils",
+    srcs = [
+        "//src/core:tsi/ssl_telemetry_utils.cc",
+    ],
+    hdrs = [
+        "//src/core:tsi/ssl_telemetry_utils.h",
+    ],
+    external_deps = [
+        "absl/base:core_headers",
+        "absl/log:log",
+        "absl/strings",
+        "libcrypto",
+        "libssl",
+    ],
+    visibility = ["//visibility:public"],
+    deps = [
+        "gpr",
+        "//src/core:tsi_ssl_types",
+    ],
+)
+
+grpc_cc_library(
     name = "tsi_ssl_credentials",
     srcs = [
         "//src/core:credentials/transport/tls/ssl_utils.cc",
@@ -4639,6 +4661,7 @@ grpc_cc_library(
         "transport_auth_context",
         "tsi_base",
         "tsi_ssl_session_cache",
+        "ssl_telemetry_utils",
         "//src/core:channel_args",
         "//src/core:default_event_engine",
         "//src/core:env",
