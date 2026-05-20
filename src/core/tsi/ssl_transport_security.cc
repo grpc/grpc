@@ -3357,7 +3357,6 @@ bool IsRootCertInfoEmpty(const tsi::RootCertInfo* root_cert_info) {
         return spiffe_bundle_map.size() == 0;
       });
 }
-
 }  // namespace tsi
 
 // --- Testing support. ---
