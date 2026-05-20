@@ -1527,6 +1527,12 @@ TEST(SslTransportSecurityTest, MapSslErrorToTlsTelemetryResultTest) {
             tsi::TlsTelemetryResult::CRL_EXPIRED);
   EXPECT_EQ(tsi::MapSslErrorToTlsTelemetryResult(SSL_ERROR_NONE, 0, X509_V_ERR_CRL_SIGNATURE_FAILURE),
             tsi::TlsTelemetryResult::CRL_SIGNATURE_FAILURE);
+  EXPECT_EQ(tsi::MapSslErrorToTlsTelemetryResult(SSL_ERROR_NONE, 0, X509_V_ERR_HOSTNAME_MISMATCH),
+            tsi::TlsTelemetryResult::CERTIFICATE_HOSTNAME_MISMATCH);
+  EXPECT_EQ(tsi::MapSslErrorToTlsTelemetryResult(SSL_ERROR_NONE, 0, X509_V_ERR_INVALID_PURPOSE),
+            tsi::TlsTelemetryResult::CERTIFICATE_MALFORMED);
+  EXPECT_EQ(tsi::MapSslErrorToTlsTelemetryResult(SSL_ERROR_NONE, 0, X509_V_ERR_CERT_SIGNATURE_FAILURE),
+            tsi::TlsTelemetryResult::SIGNATURE_VERIFICATION_FAILED);
 
   // Test PEER_CONNECTION_CLOSED
   EXPECT_EQ(tsi::MapSslErrorToTlsTelemetryResult(SSL_ERROR_ZERO_RETURN, 0, X509_V_OK),
@@ -1562,6 +1568,11 @@ TEST(SslTransportSecurityTest, MapSslErrorToTlsTelemetryResultTest) {
   // Handshake timeout
   EXPECT_EQ(tsi::MapSslErrorToTlsTelemetryResult(SSL_ERROR_SSL, ERR_PACK(ERR_LIB_SSL, SSL_R_READ_TIMEOUT_EXPIRED), X509_V_OK),
             tsi::TlsTelemetryResult::HANDSHAKE_TIMEOUT);
+  // Certificate verification failures delegation
+  EXPECT_EQ(tsi::MapSslErrorToTlsTelemetryResult(SSL_ERROR_SSL, ERR_PACK(ERR_LIB_SSL, SSL_R_CERTIFICATE_VERIFY_FAILED), X509_V_ERR_CERT_REVOKED),
+            tsi::TlsTelemetryResult::CERTIFICATE_REVOKED);
+  EXPECT_EQ(tsi::MapSslErrorToTlsTelemetryResult(SSL_ERROR_SSL, ERR_PACK(ERR_LIB_SSL, SSL_R_CERTIFICATE_VERIFY_FAILED), X509_V_OK),
+            tsi::TlsTelemetryResult::CERTIFICATE_VERIFICATION_FAILED);
   // Client certificate required but missing
   EXPECT_EQ(tsi::MapSslErrorToTlsTelemetryResult(SSL_ERROR_SSL, ERR_PACK(ERR_LIB_SSL, SSL_R_PEER_DID_NOT_RETURN_A_CERTIFICATE), X509_V_OK),
             tsi::TlsTelemetryResult::PEER_CERTIFICATE_REQUIRED_BUT_MISSING);
