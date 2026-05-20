@@ -1216,7 +1216,7 @@ class _UnaryUnaryMultiCallable(grpc.UnaryUnaryMultiCallable):
             deadline,
             metadata,
             None if credentials is None else credentials._credentials,
-            (operations,),
+            (operations or [], ),
             event_handler,
             self._context,
             self._registered_call_handle,
@@ -1815,11 +1815,11 @@ class _ChannelConnectivityState:
     lock: threading.RLock
     channel: cygrpc.Channel
     polling: bool
-    connectivity: grpc.ChannelConnectivity
+    connectivity: Optional[grpc.ChannelConnectivity]
     try_to_connect: bool
     # TODO(xuanwn): Refactor this: https://github.com/grpc/grpc/issues/31704
     callbacks_and_connectivities: List[
-        Sequence[
+        MutableSequence[
             Union[
                 Callable[[grpc.ChannelConnectivity], None],
                 Optional[grpc.ChannelConnectivity],
