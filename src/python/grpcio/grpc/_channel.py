@@ -1865,7 +1865,12 @@ def _deliver(
     while True:
         for callback in callbacks:
             try:
-                callback(connectivity)
+                if connectivity is not None:
+                    callback(connectivity)
+                else:
+                    _LOGGER.warning(
+                        "Received a None connectivity state, skipping callback"
+                    )
             except Exception:  # pylint: disable=broad-except
                 _LOGGER.exception(
                     _CHANNEL_SUBSCRIPTION_CALLBACK_ERROR_LOG_MESSAGE
