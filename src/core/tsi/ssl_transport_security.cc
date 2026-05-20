@@ -3398,8 +3398,6 @@ bool IsRootCertInfoEmpty(const tsi::RootCertInfo* root_cert_info) {
       });
 }
 
-
-
 TlsTelemetryResult MapSslErrorToTlsTelemetryResult(int ssl_error,
                                                    unsigned long err_code,
                                                    long verify_result) {
