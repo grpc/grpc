@@ -3358,61 +3358,59 @@ bool IsRootCertInfoEmpty(const tsi::RootCertInfo* root_cert_info) {
       });
 }
 
-static std::optional<TlsTelemetryStatus> MapVerifyResultToTlsTelemetryStatus(
+static TlsTelemetryResult MapVerifyResultToTlsTelemetryResult(
     long verify_result) {
-  if (verify_result == X509_V_OK) return std::nullopt;
+  if (verify_result == X509_V_OK) return TlsTelemetryResult::SUCCESS;
   switch (verify_result) {
     case X509_V_ERR_CERT_REVOKED:
-      return TlsTelemetryStatus::CERTIFICATE_REVOKED;
+      return TlsTelemetryResult::CERTIFICATE_REVOKED;
     case X509_V_ERR_CERT_HAS_EXPIRED:
-      return TlsTelemetryStatus::CERTIFICATE_EXPIRED;
+      return TlsTelemetryResult::CERTIFICATE_EXPIRED;
     case X509_V_ERR_CERT_NOT_YET_VALID:
-      return TlsTelemetryStatus::CERTIFICATE_NOT_YET_VALID;
+      return TlsTelemetryResult::CERTIFICATE_NOT_YET_VALID;
     case X509_V_ERR_UNABLE_TO_GET_ISSUER_CERT:
     case X509_V_ERR_UNABLE_TO_GET_ISSUER_CERT_LOCALLY:
     case X509_V_ERR_DEPTH_ZERO_SELF_SIGNED_CERT:
     case X509_V_ERR_SELF_SIGNED_CERT_IN_CHAIN:
     case X509_V_ERR_UNABLE_TO_VERIFY_LEAF_SIGNATURE:
-      return TlsTelemetryStatus::CERTIFICATE_AUTHORITY_INVALID;
+      return TlsTelemetryResult::CERTIFICATE_AUTHORITY_INVALID;
     case X509_V_ERR_HOSTNAME_MISMATCH:
-      return TlsTelemetryStatus::CERTIFICATE_HOSTNAME_MISMATCH;
+      return TlsTelemetryResult::CERTIFICATE_HOSTNAME_MISMATCH;
     case X509_V_ERR_CERT_REJECTED:
-      return TlsTelemetryStatus::CERTIFICATE_VERIFICATION_FAILED;
+      return TlsTelemetryResult::CERTIFICATE_VERIFICATION_FAILED;
     case X509_V_ERR_UNABLE_TO_GET_CRL:
-      return TlsTelemetryStatus::CRL_NOT_FOUND;
+      return TlsTelemetryResult::CRL_NOT_FOUND;
     case X509_V_ERR_CRL_HAS_EXPIRED:
     case X509_V_ERR_CRL_NOT_YET_VALID:
-      return TlsTelemetryStatus::CRL_EXPIRED;
+      return TlsTelemetryResult::CRL_EXPIRED;
     case X509_V_ERR_CRL_SIGNATURE_FAILURE:
-      return TlsTelemetryStatus::CRL_SIGNATURE_FAILURE;
+      return TlsTelemetryResult::CRL_SIGNATURE_FAILURE;
     case X509_V_ERR_INVALID_CA:
     case X509_V_ERR_INVALID_NON_CA:
     case X509_V_ERR_INVALID_PURPOSE:
     case X509_V_ERR_ERROR_IN_CERT_NOT_BEFORE_FIELD:
     case X509_V_ERR_ERROR_IN_CERT_NOT_AFTER_FIELD:
-      return TlsTelemetryStatus::CERTIFICATE_MALFORMED;
+      return TlsTelemetryResult::CERTIFICATE_MALFORMED;
     case X509_V_ERR_CERT_SIGNATURE_FAILURE:
-      return TlsTelemetryStatus::SIGNATURE_VERIFICATION_FAILED;
+      return TlsTelemetryResult::SIGNATURE_VERIFICATION_FAILED;
     default:
-      return TlsTelemetryStatus::CERTIFICATE_VERIFICATION_FAILED;
+      return TlsTelemetryResult::CERTIFICATE_VERIFICATION_FAILED;
   }
 }
 
-TlsTelemetryStatus MapSslErrorToTlsTelemetryStatus(int ssl_error,
+TlsTelemetryResult MapSslErrorToTlsTelemetryResult(int ssl_error,
                                                    unsigned long err_code,
                                                    long verify_result) {
   if (ssl_error == SSL_ERROR_NONE) {
-    auto status = MapVerifyResultToTlsTelemetryStatus(verify_result);
-    if (status.has_value()) return *status;
-    return TlsTelemetryStatus::SUCCESS;
+    return MapVerifyResultToTlsTelemetryResult(verify_result);
   }
 
   if (ssl_error == SSL_ERROR_ZERO_RETURN) {
-    return TlsTelemetryStatus::PEER_CONNECTION_CLOSED;
+    return TlsTelemetryResult::PEER_CONNECTION_CLOSED;
   }
 
   if (ssl_error == SSL_ERROR_SYSCALL) {
-    return TlsTelemetryStatus::PEER_CONNECTION_CLOSED;
+    return TlsTelemetryResult::PEER_CONNECTION_CLOSED;
   }
 
   if (ssl_error == SSL_ERROR_SSL) {
@@ -3428,7 +3426,7 @@ TlsTelemetryStatus MapSslErrorToTlsTelemetryStatus(int ssl_error,
       case SSL_R_WRONG_CIPHER_RETURNED:
       case SSL_R_CIPHER_MISMATCH_ON_EARLY_DATA:
       case SSL_R_CIPHER_OR_HASH_UNAVAILABLE:
-        return TlsTelemetryStatus::CIPHER_SUITE_MISMATCH;
+        return TlsTelemetryResult::CIPHER_SUITE_MISMATCH;
 
       // Protocol version unsupported failures
       case SSL_R_UNKNOWN_PROTOCOL:
@@ -3440,11 +3438,11 @@ TlsTelemetryStatus MapSslErrorToTlsTelemetryStatus(int ssl_error,
       case SSL_R_WRONG_VERSION_ON_EARLY_DATA:
       case SSL_R_NO_SUPPORTED_VERSIONS_ENABLED:
       case SSL_R_SECOND_SERVERHELLO_VERSION_MISMATCH:
-        return TlsTelemetryStatus::PROTOCOL_VERSION_UNSUPPORTED;
+        return TlsTelemetryResult::PROTOCOL_VERSION_UNSUPPORTED;
 
       // Inappropriate fallback
       case SSL_R_INAPPROPRIATE_FALLBACK:
-        return TlsTelemetryStatus::INAPPROPRIATE_FALLBACK;
+        return TlsTelemetryResult::INAPPROPRIATE_FALLBACK;
 
       // No application protocol
       case SSL_R_NO_APPLICATION_PROTOCOL:
@@ -3452,45 +3450,50 @@ TlsTelemetryStatus MapSslErrorToTlsTelemetryStatus(int ssl_error,
       case SSL_R_INVALID_ALPN_PROTOCOL_LIST:
       case SSL_R_NEGOTIATED_BOTH_NPN_AND_ALPN:
       case SSL_R_ALPN_MISMATCH_ON_EARLY_DATA:
-        return TlsTelemetryStatus::NO_APPLICATION_PROTOCOL;
+        return TlsTelemetryResult::NO_APPLICATION_PROTOCOL;
 
       // Cryptographic failures: Signature verification failed
       case SSL_R_BAD_SIGNATURE:
       case SSL_R_WRONG_SIGNATURE_TYPE:
-        return TlsTelemetryStatus::SIGNATURE_VERIFICATION_FAILED;
+        return TlsTelemetryResult::SIGNATURE_VERIFICATION_FAILED;
 
       // Cryptographic failures: Decryption failed
       case SSL_R_DECRYPTION_FAILED:
       case SSL_R_DECRYPTION_FAILED_OR_BAD_RECORD_MAC:
       case SSL_R_BLOCK_CIPHER_PAD_IS_WRONG:
-        return TlsTelemetryStatus::DECRYPTION_FAILED;
+        return TlsTelemetryResult::DECRYPTION_FAILED;
 
       // Cryptographic failures: Key exchange failure
       case SSL_R_WRONG_CURVE:
       case SSL_R_BAD_ECPOINT:
-        return TlsTelemetryStatus::KEY_EXCHANGE_FAILURE;
+        return TlsTelemetryResult::KEY_EXCHANGE_FAILURE;
 
       // Unexpected message
       case SSL_R_UNEXPECTED_MESSAGE:
       case SSL_R_UNEXPECTED_RECORD:
       case SSL_R_APP_DATA_IN_HANDSHAKE:
       case SSL_R_EXCESS_HANDSHAKE_DATA:
-        return TlsTelemetryStatus::UNEXPECTED_MESSAGE;
+        return TlsTelemetryResult::UNEXPECTED_MESSAGE;
 
       // Handshake timeout
       case SSL_R_READ_TIMEOUT_EXPIRED:
-        return TlsTelemetryStatus::HANDSHAKE_TIMEOUT;
+        return TlsTelemetryResult::HANDSHAKE_TIMEOUT;
 
       // Certificate verification failures
       case SSL_R_CERTIFICATE_VERIFY_FAILED: {
-        auto status = MapVerifyResultToTlsTelemetryStatus(verify_result);
-        if (status.has_value()) return *status;
-        return TlsTelemetryStatus::CERTIFICATE_VERIFICATION_FAILED;
+        TlsTelemetryResult result =
+            MapVerifyResultToTlsTelemetryResult(verify_result);
+        if (result == TlsTelemetryResult::SUCCESS) {
+          // There's no more detail on certificate failure, this is as granular
+          // as we can get.
+          return TlsTelemetryResult::CERTIFICATE_VERIFICATION_FAILED;
+        }
+        return result;
       }
 
       // Certificate malformed
       case SSL_R_DECODE_ERROR:
-        return TlsTelemetryStatus::CERTIFICATE_MALFORMED;
+        return TlsTelemetryResult::CERTIFICATE_MALFORMED;
 
       // Client Certificate required but missing
       case SSL_R_PEER_DID_NOT_RETURN_A_CERTIFICATE:
@@ -3499,20 +3502,20 @@ TlsTelemetryStatus MapSslErrorToTlsTelemetryStatus(int ssl_error,
       case SSL_R_NO_CERTIFICATE_ASSIGNED:
       case SSL_R_SSLV3_ALERT_NO_CERTIFICATE:
       case SSL_R_TLSV1_ALERT_CERTIFICATE_REQUIRED:
-        return TlsTelemetryStatus::PEER_CERTIFICATE_REQUIRED_BUT_MISSING;
+        return TlsTelemetryResult::PEER_CERTIFICATE_REQUIRED_BUT_MISSING;
 
       // Internal / Resource failures
       case ERR_R_MALLOC_FAILURE:
       case ERR_R_INTERNAL_ERROR:
       case ERR_R_OVERFLOW:
-        return TlsTelemetryStatus::INTERNAL_SYSTEM_ERROR;
+        return TlsTelemetryResult::INTERNAL_SYSTEM_ERROR;
 
       default:
         break;
     }
   }
 
-  return TlsTelemetryStatus::UNKNOWN_FAILURE;
+  return TlsTelemetryResult::UNKNOWN_FAILURE;
 }
 }  // namespace tsi
 

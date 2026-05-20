@@ -463,7 +463,7 @@ tsi_result tsi_ssl_get_cert_chain_contents(STACK_OF(X509) * peer_chain,
 namespace tsi {
 bool IsRootCertInfoEmpty(const RootCertInfo* root_cert_info);
 
-enum class TlsTelemetryStatus {
+enum class TlsTelemetryResult {
   UNKNOWN_FAILURE,  
   SUCCESS,
   // Peer certificate verification failures.
@@ -495,7 +495,7 @@ enum class TlsTelemetryStatus {
   INTERNAL_SYSTEM_ERROR
 };
 
-TlsTelemetryStatus MapSslErrorToTlsTelemetryStatus(int ssl_error,
+TlsTelemetryResult MapSslErrorToTlsTelemetryResult(int ssl_error,
                                                    unsigned long err_code,
                                                    long verify_result);
 }  // namespace tsi
