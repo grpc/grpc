@@ -1216,7 +1216,7 @@ class _UnaryUnaryMultiCallable(grpc.UnaryUnaryMultiCallable):
             deadline,
             metadata,
             None if credentials is None else credentials._credentials,
-            (operations or [], ),
+            (operations or [],),
             event_handler,
             self._context,
             self._registered_call_handle,
@@ -1926,7 +1926,8 @@ def _poll_connectivity(
             ]
         )
         callbacks = tuple(
-            subscription.callback for subscription in state.callbacks_and_connectivities
+            subscription.callback
+            for subscription in state.callbacks_and_connectivities
         )
         for subscription in state.callbacks_and_connectivities:
             subscription.connectivity = state.connectivity
@@ -1985,7 +1986,9 @@ def _subscribe(
     with state.lock:
         if not state.callbacks_and_connectivities and not state.polling:
             _spawn_poll_connectivity(state, try_to_connect)
-            state.callbacks_and_connectivities.append(_Subscription(callback, None))
+            state.callbacks_and_connectivities.append(
+                _Subscription(callback, None)
+            )
         elif not state.delivering and state.connectivity is not None:
             _spawn_delivery(state, (callback,))
             state.try_to_connect |= bool(try_to_connect)
@@ -1994,7 +1997,9 @@ def _subscribe(
             )
         else:
             state.try_to_connect |= bool(try_to_connect)
-            state.callbacks_and_connectivities.append(_Subscription(callback, None))
+            state.callbacks_and_connectivities.append(
+                _Subscription(callback, None)
+            )
 
 
 def _unsubscribe(
