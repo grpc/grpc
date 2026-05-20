@@ -13,6 +13,7 @@
 # limitations under the License.
 """Invocation-side implementation of gRPC Python."""
 
+from collections.abc import MutableSequence
 import copy
 import functools
 import logging
@@ -44,7 +45,6 @@ from grpc._typing import ChannelArgumentType
 from grpc._typing import DeserializingFunction
 from grpc._typing import IntegratedCallFactory
 from grpc._typing import MetadataType
-from collections.abc import MutableSequence
 from grpc._typing import NullaryCallbackType
 from grpc._typing import ResponseType
 from grpc._typing import SerializingFunction
