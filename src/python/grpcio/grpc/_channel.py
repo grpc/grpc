@@ -13,7 +13,6 @@
 # limitations under the License.
 """Invocation-side implementation of gRPC Python."""
 
-from collections.abc import MutableSequence
 import copy
 import functools
 import logging
