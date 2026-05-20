@@ -1585,6 +1585,7 @@ TEST(SslTransportSecurityTest, MapSslErrorToTlsTelemetryHandshakeResultTest) {
   EXPECT_EQ(tsi::MapSslErrorToTlsTelemetryHandshakeResult(SSL_ERROR_SSL, ERR_PACK(ERR_LIB_SSL, 9999), X509_V_OK),
             tsi::TlsTelemetryHandshakeResult::UNKNOWN_FAILURE);
 }
+}
 
 }  // namespace
 }  // namespace testing
