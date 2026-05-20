@@ -25,7 +25,7 @@
 
 #include <optional>
 
-namespace tsi {
+namespace grpc_core {
 
 namespace {
 
@@ -190,4 +190,4 @@ TlsTelemetryHandshakeResult MapSslErrorToTlsTelemetryHandshakeResult(
   return TlsTelemetryHandshakeResult::UNKNOWN_FAILURE;
 }
 
-}  // namespace tsi
+}  // namespace grpc_core

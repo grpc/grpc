@@ -21,7 +21,7 @@
 
 #include <grpc/support/port_platform.h>
 
-namespace tsi {
+namespace grpc_core {
 
 enum class TlsTelemetryHandshakeResult {
   UNKNOWN_FAILURE,  
@@ -66,6 +66,6 @@ TlsTelemetryHandshakeResult MapSslErrorToTlsTelemetryHandshakeResult(int ssl_err
                                                                    unsigned long err_code,
                                                                    long verify_result);
 
-}  // namespace tsi
+}  // namespace grpc_core
 
 #endif  // GRPC_SRC_CORE_TSI_SSL_TELEMETRY_UTILS_H
