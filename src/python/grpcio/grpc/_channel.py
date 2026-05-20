@@ -2120,7 +2120,7 @@ class Channel(grpc.Channel):
     def subscribe(
         self,
         callback: Callable[[grpc.ChannelConnectivity], None],
-        try_to_connect: Optional[bool] = None,
+        try_to_connect: bool = False,
     ) -> None:
         _subscribe(self._connectivity_state, callback, try_to_connect)
 
