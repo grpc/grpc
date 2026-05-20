@@ -464,7 +464,7 @@ namespace tsi {
 bool IsRootCertInfoEmpty(const RootCertInfo* root_cert_info);
 
 enum class TlsTelemetryResult {
-  UNKNOWN_FAILURE,  
+  UNKNOWN_FAILURE,
   SUCCESS,
   // Peer certificate verification failures.
   CERTIFICATE_VERIFICATION_FAILED,
@@ -495,11 +495,14 @@ enum class TlsTelemetryResult {
   INTERNAL_SYSTEM_ERROR
 };
 
-// Maps different kinds of handshake/SSL/TLS errors to a unified TlsTelemetryResult.
+// Maps different kinds of handshake/SSL/TLS errors to a unified
+// TlsTelemetryResult.
 //
 // - ssl_error: the return code from SSL_get_error().
-// - err_code: the packed error code from the OpenSSL error queue (ERR_get_error()).
-// - verify_result: the certificate verification result from SSL_get_verify_result().
+// - err_code: the packed error code from the OpenSSL error queue
+// (ERR_get_error()).
+// - verify_result: the certificate verification result from
+// SSL_get_verify_result().
 //
 // - Returns the corresponding TlsTelemetryResult mapping for the failures.
 TlsTelemetryResult MapSslErrorToTlsTelemetryResult(int ssl_error,
