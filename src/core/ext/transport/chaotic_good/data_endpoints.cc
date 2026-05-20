@@ -47,9 +47,7 @@
 #include "absl/cleanup/cleanup.h"
 #include "absl/container/inlined_vector.h"
 #include "absl/log/log.h"
-#include "absl/status/status.h"
 #include "absl/strings/numbers.h"
-#include "absl/strings/str_cat.h"
 #include "absl/strings/str_split.h"
 #include "absl/time/time.h"
 
@@ -393,11 +391,11 @@ InputQueue::ReadTicket InputQueue::Read(uint64_t payload_tag) {
     return ReadTicket(
         MakeRefCounted<Completion>(
             payload_tag, absl::UnavailableError("Duplicate read requested")),
-        Ref());
+        nullptr);
   }
   auto it = completions_.find(payload_tag);
   if (it != completions_.end()) {
-    return ReadTicket(it->second, Ref());
+    return ReadTicket(it->second, nullptr);
   }
   auto completion = MakeRefCounted<Completion>(payload_tag);
   completions_.emplace(payload_tag, completion);
@@ -835,17 +833,12 @@ auto Endpoint::ReadLoop(RefCountedPtr<EndpointContext> ctx) {
                 TcpDataFrameHeader::kFrameHeaderSize +
                 DataConnectionPadding(TcpDataFrameHeader::kFrameHeaderSize,
                                       ctx->decode_alignment))),
-        [id = ctx->id,
-         ctx](Slice frame_header) -> absl::StatusOr<TcpDataFrameHeader> {
+        [id = ctx->id](Slice frame_header) {
           auto hdr = TcpDataFrameHeader::Parse(frame_header.data());
-          if (!hdr.ok()) return hdr.status();
-          if (hdr->payload_length > ctx->max_receive_message_length) {
-            return absl::ResourceExhaustedError(absl::StrCat(
-                "Received message larger than max (", hdr->payload_length,
-                " vs. ", ctx->max_receive_message_length, ")"));
-          }
           GRPC_TRACE_LOG(chaotic_good, INFO)
-              << "CHAOTIC_GOOD: Read " << *hdr << " on data connection #" << id;
+              << "CHAOTIC_GOOD: Read "
+              << (hdr.ok() ? absl::StrCat(*hdr) : hdr.status().ToString())
+              << " on data connection #" << id;
           return hdr;
         },
         [ctx](TcpDataFrameHeader frame_header) {
@@ -914,8 +907,7 @@ void Endpoint::AddData(channelz::DataSink sink) {
 }
 
 Endpoint::Endpoint(uint32_t id, uint32_t encode_alignment,
-                   uint32_t decode_alignment,
-                   uint32_t max_receive_message_length, Clock* clock,
+                   uint32_t decode_alignment, Clock* clock,
                    RefCountedPtr<OutputBuffers> output_buffers,
                    RefCountedPtr<InputQueue> input_queues,
                    PendingConnection pending_connection, bool enable_tracing,
@@ -926,7 +918,6 @@ Endpoint::Endpoint(uint32_t id, uint32_t encode_alignment,
   ep_ctx->id = id;
   ep_ctx->encode_alignment = encode_alignment;
   ep_ctx->decode_alignment = decode_alignment;
-  ep_ctx->max_receive_message_length = max_receive_message_length;
   ep_ctx->enable_tracing = enable_tracing;
   ep_ctx->output_buffers = std::move(output_buffers);
   ep_ctx->input_queues = std::move(input_queues);
@@ -1024,7 +1015,6 @@ Endpoint::Endpoint(uint32_t id, uint32_t encode_alignment,
 DataEndpoints::DataEndpoints(
     std::vector<PendingConnection> endpoints_vec, TransportContextPtr ctx,
     uint32_t encode_alignment, uint32_t decode_alignment,
-    uint32_t max_receive_message_length,
     std::shared_ptr<TcpZTraceCollector> ztrace_collector, bool enable_tracing,
     std::string scheduler_config, data_endpoints_detail::Clock* clock)
     : channelz::DataSource(ctx->socket_node),
@@ -1034,9 +1024,9 @@ DataEndpoints::DataEndpoints(
       input_queues_(MakeRefCounted<data_endpoints_detail::InputQueue>()) {
   for (size_t i = 0; i < endpoints_vec.size(); ++i) {
     endpoints_.emplace_back(std::make_unique<data_endpoints_detail::Endpoint>(
-        i, encode_alignment, decode_alignment, max_receive_message_length,
-        clock, output_buffers_, input_queues_, std::move(endpoints_vec[i]),
-        enable_tracing, ctx, ztrace_collector));
+        i, encode_alignment, decode_alignment, clock, output_buffers_,
+        input_queues_, std::move(endpoints_vec[i]), enable_tracing, ctx,
+        ztrace_collector));
   }
   SourceConstructed();
 }

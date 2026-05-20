@@ -17,28 +17,20 @@
 #include <google/protobuf/text_format.h>
 
 #include <algorithm>
-#include <cstddef>
-#include <cstdint>
-#include <limits>
 #include <memory>
-#include <utility>
 
 #include "fuzztest/fuzztest.h"
 #include "src/core/ext/transport/chaotic_good/frame_transport.h"
 #include "src/core/lib/promise/inter_activity_latch.h"
-#include "src/core/lib/promise/seq.h"
 #include "src/core/util/postmortem_emit.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h"
 #include "test/core/transport/chaotic_good/test_frame.h"
 #include "test/core/transport/chaotic_good/test_frame.pb.h"
 #include "gtest/gtest.h"
-#include "absl/status/status.h"
-#include "absl/strings/str_format.h"
 
 using fuzztest::Arbitrary;
 using fuzztest::InRange;
-using fuzztest::Just;
 using fuzztest::VectorOf;
 using grpc_event_engine::experimental::EventEngine;
 using grpc_event_engine::experimental::FuzzingEventEngine;
@@ -119,10 +111,6 @@ class TestSink : public FrameTransportSink {
 
   bool done() const { return expected_frames_.empty(); }
 
-  bool closed() const { return closed_; }
-
-  absl::Status closed_status() const { return closed_status_; }
-
   void OnIncomingFrame(IncomingFrame incoming_frame) override {
     const size_t frame_id = next_frame_;
     GRPC_TRACE_LOG(chaotic_good, INFO)
@@ -157,8 +145,6 @@ class TestSink : public FrameTransportSink {
 
   void OnFrameTransportClosed(absl::Status status) override {
     LOG(INFO) << "transport closed: " << status;
-    closed_ = true;
-    closed_status_ = status;
   }
 
  private:
@@ -167,8 +153,6 @@ class TestSink : public FrameTransportSink {
   size_t next_frame_ = 0;
   EventEngine* const event_engine_;
   RefCountedPtr<channelz::BaseNode> channelz_node_;
-  bool closed_ = false;
-  absl::Status closed_status_;
 };
 
 RefCountedPtr<channelz::SocketNode> MakeTestChannelzSocketNode(
@@ -176,20 +160,14 @@ RefCountedPtr<channelz::SocketNode> MakeTestChannelzSocketNode(
   return MakeRefCounted<channelz::SocketNode>("from", "to", name, nullptr);
 }
 
-void CanSendFrames(
-    size_t num_data_endpoints, uint32_t client_alignment,
-    uint32_t server_alignment, uint32_t client_inlined_payload_size_threshold,
-    uint32_t server_inlined_payload_size_threshold,
-    size_t client_max_buffer_hint, size_t server_max_buffer_hint,
-    const fuzzing_event_engine::Actions& actions,
-    std::vector<Frame> send_on_client_frames,
-    std::vector<Frame> send_on_server_frames,
-    uint32_t client_max_receive_message_length =
-        std::numeric_limits<uint32_t>::max(),
-    uint32_t server_max_receive_message_length =
-        std::numeric_limits<uint32_t>::max(),
-    absl::StatusCode expected_client_status = absl::StatusCode::kOk,
-    absl::StatusCode expected_server_status = absl::StatusCode::kOk) {
+void CanSendFrames(size_t num_data_endpoints, uint32_t client_alignment,
+                   uint32_t server_alignment,
+                   uint32_t client_inlined_payload_size_threshold,
+                   uint32_t server_inlined_payload_size_threshold,
+                   size_t client_max_buffer_hint, size_t server_max_buffer_hint,
+                   const fuzzing_event_engine::Actions& actions,
+                   std::vector<Frame> send_on_client_frames,
+                   std::vector<Frame> send_on_server_frames) {
   grpc_tracer_init();
   auto engine = std::make_shared<FuzzingEventEngine>(
       FuzzingEventEngine::Options(), actions);
@@ -202,28 +180,17 @@ void CanSendFrames(
   }
   auto [client, server] = CreatePromiseEndpointPair(engine);
   auto client_node = MakeTestChannelzSocketNode("client");
-  TcpFrameTransport::Options client_options;
-  client_options.encode_alignment = server_alignment;
-  client_options.decode_alignment = client_alignment;
-  client_options.inlined_payload_size_threshold =
-      server_inlined_payload_size_threshold;
-  client_options.max_receive_message_length = client_max_receive_message_length;
-
   auto client_transport = MakeOrphanable<TcpFrameTransport>(
-      client_options, std::move(client), std::move(pending_connections_client),
+      TcpFrameTransport::Options{server_alignment, client_alignment,
+                                 server_inlined_payload_size_threshold},
+      std::move(client), std::move(pending_connections_client),
       MakeRefCounted<TransportContext>(
           std::static_pointer_cast<EventEngine>(engine), client_node));
-
-  TcpFrameTransport::Options server_options;
-  server_options.encode_alignment = client_alignment;
-  server_options.decode_alignment = server_alignment;
-  server_options.inlined_payload_size_threshold =
-      client_inlined_payload_size_threshold;
-  server_options.max_receive_message_length = server_max_receive_message_length;
-
   auto server_node = MakeTestChannelzSocketNode("server");
   auto server_transport = MakeOrphanable<TcpFrameTransport>(
-      server_options, std::move(server), std::move(pending_connections_server),
+      TcpFrameTransport::Options{client_alignment, server_alignment,
+                                 client_inlined_payload_size_threshold},
+      std::move(server), std::move(pending_connections_server),
       MakeRefCounted<TransportContext>(
           std::static_pointer_cast<EventEngine>(engine), server_node));
   auto client_arena = SimpleArenaAllocator()->MakeArena();
@@ -257,31 +224,17 @@ void CanSendFrames(
         UntracedOutgoingFrame(CopyFrame(frame)), 1);
   }
   auto deadline = Timestamp::Now() + Duration::Hours(6);
-  while (true) {
-    bool client_done_sending_or_closed =
-        expected_client_status == absl::StatusCode::kOk ? client_sink->done()
-                                                        : client_sink->closed();
-    bool server_done_sending_or_closed =
-        expected_server_status == absl::StatusCode::kOk ? server_sink->done()
-                                                        : server_sink->closed();
-    if (client_done_sending_or_closed && server_done_sending_or_closed) {
-      break;
-    }
+  while (!client_sink->done() || !server_sink->done()) {
     engine->Tick();
     if (Timestamp::Now() > deadline) {
       PostMortemEmit();
       LOG(FATAL) << "6 hour deadline exceeded";
     }
   }
-
-  EXPECT_EQ(client_sink->closed_status().code(), expected_client_status);
-  EXPECT_EQ(server_sink->closed_status().code(), expected_server_status);
-
   client_transport.reset();
   server_transport.reset();
   engine->TickUntilIdle();
 }
-
 FUZZ_TEST(TcpFrameTransportTest, CanSendFrames)
     .WithDomains(
         /* num_data_endpoints */ InRange<size_t>(0, 64),
@@ -295,13 +248,7 @@ FUZZ_TEST(TcpFrameTransportTest, CanSendFrames)
         /* server_max_buffer_hint */ InRange<uint32_t>(1, 1024 * 1024 * 1024),
         /* actions */ Arbitrary<fuzzing_event_engine::Actions>(),
         /* send_on_client_frames */ VectorOf(AnyFrame()),
-        /* send_on_server_frames */ VectorOf(AnyFrame()),
-        /* client_max_receive_message_length */
-        Just(std::numeric_limits<uint32_t>::max()),
-        /* server_max_receive_message_length */
-        Just(std::numeric_limits<uint32_t>::max()),
-        /* expected_client_status */ Just(absl::StatusCode::kOk),
-        /* expected_server_status */ Just(absl::StatusCode::kOk));
+        /* send_on_server_frames */ VectorOf(AnyFrame()));
 
 auto ParseFuzzingEventEngineProto(const std::string& proto) {
   fuzzing_event_engine::Actions msg;
@@ -341,111 +288,6 @@ TEST(TcpFrameTransportTest, CanSendFramesRegression1) {
         })pb"),
       std::move(send_on_client_frames), std::move(send_on_server_frames));
 }
-
-struct MaxMessageSizeTestParam {
-  size_t client_max_receive_message_length;
-  size_t server_max_receive_message_length;
-  bool fail_on_client;
-  size_t num_data_endpoints;
-};
-
-class MaxMessageSizeExceeded
-    : public ::testing::TestWithParam<MaxMessageSizeTestParam> {};
-
-TEST_P(MaxMessageSizeExceeded, SendsFrames) {
-  const auto& param = GetParam();
-  std::vector<Frame> send_on_client_frames;
-  std::vector<Frame> send_on_server_frames;
-
-  if (param.fail_on_client) {
-    send_on_server_frames.emplace_back(
-        chaotic_good::FrameFromTestFrame(ParseFrameProto(absl::StrFormat(
-            R"pb(
-              message { stream_id: 1 all_zeros_length: %d }
-            )pb",
-            param.client_max_receive_message_length + 1))));
-  } else {
-    send_on_client_frames.emplace_back(
-        chaotic_good::FrameFromTestFrame(ParseFrameProto(absl::StrFormat(
-            R"pb(
-              message { stream_id: 1 all_zeros_length: %d }
-            )pb",
-            param.server_max_receive_message_length + 1))));
-  }
-
-  CanSendFrames(
-      /* num_data_endpoints */ param.num_data_endpoints,
-      /* client_alignment */ 1,
-      /* server_alignment */ 1,
-      /* client_inlined_payload_size_threshold */ 8192,
-      /* server_inlined_payload_size_threshold */ 8192,
-      /* client_max_buffer_hint */ 1024,
-      /* server_max_buffer_hint */ 1024,
-      /* actions */ fuzzing_event_engine::Actions(),
-      std::move(send_on_client_frames), std::move(send_on_server_frames),
-      /* client_max_receive_message_length */
-      param.client_max_receive_message_length,
-      /* server_max_receive_message_length */
-      param.server_max_receive_message_length,
-      /* expected_client_status */
-      param.fail_on_client ? absl::StatusCode::kResourceExhausted
-                           : absl::StatusCode::kOk,
-      /* expected_server_status */
-      param.fail_on_client ? absl::StatusCode::kOk
-                           : absl::StatusCode::kResourceExhausted);
-}
-
-INSTANTIATE_TEST_SUITE_P(
-    TcpFrameTransportTest, MaxMessageSizeExceeded,
-    ::testing::Values(
-        // Client max receive message length exceeded on control endpoint with
-        // no data endpoints.
-        MaxMessageSizeTestParam{/*client_max_receive_message_length=*/10000,
-                                /*server_max_receive_message_length=*/
-                                std::numeric_limits<uint32_t>::max(),
-                                /*fail_on_client=*/true,
-                                /*num_data_endpoints=*/0},
-        // Server max receive message length exceeded on control endpoint with
-        // no data endpoints.
-        MaxMessageSizeTestParam{/*client_max_receive_message_length=*/
-                                std::numeric_limits<uint32_t>::max(),
-                                /*server_max_receive_message_length=*/10000,
-                                /*fail_on_client=*/false,
-                                /*num_data_endpoints=*/0},
-        // Client max receive message length exceeded on control endpoint with
-        // data endpoints (since limit is actually smaller than inlined payload
-        // size threshold; this is likely a misconfiguration - but should still
-        // fail)
-        MaxMessageSizeTestParam{/*client_max_receive_message_length=*/100,
-                                /*server_max_receive_message_length=*/
-                                std::numeric_limits<uint32_t>::max(),
-                                /*fail_on_client=*/true,
-                                /*num_data_endpoints=*/1},
-        // Server max receive message length exceeded on control endpoint with
-        // data endpoints (since limit is actually smaller than inlined payload
-        // size threshold; this is likely a misconfiguration - but should still
-        // fail)
-        MaxMessageSizeTestParam{/*client_max_receive_message_length=*/
-                                std::numeric_limits<uint32_t>::max(),
-                                /*server_max_receive_message_length=*/100,
-                                /*fail_on_client=*/false,
-                                /*num_data_endpoints=*/1},
-        // Client max receive message length exceeded on data endpoint. Limit is
-        // greater than inlined payload size threshold. This is the most likely
-        // scenario for this error.
-        MaxMessageSizeTestParam{/*client_max_receive_message_length=*/10000,
-                                /*server_max_receive_message_length=*/
-                                std::numeric_limits<uint32_t>::max(),
-                                /*fail_on_client=*/true,
-                                /*num_data_endpoints=*/4},
-        // Server max receive message length exceeded on data endpoint. Limit is
-        // greater than inlined payload size threshold. This is the most likely
-        // scenario for this error.
-        MaxMessageSizeTestParam{/*client_max_receive_message_length=*/
-                                std::numeric_limits<uint32_t>::max(),
-                                /*server_max_receive_message_length=*/10000,
-                                /*fail_on_client=*/false,
-                                /*num_data_endpoints=*/4}));
 
 }  // namespace
 }  // namespace chaotic_good

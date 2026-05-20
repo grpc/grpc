@@ -19,7 +19,6 @@
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/status.h>
 
-#include <cstddef>
 #include <string>
 
 #include "src/core/lib/channel/channel_args.h"
@@ -27,21 +26,10 @@
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
-using testing::HasSubstr;
+using testing::StartsWith;
 
 namespace grpc_core {
 namespace {
-
-// Should be generous enough to not error out during handshake.
-constexpr int kMaxMessageLength = 1024;
-
-std::string GetStringOfLength(size_t length) {
-  return std::string(length, 'a');
-}
-
-std::string GetTooLargeMessage() {
-  return GetStringOfLength(kMaxMessageLength + 1);
-}
 
 void TestMaxMessageLengthOnClientOnRequest(CoreEnd2endTest& test) {
   auto c = test.NewClientCall("/service/method").Create();
@@ -49,15 +37,15 @@ void TestMaxMessageLengthOnClientOnRequest(CoreEnd2endTest& test) {
   IncomingMetadata server_initial_metadata;
   c.NewBatch(1)
       .SendInitialMetadata({})
-      .SendMessage(GetTooLargeMessage())
+      .SendMessage("hello world")
       .SendCloseFromClient()
       .RecvInitialMetadata(server_initial_metadata)
       .RecvStatusOnClient(server_status);
   test.Expect(1, true);
   test.Step();
   EXPECT_EQ(server_status.status(), GRPC_STATUS_RESOURCE_EXHAUSTED);
-  EXPECT_THAT(server_status.message(),
-              HasSubstr("CLIENT: Sent message larger than max"));
+  EXPECT_EQ(server_status.message(),
+            "CLIENT: Sent message larger than max (11 vs. 5)");
 }
 
 void TestMaxMessageLengthOnServerOnRequest(CoreEnd2endTest& test) {
@@ -66,7 +54,7 @@ void TestMaxMessageLengthOnServerOnRequest(CoreEnd2endTest& test) {
   IncomingMetadata server_initial_metadata;
   c.NewBatch(1)
       .SendInitialMetadata({})
-      .SendMessage(GetTooLargeMessage())
+      .SendMessage("hello world")
       .SendCloseFromClient()
       .RecvInitialMetadata(server_initial_metadata)
       .RecvStatusOnClient(server_status);
@@ -82,33 +70,8 @@ void TestMaxMessageLengthOnServerOnRequest(CoreEnd2endTest& test) {
   EXPECT_EQ(s.method(), "/service/method");
   EXPECT_TRUE(client_close.was_cancelled());
   EXPECT_EQ(server_status.status(), GRPC_STATUS_RESOURCE_EXHAUSTED);
-  EXPECT_THAT(server_status.message(),
-              HasSubstr("SERVER: Received message larger than max"));
-}
-
-void TestMaxMessageLengthOnServerOnRequestEarlyClose(CoreEnd2endTest& test) {
-  // Only implemented in ChaoticGood.
-  auto c = test.NewClientCall("/service/method").Create();
-  IncomingStatusOnClient server_status;
-  IncomingMetadata server_initial_metadata;
-  c.NewBatch(1).SendInitialMetadata({});
-  test.Expect(1, true);
-  test.Step();
-  auto s = test.RequestCall(101);
-  test.Expect(101, true);
-  test.Step();
-  c.NewBatch(2)
-      .SendMessage(GetTooLargeMessage())
-      .RecvStatusOnClient(server_status);
-  test.Expect(2, true);
-  test.Step();
-
-  // Client just receives a socket closed error since the server closes the
-  // transport.
-  EXPECT_TRUE(server_status.status() == GRPC_STATUS_UNAVAILABLE ||
-              server_status.status() == GRPC_STATUS_INTERNAL);
-  EXPECT_THAT(server_status.message(), HasSubstr("CLIENT:"));
-  EXPECT_THAT(server_status.message(), HasSubstr("Socket closed"));
+  EXPECT_EQ(server_status.message(),
+            "SERVER: Received message larger than max (11 vs. 5)");
 }
 
 void TestMaxMessageLengthOnClientOnResponse(CoreEnd2endTest& test) {
@@ -129,15 +92,15 @@ void TestMaxMessageLengthOnClientOnResponse(CoreEnd2endTest& test) {
   s.NewBatch(102)
       .SendInitialMetadata({})
       .RecvCloseOnServer(client_close)
-      .SendMessage(GetTooLargeMessage())
+      .SendMessage("hello world")
       .SendStatusFromServer(GRPC_STATUS_OK, "xyz", {});
   test.Expect(102, true);
   test.Expect(1, true);
   test.Step();
   EXPECT_EQ(s.method(), "/service/method");
   EXPECT_EQ(server_status.status(), GRPC_STATUS_RESOURCE_EXHAUSTED);
-  EXPECT_THAT(server_status.message(),
-              HasSubstr("CLIENT: Received message larger than max"));
+  EXPECT_EQ(server_status.message(),
+            "CLIENT: Received message larger than max (11 vs. 5)");
 }
 
 void TestMaxMessageLengthOnServerOnResponse(CoreEnd2endTest& test) {
@@ -158,15 +121,15 @@ void TestMaxMessageLengthOnServerOnResponse(CoreEnd2endTest& test) {
   s.NewBatch(102)
       .SendInitialMetadata({})
       .RecvCloseOnServer(client_close)
-      .SendMessage(GetTooLargeMessage())
+      .SendMessage("hello world")
       .SendStatusFromServer(GRPC_STATUS_OK, "xyz", {});
   test.Expect(102, true);
   test.Expect(1, true);
   test.Step();
   EXPECT_EQ(s.method(), "/service/method");
   EXPECT_EQ(server_status.status(), GRPC_STATUS_RESOURCE_EXHAUSTED);
-  EXPECT_THAT(server_status.message(),
-              HasSubstr("SERVER: Sent message larger than max"));
+  EXPECT_EQ(server_status.message(),
+            "SERVER: Sent message larger than max (11 vs. 5)");
 }
 
 CORE_END2END_TEST(CoreEnd2endTests,
@@ -174,8 +137,7 @@ CORE_END2END_TEST(CoreEnd2endTests,
   SKIP_IF_MINSTACK();
   SKIP_IF_VIRTUAL();
   InitServer(DefaultServerArgs());
-  InitClient(
-      ChannelArgs().Set(GRPC_ARG_MAX_SEND_MESSAGE_LENGTH, kMaxMessageLength));
+  InitClient(ChannelArgs().Set(GRPC_ARG_MAX_SEND_MESSAGE_LENGTH, 5));
   TestMaxMessageLengthOnClientOnRequest(*this);
 }
 
@@ -192,7 +154,7 @@ CORE_END2END_TEST(
       "    \"name\": [\n"
       "      { \"service\": \"service\", \"method\": \"method\" }\n"
       "    ],\n"
-      "    \"maxRequestMessageBytes\": \"1024\"\n"
+      "    \"maxRequestMessageBytes\": \"5\"\n"
       "  } ]\n"
       "}"));
   TestMaxMessageLengthOnClientOnRequest(*this);
@@ -211,7 +173,7 @@ CORE_END2END_TEST(
       "    \"name\": [\n"
       "      { \"service\": \"service\", \"method\": \"method\" }\n"
       "    ],\n"
-      "    \"maxRequestMessageBytes\": 1024\n"
+      "    \"maxRequestMessageBytes\": 5\n"
       "  } ]\n"
       "}"));
   TestMaxMessageLengthOnClientOnRequest(*this);
@@ -221,28 +183,9 @@ CORE_END2END_TEST(CoreEnd2endTests,
                   MaxMessageLengthOnServerOnRequestViaChannelArg) {
   SKIP_IF_MINSTACK();
   SKIP_IF_VIRTUAL();
-  if (test_config()->feature_mask &
-      FEATURE_MASK_CHECKS_MAX_MESSAGE_LENGTH_IN_TRANSPORT) {
-    GTEST_SKIP() << "Skipping test as the transport checks max message length.";
-  }
-  InitServer(DefaultServerArgs().Set(GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH,
-                                     kMaxMessageLength));
+  InitServer(DefaultServerArgs().Set(GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH, 5));
   InitClient(ChannelArgs());
   TestMaxMessageLengthOnServerOnRequest(*this);
-}
-
-CORE_END2END_TEST(CoreEnd2endTests,
-                  MaxMessageLengthOnServerOnRequestViaChannelArgEarlyClose) {
-  SKIP_IF_MINSTACK();
-  if (!(test_config()->feature_mask &
-        FEATURE_MASK_CHECKS_MAX_MESSAGE_LENGTH_IN_TRANSPORT)) {
-    GTEST_SKIP()
-        << "Skipping test as the transport does not check max message length.";
-  }
-  InitServer(DefaultServerArgs().Set(GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH,
-                                     kMaxMessageLength));
-  InitClient(ChannelArgs());
-  TestMaxMessageLengthOnServerOnRequestEarlyClose(*this);
 }
 
 CORE_END2END_TEST(CoreEnd2endTests,
@@ -250,8 +193,7 @@ CORE_END2END_TEST(CoreEnd2endTests,
   SKIP_IF_MINSTACK();
   SKIP_IF_VIRTUAL();
   InitServer(DefaultServerArgs());
-  InitClient(ChannelArgs().Set(GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH,
-                               kMaxMessageLength));
+  InitClient(ChannelArgs().Set(GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH, 5));
   TestMaxMessageLengthOnClientOnResponse(*this);
 }
 
@@ -268,7 +210,7 @@ CORE_END2END_TEST(
       "    \"name\": [\n"
       "      { \"service\": \"service\", \"method\": \"method\" }\n"
       "    ],\n"
-      "    \"maxResponseMessageBytes\": \"1024\"\n"
+      "    \"maxResponseMessageBytes\": \"5\"\n"
       "  } ]\n"
       "}"));
   TestMaxMessageLengthOnClientOnResponse(*this);
@@ -287,7 +229,7 @@ CORE_END2END_TEST(
       "    \"name\": [\n"
       "      { \"service\": \"service\", \"method\": \"method\" }\n"
       "    ],\n"
-      "    \"maxResponseMessageBytes\": 1024\n"
+      "    \"maxResponseMessageBytes\": 5\n"
       "  } ]\n"
       "}"));
   TestMaxMessageLengthOnClientOnResponse(*this);
@@ -297,8 +239,7 @@ CORE_END2END_TEST(CoreEnd2endTests,
                   MaxMessageLengthOnServerOnResponseViaChannelArg) {
   SKIP_IF_MINSTACK();
   SKIP_IF_VIRTUAL();
-  InitServer(DefaultServerArgs().Set(GRPC_ARG_MAX_SEND_MESSAGE_LENGTH,
-                                     kMaxMessageLength));
+  InitServer(DefaultServerArgs().Set(GRPC_ARG_MAX_SEND_MESSAGE_LENGTH, 5));
   InitClient(ChannelArgs());
   TestMaxMessageLengthOnServerOnResponse(*this);
 }
@@ -337,7 +278,7 @@ CORE_END2END_TEST(Http2Tests,
   EXPECT_TRUE(client_close.was_cancelled());
   EXPECT_EQ(server_status.status(), GRPC_STATUS_RESOURCE_EXHAUSTED);
   EXPECT_THAT(server_status.message(),
-              HasSubstr("SERVER: Received message larger than max"));
+              StartsWith("SERVER: Received message larger than max"));
 }
 
 CORE_END2END_TEST(Http2Tests,
@@ -372,7 +313,7 @@ CORE_END2END_TEST(Http2Tests,
   EXPECT_EQ(s.method(), "/service/method");
   EXPECT_EQ(server_status.status(), GRPC_STATUS_RESOURCE_EXHAUSTED);
   EXPECT_THAT(server_status.message(),
-              HasSubstr("CLIENT: Received message larger than max"));
+              StartsWith("CLIENT: Received message larger than max"));
 }
 
 }  // namespace
