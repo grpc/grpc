@@ -1041,13 +1041,11 @@ def _stream_unary_invocation_operations_and_tags(
 
 def _determine_deadline(user_deadline: Optional[float]) -> Optional[float]:
     parent_deadline = cygrpc.get_deadline_from_context()
-    if parent_deadline is None and user_deadline is None:
-        return None
-    if parent_deadline is not None and user_deadline is None:
-        return parent_deadline
-    if user_deadline is not None and parent_deadline is None:
+    if parent_deadline is not None and user_deadline is not None:
+        return min(parent_deadline, user_deadline)
+    if parent_deadline is None:
         return user_deadline
-    return min(parent_deadline, user_deadline)
+    return parent_deadline
 
 
 class _UnaryUnaryMultiCallable(grpc.UnaryUnaryMultiCallable):
@@ -1140,7 +1138,7 @@ class _UnaryUnaryMultiCallable(grpc.UnaryUnaryMultiCallable):
             request, timeout, metadata, wait_for_ready, compression
         )
         if state is None:
-            raise rendezvous  # pylint: disable-msg=raising-bad-type
+            raise rendezvous  # pylint: disable-msg=raising-bad-type # pyright: ignore[reportGeneralTypeIssues]
         state.rpc_start_time = time.perf_counter()
         state.method = _common.decode(self._method)
         state.target = _common.decode(self._target)
@@ -1205,7 +1203,7 @@ class _UnaryUnaryMultiCallable(grpc.UnaryUnaryMultiCallable):
             request, timeout, metadata, wait_for_ready, compression
         )
         if state is None:
-            raise rendezvous  # pylint: disable-msg=raising-bad-type
+            raise rendezvous  # pylint: disable-msg=raising-bad-type # pyright: ignore[reportGeneralTypeIssues]
         event_handler = _event_handler(state, self._response_deserializer)
         state.rpc_start_time = time.perf_counter()
         state.method = _common.decode(self._method)
