@@ -22,6 +22,9 @@ module(
 # Regular dependencies
 # ====================
 
+# TODO(weizheyuan): Check if this version bump is still needed for BCR
+# releases after we drop bazel 7 supprot.
+#
 # Upgrade version of rules_swift to avoid an error in BCR CI of not
 # finding switfc.exe on Windows with bazel 7.
 bazel_dep(name = "rules_swift", version = "2.5.0")
