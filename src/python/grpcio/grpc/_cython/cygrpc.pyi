@@ -1,0 +1,139 @@
+from typing import Any, Optional, Sequence, Tuple, Union
+
+class OperationType:
+    send_initial_metadata: Any
+    send_message: Any
+    send_close_from_client: Any
+    receive_initial_metadata: Any
+    receive_message: Any
+    receive_status_on_client: Any
+
+def get_fork_epoch() -> Any: ...
+
+class BaseEvent:
+    batch_operations: Any
+
+class IntegratedCall:
+    def operate(self, operations: Any, event_handler: Any) -> bool: ...
+    def cancel(self, code: Any, details: Any) -> None: ...
+    def next_event(self) -> Any: ...
+    
+class SegregatedCall:
+    def operate(self, operations: Any, event_handler: Any) -> bool: ...
+    def cancel(self, code: Any, details: Any) -> None: ...
+    def next_event(self) -> Any: ...
+
+def enter_user_request_generator() -> None: ...
+def return_from_user_request_generator() -> None: ...
+
+class Operation:
+    pass
+
+class SendMessageOperation(Operation):
+    def __init__(self, message: bytes, flags: int) -> None: ...
+    
+def block_if_fork_in_progress(state: Any) -> None: ...
+
+class SendCloseFromClientOperation(Operation):
+    def __init__(self, flags: int) -> None: ...
+    
+class ForkManagedThread:
+    def __init__(self, *args: Any, **kwargs: Any) -> None: ...
+    def setDaemon(self, daemon: bool) -> None: ...
+    def start(self) -> None: ...
+    
+class ReceiveMessageOperation(Operation):
+    def __init__(self, flags: int) -> None: ...
+    
+class SendInitialMetadataOperation(Operation):
+    def __init__(self, metadata: Any, flags: int) -> None: ...
+    
+class ReceiveStatusOnClientOperation(Operation):
+    def __init__(self, flags: int) -> None: ...
+    
+class ReceiveInitialMetadataOperation(Operation):
+    def __init__(self, flags: int) -> None: ...
+    
+def get_deadline_from_context(context: Optional[Any] = ...) -> Any: ...
+
+class Channel:
+    def __init__(self, *args: Any, **kwargs: Any) -> None: ...
+    def check_connectivity_state(self, try_to_connect: bool) -> Any: ...
+    def watch_connectivity_state(self, last_observed_state: Any, deadline: Any) -> Any: ...
+    def close(self, *args: Any, **kwargs: Any) -> None: ...
+    def segregated_call(self, *args: Any, **kwargs: Any) -> Any: ...
+    def next_call_event(self, *args: Any, **kwargs: Any) -> Any: ...
+    def integrated_call(self, *args: Any, **kwargs: Any) -> Any: ...
+    def get_registered_call_handle(self, *args: Any, **kwargs: Any) -> Any: ...
+    def cancel_calls_on_fork(self, *args: Any, **kwargs: Any) -> Any: ...
+    
+def build_census_context() -> Any: ...
+
+class PropagationConstants:
+    connectivity_state: Any
+    GRPC_PROPAGATE_DEFAULTS: Any
+    
+class InitialMetadataFlags:
+    used_mask: Any
+    wait_for_ready: Any
+    wait_for_ready_explicitly_set: Any
+    
+class StatusCode:
+    def __init__(self, *args: Any, **kwargs: Any) -> None: ...
+    cancelled: Any
+    ok: Any
+    unknown: Any
+    invalid_argument: Any
+    deadline_exceeded: Any
+    not_found: Any
+    already_exists: Any
+    permission_denied: Any
+    unauthenticated: Any
+    resource_exhausted: Any
+    failed_precondition: Any
+    aborted: Any
+    out_of_range: Any
+    unimplemented: Any
+    internal: Any
+    unavailable: Any
+    data_loss: Any
+    
+class CompletionType:
+    queue_timeout: Any
+    
+class CallCredentials:
+    pass
+    
+class ChannelArgKey:
+    primary_user_agent_string: Any
+    
+def fork_register_channel(channel: Any) -> None: ...
+
+g_gevent_activated: bool
+
+def gevent_increment_channel_count() -> None: ...
+def fork_unregister_channel(channel: Any) -> None: ...
+def gevent_decrement_channel_count() -> None: ...
+
+class AioChannel:
+    def __init__(self, *args: Any, **kwargs: Any) -> None: ...
+    def closed(self) -> bool: ...
+    def closing(self) -> None: ...
+    def close(self) -> None: ...
+    def check_connectivity_state(self, try_to_connect: bool) -> Any: ...
+    def watch_connectivity_state(self, last_observed_state: Any, deadline: Any) -> Any: ...
+
+def get_working_loop() -> Any: ...
+
+class InternalError(Exception):
+    pass
+
+class ConnectivityState:
+    idle: Any
+    connecting: Any
+    ready: Any
+    transient_failure: Any
+    shutdown: Any
+
+class ChannelCredentials:
+    pass
