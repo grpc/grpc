@@ -592,7 +592,7 @@ def _call_behavior(
     argument: Any,
     request_deserializer: Optional[DeserializingFunction],
     send_response_callback: Optional[Callable[[ResponseType], None]] = None,
-) -> Tuple[Optional[Union[ResponseType, Iterator[ResponseType]]], bool]:
+) -> Tuple[Union[ResponseType, Iterator[ResponseType], None], bool]:
     from grpc import _create_servicer_context
 
     with _create_servicer_context(
