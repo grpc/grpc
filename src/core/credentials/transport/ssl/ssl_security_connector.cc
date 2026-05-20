@@ -32,7 +32,6 @@
 #include "src/core/handshaker/handshaker.h"
 #include "src/core/handshaker/security/security_handshaker.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/telemetry/metrics.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/error.h"
@@ -40,6 +39,7 @@
 #include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/promise/promise.h"
+#include "src/core/telemetry/metrics.h"
 #include "src/core/transport/auth_context.h"
 #include "src/core/tsi/ssl_transport_security.h"
 #include "src/core/tsi/transport_security.h"
@@ -104,7 +104,8 @@ class grpc_ssl_channel_security_connector final
                        grpc_core::HandshakeManager* handshake_mgr) override {
     // Instantiate TSI handshaker.
     tsi_handshaker* tsi_hs = nullptr;
-    auto stats_plugin_group = args.GetObjectRef<grpc_core::GlobalStatsPluginRegistry::StatsPluginGroup>();
+    auto stats_plugin_group = args.GetObjectRef<
+        grpc_core::GlobalStatsPluginRegistry::StatsPluginGroup>();
     tsi_result result = tsi_ssl_client_handshaker_factory_create_handshaker(
         client_handshaker_factory_,
         overridden_target_name_.empty() ? target_name_.c_str()
@@ -277,7 +278,8 @@ class grpc_ssl_server_security_connector
     // Instantiate TSI handshaker.
     try_fetch_ssl_server_credentials();
     tsi_handshaker* tsi_hs = nullptr;
-    auto stats_plugin_group = args.GetObjectRef<grpc_core::GlobalStatsPluginRegistry::StatsPluginGroup>();
+    auto stats_plugin_group = args.GetObjectRef<
+        grpc_core::GlobalStatsPluginRegistry::StatsPluginGroup>();
     tsi_result result = tsi_ssl_server_handshaker_factory_create_handshaker(
         server_handshaker_factory_, /*network_bio_buf_size=*/0,
         /*ssl_bio_buf_size=*/0, std::move(stats_plugin_group), &tsi_hs);

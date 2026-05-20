@@ -1509,8 +1509,8 @@ TEST_P(SslTransportSecurityTest, TestKeyExchangeGroupMismatch) {
 
 TEST(SslTransportSecurityTest, SslHandshakerStatsPluginGroupIsSet) {
   // 1. Create StatsPluginGroup
-  auto stats_plugin_group = std::make_shared<
-      grpc_core::GlobalStatsPluginRegistry::StatsPluginGroup>();
+  auto stats_plugin_group =
+      std::make_shared<GlobalStatsPluginRegistry::StatsPluginGroup>();
   stats_plugin_group->Finish();
 
   // 2. Create client handshaker factory
