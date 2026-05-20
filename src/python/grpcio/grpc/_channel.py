@@ -1811,6 +1811,19 @@ def _channel_managed_call_management(state: _ChannelCallState):
     return create
 
 
+class _Subscription:
+    callback: Callable[[grpc.ChannelConnectivity], None]
+    connectivity: Optional[grpc.ChannelConnectivity]
+
+    def __init__(
+        self,
+        callback: Callable[[grpc.ChannelConnectivity], None],
+        connectivity: Optional[grpc.ChannelConnectivity],
+    ):
+        self.callback = callback
+        self.connectivity = connectivity
+
+
 class _ChannelConnectivityState:
     lock: threading.RLock
     channel: cygrpc.Channel
@@ -1818,14 +1831,7 @@ class _ChannelConnectivityState:
     connectivity: Optional[grpc.ChannelConnectivity]
     try_to_connect: bool
     # TODO(xuanwn): Refactor this: https://github.com/grpc/grpc/issues/31704
-    callbacks_and_connectivities: List[
-        MutableSequence[
-            Union[
-                Callable[[grpc.ChannelConnectivity], None],
-                Optional[grpc.ChannelConnectivity],
-            ]
-        ]
-    ]
+    callbacks_and_connectivities: List[_Subscription]
     delivering: bool
 
     def __init__(self, channel: cygrpc.Channel):
@@ -1847,11 +1853,10 @@ def _deliveries(
     state: _ChannelConnectivityState,
 ) -> List[Callable[[grpc.ChannelConnectivity], None]]:
     callbacks_needing_update = []
-    for callback_and_connectivity in state.callbacks_and_connectivities:
-        callback, callback_connectivity = callback_and_connectivity
-        if callback_connectivity is not state.connectivity:
-            callbacks_needing_update.append(callback)
-            callback_and_connectivity[1] = state.connectivity
+    for subscription in state.callbacks_and_connectivities:
+        if subscription.connectivity is not state.connectivity:
+            callbacks_needing_update.append(subscription.callback)
+            subscription.connectivity = state.connectivity
     return callbacks_needing_update
 
 
@@ -1921,10 +1926,10 @@ def _poll_connectivity(
             ]
         )
         callbacks = tuple(
-            callback for callback, _ in state.callbacks_and_connectivities
+            subscription.callback for subscription in state.callbacks_and_connectivities
         )
-        for callback_and_connectivity in state.callbacks_and_connectivities:
-            callback_and_connectivity[1] = state.connectivity
+        for subscription in state.callbacks_and_connectivities:
+            subscription.connectivity = state.connectivity
         if callbacks:
             _spawn_delivery(state, callbacks)
     while True:
@@ -1980,16 +1985,16 @@ def _subscribe(
     with state.lock:
         if not state.callbacks_and_connectivities and not state.polling:
             _spawn_poll_connectivity(state, try_to_connect)
-            state.callbacks_and_connectivities.append([callback, None])
+            state.callbacks_and_connectivities.append(_Subscription(callback, None))
         elif not state.delivering and state.connectivity is not None:
             _spawn_delivery(state, (callback,))
             state.try_to_connect |= bool(try_to_connect)
             state.callbacks_and_connectivities.append(
-                [callback, state.connectivity]
+                _Subscription(callback, state.connectivity)
             )
         else:
             state.try_to_connect |= bool(try_to_connect)
-            state.callbacks_and_connectivities.append([callback, None])
+            state.callbacks_and_connectivities.append(_Subscription(callback, None))
 
 
 def _unsubscribe(
@@ -1997,10 +2002,10 @@ def _unsubscribe(
     callback: Callable[[grpc.ChannelConnectivity], None],
 ) -> None:
     with state.lock:
-        for index, (subscribed_callback, _unused_connectivity) in enumerate(
+        for index, subscription in enumerate(
             state.callbacks_and_connectivities
         ):
-            if callback == subscribed_callback:
+            if callback == subscription.callback:
                 state.callbacks_and_connectivities.pop(index)
                 break
 
