@@ -8972,6 +8972,7 @@ grpc_cc_library(
         "metadata_info",
         "mpsc",
         "ph2_stream",
+        "read_context",
         "sync",
         "time",
         "write_cycle",
