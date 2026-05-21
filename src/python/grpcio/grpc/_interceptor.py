@@ -17,8 +17,21 @@ from __future__ import annotations
 
 import collections
 import sys
-import types
-from typing import Any, Callable, Optional, Sequence, Tuple, Type, Union
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Optional,
+    Sequence,
+    Tuple,
+    Type,
+    Union,
+)
+
+from typing_extensions import Self
+
+if TYPE_CHECKING:
+    import types
 
 import grpc
 
@@ -783,7 +796,7 @@ class _Channel(grpc.Channel):
     def _close(self) -> None:
         self._channel.close()
 
-    def __enter__(self) -> _Channel:
+    def __enter__(self) -> Self:
         return self
 
     def __exit__(
