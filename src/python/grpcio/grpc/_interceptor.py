@@ -30,9 +30,6 @@ from typing import (
 
 from typing_extensions import Self
 
-if TYPE_CHECKING:
-    import types
-
 import grpc
 
 from ._typing import DeserializingFunction
@@ -40,6 +37,9 @@ from ._typing import DoneCallbackType
 from ._typing import MetadataType
 from ._typing import RequestIterableType
 from ._typing import SerializingFunction
+
+if TYPE_CHECKING:
+    import types
 
 
 class _ServicePipeline:
