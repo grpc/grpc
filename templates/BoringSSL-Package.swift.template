@@ -52,7 +52,7 @@
             .headerSearchPath("include/"),
           ]
         ),
-        .testTarget(
+        .executableTarget(
           name: "build-test",
           dependencies: [
             "openssl_grpc",
@@ -60,5 +60,5 @@
           path: testPath
         ),
       ],
-      cxxLanguageStandard: .cxx14
+      cxxLanguageStandard: .cxx17
     )
