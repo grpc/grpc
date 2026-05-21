@@ -44,7 +44,7 @@
 namespace grpc_core {
 namespace http2 {
 
-class IncomingMetadataTracker {
+class ReadContext {
   // Manages transport-wide state for incoming HEADERS and CONTINUATION frames.
   // RFC 9113 (Section 6.10) requires that if a HEADERS frame does not have
   // END_HEADERS set, it must be followed by a contiguous sequence of
@@ -55,14 +55,14 @@ class IncomingMetadataTracker {
   // a time. This class is distinct from HeaderAssembler, which buffers header
   // payloads on a per-stream basis.
  public:
-  explicit IncomingMetadataTracker(Slice peer_string, const bool is_client)
+  explicit ReadContext(Slice peer_string, const bool is_client)
       : peer_string_(std::move(peer_string)), is_client_(is_client) {}
-  ~IncomingMetadataTracker() = default;
+  ~ReadContext() = default;
 
-  IncomingMetadataTracker(IncomingMetadataTracker&& rvalue) = delete;
-  IncomingMetadataTracker& operator=(IncomingMetadataTracker&& rvalue) = delete;
-  IncomingMetadataTracker(const IncomingMetadataTracker&) = delete;
-  IncomingMetadataTracker& operator=(const IncomingMetadataTracker&) = delete;
+  ReadContext(ReadContext&& rvalue) = delete;
+  ReadContext& operator=(ReadContext&& rvalue) = delete;
+  ReadContext(const ReadContext&) = delete;
+  ReadContext& operator=(const ReadContext&) = delete;
 
   static Slice GetPeerString(const PromiseEndpoint& endpoint) {
     absl::StatusOr<std::string> uri =
