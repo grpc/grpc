@@ -1811,6 +1811,7 @@ def _channel_managed_call_management(state: _ChannelCallState):
 
 
 class _Subscription:
+    __slots__ = ("callback", "connectivity")
     callback: Callable[[grpc.ChannelConnectivity], None]
     connectivity: Optional[grpc.ChannelConnectivity]
 
