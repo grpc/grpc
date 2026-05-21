@@ -104,6 +104,7 @@ class XdsServerConfigFetcher final : public ServerConfigFetcher {
                          grpc_server_xds_status_notifier notifier);
 
   ~XdsServerConfigFetcher() override {
+LOG(INFO) << "~XdsServerConfigFetcher()";
     xds_client_.reset(DEBUG_LOCATION, "XdsServerConfigFetcher");
   }
 
@@ -148,6 +149,7 @@ class XdsServerConfigFetcher::ListenerWatcher final
                   std::string listening_address);
 
   ~ListenerWatcher() override {
+LOG(INFO) << "~ListenerWatcher() " << this;
     config_fetcher_.reset(DEBUG_LOCATION, "ListenerWatcher");
   }
 
@@ -310,7 +312,8 @@ class XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
 
   RouteConfigWatcher* watcher_ = nullptr;
 
-  RefCountedPtr<Blackboard> blackboard_;
+  // FIXME: add
+  //RefCountedPtr<Blackboard> blackboard_;
 
   // Will be null until we get the initial RouteConfiguration.
   // No need for synchronization, because this will always be set before
@@ -662,6 +665,7 @@ void XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
             GRPC_TRACE_LOG(xds_server_config_fetcher, INFO)
                 << "[FilterChainMatchManager " << self.get() << "]: orphaned";
             self->listener_watcher_.reset();
+            self->l4_filter_chains_.clear();
           });
 }
 
@@ -935,6 +939,7 @@ class XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
           self->watchers_.clear();  // Just in case.
           self->config_selector_ = absl::CancelledError("shutting down");
         });
+    work_serializer_.reset();
   }
 
   std::shared_ptr<WorkSerializer> work_serializer_;
@@ -1086,6 +1091,7 @@ void XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
         rds_resource_name, watcher_);
     watcher_ = nullptr;
   }
+  filter_chain_match_manager_.reset();
   Unref();
 }
 
