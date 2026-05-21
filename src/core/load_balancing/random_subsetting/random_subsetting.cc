@@ -119,12 +119,9 @@ RandomSubsetting::RandomSubsetting(Args args)
 
 absl::Status RandomSubsetting::UpdateLocked(UpdateArgs args) {
   if (shutting_down_) return absl::OkStatus();
-
   GRPC_TRACE_LOG(random_subsetting_lb, INFO)
       << "[random_subsetting_lb " << this << "] received update";
-
   auto config = args.config.TakeAsSubclass<RandomSubsettingConfig>();
-
   // Handle address errors
   if (!args.addresses.ok()) {
     absl::Status status = args.addresses.status();
@@ -133,22 +130,18 @@ absl::Status RandomSubsetting::UpdateLocked(UpdateArgs args) {
         MakeRefCounted<TransientFailurePicker>(status));
     return absl::OkStatus();
   }
-
   // Convert addresses to list for filtering
   EndpointAddressesList endpoint_list;
   (*args.addresses)->ForEach([&](const EndpointAddresses& endpoint) {
     endpoint_list.push_back(endpoint);
   });
-
   // Filter endpoints using rendezvous hashing
   auto filtered_endpoints =
       FilterEndpoints(endpoint_list, config->subset_size(), seed_);
-
   // Create child policy if needed
   if (child_policy_ == nullptr) {
     child_policy_ = CreateChildPolicyLocked(args.args);
   }
-
   // Prepare child update args
   UpdateArgs child_args;
   child_args.addresses = std::make_shared<EndpointAddressesListIterator>(
@@ -156,12 +149,10 @@ absl::Status RandomSubsetting::UpdateLocked(UpdateArgs args) {
   child_args.config = config->child_policy();
   child_args.resolution_note = std::move(args.resolution_note);
   child_args.args = std::move(args.args);
-
   // Update child policy
   GRPC_TRACE_LOG(random_subsetting_lb, INFO)
       << "[random_subsetting_lb " << this << "] updating child policy "
       << child_policy_.get();
-
   return child_policy_->UpdateLocked(std::move(child_args));
 }
 
@@ -205,7 +196,6 @@ EndpointAddressesList RandomSubsetting::FilterEndpoints(
   };
   std::vector<EndpointWithHash> endpoints_with_hash;
   endpoints_with_hash.reserve(endpoints.size());
-
   // Hash each endpoint using XXH64
   for (const auto& endpoint : endpoints) {
     if (endpoint.addresses().empty()) continue;
@@ -273,7 +263,6 @@ RandomSubsettingFactory::ParseLoadBalancingConfig(const Json& json) const {
   ValidationErrors errors;
   uint32_t subset_size = 0;
   RefCountedPtr<LoadBalancingPolicy::Config> child_policy;
-
   // Parse subset_size
   {
     ValidationErrors::ScopedField field(&errors, ".subset_size");
@@ -290,7 +279,6 @@ RandomSubsettingFactory::ParseLoadBalancingConfig(const Json& json) const {
       }
     }
   }
-
   // Parse childPolicy
   {
     ValidationErrors::ScopedField field(&errors, ".childPolicy");
@@ -310,18 +298,15 @@ RandomSubsettingFactory::ParseLoadBalancingConfig(const Json& json) const {
       }
     }
   }
-
   if (!errors.ok()) {
     return errors.status(
         absl::StatusCode::kInvalidArgument,
         "errors validating random_subsetting LB policy config");
   }
-
   if (child_policy == nullptr) {  // "should never happen" check
     return absl::InternalError(
         "child policy config is null after successful parsing");
   }
-
   return MakeRefCounted<RandomSubsettingConfig>(subset_size,
                                                 std::move(child_policy));
 }
