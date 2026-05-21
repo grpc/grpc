@@ -55,18 +55,9 @@ class ServerConfigSelector : public RefCounted<ServerConfigSelector> {
 class ServerConfigSelectorProvider
     : public DualRefCounted<ServerConfigSelectorProvider> {
  public:
-  class ServerConfigSelectorWatcher {
-   public:
-    virtual ~ServerConfigSelectorWatcher() = default;
-    virtual void OnServerConfigSelectorUpdate(
-        absl::StatusOr<RefCountedPtr<ServerConfigSelector>> update) = 0;
-  };
-
-  ~ServerConfigSelectorProvider() override = default;
-  // Only a single watcher is allowed at present
-  virtual absl::StatusOr<RefCountedPtr<ServerConfigSelector>> Watch(
-      std::unique_ptr<ServerConfigSelectorWatcher> watcher) = 0;
-  virtual void CancelWatch() = 0;
+  // Returns a promise that resolves to the current config selector.
+  virtual ArenaPromise<absl::StatusOr<RefCountedPtr<ServerConfigSelector>>>
+  GetConfigSelector() = 0;
 
   static absl::string_view ChannelArgName() {
     return "grpc.internal.server_config_selector_provider";
