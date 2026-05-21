@@ -136,7 +136,9 @@ class _FailureOutcome(
     _exception: Exception
     _traceback: Optional[types.TracebackType]
 
-    def __init__(self, exception: Exception, traceback: Optional[types.TracebackType]):
+    def __init__(
+        self, exception: Exception, traceback: Optional[types.TracebackType]
+    ):
         super(_FailureOutcome, self).__init__()
         self._exception = exception
         self._traceback = traceback
@@ -680,9 +682,7 @@ class _Channel(grpc.Channel):
         self._channel = channel
         self._interceptor = interceptor
 
-    def subscribe(
-        self, callback: Callable, try_to_connect: bool = False
-    ):
+    def subscribe(self, callback: Callable, try_to_connect: bool = False):
         self._channel.subscribe(callback, try_to_connect=try_to_connect)
 
     def unsubscribe(self, callback: Callable):
