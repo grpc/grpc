@@ -1503,8 +1503,6 @@ TEST_P(SslTransportSecurityTest, TestKeyExchangeGroupMismatch) {
 }
 #endif
 
-
-
 }  // namespace
 }  // namespace testing
 }  // namespace grpc_core
