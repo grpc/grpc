@@ -56,10 +56,12 @@ class ServerCallTracerFactory:
     grpc.experimental.server_call_tracer_factory option
     """
 
-    def __init__(self, address):
+    _address: int
+
+    def __init__(self, address: int) -> None:
         self._address = address
 
-    def __int__(self):
+    def __int__(self) -> int:
         return self._address
 
 
