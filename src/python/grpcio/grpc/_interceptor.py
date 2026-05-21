@@ -28,9 +28,8 @@ from typing import (
     Union,
 )
 
-from typing_extensions import Self
-
 import grpc
+from typing_extensions import Self
 
 from ._typing import DeserializingFunction
 from ._typing import DoneCallbackType
