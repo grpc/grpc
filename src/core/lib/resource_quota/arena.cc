@@ -27,51 +27,7 @@
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/util/alloc.h"
 #include "absl/log/log.h"
-
-//////////////////////////////////////
-// Forward declarations.
-
-struct census_context;
-namespace grpc_event_engine::experimental {
-class EventEngine;
-}
-
 namespace grpc_core {
-class BackendMetricProvider;
-class Call;
-class CallSpan;
-class CallTracer;
-class SecurityContext;
-class ServiceConfigCallData;
-
-struct TelemetryLabel;
-struct V3InterceptorToV2State;
-
-// Test-only, see arena_test.cc
-struct Foo;
-}  // namespace grpc_core
-namespace grpc_core::channelz {
-class CallNode;
-}
-namespace grpc_core::lb_policy_detail {
-class SubchannelCallTrackerInterface;
-}
-
-// End of forward declarations
-//////////////////////////////////////
-
-namespace grpc_core {
-
-namespace arena_detail {
-
-// Explicit instantiation
-template <typename T>
-uint16_t IdAssigner<T>::id() {
-  static uint16_t lazy_id = RegisteredTraits().AssignId();
-  return lazy_id;
-}
-
-}  // namespace arena_detail
 
 namespace {
 
@@ -200,57 +156,5 @@ RefCountedPtr<ArenaFactory> SimpleArenaAllocator(size_t initial_size,
   };
   return MakeRefCounted<Allocator>(initial_size, std::move(allocator));
 }
-
-namespace arena_detail {
-
-template class IdAssigner<struct census_context>;
-template class IdAssigner<grpc_event_engine::experimental::EventEngine>;
-template class IdAssigner<BackendMetricProvider>;
-template class IdAssigner<Call>;
-template class IdAssigner<CallSpan>;
-template class IdAssigner<CallTracer>;
-template class IdAssigner<SecurityContext>;
-template class IdAssigner<ServiceConfigCallData>;
-template class IdAssigner<TelemetryLabel>;
-template class IdAssigner<V3InterceptorToV2State>;
-template class IdAssigner<channelz::CallNode>;
-template class IdAssigner<lb_policy_detail::SubchannelCallTrackerInterface>;
-
-template class IdAssigner<Foo>;
-
-struct ArenaContextTraitsInitializer {
-  ArenaContextTraitsInitializer() {
-    // Force initialization and allocation of ids.
-    IdAssigner<struct census_context>::id();
-    IdAssigner<grpc_event_engine::experimental::EventEngine>::id();
-    IdAssigner<BackendMetricProvider>::id();
-    IdAssigner<Call>::id();
-    IdAssigner<CallSpan>::id();
-    IdAssigner<CallTracer>::id();
-    IdAssigner<SecurityContext>::id();
-    IdAssigner<ServiceConfigCallData>::id();
-    IdAssigner<TelemetryLabel>::id();
-    IdAssigner<V3InterceptorToV2State>::id();
-    IdAssigner<channelz::CallNode>::id();
-    IdAssigner<lb_policy_detail::SubchannelCallTrackerInterface>::id();
-    IdAssigner<Foo>::id();
-  }
-};
-
-// Must be at the bottom of this file (because MSVC init_seg() affect all
-// subsequent objects).
-namespace {
-#if defined(__GNUC__) || defined(__clang__)
-__attribute__((init_priority(
-    101))) ArenaContextTraitsInitializer context_traits_initializer;
-#elif defined(_MSC_VER)
-#pragma init_seg(lib)
-ArenaContextTraitsInitializer context_traits_initializer;
-#else
-ArenaContextTraitsInitializer context_traits_initializer;
-#endif
-}  // namespace
-
-}  // namespace arena_detail
 
 }  // namespace grpc_core

@@ -34,11 +34,17 @@ using NoDestruct = absl::NoDestructor<T>;
 template <typename T>
 class NoDestructSingleton {
  public:
-  static T* Get() {
-    static NoDestruct<T> value;
-    return value.get();
-  }
+  static T* Get() { return &*value_; }
+
+ private:
+  NoDestructSingleton() = delete;
+  ~NoDestructSingleton() = delete;
+
+  static NoDestruct<T> value_;
 };
+
+template <typename T>
+NoDestruct<T> NoDestructSingleton<T>::value_;
 
 }  // namespace grpc_core
 

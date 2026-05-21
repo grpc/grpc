@@ -93,64 +93,8 @@ namespace grpc_core {
 /// returned by \a interested_parties().
 // TODO(roth): Once we move to EventManager-based polling, remove the
 // interested_parties() hooks from the API.
-
-namespace lb_policy_detail {
-/// Interface for tracking subchannel calls.
-/// Implemented by LB policy and used by the channel.
-// TODO(roth): Before making this API public, consider whether we
-// should just replace this with a CallTracer, similar to what Java does.
-/// Interface for accessing metadata.
-/// Implemented by the client channel and used by the SubchannelPicker.
-class MetadataInterface {
- public:
-  virtual ~MetadataInterface() = default;
-
-  virtual std::optional<absl::string_view> Lookup(
-      absl::string_view key, std::string* buffer) const = 0;
-};
-
-/// Interface for accessing backend metric data.
-/// Implemented by the client channel and used by
-/// SubchannelCallTrackerInterface.
-class BackendMetricAccessor {
- public:
-  virtual ~BackendMetricAccessor() = default;
-
-  /// Returns the backend metric data returned by the server for the call,
-  /// or null if no backend metric data was returned.
-  virtual const BackendMetricData* GetBackendMetricData() = 0;
-};
-
-class SubchannelCallTrackerInterface {
- public:
-  virtual ~SubchannelCallTrackerInterface() = default;
-
-  /// Called when a subchannel call is completed.
-  /// The metadata may be modified by the implementation.  However, the
-  /// implementation does not take ownership, so any data that needs to be
-  /// used after returning must be copied.
-  ///
-  /// Note that when the picker returns a complete pick, it's possible
-  /// that the returned subchannel has already lost its connection, in
-  /// which case the channel will queue the pick.  In that case,
-  /// the SubchannelCallTrackerInterface object will be destroyed
-  /// without ever calling Finish().
-  struct FinishArgs {
-    absl::string_view peer_address;
-    absl::Status status;
-    MetadataInterface* trailing_metadata;
-    BackendMetricAccessor* backend_metric_accessor;
-  };
-  virtual void Finish(FinishArgs args) = 0;
-};
-}  // namespace lb_policy_detail
-
 class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
  public:
-  using SubchannelCallTrackerInterface =
-      lb_policy_detail::SubchannelCallTrackerInterface;
-  using MetadataInterface = lb_policy_detail::MetadataInterface;
-  using BackendMetricAccessor = lb_policy_detail::BackendMetricAccessor;
   /// Interface for accessing per-call state.
   /// Implemented by the client channel and used by the SubchannelPicker.
   class CallState {
@@ -163,6 +107,16 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
     /// It is more efficient to use this than to allocate memory directly
     /// for allocations that need to be made on a per-call basis.
     virtual void* Alloc(size_t size) = 0;
+  };
+
+  /// Interface for accessing metadata.
+  /// Implemented by the client channel and used by the SubchannelPicker.
+  class MetadataInterface {
+   public:
+    virtual ~MetadataInterface() = default;
+
+    virtual std::optional<absl::string_view> Lookup(
+        absl::string_view key, std::string* buffer) const = 0;
   };
 
   /// A list of metadata mutations to be returned along with a PickResult.
@@ -202,6 +156,45 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
     /// An interface for accessing call state.  Can be used to allocate
     /// memory associated with the call in an efficient way.
     CallState* call_state;
+  };
+
+  /// Interface for accessing backend metric data.
+  /// Implemented by the client channel and used by
+  /// SubchannelCallTrackerInterface.
+  class BackendMetricAccessor {
+   public:
+    virtual ~BackendMetricAccessor() = default;
+
+    /// Returns the backend metric data returned by the server for the call,
+    /// or null if no backend metric data was returned.
+    virtual const BackendMetricData* GetBackendMetricData() = 0;
+  };
+
+  /// Interface for tracking subchannel calls.
+  /// Implemented by LB policy and used by the channel.
+  // TODO(roth): Before making this API public, consider whether we
+  // should just replace this with a CallTracer, similar to what Java does.
+  class SubchannelCallTrackerInterface {
+   public:
+    virtual ~SubchannelCallTrackerInterface() = default;
+
+    /// Called when a subchannel call is completed.
+    /// The metadata may be modified by the implementation.  However, the
+    /// implementation does not take ownership, so any data that needs to be
+    /// used after returning must be copied.
+    ///
+    /// Note that when the picker returns a complete pick, it's possible
+    /// that the returned subchannel has already lost its connection, in
+    /// which case the channel will queue the pick.  In that case,
+    /// the SubchannelCallTrackerInterface object will be destroyed
+    /// without ever calling Finish().
+    struct FinishArgs {
+      absl::string_view peer_address;
+      absl::Status status;
+      MetadataInterface* trailing_metadata;
+      BackendMetricAccessor* backend_metric_accessor;
+    };
+    virtual void Finish(FinishArgs args) = 0;
   };
 
   /// The result of picking a subchannel for a call.
