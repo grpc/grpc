@@ -613,6 +613,9 @@ class AuthMetadataContext(abc.ABC):
       method_name: A string of the fully qualified method name being called.
     """
 
+    service_url: str
+    method_name: str
+
 
 class AuthMetadataPluginCallback(abc.ABC):
     """Callback object received by a metadata plugin."""
