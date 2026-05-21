@@ -78,7 +78,12 @@ def _unwrap_client_call_details(
     call_details: grpc.ClientCallDetails,
     default_details: grpc.ClientCallDetails,
 ) -> Tuple[
-    str, float, MetadataType, grpc.CallCredentials, bool, grpc.Compression
+    str,
+    Optional[float],
+    Optional[MetadataType],
+    Optional[grpc.CallCredentials],
+    Optional[bool],
+    Optional[grpc.Compression],
 ]:
     try:
         method = call_details.method  # pytype: disable=attribute-error
@@ -129,9 +134,9 @@ class _FailureOutcome(
     grpc.RpcError, grpc.Future, grpc.Call
 ):  # pylint: disable=too-many-ancestors
     _exception: Exception
-    _traceback: types.TracebackType
+    _traceback: Optional[types.TracebackType]
 
-    def __init__(self, exception: Exception, traceback: types.TracebackType):
+    def __init__(self, exception: Exception, traceback: Optional[types.TracebackType]):
         super(_FailureOutcome, self).__init__()
         self._exception = exception
         self._traceback = traceback
@@ -676,7 +681,7 @@ class _Channel(grpc.Channel):
         self._interceptor = interceptor
 
     def subscribe(
-        self, callback: Callable, try_to_connect: Optional[bool] = False
+        self, callback: Callable, try_to_connect: bool = False
     ):
         self._channel.subscribe(callback, try_to_connect=try_to_connect)
 
@@ -689,7 +694,7 @@ class _Channel(grpc.Channel):
         method: str,
         request_serializer: Optional[SerializingFunction] = None,
         response_deserializer: Optional[DeserializingFunction] = None,
-        _registered_method: Optional[bool] = False,
+        _registered_method: bool = False,
     ) -> grpc.UnaryUnaryMultiCallable:
         # pytype: disable=wrong-arg-count
         thunk = lambda m: self._channel.unary_unary(
@@ -709,7 +714,7 @@ class _Channel(grpc.Channel):
         method: str,
         request_serializer: Optional[SerializingFunction] = None,
         response_deserializer: Optional[DeserializingFunction] = None,
-        _registered_method: Optional[bool] = False,
+        _registered_method: bool = False,
     ) -> grpc.UnaryStreamMultiCallable:
         # pytype: disable=wrong-arg-count
         thunk = lambda m: self._channel.unary_stream(
@@ -729,7 +734,7 @@ class _Channel(grpc.Channel):
         method: str,
         request_serializer: Optional[SerializingFunction] = None,
         response_deserializer: Optional[DeserializingFunction] = None,
-        _registered_method: Optional[bool] = False,
+        _registered_method: bool = False,
     ) -> grpc.StreamUnaryMultiCallable:
         # pytype: disable=wrong-arg-count
         thunk = lambda m: self._channel.stream_unary(
@@ -749,7 +754,7 @@ class _Channel(grpc.Channel):
         method: str,
         request_serializer: Optional[SerializingFunction] = None,
         response_deserializer: Optional[DeserializingFunction] = None,
-        _registered_method: Optional[bool] = False,
+        _registered_method: bool = False,
     ) -> grpc.StreamStreamMultiCallable:
         # pytype: disable=wrong-arg-count
         thunk = lambda m: self._channel.stream_stream(
