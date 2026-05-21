@@ -426,7 +426,6 @@
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/http2_ztrace_collector.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/huffsyms.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/huffsyms.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/read_context.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/internal.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/internal_channel_arg_names.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/keepalive.cc" role="src" />
@@ -442,6 +441,7 @@
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/ping_promise.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/ping_rate_policy.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/ping_rate_policy.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/read_context.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/security_frame.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/stream.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/stream_data_queue.h" role="src" />

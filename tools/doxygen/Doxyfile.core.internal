@@ -1240,7 +1240,6 @@ src/core/ext/transport/chttp2/transport/http2_transport.h \
 src/core/ext/transport/chttp2/transport/http2_ztrace_collector.h \
 src/core/ext/transport/chttp2/transport/huffsyms.cc \
 src/core/ext/transport/chttp2/transport/huffsyms.h \
-src/core/ext/transport/chttp2/transport/read_context.h \
 src/core/ext/transport/chttp2/transport/internal.h \
 src/core/ext/transport/chttp2/transport/internal_channel_arg_names.h \
 src/core/ext/transport/chttp2/transport/keepalive.cc \
@@ -1256,6 +1255,7 @@ src/core/ext/transport/chttp2/transport/ping_promise.cc \
 src/core/ext/transport/chttp2/transport/ping_promise.h \
 src/core/ext/transport/chttp2/transport/ping_rate_policy.cc \
 src/core/ext/transport/chttp2/transport/ping_rate_policy.h \
+src/core/ext/transport/chttp2/transport/read_context.h \
 src/core/ext/transport/chttp2/transport/security_frame.h \
 src/core/ext/transport/chttp2/transport/stream.h \
 src/core/ext/transport/chttp2/transport/stream_data_queue.h \
