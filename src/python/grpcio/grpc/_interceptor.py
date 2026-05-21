@@ -248,10 +248,14 @@ class _UnaryOutcome(grpc.Call, grpc.Future):
     def result(self, ignored_timeout: Optional[float] = None) -> Any:
         return self._response
 
-    def exception(self, ignored_timeout: Optional[float] = None) -> Optional[Exception]:
+    def exception(
+        self, ignored_timeout: Optional[float] = None
+    ) -> Optional[Exception]:
         return None
 
-    def traceback(self, ignored_timeout: Optional[float] = None) -> Optional[types.TracebackType]:
+    def traceback(
+        self, ignored_timeout: Optional[float] = None
+    ) -> Optional[types.TracebackType]:
         return None
 
     def add_done_callback(self, fn: DoneCallbackType) -> None:
@@ -684,10 +688,16 @@ class _Channel(grpc.Channel):
         self._channel = channel
         self._interceptor = interceptor
 
-    def subscribe(self, callback: Callable[[grpc.ChannelConnectivity], None], try_to_connect: bool = False) -> None:
+    def subscribe(
+        self,
+        callback: Callable[[grpc.ChannelConnectivity], None],
+        try_to_connect: bool = False,
+    ) -> None:
         self._channel.subscribe(callback, try_to_connect=try_to_connect)
 
-    def unsubscribe(self, callback: Callable[[grpc.ChannelConnectivity], None]) -> None:
+    def unsubscribe(
+        self, callback: Callable[[grpc.ChannelConnectivity], None]
+    ) -> None:
         self._channel.unsubscribe(callback)
 
     # pylint: disable=arguments-differ
@@ -776,7 +786,12 @@ class _Channel(grpc.Channel):
     def __enter__(self) -> _Channel:
         return self
 
-    def __exit__(self, exc_type: Optional[Type[BaseException]], exc_val: Optional[BaseException], exc_tb: Optional[types.TracebackType]) -> bool:
+    def __exit__(
+        self,
+        exc_type: Optional[Type[BaseException]],
+        exc_val: Optional[BaseException],
+        exc_tb: Optional[types.TracebackType],
+    ) -> bool:
         self._close()
         return False
 
