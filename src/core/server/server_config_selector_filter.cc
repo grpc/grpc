@@ -27,6 +27,7 @@
 #include "src/core/lib/event_engine/event_engine_context.h"
 #include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/promise/context.h"
+#include "src/core/lib/promise/observable.h"
 #include "src/core/lib/promise/promise.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/transport/transport.h"
@@ -37,7 +38,6 @@
 #include "src/core/util/latent_see.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/status_helper.h"
-#include "src/core/util/sync.h"
 #include "absl/base/thread_annotations.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
@@ -69,8 +69,8 @@ class ServerConfigSelectorFilter final
 
   class Call {
    public:
-    absl::Status OnClientInitialMetadata(ClientMetadata& md,
-                                         ServerConfigSelectorFilter* filter);
+    ArenaPromise<absl::Status> OnClientInitialMetadata(
+        ClientMetadata& md, ServerConfigSelectorFilter* filter);
     static inline const NoInterceptor OnServerInitialMetadata;
     static inline const NoInterceptor OnServerTrailingMetadata;
     static inline const NoInterceptor OnClientToServerMessage;
@@ -79,10 +79,7 @@ class ServerConfigSelectorFilter final
     static inline const NoInterceptor OnFinalize;
   };
 
-  absl::StatusOr<RefCountedPtr<ServerConfigSelector>> config_selector() {
-    MutexLock lock(&mu_);
-    return config_selector_.value();
-  }
+  auto GetConfigSelector() { return config_selector_.Next(nullptr); }
 
  private:
   class ServerConfigSelectorWatcher
@@ -93,8 +90,7 @@ class ServerConfigSelectorFilter final
         : filter_(filter) {}
     void OnServerConfigSelectorUpdate(
         absl::StatusOr<RefCountedPtr<ServerConfigSelector>> update) override {
-      MutexLock lock(&filter_->mu_);
-      filter_->config_selector_ = std::move(update);
+      filter_->config_selector_.Set(std::move(update));
     }
 
    private:
@@ -103,9 +99,8 @@ class ServerConfigSelectorFilter final
 
   RefCountedPtr<ServerConfigSelectorProvider> server_config_selector_provider_;
   std::shared_ptr<ServerConfigSelectorWatcher> watcher_;
-  Mutex mu_;
-  std::optional<absl::StatusOr<RefCountedPtr<ServerConfigSelector>>>
-      config_selector_ ABSL_GUARDED_BY(mu_);
+  Observable<absl::StatusOr<RefCountedPtr<ServerConfigSelector>>>
+      config_selector_;
 };
 
 absl::StatusOr<OrphanablePtr<ServerConfigSelectorFilter>>
@@ -123,15 +118,11 @@ ServerConfigSelectorFilter::Create(const ChannelArgs& args,
 ServerConfigSelectorFilter::ServerConfigSelectorFilter(
     RefCountedPtr<ServerConfigSelectorProvider> server_config_selector_provider)
     : server_config_selector_provider_(
-          std::move(server_config_selector_provider)) {
+          std::move(server_config_selector_provider)),
+      config_selector_(nullptr) {
   GRPC_CHECK(server_config_selector_provider_ != nullptr);
   watcher_ = std::make_shared<ServerConfigSelectorWatcher>(Ref());
-  auto config_selector = server_config_selector_provider_->Watch(watcher_);
-  MutexLock lock(&mu_);
-  // It's possible for the watcher to have already updated config_selector_
-  if (!config_selector_.has_value()) {
-    config_selector_ = std::move(config_selector);
-  }
+  server_config_selector_provider_->Watch(watcher_);
 }
 
 void ServerConfigSelectorFilter::Orphan() {
@@ -141,21 +132,28 @@ void ServerConfigSelectorFilter::Orphan() {
   Unref();
 }
 
-absl::Status ServerConfigSelectorFilter::Call::OnClientInitialMetadata(
+ArenaPromise<absl::Status>
+ServerConfigSelectorFilter::Call::OnClientInitialMetadata(
     ClientMetadata& md, ServerConfigSelectorFilter* filter) {
   GRPC_LATENT_SEE_SCOPE(
       "ServerConfigSelectorFilter::Call::OnClientInitialMetadata");
-  auto sel = filter->config_selector();
-  if (!sel.ok()) return sel.status();
-  auto call_config = sel.value()->GetCallConfig(&md);
-  if (!call_config.ok()) {
-    return absl::UnavailableError(StatusToString(call_config.status()));
-  }
-  auto* service_config_call_data =
-      GetContext<Arena>()->New<ServiceConfigCallData>(GetContext<Arena>());
-  service_config_call_data->SetServiceConfig(
-      std::move(call_config->service_config), call_config->method_configs);
-  return absl::OkStatus();
+  return TrySeq(
+      filter->GetConfigSelector(),
+      [&md](
+          absl::StatusOr<RefCountedPtr<ServerConfigSelector>> config_selector) {
+        if (!config_selector.ok()) return config_selector.status();
+        auto call_config = (*config_selector)->GetCallConfig(&md);
+        if (!call_config.ok()) {
+          return absl::UnavailableError(StatusToString(call_config.status()));
+        }
+        auto* arena = GetContext<Arena>();
+        auto* service_config_call_data =
+            arena->New<ServiceConfigCallData>(arena);
+        service_config_call_data->SetServiceConfig(
+            std::move(call_config->service_config),
+            call_config->method_configs);
+        return absl::OkStatus();
+      });
 }
 
 }  // namespace
