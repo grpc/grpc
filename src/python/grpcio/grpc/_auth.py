@@ -52,9 +52,7 @@ class GoogleCallCredentials(grpc.AuthMetadataPlugin):
         try:
             if self._is_jwt:
                 access_token = self._credentials.get_access_token(
-                    additional_claims={
-                        "aud": context.service_url
-                    }
+                    additional_claims={"aud": context.service_url}
                 ).access_token
             else:
                 access_token = self._credentials.get_access_token().access_token
