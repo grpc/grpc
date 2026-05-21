@@ -1193,7 +1193,7 @@ void Http2ServerTransport::AddToStreamList(RefCountedPtr<Stream> stream) {
 //         << "Http2ServerTransport::MaybeAddStreamToWritableStreamList Stream "
 //            "id: "
 //         << stream->GetStreamId() << " became writable";
-//     // TODO(akshitpatel) [Perf]: Might be worth exploring if this funciton
+//     // TODO(akshitpatel) [Perf]: Might be worth exploring if this function
 //     // should take a raw stream ptr and take a ref here.
 //     absl::Status status =
 //         writable_stream_list_.Enqueue(std::move(stream), result.priority);

@@ -1824,7 +1824,7 @@ absl::Status Http2ClientTransport::MaybeAddStreamToWritableStreamList(
         << "Http2ClientTransport::MaybeAddStreamToWritableStreamList Stream "
            "id: "
         << stream->GetStreamId() << " became writable";
-    // TODO(akshitpatel) [Perf]: Might be worth exploring if this funciton
+    // TODO(akshitpatel) [Perf]: Might be worth exploring if this function
     // should take a raw stream ptr and take a ref here.
     absl::Status status =
         writable_stream_list_.Enqueue(std::move(stream), result.priority);
@@ -2177,7 +2177,7 @@ uint32_t Http2ClientTransport::GoawayInterfaceImpl::GetLastAcceptedStreamId() {
 // TODO(akshitpatel) : [PH2][P2] : Eventually there should be a separate ref
 // counted struct/class passed to all the transport promises/members. This
 // will help removing back references from the transport members to
-// transport and greatly simpilfy the cleanup path. Need to do this for
+// transport and greatly simplify the cleanup path. Need to do this for
 // PingSystemInterfaceImpl, KeepAliveInterfaceImpl and GoawayInterfaceImpl.
 
 }  // namespace http2

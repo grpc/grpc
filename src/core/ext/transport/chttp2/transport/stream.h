@@ -374,7 +374,7 @@ class Stream : public RefCounted<Stream> {
   bool did_receive_trailing_metadata_;
   bool did_push_server_trailing_metadata_;
   // TODO(akshitpatel) : [PH2][P0][Server] : This would need to change to
-  // accomodate ServerMetadataHandle for the server side.
+  // accommodate ServerMetadataHandle for the server side.
   RefCountedPtr<StreamDataQueue<ClientMetadataHandle>> data_queue_;
 };
 
