@@ -154,8 +154,23 @@ grpc_cc_test(
         "//:grpc",
         "//:tsi_base",
         "//:tsi_ssl_credentials",
-        "//:ssl_telemetry_utils",
         "//test/core/test_util:build",
+        "//test/core/test_util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "ssl_telemetry_utils_test",
+    srcs = ["ssl_telemetry_utils_test.cc"],
+    external_deps = [
+        "gtest",
+        "libcrypto",
+        "libssl",
+    ],
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//:ssl_telemetry_utils",
         "//test/core/test_util:grpc_test_util",
     ],
 )
