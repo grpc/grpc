@@ -916,7 +916,7 @@ def _handle_unary_stream(
     state: _RPCState,
     method_handler: grpc.RpcMethodHandler,
     default_thread_pool: futures.ThreadPoolExecutor,
-) -> Optional[futures.Future]:
+) -> futures.Future:
     unary_request = _unary_request(
         rpc_event, state, method_handler.request_deserializer
     )
@@ -942,7 +942,7 @@ def _handle_stream_unary(
     state: _RPCState,
     method_handler: grpc.RpcMethodHandler,
     default_thread_pool: futures.ThreadPoolExecutor,
-) -> Optional[futures.Future]:
+) -> futures.Future:
     request_iterator = _RequestIterator(
         state, rpc_event.call, method_handler.request_deserializer
     )
@@ -968,7 +968,7 @@ def _handle_stream_stream(
     state: _RPCState,
     method_handler: grpc.RpcMethodHandler,
     default_thread_pool: futures.ThreadPoolExecutor,
-) -> Optional[futures.Future]:
+) -> futures.Future:
     request_iterator = _RequestIterator(
         state, rpc_event.call, method_handler.request_deserializer
     )
