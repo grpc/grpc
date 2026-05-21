@@ -22,6 +22,7 @@
 #include <memory>
 
 #include "src/core/call/metadata_batch.h"
+#include "src/core/lib/promise/arena_promise.h"
 #include "src/core/service_config/service_config.h"
 #include "src/core/service_config/service_config_parser.h"
 #include "src/core/util/dual_ref_counted.h"
