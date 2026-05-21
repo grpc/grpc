@@ -14,26 +14,28 @@
 # limitations under the License.
 
 
+# Ensure all tracking are registered
+
+PS4="+ \$(date +[%H:%M:%S_%Z]) "
+set -xeuo pipefail
+
 # Ensure package to install is provided
 if [ $# -eq 0 ]; then
   echo "Error: No package name provided to install with apt-get." >&2
   exit 1
 fi
 
-PACKAGES="$*"
+PACKAGES=("$@")
 
 MAX_RETRIES=4
 # Initial delay, will grow exponentially
 delay=3
 
-PS4="+ \$(date +[%H:%M:%S_%Z]) "
-set -euo pipefail
-
 echo "Installing packages ${PACKAGES} using apt-get"
 
 for i in $(seq 1 $MAX_RETRIES); do
   echo "Running apt-get update and install (attempt ${i})..."
-  if apt-get update && apt-get install -y ${PACKAGES}; then
+  if apt-get update && apt-get install -y "${PACKAGES[@]}"; then
     echo "apt-get succeeded on attempt ${i}.";
     break;
   else
