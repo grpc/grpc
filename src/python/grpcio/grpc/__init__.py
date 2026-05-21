@@ -21,13 +21,16 @@ import enum
 import logging
 import sys
 import typing
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from grpc._typing import MetadataType as _MetadataType
 
 from grpc import _compression
 from grpc._cython import cygrpc as _cygrpc
 from grpc._runtime_protos import protos
 from grpc._runtime_protos import protos_and_services
 from grpc._runtime_protos import services
-from grpc._typing import MetadataType as _MetadataType
 
 logging.getLogger(__name__).addHandler(logging.NullHandler())
 
