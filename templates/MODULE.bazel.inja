@@ -55,6 +55,10 @@ bazel_dep(name = "opentelemetry-cpp", version = "1.19.0", repo_name = "io_opente
 bazel_dep(name = "protobuf", version = "33.5", repo_name = "com_google_protobuf")
 single_version_override(
     module_name = "protobuf",
+    patch_strip = 1,
+    patches = [
+        "//bazel:protobuf/fix_name_conflict.patch",
+    ],
     version = "33.5",
 )
 
