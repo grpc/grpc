@@ -87,8 +87,8 @@ class AioRpcError(grpc.RpcError):
     def __init__(
         self,
         code: grpc.StatusCode,
-        initial_metadata: Metadata,
-        trailing_metadata: Metadata,
+        initial_metadata: Optional[Metadata],
+        trailing_metadata: Optional[Metadata],
         details: Optional[str] = None,
         debug_error_string: Optional[str] = None,
     ) -> None:
@@ -402,7 +402,7 @@ class _StreamResponseMixin(Call, Generic[ResponseType]):
         return response_message
 
 
-class _StreamRequestMixin(Call):
+class _StreamRequestMixin(Call, Generic[RequestType]):
     _metadata_sent: asyncio.Event
     _done_writing_flag_state: bool
     _async_request_poller: Optional[asyncio.Task]
@@ -540,7 +540,9 @@ class _StreamRequestMixin(Call):
 
 
 class UnaryUnaryCall(
-    _UnaryResponseMixin, Call, _base_call.UnaryUnaryCall, Generic[RequestType]
+    _UnaryResponseMixin[ResponseType],
+    Call,
+    _base_call.UnaryUnaryCall[RequestType, ResponseType],
 ):
     """Object for managing unary-unary RPC calls.
 
@@ -605,7 +607,9 @@ class UnaryUnaryCall(
 
 
 class UnaryStreamCall(
-    _StreamResponseMixin, Call, _base_call.UnaryStreamCall, Generic[RequestType]
+    _StreamResponseMixin[ResponseType],
+    Call,
+    _base_call.UnaryStreamCall[RequestType, ResponseType],
 ):
     """Object for managing unary-stream RPC calls.
 
@@ -647,7 +651,7 @@ class UnaryStreamCall(
         )
         self._init_stream_response_mixin(self._send_unary_request_task)
 
-    async def _send_unary_request(self) -> Optional[ResponseType]:
+    async def _send_unary_request(self) -> None:
         serialized_request = _common.serialize(
             self._request, self._request_serializer
         )
@@ -668,7 +672,10 @@ class UnaryStreamCall(
 
 # pylint: disable=too-many-ancestors
 class StreamUnaryCall(
-    _StreamRequestMixin, _UnaryResponseMixin, Call, _base_call.StreamUnaryCall
+    _StreamRequestMixin[RequestType],
+    _UnaryResponseMixin,
+    Call,
+    _base_call.StreamUnaryCall[RequestType, ResponseType],
 ):
     """Object for managing stream-unary RPC calls.
 
@@ -719,7 +726,10 @@ class StreamUnaryCall(
 
 
 class StreamStreamCall(
-    _StreamRequestMixin, _StreamResponseMixin, Call, _base_call.StreamStreamCall
+    _StreamRequestMixin[RequestType],
+    _StreamResponseMixin,
+    Call,
+    _base_call.StreamStreamCall[RequestType, ResponseType],
 ):
     """Object for managing stream-stream RPC calls.
 
