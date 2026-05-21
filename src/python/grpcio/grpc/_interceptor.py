@@ -13,10 +13,12 @@
 # limitations under the License.
 """Implementation of gRPC Python interceptors."""
 
+from __future__ import annotations
+
 import collections
 import sys
 import types
-from typing import Any, Callable, Optional, Sequence, Tuple, Union
+from typing import Any, Callable, Optional, Sequence, Tuple, Type, Union
 
 import grpc
 
@@ -173,7 +175,7 @@ class _FailureOutcome(
     def done(self) -> bool:
         return True
 
-    def result(self, ignored_timeout: Optional[float] = None):
+    def result(self, ignored_timeout: Optional[float] = None) -> Any:
         raise self._exception
 
     def exception(
@@ -186,19 +188,19 @@ class _FailureOutcome(
     ) -> Optional[types.TracebackType]:
         return self._traceback
 
-    def add_callback(self, unused_callback) -> bool:
+    def add_callback(self, unused_callback: Callable[[], None]) -> bool:
         return False
 
     def add_done_callback(self, fn: DoneCallbackType) -> None:
         fn(self)
 
-    def __iter__(self):
+    def __iter__(self) -> _FailureOutcome:
         return self
 
-    def __next__(self):
+    def __next__(self) -> Any:
         raise self._exception
 
-    def next(self):
+    def next(self) -> Any:
         return self.__next__()
 
 
@@ -231,7 +233,7 @@ class _UnaryOutcome(grpc.Call, grpc.Future):
     def cancel(self) -> bool:
         return self._call.cancel()
 
-    def add_callback(self, callback) -> bool:
+    def add_callback(self, callback: Callable[[], None]) -> bool:
         return self._call.add_callback(callback)
 
     def cancelled(self) -> bool:
@@ -243,13 +245,13 @@ class _UnaryOutcome(grpc.Call, grpc.Future):
     def done(self) -> bool:
         return True
 
-    def result(self, ignored_timeout: Optional[float] = None):
+    def result(self, ignored_timeout: Optional[float] = None) -> Any:
         return self._response
 
-    def exception(self, ignored_timeout: Optional[float] = None):
+    def exception(self, ignored_timeout: Optional[float] = None) -> Optional[Exception]:
         return None
 
-    def traceback(self, ignored_timeout: Optional[float] = None):
+    def traceback(self, ignored_timeout: Optional[float] = None) -> Optional[types.TracebackType]:
         return None
 
     def add_done_callback(self, fn: DoneCallbackType) -> None:
@@ -422,7 +424,7 @@ class _UnaryStreamMultiCallable(grpc.UnaryStreamMultiCallable):
         credentials: Optional[grpc.CallCredentials] = None,
         wait_for_ready: Optional[bool] = None,
         compression: Optional[grpc.Compression] = None,
-    ):
+    ) -> Any:
         client_call_details = _ClientCallDetails(
             self._method,
             timeout,
@@ -624,7 +626,7 @@ class _StreamStreamMultiCallable(grpc.StreamStreamMultiCallable):
         credentials: Optional[grpc.CallCredentials] = None,
         wait_for_ready: Optional[bool] = None,
         compression: Optional[grpc.Compression] = None,
-    ):
+    ) -> Any:
         client_call_details = _ClientCallDetails(
             self._method,
             timeout,
@@ -682,10 +684,10 @@ class _Channel(grpc.Channel):
         self._channel = channel
         self._interceptor = interceptor
 
-    def subscribe(self, callback: Callable, try_to_connect: bool = False):
+    def subscribe(self, callback: Callable[[grpc.ChannelConnectivity], None], try_to_connect: bool = False) -> None:
         self._channel.subscribe(callback, try_to_connect=try_to_connect)
 
-    def unsubscribe(self, callback: Callable):
+    def unsubscribe(self, callback: Callable[[grpc.ChannelConnectivity], None]) -> None:
         self._channel.unsubscribe(callback)
 
     # pylint: disable=arguments-differ
@@ -768,17 +770,17 @@ class _Channel(grpc.Channel):
             return _StreamStreamMultiCallable(thunk, method, self._interceptor)
         return thunk(method)
 
-    def _close(self):
+    def _close(self) -> None:
         self._channel.close()
 
-    def __enter__(self):
+    def __enter__(self) -> _Channel:
         return self
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
+    def __exit__(self, exc_type: Optional[Type[BaseException]], exc_val: Optional[BaseException], exc_tb: Optional[types.TracebackType]) -> bool:
         self._close()
         return False
 
-    def close(self):
+    def close(self) -> None:
         self._channel.close()
 
 
