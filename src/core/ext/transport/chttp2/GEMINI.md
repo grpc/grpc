@@ -116,7 +116,7 @@ and the underlying endpoint.
 *   Flow Control Helper : `flow_control_manager.h`
 *   Stream : `stream.h` representation of each HTTP2 stream in the HTTP2 transport.
 *   GoAway : `goaway.{h,cc}` for implementation of HTTP2 GOAWAY
-*   Metadata: `incoming_metadata_tracker.h`
+*   Metadata: `read_context.h`
 *   Security Frame : `security_frame.h`
 
 ## 3. Common Files (Shared by CHTTP2 and PH2)
@@ -199,7 +199,7 @@ Key test files include:
     *   `test/core/transport/chttp2/stream_data_queue_test.cc`
     *   `test/core/transport/chttp2/writable_streams_fuzz_test.cc`
     *   `test/core/transport/chttp2/writable_streams_test.cc`
-    *   `test/core/transport/chttp2/incoming_metadata_tracker_test.cc`
+    *   `test/core/transport/chttp2/read_context_test.cc`
     *   `test/core/transport/chttp2/http2_security_frame_test.cc`
     *   `test/core/transport/chttp2/write_cycle_test.cc`
     *   `test/core/transport/chttp2/stream_test.cc`

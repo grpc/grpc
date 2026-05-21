@@ -825,9 +825,9 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
-    name = "incoming_metadata_tracker_test",
+    name = "read_context_test",
     srcs = [
-        "incoming_metadata_tracker_test.cc",
+        "read_context_test.cc",
     ],
     external_deps = [
         "gtest",
@@ -839,7 +839,7 @@ grpc_cc_test(
         "//:grpc_base",
         "//src/core:grpc_check",
         "//src/core:http2_status",
-        "//src/core:incoming_metadata_tracker",
+        "//src/core:read_context",
         "//src/core:slice",
         "//test/core/transport/util:mock_promise_endpoint",
     ],
