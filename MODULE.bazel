@@ -68,6 +68,7 @@ archive_override(
     patch_strip = 1,
     patches = [
         "//bazel:protobuf/fix_name_conflict.patch",
+        "//bazel:protobuf/fix_msvc_crash.patch",
     ],
 )
 
