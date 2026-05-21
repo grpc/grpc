@@ -218,14 +218,14 @@ class Service {
         internal::RpcServiceMethod::ApiType::RAW_CALL_BACK);
   }
 
-  void SetVirtualService() { is_virtual_service_ = true; }
-
   internal::MethodHandler* GetHandler(int index) {
     size_t idx = static_cast<size_t>(index);
     return methods_[idx]->handler();
   }
 
  private:
+  void SetVirtualService() { is_virtual_service_ = true; }
+
   friend class Server;
   friend class ServerInterface;
   template <class RequestType>
