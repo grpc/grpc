@@ -18,7 +18,9 @@ from typing import Optional, Tuple, Union
 
 import grpc
 from grpc._cython import cygrpc
-from grpc._typing import ChannelArgumentType, MetadatumType, MetadataType
+from grpc._typing import ChannelArgumentType
+from grpc._typing import MetadataType
+from grpc._typing import MetadatumType
 
 NoCompression = cygrpc.CompressionAlgorithm.none
 Deflate = cygrpc.CompressionAlgorithm.deflate
