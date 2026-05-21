@@ -890,7 +890,7 @@ def _handle_unary_unary(
     state: _RPCState,
     method_handler: grpc.RpcMethodHandler,
     default_thread_pool: futures.ThreadPoolExecutor,
-) -> Optional[futures.Future]:
+) -> futures.Future:
     unary_request = _unary_request(
         rpc_event, state, method_handler.request_deserializer
     )
