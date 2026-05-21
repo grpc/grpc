@@ -1056,7 +1056,8 @@ class CallbackSessionHandler : public grpc::internal::MethodHandler {
     }
 
     void BindInnerServer(grpc::Server* inner_server) override {
-      grpc::experimental::internal::BindSessionToInnerServer(call_.call(), inner_server);
+      grpc::experimental::internal::BindSessionToInnerServer(call_.call(),
+                                                             inner_server);
     }
 
    private:
