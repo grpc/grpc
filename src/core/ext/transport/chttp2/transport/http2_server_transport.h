@@ -46,9 +46,9 @@
 #include "src/core/ext/transport/chttp2/transport/http2_status.h"
 #include "src/core/ext/transport/chttp2/transport/http2_transport.h"
 #include "src/core/ext/transport/chttp2/transport/http2_ztrace_collector.h"
-#include "src/core/ext/transport/chttp2/transport/incoming_metadata_tracker.h"
 #include "src/core/ext/transport/chttp2/transport/keepalive.h"
 #include "src/core/ext/transport/chttp2/transport/ping_promise.h"
+#include "src/core/ext/transport/chttp2/transport/read_context.h"
 #include "src/core/ext/transport/chttp2/transport/security_frame.h"
 #include "src/core/ext/transport/chttp2/transport/stream.h"
 #include "src/core/ext/transport/chttp2/transport/stream_data_queue.h"
@@ -708,7 +708,7 @@ class Http2ServerTransport final : public ServerTransport,
   RefCountedPtr<StateWatcher> watcher_ ABSL_GUARDED_BY(transport_mutex_);
 
   bool should_reset_ping_clock_;
-  IncomingMetadataTracker incoming_headers_;
+  ReadContext incoming_headers_;
 
   // Transport wide write context. This is used to track the state of the
   // transport during write cycles.
