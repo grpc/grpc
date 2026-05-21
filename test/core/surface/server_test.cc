@@ -16,6 +16,8 @@
 //
 //
 
+#include "src/core/server/server.h"
+
 #include <grpc/credentials.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
@@ -30,6 +32,7 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/event_engine/shim.h"
 #include "src/core/lib/event_engine/utils.h"
+#include "src/core/telemetry/metrics.h"
 #include "src/core/util/host_port.h"
 #include "src/core/util/useful.h"
 #include "test/core/test_util/port.h"
@@ -153,6 +156,16 @@ static void test_bind_server_to_addrs(const char** addrs, size_t n) {
     test_bind_server_to_addr(addrs[i], false);
     test_bind_server_to_addr(addrs[i], true);
   }
+}
+
+TEST(ServerTest, StatsPluginGroupPlumbed) {
+  grpc_server* server = grpc_server_create(nullptr, nullptr);
+  grpc_core::Server* core_server = grpc_core::Server::FromC(server);
+  auto stats_plugin_group =
+      core_server->channel_args()
+          .GetObject<grpc_core::GlobalStatsPluginRegistry::StatsPluginGroup>();
+  ASSERT_NE(stats_plugin_group, nullptr);
+  grpc_server_destroy(server);
 }
 
 TEST(ServerTest, MainTest) {

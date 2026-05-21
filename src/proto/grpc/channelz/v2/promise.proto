@@ -54,6 +54,14 @@ message Promise {
     bool yield = 3;
   }
 
+  // ForEach(reader_factory, action_factory)
+  message ForEach {
+    string reader_factory = 1;
+    string action_factory = 2;
+    Promise reader_promise = 3;
+    Promise action_promise = 4;
+  }
+
   // Race(child1, child2, ...)
   message Race {
     repeated Promise children = 1;
@@ -63,6 +71,7 @@ message Promise {
     UNKNOWN = 0;
     NORMAL = 1;
     TRY = 2;
+    ALL_OK = 3;
   }
 
   // One step in a sequence
@@ -109,5 +118,6 @@ message Promise {
     Seq seq_promise = 6;
     Join join_promise = 7;
     Map map_promise = 8;
+    ForEach for_each_promise = 9;
   }
 }

@@ -40,7 +40,7 @@ SERVICER_IDENTIFIER = "TestServiceServicer"
 ADD_SERVICER_TO_SERVER_IDENTIFIER = "add_TestServiceServicer_to_server"
 
 
-class _ServicerMethods(object):
+class _ServicerMethods:
     def __init__(self):
         self._condition = threading.Condition()
         self._paused = False
@@ -555,10 +555,6 @@ class PythonPluginTest(unittest.TestCase):
         service.server.stop(None)
 
 
-@unittest.skipIf(
-    sys.version_info[0] < 3 or sys.version_info[1] < 6,
-    "Unsupported on Python 2.",
-)
 class SimpleStubsPluginTest(unittest.TestCase):
     servicer_methods = _ServicerMethods()
 

@@ -254,8 +254,7 @@ Status ChannelzService::GetSocket(ServerContext* /*unused*/,
       return Status(StatusCode::INTERNAL,
                     std::string(serialized_v1.status().message()));
     }
-    if (!response->mutable_socket()->mutable_ref()->ParseFromString(
-            *serialized_v1)) {
+    if (!response->mutable_socket()->ParseFromString(*serialized_v1)) {
       return Status(StatusCode::INTERNAL,
                     "Failed to parse converted listen socket");
     }

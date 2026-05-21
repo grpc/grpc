@@ -36,9 +36,10 @@ using Promise = absl::AnyInvocable<Poll<T>()>;
 // Helper to execute a promise immediately and return either the result or
 // nothing.
 template <typename Promise>
-auto NowOrNever(Promise promise)
-    -> std::optional<typename promise_detail::PromiseLike<Promise>::Result> {
-  auto r = promise_detail::PromiseLike<Promise>(std::move(promise))();
+auto NowOrNever(Promise&& promise) -> std::optional<
+    typename promise_detail::PromiseLike<std::decay_t<Promise>>::Result> {
+  auto r = promise_detail::PromiseLike<std::decay_t<Promise>>(
+      std::forward<Promise>(promise))();
   if (auto* p = r.value_if_ready()) {
     return std::move(*p);
   }
@@ -56,8 +57,12 @@ namespace promise_detail {
 template <typename T>
 class Immediate {
  public:
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION explicit Immediate(T value)
+  template <typename U>
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION explicit Immediate(U value)
       : value_(std::move(value)) {}
+
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION explicit Immediate(T&& value)
+      : value_(std::forward<T>(value)) {}
 
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Poll<T> operator()() {
     return std::move(value_);
@@ -70,9 +75,10 @@ class Immediate {
 
 // Return \a value immediately
 template <typename T>
-GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline promise_detail::Immediate<T>
-Immediate(T value) {
-  return promise_detail::Immediate<T>(std::move(value));
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline promise_detail::Immediate<
+    std::decay_t<T>>
+Immediate(T&& value) {
+  return promise_detail::Immediate<std::decay_t<T>>(std::forward<T>(value));
 }
 
 // Return status Ok immediately
@@ -88,10 +94,9 @@ struct ImmediateOkStatus {
 // should fail to compile. When modifying this code these should be uncommented
 // and their miscompilation verified.
 template <typename T, typename F>
-GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline auto AssertResultType(F f) ->
-    typename std::enable_if<std::is_same<decltype(f()), Poll<T>>::value,
-                            F>::type {
-  return f;
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline auto AssertResultType(F&& f) ->
+    typename std::enable_if_t<std::is_same_v<decltype(f()), Poll<T>>, F> {
+  return std::forward<F>(f);
 }
 
 template <typename Promise>

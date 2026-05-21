@@ -42,31 +42,22 @@ void FuzzRawEncoder(bool is_true_binary,
                     std::vector<std::pair<std::string, std::string>> headers) {
   grpc_core::RawEncoder encoder(is_true_binary);
   std::vector<std::pair<std::string, std::string>> added_headers;
-  // Size limit is 16KB. Keep track of size to avoid filling up and getting
-  // dropped headers which would fail verification.
-  size_t current_size = 0;
-  // 2KB per key-value pair limit
-  constexpr size_t kMaxKeyValueSize = 2 * 1024u;
-  constexpr size_t kMaxSize = 1 << 14;
 
   for (const auto& p : headers) {
     // Prefix key to avoid colliding with known traits that might do validation
     // or normalization (like grpc-timeout).
     std::string key = "user-key-" + p.first;
 
-    // 32 bytes is a conservative estimate for the overhead of encoding a
-    // header. It may be smaller in practice.
-    size_t kv_size = key.length() + p.second.length() + 32u;
-    if (kv_size > kMaxKeyValueSize) continue;
-    if (current_size + kv_size > kMaxSize) break;
-
     if (!p.first.empty()) {
       uint32_t len_before = encoder.Length();
       encoder.Encode(grpc_core::Slice::FromCopiedString(key),
                      grpc_core::Slice::FromCopiedString(p.second));
-      ASSERT_GT(encoder.Length(), len_before);
-      current_size += (encoder.Length() - len_before);
-      added_headers.emplace_back(key, p.second);
+
+      // Only add the header if it was encoded. `RawEncoder` might drop headers
+      // if they are too large.
+      if (encoder.Length() > len_before) {
+        added_headers.emplace_back(key, p.second);
+      }
     }
   }
 

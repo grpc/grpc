@@ -118,6 +118,10 @@ class DefaultReactorTestPeer;
 namespace experimental {
 class CallMetricRecorder;
 class ServerMetricRecorder;
+namespace internal {
+template <class RequestType>
+class CallbackSessionHandler;
+}  // namespace internal
 }  // namespace experimental
 
 /// Base class of ServerContext.
@@ -403,6 +407,8 @@ class ServerContextBase {
   friend class grpc::internal::CallbackServerStreamingHandler;
   template <class RequestType, class ResponseType>
   friend class grpc::internal::CallbackBidiHandler;
+  template <class RequestType>
+  friend class grpc::experimental::internal::CallbackSessionHandler;
   template <grpc::StatusCode code>
   friend class grpc::internal::ErrorMethodHandler;
   template <class Base>

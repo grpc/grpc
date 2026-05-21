@@ -74,6 +74,31 @@ Duration ParseDuration(const google_protobuf_Duration* proto_duration,
 }
 
 //
+// ParseFractionalPercent()
+//
+
+uint32_t ParseFractionalPercent(
+    const envoy_type_v3_FractionalPercent* fractional_percent) {
+  if (fractional_percent == nullptr) return 1000000;
+  uint32_t numerator =
+      envoy_type_v3_FractionalPercent_numerator(fractional_percent);
+  const auto denominator =
+      static_cast<envoy_type_v3_FractionalPercent_DenominatorType>(
+          envoy_type_v3_FractionalPercent_denominator(fractional_percent));
+  switch (denominator) {
+    case envoy_type_v3_FractionalPercent_MILLION:
+      break;
+    case envoy_type_v3_FractionalPercent_TEN_THOUSAND:
+      numerator *= 100;
+      break;
+    case envoy_type_v3_FractionalPercent_HUNDRED:
+    default:
+      numerator *= 10000;
+  }
+  return std::min(numerator, 1000000u);
+}
+
+//
 // ParseXdsAddress()
 //
 
@@ -618,9 +643,14 @@ std::pair<std::string, std::string> ParseHeader(
   {
     ValidationErrors::ScopedField field(errors, ".key");
     if (key.size() > 16384) errors->AddError("longer than 16384 bytes");
-    ValidateMetadataResult result = ValidateHeaderKeyIsLegal(key);
-    if (result != ValidateMetadataResult::kOk) {
-      errors->AddError(ValidateMetadataResultToString(result));
+    if (absl::StartsWith(key, ":") || absl::StartsWith(key, "grpc-") ||
+        key == "host") {
+      errors->AddError(absl::StrCat("header \"", key, "\" not allowed"));
+    } else {
+      ValidateMetadataResult result = ValidateHeaderKeyIsLegal(key);
+      if (result != ValidateMetadataResult::kOk) {
+        errors->AddError(ValidateMetadataResultToString(result));
+      }
     }
   }
   // value or raw_value
@@ -777,6 +807,63 @@ XdsGrpcService ParseXdsGrpcService(
         std::move(call_creds_configs));
   }
   return xds_grpc_service;
+}
+
+//
+// ParseHeaderMutationRules()
+//
+namespace {
+
+std::unique_ptr<RE2> ParseRegexMatcher(
+    const envoy_type_matcher_v3_RegexMatcher* regex_matcher,
+    ValidationErrors* errors) {
+  auto matcher = UpbStringToStdString(
+      envoy_type_matcher_v3_RegexMatcher_regex(regex_matcher));
+  auto regex = std::make_unique<RE2>(matcher);
+  if (!regex->ok()) {
+    errors->AddError(absl::StrCat("Invalid regex string specified in matcher: ",
+                                  regex->error()));
+    return nullptr;
+  }
+  return regex;
+}
+
+}  // namespace
+
+HeaderMutationRules ParseHeaderMutationRules(
+    const envoy_config_common_mutation_rules_v3_HeaderMutationRules*
+        header_mutation_rules,
+    ValidationErrors* errors) {
+  if (header_mutation_rules == nullptr) {
+    errors->AddError("field is not present");
+    return {};
+  }
+  HeaderMutationRules header_mutation_rules_config;
+  header_mutation_rules_config.disallow_all =
+      envoy_config_common_mutation_rules_v3_HeaderMutationRules_disallow_all(
+          header_mutation_rules);
+  header_mutation_rules_config.disallow_is_error =
+      envoy_config_common_mutation_rules_v3_HeaderMutationRules_disallow_is_error(
+          header_mutation_rules);
+  const auto* disallow_expression_proto =
+      envoy_config_common_mutation_rules_v3_HeaderMutationRules_disallow_expression(
+          header_mutation_rules);
+  if (disallow_expression_proto != nullptr) {
+    ValidationErrors::ScopedField field(
+        errors, ".header_mutation_rules.disallow_expression");
+    header_mutation_rules_config.disallow_expression =
+        ParseRegexMatcher(disallow_expression_proto, errors);
+  }
+  const auto* allow_expression_proto =
+      envoy_config_common_mutation_rules_v3_HeaderMutationRules_allow_expression(
+          header_mutation_rules);
+  if (allow_expression_proto != nullptr) {
+    ValidationErrors::ScopedField field(
+        errors, ".header_mutation_rules.allow_expression");
+    header_mutation_rules_config.allow_expression =
+        ParseRegexMatcher(allow_expression_proto, errors);
+  }
+  return header_mutation_rules_config;
 }
 
 }  // namespace grpc_core

@@ -44,6 +44,7 @@
 #include "src/core/util/crash.h"
 #include "src/core/util/fork.h"
 #include "src/core/util/grpc_check.h"
+#include "src/core/util/strerror.h"
 #include "src/core/util/sync.h"
 #include "src/core/util/useful.h"
 #include "absl/base/no_destructor.h"
@@ -255,7 +256,7 @@ void AsyncConnect::Start(EventEngine::Duration timeout) {
   fd_->NotifyOnWrite(on_writable_);
 }
 
-AsyncConnect ::~AsyncConnect() { delete on_writable_; }
+AsyncConnect::~AsyncConnect() { delete on_writable_; }
 
 void AsyncConnect::OnTimeoutExpired(absl::Status status) {
   bool done = false;
@@ -383,13 +384,13 @@ void AsyncConnect::OnWritable(absl::Status status)
       return;
     case ECONNREFUSED:
       // This error shouldn't happen for anything other than connect().
-      status = absl::FailedPreconditionError(std::strerror(so_error));
+      status = absl::FailedPreconditionError(grpc_core::StrError(so_error));
       break;
     default:
       // We don't really know which syscall triggered the problem here, so
       // punt by reporting getsockopt().
-      status = absl::FailedPreconditionError(
-          absl::StrCat("getsockopt(SO_ERROR): ", std::strerror(so_error)));
+      status = absl::FailedPreconditionError(absl::StrCat(
+          "getsockopt(SO_ERROR): ", grpc_core::StrError(so_error)));
       break;
   }
 }
@@ -403,9 +404,10 @@ void PosixEventEngine::OnConnectFinishInternal(int connection_handle) {
   }
 }
 
-std::shared_ptr<PosixEventEngine> PosixEventEngine::MakePosixEventEngine() {
+std::shared_ptr<PosixEventEngine> PosixEventEngine::MakePosixEventEngine(
+    Options options) {
   // Can't use make_shared as ctor is private
-  std::shared_ptr<PosixEventEngine> engine(new PosixEventEngine());
+  std::shared_ptr<PosixEventEngine> engine(new PosixEventEngine(options));
   RegisterEventEngineForFork(engine, engine->executor_, engine->timer_manager_);
   return engine;
 }
@@ -416,20 +418,21 @@ PosixEventEngine::MakeTestOnlyPosixEventEngine(
         test_only_poller) {
   // Calling a private PosixEventEngine constructor - can't do make_shared
   std::shared_ptr<PosixEventEngine> engine(
-      new PosixEventEngine(std::move(test_only_poller)));
+      new PosixEventEngine(Options{}, std::move(test_only_poller)));
   RegisterEventEngineForFork(engine, engine->executor_, engine->timer_manager_);
   return engine;
 }
 
-PosixEventEngine::PosixEventEngine(std::shared_ptr<PosixEventPoller> poller)
-    : connection_shards_(std::max(2 * gpr_cpu_num_cores(), 1u)),
+PosixEventEngine::PosixEventEngine(const Options& options,
+                                   std::shared_ptr<PosixEventPoller> poller)
+    : connection_shards_(options.connection_shards),
       poller_(std::move(poller)),
-      executor_(MakeThreadPool(grpc_core::Clamp(gpr_cpu_num_cores(), 4u, 16u))),
+      executor_(MakeThreadPool(options.reserve_threads)),
       timer_manager_(std::make_shared<TimerManager>(executor_)) {}
 
-PosixEventEngine::PosixEventEngine()
-    : connection_shards_(std::max(2 * gpr_cpu_num_cores(), 1u)),
-      executor_(MakeThreadPool(grpc_core::Clamp(gpr_cpu_num_cores(), 4u, 16u))),
+PosixEventEngine::PosixEventEngine(const Options& options)
+    : connection_shards_(options.connection_shards),
+      executor_(MakeThreadPool(options.reserve_threads)),
       timer_manager_(std::make_shared<TimerManager>(executor_)) {
   if (ShouldUsePosixPoller()) {
     poller_ = grpc_event_engine::experimental::MakeDefaultPoller(executor_);
@@ -457,6 +460,19 @@ struct PosixEventEngine::ClosureData final : public EventEngine::Closure {
   }
 };
 
+void PosixEventEngine::CancelAllPendingTimers() {
+  {
+    grpc_core::MutexLock lock(&mu_);
+    auto pending_handles = known_handles_;
+    for (auto handle : pending_handles) {
+      CancelInternal(handle);
+    }
+    GRPC_CHECK(known_handles_.empty());
+    // Prevent new timers from being scheduled on this EventEngine.
+    disallow_new_timers_ = true;
+  }
+}
+
 PosixEventEngine::~PosixEventEngine() {
   {
     grpc_core::MutexLock lock(&mu_);
@@ -478,6 +494,10 @@ PosixEventEngine::~PosixEventEngine() {
 
 bool PosixEventEngine::Cancel(EventEngine::TaskHandle handle) {
   grpc_core::MutexLock lock(&mu_);
+  return CancelInternal(handle);
+}
+
+bool PosixEventEngine::CancelInternal(EventEngine::TaskHandle handle) {
   if (!known_handles_.contains(handle)) return false;
   auto* cd = reinterpret_cast<ClosureData*>(handle.keys[0]);
   bool r = timer_manager_->TimerCancel(&cd->timer);
@@ -517,6 +537,12 @@ EventEngine::TaskHandle PosixEventEngine::RunAfterInternal(
   EventEngine::TaskHandle handle{reinterpret_cast<intptr_t>(cd),
                                  aba_token_.fetch_add(1)};
   grpc_core::MutexLock lock(&mu_);
+  if (disallow_new_timers_) {
+    delete cd;
+    // Return handle and don't schedule the callback. The caller will see a
+    // valid handle but it cannot be cancelled since it was not scheduled.
+    return handle;
+  }
   known_handles_.insert(handle);
   cd->handle = handle;
   GRPC_TRACE_LOG(event_engine, INFO)
@@ -782,7 +808,7 @@ PosixEventEngine::CreateEndpointFromUnconnectedFdInternal(
     Run([on_connect = std::move(on_connect),
          ep = absl::FailedPreconditionError(absl::StrCat(
              "connect failed: ", "addr: ", addr_uri.value(),
-             " error: ", std::strerror(connect_errno)))]() mutable {
+             " error: ", grpc_core::StrError(connect_errno)))]() mutable {
       on_connect(std::move(ep));
     });
     return EventEngine::ConnectionHandle::kInvalid;

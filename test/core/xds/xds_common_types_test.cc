@@ -25,6 +25,7 @@
 #include <utility>
 #include <vector>
 
+#include "envoy/config/common/mutation_rules/v3/mutation_rules.pb.h"
 #include "envoy/config/core/v3/grpc_service.pb.h"
 #include "envoy/extensions/grpc_service/call_credentials/access_token/v3/access_token_credentials.pb.h"
 #include "envoy/extensions/grpc_service/channel_credentials/google_default/v3/google_default_credentials.pb.h"
@@ -33,6 +34,7 @@
 #include "envoy/extensions/transport_sockets/tls/v3/tls.upb.h"
 #include "envoy/type/matcher/v3/regex.pb.h"
 #include "envoy/type/matcher/v3/string.pb.h"
+#include "envoy/type/v3/percent.upb.h"
 #include "google/protobuf/any.upb.h"
 #include "google/protobuf/duration.upb.h"
 #include "re2/re2.h"
@@ -67,6 +69,8 @@ using envoy::config::core::v3::GrpcService;
 using CommonTlsContextProto =
     envoy::extensions::transport_sockets::tls::v3::CommonTlsContext;
 using xds::type::v3::TypedStruct;
+using HeaderMutationRulesProto =
+    envoy::config::common::mutation_rules::v3::HeaderMutationRules;
 
 namespace grpc_core {
 namespace testing {
@@ -173,6 +177,52 @@ TEST_F(DurationTest, ValuesTooHigh) {
             "field:nanos error:value must be in the range [0, 999999999]; "
             "field:seconds error:value must be in the range [0, 315576000000]]")
       << status;
+}
+
+//
+// ParseFractionalPercent() tests
+//
+
+using FractionalPercentTest = XdsCommonTypesTest;
+
+TEST_F(FractionalPercentTest, AlwaysIfUnset) {
+  EXPECT_EQ(1000000, ParseFractionalPercent(nullptr));
+}
+
+TEST_F(FractionalPercentTest, PerHundred) {
+  envoy_type_v3_FractionalPercent* proto =
+      envoy_type_v3_FractionalPercent_new(upb_arena_.ptr());
+  envoy_type_v3_FractionalPercent_set_numerator(proto, 30);
+  envoy_type_v3_FractionalPercent_set_denominator(
+      proto, envoy_type_v3_FractionalPercent_HUNDRED);
+  EXPECT_EQ(300000, ParseFractionalPercent(proto));
+}
+
+TEST_F(FractionalPercentTest, PerTenThousand) {
+  envoy_type_v3_FractionalPercent* proto =
+      envoy_type_v3_FractionalPercent_new(upb_arena_.ptr());
+  envoy_type_v3_FractionalPercent_set_numerator(proto, 30);
+  envoy_type_v3_FractionalPercent_set_denominator(
+      proto, envoy_type_v3_FractionalPercent_TEN_THOUSAND);
+  EXPECT_EQ(3000, ParseFractionalPercent(proto));
+}
+
+TEST_F(FractionalPercentTest, PerMillion) {
+  envoy_type_v3_FractionalPercent* proto =
+      envoy_type_v3_FractionalPercent_new(upb_arena_.ptr());
+  envoy_type_v3_FractionalPercent_set_numerator(proto, 30);
+  envoy_type_v3_FractionalPercent_set_denominator(
+      proto, envoy_type_v3_FractionalPercent_MILLION);
+  EXPECT_EQ(30, ParseFractionalPercent(proto));
+}
+
+TEST_F(FractionalPercentTest, ClampsValue) {
+  envoy_type_v3_FractionalPercent* proto =
+      envoy_type_v3_FractionalPercent_new(upb_arena_.ptr());
+  envoy_type_v3_FractionalPercent_set_numerator(proto, 105);
+  envoy_type_v3_FractionalPercent_set_denominator(
+      proto, envoy_type_v3_FractionalPercent_HUNDRED);
+  EXPECT_EQ(1000000, ParseFractionalPercent(proto));
 }
 
 //
@@ -1156,18 +1206,31 @@ TEST_F(ParseXdsGrpcServiceTest, InvalidHeaderKeyAndValue) {
   auto* header_value = grpc_service.add_initial_metadata();
   header_value->set_key("Foo");
   header_value->set_value("\x1f");
+  header_value = grpc_service.add_initial_metadata();
+  header_value->set_key("host");
+  header_value->set_value("x");
+  header_value = grpc_service.add_initial_metadata();
+  header_value->set_key(":path");
+  header_value->set_value("x");
+  header_value = grpc_service.add_initial_metadata();
+  header_value->set_key("grpc-foo");
+  header_value->set_value("x");
   auto* google_grpc = grpc_service.mutable_google_grpc();
   google_grpc->set_target_uri("dns:server.example.com");
   google_grpc->add_channel_credentials_plugin()->PackFrom(
       envoy::extensions::grpc_service::channel_credentials::insecure::v3::
           InsecureCredentials());
   auto xds_grpc_service = Parse(grpc_service);
-  EXPECT_EQ(xds_grpc_service.status(),
-            absl::InvalidArgumentError("validation failed: ["
-                                       "field:initial_metadata[0].key "
-                                       "error:Illegal header key; "
-                                       "field:initial_metadata[0].value "
-                                       "error:Illegal header value]"));
+  EXPECT_EQ(
+      xds_grpc_service.status(),
+      absl::InvalidArgumentError(
+          "validation failed: ["
+          "field:initial_metadata[0].key error:Illegal header key; "
+          "field:initial_metadata[0].value error:Illegal header value; "
+          "field:initial_metadata[1].key error:header \"host\" not allowed; "
+          "field:initial_metadata[2].key error:header \":path\" not allowed; "
+          "field:initial_metadata[3].key "
+          "error:header \"grpc-foo\" not allowed]"));
 }
 
 TEST_F(ParseXdsGrpcServiceTest, RawHeaderValueForBinaryHeader) {
@@ -1271,6 +1334,141 @@ TEST_F(ParseXdsGrpcServiceTest, InvalidTargetUri) {
             absl::InvalidArgumentError(
                 "validation failed: ["
                 "field:google_grpc.target_uri error:invalid target URI]"));
+}
+
+//
+// ParseHeaderMutationRules() tests
+//
+
+class ParseHeaderMutationRulesTest : public XdsCommonTypesTest {
+ protected:
+  const envoy_config_common_mutation_rules_v3_HeaderMutationRules* ConvertToUpb(
+      const HeaderMutationRulesProto& proto) {
+    std::string serialized_proto;
+    if (!proto.SerializeToString(&serialized_proto)) {
+      EXPECT_TRUE(false) << "protobuf serialization failed";
+      return nullptr;
+    }
+    const auto* upb_proto =
+        envoy_config_common_mutation_rules_v3_HeaderMutationRules_parse(
+            serialized_proto.data(), serialized_proto.size(), upb_arena_.ptr());
+    if (upb_proto == nullptr) {
+      EXPECT_TRUE(false) << "upb parsing failed";
+      return nullptr;
+    }
+    return upb_proto;
+  }
+
+  HeaderMutationRules Parse(
+      const envoy_config_common_mutation_rules_v3_HeaderMutationRules*
+          upb_proto,
+      ValidationErrors* errors) {
+    return ParseHeaderMutationRules(upb_proto, errors);
+  }
+};
+
+TEST_F(ParseHeaderMutationRulesTest, Empty) {
+  HeaderMutationRulesProto proto;
+  const auto* upb_proto = ConvertToUpb(proto);
+  ASSERT_NE(upb_proto, nullptr);
+  ValidationErrors errors;
+  auto rules = Parse(upb_proto, &errors);
+  EXPECT_TRUE(errors.ok()) << errors.status(absl::StatusCode::kInvalidArgument,
+                                            "unexpected errors");
+  EXPECT_FALSE(rules.disallow_all);
+  EXPECT_FALSE(rules.disallow_is_error);
+  EXPECT_EQ(rules.allow_expression, nullptr);
+  EXPECT_EQ(rules.disallow_expression, nullptr);
+}
+
+TEST_F(ParseHeaderMutationRulesTest, Basic) {
+  HeaderMutationRulesProto proto;
+  proto.mutable_allow_expression()->set_regex("allow");
+  proto.mutable_disallow_expression()->set_regex("disallow");
+  proto.mutable_disallow_all()->set_value(true);
+  proto.mutable_disallow_is_error()->set_value(true);
+  const auto* upb_proto = ConvertToUpb(proto);
+  ASSERT_NE(upb_proto, nullptr);
+  ValidationErrors errors;
+  auto rules = Parse(upb_proto, &errors);
+  EXPECT_TRUE(errors.ok()) << errors.status(absl::StatusCode::kInvalidArgument,
+                                            "unexpected errors");
+  EXPECT_TRUE(rules.disallow_all);
+  EXPECT_TRUE(rules.disallow_is_error);
+  ASSERT_NE(rules.allow_expression, nullptr);
+  EXPECT_EQ(rules.allow_expression->pattern(), "allow");
+  ASSERT_NE(rules.disallow_expression, nullptr);
+  EXPECT_EQ(rules.disallow_expression->pattern(), "disallow");
+}
+
+TEST_F(ParseHeaderMutationRulesTest, InvalidRegex) {
+  HeaderMutationRulesProto proto;
+  proto.mutable_allow_expression()->set_regex("[");
+  const auto* upb_proto = ConvertToUpb(proto);
+  ASSERT_NE(upb_proto, nullptr);
+  ValidationErrors errors;
+  Parse(upb_proto, &errors);
+  EXPECT_FALSE(errors.ok());
+  EXPECT_EQ(
+      errors.status(absl::StatusCode::kInvalidArgument, "validation failed")
+          .message(),
+      "validation failed: [field:header_mutation_rules.allow_expression "
+      "error:Invalid regex string specified in matcher: missing ]: []");
+}
+
+TEST(HeaderMutationRulesTest, DefaultAllowsAll) {
+  HeaderMutationRules rules;
+  EXPECT_TRUE(rules.IsMutationAllowed("foo"));
+  EXPECT_TRUE(rules.IsMutationAllowed("bar"));
+}
+
+TEST(HeaderMutationRulesTest, DisallowAll) {
+  HeaderMutationRules rules;
+  rules.disallow_all = true;
+  rules.allow_expression = std::make_unique<RE2>(".*header");
+  EXPECT_FALSE(rules.IsMutationAllowed("allow_header"));
+}
+
+TEST(HeaderMutationRulesTest, DisallowExpression) {
+  HeaderMutationRules rules;
+  rules.disallow_expression = std::make_unique<RE2>("disallowed.*");
+  EXPECT_FALSE(rules.IsMutationAllowed("disallowed_header"));
+  EXPECT_TRUE(rules.IsMutationAllowed("allowed_header"));
+}
+
+TEST(HeaderMutationRulesTest, AllowExpression) {
+  HeaderMutationRules rules;
+  rules.allow_expression = std::make_unique<RE2>("allowed.*");
+  // "allowed_header" matches allow_expression
+  EXPECT_TRUE(rules.IsMutationAllowed("allowed_header"));
+  // "other" does not match allow_expression
+  EXPECT_FALSE(rules.IsMutationAllowed("other"));
+}
+
+TEST(HeaderMutationRulesTest, DisallowExpressionOverridesAllowExpression) {
+  HeaderMutationRules rules;
+  rules.disallow_expression = std::make_unique<RE2>("common.*");
+  rules.allow_expression = std::make_unique<RE2>(".*header");
+  // "common_header" matches both. Should be disallowed.
+  EXPECT_FALSE(rules.IsMutationAllowed("common_header"));
+  // "unique_header" matches only allow. Should be allowed.
+  EXPECT_TRUE(rules.IsMutationAllowed("unique_header"));
+  // "common_stuff" matches only disallow. Should be disallowed.
+  EXPECT_FALSE(rules.IsMutationAllowed("common_stuff"));
+  // "stuff" matches neither. Should be disallowed (because allow_expression is
+  // set).
+  EXPECT_FALSE(rules.IsMutationAllowed("stuff"));
+}
+
+TEST(HeaderMutationRulesTest, SomeHeadersNeverAllowed) {
+  HeaderMutationRules rules;
+  rules.allow_expression = std::make_unique<RE2>(".*");
+  EXPECT_TRUE(rules.IsMutationAllowed("foo"));
+  EXPECT_TRUE(rules.IsMutationAllowed("bar"));
+  // Still does not allow certain headers.
+  EXPECT_FALSE(rules.IsMutationAllowed("host"));
+  EXPECT_FALSE(rules.IsMutationAllowed(":path"));
+  EXPECT_FALSE(rules.IsMutationAllowed("grpc-foo"));
 }
 
 }  // namespace

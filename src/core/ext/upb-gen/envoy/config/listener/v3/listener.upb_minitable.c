@@ -63,14 +63,10 @@ static const upb_MiniTableField envoy_config_listener_v3_ListenerCollection__fie
 const upb_MiniTable envoy__config__listener__v3__ListenerCollection_msg_init = {
   &envoy_config_listener_v3_ListenerCollection__submsgs[0],
   &envoy_config_listener_v3_ListenerCollection__fields[0],
-  16, 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(8), 0,
+  16, 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.config.listener.v3.ListenerCollection",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x000800003f00000a, &upb_prm_1bt_maxmaxb},
-  })
 };
 
 const upb_MiniTable* envoy__config__listener__v3__ListenerCollection_msg_init_ptr = &envoy__config__listener__v3__ListenerCollection_msg_init;
@@ -142,44 +138,10 @@ static const upb_MiniTableField envoy_config_listener_v3_Listener__fields[34] = 
 const upb_MiniTable envoy__config__listener__v3__Listener_msg_init = {
   &envoy_config_listener_v3_Listener__submsgs[0],
   &envoy_config_listener_v3_Listener__fields[0],
-  UPB_SIZE(144, 264), 34, kUpb_ExtMode_NonExtendable, 13, UPB_FASTTABLE_MASK(248), 0,
+  UPB_SIZE(144, 264), 34, kUpb_ExtMode_NonExtendable, 13, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.config.listener.v3.Listener",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x002000003f00000a, &upb_pss_1bt},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x004800003f01001a, &upb_prm_1bt_maxmaxb},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x001000003f000040, &upb_psv4_1bt},
-    {0x007000003f06004a, &upb_prm_1bt_maxmaxb},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x009000003f0a006a, &upb_prm_1bt_maxmaxb},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x001400003f000180, &upb_psv4_2bt},
-    {0x000b00003f000188, &upb_psb1_2bt},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x000f00003f000298, &upb_psb1_2bt},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x000c00003f0001a8, &upb_psb1_2bt},
-    {0x00b800003f0f01b2, &upb_prm_2bt_maxmaxb},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x010000181b1301da, &upb_pom_2bt_max64b},
-    {0x003000003f0001e2, &upb_pss_2bt},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x000d00003f0001f0, &upb_psb1_2bt},
-    {0x000e00003f0001f8, &upb_psb1_2bt},
-  })
 };
 
 const upb_MiniTable* envoy__config__listener__v3__Listener_msg_init_ptr = &envoy__config__listener__v3__Listener_msg_init;
@@ -214,16 +176,10 @@ static const upb_MiniTableField envoy_config_listener_v3_Listener_ConnectionBala
 const upb_MiniTable envoy__config__listener__v3__Listener__ConnectionBalanceConfig_msg_init = {
   &envoy_config_listener_v3_Listener_ConnectionBalanceConfig__submsgs[0],
   &envoy_config_listener_v3_Listener_ConnectionBalanceConfig__fields[0],
-  UPB_SIZE(16, 24), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
+  UPB_SIZE(16, 24), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.config.listener.v3.Listener.ConnectionBalanceConfig",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x001000080100000a, &upb_pom_1bt_max64b},
-    {0x0010000802010012, &upb_pom_1bt_maxmaxb},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-  })
 };
 
 const upb_MiniTable* envoy__config__listener__v3__Listener__ConnectionBalanceConfig_msg_init_ptr = &envoy__config__listener__v3__Listener__ConnectionBalanceConfig_msg_init;
@@ -259,14 +215,10 @@ static const upb_MiniTableField envoy_config_listener_v3_Listener_FcdsConfig__fi
 const upb_MiniTable envoy__config__listener__v3__Listener__FcdsConfig_msg_init = {
   &envoy_config_listener_v3_Listener_FcdsConfig__submsgs[0],
   &envoy_config_listener_v3_Listener_FcdsConfig__fields[0],
-  UPB_SIZE(24, 40), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(8), 0,
+  UPB_SIZE(24, 40), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.config.listener.v3.Listener.FcdsConfig",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x001000003f00000a, &upb_pss_1bt},
-  })
 };
 
 const upb_MiniTable* envoy__config__listener__v3__Listener__FcdsConfig_msg_init_ptr = &envoy__config__listener__v3__Listener__FcdsConfig_msg_init;

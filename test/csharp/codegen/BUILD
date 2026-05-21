@@ -90,3 +90,28 @@ grpc_sh_test(
     ],
     uses_polling = False,
 )
+
+grpc_sh_test(
+    name = "csharp_codegen_async_suffix_test",
+    size = "small",
+    srcs = ["csharp_codegen_async_suffix_test.sh"],
+    data = [
+        "async_suffix/expected/GreetGrpc.cs",
+        "async_suffix/proto/greet.proto",
+        "//src/compiler:grpc_csharp_plugin",
+        "@bazel_tools//tools/bash/runfiles",
+        "@com_google_protobuf//:protoc",
+    ],
+    env = {
+        "RLOCATIONPATH_PROTOC": "$(rlocationpath @com_google_protobuf//:protoc)",
+        "RLOCATIONPATH_PLUGIN": "$(rlocationpath //src/compiler:grpc_csharp_plugin)",
+    },
+    tags = [
+        "no_windows",
+        "noasan",
+        "nomsan",
+        "notsan",
+        "noubsan",
+    ],
+    uses_polling = False,
+)

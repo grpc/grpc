@@ -65,7 +65,7 @@ _EXPECTED_CLIENT_CODES = (
 _EXPECTED_DETAILS = (_DETAILS, _DETAILS, "")
 
 
-class _Servicer(object):
+class _Servicer:
     def __init__(self):
         self._lock = threading.Lock()
         self._abort_call = False

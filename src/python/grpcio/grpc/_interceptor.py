@@ -27,7 +27,7 @@ from ._typing import RequestIterableType
 from ._typing import SerializingFunction
 
 
-class _ServicePipeline(object):
+class _ServicePipeline:
     interceptors: Tuple[grpc.ServerInterceptor]
 
     def __init__(self, interceptors: Sequence[grpc.ServerInterceptor]):

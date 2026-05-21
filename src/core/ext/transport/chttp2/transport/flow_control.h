@@ -609,7 +609,7 @@ class StreamFlowControl final {
     return stats;
   }
 
-  void ReportIfStalled(bool is_client, uint32_t stream_id,
+  void ReportIfStalled(const bool is_client, const uint32_t stream_id,
                        const Http2Settings& peer_settings) const {
     if (remote_window_delta() + peer_settings.initial_window_size() <= 0 ||
         tfc_->remote_window_ == 0) {

@@ -19,9 +19,9 @@
 #ifndef GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_HTTP2_TRANSPORT_H
 #define GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_HTTP2_TRANSPORT_H
 
-#include <cstddef>
 #include <cstdint>
 #include <string>
+#include <type_traits>
 
 #include "src/core/channelz/channelz.h"
 #include "src/core/ext/transport/chttp2/transport/flow_control.h"
@@ -30,14 +30,13 @@
 #include "src/core/ext/transport/chttp2/transport/http2_settings.h"
 #include "src/core/ext/transport/chttp2/transport/http2_status.h"
 #include "src/core/ext/transport/chttp2/transport/stream.h"
-#include "src/core/ext/transport/chttp2/transport/write_size_policy.h"
+#include "src/core/ext/transport/chttp2/transport/write_cycle.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/poll.h"
-#include "src/core/lib/transport/promise_endpoint.h"
+#include "src/core/lib/slice/slice.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "absl/log/log.h"
 #include "absl/status/status.h"
-#include "absl/strings/str_cat.h"
 
 namespace grpc_core {
 namespace http2 {
@@ -50,6 +49,9 @@ namespace http2 {
 // http2 rollout begins.
 
 #define GRPC_HTTP2_CLIENT_DLOG \
+  DLOG_IF(INFO, GRPC_TRACE_FLAG_ENABLED(http2_ph2_transport))
+
+#define GRPC_HTTP2_SERVER_DLOG \
   DLOG_IF(INFO, GRPC_TRACE_FLAG_ENABLED(http2_ph2_transport))
 
 #define GRPC_HTTP2_CLIENT_ERROR_DLOG \
@@ -115,102 +117,37 @@ class Http2ReadContext {
   Waker read_loop_waker_;
 };
 
-class WriteContext {
- public:
-  WriteContext() = default;
-  // WriteContext is neither copyable nor movable.
-  WriteContext(const WriteContext&) = delete;
-  WriteContext& operator=(const WriteContext&) = delete;
-  WriteContext(WriteContext&&) = delete;
-  WriteContext& operator=(WriteContext&&) = delete;
+Http2Status ValidateIncomingConnectionPreface(
+    const absl::StatusOr<Slice>& status);
 
-  class WriteQuota {
-   public:
-    explicit WriteQuota(size_t target_write_size)
-        : target_write_size_(target_write_size) {}
-
-    // WriteQuota is neither copyable nor movable.
-    WriteQuota(const WriteQuota&) = delete;
-    WriteQuota& operator=(const WriteQuota&) = delete;
-    WriteQuota(WriteQuota&&) = delete;
-    WriteQuota& operator=(WriteQuota&&) = delete;
-
-    // Increments the bytes consumed for the current write attempt.
-    void IncrementBytesConsumed(size_t bytes_consumed) {
-      bytes_consumed_ += bytes_consumed;
-    }
-
-    // Returns the number of bytes remaining that can be written in the current
-    // write attempt.
-    size_t GetWriteBytesRemaining() const {
-      return (target_write_size_ > bytes_consumed_)
-                 ? target_write_size_ - bytes_consumed_
-                 : 0u;
-    }
-
-    // Returns the target write size for the current write attempt.
-    size_t GetTargetWriteSize() const { return target_write_size_; }
-
-    std::string DebugString() const {
-      return absl::StrCat("WriteQuota: target_write_size: ", target_write_size_,
-                          " bytes_consumed: ", bytes_consumed_);
-    }
-
-   private:
-    const size_t target_write_size_;
-    size_t bytes_consumed_ = 0;
-  };
-
-  // Starts a new write attempt.
-  WriteQuota StartNewWriteAttempt() {
-    size_t target_write_size = write_size_policy_.WriteTargetSize();
-    GRPC_HTTP2_COMMON_DLOG
-        << "Http2ClientTransport WriteContext StartNewWriteAttempt "
-           "target_write_size_ = "
-        << target_write_size;
-    return WriteQuota(target_write_size);
+template <typename T, typename Tracker>
+inline Http2Status ValidateMetadataFrameState(
+    T& frame, Stream& stream, Tracker& incoming_headers,
+    const uint32_t max_header_list_size) {
+  if (stream.IsStreamHalfClosedRemote()) {
+    return incoming_headers.ParseAndDiscardHeaders(
+        std::move(frame.payload), frame.end_headers, &stream,
+        Http2Status::Http2StreamError(
+            Http2ErrorCode::kStreamClosed,
+            std::string(RFC9113::kHalfClosedRemoteState)),
+        max_header_list_size);
   }
 
-  // Signals that the specified number of bytes are about to be written. Caller
-  // should try to call this as close to the actual write as possible. EndWrite
-  // MUST be called after this.
-  void BeginWrite(size_t bytes_to_write) {
-    write_size_policy_.BeginWrite(bytes_to_write);
-  }
-
-  // Signals that a write has completed with the specified status.
-  void EndWrite(bool write_success) {
-    write_size_policy_.EndWrite(write_success);
-  }
-
-  static inline PromiseEndpoint::WriteArgs GetWriteArgs(
-      const Http2Settings& peer_settings) {
-    PromiseEndpoint::WriteArgs args;
-    int max_frame_size = peer_settings.preferred_receive_crypto_message_size();
-    // Note: max frame size is 0 if the remote peer does not support adjusting
-    // the sending frame size.
-    if (max_frame_size == 0) {
-      max_frame_size = INT_MAX;
+  if constexpr (std::is_same_v<std::decay_t<T>, Http2HeaderFrame>) {
+    if (incoming_headers.DidReceiveDuplicateMetadata(
+            stream.IsInitialMetadataReceived(),
+            stream.IsTrailingMetadataReceived())) {
+      return incoming_headers.ParseAndDiscardHeaders(
+          std::move(frame.payload), frame.end_headers, &stream,
+          Http2Status::Http2StreamError(
+              Http2ErrorCode::kInternalError,
+              std::string(GrpcErrors::kTooManyMetadata)),
+          max_header_list_size);
     }
-    // `WriteArgs.max_frame_size` is a suggestion to the endpoint implementation
-    // to group data to be written into frames of the specified max_frame_size.
-    // It is different from HTTP2 SETTINGS_MAX_FRAME_SIZE. That setting limits
-    // HTTP2 frame payload size.
-    args.set_max_frame_size(max_frame_size);
-
-    // TODO(akshitpatel) [PH2][P1] : Currently only the WriteArgs related to
-    // preferred_receive_crypto_message_size have been plumbed. The other write
-    // args may need to be plumbed for PH2.
-    // CHTTP2 : Reference :
-    // File : src/core/ext/transport/chttp2/transport/chttp2_transport.cc
-    // Function : write_action
-
-    return args;
   }
 
- private:
-  Chttp2WriteSizePolicy write_size_policy_;
-};
+  return Http2Status::Ok();
+}
 
 ///////////////////////////////////////////////////////////////////////////////
 // Settings helpers
@@ -264,58 +201,19 @@ void ProcessOutgoingDataFrameFlowControl(
 ValueOrHttp2Status<chttp2::FlowControlAction>
 ProcessIncomingDataFrameFlowControl(Http2FrameHeader& frame,
                                     chttp2::TransportFlowControl& flow_control,
-                                    RefCountedPtr<Stream> stream);
+                                    Stream* stream);
 
 // Returns true if a write should be triggered
 bool ProcessIncomingWindowUpdateFrameFlowControl(
     const Http2WindowUpdateFrame& frame,
-    chttp2::TransportFlowControl& flow_control, RefCountedPtr<Stream> stream);
+    chttp2::TransportFlowControl& flow_control, Stream* stream);
 
 void MaybeAddTransportWindowUpdateFrame(
-    chttp2::TransportFlowControl& flow_control,
-    std::vector<Http2Frame>& frames);
+    chttp2::TransportFlowControl& flow_control, FrameSender& frame_sender);
 
-void MaybeAddStreamWindowUpdateFrame(RefCountedPtr<Stream> stream,
-                                     std::vector<Http2Frame>& frames);
+void MaybeAddStreamWindowUpdateFrame(Stream& stream, FrameSender& frame_sender);
 
-///////////////////////////////////////////////////////////////////////////////
-// Header and Continuation frame processing helpers
-
-// This function is used to partially process a HEADER or CONTINUATION frame.
-// `PARTIAL PROCESSING` means reading the payload of a HEADER or CONTINUATION
-// and processing it with the HPACK decoder, and then discarding the payload.
-// This is done to keep the transports HPACK parser in sync with peers HPACK.
-// Scenarios where 'partial processing' is used:
 //
-// Case 1: Received a HEADER/CONTINUATION frame
-// 1. If the frame is invalid ('ParseHeaderFrame'/'ParseContinuationFrame'
-//    returns a non-OK status) then it is a connection error. In this case, we
-//    do NOT invoke 'partial processing' as the transport is about to be closed
-//    anyway.
-// 2. If ParseFramePayload returns a non-OK status, then it is a connection
-//    error. In this case, we do NOT invoke 'partial processing' as the
-//    transport is about to be closed anyway.
-// 3. If the frame is valid, but lookup stream fails, then we invoke 'partial
-//    processing' and pass the current payload through the HPACK decoder. This
-//    can happen if the stream was already closed.
-// 4. If the frame is valid, lookup stream succeeds and we fail while processing
-//    the frame (be it stream or connection error), we first parse the buffered
-//    payload (if any) in the stream through the HPACK decoder and then pass the
-//    current payload through the HPACK decoder.
-// Case 2: Stream close
-// 1. If the stream is being aborted by the upper layers or the transport hit
-//    a stream error on a stream while reading HEADER/CONTINUATION frames, we
-//    invoke 'partial processing' to parse the enqueued buffer (if any) in the
-//    stream to keep our HPACK state consistent with the peer right before
-//    closing the stream. This is done as the next time a HEADER/CONTINUATION
-//    frame is received from the peer, the stream lookup will start failing.
-// This function returns a connection error if HPACK parsing fails. Otherwise,
-// it returns the original status.
-Http2Status ParseAndDiscardHeaders(HPackParser& parser, SliceBuffer&& buffer,
-                                   HeaderAssembler::ParseHeaderArgs args,
-                                   RefCountedPtr<Stream> stream,
-                                   Http2Status&& original_status);
-
 }  // namespace http2
 }  // namespace grpc_core
 

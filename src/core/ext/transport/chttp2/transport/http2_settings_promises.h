@@ -23,6 +23,7 @@
 #include <grpc/support/port_platform.h>
 
 #include <algorithm>
+#include <cstddef>
 #include <cstdint>
 #include <optional>
 #include <string>
@@ -35,6 +36,7 @@
 #include "src/core/ext/transport/chttp2/transport/http2_settings.h"
 #include "src/core/ext/transport/chttp2/transport/http2_settings_manager.h"
 #include "src/core/ext/transport/chttp2/transport/http2_status.h"
+#include "src/core/ext/transport/chttp2/transport/write_cycle.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/promise/activity.h"
@@ -48,6 +50,7 @@
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/ref_counted.h"
 #include "src/core/util/time.h"
+#include "absl/container/flat_hash_map.h"
 #include "absl/functional/any_invocable.h"
 #include "absl/log/log.h"
 #include "absl/status/status.h"
@@ -73,7 +76,9 @@ class SettingsPromiseManager final : public RefCounted<SettingsPromiseManager> {
   explicit SettingsPromiseManager(
       absl::AnyInvocable<void(absl::StatusOr<uint32_t>)> on_receive_settings)
       : on_receive_first_settings_(std::move(on_receive_settings)),
-        state_(SettingsState::kWaitingForFirstPeerSettings) {}
+        state_(SettingsState::kWaitingForFirstPeerSettings) {
+    pending_peer_settings_.reserve(Http2Settings::kNumSettings + 1);
+  }
 
   ~SettingsPromiseManager() override {
     GRPC_DCHECK(on_receive_first_settings_ == nullptr);
@@ -197,10 +202,13 @@ class SettingsPromiseManager final : public RefCounted<SettingsPromiseManager> {
       state_ = SettingsState::kFirstPeerSettingsReceived;
     }
     ++num_acks_to_send_;
-    pending_peer_settings_.reserve(pending_peer_settings_.size() +
-                                   settings.size());
-    pending_peer_settings_.insert(pending_peer_settings_.end(),
-                                  settings.begin(), settings.end());
+    for (const auto& setting : settings) {
+      // RFC9113: An endpoint that receives a SETTINGS frame with any unknown or
+      // unsupported identifier MUST ignore that setting.
+      if (Http2Settings::IsKnownSettingId(setting.id)) {
+        pending_peer_settings_[setting.id] = setting.value;
+      }
+    }
   }
 
   // Applies settings buffered by BufferPeerSettings().
@@ -210,13 +218,20 @@ class SettingsPromiseManager final : public RefCounted<SettingsPromiseManager> {
   http2::Http2ErrorCode MaybeReportAndApplyBufferedPeerSettings(
       grpc_event_engine::experimental::EventEngine* event_engine,
       bool& should_spawn_security_frame_loop) {
-    http2::Http2ErrorCode status = settings_.ApplyIncomingSettings(
-        std::exchange(pending_peer_settings_, {}));
+    std::vector<Http2SettingsFrame::Setting> settings_to_apply;
+    settings_to_apply.reserve(pending_peer_settings_.size());
+    for (const auto& [id, value] : pending_peer_settings_) {
+      settings_to_apply.emplace_back(id, value);
+    }
+    pending_peer_settings_.clear();
+    http2::Http2ErrorCode status =
+        settings_.ApplyIncomingSettings(settings_to_apply);
     if (state_ == SettingsState::kFirstPeerSettingsReceived) {
       MaybeReportInitialSettings(event_engine);
       state_ = SettingsState::kReady;
       should_spawn_security_frame_loop = IsSecurityFrameExpected();
     }
+    GRPC_DCHECK(pending_peer_settings_.empty());
     return status;
   }
 
@@ -229,15 +244,15 @@ class SettingsPromiseManager final : public RefCounted<SettingsPromiseManager> {
   // acknowledgment. This MUST be called only after the
   // MaybeReportAndApplyBufferedPeerSettings function.
   void MaybeGetSettingsAndSettingsAckFrames(
-      chttp2::TransportFlowControl& flow_control, SliceBuffer& output_buf) {
+      chttp2::TransportFlowControl& flow_control,
+      http2::FrameSender& frame_sender) {
     GRPC_SETTINGS_TIMEOUT_DLOG << "MaybeGetSettingsAndSettingsAckFrames";
     if (did_previous_settings_promise_resolve_) {
       std::optional<Http2Frame> settings_frame = settings_.MaybeSendUpdate();
       if (settings_frame.has_value()) {
         GRPC_SETTINGS_TIMEOUT_DLOG
             << "MaybeGetSettingsAndSettingsAckFrames Frame Settings ";
-        Serialize(absl::Span<Http2Frame>(&settings_frame.value(), 1),
-                  output_buf);
+        frame_sender.AddRegularFrame(std::move(*settings_frame));
         flow_control.FlushedSettings();
         WillSendSettings();
       }
@@ -245,11 +260,11 @@ class SettingsPromiseManager final : public RefCounted<SettingsPromiseManager> {
     if (num_acks_to_send_ > 0) {
       GRPC_SETTINGS_TIMEOUT_DLOG << "Sending " << num_acks_to_send_
                                  << " settings ACK frames";
-      std::vector<Http2Frame> ack_frames(num_acks_to_send_);
+      frame_sender.ReserveRegularFrames(num_acks_to_send_);
       for (uint32_t i = 0; i < num_acks_to_send_; ++i) {
-        ack_frames[i] = Http2SettingsFrame{true, {}};
+        frame_sender.AddRegularFrame(Http2SettingsFrame{true, {}});
       }
-      Serialize(absl::MakeSpan(ack_frames), output_buf);
+
       num_acks_to_send_ = 0;
     }
   }
@@ -265,7 +280,14 @@ class SettingsPromiseManager final : public RefCounted<SettingsPromiseManager> {
   // ChannelZ and Security Frame Stuff
 
   channelz::PropertyGrid ChannelzProperties() const {
-    return settings_.ChannelzProperties();
+    return settings_.ChannelzProperties().SetColumn(
+        "Counters",
+        channelz::PropertyList().Set("initial_window_size_increase_count",
+                                     num_peer_initial_window_size_increases_));
+  }
+
+  void IncrementInitialWindowSizeIncreaseCount() {
+    ++num_peer_initial_window_size_increases_;
   }
 
   bool IsSecurityFrameExpected() const {
@@ -295,7 +317,11 @@ class SettingsPromiseManager final : public RefCounted<SettingsPromiseManager> {
            peer_max_concurrent_streams =
                settings_.peer().max_concurrent_streams()]() mutable {
             ExecCtx exec_ctx;
-            std::move(on_receive_settings)(peer_max_concurrent_streams);
+            on_receive_settings(peer_max_concurrent_streams);
+            // Ensure the captured callback is destroyed while ExecCtx is still
+            // alive. Its destructor may trigger work that needs to schedule
+            // closures on the ExecCtx.
+            on_receive_settings = nullptr;
           });
       GRPC_DCHECK(on_receive_first_settings_ == nullptr);
     }
@@ -311,8 +337,11 @@ class SettingsPromiseManager final : public RefCounted<SettingsPromiseManager> {
       event_engine->Run([on_receive_settings =
                              std::move(on_receive_first_settings_)]() mutable {
         ExecCtx exec_ctx;
-        std::move(on_receive_settings)(
-            absl::UnavailableError("transport closed"));
+        on_receive_settings(absl::UnavailableError("transport closed"));
+        // Ensure the captured callback is destroyed while ExecCtx is still
+        // alive. Its destructor may trigger work that needs to schedule
+        // closures on the ExecCtx.
+        on_receive_settings = nullptr;
       });
       GRPC_DCHECK(on_receive_first_settings_ == nullptr);
     }
@@ -404,7 +433,7 @@ class SettingsPromiseManager final : public RefCounted<SettingsPromiseManager> {
   // Data Members for SETTINGS being received from the peer.
 
   absl::AnyInvocable<void(absl::StatusOr<uint32_t>)> on_receive_first_settings_;
-  std::vector<Http2SettingsFrame::Setting> pending_peer_settings_;
+  absl::flat_hash_map<uint16_t, uint32_t> pending_peer_settings_;
   // Number of incoming SETTINGS frames that we have received but not ACKed yet.
   uint32_t num_acks_to_send_ = 0;
 
@@ -414,6 +443,12 @@ class SettingsPromiseManager final : public RefCounted<SettingsPromiseManager> {
     kReady,
   };
   SettingsState state_;
+
+  // Number of times the peer has increased the initial window size. Currently,
+  // PH2 handles this by iterating over all the active streams to potentially
+  // make them writable. This is tracked via channelz in case it causes any
+  // performance issues in the future.
+  size_t num_peer_initial_window_size_increases_ = 0;
 };
 
 }  // namespace grpc_core

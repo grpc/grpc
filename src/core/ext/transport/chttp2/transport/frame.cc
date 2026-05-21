@@ -223,8 +223,7 @@ class SerializeHeaderAndPayload {
     GRPC_HTTP2_FRAME_DLOG
         << "SerializeHeaderAndPayload Http2DataFrame Type:0 { stream_id:"
         << frame.stream_id << ", end_stream:" << frame.end_stream
-        << ", payload_length:" << frame.payload.Length()
-        << ", payload:" << MaybeTruncatePayload(frame.payload) << "}";
+        << ", payload_length:" << frame.payload.Length() << "}";
     auto hdr = extra_bytes_.TakeFirst(kFrameHeaderSize);
     Http2FrameHeader{static_cast<uint32_t>(frame.payload.Length()),
                      static_cast<uint8_t>(FrameType::kData),
@@ -241,8 +240,7 @@ class SerializeHeaderAndPayload {
         << "SerializeHeaderAndPayload Http2HeaderFrame Type:1 { stream_id:"
         << frame.stream_id << ", end_headers:" << frame.end_headers
         << ", end_stream:" << frame.end_stream
-        << ", payload_length:" << frame.payload.Length()
-        << ", payload:" << MaybeTruncatePayload(frame.payload) << "}";
+        << ", payload_length:" << frame.payload.Length() << "}";
     auto hdr = extra_bytes_.TakeFirst(kFrameHeaderSize);
     Http2FrameHeader{
         static_cast<uint32_t>(frame.payload.Length()),
@@ -262,7 +260,6 @@ class SerializeHeaderAndPayload {
                           << frame.stream_id
                           << ", end_headers:" << frame.end_headers
                           << ", payload_length:" << frame.payload.Length()
-                          << ", payload:" << MaybeTruncatePayload(frame.payload)
                           << "}";
     auto hdr = extra_bytes_.TakeFirst(kFrameHeaderSize);
     Http2FrameHeader{
@@ -728,7 +725,7 @@ SerializeReturn Serialize(absl::Span<Http2Frame> frames, SliceBuffer& out) {
 }
 
 http2::ValueOrHttp2Status<Http2Frame> ParseFramePayload(
-    const Http2FrameHeader& hdr, SliceBuffer payload) {
+    const Http2FrameHeader& hdr, SliceBuffer&& payload) {
   GRPC_CHECK(payload.Length() == hdr.length);
 
   switch (static_cast<FrameType>(hdr.type)) {
@@ -834,7 +831,8 @@ Http2Status ValidateFrameHeader(const uint32_t max_frame_size_setting,
                                 Http2FrameHeader& current_frame_header,
                                 const uint32_t last_stream_id,
                                 const bool is_client,
-                                const bool is_first_settings_processed) {
+                                const bool is_first_settings_processed,
+                                Http2FrameCountTracker& tracker) {
   if (GPR_UNLIKELY(!is_first_settings_processed)) {
     // This check works only because we pause the read loop after reading the
     // first SETTINGS frame.
@@ -876,18 +874,35 @@ Http2Status ValidateFrameHeader(const uint32_t max_frame_size_setting,
     return Http2Status::Http2ConnectionError(
         Http2ErrorCode::kProtocolError, std::string(RFC9113::kUnknownStreamId));
   }
+
+  if (current_frame_header.type ==
+      static_cast<uint8_t>(FrameType::kContinuation)) {
+    if (GPR_UNLIKELY(current_frame_header.length == 0u &&
+                     (current_frame_header.flags & kFlagEndHeaders) == 0u)) {
+      tracker.noop_continuation_frames++;
+      if (GPR_UNLIKELY(tracker.noop_continuation_frames >=
+                       kMaxNoopContinuationFrames)) {
+        return Http2Status::Http2ConnectionError(
+            Http2ErrorCode::kInternalError,
+            std::string(GrpcErrors::kTooManyZeroLengthContinuationFrames));
+      }
+    }
+  }
+
+  if (current_frame_header.type == static_cast<uint8_t>(FrameType::kData)) {
+    if (GPR_UNLIKELY(current_frame_header.length == 0u &&
+                     (current_frame_header.flags & kFlagEndStream) == 0u)) {
+      tracker.noop_data_frames++;
+      if (GPR_UNLIKELY(tracker.noop_data_frames >= kMaxNoopDataFrames)) {
+        return Http2Status::Http2ConnectionError(
+            Http2ErrorCode::kInternalError,
+            std::string(GrpcErrors::kTooManyZeroLengthDataFrames));
+      }
+    }
+  }
+
   // TODO(tjagtap) : [PH2][P2]:Consider validating MAX_CONCURRENT_STREAMS here
   // for server.
   return Http2Status::Ok();
 }
-
-std::string MaybeTruncatePayload(SliceBuffer& payload, const uint32_t length) {
-  if (payload.Length() <= length) {
-    return payload.JoinIntoString();
-  }
-  std::string result(length, '\0');
-  payload.CopyFirstNBytesIntoBuffer(length, result.data());
-  return absl::StrCat(result, "<clipped>");
-}
-
 }  // namespace grpc_core

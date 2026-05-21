@@ -50,7 +50,7 @@ def _relative_path_to_module_prefix(path):
     return path.replace(os.path.sep, ".")
 
 
-class Loader(object):
+class Loader:
     """Test loader for setuptools test suite support.
 
     Attributes:

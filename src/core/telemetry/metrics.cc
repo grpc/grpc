@@ -14,6 +14,7 @@
 
 #include "src/core/telemetry/metrics.h"
 
+#include <grpc/impl/channel_arg_names.h>
 #include <grpc/support/port_platform.h>
 
 #include <memory>
@@ -174,6 +175,19 @@ GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
       group->AddStatsPlugin(node->plugin, std::move(config));
     }
   }
+  using StatsPluginList =
+      std::shared_ptr<std::vector<std::shared_ptr<StatsPlugin>>>;
+  auto* stats_plugin_list =
+      static_cast<StatsPluginList*>(scope.experimental_args().GetVoidPointer(
+          GRPC_ARG_EXPERIMENTAL_STATS_PLUGINS));
+  if (stats_plugin_list != nullptr) {
+    for (const auto& plugin : **stats_plugin_list) {
+      auto [is_enabled, config] = plugin->IsEnabledForChannel(scope);
+      if (is_enabled) {
+        group->AddStatsPlugin(plugin, std::move(config));
+      }
+    }
+  }
   group->Finish();
   return group;
 }
@@ -186,6 +200,18 @@ GlobalStatsPluginRegistry::GetStatsPluginsForServer(const ChannelArgs& args) {
     auto [is_enabled, config] = node->plugin->IsEnabledForServer(args);
     if (is_enabled) {
       group->AddStatsPlugin(node->plugin, std::move(config));
+    }
+  }
+  using StatsPluginList =
+      std::shared_ptr<std::vector<std::shared_ptr<StatsPlugin>>>;
+  auto* stats_plugin_list =
+      args.GetPointer<StatsPluginList>(GRPC_ARG_EXPERIMENTAL_STATS_PLUGINS);
+  if (stats_plugin_list != nullptr) {
+    for (const auto& plugin : **stats_plugin_list) {
+      auto [is_enabled, config] = plugin->IsEnabledForServer(args);
+      if (is_enabled) {
+        group->AddStatsPlugin(plugin, std::move(config));
+      }
     }
   }
   group->Finish();

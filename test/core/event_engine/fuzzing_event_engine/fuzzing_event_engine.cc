@@ -80,6 +80,7 @@ namespace {
 const intptr_t kTaskHandleSalt = 12345;
 FuzzingEventEngine* g_fuzzing_event_engine = nullptr;
 gpr_timespec (*g_orig_gpr_now_impl)(gpr_clock_type clock_type);
+gpr_timespec g_orig_epoch;
 }  // namespace
 
 FuzzingEventEngine::FuzzingEventEngine(
@@ -117,6 +118,8 @@ FuzzingEventEngine::FuzzingEventEngine(
   }
 
   // Whilst a fuzzing EventEngine is active we override grpc's now function.
+  g_orig_epoch =
+      grpc_core::Timestamp::ProcessEpoch().as_timespec(GPR_CLOCK_MONOTONIC);
   g_orig_gpr_now_impl = gpr_now_impl;
   gpr_now_impl = GlobalNowImpl;
   GRPC_CHECK_EQ(g_fuzzing_event_engine, nullptr);
@@ -444,11 +447,16 @@ bool FuzzingEventEngine::FuzzingEndpoint::Write(
                          std::chrono::microseconds(r.delay_us())),
                      g_fuzzing_event_engine->max_delay_write()),
             [middle = middle_, index = my_index(), r, write_event_callback]() {
-              grpc_core::MutexLock lock(&*mu_);
-              if (middle->closed[index]) return;
               std::vector<WriteMetric> metrics;
-              for (const auto& m : r.returned_endpoint_metrics()) {
-                metrics.push_back(WriteMetric{m.key(), m.value()});
+              {
+                grpc_core::MutexLock lock(&*mu_);
+                if (middle->closed[index]) {
+                  return;
+                }
+
+                for (const auto& m : r.returned_endpoint_metrics()) {
+                  metrics.push_back(WriteMetric{m.key(), m.value()});
+                }
               }
               (*write_event_callback)(static_cast<WriteEvent>(r.event()),
                                       g_fuzzing_event_engine->NowAsAbslTime(),
@@ -915,6 +923,7 @@ void FuzzingEventEngine::UnsetGlobalHooks() {
   if (g_fuzzing_event_engine != this) return;
   g_fuzzing_event_engine = nullptr;
   gpr_now_impl = g_orig_gpr_now_impl;
+  grpc_core::TestOnlySetProcessEpoch(g_orig_epoch);
   g_orig_gpr_now_impl = nullptr;
   grpc_set_pick_port_functions(previous_pick_port_functions_);
 }
