@@ -282,6 +282,13 @@ def maybe_record_rpc_latency(state: "_RPCState") -> None:
       state: a grpc._channel._RPCState object which contains the stats related to the
     RPC.
     """
+    if (
+        state.method is None
+        or state.target is None
+        or state.rpc_start_time is None
+        or state.rpc_end_time is None
+    ):
+        return
     # TODO(xuanwn): use channel args to exclude those metrics.
     for exclude_prefix in _SERVICES_TO_EXCLUDE:
         if exclude_prefix in state.method.encode("utf8"):

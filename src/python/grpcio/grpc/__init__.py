@@ -1366,6 +1366,9 @@ class HandlerCallDetails(abc.ABC):
       invocation_metadata: The :term:`metadata` sent by the client.
     """
 
+    method: str
+    invocation_metadata: typing.Optional[_MetadataType]
+
 
 class GenericRpcHandler(abc.ABC):
     """An implementation of arbitrarily many RPC methods."""
