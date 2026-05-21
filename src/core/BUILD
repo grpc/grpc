@@ -8540,9 +8540,9 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "incoming_metadata_tracker",
+    name = "read_context",
     hdrs = [
-        "ext/transport/chttp2/transport/incoming_metadata_tracker.h",
+        "ext/transport/chttp2/transport/read_context.h",
     ],
     external_deps = [
         "absl/log",
@@ -8694,7 +8694,6 @@ grpc_cc_library(
         "http2_transport",
         "http2_ztrace_collector",
         "if",
-        "incoming_metadata_tracker",
         "inter_activity_mutex",
         "internal_channel_arg_names",
         "iomgr_fwd",
@@ -8713,6 +8712,7 @@ grpc_cc_library(
         "ph2_stream",
         "ping_promise",
         "race",
+        "read_context",
         "resource_quota",
         "sleep",
         "status_flag",
@@ -8789,7 +8789,6 @@ grpc_cc_library(
         "http2_transport",
         "http2_ztrace_collector",
         "if",
-        "incoming_metadata_tracker",
         "inter_activity_mutex",
         "internal_channel_arg_names",
         "iomgr_fwd",
@@ -8808,6 +8807,7 @@ grpc_cc_library(
         "ph2_stream",
         "ping_promise",
         "race",
+        "read_context",
         "ref_counted",
         "resource_quota",
         "sleep",

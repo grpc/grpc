@@ -76,8 +76,6 @@ template <class RequestType, class ResponseType>
 class CallbackServerStreamingHandler;
 template <class RequestType, class ResponseType>
 class CallbackBidiHandler;
-template <class RequestType>
-class CallbackSessionHandler;
 template <class ServiceType, class RequestType, class ResponseType>
 class ClientStreamingHandler;
 template <class ResponseType>
@@ -120,6 +118,10 @@ class DefaultReactorTestPeer;
 namespace experimental {
 class CallMetricRecorder;
 class ServerMetricRecorder;
+namespace internal {
+template <class RequestType>
+class CallbackSessionHandler;
+}  // namespace internal
 }  // namespace experimental
 
 /// Base class of ServerContext.
@@ -406,7 +408,7 @@ class ServerContextBase {
   template <class RequestType, class ResponseType>
   friend class grpc::internal::CallbackBidiHandler;
   template <class RequestType>
-  friend class grpc::internal::CallbackSessionHandler;
+  friend class grpc::experimental::internal::CallbackSessionHandler;
   template <grpc::StatusCode code>
   friend class grpc::internal::ErrorMethodHandler;
   template <class Base>

@@ -52,14 +52,22 @@ bazel_dep(name = "openssl", version = "3.3.1.bcr.1")
 bazel_dep(name = "opentelemetry-cpp", version = "1.19.0", repo_name = "io_opentelemetry_cpp")
 
 # --- Protobuf related packages.
+# TODO(weizheyuan): Protobuf 34.2 isn't released on BCR yet so we use
+# commit hash instead.
 bazel_dep(name = "protobuf", version = "34.1", repo_name = "com_google_protobuf")
+
 archive_override(
     module_name = "protobuf",
-    integrity = "sha256-k7TXH3XPvcczdrGW2ulzUsFSdu/cuJIGVbcBBjazH4I=",
-    strip_prefix = "protobuf-7153ad6febec788275e85e0ae4076f5d1deae1c7",
+    integrity = "sha256-PwXyAzMp+9fsrcTjnXjOos8mtH3gRkCe+bop9hAIO+U=",
+    # Commit hash is v34.2
+    strip_prefix = "protobuf-b2f8f21c9a7b2bcd0cb26d92c459b7f2c30cd635",
     urls = [
-        "https://storage.googleapis.com/grpc-bazel-mirror/github.com/protocolbuffers/protobuf/archive/7153ad6febec788275e85e0ae4076f5d1deae1c7.tar.gz",
-        "https://github.com/protocolbuffers/protobuf/archive/7153ad6febec788275e85e0ae4076f5d1deae1c7.tar.gz",
+        "https://storage.googleapis.com/grpc-bazel-mirror/github.com/protocolbuffers/protobuf/archive/b2f8f21c9a7b2bcd0cb26d92c459b7f2c30cd635.tar.gz",
+        "https://github.com/protocolbuffers/protobuf/archive/b2f8f21c9a7b2bcd0cb26d92c459b7f2c30cd635.tar.gz",
+    ],
+    patch_strip = 1,
+    patches = [
+        "//bazel:protobuf/fix_name_conflict.patch",
     ],
 )
 

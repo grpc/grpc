@@ -53,10 +53,10 @@
 #include "src/core/ext/transport/chttp2/transport/http2_status.h"
 #include "src/core/ext/transport/chttp2/transport/http2_transport.h"
 #include "src/core/ext/transport/chttp2/transport/http2_ztrace_collector.h"
-#include "src/core/ext/transport/chttp2/transport/incoming_metadata_tracker.h"
 #include "src/core/ext/transport/chttp2/transport/keepalive.h"
 #include "src/core/ext/transport/chttp2/transport/message_assembler.h"
 #include "src/core/ext/transport/chttp2/transport/ping_promise.h"
+#include "src/core/ext/transport/chttp2/transport/read_context.h"
 #include "src/core/ext/transport/chttp2/transport/security_frame.h"
 #include "src/core/ext/transport/chttp2/transport/stream.h"
 #include "src/core/ext/transport/chttp2/transport/stream_data_queue.h"
@@ -1978,8 +1978,7 @@ Http2ServerTransport::Http2ServerTransport(
           std::move(on_receive_settings))),
       on_close_callback_(on_close_callback),
       should_reset_ping_clock_(false),
-      incoming_headers_(IncomingMetadataTracker::GetPeerString(endpoint_),
-                        kIsClient),
+      incoming_headers_(ReadContext::GetPeerString(endpoint_), kIsClient),
       transport_write_context_(kIsClient),
       ping_manager_(std::nullopt),
       keepalive_manager_(std::nullopt),
