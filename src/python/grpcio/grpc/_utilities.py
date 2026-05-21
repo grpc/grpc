@@ -17,7 +17,7 @@ import collections
 import logging
 import threading
 import time
-from typing import Callable, Dict, List, Optional, Sequence
+from typing import Dict, List, Optional
 
 import grpc
 from grpc import _common
