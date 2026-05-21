@@ -537,8 +537,7 @@ TEST_F(Http2ClientTransportTest, TestCanStreamReceiveDataFrames) {
                     GRPC_STATUS_INTERNAL);
           EXPECT_EQ(
               metadata->get_pointer(GrpcMessageMetadata())->as_string_view(),
-              "gRPC Error : DATA frames must follow initial "
-              "metadata and precede trailing metadata.");
+              GrpcErrors::kOutOfOrderDataFrame);
           return Empty{};
         });
   });

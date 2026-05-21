@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM  --platform=linux/arm64/v8 arm64v8/ruby:3.1-bullseye
+FROM --platform=linux/arm64/v8 arm64v8/ruby:3.2-bullseye
 
 #=================
 # Install apt-get-install-retry wrapper script

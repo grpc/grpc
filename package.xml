@@ -13,8 +13,8 @@
  <date>2019-09-24</date>
  <time>16:06:07</time>
  <version>
-  <release>1.81.0dev</release>
-  <api>1.81.0dev</api>
+  <release>1.82.0dev</release>
+  <api>1.82.0dev</api>
  </version>
  <stability>
   <release>beta</release>
@@ -22,7 +22,7 @@
  </stability>
  <license>Apache 2.0</license>
  <notes>
-- gRPC Core 1.81.0 update
+- gRPC Core 1.82.0 update
  </notes>
  <contents>
   <dir baseinstalldir="/" name="/">
@@ -340,12 +340,8 @@
     <file baseinstalldir="/" name="src/core/ext/filters/channel_idle/legacy_channel_idle_filter.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/fault_injection/fault_injection_filter.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/fault_injection/fault_injection_filter.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/filters/fault_injection/fault_injection_service_config_parser.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/filters/fault_injection/fault_injection_service_config_parser.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/gcp_authentication/gcp_authentication_filter.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/gcp_authentication/gcp_authentication_filter.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/filters/gcp_authentication/gcp_authentication_service_config_parser.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/filters/gcp_authentication/gcp_authentication_service_config_parser.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/http/client/http_client_filter.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/http/client/http_client_filter.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/http/client_authority_filter.cc" role="src" />
@@ -363,8 +359,6 @@
     <file baseinstalldir="/" name="src/core/ext/filters/rbac/rbac_service_config_parser.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/stateful_session/stateful_session_filter.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/stateful_session/stateful_session_filter.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/filters/stateful_session/stateful_session_service_config_parser.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/filters/stateful_session/stateful_session_service_config_parser.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/alpn/alpn.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/alpn/alpn.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/chttp2_plugin.cc" role="src" />
@@ -417,6 +411,8 @@
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/hpack_parser_table.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/http2_client_transport.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/http2_client_transport.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/http2_server_transport.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/http2_server_transport.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/http2_settings.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/http2_settings.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/http2_settings_manager.cc" role="src" />
@@ -430,7 +426,6 @@
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/http2_ztrace_collector.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/huffsyms.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/huffsyms.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/incoming_metadata_tracker.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/internal.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/internal_channel_arg_names.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/keepalive.cc" role="src" />
@@ -446,6 +441,7 @@
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/ping_promise.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/ping_rate_policy.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/ping_rate_policy.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/read_context.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/security_frame.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/stream.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/stream_data_queue.h" role="src" />
@@ -1857,6 +1853,7 @@
     <file baseinstalldir="/" name="src/core/load_balancing/weighted_round_robin/static_stride_scheduler.cc" role="src" />
     <file baseinstalldir="/" name="src/core/load_balancing/weighted_round_robin/static_stride_scheduler.h" role="src" />
     <file baseinstalldir="/" name="src/core/load_balancing/weighted_round_robin/weighted_round_robin.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/load_balancing/weighted_round_robin/weighted_round_robin.h" role="src" />
     <file baseinstalldir="/" name="src/core/load_balancing/weighted_target/weighted_target.cc" role="src" />
     <file baseinstalldir="/" name="src/core/load_balancing/weighted_target/weighted_target.h" role="src" />
     <file baseinstalldir="/" name="src/core/load_balancing/xds/cds.cc" role="src" />
@@ -1867,6 +1864,7 @@
     <file baseinstalldir="/" name="src/core/load_balancing/xds/xds_override_host.cc" role="src" />
     <file baseinstalldir="/" name="src/core/load_balancing/xds/xds_override_host.h" role="src" />
     <file baseinstalldir="/" name="src/core/load_balancing/xds/xds_wrr_locality.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/mitigation_engine/mitigation_engine.h" role="src" />
     <file baseinstalldir="/" name="src/core/net/socket_mutator.cc" role="src" />
     <file baseinstalldir="/" name="src/core/net/socket_mutator.h" role="src" />
     <file baseinstalldir="/" name="src/core/plugin_registry/grpc_plugin_registry.cc" role="src" />
@@ -1953,6 +1951,10 @@
     <file baseinstalldir="/" name="src/core/transport/endpoint_transport.h" role="src" />
     <file baseinstalldir="/" name="src/core/transport/endpoint_transport_client_channel_factory.cc" role="src" />
     <file baseinstalldir="/" name="src/core/transport/endpoint_transport_client_channel_factory.h" role="src" />
+    <file baseinstalldir="/" name="src/core/transport/message_size_service_config.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/transport/message_size_service_config.h" role="src" />
+    <file baseinstalldir="/" name="src/core/transport/session_endpoint.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/transport/session_endpoint.h" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/alts/crypt/aes_gcm.cc" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/alts/crypt/gsec.cc" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/alts/crypt/gsec.h" role="src" />

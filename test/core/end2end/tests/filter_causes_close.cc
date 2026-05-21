@@ -255,13 +255,16 @@ void FilterCloseOnMessage(CoreEnd2endTest& test) {
 }
 
 CORE_END2END_TEST(CoreEnd2endTests, FilterCausesClose) {
+  bool is_virtual = test_config()->feature_mask & FEATURE_MASK_IS_VIRTUAL_RPC;
   CoreConfiguration::RegisterEphemeralBuilder(
-      [](CoreConfiguration::Builder* builder) {
+      [is_virtual](CoreConfiguration::Builder* builder) {
+        auto channel_type =
+            is_virtual ? GRPC_SERVER_VIRTUAL_CHANNEL : GRPC_SERVER_CHANNEL;
         builder->channel_init()->RegisterFilter<TestFilterFailOnMessage>(
-            GRPC_SERVER_CHANNEL);
+            channel_type);
         builder->channel_init()
             ->RegisterFilter<TestFilterFailOnClientInitialMetadata>(
-                GRPC_SERVER_CHANNEL);
+                channel_type);
       });
 
   FilterCloseOnInitialMetadata(*this);

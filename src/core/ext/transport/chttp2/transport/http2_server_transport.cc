@@ -53,16 +53,17 @@
 #include "src/core/ext/transport/chttp2/transport/http2_status.h"
 #include "src/core/ext/transport/chttp2/transport/http2_transport.h"
 #include "src/core/ext/transport/chttp2/transport/http2_ztrace_collector.h"
-#include "src/core/ext/transport/chttp2/transport/incoming_metadata_tracker.h"
 #include "src/core/ext/transport/chttp2/transport/keepalive.h"
 #include "src/core/ext/transport/chttp2/transport/message_assembler.h"
 #include "src/core/ext/transport/chttp2/transport/ping_promise.h"
+#include "src/core/ext/transport/chttp2/transport/read_context.h"
 #include "src/core/ext/transport/chttp2/transport/security_frame.h"
 #include "src/core/ext/transport/chttp2/transport/stream.h"
 #include "src/core/ext/transport/chttp2/transport/stream_data_queue.h"
 #include "src/core/ext/transport/chttp2/transport/transport_common.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace_impl.h"
+#include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/promise/for_each.h"
 #include "src/core/lib/promise/if.h"
@@ -91,6 +92,7 @@
 #include "src/core/util/sync.h"
 #include "src/core/util/time.h"
 #include "absl/container/flat_hash_map.h"
+#include "absl/functional/any_invocable.h"
 #include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/strings/cord.h"
@@ -290,14 +292,18 @@ Http2Status Http2ServerTransport::ProcessIncomingFrame(Http2DataFrame&& frame) {
 
   RefCountedPtr<Stream> stream = LookupStream(frame.stream_id);
 
-  ValueOrHttp2Status<chttp2::FlowControlAction> flow_control_action =
-      ProcessIncomingDataFrameFlowControl(current_frame_header_, flow_control_,
-                                          stream.get());
-  if (!flow_control_action.IsOk()) {
-    return ValueOrHttp2Status<chttp2::FlowControlAction>::TakeStatus(
-        std::move(flow_control_action));
+  if (frame.payload.Length() > 0) {
+    // DATA frames with empty payload are legitimate frames. CHTTP2 and PH2 send
+    // empty DATA frames with END_Stream flag set to true.
+    ValueOrHttp2Status<chttp2::FlowControlAction> flow_control_action =
+        ProcessIncomingDataFrameFlowControl(current_frame_header_,
+                                            flow_control_, stream.get());
+    if (!flow_control_action.IsOk()) {
+      return ValueOrHttp2Status<chttp2::FlowControlAction>::TakeStatus(
+          std::move(flow_control_action));
+    }
+    ActOnFlowControlAction(flow_control_action.value(), stream.get());
   }
-  ActOnFlowControlAction(flow_control_action.value(), stream.get());
 
   if (stream == nullptr) {
     // TODO(tjagtap) : [PH2][P2] : Implement the correct behaviour later.
@@ -490,9 +496,11 @@ Http2Status Http2ServerTransport::ProcessIncomingFrame(
                                  settings_->acked().initial_window_size()),
                              /*stream=*/nullptr);
     } else {
-      // CHTTP2 returns a connection error for an unsolicited SETTINGS ACK.
-      // However, we ignore it in PH2 since RFC 9113 doesn't explicitly mandate
-      // an error.
+      // CHTTP2 and PH2 return connection error for an unsolicited SETTINGS ACK.
+      // RFC 9113 does not explicitly specify unsolicited ACK handling.
+      return Http2Status::Http2ConnectionError(
+          Http2ErrorCode::kInternalError,
+          std::string(GrpcErrors::kUnsolicitedSettingsAck));
       LOG(ERROR) << "Settings ack received without sending settings. Ignore.";
     }
   }
@@ -756,7 +764,8 @@ auto Http2ServerTransport::ReadAndProcessOneFrame() {
             // TODO(tjagtap) : [PH2][P0] : Fix
             /*last_stream_id=*//*GetLastStreamId()*/ 100,
             /*is_client=*/kIsClient, /*is_first_settings_processed=*/
-            settings_->IsFirstPeerSettingsApplied());
+            settings_->IsFirstPeerSettingsApplied(),
+            /*tracker=*/incoming_headers_.mutable_tracker());
 
         if (GPR_UNLIKELY(!status.IsOk())) {
           GRPC_DCHECK(status.GetType() ==
@@ -1019,26 +1028,6 @@ absl::Status Http2ServerTransport::DequeueStreamFrames(
                          << " stream_priority = "
                          << static_cast<uint8_t>(result.priority);
   return absl::OkStatus();
-}
-
-auto Http2ServerTransport::WriteFromQueue() {
-  GRPC_HTTP2_SERVER_DLOG << "Http2ServerTransport WriteFromQueue Factory";
-  return []() -> Poll<absl::Status> {
-    // TODO(tjagtap) : [PH2][P2] : Implement this.
-    // Read from the mpsc queue and write it to endpoint
-    GRPC_HTTP2_SERVER_DLOG << "Http2ServerTransport WriteFromQueue Promise";
-    return Pending{};
-  };
-}
-
-auto Http2ServerTransport::WriteLoop() {
-  GRPC_HTTP2_SERVER_DLOG << "Http2ServerTransport WriteLoop Factory";
-  return AssertResultType<absl::Status>(Loop([this]() {
-    return TrySeq(WriteFromQueue(), []() -> LoopCtl<absl::Status> {
-      GRPC_HTTP2_SERVER_DLOG << "Http2ServerTransport WriteLoop Continue";
-      return Continue();
-    });
-  }));
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -1683,6 +1672,8 @@ absl::Status Http2ServerTransport::AckPing(uint64_t opaque_data) {
 //////////////////////////////////////////////////////////////////////////////
 // Error Path and Close Path
 
+// TODO(akshitpatel) : [PH2][P1] : Invoke on_close_callback_ when CloseTransport
+// is implemented.
 // void Http2ServerTransport::MaybeSpawnCloseTransport(Http2Status http2_status,
 //                                                     DebugLocation whence) {
 //   GRPC_HTTP2_SERVER_DLOG << "Http2ServerTransport::MaybeSpawnCloseTransport "
@@ -1976,7 +1967,8 @@ uint32_t Http2ServerTransport::GoawayInterfaceImpl::GetLastAcceptedStreamId() {
 Http2ServerTransport::Http2ServerTransport(
     PromiseEndpoint endpoint, const ChannelArgs& channel_args,
     std::shared_ptr<EventEngine> event_engine,
-    absl::AnyInvocable<void(absl::StatusOr<uint32_t>)> on_receive_settings)
+    absl::AnyInvocable<void(absl::StatusOr<uint32_t>)> on_receive_settings,
+    grpc_closure* on_close_callback)
     : channelz::DataSource(http2::CreateChannelzSocketNode(
           endpoint.GetEventEngineEndpoint(), channel_args)),
       outgoing_frames_(10),  // TODO(akshitpatel) : [PH2][P0][Write] : Remove
@@ -1984,9 +1976,9 @@ Http2ServerTransport::Http2ServerTransport(
       endpoint_(std::move(endpoint)),
       settings_(MakeRefCounted<SettingsPromiseManager>(
           std::move(on_receive_settings))),
+      on_close_callback_(on_close_callback),
       should_reset_ping_clock_(false),
-      incoming_headers_(IncomingMetadataTracker::GetPeerString(endpoint_),
-                        kIsClient),
+      incoming_headers_(ReadContext::GetPeerString(endpoint_), kIsClient),
       transport_write_context_(kIsClient),
       ping_manager_(std::nullopt),
       keepalive_manager_(std::nullopt),
@@ -2110,10 +2102,6 @@ void Http2ServerTransport::SpawnTransportLoops() {
   // For Server, read happens before write. So ReadLoop is spawned first.
   // MultiplexerLoop is spawned after the first read.
   SpawnGuardedTransportParty("ReadLoop", UntilTransportClosed(ReadLoop()));
-
-  // TODO(tjagtap) : [PH2][P0] : Spawn MultiplexerLoop after 1st read completes.
-  // TODO(tjagtap) : [PH2][P0] : Remove this when MultiplexerLoop is implemented
-  SpawnGuardedTransportParty("WriteLoop", WriteLoop());
 
   GRPC_HTTP2_SERVER_DLOG << "Http2ServerTransport::SpawnTransportLoops End";
 }

@@ -18,5 +18,4 @@ This file is generated from the supported_bazel_versions.bzl.template
 
 SUPPORTED_BAZEL_VERSIONS = [
     "8.0.1",
-    "7.4.1",
 ]

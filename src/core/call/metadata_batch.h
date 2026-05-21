@@ -706,7 +706,7 @@ struct IsEncodableTrait {
 };
 
 template <typename Trait>
-struct IsEncodableTrait<Trait, absl::void_t<decltype(Trait::key())>> {
+struct IsEncodableTrait<Trait, std::void_t<decltype(Trait::key())>> {
   static const bool value = true;
 };
 
