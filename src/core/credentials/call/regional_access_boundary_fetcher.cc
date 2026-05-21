@@ -212,10 +212,10 @@ void RegionalAccessBoundaryFetcher::Request::OnResponse(
   if (fetcher == nullptr) return;
   bool success = false;
   std::string encoded_locations;
-  absl::string_view response_body = "";
-  if (response_.body != nullptr) {
-    response_body = absl::string_view(response_.body, response_.body_length);
-  }
+  absl::string_view response_body =
+      response_.body != nullptr
+          ? absl::string_view(response_.body, response_.body_length)
+          : "";
   if (error.ok() && response_.status == 200) {
     absl::StatusOr<Json> json = JsonParse(response_body);
     if (json.ok() && json->type() == Json::Type::kObject) {
@@ -287,10 +287,10 @@ class EmailFetcher::EmailRequest final
   void OnResponse(grpc_error_handle error) {
     auto fetcher = fetcher_->RefIfNonZero();
     if (fetcher == nullptr) return;
-    absl::string_view response_body = "";
-    if (response_.body != nullptr) {
-      response_body = absl::string_view(response_.body, response_.body_length);
-    }
+    absl::string_view response_body =
+        response_.body != nullptr
+            ? absl::string_view(response_.body, response_.body_length)
+            : "";
     if (!error.ok()) {
       fetcher->OnEmailFetchError(error);
     } else if (response_.status != 200) {
