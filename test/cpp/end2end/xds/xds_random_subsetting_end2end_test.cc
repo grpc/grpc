@@ -26,7 +26,6 @@ namespace grpc {
 namespace testing {
 namespace {
 
-using ::envoy::config::cluster::v3::Cluster;
 using ::xds::type::v3::TypedStruct;
 
 class RandomSubsettingTest : public XdsEnd2endTest {
