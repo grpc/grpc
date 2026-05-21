@@ -18,6 +18,11 @@ import contextlib
 import enum
 import logging
 import sys
+import typing
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from grpc._typing import MetadataType as _MetadataType
 
 from grpc import _compression
 from grpc._cython import cygrpc as _cygrpc
