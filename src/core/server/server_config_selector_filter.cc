@@ -103,6 +103,7 @@ class LegacyServerConfigSelectorFilter final
   };
 
   RefCountedPtr<ServerConfigSelectorProvider> server_config_selector_provider_;
+  std::shared_ptr<ServerConfigSelectorWatcher> watcher_;
   Mutex mu_;
   std::optional<absl::StatusOr<RefCountedPtr<ServerConfigSelector>>>
       config_selector_ ABSL_GUARDED_BY(mu_);
@@ -125,10 +126,8 @@ LegacyServerConfigSelectorFilter::LegacyServerConfigSelectorFilter(
     : server_config_selector_provider_(
           std::move(server_config_selector_provider)) {
   GRPC_CHECK(server_config_selector_provider_ != nullptr);
-  auto server_config_selector_watcher =
-      std::make_unique<ServerConfigSelectorWatcher>(Ref());
-  auto config_selector = server_config_selector_provider_->Watch(
-      std::move(server_config_selector_watcher));
+  watcher_ = std::make_shared<ServerConfigSelectorWatcher>(Ref());
+  auto config_selector = server_config_selector_provider_->Watch(watcher_);
   MutexLock lock(&mu_);
   // It's possible for the watcher to have already updated config_selector_
   if (!config_selector_.has_value()) {
@@ -138,7 +137,7 @@ LegacyServerConfigSelectorFilter::LegacyServerConfigSelectorFilter(
 
 void LegacyServerConfigSelectorFilter::Orphan() {
   if (server_config_selector_provider_ != nullptr) {
-    server_config_selector_provider_->CancelWatch();
+    server_config_selector_provider_->CancelWatch(std::move(watcher_));
   }
   Unref();
 }
@@ -219,14 +218,11 @@ ServerConfigSelectorInterceptor::ServerConfigSelectorInterceptor(
           std::move(server_config_selector_provider)),
       config_selector_(nullptr) {
   // Start watch for ServerConfigSelector.
-  auto watcher = std::make_unique<Watcher>(
+  watcher_ = std::make_shared<Watcher>(
       WeakRef().TakeAsSubclass<ServerConfigSelectorInterceptor>());
-  auto config_selector =
-      server_config_selector_provider_->Watch(std::move(watcher));
-  // FIXME: possible race condition?
-  // FIXME: maybe just use observable in provider instead of
-  // callback-based watcher API?
-  OnConfigSelectorUpdate(std::move(config_selector));
+  // TODO(roth): Remove void cast when removing the
+  // xds_server_filter_chain_per_route experiment.
+  (void)server_config_selector_provider_->Watch(watcher_);
 }
 
 namespace {
@@ -295,6 +291,7 @@ void ServerConfigSelectorInterceptor::OnConfigSelectorUpdate(
 
 void ServerConfigSelectorInterceptor::Orphaned() {
   args_ = ChannelArgs();
+  server_config_selector_provider_->CancelWatch(std::move(watcher_));
   server_config_selector_provider_.reset();
   config_selector_.Set(absl::CancelledError("shutting down"));
 }

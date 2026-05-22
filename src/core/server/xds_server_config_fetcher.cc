@@ -52,7 +52,6 @@
 #include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/socket_utils.h"
-#include "src/core/lib/promise/observable.h"
 #include "src/core/server/server.h"
 #include "src/core/server/server_config_selector.h"
 #include "src/core/server/server_config_selector_filter.h"
@@ -645,13 +644,14 @@ void XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::Start() {
   ForEachFilterChain(
       [&](const XdsListenerResource::FilterChainData& filter_chain_data)
           ABSL_EXCLUSIVE_LOCKS_REQUIRED(*FetcherState::work_serializer) {
-        auto l4_filter_chain = MakeOrphanable<L4FilterChain>(
-            fetcher_state_.Ref(DEBUG_LOCATION, "L4FilterChain"),
-            WeakRefAsSubclass<FilterChainMatchManager>(), filter_chain_data);
-        if (!l4_filter_chain->HasRouteConfig()) ready = false;
-        l4_filter_chains_.emplace(&filter_chain_data,
-                                  std::move(l4_filter_chain));
-      });
+            auto l4_filter_chain = MakeOrphanable<L4FilterChain>(
+                fetcher_state_.Ref(DEBUG_LOCATION, "L4FilterChain"),
+                WeakRefAsSubclass<FilterChainMatchManager>(),
+                filter_chain_data);
+            if (!l4_filter_chain->HasRouteConfig()) ready = false;
+            l4_filter_chains_.emplace(&filter_chain_data,
+                                      std::move(l4_filter_chain));
+          });
   // If all L4 filter chains had inline RouteConfigs, then promote this
   // FilterChainMatchManager immediately.
   if (ready) {
@@ -917,12 +917,15 @@ class XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
     L4FilterChain::XdsServerConfigSelectorProvider final
     : public ServerConfigSelectorProvider {
  public:
-  explicit XdsServerConfigSelectorProvider(
+  XdsServerConfigSelectorProvider(
+      RefCountedPtr<FetcherState> fetcher_state,
       absl::StatusOr<RefCountedPtr<ServerConfigSelector>> config_selector)
-      : config_selector_(std::move(config_selector)) {}
+      : fetcher_state_(std::move(fetcher_state)),
+        config_selector_(std::move(config_selector)) {}
 
   void SetServerConfigSelector(
-      absl::StatusOr<RefCountedPtr<ServerConfigSelector>> config_selector) {
+      absl::StatusOr<RefCountedPtr<ServerConfigSelector>> config_selector)
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(*FetcherState::work_serializer) {
     if (GRPC_TRACE_FLAG_ENABLED(xds_server_config_fetcher)) {
       if (config_selector.ok()) {
         LOG(INFO) << "[XdsServerConfigSelectorProvider " << this
@@ -934,32 +937,48 @@ class XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
                   << config_selector.status();
       }
     }
-    config_selector_.Set(std::move(config_selector));
+    config_selector_ = std::move(config_selector);
+    for (const auto& watcher : watchers_) {
+      watcher->OnServerConfigSelectorUpdate(config_selector_);
+    }
   }
 
-  ArenaPromise<absl::StatusOr<RefCountedPtr<ServerConfigSelector>>>
-  GetConfigSelector() override {
-    return config_selector_.Next(nullptr);
-  }
-
-  // Not used.
   absl::StatusOr<RefCountedPtr<ServerConfigSelector>> Watch(
-      std::unique_ptr<ServerConfigSelectorWatcher>) override {
+      std::shared_ptr<ServerConfigSelectorWatcher> watcher) override {
+    fetcher_state_->work_serializer->Run(
+        [self = WeakRefAsSubclass<XdsServerConfigSelectorProvider>(),
+         watcher = std::move(watcher)]()
+            ABSL_EXCLUSIVE_LOCKS_REQUIRED(
+                *FetcherState::work_serializer) mutable {
+              watcher->OnServerConfigSelectorUpdate(self->config_selector_);
+              self->watchers_.insert(std::move(watcher));
+            });
     return nullptr;
   }
 
-  // Not used.
-  void CancelWatch() override {}
+  void CancelWatch(
+      std::shared_ptr<ServerConfigSelectorWatcher> watcher) override {
+    fetcher_state_->work_serializer->Run(
+        [self = WeakRefAsSubclass<XdsServerConfigSelectorProvider>(),
+         watcher = std::move(watcher)]()
+            ABSL_EXCLUSIVE_LOCKS_REQUIRED(
+                *FetcherState::work_serializer) mutable {
+              self->watchers_.erase(std::move(watcher));
+            });
+  }
 
  private:
   void Orphaned() override {
     GRPC_TRACE_LOG(xds_server_config_fetcher, INFO)
         << "[XdsServerConfigSelectorProvider " << this << "]: orphaned";
-    config_selector_.Set(absl::CancelledError("shutting down"));
   }
 
-  Observable<absl::StatusOr<RefCountedPtr<ServerConfigSelector>>>
-      config_selector_;
+  RefCountedPtr<FetcherState> fetcher_state_;
+
+  absl::StatusOr<RefCountedPtr<ServerConfigSelector>> config_selector_
+      ABSL_GUARDED_BY(*FetcherState::work_serializer);
+  absl::flat_hash_set<std::shared_ptr<ServerConfigSelectorWatcher>> watchers_
+      ABSL_GUARDED_BY(*FetcherState::work_serializer);
 };
 
 //
@@ -1144,7 +1163,7 @@ void XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
         << "[L4FilterChain " << this
         << "]: initial update; creating new XdsServerConfigSelectorProvider";
     config_selector_provider_ = MakeRefCounted<XdsServerConfigSelectorProvider>(
-        std::move(config_selector));
+        fetcher_state_, std::move(config_selector));
   } else {
     // Provider already exists, so just update it.
     config_selector_provider_->SetServerConfigSelector(
