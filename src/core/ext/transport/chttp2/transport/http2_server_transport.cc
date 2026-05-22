@@ -1986,7 +1986,6 @@ Http2ServerTransport::Http2ServerTransport(
           &memory_owner_),
       ztrace_collector_(std::make_shared<PromiseHttp2ZTraceCollector>()) {
   GRPC_HTTP2_SERVER_DLOG << "Http2ServerTransport Constructor Begin";
-  SourceConstructed();
 
   // Initialize the general party and write party.
   RefCountedPtr<Arena> party_arena = SimpleArenaAllocator(0)->MakeArena();
