@@ -588,7 +588,7 @@ def _unary_request(
 def _call_behavior(
     rpc_event: cygrpc.BaseEvent,
     state: _RPCState,
-    behavior: Optional[ArityAgnosticMethodHandler],
+    behavior: ArityAgnosticMethodHandler,
     argument: Any,
     request_deserializer: Optional[DeserializingFunction],
     send_response_callback: Optional[Callable[[ResponseType], None]] = None,
@@ -871,7 +871,7 @@ def _send_message_callback_to_blocking_iterator_adapter(
 
 
 def _select_thread_pool_for_behavior(
-    behavior: Optional[ArityAgnosticMethodHandler],
+    behavior: ArityAgnosticMethodHandler,
     default_thread_pool: futures.ThreadPoolExecutor,
 ) -> futures.ThreadPoolExecutor:
     if (
@@ -894,11 +894,11 @@ def _handle_unary_unary(
     unary_request = _unary_request(
         rpc_event, state, method_handler.request_deserializer
     )
+    assert method_handler.unary_unary is not None
     thread_pool = _select_thread_pool_for_behavior(
         method_handler.unary_unary,
         default_thread_pool,
     )
-    assert method_handler.unary_unary is not None
     return thread_pool.submit(
         state.context.run,
         _unary_response_in_pool,
@@ -920,11 +920,11 @@ def _handle_unary_stream(
     unary_request = _unary_request(
         rpc_event, state, method_handler.request_deserializer
     )
+    assert method_handler.unary_stream is not None
     thread_pool = _select_thread_pool_for_behavior(
         method_handler.unary_stream,
         default_thread_pool,
     )
-    assert method_handler.unary_stream is not None
     return thread_pool.submit(
         state.context.run,
         _stream_response_in_pool,
@@ -946,11 +946,11 @@ def _handle_stream_unary(
     request_iterator = _RequestIterator(
         state, rpc_event.call, method_handler.request_deserializer
     )
+    assert method_handler.stream_unary is not None
     thread_pool = _select_thread_pool_for_behavior(
         method_handler.stream_unary,
         default_thread_pool,
     )
-    assert method_handler.stream_unary is not None
     return thread_pool.submit(
         state.context.run,
         _unary_response_in_pool,
@@ -972,11 +972,11 @@ def _handle_stream_stream(
     request_iterator = _RequestIterator(
         state, rpc_event.call, method_handler.request_deserializer
     )
+    assert method_handler.stream_stream is not None
     thread_pool = _select_thread_pool_for_behavior(
         method_handler.stream_stream,
         default_thread_pool,
     )
-    assert method_handler.stream_stream is not None
     return thread_pool.submit(
         state.context.run,
         _stream_response_in_pool,
