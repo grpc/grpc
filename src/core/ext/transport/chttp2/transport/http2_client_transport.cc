@@ -47,10 +47,10 @@
 #include "src/core/ext/transport/chttp2/transport/http2_status.h"
 #include "src/core/ext/transport/chttp2/transport/http2_transport.h"
 #include "src/core/ext/transport/chttp2/transport/http2_ztrace_collector.h"
-#include "src/core/ext/transport/chttp2/transport/incoming_metadata_tracker.h"
 #include "src/core/ext/transport/chttp2/transport/keepalive.h"
 #include "src/core/ext/transport/chttp2/transport/message_assembler.h"
 #include "src/core/ext/transport/chttp2/transport/ping_promise.h"
+#include "src/core/ext/transport/chttp2/transport/read_context.h"
 #include "src/core/ext/transport/chttp2/transport/security_frame.h"
 #include "src/core/ext/transport/chttp2/transport/stream.h"
 #include "src/core/ext/transport/chttp2/transport/stream_data_queue.h"
@@ -243,15 +243,18 @@ Http2Status Http2ClientTransport::ProcessIncomingFrame(Http2DataFrame&& frame) {
 
   RefCountedPtr<Stream> stream = LookupStream(frame.stream_id);
 
-  ValueOrHttp2Status<chttp2::FlowControlAction> flow_control_action =
-      ProcessIncomingDataFrameFlowControl(current_frame_header_, flow_control_,
-                                          stream.get());
-  if (!flow_control_action.IsOk()) {
-    return ValueOrHttp2Status<chttp2::FlowControlAction>::TakeStatus(
-        std::move(flow_control_action));
+  if (frame.payload.Length() > 0) {
+    // DATA frames with empty payload are legitimate frames. CHTTP2 and PH2 send
+    // empty DATA frames with END_Stream flag set to true.
+    ValueOrHttp2Status<chttp2::FlowControlAction> flow_control_action =
+        ProcessIncomingDataFrameFlowControl(current_frame_header_,
+                                            flow_control_, stream.get());
+    if (!flow_control_action.IsOk()) {
+      return ValueOrHttp2Status<chttp2::FlowControlAction>::TakeStatus(
+          std::move(flow_control_action));
+    }
+    ActOnFlowControlAction(flow_control_action.value(), stream.get());
   }
-  ActOnFlowControlAction(flow_control_action.value(), stream.get());
-
   if (stream == nullptr) {
     // TODO(tjagtap) : [PH2][P2] : Implement the correct behaviour later.
     // RFC9113 : If a DATA frame is received whose stream is not in the "open"
@@ -418,33 +421,28 @@ Http2Status Http2ClientTransport::ProcessIncomingFrame(
       << frame.ack << ", settings length=" << frame.settings.size() << "}";
 
   if (!frame.ack) {
-    Http2Status status = ValidateSettingsValues(frame.settings);
-    if (!status.IsOk()) {
-      return status;
+    Http2Status s = settings_->BufferPeerSettings(std::move(frame.settings));
+    if (!s.IsOk()) {
+      return s;
     }
-    settings_->BufferPeerSettings(std::move(frame.settings));
     absl::Status trigger_write_status = TriggerWriteCycle();
     if (!trigger_write_status.ok()) {
       return ToHttpOkOrConnError(trigger_write_status);
     }
-
     if (GPR_UNLIKELY(!settings_->IsFirstPeerSettingsApplied())) {
       // Apply the first settings before we read any other frames.
       reader_state_.SetPauseReadLoop();
     }
   } else {
-    if (settings_->OnSettingsAckReceived()) {
-      incoming_headers_.SetMaxHeaderTableSize(
-          settings_->acked().header_table_size());
-      ActOnFlowControlAction(flow_control_.SetAckedInitialWindow(
-                                 settings_->acked().initial_window_size()),
-                             /*stream=*/nullptr);
-    } else {
-      // CHTTP2 returns a connection error for an unsolicited SETTINGS ACK.
-      // However, we ignore it in PH2 since RFC 9113 doesn't explicitly mandate
-      // an error.
-      LOG(ERROR) << "Settings ack received without sending settings. Ignore.";
+    Http2Status status = settings_->OnSettingsAckReceived();
+    if (!status.IsOk()) {
+      return status;
     }
+    incoming_headers_.SetMaxHeaderTableSize(
+        settings_->acked().header_table_size());
+    ActOnFlowControlAction(flow_control_.SetAckedInitialWindow(
+                               settings_->acked().initial_window_size()),
+                           /*stream=*/nullptr);
   }
 
   return Http2Status::Ok();
@@ -698,7 +696,8 @@ auto Http2ClientTransport::ReadAndProcessOneFrame() {
             /*current_frame_header*/ header,
             /*last_stream_id=*/GetLastStreamId(),
             /*is_client=*/kIsClient, /*is_first_settings_processed=*/
-            settings_->IsFirstPeerSettingsApplied());
+            settings_->IsFirstPeerSettingsApplied(),
+            /*tracker=*/incoming_headers_.mutable_tracker());
 
         if (GPR_UNLIKELY(!status.IsOk())) {
           GRPC_DCHECK(status.GetType() ==
@@ -1311,8 +1310,7 @@ Http2ClientTransport::Http2ClientTransport(
           std::move(on_receive_settings))),
       next_stream_id_(/*Initial Stream ID*/ 1),
       should_reset_ping_clock_(false),
-      incoming_headers_(IncomingMetadataTracker::GetPeerString(endpoint_),
-                        kIsClient),
+      incoming_headers_(ReadContext::GetPeerString(endpoint_), kIsClient),
       transport_write_context_(kIsClient),
       ping_manager_(std::nullopt),
       keepalive_manager_(std::nullopt),

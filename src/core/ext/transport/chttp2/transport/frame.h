@@ -270,6 +270,19 @@ void AppendGrpcHeaderToSliceBuffer(SliceBuffer& payload, uint32_t flags,
                                    uint32_t length);
 
 ///////////////////////////////////////////////////////////////////////////////
+// Frame limits
+
+constexpr uint16_t kMaxNoopDataFrames = 16384u;
+constexpr uint16_t kMaxNoopContinuationFrames = 128u;
+
+struct Http2FrameCountTracker {
+  void OnEndHeaders() { noop_continuation_frames = 0u; }
+
+  uint16_t noop_continuation_frames = 0u;
+  uint16_t noop_data_frames = 0u;
+};
+
+///////////////////////////////////////////////////////////////////////////////
 // Validations
 
 http2::Http2Status ValidateSettingsValues(
@@ -280,7 +293,8 @@ http2::Http2Status ValidateFrameHeader(uint32_t max_frame_size_setting,
                                        uint32_t incoming_header_stream_id,
                                        Http2FrameHeader& current_frame_header,
                                        uint32_t last_stream_id, bool is_client,
-                                       bool is_first_settings_processed);
+                                       bool is_first_settings_processed,
+                                       Http2FrameCountTracker& tracker);
 
 ///////////////////////////////////////////////////////////////////////////////
 // RFC9113 Related Strings and Consts
@@ -404,8 +418,15 @@ inline constexpr absl::string_view kTooManyMetadata =
     "gRPC Error : A gRPC server can send upto 1 initial metadata followed by "
     "upto 1 trailing metadata.";
 inline constexpr absl::string_view kOutOfOrderDataFrame =
-    "gRPC Error : DATA frames must follow initial metadata and precede "
-    "trailing metadata.";
+    "gRPC Transport Error : DATA frames must follow initial metadata and "
+    "precede trailing metadata.";
+inline constexpr absl::string_view kTooManyZeroLengthContinuationFrames =
+    "gRPC Transport Error : Received too many zero length CONTINUATION frames "
+    "without end_headers flag set";
+inline constexpr absl::string_view kTooManyZeroLengthDataFrames =
+    "gRPC Transport Error : Received too many zero length DATA frames";
+inline constexpr absl::string_view kUnsolicitedSettingsAck =
+    "gRPC Transport Error : Received unsolicited SETTINGS ACK.";
 }  // namespace GrpcErrors
 
 }  // namespace grpc_core

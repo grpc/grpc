@@ -117,12 +117,19 @@ class SettingsPromiseManager final : public RefCounted<SettingsPromiseManager> {
   // Called when transport receives a SETTINGS ACK frame from peer.
   // This SETTINGS ACK was sent by peer to confirm receipt of SETTINGS frame
   // sent by us. Stop the settings timeout promise.
-  GRPC_MUST_USE_RESULT bool OnSettingsAckReceived() {
+  http2::Http2Status OnSettingsAckReceived() {
     bool is_valid = settings_.AckLastSend();
     if (is_valid) {
       RecordReceivedAck();
+    } else {
+      LOG(ERROR) << "Settings ack received without sending settings. Ignore.";
+      // CHTTP2 and PH2 return connection error for an unsolicited SETTINGS ACK.
+      // RFC 9113 does not explicitly specify unsolicited ACK handling.
+      return http2::Http2Status::Http2ConnectionError(
+          http2::Http2ErrorCode::kInternalError,
+          std::string(GrpcErrors::kUnsolicitedSettingsAck));
     }
-    return is_valid;
+    return http2::Http2Status::Ok();
   }
 
   // Called when our transport enqueues a SETTINGS frame to send to the peer.
@@ -197,7 +204,12 @@ class SettingsPromiseManager final : public RefCounted<SettingsPromiseManager> {
   // Buffers SETTINGS frames received from peer.
   // Buffered to apply settings at start of next write cycle, only after
   // SETTINGS ACK is written to the endpoint.
-  void BufferPeerSettings(std::vector<Http2SettingsFrame::Setting>&& settings) {
+  http2::Http2Status BufferPeerSettings(
+      std::vector<Http2SettingsFrame::Setting>&& settings) {
+    http2::Http2Status status = ValidateSettingsValues(settings);
+    if (!status.IsOk()) {
+      return status;
+    }
     if (state_ == SettingsState::kWaitingForFirstPeerSettings) {
       state_ = SettingsState::kFirstPeerSettingsReceived;
     }
@@ -209,6 +221,7 @@ class SettingsPromiseManager final : public RefCounted<SettingsPromiseManager> {
         pending_peer_settings_[setting.id] = setting.value;
       }
     }
+    return http2::Http2Status::Ok();
   }
 
   // Applies settings buffered by BufferPeerSettings().

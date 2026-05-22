@@ -145,6 +145,9 @@ class ClientReactor {
 namespace experimental {
 template <class RequestType, class ResponseType>
 class GenericStubSession;
+
+class ClientSessionReactor;
+class ClientCallbackSession;
 }  // namespace experimental
 
 // Forward declarations
@@ -155,7 +158,6 @@ class ClientReadReactor;
 template <class Request>
 class ClientWriteReactor;
 class ClientUnaryReactor;
-class ClientSessionReactor;
 
 // NOTE: The streaming objects are not actually implemented in the public API.
 //       These interfaces are provided for mocking only. Typical applications
@@ -222,6 +224,7 @@ class ClientCallbackUnary {
   void BindReactor(ClientUnaryReactor* reactor);
 };
 
+namespace experimental {
 class ClientCallbackSession {
  public:
   virtual ~ClientCallbackSession() {}
@@ -230,6 +233,7 @@ class ClientCallbackSession {
  protected:
   void BindReactor(ClientSessionReactor* reactor);
 };
+}  // namespace experimental
 
 // The following classes are the reactor interfaces that are to be implemented
 // by the user. They are passed in to the library as an argument to a call on a
@@ -469,10 +473,11 @@ inline void ClientCallbackUnary::BindReactor(ClientUnaryReactor* reactor) {
   reactor->BindCall(this);
 }
 
+namespace experimental {
 /// \a ClientSessionReactor is a reactor-style interface for a session RPC.
 /// This will be activated as any other reactor-based RPC, by calling
 /// StartCall on the reactor.
-class ClientSessionReactor : public internal::ClientReactor {
+class ClientSessionReactor : public grpc::internal::ClientReactor {
  public:
   void StartCall() { call_->StartCall(); }
   void OnDone(const grpc::Status& /*s*/) override {}
@@ -489,6 +494,7 @@ class ClientSessionReactor : public internal::ClientReactor {
 inline void ClientCallbackSession::BindReactor(ClientSessionReactor* reactor) {
   reactor->BindCall(this);
 }
+}  // namespace experimental
 
 namespace internal {
 
@@ -1283,6 +1289,10 @@ class ClientCallbackUnaryFactory {
   }
 };
 
+}  // namespace internal
+
+namespace experimental {
+namespace internal {
 class ClientCallbackSessionImpl final : public ClientCallbackSession {
  public:
   // always allocated against a call arena, no memory free required
@@ -1331,7 +1341,7 @@ class ClientCallbackSessionImpl final : public ClientCallbackSession {
                             grpc::internal::Call call,
                             grpc::ClientContext* context,
                             const Request* request,
-                            grpc::ClientSessionReactor* reactor)
+                            grpc::experimental::ClientSessionReactor* reactor)
       : context_(context), call_(call), reactor_(reactor) {
     this->BindReactor(reactor);
     ABSL_CHECK(
@@ -1367,7 +1377,7 @@ class ClientCallbackSessionImpl final : public ClientCallbackSession {
 
   grpc::ClientContext* context_;
   grpc::internal::Call call_;
-  grpc::ClientSessionReactor* reactor_;
+  grpc::experimental::ClientSessionReactor* reactor_;
   grpc::internal::CallOpSet<grpc::internal::CallOpSendInitialMetadata,
                             grpc::internal::CallOpSendMessage>
       send_ops_;
@@ -1390,7 +1400,7 @@ class ClientCallbackSessionFactory {
   static void Create(grpc::ChannelInterface* channel,
                      const grpc::internal::RpcMethod& method,
                      grpc::ClientContext* context, const Request* request,
-                     ClientSessionReactor* reactor) {
+                     grpc::experimental::ClientSessionReactor* reactor) {
     grpc::internal::Call call =
         channel->CreateCall(method, context, channel->CallbackCQ());
 
@@ -1405,8 +1415,8 @@ class ClientCallbackSessionFactory {
   template <class RequestType, class ResponseType>
   friend class grpc::experimental::GenericStubSession;
 };
-
 }  // namespace internal
+}  // namespace experimental
 }  // namespace grpc
 
 #endif  // GRPCPP_SUPPORT_CLIENT_CALLBACK_H

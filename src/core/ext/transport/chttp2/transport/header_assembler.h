@@ -258,6 +258,7 @@ class HeaderAssembler {
   static Http2Status ParseHeader(HPackParser& parser, SliceBuffer&& buffer,
                                  grpc_metadata_batch* grpc_metadata_batch,
                                  const ParseHeaderArgs args) {
+    // TODO(alishananda): Propagate mitigation engine here.
     parser.BeginFrame(
         /*grpc_metadata_batch*/ grpc_metadata_batch,
         args.max_header_list_size_soft_limit,
@@ -268,7 +269,8 @@ class HeaderAssembler {
                              args.is_initial_metadata
                                  ? HPackParser::LogInfo::Type::kHeaders
                                  : HPackParser::LogInfo::Type::kTrailers,
-                             args.is_client});
+                             args.is_client},
+        /*mitigation_engine=*/nullptr);
     // TODO(tjagtap) [PH2][P5] Bug fix : Check if the received metadata honours
     // allow_true_binary_metadata or not. Will need changes to HPack code.
     absl::Status stream_error = absl::OkStatus();
