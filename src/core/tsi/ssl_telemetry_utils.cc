@@ -274,7 +274,7 @@ TlsTelemetryHandshakeResult MapSslErrorToTlsTelemetryHandshakeResult(
       case SSL_R_INAPPROPRIATE_FALLBACK:
         return TlsTelemetryHandshakeResult::INAPPROPRIATE_FALLBACK;
 
-      // No application protocol
+        // No application protocol
 #ifdef SSL_R_NO_APPLICATION_PROTOCOL
       case SSL_R_NO_APPLICATION_PROTOCOL:
         return TlsTelemetryHandshakeResult::NO_APPLICATION_PROTOCOL;
