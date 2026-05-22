@@ -1138,6 +1138,13 @@ void XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
             route_config) ABSL_EXCLUSIVE_LOCKS_REQUIRED(*work_serializer_) {
   GRPC_TRACE_LOG(xds_server_config_fetcher, INFO)
       << "[L4FilterChain " << this << "]: received RDS update";
+  if (!route_config.ok()) {
+    auto& hcm = filter_chain_data_.http_connection_manager;
+    auto& rds_resource_name = std::get<std::string>(hcm.route_config);
+    route_config = absl::UnavailableError(
+        absl::StrCat("RDS resource ", rds_resource_name, ": ",
+                     route_config.status().message()));
+  }
   UpdateServerConfigSelector(std::move(route_config));
   filter_chain_match_manager_->MaybePromote();
 }
