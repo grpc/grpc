@@ -1,8 +1,8 @@
 diff --git a/upb/port/def.inc b/upb/port/def.inc
-index 4616c65cc..0488c92d6 100644
+index 4616c65cc..b37089756 100644
 --- a/upb/port/def.inc
 +++ b/upb/port/def.inc
-@@ -668,7 +668,7 @@ Error, UINTPTR_MAX is undefined
+@@ -668,10 +668,10 @@ Error, UINTPTR_MAX is undefined
   * to prevent optimizers from removing the constructor. Our solution is to
   * create a dummy exported weak symbol that prevent this stripping.
   */
@@ -10,4 +10,8 @@ index 4616c65cc..0488c92d6 100644
 +#pragma section(".CRT$XCV", long, read)
  #define UPB_CONSTRUCTOR(name, unique_name)                                   \
    static void __cdecl UPB_PRIVATE(name)(void);                               \
-   __declspec(allocate(".CRT$XCU"), selectany) void(                          \
+-  __declspec(allocate(".CRT$XCU"), selectany) void(                          \
++  __declspec(allocate(".CRT$XCV"), selectany) void(                          \
+       __cdecl * UPB_PRIVATE(name##_))(void) = UPB_PRIVATE(name);             \
+   __declspec(selectany, dllexport) void* UPB_PRIVATE(name##_force_linkage) = \
+       &UPB_PRIVATE(name##_);                                                 \
