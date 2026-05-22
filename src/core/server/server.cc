@@ -685,6 +685,12 @@ class Server::RealRequestMatcher : public RequestMatcherInterface {
         }
       }
       if (rc == nullptr) {
+        if (IsOptimization04Enabled() &&
+            server_->pending_backlog_protector_.Reject(
+                pending_filter_stack_.size(), SharedBitGen())) {
+          calld->FailCallCreation();
+          return;
+        }
         calld->SetState(CallData::CallState::PENDING);
         pending_filter_stack_.push(PendingCallFilterStack{calld});
         return;
