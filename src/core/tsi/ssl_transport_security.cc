@@ -587,6 +587,7 @@ void OnSelectCertificateDone(
       handshaker->cert_selection_status =
           ProcessSelectCertificateResult(handshaker.get(), *std::move(result));
     }
+    handshaker->cert_selection_handle.reset();
     auto async_result = ssl_handshaker_next_async(handshaker.get());
     next_result = async_result.first;
     next_args = std::move(async_result.second);

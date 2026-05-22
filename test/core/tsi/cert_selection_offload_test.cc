@@ -457,7 +457,8 @@ TEST_P(CertSelectionOffloadTest, AsyncCertSelectionCancelledAfterFinished) {
   event_engine_->RunAfter(Duration::Seconds(3),
                           [&fixture] { fixture->Shutdown(); });
   fixture->Run(/*expect_success=*/false, event_engine_.get());
-  EXPECT_TRUE(fixture->CertSelectionCancelled());
+  // The handle should have been reset by the handshaker so no cancellation.
+  EXPECT_FALSE(fixture->CertSelectionCancelled());
   EXPECT_TRUE(fixture->CertSelectionDone());
 }
 
