@@ -102,8 +102,6 @@ inline bool IsMemoryOptimization01Enabled() { return false; }
 inline bool IsMemoryOptimization02Enabled() { return false; }
 inline bool IsMessageSizeRefactoringEnabled() { return false; }
 inline bool IsMetadataOutstandingTokenRefactorEnabled() { return false; }
-#define GRPC_EXPERIMENT_IS_INCLUDED_METADATA_PUBLISH_TO_APP_TAG
-inline bool IsMetadataPublishToAppTagEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_MONITORING_EXPERIMENT
 inline bool IsMonitoringExperimentEnabled() { return true; }
 inline bool IsMultipingEnabled() { return false; }
@@ -190,8 +188,6 @@ inline bool IsMemoryOptimization01Enabled() { return false; }
 inline bool IsMemoryOptimization02Enabled() { return false; }
 inline bool IsMessageSizeRefactoringEnabled() { return false; }
 inline bool IsMetadataOutstandingTokenRefactorEnabled() { return false; }
-#define GRPC_EXPERIMENT_IS_INCLUDED_METADATA_PUBLISH_TO_APP_TAG
-inline bool IsMetadataPublishToAppTagEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_MONITORING_EXPERIMENT
 inline bool IsMonitoringExperimentEnabled() { return true; }
 inline bool IsMultipingEnabled() { return false; }
@@ -278,8 +274,6 @@ inline bool IsMemoryOptimization01Enabled() { return false; }
 inline bool IsMemoryOptimization02Enabled() { return false; }
 inline bool IsMessageSizeRefactoringEnabled() { return false; }
 inline bool IsMetadataOutstandingTokenRefactorEnabled() { return false; }
-#define GRPC_EXPERIMENT_IS_INCLUDED_METADATA_PUBLISH_TO_APP_TAG
-inline bool IsMetadataPublishToAppTagEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_MONITORING_EXPERIMENT
 inline bool IsMonitoringExperimentEnabled() { return true; }
 inline bool IsMultipingEnabled() { return false; }
@@ -350,7 +344,6 @@ enum ExperimentIds {
   kExperimentIdMemoryOptimization02,
   kExperimentIdMessageSizeRefactoring,
   kExperimentIdMetadataOutstandingTokenRefactor,
-  kExperimentIdMetadataPublishToAppTag,
   kExperimentIdMonitoringExperiment,
   kExperimentIdMultiping,
   kExperimentIdOptimization01,
@@ -494,10 +487,6 @@ inline bool IsMessageSizeRefactoringEnabled() {
 #define GRPC_EXPERIMENT_IS_INCLUDED_METADATA_OUTSTANDING_TOKEN_REFACTOR
 inline bool IsMetadataOutstandingTokenRefactorEnabled() {
   return IsExperimentEnabled<kExperimentIdMetadataOutstandingTokenRefactor>();
-}
-#define GRPC_EXPERIMENT_IS_INCLUDED_METADATA_PUBLISH_TO_APP_TAG
-inline bool IsMetadataPublishToAppTagEnabled() {
-  return IsExperimentEnabled<kExperimentIdMetadataPublishToAppTag>();
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_MONITORING_EXPERIMENT
 inline bool IsMonitoringExperimentEnabled() {

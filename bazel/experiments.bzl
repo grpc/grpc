@@ -44,7 +44,6 @@ EXPERIMENT_ENABLES = {
     "memory_optimization_02": "memory_optimization_02",
     "message_size_refactoring": "message_size_refactoring",
     "metadata_outstanding_token_refactor": "metadata_outstanding_token_refactor",
-    "metadata_publish_to_app_tag": "metadata_publish_to_app_tag",
     "monitoring_experiment": "monitoring_experiment",
     "multiping": "multiping",
     "optimization_01": "optimization_01",
