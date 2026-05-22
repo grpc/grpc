@@ -43,7 +43,7 @@ DEP_MAPS = {
     # "re2": "re2",                                      # third_party/re2 cannot be upgraded due to their cmake issue.
     # "xds": "xds",                                      # This can be resolved with https://github.com/grpc/grpc/pull/39908.
     # "zlib": "zlib",                                    # This can be resolved when zlib has a new release later than 1.3.1. (https://github.com/grpc/grpc/pull/40165)
-    #"protobuf": "protobuf",                             # Protobuf requires archive_override
+    # "protobuf": "protobuf",                            # Protobuf requires archive_override
 }
 
 GITHUB_TOKEN = None
