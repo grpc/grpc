@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_INCOMING_METADATA_TRACKER_H
-#define GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_INCOMING_METADATA_TRACKER_H
+#ifndef GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_READ_CONTEXT_H
+#define GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_READ_CONTEXT_H
 
 #include <grpc/support/port_platform.h>
 
@@ -44,7 +44,7 @@
 namespace grpc_core {
 namespace http2 {
 
-class IncomingMetadataTracker {
+class ReadContext {
   // Manages transport-wide state for incoming HEADERS and CONTINUATION frames.
   // RFC 9113 (Section 6.10) requires that if a HEADERS frame does not have
   // END_HEADERS set, it must be followed by a contiguous sequence of
@@ -55,14 +55,14 @@ class IncomingMetadataTracker {
   // a time. This class is distinct from HeaderAssembler, which buffers header
   // payloads on a per-stream basis.
  public:
-  explicit IncomingMetadataTracker(Slice peer_string, const bool is_client)
+  explicit ReadContext(Slice peer_string, const bool is_client)
       : peer_string_(std::move(peer_string)), is_client_(is_client) {}
-  ~IncomingMetadataTracker() = default;
+  ~ReadContext() = default;
 
-  IncomingMetadataTracker(IncomingMetadataTracker&& rvalue) = delete;
-  IncomingMetadataTracker& operator=(IncomingMetadataTracker&& rvalue) = delete;
-  IncomingMetadataTracker(const IncomingMetadataTracker&) = delete;
-  IncomingMetadataTracker& operator=(const IncomingMetadataTracker&) = delete;
+  ReadContext(ReadContext&& rvalue) = delete;
+  ReadContext& operator=(ReadContext&& rvalue) = delete;
+  ReadContext(const ReadContext&) = delete;
+  ReadContext& operator=(const ReadContext&) = delete;
 
   static Slice GetPeerString(const PromiseEndpoint& endpoint) {
     absl::StatusOr<std::string> uri =
@@ -154,6 +154,9 @@ class IncomingMetadataTracker {
   void UpdateState(const Http2ContinuationFrame& frame) {
     GRPC_CHECK(incoming_header_in_progress_);
     GRPC_CHECK_EQ(frame.stream_id, incoming_header_stream_id_);
+    if (frame.end_headers && incoming_header_in_progress_) {
+      tracker_.OnEndHeaders();
+    }
     incoming_header_in_progress_ = !frame.end_headers;
   }
 
@@ -197,6 +200,9 @@ class IncomingMetadataTracker {
         ", incoming_header_stream_id : ", incoming_header_stream_id_, "}");
   }
 
+  Http2FrameCountTracker& mutable_tracker() { return tracker_; }
+  const Http2FrameCountTracker& tracker() const { return tracker_; }
+
  private:
   // Initialized only once at the time of transport creation.
   // Should remain constant for the lifetime of the transport.
@@ -209,9 +215,10 @@ class IncomingMetadataTracker {
   uint32_t max_header_list_size_soft_limit_ =
       DEFAULT_MAX_HEADER_LIST_SIZE_SOFT_LIMIT;
   HPackParser parser_;
+  Http2FrameCountTracker tracker_;
 };
 
 }  // namespace http2
 }  // namespace grpc_core
 
-#endif  // GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_INCOMING_METADATA_TRACKER_H
+#endif  // GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_READ_CONTEXT_H

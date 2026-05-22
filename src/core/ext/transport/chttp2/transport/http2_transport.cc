@@ -252,7 +252,7 @@ void ReadSettingsFromChannelArgs(const ChannelArgs& channel_args,
 
   // TODO(tjagtap) : [PH2][P4] : If max_header_list_size is set only once
   // in the life of a transport, consider making this a data member of
-  // class IncomingMetadataTracker instead of accessing via acked settings again
+  // class ReadContext instead of accessing via acked settings again
   // and again. Else delete this comment.
 
   GRPC_HTTP2_COMMON_DLOG
