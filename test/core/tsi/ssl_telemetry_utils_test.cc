@@ -35,7 +35,8 @@ namespace grpc_core {
 namespace testing {
 namespace {
 
-TEST(SslTelemetryUtilsTest, MapSslErrorToTlsTelemetryHandshakeResultTest) {
+// Test cases that are common to both BoringSSL and OpenSSL builds
+TEST(SslTelemetryUtilsTest, GeneralMapSslErrorToTlsTelemetryHandshakeResultTest) {
   // Test SUCCESS
   EXPECT_EQ(grpc_core::MapSslErrorToTlsTelemetryHandshakeResult(SSL_ERROR_NONE, 0, X509_V_OK),
             grpc_core::TlsTelemetryHandshakeResult::SUCCESS);
@@ -117,6 +118,110 @@ TEST(SslTelemetryUtilsTest, MapSslErrorToTlsTelemetryHandshakeResultTest) {
   EXPECT_EQ(grpc_core::MapSslErrorToTlsTelemetryHandshakeResult(SSL_ERROR_SSL, TEST_ERR_PACK(ERR_LIB_SSL, 9999), X509_V_OK),
             grpc_core::TlsTelemetryHandshakeResult::UNKNOWN_FAILURE);
 }
+
+#if defined(OPENSSL_IS_BORINGSSL)
+
+// BoringSSL-specific reason code tests
+TEST(SslTelemetryUtilsTest, BoringSslSpecificMapSslErrorToTlsTelemetryHandshakeResultTest) {
+  // Extra Cipher suite mismatch cases
+  EXPECT_EQ(grpc_core::MapSslErrorToTlsTelemetryHandshakeResult(SSL_ERROR_SSL, TEST_ERR_PACK(ERR_LIB_SSL, SSL_R_NO_CIPHERS_AVAILABLE), X509_V_OK),
+            grpc_core::TlsTelemetryHandshakeResult::CIPHER_SUITE_MISMATCH);
+  EXPECT_EQ(grpc_core::MapSslErrorToTlsTelemetryHandshakeResult(SSL_ERROR_SSL, TEST_ERR_PACK(ERR_LIB_SSL, SSL_R_NO_CIPHERS_PASSED), X509_V_OK),
+            grpc_core::TlsTelemetryHandshakeResult::CIPHER_SUITE_MISMATCH);
+  EXPECT_EQ(grpc_core::MapSslErrorToTlsTelemetryHandshakeResult(SSL_ERROR_SSL, TEST_ERR_PACK(ERR_LIB_SSL, SSL_R_NO_SHARED_CIPHER), X509_V_OK),
+            grpc_core::TlsTelemetryHandshakeResult::CIPHER_SUITE_MISMATCH);
+  EXPECT_EQ(grpc_core::MapSslErrorToTlsTelemetryHandshakeResult(SSL_ERROR_SSL, TEST_ERR_PACK(ERR_LIB_SSL, SSL_R_REQUIRED_CIPHER_MISSING), X509_V_OK),
+            grpc_core::TlsTelemetryHandshakeResult::CIPHER_SUITE_MISMATCH);
+  EXPECT_EQ(grpc_core::MapSslErrorToTlsTelemetryHandshakeResult(SSL_ERROR_SSL, TEST_ERR_PACK(ERR_LIB_SSL, SSL_R_UNSUPPORTED_CIPHER), X509_V_OK),
+            grpc_core::TlsTelemetryHandshakeResult::CIPHER_SUITE_MISMATCH);
+  EXPECT_EQ(grpc_core::MapSslErrorToTlsTelemetryHandshakeResult(SSL_ERROR_SSL, TEST_ERR_PACK(ERR_LIB_SSL, SSL_R_WRONG_CIPHER_RETURNED), X509_V_OK),
+            grpc_core::TlsTelemetryHandshakeResult::CIPHER_SUITE_MISMATCH);
+  EXPECT_EQ(grpc_core::MapSslErrorToTlsTelemetryHandshakeResult(SSL_ERROR_SSL, TEST_ERR_PACK(ERR_LIB_SSL, SSL_R_CIPHER_MISMATCH_ON_EARLY_DATA), X509_V_OK),
+            grpc_core::TlsTelemetryHandshakeResult::CIPHER_SUITE_MISMATCH);
+  EXPECT_EQ(grpc_core::MapSslErrorToTlsTelemetryHandshakeResult(SSL_ERROR_SSL, TEST_ERR_PACK(ERR_LIB_SSL, SSL_R_CIPHER_OR_HASH_UNAVAILABLE), X509_V_OK),
+            grpc_core::TlsTelemetryHandshakeResult::CIPHER_SUITE_MISMATCH);
+
+  // Extra Protocol version cases
+  EXPECT_EQ(grpc_core::MapSslErrorToTlsTelemetryHandshakeResult(SSL_ERROR_SSL, TEST_ERR_PACK(ERR_LIB_SSL, SSL_R_UNKNOWN_PROTOCOL), X509_V_OK),
+            grpc_core::TlsTelemetryHandshakeResult::PROTOCOL_VERSION_UNSUPPORTED);
+  EXPECT_EQ(grpc_core::MapSslErrorToTlsTelemetryHandshakeResult(SSL_ERROR_SSL, TEST_ERR_PACK(ERR_LIB_SSL, SSL_R_UNKNOWN_SSL_VERSION), X509_V_OK),
+            grpc_core::TlsTelemetryHandshakeResult::PROTOCOL_VERSION_UNSUPPORTED);
+  EXPECT_EQ(grpc_core::MapSslErrorToTlsTelemetryHandshakeResult(SSL_ERROR_SSL, TEST_ERR_PACK(ERR_LIB_SSL, SSL_R_WRONG_SSL_VERSION), X509_V_OK),
+            grpc_core::TlsTelemetryHandshakeResult::PROTOCOL_VERSION_UNSUPPORTED);
+  EXPECT_EQ(grpc_core::MapSslErrorToTlsTelemetryHandshakeResult(SSL_ERROR_SSL, TEST_ERR_PACK(ERR_LIB_SSL, SSL_R_WRONG_VERSION_NUMBER), X509_V_OK),
+            grpc_core::TlsTelemetryHandshakeResult::PROTOCOL_VERSION_UNSUPPORTED);
+  EXPECT_EQ(grpc_core::MapSslErrorToTlsTelemetryHandshakeResult(SSL_ERROR_SSL, TEST_ERR_PACK(ERR_LIB_SSL, SSL_R_UNSUPPORTED_PROTOCOL_FOR_CUSTOM_KEY), X509_V_OK),
+            grpc_core::TlsTelemetryHandshakeResult::PROTOCOL_VERSION_UNSUPPORTED);
+  EXPECT_EQ(grpc_core::MapSslErrorToTlsTelemetryHandshakeResult(SSL_ERROR_SSL, TEST_ERR_PACK(ERR_LIB_SSL, SSL_R_WRONG_VERSION_ON_EARLY_DATA), X509_V_OK),
+            grpc_core::TlsTelemetryHandshakeResult::PROTOCOL_VERSION_UNSUPPORTED);
+  EXPECT_EQ(grpc_core::MapSslErrorToTlsTelemetryHandshakeResult(SSL_ERROR_SSL, TEST_ERR_PACK(ERR_LIB_SSL, SSL_R_NO_SUPPORTED_VERSIONS_ENABLED), X509_V_OK),
+            grpc_core::TlsTelemetryHandshakeResult::PROTOCOL_VERSION_UNSUPPORTED);
+  EXPECT_EQ(grpc_core::MapSslErrorToTlsTelemetryHandshakeResult(SSL_ERROR_SSL, TEST_ERR_PACK(ERR_LIB_SSL, SSL_R_SECOND_SERVERHELLO_VERSION_MISMATCH), X509_V_OK),
+            grpc_core::TlsTelemetryHandshakeResult::PROTOCOL_VERSION_UNSUPPORTED);
+
+  // Extra ALPN cases
+  EXPECT_EQ(grpc_core::MapSslErrorToTlsTelemetryHandshakeResult(SSL_ERROR_SSL, TEST_ERR_PACK(ERR_LIB_SSL, SSL_R_INVALID_ALPN_PROTOCOL), X509_V_OK),
+            grpc_core::TlsTelemetryHandshakeResult::NO_APPLICATION_PROTOCOL);
+  EXPECT_EQ(grpc_core::MapSslErrorToTlsTelemetryHandshakeResult(SSL_ERROR_SSL, TEST_ERR_PACK(ERR_LIB_SSL, SSL_R_INVALID_ALPN_PROTOCOL_LIST), X509_V_OK),
+            grpc_core::TlsTelemetryHandshakeResult::NO_APPLICATION_PROTOCOL);
+  EXPECT_EQ(grpc_core::MapSslErrorToTlsTelemetryHandshakeResult(SSL_ERROR_SSL, TEST_ERR_PACK(ERR_LIB_SSL, SSL_R_NEGOTIATED_BOTH_NPN_AND_ALPN), X509_V_OK),
+            grpc_core::TlsTelemetryHandshakeResult::NO_APPLICATION_PROTOCOL);
+  EXPECT_EQ(grpc_core::MapSslErrorToTlsTelemetryHandshakeResult(SSL_ERROR_SSL, TEST_ERR_PACK(ERR_LIB_SSL, SSL_R_ALPN_MISMATCH_ON_EARLY_DATA), X509_V_OK),
+            grpc_core::TlsTelemetryHandshakeResult::NO_APPLICATION_PROTOCOL);
+
+  // Extra Cryptographic signature and decryption cases
+  EXPECT_EQ(grpc_core::MapSslErrorToTlsTelemetryHandshakeResult(SSL_ERROR_SSL, TEST_ERR_PACK(ERR_LIB_SSL, SSL_R_WRONG_SIGNATURE_TYPE), X509_V_OK),
+            grpc_core::TlsTelemetryHandshakeResult::SIGNATURE_VERIFICATION_FAILED);
+  EXPECT_EQ(grpc_core::MapSslErrorToTlsTelemetryHandshakeResult(SSL_ERROR_SSL, TEST_ERR_PACK(ERR_LIB_SSL, SSL_R_DECRYPTION_FAILED_OR_BAD_RECORD_MAC), X509_V_OK),
+            grpc_core::TlsTelemetryHandshakeResult::DECRYPTION_FAILED);
+  EXPECT_EQ(grpc_core::MapSslErrorToTlsTelemetryHandshakeResult(SSL_ERROR_SSL, TEST_ERR_PACK(ERR_LIB_SSL, SSL_R_BLOCK_CIPHER_PAD_IS_WRONG), X509_V_OK),
+            grpc_core::TlsTelemetryHandshakeResult::DECRYPTION_FAILED);
+  EXPECT_EQ(grpc_core::MapSslErrorToTlsTelemetryHandshakeResult(SSL_ERROR_SSL, TEST_ERR_PACK(ERR_LIB_SSL, SSL_R_BAD_ECPOINT), X509_V_OK),
+            grpc_core::TlsTelemetryHandshakeResult::KEY_EXCHANGE_FAILURE);
+
+  // Extra Unexpected message cases
+  EXPECT_EQ(grpc_core::MapSslErrorToTlsTelemetryHandshakeResult(SSL_ERROR_SSL, TEST_ERR_PACK(ERR_LIB_SSL, SSL_R_UNEXPECTED_RECORD), X509_V_OK),
+            grpc_core::TlsTelemetryHandshakeResult::UNEXPECTED_MESSAGE);
+  EXPECT_EQ(grpc_core::MapSslErrorToTlsTelemetryHandshakeResult(SSL_ERROR_SSL, TEST_ERR_PACK(ERR_LIB_SSL, SSL_R_APP_DATA_IN_HANDSHAKE), X509_V_OK),
+            grpc_core::TlsTelemetryHandshakeResult::UNEXPECTED_MESSAGE);
+  EXPECT_EQ(grpc_core::MapSslErrorToTlsTelemetryHandshakeResult(SSL_ERROR_SSL, TEST_ERR_PACK(ERR_LIB_SSL, SSL_R_EXCESS_HANDSHAKE_DATA), X509_V_OK),
+            grpc_core::TlsTelemetryHandshakeResult::UNEXPECTED_MESSAGE);
+
+  // Extra Certificate required cases
+  EXPECT_EQ(grpc_core::MapSslErrorToTlsTelemetryHandshakeResult(SSL_ERROR_SSL, TEST_ERR_PACK(ERR_LIB_SSL, SSL_R_NO_CERTIFICATES_RETURNED), X509_V_OK),
+            grpc_core::TlsTelemetryHandshakeResult::PEER_CERTIFICATE_REQUIRED_BUT_MISSING);
+  EXPECT_EQ(grpc_core::MapSslErrorToTlsTelemetryHandshakeResult(SSL_ERROR_SSL, TEST_ERR_PACK(ERR_LIB_SSL, SSL_R_NO_CERTIFICATE_SET), X509_V_OK),
+            grpc_core::TlsTelemetryHandshakeResult::PEER_CERTIFICATE_REQUIRED_BUT_MISSING);
+  EXPECT_EQ(grpc_core::MapSslErrorToTlsTelemetryHandshakeResult(SSL_ERROR_SSL, TEST_ERR_PACK(ERR_LIB_SSL, SSL_R_NO_CERTIFICATE_ASSIGNED), X509_V_OK),
+            grpc_core::TlsTelemetryHandshakeResult::PEER_CERTIFICATE_REQUIRED_BUT_MISSING);
+  EXPECT_EQ(grpc_core::MapSslErrorToTlsTelemetryHandshakeResult(SSL_ERROR_SSL, TEST_ERR_PACK(ERR_LIB_SSL, SSL_R_SSLV3_ALERT_NO_CERTIFICATE), X509_V_OK),
+            grpc_core::TlsTelemetryHandshakeResult::PEER_CERTIFICATE_REQUIRED_BUT_MISSING);
+  EXPECT_EQ(grpc_core::MapSslErrorToTlsTelemetryHandshakeResult(SSL_ERROR_SSL, TEST_ERR_PACK(ERR_LIB_SSL, SSL_R_TLSV1_ALERT_CERTIFICATE_REQUIRED), X509_V_OK),
+            grpc_core::TlsTelemetryHandshakeResult::PEER_CERTIFICATE_REQUIRED_BUT_MISSING);
+  EXPECT_EQ(grpc_core::MapSslErrorToTlsTelemetryHandshakeResult(SSL_ERROR_SSL, TEST_ERR_PACK(ERR_LIB_SSL, SSL_R_DECODE_ERROR), X509_V_OK),
+            grpc_core::TlsTelemetryHandshakeResult::CERTIFICATE_MALFORMED);
+
+  // Extra Internal errors
+  EXPECT_EQ(grpc_core::MapSslErrorToTlsTelemetryHandshakeResult(SSL_ERROR_SSL, TEST_ERR_PACK(ERR_LIB_SSL, ERR_R_OVERFLOW), X509_V_OK),
+            grpc_core::TlsTelemetryHandshakeResult::INTERNAL_SYSTEM_ERROR);
+}
+
+#else  // !defined(OPENSSL_IS_BORINGSSL)
+
+// OpenSSL-specific reason code tests
+TEST(SslTelemetryUtilsTest, OpenSslSpecificMapSslErrorToTlsTelemetryHandshakeResultTest) {
+  // Extra OpenSSL-only cert missing cases
+  EXPECT_EQ(grpc_core::MapSslErrorToTlsTelemetryHandshakeResult(SSL_ERROR_SSL, TEST_ERR_PACK(ERR_LIB_SSL, SSL_R_NO_CERTIFICATES_RETURNED), X509_V_OK),
+            grpc_core::TlsTelemetryHandshakeResult::PEER_CERTIFICATE_REQUIRED_BUT_MISSING);
+  EXPECT_EQ(grpc_core::MapSslErrorToTlsTelemetryHandshakeResult(SSL_ERROR_SSL, TEST_ERR_PACK(ERR_LIB_SSL, SSL_R_NO_CERTIFICATE_SET), X509_V_OK),
+            grpc_core::TlsTelemetryHandshakeResult::PEER_CERTIFICATE_REQUIRED_BUT_MISSING);
+  EXPECT_EQ(grpc_core::MapSslErrorToTlsTelemetryHandshakeResult(SSL_ERROR_SSL, TEST_ERR_PACK(ERR_LIB_SSL, SSL_R_NO_CERTIFICATE_ASSIGNED), X509_V_OK),
+            grpc_core::TlsTelemetryHandshakeResult::PEER_CERTIFICATE_REQUIRED_BUT_MISSING);
+  EXPECT_EQ(grpc_core::MapSslErrorToTlsTelemetryHandshakeResult(SSL_ERROR_SSL, TEST_ERR_PACK(ERR_LIB_SSL, SSL_R_SSLV3_ALERT_NO_CERTIFICATE), X509_V_OK),
+            grpc_core::TlsTelemetryHandshakeResult::PEER_CERTIFICATE_REQUIRED_BUT_MISSING);
+}
+
+#endif  // OPENSSL_IS_BORINGSSL
 
 }  // namespace
 }  // namespace testing
