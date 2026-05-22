@@ -807,6 +807,77 @@ TEST_F(Http2ReadContextTest, PauseAndWake) {
                "SetPause Pause Wake _ . EndRead Wake EndWrite ");
 }
 
+TEST_F(Http2ReadContextTest, SetAndGetFrameHeader) {
+  // Purpose: Verify that SetCurrentFrameHeader stores header attributes
+  // correctly. Assertions: GetCurrentFrameHeader returns the exact frame header
+  // that was set.
+  Http2ReadContext context;
+  Http2FrameHeader header;
+  header.length = 100u;
+  header.type = 1u;
+  header.flags = 2u;
+  header.stream_id = 3u;
+
+  context.SetCurrentFrameHeader(header);
+  const Http2FrameHeader& retrieved_header = context.GetCurrentFrameHeader();
+  EXPECT_EQ(retrieved_header.length, 100u);
+  EXPECT_EQ(retrieved_header.type, 1u);
+  EXPECT_EQ(retrieved_header.flags, 2u);
+  EXPECT_EQ(retrieved_header.stream_id, 3u);
+}
+
+TEST_F(Http2ReadContextTest, ReadCycleFramesLimits) {
+  // Verify that MaybePauseReadLoop only pauses when frame limit is reached.
+  // Assertions: MaybePauseReadLoop does not pause under limit, but pauses at
+  // limit.
+  ExecCtx ctx;
+  const RefCountedPtr<Party> party = MakeParty();
+  bool was_pending_under_limit = false;
+  bool was_pending_at_limit = false;
+  Notification notification;
+
+  party->Spawn(
+      "TestFramesLimits",
+      [&was_pending_under_limit,
+       &was_pending_at_limit]() -> Poll<absl::Status> {
+        Http2ReadContext read_context;
+        const Http2FrameHeader header = {
+            0u,  // length
+            0u,  // type
+            0u,  // flags
+            1u   // stream_id
+        };
+
+        // Step 1: Set frames strictly under the limit.
+        for (uint32_t i = 0u; i < kMaxFramesReadPerReadCycle - 1u; ++i) {
+          read_context.SetCurrentFrameHeader(header);
+          // Step 2: Verify read loop does not pause under the limit.
+          const Poll<absl::Status> poll_under =
+              read_context.MaybePauseReadLoop();
+          if (poll_under.pending()) {
+            was_pending_under_limit = true;
+            read_context.ResumeReadLoopIfPaused();
+          }
+        }
+
+        // Step 3: Set one more frame to hit the limit.
+        read_context.SetCurrentFrameHeader(header);
+        // Step 4: Verify read loop pauses at the limit.
+        const Poll<absl::Status> poll_at = read_context.MaybePauseReadLoop();
+        if (poll_at.pending()) {
+          was_pending_at_limit = true;
+          read_context.ResumeReadLoopIfPaused();
+          EXPECT_TRUE(read_context.TestOnlyCheckCounters(0u, 0u, false));
+        }
+        return absl::OkStatus();
+      },
+      [&notification](absl::Status status) { notification.Notify(); });
+
+  notification.WaitForNotification();
+  EXPECT_FALSE(was_pending_under_limit);
+  EXPECT_TRUE(was_pending_at_limit);
+}
+
 TEST(Http2CommonTransportTest, TestTarpitDuration) {
   // Verify that TarpitDuration generates random values within bounds across
   // many runs.

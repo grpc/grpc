@@ -74,6 +74,8 @@ struct CloseStreamArgs {
 ///////////////////////////////////////////////////////////////////////////////
 // Read and Write helpers
 
+constexpr uint32_t kMaxFramesReadPerReadCycle = 16u * 1024u;  // 16K frames
+
 class Http2ReadContext {
  public:
   Http2ReadContext() = default;
@@ -81,6 +83,20 @@ class Http2ReadContext {
   Http2ReadContext& operator=(const Http2ReadContext&) = delete;
   Http2ReadContext(Http2ReadContext&&) = delete;
   Http2ReadContext& operator=(Http2ReadContext&&) = delete;
+
+  //////////////////////////////////////////////////////////////////////////////
+  // Current Frame Header management.
+
+  const Http2FrameHeader& GetCurrentFrameHeader() const {
+    return current_frame_header_;
+  }
+  void SetCurrentFrameHeader(const Http2FrameHeader& header) {
+    current_frame_header_ = header;
+    IncrementReadCycleCounters(header.length);
+  }
+
+  //////////////////////////////////////////////////////////////////////////////
+  // Read Loop Pause/Resume management.
 
   // Signals that the read loop should pause. If it's already paused, this is a
   // no-op.
@@ -93,7 +109,7 @@ class Http2ReadContext {
 
   // If SetPauseReadLoop() was called, this returns Pending and
   // registers a waker that will be woken by WakeReadLoop().
-  // If SetPauseReadLoop() was not called, this returns OkStatus.
+  // If the read loop does not need to be paused, this returns OkStatus.
   // This should be polled by the read loop to yield control when requested.
   Poll<absl::Status> MaybePauseReadLoop() {
     if (should_pause_read_loop_) {
@@ -103,16 +119,57 @@ class Http2ReadContext {
     return absl::OkStatus();
   }
 
-  // If SetPauseReadLoop() was called, resumes it by
-  // waking up the ReadLoop. If not paused, this is a no-op.
+  // If SetPauseReadLoop() was called, resumes ReadLoop by waking it up.
+  // This will cause a wakeup ONLY if the loop was paused because of
+  // MaybePauseReadLoop(). If the ReadLoop was paused due to other
+  // endpoint.Read(), this wakeup will not happen.
   void ResumeReadLoopIfPaused() {
+    ResetReadCycleCounters();
     if (should_pause_read_loop_) {
       should_pause_read_loop_ = false;
       read_loop_waker_.Wakeup();
     }
   }
 
+  bool TestOnlyCheckCounters(uint64_t expected_bytes_read,
+                             uint16_t expected_read_count,
+                             bool should_pause) const {
+    return current_cycle_read_count_ == expected_read_count &&
+           current_cycle_bytes_read_ == expected_bytes_read &&
+           should_pause_read_loop_ == should_pause;
+  }
+
  private:
+  //////////////////////////////////////////////////////////////////////////////
+  // Read Cycle Counter management.
+  void ResetReadCycleCounters() {
+    current_cycle_read_count_ = 0u;
+    current_cycle_bytes_read_ = 0u;
+  }
+  void IncrementReadCycleCounters(const uint32_t payload_length) {
+    current_cycle_bytes_read_ += kFrameHeaderSize + payload_length;
+    ++current_cycle_read_count_;
+    if (current_cycle_read_count_ >= kMaxFramesReadPerReadCycle) {
+      SetPauseReadLoop();
+      ResetReadCycleCounters();
+    }
+  }
+  // Counters to track total bytes and frames read per cycle.
+  // Checked against limits to pause the read loop when maxed out.
+  // This yields execution to prevent starvation of other transport tasks.
+  // As per RFC 9113, HTTP/2 frame sizes can vary significantly.
+  // Some frames are very large, while others are extremely small.
+  // We stall the read loop based only on current_cycle_read_count_.
+  // We measure current_cycle_bytes_read_ just for telemetry. We are not
+  // stalling the read loop based on the number of bytes read right now because
+  // we think that current_cycle_read_count_ would be sufficient for now.
+  uint64_t current_cycle_bytes_read_ = 0u;
+  uint16_t current_cycle_read_count_ = 0u;
+
+  //////////////////////////////////////////////////////////////////////////////
+  // Other data members.
+
+  Http2FrameHeader current_frame_header_ = {};
   bool should_pause_read_loop_ = false;
   Waker read_loop_waker_;
 };
@@ -199,7 +256,7 @@ void ProcessOutgoingDataFrameFlowControl(
     uint32_t flow_control_tokens_consumed);
 
 ValueOrHttp2Status<chttp2::FlowControlAction>
-ProcessIncomingDataFrameFlowControl(Http2FrameHeader& frame,
+ProcessIncomingDataFrameFlowControl(const Http2FrameHeader& frame,
                                     chttp2::TransportFlowControl& flow_control,
                                     Stream* stream);
 

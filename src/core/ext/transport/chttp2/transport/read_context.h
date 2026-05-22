@@ -139,6 +139,23 @@ class ReadContext {
     return (status.IsOk()) ? std::move(original_status) : std::move(status);
   }
 
+  Http2Status ValidateHeader(const uint32_t max_frame_size_setting,
+                             Http2FrameHeader& current_frame_header,
+                             const uint32_t last_stream_id,
+                             const bool is_first_settings_processed) {
+    GRPC_HTTP2_COMMON_DLOG << "ReadContext::ValidateFrameHeader "
+                           << current_frame_header.ToString();
+    return ValidateFrameHeader(
+        /*max_frame_size_setting=*/max_frame_size_setting,
+        /*incoming_header_in_progress=*/incoming_header_in_progress_,
+        /*incoming_header_stream_id=*/incoming_header_stream_id_,
+        /*current_frame_header=*/current_frame_header,
+        /*last_stream_id=*/last_stream_id,
+        /*is_client=*/is_client_,
+        /*is_first_settings_processed=*/is_first_settings_processed,
+        /*tracker=*/tracker_);
+  }
+
   //////////////////////////////////////////////////////////////////////////////
   // Writing Header and Continuation State
 

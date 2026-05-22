@@ -647,8 +647,6 @@ class Http2ClientTransport final : public ClientTransport,
   PromiseEndpoint endpoint_;
   RefCountedPtr<SettingsPromiseManager> settings_;
 
-  Http2FrameHeader current_frame_header_;
-
   Mutex transport_mutex_;
 
   absl::flat_hash_map<uint32_t, RefCountedPtr<Stream>> stream_list_

@@ -8635,6 +8635,7 @@ grpc_cc_library(
         "message",
         "message_assembler",
         "metadata",
+        "metadata_batch",
         "ref_counted",
         "stream_data_queue",
         "write_cycle",

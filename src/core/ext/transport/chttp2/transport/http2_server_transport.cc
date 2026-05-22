@@ -296,8 +296,8 @@ Http2Status Http2ServerTransport::ProcessIncomingFrame(Http2DataFrame&& frame) {
     // DATA frames with empty payload are legitimate frames. CHTTP2 and PH2 send
     // empty DATA frames with END_Stream flag set to true.
     ValueOrHttp2Status<chttp2::FlowControlAction> flow_control_action =
-        ProcessIncomingDataFrameFlowControl(current_frame_header_,
-                                            flow_control_, stream.get());
+        ProcessIncomingDataFrameFlowControl(
+            reader_state_.GetCurrentFrameHeader(), flow_control_, stream.get());
     if (!flow_control_action.IsOk()) {
       return ValueOrHttp2Status<chttp2::FlowControlAction>::TakeStatus(
           std::move(flow_control_action));
@@ -473,36 +473,29 @@ Http2Status Http2ServerTransport::ProcessIncomingFrame(
       << frame.ack << ", settings length=" << frame.settings.size() << "}";
 
   if (!frame.ack) {
-    Http2Status status = ValidateSettingsValues(frame.settings);
-    if (!status.IsOk()) {
-      return status;
+    Http2Status s = settings_->BufferPeerSettings(std::move(frame.settings));
+    if (!s.IsOk()) {
+      return s;
     }
-    settings_->BufferPeerSettings(std::move(frame.settings));
     absl::Status trigger_write_status = TriggerWriteCycle();
     if (!trigger_write_status.ok()) {
       return ToHttpOkOrConnError(trigger_write_status);
     }
-
     if (GPR_UNLIKELY(!settings_->IsFirstPeerSettingsApplied())) {
       // Apply the first settings before we read any other frames.
       // TODO(tjagtap) [PH2][P0][Write] Uncomment when write loop does wakeup
       // reader_state_.SetPauseReadLoop();
     }
   } else {
-    if (settings_->OnSettingsAckReceived()) {
-      incoming_headers_.SetMaxHeaderTableSize(
-          settings_->acked().header_table_size());
-      ActOnFlowControlAction(flow_control_.SetAckedInitialWindow(
-                                 settings_->acked().initial_window_size()),
-                             /*stream=*/nullptr);
-    } else {
-      // CHTTP2 and PH2 return connection error for an unsolicited SETTINGS ACK.
-      // RFC 9113 does not explicitly specify unsolicited ACK handling.
-      return Http2Status::Http2ConnectionError(
-          Http2ErrorCode::kInternalError,
-          std::string(GrpcErrors::kUnsolicitedSettingsAck));
-      LOG(ERROR) << "Settings ack received without sending settings. Ignore.";
+    Http2Status status = settings_->OnSettingsAckReceived();
+    if (!status.IsOk()) {
+      return status;
     }
+    incoming_headers_.SetMaxHeaderTableSize(
+        settings_->acked().header_table_size());
+    ActOnFlowControlAction(flow_control_.SetAckedInitialWindow(
+                               settings_->acked().initial_window_size()),
+                           /*stream=*/nullptr);
   }
 
   return Http2Status::Ok();
@@ -749,68 +742,64 @@ auto Http2ServerTransport::ReadAndProcessOneFrame() {
       EndpointReadSlice(kFrameHeaderSize),
       // Parse the frame header.
       [this](Slice header_bytes) {
-        GRPC_HTTP2_SERVER_DLOG
-            << "Http2ServerTransport::ReadAndProcessOneFrame Parse "
-            << header_bytes.as_string_view();
         Http2FrameHeader header = Http2FrameHeader::Parse(header_bytes.begin());
         // Validate the incoming frame as per the current state of the transport
-        Http2Status status = ValidateFrameHeader(
-            /*max_frame_size_setting*/ settings_->acked().max_frame_size(),
-            /*incoming_header_in_progress*/
-            incoming_headers_.IsWaitingForContinuationFrame(),
-            /*incoming_header_stream_id*/
-            incoming_headers_.GetStreamId(),
-            /*current_frame_header*/ header,
+        Http2Status status = incoming_headers_.ValidateHeader(
+            /*max_frame_size_setting=*/settings_->acked().max_frame_size(),
+            /*current_frame_header=*/header,
             // TODO(tjagtap) : [PH2][P0] : Fix
             /*last_stream_id=*//*GetLastStreamId()*/ 100,
-            /*is_client=*/kIsClient, /*is_first_settings_processed=*/
-            settings_->IsFirstPeerSettingsApplied(),
-            /*tracker=*/incoming_headers_.mutable_tracker());
+            /*is_first_settings_processed=*/
+            settings_->IsFirstPeerSettingsApplied());
 
         if (GPR_UNLIKELY(!status.IsOk())) {
           GRPC_DCHECK(status.GetType() ==
                       Http2Status::Http2ErrorType::kConnectionError);
           return HandleError(std::nullopt, std::move(status));
         }
-        GRPC_HTTP2_SERVER_DLOG
-            << "Http2ServerTransport::ReadAndProcessOneFrame "
-               "Validated Frame Header:"
-            << header.ToString();
-        current_frame_header_ = header;
+        reader_state_.SetCurrentFrameHeader(header);
         return absl::OkStatus();
       },
       // Read the payload of the frame.
       [this]() {
         GRPC_HTTP2_SERVER_DLOG
             << "Http2ServerTransport::ReadAndProcessOneFrame Read Frame ";
-        return AssertResultType<absl::Status>(Map(
-            EndpointRead(current_frame_header_.length),
-            [this](absl::StatusOr<SliceBuffer>&& payload) {
-              if (GPR_UNLIKELY(!payload.ok())) {
-                return payload.status();
-              }
-              GRPC_HTTP2_SERVER_DLOG
-                  << "Http2ServerTransport::ReadAndProcessOneFrame "
-                     "ParseFramePayload payload length: "
-                  << payload.value().Length();
-              ValueOrHttp2Status<Http2Frame> frame = ParseFramePayload(
-                  current_frame_header_, TakeValue(std::move(payload)));
-              if (GPR_UNLIKELY(!frame.IsOk())) {
-                return HandleError(current_frame_header_.stream_id,
-                                   ValueOrHttp2Status<Http2Frame>::TakeStatus(
-                                       std::move(frame)));
-              }
-              Http2Status status =
-                  ProcessOneIncomingFrame(TakeValue(std::move(frame)));
-              if (GPR_UNLIKELY(!status.IsOk())) {
-                return HandleError(current_frame_header_.stream_id,
-                                   std::move(status));
-              }
-              return absl::OkStatus();
-            }));
+        return AssertResultType<absl::Status>(
+            Map(EndpointRead(reader_state_.GetCurrentFrameHeader().length),
+                [this](absl::StatusOr<SliceBuffer>&& payload) {
+                  if (GPR_UNLIKELY(!payload.ok())) {
+                    return payload.status();
+                  }
+                  GRPC_HTTP2_SERVER_DLOG
+                      << "Http2ServerTransport::ReadAndProcessOneFrame "
+                         "ParseFramePayload payload length: "
+                      << payload.value().Length();
+                  ValueOrHttp2Status<Http2Frame> frame =
+                      ParseFramePayload(reader_state_.GetCurrentFrameHeader(),
+                                        TakeValue(std::move(payload)));
+                  if (GPR_UNLIKELY(!frame.IsOk())) {
+                    return HandleError(
+                        reader_state_.GetCurrentFrameHeader().stream_id,
+                        ValueOrHttp2Status<Http2Frame>::TakeStatus(
+                            std::move(frame)));
+                  }
+                  Http2Status status =
+                      ProcessOneIncomingFrame(TakeValue(std::move(frame)));
+                  if (GPR_UNLIKELY(!status.IsOk())) {
+                    return HandleError(
+                        reader_state_.GetCurrentFrameHeader().stream_id,
+                        std::move(status));
+                  }
+                  return absl::OkStatus();
+                }));
       },
       [this]() -> Poll<absl::Status> {
-        return reader_state_.MaybePauseReadLoop();
+        Poll<absl::Status> poll_result = reader_state_.MaybePauseReadLoop();
+        if (poll_result.pending()) {
+          TriggerWriteCycleOrHandleError();
+          return Pending{};
+        }
+        return poll_result;
       }));
 }
 
@@ -1993,7 +1982,6 @@ Http2ServerTransport::Http2ServerTransport(
           &memory_owner_),
       ztrace_collector_(std::make_shared<PromiseHttp2ZTraceCollector>()) {
   GRPC_HTTP2_SERVER_DLOG << "Http2ServerTransport Constructor Begin";
-  SourceConstructed();
 
   // Initialize the general party and write party.
   RefCountedPtr<Arena> party_arena = SimpleArenaAllocator(0)->MakeArena();
