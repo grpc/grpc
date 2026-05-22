@@ -682,32 +682,20 @@ auto Http2ClientTransport::ReadAndProcessOneFrame() {
       EndpointReadSlice(kFrameHeaderSize),
       // Parse the frame header.
       [this](Slice header_bytes) {
-        GRPC_HTTP2_CLIENT_DLOG
-            << "Http2ClientTransport::ReadAndProcessOneFrame Parse "
-            << header_bytes.as_string_view();
         Http2FrameHeader header = Http2FrameHeader::Parse(header_bytes.begin());
         // Validate the incoming frame as per the current state of the transport
-        Http2Status status = ValidateFrameHeader(
-            /*max_frame_size_setting*/ settings_->acked().max_frame_size(),
-            /*incoming_header_in_progress*/
-            incoming_headers_.IsWaitingForContinuationFrame(),
-            /*incoming_header_stream_id*/
-            incoming_headers_.GetStreamId(),
-            /*current_frame_header*/ header,
+        Http2Status status = incoming_headers_.ValidateHeader(
+            /*max_frame_size_setting=*/settings_->acked().max_frame_size(),
+            /*current_frame_header=*/header,
             /*last_stream_id=*/GetLastStreamId(),
-            /*is_client=*/kIsClient, /*is_first_settings_processed=*/
-            settings_->IsFirstPeerSettingsApplied(),
-            /*tracker=*/incoming_headers_.mutable_tracker());
+            /*is_first_settings_processed=*/
+            settings_->IsFirstPeerSettingsApplied());
 
         if (GPR_UNLIKELY(!status.IsOk())) {
           GRPC_DCHECK(status.GetType() ==
                       Http2Status::Http2ErrorType::kConnectionError);
           return HandleError(std::nullopt, std::move(status));
         }
-        GRPC_HTTP2_CLIENT_DLOG
-            << "Http2ClientTransport::ReadAndProcessOneFrame "
-               "Validated Frame Header:"
-            << header.ToString();
         reader_state_.SetCurrentFrameHeader(header);
         return absl::OkStatus();
       },
