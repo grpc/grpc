@@ -294,7 +294,10 @@ if EXTRA_ENV_LINK_ARGS is None:
         EXTRA_ENV_LINK_ARGS += " -static-libgcc"
         _version_script = os.path.join(
             os.path.dirname(os.path.abspath(__file__)),
-            "src", "python", "grpcio", "cygrpc_exports.lds",
+            "src",
+            "python",
+            "grpcio",
+            "cygrpc_exports.lds",
         )
         EXTRA_ENV_LINK_ARGS += " -Wl,--version-script=" + _version_script
 
