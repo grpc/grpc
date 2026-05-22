@@ -25,6 +25,12 @@
 
 #include "test/core/test_util/test_config.h"
 
+#if defined(OPENSSL_IS_BORINGSSL)
+#define TEST_ERR_PACK(lib, reason) ERR_PACK(lib, reason)
+#else
+#define TEST_ERR_PACK(lib, reason) ERR_PACK(lib, 0, reason)
+#endif
+
 namespace grpc_core {
 namespace testing {
 namespace {
@@ -68,47 +74,47 @@ TEST(SslTelemetryUtilsTest, MapSslErrorToTlsTelemetryHandshakeResultTest) {
 
   // Test SSL_ERROR_SSL reason code mappings
   // Cipher suite mismatch
-  EXPECT_EQ(grpc_core::MapSslErrorToTlsTelemetryHandshakeResult(SSL_ERROR_SSL, ERR_PACK(ERR_LIB_SSL, SSL_R_NO_CIPHER_MATCH), X509_V_OK),
+  EXPECT_EQ(grpc_core::MapSslErrorToTlsTelemetryHandshakeResult(SSL_ERROR_SSL, TEST_ERR_PACK(ERR_LIB_SSL, SSL_R_NO_CIPHER_MATCH), X509_V_OK),
             grpc_core::TlsTelemetryHandshakeResult::CIPHER_SUITE_MISMATCH);
   // Protocol version unsupported
-  EXPECT_EQ(grpc_core::MapSslErrorToTlsTelemetryHandshakeResult(SSL_ERROR_SSL, ERR_PACK(ERR_LIB_SSL, SSL_R_UNSUPPORTED_PROTOCOL), X509_V_OK),
+  EXPECT_EQ(grpc_core::MapSslErrorToTlsTelemetryHandshakeResult(SSL_ERROR_SSL, TEST_ERR_PACK(ERR_LIB_SSL, SSL_R_UNSUPPORTED_PROTOCOL), X509_V_OK),
             grpc_core::TlsTelemetryHandshakeResult::PROTOCOL_VERSION_UNSUPPORTED);
   // Inappropriate fallback
-  EXPECT_EQ(grpc_core::MapSslErrorToTlsTelemetryHandshakeResult(SSL_ERROR_SSL, ERR_PACK(ERR_LIB_SSL, SSL_R_INAPPROPRIATE_FALLBACK), X509_V_OK),
+  EXPECT_EQ(grpc_core::MapSslErrorToTlsTelemetryHandshakeResult(SSL_ERROR_SSL, TEST_ERR_PACK(ERR_LIB_SSL, SSL_R_INAPPROPRIATE_FALLBACK), X509_V_OK),
             grpc_core::TlsTelemetryHandshakeResult::INAPPROPRIATE_FALLBACK);
   // No application protocol
-  EXPECT_EQ(grpc_core::MapSslErrorToTlsTelemetryHandshakeResult(SSL_ERROR_SSL, ERR_PACK(ERR_LIB_SSL, SSL_R_NO_APPLICATION_PROTOCOL), X509_V_OK),
+  EXPECT_EQ(grpc_core::MapSslErrorToTlsTelemetryHandshakeResult(SSL_ERROR_SSL, TEST_ERR_PACK(ERR_LIB_SSL, SSL_R_NO_APPLICATION_PROTOCOL), X509_V_OK),
             grpc_core::TlsTelemetryHandshakeResult::NO_APPLICATION_PROTOCOL);
   // Signature verification failed
-  EXPECT_EQ(grpc_core::MapSslErrorToTlsTelemetryHandshakeResult(SSL_ERROR_SSL, ERR_PACK(ERR_LIB_SSL, SSL_R_BAD_SIGNATURE), X509_V_OK),
+  EXPECT_EQ(grpc_core::MapSslErrorToTlsTelemetryHandshakeResult(SSL_ERROR_SSL, TEST_ERR_PACK(ERR_LIB_SSL, SSL_R_BAD_SIGNATURE), X509_V_OK),
             grpc_core::TlsTelemetryHandshakeResult::SIGNATURE_VERIFICATION_FAILED);
   // Decryption failed
-  EXPECT_EQ(grpc_core::MapSslErrorToTlsTelemetryHandshakeResult(SSL_ERROR_SSL, ERR_PACK(ERR_LIB_SSL, SSL_R_DECRYPTION_FAILED), X509_V_OK),
+  EXPECT_EQ(grpc_core::MapSslErrorToTlsTelemetryHandshakeResult(SSL_ERROR_SSL, TEST_ERR_PACK(ERR_LIB_SSL, SSL_R_DECRYPTION_FAILED), X509_V_OK),
             grpc_core::TlsTelemetryHandshakeResult::DECRYPTION_FAILED);
   // Key exchange failure
-  EXPECT_EQ(grpc_core::MapSslErrorToTlsTelemetryHandshakeResult(SSL_ERROR_SSL, ERR_PACK(ERR_LIB_SSL, SSL_R_WRONG_CURVE), X509_V_OK),
+  EXPECT_EQ(grpc_core::MapSslErrorToTlsTelemetryHandshakeResult(SSL_ERROR_SSL, TEST_ERR_PACK(ERR_LIB_SSL, SSL_R_WRONG_CURVE), X509_V_OK),
             grpc_core::TlsTelemetryHandshakeResult::KEY_EXCHANGE_FAILURE);
   // Unexpected message
-  EXPECT_EQ(grpc_core::MapSslErrorToTlsTelemetryHandshakeResult(SSL_ERROR_SSL, ERR_PACK(ERR_LIB_SSL, SSL_R_UNEXPECTED_MESSAGE), X509_V_OK),
+  EXPECT_EQ(grpc_core::MapSslErrorToTlsTelemetryHandshakeResult(SSL_ERROR_SSL, TEST_ERR_PACK(ERR_LIB_SSL, SSL_R_UNEXPECTED_MESSAGE), X509_V_OK),
             grpc_core::TlsTelemetryHandshakeResult::UNEXPECTED_MESSAGE);
   // Handshake timeout
-  EXPECT_EQ(grpc_core::MapSslErrorToTlsTelemetryHandshakeResult(SSL_ERROR_SSL, ERR_PACK(ERR_LIB_SSL, SSL_R_READ_TIMEOUT_EXPIRED), X509_V_OK),
+  EXPECT_EQ(grpc_core::MapSslErrorToTlsTelemetryHandshakeResult(SSL_ERROR_SSL, TEST_ERR_PACK(ERR_LIB_SSL, SSL_R_READ_TIMEOUT_EXPIRED), X509_V_OK),
             grpc_core::TlsTelemetryHandshakeResult::HANDSHAKE_TIMEOUT);
   // Certificate verification failures delegation
-  EXPECT_EQ(grpc_core::MapSslErrorToTlsTelemetryHandshakeResult(SSL_ERROR_SSL, ERR_PACK(ERR_LIB_SSL, SSL_R_CERTIFICATE_VERIFY_FAILED), X509_V_ERR_CERT_REVOKED),
+  EXPECT_EQ(grpc_core::MapSslErrorToTlsTelemetryHandshakeResult(SSL_ERROR_SSL, TEST_ERR_PACK(ERR_LIB_SSL, SSL_R_CERTIFICATE_VERIFY_FAILED), X509_V_ERR_CERT_REVOKED),
             grpc_core::TlsTelemetryHandshakeResult::CERTIFICATE_REVOKED);
-  EXPECT_EQ(grpc_core::MapSslErrorToTlsTelemetryHandshakeResult(SSL_ERROR_SSL, ERR_PACK(ERR_LIB_SSL, SSL_R_CERTIFICATE_VERIFY_FAILED), X509_V_OK),
+  EXPECT_EQ(grpc_core::MapSslErrorToTlsTelemetryHandshakeResult(SSL_ERROR_SSL, TEST_ERR_PACK(ERR_LIB_SSL, SSL_R_CERTIFICATE_VERIFY_FAILED), X509_V_OK),
             grpc_core::TlsTelemetryHandshakeResult::CERTIFICATE_VERIFICATION_FAILED);
   // Client certificate required but missing
-  EXPECT_EQ(grpc_core::MapSslErrorToTlsTelemetryHandshakeResult(SSL_ERROR_SSL, ERR_PACK(ERR_LIB_SSL, SSL_R_PEER_DID_NOT_RETURN_A_CERTIFICATE), X509_V_OK),
+  EXPECT_EQ(grpc_core::MapSslErrorToTlsTelemetryHandshakeResult(SSL_ERROR_SSL, TEST_ERR_PACK(ERR_LIB_SSL, SSL_R_PEER_DID_NOT_RETURN_A_CERTIFICATE), X509_V_OK),
             grpc_core::TlsTelemetryHandshakeResult::PEER_CERTIFICATE_REQUIRED_BUT_MISSING);
   // Internal system errors
-  EXPECT_EQ(grpc_core::MapSslErrorToTlsTelemetryHandshakeResult(SSL_ERROR_SSL, ERR_PACK(ERR_LIB_SSL, ERR_R_MALLOC_FAILURE), X509_V_OK),
+  EXPECT_EQ(grpc_core::MapSslErrorToTlsTelemetryHandshakeResult(SSL_ERROR_SSL, TEST_ERR_PACK(ERR_LIB_SSL, ERR_R_MALLOC_FAILURE), X509_V_OK),
             grpc_core::TlsTelemetryHandshakeResult::INTERNAL_SYSTEM_ERROR);
-  EXPECT_EQ(grpc_core::MapSslErrorToTlsTelemetryHandshakeResult(SSL_ERROR_SSL, ERR_PACK(ERR_LIB_SSL, ERR_R_INTERNAL_ERROR), X509_V_OK),
+  EXPECT_EQ(grpc_core::MapSslErrorToTlsTelemetryHandshakeResult(SSL_ERROR_SSL, TEST_ERR_PACK(ERR_LIB_SSL, ERR_R_INTERNAL_ERROR), X509_V_OK),
             grpc_core::TlsTelemetryHandshakeResult::INTERNAL_SYSTEM_ERROR);
   // Unknown / generic SSL error
-  EXPECT_EQ(grpc_core::MapSslErrorToTlsTelemetryHandshakeResult(SSL_ERROR_SSL, ERR_PACK(ERR_LIB_SSL, 9999), X509_V_OK),
+  EXPECT_EQ(grpc_core::MapSslErrorToTlsTelemetryHandshakeResult(SSL_ERROR_SSL, TEST_ERR_PACK(ERR_LIB_SSL, 9999), X509_V_OK),
             grpc_core::TlsTelemetryHandshakeResult::UNKNOWN_FAILURE);
 }
 
