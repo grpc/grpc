@@ -469,9 +469,14 @@ class Channel(_base_channel.Channel):
         self,
         last_observed_state: grpc.ChannelConnectivity,
     ) -> None:
-        assert await self._channel.watch_connectivity_state(
+        # The await expression must not be placed directly inside the assert
+        # statement because assert statements are optimized out under python -O,
+        # which would skip awaiting watch_connectivity_state and cause a 100% CPU loop.
+        # See https://github.com/grpc/grpc/issues/42393 for context.
+        resolved = await self._channel.watch_connectivity_state(
             last_observed_state.value[0], None
         )
+        assert resolved
 
     async def channel_ready(self) -> None:
         state = self.get_state(try_to_connect=True)
