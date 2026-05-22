@@ -21,6 +21,10 @@
 #include <grpcpp/server.h>
 #include <grpcpp/support/server_callback.h>
 
+#include <cstdint>
+#include <memory>
+#include <utility>
+
 #include "src/core/call/server_call.h"
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/lib/iomgr/event_engine_shims/endpoint.h"
@@ -62,6 +66,23 @@ void BindSessionToInnerServer(grpc_call* call, grpc::Server* inner_server,
 
   // Disable keepalive to avoid sending keepalive pings on the inner transport.
   args = args.Set(GRPC_ARG_KEEPALIVE_TIME_MS, std::numeric_limits<int>::max());
+
+  // Add the session call arena to channel args to propagate to child calls.
+  // The server will extract this and add it to the virtual call's arena.
+  grpc_core::Arena* parent_arena = grpc_call_get_arena(call);
+  static const grpc_arg_pointer_vtable vtable = {
+      // copy
+      [](void* p) -> void* {
+        return static_cast<grpc_core::Arena*>(p)->Ref().release();
+      },
+      // destroy
+      [](void* p) { static_cast<grpc_core::Arena*>(p)->Unref(); },
+      // cmp
+      [](void* p1, void* p2) { return grpc_core::QsortCompare(p1, p2); },
+  };
+  args = args.Set(
+      GRPC_ARG_SERVER_INTERNAL_PARENT_CALL_ARENA,
+      grpc_core::ChannelArgs::Pointer(parent_arena->Ref().release(), &vtable));
 
   // Create old-style CHTTP2 Transport
   grpc_core::Transport* transport_ptr = grpc_create_chttp2_transport(
