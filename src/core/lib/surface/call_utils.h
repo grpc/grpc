@@ -584,6 +584,87 @@ class MessageReceiver {
       GRPC_COMPRESS_NONE;
 };
 
+// Tracks and validates the state of operations on a call to ensure invariants.
+//
+// Invariants validated:
+// 1. Intra-batch duplicates: A single batch cannot contain multiple operations
+//    of the same type.
+// 2. Once-only operations: Operations like sending initial metadata or closing
+//    the call can only be performed once.
+// 3. Concurrent operations: Operations like sending or receiving messages
+//    cannot run concurrently (i.e., a new one cannot start until the previous
+//    one completes).
+//
+// This class is thread-safe.
+class CallOpInvariantsValidator {
+ public:
+  CallOpInvariantsValidator() : ops_state_(0) {}
+
+  // Validates a batch of operations against the current call state and commits
+  // them if valid.
+  //
+  // Returns GRPC_CALL_OK if the batch is valid and its operations are
+  // successfully committed to the active state.
+  // Returns GRPC_CALL_ERROR_TOO_MANY_OPERATIONS if:
+  // - The batch contains duplicate operations of the same type.
+  // - Any operation in the batch conflicts with the current state (either
+  //   because a once-only operation has already been performed, or a
+  //   concurrent operation is already active).
+  grpc_call_error ValidateAndCommit(const grpc_op* ops, size_t nops);
+
+  // Resets the state of a concurrent operation, marking it as no longer active.
+  // This allows subsequent operations of the same type to be validated and
+  // committed. Should be called when the operation completes.
+  void ResetConcurrentOp(grpc_op_type op);
+
+ private:
+  static constexpr uint8_t kOnceOpsMask =
+      (1 << GRPC_OP_SEND_INITIAL_METADATA) |
+      (1 << GRPC_OP_SEND_CLOSE_FROM_CLIENT) |
+      (1 << GRPC_OP_SEND_STATUS_FROM_SERVER) |
+      (1 << GRPC_OP_RECV_INITIAL_METADATA) |
+      (1 << GRPC_OP_RECV_STATUS_ON_CLIENT) |
+      (1 << GRPC_OP_RECV_CLOSE_ON_SERVER);
+
+  static constexpr uint8_t kConcurrentOpsMask =
+      (1 << GRPC_OP_SEND_MESSAGE) | (1 << GRPC_OP_RECV_MESSAGE);
+
+  static constexpr uint8_t OpBit(const grpc_op_type op) { return 1 << op; }
+
+  std::atomic<uint8_t> ops_state_;
+};
+
+// RAII guard for concurrent operations.
+//
+// Ensures that `CallOpInvariantsValidator::ResetConcurrentOp` is called when
+// the guard goes out of scope, marking the operation as no longer active.
+//
+// Typically used to manage the lifecycle of concurrent operations like
+// GRPC_OP_SEND_MESSAGE and GRPC_OP_RECV_MESSAGE.
+class ConcurrentOpGuard {
+ public:
+  ConcurrentOpGuard(CallOpInvariantsValidator* validator, grpc_op_type op)
+      : validator_(validator), op_(op) {}
+
+  ~ConcurrentOpGuard() {
+    if (IsCallv3BatchValidationEnabled() && validator_ != nullptr) {
+      validator_->ResetConcurrentOp(op_);
+    }
+  }
+
+  // ConcurrentOpGuard is only move constructible but not copyable.
+  ConcurrentOpGuard(ConcurrentOpGuard&& other) noexcept
+      : validator_(std::exchange(other.validator_, nullptr)), op_(other.op_) {}
+
+  ConcurrentOpGuard(const ConcurrentOpGuard&) = delete;
+  ConcurrentOpGuard& operator=(const ConcurrentOpGuard&) = delete;
+  ConcurrentOpGuard& operator=(ConcurrentOpGuard&& other) = delete;
+
+ private:
+  CallOpInvariantsValidator* validator_ = nullptr;
+  const grpc_op_type op_;
+};
+
 std::string MakeErrorString(const ServerMetadata* trailing_metadata);
 
 }  // namespace grpc_core

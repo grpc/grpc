@@ -178,6 +178,7 @@ class ClientCall final
   // otherwise the server trailing metadata from started_call_initiator_ is
   // authoritative.
   SingleSetPtr<absl::Status> cancel_status_;
+  CallOpInvariantsValidator call_op_invariants_validator_;
   MessageReceiver message_receiver_;
   grpc_completion_queue* const cq_;
   const RefCountedPtr<UnstartedCallDestination> call_destination_;

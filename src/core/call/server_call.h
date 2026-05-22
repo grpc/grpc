@@ -162,6 +162,7 @@ class ServerCall final : public Call, public DualRefCounted<ServerCall> {
   std::string DebugTag() { return absl::StrFormat("SERVER_CALL[%p]: ", this); }
 
   CallHandler call_handler_;
+  CallOpInvariantsValidator call_op_invariants_validator_;
   std::atomic<bool> sent_server_initial_metadata_batch_{false};
   Latch<void> server_initial_metadata_scheduled_;
   MessageReceiver message_receiver_;
