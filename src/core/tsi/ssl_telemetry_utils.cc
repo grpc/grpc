@@ -275,8 +275,10 @@ TlsTelemetryHandshakeResult MapSslErrorToTlsTelemetryHandshakeResult(
         return TlsTelemetryHandshakeResult::INAPPROPRIATE_FALLBACK;
 
       // No application protocol
+#ifdef SSL_R_NO_APPLICATION_PROTOCOL
       case SSL_R_NO_APPLICATION_PROTOCOL:
         return TlsTelemetryHandshakeResult::NO_APPLICATION_PROTOCOL;
+#endif
 
       // Cryptographic failures: Signature verification failed
       case SSL_R_BAD_SIGNATURE:

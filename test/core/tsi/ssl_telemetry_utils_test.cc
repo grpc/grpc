@@ -108,11 +108,13 @@ TEST(SslTelemetryUtilsTest,
           TEST_ERR_PACK(ERR_LIB_SSL, SSL_R_INAPPROPRIATE_FALLBACK), X509_V_OK),
       TlsTelemetryHandshakeResult::INAPPROPRIATE_FALLBACK);
   // No application protocol
+#ifdef SSL_R_NO_APPLICATION_PROTOCOL
   EXPECT_EQ(
       MapSslErrorToTlsTelemetryHandshakeResult(
           SSL_ERROR_SSL,
           TEST_ERR_PACK(ERR_LIB_SSL, SSL_R_NO_APPLICATION_PROTOCOL), X509_V_OK),
       TlsTelemetryHandshakeResult::NO_APPLICATION_PROTOCOL);
+#endif
   // Signature verification failed
   EXPECT_EQ(MapSslErrorToTlsTelemetryHandshakeResult(
                 SSL_ERROR_SSL, TEST_ERR_PACK(ERR_LIB_SSL, SSL_R_BAD_SIGNATURE),
