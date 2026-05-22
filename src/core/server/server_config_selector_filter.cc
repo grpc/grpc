@@ -58,8 +58,8 @@ class LegacyServerConfigSelectorFilter final
     return "server_config_selector_filter";
   }
 
-  LegacyServerConfigSelectorFilter(
-      const LegacyServerConfigSelectorFilter&) = delete;
+  LegacyServerConfigSelectorFilter(const LegacyServerConfigSelectorFilter&) =
+      delete;
   LegacyServerConfigSelectorFilter& operator=(
       const LegacyServerConfigSelectorFilter&) = delete;
 
@@ -110,7 +110,7 @@ class LegacyServerConfigSelectorFilter final
 
 absl::StatusOr<OrphanablePtr<LegacyServerConfigSelectorFilter>>
 LegacyServerConfigSelectorFilter::Create(const ChannelArgs& args,
-                                   ChannelFilter::Args) {
+                                         ChannelFilter::Args) {
   ServerConfigSelectorProvider* server_config_selector_provider =
       args.GetObject<ServerConfigSelectorProvider>();
   if (server_config_selector_provider == nullptr) {
@@ -197,8 +197,8 @@ class ServerConfigSelectorFilter final
   explicit ServerConfigSelectorFilter(
       RefCountedPtr<ServerConfigSelectorProvider>
           server_config_selector_provider)
-    : server_config_selector_provider_(
-          std::move(server_config_selector_provider)) {}
+      : server_config_selector_provider_(
+            std::move(server_config_selector_provider)) {}
 
   ServerConfigSelectorFilter(const ServerConfigSelectorFilter&) = delete;
   ServerConfigSelectorFilter& operator=(const ServerConfigSelectorFilter&) =
