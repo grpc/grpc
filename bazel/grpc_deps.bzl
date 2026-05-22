@@ -62,10 +62,10 @@ def grpc_deps():
         http_archive(
             # v34.2
             name = "com_google_protobuf",
-            strip_prefix = "protobuf-b2f8f21c9a7b2bcd0cb26d92c459b7f2c30cd635",
+            strip_prefix = "protobuf-34a6cc00b0fa88dce9e41be106bf487da58ecb88",
             urls = [
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/protocolbuffers/protobuf/archive/b2f8f21c9a7b2bcd0cb26d92c459b7f2c30cd635.tar.gz",
-                "https://github.com/protocolbuffers/protobuf/archive/b2f8f21c9a7b2bcd0cb26d92c459b7f2c30cd635.tar.gz",
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/protocolbuffers/protobuf/archive/34a6cc00b0fa88dce9e41be106bf487da58ecb88.tar.gz",
+                "https://github.com/protocolbuffers/protobuf/archive/34a6cc00b0fa88dce9e41be106bf487da58ecb88.tar.gz",
             ],
             patches = [
                 "@com_github_grpc_grpc//third_party:protobuf.patch",

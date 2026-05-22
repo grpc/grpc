@@ -55,20 +55,17 @@ bazel_dep(name = "opentelemetry-cpp", version = "1.19.0", repo_name = "io_opente
 # TODO(weizheyuan): Protobuf 34.2 isn't released on BCR yet so we use
 # commit hash instead.
 bazel_dep(name = "protobuf", version = "34.1", repo_name = "com_google_protobuf")
-
 archive_override(
     module_name = "protobuf",
-    integrity = "sha256-PwXyAzMp+9fsrcTjnXjOos8mtH3gRkCe+bop9hAIO+U=",
-    # Commit hash is v34.2
-    strip_prefix = "protobuf-b2f8f21c9a7b2bcd0cb26d92c459b7f2c30cd635",
-    urls = [
-        "https://storage.googleapis.com/grpc-bazel-mirror/github.com/protocolbuffers/protobuf/archive/b2f8f21c9a7b2bcd0cb26d92c459b7f2c30cd635.tar.gz",
-        "https://github.com/protocolbuffers/protobuf/archive/b2f8f21c9a7b2bcd0cb26d92c459b7f2c30cd635.tar.gz",
-    ],
+    integrity = "sha256-TGSPJfcDsb/9JHWL7V/MzkhwDN98VrV1/oJU2Yzswrk=",
     patch_strip = 1,
     patches = [
         "//bazel:protobuf/fix_name_conflict.patch",
-        "//bazel:protobuf/fix_msvc_crash.patch",
+    ],
+    strip_prefix = "protobuf-34a6cc00b0fa88dce9e41be106bf487da58ecb88",
+    urls = [
+        "https://storage.googleapis.com/grpc-bazel-mirror/github.com/protocolbuffers/protobuf/archive/34a6cc00b0fa88dce9e41be106bf487da58ecb88.tar.gz",
+        "https://github.com/protocolbuffers/protobuf/archive/34a6cc00b0fa88dce9e41be106bf487da58ecb88.tar.gz",
     ],
 )
 
