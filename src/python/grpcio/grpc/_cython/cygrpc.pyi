@@ -12,10 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-class CompressionAlgorithm:
-    none: int
-    deflate: int
-    gzip: int
+from typing import Any
 
-GRPC_COMPRESSION_REQUEST_ALGORITHM_MD_KEY: str
-GRPC_COMPRESSION_CHANNEL_DEFAULT_ALGORITHM: str
+def __getattr__(name: str) -> Any: ...
