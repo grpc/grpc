@@ -311,7 +311,7 @@ void ProcessOutgoingDataFrameFlowControl(
 }
 
 ValueOrHttp2Status<chttp2::FlowControlAction>
-ProcessIncomingDataFrameFlowControl(Http2FrameHeader& frame_header,
+ProcessIncomingDataFrameFlowControl(const Http2FrameHeader& frame_header,
                                     chttp2::TransportFlowControl& flow_control,
                                     Stream* stream) {
   GRPC_DCHECK_EQ(frame_header.type, 0u);
