@@ -399,7 +399,8 @@ class XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
   }
 
   absl::StatusOr<RefCountedPtr<ServerConfigSelector>> Watch(
-      std::unique_ptr<ServerConfigSelectorWatcher> watcher) override {
+      std::unique_ptr<ServerConfigSelectorProvider::ServerConfigSelectorWatcher>
+          watcher) override {
     GRPC_CHECK(watcher_ == nullptr);
     watcher_ = std::move(watcher);
     if (!static_resource_.ok()) {
@@ -452,7 +453,8 @@ class XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
   }
 
   absl::StatusOr<RefCountedPtr<ServerConfigSelector>> Watch(
-      std::unique_ptr<ServerConfigSelectorWatcher> watcher) override;
+      std::unique_ptr<ServerConfigSelectorProvider::ServerConfigSelectorWatcher>
+          watcher) override;
   void CancelWatch() override;
 
   // Not used.
@@ -1248,7 +1250,9 @@ void XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
 absl::StatusOr<RefCountedPtr<ServerConfigSelector>>
 XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
     DynamicXdsServerConfigSelectorProvider::Watch(
-        std::unique_ptr<ServerConfigSelectorWatcher> watcher) {
+        std::unique_ptr<
+            ServerConfigSelectorProvider::ServerConfigSelectorWatcher>
+            watcher) {
   absl::StatusOr<std::shared_ptr<const XdsRouteConfigResource>> resource;
   {
     MutexLock lock(&mu_);
