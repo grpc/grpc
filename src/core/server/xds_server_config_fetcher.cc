@@ -279,7 +279,10 @@ class XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
       // Always called within WorkSerializer, but the compiler can't tell.
       ABSL_NO_THREAD_SAFETY_ANALYSIS;
 
-  bool HasRouteConfig() const { return config_selector_provider_ != nullptr; }
+  bool HasRouteConfig() const
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(*FetcherState::work_serializer) {
+    return config_selector_provider_ != nullptr;
+  }
 
   absl::StatusOr<ChannelArgs> UpdateChannelArgsForConnection(
       const ChannelArgs& args) const;
@@ -318,10 +321,15 @@ class XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
   RouteConfigWatcher* watcher_ = nullptr;
 
   // Will be null until we get the initial RouteConfiguration.
-  // No need for synchronization, because this will always be set before
-  // we start being used for incoming connections.
-  // FIXME: maybe use lock annotation anyway?
-  RefCountedPtr<XdsServerConfigSelectorProvider> config_selector_provider_;
+  //
+  // The lock annotation here is a little misleading: this is actually
+  // set only once inside of the WorkSerializer, but after that it gets
+  // accessed from outside of the WorkSerializer.  We use the lock
+  // annotation just to make sure we don't accidentally modify this
+  // field anywhere else in the future, and we inhibit the lock
+  // annotation for the known-safe read from outside of the WorkSerializer.
+  RefCountedPtr<XdsServerConfigSelectorProvider> config_selector_provider_
+      ABSL_GUARDED_BY(*FetcherState::work_serializer);
 };
 
 // An implementation of ServerConfigSelector that stores parsed xDS filter
@@ -611,7 +619,8 @@ void XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::Start() {
   // Create L4FilterChain object for each L4 filter chain.
   bool ready = true;
   ForEachFilterChain(
-      [&](const XdsListenerResource::FilterChainData& filter_chain_data) {
+      [&](const XdsListenerResource::FilterChainData& filter_chain_data)
+          ABSL_EXCLUSIVE_LOCKS_REQUIRED(*FetcherState::work_serializer) {
         auto l4_filter_chain = MakeOrphanable<L4FilterChain>(
             fetcher_state_.Ref(DEBUG_LOCATION, "L4FilterChain"),
             WeakRefAsSubclass<FilterChainMatchManager>(), filter_chain_data);
@@ -1106,7 +1115,11 @@ absl::StatusOr<ChannelArgs> XdsServerConfigFetcher::ListenerWatcher::
   new_args = new_args.SetObject(
       MakeRefCounted<XdsChannelStackModifier>(std::move(filters)));
   // TODO(roth): Don't add ConfigSelectorProvider if there are no filters.
-  new_args = new_args.SetObject(config_selector_provider_);
+  new_args = new_args.SetObject(
+      // This is the only place where the provider is accessed from outside
+      // of the WorkSerializer, and it will always be set before this
+      // happens, so this read is safe even though the compiler can't tell.
+      ABSL_TS_UNCHECKED_READ(config_selector_provider_));
   return new_args;
 }
 
