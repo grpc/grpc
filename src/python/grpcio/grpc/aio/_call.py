@@ -665,7 +665,7 @@ class UnaryStreamCall(
 # pylint: disable=too-many-ancestors
 class StreamUnaryCall(
     _StreamRequestMixin[RequestType],
-    _UnaryResponseMixin,
+    _UnaryResponseMixin[ResponseType],
     Call,
     _base_call.StreamUnaryCall[RequestType, ResponseType],
 ):
