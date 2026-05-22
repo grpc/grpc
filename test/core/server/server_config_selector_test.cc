@@ -32,15 +32,11 @@ namespace {
 class TestServerConfigSelectorProvider : public ServerConfigSelectorProvider {
  public:
   absl::StatusOr<RefCountedPtr<ServerConfigSelector>> Watch(
-      std::unique_ptr<ServerConfigSelectorWatcher> /*watcher*/) override {
+      std::shared_ptr<ServerConfigSelectorWatcher> /*watcher*/) override {
     return absl::UnavailableError("Test ServerConfigSelector");
   }
-  void CancelWatch() override {}
-
-  ArenaPromise<absl::StatusOr<RefCountedPtr<ServerConfigSelector>>>
-  GetConfigSelector() override {
-    return []() { return Pending{}; };
-  }
+  void CancelWatch(
+      std::shared_ptr<ServerConfigSelectorWatcher> /*watcher*/) override {}
 
   void Orphaned() override {}
 };
