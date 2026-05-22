@@ -58,9 +58,10 @@ class LegacyServerConfigSelectorFilter final
     return "server_config_selector_filter";
   }
 
-  LegacyServerConfigSelectorFilter(const LegacyServerConfigSelectorFilter&) = delete;
-  LegacyServerConfigSelectorFilter& operator=(const LegacyServerConfigSelectorFilter&) =
+  LegacyServerConfigSelectorFilter(const LegacyServerConfigSelectorFilter&) =
       delete;
+  LegacyServerConfigSelectorFilter& operator=(
+      const LegacyServerConfigSelectorFilter&) = delete;
 
   static absl::StatusOr<OrphanablePtr<LegacyServerConfigSelectorFilter>> Create(
       const ChannelArgs& args, ChannelFilter::Args);
@@ -69,8 +70,8 @@ class LegacyServerConfigSelectorFilter final
 
   class Call {
    public:
-    absl::Status OnClientInitialMetadata(ClientMetadata& md,
-                                         LegacyServerConfigSelectorFilter* filter);
+    absl::Status OnClientInitialMetadata(
+        ClientMetadata& md, LegacyServerConfigSelectorFilter* filter);
     static inline const NoInterceptor OnServerInitialMetadata;
     static inline const NoInterceptor OnServerTrailingMetadata;
     static inline const NoInterceptor OnClientToServerMessage;
@@ -109,7 +110,7 @@ class LegacyServerConfigSelectorFilter final
 
 absl::StatusOr<OrphanablePtr<LegacyServerConfigSelectorFilter>>
 LegacyServerConfigSelectorFilter::Create(const ChannelArgs& args,
-                                   ChannelFilter::Args) {
+                                         ChannelFilter::Args) {
   ServerConfigSelectorProvider* server_config_selector_provider =
       args.GetObject<ServerConfigSelectorProvider>();
   if (server_config_selector_provider == nullptr) {
