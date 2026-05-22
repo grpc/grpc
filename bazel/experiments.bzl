@@ -77,6 +77,7 @@ EXPERIMENT_ENABLES = {
     "unconstrained_max_quota_buffer_size": "unconstrained_max_quota_buffer_size",
     "use_call_event_engine_in_completion_queue": "use_call_event_engine_in_completion_queue",
     "wildcard_ip_expansion_restriction": "wildcard_ip_expansion_restriction",
+    "xds_server_filter_chain_per_route": "xds_server_filter_chain_per_route",
 }
 
 EXPERIMENT_POLLERS = [
@@ -210,6 +211,12 @@ EXPERIMENTS = {
             ],
             "secure_endpoint_test": [
                 "pipelined_read_secure_endpoint",
+            ],
+            "xds_end2end_test": [
+                "xds_server_filter_chain_per_route",
+            ],
+            "xds_test": [
+                "xds_server_filter_chain_per_route",
             ],
         },
         "on": {
