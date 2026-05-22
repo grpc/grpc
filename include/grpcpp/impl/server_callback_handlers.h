@@ -136,7 +136,7 @@ class CallbackUnaryHandler : public grpc::internal::MethodHandler {
         if (ctx_->compression_level_set()) {
           finish_ops_.set_compression_level(ctx_->compression_level());
         }
-        ctx_->sent_initial_metadata_ = true;
+        ctx_->MarkInitialMetadataSent();
       }
       // The response is dropped if the status is not OK.
       if (s.ok()) {
@@ -172,7 +172,7 @@ class CallbackUnaryHandler : public grpc::internal::MethodHandler {
       if (ctx_->compression_level_set()) {
         meta_ops_.set_compression_level(ctx_->compression_level());
       }
-      ctx_->sent_initial_metadata_ = true;
+      ctx_->MarkInitialMetadataSent();
       meta_ops_.set_core_cq_tag(&meta_tag_);
       meta_ops_.FillOps(&call_);
     }
@@ -325,7 +325,7 @@ class CallbackClientStreamingHandler : public grpc::internal::MethodHandler {
         if (ctx_->compression_level_set()) {
           finish_ops_.set_compression_level(ctx_->compression_level());
         }
-        ctx_->sent_initial_metadata_ = true;
+        ctx_->MarkInitialMetadataSent();
       }
       // The response is dropped if the status is not OK.
       if (s.ok()) {
@@ -359,7 +359,7 @@ class CallbackClientStreamingHandler : public grpc::internal::MethodHandler {
       if (ctx_->compression_level_set()) {
         meta_ops_.set_compression_level(ctx_->compression_level());
       }
-      ctx_->sent_initial_metadata_ = true;
+      ctx_->MarkInitialMetadataSent();
       meta_ops_.set_core_cq_tag(&meta_tag_);
       meta_ops_.FillOps(&call_);
     }
@@ -536,7 +536,7 @@ class CallbackServerStreamingHandler : public grpc::internal::MethodHandler {
         if (ctx_->compression_level_set()) {
           finish_ops_.set_compression_level(ctx_->compression_level());
         }
-        ctx_->sent_initial_metadata_ = true;
+        ctx_->MarkInitialMetadataSent();
       }
       finish_ops_.ServerSendStatus(&ctx_->trailing_metadata_, s);
       finish_ops_.FillOps(&call_);
@@ -562,7 +562,7 @@ class CallbackServerStreamingHandler : public grpc::internal::MethodHandler {
       if (ctx_->compression_level_set()) {
         meta_ops_.set_compression_level(ctx_->compression_level());
       }
-      ctx_->sent_initial_metadata_ = true;
+      ctx_->MarkInitialMetadataSent();
       meta_ops_.set_core_cq_tag(&meta_tag_);
       meta_ops_.FillOps(&call_);
     }
@@ -578,7 +578,7 @@ class CallbackServerStreamingHandler : public grpc::internal::MethodHandler {
         if (ctx_->compression_level_set()) {
           write_ops_.set_compression_level(ctx_->compression_level());
         }
-        ctx_->sent_initial_metadata_ = true;
+        ctx_->MarkInitialMetadataSent();
       }
       // TODO(vjpai): don't assert
       ABSL_CHECK(
@@ -752,7 +752,7 @@ class CallbackBidiHandler : public grpc::internal::MethodHandler {
         if (ctx_->compression_level_set()) {
           finish_ops_.set_compression_level(ctx_->compression_level());
         }
-        ctx_->sent_initial_metadata_ = true;
+        ctx_->MarkInitialMetadataSent();
       }
       finish_ops_.ServerSendStatus(&ctx_->trailing_metadata_, s);
       finish_ops_.FillOps(&call_);
@@ -778,7 +778,7 @@ class CallbackBidiHandler : public grpc::internal::MethodHandler {
       if (ctx_->compression_level_set()) {
         meta_ops_.set_compression_level(ctx_->compression_level());
       }
-      ctx_->sent_initial_metadata_ = true;
+      ctx_->MarkInitialMetadataSent();
       meta_ops_.set_core_cq_tag(&meta_tag_);
       meta_ops_.FillOps(&call_);
     }
@@ -794,7 +794,7 @@ class CallbackBidiHandler : public grpc::internal::MethodHandler {
         if (ctx_->compression_level_set()) {
           write_ops_.set_compression_level(ctx_->compression_level());
         }
-        ctx_->sent_initial_metadata_ = true;
+        ctx_->MarkInitialMetadataSent();
       }
       // TODO(vjpai): don't assert
       ABSL_CHECK(
@@ -1018,7 +1018,7 @@ class CallbackSessionHandler : public grpc::internal::MethodHandler {
         if (ctx_->compression_level_set()) {
           finish_ops_.set_compression_level(ctx_->compression_level());
         }
-        ctx_->sent_initial_metadata_ = true;
+        ctx_->MarkInitialMetadataSent();
       }
       finish_ops_.ServerSendStatus(&ctx_->trailing_metadata_, s);
       finish_ops_.set_core_cq_tag(&finish_tag_);
@@ -1047,7 +1047,7 @@ class CallbackSessionHandler : public grpc::internal::MethodHandler {
       if (ctx_->compression_level_set()) {
         meta_ops_.set_compression_level(ctx_->compression_level());
       }
-      ctx_->sent_initial_metadata_ = true;
+      ctx_->MarkInitialMetadataSent();
       meta_ops_.set_core_cq_tag(&meta_tag_);
       meta_ops_.FillOps(&call_);
       // We bind the inner server only when sending initial metadata because
