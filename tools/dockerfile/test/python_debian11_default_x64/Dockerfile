@@ -180,9 +180,6 @@ RUN python3.14 -m ensurepip && \
 # to be installed before Python.
 RUN apt-get update && apt-get install -y libsqlite3-dev
 
-# 3.10 is the default python3 version on debian11
-RUN apt-get update && apt-get install -y python3.10 python3.10-dev python3-pip
-
 # for Python test coverage reporting
 RUN python3.10 -m pip install coverage
 
