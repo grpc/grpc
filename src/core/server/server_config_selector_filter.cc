@@ -330,7 +330,8 @@ void ServerConfigSelectorInterceptor::InterceptCall(
                           << "[server_config_selector_interceptor "
                           << self.get() << "]: config selector returned error: "
                           << call_config.status();
-                      return call_config.status();
+                      return absl::UnavailableError(
+                          StatusToString(call_config.status()));
                     }
                     // FIXME: remove this once we switch to per-route
                     // filter chains
