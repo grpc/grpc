@@ -222,10 +222,10 @@ module GRPC
                    server_args: {},
                    interceptors: [])
       @connect_md_proc = RpcServer.setup_connect_md_proc(connect_md_proc)
-      @max_waiting_requests = max_waiting_requests
-      @poll_period = poll_period
-      @pool_size = pool_size
-      @pool = Pool.new(@pool_size, keep_alive: pool_keep_alive)
+      @max_waiting_requests = max_waiting_requests.to_i
+      @poll_period = poll_period.to_i
+      @pool_size = pool_size.to_i
+      @pool = Pool.new(@pool_size, keep_alive: pool_keep_alive.to_i)
       @run_cond = ConditionVariable.new
       @run_mutex = Mutex.new
       # running_state can take 4 values: :not_started, :running, :stopping, and
