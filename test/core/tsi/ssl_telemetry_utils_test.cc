@@ -18,12 +18,12 @@
 
 #include "src/core/tsi/ssl_telemetry_utils.h"
 
-#include <gtest/gtest.h>
 #include <openssl/err.h>
 #include <openssl/ssl.h>
 #include <openssl/x509.h>
 
 #include "test/core/test_util/test_config.h"
+#include "gtest/gtest.h"
 
 #if defined(OPENSSL_IS_BORINGSSL)
 #define TEST_ERR_PACK(lib, reason) ERR_PACK(lib, reason)
@@ -38,40 +38,55 @@ namespace {
 // Test cases that are common to both BoringSSL and OpenSSL builds
 TEST(SslTelemetryUtilsTest, GeneralMapSslErrorToTlsTelemetryHandshakeResultTest) {
   // Test SUCCESS
-  EXPECT_EQ(grpc_core::MapSslErrorToTlsTelemetryHandshakeResult(SSL_ERROR_NONE, 0, X509_V_OK),
-            grpc_core::TlsTelemetryHandshakeResult::SUCCESS);
+  EXPECT_EQ(
+      MapSslErrorToTlsTelemetryHandshakeResult(SSL_ERROR_NONE, 0, X509_V_OK),
+      TlsTelemetryHandshakeResult::SUCCESS);
 
   // Test Peer certificate verification failures
-  EXPECT_EQ(grpc_core::MapSslErrorToTlsTelemetryHandshakeResult(SSL_ERROR_NONE, 0, X509_V_ERR_CERT_REVOKED),
-            grpc_core::TlsTelemetryHandshakeResult::CERTIFICATE_REVOKED);
-  EXPECT_EQ(grpc_core::MapSslErrorToTlsTelemetryHandshakeResult(SSL_ERROR_NONE, 0, X509_V_ERR_CERT_HAS_EXPIRED),
-            grpc_core::TlsTelemetryHandshakeResult::CERTIFICATE_EXPIRED);
-  EXPECT_EQ(grpc_core::MapSslErrorToTlsTelemetryHandshakeResult(SSL_ERROR_NONE, 0, X509_V_ERR_CERT_NOT_YET_VALID),
-            grpc_core::TlsTelemetryHandshakeResult::CERTIFICATE_NOT_YET_VALID);
-  EXPECT_EQ(grpc_core::MapSslErrorToTlsTelemetryHandshakeResult(SSL_ERROR_NONE, 0, X509_V_ERR_DEPTH_ZERO_SELF_SIGNED_CERT),
-            grpc_core::TlsTelemetryHandshakeResult::CERTIFICATE_AUTHORITY_INVALID);
-  EXPECT_EQ(grpc_core::MapSslErrorToTlsTelemetryHandshakeResult(SSL_ERROR_NONE, 0, X509_V_ERR_CERT_REJECTED),
-            grpc_core::TlsTelemetryHandshakeResult::CERTIFICATE_VERIFICATION_FAILED);
-  EXPECT_EQ(grpc_core::MapSslErrorToTlsTelemetryHandshakeResult(SSL_ERROR_NONE, 0, X509_V_ERR_UNABLE_TO_GET_CRL),
-            grpc_core::TlsTelemetryHandshakeResult::CRL_NOT_FOUND);
-  EXPECT_EQ(grpc_core::MapSslErrorToTlsTelemetryHandshakeResult(SSL_ERROR_NONE, 0, X509_V_ERR_CRL_HAS_EXPIRED),
-            grpc_core::TlsTelemetryHandshakeResult::CRL_EXPIRED);
-  EXPECT_EQ(grpc_core::MapSslErrorToTlsTelemetryHandshakeResult(SSL_ERROR_NONE, 0, X509_V_ERR_CRL_NOT_YET_VALID),
-            grpc_core::TlsTelemetryHandshakeResult::CRL_EXPIRED);
-  EXPECT_EQ(grpc_core::MapSslErrorToTlsTelemetryHandshakeResult(SSL_ERROR_NONE, 0, X509_V_ERR_CRL_SIGNATURE_FAILURE),
-            grpc_core::TlsTelemetryHandshakeResult::CRL_SIGNATURE_FAILURE);
-  EXPECT_EQ(grpc_core::MapSslErrorToTlsTelemetryHandshakeResult(SSL_ERROR_NONE, 0, X509_V_ERR_HOSTNAME_MISMATCH),
-            grpc_core::TlsTelemetryHandshakeResult::CERTIFICATE_HOSTNAME_MISMATCH);
-  EXPECT_EQ(grpc_core::MapSslErrorToTlsTelemetryHandshakeResult(SSL_ERROR_NONE, 0, X509_V_ERR_INVALID_PURPOSE),
-            grpc_core::TlsTelemetryHandshakeResult::CERTIFICATE_MALFORMED);
-  EXPECT_EQ(grpc_core::MapSslErrorToTlsTelemetryHandshakeResult(SSL_ERROR_NONE, 0, X509_V_ERR_CERT_SIGNATURE_FAILURE),
-            grpc_core::TlsTelemetryHandshakeResult::SIGNATURE_VERIFICATION_FAILED);
+  EXPECT_EQ(MapSslErrorToTlsTelemetryHandshakeResult(SSL_ERROR_NONE, 0,
+                                                     X509_V_ERR_CERT_REVOKED),
+            TlsTelemetryHandshakeResult::CERTIFICATE_REVOKED);
+  EXPECT_EQ(MapSslErrorToTlsTelemetryHandshakeResult(
+                SSL_ERROR_NONE, 0, X509_V_ERR_CERT_HAS_EXPIRED),
+            TlsTelemetryHandshakeResult::CERTIFICATE_EXPIRED);
+  EXPECT_EQ(MapSslErrorToTlsTelemetryHandshakeResult(
+                SSL_ERROR_NONE, 0, X509_V_ERR_CERT_NOT_YET_VALID),
+            TlsTelemetryHandshakeResult::CERTIFICATE_NOT_YET_VALID);
+  EXPECT_EQ(MapSslErrorToTlsTelemetryHandshakeResult(
+                SSL_ERROR_NONE, 0, X509_V_ERR_DEPTH_ZERO_SELF_SIGNED_CERT),
+            TlsTelemetryHandshakeResult::CERTIFICATE_AUTHORITY_INVALID);
+  EXPECT_EQ(MapSslErrorToTlsTelemetryHandshakeResult(SSL_ERROR_NONE, 0,
+                                                     X509_V_ERR_CERT_REJECTED),
+            TlsTelemetryHandshakeResult::CERTIFICATE_VERIFICATION_FAILED);
+  EXPECT_EQ(MapSslErrorToTlsTelemetryHandshakeResult(
+                SSL_ERROR_NONE, 0, X509_V_ERR_UNABLE_TO_GET_CRL),
+            TlsTelemetryHandshakeResult::CRL_NOT_FOUND);
+  EXPECT_EQ(MapSslErrorToTlsTelemetryHandshakeResult(
+                SSL_ERROR_NONE, 0, X509_V_ERR_CRL_HAS_EXPIRED),
+            TlsTelemetryHandshakeResult::CRL_EXPIRED);
+  EXPECT_EQ(MapSslErrorToTlsTelemetryHandshakeResult(
+                SSL_ERROR_NONE, 0, X509_V_ERR_CRL_NOT_YET_VALID),
+            TlsTelemetryHandshakeResult::CRL_EXPIRED);
+  EXPECT_EQ(MapSslErrorToTlsTelemetryHandshakeResult(
+                SSL_ERROR_NONE, 0, X509_V_ERR_CRL_SIGNATURE_FAILURE),
+            TlsTelemetryHandshakeResult::CRL_SIGNATURE_FAILURE);
+  EXPECT_EQ(MapSslErrorToTlsTelemetryHandshakeResult(
+                SSL_ERROR_NONE, 0, X509_V_ERR_HOSTNAME_MISMATCH),
+            TlsTelemetryHandshakeResult::CERTIFICATE_HOSTNAME_MISMATCH);
+  EXPECT_EQ(MapSslErrorToTlsTelemetryHandshakeResult(
+                SSL_ERROR_NONE, 0, X509_V_ERR_INVALID_PURPOSE),
+            TlsTelemetryHandshakeResult::CERTIFICATE_MALFORMED);
+  EXPECT_EQ(MapSslErrorToTlsTelemetryHandshakeResult(
+                SSL_ERROR_NONE, 0, X509_V_ERR_CERT_SIGNATURE_FAILURE),
+            TlsTelemetryHandshakeResult::SIGNATURE_VERIFICATION_FAILED);
 
   // Test PEER_CONNECTION_CLOSED
-  EXPECT_EQ(grpc_core::MapSslErrorToTlsTelemetryHandshakeResult(SSL_ERROR_ZERO_RETURN, 0, X509_V_OK),
-            grpc_core::TlsTelemetryHandshakeResult::PEER_CONNECTION_CLOSED);
-  EXPECT_EQ(grpc_core::MapSslErrorToTlsTelemetryHandshakeResult(SSL_ERROR_SYSCALL, 0, X509_V_OK),
-            grpc_core::TlsTelemetryHandshakeResult::PEER_CONNECTION_CLOSED);
+  EXPECT_EQ(MapSslErrorToTlsTelemetryHandshakeResult(SSL_ERROR_ZERO_RETURN, 0,
+                                                     X509_V_OK),
+            TlsTelemetryHandshakeResult::PEER_CONNECTION_CLOSED);
+  EXPECT_EQ(
+      MapSslErrorToTlsTelemetryHandshakeResult(SSL_ERROR_SYSCALL, 0, X509_V_OK),
+      TlsTelemetryHandshakeResult::PEER_CONNECTION_CLOSED);
 
   // Test SSL_ERROR_SSL reason code mappings
   // Cipher suite mismatch
