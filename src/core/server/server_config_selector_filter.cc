@@ -46,11 +46,11 @@ namespace grpc_core {
 
 namespace {
 
-class ServerConfigSelectorFilter final
-    : public ImplementChannelFilter<ServerConfigSelectorFilter>,
-      public InternallyRefCounted<ServerConfigSelectorFilter> {
+class LegacyServerConfigSelectorFilter final
+    : public ImplementChannelFilter<LegacyServerConfigSelectorFilter>,
+      public InternallyRefCounted<LegacyServerConfigSelectorFilter> {
  public:
-  explicit ServerConfigSelectorFilter(
+  explicit LegacyServerConfigSelectorFilter(
       RefCountedPtr<ServerConfigSelectorProvider>
           server_config_selector_provider);
 
@@ -58,15 +58,119 @@ class ServerConfigSelectorFilter final
     return "server_config_selector_filter";
   }
 
-  ServerConfigSelectorFilter(const ServerConfigSelectorFilter&) = delete;
-  ServerConfigSelectorFilter& operator=(const ServerConfigSelectorFilter&) =
-      delete;
+  LegacyServerConfigSelectorFilter(
+      const LegacyServerConfigSelectorFilter&) = delete;
+  LegacyServerConfigSelectorFilter& operator=(
+      const LegacyServerConfigSelectorFilter&) = delete;
 
-  static absl::StatusOr<OrphanablePtr<ServerConfigSelectorFilter>> Create(
+  static absl::StatusOr<OrphanablePtr<LegacyServerConfigSelectorFilter>> Create(
       const ChannelArgs& args, ChannelFilter::Args);
 
   void Orphan() override;
 
+  class Call {
+   public:
+    absl::Status OnClientInitialMetadata(
+        ClientMetadata& md, LegacyServerConfigSelectorFilter* filter);
+    static inline const NoInterceptor OnServerInitialMetadata;
+    static inline const NoInterceptor OnServerTrailingMetadata;
+    static inline const NoInterceptor OnClientToServerMessage;
+    static inline const NoInterceptor OnClientToServerHalfClose;
+    static inline const NoInterceptor OnServerToClientMessage;
+    static inline const NoInterceptor OnFinalize;
+  };
+
+  absl::StatusOr<RefCountedPtr<ServerConfigSelector>> config_selector() {
+    MutexLock lock(&mu_);
+    return config_selector_.value();
+  }
+
+ private:
+  class ServerConfigSelectorWatcher
+      : public ServerConfigSelectorProvider::ServerConfigSelectorWatcher {
+   public:
+    explicit ServerConfigSelectorWatcher(
+        RefCountedPtr<LegacyServerConfigSelectorFilter> filter)
+        : filter_(filter) {}
+    void OnServerConfigSelectorUpdate(
+        absl::StatusOr<RefCountedPtr<ServerConfigSelector>> update) override {
+      MutexLock lock(&filter_->mu_);
+      filter_->config_selector_ = std::move(update);
+    }
+
+   private:
+    RefCountedPtr<LegacyServerConfigSelectorFilter> filter_;
+  };
+
+  RefCountedPtr<ServerConfigSelectorProvider> server_config_selector_provider_;
+  Mutex mu_;
+  std::optional<absl::StatusOr<RefCountedPtr<ServerConfigSelector>>>
+      config_selector_ ABSL_GUARDED_BY(mu_);
+};
+
+absl::StatusOr<OrphanablePtr<LegacyServerConfigSelectorFilter>>
+LegacyServerConfigSelectorFilter::Create(const ChannelArgs& args,
+                                   ChannelFilter::Args) {
+  ServerConfigSelectorProvider* server_config_selector_provider =
+      args.GetObject<ServerConfigSelectorProvider>();
+  if (server_config_selector_provider == nullptr) {
+    return absl::UnknownError("No ServerConfigSelectorProvider object found");
+  }
+  return MakeOrphanable<LegacyServerConfigSelectorFilter>(
+      server_config_selector_provider->Ref());
+}
+
+LegacyServerConfigSelectorFilter::LegacyServerConfigSelectorFilter(
+    RefCountedPtr<ServerConfigSelectorProvider> server_config_selector_provider)
+    : server_config_selector_provider_(
+          std::move(server_config_selector_provider)) {
+  GRPC_CHECK(server_config_selector_provider_ != nullptr);
+  auto server_config_selector_watcher =
+      std::make_unique<ServerConfigSelectorWatcher>(Ref());
+  auto config_selector = server_config_selector_provider_->Watch(
+      std::move(server_config_selector_watcher));
+  MutexLock lock(&mu_);
+  // It's possible for the watcher to have already updated config_selector_
+  if (!config_selector_.has_value()) {
+    config_selector_ = std::move(config_selector);
+  }
+}
+
+void LegacyServerConfigSelectorFilter::Orphan() {
+  if (server_config_selector_provider_ != nullptr) {
+    server_config_selector_provider_->CancelWatch();
+  }
+  Unref();
+}
+
+absl::Status LegacyServerConfigSelectorFilter::Call::OnClientInitialMetadata(
+    ClientMetadata& md, LegacyServerConfigSelectorFilter* filter) {
+  GRPC_LATENT_SEE_SCOPE(
+      "LegacyServerConfigSelectorFilter::Call::OnClientInitialMetadata");
+  auto sel = filter->config_selector();
+  if (!sel.ok()) return sel.status();
+  auto call_config = sel.value()->GetCallConfig(&md);
+  if (!call_config.ok()) {
+    return absl::UnavailableError(StatusToString(call_config.status()));
+  }
+  auto* service_config_call_data =
+      GetContext<Arena>()->New<ServiceConfigCallData>(GetContext<Arena>());
+  service_config_call_data->SetServiceConfig(
+      std::move(call_config->service_config), call_config->method_configs);
+  return absl::OkStatus();
+}
+
+}  // namespace
+
+const grpc_channel_filter kLegacyServerConfigSelectorFilter =
+    MakePromiseBasedFilter<LegacyServerConfigSelectorFilter,
+                           FilterEndpoint::kServer>();
+
+namespace {
+
+class ServerConfigSelectorFilter final
+    : public ImplementChannelFilter<ServerConfigSelectorFilter> {
+ public:
   class Call {
    public:
     ArenaPromise<absl::Status> OnClientInitialMetadata(
@@ -79,58 +183,34 @@ class ServerConfigSelectorFilter final
     static inline const NoInterceptor OnFinalize;
   };
 
-  auto GetConfigSelector() { return config_selector_.Next(nullptr); }
+  static absl::StatusOr<std::unique_ptr<ServerConfigSelectorFilter>> Create(
+      const ChannelArgs& args, ChannelFilter::Args) {
+    auto server_config_selector_provider =
+        args.GetObjectRef<ServerConfigSelectorProvider>();
+    if (server_config_selector_provider == nullptr) {
+      return absl::UnknownError("No ServerConfigSelectorProvider object found");
+    }
+    return std::make_unique<ServerConfigSelectorFilter>(
+        std::move(server_config_selector_provider));
+  }
+
+  explicit ServerConfigSelectorFilter(
+      RefCountedPtr<ServerConfigSelectorProvider>
+          server_config_selector_provider)
+    : server_config_selector_provider_(
+          std::move(server_config_selector_provider)) {}
+
+  ServerConfigSelectorFilter(const ServerConfigSelectorFilter&) = delete;
+  ServerConfigSelectorFilter& operator=(const ServerConfigSelectorFilter&) =
+      delete;
+
+  static absl::string_view TypeName() {
+    return "server_config_selector_filter";
+  }
 
  private:
-  class ServerConfigSelectorWatcher
-      : public ServerConfigSelectorProvider::ServerConfigSelectorWatcher {
-   public:
-    explicit ServerConfigSelectorWatcher(
-        RefCountedPtr<ServerConfigSelectorFilter> filter)
-        : filter_(filter) {}
-    void OnServerConfigSelectorUpdate(
-        absl::StatusOr<RefCountedPtr<ServerConfigSelector>> update) override {
-      filter_->config_selector_.Set(std::move(update));
-    }
-
-   private:
-    RefCountedPtr<ServerConfigSelectorFilter> filter_;
-  };
-
   RefCountedPtr<ServerConfigSelectorProvider> server_config_selector_provider_;
-  std::shared_ptr<ServerConfigSelectorWatcher> watcher_;
-  Observable<absl::StatusOr<RefCountedPtr<ServerConfigSelector>>>
-      config_selector_;
 };
-
-absl::StatusOr<OrphanablePtr<ServerConfigSelectorFilter>>
-ServerConfigSelectorFilter::Create(const ChannelArgs& args,
-                                   ChannelFilter::Args) {
-  ServerConfigSelectorProvider* server_config_selector_provider =
-      args.GetObject<ServerConfigSelectorProvider>();
-  if (server_config_selector_provider == nullptr) {
-    return absl::UnknownError("No ServerConfigSelectorProvider object found");
-  }
-  return MakeOrphanable<ServerConfigSelectorFilter>(
-      server_config_selector_provider->Ref());
-}
-
-ServerConfigSelectorFilter::ServerConfigSelectorFilter(
-    RefCountedPtr<ServerConfigSelectorProvider> server_config_selector_provider)
-    : server_config_selector_provider_(
-          std::move(server_config_selector_provider)),
-      config_selector_(nullptr) {
-  GRPC_CHECK(server_config_selector_provider_ != nullptr);
-  watcher_ = std::make_shared<ServerConfigSelectorWatcher>(Ref());
-  server_config_selector_provider_->Watch(watcher_);
-}
-
-void ServerConfigSelectorFilter::Orphan() {
-  if (server_config_selector_provider_ != nullptr) {
-    server_config_selector_provider_->CancelWatch(std::move(watcher_));
-  }
-  Unref();
-}
 
 ArenaPromise<absl::Status>
 ServerConfigSelectorFilter::Call::OnClientInitialMetadata(
@@ -138,7 +218,7 @@ ServerConfigSelectorFilter::Call::OnClientInitialMetadata(
   GRPC_LATENT_SEE_SCOPE(
       "ServerConfigSelectorFilter::Call::OnClientInitialMetadata");
   return TrySeq(
-      filter->GetConfigSelector(),
+      filter->server_config_selector_provider_->GetConfigSelector(),
       [&md](
           absl::StatusOr<RefCountedPtr<ServerConfigSelector>> config_selector) {
         if (!config_selector.ok()) return config_selector.status();

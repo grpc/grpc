@@ -52,6 +52,7 @@
 #include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/socket_utils.h"
+#include "src/core/lib/promise/observable.h"
 #include "src/core/server/server.h"
 #include "src/core/server/server_config_selector.h"
 #include "src/core/server/server_config_selector_filter.h"
@@ -882,11 +883,9 @@ class XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
     L4FilterChain::XdsServerConfigSelectorProvider final
     : public ServerConfigSelectorProvider {
  public:
-  XdsServerConfigSelectorProvider(
-      std::shared_ptr<WorkSerializer> work_serializer,
+  explicit XdsServerConfigSelectorProvider(
       absl::StatusOr<RefCountedPtr<ServerConfigSelector>> config_selector)
-      : work_serializer_(std::move(work_serializer)),
-        config_selector_(std::move(config_selector)) {}
+      : config_selector_(std::move(config_selector)) {}
 
   void SetServerConfigSelector(
       absl::StatusOr<RefCountedPtr<ServerConfigSelector>> config_selector) {
@@ -901,56 +900,32 @@ class XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
                   << config_selector.status();
       }
     }
-    config_selector_ = std::move(config_selector);
-    for (const auto& watcher : watchers_) {
-      watcher->OnServerConfigSelectorUpdate(config_selector_);
-    }
+    config_selector_.Set(std::move(config_selector));
   }
 
+  ArenaPromise<absl::StatusOr<RefCountedPtr<ServerConfigSelector>>>
+  GetConfigSelector() override {
+    return config_selector_.Next(nullptr);
+  }
+
+  // Not used.
   absl::StatusOr<RefCountedPtr<ServerConfigSelector>> Watch(
-      std::shared_ptr<ServerConfigSelectorWatcher> watcher) override {
-    work_serializer_->Run(
-        [self = WeakRefAsSubclass<XdsServerConfigSelectorProvider>(),
-         watcher = std::move(watcher)]() mutable {
-          GRPC_TRACE_LOG(xds_server_config_fetcher, INFO)
-              << "[XdsServerConfigSelectorProvider " << self.get()
-              << "]: starting watch, watcher " << watcher.get();
-          watcher->OnServerConfigSelectorUpdate(self->config_selector_);
-          self->watchers_.insert(std::move(watcher));
-        });
+      std::unique_ptr<ServerConfigSelectorWatcher>) override {
     return nullptr;
   }
 
-  void CancelWatch(
-      std::shared_ptr<ServerConfigSelectorWatcher> watcher) override {
-    work_serializer_->Run(
-        [self = WeakRefAsSubclass<XdsServerConfigSelectorProvider>(),
-         watcher = std::move(watcher)]() mutable {
-          GRPC_TRACE_LOG(xds_server_config_fetcher, INFO)
-              << "[XdsServerConfigSelectorProvider " << self.get()
-              << "]: cancelling watch, watcher " << watcher.get();
-          self->watchers_.erase(watcher);
-        });
-  }
+  // Not used.
+  void CancelWatch() override {}
 
  private:
   void Orphaned() override {
-    work_serializer_->Run(
-        [self = WeakRefAsSubclass<XdsServerConfigSelectorProvider>()]() {
-          GRPC_TRACE_LOG(xds_server_config_fetcher, INFO)
-              << "[XdsServerConfigSelectorProvider " << self.get()
-              << "]: orphaned";
-          self->watchers_.clear();  // Just in case.
-          self->config_selector_ = absl::CancelledError("shutting down");
-        });
-    work_serializer_.reset();
+    GRPC_TRACE_LOG(xds_server_config_fetcher, INFO)
+        << "[XdsServerConfigSelectorProvider " << this << "]: orphaned";
+    config_selector_.Set(absl::CancelledError("shutting down"));
   }
 
-  std::shared_ptr<WorkSerializer> work_serializer_;
-
-  // FIXME: lock annotations?
-  absl::StatusOr<RefCountedPtr<ServerConfigSelector>> config_selector_;
-  absl::flat_hash_set<std::shared_ptr<ServerConfigSelectorWatcher>> watchers_;
+  Observable<absl::StatusOr<RefCountedPtr<ServerConfigSelector>>>
+      config_selector_;
 };
 
 //
@@ -1158,7 +1133,7 @@ void XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
         << "[L4FilterChain " << this
         << "]: initial update; creating new XdsServerConfigSelectorProvider";
     config_selector_provider_ = MakeRefCounted<XdsServerConfigSelectorProvider>(
-        work_serializer_, std::move(config_selector));
+        std::move(config_selector));
   } else {
     // Provider already exists, so just update it.
     config_selector_provider_->SetServerConfigSelector(

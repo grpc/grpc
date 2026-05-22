@@ -399,7 +399,7 @@ class XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
   }
 
   absl::StatusOr<RefCountedPtr<ServerConfigSelector>> Watch(
-      std::shared_ptr<ServerConfigSelectorWatcher> watcher) override {
+      std::unique_ptr<ServerConfigSelectorWatcher> watcher) override {
     GRPC_CHECK(watcher_ == nullptr);
     watcher_ = std::move(watcher);
     if (!static_resource_.ok()) {
@@ -411,10 +411,12 @@ class XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
         static_resource_.value(), http_filters_);
   }
 
-  void CancelWatch(
-      std::shared_ptr<ServerConfigSelectorWatcher> watcher) override {
-    GRPC_CHECK(watcher == watcher_);
-    watcher_.reset();
+  void CancelWatch() override { watcher_.reset(); }
+
+  // Not used.
+  ArenaPromise<absl::StatusOr<RefCountedPtr<ServerConfigSelector>>>
+  GetConfigSelector() override {
+    return []() { return Pending{}; };
   }
 
  private:
@@ -428,7 +430,7 @@ class XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
   // copying the HTTP filters here.
   std::vector<XdsListenerResource::HttpConnectionManager::HttpFilter>
       http_filters_;
-  std::shared_ptr<ServerConfigSelectorProvider::ServerConfigSelectorWatcher>
+  std::unique_ptr<ServerConfigSelectorProvider::ServerConfigSelectorWatcher>
       watcher_;
 };
 
@@ -450,9 +452,14 @@ class XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
   }
 
   absl::StatusOr<RefCountedPtr<ServerConfigSelector>> Watch(
-      std::shared_ptr<ServerConfigSelectorWatcher> watcher) override;
-  void CancelWatch(
-      std::shared_ptr<ServerConfigSelectorWatcher> watcher) override;
+      std::unique_ptr<ServerConfigSelectorWatcher> watcher) override;
+  void CancelWatch() override;
+
+  // Not used.
+  ArenaPromise<absl::StatusOr<RefCountedPtr<ServerConfigSelector>>>
+  GetConfigSelector() override {
+    return []() { return Pending{}; };
+  }
 
  private:
   class RouteConfigWatcher;
@@ -471,7 +478,7 @@ class XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
       http_filters_;
   RouteConfigWatcher* route_config_watcher_ = nullptr;
   Mutex mu_;
-  std::shared_ptr<ServerConfigSelectorProvider::ServerConfigSelectorWatcher>
+  std::unique_ptr<ServerConfigSelectorProvider::ServerConfigSelectorWatcher>
       watcher_ ABSL_GUARDED_BY(mu_);
   absl::StatusOr<std::shared_ptr<const XdsRouteConfigResource>> resource_
       ABSL_GUARDED_BY(mu_);
@@ -1061,7 +1068,7 @@ absl::StatusOr<ChannelArgs> XdsServerConfigFetcher::ListenerWatcher::
     }
   }
   // Add config selector filter.
-  filters.push_back(&kServerConfigSelectorFilter);
+  filters.push_back(&kLegacyServerConfigSelectorFilter);
   channel_stack_modifier =
       MakeRefCounted<XdsChannelStackModifier>(std::move(filters));
   Match(
@@ -1241,7 +1248,7 @@ void XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
 absl::StatusOr<RefCountedPtr<ServerConfigSelector>>
 XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
     DynamicXdsServerConfigSelectorProvider::Watch(
-        std::shared_ptr<ServerConfigSelectorWatcher> watcher) {
+        std::unique_ptr<ServerConfigSelectorWatcher> watcher) {
   absl::StatusOr<std::shared_ptr<const XdsRouteConfigResource>> resource;
   {
     MutexLock lock(&mu_);
@@ -1259,10 +1266,8 @@ XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
 }
 
 void XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
-    DynamicXdsServerConfigSelectorProvider::CancelWatch(
-        std::shared_ptr<ServerConfigSelectorWatcher> watcher) {
+    DynamicXdsServerConfigSelectorProvider::CancelWatch() {
   MutexLock lock(&mu_);
-  GRPC_CHECK(watcher == watcher_);
   watcher_.reset();
 }
 
