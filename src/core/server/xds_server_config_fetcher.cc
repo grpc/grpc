@@ -621,13 +621,14 @@ void XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::Start() {
   ForEachFilterChain(
       [&](const XdsListenerResource::FilterChainData& filter_chain_data)
           ABSL_EXCLUSIVE_LOCKS_REQUIRED(*FetcherState::work_serializer) {
-        auto l4_filter_chain = MakeOrphanable<L4FilterChain>(
-            fetcher_state_.Ref(DEBUG_LOCATION, "L4FilterChain"),
-            WeakRefAsSubclass<FilterChainMatchManager>(), filter_chain_data);
-        if (!l4_filter_chain->HasRouteConfig()) ready = false;
-        l4_filter_chains_.emplace(&filter_chain_data,
-                                  std::move(l4_filter_chain));
-      });
+            auto l4_filter_chain = MakeOrphanable<L4FilterChain>(
+                fetcher_state_.Ref(DEBUG_LOCATION, "L4FilterChain"),
+                WeakRefAsSubclass<FilterChainMatchManager>(),
+                filter_chain_data);
+            if (!l4_filter_chain->HasRouteConfig()) ready = false;
+            l4_filter_chains_.emplace(&filter_chain_data,
+                                      std::move(l4_filter_chain));
+          });
   // If all L4 filter chains had inline RouteConfigs, then promote this
   // FilterChainMatchManager immediately.
   if (ready) {
