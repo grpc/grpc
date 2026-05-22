@@ -1,4 +1,4 @@
-# Copyright 2026 The gRPC Authors
+# Copyright 2026 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,28 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-class ConnectivityState:
-    idle: int
-    connecting: int
-    ready: int
-    transient_failure: int
-    shutdown: int
+from typing import Any
 
-class StatusCode:
-    ok: int
-    cancelled: int
-    unknown: int
-    invalid_argument: int
-    deadline_exceeded: int
-    not_found: int
-    already_exists: int
-    permission_denied: int
-    unauthenticated: int
-    resource_exhausted: int
-    failed_precondition: int
-    aborted: int
-    out_of_range: int
-    unimplemented: int
-    internal: int
-    unavailable: int
-    data_loss: int
+def __getattr__(name: str) -> Any: ...
