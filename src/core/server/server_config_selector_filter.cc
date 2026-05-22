@@ -211,7 +211,7 @@ ServerConfigSelectorInterceptor::Create(const ChannelArgs& args,
 }
 
 ServerConfigSelectorInterceptor::ServerConfigSelectorInterceptor(
-    const ChannelArgs& args, ChannelFilter::Args filter_args,
+    const ChannelArgs& args, ChannelFilter::Args /*filter_args*/,
     RefCountedPtr<ServerConfigSelectorProvider> server_config_selector_provider)
     : args_(args),
       server_config_selector_provider_(
