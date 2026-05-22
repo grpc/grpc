@@ -719,7 +719,7 @@ class StreamUnaryCall(
 
 class StreamStreamCall(
     _StreamRequestMixin[RequestType],
-    _StreamResponseMixin,
+    _StreamResponseMixin[ResponseType],
     Call,
     _base_call.StreamStreamCall[RequestType, ResponseType],
 ):
