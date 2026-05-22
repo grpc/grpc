@@ -640,8 +640,8 @@ void XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
   // FilterChainData object.  Therefore, we start by constructing a set
   // of all FilterChainData objects by address, to weed out duplicates.
   std::set<const XdsListenerResource::FilterChainData*> filter_chain_data_set;
-  for (const auto& destination_ip
-       : tcp_listener.filter_chain_map.destination_ip_vector) {
+  for (const auto& destination_ip :
+       tcp_listener.filter_chain_map.destination_ip_vector) {
     for (const auto& source_type : destination_ip.source_types_array) {
       for (const auto& source_ip : source_type) {
         for (const auto& source_port_pair : source_ip.ports_map) {
