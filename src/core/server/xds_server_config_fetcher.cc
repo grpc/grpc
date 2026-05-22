@@ -961,9 +961,8 @@ class XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
     fetcher_state_->work_serializer->Run(
         [self = WeakRefAsSubclass<XdsServerConfigSelectorProvider>(),
          watcher = std::move(watcher)]()
-            ABSL_EXCLUSIVE_LOCKS_REQUIRED(
-                *FetcherState::work_serializer) mutable {
-              self->watchers_.erase(std::move(watcher));
+            ABSL_EXCLUSIVE_LOCKS_REQUIRED(*FetcherState::work_serializer) {
+              self->watchers_.erase(watcher);
             });
   }
 
