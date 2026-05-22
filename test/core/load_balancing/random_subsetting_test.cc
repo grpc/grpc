@@ -146,13 +146,11 @@ TEST_F(RandomSubsettingTest, EmptyAddressList) {
           ->GetGlobalParsedConfig(
               ClientChannelServiceConfigParser::ParserIndex()));
   auto lb_config = global_config->parsed_lb_config();
-
   const std::array<absl::string_view, 0> kEmptyAddresses = {};
   auto status =
       ApplyUpdate(BuildUpdate(kEmptyAddresses, lb_config), lb_policy());
   EXPECT_EQ(status.code(), absl::StatusCode::kUnavailable);
   EXPECT_THAT(status.message(), ::testing::HasSubstr("empty address list"));
-
   // Should report TRANSIENT_FAILURE with the error status
   auto picker = ExpectState(GRPC_CHANNEL_TRANSIENT_FAILURE,
                             absl::UnavailableError("empty address list"));
@@ -164,11 +162,9 @@ TEST_F(RandomSubsettingTest, FiltersEndpointsCorrectly) {
   const std::array<absl::string_view, 5> kAddresses = {
       "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442", "ipv4:127.0.0.1:443",
       "ipv4:127.0.0.1:444", "ipv4:127.0.0.1:445"};
-
   auto service_config = ServiceConfigImpl::Create(
       ChannelArgs(), MakeRandomSubsettingServiceConfig(kSubsetSize));
   ASSERT_TRUE(service_config.ok()) << service_config.status();
-
   auto global_config = DownCast<ClientChannelGlobalParsedConfig*>(
       (*service_config)
           ->GetGlobalParsedConfig(
@@ -176,10 +172,8 @@ TEST_F(RandomSubsettingTest, FiltersEndpointsCorrectly) {
   ASSERT_NE(global_config, nullptr);
   auto lb_config = global_config->parsed_lb_config();
   ASSERT_NE(lb_config, nullptr);
-
   EXPECT_EQ(ApplyUpdate(BuildUpdate(kAddresses, lb_config), lb_policy()),
             absl::OkStatus());
-
   // Verify only 3 subchannels are created (subset_size)
   int subchannel_count = 0;
   for (const auto& address : kAddresses) {
@@ -195,12 +189,10 @@ TEST_F(RandomSubsettingTest, ConnectivityStateTransitions) {
   const std::array<absl::string_view, 5> kAddresses = {
       "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442", "ipv4:127.0.0.1:443",
       "ipv4:127.0.0.1:444", "ipv4:127.0.0.1:445"};
-
   auto service_config = ServiceConfigImpl::Create(
       ChannelArgs(),
       MakeRandomSubsettingServiceConfig(kSubsetSize, "pick_first"));
   ASSERT_TRUE(service_config.ok()) << service_config.status();
-
   auto global_config = DownCast<ClientChannelGlobalParsedConfig*>(
       (*service_config)
           ->GetGlobalParsedConfig(
@@ -208,10 +200,8 @@ TEST_F(RandomSubsettingTest, ConnectivityStateTransitions) {
   ASSERT_NE(global_config, nullptr);
   auto lb_config = global_config->parsed_lb_config();
   ASSERT_NE(lb_config, nullptr);
-
   EXPECT_EQ(ApplyUpdate(BuildUpdate(kAddresses, lb_config), lb_policy()),
             absl::OkStatus());
-
   // Find which subchannel the child policy is trying to connect to
   SubchannelState* connecting_subchannel = nullptr;
   for (const auto& address : kAddresses) {
@@ -222,12 +212,10 @@ TEST_F(RandomSubsettingTest, ConnectivityStateTransitions) {
     }
   }
   ASSERT_NE(connecting_subchannel, nullptr);
-
   // Subchannel reports CONNECTING
   connecting_subchannel->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
   auto picker = ExpectState(GRPC_CHANNEL_CONNECTING);
   ASSERT_NE(picker, nullptr);
-
   // Subchannel reports READY
   connecting_subchannel->SetConnectivityState(GRPC_CHANNEL_READY);
   picker = WaitForConnected();
@@ -241,7 +229,6 @@ TEST_F(RandomSubsettingTest, MinimizesChurnOnAddressUpdate) {
   const std::array<absl::string_view, kInitialServers> kInitialAddresses = {
       "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442", "ipv4:127.0.0.1:443",
       "ipv4:127.0.0.1:444", "ipv4:127.0.0.1:445"};
-
   auto service_config = ServiceConfigImpl::Create(
       ChannelArgs(), MakeRandomSubsettingServiceConfig(kSubsetSize));
   auto global_config = DownCast<ClientChannelGlobalParsedConfig*>(
@@ -249,10 +236,8 @@ TEST_F(RandomSubsettingTest, MinimizesChurnOnAddressUpdate) {
           ->GetGlobalParsedConfig(
               ClientChannelServiceConfigParser::ParserIndex()));
   auto lb_config = global_config->parsed_lb_config();
-
   EXPECT_EQ(ApplyUpdate(BuildUpdate(kInitialAddresses, lb_config), lb_policy()),
             absl::OkStatus());
-
   // Track which subchannels were selected initially
   std::set<std::string> initial_subchannels;
   for (const auto& address : kInitialAddresses) {
@@ -261,15 +246,12 @@ TEST_F(RandomSubsettingTest, MinimizesChurnOnAddressUpdate) {
     }
   }
   EXPECT_EQ(initial_subchannels.size(), kSubsetSize);
-
   // Add one new endpoint
   const std::array<absl::string_view, 6> kUpdatedAddresses = {
       "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442", "ipv4:127.0.0.1:443",
       "ipv4:127.0.0.1:444", "ipv4:127.0.0.1:445", "ipv4:127.0.0.1:446"};
-
   EXPECT_EQ(ApplyUpdate(BuildUpdate(kUpdatedAddresses, lb_config), lb_policy()),
             absl::OkStatus());
-
   // Count how many subchannels remained the same
   int unchanged_count = 0;
   for (const auto& address : kUpdatedAddresses) {

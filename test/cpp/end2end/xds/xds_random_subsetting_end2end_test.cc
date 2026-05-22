@@ -45,13 +45,11 @@ INSTANTIATE_TEST_SUITE_P(
 TEST_P(RandomSubsettingTest, Basic) {
   CreateAndStartBackends(4);
   auto cluster = default_cluster_;
-
   // Create custom LB policy config using TypedStruct
   TypedStruct typed_struct;
   typed_struct.set_type_url("type.googleapis.com/random_subsetting");
   auto* fields = typed_struct.mutable_value()->mutable_fields();
   (*fields)["subset_size"].set_number_value(2);
-
   // child_policy should be a list of policies in gRPC JSON.
   // We use the format that makes it painless to morph into option 1.
   auto* child_policy_list = (*fields)["childPolicy"].mutable_list_value();
@@ -59,20 +57,15 @@ TEST_P(RandomSubsettingTest, Basic) {
       child_policy_list->add_values()->mutable_struct_value();
   (*child_policy_obj->mutable_fields())["round_robin"]
       .mutable_struct_value();  // empty struct for round_robin
-
   auto* policy = cluster.mutable_load_balancing_policy()->add_policies();
   policy->mutable_typed_extension_config()->set_name("random_subsetting");
   policy->mutable_typed_extension_config()->mutable_typed_config()->PackFrom(
       typed_struct);
-
   balancer_->ads_service()->SetCdsResource(cluster);
-
   EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-
   // Send RPCs and verify
   CheckRpcSendOk(DEBUG_LOCATION, 100);
-
   int active_backends = 0;
   for (size_t i = 0; i < backends_.size(); ++i) {
     if (backends_[i]->backend_service()->request_count() > 0) {

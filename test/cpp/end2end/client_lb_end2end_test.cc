@@ -83,6 +83,7 @@
 #include "xds/data/orca/v3/orca_load_report.pb.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
+#include "absl/container/flat_hash_set.h"
 #include "absl/log/log.h"
 #include "absl/memory/memory.h"
 #include "absl/strings/str_cat.h"
@@ -4157,44 +4158,64 @@ TEST_F(ConnectionScalingTest, IdleConnectionsClosed) {
 // random_subsetting tests
 //
 
-using RandomSubsettingTest = ClientLbEnd2endTest;
+class RandomSubsettingTest : public ClientLbEnd2endTest {
+ protected:
+  struct ChannelData {
+    std::unique_ptr<FakeResolverResponseGeneratorWrapper> response_generator;
+    std::shared_ptr<Channel> channel;
+    std::unique_ptr<grpc::testing::EchoTestService::Stub> stub;
+  };
+
+  ChannelData CreateChannelData(
+      const ChannelArguments& args = ChannelArguments()) {
+    ChannelData data;
+    data.response_generator =
+        std::make_unique<FakeResolverResponseGeneratorWrapper>();
+    data.channel = BuildChannel("", *data.response_generator, args);
+    data.stub = BuildStub(data.channel);
+    return data;
+  }
+};
+
+std::string GetRandomSubsettingConfigJson(int subset_size) {
+  return absl::StrCat(
+      "{\n"
+      "  \"loadBalancingConfig\":[{\n"
+      "    \"random_subsetting\":{\n"
+      "      \"subset_size\": ",
+      subset_size,
+      ",\n"
+      "      \"childPolicy\": [{\"round_robin\": {}}]\n"
+      "    }\n"
+      "  }]\n"
+      "}\n");
+}
 
 TEST_F(RandomSubsettingTest, Basic) {
   const int kNumServers = 5;
   const int kSubsetSize = 3;
   StartServers(kNumServers);
-  const char* service_config_json =
-      "{\n"
-      "  \"loadBalancingConfig\":[{\n"
-      "    \"random_subsetting\":{\n"
-      "      \"subset_size\": 3,\n"
-      "      \"childPolicy\": [{\"round_robin\": {}}]\n"
-      "    }\n"
-      "  }]\n"
-      "}\n";
-  FakeResolverResponseGeneratorWrapper response_generator;
-  auto channel = BuildChannel("", response_generator);
-  auto stub = BuildStub(channel);
-  response_generator.SetNextResolution(GetServersPorts(), service_config_json);
-
+  std::string service_config_json = GetRandomSubsettingConfigJson(3);
+  auto channel_data = CreateChannelData();
+  channel_data.response_generator->SetNextResolution(
+      GetServersPorts(), service_config_json.c_str());
   // Determine which servers are actually in the subset by sending RPCs
   // and checking which servers receive traffic
-  std::set<int> active_servers;
+  absl::flat_hash_set<int> active_servers;
   for (int i = 0; i < 100; ++i) {
-    CheckRpcSendOk(DEBUG_LOCATION, stub);
+    CheckRpcSendOk(DEBUG_LOCATION, channel_data.stub);
     for (size_t j = 0; j < servers_.size(); ++j) {
       if (servers_[j]->service_.request_count() > 0) {
         active_servers.insert(j);
       }
     }
   }
-
   // Verify exactly kSubsetSize servers received traffic
   EXPECT_EQ(active_servers.size(), kSubsetSize);
   // Verify round-robin distribution among the active servers
   ResetCounters();
   for (int i = 0; i < kSubsetSize * 10; ++i) {
-    CheckRpcSendOk(DEBUG_LOCATION, stub);
+    CheckRpcSendOk(DEBUG_LOCATION, channel_data.stub);
   }
   // Each active server should have received approximately equal traffic
   for (int server_idx : active_servers) {
@@ -4206,27 +4227,17 @@ TEST_F(RandomSubsettingTest, AddressUpdates) {
   const int kNumServers = 5;
   const int kSubsetSize = 3;
   StartServers(kNumServers);
-  const char* service_config_json =
-      "{\n"
-      "  \"loadBalancingConfig\":[{\n"
-      "    \"random_subsetting\":{\n"
-      "      \"subset_size\": 3,\n"
-      "      \"childPolicy\": [{\"round_robin\": {}}]\n"
-      "    }\n"
-      "  }]\n"
-      "}\n";
-  FakeResolverResponseGeneratorWrapper response_generator;
-  auto channel = BuildChannel("", response_generator);
-  auto stub = BuildStub(channel);
-  response_generator.SetNextResolution(GetServersPorts(), service_config_json);
-
+  std::string service_config_json = GetRandomSubsettingConfigJson(3);
+  auto channel_data = CreateChannelData();
+  channel_data.response_generator->SetNextResolution(
+      GetServersPorts(), service_config_json.c_str());
   // Discover which servers are in the initial subset
   // Send enough RPCs to ensure all servers in subset receive traffic
-  std::set<int> active_servers;
+  absl::flat_hash_set<int> active_servers;
   int max_attempts = 100;
   int attempts = 0;
   while (active_servers.size() < kSubsetSize && attempts < max_attempts) {
-    CheckRpcSendOk(DEBUG_LOCATION, stub);
+    CheckRpcSendOk(DEBUG_LOCATION, channel_data.stub);
     // Check which servers have received requests
     active_servers.clear();
     for (size_t i = 0; i < servers_.size(); ++i) {
@@ -4238,24 +4249,187 @@ TEST_F(RandomSubsettingTest, AddressUpdates) {
   }
   EXPECT_EQ(active_servers.size(), kSubsetSize);
   ResetCounters();
-
   // Update to a different set of servers
   std::vector<int> new_ports = {servers_[2]->port_, servers_[3]->port_,
                                 servers_[4]->port_};
-  response_generator.SetNextResolution(new_ports, service_config_json);
+  channel_data.response_generator->SetNextResolution(
+      new_ports, service_config_json.c_str());
   // Wait for the new subset {2, 3, 4} to be active.
   // We use wait_for_ready=true to avoid failures during transition.
-  WaitForServers(DEBUG_LOCATION, stub, 2, 5, nullptr, absl::Seconds(30), true);
-
+  WaitForServers(DEBUG_LOCATION, channel_data.stub, 2, 5, nullptr,
+                 absl::Seconds(30), true);
   // Verify that the new subset only contains servers from the updated list.
   // WaitForServers already verified we saw all of them.
   // Now verify we DON'T see any traffic to servers 0 and 1.
   // We send some more RPCs to be sure.
   for (int i = 0; i < 10; ++i) {
-    CheckRpcSendOk(DEBUG_LOCATION, stub);
+    CheckRpcSendOk(DEBUG_LOCATION, channel_data.stub);
   }
   EXPECT_EQ(servers_[0]->service_.request_count(), 0);
   EXPECT_EQ(servers_[1]->service_.request_count(), 0);
+}
+
+TEST_F(RandomSubsettingTest, SubsetLargerThanTotalBackends) {
+  const int kNumServers = 3;
+  StartServers(kNumServers);
+  std::string service_config_json = GetRandomSubsettingConfigJson(5);
+  auto channel_data = CreateChannelData();
+  channel_data.response_generator->SetNextResolution(
+      GetServersPorts(), service_config_json.c_str());
+  absl::flat_hash_set<int> active_servers;
+  for (int i = 0; i < 100; ++i) {
+    CheckRpcSendOk(DEBUG_LOCATION, channel_data.stub);
+    for (size_t j = 0; j < servers_.size(); ++j) {
+      if (servers_[j]->service_.request_count() > 0) {
+        active_servers.insert(j);
+      }
+    }
+  }
+  EXPECT_EQ(active_servers.size(), kNumServers);
+}
+
+TEST_F(RandomSubsettingTest, SubsetSizeZeroIgnored) {
+  const int kNumServers = 5;
+  const int kSubsetSize = 3;
+  StartServers(kNumServers);
+  std::string service_config_json_valid = GetRandomSubsettingConfigJson(3);
+  std::string service_config_json_invalid = GetRandomSubsettingConfigJson(0);
+  auto channel_data = CreateChannelData();
+  channel_data.response_generator->SetNextResolution(
+      GetServersPorts(), service_config_json_valid.c_str());
+  absl::flat_hash_set<int> active_servers;
+  for (int i = 0; i < 100; ++i) {
+    CheckRpcSendOk(DEBUG_LOCATION, channel_data.stub);
+    for (size_t j = 0; j < servers_.size(); ++j) {
+      if (servers_[j]->service_.request_count() > 0) {
+        active_servers.insert(j);
+      }
+    }
+  }
+  EXPECT_EQ(active_servers.size(), kSubsetSize);
+  ResetCounters();
+  // Inject invalid config manually to bypass assertion in helper
+  grpc_core::Resolver::Result result;
+  result.addresses = grpc_core::EndpointAddressesList();
+  for (int port : GetServersPorts()) {
+    absl::StatusOr<grpc_core::URI> lb_uri =
+        grpc_core::URI::Parse(grpc_core::LocalIpUri(port));
+    GRPC_CHECK_OK(lb_uri);
+    grpc_resolved_address address;
+    GRPC_CHECK(grpc_parse_uri(*lb_uri, &address));
+    result.addresses->emplace_back(address, grpc_core::ChannelArgs());
+  }
+  result.service_config = grpc_core::ServiceConfigImpl::Create(
+      grpc_core::ChannelArgs(), service_config_json_invalid.c_str());
+  channel_data.response_generator->SetResponse(std::move(result));
+  active_servers.clear();
+  for (int i = 0; i < 100; ++i) {
+    CheckRpcSendOk(DEBUG_LOCATION, channel_data.stub);
+    for (size_t j = 0; j < servers_.size(); ++j) {
+      if (servers_[j]->service_.request_count() > 0) {
+        active_servers.insert(j);
+      }
+    }
+  }
+  EXPECT_EQ(active_servers.size(), kSubsetSize);
+}
+
+TEST_F(RandomSubsettingTest, SubsetSizeChange) {
+  const int kNumServers = 5;
+  StartServers(kNumServers);
+  std::string service_config_json_3 = GetRandomSubsettingConfigJson(3);
+  std::string service_config_json_2 = GetRandomSubsettingConfigJson(2);
+  auto channel_data = CreateChannelData();
+  channel_data.response_generator->SetNextResolution(
+      GetServersPorts(), service_config_json_3.c_str());
+  absl::flat_hash_set<int> active_servers;
+  for (int i = 0; i < 100; ++i) {
+    CheckRpcSendOk(DEBUG_LOCATION, channel_data.stub);
+    for (size_t j = 0; j < servers_.size(); ++j) {
+      if (servers_[j]->service_.request_count() > 0) {
+        active_servers.insert(j);
+      }
+    }
+  }
+  EXPECT_EQ(active_servers.size(), 3);
+  channel_data.response_generator->SetNextResolution(
+      GetServersPorts(), service_config_json_2.c_str());
+  bool subset_shrunk = false;
+  int attempts = 0;
+  while (!subset_shrunk && attempts < 10) {
+    ResetCounters();
+    absl::flat_hash_set<int> current_active_servers;
+    for (int i = 0; i < 50; ++i) {
+      CheckRpcSendOk(DEBUG_LOCATION, channel_data.stub);
+      for (size_t j = 0; j < servers_.size(); ++j) {
+        if (servers_[j]->service_.request_count() > 0) {
+          current_active_servers.insert(j);
+        }
+      }
+    }
+    if (current_active_servers.size() == 2) {
+      subset_shrunk = true;
+      for (int s : current_active_servers) {
+        EXPECT_TRUE(active_servers.count(s));
+      }
+    }
+    attempts++;
+  }
+  EXPECT_TRUE(subset_shrunk) << "Subset did not shrink to size 2";
+}
+
+TEST_F(RandomSubsettingTest, DiversityAcrossChannels) {
+  const int kNumServers = 10;
+  const int kSubsetSize = 3;
+  const int kNumChannels = 5;
+  StartServers(kNumServers);
+  std::string service_config_json = GetRandomSubsettingConfigJson(kSubsetSize);
+  absl::flat_hash_set<int> all_active_servers;
+  for (int c = 0; c < kNumChannels; ++c) {
+    auto channel_data = CreateChannelData();
+    channel_data.response_generator->SetNextResolution(
+        GetServersPorts(), service_config_json.c_str());
+    absl::flat_hash_set<int> channel_active_servers;
+    for (int i = 0; i < 100; ++i) {
+      CheckRpcSendOk(DEBUG_LOCATION, channel_data.stub);
+      for (size_t j = 0; j < servers_.size(); ++j) {
+        if (servers_[j]->service_.request_count() > 0) {
+          channel_active_servers.insert(j);
+          all_active_servers.insert(j);
+        }
+      }
+    }
+    EXPECT_EQ(channel_active_servers.size(), kSubsetSize);
+    ResetCounters();
+  }
+  EXPECT_GT(all_active_servers.size(), kSubsetSize);
+}
+
+TEST_F(RandomSubsettingTest, SubsetBecomesUnavailable) {
+  const int kNumServers = 5;
+  const int kSubsetSize = 3;
+  StartServers(kNumServers);
+  std::string service_config_json = GetRandomSubsettingConfigJson(kSubsetSize);
+  ChannelArguments channel_args;
+  channel_args.SetInt(GRPC_ARG_ENABLE_RETRIES, 0);
+  auto channel_data = CreateChannelData(channel_args);
+  channel_data.response_generator->SetNextResolution(
+      GetServersPorts(), service_config_json.c_str());
+  absl::flat_hash_set<int> active_servers;
+  for (int i = 0; i < 100; ++i) {
+    CheckRpcSendOk(DEBUG_LOCATION, channel_data.stub);
+    for (size_t j = 0; j < servers_.size(); ++j) {
+      if (servers_[j]->service_.request_count() > 0) {
+        active_servers.insert(j);
+      }
+    }
+  }
+  EXPECT_EQ(active_servers.size(), kSubsetSize);
+  for (int server_idx : active_servers) {
+    servers_[server_idx]->Shutdown();
+  }
+  CheckRpcSendFailure(DEBUG_LOCATION, channel_data.stub,
+                      StatusCode::UNAVAILABLE, ".*");
 }
 
 }  // namespace
