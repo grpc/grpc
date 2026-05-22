@@ -63,14 +63,12 @@ class ServerConfigSelectorProvider
         absl::StatusOr<RefCountedPtr<ServerConfigSelector>> update) = 0;
   };
 
-  // Only a single watcher is allowed at present
+  // TODO(roth): Change this to return void after removing
+  // xds_server_filter_chain_per_route experiment.
   virtual absl::StatusOr<RefCountedPtr<ServerConfigSelector>> Watch(
-      std::unique_ptr<ServerConfigSelectorWatcher> watcher) = 0;
-  virtual void CancelWatch() = 0;
-
-  // Returns a promise that resolves to the config selector.
-  virtual ArenaPromise<absl::StatusOr<RefCountedPtr<ServerConfigSelector>>>
-  GetConfigSelector() = 0;
+      std::shared_ptr<ServerConfigSelectorWatcher> watcher) = 0;
+  virtual void CancelWatch(
+      std::shared_ptr<ServerConfigSelectorWatcher> watcher) = 0;
 
   static absl::string_view ChannelArgName() {
     return "grpc.internal.server_config_selector_provider";

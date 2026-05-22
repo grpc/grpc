@@ -6792,7 +6792,6 @@ grpc_cc_library(
         "iomgr_fwd",
         "match",
         "metadata_batch",
-        "observable",
         "resolved_address",
         "slice_refcount",
         "sync",
