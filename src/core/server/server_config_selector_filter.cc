@@ -242,8 +242,7 @@ class FilterChainBuilderImpl final : public FilterChainBuilder {
  public:
   FilterChainBuilderImpl(const ChannelArgs& channel_args,
                          RefCountedPtr<UnstartedCallDestination> destination)
-      : channel_args_(channel_args),
-        destination_(std::move(destination)) {}
+      : channel_args_(channel_args), destination_(std::move(destination)) {}
 
   absl::StatusOr<RefCountedPtr<FilterChain>> Build() override {
     if (builder_ == nullptr) InitBuilder();

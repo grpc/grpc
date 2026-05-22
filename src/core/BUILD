@@ -4405,8 +4405,8 @@ grpc_cc_library(
         "absl/strings",
     ],
     deps = [
-        "filter_chain",
         "dual_ref_counted",
+        "filter_chain",
         "grpc_service_config",
         "metadata_batch",
         "ref_counted",
