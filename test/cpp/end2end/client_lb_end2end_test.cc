@@ -4243,26 +4243,19 @@ TEST_F(RandomSubsettingTest, AddressUpdates) {
   std::vector<int> new_ports = {servers_[2]->port_, servers_[3]->port_,
                                 servers_[4]->port_};
   response_generator.SetNextResolution(new_ports, service_config_json);
-  // Discover the new active subset
-  std::set<int> new_active_servers;
-  attempts = 0;
-  while (new_active_servers.size() < kSubsetSize && attempts < max_attempts) {
-    CheckRpcSendOk(DEBUG_LOCATION, stub);
-    new_active_servers.clear();
-    for (size_t i = 0; i < servers_.size(); ++i) {
-      if (servers_[i]->service_.request_count() > 0) {
-        new_active_servers.insert(i);
-      }
-    }
-    attempts++;
-  }
+  // Wait for the new subset {2, 3, 4} to be active.
+  // We use wait_for_ready=true to avoid failures during transition.
+  WaitForServers(DEBUG_LOCATION, stub, 2, 5, nullptr, absl::Seconds(30), true);
 
-  EXPECT_EQ(new_active_servers.size(), kSubsetSize);
-  // Verify that the new subset only contains servers from the updated list
-  for (int server_idx : new_active_servers) {
-    EXPECT_GE(server_idx, 2);
-    EXPECT_LE(server_idx, 4);
+  // Verify that the new subset only contains servers from the updated list.
+  // WaitForServers already verified we saw all of them.
+  // Now verify we DON'T see any traffic to servers 0 and 1.
+  // We send some more RPCs to be sure.
+  for (int i = 0; i < 10; ++i) {
+    CheckRpcSendOk(DEBUG_LOCATION, stub);
   }
+  EXPECT_EQ(servers_[0]->service_.request_count(), 0);
+  EXPECT_EQ(servers_[1]->service_.request_count(), 0);
 }
 
 }  // namespace
