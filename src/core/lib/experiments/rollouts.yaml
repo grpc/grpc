@@ -128,3 +128,5 @@
   default: false
 - name: use_call_event_engine_in_completion_queue
   default: false
+- name: verbose_channelz_connection_logging
+  default: false

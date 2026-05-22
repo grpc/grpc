@@ -421,6 +421,11 @@
   owner: aananthv@google.com
   test_tags: ["core_end2end_test"]
   platforms: ["all"]
+- name: verbose_channelz_connection_logging
+  description: Verbose logging of events into channelz during connection setup.
+  expiry: 2026/09/01
+  owner: vigneshbabu@google.com
+  test_tags: []
 - name: wildcard_ip_expansion_restriction
   description:
     If set, adds optional restriction on when to expand wildcard IPs.
