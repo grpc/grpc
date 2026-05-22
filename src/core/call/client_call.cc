@@ -411,9 +411,9 @@ void ClientCall::CommitBatch(const grpc_op* ops, size_t nops, void* notify_tag,
         std::move(primary_ops),
         OpHandler<GRPC_OP_RECV_STATUS_ON_CLIENT>(OnCancelFactory(
             std::move(make_read_trailing_metadata),
-            [this, out_status, out_status_details, out_error_string,
+            [self = Ref(), out_status, out_status_details, out_error_string,
              out_trailing_metadata]() {
-              auto* status = cancel_status_.Get();
+              auto* status = self->cancel_status_.Get();
               GRPC_CHECK_NE(status, nullptr);
               *out_status = static_cast<grpc_status_code>(status->code());
               *out_status_details =
@@ -421,7 +421,9 @@ void ClientCall::CommitBatch(const grpc_op* ops, size_t nops, void* notify_tag,
               if (out_error_string != nullptr) {
                 *out_error_string = nullptr;
               }
-              out_trailing_metadata->count = 0;
+              if (out_trailing_metadata != nullptr) {
+                out_trailing_metadata->count = 0;
+              }
             })),
         is_notify_tag_closure, notify_tag, cq_));
   } else {
@@ -458,8 +460,10 @@ void ClientCall::OnReceivedStatus(ServerMetadataHandle server_trailing_metadata,
       *out_error_string = nullptr;
     }
   }
-  PublishMetadataArray(server_trailing_metadata.get(), out_trailing_metadata,
-                       true);
+  if (out_trailing_metadata != nullptr) {
+    PublishMetadataArray(server_trailing_metadata.get(), out_trailing_metadata,
+                         true);
+  }
   received_trailing_metadata_ = std::move(server_trailing_metadata);
 }
 

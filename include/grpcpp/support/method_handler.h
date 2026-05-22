@@ -24,7 +24,10 @@
 #include <grpcpp/support/byte_buffer.h>
 #include <grpcpp/support/sync_stream.h>
 
+#include <cstdlib>
+
 #include "absl/log/absl_check.h"
+#include "absl/log/log.h"
 
 namespace grpc {
 
@@ -208,7 +211,6 @@ class ServerStreamingHandler : public grpc::internal::MethodHandler {
       });
       static_cast<RequestType*>(param.request)->~RequestType();
     }
-
     grpc::internal::CallOpSet<grpc::internal::CallOpSendInitialMetadata,
                               grpc::internal::CallOpServerSendStatus>
         ops;

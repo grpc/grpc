@@ -157,9 +157,20 @@ void Chttp2Connector::Connect(const Args& args, Result* result,
 void Chttp2Connector::Shutdown(grpc_error_handle error) {
   MutexLock lock(&mu_);
   shutdown_ = true;
+  if (timer_handle_.has_value()) {
+    event_engine_->Cancel(*timer_handle_);
+    timer_handle_.reset();
+  }
   if (handshake_mgr_ != nullptr) {
     // Handshaker will also shutdown the endpoint if it exists
     handshake_mgr_->Shutdown(error);
+  }
+}
+
+Chttp2Connector::~Chttp2Connector() {
+  MutexLock lock(&mu_);
+  if (timer_handle_.has_value()) {
+    event_engine_->Cancel(*timer_handle_);
   }
 }
 
@@ -217,7 +228,10 @@ void Chttp2Connector::OnHandshakeDone(absl::StatusOr<HandshakerArgs*> result) {
                   (*result)->endpoint.release());
       if (event_engine_endpoint == nullptr) {
         LOG(ERROR) << "Failed to take endpoint.";
-        result = GRPC_ERROR_CREATE("Failed to take endpoint.");
+        result_->Reset();
+        NullThenSchedClosure(DEBUG_LOCATION, &notify_,
+                             GRPC_ERROR_CREATE("Failed to take endpoint."));
+        return;
       }
       // Create the PromiseEndpoint
       PromiseEndpoint promise_endpoint(std::move(event_engine_endpoint),

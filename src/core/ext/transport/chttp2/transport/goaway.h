@@ -159,6 +159,13 @@ class GoawayManager {
 
     void SentGoawayTransition();
     absl::Status TriggerWriteCycle();
+    void NotifyTransportClosed() {
+      GRPC_HTTP2_GOAWAY_LOG << "NotifyTransportClosed: state change "
+                            << GoawayStateToString(goaway_state)
+                            << " -> kDone.";
+      goaway_state = GoawayState::kDone;
+      wakers.WakeupAsync();
+    }
 
     GoawayState goaway_state = GoawayState::kIdle;
     std::unique_ptr<GoawayInterface> goaway_interface;
@@ -353,6 +360,9 @@ class GoawayManager {
   // GOAWAY frame may have been sent. If a GOAWAY frame is sent in current
   // write cycle, this function handles the needed state transition.
   void NotifyGoawaySent();
+
+  // Called when the transport is closed to unblock any pending GOAWAY requests.
+  void NotifyTransportClosed() { context_->NotifyTransportClosed(); }
 
   static bool IsGracefulGoaway(Http2GoawayFrame& frame) {
     return frame.error_code ==

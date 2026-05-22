@@ -461,6 +461,10 @@ class OldSubchannel::NewConnectedSubchannel final : public ConnectedSubchannel {
         call_destination_(std::move(call_destination)),
         transport_(std::move(transport)) {}
 
+  ~NewConnectedSubchannel() override {
+    LOG(INFO) << "NewConnectedSubchannel destroyed!";
+  }
+
   void StartWatch(
       grpc_pollset_set*,
       OrphanablePtr<TransportConnectivityStateWatcher> watcher) override {

@@ -1882,6 +1882,9 @@ Server::CallData::~CallData() {
   GRPC_CHECK(state_.load(std::memory_order_relaxed) != CallState::PENDING);
   grpc_metadata_array_destroy(&initial_metadata_);
   grpc_byte_buffer_destroy(payload_);
+  if (extra_payload_ != nullptr) {
+    grpc_byte_buffer_destroy(extra_payload_);
+  }
 
   if (server_ != nullptr) {
     // TODO(snohria): Add the same for Call-V3 as well.
@@ -1968,7 +1971,53 @@ void Server::CallData::PublishNewRpc(void* arg, grpc_error_handle error) {
     calld->KillZombie();
     return;
   }
-  rm->MatchOrQueue(chand->cq_idx(), calld);
+  if (calld->expected_payload_) {
+    if (calld->payload_ != nullptr) {
+      grpc_op op;
+      op.op = GRPC_OP_RECV_MESSAGE;
+      op.flags = 0;
+      op.reserved = nullptr;
+      op.data.recv_message.recv_message = &calld->extra_payload_;
+      GRPC_CLOSURE_INIT(&calld->check_extra_message_,
+                        CheckExtraMessageAndPublish, call_elem,
+                        grpc_schedule_on_exec_ctx);
+      grpc_call_start_batch_and_execute(calld->call_, &op, 1,
+                                        &calld->check_extra_message_);
+    } else {
+      grpc_call_cancel_with_status(
+          calld->call_, GRPC_STATUS_UNIMPLEMENTED,
+          "Cardinality violation: received no request message", nullptr);
+      calld->state_.store(CallState::ZOMBIED, std::memory_order_relaxed);
+      calld->KillZombie();
+    }
+  } else {
+    // No payload expected (Client Streaming or Bidi Streaming). Proceed to
+    // publish.
+    rm->MatchOrQueue(chand->cq_idx(), calld);
+  }
+}
+
+void Server::CallData::CheckExtraMessageAndPublish(void* arg,
+                                                   grpc_error_handle error) {
+  grpc_call_element* call_elem = static_cast<grpc_call_element*>(arg);
+  auto* calld = static_cast<Server::CallData*>(call_elem->call_data);
+  auto* chand = static_cast<Server::ChannelData*>(call_elem->channel_data);
+  RequestMatcherInterface* rm = calld->matcher_;
+  Server* server = rm->server();
+  if (!error.ok() || server->ShutdownCalled()) {
+    calld->state_.store(CallState::ZOMBIED, std::memory_order_relaxed);
+    calld->KillZombie();
+    return;
+  }
+  if (calld->extra_payload_ != nullptr) {
+    grpc_call_cancel_with_status(
+        calld->call_, GRPC_STATUS_UNIMPLEMENTED,
+        "Cardinality violation: received multiple request messages", nullptr);
+    calld->state_.store(CallState::ZOMBIED, std::memory_order_relaxed);
+    calld->KillZombie();
+  } else {
+    rm->MatchOrQueue(chand->cq_idx(), calld);
+  }
 }
 
 namespace {
@@ -2010,6 +2059,7 @@ void Server::CallData::StartNewRpc(grpc_call_element* elem) {
       PublishNewRpc(elem, absl::OkStatus());
       break;
     case GRPC_SRM_PAYLOAD_READ_INITIAL_BYTE_BUFFER: {
+      expected_payload_ = true;
       grpc_op op;
       op.op = GRPC_OP_RECV_MESSAGE;
       op.flags = 0;

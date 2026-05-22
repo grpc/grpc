@@ -762,6 +762,7 @@ class ParameterizedClientInterceptorsEnd2endTest
 
   ~ParameterizedClientInterceptorsEnd2endTest() override {
     server_->Shutdown(grpc_timeout_milliseconds_to_deadline(0));
+    server_->Wait();
   }
 
   std::shared_ptr<grpc::Channel> CreateClientChannel(

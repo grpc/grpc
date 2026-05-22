@@ -1550,6 +1550,18 @@ void ClientChannelFilter::DestroyResolverAndLbPolicyLocked() {
                                        interested_parties_);
       lb_policy_.reset();
     }
+    // Fail all queued calls.
+    absl::flat_hash_set<RefCountedPtr<LoadBalancedCall>,
+                        RefCountedPtrHash<LoadBalancedCall>,
+                        RefCountedPtrEq<LoadBalancedCall>>
+        queued_calls;
+    {
+      MutexLock lock(&lb_mu_);
+      queued_calls.swap(lb_queued_calls_);
+    }
+    for (auto& call : queued_calls) {
+      call->Fail(absl::UnavailableError("Channel disconnected"));
+    }
   }
 }
 

@@ -959,10 +959,11 @@ class ReadClient : public grpc::ClientReadReactor<EchoResponse> {
       if (client_cancel_.cancel &&
           reads_complete_ == client_cancel_.ops_before_cancel) {
         context_.TryCancel();
+      } else {
+        // Even if we cancel, read until failure because there might be
+        // responses pending
+        StartRead(&response_);
       }
-      // Even if we cancel, read until failure because there might be responses
-      // pending
-      StartRead(&response_);
     }
   }
   void OnDone(const Status& s) override {

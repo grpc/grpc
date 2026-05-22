@@ -515,6 +515,7 @@ class Server : public ServerInterface,
                                                  grpc_error_handle error);
     void StartNewRpc(grpc_call_element* elem);
     static void PublishNewRpc(void* arg, grpc_error_handle error);
+    static void CheckExtraMessageAndPublish(void* arg, grpc_error_handle error);
 
     // Functions used inside the call stack.
     void StartTransportStreamOpBatchImpl(grpc_call_element* elem,
@@ -536,8 +537,11 @@ class Server : public ServerInterface,
 
     RequestMatcherInterface* matcher_ = nullptr;
     grpc_byte_buffer* payload_ = nullptr;
+    grpc_byte_buffer* extra_payload_ = nullptr;
+    bool expected_payload_ = false;
 
     grpc_closure kill_zombie_closure_;
+    grpc_closure check_extra_message_;
 
     grpc_metadata_array initial_metadata_ =
         grpc_metadata_array();  // Zero-initialize the C struct.

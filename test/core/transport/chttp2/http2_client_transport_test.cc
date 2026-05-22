@@ -194,15 +194,15 @@ TEST_F(Http2ClientTransportTest, TestHttp2ClientTransportObjectCreation) {
   });
   step->Wait();
 
-  // Uncomment this when you want to see ChannelZ Postmortem.
-  // FAIL() << "Intentionally failing to display channelz data";
-
   // The stream object would have been deallocated already.
   // However, we would still have accounting of DATA frame message bytes written
   // in the transport flow control.
   // We did not write a DATA frame with a payload.
   EXPECT_EQ(client_transport()->TestOnlyTransportFlowControlWindow(),
             RFC9113::kHttp2InitialWindowSize);
+
+  // Transport is already closed due to protocol error.
+
   LOG(INFO) << "TestHttp2ClientTransportObjectCreation End";
 }
 

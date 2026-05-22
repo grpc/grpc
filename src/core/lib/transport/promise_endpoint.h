@@ -39,6 +39,7 @@
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/util/grpc_check.h"
+#include "src/core/util/sync.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 
@@ -137,6 +138,7 @@ class PromiseEndpoint {
     // Should not have pending reads.
     GRPC_CHECK_EQ(read_state_->pending_buffer.Count(), 0u);
     bool complete = true;
+    read_state_->mu_.Lock();
     while (read_state_->buffer.Length() < num_bytes) {
       GRPC_LATENT_SEE_SCOPE("GRPC:Read:Loop");
       // Set read args with hinted bytes.
@@ -147,26 +149,31 @@ class PromiseEndpoint {
       // If `Read()` returns true immediately, the callback will not be
       // called.
       read_state_->waker = GetContext<Activity>()->MakeNonOwningWaker();
+      read_state_->mu_.Unlock();
       if (endpoint_->Read(
               [read_state = read_state_, num_bytes](absl::Status status) {
                 ExecCtx exec_ctx;
                 read_state->Complete(std::move(status), num_bytes);
               },
               &read_state_->pending_buffer, read_args)) {
+        read_state_->mu_.Lock();
         read_state_->waker = Waker();
         read_state_->pending_buffer.MoveFirstNBytesIntoSliceBuffer(
             read_state_->pending_buffer.Length(), read_state_->buffer);
         GRPC_DCHECK_EQ(read_state_->pending_buffer.Count(), 0u);
       } else {
+        read_state_->mu_.Lock();
         complete = false;
         break;
       }
     }
+    read_state_->mu_.Unlock();
     return If(
         complete,
         [this, num_bytes]() {
           return [read_state = read_state_,
                   num_bytes]() mutable -> Poll<absl::StatusOr<SliceBuffer>> {
+            MutexLock lock(&read_state->mu_);
             SliceBuffer ret;
             grpc_slice_buffer_move_first_no_inline(
                 read_state->buffer.c_slice_buffer(), num_bytes,
@@ -178,6 +185,7 @@ class PromiseEndpoint {
             "DelayedRead", ([this, num_bytes]() {
               return [read_state = read_state_,
                       num_bytes]() -> Poll<absl::StatusOr<SliceBuffer>> {
+                MutexLock lock(&read_state->mu_);
                 if (!read_state->complete.load(std::memory_order_acquire)) {
                   return Pending();
                 }
@@ -264,6 +272,7 @@ class PromiseEndpoint {
     // deleted).
     std::weak_ptr<grpc_event_engine::experimental::EventEngine::Endpoint>
         endpoint;
+    Mutex mu_;
 
     void Complete(absl::Status status, size_t num_bytes_requested);
   };
