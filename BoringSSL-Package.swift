@@ -319,7 +319,7 @@ let package = Package(
         .headerSearchPath("include/"),
       ]
     ),
-    .executableTarget(
+    .testTarget(
       name: "build-test",
       dependencies: [
         "openssl_grpc",
