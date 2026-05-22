@@ -4405,6 +4405,7 @@ grpc_cc_library(
         "absl/strings",
     ],
     deps = [
+        "filter_chain",
         "dual_ref_counted",
         "grpc_service_config",
         "metadata_batch",
@@ -4428,6 +4429,7 @@ grpc_cc_library(
         "absl/base:core_headers",
         "absl/status",
         "absl/status:statusor",
+        "absl/strings",
     ],
     deps = [
         "arena",
