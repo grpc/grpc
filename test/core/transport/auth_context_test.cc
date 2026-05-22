@@ -220,6 +220,16 @@ TEST(AuthContextTest, CompareAuthContextUnsetReturnsOptional) {
   ctx2.reset(DEBUG_LOCATION, "test");
 }
 
+TEST(AuthContextTest, AddPropertyOverflow) {
+  grpc_core::RefCountedPtr<grpc_auth_context> ctx =
+      grpc_core::MakeRefCounted<grpc_auth_context>(nullptr);
+  ASSERT_NE(ctx, nullptr);
+  grpc_auth_context_add_property(ctx.get(), "overflow", "value",
+                                 static_cast<size_t>(-1));
+  EXPECT_EQ(ctx->properties().count, 0);
+  ctx.reset(DEBUG_LOCATION, "test");
+}
+
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(&argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
