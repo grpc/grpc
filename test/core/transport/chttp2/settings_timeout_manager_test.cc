@@ -382,8 +382,10 @@ TEST_P(SettingsPromiseManagerTest,
   timeout_manager->TestOnlyTimeoutWaiterSpawned();
   output_buf.Clear();
   for (int i = 0; i < 5; ++i) {
-    timeout_manager->BufferPeerSettings(
-        {{Http2Settings::kMaxConcurrentStreamsWireId, 100}});
+    EXPECT_TRUE(timeout_manager
+                    ->BufferPeerSettings(
+                        {{Http2Settings::kMaxConcurrentStreamsWireId, 100}})
+                    .IsOk());
   }
 
   {
@@ -434,13 +436,15 @@ TEST_P(SettingsPromiseManagerTest,
   EXPECT_GT(output_buf.Length(), 0);
   // Buffer peer settings that need to be ACKed. Because the first frame sent by
   // the peer will be a SETTINGS frame.
-  timeout_manager->BufferPeerSettings(
-      {{Http2Settings::kMaxConcurrentStreamsWireId, 100}});
+  EXPECT_TRUE(timeout_manager
+                  ->BufferPeerSettings(
+                      {{Http2Settings::kMaxConcurrentStreamsWireId, 100}})
+                  .IsOk());
   timeout_manager->MaybeReportAndApplyBufferedPeerSettings(
       nullptr, should_spawn_security_frame_loop);
 
   // Section 2: Settings ACK received from peer
-  EXPECT_TRUE(timeout_manager->OnSettingsAckReceived());
+  EXPECT_TRUE(timeout_manager->OnSettingsAckReceived().IsOk());
   output_buf.Clear();
 
   // No changes to local settings, but expecting a peer settings ACK frame.
@@ -515,8 +519,10 @@ TEST_P(SettingsPromiseManagerTest,
   // MaybeGetSettingsAndSettingsAckFrames appends to it and does not overwrite
   // it, i.e. the original contents of output_buf are not erased.
   output_buf.Append(Slice::FromCopiedString("hello"));
-  timeout_manager->BufferPeerSettings(
-      {{Http2Settings::kMaxConcurrentStreamsWireId, 100}});
+  EXPECT_TRUE(timeout_manager
+                  ->BufferPeerSettings(
+                      {{Http2Settings::kMaxConcurrentStreamsWireId, 100}})
+                  .IsOk());
   {
     http2::FrameSender frame_sender = GetWriteCycle().GetFrameSender();
     timeout_manager->MaybeGetSettingsAndSettingsAckFrames(
@@ -553,8 +559,10 @@ TEST_P(SettingsPromiseManagerTest, OnReceiveSettingsCalled) {
         EXPECT_EQ(status.value(), 100u);
         notification.Notify();
       });
-  manager.BufferPeerSettings(
-      {{Http2Settings::kMaxConcurrentStreamsWireId, 100u}});
+  EXPECT_TRUE(manager
+                  .BufferPeerSettings(
+                      {{Http2Settings::kMaxConcurrentStreamsWireId, 100u}})
+                  .IsOk());
   manager.MaybeReportAndApplyBufferedPeerSettings(
       event_engine.get(), should_spawn_security_frame_loop);
   notification.WaitForNotification();
@@ -565,8 +573,10 @@ TEST_P(SettingsPromiseManagerTest, IsFirstPeerSettingsAppliedTest) {
   SettingsPromiseManager manager(/*on_receive_settings=*/nullptr);
   EXPECT_FALSE(manager.IsFirstPeerSettingsApplied());
 
-  manager.BufferPeerSettings(
-      {{Http2Settings::kMaxConcurrentStreamsWireId, 100}});
+  EXPECT_TRUE(manager
+                  .BufferPeerSettings(
+                      {{Http2Settings::kMaxConcurrentStreamsWireId, 100}})
+                  .IsOk());
   EXPECT_EQ(manager.MaybeReportAndApplyBufferedPeerSettings(
                 nullptr, should_spawn_security_frame_loop),
             Http2ErrorCode::kNoError);
@@ -578,7 +588,7 @@ TEST_P(SettingsPromiseManagerTest, IsSecurityFrameExpectedTest) {
   bool should_spawn_security_frame_loop = false;
 
   // Make IsFirstPeerSettingsApplied true.
-  manager.BufferPeerSettings({});
+  EXPECT_TRUE(manager.BufferPeerSettings({}).IsOk());
   manager.MaybeReportAndApplyBufferedPeerSettings(
       nullptr, should_spawn_security_frame_loop);
   EXPECT_TRUE(manager.IsFirstPeerSettingsApplied());
@@ -605,7 +615,7 @@ TEST_P(SettingsPromiseManagerTest, ShouldSpawnSecurityFrameLoopTest) {
   bool should_spawn_security_frame_loop = false;
 
   // Case 1: Default (false)
-  manager.BufferPeerSettings({});
+  EXPECT_TRUE(manager.BufferPeerSettings({}).IsOk());
   EXPECT_EQ(manager.MaybeReportAndApplyBufferedPeerSettings(
                 nullptr, should_spawn_security_frame_loop),
             Http2ErrorCode::kNoError);
@@ -618,8 +628,10 @@ TEST_P(SettingsPromiseManagerTest, ShouldSpawnSecurityFrameLoopTrueTest) {
 
   // Case 2: Both True
   manager.mutable_local().SetAllowSecurityFrame(true);
-  manager.BufferPeerSettings(
-      {{Http2Settings::kGrpcAllowSecurityFrameWireId, 1}});
+  EXPECT_TRUE(manager
+                  .BufferPeerSettings(
+                      {{Http2Settings::kGrpcAllowSecurityFrameWireId, 1}})
+                  .IsOk());
   EXPECT_EQ(manager.MaybeReportAndApplyBufferedPeerSettings(
                 nullptr, should_spawn_security_frame_loop),
             Http2ErrorCode::kNoError);
@@ -631,8 +643,10 @@ TEST_P(SettingsPromiseManagerTest, ShouldSpawnSecurityFrameLoopFalseTest) {
   bool should_spawn_security_frame_loop = false;
 
   // Case 3: Only Peer True
-  manager.BufferPeerSettings(
-      {{Http2Settings::kGrpcAllowSecurityFrameWireId, 1}});
+  EXPECT_TRUE(manager
+                  .BufferPeerSettings(
+                      {{Http2Settings::kGrpcAllowSecurityFrameWireId, 1}})
+                  .IsOk());
   EXPECT_EQ(manager.MaybeReportAndApplyBufferedPeerSettings(
                 nullptr, should_spawn_security_frame_loop),
             Http2ErrorCode::kNoError);
@@ -645,8 +659,10 @@ TEST_P(SettingsPromiseManagerTest, ShouldSpawnSecurityFrameLoopOnlyOnceTest) {
 
   // First time: Both True -> Spawn
   manager.mutable_local().SetAllowSecurityFrame(true);
-  manager.BufferPeerSettings(
-      {{Http2Settings::kGrpcAllowSecurityFrameWireId, 1}});
+  EXPECT_TRUE(manager
+                  .BufferPeerSettings(
+                      {{Http2Settings::kGrpcAllowSecurityFrameWireId, 1}})
+                  .IsOk());
   EXPECT_EQ(manager.MaybeReportAndApplyBufferedPeerSettings(
                 nullptr, should_spawn_security_frame_loop),
             Http2ErrorCode::kNoError);
@@ -655,11 +671,56 @@ TEST_P(SettingsPromiseManagerTest, ShouldSpawnSecurityFrameLoopOnlyOnceTest) {
   // Second time: Still True -> But logic only runs once -> Should be False
   // (untouched)
   should_spawn_security_frame_loop = false;  // Reset
-  manager.BufferPeerSettings({});
+  EXPECT_TRUE(manager.BufferPeerSettings({}).IsOk());
   EXPECT_EQ(manager.MaybeReportAndApplyBufferedPeerSettings(
                 nullptr, should_spawn_security_frame_loop),
             Http2ErrorCode::kNoError);
   EXPECT_FALSE(should_spawn_security_frame_loop);
+}
+
+TEST_P(SettingsPromiseManagerTest, OnSettingsAckReceivedNonOkStatusTest) {
+  // Purpose: Verify OnSettingsAckReceived returns a non-Ok status for
+  // unsolicited SETTINGS ACK.
+  SettingsPromiseManager manager(/*on_receive_settings=*/nullptr);
+  const Http2Status status = manager.OnSettingsAckReceived();
+  EXPECT_FALSE(status.IsOk());
+  EXPECT_EQ(status.GetType(), Http2Status::Http2ErrorType::kConnectionError);
+  EXPECT_EQ(status.GetConnectionErrorCode(), Http2ErrorCode::kInternalError);
+  const absl::Status absl_status = status.GetAbslConnectionError();
+  EXPECT_FALSE(absl_status.ok());
+  EXPECT_EQ(absl_status.message(), GrpcErrors::kUnsolicitedSettingsAck);
+}
+
+TEST_P(SettingsPromiseManagerTest,
+       BufferPeerSettingsInitialWindowSizeNonOkStatusTest) {
+  // Purpose: Verify BufferPeerSettings returns a non-Ok status for invalid
+  // initial window size.
+  SettingsPromiseManager manager(/*on_receive_settings=*/nullptr);
+  const Http2Status status = manager.BufferPeerSettings(
+      {{Http2Settings::kInitialWindowSizeWireId, RFC9113::kMaxSize31Bit + 1u}});
+  EXPECT_FALSE(status.IsOk());
+  EXPECT_EQ(status.GetType(), Http2Status::Http2ErrorType::kConnectionError);
+  EXPECT_EQ(status.GetConnectionErrorCode(), Http2ErrorCode::kFlowControlError);
+  const absl::Status absl_status = status.GetAbslConnectionError();
+  EXPECT_FALSE(absl_status.ok());
+  EXPECT_THAT(absl_status.message(),
+              ::testing::StartsWith(RFC9113::kIncorrectWindowSizeSetting));
+}
+
+TEST_P(SettingsPromiseManagerTest,
+       BufferPeerSettingsMaxFrameSizeNonOkStatusTest) {
+  // Purpose: Verify BufferPeerSettings returns a non-Ok status for invalid
+  // max frame size.
+  SettingsPromiseManager manager(/*on_receive_settings=*/nullptr);
+  const Http2Status status = manager.BufferPeerSettings(
+      {{Http2Settings::kMaxFrameSizeWireId, RFC9113::kMinimumFrameSize - 1u}});
+  EXPECT_FALSE(status.IsOk());
+  EXPECT_EQ(status.GetType(), Http2Status::Http2ErrorType::kConnectionError);
+  EXPECT_EQ(status.GetConnectionErrorCode(), Http2ErrorCode::kProtocolError);
+  const absl::Status absl_status = status.GetAbslConnectionError();
+  EXPECT_FALSE(absl_status.ok());
+  EXPECT_THAT(absl_status.message(),
+              ::testing::StartsWith(RFC9113::kIncorrectFrameSizeSetting));
 }
 
 INSTANTIATE_TEST_SUITE_P(IsClient, SettingsPromiseManagerTest,

@@ -421,35 +421,28 @@ Http2Status Http2ClientTransport::ProcessIncomingFrame(
       << frame.ack << ", settings length=" << frame.settings.size() << "}";
 
   if (!frame.ack) {
-    Http2Status status = ValidateSettingsValues(frame.settings);
-    if (!status.IsOk()) {
-      return status;
+    Http2Status s = settings_->BufferPeerSettings(std::move(frame.settings));
+    if (!s.IsOk()) {
+      return s;
     }
-    settings_->BufferPeerSettings(std::move(frame.settings));
     absl::Status trigger_write_status = TriggerWriteCycle();
     if (!trigger_write_status.ok()) {
       return ToHttpOkOrConnError(trigger_write_status);
     }
-
     if (GPR_UNLIKELY(!settings_->IsFirstPeerSettingsApplied())) {
       // Apply the first settings before we read any other frames.
       reader_state_.SetPauseReadLoop();
     }
   } else {
-    if (settings_->OnSettingsAckReceived()) {
-      incoming_headers_.SetMaxHeaderTableSize(
-          settings_->acked().header_table_size());
-      ActOnFlowControlAction(flow_control_.SetAckedInitialWindow(
-                                 settings_->acked().initial_window_size()),
-                             /*stream=*/nullptr);
-    } else {
-      // CHTTP2 and PH2 return connection error for an unsolicited SETTINGS ACK.
-      // RFC 9113 does not explicitly specify unsolicited ACK handling.
-      return Http2Status::Http2ConnectionError(
-          Http2ErrorCode::kInternalError,
-          std::string(GrpcErrors::kUnsolicitedSettingsAck));
-      LOG(ERROR) << "Settings ack received without sending settings. Ignore.";
+    Http2Status status = settings_->OnSettingsAckReceived();
+    if (!status.IsOk()) {
+      return status;
     }
+    incoming_headers_.SetMaxHeaderTableSize(
+        settings_->acked().header_table_size());
+    ActOnFlowControlAction(flow_control_.SetAckedInitialWindow(
+                               settings_->acked().initial_window_size()),
+                           /*stream=*/nullptr);
   }
 
   return Http2Status::Ok();
