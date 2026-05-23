@@ -101,7 +101,7 @@ describe 'client-server auth' do
     @stub = SslTestServiceStub.new("localhost:#{port}",
                                    create_channel_creds,
                                    **client_opts)
-    # auth should success as the fallback creds wil be used
+    # auth should success as the fallback creds will be used
     xds_channel_creds = GRPC::Core::XdsChannelCredentials.new(create_channel_creds)
     @xds_stub = SslTestServiceStub.new("localhost:#{xds_port}",
                                        xds_channel_creds,

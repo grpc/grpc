@@ -19,7 +19,7 @@
 #ifndef GRPC_RB_LOADER_H_
 #define GRPC_RB_LOADER_H_
 
-/* Attempts to load the core if necessary, and return non-zero upon succes. */
+/* Attempts to load the core if necessary, and return non-zero upon success. */
 int grpc_rb_load_core();
 
 #endif /* GRPC_RB_BYTE_BUFFER_H_ */
