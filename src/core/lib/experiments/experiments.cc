@@ -128,9 +128,6 @@ const char* const description_metadata_outstanding_token_refactor =
     "Refactor ClientInitialMetadataOutstandingToken.";
 const char* const additional_constraints_metadata_outstanding_token_refactor =
     "{}";
-const char* const description_metadata_publish_to_app_tag =
-    "Publish metadata to the app using the kPublishToApp metadata field.";
-const char* const additional_constraints_metadata_publish_to_app_tag = "{}";
 const char* const description_monitoring_experiment =
     "Placeholder experiment to prove/disprove our monitoring is working";
 const char* const additional_constraints_monitoring_experiment = "{}";
@@ -349,9 +346,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_metadata_outstanding_token_refactor,
      additional_constraints_metadata_outstanding_token_refactor, nullptr, 0,
      false, true},
-    {"metadata_publish_to_app_tag", description_metadata_publish_to_app_tag,
-     additional_constraints_metadata_publish_to_app_tag, nullptr, 0, true,
-     true},
     {"monitoring_experiment", description_monitoring_experiment,
      additional_constraints_monitoring_experiment, nullptr, 0, true, true},
     {"multiping", description_multiping, additional_constraints_multiping,
@@ -573,9 +567,6 @@ const char* const description_metadata_outstanding_token_refactor =
     "Refactor ClientInitialMetadataOutstandingToken.";
 const char* const additional_constraints_metadata_outstanding_token_refactor =
     "{}";
-const char* const description_metadata_publish_to_app_tag =
-    "Publish metadata to the app using the kPublishToApp metadata field.";
-const char* const additional_constraints_metadata_publish_to_app_tag = "{}";
 const char* const description_monitoring_experiment =
     "Placeholder experiment to prove/disprove our monitoring is working";
 const char* const additional_constraints_monitoring_experiment = "{}";
@@ -794,9 +785,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_metadata_outstanding_token_refactor,
      additional_constraints_metadata_outstanding_token_refactor, nullptr, 0,
      false, true},
-    {"metadata_publish_to_app_tag", description_metadata_publish_to_app_tag,
-     additional_constraints_metadata_publish_to_app_tag, nullptr, 0, true,
-     true},
     {"monitoring_experiment", description_monitoring_experiment,
      additional_constraints_monitoring_experiment, nullptr, 0, true, true},
     {"multiping", description_multiping, additional_constraints_multiping,
@@ -1018,9 +1006,6 @@ const char* const description_metadata_outstanding_token_refactor =
     "Refactor ClientInitialMetadataOutstandingToken.";
 const char* const additional_constraints_metadata_outstanding_token_refactor =
     "{}";
-const char* const description_metadata_publish_to_app_tag =
-    "Publish metadata to the app using the kPublishToApp metadata field.";
-const char* const additional_constraints_metadata_publish_to_app_tag = "{}";
 const char* const description_monitoring_experiment =
     "Placeholder experiment to prove/disprove our monitoring is working";
 const char* const additional_constraints_monitoring_experiment = "{}";
@@ -1239,9 +1224,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_metadata_outstanding_token_refactor,
      additional_constraints_metadata_outstanding_token_refactor, nullptr, 0,
      false, true},
-    {"metadata_publish_to_app_tag", description_metadata_publish_to_app_tag,
-     additional_constraints_metadata_publish_to_app_tag, nullptr, 0, true,
-     true},
     {"monitoring_experiment", description_monitoring_experiment,
      additional_constraints_monitoring_experiment, nullptr, 0, true, true},
     {"multiping", description_multiping, additional_constraints_multiping,

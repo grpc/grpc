@@ -81,36 +81,8 @@ class PublishToAppEncoder {
   // Publish only metadata traits that have kPublishToApp == true.
   template <typename Which>
   void Encode(Which, const typename Which::ValueType& value) {
-    if (IsMetadataPublishToAppTagEnabled()) {
-      if constexpr (Which::kPublishToApp) {
-        Append(Which::key(), value);
-      }
-    } else {
-      if constexpr (std::is_same<UserAgentMetadata, Which>::value) {
-        Append(Which::key(), value);
-      }
-      if constexpr (std::is_same<HostMetadata, Which>::value) {
-        Append(Which::key(), value);
-      }
-      if constexpr (std::is_same<GrpcPreviousRpcAttemptsMetadata,
-                                 Which>::value) {
-        Append(Which::key(), value);
-      }
-      if constexpr (std::is_same<GrpcRetryPushbackMsMetadata, Which>::value) {
-        Append(Which::key(), value);
-      }
-      if constexpr (std::is_same<LbTokenMetadata, Which>::value) {
-        Append(Which::key(), value);
-      }
-      if constexpr (std::is_same<W3CTraceParentMetadata, Which>::value) {
-        Append(Which::key(), value);
-      }
-      if constexpr (std::is_same<XForwardedForMetadata, Which>::value) {
-        Append(Which::key(), value);
-      }
-      if constexpr (std::is_same<XForwardedHostMetadata, Which>::value) {
-        Append(Which::key(), value);
-      }
+    if constexpr (Which::kPublishToApp) {
+      Append(Which::key(), value);
     }
   }
 
