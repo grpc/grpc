@@ -85,9 +85,10 @@ grpc_event rb_completion_queue_pluck(grpc_completion_queue* queue, void* tag,
   grpc_absl_log_str(GPR_DEBUG, "CQ pluck loop begin: ", reason);
   do {
     next_call.interrupted = 0;
-    rb_thread_call_without_gvl(grpc_rb_completion_queue_pluck_no_gil,
-                               (void*)&next_call, unblock_func,
-                               (void*)&next_call);
+    rb_nogvl(grpc_rb_completion_queue_pluck_no_gil,
+             (void*)&next_call, unblock_func,
+             (void*)&next_call,
+             RB_NOGVL_OFFLOAD_SAFE);
     if (next_call.event.type != GRPC_QUEUE_TIMEOUT) break;
   } while (next_call.interrupted);
   grpc_absl_log_str(GPR_DEBUG, "CQ pluck loop done: ", reason);
