@@ -663,7 +663,7 @@ class Http2ClientTransport final : public ClientTransport,
   RefCountedPtr<StateWatcher> watcher_ ABSL_GUARDED_BY(transport_mutex_);
 
   bool should_reset_ping_clock_;
-  ReadContext incoming_headers_;
+  ReadContext read_context_;
 
   // Transport wide write context. This is used to track the state of the
   // transport during write cycles.

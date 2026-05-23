@@ -122,7 +122,7 @@ class SettingsPromiseManager final : public RefCounted<SettingsPromiseManager> {
     if (is_valid) {
       RecordReceivedAck();
     } else {
-      LOG(ERROR) << "Settings ack received without sending settings. Ignore.";
+      LOG(ERROR) << "Settings ack received without sending settings.";
       // CHTTP2 and PH2 return connection error for an unsolicited SETTINGS ACK.
       // RFC 9113 does not explicitly specify unsolicited ACK handling.
       return http2::Http2Status::Http2ConnectionError(
