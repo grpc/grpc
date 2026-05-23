@@ -14,4 +14,10 @@
 
 from grpc_observability._open_telemetry_plugin import OpenTelemetryPlugin
 
+try:
+    # pylint: disable=ungrouped-imports
+    from grpc_observability._grpcio_metadata import __version__
+except ImportError:
+    __version__ = "dev0"
+
 __all__ = ("OpenTelemetryPlugin",)
