@@ -170,14 +170,14 @@ module GRPC
         c.merge_metadata_to_send(metadata)
         op = c.operation
         op.define_singleton_method(:execute) do
-          interception_context.intercept!(:request_response, intercept_args) do
-            c.request_response(req, metadata: metadata)
+          invoke_rpc(c, :request_response, interception_context, intercept_args, credentials) do |resolved_metadata|
+            c.request_response(req, metadata: resolved_metadata)
           end
         end
         op
       else
-        interception_context.intercept!(:request_response, intercept_args) do
-          c.request_response(req, metadata: metadata)
+        invoke_rpc(c, :request_response, interception_context, intercept_args, credentials) do |resolved_metadata|
+          c.request_response(req, metadata: resolved_metadata)
         end
       end
     end
@@ -247,14 +247,14 @@ module GRPC
         c.merge_metadata_to_send(metadata)
         op = c.operation
         op.define_singleton_method(:execute) do
-          interception_context.intercept!(:client_streamer, intercept_args) do
-            c.client_streamer(requests)
+          invoke_rpc(c, :client_streamer, interception_context, intercept_args, credentials) do |resolved_metadata|
+            c.client_streamer(requests, metadata: resolved_metadata)
           end
         end
         op
       else
-        interception_context.intercept!(:client_streamer, intercept_args) do
-          c.client_streamer(requests, metadata: metadata)
+        invoke_rpc(c, :client_streamer, interception_context, intercept_args, credentials) do |resolved_metadata|
+          c.client_streamer(requests, metadata: resolved_metadata)
         end
       end
     end
@@ -339,14 +339,14 @@ module GRPC
         c.merge_metadata_to_send(metadata)
         op = c.operation
         op.define_singleton_method(:execute) do
-          interception_context.intercept!(:server_streamer, intercept_args) do
-            c.server_streamer(req, &blk)
+          invoke_rpc(c, :server_streamer, interception_context, intercept_args, credentials) do |resolved_metadata|
+            c.server_streamer(req, metadata: resolved_metadata, &blk)
           end
         end
         op
       else
-        interception_context.intercept!(:server_streamer, intercept_args) do
-          c.server_streamer(req, metadata: metadata, &blk)
+        invoke_rpc(c, :server_streamer, interception_context, intercept_args, credentials) do |resolved_metadata|
+          c.server_streamer(req, metadata: resolved_metadata, &blk)
         end
       end
     end
@@ -461,19 +461,34 @@ module GRPC
         c.merge_metadata_to_send(metadata)
         op = c.operation
         op.define_singleton_method(:execute) do
-          interception_context.intercept!(:bidi_streamer, intercept_args) do
-            c.bidi_streamer(requests, &blk)
+          invoke_rpc(c, :bidi_streamer, interception_context, intercept_args, credentials) do |resolved_metadata|
+            c.bidi_streamer(requests, metadata: resolved_metadata, &blk)
           end
         end
         op
       else
-        interception_context.intercept!(:bidi_streamer, intercept_args) do
-          c.bidi_streamer(requests, metadata: metadata, &blk)
+        invoke_rpc(c, :bidi_streamer, interception_context, intercept_args, credentials) do |resolved_metadata|
+          c.bidi_streamer(requests, metadata: resolved_metadata, &blk)
         end
       end
     end
 
     private
+
+    def invoke_rpc(c, rpc_type, interception_context, intercept_args, credentials)
+      executed = false
+      begin
+        interception_context.intercept!(rpc_type, intercept_args) do
+          executed = true
+          resolved_metadata = intercept_args[:metadata]
+          resolved_creds = Core::CallCredentialsHelper.resolve(@call_creds, credentials)
+          Core::CallCredentialsHelper.apply(resolved_creds, resolved_metadata, @host, @channel_creds)
+          yield resolved_metadata
+        end
+      ensure
+        c.close unless executed
+      end
+    end
 
     # Creates a new active stub
     #

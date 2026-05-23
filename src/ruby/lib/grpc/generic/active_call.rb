@@ -616,6 +616,18 @@ module GRPC
       @call.close
     end
 
+    # Forcefully closes the active call, releasing underlying C resources.
+    # This is used to clean up calls that were eagerly created but never
+    # executed (e.g., due to a non-yielding interceptor or an exception).
+    def close
+      @call_finished_mu.synchronize do
+        return if @call_finished
+        @call_finished = true
+        op_is_done
+        @call.close
+      end
+    end
+
     # Starts the call if not already started
     # @param metadata [Hash] metadata to be sent to the server. If a value is
     # a list, multiple metadata for its key are sent
