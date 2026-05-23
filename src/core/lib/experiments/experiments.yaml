@@ -47,7 +47,7 @@
 # state of each experiment.
 - name: buffer_list_deletion_prep
   description: Gate the removal of old TCP timestamp collection mechanism.
-  expiry: 2026/05/01
+  expiry: 2026/10/05
   owner: vigneshbabu@google.com
   test_tags: [core_end2end_test]
 - name: call_tracer_in_transport
@@ -221,7 +221,7 @@
   test_tags: []
 - name: metadata_publish_to_app_tag
   description: Publish metadata to the app using the kPublishToApp metadata field.
-  expiry: 2026/04/01
+  expiry: 2026/07/21
   owner: leonzz@google.com
   test_tags: []
 - name: monitoring_experiment
@@ -236,12 +236,12 @@
   test_tags: [flow_control_test]
 - name: optimization_01
   description: Optimization 
-  expiry: 2027/01/16
+  expiry: 2026/10/05
   owner: tjagtap@google.com
   test_tags: []
 - name: optimization_02
   description: Optimization 
-  expiry: 2027/01/16
+  expiry: 2026/10/05
   owner: tjagtap@google.com
   test_tags: []
 - name: optimization_03
@@ -312,7 +312,7 @@
   allow_in_fuzzing_config: true
 - name: promise_based_inproc_transport
   description: Use call-v3 for the in-process transport.
-  expiry: 2026/05/01
+  expiry: 2026/10/05
   owner: vigneshbabu@google.com
   test_tags: []
   allow_in_fuzzing_config: false # experiment currently crashes if enabled
