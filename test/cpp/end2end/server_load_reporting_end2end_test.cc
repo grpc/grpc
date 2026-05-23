@@ -125,8 +125,6 @@ class ServerLoadReportingEnd2endTest : public ::testing::Test {
   EchoTestServiceImpl echo_service_;
 };
 
-TEST_F(ServerLoadReportingEnd2endTest, NoCall) {}
-
 TEST_F(ServerLoadReportingEnd2endTest, BasicReport) {
   ChannelArguments args;
   ApplyCommonChannelArguments(args);
