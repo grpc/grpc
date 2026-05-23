@@ -12042,6 +12042,7 @@ grpc_cc_library(
         "client_channel/virtual_channel.h",
     ],
     external_deps = [
+        "absl/functional:any_invocable",
         "absl/status",
         "absl/status:statusor",
     ],

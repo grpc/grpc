@@ -913,6 +913,9 @@ grpc_cc_library(
 grpc_cc_library(
     name = "virtual_channel",
     hdrs = ["include/grpcpp/virtual_channel.h"],
+    external_deps = [
+        "absl/functional:any_invocable",
+    ],
     visibility = ["//:__subpackages__"],
     deps = [
         "grpc++_public_hdrs",
