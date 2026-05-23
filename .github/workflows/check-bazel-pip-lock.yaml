@@ -1,0 +1,25 @@
+name: Check requirements.bazel.lock
+
+# Verifies that requirements.bazel.lock stays hash-pinned so pip.parse
+# remains hermetic. The actual check lives in
+# tools/run_tests/sanity/check_bazel_pip_lock.py so that it can also be
+# invoked from other CI drivers or locally.
+
+on:
+  pull_request:
+    branches:
+      - master
+    paths:
+      - 'requirements.bazel.txt'
+      - 'requirements.bazel.lock'
+      - 'tools/run_tests/sanity/check_bazel_pip_lock.py'
+      - '.github/workflows/check-bazel-pip-lock.yaml'
+
+jobs:
+  check-lock:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v6
+      - name: Check requirements.bazel.lock is hash-pinned
+        run: python3 tools/run_tests/sanity/check_bazel_pip_lock.py
