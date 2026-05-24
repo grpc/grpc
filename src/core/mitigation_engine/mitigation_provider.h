@@ -41,6 +41,8 @@ class MitigationProvider {
   // Subscribes to mitigation configuration updates.
   //
   // The provided callback is invoked whenever the mitigation rules change.
+  // It is invoked immediately with the current set of mitigations, before this
+  // function returns.
   //
   // Returns an opaque MitigationSubscriptionHandle to be used as an
   // unsubscription token for CancelWatch().
