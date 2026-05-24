@@ -16,6 +16,11 @@ require 'spec_helper'
 require 'grpc/core/credentials_helper'
 
 describe GRPC::Core::CallCredentialsHelper do
+  before(:each) do
+    skip 'pure Ruby path only: set GRPC_EXPERIMENTS=pure_ruby_call_credentials' \
+      unless GRPC::PURE_RUBY_CALL_CREDENTIALS_ENABLED
+  end
+
   describe '.resolve' do
     it 'returns nil if both are nil' do
       expect(GRPC::Core::CallCredentialsHelper.resolve(nil, nil)).to eq(nil)

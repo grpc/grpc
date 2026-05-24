@@ -22,7 +22,7 @@ module GRPC
       def compose(*others)
         return self if others.empty?
 
-        others.each do |o|
+        others.flatten.each do |o|
           fail TypeError, "Argument to compose must be a CallCredentials, got #{o.class}" \
             unless o.is_a?(CallCredentials)
         end
@@ -33,11 +33,11 @@ module GRPC
     end
 
     class ChannelCredentials
-      include ChannelCredentialsComposable
+      prepend ChannelCredentialsComposable
     end
 
     class XdsChannelCredentials
-      include ChannelCredentialsComposable
+      prepend ChannelCredentialsComposable
     end
 
     class CompositeChannelCredentials
@@ -51,7 +51,7 @@ module GRPC
       def compose(*others)
         return self if others.empty?
 
-        others.each do |o|
+        others.flatten.each do |o|
           fail TypeError, "Argument to compose must be a CallCredentials, got #{o.class}" \
             unless o.is_a?(CallCredentials)
         end

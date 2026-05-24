@@ -23,11 +23,16 @@ require_relative 'grpc/version'
 require_relative 'grpc/core/status_codes'
 require_relative 'grpc/core/time_consts'
 
-# Set GRPC_ENABLE_PURE_RUBY_CALL_CREDENTIALS=true to enable pure Ruby path.
-# Default (unset or false): uses C extension path for backward compatibility.
+# Feature toggle: set GRPC_EXPERIMENTS=pure_ruby_call_credentials to enable.
+# Default (false): uses C extension path for backward compatibility.
+# NOTE: must be set before `require 'grpc'` — evaluated once at load time.
 module GRPC
   PURE_RUBY_CALL_CREDENTIALS_ENABLED =
-    (ENV['GRPC_ENABLE_PURE_RUBY_CALL_CREDENTIALS'].to_s.downcase == 'true')
+    ENV.fetch('GRPC_EXPERIMENTS', '')
+       .split(',')
+       .map(&:strip)
+       .include?('pure_ruby_call_credentials')
+       .freeze
 end
 
 if GRPC::PURE_RUBY_CALL_CREDENTIALS_ENABLED

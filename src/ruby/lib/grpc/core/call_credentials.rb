@@ -29,6 +29,10 @@ module GRPC
         @auth_proc.call(context)
       end
 
+      def composite?
+        false
+      end
+
       def compose(*others)
         return self if others.empty?
         valid_others = validate_credentials_list!(others)
@@ -46,14 +50,17 @@ module GRPC
     end
 
     class CompositeCallCredentials < CallCredentials
-      # CompositeCallCredentials doesn't call super because it manages
-      # an array of credentials rather than a single auth_proc.
-      # The inheritance is primarily for type checking in compose methods.
-      # rubocop:disable Lint/MissingSuper
       def initialize(*creds)
-        @creds = creds.flatten.uniq
+        flat_creds = creds.flatten.flat_map do |c|
+          c.composite? ? c.creds : c
+        end
+        @creds = flat_creds.uniq
+        super(proc { |context| get_metadata(context) })
       end
-      # rubocop:enable Lint/MissingSuper
+
+      def composite?
+        true
+      end
 
       def get_metadata(context)
         @creds.each_with_object({}) do |c, metadata|
@@ -66,6 +73,10 @@ module GRPC
         valid_others = validate_credentials_list!(others)
         CompositeCallCredentials.new(@creds + valid_others)
       end
+
+      protected
+
+      attr_reader :creds
     end
   end
 end

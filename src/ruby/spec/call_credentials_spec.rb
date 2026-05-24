@@ -26,10 +26,15 @@ describe GRPC::Core::CallCredentials do
       expect { CallCredentials.new(auth_proc) }.not_to raise_error
     end
 
-    it 'can successfully create a CallCredentials from a block' do
-      skip 'block syntax requires pure Ruby implementation (toggle OFF)' \
-        unless GRPC::PURE_RUBY_CALL_CREDENTIALS_ENABLED
-      expect { CallCredentials.new { { 'foo' => 'bar' } } }.not_to raise_error
+    context 'pure Ruby path only' do
+      before do
+        skip 'pure Ruby path only: set GRPC_EXPERIMENTS=pure_ruby_call_credentials' \
+          unless GRPC::PURE_RUBY_CALL_CREDENTIALS_ENABLED
+      end
+
+      it 'can successfully create a CallCredentials from a block' do
+        expect { CallCredentials.new { { 'foo' => 'bar' } } }.not_to raise_error
+      end
     end
 
     it 'fails if initialized without a proc or block' do
@@ -51,36 +56,37 @@ describe GRPC::Core::CallCredentials do
       expect { creds1.compose(creds2, creds3) }.not_to raise_error
     end
 
-    it 'returns a CompositeCallCredentials with merged metadata' do
-      skip 'CompositeCallCredentials return type requires pure Ruby implementation (toggle OFF)' \
-        unless GRPC::PURE_RUBY_CALL_CREDENTIALS_ENABLED
-      creds1 = CallCredentials.new(auth_proc)
-      creds2 = CallCredentials.new(auth_proc2)
-      composite = creds1.compose(creds2)
-      expect(composite).to be_a(GRPC::Core::CompositeCallCredentials)
-      expect(composite.get_metadata(nil))
-        .to eq({ 'plugin_key' => 'plugin_value', 'plugin_key2' => 'plugin_value2' })
-    end
+    context 'pure Ruby path only' do
+      before do
+        skip 'pure Ruby path only: set GRPC_EXPERIMENTS=pure_ruby_call_credentials' \
+          unless GRPC::PURE_RUBY_CALL_CREDENTIALS_ENABLED
+      end
 
-    it 'returns a CompositeCallCredentials when composing multiple' do
-      skip 'CompositeCallCredentials return type requires pure Ruby implementation (toggle OFF)' \
-        unless GRPC::PURE_RUBY_CALL_CREDENTIALS_ENABLED
-      creds1 = CallCredentials.new(auth_proc)
-      creds2 = CallCredentials.new(auth_proc2)
-      creds3 = CallCredentials.new(proc { { 'plugin_key3' => 'plugin_value3' } })
-      composite = creds1.compose(creds2, creds3)
-      expect(composite).to be_a(GRPC::Core::CompositeCallCredentials)
-      expect(composite.get_metadata(nil))
-        .to eq({ 'plugin_key' => 'plugin_value',
-                 'plugin_key2' => 'plugin_value2',
-                 'plugin_key3' => 'plugin_value3' })
-    end
+      it 'returns a CompositeCallCredentials with merged metadata' do
+        creds1 = CallCredentials.new(auth_proc)
+        creds2 = CallCredentials.new(auth_proc2)
+        composite = creds1.compose(creds2)
+        expect(composite).to be_a(GRPC::Core::CompositeCallCredentials)
+        expect(composite.get_metadata(nil))
+          .to eq({ 'plugin_key' => 'plugin_value', 'plugin_key2' => 'plugin_value2' })
+      end
 
-    it 'fails if composed with non-CallCredentials' do
-      skip 'TypeError enforcement on compose requires pure Ruby implementation (toggle OFF)' \
-        unless GRPC::PURE_RUBY_CALL_CREDENTIALS_ENABLED
-      creds1 = CallCredentials.new(auth_proc)
-      expect { creds1.compose('not a cred') }.to raise_error(TypeError)
+      it 'returns a CompositeCallCredentials when composing multiple' do
+        creds1 = CallCredentials.new(auth_proc)
+        creds2 = CallCredentials.new(auth_proc2)
+        creds3 = CallCredentials.new(proc { { 'plugin_key3' => 'plugin_value3' } })
+        composite = creds1.compose(creds2, creds3)
+        expect(composite).to be_a(GRPC::Core::CompositeCallCredentials)
+        expect(composite.get_metadata(nil))
+          .to eq({ 'plugin_key' => 'plugin_value',
+                   'plugin_key2' => 'plugin_value2',
+                   'plugin_key3' => 'plugin_value3' })
+      end
+
+      it 'fails if composed with non-CallCredentials' do
+        creds1 = CallCredentials.new(auth_proc)
+        expect { creds1.compose('not a cred') }.to raise_error(TypeError)
+      end
     end
   end
 end

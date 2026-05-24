@@ -119,8 +119,7 @@ module GRPC
 
       def resolve_call_metadata(metadata, credentials, method)
         resolved = CallCredentialsHelper.resolve(@call_creds, credentials)
-        CallCredentialsHelper.apply(resolved, metadata.dup, @host, @channel_creds, method)
-        metadata
+        metadata.dup.tap { |m| CallCredentialsHelper.apply(resolved, m, @host, @channel_creds, method) }
       end
     end
   end
