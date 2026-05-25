@@ -683,14 +683,16 @@ class Http2ClientTransport final : public ClientTransport,
 
   GoawayManager goaway_manager_;
 
+  MemoryOwner memory_owner_;
+
+  chttp2::TransportFlowControl flow_control_;
+
   WritableStreams<RefCountedPtr<Stream>> writable_stream_list_;
 
   /// Based on channel args, preferred_rx_crypto_frame_sizes are advertised to
   /// the peer
   bool enable_preferred_rx_crypto_frame_advertisement_;
   RefCountedPtr<SecurityFrameHandler> security_frame_handler_;
-  MemoryOwner memory_owner_;
-  chttp2::TransportFlowControl flow_control_;
   std::shared_ptr<PromiseHttp2ZTraceCollector> ztrace_collector_;
 
   // TODO(tjagtap) [PH2][P2][BDP] Remove this when the BDP code is done.
