@@ -14,7 +14,6 @@ RUN cp -rL /workdir/bazel-bin/examples/python/xds/xds_greeter_client* /artifacts
 FROM python:3.10-slim-bookworm
 
 RUN apt-get update -y \
-  && apt-get install -y python3 \
   && apt-get -y autoremove \
   && apt-get install -y curl \
   && rm -rf /var/lib/apt/lists/*
