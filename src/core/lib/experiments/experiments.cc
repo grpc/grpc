@@ -255,13 +255,17 @@ const char* const description_use_call_event_engine_in_completion_queue =
     "Use the call event engine to run callbacks in completion queue.";
 const char* const
     additional_constraints_use_call_event_engine_in_completion_queue = "{}";
+const char* const description_verbose_channelz_connection_logging =
+    "Verbose logging of events into channelz during connection setup.";
+const char* const additional_constraints_verbose_channelz_connection_logging =
+    "{}";
 const char* const description_wildcard_ip_expansion_restriction =
     "If set, adds optional restriction on when to expand wildcard IPs.";
 const char* const additional_constraints_wildcard_ip_expansion_restriction =
     "{}";
-const char* const description_xds_channel_filter_chain_per_route =
-    "xDS channels use a separate filter chain for each route.";
-const char* const additional_constraints_xds_channel_filter_chain_per_route =
+const char* const description_xds_server_filter_chain_per_route =
+    "xDS servers use a separate filter chain for each route.";
+const char* const additional_constraints_xds_server_filter_chain_per_route =
     "{}";
 }  // namespace
 
@@ -353,13 +357,13 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"multiping", description_multiping, additional_constraints_multiping,
      nullptr, 0, false, true},
     {"optimization_01", description_optimization_01,
-     additional_constraints_optimization_01, nullptr, 0, false, true},
+     additional_constraints_optimization_01, nullptr, 0, true, true},
     {"optimization_02", description_optimization_02,
-     additional_constraints_optimization_02, nullptr, 0, false, true},
+     additional_constraints_optimization_02, nullptr, 0, true, true},
     {"optimization_03", description_optimization_03,
-     additional_constraints_optimization_03, nullptr, 0, false, true},
+     additional_constraints_optimization_03, nullptr, 0, true, true},
     {"optimization_04", description_optimization_04,
-     additional_constraints_optimization_04, nullptr, 0, false, true},
+     additional_constraints_optimization_04, nullptr, 0, true, true},
     {"otel_export_telemetry_domains", description_otel_export_telemetry_domains,
      additional_constraints_otel_export_telemetry_domains, nullptr, 0, false,
      true},
@@ -446,14 +450,18 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_use_call_event_engine_in_completion_queue,
      additional_constraints_use_call_event_engine_in_completion_queue, nullptr,
      0, false, true},
+    {"verbose_channelz_connection_logging",
+     description_verbose_channelz_connection_logging,
+     additional_constraints_verbose_channelz_connection_logging, nullptr, 0,
+     false, true},
     {"wildcard_ip_expansion_restriction",
      description_wildcard_ip_expansion_restriction,
      additional_constraints_wildcard_ip_expansion_restriction, nullptr, 0,
      false, true},
-    {"xds_channel_filter_chain_per_route",
-     description_xds_channel_filter_chain_per_route,
-     additional_constraints_xds_channel_filter_chain_per_route, nullptr, 0,
-     true, true},
+    {"xds_server_filter_chain_per_route",
+     description_xds_server_filter_chain_per_route,
+     additional_constraints_xds_server_filter_chain_per_route, nullptr, 0,
+     false, true},
 };
 
 }  // namespace grpc_core
@@ -692,13 +700,17 @@ const char* const description_use_call_event_engine_in_completion_queue =
     "Use the call event engine to run callbacks in completion queue.";
 const char* const
     additional_constraints_use_call_event_engine_in_completion_queue = "{}";
+const char* const description_verbose_channelz_connection_logging =
+    "Verbose logging of events into channelz during connection setup.";
+const char* const additional_constraints_verbose_channelz_connection_logging =
+    "{}";
 const char* const description_wildcard_ip_expansion_restriction =
     "If set, adds optional restriction on when to expand wildcard IPs.";
 const char* const additional_constraints_wildcard_ip_expansion_restriction =
     "{}";
-const char* const description_xds_channel_filter_chain_per_route =
-    "xDS channels use a separate filter chain for each route.";
-const char* const additional_constraints_xds_channel_filter_chain_per_route =
+const char* const description_xds_server_filter_chain_per_route =
+    "xDS servers use a separate filter chain for each route.";
+const char* const additional_constraints_xds_server_filter_chain_per_route =
     "{}";
 }  // namespace
 
@@ -790,13 +802,13 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"multiping", description_multiping, additional_constraints_multiping,
      nullptr, 0, false, true},
     {"optimization_01", description_optimization_01,
-     additional_constraints_optimization_01, nullptr, 0, false, true},
+     additional_constraints_optimization_01, nullptr, 0, true, true},
     {"optimization_02", description_optimization_02,
-     additional_constraints_optimization_02, nullptr, 0, false, true},
+     additional_constraints_optimization_02, nullptr, 0, true, true},
     {"optimization_03", description_optimization_03,
-     additional_constraints_optimization_03, nullptr, 0, false, true},
+     additional_constraints_optimization_03, nullptr, 0, true, true},
     {"optimization_04", description_optimization_04,
-     additional_constraints_optimization_04, nullptr, 0, false, true},
+     additional_constraints_optimization_04, nullptr, 0, true, true},
     {"otel_export_telemetry_domains", description_otel_export_telemetry_domains,
      additional_constraints_otel_export_telemetry_domains, nullptr, 0, false,
      true},
@@ -883,14 +895,18 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_use_call_event_engine_in_completion_queue,
      additional_constraints_use_call_event_engine_in_completion_queue, nullptr,
      0, false, true},
+    {"verbose_channelz_connection_logging",
+     description_verbose_channelz_connection_logging,
+     additional_constraints_verbose_channelz_connection_logging, nullptr, 0,
+     false, true},
     {"wildcard_ip_expansion_restriction",
      description_wildcard_ip_expansion_restriction,
      additional_constraints_wildcard_ip_expansion_restriction, nullptr, 0,
      false, true},
-    {"xds_channel_filter_chain_per_route",
-     description_xds_channel_filter_chain_per_route,
-     additional_constraints_xds_channel_filter_chain_per_route, nullptr, 0,
-     true, true},
+    {"xds_server_filter_chain_per_route",
+     description_xds_server_filter_chain_per_route,
+     additional_constraints_xds_server_filter_chain_per_route, nullptr, 0,
+     false, true},
 };
 
 }  // namespace grpc_core
@@ -1129,13 +1145,17 @@ const char* const description_use_call_event_engine_in_completion_queue =
     "Use the call event engine to run callbacks in completion queue.";
 const char* const
     additional_constraints_use_call_event_engine_in_completion_queue = "{}";
+const char* const description_verbose_channelz_connection_logging =
+    "Verbose logging of events into channelz during connection setup.";
+const char* const additional_constraints_verbose_channelz_connection_logging =
+    "{}";
 const char* const description_wildcard_ip_expansion_restriction =
     "If set, adds optional restriction on when to expand wildcard IPs.";
 const char* const additional_constraints_wildcard_ip_expansion_restriction =
     "{}";
-const char* const description_xds_channel_filter_chain_per_route =
-    "xDS channels use a separate filter chain for each route.";
-const char* const additional_constraints_xds_channel_filter_chain_per_route =
+const char* const description_xds_server_filter_chain_per_route =
+    "xDS servers use a separate filter chain for each route.";
+const char* const additional_constraints_xds_server_filter_chain_per_route =
     "{}";
 }  // namespace
 
@@ -1227,13 +1247,13 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"multiping", description_multiping, additional_constraints_multiping,
      nullptr, 0, false, true},
     {"optimization_01", description_optimization_01,
-     additional_constraints_optimization_01, nullptr, 0, false, true},
+     additional_constraints_optimization_01, nullptr, 0, true, true},
     {"optimization_02", description_optimization_02,
-     additional_constraints_optimization_02, nullptr, 0, false, true},
+     additional_constraints_optimization_02, nullptr, 0, true, true},
     {"optimization_03", description_optimization_03,
-     additional_constraints_optimization_03, nullptr, 0, false, true},
+     additional_constraints_optimization_03, nullptr, 0, true, true},
     {"optimization_04", description_optimization_04,
-     additional_constraints_optimization_04, nullptr, 0, false, true},
+     additional_constraints_optimization_04, nullptr, 0, true, true},
     {"otel_export_telemetry_domains", description_otel_export_telemetry_domains,
      additional_constraints_otel_export_telemetry_domains, nullptr, 0, false,
      true},
@@ -1320,14 +1340,18 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_use_call_event_engine_in_completion_queue,
      additional_constraints_use_call_event_engine_in_completion_queue, nullptr,
      0, false, true},
+    {"verbose_channelz_connection_logging",
+     description_verbose_channelz_connection_logging,
+     additional_constraints_verbose_channelz_connection_logging, nullptr, 0,
+     false, true},
     {"wildcard_ip_expansion_restriction",
      description_wildcard_ip_expansion_restriction,
      additional_constraints_wildcard_ip_expansion_restriction, nullptr, 0,
      false, true},
-    {"xds_channel_filter_chain_per_route",
-     description_xds_channel_filter_chain_per_route,
-     additional_constraints_xds_channel_filter_chain_per_route, nullptr, 0,
-     true, true},
+    {"xds_server_filter_chain_per_route",
+     description_xds_server_filter_chain_per_route,
+     additional_constraints_xds_server_filter_chain_per_route, nullptr, 0,
+     false, true},
 };
 
 }  // namespace grpc_core

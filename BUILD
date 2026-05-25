@@ -913,6 +913,9 @@ grpc_cc_library(
 grpc_cc_library(
     name = "virtual_channel",
     hdrs = ["include/grpcpp/virtual_channel.h"],
+    external_deps = [
+        "absl/functional:any_invocable",
+    ],
     visibility = ["//:__subpackages__"],
     deps = [
         "grpc++_public_hdrs",
@@ -4957,6 +4960,7 @@ grpc_cc_library(
         "//src/core:grpc_check",
         "//src/core:hpack_constants",
         "//src/core:metadata_batch",
+        "//src/core:mitigation_engine",
         "//src/core:ref_counted",
         "//src/core:slice",
         "//src/core:status_helper",
@@ -4997,6 +5001,7 @@ grpc_cc_library(
         "//src/core:match",
         "//src/core:metadata_batch",
         "//src/core:metadata_info",
+        "//src/core:mitigation_engine",
         "//src/core:parsed_metadata",
         "//src/core:random_early_detection",
         "//src/core:slice",
@@ -5181,6 +5186,7 @@ grpc_cc_library(
         "//src/core:metadata",
         "//src/core:metadata_batch",
         "//src/core:metadata_info",
+        "//src/core:mitigation_engine",
         "//src/core:notification",
         "//src/core:ping_abuse_policy",
         "//src/core:ping_callbacks",
