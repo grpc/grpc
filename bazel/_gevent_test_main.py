@@ -42,7 +42,8 @@ import unittest
 import sys
 import os
 import pkgutil
-import importlib
+import importlib.util
+
 
 def trace_callback(event, args):
     if event in ("switch", "throw"):
