@@ -94,7 +94,10 @@ class XdsBootstrapBuilder {
         server_listener_resource_name_template;
     return *this;
   }
-
+  XdsBootstrapBuilder& SetAllowedGrpcService() {
+    allowed_grpc_services_ = true;
+    return *this;
+  }
   std::string Build();
 
  private:
@@ -111,6 +114,7 @@ class XdsBootstrapBuilder {
   std::string MakeNodeText();
   std::string MakeCertificateProviderText();
   std::string MakeAuthorityText();
+  std::string MakeAllowedGrpcService();
 
   bool ignore_resource_deletion_ = false;
   bool fail_on_data_errors_ = false;
@@ -123,6 +127,7 @@ class XdsBootstrapBuilder {
   std::string client_default_listener_resource_name_template_;
   std::map<std::string /*key*/, PluginInfo> plugins_;
   std::map<std::string /*authority_name*/, AuthorityInfo> authorities_;
+  bool allowed_grpc_services_ = false;
   std::string server_listener_resource_name_template_ =
       "grpc/server?xds.resource.listening_address=%s";
 };
