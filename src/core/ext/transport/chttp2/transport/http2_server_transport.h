@@ -738,8 +738,6 @@ class Http2ServerTransport final : public ServerTransport,
 
   // TODO(tjagtap) [PH2][P2][BDP] Remove this when the BDP code is done.
   Waker periodic_updates_waker_;
-
-  Http2ReadContext reader_state_;
 };
 
 // TODO(tjagtap) : [PH2][P1] : Handle the case where a Server receives two

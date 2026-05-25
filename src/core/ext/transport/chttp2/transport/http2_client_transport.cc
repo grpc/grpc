@@ -248,7 +248,7 @@ Http2Status Http2ClientTransport::ProcessIncomingFrame(Http2DataFrame&& frame) {
     // empty DATA frames with END_Stream flag set to true.
     ValueOrHttp2Status<chttp2::FlowControlAction> flow_control_action =
         ProcessIncomingDataFrameFlowControl(
-            reader_state_.GetCurrentFrameHeader(), flow_control_, stream.get());
+            read_context_.GetCurrentFrameHeader(), flow_control_, stream.get());
     if (!flow_control_action.IsOk()) {
       return ValueOrHttp2Status<chttp2::FlowControlAction>::TakeStatus(
           std::move(flow_control_action));
@@ -430,7 +430,7 @@ Http2Status Http2ClientTransport::ProcessIncomingFrame(
     }
     if (GPR_UNLIKELY(!settings_->IsFirstPeerSettingsApplied())) {
       // Apply the first settings before we read any other frames.
-      reader_state_.SetPauseReadLoop();
+      read_context_.SetPauseReadLoop();
     }
   } else {
     Http2Status status = settings_->OnSettingsAckReceived();
@@ -694,7 +694,7 @@ auto Http2ClientTransport::ReadAndProcessOneFrame() {
                       Http2Status::Http2ErrorType::kConnectionError);
           return HandleError(std::nullopt, std::move(status));
         }
-        reader_state_.SetCurrentFrameHeader(header);
+        read_context_.SetCurrentFrameHeader(header);
         return absl::OkStatus();
       },
       // Read the payload of the frame.
@@ -702,7 +702,7 @@ auto Http2ClientTransport::ReadAndProcessOneFrame() {
         GRPC_HTTP2_CLIENT_DLOG
             << "Http2ClientTransport::ReadAndProcessOneFrame Read Frame ";
         return AssertResultType<absl::Status>(
-            Map(EndpointRead(reader_state_.GetCurrentFrameHeader().length),
+            Map(EndpointRead(read_context_.GetCurrentFrameHeader().length),
                 [this](absl::StatusOr<SliceBuffer>&& payload) {
                   if (GPR_UNLIKELY(!payload.ok())) {
                     return payload.status();
@@ -712,11 +712,11 @@ auto Http2ClientTransport::ReadAndProcessOneFrame() {
                          "ParseFramePayload payload length: "
                       << payload.value().Length();
                   ValueOrHttp2Status<Http2Frame> frame =
-                      ParseFramePayload(reader_state_.GetCurrentFrameHeader(),
+                      ParseFramePayload(read_context_.GetCurrentFrameHeader(),
                                         TakeValue(std::move(payload)));
                   if (GPR_UNLIKELY(!frame.IsOk())) {
                     return HandleError(
-                        reader_state_.GetCurrentFrameHeader().stream_id,
+                        read_context_.GetCurrentFrameHeader().stream_id,
                         ValueOrHttp2Status<Http2Frame>::TakeStatus(
                             std::move(frame)));
                   }
@@ -724,14 +724,14 @@ auto Http2ClientTransport::ReadAndProcessOneFrame() {
                       ProcessOneIncomingFrame(TakeValue(std::move(frame)));
                   if (GPR_UNLIKELY(!status.IsOk())) {
                     return HandleError(
-                        reader_state_.GetCurrentFrameHeader().stream_id,
+                        read_context_.GetCurrentFrameHeader().stream_id,
                         std::move(status));
                   }
                   return absl::OkStatus();
                 }));
       },
       [this]() -> Poll<absl::Status> {
-        Poll<absl::Status> poll_result = reader_state_.MaybePauseReadLoop();
+        Poll<absl::Status> poll_result = read_context_.MaybePauseReadLoop();
         if (poll_result.pending()) {
           TriggerWriteCycleOrHandleError();
           return Pending{};
@@ -819,7 +819,7 @@ void Http2ClientTransport::ActOnFlowControlAction(
     // exhaust the flow control window. This prevents us from sending window
     // updates to the peer, causing the peer to block unnecessarily while
     // waiting for flow control tokens.
-    reader_state_.SetPauseReadLoop();
+    read_context_.SetPauseReadLoop();
     if (!TriggerWriteCycleOrHandleError()) {
       return;
     }
@@ -978,7 +978,7 @@ void Http2ClientTransport::NotifyFramesWriteDone() {
   // Notify Control modules that we have sent the frames.
   // All notifications are expected to be synchronous.
   GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport::NotifyFramesWriteDone";
-  reader_state_.ResumeReadLoopIfPaused();
+  read_context_.ResumeReadLoopIfPaused();
   MaybeSpawnPingTimeout(ping_manager_->NotifyPingSent());
   goaway_manager_.NotifyGoawaySent();
   MaybeSpawnWaitForSettingsTimeout();

@@ -720,12 +720,12 @@ class Http2ReadContextTest : public ::testing::Test {
 TEST_F(Http2ReadContextTest, WakeWithoutPause) {
   // Test that calling ResumeReadLoopIfPaused before MaybePauseReadLoop has
   // no effect and does not crash.
-  Http2ReadContext read_context;
-  read_context.ResumeReadLoopIfPaused();
-  read_context.ResumeReadLoopIfPaused();
-  read_context.ResumeReadLoopIfPaused();
-  read_context.MaybePauseReadLoop();
-  read_context.SetPauseReadLoop();
+  ReadLoopPauseRestart read_loop_manager;
+  read_loop_manager.ResumeReadLoopIfPaused();
+  read_loop_manager.ResumeReadLoopIfPaused();
+  read_loop_manager.ResumeReadLoopIfPaused();
+  read_loop_manager.MaybePauseReadLoop();
+  read_loop_manager.SetPauseReadLoop();
 }
 
 class SimulatedTransport : public RefCounted<SimulatedTransport> {
@@ -737,7 +737,7 @@ class SimulatedTransport : public RefCounted<SimulatedTransport> {
         // Doing this alternate times to make sure that SetPauseReadLoop is
         // idempotent
         absl::StrAppend(&self->execution_order, "Pause ");
-        return self->context.MaybePauseReadLoop();
+        return self->read_loop_manager.MaybePauseReadLoop();
       }
       absl::StrAppend(&self->execution_order, ". ");
       return absl::OkStatus();
@@ -749,7 +749,7 @@ class SimulatedTransport : public RefCounted<SimulatedTransport> {
                     [self]() -> LoopCtl<absl::Status> {
                       if (self->i < 10) {
                         absl::StrAppend(&self->execution_order, "SetPause ");
-                        self->context.SetPauseReadLoop();
+                        self->read_loop_manager.SetPauseReadLoop();
                         return Continue();
                       }
                       absl::StrAppend(&self->execution_order, "EndRead ");
@@ -761,7 +761,7 @@ class SimulatedTransport : public RefCounted<SimulatedTransport> {
   auto SimulatedOneWrite() {
     return [self = this->Ref()]() -> Poll<absl::Status> {
       absl::StrAppend(&self->execution_order, "Wake ");
-      self->context.ResumeReadLoopIfPaused();
+      self->read_loop_manager.ResumeReadLoopIfPaused();
       return absl::OkStatus();
     };
   }
@@ -784,7 +784,7 @@ class SimulatedTransport : public RefCounted<SimulatedTransport> {
   std::string execution_order;
 
  private:
-  Http2ReadContext context;
+  ReadLoopPauseRestart read_loop_manager;
   int i = 0;
   bool did_end_read = false;
 };
@@ -812,7 +812,7 @@ TEST_F(Http2ReadContextTest, SetAndGetFrameHeader) {
   // Purpose: Verify that SetCurrentFrameHeader stores header attributes
   // correctly. Assertions: GetCurrentFrameHeader returns the exact frame header
   // that was set.
-  Http2ReadContext context;
+  ReadContext context(Slice::FromCopiedString("peer"), true);
   Http2FrameHeader header;
   header.length = 100u;
   header.type = 1u;
@@ -841,7 +841,7 @@ TEST_F(Http2ReadContextTest, ReadCycleFramesLimits) {
       "TestFramesLimits",
       [&was_pending_under_limit,
        &was_pending_at_limit]() -> Poll<absl::Status> {
-        Http2ReadContext read_context;
+        ReadContext read_context(Slice::FromCopiedString("peer"), true);
         const Http2FrameHeader header = {
             0u,  // length
             0u,  // type

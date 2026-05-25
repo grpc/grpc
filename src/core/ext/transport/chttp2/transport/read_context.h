@@ -44,24 +44,13 @@
 namespace grpc_core {
 namespace http2 {
 
-class Http2ReadContext {
+class ReadLoopPauseRestart {
  public:
-  Http2ReadContext() = default;
-  Http2ReadContext(const Http2ReadContext&) = delete;
-  Http2ReadContext& operator=(const Http2ReadContext&) = delete;
-  Http2ReadContext(Http2ReadContext&&) = delete;
-  Http2ReadContext& operator=(Http2ReadContext&&) = delete;
-
-  //////////////////////////////////////////////////////////////////////////////
-  // Current Frame Header management.
-
-  const Http2FrameHeader& GetCurrentFrameHeader() const {
-    return current_frame_header_;
-  }
-  void SetCurrentFrameHeader(const Http2FrameHeader& header) {
-    current_frame_header_ = header;
-    IncrementReadCycleCounters(header.length);
-  }
+  ReadLoopPauseRestart() = default;
+  ReadLoopPauseRestart(const ReadLoopPauseRestart&) = delete;
+  ReadLoopPauseRestart& operator=(const ReadLoopPauseRestart&) = delete;
+  ReadLoopPauseRestart(ReadLoopPauseRestart&&) = delete;
+  ReadLoopPauseRestart& operator=(ReadLoopPauseRestart&&) = delete;
 
   //////////////////////////////////////////////////////////////////////////////
   // Read Loop Pause/Resume management.
@@ -107,7 +96,6 @@ class Http2ReadContext {
            should_pause_read_loop_ == should_pause;
   }
 
- private:
   //////////////////////////////////////////////////////////////////////////////
   // Read Cycle Counter management.
   void ResetReadCycleCounters() {
@@ -122,6 +110,8 @@ class Http2ReadContext {
       ResetReadCycleCounters();
     }
   }
+
+ private:
   // Counters to track total bytes and frames read per cycle.
   // Checked against limits to pause the read loop when maxed out.
   // This yields execution to prevent starvation of other transport tasks.
@@ -137,7 +127,6 @@ class Http2ReadContext {
   //////////////////////////////////////////////////////////////////////////////
   // Other data members.
 
-  Http2FrameHeader current_frame_header_ = {};
   bool should_pause_read_loop_ = false;
   Waker read_loop_waker_;
 };
@@ -318,6 +307,41 @@ class ReadContext {
   Http2FrameCountTracker& mutable_tracker() { return tracker_; }
   const Http2FrameCountTracker& tracker() const { return tracker_; }
 
+  //////////////////////////////////////////////////////////////////////////////
+  // Current Frame Header management.
+
+  const Http2FrameHeader& GetCurrentFrameHeader() const {
+    return current_frame_header_;
+  }
+  void SetCurrentFrameHeader(const Http2FrameHeader& header) {
+    current_frame_header_ = header;
+    read_loop_manager_.IncrementReadCycleCounters(header.length);
+  }
+
+  //////////////////////////////////////////////////////////////////////////////
+  // ReadLoopPauseRestart wrapper functions.
+
+  void SetPauseReadLoop() { read_loop_manager_.SetPauseReadLoop(); }
+
+  Poll<absl::Status> MaybePauseReadLoop() {
+    return read_loop_manager_.MaybePauseReadLoop();
+  }
+
+  void ResumeReadLoopIfPaused() { read_loop_manager_.ResumeReadLoopIfPaused(); }
+
+  bool TestOnlyCheckCounters(uint64_t expected_bytes_read,
+                             uint16_t expected_read_count,
+                             bool should_pause) const {
+    return read_loop_manager_.TestOnlyCheckCounters(
+        expected_bytes_read, expected_read_count, should_pause);
+  }
+
+  void ResetReadCycleCounters() { read_loop_manager_.ResetReadCycleCounters(); }
+
+  void IncrementReadCycleCounters(const uint32_t payload_length) {
+    read_loop_manager_.IncrementReadCycleCounters(payload_length);
+  }
+
  private:
   // Initialized only once at the time of transport creation.
   // Should remain constant for the lifetime of the transport.
@@ -331,6 +355,8 @@ class ReadContext {
       DEFAULT_MAX_HEADER_LIST_SIZE_SOFT_LIMIT;
   HPackParser parser_;
   Http2FrameCountTracker tracker_;
+  Http2FrameHeader current_frame_header_ = {};
+  ReadLoopPauseRestart read_loop_manager_;
 };
 
 }  // namespace http2
