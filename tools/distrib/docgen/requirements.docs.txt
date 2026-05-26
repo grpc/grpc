@@ -15,8 +15,6 @@
 # To generate requirements.docs.lock, create a new virtual environment
 # and execute the command:
 # pip install -r requirements.docs.txt && pip freeze > requirements.docs.lock 
-# 
-# Note: this file is currently empty, as no additional packages are needed
-# to generate the documentation.  Once any package is added, please delete
-# this note
 
+Sphinx
+pydata_sphinx_theme==0.16.1
