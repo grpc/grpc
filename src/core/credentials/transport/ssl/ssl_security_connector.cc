@@ -106,6 +106,7 @@ class grpc_ssl_channel_security_connector final
     tsi_handshaker* tsi_hs = nullptr;
     auto stats_plugin_group = args.GetObjectRef<
         grpc_core::GlobalStatsPluginRegistry::StatsPluginGroup>();
+
     tsi_result result = tsi_ssl_client_handshaker_factory_create_handshaker(
         client_handshaker_factory_,
         overridden_target_name_.empty() ? target_name_.c_str()
