@@ -144,6 +144,21 @@ TEST(AuthContextTest, ContextWithExtension) {
   ctx->set_extension(std::make_unique<SampleExtension>());
 }
 
+TEST(AuthContextTest, AddPropertyWithNullValue) {
+  grpc_core::RefCountedPtr<grpc_auth_context> ctx =
+      grpc_core::MakeRefCounted<grpc_auth_context>(nullptr);
+  ASSERT_NE(ctx, nullptr);
+  grpc_auth_context_add_property(ctx.get(), "key", nullptr, 10);
+
+  grpc_auth_property_iterator it =
+      grpc_auth_context_find_properties_by_name(ctx.get(), "key");
+  const grpc_auth_property* prop = grpc_auth_property_iterator_next(&it);
+  // We expect the property NOT to be added if value is nullptr.
+  EXPECT_EQ(prop, nullptr);
+
+  ctx.reset(DEBUG_LOCATION, "test");
+}
+
 TEST(AuthContextTest, CompareAuthContextEqualProps) {
   // Setup two auth contexts with the same protocol and equal foo props
   grpc_core::RefCountedPtr<grpc_auth_context> ctx =
