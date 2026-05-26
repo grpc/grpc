@@ -1276,14 +1276,24 @@ class V3InterceptorToV2Bridge : public ChannelFilter, public Interceptor {
       InterActivityLatch<std::optional<ServerMetadataHandle>>
           server_initial_metadata;
       InterActivityPipe<MessageHandle, 1> server_to_client_messages;
+      InterActivityLatch<ServerMetadataHandle> server_trailing_metadata;
     };
     auto* pipe_owner = GetContext<Arena>()->ManagedNew<PipeOwner>();
+    initiator.SpawnInfallible(
+        "pull_server_trailing_metadata", [initiator, pipe_owner]() mutable {
+          return Map(
+              initiator.PullServerTrailingMetadata(),
+              [pipe_owner](ServerMetadataHandle metadata) {
+                pipe_owner->server_trailing_metadata.Set(std::move(metadata));
+                return Empty{};
+              });
+        });
     // Now return a promise that does all the things.
     return Race(
         // We need to start polling the initiator for server trailing
         // metadata immediately, since the v3 interceptor may generate a
         // failure before any of the other promises resolve.
-        initiator.PullServerTrailingMetadata(),
+        pipe_owner->server_trailing_metadata.Wait(),
         // This promise does the rest of the things, but it will always
         // return pending, because the promise can't actually finish
         // until the initiator returns trailing metadata above.
