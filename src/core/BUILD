@@ -6146,6 +6146,7 @@ grpc_cc_library(
         "grpc_matchers",
         "json",
         "match",
+        "time",
         "validation_errors",
         "xds_server_grpc",
         "//:gpr",
