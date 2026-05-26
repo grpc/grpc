@@ -165,6 +165,7 @@ build:python --copt=-DGRPC_PYTHON_BUILD
 
 # Compile database generation config
 build:compdb --build_tag_filters=-nocompdb
+build:compdb --skip_incompatible_explicit_targets
 
 try-import %workspace%/tools/fuzztest.bazelrc
 
