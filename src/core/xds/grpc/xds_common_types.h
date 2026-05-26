@@ -23,11 +23,13 @@
 #include <variant>
 #include <vector>
 
+#include "src/core/call/metadata_batch.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/matchers.h"
 #include "src/core/util/time.h"
 #include "src/core/util/validation_errors.h"
 #include "src/core/xds/grpc/xds_server_grpc.h"
+#include "absl/status/status.h"
 #include "absl/strings/string_view.h"
 
 namespace grpc_core {
@@ -128,6 +130,44 @@ struct HeaderMutationRules {
            is_re_equal(allow_expression.get(), other.allow_expression.get());
   }
 };
+
+// TODO(roth): We would ideally like to use a Slice for the header value, but
+// Slice isn't copyable, which makes it problematic to store here. The down-side
+// of this approach is that we need to make a copy when we apply the header
+// value to each RPC rather than just taking a new ref to the slice. Consider
+// solving this problem by adding a new RefCountedSlice class to represent an
+// immutable, ref-counted slice that can be turned into a Slice and thus added
+// to RPC metadata without a copy.
+struct XdsHeaderValueOption {
+  enum class AppendAction {
+    // If the header already exists in the metadata batch, comma-concatenate the
+    // new value.
+    // Otherwise, append a new metadata entry.
+    kAppendIfExistsOrAdd = 0,
+    // Add the header only if it is not currently present in the metadata batch.
+    kAddIfAbsent = 1,
+    // Discard any existing entries in the metadata batch and append the new
+    // value.
+    kOverwriteIfExistsOrAdd = 2,
+    // If the header already exists, discard existing entries and replace with
+    // the new value.
+    // If absent, do nothing.
+    kOverwriteIfExists = 3
+  };
+
+  // The targeted metadata key and value to apply during mutation.
+  std::pair<std::string, std::string> header;
+  // Rule specifying how to merge or overwrite existing metadata batch entries.
+  AppendAction append_action;
+};
+
+absl::Status ApplyXdsHeaderMutationsRemoval(absl::string_view remove_header,
+                                            const HeaderMutationRules* rules,
+                                            grpc_metadata_batch& md);
+
+absl::Status ApplyXdsHeaderMutationsAddition(
+    const XdsHeaderValueOption& set_header, const HeaderMutationRules* rules,
+    grpc_metadata_batch& md);
 
 }  // namespace grpc_core
 
