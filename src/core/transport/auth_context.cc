@@ -24,6 +24,7 @@
 #include <string.h>
 
 #include <algorithm>
+#include <limits>
 
 #include "src/core/config/core_configuration.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -142,6 +143,9 @@ void grpc_auth_context::ensure_capacity() {
 void grpc_auth_context::add_property(const char* name, const char* value,
                                      size_t value_length) {
   if (value == nullptr) return;
+  if (value_length == std::numeric_limits<size_t>::max()) {
+    return;
+  }
   ensure_capacity();
   grpc_auth_property* prop = &properties_.array[properties_.count++];
   prop->name = gpr_strdup(name);
