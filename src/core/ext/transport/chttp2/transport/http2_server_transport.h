@@ -499,23 +499,13 @@ class Http2ServerTransport final : public ServerTransport,
   Http2Status IncomingStream(ClientMetadataHandle&& metadata,
                              uint32_t stream_id);
 
-  // void BeginCloseStream(RefCountedPtr<Stream> stream,
-  //                       std::optional<uint32_t> reset_stream_error_code,
-  //                       ServerMetadataHandle&& metadata,
-  //                       DebugLocation whence = {});
+  void BeginCloseStream(RefCountedPtr<Stream> stream,
+                        std::optional<uint32_t> reset_stream_error_code,
+                        absl::Status status, DebugLocation whence = {});
 
   // This function MUST be idempotent.
-  void CloseStream(uint32_t stream_id, absl::Status status,
-                   DebugLocation whence = {}) {
-    LOG(INFO) << "Http2ServerTransport::CloseStream for stream id=" << stream_id
-              << " status=" << status << " location=" << whence.file() << ":"
-              << whence.line();
-    // TODO(akshitpatel) : [PH2][P2] : Implement this.
-  }
-
-  // This function MUST be idempotent.
-  // void CloseStream(Stream& stream, CloseStreamArgs args,
-  //                  DebugLocation whence = {});
+  void CloseStream(Stream& stream, CloseStreamArgs args,
+                   DebugLocation whence = {});
 
   //////////////////////////////////////////////////////////////////////////////
   // Ping Keepalive and Goaway
@@ -564,17 +554,8 @@ class Http2ServerTransport final : public ServerTransport,
   // should not be cancelled in case of stream errors.
   // If the error is a connection error, it closes the transport and returns the
   // corresponding (failed) absl status.
-  absl::Status HandleError(const std::optional<uint32_t> stream_id,
-                           Http2Status status, DebugLocation whence = {}) {
-    // TODO(akshitpatel) : [PH2][P0] : Implement this. And remove the log.
-    GRPC_HTTP2_SERVER_DLOG << "Http2ServerTransport::HandleError for stream id="
-                           << (stream_id.has_value() ? absl::StrCat(*stream_id)
-                                                     : "nullopt")
-                           << " status=" << status.DebugString()
-                           << " location=" << whence.file() << ":"
-                           << whence.line();
-    return absl::OkStatus();
-  }
+  absl::Status HandleError(std::optional<uint32_t> stream_id,
+                           Http2Status status, DebugLocation whence = {});
 
   //////////////////////////////////////////////////////////////////////////////
   // Misc Transport Stuff

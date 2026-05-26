@@ -1491,8 +1491,7 @@ void Http2ClientTransport::BeginCloseStream(
                               "is null reset_stream_error_code="
                            << (reset_stream_error_code.has_value()
                                    ? absl::StrCat(*reset_stream_error_code)
-                                   : "nullopt")
-                           << " metadata=" << metadata->DebugString();
+                                   : "nullopt");
     return;
   }
 
@@ -1502,7 +1501,6 @@ void Http2ClientTransport::BeginCloseStream(
       << (reset_stream_error_code.has_value()
               ? absl::StrCat(*reset_stream_error_code)
               : "nullopt")
-      << " ServerMetadata=" << metadata->DebugString()
       << " location=" << whence.file() << ":" << whence.line();
 
   bool close_reads = false;
