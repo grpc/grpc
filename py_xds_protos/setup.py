@@ -32,7 +32,7 @@ import python_version
 XDS_PROTOS_GENCODE_GRPC_VERSION = "1.74.0"
 
 CLASSIFIERS = [
-    "Development Status :: 5 - Production/Stable",
+    "Development Status :: 3 - Alpha",
     "Programming Language :: Python",
     "Programming Language :: Python :: 3",
 ] + [
