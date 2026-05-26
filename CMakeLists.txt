@@ -27273,6 +27273,7 @@ target_link_libraries(periodic_update_test
   absl::function_ref
   absl::hash
   absl::statusor
+  absl::string_view
   absl::span
   absl::utility
   gpr
