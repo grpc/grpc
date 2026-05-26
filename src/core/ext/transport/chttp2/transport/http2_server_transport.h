@@ -313,6 +313,27 @@ class Http2ServerTransport final : public ServerTransport,
 
   auto HandleMetadataAndMessages(RefCountedPtr<Stream> stream);
 
+  // Handles failure of a promise by closing the associated stream.
+  template <typename Promise>
+  auto HandleStreamErrorOnFailure(Promise&& promise,
+                                  RefCountedPtr<Stream> stream) {
+    return Map(std::forward<Promise>(promise),
+               [this, stream = std::move(stream)](auto&& result) mutable {
+                 absl::Status status = StatusCast<absl::Status>(result);
+                 GRPC_HTTP2_SERVER_DLOG
+                     << "Http2ServerTransport::HandleStreamErrorOnFailure "
+                        "Received status: "
+                     << status;
+                 if (GPR_UNLIKELY(!status.ok())) {
+                   GRPC_UNUSED absl::Status unused_status = HandleError(
+                       std::move(stream),
+                       Http2Status::AbslStreamError(
+                           status.code(), std::string(status.message())));
+                 }
+                 return std::forward<decltype(result)>(result);
+               });
+  }
+
   // Force triggers a transport write cycle
   absl::Status TriggerWriteCycle(DebugLocation whence = {}) {
     GRPC_HTTP2_SERVER_DLOG
@@ -331,7 +352,7 @@ class Http2ServerTransport final : public ServerTransport,
            "status: "
         << status << " at " << whence.file() << ":" << whence.line();
     GRPC_UNUSED absl::Status unused_status = HandleError(
-        /*stream_id=*/std::nullopt, ToHttpOkOrConnError(status), whence);
+        /*stream=*/nullptr, ToHttpOkOrConnError(status), whence);
     return false;
   }
 
@@ -388,7 +409,7 @@ class Http2ServerTransport final : public ServerTransport,
         [self = RefAsSubclass<Http2ServerTransport>()](absl::Status status) {
           if (!status.ok()) {
             GRPC_UNUSED absl::Status error = self->HandleError(
-                /*stream_id=*/std::nullopt, ToHttpOkOrConnError(status));
+                /*stream=*/nullptr, ToHttpOkOrConnError(status));
           }
         });
   }
@@ -499,23 +520,34 @@ class Http2ServerTransport final : public ServerTransport,
   Http2Status IncomingStream(ClientMetadataHandle&& metadata,
                              uint32_t stream_id);
 
-  // void BeginCloseStream(RefCountedPtr<Stream> stream,
-  //                       std::optional<uint32_t> reset_stream_error_code,
-  //                       ServerMetadataHandle&& metadata,
-  //                       DebugLocation whence = {});
+  // Call this when a stream error is detected locally (e.g., invalid frame
+  // payload) and we must notify the client by sending a RST_STREAM frame. This
+  // enqueues the RST_STREAM frame and immediately closes the stream for reads.
+  // Writes will be closed by the write loop after the RST_STREAM frame is
+  // written to the wire.
+  // Parameters:
+  //   stream: The stream to close.
+  //   reset_stream_error_code: The error code to use for the RST_STREAM frame.
+  //   status: The failure status to propagate to the application.
+  //   whence: The location of the caller.
+  void BeginCloseStream(RefCountedPtr<Stream> stream,
+                        uint32_t reset_stream_error_code, absl::Status status,
+                        DebugLocation whence = {});
 
-  // This function MUST be idempotent.
-  void CloseStream(uint32_t stream_id, absl::Status status,
-                   DebugLocation whence = {}) {
-    LOG(INFO) << "Http2ServerTransport::CloseStream for stream id=" << stream_id
-              << " status=" << status << " location=" << whence.file() << ":"
-              << whence.line();
-    // TODO(akshitpatel) : [PH2][P2] : Implement this.
-  }
-
-  // This function MUST be idempotent.
-  // void CloseStream(Stream& stream, CloseStreamArgs args,
-  //                  DebugLocation whence = {});
+  // Call this to immediately close the stream for reads and/or writes locally.
+  // This should be called when:
+  // 1. We receive a RST_STREAM from the client.
+  // 2. Receiving a half-close from the client.
+  // 3. Receiving a trailing metadata frame from the client.
+  // This function is be idempotent. If a non-OK status is provided, the
+  // CallSpine is cancelled and the status is propagated to the application.
+  // Parameters:
+  //   stream: The stream to close.
+  //   args: The arguments to close the stream with.
+  //   status: The failure status to propagate to the application.
+  //   whence: The location of the caller.
+  void CloseStream(Stream& stream, CloseStreamArgs args, absl::Status status,
+                   DebugLocation whence = {});
 
   //////////////////////////////////////////////////////////////////////////////
   // Ping Keepalive and Goaway
@@ -559,22 +591,13 @@ class Http2ServerTransport final : public ServerTransport,
   // Handles the error status and returns the corresponding absl status. Absl
   // Status is returned so that the error can be gracefully handled
   // by promise primitives.
-  // If the error is a stream error, it closes the stream and returns an ok
+  // If the error is a stream error, it initiates stream close and returns an ok
   // status. Ok status is returned because the calling transport promise loops
   // should not be cancelled in case of stream errors.
   // If the error is a connection error, it closes the transport and returns the
   // corresponding (failed) absl status.
-  absl::Status HandleError(const std::optional<uint32_t> stream_id,
-                           Http2Status status, DebugLocation whence = {}) {
-    // TODO(akshitpatel) : [PH2][P0] : Implement this. And remove the log.
-    GRPC_HTTP2_SERVER_DLOG << "Http2ServerTransport::HandleError for stream id="
-                           << (stream_id.has_value() ? absl::StrCat(*stream_id)
-                                                     : "nullopt")
-                           << " status=" << status.DebugString()
-                           << " location=" << whence.file() << ":"
-                           << whence.line();
-    return absl::OkStatus();
-  }
+  absl::Status HandleError(RefCountedPtr<Stream> stream, Http2Status status,
+                           DebugLocation whence = {});
 
   //////////////////////////////////////////////////////////////////////////////
   // Misc Transport Stuff
