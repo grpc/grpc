@@ -132,6 +132,13 @@ absl::Status GoawayManager::Context::TriggerWriteCycle() {
   return status;
 }
 
+void GoawayManager::Context::NotifyTransportClosed() {
+  GRPC_HTTP2_GOAWAY_LOG << "NotifyTransportClosed: state change "
+                        << GoawayStateToString(goaway_state) << " -> kDone.";
+  goaway_state = GoawayState::kDone;
+  wakers.WakeupAsync();
+}
+
 std::optional<Http2Frame> GoawayManager::TestOnlyMaybeGetGoawayFrame() {
   GRPC_HTTP2_GOAWAY_LOG << "TestOnlyMaybeGetGoawayFrame: current state: "
                         << context_->GoawayStateToString(

@@ -863,15 +863,33 @@ auto Http2ClientTransport::EndpointWrite(SliceBuffer&& output_buf) {
                          << output_buf_length;
 
   transport_write_context_.GetWriteCycle().BeginWrite(output_buf_length);
-  return Map(
-      endpoint_.Write(std::forward<SliceBuffer>(output_buf),
-                      TransportWriteContext::GetWriteArgs(settings_->peer())),
-      [this](absl::Status status) {
-        GRPC_HTTP2_CLIENT_DLOG
-            << "Http2ClientTransport::EndpointWrite complete with status = "
-            << status;
-        transport_write_context_.GetWriteCycle().EndWrite(status.ok());
-        return status;
+  return If(
+      [this]() {
+        MutexLock lock(&transport_mutex_);
+        return is_transport_closed_;
+      },
+      [this]() -> Poll<absl::Status> {
+        LOG(INFO) << "Http2ClientTransport::EndpointWrite: transport closed";
+        goaway_manager_.NotifyTransportClosed();
+        return absl::CancelledError("Transport closed");
+      },
+      [this, output_buf = std::move(output_buf)]() mutable {
+        LOG(INFO)
+            << "Http2ClientTransport::EndpointWrite: calling endpoint_.Write";
+        return Map(
+            endpoint_.Write(
+                std::move(output_buf),
+                TransportWriteContext::GetWriteArgs(settings_->peer())),
+            [this](absl::Status status) {
+              LOG(INFO) << "Http2ClientTransport::EndpointWrite: callback "
+                           "invoked with status="
+                        << status;
+              GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport::EndpointWrite "
+                                        "complete with status = "
+                                     << status;
+              transport_write_context_.GetWriteCycle().EndWrite(status.ok());
+              return status;
+            });
       });
 }
 
@@ -1600,9 +1618,14 @@ void Http2ClientTransport::BeginCloseStream(
 
 void Http2ClientTransport::CloseTransport() {
   GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport::CloseTransport";
+  {
+    MutexLock lock(&transport_mutex_);
+    is_transport_closed_ = true;
+  }
 
   transport_closed_latch_.Set();
   settings_->HandleTransportShutdown(event_engine_.get());
+  goaway_manager_.NotifyTransportClosed();
 
   // This is the only place where the general_party_ is reset.
   general_party_.reset();
@@ -1620,13 +1643,16 @@ void Http2ClientTransport::MaybeSpawnCloseTransport(Http2Status http2_status,
   // enqueued. Additionally this also prevents additional frames with non-zero
   // stream_ids from being processed by the read loop.
   ReleasableMutexLock lock(&transport_mutex_);
-  if (is_transport_closed_) {
+  if (is_transport_closed_ || is_closing_) {
     lock.Release();
     return;
   }
+  is_closing_ = true;
   GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport::MaybeSpawnCloseTransport "
                             "Initiating transport close";
-  is_transport_closed_ = true;
+  // is_transport_closed_ = true;
+  // Force NextStreamId() to fail for new streams.
+  next_stream_id_ = GetMaxAllowedStreamId() + 1;
   absl::flat_hash_map<uint32_t, RefCountedPtr<Stream>> stream_list =
       std::move(stream_list_);
   stream_list_.clear();
@@ -1690,11 +1716,11 @@ bool Http2ClientTransport::CanCloseTransportLocked() const {
   GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport::CanCloseTransportLocked "
                             "GetActiveStreamCountLocked="
                          << GetActiveStreamCountLocked()
-                         << " PeekNextStreamId=" << PeekNextStreamId()
+                         << " PeekNextStreamId=" << next_stream_id_
                          << " GetMaxAllowedStreamId="
                          << GetMaxAllowedStreamId();
   return GetActiveStreamCountLocked() == 0 &&
-         PeekNextStreamId() > GetMaxAllowedStreamId();
+         next_stream_id_ > GetMaxAllowedStreamId();
 }
 
 Http2ClientTransport::~Http2ClientTransport() {
@@ -1768,6 +1794,10 @@ RefCountedPtr<channelz::SocketNode> Http2ClientTransport::GetSocketNode()
 // Stream Related Operations
 
 absl::StatusOr<uint32_t> Http2ClientTransport::NextStreamId() {
+  MutexLock lock(&transport_mutex_);
+  if (is_transport_closed_) {
+    return absl::UnavailableError("Transport is closed");
+  }
   if (next_stream_id_ > GetMaxAllowedStreamId()) {
     // TODO(tjagtap) : [PH2][P3] : Handle case if transport runs out of stream
     // ids
@@ -1788,7 +1818,7 @@ absl::StatusOr<uint32_t> Http2ClientTransport::NextStreamId() {
     // this for incoming streams only. If a server receives more
     // streams from a client than is allowed by the clients settings,
     // whether or not we should fail is debatable.
-    MutexLock lock(&transport_mutex_);
+    // MutexLock lock(&transport_mutex_);
     if (GetActiveStreamCountLocked() >=
         settings_->peer().max_concurrent_streams()) {
       return absl::ResourceExhaustedError("Reached max concurrent streams");
@@ -1799,7 +1829,7 @@ absl::StatusOr<uint32_t> Http2ClientTransport::NextStreamId() {
   // identifiers.
   uint32_t new_stream_id = std::exchange(next_stream_id_, next_stream_id_ + 2);
   if (GPR_UNLIKELY(next_stream_id_ > GetMaxAllowedStreamId())) {
-    ReportDisconnection(
+    ReportDisconnectionLocked(
         absl::ResourceExhaustedError("Transport Stream IDs exhausted"),
         {},  // TODO(tjagtap) : [PH2][P2] : Report better disconnect info.
         "no_more_stream_ids");

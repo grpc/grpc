@@ -182,11 +182,21 @@ class Http2ClientTransport final : public ClientTransport,
   // resolved or cancelled.
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto EndpointReadSlice(
       const size_t num_bytes) {
-    return Map(endpoint_.ReadSlice(num_bytes),
-               [this, num_bytes](absl::StatusOr<Slice>&& status) {
-                 OnEndpointRead(status.ok(), num_bytes);
-                 return std::move(status);
-               });
+    return If(
+        [this]() {
+          MutexLock lock(&transport_mutex_);
+          return is_transport_closed_;
+        },
+        []() -> Poll<absl::StatusOr<Slice>> {
+          return absl::CancelledError("Transport closed");
+        },
+        [this, num_bytes]() {
+          return Map(endpoint_.ReadSlice(num_bytes),
+                     [this, num_bytes](absl::StatusOr<Slice>&& status) {
+                       OnEndpointRead(status.ok(), num_bytes);
+                       return std::move(status);
+                     });
+        });
   }
 
   // Callers MUST ensure that the transport is not destroyed till the promise is
@@ -441,7 +451,10 @@ class Http2ClientTransport final : public ClientTransport,
 
   // Returns the next stream id without incrementing it. MUST be called from the
   // transport party.
-  uint32_t PeekNextStreamId() const { return next_stream_id_; }
+  uint32_t PeekNextStreamId() const {
+    MutexLock lock(&transport_mutex_);
+    return next_stream_id_;
+  }
 
   // Returns the last stream id sent by the transport. If no streams were sent,
   // returns 0. MUST be called from the transport party.
@@ -647,7 +660,7 @@ class Http2ClientTransport final : public ClientTransport,
   PromiseEndpoint endpoint_;
   RefCountedPtr<SettingsPromiseManager> settings_;
 
-  Mutex transport_mutex_;
+  mutable Mutex transport_mutex_;
 
   absl::flat_hash_map<uint32_t, RefCountedPtr<Stream>> stream_list_
       ABSL_GUARDED_BY(transport_mutex_);
@@ -655,6 +668,7 @@ class Http2ClientTransport final : public ClientTransport,
   uint32_t next_stream_id_;
   HPackCompressor encoder_;
   bool is_transport_closed_ ABSL_GUARDED_BY(transport_mutex_) = false;
+  bool is_closing_ ABSL_GUARDED_BY(transport_mutex_) = false;
   Latch<void> transport_closed_latch_;
 
   ConnectivityStateTracker state_tracker_ ABSL_GUARDED_BY(transport_mutex_){

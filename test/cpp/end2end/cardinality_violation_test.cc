@@ -31,6 +31,7 @@
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/test_config.h"
+#include "test/cpp/util/byte_buffer_proto_helper.h"
 #include "gtest/gtest.h"
 #include "absl/strings/match.h"
 
@@ -227,6 +228,54 @@ TEST_F(CardinalityViolationTest, ClientAsyncStreamingZeroResponses) {
   EXPECT_EQ(client_cq.AsyncNext(&got_tag, &ok, deadline),
             CompletionQueue::GOT_EVENT);
   EXPECT_EQ(got_tag, tag(3));
+  EXPECT_EQ(s.error_code(), StatusCode::UNIMPLEMENTED);
+  delete writer;
+}
+TEST_F(CardinalityViolationTest, ClientStreamingExtraResponses) {
+  ClientContext context;
+  EchoResponse response;
+  grpc::internal::RpcMethod method(
+      "/grpc.testing.EchoTestService/UnregisteredClientStreamingMethod",
+      grpc::internal::RpcMethod::CLIENT_STREAMING);
+  auto writer = grpc::internal::ClientWriterFactory<EchoRequest>::Create(
+      channel_.get(), method, &context, &response);
+  GenericServerContext server_context;
+  GenericServerAsyncReaderWriter stream(&server_context);
+  generic_service_.RequestCall(&server_context, &stream, cq_.get(), cq_.get(),
+                               tag(100));
+  void* got_tag;
+  bool ok;
+  gpr_timespec deadline = gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
+                                       gpr_time_from_seconds(10, GPR_TIMESPAN));
+  EXPECT_EQ(cq_->AsyncNext(&got_tag, &ok, deadline),
+            CompletionQueue::GOT_EVENT);
+  EXPECT_EQ(got_tag, tag(100));
+  EchoResponse first_resp;
+  first_resp.set_message("first");
+  auto first_buf = SerializeToByteBuffer(&first_resp);
+  stream.Write(*first_buf, tag(101));
+  deadline = gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
+                          gpr_time_from_seconds(10, GPR_TIMESPAN));
+  EXPECT_EQ(cq_->AsyncNext(&got_tag, &ok, deadline),
+            CompletionQueue::GOT_EVENT);
+  EXPECT_EQ(got_tag, tag(101));
+  EchoResponse second_resp;
+  second_resp.set_message("second");
+  auto second_buf = SerializeToByteBuffer(&second_resp);
+  stream.Write(*second_buf, tag(102));
+  deadline = gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
+                          gpr_time_from_seconds(10, GPR_TIMESPAN));
+  EXPECT_EQ(cq_->AsyncNext(&got_tag, &ok, deadline),
+            CompletionQueue::GOT_EVENT);
+  EXPECT_EQ(got_tag, tag(102));
+  stream.Finish(Status::OK, tag(103));
+  deadline = gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
+                          gpr_time_from_seconds(10, GPR_TIMESPAN));
+  EXPECT_EQ(cq_->AsyncNext(&got_tag, &ok, deadline),
+            CompletionQueue::GOT_EVENT);
+  EXPECT_EQ(got_tag, tag(103));
+  writer->WritesDone();
+  Status s = writer->Finish();
   EXPECT_EQ(s.error_code(), StatusCode::UNIMPLEMENTED);
   delete writer;
 }
