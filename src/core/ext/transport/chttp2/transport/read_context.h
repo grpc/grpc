@@ -226,8 +226,12 @@ class ReadContext {
     return (status.IsOk()) ? std::move(original_status) : std::move(status);
   }
 
+  // Client : For a client, the last_stream_id is the last stream that is sent
+  // by the Client.
+  // Server : For a server, the last_stream_id is the last known stream that is
+  // received by the Server.
   Http2Status ValidateHeader(const uint32_t max_frame_size_setting,
-                             Http2FrameHeader& current_frame_header,
+                             const Http2FrameHeader& current_frame_header,
                              const uint32_t last_stream_id,
                              const bool is_first_settings_processed) {
     GRPC_HTTP2_COMMON_DLOG << "ReadContext::ValidateFrameHeader "

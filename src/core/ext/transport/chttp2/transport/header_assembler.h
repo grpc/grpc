@@ -41,7 +41,7 @@
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 
-// TODO(tjagtap) TODO(akshitpatel): [PH2][P3] : Write micro benchmarks for
+// TODO(akshitpatel): [PH2][P4] : Write micro benchmarks for
 // assembler and disassembler code
 
 namespace grpc_core {
