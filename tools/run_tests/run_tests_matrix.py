@@ -473,7 +473,7 @@ if __name__ == "__main__":
     argp.add_argument(
         "-j",
         "--jobs",
-        default=multiprocessing.cpu_count() / _DEFAULT_INNER_JOBS,
+        default=None,
         type=int,
         help="Number of concurrent run_tests.py instances.",
     )
