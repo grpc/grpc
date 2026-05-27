@@ -53,8 +53,11 @@ opentelemetry-exporter-prometheus
 opentelemetry-resourcedetector-gcp
 opentelemetry-sdk
 
-# Pinning to the version corresponding to third_party/protobuf v34.2
-protobuf==7.34.2
+# We're using 34.x to adopt a bugfix (https://github.com/grpc/grpc/issues/42236)
+# which isn't officially released yet.
+# This branch has compiler version number 7.34.3-dev which is larger than the latest
+# release of 7.34. Bump the runtime to at least 7.35.0 to pass version check.
+protobuf~=7.35.0
 
 pyyaml  # for DNS test
 requests
