@@ -18,6 +18,7 @@ import contextlib
 import enum
 import logging
 import sys
+import typing
 from typing import Any, Protocol
 
 from grpc import _compression
