@@ -62,10 +62,10 @@ archive_override(
     patches = [
         "//bazel:protobuf/fix_name_conflict.patch",
     ],
-    strip_prefix = "protobuf-da4cc469ff362536742f0d4a7965b559f62f68df",
+    strip_prefix = "protobuf-9570bfb4c264fb8331d136c0609aed6b94ac0551",
     urls = [
-        "https://storage.googleapis.com/grpc-bazel-mirror/github.com/protocolbuffers/protobuf/archive/da4cc469ff362536742f0d4a7965b559f62f68df.tar.gz",
-        "https://github.com/protocolbuffers/protobuf/archive/da4cc469ff362536742f0d4a7965b559f62f68df.tar.gz",
+        "https://storage.googleapis.com/grpc-bazel-mirror/github.com/protocolbuffers/protobuf/archive/9570bfb4c264fb8331d136c0609aed6b94ac0551.tar.gz",
+        "https://github.com/protocolbuffers/protobuf/archive/9570bfb4c264fb8331d136c0609aed6b94ac0551.tar.gz",
     ],
 )
 
