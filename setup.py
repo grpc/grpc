@@ -299,7 +299,7 @@ if EXTRA_ENV_LINK_ARGS is None:
             "grpcio",
             "cygrpc_exports.lds",
         )
-        EXTRA_ENV_LINK_ARGS += " -Wl,--version-script=" + _version_script
+        EXTRA_ENV_LINK_ARGS += f' -Wl,--version-script="{_version_script}"'
 
 # Explicitly link Core Foundation framework for MacOS to ensure no symbol is
 # missing when compiled using package managers like Conda.
