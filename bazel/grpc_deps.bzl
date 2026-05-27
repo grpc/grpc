@@ -57,15 +57,13 @@ def grpc_deps():
         )
 
     if "com_google_protobuf" not in native.existing_rules():
-        # TODO(weizheyuan): Populate sha256 checksum here.
-        # used for testing only
         http_archive(
-            # v34.2
+            # v34.x
             name = "com_google_protobuf",
-            strip_prefix = "protobuf-34a6cc00b0fa88dce9e41be106bf487da58ecb88",
+            strip_prefix = "protobuf-da4cc469ff362536742f0d4a7965b559f62f68df",
             urls = [
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/protocolbuffers/protobuf/archive/34a6cc00b0fa88dce9e41be106bf487da58ecb88.tar.gz",
-                "https://github.com/protocolbuffers/protobuf/archive/34a6cc00b0fa88dce9e41be106bf487da58ecb88.tar.gz",
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/protocolbuffers/protobuf/archive/da4cc469ff362536742f0d4a7965b559f62f68df.tar.gz",
+                "https://github.com/protocolbuffers/protobuf/archive/da4cc469ff362536742f0d4a7965b559f62f68df.tar.gz",
             ],
             patches = [
                 "@com_github_grpc_grpc//third_party:protobuf.patch",
