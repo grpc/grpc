@@ -569,6 +569,11 @@ if __name__ == "__main__":
     )
     args = argp.parse_args()
 
+    if args.jobs is None:
+        args.jobs = int(multiprocessing.cpu_count() / args.inner_jobs)
+        if args.jobs < 1:
+            args.jobs = 1
+
     extra_args = []
     if args.build_only:
         extra_args.append("--build_only")
