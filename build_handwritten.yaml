@@ -15,7 +15,7 @@ settings:
   core_version: 54.0.0
   csharp_major_version: 2
   g_stands_for: glacier
-  protobuf_version: 5.34.2
+  protobuf_version: 5.35.0
   supported_python_versions:
   - '3.10'
   - '3.11'
