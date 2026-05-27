@@ -21,13 +21,14 @@ module GRPC
     module ChannelCredentialsComposable
       def compose(*others)
         return self if others.empty?
+        flat_others = others.flatten
 
-        others.flatten.each do |o|
+        flat_others.each do |o|
           fail TypeError, "Argument to compose must be a CallCredentials, got #{o.class}" \
             unless o.is_a?(CallCredentials)
         end
 
-        call_creds = others.size == 1 ? others.first : CompositeCallCredentials.new(others)
+        call_creds = flat_others.size == 1 ? flat_others.first : CompositeCallCredentials.new(flat_others)
         CompositeChannelCredentials.new(self, call_creds)
       end
     end
@@ -50,16 +51,17 @@ module GRPC
 
       def compose(*others)
         return self if others.empty?
+        flat_others = others.flatten
 
-        others.flatten.each do |o|
+        flat_others.each do |o|
           fail TypeError, "Argument to compose must be a CallCredentials, got #{o.class}" \
             unless o.is_a?(CallCredentials)
         end
 
         if @call_credentials
-          CompositeChannelCredentials.new(@channel_credentials, @call_credentials.compose(*others))
+          CompositeChannelCredentials.new(@channel_credentials, @call_credentials.compose(*flat_others))
         else
-          CompositeChannelCredentials.new(@channel_credentials, CompositeCallCredentials.new(others))
+          CompositeChannelCredentials.new(@channel_credentials, CompositeCallCredentials.new(flat_others))
         end
       end
     end

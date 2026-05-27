@@ -64,7 +64,8 @@ module GRPC
 
       def get_metadata(context)
         @creds.each_with_object({}) do |c, metadata|
-          metadata.merge!(c.get_metadata(context))
+          creds_metadata = c.get_metadata(context)
+          metadata.merge!(creds_metadata) if creds_metadata
         end
       end
 

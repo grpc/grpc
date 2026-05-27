@@ -163,9 +163,9 @@ module GRPC
                          parent: nil,
                          credentials: nil,
                          metadata: {})
-      c, resolved_metadata = prepare_active_call(method, marshal, unmarshal,
-                                                 deadline: deadline, parent: parent,
-                                                 credentials: credentials, metadata: metadata)
+      c = new_active_call(method, marshal, unmarshal,
+                          deadline: deadline, parent: parent,
+                          credentials: credentials)
 
       intercept_args = {
         method: method,
@@ -174,23 +174,9 @@ module GRPC
         metadata: metadata
       }
 
-      interception_context = @interceptors.build_context
-
-      if return_op
-        op = c.operation
-        op.define_singleton_method(:execute) do
-          interception_context.intercept!(:request_response, intercept_args) do
-            c.request_response(req, metadata: resolved_metadata.merge(intercept_args[:metadata]))
-          end
-        end
-        op.define_singleton_method(:start_call) do |op_metadata = {}|
-          c.merge_metadata_to_send(resolved_metadata.merge(op_metadata))
-          c.send_initial_metadata
-        end
-        op
-      else
-        interception_context.intercept!(:request_response, intercept_args) do
-          c.request_response(req, metadata: resolved_metadata.merge(intercept_args[:metadata]))
+      handle_return_op(c, return_op, metadata, credentials, method) do
+        execute_with_interceptors(:request_response, intercept_args, credentials, method, c) do |resolved_md|
+          c.request_response(req, metadata: resolved_md)
         end
       end
     end
@@ -243,9 +229,9 @@ module GRPC
                         parent: nil,
                         credentials: nil,
                         metadata: {})
-      c, resolved_metadata = prepare_active_call(method, marshal, unmarshal,
-                                                 deadline: deadline, parent: parent,
-                                                 credentials: credentials, metadata: metadata)
+      c = new_active_call(method, marshal, unmarshal,
+                          deadline: deadline, parent: parent,
+                          credentials: credentials)
 
       intercept_args = {
         method: method,
@@ -254,23 +240,9 @@ module GRPC
         metadata: metadata
       }
 
-      interception_context = @interceptors.build_context
-
-      if return_op
-        op = c.operation
-        op.define_singleton_method(:execute) do
-          interception_context.intercept!(:client_streamer, intercept_args) do
-            c.client_streamer(requests, metadata: resolved_metadata.merge(intercept_args[:metadata]))
-          end
-        end
-        op.define_singleton_method(:start_call) do |op_metadata = {}|
-          c.merge_metadata_to_send(resolved_metadata.merge(op_metadata))
-          c.send_initial_metadata
-        end
-        op
-      else
-        interception_context.intercept!(:client_streamer, intercept_args) do
-          c.client_streamer(requests, metadata: resolved_metadata.merge(intercept_args[:metadata]))
+      handle_return_op(c, return_op, metadata, credentials, method) do
+        execute_with_interceptors(:client_streamer, intercept_args, credentials, method, c) do |resolved_md|
+          c.client_streamer(requests, metadata: resolved_md)
         end
       end
     end
@@ -338,9 +310,9 @@ module GRPC
                         credentials: nil,
                         metadata: {},
                         &blk)
-      c, resolved_metadata = prepare_active_call(method, marshal, unmarshal,
-                                                 deadline: deadline, parent: parent,
-                                                 credentials: credentials, metadata: metadata)
+      c = new_active_call(method, marshal, unmarshal,
+                          deadline: deadline, parent: parent,
+                          credentials: credentials)
 
       intercept_args = {
         method: method,
@@ -349,23 +321,9 @@ module GRPC
         metadata: metadata
       }
 
-      interception_context = @interceptors.build_context
-
-      if return_op
-        op = c.operation
-        op.define_singleton_method(:execute) do
-          interception_context.intercept!(:server_streamer, intercept_args) do
-            c.server_streamer(req, metadata: resolved_metadata.merge(intercept_args[:metadata]), &blk)
-          end
-        end
-        op.define_singleton_method(:start_call) do |op_metadata = {}|
-          c.merge_metadata_to_send(resolved_metadata.merge(op_metadata))
-          c.send_initial_metadata
-        end
-        op
-      else
-        interception_context.intercept!(:server_streamer, intercept_args) do
-          c.server_streamer(req, metadata: resolved_metadata.merge(intercept_args[:metadata]), &blk)
+      handle_return_op(c, return_op, metadata, credentials, method) do
+        execute_with_interceptors(:server_streamer, intercept_args, credentials, method, c) do |resolved_md|
+          c.server_streamer(req, metadata: resolved_md, &blk)
         end
       end
     end
@@ -463,9 +421,9 @@ module GRPC
                       credentials: nil,
                       metadata: {},
                       &blk)
-      c, resolved_metadata = prepare_active_call(method, marshal, unmarshal,
-                                                 deadline: deadline, parent: parent,
-                                                 credentials: credentials, metadata: metadata)
+      c = new_active_call(method, marshal, unmarshal,
+                          deadline: deadline, parent: parent,
+                          credentials: credentials)
 
       intercept_args = {
         method: method,
@@ -474,23 +432,9 @@ module GRPC
         metadata: metadata
       }
 
-      interception_context = @interceptors.build_context
-
-      if return_op
-        op = c.operation
-        op.define_singleton_method(:execute) do
-          interception_context.intercept!(:bidi_streamer, intercept_args) do
-            c.bidi_streamer(requests, metadata: resolved_metadata.merge(intercept_args[:metadata]), &blk)
-          end
-        end
-        op.define_singleton_method(:start_call) do |op_metadata = {}|
-          c.merge_metadata_to_send(resolved_metadata.merge(op_metadata))
-          c.send_initial_metadata
-        end
-        op
-      else
-        interception_context.intercept!(:bidi_streamer, intercept_args) do
-          c.bidi_streamer(requests, metadata: resolved_metadata.merge(intercept_args[:metadata]), &blk)
+      handle_return_op(c, return_op, metadata, credentials, method) do
+        execute_with_interceptors(:bidi_streamer, intercept_args, credentials, method, c) do |resolved_md|
+          c.bidi_streamer(requests, metadata: resolved_md, &blk)
         end
       end
     end
@@ -523,21 +467,50 @@ module GRPC
                      started: false)
     end
 
-    # Creates an active call and returns [active_call, resolved_metadata].
-    # On the C path, credentials are attached via set_credentials!; metadata is
-    # returned unchanged. Overridden by Core::CompositeCredentialsHandler when toggle is ON.
-    def prepare_active_call(method, marshal, unmarshal,
-                            deadline:, parent:, credentials:, metadata:)
-      c = new_active_call(method, marshal, unmarshal,
-                          deadline: deadline, parent: parent,
-                          credentials: credentials)
-      [c, resolve_call_metadata(metadata, credentials, method)]
+    # Runs the interceptor chain and resolves metadata/credentials exactly once
+    # at the end of the chain.
+    def execute_with_interceptors(rpc_type, intercept_args, credentials, method, call)
+      interception_context = @interceptors.build_context
+      call_started = false
+      already_finished = !call.status.nil?
+      begin
+        interception_context.intercept!(rpc_type, intercept_args) do
+          resolved_md = resolve_call_metadata(intercept_args[:metadata], credentials, method)
+          call_started = true
+          yield(resolved_md)
+        end
+      rescue StandardError => e
+        call.op_is_done unless call_started || already_finished
+        raise e
+      end
+    end
+
+    # Handles return_op lifecycle branching
+    def handle_return_op(call, return_op, metadata, credentials, method, &block)
+      if return_op
+        stub = self
+        op = call.operation
+        op.define_singleton_method(:execute) do
+          block.call
+        end
+        op.define_singleton_method(:start_call) do |op_metadata = {}|
+          resolved_md = stub.send(:resolve_call_metadata, metadata, credentials, method)
+          call.merge_metadata_to_send(resolved_md.merge(op_metadata))
+          call.send_initial_metadata
+        rescue StandardError => e
+          call.op_is_done unless call.metadata_sent
+          raise e
+        end
+        op
+      else
+        yield
+      end
     end
 
     def resolve_call_metadata(metadata, _credentials, _method)
       metadata
     end
 
-    private :prepare_active_call, :resolve_call_metadata
+    private :resolve_call_metadata, :execute_with_interceptors, :handle_return_op
   end
 end
