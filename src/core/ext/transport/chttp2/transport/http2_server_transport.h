@@ -311,6 +311,8 @@ class Http2ServerTransport final : public ServerTransport,
   // down towards the endpoint.
   auto CallOutboundLoop(RefCountedPtr<Stream> stream);
 
+  auto HandleMetadataAndMessages(RefCountedPtr<Stream> stream);
+
   // Force triggers a transport write cycle
   absl::Status TriggerWriteCycle(DebugLocation whence = {}) {
     GRPC_HTTP2_SERVER_DLOG
@@ -328,8 +330,8 @@ class Http2ServerTransport final : public ServerTransport,
         << "Http2ServerTransport::TriggerWriteCycleOrHandleError failed with "
            "status: "
         << status << " at " << whence.file() << ":" << whence.line();
-    GRPC_UNUSED absl::Status unused_status =
-        HandleError(std::nullopt, ToHttpOkOrConnError(status), whence);
+    GRPC_UNUSED absl::Status unused_status = HandleError(
+        /*stream_id=*/std::nullopt, ToHttpOkOrConnError(status), whence);
     return false;
   }
 
@@ -438,12 +440,8 @@ class Http2ServerTransport final : public ServerTransport,
   void AddToStreamList(RefCountedPtr<Stream> stream);
 
   absl::Status MaybeAddStreamToWritableStreamList(
-      GRPC_UNUSED const RefCountedPtr<Stream> stream,
-      GRPC_UNUSED const StreamDataQueue<
-          ClientMetadataHandle>::StreamWritabilityUpdate result) {
-    // TODO(akshitpatel) : [PH2][P0] : Implement this.
-    return absl::OkStatus();
-  }
+      RefCountedPtr<Stream> stream,
+      StreamDataQueue<ServerMetadataHandle>::StreamWritabilityUpdate result);
 
   // Returns the next stream id. If the next stream id is not available, it
   // returns std::nullopt. MUST be called from the transport party.

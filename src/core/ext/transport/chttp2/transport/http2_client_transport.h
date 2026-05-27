@@ -321,8 +321,8 @@ class Http2ClientTransport final : public ClientTransport,
         << "Http2ClientTransport::TriggerWriteCycleOrHandleError failed with "
            "status: "
         << status << " at " << whence.file() << ":" << whence.line();
-    GRPC_UNUSED absl::Status unused_status =
-        HandleError(std::nullopt, ToHttpOkOrConnError(status), whence);
+    GRPC_UNUSED absl::Status unused_status = HandleError(
+        /*stream_id=*/std::nullopt, ToHttpOkOrConnError(status), whence);
     return false;
   }
 

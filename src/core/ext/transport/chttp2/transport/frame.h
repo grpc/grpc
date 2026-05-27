@@ -431,6 +431,8 @@ inline constexpr absl::string_view kTooManyZeroLengthDataFrames =
     "gRPC Transport Error : Received too many zero length DATA frames";
 inline constexpr absl::string_view kUnsolicitedSettingsAck =
     "gRPC Transport Error : Received unsolicited SETTINGS ACK.";
+inline constexpr absl::string_view kFailedToEnqueueStream =
+    "gRPC Transport Error : Failed to enqueue stream to writable stream list";
 }  // namespace GrpcErrors
 
 }  // namespace grpc_core
