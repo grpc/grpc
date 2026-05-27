@@ -82,14 +82,13 @@
 namespace grpc_core {
 
 class ServerConfigFetcher
-    : public CppImplOf<ServerConfigFetcher, grpc_server_config_fetcher> {
+    : public CppImplOf<ServerConfigFetcher, grpc_server_config_fetcher>,
+      public RefCounted<ServerConfigFetcher> {
  public:
-  class ConnectionManager
-      : public grpc_core::DualRefCounted<ConnectionManager> {
+  class ConnectionManager : public DualRefCounted<ConnectionManager> {
    public:
-    virtual absl::StatusOr<grpc_core::ChannelArgs>
-    UpdateChannelArgsForConnection(const grpc_core::ChannelArgs& args,
-                                   grpc_endpoint* tcp) = 0;
+    virtual absl::StatusOr<ChannelArgs> UpdateChannelArgsForConnection(
+        const ChannelArgs& args, grpc_endpoint* tcp) = 0;
   };
 
   class WatcherInterface {
@@ -99,7 +98,7 @@ class ServerConfigFetcher
     // config is available. Implementations should update the connection manager
     // and start serving if not already serving.
     virtual void UpdateConnectionManager(
-        grpc_core::RefCountedPtr<ConnectionManager> manager) = 0;
+        RefCountedPtr<ConnectionManager> manager) = 0;
     // Implementations should stop serving when this is called. Serving should
     // only resume when UpdateConfig() is invoked.
     virtual void StopServing() = 0;
@@ -111,6 +110,14 @@ class ServerConfigFetcher
                           std::unique_ptr<WatcherInterface> watcher) = 0;
   virtual void CancelWatch(WatcherInterface* watcher) = 0;
   virtual grpc_pollset_set* interested_parties() = 0;
+
+  static absl::string_view ChannelArgName() {
+    return GRPC_ARG_SERVER_CONFIG_FETCHER;
+  }
+  static int ChannelArgsCompare(const ServerConfigFetcher* a,
+                                const ServerConfigFetcher* b) {
+    return QsortCompare(a, b);
+  }
 };
 
 namespace experimental {
@@ -343,7 +350,7 @@ class Server : public ServerInterface,
     return server_call_tracer_factory_;
   }
 
-  void set_config_fetcher(std::unique_ptr<ServerConfigFetcher> config_fetcher) {
+  void set_config_fetcher(RefCountedPtr<ServerConfigFetcher> config_fetcher) {
     config_fetcher_ = std::move(config_fetcher);
   }
 
@@ -667,7 +674,7 @@ class Server : public ServerInterface,
 
   ChannelArgs const channel_args_;
   RefCountedPtr<channelz::ServerNode> channelz_node_;
-  std::unique_ptr<ServerConfigFetcher> config_fetcher_;
+  RefCountedPtr<ServerConfigFetcher> config_fetcher_;
   ServerCallTracerFactory* const server_call_tracer_factory_;
 
   std::vector<grpc_completion_queue*> cqs_;
