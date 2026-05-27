@@ -902,12 +902,17 @@ class CallbackBidiHandler : public grpc::internal::MethodHandler {
   };
 };
 
+}  // namespace internal
+
+namespace experimental {
+namespace internal {
+
 template <class RequestType>
 class CallbackSessionHandler : public grpc::internal::MethodHandler {
  public:
   explicit CallbackSessionHandler(
-      std::function<ServerSessionReactor*(grpc::CallbackServerContext*,
-                                          const RequestType*)>
+      std::function<grpc::experimental::ServerSessionReactor*(
+          grpc::CallbackServerContext*, const RequestType*)>
           get_reactor,
       grpc::Service* service = nullptr)
       : get_reactor_(std::move(get_reactor)), service_(service) {
@@ -934,9 +939,10 @@ class CallbackSessionHandler : public grpc::internal::MethodHandler {
     param.server_context->BeginCompletionOp(
         param.call, [call](bool) { call->MaybeDone(); }, call);
 
-    ServerSessionReactor* reactor = nullptr;
+    grpc::experimental::ServerSessionReactor* reactor = nullptr;
     if (param.status.ok()) {
-      reactor = grpc::internal::CatchingReactorGetter<ServerSessionReactor>(
+      reactor = grpc::internal::CatchingReactorGetter<
+          grpc::experimental::ServerSessionReactor>(
           get_reactor_,
           static_cast<grpc::CallbackServerContext*>(param.server_context),
           call->request());
@@ -961,8 +967,9 @@ class CallbackSessionHandler : public grpc::internal::MethodHandler {
     RequestType* request = nullptr;
     MessageHolder<RequestType, grpc::ByteBuffer>* allocator_state;
     allocator_state = new (grpc_call_arena_alloc(
-        call, sizeof(DefaultMessageHolder<RequestType, grpc::ByteBuffer>)))
-        DefaultMessageHolder<RequestType, grpc::ByteBuffer>();
+        call, sizeof(grpc::internal::DefaultMessageHolder<RequestType,
+                                                          grpc::ByteBuffer>)))
+        grpc::internal::DefaultMessageHolder<RequestType, grpc::ByteBuffer>();
     *handler_data = allocator_state;
     request = allocator_state->request();
     *status = grpc::Deserialize(&buf, request);
@@ -974,12 +981,13 @@ class CallbackSessionHandler : public grpc::internal::MethodHandler {
   }
 
  private:
-  std::function<ServerSessionReactor*(grpc::CallbackServerContext*,
-                                      const RequestType*)>
+  std::function<grpc::experimental::ServerSessionReactor*(
+      grpc::CallbackServerContext*, const RequestType*)>
       get_reactor_;
   grpc::Service* service_;
 
-  class ServerCallbackSessionImpl : public ServerCallbackSession {
+  class ServerCallbackSessionImpl
+      : public grpc::experimental::ServerCallbackSession {
    public:
     void Finish(grpc::Status s) override {
       if (ctx_->IsCancelled()) {
@@ -1027,7 +1035,7 @@ class CallbackSessionHandler : public grpc::internal::MethodHandler {
       meta_tag_.Set(
           call_.call(),
           [this](bool ok) {
-            ServerSessionReactor* reactor =
+            grpc::experimental::ServerSessionReactor* reactor =
                 reactor_.load(std::memory_order_relaxed);
             reactor->OnSendInitialMetadataDone(ok);
             this->MaybeDone(/*inlineable_ondone=*/true);
@@ -1048,7 +1056,8 @@ class CallbackSessionHandler : public grpc::internal::MethodHandler {
     }
 
     void BindInnerServer(grpc::Server* inner_server) override {
-      grpc::internal::BindSessionToInnerServer(call_.call(), inner_server);
+      grpc::experimental::internal::BindSessionToInnerServer(call_.call(),
+                                                             inner_server);
     }
 
    private:
@@ -1073,7 +1082,7 @@ class CallbackSessionHandler : public grpc::internal::MethodHandler {
     /// operations), maybe calls OnCancel if possible/needed, and maybe marks
     /// the completion of the RPC. This should be the last component of the
     /// handler.
-    void SetupReactor(ServerSessionReactor* reactor) {
+    void SetupReactor(grpc::experimental::ServerSessionReactor* reactor) {
       reactor_.store(reactor, std::memory_order_relaxed);
       this->BindReactor(reactor);
       this->MaybeCallOnCancel(reactor);
@@ -1095,7 +1104,7 @@ class CallbackSessionHandler : public grpc::internal::MethodHandler {
       call_requester();
     }
 
-    ServerReactor* reactor() override {
+    grpc::internal::ServerReactor* reactor() override {
       return reactor_.load(std::memory_order_relaxed);
     }
 
@@ -1113,7 +1122,7 @@ class CallbackSessionHandler : public grpc::internal::MethodHandler {
     std::function<void()> call_requester_;
     grpc::Server* inner_server_;
     // The memory ordering of reactor_ follows ServerCallbackUnaryImpl.
-    std::atomic<ServerSessionReactor*> reactor_;
+    std::atomic<grpc::experimental::ServerSessionReactor*> reactor_;
     // callbacks_outstanding_ follows a refcount pattern
     std::atomic<intptr_t> callbacks_outstanding_{
         3};  // reserve for start, Finish, and CompletionOp
@@ -1121,6 +1130,7 @@ class CallbackSessionHandler : public grpc::internal::MethodHandler {
 };
 
 }  // namespace internal
+}  // namespace experimental
 }  // namespace grpc
 
 #endif  // GRPCPP_IMPL_SERVER_CALLBACK_HANDLERS_H

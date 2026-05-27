@@ -29,6 +29,7 @@
 #include "absl/log/log.h"
 
 namespace grpc {
+namespace experimental {
 namespace internal {
 
 void BindSessionToInnerServer(grpc_call* call, grpc::Server* inner_server) {
@@ -71,6 +72,11 @@ void BindSessionToInnerServer(grpc_call* call, grpc::Server* inner_server) {
                                         nullptr, nullptr);
   }
 }
+
+}  // namespace internal
+}  // namespace experimental
+
+namespace internal {
 
 void ServerCallbackCall::ScheduleOnDone(bool inline_ondone) {
   if (inline_ondone) {
