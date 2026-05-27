@@ -29,6 +29,7 @@
 #include <grpcpp/support/status.h>
 
 #include "absl/log/absl_check.h"
+#include "absl/status/status.h"
 
 namespace grpc {
 namespace internal {
@@ -135,7 +136,7 @@ class CallbackUnaryHandler : public grpc::internal::MethodHandler {
         if (ctx_->compression_level_set()) {
           finish_ops_.set_compression_level(ctx_->compression_level());
         }
-        ctx_->sent_initial_metadata_ = true;
+        ctx_->MarkInitialMetadataSent();
       }
       // The response is dropped if the status is not OK.
       if (s.ok()) {
@@ -171,7 +172,7 @@ class CallbackUnaryHandler : public grpc::internal::MethodHandler {
       if (ctx_->compression_level_set()) {
         meta_ops_.set_compression_level(ctx_->compression_level());
       }
-      ctx_->sent_initial_metadata_ = true;
+      ctx_->MarkInitialMetadataSent();
       meta_ops_.set_core_cq_tag(&meta_tag_);
       meta_ops_.FillOps(&call_);
     }
@@ -324,7 +325,7 @@ class CallbackClientStreamingHandler : public grpc::internal::MethodHandler {
         if (ctx_->compression_level_set()) {
           finish_ops_.set_compression_level(ctx_->compression_level());
         }
-        ctx_->sent_initial_metadata_ = true;
+        ctx_->MarkInitialMetadataSent();
       }
       // The response is dropped if the status is not OK.
       if (s.ok()) {
@@ -358,7 +359,7 @@ class CallbackClientStreamingHandler : public grpc::internal::MethodHandler {
       if (ctx_->compression_level_set()) {
         meta_ops_.set_compression_level(ctx_->compression_level());
       }
-      ctx_->sent_initial_metadata_ = true;
+      ctx_->MarkInitialMetadataSent();
       meta_ops_.set_core_cq_tag(&meta_tag_);
       meta_ops_.FillOps(&call_);
     }
@@ -535,7 +536,7 @@ class CallbackServerStreamingHandler : public grpc::internal::MethodHandler {
         if (ctx_->compression_level_set()) {
           finish_ops_.set_compression_level(ctx_->compression_level());
         }
-        ctx_->sent_initial_metadata_ = true;
+        ctx_->MarkInitialMetadataSent();
       }
       finish_ops_.ServerSendStatus(&ctx_->trailing_metadata_, s);
       finish_ops_.FillOps(&call_);
@@ -561,7 +562,7 @@ class CallbackServerStreamingHandler : public grpc::internal::MethodHandler {
       if (ctx_->compression_level_set()) {
         meta_ops_.set_compression_level(ctx_->compression_level());
       }
-      ctx_->sent_initial_metadata_ = true;
+      ctx_->MarkInitialMetadataSent();
       meta_ops_.set_core_cq_tag(&meta_tag_);
       meta_ops_.FillOps(&call_);
     }
@@ -577,7 +578,7 @@ class CallbackServerStreamingHandler : public grpc::internal::MethodHandler {
         if (ctx_->compression_level_set()) {
           write_ops_.set_compression_level(ctx_->compression_level());
         }
-        ctx_->sent_initial_metadata_ = true;
+        ctx_->MarkInitialMetadataSent();
       }
       // TODO(vjpai): don't assert
       ABSL_CHECK(
@@ -751,7 +752,7 @@ class CallbackBidiHandler : public grpc::internal::MethodHandler {
         if (ctx_->compression_level_set()) {
           finish_ops_.set_compression_level(ctx_->compression_level());
         }
-        ctx_->sent_initial_metadata_ = true;
+        ctx_->MarkInitialMetadataSent();
       }
       finish_ops_.ServerSendStatus(&ctx_->trailing_metadata_, s);
       finish_ops_.FillOps(&call_);
@@ -777,7 +778,7 @@ class CallbackBidiHandler : public grpc::internal::MethodHandler {
       if (ctx_->compression_level_set()) {
         meta_ops_.set_compression_level(ctx_->compression_level());
       }
-      ctx_->sent_initial_metadata_ = true;
+      ctx_->MarkInitialMetadataSent();
       meta_ops_.set_core_cq_tag(&meta_tag_);
       meta_ops_.FillOps(&call_);
     }
@@ -793,7 +794,7 @@ class CallbackBidiHandler : public grpc::internal::MethodHandler {
         if (ctx_->compression_level_set()) {
           write_ops_.set_compression_level(ctx_->compression_level());
         }
-        ctx_->sent_initial_metadata_ = true;
+        ctx_->MarkInitialMetadataSent();
       }
       // TODO(vjpai): don't assert
       ABSL_CHECK(
@@ -902,12 +903,17 @@ class CallbackBidiHandler : public grpc::internal::MethodHandler {
   };
 };
 
+}  // namespace internal
+
+namespace experimental {
+namespace internal {
+
 template <class RequestType>
 class CallbackSessionHandler : public grpc::internal::MethodHandler {
  public:
   explicit CallbackSessionHandler(
-      std::function<ServerSessionReactor*(grpc::CallbackServerContext*,
-                                          const RequestType*)>
+      std::function<grpc::experimental::ServerSessionReactor*(
+          grpc::CallbackServerContext*, const RequestType*)>
           get_reactor,
       grpc::Service* service = nullptr)
       : get_reactor_(std::move(get_reactor)), service_(service) {
@@ -934,9 +940,10 @@ class CallbackSessionHandler : public grpc::internal::MethodHandler {
     param.server_context->BeginCompletionOp(
         param.call, [call](bool) { call->MaybeDone(); }, call);
 
-    ServerSessionReactor* reactor = nullptr;
+    grpc::experimental::ServerSessionReactor* reactor = nullptr;
     if (param.status.ok()) {
-      reactor = grpc::internal::CatchingReactorGetter<ServerSessionReactor>(
+      reactor = grpc::internal::CatchingReactorGetter<
+          grpc::experimental::ServerSessionReactor>(
           get_reactor_,
           static_cast<grpc::CallbackServerContext*>(param.server_context),
           call->request());
@@ -961,8 +968,9 @@ class CallbackSessionHandler : public grpc::internal::MethodHandler {
     RequestType* request = nullptr;
     MessageHolder<RequestType, grpc::ByteBuffer>* allocator_state;
     allocator_state = new (grpc_call_arena_alloc(
-        call, sizeof(DefaultMessageHolder<RequestType, grpc::ByteBuffer>)))
-        DefaultMessageHolder<RequestType, grpc::ByteBuffer>();
+        call, sizeof(grpc::internal::DefaultMessageHolder<RequestType,
+                                                          grpc::ByteBuffer>)))
+        grpc::internal::DefaultMessageHolder<RequestType, grpc::ByteBuffer>();
     *handler_data = allocator_state;
     request = allocator_state->request();
     *status = grpc::Deserialize(&buf, request);
@@ -974,12 +982,13 @@ class CallbackSessionHandler : public grpc::internal::MethodHandler {
   }
 
  private:
-  std::function<ServerSessionReactor*(grpc::CallbackServerContext*,
-                                      const RequestType*)>
+  std::function<grpc::experimental::ServerSessionReactor*(
+      grpc::CallbackServerContext*, const RequestType*)>
       get_reactor_;
   grpc::Service* service_;
 
-  class ServerCallbackSessionImpl : public ServerCallbackSession {
+  class ServerCallbackSessionImpl
+      : public grpc::experimental::ServerCallbackSession {
    public:
     void Finish(grpc::Status s) override {
       if (ctx_->IsCancelled()) {
@@ -1009,7 +1018,7 @@ class CallbackSessionHandler : public grpc::internal::MethodHandler {
         if (ctx_->compression_level_set()) {
           finish_ops_.set_compression_level(ctx_->compression_level());
         }
-        ctx_->sent_initial_metadata_ = true;
+        ctx_->MarkInitialMetadataSent();
       }
       finish_ops_.ServerSendStatus(&ctx_->trailing_metadata_, s);
       finish_ops_.set_core_cq_tag(&finish_tag_);
@@ -1027,7 +1036,7 @@ class CallbackSessionHandler : public grpc::internal::MethodHandler {
       meta_tag_.Set(
           call_.call(),
           [this](bool ok) {
-            ServerSessionReactor* reactor =
+            grpc::experimental::ServerSessionReactor* reactor =
                 reactor_.load(std::memory_order_relaxed);
             reactor->OnSendInitialMetadataDone(ok);
             this->MaybeDone(/*inlineable_ondone=*/true);
@@ -1038,7 +1047,7 @@ class CallbackSessionHandler : public grpc::internal::MethodHandler {
       if (ctx_->compression_level_set()) {
         meta_ops_.set_compression_level(ctx_->compression_level());
       }
-      ctx_->sent_initial_metadata_ = true;
+      ctx_->MarkInitialMetadataSent();
       meta_ops_.set_core_cq_tag(&meta_tag_);
       meta_ops_.FillOps(&call_);
       // We bind the inner server only when sending initial metadata because
@@ -1048,7 +1057,14 @@ class CallbackSessionHandler : public grpc::internal::MethodHandler {
     }
 
     void BindInnerServer(grpc::Server* inner_server) override {
-      grpc::internal::BindSessionToInnerServer(call_.call(), inner_server);
+      grpc::experimental::internal::BindSessionToInnerServer(
+          call_.call(), inner_server, &transport_, &endpoint_);
+    }
+
+    void InitiateGracefulShutdown(
+        absl::AnyInvocable<void(absl::Status)> on_shutdown) override {
+      grpc::experimental::internal::InitiateSessionGracefulShutdown(
+          transport_, endpoint_, std::move(on_shutdown));
     }
 
    private:
@@ -1073,7 +1089,7 @@ class CallbackSessionHandler : public grpc::internal::MethodHandler {
     /// operations), maybe calls OnCancel if possible/needed, and maybe marks
     /// the completion of the RPC. This should be the last component of the
     /// handler.
-    void SetupReactor(ServerSessionReactor* reactor) {
+    void SetupReactor(grpc::experimental::ServerSessionReactor* reactor) {
       reactor_.store(reactor, std::memory_order_relaxed);
       this->BindReactor(reactor);
       this->MaybeCallOnCancel(reactor);
@@ -1095,7 +1111,7 @@ class CallbackSessionHandler : public grpc::internal::MethodHandler {
       call_requester();
     }
 
-    ServerReactor* reactor() override {
+    grpc::internal::ServerReactor* reactor() override {
       return reactor_.load(std::memory_order_relaxed);
     }
 
@@ -1109,11 +1125,13 @@ class CallbackSessionHandler : public grpc::internal::MethodHandler {
 
     grpc::CallbackServerContext* const ctx_;
     grpc::internal::Call call_;
+    grpc_core::Transport* transport_ = nullptr;
+    grpc_endpoint* endpoint_ = nullptr;
     MessageHolder<RequestType, grpc::ByteBuffer>* const allocator_state_;
     std::function<void()> call_requester_;
     grpc::Server* inner_server_;
     // The memory ordering of reactor_ follows ServerCallbackUnaryImpl.
-    std::atomic<ServerSessionReactor*> reactor_;
+    std::atomic<grpc::experimental::ServerSessionReactor*> reactor_;
     // callbacks_outstanding_ follows a refcount pattern
     std::atomic<intptr_t> callbacks_outstanding_{
         3};  // reserve for start, Finish, and CompletionOp
@@ -1121,6 +1139,7 @@ class CallbackSessionHandler : public grpc::internal::MethodHandler {
 };
 
 }  // namespace internal
+}  // namespace experimental
 }  // namespace grpc
 
 #endif  // GRPCPP_IMPL_SERVER_CALLBACK_HANDLERS_H

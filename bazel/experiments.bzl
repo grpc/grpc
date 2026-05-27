@@ -36,17 +36,21 @@ EXPERIMENT_ENABLES = {
     "free_large_allocator": "free_large_allocator",
     "fuse_filters": "fuse_filters",
     "h2_max_deallocating_streams_headroom": "h2_max_deallocating_streams_headroom",
+    "inproc_cancel_stream": "inproc_cancel_stream",
     "keep_alive_ping_timer_batch": "keep_alive_ping_timer_batch",
     "local_connector_secure": "local_connector_secure",
     "max_inflight_pings_strict_limit": "max_inflight_pings_strict_limit",
     "memory_optimization_01": "memory_optimization_01",
     "memory_optimization_02": "memory_optimization_02",
     "message_size_refactoring": "message_size_refactoring",
+    "metadata_outstanding_token_refactor": "metadata_outstanding_token_refactor",
     "metadata_publish_to_app_tag": "metadata_publish_to_app_tag",
     "monitoring_experiment": "monitoring_experiment",
     "multiping": "multiping",
     "optimization_01": "optimization_01",
     "optimization_02": "optimization_02",
+    "optimization_03": "optimization_03",
+    "optimization_04": "optimization_04",
     "otel_export_telemetry_domains": "otel_export_telemetry_domains",
     "ph2_perf_01": "ph2_perf_01",
     "pick_first_ignore_empty_updates": "pick_first_ignore_empty_updates",
@@ -72,8 +76,9 @@ EXPERIMENT_ENABLES = {
     "tsi_frame_protector_without_locks": "tsi_frame_protector_without_locks",
     "unconstrained_max_quota_buffer_size": "unconstrained_max_quota_buffer_size",
     "use_call_event_engine_in_completion_queue": "use_call_event_engine_in_completion_queue",
+    "verbose_channelz_connection_logging": "verbose_channelz_connection_logging",
     "wildcard_ip_expansion_restriction": "wildcard_ip_expansion_restriction",
-    "xds_channel_filter_chain_per_route": "xds_channel_filter_chain_per_route",
+    "xds_server_filter_chain_per_route": "xds_server_filter_chain_per_route",
 }
 
 EXPERIMENT_POLLERS = [
@@ -208,6 +213,12 @@ EXPERIMENTS = {
             "secure_endpoint_test": [
                 "pipelined_read_secure_endpoint",
             ],
+            "xds_end2end_test": [
+                "xds_server_filter_chain_per_route",
+            ],
+            "xds_test": [
+                "xds_server_filter_chain_per_route",
+            ],
         },
         "on": {
             "cancel_ares_query_test": [
@@ -243,10 +254,6 @@ EXPERIMENTS = {
             "xds_end2end_test": [
                 "error_flatten",
                 "subchannel_wrapper_cleanup_on_orphan",
-                "xds_channel_filter_chain_per_route",
-            ],
-            "xds_test": [
-                "xds_channel_filter_chain_per_route",
             ],
         },
     },
