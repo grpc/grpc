@@ -372,7 +372,7 @@ class _StreamResponseMixin(Call, Generic[ResponseType]):
             self._message_aiter = self._fetch_stream_responses()
         return self._message_aiter
 
-    async def _read(self) -> ResponseType:
+    async def _read(self) -> Union[EOFType, ResponseType]:
         # Wait for the request being sent
         await self._preparation
 
