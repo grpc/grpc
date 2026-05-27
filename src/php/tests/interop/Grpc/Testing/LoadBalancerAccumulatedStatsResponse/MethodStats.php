@@ -64,7 +64,7 @@ class MethodStats extends \Google\Protobuf\Internal\Message
      * @param int $var
      * @return $this
      */
-    public function setRpcsStarted($var)
+    public function setRpcsStarted(int $var)
     {
         GPBUtil::checkInt32($var);
         $this->rpcs_started = $var;
@@ -92,7 +92,7 @@ class MethodStats extends \Google\Protobuf\Internal\Message
      * @param array|\Google\Protobuf\Internal\MapField $var
      * @return $this
      */
-    public function setResult($var)
+    public function setResult(array|\Google\Protobuf\Internal\MapField $var)
     {
         $arr = GPBUtil::checkMapField($var, \Google\Protobuf\Internal\GPBType::INT32, \Google\Protobuf\Internal\GPBType::INT32);
         $this->result = $arr;
