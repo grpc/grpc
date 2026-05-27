@@ -17,7 +17,7 @@ import collections
 import logging
 import threading
 import time
-from typing import Callable, Dict, Optional, Sequence
+from typing import Dict, List, Optional
 
 import grpc
 from grpc import _common
@@ -55,7 +55,7 @@ class DictionaryGenericHandler(grpc.ServiceRpcHandler):
 
     def __init__(
         self, service: str, method_handlers: Dict[str, grpc.RpcMethodHandler]
-    ):
+    ) -> None:
         self._name = service
         self._method_handlers = {
             _common.fully_qualified_method(service, method): method_handler
@@ -79,9 +79,9 @@ class _ChannelReadyFuture(grpc.Future):
     _channel: grpc.Channel
     _matured: bool
     _cancelled: bool
-    _done_callbacks: Sequence[Callable]
+    _done_callbacks: Optional[List[DoneCallbackType]]
 
-    def __init__(self, channel: grpc.Channel):
+    def __init__(self, channel: grpc.Channel) -> None:
         self._condition = threading.Condition()
         self._channel = channel
 
@@ -114,7 +114,7 @@ class _ChannelReadyFuture(grpc.Future):
                 self._matured = True
                 self._channel.unsubscribe(self._update)
                 self._condition.notify_all()
-                done_callbacks = tuple(self._done_callbacks)
+                done_callbacks = tuple(self._done_callbacks or ())
                 self._done_callbacks = None
             else:
                 return
@@ -131,7 +131,7 @@ class _ChannelReadyFuture(grpc.Future):
                 self._cancelled = True
                 self._channel.unsubscribe(self._update)
                 self._condition.notify_all()
-                done_callbacks = tuple(self._done_callbacks)
+                done_callbacks = tuple(self._done_callbacks or ())
                 self._done_callbacks = None
             else:
                 return False
@@ -165,19 +165,23 @@ class _ChannelReadyFuture(grpc.Future):
     def traceback(self, timeout: Optional[float] = None) -> None:
         self._block(timeout)
 
-    def add_done_callback(self, fn: DoneCallbackType):
+    def add_done_callback(self, fn: DoneCallbackType) -> None:
         with self._condition:
-            if not self._cancelled and not self._matured:
+            if (
+                not self._cancelled
+                and not self._matured
+                and self._done_callbacks is not None
+            ):
                 self._done_callbacks.append(fn)
                 return
 
         fn(self)
 
-    def start(self):
+    def start(self) -> None:
         with self._condition:
             self._channel.subscribe(self._update, try_to_connect=True)
 
-    def __del__(self):
+    def __del__(self) -> None:
         with self._condition:
             if not self._cancelled and not self._matured:
                 self._channel.unsubscribe(self._update)
