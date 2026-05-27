@@ -53,7 +53,7 @@ bazel_dep(name = "opentelemetry-cpp", version = "1.19.0", repo_name = "io_opente
 
 # --- Protobuf related packages.
 # TODO(weizheyuan): Protobuf 34.2 isn't released on BCR yet so we use
-# commit hash instead.
+# commit hash override instead.
 bazel_dep(name = "protobuf", version = "34.1", repo_name = "com_google_protobuf")
 archive_override(
     module_name = "protobuf",
