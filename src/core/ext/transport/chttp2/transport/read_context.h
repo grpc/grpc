@@ -52,9 +52,6 @@ class ReadLoopPauseRestart {
   ReadLoopPauseRestart(ReadLoopPauseRestart&&) = delete;
   ReadLoopPauseRestart& operator=(ReadLoopPauseRestart&&) = delete;
 
-  //////////////////////////////////////////////////////////////////////////////
-  // Read Loop Pause/Resume management.
-
   // Signals that the read loop should pause. If it's already paused, this is a
   // no-op.
   void SetPauseReadLoop() {
@@ -81,66 +78,22 @@ class ReadLoopPauseRestart {
   // MaybePauseReadLoop(). If the ReadLoop was paused due to other
   // endpoint.Read(), this wakeup will not happen.
   void ResumeReadLoopIfPaused() {
-    ResetReadCycleCounters();
     if (should_pause_read_loop_) {
       should_pause_read_loop_ = false;
       read_loop_waker_.Wakeup();
     }
   }
 
-  bool TestOnlyCheckCounters(uint64_t expected_bytes_read,
-                             uint16_t expected_read_count,
-                             bool should_pause) const {
-    return current_cycle_read_count_ == expected_read_count &&
-           current_cycle_bytes_read_ == expected_bytes_read &&
-           should_pause_read_loop_ == should_pause;
-  }
-
-  //////////////////////////////////////////////////////////////////////////////
-  // Read Cycle Counter management.
-  void ResetReadCycleCounters() {
-    current_cycle_read_count_ = 0u;
-    current_cycle_bytes_read_ = 0u;
-  }
-  void IncrementReadCycleCounters(const uint32_t payload_length) {
-    current_cycle_bytes_read_ += kFrameHeaderSize + payload_length;
-    ++current_cycle_read_count_;
-    if (current_cycle_read_count_ >= kMaxFramesReadPerReadCycle) {
-      SetPauseReadLoop();
-      ResetReadCycleCounters();
-    }
+  bool TestOnlyCheckCounters(const bool should_pause) const {
+    return should_pause_read_loop_ == should_pause;
   }
 
  private:
-  // Counters to track total bytes and frames read per cycle.
-  // Checked against limits to pause the read loop when maxed out.
-  // This yields execution to prevent starvation of other transport tasks.
-  // As per RFC 9113, HTTP/2 frame sizes can vary significantly.
-  // Some frames are very large, while others are extremely small.
-  // We stall the read loop based only on current_cycle_read_count_.
-  // We measure current_cycle_bytes_read_ just for telemetry. We are not
-  // stalling the read loop based on the number of bytes read right now because
-  // we think that current_cycle_read_count_ would be sufficient for now.
-  uint64_t current_cycle_bytes_read_ = 0u;
-  uint16_t current_cycle_read_count_ = 0u;
-
-  //////////////////////////////////////////////////////////////////////////////
-  // Other data members.
-
   bool should_pause_read_loop_ = false;
   Waker read_loop_waker_;
 };
 
 class ReadContext {
-  // Manages transport-wide state for incoming HEADERS and CONTINUATION frames.
-  // RFC 9113 (Section 6.10) requires that if a HEADERS frame does not have
-  // END_HEADERS set, it must be followed by a contiguous sequence of
-  // CONTINUATION frames for the same stream, ending with END_HEADERS. No other
-  // frame types or frames for other streams may be interleaved during this
-  // sequence. This constraint makes tracking header sequence state a
-  // transport-level concern, as only one stream can be receiving headers at
-  // a time. This class is distinct from HeaderAssembler, which buffers header
-  // payloads on a per-stream basis.
  public:
   explicit ReadContext(Slice peer_string, const bool is_client)
       : peer_string_(std::move(peer_string)), is_client_(is_client) {}
@@ -150,6 +103,9 @@ class ReadContext {
   ReadContext& operator=(ReadContext&& rvalue) = delete;
   ReadContext(const ReadContext&) = delete;
   ReadContext& operator=(const ReadContext&) = delete;
+
+  //////////////////////////////////////////////////////////////////////////////
+  // Peer String management.
 
   static Slice GetPeerString(const PromiseEndpoint& endpoint) {
     absl::StatusOr<std::string> uri =
@@ -162,6 +118,9 @@ class ReadContext {
   }
 
   Slice peer_string() const { return peer_string_.Ref(); }
+
+  //////////////////////////////////////////////////////////////////////////////
+  // HPack Parser Parsing and Management.
 
   void set_soft_limit(uint32_t limit) {
     max_header_list_size_soft_limit_ = limit;
@@ -226,6 +185,9 @@ class ReadContext {
     return (status.IsOk()) ? std::move(original_status) : std::move(status);
   }
 
+  //////////////////////////////////////////////////////////////////////////////
+  // Incoming Frame Header Validation.
+
   // Client : For a client, the last_stream_id is the last stream that is sent
   // by the Client.
   // Server : For a server, the last_stream_id is the last known stream that is
@@ -248,7 +210,17 @@ class ReadContext {
   }
 
   //////////////////////////////////////////////////////////////////////////////
-  // Writing Header and Continuation State
+  // Incoming Header and Continuation State
+
+  // Manages transport-wide state for incoming HEADERS and CONTINUATION frames.
+  // RFC 9113 (Section 6.10) requires that if a HEADERS frame does not have
+  // END_HEADERS set, it must be followed by a contiguous sequence of
+  // CONTINUATION frames for the same stream, ending with END_HEADERS. No other
+  // frame types or frames for other streams may be interleaved during this
+  // sequence. This constraint makes tracking header sequence state a
+  // transport-level concern, as only one stream can be receiving headers at
+  // a time. This class is distinct from HeaderAssembler, which buffers header
+  // payloads on a per-stream basis.
 
   // Called when a HEADER frame is received.
   void UpdateState(const Http2HeaderFrame& frame) {
@@ -267,9 +239,6 @@ class ReadContext {
     }
     incoming_header_in_progress_ = !frame.end_headers;
   }
-
-  //////////////////////////////////////////////////////////////////////////////
-  // Reading Header and Continuation State
 
   // Returns true if we are in the middle of receiving a header block
   // (i.e., HEADERS without END_HEADERS was received, and we are waiting for
@@ -319,7 +288,7 @@ class ReadContext {
   }
   void SetCurrentFrameHeader(const Http2FrameHeader& header) {
     current_frame_header_ = header;
-    read_loop_manager_.IncrementReadCycleCounters(header.length);
+    IncrementReadCycleCounters(header.length);
   }
 
   //////////////////////////////////////////////////////////////////////////////
@@ -331,22 +300,47 @@ class ReadContext {
     return read_loop_manager_.MaybePauseReadLoop();
   }
 
-  void ResumeReadLoopIfPaused() { read_loop_manager_.ResumeReadLoopIfPaused(); }
+  void ResumeReadLoopIfPaused() {
+    ResetReadCycleCounters();
+    read_loop_manager_.ResumeReadLoopIfPaused();
+  }
 
   bool TestOnlyCheckCounters(uint64_t expected_bytes_read,
                              uint16_t expected_read_count,
                              bool should_pause) const {
-    return read_loop_manager_.TestOnlyCheckCounters(
-        expected_bytes_read, expected_read_count, should_pause);
-  }
-
-  void ResetReadCycleCounters() { read_loop_manager_.ResetReadCycleCounters(); }
-
-  void IncrementReadCycleCounters(const uint32_t payload_length) {
-    read_loop_manager_.IncrementReadCycleCounters(payload_length);
+    return current_cycle_read_count_ == expected_read_count &&
+           current_cycle_bytes_read_ == expected_bytes_read &&
+           read_loop_manager_.TestOnlyCheckCounters(should_pause);
   }
 
  private:
+  //////////////////////////////////////////////////////////////////////////////
+  // Read Cycle Counter management.
+  void ResetReadCycleCounters() {
+    current_cycle_read_count_ = 0u;
+    current_cycle_bytes_read_ = 0u;
+  }
+  void IncrementReadCycleCounters(const uint32_t payload_length) {
+    current_cycle_bytes_read_ += kFrameHeaderSize + payload_length;
+    ++current_cycle_read_count_;
+    if (current_cycle_read_count_ >= kMaxFramesReadPerReadCycle) {
+      read_loop_manager_.SetPauseReadLoop();
+      ResetReadCycleCounters();
+    }
+  }
+
+  // Counters to track total bytes and frames read per cycle.
+  // Checked against limits to pause the read loop when maxed out.
+  // This yields execution to prevent starvation of other transport tasks.
+  // As per RFC 9113, HTTP/2 frame sizes can vary significantly.
+  // Some frames are very large, while others are extremely small.
+  // We stall the read loop based only on current_cycle_read_count_.
+  // We measure current_cycle_bytes_read_ just for telemetry. We are not
+  // stalling the read loop based on the number of bytes read right now because
+  // we think that current_cycle_read_count_ would be sufficient for now.
+  uint64_t current_cycle_bytes_read_ = 0u;
+  uint16_t current_cycle_read_count_ = 0u;
+
   // Initialized only once at the time of transport creation.
   // Should remain constant for the lifetime of the transport.
   const Slice peer_string_;
