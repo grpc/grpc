@@ -486,6 +486,7 @@ if __name__ == "__main__":
         help="Filter targets to run by label with AND semantics.",
     )
     argp.add_argument(
+        "-e",
         "--exclude",
         choices=_allowed_labels(),
         nargs="+",
