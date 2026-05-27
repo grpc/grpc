@@ -52,16 +52,13 @@ bazel_dep(name = "openssl", version = "3.3.1.bcr.1")
 bazel_dep(name = "opentelemetry-cpp", version = "1.19.0", repo_name = "io_opentelemetry_cpp")
 
 # --- Protobuf related packages.
-# TODO(weizheyuan): Protobuf 34.2 isn't released on BCR yet so we use
-# commit hash override instead.
-bazel_dep(name = "protobuf", version = "34.1", repo_name = "com_google_protobuf")
+# TODO(weizheyuan): Remove this archive_override block once protobuf 35.x includes a MSVC related
+# bugfix that we need.
+# See also https://github.com/protocolbuffers/protobuf/pull/27609
+bazel_dep(name = "protobuf", version = "35.0", repo_name = "com_google_protobuf")
 archive_override(
     module_name = "protobuf",
-    integrity = "sha256-I5flEPaPP6LnfSzzd5XIqwXWTiYpsbtZsWl1TKmcW3Y=",
-    patch_strip = 1,
-    patches = [
-        "//bazel:protobuf/fix_name_conflict.patch",
-    ],
+    integrity = "sha256-F/b+uNTH4KFpMqWLfiD6Qy4pDdCSoqAPfy5EP/FNrpM=",
     strip_prefix = "protobuf-9570bfb4c264fb8331d136c0609aed6b94ac0551",
     urls = [
         "https://storage.googleapis.com/grpc-bazel-mirror/github.com/protocolbuffers/protobuf/archive/9570bfb4c264fb8331d136c0609aed6b94ac0551.tar.gz",
