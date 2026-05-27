@@ -13,17 +13,24 @@
 # limitations under the License.
 """gRPC's Python API."""
 
+from __future__ import annotations
+
 import abc
 import contextlib
 import enum
 import logging
 import sys
+import typing
+from typing import TYPE_CHECKING
 
 from grpc import _compression
 from grpc._cython import cygrpc as _cygrpc
 from grpc._runtime_protos import protos
 from grpc._runtime_protos import protos_and_services
 from grpc._runtime_protos import services
+
+if TYPE_CHECKING:
+    from grpc._typing import MetadataType as _MetadataType
 
 logging.getLogger(__name__).addHandler(logging.NullHandler())
 
@@ -431,6 +438,13 @@ class ClientCallDetails(abc.ABC):
       compression: An element of grpc.Compression, e.g.
         grpc.Compression.Gzip.
     """
+
+    method: str
+    timeout: typing.Optional[float]
+    metadata: typing.Optional[_MetadataType]
+    credentials: typing.Optional[CallCredentials]
+    wait_for_ready: typing.Optional[bool]
+    compression: typing.Optional[Compression]
 
 
 class UnaryUnaryClientInterceptor(abc.ABC):

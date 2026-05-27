@@ -13,12 +13,23 @@
 # limitations under the License.
 """Implementation of gRPC Python interceptors."""
 
+from __future__ import annotations
+
 import collections
 import sys
-import types
-from typing import Any, Callable, Optional, Sequence, Tuple, Union
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Optional,
+    Sequence,
+    Tuple,
+    Type,
+    Union,
+)
 
 import grpc
+from typing_extensions import Self
 
 from ._typing import DeserializingFunction
 from ._typing import DoneCallbackType
@@ -26,9 +37,12 @@ from ._typing import MetadataType
 from ._typing import RequestIterableType
 from ._typing import SerializingFunction
 
+if TYPE_CHECKING:
+    import types
+
 
 class _ServicePipeline:
-    interceptors: Tuple[grpc.ServerInterceptor]
+    interceptors: Tuple[grpc.ServerInterceptor, ...]
 
     def __init__(self, interceptors: Sequence[grpc.ServerInterceptor]):
         self.interceptors = tuple(interceptors)
@@ -78,7 +92,12 @@ def _unwrap_client_call_details(
     call_details: grpc.ClientCallDetails,
     default_details: grpc.ClientCallDetails,
 ) -> Tuple[
-    str, float, MetadataType, grpc.CallCredentials, bool, grpc.Compression
+    str,
+    Optional[float],
+    Optional[MetadataType],
+    Optional[grpc.CallCredentials],
+    Optional[bool],
+    Optional[grpc.Compression],
 ]:
     try:
         method = call_details.method  # pytype: disable=attribute-error
@@ -129,9 +148,11 @@ class _FailureOutcome(
     grpc.RpcError, grpc.Future, grpc.Call
 ):  # pylint: disable=too-many-ancestors
     _exception: Exception
-    _traceback: types.TracebackType
+    _traceback: Optional[types.TracebackType]
 
-    def __init__(self, exception: Exception, traceback: types.TracebackType):
+    def __init__(
+        self, exception: Exception, traceback: Optional[types.TracebackType]
+    ):
         super(_FailureOutcome, self).__init__()
         self._exception = exception
         self._traceback = traceback
@@ -166,7 +187,7 @@ class _FailureOutcome(
     def done(self) -> bool:
         return True
 
-    def result(self, ignored_timeout: Optional[float] = None):
+    def result(self, ignored_timeout: Optional[float] = None) -> Any:
         raise self._exception
 
     def exception(
@@ -179,19 +200,19 @@ class _FailureOutcome(
     ) -> Optional[types.TracebackType]:
         return self._traceback
 
-    def add_callback(self, unused_callback) -> bool:
+    def add_callback(self, unused_callback: Callable[[], None]) -> bool:
         return False
 
     def add_done_callback(self, fn: DoneCallbackType) -> None:
         fn(self)
 
-    def __iter__(self):
+    def __iter__(self) -> _FailureOutcome:
         return self
 
-    def __next__(self):
+    def __next__(self) -> Any:
         raise self._exception
 
-    def next(self):
+    def next(self) -> Any:
         return self.__next__()
 
 
@@ -224,7 +245,7 @@ class _UnaryOutcome(grpc.Call, grpc.Future):
     def cancel(self) -> bool:
         return self._call.cancel()
 
-    def add_callback(self, callback) -> bool:
+    def add_callback(self, callback: Callable[[], None]) -> bool:
         return self._call.add_callback(callback)
 
     def cancelled(self) -> bool:
@@ -236,13 +257,17 @@ class _UnaryOutcome(grpc.Call, grpc.Future):
     def done(self) -> bool:
         return True
 
-    def result(self, ignored_timeout: Optional[float] = None):
+    def result(self, ignored_timeout: Optional[float] = None) -> Any:
         return self._response
 
-    def exception(self, ignored_timeout: Optional[float] = None):
+    def exception(
+        self, ignored_timeout: Optional[float] = None
+    ) -> Optional[Exception]:
         return None
 
-    def traceback(self, ignored_timeout: Optional[float] = None):
+    def traceback(
+        self, ignored_timeout: Optional[float] = None
+    ) -> Optional[types.TracebackType]:
         return None
 
     def add_done_callback(self, fn: DoneCallbackType) -> None:
@@ -415,7 +440,7 @@ class _UnaryStreamMultiCallable(grpc.UnaryStreamMultiCallable):
         credentials: Optional[grpc.CallCredentials] = None,
         wait_for_ready: Optional[bool] = None,
         compression: Optional[grpc.Compression] = None,
-    ):
+    ) -> Any:
         client_call_details = _ClientCallDetails(
             self._method,
             timeout,
@@ -617,7 +642,7 @@ class _StreamStreamMultiCallable(grpc.StreamStreamMultiCallable):
         credentials: Optional[grpc.CallCredentials] = None,
         wait_for_ready: Optional[bool] = None,
         compression: Optional[grpc.Compression] = None,
-    ):
+    ) -> Any:
         client_call_details = _ClientCallDetails(
             self._method,
             timeout,
@@ -676,11 +701,15 @@ class _Channel(grpc.Channel):
         self._interceptor = interceptor
 
     def subscribe(
-        self, callback: Callable, try_to_connect: Optional[bool] = False
-    ):
+        self,
+        callback: Callable[[grpc.ChannelConnectivity], None],
+        try_to_connect: bool = False,
+    ) -> None:
         self._channel.subscribe(callback, try_to_connect=try_to_connect)
 
-    def unsubscribe(self, callback: Callable):
+    def unsubscribe(
+        self, callback: Callable[[grpc.ChannelConnectivity], None]
+    ) -> None:
         self._channel.unsubscribe(callback)
 
     # pylint: disable=arguments-differ
@@ -689,7 +718,7 @@ class _Channel(grpc.Channel):
         method: str,
         request_serializer: Optional[SerializingFunction] = None,
         response_deserializer: Optional[DeserializingFunction] = None,
-        _registered_method: Optional[bool] = False,
+        _registered_method: bool = False,
     ) -> grpc.UnaryUnaryMultiCallable:
         # pytype: disable=wrong-arg-count
         thunk = lambda m: self._channel.unary_unary(
@@ -709,7 +738,7 @@ class _Channel(grpc.Channel):
         method: str,
         request_serializer: Optional[SerializingFunction] = None,
         response_deserializer: Optional[DeserializingFunction] = None,
-        _registered_method: Optional[bool] = False,
+        _registered_method: bool = False,
     ) -> grpc.UnaryStreamMultiCallable:
         # pytype: disable=wrong-arg-count
         thunk = lambda m: self._channel.unary_stream(
@@ -729,7 +758,7 @@ class _Channel(grpc.Channel):
         method: str,
         request_serializer: Optional[SerializingFunction] = None,
         response_deserializer: Optional[DeserializingFunction] = None,
-        _registered_method: Optional[bool] = False,
+        _registered_method: bool = False,
     ) -> grpc.StreamUnaryMultiCallable:
         # pytype: disable=wrong-arg-count
         thunk = lambda m: self._channel.stream_unary(
@@ -749,7 +778,7 @@ class _Channel(grpc.Channel):
         method: str,
         request_serializer: Optional[SerializingFunction] = None,
         response_deserializer: Optional[DeserializingFunction] = None,
-        _registered_method: Optional[bool] = False,
+        _registered_method: bool = False,
     ) -> grpc.StreamStreamMultiCallable:
         # pytype: disable=wrong-arg-count
         thunk = lambda m: self._channel.stream_stream(
@@ -763,17 +792,22 @@ class _Channel(grpc.Channel):
             return _StreamStreamMultiCallable(thunk, method, self._interceptor)
         return thunk(method)
 
-    def _close(self):
+    def _close(self) -> None:
         self._channel.close()
 
-    def __enter__(self):
+    def __enter__(self) -> Self:
         return self
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
+    def __exit__(
+        self,
+        exc_type: Optional[Type[BaseException]],
+        exc_val: Optional[BaseException],
+        exc_tb: Optional[types.TracebackType],
+    ) -> bool:
         self._close()
         return False
 
-    def close(self):
+    def close(self) -> None:
         self._channel.close()
 
 
