@@ -1138,13 +1138,9 @@ src/core/ext/filters/channel_idle/legacy_channel_idle_filter.h \
 src/core/ext/filters/fault_injection/GEMINI.md \
 src/core/ext/filters/fault_injection/fault_injection_filter.cc \
 src/core/ext/filters/fault_injection/fault_injection_filter.h \
-src/core/ext/filters/fault_injection/fault_injection_service_config_parser.cc \
-src/core/ext/filters/fault_injection/fault_injection_service_config_parser.h \
 src/core/ext/filters/gcp_authentication/GEMINI.md \
 src/core/ext/filters/gcp_authentication/gcp_authentication_filter.cc \
 src/core/ext/filters/gcp_authentication/gcp_authentication_filter.h \
-src/core/ext/filters/gcp_authentication/gcp_authentication_service_config_parser.cc \
-src/core/ext/filters/gcp_authentication/gcp_authentication_service_config_parser.h \
 src/core/ext/filters/http/GEMINI.md \
 src/core/ext/filters/http/client/GEMINI.md \
 src/core/ext/filters/http/client/http_client_filter.cc \
@@ -1171,8 +1167,6 @@ src/core/ext/filters/rbac/rbac_service_config_parser.h \
 src/core/ext/filters/stateful_session/GEMINI.md \
 src/core/ext/filters/stateful_session/stateful_session_filter.cc \
 src/core/ext/filters/stateful_session/stateful_session_filter.h \
-src/core/ext/filters/stateful_session/stateful_session_service_config_parser.cc \
-src/core/ext/filters/stateful_session/stateful_session_service_config_parser.h \
 src/core/ext/transport/README.md \
 src/core/ext/transport/chaotic_good/GEMINI.md \
 src/core/ext/transport/chaotic_good_legacy/GEMINI.md \
@@ -1246,7 +1240,6 @@ src/core/ext/transport/chttp2/transport/http2_transport.h \
 src/core/ext/transport/chttp2/transport/http2_ztrace_collector.h \
 src/core/ext/transport/chttp2/transport/huffsyms.cc \
 src/core/ext/transport/chttp2/transport/huffsyms.h \
-src/core/ext/transport/chttp2/transport/incoming_metadata_tracker.h \
 src/core/ext/transport/chttp2/transport/internal.h \
 src/core/ext/transport/chttp2/transport/internal_channel_arg_names.h \
 src/core/ext/transport/chttp2/transport/keepalive.cc \
@@ -1262,6 +1255,7 @@ src/core/ext/transport/chttp2/transport/ping_promise.cc \
 src/core/ext/transport/chttp2/transport/ping_promise.h \
 src/core/ext/transport/chttp2/transport/ping_rate_policy.cc \
 src/core/ext/transport/chttp2/transport/ping_rate_policy.h \
+src/core/ext/transport/chttp2/transport/read_context.h \
 src/core/ext/transport/chttp2/transport/security_frame.h \
 src/core/ext/transport/chttp2/transport/stream.h \
 src/core/ext/transport/chttp2/transport/stream_data_queue.h \
@@ -2709,6 +2703,7 @@ src/core/load_balancing/xds/xds_cluster_manager.cc \
 src/core/load_balancing/xds/xds_override_host.cc \
 src/core/load_balancing/xds/xds_override_host.h \
 src/core/load_balancing/xds/xds_wrr_locality.cc \
+src/core/mitigation_engine/mitigation_engine.h \
 src/core/net/socket_mutator.cc \
 src/core/net/socket_mutator.h \
 src/core/plugin_registry/GEMINI.md \
@@ -2773,6 +2768,7 @@ src/core/server/server_interface.h \
 src/core/server/xds_channel_stack_modifier.cc \
 src/core/server/xds_channel_stack_modifier.h \
 src/core/server/xds_server_config_fetcher.cc \
+src/core/server/xds_server_config_fetcher_legacy.cc \
 src/core/service_config/GEMINI.md \
 src/core/service_config/service_config.h \
 src/core/service_config/service_config_call_data.h \

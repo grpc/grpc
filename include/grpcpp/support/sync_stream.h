@@ -596,7 +596,7 @@ class ServerReader final : public ServerReaderInterface<R> {
     if (ctx_->compression_level_set()) {
       ops.set_compression_level(ctx_->compression_level());
     }
-    ctx_->sent_initial_metadata_ = true;
+    ctx_->MarkInitialMetadataSent();
     ops.FillOps(call_);
     call_->cq()->Pluck(&ops);
   }
@@ -653,7 +653,7 @@ class ServerWriter final : public ServerWriterInterface<W> {
     if (ctx_->compression_level_set()) {
       ops.set_compression_level(ctx_->compression_level());
     }
-    ctx_->sent_initial_metadata_ = true;
+    ctx_->MarkInitialMetadataSent();
     ops.FillOps(call_);
     call_->cq()->Pluck(&ops);
   }
@@ -680,7 +680,7 @@ class ServerWriter final : public ServerWriterInterface<W> {
       if (ctx_->compression_level_set()) {
         ctx_->pending_ops_.set_compression_level(ctx_->compression_level());
       }
-      ctx_->sent_initial_metadata_ = true;
+      ctx_->MarkInitialMetadataSent();
     }
     ctx_->pending_ops_.FillOps(call_);
     // if this is the last message we defer the pluck until AFTER we start
@@ -728,7 +728,7 @@ class ServerReaderWriterBody final {
     if (ctx_->compression_level_set()) {
       ops.set_compression_level(ctx_->compression_level());
     }
-    ctx_->sent_initial_metadata_ = true;
+    ctx_->MarkInitialMetadataSent();
     ops.FillOps(call_);
     call_->cq()->Pluck(&ops);
   }
@@ -765,7 +765,7 @@ class ServerReaderWriterBody final {
       if (ctx_->compression_level_set()) {
         ctx_->pending_ops_.set_compression_level(ctx_->compression_level());
       }
-      ctx_->sent_initial_metadata_ = true;
+      ctx_->MarkInitialMetadataSent();
     }
     ctx_->pending_ops_.FillOps(call_);
     // if this is the last message we defer the pluck until AFTER we start
