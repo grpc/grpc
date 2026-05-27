@@ -477,9 +477,6 @@ cdef extern from "grpc/grpc.h":
   ctypedef struct grpc_server_config_fetcher:
     pass
 
-  void grpc_server_set_config_fetcher(
-       grpc_server* server, grpc_server_config_fetcher* config_fetcher) nogil
-
   ctypedef struct grpc_server_xds_status_notifier:
     void (*on_serving_status_update)(void* user_data, const char* uri,
                                    grpc_status_code code,

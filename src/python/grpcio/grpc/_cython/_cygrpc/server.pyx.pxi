@@ -46,14 +46,20 @@ cdef class Server:
     self.is_shutdown = False
     self.c_server = NULL
     self.registered_methods = {}  # Mapping[bytes, RegisteredMethod]
+    if xds:
+      cdef grpc_server_xds_status_notifier notifier
+      notifier.on_serving_status_update = NULL
+      notifier.user_data = NULL
+      cdef _ChannelArgs tmp_channel_args = _ChannelArgs(arguments)
+      config_fetcher = grpc_server_config_fetcher_xds_create(
+          notifier, tmp_channel_args.c_args()))
+      cdef grpc_arg fetcher_arg
+      fetcher_arg.type = GRPC_ARG_POINTER
+      fetcher_arg.value.pointer.vtable = grpc_server_config_fetcher_arg_vtable()
+      fetcher_arg.value.pointer.address = config_fetcher
+      arguments[GRPC_ARG_SERVER_CONFIG_FETCHER] = _wrap_grpc_arg(fetcher_arg)
     cdef _ChannelArgs channel_args = _ChannelArgs(arguments)
     self.c_server = grpc_server_create(channel_args.c_args(), NULL)
-    cdef grpc_server_xds_status_notifier notifier
-    notifier.on_serving_status_update = NULL
-    notifier.user_data = NULL
-    if xds:
-      grpc_server_set_config_fetcher(self.c_server,
-        grpc_server_config_fetcher_xds_create(notifier, channel_args.c_args()))
     self.references.append(arguments)
 
   def request_call(

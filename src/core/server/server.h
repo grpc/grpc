@@ -350,10 +350,6 @@ class Server : public ServerInterface,
     return server_call_tracer_factory_;
   }
 
-  void set_config_fetcher(RefCountedPtr<ServerConfigFetcher> config_fetcher) {
-    config_fetcher_ = std::move(config_fetcher);
-  }
-
   bool HasOpenConnections() ABSL_LOCKS_EXCLUDED(mu_global_);
 
   // Adds a listener to the server.  When the server starts, it will call

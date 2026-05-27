@@ -458,12 +458,6 @@ GRPCAPI grpc_server_config_fetcher* grpc_server_config_fetcher_xds_create(
 GRPCAPI void grpc_server_config_fetcher_unref(
     grpc_server_config_fetcher* config_fetcher);
 
-// FIXME: remove
-/** EXPERIMENTAL.  Sets the server's config fetcher.  Takes ownership.
-    Must be called before adding ports */
-GRPCAPI void grpc_server_set_config_fetcher(
-    grpc_server* server, grpc_server_config_fetcher* config_fetcher);
-
 /** Add a HTTP2 over an encrypted link over tcp listener.
    Returns bound port number on success, 0 on failure.
    REQUIRES: server not started */
