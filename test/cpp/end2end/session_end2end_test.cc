@@ -22,7 +22,6 @@
 #include <grpcpp/security/server_credentials.h>
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
-#include <grpcpp/virtual_channel.h>
 
 #include <functional>
 #include <memory>
@@ -162,15 +161,16 @@ class NoStartSessionReactor : public grpc::experimental::ServerSessionReactor {
 
 class TestSessionReactor : public grpc::experimental::ClientSessionReactor {
  public:
-  TestSessionReactor(std::function<void(grpc::internal::Call)> on_ready,
-                     std::function<void(const grpc::Status&)> on_done,
-                     std::function<void(bool)> on_acknowledged = nullptr)
+  TestSessionReactor(
+      std::function<void(std::shared_ptr<grpc::Channel>)> on_ready,
+      std::function<void(const grpc::Status&)> on_done,
+      std::function<void(bool)> on_acknowledged = nullptr)
       : on_ready_(std::move(on_ready)),
         on_done_(std::move(on_done)),
         on_acknowledged_(std::move(on_acknowledged)) {}
 
-  void OnSessionReady(grpc::internal::Call call) override {
-    if (on_ready_) on_ready_(call);
+  void OnSessionReady(std::shared_ptr<grpc::Channel> virtual_channel) override {
+    if (on_ready_) on_ready_(virtual_channel);
   }
 
   void OnSessionAcknowledged(bool ok) override {
@@ -183,7 +183,7 @@ class TestSessionReactor : public grpc::experimental::ClientSessionReactor {
   }
 
  private:
-  std::function<void(grpc::internal::Call)> on_ready_;
+  std::function<void(std::shared_ptr<grpc::Channel>)> on_ready_;
   std::function<void(const grpc::Status&)> on_done_;
   std::function<void(bool)> on_acknowledged_;
 };
@@ -322,8 +322,8 @@ class SessionEnd2endTest : public ::testing::Test {
     request_.set_message("Session request");
 
     auto* session_reactor = new TestSessionReactor(
-        [this](grpc::internal::Call call) {
-          session_channel_ = grpc::experimental::CreateVirtualChannel(call);
+        [this](std::shared_ptr<grpc::Channel> channel) {
+          session_channel_ = std::move(channel);
           session_ready_.Notify();
         },
         [this, custom_on_done](const grpc::Status& s) {
@@ -341,7 +341,7 @@ class SessionEnd2endTest : public ::testing::Test {
 
     session_stub_->PrepareSessionCall(
         &context_, "/grpc.testing.EchoTestService/SessionRequest", {},
-        &request_, session_reactor);
+        &request_, session_reactor, grpc::ChannelArguments{});
     session_reactor->StartCall();
 
     session_ready_.WaitForNotification();

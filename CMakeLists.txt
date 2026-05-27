@@ -5256,7 +5256,6 @@ foreach(_hdr
   include/grpcpp/support/time.h
   include/grpcpp/support/validate_service_config.h
   include/grpcpp/version_info.h
-  include/grpcpp/virtual_channel.h
   include/grpcpp/xds_server_builder.h
 )
   string(REPLACE "include/" "" _path ${_hdr})
@@ -6005,7 +6004,6 @@ foreach(_hdr
   include/grpcpp/support/time.h
   include/grpcpp/support/validate_service_config.h
   include/grpcpp/version_info.h
-  include/grpcpp/virtual_channel.h
 )
   string(REPLACE "include/" "" _path ${_hdr})
   get_filename_component(_path ${_path} PATH)

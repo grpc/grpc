@@ -4208,7 +4208,6 @@ libs:
   - include/grpcpp/support/time.h
   - include/grpcpp/support/validate_service_config.h
   - include/grpcpp/version_info.h
-  - include/grpcpp/virtual_channel.h
   - include/grpcpp/xds_server_builder.h
   headers:
   - src/core/client_channel/virtual_channel.h
@@ -4598,7 +4597,6 @@ libs:
   - include/grpcpp/support/time.h
   - include/grpcpp/support/validate_service_config.h
   - include/grpcpp/version_info.h
-  - include/grpcpp/virtual_channel.h
   headers:
   - src/core/client_channel/virtual_channel.h
   - src/core/telemetry/telemetry_label.h
