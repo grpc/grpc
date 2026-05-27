@@ -279,6 +279,7 @@ RefCountedPtr<const FilterConfig> XdsHttpCompositeFilter::ParseOverrideConfig(
   return config;
 }
 
+// FIXME: move this to MergeConfigs() to handle blackboard
 void XdsHttpCompositeFilter::UpdateBlackboard(
     const FilterConfig& config, const Blackboard* old_blackboard,
     Blackboard* new_blackboard) const {

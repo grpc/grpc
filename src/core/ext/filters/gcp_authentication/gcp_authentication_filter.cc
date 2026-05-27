@@ -106,7 +106,7 @@ absl::Status GcpAuthenticationFilter::Call::OnClientInitialMetadata(
         cluster_name));
   }
   // Get the call creds instance.
-  auto creds = filter->cache_->Get(
+  auto creds = filter->config->cache->Get(
       DownCast<const XdsGcpAuthnAudienceMetadataValue*>(metadata_value)->url());
   // Add the call creds instance to the call.
   auto* arena = GetContext<Arena>();
@@ -166,31 +166,26 @@ GcpAuthenticationFilter::Create(const ChannelArgs& args,
                      filter_args.config()->type().name()));
   }
   auto config = filter_args.config().TakeAsSubclass<const Config>();
+  // Make sure cache is present in config.
+  if (config->cache == nullptr) {
+    return absl::InternalError(
+        "gcp_auth: cache object not found in filter config");
+  }
   // Get XdsConfig so that we can look up CDS resources.
   auto xds_config = args.GetObjectRef<XdsConfig>();
   if (xds_config == nullptr) {
     return absl::InternalError(
         "gcp_auth: xds config not found in channel args");
   }
-  // Get cache from blackboard.  This must have been populated
-  // previously by the XdsConfigSelector.
-  auto cache =
-      filter_args.GetState<CallCredentialsCache>(config->instance_name);
-  if (cache == nullptr) {
-    return absl::InternalError(
-        "gcp_auth: cache object not found in filter state");
-  }
   // Instantiate filter.
   return std::unique_ptr<GcpAuthenticationFilter>(new GcpAuthenticationFilter(
-      std::move(config), std::move(xds_config), std::move(cache)));
+      std::move(config), std::move(xds_config)));
 }
 
 GcpAuthenticationFilter::GcpAuthenticationFilter(
     RefCountedPtr<const Config> filter_config,
-    RefCountedPtr<const XdsConfig> xds_config,
-    RefCountedPtr<CallCredentialsCache> cache)
+    RefCountedPtr<const XdsConfig> xds_config)
     : filter_config_(std::move(filter_config)),
-      xds_config_(std::move(xds_config)),
-      cache_(std::move(cache)) {}
+      xds_config_(std::move(xds_config)) {}
 
 }  // namespace grpc_core

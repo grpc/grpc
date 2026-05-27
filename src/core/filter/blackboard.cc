@@ -18,16 +18,40 @@
 
 namespace grpc_core {
 
-RefCountedPtr<Blackboard::Entry> Blackboard::Get(UniqueTypeName type,
-                                                 const std::string& key) const {
-  auto it = map_.find(std::pair(type, key));
-  if (it == map_.end()) return nullptr;
-  return it->second;
+void Blackboard::Entry::Orphaned() {
+  if (blackboard_ != nullptr) blackboard_->Remove(type_, key_, this);
 }
 
-void Blackboard::Set(UniqueTypeName type, const std::string& key,
-                     RefCountedPtr<Entry> entry) {
-  map_[std::pair(type, key)] = std::move(entry);
+RefCountedPtr<Blackboard::Entry> Blackboard::Get(UniqueTypeName type,
+                                                 const std::string& key) const {
+  MutexLock lock(&mu_);
+  auto it = map_.find(std::pair(type, key));
+  if (it == map_.end()) return nullptr;
+  return it->second->RefIfNonZero();
+}
+
+RefCountedPtr<Blackboard::Entry> Blackboard::Set(
+    UniqueTypeName type, const std::string& key,
+    RefCountedPtr<Entry> constructed) {
+  MutexLock lock(&mu_);
+  auto& entry = map_[std::pair(type, key)];
+  if (entry != nullptr) {
+    auto reffed_entry = entry->RefIfNonZero();
+    if (reffed_entry != nullptr) return reffed_entry;
+  }
+  entry = constructed->WeakRef();
+  constructed->blackboard_ = Ref();
+  constructed->type_ = type;
+  constructed->key_ = key;
+  return constructed;
+}
+
+void Blackboard::Remove(UniqueTypeName type, const std::string& key,
+                        Entry* entry) {
+  MutexLock lock(&mu_);
+  auto it = map_.find(std::pair(type, key));
+  if (it == map_.end()) return nullptr;
+  if (it->second == entry) map_.erase(it);
 }
 
 }  // namespace grpc_core

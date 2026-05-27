@@ -22,8 +22,10 @@
 
 #include "src/core/resolver/endpoint_addresses.h"
 #include "src/core/util/debug_location.h"
+#include "src/core/util/dual_ref_counted.h"
 #include "src/core/util/ref_counted.h"
 #include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/sync.h"
 #include "src/core/util/unique_type_name.h"
 #include "src/core/util/useful.h"
 #include "absl/container/flat_hash_map.h"
@@ -41,7 +43,17 @@ class Blackboard : public RefCounted<Blackboard> {
   // All entries must derive from this type.
   // They must also have a static method with the following signature:
   //  static UniqueTypeName Type();
-  class Entry : public RefCounted<Entry> {};
+  class Entry : public DualRefCounted<Entry> {
+   public:
+    void Orphaned() final;
+
+   private:
+    friend class Blackboard;
+
+    RefCountedPtr<Blackboard> blackboard_;
+    UniqueTypeName type_;
+    std::string key_;
+  };
 
   // Returns an entry for a particular type and name, or null if not present.
   template <typename T>
@@ -49,20 +61,24 @@ class Blackboard : public RefCounted<Blackboard> {
     return Get(T::Type(), key).template TakeAsSubclass<T>();
   }
 
-  // Sets an entry for a particular type and name.
+  // Sets an entry for a particular type and name if it doesn't already
+  // exist.  Returns the actual entry, which may not be the one passed in
+  // if the entry already exists.
   template <typename T>
-  void Set(const std::string& key, RefCountedPtr<T> entry) {
-    Set(T::Type(), key, std::move(entry));
+  RefCountedPtr<T> Set(const std::string& key, RefCountedPtr<T> constructed) {
+    Set(T::Type(), key, std::move(constructed));
   }
 
  private:
   RefCountedPtr<Entry> Get(UniqueTypeName type, const std::string& key) const;
-  void Set(UniqueTypeName type, const std::string& key,
-           RefCountedPtr<Entry> entry);
+  RefCountedPtr<Entry> Set(UniqueTypeName type, const std::string& key,
+                           RefCountedPtr<Entry> constructed);
+  void Remove(UniqueTypeName type, const std::string& key, Entry* entry);
 
+  Mutex mu_;
   absl::flat_hash_map<std::pair<UniqueTypeName, std::string>,
-                      RefCountedPtr<Entry>>
-      map_;
+                      WeakRefCountedPtr<Entry>>
+      map_ ABSL_GUARDED_BY(&mu_);
 };
 
 }  // namespace grpc_core

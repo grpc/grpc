@@ -41,19 +41,6 @@ namespace grpc_core {
 class GcpAuthenticationFilter
     : public ImplementChannelFilter<GcpAuthenticationFilter> {
  public:
-  struct Config : public FilterConfig {
-    static UniqueTypeName Type() {
-      return GRPC_UNIQUE_TYPE_NAME_HERE("gcp_authentication_filter_config");
-    }
-    UniqueTypeName type() const override { return Type(); }
-
-    bool Equals(const FilterConfig& other) const override;
-    std::string ToString() const override;
-
-    std::string instance_name;
-    uint64_t cache_size = 10;
-  };
-
   class CallCredentialsCache : public Blackboard::Entry {
    public:
     explicit CallCredentialsCache(size_t max_size) : cache_(max_size) {}
@@ -68,6 +55,23 @@ class GcpAuthenticationFilter
     Mutex mu_;
     LruCache<std::string /*audience*/, RefCountedPtr<grpc_call_credentials>>
         cache_ ABSL_GUARDED_BY(&mu_);
+  };
+
+  struct Config : public FilterConfig {
+    static UniqueTypeName Type() {
+      return GRPC_UNIQUE_TYPE_NAME_HERE("gcp_authentication_filter_config");
+    }
+    UniqueTypeName type() const override { return Type(); }
+
+    bool Equals(const FilterConfig& other) const override;
+    std::string ToString() const override;
+
+    std::string instance_name;
+    uint64_t cache_size = 10;
+
+    // This is populated from the blackboard but is not actually part of
+    // the identity of the config (i.e., does not matter for Equals()).
+    RefCountedPtr<CallCredentialsCache> cache;
   };
 
   static const grpc_channel_filter kFilterVtable;
@@ -94,12 +98,10 @@ class GcpAuthenticationFilter
 
  private:
   GcpAuthenticationFilter(RefCountedPtr<const Config> filter_config,
-                          RefCountedPtr<const XdsConfig> xds_config,
-                          RefCountedPtr<CallCredentialsCache> cache);
+                          RefCountedPtr<const XdsConfig> xds_config);
 
   const RefCountedPtr<const Config> filter_config_;
   const RefCountedPtr<const XdsConfig> xds_config_;
-  const RefCountedPtr<CallCredentialsCache> cache_;
 };
 
 }  // namespace grpc_core
