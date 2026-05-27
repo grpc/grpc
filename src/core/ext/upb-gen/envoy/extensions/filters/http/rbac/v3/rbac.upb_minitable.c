@@ -39,20 +39,10 @@ static const upb_MiniTableField envoy_extensions_filters_http_rbac_v3_RBAC__fiel
 const upb_MiniTable envoy__extensions__filters__http__rbac__v3__RBAC_msg_init = {
   &envoy_extensions_filters_http_rbac_v3_RBAC__submsgs[0],
   &envoy_extensions_filters_http_rbac_v3_RBAC__fields[0],
-  UPB_SIZE(48, 80), 7, kUpb_ExtMode_NonExtendable, 7, UPB_FASTTABLE_MASK(56), 0,
+  UPB_SIZE(48, 80), 7, kUpb_ExtMode_NonExtendable, 7, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.extensions.filters.http.rbac.v3.RBAC",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x001000003f00001a, &upb_pss_1bt},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x002000003f000032, &upb_pss_1bt},
-    {0x000900003f000038, &upb_psb1_1bt},
-  })
 };
 
 const upb_MiniTable* envoy__extensions__filters__http__rbac__v3__RBAC_msg_init_ptr = &envoy__extensions__filters__http__rbac__v3__RBAC_msg_init;

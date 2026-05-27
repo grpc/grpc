@@ -25,11 +25,11 @@
 cmake_minimum_required(VERSION 3.16)
 
 set(PACKAGE_NAME          "grpc")
-set(PACKAGE_VERSION       "1.81.0-dev")
-set(gRPC_CORE_VERSION     "53.0.0")
-set(gRPC_CORE_SOVERSION   "53")
-set(gRPC_CPP_VERSION      "1.81.0-dev")
-set(gRPC_CPP_SOVERSION    "1.81")
+set(PACKAGE_VERSION       "1.82.0-dev")
+set(gRPC_CORE_VERSION     "54.0.0")
+set(gRPC_CORE_SOVERSION   "54")
+set(gRPC_CPP_VERSION      "1.82.0-dev")
+set(gRPC_CPP_SOVERSION    "1.82")
 set(PACKAGE_STRING        "${PACKAGE_NAME} ${PACKAGE_VERSION}")
 set(PACKAGE_TARNAME       "${PACKAGE_NAME}-${PACKAGE_VERSION}")
 set(PACKAGE_BUGREPORT     "https://github.com/grpc/grpc/issues/")
@@ -322,7 +322,7 @@ if(MSVC)
   set(_gRPC_C_CXX_FLAGS "${_gRPC_C_CXX_FLAGS} /wd4267")
   # TODO(jtattermusch): needed to build boringssl with VS2017, revisit later
   set(_gRPC_C_CXX_FLAGS "${_gRPC_C_CXX_FLAGS} /wd4987 /wd4774 /wd4819 /wd4996 /wd4619")
-  # Silences thousands of trucation warnings
+  # Silences thousands of truncation warnings
   set(_gRPC_C_CXX_FLAGS "${_gRPC_C_CXX_FLAGS} /wd4503")
   # Tell MSVC to build grpc using utf-8
   set(_gRPC_C_CXX_FLAGS "${_gRPC_C_CXX_FLAGS} /utf-8")
@@ -411,6 +411,7 @@ if (NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/third_party/cel-spec AND gRPC_DOWNLOA
   # Download the archive via HTTP, validate the checksum, and extract to third_party/cel-spec.
   download_archive(
     ${CMAKE_CURRENT_SOURCE_DIR}/third_party/cel-spec
+    https://storage.googleapis.com/grpc-bazel-mirror/github.com/google/cel-spec/archive/refs/tags/v0.25.1.tar.gz
     https://github.com/google/cel-spec/archive/refs/tags/v0.25.1.tar.gz
     13583c5a312861648449845b709722676a3c9b43396b6b8e9cbe4538feb74ad2
     cel-spec-0.25.1
@@ -421,6 +422,7 @@ if (NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/third_party/envoy-api AND gRPC_DOWNLO
   # Download the archive via HTTP, validate the checksum, and extract to third_party/envoy-api.
   download_archive(
     ${CMAKE_CURRENT_SOURCE_DIR}/third_party/envoy-api
+    https://storage.googleapis.com/grpc-bazel-mirror/github.com/envoyproxy/data-plane-api/archive/6ef568cf4a67362849911d1d2a546fd9f35db2ff.tar.gz
     https://github.com/envoyproxy/data-plane-api/archive/6ef568cf4a67362849911d1d2a546fd9f35db2ff.tar.gz
     ed5e6c319f8ebcdf24a9491f866a599bb9a3c193b859a94ad13bd31f85b46855
     data-plane-api-6ef568cf4a67362849911d1d2a546fd9f35db2ff
@@ -431,6 +433,7 @@ if (NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/third_party/googleapis AND gRPC_DOWNL
   # Download the archive via HTTP, validate the checksum, and extract to third_party/googleapis.
   download_archive(
     ${CMAKE_CURRENT_SOURCE_DIR}/third_party/googleapis
+    https://storage.googleapis.com/grpc-bazel-mirror/github.com/googleapis/googleapis/archive/2193a2bfcecb92b92aad7a4d81baa428cafd7dfd.zip
     https://github.com/googleapis/googleapis/archive/2193a2bfcecb92b92aad7a4d81baa428cafd7dfd.zip
     07a6f700cee5ca796f5230876ed8454bf1d8cc409b3b3e634505bc4f32a9f72b
     googleapis-2193a2bfcecb92b92aad7a4d81baa428cafd7dfd
@@ -441,6 +444,7 @@ if (NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/third_party/protoc-gen-validate AND g
   # Download the archive via HTTP, validate the checksum, and extract to third_party/protoc-gen-validate.
   download_archive(
     ${CMAKE_CURRENT_SOURCE_DIR}/third_party/protoc-gen-validate
+    https://storage.googleapis.com/grpc-bazel-mirror/github.com/bufbuild/protoc-gen-validate/archive/refs/tags/v1.2.1.tar.gz
     https://github.com/bufbuild/protoc-gen-validate/archive/refs/tags/v1.2.1.tar.gz
     e4718352754df1393b8792b631338aa8562f390e8160783e365454bc11d96328
     protoc-gen-validate-1.2.1
@@ -451,6 +455,7 @@ if (NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/third_party/xds AND gRPC_DOWNLOAD_ARC
   # Download the archive via HTTP, validate the checksum, and extract to third_party/xds.
   download_archive(
     ${CMAKE_CURRENT_SOURCE_DIR}/third_party/xds
+    https://storage.googleapis.com/grpc-bazel-mirror/github.com/cncf/xds/archive/ee656c7534f5d7dc23d44dd611689568f72017a6.tar.gz
     https://github.com/cncf/xds/archive/ee656c7534f5d7dc23d44dd611689568f72017a6.tar.gz
     49535f3c3370004309da50194c09bbfc528d4702424dd46e7d56a278a3dfc15d
     xds-ee656c7534f5d7dc23d44dd611689568f72017a6
@@ -461,7 +466,7 @@ if(WIN32)
   set(_gRPC_ALLTARGETS_LIBRARIES ${_gRPC_ALLTARGETS_LIBRARIES} ws2_32 crypt32)
   set(_gRPC_STATIC_WIN32 STATIC)
 endif()
-  
+
 if(BUILD_SHARED_LIBS AND WIN32)
 
 # Currently for shared lib on Windows (i.e. a DLL) certain bits of source code
@@ -1310,9 +1315,11 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx backend_metrics_lb_policy_test)
   add_dependencies(buildtests_cxx backoff_test)
   add_dependencies(buildtests_cxx bad_server_response_test)
+  add_dependencies(buildtests_cxx bad_ssl_alpn_server)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     add_dependencies(buildtests_cxx bad_ssl_alpn_test)
   endif()
+  add_dependencies(buildtests_cxx bad_ssl_cert_server)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     add_dependencies(buildtests_cxx bad_ssl_cert_test)
   endif()
@@ -1341,6 +1348,7 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx call_utils_test)
   add_dependencies(buildtests_cxx cancel_ares_query_test)
   add_dependencies(buildtests_cxx cancel_callback_test)
+  add_dependencies(buildtests_cxx cds_test)
   add_dependencies(buildtests_cxx cel_authorization_engine_test)
   add_dependencies(buildtests_cxx certificate_provider_registry_test)
   add_dependencies(buildtests_cxx certificate_provider_store_test)
@@ -1378,6 +1386,7 @@ if(gRPC_BUILD_TESTS)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     add_dependencies(buildtests_cxx client_fork_test)
   endif()
+  add_dependencies(buildtests_cxx client_initial_metadata_outstanding_token_test)
   add_dependencies(buildtests_cxx client_interceptors_end2end_test)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     add_dependencies(buildtests_cxx client_lb_end2end_test)
@@ -1444,6 +1453,8 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx end2end_posix_no_logging_test)
   add_dependencies(buildtests_cxx end2end_posix_test)
   add_dependencies(buildtests_cxx end2end_test)
+  add_dependencies(buildtests_cxx end2end_vrpc_no_logging_test)
+  add_dependencies(buildtests_cxx end2end_vrpc_test)
   add_dependencies(buildtests_cxx endpoint_addresses_test)
   add_dependencies(buildtests_cxx endpoint_config_test)
   add_dependencies(buildtests_cxx endpoint_pair_test)
@@ -1559,7 +1570,6 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx idle_filter_state_test)
   add_dependencies(buildtests_cxx if_list_test)
   add_dependencies(buildtests_cxx if_test)
-  add_dependencies(buildtests_cxx incoming_metadata_tracker_test)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     add_dependencies(buildtests_cxx info_tool_test)
   endif()
@@ -1623,6 +1633,7 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx metrics_test)
   add_dependencies(buildtests_cxx minimal_stack_is_minimal_test)
   add_dependencies(buildtests_cxx miscompile_with_no_unique_address_test)
+  add_dependencies(buildtests_cxx mitigation_engine_provider_test)
   add_dependencies(buildtests_cxx mock_stream_test)
   add_dependencies(buildtests_cxx mock_test)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
@@ -1707,6 +1718,7 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx raw_end2end_test)
   add_dependencies(buildtests_cxx rbac_service_config_parser_test)
   add_dependencies(buildtests_cxx rbac_translator_test)
+  add_dependencies(buildtests_cxx read_context_test)
   add_dependencies(buildtests_cxx ref_counted_ptr_test)
   add_dependencies(buildtests_cxx ref_counted_test)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
@@ -1761,6 +1773,7 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx server_test)
   add_dependencies(buildtests_cxx service_config_end2end_test)
   add_dependencies(buildtests_cxx service_config_test)
+  add_dependencies(buildtests_cxx session_endpoint_test)
   add_dependencies(buildtests_cxx settings_timeout_manager_test)
   add_dependencies(buildtests_cxx settings_timeout_test)
   add_dependencies(buildtests_cxx shared_bit_gen_test)
@@ -2329,9 +2342,7 @@ add_library(grpc
   src/core/ext/filters/channel_idle/idle_filter_state.cc
   src/core/ext/filters/channel_idle/legacy_channel_idle_filter.cc
   src/core/ext/filters/fault_injection/fault_injection_filter.cc
-  src/core/ext/filters/fault_injection/fault_injection_service_config_parser.cc
   src/core/ext/filters/gcp_authentication/gcp_authentication_filter.cc
-  src/core/ext/filters/gcp_authentication/gcp_authentication_service_config_parser.cc
   src/core/ext/filters/http/client/http_client_filter.cc
   src/core/ext/filters/http/client_authority_filter.cc
   src/core/ext/filters/http/http_filters_plugin.cc
@@ -2341,7 +2352,6 @@ add_library(grpc
   src/core/ext/filters/rbac/rbac_filter.cc
   src/core/ext/filters/rbac/rbac_service_config_parser.cc
   src/core/ext/filters/stateful_session/stateful_session_filter.cc
-  src/core/ext/filters/stateful_session/stateful_session_service_config_parser.cc
   src/core/ext/transport/chttp2/alpn/alpn.cc
   src/core/ext/transport/chttp2/chttp2_plugin.cc
   src/core/ext/transport/chttp2/client/chttp2_connector.cc
@@ -2367,6 +2377,7 @@ add_library(grpc
   src/core/ext/transport/chttp2/transport/hpack_parser.cc
   src/core/ext/transport/chttp2/transport/hpack_parser_table.cc
   src/core/ext/transport/chttp2/transport/http2_client_transport.cc
+  src/core/ext/transport/chttp2/transport/http2_server_transport.cc
   src/core/ext/transport/chttp2/transport/http2_settings.cc
   src/core/ext/transport/chttp2/transport/http2_settings_manager.cc
   src/core/ext/transport/chttp2/transport/http2_stats_collector.cc
@@ -3001,6 +3012,7 @@ add_library(grpc
   src/core/server/server_config_selector_filter.cc
   src/core/server/xds_channel_stack_modifier.cc
   src/core/server/xds_server_config_fetcher.cc
+  src/core/server/xds_server_config_fetcher_legacy.cc
   src/core/service_config/service_config_channel_arg_filter.cc
   src/core/service_config/service_config_impl.cc
   src/core/service_config/service_config_parser.cc
@@ -3015,6 +3027,8 @@ add_library(grpc
   src/core/telemetry/tcp_tracer.cc
   src/core/transport/auth_context.cc
   src/core/transport/endpoint_transport_client_channel_factory.cc
+  src/core/transport/message_size_service_config.cc
+  src/core/transport/session_endpoint.cc
   src/core/tsi/alts/crypt/aes_gcm.cc
   src/core/tsi/alts/crypt/gsec.cc
   src/core/tsi/alts/frame_protector/alts_counter.cc
@@ -3198,6 +3212,7 @@ foreach(_hdr
   include/grpc/byte_buffer_reader.h
   include/grpc/census.h
   include/grpc/compression.h
+  include/grpc/context_types.h
   include/grpc/create_channel_from_endpoint.h
   include/grpc/credentials.h
   include/grpc/credentials_cpp.h
@@ -3482,7 +3497,6 @@ add_library(grpc_unsecure
   src/core/ext/filters/channel_idle/idle_filter_state.cc
   src/core/ext/filters/channel_idle/legacy_channel_idle_filter.cc
   src/core/ext/filters/fault_injection/fault_injection_filter.cc
-  src/core/ext/filters/fault_injection/fault_injection_service_config_parser.cc
   src/core/ext/filters/http/client/http_client_filter.cc
   src/core/ext/filters/http/client_authority_filter.cc
   src/core/ext/filters/http/http_filters_plugin.cc
@@ -3513,6 +3527,7 @@ add_library(grpc_unsecure
   src/core/ext/transport/chttp2/transport/hpack_parser.cc
   src/core/ext/transport/chttp2/transport/hpack_parser_table.cc
   src/core/ext/transport/chttp2/transport/http2_client_transport.cc
+  src/core/ext/transport/chttp2/transport/http2_server_transport.cc
   src/core/ext/transport/chttp2/transport/http2_settings.cc
   src/core/ext/transport/chttp2/transport/http2_settings_manager.cc
   src/core/ext/transport/chttp2/transport/http2_stats_collector.cc
@@ -3824,6 +3839,8 @@ add_library(grpc_unsecure
   src/core/telemetry/tcp_tracer.cc
   src/core/transport/auth_context.cc
   src/core/transport/endpoint_transport_client_channel_factory.cc
+  src/core/transport/message_size_service_config.cc
+  src/core/transport/session_endpoint.cc
   src/core/tsi/alts/handshaker/transport_security_common_api.cc
   src/core/tsi/fake_transport_security.cc
   src/core/tsi/local_transport_security.cc
@@ -3934,6 +3951,7 @@ foreach(_hdr
   include/grpc/byte_buffer_reader.h
   include/grpc/census.h
   include/grpc/compression.h
+  include/grpc/context_types.h
   include/grpc/create_channel_from_endpoint.h
   include/grpc/credentials.h
   include/grpc/credentials_cpp.h
@@ -4085,6 +4103,9 @@ if(WIN32 AND MSVC)
   set_target_properties(upb_base_lib PROPERTIES COMPILE_PDB_NAME "upb_base_lib"
     COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
   )
+  target_compile_options(upb_base_lib PRIVATE
+    /Zc:preprocessor
+  )
   if(gRPC_INSTALL)
     install(FILES ${CMAKE_CURRENT_BINARY_DIR}/upb_base_lib.pdb
       DESTINATION ${gRPC_INSTALL_LIBDIR} OPTIONAL
@@ -4121,6 +4142,60 @@ if(gRPC_INSTALL)
 endif()
 
 
+add_library(upb_descriptor_lib
+  src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c
+)
+
+target_compile_features(upb_descriptor_lib PUBLIC cxx_std_17)
+
+set_target_properties(upb_descriptor_lib PROPERTIES
+  VERSION ${gRPC_CORE_VERSION}
+  SOVERSION ${gRPC_CORE_SOVERSION}
+)
+
+if(WIN32 AND MSVC)
+  set_target_properties(upb_descriptor_lib PROPERTIES COMPILE_PDB_NAME "upb_descriptor_lib"
+    COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
+  )
+  target_compile_options(upb_descriptor_lib PRIVATE
+    /Zc:preprocessor
+  )
+  if(gRPC_INSTALL)
+    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/upb_descriptor_lib.pdb
+      DESTINATION ${gRPC_INSTALL_LIBDIR} OPTIONAL
+    )
+  endif()
+endif()
+
+target_include_directories(upb_descriptor_lib
+  PUBLIC $<INSTALL_INTERFACE:${gRPC_INSTALL_INCLUDEDIR}> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+)
+target_link_libraries(upb_descriptor_lib
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+)
+
+
+
+if(gRPC_INSTALL)
+  install(TARGETS upb_descriptor_lib EXPORT gRPCTargets
+    RUNTIME DESTINATION ${gRPC_INSTALL_BINDIR}
+    BUNDLE DESTINATION  ${gRPC_INSTALL_BINDIR}
+    LIBRARY DESTINATION ${gRPC_INSTALL_LIBDIR}
+    ARCHIVE DESTINATION ${gRPC_INSTALL_LIBDIR}
+  )
+endif()
+
+
 add_library(upb_hash_lib
   third_party/upb/upb/hash/common.c
 )
@@ -4135,6 +4210,9 @@ set_target_properties(upb_hash_lib PROPERTIES
 if(WIN32 AND MSVC)
   set_target_properties(upb_hash_lib PROPERTIES COMPILE_PDB_NAME "upb_hash_lib"
     COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
+  )
+  target_compile_options(upb_hash_lib PRIVATE
+    /Zc:preprocessor
   )
   if(gRPC_INSTALL)
     install(FILES ${CMAKE_CURRENT_BINARY_DIR}/upb_hash_lib.pdb
@@ -4189,6 +4267,9 @@ set_target_properties(upb_json_lib PROPERTIES
 if(WIN32 AND MSVC)
   set_target_properties(upb_json_lib PROPERTIES COMPILE_PDB_NAME "upb_json_lib"
     COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
+  )
+  target_compile_options(upb_json_lib PRIVATE
+    /Zc:preprocessor
   )
   if(gRPC_INSTALL)
     install(FILES ${CMAKE_CURRENT_BINARY_DIR}/upb_json_lib.pdb
@@ -4246,6 +4327,9 @@ if(WIN32 AND MSVC)
   set_target_properties(upb_lex_lib PROPERTIES COMPILE_PDB_NAME "upb_lex_lib"
     COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
   )
+  target_compile_options(upb_lex_lib PRIVATE
+    /Zc:preprocessor
+  )
   if(gRPC_INSTALL)
     install(FILES ${CMAKE_CURRENT_BINARY_DIR}/upb_lex_lib.pdb
       DESTINATION ${gRPC_INSTALL_LIBDIR} OPTIONAL
@@ -4297,6 +4381,9 @@ set_target_properties(upb_mem_lib PROPERTIES
 if(WIN32 AND MSVC)
   set_target_properties(upb_mem_lib PROPERTIES COMPILE_PDB_NAME "upb_mem_lib"
     COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
+  )
+  target_compile_options(upb_mem_lib PRIVATE
+    /Zc:preprocessor
   )
   if(gRPC_INSTALL)
     install(FILES ${CMAKE_CURRENT_BINARY_DIR}/upb_mem_lib.pdb
@@ -4356,6 +4443,9 @@ if(WIN32 AND MSVC)
   set_target_properties(upb_message_lib PROPERTIES COMPILE_PDB_NAME "upb_message_lib"
     COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
   )
+  target_compile_options(upb_message_lib PRIVATE
+    /Zc:preprocessor
+  )
   if(gRPC_INSTALL)
     install(FILES ${CMAKE_CURRENT_BINARY_DIR}/upb_message_lib.pdb
       DESTINATION ${gRPC_INSTALL_LIBDIR} OPTIONAL
@@ -4399,6 +4489,9 @@ add_library(upb_mini_descriptor_lib
   third_party/upb/upb/mini_descriptor/internal/base92.c
   third_party/upb/upb/mini_descriptor/internal/encode.c
   third_party/upb/upb/mini_descriptor/link.c
+  third_party/upb/upb/wire/decode_fast/select.c
+  third_party/upb/upb/wire/eps_copy_input_stream.c
+  third_party/upb/upb/wire/reader.c
 )
 
 target_compile_features(upb_mini_descriptor_lib PUBLIC cxx_std_17)
@@ -4411,6 +4504,9 @@ set_target_properties(upb_mini_descriptor_lib PROPERTIES
 if(WIN32 AND MSVC)
   set_target_properties(upb_mini_descriptor_lib PROPERTIES COMPILE_PDB_NAME "upb_mini_descriptor_lib"
     COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
+  )
+  target_compile_options(upb_mini_descriptor_lib PRIVATE
+    /Zc:preprocessor
   )
   if(gRPC_INSTALL)
     install(FILES ${CMAKE_CURRENT_BINARY_DIR}/upb_mini_descriptor_lib.pdb
@@ -4435,6 +4531,7 @@ target_include_directories(upb_mini_descriptor_lib
 target_link_libraries(upb_mini_descriptor_lib
   ${_gRPC_ALLTARGETS_LIBRARIES}
   upb_mini_table_lib
+  absl::strings
 )
 
 
@@ -4465,6 +4562,9 @@ set_target_properties(upb_mini_table_lib PROPERTIES
 if(WIN32 AND MSVC)
   set_target_properties(upb_mini_table_lib PROPERTIES COMPILE_PDB_NAME "upb_mini_table_lib"
     COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
+  )
+  target_compile_options(upb_mini_table_lib PRIVATE
+    /Zc:preprocessor
   )
   if(gRPC_INSTALL)
     install(FILES ${CMAKE_CURRENT_BINARY_DIR}/upb_mini_table_lib.pdb
@@ -4504,7 +4604,6 @@ endif()
 
 
 add_library(upb_reflection_lib
-  src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c
   third_party/upb/upb/message/copy.c
   third_party/upb/upb/message/merge.c
   third_party/upb/upb/reflection/def_pool.c
@@ -4537,6 +4636,9 @@ if(WIN32 AND MSVC)
   set_target_properties(upb_reflection_lib PROPERTIES COMPILE_PDB_NAME "upb_reflection_lib"
     COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
   )
+  target_compile_options(upb_reflection_lib PRIVATE
+    /Zc:preprocessor
+  )
   if(gRPC_INSTALL)
     install(FILES ${CMAKE_CURRENT_BINARY_DIR}/upb_reflection_lib.pdb
       DESTINATION ${gRPC_INSTALL_LIBDIR} OPTIONAL
@@ -4560,6 +4662,7 @@ target_include_directories(upb_reflection_lib
 target_link_libraries(upb_reflection_lib
   ${_gRPC_ALLTARGETS_LIBRARIES}
   upb_mini_descriptor_lib
+  upb_descriptor_lib
   upb_wire_lib
 )
 
@@ -4590,6 +4693,9 @@ set_target_properties(upb_textformat_lib PROPERTIES
 if(WIN32 AND MSVC)
   set_target_properties(upb_textformat_lib PROPERTIES COMPILE_PDB_NAME "upb_textformat_lib"
     COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
+  )
+  target_compile_options(upb_textformat_lib PRIVATE
+    /Zc:preprocessor
   )
   if(gRPC_INSTALL)
     install(FILES ${CMAKE_CURRENT_BINARY_DIR}/upb_textformat_lib.pdb
@@ -4634,7 +4740,7 @@ add_library(upb_wire_lib
   third_party/upb/upb/wire/decode.c
   third_party/upb/upb/wire/encode.c
   third_party/upb/upb/wire/eps_copy_input_stream.c
-  third_party/upb/upb/wire/internal/decode_fast.c
+  third_party/upb/upb/wire/internal/decoder.c
   third_party/upb/upb/wire/reader.c
 )
 
@@ -4648,6 +4754,9 @@ set_target_properties(upb_wire_lib PROPERTIES
 if(WIN32 AND MSVC)
   set_target_properties(upb_wire_lib PROPERTIES COMPILE_PDB_NAME "upb_wire_lib"
     COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
+  )
+  target_compile_options(upb_wire_lib PRIVATE
+    /Zc:preprocessor
   )
   if(gRPC_INSTALL)
     install(FILES ${CMAKE_CURRENT_BINARY_DIR}/upb_wire_lib.pdb
@@ -4826,6 +4935,8 @@ endif()
 endif()
 
 add_library(grpc++
+  src/core/client_channel/virtual_channel.cc
+  src/cpp/client/call_context_registry.cc
   src/cpp/client/call_credentials.cc
   src/cpp/client/channel_cc.cc
   src/cpp/client/channel_credentials.cc
@@ -5006,6 +5117,7 @@ foreach(_hdr
   include/grpc++/support/sync_stream.h
   include/grpc++/support/time.h
   include/grpcpp/alarm.h
+  include/grpcpp/call_context_types.h
   include/grpcpp/channel.h
   include/grpcpp/client_context.h
   include/grpcpp/completion_queue.h
@@ -5020,7 +5132,9 @@ foreach(_hdr
   include/grpcpp/generic/generic_stub_callback.h
   include/grpcpp/grpcpp.h
   include/grpcpp/health_check_service_interface.h
+  include/grpcpp/impl/allowed_call_context_types.h
   include/grpcpp/impl/call.h
+  include/grpcpp/impl/call_context_registry.h
   include/grpcpp/impl/call_op_set.h
   include/grpcpp/impl/call_op_set_interface.h
   include/grpcpp/impl/channel_argument_option.h
@@ -5139,6 +5253,7 @@ foreach(_hdr
   include/grpcpp/support/time.h
   include/grpcpp/support/validate_service_config.h
   include/grpcpp/version_info.h
+  include/grpcpp/virtual_channel.h
   include/grpcpp/xds_server_builder.h
 )
   string(REPLACE "include/" "" _path ${_hdr})
@@ -5577,6 +5692,8 @@ target_link_libraries(grpc++_test_util
 endif()
 
 add_library(grpc++_unsecure
+  src/core/client_channel/virtual_channel.cc
+  src/cpp/client/call_context_registry.cc
   src/cpp/client/call_credentials.cc
   src/cpp/client/channel_cc.cc
   src/cpp/client/channel_credentials.cc
@@ -5748,6 +5865,7 @@ foreach(_hdr
   include/grpc++/support/sync_stream.h
   include/grpc++/support/time.h
   include/grpcpp/alarm.h
+  include/grpcpp/call_context_types.h
   include/grpcpp/channel.h
   include/grpcpp/client_context.h
   include/grpcpp/completion_queue.h
@@ -5762,7 +5880,9 @@ foreach(_hdr
   include/grpcpp/generic/generic_stub_callback.h
   include/grpcpp/grpcpp.h
   include/grpcpp/health_check_service_interface.h
+  include/grpcpp/impl/allowed_call_context_types.h
   include/grpcpp/impl/call.h
+  include/grpcpp/impl/call_context_registry.h
   include/grpcpp/impl/call_op_set.h
   include/grpcpp/impl/call_op_set_interface.h
   include/grpcpp/impl/channel_argument_option.h
@@ -5881,6 +6001,7 @@ foreach(_hdr
   include/grpcpp/support/time.h
   include/grpcpp/support/validate_service_config.h
   include/grpcpp/version_info.h
+  include/grpcpp/virtual_channel.h
 )
   string(REPLACE "include/" "" _path ${_hdr})
   get_filename_component(_path ${_path} PATH)
@@ -6270,6 +6391,7 @@ foreach(_hdr
   include/grpc/byte_buffer.h
   include/grpc/byte_buffer_reader.h
   include/grpc/compression.h
+  include/grpc/context_types.h
   include/grpc/create_channel_from_endpoint.h
   include/grpc/credentials.h
   include/grpc/credentials_cpp.h
@@ -6411,7 +6533,6 @@ target_link_libraries(grpc_plugin_support
   absl::strings
   absl::synchronization
   absl::time
-  absl::optional
   absl::span
   absl::utility
   ${_gRPC_PROTOBUF_LIBRARIES}
@@ -8869,6 +8990,44 @@ target_link_libraries(bad_server_response_test
 
 endif()
 if(gRPC_BUILD_TESTS)
+
+add_executable(bad_ssl_alpn_server
+  test/core/bad_ssl/server_common.cc
+  test/core/bad_ssl/servers/alpn.cc
+)
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(bad_ssl_alpn_server
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
+target_compile_features(bad_ssl_alpn_server PUBLIC cxx_std_17)
+target_include_directories(bad_ssl_alpn_server
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(bad_ssl_alpn_server
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
   add_executable(bad_ssl_alpn_test
@@ -8914,6 +9073,44 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
 
 endif()
+endif()
+if(gRPC_BUILD_TESTS)
+
+add_executable(bad_ssl_cert_server
+  test/core/bad_ssl/server_common.cc
+  test/core/bad_ssl/servers/cert.cc
+)
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(bad_ssl_cert_server
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
+target_compile_features(bad_ssl_cert_server PUBLIC cxx_std_17)
+target_include_directories(bad_ssl_cert_server
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(bad_ssl_cert_server
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+)
+
+
 endif()
 if(gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
@@ -10516,6 +10713,48 @@ target_link_libraries(cancel_callback_test
   absl::span
   absl::utility
   gpr
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
+add_executable(cds_test
+  test/core/load_balancing/cds_test.cc
+)
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(cds_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
+target_compile_features(cds_test PUBLIC cxx_std_17)
+target_include_directories(cds_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(cds_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  gtest
+  grpc_test_util
 )
 
 
@@ -12544,6 +12783,48 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
 
 endif()
+endif()
+if(gRPC_BUILD_TESTS)
+
+add_executable(client_initial_metadata_outstanding_token_test
+  test/core/transport/client_initial_metadata_outstanding_token_test.cc
+)
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(client_initial_metadata_outstanding_token_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
+target_compile_features(client_initial_metadata_outstanding_token_test PUBLIC cxx_std_17)
+target_include_directories(client_initial_metadata_outstanding_token_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(client_initial_metadata_outstanding_token_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  gtest
+  grpc
+)
+
+
 endif()
 if(gRPC_BUILD_TESTS)
 
@@ -16141,6 +16422,303 @@ target_link_libraries(end2end_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_test
   grpc++_test_util
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
+add_executable(end2end_vrpc_no_logging_test
+  ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.h
+  src/core/client_channel/virtual_channel.cc
+  src/core/ext/transport/chaotic_good/chaotic_good.cc
+  src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  src/core/ext/transport/chaotic_good/client_transport.cc
+  src/core/ext/transport/chaotic_good/control_endpoint.cc
+  src/core/ext/transport/chaotic_good/data_endpoints.cc
+  src/core/ext/transport/chaotic_good/frame.cc
+  src/core/ext/transport/chaotic_good/frame_header.cc
+  src/core/ext/transport/chaotic_good/scheduler.cc
+  src/core/ext/transport/chaotic_good/send_rate.cc
+  src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  src/core/ext/transport/chaotic_good/server_transport.cc
+  src/core/ext/transport/chaotic_good/tcp_frame_header.cc
+  src/core/ext/transport/chaotic_good/tcp_frame_transport.cc
+  src/core/ext/transport/chaotic_good/tcp_ztrace_collector.cc
+  src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
+  src/core/ext/transport/chaotic_good_legacy/client_transport.cc
+  src/core/ext/transport/chaotic_good_legacy/control_endpoint.cc
+  src/core/ext/transport/chaotic_good_legacy/data_endpoints.cc
+  src/core/ext/transport/chaotic_good_legacy/frame.cc
+  src/core/ext/transport/chaotic_good_legacy/frame_header.cc
+  src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
+  src/core/ext/transport/chaotic_good_legacy/server_transport.cc
+  src/core/util/seq_bit_set.cc
+  test/core/call/batch_builder.cc
+  test/core/end2end/cq_verifier.cc
+  test/core/end2end/end2end_test_suites.cc
+  test/core/end2end/end2end_tests.cc
+  test/core/end2end/end2end_vrpc_config.cc
+  test/core/end2end/fixtures/http_proxy_fixture.cc
+  test/core/end2end/fixtures/local_util.cc
+  test/core/end2end/fixtures/proxy.cc
+  test/core/end2end/tests/no_logging.cc
+  test/core/event_engine/event_engine_test_utils.cc
+  test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
+  test/core/test_util/fail_first_call_filter.cc
+  test/core/test_util/fake_stats_plugin.cc
+  test/core/test_util/fuzz_config_vars.cc
+  test/core/test_util/passthrough_endpoint.cc
+  test/core/test_util/test_call_creds.cc
+  test/core/test_util/test_lb_policies.cc
+  third_party/googletest/googlemock/src/gmock_main.cc
+)
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(end2end_vrpc_no_logging_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
+target_compile_features(end2end_vrpc_no_logging_test PUBLIC cxx_std_17)
+target_include_directories(end2end_vrpc_no_logging_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(end2end_vrpc_no_logging_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  gtest
+  absl::log_entry
+  absl::log_sink
+  absl::log_sink_registry
+  grpc_authorization_provider
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  grpc_test_util
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
+add_executable(end2end_vrpc_test
+  ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/end2end_test_fuzzer.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/test_util/fuzz_config_vars.grpc.pb.h
+  src/core/client_channel/virtual_channel.cc
+  src/core/ext/transport/chaotic_good/chaotic_good.cc
+  src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  src/core/ext/transport/chaotic_good/client_transport.cc
+  src/core/ext/transport/chaotic_good/control_endpoint.cc
+  src/core/ext/transport/chaotic_good/data_endpoints.cc
+  src/core/ext/transport/chaotic_good/frame.cc
+  src/core/ext/transport/chaotic_good/frame_header.cc
+  src/core/ext/transport/chaotic_good/scheduler.cc
+  src/core/ext/transport/chaotic_good/send_rate.cc
+  src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  src/core/ext/transport/chaotic_good/server_transport.cc
+  src/core/ext/transport/chaotic_good/tcp_frame_header.cc
+  src/core/ext/transport/chaotic_good/tcp_frame_transport.cc
+  src/core/ext/transport/chaotic_good/tcp_ztrace_collector.cc
+  src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
+  src/core/ext/transport/chaotic_good_legacy/client_transport.cc
+  src/core/ext/transport/chaotic_good_legacy/control_endpoint.cc
+  src/core/ext/transport/chaotic_good_legacy/data_endpoints.cc
+  src/core/ext/transport/chaotic_good_legacy/frame.cc
+  src/core/ext/transport/chaotic_good_legacy/frame_header.cc
+  src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
+  src/core/ext/transport/chaotic_good_legacy/server_transport.cc
+  src/core/util/seq_bit_set.cc
+  test/core/call/batch_builder.cc
+  test/core/end2end/cq_verifier.cc
+  test/core/end2end/end2end_test_suites.cc
+  test/core/end2end/end2end_tests.cc
+  test/core/end2end/end2end_vrpc_config.cc
+  test/core/end2end/fixtures/http_proxy_fixture.cc
+  test/core/end2end/fixtures/local_util.cc
+  test/core/end2end/fixtures/proxy.cc
+  test/core/end2end/tests/bad_ping.cc
+  test/core/end2end/tests/binary_metadata.cc
+  test/core/end2end/tests/call_creds.cc
+  test/core/end2end/tests/call_host_override.cc
+  test/core/end2end/tests/cancel_after_accept.cc
+  test/core/end2end/tests/cancel_after_client_done.cc
+  test/core/end2end/tests/cancel_after_invoke.cc
+  test/core/end2end/tests/cancel_after_round_trip.cc
+  test/core/end2end/tests/cancel_before_invoke.cc
+  test/core/end2end/tests/cancel_in_a_vacuum.cc
+  test/core/end2end/tests/cancel_with_status.cc
+  test/core/end2end/tests/channelz.cc
+  test/core/end2end/tests/client_streaming.cc
+  test/core/end2end/tests/compressed_payload.cc
+  test/core/end2end/tests/connection_scaling.cc
+  test/core/end2end/tests/connectivity.cc
+  test/core/end2end/tests/default_host.cc
+  test/core/end2end/tests/disappearing_server.cc
+  test/core/end2end/tests/empty_batch.cc
+  test/core/end2end/tests/filter_causes_close.cc
+  test/core/end2end/tests/filter_init_fails.cc
+  test/core/end2end/tests/filtered_metadata.cc
+  test/core/end2end/tests/graceful_server_shutdown.cc
+  test/core/end2end/tests/grpc_authz.cc
+  test/core/end2end/tests/high_initial_seqno.cc
+  test/core/end2end/tests/hpack_size.cc
+  test/core/end2end/tests/http2_stats.cc
+  test/core/end2end/tests/invoke_large_request.cc
+  test/core/end2end/tests/keepalive_timeout.cc
+  test/core/end2end/tests/large_metadata.cc
+  test/core/end2end/tests/max_concurrent_streams.cc
+  test/core/end2end/tests/max_connection_age.cc
+  test/core/end2end/tests/max_connection_idle.cc
+  test/core/end2end/tests/max_message_length.cc
+  test/core/end2end/tests/negative_deadline.cc
+  test/core/end2end/tests/no_op.cc
+  test/core/end2end/tests/payload.cc
+  test/core/end2end/tests/ping.cc
+  test/core/end2end/tests/ping_pong_streaming.cc
+  test/core/end2end/tests/proxy_auth.cc
+  test/core/end2end/tests/registered_call.cc
+  test/core/end2end/tests/request_with_flags.cc
+  test/core/end2end/tests/request_with_payload.cc
+  test/core/end2end/tests/resource_quota_server.cc
+  test/core/end2end/tests/retry.cc
+  test/core/end2end/tests/retry_cancel_after_first_attempt_starts.cc
+  test/core/end2end/tests/retry_cancel_during_delay.cc
+  test/core/end2end/tests/retry_cancel_with_multiple_send_batches.cc
+  test/core/end2end/tests/retry_cancellation.cc
+  test/core/end2end/tests/retry_disabled.cc
+  test/core/end2end/tests/retry_exceeds_buffer_size_in_delay.cc
+  test/core/end2end/tests/retry_exceeds_buffer_size_in_initial_batch.cc
+  test/core/end2end/tests/retry_exceeds_buffer_size_in_subsequent_batch.cc
+  test/core/end2end/tests/retry_lb_drop.cc
+  test/core/end2end/tests/retry_lb_fail.cc
+  test/core/end2end/tests/retry_non_retriable_status.cc
+  test/core/end2end/tests/retry_non_retriable_status_before_trailers.cc
+  test/core/end2end/tests/retry_per_attempt_recv_timeout.cc
+  test/core/end2end/tests/retry_per_attempt_recv_timeout_on_last_attempt.cc
+  test/core/end2end/tests/retry_recv_initial_metadata.cc
+  test/core/end2end/tests/retry_recv_message.cc
+  test/core/end2end/tests/retry_recv_message_replay.cc
+  test/core/end2end/tests/retry_recv_trailing_metadata_error.cc
+  test/core/end2end/tests/retry_send_initial_metadata_refs.cc
+  test/core/end2end/tests/retry_send_op_fails.cc
+  test/core/end2end/tests/retry_send_recv_batch.cc
+  test/core/end2end/tests/retry_server_pushback_delay.cc
+  test/core/end2end/tests/retry_server_pushback_disabled.cc
+  test/core/end2end/tests/retry_streaming.cc
+  test/core/end2end/tests/retry_streaming_after_commit.cc
+  test/core/end2end/tests/retry_streaming_succeeds_before_replay_finished.cc
+  test/core/end2end/tests/retry_throttled.cc
+  test/core/end2end/tests/retry_too_many_attempts.cc
+  test/core/end2end/tests/retry_transparent_goaway.cc
+  test/core/end2end/tests/retry_transparent_max_concurrent_streams.cc
+  test/core/end2end/tests/retry_transparent_not_sent_on_wire.cc
+  test/core/end2end/tests/retry_unref_before_finish.cc
+  test/core/end2end/tests/retry_unref_before_recv.cc
+  test/core/end2end/tests/server_finishes_request.cc
+  test/core/end2end/tests/server_streaming.cc
+  test/core/end2end/tests/shutdown_finishes_calls.cc
+  test/core/end2end/tests/shutdown_finishes_tags.cc
+  test/core/end2end/tests/simple_delayed_request.cc
+  test/core/end2end/tests/simple_metadata.cc
+  test/core/end2end/tests/simple_request.cc
+  test/core/end2end/tests/streaming_error_response.cc
+  test/core/end2end/tests/timeout_before_request_call.cc
+  test/core/end2end/tests/trailing_metadata.cc
+  test/core/end2end/tests/write_buffering.cc
+  test/core/end2end/tests/write_buffering_at_end.cc
+  test/core/event_engine/event_engine_test_utils.cc
+  test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
+  test/core/test_util/fail_first_call_filter.cc
+  test/core/test_util/fake_stats_plugin.cc
+  test/core/test_util/fuzz_config_vars.cc
+  test/core/test_util/passthrough_endpoint.cc
+  test/core/test_util/test_call_creds.cc
+  test/core/test_util/test_lb_policies.cc
+  third_party/googletest/googlemock/src/gmock_main.cc
+)
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(end2end_vrpc_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
+target_compile_features(end2end_vrpc_test PUBLIC cxx_std_17)
+target_include_directories(end2end_vrpc_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(end2end_vrpc_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  gtest
+  absl::log_entry
+  absl::log_sink
+  absl::log_sink_registry
+  grpc_authorization_provider
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  grpc_test_util
 )
 
 
@@ -20981,7 +21559,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
     ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
-    src/core/ext/transport/chttp2/transport/http2_server_transport.cc
     test/core/event_engine/event_engine_test_utils.cc
     test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
     test/core/transport/chttp2/http2_server_transport_test.cc
@@ -21558,56 +22135,6 @@ target_link_libraries(if_test
   absl::span
   absl::utility
   gpr
-)
-
-
-endif()
-if(gRPC_BUILD_TESTS)
-
-add_executable(incoming_metadata_tracker_test
-  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
-  test/core/event_engine/event_engine_test_utils.cc
-  test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
-  test/core/transport/chttp2/incoming_metadata_tracker_test.cc
-  test/core/transport/util/mock_promise_endpoint.cc
-)
-if(WIN32 AND MSVC)
-  if(BUILD_SHARED_LIBS)
-    target_compile_definitions(incoming_metadata_tracker_test
-    PRIVATE
-      "GPR_DLL_IMPORTS"
-      "GRPC_DLL_IMPORTS"
-    )
-  endif()
-endif()
-target_compile_features(incoming_metadata_tracker_test PUBLIC cxx_std_17)
-target_include_directories(incoming_metadata_tracker_test
-  PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
-    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-    ${_gRPC_RE2_INCLUDE_DIR}
-    ${_gRPC_SSL_INCLUDE_DIR}
-    ${_gRPC_UPB_GENERATED_DIR}
-    ${_gRPC_UPB_GRPC_GENERATED_DIR}
-    ${_gRPC_UPB_INCLUDE_DIR}
-    ${_gRPC_XXHASH_INCLUDE_DIR}
-    ${_gRPC_ZLIB_INCLUDE_DIR}
-    third_party/googletest/googletest/include
-    third_party/googletest/googletest
-    third_party/googletest/googlemock/include
-    third_party/googletest/googlemock
-    ${_gRPC_PROTO_GENS_DIR}
-)
-
-target_link_libraries(incoming_metadata_tracker_test
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  gtest
-  ${_gRPC_PROTOBUF_LIBRARIES}
-  grpc_test_util
 )
 
 
@@ -25065,6 +25592,48 @@ target_link_libraries(miscompile_with_no_unique_address_test
   gtest
   absl::config
   absl::core_headers
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
+add_executable(mitigation_engine_provider_test
+  test/core/mitigation_engine/mitigation_engine_provider_test.cc
+)
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(mitigation_engine_provider_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
+target_compile_features(mitigation_engine_provider_test PUBLIC cxx_std_17)
+target_include_directories(mitigation_engine_provider_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(mitigation_engine_provider_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  gtest
+  grpc_test_util
 )
 
 
@@ -29696,6 +30265,56 @@ target_link_libraries(rbac_translator_test
 endif()
 if(gRPC_BUILD_TESTS)
 
+add_executable(read_context_test
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
+  test/core/event_engine/event_engine_test_utils.cc
+  test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
+  test/core/transport/chttp2/read_context_test.cc
+  test/core/transport/util/mock_promise_endpoint.cc
+)
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(read_context_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
+target_compile_features(read_context_test PUBLIC cxx_std_17)
+target_include_directories(read_context_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(read_context_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  gtest
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  grpc_test_util
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
 add_executable(ref_counted_ptr_test
   test/core/util/ref_counted_ptr_test.cc
 )
@@ -31145,7 +31764,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(server_builder_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
-    grpc++
     grpc++_unsecure
     grpc_test_util_unsecure
   )
@@ -31220,7 +31838,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(server_builder_with_socket_mutator_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
-    grpc++
     grpc++_unsecure
     grpc_test_util_unsecure
   )
@@ -31857,6 +32474,49 @@ target_include_directories(service_config_test
 )
 
 target_link_libraries(service_config_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  gtest
+  grpc_test_util
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
+add_executable(session_endpoint_test
+  test/core/end2end/cq_verifier.cc
+  test/core/transport/session_endpoint_test.cc
+)
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(session_endpoint_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
+target_compile_features(session_endpoint_test PUBLIC cxx_std_17)
+target_include_directories(session_endpoint_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(session_endpoint_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_test_util
@@ -54642,7 +55302,7 @@ generate_pkgconfig(
   "absl_algorithm_container absl_any_invocable absl_base absl_bind_front absl_bits absl_btree absl_check absl_cleanup absl_config absl_cord absl_core_headers absl_flags absl_flags_marshalling absl_flat_hash_map absl_flat_hash_set absl_function_ref absl_hash absl_inlined_vector absl_log absl_log_globals absl_log_severity absl_memory absl_no_destructor absl_node_hash_map absl_optional absl_random_bit_gen_ref absl_random_distributions absl_random_random absl_span absl_status absl_statusor absl_str_format absl_string_view absl_strings absl_synchronization absl_time absl_type_traits absl_utility gpr"
   "libcares openssl re2 zlib"
   "-lgrpc"
-  "-laddress_sorting -lupb_textformat_lib -lupb_json_lib -lupb_reflection_lib -lupb_wire_lib -lupb_message_lib -lutf8_range_lib -lupb_mini_descriptor_lib -lupb_mini_table_lib -lupb_hash_lib -lupb_mem_lib -lupb_base_lib -lupb_lex_lib"
+  "-laddress_sorting -lupb_textformat_lib -lupb_json_lib -lupb_reflection_lib -lupb_wire_lib -lupb_message_lib -lutf8_range_lib -lupb_descriptor_lib -lupb_mini_descriptor_lib -lupb_mini_table_lib -lupb_hash_lib -lupb_mem_lib -lupb_base_lib -lupb_lex_lib"
   "grpc.pc")
 
 # grpc_unsecure .pc file
@@ -54653,7 +55313,7 @@ generate_pkgconfig(
   "absl_algorithm_container absl_any_invocable absl_base absl_bind_front absl_bits absl_btree absl_check absl_cleanup absl_config absl_cord absl_core_headers absl_flags absl_flags_marshalling absl_flat_hash_map absl_flat_hash_set absl_function_ref absl_hash absl_inlined_vector absl_log absl_log_globals absl_log_severity absl_memory absl_no_destructor absl_node_hash_map absl_optional absl_random_bit_gen_ref absl_random_distributions absl_random_random absl_span absl_status absl_statusor absl_str_format absl_string_view absl_strings absl_synchronization absl_time absl_type_traits absl_utility gpr"
   "libcares zlib"
   "-lgrpc_unsecure"
-  "-laddress_sorting -lupb_textformat_lib -lupb_reflection_lib -lupb_wire_lib -lupb_message_lib -lutf8_range_lib -lupb_mini_descriptor_lib -lupb_mini_table_lib -lupb_hash_lib -lupb_mem_lib -lupb_base_lib -lupb_lex_lib"
+  "-laddress_sorting -lupb_textformat_lib -lupb_reflection_lib -lupb_wire_lib -lupb_message_lib -lutf8_range_lib -lupb_descriptor_lib -lupb_mini_descriptor_lib -lupb_mini_table_lib -lupb_hash_lib -lupb_mem_lib -lupb_base_lib -lupb_lex_lib"
   "grpc_unsecure.pc")
 
 # grpc++ .pc file
@@ -54664,7 +55324,7 @@ generate_pkgconfig(
   "absl_absl_check absl_absl_log absl_algorithm_container absl_any_invocable absl_base absl_bind_front absl_bits absl_btree absl_check absl_cleanup absl_config absl_cord absl_core_headers absl_dynamic_annotations absl_flags absl_flags_marshalling absl_flat_hash_map absl_flat_hash_set absl_function_ref absl_hash absl_inlined_vector absl_layout absl_log absl_log_globals absl_log_severity absl_memory absl_no_destructor absl_node_hash_map absl_optional absl_prefetch absl_random_bit_gen_ref absl_random_distributions absl_random_random absl_span absl_status absl_statusor absl_str_format absl_string_view absl_strings absl_strings_internal absl_synchronization absl_time absl_type_traits absl_utility gpr grpc"
   "libcares openssl re2 zlib"
   "-lgrpc++"
-  "-laddress_sorting -lupb_textformat_lib -lupb_json_lib -lupb_reflection_lib -lupb_wire_lib -lupb_message_lib -lutf8_range_lib -lupb_mini_descriptor_lib -lupb_mini_table_lib -lupb_hash_lib -lupb_mem_lib -lupb_base_lib -lupb_lex_lib"
+  "-laddress_sorting -lupb_textformat_lib -lupb_json_lib -lupb_reflection_lib -lupb_wire_lib -lupb_message_lib -lutf8_range_lib -lupb_descriptor_lib -lupb_mini_descriptor_lib -lupb_mini_table_lib -lupb_hash_lib -lupb_mem_lib -lupb_base_lib -lupb_lex_lib"
   "grpc++.pc")
 
 # grpc++_unsecure .pc file
@@ -54675,7 +55335,7 @@ generate_pkgconfig(
   "absl_absl_check absl_absl_log absl_algorithm_container absl_any_invocable absl_base absl_bind_front absl_bits absl_btree absl_check absl_cleanup absl_config absl_cord absl_core_headers absl_dynamic_annotations absl_flags absl_flags_marshalling absl_flat_hash_map absl_flat_hash_set absl_function_ref absl_hash absl_inlined_vector absl_layout absl_log absl_log_globals absl_log_severity absl_memory absl_no_destructor absl_node_hash_map absl_optional absl_prefetch absl_random_bit_gen_ref absl_random_distributions absl_random_random absl_span absl_status absl_statusor absl_str_format absl_string_view absl_strings absl_strings_internal absl_synchronization absl_time absl_type_traits absl_utility gpr grpc_unsecure"
   "libcares zlib"
   "-lgrpc++_unsecure"
-  "-laddress_sorting -lupb_textformat_lib -lupb_reflection_lib -lupb_wire_lib -lupb_message_lib -lutf8_range_lib -lupb_mini_descriptor_lib -lupb_mini_table_lib -lupb_hash_lib -lupb_mem_lib -lupb_base_lib -lupb_lex_lib"
+  "-laddress_sorting -lupb_textformat_lib -lupb_reflection_lib -lupb_wire_lib -lupb_message_lib -lutf8_range_lib -lupb_descriptor_lib -lupb_mini_descriptor_lib -lupb_mini_table_lib -lupb_hash_lib -lupb_mem_lib -lupb_base_lib -lupb_lex_lib"
   "grpc++_unsecure.pc")
 
 if(gRPC_BUILD_GRPCPP_OTEL_PLUGIN)
@@ -54687,6 +55347,6 @@ if(gRPC_BUILD_GRPCPP_OTEL_PLUGIN)
     "absl_absl_check absl_absl_log absl_algorithm_container absl_any_invocable absl_base absl_bind_front absl_bits absl_btree absl_check absl_cleanup absl_config absl_cord absl_core_headers absl_dynamic_annotations absl_flags absl_flags_marshalling absl_flat_hash_map absl_flat_hash_set absl_function_ref absl_hash absl_inlined_vector absl_layout absl_log absl_log_globals absl_log_severity absl_memory absl_no_destructor absl_node_hash_map absl_optional absl_prefetch absl_random_bit_gen_ref absl_random_distributions absl_random_random absl_span absl_status absl_statusor absl_str_format absl_string_view absl_strings absl_strings_internal absl_synchronization absl_time absl_type_traits absl_utility gpr grpc grpc++ opentelemetry_api"
     "libcares openssl re2 zlib"
     "-lgrpcpp_otel_plugin"
-    "-laddress_sorting -lupb_textformat_lib -lupb_json_lib -lupb_reflection_lib -lupb_wire_lib -lupb_message_lib -lutf8_range_lib -lupb_mini_descriptor_lib -lupb_mini_table_lib -lupb_hash_lib -lupb_mem_lib -lupb_base_lib -lupb_lex_lib"
+    "-laddress_sorting -lupb_textformat_lib -lupb_json_lib -lupb_reflection_lib -lupb_wire_lib -lupb_message_lib -lutf8_range_lib -lupb_descriptor_lib -lupb_mini_descriptor_lib -lupb_mini_table_lib -lupb_hash_lib -lupb_mem_lib -lupb_base_lib -lupb_lex_lib"
     "grpcpp_otel_plugin.pc")
 endif()

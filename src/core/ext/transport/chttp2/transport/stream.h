@@ -30,6 +30,7 @@
 #include "src/core/call/call_spine.h"
 #include "src/core/call/message.h"
 #include "src/core/call/metadata.h"
+#include "src/core/call/metadata_batch.h"
 #include "src/core/ext/transport/chttp2/transport/flow_control.h"
 #include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/ext/transport/chttp2/transport/header_assembler.h"
@@ -38,6 +39,7 @@
 #include "src/core/ext/transport/chttp2/transport/message_assembler.h"
 #include "src/core/ext/transport/chttp2/transport/stream_data_queue.h"
 #include "src/core/ext/transport/chttp2/transport/write_cycle.h"
+#include "src/core/lib/resource_quota/arena.h"
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/ref_counted.h"
 #include "src/core/util/ref_counted_ptr.h"
@@ -130,12 +132,13 @@ class Stream : public RefCounted<Stream> {
   // Data Queue Helpers
   // All enqueue methods are called from the call party.
 
-  auto EnqueueInitialMetadata(ClientMetadataHandle&& metadata) {
+  auto EnqueueInitialMetadata(Arena::PoolPtr<grpc_metadata_batch>&& metadata) {
     GRPC_HTTP2_STREAM_LOG << "Stream::EnqueueInitialMetadata";
     return data_queue_->EnqueueInitialMetadata(std::move(metadata));
   }
 
-  auto EnqueueTrailingMetadata(ClientMetadataHandle&& metadata) {
+  // Only server can send trailing metadata in gRPC C++.
+  auto EnqueueTrailingMetadata(ServerMetadataHandle&& metadata) {
     GRPC_HTTP2_STREAM_LOG << "Stream::EnqueueTrailingMetadata";
     return data_queue_->EnqueueTrailingMetadata(std::move(metadata));
   }
@@ -149,6 +152,7 @@ class Stream : public RefCounted<Stream> {
   }
 
   auto EnqueueHalfClosed() {
+    GRPC_DCHECK(std::holds_alternative<CallHandler>(call_));
     GRPC_HTTP2_STREAM_LOG << "Stream::EnqueueHalfClosed";
     return data_queue_->EnqueueHalfClosed();
   }
@@ -373,9 +377,10 @@ class Stream : public RefCounted<Stream> {
   bool did_receive_initial_metadata_;
   bool did_receive_trailing_metadata_;
   bool did_push_server_trailing_metadata_;
-  // TODO(akshitpatel) : [PH2][P0][Server] : This would need to change to
-  // accomodate ServerMetadataHandle for the server side.
-  RefCountedPtr<StreamDataQueue<ClientMetadataHandle>> data_queue_;
+  // Change this if ClientMetadataHandle and ServerMetadataHandle are changed
+  // to different types.
+  RefCountedPtr<StreamDataQueue<Arena::PoolPtr<grpc_metadata_batch>>>
+      data_queue_;
 };
 
 }  // namespace http2

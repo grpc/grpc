@@ -45,8 +45,11 @@ std::pair<uint64_t, uint64_t> GetCpuStatsImpl() {
   uint64_t busy = 0, total = 0;
   FILETIME idle, kernel, user;
   if (GetSystemTimes(&idle, &kernel, &user) != 0) {
-    total = FiletimeToInt(kernel) + FiletimeToInt(user);
-    busy = total - FiletimeToInt(idle);
+    uint64_t idle_val = FiletimeToInt(idle);
+    uint64_t kernel_val = FiletimeToInt(kernel);
+    uint64_t user_val = FiletimeToInt(user);
+    total = kernel_val + user_val;
+    busy = (total > idle_val) ? (total - idle_val) : 0;
   }
   return std::pair(busy, total);
 }

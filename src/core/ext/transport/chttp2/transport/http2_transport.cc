@@ -250,11 +250,6 @@ void ReadSettingsFromChannelArgs(const ChannelArgs& channel_args,
   local_settings.SetAllowSecurityFrame(
       channel_args.GetBool(GRPC_ARG_SECURITY_FRAME_ALLOWED).value_or(false));
 
-  // TODO(tjagtap) : [PH2][P4] : If max_header_list_size is set only once
-  // in the life of a transport, consider making this a data member of
-  // class IncomingMetadataTracker instead of accessing via acked settings again
-  // and again. Else delete this comment.
-
   GRPC_HTTP2_COMMON_DLOG
       << "Http2Settings: {"
       << "header_table_size: " << local_settings.header_table_size()
@@ -311,7 +306,7 @@ void ProcessOutgoingDataFrameFlowControl(
 }
 
 ValueOrHttp2Status<chttp2::FlowControlAction>
-ProcessIncomingDataFrameFlowControl(Http2FrameHeader& frame_header,
+ProcessIncomingDataFrameFlowControl(const Http2FrameHeader& frame_header,
                                     chttp2::TransportFlowControl& flow_control,
                                     Stream* stream) {
   GRPC_DCHECK_EQ(frame_header.type, 0u);
@@ -431,44 +426,6 @@ void MaybeAddStreamWindowUpdateFrame(Stream& stream,
           Http2WindowUpdateFrame{stream.GetStreamId(), increment});
     }
   }
-}
-
-// /////////////////////////////////////////////////////////////////////////////
-// Header and Continuation frame processing helpers
-
-Http2Status ParseAndDiscardHeaders(HPackParser& parser, SliceBuffer&& buffer,
-                                   HeaderAssembler::ParseHeaderArgs args,
-                                   Stream* stream,
-                                   Http2Status&& original_status) {
-  GRPC_HTTP2_COMMON_DLOG << "ParseAndDiscardHeaders buffer "
-                            "size: "
-                         << buffer.Length() << " args: " << args.DebugString()
-                         << " stream_id: "
-                         << (stream == nullptr ? 0 : stream->GetStreamId())
-                         << " original_status: "
-                         << original_status.DebugString();
-
-  if (stream != nullptr) {
-    // Parse all the data in the header assembler
-    Http2Status result = stream->GetHeaderAssembler().ParseAndDiscardHeaders(
-        parser, args.is_initial_metadata, args.max_header_list_size_soft_limit,
-        args.max_header_list_size_hard_limit);
-    if (!result.IsOk()) {
-      GRPC_DCHECK(result.GetType() ==
-                  Http2Status::Http2ErrorType::kConnectionError);
-      LOG(ERROR) << "Connection Error: " << result;
-      return result;
-    }
-  }
-
-  if (buffer.Length() == 0) {
-    return std::move(original_status);
-  }
-
-  Http2Status status = HeaderAssembler::ParseHeader(
-      parser, std::move(buffer), /*grpc_metadata_batch=*/nullptr, args);
-
-  return (status.IsOk()) ? std::move(original_status) : std::move(status);
 }
 
 }  // namespace http2

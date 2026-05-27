@@ -36,6 +36,7 @@
 #include "src/core/ext/transport/chttp2/transport/http2_settings_promises.h"
 #include "src/core/ext/transport/chttp2/transport/http2_status.h"
 #include "src/core/ext/transport/chttp2/transport/internal_channel_arg_names.h"
+#include "src/core/ext/transport/chttp2/transport/read_context.h"
 #include "src/core/ext/transport/chttp2/transport/stream.h"
 #include "src/core/ext/transport/chttp2/transport/transport_common.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -719,12 +720,12 @@ class Http2ReadContextTest : public ::testing::Test {
 TEST_F(Http2ReadContextTest, WakeWithoutPause) {
   // Test that calling ResumeReadLoopIfPaused before MaybePauseReadLoop has
   // no effect and does not crash.
-  Http2ReadContext read_context;
-  read_context.ResumeReadLoopIfPaused();
-  read_context.ResumeReadLoopIfPaused();
-  read_context.ResumeReadLoopIfPaused();
-  read_context.MaybePauseReadLoop();
-  read_context.SetPauseReadLoop();
+  ReadLoopPauseRestart read_loop_manager;
+  read_loop_manager.ResumeReadLoopIfPaused();
+  read_loop_manager.ResumeReadLoopIfPaused();
+  read_loop_manager.ResumeReadLoopIfPaused();
+  read_loop_manager.MaybePauseReadLoop();
+  read_loop_manager.SetPauseReadLoop();
 }
 
 class SimulatedTransport : public RefCounted<SimulatedTransport> {
@@ -736,7 +737,7 @@ class SimulatedTransport : public RefCounted<SimulatedTransport> {
         // Doing this alternate times to make sure that SetPauseReadLoop is
         // idempotent
         absl::StrAppend(&self->execution_order, "Pause ");
-        return self->context.MaybePauseReadLoop();
+        return self->read_loop_manager.MaybePauseReadLoop();
       }
       absl::StrAppend(&self->execution_order, ". ");
       return absl::OkStatus();
@@ -748,7 +749,7 @@ class SimulatedTransport : public RefCounted<SimulatedTransport> {
                     [self]() -> LoopCtl<absl::Status> {
                       if (self->i < 10) {
                         absl::StrAppend(&self->execution_order, "SetPause ");
-                        self->context.SetPauseReadLoop();
+                        self->read_loop_manager.SetPauseReadLoop();
                         return Continue();
                       }
                       absl::StrAppend(&self->execution_order, "EndRead ");
@@ -760,7 +761,7 @@ class SimulatedTransport : public RefCounted<SimulatedTransport> {
   auto SimulatedOneWrite() {
     return [self = this->Ref()]() -> Poll<absl::Status> {
       absl::StrAppend(&self->execution_order, "Wake ");
-      self->context.ResumeReadLoopIfPaused();
+      self->read_loop_manager.ResumeReadLoopIfPaused();
       return absl::OkStatus();
     };
   }
@@ -783,7 +784,7 @@ class SimulatedTransport : public RefCounted<SimulatedTransport> {
   std::string execution_order;
 
  private:
-  Http2ReadContext context;
+  ReadLoopPauseRestart read_loop_manager;
   int i = 0;
   bool did_end_read = false;
 };
@@ -807,8 +808,109 @@ TEST_F(Http2ReadContextTest, PauseAndWake) {
                "SetPause Pause Wake _ . EndRead Wake EndWrite ");
 }
 
-}  // namespace testing
+TEST_F(Http2ReadContextTest, SetAndGetFrameHeader) {
+  // Purpose: Verify that SetCurrentFrameHeader stores header attributes
+  // correctly. Assertions: GetCurrentFrameHeader returns the exact frame header
+  // that was set.
+  ReadContext context(Slice::FromCopiedString("peer"), true);
+  Http2FrameHeader header;
+  header.length = 100u;
+  header.type = 1u;
+  header.flags = 2u;
+  header.stream_id = 3u;
 
+  context.SetCurrentFrameHeader(header);
+  const Http2FrameHeader& retrieved_header = context.GetCurrentFrameHeader();
+  EXPECT_EQ(retrieved_header.length, 100u);
+  EXPECT_EQ(retrieved_header.type, 1u);
+  EXPECT_EQ(retrieved_header.flags, 2u);
+  EXPECT_EQ(retrieved_header.stream_id, 3u);
+}
+
+TEST_F(Http2ReadContextTest, ReadCycleFramesLimits) {
+  // Verify that MaybePauseReadLoop only pauses when frame limit is reached.
+  // Assertions: MaybePauseReadLoop does not pause under limit, but pauses at
+  // limit.
+  ExecCtx ctx;
+  const RefCountedPtr<Party> party = MakeParty();
+  bool was_pending_under_limit = false;
+  bool was_pending_at_limit = false;
+  Notification notification;
+
+  party->Spawn(
+      "TestFramesLimits",
+      [&was_pending_under_limit,
+       &was_pending_at_limit]() -> Poll<absl::Status> {
+        ReadContext read_context(Slice::FromCopiedString("peer"), true);
+        const Http2FrameHeader header = {
+            0u,  // length
+            0u,  // type
+            0u,  // flags
+            1u   // stream_id
+        };
+
+        // Step 1: Set frames strictly under the limit.
+        for (uint32_t i = 0u; i < kMaxFramesReadPerReadCycle - 1u; ++i) {
+          read_context.SetCurrentFrameHeader(header);
+          // Step 2: Verify read loop does not pause under the limit.
+          const Poll<absl::Status> poll_under =
+              read_context.MaybePauseReadLoop();
+          if (poll_under.pending()) {
+            was_pending_under_limit = true;
+            read_context.ResumeReadLoopIfPaused();
+          }
+        }
+
+        // Step 3: Set one more frame to hit the limit.
+        read_context.SetCurrentFrameHeader(header);
+        // Step 4: Verify read loop pauses at the limit.
+        const Poll<absl::Status> poll_at = read_context.MaybePauseReadLoop();
+        if (poll_at.pending()) {
+          was_pending_at_limit = true;
+          read_context.ResumeReadLoopIfPaused();
+          EXPECT_TRUE(read_context.TestOnlyCheckCounters(0u, 0u, false));
+        }
+        return absl::OkStatus();
+      },
+      [&notification](absl::Status status) { notification.Notify(); });
+
+  notification.WaitForNotification();
+  EXPECT_FALSE(was_pending_under_limit);
+  EXPECT_TRUE(was_pending_at_limit);
+}
+
+TEST(Http2CommonTransportTest, TestTarpitDuration) {
+  // Verify that TarpitDuration generates random values within bounds across
+  // many runs.
+  int min_duration_ms = 10;
+  int max_duration_ms = 30;
+  for (int i = 0; i < 1000; ++i) {
+    const Duration current_duration =
+        TarpitDuration(min_duration_ms, max_duration_ms);
+    EXPECT_GE(current_duration, Duration::Milliseconds(min_duration_ms));
+    EXPECT_LE(current_duration, Duration::Milliseconds(max_duration_ms));
+  }
+
+  // Verify that TarpitDuration returns exactly min when bounds are equal.
+  const int exact_duration_ms = 15;
+  for (int i = 0; i < 50; ++i) {
+    const Duration duration =
+        TarpitDuration(exact_duration_ms, exact_duration_ms);
+    EXPECT_EQ(duration, Duration::Milliseconds(exact_duration_ms));
+  }
+
+  // Verify that TarpitDuration gracefully handles bad inputs without
+  // crashing.
+  min_duration_ms = 30;
+  max_duration_ms = 10;
+  for (int i = 0; i < 50; ++i) {
+    const Duration current_duration =
+        TarpitDuration(min_duration_ms, max_duration_ms);
+    EXPECT_EQ(current_duration, Duration::Milliseconds(min_duration_ms));
+  }
+}
+
+}  // namespace testing
 }  // namespace http2
 }  // namespace grpc_core
 

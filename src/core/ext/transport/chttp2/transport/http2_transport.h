@@ -21,6 +21,7 @@
 
 #include <cstdint>
 #include <string>
+#include <type_traits>
 
 #include "src/core/channelz/channelz.h"
 #include "src/core/ext/transport/chttp2/transport/flow_control.h"
@@ -44,8 +45,8 @@ namespace http2 {
 // and it is functions. The code will be written iteratively.
 // Do not use or edit any of these functions unless you are
 // familiar with the PH2 project (Moving chttp2 to promises.)
-// TODO(tjagtap) : [PH2][P3] : Update the experimental status of the code before
-// http2 rollout begins.
+// TODO(tjagtap) : [PH2][P3] : Update the experimental status of the code when
+// CHTTP2 is deleted.
 
 #define GRPC_HTTP2_CLIENT_DLOG \
   DLOG_IF(INFO, GRPC_TRACE_FLAG_ENABLED(http2_ph2_transport))
@@ -73,51 +74,39 @@ struct CloseStreamArgs {
 ///////////////////////////////////////////////////////////////////////////////
 // Read and Write helpers
 
-class Http2ReadContext {
- public:
-  Http2ReadContext() = default;
-  Http2ReadContext(const Http2ReadContext&) = delete;
-  Http2ReadContext& operator=(const Http2ReadContext&) = delete;
-  Http2ReadContext(Http2ReadContext&&) = delete;
-  Http2ReadContext& operator=(Http2ReadContext&&) = delete;
-
-  // Signals that the read loop should pause. If it's already paused, this is a
-  // no-op.
-  void SetPauseReadLoop() {
-    // TODO(tjagtap) [PH2][P2][Settings] Plumb with when we receive urgent
-    // settings. Example - initial window size 0 is urgent because it indicates
-    // extreme memory pressure on the server.
-    should_pause_read_loop_ = true;
-  }
-
-  // If SetPauseReadLoop() was called, this returns Pending and
-  // registers a waker that will be woken by WakeReadLoop().
-  // If SetPauseReadLoop() was not called, this returns OkStatus.
-  // This should be polled by the read loop to yield control when requested.
-  Poll<absl::Status> MaybePauseReadLoop() {
-    if (should_pause_read_loop_) {
-      read_loop_waker_ = GetContext<Activity>()->MakeNonOwningWaker();
-      return Pending{};
-    }
-    return absl::OkStatus();
-  }
-
-  // If SetPauseReadLoop() was called, resumes it by
-  // waking up the ReadLoop. If not paused, this is a no-op.
-  void ResumeReadLoopIfPaused() {
-    if (should_pause_read_loop_) {
-      should_pause_read_loop_ = false;
-      read_loop_waker_.Wakeup();
-    }
-  }
-
- private:
-  bool should_pause_read_loop_ = false;
-  Waker read_loop_waker_;
-};
+constexpr uint32_t kMaxFramesReadPerReadCycle = 16u * 1024u;  // 16K frames
 
 Http2Status ValidateIncomingConnectionPreface(
     const absl::StatusOr<Slice>& status);
+
+template <typename T, typename Tracker>
+inline Http2Status ValidateMetadataFrameState(
+    T& frame, Stream& stream, Tracker& incoming_headers,
+    const uint32_t max_header_list_size) {
+  if (stream.IsStreamHalfClosedRemote()) {
+    return incoming_headers.ParseAndDiscardHeaders(
+        std::move(frame.payload), frame.end_headers, &stream,
+        Http2Status::Http2StreamError(
+            Http2ErrorCode::kStreamClosed,
+            std::string(RFC9113::kHalfClosedRemoteState)),
+        max_header_list_size);
+  }
+
+  if constexpr (std::is_same_v<std::decay_t<T>, Http2HeaderFrame>) {
+    if (incoming_headers.DidReceiveDuplicateMetadata(
+            stream.IsInitialMetadataReceived(),
+            stream.IsTrailingMetadataReceived())) {
+      return incoming_headers.ParseAndDiscardHeaders(
+          std::move(frame.payload), frame.end_headers, &stream,
+          Http2Status::Http2StreamError(
+              Http2ErrorCode::kInternalError,
+              std::string(GrpcErrors::kTooManyMetadata)),
+          max_header_list_size);
+    }
+  }
+
+  return Http2Status::Ok();
+}
 
 ///////////////////////////////////////////////////////////////////////////////
 // Settings helpers
@@ -169,7 +158,7 @@ void ProcessOutgoingDataFrameFlowControl(
     uint32_t flow_control_tokens_consumed);
 
 ValueOrHttp2Status<chttp2::FlowControlAction>
-ProcessIncomingDataFrameFlowControl(Http2FrameHeader& frame,
+ProcessIncomingDataFrameFlowControl(const Http2FrameHeader& frame,
                                     chttp2::TransportFlowControl& flow_control,
                                     Stream* stream);
 
@@ -183,44 +172,7 @@ void MaybeAddTransportWindowUpdateFrame(
 
 void MaybeAddStreamWindowUpdateFrame(Stream& stream, FrameSender& frame_sender);
 
-///////////////////////////////////////////////////////////////////////////////
-// Header and Continuation frame processing helpers
-
-// This function is used to partially process a HEADER or CONTINUATION frame.
-// `PARTIAL PROCESSING` means reading the payload of a HEADER or CONTINUATION
-// and processing it with the HPACK decoder, and then discarding the payload.
-// This is done to keep the transports HPACK parser in sync with peers HPACK.
-// Scenarios where 'partial processing' is used:
 //
-// Case 1: Received a HEADER/CONTINUATION frame
-// 1. If the frame is invalid ('ParseHeaderFrame'/'ParseContinuationFrame'
-//    returns a non-OK status) then it is a connection error. In this case, we
-//    do NOT invoke 'partial processing' as the transport is about to be closed
-//    anyway.
-// 2. If ParseFramePayload returns a non-OK status, then it is a connection
-//    error. In this case, we do NOT invoke 'partial processing' as the
-//    transport is about to be closed anyway.
-// 3. If the frame is valid, but lookup stream fails, then we invoke 'partial
-//    processing' and pass the current payload through the HPACK decoder. This
-//    can happen if the stream was already closed.
-// 4. If the frame is valid, lookup stream succeeds and we fail while processing
-//    the frame (be it stream or connection error), we first parse the buffered
-//    payload (if any) in the stream through the HPACK decoder and then pass the
-//    current payload through the HPACK decoder.
-// Case 2: Stream close
-// 1. If the stream is being aborted by the upper layers or the transport hit
-//    a stream error on a stream while reading HEADER/CONTINUATION frames, we
-//    invoke 'partial processing' to parse the enqueued buffer (if any) in the
-//    stream to keep our HPACK state consistent with the peer right before
-//    closing the stream. This is done as the next time a HEADER/CONTINUATION
-//    frame is received from the peer, the stream lookup will start failing.
-// This function returns a connection error if HPACK parsing fails. Otherwise,
-// it returns the original status.
-Http2Status ParseAndDiscardHeaders(HPackParser& parser, SliceBuffer&& buffer,
-                                   HeaderAssembler::ParseHeaderArgs args,
-                                   Stream* stream,
-                                   Http2Status&& original_status);
-
 }  // namespace http2
 }  // namespace grpc_core
 

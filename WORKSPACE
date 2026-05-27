@@ -65,7 +65,7 @@ load("@com_google_protobuf//python/dist:system_python.bzl", "system_python")
 
 system_python(
     name = "system_python",
-    minimum_python_version = "3.9",
+    minimum_python_version = "3.10",
 )
 
 load("@system_python//:pip.bzl", system_pip_parse = "pip_parse")

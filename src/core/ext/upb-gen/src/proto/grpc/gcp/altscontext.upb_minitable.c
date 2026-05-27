@@ -33,20 +33,10 @@ static const upb_MiniTableField grpc_gcp_AltsContext__fields[7] = {
 const upb_MiniTable grpc__gcp__AltsContext_msg_init = {
   &grpc_gcp_AltsContext__submsgs[0],
   &grpc_gcp_AltsContext__fields[0],
-  UPB_SIZE(56, 96), 7, kUpb_ExtMode_NonExtendable, 7, UPB_FASTTABLE_MASK(56), 0,
+  UPB_SIZE(56, 96), 7, kUpb_ExtMode_NonExtendable, 7, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "grpc.gcp.AltsContext",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x001000003f00000a, &upb_pss_1bt},
-    {0x002000003f000012, &upb_pss_1bt},
-    {0x000c00003f000018, &upb_psv4_1bt},
-    {0x003000003f000022, &upb_pss_1bt},
-    {0x004000003f00002a, &upb_pss_1bt},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-  })
 };
 
 const upb_MiniTable* grpc__gcp__AltsContext_msg_init_ptr = &grpc__gcp__AltsContext_msg_init;
@@ -58,16 +48,10 @@ static const upb_MiniTableField grpc_gcp_AltsContext_PeerAttributesEntry__fields
 const upb_MiniTable grpc__gcp__AltsContext__PeerAttributesEntry_msg_init = {
   NULL,
   &grpc_gcp_AltsContext_PeerAttributesEntry__fields[0],
-  48, 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
+  48, 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "grpc.gcp.AltsContext.PeerAttributesEntry",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x001000003f00000a, &upb_pss_1bt},
-    {0x002000003f000012, &upb_pss_1bt},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-  })
 };
 
 const upb_MiniTable* grpc__gcp__AltsContext__PeerAttributesEntry_msg_init_ptr = &grpc__gcp__AltsContext__PeerAttributesEntry_msg_init;

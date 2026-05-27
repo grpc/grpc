@@ -163,7 +163,7 @@ struct HasAsyncErrorInterceptor<Promise (T::*)(A...),
   static constexpr bool value = true;
 };
 
-// For the list case we do two interceptors to avoid amiguities with the single
+// For the list case we do two interceptors to avoid ambiguities with the single
 // argument forms above.
 template <typename... Interceptors>
 inline constexpr bool HasAnyAsyncErrorInterceptor(Interceptors...) {
@@ -1175,7 +1175,7 @@ MakeFilterCall(Derived* derived) {
 //   useful for cases where the exact metadata returned needs to be customized.
 // It's also acceptable to return a promise that resolves to the
 // relevant return type listed above.
-// Finally, OnFinalize can be added to intecept call finalization.
+// Finally, OnFinalize can be added to intercept call finalization.
 // It must have one of the signatures:
 // - static inline const NoInterceptor OnFinalize:
 //   the filter does not intercept call finalization.
@@ -1423,7 +1423,7 @@ class V3InterceptorToV2Bridge : public ChannelFilter, public Interceptor {
                         });
                   });
               // In the v3 handler's activity, pull client initial metadata.
-              // Use an inter-acitivity latch to get it back to the v2
+              // Use an inter-activity latch to get it back to the v2
               // activity.
               handler.SpawnGuarded(
                   "pull_client_initial_metadata",

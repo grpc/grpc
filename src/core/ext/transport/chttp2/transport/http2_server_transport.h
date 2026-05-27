@@ -46,9 +46,9 @@
 #include "src/core/ext/transport/chttp2/transport/http2_status.h"
 #include "src/core/ext/transport/chttp2/transport/http2_transport.h"
 #include "src/core/ext/transport/chttp2/transport/http2_ztrace_collector.h"
-#include "src/core/ext/transport/chttp2/transport/incoming_metadata_tracker.h"
 #include "src/core/ext/transport/chttp2/transport/keepalive.h"
 #include "src/core/ext/transport/chttp2/transport/ping_promise.h"
+#include "src/core/ext/transport/chttp2/transport/read_context.h"
 #include "src/core/ext/transport/chttp2/transport/security_frame.h"
 #include "src/core/ext/transport/chttp2/transport/stream.h"
 #include "src/core/ext/transport/chttp2/transport/stream_data_queue.h"
@@ -105,7 +105,8 @@ class Http2ServerTransport final : public ServerTransport,
       PromiseEndpoint endpoint, const ChannelArgs& channel_args,
       std::shared_ptr<grpc_event_engine::experimental::EventEngine>
           event_engine,
-      absl::AnyInvocable<void(absl::StatusOr<uint32_t>)> on_receive_settings);
+      absl::AnyInvocable<void(absl::StatusOr<uint32_t>)> on_receive_settings,
+      grpc_closure* on_close_callback);
 
   Http2ServerTransport(const Http2ServerTransport&) = delete;
   Http2ServerTransport& operator=(const Http2ServerTransport&) = delete;
@@ -259,6 +260,9 @@ class Http2ServerTransport final : public ServerTransport,
         std::forward<Http2Frame>(frame));
   }
 
+  template <typename T>
+  Http2Status ProcessIncomingMetadata(T&& frame);
+
   auto ReadAndProcessOneFrame();
 
   // Returns a promise to keep reading in a Loop till a fail/close is received.
@@ -306,12 +310,6 @@ class Http2ServerTransport final : public ServerTransport,
   // Returns a promise to fetch data from the CallInitiator and pass it further
   // down towards the endpoint.
   auto CallOutboundLoop(RefCountedPtr<Stream> stream);
-
-  // TODO(akshitpatel) : [PH2][P0] : Delete when implementing write loop.
-  auto WriteFromQueue();
-
-  // TODO(akshitpatel) : [PH2][P0] : Delete when implementing write loop.
-  auto WriteLoop();
 
   // Force triggers a transport write cycle
   absl::Status TriggerWriteCycle(DebugLocation whence = {}) {
@@ -691,8 +689,6 @@ class Http2ServerTransport final : public ServerTransport,
   PromiseEndpoint endpoint_;
   RefCountedPtr<SettingsPromiseManager> settings_;
 
-  Http2FrameHeader current_frame_header_;
-
   Mutex transport_mutex_;
 
   absl::flat_hash_map<uint32_t, RefCountedPtr<Stream>> stream_list_
@@ -702,6 +698,7 @@ class Http2ServerTransport final : public ServerTransport,
   HPackCompressor encoder_;
   bool is_transport_closed_ ABSL_GUARDED_BY(transport_mutex_) = false;
   Latch<void> transport_closed_latch_;
+  grpc_closure* on_close_callback_;
 
   ConnectivityStateTracker state_tracker_ ABSL_GUARDED_BY(transport_mutex_){
       "http2_server", GRPC_CHANNEL_READY};
@@ -709,7 +706,7 @@ class Http2ServerTransport final : public ServerTransport,
   RefCountedPtr<StateWatcher> watcher_ ABSL_GUARDED_BY(transport_mutex_);
 
   bool should_reset_ping_clock_;
-  IncomingMetadataTracker incoming_headers_;
+  ReadContext read_context_;
 
   // Transport wide write context. This is used to track the state of the
   // transport during write cycles.
@@ -725,25 +722,22 @@ class Http2ServerTransport final : public ServerTransport,
   std::optional<PingManager> ping_manager_;
   std::optional<KeepaliveManager> keepalive_manager_;
 
-  // Flags
   bool keepalive_permit_without_calls_;
 
   GoawayManager goaway_manager_;
 
+  MemoryOwner memory_owner_;
+  chttp2::TransportFlowControl flow_control_;
   WritableStreams<RefCountedPtr<Stream>> writable_stream_list_;
 
   /// Based on channel args, preferred_rx_crypto_frame_sizes are advertised to
   /// the peer
   bool enable_preferred_rx_crypto_frame_advertisement_;
   RefCountedPtr<SecurityFrameHandler> security_frame_handler_;
-  MemoryOwner memory_owner_;
-  chttp2::TransportFlowControl flow_control_;
   std::shared_ptr<PromiseHttp2ZTraceCollector> ztrace_collector_;
 
   // TODO(tjagtap) [PH2][P2][BDP] Remove this when the BDP code is done.
   Waker periodic_updates_waker_;
-
-  Http2ReadContext reader_state_;
 };
 
 // TODO(tjagtap) : [PH2][P1] : Handle the case where a Server receives two

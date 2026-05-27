@@ -22,8 +22,7 @@
 #include <utility>
 
 #include "src/core/util/grpc_check.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/str_join.h"
+#include "src/core/util/string.h"
 #include "absl/strings/string_view.h"
 
 namespace grpc_core {
@@ -52,12 +51,46 @@ bool XdsMetadataMap::operator==(const XdsMetadataMap& other) const {
 }
 
 std::string XdsMetadataMap::ToString() const {
-  std::vector<std::string> entries;
-  for (const auto& [key, value] : map_) {
-    entries.push_back(absl::StrCat(key, "=", value->ToString()));
+  std::vector<absl::string_view> keys;
+  for (const auto& [key, _] : map_) {
+    keys.push_back(key);
   }
-  std::sort(entries.begin(), entries.end());
-  return absl::StrCat("{", absl::StrJoin(entries, ", "), "}");
+  std::sort(keys.begin(), keys.end());
+  std::string result = "{";
+  for (size_t i = 0; i < keys.size(); ++i) {
+    auto it = map_.find(keys[i]);
+    if (it == map_.end()) continue;  // Should never happen.
+    if (i > 0) StrAppend(result, ", ");
+    StrAppend(result, keys[i]);
+    StrAppend(result, "=");
+    StrAppend(result, it->second->ToString());
+  }
+  StrAppend(result, "}");
+  return result;
+}
+
+std::string XdsStructMetadataValue::ToString() const {
+  std::string result = std::string(type());
+  StrAppend(result, "{");
+  StrAppend(result, JsonDump(json_));
+  StrAppend(result, "}");
+  return result;
+}
+
+std::string XdsGcpAuthnAudienceMetadataValue::ToString() const {
+  std::string result = std::string(type());
+  StrAppend(result, "{url=\"");
+  StrAppend(result, url_);
+  StrAppend(result, "\"}");
+  return result;
+}
+
+std::string XdsAddressMetadataValue::ToString() const {
+  std::string result = std::string(type());
+  StrAppend(result, "{address=\"");
+  StrAppend(result, address_);
+  StrAppend(result, "\"}");
+  return result;
 }
 
 }  // namespace grpc_core

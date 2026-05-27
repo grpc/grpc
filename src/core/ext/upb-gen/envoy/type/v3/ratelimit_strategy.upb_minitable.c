@@ -33,16 +33,10 @@ static const upb_MiniTableField envoy_type_v3_RateLimitStrategy__fields[3] = {
 const upb_MiniTable envoy__type__v3__RateLimitStrategy_msg_init = {
   &envoy_type_v3_RateLimitStrategy__submsgs[0],
   &envoy_type_v3_RateLimitStrategy__fields[0],
-  UPB_SIZE(16, 24), 3, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(24), 0,
+  UPB_SIZE(16, 24), 3, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.type.v3.RateLimitStrategy",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0010000801000008, &upb_pov4_1bt},
-    {0x0010000802000012, &upb_pom_1bt_max64b},
-    {0x001000080301001a, &upb_pom_1bt_maxmaxb},
-  })
 };
 
 const upb_MiniTable* envoy__type__v3__RateLimitStrategy_msg_init_ptr = &envoy__type__v3__RateLimitStrategy_msg_init;
@@ -54,16 +48,10 @@ static const upb_MiniTableField envoy_type_v3_RateLimitStrategy_RequestsPerTimeU
 const upb_MiniTable envoy__type__v3__RateLimitStrategy__RequestsPerTimeUnit_msg_init = {
   NULL,
   &envoy_type_v3_RateLimitStrategy_RequestsPerTimeUnit__fields[0],
-  24, 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
+  24, 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.type.v3.RateLimitStrategy.RequestsPerTimeUnit",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x001000003f000008, &upb_psv8_1bt},
-    {0x000800003f000010, &upb_psv4_1bt},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-  })
 };
 
 const upb_MiniTable* envoy__type__v3__RateLimitStrategy__RequestsPerTimeUnit_msg_init_ptr = &envoy__type__v3__RateLimitStrategy__RequestsPerTimeUnit_msg_init;

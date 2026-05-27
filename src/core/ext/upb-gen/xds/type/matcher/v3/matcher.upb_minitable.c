@@ -32,16 +32,10 @@ static const upb_MiniTableField xds_type_matcher_v3_Matcher__fields[3] = {
 const upb_MiniTable xds__type__matcher__v3__Matcher_msg_init = {
   &xds_type_matcher_v3_Matcher__submsgs[0],
   &xds_type_matcher_v3_Matcher__fields[0],
-  UPB_SIZE(24, 32), 3, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(24), 0,
+  UPB_SIZE(24, 32), 3, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "xds.type.matcher.v3.Matcher",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0018000c0100000a, &upb_pom_1bt_max64b},
-    {0x0018000c02010012, &upb_pom_1bt_max64b},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-  })
 };
 
 const upb_MiniTable* xds__type__matcher__v3__Matcher_msg_init_ptr = &xds__type__matcher__v3__Matcher_msg_init;
@@ -59,16 +53,10 @@ static const upb_MiniTableField xds_type_matcher_v3_Matcher_OnMatch__fields[3] =
 const upb_MiniTable xds__type__matcher__v3__Matcher__OnMatch_msg_init = {
   &xds_type_matcher_v3_Matcher_OnMatch__submsgs[0],
   &xds_type_matcher_v3_Matcher_OnMatch__fields[0],
-  24, 3, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(24), 0,
+  24, 3, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "xds.type.matcher.v3.Matcher.OnMatch",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0010000c0100000a, &upb_pom_1bt_max64b},
-    {0x0010000c02010012, &upb_pom_1bt_maxmaxb},
-    {0x000800003f000018, &upb_psb1_1bt},
-  })
 };
 
 const upb_MiniTable* xds__type__matcher__v3__Matcher__OnMatch_msg_init_ptr = &xds__type__matcher__v3__Matcher__OnMatch_msg_init;
@@ -83,14 +71,10 @@ static const upb_MiniTableField xds_type_matcher_v3_Matcher_MatcherList__fields[
 const upb_MiniTable xds__type__matcher__v3__Matcher__MatcherList_msg_init = {
   &xds_type_matcher_v3_Matcher_MatcherList__submsgs[0],
   &xds_type_matcher_v3_Matcher_MatcherList__fields[0],
-  16, 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(8), 0,
+  16, 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "xds.type.matcher.v3.Matcher.MatcherList",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x000800003f00000a, &upb_prm_1bt_max64b},
-  })
 };
 
 const upb_MiniTable* xds__type__matcher__v3__Matcher__MatcherList_msg_init_ptr = &xds__type__matcher__v3__Matcher__MatcherList_msg_init;
@@ -111,20 +95,10 @@ static const upb_MiniTableField xds_type_matcher_v3_Matcher_MatcherList_Predicat
 const upb_MiniTable xds__type__matcher__v3__Matcher__MatcherList__Predicate_msg_init = {
   &xds_type_matcher_v3_Matcher_MatcherList_Predicate__submsgs[0],
   &xds_type_matcher_v3_Matcher_MatcherList_Predicate__fields[0],
-  UPB_SIZE(16, 24), 4, kUpb_ExtMode_NonExtendable, 4, UPB_FASTTABLE_MASK(56), 0,
+  UPB_SIZE(16, 24), 4, kUpb_ExtMode_NonExtendable, 4, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "xds.type.matcher.v3.Matcher.MatcherList.Predicate",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x001000080100000a, &upb_pom_1bt_max64b},
-    {0x0010000802010012, &upb_pom_1bt_max64b},
-    {0x001000080302001a, &upb_pom_1bt_max64b},
-    {0x0010000804030022, &upb_pom_1bt_max64b},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-  })
 };
 
 const upb_MiniTable* xds__type__matcher__v3__Matcher__MatcherList__Predicate_msg_init_ptr = &xds__type__matcher__v3__Matcher__MatcherList__Predicate_msg_init;
@@ -143,16 +117,10 @@ static const upb_MiniTableField xds_type_matcher_v3_Matcher_MatcherList_Predicat
 const upb_MiniTable xds__type__matcher__v3__Matcher__MatcherList__Predicate__SinglePredicate_msg_init = {
   &xds_type_matcher_v3_Matcher_MatcherList_Predicate_SinglePredicate__submsgs[0],
   &xds_type_matcher_v3_Matcher_MatcherList_Predicate_SinglePredicate__fields[0],
-  UPB_SIZE(24, 32), 3, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(24), 0,
+  UPB_SIZE(24, 32), 3, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "xds.type.matcher.v3.Matcher.MatcherList.Predicate.SinglePredicate",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0018000c02010012, &upb_pom_1bt_maxmaxb},
-    {0x0018000c0302001a, &upb_pom_1bt_maxmaxb},
-  })
 };
 
 const upb_MiniTable* xds__type__matcher__v3__Matcher__MatcherList__Predicate__SinglePredicate_msg_init_ptr = &xds__type__matcher__v3__Matcher__MatcherList__Predicate__SinglePredicate_msg_init;
@@ -167,14 +135,10 @@ static const upb_MiniTableField xds_type_matcher_v3_Matcher_MatcherList_Predicat
 const upb_MiniTable xds__type__matcher__v3__Matcher__MatcherList__Predicate__PredicateList_msg_init = {
   &xds_type_matcher_v3_Matcher_MatcherList_Predicate_PredicateList__submsgs[0],
   &xds_type_matcher_v3_Matcher_MatcherList_Predicate_PredicateList__fields[0],
-  16, 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(8), 0,
+  16, 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "xds.type.matcher.v3.Matcher.MatcherList.Predicate.PredicateList",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x000800003f00000a, &upb_prm_1bt_max64b},
-  })
 };
 
 const upb_MiniTable* xds__type__matcher__v3__Matcher__MatcherList__Predicate__PredicateList_msg_init_ptr = &xds__type__matcher__v3__Matcher__MatcherList__Predicate__PredicateList_msg_init;
@@ -215,20 +179,10 @@ static const upb_MiniTableField xds_type_matcher_v3_Matcher_MatcherTree__fields[
 const upb_MiniTable xds__type__matcher__v3__Matcher__MatcherTree_msg_init = {
   &xds_type_matcher_v3_Matcher_MatcherTree__submsgs[0],
   &xds_type_matcher_v3_Matcher_MatcherTree__fields[0],
-  UPB_SIZE(24, 32), 4, kUpb_ExtMode_NonExtendable, 4, UPB_FASTTABLE_MASK(56), 0,
+  UPB_SIZE(24, 32), 4, kUpb_ExtMode_NonExtendable, 4, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "xds.type.matcher.v3.Matcher.MatcherTree",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0018000c02010012, &upb_pom_1bt_max64b},
-    {0x0018000c0302001a, &upb_pom_1bt_max64b},
-    {0x0018000c04030022, &upb_pom_1bt_maxmaxb},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-  })
 };
 
 const upb_MiniTable* xds__type__matcher__v3__Matcher__MatcherTree_msg_init_ptr = &xds__type__matcher__v3__Matcher__MatcherTree_msg_init;
@@ -262,14 +216,10 @@ static const upb_MiniTableField xds_type_matcher_v3_Matcher_MatcherTree_MatchMap
 const upb_MiniTable xds__type__matcher__v3__Matcher__MatcherTree__MatchMap__MapEntry_msg_init = {
   &xds_type_matcher_v3_Matcher_MatcherTree_MatchMap_MapEntry__submsgs[0],
   &xds_type_matcher_v3_Matcher_MatcherTree_MatchMap_MapEntry__fields[0],
-  48, 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(8), 0,
+  48, 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "xds.type.matcher.v3.Matcher.MatcherTree.MatchMap.MapEntry",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x001000003f00000a, &upb_pss_1bt},
-  })
 };
 
 const upb_MiniTable* xds__type__matcher__v3__Matcher__MatcherTree__MatchMap__MapEntry_msg_init_ptr = &xds__type__matcher__v3__Matcher__MatcherTree__MatchMap__MapEntry_msg_init;
