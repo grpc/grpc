@@ -278,6 +278,12 @@ constexpr uint16_t kMaxNoopContinuationFrames = 128u;
 struct Http2FrameCountTracker {
   void OnEndHeaders() { noop_continuation_frames = 0u; }
 
+  std::string DebugString() const {
+    return absl::StrCat(
+        "{ noop_continuation_frames : ", noop_continuation_frames,
+        ", noop_data_frames : ", noop_data_frames, "}");
+  }
+
   uint16_t noop_continuation_frames = 0u;
   uint16_t noop_data_frames = 0u;
 };

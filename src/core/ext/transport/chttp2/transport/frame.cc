@@ -860,9 +860,20 @@ Http2Status ValidateFrameHeader(const uint32_t max_frame_size_setting,
                      ", Current Size = ", current_frame_header.length,
                      ", Max Size = ", max_frame_size_setting));
   }
-  if (GPR_UNLIKELY(incoming_header_in_progress &&
-                   (!is_continuation_frame || current_frame_header.stream_id !=
-                                                  incoming_header_stream_id))) {
+
+  // RFC 9113 (Section 6.10) requires that if a HEADERS frame does not have
+  // END_HEADERS set, it must be followed by a contiguous sequence of
+  // CONTINUATION frames for the same stream, ending with END_HEADERS. No other
+  // frame types or frames for other streams may be interleaved during this
+  // sequence.
+  const bool did_frame_violate_header_block_sequence =
+      (incoming_header_in_progress &&
+       (!is_continuation_frame ||
+        current_frame_header.stream_id != incoming_header_stream_id));
+  const bool did_receive_unexpected_continuation_frame =
+      (!incoming_header_in_progress && is_continuation_frame);
+  if (GPR_UNLIKELY(did_frame_violate_header_block_sequence ||
+                   did_receive_unexpected_continuation_frame)) {
     return Http2Status::Http2ConnectionError(
         Http2ErrorCode::kProtocolError,
         std::string(RFC9113::kAssemblerContiguousSequenceError));

@@ -88,9 +88,90 @@ class ReadLoopPauseRestart {
     return should_pause_read_loop_ == should_pause;
   }
 
+  std::string DebugString() const {
+    return absl::StrCat("{ should_pause_read_loop : ",
+                        should_pause_read_loop_ ? "true }" : "false }");
+  }
+
  private:
   bool should_pause_read_loop_ = false;
   Waker read_loop_waker_;
+};
+
+class IncomingMetadataState {
+  // Manages transport-wide state for incoming HEADERS and CONTINUATION frames.
+  // RFC 9113 (Section 6.10) requires that if a HEADERS frame does not have
+  // END_HEADERS set, it must be followed by a contiguous sequence of
+  // CONTINUATION frames for the same stream, ending with END_HEADERS. No other
+  // frame types or frames for other streams may be interleaved during this
+  // sequence. This constraint makes tracking header sequence state a
+  // transport-level concern, as only one stream can be receiving headers at
+  // a time. This class is distinct from HeaderAssembler, which buffers header
+  // payloads on a per-stream basis.
+ public:
+  IncomingMetadataState() = default;
+  IncomingMetadataState(const IncomingMetadataState&) = delete;
+  IncomingMetadataState& operator=(const IncomingMetadataState&) = delete;
+  IncomingMetadataState(IncomingMetadataState&&) = delete;
+  IncomingMetadataState& operator=(IncomingMetadataState&&) = delete;
+
+  // Called when a HEADER frame is received.
+  void UpdateState(const Http2HeaderFrame& frame) {
+    GRPC_CHECK(!metadata_in_progress_);
+    metadata_in_progress_ = !frame.end_headers;
+    stream_id_ = frame.stream_id;
+    end_stream_ = frame.end_stream;
+  }
+
+  // Called when a CONTINUATION frame is received.
+  void UpdateState(const Http2ContinuationFrame& frame,
+                   Http2FrameCountTracker& tracker) {
+    GRPC_CHECK(metadata_in_progress_);
+    GRPC_CHECK_EQ(frame.stream_id, stream_id_);
+    if (frame.end_headers) {
+      tracker.OnEndHeaders();
+    }
+    metadata_in_progress_ = !frame.end_headers;
+  }
+
+  // Returns true if we are in the middle of receiving a header block
+  // (i.e., HEADERS without END_HEADERS was received, and we are waiting for
+  // CONTINUATION frames).
+  bool IsWaitingForContinuationFrame() const { return metadata_in_progress_; }
+
+  // Returns true if end_stream was set in the received header.
+  bool HeaderHasEndStream() const { return end_stream_; }
+
+  // Returns stream id of stream for which headers are being received.
+  uint32_t GetStreamId() const { return stream_id_; }
+
+  // A gRPC server is permitted to send both initial metadata and trailing
+  // metadata where initial metadata is optional.
+  // A gRPC C++ client is permitted to send only initial metadata.
+  // However, other gRPC Client implementations may send trailing metadata too.
+  // So we allow only a maximum of 2 metadata per streams.
+  bool DidReceiveDuplicateMetadata(
+      const bool did_receive_initial_metadata,
+      const bool did_receive_trailing_metadata) const {
+    const bool is_duplicate_initial_metadata =
+        !end_stream_ && did_receive_initial_metadata;
+    const bool is_duplicate_trailing_metadata =
+        end_stream_ && did_receive_trailing_metadata;
+    return is_duplicate_initial_metadata || is_duplicate_trailing_metadata;
+  }
+
+  std::string DebugString() const {
+    return absl::StrCat(
+        "{ incoming_header_in_progress : ",
+        metadata_in_progress_ ? "true" : "false",
+        ", incoming_header_end_stream : ", end_stream_ ? "true" : "false",
+        ", incoming_header_stream_id : ", stream_id_, "}");
+  }
+
+ private:
+  bool metadata_in_progress_ = false;
+  bool end_stream_ = false;
+  uint32_t stream_id_ = 0;
 };
 
 class ReadContext {
@@ -146,13 +227,13 @@ class ReadContext {
       Http2Status&& original_status,
       const uint32_t max_header_list_size_hard_limit) {
     const HeaderAssembler::ParseHeaderArgs args = {
-        /*is_initial_metadata=*/!incoming_header_end_stream_,
+        /*is_initial_metadata=*/!metadata_state_.HeaderHasEndStream(),
         /*is_end_headers=*/is_end_headers,
         /*is_client=*/is_client_,
         /*max_header_list_size_soft_limit=*/
         max_header_list_size_soft_limit_,
         /*max_header_list_size_hard_limit=*/max_header_list_size_hard_limit,
-        /*stream_id=*/incoming_header_stream_id_,
+        /*stream_id=*/metadata_state_.GetStreamId(),
     };
     GRPC_HTTP2_COMMON_DLOG << "ParseAndDiscardHeaders buffer "
                               "size: "
@@ -186,7 +267,7 @@ class ReadContext {
   }
 
   //////////////////////////////////////////////////////////////////////////////
-  // Incoming Frame Header Validation.
+  // Incoming Header and Continuation State
 
   // Client : For a client, the last_stream_id is the last stream that is sent
   // by the Client.
@@ -200,8 +281,9 @@ class ReadContext {
                            << current_frame_header.ToString();
     return ValidateFrameHeader(
         /*max_frame_size_setting=*/max_frame_size_setting,
-        /*incoming_header_in_progress=*/incoming_header_in_progress_,
-        /*incoming_header_stream_id=*/incoming_header_stream_id_,
+        /*incoming_header_in_progress=*/
+        metadata_state_.IsWaitingForContinuationFrame(),
+        /*incoming_header_stream_id=*/metadata_state_.GetStreamId(),
         /*current_frame_header=*/current_frame_header,
         /*last_stream_id=*/last_stream_id,
         /*is_client=*/is_client_,
@@ -209,49 +291,30 @@ class ReadContext {
         /*tracker=*/tracker_);
   }
 
-  //////////////////////////////////////////////////////////////////////////////
-  // Incoming Header and Continuation State
-
-  // Manages transport-wide state for incoming HEADERS and CONTINUATION frames.
-  // RFC 9113 (Section 6.10) requires that if a HEADERS frame does not have
-  // END_HEADERS set, it must be followed by a contiguous sequence of
-  // CONTINUATION frames for the same stream, ending with END_HEADERS. No other
-  // frame types or frames for other streams may be interleaved during this
-  // sequence. This constraint makes tracking header sequence state a
-  // transport-level concern, as only one stream can be receiving headers at
-  // a time. This class is distinct from HeaderAssembler, which buffers header
-  // payloads on a per-stream basis.
-
   // Called when a HEADER frame is received.
   void UpdateState(const Http2HeaderFrame& frame) {
-    GRPC_CHECK(!incoming_header_in_progress_);
-    incoming_header_in_progress_ = !frame.end_headers;
-    incoming_header_stream_id_ = frame.stream_id;
-    incoming_header_end_stream_ = frame.end_stream;
+    metadata_state_.UpdateState(frame);
   }
 
   // Called when a CONTINUATION frame is received.
   void UpdateState(const Http2ContinuationFrame& frame) {
-    GRPC_CHECK(incoming_header_in_progress_);
-    GRPC_CHECK_EQ(frame.stream_id, incoming_header_stream_id_);
-    if (frame.end_headers && incoming_header_in_progress_) {
-      tracker_.OnEndHeaders();
-    }
-    incoming_header_in_progress_ = !frame.end_headers;
+    metadata_state_.UpdateState(frame, tracker_);
   }
 
   // Returns true if we are in the middle of receiving a header block
   // (i.e., HEADERS without END_HEADERS was received, and we are waiting for
   // CONTINUATION frames).
   bool IsWaitingForContinuationFrame() const {
-    return incoming_header_in_progress_;
+    return metadata_state_.IsWaitingForContinuationFrame();
   }
 
   // Returns true if end_stream was set in the received header.
-  bool HeaderHasEndStream() const { return incoming_header_end_stream_; }
+  bool HeaderHasEndStream() const {
+    return metadata_state_.HeaderHasEndStream();
+  }
 
   // Returns stream id of stream for which headers are being received.
-  uint32_t GetStreamId() const { return incoming_header_stream_id_; }
+  uint32_t GetStreamId() const { return metadata_state_.GetStreamId(); }
 
   // A gRPC server is permitted to send both initial metadata and trailing
   // metadata where initial metadata is optional.
@@ -261,20 +324,8 @@ class ReadContext {
   bool DidReceiveDuplicateMetadata(
       const bool did_receive_initial_metadata,
       const bool did_receive_trailing_metadata) const {
-    const bool is_duplicate_initial_metadata =
-        !incoming_header_end_stream_ && did_receive_initial_metadata;
-    const bool is_duplicate_trailing_metadata =
-        incoming_header_end_stream_ && did_receive_trailing_metadata;
-    return is_duplicate_initial_metadata || is_duplicate_trailing_metadata;
-  }
-
-  std::string DebugString() const {
-    return absl::StrCat(
-        "{ incoming_header_in_progress : ",
-        incoming_header_in_progress_ ? "true" : "false",
-        ", incoming_header_end_stream : ",
-        incoming_header_end_stream_ ? "true" : "false",
-        ", incoming_header_stream_id : ", incoming_header_stream_id_, "}");
+    return metadata_state_.DidReceiveDuplicateMetadata(
+        did_receive_initial_metadata, did_receive_trailing_metadata);
   }
 
   Http2FrameCountTracker& mutable_tracker() { return tracker_; }
@@ -313,6 +364,13 @@ class ReadContext {
            read_loop_manager_.TestOnlyCheckCounters(should_pause);
   }
 
+  std::string DebugString() const {
+    return absl::StrCat(
+        "{ metadata_state : ", metadata_state_.DebugString(),
+        ", read_loop_manager : ", read_loop_manager_.DebugString(),
+        ", tracker : ", tracker_.DebugString(), "}");
+  }
+
  private:
   //////////////////////////////////////////////////////////////////////////////
   // Read Cycle Counter management.
@@ -346,15 +404,13 @@ class ReadContext {
   const Slice peer_string_;
   const bool is_client_;
 
-  bool incoming_header_in_progress_ = false;
-  bool incoming_header_end_stream_ = false;
-  uint32_t incoming_header_stream_id_ = 0;
   uint32_t max_header_list_size_soft_limit_ =
       DEFAULT_MAX_HEADER_LIST_SIZE_SOFT_LIMIT;
   HPackParser parser_;
   Http2FrameCountTracker tracker_;
   Http2FrameHeader current_frame_header_ = {};
   ReadLoopPauseRestart read_loop_manager_;
+  IncomingMetadataState metadata_state_;
 };
 
 }  // namespace http2
