@@ -18,6 +18,7 @@
 
 #include <grpc/grpc.h>
 #include <grpcpp/support/config.h>
+#include <string.h>
 
 #include "google/protobuf/duration.upb.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
@@ -131,6 +132,33 @@ TEST_F(GrpclbTest, ParseResponseServerList) {
   EXPECT_EQ(resp.serverlist[1].port, 54321);
   EXPECT_STREQ(resp.serverlist[1].load_balance_token, "load_balancing");
   EXPECT_TRUE(resp.serverlist[1].drop);
+}
+
+TEST_F(GrpclbTest, ParseResponseServerListTokenFillingBuffer) {
+  // A token whose size equals the buffer size leaves no room for a trailing
+  // NUL. The drop path reads load_balance_token as a C string (gpr_strdup /
+  // strcmp), so such a token must not be stored.
+  LoadBalanceResponse response;
+  auto* serverlist = response.mutable_server_list();
+  auto* server = serverlist->add_servers();
+  server->set_ip_address(Ip4ToPackedString("127.0.0.1"));
+  server->set_port(12345);
+  server->set_load_balance_token(
+      std::string(GRPC_GRPCLB_SERVER_LOAD_BALANCE_TOKEN_MAX_SIZE, 'x'));
+  server->set_drop(true);
+  const std::string encoded_response = response.SerializeAsString();
+  const grpc_slice encoded_slice = grpc_slice_from_copied_buffer(
+      encoded_response.data(), encoded_response.size());
+  grpc_core::GrpcLbResponse resp;
+  upb::Arena arena;
+  ASSERT_TRUE(
+      grpc_core::GrpcLbResponseParse(encoded_slice, arena.ptr(), &resp));
+  grpc_slice_unref(encoded_slice);
+  ASSERT_EQ(resp.serverlist.size(), 1u);
+  // Token is rejected and the buffer stays NUL-terminated (empty).
+  EXPECT_EQ(strnlen(resp.serverlist[0].load_balance_token,
+                    GRPC_GRPCLB_SERVER_LOAD_BALANCE_TOKEN_MAX_SIZE),
+            0u);
 }
 
 }  // namespace
