@@ -104,8 +104,6 @@ class ServerConfigFetcher
     virtual void StopServing() = 0;
   };
 
-  virtual ~ServerConfigFetcher() = default;
-
   virtual void StartWatch(std::string listening_address,
                           std::unique_ptr<WatcherInterface> watcher) = 0;
   virtual void CancelWatch(WatcherInterface* watcher) = 0;
