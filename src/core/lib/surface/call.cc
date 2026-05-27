@@ -634,7 +634,7 @@ const char* grpc_call_error_to_string(grpc_call_error error) {
     case GRPC_CALL_OK:
       return "GRPC_CALL_OK";
   }
-  GPR_UNREACHABLE_CODE(return "GRPC_CALL_ERROR_UNKNOW");
+  GPR_UNREACHABLE_CODE(return "GRPC_CALL_ERROR_UNKNOWN");
 }
 
 void grpc_call_run_in_event_engine(const grpc_call* call,
