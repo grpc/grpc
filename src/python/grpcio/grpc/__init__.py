@@ -1359,6 +1359,7 @@ class RpcMethodHandler(abc.ABC):
     """
 
 
+@typing.runtime_checkable
 class HandlerCallDetails(Protocol):
     """Describes an RPC that has just arrived for service.
 
