@@ -322,7 +322,7 @@ if(MSVC)
   set(_gRPC_C_CXX_FLAGS "${_gRPC_C_CXX_FLAGS} /wd4267")
   # TODO(jtattermusch): needed to build boringssl with VS2017, revisit later
   set(_gRPC_C_CXX_FLAGS "${_gRPC_C_CXX_FLAGS} /wd4987 /wd4774 /wd4819 /wd4996 /wd4619")
-  # Silences thousands of trucation warnings
+  # Silences thousands of truncation warnings
   set(_gRPC_C_CXX_FLAGS "${_gRPC_C_CXX_FLAGS} /wd4503")
   # Tell MSVC to build grpc using utf-8
   set(_gRPC_C_CXX_FLAGS "${_gRPC_C_CXX_FLAGS} /utf-8")
@@ -4548,6 +4548,7 @@ endif()
 
 add_library(upb_mini_table_lib
   third_party/upb/upb/mini_table/extension_registry.c
+  third_party/upb/upb/mini_table/generated_registry.c
   third_party/upb/upb/mini_table/internal/message.c
   third_party/upb/upb/mini_table/message.c
 )
@@ -6507,6 +6508,7 @@ target_link_libraries(grpc_plugin_support
   absl::config
   absl::core_headers
   absl::dynamic_annotations
+  absl::no_destructor
   absl::prefetch
   absl::cleanup
   absl::btree
@@ -6533,6 +6535,7 @@ target_link_libraries(grpc_plugin_support
   absl::strings
   absl::synchronization
   absl::time
+  absl::optional
   absl::span
   absl::utility
   ${_gRPC_PROTOBUF_LIBRARIES}

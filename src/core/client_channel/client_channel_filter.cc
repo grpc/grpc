@@ -1472,14 +1472,11 @@ void ClientChannelFilter::UpdateServiceConfigInDataPlaneLocked(
   bool enable_retries =
       !new_args.WantMinimalStack() &&
       new_args.GetBool(GRPC_ARG_ENABLE_RETRIES).value_or(true);
-  // Construct dynamic filter stack.
   if (enable_retries) {
-// FIXME: change channel to store the retry throttler and pass it into
-// retry filter via channel args?  then blackboard can be moved from
-// channel into xds resolver.
-    RetryFilter::UpdateBlackboard(*service_config, blackboard_.get(),
-                                  new_blackboard.get());
+    retry_throttler_updater_.Update(*service_config, new_args);
   }
+  // Construct dynamic filter stack.
+  auto new_blackboard = MakeRefCounted<Blackboard>();
   LegacyFilterChainBuilder filter_chain_builder(enable_retries, new_args,
                                                 new_blackboard.get());
   config_selector->BuildFilterChains(filter_chain_builder, blackboard_.get(),
