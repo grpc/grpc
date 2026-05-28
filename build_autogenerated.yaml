@@ -3671,6 +3671,7 @@ libs:
   - third_party/upb/upb/base/internal/endian.h
   - third_party/upb/upb/base/internal/log2.h
   - third_party/upb/upb/hash/common.h
+  - third_party/upb/upb/hash/ext_table.h
   - third_party/upb/upb/hash/int_table.h
   - third_party/upb/upb/hash/str_table.h
   src:
@@ -4282,6 +4283,7 @@ libs:
   - absl/container:layout
   - absl/log:absl_check
   - absl/log:absl_log
+  - absl/strings:charset
   - absl/strings:internal
   - grpc
   - protobuf
@@ -4656,6 +4658,7 @@ libs:
   - absl/container:layout
   - absl/log:absl_check
   - absl/log:absl_log
+  - absl/strings:charset
   - absl/strings:internal
   - grpc_unsecure
   - protobuf
@@ -9022,7 +9025,6 @@ targets:
   - gtest
   - absl/container:fixed_array
   - absl/functional:overload
-  - absl/strings:charset
   - grpcpp_channelz
   - protoc
   - grpc_test_util
@@ -9336,7 +9338,6 @@ targets:
   - gtest
   - absl/container:fixed_array
   - absl/functional:overload
-  - absl/strings:charset
   - protoc
   - grpc++_test_util
 - name: client_auth_filter_test
@@ -14960,7 +14961,6 @@ targets:
   deps:
   - absl/container:fixed_array
   - absl/functional:overload
-  - absl/strings:charset
   - grpc++
   - protoc
   - grpc++_test_config
@@ -15162,7 +15162,6 @@ targets:
   - gtest
   - absl/container:fixed_array
   - absl/functional:overload
-  - absl/strings:charset
   - grpc++_reflection
   - protoc
   - grpc++_test_config
@@ -18015,7 +18014,6 @@ targets:
   - gtest
   - absl/container:fixed_array
   - absl/functional:overload
-  - absl/strings:charset
   - grpc++
   - protoc
   - grpc_test_util
@@ -24116,6 +24114,7 @@ targets:
   - absl/container:layout
   - absl/log:absl_check
   - absl/log:absl_log
+  - absl/strings:charset
   - absl/strings:internal
   - protobuf
   - grpc_test_util
@@ -27557,7 +27556,6 @@ targets:
   - gtest
   - absl/container:fixed_array
   - absl/functional:overload
-  - absl/strings:charset
   - grpc++
   - protoc
   - grpc_test_util
@@ -27744,6 +27742,7 @@ targets:
   - absl/container:layout
   - absl/log:absl_check
   - absl/log:absl_log
+  - absl/strings:charset
   - absl/strings:internal
   - protobuf
   - grpc_test_util
@@ -28041,6 +28040,7 @@ targets:
   - absl/container:layout
   - absl/log:absl_check
   - absl/log:absl_log
+  - absl/strings:charset
   - absl/strings:internal
   - protobuf
   - grpc_test_util
@@ -28537,7 +28537,6 @@ targets:
   - gtest
   - absl/container:fixed_array
   - absl/functional:overload
-  - absl/strings:charset
   - grpc++
   - protoc
   - grpc_test_util
@@ -29292,6 +29291,7 @@ targets:
   - absl/container:layout
   - absl/log:absl_check
   - absl/log:absl_log
+  - absl/strings:charset
   - absl/strings:internal
   - protobuf
   - grpc_test_util
@@ -30041,7 +30041,6 @@ targets:
   - gtest
   - absl/container:fixed_array
   - absl/functional:overload
-  - absl/strings:charset
   - grpc++
   - protoc
   - grpc_test_util
@@ -30170,7 +30169,6 @@ targets:
   - gtest
   - absl/container:fixed_array
   - absl/functional:overload
-  - absl/strings:charset
   - grpc++
   - protoc
   - grpc_test_util
@@ -30315,7 +30313,6 @@ targets:
   - gtest
   - absl/container:fixed_array
   - absl/functional:overload
-  - absl/strings:charset
   - grpc++
   - protoc
   - grpc_test_util
@@ -31533,7 +31530,6 @@ targets:
   - gtest
   - absl/container:fixed_array
   - absl/functional:overload
-  - absl/strings:charset
   - grpc++
   - protoc
   - grpc_test_util

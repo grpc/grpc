@@ -266,6 +266,7 @@ CC_FILES=[
     'third_party/protobuf/src/google/protobuf/compiler/rust/context.cc',
     'third_party/protobuf/src/google/protobuf/compiler/rust/crate_mapping.cc',
     'third_party/protobuf/src/google/protobuf/compiler/rust/enum.cc',
+    'third_party/protobuf/src/google/protobuf/compiler/rust/extension.cc',
     'third_party/protobuf/src/google/protobuf/compiler/rust/generator.cc',
     'third_party/protobuf/src/google/protobuf/compiler/rust/message.cc',
     'third_party/protobuf/src/google/protobuf/compiler/rust/naming.cc',
