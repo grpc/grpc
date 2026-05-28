@@ -138,13 +138,18 @@ class OpenTelemetryObservabilityBase(AioTestBase):
             self.fail(message() + " after " + str(timeout))
 
     async def _validate_metrics_exist(
-        self, all_metrics: dict[str, Any]
+        self,
+        all_metrics: dict[str, Any],
+        expected_count: int = len(_open_telemetry_measures.base_metrics())
     ) -> None:
-        # Sleep here to make sure we have at least one export from
-        # OTel MetricExporter.
+        # Sleep here to make sure we have at least expected number of metrics
+        # from OTel MetricExporter.
         self.assert_eventually(
-            lambda: len(all_metrics.keys()) > 1,
-            message=lambda: f"No metrics were exported",
+            lambda: len(all_metrics.keys()) >= expected_count,
+            message=lambda: (
+                f"Expected at least {expected_count} metrics, got "
+                f"{len(all_metrics.keys())}"
+            ),
         )
 
     def _validate_all_metrics_names(self, metric_names: Iterable[str]) -> None:
