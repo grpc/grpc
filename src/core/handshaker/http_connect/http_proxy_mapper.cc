@@ -77,28 +77,22 @@ bool ServerInCIDRRange(const grpc_resolved_address& server_address,
 
 bool ExactMatchOrSubdomain(absl::string_view host_name,
                            absl::string_view no_proxy_entry) {
-  // remove surrounding whitespace
+  // Remove surrounding whitespace
   no_proxy_entry = absl::StripAsciiWhitespace(no_proxy_entry);
 
-  // match domain + subdomains
-  if (!no_proxy_entry.empty() && no_proxy_entry[0] == '.') {
-    absl::string_view domain = no_proxy_entry.substr(1);
-
-    // Exact match
-    if (absl::EqualsIgnoreCase(host_name, domain)) {
-      return true;
-    }
-    if (host_name.size() > domain.size() &&
-        absl::EndsWithIgnoreCase(host_name, domain) &&
-        host_name[host_name.size() - domain.size() - 1] == '.') {
-      return true;
-    }
-
-    return false;
+  // Exact match
+  if (absl::EqualsIgnoreCase(host_name, no_proxy_entry)) {
+    return true;
   }
 
-  // Non-dot entry: exact match only
-  return absl::EqualsIgnoreCase(host_name, no_proxy_entry);
+  // Proper subdomain match only
+  if (host_name.size() > no_proxy_entry.size() &&
+      absl::EndsWithIgnoreCase(host_name, no_proxy_entry) &&
+      host_name[host_name.size() - no_proxy_entry.size() - 1] == '.') {
+    return true;
+  }
+
+  return false;
 }
 
 // Parses the list of host names, addresses or subnet masks and returns true if
