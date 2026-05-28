@@ -32,6 +32,8 @@
 #include "absl/functional/function_ref.h"
 #include "absl/strings/string_view.h"
 
+// FIXME: move this file to the xds directory
+
 namespace grpc_core {
 
 // A blackboard is a place where dynamic filters can stash global state

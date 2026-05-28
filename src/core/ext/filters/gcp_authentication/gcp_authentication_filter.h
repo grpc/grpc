@@ -49,10 +49,15 @@ class GcpAuthenticationFilter
 
     void SetMaxSize(size_t max_size);
 
+    size_t max_size() const {
+      MutexLock lock(&mu_);
+      return cache_.max_size();
+    }
+
     RefCountedPtr<grpc_call_credentials> Get(const std::string& audience);
 
    private:
-    Mutex mu_;
+    mutable Mutex mu_;
     LruCache<std::string /*audience*/, RefCountedPtr<grpc_call_credentials>>
         cache_ ABSL_GUARDED_BY(&mu_);
   };
