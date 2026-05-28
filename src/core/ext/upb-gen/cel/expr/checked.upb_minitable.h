@@ -19,31 +19,18 @@ extern "C" {
 #endif
 
 extern const upb_MiniTable cel__expr__CheckedExpr_msg_init;
-extern const upb_MiniTable* cel__expr__CheckedExpr_msg_init_ptr;
 extern const upb_MiniTable cel__expr__CheckedExpr__ReferenceMapEntry_msg_init;
-extern const upb_MiniTable* cel__expr__CheckedExpr__ReferenceMapEntry_msg_init_ptr;
 extern const upb_MiniTable cel__expr__CheckedExpr__TypeMapEntry_msg_init;
-extern const upb_MiniTable* cel__expr__CheckedExpr__TypeMapEntry_msg_init_ptr;
 extern const upb_MiniTable cel__expr__Type_msg_init;
-extern const upb_MiniTable* cel__expr__Type_msg_init_ptr;
 extern const upb_MiniTable cel__expr__Type__ListType_msg_init;
-extern const upb_MiniTable* cel__expr__Type__ListType_msg_init_ptr;
 extern const upb_MiniTable cel__expr__Type__MapType_msg_init;
-extern const upb_MiniTable* cel__expr__Type__MapType_msg_init_ptr;
 extern const upb_MiniTable cel__expr__Type__FunctionType_msg_init;
-extern const upb_MiniTable* cel__expr__Type__FunctionType_msg_init_ptr;
 extern const upb_MiniTable cel__expr__Type__AbstractType_msg_init;
-extern const upb_MiniTable* cel__expr__Type__AbstractType_msg_init_ptr;
 extern const upb_MiniTable cel__expr__Decl_msg_init;
-extern const upb_MiniTable* cel__expr__Decl_msg_init_ptr;
 extern const upb_MiniTable cel__expr__Decl__IdentDecl_msg_init;
-extern const upb_MiniTable* cel__expr__Decl__IdentDecl_msg_init_ptr;
 extern const upb_MiniTable cel__expr__Decl__FunctionDecl_msg_init;
-extern const upb_MiniTable* cel__expr__Decl__FunctionDecl_msg_init_ptr;
 extern const upb_MiniTable cel__expr__Decl__FunctionDecl__Overload_msg_init;
-extern const upb_MiniTable* cel__expr__Decl__FunctionDecl__Overload_msg_init_ptr;
 extern const upb_MiniTable cel__expr__Reference_msg_init;
-extern const upb_MiniTable* cel__expr__Reference_msg_init_ptr;
 
 extern const upb_MiniTableFile cel_expr_checked_proto_upb_file_layout;
 
