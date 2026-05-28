@@ -52,7 +52,7 @@ bazel_dep(name = "openssl", version = "3.3.1.bcr.1")
 bazel_dep(name = "opentelemetry-cpp", version = "1.19.0", repo_name = "io_opentelemetry_cpp")
 
 # --- Protobuf related packages.
-# TODO(weizheyuan): Remove this archive_override block once protobuf 35
+# TODO(weizheyuan): Remove this single_version_override block once protobuf 35
 # offical release includes a MSVC related bugfix that we need.
 # See also https://github.com/protocolbuffers/protobuf/pull/27609
 bazel_dep(name = "protobuf", version = "35.0", repo_name = "com_google_protobuf")
