@@ -120,7 +120,6 @@ libs:
   - absl/base:config
   - absl/base:core_headers
   - absl/base:log_severity
-  - absl/base:no_destructor
   - absl/cleanup:cleanup
   - absl/flags:flag
   - absl/flags:marshalling
@@ -2291,6 +2290,7 @@ libs:
   - re2
   - z
   - absl/algorithm:container
+  - absl/base:no_destructor
   - absl/container:btree
   - absl/container:flat_hash_map
   - absl/container:flat_hash_set
@@ -3492,6 +3492,7 @@ libs:
   - upb_textformat_lib
   - z
   - absl/algorithm:container
+  - absl/base:no_destructor
   - absl/container:btree
   - absl/container:flat_hash_map
   - absl/container:flat_hash_set
@@ -5421,6 +5422,7 @@ libs:
   - upb_textformat_lib
   - re2
   - z
+  - absl/base:no_destructor
   - absl/container:btree
   - absl/container:flat_hash_map
   - absl/container:flat_hash_set
@@ -7172,6 +7174,7 @@ targets:
   deps:
   - gtest
   - upb_textformat_lib
+  - absl/base:no_destructor
   - absl/container:btree
   - absl/container:flat_hash_map
   - absl/container:inlined_vector
@@ -8044,6 +8047,7 @@ targets:
   - gtest
   - upb_textformat_lib
   - z
+  - absl/base:no_destructor
   - absl/container:btree
   - absl/container:flat_hash_map
   - absl/container:inlined_vector
@@ -13696,6 +13700,7 @@ targets:
   - gtest
   - upb_textformat_lib
   - z
+  - absl/base:no_destructor
   - absl/container:btree
   - absl/container:flat_hash_map
   - absl/container:inlined_vector
@@ -16580,6 +16585,7 @@ targets:
   - gtest
   - upb_textformat_lib
   - z
+  - absl/base:no_destructor
   - absl/container:btree
   - absl/container:flat_hash_map
   - absl/container:inlined_vector
@@ -19351,6 +19357,7 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/util/construct_destruct.h
   - src/core/util/no_destruct.h
   src:
   - test/core/util/no_destruct_test.cc
@@ -19358,7 +19365,6 @@ targets:
   - gtest
   - absl/base:config
   - absl/base:core_headers
-  - absl/base:no_destructor
 - name: no_server_test
   gtest: true
   build: test
@@ -22698,6 +22704,7 @@ targets:
   deps:
   - gtest
   - upb_textformat_lib
+  - absl/base:no_destructor
   - absl/container:btree
   - absl/container:flat_hash_map
   - absl/container:inlined_vector
@@ -26177,6 +26184,7 @@ targets:
   - gtest
   - upb_textformat_lib
   - z
+  - absl/base:no_destructor
   - absl/container:btree
   - absl/container:flat_hash_map
   - absl/container:inlined_vector
