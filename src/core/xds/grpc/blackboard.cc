@@ -14,7 +14,7 @@
 // limitations under the License.
 //
 
-#include "src/core/filter/blackboard.h"
+#include "src/core/xds/grpc/blackboard.h"
 
 namespace grpc_core {
 

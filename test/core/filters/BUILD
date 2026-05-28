@@ -184,16 +184,3 @@ grpc_cc_benchmark(
         "//test/core/call:call_spine_benchmarks",
     ],
 )
-
-grpc_cc_test(
-    name = "blackboard_test",
-    srcs = ["blackboard_test.cc"],
-    external_deps = [
-        "gtest",
-    ],
-    uses_event_engine = False,
-    uses_polling = False,
-    deps = [
-        "//src/core:blackboard",
-    ],
-)

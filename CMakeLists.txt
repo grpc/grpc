@@ -2747,7 +2747,6 @@ add_library(grpc
   src/core/ext/upbdefs-gen/xds/type/v3/typed_struct.upbdefs.c
   src/core/filter/auth/client_auth_filter.cc
   src/core/filter/auth/server_auth_filter.cc
-  src/core/filter/blackboard.cc
   src/core/filter/composite/composite_filter.cc
   src/core/filter/fused_filters.cc
   src/core/handshaker/endpoint_info/endpoint_info_handshaker.cc
@@ -3095,6 +3094,7 @@ add_library(grpc
   src/core/util/wait_for_single_owner.cc
   src/core/util/windows/directory_reader.cc
   src/core/util/work_serializer.cc
+  src/core/xds/grpc/blackboard.cc
   src/core/xds/grpc/certificate_provider_store.cc
   src/core/xds/grpc/file_watcher_certificate_provider_factory.cc
   src/core/xds/grpc/xds_audit_logger_registry.cc
@@ -9477,7 +9477,6 @@ add_executable(blackboard_test
   src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/channelz.upbdefs.c
   src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/property_list.upbdefs.c
   src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/service.upbdefs.c
-  src/core/filter/blackboard.cc
   src/core/lib/address_utils/parse_address.cc
   src/core/lib/address_utils/sockaddr_utils.cc
   src/core/lib/channel/channel_args.cc
@@ -9519,7 +9518,8 @@ add_executable(blackboard_test
   src/core/util/time.cc
   src/core/util/uri.cc
   src/core/util/work_serializer.cc
-  test/core/filters/blackboard_test.cc
+  src/core/xds/grpc/blackboard.cc
+  test/core/xds/blackboard_test.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)

@@ -14,8 +14,8 @@
 // limitations under the License.
 //
 
-#ifndef GRPC_SRC_CORE_FILTER_BLACKBOARD_H
-#define GRPC_SRC_CORE_FILTER_BLACKBOARD_H
+#ifndef GRPC_SRC_CORE_XDS_GRPC_BLACKBOARD_H
+#define GRPC_SRC_CORE_XDS_GRPC_BLACKBOARD_H
 
 #include <string>
 #include <utility>
@@ -31,8 +31,6 @@
 #include "absl/container/flat_hash_map.h"
 #include "absl/functional/function_ref.h"
 #include "absl/strings/string_view.h"
-
-// FIXME: move this file to the xds directory
 
 namespace grpc_core {
 
@@ -88,4 +86,4 @@ class Blackboard : public RefCounted<Blackboard> {
 
 }  // namespace grpc_core
 
-#endif  // GRPC_SRC_CORE_FILTER_BLACKBOARD_H
+#endif  // GRPC_SRC_CORE_XDS_GRPC_BLACKBOARD_H

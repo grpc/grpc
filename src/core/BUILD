@@ -3838,10 +3838,10 @@ grpc_cc_library(
 grpc_cc_library(
     name = "blackboard",
     srcs = [
-        "filter/blackboard.cc",
+        "xds/grpc/blackboard.cc",
     ],
     hdrs = [
-        "filter/blackboard.h",
+        "xds/grpc/blackboard.h",
     ],
     external_deps = [
         "absl/functional:function_ref",

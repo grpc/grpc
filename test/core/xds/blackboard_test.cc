@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "src/core/filter/blackboard.h"
+#include "src/core/xds/grpc/blackboard.h"
 
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
