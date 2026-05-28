@@ -109,7 +109,8 @@ class XdsResolver final : public Resolver {
         interested_parties_(args.pollset_set),
         uri_(std::move(args.uri)),
         data_plane_authority_(std::move(data_plane_authority)),
-        channel_id_(absl::Uniform<uint64_t>(absl::BitGen())) {
+        channel_id_(absl::Uniform<uint64_t>(absl::BitGen())),
+        blackboard_(MakeRefCounted<Blackboard>()) {
     GRPC_TRACE_LOG(xds_resolver, INFO)
         << "[xds_resolver " << this << "] created for URI " << uri_.ToString()
         << "; data plane authority is " << data_plane_authority_;
@@ -218,8 +219,7 @@ class XdsResolver final : public Resolver {
 
     void BuildFilterChains(const XdsConfig& xds_config,
                            const XdsHttpFilterRegistry& http_filter_registry,
-                           FilterChainBuilder& builder,
-                           Blackboard& blackboard);
+                           FilterChainBuilder& builder, Blackboard& blackboard);
 
    private:
     class RouteListIterator;
@@ -255,8 +255,7 @@ class XdsResolver final : public Resolver {
                  *other_xds->xds_config_->route_config;
     }
 
-    void BuildFilterChains(FilterChainBuilder& builder,
-                           Blackboard& blackboard) override;
+    void BuildFilterChains(FilterChainBuilder& builder) override;
 
     absl::StatusOr<RefCountedPtr<const FilterChain>> GetCallConfig(
         GetCallConfigArgs args) override;
@@ -354,6 +353,7 @@ class XdsResolver final : public Resolver {
   std::string data_plane_authority_;
   const uint64_t channel_id_;
 
+  RefCountedPtr<Blackboard> blackboard_;
   OrphanablePtr<XdsDependencyManager> dependency_mgr_;
   RefCountedPtr<const XdsConfig> current_config_;
   std::map<absl::string_view, WeakRefCountedPtr<ClusterRef>> cluster_ref_map_;
@@ -751,13 +751,13 @@ XdsResolver::XdsConfigSelector::GetCallConfig(GetCallConfigArgs args) {
 }
 
 void XdsResolver::XdsConfigSelector::BuildFilterChains(
-    FilterChainBuilder& builder, Blackboard& blackboard) {
+    FilterChainBuilder& builder) {
   // Build filter chains.
   const auto& http_filter_registry =
       DownCast<const GrpcXdsBootstrap&>(resolver_->xds_client_->bootstrap())
           .http_filter_registry();
   route_config_data_->BuildFilterChains(*xds_config_, http_filter_registry,
-                                        builder, blackboard);
+                                        builder, *resolver_->blackboard_);
 }
 
 //

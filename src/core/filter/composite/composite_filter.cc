@@ -102,12 +102,12 @@ CompositeFilter::CompositeFilter(const ChannelArgs& args,
     if (action.type() != ExecuteFilterAction::Type()) return;
     const auto& execute_filter_action =
         DownCast<const ExecuteFilterAction&>(action);
-    auto it = config_->filter_config_map_.find(&action);
-    GRPC_ASSERT(it != config_->filter_config_map_.end());
+    auto it = config_->merged_config_map.find(&action);
+    GRPC_CHECK(it != config_->merged_config_map.end());
     auto& merged_configs = it->second;
-    GRPC_ASSERT_EQ(merged_configs.size(),
-                   execute_filter_action.filter_chain().size());
-    InterceptionChainBuilder builder(args, filter_args.blackboard());
+    GRPC_CHECK_EQ(merged_configs.size(),
+                  execute_filter_action.filter_chain().size());
+    InterceptionChainBuilder builder(args);
     InterceptionChainBuilderWrapper builder_wrapper(builder);
     for (size_t i = 0; i < merged_configs.size(); ++i) {
       const auto* filter_impl =

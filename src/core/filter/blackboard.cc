@@ -51,7 +51,7 @@ void Blackboard::Remove(UniqueTypeName type, const std::string& key,
                         Entry* entry) {
   MutexLock lock(&mu_);
   auto it = map_.find(std::pair(type, key));
-  if (it == map_.end()) return nullptr;
+  if (it == map_.end()) return;
   if (it->second == entry) map_.erase(it);
 }
 

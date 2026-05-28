@@ -3844,11 +3844,14 @@ grpc_cc_library(
         "filter/blackboard.h",
     ],
     external_deps = [
+        "absl/functional:function_ref",
         "absl/container:flat_hash_map",
         "absl/strings",
     ],
     deps = [
+        "dual_ref_counted",
         "ref_counted",
+        "sync",
         "unique_type_name",
         "useful",
         "//:debug_location",
@@ -3863,7 +3866,6 @@ grpc_cc_library(
         "filter/filter_args.h",
     ],
     deps = [
-        "blackboard",
         "channel_fwd",
         "match",
         "ref_counted",
@@ -3972,7 +3974,6 @@ grpc_cc_library(
     ],
     deps = [
         "arena",
-        "blackboard",
         "channel_fwd",
         "client_channel_internal_header",
         "filter_chain",
@@ -5684,6 +5685,7 @@ grpc_cc_library(
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
+        "absl/strings:str_format",
     ],
     deps = [
         "arena",

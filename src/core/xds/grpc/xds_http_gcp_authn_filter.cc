@@ -68,20 +68,19 @@ RefCountedPtr<const FilterConfig> XdsHttpGcpAuthnFilter::MergeConfigs(
     Blackboard& blackboard) const {
   // Make a copy of the parsed config.
   const auto& parsed_config =
-      DownCast<const GcpAuthenticationFilter::Config&>(top_level_config);
-  auto new_config =
-      MakeRefCounted<GcpAuthenticationFilter::Config>(parsed_config);
+      DownCast<const GcpAuthenticationFilter::Config&>(*top_level_config);
+  auto new_config = MakeRefCounted<GcpAuthenticationFilter::Config>();
+  new_config->instance_name = parsed_config.instance_name;
+  new_config->cache_size = parsed_config.cache_size;
   // Get the cache from the blackboard, adding it if necessary.
   bool constructed = false;
-  new_config->cache =
-      blackboard.GetOrSet<GcpAuthenticationFilter::CallCredentialsCache>(
-          new_config->instance_name,
-          [&]() {
-            constructed = true;
-            return MakeRefCounted<
-                       GcpAuthenticationFilter::CallCredentialsCache>(
-                       new_config->cache_size);
-          });
+  new_config->cache = blackboard.GetOrSet<
+      GcpAuthenticationFilter::CallCredentialsCache>(
+      new_config->instance_name, [&]() {
+        constructed = true;
+        return MakeRefCounted<GcpAuthenticationFilter::CallCredentialsCache>(
+            new_config->cache_size);
+      });
   // If we didn't just construct the cache object, make sure it has the
   // right size.
   if (!constructed) new_config->cache->SetMaxSize(new_config->cache_size);

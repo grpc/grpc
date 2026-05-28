@@ -3579,7 +3579,6 @@ add_library(grpc_unsecure
   src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/service.upbdefs.c
   src/core/filter/auth/client_auth_filter.cc
   src/core/filter/auth/server_auth_filter.cc
-  src/core/filter/blackboard.cc
   src/core/filter/fused_filters.cc
   src/core/handshaker/endpoint_info/endpoint_info_handshaker.cc
   src/core/handshaker/handshaker.cc
@@ -6083,7 +6082,6 @@ add_library(grpc_authorization_provider
   src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/service.upbdefs.c
   src/core/filter/auth/client_auth_filter.cc
   src/core/filter/auth/server_auth_filter.cc
-  src/core/filter/blackboard.cc
   src/core/handshaker/endpoint_info/endpoint_info_handshaker.cc
   src/core/handshaker/handshaker.cc
   src/core/handshaker/handshaker_registry.cc
@@ -10272,7 +10270,6 @@ add_executable(call_utils_test
   src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/promise.upbdefs.c
   src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/property_list.upbdefs.c
   src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/service.upbdefs.c
-  src/core/filter/blackboard.cc
   src/core/handshaker/handshaker_registry.cc
   src/core/handshaker/proxy_mapper_registry.cc
   src/core/lib/address_utils/parse_address.cc
@@ -17873,7 +17870,6 @@ add_executable(filter_fusion_test
   src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/promise.upbdefs.c
   src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/property_list.upbdefs.c
   src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/service.upbdefs.c
-  src/core/filter/blackboard.cc
   src/core/handshaker/handshaker_registry.cc
   src/core/handshaker/proxy_mapper_registry.cc
   src/core/lib/address_utils/parse_address.cc
@@ -22192,7 +22188,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/promise.upbdefs.c
     src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/property_list.upbdefs.c
     src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/service.upbdefs.c
-    src/core/filter/blackboard.cc
     src/core/handshaker/handshaker_registry.cc
     src/core/handshaker/proxy_mapper_registry.cc
     src/core/lib/address_utils/parse_address.cc
@@ -36698,7 +36693,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/promise.upbdefs.c
     src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/property_list.upbdefs.c
     src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/service.upbdefs.c
-    src/core/filter/blackboard.cc
     src/core/handshaker/handshaker_registry.cc
     src/core/handshaker/proxy_mapper_registry.cc
     src/core/lib/address_utils/parse_address.cc

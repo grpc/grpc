@@ -52,7 +52,7 @@ class Blackboard : public RefCounted<Blackboard> {
     friend class Blackboard;
 
     RefCountedPtr<Blackboard> blackboard_;
-    UniqueTypeName type_;
+    UniqueTypeName type_{GRPC_UNIQUE_TYPE_NAME_HERE("")};
     std::string key_;
   };
 
@@ -67,7 +67,8 @@ class Blackboard : public RefCounted<Blackboard> {
   template <typename T>
   RefCountedPtr<T> GetOrSet(const std::string& key,
                             absl::FunctionRef<RefCountedPtr<T>()> construct) {
-    GetOrSet(T::Type(), key, std::move(construct));
+    return GetOrSet(T::Type(), key, std::move(construct))
+        .template TakeAsSubclass<T>();
   }
 
  private:
@@ -77,7 +78,7 @@ class Blackboard : public RefCounted<Blackboard> {
       absl::FunctionRef<RefCountedPtr<Entry>()> construct);
   void Remove(UniqueTypeName type, const std::string& key, Entry* entry);
 
-  Mutex mu_;
+  mutable Mutex mu_;
   absl::flat_hash_map<std::pair<UniqueTypeName, std::string>,
                       WeakRefCountedPtr<Entry>>
       map_ ABSL_GUARDED_BY(&mu_);

@@ -1423,8 +1423,7 @@ namespace {
 class LegacyFilterChainBuilder final : public FilterChainBuilder {
  public:
   LegacyFilterChainBuilder(bool enable_retries, const ChannelArgs& channel_args)
-      : enable_retries_(enable_retries),
-        channel_args_(channel_args) {}
+      : enable_retries_(enable_retries), channel_args_(channel_args) {}
 
   absl::StatusOr<RefCountedPtr<FilterChain>> Build() override {
     if (enable_retries_) {
@@ -1476,12 +1475,8 @@ void ClientChannelFilter::UpdateServiceConfigInDataPlaneLocked(
     retry_throttler_updater_.Update(*service_config, new_args);
   }
   // Construct dynamic filter stack.
-  auto new_blackboard = MakeRefCounted<Blackboard>();
-  LegacyFilterChainBuilder filter_chain_builder(enable_retries, new_args,
-                                                new_blackboard.get());
-  config_selector->BuildFilterChains(filter_chain_builder, blackboard_.get(),
-                                     new_blackboard.get());
-  blackboard_ = std::move(new_blackboard);
+  LegacyFilterChainBuilder filter_chain_builder(enable_retries, new_args);
+  config_selector->BuildFilterChains(filter_chain_builder);
   // Grab data plane lock to update service config.
   //
   // We defer unreffing the old values (and deallocating memory) until

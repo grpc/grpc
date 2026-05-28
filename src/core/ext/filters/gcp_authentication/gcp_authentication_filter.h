@@ -69,8 +69,7 @@ class GcpAuthenticationFilter
     std::string instance_name;
     uint64_t cache_size = 10;
 
-    // This is populated from the blackboard but is not actually part of
-    // the identity of the config (i.e., does not matter for Equals()).
+    // Populated from the blackboard.
     RefCountedPtr<CallCredentialsCache> cache;
   };
 
