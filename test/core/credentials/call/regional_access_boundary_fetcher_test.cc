@@ -718,6 +718,83 @@ TEST_F(EmailFetcherTest, EarlyDestructionDoesNotCrash) {
   }
 }
 
+int httpcli_get_spiffe_id(const grpc_http_request* /*request*/,
+                          const URI& uri, Timestamp /*deadline*/,
+                          grpc_closure* on_done,
+                          grpc_http_response* response) {
+  if (uri.path() ==
+      "/computeMetadata/v1/instance/service-accounts/default/email") {
+    *response = http_response(
+        200, "spiffe://my-project.svc.id.goog/ns/default/sa/default");
+  }
+  ExecCtx::Run(DEBUG_LOCATION, on_done, absl::OkStatus());
+  return 1;
+}
+
+TEST_F(EmailFetcherTest, InvalidEmailSkipsRab) {
+  ExecCtx exec_ctx;
+  HttpRequest::SetOverride(httpcli_get_spiffe_id, nullptr, nullptr);
+  email_fetcher_->StartEmailFetch();
+  ExecCtx::Get()->Flush();
+  metadata_->Append("authorization", Slice::FromStaticString("Bearer token"),
+                    [](absl::string_view, const Slice&) { abort(); });
+  metadata_->Append(":authority", Slice::FromStaticString("foo.googleapis.com"),
+                    [](absl::string_view, const Slice&) { abort(); });
+  email_fetcher_->Fetch("token", *metadata_);
+  ExecCtx::Get()->Flush();
+  std::string buffer;
+  std::optional<absl::string_view> value =
+      metadata_->GetStringValue("x-allowed-locations", &buffer);
+  EXPECT_FALSE(value.has_value());
+}
+
+int httpcli_get_email_with_whitespace(const grpc_http_request* /*request*/,
+                                      const URI& uri, Timestamp /*deadline*/,
+                                      grpc_closure* on_done,
+                                      grpc_http_response* response) {
+  if (uri.path() ==
+      "/computeMetadata/v1/instance/service-accounts/default/email") {
+    *response = http_response(200, "  foo@bar.com\n");
+  } else {
+    // RAB fetch
+    *response = http_response(
+        200,
+        "{\"encodedLocations\": \"us-west1\", \"locations\": [\"us-west1\"]}");
+  }
+  ExecCtx::Run(DEBUG_LOCATION, on_done, absl::OkStatus());
+  return 1;
+}
+
+TEST_F(EmailFetcherTest, EmailWithWhitespaceTrimmedAndSucceeds) {
+  ExecCtx exec_ctx;
+  HttpRequest::SetOverride(httpcli_get_email_with_whitespace, nullptr, nullptr);
+  email_fetcher_->StartEmailFetch();
+  ExecCtx::Get()->Flush();
+  metadata_->Append("authorization", Slice::FromStaticString("Bearer token"),
+                    [](absl::string_view, const Slice&) { abort(); });
+  metadata_->Append(":authority", Slice::FromStaticString("foo.googleapis.com"),
+                    [](absl::string_view, const Slice&) { abort(); });
+  email_fetcher_->Fetch("token", *metadata_);
+  ExecCtx::Get()->Flush();
+  // Cache miss on first fetch.
+  std::string buffer;
+  std::optional<absl::string_view> value =
+      metadata_->GetStringValue("x-allowed-locations", &buffer);
+  EXPECT_FALSE(value.has_value());
+
+  // Verify cache is populated by fetching again (means the trimmed URL worked).
+  metadata_ = arena_->MakePooled<ClientMetadata>();
+  metadata_->Append("authorization", Slice::FromStaticString("Bearer token"),
+                    [](absl::string_view, const Slice&) { abort(); });
+  metadata_->Append(":authority", Slice::FromStaticString("foo.googleapis.com"),
+                    [](absl::string_view, const Slice&) { abort(); });
+  email_fetcher_->Fetch("token", *metadata_);
+  std::string buffer2;
+  std::optional<absl::string_view> value2 =
+      metadata_->GetStringValue("x-allowed-locations", &buffer2);
+  EXPECT_THAT(value2, ::testing::Optional(absl::string_view("us-west1")));
+}
+
 }  // namespace
 
 }  // namespace grpc_core

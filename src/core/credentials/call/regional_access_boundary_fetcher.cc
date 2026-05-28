@@ -32,6 +32,7 @@
 #include "src/core/util/status_helper.h"
 #include "src/core/util/uri.h"
 #include "absl/log/log.h"
+#include "absl/strings/ascii.h"
 #include "absl/strings/str_format.h"
 
 namespace grpc_core {
@@ -336,7 +337,9 @@ void EmailFetcher::Fetch(absl::string_view token,
   MutexLock lock(&mu_);
   if (auto* rab_fetcher =
           std::get_if<RefCountedPtr<RegionalAccessBoundaryFetcher>>(&state_)) {
-    (*rab_fetcher)->Fetch(token, initial_metadata);
+    if (*rab_fetcher != nullptr) {
+      (*rab_fetcher)->Fetch(token, initial_metadata);
+    }
   }
 }
 
@@ -348,10 +351,19 @@ void EmailFetcher::Orphaned() {
 void EmailFetcher::OnEmailFetchComplete(absl::string_view email) {
   MutexLock lock(&mu_);
   if (std::holds_alternative<OrphanablePtr<EmailRequest>>(state_)) {
+    absl::string_view trimmed_email = absl::StripAsciiWhitespace(email);
+    if (trimmed_email.find('@') == absl::string_view::npos) {
+      LOG(INFO) << "Regional Access Boundary fetch skipped: service account "
+                   "email is not a valid email address (could be a SPIFFE ID "
+                   "or managed workload identity): \""
+                << trimmed_email << "\"";
+      state_ = RefCountedPtr<RegionalAccessBoundaryFetcher>(nullptr);
+      return;
+    }
     std::string rab_url = absl::StrFormat(
         "https://iamcredentials.googleapis.com/v1/projects/-/serviceAccounts/"
         "%s/allowedLocations",
-        email);
+        trimmed_email);
     auto rab_fetcher =
         RegionalAccessBoundaryFetcher::Create(rab_url, event_engine_);
     if (rab_fetcher != nullptr) {
