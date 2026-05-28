@@ -56,14 +56,13 @@ bazel_dep(name = "opentelemetry-cpp", version = "1.19.0", repo_name = "io_opente
 # offical release includes a MSVC related bugfix that we need.
 # See also https://github.com/protocolbuffers/protobuf/pull/27609
 bazel_dep(name = "protobuf", version = "35.0", repo_name = "com_google_protobuf")
-archive_override(
+single_version_override(
     module_name = "protobuf",
-    integrity = "sha256-F/b+uNTH4KFpMqWLfiD6Qy4pDdCSoqAPfy5EP/FNrpM=",
-    strip_prefix = "protobuf-9570bfb4c264fb8331d136c0609aed6b94ac0551",
-    urls = [
-        "https://storage.googleapis.com/grpc-bazel-mirror/github.com/protocolbuffers/protobuf/archive/9570bfb4c264fb8331d136c0609aed6b94ac0551.tar.gz",
-        "https://github.com/protocolbuffers/protobuf/archive/9570bfb4c264fb8331d136c0609aed6b94ac0551.tar.gz",
+    patch_strip = 1,
+    patches = [
+        "//bazel:protobuf/fix_msvc_crash.patch",
     ],
+    version = "35.0",
 )
 
 bazel_dep(name = "protoc-gen-validate", version = "1.2.1.bcr.1", repo_name = "com_envoyproxy_protoc_gen_validate")  # Not needed directly
