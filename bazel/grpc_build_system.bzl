@@ -13,7 +13,7 @@
 # limitations under the License.
 
 #
-# This is for the gRPC build system. This isn't intended to be used outsite of
+# This is for the gRPC build system. This isn't intended to be used outside of
 # the BUILD file for gRPC. It contains the mapping for the template system we
 # use to generate other platform's build system files.
 #

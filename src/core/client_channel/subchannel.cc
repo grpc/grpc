@@ -1616,7 +1616,7 @@ void NewSubchannel::QueuedCall::ResumeOnConnectionLocked(
   // It's possible that the subchannel will get quota for the call
   // and try to resume it before buffered_call_ contains any batches.
   // In that case, we will not be holding the call combiner here, so we
-  // must not yeild it.  That's why we use
+  // must not yield it.  That's why we use
   // YieldCallCombinerIfPendingBatchesFound here.
   if (!error.ok()) {
     buffered_call_.Fail(error,
