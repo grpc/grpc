@@ -25,4 +25,4 @@ cdef class AioChannel:
         readonly bytes target
         AioChannelStatus _status
         bint _is_secure
-        cdef dict _registered_call_handles
+        dict _registered_call_handles
