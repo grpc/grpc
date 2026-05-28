@@ -2153,7 +2153,6 @@ target_link_libraries(gpr
   absl::config
   absl::core_headers
   absl::log_severity
-  absl::no_destructor
   absl::cleanup
   absl::flags
   absl::flags_marshalling
@@ -3183,6 +3182,7 @@ target_link_libraries(grpc
   ${_gRPC_RE2_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   absl::algorithm_container
+  absl::no_destructor
   absl::btree
   absl::flat_hash_map
   absl::flat_hash_set
@@ -3922,6 +3922,7 @@ target_link_libraries(grpc_unsecure
   upb_textformat_lib
   ${_gRPC_ZLIB_LIBRARIES}
   absl::algorithm_container
+  absl::no_destructor
   absl::btree
   absl::flat_hash_map
   absl::flat_hash_set
@@ -6368,6 +6369,7 @@ target_link_libraries(grpc_authorization_provider
   upb_textformat_lib
   ${_gRPC_RE2_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
+  absl::no_destructor
   absl::btree
   absl::flat_hash_map
   absl::flat_hash_set
@@ -10000,6 +10002,7 @@ target_link_libraries(call_filters_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   upb_textformat_lib
+  absl::no_destructor
   absl::btree
   absl::flat_hash_map
   absl::inlined_vector
@@ -10525,6 +10528,7 @@ target_link_libraries(call_utils_test
   gtest
   upb_textformat_lib
   ${_gRPC_ZLIB_LIBRARIES}
+  absl::no_destructor
   absl::btree
   absl::flat_hash_map
   absl::inlined_vector
@@ -18125,6 +18129,7 @@ target_link_libraries(filter_fusion_test
   gtest
   upb_textformat_lib
   ${_gRPC_ZLIB_LIBRARIES}
+  absl::no_destructor
   absl::btree
   absl::flat_hash_map
   absl::inlined_vector
@@ -22447,6 +22452,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     gtest
     upb_textformat_lib
     ${_gRPC_ZLIB_LIBRARIES}
+    absl::no_destructor
     absl::btree
     absl::flat_hash_map
     absl::inlined_vector
@@ -25854,7 +25860,6 @@ target_link_libraries(no_destruct_test
   gtest
   absl::config
   absl::core_headers
-  absl::no_destructor
 )
 
 
@@ -30562,6 +30567,7 @@ target_link_libraries(request_buffer_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   upb_textformat_lib
+  absl::no_destructor
   absl::btree
   absl::flat_hash_map
   absl::inlined_vector
@@ -36951,6 +36957,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     gtest
     upb_textformat_lib
     ${_gRPC_ZLIB_LIBRARIES}
+    absl::no_destructor
     absl::btree
     absl::flat_hash_map
     absl::inlined_vector
@@ -55283,7 +55290,7 @@ generate_pkgconfig(
   "gpr"
   "gRPC platform support library"
   "${gRPC_CORE_VERSION}"
-  "absl_any_invocable absl_base absl_bind_front absl_bits absl_check absl_cleanup absl_config absl_cord absl_core_headers absl_flags absl_flags_marshalling absl_log absl_log_globals absl_log_severity absl_memory absl_no_destructor absl_optional absl_random_random absl_status absl_str_format absl_strings absl_synchronization absl_time"
+  "absl_any_invocable absl_base absl_bind_front absl_bits absl_check absl_cleanup absl_config absl_cord absl_core_headers absl_flags absl_flags_marshalling absl_log absl_log_globals absl_log_severity absl_memory absl_optional absl_random_random absl_status absl_str_format absl_strings absl_synchronization absl_time"
   ""
   "-lgpr"
   ""
