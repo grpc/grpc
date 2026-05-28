@@ -938,6 +938,17 @@ Http2Status ValidateFrameHeader(const uint32_t max_frame_size_setting,
   // for server.
   return Http2Status::Ok();
 }
+
+uint8_t GetNumInducedFrames(const Http2FrameHeader& current_frame_header) {
+  switch (current_frame_header.type) {
+    case static_cast<uint8_t>(FrameType::kSettings):
+    case static_cast<uint8_t>(FrameType::kPing):
+      return (current_frame_header.flags & kFlagAck) == 0u ? 1u : 0u;
+    default:
+      return 0u;
+  }
+}
+
 }  // namespace grpc_core
 
 /*
