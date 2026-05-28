@@ -12,14 +12,23 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM arm64v8/debian:12
+FROM arm64v8/debian:13
 
 {% include "../../apt_get_basic.include" %}
 {% include "../../run_tests_python_deps_pep668.include" %}
-RUN apt-get update && apt-get install -y php8.2 php8.2-dev php-pear && apt-get clean
+
+# Install default PHP (which is 8.4 in Debian 13)
+RUN apt-get update && apt-get install -y php php-dev php-pear && apt-get clean
+
+# Install PHPUnit (PHPUnit 11 is the stable version that supports PHP 8.4)
+RUN wget https://phar.phpunit.de/phpunit-11.1.5.phar && \
+    mv phpunit-11.1.5.phar /usr/local/bin/phpunit && \
+    chmod +x /usr/local/bin/phpunit
+
 {% include "../../php_valgrind.include" %}
 {% include "../../cmake.include" %}
 RUN apt-get update && apt-get install -y ccache && apt-get clean
 {% include "../../run_tests_addons.include" %}
+
 # Define the default command.
 CMD ["bash"]

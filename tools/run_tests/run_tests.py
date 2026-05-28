@@ -648,7 +648,7 @@ class Php8Language:
         return [["tools/run_tests/helper_scripts/post_tests_php.sh"]]
 
     def dockerfile_dir(self):
-        return "tools/dockerfile/test/php8_debian12_%s" % _docker_arch_suffix(
+        return "tools/dockerfile/test/php8_debian13_%s" % _docker_arch_suffix(
             self.args.arch
         )
 
