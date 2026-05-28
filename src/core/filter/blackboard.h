@@ -29,6 +29,7 @@
 #include "src/core/util/unique_type_name.h"
 #include "src/core/util/useful.h"
 #include "absl/container/flat_hash_map.h"
+#include "absl/functional/function_ref.h"
 #include "absl/strings/string_view.h"
 
 namespace grpc_core {
@@ -61,18 +62,19 @@ class Blackboard : public RefCounted<Blackboard> {
     return Get(T::Type(), key).template TakeAsSubclass<T>();
   }
 
-  // Sets an entry for a particular type and name if it doesn't already
-  // exist.  Returns the actual entry, which may not be the one passed in
-  // if the entry already exists.
+  // Gets the entry for the specified key.  If not present, invokes
+  // construct to create it.  Returns the entry.
   template <typename T>
-  RefCountedPtr<T> Set(const std::string& key, RefCountedPtr<T> constructed) {
-    Set(T::Type(), key, std::move(constructed));
+  RefCountedPtr<T> GetOrSet(const std::string& key,
+                            absl::FunctionRef<RefCountedPtr<T>()> construct) {
+    GetOrSet(T::Type(), key, std::move(construct));
   }
 
  private:
   RefCountedPtr<Entry> Get(UniqueTypeName type, const std::string& key) const;
-  RefCountedPtr<Entry> Set(UniqueTypeName type, const std::string& key,
-                           RefCountedPtr<Entry> constructed);
+  RefCountedPtr<Entry> GetOrSet(
+      UniqueTypeName type, const std::string& key,
+      absl::FunctionRef<RefCountedPtr<Entry>()> construct);
   void Remove(UniqueTypeName type, const std::string& key, Entry* entry);
 
   Mutex mu_;

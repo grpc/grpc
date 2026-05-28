@@ -67,19 +67,15 @@ class XdsHttpFilterImpl {
       const XdsExtension& extension, ValidationErrors* errors) const = 0;
 
   // Returns a new filter config that takes into account any necessary
-  // overrides.  Base class returns the most specific filter config;
-  // subclasses can override if needed.
+  // overrides.  May also add objects to config from the blackboard.
+  // Base class returns the most specific filter config; subclasses can
+  // override if needed.
   virtual RefCountedPtr<const FilterConfig> MergeConfigs(
       RefCountedPtr<const FilterConfig> top_level_config,
       RefCountedPtr<const FilterConfig> virtual_host_override_config,
       RefCountedPtr<const FilterConfig> route_override_config,
-      RefCountedPtr<const FilterConfig> cluster_weight_override_config) const;
-
-  // Adds state to new_blackboard if needed for the specified filter
-  // config.  Copies existing state from old_blackboard as appropriate.
-  virtual void UpdateBlackboard(const FilterConfig& /*config*/,
-                                const Blackboard* /*old_blackboard*/,
-                                Blackboard* /*new_blackboard*/) const {}
+      RefCountedPtr<const FilterConfig> cluster_weight_override_config,
+      Blackboard& blackboard) const;
 
   // Returns true if the filter is supported on clients; false otherwise
   virtual bool IsSupportedOnClients() const = 0;
@@ -151,12 +147,6 @@ class XdsHttpFilterImpl {
   // Currently used only on the client side.
   virtual absl::StatusOr<ServiceConfigJsonEntry> GenerateServiceConfig(
       const Json& hcm_filter_config) const = 0;
-
-  // Adds state to new_blackboard if needed for the specified filter
-  // config.  Copies existing state from old_blackboard as appropriate.
-  virtual void UpdateBlackboard(const Json& /*hcm_filter_config*/,
-                                const Blackboard* /*old_blackboard*/,
-                                Blackboard* /*new_blackboard*/) const {}
 };
 
 }  // namespace grpc_core

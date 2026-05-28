@@ -64,8 +64,7 @@ class ConfigSelector : public RefCounted<ConfigSelector> {
   // The channel will call this when the resolver returns a new ConfigSelector
   // to initialize the filter chains that the ConfigSelector may need.
   virtual void BuildFilterChains(FilterChainBuilder& builder,
-                                 const Blackboard* old_blackboard,
-                                 Blackboard* new_blackboard) = 0;
+                                 Blackboard& blackboard) = 0;
 
   // Gets the configuration for the call and stores it in service config
   // call data.
@@ -106,8 +105,7 @@ class DefaultConfigSelector final : public ConfigSelector {
   }
 
   void BuildFilterChains(FilterChainBuilder& builder,
-                         const Blackboard* /*old_blackboard*/,
-                         Blackboard* /*new_blackboard*/) override {
+                         Blackboard& /*blackboard*/) override {
     filter_chain_ = builder.Build();
   }
 

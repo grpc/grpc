@@ -30,15 +30,16 @@ RefCountedPtr<Blackboard::Entry> Blackboard::Get(UniqueTypeName type,
   return it->second->RefIfNonZero();
 }
 
-RefCountedPtr<Blackboard::Entry> Blackboard::Set(
+RefCountedPtr<Blackboard::Entry> Blackboard::GetOrSet(
     UniqueTypeName type, const std::string& key,
-    RefCountedPtr<Entry> constructed) {
+    absl::FunctionRef<RefCountedPtr<Entry>()> construct) {
   MutexLock lock(&mu_);
   auto& entry = map_[std::pair(type, key)];
   if (entry != nullptr) {
     auto reffed_entry = entry->RefIfNonZero();
     if (reffed_entry != nullptr) return reffed_entry;
   }
+  auto constructed = construct();
   entry = constructed->WeakRef();
   constructed->blackboard_ = Ref();
   constructed->type_ = type;

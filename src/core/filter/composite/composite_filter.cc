@@ -102,10 +102,17 @@ CompositeFilter::CompositeFilter(const ChannelArgs& args,
     if (action.type() != ExecuteFilterAction::Type()) return;
     const auto& execute_filter_action =
         DownCast<const ExecuteFilterAction&>(action);
+    auto it = config_->filter_config_map_.find(&action);
+    GRPC_ASSERT(it != config_->filter_config_map_.end());
+    auto& merged_configs = it->second;
+    GRPC_ASSERT_EQ(merged_configs.size(),
+                   execute_filter_action.filter_chain().size());
     InterceptionChainBuilder builder(args, filter_args.blackboard());
     InterceptionChainBuilderWrapper builder_wrapper(builder);
-    for (const auto& [filter_impl, filter_config] :
-         execute_filter_action.filter_chain()) {
+    for (size_t i = 0; i < merged_configs.size(); ++i) {
+      const auto* filter_impl =
+          execute_filter_action.filter_chain()[i].filter_impl;
+      const auto& filter_config = merged_configs[i];
       // TODO(roth): Currently, this code assumes that it is always
       // running on the client side, so we'll need to remove this
       // assumption in order to make this filter work on the server

@@ -219,8 +219,7 @@ class XdsResolver final : public Resolver {
     void BuildFilterChains(const XdsConfig& xds_config,
                            const XdsHttpFilterRegistry& http_filter_registry,
                            FilterChainBuilder& builder,
-                           const Blackboard* old_blackboard,
-                           Blackboard* new_blackboard);
+                           Blackboard& blackboard);
 
    private:
     class RouteListIterator;
@@ -257,8 +256,7 @@ class XdsResolver final : public Resolver {
     }
 
     void BuildFilterChains(FilterChainBuilder& builder,
-                           const Blackboard* old_blackboard,
-                           Blackboard* new_blackboard) override;
+                           Blackboard& blackboard) override;
 
     absl::StatusOr<RefCountedPtr<const FilterChain>> GetCallConfig(
         GetCallConfigArgs args) override;
@@ -422,8 +420,7 @@ XdsResolver::RouteConfigData::GetRouteForRequest(
 void XdsResolver::RouteConfigData::BuildFilterChains(
     const XdsConfig& xds_config,
     const XdsHttpFilterRegistry& http_filter_registry,
-    FilterChainBuilder& builder, const Blackboard* old_blackboard,
-    Blackboard* new_blackboard) {
+    FilterChainBuilder& builder, Blackboard& blackboard) {
   const auto& hcm = std::get<XdsListenerResource::HttpConnectionManager>(
       xds_config.listener->listener);
   XdsRouting::PerRouteFilterChainBuilder per_route_builder(
@@ -431,7 +428,7 @@ void XdsResolver::RouteConfigData::BuildFilterChains(
       [](FilterChainBuilder& builder) {
         builder.AddFilter<ClusterSelectionFilter>(nullptr);
       },
-      old_blackboard, new_blackboard);
+      blackboard);
   // Set the filter chain for each route.
   for (auto& route_entry : routes_) {
     const auto* route_action =
@@ -754,15 +751,13 @@ XdsResolver::XdsConfigSelector::GetCallConfig(GetCallConfigArgs args) {
 }
 
 void XdsResolver::XdsConfigSelector::BuildFilterChains(
-    FilterChainBuilder& builder, const Blackboard* old_blackboard,
-    Blackboard* new_blackboard) {
+    FilterChainBuilder& builder, Blackboard& blackboard) {
   // Build filter chains.
   const auto& http_filter_registry =
       DownCast<const GrpcXdsBootstrap&>(resolver_->xds_client_->bootstrap())
           .http_filter_registry();
   route_config_data_->BuildFilterChains(*xds_config_, http_filter_registry,
-                                        builder, old_blackboard,
-                                        new_blackboard);
+                                        builder, blackboard);
 }
 
 //
