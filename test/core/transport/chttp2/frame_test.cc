@@ -1473,6 +1473,49 @@ TEST(FrameSize, Http2FrameSizeTest) {
   EXPECT_EQ(GetFrameMemoryUsage(Http2EmptyFrame{}), sizeof(Http2EmptyFrame));
 }
 
+TEST(GetNumInducedFramesTest, ExhaustiveValidation) {
+  // Known frame types defined in frame.cc:
+  const uint8_t known_types[] = {/*kData=*/0u,
+                                 /*kHeader=*/1u,
+                                 /*kRstStream=*/3u,
+                                 /*kSettings=*/4u,
+                                 /*kPushPromise=*/5u,
+                                 /*kPing=*/6u,
+                                 /*kGoaway=*/7u,
+                                 /*kWindowUpdate=*/8u,
+                                 /*kContinuation=*/9u,
+                                 /*kCustomSecurity=*/200u};
+
+  // Known flag bits defined in frame.cc:
+  const uint8_t known_flag_bits[] = {/*kFlagEndStream/kFlagAck=*/1u,
+                                     /*kFlagEndHeaders=*/4u,
+                                     /*kFlagPadded=*/8u, /*kFlagPriority=*/32u};
+
+  for (const uint8_t type : known_types) {
+    // Iterate through all 16 combinations (subsets) of the known flag bits.
+    for (uint32_t mask = 0u; mask < 16u; ++mask) {
+      uint8_t flags = 0u;
+      for (uint32_t bit = 0u; bit < 4u; ++bit) {
+        if ((mask & (1u << bit)) != 0u) {
+          flags |= known_flag_bits[bit];
+        }
+      }
+      const Http2FrameHeader header{/*length=*/0u, type, flags,
+                                    /*stream_id=*/0u};
+      uint8_t expected = 0u;
+      const bool is_ping_or_settings =
+          (type == /*kSettings=*/4u || type == /*kPing=*/6u);
+      const bool is_not_ack = (flags & /*kFlagAck=*/1u) == 0u;
+      if (is_ping_or_settings && is_not_ack) {
+        expected = 1u;
+      }
+      EXPECT_EQ(GetNumInducedFrames(header), expected)
+          << "Failed for type=" << static_cast<uint32_t>(type)
+          << ", flags=" << static_cast<uint32_t>(flags);
+    }
+  }
+}
+
 }  // namespace
 }  // namespace grpc_core
 
