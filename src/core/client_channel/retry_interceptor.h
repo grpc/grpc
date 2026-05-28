@@ -65,7 +65,7 @@ class RetryInterceptor : public Interceptor {
     return MakeRefCounted<RetryInterceptor>(args);
   }
 
-  RetryInterceptor(const ChannelArgs& args);
+  explicit RetryInterceptor(const ChannelArgs& args);
 
   void Orphaned() override {}
 
