@@ -514,7 +514,7 @@
   % for download_url in external_proto_library.urls:
   if (NOT EXISTS <%text>${CMAKE_CURRENT_SOURCE_DIR}</%text>/${external_proto_library.destination} AND gRPC_DOWNLOAD_ARCHIVES)
     # Download the archive via HTTP, validate the checksum, and extract to ${external_proto_library.destination}.
-    # TODO(sergiitk): revert removeprefix removal
+    ## TODO(sergiitk): revert removeprefix removal
     download_archive(
       <%text>${CMAKE_CURRENT_SOURCE_DIR}</%text>/${external_proto_library.destination}
       https://storage.googleapis.com/grpc-bazel-mirror/${download_url[8:] if download_url.startswith("https://") else download_url}
