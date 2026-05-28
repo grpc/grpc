@@ -22,6 +22,9 @@ module(
 # Regular dependencies
 # ====================
 
+# TODO(weizheyuan): Check if this version bump is still needed for BCR
+# releases after we drop bazel 7 supprot.
+#
 # Upgrade version of rules_swift to avoid an error in BCR CI of not
 # finding switfc.exe on Windows with bazel 7.
 bazel_dep(name = "rules_swift", version = "2.5.0")
@@ -49,10 +52,22 @@ bazel_dep(name = "openssl", version = "3.3.1.bcr.1")
 bazel_dep(name = "opentelemetry-cpp", version = "1.19.0", repo_name = "io_opentelemetry_cpp")
 
 # --- Protobuf related packages.
-bazel_dep(name = "protobuf", version = "33.5", repo_name = "com_google_protobuf")
-single_version_override(
+# TODO(weizheyuan): Remove this archive_override block once protobuf 34/35
+# offical release includes a MSVC related bugfix that we need.
+# See also https://github.com/protocolbuffers/protobuf/pull/27609
+bazel_dep(name = "protobuf", version = "34.1", repo_name = "com_google_protobuf")
+archive_override(
     module_name = "protobuf",
-    version = "33.5",
+    integrity = "sha256-I5flEPaPP6LnfSzzd5XIqwXWTiYpsbtZsWl1TKmcW3Y=",
+    patch_strip = 1,
+    patches = [
+        "//bazel:protobuf/fix_name_conflict.patch",
+    ],
+    strip_prefix = "protobuf-da4cc469ff362536742f0d4a7965b559f62f68df",
+    urls = [
+        "https://storage.googleapis.com/grpc-bazel-mirror/github.com/protocolbuffers/protobuf/archive/da4cc469ff362536742f0d4a7965b559f62f68df.tar.gz",
+        "https://github.com/protocolbuffers/protobuf/archive/da4cc469ff362536742f0d4a7965b559f62f68df.tar.gz",
+    ],
 )
 
 bazel_dep(name = "protoc-gen-validate", version = "1.2.1.bcr.1", repo_name = "com_envoyproxy_protoc_gen_validate")  # Not needed directly
@@ -102,7 +117,6 @@ bazel_dep(name = "rules_python", version = "1.6.3")
 DEFAULT_PYTHON_VERSION = "3.11"
 
 PYTHON_VERSIONS = [
-    "3.9",
     "3.10",
     "3.11",
     "3.12",

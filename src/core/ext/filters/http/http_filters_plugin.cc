@@ -65,5 +65,11 @@ void RegisterHttpFilters(CoreConfiguration::Builder* builder) {
       ->RegisterFilter<HttpServerFilter>(GRPC_SERVER_CHANNEL)
       .If(IsBuildingHttpLikeTransport)
       .After<ServerMessageSizeFilter>();
+  builder->channel_init()
+      ->RegisterFilter<HttpClientFilter>(GRPC_CLIENT_VIRTUAL_CHANNEL)
+      .If(IsBuildingHttpLikeTransport);
+  builder->channel_init()
+      ->RegisterFilter<HttpServerFilter>(GRPC_SERVER_VIRTUAL_CHANNEL)
+      .If(IsBuildingHttpLikeTransport);
 }
 }  // namespace grpc_core

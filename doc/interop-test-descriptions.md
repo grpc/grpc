@@ -95,7 +95,7 @@ Procedure:
     set to current timestamp. Timestamp format is irrelevant, and resolution is
     in nanoseconds.
     Client adds a `x-user-ip` header with value `1.2.3.4` to the request.
-    This is done since some proxys such as GFE will not cache requests from
+    This is done since some proxies such as GFE will not cache requests from
     localhost.
     Client marks the request as cacheable by setting the cacheable flag in the
     request context. Longer term this should be driven by the method option
@@ -1275,7 +1275,7 @@ Failed TLS hostname verification (ejona?)
 
 Large amount of headers to cause CONTINUATIONs; 63K of 'X's, all in one header.
 
-#### To priorize:
+#### To prioritize:
 
 Start streaming RPC but don't send any requests, server responds
 

@@ -17,12 +17,15 @@
 #ifndef GRPC_SRC_CORE_XDS_GRPC_XDS_COMMON_TYPES_H
 #define GRPC_SRC_CORE_XDS_GRPC_XDS_COMMON_TYPES_H
 
+#include <memory>
 #include <string>
+#include <utility>
 #include <variant>
 #include <vector>
 
 #include "src/core/util/json/json.h"
 #include "src/core/util/matchers.h"
+#include "src/core/util/time.h"
 #include "src/core/util/validation_errors.h"
 #include "src/core/xds/grpc/xds_server_grpc.h"
 #include "absl/strings/string_view.h"
@@ -90,6 +93,16 @@ struct XdsGrpcService {
   std::unique_ptr<GrpcXdsServerTarget> server_target;
   Duration timeout;
   std::vector<std::pair<std::string, std::string>> initial_metadata;
+
+  bool operator==(const XdsGrpcService& other) const {
+    if (timeout != other.timeout) return false;
+    if (initial_metadata != other.initial_metadata) return false;
+    if (server_target == nullptr) return other.server_target == nullptr;
+    if (other.server_target == nullptr) return false;
+    return server_target->Equals(*other.server_target);
+  }
+
+  std::string ToString() const;
 };
 
 struct HeaderMutationRules {

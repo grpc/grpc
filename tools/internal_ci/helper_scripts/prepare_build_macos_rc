@@ -57,6 +57,7 @@ fi
 # Disable HOMEBREW update to avoid new updates which potentially have problems.
 # Brew packages installed when Kokoro image was built tend to have less conflict.
 export HOMEBREW_NO_AUTO_UPDATE=1
+export HOMEBREW_NO_INSTALL_FROM_API=1
 
 # Dump the brew configuration for debugging just in case. Check "Core tap HEAD" field
 # because it should be the same as below unless it's been updated.
@@ -64,6 +65,12 @@ export HOMEBREW_NO_AUTO_UPDATE=1
 brew config
 
 if $is_sonoma; then
+  # A temporary fix for ca-certificates brew install:
+  # ==> Pouring ca-certificates--2026-05-14.all.bottle.tar.gz
+  # Error: undefined method '[]' for nil
+  # TODO(sergiitk): undo PR #42403 once ca-certificates is installable
+  brew install --build-from-source gnupg
+
   brew install cmake
   brew install gnupg
   brew install ccache
@@ -155,14 +162,6 @@ then
   # python
   time pip install --user -r $DIR/requirements.macos.txt
   time pip install --user --upgrade virtualenv Mako tox setuptools==77.0.1 twisted
-
-  # Install Python 3.9 if it doesn't exist
-  if [ ! -f "/usr/local/bin/python3.9" ]; then
-    time curl -O https://www.python.org/ftp/python/3.9.10/python-3.9.10-macos11.pkg
-    echo "ce518246c6b8bf907f0c932eaa254476ac6788b3e40536b8d89c89ddf684fff6  python-3.9.10-macos11.pkg" > /tmp/python_installer_checksum.sha256
-    shasum -c /tmp/python_installer_checksum.sha256
-    time sudo installer -pkg ./python-3.9.10-macos11.pkg -target /
-  fi
 
   # Install Python 3.10 if it doesn't exist
   if [ ! -f "/usr/local/bin/python3.10" ]; then

@@ -48,6 +48,8 @@ class Http2Settings {
     kGrpcAllowSecurityFrameWireId = 65029,
   };
 
+  constexpr static uint8_t kNumSettings = 9u;
+
   void Diff(bool is_first_send, const Http2Settings& old_setting,
             absl::FunctionRef<void(uint16_t key, uint32_t value)> cb) const;
   GRPC_MUST_USE_RESULT http2::Http2ErrorCode Apply(uint16_t key,
@@ -124,6 +126,23 @@ class Http2Settings {
     return 2147483647u;
   }
 
+  static bool IsKnownSettingId(const uint16_t id) {
+    switch (id) {
+      case kHeaderTableSizeWireId:
+      case kEnablePushWireId:
+      case kMaxConcurrentStreamsWireId:
+      case kInitialWindowSizeWireId:
+      case kMaxFrameSizeWireId:
+      case kMaxHeaderListSizeWireId:
+      case kGrpcAllowTrueBinaryMetadataWireId:
+      case kGrpcPreferredReceiveCryptoFrameSizeWireId:
+      case kGrpcAllowSecurityFrameWireId:
+        return true;
+      default:
+        return false;
+    }
+  }
+
   static std::string WireIdToName(uint16_t wire_id);
 
   bool operator==(const Http2Settings& rhs) const {
@@ -161,8 +180,6 @@ class Http2Settings {
   // We plan to change that in the future.
   uint32_t header_table_size_ = 4096u;
 
-  // TODO(tjagtap) [PH2][P4] : Get the history of why this default was decided
-  // and write it here.
   // CLIENT : Set only once in the lifetime of a client transport. This is set
   // to 0 for client.
   // SERVER : This setting can change for the server. This is usually changed to
@@ -180,8 +197,6 @@ class Http2Settings {
   // handle memory pressure.
   uint32_t max_frame_size_ = 16384u;
 
-  // TODO(tjagtap) [PH2][P4] : Get the history of why this default was decided
-  // and write it here.
   // This is an advisory but we currently enforce it.
   // Set only once in the lifetime of a transport currently.
   // When a peer that updates this more than once, that may indicate either an

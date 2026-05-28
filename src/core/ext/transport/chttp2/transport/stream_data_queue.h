@@ -564,8 +564,6 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
         /*flags=*/handle_dequeue.GetDequeueFlags()};
   }
 
-  // TODO(tjagtap) : [PH2][P1][FlowControl] : Call this while processing
-  // window update frame.
   // Needs to be invoked when the peer sends stream flow control window update.
   // stream_fc_tokens represents the stream flow control (delta) window +
   // intial_window_size.

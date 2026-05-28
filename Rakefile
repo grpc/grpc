@@ -83,7 +83,7 @@ desc 'Build the Windows gRPC DLLs for Ruby. The argument contains the list of pl
 task 'dlls', [:plat] do |t, args|
   grpc_config = ENV['GRPC_CONFIG'] || 'opt'
   verbose = ENV['V'] || '0'
-  # use env variable to set artifact build paralellism
+  # use env variable to set artifact build parallelism
   nproc_override = ENV['GRPC_RUBY_BUILD_PROCS'] || `nproc`.strip
   plat_list = args[:plat]
 
@@ -143,12 +143,12 @@ task 'gem:native', [:plat, :build_type] do |t, args|
   verbose = ENV['V'] || '0'
 
   grpc_config = ENV['GRPC_CONFIG'] || 'opt'
-  target_ruby_minor_versions = ['4.0', '3.4', '3.3', '3.2', '3.1']
+  target_ruby_minor_versions = ['4.0', '3.4', '3.3', '3.2']
   # For presubmits, only build the earliest and latest versions
   target_ruby_minor_versions = [target_ruby_minor_versions.first, target_ruby_minor_versions.last] if args[:build_type] == 'presubmit'
   selected_plat = "#{args[:plat]}"
 
-  # use env variable to set artifact build paralellism
+  # use env variable to set artifact build parallelism
   nproc_override = ENV['GRPC_RUBY_BUILD_PROCS'] || `nproc`.strip
 
   # propagate env variables with ccache configuration to the rake-compiler-dock docker container
