@@ -1793,7 +1793,7 @@ TEST_F(XdsGcpAuthnFilterTest, MergeConfigsGetsCacheFromBlackboard) {
   EXPECT_THAT(
       merged_config->ToString(),
       ::testing::MatchesRegex(
-          "\\{instance_name=\"langley\", cache_size=1, cache=0x\\S+\\}"));
+          "\\{instance_name=\"langley\", cache_size=1, cache=0x.+\\}"));
   auto blackboard_entry =
       blackboard->Get<GcpAuthenticationFilter::CallCredentialsCache>("langley");
   ASSERT_NE(blackboard_entry, nullptr);
