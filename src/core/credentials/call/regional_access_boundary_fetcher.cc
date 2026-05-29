@@ -354,8 +354,8 @@ void EmailFetcher::OnEmailFetchComplete(absl::string_view email) {
     absl::string_view trimmed_email = absl::StripAsciiWhitespace(email);
     if (trimmed_email.find('@') == absl::string_view::npos) {
       LOG(INFO) << "Regional Access Boundary fetch skipped: service account "
-                   "email is not a valid email address (could be a SPIFFE ID "
-                   "or managed workload identity): \""
+                   "email is not a valid email address (could be a principal "
+                   "string or pool id): \""
                 << trimmed_email << "\"";
       state_ = RefCountedPtr<RegionalAccessBoundaryFetcher>(nullptr);
       return;
