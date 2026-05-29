@@ -1345,6 +1345,59 @@ TEST_F(Http2ClientTransportTest,
   step4->Wait();
 }
 
+TEST_F(Http2ClientTransportTest, TestDestructionWithStalledStreamInQueue) {
+  ExecCtx ctx;
+  StrictMock<MockFunction<void()>> on_done;
+  EXPECT_CALL(on_done, Call());
+
+  // 1. Initialize transport BUT DO NOT spawn transport loops.
+  InitTransport(GetChannelArgs());
+
+  // 2. Start call and push message. This enqueues the stream to
+  //    writable_stream_list_ synchronously on the Call party.
+  //    Since transport loops are not running, it is never dequeued.
+  CallInitiator initiator = StartCall(TestInitialMetadata());
+
+  // Wait for server trailing metadata.
+  initiator.SpawnInfallible("test-wait", [initiator, &on_done]() mutable {
+    return Seq(initiator.PullServerTrailingMetadata(),
+               [&on_done](ServerMetadataHandle metadata) mutable {
+                 // Expect the call to be cancelled.
+                 EXPECT_THAT(
+                     metadata->get(GrpcCallWasCancelled()).value_or(false),
+                     true);
+                 on_done.Call();
+                 return Empty{};
+               });
+  });
+
+  initiator.SpawnGuarded("test-send", [initiator]() mutable {
+    return Seq(
+        initiator.PushMessage(Arena::MakePooled<Message>(
+            SliceBuffer(Slice::FromExternalString("Hello!")), 0)),
+        [initiator = initiator]() mutable { return initiator.FinishSends(); },
+        []() { return absl::OkStatus(); });
+  });
+
+  // 3. Expect GOAWAY from Orphan when the transport ref is released.
+  std::shared_ptr<EventSequenceEndpoint::Step> step = endpoint()->NewStep();
+  step->ThenExpectWrite({
+      helper_.SerializedGoawayFrame(
+          /*debug_data=*/"Orphaned", /*last_stream_id=*/0,
+          /*error_code=*/
+          static_cast<uint32_t>(Http2ErrorCode::kInternalError)),
+  });
+
+  // 4. Reset transport immediately.
+  // Stream is guaranteed to be in writable_stream_list_.
+  client_transport_.reset();
+
+  // Simulate upper-layer cancellation when connection is closed!
+  initiator.SpawnInfallible("Cancel", [initiator]() mutable {
+    initiator.Cancel(absl::CancelledError("Cancelled"));
+  });
+}
+
 // TODO(tjagtap) : [PH2][P2] Write tests similar to
 // TestHeaderDataHeaderFrameOrder for Continuation frame read.
 

@@ -140,6 +140,8 @@ class Stream : public RefCounted<Stream> {
   // Only server can send trailing metadata in gRPC C++.
   auto EnqueueTrailingMetadata(ServerMetadataHandle&& metadata) {
     GRPC_HTTP2_STREAM_LOG << "Stream::EnqueueTrailingMetadata";
+    GRPC_DCHECK(std::holds_alternative<CallInitiator>(call_))
+        << "Only supported for server";
     return data_queue_->EnqueueTrailingMetadata(std::move(metadata));
   }
 

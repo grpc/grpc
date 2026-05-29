@@ -917,6 +917,9 @@ grpc_cc_library(
 grpc_cc_library(
     name = "virtual_channel",
     hdrs = ["include/grpcpp/virtual_channel.h"],
+    external_deps = [
+        "absl/functional:any_invocable",
+    ],
     visibility = ["//:__subpackages__"],
     deps = [
         "grpc++_public_hdrs",
@@ -2116,7 +2119,6 @@ grpc_cc_library(
         "//src/core:arena_promise",
         "//src/core:atomic_utils",
         "//src/core:bitset",
-        "//src/core:blackboard",
         "//src/core:call_destination",
         "//src/core:call_filters",
         "//src/core:call_final_info",
@@ -4118,7 +4120,6 @@ grpc_cc_library(
         "//src/core:arena",
         "//src/core:arena_promise",
         "//src/core:backend_metric_parser",
-        "//src/core:blackboard",
         "//src/core:call_destination",
         "//src/core:call_spine",
         "//src/core:cancel_callback",

@@ -122,7 +122,7 @@ class SettingsPromiseManager final : public RefCounted<SettingsPromiseManager> {
     if (is_valid) {
       RecordReceivedAck();
     } else {
-      LOG(ERROR) << "Settings ack received without sending settings. Ignore.";
+      LOG(ERROR) << "Settings ack received without sending settings.";
       // CHTTP2 and PH2 return connection error for an unsolicited SETTINGS ACK.
       // RFC 9113 does not explicitly specify unsolicited ACK handling.
       return http2::Http2Status::Http2ConnectionError(
@@ -308,8 +308,11 @@ class SettingsPromiseManager final : public RefCounted<SettingsPromiseManager> {
         << "Security frame must not be received before SETTINGS frame";
     // TODO(tjagtap) : [PH2][P3] : Evaluate when to accept the frame and when to
     // reject it. Compare it with the requirement and with CHTTP2.
-    return (settings_.local().allow_security_frame()) &&
-           settings_.peer().allow_security_frame();
+    const bool is_expected = (settings_.local().allow_security_frame()) &&
+                             settings_.peer().allow_security_frame();
+    GRPC_SETTINGS_TIMEOUT_DLOG
+        << "SettingsPromiseManager::IsSecurityFrameExpected: " << is_expected;
+    return is_expected;
   };
 
  private:

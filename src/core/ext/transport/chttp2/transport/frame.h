@@ -278,6 +278,12 @@ constexpr uint16_t kMaxNoopContinuationFrames = 128u;
 struct Http2FrameCountTracker {
   void OnEndHeaders() { noop_continuation_frames = 0u; }
 
+  std::string DebugString() const {
+    return absl::StrCat(
+        "{ noop_continuation_frames : ", noop_continuation_frames,
+        ", noop_data_frames : ", noop_data_frames, "}");
+  }
+
   uint16_t noop_continuation_frames = 0u;
   uint16_t noop_data_frames = 0u;
 };
@@ -288,13 +294,13 @@ struct Http2FrameCountTracker {
 http2::Http2Status ValidateSettingsValues(
     std::vector<Http2SettingsFrame::Setting>& list);
 
-http2::Http2Status ValidateFrameHeader(uint32_t max_frame_size_setting,
-                                       bool incoming_header_in_progress,
-                                       uint32_t incoming_header_stream_id,
-                                       Http2FrameHeader& current_frame_header,
-                                       uint32_t last_stream_id, bool is_client,
-                                       bool is_first_settings_processed,
-                                       Http2FrameCountTracker& tracker);
+http2::Http2Status ValidateFrameHeader(
+    const uint32_t max_frame_size_setting,
+    const bool incoming_header_in_progress,
+    const uint32_t incoming_header_stream_id,
+    const Http2FrameHeader& current_frame_header, const uint32_t last_stream_id,
+    const bool is_client, const bool is_first_settings_processed,
+    Http2FrameCountTracker& tracker);
 
 ///////////////////////////////////////////////////////////////////////////////
 // RFC9113 Related Strings and Consts
@@ -358,8 +364,7 @@ inline constexpr absl::string_view kPaddingLengthLargerThanFrameLength =
 // Misc Errors
 inline constexpr absl::string_view kNoPushPromise =
     "RFC9113: PUSH_PROMISE MUST NOT be sent if the SETTINGS_ENABLE_PUSH "
-    "setting of the "
-    "peer endpoint is set to 0";
+    "setting of the peer endpoint is set to 0";
 
 inline constexpr absl::string_view kAssemblerContiguousSequenceError =
     "RFC9113 : Field blocks MUST be transmitted as a contiguous sequence "
@@ -403,6 +408,11 @@ inline constexpr absl::string_view kFirstSettingsFrameServer =
     "empty. Clients and servers MUST treat an invalid connection preface as a "
     "connection error of type PROTOCOL_ERROR.";
 
+inline constexpr absl::string_view kIdleStreamError =
+    "Stream Idle : Receiving any frame other than HEADERS or PRIORITY on a "
+    "stream in this state MUST be treated as a connection error of type "
+    "PROTOCOL_ERROR.";
+
 inline constexpr uint32_t kMaxStreamId31Bit = 0x7fffffffu;
 inline constexpr uint32_t kMaxSize31Bit = 0x7fffffffu;
 inline constexpr uint32_t kMinimumFrameSize = 16384;
@@ -427,6 +437,8 @@ inline constexpr absl::string_view kTooManyZeroLengthDataFrames =
     "gRPC Transport Error : Received too many zero length DATA frames";
 inline constexpr absl::string_view kUnsolicitedSettingsAck =
     "gRPC Transport Error : Received unsolicited SETTINGS ACK.";
+inline constexpr absl::string_view kFailedToEnqueueStream =
+    "gRPC Transport Error : Failed to enqueue stream to writable stream list";
 }  // namespace GrpcErrors
 
 }  // namespace grpc_core

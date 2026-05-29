@@ -27,7 +27,6 @@
 #include "src/core/call/interception_chain.h"
 #include "src/core/call/metadata_batch.h"
 #include "src/core/client_channel/client_channel_internal.h"
-#include "src/core/filter/blackboard.h"
 #include "src/core/filter/filter_chain.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/resource_quota/arena.h"
@@ -63,9 +62,7 @@ class ConfigSelector : public RefCounted<ConfigSelector> {
 
   // The channel will call this when the resolver returns a new ConfigSelector
   // to initialize the filter chains that the ConfigSelector may need.
-  virtual void BuildFilterChains(FilterChainBuilder& builder,
-                                 const Blackboard* old_blackboard,
-                                 Blackboard* new_blackboard) = 0;
+  virtual void BuildFilterChains(FilterChainBuilder& builder) = 0;
 
   // Gets the configuration for the call and stores it in service config
   // call data.
@@ -105,9 +102,7 @@ class DefaultConfigSelector final : public ConfigSelector {
     return kFactory.Create();
   }
 
-  void BuildFilterChains(FilterChainBuilder& builder,
-                         const Blackboard* /*old_blackboard*/,
-                         Blackboard* /*new_blackboard*/) override {
+  void BuildFilterChains(FilterChainBuilder& builder) override {
     filter_chain_ = builder.Build();
   }
 

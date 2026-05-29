@@ -1232,6 +1232,7 @@ grpc_cc_test(
         "//src/core:notification",
         "//src/core:ph2_stream",
         "//src/core:poll",
+        "//src/core:read_context",
         "//src/core:ref_counted",
         "//src/core:sleep",
         "//src/core:slice_buffer",
