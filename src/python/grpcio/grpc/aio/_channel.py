@@ -483,7 +483,8 @@ class Channel(_base_channel.Channel):
         resolved = await self._channel.watch_connectivity_state(
             last_observed_state.value[0], None
         )
-        assert resolved
+        if not resolved:
+            raise RuntimeError("Connectivity state watch failed")
 
     async def channel_ready(self) -> None:
         state = self.get_state(try_to_connect=True)
