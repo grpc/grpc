@@ -483,7 +483,7 @@ class Channel(_base_channel.Channel):
             last_observed_state.value[0], None
         )
         if not resolved:
-            error_msg = "Connectivity state watch failed"
+            error_msg = "gRPC channel connectivity state watch failed unexpectedly."
             raise RuntimeError(error_msg)
 
     async def channel_ready(self) -> None:
