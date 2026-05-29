@@ -1216,7 +1216,9 @@ requested load report in step 3. Similar to step 2.
 ### max_concurrent_streams_connection_scaling
 
 This test verifies that when the maximum concurrent streams limit has been reached
-on the connection, the subchannel scales connections upto the configured limit.
+on the connection, the subchannel scales connections upto the configured limit. This
+test needs to be invoked with --max_concurrent_streams_limit=2 and --service_config_json
+specifying maxConnectionsPerSubchannel of 2.
 
 Server features:
 * [FullDuplexCall][]
@@ -1224,16 +1226,9 @@ Server features:
 * [Fill Peer Socket Address][]
 
 Procedure:
- 1. Client creates a channel with a service config setting the connection scaling limit per subchannel to 2:
-    ```
-    {
-      connectionScaling:{
-        maxConnectionsPerSubchannel: 2
-      }
-    }
-    ```
+ 1. Client creates a channel to the server.
 
- 2.  Client starts 3 FullDuplexCall rpcs with a request to fill the peer socket address in
+ 2. Client starts 3 FullDuplexCall rpcs with a request to fill the peer socket address in
  the response.
 
     ```
