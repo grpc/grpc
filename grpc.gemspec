@@ -3453,6 +3453,7 @@ Gem::Specification.new do |s|
   s.files += %w( third_party/upb/upb/generated_code_support.h )
   s.files += %w( third_party/upb/upb/hash/common.c )
   s.files += %w( third_party/upb/upb/hash/common.h )
+  s.files += %w( third_party/upb/upb/hash/ext_table.h )
   s.files += %w( third_party/upb/upb/hash/int_table.h )
   s.files += %w( third_party/upb/upb/hash/str_table.h )
   s.files += %w( third_party/upb/upb/json/decode.c )

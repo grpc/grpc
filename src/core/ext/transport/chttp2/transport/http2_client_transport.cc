@@ -1078,11 +1078,6 @@ absl::Status Http2ClientTransport::DequeueStreamFrames(
                                          /*close_writes=*/true});
   }
 
-  // Update the write_bytes_remaining_ based on the bytes consumed
-  // in the current dequeue.
-  // Note: We do tend to overestimate the bytes consumed here. This may result
-  // in sending less data than target_write_size_.
-
   GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport::DequeueStreamFrames "
                             "After dequeue: "
                          << write_cycle.DebugString()
@@ -1118,10 +1113,6 @@ auto Http2ClientTransport::MultiplexerLoop() {
             }
             NotifyUrgentFramesWriteDone();
             WriteCycle& write_cycle = transport_write_context_.GetWriteCycle();
-            GRPC_HTTP2_CLIENT_DLOG
-                << "Http2ClientTransport::MultiplexerLoop "
-                << "Starting to iterate over writable stream list "
-                << write_cycle.DebugString();
             // Drain all the writable streams till we have written
             // max_write_size_ bytes of data or there is no more data to send.
             // In some cases, we may write more than max_write_size_ bytes(like
@@ -1357,7 +1348,6 @@ void Http2ClientTransport::SpawnTransportLoops() {
   // For Client, write happens before read. So MultiplexerLoop is spawned first.
   // ReadLoop is spawned after the first write.
   // For Server, read happens before write. So ReadLoop is spawned first.
-  // MultiplexerLoop is spawned after the first read.
   SpawnGuardedTransportParty("MultiplexerLoop",
                              UntilTransportClosed(MultiplexerLoop()));
   GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport::SpawnTransportLoops End";
