@@ -270,6 +270,7 @@ Pod::Spec.new do |s|
     ss.dependency 'abseil/random/random', abseil_version
     ss.dependency 'abseil/status/status', abseil_version
     ss.dependency 'abseil/status/statusor', abseil_version
+    ss.dependency 'abseil/strings/charset', abseil_version
     ss.dependency 'abseil/strings/cord', abseil_version
     ss.dependency 'abseil/strings/internal', abseil_version
     ss.dependency 'abseil/strings/str_format', abseil_version
@@ -1590,6 +1591,7 @@ Pod::Spec.new do |s|
                       'third_party/upb/upb/base/upcast.h',
                       'third_party/upb/upb/generated_code_support.h',
                       'third_party/upb/upb/hash/common.h',
+                      'third_party/upb/upb/hash/ext_table.h',
                       'third_party/upb/upb/hash/int_table.h',
                       'third_party/upb/upb/hash/str_table.h',
                       'third_party/upb/upb/json/decode.h',
@@ -2974,6 +2976,7 @@ Pod::Spec.new do |s|
                               'third_party/upb/upb/base/upcast.h',
                               'third_party/upb/upb/generated_code_support.h',
                               'third_party/upb/upb/hash/common.h',
+                              'third_party/upb/upb/hash/ext_table.h',
                               'third_party/upb/upb/hash/int_table.h',
                               'third_party/upb/upb/hash/str_table.h',
                               'third_party/upb/upb/json/decode.h',
