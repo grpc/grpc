@@ -574,7 +574,7 @@ class UnaryUnaryCall(
         self._invocation_task = loop.create_task(self._invoke())
         self._init_unary_response_mixin(self._invocation_task)
 
-    async def _invoke(self) -> ResponseType:
+    async def _invoke(self) -> Union[ResponseType, EOFType]:
         serialized_request = _common.serialize(
             self._request, self._request_serializer
         )
@@ -700,7 +700,7 @@ class StreamUnaryCall(
         self._init_stream_request_mixin(request_iterator)
         self._init_unary_response_mixin(loop.create_task(self._conduct_rpc()))
 
-    async def _conduct_rpc(self) -> ResponseType:
+    async def _conduct_rpc(self) -> Union[ResponseType, EOFType]:
         try:
             serialized_response = await self._cython_call.stream_unary(
                 self._metadata, self._metadata_sent_observer, self._context
