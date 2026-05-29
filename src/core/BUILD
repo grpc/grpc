@@ -11424,7 +11424,7 @@ grpc_cc_library(
     ],
     hdrs = ["channelz/zviz/html.h"],
     external_deps = [
-        "absl/container:flat_hash_map",
+        "absl/container:node_hash_map",
         "absl/strings",
         "absl/strings:string_view",
         "absl/types:span",
