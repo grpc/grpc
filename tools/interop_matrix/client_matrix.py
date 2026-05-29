@@ -58,7 +58,7 @@ LANG_RUNTIME_MATRIX = {
     "python": ["python", "pythonasyncio"],
     "node": ["node"],
     "ruby": ["ruby"],
-    "php": ["php7"],
+    "php": ["php8"],
     "csharp": ["csharp", "csharpcoreclr"],
 }
 
