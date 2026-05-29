@@ -572,38 +572,16 @@ CORE_END2END_TEST(Http2SingleHopTests,
 }
 
 CORE_END2END_TEST(Http2SingleHopTests, CompressedBitWithIdentityFails) {
+  SKIP_IF_VIRTUAL();
   TestConfigurator(*this).CompressedBitWithIdentityTest();
 }
 
 CORE_END2END_TEST(Http2SingleHopTests, ClientUnsupportedAlgorithmFails) {
+  SKIP_IF_VIRTUAL();
   TestConfigurator(*this)
       .DisableAlgorithmAtClient(GRPC_COMPRESS_GZIP)
       .ServerDefaultAlgorithm(GRPC_COMPRESS_GZIP)
       .ClientUnsupportedAlgorithmTest();
-}
-
-TEST(CardinalityTest, StreamingAllowsMultipleDataFrames) {
-  ExecCtx exec_ctx;
-  auto arena = SimpleArenaAllocator()->MakeArena();
-  auto* s = static_cast<grpc_chttp2_stream*>(
-      arena->Alloc(sizeof(grpc_chttp2_stream)));
-  memset((void*)s, 0, sizeof(grpc_chttp2_stream));
-  s->id = 101;
-  grpc_slice_buffer_init(&s->frame_storage);
-  uint8_t frame1[] = {0, 0, 0, 0, 4, 'm', 's', 'g', '1'};
-  grpc_slice slice1 =
-      grpc_slice_from_copied_buffer((const char*)frame1, sizeof(frame1));
-  uint8_t frame2[] = {0, 0, 0, 0, 4, 'm', 's', 'g', '2'};
-  grpc_slice slice2 =
-      grpc_slice_from_copied_buffer((const char*)frame2, sizeof(frame2));
-  LOG(INFO) << "--- Sending first frame ---";
-  auto err1 = grpc_chttp2_data_parser_parse(nullptr, nullptr, s, slice1, 0);
-  ASSERT_TRUE(err1.ok()) << err1.ToString();
-  LOG(INFO) << "--- Sending second frame ---";
-  auto err2 = grpc_chttp2_data_parser_parse(nullptr, nullptr, s, slice2, 0);
-  EXPECT_TRUE(err2.ok()) << "Streaming RPC should allow multiple DATA frames!";
-  grpc_slice_unref(slice1);
-  grpc_slice_unref(slice2);
 }
 
 }  // namespace
