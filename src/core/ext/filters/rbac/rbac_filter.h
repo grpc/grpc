@@ -25,6 +25,7 @@
 #include "src/core/lib/channel/promise_based_filter.h"
 #include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/security/authorization/evaluate_args.h"
+#include "src/core/lib/security/authorization/grpc_authorization_engine.h"
 #include "src/core/lib/security/authorization/rbac_policy.h"
 #include "src/core/lib/transport/transport.h"
 #include "absl/status/statusor.h"
@@ -81,9 +82,7 @@ class RbacFilter : public ImplementChannelFilter<RbacFilter> {
  private:
   // TODO(roth): Remove these fields as part of removing the
   // xds_server_filter_chain_per_route experiment.
-  // The index of this filter instance among instances of the same filter.
   size_t index_;
-  // Assigned index for service config data from the parser.
   const size_t service_config_parser_index_;
 
   GrpcAuthorizationEngine authorization_engine_;
