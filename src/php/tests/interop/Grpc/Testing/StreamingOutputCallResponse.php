@@ -66,9 +66,8 @@ class StreamingOutputCallResponse extends \Google\Protobuf\Internal\Message
      * @param \Grpc\Testing\Payload $var
      * @return $this
      */
-    public function setPayload($var)
+    public function setPayload(\Grpc\Testing\Payload|null $var)
     {
-        GPBUtil::checkMessage($var, \Grpc\Testing\Payload::class);
         $this->payload = $var;
 
         return $this;

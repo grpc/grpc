@@ -203,6 +203,20 @@ describe 'Server Interceptors' do
         expect(stub.an_rpc(request)).to be_a(EchoMsg)
       end
     end
+
+    it 'should be invoked in FIFO order', server: true do
+      expect(interceptor).to receive(:request_response).ordered
+        .once.and_call_original
+      expect(interceptor2).to receive(:request_response).ordered
+        .once.and_call_original
+      expect(interceptor3).to receive(:request_response).ordered
+        .once.and_call_original
+
+      run_services_on_server(@server, services: [service]) do
+        stub = build_insecure_stub(EchoStub)
+        expect(stub.an_rpc(request)).to be_a(EchoMsg)
+      end
+    end
   end
 
   context 'when an interceptor is not added' do

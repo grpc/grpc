@@ -61,7 +61,7 @@ inline void EnableLoggingForPH2Tests() {
 
 inline void ApplyCommonChannelArguments(ChannelArguments& args) {
   if (grpc_core::IsPromiseBasedHttp2ClientTransportEnabled()) {
-    // TODO(tjagtap) [PH2][P2] Consider removing when bug in
+    // TODO(tjagtap) [PH2][P5][Retry] Consider removing when bug in
     // retry_interceptor.cc is fixed.
     args.SetInt(GRPC_ARG_ENABLE_RETRIES, 0);
   }

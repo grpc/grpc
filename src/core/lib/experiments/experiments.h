@@ -92,19 +92,29 @@ inline bool IsFailRecvMetadataOnDeadlineExceededEnabled() { return false; }
 inline bool IsFreeLargeAllocatorEnabled() { return false; }
 inline bool IsFuseFiltersEnabled() { return false; }
 inline bool IsH2MaxDeallocatingStreamsHeadroomEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_INPROC_CANCEL_STREAM
+inline bool IsInprocCancelStreamEnabled() { return true; }
 inline bool IsKeepAlivePingTimerBatchEnabled() { return false; }
 inline bool IsLocalConnectorSecureEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_MAX_INFLIGHT_PINGS_STRICT_LIMIT
 inline bool IsMaxInflightPingsStrictLimitEnabled() { return true; }
 inline bool IsMemoryOptimization01Enabled() { return false; }
 inline bool IsMemoryOptimization02Enabled() { return false; }
+inline bool IsMessageSizeRefactoringEnabled() { return false; }
+inline bool IsMetadataOutstandingTokenRefactorEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_METADATA_PUBLISH_TO_APP_TAG
 inline bool IsMetadataPublishToAppTagEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_MONITORING_EXPERIMENT
 inline bool IsMonitoringExperimentEnabled() { return true; }
 inline bool IsMultipingEnabled() { return false; }
-inline bool IsOptimization01Enabled() { return false; }
-inline bool IsOptimization02Enabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_OPTIMIZATION_01
+inline bool IsOptimization01Enabled() { return true; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_OPTIMIZATION_02
+inline bool IsOptimization02Enabled() { return true; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_OPTIMIZATION_03
+inline bool IsOptimization03Enabled() { return true; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_OPTIMIZATION_04
+inline bool IsOptimization04Enabled() { return true; }
 inline bool IsOtelExportTelemetryDomainsEnabled() { return false; }
 inline bool IsPh2Perf01Enabled() { return false; }
 inline bool IsPickFirstIgnoreEmptyUpdatesEnabled() { return false; }
@@ -132,9 +142,9 @@ inline bool IsTcpRcvLowatEnabled() { return false; }
 inline bool IsTsiFrameProtectorWithoutLocksEnabled() { return false; }
 inline bool IsUnconstrainedMaxQuotaBufferSizeEnabled() { return false; }
 inline bool IsUseCallEventEngineInCompletionQueueEnabled() { return false; }
+inline bool IsVerboseChannelzConnectionLoggingEnabled() { return false; }
 inline bool IsWildcardIpExpansionRestrictionEnabled() { return false; }
-#define GRPC_EXPERIMENT_IS_INCLUDED_XDS_CHANNEL_FILTER_CHAIN_PER_ROUTE
-inline bool IsXdsChannelFilterChainPerRouteEnabled() { return true; }
+inline bool IsXdsServerFilterChainPerRouteEnabled() { return false; }
 
 #elif defined(GPR_WINDOWS)
 inline bool IsBufferListDeletionPrepEnabled() { return false; }
@@ -172,19 +182,29 @@ inline bool IsFailRecvMetadataOnDeadlineExceededEnabled() { return false; }
 inline bool IsFreeLargeAllocatorEnabled() { return false; }
 inline bool IsFuseFiltersEnabled() { return false; }
 inline bool IsH2MaxDeallocatingStreamsHeadroomEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_INPROC_CANCEL_STREAM
+inline bool IsInprocCancelStreamEnabled() { return true; }
 inline bool IsKeepAlivePingTimerBatchEnabled() { return false; }
 inline bool IsLocalConnectorSecureEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_MAX_INFLIGHT_PINGS_STRICT_LIMIT
 inline bool IsMaxInflightPingsStrictLimitEnabled() { return true; }
 inline bool IsMemoryOptimization01Enabled() { return false; }
 inline bool IsMemoryOptimization02Enabled() { return false; }
+inline bool IsMessageSizeRefactoringEnabled() { return false; }
+inline bool IsMetadataOutstandingTokenRefactorEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_METADATA_PUBLISH_TO_APP_TAG
 inline bool IsMetadataPublishToAppTagEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_MONITORING_EXPERIMENT
 inline bool IsMonitoringExperimentEnabled() { return true; }
 inline bool IsMultipingEnabled() { return false; }
-inline bool IsOptimization01Enabled() { return false; }
-inline bool IsOptimization02Enabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_OPTIMIZATION_01
+inline bool IsOptimization01Enabled() { return true; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_OPTIMIZATION_02
+inline bool IsOptimization02Enabled() { return true; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_OPTIMIZATION_03
+inline bool IsOptimization03Enabled() { return true; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_OPTIMIZATION_04
+inline bool IsOptimization04Enabled() { return true; }
 inline bool IsOtelExportTelemetryDomainsEnabled() { return false; }
 inline bool IsPh2Perf01Enabled() { return false; }
 inline bool IsPickFirstIgnoreEmptyUpdatesEnabled() { return false; }
@@ -212,9 +232,9 @@ inline bool IsTcpRcvLowatEnabled() { return false; }
 inline bool IsTsiFrameProtectorWithoutLocksEnabled() { return false; }
 inline bool IsUnconstrainedMaxQuotaBufferSizeEnabled() { return false; }
 inline bool IsUseCallEventEngineInCompletionQueueEnabled() { return false; }
+inline bool IsVerboseChannelzConnectionLoggingEnabled() { return false; }
 inline bool IsWildcardIpExpansionRestrictionEnabled() { return false; }
-#define GRPC_EXPERIMENT_IS_INCLUDED_XDS_CHANNEL_FILTER_CHAIN_PER_ROUTE
-inline bool IsXdsChannelFilterChainPerRouteEnabled() { return true; }
+inline bool IsXdsServerFilterChainPerRouteEnabled() { return false; }
 
 #else
 inline bool IsBufferListDeletionPrepEnabled() { return false; }
@@ -252,19 +272,29 @@ inline bool IsFailRecvMetadataOnDeadlineExceededEnabled() { return false; }
 inline bool IsFreeLargeAllocatorEnabled() { return false; }
 inline bool IsFuseFiltersEnabled() { return false; }
 inline bool IsH2MaxDeallocatingStreamsHeadroomEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_INPROC_CANCEL_STREAM
+inline bool IsInprocCancelStreamEnabled() { return true; }
 inline bool IsKeepAlivePingTimerBatchEnabled() { return false; }
 inline bool IsLocalConnectorSecureEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_MAX_INFLIGHT_PINGS_STRICT_LIMIT
 inline bool IsMaxInflightPingsStrictLimitEnabled() { return true; }
 inline bool IsMemoryOptimization01Enabled() { return false; }
 inline bool IsMemoryOptimization02Enabled() { return false; }
+inline bool IsMessageSizeRefactoringEnabled() { return false; }
+inline bool IsMetadataOutstandingTokenRefactorEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_METADATA_PUBLISH_TO_APP_TAG
 inline bool IsMetadataPublishToAppTagEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_MONITORING_EXPERIMENT
 inline bool IsMonitoringExperimentEnabled() { return true; }
 inline bool IsMultipingEnabled() { return false; }
-inline bool IsOptimization01Enabled() { return false; }
-inline bool IsOptimization02Enabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_OPTIMIZATION_01
+inline bool IsOptimization01Enabled() { return true; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_OPTIMIZATION_02
+inline bool IsOptimization02Enabled() { return true; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_OPTIMIZATION_03
+inline bool IsOptimization03Enabled() { return true; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_OPTIMIZATION_04
+inline bool IsOptimization04Enabled() { return true; }
 inline bool IsOtelExportTelemetryDomainsEnabled() { return false; }
 inline bool IsPh2Perf01Enabled() { return false; }
 inline bool IsPickFirstIgnoreEmptyUpdatesEnabled() { return false; }
@@ -292,9 +322,9 @@ inline bool IsTcpRcvLowatEnabled() { return false; }
 inline bool IsTsiFrameProtectorWithoutLocksEnabled() { return false; }
 inline bool IsUnconstrainedMaxQuotaBufferSizeEnabled() { return false; }
 inline bool IsUseCallEventEngineInCompletionQueueEnabled() { return false; }
+inline bool IsVerboseChannelzConnectionLoggingEnabled() { return false; }
 inline bool IsWildcardIpExpansionRestrictionEnabled() { return false; }
-#define GRPC_EXPERIMENT_IS_INCLUDED_XDS_CHANNEL_FILTER_CHAIN_PER_ROUTE
-inline bool IsXdsChannelFilterChainPerRouteEnabled() { return true; }
+inline bool IsXdsServerFilterChainPerRouteEnabled() { return false; }
 #endif
 
 #else
@@ -318,16 +348,21 @@ enum ExperimentIds {
   kExperimentIdFreeLargeAllocator,
   kExperimentIdFuseFilters,
   kExperimentIdH2MaxDeallocatingStreamsHeadroom,
+  kExperimentIdInprocCancelStream,
   kExperimentIdKeepAlivePingTimerBatch,
   kExperimentIdLocalConnectorSecure,
   kExperimentIdMaxInflightPingsStrictLimit,
   kExperimentIdMemoryOptimization01,
   kExperimentIdMemoryOptimization02,
+  kExperimentIdMessageSizeRefactoring,
+  kExperimentIdMetadataOutstandingTokenRefactor,
   kExperimentIdMetadataPublishToAppTag,
   kExperimentIdMonitoringExperiment,
   kExperimentIdMultiping,
   kExperimentIdOptimization01,
   kExperimentIdOptimization02,
+  kExperimentIdOptimization03,
+  kExperimentIdOptimization04,
   kExperimentIdOtelExportTelemetryDomains,
   kExperimentIdPh2Perf01,
   kExperimentIdPickFirstIgnoreEmptyUpdates,
@@ -353,8 +388,9 @@ enum ExperimentIds {
   kExperimentIdTsiFrameProtectorWithoutLocks,
   kExperimentIdUnconstrainedMaxQuotaBufferSize,
   kExperimentIdUseCallEventEngineInCompletionQueue,
+  kExperimentIdVerboseChannelzConnectionLogging,
   kExperimentIdWildcardIpExpansionRestriction,
-  kExperimentIdXdsChannelFilterChainPerRoute,
+  kExperimentIdXdsServerFilterChainPerRoute,
   kNumExperiments
 };
 #define GRPC_EXPERIMENT_IS_INCLUDED_BUFFER_LIST_DELETION_PREP
@@ -435,6 +471,10 @@ inline bool IsFuseFiltersEnabled() {
 inline bool IsH2MaxDeallocatingStreamsHeadroomEnabled() {
   return IsExperimentEnabled<kExperimentIdH2MaxDeallocatingStreamsHeadroom>();
 }
+#define GRPC_EXPERIMENT_IS_INCLUDED_INPROC_CANCEL_STREAM
+inline bool IsInprocCancelStreamEnabled() {
+  return IsExperimentEnabled<kExperimentIdInprocCancelStream>();
+}
 #define GRPC_EXPERIMENT_IS_INCLUDED_KEEP_ALIVE_PING_TIMER_BATCH
 inline bool IsKeepAlivePingTimerBatchEnabled() {
   return IsExperimentEnabled<kExperimentIdKeepAlivePingTimerBatch>();
@@ -455,6 +495,14 @@ inline bool IsMemoryOptimization01Enabled() {
 inline bool IsMemoryOptimization02Enabled() {
   return IsExperimentEnabled<kExperimentIdMemoryOptimization02>();
 }
+#define GRPC_EXPERIMENT_IS_INCLUDED_MESSAGE_SIZE_REFACTORING
+inline bool IsMessageSizeRefactoringEnabled() {
+  return IsExperimentEnabled<kExperimentIdMessageSizeRefactoring>();
+}
+#define GRPC_EXPERIMENT_IS_INCLUDED_METADATA_OUTSTANDING_TOKEN_REFACTOR
+inline bool IsMetadataOutstandingTokenRefactorEnabled() {
+  return IsExperimentEnabled<kExperimentIdMetadataOutstandingTokenRefactor>();
+}
 #define GRPC_EXPERIMENT_IS_INCLUDED_METADATA_PUBLISH_TO_APP_TAG
 inline bool IsMetadataPublishToAppTagEnabled() {
   return IsExperimentEnabled<kExperimentIdMetadataPublishToAppTag>();
@@ -474,6 +522,14 @@ inline bool IsOptimization01Enabled() {
 #define GRPC_EXPERIMENT_IS_INCLUDED_OPTIMIZATION_02
 inline bool IsOptimization02Enabled() {
   return IsExperimentEnabled<kExperimentIdOptimization02>();
+}
+#define GRPC_EXPERIMENT_IS_INCLUDED_OPTIMIZATION_03
+inline bool IsOptimization03Enabled() {
+  return IsExperimentEnabled<kExperimentIdOptimization03>();
+}
+#define GRPC_EXPERIMENT_IS_INCLUDED_OPTIMIZATION_04
+inline bool IsOptimization04Enabled() {
+  return IsExperimentEnabled<kExperimentIdOptimization04>();
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_OTEL_EXPORT_TELEMETRY_DOMAINS
 inline bool IsOtelExportTelemetryDomainsEnabled() {
@@ -576,13 +632,17 @@ inline bool IsUseCallEventEngineInCompletionQueueEnabled() {
   return IsExperimentEnabled<
       kExperimentIdUseCallEventEngineInCompletionQueue>();
 }
+#define GRPC_EXPERIMENT_IS_INCLUDED_VERBOSE_CHANNELZ_CONNECTION_LOGGING
+inline bool IsVerboseChannelzConnectionLoggingEnabled() {
+  return IsExperimentEnabled<kExperimentIdVerboseChannelzConnectionLogging>();
+}
 #define GRPC_EXPERIMENT_IS_INCLUDED_WILDCARD_IP_EXPANSION_RESTRICTION
 inline bool IsWildcardIpExpansionRestrictionEnabled() {
   return IsExperimentEnabled<kExperimentIdWildcardIpExpansionRestriction>();
 }
-#define GRPC_EXPERIMENT_IS_INCLUDED_XDS_CHANNEL_FILTER_CHAIN_PER_ROUTE
-inline bool IsXdsChannelFilterChainPerRouteEnabled() {
-  return IsExperimentEnabled<kExperimentIdXdsChannelFilterChainPerRoute>();
+#define GRPC_EXPERIMENT_IS_INCLUDED_XDS_SERVER_FILTER_CHAIN_PER_ROUTE
+inline bool IsXdsServerFilterChainPerRouteEnabled() {
+  return IsExperimentEnabled<kExperimentIdXdsServerFilterChainPerRoute>();
 }
 
 extern const ExperimentMetadata g_experiment_metadata[kNumExperiments];

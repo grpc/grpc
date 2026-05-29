@@ -9,13 +9,11 @@ The stateful session filter provides a mechanism for routing requests to the sam
 ## Files
 
 *   `stateful_session_filter.h`, `stateful_session_filter.cc`: These files define the `StatefulSessionFilter` class, a client-side filter that provides cookie-based stateful session affinity.
-*   `stateful_session_service_config_parser.h`, `stateful_session_service_config_parser.cc`: These files define the `StatefulSessionServiceConfigParser` class, which is responsible for parsing the stateful session configuration from the service config.
 
 ## Major Classes
 
 *   `grpc_core::StatefulSessionFilter`: The channel filter implementation.
 *   `grpc_core::XdsOverrideHostAttribute`: A call attribute that is used to pass state between the `StatefulSessionFilter` and the `xds_override_host` load balancing policy.
-*   `grpc_core::StatefulSessionServiceConfigParser`: The service config parser for the stateful session configuration.
 
 ## Notes
 

@@ -66,7 +66,7 @@ class Metadata(Collection):  # noqa: PLW1641
         # TODO(asheshvidyut): Make this method public and encourage people to use it instead
         # of `from_tuple` to create metadata from non-tuple types.
         if raw_metadata is None:
-            return Metadata()
+            return cls()
         if isinstance(raw_metadata, cls):
             return raw_metadata
         if raw_metadata:
