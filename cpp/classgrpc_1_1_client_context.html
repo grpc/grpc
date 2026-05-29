@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.80.0</span>
+   &#160;<span id="projectnumber">1.81.0</span>
    </div>
   </td>
  </tr>
@@ -106,6 +106,9 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:ad4e16866fee3f6ee5a10efb5be6f4da6"><td class="memTemplItemLeft" align="right" valign="top">void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_client_context.html#ad4e16866fee3f6ee5a10efb5be6f4da6">set_deadline</a> (const T &amp;<a class="el" href="classgrpc_1_1_client_context.html#a85710b2b34a48b0f83d509c33d0a44b5">deadline</a>)</td></tr>
 <tr class="memdesc:ad4e16866fee3f6ee5a10efb5be6f4da6"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set the deadline for the client call.  <a href="classgrpc_1_1_client_context.html#ad4e16866fee3f6ee5a10efb5be6f4da6">More...</a><br /></td></tr>
 <tr class="separator:ad4e16866fee3f6ee5a10efb5be6f4da6"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7ab4c520de3416787732d5ad5fd709d5"><td class="memTemplParams" colspan="2">template&lt;typename T &gt; </td></tr>
+<tr class="memitem:a7ab4c520de3416787732d5ad5fd709d5"><td class="memTemplItemLeft" align="right" valign="top">void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_client_context.html#a7ab4c520de3416787732d5ad5fd709d5">SetContext</a> (T element)</td></tr>
+<tr class="separator:a7ab4c520de3416787732d5ad5fd709d5"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aa342af7349c88727e8bd4c765a000ae5"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_client_context.html#aa342af7349c88727e8bd4c765a000ae5">set_wait_for_ready</a> (bool wait_for_ready)</td></tr>
 <tr class="memdesc:aa342af7349c88727e8bd4c765a000ae5"><td class="mdescLeft">&#160;</td><td class="mdescRight">Trigger wait-for-ready or not on this request.  <a href="classgrpc_1_1_client_context.html#aa342af7349c88727e8bd4c765a000ae5">More...</a><br /></td></tr>
 <tr class="separator:aa342af7349c88727e8bd4c765a000ae5"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -209,6 +212,8 @@ Friends</h2></td></tr>
 <tr class="memitem:a92aca219290344b2da2560d1b9878b9f"><td class="memTemplParams" colspan="2">template&lt;class InputMessage , class OutputMessage &gt; </td></tr>
 <tr class="memitem:a92aca219290344b2da2560d1b9878b9f"><td class="memTemplItemLeft" align="right" valign="top">class&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_client_context.html#a92aca219290344b2da2560d1b9878b9f">grpc::internal::CallbackUnaryCallImpl</a></td></tr>
 <tr class="separator:a92aca219290344b2da2560d1b9878b9f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af55047f2e31286297ce3dbb62f56ef6b"><td class="memItemLeft" align="right" valign="top">class&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_client_context.html#af55047f2e31286297ce3dbb62f56ef6b">experimental::internal::ClientCallbackSessionImpl</a></td></tr>
+<tr class="separator:af55047f2e31286297ce3dbb62f56ef6b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a9e716734a0f59b30387983163f43519d"><td class="memTemplParams" colspan="2">template&lt;class Request , class Response &gt; </td></tr>
 <tr class="memitem:a9e716734a0f59b30387983163f43519d"><td class="memTemplItemLeft" align="right" valign="top">class&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_client_context.html#a9e716734a0f59b30387983163f43519d">grpc::internal::ClientCallbackReaderWriterImpl</a></td></tr>
 <tr class="separator:a9e716734a0f59b30387983163f43519d"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -939,6 +944,34 @@ template&lt;typename T &gt; </div>
 
 </div>
 </div>
+<a id="a7ab4c520de3416787732d5ad5fd709d5"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a7ab4c520de3416787732d5ad5fd709d5">&#9670;&nbsp;</a></span>SetContext()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;typename T &gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void grpc::ClientContext::SetContext </td>
+          <td>(</td>
+          <td class="paramtype">T&#160;</td>
+          <td class="paramname"><em>element</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
 <a id="ad329c9fdd77093361518ef8ace1ee1f0"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#ad329c9fdd77093361518ef8ace1ee1f0">&#9670;&nbsp;</a></span>SetGlobalCallbacks()</h2>
 
@@ -989,6 +1022,28 @@ template&lt;typename T &gt; </div>
 </div>
 </div>
 <h2 class="groupheader">Friends And Related Function Documentation</h2>
+<a id="af55047f2e31286297ce3dbb62f56ef6b"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#af55047f2e31286297ce3dbb62f56ef6b">&#9670;&nbsp;</a></span>experimental::internal::ClientCallbackSessionImpl</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">friend class <a class="el" href="classgrpc_1_1experimental_1_1internal_1_1_client_callback_session_impl.html">experimental::internal::ClientCallbackSessionImpl</a></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">friend</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
 <a id="a64b4b151a4c51b2faee74a4cd492fbb4"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a64b4b151a4c51b2faee74a4cd492fbb4">&#9670;&nbsp;</a></span>grpc::Channel</h2>
 
@@ -1459,7 +1514,7 @@ template&lt;class Request &gt; </div>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Mar 26 2026 18:32:24 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri May 29 2026 17:40:41 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

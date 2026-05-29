@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC Objective-C
-   &#160;<span id="projectnumber">1.80.0</span>
+   &#160;<span id="projectnumber">1.81.0</span>
    </div>
   </td>
  </tr>
@@ -88,6 +88,12 @@ Instance Methods</h2></td></tr>
 <tr class="memitem:a7880b8488ea7b9315ec920c18ad615fd"><td class="memItemLeft" align="right" valign="top">(void)&#160;</td><td class="memItemRight" valign="bottom">- <a class="el" href="interface_g_r_p_c_unary_proto_call.html#a7880b8488ea7b9315ec920c18ad615fd">cancel</a></td></tr>
 <tr class="memdesc:a7880b8488ea7b9315ec920c18ad615fd"><td class="mdescLeft">&#160;</td><td class="mdescRight">Cancel the request of this call at best effort.  <a href="interface_g_r_p_c_unary_proto_call.html#a7880b8488ea7b9315ec920c18ad615fd">More...</a><br /></td></tr>
 <tr class="separator:a7880b8488ea7b9315ec920c18ad615fd"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a48e00caec18309a77e875ca27a870de2"><td class="memItemLeft" align="right" valign="top">(void)&#160;</td><td class="memItemRight" valign="bottom">- <a class="el" href="interface_g_r_p_c_unary_proto_call.html#a48e00caec18309a77e875ca27a870de2">receiveNextMessage</a></td></tr>
+<tr class="memdesc:a48e00caec18309a77e875ca27a870de2"><td class="mdescLeft">&#160;</td><td class="mdescRight">Tell gRPC to receive another message.  <a href="interface_g_r_p_c_unary_proto_call.html#a48e00caec18309a77e875ca27a870de2">More...</a><br /></td></tr>
+<tr class="separator:a48e00caec18309a77e875ca27a870de2"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5e0739a1f56b3c96107dd991458f93d2"><td class="memItemLeft" align="right" valign="top">(void)&#160;</td><td class="memItemRight" valign="bottom">- <a class="el" href="interface_g_r_p_c_unary_proto_call.html#a5e0739a1f56b3c96107dd991458f93d2">receiveNextMessages:</a></td></tr>
+<tr class="memdesc:a5e0739a1f56b3c96107dd991458f93d2"><td class="mdescLeft">&#160;</td><td class="mdescRight">Tell gRPC to receive another N message.  <a href="interface_g_r_p_c_unary_proto_call.html#a5e0739a1f56b3c96107dd991458f93d2">More...</a><br /></td></tr>
+<tr class="separator:a5e0739a1f56b3c96107dd991458f93d2"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-static-methods"></a>
 Class Methods</h2></td></tr>
@@ -200,6 +206,47 @@ Class Methods</h2></td></tr>
 
 </div>
 </div>
+<a id="a48e00caec18309a77e875ca27a870de2"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a48e00caec18309a77e875ca27a870de2">&#9670;&nbsp;</a></span>receiveNextMessage</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">- (void) receiveNextMessage </td>
+          <td></td>
+          <td class="paramname"></td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Tell gRPC to receive another message. </p>
+<p>This method should only be used when flow control is enabled. If flow control is enabled, gRPC will only receive additional messages after the user indicates so by using either receiveNextMessage: or receiveNextMessages: methods. If flow control is not enabled, messages will be automatically received after the previous one is delivered. </p>
+
+</div>
+</div>
+<a id="a5e0739a1f56b3c96107dd991458f93d2"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a5e0739a1f56b3c96107dd991458f93d2">&#9670;&nbsp;</a></span>receiveNextMessages:</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">- (void) receiveNextMessages: </td>
+          <td></td>
+          <td class="paramtype">(NSUInteger)&#160;</td>
+          <td class="paramname"><em>numberOfMessages</em></td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Tell gRPC to receive another N message. </p>
+<p>This method should only be used when flow control is enabled. If flow control is enabled, the messages received from the server are buffered in gRPC until the user want to receive the next message. If flow control is not enabled, messages will be automatically received after the previous one is delivered. </p>
+
+</div>
+</div>
 <a id="af02926a947dc6b4abb4e41801411c8f9"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#af02926a947dc6b4abb4e41801411c8f9">&#9670;&nbsp;</a></span>start</h2>
 
@@ -226,7 +273,7 @@ Class Methods</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Mar 26 2026 18:33:42 for GRPC Objective-C by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri May 29 2026 17:41:36 for GRPC Objective-C by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

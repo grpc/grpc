@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.80.0</span>
+   &#160;<span id="projectnumber">1.81.0</span>
    </div>
   </td>
  </tr>
@@ -69,7 +69,8 @@ $(function() {
   <div class="summary">
 <a href="#nested-classes">Data Structures</a> &#124;
 <a href="#namespaces">Namespaces</a> &#124;
-<a href="#typedef-members">Typedefs</a>  </div>
+<a href="#typedef-members">Typedefs</a> &#124;
+<a href="#func-members">Functions</a>  </div>
   <div class="headertitle">
 <div class="title">server_callback.h File Reference</div>  </div>
 </div><!--header-->
@@ -117,6 +118,8 @@ Data Structures</h2></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_callback_unary.html">grpc::ServerCallbackUnary</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_server_callback_session.html">grpc::experimental::ServerCallbackSession</a></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_callback_reader.html">grpc::ServerCallbackReader&lt; Request &gt;</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_callback_writer.html">grpc::ServerCallbackWriter&lt; Response &gt;</a></td></tr>
@@ -134,6 +137,8 @@ Data Structures</h2></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_unary_reactor.html">grpc::ServerUnaryReactor</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_server_session_reactor.html">grpc::experimental::ServerSessionReactor</a></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_finish_only_reactor.html">grpc::internal::FinishOnlyReactor&lt; Base &gt;</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
@@ -142,11 +147,13 @@ Namespaces</h2></td></tr>
 <tr class="memitem:namespacegrpc"><td class="memItemLeft" align="right" valign="top"> &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc.html">grpc</a></td></tr>
 <tr class="memdesc:namespacegrpc"><td class="mdescLeft">&#160;</td><td class="mdescRight">An <a class="el" href="classgrpc_1_1_alarm.html" title="Trigger a CompletionQueue event, or asynchronous callback execution, after some deadline.">Alarm</a> posts the user-provided tag to its associated completion queue or invokes the user-provided function on expiry or cancellation. <br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:namespacegrpc_1_1internal"><td class="memItemLeft" align="right" valign="top"> &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc_1_1internal.html">grpc::internal</a></td></tr>
-<tr class="memdesc:namespacegrpc_1_1internal"><td class="mdescLeft">&#160;</td><td class="mdescRight">Models a gRPC server. <br /></td></tr>
-<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:namespacegrpc_1_1experimental"><td class="memItemLeft" align="right" valign="top"> &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc_1_1experimental.html">grpc::experimental</a></td></tr>
 <tr class="memdesc:namespacegrpc_1_1experimental"><td class="mdescLeft">&#160;</td><td class="mdescRight"><a class="el" href="classgrpc_1_1experimental_1_1_client_rpc_info.html">ClientRpcInfo</a> represents the state of a particular RPC as it appears to an interceptor. <br /></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:namespacegrpc_1_1experimental_1_1internal"><td class="memItemLeft" align="right" valign="top"> &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc_1_1experimental_1_1internal.html">grpc::experimental::internal</a></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:namespacegrpc_1_1internal"><td class="memItemLeft" align="right" valign="top"> &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc_1_1internal.html">grpc::internal</a></td></tr>
+<tr class="memdesc:namespacegrpc_1_1internal"><td class="mdescLeft">&#160;</td><td class="mdescRight">Models a gRPC server. <br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="typedef-members"></a>
@@ -162,14 +169,21 @@ Typedefs</h2></td></tr>
 <tr class="memitem:a8460a0e2c6892295a5510e9d285297a7"><td class="memTemplParams" colspan="2">template&lt;class Request , class Response &gt; </td></tr>
 <tr class="memitem:a8460a0e2c6892295a5510e9d285297a7"><td class="memTemplItemLeft" align="right" valign="top">using&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="namespacegrpc_1_1internal.html#a8460a0e2c6892295a5510e9d285297a7">grpc::internal::UnimplementedBidiReactor</a> = FinishOnlyReactor&lt; ServerBidiReactor&lt; Request, Response &gt; &gt;</td></tr>
 <tr class="separator:a8460a0e2c6892295a5510e9d285297a7"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a62662b10dbc8c5ec45fef85097f921ad"><td class="memItemLeft" align="right" valign="top">using&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc_1_1experimental_1_1internal.html#a62662b10dbc8c5ec45fef85097f921ad">grpc::experimental::internal::UnimplementedSessionReactor</a> = <a class="el" href="classgrpc_1_1internal_1_1_finish_only_reactor.html">grpc::internal::FinishOnlyReactor</a>&lt; ServerSessionReactor &gt;</td></tr>
+<tr class="separator:a62662b10dbc8c5ec45fef85097f921ad"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:adedd4841521e4fe210676d8387190cf1"><td class="memTemplParams" colspan="2">template&lt;class Request , class Response &gt; </td></tr>
 <tr class="memitem:adedd4841521e4fe210676d8387190cf1"><td class="memTemplItemLeft" align="right" valign="top">using&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="namespacegrpc_1_1experimental.html#adedd4841521e4fe210676d8387190cf1">grpc::experimental::ServerBidiReactor</a> = ::<a class="el" href="classgrpc_1_1_server_bidi_reactor.html">grpc::ServerBidiReactor</a>&lt; Request, Response &gt;</td></tr>
 <tr class="separator:adedd4841521e4fe210676d8387190cf1"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="func-members"></a>
+Functions</h2></td></tr>
+<tr class="memitem:a2a13032abeb726ead29f70d073918cd3"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc_1_1experimental_1_1internal.html#a2a13032abeb726ead29f70d073918cd3">grpc::experimental::internal::BindSessionToInnerServer</a> (<a class="el" href="grpc__types_8h.html#a122f8f4f0a585396d993d9b55848f222">grpc_call</a> *call, <a class="el" href="classgrpc_1_1_server.html">grpc::Server</a> *inner_server)</td></tr>
+<tr class="separator:a2a13032abeb726ead29f70d073918cd3"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Mar 26 2026 18:32:24 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri May 29 2026 17:40:41 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>
