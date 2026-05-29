@@ -80,6 +80,7 @@ var menudata={children:[
 {text:"m",url:"namespacemembers_type.html#index_m"},
 {text:"r",url:"namespacemembers_type.html#index_r"},
 {text:"s",url:"namespacemembers_type.html#index_s"},
+{text:"t",url:"namespacemembers_type.html#index_t"},
 {text:"u",url:"namespacemembers_type.html#index_u"},
 {text:"z",url:"namespacemembers_type.html#index_z"}]},
 {text:"Enumerations",url:"namespacemembers_enum.html"},

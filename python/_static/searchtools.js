@@ -1,12 +1,5 @@
 /*
- * searchtools.js
- * ~~~~~~~~~~~~~~~~
- *
  * Sphinx JavaScript utilities for the full-text search.
- *
- * :copyright: Copyright 2007-2024 by the Sphinx team, see AUTHORS.
- * :license: BSD, see LICENSE for details.
- *
  */
 "use strict";
 
@@ -20,7 +13,7 @@ if (typeof Scorer === "undefined") {
     // and returns the new score.
     /*
     score: result => {
-      const [docname, title, anchor, descr, score, filename] = result
+      const [docname, title, anchor, descr, score, filename, kind] = result
       return score
     },
     */
@@ -47,6 +40,14 @@ if (typeof Scorer === "undefined") {
   };
 }
 
+// Global search result kind enum, used by themes to style search results.
+class SearchResultKind {
+    static get index() { return  "index"; }
+    static get object() { return "object"; }
+    static get text() { return "text"; }
+    static get title() { return "title"; }
+}
+
 const _removeChildren = (element) => {
   while (element && element.lastChild) element.removeChild(element.lastChild);
 };
@@ -64,9 +65,13 @@ const _displayItem = (item, searchTerms, highlightTerms) => {
   const showSearchSummary = DOCUMENTATION_OPTIONS.SHOW_SEARCH_SUMMARY;
   const contentRoot = document.documentElement.dataset.content_root;
 
-  const [docName, title, anchor, descr, score, _filename] = item;
+  const [docName, title, anchor, descr, score, _filename, kind] = item;
 
   let listItem = document.createElement("li");
+  // Add a class representing the item's type:
+  // can be used by a theme's CSS selector for styling
+  // See SearchResultKind for the class names.
+  listItem.classList.add(`kind-${kind}`);
   let requestUrl;
   let linkUrl;
   if (docBuilder === "dirhtml") {
@@ -115,8 +120,10 @@ const _finishSearch = (resultCount) => {
       "Your search did not match any documents. Please make sure that all words are spelled correctly and that you've selected enough categories."
     );
   else
-    Search.status.innerText = _(
-      "Search finished, found ${resultCount} page(s) matching the search query."
+    Search.status.innerText = Documentation.ngettext(
+      "Search finished, found one page matching the search query.",
+      "Search finished, found ${resultCount} pages matching the search query.",
+      resultCount,
     ).replace('${resultCount}', resultCount);
 };
 const _displayNextItem = (
@@ -138,7 +145,7 @@ const _displayNextItem = (
   else _finishSearch(resultCount);
 };
 // Helper function used by query() to order search results.
-// Each input is an array of [docname, title, anchor, descr, score, filename].
+// Each input is an array of [docname, title, anchor, descr, score, filename, kind].
 // Order the results by score (in opposite order of appearance, since the
 // `_displayNextItem` function uses pop() to retrieve items) and then alphabetically.
 const _orderResultsByScoreThenName = (a, b) => {
@@ -248,6 +255,7 @@ const Search = {
     searchSummary.classList.add("search-summary");
     searchSummary.innerText = "";
     const searchList = document.createElement("ul");
+    searchList.setAttribute("role", "list");
     searchList.classList.add("search");
 
     const out = document.getElementById("search-results");
@@ -318,7 +326,7 @@ const Search = {
     const indexEntries = Search._index.indexentries;
 
     // Collect multiple result groups to be sorted separately and then ordered.
-    // Each is an array of [docname, title, anchor, descr, score, filename].
+    // Each is an array of [docname, title, anchor, descr, score, filename, kind].
     const normalResults = [];
     const nonMainIndexResults = [];
 
@@ -337,6 +345,7 @@ const Search = {
             null,
             score + boost,
             filenames[file],
+            SearchResultKind.title,
           ]);
         }
       }
@@ -354,6 +363,7 @@ const Search = {
             null,
             score,
             filenames[file],
+            SearchResultKind.index,
           ];
           if (isMain) {
             normalResults.push(result);
@@ -475,6 +485,7 @@ const Search = {
         descr,
         score,
         filenames[match[0]],
+        SearchResultKind.object,
       ]);
     };
     Object.keys(objects).forEach((prefix) =>
@@ -585,6 +596,7 @@ const Search = {
         null,
         score,
         filenames[file],
+        SearchResultKind.text,
       ]);
     }
     return results;

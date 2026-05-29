@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.80.0</span>
+   &#160;<span id="projectnumber">1.81.0</span>
    </div>
   </td>
  </tr>
@@ -95,6 +95,9 @@ $(function() {
 <li>CallbackUnaryHandler
 : <a class="el" href="classgrpc_1_1internal_1_1_server_reactor.html#a36fce87741ce699f749216a4c7d36d1f">grpc::internal::ServerReactor</a>
 </li>
+<li>CallContextTypeBase
+: <a class="el" href="classgrpc_1_1impl_1_1_call_context_registry.html#a1c26afc9c7d8081145b104a3bd513dc0">grpc::impl::CallContextRegistry</a>
+</li>
 <li>ClientCallbackReader&lt; Response &gt;
 : <a class="el" href="classgrpc_1_1_client_read_reactor.html#aea195c80cb9809bbc4c6ae8f436cda69">grpc::ClientReadReactor&lt; Response &gt;</a>
 </li>
@@ -106,6 +109,12 @@ $(function() {
 </li>
 <li>ClientCallbackReaderWriterFactory&lt; Request, Response &gt;
 : <a class="el" href="classgrpc_1_1internal_1_1_client_callback_reader_writer_impl.html#aa2491adadbf938f78f8d333783de1160">grpc::internal::ClientCallbackReaderWriterImpl&lt; Request, Response &gt;</a>
+</li>
+<li>ClientCallbackSession
+: <a class="el" href="classgrpc_1_1experimental_1_1_client_session_reactor.html#ad46200e91f2c6cf6a1861dba8aa7bc85">grpc::experimental::ClientSessionReactor</a>
+</li>
+<li>ClientCallbackSessionFactory
+: <a class="el" href="classgrpc_1_1experimental_1_1internal_1_1_client_callback_session_impl.html#ac7ac645863d00543bb3a292c7d844953">grpc::experimental::internal::ClientCallbackSessionImpl</a>
 </li>
 <li>ClientCallbackUnary
 : <a class="el" href="classgrpc_1_1_client_unary_reactor.html#a17f5a31869ecd91f7378b86c16c9af21">grpc::ClientUnaryReactor</a>
@@ -141,6 +150,16 @@ $(function() {
 </li>
 <li>experimental::ChannelResetConnectionBackoff
 : <a class="el" href="classgrpc_1_1_channel.html#afeee855c9424fd530c4aa98bce518243">grpc::Channel</a>
+</li>
+<li>experimental::internal::CallbackSessionHandler
+: <a class="el" href="classgrpc_1_1_byte_buffer.html#a222c37319659799d59faa5870c40d67b">grpc::ByteBuffer</a>
+, <a class="el" href="classgrpc_1_1_service.html#a222c37319659799d59faa5870c40d67b">grpc::Service</a>
+</li>
+<li>experimental::internal::ClientCallbackSessionImpl
+: <a class="el" href="classgrpc_1_1_client_context.html#af55047f2e31286297ce3dbb62f56ef6b">grpc::ClientContext</a>
+</li>
+<li>experimental::SetVirtualService
+: <a class="el" href="classgrpc_1_1_service.html#a692dd62aecc2e86f1f3a78b318bdaf5a">grpc::Service</a>
 </li>
 </ul>
 
@@ -198,6 +217,18 @@ $(function() {
 </li>
 <li>grpc::experimental::DelegatingChannel
 : <a class="el" href="classgrpc_1_1_channel_interface.html#af675f2c216dfa6964f4a62a865aec278">grpc::ChannelInterface</a>
+</li>
+<li>grpc::experimental::GenericStubSession
+: <a class="el" href="classgrpc_1_1experimental_1_1internal_1_1_client_callback_session_factory.html#a1bd156a233fe9f22b7bdf660fb6ddc0e">grpc::experimental::internal::ClientCallbackSessionFactory</a>
+</li>
+<li>grpc::experimental::internal::CallbackSessionHandler
+: <a class="el" href="classgrpc_1_1_server_context_base.html#afc65f7e0fd471a43406878d6ca13e56e">grpc::ServerContextBase</a>
+</li>
+<li>grpc::experimental::internal::ClientCallbackSessionFactory
+: <a class="el" href="classgrpc_1_1_channel_interface.html#ac66e9cbd3ba194dae51a133ee276037a">grpc::ChannelInterface</a>
+</li>
+<li>grpc::experimental::internal::ClientCallbackSessionImpl
+: <a class="el" href="classgrpc_1_1_channel_interface.html#acbc98053fdc1a8a2d3f33e979c466133">grpc::ChannelInterface</a>
 </li>
 <li>grpc::GenericCallbackServerContext
 : <a class="el" href="classgrpc_1_1_server_context_base.html#aa1ea3c05a448214ba20b549d63f33725">grpc::ServerContextBase</a>
@@ -290,6 +321,10 @@ $(function() {
 <li>grpc::internal::InterceptedChannel
 : <a class="el" href="classgrpc_1_1_channel.html#a9cb18cf931d1547d15ee896524cd0f72">grpc::Channel</a>
 , <a class="el" href="classgrpc_1_1_channel_interface.html#a9cb18cf931d1547d15ee896524cd0f72">grpc::ChannelInterface</a>
+</li>
+<li>grpc::internal::InterceptorBatchMethodsImpl
+: <a class="el" href="classgrpc_1_1experimental_1_1_client_rpc_info.html#a9ce9d217f8042c5f9661fc8da925dc95">grpc::experimental::ClientRpcInfo</a>
+, <a class="el" href="classgrpc_1_1experimental_1_1_server_rpc_info.html#a9ce9d217f8042c5f9661fc8da925dc95">grpc::experimental::ServerRpcInfo</a>
 </li>
 <li>grpc::internal::RpcMethod
 : <a class="el" href="classgrpc_1_1_channel_interface.html#a3fc74b5fc84fcb524eaac6bfcd5767b2">grpc::ChannelInterface</a>
@@ -453,10 +488,6 @@ $(function() {
 <li>internal::GrpcByteBufferPeer
 : <a class="el" href="classgrpc_1_1_byte_buffer.html#a26d1eb015b546436fbfb535a20e2f115">grpc::ByteBuffer</a>
 </li>
-<li>internal::InterceptorBatchMethodsImpl
-: <a class="el" href="classgrpc_1_1experimental_1_1_client_rpc_info.html#a92d0ab83566677bbb964bef133221b67">grpc::experimental::ClientRpcInfo</a>
-, <a class="el" href="classgrpc_1_1experimental_1_1_server_rpc_info.html#a92d0ab83566677bbb964bef133221b67">grpc::experimental::ServerRpcInfo</a>
-</li>
 <li>internal::ProtoBufferWriterPeer
 : <a class="el" href="classgrpc_1_1_proto_buffer_writer.html#a7bb6d66e5a6bcf0eee76cb156ab598d4">grpc::ProtoBufferWriter</a>
 </li>
@@ -524,6 +555,9 @@ $(function() {
 <li>ServerCallbackReaderWriter&lt; Request, Response &gt;
 : <a class="el" href="classgrpc_1_1_server_bidi_reactor.html#a7c37735f41590c54ad5948d348e63864">grpc::ServerBidiReactor&lt; Request, Response &gt;</a>
 </li>
+<li>ServerCallbackSession
+: <a class="el" href="classgrpc_1_1experimental_1_1_server_session_reactor.html#aca1021caa3a8cf5e5cb07195259d5c7f">grpc::experimental::ServerSessionReactor</a>
+</li>
 <li>ServerCallbackUnary
 : <a class="el" href="classgrpc_1_1_server_unary_reactor.html#ae5d8451f33d09b510f7c769b74d5d434">grpc::ServerUnaryReactor</a>
 </li>
@@ -549,7 +583,7 @@ $(function() {
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Mar 26 2026 18:32:25 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri May 29 2026 17:40:42 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

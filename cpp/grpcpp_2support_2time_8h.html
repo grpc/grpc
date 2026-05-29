@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.80.0</span>
+   &#160;<span id="projectnumber">1.81.0</span>
    </div>
   </td>
  </tr>
@@ -74,9 +74,13 @@ $(function() {
 <div class="title">time.h File Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
-<div class="textblock"><code>#include &lt;<a class="el" href="grpc__types_8h_source.html">grpc/impl/grpc_types.h</a>&gt;</code><br />
+<div class="textblock"><code>#include &lt;<a class="el" href="gpr__types_8h_source.html">grpc/impl/codegen/gpr_types.h</a>&gt;</code><br />
+<code>#include &lt;<a class="el" href="grpc__types_8h_source.html">grpc/impl/grpc_types.h</a>&gt;</code><br />
+<code>#include &lt;<a class="el" href="grpc_2support_2time_8h_source.html">grpc/support/time.h</a>&gt;</code><br />
 <code>#include &lt;<a class="el" href="grpcpp_2support_2config_8h_source.html">grpcpp/support/config.h</a>&gt;</code><br />
 <code>#include &lt;chrono&gt;</code><br />
+<code>#include &quot;absl/time/clock.h&quot;</code><br />
+<code>#include &quot;absl/time/time.h&quot;</code><br />
 </div>
 <p><a href="grpcpp_2support_2time_8h_source.html">Go to the source code of this file.</a></p>
 <table class="memberdecls">
@@ -86,6 +90,8 @@ Data Structures</h2></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">If you are trying to use <a class="el" href="classgrpc_1_1_completion_queue.html#a290ddf3d96e6d1d5886580e60b0602b4" title="Read from the queue, blocking up to deadline (or the queue&#39;s shutdown).">CompletionQueue::AsyncNext</a> with a time class that isn't either <a class="el" href="structgpr__timespec.html" title="Analogous to struct timespec.">gpr_timespec</a> or std::chrono::system_clock::time_point, you will most likely be looking at this comment as your compiler will have fired an error below.  <a href="classgrpc_1_1_time_point.html#details">More...</a><br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_time_point_3_01gpr__timespec_01_4.html">grpc::TimePoint&lt; gpr_timespec &gt;</a></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_time_point_3_01absl_1_1_time_01_4.html">grpc::TimePoint&lt; absl::Time &gt;</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_time_point_3_01std_1_1chrono_1_1system__clock_1_1time__point_01_4.html">grpc::TimePoint&lt; std::chrono::system_clock::time_point &gt;</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -104,11 +110,21 @@ Functions</h2></td></tr>
 <tr class="separator:a8b3b542af97e1ae35f327c7095d98369"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a12896f279762d0100669da708d466ec1"><td class="memItemLeft" align="right" valign="top">std::chrono::system_clock::time_point&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc.html#a12896f279762d0100669da708d466ec1">grpc::Timespec2Timepoint</a> (<a class="el" href="structgpr__timespec.html">gpr_timespec</a> t)</td></tr>
 <tr class="separator:a12896f279762d0100669da708d466ec1"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a13f8cc13bb5d95da5d38708f59abe148"><td class="memItemLeft" align="right" valign="top">absl::Time&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc.html#a13f8cc13bb5d95da5d38708f59abe148">grpc::TimeFromGprTimespec</a> (<a class="el" href="structgpr__timespec.html">gpr_timespec</a> time)</td></tr>
+<tr class="separator:a13f8cc13bb5d95da5d38708f59abe148"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a86a18ab1c9f549839d3a3fd4d260a729"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structgpr__timespec.html">gpr_timespec</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc.html#a86a18ab1c9f549839d3a3fd4d260a729">grpc::GprTimeSpecFromTime</a> (absl::Time)</td></tr>
+<tr class="separator:a86a18ab1c9f549839d3a3fd4d260a729"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:afa638f46d414ce06ab39bccacb957391"><td class="memItemLeft" align="right" valign="top">absl::Duration&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc.html#afa638f46d414ce06ab39bccacb957391">grpc::DurationFromGprTimespec</a> (<a class="el" href="structgpr__timespec.html">gpr_timespec</a> time)</td></tr>
+<tr class="separator:afa638f46d414ce06ab39bccacb957391"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a19ad59877527238d0b07e503f35861ba"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structgpr__timespec.html">gpr_timespec</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc.html#a19ad59877527238d0b07e503f35861ba">grpc::GprTimeSpecFromDuration</a> (absl::Duration)</td></tr>
+<tr class="separator:a19ad59877527238d0b07e503f35861ba"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a59f105aa7d072fa30048795cde2297b5"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structgpr__timespec.html">gpr_timespec</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc.html#a59f105aa7d072fa30048795cde2297b5">grpc::DeadlineFromDuration</a> (absl::Duration dur)</td></tr>
+<tr class="separator:a59f105aa7d072fa30048795cde2297b5"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Mar 26 2026 18:32:24 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri May 29 2026 17:40:41 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

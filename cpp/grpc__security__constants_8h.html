@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.80.0</span>
+   &#160;<span id="projectnumber">1.81.0</span>
    </div>
   </td>
  </tr>
@@ -159,6 +159,13 @@ Enumerations</h2></td></tr>
  }</td></tr>
 <tr class="memdesc:ab7f46c1753e3601b1de9aa31958748dd"><td class="mdescLeft">&#160;</td><td class="mdescRight">The TLS versions that are supported by the SSL stack.  <a href="grpc__security__constants_8h.html#ab7f46c1753e3601b1de9aa31958748dd">More...</a><br /></td></tr>
 <tr class="separator:ab7f46c1753e3601b1de9aa31958748dd"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a43497c36e19c115602cd4f763c77ffd4"><td class="memItemLeft" align="right" valign="top">enum &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security__constants_8h.html#a43497c36e19c115602cd4f763c77ffd4">grpc_tls_key_exchange_group</a> { <a class="el" href="grpc__security__constants_8h.html#a43497c36e19c115602cd4f763c77ffd4a948e1b29db05283f14c38a47a5607d0e">GRPC_TLS_GROUP_UNSPECIFIED</a>, 
+<a class="el" href="grpc__security__constants_8h.html#a43497c36e19c115602cd4f763c77ffd4a04bdd45fe6ced5539714dbdbdc24afeb">GRPC_TLS_GROUP_SECP256R1</a>, 
+<a class="el" href="grpc__security__constants_8h.html#a43497c36e19c115602cd4f763c77ffd4a2d8861c5d80abf6a88a47f55ce0f6159">GRPC_TLS_GROUP_X25519</a>, 
+<a class="el" href="grpc__security__constants_8h.html#a43497c36e19c115602cd4f763c77ffd4acee25b27e50b57e22ec0886e096bd3f7">GRPC_TLS_GROUP_X25519_MLKEM768</a>
+ }</td></tr>
+<tr class="memdesc:a43497c36e19c115602cd4f763c77ffd4"><td class="mdescLeft">&#160;</td><td class="mdescRight">TLS key exchange groups.  <a href="grpc__security__constants_8h.html#a43497c36e19c115602cd4f763c77ffd4">More...</a><br /></td></tr>
+<tr class="separator:a43497c36e19c115602cd4f763c77ffd4"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Macro Definition Documentation</h2>
 <a id="a48565da473b7c82fa2453798f620fd59"></a>
@@ -527,6 +534,33 @@ Enumerations</h2></td></tr>
 
 </div>
 </div>
+<a id="a43497c36e19c115602cd4f763c77ffd4"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a43497c36e19c115602cd4f763c77ffd4">&#9670;&nbsp;</a></span>grpc_tls_key_exchange_group</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">enum <a class="el" href="grpc__security__constants_8h.html#a43497c36e19c115602cd4f763c77ffd4">grpc_tls_key_exchange_group</a></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>TLS key exchange groups. </p>
+<table class="fieldtable">
+<tr><th colspan="2">Enumerator</th></tr><tr><td class="fieldname"><a id="a43497c36e19c115602cd4f763c77ffd4a948e1b29db05283f14c38a47a5607d0e"></a>GRPC_TLS_GROUP_UNSPECIFIED&#160;</td><td class="fielddoc"><p>Unspecified key exchange group. </p>
+</td></tr>
+<tr><td class="fieldname"><a id="a43497c36e19c115602cd4f763c77ffd4a04bdd45fe6ced5539714dbdbdc24afeb"></a>GRPC_TLS_GROUP_SECP256R1&#160;</td><td class="fielddoc"><p>secp256r1 ECDH key exchange. </p>
+</td></tr>
+<tr><td class="fieldname"><a id="a43497c36e19c115602cd4f763c77ffd4a2d8861c5d80abf6a88a47f55ce0f6159"></a>GRPC_TLS_GROUP_X25519&#160;</td><td class="fielddoc"><p>X25519 ECDH key exchange. </p>
+</td></tr>
+<tr><td class="fieldname"><a id="a43497c36e19c115602cd4f763c77ffd4acee25b27e50b57e22ec0886e096bd3f7"></a>GRPC_TLS_GROUP_X25519_MLKEM768&#160;</td><td class="fielddoc"><p>X25519_MLKEM768 hybrid key exchange. </p>
+<p>Post-quantum cryptography. </p>
+</td></tr>
+</table>
+
+</div>
+</div>
 <a id="ab7f46c1753e3601b1de9aa31958748dd"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#ab7f46c1753e3601b1de9aa31958748dd">&#9670;&nbsp;</a></span>grpc_tls_version</h2>
 
@@ -550,7 +584,7 @@ Enumerations</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Mar 26 2026 18:32:24 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri May 29 2026 17:40:41 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

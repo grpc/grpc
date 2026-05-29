@@ -1,6 +1,4 @@
 var searchData=
 [
-  ['writeevent_4462',['WriteEvent',['../classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint.html#a301b6c02a83199765fee0efc0a4a77d7',1,'grpc_event_engine::experimental::EventEngine::Endpoint']]],
-  ['writeeventcallback_4463',['WriteEventCallback',['../classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint.html#af8419b606b3e423840f713d56a6e042a',1,'grpc_event_engine::experimental::EventEngine::Endpoint']]],
-  ['writeeventset_4464',['WriteEventSet',['../classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint.html#aa87b9a134fd3b57f1c9456acfe4b8951',1,'grpc_event_engine::experimental::EventEngine::Endpoint']]]
+  ['value_5ftype_4564',['value_type',['../classgrpc__event__engine_1_1experimental_1_1_memory_allocator_1_1_container.html#ac80fa61f538822111ea9597115cfaa49',1,'grpc_event_engine::experimental::MemoryAllocator::Container::value_type()'],['../classgrpc_1_1_auth_property_iterator.html#ac2e44e5556b85425992601d50c1a490c',1,'grpc::AuthPropertyIterator::value_type()']]]
 ];

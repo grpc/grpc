@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.80.0</span>
+   &#160;<span id="projectnumber">1.81.0</span>
    </div>
   </td>
  </tr>
@@ -286,7 +286,7 @@ $(function() {
 <div class="ttc" id="aclassgrpc_1_1_proto_buffer_reader_html_aa50ef34b08b9cb338dc26db6be108748"><div class="ttname"><a href="classgrpc_1_1_proto_buffer_reader.html#aa50ef34b08b9cb338dc26db6be108748">grpc::ProtoBufferReader::reader</a></div><div class="ttdeci">grpc_byte_buffer_reader * reader()</div><div class="ttdef"><b>Definition:</b> proto_buffer_reader.h:190</div></div>
 <div class="ttc" id="aclassgrpc_1_1_proto_buffer_reader_html_a98601902abf9a69f2072e81aa65f67a0"><div class="ttname"><a href="classgrpc_1_1_proto_buffer_reader.html#a98601902abf9a69f2072e81aa65f67a0">grpc::ProtoBufferReader::ByteCount</a></div><div class="ttdeci">int64_t ByteCount() const override</div><div class="ttdoc">Returns the total number of bytes read since this object was created.</div><div class="ttdef"><b>Definition:</b> proto_buffer_reader.h:123</div></div>
 <div class="ttc" id="aclassgrpc_1_1_proto_buffer_reader_html_a6f9fdfde9953f08b5ca247e6e1b2f02b"><div class="ttname"><a href="classgrpc_1_1_proto_buffer_reader.html#a6f9fdfde9953f08b5ca247e6e1b2f02b">grpc::ProtoBufferReader::Skip</a></div><div class="ttdeci">bool Skip(int count) override</div><div class="ttdoc">The proto library calls this to skip over count bytes.</div><div class="ttdef"><b>Definition:</b> proto_buffer_reader.h:107</div></div>
-<div class="ttc" id="aclassgrpc_1_1_byte_buffer_html"><div class="ttname"><a href="classgrpc_1_1_byte_buffer.html">grpc::ByteBuffer</a></div><div class="ttdoc">A sequence of bytes.</div><div class="ttdef"><b>Definition:</b> byte_buffer.h:59</div></div>
+<div class="ttc" id="aclassgrpc_1_1_byte_buffer_html"><div class="ttname"><a href="classgrpc_1_1_byte_buffer.html">grpc::ByteBuffer</a></div><div class="ttdoc">A sequence of bytes.</div><div class="ttdef"><b>Definition:</b> byte_buffer.h:67</div></div>
 <div class="ttc" id="aclassgrpc_1_1_proto_buffer_reader_html"><div class="ttname"><a href="classgrpc_1_1_proto_buffer_reader.html">grpc::ProtoBufferReader</a></div><div class="ttdoc">This is a specialization of the protobuf class ZeroCopyInputStream The principle is to get one chunk ...</div><div class="ttdef"><b>Definition:</b> proto_buffer_reader.h:47</div></div>
 <div class="ttc" id="astructgrpc__slice_html"><div class="ttname"><a href="structgrpc__slice.html">grpc_slice</a></div><div class="ttdoc">A grpc_slice s, if initialized, represents the byte range s.bytes[0..s.length-1].</div><div class="ttdef"><b>Definition:</b> slice_type.h:62</div></div>
 <div class="ttc" id="aclassgrpc_1_1_proto_buffer_reader_html_a9fa8b889f80d4bf56f6915ad9245ac3b"><div class="ttname"><a href="classgrpc_1_1_proto_buffer_reader.html#a9fa8b889f80d4bf56f6915ad9245ac3b">grpc::ProtoBufferReader::set_byte_count</a></div><div class="ttdeci">void set_byte_count(int64_t byte_count)</div><div class="ttdef"><b>Definition:</b> proto_buffer_reader.h:187</div></div>
@@ -304,7 +304,7 @@ $(function() {
 <div class="ttc" id="agrpc_2byte__buffer_8h_html_a52e8989121500cd583bd25ca9f3ff359"><div class="ttname"><a href="grpc_2byte__buffer_8h.html#a52e8989121500cd583bd25ca9f3ff359">grpc_byte_buffer_reader_peek</a></div><div class="ttdeci">GRPCAPI int grpc_byte_buffer_reader_peek(grpc_byte_buffer_reader *reader, grpc_slice **slice)</div><div class="ttdoc">EXPERIMENTAL API - This function may be removed and changed, in the future.</div></div>
 <div class="ttc" id="agrpc_2byte__buffer_8h_html_affd8fb29176a60c44fe704983fa87406"><div class="ttname"><a href="grpc_2byte__buffer_8h.html#affd8fb29176a60c44fe704983fa87406">grpc_byte_buffer_reader_init</a></div><div class="ttdeci">GRPCAPI int grpc_byte_buffer_reader_init(grpc_byte_buffer_reader *reader, grpc_byte_buffer *buffer)</div><div class="ttdoc">Initialize reader to read over buffer.</div></div>
 <div class="ttc" id="agrpc_2slice_8h_html_ac9952d98910886ca44ac416d547d0e08"><div class="ttname"><a href="grpc_2slice_8h.html#ac9952d98910886ca44ac416d547d0e08">grpc_slice_unref</a></div><div class="ttdeci">GPRAPI void grpc_slice_unref(grpc_slice s)</div><div class="ttdoc">Decrement the ref count of s.</div></div>
-<div class="ttc" id="aclassgrpc_1_1_byte_buffer_html_aea6bcd0d3c70fc14158df68c59dc82d4"><div class="ttname"><a href="classgrpc_1_1_byte_buffer.html#aea6bcd0d3c70fc14158df68c59dc82d4">grpc::ByteBuffer::Valid</a></div><div class="ttdeci">bool Valid() const</div><div class="ttdoc">Is this ByteBuffer valid?</div><div class="ttdef"><b>Definition:</b> byte_buffer.h:158</div></div>
+<div class="ttc" id="aclassgrpc_1_1_byte_buffer_html_aea6bcd0d3c70fc14158df68c59dc82d4"><div class="ttname"><a href="classgrpc_1_1_byte_buffer.html#aea6bcd0d3c70fc14158df68c59dc82d4">grpc::ByteBuffer::Valid</a></div><div class="ttdeci">bool Valid() const</div><div class="ttdoc">Is this ByteBuffer valid?</div><div class="ttdef"><b>Definition:</b> byte_buffer.h:166</div></div>
 <div class="ttc" id="aslice__type_8h_html_ae965fb2ee1a646253cdbd49d82b0b6c5"><div class="ttname"><a href="slice__type_8h.html#ae965fb2ee1a646253cdbd49d82b0b6c5">GRPC_SLICE_LENGTH</a></div><div class="ttdeci">#define GRPC_SLICE_LENGTH(slice)</div><div class="ttdef"><b>Definition:</b> slice_type.h:101</div></div>
 <div class="ttc" id="anamespacegrpc_1_1protobuf_1_1util_html_ad372120c6db3d26bf54ab69b6f595fe4"><div class="ttname"><a href="namespacegrpc_1_1protobuf_1_1util.html#ad372120c6db3d26bf54ab69b6f595fe4">grpc::protobuf::util::Status</a></div><div class="ttdeci">::absl::Status Status</div><div class="ttdef"><b>Definition:</b> config_protobuf.h:107</div></div>
 <div class="ttc" id="aclassgrpc_1_1_proto_buffer_reader_html_a0874823748781629e0b2bde470d78bf3"><div class="ttname"><a href="classgrpc_1_1_proto_buffer_reader.html#a0874823748781629e0b2bde470d78bf3">grpc::ProtoBufferReader::slice</a></div><div class="ttdeci">grpc_slice * slice()</div><div class="ttdef"><b>Definition:</b> proto_buffer_reader.h:191</div></div>
@@ -314,7 +314,7 @@ $(function() {
 <div class="ttc" id="anamespacegrpc_html_aff1730578c90160528f6a8d67ef5c43ba0ae30536146394965fd8ad64c2d414f3"><div class="ttname"><a href="namespacegrpc.html#aff1730578c90160528f6a8d67ef5c43ba0ae30536146394965fd8ad64c2d414f3">grpc::INTERNAL</a></div><div class="ttdeci">@ INTERNAL</div><div class="ttdoc">Internal errors.</div><div class="ttdef"><b>Definition:</b> status_code_enum.h:121</div></div>
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Mar 26 2026 18:32:24 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri May 29 2026 17:40:41 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

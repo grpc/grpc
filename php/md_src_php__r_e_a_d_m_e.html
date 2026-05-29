@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC PHP
-   &#160;<span id="projectnumber">1.80.0</span>
+   &#160;<span id="projectnumber">1.81.0</span>
    </div>
   </td>
  </tr>
@@ -127,7 +127,7 @@ Protocol Buffers</h1>
 <p>gRPC PHP supports <a href="https://developers.google.com/protocol-buffers">protocol buffers</a> out-of-the-box. You will need the following things to get started:</p>
 <ul>
 <li><code>protoc</code>: the protobuf compiler binary to generate PHP classes for your messages and service definition.</li>
-<li><code>grpc_php_plugin</code>: a plugin for <code>protoc</code> to generate the service stub classes.</li>
+<li><code>grpc_php_plugin_binary</code>: a plugin for <code>protoc</code> to generate the service stub classes.</li>
 <li><code>protobuf.so</code>: the <code>protobuf</code> extension runtime library.</li>
 </ul>
 <h2><a class="anchor" id="autotoc_md287"></a>
@@ -163,21 +163,21 @@ Protocol Buffers</h1>
 <div class="line">$ ./autogen.sh &amp;&amp; ./configure &amp;&amp; make</div>
 <div class="line">$ [sudo] make install</div>
 </div><!-- fragment --><h2><a class="anchor" id="autotoc_md288"></a>
-&lt;tt&gt;grpc_php_plugin&lt;/tt&gt; protoc plugin</h2>
-<p>You need the <code>grpc_php_plugin</code> to generate the PHP client stub classes. This plugin works with the main <code>protoc</code> binary to generate classes that you can import into your project.</p>
-<p>You can build <code>grpc_php_plugin</code> with <code>cmake</code>:</p>
+&lt;tt&gt;grpc_php_plugin_binary&lt;/tt&gt; protoc plugin</h2>
+<p>You need the <code>grpc_php_plugin_binary</code> to generate the PHP client stub classes. This plugin works with the main <code>protoc</code> binary to generate classes that you can import into your project.</p>
+<p>You can build <code>grpc_php_plugin_binary</code> with <code>cmake</code>:</p>
 <div class="fragment"><div class="line">$ git clone -b RELEASE_TAG_HERE https://github.com/grpc/grpc</div>
 <div class="line">$ cd grpc</div>
 <div class="line">$ git submodule update --init</div>
 <div class="line">$ mkdir -p cmake/build</div>
 <div class="line">$ cd cmake/build</div>
 <div class="line">$ cmake ../..</div>
-<div class="line">$ make protoc grpc_php_plugin</div>
-</div><!-- fragment --><p>The commands above will make <code>protoc</code> and <code>grpc_php_plugin</code> available in <code>cmake/build/third_party/protobuf/protoc</code> and <code>cmake/build/grpc_php_plugin</code>.</p>
-<p>Alternatively, you can also build the <code>grpc_php_plugin</code> with <code>bazel</code>:</p>
+<div class="line">$ make protoc grpc_php_plugin_binary</div>
+</div><!-- fragment --><p>The commands above will make <code>protoc</code> and <code>grpc_php_plugin_binary</code> available in <code>cmake/build/third_party/protobuf/protoc</code> and <code>cmake/build/grpc_php_plugin_binary</code>.</p>
+<p>Alternatively, you can also build the <code>grpc_php_plugin_binary</code> with <code>bazel</code>:</p>
 <div class="fragment"><div class="line">$ bazel build @com_google_protobuf//:protoc</div>
-<div class="line">$ bazel build src/compiler:grpc_php_plugin</div>
-</div><!-- fragment --><p>The <code>protoc</code> binary will be found in <code>bazel-bin/external/protobuf+/protoc</code>. The <code>grpc_php_plugin</code> binary will be found in <code>bazel-bin/src/compiler/grpc_php_plugin</code>.</p>
+<div class="line">$ bazel build src/compiler:grpc_php_plugin_binary</div>
+</div><!-- fragment --><p>The <code>protoc</code> binary will be found in <code>bazel-bin/external/protobuf+/protoc</code>. The <code>grpc_php_plugin_binary</code> binary will be found in <code>bazel-bin/src/compiler/grpc_php_plugin_binary</code>.</p>
 <p>Plugin may use the new feature of the new protobuf version, thus please also make sure that the protobuf version installed is compatible with the grpc version you build this plugin.</p>
 <h2><a class="anchor" id="autotoc_md289"></a>
 &lt;tt&gt;protobuf&lt;/tt&gt; runtime library</h2>
@@ -200,7 +200,7 @@ PHP implementation (for easier installation)</h3>
 Generate PHP classes from your service definition</h2>
 <p>With all the above done, now you can define your message and service definition in a <code>.proto</code> file and generate the corresponding PHP classes, which you can import into your project, with a command similar to the following:</p>
 <div class="fragment"><div class="line">$ protoc -I=. echo.proto --php_out=. --grpc_out=. \</div>
-<div class="line">--plugin=protoc-gen-grpc=&lt;path to grpc_php_plugin&gt;</div>
+<div class="line">--plugin=protoc-gen-grpc=&lt;path to grpc_php_plugin_binary&gt;</div>
 </div><!-- fragment --><h1><a class="anchor" id="autotoc_md293"></a>
 Unit Tests</h1>
 <p>You will need the source code to run tests</p>
@@ -296,7 +296,7 @@ Compression</h2>
 <div class="ttc" id="anamespace_grpc_html"><div class="ttname"><a href="namespace_grpc.html">Grpc</a></div><div class="ttdoc">Class AbstractCall.</div><div class="ttdef"><b>Definition:</b> AbstractCall.php:20</div></div>
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Mar 26 2026 18:33:43 for GRPC PHP by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri May 29 2026 17:41:37 for GRPC PHP by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>
