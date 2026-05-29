@@ -1790,10 +1790,9 @@ TEST_F(XdsGcpAuthnFilterTest, MergeConfigsGetsCacheFromBlackboard) {
       /*cluster_weight_override_config=*/nullptr, *blackboard);
   ASSERT_NE(merged_config, nullptr);
   ASSERT_EQ(merged_config->type(), GcpAuthenticationFilter::Config::Type());
-  EXPECT_THAT(
-      merged_config->ToString(),
-      ::testing::MatchesRegex(
-          "\\{instance_name=\"langley\", cache_size=1, cache=0x.+\\}"));
+  EXPECT_THAT(merged_config->ToString(),
+              ::testing::MatchesRegex(
+                  "\\{instance_name=\"langley\", cache_size=1, cache=0x.+\\}"));
   auto blackboard_entry =
       blackboard->Get<GcpAuthenticationFilter::CallCredentialsCache>("langley");
   ASSERT_NE(blackboard_entry, nullptr);
