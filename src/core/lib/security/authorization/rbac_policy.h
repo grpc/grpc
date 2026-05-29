@@ -44,6 +44,9 @@ struct Rbac {
     kOnDenyAndAllow,
   };
 
+  // TODO(roth): Unify this with
+  // XdsListenerResource::FilterChainMap::CidrRange, possibly as part of
+  // addressing https://github.com/grpc/grpc/issues/34172.
   struct CidrRange {
     CidrRange() = default;
     CidrRange(std::string address_prefix, uint32_t prefix_len);
@@ -51,6 +54,7 @@ struct Rbac {
     CidrRange(CidrRange&& other) noexcept;
     CidrRange& operator=(CidrRange&& other) noexcept;
 
+    bool operator==(const CidrRange& other) const;
     std::string ToString() const;
 
     std::string address_prefix;
@@ -91,6 +95,7 @@ struct Rbac {
     Permission(Permission&& other) noexcept;
     Permission& operator=(Permission&& other) noexcept;
 
+    bool operator==(const Permission& other) const;
     std::string ToString() const;
 
     RuleType type = RuleType::kAnd;
@@ -141,6 +146,7 @@ struct Rbac {
     Principal(Principal&& other) noexcept;
     Principal& operator=(Principal&& other) noexcept;
 
+    bool operator==(const Principal& other) const;
     std::string ToString() const;
 
     RuleType type = RuleType::kAnd;
@@ -161,6 +167,7 @@ struct Rbac {
     Policy(Policy&& other) noexcept;
     Policy& operator=(Policy&& other) noexcept;
 
+    bool operator==(const Policy& other) const;
     std::string ToString() const;
 
     Permission permissions;
@@ -174,6 +181,7 @@ struct Rbac {
   Rbac(Rbac&& other) noexcept;
   Rbac& operator=(Rbac&& other) noexcept;
 
+  bool operator==(const Rbac& other) const;
   std::string ToString() const;
 
   // The authorization policy name or empty string in xDS case.

@@ -76,6 +76,11 @@ StringMatcher StringMatcherParse(
     const xds_type_matcher_v3_StringMatcher* matcher_proto,
     ValidationErrors* errors);
 
+HeaderMatcher ParseXdsHeaderMatcher(
+    const XdsResourceType::DecodeContext& context,
+    const envoy_config_route_v3_HeaderMatcher* matcher_proto,
+    ValidationErrors* errors);
+
 CommonTlsContext CommonTlsContextParse(
     const XdsResourceType::DecodeContext& context,
     const envoy_extensions_transport_sockets_tls_v3_CommonTlsContext*
