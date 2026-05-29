@@ -8936,6 +8936,7 @@ grpc_cc_library(
         "transport_common",
         "write_size_policy",
         "//:chttp2_frame",
+        "//:debug_location",
         "//:gpr",
         "//:gpr_platform",
     ],
