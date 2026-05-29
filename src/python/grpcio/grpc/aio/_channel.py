@@ -477,7 +477,8 @@ class Channel(_base_channel.Channel):
         # calls and makes them return True. Thus, watch_connectivity_state should only return
         # True under normal operation; returning False indicates an implementation issue.
         #
-        # We do not use an assert statement here because asserts can be optimized out under python -O.
+        # We do not use an assert statement here because asserts
+        # can be optimized out under python -O.
         # See https://github.com/grpc/grpc/issues/42393 for context.
         resolved = await self._channel.watch_connectivity_state(
             last_observed_state.value[0], None
