@@ -469,22 +469,22 @@ class Channel(_base_channel.Channel):
         self,
         last_observed_state: grpc.ChannelConnectivity,
     ) -> None:
-        # The await expression must not be placed directly inside the assert
-        # statement because assert statements are optimized out under python -O,
-        # which would skip awaiting watch_connectivity_state and cause a 100% CPU loop.
-        # See https://github.com/grpc/grpc/issues/42393 for context.
+        # We raise a RuntimeError if watch_connectivity_state returns False.
         #
-        # We assert resolved because watch_connectivity_state returns True when
-        # it observes a state change and False when it times out. A channel close
-        # triggers a transition to SHUTDOWN, which resolves all pending watch
-        # calls and makes them return True. Thus, watch_connectivity_state should
-        # only return True under normal operation; returning False indicates an
-        # implementation issue.
+        # The watch_connectivity_state method returns True when it observes a state change
+        # and False when it times out (which shouldn't happen since no timeout is specified).
+        # A channel close triggers a transition to SHUTDOWN, which resolves all pending watch
+        # calls and makes them return True. Thus, watch_connectivity_state should only return
+        # True under normal operation; returning False indicates an implementation issue.
+        #
+        # We do not use an assert statement here because asserts can be optimized out under python -O.
+        # See https://github.com/grpc/grpc/issues/42393 for context.
         resolved = await self._channel.watch_connectivity_state(
             last_observed_state.value[0], None
         )
         if not resolved:
-            raise RuntimeError("Connectivity state watch failed")
+            error_msg = "Connectivity state watch failed"
+            raise RuntimeError(error_msg)
 
     async def channel_ready(self) -> None:
         state = self.get_state(try_to_connect=True)
