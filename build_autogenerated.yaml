@@ -6394,6 +6394,7 @@ targets:
   language: c++
   headers:
   - test/cpp/end2end/end2end_test_utils.h
+  - test/cpp/end2end/test_service_impl.h
   src:
   - src/proto/grpc/health/v1/health.proto
   - src/proto/grpc/testing/duplicate/echo_duplicate.proto
@@ -6405,6 +6406,7 @@ targets:
   - third_party/protoc-gen-validate/validate/validate.proto
   - third_party/xds/xds/data/orca/v3/orca_load_report.proto
   - test/cpp/end2end/async_end2end_test.cc
+  - test/cpp/end2end/test_service_impl.cc
   deps:
   - gtest
   - grpc++_test_util
@@ -23411,6 +23413,25 @@ targets:
   - test/core/service_config/service_config_test.cc
   deps:
   - gtest
+  - grpc_test_util
+- name: session_end2end_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/cpp/end2end/end2end_test_utils.h
+  src:
+  - src/proto/grpc/testing/echo.proto
+  - src/proto/grpc/testing/echo_messages.proto
+  - src/proto/grpc/testing/simple_messages.proto
+  - third_party/googleapis/google/api/http.proto
+  - third_party/googleapis/google/rpc/status.proto
+  - third_party/protoc-gen-validate/validate/validate.proto
+  - third_party/xds/xds/data/orca/v3/orca_load_report.proto
+  - test/cpp/end2end/session_end2end_test.cc
+  deps:
+  - gtest
+  - grpc++
   - grpc_test_util
 - name: session_endpoint_test
   gtest: true
