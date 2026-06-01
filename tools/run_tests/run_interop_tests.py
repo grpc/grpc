@@ -1810,14 +1810,16 @@ try:
                     )
                     jobs.append(test_job)
 
-    if 'java' in servers:
+    if "java" in servers:
         languages_for_mcs_cs = set(
             _LANGUAGES[l]
             for l in _LANGUAGES_WITH_HTTP2_CLIENTS_FOR_HTTP2_SERVER_TEST_CASES
             if "all" in args.language or l in args.language
         )
         if not languages_for_mcs_cs:
-            print('MCS connection scaling tests will be skipped since none of the supported client languages for MCS connection scaling testcases was specified')
+            print(
+                "MCS connection scaling tests will be skipped since none of the supported client languages for MCS connection scaling testcases was specified"
+            )
         else:
             mcs_server_jobspec = server_jobspec(
                 _LANGUAGES["java"],
@@ -1833,15 +1835,17 @@ try:
             for language in languages_for_mcs_cs:
                 test_job = cloud_to_cloud_jobspec(
                     language,
-                    'max_concurrent_streams_connection_scaling',
-                    'java-mcs',
-                    'localhost',
+                    "max_concurrent_streams_connection_scaling",
+                    "java-mcs",
+                    "localhost",
                     mcs_server_job.mapped_port(_DEFAULT_SERVER_PORT),
                     docker_image=docker_images.get(str(language)),
                     transport_security=args.transport_security,
                     manual_cmd_log=client_manual_cmd_log,
-                    add_env={'GRPC_EXPERIMENTAL_MAX_CONCURRENT_STREAMS_CONNECTION_SCALING': 'true',
-                        'GRPC_EXPERIMENTS': 'subchannel_connection_scaling'},
+                    add_env={
+                        "GRPC_EXPERIMENTAL_MAX_CONCURRENT_STREAMS_CONNECTION_SCALING": "true",
+                        "GRPC_EXPERIMENTS": "subchannel_connection_scaling",
+                    },
                 )
                 jobs.append(test_job)
 
