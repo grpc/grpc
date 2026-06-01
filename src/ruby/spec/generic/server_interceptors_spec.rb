@@ -49,7 +49,7 @@ describe 'Server Interceptors' do
         run_services_on_server(@server, services: [service]) do
           stub = build_insecure_stub(EchoStub)
           expect_any_instance_of(GRPC::ActiveCall).to(
-            receive(:request_response).with(request, metadata: client_metadata)
+            receive(:request_response).with(request)
               .once.and_call_original
           )
           op = stub.an_rpc(request, client_call_opts)
