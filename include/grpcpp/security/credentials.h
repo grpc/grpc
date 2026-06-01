@@ -293,6 +293,14 @@ std::shared_ptr<CallCredentials> MetadataCredentialsFromPlugin(
 std::shared_ptr<CallCredentials> ExternalAccountCredentials(
     const grpc::string& json_string, const std::vector<grpc::string>& scopes);
 
+/// Builds Google Distributed Cloud Hosting Service Account Credentials.
+/// json_string is the JSON string containing the service account key.
+/// audience is the intended recipient or service.
+///
+/// https://docs.cloud.google.com/distributed-cloud/hosted/docs/latest/gdcag/platform/pa-user/service-identity
+std::shared_ptr<CallCredentials> GDCHServiceAccountCredentials(
+    const grpc::string& json_string, const grpc::string& audience);
+
 namespace experimental {
 
 /// Options for creating STS Oauth Token Exchange credentials following the IETF

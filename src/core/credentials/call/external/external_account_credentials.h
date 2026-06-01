@@ -187,7 +187,7 @@ class ExternalAccountCredentials : public TokenFetcherCredentials {
   OrphanablePtr<FetchRequest> FetchToken(
       Timestamp deadline,
       absl::AnyInvocable<void(absl::StatusOr<RefCountedPtr<Token>>)> on_done)
-      final;
+      override;
 
   // Subclasses of ExternalAccountCredentials need to override this
   // method to implement the specific-subject token retrieval logic.
