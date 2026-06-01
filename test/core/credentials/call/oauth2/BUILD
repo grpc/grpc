@@ -29,7 +29,7 @@ grpc_cc_library(
     srcs = ["oauth2_utils.cc"],
     hdrs = ["oauth2_utils.h"],
     external_deps = ["absl/log:log"],
-    visibility = ["//test/cpp:__subpackages__"],
+    visibility = ["//test/cpp:__subpackages__","//test/core/credentials/call:__subpackages__"],
     deps = [
         "//:exec_ctx",
         "//:gpr",

@@ -100,6 +100,13 @@ std::shared_ptr<CallCredentials> ExternalAccountCredentials(
       json_string.c_str(), absl::StrJoin(scopes, ",").c_str()));
 }
 
+std::shared_ptr<CallCredentials> GDCHServiceAccountCredentials(
+    const grpc::string& json_string, const grpc::string& audience) {
+  grpc::internal::GrpcLibrary init;  // To call grpc_init().
+  return WrapCallCredentials(grpc_gdch_service_account_credentials_create(
+      json_string.c_str(), audience.c_str()));
+}
+
 // Builds SSL Credentials given SSL specific options
 std::shared_ptr<ChannelCredentials> SslCredentials(
     const SslCredentialsOptions& options) {
