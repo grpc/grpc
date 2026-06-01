@@ -1369,7 +1369,9 @@ grpc_error_handle Server::SetupTransport(
       socket_node->AddParent(channelz_node_.get());
     }
 
-    // Initialize chand.
+    // Keep a local reference to the channel alive during setup to prevent
+    // premature destruction if the transport fails concurrently.
+    RefCountedPtr<Channel> channel_keep_alive = *channel;
     chand->InitTransport(Ref(), std::move(*channel), cq_idx, transport,
                          channelz_socket_uuid);
 

@@ -198,6 +198,12 @@ class Stream : public RefCounted<Stream> {
     GRPC_DCHECK(stream_state_ == HttpStreamState::kIdle);
     stream_state_ = HttpStreamState::kOpen;
   }
+  void SentTrailingMetadata() {
+    GRPC_DCHECK(stream_state_ != HttpStreamState::kClosed ||
+                stream_state_ != HttpStreamState::kHalfClosedLocal)
+        << "Cannot send trailing metadata in closed or half closed local state";
+    stream_state_ = HttpStreamState::kClosed;
+  }
 
   void MarkHalfClosedLocal() {
     switch (stream_state_) {
