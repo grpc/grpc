@@ -66,7 +66,7 @@ function upload_bzlmod_deps {
           # TODO(weizheyuan): Handle file extension a bit better.
           #
           # e.g. https://sourceforge.net/projects/perfmon2/files/libpfm4/libpfm-4.11.0.tar.gz/download
-          # does not have .tar.gz extension and can rejected by http_archive(). Currently it's manually
+          # does not have .tar.gz extension and can get rejected by http_archive(). Currently it's manually
           # rewritten to make build work, see MODULE.bazel.
           upload "${url}"
           ;;
