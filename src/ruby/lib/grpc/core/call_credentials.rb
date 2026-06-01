@@ -65,7 +65,10 @@ module GRPC
       def get_metadata(context)
         @creds.each_with_object({}) do |c, metadata|
           creds_metadata = c.get_metadata(context)
-          metadata.merge!(creds_metadata) if creds_metadata
+          next unless creds_metadata
+          metadata.merge!(
+            creds_metadata.is_a?(Hash) ? creds_metadata : fail(TypeError, "Call credentials must return Hash or nil, got #{creds_metadata.class}")
+          )
         end
       end
 
