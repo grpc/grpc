@@ -20,11 +20,18 @@
 #define GRPC_TEST_CPP_END2END_END2END_TEST_UTILS_H
 
 #include <grpc/grpc.h>
+#include <grpcpp/impl/generic_stub_session.h>
 #include <grpcpp/support/channel_arguments.h>
+#include <grpcpp/virtual_channel.h>
+
+#include <memory>
+#include <string>
 
 #include "src/core/lib/experiments/experiments.h"
+#include "src/core/util/grpc_check.h"
 #include "absl/log/globals.h"
 #include "absl/log/log.h"
+#include "absl/synchronization/notification.h"
 
 namespace grpc {
 namespace testing {
@@ -61,11 +68,81 @@ inline void EnableLoggingForPH2Tests() {
 
 inline void ApplyCommonChannelArguments(ChannelArguments& args) {
   if (grpc_core::IsPromiseBasedHttp2ClientTransportEnabled()) {
-    // TODO(tjagtap) [PH2][P2] Consider removing when bug in
+    // TODO(tjagtap) [PH2][P5][Retry] Consider removing when bug in
     // retry_interceptor.cc is fixed.
     args.SetInt(GRPC_ARG_ENABLE_RETRIES, 0);
   }
 }
+
+class TestClientSessionReactor
+    : public grpc::experimental::ClientSessionReactor {
+ public:
+  explicit TestClientSessionReactor(const grpc::ChannelArguments& args,
+                                    absl::Notification* session_done = nullptr)
+      : args_(args), session_done_(session_done) {}
+
+  void OnSessionReady(grpc::internal::Call call) override {
+    virtual_channel_ = grpc::experimental::CreateVirtualChannel(call, args_);
+    ready_.Notify();
+  }
+  void OnSessionAcknowledged(bool ok) override { acked_.Notify(); }
+  void OnDone(const grpc::Status& s) override {
+    status_ = s;
+    if (!ready_.HasBeenNotified()) {
+      ready_.Notify();
+    }
+    caller_done_.WaitForNotification();
+    if (session_done_ != nullptr) {
+      session_done_->Notify();
+    }
+    delete this;
+  }
+
+  std::shared_ptr<grpc::Channel> virtual_channel() { return virtual_channel_; }
+  void WaitForReady() {
+    ready_.WaitForNotification();
+    GRPC_CHECK(virtual_channel_ != nullptr)
+        << "Session failed with status: " << status_.error_message() << " ("
+        << status_.error_code() << ")";
+  }
+  void SignalCallerDone() { caller_done_.Notify(); }
+
+ private:
+  grpc::ChannelArguments args_;
+  std::shared_ptr<grpc::Channel> virtual_channel_;
+  absl::Notification ready_;
+  absl::Notification acked_;
+  absl::Notification caller_done_;
+  grpc::Status status_;
+  absl::Notification* session_done_;
+};
+
+template <typename RequestType, typename ResponseType>
+std::shared_ptr<grpc::Channel> MaybeWrapVirtualChannel(
+    std::shared_ptr<grpc::Channel> channel, const grpc::ChannelArguments& args,
+    bool use_virtual_rpcs, grpc::ClientContext* context, RequestType* request,
+    absl::Notification* session_done = nullptr,
+    const std::string& method_name =
+        "/grpc.testing.EchoTestService/SessionRequest") {
+  if (!use_virtual_rpcs) return channel;
+
+  auto session_stub = std::make_unique<
+      grpc::experimental::GenericStubSession<RequestType, ResponseType>>(
+      channel);
+  auto* session_reactor = new TestClientSessionReactor(args, session_done);
+  session_stub->PrepareSessionCall(context, method_name, {}, request,
+                                   session_reactor);
+  session_reactor->StartCall();
+  session_reactor->WaitForReady();
+  auto vchannel = session_reactor->virtual_channel();
+  session_reactor->SignalCallerDone();
+  return vchannel;
+}
+
+#define SKIP_IF_VIRTUAL()                  \
+  if (GetParam().use_virtual_rpcs())       \
+    GTEST_SKIP() << "Skipped for Virtual " \
+                    "RPCs";
 
 #define SKIP_TEST_FOR_PH2_CLIENT(message)                     \
   if (grpc_core::IsPromiseBasedHttp2ClientTransportEnabled()) \

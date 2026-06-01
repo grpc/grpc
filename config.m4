@@ -19,8 +19,9 @@ if test "$PHP_GRPC" != "no"; then
 
   LIBS="-lpthread $LIBS"
 
-  CFLAGS="-std=c11 -g -O2"
-  CXXFLAGS="-std=c++17 -fno-exceptions -fno-rtti -g -O2"
+  dnl -Wno-error=attributes needed by UPB https://github.com/grpc/grpc/issues/42192
+  CFLAGS="-std=c11 -g -O2 -Wno-error=attributes"
+  CXXFLAGS="-std=c++17 -fno-exceptions -fno-rtti -g -O2 -Wno-error=attributes"
   GRPC_SHARED_LIBADD="-lpthread $GRPC_SHARED_LIBADD"
   PHP_REQUIRE_CXX()
   PHP_ADD_LIBRARY(pthread)
@@ -152,9 +153,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/filters/channel_idle/idle_filter_state.cc \
     src/core/ext/filters/channel_idle/legacy_channel_idle_filter.cc \
     src/core/ext/filters/fault_injection/fault_injection_filter.cc \
-    src/core/ext/filters/fault_injection/fault_injection_service_config_parser.cc \
     src/core/ext/filters/gcp_authentication/gcp_authentication_filter.cc \
-    src/core/ext/filters/gcp_authentication/gcp_authentication_service_config_parser.cc \
     src/core/ext/filters/http/client/http_client_filter.cc \
     src/core/ext/filters/http/client_authority_filter.cc \
     src/core/ext/filters/http/http_filters_plugin.cc \
@@ -164,7 +163,6 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/filters/rbac/rbac_filter.cc \
     src/core/ext/filters/rbac/rbac_service_config_parser.cc \
     src/core/ext/filters/stateful_session/stateful_session_filter.cc \
-    src/core/ext/filters/stateful_session/stateful_session_service_config_parser.cc \
     src/core/ext/transport/chttp2/alpn/alpn.cc \
     src/core/ext/transport/chttp2/chttp2_plugin.cc \
     src/core/ext/transport/chttp2/client/chttp2_connector.cc \
@@ -190,6 +188,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/transport/chttp2/transport/hpack_parser.cc \
     src/core/ext/transport/chttp2/transport/hpack_parser_table.cc \
     src/core/ext/transport/chttp2/transport/http2_client_transport.cc \
+    src/core/ext/transport/chttp2/transport/http2_server_transport.cc \
     src/core/ext/transport/chttp2/transport/http2_settings.cc \
     src/core/ext/transport/chttp2/transport/http2_settings_manager.cc \
     src/core/ext/transport/chttp2/transport/http2_stats_collector.cc \
@@ -825,6 +824,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/server/server_config_selector_filter.cc \
     src/core/server/xds_channel_stack_modifier.cc \
     src/core/server/xds_server_config_fetcher.cc \
+    src/core/server/xds_server_config_fetcher_legacy.cc \
     src/core/service_config/service_config_channel_arg_filter.cc \
     src/core/service_config/service_config_impl.cc \
     src/core/service_config/service_config_parser.cc \
@@ -839,6 +839,8 @@ if test "$PHP_GRPC" != "no"; then
     src/core/telemetry/tcp_tracer.cc \
     src/core/transport/auth_context.cc \
     src/core/transport/endpoint_transport_client_channel_factory.cc \
+    src/core/transport/message_size_service_config.cc \
+    src/core/transport/session_endpoint.cc \
     src/core/tsi/alts/crypt/aes_gcm.cc \
     src/core/tsi/alts/crypt/gsec.cc \
     src/core/tsi/alts/frame_protector/alts_counter.cc \
@@ -1464,6 +1466,7 @@ if test "$PHP_GRPC" != "no"; then
     third_party/upb/upb/mini_descriptor/internal/encode.c \
     third_party/upb/upb/mini_descriptor/link.c \
     third_party/upb/upb/mini_table/extension_registry.c \
+    third_party/upb/upb/mini_table/generated_registry.c \
     third_party/upb/upb/mini_table/internal/message.c \
     third_party/upb/upb/mini_table/message.c \
     third_party/upb/upb/reflection/def_pool.c \
@@ -1497,7 +1500,7 @@ if test "$PHP_GRPC" != "no"; then
     -D_HAS_EXCEPTIONS=0 -DNOMINMAX -DGRPC_ARES=0 \
     -DGRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK=1 \
     -DGRPC_XDS_USER_AGENT_NAME_SUFFIX='"\"PHP\""' \
-    -DGRPC_XDS_USER_AGENT_VERSION_SUFFIX='"\"1.81.0dev\""')
+    -DGRPC_XDS_USER_AGENT_VERSION_SUFFIX='"\"1.82.0dev\""')
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/call)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/channelz)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/channelz/v2tov1)

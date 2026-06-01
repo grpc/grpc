@@ -25,6 +25,7 @@
 #include <grpc/grpc_security.h>
 #include <grpc/support/atm.h>
 #include <grpc/support/log.h>
+#include <stdbool.h>
 
 #include "rb_byte_buffer.h"
 #include "rb_call.h"
