@@ -78,7 +78,7 @@ RegionalAccessBoundaryFetcher::RegionalAccessBoundaryFetcher(
                          .set_multiplier(2.0)
                          .set_jitter(0.2)
                          .set_max_backoff(Duration::Seconds(60))) {
-  CHECK(event_engine_ != nullptr);
+  GRPC_CHECK(event_engine_ != nullptr);
 }
 
 void RegionalAccessBoundaryFetcher::OnFetchSuccess(Slice encoded_locations) {
@@ -164,6 +164,7 @@ RegionalAccessBoundaryFetcher::Request::Request(
     WeakRefCountedPtr<RegionalAccessBoundaryFetcher> fetcher,
     absl::string_view access_token)
     : access_token_(access_token), fetcher_(std::move(fetcher)) {
+  memset(&response_, 0, sizeof(response_));
   pollent_ =
       grpc_polling_entity_create_from_pollset_set(grpc_pollset_set_create());
 }
@@ -174,7 +175,8 @@ RegionalAccessBoundaryFetcher::Request::~Request() {
 }
 
 void RegionalAccessBoundaryFetcher::Request::Start() {
-  grpc_http_request request = {};
+  grpc_http_request request;
+  memset(&request, 0, sizeof(grpc_http_request));
   grpc_http_header header = {const_cast<char*>("Authorization"),
                              const_cast<char*>(access_token_.c_str())};
   request.hdr_count = 1;
@@ -208,15 +210,12 @@ void RegionalAccessBoundaryFetcher::Request::OnResponseWrapper(
 
 void RegionalAccessBoundaryFetcher::Request::OnResponse(
     grpc_error_handle error) {
-  auto self = Ref();
-  auto fetcher = fetcher_->RefIfNonZero();
-  if (fetcher == nullptr) return;
   bool success = false;
   std::string encoded_locations;
-  absl::string_view response_body =
-      response_.body != nullptr
-          ? absl::string_view(response_.body, response_.body_length)
-          : "";
+  absl::string_view response_body;
+  if (response_.body != nullptr) {
+    response_body = absl::string_view(response_.body, response_.body_length);
+  }
   if (error.ok() && response_.status == 200) {
     absl::StatusOr<Json> json = JsonParse(response_body);
     if (json.ok() && json->type() == Json::Type::kObject) {
@@ -231,9 +230,9 @@ void RegionalAccessBoundaryFetcher::Request::OnResponse(
     }
   }
   if (success) {
-    fetcher->OnFetchSuccess(Slice::FromCopiedString(encoded_locations));
+    fetcher_->OnFetchSuccess(Slice::FromCopiedString(encoded_locations));
   } else {
-    fetcher->OnFetchFailure(error, response_.status, response_body);
+    fetcher_->OnFetchFailure(error, response_.status, response_body);
   }
 }
 
@@ -242,6 +241,7 @@ class EmailFetcher::EmailRequest final
  public:
   explicit EmailRequest(WeakRefCountedPtr<EmailFetcher> fetcher)
       : fetcher_(std::move(fetcher)) {
+    memset(&response_, 0, sizeof(response_));
     pollent_ =
         grpc_polling_entity_create_from_pollset_set(grpc_pollset_set_create());
   }
@@ -286,19 +286,17 @@ class EmailFetcher::EmailRequest final
   }
 
   void OnResponse(grpc_error_handle error) {
-    auto fetcher = fetcher_->RefIfNonZero();
-    if (fetcher == nullptr) return;
-    absl::string_view response_body =
-        response_.body != nullptr
-            ? absl::string_view(response_.body, response_.body_length)
-            : "";
+    absl::string_view response_body;
+    if (response_.body != nullptr) {
+      response_body = absl::string_view(response_.body, response_.body_length);
+    }
     if (!error.ok()) {
-      fetcher->OnEmailFetchError(error);
+      fetcher_->OnEmailFetchError(error);
     } else if (response_.status != 200) {
-      fetcher->OnEmailFetchError(GRPC_ERROR_CREATE(absl::StrCat(
+      fetcher_->OnEmailFetchError(GRPC_ERROR_CREATE(absl::StrCat(
           "Failed to fetch service account email: HTTP ", response_.status)));
     } else {
-      fetcher->OnEmailFetchComplete(response_body);
+      fetcher_->OnEmailFetchComplete(response_body);
     }
   }
 
@@ -335,12 +333,11 @@ void EmailFetcher::StartEmailFetch() {
 void EmailFetcher::Fetch(absl::string_view token,
                          ClientMetadata& initial_metadata) {
   MutexLock lock(&mu_);
-  if (auto* rab_fetcher =
-          std::get_if<RefCountedPtr<RegionalAccessBoundaryFetcher>>(&state_)) {
-    if (*rab_fetcher != nullptr) {
-      (*rab_fetcher)->Fetch(token, initial_metadata);
-    }
-  }
+  auto* rab_fetcher =
+      std::get_if<RefCountedPtr<RegionalAccessBoundaryFetcher>>(&state_);
+  if (rab_fetcher == nullptr) return;  // Don't yet have RAB fetcher.
+  if (*rab_fetcher == nullptr) return;  // Shouldn't happen, but be defensive.
+  (*rab_fetcher)->Fetch(token, initial_metadata);
 }
 
 void EmailFetcher::Orphaned() {

@@ -294,6 +294,7 @@ class grpc_compute_engine_token_fetcher_credentials
     return kFactory.Create();
   }
 
+ private:
   grpc_core::OrphanablePtr<grpc_core::HttpRequest> StartHttpRequest(
       grpc_polling_entity* pollent, grpc_core::Timestamp deadline,
       grpc_http_response* response, grpc_closure* on_complete) override {
@@ -351,7 +352,6 @@ class grpc_compute_engine_token_fetcher_credentials
         });
   }
 
- private:
   grpc_core::RefCountedPtr<grpc_core::EmailFetcher> email_fetcher_;
   std::vector<grpc_core::URI::QueryParam> query_params_;
 };
