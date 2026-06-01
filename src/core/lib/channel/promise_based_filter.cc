@@ -566,20 +566,6 @@ void BaseCallData::SendMessage::Done(const ServerMetadata& metadata,
     case State::kPushedToPipe:
       push_.reset();
       next_.reset();
-      // Ensure captured transport batches are released if the call terminates
-      // while a message is in-flight. This prevents deadlocks where the
-      // transport never receives the batch, leaving the RPC hanging for
-      // metadata.
-      if (batch_.is_captured()) {
-        std::string temp;
-        batch_.CancelWith(
-            absl::Status(
-                static_cast<absl::StatusCode>(
-                    metadata.get(GrpcStatusMetadata())
-                        .value_or(GRPC_STATUS_UNKNOWN)),
-                metadata.GetStringValue("grpc-message", &temp).value_or("")),
-            flusher);
-      }
       state_ = State::kCancelledButNotYetPolled;
       if (base_->is_current()) base_->ForceImmediateRepoll();
       break;
@@ -1249,7 +1235,7 @@ class ClientCallData::PollContext {
                       std::exchange(
                           self_->recv_initial_metadata_->original_on_ready,
                           nullptr),
-                      StatusFromMetadata(*md),
+                      absl::CancelledError(),
                       "wake_inside_combiner:recv_initial_metadata_ready");
               }
             }
