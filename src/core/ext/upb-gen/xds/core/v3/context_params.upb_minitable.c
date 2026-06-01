@@ -14,46 +14,50 @@
 // Must be last.
 #include "upb/port/def.inc"
 
-extern const struct upb_MiniTable UPB_PRIVATE(_kUpb_MiniTable_StaticallyTreeShaken);
-static const upb_MiniTableSubInternal xds_core_v3_ContextParams__submsgs[1] = {
-  {.UPB_PRIVATE(submsg) = &xds__core__v3__ContextParams__ParamsEntry_msg_init_ptr},
-};
+extern const UPB_PRIVATE(upb_GeneratedExtensionListEntry)* UPB_PRIVATE(upb_generated_extension_list);
+typedef struct {
+  upb_MiniTableField fields[1];
+  upb_MiniTableSubInternal subs[1];
+} xds__core__v3__ContextParams_msg_init_Fields;
 
-static const upb_MiniTableField xds_core_v3_ContextParams__fields[1] = {
-  {1, 8, 0, 0, 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-};
+static const xds__core__v3__ContextParams_msg_init_Fields xds_core_v3_ContextParams__fields = {{
+  {1, 8, 0, UPB_SIZE(3, 4), 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+ },
+  {
+  {.UPB_PRIVATE(submsg) = &xds__core__v3__ContextParams__ParamsEntry_msg_init},
+}};
 
 const upb_MiniTable xds__core__v3__ContextParams_msg_init = {
-  &xds_core_v3_ContextParams__submsgs[0],
-  &xds_core_v3_ContextParams__fields[0],
+  &xds_core_v3_ContextParams__fields.fields[0],
   16, 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "xds.core.v3.ContextParams",
 #endif
 };
 
-const upb_MiniTable* xds__core__v3__ContextParams_msg_init_ptr = &xds__core__v3__ContextParams_msg_init;
-static const upb_MiniTableField xds_core_v3_ContextParams_ParamsEntry__fields[2] = {
+typedef struct {
+  upb_MiniTableField fields[2];
+} xds__core__v3__ContextParams__ParamsEntry_msg_init_Fields;
+
+static const xds__core__v3__ContextParams__ParamsEntry_msg_init_Fields xds_core_v3_ContextParams_ParamsEntry__fields = {{
   {1, 16, 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
   {2, 32, 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
-};
+}};
 
 const upb_MiniTable xds__core__v3__ContextParams__ParamsEntry_msg_init = {
-  NULL,
-  &xds_core_v3_ContextParams_ParamsEntry__fields[0],
+  &xds_core_v3_ContextParams_ParamsEntry__fields.fields[0],
   48, 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
 #ifdef UPB_TRACING_ENABLED
   "xds.core.v3.ContextParams.ParamsEntry",
 #endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x001000003f00000a, &upb_pss_1bt},
-    {0x002000003f000012, &upb_pss_1bt},
+    {0x001000003f00000a, &upb_DecodeFast_String_Scalar_Tag1Byte},
+    {0x002000003f000012, &upb_DecodeFast_String_Scalar_Tag1Byte},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
   })
 };
 
-const upb_MiniTable* xds__core__v3__ContextParams__ParamsEntry_msg_init_ptr = &xds__core__v3__ContextParams__ParamsEntry_msg_init;
 static const upb_MiniTable *messages_layout[2] = {
   &xds__core__v3__ContextParams_msg_init,
   &xds__core__v3__ContextParams__ParamsEntry_msg_init,

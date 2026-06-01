@@ -535,13 +535,14 @@ class ClientLbEnd2endTest : public ::testing::Test {
       const std::unique_ptr<grpc::testing::EchoTestService::Stub>& stub,
       size_t start_index = 0, size_t stop_index = 0,
       absl::AnyInvocable<void(const Status&)> status_check = nullptr,
-      absl::Duration timeout = absl::Seconds(30)) {
+      absl::Duration timeout = absl::Seconds(30), bool wait_for_ready = false) {
     if (stop_index == 0) stop_index = servers_.size();
     auto deadline = absl::Now() + (timeout * grpc_test_slowdown_factor());
     LOG(INFO) << "========= WAITING FOR BACKENDS [" << start_index << ", "
               << stop_index << ") ==========";
     while (!SeenAllServers(start_index, stop_index)) {
-      Status status = SendRpc(stub);
+      Status status = SendRpc(stub, /*response=*/nullptr, /*timeout_ms=*/1000,
+                              /*wait_for_ready=*/wait_for_ready);
       if (status_check != nullptr) {
         if (!status.ok()) status_check(status);
       } else {
@@ -561,9 +562,10 @@ class ClientLbEnd2endTest : public ::testing::Test {
       const grpc_core::DebugLocation& location,
       const std::unique_ptr<grpc::testing::EchoTestService::Stub>& stub,
       size_t server_index,
-      absl::AnyInvocable<void(const Status&)> status_check = nullptr) {
+      absl::AnyInvocable<void(const Status&)> status_check = nullptr,
+      bool wait_for_ready = false) {
     WaitForServers(location, stub, server_index, server_index + 1,
-                   std::move(status_check));
+                   std::move(status_check), absl::Seconds(30), wait_for_ready);
   }
 
   bool WaitForChannelState(
@@ -2095,7 +2097,7 @@ TEST_F(RoundRobinTest, HealthChecking) {
   EXPECT_TRUE(WaitForChannelReady(channel.get()));
   // New channel state may be reported before the picker is updated, so
   // wait for the server before proceeding.
-  WaitForServer(DEBUG_LOCATION, stub, 0);
+  WaitForServer(DEBUG_LOCATION, stub, 0, nullptr, true /* wait_for_ready */);
   for (int i = 0; i < 10; ++i) {
     CheckRpcSendOk(DEBUG_LOCATION, stub);
   }
@@ -2174,7 +2176,7 @@ TEST_F(RoundRobinTest, HealthCheckingHandlesSubchannelFailure) {
   auto channel = BuildChannel("round_robin", response_generator, args);
   auto stub = BuildStub(channel);
   response_generator.SetNextResolution(GetServersPorts());
-  WaitForServer(DEBUG_LOCATION, stub, 0);
+  WaitForServer(DEBUG_LOCATION, stub, 0, nullptr, true /* wait_for_ready */);
   // Stop server 0 and send a new resolver result to ensure that RR
   // checks each subchannel's state.
   servers_[0]->StopListeningAndSendGoaways();

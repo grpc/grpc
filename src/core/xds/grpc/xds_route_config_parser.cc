@@ -411,10 +411,8 @@ XdsRouteConfigResource::TypedPerFilterConfig ParseTypedPerFilterConfig(
     if (filter_config.has_value()) {
       entry.config = std::move(*filter_config);
     }
-    if (IsXdsChannelFilterChainPerRouteEnabled()) {
-      entry.filter_config = filter_impl->ParseOverrideConfig(
-          key, context, *extension_to_use, errors);
-    }
+    entry.filter_config = filter_impl->ParseOverrideConfig(
+        key, context, *extension_to_use, errors);
   }
   return typed_per_filter_config;
 }
@@ -778,7 +776,7 @@ std::shared_ptr<const XdsRouteConfigResource> XdsRouteConfigResourceParse(
     const envoy_config_route_v3_RouteConfiguration* route_config,
     ValidationErrors* errors) {
   auto rds_update = std::make_shared<XdsRouteConfigResource>();
-  // Get the cluster spcifier plugin map.
+  // Get the cluster specifier plugin map.
   if (XdsRlsEnabled()) {
     rds_update->cluster_specifier_plugin_map =
         ClusterSpecifierPluginParse(context, route_config, errors);

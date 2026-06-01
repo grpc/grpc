@@ -269,7 +269,9 @@ void ChannelTrace::RenderEntry(const Entry& entry,
     RenderEntry(entries_[id], child, arena);
     size_t length;
     auto* bytes = grpc_channelz_v2_TraceEvent_serialize(child, arena, &length);
-    auto* data = grpc_channelz_v2_Data_new(arena);
+    // Allocate and attach the Data object directly to the trace_event
+    auto* data = grpc_channelz_v2_TraceEvent_add_data(trace_event, arena);
+    // Set the name and value of the fields in the Data object
     grpc_channelz_v2_Data_set_name(data, StdStringToUpbString("child_trace"));
     auto* any = grpc_channelz_v2_Data_mutable_value(data, arena);
     google_protobuf_Any_set_value(

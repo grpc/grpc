@@ -838,7 +838,8 @@ void ClientChannel::AddConnectivityWatcher(
 
 void ClientChannel::RemoveConnectivityWatcher(
     AsyncConnectivityStateWatcherInterface* watcher) {
-  auto self = RefAsSubclass<ClientChannel>();  // Held by callback.
+  WeakRefCountedPtr<ClientChannel> self =
+      WeakRefAsSubclass<ClientChannel>();  // Held by callback.
   work_serializer_->Run(
       [self, watcher]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(*self->work_serializer_) {
         self->state_tracker_.RemoveWatcher(watcher);
@@ -1391,15 +1392,14 @@ void ClientChannel::UpdateServiceConfigInDataPlaneLocked(
   }
   // Modify channel args.
   ChannelArgs new_args = args.SetObject(this).SetObject(saved_service_config_);
-  // Construct filter stack.
-  auto new_blackboard = MakeRefCounted<Blackboard>();
   const bool enable_retries =
       !channel_args_.WantMinimalStack() &&
       channel_args_.GetBool(GRPC_ARG_ENABLE_RETRIES).value_or(true);
   if (enable_retries) {
-    RetryInterceptor::UpdateBlackboard(*saved_service_config_,
-                                       blackboard_.get(), new_blackboard.get());
+    retry_throttler_updater_.Update(*saved_service_config_, new_args);
   }
+  // Construct filter stack.
+  auto new_blackboard = MakeRefCounted<Blackboard>();
   std::function<void(ServerMetadata&)> on_server_trailing_metadata;
   if (idle_timeout_ != Duration::Zero()) {
     on_server_trailing_metadata = [this](ServerMetadata&) {

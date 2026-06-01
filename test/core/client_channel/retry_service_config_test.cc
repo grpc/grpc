@@ -57,7 +57,7 @@ TEST_F(RetryParserTest, ValidRetryThrottling) {
       "}";
   auto service_config = ServiceConfigImpl::Create(ChannelArgs(), test_json);
   ASSERT_TRUE(service_config.ok()) << service_config.status();
-  const auto* parsed_config = static_cast<internal::RetryGlobalConfig*>(
+  const auto* parsed_config = static_cast<RetryGlobalConfig*>(
       (*service_config)->GetGlobalParsedConfig(parser_index_));
   ASSERT_NE(parsed_config, nullptr);
   EXPECT_EQ(parsed_config->max_milli_tokens(), 2000);
@@ -135,8 +135,8 @@ TEST_F(RetryParserTest, ValidRetryPolicy) {
           ->GetMethodParsedConfigVector(
               grpc_slice_from_static_string("/TestServ/TestMethod"));
   ASSERT_NE(vector_ptr, nullptr);
-  const auto* parsed_config = static_cast<internal::RetryMethodConfig*>(
-      ((*vector_ptr)[parser_index_]).get());
+  const auto* parsed_config =
+      static_cast<RetryMethodConfig*>(((*vector_ptr)[parser_index_]).get());
   ASSERT_NE(parsed_config, nullptr);
   EXPECT_EQ(parsed_config->max_attempts(), 3);
   EXPECT_EQ(parsed_config->initial_backoff(), Duration::Seconds(1));
@@ -527,8 +527,8 @@ TEST_F(RetryParserTest, ValidRetryPolicyWithPerAttemptRecvTimeout) {
           ->GetMethodParsedConfigVector(
               grpc_slice_from_static_string("/TestServ/TestMethod"));
   ASSERT_NE(vector_ptr, nullptr);
-  const auto* parsed_config = static_cast<internal::RetryMethodConfig*>(
-      ((*vector_ptr)[parser_index_]).get());
+  const auto* parsed_config =
+      static_cast<RetryMethodConfig*>(((*vector_ptr)[parser_index_]).get());
   ASSERT_NE(parsed_config, nullptr);
   EXPECT_EQ(parsed_config->max_attempts(), 2);
   EXPECT_EQ(parsed_config->initial_backoff(), Duration::Seconds(1));
@@ -564,8 +564,8 @@ TEST_F(RetryParserTest,
           ->GetMethodParsedConfigVector(
               grpc_slice_from_static_string("/TestServ/TestMethod"));
   ASSERT_NE(vector_ptr, nullptr);
-  const auto* parsed_config = static_cast<internal::RetryMethodConfig*>(
-      ((*vector_ptr)[parser_index_]).get());
+  const auto* parsed_config =
+      static_cast<RetryMethodConfig*>(((*vector_ptr)[parser_index_]).get());
   ASSERT_NE(parsed_config, nullptr);
   EXPECT_EQ(parsed_config->max_attempts(), 2);
   EXPECT_EQ(parsed_config->initial_backoff(), Duration::Seconds(1));
@@ -602,8 +602,8 @@ TEST_F(RetryParserTest,
           ->GetMethodParsedConfigVector(
               grpc_slice_from_static_string("/TestServ/TestMethod"));
   ASSERT_NE(vector_ptr, nullptr);
-  const auto* parsed_config = static_cast<internal::RetryMethodConfig*>(
-      ((*vector_ptr)[parser_index_]).get());
+  const auto* parsed_config =
+      static_cast<RetryMethodConfig*>(((*vector_ptr)[parser_index_]).get());
   ASSERT_NE(parsed_config, nullptr);
   EXPECT_EQ(parsed_config->max_attempts(), 2);
   EXPECT_EQ(parsed_config->initial_backoff(), Duration::Seconds(1));

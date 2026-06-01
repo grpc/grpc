@@ -6,8 +6,8 @@
 namespace Math;
 
 use Google\Protobuf\Internal\GPBType;
-use Google\Protobuf\Internal\RepeatedField;
 use Google\Protobuf\Internal\GPBUtil;
+use Google\Protobuf\RepeatedField;
 
 /**
  * Generated from protobuf message <code>math.DivArgs</code>
@@ -52,7 +52,7 @@ class DivArgs extends \Google\Protobuf\Internal\Message
      * @param int|string $var
      * @return $this
      */
-    public function setDividend($var)
+    public function setDividend(int|string $var)
     {
         GPBUtil::checkInt64($var);
         $this->dividend = $var;
@@ -74,7 +74,7 @@ class DivArgs extends \Google\Protobuf\Internal\Message
      * @param int|string $var
      * @return $this
      */
-    public function setDivisor($var)
+    public function setDivisor(int|string $var)
     {
         GPBUtil::checkInt64($var);
         $this->divisor = $var;

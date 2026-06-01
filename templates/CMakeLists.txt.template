@@ -32,12 +32,19 @@
   grpcxx_libs = ['grpc++', 'grpc++_unsecure']
   protoc_libs = ['benchmark_helpers', 'grpc++_reflection', 'grpcpp_channelz']
 
+
+  def _remove_prefix(string, prefix):
+    # TODO(sergiitk): delete and use str.removeprefix once CI VMs off of py 3.8
+    if string.startswith(prefix):
+      return string[len(prefix):]
+    return string
+
   def third_party_proto_import_path(path):
     """Removes third_party prefix to match ProtoBuf's relative import path."""
     for lib in external_proto_libraries:
       if path.startswith(lib.proto_prefix):
-        path = path[len(lib.proto_prefix):]
-        path = path.removeprefix(lib.strip_path_prefix)
+        path = _remove_prefix(path, lib.proto_prefix)
+        path = _remove_prefix(path, lib.strip_path_prefix)
         break
     return path
 
@@ -421,7 +428,7 @@
     set(_gRPC_C_CXX_FLAGS "<%text>${_gRPC_C_CXX_FLAGS}</%text> /wd4267")
     # TODO(jtattermusch): needed to build boringssl with VS2017, revisit later
     set(_gRPC_C_CXX_FLAGS "<%text>${_gRPC_C_CXX_FLAGS}</%text> /wd4987 /wd4774 /wd4819 /wd4996 /wd4619")
-    # Silences thousands of trucation warnings
+    # Silences thousands of truncation warnings
     set(_gRPC_C_CXX_FLAGS "<%text>${_gRPC_C_CXX_FLAGS}</%text> /wd4503")
     # Tell MSVC to build grpc using utf-8
     set(_gRPC_C_CXX_FLAGS "<%text>${_gRPC_C_CXX_FLAGS}</%text> /utf-8")
@@ -516,6 +523,7 @@
     # Download the archive via HTTP, validate the checksum, and extract to ${external_proto_library.destination}.
     download_archive(
       <%text>${CMAKE_CURRENT_SOURCE_DIR}</%text>/${external_proto_library.destination}
+      https://storage.googleapis.com/grpc-bazel-mirror/${_remove_prefix(download_url, "https://")}
       ${download_url}
       ${external_proto_library.hash}
       ${external_proto_library.strip_prefix}
@@ -528,7 +536,7 @@
     set(_gRPC_ALLTARGETS_LIBRARIES <%text>${_gRPC_ALLTARGETS_LIBRARIES}</%text> ws2_32 crypt32)
     set(_gRPC_STATIC_WIN32 STATIC)
   endif()
-    
+
   if(BUILD_SHARED_LIBS AND WIN32)
 
   # Currently for shared lib on Windows (i.e. a DLL) certain bits of source code
@@ -892,6 +900,12 @@
     % endfor
       )
     endif()
+    % endif
+    ## upb from protobuf 33.x requires this flag to compile. See https://github.com/grpc/grpc/issues/41951
+    % if 'upb_' in lib.name:
+    target_compile_options(${lib.name} PRIVATE
+      /Zc:preprocessor
+    )
     % endif
     if(gRPC_INSTALL)
       install(FILES <%text>${CMAKE_CURRENT_BINARY_DIR}/</%text>${lib.name}.pdb

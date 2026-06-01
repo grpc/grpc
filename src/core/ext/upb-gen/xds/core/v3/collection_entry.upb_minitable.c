@@ -17,59 +17,57 @@
 // Must be last.
 #include "upb/port/def.inc"
 
-extern const struct upb_MiniTable UPB_PRIVATE(_kUpb_MiniTable_StaticallyTreeShaken);
-static const upb_MiniTableSubInternal xds_core_v3_CollectionEntry__submsgs[2] = {
-  {.UPB_PRIVATE(submsg) = &xds__core__v3__ResourceLocator_msg_init_ptr},
-  {.UPB_PRIVATE(submsg) = &xds__core__v3__CollectionEntry__InlineEntry_msg_init_ptr},
-};
+extern const UPB_PRIVATE(upb_GeneratedExtensionListEntry)* UPB_PRIVATE(upb_generated_extension_list);
+typedef struct {
+  upb_MiniTableField fields[2];
+  upb_MiniTableSubInternal subs[2];
+} xds__core__v3__CollectionEntry_msg_init_Fields;
 
-static const upb_MiniTableField xds_core_v3_CollectionEntry__fields[2] = {
-  {1, UPB_SIZE(12, 16), -9, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-  {2, UPB_SIZE(12, 16), -9, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-};
+static const xds__core__v3__CollectionEntry_msg_init_Fields xds_core_v3_CollectionEntry__fields = {{
+  {1, UPB_SIZE(12, 16), -9, 6, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {2, UPB_SIZE(12, 16), -9, UPB_SIZE(4, 5), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+ },
+  {
+  {.UPB_PRIVATE(submsg) = &xds__core__v3__ResourceLocator_msg_init},
+  {.UPB_PRIVATE(submsg) = &xds__core__v3__CollectionEntry__InlineEntry_msg_init},
+}};
 
 const upb_MiniTable xds__core__v3__CollectionEntry_msg_init = {
-  &xds_core_v3_CollectionEntry__submsgs[0],
-  &xds_core_v3_CollectionEntry__fields[0],
-  UPB_SIZE(16, 24), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
+  &xds_core_v3_CollectionEntry__fields.fields[0],
+  UPB_SIZE(16, 24), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "xds.core.v3.CollectionEntry",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x001000080100000a, &upb_pom_1bt_maxmaxb},
-    {0x0010000802010012, &upb_pom_1bt_max64b},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-  })
 };
 
-const upb_MiniTable* xds__core__v3__CollectionEntry_msg_init_ptr = &xds__core__v3__CollectionEntry_msg_init;
-static const upb_MiniTableSubInternal xds_core_v3_CollectionEntry_InlineEntry__submsgs[1] = {
-  {.UPB_PRIVATE(submsg) = &google__protobuf__Any_msg_init_ptr},
-};
+typedef struct {
+  upb_MiniTableField fields[3];
+  upb_MiniTableSubInternal subs[1];
+} xds__core__v3__CollectionEntry__InlineEntry_msg_init_Fields;
 
-static const upb_MiniTableField xds_core_v3_CollectionEntry_InlineEntry__fields[3] = {
+static const xds__core__v3__CollectionEntry__InlineEntry_msg_init_Fields xds_core_v3_CollectionEntry_InlineEntry__fields = {{
   {1, 16, 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
   {2, UPB_SIZE(24, 32), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
-  {3, UPB_SIZE(12, 48), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-};
+  {3, UPB_SIZE(12, 48), 64, UPB_SIZE(3, 4), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+ },
+  {
+  {.UPB_PRIVATE(submsg) = &google__protobuf__Any_msg_init},
+}};
 
 const upb_MiniTable xds__core__v3__CollectionEntry__InlineEntry_msg_init = {
-  &xds_core_v3_CollectionEntry_InlineEntry__submsgs[0],
-  &xds_core_v3_CollectionEntry_InlineEntry__fields[0],
+  &xds_core_v3_CollectionEntry_InlineEntry__fields.fields[0],
   UPB_SIZE(32, 56), 3, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(24), 0,
 #ifdef UPB_TRACING_ENABLED
   "xds.core.v3.CollectionEntry.InlineEntry",
 #endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x001000003f00000a, &upb_pss_1bt},
-    {0x002000003f000012, &upb_pss_1bt},
+    {0x001000003f00000a, &upb_DecodeFast_String_Scalar_Tag1Byte},
+    {0x002000003f000012, &upb_DecodeFast_String_Scalar_Tag1Byte},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
   })
 };
 
-const upb_MiniTable* xds__core__v3__CollectionEntry__InlineEntry_msg_init_ptr = &xds__core__v3__CollectionEntry__InlineEntry_msg_init;
 static const upb_MiniTable *messages_layout[2] = {
   &xds__core__v3__CollectionEntry_msg_init,
   &xds__core__v3__CollectionEntry__InlineEntry_msg_init,

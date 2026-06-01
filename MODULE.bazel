@@ -14,7 +14,7 @@
 
 module(
     name = "grpc",
-    version = "1.81.0-dev",
+    version = "1.82.0-dev",
     compatibility_level = 1,
     repo_name = "com_github_grpc_grpc",
 )
@@ -22,6 +22,9 @@ module(
 # Regular dependencies
 # ====================
 
+# TODO(weizheyuan): Check if this version bump is still needed for BCR
+# releases after we drop bazel 7 supprot.
+#
 # Upgrade version of rules_swift to avoid an error in BCR CI of not
 # finding switfc.exe on Windows with bazel 7.
 bazel_dep(name = "rules_swift", version = "2.5.0")
@@ -49,11 +52,17 @@ bazel_dep(name = "openssl", version = "3.3.1.bcr.1")
 bazel_dep(name = "opentelemetry-cpp", version = "1.19.0", repo_name = "io_opentelemetry_cpp")
 
 # --- Protobuf related packages.
-# Pinning to 31.1 to avoid xDs breakage until we can upgrade to Protobuf >= 33.0
-bazel_dep(name = "protobuf", version = "31.1", repo_name = "com_google_protobuf")
+# TODO(weizheyuan): Remove this single_version_override block once protobuf 35
+# offical release includes a MSVC related bugfix that we need.
+# See also https://github.com/protocolbuffers/protobuf/pull/27609
+bazel_dep(name = "protobuf", version = "35.0", repo_name = "com_google_protobuf")
 single_version_override(
     module_name = "protobuf",
-    version = "31.1",
+    patch_strip = 1,
+    patches = [
+        "//bazel:protobuf/fix_msvc_crash.patch",
+    ],
+    version = "35.0",
 )
 
 bazel_dep(name = "protoc-gen-validate", version = "1.2.1.bcr.1", repo_name = "com_envoyproxy_protoc_gen_validate")  # Not needed directly
@@ -103,7 +112,6 @@ bazel_dep(name = "rules_python", version = "1.6.3")
 DEFAULT_PYTHON_VERSION = "3.11"
 
 PYTHON_VERSIONS = [
-    "3.9",
     "3.10",
     "3.11",
     "3.12",

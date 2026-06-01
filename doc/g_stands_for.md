@@ -78,4 +78,5 @@
 - 1.76 'g' stands for ['genuine'](https://github.com/grpc/grpc/tree/v1.76.x)
 - 1.78 'g' stands for ['gutsy'](https://github.com/grpc/grpc/tree/v1.78.x)
 - 1.80 'g' stands for ['glimmering'](https://github.com/grpc/grpc/tree/v1.80.x)
-- 1.81 'g' stands for ['graphic'](https://github.com/grpc/grpc/tree/master)
+- 1.81 'g' stands for ['graphic'](https://github.com/grpc/grpc/tree/v1.81.x)
+- 1.82 'g' stands for ['glacier'](https://github.com/grpc/grpc/tree/master)

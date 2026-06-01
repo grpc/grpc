@@ -905,9 +905,7 @@ std::string XdsEnd2endTest::MakeTlsHandshakeFailureRegex(
       "(Failed to connect to remote host: )?"
       // Tls handshake failure
       "Tls handshake failed \\(TSI_PROTOCOL_FAILURE\\): SSL_ERROR_SSL: "
-      "error:1000007d:SSL routines:OPENSSL_internal:CERTIFICATE_VERIFY_FAILED"
-      // Detailed reason for certificate verify failure
-      "(: .*)?");
+      ".*(CERTIFICATE_VERIFY_FAILED|certificate verify failed).*");
 }
 
 grpc_core::PemKeyCertPairList XdsEnd2endTest::ReadTlsIdentityPair(

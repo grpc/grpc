@@ -6,8 +6,8 @@
 namespace Grpc\Testing;
 
 use Google\Protobuf\Internal\GPBType;
-use Google\Protobuf\Internal\RepeatedField;
 use Google\Protobuf\Internal\GPBUtil;
+use Google\Protobuf\RepeatedField;
 
 /**
  * For reconnect interop test only.
@@ -50,7 +50,7 @@ class ReconnectParams extends \Google\Protobuf\Internal\Message
      * @param int $var
      * @return $this
      */
-    public function setMaxReconnectBackoffMs($var)
+    public function setMaxReconnectBackoffMs(int $var)
     {
         GPBUtil::checkInt32($var);
         $this->max_reconnect_backoff_ms = $var;

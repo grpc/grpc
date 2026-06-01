@@ -6,8 +6,8 @@
 namespace Grpc\Testing;
 
 use Google\Protobuf\Internal\GPBType;
-use Google\Protobuf\Internal\RepeatedField;
 use Google\Protobuf\Internal\GPBUtil;
+use Google\Protobuf\RepeatedField;
 
 /**
  * A protobuf representation for grpc status. This is used by test
@@ -55,7 +55,7 @@ class EchoStatus extends \Google\Protobuf\Internal\Message
      * @param int $var
      * @return $this
      */
-    public function setCode($var)
+    public function setCode(int $var)
     {
         GPBUtil::checkInt32($var);
         $this->code = $var;
@@ -77,9 +77,9 @@ class EchoStatus extends \Google\Protobuf\Internal\Message
      * @param string $var
      * @return $this
      */
-    public function setMessage($var)
+    public function setMessage(string $var)
     {
-        GPBUtil::checkString($var, True);
+        GPBUtil::checkString($var, true);
         $this->message = $var;
 
         return $this;
