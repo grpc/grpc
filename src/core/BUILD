@@ -11632,7 +11632,6 @@ grpc_cc_library(
     ],
 )
 
-
 ### UPB Targets
 
 grpc_upb_proto_library(
