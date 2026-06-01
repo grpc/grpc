@@ -226,10 +226,25 @@ static void test_too_many_metadata() {
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  GRPC_CHECK(GRPC_CALL_ERROR_INVALID_METADATA ==
+  op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
+  op->data.recv_status_on_client.trailing_metadata =
+      &g_state.trailing_metadata_recv;
+  op->data.recv_status_on_client.status = &g_state.status;
+  op->data.recv_status_on_client.status_details = &g_state.details;
+  op->flags = 0;
+  op->reserved = nullptr;
+  op++;
+  // Even though the metadata is invalid, we expect GRPC_CALL_OK because
+  // the error is now handled asynchronously (call is cancelled).
+  GRPC_CHECK(GRPC_CALL_OK ==
              grpc_call_start_batch(g_state.call, g_state.ops,
                                    (size_t)(op - g_state.ops),
                                    grpc_core::CqVerifier::tag(1), nullptr));
+  // Drain the CQ before inspecting output buffers — the completion must fire
+  // before the status pointer is considered stable.
+  g_state.cqv->Expect(grpc_core::CqVerifier::tag(1), false);
+  g_state.cqv->Verify();
+  GRPC_CHECK(g_state.status == GRPC_STATUS_INTERNAL);
   cleanup_test();
 }
 
@@ -510,6 +525,7 @@ static void test_too_many_trailing_metadata() {
   LOG(INFO) << "test_too_many_trailing_metadata";
 
   grpc_op* op;
+  int was_cancelled = 0;
   prepare_test(0);
 
   op = g_state.ops;
@@ -522,10 +538,22 @@ static void test_too_many_trailing_metadata() {
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  GRPC_CHECK(GRPC_CALL_ERROR_INVALID_METADATA ==
+  op->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
+  op->data.recv_close_on_server.cancelled = &was_cancelled;
+  op->flags = 0;
+  op->reserved = nullptr;
+  op++;
+  // Expect OK because the "send" operation is accepted, then the call is
+  // cancelled asynchronously.
+  GRPC_CHECK(GRPC_CALL_OK ==
              grpc_call_start_batch(g_state.server_call, g_state.ops,
                                    (size_t)(op - g_state.ops),
                                    grpc_core::CqVerifier::tag(2), nullptr));
+  // Drain the CQ before inspecting output buffers — the completion must fire
+  // before the cancelled flag is considered stable.
+  g_state.cqv->Expect(grpc_core::CqVerifier::tag(2), false);
+  g_state.cqv->Verify();
+  GRPC_CHECK(was_cancelled == 1);
   cleanup_test();
 }
 
@@ -617,10 +645,25 @@ static void test_invalid_initial_metadata_reserved_key() {
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  GRPC_CHECK(GRPC_CALL_ERROR_INVALID_METADATA ==
+  op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
+  op->data.recv_status_on_client.trailing_metadata =
+      &g_state.trailing_metadata_recv;
+  op->data.recv_status_on_client.status = &g_state.status;
+  op->data.recv_status_on_client.status_details = &g_state.details;
+  op->flags = 0;
+  op->reserved = nullptr;
+  op++;
+  // Even though the metadata is invalid, we expect GRPC_CALL_OK because
+  // the error is now handled asynchronously (call is cancelled).
+  GRPC_CHECK(GRPC_CALL_OK ==
              grpc_call_start_batch(g_state.call, g_state.ops,
                                    (size_t)(op - g_state.ops),
                                    grpc_core::CqVerifier::tag(1), nullptr));
+  // Drain the CQ before inspecting output buffers — the completion must fire
+  // before the status pointer is considered stable.
+  g_state.cqv->Expect(grpc_core::CqVerifier::tag(1), false);
+  g_state.cqv->Verify();
+  GRPC_CHECK(g_state.status == GRPC_STATUS_INTERNAL);
   cleanup_test();
 }
 

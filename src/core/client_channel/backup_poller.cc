@@ -164,7 +164,7 @@ static bool g_can_poll_in_background() {
   return grpc_iomgr_run_in_background();
 #else
   // No iomgr "event_engines" (not to be confused with the new EventEngine)
-  // are able to run in backgroung.
+  // are able to run in background.
   return false;
 #endif
 }

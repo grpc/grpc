@@ -53,7 +53,6 @@ extern void RegisterServiceConfigChannelArgFilter(
     CoreConfiguration::Builder* builder);
 extern void RegisterExtraFilters(CoreConfiguration::Builder* builder);
 extern void RegisterResourceQuota(CoreConfiguration::Builder* builder);
-extern void FaultInjectionFilterRegister(CoreConfiguration::Builder* builder);
 extern void RegisterDnsResolver(CoreConfiguration::Builder* builder);
 extern void RegisterBackendMetricFilter(CoreConfiguration::Builder* builder);
 extern void RegisterSockaddrResolver(CoreConfiguration::Builder* builder);
@@ -86,6 +85,10 @@ void RegisterBuiltins(CoreConfiguration::Builder* builder) {
       .Terminal();
   builder->channel_init()
       ->RegisterFilter(GRPC_SERVER_CHANNEL, &Server::kServerTopFilter)
+      .SkipV3()
+      .BeforeAll();
+  builder->channel_init()
+      ->RegisterFilter(GRPC_SERVER_VIRTUAL_CHANNEL, &Server::kServerTopFilter)
       .SkipV3()
       .BeforeAll();
 }
@@ -123,7 +126,6 @@ void BuildCoreConfiguration(CoreConfiguration::Builder* builder) {
   RegisterMessageSizeFilter(builder);
   RegisterServiceConfigChannelArgFilter(builder);
   RegisterResourceQuota(builder);
-  FaultInjectionFilterRegister(builder);
   RegisterDnsResolver(builder);
   RegisterSockaddrResolver(builder);
   RegisterFakeResolver(builder);

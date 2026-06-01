@@ -91,7 +91,7 @@
 // It's also acceptable to return a promise that resolves to the
 // relevant return type listed above.
 //
-// OnFinalize is added to intecept call finalization.
+// OnFinalize is added to intercept call finalization.
 // It must have one of the signatures:
 // - static inline const NoInterceptor OnFinalize:
 //   the filter does not intercept call finalization.
@@ -276,7 +276,7 @@ struct CallConstructor {
 
 template <typename FilterType>
 struct CallConstructor<FilterType,
-                       absl::void_t<decltype(typename FilterType::Call(
+                       std::void_t<decltype(typename FilterType::Call(
                            static_cast<FilterType*>(nullptr)))>> {
   static void Construct(void* call_data, FilterType* channel) {
     new (call_data) typename FilterType::Call(channel);
