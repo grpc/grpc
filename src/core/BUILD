@@ -4091,8 +4091,9 @@ grpc_cc_library(
     ],
     external_deps = ["absl/base:core_headers"],
     deps = [
-        "blackboard",
+        "grpc_service_config",
         "ref_counted",
+        "retry_service_config",
         "sync",
         "useful",
         "//:gpr",
