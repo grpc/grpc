@@ -98,6 +98,8 @@
 const size_t kMaxChainLength = 100;
 const char* kDefaultBoringSSLKeyExchangeGroups =
     "X25519MLKEM768,X25519,P-256,P-384,P-521";
+const char* kDefaultOpenSSL1_1_1KeyExchangeGroups = "X25519,P-256,P-384,P-521";
+const char* kDefaultOpenSSL1_0_2KeyExchangeGroups = "X25519:P-256:P-384:P-521";
 
 // Putting a macro like this and littering the source file with #if is really
 // bad practice.
@@ -1189,15 +1191,18 @@ static tsi_result populate_key_exchange_groups(
       LOG(ERROR) << "Could not set key exchange groups: " << group_list_str;
       return TSI_INTERNAL_ERROR;
     }
-#else if OPENSSL_VERSION_NUMBER < 0x30000000L
-    EC_KEY* ecdh = EC_KEY_new_by_curve_name(NID_X9_62_prime256v1);
-    if (!SSL_CTX_set_tmp_ecdh(context, ecdh)) {
-      LOG(ERROR) << "Could not set ephemeral ECDH key.";
-      EC_KEY_free(ecdh);
+#else if OPENSSL_VERSION_NUMBER < 0x30000000L && \
+    OPENSSL_VERSION_NUMBER >= 0x10101000L
+    if (!SSL_CTX_set1_groups_list(context,
+                                  kDefaultOpenSSL1_1_1KeyExchangeGroups)) {
+      LOG(ERROR) << "Could not set key exchange groups: " << group_list_str;
       return TSI_INTERNAL_ERROR;
     }
-    SSL_CTX_set_options(context, SSL_OP_SINGLE_ECDH_USE);
-    EC_KEY_free(ecdh);
+#else if OPENSSL_VERSION_NUMBER < 0x10101000L
+    if (!SSL_CTX_set1_curves_list(ctx, preferred_curves)) {
+      LOG(ERROR) << "Could not set key exchange groups: " << group_list_str;
+      return TSI_INTERNAL_ERROR;
+    }
 #endif
   }
 }
