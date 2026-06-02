@@ -329,12 +329,15 @@ class InterceptedCall:
 
         call_completed = False
 
-        try:
+        if (
+            interceptors_task.cancelled()
+            or interceptors_task.exception() is not None
+        ):
+            call_completed = True
+        else:
             call = interceptors_task.result()
             if call.done():
                 call_completed = True
-        except (AioRpcError, asyncio.CancelledError):
-            call_completed = True
 
         if call_completed:
             for callback in self._pending_add_done_callbacks:
@@ -398,11 +401,14 @@ class InterceptedCall:
             self._pending_add_done_callbacks.append(callback)
             return
 
-        try:
-            call = self._interceptors_task.result()
-        except (AioRpcError, asyncio.CancelledError):
+        if (
+            self._interceptors_task.cancelled()
+            or self._interceptors_task.exception() is not None
+        ):
             callback(self)
             return
+
+        call = self._interceptors_task.result()
 
         if call.done():
             callback(self)
