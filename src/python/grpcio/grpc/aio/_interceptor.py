@@ -354,49 +354,42 @@ class InterceptedCall:
         callback(self)
 
     def cancel(self) -> bool:
-        if self._interceptors_task.cancelled():
-            return False
-
         if not self._interceptors_task.done():
             # There is no yet the intercepted call available,
             # Trying to cancel it by using the generic Asyncio
             # cancellation method.
             return self._interceptors_task.cancel()
 
-        if self._interceptors_task.exception() is not None:
+        try:
+            call = self._interceptors_task.result()
+        except AioRpcError:
             return False
-
-        call = self._interceptors_task.result()
+        except asyncio.CancelledError:
+            return False
 
         return call.cancel()
 
     def cancelled(self) -> bool:
-        if self._interceptors_task.cancelled():
-            return True
         if not self._interceptors_task.done():
             return False
 
-        exc = self._interceptors_task.exception()
-        if exc is not None:
-            if isinstance(exc, asyncio.CancelledError):
-                return True
-            if isinstance(exc, AioRpcError):
-                return exc.code() == grpc.StatusCode.CANCELLED
-            return False
-
-        call = self._interceptors_task.result()
+        try:
+            call = self._interceptors_task.result()
+        except AioRpcError as err:
+            return err.code() == grpc.StatusCode.CANCELLED
+        except asyncio.CancelledError:
+            return True
 
         return call.cancelled()
 
     def done(self) -> bool:
-        if self._interceptors_task.cancelled():
-            return True
         if not self._interceptors_task.done():
             return False
-        if self._interceptors_task.exception() is not None:
-            return True
 
-        call = self._interceptors_task.result()
+        try:
+            call = self._interceptors_task.result()
+        except (AioRpcError, asyncio.CancelledError):
+            return True
 
         return call.done()
 
