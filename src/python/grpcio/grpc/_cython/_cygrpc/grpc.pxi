@@ -506,6 +506,9 @@ cdef extern from "grpc/grpc.h":
 
   grpc_slice grpc_dump_xds_configs() nogil
 
+  const char *GRPC_ARG_SERVER_CONFIG_FETCHER
+  const grpc_arg_pointer_vtable *grpc_server_config_fetcher_arg_vtable() nogil
+
   ctypedef struct grpc_server_credentials:
     # We don't care about the internals (and in fact don't know them)
     pass
