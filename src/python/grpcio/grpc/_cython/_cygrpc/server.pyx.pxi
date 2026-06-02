@@ -59,6 +59,7 @@ cdef class Server:
       tmp_channel_args = _ChannelArgs(arguments_list)
       config_fetcher = grpc_server_config_fetcher_xds_create(
           notifier, tmp_channel_args.c_args())
+      fetcher_arg.key = <char *>GRPC_ARG_SERVER_CONFIG_FETCHER
       fetcher_arg.type = GRPC_ARG_POINTER
       fetcher_arg.value.pointer.vtable = <grpc_arg_pointer_vtable *>grpc_server_config_fetcher_arg_vtable()
       fetcher_arg.value.pointer.address = config_fetcher
