@@ -23,6 +23,7 @@
 #include <grpc/grpc.h>
 #include <grpc/impl/codegen/compression_types.h>
 #include <grpc/support/alloc.h>
+#include <stdbool.h>
 
 #include "rb_byte_buffer.h"
 #include "rb_call_credentials.h"

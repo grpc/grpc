@@ -49,6 +49,7 @@
 #include "absl/random/random.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
+#include "absl/strings/str_cat.h"
 
 namespace grpc_core {
 namespace chaotic_good {
@@ -334,12 +335,18 @@ void ChaoticGoodServerTransport::StreamDispatch::OnFrameTransportClosed(
                           absl::UnavailableError("transport closed"),
                           "transport closed");
   lock.Release();
+
+  if (!status.ok()) {
+    status =
+        absl::Status(status.code(), absl::StrCat("SERVER: ", status.message()));
+  }
   for (auto& pair : stream_map) {
     auto stream = std::move(pair.second);
     auto& call = stream->call;
-    call.SpawnInfallible("cancel", [stream = std::move(stream)]() mutable {
-      stream->call.Cancel();
-    });
+    call.SpawnInfallible("cancel",
+                         [stream = std::move(stream), status]() mutable {
+                           stream->call.Cancel(status);
+                         });
   }
 }
 
@@ -372,8 +379,15 @@ absl::Status ChaoticGoodServerTransport::StreamDispatch::AddStream(
       << "CHAOTIC_GOOD " << this << " NewStream " << stream_id
       << " last_seen_new_stream_id_=" << last_seen_new_stream_id_;
   auto it = stream_map_.find(stream_id);
-  if (stream_id <= last_seen_new_stream_id_) {
-    return absl::InternalError("Stream id is not increasing");
+  if (state_tracker_.state() == GRPC_CHANNEL_SHUTDOWN) {
+    return absl::InternalError("Transport closed");
+  }
+  if (stream_id <= 0) {
+    return absl::InternalError("Invalid stream id");
+  } else {
+    // TODO(vigneshbabu): Create an experiment that enforces that stream ids
+    // are always increasing.
+    last_seen_new_stream_id_ = stream_id;
   }
   if (it != stream_map_.end()) {
     return absl::InternalError("Stream already exists");

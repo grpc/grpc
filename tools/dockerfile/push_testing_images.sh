@@ -111,29 +111,16 @@ then
   done
 fi
 
+# Create a directory for storing logs
+mkdir -p reports
+
 FAILED_DIR=$(mktemp -d)
 
 # Function to build and push a single Docker image
 process_dockerfile() {
   local DOCKERFILE_DIR=$1
   local DOCKER_IMAGE_NAME=$(basename $DOCKERFILE_DIR)
-
-  if [ ! -e "$DOCKERFILE_DIR/Dockerfile" ]; then
-    return 0
-  fi
   local DOCKER_IMAGE_TAG=$(sha1sum $DOCKERFILE_DIR/Dockerfile | cut -f1 -d\ )
-
-  # Skip if DOCKERFILE_DIR is in EXCLUDE_DIRS
-  local exclude=false
-  for exclude_dir in "${EXCLUDE_DIRS[@]}"; do
-    if [[ "$DOCKERFILE_DIR" == "$exclude_dir" ]]; then
-      exclude=true
-      break
-    fi
-  done
-  if $exclude; then
-    return 0
-  fi
 
   echo "* Visiting ${DOCKERFILE_DIR}"
 
@@ -279,9 +266,42 @@ do
     break
   fi
 
+  # Only process directories
+  if [ ! -d "${DOCKERFILE_DIR}" ]; then
+    continue
+  fi
+
+  # Check if it contains Dockerfile
+  if [ ! -e "${DOCKERFILE_DIR}/Dockerfile" ]; then
+    continue
+  fi
+
+  # Skip if DOCKERFILE_DIR is in EXCLUDE_DIRS
+  exclude=false
+  for exclude_dir in "${EXCLUDE_DIRS[@]}"; do
+    if [[ "$DOCKERFILE_DIR" == "$exclude_dir" ]]; then
+      exclude=true
+      break
+    fi
+  done
+  if $exclude; then
+    continue
+  fi
+
+  DOCKER_IMAGE_NAME=$(basename "$DOCKERFILE_DIR")
+  LOG_FILE="reports/${DOCKERFILE_DIR}/sponge_log.log"
+
+  mkdir -p "reports/${DOCKERFILE_DIR}"
+
+  echo "Starting build for ${DOCKER_IMAGE_NAME} (Logs: ${LOG_FILE})..."
+
   (
     set -e
-    if ! process_dockerfile "${DOCKERFILE_DIR}"; then
+    START_TIME=$SECONDS
+    if process_dockerfile "${DOCKERFILE_DIR}" > "${LOG_FILE}" 2>&1; then
+      echo "SUCCESS: Build for ${DOCKER_IMAGE_NAME} finished (took $((SECONDS - START_TIME))s)."
+    else
+      echo "FAILED: Build for ${DOCKER_IMAGE_NAME} failed (took $((SECONDS - START_TIME))s)! (Check ${LOG_FILE})"
       if [ -z "${KEEP_GOING}" ]; then
         touch "${FAILED_DIR}/STOP"
       fi

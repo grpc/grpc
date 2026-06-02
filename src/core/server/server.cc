@@ -107,16 +107,6 @@ void Server::ListenerState::ConfigFetcherWatcher::UpdateConnectionManager(
     if (listener_state_->server_->ShutdownCalled()) {
       return;
     }
-    RefCountedPtr<Blackboard> new_blackboard;
-    for (auto& blackboard_shard : listener_state_->blackboards_) {
-      MutexLock lock(&blackboard_shard.mu);
-      if (new_blackboard == nullptr) {
-        new_blackboard = MakeRefCounted<Blackboard>();
-        listener_state_->connection_manager_->UpdateBlackboard(
-            blackboard_shard.blackboard.get(), new_blackboard.get());
-      }
-      blackboard_shard.blackboard = new_blackboard;
-    }
     listener_state_->is_serving_ = true;
     if (listener_state_->started_) return;
     listener_state_->started_ = true;
@@ -143,8 +133,7 @@ Server::ListenerState::ListenerState(RefCountedPtr<Server> server,
       event_engine_(
           server_->channel_args()
               .GetObject<grpc_event_engine::experimental::EventEngine>()),
-      listener_(std::move(l)),
-      blackboards_(PerCpuOptions().SetMaxShards(16)) {
+      listener_(std::move(l)) {
   auto max_allowed_incoming_connections =
       server_->channel_args().GetInt(GRPC_ARG_MAX_ALLOWED_INCOMING_CONNECTIONS);
   if (max_allowed_incoming_connections.has_value()) {
@@ -288,19 +277,6 @@ void Server::ListenerState::RemoveLogicalConnection(
       return;
     }
   }
-}
-
-grpc_error_handle Server::ListenerState::SetupTransport(
-    Transport* transport, grpc_pollset* accepting_pollset,
-    const ChannelArgs& args) {
-  RefCountedPtr<Blackboard> blackboard;
-  {
-    auto& blackboard_shard = blackboards_.this_cpu();
-    MutexLock lock(&blackboard_shard.mu);
-    blackboard = blackboard_shard.blackboard;
-  }
-  return server_->SetupTransport(transport, accepting_pollset, args,
-                                 blackboard.get());
 }
 
 void Server::ListenerState::DrainConnectionsLocked() {
@@ -709,6 +685,12 @@ class Server::RealRequestMatcher : public RequestMatcherInterface {
         }
       }
       if (rc == nullptr) {
+        if (IsOptimization04Enabled() &&
+            server_->pending_backlog_protector_.Reject(
+                pending_filter_stack_.size(), SharedBitGen())) {
+          calld->FailCallCreation();
+          return;
+        }
         calld->SetState(CallData::CallState::PENDING);
         pending_filter_stack_.push(PendingCallFilterStack{calld});
         return;
@@ -1163,9 +1145,15 @@ auto Server::MatchAndPublishCall(CallHandler call_handler) {
           auto md = std::move(std::get<2>(r));
           auto* rc = mr.TakeCall();
           rc->Complete(std::move(std::get<0>(r)), *md);
-          grpc_call* call =
-              MakeServerCall(call_handler, std::move(md), this,
-                             rc->cq_bound_to_call, rc->initial_metadata);
+          RefCountedPtr<Arena> parent_arena = nullptr;
+          Arena* raw_arena = channel_args_.GetPointer<Arena>(
+              GRPC_ARG_SERVER_INTERNAL_PARENT_CALL_ARENA);
+          if (raw_arena != nullptr) {
+            parent_arena = raw_arena->Ref();
+          }
+          grpc_call* call = MakeServerCall(
+              call_handler, std::move(md), this, rc->cq_bound_to_call,
+              rc->initial_metadata, std::move(parent_arena));
           *rc->call = call;
           return Map(WaitForCqEndOp(false, rc->tag, absl::OkStatus(), mr.cq()),
                      [rc = std::unique_ptr<RequestedCall>(rc)](Empty) {
@@ -1177,14 +1165,14 @@ auto Server::MatchAndPublishCall(CallHandler call_handler) {
 
 absl::StatusOr<RefCountedPtr<UnstartedCallDestination>>
 Server::MakeCallDestination(const ChannelArgs& args,
-                            const Blackboard* blackboard) {
-  InterceptionChainBuilder builder(args, blackboard);
+                            grpc_channel_stack_type channel_stack_type) {
+  InterceptionChainBuilder builder(args);
   // TODO(ctiller): find a way to avoid adding a server ref per call
   builder.AddOnClientInitialMetadata([self = Ref()](ClientMetadata& md) {
     self->SetRegisteredMethodOnMetadata(md);
   });
   CoreConfiguration::Get().channel_init().AddToInterceptionChainBuilder(
-      GRPC_SERVER_CHANNEL, builder);
+      channel_stack_type, builder);
   return builder.Build(
       MakeCallDestinationFromHandlerFunction([this](CallHandler handler) {
         return MatchAndPublishCall(std::move(handler));
@@ -1313,8 +1301,14 @@ void Server::Start() {
 
 grpc_error_handle Server::SetupTransport(Transport* transport,
                                          grpc_pollset* accepting_pollset,
-                                         const ChannelArgs& args,
-                                         const Blackboard* blackboard) {
+                                         const ChannelArgs& args) {
+  return SetupTransport(transport, accepting_pollset, args,
+                        GRPC_SERVER_CHANNEL);
+}
+
+grpc_error_handle Server::SetupTransport(
+    Transport* transport, grpc_pollset* accepting_pollset,
+    const ChannelArgs& args, grpc_channel_stack_type channel_stack_type) {
   GRPC_LATENT_SEE_SCOPE("Server::SetupTransport");
   // Create channel.
   global_stats().IncrementServerChannelsCreated();
@@ -1327,7 +1321,7 @@ grpc_error_handle Server::SetupTransport(Transport* transport,
     auto destination = MakeCallDestination(
         args.SetObject(transport).SetObject<channelz::BaseNode>(
             transport->GetSocketNode()),
-        blackboard);
+        channel_stack_type);
     if (!destination.ok()) {
       return absl_status_to_grpc_error(destination.status());
     }
@@ -1351,7 +1345,7 @@ grpc_error_handle Server::SetupTransport(Transport* transport,
         "",
         args.SetObject(transport).SetObject<channelz::BaseNode>(
             transport->GetSocketNode()),
-        GRPC_SERVER_CHANNEL, blackboard);
+        channel_stack_type);
     if (!channel.ok()) {
       return absl_status_to_grpc_error(channel.status());
     }
@@ -1375,9 +1369,17 @@ grpc_error_handle Server::SetupTransport(Transport* transport,
       socket_node->AddParent(channelz_node_.get());
     }
 
-    // Initialize chand.
+    // Keep a local reference to the channel alive during setup to prevent
+    // premature destruction if the transport fails concurrently.
+    RefCountedPtr<Channel> channel_keep_alive = *channel;
     chand->InitTransport(Ref(), std::move(*channel), cq_idx, transport,
                          channelz_socket_uuid);
+
+    auto* parent_arena =
+        args.GetPointer<Arena>(GRPC_ARG_SERVER_INTERNAL_PARENT_CALL_ARENA);
+    if (parent_arena != nullptr) {
+      chand->set_parent_arena(parent_arena->Ref());
+    }
 
     stream_quota_->IncrementOpenChannels();
   }
@@ -1823,6 +1825,13 @@ void Server::ChannelData::AcceptStream(void* arg, Transport* /*transport*/,
   args.send_deadline = Timestamp::InfFuture();
   grpc_call* call;
   grpc_error_handle error = grpc_call_create(&args, &call);
+
+  if (chand->parent_arena() != nullptr && call != nullptr) {
+    auto* call_arena = grpc_call_get_arena(call);
+    auto* parent_link = call_arena->New<ParentCallContext>();
+    parent_link->arena = chand->parent_arena()->Ref();
+    call_arena->SetContext<ParentCallContext>(parent_link);
+  }
   grpc_call_stack* call_stack = grpc_call_get_call_stack(call);
   GRPC_CHECK_NE(call_stack, nullptr);
   grpc_call_element* elem = grpc_call_stack_element(call_stack, 0);

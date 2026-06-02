@@ -62,10 +62,10 @@ namespace grpc_core {
 
 using ::grpc_event_engine::experimental::EventEngine;
 
-// TODO(roth): Remove this once the feature passes interop tests.
+// TODO(roth): Remove this after the 1.83 release.
 bool XdsOrcaLrsPropagationChangesEnabled() {
   auto value = GetEnv("GRPC_EXPERIMENTAL_XDS_ORCA_LRS_PROPAGATION");
-  if (!value.has_value()) return false;
+  if (!value.has_value()) return true;
   bool parsed_value;
   bool parse_succeeded = gpr_parse_bool_value(value->c_str(), &parsed_value);
   return parse_succeeded && parsed_value;

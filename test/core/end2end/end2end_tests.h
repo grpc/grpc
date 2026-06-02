@@ -102,7 +102,9 @@
 #define FEATURE_MASK_IS_CALL_V3 (1 << 16)
 #define FEATURE_MASK_IS_LOCAL_TCP_CREDS (1 << 17)
 #define FEATURE_MASK_IS_PH2_CLIENT (1 << 18)
-#define FEATURE_MASK_SUPPORTS_NAMED_UDS (1 << 19)
+#define FEATURE_MASK_IS_VIRTUAL_RPC (1 << 19)
+#define FEATURE_MASK_CHECKS_MAX_MESSAGE_LENGTH_IN_TRANSPORT (1 << 20)
+#define FEATURE_MASK_SUPPORTS_NAMED_UDS (1 << 21)
 
 #define FAIL_AUTH_CHECK_SERVER_ARG_NAME "fail_auth_check"
 
@@ -795,6 +797,10 @@ inline bool IsPromiseBasedTransportEnabled() {
   if (test_config()->feature_mask & FEATURE_MASK_IS_CALL_V3) { \
     GTEST_SKIP() << "Disabled for initial v3 testing";         \
   }
+
+#define SKIP_IF_VIRTUAL()                                        \
+  if (test_config()->feature_mask & FEATURE_MASK_IS_VIRTUAL_RPC) \
+  GTEST_SKIP() << "Skipping test for vrpc"
 
 inline bool IsTokenInList(absl::string_view list, absl::string_view token) {
   if (list.empty()) return false;
