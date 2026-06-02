@@ -32,7 +32,6 @@
 #include <utility>
 
 #include "src/core/credentials/call/call_credentials.h"
-#include "src/core/util/sync.h"
 #include "src/core/credentials/call/json_util.h"
 #include "src/core/credentials/transport/transport_credentials.h"
 #include "src/core/lib/iomgr/closure.h"
@@ -42,6 +41,7 @@
 #include "src/core/util/http_client/parser.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/json/json_reader.h"
+#include "src/core/util/sync.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
@@ -473,13 +473,12 @@ class GDCHServiceAccountCredentials::GDCHFetchRequest final
  public:
   GDCHFetchRequest(
       GDCHServiceAccountCredentials* creds, Timestamp deadline,
-      absl::AnyInvocable<void(
-          absl::StatusOr<RefCountedPtr<TokenFetcherCredentials::Token>>)>
+      absl::AnyInvocable<
+          void(absl::StatusOr<RefCountedPtr<TokenFetcherCredentials::Token>>)>
           on_done)
       : creds_(creds), on_done_(std::move(on_done)) {
     fetch_body_ = creds_->RetrieveSubjectToken(
-        deadline,
-        [this](absl::StatusOr<std::string> result) {
+        deadline, [this](absl::StatusOr<std::string> result) {
           OnSubjectToken(std::move(result));
         });
   }
