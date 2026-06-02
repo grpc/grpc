@@ -2349,6 +2349,21 @@ static tsi_result ssl_handshaker_next_impl(tsi_ssl_handshaker* self)
     // has completed.
     status = ssl_handshaker_do_handshake(self);
 #endif
+  } else {
+    status = ssl_handshaker_do_handshake(self);
+    if (status == TSI_INCOMPLETE_DATA) {
+      status = TSI_OK;
+    }
+    while (status == TSI_DRAIN_BUFFER) {
+      status = ssl_handshaker_write_output_buffer(self, &bytes_written);
+      if (status != TSI_OK) {
+        return status;
+      }
+      status = ssl_handshaker_do_handshake(self);
+      if (status == TSI_INCOMPLETE_DATA) {
+        status = TSI_OK;
+      }
+    }
   }
 
   if (status != TSI_OK) {
@@ -2615,7 +2630,8 @@ static tsi_result create_tsi_ssl_handshaker(
     ERR_clear_error();
     ssl_result = SSL_do_handshake(ssl);
     ssl_result = SSL_get_error(ssl, ssl_result);
-    if (ssl_result != SSL_ERROR_WANT_READ) {
+    if (ssl_result != SSL_ERROR_WANT_READ &&
+        ssl_result != SSL_ERROR_WANT_WRITE) {
       LOG(ERROR)
           << "Unexpected error received from first SSL_do_handshake call: "
           << tsi::SslErrorString(ssl_result);
