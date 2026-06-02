@@ -21,6 +21,7 @@ EXPERIMENT_ENABLES = {
     "call_tracer_in_transport": "call_tracer_in_transport",
     "call_tracer_send_initial_metadata_is_an_annotation": "call_tracer_send_initial_metadata_is_an_annotation",
     "call_tracer_send_trailing_metadata_is_an_annotation": "call_tracer_send_trailing_metadata_is_an_annotation",
+    "callv3_batch_validation": "callv3_batch_validation",
     "chaotic_good_framing_layer": "chaotic_good_framing_layer",
     "chaotic_good_send_supported_features": "chaotic_good_send_supported_features",
     "error_flatten": "error_flatten",
@@ -170,6 +171,7 @@ EXPERIMENTS = {
             ],
             "core_end2end_test": [
                 "buffer_list_deletion_prep",
+                "callv3_batch_validation",
                 "chaotic_good_send_supported_features",
                 "local_connector_secure",
                 "otel_export_telemetry_domains",
