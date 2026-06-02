@@ -1501,6 +1501,30 @@ TEST_P(SslTransportSecurityTest, TestKeyExchangeGroupMismatch) {
   ssl_fixture_->SetClientExpectsHandshakeFailure(tls_version == TSI_TLS1_3);
   DoHandshake();
 }
+
+#ifdef OPENSSL_IS_BORINGSSL
+TEST_P(SslTransportSecurityTest, TestPqcDefaultClientHandshake) {
+  auto tls_version = std::get<0>(GetParam());
+  SetUpSslFixture(tls_version,
+                  /*send_client_ca_list=*/std::get<1>(GetParam()));
+  if (tls_version == TSI_TLS1_3) {
+    ssl_fixture_->OverrideServerKeyExchangeGroups(
+        {GRPC_TLS_GROUP_X25519_MLKEM768});
+  }
+  DoHandshake();
+}
+
+TEST_P(SslTransportSecurityTest, TestPqcDefaultServerHandshake) {
+  auto tls_version = std::get<0>(GetParam());
+  SetUpSslFixture(tls_version,
+                  /*send_client_ca_list=*/std::get<1>(GetParam()));
+  if (tls_version == TSI_TLS1_3) {
+    ssl_fixture_->OverrideClientKeyExchangeGroups(
+        {GRPC_TLS_GROUP_X25519_MLKEM768});
+  }
+  DoHandshake();
+}
+#endif
 #endif
 
 }  // namespace
