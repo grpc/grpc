@@ -36,7 +36,7 @@ _STREAM_STREAM = "StreamStream"
 # Cut down on test time.
 _STREAM_LENGTH = test_constants.STREAM_LENGTH // 16
 
-_HOST = "localhost"
+_HOST = "127.0.0.1"
 
 _REQUEST = b"\x00" * 100
 _COMPRESSION_RATIO_THRESHOLD = 0.05
@@ -163,7 +163,10 @@ def get_method_handlers(pre_response_callback):
 def _instrumented_client_server_pair(
     channel_kwargs, server_kwargs, server_handler
 ):
-    server = grpc.server(futures.ThreadPoolExecutor(), **server_kwargs)
+    options = (("grpc.so_reuseport", 0),)
+    server = grpc.server(
+        futures.ThreadPoolExecutor(), options=options, **server_kwargs
+    )
     server.add_registered_method_handlers(_SERVICE_NAME, server_handler)
     server_port = server.add_insecure_port("{}:0".format(_HOST))
     server.start()

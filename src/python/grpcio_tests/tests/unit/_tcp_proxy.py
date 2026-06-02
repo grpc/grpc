@@ -27,15 +27,26 @@ import select
 import socket
 import threading
 
+import time
+
 from tests.unit.framework.common import get_socket
 
 _TCP_PROXY_BUFFER_SIZE = 1024
-_TCP_PROXY_TIMEOUT = datetime.timedelta(milliseconds=500)
+_TCP_PROXY_TIMEOUT = datetime.timedelta(seconds=1)
 
 
 def _init_proxy_socket(gateway_address, gateway_port):
-    proxy_socket = socket.create_connection((gateway_address, gateway_port))
-    return proxy_socket
+    last_err = None
+    for attempt in range(5):
+        try:
+            proxy_socket = socket.create_connection(
+                (gateway_address, gateway_port)
+            )
+            return proxy_socket
+        except Exception as err:
+            last_err = err
+            time.sleep(0.1 * (attempt + 1))
+    raise last_err
 
 
 class TcpProxy:
@@ -67,9 +78,13 @@ class TcpProxy:
         _, self._port, self._listen_socket = get_socket(
             bind_address=self._bind_address
         )
-        self._proxy_socket = _init_proxy_socket(
-            self._gateway_address, self._gateway_port
-        )
+        try:
+            self._proxy_socket = _init_proxy_socket(
+                self._gateway_address, self._gateway_port
+            )
+        except Exception:
+            self._listen_socket.close()
+            raise
         self._thread.start()
 
     def get_port(self):
@@ -77,58 +92,106 @@ class TcpProxy:
 
     def _handle_reads(self, sockets_to_read):
         for socket_to_read in sockets_to_read:
-            if socket_to_read is self._listen_socket:
-                client_socket, client_address = socket_to_read.accept()
-                self._client_sockets.append(client_socket)
-            elif socket_to_read is self._proxy_socket:
-                data = socket_to_read.recv(_TCP_PROXY_BUFFER_SIZE)
-                with self._byte_count_lock:
-                    self._received_byte_count += len(data)
-                self._northbound_data += data
-            elif socket_to_read in self._client_sockets:
-                data = socket_to_read.recv(_TCP_PROXY_BUFFER_SIZE)
-                if data:
-                    with self._byte_count_lock:
-                        self._sent_byte_count += len(data)
-                    self._southbound_data += data
+            try:
+                if socket_to_read is self._listen_socket:
+                    client_socket, client_address = socket_to_read.accept()
+                    self._client_sockets.append(client_socket)
+                elif socket_to_read is self._proxy_socket:
+                    data = socket_to_read.recv(_TCP_PROXY_BUFFER_SIZE)
+                    if data:
+                        with self._byte_count_lock:
+                            self._received_byte_count += len(data)
+                        self._northbound_data += data
+                    else:
+                        self._stop_event.set()
+                elif socket_to_read in self._client_sockets:
+                    data = socket_to_read.recv(_TCP_PROXY_BUFFER_SIZE)
+                    if data:
+                        with self._byte_count_lock:
+                            self._sent_byte_count += len(data)
+                        self._southbound_data += data
+                    else:
+                        try:
+                            socket_to_read.close()
+                        except Exception:
+                            pass
+                        if socket_to_read in self._client_sockets:
+                            self._client_sockets.remove(socket_to_read)
                 else:
-                    self._client_sockets.remove(socket_to_read)
-            else:
-                raise RuntimeError("Unidentified socket appeared in read set.")
+                    raise RuntimeError("Unidentified socket appeared in read set.")
+            except socket.error:
+                if socket_to_read is self._proxy_socket:
+                    self._stop_event.set()
+                elif socket_to_read in self._client_sockets:
+                    try:
+                        socket_to_read.close()
+                    except Exception:
+                        pass
+                    if socket_to_read in self._client_sockets:
+                        self._client_sockets.remove(socket_to_read)
 
     def _handle_writes(self, sockets_to_write):
         for socket_to_write in sockets_to_write:
-            if socket_to_write is self._proxy_socket:
-                if self._southbound_data:
-                    self._proxy_socket.sendall(self._southbound_data)
-                    self._southbound_data = b""
-            elif socket_to_write in self._client_sockets:
-                if self._northbound_data:
-                    socket_to_write.sendall(self._northbound_data)
-                    self._northbound_data = b""
+            try:
+                if socket_to_write is self._proxy_socket:
+                    if self._southbound_data:
+                        self._proxy_socket.sendall(self._southbound_data)
+                        self._southbound_data = b""
+                elif socket_to_write in self._client_sockets:
+                    if self._northbound_data:
+                        socket_to_write.sendall(self._northbound_data)
+                        self._northbound_data = b""
+            except socket.error:
+                if socket_to_write is self._proxy_socket:
+                    self._stop_event.set()
+                elif socket_to_write in self._client_sockets:
+                    try:
+                        socket_to_write.close()
+                    except Exception:
+                        pass
+                    if socket_to_write in self._client_sockets:
+                        self._client_sockets.remove(socket_to_write)
 
     def _run_proxy(self):
-        while not self._stop_event.is_set():
-            expected_reads = (self._listen_socket, self._proxy_socket) + tuple(
-                self._client_sockets
-            )
-            expected_writes = expected_reads
-            sockets_to_read, sockets_to_write, _ = select.select(
-                expected_reads,
-                expected_writes,
-                (),
-                _TCP_PROXY_TIMEOUT.total_seconds(),
-            )
-            self._handle_reads(sockets_to_read)
-            self._handle_writes(sockets_to_write)
-        for client_socket in self._client_sockets:
-            client_socket.close()
+        try:
+            while not self._stop_event.is_set():
+                expected_reads = (self._listen_socket, self._proxy_socket) + tuple(
+                    self._client_sockets
+                )
+                expected_writes = []
+                if self._southbound_data:
+                    expected_writes.append(self._proxy_socket)
+                if self._northbound_data:
+                    expected_writes.extend(self._client_sockets)
+
+                sockets_to_read, sockets_to_write, _ = select.select(
+                    expected_reads,
+                    expected_writes,
+                    (),
+                    _TCP_PROXY_TIMEOUT.total_seconds(),
+                )
+                self._handle_reads(sockets_to_read)
+                self._handle_writes(sockets_to_write)
+        except Exception:
+            pass
+        finally:
+            for client_socket in self._client_sockets:
+                try:
+                    client_socket.close()
+                except Exception:
+                    pass
 
     def stop(self):
         self._stop_event.set()
+        try:
+            self._listen_socket.close()
+        except Exception:
+            pass
+        try:
+            self._proxy_socket.close()
+        except Exception:
+            pass
         self._thread.join()
-        self._listen_socket.close()
-        self._proxy_socket.close()
 
     def get_byte_count(self):
         with self._byte_count_lock:

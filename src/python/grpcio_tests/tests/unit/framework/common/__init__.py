@@ -16,11 +16,12 @@ import contextlib
 import errno
 import os
 import socket
+import sys
 
 _DEFAULT_SOCK_OPTIONS = (
-    (socket.SO_REUSEADDR, socket.SO_REUSEPORT)
-    if os.name != "nt"
-    else (socket.SO_REUSEADDR,)
+    (socket.SO_REUSEADDR,)
+    if os.name == "nt" or sys.platform == "darwin"
+    else (socket.SO_REUSEADDR, socket.SO_REUSEPORT)
 )
 _UNRECOVERABLE_ERRNOS = (errno.EADDRINUSE, errno.ENOSR)
 
@@ -31,6 +32,8 @@ def get_socket(
     listen=True,
     sock_options=_DEFAULT_SOCK_OPTIONS,
 ):
+    if sys.platform == "darwin" and bind_address == "localhost":
+        bind_address = "127.0.0.1"
     """Opens a socket.
 
     Useful for reserving a port for a system-under-test.
@@ -59,7 +62,7 @@ def get_socket(
                 sock.setsockopt(socket.SOL_SOCKET, sock_option, 1)
             sock.bind((bind_address, port))
             if listen:
-                sock.listen(1)
+                sock.listen(128)
             return bind_address, sock.getsockname()[1], sock
         except OSError as os_error:
             sock.close()
