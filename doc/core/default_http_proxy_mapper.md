@@ -28,7 +28,7 @@ at the first one that is set:
 If none of the above are set, then no HTTP proxy will be used.
 
 The allowed format is an [RFC3986](https://www.rfc-editor.org/rfc/rfc3986) URI
-string where the scheme is expected to be "http" and the authority portion is
+string where the scheme is expected to be `http` and the authority portion is
 used to determine the proxy to be used. For example, for an HTTP proxy setting
 of `http://username:password@proxy.google.com:443`, `username:password` would be
 used as user credentials for proxy authentication as per
@@ -49,23 +49,23 @@ again stopping at the first one that is set:
 If none of the above are set, then the previously found HTTP proxy is used.
 
 As of [PR#41915](https://github.com/grpc/grpc/pull/41915), the matching
-  behavior was changed from naive suffix matching to boundary-aware domain
-  validation. Entries without a leading dot now require an exact match, and
-  entries with a leading dot match the domain and its subdomains.
+behavior was changed from naive suffix matching to boundary-aware domain
+validation. An entry matches if the host is an exact match OR a proper
+subdomain (separated by a dot boundary). A leading dot on an entry is
+optional and treated identically to the same entry without a dot.
 
-  -   If the entry starts with a dot (e.g., `.example.com`), it matches the
-      domain itself (`example.com`) and all of its subdomains
-      (`foo.example.com`, `bar.baz.example.com`).
-  -   If the entry does not start with a dot (e.g., `example.com`), it matches
-      only that exact hostname.
+- `example.com` and `.example.com` both match `example.com` (exact) and
+  `foo.example.com`, `bar.baz.example.com` (subdomains).
+- `notexample.com` does **not** match `example.com` because there is no
+  dot boundary before the suffix.
 
-  For example, with a `grpc_proxy` setting of `proxy.google.com` and a
-  `no_grpc_proxy` setting of `.google.com, example.com`:
-  
-  -   `dns:///foo.google.com:50051` — no proxy (subdomain of `.google.com`)
-  -   `example.com:1234` — no proxy (exact match)
-  -   `bar.example.com:443` — uses proxy (not an exact match for `example.com`)
-  -   `baz.googleapis.com:443` — uses proxy (not under `.google.com`)
+For example, with a `grpc_proxy` setting of `proxy.google.com` and a
+`no_grpc_proxy` setting of `google.com`:
+
+- `dns:///foo.google.com:50051` - no proxy (subdomain of `google.com`)
+- `google.com:1234` - no proxy (exact match)
+- `notgoogle.com:443` - uses proxy (no dot boundary before `google.com`)
+- `baz.googleapis.com:443` - uses proxy (not under `google.com`)
 
 As of [PR#31119](https://github.com/grpc/grpc/pull/31119), CIDR blocks are also
 supported in the list of names. For example, a `no_proxy` setting of
@@ -97,4 +97,3 @@ accessed through the proxy. This can be specified using
 the `GRPC_ARG_ADDRESS_HTTP_PROXY_ENABLED_ADDRESSES` channel argument
 or `GRPC_ADDRESS_HTTP_PROXY_ENABLED_ADDRESSES` environment variable. Value of
 the channel argument is preferred if both values are specified.
-
