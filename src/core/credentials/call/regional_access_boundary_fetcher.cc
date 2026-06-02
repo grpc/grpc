@@ -335,7 +335,7 @@ void EmailFetcher::Fetch(absl::string_view token,
   MutexLock lock(&mu_);
   auto* rab_fetcher =
       std::get_if<RefCountedPtr<RegionalAccessBoundaryFetcher>>(&state_);
-  if (rab_fetcher == nullptr) return;  // Don't yet have RAB fetcher.
+  if (rab_fetcher == nullptr) return;   // Don't yet have RAB fetcher.
   if (*rab_fetcher == nullptr) return;  // Shouldn't happen, but be defensive.
   (*rab_fetcher)->Fetch(token, initial_metadata);
 }

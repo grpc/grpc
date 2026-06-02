@@ -718,9 +718,8 @@ TEST_F(EmailFetcherTest, EarlyDestructionDoesNotCrash) {
   }
 }
 
-int httpcli_get_spiffe_id(const grpc_http_request* /*request*/,
-                          const URI& uri, Timestamp /*deadline*/,
-                          grpc_closure* on_done,
+int httpcli_get_spiffe_id(const grpc_http_request* /*request*/, const URI& uri,
+                          Timestamp /*deadline*/, grpc_closure* on_done,
                           grpc_http_response* response) {
   if (uri.path() ==
       "/computeMetadata/v1/instance/service-accounts/default/email") {
