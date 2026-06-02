@@ -4759,7 +4759,8 @@ int gdch_service_account_creds_httpcli_post_success(
   EXPECT_TRUE(parsed_body.ok()) << parsed_body.status().ToString();
   EXPECT_EQ(parsed_body->object().at("grant_type").string(),
             "urn:ietf:params:oauth:token-type:token-exchange");
-  EXPECT_EQ(parsed_body->object().at("audience").string(), "https://my-audience.com");
+  EXPECT_EQ(parsed_body->object().at("audience").string(),
+            "https://my-audience.com");
   EXPECT_EQ(parsed_body->object().at("requested_token_type").string(),
             "urn:ietf:params:oauth:token-type:access_token");
   EXPECT_EQ(parsed_body->object().at("subject_token_type").string(),
@@ -4769,13 +4770,13 @@ int gdch_service_account_creds_httpcli_post_success(
   std::vector<std::string> parts = absl::StrSplit(jwt_token, '.');
   EXPECT_EQ(parts.size(), 3);
 
-  *response = http_response(200, "{\"access_token\": \"my-exchanged-gdch-token\"}");
+  *response =
+      http_response(200, "{\"access_token\": \"my-exchanged-gdch-token\"}");
   ExecCtx::Run(DEBUG_LOCATION, on_done, absl::OkStatus());
   return 1;
 }
 
-TEST_F(ExternalAccountCredentialsTest,
-       GDCHServiceAccountCredsSuccess) {
+TEST_F(ExternalAccountCredentialsTest, GDCHServiceAccountCredsSuccess) {
   ExecCtx exec_ctx;
   Json::Object obj = Json::Object{
       {"type", Json::FromString("gdch_service_account")},
@@ -4806,7 +4807,8 @@ TEST_F(ExternalAccountCredentialsTest,
 
 class GDCHServiceAccountCredentialsTest : public ::testing::Test {
  public:
-  static OrphanablePtr<GDCHServiceAccountCredentials::FetchBody> CallRetrieveSubjectToken(
+  static OrphanablePtr<GDCHServiceAccountCredentials::FetchBody>
+  CallRetrieveSubjectToken(
       GDCHServiceAccountCredentials* creds, Timestamp deadline,
       absl::AnyInvocable<void(absl::StatusOr<std::string>)> on_done) {
     return creds->RetrieveSubjectToken(deadline, std::move(on_done));
@@ -4842,7 +4844,8 @@ TEST_F(GDCHServiceAccountCredentialsTest, BasicRetrieveSubjectToken) {
       {"token_uri", Json::FromString("https://test-token-uri.com/token")},
   };
 
-  auto creds = GDCHServiceAccountCredentials::Create(Json::FromObject(obj), "https://my-audience.com", event_engine_);
+  auto creds = GDCHServiceAccountCredentials::Create(
+      Json::FromObject(obj), "https://my-audience.com", event_engine_);
   ASSERT_TRUE(creds.ok()) << creds.status().ToString();
   ASSERT_NE(*creds, nullptr);
   EXPECT_EQ((*creds)->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
@@ -4851,7 +4854,7 @@ TEST_F(GDCHServiceAccountCredentialsTest, BasicRetrieveSubjectToken) {
   HttpRequest::SetOverride(httpcli_get_should_not_be_called,
                            gdch_service_account_creds_httpcli_post_success,
                            httpcli_put_should_not_be_called);
-  
+
   absl::StatusOr<std::string> fetched_token;
   bool done = false;
   auto fetch_body = GDCHServiceAccountCredentialsTest::CallRetrieveSubjectToken(
@@ -4860,10 +4863,10 @@ TEST_F(GDCHServiceAccountCredentialsTest, BasicRetrieveSubjectToken) {
         fetched_token = std::move(result);
         done = true;
       });
-  
+
   event_engine_->TickUntilIdle();
   ExecCtx::Get()->Flush();
-  
+
   EXPECT_TRUE(done);
   ASSERT_TRUE(fetched_token.ok()) << fetched_token.status().ToString();
   EXPECT_EQ(*fetched_token, "my-exchanged-gdch-token");
@@ -4877,7 +4880,8 @@ MATCHER(AccessTokenIsSTSBearer, "access token is STS Bearer") {
 
 // This test can only be executed inside a GDCH Adhoc environment. It uses
 // the presence of the input environment variables to enable.
-TEST_F(GDCHServiceAccountCredentialsTest, RetrievesBearerTokenInAdhocEnvironemnt) {
+TEST_F(GDCHServiceAccountCredentialsTest,
+       RetrievesBearerTokenInAdhocEnvironemnt) {
   auto key_file_env = GetEnv("GRPC_TEST_GDCH_KEY_FILE");
   auto audience_env = GetEnv("GRPC_TEST_GDCH_AUDIENCE");
   if (!key_file_env.has_value() || !audience_env.has_value()) GTEST_SKIP();
@@ -4886,7 +4890,8 @@ TEST_F(GDCHServiceAccountCredentialsTest, RetrievesBearerTokenInAdhocEnvironemnt
   auto contents = std::string{std::istreambuf_iterator<char>{is}, {}};
   ASSERT_THAT(contents, Not(::testing::IsEmpty()));
 
-  auto creds = grpc_gdch_service_account_credentials_create(contents.c_str(), audience_env->c_str());
+  auto creds = grpc_gdch_service_account_credentials_create(
+      contents.c_str(), audience_env->c_str());
   ASSERT_THAT(creds, ::testing::NotNull());
 
   std::string token = grpc_test_fetch_oauth2_token_with_credentials(creds);

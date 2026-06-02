@@ -108,22 +108,22 @@ class GDCHServiceAccountCredentials final : public ExternalAccountCredentials {
 
   static absl::StatusOr<std::string> CreateRequestBody(
       Info const& info, std::string const& audience);
-  
+
   struct GrpcDeleter {
     void operator()(grpc_http_request* ptr);
   };
   using GrpcHttpRequestUniquePtr =
       std::unique_ptr<grpc_http_request, GrpcDeleter>;
-  
+
   static absl::StatusOr<GrpcHttpRequestUniquePtr> FormatHttpRequest(
       Info const& info, std::string const& audience);
-  
+
   static absl::StatusOr<std::string> ParseHttpResponse(
       std::string const& response_body);
-  
+
   static UniqueTypeName Type();
 
-  std::optional<std::string> ca_cert_path() const {return info_.ca_cert_path;}
+  std::optional<std::string> ca_cert_path() const { return info_.ca_cert_path; }
 
   std::string debug_string() override;
 
