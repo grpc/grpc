@@ -577,9 +577,13 @@ TEST_F(RegionalAccessBoundaryFetcherTest, CacheSoftExpirationTriggersRefresh) {
 class EmailFetcherTest : public ::testing::Test {
  protected:
   void SetUp() override {
+    fuzzing_event_engine_ =
+        std::make_shared<grpc_event_engine::experimental::FuzzingEventEngine>(
+            grpc_event_engine::experimental::FuzzingEventEngine::Options(),
+            fuzzing_event_engine::Actions());
+    grpc_timer_manager_set_start_threaded(false);
     grpc_init();
-    email_fetcher_ = MakeRefCounted<EmailFetcher>(
-        grpc_event_engine::experimental::GetDefaultEventEngine());
+    email_fetcher_ = MakeRefCounted<EmailFetcher>(fuzzing_event_engine_);
     arena_ = SimpleArenaAllocator()->MakeArena();
     metadata_ = arena_->MakePooled<ClientMetadata>();
     HttpRequest::SetOverride(nullptr, nullptr, nullptr);
@@ -587,13 +591,22 @@ class EmailFetcherTest : public ::testing::Test {
 
   void TearDown() override {
     HttpRequest::SetOverride(nullptr, nullptr, nullptr);
-    email_fetcher_.reset();  // Ensure cleanup before grpc_shutdown
+    {
+      ExecCtx exec_ctx;
+      email_fetcher_.reset();
+    }
+    fuzzing_event_engine_->FuzzingDone();
+    fuzzing_event_engine_->TickUntilIdle();
+    fuzzing_event_engine_->UnsetGlobalHooks();
+    WaitForSingleOwner(std::move(fuzzing_event_engine_));
     grpc_shutdown();
   }
 
   RefCountedPtr<EmailFetcher> email_fetcher_;
   RefCountedPtr<Arena> arena_;
   ClientMetadataHandle metadata_;
+  std::shared_ptr<grpc_event_engine::experimental::FuzzingEventEngine>
+      fuzzing_event_engine_;
 };
 
 int httpcli_get_email_success(const grpc_http_request* /*request*/,
@@ -696,7 +709,7 @@ TEST_F(EmailFetcherTest, EmailFetchBackoffRespected) {
   ExecCtx::Get()->Flush();
   EXPECT_EQ(g_mock_get_count, 1);
   // 3. Advance time past initial backoff (1s with jitters, say 2s to be safe).
-  exec_ctx.TestOnlySetNow(Timestamp::Now() + Duration::Seconds(20));
+  fuzzing_event_engine_->TickForDuration(Duration::Seconds(20));
   // 4. Retry should proceed.
   email_fetcher_->StartEmailFetch();
   ExecCtx::Get()->Flush();

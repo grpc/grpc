@@ -33,6 +33,7 @@
 #include "src/core/util/uri.h"
 #include "absl/log/log.h"
 #include "absl/strings/ascii.h"
+#include "absl/strings/match.h"
 #include "absl/strings/str_format.h"
 
 namespace grpc_core {
@@ -349,7 +350,7 @@ void EmailFetcher::OnEmailFetchComplete(absl::string_view email) {
   MutexLock lock(&mu_);
   if (std::holds_alternative<OrphanablePtr<EmailRequest>>(state_)) {
     absl::string_view trimmed_email = absl::StripAsciiWhitespace(email);
-    if (trimmed_email.find('@') == absl::string_view::npos) {
+    if (!absl::StrContains(trimmed_email, '@')) {
       LOG(INFO) << "Regional Access Boundary fetch skipped: service account "
                    "email is not a valid email address (could be a principal "
                    "string or pool id): \""
