@@ -97,8 +97,8 @@
 #define TSI_SSL_HANDSHAKER_OUTGOING_BUFFER_INITIAL_SIZE 1024
 const size_t kMaxChainLength = 100;
 const char* kDefaultBoringSSLKeyExchangeGroups =
-    "X25519MLKEM768,X25519,P-256,P-384,P-521";
-const char* kDefaultOpenSSL1_1_1KeyExchangeGroups = "X25519,P-256,P-384,P-521";
+    "X25519MLKEM768:X25519:P-256:P-384:P-521";
+const char* kDefaultOpenSSL1_1_1KeyExchangeGroups = "X25519:P-256:P-384:P-521";
 const char* kDefaultOpenSSL1_0_2KeyExchangeGroups = "X25519:P-256:P-384:P-521";
 
 // Putting a macro like this and littering the source file with #if is really
@@ -371,6 +371,66 @@ int ServerHandshakerFactoryAlpnCallback(SSL* /*ssl*/, const unsigned char** out,
                                            factory->alpn_protocol_list_length);
 }
 #endif  // TSI_OPENSSL_ALPN_SUPPORT
+
+// Populates the key exchange groups.
+// Prefers the key exchange groups (input argument) configured by the user,
+// otherwise uses the following defaults:
+//   - BoringSSL: {X25519MLKEM768, X25519, P-256, P-384, P-521}
+//   - OpenSSL < 3.0: {X25519, P-256, P-384, P-521}
+//   - OpenSSL >= 3: OpenSSL Defaults (prefers X25519MLKEM768 in OpenSSL 3.5+)
+static tsi_result populate_key_exchange_groups(
+    SSL_CTX* context,
+    const std::vector<grpc_tls_key_exchange_group>& key_exchange_groups) {
+  // Explicitly set the key exchange groups
+  if (!key_exchange_groups.empty()) {
+    std::vector<absl::string_view> group_names;
+    group_names.reserve(key_exchange_groups.size());
+    for (const auto& group : key_exchange_groups) {
+      auto group_name = tsi::ConvertKeyExchangeGroupToString(group);
+      if (!group_name.ok()) {
+        LOG(ERROR) << "Could not convert key exchange group to string.";
+        return TSI_INVALID_ARGUMENT;
+      }
+      group_names.push_back(*group_name);
+    }
+#if OPENSSL_VERSION_NUMBER >= 0x10101000L
+    std::string group_list_str = absl::StrJoin(group_names, ":");
+    if (!SSL_CTX_set1_groups_list(context, group_list_str.c_str())) {
+      LOG(ERROR) << "Could not set key exchange groups: " << group_list_str;
+      return TSI_INTERNAL_ERROR;
+    }
+    SSL_CTX_set_options(context, SSL_OP_SINGLE_ECDH_USE);
+#else
+    LOG(ERROR) << "SSL_CTX_set1_groups is not supported in OpenSSL < 1.1.1 "
+                  "version.";
+    return TSI_FAILED_PRECONDITION;
+#endif  // OPENSSL_VERSION_NUMBER >= 0x10100000
+  } else {
+// Use defaults
+#if defined(OPENSSL_IS_BORINGSSL)
+    if (!SSL_CTX_set1_groups_list(context,
+                                  kDefaultBoringSSLKeyExchangeGroups)) {
+      LOG(ERROR) << "Could not set default key exchange groups for BoringSSL";
+      return TSI_INTERNAL_ERROR;
+    }
+#elif OPENSSL_VERSION_NUMBER < 0x30000000L && \
+    OPENSSL_VERSION_NUMBER >= 0x10101000L
+    if (!SSL_CTX_set1_groups_list(context,
+                                  kDefaultOpenSSL1_1_1KeyExchangeGroups)) {
+      LOG(ERROR)
+          << "Could not set key default exchange groups for OpenSSL1.1.1";
+      return TSI_INTERNAL_ERROR;
+    }
+#elif OPENSSL_VERSION_NUMBER < 0x10101000L
+    if (!SSL_CTX_set1_curves_list(context,
+                                  kDefaultOpenSSL1_0_2KeyExchangeGroups)) {
+      LOG(ERROR)
+          << "Could not set default key exchange groups for OpenSSL1.0.2";
+      return TSI_INTERNAL_ERROR;
+    }
+#endif
+  }
+}
 }  // namespace
 
 static gpr_once g_init_openssl_once = GPR_ONCE_INIT;
@@ -1148,63 +1208,6 @@ static tsi_result ssl_ctx_load_verification_certs(SSL_CTX* context,
                        X509_V_FLAG_PARTIAL_CHAIN | X509_V_FLAG_TRUSTED_FIRST);
   return x509_store_load_certs(cert_store, pem_roots, pem_roots_size,
                                root_name);
-}
-
-// Populates the key exchange groups.
-// Prefers the key exchange groups (input argument) configured by the user,
-// otherwise uses the following defaults:
-//   - BoringSSL: {X25519MLKEM768, X25519, P-256, P-384, P-521}
-//   - OpenSSL < 3.0: {X25519, P-256, P-384, P-521}
-//   - OpenSSL >= 3: OpenSSL Defaults (prefers X25519MLKEM768 in OpenSSL 3.5+)
-static tsi_result populate_key_exchange_groups(
-    SSL_CTX* context,
-    const std::vector<grpc_tls_key_exchange_group>& key_exchange_groups) {
-  // Explicitly set the key exchange groups
-  if (!key_exchange_groups.empty()) {
-    std::vector<absl::string_view> group_names;
-    group_names.reserve(key_exchange_groups.size());
-    for (const auto& group : key_exchange_groups) {
-      auto group_name = tsi::ConvertKeyExchangeGroupToString(group);
-      if (!group_name.ok()) {
-        LOG(ERROR) << "Could not convert key exchange group to string.";
-        return TSI_INVALID_ARGUMENT;
-      }
-      group_names.push_back(*group_name);
-    }
-#if OPENSSL_VERSION_NUMBER >= 0x10101000L
-    std::string group_list_str = absl::StrJoin(group_names, ":");
-    if (!SSL_CTX_set1_groups_list(context, group_list_str.c_str())) {
-      LOG(ERROR) << "Could not set key exchange groups: " << group_list_str;
-      return TSI_INTERNAL_ERROR;
-    }
-    SSL_CTX_set_options(context, SSL_OP_SINGLE_ECDH_USE);
-#else
-    LOG(ERROR) << "SSL_CTX_set1_groups is not supported in OpenSSL < 1.1.1 "
-                  "version.";
-    return TSI_FAILED_PRECONDITION;
-#endif  // OPENSSL_VERSION_NUMBER >= 0x10100000
-  } else {
-// Use defaults
-#if defined(OPENSSL_IS_BORINGSSL)
-    if (!SSL_CTX_set1_groups_list(context,
-                                  kDefaultBoringSSLKeyExchangeGroups)) {
-      LOG(ERROR) << "Could not set key exchange groups: " << group_list_str;
-      return TSI_INTERNAL_ERROR;
-    }
-#else if OPENSSL_VERSION_NUMBER < 0x30000000L && \
-    OPENSSL_VERSION_NUMBER >= 0x10101000L
-    if (!SSL_CTX_set1_groups_list(context,
-                                  kDefaultOpenSSL1_1_1KeyExchangeGroups)) {
-      LOG(ERROR) << "Could not set key exchange groups: " << group_list_str;
-      return TSI_INTERNAL_ERROR;
-    }
-#else if OPENSSL_VERSION_NUMBER < 0x10101000L
-    if (!SSL_CTX_set1_curves_list(ctx, preferred_curves)) {
-      LOG(ERROR) << "Could not set key exchange groups: " << group_list_str;
-      return TSI_INTERNAL_ERROR;
-    }
-#endif
-  }
 }
 
 // Populates the SSL context with a private key and a cert chain, and sets the
