@@ -43,6 +43,7 @@ cdef class Server:
     cdef grpc_arg fetcher_arg
     cdef grpc_server_config_fetcher* config_fetcher
     cdef _ChannelArgs channel_args
+    cdef list arguments_list
     fork_handlers_and_grpc_init()
     self.references = []
     self.registered_completion_queues = []
@@ -51,19 +52,20 @@ cdef class Server:
     self.is_shutdown = False
     self.c_server = NULL
     self.registered_methods = {}  # Mapping[bytes, RegisteredMethod]
+    arguments_list = list(arguments) if arguments is not None else []
     if xds:
       notifier.on_serving_status_update = NULL
       notifier.user_data = NULL
-      tmp_channel_args = _ChannelArgs(arguments)
+      tmp_channel_args = _ChannelArgs(arguments_list)
       config_fetcher = grpc_server_config_fetcher_xds_create(
           notifier, tmp_channel_args.c_args())
       fetcher_arg.type = GRPC_ARG_POINTER
       fetcher_arg.value.pointer.vtable = <grpc_arg_pointer_vtable *>grpc_server_config_fetcher_arg_vtable()
       fetcher_arg.value.pointer.address = config_fetcher
-      arguments[GRPC_ARG_SERVER_CONFIG_FETCHER] = _wrap_grpc_arg(fetcher_arg)
-    channel_args = _ChannelArgs(arguments)
+      arguments_list.append((GRPC_ARG_SERVER_CONFIG_FETCHER, _wrap_grpc_arg(fetcher_arg)))
+    channel_args = _ChannelArgs(arguments_list)
     self.c_server = grpc_server_create(channel_args.c_args(), NULL)
-    self.references.append(arguments)
+    self.references.append(arguments_list)
 
   def request_call(
       self, CompletionQueue call_queue not None,
