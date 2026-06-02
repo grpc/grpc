@@ -90,9 +90,8 @@ def _patch_grpc_localhost():
         return orig_secure_channel(patch_address(target), *args, **kwargs)
     grpc.secure_channel = new_secure_channel
 
-    try:
-        from grpc.experimental import aio
-        orig_aio_server = aio.server
+    def patch_aio(aio_module):
+        orig_aio_server = aio_module.server
         def new_aio_server(*args, **kwargs):
             options = list(kwargs.get('options') or [])
             if not any(k == 'grpc.so_reuseport' for k, _ in options):
@@ -110,17 +109,27 @@ def _patch_grpc_localhost():
                 return orig_add_secure(patch_address(address), *args, **kwargs)
             server.add_secure_port = new_add_secure
             return server
-        aio.server = new_aio_server
+        aio_module.server = new_aio_server
 
-        orig_aio_insecure_channel = aio.insecure_channel
+        orig_aio_insecure_channel = aio_module.insecure_channel
         def new_aio_insecure_channel(target, *args, **kwargs):
             return orig_aio_insecure_channel(patch_address(target), *args, **kwargs)
-        aio.insecure_channel = new_aio_insecure_channel
+        aio_module.insecure_channel = new_aio_insecure_channel
 
-        orig_aio_secure_channel = aio.secure_channel
+        orig_aio_secure_channel = aio_module.secure_channel
         def new_aio_secure_channel(target, *args, **kwargs):
             return orig_aio_secure_channel(patch_address(target), *args, **kwargs)
-        aio.secure_channel = new_aio_secure_channel
+        aio_module.secure_channel = new_aio_secure_channel
+
+    try:
+        from grpc.experimental import aio as exp_aio
+        patch_aio(exp_aio)
+    except (ImportError, AttributeError):
+        pass
+
+    try:
+        import grpc.aio as public_aio
+        patch_aio(public_aio)
     except (ImportError, AttributeError):
         pass
 
