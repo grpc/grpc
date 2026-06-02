@@ -1,0 +1,16 @@
+# The whole point of this module: build the gRPC proto codegen rules with
+# protoc resolved through toolchain resolution instead of the legacy
+# @protobuf//:protoc attribute.
+common --incompatible_enable_proto_toolchain_resolution
+
+# generate_objc.bzl still returns a legacy struct provider from its rule
+# implementation, which Bazel 8 rejects by default.
+build --incompatible_disallow_struct_provider_syntax=false
+
+# boringssl (and other deps) compile with -Werror, which trips on warnings
+# emitted by newer system toolchains (e.g. -Wdiscarded-qualifiers in
+# OPENSSL_memchr). --per_file_copt is appended after the target's own copts,
+# so this -Wno-error actually wins over their -Werror.
+build --per_file_copt=.*@-Wno-error
+
+build --verbose_failures
