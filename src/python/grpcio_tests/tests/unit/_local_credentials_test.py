@@ -65,26 +65,32 @@ class LocalCredentialsTest(unittest.TestCase):
         os.name == "nt", "Unix Domain Socket is not supported on Windows"
     )
     def test_uds(self):
-        server_addr = "unix:/tmp/grpc_fullstack_test"
-        channel_creds = grpc.local_channel_credentials(
-            grpc.LocalConnectionType.UDS
-        )
-        server_creds = grpc.local_server_credentials(
-            grpc.LocalConnectionType.UDS
-        )
-
-        server = self._create_server()
-        server.add_secure_port(server_addr, server_creds)
-        server.start()
-        with grpc.secure_channel(server_addr, channel_creds) as channel:
-            self.assertEqual(
-                b"abc",
-                channel.unary_unary(
-                    grpc._common.fully_qualified_method(_SERVICE_NAME, _METHOD),
-                    _registered_method=True,
-                )(b"abc", wait_for_ready=True),
+        import tempfile
+        import shutil
+        temp_dir = tempfile.mkdtemp()
+        server_addr = "unix:{}".format(os.path.join(temp_dir, "grpc_uds.sock"))
+        try:
+            channel_creds = grpc.local_channel_credentials(
+                grpc.LocalConnectionType.UDS
             )
-        server.stop(None)
+            server_creds = grpc.local_server_credentials(
+                grpc.LocalConnectionType.UDS
+            )
+
+            server = self._create_server()
+            server.add_secure_port(server_addr, server_creds)
+            server.start()
+            with grpc.secure_channel(server_addr, channel_creds) as channel:
+                self.assertEqual(
+                    b"abc",
+                    channel.unary_unary(
+                        grpc._common.fully_qualified_method(_SERVICE_NAME, _METHOD),
+                        _registered_method=True,
+                    )(b"abc", wait_for_ready=True),
+                )
+            server.stop(None)
+        finally:
+            shutil.rmtree(temp_dir, ignore_errors=True)
 
 
 if __name__ == "__main__":

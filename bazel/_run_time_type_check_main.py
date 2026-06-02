@@ -21,6 +21,79 @@ import sys
 from typing import Optional, Sequence
 import unittest
 
+def _patch_grpc_localhost():
+    import grpc
+    
+    def patch_address(address):
+        if not isinstance(address, str):
+            return address
+        if address.startswith("[::]:"):
+            return address.replace("[::]:", "127.0.0.1:", 1)
+        if address.startswith("localhost:"):
+            return address.replace("localhost:", "127.0.0.1:", 1)
+        if address == "[::]":
+            return "127.0.0.1"
+        if address == "localhost":
+            return "127.0.0.1"
+        return address
+
+    orig_server = grpc.server
+    def new_server(*args, **kwargs):
+        server = orig_server(*args, **kwargs)
+        orig_add_insecure = server.add_insecure_port
+        def new_add_insecure(address):
+            return orig_add_insecure(patch_address(address))
+        server.add_insecure_port = new_add_insecure
+        
+        orig_add_secure = server.add_secure_port
+        def new_add_secure(address, *args, **kwargs):
+            return orig_add_secure(patch_address(address), *args, **kwargs)
+        server.add_secure_port = new_add_secure
+        return server
+    grpc.server = new_server
+
+    orig_insecure_channel = grpc.insecure_channel
+    def new_insecure_channel(target, *args, **kwargs):
+        return orig_insecure_channel(patch_address(target), *args, **kwargs)
+    grpc.insecure_channel = new_insecure_channel
+
+    orig_secure_channel = grpc.secure_channel
+    def new_secure_channel(target, *args, **kwargs):
+        return orig_secure_channel(patch_address(target), *args, **kwargs)
+    grpc.secure_channel = new_secure_channel
+
+    try:
+        from grpc.experimental import aio
+        orig_aio_server = aio.server
+        def new_aio_server(*args, **kwargs):
+            server = orig_aio_server(*args, **kwargs)
+            orig_add_insecure = server.add_insecure_port
+            def new_add_insecure(address):
+                return orig_add_insecure(patch_address(address))
+            server.add_insecure_port = new_add_insecure
+            
+            orig_add_secure = server.add_secure_port
+            def new_add_secure(address, *args, **kwargs):
+                return orig_add_secure(patch_address(address), *args, **kwargs)
+            server.add_secure_port = new_add_secure
+            return server
+        aio.server = new_aio_server
+
+        orig_aio_insecure_channel = aio.insecure_channel
+        def new_aio_insecure_channel(target, *args, **kwargs):
+            return orig_aio_insecure_channel(patch_address(target), *args, **kwargs)
+        aio.insecure_channel = new_aio_insecure_channel
+
+        orig_aio_secure_channel = aio.secure_channel
+        def new_aio_secure_channel(target, *args, **kwargs):
+            return orig_aio_secure_channel(patch_address(target), *args, **kwargs)
+        aio.secure_channel = new_aio_secure_channel
+    except (ImportError, AttributeError):
+        pass
+
+if sys.platform == "darwin":
+    _patch_grpc_localhost()
+
 from typeguard import install_import_hook
 
 
