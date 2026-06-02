@@ -39,6 +39,11 @@ def _patch_grpc_localhost():
 
     orig_server = grpc.server
     def new_server(*args, **kwargs):
+        options = list(kwargs.get('options') or [])
+        if not any(k == 'grpc.so_reuseport' for k, _ in options):
+            options.append(('grpc.so_reuseport', 0))
+        kwargs['options'] = tuple(options)
+
         server = orig_server(*args, **kwargs)
         orig_add_insecure = server.add_insecure_port
         def new_add_insecure(address):
@@ -66,6 +71,11 @@ def _patch_grpc_localhost():
         from grpc.experimental import aio
         orig_aio_server = aio.server
         def new_aio_server(*args, **kwargs):
+            options = list(kwargs.get('options') or [])
+            if not any(k == 'grpc.so_reuseport' for k, _ in options):
+                options.append(('grpc.so_reuseport', 0))
+            kwargs['options'] = tuple(options)
+
             server = orig_aio_server(*args, **kwargs)
             orig_add_insecure = server.add_insecure_port
             def new_add_insecure(address):
