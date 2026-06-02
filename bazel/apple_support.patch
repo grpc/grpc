@@ -1,0 +1,71 @@
+--- crosstool/cc_toolchain_config.bzl
++++ crosstool/cc_toolchain_config.bzl
+@@ -1478,7 +1478,7 @@
+         ],
+     )
+ 
+-    if xcode_config.xcode_version():
++    if xcode_config.xcode_version() and str(xcode_config.xcode_version()) != "None":
+         apple_env = {
+             "XCODE_VERSION_OVERRIDE": str(xcode_config.xcode_version()),
+             # TODO: Remove once we drop bazel 7.x support
+@@ -1487,8 +1487,8 @@
+         }
+     else:
+         apple_env = {
+-            "DEVELOPER_DIR": "/Library/Developer/CommandLineTools",
+-            "SDKROOT": "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
++            "DEVELOPER_DIR": "/Applications/Xcode_16.3.0.app/Contents/Developer",
++            "SDKROOT": "/Applications/Xcode_16.3.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk",
+         }
+ 
+     apple_env_feature = feature(
+
+--- lib/apple_support.bzl
++++ lib/apple_support.bzl
+@@ -201,7 +201,18 @@
+     # Add the Xcode execution requirements last to avoid clients overriding these values.
+     merged_execution_requirements.update(xcode_config.execution_info())
+ 
+-    processed_args["env"] = merged_env
++    # Redirect to Xcode if using CommandLineTools fallback
++    if merged_env.get("DEVELOPER_DIR") == "/Library/Developer/CommandLineTools" or not merged_env.get("DEVELOPER_DIR"):
++        merged_env["DEVELOPER_DIR"] = "/Applications/Xcode_16.3.0.app/Contents/Developer"
++        merged_env["SDKROOT"] = "/Applications/Xcode_16.3.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk"
++        if "APPLE_SDK_PLATFORM" in merged_env:
++            merged_env.pop("APPLE_SDK_PLATFORM")
++
++    filtered_env = {}
++    for k, v in merged_env.items():
++        if v != "None":
++            filtered_env[k] = v
++    processed_args["env"] = filtered_env
+     processed_args["execution_requirements"] = merged_execution_requirements
+     return processed_args
+ 
+
+--- crosstool/universal_exec_tool.bzl
++++ crosstool/universal_exec_tool.bzl
+@@ -33,7 +33,7 @@
+   xcrun \
+     --sdk macosx \
+     clang \
+-    -mmacosx-version-min=10.15 \
++    -mmacosx-version-min=11.0 \
+     -std=c++17 \
+     -lc++ \
+     -arch arm64 \
+
+--- crosstool/BUILD
++++ crosstool/BUILD
+@@ -10,7 +10,7 @@
+ cc_binary(
+     name = "wrapped_clang",
+     testonly = True,
+     srcs = [
+         "wrapped_clang.cc",
+     ],
+-    copts = ["-std=c++17"],
++    copts = ["-std=c++17", "-target", "arm64-apple-macosx11.0"],
+ )
+
