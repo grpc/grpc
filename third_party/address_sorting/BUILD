@@ -28,14 +28,21 @@
 # OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 # SUCH DAMAGE.
 
+load("//tools/build_defs/license:license.bzl", "license")
 load(":address_sorting.bzl", "address_sorting_cc_library")
 
 package(
+    default_applicable_licenses = [":license"],
     default_visibility = ["//visibility:public"],
     features = [
         "-layering_check",
         "-parse_headers",
     ],
+)
+
+license(
+    name = "license",
+    package_name = "address_sorting",
 )
 
 licenses(["notice"])
@@ -58,7 +65,7 @@ address_sorting_cc_library(
         "include",
     ],
     linkopts = select({
-        "@platforms//os:windows": ["-defaultlib:ws2_32.lib"],
+        "//third_party/bazel_platforms/os:windows": ["-defaultlib:ws2_32.lib"],
         "//conditions:default": [],
     }),
 )
