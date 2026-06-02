@@ -17,6 +17,7 @@ import functools
 import logging
 from typing import Callable
 import unittest
+import tests
 
 from grpc.experimental import aio
 

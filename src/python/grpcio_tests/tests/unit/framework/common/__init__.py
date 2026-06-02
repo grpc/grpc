@@ -17,6 +17,7 @@ import errno
 import os
 import socket
 import sys
+import tests
 
 _DEFAULT_SOCK_OPTIONS = (
     (socket.SO_REUSEADDR,)
