@@ -381,6 +381,7 @@ class Channel(_base_channel.Channel):
     def _register_call(self, call: _base_call.Call) -> None:
         """Register a call to be tracked by the channel."""
         self._active_calls.add(call)
+        call.add_done_callback(self._active_calls.discard)
 
     async def __aenter__(self):
         return self
