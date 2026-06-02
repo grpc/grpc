@@ -379,6 +379,7 @@ grpc_cc_test(
     uses_event_engine = False,
     uses_polling = False,
     deps = [
+        "//:grpc_public_hdrs",
         "//src/core:grpc_xds_client",
         "//test/core/test_util:grpc_test_util",
     ],
