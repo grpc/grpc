@@ -163,9 +163,14 @@ def get_method_handlers(pre_response_callback):
 def _instrumented_client_server_pair(
     channel_kwargs, server_kwargs, server_handler
 ):
-    options = (("grpc.so_reuseport", 0),)
+    import sys
+    server_options = ()
+    if sys.platform == "darwin":
+        server_options = (
+            ('grpc.so_reuseport', 0),
+        )
     server = grpc.server(
-        futures.ThreadPoolExecutor(), options=options, **server_kwargs
+        futures.ThreadPoolExecutor(), options=server_options, **server_kwargs
     )
     server.add_registered_method_handlers(_SERVICE_NAME, server_handler)
     server_port = server.add_insecure_port("{}:0".format(_HOST))
