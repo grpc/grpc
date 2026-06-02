@@ -430,6 +430,7 @@ static tsi_result populate_key_exchange_groups(
     }
 #endif
   }
+  return TSI_OK;
 }
 }  // namespace
 
