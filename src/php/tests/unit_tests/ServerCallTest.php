@@ -292,26 +292,35 @@ class ServerCallTest extends \PHPUnit\Framework\TestCase
         $message1 = $this->newStringMessage();
         $message2 = $this->newStringMessage('another string');
 
+        $invocationCount = 0;
         $this->mockCall->expects($this->exactly(4))
             ->method('startBatch')
-            ->withConsecutive(
-                [$this->identicalTo([
-                    \Grpc\OP_SEND_INITIAL_METADATA => $metadata,
-                ])],
-                [$this->identicalTo([
-                    \Grpc\OP_SEND_MESSAGE => ['message' => $message1->serializeToString()],
-                ])],
-                [$this->identicalTo([
-                    \Grpc\OP_SEND_MESSAGE => [
-                        'message' => $message2->serializeToString(),
-                        'flags' => 0x02,
-                    ]
-                ])],
-                [$this->identicalTo([
-                    \Grpc\OP_SEND_STATUS_FROM_SERVER => \Grpc\Status::ok(),
-                    \Grpc\OP_RECV_CLOSE_ON_SERVER => true,
-                ])]
-            );
+            ->willReturnCallback(function ($batch) use (&$invocationCount, $metadata, $message1, $message2) {
+                $invocationCount++;
+                switch ($invocationCount) {
+                    case 1:
+                        $this->assertEquals([\Grpc\OP_SEND_INITIAL_METADATA => $metadata], $batch);
+                        break;
+                    case 2:
+                        $this->assertEquals([\Grpc\OP_SEND_MESSAGE => ['message' => $message1->serializeToString()]], $batch);
+                        break;
+                    case 3:
+                        $this->assertEquals([
+                            \Grpc\OP_SEND_MESSAGE => [
+                                'message' => $message2->serializeToString(),
+                                'flags' => 0x02,
+                            ]
+                        ], $batch);
+                        break;
+                    case 4:
+                        $this->assertEquals([
+                            \Grpc\OP_SEND_STATUS_FROM_SERVER => \Grpc\Status::ok(),
+                            \Grpc\OP_RECV_CLOSE_ON_SERVER => true,
+                        ], $batch);
+                        break;
+                }
+                return new \stdClass();
+            });
 
         $serverCallWriter = new \Grpc\ServerCallWriter(
             $this->mockCall,
