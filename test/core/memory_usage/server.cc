@@ -215,7 +215,7 @@ int main(int argc, char** argv) {
                                               &args);
     if (config_fetcher != nullptr) {
       args_vec.push_back(grpc_channel_arg_pointer_create(
-          GRPC_ARG_SERVER_CONFIG_FETCHER, config_fetcher,
+          const_cast<char*>(GRPC_ARG_SERVER_CONFIG_FETCHER), config_fetcher,
           grpc_server_config_fetcher_arg_vtable()));
     }
   }
