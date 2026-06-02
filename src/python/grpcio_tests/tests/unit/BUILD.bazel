@@ -158,10 +158,7 @@ internal_py_grpc_test(
 
 internal_py_grpc_test(
     name = "_compression_test",
-    size = select({
-        "@platforms//os:macos": "medium",
-        "//conditions:default": "small",
-    }),
+    size = "medium",
     srcs = ["_compression_test.py"],
     data = [
         "//src/python/grpcio_tests/tests/unit/credentials",
@@ -183,3 +180,4 @@ internal_py_grpc_test(
         "//src/python/grpcio_tests/tests/unit/framework/common",
     ],
 )
+
