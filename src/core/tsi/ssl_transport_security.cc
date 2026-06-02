@@ -378,7 +378,7 @@ int ServerHandshakerFactoryAlpnCallback(SSL* /*ssl*/, const unsigned char** out,
 //   - BoringSSL: {X25519MLKEM768, X25519, P-256, P-384, P-521}
 //   - OpenSSL < 3.0: {X25519, P-256, P-384, P-521}
 //   - OpenSSL >= 3: OpenSSL Defaults (prefers X25519MLKEM768 in OpenSSL 3.5+)
-static tsi_result populate_key_exchange_groups(
+tsi_result populate_key_exchange_groups(
     SSL_CTX* context,
     const std::vector<grpc_tls_key_exchange_group>& key_exchange_groups) {
   // Explicitly set the key exchange groups
