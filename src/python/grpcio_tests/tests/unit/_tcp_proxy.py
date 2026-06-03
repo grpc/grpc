@@ -121,8 +121,7 @@ class TcpProxy:
                         socket_to_read.close()
             except socket.error:
                 if socket_to_read is self._listen_socket:
-                    _close_socket(self._listen_socket)
-                    self._listen_socket = None
+                    pass
                 elif socket_to_read is self._proxy_socket and self._proxy_socket is not None:
                     _close_socket(self._proxy_socket)
                     self._proxy_socket = None
