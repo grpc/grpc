@@ -117,6 +117,7 @@ class BenchmarkClient
   def streaming_ping_ponger(req, stub, config, waiter)
     q = EnumeratorQueue.new(self)
     Thread.current.thread_variable_set(:queue, q)
+    return if @done
     resp = stub.streaming_call(q.each_item)
     start = Time.now
     q.push(req)
