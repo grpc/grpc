@@ -59,13 +59,16 @@ cdef class Server:
       tmp_channel_args = _ChannelArgs(arguments_list)
       config_fetcher = grpc_server_config_fetcher_xds_create(
           notifier, tmp_channel_args.c_args())
-      fetcher_arg.key = <char *>GRPC_ARG_SERVER_CONFIG_FETCHER
-      fetcher_arg.type = GRPC_ARG_POINTER
-      fetcher_arg.value.pointer.vtable = <grpc_arg_pointer_vtable *>grpc_server_config_fetcher_arg_vtable()
-      fetcher_arg.value.pointer.address = config_fetcher
-      arguments_list.append((GRPC_ARG_SERVER_CONFIG_FETCHER, _wrap_grpc_arg(fetcher_arg)))
+      if config_fetcher != NULL:
+        fetcher_arg.key = <char *>GRPC_ARG_SERVER_CONFIG_FETCHER
+        fetcher_arg.type = GRPC_ARG_POINTER
+        fetcher_arg.value.pointer.vtable = <grpc_arg_pointer_vtable *>grpc_server_config_fetcher_arg_vtable()
+        fetcher_arg.value.pointer.address = config_fetcher
+        arguments_list.append((GRPC_ARG_SERVER_CONFIG_FETCHER, _wrap_grpc_arg(fetcher_arg)))
     channel_args = _ChannelArgs(arguments_list)
     self.c_server = grpc_server_create(channel_args.c_args(), NULL)
+    if xds and config_fetcher != NULL:
+      grpc_server_config_fetcher_unref(config_fetcher)
     self.references.append(arguments_list)
 
   def request_call(

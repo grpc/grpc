@@ -487,6 +487,9 @@ cdef extern from "grpc/grpc.h":
        grpc_server_xds_status_notifier notifier,
        const grpc_channel_args* args) nogil
 
+  void grpc_server_config_fetcher_unref(
+      grpc_server_config_fetcher* server_config_fetcher) nogil
+
 
   void grpc_server_start(grpc_server *server) nogil
   void grpc_server_shutdown_and_notify(
