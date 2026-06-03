@@ -700,6 +700,7 @@ void grpc_chttp2_transport::WriteSecurityFrameLocked(
             GRPC_ERROR_CREATE("Unexpected SECURITY frame scheduled for write"),
             grpc_core::StatusIntProperty::kRpcStatus,
             GRPC_STATUS_FAILED_PRECONDITION));
+    return;
   }
   grpc_core::SliceBuffer security_frame;
   grpc_chttp2_security_frame_create(data->c_slice_buffer(), data->Length(),
