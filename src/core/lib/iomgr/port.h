@@ -24,6 +24,9 @@
  * apply to custom sockets too */
 #ifdef GPR_WINDOWS
 #define GRPC_ARES_RESOLVE_LOCALHOST_MANUALLY 1
+#ifndef __MINGW32__
+#define GRPC_HAVE_UNIX_SOCKET 1
+#endif  // __MINGW32__
 #endif
 #if defined(GRPC_USE_EVENT_ENGINE)
 // Do Nothing

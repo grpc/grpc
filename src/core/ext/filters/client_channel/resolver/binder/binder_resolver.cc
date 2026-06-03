@@ -18,7 +18,14 @@
 
 #ifdef GRPC_HAVE_UNIX_SOCKET
 
+#ifdef _WIN32
+// clang-format off
+#include <ws2def.h>
+#include <afunix.h>
+// clang-format on
+#else
 #include <sys/un.h>
+#endif
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
