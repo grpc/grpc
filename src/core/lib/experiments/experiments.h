@@ -67,6 +67,8 @@ inline bool IsCallTracerSendInitialMetadataIsAnAnnotationEnabled() {
 inline bool IsCallTracerSendTrailingMetadataIsAnAnnotationEnabled() {
   return false;
 }
+#define GRPC_EXPERIMENT_IS_INCLUDED_CALLV3_BATCH_VALIDATION
+inline bool IsCallv3BatchValidationEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CHAOTIC_GOOD_FRAMING_LAYER
 inline bool IsChaoticGoodFramingLayerEnabled() { return true; }
 inline bool IsChaoticGoodSendSupportedFeaturesEnabled() { return false; }
@@ -158,6 +160,8 @@ inline bool IsCallTracerSendInitialMetadataIsAnAnnotationEnabled() {
 inline bool IsCallTracerSendTrailingMetadataIsAnAnnotationEnabled() {
   return false;
 }
+#define GRPC_EXPERIMENT_IS_INCLUDED_CALLV3_BATCH_VALIDATION
+inline bool IsCallv3BatchValidationEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CHAOTIC_GOOD_FRAMING_LAYER
 inline bool IsChaoticGoodFramingLayerEnabled() { return true; }
 inline bool IsChaoticGoodSendSupportedFeaturesEnabled() { return false; }
@@ -249,6 +253,8 @@ inline bool IsCallTracerSendInitialMetadataIsAnAnnotationEnabled() {
 inline bool IsCallTracerSendTrailingMetadataIsAnAnnotationEnabled() {
   return false;
 }
+#define GRPC_EXPERIMENT_IS_INCLUDED_CALLV3_BATCH_VALIDATION
+inline bool IsCallv3BatchValidationEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CHAOTIC_GOOD_FRAMING_LAYER
 inline bool IsChaoticGoodFramingLayerEnabled() { return true; }
 inline bool IsChaoticGoodSendSupportedFeaturesEnabled() { return false; }
@@ -336,6 +342,7 @@ enum ExperimentIds {
   kExperimentIdCallTracerInTransport,
   kExperimentIdCallTracerSendInitialMetadataIsAnAnnotation,
   kExperimentIdCallTracerSendTrailingMetadataIsAnAnnotation,
+  kExperimentIdCallv3BatchValidation,
   kExperimentIdChaoticGoodFramingLayer,
   kExperimentIdChaoticGoodSendSupportedFeatures,
   kExperimentIdErrorFlatten,
@@ -413,6 +420,10 @@ inline bool IsCallTracerSendInitialMetadataIsAnAnnotationEnabled() {
 inline bool IsCallTracerSendTrailingMetadataIsAnAnnotationEnabled() {
   return IsExperimentEnabled<
       kExperimentIdCallTracerSendTrailingMetadataIsAnAnnotation>();
+}
+#define GRPC_EXPERIMENT_IS_INCLUDED_CALLV3_BATCH_VALIDATION
+inline bool IsCallv3BatchValidationEnabled() {
+  return IsExperimentEnabled<kExperimentIdCallv3BatchValidation>();
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CHAOTIC_GOOD_FRAMING_LAYER
 inline bool IsChaoticGoodFramingLayerEnabled() {
