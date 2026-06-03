@@ -152,6 +152,7 @@ grpc_cc_test(
         ":transport_security_test_lib",
         "//:gpr",
         "//:grpc",
+        "//:grpc_public_hdrs",
         "//:tsi_base",
         "//:tsi_ssl_credentials",
         "//test/core/test_util:build",
