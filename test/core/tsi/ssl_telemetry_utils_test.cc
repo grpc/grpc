@@ -45,7 +45,7 @@ TEST(SslTelemetryUtilsTest,
 
   // Test Peer certificate verification failures
   EXPECT_EQ(MapSslErrorToTlsTelemetryHandshakeResult(SSL_ERROR_NONE, 0,
-                                                      X509_V_ERR_CERT_REVOKED),
+                                                     X509_V_ERR_CERT_REVOKED),
             TlsTelemetryHandshakeResult::kCertificateRevoked);
   EXPECT_EQ(MapSslErrorToTlsTelemetryHandshakeResult(
                 SSL_ERROR_NONE, 0, X509_V_ERR_CERT_HAS_EXPIRED),

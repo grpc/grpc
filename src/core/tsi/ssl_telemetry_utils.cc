@@ -174,8 +174,7 @@ TlsTelemetryHandshakeResult MapSslErrorToTlsTelemetryHandshakeResult(
       case SSL_R_NO_CERTIFICATE_ASSIGNED:
       case SSL_R_SSLV3_ALERT_NO_CERTIFICATE:
       case SSL_R_TLSV1_ALERT_CERTIFICATE_REQUIRED:
-        return TlsTelemetryHandshakeResult::
-            kPeerCertificateRequiredButMissing;
+        return TlsTelemetryHandshakeResult::kPeerCertificateRequiredButMissing;
 
       // Internal / Resource failures
       case ERR_R_MALLOC_FAILURE:
@@ -324,8 +323,7 @@ TlsTelemetryHandshakeResult MapSslErrorToTlsTelemetryHandshakeResult(
       case SSL_R_NO_CERTIFICATE_SET:
       case SSL_R_NO_CERTIFICATE_ASSIGNED:
       case SSL_R_SSLV3_ALERT_NO_CERTIFICATE:
-        return TlsTelemetryHandshakeResult::
-            kPeerCertificateRequiredButMissing;
+        return TlsTelemetryHandshakeResult::kPeerCertificateRequiredButMissing;
 
       // Internal / Resource failures
       case ERR_R_MALLOC_FAILURE:
