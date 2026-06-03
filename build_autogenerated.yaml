@@ -27215,6 +27215,16 @@ targets:
   - gtest
   - absl/functional:overload
   - grpc_test_util
+- name: xds_client_grpc_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/xds/xds_client_grpc_test.cc
+  deps:
+  - gtest
+  - grpc_test_util
 - name: xds_client_test
   gtest: true
   build: test
