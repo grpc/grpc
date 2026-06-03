@@ -15,6 +15,7 @@
 import asyncio
 from contextvars import ContextVar
 import datetime
+import sys
 from typing import Optional
 
 import grpc
@@ -178,11 +179,19 @@ async def start_test_server(
             server_credentials = grpc.ssl_server_credentials(
                 [(resources.private_key(), resources.certificate_chain())]
             )
-        port = server.add_secure_port("127.0.0.1:%d" % port, server_credentials)
+        if sys.platform == 'darwin':
+            port = server.add_secure_port("127.0.0.1:%d" % port, server_credentials)
+        else:
+            port = server.add_secure_port("[::]:%d" % port, server_credentials)
     else:
-        port = server.add_insecure_port("127.0.0.1:%d" % port)
+        if sys.platform == 'darwin':
+            port = server.add_insecure_port("127.0.0.1:%d" % port)
+        else:
+            port = server.add_insecure_port("[::]:%d" % port)
 
     await server.start()
 
     # NOTE(lidizheng) returning the server to prevent it from deallocation
-    return "127.0.0.1:%d" % port, server
+    if sys.platform == 'darwin':
+        return "127.0.0.1:%d" % port, server
+    return "localhost:%d" % port, server
