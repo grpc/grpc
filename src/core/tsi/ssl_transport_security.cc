@@ -3381,12 +3381,3 @@ const tsi_ssl_handshaker_factory_vtable* tsi_ssl_handshaker_factory_swap_vtable(
   factory->vtable = new_vtable;
   return orig_vtable;
 }
-
-namespace tsi {
-std::shared_ptr<grpc_core::GlobalStatsPluginRegistry::StatsPluginGroup>
-tsi_ssl_handshaker_get_stats_plugin_group_for_testing(
-    tsi_handshaker* handshaker) {
-  tsi_ssl_handshaker* impl = static_cast<tsi_ssl_handshaker*>(handshaker);
-  return impl->stats_plugin_group;
-}
-}  // namespace tsi

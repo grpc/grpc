@@ -468,13 +468,6 @@ tsi_result tsi_ssl_get_cert_chain_contents(STACK_OF(X509) * peer_chain,
 
 namespace tsi {
 bool IsRootCertInfoEmpty(const RootCertInfo* root_cert_info);
-
-// Exposed for testing only.
-// TODO(gregorycooke) - remove this once the metrics are implemented and there
-// are tests for the metrics.
-std::shared_ptr<grpc_core::GlobalStatsPluginRegistry::StatsPluginGroup>
-tsi_ssl_handshaker_get_stats_plugin_group_for_testing(
-    tsi_handshaker* handshaker);
 }  // namespace tsi
 
 #endif  // GRPC_SRC_CORE_TSI_SSL_TRANSPORT_SECURITY_H
