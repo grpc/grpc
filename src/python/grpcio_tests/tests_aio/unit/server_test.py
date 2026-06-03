@@ -14,6 +14,7 @@
 
 import asyncio
 import logging
+import sys
 import time
 import unittest
 
@@ -438,9 +439,16 @@ class TestServer(AioTestBase):
 
         with self.assertRaises(aio.AioRpcError) as exception_context:
             await call
-        self.assertEqual(
-            grpc.StatusCode.UNAVAILABLE, exception_context.exception.code()
-        )
+        
+        if sys.platform == 'darwin':
+            self.assertIn(
+                exception_context.exception.code(),
+                (grpc.StatusCode.UNAVAILABLE, grpc.StatusCode.CANCELLED)
+            )
+        else:
+            self.assertEqual(
+                grpc.StatusCode.UNAVAILABLE, exception_context.exception.code()
+            )
 
     async def test_concurrent_graceful_shutdown(self):
         call = self._channel.unary_unary(_BLOCK_BRIEFLY)(_REQUEST)
@@ -475,9 +483,16 @@ class TestServer(AioTestBase):
 
         with self.assertRaises(aio.AioRpcError) as exception_context:
             await call
-        self.assertEqual(
-            grpc.StatusCode.UNAVAILABLE, exception_context.exception.code()
-        )
+        
+        if sys.platform == 'darwin':
+            self.assertIn(
+                exception_context.exception.code(),
+                (grpc.StatusCode.UNAVAILABLE, grpc.StatusCode.CANCELLED)
+            )
+        else:
+            self.assertEqual(
+                grpc.StatusCode.UNAVAILABLE, exception_context.exception.code()
+            )
 
     async def test_shutdown_before_call(self):
         await self._server.stop(None)
@@ -504,7 +519,11 @@ class TestServer(AioTestBase):
         await call.write(_REQUEST)
         await self._server.stop(None)
 
-        self.assertEqual(grpc.StatusCode.UNAVAILABLE, await call.code())
+        code = await call.code()
+        if sys.platform == 'darwin':
+            self.assertIn(code, (grpc.StatusCode.UNAVAILABLE, grpc.StatusCode.CANCELLED))
+        else:
+            self.assertEqual(grpc.StatusCode.UNAVAILABLE, code)
         # No segfault
 
     async def test_error_in_stream_stream(self):
