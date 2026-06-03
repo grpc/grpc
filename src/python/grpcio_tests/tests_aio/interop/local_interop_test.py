@@ -109,18 +109,37 @@ class InteropTestCaseMixin:
 
 
 class InsecureLocalInteropTest(InteropTestCaseMixin, AioTestBase):
-    async def setUp(self):
-        address, self._server = await start_test_server()
-        self._channel = aio.insecure_channel(address)
-        self._stub = test_pb2_grpc.TestServiceStub(self._channel)
+    @classmethod
+    def setUpClass(cls):
+        cls._TEST_LOOP.run_until_complete(cls.asyncSetUpClass())
 
-    async def tearDown(self):
-        await self._channel.close()
-        await self._server.stop(None)
+    @classmethod
+    def tearDownClass(cls):
+        cls._TEST_LOOP.run_until_complete(cls.asyncTearDownClass())
+
+    @classmethod
+    async def asyncSetUpClass(cls):
+        address, cls._server = await start_test_server()
+        cls._channel = aio.insecure_channel(address)
+        cls._stub = test_pb2_grpc.TestServiceStub(cls._channel)
+
+    @classmethod
+    async def asyncTearDownClass(cls):
+        await cls._channel.close()
+        await cls._server.stop(None)
 
 
 class SecureLocalInteropTest(InteropTestCaseMixin, AioTestBase):
-    async def setUp(self):
+    @classmethod
+    def setUpClass(cls):
+        cls._TEST_LOOP.run_until_complete(cls.asyncSetUpClass())
+
+    @classmethod
+    def tearDownClass(cls):
+        cls._TEST_LOOP.run_until_complete(cls.asyncTearDownClass())
+
+    @classmethod
+    async def asyncSetUpClass(cls):
         server_credentials = grpc.ssl_server_credentials(
             [(resources.private_key(), resources.certificate_chain())]
         )
@@ -134,17 +153,18 @@ class SecureLocalInteropTest(InteropTestCaseMixin, AioTestBase):
             ),
         )
 
-        address, self._server = await start_test_server(
+        address, cls._server = await start_test_server(
             secure=True, server_credentials=server_credentials
         )
-        self._channel = aio.secure_channel(
+        cls._channel = aio.secure_channel(
             address, channel_credentials, channel_options
         )
-        self._stub = test_pb2_grpc.TestServiceStub(self._channel)
+        cls._stub = test_pb2_grpc.TestServiceStub(cls._channel)
 
-    async def tearDown(self):
-        await self._channel.close()
-        await self._server.stop(None)
+    @classmethod
+    async def asyncTearDownClass(cls):
+        await cls._channel.close()
+        await cls._server.stop(None)
 
 
 if __name__ == "__main__":

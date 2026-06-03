@@ -30,6 +30,7 @@ GRPCIO_PY3_ONLY_TESTS_UNIT = glob([
         main = test_file_name,
         python_version = "PY3",
         srcs_version = "PY3",
+        tags = ["exclusive"] if test_file_name == "_leak_test.py" else [],
         deps = [
             "//src/python/grpcio/grpc:grpcio",
             "//src/python/grpcio_tests/tests/testing",

@@ -57,6 +57,8 @@ def get_socket(
             sock = socket.socket(address_family, socket.SOCK_STREAM)
             for sock_option in _sock_options:
                 sock.setsockopt(socket.SOL_SOCKET, sock_option, 1)
+            if __import__('sys').platform == 'darwin' and address_family == socket.AF_INET6 and hasattr(socket, 'IPV6_V6ONLY'):
+                sock.setsockopt(socket.IPPROTO_IPV6, socket.IPV6_V6ONLY, 0)
             sock.bind((bind_address, port))
             if listen:
                 sock.listen(1)

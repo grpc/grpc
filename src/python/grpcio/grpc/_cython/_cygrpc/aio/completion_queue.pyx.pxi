@@ -60,7 +60,10 @@ cdef class _BoundEventLoop:
     def close(self):
         if self.loop:
             if self._has_reader:
-                self.loop.remove_reader(self.read_socket)
+                try:
+                    self.loop.remove_reader(self.read_socket)
+                except Exception:
+                    pass
 
 
 cdef class PollerCompletionQueue(BaseCompletionQueue):
@@ -83,6 +86,13 @@ cdef class PollerCompletionQueue(BaseCompletionQueue):
         self._queue = cpp_event_queue()
 
     def bind_loop(self, object loop):
+        for old_loop in list(self._loops):
+            if old_loop.is_closed():
+                try:
+                    self._loops[old_loop].close()
+                except Exception:
+                    pass
+                del self._loops[old_loop]
         if loop in self._loops:
             return
         else:
