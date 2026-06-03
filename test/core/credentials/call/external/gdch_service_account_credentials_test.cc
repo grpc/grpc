@@ -224,7 +224,7 @@ TEST(GDCHServiceAccountCredentialsTest, CreateSuccess) {
   ASSERT_TRUE(creds.ok()) << creds.status().ToString();
   ASSERT_NE(*creds, nullptr);
   EXPECT_EQ((*creds)->debug_string(),
-            "GDCHServiceAccountCredentials{Audience:)");
+            "GDCHServiceAccountCredentials{Audience:}");
 }
 
 TEST(GDCHServiceAccountCredentialsTest, CreateFailureInvalidJson) {
@@ -242,14 +242,14 @@ TEST(GDCHServiceAccountCredentialsTest, AssertionComponentsFromInfoSuccess) {
   auto components =
       GDCHServiceAccountCredentials::AssertionComponentsFromInfo(info, now);
 
-  auto parsed_header = JsonParse(components.first);
+  auto parsed_header = JsonParse(components.header);
   ASSERT_TRUE(parsed_header.ok());
   ASSERT_EQ(parsed_header->type(), Json::Type::kObject);
   EXPECT_EQ(parsed_header->object().at("alg").string(), "ES256");
   EXPECT_EQ(parsed_header->object().at("typ").string(), "JWT");
   EXPECT_EQ(parsed_header->object().at("kid").string(), info.private_key_id);
 
-  auto parsed_claim = JsonParse(components.second);
+  auto parsed_claim = JsonParse(components.claim);
   ASSERT_TRUE(parsed_claim.ok());
   ASSERT_EQ(parsed_claim->type(), Json::Type::kObject);
   EXPECT_EQ(parsed_claim->object().at("iss").string(),
