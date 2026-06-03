@@ -46,6 +46,26 @@ constexpr Duration kRegionalAccessBoundaryCacheDuration = Duration::Hours(6);
 constexpr absl::string_view kRegionalEndpoint = "rep.googleapis.com";
 constexpr char kComputeEngineDefaultSaEmailPath[] =
     "/computeMetadata/v1/instance/service-accounts/default/email";
+
+bool IsValidEmail(absl::string_view email) {
+  size_t at_pos = email.find('@');
+  if (at_pos == absl::string_view::npos || at_pos == 0 ||
+      at_pos == email.size() - 1) {
+    return false;
+  }
+  if (email.find('@', at_pos + 1) != absl::string_view::npos) {
+    return false;
+  }
+  absl::string_view domain = email.substr(at_pos + 1);
+  size_t dot_pos = domain.find('.');
+  while (dot_pos != absl::string_view::npos) {
+    if (dot_pos > 0 && dot_pos < domain.size() - 1) {
+      return true;
+    }
+    dot_pos = domain.find('.', dot_pos + 1);
+  }
+  return false;
+}
 }  // namespace
 
 RefCountedPtr<RegionalAccessBoundaryFetcher>
@@ -350,7 +370,7 @@ void EmailFetcher::OnEmailFetchComplete(absl::string_view email) {
   MutexLock lock(&mu_);
   if (std::holds_alternative<OrphanablePtr<EmailRequest>>(state_)) {
     absl::string_view trimmed_email = absl::StripAsciiWhitespace(email);
-    if (!absl::StrContains(trimmed_email, '@')) {
+    if (!IsValidEmail(trimmed_email)) {
       LOG(INFO) << "Regional Access Boundary fetch skipped: service account "
                    "email is not a valid email address (could be a principal "
                    "string or pool id): \""
