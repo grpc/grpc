@@ -143,8 +143,8 @@ TEST_F(TlsCertificateSelectorTest,
        CreateSelectCertificateResultFromPemFailedWithEmptyChain) {
   absl::StatusOr<CertificateSelector::SelectCertificateResult> result =
       CertificateSelector::CreateSelectCertificateResult("", pem_private_key_);
-  EXPECT_EQ(result.status().code(), absl::StatusCode::kInvalidArgument);
-  EXPECT_EQ(result.status().message(), "The cert chain is empty.");
+  EXPECT_EQ(result.status(),
+            absl::InvalidArgumentError("The cert chain is empty."));
 }
 
 TEST_F(TlsCertificateSelectorTest,
@@ -152,8 +152,8 @@ TEST_F(TlsCertificateSelectorTest,
   absl::StatusOr<CertificateSelector::SelectCertificateResult> result =
       CertificateSelector::CreateSelectCertificateResult("invalid",
                                                          pem_private_key_);
-  EXPECT_EQ(result.status().code(), absl::StatusCode::kInvalidArgument);
-  EXPECT_EQ(result.status().message(), "Failed to parse cert chain.");
+  EXPECT_EQ(result.status(),
+            absl::InvalidArgumentError("Failed to parse cert chain."));
 }
 
 TEST_F(TlsCertificateSelectorTest,
@@ -161,16 +161,16 @@ TEST_F(TlsCertificateSelectorTest,
   absl::StatusOr<CertificateSelector::SelectCertificateResult> result =
       CertificateSelector::CreateSelectCertificateResult(kInvalidPemBlock,
                                                          pem_private_key_);
-  EXPECT_EQ(result.status().code(), absl::StatusCode::kInvalidArgument);
-  EXPECT_EQ(result.status().message(), "Failed to parse cert chain.");
+  EXPECT_EQ(result.status(),
+            absl::InvalidArgumentError("Failed to parse cert chain."));
 }
 
 TEST_F(TlsCertificateSelectorTest,
        CreateSelectCertificateResultFromPemFailedWithEmptyKey) {
   absl::StatusOr<CertificateSelector::SelectCertificateResult> result =
       CertificateSelector::CreateSelectCertificateResult(pem_cert_chain_, "");
-  EXPECT_EQ(result.status().code(), absl::StatusCode::kInvalidArgument);
-  EXPECT_EQ(result.status().message(), "Failed to read private key.");
+  EXPECT_EQ(result.status(),
+            absl::InvalidArgumentError("Failed to read private key."));
 }
 
 TEST_F(TlsCertificateSelectorTest,
@@ -178,8 +178,8 @@ TEST_F(TlsCertificateSelectorTest,
   absl::StatusOr<CertificateSelector::SelectCertificateResult> result =
       CertificateSelector::CreateSelectCertificateResult(pem_cert_chain_,
                                                          "invalid");
-  EXPECT_EQ(result.status().code(), absl::StatusCode::kInvalidArgument);
-  EXPECT_EQ(result.status().message(), "Failed to read private key.");
+  EXPECT_EQ(result.status(),
+            absl::InvalidArgumentError("Failed to read private key."));
 }
 
 TEST_F(TlsCertificateSelectorTest,
@@ -214,8 +214,8 @@ TEST_F(TlsCertificateSelectorTest,
   absl::StatusOr<CertificateSelector::SelectCertificateResult> result =
       CertificateSelector::CreateSelectCertificateResult(
           std::vector<std::string>(), der_private_key_);
-  EXPECT_EQ(result.status().code(), absl::StatusCode::kInvalidArgument);
-  EXPECT_EQ(result.status().message(), "The cert chain is empty.");
+  EXPECT_EQ(result.status(),
+            absl::InvalidArgumentError("The cert chain is empty."));
 }
 
 TEST_F(TlsCertificateSelectorTest,
@@ -223,8 +223,8 @@ TEST_F(TlsCertificateSelectorTest,
   absl::StatusOr<CertificateSelector::SelectCertificateResult> result =
       CertificateSelector::CreateSelectCertificateResult(der_cert_chain_,
                                                          "invalid");
-  EXPECT_EQ(result.status().code(), absl::StatusCode::kInvalidArgument);
-  EXPECT_EQ(result.status().message(), "Failed to parse private key.");
+  EXPECT_EQ(result.status(),
+            absl::InvalidArgumentError("Failed to parse private key."));
 }
 
 }  // namespace
