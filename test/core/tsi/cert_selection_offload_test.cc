@@ -146,8 +146,7 @@ class AsyncTestCertificateSelector : public CertificateSelector {
   void Cancel(
       std::shared_ptr<AsyncCertificateSelectionHandle> handle) override {
     event_engine_->Cancel(
-        grpc_core::DownCast<TestCertSelectionHandle*>(handle.get())
-            ->task_handle_);
+        DownCast<TestCertSelectionHandle*>(handle.get())->task_handle_);
     was_cancelled_ = true;
   }
 
