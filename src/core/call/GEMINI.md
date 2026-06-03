@@ -71,10 +71,29 @@ status.
     *   `src/core/call/metadata.{h,cc}`
     *   `src/core/call/metadata_batch.{h,cc}`
 
+## Call V3 Stack
+
+![Call V3 Stack](CallV3.png)
+<!--
+Can add a text based version of this diagram if needed. It will be more
+accessible to the AIs
+-->
+
+*   **`src/core/call/call_spine.{h,cc}`**: The `CallSpine` is the key
+    abstraction to understand in this directory. It's the "glue" that holds a
+    call together.
+*   The use of `CallInitiator` and `CallHandler` provides a clean separation of
+    concerns between the client and server sides of a call.
+*   In a CallSpine we always have a `CallInitiator` and `CallHandler` pair.
+*   `CallInitiator` is always near/towards the client side.
+*   `CallHandler` is always near/towards the server side.
+*   When CallInitiator sends metadata, it flows into the spine. The spine
+    executes filter hooks before reaching CallHandler.
+*   Similarly, response metadata and messages from CallHandler pass through
+    filters and reach the CallInitiator.
+
 ## Files
 
-*   **`src/core/call/call_spine.{h,cc}`**: These files define the `CallSpine`
-    class.
 *   **`src/core/call/client_call.{h,cc}`**: These files define the `ClientCall`
     class.
 *   **`src/core/call/server_call.{h,cc}`**: These files define the `ServerCall`
@@ -93,10 +112,6 @@ status.
 
 ## Notes
 
-*   The `CallSpine` is the key abstraction to understand in this directory. It's
-    the "glue" that holds a call together.
-*   The use of `CallInitiator` and `CallHandler` provides a clean separation of
-    concerns between the client and server sides of a call.
 *   This directory is heavily based on the
     [gRPC Core Promise API](../lib/promise/GEMINI.md). Familiarity with that API
     is essential for understanding the code here.
