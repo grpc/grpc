@@ -12,7 +12,7 @@ The promise library provides a set of tools for writing asynchronous code in a c
 
 - **`promise.h`**: Defines the core `Promise` class and related helpers. A `Promise` is a functor that returns a `Poll<T>`. Most code will not use Promise<T> directly, as it's type erased and introduces unnecessary indirect function calls and memory allocations.
 - **`poll.h`**: Defines `Poll<T>`, the return type of a promise. A `Poll` can be either `Pending` or `Ready` with a value of type `T`.
-- **`party.h` / `party.cc`**: A `Party` is a tool that we use to execute promises concurrently not parallely.
+- **`party.h` / `party.cc`**: A `Party` is a tool that we use to execute promises concurrently not parallelly.
 - **`activity.h` / `activity.cc`**: Defines `Activity`, the execution context for promises. An `Activity` is responsible for running a promise to completion, and provides a mechanism for waking up a suspended promise when it's ready to make progress.
 
 ### Promise Combinators

@@ -10,9 +10,7 @@
 #define ENVOY_EXTENSIONS_FILTERS_COMMON_MATCHER_ACTION_V3_SKIP_ACTION_PROTO_UPB_H__UPB_H_
 
 #include "upb/generated_code_support.h"
-
 #include "envoy/extensions/filters/common/matcher/action/v3/skip_action.upb_minitable.h"
-
 #include "udpa/annotations/status.upb_minitable.h"
 
 // Must be last.
@@ -21,43 +19,47 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+typedef struct envoy_extensions_filters_common_matcher_action_v3_SkipFilter {
+  upb_Message UPB_PRIVATE(base);
+} envoy_extensions_filters_common_matcher_action_v3_SkipFilter;
 
-typedef struct envoy_extensions_filters_common_matcher_action_v3_SkipFilter { upb_Message UPB_PRIVATE(base); } envoy_extensions_filters_common_matcher_action_v3_SkipFilter;
 
 
 
 /* envoy.extensions.filters.common.matcher.action.v3.SkipFilter */
-
 UPB_INLINE envoy_extensions_filters_common_matcher_action_v3_SkipFilter* envoy_extensions_filters_common_matcher_action_v3_SkipFilter_new(upb_Arena* arena) {
   return (envoy_extensions_filters_common_matcher_action_v3_SkipFilter*)_upb_Message_New(&envoy__extensions__filters__common__matcher__action__v3__SkipFilter_msg_init, arena);
 }
-UPB_INLINE envoy_extensions_filters_common_matcher_action_v3_SkipFilter* envoy_extensions_filters_common_matcher_action_v3_SkipFilter_parse(const char* buf, size_t size, upb_Arena* arena) {
+UPB_INLINE envoy_extensions_filters_common_matcher_action_v3_SkipFilter* envoy_extensions_filters_common_matcher_action_v3_SkipFilter_parse(const char* buf, size_t size,
+                                        upb_Arena* arena) {
   envoy_extensions_filters_common_matcher_action_v3_SkipFilter* ret = envoy_extensions_filters_common_matcher_action_v3_SkipFilter_new(arena);
   if (!ret) return NULL;
-  if (upb_Decode(buf, size, UPB_UPCAST(ret), &envoy__extensions__filters__common__matcher__action__v3__SkipFilter_msg_init, NULL, 0, arena) !=
-      kUpb_DecodeStatus_Ok) {
-    return NULL;
-  }
-  return ret;
-}
-UPB_INLINE envoy_extensions_filters_common_matcher_action_v3_SkipFilter* envoy_extensions_filters_common_matcher_action_v3_SkipFilter_parse_ex(const char* buf, size_t size,
-                           const upb_ExtensionRegistry* extreg,
-                           int options, upb_Arena* arena) {
-  envoy_extensions_filters_common_matcher_action_v3_SkipFilter* ret = envoy_extensions_filters_common_matcher_action_v3_SkipFilter_new(arena);
-  if (!ret) return NULL;
-  if (upb_Decode(buf, size, UPB_UPCAST(ret), &envoy__extensions__filters__common__matcher__action__v3__SkipFilter_msg_init, extreg, options,
+  if (upb_Decode(buf, size, UPB_UPCAST(ret), &envoy__extensions__filters__common__matcher__action__v3__SkipFilter_msg_init, NULL, 0,
                  arena) != kUpb_DecodeStatus_Ok) {
     return NULL;
   }
   return ret;
 }
-UPB_INLINE char* envoy_extensions_filters_common_matcher_action_v3_SkipFilter_serialize(const envoy_extensions_filters_common_matcher_action_v3_SkipFilter* msg, upb_Arena* arena, size_t* len) {
+UPB_INLINE envoy_extensions_filters_common_matcher_action_v3_SkipFilter* envoy_extensions_filters_common_matcher_action_v3_SkipFilter_parse_ex(
+    const char* buf, size_t size, const upb_ExtensionRegistry* extreg,
+    int options, upb_Arena* arena) {
+  envoy_extensions_filters_common_matcher_action_v3_SkipFilter* ret = envoy_extensions_filters_common_matcher_action_v3_SkipFilter_new(arena);
+  if (!ret) return NULL;
+  if (upb_Decode(buf, size, UPB_UPCAST(ret), &envoy__extensions__filters__common__matcher__action__v3__SkipFilter_msg_init, extreg,
+                 options, arena) != kUpb_DecodeStatus_Ok) {
+    return NULL;
+  }
+  return ret;
+}
+UPB_INLINE char* envoy_extensions_filters_common_matcher_action_v3_SkipFilter_serialize(const envoy_extensions_filters_common_matcher_action_v3_SkipFilter* msg,
+                                      upb_Arena* arena, size_t* len) {
   char* ptr;
   (void)upb_Encode(UPB_UPCAST(msg), &envoy__extensions__filters__common__matcher__action__v3__SkipFilter_msg_init, 0, arena, &ptr, len);
   return ptr;
 }
-UPB_INLINE char* envoy_extensions_filters_common_matcher_action_v3_SkipFilter_serialize_ex(const envoy_extensions_filters_common_matcher_action_v3_SkipFilter* msg, int options,
-                                 upb_Arena* arena, size_t* len) {
+UPB_INLINE char* envoy_extensions_filters_common_matcher_action_v3_SkipFilter_serialize_ex(const envoy_extensions_filters_common_matcher_action_v3_SkipFilter* msg,
+                                         int options, upb_Arena* arena,
+                                         size_t* len) {
   char* ptr;
   (void)upb_Encode(UPB_UPCAST(msg), &envoy__extensions__filters__common__matcher__action__v3__SkipFilter_msg_init, options, arena, &ptr, len);
   return ptr;
@@ -65,9 +67,9 @@ UPB_INLINE char* envoy_extensions_filters_common_matcher_action_v3_SkipFilter_se
 
 
 #ifdef __cplusplus
-}  /* extern "C" */
+              } /* extern "C" */
 #endif
 
 #include "upb/port/undef.inc"
 
-#endif  /* ENVOY_EXTENSIONS_FILTERS_COMMON_MATCHER_ACTION_V3_SKIP_ACTION_PROTO_UPB_H__UPB_H_ */
+#endif /* ENVOY_EXTENSIONS_FILTERS_COMMON_MATCHER_ACTION_V3_SKIP_ACTION_PROTO_UPB_H__UPB_H_ */
