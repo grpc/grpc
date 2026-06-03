@@ -101,7 +101,7 @@ class RpcTest:
         self.server_completion_queue = cygrpc.CompletionQueue()
         self.server = cygrpc.Server([(b"grpc.so_reuseport", 0)], False)
         self.server.register_completion_queue(self.server_completion_queue)
-        port = self.server.add_http2_port(b"[::]:0")
+        port = self.server.add_http2_port(b"127.0.0.1:0")
         self.server.start()
         self.channel = cygrpc.Channel(
             "localhost:{}".format(port).encode(), [], None

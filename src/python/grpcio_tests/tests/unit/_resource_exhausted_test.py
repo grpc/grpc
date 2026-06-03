@@ -135,7 +135,7 @@ class ResourceExhaustedTest(unittest.TestCase):
         self._server.add_registered_method_handlers(
             _SERVICE_NAME, get_method_handlers(self._trigger)
         )
-        port = self._server.add_insecure_port("[::]:0")
+        port = self._server.add_insecure_port("127.0.0.1:0")
         self._server.start()
         self._channel = grpc.insecure_channel("localhost:%d" % port)
 

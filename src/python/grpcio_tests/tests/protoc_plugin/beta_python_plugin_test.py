@@ -219,7 +219,7 @@ def _CreateService(payload_pb2, responses_pb2, service_pb2):
 
     servicer = Servicer()
     server = getattr(service_pb2, SERVER_FACTORY_IDENTIFIER)(servicer)
-    port = server.add_insecure_port("[::]:0")
+    port = server.add_insecure_port("127.0.0.1:0")
     server.start()
     channel = implementations.insecure_channel("localhost", port)
     stub = getattr(service_pb2, STUB_FACTORY_IDENTIFIER)(channel)
@@ -246,7 +246,7 @@ def _CreateIncompleteService(service_pb2):
 
     servicer = Servicer()
     server = getattr(service_pb2, SERVER_FACTORY_IDENTIFIER)(servicer)
-    port = server.add_insecure_port("[::]:0")
+    port = server.add_insecure_port("127.0.0.1:0")
     server.start()
     channel = implementations.insecure_channel("localhost", port)
     stub = getattr(service_pb2, STUB_FACTORY_IDENTIFIER)(channel)

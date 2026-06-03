@@ -72,7 +72,7 @@ class AuthContextTest(unittest.TestCase):
     def testInsecure(self):
         server = test_common.test_server()
         server.add_registered_method_handlers(_SERVICE_NAME, _METHOD_HANDLERS)
-        port = server.add_insecure_port("[::]:0")
+        port = server.add_insecure_port("127.0.0.1:0")
         server.start()
 
         with grpc.insecure_channel("localhost:%d" % port) as channel:
@@ -99,7 +99,7 @@ class AuthContextTest(unittest.TestCase):
         server = test_common.test_server()
         server.add_registered_method_handlers(_SERVICE_NAME, _METHOD_HANDLERS)
         server_cred = grpc.ssl_server_credentials(_SERVER_CERTS)
-        port = server.add_secure_port("[::]:0", server_cred)
+        port = server.add_secure_port("127.0.0.1:0", server_cred)
         server.start()
 
         channel_creds = grpc.ssl_channel_credentials(
@@ -137,7 +137,7 @@ class AuthContextTest(unittest.TestCase):
             root_certificates=_TEST_ROOT_CERTIFICATES,
             require_client_auth=True,
         )
-        port = server.add_secure_port("[::]:0", server_cred)
+        port = server.add_secure_port("127.0.0.1:0", server_cred)
         server.start()
 
         channel_creds = grpc.ssl_channel_credentials(
@@ -189,7 +189,7 @@ class AuthContextTest(unittest.TestCase):
         server = test_common.test_server()
         server.add_registered_method_handlers(_SERVICE_NAME, _METHOD_HANDLERS)
         server_cred = grpc.ssl_server_credentials(_SERVER_CERTS)
-        port = server.add_secure_port("[::]:0", server_cred)
+        port = server.add_secure_port("127.0.0.1:0", server_cred)
         server.start()
 
         # Create a cache for TLS session tickets

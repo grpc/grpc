@@ -45,7 +45,7 @@ class ReflectionClientTest(unittest.TestCase):
             reflection.SERVICE_NAME,
         )
         reflection.enable_server_reflection(self._SERVICE_NAMES, self._server)
-        port = self._server.add_insecure_port("[::]:0")
+        port = self._server.add_insecure_port("127.0.0.1:0")
         self._server.start()
 
         self._channel = grpc.insecure_channel("localhost:%d" % port)

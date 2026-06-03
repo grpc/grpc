@@ -34,7 +34,7 @@ class SecureIntraopTest(_intraop_test_case.IntraopTestCase, unittest.TestCase):
             service.TestService(), self.server
         )
         port = self.server.add_secure_port(
-            "[::]:0",
+            "127.0.0.1:0",
             grpc.ssl_server_credentials(
                 [
                     (
@@ -73,7 +73,7 @@ class SecureInteropWithSyncPrivateKeyOffloadingTest(
         )
         # Configure the server for mTLS so the client will do Private Key signing
         port = self.server.add_secure_port(
-            "[::]:0",
+            "127.0.0.1:0",
             grpc.ssl_server_credentials(
                 [
                     (
@@ -118,7 +118,7 @@ class SecureInteropWithAsyncPrivateKeyOffloadingTest(
         )
         # Configure the server for mTLS so the client will do Private Key signing
         port = self.server.add_secure_port(
-            "[::]:0",
+            "127.0.0.1:0",
             grpc.ssl_server_credentials(
                 [
                     (

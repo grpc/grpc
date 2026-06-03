@@ -327,7 +327,7 @@ class _Test(unittest.TestCase, metaclass=abc.ABCMeta):
             services_module.add_TestServiceServicer_to_server(
                 _Servicer(self._messages_pb2.Response), server
             )
-            port = server.add_insecure_port("[::]:0")
+            port = server.add_insecure_port("127.0.0.1:0")
             server.start()
             channel = grpc.insecure_channel("localhost:{}".format(port))
             stub = services_module.TestServiceStub(channel)

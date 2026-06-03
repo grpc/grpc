@@ -151,7 +151,7 @@ class _ServerSSLCertReloadTest(unittest.TestCase, metaclass=abc.ABCMeta):
             self.cert_config_fetcher,
             require_client_authentication=self.require_client_auth(),
         )
-        self.port = self.server.add_secure_port("[::]:0", server_credentials)
+        self.port = self.server.add_secure_port("127.0.0.1:0", server_credentials)
         self.server.start()
 
     def tearDown(self):
@@ -457,7 +457,7 @@ class ServerSSLCertReloadTestCertConfigReuse(_ServerSSLCertReloadTest):
             self.cert_config_fetcher,
             require_client_authentication=True,
         )
-        self.port = self.server.add_secure_port("[::]:0", server_credentials)
+        self.port = self.server.add_secure_port("127.0.0.1:0", server_credentials)
         self.server.start()
 
     def test_cert_config_reuse(self):

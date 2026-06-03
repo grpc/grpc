@@ -60,7 +60,7 @@ class TestCompatibility(AioTestBase):
         self._adhoc_handlers = _common.AdhocGenericHandler()
         self._async_server.add_generic_rpc_handlers((self._adhoc_handlers,))
 
-        port = self._async_server.add_insecure_port("[::]:0")
+        port = self._async_server.add_insecure_port("127.0.0.1:0")
         address = "localhost:%d" % port
         await self._async_server.start()
 

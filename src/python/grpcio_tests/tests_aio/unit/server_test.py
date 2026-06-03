@@ -242,7 +242,7 @@ class _GenericHandler(grpc.GenericRpcHandler):
 
 async def _start_test_server():
     server = aio.server()
-    port = server.add_insecure_port("[::]:0")
+    port = server.add_insecure_port("127.0.0.1:0")
     generic_handler = _GenericHandler()
     server.add_generic_rpc_handlers((generic_handler,))
     await server.start()
@@ -649,7 +649,7 @@ class TestServer(AioTestBase):
         # Use a limit of 1 to make the test deterministic
         max_concurrent = 1
         server = aio.server(maximum_concurrent_rpcs=max_concurrent)
-        port = server.add_insecure_port("[::]:0")
+        port = server.add_insecure_port("127.0.0.1:0")
         bind_address = f"localhost:{port}"
         server.add_generic_rpc_handlers((_GenericHandler(),))
         await server.start()

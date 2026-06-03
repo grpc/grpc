@@ -111,7 +111,7 @@ class ChannelCloseTest(unittest.TestCase):
             max_workers=test_constants.THREAD_CONCURRENCY
         )
         self._server.add_registered_method_handlers("", _METHOD_HANDLERS)
-        self._port = self._server.add_insecure_port("[::]:0")
+        self._port = self._server.add_insecure_port("127.0.0.1:0")
         self._server.start()
 
     def tearDown(self):

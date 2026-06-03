@@ -51,7 +51,7 @@ class SecurityTest(unittest.TestCase):
         )
         # Configure the server for mTLS so the client will do Private Key signing
         self.port = self.server.add_secure_port(
-            "[::]:0",
+            "127.0.0.1:0",
             grpc.ssl_server_credentials(
                 [
                     (

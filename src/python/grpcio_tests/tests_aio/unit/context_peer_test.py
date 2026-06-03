@@ -51,7 +51,7 @@ class TestContextPeer(AioTestBase):
             "test", {"UnaryUnary": check_peer_unary_unary}
         )
         server.add_generic_rpc_handlers((handlers,))
-        port = server.add_insecure_port("[::]:0")
+        port = server.add_insecure_port("127.0.0.1:0")
         await server.start()
 
         # Creates a channel

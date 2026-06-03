@@ -92,7 +92,7 @@ class ChannelConnectivityTest(unittest.TestCase):
         server = grpc.server(
             recording_thread_pool, options=(("grpc.so_reuseport", 0),)
         )
-        port = server.add_insecure_port("[::]:0")
+        port = server.add_insecure_port("127.0.0.1:0")
         server.start()
         first_callback = _Callback()
         second_callback = _Callback()
@@ -152,7 +152,7 @@ class ChannelConnectivityTest(unittest.TestCase):
         server = grpc.server(
             recording_thread_pool, options=(("grpc.so_reuseport", 0),)
         )
-        port = server.add_insecure_port("[::]:0")
+        port = server.add_insecure_port("127.0.0.1:0")
         server.start()
         callback = _Callback()
 

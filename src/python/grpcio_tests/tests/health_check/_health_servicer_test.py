@@ -57,7 +57,7 @@ class BaseWatchTests:
                 _NOT_SERVING_SERVICE, health_pb2.HealthCheckResponse.NOT_SERVING
             )
             self._server = test_common.test_server()
-            port = self._server.add_insecure_port("[::]:0")
+            port = self._server.add_insecure_port("127.0.0.1:0")
             health_pb2_grpc.add_HealthServicer_to_server(
                 self._servicer, self._server
             )

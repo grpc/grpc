@@ -161,7 +161,7 @@ class CancelManyCallsTest(unittest.TestCase):
             False,
         )
         server.register_completion_queue(server_completion_queue)
-        port = server.add_http2_port(b"[::]:0")
+        port = server.add_http2_port(b"127.0.0.1:0")
         server.start()
         channel = cygrpc.Channel(
             "localhost:{}".format(port).encode(), None, None

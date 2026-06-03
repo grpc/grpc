@@ -32,7 +32,7 @@ class InsecureIntraopTest(
         test_pb2_grpc.add_TestServiceServicer_to_server(
             service.TestService(), self.server
         )
-        port = self.server.add_insecure_port("[::]:0")
+        port = self.server.add_insecure_port("127.0.0.1:0")
         self.server.start()
         self.stub = test_pb2_grpc.TestServiceStub(
             grpc.insecure_channel("localhost:{}".format(port))

@@ -76,7 +76,7 @@ class TestAuthContext(AioTestBase):
         )
         server = aio.server()
         server.add_generic_rpc_handlers((handler,))
-        port = server.add_insecure_port("[::]:0")
+        port = server.add_insecure_port("127.0.0.1:0")
         await server.start()
 
         async with aio.insecure_channel("localhost:%d" % port) as channel:
@@ -106,7 +106,7 @@ class TestAuthContext(AioTestBase):
         server = aio.server()
         server.add_generic_rpc_handlers((handler,))
         server_cred = grpc.ssl_server_credentials(_SERVER_CERTS)
-        port = server.add_secure_port("[::]:0", server_cred)
+        port = server.add_secure_port("127.0.0.1:0", server_cred)
         await server.start()
 
         channel_creds = grpc.ssl_channel_credentials(
@@ -149,7 +149,7 @@ class TestAuthContext(AioTestBase):
             root_certificates=_TEST_ROOT_CERTIFICATES,
             require_client_auth=True,
         )
-        port = server.add_secure_port("[::]:0", server_cred)
+        port = server.add_secure_port("127.0.0.1:0", server_cred)
         await server.start()
 
         channel_creds = grpc.ssl_channel_credentials(
@@ -203,7 +203,7 @@ class TestAuthContext(AioTestBase):
         server = aio.server()
         server.add_generic_rpc_handlers((handler,))
         server_cred = grpc.ssl_server_credentials(_SERVER_CERTS)
-        port = server.add_secure_port("[::]:0", server_cred)
+        port = server.add_secure_port("127.0.0.1:0", server_cred)
         await server.start()
 
         # Create a cache for TLS session tickets

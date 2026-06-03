@@ -130,7 +130,7 @@ class TestClientSideDoneCallback(AioTestBase):
 class TestServerSideDoneCallback(AioTestBase):
     async def setUp(self):
         self._server = aio.server()
-        port = self._server.add_insecure_port("[::]:0")
+        port = self._server.add_insecure_port("127.0.0.1:0")
         self._channel = aio.insecure_channel("localhost:%d" % port)
 
     async def tearDown(self):
