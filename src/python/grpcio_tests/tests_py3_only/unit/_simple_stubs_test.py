@@ -125,7 +125,7 @@ def _time_invocation(to_time: Callable[[], None]) -> datetime.timedelta:
 def _server(credentials: Optional[grpc.ServerCredentials]):
     try:
         server = test_common.test_server()
-        target = "[::]:0"
+        target = "localhost:0"
         if credentials is None:
             port = server.add_insecure_port(target)
         else:
