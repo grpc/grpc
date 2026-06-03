@@ -235,3 +235,44 @@ grpc_cc_test(
         "//test/cpp/end2end:test_service_impl",
     ],
 )
+
+grpc_cc_test(
+    name = "virtual_otel_tracing_test",
+    srcs = [
+        "virtual_otel_tracing_test.cc",
+    ],
+    external_deps = [
+        "absl/strings",
+        "absl/synchronization",
+        "absl/time",
+        "gtest",
+        "otel/api",
+        "otel/exporters/memory:in_memory_span_exporter",
+        "otel/sdk/src/trace",
+        "otel/sdk:headers",
+    ],
+    tags = [
+        # Incompatible with internal tracing
+        "grpc:no-internal-poller",
+        # TODO(b/332369798): Remove after fixing bug
+        "grpc:otel-namespace-calamity",
+    ],
+    deps = [
+        ":otel_test_library",
+        "//:call_tracer",
+        "//:config",
+        "//:generic_stub_session_hdrs",
+        "//:gpr",
+        "//:grpc++",
+        "//:grpc_transport_chttp2",
+        "//:virtual_channel",
+        "//src/core:channel_stack_type",
+        "//src/core:posix_event_engine_event_poller",
+        "//src/core:posix_event_engine_poller_posix_default",
+        "//src/cpp/ext/otel:otel_plugin",
+        "//test/core/promise:test_context",
+        "//test/core/test_util:fake_stats_plugin",
+        "//test/core/test_util:grpc_test_util",
+        "//test/cpp/end2end:test_service_impl",
+    ],
+)
