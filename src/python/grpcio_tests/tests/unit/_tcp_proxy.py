@@ -199,7 +199,12 @@ class TcpProxy:
                         (),
                         _TCP_PROXY_TIMEOUT.total_seconds(),
                     )
-                except (select.error, socket.error, ValueError):
+                except (select.error, socket.error, ValueError) as e:
+                    if isinstance(e, ValueError):
+                        import logging
+                        import os
+                        fd_count = len(os.listdir('/dev/fd')) if os.path.exists('/dev/fd') else -1
+                        logging.error("TcpProxy select error: %s. FD count: %d", e, fd_count)
                     if self._stop_event.is_set():
                         break
                     self._cleanup_bad_sockets()
