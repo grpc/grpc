@@ -366,12 +366,15 @@ void TlsChannelSecurityConnector::add_handshakers(
     }
     auto stats_plugin_group =
         args.GetObjectRef<GlobalStatsPluginRegistry::StatsPluginGroup>();
+    RefCountedPtr<CollectionScope> collection_scope =
+        stats_plugin_group != nullptr ? stats_plugin_group->GetCollectionScope()
+                                      : nullptr;
     tsi_result result = tsi_ssl_client_handshaker_factory_create_handshaker(
         client_handshaker_factory_, server_name_indication,
         /*network_bio_buf_size=*/0,
         /*ssl_bio_buf_size=*/0,
         args.GetOwnedString(GRPC_ARG_TRANSPORT_PROTOCOLS),
-        std::move(stats_plugin_group), &tsi_hs);
+        std::move(collection_scope), &tsi_hs);
     if (result != TSI_OK) {
       LOG(ERROR) << "Handshaker creation failed with error "
                  << tsi_result_to_string(result);
@@ -654,10 +657,13 @@ void TlsServerSecurityConnector::add_handshakers(
   if (server_handshaker_factory_ != nullptr) {
     auto stats_plugin_group =
         args.GetObjectRef<GlobalStatsPluginRegistry::StatsPluginGroup>();
+    RefCountedPtr<CollectionScope> collection_scope =
+        stats_plugin_group != nullptr ? stats_plugin_group->GetCollectionScope()
+                                      : nullptr;
     // Instantiate TSI handshaker.
     tsi_result result = tsi_ssl_server_handshaker_factory_create_handshaker(
         server_handshaker_factory_, /*network_bio_buf_size=*/0,
-        /*ssl_bio_buf_size=*/0, std::move(stats_plugin_group), &tsi_hs);
+        /*ssl_bio_buf_size=*/0, std::move(collection_scope), &tsi_hs);
     if (result != TSI_OK) {
       LOG(ERROR) << "Handshaker creation failed with error "
                  << tsi_result_to_string(result);

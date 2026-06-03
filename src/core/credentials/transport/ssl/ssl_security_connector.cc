@@ -106,6 +106,9 @@ class grpc_ssl_channel_security_connector final
     tsi_handshaker* tsi_hs = nullptr;
     auto stats_plugin_group = args.GetObjectRef<
         grpc_core::GlobalStatsPluginRegistry::StatsPluginGroup>();
+    grpc_core::RefCountedPtr<grpc_core::CollectionScope> collection_scope =
+        stats_plugin_group != nullptr ? stats_plugin_group->GetCollectionScope()
+                                      : nullptr;
     tsi_result result = tsi_ssl_client_handshaker_factory_create_handshaker(
         client_handshaker_factory_,
         overridden_target_name_.empty() ? target_name_.c_str()
@@ -113,7 +116,7 @@ class grpc_ssl_channel_security_connector final
         /*network_bio_buf_size=*/0,
         /*ssl_bio_buf_size=*/0,
         args.GetOwnedString(GRPC_ARG_TRANSPORT_PROTOCOLS),
-        std::move(stats_plugin_group), &tsi_hs);
+        std::move(collection_scope), &tsi_hs);
     if (result != TSI_OK) {
       LOG(ERROR) << "Handshaker creation failed with error "
                  << tsi_result_to_string(result);
@@ -280,9 +283,12 @@ class grpc_ssl_server_security_connector
     tsi_handshaker* tsi_hs = nullptr;
     auto stats_plugin_group = args.GetObjectRef<
         grpc_core::GlobalStatsPluginRegistry::StatsPluginGroup>();
+    grpc_core::RefCountedPtr<grpc_core::CollectionScope> collection_scope =
+        stats_plugin_group != nullptr ? stats_plugin_group->GetCollectionScope()
+                                      : nullptr;
     tsi_result result = tsi_ssl_server_handshaker_factory_create_handshaker(
         server_handshaker_factory_, /*network_bio_buf_size=*/0,
-        /*ssl_bio_buf_size=*/0, std::move(stats_plugin_group), &tsi_hs);
+        /*ssl_bio_buf_size=*/0, std::move(collection_scope), &tsi_hs);
     if (result != TSI_OK) {
       LOG(ERROR) << "Handshaker creation failed with error "
                  << tsi_result_to_string(result);

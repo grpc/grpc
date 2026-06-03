@@ -202,8 +202,7 @@ struct tsi_ssl_handshaker : public tsi_handshaker,
   unsigned char* outgoing_bytes_buffer;
   size_t outgoing_bytes_buffer_size;
   tsi_ssl_handshaker_factory* factory_ref;
-  std::shared_ptr<grpc_core::GlobalStatsPluginRegistry::StatsPluginGroup>
-      stats_plugin_group;
+  grpc_core::RefCountedPtr<grpc_core::CollectionScope> collection_scope;
   grpc_core::Mutex mu;
   bool is_shutdown ABSL_GUARDED_BY(mu) = false;
 
@@ -2501,8 +2500,7 @@ static tsi_result create_tsi_ssl_handshaker(
     std::optional<std::string> alpn_preferred_protocol_raw_list,
     std::shared_ptr<grpc_core::PrivateKeySigner> key_signer,
     tsi_ssl_handshaker_factory* factory,
-    std::shared_ptr<grpc_core::GlobalStatsPluginRegistry::StatsPluginGroup>
-        stats_plugin_group,
+    grpc_core::RefCountedPtr<grpc_core::CollectionScope> collection_scope,
     tsi_handshaker** handshaker) {
   SSL* ssl = SSL_new(ctx);
   BIO* network_io = nullptr;
@@ -2607,7 +2605,7 @@ static tsi_result create_tsi_ssl_handshaker(
       static_cast<unsigned char*>(gpr_zalloc(impl->outgoing_bytes_buffer_size));
   impl->vtable = &handshaker_vtable;
   impl->factory_ref = tsi_ssl_handshaker_factory_ref(factory);
-  impl->stats_plugin_group = std::move(stats_plugin_group);
+  impl->collection_scope = std::move(collection_scope);
 #if defined(OPENSSL_IS_BORINGSSL)
   impl->key_signer = std::move(key_signer);
 #endif
@@ -2656,8 +2654,7 @@ tsi_result tsi_ssl_client_handshaker_factory_create_handshaker(
     const char* server_name_indication, size_t network_bio_buf_size,
     size_t ssl_bio_buf_size,
     std::optional<std::string> alpn_preferred_protocol_list,
-    std::shared_ptr<grpc_core::GlobalStatsPluginRegistry::StatsPluginGroup>
-        stats_plugin_group,
+    grpc_core::RefCountedPtr<grpc_core::CollectionScope> collection_scope,
     tsi_handshaker** handshaker) {
   GRPC_TRACE_LOG(tsi, INFO)
       << "Creating SSL handshaker with SNI " << server_name_indication;
@@ -2665,12 +2662,12 @@ tsi_result tsi_ssl_client_handshaker_factory_create_handshaker(
   return create_tsi_ssl_handshaker(
       factory->ssl_context, 1, server_name_indication, network_bio_buf_size,
       ssl_bio_buf_size, alpn_preferred_protocol_list, factory->key_signer,
-      &factory->base, std::move(stats_plugin_group), handshaker);
+      &factory->base, std::move(collection_scope), handshaker);
 #else
   return create_tsi_ssl_handshaker(
       factory->ssl_context, 1, server_name_indication, network_bio_buf_size,
       ssl_bio_buf_size, alpn_preferred_protocol_list, /*key_signer=*/nullptr,
-      &factory->base, std::move(stats_plugin_group), handshaker);
+      &factory->base, std::move(collection_scope), handshaker);
 #endif
 }
 
@@ -2712,8 +2709,7 @@ static int client_handshaker_factory_npn_callback(
 tsi_result tsi_ssl_server_handshaker_factory_create_handshaker(
     tsi_ssl_server_handshaker_factory* factory, size_t network_bio_buf_size,
     size_t ssl_bio_buf_size,
-    std::shared_ptr<grpc_core::GlobalStatsPluginRegistry::StatsPluginGroup>
-        stats_plugin_group,
+    grpc_core::RefCountedPtr<grpc_core::CollectionScope> collection_scope,
     tsi_handshaker** handshaker) {
   if (factory->ssl_contexts.empty()) return TSI_INVALID_ARGUMENT;
 #if defined(OPENSSL_IS_BORINGSSL)
@@ -2724,12 +2720,12 @@ tsi_result tsi_ssl_server_handshaker_factory_create_handshaker(
   return create_tsi_ssl_handshaker(
       factory->ssl_contexts[0].ssl_ctx, 0, nullptr, network_bio_buf_size,
       ssl_bio_buf_size, std::nullopt, factory->ssl_contexts[0].key_signer,
-      &factory->base, std::move(stats_plugin_group), handshaker);
+      &factory->base, std::move(collection_scope), handshaker);
 #else
   return create_tsi_ssl_handshaker(
       factory->ssl_contexts[0].ssl_ctx, 0, nullptr, network_bio_buf_size,
       ssl_bio_buf_size, std::nullopt, /*key_signer=*/nullptr, &factory->base,
-      std::move(stats_plugin_group), handshaker);
+      std::move(collection_scope), handshaker);
 #endif
 }
 
