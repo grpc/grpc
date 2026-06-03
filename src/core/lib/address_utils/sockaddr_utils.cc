@@ -38,7 +38,14 @@
 #include "src/core/lib/iomgr/socket_utils.h"
 
 #ifdef GRPC_HAVE_UNIX_SOCKET
+#ifdef _WIN32
+// clang-format off
+#include <ws2def.h>
+#include <afunix.h>
+// clang-format on
+#else
 #include <sys/un.h>
+#endif
 #endif
 
 #ifdef GRPC_HAVE_UNIX_SOCKET

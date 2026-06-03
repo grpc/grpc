@@ -138,6 +138,8 @@ static void tcp_connect(grpc_closure* on_done, grpc_endpoint** endpoint,
   grpc_winsocket_callback_info* info;
   grpc_error_handle error = GRPC_ERROR_NONE;
   async_connect* ac = NULL;
+  int addr_family;
+  int protocol;
 
   *endpoint = NULL;
 
@@ -146,14 +148,25 @@ static void tcp_connect(grpc_closure* on_done, grpc_endpoint** endpoint,
     addr = &addr6_v4mapped;
   }
 
-  sock = WSASocket(AF_INET6, SOCK_STREAM, IPPROTO_TCP, NULL, 0,
+  // extract family
+  addr_family =
+      (grpc_sockaddr_get_family(addr) == AF_UNIX) ? AF_UNIX : AF_INET6;
+  protocol = addr_family == AF_UNIX ? 0 : IPPROTO_TCP;
+
+  sock = WSASocket(addr_family, SOCK_STREAM, protocol, NULL, 0,
                    grpc_get_default_wsa_socket_flags());
   if (sock == INVALID_SOCKET) {
     error = GRPC_WSA_ERROR(WSAGetLastError(), "WSASocket");
     goto failure;
   }
 
-  error = grpc_tcp_prepare_socket(sock);
+  if (addr_family == AF_UNIX) {
+    // tcp settings for af_unix are skipped.
+    error = grpc_tcp_set_non_block(sock);
+  } else {
+    error = grpc_tcp_prepare_socket(sock);
+  }
+
   if (error != GRPC_ERROR_NONE) {
     goto failure;
   }
@@ -170,7 +183,15 @@ static void tcp_connect(grpc_closure* on_done, grpc_endpoint** endpoint,
     goto failure;
   }
 
-  grpc_sockaddr_make_wildcard6(0, &local_address);
+  if (addr_family == AF_UNIX) {
+    // For ConnectEx() to work for AF_UNIX, the sock needs to be bound to
+    // the local address of an unnamed socket.
+    local_address = {};
+    ((grpc_sockaddr*)local_address.addr)->sa_family = AF_UNIX;
+    local_address.len = sizeof(grpc_sockaddr);
+  } else {
+    grpc_sockaddr_make_wildcard6(0, &local_address);
+  }
 
   status =
       bind(sock, (grpc_sockaddr*)&local_address.addr, (int)local_address.len);

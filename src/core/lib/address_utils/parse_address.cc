@@ -23,7 +23,14 @@
 #include <stdio.h>
 #include <string.h>
 #ifdef GRPC_HAVE_UNIX_SOCKET
+#ifdef _WIN32
+// clang-format off
+#include <ws2def.h>
+#include <afunix.h>
+// clang-format on
+#else
 #include <sys/un.h>
+#endif
 #endif
 #ifdef GRPC_POSIX_SOCKET
 #include <errno.h>
