@@ -48,13 +48,18 @@ def _init_proxy_socket(gateway_address, gateway_port):
         try:
             proxy_socket = socket.create_connection(
                 (gateway_address, gateway_port),
-                timeout=2.0
+                timeout=5.0
             )
             proxy_socket.settimeout(None)
             return proxy_socket
         except (socket.error, TimeoutError) as err:
             last_err = err
-            time.sleep(0.1 * (attempt + 1))
+            import logging
+            logging.warning(
+                "TcpProxy failed to connect to %s:%s (attempt %d/10): %s",
+                gateway_address, gateway_port, attempt + 1, err
+            )
+            time.sleep(0.5 * (attempt + 1))
     raise last_err
 
 
