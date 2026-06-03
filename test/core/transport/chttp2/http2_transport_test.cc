@@ -89,12 +89,10 @@ class TestsNeedingStreamObjects : public ::testing::TestWithParam<bool> {
                                             transport_flow_control_)
                    : MakeRefCounted<Stream>(
                          call_pair->initiator, transport_flow_control_,
-                         stream_id, /*allow_true_binary_metadata_peer=*/true,
-                         /*allow_true_binary_metadata_acked=*/true);
+                         stream_id, /*allow_true_binary_metadata_peer=*/true);
     if (is_client_) {
       stream->InitializeClientStream(stream_id,
-                                     /*allow_true_binary_metadata_peer=*/true,
-                                     /*allow_true_binary_metadata_acked=*/true);
+                                     /*allow_true_binary_metadata_peer=*/true);
     }
     GRPC_CHECK_EQ(stream->GetStreamId(), stream_id);
     stream_set_.push_back(std::move(stream));

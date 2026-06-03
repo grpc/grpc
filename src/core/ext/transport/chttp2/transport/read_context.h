@@ -177,7 +177,9 @@ class IncomingMetadataState {
 class ReadContext {
  public:
   explicit ReadContext(Slice peer_string, const bool is_client)
-      : peer_string_(std::move(peer_string)), is_client_(is_client) {}
+      : peer_string_(std::move(peer_string)),
+        is_client_(is_client),
+        header_assembler_(is_client) {}
   ~ReadContext() = default;
 
   ReadContext(ReadContext&& rvalue) = delete;
@@ -209,6 +211,7 @@ class ReadContext {
   uint32_t soft_limit() const { return max_header_list_size_soft_limit_; }
 
   HPackParser& parser() { return parser_; }
+  HeaderAssembler& header_assembler() { return header_assembler_; }
 
   void SetMaxHeaderTableSize(const uint32_t size) {
     parser_.hpack_table()->SetMaxBytes(size);
@@ -223,7 +226,7 @@ class ReadContext {
   // do not do partial processing for Connection Errors because the Transport
   // will be destroyed soon after.
   Http2Status ParseAndDiscardHeaders(
-      SliceBuffer&& buffer, const bool is_end_headers, Stream* stream,
+      SliceBuffer&& buffer, const bool is_end_headers,
       Http2Status&& original_status,
       const uint32_t max_header_list_size_hard_limit) {
     const HeaderAssembler::ParseHeaderArgs args = {
@@ -238,22 +241,19 @@ class ReadContext {
     GRPC_HTTP2_COMMON_DLOG << "ParseAndDiscardHeaders buffer "
                               "size: "
                            << buffer.Length() << " args: " << args.DebugString()
-                           << " stream_id: "
-                           << (stream == nullptr ? 0 : stream->GetStreamId())
+                           << " stream_id: " << metadata_state_.GetStreamId()
                            << " original_status: "
                            << original_status.DebugString();
-    if (stream != nullptr) {
-      // Parse all the data in the header assembler
-      Http2Status result = stream->GetHeaderAssembler().ParseAndDiscardHeaders(
-          parser_, args.is_initial_metadata,
-          args.max_header_list_size_soft_limit,
-          args.max_header_list_size_hard_limit);
-      if (!result.IsOk()) {
-        GRPC_DCHECK(result.GetType() ==
-                    Http2Status::Http2ErrorType::kConnectionError);
-        LOG(ERROR) << "Connection Error: " << result;
-        return result;
-      }
+
+    // Parse any data in the header assembler buffer
+    Http2Status result = header_assembler_.ParseAndDiscardHeaders(
+        parser_, args.is_initial_metadata, args.max_header_list_size_soft_limit,
+        args.max_header_list_size_hard_limit);
+    if (!result.IsOk()) {
+      GRPC_DCHECK(result.GetType() ==
+                  Http2Status::Http2ErrorType::kConnectionError);
+      LOG(ERROR) << "Connection Error: " << result;
+      return result;
     }
 
     if (buffer.Length() == 0) {
@@ -294,6 +294,7 @@ class ReadContext {
   // Called when a HEADER frame is received.
   void UpdateState(const Http2HeaderFrame& frame) {
     metadata_state_.UpdateState(frame);
+    header_assembler_.SetStreamId(frame.stream_id);
   }
 
   // Called when a CONTINUATION frame is received.
@@ -410,6 +411,7 @@ class ReadContext {
   Http2FrameCountTracker tracker_;
   Http2FrameHeader current_frame_header_ = {};
   ReadLoopPauseRestart read_loop_manager_;
+  HeaderAssembler header_assembler_;
   IncomingMetadataState metadata_state_;
 };
 

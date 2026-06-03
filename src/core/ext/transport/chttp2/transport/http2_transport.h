@@ -85,7 +85,7 @@ inline Http2Status ValidateMetadataFrameState(
     const uint32_t max_header_list_size) {
   if (stream.IsStreamHalfClosedRemote()) {
     return incoming_headers.ParseAndDiscardHeaders(
-        std::move(frame.payload), frame.end_headers, &stream,
+        std::move(frame.payload), frame.end_headers,
         Http2Status::Http2StreamError(
             Http2ErrorCode::kStreamClosed,
             std::string(RFC9113::kHalfClosedRemoteState)),
@@ -97,7 +97,7 @@ inline Http2Status ValidateMetadataFrameState(
             stream.IsInitialMetadataReceived(),
             stream.IsTrailingMetadataReceived())) {
       return incoming_headers.ParseAndDiscardHeaders(
-          std::move(frame.payload), frame.end_headers, &stream,
+          std::move(frame.payload), frame.end_headers,
           Http2Status::Http2StreamError(
               Http2ErrorCode::kInternalError,
               std::string(GrpcErrors::kTooManyMetadata)),
