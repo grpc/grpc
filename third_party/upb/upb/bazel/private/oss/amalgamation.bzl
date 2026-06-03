@@ -7,7 +7,7 @@
 
 """Internal rules for building upb."""
 
-load("//bazel:upb_proto_library.bzl", "GeneratedSrcsInfo")
+load("//upb/bazel:upb_proto_library.bzl", "GeneratedSrcsInfo")
 
 # upb_amalgamation() rule, with file_list aspect.
 
@@ -43,6 +43,7 @@ def _upb_amalgamation(ctx):
     ctx.actions.run(
         inputs = inputs,
         outputs = ctx.outputs.outs,
+        mnemonic = "UpbAmalgamation",
         arguments = [f.path for f in ctx.outputs.outs] + [f.path for f in srcs],
         progress_message = "Making amalgamation",
         executable = ctx.executable._amalgamator,
@@ -54,7 +55,7 @@ upb_amalgamation = rule(
         "_amalgamator": attr.label(
             executable = True,
             cfg = "exec",
-            default = "//upb/bazel:amalgamate",
+            default = "//upb/bazel/private/oss:amalgamate",
         ),
         "prefix": attr.string(
             default = "",

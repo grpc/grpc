@@ -45,8 +45,8 @@ namespace http2 {
 // and it is functions. The code will be written iteratively.
 // Do not use or edit any of these functions unless you are
 // familiar with the PH2 project (Moving chttp2 to promises.)
-// TODO(tjagtap) : [PH2][P3] : Update the experimental status of the code before
-// http2 rollout begins.
+// TODO(tjagtap) : [PH2][P3] : Update the experimental status of the code when
+// CHTTP2 is deleted.
 
 #define GRPC_HTTP2_CLIENT_DLOG \
   DLOG_IF(INFO, GRPC_TRACE_FLAG_ENABLED(http2_ph2_transport))
@@ -85,7 +85,7 @@ inline Http2Status ValidateMetadataFrameState(
     const uint32_t max_header_list_size) {
   if (stream.IsStreamHalfClosedRemote()) {
     return incoming_headers.ParseAndDiscardHeaders(
-        std::move(frame.payload), frame.end_headers, &stream,
+        std::move(frame.payload), frame.end_headers,
         Http2Status::Http2StreamError(
             Http2ErrorCode::kStreamClosed,
             std::string(RFC9113::kHalfClosedRemoteState)),
@@ -97,7 +97,7 @@ inline Http2Status ValidateMetadataFrameState(
             stream.IsInitialMetadataReceived(),
             stream.IsTrailingMetadataReceived())) {
       return incoming_headers.ParseAndDiscardHeaders(
-          std::move(frame.payload), frame.end_headers, &stream,
+          std::move(frame.payload), frame.end_headers,
           Http2Status::Http2StreamError(
               Http2ErrorCode::kInternalError,
               std::string(GrpcErrors::kTooManyMetadata)),

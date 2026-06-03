@@ -67,6 +67,8 @@ inline bool IsCallTracerSendInitialMetadataIsAnAnnotationEnabled() {
 inline bool IsCallTracerSendTrailingMetadataIsAnAnnotationEnabled() {
   return false;
 }
+#define GRPC_EXPERIMENT_IS_INCLUDED_CALLV3_BATCH_VALIDATION
+inline bool IsCallv3BatchValidationEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CHAOTIC_GOOD_FRAMING_LAYER
 inline bool IsChaoticGoodFramingLayerEnabled() { return true; }
 inline bool IsChaoticGoodSendSupportedFeaturesEnabled() { return false; }
@@ -98,7 +100,8 @@ inline bool IsKeepAlivePingTimerBatchEnabled() { return false; }
 inline bool IsLocalConnectorSecureEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_MAX_INFLIGHT_PINGS_STRICT_LIMIT
 inline bool IsMaxInflightPingsStrictLimitEnabled() { return true; }
-inline bool IsMemoryOptimization01Enabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_MEMORY_OPTIMIZATION_01
+inline bool IsMemoryOptimization01Enabled() { return true; }
 inline bool IsMemoryOptimization02Enabled() { return false; }
 inline bool IsMessageSizeRefactoringEnabled() { return false; }
 inline bool IsMetadataOutstandingTokenRefactorEnabled() { return false; }
@@ -157,6 +160,8 @@ inline bool IsCallTracerSendInitialMetadataIsAnAnnotationEnabled() {
 inline bool IsCallTracerSendTrailingMetadataIsAnAnnotationEnabled() {
   return false;
 }
+#define GRPC_EXPERIMENT_IS_INCLUDED_CALLV3_BATCH_VALIDATION
+inline bool IsCallv3BatchValidationEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CHAOTIC_GOOD_FRAMING_LAYER
 inline bool IsChaoticGoodFramingLayerEnabled() { return true; }
 inline bool IsChaoticGoodSendSupportedFeaturesEnabled() { return false; }
@@ -188,7 +193,8 @@ inline bool IsKeepAlivePingTimerBatchEnabled() { return false; }
 inline bool IsLocalConnectorSecureEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_MAX_INFLIGHT_PINGS_STRICT_LIMIT
 inline bool IsMaxInflightPingsStrictLimitEnabled() { return true; }
-inline bool IsMemoryOptimization01Enabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_MEMORY_OPTIMIZATION_01
+inline bool IsMemoryOptimization01Enabled() { return true; }
 inline bool IsMemoryOptimization02Enabled() { return false; }
 inline bool IsMessageSizeRefactoringEnabled() { return false; }
 inline bool IsMetadataOutstandingTokenRefactorEnabled() { return false; }
@@ -247,6 +253,8 @@ inline bool IsCallTracerSendInitialMetadataIsAnAnnotationEnabled() {
 inline bool IsCallTracerSendTrailingMetadataIsAnAnnotationEnabled() {
   return false;
 }
+#define GRPC_EXPERIMENT_IS_INCLUDED_CALLV3_BATCH_VALIDATION
+inline bool IsCallv3BatchValidationEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CHAOTIC_GOOD_FRAMING_LAYER
 inline bool IsChaoticGoodFramingLayerEnabled() { return true; }
 inline bool IsChaoticGoodSendSupportedFeaturesEnabled() { return false; }
@@ -278,7 +286,8 @@ inline bool IsKeepAlivePingTimerBatchEnabled() { return false; }
 inline bool IsLocalConnectorSecureEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_MAX_INFLIGHT_PINGS_STRICT_LIMIT
 inline bool IsMaxInflightPingsStrictLimitEnabled() { return true; }
-inline bool IsMemoryOptimization01Enabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_MEMORY_OPTIMIZATION_01
+inline bool IsMemoryOptimization01Enabled() { return true; }
 inline bool IsMemoryOptimization02Enabled() { return false; }
 inline bool IsMessageSizeRefactoringEnabled() { return false; }
 inline bool IsMetadataOutstandingTokenRefactorEnabled() { return false; }
@@ -333,6 +342,7 @@ enum ExperimentIds {
   kExperimentIdCallTracerInTransport,
   kExperimentIdCallTracerSendInitialMetadataIsAnAnnotation,
   kExperimentIdCallTracerSendTrailingMetadataIsAnAnnotation,
+  kExperimentIdCallv3BatchValidation,
   kExperimentIdChaoticGoodFramingLayer,
   kExperimentIdChaoticGoodSendSupportedFeatures,
   kExperimentIdErrorFlatten,
@@ -410,6 +420,10 @@ inline bool IsCallTracerSendInitialMetadataIsAnAnnotationEnabled() {
 inline bool IsCallTracerSendTrailingMetadataIsAnAnnotationEnabled() {
   return IsExperimentEnabled<
       kExperimentIdCallTracerSendTrailingMetadataIsAnAnnotation>();
+}
+#define GRPC_EXPERIMENT_IS_INCLUDED_CALLV3_BATCH_VALIDATION
+inline bool IsCallv3BatchValidationEnabled() {
+  return IsExperimentEnabled<kExperimentIdCallv3BatchValidation>();
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CHAOTIC_GOOD_FRAMING_LAYER
 inline bool IsChaoticGoodFramingLayerEnabled() {

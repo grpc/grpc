@@ -41,6 +41,9 @@ const char* const
 const char* const
     additional_constraints_call_tracer_send_trailing_metadata_is_an_annotation =
         "{}";
+const char* const description_callv3_batch_validation =
+    "If enabled, perform validations on receiving a new batch.";
+const char* const additional_constraints_callv3_batch_validation = "{}";
 const char* const description_chaotic_good_framing_layer =
     "Enable the chaotic good framing layer.";
 const char* const additional_constraints_chaotic_good_framing_layer = "{}";
@@ -284,6 +287,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_call_tracer_send_trailing_metadata_is_an_annotation,
      additional_constraints_call_tracer_send_trailing_metadata_is_an_annotation,
      nullptr, 0, false, true},
+    {"callv3_batch_validation", description_callv3_batch_validation,
+     additional_constraints_callv3_batch_validation, nullptr, 0, true, true},
     {"chaotic_good_framing_layer", description_chaotic_good_framing_layer,
      additional_constraints_chaotic_good_framing_layer, nullptr, 0, true,
      false},
@@ -340,7 +345,7 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_max_inflight_pings_strict_limit, nullptr, 0, true,
      true},
     {"memory_optimization_01", description_memory_optimization_01,
-     additional_constraints_memory_optimization_01, nullptr, 0, false, false},
+     additional_constraints_memory_optimization_01, nullptr, 0, true, false},
     {"memory_optimization_02", description_memory_optimization_02,
      additional_constraints_memory_optimization_02, nullptr, 0, false, false},
     {"message_size_refactoring", description_message_size_refactoring,
@@ -486,6 +491,9 @@ const char* const
 const char* const
     additional_constraints_call_tracer_send_trailing_metadata_is_an_annotation =
         "{}";
+const char* const description_callv3_batch_validation =
+    "If enabled, perform validations on receiving a new batch.";
+const char* const additional_constraints_callv3_batch_validation = "{}";
 const char* const description_chaotic_good_framing_layer =
     "Enable the chaotic good framing layer.";
 const char* const additional_constraints_chaotic_good_framing_layer = "{}";
@@ -729,6 +737,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_call_tracer_send_trailing_metadata_is_an_annotation,
      additional_constraints_call_tracer_send_trailing_metadata_is_an_annotation,
      nullptr, 0, false, true},
+    {"callv3_batch_validation", description_callv3_batch_validation,
+     additional_constraints_callv3_batch_validation, nullptr, 0, true, true},
     {"chaotic_good_framing_layer", description_chaotic_good_framing_layer,
      additional_constraints_chaotic_good_framing_layer, nullptr, 0, true,
      false},
@@ -785,7 +795,7 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_max_inflight_pings_strict_limit, nullptr, 0, true,
      true},
     {"memory_optimization_01", description_memory_optimization_01,
-     additional_constraints_memory_optimization_01, nullptr, 0, false, false},
+     additional_constraints_memory_optimization_01, nullptr, 0, true, false},
     {"memory_optimization_02", description_memory_optimization_02,
      additional_constraints_memory_optimization_02, nullptr, 0, false, false},
     {"message_size_refactoring", description_message_size_refactoring,
@@ -931,6 +941,9 @@ const char* const
 const char* const
     additional_constraints_call_tracer_send_trailing_metadata_is_an_annotation =
         "{}";
+const char* const description_callv3_batch_validation =
+    "If enabled, perform validations on receiving a new batch.";
+const char* const additional_constraints_callv3_batch_validation = "{}";
 const char* const description_chaotic_good_framing_layer =
     "Enable the chaotic good framing layer.";
 const char* const additional_constraints_chaotic_good_framing_layer = "{}";
@@ -1174,6 +1187,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_call_tracer_send_trailing_metadata_is_an_annotation,
      additional_constraints_call_tracer_send_trailing_metadata_is_an_annotation,
      nullptr, 0, false, true},
+    {"callv3_batch_validation", description_callv3_batch_validation,
+     additional_constraints_callv3_batch_validation, nullptr, 0, true, true},
     {"chaotic_good_framing_layer", description_chaotic_good_framing_layer,
      additional_constraints_chaotic_good_framing_layer, nullptr, 0, true,
      false},
@@ -1230,7 +1245,7 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_max_inflight_pings_strict_limit, nullptr, 0, true,
      true},
     {"memory_optimization_01", description_memory_optimization_01,
-     additional_constraints_memory_optimization_01, nullptr, 0, false, false},
+     additional_constraints_memory_optimization_01, nullptr, 0, true, false},
     {"memory_optimization_02", description_memory_optimization_02,
      additional_constraints_memory_optimization_02, nullptr, 0, false, false},
     {"message_size_refactoring", description_message_size_refactoring,

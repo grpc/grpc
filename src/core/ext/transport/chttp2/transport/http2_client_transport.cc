@@ -313,7 +313,7 @@ Http2Status Http2ClientTransport::ProcessIncomingFrame(Http2DataFrame&& frame) {
     break;
   }
 
-  // TODO(tjagtap) : [PH2][P2] : List of Tests:
+  // TODO(tjagtap) : [PH2][P3] : List of Tests:
   // 1. Data frame with unknown stream ID
   // 2. Data frame with only half a message and then end stream
   // 3. One data frame with a full message
@@ -345,8 +345,8 @@ Http2Status Http2ClientTransport::ProcessIncomingMetadata(T&& frame) {
                               "stream_id="
                            << frame.stream_id << "} Lookup Failed";
     return read_context_.ParseAndDiscardHeaders(
-        std::move(frame.payload), frame.end_headers, /*stream=*/nullptr,
-        Http2Status::Ok(), settings_->acked().max_header_list_size());
+        std::move(frame.payload), frame.end_headers, Http2Status::Ok(),
+        settings_->acked().max_header_list_size());
   }
 
   Http2Status validation_status = ValidateMetadataFrameState(
@@ -355,13 +355,14 @@ Http2Status Http2ClientTransport::ProcessIncomingMetadata(T&& frame) {
     return validation_status;
   }
 
-  Http2Status append_result = stream->GetHeaderAssembler().AppendFrame(frame);
+  Http2Status append_result =
+      read_context_.header_assembler().AppendFrame(frame);
   if (!append_result.IsOk()) {
     // Frame payload is not consumed if AppendFrame returns a non-OK
     // status. We need to process it to keep our in consistent state.
     return read_context_.ParseAndDiscardHeaders(
-        std::move(frame.payload), frame.end_headers, stream.get(),
-        std::move(append_result), settings_->acked().max_header_list_size());
+        std::move(frame.payload), frame.end_headers, std::move(append_result),
+        settings_->acked().max_header_list_size());
   }
 
   Http2Status status = ProcessMetadata(stream);
@@ -369,7 +370,7 @@ Http2Status Http2ClientTransport::ProcessIncomingMetadata(T&& frame) {
     // Frame payload has been moved to the HeaderAssembler. So calling
     // ParseAndDiscardHeaders with an empty buffer.
     return read_context_.ParseAndDiscardHeaders(
-        SliceBuffer(), frame.end_headers, stream.get(), std::move(status),
+        SliceBuffer(), frame.end_headers, std::move(status),
         settings_->acked().max_header_list_size());
   }
 
@@ -438,6 +439,8 @@ Http2Status Http2ClientTransport::ProcessIncomingFrame(
       return status;
     }
     read_context_.SetMaxHeaderTableSize(settings_->acked().header_table_size());
+    read_context_.header_assembler().MaybeSetAllowTrueBinaryMetadataAcked(
+        settings_->acked().allow_true_binary_metadata());
     ActOnFlowControlAction(flow_control_.SetAckedInitialWindow(
                                settings_->acked().initial_window_size()),
                            /*stream=*/nullptr);
@@ -608,8 +611,6 @@ Http2Status Http2ClientTransport::ProcessIncomingFrame(
 
 Http2Status Http2ClientTransport::ProcessIncomingFrame(
     Http2SecurityFrame&& frame) {
-  GRPC_HTTP2_CLIENT_DLOG
-      << "Http2ClientTransport::ProcessIncomingFrame(SecurityFrame) ";
   if (settings_->IsSecurityFrameExpected()) {
     security_frame_handler_->ProcessPayload(std::move(frame.payload));
   }
@@ -633,7 +634,7 @@ Http2Status Http2ClientTransport::ProcessIncomingFrame(
 
 Http2Status Http2ClientTransport::ProcessMetadata(
     RefCountedPtr<Stream> stream) {
-  HeaderAssembler& assembler = stream->GetHeaderAssembler();
+  HeaderAssembler& assembler = read_context_.header_assembler();
   CallHandler& call = stream->GetCallHandler();
 
   GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport::ProcessMetadata";
@@ -692,7 +693,7 @@ auto Http2ClientTransport::ReadAndProcessOneFrame() {
         if (GPR_UNLIKELY(!status.IsOk())) {
           GRPC_DCHECK(status.GetType() ==
                       Http2Status::Http2ErrorType::kConnectionError);
-          return HandleError(std::nullopt, std::move(status));
+          return HandleError(/*stream_id=*/std::nullopt, std::move(status));
         }
         read_context_.SetCurrentFrameHeader(header);
         return absl::OkStatus();
@@ -950,7 +951,7 @@ absl::Status Http2ClientTransport::PrepareControlFrames() {
   }
 
   if (apply_status != http2::Http2ErrorCode::kNoError) {
-    return HandleError(std::nullopt,
+    return HandleError(/*stream_id=*/std::nullopt,
                        Http2Status::Http2ConnectionError(
                            apply_status, "Failed to apply incoming settings"));
   }
@@ -1036,7 +1037,8 @@ absl::Status Http2ClientTransport::DequeueStreamFrames(
              "enqueue stream "
           << stream->GetStreamId() << " with status: " << status;
       // Close transport if we fail to enqueue stream.
-      return HandleError(std::nullopt, ToHttpOkOrConnError(status));
+      return HandleError(/*stream_id=*/std::nullopt,
+                         ToHttpOkOrConnError(status));
     }
   }
 
@@ -1079,11 +1081,6 @@ absl::Status Http2ClientTransport::DequeueStreamFrames(
                                          /*close_writes=*/true});
   }
 
-  // Update the write_bytes_remaining_ based on the bytes consumed
-  // in the current dequeue.
-  // Note: We do tend to overestimate the bytes consumed here. This may result
-  // in sending less data than target_write_size_.
-
   GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport::DequeueStreamFrames "
                             "After dequeue: "
                          << write_cycle.DebugString()
@@ -1119,10 +1116,6 @@ auto Http2ClientTransport::MultiplexerLoop() {
             }
             NotifyUrgentFramesWriteDone();
             WriteCycle& write_cycle = transport_write_context_.GetWriteCycle();
-            GRPC_HTTP2_CLIENT_DLOG
-                << "Http2ClientTransport::MultiplexerLoop "
-                << "Starting to iterate over writable stream list "
-                << write_cycle.DebugString();
             // Drain all the writable streams till we have written
             // max_write_size_ bytes of data or there is no more data to send.
             // In some cases, we may write more than max_write_size_ bytes(like
@@ -1219,9 +1212,8 @@ absl::Status Http2ClientTransport::InitializeStream(Stream& stream) {
                          << next_stream_id.value() << " to stream: " << &stream
                          << ", allow_true_binary_metadata:"
                          << settings_->peer().allow_true_binary_metadata();
-  stream.InitializeClientStream(
-      next_stream_id.value(), settings_->peer().allow_true_binary_metadata(),
-      settings_->acked().allow_true_binary_metadata());
+  stream.InitializeClientStream(next_stream_id.value(),
+                                settings_->peer().allow_true_binary_metadata());
   return absl::OkStatus();
 }
 
@@ -1259,9 +1251,10 @@ auto Http2ClientTransport::WaitForSettingsTimeoutOnDone() {
   return [self = RefAsSubclass<Http2ClientTransport>()](absl::Status status) {
     if (!status.ok()) {
       GRPC_UNUSED absl::Status result = self->HandleError(
-          std::nullopt, Http2Status::Http2ConnectionError(
-                            Http2ErrorCode::kProtocolError,
-                            std::string(RFC9113::kSettingsTimeout)));
+          /*stream_id=*/std::nullopt,
+          Http2Status::Http2ConnectionError(
+              Http2ErrorCode::kProtocolError,
+              std::string(RFC9113::kSettingsTimeout)));
     }
   };
 }
@@ -1357,7 +1350,6 @@ void Http2ClientTransport::SpawnTransportLoops() {
   // For Client, write happens before read. So MultiplexerLoop is spawned first.
   // ReadLoop is spawned after the first write.
   // For Server, read happens before write. So ReadLoop is spawned first.
-  // MultiplexerLoop is spawned after the first read.
   SpawnGuardedTransportParty("MultiplexerLoop",
                              UntilTransportClosed(MultiplexerLoop()));
   GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport::SpawnTransportLoops End";
@@ -1430,7 +1422,7 @@ void Http2ClientTransport::CloseStream(Stream& stream, CloseStreamArgs args,
         << "Http2ClientTransport::CloseStream for stream id: "
         << stream.GetStreamId() << " close_reads=" << args.close_reads
         << " close_writes=" << args.close_writes
-        << " incoming_headers_=" << read_context_.DebugString()
+        << " read_context_=" << read_context_.DebugString()
         << " location=" << whence.file() << ":" << whence.line();
 
     if (args.close_writes) {
@@ -1446,7 +1438,7 @@ void Http2ClientTransport::CloseStream(Stream& stream, CloseStreamArgs args,
       // peers.
       if (read_context_.IsWaitingForContinuationFrame()) {
         Http2Status result = read_context_.ParseAndDiscardHeaders(
-            SliceBuffer(), /*is_end_headers=*/false, &stream,
+            SliceBuffer(), /*is_end_headers=*/false,
             /*original_status=*/Http2Status::Ok(),
             settings_->acked().max_header_list_size());
         if (result.GetType() == Http2Status::Http2ErrorType::kConnectionError) {
@@ -1769,8 +1761,8 @@ RefCountedPtr<channelz::SocketNode> Http2ClientTransport::GetSocketNode()
 
 absl::StatusOr<uint32_t> Http2ClientTransport::NextStreamId() {
   if (next_stream_id_ > GetMaxAllowedStreamId()) {
-    // TODO(tjagtap) : [PH2][P3] : Handle case if transport runs out of stream
-    // ids
+    // TODO(tjagtap) : [PH2][P2] : Handle case if transport runs out of stream
+    // ids. Similar check is there in the same function. Check what to do.
     // RFC9113 : Stream identifiers cannot be reused. Long-lived connections
     // can result in an endpoint exhausting the available range of stream
     // identifiers. A client that is unable to establish a new stream
@@ -1816,16 +1808,16 @@ absl::Status Http2ClientTransport::MaybeAddStreamToWritableStreamList(
         << "Http2ClientTransport::MaybeAddStreamToWritableStreamList Stream "
            "id: "
         << stream->GetStreamId() << " became writable";
-    // TODO(akshitpatel) [Perf]: Might be worth exploring if this funciton
-    // should take a raw stream ptr and take a ref here.
+    // TODO(akshitpatel) [PH2][P4][Perf]: Might be worth exploring if this
+    // function should take a raw stream ptr and take a ref here.
     absl::Status status =
         writable_stream_list_.Enqueue(std::move(stream), result.priority);
     if (!status.ok()) {
       return HandleError(
-          std::nullopt,
+          /*stream_id=*/std::nullopt,
           Http2Status::Http2ConnectionError(
               Http2ErrorCode::kRefusedStream,
-              "Failed to enqueue stream to writable stream list"));
+              std::string(GrpcErrors::kFailedToEnqueueStream)));
     }
   }
   return absl::OkStatus();
@@ -1960,7 +1952,7 @@ auto Http2ClientTransport::CallOutboundLoop(RefCountedPtr<Stream> stream) {
         if (GPR_UNLIKELY(!enqueue_result.ok())) {
           return enqueue_result.status();
         }
-        GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport CallOutboundLoop "
+        GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport::CallOutboundLoop "
                                   "Enqueued Initial Metadata";
         return MaybeAddStreamToWritableStreamList(std::move(stream),
                                                   enqueue_result.value());
@@ -1972,7 +1964,7 @@ auto Http2ClientTransport::CallOutboundLoop(RefCountedPtr<Stream> stream) {
     if (GPR_UNLIKELY(!enqueue_result.ok())) {
       return enqueue_result.status();
     }
-    GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport CallOutboundLoop "
+    GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport::CallOutboundLoop "
                               "Enqueued Half Closed";
     return MaybeAddStreamToWritableStreamList(std::move(stream),
                                               enqueue_result.value());
@@ -2169,7 +2161,7 @@ uint32_t Http2ClientTransport::GoawayInterfaceImpl::GetLastAcceptedStreamId() {
 // TODO(akshitpatel) : [PH2][P2] : Eventually there should be a separate ref
 // counted struct/class passed to all the transport promises/members. This
 // will help removing back references from the transport members to
-// transport and greatly simpilfy the cleanup path. Need to do this for
+// transport and greatly simplify the cleanup path. Need to do this for
 // PingSystemInterfaceImpl, KeepAliveInterfaceImpl and GoawayInterfaceImpl.
 
 }  // namespace http2

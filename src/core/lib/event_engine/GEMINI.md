@@ -14,7 +14,7 @@ The EventEngine is an abstraction layer that provides a consistent interface to 
 
 ## Major Classes
 
-*   `grpc_event_engine::experimental::EventEngine`: The abstract base class for an EventEgine.
+*   `grpc_event_engine::experimental::EventEngine`: The abstract base class for an EventEngine.
 *   `grpc_event_engine::experimental::EventEngine::Endpoint`: Represents one end of a connection.
 *   `grpc_event_engine::experimental::EventEngine::Listener`: Used to accept incoming connections.
 *   `grpc_event_engine::experimental::EventEngine::DNSResolver`: Used to resolve DNS names.

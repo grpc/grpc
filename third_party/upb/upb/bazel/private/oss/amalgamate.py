@@ -30,31 +30,31 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-import sys
-import re
 import os
+import re
+import sys
 
 INCLUDE_RE = re.compile('^#include "([^"]*)"')
+
 
 def parse_include(line):
   match = INCLUDE_RE.match(line)
   return match.groups()[0] if match else None
 
+
 class Amalgamator:
-  def __init__(self, h_out, c_out):
+
+  def __init__(self, output_h, output_c, h_out_filename):
     self.include_paths = ["."]
     self.included = set()
-    self.output_h = open(h_out, "w")
-    self.output_c = open(c_out, "w")
-    self.h_out = h_out.split("/")[-1]
+    self.output_h = output_h
+    self.output_c = output_c
+    self.h_out = h_out_filename
 
   def amalgamate(self, h_files, c_files):
     self.h_files = set(h_files)
     self.output_c.write("/* Amalgamated source file */\n")
     self.output_c.write('#include "%s"\n' % (self.h_out))
-    if self.h_out == "ruby-upb.h":
-      self.output_h.write("// Ruby is still using proto3 enum semantics for proto2\n")
-      self.output_h.write("#define UPB_DISABLE_CLOSED_ENUM_CHECKING\n")
 
     self.output_h.write("/* Amalgamated source file */\n")
 
@@ -103,7 +103,9 @@ class Amalgamator:
         or include.startswith("google")
     ):
       return False
-    if include and (include.endswith("port/def.inc") or include.endswith("port/undef.inc")):
+    if include and (
+        include.endswith("port/def.inc") or include.endswith("port/undef.inc")
+    ):
       # Skip, we handle this separately
       return True
     if include.endswith("hpp"):
@@ -124,13 +126,19 @@ class Amalgamator:
         self.included.add(include)
         self._process_file(h_file, self.output_h)
         return True
-      raise RuntimeError("Couldn't find include: " + include + ", h_files=" + repr(self.h_files))
+      raise RuntimeError(
+          "Couldn't find include: "
+          + include
+          + ", h_files="
+          + repr(self.h_files)
+      )
+
 
 # ---- main ----
 
 c_out = sys.argv[1]
 h_out = sys.argv[2]
-amalgamator = Amalgamator(h_out, c_out)
+
 c_files = []
 h_files = []
 
@@ -141,4 +149,6 @@ for arg in sys.argv[3:]:
   else:
     c_files.append(arg)
 
-amalgamator.amalgamate(h_files, c_files)
+with open(h_out, "w") as output_h, open(c_out, "w") as output_c:
+  amalgamator = Amalgamator(output_h, output_c, h_out.split("/")[-1])
+  amalgamator.amalgamate(h_files, c_files)

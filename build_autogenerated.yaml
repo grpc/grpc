@@ -3641,6 +3641,7 @@ libs:
   public_headers: []
   headers:
   - third_party/upb/upb/base/descriptor_constants.h
+  - third_party/upb/upb/base/error_handler.h
   - third_party/upb/upb/base/status.h
   - third_party/upb/upb/base/status.hpp
   - third_party/upb/upb/base/string_view.h
@@ -3671,6 +3672,7 @@ libs:
   - third_party/upb/upb/base/internal/endian.h
   - third_party/upb/upb/base/internal/log2.h
   - third_party/upb/upb/hash/common.h
+  - third_party/upb/upb/hash/ext_table.h
   - third_party/upb/upb/hash/int_table.h
   - third_party/upb/upb/hash/str_table.h
   src:
@@ -3743,11 +3745,9 @@ libs:
   - third_party/upb/upb/message/internal/map.h
   - third_party/upb/upb/message/internal/map_sorter.h
   - third_party/upb/upb/message/internal/message.h
-  - third_party/upb/upb/message/internal/tagged_ptr.h
   - third_party/upb/upb/message/map.h
   - third_party/upb/upb/message/map_gencode_util.h
   - third_party/upb/upb/message/message.h
-  - third_party/upb/upb/message/tagged_ptr.h
   - third_party/upb/upb/message/value.h
   src:
   - third_party/upb/upb/message/accessors.c
@@ -3778,6 +3778,7 @@ libs:
   - third_party/upb/upb/wire/decode_fast/data.h
   - third_party/upb/upb/wire/decode_fast/select.h
   - third_party/upb/upb/wire/eps_copy_input_stream.h
+  - third_party/upb/upb/wire/internal/eps_copy_input_stream.h
   - third_party/upb/upb/wire/internal/reader.h
   - third_party/upb/upb/wire/reader.h
   - third_party/upb/upb/wire/types.h
@@ -3805,10 +3806,12 @@ libs:
   - third_party/upb/upb/mini_table/extension_registry.h
   - third_party/upb/upb/mini_table/field.h
   - third_party/upb/upb/mini_table/file.h
+  - third_party/upb/upb/mini_table/generated_registry.h
   - third_party/upb/upb/mini_table/internal/enum.h
   - third_party/upb/upb/mini_table/internal/extension.h
   - third_party/upb/upb/mini_table/internal/field.h
   - third_party/upb/upb/mini_table/internal/file.h
+  - third_party/upb/upb/mini_table/internal/generated_registry.h
   - third_party/upb/upb/mini_table/internal/message.h
   - third_party/upb/upb/mini_table/internal/size_log2.h
   - third_party/upb/upb/mini_table/internal/sub.h
@@ -3816,6 +3819,7 @@ libs:
   - third_party/upb/upb/mini_table/sub.h
   src:
   - third_party/upb/upb/mini_table/extension_registry.c
+  - third_party/upb/upb/mini_table/generated_registry.c
   - third_party/upb/upb/mini_table/internal/message.c
   - third_party/upb/upb/mini_table/message.c
   deps:
@@ -3910,6 +3914,7 @@ libs:
   - third_party/upb/upb/wire/eps_copy_input_stream.h
   - third_party/upb/upb/wire/internal/constants.h
   - third_party/upb/upb/wire/internal/decoder.h
+  - third_party/upb/upb/wire/internal/eps_copy_input_stream.h
   - third_party/upb/upb/wire/internal/reader.h
   - third_party/upb/upb/wire/reader.h
   - third_party/upb/upb/wire/types.h
@@ -4279,6 +4284,7 @@ libs:
   - absl/container:layout
   - absl/log:absl_check
   - absl/log:absl_log
+  - absl/strings:charset
   - absl/strings:internal
   - grpc
   - protobuf
@@ -4653,6 +4659,7 @@ libs:
   - absl/container:layout
   - absl/log:absl_check
   - absl/log:absl_log
+  - absl/strings:charset
   - absl/strings:internal
   - grpc_unsecure
   - protobuf
@@ -5482,6 +5489,7 @@ libs:
   - absl/base:config
   - absl/base:core_headers
   - absl/base:dynamic_annotations
+  - absl/base:no_destructor
   - absl/base:prefetch
   - absl/cleanup:cleanup
   - absl/container:btree
@@ -5508,6 +5516,7 @@ libs:
   - absl/strings:strings
   - absl/synchronization:synchronization
   - absl/time:time
+  - absl/types:optional
   - absl/types:span
   - absl/utility:utility
   - protobuf
@@ -6385,6 +6394,7 @@ targets:
   language: c++
   headers:
   - test/cpp/end2end/end2end_test_utils.h
+  - test/cpp/end2end/test_service_impl.h
   src:
   - src/proto/grpc/health/v1/health.proto
   - src/proto/grpc/testing/duplicate/echo_duplicate.proto
@@ -6396,6 +6406,7 @@ targets:
   - third_party/protoc-gen-validate/validate/validate.proto
   - third_party/xds/xds/data/orca/v3/orca_load_report.proto
   - test/cpp/end2end/async_end2end_test.cc
+  - test/cpp/end2end/test_service_impl.cc
   deps:
   - gtest
   - grpc++_test_util
@@ -9020,7 +9031,6 @@ targets:
   - gtest
   - absl/container:fixed_array
   - absl/functional:overload
-  - absl/strings:charset
   - grpcpp_channelz
   - protoc
   - grpc_test_util
@@ -9334,7 +9344,6 @@ targets:
   - gtest
   - absl/container:fixed_array
   - absl/functional:overload
-  - absl/strings:charset
   - protoc
   - grpc++_test_util
 - name: client_auth_filter_test
@@ -14959,7 +14968,6 @@ targets:
   deps:
   - absl/container:fixed_array
   - absl/functional:overload
-  - absl/strings:charset
   - grpc++
   - protoc
   - grpc++_test_config
@@ -15161,7 +15169,6 @@ targets:
   - gtest
   - absl/container:fixed_array
   - absl/functional:overload
-  - absl/strings:charset
   - grpc++_reflection
   - protoc
   - grpc++_test_config
@@ -18015,7 +18022,6 @@ targets:
   - gtest
   - absl/container:fixed_array
   - absl/functional:overload
-  - absl/strings:charset
   - grpc++
   - protoc
   - grpc_test_util
@@ -20066,6 +20072,7 @@ targets:
   - absl/functional:function_ref
   - absl/hash:hash
   - absl/status:statusor
+  - absl/strings:string_view
   - absl/types:span
   - absl/utility:utility
   - gpr
@@ -23407,6 +23414,25 @@ targets:
   deps:
   - gtest
   - grpc_test_util
+- name: session_end2end_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/cpp/end2end/end2end_test_utils.h
+  src:
+  - src/proto/grpc/testing/echo.proto
+  - src/proto/grpc/testing/echo_messages.proto
+  - src/proto/grpc/testing/simple_messages.proto
+  - third_party/googleapis/google/api/http.proto
+  - third_party/googleapis/google/rpc/status.proto
+  - third_party/protoc-gen-validate/validate/validate.proto
+  - third_party/xds/xds/data/orca/v3/orca_load_report.proto
+  - test/cpp/end2end/session_end2end_test.cc
+  deps:
+  - gtest
+  - grpc++
+  - grpc_test_util
 - name: session_endpoint_test
   gtest: true
   build: test
@@ -24117,6 +24143,7 @@ targets:
   - absl/container:layout
   - absl/log:absl_check
   - absl/log:absl_log
+  - absl/strings:charset
   - absl/strings:internal
   - protobuf
   - grpc_test_util
@@ -27559,7 +27586,6 @@ targets:
   - gtest
   - absl/container:fixed_array
   - absl/functional:overload
-  - absl/strings:charset
   - grpc++
   - protoc
   - grpc_test_util
@@ -27584,6 +27610,16 @@ targets:
   deps:
   - gtest
   - absl/functional:overload
+  - grpc_test_util
+- name: xds_client_grpc_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/xds/xds_client_grpc_test.cc
+  deps:
+  - gtest
   - grpc_test_util
 - name: xds_client_test
   gtest: true
@@ -27746,6 +27782,7 @@ targets:
   - absl/container:layout
   - absl/log:absl_check
   - absl/log:absl_log
+  - absl/strings:charset
   - absl/strings:internal
   - protobuf
   - grpc_test_util
@@ -28043,6 +28080,7 @@ targets:
   - absl/container:layout
   - absl/log:absl_check
   - absl/log:absl_log
+  - absl/strings:charset
   - absl/strings:internal
   - protobuf
   - grpc_test_util
@@ -28539,7 +28577,6 @@ targets:
   - gtest
   - absl/container:fixed_array
   - absl/functional:overload
-  - absl/strings:charset
   - grpc++
   - protoc
   - grpc_test_util
@@ -29294,6 +29331,7 @@ targets:
   - absl/container:layout
   - absl/log:absl_check
   - absl/log:absl_log
+  - absl/strings:charset
   - absl/strings:internal
   - protobuf
   - grpc_test_util
@@ -30043,7 +30081,6 @@ targets:
   - gtest
   - absl/container:fixed_array
   - absl/functional:overload
-  - absl/strings:charset
   - grpc++
   - protoc
   - grpc_test_util
@@ -30172,7 +30209,6 @@ targets:
   - gtest
   - absl/container:fixed_array
   - absl/functional:overload
-  - absl/strings:charset
   - grpc++
   - protoc
   - grpc_test_util
@@ -30317,7 +30353,6 @@ targets:
   - gtest
   - absl/container:fixed_array
   - absl/functional:overload
-  - absl/strings:charset
   - grpc++
   - protoc
   - grpc_test_util
@@ -31535,7 +31570,6 @@ targets:
   - gtest
   - absl/container:fixed_array
   - absl/functional:overload
-  - absl/strings:charset
   - grpc++
   - protoc
   - grpc_test_util
