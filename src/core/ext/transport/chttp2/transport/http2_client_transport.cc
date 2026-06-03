@@ -314,12 +314,13 @@ Http2Status Http2ClientTransport::ProcessIncomingFrame(Http2DataFrame&& frame) {
 
 template <typename T>
 Http2Status Http2ClientTransport::ProcessIncomingMetadata(T&& frame) {
-  // State update MUST happen before processing the frame.
-  read_context_.UpdateState(frame);
 
   ping_manager_->ReceivedDataFrame();
 
   RefCountedPtr<Stream> stream = LookupStream(frame.stream_id);
+  // State update MUST happen before processing the frame.
+  read_context_.UpdateState(frame, /*is_existing_stream=*/(stream != nullptr));
+
   if (stream == nullptr) {
     // TODO(tjagtap) : [PH2][P3] : Implement this.
     // RFC9113 : The identifier of a newly established stream MUST be
@@ -328,9 +329,6 @@ Http2Status Http2ClientTransport::ProcessIncomingMetadata(T&& frame) {
     // frame and streams that are reserved using PUSH_PROMISE. An endpoint that
     // receives an unexpected stream identifier MUST respond with a connection
     // error (Section 5.4.1) of type PROTOCOL_ERROR.
-    GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport::ProcessIncomingMetadata { "
-                              "stream_id="
-                           << frame.stream_id << "} Lookup Failed";
     return read_context_.ParseAndDiscardHeaders(
         std::move(frame.payload), frame.end_headers, Http2Status::Ok(),
         settings_->acked().max_header_list_size());
@@ -383,6 +381,7 @@ Http2Status Http2ClientTransport::ProcessIncomingFrame(
          "stream_id="
       << frame.stream_id << ", error_code=" << frame.error_code << " }";
 
+  read_context_.OnResetStreamFrame();
   Http2ErrorCode error_code = FrameErrorCodeToHttp2ErrorCode(frame.error_code);
   absl::Status status = absl::Status(ErrorCodeToAbslStatusCode(error_code),
                                      "Reset stream frame received.");
@@ -445,16 +444,7 @@ Http2Status Http2ClientTransport::ProcessIncomingFrame(Http2PingFrame&& frame) {
     return ToHttpOkOrConnError(AckPing(frame.opaque));
   } else {
     if (test_only_ack_pings_) {
-      // TODO(akshitpatel) : [PH2][P2] : Have a counter to track number
-      // of pending induced frames (Ping/Settings Ack). This is to
-      // ensure that if write is taking a long time, we can stop reads
-      // and prioritize writes. RFC9113: PING responses SHOULD be given
-      // higher priority than any other frame.
       ping_manager_->AddPendingPingAck(frame.opaque);
-      // TODO(akshitpatel) : [PH2][P2] : This is done assuming that the
-      // other ProcessFrame promises may return stream or connection
-      // failures. If this does not turn out to be true, consider
-      // returning absl::Status here.
       return ToHttpOkOrConnError(TriggerWriteCycle());
     } else {
       GRPC_HTTP2_CLIENT_DLOG
@@ -670,7 +660,7 @@ auto Http2ClientTransport::ReadAndProcessOneFrame() {
       [this](Slice header_bytes) {
         Http2FrameHeader header = Http2FrameHeader::Parse(header_bytes.begin());
         // Validate the incoming frame as per the current state of the transport
-        Http2Status status = read_context_.ValidateHeader(
+        Http2Status status = read_context_.ProcessHeader(
             /*max_frame_size_setting=*/settings_->acked().max_frame_size(),
             /*current_frame_header=*/header,
             /*last_stream_id=*/GetLastStreamId(),
@@ -722,7 +712,6 @@ auto Http2ClientTransport::ReadAndProcessOneFrame() {
         Poll<absl::Status> poll_result = read_context_.MaybePauseReadLoop();
         if (poll_result.pending()) {
           TriggerWriteCycleOrHandleError();
-          return Pending{};
         }
         return poll_result;
       }));
@@ -1282,7 +1271,7 @@ Http2ClientTransport::Http2ClientTransport(
           std::move(on_receive_settings))),
       next_stream_id_(/*Initial Stream ID*/ 1),
       should_reset_ping_clock_(false),
-      read_context_(ReadContext::GetPeerString(endpoint_), kIsClient),
+      read_context_(MaxNewStreamsPerRead(channel_args), endpoint_, kIsClient),
       transport_write_context_(kIsClient),
       ping_manager_(std::nullopt),
       keepalive_manager_(std::nullopt),
@@ -1375,6 +1364,7 @@ absl::Status Http2ClientTransport::HandleError(
     GRPC_DCHECK(stream_id.has_value());
     // Passing a cancelled server metadata handle to propagate the error
     // to the upper layers.
+    read_context_.OnStreamError();
     BeginCloseStream(
         LookupStream(stream_id.value()),
         Http2ErrorCodeToFrameErrorCode(status.GetStreamErrorCode()),
@@ -1693,6 +1683,8 @@ void Http2ClientTransport::SpawnAddChannelzData(RefCountedPtr<Party> party,
                 .Set("keepalive_time", self->keepalive_time_)
                 .Set("keepalive_permit_without_calls",
                      self->keepalive_permit_without_calls_)
+                .Set("max_requests_per_read",
+                     self->read_context_.max_new_streams_per_read_cycle())
                 .Set("settings", self->settings_->ChannelzProperties())
                 .Set("flow_control",
                      self->flow_control_.stats().ChannelzProperties()));

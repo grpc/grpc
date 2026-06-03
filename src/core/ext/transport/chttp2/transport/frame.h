@@ -276,7 +276,7 @@ constexpr uint16_t kMaxNoopDataFrames = 16384u;
 constexpr uint16_t kMaxNoopContinuationFrames = 128u;
 
 struct Http2FrameCountTracker {
-  void OnEndHeaders() { noop_continuation_frames = 0u; }
+  void OnLastContinuationFrame() { noop_continuation_frames = 0u; }
 
   std::string DebugString() const {
     return absl::StrCat(
@@ -301,6 +301,8 @@ http2::Http2Status ValidateFrameHeader(
     const Http2FrameHeader& current_frame_header, const uint32_t last_stream_id,
     const bool is_client, const bool is_first_settings_processed,
     Http2FrameCountTracker& tracker);
+
+uint8_t GetNumInducedFrames(const Http2FrameHeader& current_frame_header);
 
 ///////////////////////////////////////////////////////////////////////////////
 // RFC9113 Related Strings and Consts
