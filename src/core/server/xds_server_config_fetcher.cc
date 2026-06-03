@@ -1301,8 +1301,14 @@ void XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
 }  // namespace
 }  // namespace grpc_core
 
+grpc_server_config_fetcher* grpc_server_config_fetcher_xds_create_legacy(
+    grpc_server_xds_status_notifier notifier, const grpc_channel_args* args);
+
 grpc_server_config_fetcher* grpc_server_config_fetcher_xds_create(
     grpc_server_xds_status_notifier notifier, const grpc_channel_args* args) {
+  if (!grpc_core::IsXdsServerFilterChainPerRouteEnabled()) {
+    return grpc_server_config_fetcher_xds_create_legacy(notifier, args);
+  }
   grpc_core::ExecCtx exec_ctx;
   grpc_core::ChannelArgs channel_args = grpc_core::CoreConfiguration::Get()
                                             .channel_args_preconditioning()

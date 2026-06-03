@@ -446,7 +446,7 @@ enum ssl_private_key_result_t TlsPrivateKeySignWrapper(
     return ssl_private_key_failure;
   }
   if (handshaker->is_shutdown) {
-    handshaker->MaybeSetError("Handshaker is shuting down");
+    handshaker->MaybeSetError("Handshaker is shutting down");
     return ssl_private_key_failure;
   }
   // Create the completion callback by binding the current context.
