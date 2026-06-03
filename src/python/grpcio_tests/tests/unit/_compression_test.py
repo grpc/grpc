@@ -36,7 +36,7 @@ _STREAM_STREAM = "StreamStream"
 # Cut down on test time.
 _STREAM_LENGTH = test_constants.STREAM_LENGTH // 16
 
-_HOST = "localhost"
+_HOST = "127.0.0.1"
 
 _REQUEST = b"\x00" * 100
 _COMPRESSION_RATIO_THRESHOLD = 0.05
