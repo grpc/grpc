@@ -401,7 +401,7 @@ class BaseRPCTest:
         self._handler = _Handler(self._control, self._thread_pool)
 
         self._server = test_common.test_server()
-        port = self._server.add_insecure_port("[::]:0")
+        port = self._server.add_insecure_port("localhost:0")
         self._server.add_registered_method_handlers(
             _SERVICE_NAME, get_method_handlers(self._handler)
         )
