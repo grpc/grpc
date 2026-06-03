@@ -62,7 +62,6 @@ if __name__ == "__main__":
                 stdout=stdout_file,
                 stderr=stderr_file,
                 text=True,
-                check=True,
             )
 
             stdout_file.seek(0)
@@ -72,7 +71,12 @@ if __name__ == "__main__":
             stderr_count = len(stderr_file.readlines())
 
             if result.returncode != 0:
-                sys.exit("Test failure")
+                stdout_file.seek(0)
+                stderr_file.seek(0)
+                print(f"Test failed with return code {result.returncode}", file=sys.stderr)
+                print("STDOUT:\n" + stdout_file.read(), file=sys.stderr)
+                print("STDERR:\n" + stderr_file.read(), file=sys.stderr)
+                sys.exit(f"Test failure: {result.returncode}")
 
             stderr_file.seek(0)
             if not re.fullmatch(_OK_TEST_REGEX, stderr_file.read(), re.DOTALL):
