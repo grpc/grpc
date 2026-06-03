@@ -65,7 +65,8 @@ class LocalCredentialsTest(unittest.TestCase):
         os.name == "nt", "Unix Domain Socket is not supported on Windows"
     )
     def test_uds(self):
-        server_addr = "unix:/tmp/grpc_fullstack_test"
+        import uuid
+        server_addr = f"unix:/tmp/grpc_fullstack_test_{uuid.uuid4().hex}"
         channel_creds = grpc.local_channel_credentials(
             grpc.LocalConnectionType.UDS
         )
