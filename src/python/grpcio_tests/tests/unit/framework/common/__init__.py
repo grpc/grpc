@@ -61,7 +61,7 @@ def get_socket(
                 sock.setsockopt(socket.IPPROTO_IPV6, socket.IPV6_V6ONLY, 0)
             sock.bind((bind_address, port))
             if listen:
-                sock.listen(1)
+                sock.listen(socket.SOMAXCONN)
             return bind_address, sock.getsockname()[1], sock
         except OSError as os_error:
             sock.close()

@@ -175,7 +175,7 @@ def _instrumented_client_server_pair(
             try:
                 yield client_channel, proxy, server
             finally:
-                server.stop(None)
+                server.stop(0).wait()
 
 
 def _get_byte_counts(
