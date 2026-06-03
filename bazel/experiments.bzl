@@ -171,14 +171,12 @@ EXPERIMENTS = {
             ],
             "core_end2end_test": [
                 "buffer_list_deletion_prep",
-                "callv3_batch_validation",
                 "chaotic_good_send_supported_features",
                 "local_connector_secure",
                 "otel_export_telemetry_domains",
                 "pipelined_read_secure_endpoint",
                 "pollset_alternative",
                 "promise_based_http2_client_transport",
-                "promise_filter_send_cancel_metadata",
                 "retry_in_callv3",
                 "secure_endpoint_offload_large_reads",
                 "secure_endpoint_offload_large_writes",
@@ -227,6 +225,7 @@ EXPERIMENTS = {
                 "event_engine_dns",
             ],
             "core_end2end_test": [
+                "callv3_batch_validation",
                 "error_flatten",
                 "event_engine_client",
                 "event_engine_dns_non_client_channel",
