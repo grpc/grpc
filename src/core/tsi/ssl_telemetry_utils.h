@@ -24,35 +24,35 @@
 namespace grpc_core {
 
 enum class TlsTelemetryHandshakeResult {
-  UNKNOWN_FAILURE,
-  SUCCESS,
+  kUnknownFailure,
+  kSuccess,
   // Peer certificate verification failures.
-  CERTIFICATE_VERIFICATION_FAILED,
-  CERTIFICATE_REVOKED,
-  CERTIFICATE_EXPIRED,
-  CERTIFICATE_NOT_YET_VALID,
-  CERTIFICATE_AUTHORITY_INVALID,
-  PEER_CERTIFICATE_REQUIRED_BUT_MISSING,
-  CRL_NOT_FOUND,
-  CRL_EXPIRED,
-  CRL_SIGNATURE_FAILURE,
+  kCertificateVerificationFailed,
+  kCertificateRevoked,
+  kCertificateExpired,
+  kCertificateNotYetValid,
+  kCertificateAuthorityInvalid,
+  kPeerCertificateRequiredButMissing,
+  kCrlNotFound,
+  kCrlExpired,
+  kCrlSignatureFailure,
   // TLS negotiation mismatch failures
-  CERTIFICATE_HOSTNAME_MISMATCH,
-  CERTIFICATE_MALFORMED,
-  CIPHER_SUITE_MISMATCH,
-  PROTOCOL_VERSION_UNSUPPORTED,
-  INAPPROPRIATE_FALLBACK,
-  NO_APPLICATION_PROTOCOL,
+  kCertificateHostnameMismatch,
+  kCertificateMalformed,
+  kCipherSuiteMismatch,
+  kProtocolVersionUnsupported,
+  kInappropriateFallback,
+  kNoApplicationProtocol,
   // Cryptograpic failures
-  SIGNATURE_VERIFICATION_FAILED,
-  DECRYPTION_FAILED,
-  KEY_EXCHANGE_FAILURE,
-  PRIVATE_KEY_SIGNING_FAILED,
+  kSignatureVerificationFailed,
+  kDecryptionFailed,
+  kKeyExchangeFailure,
+  kPrivateKeySigningFailed,
   // Other failures
-  UNEXPECTED_MESSAGE,
-  HANDSHAKE_TIMEOUT,
-  PEER_CONNECTION_CLOSED,
-  INTERNAL_SYSTEM_ERROR
+  kUnexpectedMessage,
+  kHandshakeTimeout,
+  kPeerConnectionClosed,
+  kInternalSystemError
 };
 
 // Maps different kinds of handshake/SSL/TLS errors to a unified
