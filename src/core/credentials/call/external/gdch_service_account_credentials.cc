@@ -25,7 +25,6 @@
 #include <openssl/bio.h>
 #include <openssl/evp.h>
 #include <openssl/pem.h>
-#include <openssl/rsa.h>
 #include <string.h>
 
 #include <memory>
@@ -42,6 +41,7 @@
 #include "src/core/util/json/json.h"
 #include "src/core/util/json/json_reader.h"
 #include "src/core/util/sync.h"
+#include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
@@ -258,7 +258,7 @@ GDCHServiceAccountCredentials::ParseServiceAccountJson(Json const& json) {
   auto required_field = [&](absl::string_view name, iterator_type const& l,
                             std::optional<std::string> const& value) {
     if (l == json.object().end()) {
-      return GRPC_ERROR_CREATE(absl::StrCat(name, "field not present"));
+      return GRPC_ERROR_CREATE(absl::StrCat(name, " field not present"));
     }
     if (l->second.string().empty()) {
       return GRPC_ERROR_CREATE(absl::StrCat(name, " field must not be empty"));
@@ -345,7 +345,7 @@ GDCHServiceAccountCredentials::GDCHServiceAccountCredentials(
       info_(std::move(info)),
       audience_(std::move(audience)) {}
 
-std::pair<std::string, std::string>
+GDCHServiceAccountCredentials::AssertionComponents
 GDCHServiceAccountCredentials::AssertionComponentsFromInfo(
     Info const& info, std::chrono::system_clock::time_point now) {
   Json header = Json::FromObject({
@@ -370,7 +370,7 @@ GDCHServiceAccountCredentials::AssertionComponentsFromInfo(
       {"exp", Json::FromNumber(expiration_from_epoch)},
   });
 
-  return std::make_pair(JsonDump(header), JsonDump(claim));
+  return {JsonDump(header), JsonDump(claim)};
 }
 
 absl::StatusOr<std::string> GDCHServiceAccountCredentials::MakeJWTAssertion(
@@ -420,22 +420,15 @@ GDCHServiceAccountCredentials::FormatHttpRequest(Info const& info,
 
   auto request = GrpcHttpRequestUniquePtr(new grpc_http_request);
   memset(request.get(), 0, sizeof(grpc_http_request));
-  std::vector<absl::string_view> v =
-      absl::StrSplit(info.token_uri, absl::MaxSplits('/', 3));
-  std::string url_full_path = absl::StrCat("/", v[3]);
-  request->path = gpr_strdup(url_full_path.c_str());
-  grpc_http_header* headers = nullptr;
+  auto url = URI::Parse(info.token_uri);
+  if (!url.ok()) return url.status();
+  request->path = gpr_strdup(url->path().empty() ? "/" : url->path().c_str());
   request->hdr_count = 1;
-  headers = static_cast<grpc_http_header*>(
-      gpr_malloc(sizeof(grpc_http_header) * request->hdr_count));
-  int i = 0;
-  for (auto const& header : {std::pair<std::string, std::string>{
-           "content-type", "application/json"}}) {
-    headers[i].key = gpr_strdup(header.first.c_str());
-    headers[i].value = gpr_strdup(header.second.c_str());
-    ++i;
-  }
-  request->hdrs = headers;
+  request->hdrs = static_cast<grpc_http_header*>(
+      gpr_malloc(sizeof(grpc_http_header)));
+  request->hdrs[0].key = gpr_strdup("content-type");
+  request->hdrs[0].value = gpr_strdup("application/json");
+
   request->body_length = static_cast<int>(body->size());
   request->body = gpr_strdup(body->c_str());
   return request;
@@ -465,7 +458,7 @@ UniqueTypeName GDCHServiceAccountCredentials::Type() {
 
 std::string GDCHServiceAccountCredentials::debug_string() {
   return absl::StrCat("GDCHServiceAccountCredentials{Audience:", audience(),
-                      ")");
+                      "}");
 }
 
 class GDCHServiceAccountCredentials::GDCHFetchRequest final

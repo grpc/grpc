@@ -99,7 +99,11 @@ class GDCHServiceAccountCredentials final : public ExternalAccountCredentials {
       std::shared_ptr<grpc_event_engine::experimental::EventEngine>
           event_engine);
 
-  static std::pair<std::string, std::string> AssertionComponentsFromInfo(
+  struct AssertionComponents {
+    std::string header;
+    std::string claim;
+  };
+  static AssertionComponents AssertionComponentsFromInfo(
       Info const& info, std::chrono::system_clock::time_point now);
 
   static absl::StatusOr<std::string> MakeJWTAssertion(
