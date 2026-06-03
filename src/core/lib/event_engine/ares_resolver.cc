@@ -368,7 +368,22 @@ void AresResolver::LookupHostname(
   callback_map_.emplace(++id_, std::move(callback));
   auto* resolver_arg = new HostnameQueryArg(this, id_, name, port);
   GRPC_CHECK_NE(channel_, nullptr);
-  if (AresIsIpv6LoopbackAvailable()) {
+  if (grpc_core::ConfigVars::Get().DnsAresQueryUseGetaddrinfo()) {
+    // Issue a single combined A + AAAA query. Unlike the two separate
+    // ares_gethostbyname() calls below, ares_getaddrinfo() with AF_UNSPEC
+    // returns as soon as one address family is satisfied and stops retrying the
+    // other, so a silently-dropped AAAA response no longer blocks resolution
+    // until the query timeout. See
+    // https://github.com/grpc/grpc/issues/35638.
+    //
+    // OnAddrinfoDoneLocked() owns the HostnameQueryArg and finalizes on this
+    // single callback, so unlike the ares_gethostbyname() paths below it does
+    // not use the pending_requests counter.
+    ares_addrinfo_hints hints = {};
+    hints.ai_family = AF_UNSPEC;
+    ares_getaddrinfo(channel_, std::string(host).c_str(), /*service=*/nullptr,
+                     &hints, &AresResolver::OnAddrinfoDoneLocked, resolver_arg);
+  } else if (AresIsIpv6LoopbackAvailable()) {
     // Note that using AF_UNSPEC for both IPv6 and IPv4 queries does not work in
     // all cases, e.g. for localhost:<> it only gets back the IPv6 result (i.e.
     // ::1).
@@ -715,32 +730,147 @@ void AresResolver::OnHostbynameDoneLocked(void* arg, int status,
       }
     }
   }
+  // Both the A and AAAA queries must complete before we report the (merged)
+  // result to the caller.
   if (hostname_qa->pending_requests == 0) {
-    auto nh =
-        ares_resolver->callback_map_.extract(hostname_qa->callback_map_id);
-    if (nh.empty()) {
-      delete hostname_qa;
-      return;
-    }
-    GRPC_CHECK(std::holds_alternative<
-               EventEngine::DNSResolver::LookupHostnameCallback>(nh.mapped()));
-    auto callback = std::get<EventEngine::DNSResolver::LookupHostnameCallback>(
-        std::move(nh.mapped()));
-    if (!hostname_qa->result.empty() || hostname_qa->error_status.ok()) {
-      ares_resolver->event_engine_->Run(
-          [callback = std::move(callback),
-           result = SortAddresses(hostname_qa->result)]() mutable {
-            callback(std::move(result));
-          });
-    } else {
-      ares_resolver->event_engine_->Run(
-          [callback = std::move(callback),
-           result = std::move(hostname_qa->error_status)]() mutable {
-            callback(std::move(result));
-          });
-    }
+    ares_resolver->FinishHostnameLookupLocked(
+        hostname_qa->callback_map_id, std::move(hostname_qa->result),
+        std::move(hostname_qa->error_status));
     delete hostname_qa;
   }
+}
+
+void AresResolver::FinishHostnameLookupLocked(
+    int callback_map_id, std::vector<EventEngine::ResolvedAddress> addresses,
+    absl::Status error_status) {
+  // Recover the pending LookupHostname callback by id. If it is gone the
+  // request was cancelled/shut down, so there is nothing to report.
+  auto nh = callback_map_.extract(callback_map_id);
+  if (nh.empty()) {
+    return;
+  }
+  GRPC_CHECK(
+      std::holds_alternative<EventEngine::DNSResolver::LookupHostnameCallback>(
+          nh.mapped()));
+  auto callback = std::get<EventEngine::DNSResolver::LookupHostnameCallback>(
+      std::move(nh.mapped()));
+  // Dispatch via event_engine_->Run() rather than calling inline: the callback
+  // is user code and mutex_ is held here, so running it inline could deadlock
+  // or re-enter the resolver.
+  if (!addresses.empty() || error_status.ok()) {
+    // Success (or a legitimately empty result). SortAddresses() applies RFC
+    // 6724 destination-address ordering (e.g. IPv6 loopback ahead of IPv4).
+    event_engine_->Run([callback = std::move(callback),
+                        result = SortAddresses(addresses)]() mutable {
+      callback(std::move(result));
+    });
+  } else {
+    // No addresses and an error was recorded: report the failure status.
+    event_engine_->Run([callback = std::move(callback),
+                        status = std::move(error_status)]() mutable {
+      callback(std::move(status));
+    });
+  }
+}
+
+// Completion callback for ares_getaddrinfo(). This is the ares_getaddrinfo()
+// analogue of OnHostbynameDoneLocked() above and is adapted from it; the result
+// parsing and completion logic mirror that function, differing only where the
+// ares_getaddrinfo() API requires it (see the per-block comments below). It is
+// only reached when the experimental GRPC_DNS_ARES_QUERY_USE_GETADDRINFO flag is
+// enabled; otherwise LookupHostname() uses the OnHostbynameDoneLocked() path.
+// Unlike OnHostbynameDoneLocked(), which c-ares calls once per address family
+// (A and AAAA) for a hostname, ares_getaddrinfo() makes a single combined query
+// and so this callback fires exactly once with all results in `addrinfo`.
+void AresResolver::OnAddrinfoDoneLocked(void* arg, int status, int /*timeouts*/,
+                                        struct ares_addrinfo* addrinfo) {
+  // `arg` is the HostnameQueryArg allocated in LookupHostname(). Adopt it into
+  // a unique_ptr so it is freed however we exit this function (success, error,
+  // or an already-cancelled request below).
+  std::unique_ptr<HostnameQueryArg> hostname_qa(
+      static_cast<HostnameQueryArg*>(arg));
+  auto* ares_resolver = hostname_qa->ares_resolver;
+  if (status != ARES_SUCCESS) {
+    // DNS lookup failed (e.g. NXDOMAIN, timeout, cancellation). Record the
+    // failure as an absl::Status; it is reported to the caller below.
+    std::string error_msg =
+        absl::StrFormat("address lookup failed for %s: %s",
+                        hostname_qa->query_name, ares_strerror(status));
+    GRPC_TRACE_LOG(cares_resolver, INFO)
+        << "(EventEngine c-ares resolver) resolver:" << ares_resolver
+        << " OnAddrinfoDoneLocked: " << error_msg;
+    hostname_qa->error_status = AresStatusToAbslStatus(status, error_msg);
+  } else {
+    GRPC_TRACE_LOG(cares_resolver, INFO)
+        << "(EventEngine c-ares resolver) resolver:" << ares_resolver
+        << " OnAddrinfoDoneLocked name=" << hostname_qa->query_name
+        << " ARES_SUCCESS";
+    // ares_getaddrinfo() returns its results as a singly-linked list of nodes
+    // (addrinfo->nodes), with both A and AAAA records intermixed. Walk the list
+    // and convert each node into an EventEngine::ResolvedAddress.
+    for (const ares_addrinfo_node* node = addrinfo != nullptr ? addrinfo->nodes
+                                                              : nullptr;
+         node != nullptr; node = node->ai_next) {
+      // Defensive cap against a malicious/huge DNS response OOMing the process.
+      if (hostname_qa->result.size() == kMaxRecordSize) {
+        LOG(ERROR) << "A/AAAA response exceeds maximum record size of 65536";
+        break;
+      }
+      switch (node->ai_family) {
+        case AF_INET6: {
+          // node->ai_addr points at a sockaddr_in6 for AF_INET6. Copy it out,
+          // then stamp in the port: DNS only yields an IP address, so the port
+          // comes from the host:port the caller originally asked to resolve.
+          size_t addr_len = sizeof(struct sockaddr_in6);
+          struct sockaddr_in6 addr;
+          memset(&addr, 0, addr_len);
+          memcpy(&addr, node->ai_addr, addr_len);
+          addr.sin6_port = htons(hostname_qa->port);
+          hostname_qa->result.emplace_back(
+              reinterpret_cast<const sockaddr*>(&addr), addr_len);
+          char output[INET6_ADDRSTRLEN];
+          ares_inet_ntop(AF_INET6, &addr.sin6_addr, output, INET6_ADDRSTRLEN);
+          GRPC_TRACE_LOG(cares_resolver, INFO)
+              << "(EventEngine c-ares resolver) resolver:" << ares_resolver
+              << " c-ares resolver gets a AF_INET6 result: \n  addr: " << output
+              << "\n  port: " << hostname_qa->port
+              << "\n  sin6_scope_id: " << addr.sin6_scope_id;
+          break;
+        }
+        case AF_INET: {
+          // Same as the AF_INET6 case above, but for an IPv4 sockaddr_in.
+          size_t addr_len = sizeof(struct sockaddr_in);
+          struct sockaddr_in addr;
+          memset(&addr, 0, addr_len);
+          memcpy(&addr, node->ai_addr, addr_len);
+          addr.sin_port = htons(hostname_qa->port);
+          hostname_qa->result.emplace_back(
+              reinterpret_cast<const sockaddr*>(&addr), addr_len);
+          char output[INET_ADDRSTRLEN];
+          ares_inet_ntop(AF_INET, &addr.sin_addr, output, INET_ADDRSTRLEN);
+          GRPC_TRACE_LOG(cares_resolver, INFO)
+              << "(EventEngine c-ares resolver) resolver:" << ares_resolver
+              << " c-ares resolver gets a AF_INET result: \n  addr: " << output
+              << "\n  port: " << hostname_qa->port;
+          break;
+        }
+        default:
+          // Ignore address families other than A/AAAA.
+          break;
+      }
+    }
+  }
+  // The ares_addrinfo list is heap-allocated by c-ares and owned by us (this
+  // differs from ares_gethostbyname(), whose hostent is owned by c-ares). Free
+  // it now that we have copied everything we need out of it.
+  if (addrinfo != nullptr) {
+    ares_freeaddrinfo(addrinfo);
+  }
+  // Report the (single, combined) result via the shared completion path. The
+  // unique_ptr above frees hostname_qa on return.
+  ares_resolver->FinishHostnameLookupLocked(
+      hostname_qa->callback_map_id, std::move(hostname_qa->result),
+      std::move(hostname_qa->error_status));
 }
 
 void AresResolver::OnSRVQueryDoneLocked(void* arg, int status, int /*timeouts*/,

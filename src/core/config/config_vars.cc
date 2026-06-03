@@ -52,6 +52,13 @@ ABSL_FLAG(absl::optional<std::string>, grpc_dns_resolver, {},
           "Declares which DNS resolver to use. The default is ares if gRPC is "
           "built with c-ares support. Otherwise, the value of this environment "
           "variable is ignored.");
+ABSL_FLAG(absl::optional<bool>, grpc_dns_ares_query_use_getaddrinfo, {},
+          "EXPERIMENTAL. If true, the c-ares based DNS resolver issues a "
+          "single combined A and AAAA query via ares_getaddrinfo() with "
+          "AF_UNSPEC instead of two separate ares_gethostbyname() queries. "
+          "This returns as soon as one address family is satisfied, avoiding "
+          "long delays when a resolver silently drops AAAA queries. See "
+          "https://github.com/grpc/grpc/issues/35638.");
 ABSL_FLAG(std::vector<std::string>, grpc_trace, {},
           "A comma separated list of tracers that provide additional insight "
           "into how gRPC C core is processing requests via debug logs.");
@@ -123,6 +130,10 @@ ConfigVars::ConfigVars(const Overrides& overrides)
           LoadConfig(FLAGS_grpc_experimental_memory_pressure_threshold,
                      "GRPC_EXPERIMENTAL_MEMORY_PRESSURE_THRESHOLD",
                      overrides.experimental_memory_pressure_threshold, 0.99)),
+      dns_ares_query_use_getaddrinfo_(
+          LoadConfig(FLAGS_grpc_dns_ares_query_use_getaddrinfo,
+                     "GRPC_DNS_ARES_QUERY_USE_GETADDRINFO",
+                     overrides.dns_ares_query_use_getaddrinfo, false)),
       enable_fork_support_(LoadConfig(
           FLAGS_grpc_enable_fork_support, "GRPC_ENABLE_FORK_SUPPORT",
           overrides.enable_fork_support, GRPC_ENABLE_FORK_SUPPORT_DEFAULT)),
@@ -180,7 +191,8 @@ std::string ConfigVars::ToString() const {
       "experiments: ", "\"", absl::CEscape(Experiments()), "\"",
       ", client_channel_backup_poll_interval_ms: ",
       ClientChannelBackupPollIntervalMs(), ", dns_resolver: ", "\"",
-      absl::CEscape(DnsResolver()), "\"", ", trace: ", "\"",
+      absl::CEscape(DnsResolver()), "\"", ", dns_ares_query_use_getaddrinfo: ",
+      DnsAresQueryUseGetaddrinfo() ? "true" : "false", ", trace: ", "\"",
       absl::CEscape(Trace()), "\"", ", verbosity: ", "\"",
       absl::CEscape(Verbosity()), "\"",
       ", enable_fork_support: ", EnableForkSupport() ? "true" : "false",

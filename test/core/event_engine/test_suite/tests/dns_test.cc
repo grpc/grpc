@@ -435,6 +435,108 @@ TEST_F(EventEngineDNSTest, StressTestQueryARecordWithNameDeletion) {
   }
 }
 
+// Re-runs hostname resolution against the experimental ares_getaddrinfo() code
+// path (GRPC_DNS_ARES_QUERY_USE_GETADDRINFO=true). This issues a single
+// combined A + AAAA query instead of two separate ares_gethostbyname() queries,
+// which avoids long delays when a resolver silently drops AAAA responses. See
+// https://github.com/grpc/grpc/issues/35638.
+class EventEngineDNSGetAddrInfoTest : public EventEngineDNSTest {
+ protected:
+  static void SetUpTestSuite() {
+    grpc_core::ConfigVars::Overrides overrides;
+    overrides.dns_ares_query_use_getaddrinfo = true;
+    grpc_core::ConfigVars::SetOverrides(overrides);
+    EventEngineDNSTest::SetUpTestSuite();
+  }
+
+  static void TearDownTestSuite() {
+    EventEngineDNSTest::TearDownTestSuite();
+    grpc_core::ConfigVars::Reset();
+  }
+};
+
+// An ipv4-only target has no AAAA records, exercising the "only one address
+// family is returned" path that motivated the ares_getaddrinfo() switch.
+TEST_F(EventEngineDNSGetAddrInfoTest, QueryARecord) {
+  SKIP_TEST_FOR_NATIVE_DNS_RESOLVER();
+  auto dns_resolver = CreateDefaultDNSResolver();
+  dns_resolver->LookupHostname(
+      [this](auto result) {
+        ASSERT_TRUE(result.ok());
+        EXPECT_THAT(*result, UnorderedPointwise(
+                                 ResolvedAddressEq(),
+                                 {*URIToResolvedAddress("ipv4:1.2.3.4:443"),
+                                  *URIToResolvedAddress("ipv4:1.2.3.5:443"),
+                                  *URIToResolvedAddress("ipv4:1.2.3.6:443")}));
+        dns_resolver_signal_.Notify();
+      },
+      "ipv4-only-multi-target.dns-test.event-engine.",
+      /*default_port=*/"443");
+  dns_resolver_signal_.WaitForNotification();
+}
+
+TEST_F(EventEngineDNSGetAddrInfoTest, QueryAAAARecord) {
+  SKIP_TEST_FOR_NATIVE_DNS_RESOLVER();
+  auto dns_resolver = CreateDefaultDNSResolver();
+  dns_resolver->LookupHostname(
+      [this](auto result) {
+        ASSERT_TRUE(result.ok());
+        EXPECT_THAT(
+            *result,
+            UnorderedPointwise(
+                ResolvedAddressEq(),
+                {*URIToResolvedAddress("ipv6:[2607:f8b0:400a:801::1002]:443"),
+                 *URIToResolvedAddress("ipv6:[2607:f8b0:400a:801::1003]:443"),
+                 *URIToResolvedAddress(
+                     "ipv6:[2607:f8b0:400a:801::1004]:443")}));
+        dns_resolver_signal_.Notify();
+      },
+      "ipv6-only-multi-target.dns-test.event-engine.:443",
+      /*default_port=*/"");
+  dns_resolver_signal_.WaitForNotification();
+}
+
+// Both address families are present; verifies the combined query merges them.
+TEST_F(EventEngineDNSGetAddrInfoTest, QueryDualStackRecord) {
+  SKIP_TEST_FOR_NATIVE_DNS_RESOLVER();
+  auto dns_resolver = CreateDefaultDNSResolver();
+  dns_resolver->LookupHostname(
+      [this](auto result) {
+        ASSERT_TRUE(result.ok());
+        EXPECT_THAT(*result, UnorderedPointwise(
+                                 ResolvedAddressEq(),
+                                 {*URIToResolvedAddress("ipv4:1.2.3.4:443"),
+                                  *URIToResolvedAddress(
+                                      "ipv6:[2607:f8b0:400a:801::1002]:443")}));
+        dns_resolver_signal_.Notify();
+      },
+      "ipv4-and-ipv6-target.dns-test.event-engine.:443",
+      /*default_port=*/"");
+  dns_resolver_signal_.WaitForNotification();
+}
+
+// localhost is the case that motivated splitting LookupHostname() into two
+// separate ares_gethostbyname() queries: a single AF_UNSPEC gethostbyname()
+// only returns the IPv6 result (::1) for localhost (see the comment in
+// AresResolver::LookupHostname). ares_getaddrinfo() with AF_UNSPEC returns
+// both families, so verify that we get 127.0.0.1 and ::1 back.
+TEST_F(EventEngineDNSGetAddrInfoTest, QueryLocalhost) {
+  SKIP_TEST_FOR_NATIVE_DNS_RESOLVER();
+  auto dns_resolver = CreateDefaultDNSResolver();
+  dns_resolver->LookupHostname(
+      [this](auto result) {
+        ASSERT_TRUE(result.ok());
+        EXPECT_THAT(*result, UnorderedPointwise(
+                                 ResolvedAddressEq(),
+                                 {*URIToResolvedAddress("ipv4:127.0.0.1:443"),
+                                  *URIToResolvedAddress("ipv6:[::1]:443")}));
+        dns_resolver_signal_.Notify();
+      },
+      "localhost:443",
+      /*default_port=*/"");
+  dns_resolver_signal_.WaitForNotification();
+}
+
 #endif  // GRPC_IOS_EVENT_ENGINE_CLIENT
 
 #define EXPECT_SUCCESS()           \
