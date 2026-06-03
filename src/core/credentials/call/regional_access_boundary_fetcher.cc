@@ -34,6 +34,7 @@
 #include "absl/log/log.h"
 #include "absl/strings/ascii.h"
 #include "absl/strings/match.h"
+#include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 
 namespace grpc_core {
@@ -46,26 +47,6 @@ constexpr Duration kRegionalAccessBoundaryCacheDuration = Duration::Hours(6);
 constexpr absl::string_view kRegionalEndpoint = "rep.googleapis.com";
 constexpr char kComputeEngineDefaultSaEmailPath[] =
     "/computeMetadata/v1/instance/service-accounts/default/email";
-
-bool IsValidEmail(absl::string_view email) {
-  size_t at_pos = email.find('@');
-  if (at_pos == absl::string_view::npos || at_pos == 0 ||
-      at_pos == email.size() - 1) {
-    return false;
-  }
-  if (email.find('@', at_pos + 1) != absl::string_view::npos) {
-    return false;
-  }
-  absl::string_view domain = email.substr(at_pos + 1);
-  size_t dot_pos = domain.find('.');
-  while (dot_pos != absl::string_view::npos) {
-    if (dot_pos > 0 && dot_pos < domain.size() - 1) {
-      return true;
-    }
-    dot_pos = domain.find('.', dot_pos + 1);
-  }
-  return false;
-}
 }  // namespace
 
 RefCountedPtr<RegionalAccessBoundaryFetcher>
@@ -115,10 +96,14 @@ void RegionalAccessBoundaryFetcher::OnFetchFailure(
     grpc_error_handle error, int http_status, absl::string_view response_body) {
   MutexLock lock(&cache_mu_);
   if (shutdown_) return;
-  LOG(WARNING) << "Regional access boundary request will be retried after "
-                  "failing with error: "
-               << StatusToString(error) << ", HTTP Status: " << http_status
-               << ", Body: " << response_body;
+  auto log_message = absl::StrCat(
+      "Regional access boundary request will be retried after failing with "
+      "error: ",
+      StatusToString(error), ", HTTP Status: ", http_status);
+  if (response_body.data() != nullptr) {
+    absl::StrAppend(&log_message, ", Body: ", response_body);
+  }
+  LOG(WARNING) << log_message;
   next_fetch_time_ = Timestamp::Now() + backoff_.NextAttemptDelay();
   pending_request_.reset();
 }
@@ -233,7 +218,7 @@ void RegionalAccessBoundaryFetcher::Request::OnResponse(
     grpc_error_handle error) {
   bool success = false;
   std::string encoded_locations;
-  absl::string_view response_body = "";  // NOLINT(readability-redundant-string-init)
+  absl::string_view response_body;
   if (response_.body != nullptr) {
     response_body = absl::string_view(response_.body, response_.body_length);
   }
@@ -307,7 +292,7 @@ class EmailFetcher::EmailRequest final
   }
 
   void OnResponse(grpc_error_handle error) {
-    absl::string_view response_body = "";  // NOLINT(readability-redundant-string-init)
+    absl::string_view response_body;
     if (response_.body != nullptr) {
       response_body = absl::string_view(response_.body, response_.body_length);
     }
@@ -402,5 +387,25 @@ void EmailFetcher::OnEmailFetchError(grpc_error_handle error) {
         nullptr);  // Reset to allow retry on next invocation.
     next_fetch_earliest_time_ = Timestamp::Now() + backoff_.NextAttemptDelay();
   }
+}
+
+bool EmailFetcher::IsValidEmail(absl::string_view email) {
+  size_t at_pos = email.find('@');
+  if (at_pos == absl::string_view::npos || at_pos == 0 ||
+      at_pos == email.size() - 1) {
+    return false;
+  }
+  if (email.find('@', at_pos + 1) != absl::string_view::npos) {
+    return false;
+  }
+  absl::string_view domain = email.substr(at_pos + 1);
+  size_t dot_pos = domain.find('.');
+  while (dot_pos != absl::string_view::npos) {
+    if (dot_pos > 0 && dot_pos < domain.size() - 1) {
+      return true;
+    }
+    dot_pos = domain.find('.', dot_pos + 1);
+  }
+  return false;
 }
 }  // namespace grpc_core

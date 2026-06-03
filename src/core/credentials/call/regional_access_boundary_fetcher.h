@@ -121,6 +121,8 @@ class EmailFetcher final : public DualRefCounted<EmailFetcher> {
 
   ~EmailFetcher() override;
 
+  static bool IsValidEmail(absl::string_view email);
+
   void StartEmailFetch();
 
   // Wrapper for RAB fetcher.

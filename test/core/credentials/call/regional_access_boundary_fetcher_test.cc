@@ -39,8 +39,12 @@
 #include "test/core/test_util/test_config.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
+#include "absl/log/log_entry.h"
+#include "absl/log/log_sink.h"
+#include "absl/log/log_sink_registry.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
+#include "absl/strings/match.h"
 #include "absl/strings/string_view.h"
 
 namespace grpc_core {
@@ -385,6 +389,51 @@ TEST_F(RegionalAccessBoundaryFetcherTest, RetryableHttpErrors) {
   ExecCtx::Get()->Flush();
   EXPECT_EQ(g_mock_get_count, 2);
   fetcher_.reset();
+}
+
+int httpcli_get_network_error(const grpc_http_request* /*request*/,
+                              const URI& /*uri*/, Timestamp /*deadline*/,
+                              grpc_closure* on_done,
+                              grpc_http_response* /*response*/) {
+  ExecCtx::Run(DEBUG_LOCATION, on_done, absl::UnavailableError("Connection refused"));
+  return 1;
+}
+
+class TestLogSink : public absl::LogSink {
+ public:
+  void Send(const absl::LogEntry& entry) override {
+    messages.push_back(std::string(entry.text_message()));
+  }
+  std::vector<std::string> messages;
+};
+
+TEST_F(RegionalAccessBoundaryFetcherTest, NetworkErrorLogsResponseCorrectly) {
+  ExecCtx exec_ctx;
+  HttpRequest::SetOverride(httpcli_get_network_error, nullptr, nullptr);
+  metadata_->Append("authorization", Slice::FromStaticString("Bearer token"),
+                    [](absl::string_view, const Slice&) { abort(); });
+
+  TestLogSink log_sink;
+  absl::AddLogSink(&log_sink);
+
+  fetcher_->Fetch("", *metadata_);
+  EXPECT_TRUE(fetch_in_flight());
+  ExecCtx::Get()->Flush();
+  EXPECT_FALSE(fetch_in_flight());
+  EXPECT_FALSE(has_cache());
+
+  absl::RemoveLogSink(&log_sink);
+
+  bool found_log = false;
+  for (const auto& msg : log_sink.messages) {
+    if (absl::StrContains(msg, "Regional access boundary request will be retried")) {
+      found_log = true;
+      EXPECT_THAT(msg, ::testing::HasSubstr("failing with error: UNAVAILABLE:Connection refused"));
+      EXPECT_THAT(msg, ::testing::HasSubstr("HTTP Status: 0"));
+      EXPECT_THAT(msg, ::testing::Not(::testing::HasSubstr("Body:")));
+    }
+  }
+  EXPECT_TRUE(found_log) << "Expected log message not found";
 }
 
 TEST_F(RegionalAccessBoundaryFetcherTest, RetryClearsPendingRequest) {
@@ -807,27 +856,10 @@ TEST_F(EmailFetcherTest, EmailWithWhitespaceTrimmedAndSucceeds) {
   EXPECT_THAT(value2, ::testing::Optional(absl::string_view("us-west1")));
 }
 
-std::string g_custom_email;
-int httpcli_get_custom_email(const grpc_http_request* /*request*/, const URI& uri,
-                             Timestamp /*deadline*/, grpc_closure* on_done,
-                             grpc_http_response* response) {
-  if (uri.path() ==
-      "/computeMetadata/v1/instance/service-accounts/default/email") {
-    *response = http_response(200, g_custom_email.c_str());
-  } else {
-    // RAB fetch
-    *response = http_response(
-        200,
-        "{\"encodedLocations\": \"us-west1\", \"locations\": [\"us-west1\"]}");
-  }
-  ExecCtx::Run(DEBUG_LOCATION, on_done, absl::OkStatus());
-  return 1;
-}
-
-TEST_F(EmailFetcherTest, CustomEmailsValidation) {
+TEST(IsValidEmailTest, CustomEmailsValidation) {
   struct TestCase {
-    std::string email;
-    bool should_fetch_rab;
+    absl::string_view email;
+    bool expected_valid;
   };
   std::vector<TestCase> test_cases = {
       {"foo@bar.com", true},
@@ -840,50 +872,8 @@ TEST_F(EmailFetcherTest, CustomEmailsValidation) {
       {"foo@bar.", false},
   };
   for (const auto& tc : test_cases) {
-    ExecCtx exec_ctx;
-    g_custom_email = tc.email;
-    HttpRequest::SetOverride(httpcli_get_custom_email, nullptr, nullptr);
-    
-    auto email_fetcher = MakeRefCounted<EmailFetcher>(fuzzing_event_engine_);
-    email_fetcher->StartEmailFetch();
-    ExecCtx::Get()->Flush();
-    
-    auto metadata = arena_->MakePooled<ClientMetadata>();
-    metadata->Append("authorization", Slice::FromStaticString("Bearer token"),
-                     [](absl::string_view, const Slice&) { abort(); });
-    metadata->Append(":authority", Slice::FromStaticString("foo.googleapis.com"),
-                     [](absl::string_view, const Slice&) { abort(); });
-    email_fetcher->Fetch("token", *metadata);
-    ExecCtx::Get()->Flush();
-    
-    std::string buffer;
-    std::optional<absl::string_view> value =
-        metadata->GetStringValue("x-allowed-locations", &buffer);
-    if (tc.should_fetch_rab) {
-      auto metadata2 = arena_->MakePooled<ClientMetadata>();
-      metadata2->Append("authorization", Slice::FromStaticString("Bearer token"),
-                       [](absl::string_view, const Slice&) { abort(); });
-      metadata2->Append(":authority", Slice::FromStaticString("foo.googleapis.com"),
-                       [](absl::string_view, const Slice&) { abort(); });
-      email_fetcher->Fetch("token", *metadata2);
-      std::string buffer2;
-      std::optional<absl::string_view> value2 =
-          metadata2->GetStringValue("x-allowed-locations", &buffer2);
-      EXPECT_THAT(value2, ::testing::Optional(absl::string_view("us-west1")))
-          << "Failed for email: " << tc.email;
-    } else {
-      EXPECT_FALSE(value.has_value()) << "Failed for email: " << tc.email;
-      auto metadata2 = arena_->MakePooled<ClientMetadata>();
-      metadata2->Append("authorization", Slice::FromStaticString("Bearer token"),
-                       [](absl::string_view, const Slice&) { abort(); });
-      metadata2->Append(":authority", Slice::FromStaticString("foo.googleapis.com"),
-                       [](absl::string_view, const Slice&) { abort(); });
-      email_fetcher->Fetch("token", *metadata2);
-      std::string buffer2;
-      std::optional<absl::string_view> value2 =
-          metadata2->GetStringValue("x-allowed-locations", &buffer2);
-      EXPECT_FALSE(value2.has_value()) << "Failed for email: " << tc.email;
-    }
+    EXPECT_EQ(EmailFetcher::IsValidEmail(tc.email), tc.expected_valid)
+        << "Failed for email: " << tc.email;
   }
 }
 
