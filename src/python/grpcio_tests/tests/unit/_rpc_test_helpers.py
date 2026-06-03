@@ -410,7 +410,9 @@ class BaseRPCTest:
         self._channel = grpc.insecure_channel("127.0.0.1:%d" % port)
 
     def tearDown(self):
-        self._server.stop(None)
+        self._server.stop(0).wait()
+        if hasattr(self._server, "_test_executor"):
+            self._server._test_executor.shutdown(wait=False)
         self._channel.close()
 
     def _consume_one_stream_response_unary_request(self, multi_callable):

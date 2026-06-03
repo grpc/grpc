@@ -134,7 +134,9 @@ def _server(credentials: Optional[grpc.ServerCredentials]):
         server.start()
         yield port
     finally:
-        server.stop(None)
+        server.stop(0).wait()
+        if hasattr(server, "_test_executor"):
+            server._test_executor.shutdown(wait=False)
 
 
 class SimpleStubsTest(unittest.TestCase):

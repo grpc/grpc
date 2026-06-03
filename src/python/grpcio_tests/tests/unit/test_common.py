@@ -114,11 +114,14 @@ def test_server(max_workers=10, reuse_port=False):
     """
     server_kwargs = os.environ.get("GRPC_ADDITIONAL_SERVER_KWARGS", "{}")
     server_kwargs = ast.literal_eval(server_kwargs)
-    return grpc.server(
-        futures.ThreadPoolExecutor(max_workers=max_workers),
+    executor = futures.ThreadPoolExecutor(max_workers=max_workers)
+    server = grpc.server(
+        executor,
         options=(("grpc.so_reuseport", int(reuse_port)),),
         **server_kwargs,
     )
+    server._test_executor = executor
+    return server
 
 
 class WaitGroup:

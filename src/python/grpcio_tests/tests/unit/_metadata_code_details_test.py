@@ -256,7 +256,9 @@ class MetadataCodeDetailsTest(unittest.TestCase):
         )
 
     def tearDown(self):
-        self._server.stop(None)
+        self._server.stop(0).wait()
+        if hasattr(self._server, "_test_executor"):
+            self._server._test_executor.shutdown(wait=False)
         self._channel.close()
 
     def testSuccessfulUnaryUnary(self):
@@ -850,7 +852,9 @@ class InspectContextTest(unittest.TestCase):
         )
 
     def tearDown(self):
-        self._server.stop(None)
+        self._server.stop(0).wait()
+        if hasattr(self._server, "_test_executor"):
+            self._server._test_executor.shutdown(wait=False)
         self._channel.close()
 
     def testCodeDetailsInContext(self):
