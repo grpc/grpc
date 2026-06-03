@@ -68,7 +68,7 @@
   test_tags: []
 - name: callv3_batch_validation
   description: If enabled, perform validations on receiving a new batch.
-  expiry: 2026/09/01
+  expiry: 2026/10/31
   owner: akshitpatel@google.com
   test_tags: [core_end2end_test]
 - name: chaotic_good_framing_layer
