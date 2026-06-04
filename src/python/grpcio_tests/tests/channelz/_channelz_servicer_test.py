@@ -194,7 +194,7 @@ class ChannelzServicerTest(unittest.TestCase):
         self._pairs = _generate_channel_server_pairs(1)
         self._send_successful_unary_unary(0)
         resp = self._channelz_stub.GetChannel(
-            channelz_pb2.GetChannelRequest(channel_id=self._get_channel_id(0), wait_for_ready=True)
+            channelz_pb2.GetChannelRequest(channel_id=self._get_channel_id(0))
         )
         self.assertEqual(resp.channel.data.calls_started, 1)
         self.assertEqual(resp.channel.data.calls_succeeded, 1)
@@ -204,7 +204,7 @@ class ChannelzServicerTest(unittest.TestCase):
         self._pairs = _generate_channel_server_pairs(1)
         self._send_failed_unary_unary(0)
         resp = self._channelz_stub.GetChannel(
-            channelz_pb2.GetChannelRequest(channel_id=self._get_channel_id(0), wait_for_ready=True)
+            channelz_pb2.GetChannelRequest(channel_id=self._get_channel_id(0))
         )
         self.assertEqual(resp.channel.data.calls_started, 1)
         self.assertEqual(resp.channel.data.calls_succeeded, 0)
@@ -219,7 +219,7 @@ class ChannelzServicerTest(unittest.TestCase):
         for i in range(k_failed):
             self._send_failed_unary_unary(0)
         resp = self._channelz_stub.GetChannel(
-            channelz_pb2.GetChannelRequest(channel_id=self._get_channel_id(0), wait_for_ready=True)
+            channelz_pb2.GetChannelRequest(channel_id=self._get_channel_id(0))
         )
         self.assertEqual(resp.channel.data.calls_started, k_success + k_failed)
         self.assertEqual(resp.channel.data.calls_succeeded, k_success)
@@ -393,7 +393,7 @@ class ChannelzServicerTest(unittest.TestCase):
         self._send_successful_stream_stream(0)
 
         gc_resp = self._channelz_stub.GetChannel(
-            channelz_pb2.GetChannelRequest(channel_id=self._get_channel_id(0), wait_for_ready=True)
+            channelz_pb2.GetChannelRequest(channel_id=self._get_channel_id(0))
         )
         self.assertEqual(gc_resp.channel.data.calls_started, 1)
         self.assertEqual(gc_resp.channel.data.calls_succeeded, 1)
