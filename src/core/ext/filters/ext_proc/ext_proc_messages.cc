@@ -25,6 +25,7 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_join.h"
 #include "envoy/extensions/filters/http/ext_proc/v3/processing_mode.upb.h"
+#include "src/core/xds/grpc/xds_common_types_parser.h"
 #include "envoy/service/ext_proc/v3/external_processor.upb.h"
 #include "src/core/lib/surface/validate_metadata.h"
 #include "src/core/xds/grpc/xds_common_types.h"
@@ -32,72 +33,6 @@
 namespace grpc_core {
 
 namespace {
-
-XdsHeaderValueOption::HeaderValue ParseHeader(
-    const envoy_config_core_v3_HeaderValue* header_value) {
-  // key
-  absl::string_view key =
-      UpbStringToAbsl(envoy_config_core_v3_HeaderValue_key(header_value));
-  // value or raw_value
-  absl::string_view value;
-  if (absl::EndsWith(key, "-bin")) {
-    value = UpbStringToAbsl(
-        envoy_config_core_v3_HeaderValue_raw_value(header_value));
-    if (value.empty()) {
-      value =
-          UpbStringToAbsl(envoy_config_core_v3_HeaderValue_value(header_value));
-    }
-  } else {
-    // Key does not end in "-bin".
-    value =
-        UpbStringToAbsl(envoy_config_core_v3_HeaderValue_value(header_value));
-  }
-  return {key, value};
-}
-
-XdsHeaderValueOption::HeaderAppendAction
-UpbHeaderAppendActionToHeaderValueOptionAppendAction(
-    int32_t header_append_action) {
-  switch (header_append_action) {
-    case envoy_config_core_v3_HeaderValueOption_APPEND_IF_EXISTS_OR_ADD:
-      return XdsHeaderValueOption::HeaderAppendAction::APPEND_IF_EXISTS_OR_ADD;
-    case envoy_config_core_v3_HeaderValueOption_ADD_IF_ABSENT:
-      return XdsHeaderValueOption::HeaderAppendAction::ADD_IF_ABSENT;
-    case envoy_config_core_v3_HeaderValueOption_OVERWRITE_IF_EXISTS_OR_ADD:
-      return XdsHeaderValueOption::HeaderAppendAction::OVERWRITE_IF_EXISTS_OR_ADD;
-    case envoy_config_core_v3_HeaderValueOption_OVERWRITE_IF_EXISTS:
-      return XdsHeaderValueOption::HeaderAppendAction::OVERWRITE_IF_EXISTS;
-    default:
-      return XdsHeaderValueOption::HeaderAppendAction::APPEND_IF_EXISTS_OR_ADD;
-  }
-}
-
-XdsHeaderValueOption ParseHeaderValueOption(
-    const envoy_config_core_v3_HeaderValueOption* header_value_option_config) {
-  if (header_value_option_config == nullptr) {
-    return {};
-  }
-  XdsHeaderValueOption header_value_option;
-  // parse header
-  if (auto* header = envoy_config_core_v3_HeaderValueOption_header(
-          header_value_option_config);
-      header != nullptr) {
-    header_value_option.header = ParseHeader(header);
-  }
-  // parse header_append_action
-  int32_t header_append_action =
-      envoy_config_core_v3_HeaderValueOption_append_action(
-          header_value_option_config);
-  header_value_option.append_action =
-      UpbHeaderAppendActionToHeaderValueOptionAppendAction(
-          header_append_action);
-  // parse keep_empty_value
-  auto keep_empty_value =
-      envoy_config_core_v3_HeaderValueOption_keep_empty_value(
-          header_value_option_config);
-  header_value_option.keep_empty_value = keep_empty_value;
-  return header_value_option;
-}
 
 ExtProcResponse::HeaderMutation ParseHeaderMutation(
     const envoy_service_ext_proc_v3_HeaderMutation* header_mutation) {
@@ -110,23 +45,24 @@ ExtProcResponse::HeaderMutation ParseHeaderMutation(
       envoy_service_ext_proc_v3_HeaderMutation_set_headers(header_mutation,
                                                            &set_headers_size);
   for (size_t i = 0; i < set_headers_size; ++i) {
-    auto parsed = ParseHeaderValueOption(set_headers[i]);
+    ValidationErrors errors;
+    auto parsed = ParseHeaderValueOption(set_headers[i], &errors);
     // Extract and copy the keys/values to the reference-stable backing
     // strings list inside the response, then re-point XdsHeaderValueOption's
     // string views to these stable list buffers to prevent dangling pointers
     // when the local upb::Arena goes out of scope.
     header_mutation_response.backing_strings.push_back(
-        std::string(parsed.header.key));
+        std::string(parsed.header.first));
     absl::string_view stable_key =
         header_mutation_response.backing_strings.back();
 
     header_mutation_response.backing_strings.push_back(
-        std::string(parsed.header.value));
+        std::string(parsed.header.second));
     absl::string_view stable_val =
         header_mutation_response.backing_strings.back();
 
-    parsed.header.key = stable_key;
-    parsed.header.value = stable_val;
+    parsed.header.first = stable_key;
+    parsed.header.second = stable_val;
 
     header_mutation_response.set_headers.push_back(parsed);
   }
@@ -199,31 +135,6 @@ absl::StatusOr<ExtProcResponse::BodyMutation> ParseBodyMutation(
   return ExtProcResponse::BodyMutation{
       UpbStringToStdString(body), end_of_stream, end_of_stream_without_message};
 }
-
-#if 0
-envoy_config_core_v3_HeaderValue* ParseEnvoyHeaderValue(absl::string_view key,
-                                                        absl::string_view value,
-                                                        upb_Arena* arena) {
-  if (key.empty()) return nullptr;
-  if (key.size() > 16384) return nullptr;
-  if (key == "host") return nullptr;
-  if (ValidateHeaderKeyIsLegal(key) != ValidateMetadataResult::kOk) {
-    return nullptr;
-  }
-  if (value.size() > 16384) return nullptr;
-  auto* header_value = envoy_config_core_v3_HeaderValue_new(arena);
-  envoy_config_core_v3_HeaderValue_set_key(header_value,
-                                           StdStringToUpbString(key));
-  if (absl::EndsWith(key, "-bin")) {
-    envoy_config_core_v3_HeaderValue_set_raw_value(header_value,
-                                                   StdStringToUpbString(value));
-  } else {
-    envoy_config_core_v3_HeaderValue_set_value(header_value,
-                                               StdStringToUpbString(value));
-  }
-  return header_value;
-}
-#endif
 
 class UpbStructHeadersEncoder {
  public:

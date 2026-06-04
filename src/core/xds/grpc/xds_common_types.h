@@ -155,6 +155,8 @@ struct XdsHeaderValueOption {
   // If false, options with empty values are skipped during addition. If true,
   // empty values are explicitly added to the metadata batch.
   bool keep_empty_value;
+
+  std::string ToString() const;
 };
 
 absl::Status ApplyXdsHeaderMutationsRemoval(
