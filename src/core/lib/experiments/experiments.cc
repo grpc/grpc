@@ -199,6 +199,12 @@ const char* const description_promise_based_http2_client_transport =
     "also help with interop testing.";
 const char* const additional_constraints_promise_based_http2_client_transport =
     "{}";
+const char* const description_promise_based_http2_server_transport =
+    "Use promises for the http2 server transport. We have kept client and "
+    "server transport experiments separate to help with smoother roll outs and "
+    "also help with interop testing.";
+const char* const additional_constraints_promise_based_http2_server_transport =
+    "{}";
 const char* const description_promise_based_inproc_transport =
     "Use call-v3 for the in-process transport.";
 const char* const additional_constraints_promise_based_inproc_transport = "{}";
@@ -410,6 +416,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"promise_based_http2_client_transport",
      description_promise_based_http2_client_transport,
      additional_constraints_promise_based_http2_client_transport, nullptr, 0,
+     false, true},
+    {"promise_based_http2_server_transport",
+     description_promise_based_http2_server_transport,
+     additional_constraints_promise_based_http2_server_transport, nullptr, 0,
      false, true},
     {"promise_based_inproc_transport",
      description_promise_based_inproc_transport,
@@ -664,6 +674,12 @@ const char* const description_promise_based_http2_client_transport =
     "also help with interop testing.";
 const char* const additional_constraints_promise_based_http2_client_transport =
     "{}";
+const char* const description_promise_based_http2_server_transport =
+    "Use promises for the http2 server transport. We have kept client and "
+    "server transport experiments separate to help with smoother roll outs and "
+    "also help with interop testing.";
+const char* const additional_constraints_promise_based_http2_server_transport =
+    "{}";
 const char* const description_promise_based_inproc_transport =
     "Use call-v3 for the in-process transport.";
 const char* const additional_constraints_promise_based_inproc_transport = "{}";
@@ -875,6 +891,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"promise_based_http2_client_transport",
      description_promise_based_http2_client_transport,
      additional_constraints_promise_based_http2_client_transport, nullptr, 0,
+     false, true},
+    {"promise_based_http2_server_transport",
+     description_promise_based_http2_server_transport,
+     additional_constraints_promise_based_http2_server_transport, nullptr, 0,
      false, true},
     {"promise_based_inproc_transport",
      description_promise_based_inproc_transport,
@@ -1129,6 +1149,12 @@ const char* const description_promise_based_http2_client_transport =
     "also help with interop testing.";
 const char* const additional_constraints_promise_based_http2_client_transport =
     "{}";
+const char* const description_promise_based_http2_server_transport =
+    "Use promises for the http2 server transport. We have kept client and "
+    "server transport experiments separate to help with smoother roll outs and "
+    "also help with interop testing.";
+const char* const additional_constraints_promise_based_http2_server_transport =
+    "{}";
 const char* const description_promise_based_inproc_transport =
     "Use call-v3 for the in-process transport.";
 const char* const additional_constraints_promise_based_inproc_transport = "{}";
@@ -1340,6 +1366,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"promise_based_http2_client_transport",
      description_promise_based_http2_client_transport,
      additional_constraints_promise_based_http2_client_transport, nullptr, 0,
+     false, true},
+    {"promise_based_http2_server_transport",
+     description_promise_based_http2_server_transport,
+     additional_constraints_promise_based_http2_server_transport, nullptr, 0,
      false, true},
     {"promise_based_inproc_transport",
      description_promise_based_inproc_transport,

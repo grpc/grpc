@@ -62,6 +62,7 @@ EXPERIMENT_ENABLES = {
     "pollset_alternative": "event_engine_client,event_engine_listener,pollset_alternative",
     "prioritize_finished_requests": "prioritize_finished_requests",
     "promise_based_http2_client_transport": "promise_based_http2_client_transport",
+    "promise_based_http2_server_transport": "promise_based_http2_server_transport",
     "promise_based_inproc_transport": "promise_based_inproc_transport",
     "promise_batch_cleanup_on_cancel": "promise_batch_cleanup_on_cancel",
     "promise_filter_send_cancel_metadata": "promise_filter_send_cancel_metadata",

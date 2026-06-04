@@ -128,6 +128,7 @@ inline bool IsPipelinedReadSecureEndpointEnabled() { return false; }
 inline bool IsPollsetAlternativeEnabled() { return false; }
 inline bool IsPrioritizeFinishedRequestsEnabled() { return false; }
 inline bool IsPromiseBasedHttp2ClientTransportEnabled() { return false; }
+inline bool IsPromiseBasedHttp2ServerTransportEnabled() { return false; }
 inline bool IsPromiseBasedInprocTransportEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_PROMISE_BATCH_CLEANUP_ON_CANCEL
 inline bool IsPromiseBatchCleanupOnCancelEnabled() { return true; }
@@ -223,6 +224,7 @@ inline bool IsPipelinedReadSecureEndpointEnabled() { return false; }
 inline bool IsPollsetAlternativeEnabled() { return false; }
 inline bool IsPrioritizeFinishedRequestsEnabled() { return false; }
 inline bool IsPromiseBasedHttp2ClientTransportEnabled() { return false; }
+inline bool IsPromiseBasedHttp2ServerTransportEnabled() { return false; }
 inline bool IsPromiseBasedInprocTransportEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_PROMISE_BATCH_CLEANUP_ON_CANCEL
 inline bool IsPromiseBatchCleanupOnCancelEnabled() { return true; }
@@ -318,6 +320,7 @@ inline bool IsPipelinedReadSecureEndpointEnabled() { return false; }
 inline bool IsPollsetAlternativeEnabled() { return false; }
 inline bool IsPrioritizeFinishedRequestsEnabled() { return false; }
 inline bool IsPromiseBasedHttp2ClientTransportEnabled() { return false; }
+inline bool IsPromiseBasedHttp2ServerTransportEnabled() { return false; }
 inline bool IsPromiseBasedInprocTransportEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_PROMISE_BATCH_CLEANUP_ON_CANCEL
 inline bool IsPromiseBatchCleanupOnCancelEnabled() { return true; }
@@ -389,6 +392,7 @@ enum ExperimentIds {
   kExperimentIdPollsetAlternative,
   kExperimentIdPrioritizeFinishedRequests,
   kExperimentIdPromiseBasedHttp2ClientTransport,
+  kExperimentIdPromiseBasedHttp2ServerTransport,
   kExperimentIdPromiseBasedInprocTransport,
   kExperimentIdPromiseBatchCleanupOnCancel,
   kExperimentIdPromiseFilterSendCancelMetadata,
@@ -592,6 +596,10 @@ inline bool IsPrioritizeFinishedRequestsEnabled() {
 #define GRPC_EXPERIMENT_IS_INCLUDED_PROMISE_BASED_HTTP2_CLIENT_TRANSPORT
 inline bool IsPromiseBasedHttp2ClientTransportEnabled() {
   return IsExperimentEnabled<kExperimentIdPromiseBasedHttp2ClientTransport>();
+}
+#define GRPC_EXPERIMENT_IS_INCLUDED_PROMISE_BASED_HTTP2_SERVER_TRANSPORT
+inline bool IsPromiseBasedHttp2ServerTransportEnabled() {
+  return IsExperimentEnabled<kExperimentIdPromiseBasedHttp2ServerTransport>();
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_PROMISE_BASED_INPROC_TRANSPORT
 inline bool IsPromiseBasedInprocTransportEnabled() {
