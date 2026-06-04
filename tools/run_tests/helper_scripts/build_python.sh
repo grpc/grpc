@@ -146,7 +146,7 @@ pip_install() {
   $VENV_PYTHON -m pip install "$@"
 }
 
-pip_install --upgrade pip==25.2
+pip_install --upgrade pip==25.0.1
 pip_install --upgrade wheel
 pip_install --upgrade setuptools==77.0.1
 
