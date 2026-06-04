@@ -119,7 +119,10 @@ inline bool IsOptimization03Enabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_OPTIMIZATION_04
 inline bool IsOptimization04Enabled() { return true; }
 inline bool IsOtelExportTelemetryDomainsEnabled() { return false; }
+inline bool IsPh2ClientEnabled() { return false; }
+inline bool IsPh2ClientServerEnabled() { return false; }
 inline bool IsPh2Perf01Enabled() { return false; }
+inline bool IsPh2ServerEnabled() { return false; }
 inline bool IsPickFirstIgnoreEmptyUpdatesEnabled() { return false; }
 inline bool IsPipelinedReadSecureEndpointEnabled() { return false; }
 inline bool IsPollsetAlternativeEnabled() { return false; }
@@ -212,7 +215,10 @@ inline bool IsOptimization03Enabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_OPTIMIZATION_04
 inline bool IsOptimization04Enabled() { return true; }
 inline bool IsOtelExportTelemetryDomainsEnabled() { return false; }
+inline bool IsPh2ClientEnabled() { return false; }
+inline bool IsPh2ClientServerEnabled() { return false; }
 inline bool IsPh2Perf01Enabled() { return false; }
+inline bool IsPh2ServerEnabled() { return false; }
 inline bool IsPickFirstIgnoreEmptyUpdatesEnabled() { return false; }
 inline bool IsPipelinedReadSecureEndpointEnabled() { return false; }
 inline bool IsPollsetAlternativeEnabled() { return false; }
@@ -305,7 +311,10 @@ inline bool IsOptimization03Enabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_OPTIMIZATION_04
 inline bool IsOptimization04Enabled() { return true; }
 inline bool IsOtelExportTelemetryDomainsEnabled() { return false; }
+inline bool IsPh2ClientEnabled() { return false; }
+inline bool IsPh2ClientServerEnabled() { return false; }
 inline bool IsPh2Perf01Enabled() { return false; }
+inline bool IsPh2ServerEnabled() { return false; }
 inline bool IsPickFirstIgnoreEmptyUpdatesEnabled() { return false; }
 inline bool IsPipelinedReadSecureEndpointEnabled() { return false; }
 inline bool IsPollsetAlternativeEnabled() { return false; }
@@ -374,7 +383,10 @@ enum ExperimentIds {
   kExperimentIdOptimization03,
   kExperimentIdOptimization04,
   kExperimentIdOtelExportTelemetryDomains,
+  kExperimentIdPh2Client,
+  kExperimentIdPh2ClientServer,
   kExperimentIdPh2Perf01,
+  kExperimentIdPh2Server,
   kExperimentIdPickFirstIgnoreEmptyUpdates,
   kExperimentIdPipelinedReadSecureEndpoint,
   kExperimentIdPollsetAlternative,
@@ -549,9 +561,21 @@ inline bool IsOptimization04Enabled() {
 inline bool IsOtelExportTelemetryDomainsEnabled() {
   return IsExperimentEnabled<kExperimentIdOtelExportTelemetryDomains>();
 }
+#define GRPC_EXPERIMENT_IS_INCLUDED_PH2_CLIENT
+inline bool IsPh2ClientEnabled() {
+  return IsExperimentEnabled<kExperimentIdPh2Client>();
+}
+#define GRPC_EXPERIMENT_IS_INCLUDED_PH2_CLIENT_SERVER
+inline bool IsPh2ClientServerEnabled() {
+  return IsExperimentEnabled<kExperimentIdPh2ClientServer>();
+}
 #define GRPC_EXPERIMENT_IS_INCLUDED_PH2_PERF_01
 inline bool IsPh2Perf01Enabled() {
   return IsExperimentEnabled<kExperimentIdPh2Perf01>();
+}
+#define GRPC_EXPERIMENT_IS_INCLUDED_PH2_SERVER
+inline bool IsPh2ServerEnabled() {
+  return IsExperimentEnabled<kExperimentIdPh2Server>();
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_PICK_FIRST_IGNORE_EMPTY_UPDATES
 inline bool IsPickFirstIgnoreEmptyUpdatesEnabled() {
