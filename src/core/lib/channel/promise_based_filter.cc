@@ -1175,8 +1175,8 @@ class ClientCallData::PollContext {
                           nullptr),
                       IsV2NonOwningWakerImplementationEnabled() &&
                               !StatusFromMetadata(*md).ok()
-                          ? absl::CancelledError()
-                          : StatusFromMetadata(*md),
+                          ? StatusFromMetadata(*md)
+                          : absl::CancelledError(),
                       "wake_inside_combiner:recv_initial_metadata_ready");
               }
             }
