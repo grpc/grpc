@@ -304,6 +304,15 @@ class BuildExt(build_ext.build_ext):
             self.build_temp = tempfile.mkdtemp(dir="pyb")
             print(f"Using temp build directory: {self.build_temp}")
 
+        # Remove flags that are not supported by the cross-compiler
+        # (e.g. -mno-omit-leaf-frame-pointer added in python 3.15 natively on x86_64)
+        if sys.version_info >= (3, 15):
+            unsupported_flags = {"-mno-omit-leaf-frame-pointer"}
+            for attr in ("compiler", "compiler_so", "compiler_cxx", "linker_so", "linker_exe"):
+                cmd = getattr(self.compiler, attr, None)
+                if cmd is not None and isinstance(cmd, list):
+                    setattr(self.compiler, attr, [arg for arg in cmd if arg not in unsupported_flags])
+
         # This is to let UnixCompiler get either C or C++ compiler options depending on the source.
         # Note that this doesn't work for MSVCCompiler and will be handled by _spawn_patch.py.
         old_compile = self.compiler._compile
