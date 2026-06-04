@@ -20,7 +20,6 @@ import logging
 import sys
 import typing
 from typing import Any, Optional, Protocol
-from typing import Any, Protocol
 
 from grpc import _compression
 from grpc._cython import cygrpc as _cygrpc
