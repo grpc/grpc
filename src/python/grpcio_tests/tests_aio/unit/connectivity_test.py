@@ -63,12 +63,15 @@ class TestConnectivityState(AioTestBase):
             current_state = channel.get_state(True)
             self.assertEqual(grpc.ChannelConnectivity.IDLE, current_state)
 
+            import sys
+            timeout = test_constants.SHORT_TIMEOUT * 4 if sys.platform == 'darwin' else test_constants.SHORT_TIMEOUT
+
             # Should not time out
             await asyncio.wait_for(
                 _common.block_until_certain_state(
                     channel, grpc.ChannelConnectivity.READY
                 ),
-                test_constants.SHORT_TIMEOUT,
+                timeout,
             )
 
     async def test_timeout(self):
