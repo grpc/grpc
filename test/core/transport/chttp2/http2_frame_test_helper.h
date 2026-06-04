@@ -100,9 +100,9 @@ class Http2FrameTestHelper {
 
   EventEngineSlice SerializedDefaultServerSettingsFrame() const {
     std::vector<Http2SettingsFrame::Setting> settings;
+    settings.push_back({Http2Settings::kInitialWindowSizeWireId, 65535u});
     settings.push_back({Http2Settings::kMaxHeaderListSizeWireId,
                         DEFAULT_MAX_HEADER_LIST_SIZE});
-    settings.push_back({Http2Settings::kInitialWindowSizeWireId, 65535u});
     settings.push_back(
         {Http2Settings::kGrpcAllowTrueBinaryMetadataWireId, true});
     return EventEngineSliceFromHttp2Frame(
