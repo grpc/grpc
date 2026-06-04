@@ -109,6 +109,8 @@ class TcpProxy:
                     client_socket, client_address = socket_to_read.accept()
                     client_socket.setsockopt(socket.SOL_SOCKET, socket.SO_LINGER, struct.pack('ii', 1, 0))
                     self._client_sockets.append(client_socket)
+                    if self._proxy_socket is None:
+                        self._proxy_socket = _init_proxy_socket(self._gateway_address, self._gateway_port)
                 elif socket_to_read is self._proxy_socket and self._proxy_socket is not None:
                     data = socket_to_read.recv(_TCP_PROXY_BUFFER_SIZE)
                     if data:
@@ -127,6 +129,9 @@ class TcpProxy:
                     else:
                         self._client_sockets.remove(socket_to_read)
                         socket_to_read.close()
+                        if not self._client_sockets and self._proxy_socket is not None:
+                            _close_socket(self._proxy_socket)
+                            self._proxy_socket = None
             except socket.error:
                 if socket_to_read is self._listen_socket:
                     pass
@@ -137,6 +142,9 @@ class TcpProxy:
                     if socket_to_read in self._client_sockets:
                         self._client_sockets.remove(socket_to_read)
                     _close_socket(socket_to_read)
+                    if not self._client_sockets and self._proxy_socket is not None:
+                        _close_socket(self._proxy_socket)
+                        self._proxy_socket = None
 
     def _handle_writes(self, sockets_to_write):
         for socket_to_write in sockets_to_write:
@@ -157,6 +165,9 @@ class TcpProxy:
                     if socket_to_write in self._client_sockets:
                         self._client_sockets.remove(socket_to_write)
                     _close_socket(socket_to_write)
+                    if not self._client_sockets and self._proxy_socket is not None:
+                        _close_socket(self._proxy_socket)
+                        self._proxy_socket = None
 
     def _cleanup_bad_sockets(self):
         if self._listen_socket is not None:
