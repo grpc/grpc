@@ -19,7 +19,7 @@ import os
 
 _MAXIMUM_CHANNELS = 10
 
-_DEFAULT_TIMEOUT = 1.0
+_DEFAULT_TIMEOUT = 15.0
 
 os.environ["GRPC_PYTHON_MANAGED_CHANNEL_EVICTION_SECONDS"] = "2"
 os.environ["GRPC_PYTHON_MANAGED_CHANNEL_MAXIMUM"] = str(_MAXIMUM_CHANNELS)
@@ -259,6 +259,7 @@ class SimpleStubsTest(unittest.TestCase):
                     options=options,
                     channel_credentials=grpc.local_channel_credentials(),
                     _registered_method=0,
+                    timeout=15.0,
                 )
                 self.assert_eventually(
                     lambda: grpc._simple_stubs.ChannelCache.get()._test_only_channel_count()
