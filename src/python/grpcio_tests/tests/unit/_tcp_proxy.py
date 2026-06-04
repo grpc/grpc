@@ -43,9 +43,11 @@ def _close_socket(sock):
             pass
 
 
-def _init_proxy_socket(gateway_address, gateway_port):
+def _init_proxy_socket(gateway_address, gateway_port, stop_event=None):
     last_err = None
     for attempt in range(50):
+        if stop_event and stop_event.is_set():
+            return None
         try:
             proxy_socket = socket.create_connection(
                 (gateway_address, gateway_port),
@@ -61,7 +63,11 @@ def _init_proxy_socket(gateway_address, gateway_port):
                 "TcpProxy failed to connect to %s:%s (attempt %d/50): %s",
                 gateway_address, gateway_port, attempt + 1, err
             )
-            time.sleep(0.5 * (attempt + 1))
+            if stop_event:
+                if stop_event.wait(timeout=0.5 * (attempt + 1)):
+                    return None
+            else:
+                time.sleep(0.5 * (attempt + 1))
     raise last_err
 
 
@@ -110,7 +116,7 @@ class TcpProxy:
                     client_socket.setsockopt(socket.SOL_SOCKET, socket.SO_LINGER, struct.pack('ii', 1, 0))
                     self._client_sockets.append(client_socket)
                     if self._proxy_socket is None:
-                        self._proxy_socket = _init_proxy_socket(self._gateway_address, self._gateway_port)
+                        self._proxy_socket = _init_proxy_socket(self._gateway_address, self._gateway_port, self._stop_event)
                 elif socket_to_read is self._proxy_socket and self._proxy_socket is not None:
                     data = socket_to_read.recv(_TCP_PROXY_BUFFER_SIZE)
                     if data:
