@@ -156,17 +156,14 @@ def get_method_handlers(pre_response_callback):
         _UNARY_STREAM: _MethodHandler(False, True, pre_response_callback),
         _STREAM_UNARY: _MethodHandler(True, False, pre_response_callback),
         _STREAM_STREAM: _MethodHandler(True, True, pre_response_callback),
-    }
-
-
-_EXECUTOR = futures.ThreadPoolExecutor(max_workers=5)
-
 @contextlib.contextmanager
 def _instrumented_client_server_pair(
     channel_kwargs, server_kwargs, server_handler
 ):
+    executor = futures.ThreadPoolExecutor(max_workers=5)
     try:
-        server = grpc.server(_EXECUTOR, **server_kwargs)
+        options = (("grpc.so_reuseport", 0),)
+        server = grpc.server(executor, options=options, **server_kwargs)
         server.add_registered_method_handlers(_SERVICE_NAME, server_handler)
         server_port = server.add_insecure_port("{}:0".format(_HOST))
         server.start()
@@ -180,7 +177,7 @@ def _instrumented_client_server_pair(
                 finally:
                     server.stop(0).wait()
     finally:
-        pass
+        executor.shutdown(wait=False)
 
 
 def _get_byte_counts(
