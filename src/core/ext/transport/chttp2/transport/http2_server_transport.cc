@@ -1851,19 +1851,19 @@ absl::Status Http2ServerTransport::AckPing(uint64_t opaque_data) {
 // Misc Transport Stuff
 
 void Http2ServerTransport::ReportDisconnection(
-    const absl::Status& status, StateWatcher::DisconnectInfo disconnect_info,
-    const char* reason) {
+    const grpc_connectivity_state state, const absl::Status& status,
+    StateWatcher::DisconnectInfo disconnect_info, const char* reason) {
   MutexLock lock(&transport_mutex_);
-  ReportDisconnectionLocked(status, disconnect_info, reason);
+  ReportDisconnectionLocked(state, status, disconnect_info, reason);
 }
 
 void Http2ServerTransport::ReportDisconnectionLocked(
-    const absl::Status& status, StateWatcher::DisconnectInfo disconnect_info,
-    const char* reason) {
+    const grpc_connectivity_state state, const absl::Status& status,
+    StateWatcher::DisconnectInfo disconnect_info, const char* reason) {
   GRPC_HTTP2_SERVER_DLOG
       << "Http2ServerTransport::ReportDisconnectionLocked status="
       << status.ToString() << "; reason=" << reason;
-  state_tracker_.SetState(GRPC_CHANNEL_TRANSIENT_FAILURE, status, reason);
+  state_tracker_.SetState(state, status, reason);
   NotifyStateWatcherOnDisconnectLocked(status, disconnect_info);
 }
 
@@ -2146,9 +2146,17 @@ void Http2ServerTransport::Orphan() {
   // MaybeSpawnCloseTransport(
   //     ToHttpOkOrConnError(absl::UnavailableError("Orphaned")));
 
+  // TODO(akshitpatel) : [PH2][P1] : These calls need to be moved to a different
+  // place once shutdown code is added.
+  ReportDisconnection(GRPC_CHANNEL_SHUTDOWN, absl::UnavailableError("Orphan"),
+                      StateWatcher::DisconnectInfo(), "Orphan");
   // TODO(tjagtap) : [PH2][P2] : Implement the needed cleanup. This is not the
   // right place to clean up the party.
   general_party_.reset();
+  if (on_close_callback_ != nullptr) {
+    ExecCtx::Run(DEBUG_LOCATION, on_close_callback_, absl::OkStatus());
+    on_close_callback_ = nullptr;
+  }
   Unref();
   GRPC_HTTP2_SERVER_DLOG << "Http2ServerTransport::Orphan End";
 }
