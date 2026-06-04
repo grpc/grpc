@@ -1043,7 +1043,7 @@ def _handle_with_method_handler(
     state: _RPCState,
     method_handler: grpc.RpcMethodHandler,
     thread_pool: futures.ThreadPoolExecutor,
-) -> Optional[futures.Future]:
+) -> futures.Future:
     with state.condition:
         rpc_event.call.start_server_batch(
             (cygrpc.ReceiveCloseOnServerOperation(_EMPTY_FLAGS),),
