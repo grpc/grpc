@@ -46,14 +46,14 @@ class TestClientSideDoneCallback(AioTestBase):
         await self._server.stop(None)
 
     async def test_add_after_done(self):
-        call = self._stub.UnaryCall(messages_pb2.SimpleRequest())
+        call = self._stub.UnaryCall(messages_pb2.SimpleRequest(), wait_for_ready=True)
         self.assertEqual(grpc.StatusCode.OK, await call.code())
 
         validation = inject_callbacks(call)
         await validation
 
     async def test_unary_unary(self):
-        call = self._stub.UnaryCall(messages_pb2.SimpleRequest())
+        call = self._stub.UnaryCall(messages_pb2.SimpleRequest(), wait_for_ready=True)
         validation = inject_callbacks(call)
 
         self.assertEqual(grpc.StatusCode.OK, await call.code())
@@ -67,7 +67,7 @@ class TestClientSideDoneCallback(AioTestBase):
                 messages_pb2.ResponseParameters(size=_RESPONSE_PAYLOAD_SIZE)
             )
 
-        call = self._stub.StreamingOutputCall(request)
+        call = self._stub.StreamingOutputCall(request, wait_for_ready=True)
         validation = inject_callbacks(call)
 
         response_cnt = 0
@@ -91,7 +91,7 @@ class TestClientSideDoneCallback(AioTestBase):
             for _ in range(_NUM_STREAM_RESPONSES):
                 yield request
 
-        call = self._stub.StreamingInputCall(gen())
+        call = self._stub.StreamingInputCall(gen(), wait_for_ready=True)
         validation = inject_callbacks(call)
 
         response = await call
@@ -105,7 +105,7 @@ class TestClientSideDoneCallback(AioTestBase):
         await validation
 
     async def test_stream_stream(self):
-        call = self._stub.FullDuplexCall()
+        call = self._stub.FullDuplexCall(wait_for_ready=True)
         validation = inject_callbacks(call)
 
         request = messages_pb2.StreamingOutputCallRequest()
@@ -157,7 +157,7 @@ class TestServerSideDoneCallback(AioTestBase):
         await self._register_method_handler(
             grpc.unary_unary_rpc_method_handler(test_handler)
         )
-        response = await self._channel.unary_unary(_TEST_METHOD)(_REQUEST)
+        response = await self._channel.unary_unary(_TEST_METHOD)(_REQUEST, wait_for_ready=True)
         self.assertEqual(_RESPONSE, response)
 
         validation = await validation_future
@@ -175,7 +175,7 @@ class TestServerSideDoneCallback(AioTestBase):
         await self._register_method_handler(
             grpc.unary_stream_rpc_method_handler(test_handler)
         )
-        call = self._channel.unary_stream(_TEST_METHOD)(_REQUEST)
+        call = self._channel.unary_stream(_TEST_METHOD)(_REQUEST, wait_for_ready=True)
         async for response in call:
             self.assertEqual(_RESPONSE, response)
 
@@ -195,7 +195,7 @@ class TestServerSideDoneCallback(AioTestBase):
         await self._register_method_handler(
             grpc.stream_unary_rpc_method_handler(test_handler)
         )
-        call = self._channel.stream_unary(_TEST_METHOD)()
+        call = self._channel.stream_unary(_TEST_METHOD)(wait_for_ready=True)
         for _ in range(_NUM_STREAM_RESPONSES):
             await call.write(_REQUEST)
         await call.done_writing()
@@ -217,7 +217,7 @@ class TestServerSideDoneCallback(AioTestBase):
         await self._register_method_handler(
             grpc.stream_stream_rpc_method_handler(test_handler)
         )
-        call = self._channel.stream_stream(_TEST_METHOD)()
+        call = self._channel.stream_stream(_TEST_METHOD)(wait_for_ready=True)
         for _ in range(_NUM_STREAM_RESPONSES):
             await call.write(_REQUEST)
         await call.done_writing()
@@ -240,7 +240,7 @@ class TestServerSideDoneCallback(AioTestBase):
             grpc.unary_unary_rpc_method_handler(test_handler)
         )
         with self.assertRaises(aio.AioRpcError) as exception_context:
-            await self._channel.unary_unary(_TEST_METHOD)(_REQUEST)
+            await self._channel.unary_unary(_TEST_METHOD)(_REQUEST, wait_for_ready=True)
         rpc_error = exception_context.exception
         self.assertEqual(grpc.StatusCode.UNKNOWN, rpc_error.code())
 
@@ -265,7 +265,7 @@ class TestServerSideDoneCallback(AioTestBase):
             grpc.unary_unary_rpc_method_handler(test_handler)
         )
 
-        response = await self._channel.unary_unary(_TEST_METHOD)(_REQUEST)
+        response = await self._channel.unary_unary(_TEST_METHOD)(_REQUEST, wait_for_ready=True)
         self.assertEqual(_RESPONSE, response)
 
         # Following callbacks won't be invoked, if one of the callback crashed.

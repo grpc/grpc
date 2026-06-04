@@ -156,6 +156,9 @@ def get_method_handlers(pre_response_callback):
         _UNARY_STREAM: _MethodHandler(False, True, pre_response_callback),
         _STREAM_UNARY: _MethodHandler(True, False, pre_response_callback),
         _STREAM_STREAM: _MethodHandler(True, True, pre_response_callback),
+    }
+
+
 @contextlib.contextmanager
 def _instrumented_client_server_pair(
     channel_kwargs, server_kwargs, server_handler
