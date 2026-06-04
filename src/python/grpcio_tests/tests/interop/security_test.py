@@ -75,7 +75,7 @@ class SecurityTest(unittest.TestCase):
         Successfully use a custom sync private key signer.
         """
         with grpc.secure_channel(
-            "localhost:{}".format(self.port),
+            "127.0.0.1:{}".format(self.port),
             grpc.experimental.ssl_channel_credentials_with_custom_signer(
                 private_key_sign_fn=resources.sync_client_private_key_signer,
                 root_certificates=resources.test_root_certificates(),
@@ -97,7 +97,7 @@ class SecurityTest(unittest.TestCase):
         Successfully use a custom async private key signer.
         """
         with grpc.secure_channel(
-            "localhost:{}".format(self.port),
+            "127.0.0.1:{}".format(self.port),
             grpc.experimental.ssl_channel_credentials_with_custom_signer(
                 private_key_sign_fn=resources.async_client_private_key_signer,
                 root_certificates=resources.test_root_certificates(),
@@ -119,7 +119,7 @@ class SecurityTest(unittest.TestCase):
         Expect failure using a custom sync private key signer.
         """
         with grpc.secure_channel(
-            "localhost:{}".format(self.port),
+            "127.0.0.1:{}".format(self.port),
             grpc.experimental.ssl_channel_credentials_with_custom_signer(
                 private_key_sign_fn=resources.sync_bad_client_private_key_signer,
                 root_certificates=resources.test_root_certificates(),
@@ -140,7 +140,7 @@ class SecurityTest(unittest.TestCase):
     def test_sync_signer_raises_directly(self):
         """Expect failure using a custom sync signer that directly raises an exception"""
         with grpc.secure_channel(
-            "localhost:{}".format(self.port),
+            "127.0.0.1:{}".format(self.port),
             grpc.experimental.ssl_channel_credentials_with_custom_signer(
                 private_key_sign_fn=resources.sync_raises_exception,
                 root_certificates=resources.test_root_certificates(),
@@ -163,7 +163,7 @@ class SecurityTest(unittest.TestCase):
         Expect failure using a custom async private key signer.
         """
         with grpc.secure_channel(
-            "localhost:{}".format(self.port),
+            "127.0.0.1:{}".format(self.port),
             grpc.experimental.ssl_channel_credentials_with_custom_signer(
                 private_key_sign_fn=resources.bad_async_client_private_key_signer,
                 root_certificates=resources.test_root_certificates(),
@@ -190,7 +190,7 @@ class SecurityTest(unittest.TestCase):
             resources.async_signer_with_cancel_injection, cancel_callable
         )
         channel = grpc.secure_channel(
-            "localhost:{}".format(self.port),
+            "127.0.0.1:{}".format(self.port),
             grpc.experimental.ssl_channel_credentials_with_custom_signer(
                 private_key_sign_fn=bound_signing_fn,
                 root_certificates=resources.test_root_certificates(),
@@ -222,7 +222,7 @@ class SecurityTest(unittest.TestCase):
         # We should have a timeout here
         with self.assertRaises(Exception) as context:
             with grpc.secure_channel(
-                "localhost:{}".format(self.port),
+                "127.0.0.1:{}".format(self.port),
                 grpc.experimental.ssl_channel_credentials_with_custom_signer(
                     private_key_sign_fn=resources.async_client_private_key_signer_with_cancel,
                     root_certificates=resources.test_root_certificates(),
@@ -254,7 +254,7 @@ class SecurityTest(unittest.TestCase):
             )
 
             secure_channel = grpc.secure_channel(
-                "localhost:{}".format(self.port), creds
+                "127.0.0.1:{}".format(self.port), creds
             )
             return secure_channel, ref
 
@@ -280,7 +280,7 @@ class SecurityTest(unittest.TestCase):
 
         def channel_with_credential(creds, q, port):
             with grpc.secure_channel(
-                "localhost:{}".format(port),
+                "127.0.0.1:{}".format(port),
                 creds,
                 (
                     (

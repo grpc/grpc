@@ -77,7 +77,7 @@ class SSLSessionCacheTest(unittest.TestCase):
         self, channel_creds, channel_options, port, expect_ssl_session_reused
     ):
         channel = grpc.secure_channel(
-            "localhost:{}".format(port), channel_creds, options=channel_options
+            "127.0.0.1:{}".format(port), channel_creds, options=channel_options
         )
         response = channel.unary_unary(
             grpc._common.fully_qualified_method(_SERVICE_NAME, _UNARY_UNARY),

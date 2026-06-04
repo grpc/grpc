@@ -38,7 +38,7 @@ class LocalCredentialsTest(unittest.TestCase):
         os.name == "nt", "TODO(https://github.com/grpc/grpc/issues/20078)"
     )
     def test_local_tcp(self):
-        server_addr = "localhost:{}"
+        server_addr = "127.0.0.1:{}"
         channel_creds = grpc.local_channel_credentials(
             grpc.LocalConnectionType.LOCAL_TCP
         )

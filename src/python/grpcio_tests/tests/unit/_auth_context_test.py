@@ -75,7 +75,7 @@ class AuthContextTest(unittest.TestCase):
         port = server.add_insecure_port("127.0.0.1:0")
         server.start()
 
-        with grpc.insecure_channel("localhost:%d" % port) as channel:
+        with grpc.insecure_channel("127.0.0.1:%d" % port) as channel:
             response = channel.unary_unary(
                 grpc._common.fully_qualified_method(
                     _SERVICE_NAME, _UNARY_UNARY
@@ -106,7 +106,7 @@ class AuthContextTest(unittest.TestCase):
             root_certificates=_TEST_ROOT_CERTIFICATES
         )
         channel = grpc.secure_channel(
-            "localhost:{}".format(port),
+            "127.0.0.1:{}".format(port),
             channel_creds,
             options=_PROPERTY_OPTIONS,
         )
@@ -146,7 +146,7 @@ class AuthContextTest(unittest.TestCase):
             certificate_chain=_CERTIFICATE_CHAIN,
         )
         channel = grpc.secure_channel(
-            "localhost:{}".format(port),
+            "127.0.0.1:{}".format(port),
             channel_creds,
             options=_PROPERTY_OPTIONS,
         )
@@ -171,7 +171,7 @@ class AuthContextTest(unittest.TestCase):
         self, channel_creds, channel_options, port, expect_ssl_session_reused
     ):
         channel = grpc.secure_channel(
-            "localhost:{}".format(port), channel_creds, options=channel_options
+            "127.0.0.1:{}".format(port), channel_creds, options=channel_options
         )
         response = channel.unary_unary(
             grpc._common.fully_qualified_method(_SERVICE_NAME, _UNARY_UNARY),

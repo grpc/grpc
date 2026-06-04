@@ -164,7 +164,7 @@ class CancelManyCallsTest(unittest.TestCase):
         port = server.add_http2_port(b"127.0.0.1:0")
         server.start()
         channel = cygrpc.Channel(
-            "localhost:{}".format(port).encode(), None, None
+            "127.0.0.1:{}".format(port).encode(), None, None
         )
 
         state = _State()

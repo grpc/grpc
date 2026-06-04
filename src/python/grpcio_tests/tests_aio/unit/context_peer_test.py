@@ -55,7 +55,7 @@ class TestContextPeer(AioTestBase):
         await server.start()
 
         # Creates a channel
-        async with aio.insecure_channel("localhost:%d" % port) as channel:
+        async with aio.insecure_channel("127.0.0.1:%d" % port) as channel:
             response = await channel.unary_unary(_TEST_METHOD)(_REQUEST)
             self.assertEqual(_REQUEST, response)
 

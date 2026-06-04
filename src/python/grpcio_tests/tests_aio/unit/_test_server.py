@@ -194,4 +194,4 @@ async def start_test_server(
     # NOTE(lidizheng) returning the server to prevent it from deallocation
     if sys.platform == 'darwin':
         return "127.0.0.1:%d" % port, server
-    return "localhost:%d" % port, server
+    return "127.0.0.1:%d" % port, server

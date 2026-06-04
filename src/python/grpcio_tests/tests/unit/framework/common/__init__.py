@@ -26,7 +26,7 @@ _UNRECOVERABLE_ERRNOS = (errno.EADDRINUSE, errno.ENOSR)
 
 
 def get_socket(
-    bind_address="localhost",
+    bind_address="127.0.0.1",
     port=0,
     listen=True,
     sock_options=_DEFAULT_SOCK_OPTIONS,
@@ -83,7 +83,7 @@ def get_socket(
 
 @contextlib.contextmanager
 def bound_socket(
-    bind_address="localhost",
+    bind_address="127.0.0.1",
     port=0,
     listen=True,
     sock_options=_DEFAULT_SOCK_OPTIONS,

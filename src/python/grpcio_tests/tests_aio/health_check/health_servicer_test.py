@@ -60,7 +60,7 @@ class HealthServicerTest(AioTestBase):
         )
         await self._server.start()
 
-        self._channel = aio.insecure_channel("localhost:%d" % port)
+        self._channel = aio.insecure_channel("127.0.0.1:%d" % port)
         self._stub = health_pb2_grpc.HealthStub(self._channel)
 
     async def tearDown(self):

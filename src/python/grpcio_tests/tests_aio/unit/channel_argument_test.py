@@ -69,12 +69,12 @@ _INVALID_TEST_CHANNEL_ARGS = [
 
 
 async def test_if_reuse_port_enabled(server: aio.Server):
-    port = server.add_insecure_port("localhost:0")
+    port = server.add_insecure_port("127.0.0.1:0")
     await server.start()
 
     try:
         with common.bound_socket(
-            bind_address="localhost",
+            bind_address="127.0.0.1",
             port=port,
             listen=False,
         ) as (unused_host, bound_port):

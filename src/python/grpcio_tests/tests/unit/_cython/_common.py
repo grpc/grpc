@@ -104,7 +104,7 @@ class RpcTest:
         port = self.server.add_http2_port(b"127.0.0.1:0")
         self.server.start()
         self.channel = cygrpc.Channel(
-            "localhost:{}".format(port).encode(), [], None
+            "127.0.0.1:{}".format(port).encode(), [], None
         )
 
         self._server_shutdown_tag = "server_shutdown_tag"

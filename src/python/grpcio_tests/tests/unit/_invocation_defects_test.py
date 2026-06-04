@@ -282,7 +282,7 @@ class InvocationDefectsTest(unittest.TestCase):
         )
         self._server.start()
 
-        self._channel = grpc.insecure_channel("localhost:%d" % port)
+        self._channel = grpc.insecure_channel("127.0.0.1:%d" % port)
 
     def tearDown(self):
         self._server.stop(0)

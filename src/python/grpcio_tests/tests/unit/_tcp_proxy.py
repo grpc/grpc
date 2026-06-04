@@ -25,6 +25,7 @@ from __future__ import print_function
 import datetime
 import select
 import socket
+import struct
 import threading
 import time
 
@@ -50,6 +51,7 @@ def _init_proxy_socket(gateway_address, gateway_port):
                 (gateway_address, gateway_port),
                 timeout=5.0
             )
+            proxy_socket.setsockopt(socket.SOL_SOCKET, socket.SO_LINGER, struct.pack('ii', 1, 0))
             proxy_socket.settimeout(None)
             return proxy_socket
         except (socket.error, TimeoutError) as err:
@@ -105,6 +107,7 @@ class TcpProxy:
             try:
                 if socket_to_read is self._listen_socket:
                     client_socket, client_address = socket_to_read.accept()
+                    client_socket.setsockopt(socket.SOL_SOCKET, socket.SO_LINGER, struct.pack('ii', 1, 0))
                     self._client_sockets.append(client_socket)
                 elif socket_to_read is self._proxy_socket and self._proxy_socket is not None:
                     data = socket_to_read.recv(_TCP_PROXY_BUFFER_SIZE)

@@ -329,7 +329,7 @@ class _Test(unittest.TestCase, metaclass=abc.ABCMeta):
             )
             port = server.add_insecure_port("127.0.0.1:0")
             server.start()
-            channel = grpc.insecure_channel("localhost:{}".format(port))
+            channel = grpc.insecure_channel("127.0.0.1:{}".format(port))
             stub = services_module.TestServiceStub(channel)
             response = stub.Call(self._messages_pb2.Request())
             self.assertEqual(self._messages_pb2.Response(), response)

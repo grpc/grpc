@@ -48,7 +48,7 @@ class ReflectionClientTest(unittest.TestCase):
         port = self._server.add_insecure_port("127.0.0.1:0")
         self._server.start()
 
-        self._channel = grpc.insecure_channel("localhost:%d" % port)
+        self._channel = grpc.insecure_channel("127.0.0.1:%d" % port)
 
         self._reflection_db = ProtoReflectionDescriptorDatabase(self._channel)
         self.desc_pool = DescriptorPool(self._reflection_db)
