@@ -100,7 +100,7 @@ class ChannelzServicerTest(unittest.TestCase):
                 _SUCCESSFUL_UNARY_UNARY,
                 _registered_method=True,
             )
-            .with_call(_REQUEST)
+            .with_call(_REQUEST, wait_for_ready=True)
         )
         self.assertEqual(r.code(), grpc.StatusCode.OK)
 
@@ -109,7 +109,7 @@ class ChannelzServicerTest(unittest.TestCase):
             self._pairs[idx].channel.unary_unary(
                 _FAILED_UNARY_UNARY,
                 _registered_method=True,
-            ).with_call(_REQUEST)
+            ).with_call(_REQUEST, wait_for_ready=True)
         except grpc.RpcError:
             return
         else:
@@ -122,7 +122,7 @@ class ChannelzServicerTest(unittest.TestCase):
                 _SUCCESSFUL_STREAM_STREAM,
                 _registered_method=True,
             )
-            .__call__(iter([_REQUEST] * test_constants.STREAM_LENGTH))
+            .__call__(iter([_REQUEST] * test_constants.STREAM_LENGTH), wait_for_ready=True)
         )
         cnt = 0
         for _ in response_iterator:
@@ -132,7 +132,7 @@ class ChannelzServicerTest(unittest.TestCase):
     def _get_channel_id(self, idx):
         """Channel id may not be consecutive"""
         resp = self._channelz_stub.GetTopChannels(
-            channelz_pb2.GetTopChannelsRequest(start_channel_id=0)
+            channelz_pb2.GetTopChannelsRequest(start_channel_id=0), wait_for_ready=True
         )
         self.assertGreater(len(resp.channel), idx)
         return resp.channel[idx].ref.channel_id
@@ -164,7 +164,7 @@ class ChannelzServicerTest(unittest.TestCase):
     def test_get_top_channels_basic(self):
         self._pairs = _generate_channel_server_pairs(1)
         resp = self._channelz_stub.GetTopChannels(
-            channelz_pb2.GetTopChannelsRequest(start_channel_id=0)
+            channelz_pb2.GetTopChannelsRequest(start_channel_id=0), wait_for_ready=True
         )
         self.assertEqual(len(resp.channel), 1)
         self.assertEqual(resp.end, True)
@@ -172,7 +172,7 @@ class ChannelzServicerTest(unittest.TestCase):
     def test_get_top_channels_high_start_id(self):
         self._pairs = _generate_channel_server_pairs(1)
         resp = self._channelz_stub.GetTopChannels(
-            channelz_pb2.GetTopChannelsRequest(start_channel_id=10000)
+            channelz_pb2.GetTopChannelsRequest(start_channel_id=10000), wait_for_ready=True
         )
         self.assertEqual(len(resp.channel), 0)
         self.assertEqual(resp.end, True)
@@ -181,7 +181,7 @@ class ChannelzServicerTest(unittest.TestCase):
         self._pairs = _generate_channel_server_pairs(1)
         self._send_successful_unary_unary(0)
         resp = self._channelz_stub.GetChannel(
-            channelz_pb2.GetChannelRequest(channel_id=self._get_channel_id(0))
+            channelz_pb2.GetChannelRequest(channel_id=self._get_channel_id(0), wait_for_ready=True)
         )
         self.assertEqual(resp.channel.data.calls_started, 1)
         self.assertEqual(resp.channel.data.calls_succeeded, 1)
@@ -191,7 +191,7 @@ class ChannelzServicerTest(unittest.TestCase):
         self._pairs = _generate_channel_server_pairs(1)
         self._send_failed_unary_unary(0)
         resp = self._channelz_stub.GetChannel(
-            channelz_pb2.GetChannelRequest(channel_id=self._get_channel_id(0))
+            channelz_pb2.GetChannelRequest(channel_id=self._get_channel_id(0), wait_for_ready=True)
         )
         self.assertEqual(resp.channel.data.calls_started, 1)
         self.assertEqual(resp.channel.data.calls_succeeded, 0)
@@ -206,7 +206,7 @@ class ChannelzServicerTest(unittest.TestCase):
         for i in range(k_failed):
             self._send_failed_unary_unary(0)
         resp = self._channelz_stub.GetChannel(
-            channelz_pb2.GetChannelRequest(channel_id=self._get_channel_id(0))
+            channelz_pb2.GetChannelRequest(channel_id=self._get_channel_id(0), wait_for_ready=True)
         )
         self.assertEqual(resp.channel.data.calls_started, k_success + k_failed)
         self.assertEqual(resp.channel.data.calls_succeeded, k_success)
@@ -216,7 +216,7 @@ class ChannelzServicerTest(unittest.TestCase):
         k_channels = 4
         self._pairs = _generate_channel_server_pairs(k_channels)
         resp = self._channelz_stub.GetTopChannels(
-            channelz_pb2.GetTopChannelsRequest(start_channel_id=0)
+            channelz_pb2.GetTopChannelsRequest(start_channel_id=0), wait_for_ready=True
         )
         self.assertEqual(len(resp.channel), k_channels)
 
@@ -233,7 +233,7 @@ class ChannelzServicerTest(unittest.TestCase):
             self._send_failed_unary_unary(2)
 
         gtc_resp = self._channelz_stub.GetTopChannels(
-            channelz_pb2.GetTopChannelsRequest(start_channel_id=0)
+            channelz_pb2.GetTopChannelsRequest(start_channel_id=0), wait_for_ready=True
         )
         self.assertEqual(len(gtc_resp.channel), k_channels)
         for i in range(k_channels):
@@ -249,7 +249,7 @@ class ChannelzServicerTest(unittest.TestCase):
                     subchannel_id=gtc_resp.channel[i]
                     .subchannel_ref[0]
                     .subchannel_id
-                )
+                ), wait_for_ready=True
             )
             self.assertEqual(
                 gtc_resp.channel[i].data.calls_started,
@@ -267,20 +267,20 @@ class ChannelzServicerTest(unittest.TestCase):
     def test_server_basic(self):
         self._pairs = _generate_channel_server_pairs(1)
         resp = self._channelz_stub.GetServers(
-            channelz_pb2.GetServersRequest(start_server_id=0)
+            channelz_pb2.GetServersRequest(start_server_id=0), wait_for_ready=True
         )
         self.assertEqual(len(resp.server), 1)
 
     def test_get_one_server(self):
         self._pairs = _generate_channel_server_pairs(1)
         gss_resp = self._channelz_stub.GetServers(
-            channelz_pb2.GetServersRequest(start_server_id=0)
+            channelz_pb2.GetServersRequest(start_server_id=0), wait_for_ready=True
         )
         self.assertEqual(len(gss_resp.server), 1)
         gs_resp = self._channelz_stub.GetServer(
             channelz_pb2.GetServerRequest(
                 server_id=gss_resp.server[0].ref.server_id
-            )
+            ), wait_for_ready=True
         )
         self.assertEqual(
             gss_resp.server[0].ref.server_id, gs_resp.server.ref.server_id
@@ -296,7 +296,7 @@ class ChannelzServicerTest(unittest.TestCase):
             self._send_failed_unary_unary(0)
 
         resp = self._channelz_stub.GetServers(
-            channelz_pb2.GetServersRequest(start_server_id=0)
+            channelz_pb2.GetServersRequest(start_server_id=0), wait_for_ready=True
         )
         self.assertEqual(len(resp.server), 1)
         self.assertEqual(
@@ -318,7 +318,7 @@ class ChannelzServicerTest(unittest.TestCase):
             self._send_failed_unary_unary(2)
 
         gtc_resp = self._channelz_stub.GetTopChannels(
-            channelz_pb2.GetTopChannelsRequest(start_channel_id=0)
+            channelz_pb2.GetTopChannelsRequest(start_channel_id=0), wait_for_ready=True
         )
         self.assertEqual(len(gtc_resp.channel), k_channels)
         for i in range(k_channels):
@@ -334,14 +334,14 @@ class ChannelzServicerTest(unittest.TestCase):
                     subchannel_id=gtc_resp.channel[i]
                     .subchannel_ref[0]
                     .subchannel_id
-                )
+                ), wait_for_ready=True
             )
             self.assertEqual(len(gsc_resp.subchannel.socket_ref), 1)
 
             gs_resp = self._channelz_stub.GetSocket(
                 channelz_pb2.GetSocketRequest(
                     socket_id=gsc_resp.subchannel.socket_ref[0].socket_id
-                )
+                ), wait_for_ready=True
             )
             self.assertEqual(
                 gsc_resp.subchannel.data.calls_started,
@@ -380,7 +380,7 @@ class ChannelzServicerTest(unittest.TestCase):
         self._send_successful_stream_stream(0)
 
         gc_resp = self._channelz_stub.GetChannel(
-            channelz_pb2.GetChannelRequest(channel_id=self._get_channel_id(0))
+            channelz_pb2.GetChannelRequest(channel_id=self._get_channel_id(0), wait_for_ready=True)
         )
         self.assertEqual(gc_resp.channel.data.calls_started, 1)
         self.assertEqual(gc_resp.channel.data.calls_succeeded, 1)
@@ -394,7 +394,7 @@ class ChannelzServicerTest(unittest.TestCase):
                     subchannel_id=gc_resp.channel.subchannel_ref[
                         0
                     ].subchannel_id
-                )
+                ), wait_for_ready=True
             )
             if (
                 gsc_resp.subchannel.data.calls_started
@@ -412,7 +412,7 @@ class ChannelzServicerTest(unittest.TestCase):
             gs_resp = self._channelz_stub.GetSocket(
                 channelz_pb2.GetSocketRequest(
                     socket_id=gsc_resp.subchannel.socket_ref[0].socket_id
-                )
+                ), wait_for_ready=True
             )
             if (
                 gs_resp.socket.data.streams_started
@@ -436,7 +436,7 @@ class ChannelzServicerTest(unittest.TestCase):
         self._send_failed_unary_unary(0)
 
         gs_resp = self._channelz_stub.GetServers(
-            channelz_pb2.GetServersRequest(start_server_id=0)
+            channelz_pb2.GetServersRequest(start_server_id=0), wait_for_ready=True
         )
         self.assertEqual(len(gs_resp.server), 1)
         self.assertEqual(gs_resp.server[0].data.calls_started, 2)
@@ -446,7 +446,7 @@ class ChannelzServicerTest(unittest.TestCase):
         gss_resp = self._channelz_stub.GetServerSockets(
             channelz_pb2.GetServerSocketsRequest(
                 server_id=gs_resp.server[0].ref.server_id, start_socket_id=0
-            )
+            ), wait_for_ready=True
         )
 
         self.assertEqual(len(gss_resp.socket_ref), 1)
@@ -454,7 +454,7 @@ class ChannelzServicerTest(unittest.TestCase):
         gs_resp: channelz_pb2.GetSocketResponse = self._channelz_stub.GetSocket(
             channelz_pb2.GetSocketRequest(
                 socket_id=gss_resp.socket_ref[0].socket_id
-            )
+            ), wait_for_ready=True
         )
 
         # Verify the client socket contains valid TCP/IP addresses.
@@ -493,7 +493,7 @@ class ChannelzServicerTest(unittest.TestCase):
         self._pairs = _generate_channel_server_pairs(1)
 
         gss_resp = self._channelz_stub.GetServers(
-            channelz_pb2.GetServersRequest(start_server_id=0)
+            channelz_pb2.GetServersRequest(start_server_id=0), wait_for_ready=True
         )
         self.assertEqual(len(gss_resp.server), 1)
         self.assertEqual(len(gss_resp.server[0].listen_socket), 1)
@@ -501,7 +501,7 @@ class ChannelzServicerTest(unittest.TestCase):
         gs_resp: channelz_pb2.GetSocketResponse = self._channelz_stub.GetSocket(
             channelz_pb2.GetSocketRequest(
                 socket_id=gss_resp.server[0].listen_socket[0].socket_id
-            )
+            ), wait_for_ready=True
         )
 
         # Verify the listen socket contains a valid TCP/IP address.
@@ -536,7 +536,7 @@ class ChannelzServicerTest(unittest.TestCase):
     def test_invalid_query_get_server(self):
         try:
             self._channelz_stub.GetServer(
-                channelz_pb2.GetServerRequest(server_id=10000)
+                channelz_pb2.GetServerRequest(server_id=10000), wait_for_ready=True
             )
         except BaseException as e:
             self.assertIn("StatusCode.NOT_FOUND", str(e))
@@ -546,7 +546,7 @@ class ChannelzServicerTest(unittest.TestCase):
     def test_invalid_query_get_channel(self):
         try:
             self._channelz_stub.GetChannel(
-                channelz_pb2.GetChannelRequest(channel_id=10000)
+                channelz_pb2.GetChannelRequest(channel_id=10000), wait_for_ready=True
             )
         except BaseException as e:
             self.assertIn("StatusCode.NOT_FOUND", str(e))
@@ -556,7 +556,7 @@ class ChannelzServicerTest(unittest.TestCase):
     def test_invalid_query_get_subchannel(self):
         try:
             self._channelz_stub.GetSubchannel(
-                channelz_pb2.GetSubchannelRequest(subchannel_id=10000)
+                channelz_pb2.GetSubchannelRequest(subchannel_id=10000), wait_for_ready=True
             )
         except BaseException as e:
             self.assertIn("StatusCode.NOT_FOUND", str(e))
@@ -566,7 +566,7 @@ class ChannelzServicerTest(unittest.TestCase):
     def test_invalid_query_get_socket(self):
         try:
             self._channelz_stub.GetSocket(
-                channelz_pb2.GetSocketRequest(socket_id=10000)
+                channelz_pb2.GetSocketRequest(socket_id=10000), wait_for_ready=True
             )
         except BaseException as e:
             self.assertIn("StatusCode.NOT_FOUND", str(e))
@@ -579,7 +579,7 @@ class ChannelzServicerTest(unittest.TestCase):
                 channelz_pb2.GetServerSocketsRequest(
                     server_id=10000,
                     start_socket_id=0,
-                )
+                ), wait_for_ready=True
             )
         except BaseException as e:
             self.assertIn("StatusCode.NOT_FOUND", str(e))
