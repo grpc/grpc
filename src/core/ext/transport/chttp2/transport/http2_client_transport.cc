@@ -810,9 +810,7 @@ void Http2ClientTransport::ActOnFlowControlAction(
     }
   }
 
-  ActOnFlowControlActionSettings(
-      action, settings_->mutable_local(),
-      enable_preferred_rx_crypto_frame_advertisement_);
+  ActOnFlowControlActionSettings(action, settings_->mutable_local());
 
   if (action.AnyUpdateImmediately()) {
     // Prioritize sending flow control updates over reading data. If we
@@ -1365,8 +1363,6 @@ void Http2ClientTransport::ReadChannelArgs(const ChannelArgs& channel_args,
   keepalive_time_ = args.keepalive_time;
   read_context_.set_soft_limit(args.max_header_list_size_soft_limit);
   keepalive_permit_without_calls_ = args.keepalive_permit_without_calls;
-  enable_preferred_rx_crypto_frame_advertisement_ =
-      args.enable_preferred_rx_crypto_frame_advertisement;
   test_only_ack_pings_ = args.test_only_ack_pings;
 
   if (args.initial_sequence_number > 0) {

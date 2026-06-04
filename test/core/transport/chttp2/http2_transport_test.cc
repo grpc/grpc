@@ -244,7 +244,7 @@ TEST(Http2CommonTransportTest, TestReadTransportChannelArgs) {
     EXPECT_EQ(args.ping_timeout, Duration::Infinity());
     EXPECT_EQ(args.settings_timeout, Duration::Infinity());
     EXPECT_EQ(args.keepalive_permit_without_calls, false);
-    EXPECT_EQ(args.enable_preferred_rx_crypto_frame_advertisement, false);
+    EXPECT_EQ(transport_flow_control.ph2_enable_rx_crypto(), false);
     EXPECT_EQ(args.max_usable_hpack_table_size, -1);
     EXPECT_GE(args.max_header_list_size_soft_limit, 8192u);
   }
@@ -260,7 +260,7 @@ TEST(Http2CommonTransportTest, TestReadTransportChannelArgs) {
     EXPECT_EQ(args.ping_timeout, Duration::Minutes(1));
     EXPECT_EQ(args.settings_timeout, Duration::Minutes(1));
     EXPECT_EQ(args.keepalive_permit_without_calls, false);
-    EXPECT_EQ(args.enable_preferred_rx_crypto_frame_advertisement, false);
+    EXPECT_EQ(transport_flow_control.ph2_enable_rx_crypto(), false);
     EXPECT_EQ(args.max_usable_hpack_table_size, -1);
     EXPECT_GE(args.max_header_list_size_soft_limit, 8192u);
   }
@@ -287,7 +287,7 @@ TEST(Http2CommonTransportTest, TestReadTransportChannelArgs) {
     EXPECT_EQ(args.ping_timeout, Duration::Seconds(3));
     EXPECT_EQ(args.settings_timeout, Duration::Seconds(15));
     EXPECT_EQ(args.keepalive_permit_without_calls, true);
-    EXPECT_EQ(args.enable_preferred_rx_crypto_frame_advertisement, true);
+    EXPECT_EQ(transport_flow_control.ph2_enable_rx_crypto(), true);
     EXPECT_EQ(args.max_usable_hpack_table_size, 1024);
     EXPECT_EQ(args.max_header_list_size_soft_limit, 12345u);
   }

@@ -43,6 +43,10 @@ and the underlying endpoint.
 
 ### CHTTP2 File Structure
 
+<!--
+TODO(tjagtap) [PH2][CHTTP2] Edit this doc when CHTTP2 is getting deleted.
+-->
+
 *   General Transport Files:
     *   `chttp2_transport.{h,cc}`: Core transport logic for both client and server.
     *   `internal.h`: Internal declarations for CHTTP2.

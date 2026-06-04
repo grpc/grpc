@@ -122,7 +122,6 @@ struct TransportChannelArgs {
   Duration ping_timeout;
   Duration settings_timeout;
   bool keepalive_permit_without_calls;
-  bool enable_preferred_rx_crypto_frame_advertisement;
   // This is used to test peer behaviour when we never send a ping ack.
   bool test_only_ack_pings;
   uint32_t max_header_list_size_soft_limit;
