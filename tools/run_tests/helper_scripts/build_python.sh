@@ -134,12 +134,20 @@ source tools/internal_ci/helper_scripts/prepare_ccache_symlinks_rc
 if [[ "$(inside_venv)" ]]; then
   VENV_PYTHON="$PYTHON"
 else
-  # Instantiate the virtualenv from the Python version passed in.
-  # virtualenv 20.34.0 is the first release that knows about Python 3.15.
-  $PYTHON -m pip install --user virtualenv==20.34.0
-  # Skip wheel and setuptools and manually install later. Otherwise we might
-  # not find cython module while building grpcio.
-  $PYTHON -m virtualenv --no-wheel --no-setuptools "$VENV"
+  if $PYTHON -c "import sys; sys.exit(0 if sys.version_info >= (3, 15) else 1)"; then
+    # Python 3.15 removed typing.no_type_check_decorator. The pip wheel
+    # bundled by virtualenv 20.x (pip 25.0.1) vendors an older
+    # typing_extensions that references that attribute at import time, so
+    # the seeded pip crashes on first invocation. Seed via the stdlib venv
+    # instead, which uses Python 3.15's own ensurepip-bundled pip wheel.
+    $PYTHON -m venv "$VENV"
+  else
+    # Instantiate the virtualenv from the Python version passed in.
+    $PYTHON -m pip install --user virtualenv==20.25.0
+    # Skip wheel and setuptools and manually install later. Otherwise we might
+    # not find cython module while building grpcio.
+    $PYTHON -m virtualenv --no-wheel --no-setuptools "$VENV"
+  fi
   VENV_PYTHON="$(pwd)/$VENV/$VENV_RELATIVE_PYTHON"
 fi
 
