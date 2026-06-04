@@ -19,11 +19,8 @@ extern "C" {
 #endif
 
 extern const upb_MiniTable envoy__type__v3__HashPolicy_msg_init;
-extern const upb_MiniTable* envoy__type__v3__HashPolicy_msg_init_ptr;
 extern const upb_MiniTable envoy__type__v3__HashPolicy__SourceIp_msg_init;
-extern const upb_MiniTable* envoy__type__v3__HashPolicy__SourceIp_msg_init_ptr;
 extern const upb_MiniTable envoy__type__v3__HashPolicy__FilterState_msg_init;
-extern const upb_MiniTable* envoy__type__v3__HashPolicy__FilterState_msg_init_ptr;
 
 extern const upb_MiniTableFile envoy_type_v3_hash_policy_proto_upb_file_layout;
 

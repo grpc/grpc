@@ -21,6 +21,7 @@ EXPERIMENT_ENABLES = {
     "call_tracer_in_transport": "call_tracer_in_transport",
     "call_tracer_send_initial_metadata_is_an_annotation": "call_tracer_send_initial_metadata_is_an_annotation",
     "call_tracer_send_trailing_metadata_is_an_annotation": "call_tracer_send_trailing_metadata_is_an_annotation",
+    "callv3_batch_validation": "callv3_batch_validation",
     "chaotic_good_framing_layer": "chaotic_good_framing_layer",
     "chaotic_good_send_supported_features": "chaotic_good_send_supported_features",
     "error_flatten": "error_flatten",
@@ -76,8 +77,9 @@ EXPERIMENT_ENABLES = {
     "tsi_frame_protector_without_locks": "tsi_frame_protector_without_locks",
     "unconstrained_max_quota_buffer_size": "unconstrained_max_quota_buffer_size",
     "use_call_event_engine_in_completion_queue": "use_call_event_engine_in_completion_queue",
+    "verbose_channelz_connection_logging": "verbose_channelz_connection_logging",
     "wildcard_ip_expansion_restriction": "wildcard_ip_expansion_restriction",
-    "xds_channel_filter_chain_per_route": "xds_channel_filter_chain_per_route",
+    "xds_server_filter_chain_per_route": "xds_server_filter_chain_per_route",
 }
 
 EXPERIMENT_POLLERS = [
@@ -175,7 +177,6 @@ EXPERIMENTS = {
                 "pipelined_read_secure_endpoint",
                 "pollset_alternative",
                 "promise_based_http2_client_transport",
-                "promise_filter_send_cancel_metadata",
                 "retry_in_callv3",
                 "secure_endpoint_offload_large_reads",
                 "secure_endpoint_offload_large_writes",
@@ -212,12 +213,19 @@ EXPERIMENTS = {
             "secure_endpoint_test": [
                 "pipelined_read_secure_endpoint",
             ],
+            "xds_end2end_test": [
+                "xds_server_filter_chain_per_route",
+            ],
+            "xds_test": [
+                "xds_server_filter_chain_per_route",
+            ],
         },
         "on": {
             "cancel_ares_query_test": [
                 "event_engine_dns",
             ],
             "core_end2end_test": [
+                "callv3_batch_validation",
                 "error_flatten",
                 "event_engine_client",
                 "event_engine_dns_non_client_channel",
@@ -247,10 +255,6 @@ EXPERIMENTS = {
             "xds_end2end_test": [
                 "error_flatten",
                 "subchannel_wrapper_cleanup_on_orphan",
-                "xds_channel_filter_chain_per_route",
-            ],
-            "xds_test": [
-                "xds_channel_filter_chain_per_route",
             ],
         },
     },

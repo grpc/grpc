@@ -22,9 +22,12 @@
 
 #include <algorithm>
 #include <map>
+#include <optional>
+#include <string>
 #include <utility>
 
 #include "envoy/config/core/v3/address.upb.h"
+#include "envoy/config/core/v3/base.upb.h"
 #include "envoy/extensions/transport_sockets/tls/v3/common.upb.h"
 #include "envoy/extensions/transport_sockets/tls/v3/tls.upb.h"
 #include "envoy/type/matcher/v3/regex.upb.h"
@@ -39,6 +42,7 @@
 #include "src/core/util/env.h"
 #include "src/core/util/json/json_reader.h"
 #include "src/core/util/upb_utils.h"
+#include "src/core/util/validation_errors.h"
 #include "src/core/xds/grpc/xds_bootstrap_grpc.h"
 #include "src/core/xds/xds_client/xds_client.h"
 #include "upb/base/status.hpp"
@@ -48,9 +52,12 @@
 #include "xds/type/v3/typed_struct.upb.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
+#include "absl/strings/escaping.h"
+#include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 
@@ -616,22 +623,26 @@ std::optional<XdsExtension> ExtractXdsExtension(
 
 namespace {
 
-absl::string_view GetHeaderValue(upb_StringView upb_value,
-                                 absl::string_view field_name, bool validate,
-                                 ValidationErrors* errors) {
+std::optional<std::string> GetHeaderValue(upb_StringView upb_value,
+                                          bool is_binary,
+                                          absl::string_view field_name,
+                                          ValidationErrors* errors) {
   absl::string_view value = UpbStringToAbsl(upb_value);
-  if (!value.empty()) {
-    ValidationErrors::ScopedField field(errors, field_name);
-    if (value.size() > 16384) errors->AddError("longer than 16384 bytes");
-    if (validate) {
-      ValidateMetadataResult result =
-          ValidateNonBinaryHeaderValueIsLegal(value);
-      if (result != ValidateMetadataResult::kOk) {
-        errors->AddError(ValidateMetadataResultToString(result));
-      }
+  if (value.empty()) return std::nullopt;
+  ValidationErrors::ScopedField field(errors, field_name);
+  if (value.size() > 16384) errors->AddError("longer than 16384 bytes");
+  if (is_binary) {
+    std::string decoded_value;
+    if (!absl::Base64Unescape(value, &decoded_value)) {
+      errors->AddError("invalid base64");
     }
+    return decoded_value;
   }
-  return value;
+  ValidateMetadataResult result = ValidateNonBinaryHeaderValueIsLegal(value);
+  if (result != ValidateMetadataResult::kOk) {
+    errors->AddError(ValidateMetadataResultToString(result));
+  }
+  return std::string(value);
 }
 
 std::pair<std::string, std::string> ParseHeader(
@@ -653,30 +664,22 @@ std::pair<std::string, std::string> ParseHeader(
       }
     }
   }
-  // value or raw_value
-  absl::string_view value;
-  if (absl::EndsWith(key, "-bin")) {
-    value =
-        GetHeaderValue(envoy_config_core_v3_HeaderValue_raw_value(header_value),
-                       ".raw_value", /*validate=*/false, errors);
-    if (value.empty()) {
-      value =
-          GetHeaderValue(envoy_config_core_v3_HeaderValue_value(header_value),
-                         ".value", /*validate=*/true, errors);
-      if (value.empty()) {
-        errors->AddError("either value or raw_value must be set");
-      }
-    }
-  } else {
-    // Key does not end in "-bin".
+  // Per gRFC A102, when reading HeaderValue protos, we prioritize reading
+  // the raw_value field for both binary and non-binary headers across xDS and
+  // side-streams. If raw_value is unset, we fall back to using the value field
+  // for backward compatibility.
+  bool is_binary = absl::EndsWith(key, "-bin");
+  std::optional<std::string> value =
+      GetHeaderValue(envoy_config_core_v3_HeaderValue_raw_value(header_value),
+                     is_binary, ".raw_value", errors);
+  if (!value.has_value()) {
     value = GetHeaderValue(envoy_config_core_v3_HeaderValue_value(header_value),
-                           ".value", /*validate=*/true, errors);
-    if (value.empty()) {
-      ValidationErrors::ScopedField field(errors, ".value");
-      errors->AddError("field not set");
+                           is_binary, ".value", errors);
+    if (!value.has_value()) {
+      errors->AddError("either value or raw_value must be set");
     }
   }
-  return {std::string(key), std::string(value)};
+  return {std::string(key), value.has_value() ? std::move(*value) : ""};
 }
 
 }  // namespace

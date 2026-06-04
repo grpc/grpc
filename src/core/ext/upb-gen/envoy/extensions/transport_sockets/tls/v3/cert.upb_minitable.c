@@ -16,7 +16,7 @@
 // Must be last.
 #include "upb/port/def.inc"
 
-extern const struct upb_MiniTable UPB_PRIVATE(_kUpb_MiniTable_StaticallyTreeShaken);
+extern const UPB_PRIVATE(upb_GeneratedExtensionListEntry)* UPB_PRIVATE(upb_generated_extension_list);
 const upb_MiniTableFile envoy_extensions_transport_sockets_tls_v3_cert_proto_upb_file_layout = {
   NULL,
   NULL,
