@@ -127,6 +127,9 @@ inline bool IsPromiseBasedHttp2ServerTransportEnabled() { return false; }
 inline bool IsPromiseBasedInprocTransportEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_PROMISE_BATCH_CLEANUP_ON_CANCEL
 inline bool IsPromiseBatchCleanupOnCancelEnabled() { return true; }
+inline bool IsPromiseFilterAvoidOkStatusOnCompletedCallEnabled() {
+  return false;
+}
 inline bool IsPromiseFilterSendCancelMetadataEnabled() { return false; }
 inline bool IsRetryInCallv3Enabled() { return false; }
 inline bool IsReturnPreexistingErrorsEnabled() { return false; }
@@ -218,6 +221,9 @@ inline bool IsPromiseBasedHttp2ServerTransportEnabled() { return false; }
 inline bool IsPromiseBasedInprocTransportEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_PROMISE_BATCH_CLEANUP_ON_CANCEL
 inline bool IsPromiseBatchCleanupOnCancelEnabled() { return true; }
+inline bool IsPromiseFilterAvoidOkStatusOnCompletedCallEnabled() {
+  return false;
+}
 inline bool IsPromiseFilterSendCancelMetadataEnabled() { return false; }
 inline bool IsRetryInCallv3Enabled() { return false; }
 inline bool IsReturnPreexistingErrorsEnabled() { return false; }
@@ -309,6 +315,9 @@ inline bool IsPromiseBasedHttp2ServerTransportEnabled() { return false; }
 inline bool IsPromiseBasedInprocTransportEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_PROMISE_BATCH_CLEANUP_ON_CANCEL
 inline bool IsPromiseBatchCleanupOnCancelEnabled() { return true; }
+inline bool IsPromiseFilterAvoidOkStatusOnCompletedCallEnabled() {
+  return false;
+}
 inline bool IsPromiseFilterSendCancelMetadataEnabled() { return false; }
 inline bool IsRetryInCallv3Enabled() { return false; }
 inline bool IsReturnPreexistingErrorsEnabled() { return false; }
@@ -376,6 +385,7 @@ enum ExperimentIds {
   kExperimentIdPromiseBasedHttp2ServerTransport,
   kExperimentIdPromiseBasedInprocTransport,
   kExperimentIdPromiseBatchCleanupOnCancel,
+  kExperimentIdPromiseFilterAvoidOkStatusOnCompletedCall,
   kExperimentIdPromiseFilterSendCancelMetadata,
   kExperimentIdRetryInCallv3,
   kExperimentIdReturnPreexistingErrors,
@@ -573,6 +583,11 @@ inline bool IsPromiseBasedInprocTransportEnabled() {
 #define GRPC_EXPERIMENT_IS_INCLUDED_PROMISE_BATCH_CLEANUP_ON_CANCEL
 inline bool IsPromiseBatchCleanupOnCancelEnabled() {
   return IsExperimentEnabled<kExperimentIdPromiseBatchCleanupOnCancel>();
+}
+#define GRPC_EXPERIMENT_IS_INCLUDED_PROMISE_FILTER_AVOID_OK_STATUS_ON_COMPLETED_CALL
+inline bool IsPromiseFilterAvoidOkStatusOnCompletedCallEnabled() {
+  return IsExperimentEnabled<
+      kExperimentIdPromiseFilterAvoidOkStatusOnCompletedCall>();
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_PROMISE_FILTER_SEND_CANCEL_METADATA
 inline bool IsPromiseFilterSendCancelMetadataEnabled() {

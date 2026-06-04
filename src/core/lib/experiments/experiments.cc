@@ -189,6 +189,12 @@ const char* const additional_constraints_promise_based_inproc_transport = "{}";
 const char* const description_promise_batch_cleanup_on_cancel =
     "Fix completion queue tag handling during promise batch cancellation.";
 const char* const additional_constraints_promise_batch_cleanup_on_cancel = "{}";
+const char* const description_promise_filter_avoid_ok_status_on_completed_call =
+    "Avoid passing OkStatus to recv_initial_metadata_ready callback when a "
+    "call has already completed.";
+const char* const
+    additional_constraints_promise_filter_avoid_ok_status_on_completed_call =
+        "{}";
 const char* const description_promise_filter_send_cancel_metadata =
     "Enables sending all trailing metadata fields from server side "
     "promise-based filters upon stream cancellation.";
@@ -399,6 +405,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_promise_batch_cleanup_on_cancel,
      additional_constraints_promise_batch_cleanup_on_cancel, nullptr, 0, true,
      true},
+    {"promise_filter_avoid_ok_status_on_completed_call",
+     description_promise_filter_avoid_ok_status_on_completed_call,
+     additional_constraints_promise_filter_avoid_ok_status_on_completed_call,
+     nullptr, 0, false, true},
     {"promise_filter_send_cancel_metadata",
      description_promise_filter_send_cancel_metadata,
      additional_constraints_promise_filter_send_cancel_metadata, nullptr, 0,
@@ -634,6 +644,12 @@ const char* const additional_constraints_promise_based_inproc_transport = "{}";
 const char* const description_promise_batch_cleanup_on_cancel =
     "Fix completion queue tag handling during promise batch cancellation.";
 const char* const additional_constraints_promise_batch_cleanup_on_cancel = "{}";
+const char* const description_promise_filter_avoid_ok_status_on_completed_call =
+    "Avoid passing OkStatus to recv_initial_metadata_ready callback when a "
+    "call has already completed.";
+const char* const
+    additional_constraints_promise_filter_avoid_ok_status_on_completed_call =
+        "{}";
 const char* const description_promise_filter_send_cancel_metadata =
     "Enables sending all trailing metadata fields from server side "
     "promise-based filters upon stream cancellation.";
@@ -844,6 +860,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_promise_batch_cleanup_on_cancel,
      additional_constraints_promise_batch_cleanup_on_cancel, nullptr, 0, true,
      true},
+    {"promise_filter_avoid_ok_status_on_completed_call",
+     description_promise_filter_avoid_ok_status_on_completed_call,
+     additional_constraints_promise_filter_avoid_ok_status_on_completed_call,
+     nullptr, 0, false, true},
     {"promise_filter_send_cancel_metadata",
      description_promise_filter_send_cancel_metadata,
      additional_constraints_promise_filter_send_cancel_metadata, nullptr, 0,
@@ -1079,6 +1099,12 @@ const char* const additional_constraints_promise_based_inproc_transport = "{}";
 const char* const description_promise_batch_cleanup_on_cancel =
     "Fix completion queue tag handling during promise batch cancellation.";
 const char* const additional_constraints_promise_batch_cleanup_on_cancel = "{}";
+const char* const description_promise_filter_avoid_ok_status_on_completed_call =
+    "Avoid passing OkStatus to recv_initial_metadata_ready callback when a "
+    "call has already completed.";
+const char* const
+    additional_constraints_promise_filter_avoid_ok_status_on_completed_call =
+        "{}";
 const char* const description_promise_filter_send_cancel_metadata =
     "Enables sending all trailing metadata fields from server side "
     "promise-based filters upon stream cancellation.";
@@ -1289,6 +1315,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_promise_batch_cleanup_on_cancel,
      additional_constraints_promise_batch_cleanup_on_cancel, nullptr, 0, true,
      true},
+    {"promise_filter_avoid_ok_status_on_completed_call",
+     description_promise_filter_avoid_ok_status_on_completed_call,
+     additional_constraints_promise_filter_avoid_ok_status_on_completed_call,
+     nullptr, 0, false, true},
     {"promise_filter_send_cancel_metadata",
      description_promise_filter_send_cancel_metadata,
      additional_constraints_promise_filter_send_cancel_metadata, nullptr, 0,
