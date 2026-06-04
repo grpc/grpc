@@ -232,14 +232,14 @@ class TestMetadata(AioTestBase):
     async def test_from_client_to_server(self):
         multicallable = self._client.unary_unary(_TEST_CLIENT_TO_SERVER)
         call = multicallable(
-            _REQUEST, metadata=_INITIAL_METADATA_FROM_CLIENT_TO_SERVER
+            _REQUEST, metadata=_INITIAL_METADATA_FROM_CLIENT_TO_SERVER, wait_for_ready=True
         )
         self.assertEqual(_RESPONSE, await call)
         self.assertEqual(grpc.StatusCode.OK, await call.code())
 
     async def test_from_server_to_client(self):
         multicallable = self._client.unary_unary(_TEST_SERVER_TO_CLIENT)
-        call = multicallable(_REQUEST)
+        call = multicallable(_REQUEST, wait_for_ready=True)
 
         self.assertEqual(
             _INITIAL_METADATA_FROM_SERVER_TO_CLIENT,
@@ -250,7 +250,7 @@ class TestMetadata(AioTestBase):
 
     async def test_trailing_metadata(self):
         multicallable = self._client.unary_unary(_TEST_TRAILING_METADATA)
-        call = multicallable(_REQUEST)
+        call = multicallable(_REQUEST, wait_for_ready=True)
         self.assertEqual(_TRAILING_METADATA, await call.trailing_metadata())
         self.assertEqual(_RESPONSE, await call)
         self.assertEqual(grpc.StatusCode.OK, await call.code())
@@ -258,7 +258,7 @@ class TestMetadata(AioTestBase):
     async def test_from_client_to_server_with_list(self):
         multicallable = self._client.unary_unary(_TEST_CLIENT_TO_SERVER)
         call = multicallable(
-            _REQUEST, metadata=list(_INITIAL_METADATA_FROM_CLIENT_TO_SERVER)
+            _REQUEST, metadata=list(_INITIAL_METADATA_FROM_CLIENT_TO_SERVER), wait_for_ready=True
         )  # pytype: disable=wrong-arg-types
         self.assertEqual(_RESPONSE, await call)
         self.assertEqual(grpc.StatusCode.OK, await call.code())
@@ -276,13 +276,13 @@ class TestMetadata(AioTestBase):
         for exception_type, metadata in _INVALID_METADATA_TEST_CASES:
             with self.subTest(metadata=metadata):
                 with self.assertRaises(exception_type):
-                    call = multicallable(_REQUEST, metadata=metadata)
+                    call = multicallable(_REQUEST, metadata=metadata, wait_for_ready=True)
                     await call
 
     async def test_generic_handler(self):
         multicallable = self._client.unary_unary(_TEST_GENERIC_HANDLER)
         call = multicallable(
-            _REQUEST, metadata=_INITIAL_METADATA_FOR_GENERIC_HANDLER
+            _REQUEST, metadata=_INITIAL_METADATA_FOR_GENERIC_HANDLER, wait_for_ready=True
         )
         self.assertEqual(_RESPONSE, await call)
         self.assertEqual(grpc.StatusCode.OK, await call.code())
@@ -290,7 +290,7 @@ class TestMetadata(AioTestBase):
     async def test_unary_stream(self):
         multicallable = self._client.unary_stream(_TEST_UNARY_STREAM)
         call = multicallable(
-            _REQUEST, metadata=_INITIAL_METADATA_FROM_CLIENT_TO_SERVER
+            _REQUEST, metadata=_INITIAL_METADATA_FROM_CLIENT_TO_SERVER, wait_for_ready=True
         )
 
         self.assertTrue(
@@ -309,7 +309,7 @@ class TestMetadata(AioTestBase):
 
     async def test_stream_unary(self):
         multicallable = self._client.stream_unary(_TEST_STREAM_UNARY)
-        call = multicallable(metadata=_INITIAL_METADATA_FROM_CLIENT_TO_SERVER)
+        call = multicallable(metadata=_INITIAL_METADATA_FROM_CLIENT_TO_SERVER, wait_for_ready=True)
         await call.write(_REQUEST)
         await call.done_writing()
 
@@ -326,7 +326,7 @@ class TestMetadata(AioTestBase):
 
     async def test_stream_stream(self):
         multicallable = self._client.stream_stream(_TEST_STREAM_STREAM)
-        call = multicallable(metadata=_INITIAL_METADATA_FROM_CLIENT_TO_SERVER)
+        call = multicallable(metadata=_INITIAL_METADATA_FROM_CLIENT_TO_SERVER, wait_for_ready=True)
         await call.write(_REQUEST)
         await call.done_writing()
 
@@ -355,7 +355,7 @@ class TestMetadata(AioTestBase):
 
     async def test_inspect_context(self):
         multicallable = self._client.unary_unary(_TEST_INSPECT_CONTEXT)
-        call = multicallable(_REQUEST)
+        call = multicallable(_REQUEST, wait_for_ready=True)
         with self.assertRaises(grpc.RpcError) as exc_data:
             await call
 
