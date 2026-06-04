@@ -134,20 +134,13 @@ source tools/internal_ci/helper_scripts/prepare_ccache_symlinks_rc
 if [[ "$(inside_venv)" ]]; then
   VENV_PYTHON="$PYTHON"
 else
-  # Remove problematic .pth files installed globally in the image which break Python 3.15
-  rm -f /usr/local/lib/python*/site-packages/*.pth 2>/dev/null || true
-
-  if $PYTHON -c "import sys; sys.exit(0 if sys.version_info[0] >= 3 else 1)"; then
-    $PYTHON -m venv "$VENV"
-    VENV_PYTHON="$(pwd)/$VENV/$VENV_RELATIVE_PYTHON"
-  else
-    # Instantiate the virtualenv from the Python version passed in.
-    $PYTHON -m pip install --user virtualenv==20.34.0
-    # Skip wheel and setuptools and manually install later. Otherwise we might
-    # not find cython module while building grpcio.
-    $PYTHON -m virtualenv --reset-app-data --no-wheel --no-setuptools "$VENV"
-    VENV_PYTHON="$(pwd)/$VENV/$VENV_RELATIVE_PYTHON"
-  fi
+  # Instantiate the virtualenv from the Python version passed in.
+  # virtualenv 20.34.0 is the first release that knows about Python 3.15.
+  $PYTHON -m pip install --user virtualenv==20.34.0
+  # Skip wheel and setuptools and manually install later. Otherwise we might
+  # not find cython module while building grpcio.
+  $PYTHON -m virtualenv --no-wheel --no-setuptools "$VENV"
+  VENV_PYTHON="$(pwd)/$VENV/$VENV_RELATIVE_PYTHON"
 fi
 
 pip_install() {
