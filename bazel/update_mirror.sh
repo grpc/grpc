@@ -49,7 +49,10 @@ function upload {
 }
 
 function upload_bzlmod_deps {
-  local bazel_modules=($(bazel mod graph 2>/dev/null | sed -E '/<root>/d' | sed -E 's/^[^[:alnum:]]*([^ ]+) .*$/\1/' | sort | uniq))
+  local bazel_modules=($(bazel mod graph 2>/dev/null |
+    tail -n +2 | # ignore the <root> module
+    sed -E 's/^[^[:alnum:]]*([^ ]+) .*$/\1/' | sort | uniq))
+
   local urls=()
   if [ "${#bazel_modules[@]}" -gt 0 ]; then
     urls=($(bazel mod show_repo 2>/dev/null "${bazel_modules[@]}" | grep -E '^\s*urls = \["' | grep -Eo 'https://[^"]+' | sort | uniq))
