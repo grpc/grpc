@@ -98,8 +98,6 @@ class _BaseMultiCallable(Generic[InterceptorT]):
     _interceptors: Optional[Sequence[InterceptorT]]
     _references: List[Any]
 
-    _loop: asyncio.AbstractEventLoop
-
     # pylint: disable=too-many-arguments
     def __init__(
         self,
