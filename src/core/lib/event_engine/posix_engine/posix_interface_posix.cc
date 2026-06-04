@@ -444,6 +444,9 @@ absl::Status InternalApplySocketMutatorInOptions(
 }  // namespace
 
 bool IsSocketReusePortSupported() {
+#ifdef __APPLE__
+  return false;
+#else
   static bool kSupportSoReusePort = []() -> bool {
     EventEnginePosixInterface posix_interface;
     auto s = posix_interface.Socket(AF_INET, SOCK_STREAM, 0);
@@ -463,6 +466,7 @@ bool IsSocketReusePortSupported() {
     }
   }();
   return kSupportSoReusePort;
+#endif
 }
 
 #ifdef GRPC_ENABLE_FORK_SUPPORT

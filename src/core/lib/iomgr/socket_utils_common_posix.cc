@@ -230,8 +230,12 @@ void probe_so_reuseport_once(void) {
 }
 
 bool grpc_is_socket_reuse_port_supported() {
+#ifdef __APPLE__
+  return false;
+#else
   gpr_once_init(&g_probe_so_reuesport_once, probe_so_reuseport_once);
   return g_support_so_reuseport;
+#endif
 }
 
 // disable nagle

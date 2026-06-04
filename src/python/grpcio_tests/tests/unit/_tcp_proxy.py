@@ -49,14 +49,14 @@ def _init_proxy_socket(gateway_address, gateway_port, stop_event=None):
         if stop_event and stop_event.is_set():
             return None
         try:
-            proxy_socket = socket.create_connection(
-                (gateway_address, gateway_port),
-                timeout=10.0
-            )
+            proxy_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            # Prevent connect from blocking for macOS default 75s if SYNs are dropped
+            proxy_socket.settimeout(1.0)
+            proxy_socket.connect((gateway_address, gateway_port))
             proxy_socket.setsockopt(socket.SOL_SOCKET, socket.SO_LINGER, struct.pack('ii', 1, 0))
             proxy_socket.settimeout(None)
             return proxy_socket
-        except (socket.error, TimeoutError) as err:
+        except (socket.error, socket.timeout, TimeoutError) as err:
             last_err = err
             import logging
             logging.warning(
@@ -167,6 +167,10 @@ class TcpProxy:
                 if socket_to_write is self._proxy_socket and self._proxy_socket is not None:
                     _close_socket(self._proxy_socket)
                     self._proxy_socket = None
+                    # MUST close all clients if the backend dies, so the client initiates a clean HTTP/2 reconnect.
+                    for c in self._client_sockets:
+                        _close_socket(c)
+                    self._client_sockets.clear()
                 elif socket_to_write in self._client_sockets:
                     if socket_to_write in self._client_sockets:
                         self._client_sockets.remove(socket_to_write)
@@ -189,6 +193,10 @@ class TcpProxy:
             except (select.error, socket.error, ValueError):
                 _close_socket(self._proxy_socket)
                 self._proxy_socket = None
+                # MUST close all clients if the backend dies
+                for c in self._client_sockets:
+                    _close_socket(c)
+                self._client_sockets.clear()
 
         valid_clients = []
         for s in self._client_sockets:
