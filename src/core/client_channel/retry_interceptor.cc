@@ -35,8 +35,8 @@ size_t GetMaxPerRpcRetryBufferSize(const ChannelArgs& args) {
 
 namespace retry_detail {
 
-RetryState::RetryState(const internal::RetryMethodConfig* retry_policy,
-                       RefCountedPtr<internal::RetryThrottler> retry_throttler)
+RetryState::RetryState(const RetryMethodConfig* retry_policy,
+                       RefCountedPtr<RetryThrottler> retry_throttler)
     : retry_policy_(retry_policy),
       retry_throttler_(std::move(retry_throttler)),
       retry_backoff_(
@@ -134,38 +134,10 @@ std::optional<Duration> RetryState::ShouldRetry(
 ////////////////////////////////////////////////////////////////////////////////
 // RetryInterceptor
 
-absl::StatusOr<RefCountedPtr<RetryInterceptor>> RetryInterceptor::Create(
-    const ChannelArgs& args, const FilterArgs& filter_args) {
-  auto retry_throttler = filter_args.GetState<internal::RetryThrottler>("");
-  return MakeRefCounted<RetryInterceptor>(args, std::move(retry_throttler));
-}
-
-void RetryInterceptor::UpdateBlackboard(const ServiceConfig& service_config,
-                                        const Blackboard* old_blackboard,
-                                        Blackboard* new_blackboard) {
-  const auto* config = static_cast<const internal::RetryGlobalConfig*>(
-      service_config.GetGlobalParsedConfig(
-          internal::RetryServiceConfigParser::ParserIndex()));
-  if (config == nullptr) return;
-  // Get existing throttle state.
-  RefCountedPtr<internal::RetryThrottler> throttler;
-  if (old_blackboard != nullptr) {
-    throttler = old_blackboard->Get<internal::RetryThrottler>("");
-  }
-  throttler = internal::RetryThrottler::Create(config->max_milli_tokens(),
-                                               config->milli_token_ratio(),
-                                               std::move(throttler));
-  CHECK_NE(new_blackboard, nullptr);
-  new_blackboard->Set("", std::move(throttler));
-}
-
-RetryInterceptor::RetryInterceptor(
-    const ChannelArgs& args,
-    RefCountedPtr<internal::RetryThrottler> retry_throttler)
+RetryInterceptor::RetryInterceptor(const ChannelArgs& args)
     : per_rpc_retry_buffer_size_(GetMaxPerRpcRetryBufferSize(args)),
-      service_config_parser_index_(
-          internal::RetryServiceConfigParser::ParserIndex()),
-      retry_throttler_(std::move(retry_throttler)) {}
+      service_config_parser_index_(RetryServiceConfigParser::ParserIndex()),
+      retry_throttler_(args.GetObjectRef<RetryThrottler>()) {}
 
 void RetryInterceptor::InterceptCall(
     UnstartedCallHandler unstarted_call_handler) {
@@ -177,10 +149,10 @@ void RetryInterceptor::InterceptCall(
   call->Start();
 }
 
-const internal::RetryMethodConfig* RetryInterceptor::GetRetryPolicy() {
+const RetryMethodConfig* RetryInterceptor::GetRetryPolicy() {
   auto* svc_cfg_call_data = MaybeGetContext<ServiceConfigCallData>();
   if (svc_cfg_call_data == nullptr) return nullptr;
-  return static_cast<const internal::RetryMethodConfig*>(
+  return static_cast<const RetryMethodConfig*>(
       svc_cfg_call_data->GetMethodParsedConfig(service_config_parser_index_));
 }
 

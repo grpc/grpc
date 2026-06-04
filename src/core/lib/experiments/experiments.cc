@@ -41,6 +41,9 @@ const char* const
 const char* const
     additional_constraints_call_tracer_send_trailing_metadata_is_an_annotation =
         "{}";
+const char* const description_callv3_batch_validation =
+    "If enabled, perform validations on receiving a new batch.";
+const char* const additional_constraints_callv3_batch_validation = "{}";
 const char* const description_chaotic_good_framing_layer =
     "Enable the chaotic good framing layer.";
 const char* const additional_constraints_chaotic_good_framing_layer = "{}";
@@ -255,9 +258,17 @@ const char* const description_use_call_event_engine_in_completion_queue =
     "Use the call event engine to run callbacks in completion queue.";
 const char* const
     additional_constraints_use_call_event_engine_in_completion_queue = "{}";
+const char* const description_verbose_channelz_connection_logging =
+    "Verbose logging of events into channelz during connection setup.";
+const char* const additional_constraints_verbose_channelz_connection_logging =
+    "{}";
 const char* const description_wildcard_ip_expansion_restriction =
     "If set, adds optional restriction on when to expand wildcard IPs.";
 const char* const additional_constraints_wildcard_ip_expansion_restriction =
+    "{}";
+const char* const description_xds_server_filter_chain_per_route =
+    "xDS servers use a separate filter chain for each route.";
+const char* const additional_constraints_xds_server_filter_chain_per_route =
     "{}";
 }  // namespace
 
@@ -276,6 +287,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_call_tracer_send_trailing_metadata_is_an_annotation,
      additional_constraints_call_tracer_send_trailing_metadata_is_an_annotation,
      nullptr, 0, false, true},
+    {"callv3_batch_validation", description_callv3_batch_validation,
+     additional_constraints_callv3_batch_validation, nullptr, 0, true, true},
     {"chaotic_good_framing_layer", description_chaotic_good_framing_layer,
      additional_constraints_chaotic_good_framing_layer, nullptr, 0, true,
      false},
@@ -332,7 +345,7 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_max_inflight_pings_strict_limit, nullptr, 0, true,
      true},
     {"memory_optimization_01", description_memory_optimization_01,
-     additional_constraints_memory_optimization_01, nullptr, 0, false, false},
+     additional_constraints_memory_optimization_01, nullptr, 0, true, false},
     {"memory_optimization_02", description_memory_optimization_02,
      additional_constraints_memory_optimization_02, nullptr, 0, false, false},
     {"message_size_refactoring", description_message_size_refactoring,
@@ -442,9 +455,17 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_use_call_event_engine_in_completion_queue,
      additional_constraints_use_call_event_engine_in_completion_queue, nullptr,
      0, false, true},
+    {"verbose_channelz_connection_logging",
+     description_verbose_channelz_connection_logging,
+     additional_constraints_verbose_channelz_connection_logging, nullptr, 0,
+     false, true},
     {"wildcard_ip_expansion_restriction",
      description_wildcard_ip_expansion_restriction,
      additional_constraints_wildcard_ip_expansion_restriction, nullptr, 0,
+     false, true},
+    {"xds_server_filter_chain_per_route",
+     description_xds_server_filter_chain_per_route,
+     additional_constraints_xds_server_filter_chain_per_route, nullptr, 0,
      false, true},
 };
 
@@ -470,6 +491,9 @@ const char* const
 const char* const
     additional_constraints_call_tracer_send_trailing_metadata_is_an_annotation =
         "{}";
+const char* const description_callv3_batch_validation =
+    "If enabled, perform validations on receiving a new batch.";
+const char* const additional_constraints_callv3_batch_validation = "{}";
 const char* const description_chaotic_good_framing_layer =
     "Enable the chaotic good framing layer.";
 const char* const additional_constraints_chaotic_good_framing_layer = "{}";
@@ -684,9 +708,17 @@ const char* const description_use_call_event_engine_in_completion_queue =
     "Use the call event engine to run callbacks in completion queue.";
 const char* const
     additional_constraints_use_call_event_engine_in_completion_queue = "{}";
+const char* const description_verbose_channelz_connection_logging =
+    "Verbose logging of events into channelz during connection setup.";
+const char* const additional_constraints_verbose_channelz_connection_logging =
+    "{}";
 const char* const description_wildcard_ip_expansion_restriction =
     "If set, adds optional restriction on when to expand wildcard IPs.";
 const char* const additional_constraints_wildcard_ip_expansion_restriction =
+    "{}";
+const char* const description_xds_server_filter_chain_per_route =
+    "xDS servers use a separate filter chain for each route.";
+const char* const additional_constraints_xds_server_filter_chain_per_route =
     "{}";
 }  // namespace
 
@@ -705,6 +737,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_call_tracer_send_trailing_metadata_is_an_annotation,
      additional_constraints_call_tracer_send_trailing_metadata_is_an_annotation,
      nullptr, 0, false, true},
+    {"callv3_batch_validation", description_callv3_batch_validation,
+     additional_constraints_callv3_batch_validation, nullptr, 0, true, true},
     {"chaotic_good_framing_layer", description_chaotic_good_framing_layer,
      additional_constraints_chaotic_good_framing_layer, nullptr, 0, true,
      false},
@@ -761,7 +795,7 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_max_inflight_pings_strict_limit, nullptr, 0, true,
      true},
     {"memory_optimization_01", description_memory_optimization_01,
-     additional_constraints_memory_optimization_01, nullptr, 0, false, false},
+     additional_constraints_memory_optimization_01, nullptr, 0, true, false},
     {"memory_optimization_02", description_memory_optimization_02,
      additional_constraints_memory_optimization_02, nullptr, 0, false, false},
     {"message_size_refactoring", description_message_size_refactoring,
@@ -871,9 +905,17 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_use_call_event_engine_in_completion_queue,
      additional_constraints_use_call_event_engine_in_completion_queue, nullptr,
      0, false, true},
+    {"verbose_channelz_connection_logging",
+     description_verbose_channelz_connection_logging,
+     additional_constraints_verbose_channelz_connection_logging, nullptr, 0,
+     false, true},
     {"wildcard_ip_expansion_restriction",
      description_wildcard_ip_expansion_restriction,
      additional_constraints_wildcard_ip_expansion_restriction, nullptr, 0,
+     false, true},
+    {"xds_server_filter_chain_per_route",
+     description_xds_server_filter_chain_per_route,
+     additional_constraints_xds_server_filter_chain_per_route, nullptr, 0,
      false, true},
 };
 
@@ -899,6 +941,9 @@ const char* const
 const char* const
     additional_constraints_call_tracer_send_trailing_metadata_is_an_annotation =
         "{}";
+const char* const description_callv3_batch_validation =
+    "If enabled, perform validations on receiving a new batch.";
+const char* const additional_constraints_callv3_batch_validation = "{}";
 const char* const description_chaotic_good_framing_layer =
     "Enable the chaotic good framing layer.";
 const char* const additional_constraints_chaotic_good_framing_layer = "{}";
@@ -1113,9 +1158,17 @@ const char* const description_use_call_event_engine_in_completion_queue =
     "Use the call event engine to run callbacks in completion queue.";
 const char* const
     additional_constraints_use_call_event_engine_in_completion_queue = "{}";
+const char* const description_verbose_channelz_connection_logging =
+    "Verbose logging of events into channelz during connection setup.";
+const char* const additional_constraints_verbose_channelz_connection_logging =
+    "{}";
 const char* const description_wildcard_ip_expansion_restriction =
     "If set, adds optional restriction on when to expand wildcard IPs.";
 const char* const additional_constraints_wildcard_ip_expansion_restriction =
+    "{}";
+const char* const description_xds_server_filter_chain_per_route =
+    "xDS servers use a separate filter chain for each route.";
+const char* const additional_constraints_xds_server_filter_chain_per_route =
     "{}";
 }  // namespace
 
@@ -1134,6 +1187,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_call_tracer_send_trailing_metadata_is_an_annotation,
      additional_constraints_call_tracer_send_trailing_metadata_is_an_annotation,
      nullptr, 0, false, true},
+    {"callv3_batch_validation", description_callv3_batch_validation,
+     additional_constraints_callv3_batch_validation, nullptr, 0, true, true},
     {"chaotic_good_framing_layer", description_chaotic_good_framing_layer,
      additional_constraints_chaotic_good_framing_layer, nullptr, 0, true,
      false},
@@ -1190,7 +1245,7 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_max_inflight_pings_strict_limit, nullptr, 0, true,
      true},
     {"memory_optimization_01", description_memory_optimization_01,
-     additional_constraints_memory_optimization_01, nullptr, 0, false, false},
+     additional_constraints_memory_optimization_01, nullptr, 0, true, false},
     {"memory_optimization_02", description_memory_optimization_02,
      additional_constraints_memory_optimization_02, nullptr, 0, false, false},
     {"message_size_refactoring", description_message_size_refactoring,
@@ -1300,9 +1355,17 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_use_call_event_engine_in_completion_queue,
      additional_constraints_use_call_event_engine_in_completion_queue, nullptr,
      0, false, true},
+    {"verbose_channelz_connection_logging",
+     description_verbose_channelz_connection_logging,
+     additional_constraints_verbose_channelz_connection_logging, nullptr, 0,
+     false, true},
     {"wildcard_ip_expansion_restriction",
      description_wildcard_ip_expansion_restriction,
      additional_constraints_wildcard_ip_expansion_restriction, nullptr, 0,
+     false, true},
+    {"xds_server_filter_chain_per_route",
+     description_xds_server_filter_chain_per_route,
+     additional_constraints_xds_server_filter_chain_per_route, nullptr, 0,
      false, true},
 };
 

@@ -18,7 +18,9 @@ import contextlib
 import enum
 import logging
 import sys
-from typing import Any, Optional
+import typing
+from typing import Any, Optional, Protocol
+from typing import Any, Protocol
 
 from grpc import _compression
 from grpc._cython import cygrpc as _cygrpc
@@ -1376,13 +1378,17 @@ class RpcMethodHandler(abc.ABC):
     request_streaming and response_streaming are both True."""
 
 
-class HandlerCallDetails(abc.ABC):
+@typing.runtime_checkable
+class HandlerCallDetails(Protocol):
     """Describes an RPC that has just arrived for service.
 
     Attributes:
       method: The method name of the RPC.
       invocation_metadata: The :term:`metadata` sent by the client.
     """
+
+    method: str
+    invocation_metadata: Any
 
 
 class GenericRpcHandler(abc.ABC):
