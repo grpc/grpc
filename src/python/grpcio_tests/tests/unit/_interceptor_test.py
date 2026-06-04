@@ -223,36 +223,53 @@ def get_method_handlers(handler):
     }
 
 
+class _MultiCallableWrapper:
+    def __init__(self, original):
+        self._original = original
+
+    def __call__(self, *args, **kwargs):
+        kwargs['wait_for_ready'] = True
+        return self._original(*args, **kwargs)
+
+    def with_call(self, *args, **kwargs):
+        kwargs['wait_for_ready'] = True
+        return self._original.with_call(*args, **kwargs)
+
+    def future(self, *args, **kwargs):
+        kwargs['wait_for_ready'] = True
+        return self._original.future(*args, **kwargs)
+
+
 def _unary_unary_multi_callable(channel):
-    return channel.unary_unary(
+    return _MultiCallableWrapper(channel.unary_unary(
         grpc._common.fully_qualified_method(_SERVICE_NAME, _UNARY_UNARY),
         _registered_method=True,
-    )
+    ))
 
 
 def _unary_stream_multi_callable(channel):
-    return channel.unary_stream(
+    return _MultiCallableWrapper(channel.unary_stream(
         grpc._common.fully_qualified_method(_SERVICE_NAME, _UNARY_STREAM),
         request_serializer=_SERIALIZE_REQUEST,
         response_deserializer=_DESERIALIZE_RESPONSE,
         _registered_method=True,
-    )
+    ))
 
 
 def _stream_unary_multi_callable(channel):
-    return channel.stream_unary(
+    return _MultiCallableWrapper(channel.stream_unary(
         grpc._common.fully_qualified_method(_SERVICE_NAME, _STREAM_UNARY),
         request_serializer=_SERIALIZE_REQUEST,
         response_deserializer=_DESERIALIZE_RESPONSE,
         _registered_method=True,
-    )
+    ))
 
 
 def _stream_stream_multi_callable(channel):
-    return channel.stream_stream(
+    return _MultiCallableWrapper(channel.stream_stream(
         grpc._common.fully_qualified_method(_SERVICE_NAME, _STREAM_STREAM),
         _registered_method=True,
-    )
+    ))
 
 
 class _ClientCallDetails(
