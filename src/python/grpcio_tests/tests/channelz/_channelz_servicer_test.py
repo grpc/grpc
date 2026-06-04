@@ -92,6 +92,19 @@ def _close_channel_server_pairs(pairs):
         pair.channel.close()
 
 
+
+class _StubWrapper:
+    def __init__(self, stub):
+        self._stub = stub
+    def __getattr__(self, name):
+        attr = getattr(self._stub, name)
+        if callable(attr):
+            def wrapper(*args, **kwargs):
+                kwargs['wait_for_ready'] = True
+                return attr(*args, **kwargs)
+            return wrapper
+        return attr
+
 class ChannelzServicerTest(unittest.TestCase):
     def _send_successful_unary_unary(self, idx):
         _, r = (
@@ -154,7 +167,7 @@ class ChannelzServicerTest(unittest.TestCase):
         self._channel = grpc.insecure_channel(
             "127.0.0.1:%d" % port, _DISABLE_CHANNELZ
         )
-        self._channelz_stub = channelz_pb2_grpc.ChannelzStub(self._channel)
+        self._channelz_stub = _StubWrapper(channelz_pb2_grpc.ChannelzStub(self._channel))
 
     def tearDown(self):
         self._server.stop(None)
