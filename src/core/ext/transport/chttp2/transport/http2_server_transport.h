@@ -248,7 +248,7 @@ class Http2ServerTransport final : public ServerTransport,
   Http2Status ProcessIncomingFrame(Http2UnknownFrame&& frame);
   Http2Status ProcessIncomingFrame(Http2EmptyFrame&& frame);
 
-  Http2Status ProcessMetadata(RefCountedPtr<Stream> stream);
+  Http2Status ProcessMetadata();
 
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Http2Status
   ProcessOneIncomingFrame(Http2Frame&& frame) {
@@ -496,8 +496,8 @@ class Http2ServerTransport final : public ServerTransport,
   std::optional<RefCountedPtr<Stream>> MakeStream(
       CallInitiator&& call_initiator, const uint32_t stream_id);
 
-  absl::Status IncomingStream(ClientMetadataHandle&& metadata,
-                              const uint32_t stream_id);
+  Http2Status IncomingStream(ClientMetadataHandle&& metadata,
+                             uint32_t stream_id);
 
   // void BeginCloseStream(RefCountedPtr<Stream> stream,
   //                       std::optional<uint32_t> reset_stream_error_code,
