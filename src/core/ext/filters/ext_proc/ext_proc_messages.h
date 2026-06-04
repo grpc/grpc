@@ -1,0 +1,134 @@
+//
+// Copyright 2026 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+#ifndef GRPC_SRC_CORE_FILTER_EXT_PROC_EXT_PROC_MESSAGES_H
+#define GRPC_SRC_CORE_FILTER_EXT_PROC_EXT_PROC_MESSAGES_H
+
+#include <list>
+#include <memory>
+#include <optional>
+#include <string>
+#include <utility>
+#include <vector>
+
+#include "google/protobuf/struct.upb.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/string_view.h"
+#include "envoy/config/core/v3/base.upb.h"
+#include "envoy/service/ext_proc/v3/external_processor.upb.h"
+#include "src/core/call/metadata_batch.h"
+#include "src/core/xds/grpc/xds_common_types.h"
+#include "upb/mem/arena.h"
+
+namespace grpc_core {
+
+struct ExtProcResponse {
+  struct HeaderMutation {
+    std::vector<XdsHeaderValueOption> set_headers;
+    std::vector<std::string> remove_headers;
+    // Caches owned keys and values as std::string. Because the core xDS
+    // target target XdsHeaderValueOption uses non-owning absl::string_view
+    // keys which originally point to the locally-destroyed upb::Arena, we
+    // copy them here. We use std::list because it guarantees iterator and
+    // reference stability, ensuring pointers do not get invalidated.
+    // FUTURE OPTIMIZATION: We could allocate these backing strings directly
+    // on the Call's Arena by passing the CallHandler's arena to OnRecvMessage.
+    std::list<std::string> backing_strings;
+  };
+  std::optional<absl::StatusOr<HeaderMutation>> request_headers;
+  std::optional<absl::StatusOr<HeaderMutation>> response_headers;
+  std::optional<HeaderMutation> response_trailers;
+  struct BodyMutation {
+    std::string body;
+    bool end_of_stream = false;
+    bool end_of_stream_without_message = false;
+  };
+  std::optional<absl::StatusOr<BodyMutation>> request_body;
+  std::optional<absl::StatusOr<BodyMutation>> response_body;
+  struct ImmediateResponse {
+    uint32_t status;
+    HeaderMutation header_mutation;
+    std::string details;
+  };
+  std::optional<ImmediateResponse> immediate_response;
+  bool mode_override = false;
+  bool request_drain = false;
+};
+
+class ExtProcRequest {
+ public:
+  class Builder {
+   public:
+    explicit Builder(upb_Arena* arena);
+    Builder& SetRequestHeaders(envoy_config_core_v3_HeaderMap* headers,
+                               bool end_of_stream);
+    Builder& SetResponseHeaders(envoy_config_core_v3_HeaderMap* headers,
+                                bool end_of_stream);
+    Builder& SetRequestBody(upb_StringView buf, bool end_of_stream,
+                            bool end_of_stream_without_message = false);
+    Builder& SetResponseBody(upb_StringView buf, bool end_of_stream);
+    Builder& SetResponseTrailers(envoy_config_core_v3_HeaderMap* trailer);
+    Builder& SetObservabilityMode(bool mode);
+    Builder& SetAttributes(::google_protobuf_Struct* attributes);
+    Builder& SetProtocolConfigRequest(bool is_first_message, bool send_body);
+    Builder& SetProtocolConfigResponse(bool is_first_message, bool send_body);
+
+    ExtProcRequest Build();
+
+   private:
+    upb_Arena* arena_;
+    envoy_service_ext_proc_v3_ProcessingRequest* request_;
+  };
+  static std::string CreateClientHeadersRequest(
+      grpc_metadata_batch& headers, upb_Arena* arena,
+      ::google_protobuf_Struct* attributes, bool observability_mode,
+      bool is_first_message, bool send_request_body, bool send_response_body);
+
+  static std::string CreateServerHeadersRequest(
+      grpc_metadata_batch& headers, bool trailers_only, upb_Arena* arena,
+      ::google_protobuf_Struct* attributes, bool observability_mode);
+  static std::string CreateClientMessageRequest(
+      upb_StringView payload, bool end_of_stream,
+      bool end_of_stream_without_message, upb_Arena* arena,
+      ::google_protobuf_Struct* attributes, bool observability_mode);
+  static std::string CreateServerMessageRequest(
+      upb_StringView payload, upb_Arena* arena,
+      ::google_protobuf_Struct* attributes, bool observability_mode);
+  static std::string CreateServerTrailersRequest(
+      grpc_metadata_batch& trailers, upb_Arena* arena,
+      ::google_protobuf_Struct* attributes, bool observability_mode);
+
+  static ::google_protobuf_Struct* PopulateAttributesMap(
+      upb_Arena* arena, const std::vector<std::string>& requested_attributes,
+      const grpc_metadata_batch& metadata);
+
+  std::string SerializeMessage();
+
+ private:
+  explicit ExtProcRequest(upb_Arena* arena,
+                          envoy_service_ext_proc_v3_ProcessingRequest* request);
+
+  upb_Arena* arena_;
+  envoy_service_ext_proc_v3_ProcessingRequest* request_;
+};
+
+absl::StatusOr<ExtProcResponse> ParseExtProcResponse(
+    const envoy_service_ext_proc_v3_ProcessingResponse* response,
+    bool observability_mode = false);
+
+}  // namespace grpc_core
+
+#endif  // GRPC_SRC_CORE_FILTER_EXT_PROC_EXT_PROC_MESSAGES_H

@@ -153,6 +153,36 @@ std::string XdsGrpcService::ToString() const {
 }
 
 //
+// XdsHeaderValueOption
+//
+
+std::string XdsHeaderValueOption::ToString() const {
+  std::string result = "{header={key=";
+  StrAppend(result, header.key);
+  StrAppend(result, ", value=");
+  StrAppend(result, header.value);
+  StrAppend(result, "}, append_action=");
+  switch (append_action) {
+    case HeaderAppendAction::APPEND_IF_EXISTS_OR_ADD:
+      StrAppend(result, "APPEND_IF_EXISTS_OR_ADD");
+      break;
+    case HeaderAppendAction::ADD_IF_ABSENT:
+      StrAppend(result, "ADD_IF_ABSENT");
+      break;
+    case HeaderAppendAction::OVERWRITE_IF_EXISTS_OR_ADD:
+      StrAppend(result, "OVERWRITE_IF_EXISTS_OR_ADD");
+      break;
+    case HeaderAppendAction::OVERWRITE_IF_EXISTS:
+      StrAppend(result, "OVERWRITE_IF_EXISTS");
+      break;
+  }
+  StrAppend(result, ", keep_empty_value=");
+  StrAppend(result, keep_empty_value ? "true" : "false");
+  StrAppend(result, "}");
+  return result;
+}
+
+//
 // HeaderMutationRules
 //
 

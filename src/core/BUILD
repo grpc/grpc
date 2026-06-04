@@ -5692,6 +5692,7 @@ grpc_cc_library(
         "protobuf_struct_upb",
         "upb_utils",
         "xds_common_types",
+        "//:envoy_config_core_upb",
         "//:envoy_extensions_filters_http_ext_proc_upb",
         "//:envoy_service_ext_proc_upb",
         "//:grpc_base",
