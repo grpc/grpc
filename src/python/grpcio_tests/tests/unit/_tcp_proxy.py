@@ -45,11 +45,11 @@ def _close_socket(sock):
 
 def _init_proxy_socket(gateway_address, gateway_port):
     last_err = None
-    for attempt in range(10):
+    for attempt in range(50):
         try:
             proxy_socket = socket.create_connection(
                 (gateway_address, gateway_port),
-                timeout=5.0
+                timeout=10.0
             )
             proxy_socket.setsockopt(socket.SOL_SOCKET, socket.SO_LINGER, struct.pack('ii', 1, 0))
             proxy_socket.settimeout(None)
@@ -58,7 +58,7 @@ def _init_proxy_socket(gateway_address, gateway_port):
             last_err = err
             import logging
             logging.warning(
-                "TcpProxy failed to connect to %s:%s (attempt %d/10): %s",
+                "TcpProxy failed to connect to %s:%s (attempt %d/50): %s",
                 gateway_address, gateway_port, attempt + 1, err
             )
             time.sleep(0.5 * (attempt + 1))
