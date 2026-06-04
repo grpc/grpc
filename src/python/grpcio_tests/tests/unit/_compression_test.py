@@ -163,7 +163,7 @@ def get_method_handlers(pre_response_callback):
 def _instrumented_client_server_pair(
     channel_kwargs, server_kwargs, server_handler
 ):
-    executor = futures.ThreadPoolExecutor()
+    executor = futures.ThreadPoolExecutor(max_workers=5)
     try:
         server = grpc.server(executor, **server_kwargs)
         server.add_registered_method_handlers(_SERVICE_NAME, server_handler)
@@ -179,7 +179,7 @@ def _instrumented_client_server_pair(
                 finally:
                     server.stop(0).wait()
     finally:
-        executor.shutdown(wait=False)
+        executor.shutdown(wait=True)
 
 
 def _get_byte_counts(
