@@ -136,7 +136,7 @@ class _BaseMultiCallable(Generic[InterceptorT]):
             augmented_metadata = _compression.augment_metadata(
                 metadata, compression
             )
-            if augmented_metadata:
+            if augmented_metadata is not None:
                 metadata = Metadata(*augmented_metadata)
         return metadata
 
