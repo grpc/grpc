@@ -449,6 +449,11 @@
   owner: aananthv@google.com
   test_tags: ["core_end2end_test"]
   platforms: ["all"]
+- name: v2_non_owning_waker_implementation
+  description: Use non-owning wakers in v2 filter bridge.
+  expiry: 2027/03/01
+  owner: rishesh@google.com
+  test_tags: [core_end2end_test]
 - name: verbose_channelz_connection_logging
   description: Verbose logging of events into channelz during connection setup.
   expiry: 2026/09/01

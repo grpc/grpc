@@ -277,6 +277,10 @@ const char* const description_use_call_event_engine_in_completion_queue =
     "Use the call event engine to run callbacks in completion queue.";
 const char* const
     additional_constraints_use_call_event_engine_in_completion_queue = "{}";
+const char* const description_v2_non_owning_waker_implementation =
+    "Use non-owning wakers in v2 filter bridge.";
+const char* const additional_constraints_v2_non_owning_waker_implementation =
+    "{}";
 const char* const description_verbose_channelz_connection_logging =
     "Verbose logging of events into channelz during connection setup.";
 const char* const additional_constraints_verbose_channelz_connection_logging =
@@ -480,6 +484,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_use_call_event_engine_in_completion_queue,
      additional_constraints_use_call_event_engine_in_completion_queue, nullptr,
      0, false, true},
+    {"v2_non_owning_waker_implementation",
+     description_v2_non_owning_waker_implementation,
+     additional_constraints_v2_non_owning_waker_implementation, nullptr, 0,
+     false, true},
     {"verbose_channelz_connection_logging",
      description_verbose_channelz_connection_logging,
      additional_constraints_verbose_channelz_connection_logging, nullptr, 0,
@@ -752,6 +760,10 @@ const char* const description_use_call_event_engine_in_completion_queue =
     "Use the call event engine to run callbacks in completion queue.";
 const char* const
     additional_constraints_use_call_event_engine_in_completion_queue = "{}";
+const char* const description_v2_non_owning_waker_implementation =
+    "Use non-owning wakers in v2 filter bridge.";
+const char* const additional_constraints_v2_non_owning_waker_implementation =
+    "{}";
 const char* const description_verbose_channelz_connection_logging =
     "Verbose logging of events into channelz during connection setup.";
 const char* const additional_constraints_verbose_channelz_connection_logging =
@@ -955,6 +967,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_use_call_event_engine_in_completion_queue,
      additional_constraints_use_call_event_engine_in_completion_queue, nullptr,
      0, false, true},
+    {"v2_non_owning_waker_implementation",
+     description_v2_non_owning_waker_implementation,
+     additional_constraints_v2_non_owning_waker_implementation, nullptr, 0,
+     false, true},
     {"verbose_channelz_connection_logging",
      description_verbose_channelz_connection_logging,
      additional_constraints_verbose_channelz_connection_logging, nullptr, 0,
@@ -1227,6 +1243,10 @@ const char* const description_use_call_event_engine_in_completion_queue =
     "Use the call event engine to run callbacks in completion queue.";
 const char* const
     additional_constraints_use_call_event_engine_in_completion_queue = "{}";
+const char* const description_v2_non_owning_waker_implementation =
+    "Use non-owning wakers in v2 filter bridge.";
+const char* const additional_constraints_v2_non_owning_waker_implementation =
+    "{}";
 const char* const description_verbose_channelz_connection_logging =
     "Verbose logging of events into channelz during connection setup.";
 const char* const additional_constraints_verbose_channelz_connection_logging =
@@ -1430,6 +1450,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_use_call_event_engine_in_completion_queue,
      additional_constraints_use_call_event_engine_in_completion_queue, nullptr,
      0, false, true},
+    {"v2_non_owning_waker_implementation",
+     description_v2_non_owning_waker_implementation,
+     additional_constraints_v2_non_owning_waker_implementation, nullptr, 0,
+     false, true},
     {"verbose_channelz_connection_logging",
      description_verbose_channelz_connection_logging,
      additional_constraints_verbose_channelz_connection_logging, nullptr, 0,
