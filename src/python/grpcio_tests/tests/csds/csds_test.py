@@ -64,7 +64,7 @@ class TestCsds(unittest.TestCase):
         grpc_csds.add_csds_servicer(self._server)
         self._server.start()
 
-        self._channel = grpc.insecure_channel("localhost:%s" % port)
+        self._channel = grpc.insecure_channel("127.0.0.1:%s" % port)
         self._stub = csds_pb2_grpc.ClientStatusDiscoveryServiceStub(
             self._channel
         )
@@ -75,7 +75,7 @@ class TestCsds(unittest.TestCase):
         os.environ.pop("GRPC_XDS_BOOTSTRAP_CONFIG", None)
 
     def get_xds_config_dump(self):
-        return self._stub.FetchClientStatus(csds_pb2.ClientStatusRequest())
+        return self._stub.FetchClientStatus(csds_pb2.ClientStatusRequest(), wait_for_ready=True)
 
     def test_no_lds_found(self):
         dummy_channel = grpc.insecure_channel(_DUMMY_XDS_ADDRESS)
@@ -128,7 +128,7 @@ class TestCsdsStream(TestCsds):
         if not hasattr(self, "request_queue"):
             request_queue = queue.Queue()
             response_iterator = self._stub.StreamClientStatus(
-                iter(request_queue.get, None)
+                iter(request_queue.get, None), wait_for_ready=True
             )
         request_queue.put(csds_pb2.ClientStatusRequest())
         return next(response_iterator)
