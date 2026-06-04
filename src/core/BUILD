@@ -4252,6 +4252,9 @@ grpc_cc_library(
     name = "connection_context",
     srcs = ["lib/surface/connection_context.cc"],
     hdrs = ["lib/surface/connection_context.h"],
+    external_deps = [
+        "absl/synchronization",
+    ],
     deps = [
         "no_destruct",
         "//:gpr",

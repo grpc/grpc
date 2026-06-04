@@ -28,6 +28,7 @@
 
 #include "src/core/util/no_destruct.h"
 #include "src/core/util/orphanable.h"
+#include "absl/synchronization/mutex.h"
 
 namespace grpc_core {
 
@@ -140,6 +141,7 @@ class ConnectionContext final : public Orphanable {
   bool EmplaceIfUnset(Args&&... args) {
     using Traits =
         connection_context_detail::ConnectionContextPropertiesTraits<Which>;
+    absl::MutexLock lock(&mu_);
     Which* value = static_cast<Which*>(registered_properties()[Traits::id()]);
     if (value == nullptr) {
       registered_properties()[Traits::id()] = Traits::Construct(args...);
@@ -154,6 +156,7 @@ class ConnectionContext final : public Orphanable {
   void Update(Args&&... args) {
     using Traits =
         connection_context_detail::ConnectionContextPropertiesTraits<Which>;
+    absl::MutexLock lock(&mu_);
     Which* prev = static_cast<Which*>(registered_properties()[Traits::id()]);
     if (prev != nullptr) {
       Traits::Destroy(Traits::id(), prev);
@@ -165,6 +168,7 @@ class ConnectionContext final : public Orphanable {
   // returns nullptr.
   template <typename Which>
   Which* Get() {
+    absl::ReaderMutexLock lock(&mu_);
     return static_cast<Which*>(
         registered_properties()
             [connection_context_detail::ConnectionContextPropertiesTraits<
@@ -177,9 +181,38 @@ class ConnectionContext final : public Orphanable {
     if constexpr (connection_context_detail::IsRefCounted<Which>) {
       value->Ref();
     }
-    registered_properties()
-        [connection_context_detail::ConnectionContextPropertiesTraits<
-            Which>::id()] = value;
+    absl::MutexLock lock(&mu_);
+    using Traits =
+        connection_context_detail::ConnectionContextPropertiesTraits<Which>;
+    void* prev = registered_properties()[Traits::id()];
+    registered_properties()[Traits::id()] = value;
+    if (prev != nullptr) {
+      Traits::Destroy(Traits::id(), prev);
+    }
+  }
+
+  // Gets the value of a registered property, or creates it using the passed
+  // creator if it is not already set.
+  template <typename Which, typename Creator>
+  Which* GetOrCreate(Creator creator) {
+    using Traits =
+        connection_context_detail::ConnectionContextPropertiesTraits<Which>;
+    {
+      absl::ReaderMutexLock lock(&mu_);
+      Which* value = static_cast<Which*>(registered_properties()[Traits::id()]);
+      if (value != nullptr) {
+        return value;
+      }
+    }
+    absl::MutexLock lock(&mu_);
+    Which* value = static_cast<Which*>(registered_properties()[Traits::id()]);
+    if (value == nullptr) {
+      value = creator();
+      if (value != nullptr) {
+        registered_properties()[Traits::id()] = value;
+      }
+    }
+    return value;
   }
 
   void Orphan() override;
@@ -192,6 +225,8 @@ class ConnectionContext final : public Orphanable {
   }
 
   ConnectionContext();
+
+  absl::Mutex mu_;
 };
 
 }  // namespace grpc_core
