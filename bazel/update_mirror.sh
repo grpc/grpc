@@ -50,9 +50,13 @@ function upload {
 
 function upload_bzlmod_deps {
   local bazel_modules=($(bazel mod graph 2>/dev/null | sed -E '/<root>/d' | sed -E 's/^[^[:alnum:]]*([^ ]+) .*$/\1/' | sort | uniq))
-  local urls=($(bazel mod show_repo 2>/dev/null "${bazel_modules[@]}" | grep -E '^\s*urls = \["' | grep -Eo 'https://[^"]+' | sort | uniq))
+  local urls=()
+  if [ "${#bazel_modules[@]}" -gt 0 ]; then
+    urls=($(bazel mod show_repo 2>/dev/null "${bazel_modules[@]}" | grep -E '^\s*urls = \["' | grep -Eo 'https://[^"]+' | sort | uniq))
+  fi
+
   for url in "${urls[@]}" ; do
-    url=$(sed 's/https:..//g' <<< "${url}") # strip https:// prefix
+    url="${url#https://}" # strip https:// prefix
     case "$url" in
         *grpc-bazel-mirror*)
           echo "Skipping URL from mirror site: ${url}"
