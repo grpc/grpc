@@ -428,7 +428,7 @@ tsi_result populate_key_exchange_groups(
           << "Could not set default key exchange groups for OpenSSL1.0.2";
       return TSI_INTERNAL_ERROR;
     }
-    if (!SSL_CTX_set_ecdh_auto(content, 1)) {
+    if (!SSL_CTX_set_ecdh_auto(context, 1)) {
       LOG(ERROR) << "Could not set ecdh auto for OpenSSL1.0.2";
       return TSI_INTERNAL_ERROR;
     }
