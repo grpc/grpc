@@ -1174,7 +1174,7 @@ class ClientCallData::PollContext {
                           self_->recv_initial_metadata_->original_on_ready,
                           nullptr),
                       IsV2NonOwningWakerImplementationEnabled() &&
-                              StatusFromMetadata(*md).ok()
+                              !StatusFromMetadata(*md).ok()
                           ? absl::CancelledError()
                           : StatusFromMetadata(*md),
                       "wake_inside_combiner:recv_initial_metadata_ready");
