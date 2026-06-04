@@ -151,9 +151,28 @@ const char* const additional_constraints_optimization_04 = "{}";
 const char* const description_otel_export_telemetry_domains =
     "Export telemetry domains in OpenTelemetry metrics.";
 const char* const additional_constraints_otel_export_telemetry_domains = "{}";
+const char* const description_ph2_client =
+    "Use promises for the http2 client transport. We have kept client and "
+    "server transport experiments separate to help with smoother roll outs. "
+    "When this flag is enabled for the test suites, it would test PH2 Client "
+    "with CHTTP2 Server.";
+const char* const additional_constraints_ph2_client = "{}";
+const char* const description_ph2_client_server =
+    "This is a combination of ph2_server and ph2_client experiments. When this "
+    "flag is enabled for the test suites, it would test PH2 Client with PH2 "
+    "Server. We will NEVER be rolling out this experiment, because the roll "
+    "out would be done using ph2_server and ph2_client. This experiment MUST "
+    "be deleted when either ph2_server or ph2_client are deleted.";
+const char* const additional_constraints_ph2_client_server = "{}";
 const char* const description_ph2_perf_01 =
     "Different performance experiments for PH2 Transport";
 const char* const additional_constraints_ph2_perf_01 = "{}";
+const char* const description_ph2_server =
+    "Use promises for the http2 server transport. We have kept client and "
+    "server transport experiments separate to help with smoother roll outs. "
+    "When this flag is enabled for the test suites, it would test CHTTP2 "
+    "Client with PH2 Server.";
+const char* const additional_constraints_ph2_server = "{}";
 const char* const description_pick_first_ignore_empty_updates =
     "Ignore empty resolutions in pick_first (delete)";
 const char* const additional_constraints_pick_first_ignore_empty_updates = "{}";
@@ -372,7 +391,13 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"otel_export_telemetry_domains", description_otel_export_telemetry_domains,
      additional_constraints_otel_export_telemetry_domains, nullptr, 0, false,
      true},
+    {"ph2_client", description_ph2_client, additional_constraints_ph2_client,
+     nullptr, 0, false, true},
+    {"ph2_client_server", description_ph2_client_server,
+     additional_constraints_ph2_client_server, nullptr, 0, false, true},
     {"ph2_perf_01", description_ph2_perf_01, additional_constraints_ph2_perf_01,
+     nullptr, 0, false, true},
+    {"ph2_server", description_ph2_server, additional_constraints_ph2_server,
      nullptr, 0, false, true},
     {"pick_first_ignore_empty_updates",
      description_pick_first_ignore_empty_updates,
@@ -601,9 +626,28 @@ const char* const additional_constraints_optimization_04 = "{}";
 const char* const description_otel_export_telemetry_domains =
     "Export telemetry domains in OpenTelemetry metrics.";
 const char* const additional_constraints_otel_export_telemetry_domains = "{}";
+const char* const description_ph2_client =
+    "Use promises for the http2 client transport. We have kept client and "
+    "server transport experiments separate to help with smoother roll outs. "
+    "When this flag is enabled for the test suites, it would test PH2 Client "
+    "with CHTTP2 Server.";
+const char* const additional_constraints_ph2_client = "{}";
+const char* const description_ph2_client_server =
+    "This is a combination of ph2_server and ph2_client experiments. When this "
+    "flag is enabled for the test suites, it would test PH2 Client with PH2 "
+    "Server. We will NEVER be rolling out this experiment, because the roll "
+    "out would be done using ph2_server and ph2_client. This experiment MUST "
+    "be deleted when either ph2_server or ph2_client are deleted.";
+const char* const additional_constraints_ph2_client_server = "{}";
 const char* const description_ph2_perf_01 =
     "Different performance experiments for PH2 Transport";
 const char* const additional_constraints_ph2_perf_01 = "{}";
+const char* const description_ph2_server =
+    "Use promises for the http2 server transport. We have kept client and "
+    "server transport experiments separate to help with smoother roll outs. "
+    "When this flag is enabled for the test suites, it would test CHTTP2 "
+    "Client with PH2 Server.";
+const char* const additional_constraints_ph2_server = "{}";
 const char* const description_pick_first_ignore_empty_updates =
     "Ignore empty resolutions in pick_first (delete)";
 const char* const additional_constraints_pick_first_ignore_empty_updates = "{}";
@@ -822,7 +866,13 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"otel_export_telemetry_domains", description_otel_export_telemetry_domains,
      additional_constraints_otel_export_telemetry_domains, nullptr, 0, false,
      true},
+    {"ph2_client", description_ph2_client, additional_constraints_ph2_client,
+     nullptr, 0, false, true},
+    {"ph2_client_server", description_ph2_client_server,
+     additional_constraints_ph2_client_server, nullptr, 0, false, true},
     {"ph2_perf_01", description_ph2_perf_01, additional_constraints_ph2_perf_01,
+     nullptr, 0, false, true},
+    {"ph2_server", description_ph2_server, additional_constraints_ph2_server,
      nullptr, 0, false, true},
     {"pick_first_ignore_empty_updates",
      description_pick_first_ignore_empty_updates,
@@ -1051,9 +1101,28 @@ const char* const additional_constraints_optimization_04 = "{}";
 const char* const description_otel_export_telemetry_domains =
     "Export telemetry domains in OpenTelemetry metrics.";
 const char* const additional_constraints_otel_export_telemetry_domains = "{}";
+const char* const description_ph2_client =
+    "Use promises for the http2 client transport. We have kept client and "
+    "server transport experiments separate to help with smoother roll outs. "
+    "When this flag is enabled for the test suites, it would test PH2 Client "
+    "with CHTTP2 Server.";
+const char* const additional_constraints_ph2_client = "{}";
+const char* const description_ph2_client_server =
+    "This is a combination of ph2_server and ph2_client experiments. When this "
+    "flag is enabled for the test suites, it would test PH2 Client with PH2 "
+    "Server. We will NEVER be rolling out this experiment, because the roll "
+    "out would be done using ph2_server and ph2_client. This experiment MUST "
+    "be deleted when either ph2_server or ph2_client are deleted.";
+const char* const additional_constraints_ph2_client_server = "{}";
 const char* const description_ph2_perf_01 =
     "Different performance experiments for PH2 Transport";
 const char* const additional_constraints_ph2_perf_01 = "{}";
+const char* const description_ph2_server =
+    "Use promises for the http2 server transport. We have kept client and "
+    "server transport experiments separate to help with smoother roll outs. "
+    "When this flag is enabled for the test suites, it would test CHTTP2 "
+    "Client with PH2 Server.";
+const char* const additional_constraints_ph2_server = "{}";
 const char* const description_pick_first_ignore_empty_updates =
     "Ignore empty resolutions in pick_first (delete)";
 const char* const additional_constraints_pick_first_ignore_empty_updates = "{}";
@@ -1272,7 +1341,13 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"otel_export_telemetry_domains", description_otel_export_telemetry_domains,
      additional_constraints_otel_export_telemetry_domains, nullptr, 0, false,
      true},
+    {"ph2_client", description_ph2_client, additional_constraints_ph2_client,
+     nullptr, 0, false, true},
+    {"ph2_client_server", description_ph2_client_server,
+     additional_constraints_ph2_client_server, nullptr, 0, false, true},
     {"ph2_perf_01", description_ph2_perf_01, additional_constraints_ph2_perf_01,
+     nullptr, 0, false, true},
+    {"ph2_server", description_ph2_server, additional_constraints_ph2_server,
      nullptr, 0, false, true},
     {"pick_first_ignore_empty_updates",
      description_pick_first_ignore_empty_updates,

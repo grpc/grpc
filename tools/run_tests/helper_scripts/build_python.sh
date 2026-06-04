@@ -134,6 +134,9 @@ source tools/internal_ci/helper_scripts/prepare_ccache_symlinks_rc
 if [[ "$(inside_venv)" ]]; then
   VENV_PYTHON="$PYTHON"
 else
+  # Remove problematic .pth files installed globally in the image which break Python 3.15
+  rm -f /usr/local/lib/python*/site-packages/*.pth 2>/dev/null || true
+
   if $PYTHON -c "import sys; sys.exit(0 if sys.version_info[0] >= 3 else 1)"; then
     $PYTHON -m venv "$VENV"
     VENV_PYTHON="$(pwd)/$VENV/$VENV_RELATIVE_PYTHON"
@@ -151,7 +154,7 @@ pip_install() {
   $VENV_PYTHON -m pip install "$@"
 }
 
-pip_install --upgrade pip==24.3.1
+pip_install --upgrade pip==25.2
 pip_install --upgrade wheel
 pip_install --upgrade setuptools==77.0.1
 
