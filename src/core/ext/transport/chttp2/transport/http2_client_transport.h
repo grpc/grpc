@@ -687,9 +687,6 @@ class Http2ClientTransport final : public ClientTransport,
   chttp2::TransportFlowControl flow_control_;
   WritableStreams<RefCountedPtr<Stream>> writable_stream_list_;
 
-  /// Based on channel args, preferred_rx_crypto_frame_sizes are advertised to
-  /// the peer
-  bool enable_preferred_rx_crypto_frame_advertisement_;
   RefCountedPtr<SecurityFrameHandler> security_frame_handler_;
   std::shared_ptr<PromiseHttp2ZTraceCollector> ztrace_collector_;
 

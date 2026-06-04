@@ -85,7 +85,7 @@ inline Http2Status ValidateMetadataFrameState(
     const uint32_t max_header_list_size) {
   if (stream.IsStreamHalfClosedRemote()) {
     return incoming_headers.ParseAndDiscardHeaders(
-        std::move(frame.payload), frame.end_headers, &stream,
+        std::move(frame.payload), frame.end_headers,
         Http2Status::Http2StreamError(
             Http2ErrorCode::kStreamClosed,
             std::string(RFC9113::kHalfClosedRemoteState)),
@@ -97,7 +97,7 @@ inline Http2Status ValidateMetadataFrameState(
             stream.IsInitialMetadataReceived(),
             stream.IsTrailingMetadataReceived())) {
       return incoming_headers.ParseAndDiscardHeaders(
-          std::move(frame.payload), frame.end_headers, &stream,
+          std::move(frame.payload), frame.end_headers,
           Http2Status::Http2StreamError(
               Http2ErrorCode::kInternalError,
               std::string(GrpcErrors::kTooManyMetadata)),
@@ -122,7 +122,6 @@ struct TransportChannelArgs {
   Duration ping_timeout;
   Duration settings_timeout;
   bool keepalive_permit_without_calls;
-  bool enable_preferred_rx_crypto_frame_advertisement;
   // This is used to test peer behaviour when we never send a ping ack.
   bool test_only_ack_pings;
   uint32_t max_header_list_size_soft_limit;

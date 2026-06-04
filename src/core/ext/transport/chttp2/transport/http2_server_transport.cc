@@ -394,8 +394,7 @@ Http2Status Http2ServerTransport::ProcessIncomingMetadata(T&& frame) {
                               "stream_id="
                            << frame.stream_id << "} Lookup Failed";
     return read_context_.ParseAndDiscardHeaders(
-        std::move(frame.payload), frame.end_headers,
-        /*stream=*/nullptr, Http2Status::Ok(),
+        std::move(frame.payload), frame.end_headers, Http2Status::Ok(),
         settings_->acked().max_header_list_size());
   }
 
@@ -405,13 +404,14 @@ Http2Status Http2ServerTransport::ProcessIncomingMetadata(T&& frame) {
     return validation_status;
   }
 
-  Http2Status append_result = stream->GetHeaderAssembler().AppendFrame(frame);
+  Http2Status append_result =
+      read_context_.header_assembler().AppendFrame(frame);
   if (!append_result.IsOk()) {
     // Frame payload is not consumed if AppendFrame returns a non-OK
     // status. We need to process it to keep our in consistent state.
     return read_context_.ParseAndDiscardHeaders(
-        std::move(frame.payload), frame.end_headers, stream.get(),
-        std::move(append_result), settings_->acked().max_header_list_size());
+        std::move(frame.payload), frame.end_headers, std::move(append_result),
+        settings_->acked().max_header_list_size());
   }
 
   Http2Status status = ProcessMetadata(stream);
@@ -419,7 +419,7 @@ Http2Status Http2ServerTransport::ProcessIncomingMetadata(T&& frame) {
     // Frame payload has been moved to the HeaderAssembler. So calling
     // ParseAndDiscardHeaders with an empty buffer.
     return read_context_.ParseAndDiscardHeaders(
-        SliceBuffer(), frame.end_headers, stream.get(), std::move(status),
+        SliceBuffer(), frame.end_headers, std::move(status),
         settings_->acked().max_header_list_size());
   }
 
@@ -489,6 +489,8 @@ Http2Status Http2ServerTransport::ProcessIncomingFrame(
       return status;
     }
     read_context_.SetMaxHeaderTableSize(settings_->acked().header_table_size());
+    read_context_.header_assembler().MaybeSetAllowTrueBinaryMetadataAcked(
+        settings_->acked().allow_true_binary_metadata());
     ActOnFlowControlAction(flow_control_.SetAckedInitialWindow(
                                settings_->acked().initial_window_size()),
                            /*stream=*/nullptr);
@@ -691,7 +693,7 @@ Http2Status Http2ServerTransport::ProcessIncomingFrame(
 
 Http2Status Http2ServerTransport::ProcessMetadata(
     RefCountedPtr<Stream> stream) {
-  HeaderAssembler& assembler = stream->GetHeaderAssembler();
+  HeaderAssembler& assembler = read_context_.header_assembler();
   // CallInitiator& call = stream->GetCallInitiator();
 
   GRPC_HTTP2_SERVER_DLOG << "Http2ServerTransport::ProcessMetadata";
@@ -1132,9 +1134,7 @@ void Http2ServerTransport::ActOnFlowControlAction(
     }
   }
 
-  ActOnFlowControlActionSettings(
-      action, settings_->mutable_local(),
-      enable_preferred_rx_crypto_frame_advertisement_);
+  ActOnFlowControlActionSettings(action, settings_->mutable_local());
 
   if (action.AnyUpdateImmediately()) {
     // Prioritize sending flow control updates over reading data. If we
@@ -1401,8 +1401,7 @@ std::optional<RefCountedPtr<Stream>> Http2ServerTransport::MakeStream(
     CallInitiator&& call_initiator, const uint32_t stream_id) {
   RefCountedPtr<Stream> stream =
       MakeRefCounted<Stream>(call_initiator, flow_control_, stream_id,
-                             settings_->peer().allow_true_binary_metadata(),
-                             settings_->acked().allow_true_binary_metadata());
+                             settings_->peer().allow_true_binary_metadata());
   const bool on_done_added = SetOnDone(stream);
   if (!on_done_added) return std::nullopt;
   return std::move(stream);
@@ -1617,7 +1616,7 @@ absl::Status Http2ServerTransport::IncomingStream(
 //       // peers.
 //       if (read_context_.IsWaitingForContinuationFrame()) {
 //         Http2Status result = read_context_.ParseAndDiscardHeaders(
-//             SliceBuffer(), /*is_end_headers=*/false, &stream,
+//             SliceBuffer(), /*is_end_headers=*/false,
 //             /*original_status=*/Http2Status::Ok(),
 //             settings_->acked().max_header_list_size());
 //         if (result.GetType() ==
@@ -1924,8 +1923,6 @@ void Http2ServerTransport::ReadChannelArgs(const ChannelArgs& channel_args,
   keepalive_time_ = args.keepalive_time;
   read_context_.set_soft_limit(args.max_header_list_size_soft_limit);
   keepalive_permit_without_calls_ = args.keepalive_permit_without_calls;
-  enable_preferred_rx_crypto_frame_advertisement_ =
-      args.enable_preferred_rx_crypto_frame_advertisement;
   test_only_ack_pings_ = args.test_only_ack_pings;
 
   if (args.initial_sequence_number > 0) {
