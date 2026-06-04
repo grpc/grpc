@@ -326,11 +326,6 @@
   expiry: 2026/07/01
   owner: akshitpatel@google.com
   test_tags: []
-- name: promise_filter_avoid_ok_status_on_completed_call
-  description: Avoid passing OkStatus to recv_initial_metadata_ready callback when a call has already completed.
-  expiry: 2027/03/01
-  owner: rishesh@google.com
-  test_tags: [core_end2end_test]
 - name: promise_filter_send_cancel_metadata
   description: Enables sending all trailing metadata fields from server side promise-based filters
     upon stream cancellation.
@@ -431,6 +426,11 @@
   owner: aananthv@google.com
   test_tags: ["core_end2end_test"]
   platforms: ["all"]
+- name: v2_non_owning_waker_implementation
+  description: Use non-owning wakers in v2 filter bridge.
+  expiry: 2027/03/01
+  owner: rishesh@google.com
+  test_tags: [core_end2end_test]
 - name: verbose_channelz_connection_logging
   description: Verbose logging of events into channelz during connection setup.
   expiry: 2026/09/01

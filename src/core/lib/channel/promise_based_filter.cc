@@ -500,7 +500,7 @@ void BaseCallData::SendMessage::Done(const ServerMetadata& metadata,
       // while a message is in-flight. This prevents deadlocks where the
       // transport never receives the batch, leaving the RPC hanging for
       // metadata.
-      if (IsPromiseFilterAvoidOkStatusOnCompletedCallEnabled()) {
+      if (IsV2NonOwningWakerImplementationEnabled()) {
         GRPC_DCHECK(batch_.is_captured());
         batch_.CancelWith(StatusFromMetadata(metadata), flusher);
       }
@@ -1173,10 +1173,10 @@ class ClientCallData::PollContext {
                       std::exchange(
                           self_->recv_initial_metadata_->original_on_ready,
                           nullptr),
-                      IsPromiseFilterAvoidOkStatusOnCompletedCallEnabled() &&
-                              !StatusFromMetadata(*md).ok()
-                          ? StatusFromMetadata(*md)
-                          : absl::CancelledError(),
+                      IsV2NonOwningWakerImplementationEnabled() &&
+                              StatusFromMetadata(*md).ok()
+                          ? absl::CancelledError()
+                          : StatusFromMetadata(*md),
                       "wake_inside_combiner:recv_initial_metadata_ready");
               }
             }
