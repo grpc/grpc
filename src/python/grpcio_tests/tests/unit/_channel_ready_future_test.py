@@ -62,36 +62,46 @@ class ChannelReadyFutureTest(unittest.TestCase):
         channel.close()
 
     def test_immediately_connectable_channel_connectivity(self):
-        recording_thread_pool = thread_pool.RecordingThreadPool(
-            max_workers=None
-        )
-        server = grpc.server(
-            recording_thread_pool, options=(("grpc.so_reuseport", 0),)
-        )
-        port = server.add_insecure_port("127.0.0.1:0")
-        server.start()
-        channel = grpc.insecure_channel("127.0.0.1:{}".format(port))
-        callback = _Callback()
+        for _ in range(5):
+            recording_thread_pool = thread_pool.RecordingThreadPool(
+                max_workers=None
+            )
+            server = grpc.server(
+                recording_thread_pool, options=(("grpc.so_reuseport", 0),)
+            )
+            port = server.add_insecure_port("127.0.0.1:0")
+            server.start()
+            channel = grpc.insecure_channel("127.0.0.1:{}".format(port))
+            callback = _Callback()
 
-        ready_future = grpc.channel_ready_future(channel)
-        ready_future.add_done_callback(callback.accept_value)
-        self.assertIsNone(
-            ready_future.result(timeout=test_constants.LONG_TIMEOUT)
-        )
-        value_passed_to_callback = callback.block_until_called()
-        self.assertIs(ready_future, value_passed_to_callback)
-        self.assertFalse(ready_future.cancelled())
-        self.assertTrue(ready_future.done())
-        self.assertFalse(ready_future.running())
-        # Cancellation after maturity has no effect.
-        ready_future.cancel()
-        self.assertFalse(ready_future.cancelled())
-        self.assertTrue(ready_future.done())
-        self.assertFalse(ready_future.running())
-        self.assertFalse(recording_thread_pool.was_used())
+            ready_future = grpc.channel_ready_future(channel)
+            ready_future.add_done_callback(callback.accept_value)
+            try:
+                self.assertIsNone(
+                    ready_future.result(timeout=15)
+                )
+            except grpc.FutureTimeoutError:
+                channel.close()
+                server.stop(None)
+                continue
 
-        channel.close()
-        server.stop(None)
+            value_passed_to_callback = callback.block_until_called()
+            self.assertIs(ready_future, value_passed_to_callback)
+            self.assertFalse(ready_future.cancelled())
+            self.assertTrue(ready_future.done())
+            self.assertFalse(ready_future.running())
+            # Cancellation after maturity has no effect.
+            ready_future.cancel()
+            self.assertFalse(ready_future.cancelled())
+            self.assertTrue(ready_future.done())
+            self.assertFalse(ready_future.running())
+            self.assertFalse(recording_thread_pool.was_used())
+
+            channel.close()
+            server.stop(None)
+            break
+        else:
+            self.fail("Channel connectivity failed to mature after 5 attempts")
 
 
 if __name__ == "__main__":

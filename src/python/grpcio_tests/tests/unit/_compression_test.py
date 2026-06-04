@@ -165,8 +165,7 @@ def _instrumented_client_server_pair(
 ):
     executor = futures.ThreadPoolExecutor(max_workers=5)
     try:
-        options = (("grpc.so_reuseport", 0),)
-        server = grpc.server(executor, options=options, **server_kwargs)
+        server = grpc.server(executor, **server_kwargs)
         server.add_registered_method_handlers(_SERVICE_NAME, server_handler)
         server_port = server.add_insecure_port("{}:0".format(_HOST))
         server.start()
