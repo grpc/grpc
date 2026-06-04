@@ -23,11 +23,13 @@
 #include <variant>
 #include <vector>
 
+#include "src/core/call/metadata_batch.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/matchers.h"
 #include "src/core/util/time.h"
 #include "src/core/util/validation_errors.h"
 #include "src/core/xds/grpc/xds_server_grpc.h"
+#include "absl/status/status.h"
 #include "absl/strings/string_view.h"
 
 namespace grpc_core {
@@ -128,6 +130,40 @@ struct HeaderMutationRules {
            is_re_equal(allow_expression.get(), other.allow_expression.get());
   }
 };
+
+struct XdsHeaderValueOption {
+  enum class AppendAction {
+    // If the header already exists in the metadata batch, comma-concatenate the
+    // new value.
+    // Otherwise, append a new metadata entry.
+    kAppendIfExistsOrAdd = 0,
+    // Add the header only if it is not currently present in the metadata batch.
+    kAddIfAbsent = 1,
+    // Discard any existing entries in the metadata batch and append the new
+    // value.
+    kOverwriteIfExistsOrAdd = 2,
+    // If the header already exists, discard existing entries and replace with
+    // the new value.
+    // If absent, do nothing.
+    kOverwriteIfExists = 3
+  };
+
+  // The targeted metadata key and value to apply during mutation.
+  std::pair<std::string, std::string> header;
+  // Rule specifying how to merge or overwrite existing metadata batch entries.
+  AppendAction append_action;
+  // If false, options with empty values are skipped during addition. If true,
+  // empty values are explicitly added to the metadata batch.
+  bool keep_empty_value;
+};
+
+absl::Status ApplyXdsHeaderMutationsRemoval(
+    const std::vector<absl::string_view>& remove_headers,
+    const HeaderMutationRules* rules, grpc_metadata_batch& md);
+
+absl::Status ApplyXdsHeaderMutationsAddition(
+    const std::vector<XdsHeaderValueOption>& set_headers,
+    const HeaderMutationRules* rules, grpc_metadata_batch& md);
 
 }  // namespace grpc_core
 

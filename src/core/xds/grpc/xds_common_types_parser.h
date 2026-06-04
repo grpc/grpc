@@ -17,6 +17,7 @@
 #ifndef GRPC_SRC_CORE_XDS_GRPC_XDS_COMMON_TYPES_PARSER_H
 #define GRPC_SRC_CORE_XDS_GRPC_XDS_COMMON_TYPES_PARSER_H
 
+#include <cstdint>
 #include <optional>
 
 #include "envoy/config/common/mutation_rules/v3/mutation_rules.upb.h"
@@ -99,6 +100,14 @@ HeaderMutationRules ParseHeaderMutationRules(
     const envoy_config_common_mutation_rules_v3_HeaderMutationRules*
         header_mutation_rules,
     ValidationErrors* errors);
+
+XdsHeaderValueOption ParseHeaderValueOption(
+    const envoy_config_core_v3_HeaderValueOption* header_value_option_config,
+    ValidationErrors* errors);
+
+std::optional<XdsHeaderValueOption::AppendAction>
+ParseXdsHeaderValueOptionAppendAction(int32_t header_value_option_append_action,
+                                      ValidationErrors* errors);
 
 }  // namespace grpc_core
 

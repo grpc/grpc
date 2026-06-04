@@ -17,11 +17,17 @@
 #include "src/core/xds/grpc/xds_common_types.h"
 
 #include <string>
+#include <vector>
 
+#include "src/core/call/metadata_batch.h"
+#include "src/core/lib/slice/slice.h"
 #include "src/core/util/match.h"
 #include "src/core/util/string.h"
 #include "src/core/util/time.h"
+#include "absl/status/status.h"
 #include "absl/strings/match.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 
@@ -238,6 +244,106 @@ std::string HeaderMutationRules::ToString() const {
   }
   StrAppend(result, "}");
   return result;
+}
+
+//
+// XdsHeaderValueOption
+//
+
+namespace {
+
+void ApplyHeaderValueOptionMutation(const XdsHeaderValueOption& header,
+                                    grpc_metadata_batch& md) {
+  absl::string_view header_key = header.header.first;
+  absl::string_view header_value = header.header.second;
+  std::string buffer;
+  auto existing_value = md.GetStringValue(header_key, &buffer);
+  switch (header.append_action) {
+    case XdsHeaderValueOption::AppendAction::kAppendIfExistsOrAdd: {
+      if (!existing_value.has_value()) {
+        if (!header_value.empty() || header.keep_empty_value) {
+          md.Append(header_key, Slice::FromCopiedString(header_value),
+                    [](absl::string_view, const Slice&) {});
+        }
+      } else if (!header_value.empty()) {
+        std::string concatenated_val =
+            absl::StrCat(*existing_value, ",", header_value);
+        md.Remove(header_key);
+        md.Append(header_key, Slice::FromCopiedString(concatenated_val),
+                  [](absl::string_view, const Slice&) {});
+      }
+      break;
+    }
+    case XdsHeaderValueOption::AppendAction::kAddIfAbsent: {
+      if (!existing_value.has_value()) {
+        if (!header_value.empty() || header.keep_empty_value) {
+          md.Append(header_key, Slice::FromCopiedString(header_value),
+                    [](absl::string_view, const Slice&) {});
+        }
+      }
+      break;
+    }
+    case XdsHeaderValueOption::AppendAction::kOverwriteIfExists: {
+      if (existing_value.has_value()) {
+        md.Remove(header_key);
+        if (!header_value.empty() || header.keep_empty_value) {
+          md.Append(header_key, Slice::FromCopiedString(header_value),
+                    [](absl::string_view, const Slice&) {});
+        }
+      }
+      break;
+    }
+    case XdsHeaderValueOption::AppendAction::kOverwriteIfExistsOrAdd: {
+      md.Remove(header_key);
+      if (!header_value.empty() || header.keep_empty_value) {
+        md.Append(header_key, Slice::FromCopiedString(header_value),
+                  [](absl::string_view, const Slice&) {});
+      }
+      break;
+    }
+  }
+}
+
+}  // namespace
+
+absl::Status ApplyXdsHeaderMutationsRemoval(
+    const std::vector<absl::string_view>& remove_headers,
+    const HeaderMutationRules* rules, grpc_metadata_batch& md) {
+  for (const auto& remove_header : remove_headers) {
+    bool allowed = true;
+    bool disallow_is_error = false;
+    if (rules != nullptr) {
+      allowed = rules->IsMutationAllowed(std::string(remove_header));
+      disallow_is_error = rules->disallow_is_error;
+    }
+    if (allowed) {
+      md.Remove(absl::string_view(remove_header));
+    } else if (disallow_is_error) {
+      return absl::InternalError(
+          absl::StrCat("Forbidden header removal: ", remove_header));
+    }
+  }
+  return absl::OkStatus();
+}
+
+absl::Status ApplyXdsHeaderMutationsAddition(
+    const std::vector<XdsHeaderValueOption>& set_headers,
+    const HeaderMutationRules* rules, grpc_metadata_batch& md) {
+  for (const auto& set_header : set_headers) {
+    bool allowed = true;
+    bool disallow_is_error = false;
+    if (rules != nullptr) {
+      allowed = rules->IsMutationAllowed(std::string(set_header.header.first));
+      disallow_is_error = rules->disallow_is_error;
+    }
+    if (allowed) {
+      ApplyHeaderValueOptionMutation(set_header, md);
+    } else if (disallow_is_error) {
+      return absl::InternalError(
+          absl::StrCat("Forbidden header mutation: ", set_header.header.first));
+    }
+  }
+  return absl::OkStatus();
 }
 
 }  // namespace grpc_core
