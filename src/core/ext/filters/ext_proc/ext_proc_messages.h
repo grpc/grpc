@@ -61,28 +61,6 @@ struct ExtProcResponse {
 
 class ExtProcRequest {
  public:
-  class Builder {
-   public:
-    explicit Builder(upb_Arena* arena);
-    Builder& SetRequestHeaders(envoy_config_core_v3_HeaderMap* headers,
-                               bool end_of_stream);
-    Builder& SetResponseHeaders(envoy_config_core_v3_HeaderMap* headers,
-                                bool end_of_stream);
-    Builder& SetRequestBody(upb_StringView buf, bool end_of_stream,
-                            bool end_of_stream_without_message = false);
-    Builder& SetResponseBody(upb_StringView buf, bool end_of_stream);
-    Builder& SetResponseTrailers(envoy_config_core_v3_HeaderMap* trailer);
-    Builder& SetObservabilityMode(bool mode);
-    Builder& SetAttributes(::google_protobuf_Struct* attributes);
-    Builder& SetProtocolConfigRequest(bool is_first_message, bool send_body);
-    Builder& SetProtocolConfigResponse(bool is_first_message, bool send_body);
-
-    ExtProcRequest Build();
-
-   private:
-    upb_Arena* arena_;
-    envoy_service_ext_proc_v3_ProcessingRequest* request_;
-  };
   static std::string CreateClientHeadersRequest(
       grpc_metadata_batch& headers, upb_Arena* arena,
       ::google_protobuf_Struct* attributes, bool observability_mode,
@@ -109,6 +87,29 @@ class ExtProcRequest {
   std::string SerializeMessage();
 
  private:
+  class Builder {
+   public:
+    explicit Builder(upb_Arena* arena);
+    Builder& SetRequestHeaders(envoy_config_core_v3_HeaderMap* headers,
+                               bool end_of_stream);
+    Builder& SetResponseHeaders(envoy_config_core_v3_HeaderMap* headers,
+                                bool end_of_stream);
+    Builder& SetRequestBody(upb_StringView buf, bool end_of_stream,
+                            bool end_of_stream_without_message = false);
+    Builder& SetResponseBody(upb_StringView buf, bool end_of_stream);
+    Builder& SetResponseTrailers(envoy_config_core_v3_HeaderMap* trailer);
+    Builder& SetObservabilityMode(bool mode);
+    Builder& SetAttributes(::google_protobuf_Struct* attributes);
+    Builder& SetProtocolConfigRequest(bool is_first_message, bool send_body);
+    Builder& SetProtocolConfigResponse(bool is_first_message, bool send_body);
+
+    ExtProcRequest Build();
+
+   private:
+    upb_Arena* arena_;
+    envoy_service_ext_proc_v3_ProcessingRequest* request_;
+  };
+
   explicit ExtProcRequest(upb_Arena* arena,
                           envoy_service_ext_proc_v3_ProcessingRequest* request);
 

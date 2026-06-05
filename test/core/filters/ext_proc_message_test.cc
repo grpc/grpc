@@ -35,94 +35,50 @@
 namespace grpc_core {
 namespace {
 
-envoy_config_core_v3_HeaderMap* MakeHeaderMap(
-    const std::vector<std::pair<std::string, std::string>>& headers,
-    upb_Arena* arena) {
-  auto* header_map = envoy_config_core_v3_HeaderMap_new(arena);
-  for (const auto& [key, val] : headers) {
-    auto* value_msg =
-        envoy_config_core_v3_HeaderMap_add_headers(header_map, arena);
-    envoy_config_core_v3_HeaderValue_set_key(
-        value_msg, CopyStdStringToUpbString(key, arena));
-    envoy_config_core_v3_HeaderValue_set_value(
-        value_msg, CopyStdStringToUpbString(val, arena));
-  }
-  return header_map;
-}
 
 // Protocol Initiation tests
-TEST(ExtProcMessageTest, ProtocolInitiationFirstMessageConfig) {
+TEST(ExtProcMessageTest, ClientHeadersProtocolInitiation) {
   upb::Arena arena;
-  ExtProcRequest request =
-      ExtProcRequest::Builder(arena.ptr())
-          .SetProtocolConfigRequest(/*is_first_message=*/true,
-                                    /*send_body=*/true)
-          .SetProtocolConfigResponse(/*is_first_message=*/true,
-                                     /*send_body=*/true)
-          .Build();
-  std::string serialized = request.SerializeMessage();
-  envoy::service::ext_proc::v3::ProcessingRequest parsed;
-  ASSERT_TRUE(parsed.ParseFromString(serialized));
-  ASSERT_TRUE(parsed.has_protocol_config());
-}
-
-TEST(ExtProcMessageTest, ProtocolInitiationSubsequentMessageConfig) {
-  upb::Arena arena;
-  ExtProcRequest request =
-      ExtProcRequest::Builder(arena.ptr())
-          .SetProtocolConfigRequest(/*is_first_message=*/false,
-                                    /*send_body=*/true)
-          .SetProtocolConfigResponse(/*is_first_message=*/false,
-                                     /*send_body=*/true)
-          .Build();
-  std::string serialized = request.SerializeMessage();
-  envoy::service::ext_proc::v3::ProcessingRequest parsed;
-  ASSERT_TRUE(parsed.ParseFromString(serialized));
-  EXPECT_FALSE(parsed.has_protocol_config());
-}
-
-TEST(ExtProcMessageTest, ProtocolInitiationRequestBodyModeGrpc) {
-  upb::Arena arena;
-  ExtProcRequest request =
-      ExtProcRequest::Builder(arena.ptr())
-          .SetProtocolConfigRequest(/*is_first_message=*/true,
-                                    /*send_body=*/true)
-          .Build();
-  std::string serialized = request.SerializeMessage();
+  grpc_metadata_batch batch;
+  std::string serialized = ExtProcRequest::CreateClientHeadersRequest(
+      batch, arena.ptr(), {}, /*observability_mode=*/false,
+      /*is_first_message=*/true, /*send_request_body=*/true,
+      /*send_response_body=*/true);
   envoy::service::ext_proc::v3::ProcessingRequest parsed;
   ASSERT_TRUE(parsed.ParseFromString(serialized));
   ASSERT_TRUE(parsed.has_protocol_config());
   EXPECT_EQ(parsed.protocol_config().request_body_mode(),
             envoy::extensions::filters::http::ext_proc::v3::
                 ProcessingMode_BodySendMode_GRPC);
-}
-
-TEST(ExtProcMessageTest, ProtocolInitiationResponseBodyModeGrpc) {
-  upb::Arena arena;
-  ExtProcRequest request =
-      ExtProcRequest::Builder(arena.ptr())
-          .SetProtocolConfigResponse(/*is_first_message=*/true,
-                                     /*send_body=*/true)
-          .Build();
-  std::string serialized = request.SerializeMessage();
-  envoy::service::ext_proc::v3::ProcessingRequest parsed;
-  ASSERT_TRUE(parsed.ParseFromString(serialized));
-  ASSERT_TRUE(parsed.has_protocol_config());
   EXPECT_EQ(parsed.protocol_config().response_body_mode(),
             envoy::extensions::filters::http::ext_proc::v3::
                 ProcessingMode_BodySendMode_GRPC);
 }
 
+TEST(ExtProcMessageTest, ClientHeadersProtocolInitiationSubsequentMessageConfig) {
+  upb::Arena arena;
+  grpc_metadata_batch batch;
+  std::string serialized = ExtProcRequest::CreateClientHeadersRequest(
+      batch, arena.ptr(), {}, /*observability_mode=*/false,
+      /*is_first_message=*/false, /*send_request_body=*/true,
+      /*send_response_body=*/true);
+  envoy::service::ext_proc::v3::ProcessingRequest parsed;
+  ASSERT_TRUE(parsed.ParseFromString(serialized));
+  EXPECT_FALSE(parsed.has_protocol_config());
+}
+
 // Client-to-Server Headers tests
 TEST(ExtProcMessageTest, ClientHeadersMetadataPropagated) {
   upb::Arena arena;
-  auto* header_map =
-      MakeHeaderMap({{"key1", "val1"}, {"key2", "val2"}}, arena.ptr());
-  ExtProcRequest request =
-      ExtProcRequest::Builder(arena.ptr())
-          .SetRequestHeaders(header_map, /*end_of_stream=*/false)
-          .Build();
-  std::string serialized = request.SerializeMessage();
+  grpc_metadata_batch batch;
+  batch.Append("key1", Slice::FromCopiedString("val1"),
+               [](absl::string_view, const Slice&) {});
+  batch.Append("key2", Slice::FromCopiedString("val2"),
+               [](absl::string_view, const Slice&) {});
+  std::string serialized = ExtProcRequest::CreateClientHeadersRequest(
+      batch, arena.ptr(), {}, /*observability_mode=*/false,
+      /*is_first_message=*/false, /*send_request_body=*/false,
+      /*send_response_body=*/false);
   envoy::service::ext_proc::v3::ProcessingRequest parsed;
   ASSERT_TRUE(parsed.ParseFromString(serialized));
   ASSERT_TRUE(parsed.has_request_headers());
@@ -133,32 +89,17 @@ TEST(ExtProcMessageTest, ClientHeadersMetadataPropagated) {
   EXPECT_EQ(parsed.request_headers().headers().headers(1).value(), "val2");
 }
 
-TEST(ExtProcMessageTest, ClientHeadersEndOfStreamFalse) {
+TEST(ExtProcMessageTest, ClientHeadersEndOfStreamAlwaysFalse) {
   upb::Arena arena;
-  auto* header_map = MakeHeaderMap({}, arena.ptr());
-  ExtProcRequest request =
-      ExtProcRequest::Builder(arena.ptr())
-          .SetRequestHeaders(header_map, /*end_of_stream=*/false)
-          .Build();
-  std::string serialized = request.SerializeMessage();
+  grpc_metadata_batch batch;
+  std::string serialized = ExtProcRequest::CreateClientHeadersRequest(
+      batch, arena.ptr(), {}, /*observability_mode=*/false,
+      /*is_first_message=*/false, /*send_request_body=*/false,
+      /*send_response_body=*/false);
   envoy::service::ext_proc::v3::ProcessingRequest parsed;
   ASSERT_TRUE(parsed.ParseFromString(serialized));
   ASSERT_TRUE(parsed.has_request_headers());
   EXPECT_FALSE(parsed.request_headers().end_of_stream());
-}
-
-TEST(ExtProcMessageTest, ClientHeadersEndOfStreamTrue) {
-  upb::Arena arena;
-  auto* header_map = MakeHeaderMap({}, arena.ptr());
-  ExtProcRequest request =
-      ExtProcRequest::Builder(arena.ptr())
-          .SetRequestHeaders(header_map, /*end_of_stream=*/true)
-          .Build();
-  std::string serialized = request.SerializeMessage();
-  envoy::service::ext_proc::v3::ProcessingRequest parsed;
-  ASSERT_TRUE(parsed.ParseFromString(serialized));
-  ASSERT_TRUE(parsed.has_request_headers());
-  EXPECT_TRUE(parsed.request_headers().end_of_stream());
 }
 
 // Client-to-Server Messages/Body tests
@@ -273,9 +214,10 @@ TEST(ExtProcMessageTest, AttributesExactlyOneExtProcKey) {
   grpc_metadata_batch batch;
   auto* attr_struct = ParseAttributes(
       arena.ptr(), {"request.method"}, batch);
-  ExtProcRequest request =
-      ExtProcRequest::Builder(arena.ptr()).SetAttributes(attr_struct).Build();
-  std::string serialized = request.SerializeMessage();
+  std::string serialized = ExtProcRequest::CreateClientHeadersRequest(
+      batch, arena.ptr(), attr_struct, /*observability_mode=*/false,
+      /*is_first_message=*/false, /*send_request_body=*/false,
+      /*send_response_body=*/false);
   envoy::service::ext_proc::v3::ProcessingRequest parsed;
   ASSERT_TRUE(parsed.ParseFromString(serialized));
   ASSERT_EQ(parsed.attributes_size(), 1);
@@ -289,9 +231,10 @@ TEST(ExtProcMessageTest, AttributesSpecificMappingMatches) {
   batch.Set(HttpPathMetadata(), Slice::FromCopiedString("/Service/Method"));
   auto* attr_struct = ParseAttributes(
       arena.ptr(), {"request.path"}, batch);
-  ExtProcRequest request =
-      ExtProcRequest::Builder(arena.ptr()).SetAttributes(attr_struct).Build();
-  std::string serialized = request.SerializeMessage();
+  std::string serialized = ExtProcRequest::CreateClientHeadersRequest(
+      batch, arena.ptr(), attr_struct, /*observability_mode=*/false,
+      /*is_first_message=*/false, /*send_request_body=*/false,
+      /*send_response_body=*/false);
   envoy::service::ext_proc::v3::ProcessingRequest parsed;
   ASSERT_TRUE(parsed.ParseFromString(serialized));
   auto it = parsed.attributes().find("envoy.filters.http.ext_proc");
@@ -323,9 +266,10 @@ TEST(ExtProcMessageTest, PopulateAttributesMapAllCELVariables) {
   auto* attr_struct =
       ParseAttributes(arena.ptr(), requested, batch);
   ASSERT_NE(attr_struct, nullptr);
-  ExtProcRequest request =
-      ExtProcRequest::Builder(arena.ptr()).SetAttributes(attr_struct).Build();
-  std::string serialized = request.SerializeMessage();
+  std::string serialized = ExtProcRequest::CreateClientHeadersRequest(
+      batch, arena.ptr(), attr_struct, /*observability_mode=*/false,
+      /*is_first_message=*/false, /*send_request_body=*/false,
+      /*send_response_body=*/false);
   envoy::service::ext_proc::v3::ProcessingRequest parsed;
   ASSERT_TRUE(parsed.ParseFromString(serialized));
   auto it = parsed.attributes().find("envoy.filters.http.ext_proc");
@@ -357,9 +301,11 @@ TEST(ExtProcMessageTest, PopulateAttributesMapAllCELVariables) {
 
 TEST(ExtProcMessageTest, ObservabilityModeTrue) {
   upb::Arena arena;
-  ExtProcRequest request =
-      ExtProcRequest::Builder(arena.ptr()).SetObservabilityMode(true).Build();
-  std::string serialized = request.SerializeMessage();
+  grpc_metadata_batch batch;
+  std::string serialized = ExtProcRequest::CreateClientHeadersRequest(
+      batch, arena.ptr(), {}, /*observability_mode=*/true,
+      /*is_first_message=*/false, /*send_request_body=*/false,
+      /*send_response_body=*/false);
   envoy::service::ext_proc::v3::ProcessingRequest parsed;
   ASSERT_TRUE(parsed.ParseFromString(serialized));
   EXPECT_TRUE(parsed.observability_mode());
@@ -367,9 +313,11 @@ TEST(ExtProcMessageTest, ObservabilityModeTrue) {
 
 TEST(ExtProcMessageTest, ObservabilityModeFalse) {
   upb::Arena arena;
-  ExtProcRequest request =
-      ExtProcRequest::Builder(arena.ptr()).SetObservabilityMode(false).Build();
-  std::string serialized = request.SerializeMessage();
+  grpc_metadata_batch batch;
+  std::string serialized = ExtProcRequest::CreateClientHeadersRequest(
+      batch, arena.ptr(), {}, /*observability_mode=*/false,
+      /*is_first_message=*/false, /*send_request_body=*/false,
+      /*send_response_body=*/false);
   envoy::service::ext_proc::v3::ProcessingRequest parsed;
   ASSERT_TRUE(parsed.ParseFromString(serialized));
   EXPECT_FALSE(parsed.observability_mode());
