@@ -55,21 +55,24 @@ struct ExtProcResponse {
     std::vector<XdsHeaderValueOption> set_headers;
     std::vector<std::string> remove_headers;
   };
-  std::optional<absl::StatusOr<HeaderMutation>> request_headers;
-  std::optional<absl::StatusOr<HeaderMutation>> response_headers;
-  std::optional<HeaderMutation> response_trailers;
+
   struct BodyMutation {
     std::string body;
     bool end_of_stream = false;
     bool end_of_stream_without_message = false;
   };
-  std::optional<absl::StatusOr<BodyMutation>> request_body;
-  std::optional<absl::StatusOr<BodyMutation>> response_body;
+
   struct ImmediateResponse {
     uint32_t status;
     HeaderMutation header_mutation;
     std::string details;
   };
+
+  std::optional<absl::StatusOr<HeaderMutation>> request_headers;
+  std::optional<absl::StatusOr<HeaderMutation>> response_headers;
+  std::optional<HeaderMutation> response_trailers;
+  std::optional<absl::StatusOr<BodyMutation>> request_body;
+  std::optional<absl::StatusOr<BodyMutation>> response_body;
   std::optional<ImmediateResponse> immediate_response;
   bool mode_override = false;
   bool request_drain = false;
