@@ -98,8 +98,8 @@ bool ExactMatchOrSubdomain(absl::string_view host_name,
   // ".<no_proxy_entry>". Prevents "notexample.com" from matching
   // "example.com", while "test.example.com" still matches.
   if (host_name.size() > no_proxy_entry.size() + 1 &&
-     absl::EndsWithIgnoreCase(host_name, no_proxy_entry) &&
-     host_name[host_name.size() - no_proxy_entry.size() - 1] == '.') {
+      absl::EndsWithIgnoreCase(host_name, no_proxy_entry) &&
+      host_name[host_name.size() - no_proxy_entry.size() - 1] == '.') {
     return true;
   }
 
