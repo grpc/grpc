@@ -289,6 +289,10 @@ do
   fi
 
   DOCKER_IMAGE_NAME=$(basename "$DOCKERFILE_DIR")
+
+  if [[ ! "$DOCKER_IMAGE_NAME" == *"python"* ]]; then
+    continue
+  fi
   LOG_FILE="reports/${DOCKERFILE_DIR}/sponge_log.log"
 
   mkdir -p "reports/${DOCKERFILE_DIR}"
