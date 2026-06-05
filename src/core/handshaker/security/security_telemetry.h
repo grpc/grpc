@@ -26,7 +26,6 @@ class ClientHandshakeTelemetryDomain final
   static constexpr absl::string_view kName = "client_security_handshaker";
   GRPC_INSTRUMENT_DOMAIN_LABELS("grpc.security.handshaker.status",
                                 "grpc.target",
-                                "grpc.security.handshaker.protocol",
                                 "grpc.security.handshaker.resumed");
 
   static inline const auto kHandshakes = RegisterCounter(
@@ -40,7 +39,6 @@ class ServerHandshakeTelemetryDomain final
   using Backend = LowContentionBackend;
   static constexpr absl::string_view kName = "server_security_handshaker";
   GRPC_INSTRUMENT_DOMAIN_LABELS("grpc.security.handshaker.status",
-                                "grpc.security.handshaker.protocol",
                                 "grpc.security.handshaker.resumed");
 
   static inline const auto kHandshakes = RegisterCounter(

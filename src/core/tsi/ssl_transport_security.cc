@@ -217,7 +217,6 @@ struct tsi_ssl_handshaker : public tsi_handshaker,
     if (handshaker_next_args->error_ptr == nullptr) return;
     *handshaker_next_args->error_ptr = std::move(error);
   }
-  grpc_core::Timestamp start_time;
   bool is_client = false;
   std::string target;
   int last_ssl_error = SSL_ERROR_NONE;
@@ -259,21 +258,6 @@ void tsi_ssl_handshaker::RecordTelemetry(tsi_result status) {
   }
   std::string status_str = std::string(
       grpc_core::TlsTelemetryHandshakeResultToString(result));
-  std::string protocol = "unknown";
-  if (ssl != nullptr) {
-    const unsigned char* alpn_selected = nullptr;
-    unsigned int alpn_selected_len = 0;
-#if TSI_OPENSSL_ALPN_SUPPORT
-    SSL_get0_alpn_selected(ssl, &alpn_selected, &alpn_selected_len);
-#endif
-    if (alpn_selected == nullptr) {
-      SSL_get0_next_proto_negotiated(ssl, &alpn_selected, &alpn_selected_len);
-    }
-    if (alpn_selected != nullptr && alpn_selected_len > 0) {
-      protocol = std::string(reinterpret_cast<const char*>(alpn_selected),
-                             alpn_selected_len);
-    }
-  }
 
   auto scope = collection_scope != nullptr
                    ? collection_scope
@@ -281,11 +265,11 @@ void tsi_ssl_handshaker::RecordTelemetry(tsi_result status) {
 
   if (is_client) {
     auto storage = grpc_core::ClientHandshakeTelemetryDomain::GetStorage(
-        std::move(scope), status_str, target, protocol, resumed);
+        std::move(scope), status_str, target, resumed);
     storage->Increment(grpc_core::ClientHandshakeTelemetryDomain::kHandshakes);
   } else {
     auto storage = grpc_core::ServerHandshakeTelemetryDomain::GetStorage(
-        std::move(scope), status_str, protocol, resumed);
+        std::move(scope), status_str, resumed);
     storage->Increment(grpc_core::ServerHandshakeTelemetryDomain::kHandshakes);
   }
 }
@@ -2679,7 +2663,6 @@ static tsi_result create_tsi_ssl_handshaker(
   impl->vtable = &handshaker_vtable;
   impl->factory_ref = tsi_ssl_handshaker_factory_ref(factory);
   impl->collection_scope = std::move(collection_scope);
-  impl->start_time = grpc_core::Timestamp::Now();
   impl->is_client = (is_client != 0);
   impl->target = server_name_indication != nullptr ? server_name_indication
                                                    : "unknown";

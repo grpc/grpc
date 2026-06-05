@@ -58,13 +58,12 @@ class MockMetricsSink : public MetricsSink {
 TEST(ClientSecurityTelemetryTest, RecordAndQuery) {
   auto scope = CreateCollectionScope({}, {"grpc.security.handshaker.status",
                                           "grpc.target",
-                                          "grpc.security.handshaker.protocol",
                                           "grpc.security.handshaker.resumed"});
   auto storage = ClientHandshakeTelemetryDomain::GetStorage(
-      scope, "OK", "dns:///localhost:50051", "TLS", "false");
+      scope, "OK", "dns:///localhost:50051", "false");
 
   std::vector<std::string> label_values = {"OK", "dns:///localhost:50051",
-                                           "TLS", "false"};
+                                           "false"};
 
   ::testing::StrictMock<MockMetricsSink> sink;
 
@@ -88,12 +87,11 @@ TEST(ClientSecurityTelemetryTest, RecordAndQuery) {
 
 TEST(ServerSecurityTelemetryTest, RecordAndQuery) {
   auto scope = CreateCollectionScope({}, {"grpc.security.handshaker.status",
-                                          "grpc.security.handshaker.protocol",
                                           "grpc.security.handshaker.resumed"});
-  auto storage = ServerHandshakeTelemetryDomain::GetStorage(scope, "OK", "TLS",
+  auto storage = ServerHandshakeTelemetryDomain::GetStorage(scope, "OK",
                                                             "false");
 
-  std::vector<std::string> label_values = {"OK", "TLS", "false"};
+  std::vector<std::string> label_values = {"OK", "false"};
 
   ::testing::StrictMock<MockMetricsSink> sink;
 
