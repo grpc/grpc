@@ -365,6 +365,7 @@ TEST(ExtProcMessageTest, HeaderResponseContinueAndReplaceFails) {
   ASSERT_TRUE(result.ok());
   ASSERT_TRUE(result->request_headers.has_value());
   EXPECT_FALSE(result->request_headers->ok());
+  EXPECT_EQ(result->request_headers->status().code(), absl::StatusCode::kInternal);
   EXPECT_EQ(result->request_headers->status().message(),
             "CONTINUE_AND_REPLACE is not supported");
 }
