@@ -1737,6 +1737,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/resource_quota/resource_quota.h )
   s.files += %w( src/core/lib/resource_quota/stream_quota.cc )
   s.files += %w( src/core/lib/resource_quota/stream_quota.h )
+  s.files += %w( src/core/lib/resource_quota/telemetry.cc )
   s.files += %w( src/core/lib/resource_quota/telemetry.h )
   s.files += %w( src/core/lib/resource_quota/thread_quota.cc )
   s.files += %w( src/core/lib/resource_quota/thread_quota.h )

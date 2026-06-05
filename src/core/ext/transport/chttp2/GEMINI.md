@@ -43,6 +43,10 @@ and the underlying endpoint.
 
 ### CHTTP2 File Structure
 
+<!--
+TODO(tjagtap) [PH2][CHTTP2] Edit this doc when CHTTP2 is getting deleted.
+-->
+
 *   General Transport Files:
     *   `chttp2_transport.{h,cc}`: Core transport logic for both client and server.
     *   `internal.h`: Internal declarations for CHTTP2.
@@ -66,8 +70,10 @@ and the underlying endpoint.
 *   **Status:** Under Development.
 *   **Rollout:** Expected to begin in November 2026.
 *   **Experiments:**
-    *   Client: `IsPromiseBasedHttp2ClientTransportEnabled()`.
-    *   Server: `IsPromiseBasedHttp2ServerTransportEnabled()`.
+    *   Enable Client: `IsPh2ClientEnabled()`.
+    *   Enable Server: `IsPh2ServerEnabled()`.
+    *   Enable both PH2 Client and PH2 Server : `IsPh2ClientServerEnabled()`.
+        *   This is for testing only. This experiment will NEVER be rolled out.
 
 ### PH2 Goals
 

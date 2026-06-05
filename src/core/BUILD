@@ -250,12 +250,19 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "tcp_telemetry",
+    srcs = [
+        "lib/event_engine/tcp_telemetry.cc",
+    ],
     hdrs = [
         "lib/event_engine/tcp_telemetry.h",
+    ],
+    external_deps = [
+        "absl/strings:string_view",
     ],
     deps = [
         "histogram",
         "instrument",
+        "//:gpr_platform",
     ],
 )
 
@@ -1958,11 +1965,15 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "resource_quota_telemetry",
+    srcs = [
+        "lib/resource_quota/telemetry.cc",
+    ],
     hdrs = [
         "lib/resource_quota/telemetry.h",
     ],
     deps = [
         "instrument",
+        "//:gpr_platform",
     ],
 )
 
@@ -4091,8 +4102,9 @@ grpc_cc_library(
     ],
     external_deps = ["absl/base:core_headers"],
     deps = [
-        "blackboard",
+        "grpc_service_config",
         "ref_counted",
+        "retry_service_config",
         "sync",
         "useful",
         "//:gpr",
@@ -11424,7 +11436,7 @@ grpc_cc_library(
     ],
     hdrs = ["channelz/zviz/html.h"],
     external_deps = [
-        "absl/container:flat_hash_map",
+        "absl/container:node_hash_map",
         "absl/strings",
         "absl/strings:string_view",
         "absl/types:span",

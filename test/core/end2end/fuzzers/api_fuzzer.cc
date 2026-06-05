@@ -599,7 +599,7 @@ TEST(MyTestSuite, RunApiFuzzerRegression3) {
            actions { queue_batch { operations { receive_message {} } } }
            actions { create_channel { inproc: true } }
            config_vars {
-             experiments: "-subchannel_connection_scaling,promise_based_http2_client_transport"
+             experiments: "-subchannel_connection_scaling,ph2_client"
            }
       )pb"));
 }

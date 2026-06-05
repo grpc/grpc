@@ -1730,6 +1730,7 @@ let package = Package(
         "src/core/lib/resource_quota/resource_quota.h",
         "src/core/lib/resource_quota/stream_quota.cc",
         "src/core/lib/resource_quota/stream_quota.h",
+        "src/core/lib/resource_quota/telemetry.cc",
         "src/core/lib/resource_quota/telemetry.h",
         "src/core/lib/resource_quota/thread_quota.cc",
         "src/core/lib/resource_quota/thread_quota.h",
