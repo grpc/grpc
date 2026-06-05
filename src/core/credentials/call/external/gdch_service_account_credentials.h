@@ -20,17 +20,13 @@
 #include <grpc/support/port_platform.h>
 
 #include <chrono>
-#include <functional>
-#include <map>
 #include <string>
 #include <vector>
 
 #include "src/core/credentials/call/external/external_account_credentials.h"
-#include "src/core/lib/iomgr/error.h"
 #include "src/core/util/http_client/httpcli.h"
 #include "src/core/util/orphanable.h"
 #include "src/core/util/ref_counted_ptr.h"
-#include "src/core/util/uri.h"
 #include "absl/strings/string_view.h"
 
 namespace grpc_core {
@@ -65,17 +61,6 @@ namespace grpc_core {
 // }
 class GDCHServiceAccountCredentials final : public ExternalAccountCredentials {
  public:
-  // OpenSSL outputs DER format signatures by default. RFC-7515 (JWT/JWS)
-  // specifies the Raw format should be used.
-  enum class SignatureFormat { kDER, kRaw };
-
-  // Signs a string with the private key from a PEM container.
-  //
-  // @return the signature as an *unencoded* byte array.
-  static absl::StatusOr<std::vector<std::uint8_t>> SignUsingSha256(
-      std::string const& str, std::string const& pem_contents,
-      SignatureFormat format);
-
   struct Info {
     std::string type;
     std::string format_version;
@@ -87,8 +72,6 @@ class GDCHServiceAccountCredentials final : public ExternalAccountCredentials {
     std::string token_uri;
   };
 
-  static absl::StatusOr<Info> ParseServiceAccountJson(Json const& json);
-
   static absl::StatusOr<RefCountedPtr<GDCHServiceAccountCredentials>> Create(
       Json const& key_file_contents, std::string audience,
       std::shared_ptr<grpc_event_engine::experimental::EventEngine>
@@ -99,10 +82,43 @@ class GDCHServiceAccountCredentials final : public ExternalAccountCredentials {
       std::shared_ptr<grpc_event_engine::experimental::EventEngine>
           event_engine);
 
+  std::optional<std::string> ca_cert_path() const { return info_.ca_cert_path; }
+
+  std::string debug_string() override;
+
+  UniqueTypeName type() const override { return Type(); }
+
+ private:
+  friend class GDCHServiceAccountCredentialsTest;
+  friend class ExternalAccountCredentialsTest;
+  friend grpc_call_credentials* ::grpc_gdch_service_account_credentials_create(
+      const char* json_string, const char* audience_string);
+
+  // OpenSSL outputs DER format signatures by default. RFC-7515 (JWT/JWS)
+  // specifies the Raw format should be used.
+  enum class SignatureFormat { kDER, kRaw };
+
   struct AssertionComponents {
     std::string header;
     std::string claim;
   };
+
+  struct GrpcDeleter {
+    void operator()(grpc_http_request* ptr);
+  };
+  using GrpcHttpRequestUniquePtr =
+      std::unique_ptr<grpc_http_request, GrpcDeleter>;
+
+  // Signs a string with the private key from a PEM container.
+  //
+  // @return the signature as an *unencoded* byte array.
+  static absl::StatusOr<std::vector<std::uint8_t>> SignUsingSha256(
+      std::string const& str, std::string const& pem_contents,
+      SignatureFormat format);
+
+  static absl::StatusOr<Info> ParseServiceAccountJson(Json const& json);
+
+
   static AssertionComponents AssertionComponentsFromInfo(
       Info const& info, std::chrono::system_clock::time_point now);
 
@@ -113,12 +129,6 @@ class GDCHServiceAccountCredentials final : public ExternalAccountCredentials {
   static absl::StatusOr<std::string> CreateRequestBody(
       Info const& info, std::string const& audience);
 
-  struct GrpcDeleter {
-    void operator()(grpc_http_request* ptr);
-  };
-  using GrpcHttpRequestUniquePtr =
-      std::unique_ptr<grpc_http_request, GrpcDeleter>;
-
   static absl::StatusOr<GrpcHttpRequestUniquePtr> FormatHttpRequest(
       Info const& info, std::string const& audience);
 
@@ -126,15 +136,6 @@ class GDCHServiceAccountCredentials final : public ExternalAccountCredentials {
       std::string const& response_body);
 
   static UniqueTypeName Type();
-
-  std::optional<std::string> ca_cert_path() const { return info_.ca_cert_path; }
-
-  std::string debug_string() override;
-
-  UniqueTypeName type() const override { return Type(); }
-
- private:
-  friend class GDCHServiceAccountCredentialsTest;
 
   OrphanablePtr<FetchRequest> FetchToken(
       Timestamp deadline,
