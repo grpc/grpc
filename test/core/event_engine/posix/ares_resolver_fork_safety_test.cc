@@ -24,16 +24,19 @@
 // This test verifies that Reset() followed by Orphan() (without Restart)
 // does NOT crash.
 //
-// Build: bazel test --config=fork_support \
-//          //test/core/event_engine/posix:ares_resolver_fork_safety_test
+// Build: bazel test --config=fork_support
+//        //test/core/event_engine/posix:ares_resolver_fork_safety_test
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
 #include <grpc/support/port_platform.h>
 
 #include <memory>
+#include <utility>
+#include <vector>
 
 #include "src/core/lib/event_engine/ares_resolver.h"
+#include "src/core/lib/event_engine/grpc_polled_fd.h"
 #include "src/core/lib/event_engine/posix_engine/grpc_polled_fd_posix.h"
 #include "src/core/lib/event_engine/posix_engine/posix_engine.h"
 #include "src/core/util/notification.h"
@@ -41,6 +44,7 @@
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/test_config.h"
 #include "gtest/gtest.h"
+#include "absl/functional/any_invocable.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 
@@ -126,6 +130,123 @@ TEST_F(AresResolverTest, ResetThenOrphanWithPendingLookupsDoesNotCrash) {
   reinit_handle.reset();
 
   // Wait for the lookup callback (it was cancelled by Reset)
+  lookup_done.WaitForNotification();
+}
+
+namespace {
+
+struct FakePolledFdState {
+  bool current = true;
+  std::vector<absl::AnyInvocable<void(absl::Status)>> closures;
+};
+
+class FakePolledFd final : public GrpcPolledFd {
+ public:
+  FakePolledFd(ares_socket_t as, std::shared_ptr<FakePolledFdState> state)
+      : as_(as), state_(std::move(state)) {}
+
+  void RegisterForOnReadableLocked(
+      absl::AnyInvocable<void(absl::Status)> read_closure) override {
+    state_->closures.push_back(std::move(read_closure));
+  }
+
+  void RegisterForOnWriteableLocked(
+      absl::AnyInvocable<void(absl::Status)> write_closure) override {
+    state_->closures.push_back(std::move(write_closure));
+  }
+
+  bool IsFdStillReadableLocked() override { return false; }
+
+  bool ShutdownLocked(absl::Status /*error*/) override { return true; }
+
+  ares_socket_t GetWrappedAresSocketLocked() override { return as_; }
+
+  const char* GetName() const override { return "fake c-ares fd"; }
+
+  bool IsCurrent() const override { return state_->current; }
+
+ private:
+  ares_socket_t as_;
+  std::shared_ptr<FakePolledFdState> state_;
+};
+
+class FakePolledFdFactory final : public GrpcPolledFdFactory {
+ public:
+  explicit FakePolledFdFactory(std::shared_ptr<FakePolledFdState> state)
+      : state_(std::move(state)) {}
+
+  void Initialize(grpc_core::Mutex* /*mutex*/,
+                  EventEngine* /*event_engine*/) override {}
+
+  std::unique_ptr<GrpcPolledFd> NewGrpcPolledFdLocked(
+      ares_socket_t as) override {
+    return std::make_unique<FakePolledFd>(as, state_);
+  }
+
+  void ConfigureAresChannelLocked(ares_channel /*channel*/) override {}
+
+  std::unique_ptr<GrpcPolledFdFactory> NewEmptyInstance() const override {
+    return std::make_unique<FakePolledFdFactory>(state_);
+  }
+
+ private:
+  std::shared_ptr<FakePolledFdState> state_;
+};
+
+void RunFakePolledFdClosures(FakePolledFdState* state) {
+  auto closures = std::move(state->closures);
+  state->closures.clear();
+  for (auto& closure : closures) {
+    closure(absl::CancelledError("simulated stale fd shutdown"));
+  }
+}
+
+}  // namespace
+
+// Verifies that destroying an orphaned AresResolver with in-flight DNS lookups
+// drains outstanding c-ares callbacks before checking callback_map_.
+//
+// This covers the teardown path where Orphan() shuts down poller FDs, but
+// Reset() was not called first to clear callback_map_. In that case the
+// destructor must let ares_destroy() synchronously invoke pending query
+// callbacks so callback_map_ can drain before the final invariant check.
+TEST_F(AresResolverTest, OrphanWithPendingLookupDrainsCallbacksDoesNotCrash) {
+  auto dns_server = DnsServer::Start(grpc_pick_unused_port_or_die());
+  ASSERT_TRUE(dns_server.ok()) << dns_server.status();
+
+  auto ee = PosixEventEngine::MakePosixEventEngine();
+  auto fd_state = std::make_shared<FakePolledFdState>();
+
+  auto ares_resolver = AresResolver::CreateAresResolver(
+      dns_server->address(), std::make_unique<FakePolledFdFactory>(fd_state),
+      ee);
+  ASSERT_TRUE(ares_resolver.ok()) << ares_resolver.status();
+
+  grpc_core::Notification lookup_done;
+  ares_resolver->get()->LookupHostname(
+      [&lookup_done](const auto& result) {
+        EXPECT_FALSE(result.ok()) << result.status();
+        lookup_done.Notify();
+      },
+      "pending-destroy.example.com", "443");
+
+  // Ensure c-ares has an outstanding query and callback_map_ is populated, but
+  // do not answer it. The pending callback should be drained by ares_destroy()
+  // when the resolver is eventually destroyed after Orphan().
+  dns_server->WaitForQuestion("pending-destroy.example.com");
+  ASSERT_FALSE(fd_state->closures.empty());
+
+  // Simulate the fork-generation change from the production crash. When the
+  // pending fd callbacks run after Orphan(), IsCurrent() returns false, so
+  // OnReadable()/OnWritable() clean up fd_node_list_ without calling
+  // ares_cancel(). That leaves callback_map_ populated until ares_destroy()
+  // runs in the destructor.
+  fd_state->current = false;
+  ares_resolver->reset();
+  RunFakePolledFdClosures(fd_state.get());
+
+  // If the destructor checks callback_map_ before ares_destroy() drains the
+  // outstanding query callbacks, this test will abort before notification.
   lookup_done.WaitForNotification();
 }
 

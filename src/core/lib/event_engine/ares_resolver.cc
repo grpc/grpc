@@ -281,10 +281,15 @@ AresResolver::AresResolver(
 
 AresResolver::~AresResolver() {
   GRPC_CHECK(fd_node_list_.empty());
-  GRPC_CHECK(callback_map_.empty());
+
+  // ares_cancel() or ares_destroy() synchronously invokes outstanding
+  // query callbacks, which should drain callback_map_.
   if (channel_ != nullptr) {
     ares_destroy(channel_);
+    channel_ = nullptr;
   }
+
+  GRPC_CHECK(callback_map_.empty());
 }
 
 void AresResolver::Orphan() {

@@ -509,6 +509,7 @@ grpc_cc_test(
     srcs = ["ares_resolver_fork_safety_test.cc"],
     external_deps = [
         "gtest",
+        "absl/functional:any_invocable",
         "absl/status",
         "absl/status:statusor",
     ],
