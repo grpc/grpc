@@ -167,8 +167,13 @@ class UnaryUnaryMultiCallable(
                 self._loop,
             )
 
-        if self._references and isinstance(self._references[0], Channel):
-            self._references[0]._register_call(call)
+        if not self._references:
+            raise ValueError("MultiCallable must be attached to a Channel, unexpectedly found no references.")
+
+        if not isinstance(self._references[0], Channel):
+            raise TypeError("Invalid reference type. MultiCallable must be attached to a Channel.")
+
+        self._references[0]._register_call(call)
 
         return call
 
@@ -216,8 +221,13 @@ class UnaryStreamMultiCallable(
                 self._loop,
             )
 
-        if self._references and isinstance(self._references[0], Channel):
-            self._references[0]._register_call(call)
+        if not self._references:
+            raise ValueError("MultiCallable must be attached to a Channel, unexpectedly found no references.")
+
+        if not isinstance(self._references[0], Channel):
+            raise TypeError("Invalid reference type. MultiCallable must be attached to a Channel.")
+
+        self._references[0]._register_call(call)
 
         return call
 
@@ -264,8 +274,13 @@ class StreamUnaryMultiCallable(
                 self._loop,
             )
 
-        if self._references and isinstance(self._references[0], Channel):
-            self._references[0]._register_call(call)
+        if not self._references:
+            raise ValueError("MultiCallable must be attached to a Channel, unexpectedly found no references.")
+
+        if not isinstance(self._references[0], Channel):
+            raise TypeError("Invalid reference type. MultiCallable must be attached to a Channel.")
+
+        self._references[0]._register_call(call)
 
         return call
 
@@ -312,8 +327,13 @@ class StreamStreamMultiCallable(
                 self._loop,
             )
 
-        if self._references and isinstance(self._references[0], Channel):
-            self._references[0]._register_call(call)
+        if not self._references:
+            raise ValueError("MultiCallable must be attached to a Channel, unexpectedly found no references.")
+
+        if not isinstance(self._references[0], Channel):
+            raise TypeError("Invalid reference type. MultiCallable must be attached to a Channel.")
+
+        self._references[0]._register_call(call)
 
         return call
 
@@ -399,6 +419,7 @@ class Channel(_base_channel.Channel):
         calls = list(self._active_calls)
 
         if grace:
+            # Use `call.code()` to wait for call completion during grace period.
             call_tasks = [
                 self._loop.create_task(call.code())
                 for call in calls
@@ -411,6 +432,7 @@ class Channel(_base_channel.Channel):
         for call in calls:
             call.cancel()
 
+        calls.clear()
         self._active_calls.clear()
 
         # Destroy the channel
