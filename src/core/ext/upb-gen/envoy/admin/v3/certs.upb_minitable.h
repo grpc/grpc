@@ -19,15 +19,10 @@ extern "C" {
 #endif
 
 extern const upb_MiniTable envoy__admin__v3__Certificates_msg_init;
-extern const upb_MiniTable* envoy__admin__v3__Certificates_msg_init_ptr;
 extern const upb_MiniTable envoy__admin__v3__Certificate_msg_init;
-extern const upb_MiniTable* envoy__admin__v3__Certificate_msg_init_ptr;
 extern const upb_MiniTable envoy__admin__v3__CertificateDetails_msg_init;
-extern const upb_MiniTable* envoy__admin__v3__CertificateDetails_msg_init_ptr;
 extern const upb_MiniTable envoy__admin__v3__CertificateDetails__OcspDetails_msg_init;
-extern const upb_MiniTable* envoy__admin__v3__CertificateDetails__OcspDetails_msg_init_ptr;
 extern const upb_MiniTable envoy__admin__v3__SubjectAlternateName_msg_init;
-extern const upb_MiniTable* envoy__admin__v3__SubjectAlternateName_msg_init_ptr;
 
 extern const upb_MiniTableFile envoy_admin_v3_certs_proto_upb_file_layout;
 

@@ -19,8 +19,9 @@ if test "$PHP_GRPC" != "no"; then
 
   LIBS="-lpthread $LIBS"
 
-  CFLAGS="-std=c11 -g -O2"
-  CXXFLAGS="-std=c++17 -fno-exceptions -fno-rtti -g -O2"
+  dnl -Wno-error=attributes needed by UPB https://github.com/grpc/grpc/issues/42192
+  CFLAGS="-std=c11 -g -O2 -Wno-error=attributes"
+  CXXFLAGS="-std=c++17 -fno-exceptions -fno-rtti -g -O2 -Wno-error=attributes"
   GRPC_SHARED_LIBADD="-lpthread $GRPC_SHARED_LIBADD"
   PHP_REQUIRE_CXX()
   PHP_ADD_LIBRARY(pthread)
@@ -722,6 +723,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/resource_quota/periodic_update.cc \
     src/core/lib/resource_quota/resource_quota.cc \
     src/core/lib/resource_quota/stream_quota.cc \
+    src/core/lib/resource_quota/telemetry.cc \
     src/core/lib/resource_quota/thread_quota.cc \
     src/core/lib/resource_tracker/resource_tracker.cc \
     src/core/lib/security/authorization/audit_logging.cc \
@@ -1465,6 +1467,7 @@ if test "$PHP_GRPC" != "no"; then
     third_party/upb/upb/mini_descriptor/internal/encode.c \
     third_party/upb/upb/mini_descriptor/link.c \
     third_party/upb/upb/mini_table/extension_registry.c \
+    third_party/upb/upb/mini_table/generated_registry.c \
     third_party/upb/upb/mini_table/internal/message.c \
     third_party/upb/upb/mini_table/message.c \
     third_party/upb/upb/reflection/def_pool.c \

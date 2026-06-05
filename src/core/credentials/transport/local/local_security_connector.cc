@@ -155,7 +155,7 @@ void local_check_peer(tsi_peer peer, grpc_endpoint* ep,
       &peer.properties[peer.property_count]);
   if (result != TSI_OK) return;
   peer.property_count++;
-  // Create an auth context which is necessary to pass the santiy check in
+  // Create an auth context which is necessary to pass the sanity check in
   // {client, server}_auth_filter that verifies if the peer's auth context is
   // obtained during handshakes. The auth context is only checked for its
   // existence and not actually used.

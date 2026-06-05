@@ -427,6 +427,10 @@ class CoreEnd2endTest {
     // Return some initial metadata.
     std::optional<std::string> GetInitialMetadata(absl::string_view key) const;
 
+    // Return repeated initial metadata.
+    std::optional<std::vector<std::string>> GetRepeatedInitialMetadata(
+        absl::string_view key) const;
+
     // Return the peer address.
     std::optional<std::string> GetPeer() { return impl_->call.GetPeer(); }
 
@@ -763,9 +767,14 @@ inline auto MaybeAddNullConfig(
   return configs;
 }
 
+inline bool IsPh2Test() {
+  return IsPh2ClientEnabled() || IsPh2ServerEnabled() ||
+         IsPh2ClientServerEnabled();
+}
+
 // TODO(akshitpatel) : [PH2][P3] : Remove once all the PH2 E2E tests are fixed.
 inline void EnableLoggingForPH2Tests() {
-  if (IsPromiseBasedHttp2ClientTransportEnabled()) {
+  if (IsPh2Test()) {
     grpc_tracer_set_enabled("http2_ph2_transport", true);
     absl::SetMinLogLevel(absl::LogSeverityAtLeast::kInfo);
     absl::SetGlobalVLogLevel(2);
@@ -774,14 +783,10 @@ inline void EnableLoggingForPH2Tests() {
 
 // TODO(akshitpatel) : [PH2][P3] : Remove once all the PH2 E2E tests are fixed.
 inline void DisableLoggingForPH2Tests() {
-  if (IsPromiseBasedHttp2ClientTransportEnabled()) {
+  if (IsPh2Test()) {
     absl::SetGlobalVLogLevel(-1);
     grpc_tracer_set_enabled("http2_ph2_transport", false);
   }
-}
-
-inline bool IsPromiseBasedTransportEnabled() {
-  return IsPromiseBasedHttp2ClientTransportEnabled();
 }
 
 // If this test fixture is being run under minstack, skip the test.
