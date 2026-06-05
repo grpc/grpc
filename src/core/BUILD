@@ -250,12 +250,19 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "tcp_telemetry",
+    srcs = [
+        "lib/event_engine/tcp_telemetry.cc",
+    ],
     hdrs = [
         "lib/event_engine/tcp_telemetry.h",
+    ],
+    external_deps = [
+        "absl/strings:string_view",
     ],
     deps = [
         "histogram",
         "instrument",
+        "//:gpr_platform",
     ],
 )
 
@@ -1958,11 +1965,15 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "resource_quota_telemetry",
+    srcs = [
+        "lib/resource_quota/telemetry.cc",
+    ],
     hdrs = [
         "lib/resource_quota/telemetry.h",
     ],
     deps = [
         "instrument",
+        "//:gpr_platform",
     ],
 )
 
