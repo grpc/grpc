@@ -47,24 +47,7 @@ ExtProcResponse::HeaderMutation ParseHeaderMutation(
   for (size_t i = 0; i < set_headers_size; ++i) {
     ValidationErrors errors;
     auto parsed = ParseHeaderValueOption(set_headers[i], &errors);
-    // Extract and copy the keys/values to the reference-stable backing
-    // strings list inside the response, then re-point XdsHeaderValueOption's
-    // string views to these stable list buffers to prevent dangling pointers
-    // when the local upb::Arena goes out of scope.
-    header_mutation_response.backing_strings.push_back(
-        std::string(parsed.header.first));
-    absl::string_view stable_key =
-        header_mutation_response.backing_strings.back();
-
-    header_mutation_response.backing_strings.push_back(
-        std::string(parsed.header.second));
-    absl::string_view stable_val =
-        header_mutation_response.backing_strings.back();
-
-    parsed.header.first = stable_key;
-    parsed.header.second = stable_val;
-
-    header_mutation_response.set_headers.push_back(parsed);
+    header_mutation_response.set_headers.push_back(std::move(parsed));
   }
   size_t remove_headers_size = 0;
   upb_StringView const* remove_headers =

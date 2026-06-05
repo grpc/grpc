@@ -17,7 +17,6 @@
 #ifndef GRPC_SRC_CORE_FILTER_EXT_PROC_EXT_PROC_MESSAGES_H
 #define GRPC_SRC_CORE_FILTER_EXT_PROC_EXT_PROC_MESSAGES_H
 
-#include <list>
 #include <memory>
 #include <optional>
 #include <string>
@@ -39,14 +38,6 @@ struct ExtProcResponse {
   struct HeaderMutation {
     std::vector<XdsHeaderValueOption> set_headers;
     std::vector<std::string> remove_headers;
-    // Caches owned keys and values as std::string. Because the core xDS
-    // target target XdsHeaderValueOption uses non-owning absl::string_view
-    // keys which originally point to the locally-destroyed upb::Arena, we
-    // copy them here. We use std::list because it guarantees iterator and
-    // reference stability, ensuring pointers do not get invalidated.
-    // FUTURE OPTIMIZATION: We could allocate these backing strings directly
-    // on the Call's Arena by passing the CallHandler's arena to OnRecvMessage.
-    std::list<std::string> backing_strings;
   };
   std::optional<absl::StatusOr<HeaderMutation>> request_headers;
   std::optional<absl::StatusOr<HeaderMutation>> response_headers;
