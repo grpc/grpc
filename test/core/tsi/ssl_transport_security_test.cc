@@ -1019,18 +1019,6 @@ TEST_P(SslTransportSecurityTest, DoHandshakeAlpnClientServerOk) {
   DoHandshake();
 }
 
-TEST_P(SslTransportSecurityTest, DoHandshakeWithCustomBioPair) {
-  SetUpSslFixture(/*tls_version=*/std::get<0>(GetParam()),
-                  /*send_client_ca_list=*/std::get<1>(GetParam()));
-#if OPENSSL_VERSION_NUMBER >= 0x10100000
-  ssl_fixture_->SetBioBufSizes(
-      /*network_bio_buf_size=*/TSI_TEST_DEFAULT_BUFFER_SIZE,
-      /*ssl_bio_buf_size=*/256);
-#endif
-  ssl_fixture_->SetForceClientAuth(true);
-  DoHandshake();
-}
-
 // TODO(matthewstevenson88): Make tests below compatible with OpenSSL.
 #if defined(OPENSSL_IS_BORINGSSL)
 TEST_P(SslTransportSecurityTest, Protect) {

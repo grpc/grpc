@@ -2353,21 +2353,6 @@ static tsi_result ssl_handshaker_next_impl(tsi_ssl_handshaker* self)
     // has completed.
     status = ssl_handshaker_do_handshake(self);
 #endif
-  } else {
-    status = ssl_handshaker_do_handshake(self);
-    if (status == TSI_INCOMPLETE_DATA) {
-      status = TSI_OK;
-    }
-    while (status == TSI_DRAIN_BUFFER) {
-      status = ssl_handshaker_write_output_buffer(self, &bytes_written);
-      if (status != TSI_OK) {
-        return status;
-      }
-      status = ssl_handshaker_do_handshake(self);
-      if (status == TSI_INCOMPLETE_DATA) {
-        status = TSI_OK;
-      }
-    }
   }
 
   if (status != TSI_OK) {
