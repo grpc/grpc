@@ -64,7 +64,7 @@ function upload_bzlmod_deps {
 
   local urls=()
   if [ "${#bazel_modules[@]}" -gt 0 ]; then
-    urls=($(bazel mod show_repo 2>/dev/null "${bazel_modules[@]}" | grep -E '^\s*urls = \["' | grep -Eo 'https://[^"]+' | sort | uniq))
+    urls=($(bazel mod show_repo 2>/dev/null "${bazel_modules[@]}" | grep -Eo 'https://[^"]+' | sort | uniq))
   fi
 
   for url in "${urls[@]}" ; do
