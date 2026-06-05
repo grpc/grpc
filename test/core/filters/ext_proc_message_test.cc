@@ -19,22 +19,19 @@
 #include <utility>
 #include <vector>
 
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
-
 #include "envoy/config/core/v3/base.pb.h"
 #include "envoy/config/core/v3/base.upb.h"
 #include "envoy/extensions/filters/http/ext_proc/v3/processing_mode.pb.h"
 #include "envoy/service/ext_proc/v3/external_processor.pb.h"
 #include "envoy/service/ext_proc/v3/external_processor.upb.h"
-#include "upb/mem/arena.hpp"
-
 #include "src/core/ext/filters/ext_proc/ext_proc_messages.h"
 #include "src/core/util/upb_utils.h"
+#include "upb/mem/arena.hpp"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
 
 namespace grpc_core {
 namespace {
-
 
 // Protocol Initiation tests
 TEST(ExtProcMessageTest, ClientHeadersProtocolInitiation) {
@@ -56,7 +53,8 @@ TEST(ExtProcMessageTest, ClientHeadersProtocolInitiation) {
                 ProcessingMode_BodySendMode_GRPC);
 }
 
-TEST(ExtProcMessageTest, ClientHeadersProtocolInitiationSubsequentMessageConfig) {
+TEST(ExtProcMessageTest,
+     ClientHeadersProtocolInitiationSubsequentMessageConfig) {
   upb::Arena arena;
   grpc_metadata_batch batch;
   std::string serialized = CreateExtProcRequest(
@@ -191,8 +189,9 @@ TEST(ExtProcMessageTest, ServerHeadersProtocolInitiation) {
 TEST(ExtProcMessageTest, ServerBodyEndOfStreamAlwaysFalse) {
   upb::Arena arena;
   std::string serialized = CreateExtProcRequest(
-      arena.ptr(), ExtProcRequestType::kServerMessage, StdStringToUpbString("data"),
-      {}, /*observability_mode=*/false, /*is_first_message=*/false,
+      arena.ptr(), ExtProcRequestType::kServerMessage,
+      StdStringToUpbString("data"), {}, /*observability_mode=*/false,
+      /*is_first_message=*/false,
       /*send_request_body=*/false, /*send_response_body=*/false);
   envoy::service::ext_proc::v3::ProcessingRequest parsed;
   ASSERT_TRUE(parsed.ParseFromString(serialized));
@@ -223,8 +222,7 @@ TEST(ExtProcMessageTest, ServerTrailersMetadataAndStatus) {
 TEST(ExtProcMessageTest, AttributesExactlyOneExtProcKey) {
   upb::Arena arena;
   grpc_metadata_batch batch;
-  auto* attr_struct = ParseAttributes(
-      arena.ptr(), {"request.method"}, batch);
+  auto* attr_struct = ParseAttributes(arena.ptr(), {"request.method"}, batch);
   std::string serialized = CreateExtProcRequest(
       arena.ptr(), ExtProcRequestType::kClientHeaders, &batch, attr_struct,
       /*observability_mode=*/false,
@@ -241,8 +239,7 @@ TEST(ExtProcMessageTest, AttributesSpecificMappingMatches) {
   upb::Arena arena;
   grpc_metadata_batch batch;
   batch.Set(HttpPathMetadata(), Slice::FromCopiedString("/Service/Method"));
-  auto* attr_struct = ParseAttributes(
-      arena.ptr(), {"request.path"}, batch);
+  auto* attr_struct = ParseAttributes(arena.ptr(), {"request.path"}, batch);
   std::string serialized = CreateExtProcRequest(
       arena.ptr(), ExtProcRequestType::kClientHeaders, &batch, attr_struct,
       /*observability_mode=*/false,
@@ -276,8 +273,7 @@ TEST(ExtProcMessageTest, PopulateAttributesMapAllCELVariables) {
       "request.scheme",  "request.method",    "request.headers",
       "request.referer", "request.useragent", "request.time",
       "request.id",      "request.protocol",  "request.query"};
-  auto* attr_struct =
-      ParseAttributes(arena.ptr(), requested, batch);
+  auto* attr_struct = ParseAttributes(arena.ptr(), requested, batch);
   ASSERT_NE(attr_struct, nullptr);
   std::string serialized = CreateExtProcRequest(
       arena.ptr(), ExtProcRequestType::kClientHeaders, &batch, attr_struct,
@@ -500,9 +496,8 @@ TEST(ExtProcMessageTest, BodyMutationBodyValueIgnored) {
   upb::Arena arena;
   envoy::service::ext_proc::v3::ProcessingResponse proto_resp;
   auto* body_resp = proto_resp.mutable_request_body();
-  body_resp->mutable_response()
-      ->mutable_body_mutation()
-      ->set_body("unsupported-raw-body");
+  body_resp->mutable_response()->mutable_body_mutation()->set_body(
+      "unsupported-raw-body");
   std::string serialized = proto_resp.SerializeAsString();
   auto* upb_resp = envoy_service_ext_proc_v3_ProcessingResponse_parse(
       serialized.data(), serialized.size(), arena.ptr());
@@ -518,9 +513,7 @@ TEST(ExtProcMessageTest, BodyMutationClearBodyIgnored) {
   upb::Arena arena;
   envoy::service::ext_proc::v3::ProcessingResponse proto_resp;
   auto* body_resp = proto_resp.mutable_request_body();
-  body_resp->mutable_response()
-      ->mutable_body_mutation()
-      ->set_clear_body(true);
+  body_resp->mutable_response()->mutable_body_mutation()->set_clear_body(true);
   std::string serialized = proto_resp.SerializeAsString();
   auto* upb_resp = envoy_service_ext_proc_v3_ProcessingResponse_parse(
       serialized.data(), serialized.size(), arena.ptr());

@@ -24,14 +24,14 @@
 #include <variant>
 #include <vector>
 
-#include "google/protobuf/struct.upb.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/string_view.h"
 #include "envoy/config/core/v3/base.upb.h"
 #include "envoy/service/ext_proc/v3/external_processor.upb.h"
+#include "google/protobuf/struct.upb.h"
 #include "src/core/call/metadata_batch.h"
 #include "src/core/xds/grpc/xds_common_types.h"
 #include "upb/mem/arena.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 
