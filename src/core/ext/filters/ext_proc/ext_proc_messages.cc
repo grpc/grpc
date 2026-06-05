@@ -156,6 +156,10 @@ class UpbStructHeadersEncoder {
 
 }  // namespace
 
+//
+// ParseExtProcResponse()
+//
+
 absl::StatusOr<ExtProcResponse> ParseExtProcResponse(
     const envoy_service_ext_proc_v3_ProcessingResponse* response,
     bool observability_mode) {
@@ -312,13 +316,11 @@ class UpbHeaderMapEncoder {
 
     char* val_buf = static_cast<char*>(upb_Arena_Malloc(arena_, value.size()));
     memcpy(val_buf, value.data(), value.size());
-    if (absl::EndsWith(key, "-bin")) {
-      envoy_config_core_v3_HeaderValue_set_raw_value(
-          value_msg, upb_StringView_FromDataAndSize(val_buf, value.size()));
-    } else {
-      envoy_config_core_v3_HeaderValue_set_value(
-          value_msg, upb_StringView_FromDataAndSize(val_buf, value.size()));
-    }
+    // Per gRFC A102, when writing, we always set the raw_value field and never
+    // the value field. This is because ext_proc only reads and writes raw_value
+    // while ext_authz reads value but writes raw_value.
+    envoy_config_core_v3_HeaderValue_set_raw_value(
+        value_msg, upb_StringView_FromDataAndSize(val_buf, value.size()));
   }
 
   envoy_config_core_v3_HeaderMap* header_map_;
@@ -408,40 +410,22 @@ void SetAttributes(envoy_service_ext_proc_v3_ProcessingRequest* request,
       attributes, arena);
 }
 
-void SetProtocolConfigRequest(
-    envoy_service_ext_proc_v3_ProcessingRequest* request, upb_Arena* arena,
-    bool is_first_message, bool send_body) {
-  if (!is_first_message) return;
+void SetProtocolConfig(envoy_service_ext_proc_v3_ProcessingRequest* request,
+                       upb_Arena* arena, bool send_request_body,
+                       bool send_response_body) {
   auto* protocol_config =
       envoy_service_ext_proc_v3_ProcessingRequest_mutable_protocol_config(
           request, arena);
-  if (send_body) {
-    envoy_service_ext_proc_v3_ProtocolConfiguration_set_request_body_mode(
-        protocol_config,
-        envoy_extensions_filters_http_ext_proc_v3_ProcessingMode_GRPC);
-  } else {
-    envoy_service_ext_proc_v3_ProtocolConfiguration_set_request_body_mode(
-        protocol_config,
-        envoy_extensions_filters_http_ext_proc_v3_ProcessingMode_NONE);
-  }
-}
-
-void SetProtocolConfigResponse(
-    envoy_service_ext_proc_v3_ProcessingRequest* request, upb_Arena* arena,
-    bool is_first_message, bool send_body) {
-  if (!is_first_message) return;
-  auto* protocol_config =
-      envoy_service_ext_proc_v3_ProcessingRequest_mutable_protocol_config(
-          request, arena);
-  if (send_body) {
-    envoy_service_ext_proc_v3_ProtocolConfiguration_set_response_body_mode(
-        protocol_config,
-        envoy_extensions_filters_http_ext_proc_v3_ProcessingMode_GRPC);
-  } else {
-    envoy_service_ext_proc_v3_ProtocolConfiguration_set_response_body_mode(
-        protocol_config,
-        envoy_extensions_filters_http_ext_proc_v3_ProcessingMode_NONE);
-  }
+  envoy_service_ext_proc_v3_ProtocolConfiguration_set_request_body_mode(
+      protocol_config,
+      send_request_body
+          ? envoy_extensions_filters_http_ext_proc_v3_ProcessingMode_GRPC
+          : envoy_extensions_filters_http_ext_proc_v3_ProcessingMode_NONE);
+  envoy_service_ext_proc_v3_ProtocolConfiguration_set_response_body_mode(
+      protocol_config,
+      send_response_body
+          ? envoy_extensions_filters_http_ext_proc_v3_ProcessingMode_GRPC
+          : envoy_extensions_filters_http_ext_proc_v3_ProcessingMode_NONE);
 }
 
 std::string SerializeMessage(
@@ -454,6 +438,10 @@ std::string SerializeMessage(
 }
 
 }  // namespace
+
+//
+// CreateExtProcRequest()
+//
 
 std::string CreateExtProcRequest(
     upb_Arena* arena, ExtProcRequestType type,
@@ -498,9 +486,9 @@ std::string CreateExtProcRequest(
   }
   SetAttributes(request, arena, attributes);
   SetObservabilityMode(request, observability_mode);
-  SetProtocolConfigRequest(request, arena, is_first_message, send_request_body);
-  SetProtocolConfigResponse(request, arena, is_first_message,
-                            send_response_body);
+  if (is_first_message) {
+    SetProtocolConfig(request, arena, send_request_body, send_response_body);
+  }
   return SerializeMessage(request, arena);
 }
 
