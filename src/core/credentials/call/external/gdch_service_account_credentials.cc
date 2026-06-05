@@ -17,7 +17,6 @@
 
 #include <grpc/credentials.h>
 #include <grpc/grpc.h>
-#include <grpc/grpc_security.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/json.h>
 #include <grpc/support/port_platform.h>
@@ -35,7 +34,6 @@
 #include "src/core/credentials/transport/transport_credentials.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/transport/error_utils.h"
-#include "src/core/util/grpc_check.h"
 #include "src/core/util/http_client/httpcli_ssl_credentials.h"
 #include "src/core/util/http_client/parser.h"
 #include "src/core/util/json/json.h"

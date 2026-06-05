@@ -2958,6 +2958,8 @@ TEST_F(CredentialsTest,
                       grpc_version_string()));
 }
 
+}  // namespace
+
 class ExternalAccountCredentialsTest : public ::testing::Test {
  protected:
   void SetUp() override {
@@ -2977,6 +2979,8 @@ class ExternalAccountCredentialsTest : public ::testing::Test {
       std::make_shared<FuzzingEventEngine>(FuzzingEventEngine::Options(),
                                            fuzzing_event_engine::Actions());
 };
+
+namespace {
 
 TEST_F(ExternalAccountCredentialsTest, Success) {
   ExecCtx exec_ctx;
