@@ -16,7 +16,6 @@
 #define GRPC_SRC_CORE_HANDSHAKER_SECURITY_SECURITY_TELEMETRY_H
 
 #include "src/core/telemetry/instrument.h"
-#include "src/core/telemetry/histogram.h"
 
 namespace grpc_core {
 
@@ -30,10 +29,9 @@ class ClientHandshakeTelemetryDomain final
                                 "grpc.security.handshaker.protocol",
                                 "grpc.security.handshaker.resumed");
 
-  static inline const auto kDuration =
-      RegisterHistogram<ExponentialHistogramShape>(
-          "grpc.security.client.handshaker.duration",
-          "Duration of client-side security handshake", "us", 1e6, 20);
+  static inline const auto kHandshakes = RegisterCounter(
+      "grpc.client.tls.handshakes",
+      "Total number of client-side TLS handshakes", "{handshake}");
 };
 
 class ServerHandshakeTelemetryDomain final
@@ -45,10 +43,9 @@ class ServerHandshakeTelemetryDomain final
                                 "grpc.security.handshaker.protocol",
                                 "grpc.security.handshaker.resumed");
 
-  static inline const auto kDuration =
-      RegisterHistogram<ExponentialHistogramShape>(
-          "grpc.security.server.handshaker.duration",
-          "Duration of server-side security handshake", "us", 1e6, 20);
+  static inline const auto kHandshakes = RegisterCounter(
+      "grpc.server.tls.handshakes",
+      "Total number of server-side TLS handshakes", "{handshake}");
 };
 
 }  // namespace grpc_core

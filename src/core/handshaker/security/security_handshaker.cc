@@ -41,8 +41,6 @@
 #include "src/core/handshaker/handshaker_factory.h"
 #include "src/core/handshaker/handshaker_registry.h"
 #include "src/core/handshaker/security/secure_endpoint.h"
-#include "src/core/handshaker/security/security_telemetry.h"
-#include "src/core/client_channel/client_channel_args.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/endpoint.h"
@@ -52,7 +50,6 @@
 #include "src/core/lib/iomgr/tcp_server.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_internal.h"
-#include "src/core/telemetry/metrics.h"
 #include "src/core/telemetry/stats.h"
 #include "src/core/telemetry/stats_data.h"
 #include "src/core/transport/auth_context.h"
@@ -74,28 +71,6 @@
 namespace grpc_core {
 
 namespace {
-
-constexpr absl::string_view kMetricLabelStatus = "grpc.security.handshaker.status";
-constexpr absl::string_view kMetricLabelProtocol = "grpc.security.handshaker.protocol";
-constexpr absl::string_view kMetricLabelTarget = "grpc.target";
-constexpr absl::string_view kMetricLabelResumed = "grpc.security.handshaker.resumed";
-
-const auto kMetricClientHandshakerDuration =
-    GlobalInstrumentsRegistry::RegisterDoubleHistogram(
-        "grpc.security.client.handshaker.duration",
-        "Client-side handshake duration in milliseconds.",
-        "ms", false)
-        .Labels(kMetricLabelStatus, kMetricLabelTarget,
-                kMetricLabelProtocol, kMetricLabelResumed)
-        .Build();
-
-const auto kMetricServerHandshakerDuration =
-    GlobalInstrumentsRegistry::RegisterDoubleHistogram(
-        "grpc.security.server.handshaker.duration",
-        "Server-side handshake duration in milliseconds.",
-        "ms", false)
-        .Labels(kMetricLabelStatus, kMetricLabelProtocol, kMetricLabelResumed)
-        .Build();
 
 class SecurityHandshaker : public Handshaker {
  public:
@@ -153,7 +128,6 @@ class SecurityHandshaker : public Handshaker {
   size_t max_frame_size_ = 0;
   std::string tsi_handshake_error_;
   grpc_closure* on_peer_checked_ ABSL_GUARDED_BY(mu_) = nullptr;
-  Timestamp start_time_;
 };
 
 SecurityHandshaker::SecurityHandshaker(tsi_handshaker* handshaker,
@@ -210,55 +184,6 @@ void SecurityHandshaker::HandshakeFailedLocked(absl::Status error) {
 }
 
 void SecurityHandshaker::Finish(absl::Status status) {
-  int64_t duration_us = (Timestamp::Now() - start_time_).millis() * 1000;
-  std::string status_str = status.ok() ? "OK" : absl::StatusCodeToString(status.code());
-  std::string protocol = absl::AsciiStrToLower(connector_->type().name());
-
-  std::string resumed = "false";
-  if (auth_context_ != nullptr) {
-    grpc_auth_property_iterator it = grpc_auth_context_find_properties_by_name(
-        auth_context_.get(), GRPC_SSL_SESSION_REUSED_PROPERTY);
-    const grpc_auth_property* prop = grpc_auth_property_iterator_next(&it);
-    if (prop != nullptr && prop->value_length > 0 &&
-        absl::string_view(prop->value, prop->value_length) == "true") {
-      resumed = "true";
-    }
-  }
-
-  std::shared_ptr<GlobalStatsPluginRegistry::StatsPluginGroup> stats_plugin_group;
-  if (args_ != nullptr) {
-    stats_plugin_group =
-        args_->args
-            .GetObjectRef<GlobalStatsPluginRegistry::StatsPluginGroup>();
-    if (stats_plugin_group == nullptr && !connector_->is_client()) {
-      stats_plugin_group = GlobalStatsPluginRegistry::GetStatsPluginsForServer(args_->args);
-    }
-  }
-  auto scope = stats_plugin_group != nullptr
-                   ? stats_plugin_group->GetCollectionScope()
-                   : GlobalCollectionScope();
-
-  if (connector_->is_client()) {
-    std::string target = std::string(args_ != nullptr ? args_->args.GetString(GRPC_ARG_SERVER_URI).value_or("unknown") : "unknown");
-    auto storage = ClientHandshakeTelemetryDomain::GetStorage(
-        std::move(scope), status_str, target, protocol, resumed);
-    storage->Increment(ClientHandshakeTelemetryDomain::kDuration, duration_us);
-    if (stats_plugin_group != nullptr) {
-      stats_plugin_group->RecordHistogram(
-          kMetricClientHandshakerDuration, duration_us / 1000.0,
-          {status_str, target, protocol, resumed}, {});
-    }
-  } else {
-    auto storage = ServerHandshakeTelemetryDomain::GetStorage(
-        std::move(scope), status_str, protocol, resumed);
-    storage->Increment(ServerHandshakeTelemetryDomain::kDuration, duration_us);
-    if (stats_plugin_group != nullptr) {
-      stats_plugin_group->RecordHistogram(
-          kMetricServerHandshakerDuration, duration_us / 1000.0,
-          {status_str, protocol, resumed}, {});
-    }
-  }
-
   InvokeOnHandshakeDone(args_, std::move(on_handshake_done_),
                         std::move(status));
 }
@@ -605,7 +530,6 @@ void SecurityHandshaker::DoHandshake(
   MutexLock lock(&mu_);
   args_ = args;
   on_handshake_done_ = std::move(on_handshake_done);
-  start_time_ = Timestamp::Now();
   size_t bytes_received_size = MoveReadBufferIntoHandshakeBuffer();
   grpc_error_handle error =
       DoHandshakerNextLocked(handshake_buffer_, bytes_received_size);

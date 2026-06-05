@@ -23,6 +23,8 @@
 #include <openssl/ssl.h>
 #include <openssl/x509.h>
 
+#include "absl/strings/string_view.h"
+
 namespace grpc_core {
 
 #if defined(OPENSSL_IS_BORINGSSL)
@@ -339,5 +341,62 @@ TlsTelemetryHandshakeResult MapSslErrorToTlsTelemetryHandshakeResult(
 }
 
 #endif  // OPENSSL_IS_BORINGSSL
+
+absl::string_view TlsTelemetryHandshakeResultToString(
+    TlsTelemetryHandshakeResult result) {
+  switch (result) {
+    case TlsTelemetryHandshakeResult::kSuccess:
+      return "OK";
+    case TlsTelemetryHandshakeResult::kCertificateVerificationFailed:
+      return "CERTIFICATE_VERIFICATION_FAILED";
+    case TlsTelemetryHandshakeResult::kCertificateRevoked:
+      return "CERTIFICATE_REVOKED";
+    case TlsTelemetryHandshakeResult::kCertificateExpired:
+      return "CERTIFICATE_EXPIRED";
+    case TlsTelemetryHandshakeResult::kCertificateNotYetValid:
+      return "CERTIFICATE_NOT_YET_VALID";
+    case TlsTelemetryHandshakeResult::kCertificateAuthorityInvalid:
+      return "CERTIFICATE_AUTHORITY_INVALID";
+    case TlsTelemetryHandshakeResult::kPeerCertificateRequiredButMissing:
+      return "PEER_CERTIFICATE_REQUIRED_BUT_MISSING";
+    case TlsTelemetryHandshakeResult::kCrlNotFound:
+      return "CRL_NOT_FOUND";
+    case TlsTelemetryHandshakeResult::kCrlExpired:
+      return "CRL_EXPIRED";
+    case TlsTelemetryHandshakeResult::kCrlSignatureFailure:
+      return "CRL_SIGNATURE_FAILURE";
+    case TlsTelemetryHandshakeResult::kCertificateHostnameMismatch:
+      return "CERTIFICATE_HOSTNAME_MISMATCH";
+    case TlsTelemetryHandshakeResult::kCertificateMalformed:
+      return "CERTIFICATE_MALFORMED";
+    case TlsTelemetryHandshakeResult::kCipherSuiteMismatch:
+      return "CIPHER_SUITE_MISMATCH";
+    case TlsTelemetryHandshakeResult::kProtocolVersionUnsupported:
+      return "PROTOCOL_VERSION_UNSUPPORTED";
+    case TlsTelemetryHandshakeResult::kInappropriateFallback:
+      return "INAPPROPRIATE_FALLBACK";
+    case TlsTelemetryHandshakeResult::kNoApplicationProtocol:
+      return "NO_APPLICATION_PROTOCOL";
+    case TlsTelemetryHandshakeResult::kSignatureVerificationFailed:
+      return "SIGNATURE_VERIFICATION_FAILED";
+    case TlsTelemetryHandshakeResult::kDecryptionFailed:
+      return "DECRYPTION_FAILED";
+    case TlsTelemetryHandshakeResult::kKeyExchangeFailure:
+      return "KEY_EXCHANGE_FAILURE";
+    case TlsTelemetryHandshakeResult::kPrivateKeySigningFailed:
+      return "PRIVATE_KEY_SIGNING_FAILED";
+    case TlsTelemetryHandshakeResult::kUnexpectedMessage:
+      return "UNEXPECTED_MESSAGE";
+    case TlsTelemetryHandshakeResult::kHandshakeTimeout:
+      return "HANDSHAKE_TIMEOUT";
+    case TlsTelemetryHandshakeResult::kPeerConnectionClosed:
+      return "PEER_CONNECTION_CLOSED";
+    case TlsTelemetryHandshakeResult::kInternalSystemError:
+      return "INTERNAL_SYSTEM_ERROR";
+    case TlsTelemetryHandshakeResult::kUnknownFailure:
+      return "UNKNOWN_FAILURE";
+  }
+  return "UNKNOWN_FAILURE";
+}
 
 }  // namespace grpc_core

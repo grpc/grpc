@@ -64,10 +64,12 @@
 #include "src/core/lib/surface/init.h"
 #include "src/core/tsi/ssl/key_logging/ssl_key_logging.h"
 #include "src/core/tsi/ssl/session_cache/ssl_session_cache.h"
+#include "src/core/tsi/ssl_telemetry_utils.h"
 #include "src/core/tsi/ssl_transport_security_utils.h"
 #include "src/core/tsi/ssl_types.h"
 #include "src/core/tsi/transport_security.h"
 #include "src/core/tsi/transport_security_interface.h"
+#include "src/core/handshaker/security/security_telemetry.h"
 #include "src/core/util/env.h"
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/match.h"
@@ -215,6 +217,15 @@ struct tsi_ssl_handshaker : public tsi_handshaker,
     if (handshaker_next_args->error_ptr == nullptr) return;
     *handshaker_next_args->error_ptr = std::move(error);
   }
+  grpc_core::Timestamp start_time;
+  bool is_client = false;
+  std::string target;
+  int last_ssl_error = SSL_ERROR_NONE;
+  unsigned long last_err_code = 0;
+  bool metric_recorded ABSL_GUARDED_BY(mu) = false;
+
+  void RecordTelemetry(tsi_result status) ABSL_EXCLUSIVE_LOCKS_REQUIRED(&mu);
+
 #if defined(OPENSSL_IS_BORINGSSL)
   std::shared_ptr<grpc_core::PrivateKeySigner> key_signer;
   // The signed_bytes are populated when the signature process is completed if
@@ -226,6 +237,58 @@ struct tsi_ssl_handshaker : public tsi_handshaker,
       signing_handle ABSL_GUARDED_BY(mu);
 #endif
 };
+
+void tsi_ssl_handshaker::RecordTelemetry(tsi_result status) {
+  if (status == TSI_ASYNC || status == TSI_INCOMPLETE_DATA ||
+      status == TSI_DRAIN_BUFFER) {
+    return;
+  }
+  if (metric_recorded) return;
+  metric_recorded = true;
+
+  std::string resumed =
+      (ssl != nullptr && SSL_session_reused(ssl)) ? "true" : "false";
+
+  grpc_core::TlsTelemetryHandshakeResult result;
+  if (status == TSI_OK) {
+    result = grpc_core::TlsTelemetryHandshakeResult::kSuccess;
+  } else {
+    long verify_res = ssl != nullptr ? SSL_get_verify_result(ssl) : X509_V_OK;
+    result = grpc_core::MapSslErrorToTlsTelemetryHandshakeResult(
+        last_ssl_error, last_err_code, verify_res);
+  }
+  std::string status_str = std::string(
+      grpc_core::TlsTelemetryHandshakeResultToString(result));
+  std::string protocol = "unknown";
+  if (ssl != nullptr) {
+    const unsigned char* alpn_selected = nullptr;
+    unsigned int alpn_selected_len = 0;
+#if TSI_OPENSSL_ALPN_SUPPORT
+    SSL_get0_alpn_selected(ssl, &alpn_selected, &alpn_selected_len);
+#endif
+    if (alpn_selected == nullptr) {
+      SSL_get0_next_proto_negotiated(ssl, &alpn_selected, &alpn_selected_len);
+    }
+    if (alpn_selected != nullptr && alpn_selected_len > 0) {
+      protocol = std::string(reinterpret_cast<const char*>(alpn_selected),
+                             alpn_selected_len);
+    }
+  }
+
+  auto scope = collection_scope != nullptr
+                   ? collection_scope
+                   : grpc_core::GlobalCollectionScope();
+
+  if (is_client) {
+    auto storage = grpc_core::ClientHandshakeTelemetryDomain::GetStorage(
+        std::move(scope), status_str, target, protocol, resumed);
+    storage->Increment(grpc_core::ClientHandshakeTelemetryDomain::kHandshakes);
+  } else {
+    auto storage = grpc_core::ServerHandshakeTelemetryDomain::GetStorage(
+        std::move(scope), status_str, protocol, resumed);
+    storage->Increment(grpc_core::ServerHandshakeTelemetryDomain::kHandshakes);
+  }
+}
 
 static std::pair<tsi_result, std::optional<HandshakerNextArgs>>
 ssl_handshaker_next_async(tsi_ssl_handshaker* self)
@@ -2151,7 +2214,10 @@ static tsi_result ssl_handshaker_do_handshake(tsi_ssl_handshaker* impl)
 #endif
       default: {
         char err_str[256];
-        ERR_error_string_n(ERR_get_error(), err_str, sizeof(err_str));
+        unsigned long err_code = ERR_get_error();
+        impl->last_ssl_error = ssl_result;
+        impl->last_err_code = err_code;
+        ERR_error_string_n(err_code, err_str, sizeof(err_str));
         long verify_result = SSL_get_verify_result(impl->ssl);
         std::string verify_result_str;
         if (verify_result != X509_V_OK) {
@@ -2318,11 +2384,13 @@ static tsi_result ssl_handshaker_next_impl(tsi_ssl_handshaker* self)
   }
 
   if (status != TSI_OK) {
+    self->RecordTelemetry(status);
     return status;
   }
   // Get bytes to send to the peer, if available.
   status = ssl_handshaker_write_output_buffer(self, &bytes_written);
   if (status != TSI_OK) {
+    self->RecordTelemetry(status);
     return status;
   }
   self->handshaker_next_args->bytes_to_send = self->outgoing_bytes_buffer;
@@ -2346,11 +2414,13 @@ static tsi_result ssl_handshaker_next_impl(tsi_ssl_handshaker* self)
       LOG(ERROR) << "More unused bytes than received bytes.";
       gpr_free(unused_bytes);
       self->MaybeSetError("More unused bytes than received bytes.");
+      self->RecordTelemetry(TSI_INTERNAL_ERROR);
       return TSI_INTERNAL_ERROR;
     }
     status =
         ssl_handshaker_result_create(self, unused_bytes, unused_bytes_size);
     if (status == TSI_OK) {
+      self->RecordTelemetry(TSI_OK);
       // Indicates that the handshake has completed and that a
       // handshaker_result has been created.
       self->handshaker_result_created = true;
@@ -2366,6 +2436,8 @@ static tsi_result ssl_handshaker_next_impl(tsi_ssl_handshaker* self)
               SSL_CIPHER_get_name(cipher));
         }
       }
+    } else {
+      self->RecordTelemetry(status);
     }
   }
   return status;
@@ -2442,6 +2514,7 @@ static void ssl_handshaker_shutdown(tsi_handshaker* self) {
     grpc_core::MutexLock lock(&impl->mu);
     if (impl->ssl == nullptr) return;
     impl->is_shutdown = true;
+    impl->RecordTelemetry(TSI_HANDSHAKE_SHUTDOWN);
     if (impl->key_signer != nullptr && impl->signing_handle != nullptr) {
       signing_handle = std::move(impl->signing_handle);
     }
@@ -2606,6 +2679,10 @@ static tsi_result create_tsi_ssl_handshaker(
   impl->vtable = &handshaker_vtable;
   impl->factory_ref = tsi_ssl_handshaker_factory_ref(factory);
   impl->collection_scope = std::move(collection_scope);
+  impl->start_time = grpc_core::Timestamp::Now();
+  impl->is_client = (is_client != 0);
+  impl->target = server_name_indication != nullptr ? server_name_indication
+                                                   : "unknown";
 #if defined(OPENSSL_IS_BORINGSSL)
   impl->key_signer = std::move(key_signer);
 #endif

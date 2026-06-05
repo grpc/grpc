@@ -60,60 +60,59 @@ TEST(ClientSecurityTelemetryTest, RecordAndQuery) {
                                           "grpc.target",
                                           "grpc.security.handshaker.protocol",
                                           "grpc.security.handshaker.resumed"});
-  auto storage = ClientHandshakeTelemetryDomain::GetStorage(scope, "OK", "dns:///localhost:50051", "TLS", "false");
-  
-  std::vector<std::string> label_values = {"OK", "dns:///localhost:50051", "TLS", "false"};
+  auto storage = ClientHandshakeTelemetryDomain::GetStorage(
+      scope, "OK", "dns:///localhost:50051", "TLS", "false");
+
+  std::vector<std::string> label_values = {"OK", "dns:///localhost:50051",
+                                           "TLS", "false"};
 
   ::testing::StrictMock<MockMetricsSink> sink;
-  
+
   EXPECT_CALL(sink,
-              Histogram(::testing::_,
-                        ::testing::ElementsAreArray(label_values),
-                        "grpc.security.client.handshaker.duration", ::testing::_, ::testing::_))
+              Counter(::testing::_, ::testing::ElementsAreArray(label_values),
+                      "grpc.client.tls.handshakes", 0))
       .Times(1);
-  
-  MetricsQuery().OnlyMetrics({"grpc.security.client.handshaker.duration"}).Run(scope, sink);
+
+  MetricsQuery().OnlyMetrics({"grpc.client.tls.handshakes"}).Run(scope, sink);
   ::testing::Mock::VerifyAndClearExpectations(&sink);
 
-  storage->Increment(ClientHandshakeTelemetryDomain::kDuration, 100);
+  storage->Increment(ClientHandshakeTelemetryDomain::kHandshakes);
 
   EXPECT_CALL(sink,
-              Histogram(::testing::_,
-                        ::testing::ElementsAreArray(label_values),
-                        "grpc.security.client.handshaker.duration", ::testing::_, ::testing::_))
+              Counter(::testing::_, ::testing::ElementsAreArray(label_values),
+                      "grpc.client.tls.handshakes", 1))
       .Times(1);
-  
-  MetricsQuery().OnlyMetrics({"grpc.security.client.handshaker.duration"}).Run(scope, sink);
+
+  MetricsQuery().OnlyMetrics({"grpc.client.tls.handshakes"}).Run(scope, sink);
 }
 
 TEST(ServerSecurityTelemetryTest, RecordAndQuery) {
   auto scope = CreateCollectionScope({}, {"grpc.security.handshaker.status",
                                           "grpc.security.handshaker.protocol",
                                           "grpc.security.handshaker.resumed"});
-  auto storage = ServerHandshakeTelemetryDomain::GetStorage(scope, "OK", "TLS", "false");
-  
+  auto storage = ServerHandshakeTelemetryDomain::GetStorage(scope, "OK", "TLS",
+                                                            "false");
+
   std::vector<std::string> label_values = {"OK", "TLS", "false"};
 
   ::testing::StrictMock<MockMetricsSink> sink;
-  
+
   EXPECT_CALL(sink,
-              Histogram(::testing::_,
-                        ::testing::ElementsAreArray(label_values),
-                        "grpc.security.server.handshaker.duration", ::testing::_, ::testing::_))
+              Counter(::testing::_, ::testing::ElementsAreArray(label_values),
+                      "grpc.server.tls.handshakes", 0))
       .Times(1);
-  
-  MetricsQuery().OnlyMetrics({"grpc.security.server.handshaker.duration"}).Run(scope, sink);
+
+  MetricsQuery().OnlyMetrics({"grpc.server.tls.handshakes"}).Run(scope, sink);
   ::testing::Mock::VerifyAndClearExpectations(&sink);
 
-  storage->Increment(ServerHandshakeTelemetryDomain::kDuration, 100);
+  storage->Increment(ServerHandshakeTelemetryDomain::kHandshakes);
 
   EXPECT_CALL(sink,
-              Histogram(::testing::_,
-                        ::testing::ElementsAreArray(label_values),
-                        "grpc.security.server.handshaker.duration", ::testing::_, ::testing::_))
+              Counter(::testing::_, ::testing::ElementsAreArray(label_values),
+                      "grpc.server.tls.handshakes", 1))
       .Times(1);
-  
-  MetricsQuery().OnlyMetrics({"grpc.security.server.handshaker.duration"}).Run(scope, sink);
+
+  MetricsQuery().OnlyMetrics({"grpc.server.tls.handshakes"}).Run(scope, sink);
 }
 
 }  // namespace

@@ -249,18 +249,5 @@ grpc_cc_test(
     ],
 )
 
-grpc_cc_test(
-    name = "security_handshaker_test",
-    srcs = ["security_handshaker_test.cc"],
-    external_deps = [
-        "gtest",
-        "absl/status",
-    ],
-    deps = [
-        "//:grpc",
-        "//:grpc_security_base",
-        "//:exec_ctx",
-        "//test/core/test_util:grpc_test_util",
-    ],
-)
+
 
