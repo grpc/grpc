@@ -1384,11 +1384,11 @@ TEST_F(OpenTelemetryPluginEnd2EndTest, ClientHandshakes) {
   const auto* locality_value =
       std::get_if<std::string>(&attributes.at("grpc.lb.locality"));
   ASSERT_NE(locality_value, nullptr);
-  EXPECT_EQ(*locality_value, "");
+  EXPECT_EQ(*locality_value, "locality_1");
   const auto* backend_value =
       std::get_if<std::string>(&attributes.at("grpc.lb.backend_service"));
   ASSERT_NE(backend_value, nullptr);
-  EXPECT_EQ(*backend_value, "");
+  EXPECT_EQ(*backend_value, "backend_1");
 }
 
 TEST_F(OpenTelemetryPluginEnd2EndTest, ServerHandshakes) {

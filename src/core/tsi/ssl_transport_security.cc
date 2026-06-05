@@ -219,6 +219,8 @@ struct tsi_ssl_handshaker : public tsi_handshaker,
   }
   bool is_client = false;
   std::string target;
+  std::string locality;
+  std::string backend_service;
   int last_ssl_error = SSL_ERROR_NONE;
   unsigned long last_err_code = 0;
   bool metric_recorded ABSL_GUARDED_BY(mu) = false;
@@ -264,12 +266,9 @@ void tsi_ssl_handshaker::RecordTelemetry(tsi_result status) {
                    : grpc_core::GlobalCollectionScope();
 
   if (is_client) {
-    // We supply empty default arguments ("", "") for the optional LB locality
-    // and backend service dimensions. When populated on the active
-    // CollectionScope during an RPC or subchannel connection attempt,
-    // FilterLabels automatically resolves and publishes those explicit values.
     auto storage = grpc_core::ClientHandshakeTelemetryDomain::GetStorage(
-        std::move(scope), status_str, target, resumed, "", "");
+        std::move(scope), status_str, target, resumed, locality,
+        backend_service);
     storage->Increment(grpc_core::ClientHandshakeTelemetryDomain::kHandshakes);
   } else {
     auto storage = grpc_core::ServerHandshakeTelemetryDomain::GetStorage(
@@ -2562,6 +2561,7 @@ static tsi_result create_tsi_ssl_handshaker(
     std::shared_ptr<grpc_core::PrivateKeySigner> key_signer,
     tsi_ssl_handshaker_factory* factory,
     grpc_core::RefCountedPtr<grpc_core::CollectionScope> collection_scope,
+    std::string locality, std::string backend_service,
     tsi_handshaker** handshaker) {
   SSL* ssl = SSL_new(ctx);
   BIO* network_io = nullptr;
@@ -2670,6 +2670,8 @@ static tsi_result create_tsi_ssl_handshaker(
   impl->is_client = (is_client != 0);
   impl->target = server_name_indication != nullptr ? server_name_indication
                                                    : "unknown";
+  impl->locality = std::move(locality);
+  impl->backend_service = std::move(backend_service);
 #if defined(OPENSSL_IS_BORINGSSL)
   impl->key_signer = std::move(key_signer);
 #endif
@@ -2719,6 +2721,7 @@ tsi_result tsi_ssl_client_handshaker_factory_create_handshaker(
     size_t ssl_bio_buf_size,
     std::optional<std::string> alpn_preferred_protocol_list,
     grpc_core::RefCountedPtr<grpc_core::CollectionScope> collection_scope,
+    std::string locality, std::string backend_service,
     tsi_handshaker** handshaker) {
   GRPC_TRACE_LOG(tsi, INFO)
       << "Creating SSL handshaker with SNI " << server_name_indication;
@@ -2726,12 +2729,14 @@ tsi_result tsi_ssl_client_handshaker_factory_create_handshaker(
   return create_tsi_ssl_handshaker(
       factory->ssl_context, 1, server_name_indication, network_bio_buf_size,
       ssl_bio_buf_size, alpn_preferred_protocol_list, factory->key_signer,
-      &factory->base, std::move(collection_scope), handshaker);
+      &factory->base, std::move(collection_scope), std::move(locality),
+      std::move(backend_service), handshaker);
 #else
   return create_tsi_ssl_handshaker(
       factory->ssl_context, 1, server_name_indication, network_bio_buf_size,
       ssl_bio_buf_size, alpn_preferred_protocol_list, /*key_signer=*/nullptr,
-      &factory->base, std::move(collection_scope), handshaker);
+      &factory->base, std::move(collection_scope), std::move(locality),
+      std::move(backend_service), handshaker);
 #endif
 }
 
@@ -2784,12 +2789,12 @@ tsi_result tsi_ssl_server_handshaker_factory_create_handshaker(
   return create_tsi_ssl_handshaker(
       factory->ssl_contexts[0].ssl_ctx, 0, nullptr, network_bio_buf_size,
       ssl_bio_buf_size, std::nullopt, factory->ssl_contexts[0].key_signer,
-      &factory->base, std::move(collection_scope), handshaker);
+      &factory->base, std::move(collection_scope), "", "", handshaker);
 #else
   return create_tsi_ssl_handshaker(
       factory->ssl_contexts[0].ssl_ctx, 0, nullptr, network_bio_buf_size,
       ssl_bio_buf_size, std::nullopt, /*key_signer=*/nullptr, &factory->base,
-      std::move(collection_scope), handshaker);
+      std::move(collection_scope), "", "", handshaker);
 #endif
 }
 
