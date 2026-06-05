@@ -279,8 +279,13 @@ class UpbStructHeadersEncoder {
 class UpbHeaderMapEncoder {
  public:
   UpbHeaderMapEncoder(envoy_config_core_v3_HeaderMap* header_map,
-                      upb_Arena* arena)
-      : header_map_(header_map), arena_(arena) {}
+                      upb_Arena* arena,
+                      const std::vector<StringMatcher>& allowed_headers,
+                      const std::vector<StringMatcher>& disallowed_headers)
+      : header_map_(header_map),
+        arena_(arena),
+        allowed_headers_(allowed_headers),
+        disallowed_headers_(disallowed_headers) {}
 
   void Encode(const Slice& key, const Slice& value) {
     Append(key.as_string_view(), value.as_string_view());
@@ -292,9 +297,31 @@ class UpbHeaderMapEncoder {
   }
 
  private:
+  bool ShouldForwardHeader(absl::string_view key) const {
+    if (!allowed_headers_.empty()) {
+      bool allowed = false;
+      for (const auto& matcher : allowed_headers_) {
+        if (matcher.Match(key)) {
+          allowed = true;
+          break;
+        }
+      }
+      if (!allowed) return false;
+    }
+    for (const auto& matcher : disallowed_headers_) {
+      if (matcher.Match(key)) {
+        return false;
+      }
+    }
+    return true;
+  }
+
   void Append(absl::string_view key, absl::string_view value) {
     if (key.empty() || key.size() > 16384 || key == "host" ||
         value.size() > 16384) {
+      return;
+    }
+    if (!ShouldForwardHeader(key)) {
       return;
     }
     absl::string_view validation_key = key;
@@ -323,12 +350,16 @@ class UpbHeaderMapEncoder {
 
   envoy_config_core_v3_HeaderMap* header_map_;
   upb_Arena* arena_;
+  const std::vector<StringMatcher>& allowed_headers_;
+  const std::vector<StringMatcher>& disallowed_headers_;
 };
 
 void PopulateMetadataBatchToHeaderMap(
     grpc_metadata_batch& batch, envoy_config_core_v3_HeaderMap* header_map,
-    upb_Arena* arena) {
-  UpbHeaderMapEncoder encoder(header_map, arena);
+    const std::vector<StringMatcher>& allowed_headers,
+    const std::vector<StringMatcher>& disallowed_headers, upb_Arena* arena) {
+  UpbHeaderMapEncoder encoder(header_map, arena, allowed_headers,
+                              disallowed_headers);
   batch.Encode(&encoder);
 }
 
@@ -444,6 +475,8 @@ std::string SerializeMessage(
 std::string CreateExtProcRequest(
     upb_Arena* arena, ExtProcRequestType type,
     std::variant<grpc_metadata_batch*, upb_StringView> payload,
+    const std::vector<StringMatcher>& allowed_headers,
+    const std::vector<StringMatcher>& disallowed_headers,
     ::google_protobuf_Struct* attributes, bool observability_mode,
     bool is_first_message, bool send_request_body, bool send_response_body,
     bool end_of_stream, bool end_of_stream_without_message) {
@@ -452,14 +485,16 @@ std::string CreateExtProcRequest(
     case ExtProcRequestType::kClientHeaders: {
       auto* upb_headers = envoy_config_core_v3_HeaderMap_new(arena);
       PopulateMetadataBatchToHeaderMap(*std::get<grpc_metadata_batch*>(payload),
-                                       upb_headers, arena);
+                                       upb_headers, allowed_headers,
+                                       disallowed_headers, arena);
       SetRequestHeaders(request, arena, upb_headers, /*end_of_stream=*/false);
       break;
     }
     case ExtProcRequestType::kServerHeaders: {
       auto* upb_headers = envoy_config_core_v3_HeaderMap_new(arena);
       PopulateMetadataBatchToHeaderMap(*std::get<grpc_metadata_batch*>(payload),
-                                       upb_headers, arena);
+                                       upb_headers, allowed_headers,
+                                       disallowed_headers, arena);
       SetResponseHeaders(request, arena, upb_headers,
                          /*end_of_stream=*/end_of_stream);
       break;
@@ -477,7 +512,8 @@ std::string CreateExtProcRequest(
     case ExtProcRequestType::kServerTrailers: {
       auto* upb_trailers = envoy_config_core_v3_HeaderMap_new(arena);
       PopulateMetadataBatchToHeaderMap(*std::get<grpc_metadata_batch*>(payload),
-                                       upb_trailers, arena);
+                                       upb_trailers, allowed_headers,
+                                       disallowed_headers, arena);
       SetResponseTrailers(request, arena, upb_trailers);
       break;
     }
@@ -489,7 +525,6 @@ std::string CreateExtProcRequest(
   }
   return SerializeMessage(request, arena);
 }
-
 
 ::google_protobuf_Struct* ParseAttributes(
     upb_Arena* arena, const std::vector<std::string>& requested_attributes,

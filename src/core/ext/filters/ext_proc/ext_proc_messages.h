@@ -28,6 +28,7 @@
 #include "envoy/service/ext_proc/v3/external_processor.upb.h"
 #include "google/protobuf/struct.upb.h"
 #include "src/core/call/metadata_batch.h"
+#include "src/core/util/matchers.h"
 #include "src/core/xds/grpc/xds_common_types.h"
 #include "upb/mem/arena.h"
 #include "absl/status/statusor.h"
@@ -46,6 +47,8 @@ enum class ExtProcRequestType {
 std::string CreateExtProcRequest(
     upb_Arena* arena, ExtProcRequestType type,
     std::variant<grpc_metadata_batch*, upb_StringView> payload,
+    const std::vector<StringMatcher>& allowed_headers,
+    const std::vector<StringMatcher>& disallowed_headers,
     ::google_protobuf_Struct* attributes, bool observability_mode,
     bool is_first_message, bool send_request_body, bool send_response_body,
     bool end_of_stream = false, bool end_of_stream_without_message = false);
