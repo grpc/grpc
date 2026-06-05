@@ -276,6 +276,55 @@ class UpbStructHeadersEncoder {
   upb_Arena* arena_;
 };
 
+class UpbHeaderMapEncoder {
+ public:
+  UpbHeaderMapEncoder(envoy_config_core_v3_HeaderMap* header_map,
+                      upb_Arena* arena)
+      : header_map_(header_map), arena_(arena) {}
+
+  void Encode(const Slice& key, const Slice& value) {
+    Append(key.as_string_view(), value.as_string_view());
+  }
+
+  template <typename Which>
+  void Encode(Which, const typename Which::ValueType& value) {
+    Append(Which::key(), Which::Encode(value).as_string_view());
+  }
+
+ private:
+  void Append(absl::string_view key, absl::string_view value) {
+    if (key.empty() || key.size() > 16384 || key == "host" ||
+        value.size() > 16384) {
+      return;
+    }
+    absl::string_view validation_key = key;
+    if (absl::StartsWith(key, ":")) {
+      validation_key = key.substr(1);
+    }
+    if (ValidateHeaderKeyIsLegal(validation_key) !=
+        ValidateMetadataResult::kOk) {
+      return;
+    }
+    auto* value_msg =
+        envoy_config_core_v3_HeaderMap_add_headers(header_map_, arena_);
+    char* key_buf = static_cast<char*>(upb_Arena_Malloc(arena_, key.size()));
+    memcpy(key_buf, key.data(), key.size());
+    envoy_config_core_v3_HeaderValue_set_key(
+        value_msg, upb_StringView_FromDataAndSize(key_buf, key.size()));
+
+    char* val_buf = static_cast<char*>(upb_Arena_Malloc(arena_, value.size()));
+    memcpy(val_buf, value.data(), value.size());
+    // Per gRFC A102, when writing, we always set the raw_value field and never
+    // the value field. This is because ext_proc only reads and writes raw_value
+    // while ext_authz reads value but writes raw_value.
+    envoy_config_core_v3_HeaderValue_set_raw_value(
+        value_msg, upb_StringView_FromDataAndSize(val_buf, value.size()));
+  }
+
+  envoy_config_core_v3_HeaderMap* header_map_;
+  upb_Arena* arena_;
+};
+
 void PopulateMetadataBatchToHeaderMap(
     grpc_metadata_batch& batch, envoy_config_core_v3_HeaderMap* header_map,
     upb_Arena* arena) {
@@ -441,58 +490,6 @@ std::string CreateExtProcRequest(
   return SerializeMessage(request, arena);
 }
 
-namespace {
-
-class UpbHeaderMapEncoder {
- public:
-  UpbHeaderMapEncoder(envoy_config_core_v3_HeaderMap* header_map,
-                      upb_Arena* arena)
-      : header_map_(header_map), arena_(arena) {}
-
-  void Encode(const Slice& key, const Slice& value) {
-    Append(key.as_string_view(), value.as_string_view());
-  }
-
-  template <typename Which>
-  void Encode(Which, const typename Which::ValueType& value) {
-    Append(Which::key(), Which::Encode(value).as_string_view());
-  }
-
- private:
-  void Append(absl::string_view key, absl::string_view value) {
-    if (key.empty() || key.size() > 16384 || key == "host" ||
-        value.size() > 16384) {
-      return;
-    }
-    absl::string_view validation_key = key;
-    if (absl::StartsWith(key, ":")) {
-      validation_key = key.substr(1);
-    }
-    if (ValidateHeaderKeyIsLegal(validation_key) !=
-        ValidateMetadataResult::kOk) {
-      return;
-    }
-    auto* value_msg =
-        envoy_config_core_v3_HeaderMap_add_headers(header_map_, arena_);
-    char* key_buf = static_cast<char*>(upb_Arena_Malloc(arena_, key.size()));
-    memcpy(key_buf, key.data(), key.size());
-    envoy_config_core_v3_HeaderValue_set_key(
-        value_msg, upb_StringView_FromDataAndSize(key_buf, key.size()));
-
-    char* val_buf = static_cast<char*>(upb_Arena_Malloc(arena_, value.size()));
-    memcpy(val_buf, value.data(), value.size());
-    // Per gRFC A102, when writing, we always set the raw_value field and never
-    // the value field. This is because ext_proc only reads and writes raw_value
-    // while ext_authz reads value but writes raw_value.
-    envoy_config_core_v3_HeaderValue_set_raw_value(
-        value_msg, upb_StringView_FromDataAndSize(val_buf, value.size()));
-  }
-
-  envoy_config_core_v3_HeaderMap* header_map_;
-  upb_Arena* arena_;
-};
-
-}  // namespace
 
 ::google_protobuf_Struct* ParseAttributes(
     upb_Arena* arena, const std::vector<std::string>& requested_attributes,
