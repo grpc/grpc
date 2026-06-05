@@ -33,6 +33,10 @@
 namespace grpc_core {
 namespace {
 
+//
+// ParseExtProcRequest() tests
+//
+
 class ExtProcRequestTest : public ::testing::Test {
  protected:
   envoy::service::ext_proc::v3::ProcessingRequest ParseRequest(
@@ -524,6 +528,10 @@ TEST_F(ExtProcRequestTest, AttributesPayload) {
   EXPECT_EQ(field_it->second.string_value(), "val1");
 }
 
+//
+// ParseAttributes() tests
+//
+
 class ParseAttributesTest : public ::testing::Test {
  protected:
   google::protobuf::Struct ConvertToProto(
@@ -623,6 +631,10 @@ TEST_F(ParseAttributesTest, AttributesRequestHeaders) {
   EXPECT_EQ(headers_struct.fields().at("x-custom1").string_value(), "val1");
   EXPECT_EQ(headers_struct.fields().at("x-custom2").string_value(), "val2");
 }
+
+//
+// ParseExtProcResponse() tests
+//
 
 class ExtProcResponseTest : public ::testing::Test {
  protected:
