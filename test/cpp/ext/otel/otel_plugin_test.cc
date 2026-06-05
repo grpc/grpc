@@ -1347,8 +1347,12 @@ TEST_F(OpenTelemetryPluginEnd2EndTest, ClientHandshakes) {
   if (!grpc_core::IsOtelExportTelemetryDomainsEnabled()) {
     GTEST_SKIP() << "Test requires otel_export_telemetry_domains to be enabled";
   }
-  InitSecure(std::move(Options().set_metric_names(
-      {grpc::OpenTelemetryPluginBuilder::kClientHandshakesInstrumentName})));
+  InitSecure(std::move(
+      Options()
+          .set_metric_names({grpc::OpenTelemetryPluginBuilder::
+                                 kClientHandshakesInstrumentName})
+          .add_optional_label("grpc.lb.locality")
+          .add_optional_label("grpc.lb.backend_service")));
   SendRPC();
   const char* kMetricName = "grpc.client.tls.handshakes";
   auto data = ReadCurrentMetricsData(
@@ -1364,7 +1368,7 @@ TEST_F(OpenTelemetryPluginEnd2EndTest, ClientHandshakes) {
   ASSERT_NE(client_handshakes_value, nullptr);
   EXPECT_EQ(*client_handshakes_value, 1);
   const auto& attributes = data[kMetricName][0].attributes.GetAttributes();
-  EXPECT_EQ(attributes.size(), 3);
+  EXPECT_EQ(attributes.size(), 5);
   const auto* status_value =
       std::get_if<std::string>(&attributes.at("grpc.security.handshaker.status"));
   ASSERT_NE(status_value, nullptr);
@@ -1377,6 +1381,14 @@ TEST_F(OpenTelemetryPluginEnd2EndTest, ClientHandshakes) {
       std::get_if<std::string>(&attributes.at("grpc.security.handshaker.resumed"));
   ASSERT_NE(resumed_value, nullptr);
   EXPECT_EQ(*resumed_value, "false");
+  const auto* locality_value =
+      std::get_if<std::string>(&attributes.at("grpc.lb.locality"));
+  ASSERT_NE(locality_value, nullptr);
+  EXPECT_EQ(*locality_value, "");
+  const auto* backend_value =
+      std::get_if<std::string>(&attributes.at("grpc.lb.backend_service"));
+  ASSERT_NE(backend_value, nullptr);
+  EXPECT_EQ(*backend_value, "");
 }
 
 TEST_F(OpenTelemetryPluginEnd2EndTest, ServerHandshakes) {
