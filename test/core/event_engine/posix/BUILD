@@ -510,6 +510,7 @@ grpc_cc_test(
     copts = ["-DGRPC_ENABLE_FORK_SUPPORT"],
     external_deps = [
         "gtest",
+        "absl/functional:any_invocable",
         "absl/status",
         "absl/status:statusor",
     ],
