@@ -554,7 +554,7 @@ std::string ExtProcRequest::CreateServerTrailersRequest(
       .SerializeMessage();
 }
 
-::google_protobuf_Struct* ExtProcRequest::PopulateAttributesMap(
+::google_protobuf_Struct* ParseAttributes(
     upb_Arena* arena, const std::vector<std::string>& requested_attributes,
     const grpc_metadata_batch& metadata) {
   if (requested_attributes.empty()) return nullptr;

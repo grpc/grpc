@@ -106,10 +106,6 @@ class ExtProcRequest {
       ::google_protobuf_Struct* attributes, bool observability_mode,
       bool is_first_message, bool send_request_body, bool send_response_body);
 
-  static ::google_protobuf_Struct* PopulateAttributesMap(
-      upb_Arena* arena, const std::vector<std::string>& requested_attributes,
-      const grpc_metadata_batch& metadata);
-
   std::string SerializeMessage();
 
  private:
@@ -119,6 +115,10 @@ class ExtProcRequest {
   upb_Arena* arena_;
   envoy_service_ext_proc_v3_ProcessingRequest* request_;
 };
+
+::google_protobuf_Struct* ParseAttributes(
+    upb_Arena* arena, const std::vector<std::string>& requested_attributes,
+    const grpc_metadata_batch& metadata);
 
 absl::StatusOr<ExtProcResponse> ParseExtProcResponse(
     const envoy_service_ext_proc_v3_ProcessingResponse* response,

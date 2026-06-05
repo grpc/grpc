@@ -271,7 +271,7 @@ TEST(ExtProcMessageTest, ServerTrailersMetadataAndStatus) {
 TEST(ExtProcMessageTest, AttributesExactlyOneExtProcKey) {
   upb::Arena arena;
   grpc_metadata_batch batch;
-  auto* attr_struct = ExtProcRequest::PopulateAttributesMap(
+  auto* attr_struct = ParseAttributes(
       arena.ptr(), {"request.method"}, batch);
   ExtProcRequest request =
       ExtProcRequest::Builder(arena.ptr()).SetAttributes(attr_struct).Build();
@@ -287,7 +287,7 @@ TEST(ExtProcMessageTest, AttributesSpecificMappingMatches) {
   upb::Arena arena;
   grpc_metadata_batch batch;
   batch.Set(HttpPathMetadata(), Slice::FromCopiedString("/Service/Method"));
-  auto* attr_struct = ExtProcRequest::PopulateAttributesMap(
+  auto* attr_struct = ParseAttributes(
       arena.ptr(), {"request.path"}, batch);
   ExtProcRequest request =
       ExtProcRequest::Builder(arena.ptr()).SetAttributes(attr_struct).Build();
@@ -321,7 +321,7 @@ TEST(ExtProcMessageTest, PopulateAttributesMapAllCELVariables) {
       "request.referer", "request.useragent", "request.time",
       "request.id",      "request.protocol",  "request.query"};
   auto* attr_struct =
-      ExtProcRequest::PopulateAttributesMap(arena.ptr(), requested, batch);
+      ParseAttributes(arena.ptr(), requested, batch);
   ASSERT_NE(attr_struct, nullptr);
   ExtProcRequest request =
       ExtProcRequest::Builder(arena.ptr()).SetAttributes(attr_struct).Build();
