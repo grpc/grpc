@@ -46,9 +46,9 @@
 #include "src/core/ext/transport/chttp2/transport/http2_status.h"
 #include "src/core/ext/transport/chttp2/transport/http2_transport.h"
 #include "src/core/ext/transport/chttp2/transport/http2_ztrace_collector.h"
-#include "src/core/ext/transport/chttp2/transport/incoming_metadata_tracker.h"
 #include "src/core/ext/transport/chttp2/transport/keepalive.h"
 #include "src/core/ext/transport/chttp2/transport/ping_promise.h"
+#include "src/core/ext/transport/chttp2/transport/read_context.h"
 #include "src/core/ext/transport/chttp2/transport/security_frame.h"
 #include "src/core/ext/transport/chttp2/transport/stream.h"
 #include "src/core/ext/transport/chttp2/transport/stream_data_queue.h"
@@ -311,11 +311,7 @@ class Http2ServerTransport final : public ServerTransport,
   // down towards the endpoint.
   auto CallOutboundLoop(RefCountedPtr<Stream> stream);
 
-  // TODO(akshitpatel) : [PH2][P0] : Delete when implementing write loop.
-  auto WriteFromQueue();
-
-  // TODO(akshitpatel) : [PH2][P0] : Delete when implementing write loop.
-  auto WriteLoop();
+  auto HandleMetadataAndMessages(RefCountedPtr<Stream> stream);
 
   // Force triggers a transport write cycle
   absl::Status TriggerWriteCycle(DebugLocation whence = {}) {
@@ -334,8 +330,8 @@ class Http2ServerTransport final : public ServerTransport,
         << "Http2ServerTransport::TriggerWriteCycleOrHandleError failed with "
            "status: "
         << status << " at " << whence.file() << ":" << whence.line();
-    GRPC_UNUSED absl::Status unused_status =
-        HandleError(std::nullopt, ToHttpOkOrConnError(status), whence);
+    GRPC_UNUSED absl::Status unused_status = HandleError(
+        /*stream_id=*/std::nullopt, ToHttpOkOrConnError(status), whence);
     return false;
   }
 
@@ -444,12 +440,8 @@ class Http2ServerTransport final : public ServerTransport,
   void AddToStreamList(RefCountedPtr<Stream> stream);
 
   absl::Status MaybeAddStreamToWritableStreamList(
-      GRPC_UNUSED const RefCountedPtr<Stream> stream,
-      GRPC_UNUSED const StreamDataQueue<
-          ClientMetadataHandle>::StreamWritabilityUpdate result) {
-    // TODO(akshitpatel) : [PH2][P0] : Implement this.
-    return absl::OkStatus();
-  }
+      RefCountedPtr<Stream> stream,
+      StreamDataQueue<ServerMetadataHandle>::StreamWritabilityUpdate result);
 
   // Returns the next stream id. If the next stream id is not available, it
   // returns std::nullopt. MUST be called from the transport party.
@@ -695,8 +687,6 @@ class Http2ServerTransport final : public ServerTransport,
   PromiseEndpoint endpoint_;
   RefCountedPtr<SettingsPromiseManager> settings_;
 
-  Http2FrameHeader current_frame_header_;
-
   Mutex transport_mutex_;
 
   absl::flat_hash_map<uint32_t, RefCountedPtr<Stream>> stream_list_
@@ -714,7 +704,7 @@ class Http2ServerTransport final : public ServerTransport,
   RefCountedPtr<StateWatcher> watcher_ ABSL_GUARDED_BY(transport_mutex_);
 
   bool should_reset_ping_clock_;
-  IncomingMetadataTracker incoming_headers_;
+  ReadContext read_context_;
 
   // Transport wide write context. This is used to track the state of the
   // transport during write cycles.
@@ -734,20 +724,18 @@ class Http2ServerTransport final : public ServerTransport,
 
   GoawayManager goaway_manager_;
 
+  MemoryOwner memory_owner_;
+  chttp2::TransportFlowControl flow_control_;
   WritableStreams<RefCountedPtr<Stream>> writable_stream_list_;
 
   /// Based on channel args, preferred_rx_crypto_frame_sizes are advertised to
   /// the peer
   bool enable_preferred_rx_crypto_frame_advertisement_;
   RefCountedPtr<SecurityFrameHandler> security_frame_handler_;
-  MemoryOwner memory_owner_;
-  chttp2::TransportFlowControl flow_control_;
   std::shared_ptr<PromiseHttp2ZTraceCollector> ztrace_collector_;
 
   // TODO(tjagtap) [PH2][P2][BDP] Remove this when the BDP code is done.
   Waker periodic_updates_waker_;
-
-  Http2ReadContext reader_state_;
 };
 
 // TODO(tjagtap) : [PH2][P1] : Handle the case where a Server receives two

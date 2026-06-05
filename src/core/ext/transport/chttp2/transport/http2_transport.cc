@@ -250,11 +250,6 @@ void ReadSettingsFromChannelArgs(const ChannelArgs& channel_args,
   local_settings.SetAllowSecurityFrame(
       channel_args.GetBool(GRPC_ARG_SECURITY_FRAME_ALLOWED).value_or(false));
 
-  // TODO(tjagtap) : [PH2][P4] : If max_header_list_size is set only once
-  // in the life of a transport, consider making this a data member of
-  // class IncomingMetadataTracker instead of accessing via acked settings again
-  // and again. Else delete this comment.
-
   GRPC_HTTP2_COMMON_DLOG
       << "Http2Settings: {"
       << "header_table_size: " << local_settings.header_table_size()
@@ -311,7 +306,7 @@ void ProcessOutgoingDataFrameFlowControl(
 }
 
 ValueOrHttp2Status<chttp2::FlowControlAction>
-ProcessIncomingDataFrameFlowControl(Http2FrameHeader& frame_header,
+ProcessIncomingDataFrameFlowControl(const Http2FrameHeader& frame_header,
                                     chttp2::TransportFlowControl& flow_control,
                                     Stream* stream) {
   GRPC_DCHECK_EQ(frame_header.type, 0u);

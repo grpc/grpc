@@ -74,13 +74,18 @@ grpc_slice grpc_chttp2_rst_stream_create(
   return slice;
 }
 
-void grpc_chttp2_add_rst_stream_to_next_write(
+grpc_error_handle grpc_chttp2_add_rst_stream_to_next_write(
     grpc_chttp2_transport* t, uint32_t id, uint32_t code,
     grpc_core::CallTracerInterface* call_tracer) {
-  t->num_pending_induced_frames++;
+  grpc_error_handle error = grpc_chttp2_increase_num_pending_induced_frames(t);
+  if (GPR_UNLIKELY(!error.ok())) {
+    return error;
+  }
+
   grpc_slice_buffer_add(
       &t->qbuf, grpc_chttp2_rst_stream_create(id, code, call_tracer,
                                               &t->http2_ztrace_collector));
+  return absl::OkStatus();
 }
 
 grpc_error_handle grpc_chttp2_rst_stream_parser_begin_frame(
@@ -137,7 +142,10 @@ grpc_error_handle grpc_chttp2_rst_stream_parser_parse(void* parser,
     grpc_core::SharedBitGen g;
     if (!t->is_client &&
         absl::Bernoulli(g, t->ping_on_rst_stream_percent / 100.0)) {
-      ++t->num_pending_induced_frames;
+      grpc_error_handle error =
+          grpc_chttp2_increase_num_pending_induced_frames(t);
+      if (GPR_UNLIKELY(!error.ok())) return error;
+
       t->ping_callbacks.RequestPing();
       grpc_chttp2_initiate_write(t, GRPC_CHTTP2_INITIATE_WRITE_KEEPALIVE_PING);
     }
