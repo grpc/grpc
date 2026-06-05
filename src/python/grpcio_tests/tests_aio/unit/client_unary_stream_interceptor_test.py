@@ -479,6 +479,97 @@ class TestUnaryStreamClientInterceptor(AioTestBase):
 
         await channel.close()
 
+    async def test_exception_raised_by_interceptor_done_callbacks_not_finished(
+        self,
+    ):
+        class InterceptorException(Exception):
+            pass
+
+        class Interceptor(aio.UnaryStreamClientInterceptor):
+            async def intercept_unary_stream(
+                self, continuation, client_call_details, request
+            ):
+                raise InterceptorException
+
+        channel = aio.insecure_channel(
+            UNREACHABLE_TARGET, interceptors=[Interceptor()]
+        )
+        request = messages_pb2.StreamingOutputCallRequest()
+        stub = test_pb2_grpc.TestServiceStub(channel)
+        call = stub.StreamingOutputCall(request)
+
+        validation = inject_callbacks(call)
+
+        with self.assertRaises(InterceptorException):
+            async for _ in call:
+                pass
+
+        await validation
+
+        await channel.close()
+
+    async def test_exception_raised_by_interceptor_done_callbacks_finished(
+        self,
+    ):
+        class InterceptorException(Exception):
+            pass
+
+        class Interceptor(aio.UnaryStreamClientInterceptor):
+            async def intercept_unary_stream(
+                self, continuation, client_call_details, request_iterator
+            ):
+                raise InterceptorException
+
+        channel = aio.insecure_channel(
+            UNREACHABLE_TARGET, interceptors=[Interceptor()]
+        )
+        stub = test_pb2_grpc.TestServiceStub(channel)
+
+        request = messages_pb2.StreamingOutputCallRequest()
+        call = stub.StreamingOutputCall(request)
+
+        with self.assertRaises(InterceptorException):
+            async for _ in call:
+                pass
+
+        validation = inject_callbacks(call)
+
+        await validation
+
+        await channel.close()
+
+    async def test_exception_raised_by_interceptor_state(self):
+        class InterceptorException(Exception):
+            pass
+
+        class Interceptor(aio.UnaryStreamClientInterceptor):
+            async def intercept_unary_stream(
+                self, continuation, client_call_details, request
+            ):
+                raise InterceptorException
+
+        channel = aio.insecure_channel(
+            UNREACHABLE_TARGET, interceptors=[Interceptor()]
+        )
+        request = messages_pb2.StreamingOutputCallRequest()
+        stub = test_pb2_grpc.TestServiceStub(channel)
+        call = stub.StreamingOutputCall(request)
+
+        # Before exception (task scheduled but not run)
+        self.assertFalse(call.done())
+        self.assertFalse(call.cancelled())
+
+        with self.assertRaises(InterceptorException):
+            async for _ in call:
+                pass
+
+        # After exception
+        self.assertTrue(call.done())
+        self.assertFalse(call.cancelled())
+        self.assertFalse(call.cancel())
+
+        await channel.close()
+
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG)
