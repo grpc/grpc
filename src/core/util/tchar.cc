@@ -33,6 +33,7 @@ TcharString CharToTchar(std::string input) {
 }
 
 std::string TcharToChar(TcharString input) {
+  if (input.size() > INT_MAX) return std::string();
   int len = static_cast<int>(input.size());
   int needed = WideCharToMultiByte(CP_UTF8, 0, input.c_str(), len, nullptr, 0,
                                    nullptr, nullptr);
