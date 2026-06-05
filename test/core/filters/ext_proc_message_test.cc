@@ -40,9 +40,8 @@ namespace {
 TEST(ExtProcMessageTest, ClientHeadersProtocolInitiation) {
   upb::Arena arena;
   grpc_metadata_batch batch;
-  ExtProcRequest request(arena.ptr());
-  std::string serialized = request.CreateRequest(
-      ExtProcRequest::RequestType::kClientHeaders, &batch, {},
+  std::string serialized = CreateExtProcRequest(
+      arena.ptr(), ExtProcRequestType::kClientHeaders, &batch, {},
       /*observability_mode=*/false,
       /*is_first_message=*/true, /*send_request_body=*/true,
       /*send_response_body=*/true);
@@ -60,9 +59,8 @@ TEST(ExtProcMessageTest, ClientHeadersProtocolInitiation) {
 TEST(ExtProcMessageTest, ClientHeadersProtocolInitiationSubsequentMessageConfig) {
   upb::Arena arena;
   grpc_metadata_batch batch;
-  ExtProcRequest request(arena.ptr());
-  std::string serialized = request.CreateRequest(
-      ExtProcRequest::RequestType::kClientHeaders, &batch, {},
+  std::string serialized = CreateExtProcRequest(
+      arena.ptr(), ExtProcRequestType::kClientHeaders, &batch, {},
       /*observability_mode=*/false,
       /*is_first_message=*/false, /*send_request_body=*/true,
       /*send_response_body=*/true);
@@ -79,9 +77,8 @@ TEST(ExtProcMessageTest, ClientHeadersMetadataPropagated) {
                [](absl::string_view, const Slice&) {});
   batch.Append("key2", Slice::FromCopiedString("val2"),
                [](absl::string_view, const Slice&) {});
-  ExtProcRequest request(arena.ptr());
-  std::string serialized = request.CreateRequest(
-      ExtProcRequest::RequestType::kClientHeaders, &batch, {},
+  std::string serialized = CreateExtProcRequest(
+      arena.ptr(), ExtProcRequestType::kClientHeaders, &batch, {},
       /*observability_mode=*/false,
       /*is_first_message=*/false, /*send_request_body=*/false,
       /*send_response_body=*/false);
@@ -98,9 +95,8 @@ TEST(ExtProcMessageTest, ClientHeadersMetadataPropagated) {
 TEST(ExtProcMessageTest, ClientHeadersEndOfStreamAlwaysFalse) {
   upb::Arena arena;
   grpc_metadata_batch batch;
-  ExtProcRequest request(arena.ptr());
-  std::string serialized = request.CreateRequest(
-      ExtProcRequest::RequestType::kClientHeaders, &batch, {},
+  std::string serialized = CreateExtProcRequest(
+      arena.ptr(), ExtProcRequestType::kClientHeaders, &batch, {},
       /*observability_mode=*/false,
       /*is_first_message=*/false, /*send_request_body=*/false,
       /*send_response_body=*/false);
@@ -114,9 +110,8 @@ TEST(ExtProcMessageTest, ClientHeadersEndOfStreamAlwaysFalse) {
 TEST(ExtProcMessageTest, ClientBodyPayloadValid) {
   upb::Arena arena;
   std::string body_data = "test request body data";
-  ExtProcRequest request(arena.ptr());
-  std::string serialized = request.CreateRequest(
-      ExtProcRequest::RequestType::kClientMessage,
+  std::string serialized = CreateExtProcRequest(
+      arena.ptr(), ExtProcRequestType::kClientMessage,
       StdStringToUpbString(body_data), {}, /*observability_mode=*/false,
       /*is_first_message=*/false, /*send_request_body=*/false,
       /*send_response_body=*/false, /*end_of_stream=*/false,
@@ -131,9 +126,8 @@ TEST(ExtProcMessageTest, ClientBodyPayloadValid) {
 
 TEST(ExtProcMessageTest, ClientBodyEndOfStream) {
   upb::Arena arena;
-  ExtProcRequest request(arena.ptr());
-  std::string serialized = request.CreateRequest(
-      ExtProcRequest::RequestType::kClientMessage,
+  std::string serialized = CreateExtProcRequest(
+      arena.ptr(), ExtProcRequestType::kClientMessage,
       StdStringToUpbString("data"), {}, /*observability_mode=*/false,
       /*is_first_message=*/false, /*send_request_body=*/false,
       /*send_response_body=*/false, /*end_of_stream=*/true,
@@ -146,9 +140,9 @@ TEST(ExtProcMessageTest, ClientBodyEndOfStream) {
 
 TEST(ExtProcMessageTest, ClientHalfCloseEndOfStreamWithoutMessage) {
   upb::Arena arena;
-  ExtProcRequest request(arena.ptr());
-  std::string serialized = request.CreateRequest(
-      ExtProcRequest::RequestType::kClientMessage, StdStringToUpbString(""), {},
+  std::string serialized = CreateExtProcRequest(
+      arena.ptr(), ExtProcRequestType::kClientMessage, StdStringToUpbString(""),
+      {},
       /*observability_mode=*/false,
       /*is_first_message=*/false, /*send_request_body=*/false,
       /*send_response_body=*/false, /*end_of_stream=*/true,
@@ -164,9 +158,8 @@ TEST(ExtProcMessageTest, ClientHalfCloseEndOfStreamWithoutMessage) {
 TEST(ExtProcMessageTest, ServerHeadersEndOfStreamTrue) {
   upb::Arena arena;
   grpc_metadata_batch batch;
-  ExtProcRequest request(arena.ptr());
-  std::string serialized = request.CreateRequest(
-      ExtProcRequest::RequestType::kServerHeaders, &batch, {},
+  std::string serialized = CreateExtProcRequest(
+      arena.ptr(), ExtProcRequestType::kServerHeaders, &batch, {},
       /*observability_mode=*/false,
       /*is_first_message=*/false, /*send_request_body=*/false,
       /*send_response_body=*/false, /*end_of_stream=*/true);
@@ -179,9 +172,8 @@ TEST(ExtProcMessageTest, ServerHeadersEndOfStreamTrue) {
 TEST(ExtProcMessageTest, ServerHeadersProtocolInitiation) {
   upb::Arena arena;
   grpc_metadata_batch batch;
-  ExtProcRequest request(arena.ptr());
-  std::string serialized = request.CreateRequest(
-      ExtProcRequest::RequestType::kServerHeaders, &batch, {},
+  std::string serialized = CreateExtProcRequest(
+      arena.ptr(), ExtProcRequestType::kServerHeaders, &batch, {},
       /*observability_mode=*/false,
       /*is_first_message=*/true, /*send_request_body=*/true,
       /*send_response_body=*/true, /*end_of_stream=*/false);
@@ -198,9 +190,8 @@ TEST(ExtProcMessageTest, ServerHeadersProtocolInitiation) {
 
 TEST(ExtProcMessageTest, ServerBodyEndOfStreamAlwaysFalse) {
   upb::Arena arena;
-  ExtProcRequest request(arena.ptr());
-  std::string serialized = request.CreateRequest(
-      ExtProcRequest::RequestType::kServerMessage, StdStringToUpbString("data"),
+  std::string serialized = CreateExtProcRequest(
+      arena.ptr(), ExtProcRequestType::kServerMessage, StdStringToUpbString("data"),
       {}, /*observability_mode=*/false, /*is_first_message=*/false,
       /*send_request_body=*/false, /*send_response_body=*/false);
   envoy::service::ext_proc::v3::ProcessingRequest parsed;
@@ -214,9 +205,8 @@ TEST(ExtProcMessageTest, ServerTrailersMetadataAndStatus) {
   grpc_metadata_batch batch;
   batch.Append("grpc-status", Slice::FromCopiedString("13"),
                [](absl::string_view, const Slice&) {});
-  ExtProcRequest request(arena.ptr());
-  std::string serialized = request.CreateRequest(
-      ExtProcRequest::RequestType::kServerTrailers, &batch, {},
+  std::string serialized = CreateExtProcRequest(
+      arena.ptr(), ExtProcRequestType::kServerTrailers, &batch, {},
       /*observability_mode=*/false,
       /*is_first_message=*/false, /*send_request_body=*/false,
       /*send_response_body=*/false);
@@ -235,9 +225,8 @@ TEST(ExtProcMessageTest, AttributesExactlyOneExtProcKey) {
   grpc_metadata_batch batch;
   auto* attr_struct = ParseAttributes(
       arena.ptr(), {"request.method"}, batch);
-  ExtProcRequest request(arena.ptr());
-  std::string serialized = request.CreateRequest(
-      ExtProcRequest::RequestType::kClientHeaders, &batch, attr_struct,
+  std::string serialized = CreateExtProcRequest(
+      arena.ptr(), ExtProcRequestType::kClientHeaders, &batch, attr_struct,
       /*observability_mode=*/false,
       /*is_first_message=*/false, /*send_request_body=*/false,
       /*send_response_body=*/false);
@@ -254,9 +243,8 @@ TEST(ExtProcMessageTest, AttributesSpecificMappingMatches) {
   batch.Set(HttpPathMetadata(), Slice::FromCopiedString("/Service/Method"));
   auto* attr_struct = ParseAttributes(
       arena.ptr(), {"request.path"}, batch);
-  ExtProcRequest request(arena.ptr());
-  std::string serialized = request.CreateRequest(
-      ExtProcRequest::RequestType::kClientHeaders, &batch, attr_struct,
+  std::string serialized = CreateExtProcRequest(
+      arena.ptr(), ExtProcRequestType::kClientHeaders, &batch, attr_struct,
       /*observability_mode=*/false,
       /*is_first_message=*/false, /*send_request_body=*/false,
       /*send_response_body=*/false);
@@ -291,9 +279,8 @@ TEST(ExtProcMessageTest, PopulateAttributesMapAllCELVariables) {
   auto* attr_struct =
       ParseAttributes(arena.ptr(), requested, batch);
   ASSERT_NE(attr_struct, nullptr);
-  ExtProcRequest request(arena.ptr());
-  std::string serialized = request.CreateRequest(
-      ExtProcRequest::RequestType::kClientHeaders, &batch, attr_struct,
+  std::string serialized = CreateExtProcRequest(
+      arena.ptr(), ExtProcRequestType::kClientHeaders, &batch, attr_struct,
       /*observability_mode=*/false,
       /*is_first_message=*/false, /*send_request_body=*/false,
       /*send_response_body=*/false);
@@ -329,9 +316,8 @@ TEST(ExtProcMessageTest, PopulateAttributesMapAllCELVariables) {
 TEST(ExtProcMessageTest, ObservabilityModeTrue) {
   upb::Arena arena;
   grpc_metadata_batch batch;
-  ExtProcRequest request(arena.ptr());
-  std::string serialized = request.CreateRequest(
-      ExtProcRequest::RequestType::kClientHeaders, &batch, {},
+  std::string serialized = CreateExtProcRequest(
+      arena.ptr(), ExtProcRequestType::kClientHeaders, &batch, {},
       /*observability_mode=*/true,
       /*is_first_message=*/false, /*send_request_body=*/false,
       /*send_response_body=*/false);
@@ -343,9 +329,8 @@ TEST(ExtProcMessageTest, ObservabilityModeTrue) {
 TEST(ExtProcMessageTest, ObservabilityModeFalse) {
   upb::Arena arena;
   grpc_metadata_batch batch;
-  ExtProcRequest request(arena.ptr());
-  std::string serialized = request.CreateRequest(
-      ExtProcRequest::RequestType::kClientHeaders, &batch, {},
+  std::string serialized = CreateExtProcRequest(
+      arena.ptr(), ExtProcRequestType::kClientHeaders, &batch, {},
       /*observability_mode=*/false,
       /*is_first_message=*/false, /*send_request_body=*/false,
       /*send_response_body=*/false);

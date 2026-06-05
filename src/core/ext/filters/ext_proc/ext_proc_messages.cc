@@ -272,128 +272,6 @@ absl::StatusOr<ExtProcResponse> ParseExtProcResponse(
   return ext_proc_response;
 }
 
-//
-// ExtProcRequest::Builder
-//
-
-ExtProcRequest::ExtProcRequest(upb_Arena* arena)
-    : arena_(arena) {
-  request_ = envoy_service_ext_proc_v3_ProcessingRequest_new(arena_);
-}
-
-void ExtProcRequest::SetRequestHeaders(
-    envoy_config_core_v3_HeaderMap* headers, bool end_of_stream) {
-  auto http_headers = envoy_service_ext_proc_v3_HttpHeaders_new(arena_);
-  envoy_service_ext_proc_v3_HttpHeaders_set_headers(http_headers, headers);
-  envoy_service_ext_proc_v3_HttpHeaders_set_end_of_stream(http_headers,
-                                                          end_of_stream);
-  envoy_service_ext_proc_v3_ProcessingRequest_set_request_headers(request_,
-                                                                  http_headers);
-}
-
-void ExtProcRequest::SetResponseHeaders(
-    envoy_config_core_v3_HeaderMap* headers, bool end_of_stream) {
-  auto http_headers = envoy_service_ext_proc_v3_HttpHeaders_new(arena_);
-  envoy_service_ext_proc_v3_HttpHeaders_set_headers(http_headers, headers);
-  envoy_service_ext_proc_v3_HttpHeaders_set_end_of_stream(http_headers,
-                                                          end_of_stream);
-  envoy_service_ext_proc_v3_ProcessingRequest_set_response_headers(
-      request_, http_headers);
-}
-
-void ExtProcRequest::SetRequestBody(
-    upb_StringView buf, bool end_of_stream,
-    bool end_of_stream_without_message) {
-  envoy_service_ext_proc_v3_HttpBody* body =
-      envoy_service_ext_proc_v3_HttpBody_new(arena_);
-  envoy_service_ext_proc_v3_HttpBody_set_body(body, buf);
-  envoy_service_ext_proc_v3_HttpBody_set_end_of_stream(body, end_of_stream);
-  if (end_of_stream_without_message) {
-    envoy_service_ext_proc_v3_HttpBody_set_end_of_stream_without_message(body,
-                                                                         true);
-  } else if (buf.size == 0 && end_of_stream) {
-    envoy_service_ext_proc_v3_HttpBody_set_end_of_stream_without_message(body,
-                                                                         true);
-  }
-  envoy_service_ext_proc_v3_ProcessingRequest_set_request_body(request_, body);
-}
-
-void ExtProcRequest::SetResponseBody(
-    upb_StringView buf, bool end_of_stream) {
-  envoy_service_ext_proc_v3_HttpBody* body =
-      envoy_service_ext_proc_v3_HttpBody_new(arena_);
-  envoy_service_ext_proc_v3_HttpBody_set_body(body, buf);
-  envoy_service_ext_proc_v3_HttpBody_set_end_of_stream(body, end_of_stream);
-  envoy_service_ext_proc_v3_ProcessingRequest_set_response_body(request_, body);
-}
-
-void ExtProcRequest::SetResponseTrailers(
-    envoy_config_core_v3_HeaderMap* trailer) {
-  auto http_trailers = envoy_service_ext_proc_v3_HttpTrailers_new(arena_);
-  envoy_service_ext_proc_v3_HttpTrailers_set_trailers(http_trailers, trailer);
-  envoy_service_ext_proc_v3_ProcessingRequest_set_response_trailers(
-      request_, http_trailers);
-}
-
-void ExtProcRequest::SetObservabilityMode(
-    bool mode) {
-  envoy_service_ext_proc_v3_ProcessingRequest_set_observability_mode(request_,
-                                                                     mode);
-}
-
-void ExtProcRequest::SetAttributes(
-    ::google_protobuf_Struct* attributes) {
-  if (attributes == nullptr) return;
-
-  envoy_service_ext_proc_v3_ProcessingRequest_attributes_set(
-      request_,
-      upb_StringView_FromDataAndSize("envoy.filters.http.ext_proc",
-                                     sizeof("envoy.filters.http.ext_proc") - 1),
-      attributes, arena_);
-}
-
-void ExtProcRequest::SetProtocolConfigRequest(
-    bool is_first_message, bool send_body) {
-  if (!is_first_message) return;
-  auto* protocol_config =
-      envoy_service_ext_proc_v3_ProcessingRequest_mutable_protocol_config(
-          request_, arena_);
-  if (send_body) {
-    envoy_service_ext_proc_v3_ProtocolConfiguration_set_request_body_mode(
-        protocol_config,
-        envoy_extensions_filters_http_ext_proc_v3_ProcessingMode_GRPC);
-  } else {
-    envoy_service_ext_proc_v3_ProtocolConfiguration_set_request_body_mode(
-        protocol_config,
-        envoy_extensions_filters_http_ext_proc_v3_ProcessingMode_NONE);
-  }
-}
-
-void ExtProcRequest::SetProtocolConfigResponse(
-    bool is_first_message, bool send_body) {
-  if (!is_first_message) return;
-  auto* protocol_config =
-      envoy_service_ext_proc_v3_ProcessingRequest_mutable_protocol_config(
-          request_, arena_);
-  if (send_body) {
-    envoy_service_ext_proc_v3_ProtocolConfiguration_set_response_body_mode(
-        protocol_config,
-        envoy_extensions_filters_http_ext_proc_v3_ProcessingMode_GRPC);
-  } else {
-    envoy_service_ext_proc_v3_ProtocolConfiguration_set_response_body_mode(
-        protocol_config,
-        envoy_extensions_filters_http_ext_proc_v3_ProcessingMode_NONE);
-  }
-}
-
-std::string ExtProcRequest::SerializeMessage() {
-  size_t size;
-  auto message = envoy_service_ext_proc_v3_ProcessingRequest_serialize(
-      request_, arena_, &size);
-  if (message == nullptr) return "";
-  return std::string(message, size);
-}
-
 namespace {
 
 class UpbHeaderMapEncoder {
@@ -454,51 +332,176 @@ void PopulateMetadataBatchToHeaderMap(
   batch.Encode(&encoder);
 }
 
+void SetRequestHeaders(
+    envoy_service_ext_proc_v3_ProcessingRequest* request, upb_Arena* arena,
+    envoy_config_core_v3_HeaderMap* headers, bool end_of_stream) {
+  auto http_headers = envoy_service_ext_proc_v3_HttpHeaders_new(arena);
+  envoy_service_ext_proc_v3_HttpHeaders_set_headers(http_headers, headers);
+  envoy_service_ext_proc_v3_HttpHeaders_set_end_of_stream(http_headers,
+                                                          end_of_stream);
+  envoy_service_ext_proc_v3_ProcessingRequest_set_request_headers(request,
+                                                                  http_headers);
+}
+
+void SetResponseHeaders(
+    envoy_service_ext_proc_v3_ProcessingRequest* request, upb_Arena* arena,
+    envoy_config_core_v3_HeaderMap* headers, bool end_of_stream) {
+  auto http_headers = envoy_service_ext_proc_v3_HttpHeaders_new(arena);
+  envoy_service_ext_proc_v3_HttpHeaders_set_headers(http_headers, headers);
+  envoy_service_ext_proc_v3_HttpHeaders_set_end_of_stream(http_headers,
+                                                          end_of_stream);
+  envoy_service_ext_proc_v3_ProcessingRequest_set_response_headers(
+      request, http_headers);
+}
+
+void SetRequestBody(
+    envoy_service_ext_proc_v3_ProcessingRequest* request, upb_Arena* arena,
+    upb_StringView buf, bool end_of_stream,
+    bool end_of_stream_without_message) {
+  envoy_service_ext_proc_v3_HttpBody* body =
+      envoy_service_ext_proc_v3_HttpBody_new(arena);
+  envoy_service_ext_proc_v3_HttpBody_set_body(body, buf);
+  envoy_service_ext_proc_v3_HttpBody_set_end_of_stream(body, end_of_stream);
+  if (end_of_stream_without_message) {
+    envoy_service_ext_proc_v3_HttpBody_set_end_of_stream_without_message(body,
+                                                                         true);
+  } else if (buf.size == 0 && end_of_stream) {
+    envoy_service_ext_proc_v3_HttpBody_set_end_of_stream_without_message(body,
+                                                                         true);
+  }
+  envoy_service_ext_proc_v3_ProcessingRequest_set_request_body(request, body);
+}
+
+void SetResponseBody(
+    envoy_service_ext_proc_v3_ProcessingRequest* request, upb_Arena* arena,
+    upb_StringView buf, bool end_of_stream) {
+  envoy_service_ext_proc_v3_HttpBody* body =
+      envoy_service_ext_proc_v3_HttpBody_new(arena);
+  envoy_service_ext_proc_v3_HttpBody_set_body(body, buf);
+  envoy_service_ext_proc_v3_HttpBody_set_end_of_stream(body, end_of_stream);
+  envoy_service_ext_proc_v3_ProcessingRequest_set_response_body(request, body);
+}
+
+void SetResponseTrailers(
+    envoy_service_ext_proc_v3_ProcessingRequest* request, upb_Arena* arena,
+    envoy_config_core_v3_HeaderMap* trailer) {
+  auto http_trailers = envoy_service_ext_proc_v3_HttpTrailers_new(arena);
+  envoy_service_ext_proc_v3_HttpTrailers_set_trailers(http_trailers, trailer);
+  envoy_service_ext_proc_v3_ProcessingRequest_set_response_trailers(
+      request, http_trailers);
+}
+
+void SetObservabilityMode(
+    envoy_service_ext_proc_v3_ProcessingRequest* request, bool mode) {
+  envoy_service_ext_proc_v3_ProcessingRequest_set_observability_mode(request,
+                                                                     mode);
+}
+
+void SetAttributes(
+    envoy_service_ext_proc_v3_ProcessingRequest* request, upb_Arena* arena,
+    ::google_protobuf_Struct* attributes) {
+  if (attributes == nullptr) return;
+
+  envoy_service_ext_proc_v3_ProcessingRequest_attributes_set(
+      request,
+      upb_StringView_FromDataAndSize("envoy.filters.http.ext_proc",
+                                     sizeof("envoy.filters.http.ext_proc") - 1),
+      attributes, arena);
+}
+
+void SetProtocolConfigRequest(
+    envoy_service_ext_proc_v3_ProcessingRequest* request, upb_Arena* arena,
+    bool is_first_message, bool send_body) {
+  if (!is_first_message) return;
+  auto* protocol_config =
+      envoy_service_ext_proc_v3_ProcessingRequest_mutable_protocol_config(
+          request, arena);
+  if (send_body) {
+    envoy_service_ext_proc_v3_ProtocolConfiguration_set_request_body_mode(
+        protocol_config,
+        envoy_extensions_filters_http_ext_proc_v3_ProcessingMode_GRPC);
+  } else {
+    envoy_service_ext_proc_v3_ProtocolConfiguration_set_request_body_mode(
+        protocol_config,
+        envoy_extensions_filters_http_ext_proc_v3_ProcessingMode_NONE);
+  }
+}
+
+void SetProtocolConfigResponse(
+    envoy_service_ext_proc_v3_ProcessingRequest* request, upb_Arena* arena,
+    bool is_first_message, bool send_body) {
+  if (!is_first_message) return;
+  auto* protocol_config =
+      envoy_service_ext_proc_v3_ProcessingRequest_mutable_protocol_config(
+          request, arena);
+  if (send_body) {
+    envoy_service_ext_proc_v3_ProtocolConfiguration_set_response_body_mode(
+        protocol_config,
+        envoy_extensions_filters_http_ext_proc_v3_ProcessingMode_GRPC);
+  } else {
+    envoy_service_ext_proc_v3_ProtocolConfiguration_set_response_body_mode(
+        protocol_config,
+        envoy_extensions_filters_http_ext_proc_v3_ProcessingMode_NONE);
+  }
+}
+
+std::string SerializeMessage(
+    envoy_service_ext_proc_v3_ProcessingRequest* request, upb_Arena* arena) {
+  size_t size;
+  auto message = envoy_service_ext_proc_v3_ProcessingRequest_serialize(
+      request, arena, &size);
+  if (message == nullptr) return "";
+  return std::string(message, size);
+}
+
 }  // namespace
 
-std::string ExtProcRequest::CreateRequest(
-    RequestType type,
+std::string CreateExtProcRequest(
+    upb_Arena* arena, ExtProcRequestType type,
     std::variant<grpc_metadata_batch*, upb_StringView> payload,
     ::google_protobuf_Struct* attributes, bool observability_mode,
     bool is_first_message, bool send_request_body, bool send_response_body,
     bool end_of_stream, bool end_of_stream_without_message) {
+  auto* request = envoy_service_ext_proc_v3_ProcessingRequest_new(arena);
   switch (type) {
-    case RequestType::kClientHeaders: {
-      auto* upb_headers = envoy_config_core_v3_HeaderMap_new(arena_);
+    case ExtProcRequestType::kClientHeaders: {
+      auto* upb_headers = envoy_config_core_v3_HeaderMap_new(arena);
       PopulateMetadataBatchToHeaderMap(*std::get<grpc_metadata_batch*>(payload),
-                                       upb_headers, arena_);
-      SetRequestHeaders(upb_headers, /*end_of_stream=*/false);
+                                       upb_headers, arena);
+      SetRequestHeaders(request, arena, upb_headers, /*end_of_stream=*/false);
       break;
     }
-    case RequestType::kServerHeaders: {
-      auto* upb_headers = envoy_config_core_v3_HeaderMap_new(arena_);
+    case ExtProcRequestType::kServerHeaders: {
+      auto* upb_headers = envoy_config_core_v3_HeaderMap_new(arena);
       PopulateMetadataBatchToHeaderMap(*std::get<grpc_metadata_batch*>(payload),
-                                       upb_headers, arena_);
-      SetResponseHeaders(upb_headers, /*end_of_stream=*/end_of_stream);
+                                       upb_headers, arena);
+      SetResponseHeaders(request, arena, upb_headers,
+                         /*end_of_stream=*/end_of_stream);
       break;
     }
-    case RequestType::kClientMessage: {
-      SetRequestBody(std::get<upb_StringView>(payload), end_of_stream,
-                     end_of_stream_without_message);
+    case ExtProcRequestType::kClientMessage: {
+      SetRequestBody(request, arena, std::get<upb_StringView>(payload),
+                     end_of_stream, end_of_stream_without_message);
       break;
     }
-    case RequestType::kServerMessage: {
-      SetResponseBody(std::get<upb_StringView>(payload), /*end_of_stream=*/false);
+    case ExtProcRequestType::kServerMessage: {
+      SetResponseBody(request, arena, std::get<upb_StringView>(payload),
+                      /*end_of_stream=*/false);
       break;
     }
-    case RequestType::kServerTrailers: {
-      auto* upb_trailers = envoy_config_core_v3_HeaderMap_new(arena_);
+    case ExtProcRequestType::kServerTrailers: {
+      auto* upb_trailers = envoy_config_core_v3_HeaderMap_new(arena);
       PopulateMetadataBatchToHeaderMap(*std::get<grpc_metadata_batch*>(payload),
-                                       upb_trailers, arena_);
-      SetResponseTrailers(upb_trailers);
+                                       upb_trailers, arena);
+      SetResponseTrailers(request, arena, upb_trailers);
       break;
     }
   }
-  SetAttributes(attributes);
-  SetObservabilityMode(observability_mode);
-  SetProtocolConfigRequest(is_first_message, send_request_body);
-  SetProtocolConfigResponse(is_first_message, send_response_body);
-  return SerializeMessage();
+  SetAttributes(request, arena, attributes);
+  SetObservabilityMode(request, observability_mode);
+  SetProtocolConfigRequest(request, arena, is_first_message, send_request_body);
+  SetProtocolConfigResponse(request, arena, is_first_message, send_response_body);
+  return SerializeMessage(request, arena);
 }
 
 ::google_protobuf_Struct* ParseAttributes(
