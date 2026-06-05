@@ -168,7 +168,8 @@ TEST(ExtProcMessageTest, ClientBodyPayloadValid) {
   std::string serialized = ExtProcRequest::CreateClientMessageRequest(
       StdStringToUpbString(body_data), /*end_of_stream=*/false,
       /*end_of_stream_without_message=*/false, arena.ptr(), {},
-      /*observability_mode=*/false);
+      /*observability_mode=*/false, /*is_first_message=*/false,
+      /*send_request_body=*/false, /*send_response_body=*/false);
   envoy::service::ext_proc::v3::ProcessingRequest parsed;
   ASSERT_TRUE(parsed.ParseFromString(serialized));
   ASSERT_TRUE(parsed.has_request_body());
@@ -182,7 +183,8 @@ TEST(ExtProcMessageTest, ClientBodyEndOfStream) {
   std::string serialized = ExtProcRequest::CreateClientMessageRequest(
       StdStringToUpbString("data"), /*end_of_stream=*/true,
       /*end_of_stream_without_message=*/false, arena.ptr(), {},
-      /*observability_mode=*/false);
+      /*observability_mode=*/false, /*is_first_message=*/false,
+      /*send_request_body=*/false, /*send_response_body=*/false);
   envoy::service::ext_proc::v3::ProcessingRequest parsed;
   ASSERT_TRUE(parsed.ParseFromString(serialized));
   ASSERT_TRUE(parsed.has_request_body());
@@ -194,7 +196,8 @@ TEST(ExtProcMessageTest, ClientHalfCloseEndOfStreamWithoutMessage) {
   std::string serialized = ExtProcRequest::CreateClientMessageRequest(
       StdStringToUpbString(""), /*end_of_stream=*/true,
       /*end_of_stream_without_message=*/true, arena.ptr(), {},
-      /*observability_mode=*/false);
+      /*observability_mode=*/false, /*is_first_message=*/false,
+      /*send_request_body=*/false, /*send_response_body=*/false);
   envoy::service::ext_proc::v3::ProcessingRequest parsed;
   ASSERT_TRUE(parsed.ParseFromString(serialized));
   ASSERT_TRUE(parsed.has_request_body());
@@ -208,18 +211,38 @@ TEST(ExtProcMessageTest, ServerHeadersEndOfStreamTrue) {
   grpc_metadata_batch batch;
   std::string serialized = ExtProcRequest::CreateServerHeadersRequest(
       batch, /*trailers_only=*/true, arena.ptr(), {},
-      /*observability_mode=*/false);
+      /*observability_mode=*/false, /*is_first_message=*/false,
+      /*send_request_body=*/false, /*send_response_body=*/false);
   envoy::service::ext_proc::v3::ProcessingRequest parsed;
   ASSERT_TRUE(parsed.ParseFromString(serialized));
   ASSERT_TRUE(parsed.has_response_headers());
   EXPECT_TRUE(parsed.response_headers().end_of_stream());
 }
 
+TEST(ExtProcMessageTest, ServerHeadersProtocolInitiation) {
+  upb::Arena arena;
+  grpc_metadata_batch batch;
+  std::string serialized = ExtProcRequest::CreateServerHeadersRequest(
+      batch, /*trailers_only=*/false, arena.ptr(), {},
+      /*observability_mode=*/false, /*is_first_message=*/true,
+      /*send_request_body=*/true, /*send_response_body=*/true);
+  envoy::service::ext_proc::v3::ProcessingRequest parsed;
+  ASSERT_TRUE(parsed.ParseFromString(serialized));
+  ASSERT_TRUE(parsed.has_protocol_config());
+  EXPECT_EQ(parsed.protocol_config().request_body_mode(),
+            envoy::extensions::filters::http::ext_proc::v3::
+                ProcessingMode_BodySendMode_GRPC);
+  EXPECT_EQ(parsed.protocol_config().response_body_mode(),
+            envoy::extensions::filters::http::ext_proc::v3::
+                ProcessingMode_BodySendMode_GRPC);
+}
+
 TEST(ExtProcMessageTest, ServerBodyEndOfStreamAlwaysFalse) {
   upb::Arena arena;
   std::string serialized = ExtProcRequest::CreateServerMessageRequest(
       StdStringToUpbString("data"), arena.ptr(), {},
-      /*observability_mode=*/false);
+      /*observability_mode=*/false, /*is_first_message=*/false,
+      /*send_request_body=*/false, /*send_response_body=*/false);
   envoy::service::ext_proc::v3::ProcessingRequest parsed;
   ASSERT_TRUE(parsed.ParseFromString(serialized));
   ASSERT_TRUE(parsed.has_response_body());
@@ -232,7 +255,9 @@ TEST(ExtProcMessageTest, ServerTrailersMetadataAndStatus) {
   batch.Append("grpc-status", Slice::FromCopiedString("13"),
                [](absl::string_view, const Slice&) {});
   std::string serialized = ExtProcRequest::CreateServerTrailersRequest(
-      batch, arena.ptr(), {}, /*observability_mode=*/false);
+      batch, arena.ptr(), {}, /*observability_mode=*/false,
+      /*is_first_message=*/false, /*send_request_body=*/false,
+      /*send_response_body=*/false);
   envoy::service::ext_proc::v3::ProcessingRequest parsed;
   ASSERT_TRUE(parsed.ParseFromString(serialized));
   ASSERT_TRUE(parsed.has_response_trailers());

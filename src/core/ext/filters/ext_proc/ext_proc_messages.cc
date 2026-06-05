@@ -495,13 +495,16 @@ std::string ExtProcRequest::CreateClientHeadersRequest(
 
 std::string ExtProcRequest::CreateServerHeadersRequest(
     grpc_metadata_batch& headers, bool trailers_only, upb_Arena* arena,
-    ::google_protobuf_Struct* attributes, bool observability_mode) {
+    ::google_protobuf_Struct* attributes, bool observability_mode,
+    bool is_first_message, bool send_request_body, bool send_response_body) {
   auto* upb_headers = envoy_config_core_v3_HeaderMap_new(arena);
   PopulateMetadataBatchToHeaderMap(headers, upb_headers, arena);
   return Builder(arena)
       .SetResponseHeaders(upb_headers, trailers_only)
       .SetAttributes(attributes)
       .SetObservabilityMode(observability_mode)
+      .SetProtocolConfigRequest(is_first_message, send_request_body)
+      .SetProtocolConfigResponse(is_first_message, send_response_body)
       .Build()
       .SerializeMessage();
 }
@@ -509,35 +512,44 @@ std::string ExtProcRequest::CreateServerHeadersRequest(
 std::string ExtProcRequest::CreateClientMessageRequest(
     upb_StringView payload, bool end_of_stream,
     bool end_of_stream_without_message, upb_Arena* arena,
-    ::google_protobuf_Struct* attributes, bool observability_mode) {
+    ::google_protobuf_Struct* attributes, bool observability_mode,
+    bool is_first_message, bool send_request_body, bool send_response_body) {
   auto builder = Builder(arena);
   builder.SetRequestBody(payload, end_of_stream, end_of_stream_without_message);
   return builder.SetAttributes(attributes)
       .SetObservabilityMode(observability_mode)
+      .SetProtocolConfigRequest(is_first_message, send_request_body)
+      .SetProtocolConfigResponse(is_first_message, send_response_body)
       .Build()
       .SerializeMessage();
 }
 
 std::string ExtProcRequest::CreateServerMessageRequest(
     upb_StringView payload, upb_Arena* arena,
-    ::google_protobuf_Struct* attributes, bool observability_mode) {
+    ::google_protobuf_Struct* attributes, bool observability_mode,
+    bool is_first_message, bool send_request_body, bool send_response_body) {
   return Builder(arena)
       .SetResponseBody(payload, /*end_of_stream=*/false)
       .SetAttributes(attributes)
       .SetObservabilityMode(observability_mode)
+      .SetProtocolConfigRequest(is_first_message, send_request_body)
+      .SetProtocolConfigResponse(is_first_message, send_response_body)
       .Build()
       .SerializeMessage();
 }
 
 std::string ExtProcRequest::CreateServerTrailersRequest(
     grpc_metadata_batch& trailers, upb_Arena* arena,
-    ::google_protobuf_Struct* attributes, bool observability_mode) {
+    ::google_protobuf_Struct* attributes, bool observability_mode,
+    bool is_first_message, bool send_request_body, bool send_response_body) {
   auto* upb_trailers = envoy_config_core_v3_HeaderMap_new(arena);
   PopulateMetadataBatchToHeaderMap(trailers, upb_trailers, arena);
   return Builder(arena)
       .SetResponseTrailers(upb_trailers)
       .SetAttributes(attributes)
       .SetObservabilityMode(observability_mode)
+      .SetProtocolConfigRequest(is_first_message, send_request_body)
+      .SetProtocolConfigResponse(is_first_message, send_response_body)
       .Build()
       .SerializeMessage();
 }

@@ -90,17 +90,21 @@ class ExtProcRequest {
 
   static std::string CreateServerHeadersRequest(
       grpc_metadata_batch& headers, bool trailers_only, upb_Arena* arena,
-      ::google_protobuf_Struct* attributes, bool observability_mode);
+      ::google_protobuf_Struct* attributes, bool observability_mode,
+      bool is_first_message, bool send_request_body, bool send_response_body);
   static std::string CreateClientMessageRequest(
       upb_StringView payload, bool end_of_stream,
       bool end_of_stream_without_message, upb_Arena* arena,
-      ::google_protobuf_Struct* attributes, bool observability_mode);
+      ::google_protobuf_Struct* attributes, bool observability_mode,
+      bool is_first_message, bool send_request_body, bool send_response_body);
   static std::string CreateServerMessageRequest(
       upb_StringView payload, upb_Arena* arena,
-      ::google_protobuf_Struct* attributes, bool observability_mode);
+      ::google_protobuf_Struct* attributes, bool observability_mode,
+      bool is_first_message, bool send_request_body, bool send_response_body);
   static std::string CreateServerTrailersRequest(
       grpc_metadata_batch& trailers, upb_Arena* arena,
-      ::google_protobuf_Struct* attributes, bool observability_mode);
+      ::google_protobuf_Struct* attributes, bool observability_mode,
+      bool is_first_message, bool send_request_body, bool send_response_body);
 
   static ::google_protobuf_Struct* PopulateAttributesMap(
       upb_Arena* arena, const std::vector<std::string>& requested_attributes,
