@@ -5688,6 +5688,7 @@ grpc_cc_library(
         "absl/strings",
     ],
     deps = [
+        "grpc_matchers",
         "metadata_batch",
         "grpc_xds_client",
         "protobuf_struct_upb",

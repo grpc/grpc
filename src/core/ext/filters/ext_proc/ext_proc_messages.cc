@@ -297,21 +297,29 @@ class UpbHeaderMapEncoder {
   }
 
  private:
+  // Specifies what headers are allowed to be forwarded to the external
+  // processing server.
+  //   1. If neither allowed_headers nor disallowed_headers is set, all headers
+  //      are forwarded.
+  //   2. If both allowed_headers and disallowed_headers are set, only headers
+  //      in allowed_headers but not in disallowed_headers are forwarded.
+  //   3. If allowed_headers is set, and disallowed_headers is not set, only
+  //      headers in allowed_headers are forwarded.
+  //   4. If disallowed_headers is set, and allowed_headers is not set, all
+  //      headers except headers in disallowed_headers are forwarded.
   bool ShouldForwardHeader(absl::string_view key) const {
-    if (!allowed_headers_.empty()) {
-      bool allowed = false;
-      for (const auto& matcher : allowed_headers_) {
-        if (matcher.Match(key)) {
-          allowed = true;
-          break;
-        }
-      }
-      if (!allowed) return false;
-    }
     for (const auto& matcher : disallowed_headers_) {
       if (matcher.Match(key)) {
         return false;
       }
+    }
+    if (!allowed_headers_.empty()) {
+      for (const auto& matcher : allowed_headers_) {
+        if (matcher.Match(key)) {
+          return true;
+        }
+      }
+      return false;
     }
     return true;
   }
@@ -527,9 +535,9 @@ std::string CreateExtProcRequest(
 }
 
 ::google_protobuf_Struct* ParseAttributes(
-    upb_Arena* arena, const std::vector<std::string>& requested_attributes,
+    upb_Arena* arena, const std::vector<std::string>& attributes,
     const grpc_metadata_batch& metadata) {
-  if (requested_attributes.empty()) return nullptr;
+  if (attributes.empty()) return nullptr;
   ::google_protobuf_Struct* struct_msg = google_protobuf_Struct_new(arena);
   auto add_field = [&](absl::string_view name, absl::string_view value) {
     char* name_buf = static_cast<char*>(upb_Arena_Malloc(arena, name.size()));
@@ -544,7 +552,7 @@ std::string CreateExtProcRequest(
         val_msg, arena);
   };
 
-  for (const auto& attr : requested_attributes) {
+  for (const auto& attr : attributes) {
     if (attr == "request.path" || attr == "request.url_path") {
       if (const Slice* path = metadata.get_pointer(HttpPathMetadata())) {
         add_field(attr, path->as_string_view());

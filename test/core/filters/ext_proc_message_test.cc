@@ -85,9 +85,9 @@ TEST(ExtProcMessageTest, ClientHeadersMetadataPropagated) {
   ASSERT_TRUE(parsed.has_request_headers());
   ASSERT_EQ(parsed.request_headers().headers().headers_size(), 2);
   EXPECT_EQ(parsed.request_headers().headers().headers(0).key(), "key1");
-  EXPECT_EQ(parsed.request_headers().headers().headers(0).value(), "val1");
+  EXPECT_EQ(parsed.request_headers().headers().headers(0).raw_value(), "val1");
   EXPECT_EQ(parsed.request_headers().headers().headers(1).key(), "key2");
-  EXPECT_EQ(parsed.request_headers().headers().headers(1).value(), "val2");
+  EXPECT_EQ(parsed.request_headers().headers().headers(1).raw_value(), "val2");
 }
 
 TEST(ExtProcMessageTest, ClientHeadersEndOfStreamAlwaysFalse) {
@@ -215,7 +215,7 @@ TEST(ExtProcMessageTest, ServerTrailersMetadataAndStatus) {
   ASSERT_EQ(parsed.response_trailers().trailers().headers_size(), 1);
   EXPECT_EQ(parsed.response_trailers().trailers().headers(0).key(),
             "grpc-status");
-  EXPECT_EQ(parsed.response_trailers().trailers().headers(0).value(), "13");
+  EXPECT_EQ(parsed.response_trailers().trailers().headers(0).raw_value(), "13");
 }
 
 // Metadata & Configuration tests
@@ -667,9 +667,9 @@ TEST(ExtProcMessageTest, AllowedHeadersForwardedOthersDropped) {
   ASSERT_TRUE(parsed.has_request_headers());
   ASSERT_EQ(parsed.request_headers().headers().headers_size(), 2);
   EXPECT_EQ(parsed.request_headers().headers().headers(0).key(), "key1");
-  EXPECT_EQ(parsed.request_headers().headers().headers(0).value(), "val1");
+  EXPECT_EQ(parsed.request_headers().headers().headers(0).raw_value(), "val1");
   EXPECT_EQ(parsed.request_headers().headers().headers(1).key(), "key3");
-  EXPECT_EQ(parsed.request_headers().headers().headers(1).value(), "val3");
+  EXPECT_EQ(parsed.request_headers().headers().headers(1).raw_value(), "val3");
 }
 
 TEST(ExtProcMessageTest, DisallowedHeadersDropped) {
@@ -695,9 +695,9 @@ TEST(ExtProcMessageTest, DisallowedHeadersDropped) {
   ASSERT_TRUE(parsed.has_request_headers());
   ASSERT_EQ(parsed.request_headers().headers().headers_size(), 2);
   EXPECT_EQ(parsed.request_headers().headers().headers(0).key(), "key1");
-  EXPECT_EQ(parsed.request_headers().headers().headers(0).value(), "val1");
+  EXPECT_EQ(parsed.request_headers().headers().headers(0).raw_value(), "val1");
   EXPECT_EQ(parsed.request_headers().headers().headers(1).key(), "key3");
-  EXPECT_EQ(parsed.request_headers().headers().headers(1).value(), "val3");
+  EXPECT_EQ(parsed.request_headers().headers().headers(1).raw_value(), "val3");
 }
 
 }  // namespace
