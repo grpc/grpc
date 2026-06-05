@@ -329,9 +329,9 @@ class InterceptedCall:
 
         call_completed = False
 
-        if (
-            interceptors_task.cancelled()
-            or interceptors_task.exception() is not None
+        if interceptors_task.cancelled() or (
+            interceptors_task.done()
+            and interceptors_task.exception() is not None
         ):
             call_completed = True
         else:
