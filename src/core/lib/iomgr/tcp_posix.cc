@@ -742,10 +742,9 @@ static void finish_estimate(grpc_tcp* tcp) {
   // causing memory proportional to (num_connections * peak_message_size).
   // max_read_chunk_size is the intended upper bound per
   // GRPC_ARG_TCP_MAX_READ_CHUNK_SIZE but was never applied to the estimator.
-  tcp->target_length =
-      grpc_core::Clamp(tcp->target_length,
-                       static_cast<double>(tcp->min_read_chunk_size),
-                       static_cast<double>(tcp->max_read_chunk_size));
+  tcp->target_length = grpc_core::Clamp(
+      tcp->target_length, static_cast<double>(tcp->min_read_chunk_size),
+      static_cast<double>(tcp->max_read_chunk_size));
   tcp->bytes_read_this_round = 0;
 }
 
