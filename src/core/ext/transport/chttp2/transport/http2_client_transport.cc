@@ -266,9 +266,6 @@ Http2Status Http2ClientTransport::ProcessIncomingFrame(Http2DataFrame&& frame) {
     return Http2Status::Ok();
   }
 
-  // TODO(akshitpatel) : [PH2][P3] : We should add a check to reset stream if
-  // the stream state is kIdle as well.
-
   Http2Status stream_status = stream->CanStreamReceiveDataFrames();
   if (!stream_status.IsOk()) {
     return stream_status;
@@ -303,8 +300,7 @@ Http2Status Http2ClientTransport::ProcessIncomingFrame(Http2DataFrame&& frame) {
     if (message != nullptr) {
       GRPC_HTTP2_CLIENT_DLOG
           << "Http2ClientTransport::ProcessIncomingFrame(DataFrame) "
-             "SpawnPushMessage "
-          << message->DebugString();
+             "SpawnPushMessage ";
       stream->GetCallHandler().SpawnPushMessage(std::move(message));
       continue;
     }
@@ -313,15 +309,6 @@ Http2Status Http2ClientTransport::ProcessIncomingFrame(Http2DataFrame&& frame) {
     break;
   }
 
-  // TODO(tjagtap) : [PH2][P3] : List of Tests:
-  // 1. Data frame with unknown stream ID
-  // 2. Data frame with only half a message and then end stream
-  // 3. One data frame with a full message
-  // 4. Three data frames with one full message
-  // 5. One data frame with three full messages. All messages should be pushed.
-  // Will need to mock the call_handler object and test this along with the
-  // Header reading code. Because we need a stream in place for the lookup to
-  // work.
   return Http2Status::Ok();
 }
 
@@ -1912,14 +1899,10 @@ void Http2ClientTransport::SetMaxAllowedStreamId(
   if (GPR_LIKELY(max_allowed_stream_id <= old_max_allowed_stream_id)) {
     max_allowed_stream_id_ = max_allowed_stream_id;
   } else {
+    GRPC_DCHECK_LE(max_allowed_stream_id, old_max_allowed_stream_id);
     LOG_IF(ERROR, max_allowed_stream_id > old_max_allowed_stream_id)
         << "Endpoints MUST NOT increase the value they send in the last "
-           "stream "
-           "identifier";
-    GRPC_DCHECK_LE(max_allowed_stream_id, old_max_allowed_stream_id)
-        << "Endpoints MUST NOT increase the value they send in the last "
-           "stream "
-           "identifier";
+           "stream identifier";
   }
 }
 

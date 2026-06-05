@@ -789,8 +789,6 @@ inline void DisableLoggingForPH2Tests() {
   }
 }
 
-inline bool IsPromiseBasedTransportEnabled() { return IsPh2ClientEnabled(); }
-
 // If this test fixture is being run under minstack, skip the test.
 #define SKIP_IF_MINSTACK()                                    \
   if (test_config()->feature_mask & FEATURE_MASK_IS_MINSTACK) \

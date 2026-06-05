@@ -67,6 +67,14 @@ struct CloseStreamArgs {
   bool close_writes;
 };
 
+inline bool ShouldEnablePh2Client() {
+  return IsPh2ClientEnabled() || IsPh2ClientServerEnabled();
+}
+
+inline bool ShouldEnablePh2Server() {
+  return IsPh2ServerEnabled() || IsPh2ClientServerEnabled();
+}
+
 // TODO(akshitpatel) [PH2][P3] : Write a way to measure the total size of a
 // transport object. Reference :
 // https://github.com/grpc/grpc/pull/41294/files#diff-c685cc4847f228327938326e2a45083a2d0845bacff0ac004bd802027a670c4e
