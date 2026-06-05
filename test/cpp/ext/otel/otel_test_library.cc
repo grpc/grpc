@@ -33,6 +33,7 @@
 #include "src/core/util/notification.h"
 #include "test/core/test_util/fake_stats_plugin.h"
 #include "test/core/test_util/test_config.h"
+#include "test/core/test_util/tls_utils.h"
 #include "test/cpp/end2end/test_service_impl.h"
 #include "test/cpp/util/byte_buffer_proto_helper.h"
 #include "gmock/gmock.h"
@@ -265,6 +266,60 @@ void OpenTelemetryPluginEnd2EndTest::Init(Options config) {
 
   auto channel = grpc::CreateCustomChannel(
       server_address_, grpc::InsecureChannelCredentials(), channel_args);
+  stub_ = EchoTestService::NewStub(channel);
+  generic_stub_ = std::make_unique<GenericStub>(std::move(channel));
+}
+
+void OpenTelemetryPluginEnd2EndTest::InitSecure(Options config) {
+  ChannelArguments channel_args;
+  if (!config.labels_to_inject.empty()) {
+    labels_to_inject_ = std::move(config.labels_to_inject);
+    grpc_core::CoreConfiguration::RegisterEphemeralBuilder(
+        [](grpc_core::CoreConfiguration::Builder* builder) mutable {
+          builder->channel_init()->RegisterFilter(GRPC_CLIENT_SUBCHANNEL,
+                                                  &AddLabelsFilter::kFilter);
+        });
+    channel_args.SetPointer(GRPC_ARG_LABELS_TO_INJECT, &labels_to_inject_);
+  }
+  if (!config.service_config.empty()) {
+    channel_args.SetString(GRPC_ARG_SERVICE_CONFIG, config.service_config);
+  }
+  grpc_init();
+  std::string root_cert = grpc_core::testing::GetFileContents(
+      "src/core/tsi/test_creds/ca.pem");
+  grpc::SslServerCredentialsOptions::PemKeyCertPair key_cert_pair = {
+      grpc_core::testing::GetFileContents(
+          "src/core/tsi/test_creds/server1.key"),
+      grpc_core::testing::GetFileContents(
+          "src/core/tsi/test_creds/server1.pem")};
+  grpc::SslServerCredentialsOptions ssl_options;
+  ssl_options.pem_key_cert_pairs.push_back(key_cert_pair);
+  ssl_options.pem_root_certs = root_cert;
+
+  grpc::ServerBuilder builder;
+  int port;
+  builder.AddListeningPort("0.0.0.0:0", grpc::SslServerCredentials(ssl_options),
+                           &port);
+  builder.RegisterService(&service_);
+  for (auto& per_server_stats_plugin : config.per_server_stats_plugins) {
+    per_server_stats_plugin->AddToServerBuilder(&builder);
+  }
+  for (auto& per_channel_stats_plugin : config.per_channel_stats_plugins) {
+    per_channel_stats_plugin->AddToChannelArguments(&channel_args);
+  }
+  reader_ = BuildAndRegisterOpenTelemetryPlugin(std::move(config));
+  server_ = builder.BuildAndStart();
+  ASSERT_NE(nullptr, server_);
+  ASSERT_NE(0, port);
+  server_address_ = absl::StrCat("localhost:", port);
+  canonical_server_address_ = absl::StrCat("dns:///", server_address_);
+
+  channel_args.SetSslTargetNameOverride("foo.test.google.fr");
+  grpc::SslCredentialsOptions client_ssl_options;
+  client_ssl_options.pem_root_certs = root_cert;
+
+  auto channel = grpc::CreateCustomChannel(
+      server_address_, grpc::SslCredentials(client_ssl_options), channel_args);
   stub_ = EchoTestService::NewStub(channel);
   generic_stub_ = std::make_unique<GenericStub>(std::move(channel));
 }
