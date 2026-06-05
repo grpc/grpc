@@ -22,6 +22,7 @@ namespace grpc_core {
 
 #if defined UNICODE || defined _UNICODE
 TcharString CharToTchar(std::string input) {
+  if (input.size() > INT_MAX) return TcharString();
   int len = static_cast<int>(input.size());
   int needed = MultiByteToWideChar(CP_UTF8, 0, input.c_str(), len, nullptr, 0);
   if (needed <= 0) return TcharString();
