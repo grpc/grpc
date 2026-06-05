@@ -897,8 +897,8 @@ XdsHeaderValueOption ParseHeaderValueOption(
   int32_t header_append_action =
       envoy_config_core_v3_HeaderValueOption_append_action(
           header_value_option_config);
-  if (auto action = ParseXdsHeaderValueOptionAppendAction(header_append_action,
-                                                          errors);
+  if (auto action =
+          ParseXdsHeaderValueOptionAppendAction(header_append_action, errors);
       action.has_value()) {
     header_value_option.append_action = *action;
   }

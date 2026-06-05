@@ -5689,8 +5689,8 @@ grpc_cc_library(
     ],
     deps = [
         "grpc_matchers",
-        "metadata_batch",
         "grpc_xds_client",
+        "metadata_batch",
         "protobuf_struct_upb",
         "upb_utils",
         "xds_common_types",
