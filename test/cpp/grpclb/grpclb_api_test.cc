@@ -18,7 +18,6 @@
 
 #include <grpc/grpc.h>
 #include <grpcpp/support/config.h>
-#include <string.h>
 
 #include "google/protobuf/duration.upb.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
@@ -134,17 +133,16 @@ TEST_F(GrpclbTest, ParseResponseServerList) {
   EXPECT_TRUE(resp.serverlist[1].drop);
 }
 
-TEST_F(GrpclbTest, ParseResponseServerListTokenFillingBuffer) {
-  // A token whose size equals the buffer size leaves no room for a trailing
-  // NUL. The drop path reads load_balance_token as a C string (gpr_strdup /
-  // strcmp), so such a token must not be stored.
+TEST_F(GrpclbTest, ParseResponseServerListMaxSizeToken) {
+  // A token of exactly GRPC_GRPCLB_SERVER_LOAD_BALANCE_TOKEN_MAX_SIZE bytes is
+  // accepted and stored NUL-terminated, so the drop path can read it as a C
+  // string (gpr_strdup / strcmp) without walking past the buffer.
+  const std::string token(GRPC_GRPCLB_SERVER_LOAD_BALANCE_TOKEN_MAX_SIZE, 'x');
   LoadBalanceResponse response;
-  auto* serverlist = response.mutable_server_list();
-  auto* server = serverlist->add_servers();
+  auto* server = response.mutable_server_list()->add_servers();
   server->set_ip_address(Ip4ToPackedString("127.0.0.1"));
   server->set_port(12345);
-  server->set_load_balance_token(
-      std::string(GRPC_GRPCLB_SERVER_LOAD_BALANCE_TOKEN_MAX_SIZE, 'x'));
+  server->set_load_balance_token(token);
   server->set_drop(true);
   const std::string encoded_response = response.SerializeAsString();
   const grpc_slice encoded_slice = grpc_slice_from_copied_buffer(
@@ -155,10 +153,30 @@ TEST_F(GrpclbTest, ParseResponseServerListTokenFillingBuffer) {
       grpc_core::GrpcLbResponseParse(encoded_slice, arena.ptr(), &resp));
   grpc_slice_unref(encoded_slice);
   ASSERT_EQ(resp.serverlist.size(), 1u);
-  // Token is rejected and the buffer stays NUL-terminated (empty).
-  EXPECT_EQ(strnlen(resp.serverlist[0].load_balance_token,
-                    GRPC_GRPCLB_SERVER_LOAD_BALANCE_TOKEN_MAX_SIZE),
-            0u);
+  EXPECT_STREQ(resp.serverlist[0].load_balance_token, token.c_str());
+}
+
+TEST_F(GrpclbTest, ParseResponseServerListTokenTooLong) {
+  // A token one byte longer than the buffer can hold is rejected, leaving the
+  // load_balance_token an empty (NUL-terminated) string.
+  const std::string token(GRPC_GRPCLB_SERVER_LOAD_BALANCE_TOKEN_MAX_SIZE + 1,
+                          'x');
+  LoadBalanceResponse response;
+  auto* server = response.mutable_server_list()->add_servers();
+  server->set_ip_address(Ip4ToPackedString("127.0.0.1"));
+  server->set_port(12345);
+  server->set_load_balance_token(token);
+  server->set_drop(true);
+  const std::string encoded_response = response.SerializeAsString();
+  const grpc_slice encoded_slice = grpc_slice_from_copied_buffer(
+      encoded_response.data(), encoded_response.size());
+  grpc_core::GrpcLbResponse resp;
+  upb::Arena arena;
+  ASSERT_TRUE(
+      grpc_core::GrpcLbResponseParse(encoded_slice, arena.ptr(), &resp));
+  grpc_slice_unref(encoded_slice);
+  ASSERT_EQ(resp.serverlist.size(), 1u);
+  EXPECT_STREQ(resp.serverlist[0].load_balance_token, "");
 }
 
 }  // namespace

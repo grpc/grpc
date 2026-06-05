@@ -140,9 +140,7 @@ bool ParseServerList(const grpc_lb_v1_LoadBalanceResponse& response,
       upb_StringView token = grpc_lb_v1_Server_load_balance_token(servers[i]);
       if (token.size == 0) {
         ;  // Nothing to do because cur->load_balance_token is an empty string.
-      } else if (token.size < GRPC_GRPCLB_SERVER_LOAD_BALANCE_TOKEN_MAX_SIZE) {
-        // Leave room for the trailing NUL: load_balance_token is read as a
-        // C string by the drop path (gpr_strdup/strcmp) and AsText().
+      } else if (token.size <= GRPC_GRPCLB_SERVER_LOAD_BALANCE_TOKEN_MAX_SIZE) {
         memcpy(cur.load_balance_token, token.data, token.size);
       } else {
         LOG(ERROR) << "grpc_lb_v1_LoadBalanceResponse has too long token. len="
