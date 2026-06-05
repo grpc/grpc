@@ -139,7 +139,7 @@ class ConfigQuery {
       exclude_features_ |= FEATURE_MASK_DO_NOT_GTEST;
     }
     exclude_experiments_except_for_configs_.insert(
-        {ExperimentIds::kExperimentIdPromiseBasedHttp2ClientTransport,
+        {ExperimentIds::kExperimentIdPh2Client,
          {GRPC_HTTP2_PH2_CLIENT_CHTTP2_SERVER_CONFIG,
           GRPC_HTTP2_PH2_CLIENT_CHTTP2_SERVER_CONFIG_FAKE_SECURITY,
           GRPC_HTTP2_PH2_CLIENT_CHTTP2_SERVER_CONFIG_INSECURE_CREDENTIALS,

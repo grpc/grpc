@@ -270,7 +270,7 @@
     server transport experiments separate to help with smoother roll outs. When this flag is enabled for the test suites, it would test PH2 Client with CHTTP2 Server.
   expiry: 2027/03/16
   owner: tjagtap@google.com
-  test_tags: []
+  test_tags: ["core_end2end_test", "cpp_end2end_test"]
   allow_in_fuzzing_config: true
 - name: ph2_client_server
   description:
@@ -327,7 +327,7 @@
     and also help with interop testing.
   expiry: 2027/01/16
   owner: tjagtap@google.com
-  test_tags: ["core_end2end_test", "cpp_end2end_test"]
+  test_tags: []
   allow_in_fuzzing_config: true
 - name: promise_based_http2_server_transport
   description:

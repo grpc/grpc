@@ -1594,9 +1594,7 @@ std::vector<TestScenario> CreateTestScenarios(bool test_insecure) {
         for (bool use_interceptors : barr) {
           for (bool use_virtual_rpcs : barr) {
             if (use_virtual_rpcs &&
-                (grpc_core::IsPromiseBasedHttp2ClientTransportEnabled() ||
-                 grpc_core::IsPromiseBasedHttp2ServerTransportEnabled() ||
-                 p == Protocol::INPROC || use_interceptors)) {
+                (IsPh2Test() || p == Protocol::INPROC || use_interceptors)) {
               continue;
             }
             scenarios.emplace_back(callback_server, p, use_interceptors, cred,

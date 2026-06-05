@@ -178,9 +178,9 @@ EXPERIMENTS = {
                 "chaotic_good_send_supported_features",
                 "local_connector_secure",
                 "otel_export_telemetry_domains",
+                "ph2_client",
                 "pipelined_read_secure_endpoint",
                 "pollset_alternative",
-                "promise_based_http2_client_transport",
                 "retry_in_callv3",
                 "secure_endpoint_offload_large_reads",
                 "secure_endpoint_offload_large_writes",
@@ -191,7 +191,7 @@ EXPERIMENTS = {
                 "wildcard_ip_expansion_restriction",
             ],
             "cpp_end2end_test": [
-                "promise_based_http2_client_transport",
+                "ph2_client",
             ],
             "cpp_lb_end2end_test": [
                 "subchannel_connection_scaling",
