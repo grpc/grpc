@@ -21,6 +21,7 @@
 #include <optional>
 #include <string>
 #include <utility>
+#include <variant>
 #include <vector>
 
 #include "google/protobuf/struct.upb.h"
@@ -61,57 +62,38 @@ struct ExtProcResponse {
 
 class ExtProcRequest {
  public:
-  static std::string CreateClientHeadersRequest(
-      grpc_metadata_batch& headers, upb_Arena* arena,
-      ::google_protobuf_Struct* attributes, bool observability_mode,
-      bool is_first_message, bool send_request_body, bool send_response_body);
+  explicit ExtProcRequest(upb_Arena* arena);
 
-  static std::string CreateServerHeadersRequest(
-      grpc_metadata_batch& headers, bool trailers_only, upb_Arena* arena,
+  enum class RequestType {
+    kClientHeaders,
+    kServerHeaders,
+    kClientMessage,
+    kServerMessage,
+    kServerTrailers,
+  };
+
+  std::string CreateRequest(
+      RequestType type,
+      std::variant<grpc_metadata_batch*, upb_StringView> payload,
       ::google_protobuf_Struct* attributes, bool observability_mode,
-      bool is_first_message, bool send_request_body, bool send_response_body);
-  static std::string CreateClientMessageRequest(
-      upb_StringView payload, bool end_of_stream,
-      bool end_of_stream_without_message, upb_Arena* arena,
-      ::google_protobuf_Struct* attributes, bool observability_mode,
-      bool is_first_message, bool send_request_body, bool send_response_body);
-  static std::string CreateServerMessageRequest(
-      upb_StringView payload, upb_Arena* arena,
-      ::google_protobuf_Struct* attributes, bool observability_mode,
-      bool is_first_message, bool send_request_body, bool send_response_body);
-  static std::string CreateServerTrailersRequest(
-      grpc_metadata_batch& trailers, upb_Arena* arena,
-      ::google_protobuf_Struct* attributes, bool observability_mode,
-      bool is_first_message, bool send_request_body, bool send_response_body);
+      bool is_first_message, bool send_request_body, bool send_response_body,
+      bool end_of_stream = false, bool end_of_stream_without_message = false);
 
   std::string SerializeMessage();
 
  private:
-  class Builder {
-   public:
-    explicit Builder(upb_Arena* arena);
-    Builder& SetRequestHeaders(envoy_config_core_v3_HeaderMap* headers,
-                               bool end_of_stream);
-    Builder& SetResponseHeaders(envoy_config_core_v3_HeaderMap* headers,
-                                bool end_of_stream);
-    Builder& SetRequestBody(upb_StringView buf, bool end_of_stream,
-                            bool end_of_stream_without_message = false);
-    Builder& SetResponseBody(upb_StringView buf, bool end_of_stream);
-    Builder& SetResponseTrailers(envoy_config_core_v3_HeaderMap* trailer);
-    Builder& SetObservabilityMode(bool mode);
-    Builder& SetAttributes(::google_protobuf_Struct* attributes);
-    Builder& SetProtocolConfigRequest(bool is_first_message, bool send_body);
-    Builder& SetProtocolConfigResponse(bool is_first_message, bool send_body);
-
-    ExtProcRequest Build();
-
-   private:
-    upb_Arena* arena_;
-    envoy_service_ext_proc_v3_ProcessingRequest* request_;
-  };
-
-  explicit ExtProcRequest(upb_Arena* arena,
-                          envoy_service_ext_proc_v3_ProcessingRequest* request);
+  void SetRequestHeaders(envoy_config_core_v3_HeaderMap* headers,
+                         bool end_of_stream);
+  void SetResponseHeaders(envoy_config_core_v3_HeaderMap* headers,
+                          bool end_of_stream);
+  void SetRequestBody(upb_StringView buf, bool end_of_stream,
+                      bool end_of_stream_without_message = false);
+  void SetResponseBody(upb_StringView buf, bool end_of_stream);
+  void SetResponseTrailers(envoy_config_core_v3_HeaderMap* trailer);
+  void SetObservabilityMode(bool mode);
+  void SetAttributes(::google_protobuf_Struct* attributes);
+  void SetProtocolConfigRequest(bool is_first_message, bool send_body);
+  void SetProtocolConfigResponse(bool is_first_message, bool send_body);
 
   upb_Arena* arena_;
   envoy_service_ext_proc_v3_ProcessingRequest* request_;
