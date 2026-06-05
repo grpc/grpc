@@ -26,7 +26,9 @@ class ClientHandshakeTelemetryDomain final
   static constexpr absl::string_view kName = "client_security_handshaker";
   GRPC_INSTRUMENT_DOMAIN_LABELS("grpc.security.handshaker.status",
                                 "grpc.target",
-                                "grpc.security.handshaker.resumed");
+                                "grpc.security.handshaker.resumed",
+                                "grpc.lb.locality",
+                                "grpc.lb.backend_service");
 
   static inline const auto kHandshakes = RegisterCounter(
       "grpc.client.tls.handshakes",

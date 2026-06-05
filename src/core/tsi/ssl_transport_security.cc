@@ -264,8 +264,12 @@ void tsi_ssl_handshaker::RecordTelemetry(tsi_result status) {
                    : grpc_core::GlobalCollectionScope();
 
   if (is_client) {
+    // We supply empty default arguments ("", "") for the optional LB locality
+    // and backend service dimensions. When populated on the active
+    // CollectionScope during an RPC or subchannel connection attempt,
+    // FilterLabels automatically resolves and publishes those explicit values.
     auto storage = grpc_core::ClientHandshakeTelemetryDomain::GetStorage(
-        std::move(scope), status_str, target, resumed);
+        std::move(scope), status_str, target, resumed, "", "");
     storage->Increment(grpc_core::ClientHandshakeTelemetryDomain::kHandshakes);
   } else {
     auto storage = grpc_core::ServerHandshakeTelemetryDomain::GetStorage(
