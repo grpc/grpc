@@ -134,7 +134,7 @@ source tools/internal_ci/helper_scripts/prepare_ccache_symlinks_rc
 if [[ "$(inside_venv)" ]]; then
   VENV_PYTHON="$PYTHON"
 else
-  if $PYTHON -c "import sys; sys.exit(0 if sys.version_info >= (3, 15) else 1)"; then
+  if $PYTHON -c "import sys; sys.exit(sys.version_info < (3, 15))"; then
     # Python 3.15 removed typing.no_type_check_decorator. The pip wheel
     # bundled by virtualenv 20.x (pip 25.0.1) vendors an older
     # typing_extensions that references that attribute at import time, so
