@@ -149,7 +149,9 @@ class BuildExt(build_ext.build_ext):
                     setattr(
                         self.compiler,
                         attr,
-                        type(cmd)(arg for arg in cmd if arg not in unsupported_flags),
+                        type(cmd)(
+                            arg for arg in cmd if arg not in unsupported_flags
+                        ),
                     )
 
         # This is to let UnixCompiler get either C or C++ compiler options depending on the source.
