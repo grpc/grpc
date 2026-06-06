@@ -79,15 +79,15 @@ class AioRpcError(grpc.RpcError):
 
     _code: grpc.StatusCode
     _details: Optional[str]
-    _initial_metadata: Optional[Metadata]
-    _trailing_metadata: Optional[Metadata]
+    _initial_metadata: Optional[Metadata] = None
+    _trailing_metadata: Optional[Metadata] = None
     _debug_error_string: Optional[str]
 
     def __init__(
         self,
         code: grpc.StatusCode,
-        initial_metadata: Optional[Metadata],
-        trailing_metadata: Optional[Metadata],
+        initial_metadata: Optional[Metadata] = None,
+        trailing_metadata: Optional[Metadata] = None,
         details: Optional[str] = None,
         debug_error_string: Optional[str] = None,
     ) -> None:
@@ -467,6 +467,12 @@ class _StreamRequestMixin(Call, Generic[RequestType]):
                             rpc_error,
                         )
                         return
+            else:
+                err_msg = (
+                    "request_iterator must be an Iterable or AsyncIterable,"
+                    f" got {type(request_iterator).__name__!r} instead"
+                )
+                raise TypeError(err_msg)
 
             await self._done_writing()
         except:  # pylint: disable=bare-except # noqa: E722
