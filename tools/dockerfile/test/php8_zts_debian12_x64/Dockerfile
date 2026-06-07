@@ -73,5 +73,11 @@ RUN mkdir /var/local/jenkins
 RUN python3 -m pip install virtualenv==16.7.9
 
 
+# Install mbstring extension dependencies and compile mbstring
+RUN apt-get update && apt-get install -y libonig-dev && apt-get clean
+RUN docker-php-ext-install mbstring
+# Install PHPUnit 9
+RUN curl -sSL https://phar.phpunit.de/phpunit-9.phar -o /usr/local/bin/phpunit && chmod +x /usr/local/bin/phpunit
+
 # Define the default command.
 CMD ["bash"]

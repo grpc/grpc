@@ -326,9 +326,32 @@ def _create_test_jobs(extra_args=[], inner_jobs=_DEFAULT_INNER_JOBS):
         timeout_seconds=_RUBY_RUNTESTS_TIMEOUT,
     )
 
+    # php8.4 runs on Linux only
+    test_jobs += _generate_jobs(
+        languages=["php8.4"],
+        configs=["dbg", "opt"],
+        platforms=["linux"],
+        labels=["basictests", "multilang"],
+        extra_args=extra_args + ["--report_multi_target"],
+        inner_jobs=inner_jobs,
+        timeout_seconds=_RUBY_RUNTESTS_TIMEOUT,
+    )
+
     # ARM64 Linux Ruby and PHP tests
     test_jobs += _generate_jobs(
         languages=["ruby", "php8"],
+        configs=["dbg", "opt"],
+        platforms=["linux"],
+        arch="arm64",
+        compiler="default",
+        labels=["basictests_arm64"],
+        extra_args=extra_args + ["--report_multi_target"],
+        inner_jobs=inner_jobs,
+    )
+
+    # ARM64 Linux php8.4 tests
+    test_jobs += _generate_jobs(
+        languages=["php8.4"],
         configs=["dbg", "opt"],
         platforms=["linux"],
         arch="arm64",

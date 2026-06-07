@@ -86,7 +86,7 @@ grpc_run_tests_harness_test(
     use_login_shell = True,  # ruby's docker image uses RVM which weirdly requires login shell
 )
 
-# PHP (Debian 12)
+# PHP 8.2
 grpc_run_tests_harness_test(
     name = "runtests_php_linux_dbg",
     size = "enormous",
@@ -105,7 +105,7 @@ grpc_run_tests_harness_test(
     docker_image_version = "tools/dockerfile/test/php8_debian12_x64.current_version",
 )
 
-# PHP (Debian 13)
+# PHP 8.4
 grpc_run_tests_harness_test(
     name = "runtests_php_debian13_linux_dbg",
     size = "enormous",
