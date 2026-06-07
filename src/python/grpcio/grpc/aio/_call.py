@@ -14,7 +14,8 @@
 """Invocation-side implementation of gRPC Asyncio Python."""
 
 import asyncio
-from collections.abc import AsyncIterable, Iterable
+from collections.abc import AsyncIterable
+from collections.abc import Iterable
 import enum
 from functools import partial
 import logging
