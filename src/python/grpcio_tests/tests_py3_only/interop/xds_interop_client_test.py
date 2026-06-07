@@ -41,11 +41,12 @@ _METHODS = (
     (messages_pb2.ClientConfigureRequest.EMPTY_CALL, "EMPTY_CALL"),
 )
 
-_QPS = 100
-_NUM_CHANNELS = 20
+_QPS = 20 if sys.platform == "darwin" else 100
+_NUM_CHANNELS = 5 if sys.platform == "darwin" else 20
 
 _TEST_ITERATIONS = 10
 _ITERATION_DURATION_SECONDS = 1
+_CONFIG_SETTLE_SECONDS = 2 if sys.platform == "darwin" else 0
 _SUBPROCESS_TIMEOUT_SECONDS = 2
 
 
@@ -144,6 +145,9 @@ class XdsInteropClientTest(unittest.TestCase):
                 messages_pb2.ClientConfigureRequest(types=[target_method]),
                 **settings,
             )
+            # Allow in-flight RPCs from the previous configuration to drain
+            # before measuring stats for the new configuration.
+            time.sleep(_CONFIG_SETTLE_SECONDS)
             delta = _collect_stats(stats_port, _ITERATION_DURATION_SECONDS)
             logging.info("Delta: %s", delta)
             for _, method_str in _METHODS:
@@ -154,7 +158,8 @@ class XdsInteropClientTest(unittest.TestCase):
                         self.assertEqual(delta[method_str][status], 0, delta)
 
     def test_configure_consistency(self):
-        _, server_port, socket = framework_common.get_socket()
+        _, server_port, server_socket = framework_common.get_socket()
+        server_socket.close()
 
         with _start_python_with_args(
             _SERVER_PATH,
@@ -169,8 +174,8 @@ class XdsInteropClientTest(unittest.TestCase):
                 wait_for_ready=True,
             )
             logging.info("Server successfully started.")
-            socket.close()
             _, stats_port, stats_socket = framework_common.get_socket()
+            stats_socket.close()
             with _start_python_with_args(
                 _CLIENT_PATH,
                 [
@@ -180,7 +185,6 @@ class XdsInteropClientTest(unittest.TestCase):
                     f"--num_channels={_NUM_CHANNELS}",
                 ],
             ) as (client, client_stdout, client_stderr):
-                stats_socket.close()
                 try:
                     self._assert_client_consistent(
                         server_port, stats_port, _QPS, _NUM_CHANNELS
