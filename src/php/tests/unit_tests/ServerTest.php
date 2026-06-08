@@ -70,13 +70,13 @@ class ServerTest extends \PHPUnit\Framework\TestCase
                                     ]);
 
         $c = $this->server->requestCall();
-        $this->assertObjectHasAttribute('call', $c);
-        $this->assertObjectHasAttribute('method', $c);
+        $this->assertTrue(property_exists($c, 'call'));
+        $this->assertTrue(property_exists($c, 'method'));
         $this->assertSame('phony_method', $c->method);
-        $this->assertObjectHasAttribute('host', $c);
+        $this->assertTrue(property_exists($c, 'host'));
         $this->assertTrue(is_string($c->host));
-        $this->assertObjectHasAttribute('absolute_deadline', $c);
-        $this->assertObjectHasAttribute('metadata', $c);
+        $this->assertTrue(property_exists($c, 'absolute_deadline'));
+        $this->assertTrue(property_exists($c, 'metadata'));
 
         unset($call);
         unset($channel);
