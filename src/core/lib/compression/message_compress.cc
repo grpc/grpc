@@ -22,12 +22,12 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/port_platform.h>
 #include <string.h>
-#include <zconf.h>
-#include <zlib.h>
 
 #include "src/core/lib/slice/slice.h"
 #include "src/core/util/grpc_check.h"
 #include "absl/log/log.h"
+#include <zconf.h>
+#include <zlib.h>
 
 #define OUTPUT_BLOCK_SIZE 1024
 
