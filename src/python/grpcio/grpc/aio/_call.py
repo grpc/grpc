@@ -403,7 +403,7 @@ class _StreamResponseMixin(Call):
 
 class _StreamRequestMixin(Call):
     _metadata_sent: asyncio.Event
-    _done_writing_flag_state: bool
+    _done_writing_flag: bool
     _async_request_poller: Optional[asyncio.Task]
     _request_style: _APIStyle
 
@@ -411,7 +411,7 @@ class _StreamRequestMixin(Call):
         self, request_iterator: Optional[RequestIterableType]
     ):
         self._metadata_sent = asyncio.Event()
-        self._done_writing_flag_state = False
+        self._done_writing_flag = False
 
         # If user passes in an async iterator, create a consumer Task.
         if request_iterator is not None:
@@ -429,7 +429,7 @@ class _StreamRequestMixin(Call):
 
     @property
     def _done_writing_flag(self) -> bool:
-        return self._done_writing_flag_state
+        return self._done_writing_flag
 
     def cancel(self) -> bool:
         if super().cancel():
@@ -488,7 +488,7 @@ class _StreamRequestMixin(Call):
     async def _write(self, request: RequestType) -> None:
         if self.done():
             raise asyncio.InvalidStateError(_RPC_ALREADY_FINISHED_DETAILS)
-        if self._done_writing_flag_state:
+        if self._done_writing_flag:
             raise asyncio.InvalidStateError(_RPC_HALF_CLOSED_DETAILS)
         if not self._metadata_sent.is_set():
             await self._metadata_sent.wait()
@@ -512,9 +512,9 @@ class _StreamRequestMixin(Call):
         if self.done():
             # If the RPC is finished, do nothing.
             return
-        if not self._done_writing_flag_state:
+        if not self._done_writing_flag:
             # If the done writing is not sent before, try to send it.
-            self._done_writing_flag_state = True
+            self._done_writing_flag = True
             try:
                 await self._cython_call.send_receive_close()
             except asyncio.CancelledError:
