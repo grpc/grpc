@@ -28,9 +28,9 @@ TARGET_DIR="doc/build"
 export PIP_EXTRA_INDEX_URL="https://pypi.org/simple"
 
 tools/run_tests/run_tests.py -c opt -l python --compiler python3.10 --newline_on_success -j 8 --build_only
+# shellcheck disable=SC1091
 source py310/bin/activate
 pip install -r tools/distrib/docgen/requirements.docs.lock
-# shellcheck disable=SC1091
 
 # Use direct sphinx-build CLI command instead of `python setup.py doc`
 sphinx-build -b html -W --keep-going "$SOURCE_DIR" "$TARGET_DIR"
