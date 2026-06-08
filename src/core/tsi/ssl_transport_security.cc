@@ -520,7 +520,7 @@ static void verified_root_cert_free(void* /*parent*/, void* ptr,
 
 static void init_openssl(void) {
 #if OPENSSL_VERSION_NUMBER >= 0x10100000
-  OPENSSL_init_ssl(0, nullptr);
+  OPENSSL_init_ssl(OPENSSL_INIT_NO_ATEXIT, nullptr);
   // Ensure OPENSSL global clean up happens after gRPC shutdown completes.
   // OPENSSL registers an exit handler to clean up global objects, which
   // otherwise may happen before gRPC removes all references to OPENSSL. Below
