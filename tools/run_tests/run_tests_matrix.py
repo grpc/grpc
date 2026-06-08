@@ -229,6 +229,8 @@ def _generate_jobs(
                         language,
                         iomgr_platform,
                     ] + labels
+                    if language.startswith("php"):
+                        job.labels.append("php")
                     result.append(job)
     return result
 
