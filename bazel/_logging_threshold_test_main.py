@@ -57,22 +57,13 @@ if __name__ == "__main__":
 
     with tempfile.TemporaryFile(mode="w+") as stdout_file:
         with tempfile.TemporaryFile(mode="w+") as stderr_file:
-            try:
-                result = subprocess.run(
-                    command,
-                    stdout=stdout_file,
-                    stderr=stderr_file,
-                    text=True,
-                    check=True,
-                )
-            except subprocess.CalledProcessError as e:
-                stdout_file.seek(0)
-                stderr_file.seek(0)
-                print("--- SUBPROCESS STDOUT ---", file=sys.stderr)
-                print(stdout_file.read(), file=sys.stderr)
-                print("--- SUBPROCESS STDERR ---", file=sys.stderr)
-                print(stderr_file.read(), file=sys.stderr)
-                raise e
+            result = subprocess.run(
+                command,
+                stdout=stdout_file,
+                stderr=stderr_file,
+                text=True,
+                check=True,
+            )
 
             stdout_file.seek(0)
             stderr_file.seek(0)

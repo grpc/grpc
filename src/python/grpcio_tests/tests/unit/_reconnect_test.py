@@ -59,14 +59,7 @@ class TestServer:
 
     def __init__(self):
         self.pool = logging_pool.pool(test_constants.THREAD_CONCURRENCY)
-        sock_options = (
-            (socket.SO_REUSEADDR, socket.SO_REUSEPORT)
-            if hasattr(socket, "SO_REUSEPORT")
-            else (socket.SO_REUSEADDR,)
-        )
-        self.host, self.port, self._sock = test_common.get_socket(
-            listen=False, sock_options=sock_options
-        )
+        self.host, self.port, self._sock = test_common.get_socket(listen=False)
 
     @property
     def addr(self) -> str:

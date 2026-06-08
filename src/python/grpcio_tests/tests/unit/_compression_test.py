@@ -36,7 +36,7 @@ _STREAM_STREAM = "StreamStream"
 # Cut down on test time.
 _STREAM_LENGTH = test_constants.STREAM_LENGTH // 16
 
-_HOST = "127.0.0.1"
+_HOST = "localhost"
 
 _REQUEST = b"\x00" * 100
 _COMPRESSION_RATIO_THRESHOLD = 0.05
@@ -163,15 +163,7 @@ def get_method_handlers(pre_response_callback):
 def _instrumented_client_server_pair(
     channel_kwargs, server_kwargs, server_handler
 ):
-    import sys
-    server_options = ()
-    if sys.platform == "darwin":
-        server_options = (
-            ('grpc.so_reuseport', 0),
-        )
-    server = grpc.server(
-        futures.ThreadPoolExecutor(), options=server_options, **server_kwargs
-    )
+    server = grpc.server(futures.ThreadPoolExecutor(), **server_kwargs)
     server.add_registered_method_handlers(_SERVICE_NAME, server_handler)
     server_port = server.add_insecure_port("{}:0".format(_HOST))
     server.start()
@@ -194,30 +186,12 @@ def _get_byte_counts(
     server_handler,
     message,
 ):
-    import sys
-    import grpc
-    if sys.platform == "darwin":
-        for attempt in range(5):
-            try:
-                with _instrumented_client_server_pair(
-                    channel_kwargs, server_kwargs, server_handler
-                ) as pipeline:
-                    client_channel, proxy, server = pipeline
-                    client_function(client_channel, multicallable_kwargs, message)
-                    return proxy.get_byte_count()
-            except grpc.RpcError as e:
-                if e.code() == grpc.StatusCode.UNAVAILABLE and attempt < 4:
-                    import time
-                    time.sleep(0.5)
-                    continue
-                raise
-    else:
-        with _instrumented_client_server_pair(
-            channel_kwargs, server_kwargs, server_handler
-        ) as pipeline:
-            client_channel, proxy, server = pipeline
-            client_function(client_channel, multicallable_kwargs, message)
-            return proxy.get_byte_count()
+    with _instrumented_client_server_pair(
+        channel_kwargs, server_kwargs, server_handler
+    ) as pipeline:
+        client_channel, proxy, server = pipeline
+        client_function(client_channel, multicallable_kwargs, message)
+        return proxy.get_byte_count()
 
 
 def _get_compression_ratios(
