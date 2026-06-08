@@ -23,6 +23,7 @@
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
+#include <grpc/support/atm.h>
 #include <ruby/thread.h>
 #include <stdbool.h>
 
@@ -35,7 +36,7 @@ typedef struct next_call_stack {
   grpc_event event;
   gpr_timespec timeout;
   void* tag;
-  volatile int interrupted;
+  gpr_atm interrupted;
 } next_call_stack;
 
 /* Calls grpc_completion_queue_pluck without holding the ruby GIL */
@@ -49,7 +50,7 @@ static void* grpc_rb_completion_queue_pluck_no_gil(void* param) {
         next_call->cq, next_call->tag, deadline, NULL);
     if (next_call->event.type != GRPC_QUEUE_TIMEOUT) break;
     if (gpr_time_cmp(deadline, next_call->timeout) > 0) break;
-    if (next_call->interrupted) break;
+    if (gpr_atm_acq_load(&next_call->interrupted)) break;
   }
   return NULL;
 }
@@ -66,7 +67,7 @@ void grpc_rb_completion_queue_destroy(grpc_completion_queue* cq) {
 
 static void unblock_func(void* param) {
   next_call_stack* const next_call = (next_call_stack*)param;
-  next_call->interrupted = 1;
+  gpr_atm_rel_store(&next_call->interrupted, 1);
 }
 
 /* Does the same thing as grpc_completion_queue_pluck, while properly releasing
@@ -85,12 +86,12 @@ grpc_event rb_completion_queue_pluck(grpc_completion_queue* queue, void* tag,
    * this is necessary. */
   grpc_absl_log_str(GPR_DEBUG, "CQ pluck loop begin: ", reason);
   do {
-    next_call.interrupted = 0;
+    gpr_atm_rel_store(&next_call.interrupted, 0);
     rb_thread_call_without_gvl(grpc_rb_completion_queue_pluck_no_gil,
                                (void*)&next_call, unblock_func,
                                (void*)&next_call);
     if (next_call.event.type != GRPC_QUEUE_TIMEOUT) break;
-  } while (next_call.interrupted);
+  } while (gpr_atm_acq_load(&next_call.interrupted));
   grpc_absl_log_str(GPR_DEBUG, "CQ pluck loop done: ", reason);
   return next_call.event;
 }
