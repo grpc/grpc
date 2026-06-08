@@ -42,7 +42,6 @@
 #include <variant>
 #include <vector>
 
-#include "fuzztest/fuzztest.h"
 #include "src/core/call/message.h"
 #include "src/core/channelz/channelz.h"
 #include "src/core/ext/transport/chaotic_good/frame.h"
@@ -67,6 +66,7 @@
 #include "test/core/transport/util/mock_promise_endpoint.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
+#include "fuzztest/fuzztest.h"
 #include "absl/functional/any_invocable.h"
 #include "absl/log/check.h"
 #include "absl/status/status.h"
@@ -220,7 +220,7 @@ DATA_ENDPOINTS_TEST(CanWrite) {
       MakeRefCounted<chaotic_good::TransportContext>(
           event_engine(), MakeTestChannelzSocketNode()),
       64, 64, std::numeric_limits<uint32_t>::max(),
-      std::make_shared<chaotic_good::TcpZTraceCollector>(), false, "rand",
+      std::make_shared<chaotic_good::TcpZTraceCollector>(), false, "rand", 1,
       Time1Clock());
   ep.ExpectWrite(
       {DataFrameHeader(64, 123, 1, 5),
@@ -246,7 +246,7 @@ DATA_ENDPOINTS_TEST(CanMultiWrite) {
       MakeRefCounted<chaotic_good::TransportContext>(
           event_engine(), MakeTestChannelzSocketNode()),
       64, 64, std::numeric_limits<uint32_t>::max(),
-      std::make_shared<chaotic_good::TcpZTraceCollector>(), false, "spanrr",
+      std::make_shared<chaotic_good::TcpZTraceCollector>(), false, "spanrr", 1,
       Time1Clock());
   SliceBuffer writes;
   ep1.CaptureWrites(writes, event_engine().get());
@@ -294,7 +294,7 @@ DATA_ENDPOINTS_TEST(CanRead) {
       MakeRefCounted<chaotic_good::TransportContext>(
           event_engine(), MakeTestChannelzSocketNode()),
       64, 64, std::numeric_limits<uint32_t>::max(),
-      std::make_shared<chaotic_good::TcpZTraceCollector>(), false, "spanrr",
+      std::make_shared<chaotic_good::TcpZTraceCollector>(), false, "spanrr", 1,
       Time1Clock());
   SpawnTestSeqWithoutContext("read", data_endpoints.Read(5).Await(),
                              [](absl::StatusOr<SliceBuffer> result) {
@@ -315,7 +315,7 @@ DATA_ENDPOINTS_TEST(ReadFailsWhenClosed) {
       MakeRefCounted<chaotic_good::TransportContext>(
           event_engine(), MakeTestChannelzSocketNode()),
       64, 64, std::numeric_limits<uint32_t>::max(),
-      std::make_shared<chaotic_good::TcpZTraceCollector>(), false, "spanrr",
+      std::make_shared<chaotic_good::TcpZTraceCollector>(), false, "spanrr", 1,
       Time1Clock());
   bool read_completed = false;
   SpawnTestSeqWithoutContext(
@@ -360,7 +360,7 @@ DATA_ENDPOINTS_TEST(CanWriteSecurityFrame) {
       MakeRefCounted<chaotic_good::TransportContext>(
           event_engine(), MakeTestChannelzSocketNode()),
       64, 64, std::numeric_limits<uint32_t>::max(),
-      std::make_shared<chaotic_good::TcpZTraceCollector>(), false, "rand",
+      std::make_shared<chaotic_good::TcpZTraceCollector>(), false, "rand", 1,
       Time1Clock());
   ::testing::Mock::VerifyAndClearExpectations(
       transport_framing_endpoint_extension);
@@ -401,7 +401,7 @@ DATA_ENDPOINTS_TEST(CanReadSecurityFrame) {
       MakeRefCounted<chaotic_good::TransportContext>(
           event_engine(), MakeTestChannelzSocketNode()),
       64, 64, std::numeric_limits<uint32_t>::max(),
-      std::make_shared<chaotic_good::TcpZTraceCollector>(), false, "rand",
+      std::make_shared<chaotic_good::TcpZTraceCollector>(), false, "rand", 1,
       Time1Clock());
   SpawnTestSeqWithoutContext(
       "read",
@@ -430,7 +430,7 @@ DATA_ENDPOINTS_TEST(FailsOnLargeMessage) {
       MakeRefCounted<chaotic_good::TransportContext>(
           event_engine(), MakeTestChannelzSocketNode()),
       64, 64, 5, std::make_shared<chaotic_good::TcpZTraceCollector>(), false,
-      "spanrr", Time1Clock());
+      "spanrr", 1, Time1Clock());
 
   SpawnTestSeqWithoutContext(
       "read", data_endpoints.Read(5).Await(),
@@ -500,7 +500,7 @@ DATA_ENDPOINTS_TEST(FailsOnOverflowingMessage) {
       MakeRefCounted<chaotic_good::TransportContext>(
           event_engine(), MakeTestChannelzSocketNode()),
       64, 64, std::numeric_limits<uint32_t>::max(),
-      std::make_shared<chaotic_good::TcpZTraceCollector>(), false, "spanrr",
+      std::make_shared<chaotic_good::TcpZTraceCollector>(), false, "spanrr", 1,
       Time1Clock());
 
   SpawnTestSeqWithoutContext(

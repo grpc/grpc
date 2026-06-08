@@ -16,6 +16,7 @@
 
 #include <sys/types.h>
 
+#include <atomic>
 #include <cstdint>
 
 #include "src/core/ext/transport/chaotic_good/control_endpoint.h"
@@ -41,6 +42,8 @@ namespace grpc_core {
 namespace chaotic_good {
 
 namespace {
+std::atomic<uint64_t> g_next_connection_id{1};
+
 TransportFramingEndpointExtension* GetTransportFramingEndpointExtension(
     grpc_event_engine::experimental::EventEngine::Endpoint& endpoint) {
   return grpc_event_engine::experimental::QueryExtension<
@@ -57,12 +60,21 @@ TcpFrameTransport::TcpFrameTransport(
     TransportContextPtr ctx)
     : DataSource(ctx->socket_node),
       ctx_(ctx),
+      connection_id_(
+          g_next_connection_id.fetch_add(1, std::memory_order_relaxed)),
       control_endpoint_(std::move(control_endpoint), ctx, ztrace_collector_),
       data_endpoints_(std::move(pending_data_endpoints), ctx,
                       options.encode_alignment, options.decode_alignment,
                       options.max_receive_message_length, ztrace_collector_,
-                      options.enable_tracing, options.scheduler_config),
+                      options.enable_tracing, options.scheduler_config,
+                      connection_id_),
       options_(options) {
+  std::string peer_address =
+      grpc_event_engine::experimental::ResolvedAddressToString(
+          control_endpoint_.GetPeerAddress())
+          .value_or("unknown");
+  ztrace_collector_->Append(TransportInitTrace{peer_address, connection_id_});
+
   auto* transport_framing_endpoint_extension =
       GetTransportFramingEndpointExtension(
           *control_endpoint_.GetEventEngineEndpoint());
@@ -81,7 +93,8 @@ auto TcpFrameTransport::WriteFrame(MpscQueued<OutgoingFrame> queued_frame) {
         uint64_t flow_id;
         if (absl::SimpleAtoi(meta.value(), &flow_id)) {
           ztrace_collector_->Append(ChunkStreamAssociationTrace{
-              static_cast<int64_t>(metadata_frame->stream_id), flow_id});
+              static_cast<int64_t>(metadata_frame->stream_id), flow_id,
+              connection_id_});
         }
         break;
       }

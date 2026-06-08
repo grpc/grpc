@@ -132,6 +132,8 @@ class TcpCallTracer {
       grpc_event_engine::experimental::internal::WriteEvent event,
       absl::Time time, size_t byte_offset,
       const std::vector<TcpEventMetric>& metrics) = 0;
+
+  virtual uint64_t flow_id() const { return 0; }
 };
 
 class TcpConnectionTracer {
