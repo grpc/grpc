@@ -292,8 +292,8 @@ void OpenTelemetryPluginEnd2EndTest::InitSecure(Options config) {
     channel_args.SetString("grpc.internal.backend_service", "backend_1");
   }
   grpc_init();
-  std::string root_cert = grpc_core::testing::GetFileContents(
-      "src/core/tsi/test_creds/ca.pem");
+  std::string root_cert =
+      grpc_core::testing::GetFileContents("src/core/tsi/test_creds/ca.pem");
   grpc::SslServerCredentialsOptions::PemKeyCertPair key_cert_pair = {
       grpc_core::testing::GetFileContents(
           "src/core/tsi/test_creds/server1.key"),

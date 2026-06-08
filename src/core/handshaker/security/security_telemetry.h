@@ -27,8 +27,7 @@ class ClientHandshakeTelemetryDomain final
   GRPC_INSTRUMENT_DOMAIN_LABELS("grpc.security.handshaker.status",
                                 "grpc.target",
                                 "grpc.security.handshaker.resumed",
-                                "grpc.lb.locality",
-                                "grpc.lb.backend_service");
+                                "grpc.lb.locality", "grpc.lb.backend_service");
 
   static inline const auto kHandshakes = RegisterCounter(
       "grpc.client.tls.handshakes",

@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "src/core/handshaker/security/security_telemetry.h"
+
 #include "src/core/telemetry/instrument.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
@@ -56,11 +57,10 @@ class MockMetricsSink : public MetricsSink {
 };
 
 TEST(ClientSecurityTelemetryTest, RecordAndQuery) {
-  auto scope = CreateCollectionScope({}, {"grpc.security.handshaker.status",
-                                          "grpc.target",
-                                          "grpc.security.handshaker.resumed",
-                                          "grpc.lb.locality",
-                                          "grpc.lb.backend_service"});
+  auto scope = CreateCollectionScope(
+      {}, {"grpc.security.handshaker.status", "grpc.target",
+           "grpc.security.handshaker.resumed", "grpc.lb.locality",
+           "grpc.lb.backend_service"});
   auto storage = ClientHandshakeTelemetryDomain::GetStorage(
       scope, "OK", "dns:///localhost:50051", "false", "", "");
 
@@ -90,8 +90,8 @@ TEST(ClientSecurityTelemetryTest, RecordAndQuery) {
 TEST(ServerSecurityTelemetryTest, RecordAndQuery) {
   auto scope = CreateCollectionScope({}, {"grpc.security.handshaker.status",
                                           "grpc.security.handshaker.resumed"});
-  auto storage = ServerHandshakeTelemetryDomain::GetStorage(scope, "OK",
-                                                            "false");
+  auto storage =
+      ServerHandshakeTelemetryDomain::GetStorage(scope, "OK", "false");
 
   std::vector<std::string> label_values = {"OK", "false"};
 
