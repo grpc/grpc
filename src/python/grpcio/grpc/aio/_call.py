@@ -612,10 +612,6 @@ class UnaryStreamCall(_StreamResponseMixin, Call, _base_call.UnaryStreamCall):
     _request: RequestType
     _send_unary_request_task: asyncio.Task
 
-    @property
-    def _done_writing_flag(self) -> bool:
-        return True
-
     # pylint: disable=too-many-arguments
     def __init__(
         self,
