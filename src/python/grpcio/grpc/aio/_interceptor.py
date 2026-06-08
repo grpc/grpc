@@ -483,19 +483,6 @@ class InterceptedCall:
         call = await self._interceptors_task
         return await call.wait_for_connection()
 
-    @property
-    def _done_writing_flag(self) -> bool:
-        if not self._interceptors_task.done():
-            return False
-
-        exc = self._interceptors_task.exception()
-        if exc is not None:
-            return True
-
-        call = self._interceptors_task.result()
-
-        return call._done_writing_flag
-
 
 class _InterceptedUnaryResponseMixin:
     _interceptors_task: asyncio.Task[Any]
