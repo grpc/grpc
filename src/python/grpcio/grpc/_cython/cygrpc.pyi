@@ -12,6 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# This file serves as a type stub for the cygrpc Cython extension module.
+# Since type checkers (like pyright/mypy) and IDEs cannot directly inspect the
+# compiled C extension, this file provides necessary type information.
+# The catch-all __getattr__ allows any attribute access to typecheck as Any.
+
 from typing import Any
 
 def __getattr__(name: str) -> Any: ...
