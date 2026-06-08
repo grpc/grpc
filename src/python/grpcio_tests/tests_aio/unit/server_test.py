@@ -520,6 +520,10 @@ class TestServer(AioTestBase):
 
         # Don't half close the RPC yet, keep it alive.
         await call.write(_REQUEST)
+        # wait until the RPC has slot assigned on a server side; else test is
+        # not deterministic (e.g. server shutdown might happen before RPC
+        # is established)
+        await self._generic_handler.wait_for_call()
         await self._server.stop(None)
 
         self.assertEqual(grpc.StatusCode.UNAVAILABLE, await call.code())

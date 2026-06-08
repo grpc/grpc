@@ -1175,17 +1175,11 @@ cdef class AioServer:
         # Otherwise, the actual start time of the server is un-controllable.
         await server_started
 
-    async def _start_shutting_down(self, grace):
+    async def _start_shutting_down(self):
         """Prepares the server to shutting down.
 
         This coroutine function is NOT coroutine-safe.
         """
-        if grace is None:
-            # `cancel_all_calls` before `shutdown_and_notify`. If we notify
-            # first, it can unref a still open call, which results in core
-            # sending CANCELLED status to the client instead.
-            grpc_server_cancel_all_calls(self._server.c_server)
-
         # The shutdown callback won't be called until there is no live RPC.
         grpc_server_shutdown_and_notify(
             self._server.c_server,
@@ -1214,9 +1208,11 @@ cdef class AioServer:
             if self._status == AIO_SERVER_STATUS_RUNNING:
                 self._server.is_shutting_down = True
                 self._status = AIO_SERVER_STATUS_STOPPING
-                await self._start_shutting_down(grace)
+                await self._start_shutting_down()
 
         if grace is None:
+            # Directly cancels all calls
+            grpc_server_cancel_all_calls(self._server.c_server)
             await self._shutdown_completed
         else:
             try:
