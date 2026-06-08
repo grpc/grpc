@@ -775,6 +775,11 @@ class CallOpClientRecvStatus {
         recv_status_(nullptr),
         debug_error_string_(nullptr) {}
 
+  void SetCheckCardinalityViolation(const bool* got_message_ptr) {
+    check_cardinality_ = true;
+    got_message_ptr_ = got_message_ptr;
+  }
+
   void ClientRecvStatus(grpc::ClientContext* context, Status* status) {
     client_context_ = context;
     metadata_map_ = &client_context_->trailing_metadata_;
@@ -798,8 +803,14 @@ class CallOpClientRecvStatus {
   void FinishOp(bool* /*status*/) {
     if (recv_status_ == nullptr || hijacked_) return;
     if (static_cast<StatusCode>(status_code_) == StatusCode::OK) {
-      *recv_status_ = Status();
-      ABSL_DCHECK_EQ(debug_error_string_, nullptr);
+      if (check_cardinality_ && !*got_message_ptr_) {
+        *recv_status_ =
+            Status(StatusCode::UNIMPLEMENTED,
+                   "No message returned for client-streaming request");
+      } else {
+        *recv_status_ = Status();
+        ABSL_DCHECK_EQ(debug_error_string_, nullptr);
+      }
     } else {
       *recv_status_ =
           Status(static_cast<StatusCode>(status_code_),
@@ -841,6 +852,8 @@ class CallOpClientRecvStatus {
 
  private:
   bool hijacked_ = false;
+  bool check_cardinality_ = false;
+  const bool* got_message_ptr_ = nullptr;
   grpc::ClientContext* client_context_;
   MetadataMap* metadata_map_;
   Status* recv_status_;
