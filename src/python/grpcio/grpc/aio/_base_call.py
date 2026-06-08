@@ -134,6 +134,7 @@ class Call(RpcContext, metaclass=ABCMeta):
         This method is recommended for building retry mechanisms.
         """
 
+
 class UnaryUnaryCall(
     Generic[RequestType, ResponseType], Call, metaclass=ABCMeta
 ):
