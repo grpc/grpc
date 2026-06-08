@@ -104,10 +104,8 @@ InstrumentLabelList InstrumentLabelSet::ToList() const {
 std::string InstrumentLabelList::DebugString() const {
   return absl::StrJoin(absl::MakeSpan(labels_, count_), ", ",
                        [](std::string* s, const InstrumentLabel& label) {
-                         s->append(label.label());
-                         s->append("[idx=");
-                         s->append(std::to_string(label.index()));
-                         s->append("]");
+                         absl::StrAppend(s, label.label(), "[idx=",
+                                         label.index(), "]");
                        });
 }
 

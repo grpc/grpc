@@ -153,7 +153,7 @@ void grpc_auth_context::add_property(const char* name, const char* value,
 }
 
 void grpc_auth_context::set_protocol(absl::string_view protocol) {
-  protocol_ = protocol;
+  protocol_ = std::string(protocol);
 }
 
 void grpc_auth_context_add_property(grpc_auth_context* ctx, const char* name,
