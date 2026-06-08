@@ -43,6 +43,37 @@
 #   promise_test:        tests around the promise architecture
 #   resource_quota_test: tests known to exercise resource quota
 
+# Note on experiment deletion
+#
+# When deciding when to delete an experiment and remove its fallback code, we must
+# evaluate the risks for each individual experiment across both google3 (prod) and OSS.
+#
+# Key Differences Between Google3 and OSS (The "Why"):
+# * Tooling & Canary Signal: Google3 has robust tooling for gradual rollouts and rapid
+#   feedback, making it an excellent canary for higher-risk changes. OSS lacks these
+#   gradual rollout mechanisms.
+# * Release Cadence & Rollbacks: Google3 lives at head, allowing us to deploy or roll
+#   back an experiment at any time. In contrast, OSS changes are tied to release cuts,
+#   meaning an OSS rollback requires cutting a new patch release.
+# * Disabling Experiments: There is no way to know if OSS users disable an experiment. 
+#   However, users almost always reach out if they disable an experiment because doing so
+#   typically indicates an underlying issue.
+#
+# Rollout and Deletion Policy (The "How"):
+# * High-Risk Experiments Exercised in Prod:
+#   - First, complete the gradual rollout in prod. We wait until the rollout percentage
+#     nears our baseline (monitoring_experiment) for at least a couple of weeks.
+#     This can take up to a build horizon, but may complete sooner.
+#   - Only after the prod rollout is complete and stable should the experiment be
+#     enabled in OSS. If prod exercised the code without issue, it is highly likely
+#     to be safe in OSS.
+# * OSS-Specific Risk & Release Horizons:
+#   - If there is any concern that the experiment might cause problems specific to OSS,
+#     we must wait at least one full OSS release cycle (6 weeks) after enabling it
+#     before deleting the experiment.
+#   - This 6-week buffer ensures OSS users have sufficient opportunity to exercise the
+#     new code in production before we burn the bridge and remove the fallback code.
+
 # This file only defines the experiments. Refer to rollouts.yaml for the rollout
 # state of each experiment.
 - name: buffer_list_deletion_prep
