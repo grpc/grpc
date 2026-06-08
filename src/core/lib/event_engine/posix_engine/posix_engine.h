@@ -179,7 +179,7 @@ class PosixEventEngine final : public PosixEventEngineWithFdSupport {
   bool Cancel(TaskHandle handle) override;
   // Cancels all pending timers and prevents any more timers from being
   // scheduled. This method should be only called prior to EventEngine shutdown.
-  void CancelAllPendingTimers();
+  void CancelAllPendingTimers() override;
 
 #ifdef GRPC_POSIX_SOCKET_TCP
 

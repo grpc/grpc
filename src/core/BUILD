@@ -192,6 +192,7 @@ grpc_cc_library(
         "lib/event_engine/extensions/iomgr_compatible.h",
         "lib/event_engine/extensions/receive_coalescing_extension.h",
         "lib/event_engine/extensions/supports_fd.h",
+        "lib/event_engine/extensions/supports_timer.h",
         "lib/event_engine/extensions/supports_win_sockets.h",
         "lib/event_engine/extensions/tcp_trace.h",
     ],
@@ -2261,6 +2262,7 @@ grpc_cc_library(
         "lib/event_engine/query_extensions.h",
     ],
     external_deps = ["absl/strings"],
+    visibility = ["//visibility:public"],
     deps = [
         "event_engine_common",
         "//:event_engine_base_hdrs",
@@ -3358,7 +3360,7 @@ grpc_cc_library(
     }),
     external_deps = ["absl/functional:any_invocable"],
     visibility = [
-        "//bazel:alt_grpc_base_legacy",
+        "//visibility:public",
     ],
     deps = [
         "channel_args",

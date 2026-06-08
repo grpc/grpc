@@ -1443,6 +1443,7 @@ let package = Package(
         "src/core/lib/event_engine/extensions/iomgr_compatible.h",
         "src/core/lib/event_engine/extensions/receive_coalescing_extension.h",
         "src/core/lib/event_engine/extensions/supports_fd.h",
+        "src/core/lib/event_engine/extensions/supports_timer.h",
         "src/core/lib/event_engine/extensions/supports_win_sockets.h",
         "src/core/lib/event_engine/extensions/tcp_trace.h",
         "src/core/lib/event_engine/grpc_polled_fd.h",
