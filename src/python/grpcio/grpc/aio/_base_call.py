@@ -134,15 +134,6 @@ class Call(RpcContext, metaclass=ABCMeta):
         This method is recommended for building retry mechanisms.
         """
 
-    @abstractmethod
-    async def debug_error_string(self) -> Optional[str]:
-        """Accesses the debug error string sent by the server.
-
-        Returns:
-          The debug error string received.
-        """
-
-
 class UnaryUnaryCall(
     Generic[RequestType, ResponseType], Call, metaclass=ABCMeta
 ):
@@ -183,6 +174,14 @@ class UnaryStreamCall(
         Returns:
           A response message, or an `grpc.aio.EOF` to indicate the end of the
           stream.
+        """
+
+    @abstractmethod
+    async def debug_error_string(self) -> Optional[str]:
+        """Accesses the debug error string sent by the server.
+
+        Returns:
+          The debug error string received.
         """
 
 
@@ -264,4 +263,12 @@ class StreamStreamCall(
 
         After done_writing is called, any additional invocation to the write
         function will fail. This function is idempotent.
+        """
+
+    @abstractmethod
+    async def debug_error_string(self) -> Optional[str]:
+        """Accesses the debug error string sent by the server.
+
+        Returns:
+          The debug error string received.
         """
