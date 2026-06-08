@@ -1214,14 +1214,12 @@ class UnaryStreamCallResponseIterator(
         # async iterator. So this path should not be reached.
         raise NotImplementedError()
 
-    @property
-    def _done_writing_flag(self) -> bool:
-        return self._call._done_writing_flag
-
 
 class StreamStreamCallResponseIterator(
     _StreamCallResponseIterator, _base_call.StreamStreamCall
 ):
+    _call: _base_call.StreamStreamCall
+
     """StreamStreamCall class which uses an alternative response iterator."""
 
     async def read(self) -> Union[EOFType, ResponseType]:
