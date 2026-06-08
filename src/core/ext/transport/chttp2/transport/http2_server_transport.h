@@ -248,7 +248,7 @@ class Http2ServerTransport final : public ServerTransport,
   Http2Status ProcessIncomingFrame(Http2UnknownFrame&& frame);
   Http2Status ProcessIncomingFrame(Http2EmptyFrame&& frame);
 
-  Http2Status ProcessMetadata(RefCountedPtr<Stream> stream);
+  Http2Status ProcessMetadata();
 
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Http2Status
   ProcessOneIncomingFrame(Http2Frame&& frame) {
@@ -496,8 +496,8 @@ class Http2ServerTransport final : public ServerTransport,
   std::optional<RefCountedPtr<Stream>> MakeStream(
       CallInitiator&& call_initiator, const uint32_t stream_id);
 
-  absl::Status IncomingStream(ClientMetadataHandle&& metadata,
-                              const uint32_t stream_id);
+  Http2Status IncomingStream(ClientMetadataHandle&& metadata,
+                             uint32_t stream_id);
 
   // void BeginCloseStream(RefCountedPtr<Stream> stream,
   //                       std::optional<uint32_t> reset_stream_error_code,
@@ -579,11 +579,13 @@ class Http2ServerTransport final : public ServerTransport,
   //////////////////////////////////////////////////////////////////////////////
   // Misc Transport Stuff
 
-  void ReportDisconnection(const absl::Status& status,
+  void ReportDisconnection(grpc_connectivity_state state,
+                           const absl::Status& status,
                            StateWatcher::DisconnectInfo disconnect_info,
                            const char* reason);
 
-  void ReportDisconnectionLocked(const absl::Status& status,
+  void ReportDisconnectionLocked(grpc_connectivity_state state,
+                                 const absl::Status& status,
                                  StateWatcher::DisconnectInfo disconnect_info,
                                  const char* reason)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(&transport_mutex_);
@@ -728,9 +730,6 @@ class Http2ServerTransport final : public ServerTransport,
   chttp2::TransportFlowControl flow_control_;
   WritableStreams<RefCountedPtr<Stream>> writable_stream_list_;
 
-  /// Based on channel args, preferred_rx_crypto_frame_sizes are advertised to
-  /// the peer
-  bool enable_preferred_rx_crypto_frame_advertisement_;
   RefCountedPtr<SecurityFrameHandler> security_frame_handler_;
   std::shared_ptr<PromiseHttp2ZTraceCollector> ztrace_collector_;
 

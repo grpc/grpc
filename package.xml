@@ -1427,6 +1427,7 @@
     <file baseinstalldir="/" name="src/core/lib/event_engine/extensions/channelz.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/extensions/chaotic_good_extension.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/extensions/iomgr_compatible.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/event_engine/extensions/receive_coalescing_extension.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/extensions/supports_fd.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/extensions/supports_win_sockets.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/extensions/tcp_trace.h" role="src" />
@@ -1716,6 +1717,7 @@
     <file baseinstalldir="/" name="src/core/lib/resource_quota/resource_quota.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/resource_quota/stream_quota.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/resource_quota/stream_quota.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/resource_quota/telemetry.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/resource_quota/telemetry.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/resource_quota/thread_quota.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/resource_quota/thread_quota.h" role="src" />
@@ -3319,6 +3321,7 @@
     <file baseinstalldir="/" name="third_party/upb/upb/generated_code_support.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/hash/common.c" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/hash/common.h" role="src" />
+    <file baseinstalldir="/" name="third_party/upb/upb/hash/ext_table.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/hash/int_table.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/hash/str_table.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/json/decode.c" role="src" />
