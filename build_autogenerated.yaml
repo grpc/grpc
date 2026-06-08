@@ -904,7 +904,6 @@ libs:
   - src/core/ext/upbdefs-gen/xds/type/v3/range.upbdefs.h
   - src/core/ext/upbdefs-gen/xds/type/v3/typed_struct.upbdefs.h
   - src/core/filter/auth/auth_filters.h
-  - src/core/filter/blackboard.h
   - src/core/filter/composite/composite_filter.h
   - src/core/filter/filter_args.h
   - src/core/filter/filter_chain.h
@@ -1330,6 +1329,7 @@ libs:
   - src/core/util/wait_for_single_owner.h
   - src/core/util/work_serializer.h
   - src/core/util/xxhash_inline.h
+  - src/core/xds/grpc/blackboard.h
   - src/core/xds/grpc/certificate_provider_store.h
   - src/core/xds/grpc/certificate_provider_store_interface.h
   - src/core/xds/grpc/file_watcher_certificate_provider_factory.h
@@ -1896,7 +1896,6 @@ libs:
   - src/core/ext/upbdefs-gen/xds/type/v3/typed_struct.upbdefs.c
   - src/core/filter/auth/client_auth_filter.cc
   - src/core/filter/auth/server_auth_filter.cc
-  - src/core/filter/blackboard.cc
   - src/core/filter/composite/composite_filter.cc
   - src/core/filter/fused_filters.cc
   - src/core/handshaker/endpoint_info/endpoint_info_handshaker.cc
@@ -2245,6 +2244,7 @@ libs:
   - src/core/util/wait_for_single_owner.cc
   - src/core/util/windows/directory_reader.cc
   - src/core/util/work_serializer.cc
+  - src/core/xds/grpc/blackboard.cc
   - src/core/xds/grpc/certificate_provider_store.cc
   - src/core/xds/grpc/file_watcher_certificate_provider_factory.cc
   - src/core/xds/grpc/xds_audit_logger_registry.cc
@@ -2656,7 +2656,6 @@ libs:
   - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/property_list.upbdefs.h
   - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/service.upbdefs.h
   - src/core/filter/auth/auth_filters.h
-  - src/core/filter/blackboard.h
   - src/core/filter/filter_args.h
   - src/core/filter/filter_chain.h
   - src/core/handshaker/endpoint_info/endpoint_info_handshaker.h
@@ -3193,7 +3192,6 @@ libs:
   - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/service.upbdefs.c
   - src/core/filter/auth/client_auth_filter.cc
   - src/core/filter/auth/server_auth_filter.cc
-  - src/core/filter/blackboard.cc
   - src/core/filter/fused_filters.cc
   - src/core/handshaker/endpoint_info/endpoint_info_handshaker.cc
   - src/core/handshaker/handshaker.cc
@@ -4797,7 +4795,6 @@ libs:
   - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/property_list.upbdefs.h
   - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/service.upbdefs.h
   - src/core/filter/auth/auth_filters.h
-  - src/core/filter/blackboard.h
   - src/core/filter/filter_args.h
   - src/core/handshaker/endpoint_info/endpoint_info_handshaker.h
   - src/core/handshaker/handshaker.h
@@ -5181,7 +5178,6 @@ libs:
   - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/service.upbdefs.c
   - src/core/filter/auth/client_auth_filter.cc
   - src/core/filter/auth/server_auth_filter.cc
-  - src/core/filter/blackboard.cc
   - src/core/handshaker/endpoint_info/endpoint_info_handshaker.cc
   - src/core/handshaker/handshaker.cc
   - src/core/handshaker/handshaker_registry.cc
@@ -6707,7 +6703,6 @@ targets:
   - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/channelz.upbdefs.h
   - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/property_list.upbdefs.h
   - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/service.upbdefs.h
-  - src/core/filter/blackboard.h
   - src/core/lib/address_utils/parse_address.h
   - src/core/lib/address_utils/sockaddr_utils.h
   - src/core/lib/channel/channel_args.h
@@ -6774,6 +6769,7 @@ targets:
   - src/core/util/upb_utils.h
   - src/core/util/uri.h
   - src/core/util/work_serializer.h
+  - src/core/xds/grpc/blackboard.h
   - third_party/upb/upb/generated_code_support.h
   src:
   - src/core/channelz/channel_trace.cc
@@ -6796,7 +6792,6 @@ targets:
   - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/channelz.upbdefs.c
   - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/property_list.upbdefs.c
   - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/service.upbdefs.c
-  - src/core/filter/blackboard.cc
   - src/core/lib/address_utils/parse_address.cc
   - src/core/lib/address_utils/sockaddr_utils.cc
   - src/core/lib/channel/channel_args.cc
@@ -6838,7 +6833,8 @@ targets:
   - src/core/util/time.cc
   - src/core/util/uri.cc
   - src/core/util/work_serializer.cc
-  - test/core/filters/blackboard_test.cc
+  - src/core/xds/grpc/blackboard.cc
+  - test/core/xds/blackboard_test.cc
   deps:
   - gtest
   - upb_textformat_lib
@@ -7482,7 +7478,6 @@ targets:
   - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/promise.upbdefs.h
   - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/property_list.upbdefs.h
   - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/service.upbdefs.h
-  - src/core/filter/blackboard.h
   - src/core/filter/filter_args.h
   - src/core/handshaker/handshaker_factory.h
   - src/core/handshaker/handshaker_registry.h
@@ -7830,7 +7825,6 @@ targets:
   - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/promise.upbdefs.c
   - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/property_list.upbdefs.c
   - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/service.upbdefs.c
-  - src/core/filter/blackboard.cc
   - src/core/handshaker/handshaker_registry.cc
   - src/core/handshaker/proxy_mapper_registry.cc
   - src/core/lib/address_utils/parse_address.cc
@@ -13139,7 +13133,6 @@ targets:
   - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/promise.upbdefs.h
   - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/property_list.upbdefs.h
   - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/service.upbdefs.h
-  - src/core/filter/blackboard.h
   - src/core/filter/filter_args.h
   - src/core/handshaker/handshaker_factory.h
   - src/core/handshaker/handshaker_registry.h
@@ -13487,7 +13480,6 @@ targets:
   - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/promise.upbdefs.c
   - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/property_list.upbdefs.c
   - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/service.upbdefs.c
-  - src/core/filter/blackboard.cc
   - src/core/handshaker/handshaker_registry.cc
   - src/core/handshaker/proxy_mapper_registry.cc
   - src/core/lib/address_utils/parse_address.cc
@@ -16023,7 +16015,6 @@ targets:
   - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/promise.upbdefs.h
   - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/property_list.upbdefs.h
   - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/service.upbdefs.h
-  - src/core/filter/blackboard.h
   - src/core/filter/filter_args.h
   - src/core/handshaker/handshaker_factory.h
   - src/core/handshaker/handshaker_registry.h
@@ -16374,7 +16365,6 @@ targets:
   - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/promise.upbdefs.c
   - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/property_list.upbdefs.c
   - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/service.upbdefs.c
-  - src/core/filter/blackboard.cc
   - src/core/handshaker/handshaker_registry.cc
   - src/core/handshaker/proxy_mapper_registry.cc
   - src/core/lib/address_utils/parse_address.cc
@@ -25650,7 +25640,6 @@ targets:
   - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/promise.upbdefs.h
   - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/property_list.upbdefs.h
   - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/service.upbdefs.h
-  - src/core/filter/blackboard.h
   - src/core/filter/filter_args.h
   - src/core/handshaker/handshaker_factory.h
   - src/core/handshaker/handshaker_registry.h
@@ -26000,7 +25989,6 @@ targets:
   - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/promise.upbdefs.c
   - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/property_list.upbdefs.c
   - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/service.upbdefs.c
-  - src/core/filter/blackboard.cc
   - src/core/handshaker/handshaker_registry.cc
   - src/core/handshaker/proxy_mapper_registry.cc
   - src/core/lib/address_utils/parse_address.cc
