@@ -322,7 +322,7 @@ if(MSVC)
   set(_gRPC_C_CXX_FLAGS "${_gRPC_C_CXX_FLAGS} /wd4267")
   # TODO(jtattermusch): needed to build boringssl with VS2017, revisit later
   set(_gRPC_C_CXX_FLAGS "${_gRPC_C_CXX_FLAGS} /wd4987 /wd4774 /wd4819 /wd4996 /wd4619")
-  # Silences thousands of trucation warnings
+  # Silences thousands of truncation warnings
   set(_gRPC_C_CXX_FLAGS "${_gRPC_C_CXX_FLAGS} /wd4503")
   # Tell MSVC to build grpc using utf-8
   set(_gRPC_C_CXX_FLAGS "${_gRPC_C_CXX_FLAGS} /utf-8")
@@ -1773,6 +1773,7 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx server_test)
   add_dependencies(buildtests_cxx service_config_end2end_test)
   add_dependencies(buildtests_cxx service_config_test)
+  add_dependencies(buildtests_cxx session_end2end_test)
   add_dependencies(buildtests_cxx session_endpoint_test)
   add_dependencies(buildtests_cxx settings_timeout_manager_test)
   add_dependencies(buildtests_cxx settings_timeout_test)
@@ -1930,6 +1931,7 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx xds_audit_logger_registry_test)
   add_dependencies(buildtests_cxx xds_bootstrap_test)
   add_dependencies(buildtests_cxx xds_certificate_provider_test)
+  add_dependencies(buildtests_cxx xds_client_grpc_test)
   add_dependencies(buildtests_cxx xds_client_test)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     add_dependencies(buildtests_cxx xds_cluster_end2end_test)
@@ -2747,7 +2749,6 @@ add_library(grpc
   src/core/ext/upbdefs-gen/xds/type/v3/typed_struct.upbdefs.c
   src/core/filter/auth/client_auth_filter.cc
   src/core/filter/auth/server_auth_filter.cc
-  src/core/filter/blackboard.cc
   src/core/filter/composite/composite_filter.cc
   src/core/filter/fused_filters.cc
   src/core/handshaker/endpoint_info/endpoint_info_handshaker.cc
@@ -2911,6 +2912,7 @@ add_library(grpc
   src/core/lib/resource_quota/periodic_update.cc
   src/core/lib/resource_quota/resource_quota.cc
   src/core/lib/resource_quota/stream_quota.cc
+  src/core/lib/resource_quota/telemetry.cc
   src/core/lib/resource_quota/thread_quota.cc
   src/core/lib/resource_tracker/resource_tracker.cc
   src/core/lib/security/authorization/audit_logging.cc
@@ -3095,6 +3097,7 @@ add_library(grpc
   src/core/util/wait_for_single_owner.cc
   src/core/util/windows/directory_reader.cc
   src/core/util/work_serializer.cc
+  src/core/xds/grpc/blackboard.cc
   src/core/xds/grpc/certificate_provider_store.cc
   src/core/xds/grpc/file_watcher_certificate_provider_factory.cc
   src/core/xds/grpc/xds_audit_logger_registry.cc
@@ -3579,7 +3582,6 @@ add_library(grpc_unsecure
   src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/service.upbdefs.c
   src/core/filter/auth/client_auth_filter.cc
   src/core/filter/auth/server_auth_filter.cc
-  src/core/filter/blackboard.cc
   src/core/filter/fused_filters.cc
   src/core/handshaker/endpoint_info/endpoint_info_handshaker.cc
   src/core/handshaker/handshaker.cc
@@ -3741,6 +3743,7 @@ add_library(grpc_unsecure
   src/core/lib/resource_quota/periodic_update.cc
   src/core/lib/resource_quota/resource_quota.cc
   src/core/lib/resource_quota/stream_quota.cc
+  src/core/lib/resource_quota/telemetry.cc
   src/core/lib/resource_quota/thread_quota.cc
   src/core/lib/resource_tracker/resource_tracker.cc
   src/core/lib/security/authorization/authorization_policy_provider_vtable.cc
@@ -4549,6 +4552,7 @@ endif()
 
 add_library(upb_mini_table_lib
   third_party/upb/upb/mini_table/extension_registry.c
+  third_party/upb/upb/mini_table/generated_registry.c
   third_party/upb/upb/mini_table/internal/message.c
   third_party/upb/upb/mini_table/message.c
 )
@@ -5038,6 +5042,7 @@ target_link_libraries(grpc++
   absl::layout
   absl::absl_check
   absl::absl_log
+  absl::charset
   absl::strings_internal
   grpc
   ${_gRPC_PROTOBUF_LIBRARIES}
@@ -5786,6 +5791,7 @@ target_link_libraries(grpc++_unsecure
   absl::layout
   absl::absl_check
   absl::absl_log
+  absl::charset
   absl::strings_internal
   grpc_unsecure
   ${_gRPC_PROTOBUF_LIBRARIES}
@@ -6083,7 +6089,6 @@ add_library(grpc_authorization_provider
   src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/service.upbdefs.c
   src/core/filter/auth/client_auth_filter.cc
   src/core/filter/auth/server_auth_filter.cc
-  src/core/filter/blackboard.cc
   src/core/handshaker/endpoint_info/endpoint_info_handshaker.cc
   src/core/handshaker/handshaker.cc
   src/core/handshaker/handshaker_registry.cc
@@ -6237,6 +6242,7 @@ add_library(grpc_authorization_provider
   src/core/lib/resource_quota/periodic_update.cc
   src/core/lib/resource_quota/resource_quota.cc
   src/core/lib/resource_quota/stream_quota.cc
+  src/core/lib/resource_quota/telemetry.cc
   src/core/lib/resource_quota/thread_quota.cc
   src/core/lib/resource_tracker/resource_tracker.cc
   src/core/lib/security/authorization/audit_logging.cc
@@ -6508,6 +6514,7 @@ target_link_libraries(grpc_plugin_support
   absl::config
   absl::core_headers
   absl::dynamic_annotations
+  absl::no_destructor
   absl::prefetch
   absl::cleanup
   absl::btree
@@ -6534,6 +6541,7 @@ target_link_libraries(grpc_plugin_support
   absl::strings
   absl::synchronization
   absl::time
+  absl::optional
   absl::span
   absl::utility
   ${_gRPC_PROTOBUF_LIBRARIES}
@@ -8550,6 +8558,7 @@ add_executable(async_end2end_test
   ${_gRPC_PROTO_GENS_DIR}/xds/data/orca/v3/orca_load_report.pb.h
   ${_gRPC_PROTO_GENS_DIR}/xds/data/orca/v3/orca_load_report.grpc.pb.h
   test/cpp/end2end/async_end2end_test.cc
+  test/cpp/end2end/test_service_impl.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -9477,7 +9486,6 @@ add_executable(blackboard_test
   src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/channelz.upbdefs.c
   src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/property_list.upbdefs.c
   src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/service.upbdefs.c
-  src/core/filter/blackboard.cc
   src/core/lib/address_utils/parse_address.cc
   src/core/lib/address_utils/sockaddr_utils.cc
   src/core/lib/channel/channel_args.cc
@@ -9519,7 +9527,8 @@ add_executable(blackboard_test
   src/core/util/time.cc
   src/core/util/uri.cc
   src/core/util/work_serializer.cc
-  test/core/filters/blackboard_test.cc
+  src/core/xds/grpc/blackboard.cc
+  test/core/xds/blackboard_test.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -9934,6 +9943,7 @@ add_executable(call_filters_test
   src/core/lib/resource_quota/periodic_update.cc
   src/core/lib/resource_quota/resource_quota.cc
   src/core/lib/resource_quota/stream_quota.cc
+  src/core/lib/resource_quota/telemetry.cc
   src/core/lib/resource_quota/thread_quota.cc
   src/core/lib/resource_tracker/resource_tracker.cc
   src/core/lib/slice/percent_encoding.cc
@@ -10270,7 +10280,6 @@ add_executable(call_utils_test
   src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/promise.upbdefs.c
   src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/property_list.upbdefs.c
   src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/service.upbdefs.c
-  src/core/filter/blackboard.cc
   src/core/handshaker/handshaker_registry.cc
   src/core/handshaker/proxy_mapper_registry.cc
   src/core/lib/address_utils/parse_address.cc
@@ -10419,6 +10428,7 @@ add_executable(call_utils_test
   src/core/lib/resource_quota/periodic_update.cc
   src/core/lib/resource_quota/resource_quota.cc
   src/core/lib/resource_quota/stream_quota.cc
+  src/core/lib/resource_quota/telemetry.cc
   src/core/lib/resource_quota/thread_quota.cc
   src/core/lib/resource_tracker/resource_tracker.cc
   src/core/lib/slice/percent_encoding.cc
@@ -10638,6 +10648,7 @@ add_executable(cancel_callback_test
   src/core/lib/resource_quota/periodic_update.cc
   src/core/lib/resource_quota/resource_quota.cc
   src/core/lib/resource_quota/stream_quota.cc
+  src/core/lib/resource_quota/telemetry.cc
   src/core/lib/resource_quota/thread_quota.cc
   src/core/lib/resource_tracker/resource_tracker.cc
   src/core/lib/slice/percent_encoding.cc
@@ -12028,7 +12039,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     gtest
     absl::fixed_array
     absl::overload
-    absl::charset
     grpcpp_channelz
     ${_gRPC_PROTOBUF_PROTOC_LIBRARIES}
     grpc_test_util
@@ -12283,6 +12293,7 @@ add_executable(chunked_vector_test
   src/core/lib/resource_quota/periodic_update.cc
   src/core/lib/resource_quota/resource_quota.cc
   src/core/lib/resource_quota/stream_quota.cc
+  src/core/lib/resource_quota/telemetry.cc
   src/core/lib/resource_quota/thread_quota.cc
   src/core/lib/resource_tracker/resource_tracker.cc
   src/core/lib/slice/percent_encoding.cc
@@ -12441,7 +12452,6 @@ target_link_libraries(cli_call_test
   gtest
   absl::fixed_array
   absl::overload
-  absl::charset
   ${_gRPC_PROTOBUF_PROTOC_LIBRARIES}
   grpc++_test_util
 )
@@ -17871,7 +17881,6 @@ add_executable(filter_fusion_test
   src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/promise.upbdefs.c
   src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/property_list.upbdefs.c
   src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/service.upbdefs.c
-  src/core/filter/blackboard.cc
   src/core/handshaker/handshaker_registry.cc
   src/core/handshaker/proxy_mapper_registry.cc
   src/core/lib/address_utils/parse_address.cc
@@ -18020,6 +18029,7 @@ add_executable(filter_fusion_test
   src/core/lib/resource_quota/periodic_update.cc
   src/core/lib/resource_quota/resource_quota.cc
   src/core/lib/resource_quota/stream_quota.cc
+  src/core/lib/resource_quota/telemetry.cc
   src/core/lib/resource_quota/thread_quota.cc
   src/core/lib/resource_tracker/resource_tracker.cc
   src/core/lib/slice/percent_encoding.cc
@@ -18320,6 +18330,7 @@ add_executable(flow_control_manager_test
   src/core/lib/resource_quota/periodic_update.cc
   src/core/lib/resource_quota/resource_quota.cc
   src/core/lib/resource_quota/stream_quota.cc
+  src/core/lib/resource_quota/telemetry.cc
   src/core/lib/resource_quota/thread_quota.cc
   src/core/lib/resource_tracker/resource_tracker.cc
   src/core/lib/slice/percent_encoding.cc
@@ -18451,6 +18462,7 @@ add_executable(flow_control_test
   src/core/lib/resource_quota/periodic_update.cc
   src/core/lib/resource_quota/resource_quota.cc
   src/core/lib/resource_quota/stream_quota.cc
+  src/core/lib/resource_quota/telemetry.cc
   src/core/lib/resource_quota/thread_quota.cc
   src/core/lib/resource_tracker/resource_tracker.cc
   src/core/lib/slice/percent_encoding.cc
@@ -18577,6 +18589,7 @@ add_executable(for_each_test
   src/core/lib/resource_quota/periodic_update.cc
   src/core/lib/resource_quota/resource_quota.cc
   src/core/lib/resource_quota/stream_quota.cc
+  src/core/lib/resource_quota/telemetry.cc
   src/core/lib/resource_quota/thread_quota.cc
   src/core/lib/resource_tracker/resource_tracker.cc
   src/core/lib/slice/percent_encoding.cc
@@ -18838,6 +18851,7 @@ add_executable(frame_test
   src/core/lib/resource_quota/periodic_update.cc
   src/core/lib/resource_quota/resource_quota.cc
   src/core/lib/resource_quota/stream_quota.cc
+  src/core/lib/resource_quota/telemetry.cc
   src/core/lib/resource_quota/thread_quota.cc
   src/core/lib/resource_tracker/resource_tracker.cc
   src/core/lib/slice/percent_encoding.cc
@@ -19770,7 +19784,6 @@ target_link_libraries(grpc_cli
   ${_gRPC_ALLTARGETS_LIBRARIES}
   absl::fixed_array
   absl::overload
-  absl::charset
   grpc++
   ${_gRPC_PROTOBUF_PROTOC_LIBRARIES}
   grpc++_test_config
@@ -20515,7 +20528,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
     gtest
     absl::fixed_array
     absl::overload
-    absl::charset
     grpc++_reflection
     ${_gRPC_PROTOBUF_PROTOC_LIBRARIES}
     grpc++_test_config
@@ -22190,7 +22202,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/promise.upbdefs.c
     src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/property_list.upbdefs.c
     src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/service.upbdefs.c
-    src/core/filter/blackboard.cc
     src/core/handshaker/handshaker_registry.cc
     src/core/handshaker/proxy_mapper_registry.cc
     src/core/lib/address_utils/parse_address.cc
@@ -22339,6 +22350,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     src/core/lib/resource_quota/periodic_update.cc
     src/core/lib/resource_quota/resource_quota.cc
     src/core/lib/resource_quota/stream_quota.cc
+    src/core/lib/resource_quota/telemetry.cc
     src/core/lib/resource_quota/thread_quota.cc
     src/core/lib/resource_tracker/resource_tracker.cc
     src/core/lib/slice/percent_encoding.cc
@@ -22972,6 +22984,7 @@ add_executable(interceptor_list_test
   src/core/lib/resource_quota/periodic_update.cc
   src/core/lib/resource_quota/resource_quota.cc
   src/core/lib/resource_quota/stream_quota.cc
+  src/core/lib/resource_quota/telemetry.cc
   src/core/lib/resource_quota/thread_quota.cc
   src/core/lib/resource_tracker/resource_tracker.cc
   src/core/lib/slice/percent_encoding.cc
@@ -23888,6 +23901,7 @@ add_executable(latent_see_test
   src/core/lib/resource_quota/periodic_update.cc
   src/core/lib/resource_quota/resource_quota.cc
   src/core/lib/resource_quota/stream_quota.cc
+  src/core/lib/resource_quota/telemetry.cc
   src/core/lib/resource_quota/thread_quota.cc
   src/core/lib/resource_tracker/resource_tracker.cc
   src/core/lib/slice/percent_encoding.cc
@@ -24076,7 +24090,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     gtest
     absl::fixed_array
     absl::overload
-    absl::charset
     grpc++
     ${_gRPC_PROTOBUF_PROTOC_LIBRARIES}
     grpc_test_util
@@ -24820,6 +24833,7 @@ add_executable(map_pipe_test
   src/core/lib/resource_quota/periodic_update.cc
   src/core/lib/resource_quota/resource_quota.cc
   src/core/lib/resource_quota/stream_quota.cc
+  src/core/lib/resource_quota/telemetry.cc
   src/core/lib/resource_quota/thread_quota.cc
   src/core/lib/resource_tracker/resource_tracker.cc
   src/core/lib/slice/percent_encoding.cc
@@ -27274,6 +27288,7 @@ target_link_libraries(periodic_update_test
   absl::function_ref
   absl::hash
   absl::statusor
+  absl::string_view
   absl::span
   absl::utility
   gpr
@@ -30499,6 +30514,7 @@ add_executable(request_buffer_test
   src/core/lib/resource_quota/periodic_update.cc
   src/core/lib/resource_quota/resource_quota.cc
   src/core/lib/resource_quota/stream_quota.cc
+  src/core/lib/resource_quota/telemetry.cc
   src/core/lib/resource_quota/thread_quota.cc
   src/core/lib/resource_tracker/resource_tracker.cc
   src/core/lib/slice/percent_encoding.cc
@@ -32484,6 +32500,78 @@ target_link_libraries(service_config_test
 endif()
 if(gRPC_BUILD_TESTS)
 
+add_executable(session_end2end_test
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/google/api/http.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/google/api/http.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/google/api/http.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/google/api/http.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/google/rpc/status.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/google/rpc/status.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/google/rpc/status.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/google/rpc/status.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/validate/validate.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/validate/validate.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/validate/validate.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/validate/validate.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/xds/data/orca/v3/orca_load_report.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/xds/data/orca/v3/orca_load_report.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/xds/data/orca/v3/orca_load_report.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/xds/data/orca/v3/orca_load_report.grpc.pb.h
+  test/cpp/end2end/session_end2end_test.cc
+)
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(session_end2end_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
+    )
+  endif()
+endif()
+target_compile_features(session_end2end_test PUBLIC cxx_std_17)
+target_include_directories(session_end2end_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(session_end2end_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  gtest
+  grpc++
+  grpc_test_util
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
 add_executable(session_endpoint_test
   test/core/end2end/cq_verifier.cc
   test/core/transport/session_endpoint_test.cc
@@ -33820,6 +33908,7 @@ target_link_libraries(status_test
   absl::layout
   absl::absl_check
   absl::absl_log
+  absl::charset
   absl::strings_internal
   ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
@@ -36696,7 +36785,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/promise.upbdefs.c
     src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/property_list.upbdefs.c
     src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/service.upbdefs.c
-    src/core/filter/blackboard.cc
     src/core/handshaker/handshaker_registry.cc
     src/core/handshaker/proxy_mapper_registry.cc
     src/core/lib/address_utils/parse_address.cc
@@ -36845,6 +36933,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     src/core/lib/resource_quota/periodic_update.cc
     src/core/lib/resource_quota/resource_quota.cc
     src/core/lib/resource_quota/stream_quota.cc
+    src/core/lib/resource_quota/telemetry.cc
     src/core/lib/resource_quota/thread_quota.cc
     src/core/lib/resource_tracker/resource_tracker.cc
     src/core/lib/slice/percent_encoding.cc
@@ -39010,7 +39099,6 @@ target_link_libraries(xds_audit_logger_registry_test
   gtest
   absl::fixed_array
   absl::overload
-  absl::charset
   grpc++
   ${_gRPC_PROTOBUF_PROTOC_LIBRARIES}
   grpc_test_util
@@ -39098,6 +39186,48 @@ target_link_libraries(xds_certificate_provider_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   absl::overload
+  grpc_test_util
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
+add_executable(xds_client_grpc_test
+  test/core/xds/xds_client_grpc_test.cc
+)
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(xds_client_grpc_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
+target_compile_features(xds_client_grpc_test PUBLIC cxx_std_17)
+target_include_directories(xds_client_grpc_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(xds_client_grpc_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  gtest
   grpc_test_util
 )
 
@@ -39694,6 +39824,7 @@ target_link_libraries(xds_client_test
   absl::layout
   absl::absl_check
   absl::absl_log
+  absl::charset
   absl::strings_internal
   ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
@@ -40777,6 +40908,7 @@ target_link_libraries(xds_cluster_resource_type_test
   absl::layout
   absl::absl_check
   absl::absl_log
+  absl::charset
   absl::strings_internal
   ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
@@ -41789,7 +41921,6 @@ target_link_libraries(xds_common_types_test
   gtest
   absl::fixed_array
   absl::overload
-  absl::charset
   grpc++
   ${_gRPC_PROTOBUF_PROTOC_LIBRARIES}
   grpc_test_util
@@ -44522,6 +44653,7 @@ target_link_libraries(xds_endpoint_resource_type_test
   absl::layout
   absl::absl_check
   absl::absl_log
+  absl::charset
   absl::strings_internal
   ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
@@ -47231,7 +47363,6 @@ target_link_libraries(xds_http_filters_test
   gtest
   absl::fixed_array
   absl::overload
-  absl::charset
   grpc++
   ${_gRPC_PROTOBUF_PROTOC_LIBRARIES}
   grpc_test_util
@@ -47684,7 +47815,6 @@ target_link_libraries(xds_lb_policy_registry_test
   gtest
   absl::fixed_array
   absl::overload
-  absl::charset
   grpc++
   ${_gRPC_PROTOBUF_PROTOC_LIBRARIES}
   grpc_test_util
@@ -48205,7 +48335,6 @@ target_link_libraries(xds_listener_resource_type_test
   gtest
   absl::fixed_array
   absl::overload
-  absl::charset
   grpc++
   ${_gRPC_PROTOBUF_PROTOC_LIBRARIES}
   grpc_test_util
@@ -52264,7 +52393,6 @@ target_link_libraries(xds_route_config_resource_type_test
   gtest
   absl::fixed_array
   absl::overload
-  absl::charset
   grpc++
   ${_gRPC_PROTOBUF_PROTOC_LIBRARIES}
   grpc_test_util
@@ -55322,7 +55450,7 @@ generate_pkgconfig(
   "gRPC++"
   "C++ wrapper for gRPC"
   "${gRPC_CPP_VERSION}"
-  "absl_absl_check absl_absl_log absl_algorithm_container absl_any_invocable absl_base absl_bind_front absl_bits absl_btree absl_check absl_cleanup absl_config absl_cord absl_core_headers absl_dynamic_annotations absl_flags absl_flags_marshalling absl_flat_hash_map absl_flat_hash_set absl_function_ref absl_hash absl_inlined_vector absl_layout absl_log absl_log_globals absl_log_severity absl_memory absl_no_destructor absl_node_hash_map absl_optional absl_prefetch absl_random_bit_gen_ref absl_random_distributions absl_random_random absl_span absl_status absl_statusor absl_str_format absl_string_view absl_strings absl_strings_internal absl_synchronization absl_time absl_type_traits absl_utility gpr grpc"
+  "absl_absl_check absl_absl_log absl_algorithm_container absl_any_invocable absl_base absl_bind_front absl_bits absl_btree absl_charset absl_check absl_cleanup absl_config absl_cord absl_core_headers absl_dynamic_annotations absl_flags absl_flags_marshalling absl_flat_hash_map absl_flat_hash_set absl_function_ref absl_hash absl_inlined_vector absl_layout absl_log absl_log_globals absl_log_severity absl_memory absl_no_destructor absl_node_hash_map absl_optional absl_prefetch absl_random_bit_gen_ref absl_random_distributions absl_random_random absl_span absl_status absl_statusor absl_str_format absl_string_view absl_strings absl_strings_internal absl_synchronization absl_time absl_type_traits absl_utility gpr grpc"
   "libcares openssl re2 zlib"
   "-lgrpc++"
   "-laddress_sorting -lupb_textformat_lib -lupb_json_lib -lupb_reflection_lib -lupb_wire_lib -lupb_message_lib -lutf8_range_lib -lupb_descriptor_lib -lupb_mini_descriptor_lib -lupb_mini_table_lib -lupb_hash_lib -lupb_mem_lib -lupb_base_lib -lupb_lex_lib"
@@ -55333,7 +55461,7 @@ generate_pkgconfig(
   "gRPC++ unsecure"
   "C++ wrapper for gRPC without SSL"
   "${gRPC_CPP_VERSION}"
-  "absl_absl_check absl_absl_log absl_algorithm_container absl_any_invocable absl_base absl_bind_front absl_bits absl_btree absl_check absl_cleanup absl_config absl_cord absl_core_headers absl_dynamic_annotations absl_flags absl_flags_marshalling absl_flat_hash_map absl_flat_hash_set absl_function_ref absl_hash absl_inlined_vector absl_layout absl_log absl_log_globals absl_log_severity absl_memory absl_no_destructor absl_node_hash_map absl_optional absl_prefetch absl_random_bit_gen_ref absl_random_distributions absl_random_random absl_span absl_status absl_statusor absl_str_format absl_string_view absl_strings absl_strings_internal absl_synchronization absl_time absl_type_traits absl_utility gpr grpc_unsecure"
+  "absl_absl_check absl_absl_log absl_algorithm_container absl_any_invocable absl_base absl_bind_front absl_bits absl_btree absl_charset absl_check absl_cleanup absl_config absl_cord absl_core_headers absl_dynamic_annotations absl_flags absl_flags_marshalling absl_flat_hash_map absl_flat_hash_set absl_function_ref absl_hash absl_inlined_vector absl_layout absl_log absl_log_globals absl_log_severity absl_memory absl_no_destructor absl_node_hash_map absl_optional absl_prefetch absl_random_bit_gen_ref absl_random_distributions absl_random_random absl_span absl_status absl_statusor absl_str_format absl_string_view absl_strings absl_strings_internal absl_synchronization absl_time absl_type_traits absl_utility gpr grpc_unsecure"
   "libcares zlib"
   "-lgrpc++_unsecure"
   "-laddress_sorting -lupb_textformat_lib -lupb_reflection_lib -lupb_wire_lib -lupb_message_lib -lutf8_range_lib -lupb_descriptor_lib -lupb_mini_descriptor_lib -lupb_mini_table_lib -lupb_hash_lib -lupb_mem_lib -lupb_base_lib -lupb_lex_lib"
@@ -55345,7 +55473,7 @@ if(gRPC_BUILD_GRPCPP_OTEL_PLUGIN)
     "gRPC++ OpenTelemetry Plugin"
     "OpenTelemetry Plugin for gRPC C++"
     "${gRPC_CPP_VERSION}"
-    "absl_absl_check absl_absl_log absl_algorithm_container absl_any_invocable absl_base absl_bind_front absl_bits absl_btree absl_check absl_cleanup absl_config absl_cord absl_core_headers absl_dynamic_annotations absl_flags absl_flags_marshalling absl_flat_hash_map absl_flat_hash_set absl_function_ref absl_hash absl_inlined_vector absl_layout absl_log absl_log_globals absl_log_severity absl_memory absl_no_destructor absl_node_hash_map absl_optional absl_prefetch absl_random_bit_gen_ref absl_random_distributions absl_random_random absl_span absl_status absl_statusor absl_str_format absl_string_view absl_strings absl_strings_internal absl_synchronization absl_time absl_type_traits absl_utility gpr grpc grpc++ opentelemetry_api"
+    "absl_absl_check absl_absl_log absl_algorithm_container absl_any_invocable absl_base absl_bind_front absl_bits absl_btree absl_charset absl_check absl_cleanup absl_config absl_cord absl_core_headers absl_dynamic_annotations absl_flags absl_flags_marshalling absl_flat_hash_map absl_flat_hash_set absl_function_ref absl_hash absl_inlined_vector absl_layout absl_log absl_log_globals absl_log_severity absl_memory absl_no_destructor absl_node_hash_map absl_optional absl_prefetch absl_random_bit_gen_ref absl_random_distributions absl_random_random absl_span absl_status absl_statusor absl_str_format absl_string_view absl_strings absl_strings_internal absl_synchronization absl_time absl_type_traits absl_utility gpr grpc grpc++ opentelemetry_api"
     "libcares openssl re2 zlib"
     "-lgrpcpp_otel_plugin"
     "-laddress_sorting -lupb_textformat_lib -lupb_json_lib -lupb_reflection_lib -lupb_wire_lib -lupb_message_lib -lutf8_range_lib -lupb_descriptor_lib -lupb_mini_descriptor_lib -lupb_mini_table_lib -lupb_hash_lib -lupb_mem_lib -lupb_base_lib -lupb_lex_lib"

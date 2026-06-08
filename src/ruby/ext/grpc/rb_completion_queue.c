@@ -24,6 +24,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 #include <ruby/thread.h>
+#include <stdbool.h>
 
 #include "rb_grpc.h"
 #include "rb_grpc_imports.generated.h"

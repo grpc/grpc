@@ -108,6 +108,14 @@ class ServerConfigFetcher
                           std::unique_ptr<WatcherInterface> watcher) = 0;
   virtual void CancelWatch(WatcherInterface* watcher) = 0;
   virtual grpc_pollset_set* interested_parties() = 0;
+
+  static absl::string_view ChannelArgName() {
+    return GRPC_ARG_SERVER_CONFIG_FETCHER;
+  }
+  static int ChannelArgsCompare(const ServerConfigFetcher* a,
+                                const ServerConfigFetcher* b) {
+    return QsortCompare(a, b);
+  }
 };
 
 namespace experimental {
@@ -338,10 +346,6 @@ class Server : public ServerInterface,
 
   ServerCallTracerFactory* server_call_tracer_factory() const override {
     return server_call_tracer_factory_;
-  }
-
-  void set_config_fetcher(RefCountedPtr<ServerConfigFetcher> config_fetcher) {
-    config_fetcher_ = std::move(config_fetcher);
   }
 
   bool HasOpenConnections() ABSL_LOCKS_EXCLUDED(mu_global_);

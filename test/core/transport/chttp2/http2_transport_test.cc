@@ -36,6 +36,7 @@
 #include "src/core/ext/transport/chttp2/transport/http2_settings_promises.h"
 #include "src/core/ext/transport/chttp2/transport/http2_status.h"
 #include "src/core/ext/transport/chttp2/transport/internal_channel_arg_names.h"
+#include "src/core/ext/transport/chttp2/transport/read_context.h"
 #include "src/core/ext/transport/chttp2/transport/stream.h"
 #include "src/core/ext/transport/chttp2/transport/transport_common.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -88,12 +89,10 @@ class TestsNeedingStreamObjects : public ::testing::TestWithParam<bool> {
                                             transport_flow_control_)
                    : MakeRefCounted<Stream>(
                          call_pair->initiator, transport_flow_control_,
-                         stream_id, /*allow_true_binary_metadata_peer=*/true,
-                         /*allow_true_binary_metadata_acked=*/true);
+                         stream_id, /*allow_true_binary_metadata_peer=*/true);
     if (is_client_) {
       stream->InitializeClientStream(stream_id,
-                                     /*allow_true_binary_metadata_peer=*/true,
-                                     /*allow_true_binary_metadata_acked=*/true);
+                                     /*allow_true_binary_metadata_peer=*/true);
     }
     GRPC_CHECK_EQ(stream->GetStreamId(), stream_id);
     stream_set_.push_back(std::move(stream));
@@ -245,7 +244,7 @@ TEST(Http2CommonTransportTest, TestReadTransportChannelArgs) {
     EXPECT_EQ(args.ping_timeout, Duration::Infinity());
     EXPECT_EQ(args.settings_timeout, Duration::Infinity());
     EXPECT_EQ(args.keepalive_permit_without_calls, false);
-    EXPECT_EQ(args.enable_preferred_rx_crypto_frame_advertisement, false);
+    EXPECT_EQ(transport_flow_control.ph2_enable_rx_crypto(), false);
     EXPECT_EQ(args.max_usable_hpack_table_size, -1);
     EXPECT_GE(args.max_header_list_size_soft_limit, 8192u);
   }
@@ -261,7 +260,7 @@ TEST(Http2CommonTransportTest, TestReadTransportChannelArgs) {
     EXPECT_EQ(args.ping_timeout, Duration::Minutes(1));
     EXPECT_EQ(args.settings_timeout, Duration::Minutes(1));
     EXPECT_EQ(args.keepalive_permit_without_calls, false);
-    EXPECT_EQ(args.enable_preferred_rx_crypto_frame_advertisement, false);
+    EXPECT_EQ(transport_flow_control.ph2_enable_rx_crypto(), false);
     EXPECT_EQ(args.max_usable_hpack_table_size, -1);
     EXPECT_GE(args.max_header_list_size_soft_limit, 8192u);
   }
@@ -288,7 +287,7 @@ TEST(Http2CommonTransportTest, TestReadTransportChannelArgs) {
     EXPECT_EQ(args.ping_timeout, Duration::Seconds(3));
     EXPECT_EQ(args.settings_timeout, Duration::Seconds(15));
     EXPECT_EQ(args.keepalive_permit_without_calls, true);
-    EXPECT_EQ(args.enable_preferred_rx_crypto_frame_advertisement, true);
+    EXPECT_EQ(transport_flow_control.ph2_enable_rx_crypto(), true);
     EXPECT_EQ(args.max_usable_hpack_table_size, 1024);
     EXPECT_EQ(args.max_header_list_size_soft_limit, 12345u);
   }
@@ -719,12 +718,12 @@ class Http2ReadContextTest : public ::testing::Test {
 TEST_F(Http2ReadContextTest, WakeWithoutPause) {
   // Test that calling ResumeReadLoopIfPaused before MaybePauseReadLoop has
   // no effect and does not crash.
-  Http2ReadContext read_context;
-  read_context.ResumeReadLoopIfPaused();
-  read_context.ResumeReadLoopIfPaused();
-  read_context.ResumeReadLoopIfPaused();
-  read_context.MaybePauseReadLoop();
-  read_context.SetPauseReadLoop();
+  ReadLoopPauseRestart read_loop_manager;
+  read_loop_manager.ResumeReadLoopIfPaused();
+  read_loop_manager.ResumeReadLoopIfPaused();
+  read_loop_manager.ResumeReadLoopIfPaused();
+  read_loop_manager.MaybePauseReadLoop();
+  read_loop_manager.SetPauseReadLoop();
 }
 
 class SimulatedTransport : public RefCounted<SimulatedTransport> {
@@ -736,7 +735,7 @@ class SimulatedTransport : public RefCounted<SimulatedTransport> {
         // Doing this alternate times to make sure that SetPauseReadLoop is
         // idempotent
         absl::StrAppend(&self->execution_order, "Pause ");
-        return self->context.MaybePauseReadLoop();
+        return self->read_loop_manager.MaybePauseReadLoop();
       }
       absl::StrAppend(&self->execution_order, ". ");
       return absl::OkStatus();
@@ -748,7 +747,7 @@ class SimulatedTransport : public RefCounted<SimulatedTransport> {
                     [self]() -> LoopCtl<absl::Status> {
                       if (self->i < 10) {
                         absl::StrAppend(&self->execution_order, "SetPause ");
-                        self->context.SetPauseReadLoop();
+                        self->read_loop_manager.SetPauseReadLoop();
                         return Continue();
                       }
                       absl::StrAppend(&self->execution_order, "EndRead ");
@@ -760,7 +759,7 @@ class SimulatedTransport : public RefCounted<SimulatedTransport> {
   auto SimulatedOneWrite() {
     return [self = this->Ref()]() -> Poll<absl::Status> {
       absl::StrAppend(&self->execution_order, "Wake ");
-      self->context.ResumeReadLoopIfPaused();
+      self->read_loop_manager.ResumeReadLoopIfPaused();
       return absl::OkStatus();
     };
   }
@@ -783,7 +782,7 @@ class SimulatedTransport : public RefCounted<SimulatedTransport> {
   std::string execution_order;
 
  private:
-  Http2ReadContext context;
+  ReadLoopPauseRestart read_loop_manager;
   int i = 0;
   bool did_end_read = false;
 };
@@ -811,7 +810,7 @@ TEST_F(Http2ReadContextTest, SetAndGetFrameHeader) {
   // Purpose: Verify that SetCurrentFrameHeader stores header attributes
   // correctly. Assertions: GetCurrentFrameHeader returns the exact frame header
   // that was set.
-  Http2ReadContext context;
+  ReadContext context(Slice::FromCopiedString("peer"), true);
   Http2FrameHeader header;
   header.length = 100u;
   header.type = 1u;
@@ -840,7 +839,7 @@ TEST_F(Http2ReadContextTest, ReadCycleFramesLimits) {
       "TestFramesLimits",
       [&was_pending_under_limit,
        &was_pending_at_limit]() -> Poll<absl::Status> {
-        Http2ReadContext read_context;
+        ReadContext read_context(Slice::FromCopiedString("peer"), true);
         const Http2FrameHeader header = {
             0u,  // length
             0u,  // type

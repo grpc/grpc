@@ -60,25 +60,31 @@ void XdsHttpGcpAuthnFilter::AddFilter(
   builder.AddFilter<GcpAuthenticationFilter>(std::move(config));
 }
 
-void XdsHttpGcpAuthnFilter::UpdateBlackboard(const FilterConfig& config,
-                                             const Blackboard* old_blackboard,
-                                             Blackboard* new_blackboard) const {
-  const auto& filter_config =
-      DownCast<const GcpAuthenticationFilter::Config&>(config);
-  ValidationErrors errors;
-  RefCountedPtr<GcpAuthenticationFilter::CallCredentialsCache> cache;
-  if (old_blackboard != nullptr) {
-    cache = old_blackboard->Get<GcpAuthenticationFilter::CallCredentialsCache>(
-        filter_config.instance_name);
-  }
-  if (cache != nullptr) {
-    cache->SetMaxSize(filter_config.cache_size);
-  } else {
-    cache = MakeRefCounted<GcpAuthenticationFilter::CallCredentialsCache>(
-        filter_config.cache_size);
-  }
-  CHECK_NE(new_blackboard, nullptr);
-  new_blackboard->Set(filter_config.instance_name, std::move(cache));
+RefCountedPtr<const FilterConfig> XdsHttpGcpAuthnFilter::MergeConfigs(
+    RefCountedPtr<const FilterConfig> top_level_config,
+    RefCountedPtr<const FilterConfig> /*virtual_host_override_config*/,
+    RefCountedPtr<const FilterConfig> /*route_override_config*/,
+    RefCountedPtr<const FilterConfig> /*cluster_weight_override_config*/,
+    Blackboard& blackboard) const {
+  // Make a copy of the parsed config.
+  const auto& parsed_config =
+      DownCast<const GcpAuthenticationFilter::Config&>(*top_level_config);
+  auto new_config = MakeRefCounted<GcpAuthenticationFilter::Config>();
+  new_config->instance_name = parsed_config.instance_name;
+  new_config->cache_size = parsed_config.cache_size;
+  // Get the cache from the blackboard, adding it if necessary.
+  bool constructed = false;
+  new_config->cache = blackboard.GetOrSet<
+      GcpAuthenticationFilter::CallCredentialsCache>(
+      new_config->instance_name, [&]() {
+        constructed = true;
+        return MakeRefCounted<GcpAuthenticationFilter::CallCredentialsCache>(
+            new_config->cache_size);
+      });
+  // If we didn't just construct the cache object, make sure it has the
+  // right size.
+  if (!constructed) new_config->cache->SetMaxSize(new_config->cache_size);
+  return new_config;
 }
 
 RefCountedPtr<const FilterConfig> XdsHttpGcpAuthnFilter::ParseTopLevelConfig(
