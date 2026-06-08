@@ -21,7 +21,7 @@ FROM debian:11
 RUN apt update && apt upgrade -y
 
 # Java
-RUN apt-get install -y openjdk-11-jdk
+RUN /usr/local/bin/apt-get-install-retry openjdk-11-jdk
 
 # Install Android SDK
 ENV ANDROID_HOME /opt/android-sdk

@@ -19,7 +19,7 @@ FROM --platform=linux/arm64/v8 arm64v8/debian:11
 #=================
 #  Create wrapper for apt-get
 
-COPY <<-"EOF" /usr/local/bin/apt-get-install-retry
+COPY --chmod=+x <<-"EOF" /usr/local/bin/apt-get-install-retry
 #!/usr/bin/env bash
 # Copyright 2026 The gRPC Authors
 #
@@ -72,7 +72,6 @@ for i in $(seq 1 $MAX_RETRIES); do
 done
 
 EOF
-RUN chmod +x /usr/local/bin/apt-get-install-retry
 
 
 # Basic C core dependencies
@@ -128,13 +127,13 @@ RUN mkdir /var/local/jenkins
 
 # Python test coverage requires libsqlite3, and it have
 # to be installed before Python.
-RUN apt-get update && apt-get install -y libsqlite3-dev
+RUN /usr/local/bin/apt-get-install-retry libsqlite3-dev
 
 #=================
 # Compile CPython 3.10.3 from source
 
-RUN apt-get update && apt-get install -y zlib1g-dev libssl-dev libsqlite3-dev && apt-get clean
-RUN apt-get update && apt-get install -y jq build-essential libffi-dev && apt-get clean
+RUN /usr/local/bin/apt-get-install-retry zlib1g-dev libssl-dev libsqlite3-dev
+RUN /usr/local/bin/apt-get-install-retry jq build-essential libffi-dev
 
 RUN cd /tmp && \
     wget -q https://www.python.org/ftp/python/3.10.3/Python-3.10.3.tgz && \
@@ -159,7 +158,7 @@ RUN python3.10 -m pip install --upgrade google-auth==1.23.0 google-api-python-cl
 # Install cmake
 # Note that this step should be only used for distributions that have new enough cmake to satisfy gRPC's cmake version requirement.
 
-RUN apt-get update && apt-get install -y cmake && apt-get clean
+RUN /usr/local/bin/apt-get-install-retry cmake
 
 #=================
 # Install ccache

@@ -19,7 +19,7 @@ FROM --platform=linux/arm64/v8 arm64v8/debian:12
 #=================
 #  Create wrapper for apt-get
 
-COPY <<-"EOF" /usr/local/bin/apt-get-install-retry
+COPY --chmod=+x <<-"EOF" /usr/local/bin/apt-get-install-retry
 #!/usr/bin/env bash
 # Copyright 2026 The gRPC Authors
 #
@@ -72,7 +72,6 @@ for i in $(seq 1 $MAX_RETRIES); do
 done
 
 EOF
-RUN chmod +x /usr/local/bin/apt-get-install-retry
 
 
 # Basic C core dependencies
@@ -128,12 +127,12 @@ RUN git config --global protocol.file.allow always
 # Basic python dependencies to be able to run tools/run_tests python scripts
 # These dependencies are not sufficient to build gRPC Python, gRPC Python
 # deps are defined elsewhere (e.g. python_deps.include)
-RUN apt-get update && apt-get install -y \
+RUN /usr/local/bin/apt-get-install-retry \
   python3 \
   python3-pip \
   python3-setuptools \
-  python3-yaml \
-  && apt-get clean
+  python3-yaml
+ 
 
 # use pinned version of pip to avoid sudden breakages
 # Some newer distros that have already implemented PEP 668. Use of
@@ -150,19 +149,20 @@ RUN python3 -m pip install six==1.16.0
 RUN python3 -m pip install --upgrade google-auth==1.23.0 google-api-python-client==1.12.8 oauth2client==4.1.0
 
 
-RUN apt-get update && apt-get install -y php8.2 php8.2-dev php-pear && apt-get clean
+RUN /usr/local/bin/apt-get-install-retry  php8.2 php8.2-dev php-pear
 #=================
 # PHP Test dependencies
 
- RUN apt-get update && apt-get install -y \
+ RUN /usr/local/bin/apt-get-install-retry \
     valgrind
+
 #=================
 # Install cmake
 # Note that this step should be only used for distributions that have new enough cmake to satisfy gRPC's cmake version requirement.
 
-RUN apt-get update && apt-get install -y cmake && apt-get clean
+RUN /usr/local/bin/apt-get-install-retry cmake
 
-RUN apt-get update && apt-get install -y ccache && apt-get clean
+RUN /usr/local/bin/apt-get-install-retry  ccache
 
 RUN mkdir /var/local/jenkins
 

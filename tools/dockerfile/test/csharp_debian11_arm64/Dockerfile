@@ -19,7 +19,7 @@ FROM --platform=linux/arm64/v8 arm64v8/debian:11
 #=================
 #  Create wrapper for apt-get
 
-COPY <<-"EOF" /usr/local/bin/apt-get-install-retry
+COPY --chmod=+x <<-"EOF" /usr/local/bin/apt-get-install-retry
 #!/usr/bin/env bash
 # Copyright 2026 The gRPC Authors
 #
@@ -72,7 +72,6 @@ for i in $(seq 1 $MAX_RETRIES); do
 done
 
 EOF
-RUN chmod +x /usr/local/bin/apt-get-install-retry
 
 
 # Basic C core dependencies
@@ -128,12 +127,12 @@ RUN git config --global protocol.file.allow always
 # Basic python dependencies to be able to run tools/run_tests python scripts
 # These dependencies are not sufficient to build gRPC Python, gRPC Python
 # deps are defined elsewhere (e.g. python_deps.include)
-RUN apt-get update && apt-get install -y \
+RUN /usr/local/bin/apt-get-install-retry \
   python3 \
   python3-pip \
   python3-setuptools \
-  python3-yaml \
-  && apt-get clean
+  python3-yaml
+ 
 
 # use pinned version of pip to avoid sudden breakages
 RUN python3 -m pip install --upgrade pip==19.3.1
@@ -151,17 +150,17 @@ RUN python3 -m pip install --upgrade google-auth==1.23.0 google-api-python-clien
 # C# dependencies
 
 # cmake >=3.6 needed to build grpc_csharp_ext
-RUN apt-get update && apt-get install -y cmake && apt-get clean
+RUN /usr/local/bin/apt-get-install-retry cmake
 
 # Install mono
-RUN apt-get update && apt-get install -y apt-transport-https dirmngr && apt-get clean
+RUN /usr/local/bin/apt-get-install-retry apt-transport-https dirmngr
 RUN apt-key adv --no-tty --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 3FA7E0328081BFF6A14DA29AA6A19B38D3D831EF
 RUN echo "deb https://download.mono-project.com/repo/debian stable-buster main" | tee /etc/apt/sources.list.d/mono-official-stable.list
-RUN apt-get update && apt-get install -y \
+RUN /usr/local/bin/apt-get-install-retry \
     mono-devel \
     ca-certificates-mono \
-    nuget \
-    && apt-get clean
+    nuget
+   
 
 # Install .NET Core 3.1 (to be able to run the netcoreapp3.1 targets)
 RUN DOTNET_DOWNLOAD_VERSION=3.1.415 \

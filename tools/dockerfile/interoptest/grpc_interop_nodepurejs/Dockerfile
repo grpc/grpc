@@ -19,7 +19,7 @@ FROM debian:11
 #=================
 #  Create wrapper for apt-get
 
-COPY <<-"EOF" /usr/local/bin/apt-get-install-retry
+COPY --chmod=+x <<-"EOF" /usr/local/bin/apt-get-install-retry
 #!/usr/bin/env bash
 # Copyright 2026 The gRPC Authors
 #
@@ -72,7 +72,6 @@ for i in $(seq 1 $MAX_RETRIES); do
 done
 
 EOF
-RUN chmod +x /usr/local/bin/apt-get-install-retry
 
 
 # Basic C core dependencies
