@@ -836,7 +836,10 @@ class InterceptedUnaryStreamCall(
                     )
                 else:
                     if self._last_returned_call_from_interceptors is None:
-                        err_msg = "Interceptor returned an AsyncIterable but did not call continuation"
+                        err_msg = (
+                            "Interceptor returned an AsyncIterable but did not "
+                            "call continuation"
+                        )
                         raise RuntimeError(err_msg)
                     self._last_returned_call_from_interceptors = (
                         UnaryStreamCallResponseIterator(
@@ -1059,7 +1062,10 @@ class InterceptedStreamStreamCall(
                     )
                 elif hasattr(call_or_response_iterator, "__aiter__"):
                     if self._last_returned_call_from_interceptors is None:
-                        err_msg = "Interceptor returned an AsyncIterable but did not call continuation"
+                        err_msg = (
+                            "Interceptor returned an AsyncIterable but did not "
+                            "call continuation"
+                        )
                         raise RuntimeError(err_msg)
                     self._last_returned_call_from_interceptors = (
                         StreamStreamCallResponseIterator(
