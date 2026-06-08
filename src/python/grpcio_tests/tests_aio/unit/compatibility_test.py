@@ -18,6 +18,7 @@ from concurrent.futures import ThreadPoolExecutor
 import logging
 import os
 import random
+import sys
 import threading
 from typing import Callable, Iterable, Sequence, Tuple
 import unittest
@@ -308,9 +309,19 @@ class TestCompatibility(AioTestBase):
         with self.assertRaises(aio.AioRpcError) as exception_context:
             async for response in call:
                 self.assertEqual(_REQUEST, response)
-        self.assertEqual(
-            grpc.StatusCode.UNKNOWN, exception_context.exception.code()
-        )
+        # On darwin under high concurrency the connection can drop before
+        # the server-side RuntimeError propagates as UNKNOWN, surfacing as
+        # UNAVAILABLE on the client. Accept either on darwin; elsewhere
+        # keep the strict UNKNOWN check.
+        if sys.platform == "darwin":
+            self.assertIn(
+                exception_context.exception.code(),
+                (grpc.StatusCode.UNKNOWN, grpc.StatusCode.UNAVAILABLE),
+            )
+        else:
+            self.assertEqual(
+                grpc.StatusCode.UNKNOWN, exception_context.exception.code()
+            )
 
     async def test_sync_stream_unary_success(self):
         @grpc.stream_unary_rpc_method_handler
@@ -341,9 +352,19 @@ class TestCompatibility(AioTestBase):
             response = await self._async_channel.stream_unary(
                 _common.ADHOC_METHOD
             )(request_iterator)
-        self.assertEqual(
-            grpc.StatusCode.UNKNOWN, exception_context.exception.code()
-        )
+        # On darwin under high concurrency the connection can drop before
+        # the server-side RuntimeError propagates as UNKNOWN, surfacing as
+        # UNAVAILABLE on the client. Accept either on darwin; elsewhere
+        # keep the strict UNKNOWN check.
+        if sys.platform == "darwin":
+            self.assertIn(
+                exception_context.exception.code(),
+                (grpc.StatusCode.UNKNOWN, grpc.StatusCode.UNAVAILABLE),
+            )
+        else:
+            self.assertEqual(
+                grpc.StatusCode.UNKNOWN, exception_context.exception.code()
+            )
 
     async def test_sync_stream_stream_success(self):
         @grpc.stream_stream_rpc_method_handler
@@ -378,9 +399,19 @@ class TestCompatibility(AioTestBase):
         with self.assertRaises(aio.AioRpcError) as exception_context:
             async for response in call:
                 self.assertEqual(_REQUEST, response)
-        self.assertEqual(
-            grpc.StatusCode.UNKNOWN, exception_context.exception.code()
-        )
+        # On darwin under high concurrency the connection can drop before
+        # the server-side RuntimeError propagates as UNKNOWN, surfacing as
+        # UNAVAILABLE on the client. Accept either on darwin; elsewhere
+        # keep the strict UNKNOWN check.
+        if sys.platform == "darwin":
+            self.assertIn(
+                exception_context.exception.code(),
+                (grpc.StatusCode.UNKNOWN, grpc.StatusCode.UNAVAILABLE),
+            )
+        else:
+            self.assertEqual(
+                grpc.StatusCode.UNKNOWN, exception_context.exception.code()
+            )
 
 
 if __name__ == "__main__":

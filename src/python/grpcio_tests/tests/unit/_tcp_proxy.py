@@ -36,12 +36,17 @@ _TCP_PROXY_TIMEOUT = datetime.timedelta(seconds=1)
 
 
 def _init_proxy_socket(gateway_address, gateway_port):
+    # Per-attempt connect timeout so a hung connect (seen on darwin under
+    # heavy --runs_per_test load) can't swallow the whole retry budget.
+    # Without this socket.create_connection blocks on the kernel's default
+    # TCP connect timeout (~75s on macOS), which exceeds the test deadline.
     last_err = None
     for attempt in range(10):
         try:
             proxy_socket = socket.create_connection(
-                (gateway_address, gateway_port)
+                (gateway_address, gateway_port), timeout=2
             )
+            proxy_socket.settimeout(None)
             return proxy_socket
         except Exception as err:
             last_err = err
