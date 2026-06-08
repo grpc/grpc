@@ -220,10 +220,7 @@ class StreamUnaryCall(
 class StreamStreamCall(
     Generic[RequestType, ResponseType], Call, metaclass=ABCMeta
 ):
-    @property
-    @abstractmethod
-    def _done_writing_flag(self) -> bool:
-        """Indicates whether the client is done sending messages."""
+    _done_writing_flag: bool
 
     @abstractmethod
     def __aiter__(self) -> AsyncIterator[ResponseType]:
