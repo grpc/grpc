@@ -134,14 +134,6 @@ class Call(RpcContext, metaclass=ABCMeta):
         This method is recommended for building retry mechanisms.
         """
 
-    @abstractmethod
-    async def debug_error_string(self) -> Optional[str]:
-        """Accesses the debug error string sent by the server.
-
-        Returns:
-          The debug error string received.
-        """
-
 
 class UnaryUnaryCall(
     Generic[RequestType, ResponseType], Call, metaclass=ABCMeta
@@ -160,11 +152,6 @@ class UnaryUnaryCall(
 class UnaryStreamCall(
     Generic[RequestType, ResponseType], Call, metaclass=ABCMeta
 ):
-    @property
-    @abstractmethod
-    def _done_writing_flag(self) -> bool:
-        """Indicates whether the client is done sending messages."""
-
     @abstractmethod
     def __aiter__(self) -> AsyncIterator[ResponseType]:
         """Returns the async iterator representation that yields messages.
@@ -188,6 +175,14 @@ class UnaryStreamCall(
         Returns:
           A response message, or an `grpc.aio.EOF` to indicate the end of the
           stream.
+        """
+
+    @abstractmethod
+    async def debug_error_string(self) -> Optional[str]:
+        """Accesses the debug error string sent by the server.
+
+        Returns:
+          The debug error string received.
         """
 
 
@@ -225,10 +220,7 @@ class StreamUnaryCall(
 class StreamStreamCall(
     Generic[RequestType, ResponseType], Call, metaclass=ABCMeta
 ):
-    @property
-    @abstractmethod
-    def _done_writing_flag(self) -> bool:
-        """Indicates whether the client is done sending messages."""
+    _done_writing_flag: bool
 
     @abstractmethod
     def __aiter__(self) -> AsyncIterator[ResponseType]:
@@ -272,4 +264,12 @@ class StreamStreamCall(
 
         After done_writing is called, any additional invocation to the write
         function will fail. This function is idempotent.
+        """
+
+    @abstractmethod
+    async def debug_error_string(self) -> Optional[str]:
+        """Accesses the debug error string sent by the server.
+
+        Returns:
+          The debug error string received.
         """
