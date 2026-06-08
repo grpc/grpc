@@ -118,6 +118,25 @@ def _patch_grpc_localhost():
 
 _patch_grpc_localhost()
 
+# On macOS the gRPC aio interpreter-shutdown path occasionally leaves
+# background pollers alive after unittest.main() exits, hanging the process
+# past Bazel's per-test timeout even though every test passed. Replace
+# sys.exit with os._exit so the runner terminates immediately with the
+# unittest result code instead of waiting on asyncio/grpc finalizers.
+if sys.platform == "darwin":
+    import os
+
+    def _hard_exit(code=0):
+        if isinstance(code, bool):
+            code = 1 if code else 0
+        elif code is None:
+            code = 0
+        elif not isinstance(code, int):
+            code = 1
+        os._exit(code)
+
+    sys.exit = _hard_exit
+
 from grpc.experimental import aio
 
 __all__ = "AioTestBase"
