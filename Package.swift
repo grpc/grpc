@@ -1441,6 +1441,7 @@ let package = Package(
         "src/core/lib/event_engine/extensions/channelz.h",
         "src/core/lib/event_engine/extensions/chaotic_good_extension.h",
         "src/core/lib/event_engine/extensions/iomgr_compatible.h",
+        "src/core/lib/event_engine/extensions/receive_coalescing_extension.h",
         "src/core/lib/event_engine/extensions/supports_fd.h",
         "src/core/lib/event_engine/extensions/supports_win_sockets.h",
         "src/core/lib/event_engine/extensions/tcp_trace.h",
