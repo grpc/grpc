@@ -70,9 +70,11 @@ class TokenFetcherCredentials : public grpc_call_credentials {
 
   void Orphaned() override;
 
+  // TODO(roth): Change internal code to not override this method and then
+  // change it to 'final'.
   ArenaPromise<absl::StatusOr<ClientMetadataHandle>> GetRequestMetadata(
       ClientMetadataHandle initial_metadata,
-      const GetRequestMetadataArgs* args) final;
+      const GetRequestMetadataArgs* args) override;
 
  protected:
   // Base class for fetch requests.
