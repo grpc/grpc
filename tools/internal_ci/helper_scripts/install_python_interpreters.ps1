@@ -24,6 +24,14 @@ function Install-Python {
         [string]$PythonInstallPath,
         [string]$PythonInstallerHash
     )
+    $PythonBinary = "$PythonInstallPath\python.exe"
+    
+    # Check if target path already exists
+    if (Test-Path $PythonBinary) {
+        Write-Host "Python $PythonVersion already installed at $PythonInstallPath. Skipping."
+        return
+    }
+
     $PythonInstallerUrl = "https://www.python.org/ftp/python/$PythonVersion/$PythonInstaller.exe"
     $PythonInstallerPath = "C:\tools\$PythonInstaller.exe"
 
