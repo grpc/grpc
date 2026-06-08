@@ -348,6 +348,12 @@ std::variant<size_t, absl::Status> grpc_chttp2_perform_read(
           << " len:" << t->incoming_frame_size
           << absl::StrFormat(" id:0x%08x", t->incoming_stream_id);
       t->deframe_state = GRPC_DTS_FRAME;
+      if (t->incoming_frame_size != 0 &&
+          t->incoming_frame_size > t->settings.acked().max_frame_size()) {
+        return GRPC_ERROR_CREATE(absl::StrFormat(
+            "Frame size %d is larger than max frame size %d",
+            t->incoming_frame_size, t->settings.acked().max_frame_size()));
+      }
       err = init_frame_parser(t, requests_started);
       if (!err.ok()) {
         return err;
@@ -363,11 +369,6 @@ std::variant<size_t, absl::Status> grpc_chttp2_perform_read(
           return absl::OkStatus();
         }
         goto dts_fh_0;  // loop
-      } else if (t->incoming_frame_size >
-                 t->settings.acked().max_frame_size()) {
-        return GRPC_ERROR_CREATE(absl::StrFormat(
-            "Frame size %d is larger than max frame size %d",
-            t->incoming_frame_size, t->settings.acked().max_frame_size()));
       }
       if (++cur == end) {
         return absl::OkStatus();
