@@ -488,12 +488,13 @@ class InterceptedCall:
         if not self._interceptors_task.done():
             return False
 
-        try:
-            call = self._interceptors_task.result()
-        except (AioRpcError, asyncio.CancelledError):
+        exc = self._interceptors_task.exception()
+        if exc is not None:
             return True
 
-        return getattr(call, "_done_writing_flag", True)
+        call = self._interceptors_task.result()
+
+        return call._done_writing_flag
 
 
 class _InterceptedUnaryResponseMixin:
@@ -1215,9 +1216,7 @@ class UnaryStreamCallResponseIterator(
 
     @property
     def _done_writing_flag(self) -> bool:
-        if self._call is None:
-            return False
-        return getattr(self._call, "_done_writing_flag", True)
+        return self._call._done_writing_flag
 
 
 class StreamStreamCallResponseIterator(
@@ -1244,6 +1243,4 @@ class StreamStreamCallResponseIterator(
 
     @property
     def _done_writing_flag(self) -> bool:
-        if self._call is None:
-            return False
-        return getattr(self._call, "_done_writing_flag", True)
+        return self._call._done_writing_flag
