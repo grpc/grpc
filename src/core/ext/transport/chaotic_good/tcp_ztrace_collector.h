@@ -78,6 +78,7 @@ struct EndpointWriteMetricsTrace {
       write_event;
   std::vector<std::pair<absl::string_view, int64_t>> metrics;
   size_t endpoint_id;
+  uint64_t connection_id;
 
   channelz::PropertyList ChannelzProperties() const {
     return channelz::PropertyList()
@@ -91,7 +92,8 @@ struct EndpointWriteMetricsTrace {
           }
           return props;
         }())
-        .Set("endpoint_id", endpoint_id);
+        .Set("endpoint_id", endpoint_id)
+        .Set("connection_id", connection_id);
   }
 
   void RenderJson(Json::Object& object) const {
@@ -103,6 +105,7 @@ struct EndpointWriteMetricsTrace {
       object.emplace(name, Json::FromNumber(value));
     }
     object["endpoint_id"] = Json::FromNumber(endpoint_id);
+    object["connection_id"] = Json::FromNumber(connection_id);
   }
 };
 
@@ -156,6 +159,7 @@ struct WriteLargeFrameHeaderTrace {
   uint64_t payload_size;
   uint32_t chosen_endpoint;
   uint32_t stream_id;
+  uint64_t connection_id;
 
   channelz::PropertyList ChannelzProperties() const {
     return channelz::PropertyList()
@@ -163,7 +167,8 @@ struct WriteLargeFrameHeaderTrace {
         .Set("payload_tag", payload_tag)
         .Set("payload_size", payload_size)
         .Set("chosen_endpoint", chosen_endpoint)
-        .Set("stream_id", stream_id);
+        .Set("stream_id", stream_id)
+        .Set("connection_id", connection_id);
   }
 };
 
@@ -204,12 +209,14 @@ struct WriteBytesToControlChannelTrace {
 struct ChunkStreamAssociationTrace {
   int64_t stream_id;
   uint64_t flow_id;
+  uint64_t connection_id;
 
   channelz::PropertyList ChannelzProperties() const {
     return channelz::PropertyList()
         .Set("metadata_type", "CHUNK_STREAM_ASSOCIATION")
         .Set("stream_id", stream_id)
-        .Set("flow_id", flow_id);
+        .Set("flow_id", flow_id)
+        .Set("connection_id", connection_id);
   }
 };
 
@@ -250,6 +257,18 @@ struct EndpointCloseTrace {
   }
 };
 
+struct TransportInitTrace {
+  std::string peer_address;
+  uint64_t connection_id;
+
+  channelz::PropertyList ChannelzProperties() const {
+    return channelz::PropertyList()
+        .Set("metadata_type", "TRANSPORT_INIT")
+        .Set("peer_address", peer_address)
+        .Set("connection_id", connection_id);
+  }
+};
+
 using TcpZTraceCollector = channelz::ZTraceCollector<
     tcp_ztrace_collector_detail::Config, ReadFrameHeaderTrace,
     ReadDataHeaderTrace, WriteFrameHeaderTrace, TraceWriteSchedule,
@@ -257,7 +276,7 @@ using TcpZTraceCollector = channelz::ZTraceCollector<
     WriteBytesToEndpointTrace, FinishWriteBytesToEndpointTrace,
     WriteBytesToControlChannelTrace, FinishWriteBytesToControlChannelTrace,
     ChunkStreamAssociationTrace, TransportError<true>, TransportError<false>,
-    OrphanTrace, EndpointCloseTrace>;
+    OrphanTrace, EndpointCloseTrace, TransportInitTrace>;
 
 }  // namespace grpc_core::chaotic_good
 
