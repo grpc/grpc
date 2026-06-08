@@ -16,7 +16,10 @@ load("@rules_python//python:defs.bzl", "py_test")
 
 py_test(
     name = "csds_test",
-    size = "small",
+    size = select({
+        "@platforms//os:macos": "medium",
+        "//conditions:default": "small",
+    }),
     srcs = ["csds_test.py"],
     main = "csds_test.py",
     python_version = "PY3",
