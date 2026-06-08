@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "src/core/filter/blackboard.h"
+#include "src/core/xds/grpc/blackboard.h"
 
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
@@ -37,24 +37,32 @@ class BarEntry : public Blackboard::Entry {
 };
 
 TEST(Blackboard, Basic) {
-  Blackboard blackboard;
-  // No entry for type FooEntry key "foo".
-  EXPECT_EQ(blackboard.Get<FooEntry>("a"), nullptr);
-  // Set entry for type FooEntry key "foo".
+  auto blackboard = MakeRefCounted<Blackboard>();
+  // No entry for type FooEntry key "a".
+  EXPECT_EQ(blackboard->Get<FooEntry>("a"), nullptr);
+  // Set entry for type FooEntry key "a".
   auto foo_entry = MakeRefCounted<FooEntry>();
-  blackboard.Set("a", foo_entry);
+  auto foo_entry_actual =
+      blackboard->GetOrSet<FooEntry>("a", [&]() { return foo_entry; });
+  EXPECT_EQ(foo_entry, foo_entry_actual);
   // Get the entry we just added.
-  EXPECT_EQ(blackboard.Get<FooEntry>("a"), foo_entry);
+  EXPECT_EQ(blackboard->Get<FooEntry>("a"), foo_entry);
+  // Re-add the entry, which should return the original entry.
+  EXPECT_EQ(blackboard->GetOrSet<FooEntry>(
+                "a", [&]() { return MakeRefCounted<FooEntry>(); }),
+            foo_entry);
   // A different key for the same type is still unset.
-  EXPECT_EQ(blackboard.Get<FooEntry>("b"), nullptr);
+  EXPECT_EQ(blackboard->Get<FooEntry>("b"), nullptr);
   // The same key for a different type is still unset.
-  EXPECT_EQ(blackboard.Get<BarEntry>("a"), nullptr);
-  // Set entry for type BarEntry key "foo".
+  EXPECT_EQ(blackboard->Get<BarEntry>("a"), nullptr);
+  // Set entry for type BarEntry key "a".
   auto bar_entry = MakeRefCounted<BarEntry>();
-  blackboard.Set("a", bar_entry);
-  EXPECT_EQ(blackboard.Get<BarEntry>("a"), bar_entry);
+  auto bar_entry_actual =
+      blackboard->GetOrSet<BarEntry>("a", [&]() { return bar_entry; });
+  EXPECT_EQ(bar_entry_actual, bar_entry);
+  EXPECT_EQ(blackboard->Get<BarEntry>("a"), bar_entry);
   // This should not have replaced the same key for FooEntry.
-  EXPECT_EQ(blackboard.Get<FooEntry>("a"), foo_entry);
+  EXPECT_EQ(blackboard->Get<FooEntry>("a"), foo_entry);
 }
 
 }  // namespace
