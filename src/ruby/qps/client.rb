@@ -116,6 +116,7 @@ class BenchmarkClient
   end
   def streaming_ping_ponger(req, stub, config, waiter)
     q = EnumeratorQueue.new(self)
+    # Exposes the queue to the shutdown thread for termination
     Thread.current.thread_variable_set(:queue, q)
     return if @done
     resp = stub.streaming_call(q.each_item)
@@ -155,6 +156,7 @@ class BenchmarkClient
   end
   def shutdown
     @done = true
+    # Sends a stop signal to each streaming threads.
     @child_threads
       .each { |t| t.thread_variable_get(:queue)&.push(self) }
       .each(&:join)
