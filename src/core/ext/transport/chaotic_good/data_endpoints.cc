@@ -302,7 +302,7 @@ void OutputBuffers::Schedule() {
             absl::ConvertVariantTo<FrameInterface&>(message->frame->payload);
         return WriteLargeFrameHeaderTrace{
             message->payload_tag, WriteSizeForFrame(*message), *selected_reader,
-            frame.MakeHeader().stream_id};
+            frame.MakeHeader().stream_id, connection_id_};
       });
       SchedulingData& scheduling = scheduling_data[*selected_reader];
       scheduling.queued_bytes += WriteSizeForFrame(*message);
@@ -518,8 +518,11 @@ class MetricsCollector
  public:
   explicit MetricsCollector(
       Clock* clock,
-      grpc_event_engine::experimental::EventEngine::Endpoint& endpoint)
-      : clock_(clock), telemetry_info_(endpoint.GetTelemetryInfo()) {
+      grpc_event_engine::experimental::EventEngine::Endpoint& endpoint,
+      uint64_t connection_id)
+      : clock_(clock),
+        connection_id_(connection_id),
+        telemetry_info_(endpoint.GetTelemetryInfo()) {
     if (telemetry_info_ == nullptr) return;
     delivery_rate_ = telemetry_info_->GetMetricKey("delivery_rate");
     rtt_ = telemetry_info_->GetMetricKey("net_rtt_usec");
@@ -642,8 +645,10 @@ class MetricsCollector
           GRPC_LATENT_SEE_SCOPE("MetricsCollector::WriteEventSink");
           ztrace_collector->Append([event, timestamp, &metrics,
                                     telemetry_info = self->telemetry_info_,
-                                    reader]() {
-            EndpointWriteMetricsTrace trace{timestamp, event, {}, reader->id()};
+                                    reader,
+                                    connection_id = self->connection_id_]() {
+            EndpointWriteMetricsTrace trace{
+                timestamp, event, {}, reader->id(), connection_id};
             trace.metrics.reserve(metrics.size());
             for (const auto [id, value] : metrics) {
               if (auto name = telemetry_info->GetMetricName(id);
@@ -669,6 +674,7 @@ class MetricsCollector
 
  private:
   Clock* const clock_;
+  const uint64_t connection_id_;
   std::optional<size_t> delivery_rate_;
   std::optional<size_t> rtt_;
   std::optional<size_t> min_rtt_;
@@ -758,7 +764,7 @@ auto Endpoint::PullDataPayload(RefCountedPtr<EndpointContext> ctx) {
 
 auto Endpoint::WriteLoop(RefCountedPtr<EndpointContext> ctx) {
   auto metrics_collector = MakeRefCounted<MetricsCollector>(
-      ctx->clock, *ctx->endpoint->GetEventEngineEndpoint());
+      ctx->clock, *ctx->endpoint->GetEventEngineEndpoint(), ctx->connection_id);
   if (!metrics_collector->HasAnyMetrics()) {
     metrics_collector.reset();
   }
@@ -927,7 +933,8 @@ Endpoint::Endpoint(uint32_t id, uint32_t encode_alignment,
                    RefCountedPtr<InputQueue> input_queues,
                    PendingConnection pending_connection, bool enable_tracing,
                    TransportContextPtr ctx,
-                   std::shared_ptr<TcpZTraceCollector> ztrace_collector) {
+                   std::shared_ptr<TcpZTraceCollector> ztrace_collector,
+                   uint64_t connection_id) {
   auto ep_ctx = MakeRefCounted<EndpointContext>();
   ctx_ = ep_ctx;
   ep_ctx->id = id;
@@ -943,6 +950,7 @@ Endpoint::Endpoint(uint32_t id, uint32_t encode_alignment,
   ep_ctx->clock = clock;
   ep_ctx->transport_ctx = std::move(ctx);
   ep_ctx->reader = ep_ctx->output_buffers->MakeReader(ep_ctx->id);
+  ep_ctx->connection_id = connection_id;
   party_ = Party::Make(ep_ctx->arena);
   party_->Spawn(
       "write",
@@ -1033,17 +1041,18 @@ DataEndpoints::DataEndpoints(
     uint32_t encode_alignment, uint32_t decode_alignment,
     uint32_t max_receive_message_length,
     std::shared_ptr<TcpZTraceCollector> ztrace_collector, bool enable_tracing,
-    std::string scheduler_config, data_endpoints_detail::Clock* clock)
+    std::string scheduler_config, uint64_t connection_id,
+    data_endpoints_detail::Clock* clock)
     : channelz::DataSource(ctx->socket_node),
       output_buffers_(MakeRefCounted<data_endpoints_detail::OutputBuffers>(
           clock, encode_alignment, ztrace_collector,
-          std::move(scheduler_config), ctx)),
+          std::move(scheduler_config), ctx, connection_id)),
       input_queues_(MakeRefCounted<data_endpoints_detail::InputQueue>()) {
   for (size_t i = 0; i < endpoints_vec.size(); ++i) {
     endpoints_.emplace_back(std::make_unique<data_endpoints_detail::Endpoint>(
         i, encode_alignment, decode_alignment, max_receive_message_length,
         clock, output_buffers_, input_queues_, std::move(endpoints_vec[i]),
-        enable_tracing, ctx, ztrace_collector));
+        enable_tracing, ctx, ztrace_collector, connection_id));
   }
   SourceConstructed();
 }
