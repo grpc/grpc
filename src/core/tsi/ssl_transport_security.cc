@@ -178,7 +178,7 @@ struct HandshakerNextArgs {
   size_t original_received_bytes_size = 0;
   tsi_handshaker_on_next_done_cb cb;
   void* user_data;
-  std::string* error_ptr = nullptr;
+  TsiErrorDetails* error_ptr = nullptr;
 
   // Output args.
   const unsigned char* bytes_to_send = nullptr;
@@ -212,7 +212,7 @@ struct tsi_ssl_handshaker : public tsi_handshaker,
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(&mu) {
     if (!handshaker_next_args.has_value()) return;
     if (handshaker_next_args->error_ptr == nullptr) return;
-    *handshaker_next_args->error_ptr = std::move(error);
+    handshaker_next_args->error_ptr->error = std::move(error);
   }
 #if defined(OPENSSL_IS_BORINGSSL)
   std::shared_ptr<grpc_core::PrivateKeySigner> key_signer;
@@ -2390,22 +2390,25 @@ ssl_handshaker_next_async(tsi_ssl_handshaker* self)
 }
 
 // Entry point when the security handshaker calls tsi_handshaker_next().
-static tsi_result ssl_handshaker_next(
-    tsi_handshaker* self, const unsigned char* received_bytes,
-    size_t received_bytes_size, const unsigned char** bytes_to_send,
-    size_t* bytes_to_send_size, tsi_handshaker_result** handshaker_result,
-    tsi_handshaker_on_next_done_cb cb, void* user_data, std::string* error) {
+static tsi_result ssl_handshaker_next(tsi_handshaker* self,
+                                      const unsigned char* received_bytes,
+                                      size_t received_bytes_size,
+                                      const unsigned char** bytes_to_send,
+                                      size_t* bytes_to_send_size,
+                                      tsi_handshaker_result** handshaker_result,
+                                      tsi_handshaker_on_next_done_cb cb,
+                                      void* user_data, TsiErrorDetails* error) {
   // Input sanity check.
   if ((received_bytes_size > 0 && received_bytes == nullptr) ||
       bytes_to_send == nullptr || bytes_to_send_size == nullptr ||
       handshaker_result == nullptr) {
-    if (error != nullptr) *error = "invalid argument";
+    if (error != nullptr) error->error = "invalid argument";
     return TSI_INVALID_ARGUMENT;
   }
   tsi_ssl_handshaker* impl = static_cast<tsi_ssl_handshaker*>(self);
   grpc_core::MutexLock lock(&impl->mu);
   if (impl->is_shutdown) {
-    if (error != nullptr) *error = "Handshaker shutdown";
+    if (error != nullptr) error->error = "Handshaker shutdown";
     return TSI_HANDSHAKE_SHUTDOWN;
   }
   // Store args in impl->handshaker_next_args.
@@ -2456,7 +2459,7 @@ static void ssl_handshaker_shutdown(tsi_handshaker* self) {
     grpc_event_engine::experimental::GetDefaultEventEngine()->Run(
         [args = std::move(*next_args)]() mutable {
           if (args.error_ptr != nullptr) {
-            *args.error_ptr = "Handshaker shutdown";
+            args.error_ptr->error = "Handshaker shutdown";
           }
           if (args.cb != nullptr) {
             args.cb(TSI_HANDSHAKE_SHUTDOWN, args.user_data, nullptr, 0,
