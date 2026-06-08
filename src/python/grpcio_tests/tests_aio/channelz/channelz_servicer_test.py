@@ -140,6 +140,15 @@ class ChannelzServicerTest(AioTestBase):
             "localhost:%d" % port, options=_DISABLE_CHANNELZ
         )
         self._channelz_stub = channelz_pb2_grpc.ChannelzStub(self._channel)
+        # Pre-warm the channel so the first RPC inside a test doesn't pay
+        # the kernel TCP connect timeout under heavy --runs_per_test load
+        # on darwin (seen as `getsockopt(SO_ERROR): Operation timed out`).
+        try:
+            await asyncio.wait_for(self._channel.channel_ready(), timeout=30)
+        except asyncio.TimeoutError:
+            self.fail(
+                "channelz control channel did not become READY within 30s"
+            )
 
     async def tearDown(self):
         await self._channel.close()
