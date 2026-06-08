@@ -446,12 +446,14 @@ class SslTransportSecurityTest
                     ssl_fixture->network_bio_buf_size_,
                     ssl_fixture->ssl_bio_buf_size_,
                     ssl_fixture->alpn_client_overriden_protocols_,
+                    /*stats_plugin_group=*/nullptr,
                     &ssl_fixture->base_.client_handshaker),
                 TSI_OK);
       ASSERT_EQ(tsi_ssl_server_handshaker_factory_create_handshaker(
                     ssl_fixture->server_handshaker_factory_,
                     ssl_fixture->network_bio_buf_size_,
                     ssl_fixture->ssl_bio_buf_size_,
+                    /*stats_plugin_group=*/nullptr,
                     &ssl_fixture->base_.server_handshaker),
                 TSI_OK);
     }
@@ -1182,11 +1184,11 @@ TEST(SslTransportSecurityTest, TestClientHandshakerFactoryRefcounting) {
   tsi_handshaker* handshaker[3];
 
   for (i = 0; i < 3; ++i) {
-    ASSERT_EQ(
-        tsi_ssl_client_handshaker_factory_create_handshaker(
-            client_handshaker_factory, "google.com", 0, 0,
-            /*alpn_preferred_protocol_list=*/std::nullopt, &handshaker[i]),
-        TSI_OK);
+    ASSERT_EQ(tsi_ssl_client_handshaker_factory_create_handshaker(
+                  client_handshaker_factory, "google.com", 0, 0,
+                  /*alpn_preferred_protocol_list=*/std::nullopt,
+                  /*stats_plugin_group=*/nullptr, &handshaker[i]),
+              TSI_OK);
   }
 
   client_handshaker_factory =
@@ -1236,7 +1238,8 @@ TEST(SslTransportSecurityTest, TestServerHandshakerFactoryRefcounting) {
 
   for (i = 0; i < 3; ++i) {
     ASSERT_EQ(tsi_ssl_server_handshaker_factory_create_handshaker(
-                  server_handshaker_factory, 0, 0, &handshaker[i]),
+                  server_handshaker_factory, 0, 0,
+                  /*stats_plugin_group=*/nullptr, &handshaker[i]),
               TSI_OK);
   }
 
@@ -1502,6 +1505,43 @@ TEST_P(SslTransportSecurityTest, TestKeyExchangeGroupMismatch) {
   DoHandshake();
 }
 #endif
+
+TEST(SslTransportSecurityTest, SslHandshakerStatsPluginGroupIsSet) {
+  // 1. Create StatsPluginGroup
+  auto stats_plugin_group =
+      std::make_shared<GlobalStatsPluginRegistry::StatsPluginGroup>();
+  stats_plugin_group->Finish();
+
+  // 2. Create client handshaker factory
+  tsi_ssl_client_handshaker_options client_options;
+  std::string root_cert =
+      testing::GetFileContents("src/core/tsi/test_creds/ca.pem");
+  client_options.root_cert_info =
+      std::make_shared<tsi::RootCertInfo>(root_cert);
+  tsi_ssl_client_handshaker_factory* client_factory = nullptr;
+  ASSERT_EQ(tsi_create_ssl_client_handshaker_factory_with_options(
+                &client_options, &client_factory),
+            TSI_OK);
+
+  // 3. Create client handshaker passing the stats_plugin_group
+  tsi_handshaker* client_handshaker = nullptr;
+  ASSERT_EQ(tsi_ssl_client_handshaker_factory_create_handshaker(
+                client_factory, "foo.test.google.com.au",
+                /*network_bio_buf_size=*/0,
+                /*ssl_bio_buf_size=*/0, std::nullopt, stats_plugin_group,
+                &client_handshaker),
+            TSI_OK);
+
+  // 4. Verify it was stored in the handshaker
+  auto retrieved_group =
+      tsi::tsi_ssl_handshaker_get_stats_plugin_group_for_testing(
+          client_handshaker);
+  EXPECT_EQ(retrieved_group, stats_plugin_group);
+
+  // 5. Clean up
+  tsi_handshaker_destroy(client_handshaker);
+  tsi_ssl_client_handshaker_factory_unref(client_factory);
+}
 
 }  // namespace
 }  // namespace testing
