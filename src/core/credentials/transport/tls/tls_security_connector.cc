@@ -369,10 +369,14 @@ void TlsChannelSecurityConnector::add_handshakers(
     RefCountedPtr<CollectionScope> collection_scope =
         stats_plugin_group != nullptr ? stats_plugin_group->GetCollectionScope()
                                       : nullptr;
-    std::string locality(args.GetString("grpc.lb.locality").value_or(""));
+    constexpr const char* kLocalityLabel = "grpc.lb.locality";
+    constexpr const char* kBackendServiceLabel = "grpc.lb.backend_service";
+    constexpr const char* kInternalBackendServiceLabel =
+        "grpc.internal.backend_service";
+    std::string locality(args.GetString(kLocalityLabel).value_or(""));
     std::string backend_service(
-        args.GetString("grpc.internal.backend_service")
-            .value_or(args.GetString("grpc.lb.backend_service").value_or("")));
+        args.GetString(kInternalBackendServiceLabel)
+            .value_or(args.GetString(kBackendServiceLabel).value_or("")));
     tsi_result result = tsi_ssl_client_handshaker_factory_create_handshaker(
         client_handshaker_factory_, server_name_indication,
         /*network_bio_buf_size=*/0,
