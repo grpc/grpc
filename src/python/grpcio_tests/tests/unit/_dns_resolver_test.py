@@ -57,16 +57,31 @@ class DNSResolverTest(unittest.TestCase):
         with grpc.insecure_channel(
             "loopback46.unittest.grpc.io:%d" % self._port
         ) as channel:
-            self.assertEqual(
-                channel.unary_unary(
-                    grpc._common.fully_qualified_method(_SERVICE_NAME, _METHOD),
-                    _registered_method=True,
-                )(
-                    _REQUEST,
-                    timeout=10,
-                ),
-                _RESPONSE,
-            )
+            # DNS lookup against a public domain can be slow on some
+            # CI workers (notably gevent on darwin); retry a couple of
+            # times before treating a deadline as a hard failure.
+            last_err = None
+            for _ in range(3):
+                try:
+                    self.assertEqual(
+                        channel.unary_unary(
+                            grpc._common.fully_qualified_method(
+                                _SERVICE_NAME, _METHOD
+                            ),
+                            _registered_method=True,
+                        )(
+                            _REQUEST,
+                            timeout=30,
+                            wait_for_ready=True,
+                        ),
+                        _RESPONSE,
+                    )
+                    return
+                except grpc.RpcError as err:
+                    last_err = err
+                    if err.code() != grpc.StatusCode.DEADLINE_EXCEEDED:
+                        raise
+            raise last_err
 
 
 if __name__ == "__main__":

@@ -504,7 +504,12 @@ class TestServer(AioTestBase):
         await call.write(_REQUEST)
         await self._server.stop(None)
 
-        self.assertEqual(grpc.StatusCode.UNAVAILABLE, await call.code())
+        # On darwin the race between server shutdown and the client observing
+        # the GOAWAY can surface as CANCELLED instead of UNAVAILABLE.
+        self.assertIn(
+            await call.code(),
+            (grpc.StatusCode.UNAVAILABLE, grpc.StatusCode.CANCELLED),
+        )
         # No segfault
 
     async def test_error_in_stream_stream(self):
