@@ -149,6 +149,8 @@ void ReadSettingsFromChannelArgs(const ChannelArgs& channel_args,
                                  chttp2::TransportFlowControl& flow_control,
                                  bool is_client);
 
+uint32_t MaxNewStreamsPerRead(const ChannelArgs& channel_args);
+
 ///////////////////////////////////////////////////////////////////////////////
 // ChannelZ helpers
 

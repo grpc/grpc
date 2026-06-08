@@ -576,6 +576,9 @@ class Http2ServerTransport final : public ServerTransport,
     return absl::OkStatus();
   }
 
+  // TODO(akshitpatel) : [PH2][P0] : Call read_context_.OnStreamError() from
+  // HandleError while implementing HandleError.
+
   //////////////////////////////////////////////////////////////////////////////
   // Misc Transport Stuff
 
