@@ -308,6 +308,8 @@ void CFStreamEndpointImpl::Shutdown() {
 
   CFReadStreamClose(cf_read_stream_);
   CFWriteStreamClose(cf_write_stream_);
+  cf_read_stream_.reset();
+  cf_write_stream_.reset();
 }
 
 bool CFStreamEndpointImpl::Read(absl::AnyInvocable<void(absl::Status)> on_read,
