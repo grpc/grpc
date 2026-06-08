@@ -79,7 +79,7 @@ struct GrpcTimeoutMetadata {
   using ValueType = Timestamp;
   using MementoType = Duration;
   using CompressionTraits = TimeoutCompressor;
-  static absl::string_view key() { return "grpc-timeout"; }
+  static constexpr absl::string_view key() { return "grpc-timeout"; }
   static MementoType ParseMemento(Slice value,
                                   bool will_keep_past_request_lifetime,
                                   MetadataParseErrorFn on_error);
@@ -103,7 +103,7 @@ struct TeMetadata {
   };
   using MementoType = ValueType;
   using CompressionTraits = KnownValueCompressor<ValueType, kTrailers>;
-  static absl::string_view key() { return "te"; }
+  static constexpr absl::string_view key() { return "te"; }
   static MementoType ParseMemento(Slice value,
                                   bool will_keep_past_request_lifetime,
                                   MetadataParseErrorFn on_error);
@@ -135,7 +135,7 @@ struct ContentTypeMetadata {
   };
   using MementoType = ValueType;
   using CompressionTraits = KnownValueCompressor<ValueType, kApplicationGrpc>;
-  static absl::string_view key() { return "content-type"; }
+  static constexpr absl::string_view key() { return "content-type"; }
   static MementoType ParseMemento(Slice value,
                                   bool will_keep_past_request_lifetime,
                                   MetadataParseErrorFn on_error);
@@ -162,7 +162,7 @@ struct HttpSchemeMetadata {
   };
   using MementoType = ValueType;
   using CompressionTraits = HttpSchemeCompressor;
-  static absl::string_view key() { return ":scheme"; }
+  static constexpr absl::string_view key() { return ":scheme"; }
   static MementoType ParseMemento(Slice value, bool,
                                   MetadataParseErrorFn on_error) {
     return Parse(value.as_string_view(), on_error);
@@ -194,7 +194,7 @@ struct HttpMethodMetadata {
   };
   using MementoType = ValueType;
   using CompressionTraits = HttpMethodCompressor;
-  static absl::string_view key() { return ":method"; }
+  static constexpr absl::string_view key() { return ":method"; }
   static MementoType ParseMemento(Slice value,
                                   bool will_keep_past_request_lifetime,
                                   MetadataParseErrorFn on_error);
@@ -238,7 +238,7 @@ struct GrpcEncodingMetadata : public CompressionAlgorithmBasedMetadata {
   static constexpr bool kTransferOnTrailersOnly = false;
   using CompressionTraits =
       SmallIntegralValuesCompressor<GRPC_COMPRESS_ALGORITHMS_COUNT>;
-  static absl::string_view key() { return "grpc-encoding"; }
+  static constexpr absl::string_view key() { return "grpc-encoding"; }
 };
 
 // grpc-internal-encoding-request metadata trait.
@@ -247,7 +247,9 @@ struct GrpcInternalEncodingRequest : public CompressionAlgorithmBasedMetadata {
   static constexpr bool kRepeatable = false;
   static constexpr bool kTransferOnTrailersOnly = false;
   using CompressionTraits = NoCompressionCompressor;
-  static absl::string_view key() { return "grpc-internal-encoding-request"; }
+  static constexpr absl::string_view key() {
+    return "grpc-internal-encoding-request";
+  }
 };
 
 // grpc-accept-encoding metadata trait.
@@ -255,7 +257,7 @@ struct GrpcAcceptEncodingMetadata {
   static constexpr bool kPublishToApp = false;
   static constexpr bool kRepeatable = false;
   static constexpr bool kTransferOnTrailersOnly = false;
-  static absl::string_view key() { return "grpc-accept-encoding"; }
+  static constexpr absl::string_view key() { return "grpc-accept-encoding"; }
   using ValueType = CompressionAlgorithmSet;
   using MementoType = ValueType;
   using CompressionTraits = StableValueCompressor;
@@ -276,7 +278,7 @@ struct UserAgentMetadata : public SimpleSliceBasedMetadata {
   static constexpr bool kRepeatable = false;
   static constexpr bool kTransferOnTrailersOnly = false;
   using CompressionTraits = StableValueCompressor;
-  static absl::string_view key() { return "user-agent"; }
+  static constexpr absl::string_view key() { return "user-agent"; }
 };
 
 // grpc-message metadata trait.
@@ -285,7 +287,7 @@ struct GrpcMessageMetadata : public SimpleSliceBasedMetadata {
   static constexpr bool kRepeatable = false;
   static constexpr bool kTransferOnTrailersOnly = false;
   using CompressionTraits = NoCompressionCompressor;
-  static absl::string_view key() { return "grpc-message"; }
+  static constexpr absl::string_view key() { return "grpc-message"; }
 };
 
 // host metadata trait.
@@ -294,7 +296,7 @@ struct HostMetadata : public SimpleSliceBasedMetadata {
   static constexpr bool kRepeatable = false;
   static constexpr bool kTransferOnTrailersOnly = false;
   using CompressionTraits = NoCompressionCompressor;
-  static absl::string_view key() { return "host"; }
+  static constexpr absl::string_view key() { return "host"; }
 };
 
 // endpoint-load-metrics-bin metadata trait.
@@ -303,7 +305,9 @@ struct EndpointLoadMetricsBinMetadata : public SimpleSliceBasedMetadata {
   static constexpr bool kRepeatable = false;
   static constexpr bool kTransferOnTrailersOnly = false;
   using CompressionTraits = NoCompressionCompressor;
-  static absl::string_view key() { return "endpoint-load-metrics-bin"; }
+  static constexpr absl::string_view key() {
+    return "endpoint-load-metrics-bin";
+  }
 };
 
 // grpc-server-stats-bin metadata trait.
@@ -312,7 +316,7 @@ struct GrpcServerStatsBinMetadata : public SimpleSliceBasedMetadata {
   static constexpr bool kRepeatable = false;
   static constexpr bool kTransferOnTrailersOnly = false;
   using CompressionTraits = NoCompressionCompressor;
-  static absl::string_view key() { return "grpc-server-stats-bin"; }
+  static constexpr absl::string_view key() { return "grpc-server-stats-bin"; }
 };
 
 // grpc-trace-bin metadata trait.
@@ -321,7 +325,7 @@ struct GrpcTraceBinMetadata : public SimpleSliceBasedMetadata {
   static constexpr bool kRepeatable = false;
   static constexpr bool kTransferOnTrailersOnly = false;
   using CompressionTraits = FrequentKeyWithNoValueCompressionCompressor;
-  static absl::string_view key() { return "grpc-trace-bin"; }
+  static constexpr absl::string_view key() { return "grpc-trace-bin"; }
 };
 
 // grpc-tags-bin metadata trait.
@@ -330,7 +334,7 @@ struct GrpcTagsBinMetadata : public SimpleSliceBasedMetadata {
   static constexpr bool kRepeatable = false;
   static constexpr bool kTransferOnTrailersOnly = false;
   using CompressionTraits = FrequentKeyWithNoValueCompressionCompressor;
-  static absl::string_view key() { return "grpc-tags-bin"; }
+  static constexpr absl::string_view key() { return "grpc-tags-bin"; }
 };
 
 // XEnvoyPeerMetadata
@@ -339,7 +343,7 @@ struct XEnvoyPeerMetadata : public SimpleSliceBasedMetadata {
   static constexpr bool kRepeatable = false;
   static constexpr bool kTransferOnTrailersOnly = true;
   using CompressionTraits = StableValueCompressor;
-  static absl::string_view key() { return "x-envoy-peer-metadata"; }
+  static constexpr absl::string_view key() { return "x-envoy-peer-metadata"; }
 };
 
 // x-forwarded-for metadata trait for HTTP connect.
@@ -348,7 +352,7 @@ struct XForwardedForMetadata : public SimpleSliceBasedMetadata {
   static constexpr bool kRepeatable = false;
   static constexpr bool kTransferOnTrailersOnly = false;
   using CompressionTraits = StableValueCompressor;
-  static absl::string_view key() { return "x-forwarded-for"; }
+  static constexpr absl::string_view key() { return "x-forwarded-for"; }
 };
 
 // x-forwarded-host metadata trait for HTTP connect.
@@ -357,7 +361,7 @@ struct XForwardedHostMetadata : public SimpleSliceBasedMetadata {
   static constexpr bool kRepeatable = false;
   static constexpr bool kTransferOnTrailersOnly = false;
   using CompressionTraits = StableValueCompressor;
-  static absl::string_view key() { return "x-forwarded-host"; }
+  static constexpr absl::string_view key() { return "x-forwarded-host"; }
 };
 
 // :authority metadata trait.
@@ -366,7 +370,7 @@ struct HttpAuthorityMetadata : public SimpleSliceBasedMetadata {
   static constexpr bool kRepeatable = false;
   static constexpr bool kTransferOnTrailersOnly = false;
   using CompressionTraits = SmallSetOfValuesCompressor;
-  static absl::string_view key() { return ":authority"; }
+  static constexpr absl::string_view key() { return ":authority"; }
 };
 
 // :path metadata trait.
@@ -375,7 +379,7 @@ struct HttpPathMetadata : public SimpleSliceBasedMetadata {
   static constexpr bool kRepeatable = false;
   static constexpr bool kTransferOnTrailersOnly = false;
   using CompressionTraits = SmallSetOfValuesCompressor;
-  static absl::string_view key() { return ":path"; }
+  static constexpr absl::string_view key() { return ":path"; }
 };
 
 // We separate SimpleIntBasedMetadata into two pieces: one that does not
@@ -455,7 +459,7 @@ struct GrpcStatusMetadata {
   static constexpr bool kRepeatable = false;
   static constexpr bool kTransferOnTrailersOnly = false;
   using CompressionTraits = SmallIntegralValuesCompressor<16>;
-  static absl::string_view key() { return "grpc-status"; }
+  static constexpr absl::string_view key() { return "grpc-status"; }
   static grpc_status_code ParseMemento(Slice value, bool,
                                        MetadataParseErrorFn on_error) {
     int64_t wire_value;
@@ -482,7 +486,9 @@ struct GrpcPreviousRpcAttemptsMetadata
   static constexpr bool kRepeatable = false;
   static constexpr bool kTransferOnTrailersOnly = false;
   using CompressionTraits = NoCompressionCompressor;
-  static absl::string_view key() { return "grpc-previous-rpc-attempts"; }
+  static constexpr absl::string_view key() {
+    return "grpc-previous-rpc-attempts";
+  }
 };
 
 // grpc-retry-pushback-ms metadata trait.
@@ -490,7 +496,7 @@ struct GrpcRetryPushbackMsMetadata {
   static constexpr bool kPublishToApp = true;
   static constexpr bool kRepeatable = false;
   static constexpr bool kTransferOnTrailersOnly = false;
-  static absl::string_view key() { return "grpc-retry-pushback-ms"; }
+  static constexpr absl::string_view key() { return "grpc-retry-pushback-ms"; }
   using ValueType = Duration;
   using MementoType = Duration;
   using CompressionTraits = NoCompressionCompressor;
@@ -510,7 +516,7 @@ struct HttpStatusMetadata : public SimpleIntBasedMetadata<uint32_t, 0> {
   static constexpr bool kRepeatable = false;
   static constexpr bool kTransferOnTrailersOnly = true;
   using CompressionTraits = HttpStatusCompressor;
-  static absl::string_view key() { return ":status"; }
+  static constexpr absl::string_view key() { return ":status"; }
 };
 
 // "secret" metadata trait used to pass load balancing token between filters.
@@ -521,7 +527,7 @@ struct GrpcLbClientStatsMetadata {
   static constexpr bool kPublishToApp = false;
   static constexpr bool kRepeatable = false;
   static constexpr bool kTransferOnTrailersOnly = false;
-  static absl::string_view key() { return "grpclb_client_stats"; }
+  static constexpr absl::string_view key() { return "grpclb_client_stats"; }
   using ValueType = GrpcLbClientStats*;
   using MementoType = ValueType;
   using CompressionTraits = NoCompressionCompressor;
@@ -548,7 +554,7 @@ struct LbTokenMetadata : public SimpleSliceBasedMetadata {
   static constexpr bool kRepeatable = false;
   static constexpr bool kTransferOnTrailersOnly = false;
   using CompressionTraits = NoCompressionCompressor;
-  static absl::string_view key() { return "lb-token"; }
+  static constexpr absl::string_view key() { return "lb-token"; }
 };
 
 // lb-cost-bin metadata
@@ -556,7 +562,7 @@ struct LbCostBinMetadata {
   static constexpr bool kPublishToApp = false;
   static constexpr bool kRepeatable = true;
   static constexpr bool kTransferOnTrailersOnly = false;
-  static absl::string_view key() { return "lb-cost-bin"; }
+  static constexpr absl::string_view key() { return "lb-cost-bin"; }
   struct ValueType {
     double cost;
     std::string name;
@@ -578,7 +584,7 @@ struct W3CTraceParentMetadata : public SimpleSliceBasedMetadata {
   static constexpr bool kRepeatable = false;
   static constexpr bool kTransferOnTrailersOnly = false;
   using CompressionTraits = NoCompressionCompressor;
-  static absl::string_view key() { return "traceparent"; }
+  static constexpr absl::string_view key() { return "traceparent"; }
 };
 
 // Annotation added by a transport to note whether a failed request was never
@@ -732,24 +738,114 @@ struct EncodableTraits<void> {
   using List = Typelist<>;
 };
 
-template <typename Trait>
-struct EncodableNameLookupKeyComparison {
-  bool operator()(absl::string_view key) { return key == Trait::key(); }
+template <size_t Length, typename Op, typename... Traits>
+struct EncodableNameLookupStep;
+
+template <size_t Length, typename Op>
+struct EncodableNameLookupStep<Length, Op> {
+  static auto Lookup(absl::string_view key, Op* op) {
+    return op->NotFound(key);
+  }
 };
 
-template <typename Trait, typename Op>
-struct EncodableNameLookupOnFound {
-  auto operator()(Op* op) { return op->Found(Trait()); }
+template <size_t Length, typename Op, typename First, typename... Rest>
+struct EncodableNameLookupStep<Length, Op, First, Rest...> {
+  static auto Lookup(absl::string_view key, Op* op) {
+    if constexpr (First::key().size() == Length) {
+      if (key == First::key()) {
+        return op->Found(First());
+      }
+    }
+    return EncodableNameLookupStep<Length, Op, Rest...>::Lookup(key, op);
+  }
 };
 
 template <typename... Traits>
 struct EncodableNameLookup {
   template <typename Op>
   static auto Lookup(absl::string_view key, Op* op) {
-    return IfList(
-        key, op, [key](Op* op) { return op->NotFound(key); },
-        EncodableNameLookupKeyComparison<Traits>()...,
-        EncodableNameLookupOnFound<Traits, Op>()...);
+    switch (key.size()) {
+      case 2:
+        return EncodableNameLookupStep<2, Op, Traits...>::Lookup(key, op);
+      case 3:
+        return EncodableNameLookupStep<3, Op, Traits...>::Lookup(key, op);
+      case 4:
+        return EncodableNameLookupStep<4, Op, Traits...>::Lookup(key, op);
+      case 5:
+        return EncodableNameLookupStep<5, Op, Traits...>::Lookup(key, op);
+      case 6:
+        return EncodableNameLookupStep<6, Op, Traits...>::Lookup(key, op);
+      case 7:
+        return EncodableNameLookupStep<7, Op, Traits...>::Lookup(key, op);
+      case 8:
+        return EncodableNameLookupStep<8, Op, Traits...>::Lookup(key, op);
+      case 9:
+        return EncodableNameLookupStep<9, Op, Traits...>::Lookup(key, op);
+      case 10:
+        return EncodableNameLookupStep<10, Op, Traits...>::Lookup(key, op);
+      case 11:
+        return EncodableNameLookupStep<11, Op, Traits...>::Lookup(key, op);
+      case 12:
+        return EncodableNameLookupStep<12, Op, Traits...>::Lookup(key, op);
+      case 13:
+        return EncodableNameLookupStep<13, Op, Traits...>::Lookup(key, op);
+      case 14:
+        return EncodableNameLookupStep<14, Op, Traits...>::Lookup(key, op);
+      case 15:
+        return EncodableNameLookupStep<15, Op, Traits...>::Lookup(key, op);
+      case 16:
+        return EncodableNameLookupStep<16, Op, Traits...>::Lookup(key, op);
+      case 17:
+        return EncodableNameLookupStep<17, Op, Traits...>::Lookup(key, op);
+      case 18:
+        return EncodableNameLookupStep<18, Op, Traits...>::Lookup(key, op);
+      case 19:
+        return EncodableNameLookupStep<19, Op, Traits...>::Lookup(key, op);
+      case 20:
+        return EncodableNameLookupStep<20, Op, Traits...>::Lookup(key, op);
+      case 21:
+        return EncodableNameLookupStep<21, Op, Traits...>::Lookup(key, op);
+      case 22:
+        return EncodableNameLookupStep<22, Op, Traits...>::Lookup(key, op);
+      case 23:
+        return EncodableNameLookupStep<23, Op, Traits...>::Lookup(key, op);
+      case 24:
+        return EncodableNameLookupStep<24, Op, Traits...>::Lookup(key, op);
+      case 25:
+        return EncodableNameLookupStep<25, Op, Traits...>::Lookup(key, op);
+      case 26:
+        return EncodableNameLookupStep<26, Op, Traits...>::Lookup(key, op);
+      case 27:
+        return EncodableNameLookupStep<27, Op, Traits...>::Lookup(key, op);
+      case 28:
+        return EncodableNameLookupStep<28, Op, Traits...>::Lookup(key, op);
+      case 29:
+        return EncodableNameLookupStep<29, Op, Traits...>::Lookup(key, op);
+      case 30:
+        return EncodableNameLookupStep<30, Op, Traits...>::Lookup(key, op);
+      case 31:
+        return EncodableNameLookupStep<31, Op, Traits...>::Lookup(key, op);
+      case 32:
+        return EncodableNameLookupStep<32, Op, Traits...>::Lookup(key, op);
+      case 33:
+        return EncodableNameLookupStep<33, Op, Traits...>::Lookup(key, op);
+      case 34:
+        return EncodableNameLookupStep<34, Op, Traits...>::Lookup(key, op);
+      case 35:
+        return EncodableNameLookupStep<35, Op, Traits...>::Lookup(key, op);
+      case 36:
+        return EncodableNameLookupStep<36, Op, Traits...>::Lookup(key, op);
+      case 37:
+        return EncodableNameLookupStep<37, Op, Traits...>::Lookup(key, op);
+      case 38:
+        return EncodableNameLookupStep<38, Op, Traits...>::Lookup(key, op);
+      case 39:
+        return EncodableNameLookupStep<39, Op, Traits...>::Lookup(key, op);
+      case 40:
+        return EncodableNameLookupStep<40, Op, Traits...>::Lookup(key, op);
+      default:
+        return op->NotFound(key);
+    }
   }
 };
 
@@ -1354,7 +1450,7 @@ MetadataValueAsSlice(typename Which::ValueType value) {
 //   // The type that's stored in compression/decompression tables
 //   using MementoType = ...;
 //   // The string key for this metadata type (for transports that require it)
-//   static absl::string_view key() { return "grpc-xyz"; }
+//   static constexpr absl::string_view key() { return "grpc-xyz"; }
 //   // Parse a memento from a slice
 //   // Takes ownership of value
 //   // If will_keep_past_request_lifetime is true, expect that the returned
