@@ -160,11 +160,6 @@ class UnaryUnaryCall(
 class UnaryStreamCall(
     Generic[RequestType, ResponseType], Call, metaclass=ABCMeta
 ):
-    @property
-    @abstractmethod
-    def _done_writing_flag(self) -> bool:
-        """Indicates whether the client is done sending messages."""
-
     @abstractmethod
     def __aiter__(self) -> AsyncIterator[ResponseType]:
         """Returns the async iterator representation that yields messages.
