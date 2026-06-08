@@ -59,6 +59,7 @@
 
 #include "src/core/credentials/transport/tls/grpc_tls_crl_provider.h"
 #include "src/core/credentials/transport/tls/ssl_utils.h"
+#include "src/core/handshaker/security/security_telemetry.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/surface/init.h"
@@ -69,7 +70,6 @@
 #include "src/core/tsi/ssl_types.h"
 #include "src/core/tsi/transport_security.h"
 #include "src/core/tsi/transport_security_interface.h"
-#include "src/core/handshaker/security/security_telemetry.h"
 #include "src/core/util/env.h"
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/match.h"
@@ -258,12 +258,11 @@ void tsi_ssl_handshaker::RecordTelemetry(tsi_result status) {
     result = grpc_core::MapSslErrorToTlsTelemetryHandshakeResult(
         last_ssl_error, last_err_code, verify_res);
   }
-  std::string status_str = std::string(
-      grpc_core::TlsTelemetryHandshakeResultToString(result));
+  std::string status_str =
+      std::string(grpc_core::TlsTelemetryHandshakeResultToString(result));
 
-  auto scope = collection_scope != nullptr
-                   ? collection_scope
-                   : grpc_core::GlobalCollectionScope();
+  auto scope = collection_scope != nullptr ? collection_scope
+                                           : grpc_core::GlobalCollectionScope();
 
   if (is_client) {
     auto storage = grpc_core::ClientHandshakeTelemetryDomain::GetStorage(
@@ -2668,8 +2667,8 @@ static tsi_result create_tsi_ssl_handshaker(
   impl->factory_ref = tsi_ssl_handshaker_factory_ref(factory);
   impl->collection_scope = std::move(collection_scope);
   impl->is_client = (is_client != 0);
-  impl->target = server_name_indication != nullptr ? server_name_indication
-                                                   : "unknown";
+  impl->target =
+      server_name_indication != nullptr ? server_name_indication : "unknown";
   impl->locality = std::move(locality);
   impl->backend_service = std::move(backend_service);
 #if defined(OPENSSL_IS_BORINGSSL)
