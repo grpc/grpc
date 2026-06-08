@@ -140,7 +140,8 @@ class _BaseMultiCallable(Generic[InterceptorT]):
 
 
 class UnaryUnaryMultiCallable(
-    _BaseMultiCallable[UnaryUnaryClientInterceptor], _base_channel.UnaryUnaryMultiCallable
+    _BaseMultiCallable[UnaryUnaryClientInterceptor],
+    _base_channel.UnaryUnaryMultiCallable,
 ):
     def __call__(
         self,
@@ -185,7 +186,8 @@ class UnaryUnaryMultiCallable(
 
 
 class UnaryStreamMultiCallable(
-    _BaseMultiCallable[UnaryStreamClientInterceptor], _base_channel.UnaryStreamMultiCallable
+    _BaseMultiCallable[UnaryStreamClientInterceptor],
+    _base_channel.UnaryStreamMultiCallable,
 ):
     def __call__(
         self,
@@ -231,7 +233,8 @@ class UnaryStreamMultiCallable(
 
 
 class StreamUnaryMultiCallable(
-    _BaseMultiCallable[StreamUnaryClientInterceptor], _base_channel.StreamUnaryMultiCallable
+    _BaseMultiCallable[StreamUnaryClientInterceptor],
+    _base_channel.StreamUnaryMultiCallable,
 ):
     def __call__(
         self,
@@ -276,7 +279,8 @@ class StreamUnaryMultiCallable(
 
 
 class StreamStreamMultiCallable(
-    _BaseMultiCallable[StreamStreamClientInterceptor], _base_channel.StreamStreamMultiCallable
+    _BaseMultiCallable[StreamStreamClientInterceptor],
+    _base_channel.StreamStreamMultiCallable,
 ):
     def __call__(
         self,
