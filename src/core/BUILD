@@ -11296,6 +11296,17 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "handshaker_telemetry",
+    hdrs = [
+        "tsi/telemetry/handshaker_domain.h",
+    ],
+    deps = [
+        "histogram",
+        "instrument",
+    ],
+)
+
+grpc_cc_library(
     name = "zviz_strings",
     srcs = [
         "channelz/zviz/strings.cc",
