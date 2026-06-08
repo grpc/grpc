@@ -171,8 +171,13 @@ build:compdb --skip_incompatible_explicit_targets
 # easily exhausted when many test actions each spin up grpc.server
 # instances in parallel. Cap concurrent test actions so SYNs aren't dropped
 # (symptom: `getsockopt(SO_ERROR): Operation timed out` / `TimeoutError:
-# timed out` on intra-host `connect()` calls).
-test:macos --local_test_jobs=HOST_CPUS*0.5
+# timed out` on intra-host `connect()` calls; also surfaces as
+# `wait_for_ready` RPCs hanging because the SYN can't get queued).
+#
+# Empirically HOST_CPUS*0.5 still saturates on higher-core M-series Macs
+# at --runs_per_test=16; HOST_CPUS*0.25 keeps the SYN queue under the
+# default 128-slot limit.
+test:macos --local_test_jobs=HOST_CPUS*0.25
 
 try-import %workspace%/tools/fuzztest.bazelrc
 
