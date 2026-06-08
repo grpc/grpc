@@ -604,5 +604,41 @@ TEST(MyTestSuite, RunApiFuzzerRegression3) {
       )pb"));
 }
 
+// Regression test for a fuzzer-discovered crash.
+// Sequence:
+// - Creates a channel to "server" (which won't connect since no server is
+//   running).
+// - Starts a call with `wait_for_ready` enabled, so it waits for a connection.
+// - Queues a batch with send_initial_metadata, send_close_from_client, and
+//   receive_status_on_client.
+// - Queues a second batch with a duplicate send_close_from_client.
+// - Destroys the call while it is still waiting for a ready channel.
+// Runs with CallV3 enabled.
+TEST(MyTestSuite, DuplicateOpsCallV3Regression) {
+  RunApiFuzzer(ParseTestProto(
+      R"pb(actions { create_channel { target: "server" } }
+           actions {
+             create_call {
+               method { value: "test" }
+               host { value: "test" }
+               timeout: 1140380111
+             }
+           }
+           actions {
+             queue_batch {
+               operations { receive_status_on_client {} }
+               operations {
+                 send_initial_metadata {}
+                 flags: 32
+               }
+               operations { send_close_from_client {} }
+             }
+           }
+           actions { queue_batch { operations { send_close_from_client {} } } }
+           actions { destroy_call {} }
+           config_vars { experiments: "promise_based_http2_client_transport" }
+      )pb"));
+}
+
 }  // namespace testing
 }  // namespace grpc_core

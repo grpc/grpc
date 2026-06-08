@@ -91,8 +91,10 @@ grpc_call_error ValidateClientBatch(const grpc_op* ops, size_t nops) {
       case GRPC_OP_SEND_STATUS_FROM_SERVER:
         return GRPC_CALL_ERROR_NOT_ON_CLIENT;
     }
-    if (got_ops.is_set(op.op)) return GRPC_CALL_ERROR_TOO_MANY_OPERATIONS;
-    got_ops.set(op.op);
+    if (!IsCallv3BatchValidationEnabled()) {
+      if (got_ops.is_set(op.op)) return GRPC_CALL_ERROR_TOO_MANY_OPERATIONS;
+      got_ops.set(op.op);
+    }
   }
   return GRPC_CALL_OK;
 }
@@ -165,6 +167,12 @@ grpc_call_error ClientCall::StartBatch(const grpc_op* ops, size_t nops,
   if (validation_result != GRPC_CALL_OK) {
     return validation_result;
   }
+  const grpc_call_error state_validation_result =
+      call_op_invariants_validator_.ValidateAndCommit(ops, nops);
+  if (state_validation_result != GRPC_CALL_OK) {
+    return state_validation_result;
+  }
+
   CommitBatch(ops, nops, notify_tag, is_notify_tag_closure);
   return GRPC_CALL_OK;
 }
@@ -257,7 +265,7 @@ Party::WakeupHold ClientCall::StartCall(
     const grpc_op& send_initial_metadata_op) {
   GRPC_LATENT_SEE_SCOPE("ClientCall::StartCall");
   auto cur_state = call_state_.load(std::memory_order_acquire);
-  // TODO(akshitpatel): [PH2][P1]: Might need to invoke
+  // TODO(akshitpatel): [PH2][P3]: Might need to invoke
   // PrepareApplicationMetadata here.
   CToMetadata(send_initial_metadata_op.data.send_initial_metadata.metadata,
               send_initial_metadata_op.data.send_initial_metadata.count,
@@ -333,7 +341,10 @@ void ClientCall::CommitBatch(const grpc_op* ops, size_t nops, void* notify_tag,
             send.c_slice_buffer());
         auto msg = arena()->MakePooled<Message>(std::move(send), op.flags);
         return [this, msg = std::move(msg)]() mutable {
-          return started_call_initiator_.PushMessage(std::move(msg));
+          return Map(started_call_initiator_.PushMessage(std::move(msg)),
+                     [guard = ConcurrentOpGuard(&call_op_invariants_validator_,
+                                                GRPC_OP_SEND_MESSAGE)](
+                         StatusFlag result) { return result; });
         };
       });
   auto send_close_from_client =
@@ -346,7 +357,17 @@ void ClientCall::CommitBatch(const grpc_op* ops, size_t nops, void* notify_tag,
           });
   auto recv_message =
       op_index.OpHandler<GRPC_OP_RECV_MESSAGE>([this](const grpc_op& op) {
-        return message_receiver_.MakeBatchOp(op, &started_call_initiator_);
+        auto recv_message_promise_factory =
+            message_receiver_.MakeBatchOp(op, &started_call_initiator_);
+        // Validator is guaranteed to outlive the ConcurrentOpGuard because of
+        // weak ref to the call taken by the PrimaryOps promise.
+        return [this, recv_message_promise_factory =
+                          std::move(recv_message_promise_factory)]() mutable {
+          return Map(recv_message_promise_factory(),
+                     [guard = ConcurrentOpGuard(&call_op_invariants_validator_,
+                                                GRPC_OP_RECV_MESSAGE)](
+                         StatusFlag result) { return result; });
+        };
       });
   auto recv_initial_metadata =
       op_index.OpHandler<GRPC_OP_RECV_INITIAL_METADATA>([this](

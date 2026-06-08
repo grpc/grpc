@@ -93,8 +93,10 @@ grpc_call_error ValidateServerBatch(const grpc_op* ops, size_t nops) {
       case GRPC_OP_RECV_STATUS_ON_CLIENT:
         return GRPC_CALL_ERROR_NOT_ON_SERVER;
     }
-    if (got_ops.is_set(op.op)) return GRPC_CALL_ERROR_TOO_MANY_OPERATIONS;
-    got_ops.set(op.op);
+    if (!IsCallv3BatchValidationEnabled()) {
+      if (got_ops.is_set(op.op)) return GRPC_CALL_ERROR_TOO_MANY_OPERATIONS;
+      got_ops.set(op.op);
+    }
   }
   return GRPC_CALL_OK;
 }
@@ -112,6 +114,12 @@ grpc_call_error ServerCall::StartBatch(const grpc_op* ops, size_t nops,
   if (validation_result != GRPC_CALL_OK) {
     return validation_result;
   }
+  const grpc_call_error state_validation_result =
+      call_op_invariants_validator_.ValidateAndCommit(ops, nops);
+  if (state_validation_result != GRPC_CALL_OK) {
+    return state_validation_result;
+  }
+
   CommitBatch(ops, nops, notify_tag, is_notify_tag_closure);
   return GRPC_CALL_OK;
 }
@@ -124,18 +132,32 @@ void ServerCall::CommitBatch(const grpc_op* ops, size_t nops, void* notify_tag,
   auto commit_with_send_ops = [&](auto send_ops) {
     auto recv_message =
         op_index.OpHandler<GRPC_OP_RECV_MESSAGE>([this](const grpc_op& op) {
-          return message_receiver_.MakeBatchOp(op, &call_handler_);
+          auto recv_message_promise_factory =
+              message_receiver_.MakeBatchOp(op, &call_handler_);
+          return [this, recv_message_promise_factory =
+                            std::move(recv_message_promise_factory)]() mutable {
+            return Map(
+                recv_message_promise_factory(),
+                [guard = ConcurrentOpGuard(&call_op_invariants_validator_,
+                                           GRPC_OP_RECV_MESSAGE)](
+                    StatusFlag result) { return result; });
+          };
         });
+    // We hold a weak ref to the call in the primary ops, so that we prevent the
+    // call from being destroyed before the ops are completed.
     auto primary_ops =
-        AllOk<StatusFlag>(std::move(send_ops), std::move(recv_message));
+        Map(AllOk<StatusFlag>(std::move(send_ops), std::move(recv_message)),
+            [self = WeakRef()](StatusFlag x) { return x; });
+
     if (auto* op = op_index.op(GRPC_OP_RECV_CLOSE_ON_SERVER)) {
       auto recv_trailing_metadata = OpHandler<GRPC_OP_RECV_CLOSE_ON_SERVER>(
-          [this, cancelled = op->data.recv_close_on_server.cancelled]() {
-            return Map(call_handler_.WasCancelled(),
-                       [cancelled, this](bool result) -> Success {
-                         saw_was_cancelled_.store(true,
-                                                  std::memory_order_relaxed);
-                         ResetDeadline();
+          [self = WeakRef(),
+           cancelled = op->data.recv_close_on_server.cancelled]() {
+            return Map(self->call_handler_.WasCancelled(),
+                       [cancelled, self](bool result) -> Success {
+                         self->saw_was_cancelled_.store(
+                             true, std::memory_order_relaxed);
+                         self->ResetDeadline();
                          *cancelled = result ? 1 : 0;
                          return Success{};
                        });
@@ -228,7 +250,11 @@ void ServerCall::CommitBatch(const grpc_op* ops, size_t nops, void* notify_tag,
               send.c_slice_buffer());
           auto msg = arena()->MakePooled<Message>(std::move(send), op.flags);
           return [this, msg = std::move(msg)]() mutable {
-            return call_handler_.PushMessage(std::move(msg));
+            return Map(
+                call_handler_.PushMessage(std::move(msg)),
+                [guard = ConcurrentOpGuard(&call_op_invariants_validator_,
+                                           GRPC_OP_SEND_MESSAGE)](
+                    StatusFlag result) { return result; });
           };
         });
     auto send_trailing_metadata =
