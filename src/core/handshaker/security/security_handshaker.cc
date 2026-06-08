@@ -41,6 +41,7 @@
 #include "src/core/handshaker/handshaker_factory.h"
 #include "src/core/handshaker/handshaker_registry.h"
 #include "src/core/handshaker/security/secure_endpoint.h"
+#include "src/core/handshaker/telemetry/handshaker_domain.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/endpoint.h"
@@ -126,6 +127,8 @@ class SecurityHandshaker : public Handshaker {
   tsi_handshaker_result* handshaker_result_ = nullptr;
   size_t max_frame_size_ = 0;
   std::string tsi_handshake_error_;
+  const absl::Time handshaker_creation_time_ = absl::Now();
+  HandshakerDomain::Protocol protocol_ = HandshakerDomain::Protocol::kUndefined;
   grpc_closure* on_peer_checked_ ABSL_GUARDED_BY(mu_) = nullptr;
 };
 
@@ -188,6 +191,15 @@ void SecurityHandshaker::Finish(absl::Status status) {
 }
 
 namespace {
+
+void MaybeRecordHistogramResult(tsi_result status, std::string error_details,
+                                absl::Time duration,
+                                HandshakerDomain::Protocol protocol) {
+  auto storage = HandshakerDomain::GetStorage(
+      grpc_core::GlobalCollectionScope(), status, error_details, protocol);
+  storage->Increment(HandshakerDomain::kHandshakeDuration,
+                     absl::ToInt64Microseconds(duration));
+}
 
 RefCountedPtr<channelz::SocketNode::Security>
 MakeChannelzSecurityFromAuthContext(grpc_auth_context* auth_context) {
@@ -315,6 +327,9 @@ grpc_error_handle SecurityHandshaker::CheckPeerLocked() {
   tsi_result result =
       tsi_handshaker_result_extract_peer(handshaker_result_, &peer);
   if (result != TSI_OK) {
+    MaybeRecordHistogramResult(result, tsi_handshake_error_,
+                               absl::Now() - handshaker_creation_time_,
+                               protocol_);
     return GRPC_ERROR_CREATE(absl::StrCat("Peer extraction failed (",
                                           tsi_result_to_string(result), ")"));
   }
@@ -334,6 +349,8 @@ grpc_error_handle SecurityHandshaker::CheckPeerLocked() {
       !strcmp(tsi_security_level_to_string(TSI_SECURITY_NONE), prop->value)) {
     global_stats().IncrementInsecureConnectionsCreated();
   }
+  MaybeRecordHistogramResult(
+      TSI_OK, "", absl::Now() - handshaker_creation_time_, protocol_);
   return absl::OkStatus();
 }
 
@@ -361,6 +378,9 @@ grpc_error_handle SecurityHandshaker::OnHandshakeNextDoneLocked(
   if (result != TSI_OK) {
     // TODO(roth): Get a better signal from the TSI layer as to what
     // status code we should use here.
+    MaybeRecordHistogramResult(result, tsi_handshake_error_,
+                               absl::Now() - handshaker_creation_time_,
+                               protocol_);
     return GRPC_ERROR_CREATE(absl::StrCat(
         connector_->type().name(), " handshake failed (",
         tsi_result_to_string(result), ")",
