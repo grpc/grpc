@@ -1073,7 +1073,7 @@ class InterceptedStreamStreamCall(
                     self._last_returned_call_from_interceptors = (
                         call_or_response_iterator
                     )
-                elif hasattr(call_or_response_iterator, "__aiter__"):
+                else:
                     if self._last_returned_call_from_interceptors is None:
                         err_msg = (
                             "Interceptor returned an AsyncIterable but did not "
@@ -1086,12 +1086,6 @@ class InterceptedStreamStreamCall(
                             call_or_response_iterator,
                         )
                     )
-                else:
-                    err_msg = (
-                        f"Interceptor must return a grpc.aio.StreamStreamCall or an "
-                        f"AsyncIterable. Got {type(call_or_response_iterator)} instead."
-                    )
-                    raise TypeError(err_msg)
                 return self._last_returned_call_from_interceptors
             self._last_returned_call_from_interceptors = StreamStreamCall(
                 request_iterator,
