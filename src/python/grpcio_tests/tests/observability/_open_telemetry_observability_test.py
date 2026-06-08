@@ -512,7 +512,7 @@ class OpenTelemetryObservabilityTest(unittest.TestCase):
     def _validate_metrics_exist(
         self,
         all_metrics: dict[str, Any],
-        expected_count: int = len(_open_telemetry_measures.base_metrics())
+        expected_count: int = len(_open_telemetry_measures.base_metrics()),
     ) -> None:
         # Sleep here to make sure we have at least expected number of metrics
         # from OTel MetricExporter.
