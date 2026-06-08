@@ -2191,6 +2191,7 @@ src/core/handshaker/security/secure_endpoint.cc \
 src/core/handshaker/security/secure_endpoint.h \
 src/core/handshaker/security/security_handshaker.cc \
 src/core/handshaker/security/security_handshaker.h \
+src/core/handshaker/security/security_telemetry.h \
 src/core/handshaker/tcp_connect/GEMINI.md \
 src/core/handshaker/tcp_connect/tcp_connect_handshaker.cc \
 src/core/handshaker/tcp_connect/tcp_connect_handshaker.h \

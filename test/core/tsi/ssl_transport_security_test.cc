@@ -438,18 +438,18 @@ class SslTransportSecurityTest
         gpr_free(server_options.alpn_protocols);
       }
       // Create server and client handshakers.
-      ASSERT_EQ(tsi_ssl_client_handshaker_factory_create_handshaker(
-                    ssl_fixture->client_handshaker_factory_,
-                    ssl_fixture->server_name_indication_.empty()
-                        ? nullptr
-                        : ssl_fixture->server_name_indication_.c_str(),
-                    ssl_fixture->network_bio_buf_size_,
-                    ssl_fixture->ssl_bio_buf_size_,
-                    ssl_fixture->alpn_client_overriden_protocols_,
-                    /*collection_scope=*/nullptr, /*locality=*/"",
-                    /*backend_service=*/"",
-                    &ssl_fixture->base_.client_handshaker),
-                TSI_OK);
+      ASSERT_EQ(
+          tsi_ssl_client_handshaker_factory_create_handshaker(
+              ssl_fixture->client_handshaker_factory_,
+              ssl_fixture->server_name_indication_.empty()
+                  ? nullptr
+                  : ssl_fixture->server_name_indication_.c_str(),
+              ssl_fixture->network_bio_buf_size_,
+              ssl_fixture->ssl_bio_buf_size_,
+              ssl_fixture->alpn_client_overriden_protocols_,
+              /*collection_scope=*/nullptr, /*locality=*/"",
+              /*backend_service=*/"", &ssl_fixture->base_.client_handshaker),
+          TSI_OK);
       ASSERT_EQ(tsi_ssl_server_handshaker_factory_create_handshaker(
                     ssl_fixture->server_handshaker_factory_,
                     ssl_fixture->network_bio_buf_size_,

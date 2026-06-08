@@ -1347,12 +1347,12 @@ TEST_F(OpenTelemetryPluginEnd2EndTest, ClientHandshakes) {
   if (!grpc_core::IsOtelExportTelemetryDomainsEnabled()) {
     GTEST_SKIP() << "Test requires otel_export_telemetry_domains to be enabled";
   }
-  InitSecure(std::move(
-      Options()
-          .set_metric_names({grpc::OpenTelemetryPluginBuilder::
-                                 kClientHandshakesInstrumentName})
-          .add_optional_label("grpc.lb.locality")
-          .add_optional_label("grpc.lb.backend_service")));
+  InitSecure(
+      std::move(Options()
+                    .set_metric_names({grpc::OpenTelemetryPluginBuilder::
+                                           kClientHandshakesInstrumentName})
+                    .add_optional_label("grpc.lb.locality")
+                    .add_optional_label("grpc.lb.backend_service")));
   SendRPC();
   const char* kMetricName = "grpc.client.tls.handshakes";
   auto data = ReadCurrentMetricsData(
@@ -1369,16 +1369,16 @@ TEST_F(OpenTelemetryPluginEnd2EndTest, ClientHandshakes) {
   EXPECT_EQ(*client_handshakes_value, 1);
   const auto& attributes = data[kMetricName][0].attributes.GetAttributes();
   EXPECT_EQ(attributes.size(), 5);
-  const auto* status_value =
-      std::get_if<std::string>(&attributes.at("grpc.security.handshaker.status"));
+  const auto* status_value = std::get_if<std::string>(
+      &attributes.at("grpc.security.handshaker.status"));
   ASSERT_NE(status_value, nullptr);
   EXPECT_EQ(*status_value, "OK");
   const auto* target_value =
       std::get_if<std::string>(&attributes.at("grpc.target"));
   ASSERT_NE(target_value, nullptr);
   EXPECT_EQ(*target_value, "foo.test.google.fr");
-  const auto* resumed_value =
-      std::get_if<std::string>(&attributes.at("grpc.security.handshaker.resumed"));
+  const auto* resumed_value = std::get_if<std::string>(
+      &attributes.at("grpc.security.handshaker.resumed"));
   ASSERT_NE(resumed_value, nullptr);
   EXPECT_EQ(*resumed_value, "false");
   const auto* locality_value =
@@ -1413,12 +1413,12 @@ TEST_F(OpenTelemetryPluginEnd2EndTest, ServerHandshakes) {
   EXPECT_EQ(*server_handshakes_value, 1);
   const auto& attributes = data[kMetricName][0].attributes.GetAttributes();
   EXPECT_EQ(attributes.size(), 2);
-  const auto* status_value =
-      std::get_if<std::string>(&attributes.at("grpc.security.handshaker.status"));
+  const auto* status_value = std::get_if<std::string>(
+      &attributes.at("grpc.security.handshaker.status"));
   ASSERT_NE(status_value, nullptr);
   EXPECT_EQ(*status_value, "OK");
-  const auto* resumed_value =
-      std::get_if<std::string>(&attributes.at("grpc.security.handshaker.resumed"));
+  const auto* resumed_value = std::get_if<std::string>(
+      &attributes.at("grpc.security.handshaker.resumed"));
   ASSERT_NE(resumed_value, nullptr);
   EXPECT_EQ(*resumed_value, "false");
 }
