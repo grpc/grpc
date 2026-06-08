@@ -1,0 +1,59 @@
+# Copyright 2024 The gRPC authors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+services:
+  grpc-server:
+    build: .
+    command: python dashboard_greeter_server.py --port 50051 --prometheus_endpoint 9464
+    ports:
+      - "50051:50051"
+      - "9464:9464"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:9464/metrics')"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  grpc-client:
+    build: .
+    command: python dashboard_greeter_client.py --target grpc-server:50051 --rps 10 --prometheus_endpoint 9465
+    ports:
+      - "9465:9465"
+    depends_on:
+      grpc-server:
+        condition: service_healthy
+
+  prometheus:
+    image: prom/prometheus:latest
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    ports:
+      - "9090:9090"
+    depends_on:
+      grpc-server:
+        condition: service_healthy
+
+  grafana:
+    image: grafana/grafana:latest
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Viewer
+      - GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH=/var/lib/grafana/dashboards/grpc-overview.json
+    depends_on:
+      - prometheus
