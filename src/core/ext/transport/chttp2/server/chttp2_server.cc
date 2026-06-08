@@ -702,8 +702,8 @@ absl::StatusOr<int> Chttp2ServerAddPort(Server* server, const char* addr,
     return GRPC_ERROR_CREATE("Invalid address: addr cannot be a nullptr.");
   }
 
-  ChannelArgs updated_args = args.Set(
-      GRPC_ARG_USE_V3_STACK, IsPromiseBasedHttp2ServerTransportEnabled());
+  ChannelArgs updated_args =
+      args.Set(GRPC_ARG_USE_V3_STACK, http2::ShouldEnablePh2Server());
   if (strncmp(addr, "external:", 9) == 0) {
     auto r =
         NewChttp2ServerListener::CreateWithAcceptor(server, addr, updated_args);
@@ -869,7 +869,7 @@ void grpc_server_add_channel_from_fd(grpc_server* server, int fd,
   grpc_core::ExecCtx exec_ctx;
   grpc_core::Server* core_server = grpc_core::Server::FromC(server);
 
-  const bool is_callv3 = grpc_core::IsPromiseBasedHttp2ServerTransportEnabled();
+  const bool is_callv3 = grpc_core::http2::ShouldEnablePh2Server();
   grpc_core::ChannelArgs server_args =
       core_server->channel_args().Set(GRPC_ARG_USE_V3_STACK, is_callv3);
 
@@ -960,7 +960,7 @@ absl::Status grpc_server_add_passive_listener(
                   .SetObject(credentials->Ref())
                   .SetObject(std::move(sc))
                   .Set(GRPC_ARG_USE_V3_STACK,
-                       grpc_core::IsPromiseBasedHttp2ServerTransportEnabled());
+                       grpc_core::http2::ShouldEnablePh2Server());
   passive_listener->listener_ =
       grpc_core::NewChttp2ServerListener::CreateForPassiveListener(
           server, args, passive_listener);

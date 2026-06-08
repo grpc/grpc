@@ -206,6 +206,10 @@ class TransportFlowControl final {
   ~TransportFlowControl() {}
 
   bool bdp_probe() const { return enable_bdp_probe_; }
+  bool ph2_enable_rx_crypto() const { return ph2_enable_rx_crypto_; }
+  void set_ph2_enable_rx_crypto(const bool enable) {
+    ph2_enable_rx_crypto_ = enable;
+  }
 
   // Returns a non-zero announce if we should send a transport update to our
   // peer, else returns zero; writing_anyway indicates if a write would happen
@@ -471,6 +475,13 @@ class TransportFlowControl final {
   uint32_t acked_init_window_ = kDefaultWindow;
   uint32_t sent_init_window_ = kDefaultWindow;
   absl::flat_hash_set<uint32_t> window_update_list_;
+
+  // Preferred_rx_crypto_frame_sizes are advertised to the peer
+  // For CHTTP2, this is always true.
+  // For PH2, this is set by the transport based on the channel arg
+  // GRPC_ARG_EXPERIMENTAL_HTTP2_PREFERRED_CRYPTO_FRAME_SIZE.
+  // TODO(tjagtap) [PH2][CHTTP2] Edit comment when CHTTP2 is getting deleted.
+  bool ph2_enable_rx_crypto_ = true;
 };
 
 // Implementation of flow control that abides to HTTP/2 spec and attempts

@@ -2913,6 +2913,7 @@ add_library(grpc
   src/core/lib/resource_quota/periodic_update.cc
   src/core/lib/resource_quota/resource_quota.cc
   src/core/lib/resource_quota/stream_quota.cc
+  src/core/lib/resource_quota/telemetry.cc
   src/core/lib/resource_quota/thread_quota.cc
   src/core/lib/resource_tracker/resource_tracker.cc
   src/core/lib/security/authorization/audit_logging.cc
@@ -3743,6 +3744,7 @@ add_library(grpc_unsecure
   src/core/lib/resource_quota/periodic_update.cc
   src/core/lib/resource_quota/resource_quota.cc
   src/core/lib/resource_quota/stream_quota.cc
+  src/core/lib/resource_quota/telemetry.cc
   src/core/lib/resource_quota/thread_quota.cc
   src/core/lib/resource_tracker/resource_tracker.cc
   src/core/lib/security/authorization/authorization_policy_provider_vtable.cc
@@ -6241,6 +6243,7 @@ add_library(grpc_authorization_provider
   src/core/lib/resource_quota/periodic_update.cc
   src/core/lib/resource_quota/resource_quota.cc
   src/core/lib/resource_quota/stream_quota.cc
+  src/core/lib/resource_quota/telemetry.cc
   src/core/lib/resource_quota/thread_quota.cc
   src/core/lib/resource_tracker/resource_tracker.cc
   src/core/lib/security/authorization/audit_logging.cc
@@ -9941,6 +9944,7 @@ add_executable(call_filters_test
   src/core/lib/resource_quota/periodic_update.cc
   src/core/lib/resource_quota/resource_quota.cc
   src/core/lib/resource_quota/stream_quota.cc
+  src/core/lib/resource_quota/telemetry.cc
   src/core/lib/resource_quota/thread_quota.cc
   src/core/lib/resource_tracker/resource_tracker.cc
   src/core/lib/slice/percent_encoding.cc
@@ -10426,6 +10430,7 @@ add_executable(call_utils_test
   src/core/lib/resource_quota/periodic_update.cc
   src/core/lib/resource_quota/resource_quota.cc
   src/core/lib/resource_quota/stream_quota.cc
+  src/core/lib/resource_quota/telemetry.cc
   src/core/lib/resource_quota/thread_quota.cc
   src/core/lib/resource_tracker/resource_tracker.cc
   src/core/lib/slice/percent_encoding.cc
@@ -10645,6 +10650,7 @@ add_executable(cancel_callback_test
   src/core/lib/resource_quota/periodic_update.cc
   src/core/lib/resource_quota/resource_quota.cc
   src/core/lib/resource_quota/stream_quota.cc
+  src/core/lib/resource_quota/telemetry.cc
   src/core/lib/resource_quota/thread_quota.cc
   src/core/lib/resource_tracker/resource_tracker.cc
   src/core/lib/slice/percent_encoding.cc
@@ -12289,6 +12295,7 @@ add_executable(chunked_vector_test
   src/core/lib/resource_quota/periodic_update.cc
   src/core/lib/resource_quota/resource_quota.cc
   src/core/lib/resource_quota/stream_quota.cc
+  src/core/lib/resource_quota/telemetry.cc
   src/core/lib/resource_quota/thread_quota.cc
   src/core/lib/resource_tracker/resource_tracker.cc
   src/core/lib/slice/percent_encoding.cc
@@ -18025,6 +18032,7 @@ add_executable(filter_fusion_test
   src/core/lib/resource_quota/periodic_update.cc
   src/core/lib/resource_quota/resource_quota.cc
   src/core/lib/resource_quota/stream_quota.cc
+  src/core/lib/resource_quota/telemetry.cc
   src/core/lib/resource_quota/thread_quota.cc
   src/core/lib/resource_tracker/resource_tracker.cc
   src/core/lib/slice/percent_encoding.cc
@@ -18325,6 +18333,7 @@ add_executable(flow_control_manager_test
   src/core/lib/resource_quota/periodic_update.cc
   src/core/lib/resource_quota/resource_quota.cc
   src/core/lib/resource_quota/stream_quota.cc
+  src/core/lib/resource_quota/telemetry.cc
   src/core/lib/resource_quota/thread_quota.cc
   src/core/lib/resource_tracker/resource_tracker.cc
   src/core/lib/slice/percent_encoding.cc
@@ -18456,6 +18465,7 @@ add_executable(flow_control_test
   src/core/lib/resource_quota/periodic_update.cc
   src/core/lib/resource_quota/resource_quota.cc
   src/core/lib/resource_quota/stream_quota.cc
+  src/core/lib/resource_quota/telemetry.cc
   src/core/lib/resource_quota/thread_quota.cc
   src/core/lib/resource_tracker/resource_tracker.cc
   src/core/lib/slice/percent_encoding.cc
@@ -18582,6 +18592,7 @@ add_executable(for_each_test
   src/core/lib/resource_quota/periodic_update.cc
   src/core/lib/resource_quota/resource_quota.cc
   src/core/lib/resource_quota/stream_quota.cc
+  src/core/lib/resource_quota/telemetry.cc
   src/core/lib/resource_quota/thread_quota.cc
   src/core/lib/resource_tracker/resource_tracker.cc
   src/core/lib/slice/percent_encoding.cc
@@ -18843,6 +18854,7 @@ add_executable(frame_test
   src/core/lib/resource_quota/periodic_update.cc
   src/core/lib/resource_quota/resource_quota.cc
   src/core/lib/resource_quota/stream_quota.cc
+  src/core/lib/resource_quota/telemetry.cc
   src/core/lib/resource_quota/thread_quota.cc
   src/core/lib/resource_tracker/resource_tracker.cc
   src/core/lib/slice/percent_encoding.cc
@@ -22342,6 +22354,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     src/core/lib/resource_quota/periodic_update.cc
     src/core/lib/resource_quota/resource_quota.cc
     src/core/lib/resource_quota/stream_quota.cc
+    src/core/lib/resource_quota/telemetry.cc
     src/core/lib/resource_quota/thread_quota.cc
     src/core/lib/resource_tracker/resource_tracker.cc
     src/core/lib/slice/percent_encoding.cc
@@ -22975,6 +22988,7 @@ add_executable(interceptor_list_test
   src/core/lib/resource_quota/periodic_update.cc
   src/core/lib/resource_quota/resource_quota.cc
   src/core/lib/resource_quota/stream_quota.cc
+  src/core/lib/resource_quota/telemetry.cc
   src/core/lib/resource_quota/thread_quota.cc
   src/core/lib/resource_tracker/resource_tracker.cc
   src/core/lib/slice/percent_encoding.cc
@@ -23891,6 +23905,7 @@ add_executable(latent_see_test
   src/core/lib/resource_quota/periodic_update.cc
   src/core/lib/resource_quota/resource_quota.cc
   src/core/lib/resource_quota/stream_quota.cc
+  src/core/lib/resource_quota/telemetry.cc
   src/core/lib/resource_quota/thread_quota.cc
   src/core/lib/resource_tracker/resource_tracker.cc
   src/core/lib/slice/percent_encoding.cc
@@ -24822,6 +24837,7 @@ add_executable(map_pipe_test
   src/core/lib/resource_quota/periodic_update.cc
   src/core/lib/resource_quota/resource_quota.cc
   src/core/lib/resource_quota/stream_quota.cc
+  src/core/lib/resource_quota/telemetry.cc
   src/core/lib/resource_quota/thread_quota.cc
   src/core/lib/resource_tracker/resource_tracker.cc
   src/core/lib/slice/percent_encoding.cc
@@ -30502,6 +30518,7 @@ add_executable(request_buffer_test
   src/core/lib/resource_quota/periodic_update.cc
   src/core/lib/resource_quota/resource_quota.cc
   src/core/lib/resource_quota/stream_quota.cc
+  src/core/lib/resource_quota/telemetry.cc
   src/core/lib/resource_quota/thread_quota.cc
   src/core/lib/resource_tracker/resource_tracker.cc
   src/core/lib/slice/percent_encoding.cc
@@ -36921,6 +36938,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     src/core/lib/resource_quota/periodic_update.cc
     src/core/lib/resource_quota/resource_quota.cc
     src/core/lib/resource_quota/stream_quota.cc
+    src/core/lib/resource_quota/telemetry.cc
     src/core/lib/resource_quota/thread_quota.cc
     src/core/lib/resource_tracker/resource_tracker.cc
     src/core/lib/slice/percent_encoding.cc
