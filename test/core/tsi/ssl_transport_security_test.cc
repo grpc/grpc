@@ -446,7 +446,8 @@ class SslTransportSecurityTest
                     ssl_fixture->network_bio_buf_size_,
                     ssl_fixture->ssl_bio_buf_size_,
                     ssl_fixture->alpn_client_overriden_protocols_,
-                    /*collection_scope=*/nullptr, "", "",
+                    /*collection_scope=*/nullptr, /*locality=*/"",
+                    /*backend_service=*/"",
                     &ssl_fixture->base_.client_handshaker),
                 TSI_OK);
       ASSERT_EQ(tsi_ssl_server_handshaker_factory_create_handshaker(
@@ -1187,7 +1188,8 @@ TEST(SslTransportSecurityTest, TestClientHandshakerFactoryRefcounting) {
     ASSERT_EQ(tsi_ssl_client_handshaker_factory_create_handshaker(
                   client_handshaker_factory, "google.com", 0, 0,
                   /*alpn_preferred_protocol_list=*/std::nullopt,
-                  /*collection_scope=*/nullptr, "", "", &handshaker[i]),
+                  /*collection_scope=*/nullptr, /*locality=*/"",
+                  /*backend_service=*/"", &handshaker[i]),
               TSI_OK);
   }
 
