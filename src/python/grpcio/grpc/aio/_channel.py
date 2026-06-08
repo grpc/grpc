@@ -15,8 +15,8 @@
 
 import asyncio
 import sys
-import weakref
 from typing import Any, Iterable, List, Optional, Sequence
+import weakref
 
 import grpc
 from grpc import _common
@@ -105,6 +105,15 @@ class _BaseMultiCallable:
         self._interceptors = interceptors
         self._references = references
 
+        if not self._references:
+            error_msg = "MultiCallable must be attached to a Channel, unexpectedly found no references."
+            raise ValueError(error_msg)
+        if not isinstance(self._references[0], Channel):
+            error_msg = "Invalid reference type. MultiCallable must be attached to a Channel."
+            raise TypeError(error_msg)
+
+        self._python_channel = self._references[0]
+
     @staticmethod
     def _init_metadata(
         metadata: Optional[MetadataType] = None,
@@ -167,13 +176,7 @@ class UnaryUnaryMultiCallable(
                 self._loop,
             )
 
-        if not self._references:
-            raise ValueError("MultiCallable must be attached to a Channel, unexpectedly found no references.")
-
-        if not isinstance(self._references[0], Channel):
-            raise TypeError("Invalid reference type. MultiCallable must be attached to a Channel.")
-
-        self._references[0]._register_call(call)
+        self._python_channel._register_call(call)
 
         return call
 
@@ -221,13 +224,7 @@ class UnaryStreamMultiCallable(
                 self._loop,
             )
 
-        if not self._references:
-            raise ValueError("MultiCallable must be attached to a Channel, unexpectedly found no references.")
-
-        if not isinstance(self._references[0], Channel):
-            raise TypeError("Invalid reference type. MultiCallable must be attached to a Channel.")
-
-        self._references[0]._register_call(call)
+        self._python_channel._register_call(call)
 
         return call
 
@@ -274,13 +271,7 @@ class StreamUnaryMultiCallable(
                 self._loop,
             )
 
-        if not self._references:
-            raise ValueError("MultiCallable must be attached to a Channel, unexpectedly found no references.")
-
-        if not isinstance(self._references[0], Channel):
-            raise TypeError("Invalid reference type. MultiCallable must be attached to a Channel.")
-
-        self._references[0]._register_call(call)
+        self._python_channel._register_call(call)
 
         return call
 
@@ -327,13 +318,7 @@ class StreamStreamMultiCallable(
                 self._loop,
             )
 
-        if not self._references:
-            raise ValueError("MultiCallable must be attached to a Channel, unexpectedly found no references.")
-
-        if not isinstance(self._references[0], Channel):
-            raise TypeError("Invalid reference type. MultiCallable must be attached to a Channel.")
-
-        self._references[0]._register_call(call)
+        self._python_channel._register_call(call)
 
         return call
 
@@ -416,12 +401,20 @@ class Channel(_base_channel.Channel):
         # No new calls will be accepted by the Cython channel.
         self._channel.closing()
 
+        async def _wait_for_call_to_complete(call):
+            try:
+                await call.code()
+            except Exception:
+                # Ignore exceptions here as true RPC errors bubble up via
+                # standard application paths. Silencing prevents channel close
+                # from failing and suppresses asyncio noise warnings.
+                pass
+
         calls = list(self._active_calls)
 
-        if grace:
-            # Use `call.code()` to wait for call completion during grace period.
+        if grace is not None and grace > 0:
             call_tasks = [
-                self._loop.create_task(call.code())
+                self._loop.create_task(_wait_for_call_to_complete(call))
                 for call in calls
                 if not call.done()
             ]
