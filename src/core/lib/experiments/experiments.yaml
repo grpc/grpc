@@ -82,6 +82,12 @@
   expiry: 2026/09/01
   owner: aananthv@google.com
   test_tags: [core_end2end_test]
+- name: custom_frame_check
+  description: Adding checks to custom HTTP2 frame.
+  expiry: 2027/01/20
+  owner: tjagtap@google.com
+  test_tags: []
+  allow_in_fuzzing_config: false
 - name: error_flatten
   description: Flatten errors to ordinary absl::Status form.
   expiry: 2026/07/01

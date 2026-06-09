@@ -51,6 +51,9 @@ const char* const description_chaotic_good_send_supported_features =
     "Send supported features in chaotic good settings frames.";
 const char* const additional_constraints_chaotic_good_send_supported_features =
     "{}";
+const char* const description_custom_frame_check =
+    "Adding checks to custom HTTP2 frame.";
+const char* const additional_constraints_custom_frame_check = "{}";
 const char* const description_error_flatten =
     "Flatten errors to ordinary absl::Status form.";
 const char* const additional_constraints_error_flatten = "{}";
@@ -307,6 +310,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_chaotic_good_send_supported_features,
      additional_constraints_chaotic_good_send_supported_features, nullptr, 0,
      false, true},
+    {"custom_frame_check", description_custom_frame_check,
+     additional_constraints_custom_frame_check, nullptr, 0, true, false},
     {"error_flatten", description_error_flatten,
      additional_constraints_error_flatten, nullptr, 0, true, false},
     {"event_engine_client", description_event_engine_client,
@@ -514,6 +519,9 @@ const char* const description_chaotic_good_send_supported_features =
     "Send supported features in chaotic good settings frames.";
 const char* const additional_constraints_chaotic_good_send_supported_features =
     "{}";
+const char* const description_custom_frame_check =
+    "Adding checks to custom HTTP2 frame.";
+const char* const additional_constraints_custom_frame_check = "{}";
 const char* const description_error_flatten =
     "Flatten errors to ordinary absl::Status form.";
 const char* const additional_constraints_error_flatten = "{}";
@@ -770,6 +778,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_chaotic_good_send_supported_features,
      additional_constraints_chaotic_good_send_supported_features, nullptr, 0,
      false, true},
+    {"custom_frame_check", description_custom_frame_check,
+     additional_constraints_custom_frame_check, nullptr, 0, true, false},
     {"error_flatten", description_error_flatten,
      additional_constraints_error_flatten, nullptr, 0, true, false},
     {"event_engine_client", description_event_engine_client,
@@ -977,6 +987,9 @@ const char* const description_chaotic_good_send_supported_features =
     "Send supported features in chaotic good settings frames.";
 const char* const additional_constraints_chaotic_good_send_supported_features =
     "{}";
+const char* const description_custom_frame_check =
+    "Adding checks to custom HTTP2 frame.";
+const char* const additional_constraints_custom_frame_check = "{}";
 const char* const description_error_flatten =
     "Flatten errors to ordinary absl::Status form.";
 const char* const additional_constraints_error_flatten = "{}";
@@ -1233,6 +1246,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_chaotic_good_send_supported_features,
      additional_constraints_chaotic_good_send_supported_features, nullptr, 0,
      false, true},
+    {"custom_frame_check", description_custom_frame_check,
+     additional_constraints_custom_frame_check, nullptr, 0, true, false},
     {"error_flatten", description_error_flatten,
      additional_constraints_error_flatten, nullptr, 0, true, false},
     {"event_engine_client", description_event_engine_client,
