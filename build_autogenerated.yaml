@@ -22446,6 +22446,9 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   deps:
   - gtest
+  - absl/log:log_entry
+  - absl/log:log_sink
+  - absl/log:log_sink_registry
   - protobuf
   - grpc_test_util
 - name: remove_stream_from_stalled_lists_test

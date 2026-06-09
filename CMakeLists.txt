@@ -30441,6 +30441,9 @@ target_include_directories(regional_access_boundary_fetcher_test
 target_link_libraries(regional_access_boundary_fetcher_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  absl::log_entry
+  absl::log_sink
+  absl::log_sink_registry
   ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
 )

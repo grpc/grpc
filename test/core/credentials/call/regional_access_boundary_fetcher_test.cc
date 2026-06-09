@@ -28,7 +28,6 @@
 #include "src/core/credentials/call/call_credentials.h"
 #include "src/core/lib/iomgr/timer_manager.h"
 #include "src/core/lib/promise/arena_promise.h"
-#include "src/core/lib/promise/poll.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/util/http_client/httpcli.h"
 #include "src/core/util/ref_counted_ptr.h"
