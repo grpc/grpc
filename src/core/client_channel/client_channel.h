@@ -25,7 +25,6 @@
 #include "src/core/client_channel/retry_throttle.h"
 #include "src/core/client_channel/subchannel.h"
 #include "src/core/ext/filters/channel_idle/idle_filter_state.h"
-#include "src/core/filter/blackboard.h"
 #include "src/core/lib/promise/observable.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/load_balancing/lb_policy.h"
@@ -215,8 +214,6 @@ class ClientChannel : public Channel {
   RefCountedPtr<ConfigSelector> saved_config_selector_
       ABSL_GUARDED_BY(*work_serializer_);
   RetryThrottlerChannelArgsUpdater retry_throttler_updater_
-      ABSL_GUARDED_BY(*work_serializer_);
-  RefCountedPtr<const Blackboard> blackboard_
       ABSL_GUARDED_BY(*work_serializer_);
   OrphanablePtr<LoadBalancingPolicy> lb_policy_
       ABSL_GUARDED_BY(*work_serializer_);

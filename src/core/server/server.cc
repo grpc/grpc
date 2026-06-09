@@ -1187,6 +1187,7 @@ Server::Server(const ChannelArgs& args)
                          ? nullptr
                          : channelz::DataSource::channelz_node()
                                ->RefAsSubclass<channelz::ServerNode>()),
+      config_fetcher_(channel_args_.GetObjectRef<ServerConfigFetcher>()),
       server_call_tracer_factory_(ServerCallTracerFactory::Get(channel_args_)),
       compression_options_(CompressionOptionsFromChannelArgs(channel_args_)),
       max_time_in_pending_queue_(Duration::Seconds(
@@ -2269,22 +2270,16 @@ grpc_call_error grpc_server_request_registered_call(
       cq_for_notification, tag_new);
 }
 
-void grpc_server_set_config_fetcher(
-    grpc_server* server, grpc_server_config_fetcher* server_config_fetcher) {
-  grpc_core::ExecCtx exec_ctx;
-  GRPC_TRACE_LOG(api, INFO)
-      << "grpc_server_set_config_fetcher(server=" << server
-      << ", config_fetcher=" << server_config_fetcher << ")";
-  grpc_core::Server::FromC(server)->set_config_fetcher(
-      std::unique_ptr<grpc_core::ServerConfigFetcher>(
-          grpc_core::ServerConfigFetcher::FromC(server_config_fetcher)));
-}
-
-void grpc_server_config_fetcher_destroy(
+void grpc_server_config_fetcher_unref(
     grpc_server_config_fetcher* server_config_fetcher) {
   grpc_core::ExecCtx exec_ctx;
   GRPC_TRACE_LOG(api, INFO)
-      << "grpc_server_config_fetcher_destroy(config_fetcher="
+      << "grpc_server_config_fetcher_unref(config_fetcher="
       << server_config_fetcher << ")";
-  delete grpc_core::ServerConfigFetcher::FromC(server_config_fetcher);
+  grpc_core::ServerConfigFetcher::FromC(server_config_fetcher)->Unref();
+}
+
+const grpc_arg_pointer_vtable* grpc_server_config_fetcher_arg_vtable(void) {
+  return grpc_core::ChannelArgTypeTraits<
+      grpc_core::ServerConfigFetcher>::VTable();
 }

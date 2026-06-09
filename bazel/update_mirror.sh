@@ -31,40 +31,40 @@ function cleanup {
 }
 trap cleanup EXIT
 
-function upload {
-  local file="$1"
-  local expected_sha256="$2"
-  local actual_sha256
+function upload() {
+  local uri="$1"
+  local dst_path="${uri}"
 
-  if gcloud storage objects list --stat --fetch-encrypted-object-hashes "gs://grpc-bazel-mirror/${file}" > /dev/null
-  then
-    echo "Skipping ${file}"
-  else
-    echo "Downloading https://${file}"
-    curl -L --fail --output "${tmpdir}/archive" "https://${file}"
-    if [[ ! -z "${expected_sha256}" ]]; then
-      actual_sha256=$(sha256sum "${tmpdir}/archive" | cut -d' ' -f1)
-      if [[ "${expected_sha256}" != "${actual_sha256}" ]]; then
-        echo "ERROR: mismatched sha256: ${expected_sha256} vs ${actual_sha256}"
-        exit 1
-      fi
-    fi
-
-    echo "Uploading https://${file} to https://storage.googleapis.com/grpc-bazel-mirror/${file}"
-    gcloud storage cp "${tmpdir}/archive" "gs://grpc-bazel-mirror/${file}"
-
-    rm -rf "${tmpdir}/archive"
+  if [[ "$dst_path" == https://sourceforge.net/*/download ]]; then
+    dst_path="${dst_path%/download}"
   fi
+
+  if gcloud storage objects list --stat --fetch-encrypted-object-hashes "gs://grpc-bazel-mirror/${uri}" > /dev/null; then
+    echo "Skipping ${uri}"
+    return 0
+  fi
+
+  echo "Downloading https://${uri}"
+  curl -L --fail --output "${tmpdir}/archive" "https://${uri}"
+  if [[ ! -s "${tmpdir}/archive" ]]; then
+    echo "Failed to download https://${uri}: zero bytes returned"
+    return 0
+  fi
+
+  echo "Uploading https://${uri} to https://storage.googleapis.com/grpc-bazel-mirror/${dst_path}"
+  gcloud storage cp "${tmpdir}/archive" "gs://grpc-bazel-mirror/${dst_path}"
+
+  rm -rf "${tmpdir}/archive"
 }
 
 function upload_bzlmod_deps {
   local bazel_modules=($(bazel mod graph 2>/dev/null |
     tail -n +2 | # ignore the <root> module
-    sed -E 's/^[^[:alnum:]]*([^ ]+) .*$/\1/' | sort | uniq))
+    sed -E 's/^[^[:alnum:]]*([a-zA-Z0-9@\._-]+).*$/\1/' | sort | uniq))
 
   local urls=()
   if [ "${#bazel_modules[@]}" -gt 0 ]; then
-    urls=($(bazel mod show_repo 2>/dev/null "${bazel_modules[@]}" | grep -E '^\s*urls = \["' | grep -Eo 'https://[^"]+' | sort | uniq))
+    urls=($(bazel mod show_repo 2>/dev/null "${bazel_modules[@]}" | grep -Eo 'https://[^"]+' | sort | uniq))
   fi
 
   for url in "${urls[@]}" ; do
@@ -79,11 +79,6 @@ function upload_bzlmod_deps {
           ;;
         *)
           echo "Uploading archive from non-github site: ${url}"
-          # TODO(weizheyuan): Handle file extension a bit better.
-          #
-          # e.g. https://sourceforge.net/projects/perfmon2/files/libpfm4/libpfm-4.11.0.tar.gz/download
-          # does not have .tar.gz extension and can get rejected by http_archive(). Currently it's manually
-          # rewritten to make build work, see MODULE.bazel.
           upload "${url}"
           ;;
     esac

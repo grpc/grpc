@@ -733,6 +733,7 @@ LIBGRPC_SRC = \
     src/core/credentials/call/jwt_util.cc \
     src/core/credentials/call/oauth2/oauth2_credentials.cc \
     src/core/credentials/call/plugin/plugin_credentials.cc \
+    src/core/credentials/call/regional_access_boundary_fetcher.cc \
     src/core/credentials/call/token_fetcher/token_fetcher_credentials.cc \
     src/core/credentials/transport/alts/alts_credentials.cc \
     src/core/credentials/transport/alts/alts_security_connector.cc \
@@ -1183,7 +1184,6 @@ LIBGRPC_SRC = \
     src/core/ext/upbdefs-gen/xds/type/v3/typed_struct.upbdefs.c \
     src/core/filter/auth/client_auth_filter.cc \
     src/core/filter/auth/server_auth_filter.cc \
-    src/core/filter/blackboard.cc \
     src/core/filter/composite/composite_filter.cc \
     src/core/filter/fused_filters.cc \
     src/core/handshaker/endpoint_info/endpoint_info_handshaker.cc \
@@ -1569,6 +1569,7 @@ LIBGRPC_SRC = \
     src/core/util/windows/time.cc \
     src/core/util/windows/tmpfile.cc \
     src/core/util/work_serializer.cc \
+    src/core/xds/grpc/blackboard.cc \
     src/core/xds/grpc/certificate_provider_store.cc \
     src/core/xds/grpc/file_watcher_certificate_provider_factory.cc \
     src/core/xds/grpc/xds_audit_logger_registry.cc \

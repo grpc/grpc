@@ -898,7 +898,6 @@ Server::Server(
     int min_pollers, int max_pollers, int sync_cq_timeout_msec,
     std::vector<std::shared_ptr<grpc::internal::ExternalConnectionAcceptorImpl>>
         acceptors,
-    grpc_server_config_fetcher* server_config_fetcher,
     grpc_resource_quota* server_rq,
     std::vector<
         std::unique_ptr<grpc::experimental::ServerInterceptorFactoryInterface>>
@@ -967,7 +966,6 @@ Server::Server(
     }
   }
   server_ = grpc_server_create(&channel_args, nullptr);
-  grpc_server_set_config_fetcher(server_, server_config_fetcher);
 
   if (server_rq != nullptr) {
     memory_allocator_ = grpc_core::ResourceQuota::FromC(server_rq)

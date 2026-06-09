@@ -24,6 +24,7 @@ EXPERIMENT_ENABLES = {
     "callv3_batch_validation": "callv3_batch_validation",
     "chaotic_good_framing_layer": "chaotic_good_framing_layer",
     "chaotic_good_send_supported_features": "chaotic_good_send_supported_features",
+    "custom_frame_check": "custom_frame_check",
     "error_flatten": "error_flatten",
     "event_engine_client": "event_engine_client",
     "event_engine_dns": "event_engine_dns",
