@@ -1516,7 +1516,7 @@ TEST_P(SslTransportSecurityTest, TestKeyExchangeGroupMismatch) {
   DoHandshake();
 }
 
-#ifdef OPENSSL_IS_BORINGSSL
+#if defined(OPENSSL_IS_BORINGSSL)
 TEST_P(SslTransportSecurityTest,
        SuccessfulHandshake_ServerSpecifiesX25519Mlkem768) {
   auto tls_version = std::get<0>(GetParam());
@@ -1588,7 +1588,6 @@ TEST_P(SslTransportSecurityTest, SuccessfulHandshake_ClientSpecifiesP256) {
   }
   DoHandshake();
 }
-
 
 #endif
 #endif

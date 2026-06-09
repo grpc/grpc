@@ -389,7 +389,7 @@ tsi_result SetKeyExchangeGroups(
       auto group_name = tsi::ConvertKeyExchangeGroupToString(group);
       if (!group_name.ok()) {
         LOG(ERROR) << "Could not convert key exchange group to string: "
-                   << group << ".\n";
+                   << group;
         return TSI_INVALID_ARGUMENT;
       }
       group_names.push_back(*group_name);
@@ -420,7 +420,7 @@ tsi_result SetKeyExchangeGroups(
     if (!SSL_CTX_set1_groups_list(context,
                                   kDefaultOpenSSL1_1_1KeyExchangeGroups)) {
       LOG(ERROR)
-          << "Could not set key default exchange groups for OpenSSL 1.1.1.";
+          << "Could not set default key exchange groups for OpenSSL 1.1.1.";
       return TSI_INTERNAL_ERROR;
     }
 #elif OPENSSL_VERSION_NUMBER < 0x10101000L
