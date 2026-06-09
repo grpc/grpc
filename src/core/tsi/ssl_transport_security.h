@@ -55,8 +55,6 @@
 #define TSI_SSL_NEGOTIATED_KEY_EXCHANGE_GROUP \
   "ssl_negotiated_key_exchange_group"
 
-
-
 namespace tsi {
 using RootCertInfo = std::variant<std::string, grpc_core::SpiffeBundleMap>;
 
