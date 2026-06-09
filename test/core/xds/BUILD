@@ -370,6 +370,22 @@ grpc_fuzz_test(
 )
 
 grpc_cc_test(
+    name = "xds_client_grpc_test",
+    srcs = ["xds_client_grpc_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    tags = ["xds_test"],
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//:grpc_public_hdrs",
+        "//src/core:grpc_xds_client",
+        "//test/core/test_util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
     name = "xds_common_types_test",
     srcs = ["xds_common_types_test.cc"],
     external_deps = [
@@ -828,5 +844,18 @@ grpc_cc_test(
         "//src/core:xds_listener",
         "//src/core:xds_route_config",
         "//test/core/test_util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "blackboard_test",
+    srcs = ["blackboard_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//src/core:blackboard",
     ],
 )

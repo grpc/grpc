@@ -83,10 +83,11 @@ NativeWindowsDNSResolver::NativeWindowsDNSResolver(
 void NativeWindowsDNSResolver::LookupHostname(
     EventEngine::DNSResolver::LookupHostnameCallback on_resolved,
     absl::string_view name, absl::string_view default_port) {
-  event_engine_->Run(
-      [name, default_port, on_resolved = std::move(on_resolved)]() mutable {
-        on_resolved(LookupHostnameBlocking(name, default_port));
-      });
+  event_engine_->Run([name = std::string(name),
+                      default_port = std::string(default_port),
+                      on_resolved = std::move(on_resolved)]() mutable {
+    on_resolved(LookupHostnameBlocking(name, default_port));
+  });
 }
 
 void NativeWindowsDNSResolver::LookupSRV(

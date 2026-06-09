@@ -322,7 +322,7 @@ absl::StatusOr<grpc_channel*> CreateHttp2Channel(std::string target,
   // 8-15 months.
   const bool is_v3 = false;
 #else
-  const bool is_v3 = IsPromiseBasedHttp2ClientTransportEnabled();
+  const bool is_v3 = grpc_core::http2::ShouldEnablePh2Client();
 #endif  // GRPC_EXPERIMENTAL_TEMPORARILY_DISABLE_PH2
   auto r = ChannelCreate(
       target,

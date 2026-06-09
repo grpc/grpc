@@ -38,7 +38,6 @@
 #include "src/core/call/message.h"
 #include "src/core/call/metadata.h"
 #include "src/core/call/metadata_batch.h"
-#include "src/core/filter/blackboard.h"
 #include "src/core/filter/filter_args.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
@@ -2268,7 +2267,7 @@ struct ChannelFilterWithFlagsMethods {
         F::Create(args->channel_args,
                   ChannelFilter::Args(args->channel_stack, elem,
                                       grpc_channel_stack_filter_instance_number,
-                                      args->config, args->blackboard));
+                                      args->config));
     if (!status.ok()) {
       new (elem->channel_data) F*(nullptr);
       return absl_status_to_grpc_error(status.status());

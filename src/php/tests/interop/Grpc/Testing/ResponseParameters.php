@@ -80,7 +80,7 @@ class ResponseParameters extends \Google\Protobuf\Internal\Message
      * @param int $var
      * @return $this
      */
-    public function setSize($var)
+    public function setSize(int $var)
     {
         GPBUtil::checkInt32($var);
         $this->size = $var;
@@ -108,7 +108,7 @@ class ResponseParameters extends \Google\Protobuf\Internal\Message
      * @param int $var
      * @return $this
      */
-    public function setIntervalUs($var)
+    public function setIntervalUs(int $var)
     {
         GPBUtil::checkInt32($var);
         $this->interval_us = $var;
@@ -150,9 +150,8 @@ class ResponseParameters extends \Google\Protobuf\Internal\Message
      * @param \Grpc\Testing\BoolValue $var
      * @return $this
      */
-    public function setCompressed($var)
+    public function setCompressed(\Grpc\Testing\BoolValue|null $var)
     {
-        GPBUtil::checkMessage($var, \Grpc\Testing\BoolValue::class);
         $this->compressed = $var;
 
         return $this;
