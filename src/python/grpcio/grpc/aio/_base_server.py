@@ -315,6 +315,7 @@ class ServicerContext(Generic[RequestType, ResponseType], abc.ABC):
         Returns:
           A map of strings to an iterable of bytes for each auth property.
         """
+        raise NotImplementedError()
 
     def time_remaining(self) -> float:
         """Describes the length of allowed time remaining for the RPC.
