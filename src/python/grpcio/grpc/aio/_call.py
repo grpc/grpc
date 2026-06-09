@@ -469,7 +469,7 @@ class _StreamRequestMixin(Call, Generic[RequestType]):
                         return
             else:
                 err_msg = (
-                    "request_iterator must be an Iterable or AsyncIterable,"
+                    f"request_iterator must be an {RequestIterableType},"
                     f" got {type(request_iterator).__name__!r} instead"
                 )
                 raise TypeError(err_msg)
