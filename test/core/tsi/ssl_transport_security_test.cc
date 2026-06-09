@@ -1542,6 +1542,54 @@ TEST_P(SslTransportSecurityTest,
   }
   DoHandshake();
 }
+
+TEST_P(SslTransportSecurityTest, SuccessfulHandshake_ServerSpecifiesX25519) {
+  auto tls_version = std::get<0>(GetParam());
+  SetUpSslFixture(tls_version,
+                  /*send_client_ca_list=*/std::get<1>(GetParam()));
+  if (tls_version == TSI_TLS1_3) {
+    ssl_fixture_->OverrideServerKeyExchangeGroups({GRPC_TLS_GROUP_X25519});
+    ssl_fixture_->SetExpectedNegotiatedGroup("X25519");
+  }
+  DoHandshake();
+}
+
+TEST_P(SslTransportSecurityTest, SuccessfulHandshake_ClientSpecifiesX25519) {
+  auto tls_version = std::get<0>(GetParam());
+  SetUpSslFixture(tls_version,
+                  /*send_client_ca_list=*/std::get<1>(GetParam()));
+  if (tls_version == TSI_TLS1_3) {
+    ssl_fixture_->OverrideClientKeyExchangeGroups({GRPC_TLS_GROUP_X25519});
+    ssl_fixture_->SetExpectedNegotiatedGroup("X25519");
+  }
+  DoHandshake();
+}
+
+TEST_P(SslTransportSecurityTest, SuccessfulHandshake_ServerSpecifiesP256) {
+  auto tls_version = std::get<0>(GetParam());
+  SetUpSslFixture(tls_version,
+                  /*send_client_ca_list=*/std::get<1>(GetParam()));
+  if (tls_version == TSI_TLS1_3) {
+    ssl_fixture_->OverrideServerKeyExchangeGroups(
+        {GRPC_TLS_GROUP_SECP256R1});
+    ssl_fixture_->SetExpectedNegotiatedGroup("prime256v1");
+  }
+  DoHandshake();
+}
+
+TEST_P(SslTransportSecurityTest, SuccessfulHandshake_ClientSpecifiesP256) {
+  auto tls_version = std::get<0>(GetParam());
+  SetUpSslFixture(tls_version,
+                  /*send_client_ca_list=*/std::get<1>(GetParam()));
+  if (tls_version == TSI_TLS1_3) {
+    ssl_fixture_->OverrideClientKeyExchangeGroups(
+        {GRPC_TLS_GROUP_SECP256R1});
+    ssl_fixture_->SetExpectedNegotiatedGroup("prime256v1");
+  }
+  DoHandshake();
+}
+
+
 #endif
 #endif
 
