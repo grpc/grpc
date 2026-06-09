@@ -1491,7 +1491,8 @@ TEST_P(SslTransportSecurityTest, TestKeyExchangeGroupMismatch) {
 }
 
 #ifdef OPENSSL_IS_BORINGSSL
-TEST_P(SslTransportSecurityTest, TestPqcDefaultClientHandshake) {
+TEST_P(SslTransportSecurityTest,
+       SuccessfulHandshake_ServerSpecifiesX25519Mlkem768) {
   auto tls_version = std::get<0>(GetParam());
   SetUpSslFixture(tls_version,
                   /*send_client_ca_list=*/std::get<1>(GetParam()));
@@ -1502,7 +1503,8 @@ TEST_P(SslTransportSecurityTest, TestPqcDefaultClientHandshake) {
   DoHandshake();
 }
 
-TEST_P(SslTransportSecurityTest, TestPqcDefaultServerHandshake) {
+TEST_P(SslTransportSecurityTest,
+       SuccessfulHandshake_ClientSpecifiesX25519Mlkem768) {
   auto tls_version = std::get<0>(GetParam());
   SetUpSslFixture(tls_version,
                   /*send_client_ca_list=*/std::get<1>(GetParam()));

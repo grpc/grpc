@@ -96,10 +96,10 @@
 #define TSI_SSL_MAX_PROTECTED_FRAME_SIZE_LOWER_BOUND 1024
 #define TSI_SSL_HANDSHAKER_OUTGOING_BUFFER_INITIAL_SIZE 1024
 const size_t kMaxChainLength = 100;
-const char* kDefaultBoringSSLKeyExchangeGroups =
+const char kDefaultBoringSSLKeyExchangeGroups[] =
     "X25519MLKEM768:X25519:P-256:P-384:P-521";
-const char* kDefaultOpenSSL1_1_1KeyExchangeGroups = "X25519:P-256:P-384:P-521";
-const char* kDefaultOpenSSL1_0_2KeyExchangeGroups = "P-256:P-384:P-521";
+const char kDefaultOpenSSL1_1_1KeyExchangeGroups[] = "X25519:P-256:P-384:P-521";
+const char kDefaultOpenSSL1_0_2KeyExchangeGroups[] = "P-256:P-384:P-521";
 
 // Putting a macro like this and littering the source file with #if is really
 // bad practice.
@@ -378,17 +378,18 @@ int ServerHandshakerFactoryAlpnCallback(SSL* /*ssl*/, const unsigned char** out,
 //   - BoringSSL: {X25519MLKEM768, X25519, P-256, P-384, P-521}
 //   - OpenSSL < 3.0: {X25519, P-256, P-384, P-521}
 //   - OpenSSL >= 3: OpenSSL Defaults (prefers X25519MLKEM768 in OpenSSL 3.5+)
-tsi_result populate_key_exchange_groups(
+tsi_result SetKeyExchangeGroups(
     SSL_CTX* context,
     const std::vector<grpc_tls_key_exchange_group>& key_exchange_groups) {
-  // Explicitly set the key exchange groups
+  // Explicitly set the key exchange groups based on user-provided preferences.
   if (!key_exchange_groups.empty()) {
     std::vector<absl::string_view> group_names;
     group_names.reserve(key_exchange_groups.size());
     for (const auto& group : key_exchange_groups) {
       auto group_name = tsi::ConvertKeyExchangeGroupToString(group);
       if (!group_name.ok()) {
-        LOG(ERROR) << "Could not convert key exchange group to string.";
+        LOG(ERROR) << "Could not convert key exchange group to string: "
+                   << group << ".\n";
         return TSI_INVALID_ARGUMENT;
       }
       group_names.push_back(*group_name);
@@ -401,8 +402,9 @@ tsi_result populate_key_exchange_groups(
     }
     SSL_CTX_set_options(context, SSL_OP_SINGLE_ECDH_USE);
 #else
-    LOG(ERROR) << "SSL_CTX_set1_groups is not supported in OpenSSL < 1.1.1 "
-                  "version.";
+
+    LOG(ERROR) << "Setting TLS key exchange groups is not supported when "
+                  "building against OpenSSL versions < 1.1.1.";
     return TSI_FAILED_PRECONDITION;
 #endif  // OPENSSL_VERSION_NUMBER >= 0x10100000
   } else {
@@ -410,7 +412,7 @@ tsi_result populate_key_exchange_groups(
 #if defined(OPENSSL_IS_BORINGSSL)
     if (!SSL_CTX_set1_groups_list(context,
                                   kDefaultBoringSSLKeyExchangeGroups)) {
-      LOG(ERROR) << "Could not set default key exchange groups for BoringSSL";
+      LOG(ERROR) << "Could not set default key exchange groups for BoringSSL.";
       return TSI_INTERNAL_ERROR;
     }
 #elif OPENSSL_VERSION_NUMBER < 0x30000000L && \
@@ -418,18 +420,18 @@ tsi_result populate_key_exchange_groups(
     if (!SSL_CTX_set1_groups_list(context,
                                   kDefaultOpenSSL1_1_1KeyExchangeGroups)) {
       LOG(ERROR)
-          << "Could not set key default exchange groups for OpenSSL1.1.1";
+          << "Could not set key default exchange groups for OpenSSL 1.1.1.";
       return TSI_INTERNAL_ERROR;
     }
 #elif OPENSSL_VERSION_NUMBER < 0x10101000L
     if (!SSL_CTX_set1_curves_list(context,
                                   kDefaultOpenSSL1_0_2KeyExchangeGroups)) {
       LOG(ERROR)
-          << "Could not set default key exchange groups for OpenSSL1.0.2";
+          << "Could not set default key exchange groups for OpenSSL 1.0.2.";
       return TSI_INTERNAL_ERROR;
     }
     if (!SSL_CTX_set_ecdh_auto(context, /*onoff=*/1)) {
-      LOG(ERROR) << "Could not set ecdh auto for OpenSSL1.0.2";
+      LOG(ERROR) << "Could not set ecdh auto for OpenSSL 1.0.2.";
       return TSI_INTERNAL_ERROR;
     }
 #endif
@@ -1264,9 +1266,8 @@ static tsi_result populate_ssl_context(
     LOG(ERROR) << "Invalid cipher list: " << cipher_list;
     return TSI_INVALID_ARGUMENT;
   }
-  result = populate_key_exchange_groups(context, key_exchange_groups);
+  result = SetKeyExchangeGroups(context, key_exchange_groups);
   if (result != TSI_OK) {
-    LOG(ERROR) << "Failed to populate key exchange groups.";
     return result;
   }
   return TSI_OK;
@@ -2619,8 +2620,7 @@ static tsi_result create_tsi_ssl_handshaker(
     ERR_clear_error();
     ssl_result = SSL_do_handshake(ssl);
     ssl_result = SSL_get_error(ssl, ssl_result);
-    if (ssl_result != SSL_ERROR_WANT_READ &&
-        ssl_result != SSL_ERROR_WANT_WRITE) {
+    if (ssl_result != SSL_ERROR_WANT_READ) {
       LOG(ERROR)
           << "Unexpected error received from first SSL_do_handshake call: "
           << tsi::SslErrorString(ssl_result);
