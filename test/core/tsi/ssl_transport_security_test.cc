@@ -1570,8 +1570,7 @@ TEST_P(SslTransportSecurityTest, SuccessfulHandshake_ServerSpecifiesP256) {
   SetUpSslFixture(tls_version,
                   /*send_client_ca_list=*/std::get<1>(GetParam()));
   if (tls_version == TSI_TLS1_3) {
-    ssl_fixture_->OverrideServerKeyExchangeGroups(
-        {GRPC_TLS_GROUP_SECP256R1});
+    ssl_fixture_->OverrideServerKeyExchangeGroups({GRPC_TLS_GROUP_SECP256R1});
     ssl_fixture_->SetExpectedNegotiatedGroup("prime256v1");
   }
   DoHandshake();
@@ -1582,13 +1581,11 @@ TEST_P(SslTransportSecurityTest, SuccessfulHandshake_ClientSpecifiesP256) {
   SetUpSslFixture(tls_version,
                   /*send_client_ca_list=*/std::get<1>(GetParam()));
   if (tls_version == TSI_TLS1_3) {
-    ssl_fixture_->OverrideClientKeyExchangeGroups(
-        {GRPC_TLS_GROUP_SECP256R1});
+    ssl_fixture_->OverrideClientKeyExchangeGroups({GRPC_TLS_GROUP_SECP256R1});
     ssl_fixture_->SetExpectedNegotiatedGroup("prime256v1");
   }
   DoHandshake();
 }
-
 
 #endif
 #endif
