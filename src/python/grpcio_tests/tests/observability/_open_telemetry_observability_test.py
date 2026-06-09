@@ -311,7 +311,9 @@ class OpenTelemetryObservabilityTest(unittest.TestCase):
 
         self.all_metrics = defaultdict(list)
         _test_server.unary_unary_call(port=self._port)
-        with self.assertRaisesRegex(AssertionError, "No metrics was exported"):
+        with self.assertRaisesRegex(
+            AssertionError, r"Expected at least \d+ metrics, got 0"
+        ):
             self._validate_metrics_exist(self.all_metrics)
 
     def testNoRecordAfterExitUseGlobal(self):
@@ -331,7 +333,9 @@ class OpenTelemetryObservabilityTest(unittest.TestCase):
 
         self.all_metrics = defaultdict(list)
         _test_server.unary_unary_call(port=self._port)
-        with self.assertRaisesRegex(AssertionError, "No metrics was exported"):
+        with self.assertRaisesRegex(
+            AssertionError, r"Expected at least \d+ metrics, got 0"
+        ):
             self._validate_metrics_exist(self.all_metrics)
 
     def testRecordUnaryStream(self):
