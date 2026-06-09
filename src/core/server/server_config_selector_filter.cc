@@ -264,8 +264,7 @@ class FilterChainBuilderImpl final : public FilterChainBuilder {
   }
 
   void InitBuilder() {
-    builder_ = std::make_unique<InterceptionChainBuilder>(
-        channel_args_, /*blackboard=*/nullptr);
+    builder_ = std::make_unique<InterceptionChainBuilder>(channel_args_);
   }
 
   const ChannelArgs channel_args_;
