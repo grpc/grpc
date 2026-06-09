@@ -62,6 +62,16 @@ Ready to dive in?  We'll walk you through the entire process of making your firs
        ```bash
        bazel test --cache_test_results=no "//src/python/..." 
        ```
+     * Consider adding flag - `--incompatible_default_to_explicit_init_py` flag to the above bazel commands,
+       in case failures are seen. Final command would then be:
+       ```bash
+       bazel test --cache_test_results=no "//src/python/..." --incompatible_default_to_explicit_init_py
+       ```
+       Example failures:
+       ```
+       No module named 'src.python',
+       No module named 'src.proto'
+       ```
    * **Using Provided Scripts (Alternative):**
      * Install Python Modules:
        ```bash
