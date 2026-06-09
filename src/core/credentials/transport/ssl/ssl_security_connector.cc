@@ -104,7 +104,7 @@ class grpc_ssl_channel_security_connector final
                        grpc_core::HandshakeManager* handshake_mgr) override {
     // Instantiate TSI handshaker.
     tsi_handshaker* tsi_hs = nullptr;
-    auto stats_plugin_group = args.GetObjectRef<
+    auto stats_plugin_group = args.GetObject<
         grpc_core::GlobalStatsPluginRegistry::StatsPluginGroup>();
     grpc_core::RefCountedPtr<grpc_core::CollectionScope> collection_scope =
         stats_plugin_group != nullptr ? stats_plugin_group->GetCollectionScope()
@@ -281,7 +281,7 @@ class grpc_ssl_server_security_connector
     // Instantiate TSI handshaker.
     try_fetch_ssl_server_credentials();
     tsi_handshaker* tsi_hs = nullptr;
-    auto stats_plugin_group = args.GetObjectRef<
+    auto stats_plugin_group = args.GetObject<
         grpc_core::GlobalStatsPluginRegistry::StatsPluginGroup>();
     grpc_core::RefCountedPtr<grpc_core::CollectionScope> collection_scope =
         stats_plugin_group != nullptr ? stats_plugin_group->GetCollectionScope()

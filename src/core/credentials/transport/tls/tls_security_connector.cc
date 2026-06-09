@@ -365,7 +365,7 @@ void TlsChannelSecurityConnector::add_handshakers(
                                    : overridden_target_name_.c_str();
     }
     auto stats_plugin_group =
-        args.GetObjectRef<GlobalStatsPluginRegistry::StatsPluginGroup>();
+        args.GetObject<GlobalStatsPluginRegistry::StatsPluginGroup>();
     RefCountedPtr<CollectionScope> collection_scope =
         stats_plugin_group != nullptr ? stats_plugin_group->GetCollectionScope()
                                       : nullptr;
@@ -656,7 +656,7 @@ void TlsServerSecurityConnector::add_handshakers(
   tsi_handshaker* tsi_hs = nullptr;
   if (server_handshaker_factory_ != nullptr) {
     auto stats_plugin_group =
-        args.GetObjectRef<GlobalStatsPluginRegistry::StatsPluginGroup>();
+        args.GetObject<GlobalStatsPluginRegistry::StatsPluginGroup>();
     RefCountedPtr<CollectionScope> collection_scope =
         stats_plugin_group != nullptr ? stats_plugin_group->GetCollectionScope()
                                       : nullptr;
