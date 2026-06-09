@@ -276,7 +276,7 @@ constexpr uint16_t kMaxNoopDataFrames = 16384u;
 constexpr uint16_t kMaxNoopContinuationFrames = 128u;
 
 struct Http2FrameCountTracker {
-  void OnEndHeaders() { noop_continuation_frames = 0u; }
+  void OnLastContinuationFrame() { noop_continuation_frames = 0u; }
 
   std::string DebugString() const {
     return absl::StrCat(
@@ -439,6 +439,8 @@ inline constexpr absl::string_view kUnsolicitedSettingsAck =
     "gRPC Transport Error : Received unsolicited SETTINGS ACK.";
 inline constexpr absl::string_view kFailedToEnqueueStream =
     "gRPC Transport Error : Failed to enqueue stream to writable stream list";
+inline constexpr absl::string_view kStreamCreationFailed =
+    "gRPC Transport Error : Stream creation failed";
 }  // namespace GrpcErrors
 
 }  // namespace grpc_core

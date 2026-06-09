@@ -67,6 +67,14 @@ struct CloseStreamArgs {
   bool close_writes;
 };
 
+inline bool ShouldEnablePh2Client() {
+  return IsPh2ClientEnabled() || IsPh2ClientServerEnabled();
+}
+
+inline bool ShouldEnablePh2Server() {
+  return IsPh2ServerEnabled() || IsPh2ClientServerEnabled();
+}
+
 // TODO(akshitpatel) [PH2][P3] : Write a way to measure the total size of a
 // transport object. Reference :
 // https://github.com/grpc/grpc/pull/41294/files#diff-c685cc4847f228327938326e2a45083a2d0845bacff0ac004bd802027a670c4e
@@ -122,7 +130,6 @@ struct TransportChannelArgs {
   Duration ping_timeout;
   Duration settings_timeout;
   bool keepalive_permit_without_calls;
-  bool enable_preferred_rx_crypto_frame_advertisement;
   // This is used to test peer behaviour when we never send a ping ack.
   bool test_only_ack_pings;
   uint32_t max_header_list_size_soft_limit;
@@ -141,6 +148,8 @@ void ReadSettingsFromChannelArgs(const ChannelArgs& channel_args,
                                  Http2Settings& local_settings,
                                  chttp2::TransportFlowControl& flow_control,
                                  bool is_client);
+
+uint32_t MaxNewStreamsPerRead(const ChannelArgs& channel_args);
 
 ///////////////////////////////////////////////////////////////////////////////
 // ChannelZ helpers

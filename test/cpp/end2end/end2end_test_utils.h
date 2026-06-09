@@ -36,9 +36,14 @@
 namespace grpc {
 namespace testing {
 
+inline bool IsPh2Test() {
+  return grpc_core::IsPh2ClientEnabled() || grpc_core::IsPh2ServerEnabled() ||
+         grpc_core::IsPh2ClientServerEnabled();
+}
+
 // TODO(tjagtap) : [PH2][P3] : Remove once all the PH2 E2E tests are fixed.
 inline void DisableLoggingForPH2Tests() {
-  if (grpc_core::IsPromiseBasedHttp2ClientTransportEnabled()) {
+  if (IsPh2Test()) {
     grpc_tracer_set_enabled("http", false);
     grpc_tracer_set_enabled("channel", false);
     grpc_tracer_set_enabled("subchannel", false);
@@ -53,7 +58,7 @@ inline void DisableLoggingForPH2Tests() {
 
 // TODO(tjagtap) : [PH2][P3] : Remove once all the PH2 E2E tests are fixed.
 inline void EnableLoggingForPH2Tests() {
-  if (grpc_core::IsPromiseBasedHttp2ClientTransportEnabled()) {
+  if (IsPh2Test()) {
     grpc_tracer_set_enabled("http", 1);
     grpc_tracer_set_enabled("channel", 1);
     grpc_tracer_set_enabled("subchannel", 1);
@@ -67,7 +72,8 @@ inline void EnableLoggingForPH2Tests() {
 }
 
 inline void ApplyCommonChannelArguments(ChannelArguments& args) {
-  if (grpc_core::IsPromiseBasedHttp2ClientTransportEnabled()) {
+  if (grpc_core::IsPh2ClientEnabled() ||
+      grpc_core::IsPh2ClientServerEnabled()) {
     // TODO(tjagtap) [PH2][P5][Retry] Consider removing when bug in
     // retry_interceptor.cc is fixed.
     args.SetInt(GRPC_ARG_ENABLE_RETRIES, 0);
@@ -144,18 +150,24 @@ std::shared_ptr<grpc::Channel> MaybeWrapVirtualChannel(
     GTEST_SKIP() << "Skipped for Virtual " \
                     "RPCs";
 
-#define SKIP_TEST_FOR_PH2_CLIENT(message)                     \
-  if (grpc_core::IsPromiseBasedHttp2ClientTransportEnabled()) \
+#define SKIP_TEST_FOR_PH2_CLIENT(message)    \
+  if (grpc_core::IsPh2ClientEnabled() ||     \
+      grpc_core::IsPh2ClientServerEnabled()) \
     GTEST_SKIP() << (message);
 
-#define SKIP_TEST_FOR_PH2_SERVER(message)                     \
-  if (grpc_core::IsPromiseBasedHttp2ServerTransportEnabled()) \
+#define SKIP_TEST_FOR_PH2_SERVER(message)    \
+  if (grpc_core::IsPh2ServerEnabled() ||     \
+      grpc_core::IsPh2ClientServerEnabled()) \
     GTEST_SKIP() << (message);
 
-// Retry for PH2 will be implemented separately, after the PH2 Client and Server
-// rollout starts.
-#define SKIP_RETRY_TEST_FOR_PH2_CLIENT(message)               \
-  if (grpc_core::IsPromiseBasedHttp2ClientTransportEnabled()) \
+#define SKIP_TEST_FOR_PH2(message) \
+  if (IsPh2Test()) GTEST_SKIP() << (message);
+
+// Retry for PH2 will be implemented separately, after the PH2 Client and
+// Server rollout starts.
+#define SKIP_RETRY_TEST_FOR_PH2_CLIENT(message) \
+  if (grpc_core::IsPh2ClientEnabled() ||        \
+      grpc_core::IsPh2ClientServerEnabled())    \
     GTEST_SKIP() << (message);
 
 }  // namespace testing

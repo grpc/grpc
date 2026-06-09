@@ -26,6 +26,7 @@
 #include "src/core/call/metadata.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/promise/seq.h"
 #include "src/core/lib/slice/slice.h"
@@ -495,6 +496,14 @@ void BaseCallData::SendMessage::Done(const ServerMetadata& metadata,
     case State::kPushedToPipe:
       push_.reset();
       next_.reset();
+      // Ensure captured transport batches are released if the call terminates
+      // while a message is in-flight. This prevents deadlocks where the
+      // transport never receives the batch, leaving the RPC hanging for
+      // metadata.
+      if (IsV2NonOwningWakerImplementationEnabled()) {
+        GRPC_DCHECK(batch_.is_captured());
+        batch_.CancelWith(StatusFromMetadata(metadata), flusher);
+      }
       state_ = State::kCancelledButNotYetPolled;
       if (base_->is_current()) base_->ForceImmediateRepoll();
       break;
@@ -1164,7 +1173,10 @@ class ClientCallData::PollContext {
                       std::exchange(
                           self_->recv_initial_metadata_->original_on_ready,
                           nullptr),
-                      absl::CancelledError(),
+                      IsV2NonOwningWakerImplementationEnabled() &&
+                              !StatusFromMetadata(*md).ok()
+                          ? StatusFromMetadata(*md)
+                          : absl::CancelledError(),
                       "wake_inside_combiner:recv_initial_metadata_ready");
               }
             }

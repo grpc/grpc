@@ -1342,8 +1342,6 @@
     <file baseinstalldir="/" name="src/core/filter/auth/auth_filters.h" role="src" />
     <file baseinstalldir="/" name="src/core/filter/auth/client_auth_filter.cc" role="src" />
     <file baseinstalldir="/" name="src/core/filter/auth/server_auth_filter.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/filter/blackboard.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/filter/blackboard.h" role="src" />
     <file baseinstalldir="/" name="src/core/filter/composite/composite_filter.cc" role="src" />
     <file baseinstalldir="/" name="src/core/filter/composite/composite_filter.h" role="src" />
     <file baseinstalldir="/" name="src/core/filter/filter_args.h" role="src" />
@@ -1429,6 +1427,7 @@
     <file baseinstalldir="/" name="src/core/lib/event_engine/extensions/channelz.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/extensions/chaotic_good_extension.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/extensions/iomgr_compatible.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/event_engine/extensions/receive_coalescing_extension.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/extensions/supports_fd.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/extensions/supports_win_sockets.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/extensions/tcp_trace.h" role="src" />
@@ -1718,6 +1717,7 @@
     <file baseinstalldir="/" name="src/core/lib/resource_quota/resource_quota.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/resource_quota/stream_quota.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/resource_quota/stream_quota.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/resource_quota/telemetry.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/resource_quota/telemetry.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/resource_quota/thread_quota.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/resource_quota/thread_quota.h" role="src" />
@@ -2174,6 +2174,8 @@
     <file baseinstalldir="/" name="src/core/util/work_serializer.cc" role="src" />
     <file baseinstalldir="/" name="src/core/util/work_serializer.h" role="src" />
     <file baseinstalldir="/" name="src/core/util/xxhash_inline.h" role="src" />
+    <file baseinstalldir="/" name="src/core/xds/grpc/blackboard.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/xds/grpc/blackboard.h" role="src" />
     <file baseinstalldir="/" name="src/core/xds/grpc/certificate_provider_store.cc" role="src" />
     <file baseinstalldir="/" name="src/core/xds/grpc/certificate_provider_store.h" role="src" />
     <file baseinstalldir="/" name="src/core/xds/grpc/certificate_provider_store_interface.h" role="src" />

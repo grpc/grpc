@@ -264,11 +264,39 @@
   expiry: 2026/07/01
   owner: aadik@google.com
   test_tags: [core_end2end_test]
+- name: ph2_client
+  description:
+    Use promises for the http2 client transport. We have kept client and
+    server transport experiments separate to help with smoother roll outs. 
+    When this flag is enabled for the test suites, it would test PH2 Client with CHTTP2 Server.
+  expiry: 2027/03/16
+  owner: tjagtap@google.com
+  test_tags: ["core_end2end_test", "cpp_end2end_test"]
+  allow_in_fuzzing_config: true
+- name: ph2_client_server
+  description:
+    This is a combination of ph2_server and ph2_client experiments.
+    When this flag is enabled for the test suites, it would test PH2 Client with PH2 Server.
+    We will NEVER be rolling out this experiment, because the roll out would be done using ph2_server and ph2_client. 
+    This experiment MUST be deleted when either ph2_server or ph2_client experiments are deleted. 
+  expiry: 2027/03/16
+  owner: tjagtap@google.com
+  test_tags: []
+  allow_in_fuzzing_config: true
 - name: ph2_perf_01
   description: Different performance experiments for PH2 Transport
   expiry: 2026/08/22
   owner: akshitpatel@google.com
   test_tags: []
+- name: ph2_server
+  description:
+    Use promises for the http2 server transport. We have kept client and
+    server transport experiments separate to help with smoother roll outs.
+    When this flag is enabled for the test suites, it would test CHTTP2 Client with PH2 Server.
+  expiry: 2027/03/16
+  owner: tjagtap@google.com
+  test_tags: []
+  allow_in_fuzzing_config: true
 - name: pick_first_ignore_empty_updates
   description: Ignore empty resolutions in pick_first (delete)
   expiry: 2026/10/01
@@ -297,24 +325,6 @@
   expiry: 2026/09/01
   owner: vigneshbabu@google.com
   test_tags: []
-- name: promise_based_http2_client_transport
-  description:
-    Use promises for the http2 client transport. We have kept client and
-    server transport experiments separate to help with smoother roll outs
-    and also help with interop testing.
-  expiry: 2027/01/16
-  owner: tjagtap@google.com
-  test_tags: ["core_end2end_test", "cpp_end2end_test"]
-  allow_in_fuzzing_config: true
-- name: promise_based_http2_server_transport
-  description:
-    Use promises for the http2 server transport. We have kept client and
-    server transport experiments separate to help with smoother roll outs
-    and also help with interop testing.
-  expiry: 2027/01/16
-  owner: tjagtap@google.com
-  test_tags: []
-  allow_in_fuzzing_config: true
 - name: promise_based_inproc_transport
   description: Use call-v3 for the in-process transport.
   expiry: 2026/08/24
@@ -426,6 +436,11 @@
   owner: aananthv@google.com
   test_tags: ["core_end2end_test"]
   platforms: ["all"]
+- name: v2_non_owning_waker_implementation
+  description: Use non-owning wakers in v2 filter bridge.
+  expiry: 2027/03/01
+  owner: rishesh@google.com
+  test_tags: [core_end2end_test]
 - name: verbose_channelz_connection_logging
   description: Verbose logging of events into channelz during connection setup.
   expiry: 2026/09/01

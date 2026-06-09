@@ -266,9 +266,6 @@ Http2Status Http2ClientTransport::ProcessIncomingFrame(Http2DataFrame&& frame) {
     return Http2Status::Ok();
   }
 
-  // TODO(akshitpatel) : [PH2][P3] : We should add a check to reset stream if
-  // the stream state is kIdle as well.
-
   Http2Status stream_status = stream->CanStreamReceiveDataFrames();
   if (!stream_status.IsOk()) {
     return stream_status;
@@ -303,8 +300,7 @@ Http2Status Http2ClientTransport::ProcessIncomingFrame(Http2DataFrame&& frame) {
     if (message != nullptr) {
       GRPC_HTTP2_CLIENT_DLOG
           << "Http2ClientTransport::ProcessIncomingFrame(DataFrame) "
-             "SpawnPushMessage "
-          << message->DebugString();
+             "SpawnPushMessage ";
       stream->GetCallHandler().SpawnPushMessage(std::move(message));
       continue;
     }
@@ -313,26 +309,17 @@ Http2Status Http2ClientTransport::ProcessIncomingFrame(Http2DataFrame&& frame) {
     break;
   }
 
-  // TODO(tjagtap) : [PH2][P3] : List of Tests:
-  // 1. Data frame with unknown stream ID
-  // 2. Data frame with only half a message and then end stream
-  // 3. One data frame with a full message
-  // 4. Three data frames with one full message
-  // 5. One data frame with three full messages. All messages should be pushed.
-  // Will need to mock the call_handler object and test this along with the
-  // Header reading code. Because we need a stream in place for the lookup to
-  // work.
   return Http2Status::Ok();
 }
 
 template <typename T>
 Http2Status Http2ClientTransport::ProcessIncomingMetadata(T&& frame) {
-  // State update MUST happen before processing the frame.
-  read_context_.UpdateState(frame);
-
   ping_manager_->ReceivedDataFrame();
 
   RefCountedPtr<Stream> stream = LookupStream(frame.stream_id);
+  // State update MUST happen before processing the frame.
+  read_context_.UpdateState(frame, /*is_existing_stream=*/(stream != nullptr));
+
   if (stream == nullptr) {
     // TODO(tjagtap) : [PH2][P3] : Implement this.
     // RFC9113 : The identifier of a newly established stream MUST be
@@ -341,9 +328,6 @@ Http2Status Http2ClientTransport::ProcessIncomingMetadata(T&& frame) {
     // frame and streams that are reserved using PUSH_PROMISE. An endpoint that
     // receives an unexpected stream identifier MUST respond with a connection
     // error (Section 5.4.1) of type PROTOCOL_ERROR.
-    GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport::ProcessIncomingMetadata { "
-                              "stream_id="
-                           << frame.stream_id << "} Lookup Failed";
     return read_context_.ParseAndDiscardHeaders(
         std::move(frame.payload), frame.end_headers, Http2Status::Ok(),
         settings_->acked().max_header_list_size());
@@ -735,7 +719,6 @@ auto Http2ClientTransport::ReadAndProcessOneFrame() {
         Poll<absl::Status> poll_result = read_context_.MaybePauseReadLoop();
         if (poll_result.pending()) {
           TriggerWriteCycleOrHandleError();
-          return Pending{};
         }
         return poll_result;
       }));
@@ -810,9 +793,7 @@ void Http2ClientTransport::ActOnFlowControlAction(
     }
   }
 
-  ActOnFlowControlActionSettings(
-      action, settings_->mutable_local(),
-      enable_preferred_rx_crypto_frame_advertisement_);
+  ActOnFlowControlActionSettings(action, settings_->mutable_local());
 
   if (action.AnyUpdateImmediately()) {
     // Prioritize sending flow control updates over reading data. If we
@@ -1297,7 +1278,7 @@ Http2ClientTransport::Http2ClientTransport(
           std::move(on_receive_settings))),
       next_stream_id_(/*Initial Stream ID*/ 1),
       should_reset_ping_clock_(false),
-      read_context_(ReadContext::GetPeerString(endpoint_), kIsClient),
+      read_context_(MaxNewStreamsPerRead(channel_args), endpoint_, kIsClient),
       transport_write_context_(kIsClient),
       ping_manager_(std::nullopt),
       keepalive_manager_(std::nullopt),
@@ -1365,8 +1346,6 @@ void Http2ClientTransport::ReadChannelArgs(const ChannelArgs& channel_args,
   keepalive_time_ = args.keepalive_time;
   read_context_.set_soft_limit(args.max_header_list_size_soft_limit);
   keepalive_permit_without_calls_ = args.keepalive_permit_without_calls;
-  enable_preferred_rx_crypto_frame_advertisement_ =
-      args.enable_preferred_rx_crypto_frame_advertisement;
   test_only_ack_pings_ = args.test_only_ack_pings;
 
   if (args.initial_sequence_number > 0) {
@@ -1710,6 +1689,8 @@ void Http2ClientTransport::SpawnAddChannelzData(RefCountedPtr<Party> party,
                 .Set("keepalive_time", self->keepalive_time_)
                 .Set("keepalive_permit_without_calls",
                      self->keepalive_permit_without_calls_)
+                .Set("max_requests_per_read",
+                     self->read_context_.max_new_streams_per_read_cycle())
                 .Set("settings", self->settings_->ChannelzProperties())
                 .Set("flow_control",
                      self->flow_control_.stats().ChannelzProperties()));
@@ -1916,14 +1897,10 @@ void Http2ClientTransport::SetMaxAllowedStreamId(
   if (GPR_LIKELY(max_allowed_stream_id <= old_max_allowed_stream_id)) {
     max_allowed_stream_id_ = max_allowed_stream_id;
   } else {
+    GRPC_DCHECK_LE(max_allowed_stream_id, old_max_allowed_stream_id);
     LOG_IF(ERROR, max_allowed_stream_id > old_max_allowed_stream_id)
         << "Endpoints MUST NOT increase the value they send in the last "
-           "stream "
-           "identifier";
-    GRPC_DCHECK_LE(max_allowed_stream_id, old_max_allowed_stream_id)
-        << "Endpoints MUST NOT increase the value they send in the last "
-           "stream "
-           "identifier";
+           "stream identifier";
   }
 }
 

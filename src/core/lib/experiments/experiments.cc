@@ -151,9 +151,28 @@ const char* const additional_constraints_optimization_04 = "{}";
 const char* const description_otel_export_telemetry_domains =
     "Export telemetry domains in OpenTelemetry metrics.";
 const char* const additional_constraints_otel_export_telemetry_domains = "{}";
+const char* const description_ph2_client =
+    "Use promises for the http2 client transport. We have kept client and "
+    "server transport experiments separate to help with smoother roll outs. "
+    "When this flag is enabled for the test suites, it would test PH2 Client "
+    "with CHTTP2 Server.";
+const char* const additional_constraints_ph2_client = "{}";
+const char* const description_ph2_client_server =
+    "This is a combination of ph2_server and ph2_client experiments. When this "
+    "flag is enabled for the test suites, it would test PH2 Client with PH2 "
+    "Server. We will NEVER be rolling out this experiment, because the roll "
+    "out would be done using ph2_server and ph2_client. This experiment MUST "
+    "be deleted when either ph2_server or ph2_client experiments are deleted.";
+const char* const additional_constraints_ph2_client_server = "{}";
 const char* const description_ph2_perf_01 =
     "Different performance experiments for PH2 Transport";
 const char* const additional_constraints_ph2_perf_01 = "{}";
+const char* const description_ph2_server =
+    "Use promises for the http2 server transport. We have kept client and "
+    "server transport experiments separate to help with smoother roll outs. "
+    "When this flag is enabled for the test suites, it would test CHTTP2 "
+    "Client with PH2 Server.";
+const char* const additional_constraints_ph2_server = "{}";
 const char* const description_pick_first_ignore_empty_updates =
     "Ignore empty resolutions in pick_first (delete)";
 const char* const additional_constraints_pick_first_ignore_empty_updates = "{}";
@@ -174,18 +193,6 @@ const char* const description_prioritize_finished_requests =
     "Prioritize flushing out finished requests over other in-flight requests "
     "during transport writes.";
 const char* const additional_constraints_prioritize_finished_requests = "{}";
-const char* const description_promise_based_http2_client_transport =
-    "Use promises for the http2 client transport. We have kept client and "
-    "server transport experiments separate to help with smoother roll outs and "
-    "also help with interop testing.";
-const char* const additional_constraints_promise_based_http2_client_transport =
-    "{}";
-const char* const description_promise_based_http2_server_transport =
-    "Use promises for the http2 server transport. We have kept client and "
-    "server transport experiments separate to help with smoother roll outs and "
-    "also help with interop testing.";
-const char* const additional_constraints_promise_based_http2_server_transport =
-    "{}";
 const char* const description_promise_based_inproc_transport =
     "Use call-v3 for the in-process transport.";
 const char* const additional_constraints_promise_based_inproc_transport = "{}";
@@ -258,6 +265,10 @@ const char* const description_use_call_event_engine_in_completion_queue =
     "Use the call event engine to run callbacks in completion queue.";
 const char* const
     additional_constraints_use_call_event_engine_in_completion_queue = "{}";
+const char* const description_v2_non_owning_waker_implementation =
+    "Use non-owning wakers in v2 filter bridge.";
+const char* const additional_constraints_v2_non_owning_waker_implementation =
+    "{}";
 const char* const description_verbose_channelz_connection_logging =
     "Verbose logging of events into channelz during connection setup.";
 const char* const additional_constraints_verbose_channelz_connection_logging =
@@ -372,7 +383,13 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"otel_export_telemetry_domains", description_otel_export_telemetry_domains,
      additional_constraints_otel_export_telemetry_domains, nullptr, 0, false,
      true},
+    {"ph2_client", description_ph2_client, additional_constraints_ph2_client,
+     nullptr, 0, false, true},
+    {"ph2_client_server", description_ph2_client_server,
+     additional_constraints_ph2_client_server, nullptr, 0, false, true},
     {"ph2_perf_01", description_ph2_perf_01, additional_constraints_ph2_perf_01,
+     nullptr, 0, false, true},
+    {"ph2_server", description_ph2_server, additional_constraints_ph2_server,
      nullptr, 0, false, true},
     {"pick_first_ignore_empty_updates",
      description_pick_first_ignore_empty_updates,
@@ -388,14 +405,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"prioritize_finished_requests", description_prioritize_finished_requests,
      additional_constraints_prioritize_finished_requests, nullptr, 0, false,
      true},
-    {"promise_based_http2_client_transport",
-     description_promise_based_http2_client_transport,
-     additional_constraints_promise_based_http2_client_transport, nullptr, 0,
-     false, true},
-    {"promise_based_http2_server_transport",
-     description_promise_based_http2_server_transport,
-     additional_constraints_promise_based_http2_server_transport, nullptr, 0,
-     false, true},
     {"promise_based_inproc_transport",
      description_promise_based_inproc_transport,
      additional_constraints_promise_based_inproc_transport, nullptr, 0, false,
@@ -455,6 +464,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_use_call_event_engine_in_completion_queue,
      additional_constraints_use_call_event_engine_in_completion_queue, nullptr,
      0, false, true},
+    {"v2_non_owning_waker_implementation",
+     description_v2_non_owning_waker_implementation,
+     additional_constraints_v2_non_owning_waker_implementation, nullptr, 0,
+     false, true},
     {"verbose_channelz_connection_logging",
      description_verbose_channelz_connection_logging,
      additional_constraints_verbose_channelz_connection_logging, nullptr, 0,
@@ -601,9 +614,28 @@ const char* const additional_constraints_optimization_04 = "{}";
 const char* const description_otel_export_telemetry_domains =
     "Export telemetry domains in OpenTelemetry metrics.";
 const char* const additional_constraints_otel_export_telemetry_domains = "{}";
+const char* const description_ph2_client =
+    "Use promises for the http2 client transport. We have kept client and "
+    "server transport experiments separate to help with smoother roll outs. "
+    "When this flag is enabled for the test suites, it would test PH2 Client "
+    "with CHTTP2 Server.";
+const char* const additional_constraints_ph2_client = "{}";
+const char* const description_ph2_client_server =
+    "This is a combination of ph2_server and ph2_client experiments. When this "
+    "flag is enabled for the test suites, it would test PH2 Client with PH2 "
+    "Server. We will NEVER be rolling out this experiment, because the roll "
+    "out would be done using ph2_server and ph2_client. This experiment MUST "
+    "be deleted when either ph2_server or ph2_client experiments are deleted.";
+const char* const additional_constraints_ph2_client_server = "{}";
 const char* const description_ph2_perf_01 =
     "Different performance experiments for PH2 Transport";
 const char* const additional_constraints_ph2_perf_01 = "{}";
+const char* const description_ph2_server =
+    "Use promises for the http2 server transport. We have kept client and "
+    "server transport experiments separate to help with smoother roll outs. "
+    "When this flag is enabled for the test suites, it would test CHTTP2 "
+    "Client with PH2 Server.";
+const char* const additional_constraints_ph2_server = "{}";
 const char* const description_pick_first_ignore_empty_updates =
     "Ignore empty resolutions in pick_first (delete)";
 const char* const additional_constraints_pick_first_ignore_empty_updates = "{}";
@@ -624,18 +656,6 @@ const char* const description_prioritize_finished_requests =
     "Prioritize flushing out finished requests over other in-flight requests "
     "during transport writes.";
 const char* const additional_constraints_prioritize_finished_requests = "{}";
-const char* const description_promise_based_http2_client_transport =
-    "Use promises for the http2 client transport. We have kept client and "
-    "server transport experiments separate to help with smoother roll outs and "
-    "also help with interop testing.";
-const char* const additional_constraints_promise_based_http2_client_transport =
-    "{}";
-const char* const description_promise_based_http2_server_transport =
-    "Use promises for the http2 server transport. We have kept client and "
-    "server transport experiments separate to help with smoother roll outs and "
-    "also help with interop testing.";
-const char* const additional_constraints_promise_based_http2_server_transport =
-    "{}";
 const char* const description_promise_based_inproc_transport =
     "Use call-v3 for the in-process transport.";
 const char* const additional_constraints_promise_based_inproc_transport = "{}";
@@ -708,6 +728,10 @@ const char* const description_use_call_event_engine_in_completion_queue =
     "Use the call event engine to run callbacks in completion queue.";
 const char* const
     additional_constraints_use_call_event_engine_in_completion_queue = "{}";
+const char* const description_v2_non_owning_waker_implementation =
+    "Use non-owning wakers in v2 filter bridge.";
+const char* const additional_constraints_v2_non_owning_waker_implementation =
+    "{}";
 const char* const description_verbose_channelz_connection_logging =
     "Verbose logging of events into channelz during connection setup.";
 const char* const additional_constraints_verbose_channelz_connection_logging =
@@ -822,7 +846,13 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"otel_export_telemetry_domains", description_otel_export_telemetry_domains,
      additional_constraints_otel_export_telemetry_domains, nullptr, 0, false,
      true},
+    {"ph2_client", description_ph2_client, additional_constraints_ph2_client,
+     nullptr, 0, false, true},
+    {"ph2_client_server", description_ph2_client_server,
+     additional_constraints_ph2_client_server, nullptr, 0, false, true},
     {"ph2_perf_01", description_ph2_perf_01, additional_constraints_ph2_perf_01,
+     nullptr, 0, false, true},
+    {"ph2_server", description_ph2_server, additional_constraints_ph2_server,
      nullptr, 0, false, true},
     {"pick_first_ignore_empty_updates",
      description_pick_first_ignore_empty_updates,
@@ -838,14 +868,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"prioritize_finished_requests", description_prioritize_finished_requests,
      additional_constraints_prioritize_finished_requests, nullptr, 0, false,
      true},
-    {"promise_based_http2_client_transport",
-     description_promise_based_http2_client_transport,
-     additional_constraints_promise_based_http2_client_transport, nullptr, 0,
-     false, true},
-    {"promise_based_http2_server_transport",
-     description_promise_based_http2_server_transport,
-     additional_constraints_promise_based_http2_server_transport, nullptr, 0,
-     false, true},
     {"promise_based_inproc_transport",
      description_promise_based_inproc_transport,
      additional_constraints_promise_based_inproc_transport, nullptr, 0, false,
@@ -905,6 +927,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_use_call_event_engine_in_completion_queue,
      additional_constraints_use_call_event_engine_in_completion_queue, nullptr,
      0, false, true},
+    {"v2_non_owning_waker_implementation",
+     description_v2_non_owning_waker_implementation,
+     additional_constraints_v2_non_owning_waker_implementation, nullptr, 0,
+     false, true},
     {"verbose_channelz_connection_logging",
      description_verbose_channelz_connection_logging,
      additional_constraints_verbose_channelz_connection_logging, nullptr, 0,
@@ -1051,9 +1077,28 @@ const char* const additional_constraints_optimization_04 = "{}";
 const char* const description_otel_export_telemetry_domains =
     "Export telemetry domains in OpenTelemetry metrics.";
 const char* const additional_constraints_otel_export_telemetry_domains = "{}";
+const char* const description_ph2_client =
+    "Use promises for the http2 client transport. We have kept client and "
+    "server transport experiments separate to help with smoother roll outs. "
+    "When this flag is enabled for the test suites, it would test PH2 Client "
+    "with CHTTP2 Server.";
+const char* const additional_constraints_ph2_client = "{}";
+const char* const description_ph2_client_server =
+    "This is a combination of ph2_server and ph2_client experiments. When this "
+    "flag is enabled for the test suites, it would test PH2 Client with PH2 "
+    "Server. We will NEVER be rolling out this experiment, because the roll "
+    "out would be done using ph2_server and ph2_client. This experiment MUST "
+    "be deleted when either ph2_server or ph2_client experiments are deleted.";
+const char* const additional_constraints_ph2_client_server = "{}";
 const char* const description_ph2_perf_01 =
     "Different performance experiments for PH2 Transport";
 const char* const additional_constraints_ph2_perf_01 = "{}";
+const char* const description_ph2_server =
+    "Use promises for the http2 server transport. We have kept client and "
+    "server transport experiments separate to help with smoother roll outs. "
+    "When this flag is enabled for the test suites, it would test CHTTP2 "
+    "Client with PH2 Server.";
+const char* const additional_constraints_ph2_server = "{}";
 const char* const description_pick_first_ignore_empty_updates =
     "Ignore empty resolutions in pick_first (delete)";
 const char* const additional_constraints_pick_first_ignore_empty_updates = "{}";
@@ -1074,18 +1119,6 @@ const char* const description_prioritize_finished_requests =
     "Prioritize flushing out finished requests over other in-flight requests "
     "during transport writes.";
 const char* const additional_constraints_prioritize_finished_requests = "{}";
-const char* const description_promise_based_http2_client_transport =
-    "Use promises for the http2 client transport. We have kept client and "
-    "server transport experiments separate to help with smoother roll outs and "
-    "also help with interop testing.";
-const char* const additional_constraints_promise_based_http2_client_transport =
-    "{}";
-const char* const description_promise_based_http2_server_transport =
-    "Use promises for the http2 server transport. We have kept client and "
-    "server transport experiments separate to help with smoother roll outs and "
-    "also help with interop testing.";
-const char* const additional_constraints_promise_based_http2_server_transport =
-    "{}";
 const char* const description_promise_based_inproc_transport =
     "Use call-v3 for the in-process transport.";
 const char* const additional_constraints_promise_based_inproc_transport = "{}";
@@ -1158,6 +1191,10 @@ const char* const description_use_call_event_engine_in_completion_queue =
     "Use the call event engine to run callbacks in completion queue.";
 const char* const
     additional_constraints_use_call_event_engine_in_completion_queue = "{}";
+const char* const description_v2_non_owning_waker_implementation =
+    "Use non-owning wakers in v2 filter bridge.";
+const char* const additional_constraints_v2_non_owning_waker_implementation =
+    "{}";
 const char* const description_verbose_channelz_connection_logging =
     "Verbose logging of events into channelz during connection setup.";
 const char* const additional_constraints_verbose_channelz_connection_logging =
@@ -1272,7 +1309,13 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"otel_export_telemetry_domains", description_otel_export_telemetry_domains,
      additional_constraints_otel_export_telemetry_domains, nullptr, 0, false,
      true},
+    {"ph2_client", description_ph2_client, additional_constraints_ph2_client,
+     nullptr, 0, false, true},
+    {"ph2_client_server", description_ph2_client_server,
+     additional_constraints_ph2_client_server, nullptr, 0, false, true},
     {"ph2_perf_01", description_ph2_perf_01, additional_constraints_ph2_perf_01,
+     nullptr, 0, false, true},
+    {"ph2_server", description_ph2_server, additional_constraints_ph2_server,
      nullptr, 0, false, true},
     {"pick_first_ignore_empty_updates",
      description_pick_first_ignore_empty_updates,
@@ -1288,14 +1331,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"prioritize_finished_requests", description_prioritize_finished_requests,
      additional_constraints_prioritize_finished_requests, nullptr, 0, false,
      true},
-    {"promise_based_http2_client_transport",
-     description_promise_based_http2_client_transport,
-     additional_constraints_promise_based_http2_client_transport, nullptr, 0,
-     false, true},
-    {"promise_based_http2_server_transport",
-     description_promise_based_http2_server_transport,
-     additional_constraints_promise_based_http2_server_transport, nullptr, 0,
-     false, true},
     {"promise_based_inproc_transport",
      description_promise_based_inproc_transport,
      additional_constraints_promise_based_inproc_transport, nullptr, 0, false,
@@ -1355,6 +1390,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_use_call_event_engine_in_completion_queue,
      additional_constraints_use_call_event_engine_in_completion_queue, nullptr,
      0, false, true},
+    {"v2_non_owning_waker_implementation",
+     description_v2_non_owning_waker_implementation,
+     additional_constraints_v2_non_owning_waker_implementation, nullptr, 0,
+     false, true},
     {"verbose_channelz_connection_logging",
      description_verbose_channelz_connection_logging,
      additional_constraints_verbose_channelz_connection_logging, nullptr, 0,

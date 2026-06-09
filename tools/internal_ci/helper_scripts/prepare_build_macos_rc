@@ -222,11 +222,11 @@ fi
 
 if [ "${PREPARE_BUILD_INSTALL_DEPS_PHP}" == "true" ]
 then
-  time brew install php@8.1 || true
-  if [ -e "/usr/local/opt/php@8.1/" ]; then
-    PHP_PATH="/usr/local/opt/php@8.1/"
-  elif [ -e "/opt/homebrew/opt/php@8.1" ]; then
-    PHP_PATH="/opt/homebrew/opt/php@8.1"
+  time brew install php@8.4 || true
+  if [ -e "/usr/local/opt/php@8.4/" ]; then
+    PHP_PATH="/usr/local/opt/php@8.4/"
+  elif [ -e "/opt/homebrew/opt/php@8.4" ]; then
+    PHP_PATH="/opt/homebrew/opt/php@8.4"
   else
     echo "Error: Unable to check php install path" >&2
     exit 1
@@ -236,7 +236,7 @@ then
   export CPPFLAGS="-I${PHP_PATH}include ${CPPFLAGS}"
   export PATH="${PHP_PATH}/bin:${PHP_PATH}/sbin:${PATH}"
 
-  # the exit code from "brew install php@8.1" is useless
+  # the exit code from "brew install php@8.4" is useless
   # so instead we check if PHP was indeed installed successfully.
   # Failing early is better than cryptic errors later in the build process.
   php --version
@@ -269,13 +269,13 @@ then
     rm composer-setup.php
 
     # Install PHP test dependencies.
-    php /tmp/composer.phar global require phpunit/phpunit:9.5.9 --no-security-blocking
+    php /tmp/composer.phar global require phpunit/phpunit:^13 --no-security-blocking
     export PATH="${HOME}/.composer/vendor/bin:${PATH}"
   else
     # Workaround for https://github.com/Homebrew/homebrew-core/issues/41081
     mkdir -p /usr/local/lib/php/pecl
     # Download the right version of phpunit to match PHP version
-    sudo curl -sSL https://phar.phpunit.de/phpunit-9.5.9.phar -o /usr/local/bin/phpunit
+    sudo curl -sSL https://phar.phpunit.de/phpunit-13.phar -o /usr/local/bin/phpunit
     sudo chmod +x /usr/local/bin/phpunit
   fi
 fi

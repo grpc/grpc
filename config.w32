@@ -522,7 +522,6 @@ if (PHP_GRPC != "no") {
     "src\\core\\ext\\upbdefs-gen\\xds\\type\\v3\\typed_struct.upbdefs.c " +
     "src\\core\\filter\\auth\\client_auth_filter.cc " +
     "src\\core\\filter\\auth\\server_auth_filter.cc " +
-    "src\\core\\filter\\blackboard.cc " +
     "src\\core\\filter\\composite\\composite_filter.cc " +
     "src\\core\\filter\\fused_filters.cc " +
     "src\\core\\handshaker\\endpoint_info\\endpoint_info_handshaker.cc " +
@@ -687,6 +686,7 @@ if (PHP_GRPC != "no") {
     "src\\core\\lib\\resource_quota\\periodic_update.cc " +
     "src\\core\\lib\\resource_quota\\resource_quota.cc " +
     "src\\core\\lib\\resource_quota\\stream_quota.cc " +
+    "src\\core\\lib\\resource_quota\\telemetry.cc " +
     "src\\core\\lib\\resource_quota\\thread_quota.cc " +
     "src\\core\\lib\\resource_tracker\\resource_tracker.cc " +
     "src\\core\\lib\\security\\authorization\\audit_logging.cc " +
@@ -907,6 +907,7 @@ if (PHP_GRPC != "no") {
     "src\\core\\util\\windows\\time.cc " +
     "src\\core\\util\\windows\\tmpfile.cc " +
     "src\\core\\util\\work_serializer.cc " +
+    "src\\core\\xds\\grpc\\blackboard.cc " +
     "src\\core\\xds\\grpc\\certificate_provider_store.cc " +
     "src\\core\\xds\\grpc\\file_watcher_certificate_provider_factory.cc " +
     "src\\core\\xds\\grpc\\xds_audit_logger_registry.cc " +
