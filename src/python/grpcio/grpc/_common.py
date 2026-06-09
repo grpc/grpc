@@ -110,7 +110,7 @@ def _wait_once(
     wait_fn: Callable[..., bool],
     timeout: float,
     spin_cb: Optional[Callable[[], None]],
-):
+) -> None:
     wait_fn(timeout=timeout)
     if spin_cb is not None:
         spin_cb()
