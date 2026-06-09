@@ -119,5 +119,5 @@ DOCKERIMAGE_CURRENT_VERSIONS = {
     "tools/dockerfile/test/rbe_ubuntu2004.current_version": "docker://us-docker.pkg.dev/grpc-testing/testing-images-public/rbe_ubuntu2004@sha256:ed318c654903f9cf4139a501975aec24d4ce1941e6e1ccd87d42b843dc96d869",
     "tools/dockerfile/test/ruby_debian11_arm64.current_version": "docker://us-docker.pkg.dev/grpc-testing/testing-images-public/ruby_debian11_arm64@sha256:ea70e5bccd63b5d513eff734635f39433327fc9db1f244aed28ec14013e56d55",
     "tools/dockerfile/test/ruby_debian11_x64.current_version": "docker://us-docker.pkg.dev/grpc-testing/testing-images-public/ruby_debian11_x64@sha256:a313c623cebbc39cc730c4ae3202087964489d45efac2d71943d03346063feff",
-    "tools/dockerfile/test/sanity.current_version": "docker://us-docker.pkg.dev/grpc-testing/testing-images-public/sanity@sha256:2a4d6e174d76605b2076da6cb3d422e9d8b6dd96be3d5989e71f686c0c0884ce",
+    "tools/dockerfile/test/sanity.current_version": "docker://us-docker.pkg.dev/grpc-testing/testing-images-public/sanity@sha256:7157f86746ffaffcb930036ef97435e553f9859037cae02821eb35178c34a45b",
 }

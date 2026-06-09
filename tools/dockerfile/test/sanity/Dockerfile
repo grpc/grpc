@@ -15,6 +15,8 @@
 FROM silkeh/clang:19-bookworm
 
 #=================
+# Install apt-get-install-retry wrapper script
+#=================
 #  Create wrapper for apt-get
 
 COPY --chmod=+x <<-"EOF" /usr/local/bin/apt-get-install-retry
@@ -70,6 +72,54 @@ for i in $(seq 1 $MAX_RETRIES); do
 done
 
 EOF
+
+
+# Basic C core dependencies
+
+# C/C++ dependencies according to https://github.com/grpc/grpc/blob/master/BUILDING.md
+RUN /usr/local/bin/apt-get-install-retry \
+  build-essential \
+  autoconf \
+  libtool \
+  pkg-config \
+  && apt-get clean
+
+# GCC
+RUN /usr/local/bin/apt-get-install-retry \
+  gcc \
+  g++ \
+  && apt-get clean
+
+# libc6
+RUN /usr/local/bin/apt-get-install-retry \
+  libc6 \
+  libc6-dbg \
+  libc6-dev \
+  && apt-get clean
+
+# Tools
+RUN /usr/local/bin/apt-get-install-retry \
+  bzip2 \
+  curl \
+  dnsutils \
+  git \
+  lcov \
+  make \
+  strace \
+  time \
+  unzip \
+  wget \
+  zip \
+  && apt-get clean
+
+#=================
+# Setup git to access working directory across docker boundary.
+# This avoids the "fatal: detected dubious ownership in repository XYZ"
+# git error.
+
+RUN git config --global --add safe.directory '*'
+RUN git config --global protocol.file.allow always
+
 
 
 RUN /usr/local/bin/apt-get-install-retry python3 python3-pip && apt clean
