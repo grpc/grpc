@@ -68,8 +68,7 @@ class Stream : public RefCounted<Stream> {
  public:
   explicit Stream(CallHandler call_handler,
                   chttp2::TransportFlowControl& transport_flow_control)
-      : header_assembler_(/*is_client*/ true),
-        flow_control_(&transport_flow_control),
+      : flow_control_(&transport_flow_control),
         call_(std::move(call_handler)),
         is_write_closed_(false),
         stream_id_(kInvalidStreamId),
@@ -84,10 +83,8 @@ class Stream : public RefCounted<Stream> {
   explicit Stream(CallInitiator call_initiator,
                   chttp2::TransportFlowControl& transport_flow_control,
                   const uint32_t stream_id,
-                  const bool allow_true_binary_metadata_peer,
-                  const bool allow_true_binary_metadata_acked)
-      : header_assembler_(/*is_client*/ false),
-        flow_control_(&transport_flow_control),
+                  const bool allow_true_binary_metadata_peer)
+      : flow_control_(&transport_flow_control),
         call_(std::move(call_initiator)),
         is_write_closed_(false),
         stream_id_(stream_id),
@@ -98,8 +95,7 @@ class Stream : public RefCounted<Stream> {
         data_queue_(MakeRefCounted<StreamDataQueue<ClientMetadataHandle>>(
             std::get<CallInitiator>(call_).arena(), /*is_client*/ false,
             /*queue_size*/ kStreamQueueSize)) {
-    InitializeStream(allow_true_binary_metadata_peer,
-                     allow_true_binary_metadata_acked);
+    InitializeStream(allow_true_binary_metadata_peer);
   }
 
   Stream(const Stream&) = delete;
@@ -113,8 +109,7 @@ class Stream : public RefCounted<Stream> {
   // The upside is that we save 8 bytes per call. Decide based on benchmark
   // results.
   void InitializeClientStream(const uint32_t stream_id,
-                              const bool allow_true_binary_metadata_peer,
-                              const bool allow_true_binary_metadata_acked) {
+                              const bool allow_true_binary_metadata_peer) {
     GRPC_DCHECK(std::holds_alternative<CallHandler>(call_))
         << "Client Only Function";
     GRPC_DCHECK_NE(stream_id, 0u);
@@ -123,8 +118,7 @@ class Stream : public RefCounted<Stream> {
                           << stream_id;
     if (GPR_LIKELY(this->stream_id_ == 0)) {
       this->stream_id_ = stream_id;
-      InitializeStream(allow_true_binary_metadata_peer,
-                       allow_true_binary_metadata_acked);
+      InitializeStream(allow_true_binary_metadata_peer);
     }
   }
 
@@ -197,6 +191,12 @@ class Stream : public RefCounted<Stream> {
   void SentInitialMetadata() {
     GRPC_DCHECK(stream_state_ == HttpStreamState::kIdle);
     stream_state_ = HttpStreamState::kOpen;
+  }
+  void SentTrailingMetadata() {
+    GRPC_DCHECK(stream_state_ != HttpStreamState::kClosed ||
+                stream_state_ != HttpStreamState::kHalfClosedLocal)
+        << "Cannot send trailing metadata in closed or half closed local state";
+    stream_state_ = HttpStreamState::kClosed;
   }
 
   void MarkHalfClosedLocal() {
@@ -339,28 +339,20 @@ class Stream : public RefCounted<Stream> {
     return assembler_;
   }
 
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION HeaderAssembler& GetHeaderAssembler() {
-    return header_assembler_;
-  }
-
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION chttp2::StreamFlowControl&
   GetStreamFlowControl() {
     return flow_control_;
   }
 
  private:
-  void InitializeStream(const bool allow_true_binary_metadata_peer,
-                        const bool allow_true_binary_metadata_acked) {
+  void InitializeStream(const bool allow_true_binary_metadata_peer) {
     GRPC_HTTP2_STREAM_LOG << "Stream::InitializeStream stream_id="
                           << stream_id_;
     GRPC_DCHECK_GE(stream_id_, 0u);
-    header_assembler_.InitializeStream(stream_id_,
-                                       allow_true_binary_metadata_acked);
     data_queue_->SetStreamId(stream_id_, allow_true_binary_metadata_peer);
   }
 
   GrpcMessageAssembler assembler_;
-  HeaderAssembler header_assembler_;
   chttp2::StreamFlowControl flow_control_;
   std::variant<CallInitiator, CallHandler> call_;
 

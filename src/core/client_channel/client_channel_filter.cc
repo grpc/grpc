@@ -1475,12 +1475,11 @@ void ClientChannelFilter::UpdateServiceConfigInDataPlaneLocked(
   bool enable_retries =
       !new_args.WantMinimalStack() &&
       new_args.GetBool(GRPC_ARG_ENABLE_RETRIES).value_or(true);
+  if (enable_retries) {
+    retry_throttler_updater_.Update(*service_config, new_args);
+  }
   // Construct dynamic filter stack.
   auto new_blackboard = MakeRefCounted<Blackboard>();
-  if (enable_retries) {
-    RetryFilter::UpdateBlackboard(*service_config, blackboard_.get(),
-                                  new_blackboard.get());
-  }
   LegacyFilterChainBuilder filter_chain_builder(enable_retries, new_args,
                                                 new_blackboard.get());
   config_selector->BuildFilterChains(filter_chain_builder, blackboard_.get(),

@@ -51,8 +51,7 @@ TEST(StreamTest, Minimal) {
   RefCountedPtr<Stream> stream =
       MakeRefCounted<Stream>(call_pair.handler.StartCall(), tfc);
   stream->InitializeClientStream(
-      /*stream_id=*/123u, /*allow_true_binary_metadata_peer=*/true,
-      /*allow_true_binary_metadata_acked=*/true);
+      /*stream_id=*/123u, /*allow_true_binary_metadata_peer=*/true);
   EXPECT_EQ(stream->GetStreamId(), 123u);
 }
 
