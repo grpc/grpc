@@ -1974,6 +1974,12 @@ static tsi_result ssl_handshaker_result_extract_peer(
   if (alpn_selected != nullptr) new_property_count++;
   if (peer_chain != nullptr) new_property_count++;
   if (verified_root_cert != nullptr) new_property_count++;
+#if OPENSSL_VERSION_NUMBER >= 0x10101000L
+  int nid = SSL_get_negotiated_group(impl->ssl);
+  const char* negotiated_group_name =
+      (nid != NID_undef && nid != 0) ? OBJ_nid2sn(nid) : nullptr;
+  if (negotiated_group_name != nullptr) new_property_count++;
+#endif
   tsi_peer_property* new_properties = static_cast<tsi_peer_property*>(
       gpr_zalloc(sizeof(*new_properties) * new_property_count));
   for (size_t i = 0; i < peer->property_count; i++) {
@@ -2019,6 +2025,16 @@ static tsi_result ssl_handshaker_result_extract_peer(
     }
     peer->property_count++;
   }
+
+#if OPENSSL_VERSION_NUMBER >= 0x10101000L
+  if (negotiated_group_name != nullptr) {
+    result = tsi_construct_string_peer_property_from_cstring(
+        TSI_SSL_NEGOTIATED_KEY_EXCHANGE_GROUP, negotiated_group_name,
+        &peer->properties[peer->property_count]);
+    if (result != TSI_OK) return result;
+    peer->property_count++;
+  }
+#endif
 
   return result;
 }
