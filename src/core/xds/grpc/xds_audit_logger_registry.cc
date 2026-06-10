@@ -16,8 +16,6 @@
 
 #include "src/core/xds/grpc/xds_audit_logger_registry.h"
 
-#include <grpc/support/port_platform.h>
-
 #include <optional>
 #include <string>
 #include <utility>
@@ -67,7 +65,7 @@ XdsAuditLoggerRegistry::XdsAuditLoggerRegistry() {
       std::make_unique<StdoutLoggerConfigFactory>());
 }
 
-std::unique_ptr<std::unique_ptr<AuditLoggerFactory::Config>>
+std::unique_ptr<experimental::AuditLoggerFactory::Config>
 XdsAuditLoggerRegistry::ParseXdsAuditLoggerConfig(
     const XdsResourceType::DecodeContext& context,
     const envoy_config_rbac_v3_RBAC_AuditLoggingOptions_AuditLoggerConfig*
@@ -113,7 +111,8 @@ XdsAuditLoggerRegistry::ParseXdsAuditLoggerConfig(
     return nullptr;
   }
   // Validate the converted config.
-  auto parsed_config = AuditLoggerRegistry::ParseConfig(name, config);
+  auto parsed_config =
+      AuditLoggerRegistry::ParseConfig(extension->type, config);
   if (!parsed_config.ok()) {
     errors->AddError(parsed_config.status().message());
     return nullptr;

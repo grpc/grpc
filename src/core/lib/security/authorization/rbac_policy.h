@@ -55,6 +55,8 @@ struct Rbac {
     CidrRange& operator=(CidrRange&& other) noexcept;
 
     bool operator==(const CidrRange& other) const;
+    bool operator!=(const CidrRange& other) const { return !(*this == other); }
+
     std::string ToString() const;
 
     std::string address_prefix;
@@ -96,6 +98,8 @@ struct Rbac {
     Permission& operator=(Permission&& other) noexcept;
 
     bool operator==(const Permission& other) const;
+    bool operator!=(const Permission& other) const { return !(*this == other); }
+
     std::string ToString() const;
 
     RuleType type = RuleType::kAnd;
@@ -147,6 +151,8 @@ struct Rbac {
     Principal& operator=(Principal&& other) noexcept;
 
     bool operator==(const Principal& other) const;
+    bool operator!=(const Principal& other) const { return !(*this == other); }
+
     std::string ToString() const;
 
     RuleType type = RuleType::kAnd;
@@ -168,6 +174,8 @@ struct Rbac {
     Policy& operator=(Policy&& other) noexcept;
 
     bool operator==(const Policy& other) const;
+    bool operator!=(const Policy& other) const { return !(*this == other); }
+
     std::string ToString() const;
 
     Permission permissions;
@@ -182,6 +190,8 @@ struct Rbac {
   Rbac& operator=(Rbac&& other) noexcept;
 
   bool operator==(const Rbac& other) const;
+  bool operator!=(const Rbac& other) const { return !(*this == other); }
+
   std::string ToString() const;
 
   // The authorization policy name or empty string in xDS case.

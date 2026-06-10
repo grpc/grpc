@@ -23,6 +23,7 @@
 #include <memory>
 
 #include "envoy/config/rbac/v3/rbac.upb.h"
+#include "src/core/lib/security/authorization/audit_logging.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/validation_errors.h"
 #include "src/core/xds/xds_client/xds_resource_type.h"
@@ -48,10 +49,10 @@ class XdsAuditLoggerRegistry final {
 
   XdsAuditLoggerRegistry();
 
-  virtual std::unique_ptr<std::unique_ptr<AuditLoggerFactory::Config>>
+  std::unique_ptr<experimental::AuditLoggerFactory::Config>
   ParseXdsAuditLoggerConfig(
       const XdsResourceType::DecodeContext& context,
-      absl::string_view configuration, ValidationErrors* errors) const = 0;
+      absl::string_view configuration, ValidationErrors* errors) const;
 
   // TODO(roth): Remove this method when removing the
   // xds_server_filter_chain_per_route experiment.

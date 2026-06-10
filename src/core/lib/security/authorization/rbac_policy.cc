@@ -58,8 +58,13 @@ bool Rbac::operator==(const Rbac& other) const {
   if (audit_condition != other.audit_condition) return false;
   if (logger_configs.size() != other.logger_configs.size()) return false;
   for (size_t i = 0; i < logger_configs.size(); ++i) {
-    if (logger_configs[i].name() != other.logger_configs[i].name() ||
-        logger_configs[i].ToString() != other.logger_configs[i].ToString()) {
+    if (logger_configs[i] == nullptr) {
+      if (other.logger_configs[i] != nullptr) return false;
+      continue;
+    }
+    if (other.logger_configs[i] == nullptr) return false;
+    if (logger_configs[i]->name() != other.logger_configs[i]->name() ||
+        logger_configs[i]->ToString() != other.logger_configs[i]->ToString()) {
       return false;
     }
   }
@@ -270,7 +275,7 @@ bool Rbac::Permission::operator==(const Rbac::Permission& other) const {
       if (other.permissions[i] != nullptr) return false;
     } else {
       if (other.permissions[i] == nullptr) return false;
-      if (!(*permissions[i] == *other.permissions[i])) return false;
+      if (*permissions[i] != *other.permissions[i]) return false;
     }
   }
   return true;
@@ -460,7 +465,7 @@ bool Rbac::Principal::operator==(const Rbac::Principal& other) const {
       if (other.principals[i] != nullptr) return false;
     } else {
       if (other.principals[i] == nullptr) return false;
-      if (!(*principals[i] == *other.principals[i])) return false;
+      if (*principals[i] != *other.principals[i]) return false;
     }
   }
   return true;
