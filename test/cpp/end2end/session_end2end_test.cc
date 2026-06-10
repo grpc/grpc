@@ -281,8 +281,8 @@ class SessionEnd2endTest : public ::testing::Test {
   SessionEnd2endTest() = default;
 
   void SetUp() override {
-    if (grpc_core::IsPromiseBasedHttp2ClientTransportEnabled() ||
-        grpc_core::IsPromiseBasedHttp2ServerTransportEnabled()) {
+    if (grpc_core::IsPh2ClientEnabled() || grpc_core::IsPh2ServerEnabled() ||
+        grpc_core::IsPh2ClientServerEnabled()) {
       GTEST_SKIP() << "Skipped for Promise-based HTTP/2 Transport";
     }
 

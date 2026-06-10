@@ -924,12 +924,10 @@ class FilterChainBuilderImpl final : public FilterChainBuilder {
  public:
   FilterChainBuilderImpl(
       bool enable_retries, const ChannelArgs& channel_args,
-      Blackboard* blackboard,
       std::function<void(ServerMetadata&)> on_server_trailing_metadata,
       RefCountedPtr<UnstartedCallDestination> destination)
       : enable_retries_(enable_retries),
         channel_args_(channel_args),
-        blackboard_(blackboard),
         on_server_trailing_metadata_(std::move(on_server_trailing_metadata)),
         destination_(std::move(destination)) {}
 
@@ -954,8 +952,7 @@ class FilterChainBuilderImpl final : public FilterChainBuilder {
   }
 
   void InitBuilder() {
-    builder_ =
-        std::make_unique<InterceptionChainBuilder>(channel_args_, blackboard_);
+    builder_ = std::make_unique<InterceptionChainBuilder>(channel_args_);
     if (on_server_trailing_metadata_ != nullptr) {
       builder_->AddOnServerTrailingMetadata(on_server_trailing_metadata_);
     }
@@ -965,7 +962,6 @@ class FilterChainBuilderImpl final : public FilterChainBuilder {
 
   const bool enable_retries_;
   const ChannelArgs channel_args_;
-  const Blackboard* blackboard_;
   const std::function<void(ServerMetadata&)> on_server_trailing_metadata_;
   const RefCountedPtr<UnstartedCallDestination> destination_;
   std::unique_ptr<InterceptionChainBuilder> builder_;
@@ -1399,7 +1395,6 @@ void ClientChannel::UpdateServiceConfigInDataPlaneLocked(
     retry_throttler_updater_.Update(*saved_service_config_, new_args);
   }
   // Construct filter stack.
-  auto new_blackboard = MakeRefCounted<Blackboard>();
   std::function<void(ServerMetadata&)> on_server_trailing_metadata;
   if (idle_timeout_ != Duration::Zero()) {
     on_server_trailing_metadata = [this](ServerMetadata&) {
@@ -1407,11 +1402,9 @@ void ClientChannel::UpdateServiceConfigInDataPlaneLocked(
     };
   }
   FilterChainBuilderImpl filter_chain_builder(
-      enable_retries, new_args, new_blackboard.get(),
-      std::move(on_server_trailing_metadata), call_destination_);
-  config_selector->BuildFilterChains(filter_chain_builder, blackboard_.get(),
-                                     new_blackboard.get());
-  blackboard_ = std::move(new_blackboard);
+      enable_retries, new_args, std::move(on_server_trailing_metadata),
+      call_destination_);
+  config_selector->BuildFilterChains(filter_chain_builder);
   resolver_data_for_calls_.Set(std::move(config_selector));
 }
 
