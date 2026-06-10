@@ -21,6 +21,7 @@ RUN apk update && apk add \
   bash \
   bzip2 \
   build-base \
+  ccache \
   cmake \
   curl \
   gcc \
@@ -38,14 +39,18 @@ RUN apk update && apk add \
 
 {% include "../../git_avoid_dubious_ownership_error.include" %}
 
-# Google Cloud Platform API libraries
-# These are needed for uploading test results to BigQuery (e.g. by tools/run_tests scripts)
-RUN python3 -m pip install --break-system-packages --upgrade google-auth==1.24.0 google-api-python-client==1.12.8 oauth2client==4.1.0
 
-RUN python3 -m pip install --break-system-packages --upgrade --ignore-installed PyYAML==6.0.1 --user
-RUN python3 -m pip install --break-system-packages twisted
+# Add Python user install directory to PATH
+ENV PATH="$HOME/.local/bin:$PATH"
+RUN pip install --no-cache-dir --break-system-packages --user \
+  google-api-python-client==1.12.8 \
+  google-auth==1.24.0 \
+  oauth2client==4.1.0 \
+  PyYAML \
+  twisted \
+  && :
 
-{% include "../../ccache.include" %}
+
 {% include "../../run_tests_addons.include" %}
 
 
