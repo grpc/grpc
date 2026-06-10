@@ -19,8 +19,9 @@ if test "$PHP_GRPC" != "no"; then
 
   LIBS="-lpthread $LIBS"
 
-  CFLAGS="-std=c11 -g -O2"
-  CXXFLAGS="-std=c++17 -fno-exceptions -fno-rtti -g -O2"
+  dnl -Wno-error=attributes needed by UPB https://github.com/grpc/grpc/issues/42192
+  CFLAGS="-std=c11 -g -O2 -Wno-error=attributes"
+  CXXFLAGS="-std=c++17 -fno-exceptions -fno-rtti -g -O2 -Wno-error=attributes"
   GRPC_SHARED_LIBADD="-lpthread $GRPC_SHARED_LIBADD"
   PHP_REQUIRE_CXX()
   PHP_ADD_LIBRARY(pthread)
@@ -107,6 +108,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/credentials/call/jwt_util.cc \
     src/core/credentials/call/oauth2/oauth2_credentials.cc \
     src/core/credentials/call/plugin/plugin_credentials.cc \
+    src/core/credentials/call/regional_access_boundary_fetcher.cc \
     src/core/credentials/call/token_fetcher/token_fetcher_credentials.cc \
     src/core/credentials/transport/alts/alts_credentials.cc \
     src/core/credentials/transport/alts/alts_security_connector.cc \
@@ -557,7 +559,6 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/upbdefs-gen/xds/type/v3/typed_struct.upbdefs.c \
     src/core/filter/auth/client_auth_filter.cc \
     src/core/filter/auth/server_auth_filter.cc \
-    src/core/filter/blackboard.cc \
     src/core/filter/composite/composite_filter.cc \
     src/core/filter/fused_filters.cc \
     src/core/handshaker/endpoint_info/endpoint_info_handshaker.cc \
@@ -722,6 +723,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/resource_quota/periodic_update.cc \
     src/core/lib/resource_quota/resource_quota.cc \
     src/core/lib/resource_quota/stream_quota.cc \
+    src/core/lib/resource_quota/telemetry.cc \
     src/core/lib/resource_quota/thread_quota.cc \
     src/core/lib/resource_tracker/resource_tracker.cc \
     src/core/lib/security/authorization/audit_logging.cc \
@@ -823,6 +825,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/server/server_config_selector_filter.cc \
     src/core/server/xds_channel_stack_modifier.cc \
     src/core/server/xds_server_config_fetcher.cc \
+    src/core/server/xds_server_config_fetcher_legacy.cc \
     src/core/service_config/service_config_channel_arg_filter.cc \
     src/core/service_config/service_config_impl.cc \
     src/core/service_config/service_config_parser.cc \
@@ -941,6 +944,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/util/windows/time.cc \
     src/core/util/windows/tmpfile.cc \
     src/core/util/work_serializer.cc \
+    src/core/xds/grpc/blackboard.cc \
     src/core/xds/grpc/certificate_provider_store.cc \
     src/core/xds/grpc/file_watcher_certificate_provider_factory.cc \
     src/core/xds/grpc/xds_audit_logger_registry.cc \
@@ -1464,6 +1468,7 @@ if test "$PHP_GRPC" != "no"; then
     third_party/upb/upb/mini_descriptor/internal/encode.c \
     third_party/upb/upb/mini_descriptor/link.c \
     third_party/upb/upb/mini_table/extension_registry.c \
+    third_party/upb/upb/mini_table/generated_registry.c \
     third_party/upb/upb/mini_table/internal/message.c \
     third_party/upb/upb/mini_table/message.c \
     third_party/upb/upb/reflection/def_pool.c \

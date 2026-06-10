@@ -30,6 +30,7 @@
 #include <grpcpp/impl/completion_queue_tag.h>
 #include <grpcpp/impl/metadata_map.h>
 #include <grpcpp/impl/rpc_service_method.h>
+#include <grpcpp/impl/sync.h>
 #include <grpcpp/security/auth_context.h>
 #include <grpcpp/support/callback_common.h>
 #include <grpcpp/support/config.h>
@@ -42,6 +43,7 @@
 
 #include <atomic>
 #include <cassert>
+#include <cstdint>
 #include <map>
 #include <memory>
 #include <type_traits>
@@ -107,6 +109,29 @@ class GenericCallbackServerContext;
 
 namespace internal {
 class Call;
+
+void ServerContextSetSessionContext(grpc_call* call, uint16_t id, void* ptr);
+void* ServerContextGetSessionContext(grpc_call* call, uint16_t id);
+uint16_t ServerContextRegisterSessionContext(void (*destroy)(void*));
+
+template <typename T>
+struct SessionContextType {
+  static uint16_t id() {
+    static const uint16_t id =
+        ServerContextRegisterSessionContext([](void* element) {
+          delete static_cast<std::shared_ptr<T>*>(element);
+        });
+    return id;
+  }
+
+  static void* Wrap(std::shared_ptr<T> context) {
+    return new std::shared_ptr<T>(std::move(context));
+  }
+
+  static std::shared_ptr<T> Unwrap(void* ptr) {
+    return ptr != nullptr ? *static_cast<std::shared_ptr<T>*>(ptr) : nullptr;
+  }
+};
 }  // namespace internal
 
 namespace testing {
@@ -115,7 +140,47 @@ class ServerContextTestSpouse;
 class DefaultReactorTestPeer;
 }  // namespace testing
 
+class ServerContextBase;
+
 namespace experimental {
+/// Set the session context. This is an experimental API.
+///
+/// Session context allows attaching custom, user-defined data (e.g., auth
+/// tokens, tenant IDs, connection metadata) to a parent SESSION_RPC, which is
+/// then automatically inherited and accessible by all virtual child RPCs
+/// multiplexed over that session.
+///
+/// \warning Session context is intended to be established during the session
+/// handshake phase. Once virtual RPCs have started (i.e., after initial
+/// metadata has been sent), session context becomes immutable. Any attempt to
+/// call SetSessionContext after virtual RPCs have started will be ignored.
+///
+/// Example Usage:
+/// \code{.cpp}
+///   struct AuthContext { std::string tenant_id; };
+///
+///   // 1. In the Session RPC handshake handler:
+///   grpc::experimental::SetSessionContext(
+///       context, std::make_shared<AuthContext>("tenant_a"));
+/// \endcode
+template <typename T>
+void SetSessionContext(ServerContextBase* context,
+                       std::shared_ptr<T> session_context);
+
+/// Get the session context. This is an experimental API.
+///
+/// Retrieves the custom session context previously attached to the parent
+/// SESSION_RPC via SetSessionContext(). If called from a virtual child RPC,
+/// it automatically accesses the parent session's context lock-free.
+///
+/// Example Usage:
+/// \code{.cpp}
+///   // 2. In a virtual child RPC method handler:
+///   auto auth = grpc::experimental::GetSessionContext<AuthContext>(context);
+/// \endcode
+template <typename T>
+std::shared_ptr<T> GetSessionContext(const ServerContextBase* context);
+
 class CallMetricRecorder;
 class ServerMetricRecorder;
 namespace internal {
@@ -356,6 +421,16 @@ class ServerContextBase {
     return reinterpret_cast<Reactor*>(&default_reactor_);
   }
 
+  void MarkInitialMetadataSent() {
+    // Lock prevents the session from transitioning to the lock-free read phase
+    // while a concurrent call to SetSessionContext is currently executing.
+    grpc::internal::MutexLock lock(&metadata_mu_);
+    // Release-store synchronizes with the acquire-loads in
+    // Set/GetSessionContext to guarantee that all context writes made before
+    // initial metadata is sent are fully visible to subsequent read operations.
+    sent_initial_metadata_.store(true, std::memory_order_release);
+  }
+
   /// Constructors for use by derived classes
   ServerContextBase();
   ServerContextBase(gpr_timespec deadline, grpc_metadata_array* arr);
@@ -416,6 +491,39 @@ class ServerContextBase {
   friend class grpc::ClientContext;
   friend class grpc::GenericServerContext;
   friend class grpc::GenericCallbackServerContext;
+
+  template <typename T>
+  friend void experimental::SetSessionContext(
+      ServerContextBase* context, std::shared_ptr<T> session_context);
+  template <typename T>
+  friend std::shared_ptr<T> experimental::GetSessionContext(
+      const ServerContextBase* context);
+
+  template <typename T>
+  void SetSessionContext(std::shared_ptr<T> context) {
+    if (!sent_initial_metadata_.load(std::memory_order_acquire)) {
+      grpc::internal::MutexLock lock(&metadata_mu_);
+      if (!sent_initial_metadata_.load(std::memory_order_acquire)) {
+        internal::ServerContextSetSessionContext(
+            call_.call, internal::SessionContextType<T>::id(),
+            internal::SessionContextType<T>::Wrap(std::move(context)));
+      }
+    }
+  }
+
+  template <typename T>
+  std::shared_ptr<T> GetSessionContext() const {
+    if (sent_initial_metadata_.load(std::memory_order_acquire)) {
+      return internal::SessionContextType<T>::Unwrap(
+          internal::ServerContextGetSessionContext(
+              call_.call, internal::SessionContextType<T>::id()));
+    } else {
+      grpc::internal::MutexLock lock(&metadata_mu_);
+      return internal::SessionContextType<T>::Unwrap(
+          internal::ServerContextGetSessionContext(
+              call_.call, internal::SessionContextType<T>::id()));
+    }
+  }
 
   /// Prevent copying.
   ServerContextBase(const ServerContextBase&);
@@ -489,7 +597,8 @@ class ServerContextBase {
 
   gpr_timespec deadline_;
   grpc::CompletionQueue* cq_ = nullptr;
-  bool sent_initial_metadata_ = false;
+  std::atomic<bool> sent_initial_metadata_{false};
+  mutable grpc::internal::Mutex metadata_mu_;
   mutable std::shared_ptr<const grpc::AuthContext> auth_context_;
   mutable grpc::internal::MetadataMap client_metadata_;
   std::multimap<std::string, std::string> initial_metadata_;
@@ -687,6 +796,21 @@ class ContextAllocator {
 
   virtual void Release(GenericCallbackServerContext*) {}
 };
+
+namespace experimental {
+
+template <typename T>
+inline void SetSessionContext(ServerContextBase* context,
+                              std::shared_ptr<T> session_context) {
+  context->SetSessionContext(std::move(session_context));
+}
+
+template <typename T>
+inline std::shared_ptr<T> GetSessionContext(const ServerContextBase* context) {
+  return context->GetSessionContext<T>();
+}
+
+}  // namespace experimental
 
 }  // namespace grpc
 

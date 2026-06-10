@@ -321,8 +321,8 @@ class Http2ClientTransport final : public ClientTransport,
         << "Http2ClientTransport::TriggerWriteCycleOrHandleError failed with "
            "status: "
         << status << " at " << whence.file() << ":" << whence.line();
-    GRPC_UNUSED absl::Status unused_status =
-        HandleError(std::nullopt, ToHttpOkOrConnError(status), whence);
+    GRPC_UNUSED absl::Status unused_status = HandleError(
+        /*stream_id=*/std::nullopt, ToHttpOkOrConnError(status), whence);
     return false;
   }
 
@@ -647,8 +647,6 @@ class Http2ClientTransport final : public ClientTransport,
   PromiseEndpoint endpoint_;
   RefCountedPtr<SettingsPromiseManager> settings_;
 
-  Http2FrameHeader current_frame_header_;
-
   Mutex transport_mutex_;
 
   absl::flat_hash_map<uint32_t, RefCountedPtr<Stream>> stream_list_
@@ -665,7 +663,7 @@ class Http2ClientTransport final : public ClientTransport,
   RefCountedPtr<StateWatcher> watcher_ ABSL_GUARDED_BY(transport_mutex_);
 
   bool should_reset_ping_clock_;
-  ReadContext incoming_headers_;
+  ReadContext read_context_;
 
   // Transport wide write context. This is used to track the state of the
   // transport during write cycles.
@@ -685,20 +683,15 @@ class Http2ClientTransport final : public ClientTransport,
 
   GoawayManager goaway_manager_;
 
-  WritableStreams<RefCountedPtr<Stream>> writable_stream_list_;
-
-  /// Based on channel args, preferred_rx_crypto_frame_sizes are advertised to
-  /// the peer
-  bool enable_preferred_rx_crypto_frame_advertisement_;
-  RefCountedPtr<SecurityFrameHandler> security_frame_handler_;
   MemoryOwner memory_owner_;
   chttp2::TransportFlowControl flow_control_;
+  WritableStreams<RefCountedPtr<Stream>> writable_stream_list_;
+
+  RefCountedPtr<SecurityFrameHandler> security_frame_handler_;
   std::shared_ptr<PromiseHttp2ZTraceCollector> ztrace_collector_;
 
   // TODO(tjagtap) [PH2][P2][BDP] Remove this when the BDP code is done.
   Waker periodic_updates_waker_;
-
-  Http2ReadContext reader_state_;
 };
 
 }  // namespace http2

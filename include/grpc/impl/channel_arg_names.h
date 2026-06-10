@@ -35,7 +35,7 @@
     Boolean valued. Defaults to false. */
 #define GRPC_ARG_MINIMAL_STACK "grpc.minimal_stack"
 /** Maximum number of concurrent incoming streams to allow on a http2
-    connection. Int valued. Deafult to -1(indicating no explicit limit).*/
+    connection. Int valued. Default to -1(indicating no explicit limit).*/
 #define GRPC_ARG_MAX_CONCURRENT_STREAMS "grpc.max_concurrent_streams"
 /** Maximum message length that the channel can receive. Int valued, bytes.
     -1 means unlimited. Defaults to 4MB(4*1024*1024 bytes). -1 means unlimited.
@@ -441,5 +441,7 @@
 /** \} */
 /** If non-zero, enable TCP tracing and stats collection. */
 #define GRPC_ARG_TCP_TRACING_ENABLED "grpc.tcp_tracing_enabled"
+/** Server config fetcher. */
+#define GRPC_ARG_SERVER_CONFIG_FETCHER "grpc.server_config_fetcher"
 
 #endif /* GRPC_IMPL_CHANNEL_ARG_NAMES_H */
