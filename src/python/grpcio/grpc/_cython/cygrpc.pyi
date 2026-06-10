@@ -1,4 +1,4 @@
-# Copyright 2022 The gRPC Authors
+# Copyright 2026 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,14 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM --platform=linux/arm64/v8 arm64v8/debian:11
+# This file serves as a type stub for the cygrpc Cython extension module.
+# Since type checkers (like pyright/mypy) and IDEs cannot directly inspect the
+# compiled C extension, this file provides necessary type information.
+# The catch-all __getattr__ allows any attribute access to typecheck as Any.
 
-{% include "../../apt_get_basic.include" %}
-{% include "../../run_tests_python_deps.include" %}
-{% include "../../cxx_deps.include" %}
+from typing import Any
 
-# Install bazel
-{% include "../../bazel.include" %}
-
-# Define the default command.
-CMD ["bash"]
+def __getattr__(name: str) -> Any: ...
