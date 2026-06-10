@@ -1542,7 +1542,9 @@ TEST_P(SslTransportSecurityTest,
   }
   DoHandshake();
 }
+#endif  // OPENSSL_IS_BORINGSSL
 
+#if OPENSSL_VERSION_NUMBER >= 0x10101000L
 TEST_P(SslTransportSecurityTest, SuccessfulHandshake_ServerSpecifiesX25519) {
   auto tls_version = std::get<0>(GetParam());
   SetUpSslFixture(tls_version,
@@ -1587,8 +1589,7 @@ TEST_P(SslTransportSecurityTest, SuccessfulHandshake_ClientSpecifiesP256) {
   DoHandshake();
 }
 
-#endif
-#endif
+#endif  // OPENSSL_IS_BORINGSSL
 
 }  // namespace
 }  // namespace testing
