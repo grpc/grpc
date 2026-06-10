@@ -73,6 +73,9 @@ class Loader:
         # ensure that we capture decorators and definitions (else our coverage
         # measure unnecessarily suffers)
         coverage_context = coverage.Coverage(data_suffix=True)
+        if sys.version_info >= (3, 15):
+            coverage_context.set_option("run:plugins", [])
+            coverage_context.set_option("run:core", "sysmon")
         coverage_context.start()
         imported_modules = tuple(
             importlib.import_module(name) for name in names

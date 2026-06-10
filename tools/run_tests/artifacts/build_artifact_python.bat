@@ -59,7 +59,10 @@ python -m build --no-isolation --wheel || goto :error
 popd
 
 @rem Ensure the generate artifacts are valid.
-python -m pip install packaging==21.3 twine==5.0.0
+@rem Use --user so the install also works on Kokoro VMs whose system
+@rem site-packages dir has restricted permissions (see e.g. Permission denied
+@rem on zipp-*-dist-info/INSTALLER when installing twine without --user).
+python -m pip install --user packaging==21.3 twine==5.0.0
 python -m twine check dist\* tools\distrib\python\grpcio_tools\dist\* || goto :error
 
 xcopy /Y /I /S dist\* %ARTIFACT_DIR% || goto :error

@@ -290,6 +290,7 @@ do
   fi
 
   DOCKER_IMAGE_NAME=$(basename "$DOCKERFILE_DIR")
+
   LOG_FILE="reports/${DOCKERFILE_DIR}/sponge_log.log"
 
   mkdir -p "reports/${DOCKERFILE_DIR}"
