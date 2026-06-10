@@ -2393,6 +2393,7 @@ static tsi_result ssl_handshaker_next_impl(tsi_ssl_handshaker* self)
     size_t unused_bytes_size = 0;
     status = ssl_bytes_remaining(self, &unused_bytes, &unused_bytes_size);
     if (status != TSI_OK) {
+      self->RecordTelemetry(status);
       return status;
     }
     if (unused_bytes_size >
