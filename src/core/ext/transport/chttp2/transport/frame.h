@@ -270,17 +270,37 @@ void AppendGrpcHeaderToSliceBuffer(SliceBuffer& payload, uint32_t flags,
                                    uint32_t length);
 
 ///////////////////////////////////////////////////////////////////////////////
+// Frame limits
+
+constexpr uint16_t kMaxNoopDataFrames = 16384u;
+constexpr uint16_t kMaxNoopContinuationFrames = 128u;
+
+struct Http2FrameCountTracker {
+  void OnLastContinuationFrame() { noop_continuation_frames = 0u; }
+
+  std::string DebugString() const {
+    return absl::StrCat(
+        "{ noop_continuation_frames : ", noop_continuation_frames,
+        ", noop_data_frames : ", noop_data_frames, "}");
+  }
+
+  uint16_t noop_continuation_frames = 0u;
+  uint16_t noop_data_frames = 0u;
+};
+
+///////////////////////////////////////////////////////////////////////////////
 // Validations
 
 http2::Http2Status ValidateSettingsValues(
     std::vector<Http2SettingsFrame::Setting>& list);
 
-http2::Http2Status ValidateFrameHeader(uint32_t max_frame_size_setting,
-                                       bool incoming_header_in_progress,
-                                       uint32_t incoming_header_stream_id,
-                                       Http2FrameHeader& current_frame_header,
-                                       uint32_t last_stream_id, bool is_client,
-                                       bool is_first_settings_processed);
+http2::Http2Status ValidateFrameHeader(
+    const uint32_t max_frame_size_setting,
+    const bool incoming_header_in_progress,
+    const uint32_t incoming_header_stream_id,
+    const Http2FrameHeader& current_frame_header, const uint32_t last_stream_id,
+    const bool is_client, const bool is_first_settings_processed,
+    Http2FrameCountTracker& tracker);
 
 ///////////////////////////////////////////////////////////////////////////////
 // RFC9113 Related Strings and Consts
@@ -344,8 +364,7 @@ inline constexpr absl::string_view kPaddingLengthLargerThanFrameLength =
 // Misc Errors
 inline constexpr absl::string_view kNoPushPromise =
     "RFC9113: PUSH_PROMISE MUST NOT be sent if the SETTINGS_ENABLE_PUSH "
-    "setting of the "
-    "peer endpoint is set to 0";
+    "setting of the peer endpoint is set to 0";
 
 inline constexpr absl::string_view kAssemblerContiguousSequenceError =
     "RFC9113 : Field blocks MUST be transmitted as a contiguous sequence "
@@ -389,6 +408,11 @@ inline constexpr absl::string_view kFirstSettingsFrameServer =
     "empty. Clients and servers MUST treat an invalid connection preface as a "
     "connection error of type PROTOCOL_ERROR.";
 
+inline constexpr absl::string_view kIdleStreamError =
+    "Stream Idle : Receiving any frame other than HEADERS or PRIORITY on a "
+    "stream in this state MUST be treated as a connection error of type "
+    "PROTOCOL_ERROR.";
+
 inline constexpr uint32_t kMaxStreamId31Bit = 0x7fffffffu;
 inline constexpr uint32_t kMaxSize31Bit = 0x7fffffffu;
 inline constexpr uint32_t kMinimumFrameSize = 16384;
@@ -404,8 +428,19 @@ inline constexpr absl::string_view kTooManyMetadata =
     "gRPC Error : A gRPC server can send upto 1 initial metadata followed by "
     "upto 1 trailing metadata.";
 inline constexpr absl::string_view kOutOfOrderDataFrame =
-    "gRPC Error : DATA frames must follow initial metadata and precede "
-    "trailing metadata.";
+    "gRPC Transport Error : DATA frames must follow initial metadata and "
+    "precede trailing metadata.";
+inline constexpr absl::string_view kTooManyZeroLengthContinuationFrames =
+    "gRPC Transport Error : Received too many zero length CONTINUATION frames "
+    "without end_headers flag set";
+inline constexpr absl::string_view kTooManyZeroLengthDataFrames =
+    "gRPC Transport Error : Received too many zero length DATA frames";
+inline constexpr absl::string_view kUnsolicitedSettingsAck =
+    "gRPC Transport Error : Received unsolicited SETTINGS ACK.";
+inline constexpr absl::string_view kFailedToEnqueueStream =
+    "gRPC Transport Error : Failed to enqueue stream to writable stream list";
+inline constexpr absl::string_view kStreamCreationFailed =
+    "gRPC Transport Error : Stream creation failed";
 }  // namespace GrpcErrors
 
 }  // namespace grpc_core

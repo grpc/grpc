@@ -486,9 +486,7 @@ auto ChaoticGoodServerListener::ActiveConnection::HandshakingState::
           }
         }
 
-        // TODO(aananthv): Maybe do not construct Config twice (once here and
-        // once after we read the settings frame).
-        Config config{self->connection_->args()};
+        Config config{self->connection_->args(), /*is_server=*/true};
         if (frame_header.ok() && frame_header->header.payload_length >
                                      config.max_receive_message_length()) {
           frame_header = absl::ResourceExhaustedError(absl::StrCat(
@@ -525,14 +523,19 @@ auto ChaoticGoodServerListener::ActiveConnection::HandshakingState::
                       self->data_.emplace<DataConnection>(
                           frame.body.connection_id()[0]);
                     } else {
-                      Config config{self->connection_->args()};
+                      Config config{self->connection_->args(),
+                                    /*is_server=*/true};
                       auto settings_status =
                           config.ReceiveClientIncomingSettings(frame.body);
                       if (!settings_status.ok()) return settings_status;
                       const int num_data_connections =
-                          self->connection_->listener_->args()
-                              .GetInt(GRPC_ARG_CHAOTIC_GOOD_DATA_CONNECTIONS)
-                              .value_or(1);
+                          config.num_data_connections();
+                      if (num_data_connections == 0) {
+                        GRPC_TRACE_LOG(chaotic_good, INFO)
+                            << "CHAOTIC_GOOD: Bypassing secondary data "
+                               "connections for remote endpoint; establishing "
+                               "control-only transport.";
+                      }
                       auto& data_connection_listener =
                           *self->connection_->listener_
                                ->data_connection_listener_;

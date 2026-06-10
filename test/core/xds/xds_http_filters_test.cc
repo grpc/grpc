@@ -69,6 +69,7 @@
 #include "upb/mem/arena.hpp"
 #include "upb/reflection/def.hpp"
 #include "xds/type/v3/typed_struct.pb.h"
+#include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_format.h"
@@ -1681,7 +1682,7 @@ TEST_F(XdsGcpAuthnFilterTest, ParseTopLevelConfigEmpty) {
   ASSERT_NE(config, nullptr);
   ASSERT_EQ(config->type(), GcpAuthenticationFilter::Config::Type());
   EXPECT_EQ(config->ToString(),
-            "{instance_name=\"enterprise\", cache_size=10}");
+            "{instance_name=\"enterprise\", cache_size=10, cache=(nil)}");
 }
 
 TEST_F(XdsGcpAuthnFilterTest, ParseTopLevelConfigCacheSizeDefault) {
@@ -1694,7 +1695,8 @@ TEST_F(XdsGcpAuthnFilterTest, ParseTopLevelConfigCacheSizeDefault) {
       absl::StatusCode::kInvalidArgument, "unexpected errors");
   ASSERT_NE(config, nullptr);
   ASSERT_EQ(config->type(), GcpAuthenticationFilter::Config::Type());
-  EXPECT_EQ(config->ToString(), "{instance_name=\"yorktown\", cache_size=10}");
+  EXPECT_EQ(config->ToString(),
+            "{instance_name=\"yorktown\", cache_size=10, cache=(nil)}");
 }
 
 TEST_F(XdsGcpAuthnFilterTest, ParseTopLevelConfigCacheSize) {
@@ -1707,7 +1709,8 @@ TEST_F(XdsGcpAuthnFilterTest, ParseTopLevelConfigCacheSize) {
       absl::StatusCode::kInvalidArgument, "unexpected errors");
   ASSERT_NE(config, nullptr);
   ASSERT_EQ(config->type(), GcpAuthenticationFilter::Config::Type());
-  EXPECT_EQ(config->ToString(), "{instance_name=\"hornet\", cache_size=6}");
+  EXPECT_EQ(config->ToString(),
+            "{instance_name=\"hornet\", cache_size=6, cache=(nil)}");
 }
 
 TEST_F(XdsGcpAuthnFilterTest, ParseTopLevelConfigCacheSizeZero) {
@@ -1774,6 +1777,29 @@ TEST_F(XdsGcpAuthnFilterTest, ParseOverrideConfig) {
             "envoy.extensions.filters.http.gcp_authn.v3.GcpAuthnFilterConfig] "
             "error:GCP auth filter does not support config override]")
       << status;
+}
+
+TEST_F(XdsGcpAuthnFilterTest, MergeConfigsGetsCacheFromBlackboard) {
+  auto config = MakeRefCounted<GcpAuthenticationFilter::Config>();
+  config->instance_name = "langley";
+  config->cache_size = 1;
+  auto blackboard = MakeRefCounted<Blackboard>();
+  auto merged_config = filter_->MergeConfigs(
+      config, /*virtual_host_override_config=*/nullptr,
+      /*route_override_config=*/nullptr,
+      /*cluster_weight_override_config=*/nullptr, *blackboard);
+  ASSERT_NE(merged_config, nullptr);
+  ASSERT_EQ(merged_config->type(), GcpAuthenticationFilter::Config::Type());
+  EXPECT_THAT(merged_config->ToString(),
+              ::testing::MatchesRegex(
+                  "\\{instance_name=\"langley\", cache_size=1, cache=0x.+\\}"));
+  auto blackboard_entry =
+      blackboard->Get<GcpAuthenticationFilter::CallCredentialsCache>("langley");
+  ASSERT_NE(blackboard_entry, nullptr);
+  EXPECT_EQ(
+      DownCast<const GcpAuthenticationFilter::Config&>(*merged_config).cache,
+      blackboard_entry);
+  EXPECT_EQ(blackboard_entry->max_size(), 1);
 }
 
 //
@@ -2157,6 +2183,66 @@ TEST_F(XdsCompositeFilterTest, ParseOverrideConfigRequiredFieldMissing) {
             "envoy.extensions.common.matching.v3.ExtensionWithMatcherPerRoute]"
             ".xds_matcher error:field not set]")
       << status;
+}
+
+TEST_F(XdsCompositeFilterTest, MergeConfigsHandlesBlackboardForNestedFilters) {
+  // First, construct the composite filter config.  We use the GCP authn
+  // filter as the child, since it uses the blackboard.
+  ExtensionWithMatcher extension_with_matcher;
+  extension_with_matcher.mutable_extension_config()
+      ->mutable_typed_config()
+      ->PackFrom(Composite());
+  auto* matcher_tree =
+      extension_with_matcher.mutable_xds_matcher()->mutable_matcher_tree();
+  HttpRequestHeaderMatchInput input;
+  input.set_header_name("header_name");
+  matcher_tree->mutable_input()->mutable_typed_config()->PackFrom(input);
+  GcpAuthnFilterConfig gcp_authn_filter_config;
+  gcp_authn_filter_config.mutable_cache_config()
+      ->mutable_cache_size()
+      ->set_value(6);
+  ExecuteFilterAction execute_filter_action;
+  auto* typed_extension_config = execute_filter_action.mutable_typed_config();
+  typed_extension_config->set_name("gcp_authn_instance");
+  typed_extension_config->mutable_typed_config()->PackFrom(
+      gcp_authn_filter_config);
+  auto* map = matcher_tree->mutable_exact_match_map()->mutable_map();
+  (*map)["header_value"].mutable_action()->mutable_typed_config()->PackFrom(
+      execute_filter_action);
+  XdsExtension extension = MakeXdsExtension(extension_with_matcher);
+  auto config =
+      filter_->ParseTopLevelConfig("", decode_context_, extension, &errors_);
+  ASSERT_TRUE(errors_.ok()) << errors_.message("unexpected errors");
+  ASSERT_NE(config, nullptr);
+  // Now call MergeConfigs() and make sure it delegates to the child
+  // filters to handle the blackboard.
+  auto blackboard = MakeRefCounted<Blackboard>();
+  auto merged_config = filter_->MergeConfigs(
+      config, /*virtual_host_override_config=*/nullptr,
+      /*route_override_config=*/nullptr,
+      /*cluster_weight_override_config=*/nullptr, *blackboard);
+  ASSERT_NE(merged_config, nullptr);
+  ASSERT_EQ(merged_config->type(), CompositeFilter::Config::Type());
+  EXPECT_EQ(merged_config->ToString(),
+            "XdsMatcherExactMap{input=MetadataInput(key=header_name), "
+            "map={{\"header_value\": {action=ExecuteFilterAction{"
+            "filter_chain=[gcp_authentication_filter_config="
+            "{instance_name=\"gcp_authn_instance\", cache_size=6, "
+            "cache=(nil)}]}, keep_matching=false}}}}");
+  auto blackboard_entry =
+      blackboard->Get<GcpAuthenticationFilter::CallCredentialsCache>(
+          "gcp_authn_instance");
+  ASSERT_NE(blackboard_entry, nullptr);
+  EXPECT_EQ(blackboard_entry->max_size(), 6);
+  auto& merged_composite_config =
+      DownCast<const CompositeFilter::Config&>(*merged_config);
+  ASSERT_EQ(merged_composite_config.merged_config_map.size(), 1);
+  auto it = merged_composite_config.merged_config_map.begin();
+  ASSERT_EQ(it->second.size(), 1);
+  ASSERT_EQ(it->second[0]->type(), GcpAuthenticationFilter::Config::Type());
+  auto& gcp_auth_merged_config =
+      DownCast<const GcpAuthenticationFilter::Config&>(*it->second[0]);
+  EXPECT_EQ(gcp_auth_merged_config.cache, blackboard_entry);
 }
 
 }  // namespace

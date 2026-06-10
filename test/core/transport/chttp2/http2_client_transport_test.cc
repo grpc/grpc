@@ -537,8 +537,7 @@ TEST_F(Http2ClientTransportTest, TestCanStreamReceiveDataFrames) {
                     GRPC_STATUS_INTERNAL);
           EXPECT_EQ(
               metadata->get_pointer(GrpcMessageMetadata())->as_string_view(),
-              "gRPC Error : DATA frames must follow initial "
-              "metadata and precede trailing metadata.");
+              GrpcErrors::kOutOfOrderDataFrame);
           return Empty{};
         });
   });
@@ -1346,10 +1345,63 @@ TEST_F(Http2ClientTransportTest,
   step4->Wait();
 }
 
+TEST_F(Http2ClientTransportTest, TestDestructionWithStalledStreamInQueue) {
+  ExecCtx ctx;
+  StrictMock<MockFunction<void()>> on_done;
+  EXPECT_CALL(on_done, Call());
+
+  // 1. Initialize transport BUT DO NOT spawn transport loops.
+  InitTransport(GetChannelArgs());
+
+  // 2. Start call and push message. This enqueues the stream to
+  //    writable_stream_list_ synchronously on the Call party.
+  //    Since transport loops are not running, it is never dequeued.
+  CallInitiator initiator = StartCall(TestInitialMetadata());
+
+  // Wait for server trailing metadata.
+  initiator.SpawnInfallible("test-wait", [initiator, &on_done]() mutable {
+    return Seq(initiator.PullServerTrailingMetadata(),
+               [&on_done](ServerMetadataHandle metadata) mutable {
+                 // Expect the call to be cancelled.
+                 EXPECT_THAT(
+                     metadata->get(GrpcCallWasCancelled()).value_or(false),
+                     true);
+                 on_done.Call();
+                 return Empty{};
+               });
+  });
+
+  initiator.SpawnGuarded("test-send", [initiator]() mutable {
+    return Seq(
+        initiator.PushMessage(Arena::MakePooled<Message>(
+            SliceBuffer(Slice::FromExternalString("Hello!")), 0)),
+        [initiator = initiator]() mutable { return initiator.FinishSends(); },
+        []() { return absl::OkStatus(); });
+  });
+
+  // 3. Expect GOAWAY from Orphan when the transport ref is released.
+  std::shared_ptr<EventSequenceEndpoint::Step> step = endpoint()->NewStep();
+  step->ThenExpectWrite({
+      helper_.SerializedGoawayFrame(
+          /*debug_data=*/"Orphaned", /*last_stream_id=*/0,
+          /*error_code=*/
+          static_cast<uint32_t>(Http2ErrorCode::kInternalError)),
+  });
+
+  // 4. Reset transport immediately.
+  // Stream is guaranteed to be in writable_stream_list_.
+  client_transport_.reset();
+
+  // Simulate upper-layer cancellation when connection is closed!
+  initiator.SpawnInfallible("Cancel", [initiator]() mutable {
+    initiator.Cancel(absl::CancelledError("Cancelled"));
+  });
+}
+
 // TODO(tjagtap) : [PH2][P2] Write tests similar to
 // TestHeaderDataHeaderFrameOrder for Continuation frame read.
 
-// TODO(tjagtap) : [PH2][P3] Write tests for following failure cases
+// TODO(tjagtap) : [PH2][P4] Write tests
 // 1. Client receives header frame with unknown stream id.
 // 2. Client receives DATA frame with unknown stream id.
 // 3. Client receives DATA frame when it is waiting for a continuation frame.
@@ -1357,6 +1409,14 @@ TEST_F(Http2ClientTransportTest,
 // metadata HEADER frame does not have END_STREAM set.
 // 5. Received HEADER frame after half close.
 // 6. Received DATA frame after half close.
+// 7. Data frame with unknown stream ID
+// 8. Data frame with only half a message and then end stream
+// 9. One data frame with a full message
+// 10. Three data frames with one full message
+// 11. One data frame with three full messages. All messages should be pushed.
+// Will need to mock the call_initiator object and test this along with the
+// Header reading code. Because we need a stream in place for the lookup to
+// work.
 
 }  // namespace testing
 
