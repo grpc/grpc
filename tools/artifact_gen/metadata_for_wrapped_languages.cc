@@ -244,7 +244,7 @@ void AddBoringSslMetadata(nlohmann::json& metadata) {
   auto sources = nlohmann::json::parse(sources_in);
   auto file_list = [&sources](std::initializer_list<std::string> paths) {
     std::vector<std::string> ret;
-    for (const std::string& p: paths) {
+    for (const std::string& p : paths) {
       nlohmann::json::json_pointer ptr{p};
       for (const auto& file : sources[ptr]) {
         std::string file_str = file;
@@ -256,10 +256,10 @@ void AddBoringSslMetadata(nlohmann::json& metadata) {
     return ret;
   };
   std::vector<std::string> asm_srcs;
-  for (auto kv: sources.items()) {
+  for (auto kv : sources.items()) {
     const auto& lib = kv.value();
-    if (auto asm_it = lib.find("asm"); asm_it != lib.end()){
-      for (const auto& file: asm_it.value().items()){
+    if (auto asm_it = lib.find("asm"); asm_it != lib.end()) {
+      for (const auto& file : asm_it.value().items()) {
         asm_srcs.push_back(file.value());
       }
     }
@@ -274,9 +274,8 @@ void AddBoringSslMetadata(nlohmann::json& metadata) {
        {"secure", false},
        {"src", file_list({"/ssl/srcs", "/crypto/srcs", "/bcm/srcs"})},
        {"asm_src", asm_srcs},
-       {"headers",
-        file_list({"/ssl/hdrs", "/ssl/internal_hdrs", "/crypto/hdrs",
-                   "/crypto/internal_hdrs", "/bcm/internal_hdrs"})},
+       {"headers", file_list({"/ssl/hdrs", "/ssl/internal_hdrs", "/crypto/hdrs",
+                              "/crypto/internal_hdrs", "/bcm/internal_hdrs"})},
        {"boringssl", true},
        {"defaults", "boringssl"}});
   metadata["libs"].push_back({{"name", "boringssl_test_util"},
