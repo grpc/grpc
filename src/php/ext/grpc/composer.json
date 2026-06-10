@@ -1,0 +1,26 @@
+{
+  "name": "grpc/grpc-php-extension",
+  "type": "php-ext",
+  "description": "gRPC C extension for PHP",
+  "license": "Apache-2.0",
+  "require": {
+    "php": "^8.1.0",
+    "composer/installers": "^2.0"
+  },
+  "extra": {
+    "pie": {
+      "build-system": "phpize",
+      "configure-options": [
+        "--enable-grpc"
+      ],
+      "unix-dependencies": {
+        "apt": [
+          "zlib1g-dev"
+        ],
+        "homebrew": [
+          "zlib"
+        ]
+      }
+    }
+  }
+}
