@@ -19,10 +19,11 @@ GIT_ROOT="$(pwd)"
 
 cd test/bazel_build_out_of_tree/bazel_9
 
+# TODO(weizheyuan): replace with bazel
 # Build the same targets as .bcr/presubmit.yml so we are more confident with
 # releases.
 #$GIT_ROOT/tools/bazel \
-bazelisk
+bazelisk \
     build \
     -- \
     "@grpc" \
