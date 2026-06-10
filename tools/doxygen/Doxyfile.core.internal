@@ -40,7 +40,7 @@ PROJECT_NAME           = "GRPC Core"
 # could be handy for archiving the generated documentation or if some version
 # control system is used.
 
-PROJECT_NUMBER         = 54.0.0
+PROJECT_NUMBER         = 55.0.0
 
 # Using the PROJECT_BRIEF tag one can provide an optional one line description
 # for a project that appears at the top of each page and should give viewer a
@@ -1049,6 +1049,8 @@ src/core/credentials/call/oauth2/oauth2_credentials.cc \
 src/core/credentials/call/oauth2/oauth2_credentials.h \
 src/core/credentials/call/plugin/plugin_credentials.cc \
 src/core/credentials/call/plugin/plugin_credentials.h \
+src/core/credentials/call/regional_access_boundary_fetcher.cc \
+src/core/credentials/call/regional_access_boundary_fetcher.h \
 src/core/credentials/call/token_fetcher/token_fetcher_credentials.cc \
 src/core/credentials/call/token_fetcher/token_fetcher_credentials.h \
 src/core/credentials/transport/GEMINI.md \
@@ -2861,6 +2863,8 @@ src/core/tsi/ssl/session_cache/ssl_session_boringssl.cc \
 src/core/tsi/ssl/session_cache/ssl_session_cache.cc \
 src/core/tsi/ssl/session_cache/ssl_session_cache.h \
 src/core/tsi/ssl/session_cache/ssl_session_openssl.cc \
+src/core/tsi/ssl_telemetry_utils.cc \
+src/core/tsi/ssl_telemetry_utils.h \
 src/core/tsi/ssl_transport_security.cc \
 src/core/tsi/ssl_transport_security.h \
 src/core/tsi/ssl_transport_security_utils.cc \
