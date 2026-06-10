@@ -27010,7 +27010,6 @@ targets:
   - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/promise.upbdefs.h
   - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/property_list.upbdefs.h
   - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/service.upbdefs.h
-  - src/core/filter/blackboard.h
   - src/core/filter/filter_args.h
   - src/core/handshaker/handshaker_factory.h
   - src/core/handshaker/handshaker_registry.h
@@ -27047,6 +27046,7 @@ targets:
   - src/core/lib/event_engine/extensions/channelz.h
   - src/core/lib/event_engine/extensions/chaotic_good_extension.h
   - src/core/lib/event_engine/extensions/iomgr_compatible.h
+  - src/core/lib/event_engine/extensions/receive_coalescing_extension.h
   - src/core/lib/event_engine/extensions/supports_fd.h
   - src/core/lib/event_engine/extensions/supports_win_sockets.h
   - src/core/lib/event_engine/extensions/tcp_trace.h
@@ -27358,7 +27358,6 @@ targets:
   - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/promise.upbdefs.c
   - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/property_list.upbdefs.c
   - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/service.upbdefs.c
-  - src/core/filter/blackboard.cc
   - src/core/handshaker/handshaker_registry.cc
   - src/core/handshaker/proxy_mapper_registry.cc
   - src/core/lib/address_utils/parse_address.cc
@@ -27507,6 +27506,7 @@ targets:
   - src/core/lib/resource_quota/periodic_update.cc
   - src/core/lib/resource_quota/resource_quota.cc
   - src/core/lib/resource_quota/stream_quota.cc
+  - src/core/lib/resource_quota/telemetry.cc
   - src/core/lib/resource_quota/thread_quota.cc
   - src/core/lib/resource_tracker/resource_tracker.cc
   - src/core/lib/slice/percent_encoding.cc

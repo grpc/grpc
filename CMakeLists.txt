@@ -37955,7 +37955,6 @@ add_executable(v3_bridge_test
   src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/promise.upbdefs.c
   src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/property_list.upbdefs.c
   src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/service.upbdefs.c
-  src/core/filter/blackboard.cc
   src/core/handshaker/handshaker_registry.cc
   src/core/handshaker/proxy_mapper_registry.cc
   src/core/lib/address_utils/parse_address.cc
@@ -38104,6 +38103,7 @@ add_executable(v3_bridge_test
   src/core/lib/resource_quota/periodic_update.cc
   src/core/lib/resource_quota/resource_quota.cc
   src/core/lib/resource_quota/stream_quota.cc
+  src/core/lib/resource_quota/telemetry.cc
   src/core/lib/resource_quota/thread_quota.cc
   src/core/lib/resource_tracker/resource_tracker.cc
   src/core/lib/slice/percent_encoding.cc
