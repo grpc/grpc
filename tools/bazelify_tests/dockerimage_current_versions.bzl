@@ -97,7 +97,7 @@ DOCKERIMAGE_CURRENT_VERSIONS = {
     "tools/dockerfile/test/bazel_arm64.current_version": "docker://us-docker.pkg.dev/grpc-testing/testing-images-public/bazel_arm64@sha256:717cd3badcb75d79b63ff17ff9a08193065ffa4583a9ee6296dba51160a795d8",
     "tools/dockerfile/test/csharp_debian11_arm64.current_version": "docker://us-docker.pkg.dev/grpc-testing/testing-images-public/csharp_debian11_arm64@sha256:37792a7264b9319e41820b469d508e4fe5ff8ae231214e51908be93309cfba1d",
     "tools/dockerfile/test/csharp_debian11_x64.current_version": "docker://us-docker.pkg.dev/grpc-testing/testing-images-public/csharp_debian11_x64@sha256:708c3f1ad6692f9c0352b286df586c4a2599616ecc8c4d11154df4ec67074193",
-    "tools/dockerfile/test/cxx_alpine_x64.current_version": "docker://us-docker.pkg.dev/grpc-testing/testing-images-public/cxx_alpine_x64:f704ab8804a377d1bbe9b944a95e64f9402d35f7",
+    "tools/dockerfile/test/cxx_alpine_x64.current_version": "docker://us-docker.pkg.dev/grpc-testing/testing-images-public/cxx_alpine_x64@sha256:099c1093aee384ce57695ee9cf6c3b67d72a8753b2290cd8af79f359ab9aa2a1",
     "tools/dockerfile/test/cxx_clang_11_x64.current_version": "docker://us-docker.pkg.dev/grpc-testing/testing-images-public/cxx_clang_11_x64@sha256:f7727b7aceeea8316929f0fef39e7eb8cdea5f0cef6c10ac78177cf2b7146303",
     "tools/dockerfile/test/cxx_clang_19_x64.current_version": "docker://us-docker.pkg.dev/grpc-testing/testing-images-public/cxx_clang_19_x64@sha256:c6d584d6beb654b6bec8fdd4769275dba45cc42291cb9615e6fd678c63ff2b45",
     "tools/dockerfile/test/cxx_debian11_openssl102_x64.current_version": "docker://us-docker.pkg.dev/grpc-testing/testing-images-public/cxx_debian11_openssl102_x64@sha256:d10ac783e2991e06e4c2f3fe2afb2e70b57d6b2ce498a681d761ee4f11e9b93c",
