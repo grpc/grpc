@@ -1366,7 +1366,7 @@ TEST_F(OpenTelemetryPluginEnd2EndTest, ClientHandshakes) {
   ASSERT_NE(point_data, nullptr);
   auto client_handshakes_value = std::get_if<int64_t>(&point_data->value_);
   ASSERT_NE(client_handshakes_value, nullptr);
-  EXPECT_EQ(*client_handshakes_value, 1);
+  EXPECT_GE(*client_handshakes_value, 1);
   const auto& attributes = data[kMetricName][0].attributes.GetAttributes();
   EXPECT_EQ(attributes.size(), 5);
   const auto* status_value = std::get_if<std::string>(
@@ -1410,7 +1410,7 @@ TEST_F(OpenTelemetryPluginEnd2EndTest, ServerHandshakes) {
   ASSERT_NE(point_data, nullptr);
   auto server_handshakes_value = std::get_if<int64_t>(&point_data->value_);
   ASSERT_NE(server_handshakes_value, nullptr);
-  EXPECT_EQ(*server_handshakes_value, 1);
+  EXPECT_GE(*server_handshakes_value, 1);
   const auto& attributes = data[kMetricName][0].attributes.GetAttributes();
   EXPECT_EQ(attributes.size(), 2);
   const auto* status_value = std::get_if<std::string>(

@@ -19,6 +19,9 @@
 #include "test/cpp/ext/otel/otel_test_library.h"
 
 #include <grpcpp/grpcpp.h>
+#include <grpcpp/security/server_credentials.h>
+#include <grpcpp/security/tls_certificate_provider.h>
+#include <grpcpp/security/tls_credentials_options.h>
 
 #include <atomic>
 #include <memory>
@@ -294,19 +297,34 @@ void OpenTelemetryPluginEnd2EndTest::InitSecure(Options config) {
   grpc_init();
   std::string root_cert =
       grpc_core::testing::GetFileContents("src/core/tsi/test_creds/ca.pem");
-  grpc::SslServerCredentialsOptions::PemKeyCertPair key_cert_pair = {
-      grpc_core::testing::GetFileContents(
-          "src/core/tsi/test_creds/server1.key"),
-      grpc_core::testing::GetFileContents(
-          "src/core/tsi/test_creds/server1.pem")};
-  grpc::SslServerCredentialsOptions ssl_options;
-  ssl_options.pem_key_cert_pairs.push_back(key_cert_pair);
-  ssl_options.pem_root_certs = root_cert;
+  std::string server_key = grpc_core::testing::GetFileContents(
+      "src/core/tsi/test_creds/server1.key");
+  std::string server_cert = grpc_core::testing::GetFileContents(
+      "src/core/tsi/test_creds/server1.pem");
+  grpc::experimental::IdentityKeyOrSignerCertPair key_cert_pair = {
+      server_key, server_cert};
+  auto certificate_provider =
+      std::make_shared<grpc::experimental::InMemoryCertificateProvider>();
+  ASSERT_TRUE(certificate_provider->UpdateRoot(root_cert).ok());
+  ASSERT_TRUE(
+      certificate_provider
+          ->UpdateIdentityKeyCertPair(
+              std::vector<grpc::experimental::IdentityKeyOrSignerCertPair>{
+                  key_cert_pair})
+          .ok());
+  auto server_options_or =
+      grpc::experimental::TlsServerCredentialsOptions::Create(
+          certificate_provider);
+  ASSERT_TRUE(server_options_or.ok());
+  grpc::experimental::TlsServerCredentialsOptions server_options =
+      *std::move(server_options_or);
+  server_options.set_root_certificate_provider(certificate_provider);
 
   grpc::ServerBuilder builder;
   int port;
-  builder.AddListeningPort("0.0.0.0:0", grpc::SslServerCredentials(ssl_options),
-                           &port);
+  builder.AddListeningPort(
+      "0.0.0.0:0", grpc::experimental::TlsServerCredentials(server_options),
+      &port);
   builder.RegisterService(&service_);
   for (auto& per_server_stats_plugin : config.per_server_stats_plugins) {
     per_server_stats_plugin->AddToServerBuilder(&builder);
@@ -321,12 +339,17 @@ void OpenTelemetryPluginEnd2EndTest::InitSecure(Options config) {
   server_address_ = absl::StrCat("localhost:", port);
   canonical_server_address_ = absl::StrCat("dns:///", server_address_);
 
-  channel_args.SetSslTargetNameOverride("foo.test.google.fr");
-  grpc::SslCredentialsOptions client_ssl_options;
-  client_ssl_options.pem_root_certs = root_cert;
+  grpc::experimental::TlsChannelCredentialsOptions client_tls_options;
+  auto client_certificate_provider =
+      std::make_shared<grpc::experimental::InMemoryCertificateProvider>();
+  ASSERT_TRUE(client_certificate_provider->UpdateRoot(root_cert).ok());
+  client_tls_options.set_root_certificate_provider(
+      client_certificate_provider);
+  client_tls_options.set_sni_override("foo.test.google.fr");
 
   auto channel = grpc::CreateCustomChannel(
-      server_address_, grpc::SslCredentials(client_ssl_options), channel_args);
+      server_address_, grpc::experimental::TlsCredentials(client_tls_options),
+      channel_args);
   stub_ = EchoTestService::NewStub(channel);
   generic_stub_ = std::make_unique<GenericStub>(std::move(channel));
 }
