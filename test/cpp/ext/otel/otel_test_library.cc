@@ -301,8 +301,8 @@ void OpenTelemetryPluginEnd2EndTest::InitSecure(Options config) {
       "src/core/tsi/test_creds/server1.key");
   std::string server_cert = grpc_core::testing::GetFileContents(
       "src/core/tsi/test_creds/server1.pem");
-  grpc::experimental::IdentityKeyOrSignerCertPair key_cert_pair = {
-      server_key, server_cert};
+  grpc::experimental::IdentityKeyOrSignerCertPair key_cert_pair = {server_key,
+                                                                   server_cert};
   auto certificate_provider =
       std::make_shared<grpc::experimental::InMemoryCertificateProvider>();
   ASSERT_TRUE(certificate_provider->UpdateRoot(root_cert).ok());
@@ -343,8 +343,7 @@ void OpenTelemetryPluginEnd2EndTest::InitSecure(Options config) {
   auto client_certificate_provider =
       std::make_shared<grpc::experimental::InMemoryCertificateProvider>();
   ASSERT_TRUE(client_certificate_provider->UpdateRoot(root_cert).ok());
-  client_tls_options.set_root_certificate_provider(
-      client_certificate_provider);
+  client_tls_options.set_root_certificate_provider(client_certificate_provider);
   client_tls_options.set_sni_override("foo.test.google.fr");
 
   auto channel = grpc::CreateCustomChannel(
