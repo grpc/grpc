@@ -174,8 +174,10 @@ if [[ -d "$INPUT_NATIVE_DEBUG_DIR" ]]; then
       exit 1
     fi
 
-    gsutil -m cp -n "$local_stage"/* "$GCS_NATIVE_DEBUG/v$GRPC_VERSION/"
-    echo "Uploaded Ruby native debug gems to $GCS_NATIVE_DEBUG/v$GRPC_VERSION/"
+    if ! gsutil -m cp -n "$local_stage"/* "$GCS_NATIVE_DEBUG/v$GRPC_VERSION/"; then
+      echo "Error: Failed to upload native debug rubygems to $GCS_NATIVE_DEBUG/v$GRPC_VERSION/"
+      exit 1
+    fi
 
     rm -rf "$local_stage"
   else
