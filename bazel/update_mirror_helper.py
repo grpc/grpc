@@ -21,6 +21,7 @@ import sys
 
 _MIRROR_SITE_PATTERN = "https://storage.googleapis.com/grpc-bazel-mirror"
 _SUPPORTED_RULE_KINDS = ["http_archive", "http_file", "python_repository", "whl_library"]
+_LOGGED_FIELDS = ["repoRuleName", "name", "canonicalName", "apparentName"]
 logger = logging.getLogger(__name__)
 
 def parse_ndjson(file_path):
@@ -43,7 +44,7 @@ def parse_ndjson(file_path):
 def main():
     logging.basicConfig(level=logging.INFO)
     if len(sys.argv) < 3:
-        logger.info("Usage: update_mirror_helper.py <input> <output>")
+        logger.error("Usage: update_mirror_helper.py <input> <output>")
         sys.exit(1)
     input_path = sys.argv[1]
     output_path = sys.argv[2]
@@ -52,22 +53,16 @@ def main():
     for repo in repos:
         if repo["repoRuleName"] not in _SUPPORTED_RULE_KINDS:
             continue
-        archive = {}
         urls = []
-        archive["urls"] = urls
-        archive["canonicalName"] = repo.get("canonicalName")
-        archive["apparentName"] = repo.get("apparentName")
-        archive["name"] = repo.get("name")
         for attr in repo["attribute"]:
             if attr["name"] == "url" and attr["stringValue"]:
                 urls.append(attr["stringValue"])
             elif attr["name"] == "urls":
                 urls.extend(attr.get("stringListValue", list()))
-            elif attr["name"] == "sha256" and attr["stringValue"]:
-                archive["sha256"] = attr["stringValue"]
-            elif attr["name"] == "integrity" and attr["stringValue"]:
-                archive["integrity"] = attr["stringValue"]
-        logger.debug(f"Processing archive definition: {json.dumps(archive, indent=4)}")
+
+        logging_data = {k: repo[k] for k in _LOGGED_FIELDS if k in repo}
+        logging_data["urls"] = urls
+        logger.debug(f"Processing repo definition: {json.dumps(logging_data, indent=4)}")
         for url in urls:
             if _MIRROR_SITE_PATTERN not in url:
                 output_lines.append(f"{url.removeprefix('https://')}")
