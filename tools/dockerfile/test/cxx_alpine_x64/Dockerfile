@@ -21,6 +21,7 @@ RUN apk update && apk add \
   bash \
   bzip2 \
   build-base \
+  ccache \
   cmake \
   curl \
   gcc \
@@ -45,26 +46,17 @@ RUN git config --global --add safe.directory '*'
 RUN git config --global protocol.file.allow always
 
 
-# Google Cloud Platform API libraries
-# These are needed for uploading test results to BigQuery (e.g. by tools/run_tests scripts)
-RUN python3 -m pip install --break-system-packages --upgrade google-auth==1.24.0 google-api-python-client==1.12.8 oauth2client==4.1.0
 
-RUN python3 -m pip install --break-system-packages --upgrade --ignore-installed PyYAML==6.0.1 --user
-RUN python3 -m pip install --break-system-packages twisted
+# Add Python user install directory to PATH
+ENV PATH="$HOME/.local/bin:$PATH"
+RUN pip install --no-cache-dir --break-system-packages --user \
+  google-api-python-client==1.12.8 \
+  google-auth==1.24.0 \
+  oauth2client==4.1.0 \
+  PyYAML \
+  twisted \
+  && :
 
-#=================
-# Install ccache
-
-# Install ccache from source since ccache 3.x packaged with most linux distributions
-# does not support Redis backend for caching.
-RUN curl -sSL --fail --retry 5 -o ccache.tar.gz https://github.com/ccache/ccache/releases/download/v4.11.3/ccache-4.11.3.tar.gz \
-    && tar -zxf ccache.tar.gz \
-    && cd ccache-4.11.3 \
-    && mkdir build && cd build \
-    && cmake -DCMAKE_BUILD_TYPE=Release -DZSTD_FROM_INTERNET=ON -DHIREDIS_FROM_INTERNET=ON .. \
-    && make -j4 && make install \
-    && cd ../.. \
-    && rm -rf ccache-4.11.3 ccache.tar.gz
 
 
 RUN mkdir /var/local/jenkins
