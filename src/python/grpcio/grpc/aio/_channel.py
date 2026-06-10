@@ -404,6 +404,9 @@ class Channel(_base_channel.Channel):
         if self._channel.closed():
             return
 
+        if grace and grace < 0:
+            raise ValueError("grace must be non-negative")
+
         # No new calls will be accepted by the Cython channel.
         self._channel.closing()
 
@@ -418,7 +421,7 @@ class Channel(_base_channel.Channel):
 
         calls = list(self._active_calls)
 
-        if grace is not None and grace > 0:
+        if grace:
             call_tasks = [
                 self._loop.create_task(_wait_for_call_to_complete(call))
                 for call in calls
