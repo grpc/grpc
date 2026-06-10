@@ -1518,7 +1518,7 @@ TEST_P(SslTransportSecurityTest, TestKeyExchangeGroupMismatch) {
 
 #if defined(OPENSSL_IS_BORINGSSL)
 TEST_P(SslTransportSecurityTest,
-       SuccessfulHandshake_ServerSpecifiesX25519Mlkem768) {
+       SuccessfulHandshakeServerSpecifiesX25519Mlkem768) {
   auto tls_version = std::get<0>(GetParam());
   SetUpSslFixture(tls_version,
                   /*send_client_ca_list=*/std::get<1>(GetParam()));
@@ -1531,7 +1531,7 @@ TEST_P(SslTransportSecurityTest,
 }
 
 TEST_P(SslTransportSecurityTest,
-       SuccessfulHandshake_ClientSpecifiesX25519Mlkem768) {
+       SuccessfulHandshakeClientSpecifiesX25519Mlkem768) {
   auto tls_version = std::get<0>(GetParam());
   SetUpSslFixture(tls_version,
                   /*send_client_ca_list=*/std::get<1>(GetParam()));
@@ -1543,7 +1543,7 @@ TEST_P(SslTransportSecurityTest,
   DoHandshake();
 }
 #endif  // OPENSSL_IS_BORINGSSL
-TEST_P(SslTransportSecurityTest, SuccessfulHandshake_ServerSpecifiesX25519) {
+TEST_P(SslTransportSecurityTest, SuccessfulHandshakeServerSpecifiesX25519) {
   auto tls_version = std::get<0>(GetParam());
   SetUpSslFixture(tls_version,
                   /*send_client_ca_list=*/std::get<1>(GetParam()));
@@ -1554,7 +1554,7 @@ TEST_P(SslTransportSecurityTest, SuccessfulHandshake_ServerSpecifiesX25519) {
   DoHandshake();
 }
 
-TEST_P(SslTransportSecurityTest, SuccessfulHandshake_ClientSpecifiesX25519) {
+TEST_P(SslTransportSecurityTest, SuccessfulHandshakeClientSpecifiesX25519) {
   auto tls_version = std::get<0>(GetParam());
   SetUpSslFixture(tls_version,
                   /*send_client_ca_list=*/std::get<1>(GetParam()));
@@ -1565,7 +1565,7 @@ TEST_P(SslTransportSecurityTest, SuccessfulHandshake_ClientSpecifiesX25519) {
   DoHandshake();
 }
 
-TEST_P(SslTransportSecurityTest, SuccessfulHandshake_ServerSpecifiesP256) {
+TEST_P(SslTransportSecurityTest, SuccessfulHandshakeServerSpecifiesP256) {
   auto tls_version = std::get<0>(GetParam());
   SetUpSslFixture(tls_version,
                   /*send_client_ca_list=*/std::get<1>(GetParam()));
@@ -1576,7 +1576,7 @@ TEST_P(SslTransportSecurityTest, SuccessfulHandshake_ServerSpecifiesP256) {
   DoHandshake();
 }
 
-TEST_P(SslTransportSecurityTest, SuccessfulHandshake_ClientSpecifiesP256) {
+TEST_P(SslTransportSecurityTest, SuccessfulHandshakeClientSpecifiesP256) {
   auto tls_version = std::get<0>(GetParam());
   SetUpSslFixture(tls_version,
                   /*send_client_ca_list=*/std::get<1>(GetParam()));

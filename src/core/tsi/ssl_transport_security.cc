@@ -98,8 +98,10 @@
 const size_t kMaxChainLength = 100;
 const char kDefaultBoringSSLKeyExchangeGroups[] =
     "X25519MLKEM768:X25519:P-256:P-384:P-521";
-const char kDefaultOpenSSL1_1_1KeyExchangeGroups[] = "X25519:P-256:P-384:P-521";
-const char kDefaultOpenSSL1_0_2KeyExchangeGroups[] = "P-256:P-384:P-521";
+const char kDefaultOpenSSL1_1_1KeyExchangeGroups[] =
+    "X25519:P-256:P-384:P-521";  // NOLINT(clang-diagnostic-unused-const-variable)
+const char kDefaultOpenSSL1_0_2KeyExchangeGroups[] =
+    "P-256:P-384:P-521";  // NOLINT(clang-diagnostic-unused-const-variable)
 
 // Putting a macro like this and littering the source file with #if is really
 // bad practice.
