@@ -406,6 +406,11 @@ void GrpcMemoryAllocatorImpl::Replenish() {
 grpc_slice GrpcMemoryAllocatorImpl::MakeSlice(MemoryRequest request) {
   auto size = Reserve(request.Increase(sizeof(SliceRefCount)));
   void* p = malloc(size);
+  if (GPR_UNLIKELY(p == nullptr)) {
+    Crash(absl::StrFormat(
+        "GrpcMemoryAllocatorImpl::MakeSlice: malloc(%zu) returned nullptr",
+        size));
+  }
   new (p) SliceRefCount(shared_from_this(), size);
   grpc_slice slice;
   slice.refcount = static_cast<SliceRefCount*>(p);
