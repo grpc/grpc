@@ -282,7 +282,7 @@ python_config_settings()
 # This should be updated along with build_handwritten.yaml
 g_stands_for = "glacier"  # @unused
 
-core_version = "54.0.0"  # @unused
+core_version = "55.0.0"  # @unused
 
 version = "1.82.0-dev"  # @unused
 
@@ -4608,6 +4608,28 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "ssl_telemetry_utils",
+    srcs = [
+        "//src/core:tsi/ssl_telemetry_utils.cc",
+    ],
+    hdrs = [
+        "//src/core:tsi/ssl_telemetry_utils.h",
+    ],
+    external_deps = [
+        "absl/base:core_headers",
+        "absl/log:log",
+        "absl/strings",
+        "libcrypto",
+        "libssl",
+    ],
+    visibility = ["//visibility:public"],
+    deps = [
+        "gpr",
+        "//src/core:tsi_ssl_types",
+    ],
+)
+
+grpc_cc_library(
     name = "tsi_ssl_credentials",
     srcs = [
         "//src/core:credentials/transport/tls/ssl_utils.cc",
@@ -4639,6 +4661,7 @@ grpc_cc_library(
         "grpc_public_hdrs",
         "grpc_security_base",
         "ref_counted_ptr",
+        "ssl_telemetry_utils",
         "transport_auth_context",
         "tsi_base",
         "tsi_ssl_session_cache",
