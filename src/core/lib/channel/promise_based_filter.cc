@@ -192,12 +192,15 @@ void BaseCallData::Orphan() { abort(); }
 // For now we don't care about owning/non-owning wakers, instead just share
 // implementation.
 Waker BaseCallData::MakeNonOwningWaker() {
-  if (handle_ == nullptr) {
-    handle_ = new WeakWakerHandle(this);
-  } else {
-    handle_->Ref();
+  if (IsV2NonOwningWakerImplementationEnabled()) {
+    if (handle_ == nullptr) {
+      handle_ = new WeakWakerHandle(this);
+    } else {
+      handle_->Ref();
+    }
+    return Waker(handle_, 0);
   }
-  return Waker(handle_, 0);
+  return MakeOwningWaker();
 }
 
 Waker BaseCallData::MakeOwningWaker() {
