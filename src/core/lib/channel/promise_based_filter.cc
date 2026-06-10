@@ -125,6 +125,14 @@ class BaseCallData::WeakWakerHandle final : public Wakeable {
     mu_.Unlock();
     if (wakeup_base != nullptr) {
       wakeup_base->Wakeup(wakeup_mask);
+      // Note: We use the owning Wakeup() here instead of WakeupNonOwning() to
+      // safely balance the temporary reference we acquired via RefIfNonZero().
+      // Since the call combiner executes closures asynchronously, performing
+      // the UNREF immediately after calling WakeupNonOwning() would be unsafe,
+      // as the call stack could be destroyed before the wakeup closure runs. By
+      // calling Wakeup(), we delegate the UNREF to the scheduled closure itself
+      // (via Drop(0)), ensuring the call stack remains alive until OnWakeup()
+      // has finished execution.
     }
     Unref();
   }
@@ -217,6 +225,15 @@ void BaseCallData::Wakeup(WakeupMask) {
   auto* closure = GRPC_CLOSURE_CREATE(wakeup, this, nullptr);
   GRPC_CALL_COMBINER_START(call_combiner_, closure, absl::OkStatus(), "wakeup");
 }
+
+void BaseCallData::WakeupAsync(WakeupMask wakeup_mask) {
+  if (IsV2NonOwningWakerImplementationEnabled()) {
+    Wakeup(wakeup_mask);
+  } else {
+    Crash("not implemented");
+  }
+}
+
 void BaseCallData::WakeupNonOwning(WakeupMask) {
   auto wakeup = [](void* p, grpc_error_handle) {
     auto* self = static_cast<BaseCallData*>(p);
