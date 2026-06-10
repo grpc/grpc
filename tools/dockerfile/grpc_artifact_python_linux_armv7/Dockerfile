@@ -20,6 +20,7 @@
 FROM dockcross/linux-armv7
 
 # Configure git early so the cache reused by other py build based on the same image.
+# Trigger rebuild for python 3.15 frame pointers fix
 RUN git config --global protocol.file.allow always && \
   git config --global --add safe.directory /var/local/jenkins/grpc && \
   git config --global --add safe.directory /var/local/jenkins/grpc/.git && \
