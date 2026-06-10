@@ -1,4 +1,4 @@
-# Copyright 2021 The gRPC Authors
+# Copyright 2026 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,8 +12,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# On aarch64 the protoc and codegen plugins are built via crosscompilation.
-FROM dockcross/linux-arm64
+FROM gcc:10
 
-RUN git config --global --add safe.directory '*'
-RUN git config --global protocol.file.allow always
+RUN apt-get update && apt-get install -y curl git time zip && apt-get clean
+{% include "../../git_avoid_dubious_ownership_error.include" %}
+{% include "../../run_tests_python_deps.include" %}
+{% include "../../cxx_test_deps.include" %}
+{% include "../../cmake.include" %}
+
+# Install ccache 4.2 from official repo.
+RUN apt-get install -y ccache
+{% include "../../run_tests_addons.include" %}
+
+# Define the default command.
+CMD ["bash"]

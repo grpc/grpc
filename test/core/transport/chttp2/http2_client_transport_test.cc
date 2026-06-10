@@ -1401,7 +1401,7 @@ TEST_F(Http2ClientTransportTest, TestDestructionWithStalledStreamInQueue) {
 // TODO(tjagtap) : [PH2][P2] Write tests similar to
 // TestHeaderDataHeaderFrameOrder for Continuation frame read.
 
-// TODO(tjagtap) : [PH2][P3] Write tests for following failure cases
+// TODO(tjagtap) : [PH2][P4] Write tests
 // 1. Client receives header frame with unknown stream id.
 // 2. Client receives DATA frame with unknown stream id.
 // 3. Client receives DATA frame when it is waiting for a continuation frame.
@@ -1409,6 +1409,14 @@ TEST_F(Http2ClientTransportTest, TestDestructionWithStalledStreamInQueue) {
 // metadata HEADER frame does not have END_STREAM set.
 // 5. Received HEADER frame after half close.
 // 6. Received DATA frame after half close.
+// 7. Data frame with unknown stream ID
+// 8. Data frame with only half a message and then end stream
+// 9. One data frame with a full message
+// 10. Three data frames with one full message
+// 11. One data frame with three full messages. All messages should be pushed.
+// Will need to mock the call_initiator object and test this along with the
+// Header reading code. Because we need a stream in place for the lookup to
+// work.
 
 }  // namespace testing
 

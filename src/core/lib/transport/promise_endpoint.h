@@ -29,6 +29,7 @@
 #include <utility>
 
 #include "src/core/lib/event_engine/extensions/chaotic_good_extension.h"
+#include "src/core/lib/event_engine/extensions/receive_coalescing_extension.h"
 #include "src/core/lib/event_engine/query_extensions.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/promise/activity.h"
@@ -224,11 +225,12 @@ class PromiseEndpoint {
   // Enables RPC receive coalescing and alignment of memory holding received
   // RPCs.
   void EnforceRxMemoryAlignmentAndCoalescing() {
-    auto* chaotic_good_ext = grpc_event_engine::experimental::QueryExtension<
-        grpc_event_engine::experimental::ChaoticGoodExtension>(endpoint_.get());
-    if (chaotic_good_ext != nullptr) {
-      chaotic_good_ext->EnforceRxMemoryAlignment();
-      chaotic_good_ext->EnableRpcReceiveCoalescing();
+    auto* ext = grpc_event_engine::experimental::QueryExtension<
+        grpc_event_engine::experimental::ReceiveCoalescingExtension>(
+        endpoint_.get());
+    if (ext != nullptr) {
+      ext->EnforceRxMemoryAlignment();
+      ext->EnableRpcReceiveCoalescing();
     }
   }
 

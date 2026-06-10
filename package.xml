@@ -257,6 +257,8 @@
     <file baseinstalldir="/" name="src/core/credentials/call/oauth2/oauth2_credentials.h" role="src" />
     <file baseinstalldir="/" name="src/core/credentials/call/plugin/plugin_credentials.cc" role="src" />
     <file baseinstalldir="/" name="src/core/credentials/call/plugin/plugin_credentials.h" role="src" />
+    <file baseinstalldir="/" name="src/core/credentials/call/regional_access_boundary_fetcher.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/credentials/call/regional_access_boundary_fetcher.h" role="src" />
     <file baseinstalldir="/" name="src/core/credentials/call/token_fetcher/token_fetcher_credentials.cc" role="src" />
     <file baseinstalldir="/" name="src/core/credentials/call/token_fetcher/token_fetcher_credentials.h" role="src" />
     <file baseinstalldir="/" name="src/core/credentials/transport/alts/alts_credentials.cc" role="src" />
@@ -1342,8 +1344,6 @@
     <file baseinstalldir="/" name="src/core/filter/auth/auth_filters.h" role="src" />
     <file baseinstalldir="/" name="src/core/filter/auth/client_auth_filter.cc" role="src" />
     <file baseinstalldir="/" name="src/core/filter/auth/server_auth_filter.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/filter/blackboard.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/filter/blackboard.h" role="src" />
     <file baseinstalldir="/" name="src/core/filter/composite/composite_filter.cc" role="src" />
     <file baseinstalldir="/" name="src/core/filter/composite/composite_filter.h" role="src" />
     <file baseinstalldir="/" name="src/core/filter/filter_args.h" role="src" />
@@ -1429,6 +1429,7 @@
     <file baseinstalldir="/" name="src/core/lib/event_engine/extensions/channelz.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/extensions/chaotic_good_extension.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/extensions/iomgr_compatible.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/event_engine/extensions/receive_coalescing_extension.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/extensions/supports_fd.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/extensions/supports_win_sockets.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/extensions/tcp_trace.h" role="src" />
@@ -1718,6 +1719,7 @@
     <file baseinstalldir="/" name="src/core/lib/resource_quota/resource_quota.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/resource_quota/stream_quota.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/resource_quota/stream_quota.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/resource_quota/telemetry.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/resource_quota/telemetry.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/resource_quota/thread_quota.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/resource_quota/thread_quota.h" role="src" />
@@ -2004,6 +2006,8 @@
     <file baseinstalldir="/" name="src/core/tsi/ssl/session_cache/ssl_session_cache.cc" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/ssl/session_cache/ssl_session_cache.h" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/ssl/session_cache/ssl_session_openssl.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/tsi/ssl_telemetry_utils.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/tsi/ssl_telemetry_utils.h" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/ssl_transport_security.cc" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/ssl_transport_security.h" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/ssl_transport_security_utils.cc" role="src" />
@@ -2174,6 +2178,8 @@
     <file baseinstalldir="/" name="src/core/util/work_serializer.cc" role="src" />
     <file baseinstalldir="/" name="src/core/util/work_serializer.h" role="src" />
     <file baseinstalldir="/" name="src/core/util/xxhash_inline.h" role="src" />
+    <file baseinstalldir="/" name="src/core/xds/grpc/blackboard.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/xds/grpc/blackboard.h" role="src" />
     <file baseinstalldir="/" name="src/core/xds/grpc/certificate_provider_store.cc" role="src" />
     <file baseinstalldir="/" name="src/core/xds/grpc/certificate_provider_store.h" role="src" />
     <file baseinstalldir="/" name="src/core/xds/grpc/certificate_provider_store_interface.h" role="src" />

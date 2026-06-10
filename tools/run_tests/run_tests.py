@@ -561,6 +561,8 @@ class CLanguage:
             return ("debian11", ["-DCMAKE_CXX_STANDARD=17"])
         elif compiler == "gcc8":
             return ("gcc_8", ["-DCMAKE_CXX_STANDARD=17"])
+        elif compiler == "gcc10":
+            return ("gcc_10", ["-DCMAKE_CXX_STANDARD=17"])
         elif compiler == "gcc10.2":
             return ("debian11", ["-DCMAKE_CXX_STANDARD=17"])
         elif compiler == "gcc10.2_openssl102":
@@ -1727,6 +1729,9 @@ argp.add_argument(
     choices=[
         "default",
         "gcc8",
+        # The gcc:10 docker image which is 10.5 as of May 2026.
+        "gcc10",
+        # Uses debian11 docker image which comes with gcc 10.2
         "gcc10.2",
         "gcc10.2_openssl102",
         "gcc10.2_openssl111",

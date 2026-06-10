@@ -1246,6 +1246,8 @@ src/core/credentials/call/oauth2/oauth2_credentials.cc \
 src/core/credentials/call/oauth2/oauth2_credentials.h \
 src/core/credentials/call/plugin/plugin_credentials.cc \
 src/core/credentials/call/plugin/plugin_credentials.h \
+src/core/credentials/call/regional_access_boundary_fetcher.cc \
+src/core/credentials/call/regional_access_boundary_fetcher.h \
 src/core/credentials/call/token_fetcher/token_fetcher_credentials.cc \
 src/core/credentials/call/token_fetcher/token_fetcher_credentials.h \
 src/core/credentials/transport/alts/alts_credentials.cc \
@@ -2331,8 +2333,6 @@ src/core/ext/upbdefs-gen/xds/type/v3/typed_struct.upbdefs.h \
 src/core/filter/auth/auth_filters.h \
 src/core/filter/auth/client_auth_filter.cc \
 src/core/filter/auth/server_auth_filter.cc \
-src/core/filter/blackboard.cc \
-src/core/filter/blackboard.h \
 src/core/filter/composite/composite_filter.cc \
 src/core/filter/composite/composite_filter.h \
 src/core/filter/filter_args.h \
@@ -2418,6 +2418,7 @@ src/core/lib/event_engine/extensions/can_track_errors.h \
 src/core/lib/event_engine/extensions/channelz.h \
 src/core/lib/event_engine/extensions/chaotic_good_extension.h \
 src/core/lib/event_engine/extensions/iomgr_compatible.h \
+src/core/lib/event_engine/extensions/receive_coalescing_extension.h \
 src/core/lib/event_engine/extensions/supports_fd.h \
 src/core/lib/event_engine/extensions/supports_win_sockets.h \
 src/core/lib/event_engine/extensions/tcp_trace.h \
@@ -2707,6 +2708,7 @@ src/core/lib/resource_quota/resource_quota.cc \
 src/core/lib/resource_quota/resource_quota.h \
 src/core/lib/resource_quota/stream_quota.cc \
 src/core/lib/resource_quota/stream_quota.h \
+src/core/lib/resource_quota/telemetry.cc \
 src/core/lib/resource_quota/telemetry.h \
 src/core/lib/resource_quota/thread_quota.cc \
 src/core/lib/resource_quota/thread_quota.h \
@@ -2994,6 +2996,8 @@ src/core/tsi/ssl/session_cache/ssl_session_boringssl.cc \
 src/core/tsi/ssl/session_cache/ssl_session_cache.cc \
 src/core/tsi/ssl/session_cache/ssl_session_cache.h \
 src/core/tsi/ssl/session_cache/ssl_session_openssl.cc \
+src/core/tsi/ssl_telemetry_utils.cc \
+src/core/tsi/ssl_telemetry_utils.h \
 src/core/tsi/ssl_transport_security.cc \
 src/core/tsi/ssl_transport_security.h \
 src/core/tsi/ssl_transport_security_utils.cc \
@@ -3164,6 +3168,8 @@ src/core/util/windows/tmpfile.cc \
 src/core/util/work_serializer.cc \
 src/core/util/work_serializer.h \
 src/core/util/xxhash_inline.h \
+src/core/xds/grpc/blackboard.cc \
+src/core/xds/grpc/blackboard.h \
 src/core/xds/grpc/certificate_provider_store.cc \
 src/core/xds/grpc/certificate_provider_store.h \
 src/core/xds/grpc/certificate_provider_store_interface.h \
