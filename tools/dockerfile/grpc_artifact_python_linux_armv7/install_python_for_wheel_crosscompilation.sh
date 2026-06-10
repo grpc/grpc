@@ -32,8 +32,6 @@ if [[ "$PYTHON_VERSION" == 3.15* ]]; then
     # for x86-specific flags like -mno-omit-leaf-frame-pointer. If we don't disable this, those
     # flags get baked into the host Python's sysconfig (CFLAGS) and leak into the cross-compiler
     # environment when building grpcio, breaking armv7 cross-compilation.
-    # Note: Changes to this script require regenerating and pushing the docker images, otherwise
-    # CI tests will continue pulling the old image that contains the broken sysconfig.
     CONFIGURE_FLAGS="--without-frame-pointers"
 fi
 
