@@ -282,7 +282,7 @@ python_config_settings()
 # This should be updated along with build_handwritten.yaml
 g_stands_for = "glacier"  # @unused
 
-core_version = "54.0.0"  # @unused
+core_version = "55.0.0"  # @unused
 
 version = "1.82.0-dev"  # @unused
 
@@ -2115,7 +2115,6 @@ grpc_cc_library(
         "//src/core:arena_promise",
         "//src/core:atomic_utils",
         "//src/core:bitset",
-        "//src/core:blackboard",
         "//src/core:call_destination",
         "//src/core:call_filters",
         "//src/core:call_final_info",
@@ -2437,7 +2436,9 @@ grpc_cc_library(
         "//src/core:connection_context",
         "//src/core:context",
         "//src/core:error",
+        "//src/core:event_engine_extensions",
         "//src/core:event_engine_memory_allocator",
+        "//src/core:event_engine_query_extensions",
         "//src/core:experiments",
         "//src/core:gpr_atm",
         "//src/core:grpc_check",
@@ -4117,7 +4118,6 @@ grpc_cc_library(
         "//src/core:arena",
         "//src/core:arena_promise",
         "//src/core:backend_metric_parser",
-        "//src/core:blackboard",
         "//src/core:call_destination",
         "//src/core:call_spine",
         "//src/core:cancel_callback",
@@ -4429,10 +4429,10 @@ grpc_cc_library(
         "orphanable",
         "promise",
         "ref_counted_ptr",
-        "transport_auth_context",
         "uri",
         "//src/core:arena_promise",
         "//src/core:closure",
+        "//src/core:default_event_engine",
         "//src/core:error",
         "//src/core:gpr_manual_constructor",
         "//src/core:grpc_check",
@@ -4442,8 +4442,8 @@ grpc_cc_library(
         "//src/core:json_reader",
         "//src/core:json_writer",
         "//src/core:metadata_batch",
+        "//src/core:regional_access_boundary_fetcher",
         "//src/core:slice",
-        "//src/core:slice_refcount",
         "//src/core:time",
         "//src/core:tsi_ssl_types",
         "//src/core:unique_type_name",
@@ -4608,6 +4608,28 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "ssl_telemetry_utils",
+    srcs = [
+        "//src/core:tsi/ssl_telemetry_utils.cc",
+    ],
+    hdrs = [
+        "//src/core:tsi/ssl_telemetry_utils.h",
+    ],
+    external_deps = [
+        "absl/base:core_headers",
+        "absl/log:log",
+        "absl/strings",
+        "libcrypto",
+        "libssl",
+    ],
+    visibility = ["//visibility:public"],
+    deps = [
+        "gpr",
+        "//src/core:tsi_ssl_types",
+    ],
+)
+
+grpc_cc_library(
     name = "tsi_ssl_credentials",
     srcs = [
         "//src/core:credentials/transport/tls/ssl_utils.cc",
@@ -4639,6 +4661,7 @@ grpc_cc_library(
         "grpc_public_hdrs",
         "grpc_security_base",
         "ref_counted_ptr",
+        "ssl_telemetry_utils",
         "transport_auth_context",
         "tsi_base",
         "tsi_ssl_session_cache",

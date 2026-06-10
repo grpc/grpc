@@ -157,6 +157,12 @@ class ConfigQuery {
           GRPC_HTTP2_PH2_CLIENT_CHTTP2_SERVER_CONFIG_SIMPLE_SSL_FULLSTACK,
           GRPC_HTTP2_PH2_CLIENT_CHTTP2_SERVER_CONFIG_STATIC_PROVIDER_ASYNC_VERIFIER_TLS13,
           GRPC_HTTP2_PH2_CLIENT_CHTTP2_SERVER_CONFIG_RETRY}});
+    exclude_experiments_except_for_configs_.insert(
+        {ExperimentIds::kExperimentIdPh2Server,
+         {GRPC_HTTP2_CHTTP2_CLIENT_PH2_SERVER_CONFIG}});
+    exclude_experiments_except_for_configs_.insert(
+        {ExperimentIds::kExperimentIdPh2ClientServer,
+         {GRPC_HTTP2_PH2_CLIENT_PH2_SERVER_CONFIG}});
   }
   ConfigQuery(const ConfigQuery&) = delete;
   ConfigQuery& operator=(const ConfigQuery&) = delete;

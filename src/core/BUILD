@@ -190,6 +190,7 @@ grpc_cc_library(
         "lib/event_engine/extensions/channelz.h",
         "lib/event_engine/extensions/chaotic_good_extension.h",
         "lib/event_engine/extensions/iomgr_compatible.h",
+        "lib/event_engine/extensions/receive_coalescing_extension.h",
         "lib/event_engine/extensions/supports_fd.h",
         "lib/event_engine/extensions/supports_win_sockets.h",
         "lib/event_engine/extensions/tcp_trace.h",
@@ -3850,17 +3851,20 @@ grpc_cc_library(
 grpc_cc_library(
     name = "blackboard",
     srcs = [
-        "filter/blackboard.cc",
+        "xds/grpc/blackboard.cc",
     ],
     hdrs = [
-        "filter/blackboard.h",
+        "xds/grpc/blackboard.h",
     ],
     external_deps = [
+        "absl/functional:function_ref",
         "absl/container:flat_hash_map",
         "absl/strings",
     ],
     deps = [
+        "dual_ref_counted",
         "ref_counted",
+        "sync",
         "unique_type_name",
         "useful",
         "//:debug_location",
@@ -3875,7 +3879,6 @@ grpc_cc_library(
         "filter/filter_args.h",
     ],
     deps = [
-        "blackboard",
         "channel_fwd",
         "match",
         "ref_counted",
@@ -3984,7 +3987,6 @@ grpc_cc_library(
     ],
     deps = [
         "arena",
-        "blackboard",
         "channel_fwd",
         "client_channel_internal_header",
         "filter_chain",
@@ -5034,7 +5036,6 @@ grpc_cc_library(
         "//:orphanable",
         "//:promise",
         "//:ref_counted_ptr",
-        "//:transport_auth_context",
     ],
 )
 
@@ -5140,10 +5141,8 @@ grpc_cc_library(
         "absl/strings:str_format",
     ],
     deps = [
-        "activity",
         "arena_promise",
         "closure",
-        "context",
         "error",
         "error_utils",
         "grpc_check",
@@ -5151,10 +5150,10 @@ grpc_cc_library(
         "json",
         "json_reader",
         "load_file",
+        "map",
         "metadata_batch",
-        "poll",
-        "pollset_set",
         "ref_counted",
+        "regional_access_boundary_fetcher",
         "slice",
         "slice_refcount",
         "status_helper",
@@ -5175,6 +5174,7 @@ grpc_cc_library(
         "//:ref_counted_ptr",
         "//:transport_auth_context",
         "//:uri",
+        "//src/core:default_event_engine",
     ],
 )
 
@@ -5215,8 +5215,9 @@ grpc_cc_library(
         "json_reader",
         "json_writer",
         "load_file",
+        "map",
+        "regional_access_boundary_fetcher",
         "slice",
-        "slice_refcount",
         "status_conversion",
         "status_helper",
         "time",
@@ -5696,6 +5697,7 @@ grpc_cc_library(
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
+        "absl/strings:str_format",
     ],
     deps = [
         "arena",
@@ -10963,7 +10965,6 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/log",
-        "absl/strings",
         "absl/types:span",
     ],
     deps = [
@@ -11624,6 +11625,45 @@ grpc_cc_library(
         "//:config",
         "//:gpr",
         "//:grpc_public_hdrs",
+    ],
+)
+
+grpc_cc_library(
+    name = "regional_access_boundary_fetcher",
+    srcs = ["credentials/call/regional_access_boundary_fetcher.cc"],
+    hdrs = ["credentials/call/regional_access_boundary_fetcher.h"],
+    external_deps = [
+        "absl/log:log",
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
+        "absl/strings:str_format",
+    ],
+    deps = [
+        "closure",
+        "dual_ref_counted",
+        "env",
+        "error",
+        "grpc_check",
+        "httpcli_ssl_credentials",
+        "json",
+        "json_reader",
+        "metadata",
+        "pollset_set",
+        "ref_counted",
+        "slice",
+        "status_helper",
+        "time",
+        "//:backoff",
+        "//:gpr",
+        "//:grpc_base",
+        "//:grpc_security_base",
+        "//:httpcli",
+        "//:iomgr",
+        "//:ref_counted_ptr",
+        "//:transport_auth_context",
+        "//:uri",
+        "//src/core:default_event_engine",
     ],
 )
 

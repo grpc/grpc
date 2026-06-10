@@ -31,31 +31,40 @@ function cleanup {
 }
 trap cleanup EXIT
 
-function upload {
-  local file="$1"
+function upload() {
+  local uri="$1"
+  local dst_path="${uri}"
 
-  if gcloud storage objects list --stat --fetch-encrypted-object-hashes "gs://grpc-bazel-mirror/${file}" > /dev/null
-  then
-    echo "Skipping ${file}"
-  else
-    echo "Downloading https://${file}"
-    curl -L --fail --output "${tmpdir}/archive" "https://${file}"
-
-    echo "Uploading https://${file} to https://storage.googleapis.com/grpc-bazel-mirror/${file}"
-    gcloud storage cp "${tmpdir}/archive" "gs://grpc-bazel-mirror/${file}"
-
-    rm -rf "${tmpdir}/archive"
+  if [[ "$dst_path" == https://sourceforge.net/*/download ]]; then
+    dst_path="${dst_path%/download}"
   fi
+
+  if gcloud storage objects list --stat --fetch-encrypted-object-hashes "gs://grpc-bazel-mirror/${uri}" > /dev/null; then
+    echo "Skipping ${uri}"
+    return 0
+  fi
+
+  echo "Downloading https://${uri}"
+  curl -L --fail --output "${tmpdir}/archive" "https://${uri}"
+  if [[ ! -s "${tmpdir}/archive" ]]; then
+    echo "Failed to download https://${uri}: zero bytes returned"
+    return 0
+  fi
+
+  echo "Uploading https://${uri} to https://storage.googleapis.com/grpc-bazel-mirror/${dst_path}"
+  gcloud storage cp "${tmpdir}/archive" "gs://grpc-bazel-mirror/${dst_path}"
+
+  rm -rf "${tmpdir}/archive"
 }
 
 function upload_bzlmod_deps {
   local bazel_modules=($(bazel mod graph 2>/dev/null |
     tail -n +2 | # ignore the <root> module
-    sed -E 's/^[^[:alnum:]]*([^ ]+) .*$/\1/' | sort | uniq))
+    sed -E 's/^[^[:alnum:]]*([a-zA-Z0-9@\._-]+).*$/\1/' | sort | uniq))
 
   local urls=()
   if [ "${#bazel_modules[@]}" -gt 0 ]; then
-    urls=($(bazel mod show_repo 2>/dev/null "${bazel_modules[@]}" | grep -E '^\s*urls = \["' | grep -Eo 'https://[^"]+' | sort | uniq))
+    urls=($(bazel mod show_repo 2>/dev/null "${bazel_modules[@]}" | grep -Eo 'https://[^"]+' | sort | uniq))
   fi
 
   for url in "${urls[@]}" ; do
@@ -70,11 +79,6 @@ function upload_bzlmod_deps {
           ;;
         *)
           echo "Uploading archive from non-github site: ${url}"
-          # TODO(weizheyuan): Handle file extension a bit better.
-          #
-          # e.g. https://sourceforge.net/projects/perfmon2/files/libpfm4/libpfm-4.11.0.tar.gz/download
-          # does not have .tar.gz extension and can get rejected by http_archive(). Currently it's manually
-          # rewritten to make build work, see MODULE.bazel.
           upload "${url}"
           ;;
     esac
@@ -90,10 +94,10 @@ function upload_bzlmod_deps {
 # upload "github.com/google/boringssl/archive/1c2769383f027befac5b75b6cedd25daf3bf4dcf.tar.gz"
 
 # bazel binaries used by the tools/bazel wrapper script
-upload github.com/bazelbuild/bazel/releases/download/8.0.1/bazel-8.0.1-linux-arm64
-upload github.com/bazelbuild/bazel/releases/download/8.0.1/bazel-8.0.1-linux-x86_64
-upload github.com/bazelbuild/bazel/releases/download/8.0.1/bazel-8.0.1-darwin-x86_64
-upload github.com/bazelbuild/bazel/releases/download/8.0.1/bazel-8.0.1-windows-x86_64.exe
+upload github.com/bazelbuild/bazel/releases/download/8.7.0/bazel-8.7.0-linux-arm64
+upload github.com/bazelbuild/bazel/releases/download/8.7.0/bazel-8.7.0-linux-x86_64
+upload github.com/bazelbuild/bazel/releases/download/8.7.0/bazel-8.7.0-darwin-x86_64
+upload github.com/bazelbuild/bazel/releases/download/8.7.0/bazel-8.7.0-windows-x86_64.exe
 
 # Collect the github archives to mirror from grpc_deps.bzl
 # TODO(weizheyuan): Considier removing this block completely (since it's used by WORKSPACE only)
