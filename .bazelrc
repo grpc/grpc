@@ -2,4 +2,3 @@
 # as recommended in https://github.com/bazelbuild/bazel/issues/6319
 import %workspace%/tools/bazel.rc
 
-
