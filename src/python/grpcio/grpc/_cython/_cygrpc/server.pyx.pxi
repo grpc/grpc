@@ -218,7 +218,8 @@ cdef class Server:
   def destroy(self):
     if self.c_server != NULL:
       if not self.is_started:
-        pass
+        if self.registered_completion_queues:
+          self._c_shutdown(self.registered_completion_queues[0], None)
       elif self.is_shutdown:
         pass
       elif not self.is_shutting_down:
