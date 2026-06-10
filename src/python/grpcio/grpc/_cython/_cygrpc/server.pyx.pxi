@@ -219,7 +219,7 @@ cdef class Server:
     if self.c_server != NULL:
       if not self.is_started:
         if self.registered_completion_queues:
-          for queue in self.registered_completion_queue:
+          for queue in self.registered_completion_queues:
             self._c_shutdown(queue, None)
       elif self.is_shutdown:
         pass
