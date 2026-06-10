@@ -971,11 +971,11 @@ Endpoint::Endpoint(uint32_t id, uint32_t encode_alignment,
               }
               auto endpoint = std::make_shared<PromiseEndpoint>(std::move(ep));
               ep_ctx->endpoint = endpoint;
-              // Enable RxMemoryAlignment and RPC receive coalescing after the
-              // transport setup is complete. At this point all the settings
-              // frames should have been read.
+              // Enable RPC receive coalescing after the transport setup is
+              // complete. At this point all the settings frames should have
+              // been read.
               if (ep_ctx->decode_alignment != 1) {
-                endpoint->EnforceRxMemoryAlignmentAndCoalescing();
+                endpoint->EnableRpcReceiveCoalescing();
               }
               if (ep_ctx->enable_tracing) {
                 auto* epte = grpc_event_engine::experimental::QueryExtension<
