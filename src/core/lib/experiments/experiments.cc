@@ -207,6 +207,10 @@ const char* const description_promise_filter_send_cancel_metadata =
     "promise-based filters upon stream cancellation.";
 const char* const additional_constraints_promise_filter_send_cancel_metadata =
     "{}";
+const char* const description_python_memoryview =
+    "Enable returning memoryview from ReceiveMessageOperation and zero-copy "
+    "buffer sending from SendMessageOperation in gRPC Python";
+const char* const additional_constraints_python_memoryview = "{}";
 const char* const description_retry_in_callv3 = "Support retries with call-v3";
 const char* const additional_constraints_retry_in_callv3 = "{}";
 const char* const description_return_preexisting_errors =
@@ -422,6 +426,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_promise_filter_send_cancel_metadata,
      additional_constraints_promise_filter_send_cancel_metadata, nullptr, 0,
      false, true},
+    {"python_memoryview", description_python_memoryview,
+     additional_constraints_python_memoryview, nullptr, 0, false, true},
     {"retry_in_callv3", description_retry_in_callv3,
      additional_constraints_retry_in_callv3, nullptr, 0, false, true},
     {"return_preexisting_errors", description_return_preexisting_errors,
@@ -675,6 +681,10 @@ const char* const description_promise_filter_send_cancel_metadata =
     "promise-based filters upon stream cancellation.";
 const char* const additional_constraints_promise_filter_send_cancel_metadata =
     "{}";
+const char* const description_python_memoryview =
+    "Enable returning memoryview from ReceiveMessageOperation and zero-copy "
+    "buffer sending from SendMessageOperation in gRPC Python";
+const char* const additional_constraints_python_memoryview = "{}";
 const char* const description_retry_in_callv3 = "Support retries with call-v3";
 const char* const additional_constraints_retry_in_callv3 = "{}";
 const char* const description_return_preexisting_errors =
@@ -890,6 +900,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_promise_filter_send_cancel_metadata,
      additional_constraints_promise_filter_send_cancel_metadata, nullptr, 0,
      false, true},
+    {"python_memoryview", description_python_memoryview,
+     additional_constraints_python_memoryview, nullptr, 0, false, true},
     {"retry_in_callv3", description_retry_in_callv3,
      additional_constraints_retry_in_callv3, nullptr, 0, false, true},
     {"return_preexisting_errors", description_return_preexisting_errors,
@@ -1143,6 +1155,10 @@ const char* const description_promise_filter_send_cancel_metadata =
     "promise-based filters upon stream cancellation.";
 const char* const additional_constraints_promise_filter_send_cancel_metadata =
     "{}";
+const char* const description_python_memoryview =
+    "Enable returning memoryview from ReceiveMessageOperation and zero-copy "
+    "buffer sending from SendMessageOperation in gRPC Python";
+const char* const additional_constraints_python_memoryview = "{}";
 const char* const description_retry_in_callv3 = "Support retries with call-v3";
 const char* const additional_constraints_retry_in_callv3 = "{}";
 const char* const description_return_preexisting_errors =
@@ -1358,6 +1374,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_promise_filter_send_cancel_metadata,
      additional_constraints_promise_filter_send_cancel_metadata, nullptr, 0,
      false, true},
+    {"python_memoryview", description_python_memoryview,
+     additional_constraints_python_memoryview, nullptr, 0, false, true},
     {"retry_in_callv3", description_retry_in_callv3,
      additional_constraints_retry_in_callv3, nullptr, 0, false, true},
     {"return_preexisting_errors", description_return_preexisting_errors,

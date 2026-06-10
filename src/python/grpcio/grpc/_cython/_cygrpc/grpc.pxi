@@ -113,6 +113,8 @@ cdef extern from "grpc/grpc.h":
   grpc_slice grpc_slice_new(void *p, size_t len, void (*destroy)(void *)) nogil
   grpc_slice grpc_slice_new_with_len(
       void *p, size_t len, void (*destroy)(void *, size_t)) nogil
+  grpc_slice grpc_slice_new_with_user_data(
+      void *p, size_t len, void (*destroy)(void *), void *user_data) nogil
   grpc_slice grpc_slice_malloc(size_t length) nogil
   grpc_slice grpc_slice_from_copied_string(const char *source) nogil
   grpc_slice grpc_slice_from_copied_buffer(const char *source, size_t len) nogil
@@ -836,3 +838,6 @@ cdef extern from "src/core/config/config_vars.h" namespace "grpc_core":
   cdef cppclass ConfigVars:
     @staticmethod
     void Reset()
+
+cdef extern from "src/core/lib/experiments/experiments.h" namespace "grpc_core" nogil:
+  bint IsPythonMemoryviewEnabled()

@@ -133,6 +133,7 @@ inline bool IsPromiseBasedInprocTransportEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_PROMISE_BATCH_CLEANUP_ON_CANCEL
 inline bool IsPromiseBatchCleanupOnCancelEnabled() { return true; }
 inline bool IsPromiseFilterSendCancelMetadataEnabled() { return false; }
+inline bool IsPythonMemoryviewEnabled() { return false; }
 inline bool IsRetryInCallv3Enabled() { return false; }
 inline bool IsReturnPreexistingErrorsEnabled() { return false; }
 inline bool IsScheduleCancellationOverWriteEnabled() { return false; }
@@ -230,6 +231,7 @@ inline bool IsPromiseBasedInprocTransportEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_PROMISE_BATCH_CLEANUP_ON_CANCEL
 inline bool IsPromiseBatchCleanupOnCancelEnabled() { return true; }
 inline bool IsPromiseFilterSendCancelMetadataEnabled() { return false; }
+inline bool IsPythonMemoryviewEnabled() { return false; }
 inline bool IsRetryInCallv3Enabled() { return false; }
 inline bool IsReturnPreexistingErrorsEnabled() { return false; }
 inline bool IsScheduleCancellationOverWriteEnabled() { return false; }
@@ -327,6 +329,7 @@ inline bool IsPromiseBasedInprocTransportEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_PROMISE_BATCH_CLEANUP_ON_CANCEL
 inline bool IsPromiseBatchCleanupOnCancelEnabled() { return true; }
 inline bool IsPromiseFilterSendCancelMetadataEnabled() { return false; }
+inline bool IsPythonMemoryviewEnabled() { return false; }
 inline bool IsRetryInCallv3Enabled() { return false; }
 inline bool IsReturnPreexistingErrorsEnabled() { return false; }
 inline bool IsScheduleCancellationOverWriteEnabled() { return false; }
@@ -398,6 +401,7 @@ enum ExperimentIds {
   kExperimentIdPromiseBasedInprocTransport,
   kExperimentIdPromiseBatchCleanupOnCancel,
   kExperimentIdPromiseFilterSendCancelMetadata,
+  kExperimentIdPythonMemoryview,
   kExperimentIdRetryInCallv3,
   kExperimentIdReturnPreexistingErrors,
   kExperimentIdScheduleCancellationOverWrite,
@@ -611,6 +615,10 @@ inline bool IsPromiseBatchCleanupOnCancelEnabled() {
 #define GRPC_EXPERIMENT_IS_INCLUDED_PROMISE_FILTER_SEND_CANCEL_METADATA
 inline bool IsPromiseFilterSendCancelMetadataEnabled() {
   return IsExperimentEnabled<kExperimentIdPromiseFilterSendCancelMetadata>();
+}
+#define GRPC_EXPERIMENT_IS_INCLUDED_PYTHON_MEMORYVIEW
+inline bool IsPythonMemoryviewEnabled() {
+  return IsExperimentEnabled<kExperimentIdPythonMemoryview>();
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_RETRY_IN_CALLV3
 inline bool IsRetryInCallv3Enabled() {

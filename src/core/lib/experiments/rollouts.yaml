@@ -118,6 +118,8 @@
   default: true
 - name: promise_filter_send_cancel_metadata
   default: false
+- name: python_memoryview
+  default: false
 - name: schedule_cancellation_over_write
   default: false
 - name: skip_clear_peer_on_cancellation

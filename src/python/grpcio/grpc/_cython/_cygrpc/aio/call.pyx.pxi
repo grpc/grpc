@@ -383,7 +383,7 @@ cdef class _AioCall(GrpcCallWrapper):
 
     async def receive_serialized_message(self):
         """Receives one single raw message in bytes."""
-        cdef bytes received_message
+        cdef object received_message
 
         # Receives a message. Returns None when failed:
         # * EOF, no more messages to read;

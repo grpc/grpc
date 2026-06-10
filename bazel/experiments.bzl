@@ -65,6 +65,7 @@ EXPERIMENT_ENABLES = {
     "promise_based_inproc_transport": "promise_based_inproc_transport",
     "promise_batch_cleanup_on_cancel": "promise_batch_cleanup_on_cancel",
     "promise_filter_send_cancel_metadata": "promise_filter_send_cancel_metadata",
+    "python_memoryview": "python_memoryview",
     "retry_in_callv3": "retry_in_callv3",
     "return_preexisting_errors": "return_preexisting_errors",
     "schedule_cancellation_over_write": "schedule_cancellation_over_write",
