@@ -20,7 +20,6 @@
 FROM dockcross/linux-armv7
 
 # Configure git early so the cache reused by other py build based on the same image.
-# Trigger rebuild for python 3.15 frame pointers fix
 {% include "../git_config.include" %}
 
 RUN apt update && apt install -y build-essential zlib1g-dev libncurses5-dev libgdbm-dev \
