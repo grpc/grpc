@@ -1543,6 +1543,7 @@ TEST_P(SslTransportSecurityTest,
   DoHandshake();
 }
 #endif  // OPENSSL_IS_BORINGSSL
+
 TEST_P(SslTransportSecurityTest, SuccessfulHandshakeServerSpecifiesX25519) {
   auto tls_version = std::get<0>(GetParam());
   SetUpSslFixture(tls_version,
