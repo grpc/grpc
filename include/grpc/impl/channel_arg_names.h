@@ -441,5 +441,7 @@
 /** \} */
 /** If non-zero, enable TCP tracing and stats collection. */
 #define GRPC_ARG_TCP_TRACING_ENABLED "grpc.tcp_tracing_enabled"
+/** Server config fetcher. */
+#define GRPC_ARG_SERVER_CONFIG_FETCHER "grpc.server_config_fetcher"
 
 #endif /* GRPC_IMPL_CHANNEL_ARG_NAMES_H */

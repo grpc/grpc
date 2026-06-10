@@ -72,6 +72,8 @@ inline bool IsCallv3BatchValidationEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CHAOTIC_GOOD_FRAMING_LAYER
 inline bool IsChaoticGoodFramingLayerEnabled() { return true; }
 inline bool IsChaoticGoodSendSupportedFeaturesEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_CUSTOM_FRAME_CHECK
+inline bool IsCustomFrameCheckEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_ERROR_FLATTEN
 inline bool IsErrorFlattenEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_CLIENT
@@ -127,8 +129,6 @@ inline bool IsPickFirstIgnoreEmptyUpdatesEnabled() { return false; }
 inline bool IsPipelinedReadSecureEndpointEnabled() { return false; }
 inline bool IsPollsetAlternativeEnabled() { return false; }
 inline bool IsPrioritizeFinishedRequestsEnabled() { return false; }
-inline bool IsPromiseBasedHttp2ClientTransportEnabled() { return false; }
-inline bool IsPromiseBasedHttp2ServerTransportEnabled() { return false; }
 inline bool IsPromiseBasedInprocTransportEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_PROMISE_BATCH_CLEANUP_ON_CANCEL
 inline bool IsPromiseBatchCleanupOnCancelEnabled() { return true; }
@@ -148,6 +148,7 @@ inline bool IsTcpRcvLowatEnabled() { return false; }
 inline bool IsTsiFrameProtectorWithoutLocksEnabled() { return false; }
 inline bool IsUnconstrainedMaxQuotaBufferSizeEnabled() { return false; }
 inline bool IsUseCallEventEngineInCompletionQueueEnabled() { return false; }
+inline bool IsV2NonOwningWakerImplementationEnabled() { return false; }
 inline bool IsVerboseChannelzConnectionLoggingEnabled() { return false; }
 inline bool IsWildcardIpExpansionRestrictionEnabled() { return false; }
 inline bool IsXdsServerFilterChainPerRouteEnabled() { return false; }
@@ -168,6 +169,8 @@ inline bool IsCallv3BatchValidationEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CHAOTIC_GOOD_FRAMING_LAYER
 inline bool IsChaoticGoodFramingLayerEnabled() { return true; }
 inline bool IsChaoticGoodSendSupportedFeaturesEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_CUSTOM_FRAME_CHECK
+inline bool IsCustomFrameCheckEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_ERROR_FLATTEN
 inline bool IsErrorFlattenEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_CLIENT
@@ -223,8 +226,6 @@ inline bool IsPickFirstIgnoreEmptyUpdatesEnabled() { return false; }
 inline bool IsPipelinedReadSecureEndpointEnabled() { return false; }
 inline bool IsPollsetAlternativeEnabled() { return false; }
 inline bool IsPrioritizeFinishedRequestsEnabled() { return false; }
-inline bool IsPromiseBasedHttp2ClientTransportEnabled() { return false; }
-inline bool IsPromiseBasedHttp2ServerTransportEnabled() { return false; }
 inline bool IsPromiseBasedInprocTransportEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_PROMISE_BATCH_CLEANUP_ON_CANCEL
 inline bool IsPromiseBatchCleanupOnCancelEnabled() { return true; }
@@ -244,6 +245,7 @@ inline bool IsTcpRcvLowatEnabled() { return false; }
 inline bool IsTsiFrameProtectorWithoutLocksEnabled() { return false; }
 inline bool IsUnconstrainedMaxQuotaBufferSizeEnabled() { return false; }
 inline bool IsUseCallEventEngineInCompletionQueueEnabled() { return false; }
+inline bool IsV2NonOwningWakerImplementationEnabled() { return false; }
 inline bool IsVerboseChannelzConnectionLoggingEnabled() { return false; }
 inline bool IsWildcardIpExpansionRestrictionEnabled() { return false; }
 inline bool IsXdsServerFilterChainPerRouteEnabled() { return false; }
@@ -264,6 +266,8 @@ inline bool IsCallv3BatchValidationEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CHAOTIC_GOOD_FRAMING_LAYER
 inline bool IsChaoticGoodFramingLayerEnabled() { return true; }
 inline bool IsChaoticGoodSendSupportedFeaturesEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_CUSTOM_FRAME_CHECK
+inline bool IsCustomFrameCheckEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_ERROR_FLATTEN
 inline bool IsErrorFlattenEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_CLIENT
@@ -319,8 +323,6 @@ inline bool IsPickFirstIgnoreEmptyUpdatesEnabled() { return false; }
 inline bool IsPipelinedReadSecureEndpointEnabled() { return false; }
 inline bool IsPollsetAlternativeEnabled() { return false; }
 inline bool IsPrioritizeFinishedRequestsEnabled() { return false; }
-inline bool IsPromiseBasedHttp2ClientTransportEnabled() { return false; }
-inline bool IsPromiseBasedHttp2ServerTransportEnabled() { return false; }
 inline bool IsPromiseBasedInprocTransportEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_PROMISE_BATCH_CLEANUP_ON_CANCEL
 inline bool IsPromiseBatchCleanupOnCancelEnabled() { return true; }
@@ -340,6 +342,7 @@ inline bool IsTcpRcvLowatEnabled() { return false; }
 inline bool IsTsiFrameProtectorWithoutLocksEnabled() { return false; }
 inline bool IsUnconstrainedMaxQuotaBufferSizeEnabled() { return false; }
 inline bool IsUseCallEventEngineInCompletionQueueEnabled() { return false; }
+inline bool IsV2NonOwningWakerImplementationEnabled() { return false; }
 inline bool IsVerboseChannelzConnectionLoggingEnabled() { return false; }
 inline bool IsWildcardIpExpansionRestrictionEnabled() { return false; }
 inline bool IsXdsServerFilterChainPerRouteEnabled() { return false; }
@@ -354,6 +357,7 @@ enum ExperimentIds {
   kExperimentIdCallv3BatchValidation,
   kExperimentIdChaoticGoodFramingLayer,
   kExperimentIdChaoticGoodSendSupportedFeatures,
+  kExperimentIdCustomFrameCheck,
   kExperimentIdErrorFlatten,
   kExperimentIdEventEngineClient,
   kExperimentIdEventEngineDns,
@@ -391,8 +395,6 @@ enum ExperimentIds {
   kExperimentIdPipelinedReadSecureEndpoint,
   kExperimentIdPollsetAlternative,
   kExperimentIdPrioritizeFinishedRequests,
-  kExperimentIdPromiseBasedHttp2ClientTransport,
-  kExperimentIdPromiseBasedHttp2ServerTransport,
   kExperimentIdPromiseBasedInprocTransport,
   kExperimentIdPromiseBatchCleanupOnCancel,
   kExperimentIdPromiseFilterSendCancelMetadata,
@@ -410,6 +412,7 @@ enum ExperimentIds {
   kExperimentIdTsiFrameProtectorWithoutLocks,
   kExperimentIdUnconstrainedMaxQuotaBufferSize,
   kExperimentIdUseCallEventEngineInCompletionQueue,
+  kExperimentIdV2NonOwningWakerImplementation,
   kExperimentIdVerboseChannelzConnectionLogging,
   kExperimentIdWildcardIpExpansionRestriction,
   kExperimentIdXdsServerFilterChainPerRoute,
@@ -444,6 +447,10 @@ inline bool IsChaoticGoodFramingLayerEnabled() {
 #define GRPC_EXPERIMENT_IS_INCLUDED_CHAOTIC_GOOD_SEND_SUPPORTED_FEATURES
 inline bool IsChaoticGoodSendSupportedFeaturesEnabled() {
   return IsExperimentEnabled<kExperimentIdChaoticGoodSendSupportedFeatures>();
+}
+#define GRPC_EXPERIMENT_IS_INCLUDED_CUSTOM_FRAME_CHECK
+inline bool IsCustomFrameCheckEnabled() {
+  return IsExperimentEnabled<kExperimentIdCustomFrameCheck>();
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_ERROR_FLATTEN
 inline bool IsErrorFlattenEnabled() {
@@ -593,14 +600,6 @@ inline bool IsPollsetAlternativeEnabled() {
 inline bool IsPrioritizeFinishedRequestsEnabled() {
   return IsExperimentEnabled<kExperimentIdPrioritizeFinishedRequests>();
 }
-#define GRPC_EXPERIMENT_IS_INCLUDED_PROMISE_BASED_HTTP2_CLIENT_TRANSPORT
-inline bool IsPromiseBasedHttp2ClientTransportEnabled() {
-  return IsExperimentEnabled<kExperimentIdPromiseBasedHttp2ClientTransport>();
-}
-#define GRPC_EXPERIMENT_IS_INCLUDED_PROMISE_BASED_HTTP2_SERVER_TRANSPORT
-inline bool IsPromiseBasedHttp2ServerTransportEnabled() {
-  return IsExperimentEnabled<kExperimentIdPromiseBasedHttp2ServerTransport>();
-}
 #define GRPC_EXPERIMENT_IS_INCLUDED_PROMISE_BASED_INPROC_TRANSPORT
 inline bool IsPromiseBasedInprocTransportEnabled() {
   return IsExperimentEnabled<kExperimentIdPromiseBasedInprocTransport>();
@@ -669,6 +668,10 @@ inline bool IsUnconstrainedMaxQuotaBufferSizeEnabled() {
 inline bool IsUseCallEventEngineInCompletionQueueEnabled() {
   return IsExperimentEnabled<
       kExperimentIdUseCallEventEngineInCompletionQueue>();
+}
+#define GRPC_EXPERIMENT_IS_INCLUDED_V2_NON_OWNING_WAKER_IMPLEMENTATION
+inline bool IsV2NonOwningWakerImplementationEnabled() {
+  return IsExperimentEnabled<kExperimentIdV2NonOwningWakerImplementation>();
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_VERBOSE_CHANNELZ_CONNECTION_LOGGING
 inline bool IsVerboseChannelzConnectionLoggingEnabled() {

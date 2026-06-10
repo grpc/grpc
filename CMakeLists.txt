@@ -1731,6 +1731,7 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx read_context_test)
   add_dependencies(buildtests_cxx ref_counted_ptr_test)
   add_dependencies(buildtests_cxx ref_counted_test)
+  add_dependencies(buildtests_cxx regional_access_boundary_fetcher_test)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     add_dependencies(buildtests_cxx remove_stream_from_stalled_lists_test)
   endif()
@@ -2309,6 +2310,7 @@ add_library(grpc
   src/core/credentials/call/jwt_util.cc
   src/core/credentials/call/oauth2/oauth2_credentials.cc
   src/core/credentials/call/plugin/plugin_credentials.cc
+  src/core/credentials/call/regional_access_boundary_fetcher.cc
   src/core/credentials/call/token_fetcher/token_fetcher_credentials.cc
   src/core/credentials/transport/alts/alts_credentials.cc
   src/core/credentials/transport/alts/alts_security_connector.cc
@@ -2759,7 +2761,6 @@ add_library(grpc
   src/core/ext/upbdefs-gen/xds/type/v3/typed_struct.upbdefs.c
   src/core/filter/auth/client_auth_filter.cc
   src/core/filter/auth/server_auth_filter.cc
-  src/core/filter/blackboard.cc
   src/core/filter/composite/composite_filter.cc
   src/core/filter/fused_filters.cc
   src/core/handshaker/endpoint_info/endpoint_info_handshaker.cc
@@ -2923,6 +2924,7 @@ add_library(grpc
   src/core/lib/resource_quota/periodic_update.cc
   src/core/lib/resource_quota/resource_quota.cc
   src/core/lib/resource_quota/stream_quota.cc
+  src/core/lib/resource_quota/telemetry.cc
   src/core/lib/resource_quota/thread_quota.cc
   src/core/lib/resource_tracker/resource_tracker.cc
   src/core/lib/security/authorization/audit_logging.cc
@@ -3107,6 +3109,7 @@ add_library(grpc
   src/core/util/wait_for_single_owner.cc
   src/core/util/windows/directory_reader.cc
   src/core/util/work_serializer.cc
+  src/core/xds/grpc/blackboard.cc
   src/core/xds/grpc/certificate_provider_store.cc
   src/core/xds/grpc/file_watcher_certificate_provider_factory.cc
   src/core/xds/grpc/xds_audit_logger_registry.cc
@@ -3591,7 +3594,6 @@ add_library(grpc_unsecure
   src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/service.upbdefs.c
   src/core/filter/auth/client_auth_filter.cc
   src/core/filter/auth/server_auth_filter.cc
-  src/core/filter/blackboard.cc
   src/core/filter/fused_filters.cc
   src/core/handshaker/endpoint_info/endpoint_info_handshaker.cc
   src/core/handshaker/handshaker.cc
@@ -3753,6 +3755,7 @@ add_library(grpc_unsecure
   src/core/lib/resource_quota/periodic_update.cc
   src/core/lib/resource_quota/resource_quota.cc
   src/core/lib/resource_quota/stream_quota.cc
+  src/core/lib/resource_quota/telemetry.cc
   src/core/lib/resource_quota/thread_quota.cc
   src/core/lib/resource_tracker/resource_tracker.cc
   src/core/lib/security/authorization/authorization_policy_provider_vtable.cc
@@ -6097,7 +6100,6 @@ add_library(grpc_authorization_provider
   src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/service.upbdefs.c
   src/core/filter/auth/client_auth_filter.cc
   src/core/filter/auth/server_auth_filter.cc
-  src/core/filter/blackboard.cc
   src/core/handshaker/endpoint_info/endpoint_info_handshaker.cc
   src/core/handshaker/handshaker.cc
   src/core/handshaker/handshaker_registry.cc
@@ -6251,6 +6253,7 @@ add_library(grpc_authorization_provider
   src/core/lib/resource_quota/periodic_update.cc
   src/core/lib/resource_quota/resource_quota.cc
   src/core/lib/resource_quota/stream_quota.cc
+  src/core/lib/resource_quota/telemetry.cc
   src/core/lib/resource_quota/thread_quota.cc
   src/core/lib/resource_tracker/resource_tracker.cc
   src/core/lib/security/authorization/audit_logging.cc
@@ -9494,7 +9497,6 @@ add_executable(blackboard_test
   src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/channelz.upbdefs.c
   src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/property_list.upbdefs.c
   src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/service.upbdefs.c
-  src/core/filter/blackboard.cc
   src/core/lib/address_utils/parse_address.cc
   src/core/lib/address_utils/sockaddr_utils.cc
   src/core/lib/channel/channel_args.cc
@@ -9536,7 +9538,8 @@ add_executable(blackboard_test
   src/core/util/time.cc
   src/core/util/uri.cc
   src/core/util/work_serializer.cc
-  test/core/filters/blackboard_test.cc
+  src/core/xds/grpc/blackboard.cc
+  test/core/xds/blackboard_test.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -9951,6 +9954,7 @@ add_executable(call_filters_test
   src/core/lib/resource_quota/periodic_update.cc
   src/core/lib/resource_quota/resource_quota.cc
   src/core/lib/resource_quota/stream_quota.cc
+  src/core/lib/resource_quota/telemetry.cc
   src/core/lib/resource_quota/thread_quota.cc
   src/core/lib/resource_tracker/resource_tracker.cc
   src/core/lib/slice/percent_encoding.cc
@@ -10287,7 +10291,6 @@ add_executable(call_utils_test
   src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/promise.upbdefs.c
   src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/property_list.upbdefs.c
   src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/service.upbdefs.c
-  src/core/filter/blackboard.cc
   src/core/handshaker/handshaker_registry.cc
   src/core/handshaker/proxy_mapper_registry.cc
   src/core/lib/address_utils/parse_address.cc
@@ -10436,6 +10439,7 @@ add_executable(call_utils_test
   src/core/lib/resource_quota/periodic_update.cc
   src/core/lib/resource_quota/resource_quota.cc
   src/core/lib/resource_quota/stream_quota.cc
+  src/core/lib/resource_quota/telemetry.cc
   src/core/lib/resource_quota/thread_quota.cc
   src/core/lib/resource_tracker/resource_tracker.cc
   src/core/lib/slice/percent_encoding.cc
@@ -10655,6 +10659,7 @@ add_executable(cancel_callback_test
   src/core/lib/resource_quota/periodic_update.cc
   src/core/lib/resource_quota/resource_quota.cc
   src/core/lib/resource_quota/stream_quota.cc
+  src/core/lib/resource_quota/telemetry.cc
   src/core/lib/resource_quota/thread_quota.cc
   src/core/lib/resource_tracker/resource_tracker.cc
   src/core/lib/slice/percent_encoding.cc
@@ -12299,6 +12304,7 @@ add_executable(chunked_vector_test
   src/core/lib/resource_quota/periodic_update.cc
   src/core/lib/resource_quota/resource_quota.cc
   src/core/lib/resource_quota/stream_quota.cc
+  src/core/lib/resource_quota/telemetry.cc
   src/core/lib/resource_quota/thread_quota.cc
   src/core/lib/resource_tracker/resource_tracker.cc
   src/core/lib/slice/percent_encoding.cc
@@ -18282,7 +18288,6 @@ add_executable(filter_fusion_test
   src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/promise.upbdefs.c
   src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/property_list.upbdefs.c
   src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/service.upbdefs.c
-  src/core/filter/blackboard.cc
   src/core/handshaker/handshaker_registry.cc
   src/core/handshaker/proxy_mapper_registry.cc
   src/core/lib/address_utils/parse_address.cc
@@ -18431,6 +18436,7 @@ add_executable(filter_fusion_test
   src/core/lib/resource_quota/periodic_update.cc
   src/core/lib/resource_quota/resource_quota.cc
   src/core/lib/resource_quota/stream_quota.cc
+  src/core/lib/resource_quota/telemetry.cc
   src/core/lib/resource_quota/thread_quota.cc
   src/core/lib/resource_tracker/resource_tracker.cc
   src/core/lib/slice/percent_encoding.cc
@@ -18731,6 +18737,7 @@ add_executable(flow_control_manager_test
   src/core/lib/resource_quota/periodic_update.cc
   src/core/lib/resource_quota/resource_quota.cc
   src/core/lib/resource_quota/stream_quota.cc
+  src/core/lib/resource_quota/telemetry.cc
   src/core/lib/resource_quota/thread_quota.cc
   src/core/lib/resource_tracker/resource_tracker.cc
   src/core/lib/slice/percent_encoding.cc
@@ -18862,6 +18869,7 @@ add_executable(flow_control_test
   src/core/lib/resource_quota/periodic_update.cc
   src/core/lib/resource_quota/resource_quota.cc
   src/core/lib/resource_quota/stream_quota.cc
+  src/core/lib/resource_quota/telemetry.cc
   src/core/lib/resource_quota/thread_quota.cc
   src/core/lib/resource_tracker/resource_tracker.cc
   src/core/lib/slice/percent_encoding.cc
@@ -18988,6 +18996,7 @@ add_executable(for_each_test
   src/core/lib/resource_quota/periodic_update.cc
   src/core/lib/resource_quota/resource_quota.cc
   src/core/lib/resource_quota/stream_quota.cc
+  src/core/lib/resource_quota/telemetry.cc
   src/core/lib/resource_quota/thread_quota.cc
   src/core/lib/resource_tracker/resource_tracker.cc
   src/core/lib/slice/percent_encoding.cc
@@ -19249,6 +19258,7 @@ add_executable(frame_test
   src/core/lib/resource_quota/periodic_update.cc
   src/core/lib/resource_quota/resource_quota.cc
   src/core/lib/resource_quota/stream_quota.cc
+  src/core/lib/resource_quota/telemetry.cc
   src/core/lib/resource_quota/thread_quota.cc
   src/core/lib/resource_tracker/resource_tracker.cc
   src/core/lib/slice/percent_encoding.cc
@@ -22599,7 +22609,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/promise.upbdefs.c
     src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/property_list.upbdefs.c
     src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/service.upbdefs.c
-    src/core/filter/blackboard.cc
     src/core/handshaker/handshaker_registry.cc
     src/core/handshaker/proxy_mapper_registry.cc
     src/core/lib/address_utils/parse_address.cc
@@ -22748,6 +22757,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     src/core/lib/resource_quota/periodic_update.cc
     src/core/lib/resource_quota/resource_quota.cc
     src/core/lib/resource_quota/stream_quota.cc
+    src/core/lib/resource_quota/telemetry.cc
     src/core/lib/resource_quota/thread_quota.cc
     src/core/lib/resource_tracker/resource_tracker.cc
     src/core/lib/slice/percent_encoding.cc
@@ -23381,6 +23391,7 @@ add_executable(interceptor_list_test
   src/core/lib/resource_quota/periodic_update.cc
   src/core/lib/resource_quota/resource_quota.cc
   src/core/lib/resource_quota/stream_quota.cc
+  src/core/lib/resource_quota/telemetry.cc
   src/core/lib/resource_quota/thread_quota.cc
   src/core/lib/resource_tracker/resource_tracker.cc
   src/core/lib/slice/percent_encoding.cc
@@ -24297,6 +24308,7 @@ add_executable(latent_see_test
   src/core/lib/resource_quota/periodic_update.cc
   src/core/lib/resource_quota/resource_quota.cc
   src/core/lib/resource_quota/stream_quota.cc
+  src/core/lib/resource_quota/telemetry.cc
   src/core/lib/resource_quota/thread_quota.cc
   src/core/lib/resource_tracker/resource_tracker.cc
   src/core/lib/slice/percent_encoding.cc
@@ -25228,6 +25240,7 @@ add_executable(map_pipe_test
   src/core/lib/resource_quota/periodic_update.cc
   src/core/lib/resource_quota/resource_quota.cc
   src/core/lib/resource_quota/stream_quota.cc
+  src/core/lib/resource_quota/telemetry.cc
   src/core/lib/resource_quota/thread_quota.cc
   src/core/lib/resource_tracker/resource_tracker.cc
   src/core/lib/slice/percent_encoding.cc
@@ -30808,6 +30821,58 @@ target_link_libraries(ref_counted_test
 
 endif()
 if(gRPC_BUILD_TESTS)
+
+add_executable(regional_access_boundary_fetcher_test
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
+  test/core/credentials/call/regional_access_boundary_fetcher_test.cc
+  test/core/event_engine/event_engine_test_utils.cc
+  test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
+)
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(regional_access_boundary_fetcher_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
+target_compile_features(regional_access_boundary_fetcher_test PUBLIC cxx_std_17)
+target_include_directories(regional_access_boundary_fetcher_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(regional_access_boundary_fetcher_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  gtest
+  absl::log_entry
+  absl::log_sink
+  absl::log_sink_registry
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  grpc_test_util
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
   add_executable(remove_stream_from_stalled_lists_test
@@ -30908,6 +30973,7 @@ add_executable(request_buffer_test
   src/core/lib/resource_quota/periodic_update.cc
   src/core/lib/resource_quota/resource_quota.cc
   src/core/lib/resource_quota/stream_quota.cc
+  src/core/lib/resource_quota/telemetry.cc
   src/core/lib/resource_quota/thread_quota.cc
   src/core/lib/resource_tracker/resource_tracker.cc
   src/core/lib/slice/percent_encoding.cc
@@ -37178,7 +37244,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/promise.upbdefs.c
     src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/property_list.upbdefs.c
     src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/service.upbdefs.c
-    src/core/filter/blackboard.cc
     src/core/handshaker/handshaker_registry.cc
     src/core/handshaker/proxy_mapper_registry.cc
     src/core/lib/address_utils/parse_address.cc
@@ -37327,6 +37392,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     src/core/lib/resource_quota/periodic_update.cc
     src/core/lib/resource_quota/resource_quota.cc
     src/core/lib/resource_quota/stream_quota.cc
+    src/core/lib/resource_quota/telemetry.cc
     src/core/lib/resource_quota/thread_quota.cc
     src/core/lib/resource_tracker/resource_tracker.cc
     src/core/lib/slice/percent_encoding.cc

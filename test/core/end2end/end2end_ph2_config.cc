@@ -47,8 +47,7 @@ class Ph2InsecureFixture : public InsecureFixture {
  public:
   explicit Ph2InsecureFixture(bool enable_retry) : enable_retry_(enable_retry) {
     // At Least one of the 2 peers MUST be a PH2
-    GRPC_DCHECK(IsPromiseBasedHttp2ClientTransportEnabled() ||
-                IsPromiseBasedHttp2ServerTransportEnabled());
+    GRPC_DCHECK(IsPh2Test());
   }
 
   ChannelArgs MutateClientArgs(ChannelArgs args) override {
@@ -100,31 +99,31 @@ class Ph2InsecureFixture : public InsecureFixture {
 
 std::vector<CoreTestConfiguration> End2endTestConfigs() {
   std::vector<CoreTestConfiguration> list_of_configs;
-  if (IsExperimentEnabled(
-          ExperimentIds::kExperimentIdPromiseBasedHttp2ClientTransport)) {
+  if (IsExperimentEnabled(ExperimentIds::kExperimentIdPh2Client)) {
     std::vector<CoreTestConfiguration> skip_windows_configs;
-    // TODO(tjagtap) : [PH2][P3] : Add configs for
-    // 1. CHTTP2 Client vs PH2 server
-    // 2. and PH2 Client vs PH2 server
-    list_of_configs = std::vector<CoreTestConfiguration>{CoreTestConfiguration{
-        /*name=*/GRPC_HTTP2_PH2_CLIENT_CHTTP2_SERVER_CONFIG,
-        /*feature_mask=*/FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
-            GRPC_HTTP2_PH2_FEATURE_MASK | FEATURE_MASK_DO_NOT_FUZZ |
-            FEATURE_MASK_DOES_NOT_SUPPORT_RETRY,
-        // TODO(tjagtap) : [PH2][P3] Explore if fuzzing can be enabled.
-        /*overridden_call_host=*/nullptr,
-        /*create_fixture=*/
-        [](const ChannelArgs& /*client_args*/,
-           const ChannelArgs& /*server_args*/) {
-          return std::make_unique<Ph2InsecureFixture>(
-              /*enable_retry=*/false);
-        },
-        /* include_test_suites */
-        GRPC_HTTP2_PROMISE_CLIENT_TRANSPORT_ALLOW_SUITE,
-        /* include_specific_tests */
-        "",
-        /* exclude_specific_tests */
-        GRPC_HTTP2_PROMISE_CLIENT_TRANSPORT_AVOID_LIST}};
+    std::vector<CoreTestConfiguration> ph2client_chttp2server_configs;
+    // TODO(akshitpatel) : [PH2][P4] : This test config has been enabled for
+    // fuzzing. If lot of failures occur, then disable fuzzing for this config.
+    ph2client_chttp2server_configs =
+        std::vector<CoreTestConfiguration>{CoreTestConfiguration{
+            /*name=*/GRPC_HTTP2_PH2_CLIENT_CHTTP2_SERVER_CONFIG,
+            /*feature_mask=*/FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
+                GRPC_HTTP2_PH2_FEATURE_MASK |
+                FEATURE_MASK_DOES_NOT_SUPPORT_RETRY,
+            // TODO(tjagtap) : [PH2][P3] Explore if fuzzing can be enabled.
+            /*overridden_call_host=*/nullptr,
+            /*create_fixture=*/
+            [](const ChannelArgs& /*client_args*/,
+               const ChannelArgs& /*server_args*/) {
+              return std::make_unique<Ph2InsecureFixture>(
+                  /*enable_retry=*/false);
+            },
+            /* include_test_suites */
+            GRPC_HTTP2_PROMISE_CLIENT_TRANSPORT_ALLOW_SUITE,
+            /* include_specific_tests */
+            "",
+            /* exclude_specific_tests */
+            GRPC_HTTP2_PROMISE_CLIENT_TRANSPORT_AVOID_LIST}};
 
     skip_windows_configs = std::vector<CoreTestConfiguration>{
         CoreTestConfiguration{
@@ -416,10 +415,71 @@ std::vector<CoreTestConfiguration> End2endTestConfigs() {
 #ifndef GPR_WINDOWS
     // TODO(akshitpatel): [PH2][P5] - Re-enable tests on Windows.
     // Due to capacity constraints, we are skipping a few tests on windows.
-    list_of_configs.insert(list_of_configs.end(), skip_windows_configs.begin(),
-                           skip_windows_configs.end());
+    ph2client_chttp2server_configs.insert(ph2client_chttp2server_configs.end(),
+                                          skip_windows_configs.begin(),
+                                          skip_windows_configs.end());
 #endif
+    list_of_configs.insert(list_of_configs.end(),
+                           ph2client_chttp2server_configs.begin(),
+                           ph2client_chttp2server_configs.end());
   }
+
+  // Config for chttp2 client and ph2 server.
+  if (IsPh2ServerEnabled()) {
+    std::vector<CoreTestConfiguration> chttp2client_ph2server_configs;
+
+    // TODO(akshitpatel) : [PH2][P4] : This test config has been enabled for
+    // fuzzing. If lot of failures occur, then disable fuzzing for this config.
+    chttp2client_ph2server_configs.push_back(CoreTestConfiguration{
+        /*name=*/GRPC_HTTP2_CHTTP2_CLIENT_PH2_SERVER_CONFIG,
+        /*feature_mask=*/FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
+            GRPC_HTTP2_PH2_FEATURE_MASK | FEATURE_MASK_DOES_NOT_SUPPORT_RETRY,
+        /*overridden_call_host=*/nullptr,
+        /*create_fixture=*/
+        [](const ChannelArgs& /*client_args*/,
+           const ChannelArgs& /*server_args*/) {
+          return std::make_unique<Ph2InsecureFixture>(
+              /*enable_retry=*/false);
+        },
+        /* include_test_suites */
+        "",
+        /* include_specific_tests */
+        "CoreEnd2endTests.SimpleRequest",
+        /* exclude_specific_tests */
+        ""});
+    list_of_configs.insert(list_of_configs.end(),
+                           chttp2client_ph2server_configs.begin(),
+                           chttp2client_ph2server_configs.end());
+  }
+
+  // Config for ph2 client and ph2 server.
+  if (IsPh2ClientServerEnabled()) {
+    std::vector<CoreTestConfiguration> ph2client_ph2server_configs;
+
+    // TODO(akshitpatel) : [PH2][P4] : This test config has been enabled for
+    // fuzzing. If lot of failures occur, then disable fuzzing for this config.
+    ph2client_ph2server_configs.push_back(CoreTestConfiguration{
+        /*name=*/GRPC_HTTP2_PH2_CLIENT_PH2_SERVER_CONFIG,
+        /*feature_mask=*/FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
+            GRPC_HTTP2_PH2_FEATURE_MASK | FEATURE_MASK_DOES_NOT_SUPPORT_RETRY,
+        /*overridden_call_host=*/nullptr,
+        /*create_fixture=*/
+        [](const ChannelArgs& /*client_args*/,
+           const ChannelArgs& /*server_args*/) {
+          return std::make_unique<Ph2InsecureFixture>(
+              /*enable_retry=*/false);
+        },
+        /* include_test_suites */
+        "",
+        /* include_specific_tests */
+        "CoreEnd2endTests.SimpleRequest",
+        /* exclude_specific_tests */
+        ""});
+    list_of_configs.insert(list_of_configs.end(),
+                           ph2client_ph2server_configs.begin(),
+                           ph2client_ph2server_configs.end());
+  }
+
   return list_of_configs;
 }
 

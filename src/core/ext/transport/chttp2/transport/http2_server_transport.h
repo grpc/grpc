@@ -579,11 +579,13 @@ class Http2ServerTransport final : public ServerTransport,
   //////////////////////////////////////////////////////////////////////////////
   // Misc Transport Stuff
 
-  void ReportDisconnection(const absl::Status& status,
+  void ReportDisconnection(grpc_connectivity_state state,
+                           const absl::Status& status,
                            StateWatcher::DisconnectInfo disconnect_info,
                            const char* reason);
 
-  void ReportDisconnectionLocked(const absl::Status& status,
+  void ReportDisconnectionLocked(grpc_connectivity_state state,
+                                 const absl::Status& status,
                                  StateWatcher::DisconnectInfo disconnect_info,
                                  const char* reason)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(&transport_mutex_);

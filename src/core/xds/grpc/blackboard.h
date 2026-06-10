@@ -14,19 +14,22 @@
 // limitations under the License.
 //
 
-#ifndef GRPC_SRC_CORE_FILTER_BLACKBOARD_H
-#define GRPC_SRC_CORE_FILTER_BLACKBOARD_H
+#ifndef GRPC_SRC_CORE_XDS_GRPC_BLACKBOARD_H
+#define GRPC_SRC_CORE_XDS_GRPC_BLACKBOARD_H
 
 #include <string>
 #include <utility>
 
 #include "src/core/resolver/endpoint_addresses.h"
 #include "src/core/util/debug_location.h"
+#include "src/core/util/dual_ref_counted.h"
 #include "src/core/util/ref_counted.h"
 #include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/sync.h"
 #include "src/core/util/unique_type_name.h"
 #include "src/core/util/useful.h"
 #include "absl/container/flat_hash_map.h"
+#include "absl/functional/function_ref.h"
 #include "absl/strings/string_view.h"
 
 namespace grpc_core {
@@ -41,7 +44,17 @@ class Blackboard : public RefCounted<Blackboard> {
   // All entries must derive from this type.
   // They must also have a static method with the following signature:
   //  static UniqueTypeName Type();
-  class Entry : public RefCounted<Entry> {};
+  class Entry : public DualRefCounted<Entry> {
+   public:
+    void Orphaned() final;
+
+   private:
+    friend class Blackboard;
+
+    RefCountedPtr<Blackboard> blackboard_;
+    UniqueTypeName type_{GRPC_UNIQUE_TYPE_NAME_HERE("")};
+    std::string key_;
+  };
 
   // Returns an entry for a particular type and name, or null if not present.
   template <typename T>
@@ -49,22 +62,28 @@ class Blackboard : public RefCounted<Blackboard> {
     return Get(T::Type(), key).template TakeAsSubclass<T>();
   }
 
-  // Sets an entry for a particular type and name.
+  // Gets the entry for the specified key.  If not present, invokes
+  // construct to create it.  Returns the entry.
   template <typename T>
-  void Set(const std::string& key, RefCountedPtr<T> entry) {
-    Set(T::Type(), key, std::move(entry));
+  RefCountedPtr<T> GetOrSet(const std::string& key,
+                            absl::FunctionRef<RefCountedPtr<T>()> construct) {
+    return GetOrSet(T::Type(), key, std::move(construct))
+        .template TakeAsSubclass<T>();
   }
 
  private:
   RefCountedPtr<Entry> Get(UniqueTypeName type, const std::string& key) const;
-  void Set(UniqueTypeName type, const std::string& key,
-           RefCountedPtr<Entry> entry);
+  RefCountedPtr<Entry> GetOrSet(
+      UniqueTypeName type, const std::string& key,
+      absl::FunctionRef<RefCountedPtr<Entry>()> construct);
+  void Remove(UniqueTypeName type, const std::string& key, Entry* entry);
 
+  mutable Mutex mu_;
   absl::flat_hash_map<std::pair<UniqueTypeName, std::string>,
-                      RefCountedPtr<Entry>>
-      map_;
+                      WeakRefCountedPtr<Entry>>
+      map_ ABSL_GUARDED_BY(&mu_);
 };
 
 }  // namespace grpc_core
 
-#endif  // GRPC_SRC_CORE_FILTER_BLACKBOARD_H
+#endif  // GRPC_SRC_CORE_XDS_GRPC_BLACKBOARD_H

@@ -166,6 +166,8 @@ void Http2ServerTransport::SpawnAddChannelzData(RefCountedPtr<Party> party,
                 .Set("keepalive_time", self->keepalive_time_)
                 .Set("keepalive_permit_without_calls",
                      self->keepalive_permit_without_calls_)
+                .Set("max_requests_per_read",
+                     self->read_context_.max_new_streams_per_read_cycle())
                 .Set("settings", self->settings_->ChannelzProperties())
                 .Set("flow_control",
                      self->flow_control_.stats().ChannelzProperties()));
@@ -352,8 +354,7 @@ Http2Status Http2ServerTransport::ProcessIncomingFrame(Http2DataFrame&& frame) {
     if (message != nullptr) {
       GRPC_HTTP2_SERVER_DLOG
           << "Http2ServerTransport::ProcessIncomingFrame(DataFrame) "
-             "SpawnPushMessage "
-          << message->DebugString();
+             "SpawnPushMessage ";
       stream->GetCallInitiator().SpawnPushMessage(std::move(message));
       continue;
     }
@@ -362,27 +363,17 @@ Http2Status Http2ServerTransport::ProcessIncomingFrame(Http2DataFrame&& frame) {
     break;
   }
 
-  // TODO(tjagtap) : [PH2][P4] : List of Tests:
-  // 1. Data frame with unknown stream ID
-  // 2. Data frame with only half a message and then end stream
-  // 3. One data frame with a full message
-  // 4. Three data frames with one full message
-  // 5. One data frame with three full messages. All messages should be pushed.
-  // Will need to mock the call_initiator object and test this along with the
-  // Header reading code. Because we need a stream in place for the lookup to
-  // work.
   return Http2Status::Ok();
 }
 
 template <typename T>
 Http2Status Http2ServerTransport::ProcessIncomingMetadata(T&& frame) {
-  // State update MUST happen before processing the frame.
-  read_context_.UpdateState(frame);
-
   ping_manager_->ReceivedDataFrame();
 
   bool is_new_stream = false;
   RefCountedPtr<Stream> stream = nullptr;
+  // State update MUST happen before processing the frame.
+  read_context_.UpdateState(frame, /*is_existing_stream=*/(stream != nullptr));
   if (!read_context_.IsWaitingForContinuationFrame()) {
     // This is a HEADERS frame.
     stream = LookupStream(frame.stream_id);
@@ -404,10 +395,6 @@ Http2Status Http2ServerTransport::ProcessIncomingMetadata(T&& frame) {
     // frame and streams that are reserved using PUSH_PROMISE. An endpoint that
     // receives an unexpected stream identifier MUST respond with a connection
     // error (Section 5.4.1) of type PROTOCOL_ERROR.
-    GRPC_HTTP2_SERVER_DLOG << "Http2ServerTransport::ProcessIncomingMetadata { "
-                              "stream_id="
-                           << frame.stream_id << "} Lookup Failed";
-
     Http2Status append_result =
         read_context_.header_assembler().AppendFrame(frame);
     if (!append_result.IsOk()) {
@@ -438,7 +425,6 @@ Http2Status Http2ServerTransport::ProcessIncomingMetadata(T&& frame) {
       return validation_status;
     }
   }
-
   // Frame payload has either been processed or moved to the HeaderAssembler.
   return Http2Status::Ok();
 }
@@ -808,7 +794,6 @@ auto Http2ServerTransport::ReadAndProcessOneFrame() {
         Poll<absl::Status> poll_result = read_context_.MaybePauseReadLoop();
         if (poll_result.pending()) {
           TriggerWriteCycleOrHandleError();
-          return Pending{};
         }
         return poll_result;
       }));
@@ -1851,19 +1836,19 @@ absl::Status Http2ServerTransport::AckPing(uint64_t opaque_data) {
 // Misc Transport Stuff
 
 void Http2ServerTransport::ReportDisconnection(
-    const absl::Status& status, StateWatcher::DisconnectInfo disconnect_info,
-    const char* reason) {
+    const grpc_connectivity_state state, const absl::Status& status,
+    StateWatcher::DisconnectInfo disconnect_info, const char* reason) {
   MutexLock lock(&transport_mutex_);
-  ReportDisconnectionLocked(status, disconnect_info, reason);
+  ReportDisconnectionLocked(state, status, disconnect_info, reason);
 }
 
 void Http2ServerTransport::ReportDisconnectionLocked(
-    const absl::Status& status, StateWatcher::DisconnectInfo disconnect_info,
-    const char* reason) {
+    const grpc_connectivity_state state, const absl::Status& status,
+    StateWatcher::DisconnectInfo disconnect_info, const char* reason) {
   GRPC_HTTP2_SERVER_DLOG
       << "Http2ServerTransport::ReportDisconnectionLocked status="
       << status.ToString() << "; reason=" << reason;
-  state_tracker_.SetState(GRPC_CHANNEL_TRANSIENT_FAILURE, status, reason);
+  state_tracker_.SetState(state, status, reason);
   NotifyStateWatcherOnDisconnectLocked(status, disconnect_info);
 }
 
@@ -2046,7 +2031,7 @@ Http2ServerTransport::Http2ServerTransport(
           std::move(on_receive_settings))),
       on_close_callback_(on_close_callback),
       should_reset_ping_clock_(false),
-      read_context_(ReadContext::GetPeerString(endpoint_), kIsClient),
+      read_context_(MaxNewStreamsPerRead(channel_args), endpoint_, kIsClient),
       transport_write_context_(kIsClient),
       ping_manager_(std::nullopt),
       keepalive_manager_(std::nullopt),
@@ -2146,9 +2131,17 @@ void Http2ServerTransport::Orphan() {
   // MaybeSpawnCloseTransport(
   //     ToHttpOkOrConnError(absl::UnavailableError("Orphaned")));
 
+  // TODO(akshitpatel) : [PH2][P1] : These calls need to be moved to a different
+  // place once shutdown code is added.
+  ReportDisconnection(GRPC_CHANNEL_SHUTDOWN, absl::UnavailableError("Orphan"),
+                      StateWatcher::DisconnectInfo(), "Orphan");
   // TODO(tjagtap) : [PH2][P2] : Implement the needed cleanup. This is not the
   // right place to clean up the party.
   general_party_.reset();
+  if (on_close_callback_ != nullptr) {
+    ExecCtx::Run(DEBUG_LOCATION, on_close_callback_, absl::OkStatus());
+    on_close_callback_ = nullptr;
+  }
   Unref();
   GRPC_HTTP2_SERVER_DLOG << "Http2ServerTransport::Orphan End";
 }
