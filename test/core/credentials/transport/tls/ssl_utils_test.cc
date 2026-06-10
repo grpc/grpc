@@ -552,7 +552,7 @@ TEST(SslUtilsTest, SslCheckCallHostWithOverride) {
   RefCountedPtr<grpc_auth_context> auth_context =
       grpc_ssl_peer_to_auth_context(&peer, GRPC_TLS_TRANSPORT_SECURITY_TYPE);
   EXPECT_EQ(SslCheckCallHost("target.name.com", "target.name.com",
-                               "foo.bar.com", auth_context.get()),
+                             "foo.bar.com", auth_context.get()),
             absl::OkStatus());
   tsi_peer_destruct(&peer);
 }
