@@ -1558,8 +1558,6 @@ TEST_P(End2endTest, BinaryTrailerTest) {
 }
 
 TEST_P(End2endTest, ExpectErrorTest) {
-  SKIP_TEST_FOR_PH2_CLIENT("TODO(tjagtap) [PH2][P3][Client] Fix bug");
-
   ResetStub();
 
   std::vector<ErrorStatus> expected_status;
@@ -2389,8 +2387,7 @@ std::vector<TestScenario> CreateTestScenarios(bool use_proxy,
 
     // Add scenarios with virtual RPCs if promise-based HTTP2 transport is
     // disabled.
-    if (!grpc_core::IsPromiseBasedHttp2ClientTransportEnabled() &&
-        !grpc_core::IsPromiseBasedHttp2ServerTransportEnabled()) {
+    if (!IsPh2Test()) {
       scenarios.emplace_back(false, false, false, cred, false, true);
       if (test_callback_server) {
         scenarios.emplace_back(false, false, false, cred, true, true);
