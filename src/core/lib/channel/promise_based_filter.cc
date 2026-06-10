@@ -109,16 +109,21 @@ class BaseCallData::WeakWakerHandle final : public Wakeable {
 
  private:
   void WakeupGeneric(WakeupMask wakeup_mask) {
+    BaseCallData* wakeup_base = nullptr;
     mu_.Lock();
     if (base_ != nullptr) {
       auto* call_stack = base_->call_stack();
-      GRPC_CALL_STACK_REF(call_stack, "waker");
-      auto* base = base_;
-      mu_.Unlock();
-      base->WakeupNonOwning(wakeup_mask);
-      GRPC_CALL_STACK_UNREF(call_stack, "waker");
-    } else {
-      mu_.Unlock();
+#ifndef NDEBUG
+      if (call_stack->refcount.refs.RefIfNonZero(DEBUG_LOCATION, "waker")) {
+#else
+      if (call_stack->refcount.refs.RefIfNonZero()) {
+#endif
+        wakeup_base = base_;
+      }
+    }
+    mu_.Unlock();
+    if (wakeup_base != nullptr) {
+      wakeup_base->Wakeup(wakeup_mask);
     }
     Unref();
   }
