@@ -381,8 +381,6 @@ class InterceptedCall:
 
         exc = self._interceptors_task.exception()
         if exc is not None:
-            if isinstance(exc, asyncio.CancelledError):
-                return True
             if isinstance(exc, AioRpcError):
                 return exc.code() == grpc.StatusCode.CANCELLED
             return False
