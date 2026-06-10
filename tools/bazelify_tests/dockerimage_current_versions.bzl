@@ -106,7 +106,7 @@ DOCKERIMAGE_CURRENT_VERSIONS = {
     "tools/dockerfile/test/cxx_debian11_x64.current_version": "docker://us-docker.pkg.dev/grpc-testing/testing-images-public/cxx_debian11_x64@sha256:690b3134166d9ef8434acb3fece1ea2d0ac6dd3e6db90574dca653615ab67ef4",
     "tools/dockerfile/test/cxx_debian11_x86.current_version": "docker://us-docker.pkg.dev/grpc-testing/testing-images-public/cxx_debian11_x86@sha256:e7c191fdb9d96934e57819c07b5c8af60f995700154b2f74de1078819e1e4235",
     "tools/dockerfile/test/cxx_debian12_openssl309_x64.current_version": "docker://us-docker.pkg.dev/grpc-testing/testing-images-public/cxx_debian12_openssl309_x64@sha256:a8effa1e277f8403ca31b6257a142fda4c129c876866ad75a1d8c8783ed330f6",
-    "tools/dockerfile/test/cxx_gcc_10_x64.current_version": "docker://us-docker.pkg.dev/grpc-testing/testing-images-public/cxx_gcc_10_x64@sha256:eb921278d0711d12071d2970c976d315d675e034ccd9ce500cdb20be670901c7",
+    "tools/dockerfile/test/cxx_gcc_10_x64.current_version": "docker://us-docker.pkg.dev/grpc-testing/testing-images-public/cxx_gcc_10_x64@sha256:f840a42191baeed0f18452e5abe2f055f40f58e4413f4a3e77c52fd83075ca68",
     "tools/dockerfile/test/cxx_gcc_14_x64.current_version": "docker://us-docker.pkg.dev/grpc-testing/testing-images-public/cxx_gcc_14_x64@sha256:afccb5a7d517eb9c6441fd82a76f7c8f46ac2f66ef5aaced8936ae874e208d42",
     "tools/dockerfile/test/cxx_gcc_7_x64.current_version": "docker://us-docker.pkg.dev/grpc-testing/testing-images-public/cxx_gcc_7_x64@sha256:7e2eff34ce0bcd05e39fa5b69fc4cd6e8fbf5e5b78d95ee7949e0df340d276da",
     "tools/dockerfile/test/cxx_gcc_8_x64.current_version": "docker://us-docker.pkg.dev/grpc-testing/testing-images-public/cxx_gcc_8_x64@sha256:3d4bcff016858a4637ae34d89088e463c16b6e8047c951d909d90ee939c7ea3a",
