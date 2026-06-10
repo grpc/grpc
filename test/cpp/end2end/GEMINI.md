@@ -57,6 +57,6 @@ For more information on PH2 refer file src/core/ext/transport/chttp2/GEMINI.md
 ### Retry for PH2
 
 Retries have not yet been implemented for PH2.
-Hence, whenever PH2 experiment `IsPromiseBasedHttp2ClientTransportEnabled()`is
+Hence, whenever PH2 experiment `IsPh2ClientEnabled()`is
 enabled, we must disable retries. This is done with ApplyCommonChannelArguments.
 file : test/cpp/end2end/end2end_test_utils.h

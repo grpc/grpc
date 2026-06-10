@@ -2035,8 +2035,7 @@ std::vector<TestScenario> CreateTestScenarios(bool /*test_secure*/,
       for (auto cred = credentials_types.begin();
            cred != credentials_types.end(); ++cred) {
         scenarios.emplace_back(false, *cred, health_check_service, *msg, false);
-        if (!grpc_core::IsPromiseBasedHttp2ClientTransportEnabled() &&
-            !grpc_core::IsPromiseBasedHttp2ServerTransportEnabled()) {
+        if (!IsPh2Test()) {
           scenarios.emplace_back(false, *cred, health_check_service, *msg,
                                  true);
         }
