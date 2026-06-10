@@ -61,9 +61,17 @@ def _start_a_test_server():
         ThreadPoolExecutor(max_workers=1), options=(("grpc.so_reuseport", 0),)
     )
     server.add_generic_rpc_handlers((_GenericHandler(),))
-    port = server.add_insecure_port("localhost:0")
+    if os.name == "posix":
+        import tempfile
+        server.temp_dir = tempfile.mkdtemp()
+        socket_path = os.path.join(server.temp_dir, "grpc_leak_test.sock")
+        address = f"unix:{socket_path}"
+        server.add_insecure_port(address)
+    else:
+        port = server.add_insecure_port("localhost:0")
+        address = "localhost:%d" % port
     server.start()
-    return "localhost:%d" % port, server
+    return address, server
 
 
 def _perform_an_rpc(address):
@@ -79,23 +87,28 @@ def _perform_an_rpc(address):
 class TestLeak(unittest.TestCase):
     def test_leak_with_single_shot_rpcs(self):
         address, server = _start_a_test_server()
+        try:
+            # Records memory before experiment.
+            before = _get_max_rss()
 
-        # Records memory before experiment.
-        before = _get_max_rss()
+            # Amplifies the leak.
+            for n in range(_LARGE_NUM_OF_ITERATIONS):
+                _perform_an_rpc(address)
 
-        # Amplifies the leak.
-        for n in range(_LARGE_NUM_OF_ITERATIONS):
-            _perform_an_rpc(address)
-
-        # Fails the test if memory leak detected.
-        diff = _get_max_rss() - before
-        if diff > _FAIL_THRESHOLD:
-            self.fail(
-                "Max RSS inflated {} > {}".format(
-                    _pretty_print_bytes(diff),
-                    _pretty_print_bytes(_FAIL_THRESHOLD),
+            # Fails the test if memory leak detected.
+            diff = _get_max_rss() - before
+            if diff > _FAIL_THRESHOLD:
+                self.fail(
+                    "Max RSS inflated {} > {}".format(
+                        _pretty_print_bytes(diff),
+                        _pretty_print_bytes(_FAIL_THRESHOLD),
+                    )
                 )
-            )
+        finally:
+            server.stop(None)
+            if hasattr(server, "temp_dir"):
+                import shutil
+                shutil.rmtree(server.temp_dir, ignore_errors=True)
 
 
 if __name__ == "__main__":

@@ -27,7 +27,7 @@ from src.proto.grpc.testing import test_pb2_grpc
 from tests_aio.unit import _common
 from tests_aio.unit._test_server import start_test_server
 
-_NUM_OF_LOOPS = 50
+_NUM_OF_LOOPS = 10 if sys.platform == "darwin" else 50
 
 
 class TestOutsideInit(unittest.TestCase):

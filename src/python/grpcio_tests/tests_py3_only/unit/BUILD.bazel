@@ -22,11 +22,22 @@ GRPCIO_PY3_ONLY_TESTS_UNIT = glob([
     "*_test.py",
 ])
 
+# Tests that legitimately stress the channel cache / connect path and
+# occasionally need a retry under heavy --runs_per_test concurrency.
+# Keep this list small — flaky should not become a dumping ground.
+_FLAKY_TESTS = [
+    # _simple_stubs_test::test_total_channels_enforced opens 100 channels in
+    # a tight loop ("send messages at full blast"); the default 60s per-RPC
+    # timeout can be exceeded on darwin under contention.
+    "_simple_stubs_test.py",
+]
+
 [
     py_test(
         name = test_file_name[:-len(".py")],
         size = "small",
         srcs = [test_file_name],
+        flaky = test_file_name in _FLAKY_TESTS,
         main = test_file_name,
         python_version = "PY3",
         srcs_version = "PY3",

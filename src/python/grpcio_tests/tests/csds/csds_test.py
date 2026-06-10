@@ -17,6 +17,7 @@ from concurrent.futures import ThreadPoolExecutor
 import logging
 import os
 import queue
+import sys
 import time
 import unittest
 
@@ -60,11 +61,11 @@ class TestCsds(unittest.TestCase):
     def setUp(self):
         os.environ["GRPC_XDS_BOOTSTRAP_CONFIG"] = _DUMMY_BOOTSTRAP_FILE
         self._server = grpc.server(ThreadPoolExecutor())
-        port = self._server.add_insecure_port("localhost:0")
+        port = self._server.add_insecure_port("127.0.0.1:0")
         grpc_csds.add_csds_servicer(self._server)
         self._server.start()
 
-        self._channel = grpc.insecure_channel("localhost:%s" % port)
+        self._channel = grpc.insecure_channel("127.0.0.1:%s" % port)
         self._stub = csds_pb2_grpc.ClientStatusDiscoveryServiceStub(
             self._channel
         )
@@ -90,8 +91,13 @@ class TestCsds(unittest.TestCase):
             grpc.StatusCode.DEADLINE_EXCEEDED, rpc_error.exception.code()
         )
 
-        # The resource request will fail with DOES_NOT_EXIST (after 15s)
-        while True:
+        # The resource request will fail with DOES_NOT_EXIST (after 15s).
+        # Bound the wait so the test fails fast instead of hanging past the
+        # bazel timeout (especially on darwin under high --runs_per_test
+        # concurrency).
+        deadline = time.monotonic() + 60
+        ok = False
+        while time.monotonic() < deadline:
             resp = self.get_xds_config_dump()
             # Check node is setup in the CSDS response
             self.assertEqual(1, len(resp.config))
@@ -121,6 +127,11 @@ class TestCsds(unittest.TestCase):
                 break
             time.sleep(1)
         dummy_channel.close()
+        self.assertTrue(
+            ok,
+            "Listener never reached REQUESTED state within 60s; "
+            "xDS client did not progress (likely darwin flake).",
+        )
 
 
 class TestCsdsStream(TestCsds):

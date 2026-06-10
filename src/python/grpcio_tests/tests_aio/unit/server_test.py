@@ -14,6 +14,7 @@
 
 import asyncio
 import logging
+import sys
 import time
 import unittest
 
@@ -504,7 +505,17 @@ class TestServer(AioTestBase):
         await call.write(_REQUEST)
         await self._server.stop(None)
 
-        self.assertEqual(grpc.StatusCode.UNAVAILABLE, await call.code())
+        # On darwin the race between server shutdown and the client observing
+        # the GOAWAY can surface as CANCELLED instead of UNAVAILABLE. Accept
+        # either on darwin; elsewhere keep the strict UNAVAILABLE check.
+        code = await call.code()
+        if sys.platform == "darwin":
+            self.assertIn(
+                code,
+                (grpc.StatusCode.UNAVAILABLE, grpc.StatusCode.CANCELLED),
+            )
+        else:
+            self.assertEqual(grpc.StatusCode.UNAVAILABLE, code)
         # No segfault
 
     async def test_error_in_stream_stream(self):

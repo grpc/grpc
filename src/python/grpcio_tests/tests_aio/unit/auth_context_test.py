@@ -13,6 +13,7 @@
 # limitations under the License.
 """Porting auth context tests from sync stack."""
 
+import asyncio
 import logging
 import pickle
 import unittest
@@ -182,7 +183,20 @@ class TestAuthContext(AioTestBase):
         channel = aio.secure_channel(
             "localhost:{}".format(port), channel_creds, options=channel_options
         )
-        response = await channel.unary_unary(_UNARY_UNARY)(_REQUEST)
+        # Wait for the channel to be READY so we don't time out on the
+        # initial TLS handshake on slow / loaded hosts (e.g. darwin under
+        # high --runs_per_test concurrency).
+        try:
+            await asyncio.wait_for(channel.channel_ready(), timeout=30)
+        except asyncio.TimeoutError:
+            await channel.close()
+            raise AssertionError(
+                "Channel did not become READY within 30s for "
+                "test_session_resumption"
+            )
+        response = await asyncio.wait_for(
+            channel.unary_unary(_UNARY_UNARY)(_REQUEST), timeout=30
+        )
         auth_data = pickle.loads(response)
         self.assertEqual(
             expect_ssl_session_reused,
