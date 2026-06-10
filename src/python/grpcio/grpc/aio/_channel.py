@@ -106,10 +106,16 @@ class _BaseMultiCallable:
         self._references = references
 
         if not self._references:
-            error_msg = "MultiCallable must be attached to a Channel, unexpectedly found no references."
+            error_msg = (
+                "MultiCallable must be attached to a Channel, unexpectedly"
+                " found no references."
+            )
             raise ValueError(error_msg)
         if not isinstance(self._references[0], Channel):
-            error_msg = "Invalid reference type. MultiCallable must be attached to a Channel."
+            error_msg = (
+                "Invalid reference type. MultiCallable must be attached to a"
+                " Channel."
+            )
             raise TypeError(error_msg)
 
         self._python_channel = self._references[0]
