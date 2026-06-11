@@ -21,7 +21,6 @@ OVERRIDE_BAZEL_VERSION=9.1.0 \
 ${GIT_ROOT}/tools/bazel \
     --bazelrc=tools/remote_build/linux_bzlmod.bazelrc \
     build \
-    --nobuild \
     -- \
     "//:grpc" \
     "//:grpc++_test" \
