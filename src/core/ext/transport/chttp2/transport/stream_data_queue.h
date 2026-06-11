@@ -26,12 +26,10 @@
 #include <cstdint>
 #include <limits>
 #include <optional>
-#include <queue>
 #include <string>
 #include <type_traits>
 #include <utility>
 #include <variant>
-#include <vector>
 
 #include "src/core/call/message.h"
 #include "src/core/ext/transport/chttp2/transport/frame.h"
@@ -103,7 +101,7 @@ class SimpleQueue {
   }
 
   // Returns true if the queue is empty. This function is NOT thread safe.
-  inline bool IsEmpty() { return queue_.Peek() == nullptr; }
+  bool IsEmpty() { return queue_.Peek() == nullptr; }
 
   // Clears the queue. This function is NOT thread safe.
   void Clear() {
@@ -112,7 +110,7 @@ class SimpleQueue {
     GRPC_DCHECK(IsEmpty());
   }
 
-  inline std::optional<uint32_t> GetNextEntryTokens() {
+  std::optional<uint32_t> GetNextEntryTokens() {
     Entry* front = queue_.Peek();
     return front == nullptr ? std::nullopt : std::make_optional(front->tokens);
   }
@@ -141,8 +139,7 @@ class SimpleQueue {
     return Pending{};
   }
 
-  inline absl::StatusOr<bool> ImmediateEnqueueInternal(T data,
-                                                       const uint32_t tokens) {
+  absl::StatusOr<bool> ImmediateEnqueueInternal(T data, const uint32_t tokens) {
     GRPC_DCHECK_LE(tokens_consumed_,
                    std::numeric_limits<uint32_t>::max() - tokens);
     if (tokens_consumed_ > std::numeric_limits<uint32_t>::max() - tokens) {
@@ -456,7 +453,7 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
 
     GRPC_STREAM_DATA_QUEUE_DEBUG
         << "Immediate enqueueing reset stream with error code: " << error_code;
-    reset_stream_state_ = RstStreamState::kQueued;
+    reset_stream_state_ = ResetStreamState::kQueued;
     reset_stream_error_code_ = error_code;
 
     // became_non_empty is set to true if the queue is empty because we are not
@@ -659,7 +656,7 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
     DequeueFlags GetDequeueFlags() const { return dequeue_flags_; }
 
    private:
-    inline void MaybeAppendInitialMetadataFrames() {
+    void MaybeAppendInitialMetadataFrames() {
       while (queue_.initial_metadata_disassembler_.HasMoreData()) {
         GRPC_DCHECK(!dequeue_flags_.IsHalfCloseDequeued());
         GRPC_DCHECK(!dequeue_flags_.IsResetStreamDequeued());
@@ -671,21 +668,27 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
       }
     }
 
-    inline void MaybeAppendTrailingMetadataFrames() {
+    void MaybeAppendTrailingMetadataFrames() {
       while (queue_.trailing_metadata_disassembler_.HasMoreData()) {
         GRPC_DCHECK(!dequeue_flags_.IsHalfCloseDequeued());
         GRPC_DCHECK_EQ(queue_.message_disassembler_.GetBufferedLength(), 0u);
         GRPC_DCHECK_EQ(
             queue_.initial_metadata_disassembler_.GetBufferedLength(), 0u);
+        GRPC_DCHECK(dequeue_flags_.IsTrailingMetadataDequeued());
         // TODO(akshitpatel) : [PH2][P2] : I do not think we need this.
         // HasMoreData() should be enough.
         bool is_end_headers = false;
         AppendFrame(queue_.trailing_metadata_disassembler_.GetNextFrame(
             max_frame_length_, is_end_headers));
       }
+
+      // In gRPC C++, TrailingMetadata is always followed by RST_STREAM.
+      if (dequeue_flags_.IsTrailingMetadataDequeued()) {
+        AppendResetStreamFrame(Http2ErrorCode::kNoError);
+      }
     }
 
-    inline void MaybeAppendEndOfStreamFrame() {
+    void MaybeAppendEndOfStreamFrame() {
       if (dequeue_flags_.IsHalfCloseDequeued()) {
         GRPC_DCHECK_EQ(queue_.message_disassembler_.GetBufferedLength(), 0u);
         GRPC_DCHECK_EQ(
@@ -717,7 +720,7 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
       }
     }
 
-    inline void MaybeAppendMessageFrames() {
+    void MaybeAppendMessageFrames() {
       while (queue_.message_disassembler_.GetBufferedLength() > 0 &&
              (max_tokens_available_ - flow_control_tokens_consumed_) > 0) {
         GRPC_DCHECK_EQ(
@@ -736,20 +739,19 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
       }
     }
 
-    inline void MaybeAppendResetStreamFrame() {
-      if (dequeue_flags_.IsResetStreamDequeued()) {
-        // TODO(akshitpatel) : [PH2][P2] : Consider if we can send reset stream
-        // frame without flushing all the messages enqueued until now.
-        GRPC_DCHECK_EQ(queue_.message_disassembler_.GetBufferedLength(), 0u);
-        GRPC_DCHECK_EQ(
-            queue_.initial_metadata_disassembler_.GetBufferedLength(), 0u);
-        GRPC_DCHECK_EQ(
-            queue_.trailing_metadata_disassembler_.GetBufferedLength(), 0u);
-        AppendFrame(Http2RstStreamFrame{queue_.stream_id_, error_code_});
-      }
+    void AppendResetStreamFrame(Http2ErrorCode error_code) {
+      GRPC_DCHECK_EQ(queue_.message_disassembler_.GetBufferedLength(), 0u);
+      GRPC_DCHECK_EQ(queue_.initial_metadata_disassembler_.GetBufferedLength(),
+                     0u);
+      GRPC_DCHECK_EQ(queue_.trailing_metadata_disassembler_.GetBufferedLength(),
+                     0u);
+      AppendFrame(Http2RstStreamFrame{
+          queue_.stream_id_, Http2ErrorCodeToFrameErrorCode(error_code)});
+      queue_.reset_stream_state_ = ResetStreamState::kDequeued;
+      dequeue_flags_.set_reset_stream_dequeued();
     }
 
-    inline void AppendFrame(Http2Frame&& frame) {
+    void AppendFrame(Http2Frame&& frame) {
       // FrameSender automatically accounts for the frame size in write quota.
       // We do tend to overestimate the bytes consumed here but should be good
       // enough for our purposes.
@@ -760,7 +762,6 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
     const uint32_t max_frame_length_;
     const uint32_t max_tokens_available_;
     uint32_t flow_control_tokens_consumed_;
-    uint32_t error_code_ = static_cast<uint32_t>(Http2ErrorCode::kNoError);
     HPackCompressor& encoder_;
     FrameSender& frame_sender_;
     DequeueFlags dequeue_flags_;
@@ -841,7 +842,7 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
     return is_writable_;
   }
 
-  inline bool IsNextQueueEntryMessage() {
+  bool IsNextQueueEntryMessage() {
     std::optional<size_t> next_entry_tokens = queue_.GetNextEntryTokens();
     return next_entry_tokens.has_value() && *next_entry_tokens > 0;
   }
@@ -854,7 +855,7 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
       const bool can_send_reset_stream, FrameSender& frame_sender)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
     switch (reset_stream_state_) {
-      case RstStreamState::kDequeued:
+      case ResetStreamState::kDequeued:
         GRPC_STREAM_DATA_QUEUE_DEBUG
             << "Reset stream is already dequeued. Returning empty frames.";
         GRPC_DCHECK(queue_.IsEmpty());
@@ -862,7 +863,7 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
         return DequeueResult{is_writable_, priority_,
                              /*flow_control_tokens_consumed=*/0u,
                              /*flags=*/DequeueFlags{}};
-      case RstStreamState::kQueued: {
+      case ResetStreamState::kQueued: {
         GRPC_STREAM_DATA_QUEUE_DEBUG
             << "Reset stream is queued. Skipping all frames (if any) for "
                "dequeuing.";
@@ -874,11 +875,11 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
           flags.set_reset_stream_dequeued();
         }
         queue_.Clear();
-        reset_stream_state_ = RstStreamState::kDequeued;
+        reset_stream_state_ = ResetStreamState::kDequeued;
         return DequeueResult{is_writable_, priority_,
                              /*flow_control_tokens_consumed=*/0u, flags};
       }
-      case RstStreamState::kNotQueued:
+      case ResetStreamState::kNotQueued:
         return std::nullopt;
       default:
         GRPC_CHECK(false) << "Invalid reset stream state: "
@@ -889,10 +890,10 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
 
   bool IsEnqueueClosed() const ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
     switch (reset_stream_state_) {
-      case RstStreamState::kNotQueued:
+      case ResetStreamState::kNotQueued:
         return false;
-      case RstStreamState::kQueued:
-      case RstStreamState::kDequeued:
+      case ResetStreamState::kQueued:
+      case ResetStreamState::kDequeued:
         // This can happen when the transport tries to close the stream and the
         // stream is cancelled from the call stack.
         GRPC_STREAM_DATA_QUEUE_DEBUG << "Reset stream already queued.";
@@ -910,7 +911,7 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
   // This is only used for DCHECKs. Not actually used for any business logic.
   const bool is_client_;
 
-  enum class RstStreamState : uint8_t {
+  enum class ResetStreamState : uint8_t {
     kNotQueued = 0,
     kQueued,
     kDequeued,
@@ -927,8 +928,8 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
   // (if needed) to send them. This variable also has 1-1 correspondence with
   // whether the stream is in the list of writable streams in the transport.
   bool is_writable_ ABSL_GUARDED_BY(mu_) = false;
-  RstStreamState reset_stream_state_ ABSL_GUARDED_BY(mu_) =
-      RstStreamState::kNotQueued;
+  ResetStreamState reset_stream_state_ ABSL_GUARDED_BY(mu_) =
+      ResetStreamState::kNotQueued;
   SimpleQueue<QueueEntry> queue_;
   WritableStreamPriority priority_ ABSL_GUARDED_BY(mu_) =
       WritableStreamPriority::kDefault;

@@ -47,6 +47,7 @@
 #include "test/core/transport/chttp2/http2_common_test_inputs.h"
 #include "test/core/transport/chttp2/http2_frame_test_helper.h"
 #include "test/core/transport/util/transport_test.h"
+#include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "absl/functional/any_invocable.h"
 #include "absl/log/log.h"
@@ -58,7 +59,10 @@ namespace http2 {
 namespace testing {
 
 using EventEngineSlice = grpc_event_engine::experimental::Slice;
+using ::testing::MockFunction;
+using ::testing::StrictMock;
 using util::testing::EventSequenceEndpoint;
+
 constexpr absl::string_view kConnectionClosed = "Connection closed";
 const std::vector<uint8_t> kGrpcStatusOK = {0x40, 0x0b, 0x67, 0x72, 0x70,
                                             0x63, 0x2d, 0x73, 0x74, 0x61,
@@ -76,6 +80,12 @@ class Http2ServerTransportTest : public Http2TransportTest {
   Http2ServerTransportTest& operator=(const Http2ServerTransportTest&) = delete;
   Http2ServerTransportTest(Http2ServerTransportTest&&) = delete;
   Http2ServerTransportTest& operator=(Http2ServerTransportTest&&) = delete;
+
+  void TearDown() override {
+    ExecCtx ctx;
+    server_transport_.reset();
+    Http2TransportTest::TearDown();
+  }
 
  protected:
   // Initializes the transport with the given channel args.
@@ -154,7 +164,9 @@ class Http2ServerTransportTest : public Http2TransportTest {
     PromiseFactoryFactory promise_factory_factory;
   };
 
-  // For now, we only support a single stream active at a time.
+  // The underlying promise passed to this function will be polled for the next
+  // stream created on the transport. For now, we only support a single stream
+  // active at a time.
   template <typename PromiseFactoryFactory>
   void AddStream(PromiseFactoryFactory&& promise_factory_factory) {
     stream_data_ = MakeRefCounted<StreamData<PromiseFactoryFactory>>(
@@ -177,7 +189,6 @@ class Http2ServerTransportTest : public Http2TransportTest {
 };
 
 TEST_F(Http2ServerTransportTest, TestHttp2ServerTransportObjectCreation) {
-  ExecCtx ctx;
   // 1. Initialize the transport and exchange settings.
   InitTransport(GetChannelArgs());
   SpawnTransportLoopsAndExchangeSettings();
@@ -190,7 +201,6 @@ TEST_F(Http2ServerTransportTest, TestHttp2ServerTransportObjectCreation) {
 }
 
 TEST_F(Http2ServerTransportTest, TestHttp2ServerTransportWriteFromCall) {
-  ExecCtx ctx;
   const std::string data_payload(kString1);
 
   // 1. Initialize the transport and exchange settings.
@@ -239,7 +249,133 @@ TEST_F(Http2ServerTransportTest, TestHttp2ServerTransportWriteFromCall) {
        helper_.SerializedHeaderFrame(std::string(kGrpcStatusCancelled.begin(),
                                                  kGrpcStatusCancelled.end()),
                                      /*stream_id=*/1, /*end_headers=*/true,
-                                     /*end_stream=*/true)});
+                                     /*end_stream=*/true),
+       helper_.SerializedResetStreamFrame(
+           /*stream_id=*/1,
+           /*error_code=*/static_cast<uint32_t>(Http2ErrorCode::kNoError))});
+  step->Wait();
+}
+
+TEST_F(Http2ServerTransportTest, ClientInitiatedCancellationTest) {
+  InitTransport(GetChannelArgs());
+  SpawnTransportLoopsAndExchangeSettings();
+  StrictMock<MockFunction<void(bool)>> on_done;
+  EXPECT_CALL(on_done, Call(true));
+
+  auto factory_factory = [&on_done](CallHandler call_handler) {
+    return [call_handler, &on_done]() mutable {
+      return TrySeq(
+          call_handler.PullClientInitialMetadata(),
+          [call_handler, &on_done](ClientMetadataHandle metadata) mutable {
+            return Map(call_handler.WasCancelled(),
+                       [&on_done](bool cancelled) -> absl::Status {
+                         on_done.Call(cancelled);
+                         return absl::OkStatus();
+                       });
+          });
+    };
+  };
+  AddStream(std::move(factory_factory));
+
+  auto step = endpoint()->NewStep();
+  // Client sends a header frame to start stream 1.
+  step->ThenPerformRead({
+      helper_.SerializedHeaderFrame(
+          std::string(kPathDemoServiceStep.begin(), kPathDemoServiceStep.end()),
+          /*stream_id=*/1,
+          /*end_headers=*/true,
+          /*end_stream=*/false),
+  });
+  // Client sends RST_STREAM.
+  step->ThenPerformRead({
+      helper_.SerializedResetStreamFrame(
+          /*stream_id=*/1,
+          /*error_code=*/static_cast<uint32_t>(Http2ErrorCode::kCancel)),
+  });
+  step->Wait();
+  // Tick to allow the server transport to process the RST_STREAM frame and
+  // cancel the stream.
+  event_engine()->Tick();
+}
+
+TEST_F(Http2ServerTransportTest, ServerApplicationInitiatedCancellationTest) {
+  InitTransport(GetChannelArgs());
+  SpawnTransportLoopsAndExchangeSettings();
+
+  auto factory_factory = [](CallHandler call_handler) {
+    return [call_handler]() mutable {
+      return TrySeq(call_handler.PullClientInitialMetadata(),
+                    [call_handler](ClientMetadataHandle metadata) mutable {
+                      call_handler.PushServerTrailingMetadata(
+                          ServerMetadataFromStatus(absl::CancelledError()));
+                      return absl::OkStatus();
+                    });
+    };
+  };
+  AddStream(std::move(factory_factory));
+
+  auto step = endpoint()->NewStep();
+  // Client sends a header frame to start stream 1.
+  step->ThenPerformRead({
+      helper_.SerializedHeaderFrame(
+          std::string(kPathDemoServiceStep.begin(), kPathDemoServiceStep.end()),
+          /*stream_id=*/1,
+          /*end_headers=*/true,
+          /*end_stream=*/false),
+  });
+
+  // We expect Trailers-Only with CANCELLED status.
+  // And we ALSO expect RST_STREAM(NO_ERROR) because trailing metadata is
+  // followed by RST_STREAM.
+  step->ThenExpectWrite(
+      {helper_.SerializedHeaderFrame(std::string(kGrpcStatusCancelled.begin(),
+                                                 kGrpcStatusCancelled.end()),
+                                     /*stream_id=*/1, /*end_headers=*/true,
+                                     /*end_stream=*/true),
+       helper_.SerializedResetStreamFrame(
+           /*stream_id=*/1,
+           /*error_code=*/static_cast<uint32_t>(Http2ErrorCode::kNoError))});
+
+  step->Wait();
+}
+
+TEST_F(Http2ServerTransportTest, ServerApplicationErrorTest) {
+  InitTransport(GetChannelArgs());
+  SpawnTransportLoopsAndExchangeSettings();
+
+  auto factory_factory = [](CallHandler call_handler) {
+    return [call_handler]() mutable {
+      return TrySeq(call_handler.PullClientInitialMetadata(),
+                    [](ClientMetadataHandle metadata) -> absl::Status {
+                      // Server application fails with error.
+                      return absl::CancelledError();
+                    });
+    };
+  };
+  AddStream(std::move(factory_factory));
+
+  auto step = endpoint()->NewStep();
+  // Client sends a header frame to start stream 1.
+  step->ThenPerformRead({
+      helper_.SerializedHeaderFrame(
+          std::string(kPathDemoServiceStep.begin(), kPathDemoServiceStep.end()),
+          /*stream_id=*/1,
+          /*end_headers=*/true,
+          /*end_stream=*/false),
+  });
+
+  // We expect Trailers-Only with CANCELLED status.
+  // And we ALSO expect RST_STREAM(NO_ERROR) because trailing metadata is
+  // followed by RST_STREAM.
+  step->ThenExpectWrite(
+      {helper_.SerializedHeaderFrame(std::string(kGrpcStatusCancelled.begin(),
+                                                 kGrpcStatusCancelled.end()),
+                                     /*stream_id=*/1, /*end_headers=*/true,
+                                     /*end_stream=*/true),
+       helper_.SerializedResetStreamFrame(
+           /*stream_id=*/1,
+           /*error_code=*/static_cast<uint32_t>(Http2ErrorCode::kNoError))});
+
   step->Wait();
 }
 

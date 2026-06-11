@@ -515,13 +515,13 @@ TEST_F(Http2ClientTransportTest, TestCanStreamReceiveDataFrames) {
           static_cast<uint32_t>(Http2ErrorCode::kNoError)),
   });
 
-  step->ThenExpectWrite({helper_.SerializedRstStreamFrame(
+  step->ThenExpectWrite({helper_.SerializedResetStreamFrame(
       /*stream_id=*/1, /*error_code=*/
       static_cast<uint32_t>(Http2ErrorCode::kStreamClosed))});
 
   step->ThenExpectWrite({
       helper_.SerializedGoawayFrame(
-          /*debug_data=*/"kthxbye",
+          /*debug_data=*/std::string(RFC9113::kLastStreamClosed),
           /*last_stream_id=*/0,
           /*error_code=*/
           static_cast<uint32_t>(Http2ErrorCode::kInternalError)),
@@ -625,7 +625,7 @@ TEST_F(Http2ClientTransportTest, StreamCleanupTrailingMetadataWithResetStream) {
           std::string(kPathDemoServiceStep.begin(), kPathDemoServiceStep.end()),
           /*stream_id=*/1,
           /*end_headers=*/true, /*end_stream=*/true),
-      helper_.SerializedRstStreamFrame(),
+      helper_.SerializedResetStreamFrame(),
   });
 
   CallInitiator initiator = StartCall(TestInitialMetadata());
@@ -670,7 +670,7 @@ TEST_F(Http2ClientTransportTest, StreamCleanupResetStream) {
           /*end_headers=*/true, /*end_stream=*/false),
   });
   step->ThenPerformRead({
-      helper_.SerializedRstStreamFrame(),
+      helper_.SerializedResetStreamFrame(),
   });
 
   CallInitiator initiator = StartCall(TestInitialMetadata());
@@ -719,7 +719,7 @@ TEST_F(Http2ClientTransportTest, Http2ClientTransportStreamAbortTest) {
           /*end_headers=*/true, /*end_stream=*/false),
   });
   step->ThenExpectWrite({
-      helper_.SerializedRstStreamFrame(
+      helper_.SerializedResetStreamFrame(
           /*stream_id=*/1,
           /*error_code=*/static_cast<uint32_t>(http2::Http2ErrorCode::kCancel)),
   });
@@ -785,7 +785,7 @@ TEST_F(Http2ClientTransportTest, Http2ClientTransportAbortTest) {
           /*debug_data=*/kConnectionClosed, /*last_stream_id=*/0,
           /*error_code=*/
           static_cast<uint32_t>(Http2ErrorCode::kInternalError)),
-      helper_.SerializedRstStreamFrame(
+      helper_.SerializedResetStreamFrame(
           /*stream_id=*/1, /*error_code=*/static_cast<uint32_t>(
               http2::Http2ErrorCode::kInternalError)),
   });
@@ -1152,7 +1152,7 @@ TEST_F(Http2ClientTransportTest, TestMaxAllowedStreamId) {
                                                  kPathDemoServiceStep.end()),
                                      /*stream_id=*/kMaxAllowedStreamId,
                                      /*end_headers=*/true, /*end_stream=*/true),
-       helper_.SerializedRstStreamFrame(
+       helper_.SerializedResetStreamFrame(
            /*stream_id=*/kMaxAllowedStreamId)});
 
   step3->ThenExpectWrite({
