@@ -387,7 +387,7 @@ class _InactiveRpcError(grpc.RpcError, grpc.Call, grpc.Future):
             msg = "Inactive RPC Error: Invalid RPC state type."
             if isinstance(state, str):
                 msg = f"{msg} Details: {state}"
-            state = _RPCState((), (), (), grpc.StatusCode.INTERNAL, state)
+            state = _RPCState((), (), (), grpc.StatusCode.INTERNAL, msg)
 
         with state.condition:
             self._state = _RPCState(
