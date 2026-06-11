@@ -29,7 +29,6 @@
 
 namespace grpc_core {
 
-class Blackboard;
 class InterceptionChainBuilder;
 
 // One hijacked call. Using this we can get access to the CallHandler for the
@@ -88,13 +87,21 @@ class HijackedCall final {
 // *Interceptor* in the call chain (without having been processed by any
 // intervening filters) -- note that this is commonly not useful (not enough
 // guarantees), and so it's usually better to Hijack and examine the metadata.
+//
+// TODO(roth, ctiller): Change this API such that it always deals with
+// the client initial metadata after it has been processed by any
+// preceding filters.  We don't actually have any use-case for seeing
+// the unprocessed initial metadata and deciding to do a PassThrough(),
+// and its presence in this API is confusing.
 
 class Interceptor : public UnstartedCallDestination {
  public:
   using UnstartedCallDestination::UnstartedCallDestination;
 
   void StartCall(UnstartedCallHandler unstarted_call_handler) final {
-    unstarted_call_handler.AddCallStack(filter_stack_);
+    if (filter_stack_ != nullptr) {
+      unstarted_call_handler.AddCallStack(filter_stack_);
+    }
     InterceptCall(std::move(unstarted_call_handler));
   }
 
@@ -137,6 +144,9 @@ class Interceptor : public UnstartedCallDestination {
  private:
   friend class InterceptionChainBuilder;
 
+  template <typename Derived>
+  friend class V3InterceptorToV2Bridge;
+
   RefCountedPtr<UnstartedCallDestination> wrapped_destination_;
   RefCountedPtr<CallFilters::Stack> filter_stack_;
 };
@@ -163,9 +173,8 @@ class InterceptionChainBuilder final {
   using FinalDestination = std::variant<RefCountedPtr<UnstartedCallDestination>,
                                         RefCountedPtr<CallDestination>>;
 
-  explicit InterceptionChainBuilder(ChannelArgs args,
-                                    const Blackboard* blackboard = nullptr)
-      : args_(std::move(args)), blackboard_(blackboard) {}
+  explicit InterceptionChainBuilder(ChannelArgs args)
+      : args_(std::move(args)) {}
 
   // Add a filter with a `Call` class as an inner member.
   // Call class must be one compatible with the filters described in
@@ -174,8 +183,8 @@ class InterceptionChainBuilder final {
   absl::enable_if_t<sizeof(typename T::Call) != 0, InterceptionChainBuilder&>
   Add(RefCountedPtr<const FilterConfig> config) {
     if (!status_.ok()) return *this;
-    auto filter = T::Create(args_, {FilterInstanceId(FilterTypeId<T>()),
-                                    std::move(config), blackboard_});
+    auto filter = T::Create(
+        args_, {FilterInstanceId(FilterTypeId<T>()), std::move(config)});
     if (!filter.ok()) {
       status_ = filter.status();
       return *this;
@@ -191,8 +200,8 @@ class InterceptionChainBuilder final {
   absl::enable_if_t<std::is_base_of<Interceptor, T>::value,
                     InterceptionChainBuilder&>
   Add(RefCountedPtr<const FilterConfig> config) {
-    AddInterceptor(T::Create(args_, {FilterInstanceId(FilterTypeId<T>()),
-                                     std::move(config), blackboard_}));
+    AddInterceptor(T::Create(
+        args_, {FilterInstanceId(FilterTypeId<T>()), std::move(config)}));
     return *this;
   };
 
@@ -271,7 +280,6 @@ class InterceptionChainBuilder final {
   absl::Status status_;
   std::map<size_t, size_t> filter_type_counts_;
   static std::atomic<size_t> next_filter_id_;
-  const Blackboard* blackboard_ = nullptr;
 };
 
 }  // namespace grpc_core

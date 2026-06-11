@@ -67,6 +67,8 @@ grpc_cc_benchmark(
     name = "bm_latent_see",
     srcs = ["bm_latent_see.cc"],
     external_deps = [
+        "absl/log:globals",
+        "absl/base:log_severity",
     ],
     monitoring = HISTORY,
     deps = [

@@ -19,82 +19,86 @@
 // Must be last.
 #include "upb/port/def.inc"
 
-extern const struct upb_MiniTable UPB_PRIVATE(_kUpb_MiniTable_StaticallyTreeShaken);
-static const upb_MiniTableSubInternal envoy_config_common_mutation_rules_v3_HeaderMutationRules__submsgs[7] = {
-  {.UPB_PRIVATE(submsg) = &google__protobuf__BoolValue_msg_init_ptr},
-  {.UPB_PRIVATE(submsg) = &google__protobuf__BoolValue_msg_init_ptr},
-  {.UPB_PRIVATE(submsg) = &google__protobuf__BoolValue_msg_init_ptr},
-  {.UPB_PRIVATE(submsg) = &google__protobuf__BoolValue_msg_init_ptr},
-  {.UPB_PRIVATE(submsg) = &envoy__type__matcher__v3__RegexMatcher_msg_init_ptr},
-  {.UPB_PRIVATE(submsg) = &envoy__type__matcher__v3__RegexMatcher_msg_init_ptr},
-  {.UPB_PRIVATE(submsg) = &google__protobuf__BoolValue_msg_init_ptr},
-};
+extern const UPB_PRIVATE(upb_GeneratedExtensionListEntry)* UPB_PRIVATE(upb_generated_extension_list);
+typedef struct {
+  upb_MiniTableField fields[7];
+  upb_MiniTableSubInternal subs[7];
+} envoy__config__common__mutation_0rules__v3__HeaderMutationRules_msg_init_Fields;
 
-static const upb_MiniTableField envoy_config_common_mutation_rules_v3_HeaderMutationRules__fields[7] = {
-  {1, UPB_SIZE(12, 16), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-  {2, UPB_SIZE(16, 24), 65, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-  {3, UPB_SIZE(20, 32), 66, 2, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-  {4, UPB_SIZE(24, 40), 67, 3, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-  {5, UPB_SIZE(28, 48), 68, 4, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-  {6, UPB_SIZE(32, 56), 69, 5, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-  {7, UPB_SIZE(36, 64), 70, 6, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-};
+static const envoy__config__common__mutation_0rules__v3__HeaderMutationRules_msg_init_Fields envoy_config_common_mutation_rules_v3_HeaderMutationRules__fields = {{
+  {1, UPB_SIZE(12, 16), 64, UPB_SIZE(21, 22), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {2, UPB_SIZE(16, 24), 65, UPB_SIZE(19, 21), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {3, UPB_SIZE(20, 32), 66, UPB_SIZE(17, 20), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {4, UPB_SIZE(24, 40), 67, UPB_SIZE(15, 19), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {5, UPB_SIZE(28, 48), 68, UPB_SIZE(13, 18), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {6, UPB_SIZE(32, 56), 69, UPB_SIZE(11, 17), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {7, UPB_SIZE(36, 64), 70, UPB_SIZE(9, 16), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+ },
+  {
+  {.UPB_PRIVATE(submsg) = &google__protobuf__BoolValue_msg_init},
+  {.UPB_PRIVATE(submsg) = &google__protobuf__BoolValue_msg_init},
+  {.UPB_PRIVATE(submsg) = &google__protobuf__BoolValue_msg_init},
+  {.UPB_PRIVATE(submsg) = &google__protobuf__BoolValue_msg_init},
+  {.UPB_PRIVATE(submsg) = &envoy__type__matcher__v3__RegexMatcher_msg_init},
+  {.UPB_PRIVATE(submsg) = &envoy__type__matcher__v3__RegexMatcher_msg_init},
+  {.UPB_PRIVATE(submsg) = &google__protobuf__BoolValue_msg_init},
+}};
 
 const upb_MiniTable envoy__config__common__mutation_0rules__v3__HeaderMutationRules_msg_init = {
-  &envoy_config_common_mutation_rules_v3_HeaderMutationRules__submsgs[0],
-  &envoy_config_common_mutation_rules_v3_HeaderMutationRules__fields[0],
+  &envoy_config_common_mutation_rules_v3_HeaderMutationRules__fields.fields[0],
   UPB_SIZE(40, 72), 7, kUpb_ExtMode_NonExtendable, 7, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.config.common.mutation_rules.v3.HeaderMutationRules",
 #endif
 };
 
-const upb_MiniTable* envoy__config__common__mutation_0rules__v3__HeaderMutationRules_msg_init_ptr = &envoy__config__common__mutation_0rules__v3__HeaderMutationRules_msg_init;
-static const upb_MiniTableSubInternal envoy_config_common_mutation_rules_v3_HeaderMutation__submsgs[2] = {
-  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__HeaderValueOption_msg_init_ptr},
-  {.UPB_PRIVATE(submsg) = &envoy__config__common__mutation_0rules__v3__HeaderMutation__RemoveOnMatch_msg_init_ptr},
-};
+typedef struct {
+  upb_MiniTableField fields[3];
+  upb_MiniTableSubInternal subs[2];
+} envoy__config__common__mutation_0rules__v3__HeaderMutation_msg_init_Fields;
 
-static const upb_MiniTableField envoy_config_common_mutation_rules_v3_HeaderMutation__fields[3] = {
+static const envoy__config__common__mutation_0rules__v3__HeaderMutation_msg_init_Fields envoy_config_common_mutation_rules_v3_HeaderMutation__fields = {{
   {1, UPB_SIZE(12, 16), -9, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
-  {2, UPB_SIZE(12, 16), -9, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-  {3, UPB_SIZE(12, 16), -9, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-};
+  {2, UPB_SIZE(12, 16), -9, UPB_SIZE(6, 7), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {3, UPB_SIZE(12, 16), -9, UPB_SIZE(4, 6), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+ },
+  {
+  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__HeaderValueOption_msg_init},
+  {.UPB_PRIVATE(submsg) = &envoy__config__common__mutation_0rules__v3__HeaderMutation__RemoveOnMatch_msg_init},
+}};
 
 const upb_MiniTable envoy__config__common__mutation_0rules__v3__HeaderMutation_msg_init = {
-  &envoy_config_common_mutation_rules_v3_HeaderMutation__submsgs[0],
-  &envoy_config_common_mutation_rules_v3_HeaderMutation__fields[0],
-  UPB_SIZE(24, 32), 3, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(24), 0,
+  &envoy_config_common_mutation_rules_v3_HeaderMutation__fields.fields[0],
+  UPB_SIZE(24, 32), 3, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(8), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.config.common.mutation_rules.v3.HeaderMutation",
 #endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x001000080100000a, &upb_pos_1bt},
-    {0x0010000802000012, &upb_pom_1bt_maxmaxb},
-    {0x001000080301001a, &upb_pom_1bt_max64b},
+    {0x001000080100000a, &upb_DecodeFast_String_Oneof_Tag1Byte},
   })
 };
 
-const upb_MiniTable* envoy__config__common__mutation_0rules__v3__HeaderMutation_msg_init_ptr = &envoy__config__common__mutation_0rules__v3__HeaderMutation_msg_init;
-static const upb_MiniTableSubInternal envoy_config_common_mutation_rules_v3_HeaderMutation_RemoveOnMatch__submsgs[1] = {
-  {.UPB_PRIVATE(submsg) = &envoy__type__matcher__v3__StringMatcher_msg_init_ptr},
-};
+typedef struct {
+  upb_MiniTableField fields[1];
+  upb_MiniTableSubInternal subs[1];
+} envoy__config__common__mutation_0rules__v3__HeaderMutation__RemoveOnMatch_msg_init_Fields;
 
-static const upb_MiniTableField envoy_config_common_mutation_rules_v3_HeaderMutation_RemoveOnMatch__fields[1] = {
-  {1, UPB_SIZE(12, 16), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-};
+static const envoy__config__common__mutation_0rules__v3__HeaderMutation__RemoveOnMatch_msg_init_Fields envoy_config_common_mutation_rules_v3_HeaderMutation_RemoveOnMatch__fields = {{
+  {1, UPB_SIZE(12, 16), 64, UPB_SIZE(3, 4), 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+ },
+  {
+  {.UPB_PRIVATE(submsg) = &envoy__type__matcher__v3__StringMatcher_msg_init},
+}};
 
 const upb_MiniTable envoy__config__common__mutation_0rules__v3__HeaderMutation__RemoveOnMatch_msg_init = {
-  &envoy_config_common_mutation_rules_v3_HeaderMutation_RemoveOnMatch__submsgs[0],
-  &envoy_config_common_mutation_rules_v3_HeaderMutation_RemoveOnMatch__fields[0],
+  &envoy_config_common_mutation_rules_v3_HeaderMutation_RemoveOnMatch__fields.fields[0],
   UPB_SIZE(16, 24), 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.config.common.mutation_rules.v3.HeaderMutation.RemoveOnMatch",
 #endif
 };
 
-const upb_MiniTable* envoy__config__common__mutation_0rules__v3__HeaderMutation__RemoveOnMatch_msg_init_ptr = &envoy__config__common__mutation_0rules__v3__HeaderMutation__RemoveOnMatch_msg_init;
 static const upb_MiniTable *messages_layout[3] = {
   &envoy__config__common__mutation_0rules__v3__HeaderMutationRules_msg_init,
   &envoy__config__common__mutation_0rules__v3__HeaderMutation_msg_init,

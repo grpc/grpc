@@ -39,6 +39,7 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/promise/promise.h"
+#include "src/core/telemetry/metrics.h"
 #include "src/core/transport/auth_context.h"
 #include "src/core/tsi/ssl_transport_security.h"
 #include "src/core/util/debug_location.h"
@@ -363,11 +364,17 @@ void TlsChannelSecurityConnector::add_handshakers(
                                    ? target_name_.c_str()
                                    : overridden_target_name_.c_str();
     }
+    auto stats_plugin_group =
+        args.GetObject<GlobalStatsPluginRegistry::StatsPluginGroup>();
+    RefCountedPtr<CollectionScope> collection_scope =
+        stats_plugin_group != nullptr ? stats_plugin_group->GetCollectionScope()
+                                      : nullptr;
     tsi_result result = tsi_ssl_client_handshaker_factory_create_handshaker(
         client_handshaker_factory_, server_name_indication,
         /*network_bio_buf_size=*/0,
         /*ssl_bio_buf_size=*/0,
-        args.GetOwnedString(GRPC_ARG_TRANSPORT_PROTOCOLS), &tsi_hs);
+        args.GetOwnedString(GRPC_ARG_TRANSPORT_PROTOCOLS),
+        std::move(collection_scope), &tsi_hs);
     if (result != TSI_OK) {
       LOG(ERROR) << "Handshaker creation failed with error "
                  << tsi_result_to_string(result);
@@ -559,7 +566,8 @@ TlsChannelSecurityConnector::UpdateHandshakerFactoryLocked() {
       grpc_get_tsi_tls_version(options_->min_tls_version()),
       grpc_get_tsi_tls_version(options_->max_tls_version()), ssl_session_cache_,
       tls_session_key_logger_.get(), options_->crl_directory().c_str(),
-      options_->crl_provider(), &client_handshaker_factory_);
+      options_->crl_provider(), options_->key_exchange_groups(),
+      &client_handshaker_factory_);
 }
 
 // -------------------server security connector-------------------
@@ -647,10 +655,15 @@ void TlsServerSecurityConnector::add_handshakers(
   MutexLock lock(&mu_);
   tsi_handshaker* tsi_hs = nullptr;
   if (server_handshaker_factory_ != nullptr) {
+    auto stats_plugin_group =
+        args.GetObject<GlobalStatsPluginRegistry::StatsPluginGroup>();
+    RefCountedPtr<CollectionScope> collection_scope =
+        stats_plugin_group != nullptr ? stats_plugin_group->GetCollectionScope()
+                                      : nullptr;
     // Instantiate TSI handshaker.
     tsi_result result = tsi_ssl_server_handshaker_factory_create_handshaker(
         server_handshaker_factory_, /*network_bio_buf_size=*/0,
-        /*ssl_bio_buf_size=*/0, &tsi_hs);
+        /*ssl_bio_buf_size=*/0, std::move(collection_scope), &tsi_hs);
     if (result != TSI_OK) {
       LOG(ERROR) << "Handshaker creation failed with error "
                  << tsi_result_to_string(result);
@@ -828,7 +841,7 @@ TlsServerSecurityConnector::UpdateHandshakerFactoryLocked() {
       grpc_get_tsi_tls_version(options_->max_tls_version()),
       tls_session_key_logger_.get(), options_->crl_directory().c_str(),
       options_->send_client_ca_list(), options_->crl_provider(),
-      &server_handshaker_factory_);
+      options_->key_exchange_groups(), &server_handshaker_factory_);
 }
 
 }  // namespace grpc_core

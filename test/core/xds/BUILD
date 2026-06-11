@@ -370,6 +370,22 @@ grpc_fuzz_test(
 )
 
 grpc_cc_test(
+    name = "xds_client_grpc_test",
+    srcs = ["xds_client_grpc_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    tags = ["xds_test"],
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//:grpc_public_hdrs",
+        "//src/core:grpc_xds_client",
+        "//test/core/test_util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
     name = "xds_common_types_test",
     srcs = ["xds_common_types_test.cc"],
     external_deps = [
@@ -387,6 +403,7 @@ grpc_cc_test(
     deps = [
         "//:config",
         "//:envoy_extensions_transport_sockets_tls_upb",
+        "//:envoy_type_upb",
         "//:gpr",
         "//:grpc",
         "//:grpc_trace",
@@ -448,16 +465,62 @@ grpc_cc_test(
     ],
 )
 
+grpc_cc_library(
+    name = "bm_xds_matcher_common",
+    testonly = True,
+    hdrs = ["bm_xds_matcher_common.h"],
+    external_deps = [
+        "absl/strings",
+        "benchmark",
+    ],
+    deps = [
+        "//src/core:down_cast",
+        "//src/core:xds_matcher",
+    ],
+)
+
 grpc_cc_benchmark(
-    name = "bm_xds_matcher_test",
-    srcs = ["bm_xds_matcher_test.cc"],
+    name = "bm_xds_matcher_list_test",
+    srcs = ["bm_xds_matcher_list_test.cc"],
     external_deps = [
         "absl/strings",
     ],
     monitoring = HISTORY,
     deps = [
-        "//src/core:down_cast",
+        ":bm_xds_matcher_common",
         "//src/core:grpc_matchers",
+        "//src/core:grpc_xds_client",
+        "//src/core:xds_matcher",
+        "//test/core/test_util:grpc_test_util",
+    ],
+)
+
+grpc_cc_benchmark(
+    name = "bm_xds_matcher_exact_map_test",
+    srcs = ["bm_xds_matcher_exact_map_test.cc"],
+    external_deps = [
+        "absl/container:flat_hash_map",
+        "absl/strings",
+    ],
+    monitoring = HISTORY,
+    deps = [
+        ":bm_xds_matcher_common",
+        "//src/core:grpc_xds_client",
+        "//src/core:xds_matcher",
+        "//test/core/test_util:grpc_test_util",
+    ],
+)
+
+grpc_cc_benchmark(
+    name = "bm_xds_matcher_prefix_map_test",
+    srcs = ["bm_xds_matcher_prefix_map_test.cc"],
+    external_deps = [
+        "absl/container:flat_hash_map",
+        "absl/strings",
+    ],
+    monitoring = HISTORY,
+    deps = [
+        ":bm_xds_matcher_common",
         "//src/core:grpc_xds_client",
         "//src/core:xds_matcher",
         "//test/core/test_util:grpc_test_util",
@@ -538,6 +601,7 @@ grpc_cc_test(
         "//:grpc_trace",
         "//:ref_counted_ptr",
         "//:xds_client",
+        "//src/core:composite_filter",
         "//src/core:error",
         "//src/core:gcp_authentication_filter",
         "//src/core:grpc_check",
@@ -558,7 +622,10 @@ grpc_cc_test(
         "@envoy_api//envoy/config/core/v3:pkg_cc_proto",
         "@envoy_api//envoy/config/rbac/v3:pkg_cc_proto",
         "@envoy_api//envoy/config/route/v3:pkg_cc_proto",
+        "@envoy_api//envoy/extensions/common/matching/v3:pkg_cc_proto",
         "@envoy_api//envoy/extensions/filters/common/fault/v3:pkg_cc_proto",
+        "@envoy_api//envoy/extensions/filters/common/matcher/action/v3:pkg_cc_proto",
+        "@envoy_api//envoy/extensions/filters/http/composite/v3:pkg_cc_proto",
         "@envoy_api//envoy/extensions/filters/http/fault/v3:pkg_cc_proto",
         "@envoy_api//envoy/extensions/filters/http/gcp_authn/v3:pkg_cc_proto",
         "@envoy_api//envoy/extensions/filters/http/rbac/v3:pkg_cc_proto",
@@ -777,5 +844,18 @@ grpc_cc_test(
         "//src/core:xds_listener",
         "//src/core:xds_route_config",
         "//test/core/test_util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "blackboard_test",
+    srcs = ["blackboard_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//src/core:blackboard",
     ],
 )

@@ -6,8 +6,8 @@
 namespace Grpc\Testing;
 
 use Google\Protobuf\Internal\GPBType;
-use Google\Protobuf\Internal\RepeatedField;
 use Google\Protobuf\Internal\GPBUtil;
+use Google\Protobuf\RepeatedField;
 
 /**
  * Generated from protobuf message <code>grpc.testing.HookRequest</code>
@@ -53,7 +53,7 @@ class HookRequest extends \Google\Protobuf\Internal\Message
 
     /**
      * Generated from protobuf field <code>.grpc.testing.HookRequest.HookRequestCommand command = 1;</code>
-     * @return int
+     * @return int one of the values in {@see \Grpc\Testing\HookRequest\HookRequestCommand}
      */
     public function getCommand()
     {
@@ -62,10 +62,10 @@ class HookRequest extends \Google\Protobuf\Internal\Message
 
     /**
      * Generated from protobuf field <code>.grpc.testing.HookRequest.HookRequestCommand command = 1;</code>
-     * @param int $var
+     * @param int $var one of the values in {@see \Grpc\Testing\HookRequest\HookRequestCommand}
      * @return $this
      */
-    public function setCommand($var)
+    public function setCommand(int $var)
     {
         GPBUtil::checkEnum($var, \Grpc\Testing\HookRequest\HookRequestCommand::class);
         $this->command = $var;
@@ -87,7 +87,7 @@ class HookRequest extends \Google\Protobuf\Internal\Message
      * @param int $var
      * @return $this
      */
-    public function setGrpcCodeToReturn($var)
+    public function setGrpcCodeToReturn(int $var)
     {
         GPBUtil::checkInt32($var);
         $this->grpc_code_to_return = $var;
@@ -109,9 +109,9 @@ class HookRequest extends \Google\Protobuf\Internal\Message
      * @param string $var
      * @return $this
      */
-    public function setGrpcStatusDescription($var)
+    public function setGrpcStatusDescription(string $var)
     {
-        GPBUtil::checkString($var, True);
+        GPBUtil::checkString($var, true);
         $this->grpc_status_description = $var;
 
         return $this;
@@ -135,7 +135,7 @@ class HookRequest extends \Google\Protobuf\Internal\Message
      * @param int $var
      * @return $this
      */
-    public function setServerPort($var)
+    public function setServerPort(int $var)
     {
         GPBUtil::checkInt32($var);
         $this->server_port = $var;

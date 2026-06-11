@@ -116,6 +116,9 @@ class BenchmarkClient
   end
   def streaming_ping_ponger(req, stub, config, waiter)
     q = EnumeratorQueue.new(self)
+    # Exposes the queue to the shutdown thread for termination
+    Thread.current.thread_variable_set(:queue, q)
+    return if @done
     resp = stub.streaming_call(q.each_item)
     start = Time.now
     q.push(req)
@@ -128,10 +131,12 @@ class BenchmarkClient
         q.push(req)
       else
         q.push(self) unless pushed_sentinal
-	# Continue polling on the responses to consume and release resources
+        # Continue polling on the responses to consume and release resources
         pushed_sentinal = true
       end
     end
+  ensure
+    Thread.current.thread_variable_set(:queue, nil)
   end
   def mark(reset)
     lat = Grpc::Testing::HistogramData.new(
@@ -151,8 +156,9 @@ class BenchmarkClient
   end
   def shutdown
     @done = true
-    @child_threads.each do |thread|
-      thread.join
-    end
+    # Sends a stop signal to each streaming threads.
+    @child_threads
+      .each { |t| t.thread_variable_get(:queue)&.push(self) }
+      .each(&:join)
   end
 end

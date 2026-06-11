@@ -14,29 +14,31 @@
 // Must be last.
 #include "upb/port/def.inc"
 
-extern const struct upb_MiniTable UPB_PRIVATE(_kUpb_MiniTable_StaticallyTreeShaken);
-static const upb_MiniTableField envoy_config_core_v3_CelExpressionConfig__fields[3] = {
+extern const UPB_PRIVATE(upb_GeneratedExtensionListEntry)* UPB_PRIVATE(upb_generated_extension_list);
+typedef struct {
+  upb_MiniTableField fields[3];
+} envoy__config__core__v3__CelExpressionConfig_msg_init_Fields;
+
+static const envoy__config__core__v3__CelExpressionConfig_msg_init_Fields envoy_config_core_v3_CelExpressionConfig__fields = {{
   {1, 8, 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
   {2, 9, 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
   {3, 10, 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
-};
+}};
 
 const upb_MiniTable envoy__config__core__v3__CelExpressionConfig_msg_init = {
-  NULL,
-  &envoy_config_core_v3_CelExpressionConfig__fields[0],
+  &envoy_config_core_v3_CelExpressionConfig__fields.fields[0],
   16, 3, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(24), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.config.core.v3.CelExpressionConfig",
 #endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x000800003f000008, &upb_psb1_1bt},
-    {0x000900003f000010, &upb_psb1_1bt},
-    {0x000a00003f000018, &upb_psb1_1bt},
+    {0x000800003f000008, &upb_DecodeFast_Bool_Scalar_Tag1Byte},
+    {0x000900003f000010, &upb_DecodeFast_Bool_Scalar_Tag1Byte},
+    {0x000a00003f000018, &upb_DecodeFast_Bool_Scalar_Tag1Byte},
   })
 };
 
-const upb_MiniTable* envoy__config__core__v3__CelExpressionConfig_msg_init_ptr = &envoy__config__core__v3__CelExpressionConfig_msg_init;
 static const upb_MiniTable *messages_layout[1] = {
   &envoy__config__core__v3__CelExpressionConfig_msg_init,
 };

@@ -6,8 +6,8 @@
 namespace Grpc\Testing;
 
 use Google\Protobuf\Internal\GPBType;
-use Google\Protobuf\Internal\RepeatedField;
 use Google\Protobuf\Internal\GPBUtil;
+use Google\Protobuf\RepeatedField;
 
 /**
  * Unary request.
@@ -131,7 +131,7 @@ class SimpleRequest extends \Google\Protobuf\Internal\Message
      * If response_type is RANDOM, server randomly chooses one from other formats.
      *
      * Generated from protobuf field <code>.grpc.testing.PayloadType response_type = 1;</code>
-     * @return int
+     * @return int one of the values in {@see \Grpc\Testing\PayloadType}
      */
     public function getResponseType()
     {
@@ -143,10 +143,10 @@ class SimpleRequest extends \Google\Protobuf\Internal\Message
      * If response_type is RANDOM, server randomly chooses one from other formats.
      *
      * Generated from protobuf field <code>.grpc.testing.PayloadType response_type = 1;</code>
-     * @param int $var
+     * @param int $var one of the values in {@see \Grpc\Testing\PayloadType}
      * @return $this
      */
-    public function setResponseType($var)
+    public function setResponseType(int $var)
     {
         GPBUtil::checkEnum($var, \Grpc\Testing\PayloadType::class);
         $this->response_type = $var;
@@ -172,7 +172,7 @@ class SimpleRequest extends \Google\Protobuf\Internal\Message
      * @param int $var
      * @return $this
      */
-    public function setResponseSize($var)
+    public function setResponseSize(int $var)
     {
         GPBUtil::checkInt32($var);
         $this->response_size = $var;
@@ -208,9 +208,8 @@ class SimpleRequest extends \Google\Protobuf\Internal\Message
      * @param \Grpc\Testing\Payload $var
      * @return $this
      */
-    public function setPayload($var)
+    public function setPayload(\Grpc\Testing\Payload|null $var)
     {
-        GPBUtil::checkMessage($var, \Grpc\Testing\Payload::class);
         $this->payload = $var;
 
         return $this;
@@ -234,9 +233,8 @@ class SimpleRequest extends \Google\Protobuf\Internal\Message
      * @param bool $var
      * @return $this
      */
-    public function setFillUsername($var)
+    public function setFillUsername(bool $var)
     {
-        GPBUtil::checkBool($var);
         $this->fill_username = $var;
 
         return $this;
@@ -260,9 +258,8 @@ class SimpleRequest extends \Google\Protobuf\Internal\Message
      * @param bool $var
      * @return $this
      */
-    public function setFillOauthScope($var)
+    public function setFillOauthScope(bool $var)
     {
-        GPBUtil::checkBool($var);
         $this->fill_oauth_scope = $var;
 
         return $this;
@@ -302,9 +299,8 @@ class SimpleRequest extends \Google\Protobuf\Internal\Message
      * @param \Grpc\Testing\BoolValue $var
      * @return $this
      */
-    public function setResponseCompressed($var)
+    public function setResponseCompressed(\Grpc\Testing\BoolValue|null $var)
     {
-        GPBUtil::checkMessage($var, \Grpc\Testing\BoolValue::class);
         $this->response_compressed = $var;
 
         return $this;
@@ -338,9 +334,8 @@ class SimpleRequest extends \Google\Protobuf\Internal\Message
      * @param \Grpc\Testing\EchoStatus $var
      * @return $this
      */
-    public function setResponseStatus($var)
+    public function setResponseStatus(\Grpc\Testing\EchoStatus|null $var)
     {
-        GPBUtil::checkMessage($var, \Grpc\Testing\EchoStatus::class);
         $this->response_status = $var;
 
         return $this;
@@ -374,9 +369,8 @@ class SimpleRequest extends \Google\Protobuf\Internal\Message
      * @param \Grpc\Testing\BoolValue $var
      * @return $this
      */
-    public function setExpectCompressed($var)
+    public function setExpectCompressed(\Grpc\Testing\BoolValue|null $var)
     {
-        GPBUtil::checkMessage($var, \Grpc\Testing\BoolValue::class);
         $this->expect_compressed = $var;
 
         return $this;
@@ -400,9 +394,8 @@ class SimpleRequest extends \Google\Protobuf\Internal\Message
      * @param bool $var
      * @return $this
      */
-    public function setFillServerId($var)
+    public function setFillServerId(bool $var)
     {
-        GPBUtil::checkBool($var);
         $this->fill_server_id = $var;
 
         return $this;
@@ -426,9 +419,8 @@ class SimpleRequest extends \Google\Protobuf\Internal\Message
      * @param bool $var
      * @return $this
      */
-    public function setFillGrpclbRouteType($var)
+    public function setFillGrpclbRouteType(bool $var)
     {
-        GPBUtil::checkBool($var);
         $this->fill_grpclb_route_type = $var;
 
         return $this;
@@ -462,9 +454,8 @@ class SimpleRequest extends \Google\Protobuf\Internal\Message
      * @param \Grpc\Testing\TestOrcaReport $var
      * @return $this
      */
-    public function setOrcaPerQueryReport($var)
+    public function setOrcaPerQueryReport(\Grpc\Testing\TestOrcaReport|null $var)
     {
-        GPBUtil::checkMessage($var, \Grpc\Testing\TestOrcaReport::class);
         $this->orca_per_query_report = $var;
 
         return $this;

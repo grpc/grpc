@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <algorithm>
 #include <fstream>
 #include <map>
 #include <optional>
@@ -428,6 +429,55 @@ class ArtifactGen {
     }
   }
 
+  // TODO: Remove this protobuf 33.x specific logic.
+  // As of protobuf 33.x certain upb experimental features are
+  // gated behind config flag such as //upb:fasttable_enabled_setting.
+  //
+  // Our codegen tooling uses bazel query which doesn't resolve such conditional
+  // dependencies properly, so we do manual pruning here as a temporary fix.
+  //
+  // Better solutions would be using more accurate resolution with `bazel
+  // cquery`, and/or use protobuf's official cmake/libupb.cmake for our cmake
+  // builds.
+  void PruneUpbExperimentalFeatures() {
+    constexpr char kUpbExcludedTargetsPattern[] = "//upb/wire/decode_fast";
+    // These targets are needed by upb_generator.
+    std::vector<std::string> kUpbExcludedTargetsExceptions = {
+        "@com_google_protobuf//upb/wire/decode_fast:select",
+        "@com_google_protobuf//upb/wire/decode_fast:combinations",
+        "@com_google_protobuf//upb/wire/decode_fast:data",
+    };
+    auto should_include = [&](absl::string_view rule) {
+      if (!absl::StrContains(rule, kUpbExcludedTargetsPattern)) {
+        return true;
+      }
+      LOG(INFO) << "checking experimental target: " << rule;
+      for (const std::string& e : kUpbExcludedTargetsExceptions) {
+        if (absl::EndsWith(rule, e)) {
+          return true;
+        }
+      }
+      return false;
+    };
+    auto it_rule = rules_.begin();
+    while (it_rule != rules_.end()) {
+      BazelRule& rule = it_rule->second;
+      if (!should_include(rule.name)) {
+        it_rule = rules_.erase(it_rule);
+        continue;
+      }
+      // Use index to avoid iterator invalidation.
+      for (int i = 0; i < rule.deps.size();) {
+        if (!should_include(rule.deps[i])) {
+          rule.deps.erase(rule.deps.begin() + i);
+        } else {
+          ++i;
+        }
+      }
+      ++it_rule;
+    }
+  }
+
   void ExpandUpbProtoLibraryRules() {
     const std::string kGenUpbRoot = "//:src/core/ext/upb-gen/";
     const std::string kGenUpbdefsRoot = "//:src/core/ext/upbdefs-gen/";
@@ -713,18 +763,17 @@ class ArtifactGen {
     std::ifstream fs(filename);
     nlohmann::json http_archives = nlohmann::json::parse(fs);
     // Make a copy for each element
-    for (nlohmann::json http_archive: http_archives["http_archives"]){
-        const std::string name = http_archive["name"].get<std::string>();
-        if (external_proto_libraries_.count(name) == 0) {
-          // If this http archive is not one of the external proto libraries,
-          // we don't want to include it as a CMake target
-          continue;
-        }
-        const auto& extlib =
-            external_proto_libraries_.find(name)->second;
-        http_archive["destination"] = extlib.destination;
-        http_archive["proto_prefix"] = extlib.proto_prefix;
-        external_proto_libraries.push_back(http_archive);
+    for (nlohmann::json http_archive : http_archives["http_archives"]) {
+      const std::string name = http_archive["name"].get<std::string>();
+      if (external_proto_libraries_.count(name) == 0) {
+        // If this http archive is not one of the external proto libraries,
+        // we don't want to include it as a CMake target
+        continue;
+      }
+      const auto& extlib = external_proto_libraries_.find(name)->second;
+      http_archive["destination"] = extlib.destination;
+      http_archive["proto_prefix"] = extlib.proto_prefix;
+      external_proto_libraries.push_back(http_archive);
     }
 
     build_yaml_like_["external_proto_libraries"] = external_proto_libraries;
@@ -1198,7 +1247,10 @@ nlohmann::json ExtractMetadataFromBazelXml() {
   for (auto target_query : absl::GetFlag(FLAGS_target_query)) {
     generator.LoadRulesXml(target_query);
   }
+
   generator.ExpandUpbProtoLibraryRules();
+  generator.PruneUpbExperimentalFeatures();
+
   generator.PatchGrpcProtoLibraryRules();
   generator.PatchDescriptorUpbProtoLibrary();
   generator.PopulateCcTests();

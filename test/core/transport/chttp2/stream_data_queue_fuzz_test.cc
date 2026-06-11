@@ -228,14 +228,16 @@ class StreamDataQueueFuzzTest : public YodelTest {
     explicit AssembleFrames(const uint32_t stream_id,
                             const bool allow_true_binary_metadata)
         : header_assembler_(/*is_client=*/true) {
-      header_assembler_.InitializeStream(stream_id, allow_true_binary_metadata);
+      header_assembler_.SetStreamId(stream_id);
+      header_assembler_.MaybeSetAllowTrueBinaryMetadataAcked(
+          allow_true_binary_metadata);
     }
     void operator()(Http2HeaderFrame frame) {
-      auto status = header_assembler_.AppendHeaderFrame(frame);
+      auto status = header_assembler_.AppendFrame(frame);
       EXPECT_TRUE(status.IsOk());
     }
     void operator()(Http2ContinuationFrame frame) {
-      auto status = header_assembler_.AppendContinuationFrame(frame);
+      auto status = header_assembler_.AppendFrame(frame);
       EXPECT_TRUE(status.IsOk());
     }
     void operator()(Http2DataFrame frame) {

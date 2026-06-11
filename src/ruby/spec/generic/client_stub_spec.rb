@@ -157,6 +157,29 @@ describe 'ClientStub' do  # rubocop:disable Metrics/BlockLength
       end
       expect(&blk).to_not raise_error
     end
+
+    it 'creates secure channel when only CallCredentials provided' do
+      call_creds = GRPC::Core::CallCredentials.new(proc { {} })
+      stub = GRPC::ClientStub.new(fake_host, call_creds)
+      # Verify the internal channel credentials are SSL (not insecure)
+      expect(stub.instance_variable_get(:@channel_creds)).to be_a(GRPC::Core::ChannelCredentials)
+      expect(stub.instance_variable_get(:@call_creds)).to eq(call_creds)
+    end
+
+    context 'with CompositeChannelCredentials (pure Ruby path)' do
+      it 'splits CompositeChannelCredentials into channel + call creds' do
+        skip 'CompositeChannelCredentials requires pure Ruby toggle ON' \
+          unless GRPC::PURE_RUBY_CALL_CREDENTIALS_ENABLED
+        require 'grpc/core/call_credentials'
+        require 'grpc/core/channel_credentials'
+        chan_creds = GRPC::Core::ChannelCredentials.new
+        call_creds = GRPC::Core::CallCredentials.new(proc { {} })
+        composite = chan_creds.compose(call_creds)
+        stub = GRPC::ClientStub.new(fake_host, composite)
+        expect(stub.instance_variable_get(:@channel_creds)).to eq(chan_creds)
+        expect(stub.instance_variable_get(:@call_creds)).to eq(call_creds)
+      end
+    end
   end
 
   describe '#request_response', request_response: true do
@@ -301,7 +324,7 @@ describe 'ClientStub' do  # rubocop:disable Metrics/BlockLength
     describe 'via a call operation' do
       after(:each) do
         # make sure op.wait doesn't freeze, even if there's a bad status
-        @op.wait
+        @op&.wait
       end
       def get_response(stub, run_start_call_first: false, credentials: nil)
         @op = stub.request_response(@method, @sent_msg, noop, noop,
@@ -403,7 +426,7 @@ describe 'ClientStub' do  # rubocop:disable Metrics/BlockLength
     describe 'via a call operation' do
       after(:each) do
         # make sure op.wait doesn't freeze, even if there's a bad status
-        @op.wait
+        @op&.wait
       end
       def get_response(stub, run_start_call_first: false)
         @op = stub.client_streamer(@method, @sent_msgs, noop, noop,
@@ -522,7 +545,7 @@ describe 'ClientStub' do  # rubocop:disable Metrics/BlockLength
 
     describe 'via a call operation' do
       after(:each) do
-        @op.wait # make sure wait doesn't freeze
+        @op&.wait
       end
       def get_responses(stub, run_start_call_first: false, unmarshal: noop)
         @op = stub.server_streamer(@method, @sent_msg, noop, unmarshal,
@@ -841,7 +864,7 @@ describe 'ClientStub' do  # rubocop:disable Metrics/BlockLength
 
     describe 'via a call operation' do
       after(:each) do
-        @op.wait # make sure wait doesn't freeze
+        @op&.wait
       end
       def get_responses(stub, run_start_call_first: false, deadline: nil,
                         marshal_proc: noop)
