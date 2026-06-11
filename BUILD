@@ -916,7 +916,10 @@ grpc_cc_library(
     external_deps = [
         "absl/functional:any_invocable",
     ],
-    visibility = ["//:__subpackages__"],
+    visibility = [
+        "//:__subpackages__",
+        "//bazel:virtual_rpcs",
+    ],
     deps = [
         "grpc++_public_hdrs",
     ],
@@ -1387,6 +1390,7 @@ grpc_cc_library(
         "nofixdeps",
     ],
     visibility = [
+        "//bazel:virtual_rpcs",
         "//test/core/transport/chttp2:__pkg__",
     ],
     deps = [
