@@ -11,7 +11,7 @@ on:
 
 jobs:
   publish:
-    uses: ./.github/workflows/publish-to-bcr
+    uses: ./.github/workflows/publish-to-bcr.yaml
     with:
       #tag_name: ${{ github.ref_name }}
       tag_name: "fake-tag"
