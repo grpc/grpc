@@ -13,8 +13,6 @@
 # limitations under the License.
 """Download and unzip the target file to the destination."""
 
-from __future__ import print_function
-
 import os
 import sys
 import tempfile

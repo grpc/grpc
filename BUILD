@@ -280,11 +280,11 @@ config_setting(
 python_config_settings()
 
 # This should be updated along with build_handwritten.yaml
-g_stands_for = "glacier"  # @unused
+g_stands_for = "garden"  # @unused
 
 core_version = "55.0.0"  # @unused
 
-version = "1.82.0-dev"  # @unused
+version = "1.83.0-dev"  # @unused
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
@@ -916,7 +916,10 @@ grpc_cc_library(
     external_deps = [
         "absl/functional:any_invocable",
     ],
-    visibility = ["//:__subpackages__"],
+    visibility = [
+        "//:__subpackages__",
+        "//bazel:virtual_rpcs",
+    ],
     deps = [
         "grpc++_public_hdrs",
     ],
@@ -1387,6 +1390,7 @@ grpc_cc_library(
         "nofixdeps",
     ],
     visibility = [
+        "//bazel:virtual_rpcs",
         "//test/core/transport/chttp2:__pkg__",
     ],
     deps = [
@@ -4674,6 +4678,7 @@ grpc_cc_library(
         "//src/core:grpc_transport_chttp2_alpn",
         "//src/core:load_file",
         "//src/core:match",
+        "//src/core:metrics",
         "//src/core:ref_counted",
         "//src/core:slice",
         "//src/core:spiffe_utils",

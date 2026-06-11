@@ -173,10 +173,12 @@ class IncomingMetadataState {
 class ReadContext {
  public:
   explicit ReadContext(const uint32_t max_new_streams_per_read_cycle,
-                       const PromiseEndpoint& endpoint, const bool is_client)
+                       const PromiseEndpoint& endpoint, const bool is_client,
+                       const uint32_t max_security_frame_size)
       : max_new_streams_per_read_cycle_(max_new_streams_per_read_cycle),
         peer_string_(GetPeerString(endpoint)),
         is_client_(is_client),
+        max_security_frame_size_(max_security_frame_size),
         header_assembler_(is_client) {
     GRPC_DCHECK(max_new_streams_per_read_cycle > 0u)
         << "0 is invalid, because we will never be able to create a stream.";
@@ -282,7 +284,8 @@ class ReadContext {
         /*last_stream_id=*/last_stream_id,
         /*is_client=*/is_client_,
         /*is_first_settings_processed=*/is_first_settings_processed,
-        /*tracker=*/tracker_);
+        /*tracker=*/tracker_,
+        /*max_security_frame_size=*/max_security_frame_size_);
   }
 
   // Called when a HEADER frame is received.
@@ -436,6 +439,7 @@ class ReadContext {
   const Slice peer_string_;
   const bool is_client_;
 
+  const uint32_t max_security_frame_size_;
   uint32_t max_header_list_size_soft_limit_ =
       DEFAULT_MAX_HEADER_LIST_SIZE_SOFT_LIMIT;
   HPackParser parser_;
