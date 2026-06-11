@@ -1,0 +1,28 @@
+diff --git a/BUILD.bazel b/BUILD.bazel
+index 643d71f..7f5f84b 100644
+--- a/BUILD.bazel
++++ b/BUILD.bazel
+@@ -4,6 +4,10 @@
+ 
+ # Bazel (http://bazel.build/) BUILD file for RE2.
+ 
++load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
++load("@rules_cc//cc:cc_library.bzl", "cc_library")
++load("@rules_cc//cc:cc_test.bzl", "cc_test")
++
+ licenses(["notice"])
+ 
+ exports_files(["LICENSE"])
+diff --git a/app/BUILD.bazel b/app/BUILD.bazel
+index cb510af..a65e129 100644
+--- a/app/BUILD.bazel
++++ b/app/BUILD.bazel
+@@ -4,6 +4,8 @@
+ 
+ # Bazel (http://bazel.build/) BUILD file for RE2 app.
+ 
++load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
++
+ cc_binary(
+     name = "_re2.js",
+     testonly = 1,

@@ -1,0 +1,111 @@
+diff --git a/BUILD.bazel b/BUILD.bazel
+index 53501454..1f20c833 100644
+--- a/BUILD.bazel
++++ b/BUILD.bazel
+@@ -30,6 +30,9 @@
+ #
+ #   Bazel Build for Google C++ Testing Framework(Google Test)
+ 
++load("@rules_cc//cc:cc_library.bzl", "cc_library")
++load("@rules_cc//cc:cc_test.bzl", "cc_test")
++
+ package(default_visibility = ["//visibility:public"])
+ 
+ licenses(["notice"])
+@@ -154,7 +157,7 @@ cc_library(
+             "@abseil-cpp//absl/types:any",
+             "@abseil-cpp//absl/types:optional",
+             "@abseil-cpp//absl/types:variant",
+-            "@re2//:re2",
++            "@re2",
+         ],
+         "//conditions:default": [],
+     }) + select({
+@@ -174,8 +177,8 @@ cc_library(
+ # `gtest`, but testonly. See guidance on `gtest` for when to use this.
+ alias(
+     name = "gtest_for_library",
+-    actual = ":gtest",
+     testonly = True,
++    actual = ":gtest",
+ )
+ 
+ # Implements main() for tests using gtest. Prefer to depend on `gtest` as well
+diff --git a/MODULE.bazel b/MODULE.bazel
+index 5cb0b156..af63fb3b 100644
+--- a/MODULE.bazel
++++ b/MODULE.bazel
+@@ -36,6 +36,7 @@ module(
+     compatibility_level = 1,
+ )
+ 
++bazel_dep(name = "rules_cc", version = "0.2.19")
+ # Only direct dependencies need to be listed below.
+ # Please keep the versions in sync with the versions in the WORKSPACE file.
+ 
+diff --git a/WORKSPACE b/WORKSPACE
+index 0ae5dee9..be4053f5 100644
+--- a/WORKSPACE
++++ b/WORKSPACE
+@@ -31,6 +31,7 @@
+ workspace(name = "googletest")
+ 
+ load("//:googletest_deps.bzl", "googletest_deps")
++
+ googletest_deps()
+ 
+ load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+@@ -41,21 +42,23 @@ http_archive(
+     strip_prefix = "rules_python-1.3.0",
+     url = "https://github.com/bazelbuild/rules_python/releases/download/1.3.0/rules_python-1.3.0.tar.gz",
+ )
++
+ # https://github.com/bazelbuild/rules_python/releases/tag/1.1.0
+ load("@rules_python//python:repositories.bzl", "py_repositories")
++
+ py_repositories()
+ 
+ http_archive(
+-  name = "bazel_skylib",
+-  sha256 = "cd55a062e763b9349921f0f5db8c3933288dc8ba4f76dd9416aac68acee3cb94",
+-  urls = ["https://github.com/bazelbuild/bazel-skylib/releases/download/1.5.0/bazel-skylib-1.5.0.tar.gz"],
++    name = "bazel_skylib",
++    sha256 = "cd55a062e763b9349921f0f5db8c3933288dc8ba4f76dd9416aac68acee3cb94",
++    urls = ["https://github.com/bazelbuild/bazel-skylib/releases/download/1.5.0/bazel-skylib-1.5.0.tar.gz"],
+ )
+ 
+ http_archive(
+     name = "platforms",
++    sha256 = "29742e87275809b5e598dc2f04d86960cc7a55b3067d97221c9abbc9926bff0f",
+     urls = [
+         "https://mirror.bazel.build/github.com/bazelbuild/platforms/releases/download/0.0.11/platforms-0.0.11.tar.gz",
+         "https://github.com/bazelbuild/platforms/releases/download/0.0.11/platforms-0.0.11.tar.gz",
+     ],
+-    sha256 = "29742e87275809b5e598dc2f04d86960cc7a55b3067d97221c9abbc9926bff0f",
+ )
+diff --git a/googlemock/test/BUILD.bazel b/googlemock/test/BUILD.bazel
+index d4297c80..625cff96 100644
+--- a/googlemock/test/BUILD.bazel
++++ b/googlemock/test/BUILD.bazel
+@@ -30,6 +30,8 @@
+ #
+ #   Bazel Build for Google C++ Testing Framework(Google Test)-googlemock
+ 
++load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
++load("@rules_cc//cc:cc_test.bzl", "cc_test")
+ load("@rules_python//python:defs.bzl", "py_library", "py_test")
+ 
+ licenses(["notice"])
+diff --git a/googletest/test/BUILD.bazel b/googletest/test/BUILD.bazel
+index c561ef8b..9a8f00ca 100644
+--- a/googletest/test/BUILD.bazel
++++ b/googletest/test/BUILD.bazel
+@@ -30,6 +30,8 @@
+ #
+ # Bazel BUILD for The Google C++ Testing Framework (Google Test)
+ 
++load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
++load("@rules_cc//cc:cc_test.bzl", "cc_test")
+ load("@rules_python//python:defs.bzl", "py_library", "py_test")
+ 
+ licenses(["notice"])
