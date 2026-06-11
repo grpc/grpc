@@ -27,8 +27,9 @@ bazelisk \
     build \
     --override_module=re2=${HOME}/deps/re2 \
     --override_module=googletest=${HOME}/deps/googletest \
-    --override_module=c-ares=${HOME}/deps/c-ares-1.19.1 \
+    --override_module=c-ares=${HOME}/deps/c-ares \
     --override_module=opencensus-cpp=${HOME}/deps/opencensus-cpp \
+    --override_module=opentelemetry-cpp=${HOME}/deps/opentelemetry-cpp \
     --nobuild \
     -- \
     "@grpc" \
