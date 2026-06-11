@@ -4,9 +4,14 @@ on:
   push:
     tags:
       - 'v*'
+  # Temporary: run whenever you push code to this PR
+  pull_request:
+    branches:
+      - main
 
 jobs:
   publish:
     uses: ./.github/workflows/publish-to-bcr
     with:
-      tag_name: ${{ github.ref_name }}
+      #tag_name: ${{ github.ref_name }}
+      tag_name: "fake-tag"
