@@ -58,8 +58,7 @@ from ._typing import SerializingFunction
 from ._utils import _timeout_to_deadline
 
 if TYPE_CHECKING:
-    from collections.abc import AsyncIterable
-    from collections.abc import AsyncIterator
+    from collections.abc import AsyncIterable, AsyncIterator
 
 
 _LOCAL_CANCELLATION_DETAILS = "Locally cancelled by application!"
