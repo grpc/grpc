@@ -818,6 +818,27 @@ TEST_F(ExtProcResponseTest, RequestBodyUnsupportedStatus) {
             "CONTINUE_AND_REPLACE is not supported");
 }
 
+TEST_F(ExtProcResponseTest, RequestBodyCompressedMessageUnsupported) {
+  upb::Arena arena;
+  envoy::service::ext_proc::v3::ProcessingResponse response;
+  auto* body_response = response.mutable_request_body();
+  auto* common_response = body_response->mutable_response();
+  common_response->set_status(
+      envoy::service::ext_proc::v3::CommonResponse::CONTINUE);
+  auto* body_mutation = common_response->mutable_body_mutation();
+  auto* streamed_response = body_mutation->mutable_streamed_response();
+  streamed_response->set_body("test request body");
+  streamed_response->set_grpc_message_compressed(true);
+  auto parsed_or = ParseResponse(response, arena.ptr());
+  ASSERT_TRUE(parsed_or.ok()) << parsed_or.status().ToString();
+  auto parsed = std::move(parsed_or.value());
+  ASSERT_TRUE(parsed.request_body.has_value());
+  EXPECT_FALSE(parsed.request_body->ok());
+  EXPECT_EQ(parsed.request_body->status().code(), absl::StatusCode::kInternal);
+  EXPECT_EQ(parsed.request_body->status().message(),
+            "grpc_message_compressed is not supported");
+}
+
 TEST_F(ExtProcResponseTest, ResponseBodyMutation) {
   upb::Arena arena;
   envoy::service::ext_proc::v3::ProcessingResponse response;
@@ -881,6 +902,17 @@ TEST_F(ExtProcResponseTest, ImmediateResponse) {
   EXPECT_EQ(
       parsed.immediate_response->header_mutation->set_headers[0].header.second,
       "Bearer");
+}
+
+TEST_F(ExtProcResponseTest, UnsupportedResponseCaseRequestTrailers) {
+  upb::Arena arena;
+  envoy::service::ext_proc::v3::ProcessingResponse response;
+  response.mutable_request_trailers();
+  auto parsed_or = ParseResponse(response, arena.ptr());
+  EXPECT_FALSE(parsed_or.ok());
+  EXPECT_EQ(parsed_or.status().code(), absl::StatusCode::kInternal);
+  EXPECT_THAT(parsed_or.status().message(),
+              ::testing::StartsWith("Unsupported ProcessingResponse response case:"));
 }
 
 TEST_F(ExtProcResponseTest, RequestHeadersCommonResponseNull) {
