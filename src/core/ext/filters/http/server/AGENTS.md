@@ -2,7 +2,7 @@
 
 This directory contains a server-side filter for processing HTTP/2 headers.
 
-See also: [gRPC HTTP Filters overview](../GEMINI.md)
+See also: [gRPC HTTP Filters overview](../AGENTS.md)
 
 ## Overarching Purpose
 

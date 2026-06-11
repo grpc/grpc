@@ -27,5 +27,5 @@ The EventEngine is an abstraction layer that provides a consistent interface to 
 
 ## See also
 
-*   `src/core/lib/iomgr/GEMINI.md`
+*   `src/core/lib/iomgr/AGENTS.md`
     *   The EventEngine is replacing the `iomgr` subsystem.

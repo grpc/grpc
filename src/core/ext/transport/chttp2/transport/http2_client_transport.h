@@ -641,7 +641,7 @@ class Http2ClientTransport final : public ClientTransport,
   //////////////////////////////////////////////////////////////////////////////
   // All Data Members
 
-  RefCountedPtr<Party> general_party_;  // Refer Gemini.md for party slot usage
+  RefCountedPtr<Party> general_party_;  // Refer AGENTS.md for party slot usage
   std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_;
 
   PromiseEndpoint endpoint_;

@@ -683,7 +683,7 @@ class Http2ServerTransport final : public ServerTransport,
   // TODO(tjagtap) : [PH2][P0] : These are copied as is from the client
   // transport. Take a look if modifications are needed.
 
-  RefCountedPtr<Party> general_party_;  // Refer Gemini.md for party slot usage
+  RefCountedPtr<Party> general_party_;  // Refer AGENTS.md for party slot usage
   std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_;
 
   PromiseEndpoint endpoint_;
