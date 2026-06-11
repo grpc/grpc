@@ -14,8 +14,7 @@
 """Invocation-side implementation of gRPC Asyncio Python."""
 
 import asyncio
-import sys
-from typing import Any, Iterable, List, Optional, Sequence
+from typing import Any, List, Optional, Sequence
 import weakref
 
 import grpc
@@ -405,7 +404,8 @@ class Channel(_base_channel.Channel):
             return
 
         if grace and grace < 0:
-            raise ValueError("grace must be non-negative")
+            error_msg = f"grace must be non-negative, got {grace}."
+            raise ValueError(error_msg)
 
         # No new calls will be accepted by the Cython channel.
         self._channel.closing()
@@ -413,7 +413,7 @@ class Channel(_base_channel.Channel):
         async def _wait_for_call_to_complete(call):
             try:
                 await call.code()
-            except Exception:
+            except Exception:  # pylint: disable=broad-except
                 # Ignore exceptions here as true RPC errors bubble up via
                 # standard application paths. Silencing prevents channel close
                 # from failing and suppresses asyncio noise warnings.
