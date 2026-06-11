@@ -37,6 +37,7 @@ PLUGIN_IDENTIFIER_SEP = ","
 
 _LOGGER = logging.getLogger(__name__)
 
+_PyEvent = Dict[str, Union[str, Dict[str, str]]]
 
 class _CyMetricsName:
   CY_CLIENT_API_LATENCY = kRpcClientApiLatencyMeasureName
@@ -116,9 +117,33 @@ def activate_config(object py_config) -> None:
 def activate_stats() -> None:
   EnablePythonCensusStats(True);
 
+
+def activate_tracing() -> None:
+  EnablePythonCensusTracing(True)
+  # always sample when OTel tracing is enabled
+  ProbabilitySampler.Get().SetThreshold(1.0)
+
+
+cdef vector[Label] _get_propagation_headers_bridge(
+  const char* trace_id, const char* span_id, bint is_sampled,
+  PyObject* py_callable) noexcept nogil:
+  """Cython bridge called from C++ client call tracer"""
+  cdef vector[Label] empty_result
+  with gil:
+    try:
+      py_fn = <object>py_callable
+      result = py_fn(_decode(trace_id), _decode(span_id), bool(is_sampled))
+      return _labels_to_c_labels(result)
+    except Exception:
+      _LOGGER.exception("Failed to generate propagation headers")
+      return empty_result
+  return empty_result
+
+
 def create_client_call_tracer(bytes method_name, bytes target, bytes trace_id, str identifier,
-                              dict exchange_labels, object enabled_optional_labels,
-                              bint registered_method, bytes parent_span_id=b'') -> cpython.PyObject:
+                              dict exchange_labels, object propagation_headers_callable,
+                              object enabled_optional_labels, bint registered_method,
+                              bytes parent_span_id=b'') -> cpython.PyObject:
   """Create a ClientCallTracer and save to PyCapsule.
 
   Returns: A grpc_observability._observability.ClientCallTracerCapsule object.
@@ -130,6 +155,11 @@ def create_client_call_tracer(bytes method_name, bytes target, bytes trace_id, s
   identifier_bytes = _encode(identifier)
   cdef char* c_identifier = cpython.PyBytes_AsString(identifier_bytes)
   cdef vector[Label] c_labels = _labels_to_c_labels(exchange_labels)
+  cdef GetPropagationHeadersCb get_propagation_headers_cb = NULL
+  cdef PyObject* py_callable = NULL
+  if propagation_headers_callable:
+    get_propagation_headers_cb = _get_propagation_headers_bridge
+    py_callable = <PyObject*>propagation_headers_callable
   cdef bint add_csm_optional_labels = False
 
   for label_type in enabled_optional_labels:
@@ -137,20 +167,28 @@ def create_client_call_tracer(bytes method_name, bytes target, bytes trace_id, s
       add_csm_optional_labels = True
 
   cdef void* call_tracer = CreateClientCallTracer(c_method, c_target, c_trace_id, c_parent_span_id,
-                                                  c_identifier, c_labels, add_csm_optional_labels,
+                                                  c_identifier, c_labels, get_propagation_headers_cb,
+                                                  py_callable, add_csm_optional_labels,
                                                   registered_method)
   capsule = cpython.PyCapsule_New(call_tracer, CLIENT_CALL_TRACER, NULL)
   return capsule
 
 
-def create_server_call_tracer_factory_capsule(dict exchange_labels, str identifier) -> cpython.PyObject:
+def create_server_call_tracer_factory_capsule(dict exchange_labels,
+                                              set propagation_fields,
+                                              str identifier) -> cpython.PyObject:
   """Create a ServerCallTracerFactory and save to PyCapsule.
 
   Returns: A grpc_observability._observability.ServerCallTracerFactoryCapsule object.
   """
   cdef vector[Label] c_labels = _labels_to_c_labels(exchange_labels)
+  cdef vector[string] c_propagation_fields
+  for field_name in propagation_fields:
+    c_propagation_fields.push_back(_encode(field_name))
   cdef char* c_identifier = cpython.PyBytes_AsString(_encode(identifier))
-  cdef void* call_tracer_factory = CreateServerCallTracerFactory(c_labels, c_identifier)
+  cdef void* call_tracer_factory = CreateServerCallTracerFactory(
+    c_labels, c_propagation_fields, c_identifier
+  )
   capsule = cpython.PyCapsule_New(call_tracer_factory, SERVER_CALL_TRACER_FACTORY, NULL)
   return capsule
 
@@ -204,12 +242,19 @@ def _c_measurement_to_measurement(object measurement
   return py_measurement
 
 
-def _c_annotation_to_annotations(vector[Annotation] c_annotations) -> List[Tuple[str, str]]:
-  py_annotations = []
-  for annotation in c_annotations:
-    py_annotations.append((_decode(annotation.time_stamp),
-                          _decode(annotation.description)))
-  return py_annotations
+def _c_event_to_events(vector[Event] c_events) -> List[_PyEvent]:
+  py_events = []
+
+  for event in c_events:
+    py_attributes = {}
+    for attribute in event.attributes:
+      py_attributes[_decode(attribute.key)] = _decode(attribute.value)
+    py_events.append({
+      "name": _decode(event.name),
+      "attributes": py_attributes,
+      "time_stamp": _decode(event.time_stamp),
+    })
+  return py_events
 
 
 def observability_deinit() -> None:
@@ -263,9 +308,12 @@ def _get_stats_data(object measurement, object labels, object identifier) -> _ob
 
 
 def _get_tracing_data(SpanCensusData span_data, vector[Label] span_labels,
-                      vector[Annotation] span_annotations) -> _observability.TracingData:
+                      vector[Event] span_events) -> _observability.TracingData:
   py_span_labels = _c_label_to_labels(span_labels)
-  py_span_annotations = _c_annotation_to_annotations(span_annotations)
+  py_received_headers = {
+    _decode(rh.key): _decode(rh.value) for rh in span_data.received_headers
+  }
+  py_span_events = _c_event_to_events(span_events)
   return _observability.TracingData(name=_decode(span_data.name),
                                     start_time = _decode(span_data.start_time),
                                     end_time = _decode(span_data.end_time),
@@ -276,7 +324,8 @@ def _get_tracing_data(SpanCensusData span_data, vector[Label] span_labels,
                                     should_sample = span_data.should_sample,
                                     child_span_count = span_data.child_span_count,
                                     span_labels = py_span_labels,
-                                    span_annotations = py_span_annotations)
+                                    received_headers=py_received_headers,
+                                    span_events = py_span_events)
 
 
 def _record_rpc_latency(object exporter, str method, str target, float rpc_latency,
@@ -346,7 +395,7 @@ cdef void _flush_census_data(object exporter):
       py_metrics_batch.append(py_metric)
     else:
       py_span = _get_tracing_data(c_census_data.span_data, c_census_data.span_data.span_labels,
-                                  c_census_data.span_data.span_annotations)
+                                  c_census_data.span_data.span_events)
       py_spans_batch.append(py_span)
     g_census_data_buffer.pop()
 

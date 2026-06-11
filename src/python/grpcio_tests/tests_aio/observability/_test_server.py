@@ -67,8 +67,8 @@ class _GenericHandler(grpc.GenericRpcHandler):
         return self._routing_table.get(handler_details.method)
 
 
-async def start_server() -> Tuple[grpc.aio.Server, int]:
-    server = grpc.aio.server()
+async def start_server(interceptors=None) -> Tuple[grpc.aio.Server, int]:
+    server = grpc.aio.server(interceptors=interceptors)
     port = server.add_insecure_port("[::]:0")
     generic_handler = _GenericHandler()
     server.add_generic_rpc_handlers((generic_handler,))
