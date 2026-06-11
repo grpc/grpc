@@ -35,12 +35,22 @@ bazel_dep(name = "abseil-cpp", version = "20250512.1", repo_name = "com_google_a
 single_version_override(
     module_name = "abseil-cpp",
     version = "20250512.1",
+    patch_strip = 1,
+    patches = [
+        "//bazel:abseil-cpp/bazel_9_support.patch",
+    ],
 )
 
 bazel_dep(name = "platforms", version = "1.0.0")
 bazel_dep(name = "apple_support", version = "1.19.0", repo_name = "build_bazel_apple_support")
 bazel_dep(name = "bazel_skylib", version = "1.8.1")
 bazel_dep(name = "boringssl", version = "0.20241024.0")  # mismatched 20241211
+
+########## Version bumps for bazel 9 compatibility
+bazel_dep(name = "aspect_bazel_lib", version = "2.22.5")
+bazel_dep(name = "aspect_rules_esbuild", version = "0.26.0")
+########## End of Version bumps for bazel 9 compatibility
+
 bazel_dep(name = "c-ares", version = "1.19.1", repo_name = "com_github_cares_cares")
 single_version_override(
     module_name = "c-ares",
@@ -140,6 +150,7 @@ archive_override(
     patches = [
         "//bazel/zlib:add_module_dot_bazel.patch",
         "//bazel/zlib:add_custom_build_file.patch",
+        "//bazel/zlib:bazel_9_support.patch",
     ],
     strip_prefix = "zlib-f1f503da85d52e56aae11557b4d79a42bcaa2b86",
     urls = [
