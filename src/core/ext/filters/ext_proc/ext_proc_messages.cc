@@ -46,7 +46,7 @@ ExtProcResponse::HeaderMutation ParseHeaderMutation(
                                                            &set_headers_size);
   for (size_t i = 0; i < set_headers_size; ++i) {
     ValidationErrors errors;
-    auto parsed = ParseHeaderValueOption(set_headers[i], &errors);
+    auto parsed = ParseXdsHeaderValueOption(set_headers[i], &errors);
     header_mutation_response.set_headers.push_back(std::move(parsed));
   }
   size_t remove_headers_size = 0;
