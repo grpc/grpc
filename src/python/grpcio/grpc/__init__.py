@@ -1136,6 +1136,15 @@ class ServicerContext(RpcContext, metaclass=abc.ABCMeta):
         raise NotImplementedError()
 
     @abc.abstractmethod
+    def experimental_authority(self) -> str:
+        """Accesses the host (:authority) sent by the client
+
+        Returns:
+          The :authority header of the RPC.
+        """
+        raise NotImplementedError()
+
+    @abc.abstractmethod
     def peer(self):
         """Identifies the peer that invoked the RPC being serviced.
 
