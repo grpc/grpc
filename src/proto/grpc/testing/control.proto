@@ -132,6 +132,9 @@ message ClientConfig {
 
   // Protocol.
   Protocol protocol = 22;
+
+  // Whether to run over a virtual channel session.
+  bool use_session = 24;
 }
 
 message ClientStatus {
@@ -188,6 +191,9 @@ message ServerConfig {
 
   // Protocol.
   Protocol protocol = 22;
+
+  // Whether to run over a virtual channel session.
+  bool use_session = 24;
 }
 
 message ServerArgs {
