@@ -22,6 +22,7 @@
 #include <grpcpp/channel.h>
 #include <grpcpp/client_context.h>
 #include <grpcpp/create_channel.h>
+#include <grpcpp/generic/generic_stub_callback.h>
 #include <grpcpp/resource_quota.h>
 #include <grpcpp/security/auth_metadata_processor.h>
 #include <grpcpp/security/credentials.h>
@@ -29,11 +30,15 @@
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
 #include <grpcpp/server_context.h>
+#include <grpcpp/support/slice.h>
+#include <grpcpp/support/status.h>
 #include <grpcpp/support/string_ref.h>
+#include <grpcpp/support/stub_options.h>
 #include <grpcpp/test/channel_test_peer.h>
 
 #include <memory>
 #include <mutex>
+#include <string>
 #include <thread>
 
 #include "src/core/client_channel/backup_poller.h"
@@ -58,6 +63,7 @@
 #include "absl/strings/ascii.h"
 #include "absl/strings/match.h"
 #include "absl/strings/str_format.h"
+#include "absl/synchronization/notification.h"
 
 #ifdef GRPC_POSIX_SOCKET_EV
 #include "src/core/lib/iomgr/ev_posix.h"
@@ -531,6 +537,7 @@ class End2endTest : public ::testing::TestWithParam<TestScenario> {
     }
 
     stub_ = grpc::testing::EchoTestService::NewStub(channel_);
+    generic_stub_ = std::make_unique<grpc::GenericStubCallback>(channel_);
     PhonyInterceptor::Reset();
   }
 
@@ -540,6 +547,7 @@ class End2endTest : public ::testing::TestWithParam<TestScenario> {
   std::unique_ptr<grpc::ClientContext> session_context_;
   std::unique_ptr<grpc::testing::EchoRequest> session_request_;
   std::unique_ptr<absl::Notification> session_done_;
+  std::unique_ptr<grpc::GenericStubCallback> generic_stub_;
   std::unique_ptr<Server> server_;
   std::unique_ptr<Server> proxy_server_;
   std::unique_ptr<Proxy> proxy_service_;
@@ -1558,8 +1566,6 @@ TEST_P(End2endTest, BinaryTrailerTest) {
 }
 
 TEST_P(End2endTest, ExpectErrorTest) {
-  SKIP_TEST_FOR_PH2_CLIENT("TODO(tjagtap) [PH2][P3][Client] Fix bug");
-
   ResetStub();
 
   std::vector<ErrorStatus> expected_status;
@@ -2341,6 +2347,34 @@ TEST_P(ResourceQuotaEnd2endTest, SimpleRequest) {
   Status s = stub_->Echo(&context, request, &response);
   EXPECT_EQ(response.message(), request.message());
   EXPECT_TRUE(s.ok());
+}
+
+TEST_P(End2endTest, DeserializationFailure) {
+  ResetStub();
+  const std::string kMethodName("/grpc.testing.EchoTestService/Echo");
+  const char kMessage[] = "Invalid message that will not deserialize";
+  grpc::Slice slice(kMessage, sizeof(kMessage));
+  ByteBuffer send_buf(&slice, 1);
+  ByteBuffer recv_buf;
+  ClientContext cli_ctx;
+
+  absl::Notification notify;
+  Status status;
+  StubOptions options;
+  generic_stub_->UnaryCall(&cli_ctx, kMethodName, options, &send_buf, &recv_buf,
+                           [&notify, &status](Status s) {
+                             status = s;
+                             notify.Notify();
+                           });
+
+  notify.WaitForNotification();
+
+  if (!GetParam().callback_server() ||
+      grpc_core::IsReturnPreexistingErrorsEnabled()) {
+    EXPECT_EQ(StatusCode::INTERNAL, status.error_code());
+  } else {
+    EXPECT_EQ(StatusCode::UNIMPLEMENTED, status.error_code());
+  }
 }
 
 // TODO(vjpai): refactor arguments into a struct if it makes sense

@@ -53,6 +53,7 @@ EXPERIMENT_ENABLES = {
     "optimization_02": "optimization_02",
     "optimization_03": "optimization_03",
     "optimization_04": "optimization_04",
+    "optimization_05": "optimization_05",
     "otel_export_telemetry_domains": "otel_export_telemetry_domains",
     "ph2_client": "ph2_client",
     "ph2_client_server": "ph2_client_server",

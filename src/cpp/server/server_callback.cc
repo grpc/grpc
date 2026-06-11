@@ -27,6 +27,7 @@
 
 #include "src/core/call/server_call.h"
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
+#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/iomgr/event_engine_shims/endpoint.h"
 #include "src/core/lib/surface/call.h"
 #include "src/core/lib/surface/channel_stack_type.h"
@@ -170,6 +171,10 @@ void InitiateSessionGracefulShutdown(
 }  // namespace experimental
 
 namespace internal {
+
+bool ReturnPreexistingErrors() {
+  return grpc_core::IsReturnPreexistingErrorsEnabled();
+}
 
 void ServerCallbackCall::ScheduleOnDone(bool inline_ondone) {
   if (inline_ondone) {
