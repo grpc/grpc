@@ -831,7 +831,8 @@ Http2Status ValidateFrameHeader(const uint32_t max_frame_size_setting,
                                 const uint32_t last_stream_id,
                                 const bool is_client,
                                 const bool is_first_settings_processed,
-                                Http2FrameCountTracker& tracker) {
+                                Http2FrameCountTracker& tracker,
+                                const uint32_t max_security_frame_size) {
   const bool is_data_frame =
       current_frame_header.type == static_cast<uint8_t>(FrameType::kData);
   const bool is_continuation_frame =
@@ -859,6 +860,16 @@ Http2Status ValidateFrameHeader(const uint32_t max_frame_size_setting,
         absl::StrCat(RFC9113::kFrameSizeLargerThanMaxFrameSizeSetting,
                      ", Current Size = ", current_frame_header.length,
                      ", Max Size = ", max_frame_size_setting));
+  }
+
+  if (GPR_UNLIKELY(current_frame_header.type ==
+                       static_cast<uint8_t>(FrameType::kCustomSecurity) &&
+                   current_frame_header.length > max_security_frame_size)) {
+    return Http2Status::Http2ConnectionError(
+        Http2ErrorCode::kFrameSizeError,
+        absl::StrCat(GrpcErrors::kSecurityFrameTooLarge,
+                     max_security_frame_size,
+                     ", Received size : ", current_frame_header.length));
   }
 
   // RFC 9113 (Section 6.10) requires that if a HEADERS frame does not have
