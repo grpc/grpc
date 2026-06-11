@@ -62,7 +62,7 @@ bool AuditLoggerRegistry::FactoryExists(absl::string_view name) {
          registry->logger_factories_map_.end();
 }
 
-absl::StatusOr<std::unique_ptr<AuditLoggerFactory::Config>>
+absl::StatusOr<std::shared_ptr<const AuditLoggerFactory::Config>>
 AuditLoggerRegistry::ParseConfig(absl::string_view name, const Json& json) {
   MutexLock lock(mu);
   auto it = registry->logger_factories_map_.find(name);
@@ -74,7 +74,7 @@ AuditLoggerRegistry::ParseConfig(absl::string_view name, const Json& json) {
 }
 
 std::unique_ptr<AuditLogger> AuditLoggerRegistry::CreateAuditLogger(
-    std::unique_ptr<AuditLoggerFactory::Config> config) {
+    std::shared_ptr<const AuditLoggerFactory::Config> config) {
   MutexLock lock(mu);
   auto it = registry->logger_factories_map_.find(config->name());
   GRPC_CHECK(it != registry->logger_factories_map_.end());
