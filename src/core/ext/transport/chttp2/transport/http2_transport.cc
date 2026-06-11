@@ -263,6 +263,12 @@ void ReadSettingsFromChannelArgs(const ChannelArgs& channel_args,
       << "}";
 }
 
+uint32_t MaxNewStreamsPerRead(const ChannelArgs& channel_args) {
+  return Clamp(
+      channel_args.GetInt("grpc.http2.max_requests_per_read").value_or(32), 1,
+      10000);
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 // ChannelZ helpers
 

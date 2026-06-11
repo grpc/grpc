@@ -72,6 +72,8 @@ inline bool IsCallv3BatchValidationEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CHAOTIC_GOOD_FRAMING_LAYER
 inline bool IsChaoticGoodFramingLayerEnabled() { return true; }
 inline bool IsChaoticGoodSendSupportedFeaturesEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_CUSTOM_FRAME_CHECK
+inline bool IsCustomFrameCheckEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_ERROR_FLATTEN
 inline bool IsErrorFlattenEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_CLIENT
@@ -118,6 +120,7 @@ inline bool IsOptimization02Enabled() { return true; }
 inline bool IsOptimization03Enabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_OPTIMIZATION_04
 inline bool IsOptimization04Enabled() { return true; }
+inline bool IsOptimization05Enabled() { return false; }
 inline bool IsOtelExportTelemetryDomainsEnabled() { return false; }
 inline bool IsPh2ClientEnabled() { return false; }
 inline bool IsPh2ClientServerEnabled() { return false; }
@@ -167,6 +170,8 @@ inline bool IsCallv3BatchValidationEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CHAOTIC_GOOD_FRAMING_LAYER
 inline bool IsChaoticGoodFramingLayerEnabled() { return true; }
 inline bool IsChaoticGoodSendSupportedFeaturesEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_CUSTOM_FRAME_CHECK
+inline bool IsCustomFrameCheckEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_ERROR_FLATTEN
 inline bool IsErrorFlattenEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_CLIENT
@@ -213,6 +218,7 @@ inline bool IsOptimization02Enabled() { return true; }
 inline bool IsOptimization03Enabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_OPTIMIZATION_04
 inline bool IsOptimization04Enabled() { return true; }
+inline bool IsOptimization05Enabled() { return false; }
 inline bool IsOtelExportTelemetryDomainsEnabled() { return false; }
 inline bool IsPh2ClientEnabled() { return false; }
 inline bool IsPh2ClientServerEnabled() { return false; }
@@ -262,6 +268,8 @@ inline bool IsCallv3BatchValidationEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CHAOTIC_GOOD_FRAMING_LAYER
 inline bool IsChaoticGoodFramingLayerEnabled() { return true; }
 inline bool IsChaoticGoodSendSupportedFeaturesEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_CUSTOM_FRAME_CHECK
+inline bool IsCustomFrameCheckEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_ERROR_FLATTEN
 inline bool IsErrorFlattenEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_CLIENT
@@ -308,6 +316,7 @@ inline bool IsOptimization02Enabled() { return true; }
 inline bool IsOptimization03Enabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_OPTIMIZATION_04
 inline bool IsOptimization04Enabled() { return true; }
+inline bool IsOptimization05Enabled() { return false; }
 inline bool IsOtelExportTelemetryDomainsEnabled() { return false; }
 inline bool IsPh2ClientEnabled() { return false; }
 inline bool IsPh2ClientServerEnabled() { return false; }
@@ -351,6 +360,7 @@ enum ExperimentIds {
   kExperimentIdCallv3BatchValidation,
   kExperimentIdChaoticGoodFramingLayer,
   kExperimentIdChaoticGoodSendSupportedFeatures,
+  kExperimentIdCustomFrameCheck,
   kExperimentIdErrorFlatten,
   kExperimentIdEventEngineClient,
   kExperimentIdEventEngineDns,
@@ -379,6 +389,7 @@ enum ExperimentIds {
   kExperimentIdOptimization02,
   kExperimentIdOptimization03,
   kExperimentIdOptimization04,
+  kExperimentIdOptimization05,
   kExperimentIdOtelExportTelemetryDomains,
   kExperimentIdPh2Client,
   kExperimentIdPh2ClientServer,
@@ -440,6 +451,10 @@ inline bool IsChaoticGoodFramingLayerEnabled() {
 #define GRPC_EXPERIMENT_IS_INCLUDED_CHAOTIC_GOOD_SEND_SUPPORTED_FEATURES
 inline bool IsChaoticGoodSendSupportedFeaturesEnabled() {
   return IsExperimentEnabled<kExperimentIdChaoticGoodSendSupportedFeatures>();
+}
+#define GRPC_EXPERIMENT_IS_INCLUDED_CUSTOM_FRAME_CHECK
+inline bool IsCustomFrameCheckEnabled() {
+  return IsExperimentEnabled<kExperimentIdCustomFrameCheck>();
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_ERROR_FLATTEN
 inline bool IsErrorFlattenEnabled() {
@@ -552,6 +567,10 @@ inline bool IsOptimization03Enabled() {
 #define GRPC_EXPERIMENT_IS_INCLUDED_OPTIMIZATION_04
 inline bool IsOptimization04Enabled() {
   return IsExperimentEnabled<kExperimentIdOptimization04>();
+}
+#define GRPC_EXPERIMENT_IS_INCLUDED_OPTIMIZATION_05
+inline bool IsOptimization05Enabled() {
+  return IsExperimentEnabled<kExperimentIdOptimization05>();
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_OTEL_EXPORT_TELEMETRY_DOMAINS
 inline bool IsOtelExportTelemetryDomainsEnabled() {

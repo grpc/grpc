@@ -44,13 +44,7 @@ class GrpcAuthorizationEngine : public AuthorizationEngine {
   explicit GrpcAuthorizationEngine(Rbac::Action action)
       : action_(action), audit_condition_(Rbac::AuditCondition::kNone) {}
   // Builds GrpcAuthorizationEngine with allow/deny RBAC policy.
-  // FIXME: change this to either:
-  // 1. copy individual fields out of rbac (including the audit
-  //    loggers, which requires not using unique_ptr for them), or
-  // 2. store const references to the individual fields in rbac, which
-  //    requires it to outlive this object (either make it the caller's
-  //    problem, or use shared_ptr and hold a ref to rbac)
-  explicit GrpcAuthorizationEngine(Rbac policy);
+  explicit GrpcAuthorizationEngine(const Rbac& policy);
 
   GrpcAuthorizationEngine(GrpcAuthorizationEngine&& other) noexcept;
   GrpcAuthorizationEngine& operator=(GrpcAuthorizationEngine&& other) noexcept;

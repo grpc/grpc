@@ -30,13 +30,13 @@
 namespace grpc_core {
 
 std::unique_ptr<AuthorizationMatcher> AuthorizationMatcher::Create(
-    Rbac::Permission permission) {
+    const Rbac::Permission& permission) {
   switch (permission.type) {
     case Rbac::Permission::RuleType::kAnd: {
       std::vector<std::unique_ptr<AuthorizationMatcher>> matchers;
       matchers.reserve(permission.permissions.size());
       for (const auto& rule : permission.permissions) {
-        matchers.push_back(AuthorizationMatcher::Create(std::move(*rule)));
+        matchers.push_back(AuthorizationMatcher::Create(*rule));
       }
       return std::make_unique<AndAuthorizationMatcher>(std::move(matchers));
     }
@@ -44,43 +44,43 @@ std::unique_ptr<AuthorizationMatcher> AuthorizationMatcher::Create(
       std::vector<std::unique_ptr<AuthorizationMatcher>> matchers;
       matchers.reserve(permission.permissions.size());
       for (const auto& rule : permission.permissions) {
-        matchers.push_back(AuthorizationMatcher::Create(std::move(*rule)));
+        matchers.push_back(AuthorizationMatcher::Create(*rule));
       }
       return std::make_unique<OrAuthorizationMatcher>(std::move(matchers));
     }
     case Rbac::Permission::RuleType::kNot:
       return std::make_unique<NotAuthorizationMatcher>(
-          AuthorizationMatcher::Create(std::move(*permission.permissions[0])));
+          AuthorizationMatcher::Create(*permission.permissions[0]));
     case Rbac::Permission::RuleType::kAny:
       return std::make_unique<AlwaysAuthorizationMatcher>();
     case Rbac::Permission::RuleType::kHeader:
       return std::make_unique<HeaderAuthorizationMatcher>(
-          std::move(permission.header_matcher));
+          permission.header_matcher);
     case Rbac::Permission::RuleType::kPath:
       return std::make_unique<PathAuthorizationMatcher>(
-          std::move(permission.string_matcher));
+          permission.string_matcher);
     case Rbac::Permission::RuleType::kDestIp:
       return std::make_unique<IpAuthorizationMatcher>(
-          IpAuthorizationMatcher::Type::kDestIp, std::move(permission.ip));
+          IpAuthorizationMatcher::Type::kDestIp, permission.ip);
     case Rbac::Permission::RuleType::kDestPort:
       return std::make_unique<PortAuthorizationMatcher>(permission.port);
     case Rbac::Permission::RuleType::kMetadata:
       return std::make_unique<MetadataAuthorizationMatcher>(permission.invert);
     case Rbac::Permission::RuleType::kReqServerName:
       return std::make_unique<ReqServerNameAuthorizationMatcher>(
-          std::move(permission.string_matcher));
+          permission.string_matcher);
   }
   return nullptr;
 }
 
 std::unique_ptr<AuthorizationMatcher> AuthorizationMatcher::Create(
-    Rbac::Principal principal) {
+    const Rbac::Principal& principal) {
   switch (principal.type) {
     case Rbac::Principal::RuleType::kAnd: {
       std::vector<std::unique_ptr<AuthorizationMatcher>> matchers;
       matchers.reserve(principal.principals.size());
       for (const auto& id : principal.principals) {
-        matchers.push_back(AuthorizationMatcher::Create(std::move(*id)));
+        matchers.push_back(AuthorizationMatcher::Create(*id));
       }
       return std::make_unique<AndAuthorizationMatcher>(std::move(matchers));
     }
@@ -88,34 +88,33 @@ std::unique_ptr<AuthorizationMatcher> AuthorizationMatcher::Create(
       std::vector<std::unique_ptr<AuthorizationMatcher>> matchers;
       matchers.reserve(principal.principals.size());
       for (const auto& id : principal.principals) {
-        matchers.push_back(AuthorizationMatcher::Create(std::move(*id)));
+        matchers.push_back(AuthorizationMatcher::Create(*id));
       }
       return std::make_unique<OrAuthorizationMatcher>(std::move(matchers));
     }
     case Rbac::Principal::RuleType::kNot:
       return std::make_unique<NotAuthorizationMatcher>(
-          AuthorizationMatcher::Create(std::move(*principal.principals[0])));
+          AuthorizationMatcher::Create(*principal.principals[0]));
     case Rbac::Principal::RuleType::kAny:
       return std::make_unique<AlwaysAuthorizationMatcher>();
     case Rbac::Principal::RuleType::kPrincipalName:
       return std::make_unique<AuthenticatedAuthorizationMatcher>(
-          std::move(principal.string_matcher));
+          principal.string_matcher);
     case Rbac::Principal::RuleType::kSourceIp:
       return std::make_unique<IpAuthorizationMatcher>(
-          IpAuthorizationMatcher::Type::kSourceIp, std::move(principal.ip));
+          IpAuthorizationMatcher::Type::kSourceIp, principal.ip);
     case Rbac::Principal::RuleType::kDirectRemoteIp:
       return std::make_unique<IpAuthorizationMatcher>(
-          IpAuthorizationMatcher::Type::kDirectRemoteIp,
-          std::move(principal.ip));
+          IpAuthorizationMatcher::Type::kDirectRemoteIp, principal.ip);
     case Rbac::Principal::RuleType::kRemoteIp:
       return std::make_unique<IpAuthorizationMatcher>(
-          IpAuthorizationMatcher::Type::kRemoteIp, std::move(principal.ip));
+          IpAuthorizationMatcher::Type::kRemoteIp, principal.ip);
     case Rbac::Principal::RuleType::kHeader:
       return std::make_unique<HeaderAuthorizationMatcher>(
-          std::move(principal.header_matcher));
+          principal.header_matcher);
     case Rbac::Principal::RuleType::kPath:
       return std::make_unique<PathAuthorizationMatcher>(
-          std::move(principal.string_matcher.value()));
+          principal.string_matcher.value());
     case Rbac::Principal::RuleType::kMetadata:
       return std::make_unique<MetadataAuthorizationMatcher>(principal.invert);
   }
@@ -150,7 +149,8 @@ bool HeaderAuthorizationMatcher::Matches(const EvaluateArgs& args) const {
       args.GetHeaderValue(matcher_.name(), &concatenated_value));
 }
 
-IpAuthorizationMatcher::IpAuthorizationMatcher(Type type, Rbac::CidrRange range)
+IpAuthorizationMatcher::IpAuthorizationMatcher(Type type,
+                                               const Rbac::CidrRange& range)
     : type_(type), prefix_len_(range.prefix_len) {
   auto address =
       StringToSockaddr(range.address_prefix, 0);  // Port does not matter here.

@@ -1,4 +1,4 @@
-# Copyright 2021 The gRPC Authors
+# Copyright 2026 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,8 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# On aarch64 the protoc and codegen plugins are built via crosscompilation.
-FROM dockcross/manylinux2014-aarch64
+# This file serves as a type stub for the cygrpc Cython extension module.
+# Since type checkers (like pyright/mypy) and IDEs cannot directly inspect the
+# compiled C extension, this file provides necessary type information.
+# The catch-all __getattr__ allows any attribute access to typecheck as Any.
 
-RUN git config --global --add safe.directory '*'
-RUN git config --global protocol.file.allow always
+from typing import Any
+
+def __getattr__(name: str) -> Any: ...
