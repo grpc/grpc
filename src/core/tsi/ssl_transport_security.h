@@ -29,9 +29,11 @@
 #include <string>
 
 #include "src/core/credentials/transport/tls/spiffe_utils.h"
+#include "src/core/telemetry/metrics.h"
 #include "src/core/tsi/ssl/key_logging/ssl_key_logging.h"
 #include "src/core/tsi/ssl_transport_security_utils.h"
 #include "src/core/tsi/transport_security_interface.h"
+#include "src/core/util/ref_counted_ptr.h"
 #include "absl/strings/string_view.h"
 
 // Value for the TSI_CERTIFICATE_TYPE_PEER_PROPERTY property for X509 certs.
@@ -254,6 +256,7 @@ tsi_result tsi_ssl_client_handshaker_factory_create_handshaker(
     const char* server_name_indication, size_t network_bio_buf_size,
     size_t ssl_bio_buf_size,
     std::optional<std::string> alpn_preferred_protocol_list,
+    grpc_core::RefCountedPtr<grpc_core::CollectionScope> collection_scope,
     tsi_handshaker** handshaker);
 
 // Increments reference count of the client handshaker factory.
@@ -416,7 +419,9 @@ tsi_result tsi_create_ssl_server_handshaker_factory_with_options(
 //  where a parameter is invalid.
 tsi_result tsi_ssl_server_handshaker_factory_create_handshaker(
     tsi_ssl_server_handshaker_factory* factory, size_t network_bio_buf_size,
-    size_t ssl_bio_buf_size, tsi_handshaker** handshaker);
+    size_t ssl_bio_buf_size,
+    grpc_core::RefCountedPtr<grpc_core::CollectionScope> collection_scope,
+    tsi_handshaker** handshaker);
 
 // Decrements reference count of the handshaker factory. Handshaker factory will
 // be destroyed once no references exist.

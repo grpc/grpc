@@ -446,12 +446,14 @@ class SslTransportSecurityTest
                     ssl_fixture->network_bio_buf_size_,
                     ssl_fixture->ssl_bio_buf_size_,
                     ssl_fixture->alpn_client_overriden_protocols_,
+                    /*collection_scope=*/nullptr,
                     &ssl_fixture->base_.client_handshaker),
                 TSI_OK);
       ASSERT_EQ(tsi_ssl_server_handshaker_factory_create_handshaker(
                     ssl_fixture->server_handshaker_factory_,
                     ssl_fixture->network_bio_buf_size_,
                     ssl_fixture->ssl_bio_buf_size_,
+                    /*collection_scope=*/nullptr,
                     &ssl_fixture->base_.server_handshaker),
                 TSI_OK);
     }
@@ -1182,11 +1184,11 @@ TEST(SslTransportSecurityTest, TestClientHandshakerFactoryRefcounting) {
   tsi_handshaker* handshaker[3];
 
   for (i = 0; i < 3; ++i) {
-    ASSERT_EQ(
-        tsi_ssl_client_handshaker_factory_create_handshaker(
-            client_handshaker_factory, "google.com", 0, 0,
-            /*alpn_preferred_protocol_list=*/std::nullopt, &handshaker[i]),
-        TSI_OK);
+    ASSERT_EQ(tsi_ssl_client_handshaker_factory_create_handshaker(
+                  client_handshaker_factory, "google.com", 0, 0,
+                  /*alpn_preferred_protocol_list=*/std::nullopt,
+                  /*collection_scope=*/nullptr, &handshaker[i]),
+              TSI_OK);
   }
 
   client_handshaker_factory =
@@ -1236,7 +1238,8 @@ TEST(SslTransportSecurityTest, TestServerHandshakerFactoryRefcounting) {
 
   for (i = 0; i < 3; ++i) {
     ASSERT_EQ(tsi_ssl_server_handshaker_factory_create_handshaker(
-                  server_handshaker_factory, 0, 0, &handshaker[i]),
+                  server_handshaker_factory, 0, 0,
+                  /*collection_scope=*/nullptr, &handshaker[i]),
               TSI_OK);
   }
 

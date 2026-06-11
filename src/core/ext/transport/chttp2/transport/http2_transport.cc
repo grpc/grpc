@@ -269,6 +269,14 @@ uint32_t MaxNewStreamsPerRead(const ChannelArgs& channel_args) {
       10000);
 }
 
+uint32_t GetMaxSecurityFrameSize(const ChannelArgs& channel_args) {
+  return static_cast<uint32_t>(
+      Clamp(channel_args.GetInt(GRPC_ARG_MAX_SECURITY_FRAME_SIZE)
+                .value_or(GrpcErrors::kMaxSecurityFrameSize),
+            GrpcErrors::kMinMaxSecurityFrameSize,
+            static_cast<int>(GrpcErrors::kMaxSecurityFrameSize)));
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 // ChannelZ helpers
 
