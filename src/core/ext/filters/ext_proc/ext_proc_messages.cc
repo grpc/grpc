@@ -413,11 +413,11 @@ void SetRequestBody(envoy_service_ext_proc_v3_ProcessingRequest* request,
 }
 
 void SetResponseBody(envoy_service_ext_proc_v3_ProcessingRequest* request,
-                     upb_Arena* arena, upb_StringView buf, bool end_of_stream) {
+                     upb_Arena* arena, upb_StringView buf) {
   envoy_service_ext_proc_v3_HttpBody* body =
       envoy_service_ext_proc_v3_HttpBody_new(arena);
   envoy_service_ext_proc_v3_HttpBody_set_body(body, buf);
-  envoy_service_ext_proc_v3_HttpBody_set_end_of_stream(body, end_of_stream);
+  envoy_service_ext_proc_v3_HttpBody_set_end_of_stream(body, false);
   envoy_service_ext_proc_v3_ProcessingRequest_set_response_body(request, body);
 }
 
@@ -513,8 +513,7 @@ std::string CreateExtProcRequest(
       break;
     }
     case ExtProcRequestType::kServerMessage: {
-      SetResponseBody(request, arena, std::get<upb_StringView>(payload),
-                      /*end_of_stream=*/false);
+      SetResponseBody(request, arena, std::get<upb_StringView>(payload));
       break;
     }
     case ExtProcRequestType::kServerTrailers: {
