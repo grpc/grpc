@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+     Note: common properties and targets for tests are imported from the
+     Directory.Build.props and Directory.Build.targets files in the parent directoty
+  -->
+
+  <PropertyGroup>
+    <Nullable>enable</Nullable>
+    <LangVersion>latest</LangVersion>
+    <!-- for these tests assume protoc supports the enable_nrt option -->
+    <Protobuf_EnableNRT_Supported>true</Protobuf_EnableNRT_Supported>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Protobuf Include="file.proto" GrpcServices="server" />
+  </ItemGroup>
+  
+</Project>
