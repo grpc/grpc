@@ -15,12 +15,13 @@
 
 set -ex
 
-GIT_ROOT="$(dirname $0)/../../.."
+export OVERRIDE_BAZEL_VERSION=9.1.0
+GIT_ROOT=$(realpath "$(dirname "$0")/../../..")
 
-OVERRIDE_BAZEL_VERSION=9.1.0 \
 ${GIT_ROOT}/tools/bazel \
     --bazelrc=tools/remote_build/linux_bzlmod.bazelrc \
     build \
+    --nobuild \
     -- \
     "//:grpc" \
     "//:grpc++_test" \
@@ -35,3 +36,24 @@ ${GIT_ROOT}/tools/bazel \
     "//:grpcpp_csds" \
     "//:grpcpp_orca_service" \
     "//examples/protos/..."
+
+
+# The out-of-tree test
+cd ${GIT_ROOT}/test/bazel_build_out_of_tree/bazel_9
+
+${GIT_ROOT}/tools/bazel \
+    build \
+    --nobuild \
+    -- \
+    "@grpc//:grpc" \
+    "@grpc//:grpc++" \
+    "@grpc//:grpc++_reflection" \
+    "@grpc//:grpc++_unsecure" \
+    "@grpc//:grpc_opencensus_plugin" \
+    "@grpc//:grpc_security_base" \
+    "@grpc//:grpc_unsecure" \
+    "@grpc//:grpcpp_admin" \
+    "@grpc//:grpcpp_channelz" \
+    "@grpc//:grpcpp_csds" \
+    "@grpc//:grpcpp_orca_service" \
+    "@grpc//examples/protos/..."
