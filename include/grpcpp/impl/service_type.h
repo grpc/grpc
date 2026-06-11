@@ -32,10 +32,17 @@ namespace grpc {
 class CompletionQueue;
 class ServerContext;
 class ServerInterface;
+class Service;
 
+namespace experimental {
+void SetVirtualService(Service* service);
 namespace internal {
 template <class RequestType>
 class CallbackSessionHandler;
+}  // namespace internal
+}  // namespace experimental
+
+namespace internal {
 class Call;
 class ServerAsyncStreamingInterface {
  public:
@@ -218,8 +225,6 @@ class Service {
         internal::RpcServiceMethod::ApiType::RAW_CALL_BACK);
   }
 
-  void SetVirtualService() { is_virtual_service_ = true; }
-
   internal::MethodHandler* GetHandler(int index) {
     size_t idx = static_cast<size_t>(index);
     return methods_[idx]->handler();
@@ -229,11 +234,18 @@ class Service {
   friend class Server;
   friend class ServerInterface;
   template <class RequestType>
-  friend class internal::CallbackSessionHandler;
+  friend class experimental::internal::CallbackSessionHandler;
+  friend void experimental::SetVirtualService(Service* service);
   ServerInterface* server_;
   bool is_virtual_service_ = false;
   std::vector<std::unique_ptr<internal::RpcServiceMethod>> methods_;
 };
+
+namespace experimental {
+inline void SetVirtualService(Service* service) {
+  service->is_virtual_service_ = true;
+}
+}  // namespace experimental
 
 }  // namespace grpc
 

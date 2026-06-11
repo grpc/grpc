@@ -492,4 +492,27 @@ TEST(DataEndpointsTest, CanWriteRegression2) {
   )pb"));
 }
 
+DATA_ENDPOINTS_TEST(FailsOnOverflowingMessage) {
+  util::testing::MockPromiseEndpoint ep(1234);
+  ep.ExpectRead({DataFrameHeader(64, 5, 1, 0xFFFFFFF0)}, event_engine().get());
+  chaotic_good::DataEndpoints data_endpoints(
+      Endpoints(std::move(ep.promise_endpoint)),
+      MakeRefCounted<chaotic_good::TransportContext>(
+          event_engine(), MakeTestChannelzSocketNode()),
+      64, 64, std::numeric_limits<uint32_t>::max(),
+      std::make_shared<chaotic_good::TcpZTraceCollector>(), false, "spanrr",
+      Time1Clock());
+
+  SpawnTestSeqWithoutContext(
+      "read", data_endpoints.Read(5).Await(),
+      [](absl::StatusOr<SliceBuffer> result) {
+        EXPECT_FALSE(result.ok());
+        EXPECT_EQ(result.status().code(), absl::StatusCode::kInvalidArgument);
+        EXPECT_THAT(result.status().message(),
+                    ::testing::HasSubstr(
+                        "Integer overflow in payload length plus padding"));
+      });
+  WaitForAllPendingWork();
+}
+
 }  // namespace grpc_core

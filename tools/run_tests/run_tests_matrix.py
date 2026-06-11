@@ -14,8 +14,6 @@
 # limitations under the License.
 """Run test matrix."""
 
-from __future__ import print_function
-
 import argparse
 import datetime
 import multiprocessing
@@ -371,6 +369,7 @@ def _create_portability_test_jobs(
     # portability C and C++ on x64
     for compiler in [
         "gcc8",
+        "gcc10",
         # TODO(b/283304471): Tests using OpenSSL's engine APIs were broken and removed
         "gcc10.2_openssl102",
         "gcc10.2_openssl111",
@@ -473,7 +472,7 @@ if __name__ == "__main__":
     argp.add_argument(
         "-j",
         "--jobs",
-        default=multiprocessing.cpu_count() / _DEFAULT_INNER_JOBS,
+        default=None,
         type=int,
         help="Number of concurrent run_tests.py instances.",
     )
@@ -486,6 +485,7 @@ if __name__ == "__main__":
         help="Filter targets to run by label with AND semantics.",
     )
     argp.add_argument(
+        "-e",
         "--exclude",
         choices=_allowed_labels(),
         nargs="+",
@@ -568,6 +568,11 @@ if __name__ == "__main__":
         help="Extra test args passed to each sub-script.",
     )
     args = argp.parse_args()
+
+    if args.jobs is None:
+        args.jobs = int(multiprocessing.cpu_count() / args.inner_jobs)
+        if args.jobs < 1:
+            args.jobs = 1
 
     extra_args = []
     if args.build_only:

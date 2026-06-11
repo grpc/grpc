@@ -888,6 +888,22 @@ class GetStringValueHelper {
   template <typename Trait>
   GPR_ATTRIBUTE_NOINLINE absl::enable_if_t<
       Trait::kRepeatable == true &&
+          std::is_same<Slice, typename Trait::ValueType>::value,
+      std::optional<absl::string_view>>
+  Found(Trait) {
+    const auto* value = container_->get_pointer(Trait());
+    if (value == nullptr) return std::nullopt;
+    backing_->clear();
+    for (const auto& v : *value) {
+      if (!backing_->empty()) backing_->push_back(',');
+      backing_->append(v.as_string_view());
+    }
+    return *backing_;
+  }
+
+  template <typename Trait>
+  GPR_ATTRIBUTE_NOINLINE absl::enable_if_t<
+      Trait::kRepeatable == true &&
           !std::is_same<Slice, typename Trait::ValueType>::value,
       std::optional<absl::string_view>>
   Found(Trait) {

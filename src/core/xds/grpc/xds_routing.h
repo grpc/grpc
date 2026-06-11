@@ -101,7 +101,7 @@ class XdsRouting final {
         const XdsRouteConfigResource::VirtualHost& vhost,
         FilterChainBuilder& builder,
         absl::AnyInvocable<void(FilterChainBuilder&)> add_last_filter,
-        const Blackboard* old_blackboard, Blackboard* new_blackboard);
+        Blackboard& blackboard);
 
     // Builds a filter chain for a route that has an individual cluster
     // or a ClusterSpecifierPlugin.
@@ -125,8 +125,7 @@ class XdsRouting final {
     const XdsRouteConfigResource::VirtualHost& vhost_;
     FilterChainBuilder& builder_;
     absl::AnyInvocable<void(FilterChainBuilder&)> add_last_filter_;
-    const Blackboard* old_blackboard_;
-    Blackboard* new_blackboard_;
+    Blackboard& blackboard_;
 
     // Same size as hcm_filter_configs_.
     std::vector<const XdsHttpFilterImpl*> filter_impls_;
