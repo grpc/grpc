@@ -1,0 +1,346 @@
+diff --git a/MODULE.bazel b/MODULE.bazel
+index 48a65c79..07814897 100644
+--- a/MODULE.bazel
++++ b/MODULE.bazel
+@@ -20,9 +20,11 @@ module(
+     compatibility_level = 1,
+ )
+ 
+-cc_configure = use_extension("@rules_cc//cc:extensions.bzl",
+-                             "cc_configure_extension",
+-                             dev_dependency = True)
++cc_configure = use_extension(
++    "@rules_cc//cc:extensions.bzl",
++    "cc_configure_extension",
++    dev_dependency = True,
++)
+ use_repo(cc_configure, "local_config_cc")
+ 
+ bazel_dep(name = "rules_cc", version = "0.1.1")
+diff --git a/absl/algorithm/BUILD.bazel b/absl/algorithm/BUILD.bazel
+index 0ec8b921..0446a0ce 100644
+--- a/absl/algorithm/BUILD.bazel
++++ b/absl/algorithm/BUILD.bazel
+@@ -14,6 +14,8 @@
+ # limitations under the License.
+ #
+ 
++load("@rules_cc//cc:cc_library.bzl", "cc_library")
++load("@rules_cc//cc:cc_test.bzl", "cc_test")
+ load(
+     "//absl:copts/configure_copts.bzl",
+     "ABSL_DEFAULT_COPTS",
+diff --git a/absl/base/BUILD.bazel b/absl/base/BUILD.bazel
+index ef97b4ee..81fff274 100644
+--- a/absl/base/BUILD.bazel
++++ b/absl/base/BUILD.bazel
+@@ -14,6 +14,9 @@
+ # limitations under the License.
+ #
+ 
++load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
++load("@rules_cc//cc:cc_library.bzl", "cc_library")
++load("@rules_cc//cc:cc_test.bzl", "cc_test")
+ load(
+     "//absl:copts/configure_copts.bzl",
+     "ABSL_DEFAULT_COPTS",
+diff --git a/absl/cleanup/BUILD.bazel b/absl/cleanup/BUILD.bazel
+index d5797816..54754392 100644
+--- a/absl/cleanup/BUILD.bazel
++++ b/absl/cleanup/BUILD.bazel
+@@ -12,6 +12,8 @@
+ # See the License for the specific language governing permissions and
+ # limitations under the License.
+ 
++load("@rules_cc//cc:cc_library.bzl", "cc_library")
++load("@rules_cc//cc:cc_test.bzl", "cc_test")
+ load(
+     "//absl:copts/configure_copts.bzl",
+     "ABSL_DEFAULT_COPTS",
+diff --git a/absl/container/BUILD.bazel b/absl/container/BUILD.bazel
+index 61e816fc..ae66c9c5 100644
+--- a/absl/container/BUILD.bazel
++++ b/absl/container/BUILD.bazel
+@@ -14,6 +14,9 @@
+ # limitations under the License.
+ #
+ 
++load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
++load("@rules_cc//cc:cc_library.bzl", "cc_library")
++load("@rules_cc//cc:cc_test.bzl", "cc_test")
+ load(
+     "//absl:copts/configure_copts.bzl",
+     "ABSL_DEFAULT_COPTS",
+diff --git a/absl/crc/BUILD.bazel b/absl/crc/BUILD.bazel
+index b659a7e2..22c3cbf0 100644
+--- a/absl/crc/BUILD.bazel
++++ b/absl/crc/BUILD.bazel
+@@ -12,6 +12,9 @@
+ # See the License for the specific language governing permissions and
+ # limitations under the License.
+ 
++load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
++load("@rules_cc//cc:cc_library.bzl", "cc_library")
++load("@rules_cc//cc:cc_test.bzl", "cc_test")
+ load(
+     "//absl:copts/configure_copts.bzl",
+     "ABSL_DEFAULT_COPTS",
+diff --git a/absl/debugging/BUILD.bazel b/absl/debugging/BUILD.bazel
+index cd0f1dea..3a4aa018 100644
+--- a/absl/debugging/BUILD.bazel
++++ b/absl/debugging/BUILD.bazel
+@@ -14,6 +14,9 @@
+ # limitations under the License.
+ #
+ 
++load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
++load("@rules_cc//cc:cc_library.bzl", "cc_library")
++load("@rules_cc//cc:cc_test.bzl", "cc_test")
+ load(
+     "//absl:copts/configure_copts.bzl",
+     "ABSL_DEFAULT_COPTS",
+diff --git a/absl/flags/BUILD.bazel b/absl/flags/BUILD.bazel
+index 620af2b5..532721d2 100644
+--- a/absl/flags/BUILD.bazel
++++ b/absl/flags/BUILD.bazel
+@@ -14,6 +14,9 @@
+ # limitations under the License.
+ #
+ 
++load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
++load("@rules_cc//cc:cc_library.bzl", "cc_library")
++load("@rules_cc//cc:cc_test.bzl", "cc_test")
+ load(
+     "//absl:copts/configure_copts.bzl",
+     "ABSL_DEFAULT_COPTS",
+diff --git a/absl/functional/BUILD.bazel b/absl/functional/BUILD.bazel
+index aeed3b66..c2bb96d7 100644
+--- a/absl/functional/BUILD.bazel
++++ b/absl/functional/BUILD.bazel
+@@ -14,6 +14,9 @@
+ # limitations under the License.
+ #
+ 
++load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
++load("@rules_cc//cc:cc_library.bzl", "cc_library")
++load("@rules_cc//cc:cc_test.bzl", "cc_test")
+ load(
+     "//absl:copts/configure_copts.bzl",
+     "ABSL_DEFAULT_COPTS",
+diff --git a/absl/hash/BUILD.bazel b/absl/hash/BUILD.bazel
+index b2ffcd08..d115ae23 100644
+--- a/absl/hash/BUILD.bazel
++++ b/absl/hash/BUILD.bazel
+@@ -14,6 +14,9 @@
+ # limitations under the License.
+ #
+ 
++load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
++load("@rules_cc//cc:cc_library.bzl", "cc_library")
++load("@rules_cc//cc:cc_test.bzl", "cc_test")
+ load(
+     "//absl:copts/configure_copts.bzl",
+     "ABSL_DEFAULT_COPTS",
+diff --git a/absl/log/BUILD.bazel b/absl/log/BUILD.bazel
+index 62ece451..d4b37307 100644
+--- a/absl/log/BUILD.bazel
++++ b/absl/log/BUILD.bazel
+@@ -14,6 +14,8 @@
+ # limitations under the License.
+ #
+ 
++load("@rules_cc//cc:cc_library.bzl", "cc_library")
++load("@rules_cc//cc:cc_test.bzl", "cc_test")
+ load(
+     "//absl:copts/configure_copts.bzl",
+     "ABSL_DEFAULT_COPTS",
+diff --git a/absl/log/internal/BUILD.bazel b/absl/log/internal/BUILD.bazel
+index 953b690e..1ba9d766 100644
+--- a/absl/log/internal/BUILD.bazel
++++ b/absl/log/internal/BUILD.bazel
+@@ -14,6 +14,9 @@
+ # limitations under the License.
+ #
+ 
++load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
++load("@rules_cc//cc:cc_library.bzl", "cc_library")
++load("@rules_cc//cc:cc_test.bzl", "cc_test")
+ load(
+     "//absl:copts/configure_copts.bzl",
+     "ABSL_DEFAULT_COPTS",
+diff --git a/absl/memory/BUILD.bazel b/absl/memory/BUILD.bazel
+index d50a502e..81e12fac 100644
+--- a/absl/memory/BUILD.bazel
++++ b/absl/memory/BUILD.bazel
+@@ -14,6 +14,8 @@
+ # limitations under the License.
+ #
+ 
++load("@rules_cc//cc:cc_library.bzl", "cc_library")
++load("@rules_cc//cc:cc_test.bzl", "cc_test")
+ load(
+     "//absl:copts/configure_copts.bzl",
+     "ABSL_DEFAULT_COPTS",
+diff --git a/absl/meta/BUILD.bazel b/absl/meta/BUILD.bazel
+index d01cb8a2..f6efa42b 100644
+--- a/absl/meta/BUILD.bazel
++++ b/absl/meta/BUILD.bazel
+@@ -14,6 +14,8 @@
+ # limitations under the License.
+ #
+ 
++load("@rules_cc//cc:cc_library.bzl", "cc_library")
++load("@rules_cc//cc:cc_test.bzl", "cc_test")
+ load(
+     "//absl:copts/configure_copts.bzl",
+     "ABSL_DEFAULT_COPTS",
+diff --git a/absl/numeric/BUILD.bazel b/absl/numeric/BUILD.bazel
+index f455d1e9..edfe6b6f 100644
+--- a/absl/numeric/BUILD.bazel
++++ b/absl/numeric/BUILD.bazel
+@@ -12,6 +12,9 @@
+ # See the License for the specific language governing permissions and
+ # limitations under the License.
+ 
++load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
++load("@rules_cc//cc:cc_library.bzl", "cc_library")
++load("@rules_cc//cc:cc_test.bzl", "cc_test")
+ load(
+     "//absl:copts/configure_copts.bzl",
+     "ABSL_DEFAULT_COPTS",
+diff --git a/absl/profiling/BUILD.bazel b/absl/profiling/BUILD.bazel
+index ee4800de..d4e2f949 100644
+--- a/absl/profiling/BUILD.bazel
++++ b/absl/profiling/BUILD.bazel
+@@ -12,6 +12,9 @@
+ # See the License for the specific language governing permissions and
+ # limitations under the License.
+ 
++load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
++load("@rules_cc//cc:cc_library.bzl", "cc_library")
++load("@rules_cc//cc:cc_test.bzl", "cc_test")
+ load(
+     "//absl:copts/configure_copts.bzl",
+     "ABSL_DEFAULT_COPTS",
+diff --git a/absl/random/BUILD.bazel b/absl/random/BUILD.bazel
+index 887ab0f2..8986211d 100644
+--- a/absl/random/BUILD.bazel
++++ b/absl/random/BUILD.bazel
+@@ -16,6 +16,9 @@
+ 
+ # ABSL random-number generation libraries.
+ 
++load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
++load("@rules_cc//cc:cc_library.bzl", "cc_library")
++load("@rules_cc//cc:cc_test.bzl", "cc_test")
+ load(
+     "//absl:copts/configure_copts.bzl",
+     "ABSL_DEFAULT_COPTS",
+diff --git a/absl/random/internal/BUILD.bazel b/absl/random/internal/BUILD.bazel
+index 994fb5c9..a9adea3c 100644
+--- a/absl/random/internal/BUILD.bazel
++++ b/absl/random/internal/BUILD.bazel
+@@ -15,6 +15,9 @@
+ #
+ 
+ load("@bazel_skylib//lib:selects.bzl", "selects")
++load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
++load("@rules_cc//cc:cc_library.bzl", "cc_library")
++load("@rules_cc//cc:cc_test.bzl", "cc_test")
+ 
+ # Internal-only implementation classes for Abseil Random
+ load(
+diff --git a/absl/status/BUILD.bazel b/absl/status/BUILD.bazel
+index b61abeb4..7537797a 100644
+--- a/absl/status/BUILD.bazel
++++ b/absl/status/BUILD.bazel
+@@ -17,6 +17,9 @@
+ # It will expand later to have utilities around `Status` like `StatusOr`,
+ # `StatusBuilder` and macros.
+ 
++load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
++load("@rules_cc//cc:cc_library.bzl", "cc_library")
++load("@rules_cc//cc:cc_test.bzl", "cc_test")
+ load(
+     "//absl:copts/configure_copts.bzl",
+     "ABSL_DEFAULT_COPTS",
+diff --git a/absl/strings/BUILD.bazel b/absl/strings/BUILD.bazel
+index bb152acc..e1d1c543 100644
+--- a/absl/strings/BUILD.bazel
++++ b/absl/strings/BUILD.bazel
+@@ -13,6 +13,9 @@
+ # See the License for the specific language governing permissions and
+ # limitations under the License.
+ 
++load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
++load("@rules_cc//cc:cc_library.bzl", "cc_library")
++load("@rules_cc//cc:cc_test.bzl", "cc_test")
+ load(
+     "//absl:copts/configure_copts.bzl",
+     "ABSL_DEFAULT_COPTS",
+diff --git a/absl/synchronization/BUILD.bazel b/absl/synchronization/BUILD.bazel
+index 920928e2..247c4226 100644
+--- a/absl/synchronization/BUILD.bazel
++++ b/absl/synchronization/BUILD.bazel
+@@ -14,6 +14,9 @@
+ # limitations under the License.
+ #
+ 
++load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
++load("@rules_cc//cc:cc_library.bzl", "cc_library")
++load("@rules_cc//cc:cc_test.bzl", "cc_test")
+ load(
+     "//absl:copts/configure_copts.bzl",
+     "ABSL_DEFAULT_COPTS",
+diff --git a/absl/time/BUILD.bazel b/absl/time/BUILD.bazel
+index ad0313c5..b61999b3 100644
+--- a/absl/time/BUILD.bazel
++++ b/absl/time/BUILD.bazel
+@@ -14,6 +14,9 @@
+ # limitations under the License.
+ #
+ 
++load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
++load("@rules_cc//cc:cc_library.bzl", "cc_library")
++load("@rules_cc//cc:cc_test.bzl", "cc_test")
+ load(
+     "//absl:copts/configure_copts.bzl",
+     "ABSL_DEFAULT_COPTS",
+diff --git a/absl/time/internal/cctz/BUILD.bazel b/absl/time/internal/cctz/BUILD.bazel
+index da30a0f1..8f5235db 100644
+--- a/absl/time/internal/cctz/BUILD.bazel
++++ b/absl/time/internal/cctz/BUILD.bazel
+@@ -12,6 +12,8 @@
+ #   See the License for the specific language governing permissions and
+ #   limitations under the License.
+ 
++load("@rules_cc//cc:cc_library.bzl", "cc_library")
++load("@rules_cc//cc:cc_test.bzl", "cc_test")
+ load("//absl:copts/configure_copts.bzl", "ABSL_DEFAULT_COPTS", "ABSL_DEFAULT_LINKOPTS", "ABSL_TEST_COPTS")
+ 
+ package(features = [
+diff --git a/absl/types/BUILD.bazel b/absl/types/BUILD.bazel
+index 0668a2e7..cac5e4b1 100644
+--- a/absl/types/BUILD.bazel
++++ b/absl/types/BUILD.bazel
+@@ -13,6 +13,8 @@
+ # See the License for the specific language governing permissions and
+ # limitations under the License.
+ 
++load("@rules_cc//cc:cc_library.bzl", "cc_library")
++load("@rules_cc//cc:cc_test.bzl", "cc_test")
+ load(
+     "//absl:copts/configure_copts.bzl",
+     "ABSL_DEFAULT_COPTS",
+diff --git a/absl/utility/BUILD.bazel b/absl/utility/BUILD.bazel
+index 773f9496..a714b020 100644
+--- a/absl/utility/BUILD.bazel
++++ b/absl/utility/BUILD.bazel
+@@ -14,6 +14,7 @@
+ # limitations under the License.
+ #
+ 
++load("@rules_cc//cc:cc_library.bzl", "cc_library")
+ load(
+     "//absl:copts/configure_copts.bzl",
+     "ABSL_DEFAULT_COPTS",
