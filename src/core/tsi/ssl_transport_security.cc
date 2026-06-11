@@ -1976,7 +1976,7 @@ static tsi_result ssl_handshaker_result_extract_peer(
   if (alpn_selected != nullptr) new_property_count++;
   if (peer_chain != nullptr) new_property_count++;
   if (verified_root_cert != nullptr) new_property_count++;
-#if OPENSSL_VERSION_NUMBER >= 0x10101000L
+#if defined(OPENSSL_IS_BORINGSSL) || OPENSSL_VERSION_NUMBER >= 0x30000000L
   int nid = SSL_get_negotiated_group(impl->ssl);
   const char* negotiated_group_name =
       (nid != NID_undef && nid != 0) ? OBJ_nid2sn(nid) : nullptr;
