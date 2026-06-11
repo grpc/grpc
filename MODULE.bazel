@@ -42,14 +42,49 @@ bazel_dep(name = "apple_support", version = "1.19.0", repo_name = "build_bazel_a
 bazel_dep(name = "bazel_skylib", version = "1.8.1")
 bazel_dep(name = "boringssl", version = "0.20241024.0")  # mismatched 20241211
 bazel_dep(name = "c-ares", version = "1.19.1", repo_name = "com_github_cares_cares")
+single_version_override(
+    module_name = "c-ares",
+    patch_strip = 1,
+    patches = [
+        "//bazel:c-ares/bazel_9_support.patch",
+    ],
+    version = "1.19.1",
+)
+
 bazel_dep(name = "envoy_api", version = "0.0.0-20251216-6ef568c")
 bazel_dep(name = "googleapis-cc", version = "1.0.0")
 bazel_dep(name = "googleapis-grpc-cc", version = "1.0.0")
 bazel_dep(name = "googleapis-python", version = "1.0.0")
 bazel_dep(name = "googletest", version = "1.17.0", repo_name = "com_google_googletest")
+single_version_override(
+    module_name = "googletest",
+    patch_strip = 1,
+    patches = [
+        "//bazel:googletest/bazel_9_support.patch",
+    ],
+    version = "1.17.0",
+)
+
 bazel_dep(name = "opencensus-cpp", version = "0.0.0-20230502-50eb5de.bcr.2", repo_name = "io_opencensus_cpp")
+single_version_override(
+    module_name = "opencensus-cpp",
+    patch_strip = 1,
+    patches = [
+        "//bazel:opencensus-cpp/bazel_9_support.patch",
+    ],
+    version = "0.0.0-20230502-50eb5de.bcr.2",
+)
+
 bazel_dep(name = "openssl", version = "3.3.1.bcr.1")
 bazel_dep(name = "opentelemetry-cpp", version = "1.19.0", repo_name = "io_opentelemetry_cpp")
+single_version_override(
+    module_name = "opentelemetry-cpp",
+    patch_strip = 1,
+    patches = [
+        "//bazel:opentelemetry-cpp/bazel_9_support.patch",
+    ],
+    version = "1.19.0",
+)
 
 # --- Protobuf related packages.
 # TODO(weizheyuan): Remove this single_version_override block once protobuf 35
@@ -189,6 +224,7 @@ archive_override(
     patch_strip = 1,
     patches = [
         "//bazel:re2.patch",
+        "//bazel:re2/bazel_9_support.patch",
     ],
     strip_prefix = "re2-2022-04-01",
     urls = [
