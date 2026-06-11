@@ -579,7 +579,8 @@ class _InterceptedStreamRequestMixin(Generic[RequestType]):
         await self._interceptors_task
 
         if self._write_to_iterator_queue is None:
-            raise ValueError("Write iterator queue is not initialized")
+            err_msg = "Write iterator queue is not initialized"
+            raise ValueError(err_msg)
 
         while True:
             value = await self._write_to_iterator_queue.get()
