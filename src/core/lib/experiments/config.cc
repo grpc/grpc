@@ -54,11 +54,6 @@ ForcedExperiment* ForcedExperiments() {
   return &**forced_experiments;
 }
 
-std::atomic<bool>* Loaded() {
-  static NoDestruct<std::atomic<bool>> loaded(false);
-  return &*loaded;
-}
-
 absl::AnyInvocable<bool(struct ExperimentMetadata)>* g_check_constraints_cb =
     nullptr;
 
