@@ -34,6 +34,7 @@
 #include "src/core/credentials/transport/tls/grpc_tls_certificate_verifier.h"
 #include "src/core/credentials/transport/tls/grpc_tls_credentials_options.h"
 #include "src/core/credentials/transport/tls/ssl_utils.h"
+#include "src/core/credentials/transport/tls/tls_credentials.h"
 #include "src/core/credentials/transport/transport_credentials.h"
 #include "src/core/handshaker/security/security_handshaker.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -43,6 +44,7 @@
 #include "src/core/transport/auth_context.h"
 #include "src/core/tsi/ssl_transport_security.h"
 #include "src/core/util/debug_location.h"
+#include "src/core/util/down_cast.h"
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/host_port.h"
 #include "src/core/util/status_helper.h"
@@ -214,18 +216,6 @@ void PendingVerifierRequestDestroy(
   if (request->peer_info.verified_root_cert_subject != nullptr) {
     gpr_free(const_cast<char*>(request->peer_info.verified_root_cert_subject));
   }
-}
-
-std::vector<tsi_ssl_pem_key_cert_pair> ConvertToTsiPemKeyCertPair(
-    const PemKeyCertPairList& cert_pair_list) {
-  std::vector<tsi_ssl_pem_key_cert_pair> tsi_pairs;
-  for (size_t i = 0; i < cert_pair_list.size(); i++) {
-    GRPC_CHECK(!IsPrivateKeyEmpty(cert_pair_list[i].private_key()));
-    GRPC_CHECK(!cert_pair_list[i].cert_chain().empty());
-    tsi_pairs.emplace_back(cert_pair_list[i].private_key(),
-                           cert_pair_list[i].cert_chain());
-  }
-  return tsi_pairs;
 }
 
 }  // namespace
@@ -549,25 +539,17 @@ void TlsChannelSecurityConnector::ChannelPendingVerifierRequest::OnVerifyDone(
 // BlockOnInitialCredentialHandshaker is implemented.
 grpc_security_status
 TlsChannelSecurityConnector::UpdateHandshakerFactoryLocked() {
-  bool skip_server_certificate_verification = !options_->verify_server_cert();
-  // Free the client handshaker factory if exists.
   if (client_handshaker_factory_ != nullptr) {
     tsi_ssl_client_handshaker_factory_unref(client_handshaker_factory_);
-  }
-  std::vector<tsi_ssl_pem_key_cert_pair> pem_key_cert_pair;
-  if (pem_key_cert_pair_list_.has_value()) {
-    pem_key_cert_pair = ConvertToTsiPemKeyCertPair(*pem_key_cert_pair_list_);
+    client_handshaker_factory_ = nullptr;
   }
   bool use_default_roots = options_->root_certificate_distributor() == nullptr;
-  return grpc_ssl_tsi_client_handshaker_factory_init(
-      pem_key_cert_pair.empty() ? nullptr : &pem_key_cert_pair[0],
-      use_default_roots ? nullptr : root_cert_info_,
-      skip_server_certificate_verification,
-      grpc_get_tsi_tls_version(options_->min_tls_version()),
-      grpc_get_tsi_tls_version(options_->max_tls_version()), ssl_session_cache_,
-      tls_session_key_logger_.get(), options_->crl_directory().c_str(),
-      options_->crl_provider(), options_->key_exchange_groups(),
-      &client_handshaker_factory_);
+  auto* tls_creds = DownCast<TlsCredentials*>(mutable_channel_creds());
+  auto [status, factory] = tls_creds->GetOrCreateCachedClientHandshakerFactory(
+      use_default_roots ? nullptr : root_cert_info_, pem_key_cert_pair_list_,
+      ssl_session_cache_, tls_session_key_logger_.get());
+  client_handshaker_factory_ = factory;
+  return status;
 }
 
 // -------------------server security connector-------------------
