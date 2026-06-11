@@ -40,3 +40,22 @@ grpc_cc_test(
         "//test/core/test_util:grpc_test_util_base",
     ],
 )
+
+grpc_cc_test(
+    name = "gdch_service_account_credentials_test",
+    srcs = ["gdch_service_account_credentials_test.cc"],
+    external_deps = [
+        "gtest",
+        "absl/status",
+        "absl/status:statusor",
+    ],
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//src/core:json",
+        "//src/core:grpc_external_account_credentials",
+        "//test/core/test_util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util_base",
+    ],
+)
+
