@@ -1,0 +1,22 @@
+diff --git a/BUILD.bazel b/BUILD.bazel
+index 95ae7c5..dad5ac7 100644
+--- a/BUILD.bazel
++++ b/BUILD.bazel
+@@ -1,3 +1,5 @@
++load("@rules_cc//cc:cc_library.bzl", "cc_library")
++
+ cc_library(
+     name = "zlib",
+     srcs = [
+diff --git a/MODULE.bazel b/MODULE.bazel
+index d172165..8047ad8 100644
+--- a/MODULE.bazel
++++ b/MODULE.bazel
+@@ -3,6 +3,7 @@ module(
+     version = "1.3.1.bcr.5",
+     compatibility_level = 1,
+ )
++
+ bazel_dep(name = "platforms", version = "0.0.7")
+ bazel_dep(name = "rules_cc", version = "0.0.8")
+ bazel_dep(name = "rules_license", version = "1.0.0")
