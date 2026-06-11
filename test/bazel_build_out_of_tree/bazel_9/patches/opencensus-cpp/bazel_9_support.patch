@@ -1,1 +1,289 @@
-../../../../../bazel/opencensus-cpp/bazel_9_support.patch
+diff --git a/MODULE.bazel b/MODULE.bazel
+index 623a295..368e8a7 100644
+--- a/MODULE.bazel
++++ b/MODULE.bazel
+@@ -4,10 +4,13 @@ module(
+     repo_name = "io_opencensus_cpp",
+ )
+ 
++bazel_dep(name = "rules_cc", version = "0.2.19")
+ bazel_dep(name = "abseil-cpp", version = "20250512.0", repo_name = "com_google_absl")
+ bazel_dep(name = "bazel_skylib", version = "1.7.1")
+ bazel_dep(name = "boringssl", version = "0.20240913.0")  # Bump transitive dependency for copmatibility with newer compilers
++
+ bazel_dep(name = "civetweb", version = "1.16.bcr.1", dev_dependency = True)
++
+ bazel_dep(name = "curl", version = "8.7.1", repo_name = "com_github_curl")
+ bazel_dep(name = "google_benchmark", version = "1.8.4", repo_name = "com_github_google_benchmark")
+ bazel_dep(name = "googleapis", version = "0.0.0-20240819-fe8ba054a", repo_name = "com_google_googleapis")
+diff --git a/examples/grpc/BUILD b/examples/grpc/BUILD
+index 61c0962..e1a17cd 100644
+--- a/examples/grpc/BUILD
++++ b/examples/grpc/BUILD
+@@ -12,8 +12,12 @@
+ # See the License for the specific language governing permissions and
+ # limitations under the License.
+ 
+-load("//opencensus:copts.bzl", "DEFAULT_COPTS", "TEST_COPTS")
+ load("@com_github_grpc_grpc//bazel:cc_grpc_library.bzl", "cc_grpc_library")
++load("@com_google_protobuf//bazel:cc_proto_library.bzl", "cc_proto_library")
++load("@com_google_protobuf//bazel:proto_library.bzl", "proto_library")
++load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
++load("@rules_cc//cc:cc_library.bzl", "cc_library")
++load("//opencensus:copts.bzl", "DEFAULT_COPTS", "TEST_COPTS")
+ 
+ licenses(["notice"])  # Apache License 2.0
+ 
+diff --git a/examples/helloworld/BUILD b/examples/helloworld/BUILD
+index ca0d70d..69cebba 100644
+--- a/examples/helloworld/BUILD
++++ b/examples/helloworld/BUILD
+@@ -12,6 +12,7 @@
+ # See the License for the specific language governing permissions and
+ # limitations under the License.
+ 
++load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
+ load("//opencensus:copts.bzl", "DEFAULT_COPTS")
+ 
+ licenses(["notice"])  # Apache License 2.0
+diff --git a/examples/http/BUILD b/examples/http/BUILD
+index 12bf94f..00c7413 100644
+--- a/examples/http/BUILD
++++ b/examples/http/BUILD
+@@ -12,6 +12,7 @@
+ # See the License for the specific language governing permissions and
+ # limitations under the License.
+ 
++load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
+ load("//opencensus:copts.bzl", "DEFAULT_COPTS", "TEST_COPTS")
+ 
+ licenses(["notice"])  # Apache License 2.0
+diff --git a/opencensus/common/BUILD b/opencensus/common/BUILD
+index 64bed6c..7e1f2fc 100644
+--- a/opencensus/common/BUILD
++++ b/opencensus/common/BUILD
+@@ -15,6 +15,7 @@
+ # See the License for the specific language governing permissions and
+ # limitations under the License.
+ 
++load("@rules_cc//cc:cc_library.bzl", "cc_library")
+ load("//opencensus:copts.bzl", "DEFAULT_COPTS", "TEST_COPTS")
+ 
+ licenses(["notice"])  # Apache 2.0
+diff --git a/opencensus/common/internal/BUILD b/opencensus/common/internal/BUILD
+index 8afef74..aa3c651 100644
+--- a/opencensus/common/internal/BUILD
++++ b/opencensus/common/internal/BUILD
+@@ -14,6 +14,9 @@
+ # See the License for the specific language governing permissions and
+ # limitations under the License.
+ 
++load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
++load("@rules_cc//cc:cc_library.bzl", "cc_library")
++load("@rules_cc//cc:cc_test.bzl", "cc_test")
+ load("//opencensus:copts.bzl", "DEFAULT_COPTS", "TEST_COPTS")
+ 
+ licenses(["notice"])  # Apache 2.0
+diff --git a/opencensus/common/internal/grpc/BUILD b/opencensus/common/internal/grpc/BUILD
+index 51f43c8..d6ecb75 100644
+--- a/opencensus/common/internal/grpc/BUILD
++++ b/opencensus/common/internal/grpc/BUILD
+@@ -14,6 +14,8 @@
+ # See the License for the specific language governing permissions and
+ # limitations under the License.
+ 
++load("@rules_cc//cc:cc_library.bzl", "cc_library")
++load("@rules_cc//cc:cc_test.bzl", "cc_test")
+ load("//opencensus:copts.bzl", "DEFAULT_COPTS", "TEST_COPTS")
+ 
+ licenses(["notice"])  # Apache 2.0
+diff --git a/opencensus/context/BUILD b/opencensus/context/BUILD
+index e60ec92..152a8ed 100644
+--- a/opencensus/context/BUILD
++++ b/opencensus/context/BUILD
+@@ -15,6 +15,9 @@
+ # See the License for the specific language governing permissions and
+ # limitations under the License.
+ 
++load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
++load("@rules_cc//cc:cc_library.bzl", "cc_library")
++load("@rules_cc//cc:cc_test.bzl", "cc_test")
+ load("//opencensus:copts.bzl", "DEFAULT_COPTS", "TEST_COPTS")
+ 
+ licenses(["notice"])  # Apache 2.0
+diff --git a/opencensus/exporters/stats/prometheus/BUILD b/opencensus/exporters/stats/prometheus/BUILD
+index 302724d..71a83e5 100644
+--- a/opencensus/exporters/stats/prometheus/BUILD
++++ b/opencensus/exporters/stats/prometheus/BUILD
+@@ -12,6 +12,9 @@
+ # See the License for the specific language governing permissions and
+ # limitations under the License.
+ 
++load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
++load("@rules_cc//cc:cc_library.bzl", "cc_library")
++load("@rules_cc//cc:cc_test.bzl", "cc_test")
+ load("//opencensus:copts.bzl", "DEFAULT_COPTS", "TEST_COPTS")
+ 
+ licenses(["notice"])  # Apache License 2.0
+diff --git a/opencensus/exporters/stats/stackdriver/BUILD b/opencensus/exporters/stats/stackdriver/BUILD
+index e612d00..22ad9e5 100644
+--- a/opencensus/exporters/stats/stackdriver/BUILD
++++ b/opencensus/exporters/stats/stackdriver/BUILD
+@@ -12,6 +12,8 @@
+ # See the License for the specific language governing permissions and
+ # limitations under the License.
+ 
++load("@rules_cc//cc:cc_library.bzl", "cc_library")
++load("@rules_cc//cc:cc_test.bzl", "cc_test")
+ load("//opencensus:copts.bzl", "DEFAULT_COPTS", "TEST_COPTS")
+ 
+ licenses(["notice"])  # Apache License 2.0
+diff --git a/opencensus/exporters/stats/stdout/BUILD b/opencensus/exporters/stats/stdout/BUILD
+index 4c41c8b..79748db 100644
+--- a/opencensus/exporters/stats/stdout/BUILD
++++ b/opencensus/exporters/stats/stdout/BUILD
+@@ -12,6 +12,8 @@
+ # See the License for the specific language governing permissions and
+ # limitations under the License.
+ 
++load("@rules_cc//cc:cc_library.bzl", "cc_library")
++load("@rules_cc//cc:cc_test.bzl", "cc_test")
+ load("//opencensus:copts.bzl", "DEFAULT_COPTS", "TEST_COPTS")
+ 
+ licenses(["notice"])  # Apache License 2.0
+diff --git a/opencensus/exporters/trace/ocagent/BUILD b/opencensus/exporters/trace/ocagent/BUILD
+index 837f64a..c3c145f 100644
+--- a/opencensus/exporters/trace/ocagent/BUILD
++++ b/opencensus/exporters/trace/ocagent/BUILD
+@@ -12,6 +12,8 @@
+ # See the License for the specific language governing permissions and
+ # limitations under the License.
+ 
++load("@rules_cc//cc:cc_library.bzl", "cc_library")
++load("@rules_cc//cc:cc_test.bzl", "cc_test")
+ load("//opencensus:copts.bzl", "DEFAULT_COPTS", "TEST_COPTS")
+ 
+ licenses(["notice"])  # Apache License 2.0
+diff --git a/opencensus/exporters/trace/stackdriver/BUILD b/opencensus/exporters/trace/stackdriver/BUILD
+index 297fb7d..65b17bb 100644
+--- a/opencensus/exporters/trace/stackdriver/BUILD
++++ b/opencensus/exporters/trace/stackdriver/BUILD
+@@ -12,6 +12,7 @@
+ # See the License for the specific language governing permissions and
+ # limitations under the License.
+ 
++load("@rules_cc//cc:cc_library.bzl", "cc_library")
+ load("//opencensus:copts.bzl", "DEFAULT_COPTS")
+ 
+ licenses(["notice"])  # Apache License 2.0
+diff --git a/opencensus/exporters/trace/stdout/BUILD b/opencensus/exporters/trace/stdout/BUILD
+index 6c44d13..d528d68 100644
+--- a/opencensus/exporters/trace/stdout/BUILD
++++ b/opencensus/exporters/trace/stdout/BUILD
+@@ -12,6 +12,8 @@
+ # See the License for the specific language governing permissions and
+ # limitations under the License.
+ 
++load("@rules_cc//cc:cc_library.bzl", "cc_library")
++load("@rules_cc//cc:cc_test.bzl", "cc_test")
+ load("//opencensus:copts.bzl", "DEFAULT_COPTS", "TEST_COPTS")
+ 
+ licenses(["notice"])  # Apache License 2.0
+diff --git a/opencensus/exporters/trace/zipkin/BUILD b/opencensus/exporters/trace/zipkin/BUILD
+index c92c2ae..6b5003a 100644
+--- a/opencensus/exporters/trace/zipkin/BUILD
++++ b/opencensus/exporters/trace/zipkin/BUILD
+@@ -12,6 +12,8 @@
+ # See the License for the specific language governing permissions and
+ # limitations under the License.
+ 
++load("@rules_cc//cc:cc_library.bzl", "cc_library")
++load("@rules_cc//cc:cc_test.bzl", "cc_test")
+ load("//opencensus:copts.bzl", "DEFAULT_COPTS", "TEST_COPTS")
+ 
+ licenses(["notice"])  # Apache License 2.0
+diff --git a/opencensus/stats/BUILD b/opencensus/stats/BUILD
+index b6f0fd0..f19471d 100644
+--- a/opencensus/stats/BUILD
++++ b/opencensus/stats/BUILD
+@@ -14,6 +14,9 @@
+ # See the License for the specific language governing permissions and
+ # limitations under the License.
+ 
++load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
++load("@rules_cc//cc:cc_library.bzl", "cc_library")
++load("@rules_cc//cc:cc_test.bzl", "cc_test")
+ load("//opencensus:copts.bzl", "DEFAULT_COPTS", "TEST_COPTS")
+ 
+ licenses(["notice"])  # Apache License 2.0
+diff --git a/opencensus/stats/examples/BUILD b/opencensus/stats/examples/BUILD
+index c8e918e..c3712db 100644
+--- a/opencensus/stats/examples/BUILD
++++ b/opencensus/stats/examples/BUILD
+@@ -14,6 +14,7 @@
+ # See the License for the specific language governing permissions and
+ # limitations under the License.
+ 
++load("@rules_cc//cc:cc_test.bzl", "cc_test")
+ load("//opencensus:copts.bzl", "TEST_COPTS")
+ 
+ licenses(["notice"])  # Apache 2.0
+diff --git a/opencensus/tags/BUILD b/opencensus/tags/BUILD
+index 8506029..1b77401 100644
+--- a/opencensus/tags/BUILD
++++ b/opencensus/tags/BUILD
+@@ -14,8 +14,11 @@
+ # See the License for the specific language governing permissions and
+ # limitations under the License.
+ 
+-load("//opencensus:copts.bzl", "DEFAULT_COPTS", "TEST_COPTS")
++load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
++load("@rules_cc//cc:cc_library.bzl", "cc_library")
++load("@rules_cc//cc:cc_test.bzl", "cc_test")
+ load("//bazel:cc_fuzz_target.bzl", "cc_fuzz_target")
++load("//opencensus:copts.bzl", "DEFAULT_COPTS", "TEST_COPTS")
+ 
+ licenses(["notice"])  # Apache License 2.0
+ 
+diff --git a/opencensus/trace/BUILD b/opencensus/trace/BUILD
+index 5215dfc..cab2d38 100644
+--- a/opencensus/trace/BUILD
++++ b/opencensus/trace/BUILD
+@@ -15,8 +15,11 @@
+ # See the License for the specific language governing permissions and
+ # limitations under the License.
+ 
+-load("//opencensus:copts.bzl", "DEFAULT_COPTS", "TEST_COPTS")
++load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
++load("@rules_cc//cc:cc_library.bzl", "cc_library")
++load("@rules_cc//cc:cc_test.bzl", "cc_test")
+ load("//bazel:cc_fuzz_target.bzl", "cc_fuzz_target")
++load("//opencensus:copts.bzl", "DEFAULT_COPTS", "TEST_COPTS")
+ 
+ licenses(["notice"])  # Apache 2.0
+ 
+diff --git a/opencensus/trace/examples/BUILD b/opencensus/trace/examples/BUILD
+index d8f91a4..cbca52b 100644
+--- a/opencensus/trace/examples/BUILD
++++ b/opencensus/trace/examples/BUILD
+@@ -14,6 +14,7 @@
+ # See the License for the specific language governing permissions and
+ # limitations under the License.
+ 
++load("@rules_cc//cc:cc_test.bzl", "cc_test")
+ load("//opencensus:copts.bzl", "TEST_COPTS")
+ 
+ licenses(["notice"])  # Apache 2.0
+diff --git a/tools/zlib/BUILD b/tools/zlib/BUILD
+index 3ef019e..0dd0cbe 100644
+--- a/tools/zlib/BUILD
++++ b/tools/zlib/BUILD
+@@ -14,6 +14,8 @@
+ 
+ # @zlib comes from grpc_deps in the outer workspace.
+ 
++load("@rules_cc//cc:cc_library.bzl", "cc_library")
++
+ cc_library(
+     name = "z",
+     visibility = ["//visibility:public"],
