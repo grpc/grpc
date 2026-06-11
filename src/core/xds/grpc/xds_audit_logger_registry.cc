@@ -65,7 +65,7 @@ XdsAuditLoggerRegistry::XdsAuditLoggerRegistry() {
       std::make_unique<StdoutLoggerConfigFactory>());
 }
 
-std::unique_ptr<experimental::AuditLoggerFactory::Config>
+std::shared_ptr<const experimental::AuditLoggerFactory::Config>
 XdsAuditLoggerRegistry::ParseXdsAuditLoggerConfig(
     const XdsResourceType::DecodeContext& context,
     const envoy_config_rbac_v3_RBAC_AuditLoggingOptions_AuditLoggerConfig*

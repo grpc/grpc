@@ -86,28 +86,29 @@ absl::StatusOr<std::unique_ptr<RbacFilter>> RbacFilter::Create(
     // side.
     return GRPC_ERROR_CREATE("No transport configured");
   }
-  Rbac rbac;
-  if (IsXdsServerFilterChainPerRouteEnabled()) {
-    if (filter_args.config() == nullptr) {
-      return absl::InternalError("no config passed to RBAC filter");
-    }
-    if (filter_args.config()->type() != Config::Type()) {
-      return absl::InternalError(
-          absl::StrCat("wrong config type passed to RBAC filter: ",
-                       filter_args.config()->type().name()));
-    }
-    rbac = DownCast<const Config&>(*filter_args.config()).rbac;
+  if (!IsXdsServerFilterChainPerRouteEnabled()) {
+    return std::make_unique<RbacFilter>(
+        filter_args.instance_id(), Rbac(),
+        EvaluateArgs::PerChannelArgs(auth_context, args));
+  }
+  if (filter_args.config() == nullptr) {
+    return absl::InternalError("no config passed to RBAC filter");
+  }
+  if (filter_args.config()->type() != Config::Type()) {
+    return absl::InternalError(
+        absl::StrCat("wrong config type passed to RBAC filter: ",
+                     filter_args.config()->type().name()));
   }
   return std::make_unique<RbacFilter>(
-      filter_args.instance_id(), std::move(rbac),
+      /*instance_id=*/0, DownCast<const Config&>(*filter_args.config()).rbac,
       EvaluateArgs::PerChannelArgs(auth_context, args));
 }
 
-RbacFilter::RbacFilter(size_t index, Rbac rbac,
+RbacFilter::RbacFilter(size_t index, const Rbac& rbac,
                        EvaluateArgs::PerChannelArgs per_channel_evaluate_args)
     : index_(index),
       service_config_parser_index_(RbacServiceConfigParser::ParserIndex()),
-      authorization_engine_(std::move(rbac)),
+      authorization_engine_(rbac),
       per_channel_evaluate_args_(std::move(per_channel_evaluate_args)) {}
 
 void RbacFilterRegister(CoreConfiguration::Builder* builder) {

@@ -22,6 +22,7 @@
 #include "envoy/config/common/mutation_rules/v3/mutation_rules.upb.h"
 #include "envoy/config/core/v3/base.upb.h"
 #include "envoy/config/core/v3/grpc_service.upb.h"
+#include "envoy/config/route/v3/route_components.upb.h"
 #include "envoy/extensions/transport_sockets/tls/v3/tls.upb.h"
 #include "envoy/type/matcher/v3/string.upb.h"
 #include "envoy/type/v3/percent.upb.h"

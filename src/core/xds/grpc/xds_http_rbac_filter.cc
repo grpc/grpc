@@ -616,11 +616,12 @@ Rbac::CidrRange ParseCidrRange(const envoy_config_core_v3_CidrRange* range) {
       envoy_config_core_v3_CidrRange_address_prefix(range));
   cidr_range.prefix_len =
       ParseUInt32Value(envoy_config_core_v3_CidrRange_prefix_len(range))
-      .value_ir(0);
+      .value_or(0);
   return cidr_range;
 }
 
 StringMatcher ParsePathMatcher(
+    const XdsResourceType::DecodeContext& context,
     const envoy_type_matcher_v3_PathMatcher* matcher,
     ValidationErrors* errors) {
   ValidationErrors::ScopedField field(errors, ".path");
@@ -629,7 +630,7 @@ StringMatcher ParsePathMatcher(
     errors->AddError("field not present");
     return StringMatcher();
   }
-  return ParseStringMatcherToJson(path, errors);
+  return StringMatcherParse(context, path, errors);
 }
 
 std::unique_ptr<Rbac::Permission> ParsePermission(
@@ -638,16 +639,17 @@ std::unique_ptr<Rbac::Permission> ParsePermission(
     ValidationErrors* errors);
 
 std::vector<std::unique_ptr<Rbac::Permission>> ParsePermissionSet(
-    const envoy_config_rbac_v3_Principal_Set* set, size_t depth,
+    const XdsResourceType::DecodeContext& context,
+    const envoy_config_rbac_v3_Permission_Set* set, size_t depth,
     ValidationErrors* errors) {
-  std::vector<std::unique_ptr<Rbac::Principal>> result;
+  std::vector<std::unique_ptr<Rbac::Permission>> result;
   size_t size;
   const envoy_config_rbac_v3_Permission* const* rules =
       envoy_config_rbac_v3_Permission_Set_rules(set, &size);
   for (size_t i = 0; i < size; ++i) {
     ValidationErrors::ScopedField field(errors,
                                         absl::StrCat(".rules[", i, "]"));
-    result.push_back(ParsePermission(rules[i], depth + 1, errors));
+    result.push_back(ParsePermission(context, rules[i], depth + 1, errors));
   }
   return result;
 };
@@ -664,11 +666,13 @@ std::unique_ptr<Rbac::Permission> ParsePermission(
   if (envoy_config_rbac_v3_Permission_has_and_rules(permission)) {
     ValidationErrors::ScopedField field(errors, ".and_permission");
     *result = Rbac::Permission::MakeAndPermission(ParsePermissionSet(
-        envoy_config_rbac_v3_Permission_and_rules(permission), depth, errors));
+        context, envoy_config_rbac_v3_Permission_and_rules(permission),
+        depth, errors));
   } else if (envoy_config_rbac_v3_Permission_has_or_rules(permission)) {
     ValidationErrors::ScopedField field(errors, ".or_permission");
     *result = Rbac::Permission::MakeAndPermission(ParsePermissionSet(
-        envoy_config_rbac_v3_Permission_or_rules(permission), depth, errors));
+        context, envoy_config_rbac_v3_Permission_or_rules(permission),
+        depth, errors));
   } else if (envoy_config_rbac_v3_Permission_has_any(permission)) {
     *result = Rbac::Permission::MakeAnyPermission();
   } else if (envoy_config_rbac_v3_Permission_has_header(permission)) {
@@ -678,19 +682,19 @@ std::unique_ptr<Rbac::Permission> ParsePermission(
   } else if (envoy_config_rbac_v3_Permission_has_url_path(permission)) {
     ValidationErrors::ScopedField field(errors, ".url_path");
     *result = Rbac::Permission::MakePathPermission(ParsePathMatcher(
-        envoy_config_rbac_v3_Permission_url_path(permission), errors));
+        context, envoy_config_rbac_v3_Permission_url_path(permission), errors));
   } else if (envoy_config_rbac_v3_Permission_has_destination_ip(permission)) {
     *result = Rbac::Permission::MakeDestIpPermission(ParseCidrRange(
         envoy_config_rbac_v3_Permission_destination_ip(permission)));
   } else if (envoy_config_rbac_v3_Permission_has_destination_port(permission)) {
-    *result = Rbac::Permission::MakeDestIpPermission(ParseCidrRange(
-        envoy_config_rbac_v3_Permission_destination_port(permission)));
+    *result = Rbac::Permission::MakeDestPortPermission(
+        envoy_config_rbac_v3_Permission_destination_port(permission));
   } else if (envoy_config_rbac_v3_Permission_has_metadata(permission)) {
     const auto* metadata = envoy_config_rbac_v3_Permission_metadata(permission);
     // The fields "filter", "path" and "value" are irrelevant to gRPC as per
     // https://github.com/grpc/proposal/blob/master/A41-xds-rbac.md and are not
     // being parsed.
-    *result = Rbac::Principal::MakeMetadataPermission(
+    *result = Rbac::Permission::MakeMetadataPermission(
         envoy_type_matcher_v3_MetadataMatcher_invert(metadata));
   } else if (envoy_config_rbac_v3_Permission_has_not_rule(permission)) {
     ValidationErrors::ScopedField field(errors, ".not_rule");
@@ -716,7 +720,8 @@ std::unique_ptr<Rbac::Principal> ParsePrincipal(
     const envoy_config_rbac_v3_Principal* principal, size_t depth,
     ValidationErrors* errors);
 
-std::vector<std::unique_ptr<Rbac::Principal>> ParsePrincpaleSet(
+std::vector<std::unique_ptr<Rbac::Principal>> ParsePrincipalSet(
+    const XdsResourceType::DecodeContext& context,
     const envoy_config_rbac_v3_Principal_Set* set, size_t depth,
     ValidationErrors* errors) {
   std::vector<std::unique_ptr<Rbac::Principal>> result;
@@ -726,7 +731,7 @@ std::vector<std::unique_ptr<Rbac::Principal>> ParsePrincpaleSet(
   for (size_t i = 0; i < size; ++i) {
     ValidationErrors::ScopedField field(errors,
                                         absl::StrCat(".ids[", i, "]"));
-    result.push_back(ParsePrincipal(ids[i], depth + 1, errors));
+    result.push_back(ParsePrincipal(context, ids[i], depth + 1, errors));
   }
   return result;
 };
@@ -743,11 +748,13 @@ std::unique_ptr<Rbac::Principal> ParsePrincipal(
   if (envoy_config_rbac_v3_Principal_has_and_ids(principal)) {
     ValidationErrors::ScopedField field(errors, ".and_ids");
     *result = Rbac::Principal::MakeAndPrincipal(ParsePrincipalSet(
-        envoy_config_rbac_v3_Principal_and_ids(principal), depth, errors));
+        context, envoy_config_rbac_v3_Principal_and_ids(principal), depth,
+        errors));
   } else if (envoy_config_rbac_v3_Principal_has_or_ids(principal)) {
     ValidationErrors::ScopedField field(errors, ".or_ids");
     *result = Rbac::Principal::MakeOrPrincipal(ParsePrincipalSet(
-        envoy_config_rbac_v3_Principal_or_ids(principal), depth, errors));
+        context, envoy_config_rbac_v3_Principal_or_ids(principal), depth,
+        errors));
   } else if (envoy_config_rbac_v3_Principal_has_any(principal)) {
     *result = Rbac::Principal::MakeAnyPrincipal();
   } else if (envoy_config_rbac_v3_Principal_has_authenticated(principal)) {
@@ -764,13 +771,13 @@ std::unique_ptr<Rbac::Principal> ParsePrincipal(
         Rbac::Principal::MakeAuthenticatedPrincipal(std::move(string_matcher));
   } else if (envoy_config_rbac_v3_Principal_has_source_ip(principal)) {
     *result = Rbac::Principal::MakeSourceIpPrincipal(
-        ParseCidrRange(envoy_config_rbac_v3_Principal_source_ip));
+        ParseCidrRange(envoy_config_rbac_v3_Principal_source_ip(principal)));
   } else if (envoy_config_rbac_v3_Principal_has_direct_remote_ip(principal)) {
-    *result = Rbac::Principal::MakeDirectRemoteIpPrincipal(
-        ParseCidrRange(envoy_config_rbac_v3_Principal_source_ip));
+    *result = Rbac::Principal::MakeDirectRemoteIpPrincipal(ParseCidrRange(
+        envoy_config_rbac_v3_Principal_direct_remote_ip(principal)));
   } else if (envoy_config_rbac_v3_Principal_has_remote_ip(principal)) {
     *result = Rbac::Principal::MakeRemoteIpPrincipal(
-        ParseCidrRange(envoy_config_rbac_v3_Principal_source_ip));
+        ParseCidrRange(envoy_config_rbac_v3_Principal_remote_ip(principal)));
   } else if (envoy_config_rbac_v3_Principal_has_header(principal)) {
     ValidationErrors::ScopedField field(errors, ".header");
     HeaderMatcher header_matcher = ParseXdsHeaderMatcher(
@@ -784,11 +791,8 @@ std::unique_ptr<Rbac::Principal> ParsePrincipal(
   } else if (envoy_config_rbac_v3_Principal_has_url_path(principal)) {
     ValidationErrors::ScopedField field(errors, ".url_path");
     const auto* url_path = envoy_config_rbac_v3_Principal_url_path(principal);
-    const auto* path = envoy_type_matcher_v3_PathMatcher_path(matcher);
-    if (path == nullptr) {
-      ValidationErrors::ScopedField field(errors, ".path");
-      errors->AddError("field not present");
-    } else {
+    const auto* path = envoy_type_matcher_v3_PathMatcher_path(url_path);
+    if (path != nullptr) {
       *result = Rbac::Principal::MakePathPrincipal(
           StringMatcherParse(context, path, errors));
     }      
@@ -831,12 +835,12 @@ Rbac::Policy ParsePolicy(const XdsResourceType::DecodeContext& context,
   // principals
   const envoy_config_rbac_v3_Principal* const* principals =
       envoy_config_rbac_v3_Policy_principals(policy, &size);
-  std::vector<std::unique_ptr<Rbac::Principal>> or_princpals;
+  std::vector<std::unique_ptr<Rbac::Principal>> or_principals;
   for (size_t i = 0; i < size; ++i) {
     ValidationErrors::ScopedField field(errors,
                                         absl::StrCat(".principals[", i, "]"));
     or_principals.push_back(
-        ParsePrincipal(context, principals[i], /*depth=*/0, errors);
+        ParsePrincipal(context, principals[i], /*depth=*/0, errors));
   }
   result.principals =
       Rbac::Principal::MakeOrPrincipal(std::move(or_principals));
@@ -891,7 +895,7 @@ Rbac ParseXdsRbac(const XdsResourceType::DecodeContext& context,
       absl::string_view key = UpbStringToAbsl(key_view);
       ValidationErrors::ScopedField field(
           errors, absl::StrCat(".policies[", key, "]"));
-      result.policies[std::string(key)] = ParsePolicy(val, errors);
+      result.policies[std::string(key)] = ParsePolicy(context, val, errors);
     }
   }
   // audit_logging_options

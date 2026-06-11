@@ -61,7 +61,7 @@ class RbacFilter : public ImplementChannelFilter<RbacFilter> {
   static absl::StatusOr<std::unique_ptr<RbacFilter>> Create(
       const ChannelArgs& args, ChannelFilter::Args filter_args);
 
-  RbacFilter(size_t index, Rbac rbac,
+  RbacFilter(size_t index, const Rbac& rbac,
              EvaluateArgs::PerChannelArgs per_channel_evaluate_args);
 
   class Call {
