@@ -2028,7 +2028,7 @@ static tsi_result ssl_handshaker_result_extract_peer(
     peer->property_count++;
   }
 
-#if OPENSSL_VERSION_NUMBER >= 0x10101000L
+#if defined(OPENSSL_IS_BORINGSSL) || OPENSSL_VERSION_NUMBER >= 0x30000000L
   if (negotiated_group_name != nullptr) {
     result = tsi_construct_string_peer_property_from_cstring(
         TSI_SSL_NEGOTIATED_KEY_EXCHANGE_GROUP, negotiated_group_name,
