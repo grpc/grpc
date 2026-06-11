@@ -25,18 +25,21 @@ cd test/bazel_build_out_of_tree/bazel_9
 #$GIT_ROOT/tools/bazel \
 bazelisk \
     build \
+    --override_module=re2=${HOME}/deps/re2 \
+    --override_module=googletest=${HOME}/deps/googletest \
+    --override_module=c-ares=${HOME}/deps/c-ares-1.19.1 \
+    --nobuild \
     -- \
     "@grpc" \
-    && :
-#    "@grpc//:grpc++_test" \
-#    "@grpc//:grpc++" \
-#    "@grpc//:grpc++_reflection" \
-#    "@grpc//:grpc++_unsecure" \
-#    "@grpc//:grpc_opencensus_plugin" \
-#    "@grpc//:grpc_security_base" \
-#    "@grpc//:grpc_unsecure" \
-#    "@grpc//:grpcpp_admin" \
-#    "@grpc//:grpcpp_channelz" \
-#    "@grpc//:grpcpp_csds" \
-#    "@grpc//:grpcpp_orca_service" \
-#    "@grpc//examples/protos/..." \
+    "@grpc//:grpc++_test" \
+    "@grpc//:grpc++" \
+    "@grpc//:grpc++_reflection" \
+    "@grpc//:grpc++_unsecure" \
+    "@grpc//:grpc_opencensus_plugin" \
+    "@grpc//:grpc_security_base" \
+    "@grpc//:grpc_unsecure" \
+    "@grpc//:grpcpp_admin" \
+    "@grpc//:grpcpp_channelz" \
+    "@grpc//:grpcpp_csds" \
+    "@grpc//:grpcpp_orca_service" \
+    "@grpc//examples/protos/..."
