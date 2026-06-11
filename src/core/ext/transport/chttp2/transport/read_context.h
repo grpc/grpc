@@ -43,6 +43,7 @@
 
 namespace grpc_core {
 namespace http2 {
+constexpr uint32_t kCurrentCycleMaxResetStreams = 1024u;
 
 class ReadLoopPauseRestart {
  public:
@@ -267,12 +268,13 @@ class ReadContext {
   // by the Client.
   // Server : For a server, the last_stream_id is the last known stream that is
   // received by the Server.
-  Http2Status ValidateHeader(const uint32_t max_frame_size_setting,
-                             const Http2FrameHeader& current_frame_header,
-                             const uint32_t last_stream_id,
-                             const bool is_first_settings_processed) {
-    GRPC_HTTP2_COMMON_DLOG << "ReadContext::ValidateFrameHeader "
+  Http2Status ProcessHeader(const uint32_t max_frame_size_setting,
+                            const Http2FrameHeader& current_frame_header,
+                            const uint32_t last_stream_id,
+                            const bool is_first_settings_processed) {
+    GRPC_HTTP2_COMMON_DLOG << "ReadContext::ProcessHeader "
                            << current_frame_header.ToString();
+    IncrementInducedFrames(GetNumInducedFrames(current_frame_header));
     return ValidateFrameHeader(
         /*max_frame_size_setting=*/max_frame_size_setting,
         /*incoming_header_in_progress=*/
@@ -335,6 +337,9 @@ class ReadContext {
   Http2FrameCountTracker& mutable_tracker() { return tracker_; }
   const Http2FrameCountTracker& tracker() const { return tracker_; }
 
+  void OnStreamError() { IncrementInducedFrames(/*num_induced_frames=*/1u); }
+  void OnResetStreamFrame() { IncrementResetStreamFrames(); }
+
   //////////////////////////////////////////////////////////////////////////////
   // Current Frame Header management.
 
@@ -349,7 +354,10 @@ class ReadContext {
   //////////////////////////////////////////////////////////////////////////////
   // ReadLoopPauseRestart wrapper functions.
 
-  void SetPauseReadLoop() { read_loop_manager_.SetPauseReadLoop(); }
+  void SetPauseReadLoop() {
+    ResetReadCycleCounters();
+    read_loop_manager_.SetPauseReadLoop();
+  }
 
   Poll<absl::Status> MaybePauseReadLoop() {
     return read_loop_manager_.MaybePauseReadLoop();
@@ -396,19 +404,26 @@ class ReadContext {
   void ResetReadCycleCounters() {
     current_cycle_read_count_ = 0u;
     current_cycle_bytes_read_ = 0u;
+    current_cycle_num_induced_frames_ = 0u;
     current_cycle_num_new_streams_ = 0u;
   }
   void IncrementIncomingStreams() {
     ++current_cycle_num_new_streams_;
     if (current_cycle_num_new_streams_ >= max_new_streams_per_read_cycle_) {
-      read_loop_manager_.SetPauseReadLoop();
-      ResetReadCycleCounters();
+      SetPauseReadLoop();
     }
   }
   void IncrementReadCycleCounters(const uint32_t payload_length) {
     current_cycle_bytes_read_ += kFrameHeaderSize + payload_length;
     ++current_cycle_read_count_;
     if (current_cycle_read_count_ >= kMaxFramesReadPerReadCycle) {
+      SetPauseReadLoop();
+    }
+  }
+  void IncrementInducedFrames(const uint8_t num_induced_frames) {
+    current_cycle_num_induced_frames_ += num_induced_frames;
+    if (current_cycle_num_induced_frames_ >=
+        GrpcErrors::kDefaultMaxPendingInducedFrames) {
       read_loop_manager_.SetPauseReadLoop();
       ResetReadCycleCounters();
     }
@@ -425,8 +440,10 @@ class ReadContext {
   // we think that current_cycle_read_count_ would be sufficient for now.
   uint64_t current_cycle_bytes_read_ = 0u;
   uint16_t current_cycle_read_count_ = 0u;
+  uint32_t current_cycle_num_induced_frames_ = 0u;
 
   uint32_t current_cycle_num_new_streams_ = 0u;
+  uint32_t current_cycle_num_reset_streams_ = 0u;
   // Unlike other limits, this cannot be a constexpr because it is set per
   // transport via a ChannelArg named "grpc.http2.max_requests_per_read".
   const uint32_t max_new_streams_per_read_cycle_;

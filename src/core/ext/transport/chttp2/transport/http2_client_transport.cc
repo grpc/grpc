@@ -380,6 +380,7 @@ Http2Status Http2ClientTransport::ProcessIncomingFrame(
          "stream_id="
       << frame.stream_id << ", error_code=" << frame.error_code << " }";
 
+  read_context_.OnResetStreamFrame();
   Http2ErrorCode error_code = FrameErrorCodeToHttp2ErrorCode(frame.error_code);
   absl::Status status = absl::Status(ErrorCodeToAbslStatusCode(error_code),
                                      "Reset stream frame received.");
@@ -442,16 +443,7 @@ Http2Status Http2ClientTransport::ProcessIncomingFrame(Http2PingFrame&& frame) {
     return ToHttpOkOrConnError(AckPing(frame.opaque));
   } else {
     if (test_only_ack_pings_) {
-      // TODO(akshitpatel) : [PH2][P2] : Have a counter to track number
-      // of pending induced frames (Ping/Settings Ack). This is to
-      // ensure that if write is taking a long time, we can stop reads
-      // and prioritize writes. RFC9113: PING responses SHOULD be given
-      // higher priority than any other frame.
       ping_manager_->AddPendingPingAck(frame.opaque);
-      // TODO(akshitpatel) : [PH2][P2] : This is done assuming that the
-      // other ProcessFrame promises may return stream or connection
-      // failures. If this does not turn out to be true, consider
-      // returning absl::Status here.
       return ToHttpOkOrConnError(TriggerWriteCycle());
     } else {
       GRPC_HTTP2_CLIENT_DLOG
@@ -667,7 +659,7 @@ auto Http2ClientTransport::ReadAndProcessOneFrame() {
       [this](Slice header_bytes) {
         Http2FrameHeader header = Http2FrameHeader::Parse(header_bytes.begin());
         // Validate the incoming frame as per the current state of the transport
-        Http2Status status = read_context_.ValidateHeader(
+        Http2Status status = read_context_.ProcessHeader(
             /*max_frame_size_setting=*/settings_->acked().max_frame_size(),
             /*current_frame_header=*/header,
             /*last_stream_id=*/GetLastStreamId(),
@@ -1371,6 +1363,7 @@ absl::Status Http2ClientTransport::HandleError(
     GRPC_DCHECK(stream_id.has_value());
     // Passing a cancelled server metadata handle to propagate the error
     // to the upper layers.
+    read_context_.OnStreamError();
     BeginCloseStream(
         LookupStream(stream_id.value()),
         Http2ErrorCodeToFrameErrorCode(status.GetStreamErrorCode()),
