@@ -1,1 +1,2 @@
 common --downloader_config=../../../bazel/downloader.cfg
+common --check_visibility=false
