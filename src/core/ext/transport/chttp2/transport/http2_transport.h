@@ -45,8 +45,8 @@ namespace http2 {
 // and it is functions. The code will be written iteratively.
 // Do not use or edit any of these functions unless you are
 // familiar with the PH2 project (Moving chttp2 to promises.)
-// TODO(tjagtap) : [PH2][P3] : Update the experimental status of the code before
-// http2 rollout begins.
+// TODO(tjagtap) : [PH2][P3] : Update the experimental status of the code when
+// CHTTP2 is deleted.
 
 #define GRPC_HTTP2_CLIENT_DLOG \
   DLOG_IF(INFO, GRPC_TRACE_FLAG_ENABLED(http2_ph2_transport))
@@ -67,6 +67,14 @@ struct CloseStreamArgs {
   bool close_writes;
 };
 
+inline bool ShouldEnablePh2Client() {
+  return IsPh2ClientEnabled() || IsPh2ClientServerEnabled();
+}
+
+inline bool ShouldEnablePh2Server() {
+  return IsPh2ServerEnabled() || IsPh2ClientServerEnabled();
+}
+
 // TODO(akshitpatel) [PH2][P3] : Write a way to measure the total size of a
 // transport object. Reference :
 // https://github.com/grpc/grpc/pull/41294/files#diff-c685cc4847f228327938326e2a45083a2d0845bacff0ac004bd802027a670c4e
@@ -74,48 +82,7 @@ struct CloseStreamArgs {
 ///////////////////////////////////////////////////////////////////////////////
 // Read and Write helpers
 
-class Http2ReadContext {
- public:
-  Http2ReadContext() = default;
-  Http2ReadContext(const Http2ReadContext&) = delete;
-  Http2ReadContext& operator=(const Http2ReadContext&) = delete;
-  Http2ReadContext(Http2ReadContext&&) = delete;
-  Http2ReadContext& operator=(Http2ReadContext&&) = delete;
-
-  // Signals that the read loop should pause. If it's already paused, this is a
-  // no-op.
-  void SetPauseReadLoop() {
-    // TODO(tjagtap) [PH2][P2][Settings] Plumb with when we receive urgent
-    // settings. Example - initial window size 0 is urgent because it indicates
-    // extreme memory pressure on the server.
-    should_pause_read_loop_ = true;
-  }
-
-  // If SetPauseReadLoop() was called, this returns Pending and
-  // registers a waker that will be woken by WakeReadLoop().
-  // If SetPauseReadLoop() was not called, this returns OkStatus.
-  // This should be polled by the read loop to yield control when requested.
-  Poll<absl::Status> MaybePauseReadLoop() {
-    if (should_pause_read_loop_) {
-      read_loop_waker_ = GetContext<Activity>()->MakeNonOwningWaker();
-      return Pending{};
-    }
-    return absl::OkStatus();
-  }
-
-  // If SetPauseReadLoop() was called, resumes it by
-  // waking up the ReadLoop. If not paused, this is a no-op.
-  void ResumeReadLoopIfPaused() {
-    if (should_pause_read_loop_) {
-      should_pause_read_loop_ = false;
-      read_loop_waker_.Wakeup();
-    }
-  }
-
- private:
-  bool should_pause_read_loop_ = false;
-  Waker read_loop_waker_;
-};
+constexpr uint32_t kMaxFramesReadPerReadCycle = 16u * 1024u;  // 16K frames
 
 Http2Status ValidateIncomingConnectionPreface(
     const absl::StatusOr<Slice>& status);
@@ -126,7 +93,7 @@ inline Http2Status ValidateMetadataFrameState(
     const uint32_t max_header_list_size) {
   if (stream.IsStreamHalfClosedRemote()) {
     return incoming_headers.ParseAndDiscardHeaders(
-        std::move(frame.payload), frame.end_headers, &stream,
+        std::move(frame.payload), frame.end_headers,
         Http2Status::Http2StreamError(
             Http2ErrorCode::kStreamClosed,
             std::string(RFC9113::kHalfClosedRemoteState)),
@@ -138,7 +105,7 @@ inline Http2Status ValidateMetadataFrameState(
             stream.IsInitialMetadataReceived(),
             stream.IsTrailingMetadataReceived())) {
       return incoming_headers.ParseAndDiscardHeaders(
-          std::move(frame.payload), frame.end_headers, &stream,
+          std::move(frame.payload), frame.end_headers,
           Http2Status::Http2StreamError(
               Http2ErrorCode::kInternalError,
               std::string(GrpcErrors::kTooManyMetadata)),
@@ -163,7 +130,6 @@ struct TransportChannelArgs {
   Duration ping_timeout;
   Duration settings_timeout;
   bool keepalive_permit_without_calls;
-  bool enable_preferred_rx_crypto_frame_advertisement;
   // This is used to test peer behaviour when we never send a ping ack.
   bool test_only_ack_pings;
   uint32_t max_header_list_size_soft_limit;
@@ -183,6 +149,8 @@ void ReadSettingsFromChannelArgs(const ChannelArgs& channel_args,
                                  chttp2::TransportFlowControl& flow_control,
                                  bool is_client);
 
+uint32_t MaxNewStreamsPerRead(const ChannelArgs& channel_args);
+
 ///////////////////////////////////////////////////////////////////////////////
 // ChannelZ helpers
 
@@ -199,7 +167,7 @@ void ProcessOutgoingDataFrameFlowControl(
     uint32_t flow_control_tokens_consumed);
 
 ValueOrHttp2Status<chttp2::FlowControlAction>
-ProcessIncomingDataFrameFlowControl(Http2FrameHeader& frame,
+ProcessIncomingDataFrameFlowControl(const Http2FrameHeader& frame,
                                     chttp2::TransportFlowControl& flow_control,
                                     Stream* stream);
 

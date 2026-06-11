@@ -16,8 +16,11 @@
 
 #include "src/core/xds/grpc/xds_common_types.h"
 
+#include <string>
+
 #include "src/core/util/match.h"
 #include "src/core/util/string.h"
+#include "src/core/util/time.h"
 #include "absl/strings/match.h"
 
 namespace grpc_core {
@@ -110,6 +113,43 @@ std::string CommonTlsContext::ToString() const {
 bool CommonTlsContext::Empty() const {
   return tls_certificate_provider_instance.Empty() &&
          certificate_validation_context.Empty();
+}
+
+//
+// XdsGrpcService
+//
+
+std::string XdsGrpcService::ToString() const {
+  std::string result = "{";
+  bool is_first = true;
+  if (server_target != nullptr) {
+    StrAppend(result, "server_target=");
+    StrAppend(result, server_target->Key());
+    is_first = false;
+  }
+  if (timeout != Duration::Zero()) {
+    if (!is_first) StrAppend(result, ", ");
+    StrAppend(result, "timeout=");
+    StrAppend(result, timeout.ToString());
+    is_first = false;
+  }
+  if (!initial_metadata.empty()) {
+    if (!is_first) StrAppend(result, ", ");
+    StrAppend(result, "initial_metadata=[");
+    bool is_first_metadata = true;
+    for (const auto& metadata : initial_metadata) {
+      if (!is_first_metadata) StrAppend(result, ", ");
+      StrAppend(result, "{key=");
+      StrAppend(result, metadata.first);
+      StrAppend(result, ", value=");
+      StrAppend(result, metadata.second);
+      StrAppend(result, "}");
+      is_first_metadata = false;
+    }
+    StrAppend(result, "]");
+  }
+  StrAppend(result, "}");
+  return result;
 }
 
 //

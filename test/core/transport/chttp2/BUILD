@@ -537,6 +537,7 @@ grpc_cc_test(
         "//src/core:error_utils",
         "//src/core:event_engine_memory_allocator",
         "//src/core:memory_quota",
+        "//src/core:mitigation_engine",
         "//src/core:resource_quota",
         "//src/core:slice",
         "//src/core:status_helper",
@@ -824,9 +825,9 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
-    name = "incoming_metadata_tracker_test",
+    name = "read_context_test",
     srcs = [
-        "incoming_metadata_tracker_test.cc",
+        "read_context_test.cc",
     ],
     external_deps = [
         "gtest",
@@ -838,7 +839,7 @@ grpc_cc_test(
         "//:grpc_base",
         "//src/core:grpc_check",
         "//src/core:http2_status",
-        "//src/core:incoming_metadata_tracker",
+        "//src/core:read_context",
         "//src/core:slice",
         "//test/core/transport/util:mock_promise_endpoint",
     ],
@@ -1042,6 +1043,7 @@ grpc_cc_test(
         "//:grpc_transport_chttp2",
         "//:orphanable",
         "//src/core:arena",
+        "//src/core:call_destination",
         "//src/core:call_filters",
         "//src/core:call_spine",
         "//src/core:channel_args",
@@ -1059,6 +1061,7 @@ grpc_cc_test(
         "//src/core:metadata_batch",
         "//src/core:notification",
         "//src/core:poll",
+        "//src/core:ref_counted",
         "//src/core:seq",
         "//src/core:sleep",
         "//src/core:slice",
@@ -1231,6 +1234,7 @@ grpc_cc_test(
         "//src/core:notification",
         "//src/core:ph2_stream",
         "//src/core:poll",
+        "//src/core:read_context",
         "//src/core:ref_counted",
         "//src/core:sleep",
         "//src/core:slice_buffer",
@@ -1287,6 +1291,7 @@ grpc_cc_test(
         "//src/core:grpc_insecure_credentials",
         "//src/core:grpc_tls_credentials",
         "//src/core:grpc_transport_chttp2_server",
+        "//src/core:mitigation_engine",
         "//test/core/end2end:cq_verifier",
         "//test/core/test_util:grpc_test_util",
         "//test/core/test_util:grpc_test_util_base",

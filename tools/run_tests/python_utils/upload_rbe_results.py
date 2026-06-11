@@ -24,6 +24,9 @@ import urllib.parse
 import urllib.request
 import uuid
 
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+import utils_common
+
 gcp_utils_dir = os.path.abspath(
     os.path.join(os.path.dirname(__file__), "../../gcp/utils")
 )
@@ -331,7 +334,7 @@ if __name__ == "__main__":
             json.dump(bq_rows, f, indent=4, sort_keys=True)
         print(("Dumped BQ data to file %s" % args.bq_dump_file))
 
-    if not args.skip_upload:
+    if not args.skip_upload and utils_common.should_upload_results_on_ci():
         # BigQuery sometimes fails with large uploads, so batch 1,000 rows at a time.
         MAX_ROWS = 1000
         for i in range(0, len(bq_rows), MAX_ROWS):

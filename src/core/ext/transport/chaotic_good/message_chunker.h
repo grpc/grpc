@@ -16,6 +16,7 @@
 #define GRPC_SRC_CORE_EXT_TRANSPORT_CHAOTIC_GOOD_MESSAGE_CHUNKER_H
 
 #include <cstdint>
+#include <utility>
 
 #include "src/core/ext/transport/chaotic_good/frame.h"
 #include "src/core/ext/transport/chaotic_good/frame_transport.h"
@@ -125,7 +126,8 @@ class MessageChunker {
           frame.message = std::move(message);
           frame.stream_id = stream_id;
           uint32_t tokens = FrameMpscTokens(frame);
-          return output.Send(OutgoingFrame{std::move(frame), nullptr}, tokens);
+          return output.Send(OutgoingFrame{std::move(frame), call_tracer},
+                             tokens);
         });
   }
 

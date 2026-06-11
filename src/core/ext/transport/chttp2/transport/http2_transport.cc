@@ -72,6 +72,7 @@ namespace http2 {
 //           Milestone 4. Either do the TODOs or delete them.
 // [PH2][EXT] This is a TODO related to a project unrelated to PH2 but happening
 //            in parallel.
+// [PH2][CHTTP2] This TODO is a part of CHTTP2 deletion.
 
 constexpr Duration kDefaultPingTimeout = Duration::Minutes(1);
 constexpr Duration kDefaultKeepaliveTimeout = Duration::Seconds(20);
@@ -132,8 +133,6 @@ std::string TransportChannelArgs::DebugString() const {
       " keepalive_timeout: ", keepalive_timeout,
       " ping_timeout: ", ping_timeout, " settings_timeout: ", settings_timeout,
       " keepalive_permit_without_calls: ", keepalive_permit_without_calls,
-      " enable_preferred_rx_crypto_frame_advertisement: ",
-      enable_preferred_rx_crypto_frame_advertisement,
       " max_header_list_size_soft_limit: ", max_header_list_size_soft_limit,
       " max_usable_hpack_table_size: ", max_usable_hpack_table_size,
       " initial_sequence_number: ", initial_sequence_number,
@@ -172,11 +171,6 @@ void ReadChannelArgs(const ChannelArgs& channel_args,
   args.keepalive_permit_without_calls =
       channel_args.GetBool(GRPC_ARG_KEEPALIVE_PERMIT_WITHOUT_CALLS)
           .value_or(kDefaultKeepalivePermitWithoutCalls);
-
-  args.enable_preferred_rx_crypto_frame_advertisement =
-      channel_args
-          .GetBool(GRPC_ARG_EXPERIMENTAL_HTTP2_PREFERRED_CRYPTO_FRAME_SIZE)
-          .value_or(kDefaultEnablePreferredRxCryptoFrameAdvertisement);
 
   args.max_usable_hpack_table_size =
       channel_args.GetInt(GRPC_ARG_HTTP2_HPACK_TABLE_SIZE_ENCODER).value_or(-1);
@@ -235,9 +229,12 @@ void ReadSettingsFromChannelArgs(const ChannelArgs& channel_args,
         channel_args.GetInt(GRPC_ARG_HTTP2_MAX_FRAME_SIZE).value_or(-1));
   }
 
-  if (channel_args
+  const bool enable_preferred_crypto =
+      channel_args
           .GetBool(GRPC_ARG_EXPERIMENTAL_HTTP2_PREFERRED_CRYPTO_FRAME_SIZE)
-          .value_or(false)) {
+          .value_or(kDefaultEnablePreferredRxCryptoFrameAdvertisement);
+  flow_control.set_ph2_enable_rx_crypto(enable_preferred_crypto);
+  if (enable_preferred_crypto) {
     local_settings.SetPreferredReceiveCryptoMessageSize(INT_MAX);
   }
 
@@ -249,11 +246,6 @@ void ReadSettingsFromChannelArgs(const ChannelArgs& channel_args,
 
   local_settings.SetAllowSecurityFrame(
       channel_args.GetBool(GRPC_ARG_SECURITY_FRAME_ALLOWED).value_or(false));
-
-  // TODO(tjagtap) : [PH2][P4] : If max_header_list_size is set only once
-  // in the life of a transport, consider making this a data member of
-  // class IncomingMetadataTracker instead of accessing via acked settings again
-  // and again. Else delete this comment.
 
   GRPC_HTTP2_COMMON_DLOG
       << "Http2Settings: {"
@@ -269,6 +261,12 @@ void ReadSettingsFromChannelArgs(const ChannelArgs& channel_args,
       << local_settings.allow_true_binary_metadata()
       << ", allow_security_frame: " << local_settings.allow_security_frame()
       << "}";
+}
+
+uint32_t MaxNewStreamsPerRead(const ChannelArgs& channel_args) {
+  return Clamp(
+      channel_args.GetInt("grpc.http2.max_requests_per_read").value_or(32), 1,
+      10000);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -311,7 +309,7 @@ void ProcessOutgoingDataFrameFlowControl(
 }
 
 ValueOrHttp2Status<chttp2::FlowControlAction>
-ProcessIncomingDataFrameFlowControl(Http2FrameHeader& frame_header,
+ProcessIncomingDataFrameFlowControl(const Http2FrameHeader& frame_header,
                                     chttp2::TransportFlowControl& flow_control,
                                     Stream* stream) {
   GRPC_DCHECK_EQ(frame_header.type, 0u);

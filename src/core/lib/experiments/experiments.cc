@@ -41,6 +41,9 @@ const char* const
 const char* const
     additional_constraints_call_tracer_send_trailing_metadata_is_an_annotation =
         "{}";
+const char* const description_callv3_batch_validation =
+    "If enabled, perform validations on receiving a new batch.";
+const char* const additional_constraints_callv3_batch_validation = "{}";
 const char* const description_chaotic_good_framing_layer =
     "Enable the chaotic good framing layer.";
 const char* const additional_constraints_chaotic_good_framing_layer = "{}";
@@ -48,6 +51,9 @@ const char* const description_chaotic_good_send_supported_features =
     "Send supported features in chaotic good settings frames.";
 const char* const additional_constraints_chaotic_good_send_supported_features =
     "{}";
+const char* const description_custom_frame_check =
+    "Adding checks to custom HTTP2 frame.";
+const char* const additional_constraints_custom_frame_check = "{}";
 const char* const description_error_flatten =
     "Flatten errors to ordinary absl::Status form.";
 const char* const additional_constraints_error_flatten = "{}";
@@ -103,6 +109,9 @@ const char* const description_h2_max_deallocating_streams_headroom =
     "Separate allocated max concurrent streams.";
 const char* const additional_constraints_h2_max_deallocating_streams_headroom =
     "{}";
+const char* const description_inproc_cancel_stream =
+    "If set, cancel inproc stream inside the transport mutex.";
+const char* const additional_constraints_inproc_cancel_stream = "{}";
 const char* const description_keep_alive_ping_timer_batch =
     "Avoid explicitly cancelling the keepalive timer. Instead adjust the "
     "callback to re-schedule itself to the next ping interval.";
@@ -118,6 +127,13 @@ const char* const description_memory_optimization_01 = "Memory Optimization";
 const char* const additional_constraints_memory_optimization_01 = "{}";
 const char* const description_memory_optimization_02 = "Memory Optimization 02";
 const char* const additional_constraints_memory_optimization_02 = "{}";
+const char* const description_message_size_refactoring =
+    "Refactoring the message size config parsing.";
+const char* const additional_constraints_message_size_refactoring = "{}";
+const char* const description_metadata_outstanding_token_refactor =
+    "Refactor ClientInitialMetadataOutstandingToken.";
+const char* const additional_constraints_metadata_outstanding_token_refactor =
+    "{}";
 const char* const description_metadata_publish_to_app_tag =
     "Publish metadata to the app using the kPublishToApp metadata field.";
 const char* const additional_constraints_metadata_publish_to_app_tag = "{}";
@@ -127,11 +143,41 @@ const char* const additional_constraints_monitoring_experiment = "{}";
 const char* const description_multiping =
     "Allow more than one ping to be in flight at a time by default.";
 const char* const additional_constraints_multiping = "{}";
+const char* const description_optimization_01 = "Optimization";
+const char* const additional_constraints_optimization_01 = "{}";
+const char* const description_optimization_02 = "Optimization";
+const char* const additional_constraints_optimization_02 = "{}";
+const char* const description_optimization_03 = "Optimization";
+const char* const additional_constraints_optimization_03 = "{}";
+const char* const description_optimization_04 = "Optimization";
+const char* const additional_constraints_optimization_04 = "{}";
 const char* const description_otel_export_telemetry_domains =
     "Export telemetry domains in OpenTelemetry metrics.";
 const char* const additional_constraints_otel_export_telemetry_domains = "{}";
+const char* const description_ph2_client =
+    "Use promises for the http2 client transport. We have kept client and "
+    "server transport experiments separate to help with smoother roll outs. "
+    "When this flag is enabled for the test suites, it would test PH2 Client "
+    "with CHTTP2 Server.";
+const char* const additional_constraints_ph2_client = "{}";
+const char* const description_ph2_client_server =
+    "This is a combination of ph2_server and ph2_client experiments. When this "
+    "flag is enabled for the test suites, it would test PH2 Client with PH2 "
+    "Server. We will NEVER be rolling out this experiment, because the roll "
+    "out would be done using ph2_server and ph2_client. This experiment MUST "
+    "be deleted when either ph2_server or ph2_client experiments are deleted.";
+const char* const additional_constraints_ph2_client_server = "{}";
+const char* const description_ph2_perf_01 =
+    "Different performance experiments for PH2 Transport";
+const char* const additional_constraints_ph2_perf_01 = "{}";
+const char* const description_ph2_server =
+    "Use promises for the http2 server transport. We have kept client and "
+    "server transport experiments separate to help with smoother roll outs. "
+    "When this flag is enabled for the test suites, it would test CHTTP2 "
+    "Client with PH2 Server.";
+const char* const additional_constraints_ph2_server = "{}";
 const char* const description_pick_first_ignore_empty_updates =
-    "Ignore empty resolutions in pick_first";
+    "Ignore empty resolutions in pick_first (delete)";
 const char* const additional_constraints_pick_first_ignore_empty_updates = "{}";
 const char* const description_pipelined_read_secure_endpoint =
     "Enable pipelined reads for EventEngine secure endpoints";
@@ -150,21 +196,12 @@ const char* const description_prioritize_finished_requests =
     "Prioritize flushing out finished requests over other in-flight requests "
     "during transport writes.";
 const char* const additional_constraints_prioritize_finished_requests = "{}";
-const char* const description_promise_based_http2_client_transport =
-    "Use promises for the http2 client transport. We have kept client and "
-    "server transport experiments separate to help with smoother roll outs and "
-    "also help with interop testing.";
-const char* const additional_constraints_promise_based_http2_client_transport =
-    "{}";
-const char* const description_promise_based_http2_server_transport =
-    "Use promises for the http2 server transport. We have kept client and "
-    "server transport experiments separate to help with smoother roll outs and "
-    "also help with interop testing.";
-const char* const additional_constraints_promise_based_http2_server_transport =
-    "{}";
 const char* const description_promise_based_inproc_transport =
-    "Use promises for the in-process transport.";
+    "Use call-v3 for the in-process transport.";
 const char* const additional_constraints_promise_based_inproc_transport = "{}";
+const char* const description_promise_batch_cleanup_on_cancel =
+    "Fix completion queue tag handling during promise batch cancellation.";
+const char* const additional_constraints_promise_batch_cleanup_on_cancel = "{}";
 const char* const description_promise_filter_send_cancel_metadata =
     "Enables sending all trailing metadata fields from server side "
     "promise-based filters upon stream cancellation.";
@@ -231,13 +268,21 @@ const char* const description_use_call_event_engine_in_completion_queue =
     "Use the call event engine to run callbacks in completion queue.";
 const char* const
     additional_constraints_use_call_event_engine_in_completion_queue = "{}";
+const char* const description_v2_non_owning_waker_implementation =
+    "Use non-owning wakers in v2 filter bridge.";
+const char* const additional_constraints_v2_non_owning_waker_implementation =
+    "{}";
+const char* const description_verbose_channelz_connection_logging =
+    "Verbose logging of events into channelz during connection setup.";
+const char* const additional_constraints_verbose_channelz_connection_logging =
+    "{}";
 const char* const description_wildcard_ip_expansion_restriction =
     "If set, adds optional restriction on when to expand wildcard IPs.";
 const char* const additional_constraints_wildcard_ip_expansion_restriction =
     "{}";
-const char* const description_xds_channel_filter_chain_per_route =
-    "xDS channels use a separate filter chain for each route.";
-const char* const additional_constraints_xds_channel_filter_chain_per_route =
+const char* const description_xds_server_filter_chain_per_route =
+    "xDS servers use a separate filter chain for each route.";
+const char* const additional_constraints_xds_server_filter_chain_per_route =
     "{}";
 }  // namespace
 
@@ -256,6 +301,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_call_tracer_send_trailing_metadata_is_an_annotation,
      additional_constraints_call_tracer_send_trailing_metadata_is_an_annotation,
      nullptr, 0, false, true},
+    {"callv3_batch_validation", description_callv3_batch_validation,
+     additional_constraints_callv3_batch_validation, nullptr, 0, true, true},
     {"chaotic_good_framing_layer", description_chaotic_good_framing_layer,
      additional_constraints_chaotic_good_framing_layer, nullptr, 0, true,
      false},
@@ -263,6 +310,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_chaotic_good_send_supported_features,
      additional_constraints_chaotic_good_send_supported_features, nullptr, 0,
      false, true},
+    {"custom_frame_check", description_custom_frame_check,
+     additional_constraints_custom_frame_check, nullptr, 0, true, false},
     {"error_flatten", description_error_flatten,
      additional_constraints_error_flatten, nullptr, 0, true, false},
     {"event_engine_client", description_event_engine_client,
@@ -300,6 +349,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_h2_max_deallocating_streams_headroom,
      additional_constraints_h2_max_deallocating_streams_headroom, nullptr, 0,
      false, true},
+    {"inproc_cancel_stream", description_inproc_cancel_stream,
+     additional_constraints_inproc_cancel_stream, nullptr, 0, true, true},
     {"keep_alive_ping_timer_batch", description_keep_alive_ping_timer_batch,
      additional_constraints_keep_alive_ping_timer_batch, nullptr, 0, false,
      true},
@@ -310,9 +361,15 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_max_inflight_pings_strict_limit, nullptr, 0, true,
      true},
     {"memory_optimization_01", description_memory_optimization_01,
-     additional_constraints_memory_optimization_01, nullptr, 0, false, false},
+     additional_constraints_memory_optimization_01, nullptr, 0, true, false},
     {"memory_optimization_02", description_memory_optimization_02,
      additional_constraints_memory_optimization_02, nullptr, 0, false, false},
+    {"message_size_refactoring", description_message_size_refactoring,
+     additional_constraints_message_size_refactoring, nullptr, 0, false, true},
+    {"metadata_outstanding_token_refactor",
+     description_metadata_outstanding_token_refactor,
+     additional_constraints_metadata_outstanding_token_refactor, nullptr, 0,
+     false, true},
     {"metadata_publish_to_app_tag", description_metadata_publish_to_app_tag,
      additional_constraints_metadata_publish_to_app_tag, nullptr, 0, true,
      true},
@@ -320,9 +377,25 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_monitoring_experiment, nullptr, 0, true, true},
     {"multiping", description_multiping, additional_constraints_multiping,
      nullptr, 0, false, true},
+    {"optimization_01", description_optimization_01,
+     additional_constraints_optimization_01, nullptr, 0, true, true},
+    {"optimization_02", description_optimization_02,
+     additional_constraints_optimization_02, nullptr, 0, true, true},
+    {"optimization_03", description_optimization_03,
+     additional_constraints_optimization_03, nullptr, 0, true, true},
+    {"optimization_04", description_optimization_04,
+     additional_constraints_optimization_04, nullptr, 0, true, true},
     {"otel_export_telemetry_domains", description_otel_export_telemetry_domains,
      additional_constraints_otel_export_telemetry_domains, nullptr, 0, false,
      true},
+    {"ph2_client", description_ph2_client, additional_constraints_ph2_client,
+     nullptr, 0, false, true},
+    {"ph2_client_server", description_ph2_client_server,
+     additional_constraints_ph2_client_server, nullptr, 0, false, true},
+    {"ph2_perf_01", description_ph2_perf_01, additional_constraints_ph2_perf_01,
+     nullptr, 0, false, true},
+    {"ph2_server", description_ph2_server, additional_constraints_ph2_server,
+     nullptr, 0, false, true},
     {"pick_first_ignore_empty_updates",
      description_pick_first_ignore_empty_updates,
      additional_constraints_pick_first_ignore_empty_updates, nullptr, 0, false,
@@ -337,18 +410,14 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"prioritize_finished_requests", description_prioritize_finished_requests,
      additional_constraints_prioritize_finished_requests, nullptr, 0, false,
      true},
-    {"promise_based_http2_client_transport",
-     description_promise_based_http2_client_transport,
-     additional_constraints_promise_based_http2_client_transport, nullptr, 0,
-     false, true},
-    {"promise_based_http2_server_transport",
-     description_promise_based_http2_server_transport,
-     additional_constraints_promise_based_http2_server_transport, nullptr, 0,
-     false, true},
     {"promise_based_inproc_transport",
      description_promise_based_inproc_transport,
      additional_constraints_promise_based_inproc_transport, nullptr, 0, false,
      false},
+    {"promise_batch_cleanup_on_cancel",
+     description_promise_batch_cleanup_on_cancel,
+     additional_constraints_promise_batch_cleanup_on_cancel, nullptr, 0, true,
+     true},
     {"promise_filter_send_cancel_metadata",
      description_promise_filter_send_cancel_metadata,
      additional_constraints_promise_filter_send_cancel_metadata, nullptr, 0,
@@ -400,14 +469,22 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_use_call_event_engine_in_completion_queue,
      additional_constraints_use_call_event_engine_in_completion_queue, nullptr,
      0, false, true},
+    {"v2_non_owning_waker_implementation",
+     description_v2_non_owning_waker_implementation,
+     additional_constraints_v2_non_owning_waker_implementation, nullptr, 0,
+     false, true},
+    {"verbose_channelz_connection_logging",
+     description_verbose_channelz_connection_logging,
+     additional_constraints_verbose_channelz_connection_logging, nullptr, 0,
+     false, true},
     {"wildcard_ip_expansion_restriction",
      description_wildcard_ip_expansion_restriction,
      additional_constraints_wildcard_ip_expansion_restriction, nullptr, 0,
      false, true},
-    {"xds_channel_filter_chain_per_route",
-     description_xds_channel_filter_chain_per_route,
-     additional_constraints_xds_channel_filter_chain_per_route, nullptr, 0,
-     true, true},
+    {"xds_server_filter_chain_per_route",
+     description_xds_server_filter_chain_per_route,
+     additional_constraints_xds_server_filter_chain_per_route, nullptr, 0,
+     false, true},
 };
 
 }  // namespace grpc_core
@@ -432,6 +509,9 @@ const char* const
 const char* const
     additional_constraints_call_tracer_send_trailing_metadata_is_an_annotation =
         "{}";
+const char* const description_callv3_batch_validation =
+    "If enabled, perform validations on receiving a new batch.";
+const char* const additional_constraints_callv3_batch_validation = "{}";
 const char* const description_chaotic_good_framing_layer =
     "Enable the chaotic good framing layer.";
 const char* const additional_constraints_chaotic_good_framing_layer = "{}";
@@ -439,6 +519,9 @@ const char* const description_chaotic_good_send_supported_features =
     "Send supported features in chaotic good settings frames.";
 const char* const additional_constraints_chaotic_good_send_supported_features =
     "{}";
+const char* const description_custom_frame_check =
+    "Adding checks to custom HTTP2 frame.";
+const char* const additional_constraints_custom_frame_check = "{}";
 const char* const description_error_flatten =
     "Flatten errors to ordinary absl::Status form.";
 const char* const additional_constraints_error_flatten = "{}";
@@ -494,6 +577,9 @@ const char* const description_h2_max_deallocating_streams_headroom =
     "Separate allocated max concurrent streams.";
 const char* const additional_constraints_h2_max_deallocating_streams_headroom =
     "{}";
+const char* const description_inproc_cancel_stream =
+    "If set, cancel inproc stream inside the transport mutex.";
+const char* const additional_constraints_inproc_cancel_stream = "{}";
 const char* const description_keep_alive_ping_timer_batch =
     "Avoid explicitly cancelling the keepalive timer. Instead adjust the "
     "callback to re-schedule itself to the next ping interval.";
@@ -509,6 +595,13 @@ const char* const description_memory_optimization_01 = "Memory Optimization";
 const char* const additional_constraints_memory_optimization_01 = "{}";
 const char* const description_memory_optimization_02 = "Memory Optimization 02";
 const char* const additional_constraints_memory_optimization_02 = "{}";
+const char* const description_message_size_refactoring =
+    "Refactoring the message size config parsing.";
+const char* const additional_constraints_message_size_refactoring = "{}";
+const char* const description_metadata_outstanding_token_refactor =
+    "Refactor ClientInitialMetadataOutstandingToken.";
+const char* const additional_constraints_metadata_outstanding_token_refactor =
+    "{}";
 const char* const description_metadata_publish_to_app_tag =
     "Publish metadata to the app using the kPublishToApp metadata field.";
 const char* const additional_constraints_metadata_publish_to_app_tag = "{}";
@@ -518,11 +611,41 @@ const char* const additional_constraints_monitoring_experiment = "{}";
 const char* const description_multiping =
     "Allow more than one ping to be in flight at a time by default.";
 const char* const additional_constraints_multiping = "{}";
+const char* const description_optimization_01 = "Optimization";
+const char* const additional_constraints_optimization_01 = "{}";
+const char* const description_optimization_02 = "Optimization";
+const char* const additional_constraints_optimization_02 = "{}";
+const char* const description_optimization_03 = "Optimization";
+const char* const additional_constraints_optimization_03 = "{}";
+const char* const description_optimization_04 = "Optimization";
+const char* const additional_constraints_optimization_04 = "{}";
 const char* const description_otel_export_telemetry_domains =
     "Export telemetry domains in OpenTelemetry metrics.";
 const char* const additional_constraints_otel_export_telemetry_domains = "{}";
+const char* const description_ph2_client =
+    "Use promises for the http2 client transport. We have kept client and "
+    "server transport experiments separate to help with smoother roll outs. "
+    "When this flag is enabled for the test suites, it would test PH2 Client "
+    "with CHTTP2 Server.";
+const char* const additional_constraints_ph2_client = "{}";
+const char* const description_ph2_client_server =
+    "This is a combination of ph2_server and ph2_client experiments. When this "
+    "flag is enabled for the test suites, it would test PH2 Client with PH2 "
+    "Server. We will NEVER be rolling out this experiment, because the roll "
+    "out would be done using ph2_server and ph2_client. This experiment MUST "
+    "be deleted when either ph2_server or ph2_client experiments are deleted.";
+const char* const additional_constraints_ph2_client_server = "{}";
+const char* const description_ph2_perf_01 =
+    "Different performance experiments for PH2 Transport";
+const char* const additional_constraints_ph2_perf_01 = "{}";
+const char* const description_ph2_server =
+    "Use promises for the http2 server transport. We have kept client and "
+    "server transport experiments separate to help with smoother roll outs. "
+    "When this flag is enabled for the test suites, it would test CHTTP2 "
+    "Client with PH2 Server.";
+const char* const additional_constraints_ph2_server = "{}";
 const char* const description_pick_first_ignore_empty_updates =
-    "Ignore empty resolutions in pick_first";
+    "Ignore empty resolutions in pick_first (delete)";
 const char* const additional_constraints_pick_first_ignore_empty_updates = "{}";
 const char* const description_pipelined_read_secure_endpoint =
     "Enable pipelined reads for EventEngine secure endpoints";
@@ -541,21 +664,12 @@ const char* const description_prioritize_finished_requests =
     "Prioritize flushing out finished requests over other in-flight requests "
     "during transport writes.";
 const char* const additional_constraints_prioritize_finished_requests = "{}";
-const char* const description_promise_based_http2_client_transport =
-    "Use promises for the http2 client transport. We have kept client and "
-    "server transport experiments separate to help with smoother roll outs and "
-    "also help with interop testing.";
-const char* const additional_constraints_promise_based_http2_client_transport =
-    "{}";
-const char* const description_promise_based_http2_server_transport =
-    "Use promises for the http2 server transport. We have kept client and "
-    "server transport experiments separate to help with smoother roll outs and "
-    "also help with interop testing.";
-const char* const additional_constraints_promise_based_http2_server_transport =
-    "{}";
 const char* const description_promise_based_inproc_transport =
-    "Use promises for the in-process transport.";
+    "Use call-v3 for the in-process transport.";
 const char* const additional_constraints_promise_based_inproc_transport = "{}";
+const char* const description_promise_batch_cleanup_on_cancel =
+    "Fix completion queue tag handling during promise batch cancellation.";
+const char* const additional_constraints_promise_batch_cleanup_on_cancel = "{}";
 const char* const description_promise_filter_send_cancel_metadata =
     "Enables sending all trailing metadata fields from server side "
     "promise-based filters upon stream cancellation.";
@@ -622,13 +736,21 @@ const char* const description_use_call_event_engine_in_completion_queue =
     "Use the call event engine to run callbacks in completion queue.";
 const char* const
     additional_constraints_use_call_event_engine_in_completion_queue = "{}";
+const char* const description_v2_non_owning_waker_implementation =
+    "Use non-owning wakers in v2 filter bridge.";
+const char* const additional_constraints_v2_non_owning_waker_implementation =
+    "{}";
+const char* const description_verbose_channelz_connection_logging =
+    "Verbose logging of events into channelz during connection setup.";
+const char* const additional_constraints_verbose_channelz_connection_logging =
+    "{}";
 const char* const description_wildcard_ip_expansion_restriction =
     "If set, adds optional restriction on when to expand wildcard IPs.";
 const char* const additional_constraints_wildcard_ip_expansion_restriction =
     "{}";
-const char* const description_xds_channel_filter_chain_per_route =
-    "xDS channels use a separate filter chain for each route.";
-const char* const additional_constraints_xds_channel_filter_chain_per_route =
+const char* const description_xds_server_filter_chain_per_route =
+    "xDS servers use a separate filter chain for each route.";
+const char* const additional_constraints_xds_server_filter_chain_per_route =
     "{}";
 }  // namespace
 
@@ -647,6 +769,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_call_tracer_send_trailing_metadata_is_an_annotation,
      additional_constraints_call_tracer_send_trailing_metadata_is_an_annotation,
      nullptr, 0, false, true},
+    {"callv3_batch_validation", description_callv3_batch_validation,
+     additional_constraints_callv3_batch_validation, nullptr, 0, true, true},
     {"chaotic_good_framing_layer", description_chaotic_good_framing_layer,
      additional_constraints_chaotic_good_framing_layer, nullptr, 0, true,
      false},
@@ -654,6 +778,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_chaotic_good_send_supported_features,
      additional_constraints_chaotic_good_send_supported_features, nullptr, 0,
      false, true},
+    {"custom_frame_check", description_custom_frame_check,
+     additional_constraints_custom_frame_check, nullptr, 0, true, false},
     {"error_flatten", description_error_flatten,
      additional_constraints_error_flatten, nullptr, 0, true, false},
     {"event_engine_client", description_event_engine_client,
@@ -691,6 +817,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_h2_max_deallocating_streams_headroom,
      additional_constraints_h2_max_deallocating_streams_headroom, nullptr, 0,
      false, true},
+    {"inproc_cancel_stream", description_inproc_cancel_stream,
+     additional_constraints_inproc_cancel_stream, nullptr, 0, true, true},
     {"keep_alive_ping_timer_batch", description_keep_alive_ping_timer_batch,
      additional_constraints_keep_alive_ping_timer_batch, nullptr, 0, false,
      true},
@@ -701,9 +829,15 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_max_inflight_pings_strict_limit, nullptr, 0, true,
      true},
     {"memory_optimization_01", description_memory_optimization_01,
-     additional_constraints_memory_optimization_01, nullptr, 0, false, false},
+     additional_constraints_memory_optimization_01, nullptr, 0, true, false},
     {"memory_optimization_02", description_memory_optimization_02,
      additional_constraints_memory_optimization_02, nullptr, 0, false, false},
+    {"message_size_refactoring", description_message_size_refactoring,
+     additional_constraints_message_size_refactoring, nullptr, 0, false, true},
+    {"metadata_outstanding_token_refactor",
+     description_metadata_outstanding_token_refactor,
+     additional_constraints_metadata_outstanding_token_refactor, nullptr, 0,
+     false, true},
     {"metadata_publish_to_app_tag", description_metadata_publish_to_app_tag,
      additional_constraints_metadata_publish_to_app_tag, nullptr, 0, true,
      true},
@@ -711,9 +845,25 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_monitoring_experiment, nullptr, 0, true, true},
     {"multiping", description_multiping, additional_constraints_multiping,
      nullptr, 0, false, true},
+    {"optimization_01", description_optimization_01,
+     additional_constraints_optimization_01, nullptr, 0, true, true},
+    {"optimization_02", description_optimization_02,
+     additional_constraints_optimization_02, nullptr, 0, true, true},
+    {"optimization_03", description_optimization_03,
+     additional_constraints_optimization_03, nullptr, 0, true, true},
+    {"optimization_04", description_optimization_04,
+     additional_constraints_optimization_04, nullptr, 0, true, true},
     {"otel_export_telemetry_domains", description_otel_export_telemetry_domains,
      additional_constraints_otel_export_telemetry_domains, nullptr, 0, false,
      true},
+    {"ph2_client", description_ph2_client, additional_constraints_ph2_client,
+     nullptr, 0, false, true},
+    {"ph2_client_server", description_ph2_client_server,
+     additional_constraints_ph2_client_server, nullptr, 0, false, true},
+    {"ph2_perf_01", description_ph2_perf_01, additional_constraints_ph2_perf_01,
+     nullptr, 0, false, true},
+    {"ph2_server", description_ph2_server, additional_constraints_ph2_server,
+     nullptr, 0, false, true},
     {"pick_first_ignore_empty_updates",
      description_pick_first_ignore_empty_updates,
      additional_constraints_pick_first_ignore_empty_updates, nullptr, 0, false,
@@ -728,18 +878,14 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"prioritize_finished_requests", description_prioritize_finished_requests,
      additional_constraints_prioritize_finished_requests, nullptr, 0, false,
      true},
-    {"promise_based_http2_client_transport",
-     description_promise_based_http2_client_transport,
-     additional_constraints_promise_based_http2_client_transport, nullptr, 0,
-     false, true},
-    {"promise_based_http2_server_transport",
-     description_promise_based_http2_server_transport,
-     additional_constraints_promise_based_http2_server_transport, nullptr, 0,
-     false, true},
     {"promise_based_inproc_transport",
      description_promise_based_inproc_transport,
      additional_constraints_promise_based_inproc_transport, nullptr, 0, false,
      false},
+    {"promise_batch_cleanup_on_cancel",
+     description_promise_batch_cleanup_on_cancel,
+     additional_constraints_promise_batch_cleanup_on_cancel, nullptr, 0, true,
+     true},
     {"promise_filter_send_cancel_metadata",
      description_promise_filter_send_cancel_metadata,
      additional_constraints_promise_filter_send_cancel_metadata, nullptr, 0,
@@ -791,14 +937,22 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_use_call_event_engine_in_completion_queue,
      additional_constraints_use_call_event_engine_in_completion_queue, nullptr,
      0, false, true},
+    {"v2_non_owning_waker_implementation",
+     description_v2_non_owning_waker_implementation,
+     additional_constraints_v2_non_owning_waker_implementation, nullptr, 0,
+     false, true},
+    {"verbose_channelz_connection_logging",
+     description_verbose_channelz_connection_logging,
+     additional_constraints_verbose_channelz_connection_logging, nullptr, 0,
+     false, true},
     {"wildcard_ip_expansion_restriction",
      description_wildcard_ip_expansion_restriction,
      additional_constraints_wildcard_ip_expansion_restriction, nullptr, 0,
      false, true},
-    {"xds_channel_filter_chain_per_route",
-     description_xds_channel_filter_chain_per_route,
-     additional_constraints_xds_channel_filter_chain_per_route, nullptr, 0,
-     true, true},
+    {"xds_server_filter_chain_per_route",
+     description_xds_server_filter_chain_per_route,
+     additional_constraints_xds_server_filter_chain_per_route, nullptr, 0,
+     false, true},
 };
 
 }  // namespace grpc_core
@@ -823,6 +977,9 @@ const char* const
 const char* const
     additional_constraints_call_tracer_send_trailing_metadata_is_an_annotation =
         "{}";
+const char* const description_callv3_batch_validation =
+    "If enabled, perform validations on receiving a new batch.";
+const char* const additional_constraints_callv3_batch_validation = "{}";
 const char* const description_chaotic_good_framing_layer =
     "Enable the chaotic good framing layer.";
 const char* const additional_constraints_chaotic_good_framing_layer = "{}";
@@ -830,6 +987,9 @@ const char* const description_chaotic_good_send_supported_features =
     "Send supported features in chaotic good settings frames.";
 const char* const additional_constraints_chaotic_good_send_supported_features =
     "{}";
+const char* const description_custom_frame_check =
+    "Adding checks to custom HTTP2 frame.";
+const char* const additional_constraints_custom_frame_check = "{}";
 const char* const description_error_flatten =
     "Flatten errors to ordinary absl::Status form.";
 const char* const additional_constraints_error_flatten = "{}";
@@ -885,6 +1045,9 @@ const char* const description_h2_max_deallocating_streams_headroom =
     "Separate allocated max concurrent streams.";
 const char* const additional_constraints_h2_max_deallocating_streams_headroom =
     "{}";
+const char* const description_inproc_cancel_stream =
+    "If set, cancel inproc stream inside the transport mutex.";
+const char* const additional_constraints_inproc_cancel_stream = "{}";
 const char* const description_keep_alive_ping_timer_batch =
     "Avoid explicitly cancelling the keepalive timer. Instead adjust the "
     "callback to re-schedule itself to the next ping interval.";
@@ -900,6 +1063,13 @@ const char* const description_memory_optimization_01 = "Memory Optimization";
 const char* const additional_constraints_memory_optimization_01 = "{}";
 const char* const description_memory_optimization_02 = "Memory Optimization 02";
 const char* const additional_constraints_memory_optimization_02 = "{}";
+const char* const description_message_size_refactoring =
+    "Refactoring the message size config parsing.";
+const char* const additional_constraints_message_size_refactoring = "{}";
+const char* const description_metadata_outstanding_token_refactor =
+    "Refactor ClientInitialMetadataOutstandingToken.";
+const char* const additional_constraints_metadata_outstanding_token_refactor =
+    "{}";
 const char* const description_metadata_publish_to_app_tag =
     "Publish metadata to the app using the kPublishToApp metadata field.";
 const char* const additional_constraints_metadata_publish_to_app_tag = "{}";
@@ -909,11 +1079,41 @@ const char* const additional_constraints_monitoring_experiment = "{}";
 const char* const description_multiping =
     "Allow more than one ping to be in flight at a time by default.";
 const char* const additional_constraints_multiping = "{}";
+const char* const description_optimization_01 = "Optimization";
+const char* const additional_constraints_optimization_01 = "{}";
+const char* const description_optimization_02 = "Optimization";
+const char* const additional_constraints_optimization_02 = "{}";
+const char* const description_optimization_03 = "Optimization";
+const char* const additional_constraints_optimization_03 = "{}";
+const char* const description_optimization_04 = "Optimization";
+const char* const additional_constraints_optimization_04 = "{}";
 const char* const description_otel_export_telemetry_domains =
     "Export telemetry domains in OpenTelemetry metrics.";
 const char* const additional_constraints_otel_export_telemetry_domains = "{}";
+const char* const description_ph2_client =
+    "Use promises for the http2 client transport. We have kept client and "
+    "server transport experiments separate to help with smoother roll outs. "
+    "When this flag is enabled for the test suites, it would test PH2 Client "
+    "with CHTTP2 Server.";
+const char* const additional_constraints_ph2_client = "{}";
+const char* const description_ph2_client_server =
+    "This is a combination of ph2_server and ph2_client experiments. When this "
+    "flag is enabled for the test suites, it would test PH2 Client with PH2 "
+    "Server. We will NEVER be rolling out this experiment, because the roll "
+    "out would be done using ph2_server and ph2_client. This experiment MUST "
+    "be deleted when either ph2_server or ph2_client experiments are deleted.";
+const char* const additional_constraints_ph2_client_server = "{}";
+const char* const description_ph2_perf_01 =
+    "Different performance experiments for PH2 Transport";
+const char* const additional_constraints_ph2_perf_01 = "{}";
+const char* const description_ph2_server =
+    "Use promises for the http2 server transport. We have kept client and "
+    "server transport experiments separate to help with smoother roll outs. "
+    "When this flag is enabled for the test suites, it would test CHTTP2 "
+    "Client with PH2 Server.";
+const char* const additional_constraints_ph2_server = "{}";
 const char* const description_pick_first_ignore_empty_updates =
-    "Ignore empty resolutions in pick_first";
+    "Ignore empty resolutions in pick_first (delete)";
 const char* const additional_constraints_pick_first_ignore_empty_updates = "{}";
 const char* const description_pipelined_read_secure_endpoint =
     "Enable pipelined reads for EventEngine secure endpoints";
@@ -932,21 +1132,12 @@ const char* const description_prioritize_finished_requests =
     "Prioritize flushing out finished requests over other in-flight requests "
     "during transport writes.";
 const char* const additional_constraints_prioritize_finished_requests = "{}";
-const char* const description_promise_based_http2_client_transport =
-    "Use promises for the http2 client transport. We have kept client and "
-    "server transport experiments separate to help with smoother roll outs and "
-    "also help with interop testing.";
-const char* const additional_constraints_promise_based_http2_client_transport =
-    "{}";
-const char* const description_promise_based_http2_server_transport =
-    "Use promises for the http2 server transport. We have kept client and "
-    "server transport experiments separate to help with smoother roll outs and "
-    "also help with interop testing.";
-const char* const additional_constraints_promise_based_http2_server_transport =
-    "{}";
 const char* const description_promise_based_inproc_transport =
-    "Use promises for the in-process transport.";
+    "Use call-v3 for the in-process transport.";
 const char* const additional_constraints_promise_based_inproc_transport = "{}";
+const char* const description_promise_batch_cleanup_on_cancel =
+    "Fix completion queue tag handling during promise batch cancellation.";
+const char* const additional_constraints_promise_batch_cleanup_on_cancel = "{}";
 const char* const description_promise_filter_send_cancel_metadata =
     "Enables sending all trailing metadata fields from server side "
     "promise-based filters upon stream cancellation.";
@@ -1013,13 +1204,21 @@ const char* const description_use_call_event_engine_in_completion_queue =
     "Use the call event engine to run callbacks in completion queue.";
 const char* const
     additional_constraints_use_call_event_engine_in_completion_queue = "{}";
+const char* const description_v2_non_owning_waker_implementation =
+    "Use non-owning wakers in v2 filter bridge.";
+const char* const additional_constraints_v2_non_owning_waker_implementation =
+    "{}";
+const char* const description_verbose_channelz_connection_logging =
+    "Verbose logging of events into channelz during connection setup.";
+const char* const additional_constraints_verbose_channelz_connection_logging =
+    "{}";
 const char* const description_wildcard_ip_expansion_restriction =
     "If set, adds optional restriction on when to expand wildcard IPs.";
 const char* const additional_constraints_wildcard_ip_expansion_restriction =
     "{}";
-const char* const description_xds_channel_filter_chain_per_route =
-    "xDS channels use a separate filter chain for each route.";
-const char* const additional_constraints_xds_channel_filter_chain_per_route =
+const char* const description_xds_server_filter_chain_per_route =
+    "xDS servers use a separate filter chain for each route.";
+const char* const additional_constraints_xds_server_filter_chain_per_route =
     "{}";
 }  // namespace
 
@@ -1038,6 +1237,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_call_tracer_send_trailing_metadata_is_an_annotation,
      additional_constraints_call_tracer_send_trailing_metadata_is_an_annotation,
      nullptr, 0, false, true},
+    {"callv3_batch_validation", description_callv3_batch_validation,
+     additional_constraints_callv3_batch_validation, nullptr, 0, true, true},
     {"chaotic_good_framing_layer", description_chaotic_good_framing_layer,
      additional_constraints_chaotic_good_framing_layer, nullptr, 0, true,
      false},
@@ -1045,6 +1246,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_chaotic_good_send_supported_features,
      additional_constraints_chaotic_good_send_supported_features, nullptr, 0,
      false, true},
+    {"custom_frame_check", description_custom_frame_check,
+     additional_constraints_custom_frame_check, nullptr, 0, true, false},
     {"error_flatten", description_error_flatten,
      additional_constraints_error_flatten, nullptr, 0, true, false},
     {"event_engine_client", description_event_engine_client,
@@ -1082,6 +1285,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_h2_max_deallocating_streams_headroom,
      additional_constraints_h2_max_deallocating_streams_headroom, nullptr, 0,
      false, true},
+    {"inproc_cancel_stream", description_inproc_cancel_stream,
+     additional_constraints_inproc_cancel_stream, nullptr, 0, true, true},
     {"keep_alive_ping_timer_batch", description_keep_alive_ping_timer_batch,
      additional_constraints_keep_alive_ping_timer_batch, nullptr, 0, false,
      true},
@@ -1092,9 +1297,15 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_max_inflight_pings_strict_limit, nullptr, 0, true,
      true},
     {"memory_optimization_01", description_memory_optimization_01,
-     additional_constraints_memory_optimization_01, nullptr, 0, false, false},
+     additional_constraints_memory_optimization_01, nullptr, 0, true, false},
     {"memory_optimization_02", description_memory_optimization_02,
      additional_constraints_memory_optimization_02, nullptr, 0, false, false},
+    {"message_size_refactoring", description_message_size_refactoring,
+     additional_constraints_message_size_refactoring, nullptr, 0, false, true},
+    {"metadata_outstanding_token_refactor",
+     description_metadata_outstanding_token_refactor,
+     additional_constraints_metadata_outstanding_token_refactor, nullptr, 0,
+     false, true},
     {"metadata_publish_to_app_tag", description_metadata_publish_to_app_tag,
      additional_constraints_metadata_publish_to_app_tag, nullptr, 0, true,
      true},
@@ -1102,9 +1313,25 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_monitoring_experiment, nullptr, 0, true, true},
     {"multiping", description_multiping, additional_constraints_multiping,
      nullptr, 0, false, true},
+    {"optimization_01", description_optimization_01,
+     additional_constraints_optimization_01, nullptr, 0, true, true},
+    {"optimization_02", description_optimization_02,
+     additional_constraints_optimization_02, nullptr, 0, true, true},
+    {"optimization_03", description_optimization_03,
+     additional_constraints_optimization_03, nullptr, 0, true, true},
+    {"optimization_04", description_optimization_04,
+     additional_constraints_optimization_04, nullptr, 0, true, true},
     {"otel_export_telemetry_domains", description_otel_export_telemetry_domains,
      additional_constraints_otel_export_telemetry_domains, nullptr, 0, false,
      true},
+    {"ph2_client", description_ph2_client, additional_constraints_ph2_client,
+     nullptr, 0, false, true},
+    {"ph2_client_server", description_ph2_client_server,
+     additional_constraints_ph2_client_server, nullptr, 0, false, true},
+    {"ph2_perf_01", description_ph2_perf_01, additional_constraints_ph2_perf_01,
+     nullptr, 0, false, true},
+    {"ph2_server", description_ph2_server, additional_constraints_ph2_server,
+     nullptr, 0, false, true},
     {"pick_first_ignore_empty_updates",
      description_pick_first_ignore_empty_updates,
      additional_constraints_pick_first_ignore_empty_updates, nullptr, 0, false,
@@ -1119,18 +1346,14 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"prioritize_finished_requests", description_prioritize_finished_requests,
      additional_constraints_prioritize_finished_requests, nullptr, 0, false,
      true},
-    {"promise_based_http2_client_transport",
-     description_promise_based_http2_client_transport,
-     additional_constraints_promise_based_http2_client_transport, nullptr, 0,
-     false, true},
-    {"promise_based_http2_server_transport",
-     description_promise_based_http2_server_transport,
-     additional_constraints_promise_based_http2_server_transport, nullptr, 0,
-     false, true},
     {"promise_based_inproc_transport",
      description_promise_based_inproc_transport,
      additional_constraints_promise_based_inproc_transport, nullptr, 0, false,
      false},
+    {"promise_batch_cleanup_on_cancel",
+     description_promise_batch_cleanup_on_cancel,
+     additional_constraints_promise_batch_cleanup_on_cancel, nullptr, 0, true,
+     true},
     {"promise_filter_send_cancel_metadata",
      description_promise_filter_send_cancel_metadata,
      additional_constraints_promise_filter_send_cancel_metadata, nullptr, 0,
@@ -1182,14 +1405,22 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_use_call_event_engine_in_completion_queue,
      additional_constraints_use_call_event_engine_in_completion_queue, nullptr,
      0, false, true},
+    {"v2_non_owning_waker_implementation",
+     description_v2_non_owning_waker_implementation,
+     additional_constraints_v2_non_owning_waker_implementation, nullptr, 0,
+     false, true},
+    {"verbose_channelz_connection_logging",
+     description_verbose_channelz_connection_logging,
+     additional_constraints_verbose_channelz_connection_logging, nullptr, 0,
+     false, true},
     {"wildcard_ip_expansion_restriction",
      description_wildcard_ip_expansion_restriction,
      additional_constraints_wildcard_ip_expansion_restriction, nullptr, 0,
      false, true},
-    {"xds_channel_filter_chain_per_route",
-     description_xds_channel_filter_chain_per_route,
-     additional_constraints_xds_channel_filter_chain_per_route, nullptr, 0,
-     true, true},
+    {"xds_server_filter_chain_per_route",
+     description_xds_server_filter_chain_per_route,
+     additional_constraints_xds_server_filter_chain_per_route, nullptr, 0,
+     false, true},
 };
 
 }  // namespace grpc_core

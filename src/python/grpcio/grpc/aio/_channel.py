@@ -469,9 +469,25 @@ class Channel(_base_channel.Channel):
         self,
         last_observed_state: grpc.ChannelConnectivity,
     ) -> None:
-        assert await self._channel.watch_connectivity_state(
+        # We raise a RuntimeError if watch_connectivity_state returns False.
+        #
+        # The watch_connectivity_state method returns True when it observes a state change
+        # and False when it times out (which shouldn't happen since no timeout is specified).
+        # A channel close triggers a transition to SHUTDOWN, which resolves all pending watch
+        # calls and makes them return True. Thus, watch_connectivity_state should only return
+        # True under normal operation; returning False indicates an implementation issue.
+        #
+        # We do not use an assert statement here because asserts
+        # can be optimized out under python -O.
+        # See https://github.com/grpc/grpc/issues/42393 for context.
+        resolved = await self._channel.watch_connectivity_state(
             last_observed_state.value[0], None
         )
+        if not resolved:
+            error_msg = (
+                "gRPC channel connectivity state watch failed unexpectedly."
+            )
+            raise RuntimeError(error_msg)
 
     async def channel_ready(self) -> None:
         state = self.get_state(try_to_connect=True)

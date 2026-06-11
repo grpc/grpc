@@ -160,6 +160,22 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "ssl_telemetry_utils_test",
+    srcs = ["ssl_telemetry_utils_test.cc"],
+    external_deps = [
+        "gtest",
+        "libcrypto",
+        "libssl",
+    ],
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//:ssl_telemetry_utils",
+        "//test/core/test_util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
     name = "crl_ssl_transport_security_test",
     srcs = ["crl_ssl_transport_security_test.cc"],
     data = [
@@ -280,6 +296,7 @@ grpc_cc_test(
         "//src/core/tsi/test_creds:client.pem",
         "//src/core/tsi/test_creds:client1.key",
         "//src/core/tsi/test_creds:server0.key",
+        "//src/core/tsi/test_creds:server0.pem",
         "//src/core/tsi/test_creds:server1.key",
         "//src/core/tsi/test_creds:server1.pem",
     ],

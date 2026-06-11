@@ -966,7 +966,7 @@ void GetCallStatus(
       *is_lb_drop = true;
     }
   } else {
-    *status = *md_batch->get(GrpcStatusMetadata());
+    *status = md_batch->get(GrpcStatusMetadata()).value_or(GRPC_STATUS_UNKNOWN);
   }
   *server_pushback = md_batch->get(GrpcRetryPushbackMsMetadata());
   *stream_network_state = md_batch->get(GrpcStreamNetworkState());
