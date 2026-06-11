@@ -36,3 +36,13 @@ cc_binary(
         "@com_google_absl//absl/log:initialize",
     ],
 )
+
+cc_binary(
+    name = "threaded_server",
+    srcs = ["threaded_server.cc"],
+    deps = [
+        "//:grpc++",
+        "//:grpc++_reflection",
+        "//examples/protos:helloworld_cc_grpc",
+    ],
+)
