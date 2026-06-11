@@ -770,7 +770,8 @@ TEST_F(ExtProcResponseTest, ResponseTrailersMutation) {
   ASSERT_TRUE(parsed_or.ok()) << parsed_or.status().ToString();
   auto parsed = std::move(parsed_or.value());
   ASSERT_TRUE(parsed.response_trailers.has_value());
-  const auto& header_mutation_res = parsed.response_trailers.value();
+  ASSERT_TRUE(parsed.response_trailers->ok());
+  const auto& header_mutation_res = parsed.response_trailers->value();
   ASSERT_EQ(header_mutation_res.set_headers.size(), 1);
   EXPECT_EQ(header_mutation_res.set_headers[0].header.first, "x-mutated-key");
   EXPECT_EQ(header_mutation_res.set_headers[0].header.second, "mutated-val");
@@ -872,13 +873,106 @@ TEST_F(ExtProcResponseTest, ImmediateResponse) {
   ASSERT_TRUE(parsed.immediate_response.has_value());
   EXPECT_EQ(parsed.immediate_response->status, 16);
   EXPECT_EQ(parsed.immediate_response->details, "invalid credentials");
-  ASSERT_EQ(parsed.immediate_response->header_mutation.set_headers.size(), 1);
+  ASSERT_TRUE(parsed.immediate_response->header_mutation.ok());
+  ASSERT_EQ(parsed.immediate_response->header_mutation->set_headers.size(), 1);
   EXPECT_EQ(
-      parsed.immediate_response->header_mutation.set_headers[0].header.first,
+      parsed.immediate_response->header_mutation->set_headers[0].header.first,
       "www-authenticate");
   EXPECT_EQ(
-      parsed.immediate_response->header_mutation.set_headers[0].header.second,
+      parsed.immediate_response->header_mutation->set_headers[0].header.second,
       "Bearer");
+}
+
+TEST_F(ExtProcResponseTest, RequestHeadersCommonResponseNull) {
+  upb::Arena arena;
+  envoy::service::ext_proc::v3::ProcessingResponse response;
+  response.mutable_request_headers();
+  auto parsed_or = ParseResponse(response, arena.ptr());
+  ASSERT_TRUE(parsed_or.ok()) << parsed_or.status().ToString();
+  auto parsed = std::move(parsed_or.value());
+  ASSERT_TRUE(parsed.request_headers.has_value());
+  EXPECT_FALSE(parsed.request_headers->ok());
+  EXPECT_EQ(parsed.request_headers->status().code(),
+            absl::StatusCode::kInternal);
+  EXPECT_EQ(parsed.request_headers->status().message(),
+            "common_response is not available");
+}
+
+TEST_F(ExtProcResponseTest, ResponseHeadersCommonResponseNull) {
+  upb::Arena arena;
+  envoy::service::ext_proc::v3::ProcessingResponse response;
+  response.mutable_response_headers();
+  auto parsed_or = ParseResponse(response, arena.ptr());
+  ASSERT_TRUE(parsed_or.ok()) << parsed_or.status().ToString();
+  auto parsed = std::move(parsed_or.value());
+  ASSERT_TRUE(parsed.response_headers.has_value());
+  EXPECT_FALSE(parsed.response_headers->ok());
+  EXPECT_EQ(parsed.response_headers->status().code(),
+            absl::StatusCode::kInternal);
+  EXPECT_EQ(parsed.response_headers->status().message(),
+            "common_response is not available");
+}
+
+TEST_F(ExtProcResponseTest, RequestBodyCommonResponseNull) {
+  upb::Arena arena;
+  envoy::service::ext_proc::v3::ProcessingResponse response;
+  response.mutable_request_body();
+  auto parsed_or = ParseResponse(response, arena.ptr());
+  ASSERT_TRUE(parsed_or.ok()) << parsed_or.status().ToString();
+  auto parsed = std::move(parsed_or.value());
+  ASSERT_TRUE(parsed.request_body.has_value());
+  EXPECT_FALSE(parsed.request_body->ok());
+  EXPECT_EQ(parsed.request_body->status().code(), absl::StatusCode::kInternal);
+  EXPECT_EQ(parsed.request_body->status().message(),
+            "common_response is not available");
+}
+
+TEST_F(ExtProcResponseTest, ResponseBodyCommonResponseNull) {
+  upb::Arena arena;
+  envoy::service::ext_proc::v3::ProcessingResponse response;
+  response.mutable_response_body();
+  auto parsed_or = ParseResponse(response, arena.ptr());
+  ASSERT_TRUE(parsed_or.ok()) << parsed_or.status().ToString();
+  auto parsed = std::move(parsed_or.value());
+  ASSERT_TRUE(parsed.response_body.has_value());
+  EXPECT_FALSE(parsed.response_body->ok());
+  EXPECT_EQ(parsed.response_body->status().code(), absl::StatusCode::kInternal);
+  EXPECT_EQ(parsed.response_body->status().message(),
+            "common_response is not available");
+}
+
+TEST_F(ExtProcResponseTest, ResponseTrailersHeaderMutationNull) {
+  upb::Arena arena;
+  envoy::service::ext_proc::v3::ProcessingResponse response;
+  response.mutable_response_trailers();
+  auto parsed_or = ParseResponse(response, arena.ptr());
+  ASSERT_TRUE(parsed_or.ok()) << parsed_or.status().ToString();
+  auto parsed = std::move(parsed_or.value());
+  ASSERT_TRUE(parsed.response_trailers.has_value());
+  EXPECT_FALSE(parsed.response_trailers->ok());
+  EXPECT_EQ(parsed.response_trailers->status().code(),
+            absl::StatusCode::kInternal);
+  EXPECT_EQ(parsed.response_trailers->status().message(),
+            "header_mutation is not available");
+}
+
+TEST_F(ExtProcResponseTest, ImmediateResponseHeaderMutationNull) {
+  upb::Arena arena;
+  envoy::service::ext_proc::v3::ProcessingResponse response;
+  auto* immediate = response.mutable_immediate_response();
+  immediate->mutable_grpc_status()->set_status(16);
+  immediate->set_details("invalid credentials");
+  auto parsed_or = ParseResponse(response, arena.ptr());
+  ASSERT_TRUE(parsed_or.ok()) << parsed_or.status().ToString();
+  auto parsed = std::move(parsed_or.value());
+  ASSERT_TRUE(parsed.immediate_response.has_value());
+  EXPECT_EQ(parsed.immediate_response->status, 16);
+  EXPECT_EQ(parsed.immediate_response->details, "invalid credentials");
+  EXPECT_FALSE(parsed.immediate_response->header_mutation.ok());
+  EXPECT_EQ(parsed.immediate_response->header_mutation.status().code(),
+            absl::StatusCode::kInternal);
+  EXPECT_EQ(parsed.immediate_response->header_mutation.status().message(),
+            "header_mutation is not available");
 }
 
 }  // namespace

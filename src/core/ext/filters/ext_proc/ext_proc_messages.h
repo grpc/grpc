@@ -67,13 +67,13 @@ struct ExtProcResponse {
 
   struct ImmediateResponse {
     uint32_t status;
-    HeaderMutation header_mutation;
+    absl::StatusOr<HeaderMutation> header_mutation;
     std::string details;
   };
 
   std::optional<absl::StatusOr<HeaderMutation>> request_headers;
   std::optional<absl::StatusOr<HeaderMutation>> response_headers;
-  std::optional<HeaderMutation> response_trailers;
+  std::optional<absl::StatusOr<HeaderMutation>> response_trailers;
   std::optional<absl::StatusOr<BodyMutation>> request_body;
   std::optional<absl::StatusOr<BodyMutation>> response_body;
   std::optional<ImmediateResponse> immediate_response;

@@ -34,10 +34,10 @@ namespace grpc_core {
 
 namespace {
 
-ExtProcResponse::HeaderMutation ParseHeaderMutation(
+absl::StatusOr<ExtProcResponse::HeaderMutation> ParseHeaderMutation(
     const envoy_service_ext_proc_v3_HeaderMutation* header_mutation) {
   if (header_mutation == nullptr) {
-    return {};
+    return absl::InternalError("header_mutation is not available");
   }
   ExtProcResponse::HeaderMutation header_mutation_response;
   size_t set_headers_size = 0;
@@ -81,7 +81,7 @@ absl::StatusOr<ExtProcResponse::HeaderMutation> ParseHeaders(
 absl::StatusOr<ExtProcResponse::BodyMutation> ParseBodyMutation(
     const envoy_service_ext_proc_v3_CommonResponse* common_response) {
   if (common_response == nullptr) {
-    return ExtProcResponse::BodyMutation{};
+    return absl::InternalError("common_response is not available");
   }
   int32_t status =
       envoy_service_ext_proc_v3_CommonResponse_status(common_response);
@@ -373,12 +373,11 @@ void PopulateMetadataBatchToHeaderMap(
 
 void SetRequestHeaders(envoy_service_ext_proc_v3_ProcessingRequest* request,
                        upb_Arena* arena,
-                       envoy_config_core_v3_HeaderMap* headers,
-                       bool end_of_stream) {
+                       envoy_config_core_v3_HeaderMap* headers) {
   auto http_headers = envoy_service_ext_proc_v3_HttpHeaders_new(arena);
   envoy_service_ext_proc_v3_HttpHeaders_set_headers(http_headers, headers);
   envoy_service_ext_proc_v3_HttpHeaders_set_end_of_stream(http_headers,
-                                                          end_of_stream);
+                                                          false);
   envoy_service_ext_proc_v3_ProcessingRequest_set_request_headers(request,
                                                                   http_headers);
 }
@@ -495,7 +494,7 @@ std::string CreateExtProcRequest(
       PopulateMetadataBatchToHeaderMap(*std::get<grpc_metadata_batch*>(payload),
                                        upb_headers, allowed_headers,
                                        disallowed_headers, arena);
-      SetRequestHeaders(request, arena, upb_headers, /*end_of_stream=*/false);
+      SetRequestHeaders(request, arena, upb_headers);
       break;
     }
     case ExtProcRequestType::kServerHeaders: {
