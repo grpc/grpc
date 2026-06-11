@@ -114,7 +114,7 @@ class Call(RpcContext, metaclass=ABCMeta):
         """
 
     @abstractmethod
-    async def details(self) -> str:
+    async def details(self) -> Optional[str]:
         """Accesses the details sent by the server.
 
         Returns:
@@ -177,6 +177,14 @@ class UnaryStreamCall(
           stream.
         """
 
+    @abstractmethod
+    async def debug_error_string(self) -> Optional[str]:
+        """Accesses the debug error string sent by the server.
+
+        Returns:
+          The debug error string received.
+        """
+
 
 class StreamUnaryCall(
     Generic[RequestType, ResponseType], Call, metaclass=ABCMeta
@@ -212,6 +220,8 @@ class StreamUnaryCall(
 class StreamStreamCall(
     Generic[RequestType, ResponseType], Call, metaclass=ABCMeta
 ):
+    _done_writing_flag: bool
+
     @abstractmethod
     def __aiter__(self) -> AsyncIterator[ResponseType]:
         """Returns the async iterator representation that yields messages.
@@ -254,4 +264,12 @@ class StreamStreamCall(
 
         After done_writing is called, any additional invocation to the write
         function will fail. This function is idempotent.
+        """
+
+    @abstractmethod
+    async def debug_error_string(self) -> Optional[str]:
+        """Accesses the debug error string sent by the server.
+
+        Returns:
+          The debug error string received.
         """
