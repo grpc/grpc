@@ -563,11 +563,13 @@ class _InterceptedStreamRequestMixin(Generic[RequestType]):
 
         return request_iterator
 
-    async def _proxy_writes_as_request_iterator(self):
+    async def _proxy_writes_as_request_iterator(
+        self,
+    ) -> AsyncGenerator[RequestType, None]:
         await self._interceptors_task
 
         if self._write_to_iterator_queue is None:
-            return
+            raise ValueError("Write iterator queue is not initialized")
 
         while True:
             value = await self._write_to_iterator_queue.get()
@@ -579,7 +581,7 @@ class _InterceptedStreamRequestMixin(Generic[RequestType]):
         self,
         request: Union[RequestType, _FINISH_ITERATOR_SENTINEL_T],
         call: _base_call.Call,
-    ):
+    ) -> None:
         # Write the specified 'request' to the request iterator queue using the
         # specified 'call' to allow for interruption of the write in the case
         # of abrupt termination of the call.
@@ -752,7 +754,7 @@ class InterceptedUnaryUnaryCall(
 
 
 class InterceptedUnaryStreamCall(
-    _InterceptedStreamResponseMixin,
+    _InterceptedStreamResponseMixin[ResponseType],
     InterceptedCall,
     _base_call.UnaryStreamCall[RequestType, ResponseType],
 ):
@@ -812,7 +814,7 @@ class InterceptedUnaryStreamCall(
         response_deserializer: Optional[DeserializingFunction],
     ) -> Union[
         _base_call.UnaryStreamCall[RequestType, ResponseType],
-        UnaryStreamCallResponseIterator,
+        UnaryStreamCallResponseIterator[ResponseType],
     ]:
         """Run the RPC call wrapped in interceptors"""
 
@@ -822,7 +824,7 @@ class InterceptedUnaryStreamCall(
             request: RequestType,
         ) -> Union[
             _base_call.UnaryStreamCall[RequestType, ResponseType],
-            UnaryStreamCallResponseIterator,
+            UnaryStreamCallResponseIterator[ResponseType],
         ]:
             if interceptors:
                 continuation = functools.partial(
@@ -883,7 +885,7 @@ class InterceptedUnaryStreamCall(
 
 class InterceptedStreamUnaryCall(
     _InterceptedUnaryResponseMixin,
-    _InterceptedStreamRequestMixin,
+    _InterceptedStreamRequestMixin[RequestType],
     InterceptedCall,
     _base_call.StreamUnaryCall[RequestType, ResponseType],
 ):
@@ -982,8 +984,8 @@ class InterceptedStreamUnaryCall(
 
 
 class InterceptedStreamStreamCall(
-    _InterceptedStreamResponseMixin,
-    _InterceptedStreamRequestMixin,
+    _InterceptedStreamResponseMixin[ResponseType],
+    _InterceptedStreamRequestMixin[RequestType],
     InterceptedCall,
     _base_call.StreamStreamCall[RequestType, ResponseType],
 ):
@@ -1044,7 +1046,7 @@ class InterceptedStreamStreamCall(
         response_deserializer: Optional[DeserializingFunction],
     ) -> Union[
         _base_call.StreamStreamCall[RequestType, ResponseType],
-        StreamStreamCallResponseIterator,
+        StreamStreamCallResponseIterator[ResponseType],
     ]:
         """Run the RPC call wrapped in interceptors"""
 
@@ -1054,7 +1056,7 @@ class InterceptedStreamStreamCall(
             request_iterator: RequestIterableType,
         ) -> Union[
             _base_call.StreamStreamCall[RequestType, ResponseType],
-            StreamStreamCallResponseIterator,
+            StreamStreamCallResponseIterator[ResponseType],
         ]:
             if interceptors:
                 continuation = functools.partial(
@@ -1221,6 +1223,7 @@ class _StreamCallResponseIterator(Generic[ResponseType]):
 class UnaryStreamCallResponseIterator(
     _StreamCallResponseIterator[ResponseType],
     _base_call.UnaryStreamCall[Any, ResponseType],
+    Generic[ResponseType],
 ):
     """UnaryStreamCall class which uses an alternative response iterator."""
 
@@ -1233,6 +1236,7 @@ class UnaryStreamCallResponseIterator(
 class StreamStreamCallResponseIterator(
     _StreamCallResponseIterator[ResponseType],
     _base_call.StreamStreamCall[Any, ResponseType],
+    Generic[ResponseType],
 ):
     _call: _base_call.StreamStreamCall[Any, ResponseType]
 
