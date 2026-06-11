@@ -24,6 +24,7 @@
 
 #include <vector>
 
+#include "src/core/call/status_util.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/transport/status_conversion.h"
 #include "src/core/util/status_helper.h"
@@ -73,7 +74,7 @@ void grpc_error_get_status(grpc_error_handle error,
           http_error_code.has_value()) {
         *code = grpc_http2_error_to_grpc_status(*http_error_code, deadline);
       } else {
-        *code = static_cast<grpc_status_code>(error.code());
+        grpc_status_code_from_int(error.raw_code(), code);
       }
     }
     if (message != nullptr) *message = std::string(error.message());
@@ -137,14 +138,14 @@ void grpc_error_get_status(grpc_error_handle error,
   intptr_t integer;
   if (grpc_error_get_int(found_error, grpc_core::StatusIntProperty::kRpcStatus,
                          &integer)) {
-    status = static_cast<grpc_status_code>(integer);
+    grpc_status_code_from_int(integer, &status);
   } else if (grpc_error_get_int(found_error,
                                 grpc_core::StatusIntProperty::kHttp2Error,
                                 &integer)) {
     status = grpc_http2_error_to_grpc_status(
         static_cast<Http2ErrorCode>(integer), deadline);
   } else {
-    status = static_cast<grpc_status_code>(found_error.code());
+    grpc_status_code_from_int(found_error.raw_code(), &status);
   }
   if (code != nullptr) *code = status;
 
