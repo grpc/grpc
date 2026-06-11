@@ -1258,6 +1258,7 @@ libs:
   - src/core/tsi/ssl/key_logging/ssl_key_logging.h
   - src/core/tsi/ssl/session_cache/ssl_session.h
   - src/core/tsi/ssl/session_cache/ssl_session_cache.h
+  - src/core/tsi/ssl_telemetry_utils.h
   - src/core/tsi/ssl_transport_security.h
   - src/core/tsi/ssl_transport_security_utils.h
   - src/core/tsi/ssl_types.h
@@ -2205,6 +2206,7 @@ libs:
   - src/core/tsi/ssl/session_cache/ssl_session_boringssl.cc
   - src/core/tsi/ssl/session_cache/ssl_session_cache.cc
   - src/core/tsi/ssl/session_cache/ssl_session_openssl.cc
+  - src/core/tsi/ssl_telemetry_utils.cc
   - src/core/tsi/ssl_transport_security.cc
   - src/core/tsi/ssl_transport_security_utils.cc
   - src/core/tsi/transport_security.cc
@@ -24026,6 +24028,16 @@ targets:
   headers: []
   src:
   - test/core/util/spinlock_test.cc
+  deps:
+  - gtest
+  - grpc_test_util
+- name: ssl_telemetry_utils_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/tsi/ssl_telemetry_utils_test.cc
   deps:
   - gtest
   - grpc_test_util

@@ -363,9 +363,9 @@ class ProtocArtifact:
                     # for aarch64, use a dockcross manylinux image that will
                     # give us both ready to use crosscompiler and sufficient backward compatibility
                     dockerfile_dir = (
-                        "tools/dockerfile/grpc_artifact_manylinux2014_aarch64"
+                        "tools/dockerfile/grpc_artifact_manylinux_2_28_aarch64"
                     )
-                    # The manylinux2014 cross-compilation toolchain may produce
+                    # The manylinux_2_28 cross-compilation toolchain may produce
                     # binaries with 4KB page alignment, but ARM64 Linux kernels
                     # (e.g. RHEL) can use 64KB pages. Without this flag the
                     # protoc binary will segfault (exit code 139) on such systems.

@@ -14,8 +14,6 @@
 # limitations under the License.
 """Runs selected gRPC test/build tasks."""
 
-from __future__ import print_function
-
 import argparse
 import multiprocessing
 import sys
