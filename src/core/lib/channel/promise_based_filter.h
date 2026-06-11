@@ -71,7 +71,7 @@
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/match.h"
 #include "src/core/util/orphanable.h"
-#include "src/core/util/ref_counted.h"
+#include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/time.h"
 #include "absl/container/inlined_vector.h"
 #include "absl/functional/function_ref.h"
@@ -1936,7 +1936,7 @@ class BaseCallData : public Activity,
   const Timestamp deadline_;
   CallFinalization finalization_;
   std::atomic<grpc_polling_entity*> pollent_{nullptr};
-  WeakWakerHandle* handle_ = nullptr;
+  OrphanablePtr<WeakWakerHandle> handle_;
   Pipe<ServerMetadataHandle>* const server_initial_metadata_pipe_;
   SendMessage* const send_message_;
   ReceiveMessage* const receive_message_;

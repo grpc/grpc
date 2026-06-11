@@ -34,6 +34,8 @@
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/latent_see.h"
 #include "src/core/util/manual_constructor.h"
+#include "src/core/util/orphanable.h"
+#include "src/core/util/ref_counted.h"
 #include "src/core/util/status_helper.h"
 #include "absl/base/attributes.h"
 #include "absl/functional/function_ref.h"
@@ -82,13 +84,13 @@ absl::Status StatusFromMetadata(const ServerMetadata& md) {
 ///////////////////////////////////////////////////////////////////////////////
 // BaseCallData
 
-class BaseCallData::WeakWakerHandle final : public Wakeable {
+class BaseCallData::WeakWakerHandle final : public Wakeable, public Orphanable {
  public:
   explicit WeakWakerHandle(BaseCallData* base) : base_(base) {}
 
-  void Ref() { refs_.fetch_add(1, std::memory_order_relaxed); }
+  void Ref() { refs_.Ref(); }
 
-  void DropActivity() {
+  void Orphan() override {
     mu_.Lock();
     base_ = nullptr;
     mu_.Unlock();
@@ -111,18 +113,15 @@ class BaseCallData::WeakWakerHandle final : public Wakeable {
  private:
   void WakeupGeneric(WakeupMask wakeup_mask) {
     BaseCallData* wakeup_base = nullptr;
-    mu_.Lock();
-    if (base_ != nullptr) {
-      auto* call_stack = base_->call_stack();
-#ifndef NDEBUG
-      if (call_stack->refcount.refs.RefIfNonZero(DEBUG_LOCATION, "waker")) {
-#else
-      if (call_stack->refcount.refs.RefIfNonZero()) {
-#endif
-        wakeup_base = base_;
+    {
+      MutexLock lock(&mu_);
+      if (base_ != nullptr) {
+        auto* call_stack = base_->call_stack();
+        if (call_stack->refcount.refs.RefIfNonZero(DEBUG_LOCATION, "waker")) {
+          wakeup_base = base_;
+        }
       }
     }
-    mu_.Unlock();
     if (wakeup_base != nullptr) {
       wakeup_base->Wakeup(wakeup_mask);
       // Note: We use the owning Wakeup() here instead of WakeupNonOwning() to
@@ -138,12 +137,12 @@ class BaseCallData::WeakWakerHandle final : public Wakeable {
   }
 
   void Unref() {
-    if (1 == refs_.fetch_sub(1, std::memory_order_acq_rel)) {
+    if (refs_.Unref()) {
       delete this;
     }
   }
 
-  std::atomic<size_t> refs_{2};
+  RefCount refs_{2};
   mutable Mutex mu_;
   BaseCallData* base_ ABSL_GUARDED_BY(mu_);
 };
@@ -177,9 +176,7 @@ BaseCallData::BaseCallData(
               : nullptr) {}
 
 BaseCallData::~BaseCallData() {
-  if (handle_ != nullptr) {
-    handle_->DropActivity();
-  }
+  handle_.reset();
   FakeActivity(this).Run([this] {
     if (send_message_ != nullptr) {
       send_message_->~SendMessage();
@@ -197,16 +194,14 @@ BaseCallData::~BaseCallData() {
 // Orphan().
 void BaseCallData::Orphan() { abort(); }
 
-// For now we don't care about owning/non-owning wakers, instead just share
-// implementation.
 Waker BaseCallData::MakeNonOwningWaker() {
   if (IsV2NonOwningWakerImplementationEnabled()) {
     if (handle_ == nullptr) {
-      handle_ = new WeakWakerHandle(this);
+      handle_ = MakeOrphanable<WeakWakerHandle>(this);
     } else {
       handle_->Ref();
     }
-    return Waker(handle_, 0);
+    return Waker(handle_.get(), 0);
   }
   return MakeOwningWaker();
 }

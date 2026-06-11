@@ -20,6 +20,7 @@
 #include "src/core/call/call_spine.h"
 #include "src/core/call/metadata.h"
 #include "src/core/lib/channel/promise_based_filter.h"
+#include "src/core/lib/experiments/config.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
@@ -36,7 +37,6 @@ class EarlyFailureInterceptor
     : public V3InterceptorToV2Bridge<EarlyFailureInterceptor> {
  public:
   void InterceptCall(UnstartedCallHandler unstarted_call_handler) override {
-    GetContext<Arena>();
     // Start the call and fail it immediately.
     auto handler = unstarted_call_handler.StartCall();
     handler.PushServerTrailingMetadata(
@@ -87,29 +87,24 @@ class V3BridgeTest : public ::testing::Test {
 TEST_F(V3BridgeTest, EarlyFailureDoesNotHang) {
   RunInActivity([&]() {
     EarlyFailureInterceptor bridge;
-
     auto next_promise_factory = [](CallArgs) {
       return ArenaPromise<ServerMetadataHandle>(
           []() -> Poll<ServerMetadataHandle> { return Pending{}; });
     };
-
     CallArgs args{Arena::MakePooledForOverwrite<ClientMetadata>(),
                   ClientInitialMetadataOutstandingToken::Empty(),
                   nullptr,
                   nullptr,
                   nullptr,
                   nullptr};
-
     auto promise =
         bridge.MakeCallPromise(std::move(args), next_promise_factory);
-
     // The promise should eventually resolve to an error because the V3
     // interceptor failed.
     Poll<ServerMetadataHandle> result = Pending{};
     for (int i = 0; i < 100 && result.pending(); ++i) {
       result = promise();
     }
-
     EXPECT_TRUE(result.ready());
     if (result.ready()) {
       auto status = result.value()
@@ -126,17 +121,13 @@ TEST_F(V3BridgeTest, EarlyFailureCleansUpArena) {
   arena->SetContext<grpc_event_engine::experimental::EventEngine>(
       grpc_event_engine::experimental::GetDefaultEventEngine().get());
   auto* arena_ptr = arena.get();
-
   RunInActivity([&]() {
     promise_detail::Context<Arena> arena_ctx(arena_ptr);
-
     EarlyFailureInterceptor bridge;
-
     auto next_promise_factory = [](CallArgs) {
       return ArenaPromise<ServerMetadataHandle>(
           []() -> Poll<ServerMetadataHandle> { return Pending{}; });
     };
-
     {
       CallArgs args{Arena::MakePooledForOverwrite<ClientMetadata>(),
                     ClientInitialMetadataOutstandingToken::Empty(),
@@ -144,7 +135,6 @@ TEST_F(V3BridgeTest, EarlyFailureCleansUpArena) {
                     nullptr,
                     nullptr,
                     nullptr};
-
       auto promise =
           bridge.MakeCallPromise(std::move(args), next_promise_factory);
       Poll<ServerMetadataHandle> result = Pending{};
@@ -154,7 +144,6 @@ TEST_F(V3BridgeTest, EarlyFailureCleansUpArena) {
       EXPECT_TRUE(result.ready());
     }
   });
-
   // Verify that the arena can be destroyed.
   arena.reset();
 }
@@ -164,5 +153,6 @@ TEST_F(V3BridgeTest, EarlyFailureCleansUpArena) {
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
+  grpc_core::ForceEnableExperiment("v2_non_owning_waker_implementation", true);
   return RUN_ALL_TESTS();
 }
