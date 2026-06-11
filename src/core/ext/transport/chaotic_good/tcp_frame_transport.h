@@ -61,6 +61,7 @@ class TcpFrameTransport final : public FrameTransport,
              RefCountedPtr<FrameTransportSink> sink) override;
   void Orphan() override;
   TransportContextPtr ctx() override { return ctx_; }
+  uint64_t connection_id() const { return connection_id_; }
   std::unique_ptr<channelz::ZTrace> GetZTrace(absl::string_view name) override {
     if (name == "transport_frames") {
       return ztrace_collector_->MakeZTrace();
@@ -81,6 +82,7 @@ class TcpFrameTransport final : public FrameTransport,
   const TransportContextPtr ctx_;
   std::shared_ptr<TcpZTraceCollector> ztrace_collector_ =
       std::make_shared<TcpZTraceCollector>();
+  uint64_t connection_id_;
   ControlEndpoint control_endpoint_;
   DataEndpoints data_endpoints_;
   const Options options_;
