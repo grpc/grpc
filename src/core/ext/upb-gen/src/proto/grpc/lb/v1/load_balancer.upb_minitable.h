@@ -19,23 +19,14 @@ extern "C" {
 #endif
 
 extern const upb_MiniTable grpc__lb__v1__LoadBalanceRequest_msg_init;
-extern const upb_MiniTable* grpc__lb__v1__LoadBalanceRequest_msg_init_ptr;
 extern const upb_MiniTable grpc__lb__v1__InitialLoadBalanceRequest_msg_init;
-extern const upb_MiniTable* grpc__lb__v1__InitialLoadBalanceRequest_msg_init_ptr;
 extern const upb_MiniTable grpc__lb__v1__ClientStatsPerToken_msg_init;
-extern const upb_MiniTable* grpc__lb__v1__ClientStatsPerToken_msg_init_ptr;
 extern const upb_MiniTable grpc__lb__v1__ClientStats_msg_init;
-extern const upb_MiniTable* grpc__lb__v1__ClientStats_msg_init_ptr;
 extern const upb_MiniTable grpc__lb__v1__LoadBalanceResponse_msg_init;
-extern const upb_MiniTable* grpc__lb__v1__LoadBalanceResponse_msg_init_ptr;
 extern const upb_MiniTable grpc__lb__v1__FallbackResponse_msg_init;
-extern const upb_MiniTable* grpc__lb__v1__FallbackResponse_msg_init_ptr;
 extern const upb_MiniTable grpc__lb__v1__InitialLoadBalanceResponse_msg_init;
-extern const upb_MiniTable* grpc__lb__v1__InitialLoadBalanceResponse_msg_init_ptr;
 extern const upb_MiniTable grpc__lb__v1__ServerList_msg_init;
-extern const upb_MiniTable* grpc__lb__v1__ServerList_msg_init_ptr;
 extern const upb_MiniTable grpc__lb__v1__Server_msg_init;
-extern const upb_MiniTable* grpc__lb__v1__Server_msg_init_ptr;
 
 extern const upb_MiniTableFile src_proto_grpc_lb_v1_load_balancer_proto_upb_file_layout;
 

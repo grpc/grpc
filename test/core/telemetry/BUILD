@@ -130,6 +130,7 @@ grpc_fuzz_test(
     name = "histogram_fuzzer",
     srcs = ["histogram_fuzzer.cc"],
     external_deps = [
+        "absl/strings",
         "gtest",
         "fuzztest",
         "fuzztest_main",

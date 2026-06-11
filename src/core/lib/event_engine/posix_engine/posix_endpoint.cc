@@ -29,6 +29,7 @@
 #include <memory>
 #include <optional>
 #include <string>
+#include <utility>
 
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/event_engine/posix_engine/event_poller.h"
@@ -892,7 +893,7 @@ bool PosixEndpointImpl::WriteWithTimestamps(struct msghdr* msg,
   traced_buffers_.AddNewEntry(
       static_cast<uint32_t>(bytes_counter_ + sending_length),
       &poller_->posix_interface(), handle_->WrappedFd(),
-      std::move(outgoing_buffer_write_event_sink_).value());
+      std::move(*outgoing_buffer_write_event_sink_));
   outgoing_buffer_write_event_sink_.reset();
 
   // If there was an error on sendmsg the logic in tcp_flush will handle it.
@@ -940,6 +941,7 @@ void PosixEndpointImpl::UnrefMaybePutZerocopySendRecord(
 void PosixEndpointImpl::TcpShutdownTracedBufferList() {
   if (outgoing_buffer_write_event_sink_.has_value()) {
     traced_buffers_.Shutdown(std::move(outgoing_buffer_write_event_sink_));
+    outgoing_buffer_write_event_sink_.reset();
   }
 }
 
