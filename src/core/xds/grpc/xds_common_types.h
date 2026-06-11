@@ -131,6 +131,13 @@ struct HeaderMutationRules {
   }
 };
 
+// TODO(roth): We would ideally like to use a Slice for the header value, but
+// Slice isn't copyable, which makes it problematic to store here. The down-side
+// of this approach is that we need to make a copy when we apply the header
+// value to each RPC rather than just taking a new ref to the slice. Consider
+// solving this problem by adding a new RefCountedSlice class to represent an
+// immutable, ref-counted slice that can be turned into a Slice and thus added
+// to RPC metadata without a copy.
 struct XdsHeaderValueOption {
   enum class AppendAction {
     // If the header already exists in the metadata batch, comma-concatenate the
@@ -152,20 +159,15 @@ struct XdsHeaderValueOption {
   std::pair<std::string, std::string> header;
   // Rule specifying how to merge or overwrite existing metadata batch entries.
   AppendAction append_action;
-  // If false, options with empty values are skipped during addition. If true,
-  // empty values are explicitly added to the metadata batch.
-  bool keep_empty_value;
-
-  std::string ToString() const;
 };
 
-absl::Status ApplyXdsHeaderMutationsRemoval(
-    const std::vector<absl::string_view>& remove_headers,
-    const HeaderMutationRules* rules, grpc_metadata_batch& md);
+absl::Status ApplyXdsHeaderMutationsRemoval(absl::string_view remove_header,
+                                            const HeaderMutationRules* rules,
+                                            grpc_metadata_batch& md);
 
 absl::Status ApplyXdsHeaderMutationsAddition(
-    const std::vector<XdsHeaderValueOption>& set_headers,
-    const HeaderMutationRules* rules, grpc_metadata_batch& md);
+    const XdsHeaderValueOption& set_header, const HeaderMutationRules* rules,
+    grpc_metadata_batch& md);
 
 }  // namespace grpc_core
 

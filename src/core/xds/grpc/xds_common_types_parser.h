@@ -101,13 +101,13 @@ HeaderMutationRules ParseHeaderMutationRules(
         header_mutation_rules,
     ValidationErrors* errors);
 
-XdsHeaderValueOption ParseHeaderValueOption(
+XdsHeaderValueOption ParseXdsHeaderValueOption(
     const envoy_config_core_v3_HeaderValueOption* header_value_option_config,
     ValidationErrors* errors);
 
-std::optional<XdsHeaderValueOption::AppendAction>
-ParseXdsHeaderValueOptionAppendAction(int32_t header_value_option_append_action,
-                                      ValidationErrors* errors);
+std::pair<std::string, std::string> ParseXdsHeader(
+    const envoy_config_core_v3_HeaderValue* header_value,
+    ValidationErrors* errors);
 
 }  // namespace grpc_core
 

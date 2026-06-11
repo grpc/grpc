@@ -646,7 +646,9 @@ std::optional<std::string> GetHeaderValue(upb_StringView upb_value,
   return std::string(value);
 }
 
-std::pair<std::string, std::string> ParseHeader(
+}  // namespace
+
+std::pair<std::string, std::string> ParseXdsHeader(
     const envoy_config_core_v3_HeaderValue* header_value,
     ValidationErrors* errors) {
   // key
@@ -683,8 +685,6 @@ std::pair<std::string, std::string> ParseHeader(
   return {std::string(key), value.has_value() ? std::move(*value) : ""};
 }
 
-}  // namespace
-
 XdsGrpcService ParseXdsGrpcService(
     const XdsResourceType::DecodeContext& context,
     const envoy_config_core_v3_GrpcService* grpc_service,
@@ -711,7 +711,7 @@ XdsGrpcService ParseXdsGrpcService(
     ValidationErrors::ScopedField field(
         errors, absl::StrCat(".initial_metadata[", i, "]"));
     xds_grpc_service.initial_metadata.push_back(
-        ParseHeader(initial_metadata[i], errors));
+        ParseXdsHeader(initial_metadata[i], errors));
   }
   // google_grpc
   ValidationErrors::ScopedField field(errors, ".google_grpc");
@@ -870,11 +870,32 @@ HeaderMutationRules ParseHeaderMutationRules(
   return header_mutation_rules_config;
 }
 
+namespace {
+
+XdsHeaderValueOption::AppendAction ParseXdsHeaderValueOptionAppendAction(
+    int32_t header_value_option_append_action, ValidationErrors* errors) {
+  switch (header_value_option_append_action) {
+    case envoy_config_core_v3_HeaderValueOption_APPEND_IF_EXISTS_OR_ADD:
+      return XdsHeaderValueOption::AppendAction::kAppendIfExistsOrAdd;
+    case envoy_config_core_v3_HeaderValueOption_ADD_IF_ABSENT:
+      return XdsHeaderValueOption::AppendAction::kAddIfAbsent;
+    case envoy_config_core_v3_HeaderValueOption_OVERWRITE_IF_EXISTS_OR_ADD:
+      return XdsHeaderValueOption::AppendAction::kOverwriteIfExistsOrAdd;
+    case envoy_config_core_v3_HeaderValueOption_OVERWRITE_IF_EXISTS:
+      return XdsHeaderValueOption::AppendAction::kOverwriteIfExists;
+    default:
+      errors->AddError("unsupported append action");
+      return XdsHeaderValueOption::AppendAction::kAppendIfExistsOrAdd;
+  }
+}
+
+}  // namespace
+
 //
-// ParseHeaderValueOption()
+// ParseXdsHeaderValueOption()
 //
 
-XdsHeaderValueOption ParseHeaderValueOption(
+XdsHeaderValueOption ParseXdsHeaderValueOption(
     const envoy_config_core_v3_HeaderValueOption* header_value_option_config,
     ValidationErrors* errors) {
   if (header_value_option_config == nullptr) {
@@ -888,48 +909,21 @@ XdsHeaderValueOption ParseHeaderValueOption(
     if (const auto* header = envoy_config_core_v3_HeaderValueOption_header(
             header_value_option_config);
         header != nullptr) {
-      header_value_option.header = ParseHeader(header, errors);
+      header_value_option.header = ParseXdsHeader(header, errors);
     } else {
       errors->AddError("field not set");
     }
   }
   // parse header_append_action
-  int32_t header_append_action =
-      envoy_config_core_v3_HeaderValueOption_append_action(
-          header_value_option_config);
-  if (auto action =
-          ParseXdsHeaderValueOptionAppendAction(header_append_action, errors);
-      action.has_value()) {
-    header_value_option.append_action = *action;
+  {
+    ValidationErrors::ScopedField field(errors, ".append_action");
+    int32_t header_append_action =
+        envoy_config_core_v3_HeaderValueOption_append_action(
+            header_value_option_config);
+    header_value_option.append_action =
+        ParseXdsHeaderValueOptionAppendAction(header_append_action, errors);
   }
-  // parse keep_empty_value
-  header_value_option.keep_empty_value =
-      envoy_config_core_v3_HeaderValueOption_keep_empty_value(
-          header_value_option_config);
   return header_value_option;
-}
-
-//
-// ParseXdsHeaderValueOptionAppendAction()
-//
-
-std::optional<XdsHeaderValueOption::AppendAction>
-ParseXdsHeaderValueOptionAppendAction(int32_t header_value_option_append_action,
-                                      ValidationErrors* errors) {
-  switch (header_value_option_append_action) {
-    case envoy_config_core_v3_HeaderValueOption_APPEND_IF_EXISTS_OR_ADD:
-      return XdsHeaderValueOption::AppendAction::kAppendIfExistsOrAdd;
-    case envoy_config_core_v3_HeaderValueOption_ADD_IF_ABSENT:
-      return XdsHeaderValueOption::AppendAction::kAddIfAbsent;
-    case envoy_config_core_v3_HeaderValueOption_OVERWRITE_IF_EXISTS_OR_ADD:
-      return XdsHeaderValueOption::AppendAction::kOverwriteIfExistsOrAdd;
-    case envoy_config_core_v3_HeaderValueOption_OVERWRITE_IF_EXISTS:
-      return XdsHeaderValueOption::AppendAction::kOverwriteIfExists;
-    default:
-      ValidationErrors::ScopedField field(errors, ".append_action");
-      errors->AddError("unsupported append action");
-      return std::nullopt;
-  }
 }
 
 }  // namespace grpc_core
