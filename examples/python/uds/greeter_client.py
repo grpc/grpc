@@ -13,8 +13,6 @@
 # limitations under the License.
 """The gRPC Python client for the UDS example."""
 
-from __future__ import print_function
-
 import logging
 
 import grpc

@@ -443,5 +443,10 @@
 #define GRPC_ARG_TCP_TRACING_ENABLED "grpc.tcp_tracing_enabled"
 /** Server config fetcher. */
 #define GRPC_ARG_SERVER_CONFIG_FETCHER "grpc.server_config_fetcher"
+/** Set the maximum size of a security frame that can be received on a HTTP2
+ * Connection. Check file core/ext/transport/chttp2/transport/frame.cc for
+ * details on the Security Frame.
+ */
+#define GRPC_ARG_MAX_SECURITY_FRAME_SIZE "grpc.http2.max_security_frame_size"
 
 #endif /* GRPC_IMPL_CHANNEL_ARG_NAMES_H */

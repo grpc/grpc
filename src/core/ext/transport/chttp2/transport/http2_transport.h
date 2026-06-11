@@ -151,6 +151,8 @@ void ReadSettingsFromChannelArgs(const ChannelArgs& channel_args,
 
 uint32_t MaxNewStreamsPerRead(const ChannelArgs& channel_args);
 
+uint32_t GetMaxSecurityFrameSize(const ChannelArgs& channel_args);
+
 ///////////////////////////////////////////////////////////////////////////////
 // ChannelZ helpers
 
