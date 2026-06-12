@@ -16,12 +16,7 @@ FROM grpc-php/php-src
 
 WORKDIR /tmp
 
+COPY src/php/docker/fork-support/run_tests.sh .
 COPY src/php/docker/fork-support/fork.php .
 
-RUN echo '\
-extension=grpc.so\n\
-grpc.enable_fork_support=1\n\
-grpc.poll_strategy=epoll1\n\
-' >> /usr/local/lib/php.ini
-
-CMD ["php", "fork.php"]
+CMD ["/bin/sh", "run_tests.sh"]
