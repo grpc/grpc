@@ -6513,6 +6513,7 @@ grpc_cc_library(
         "xds/grpc/xds_cluster_specifier_plugin.h",
         "xds/grpc/xds_common_types_parser.h",
         "xds/grpc/xds_endpoint_parser.h",
+        "xds/grpc/xds_http_ext_proc_filter.h",
         "xds/grpc/xds_http_composite_filter.h",
         "xds/grpc/xds_http_fault_filter.h",
         "xds/grpc/xds_http_filter_registry.h",
