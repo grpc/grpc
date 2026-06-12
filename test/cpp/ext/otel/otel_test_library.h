@@ -221,6 +221,8 @@ class OpenTelemetryPluginEnd2EndTest : public ::testing::Test {
   // Note that we can't use SetUp() here since we want to send in parameters.
   void Init(Options config);
   void InitSecure(Options config);
+  void InitSecureBadServer(Options config);
+  void InitSecureBadClient(Options config);
 
   void TearDown() override;
 

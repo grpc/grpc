@@ -66,6 +66,10 @@ grpc_cc_test(
         "otel_plugin_test.cc",
     ],
     data = [
+        "//src/core/tsi/test_creds:badclient.key",
+        "//src/core/tsi/test_creds:badclient.pem",
+        "//src/core/tsi/test_creds:badserver.key",
+        "//src/core/tsi/test_creds:badserver.pem",
         "//src/core/tsi/test_creds:ca.pem",
         "//src/core/tsi/test_creds:server1.key",
         "//src/core/tsi/test_creds:server1.pem",

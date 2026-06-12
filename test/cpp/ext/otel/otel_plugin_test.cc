@@ -1423,6 +1423,142 @@ TEST_F(OpenTelemetryPluginEnd2EndTest, ServerHandshakes) {
   EXPECT_EQ(*resumed_value, "false");
 }
 
+TEST_F(OpenTelemetryPluginEnd2EndTest, ClientHandshakesFailed) {
+  if (!grpc_core::IsOtelExportTelemetryDomainsEnabled()) {
+    GTEST_SKIP() << "Test requires otel_export_telemetry_domains to be enabled";
+  }
+  InitSecureBadServer(
+      std::move(Options()
+                    .set_metric_names({grpc::OpenTelemetryPluginBuilder::
+                                           kClientHandshakesInstrumentName})
+                    .add_optional_label("grpc.lb.locality")
+                    .add_optional_label("grpc.lb.backend_service")));
+  SendRPC();
+  const char* kMetricName = "grpc.client.tls.handshakes";
+  auto data = ReadCurrentMetricsData(
+      [&](const absl::flat_hash_map<
+          std::string,
+          std::vector<opentelemetry::sdk::metrics::PointDataAttributes>>&
+              data) {
+        if (!data.contains(kMetricName)) return true;
+        for (const auto& point : data.at(kMetricName)) {
+          const auto& attributes = point.attributes.GetAttributes();
+          if (attributes.find("grpc.security.handshaker.status") !=
+              attributes.end()) {
+            const auto* status = std::get_if<std::string>(
+                &attributes.at("grpc.security.handshaker.status"));
+            if (status != nullptr && *status != "OK") {
+              return false;
+            }
+          }
+        }
+        return true;
+      });
+  const opentelemetry::sdk::metrics::PointDataAttributes* failure_point =
+      nullptr;
+  for (const auto& point : data.at(kMetricName)) {
+    const auto& attributes = point.attributes.GetAttributes();
+    if (attributes.find("grpc.security.handshaker.status") !=
+        attributes.end()) {
+      const auto* status = std::get_if<std::string>(
+          &attributes.at("grpc.security.handshaker.status"));
+      if (status != nullptr && *status != "OK") {
+        failure_point = &point;
+        break;
+      }
+    }
+  }
+  ASSERT_NE(failure_point, nullptr);
+  auto point_data = std::get_if<opentelemetry::sdk::metrics::SumPointData>(
+      &failure_point->point_data);
+  ASSERT_NE(point_data, nullptr);
+  auto client_handshakes_value = std::get_if<int64_t>(&point_data->value_);
+  ASSERT_NE(client_handshakes_value, nullptr);
+  EXPECT_GE(*client_handshakes_value, 1);
+  const auto& attributes = failure_point->attributes.GetAttributes();
+  EXPECT_EQ(attributes.size(), 5);
+  const auto* status_value = std::get_if<std::string>(
+      &attributes.at("grpc.security.handshaker.status"));
+  ASSERT_NE(status_value, nullptr);
+  EXPECT_NE(*status_value, "OK");
+  const auto* target_value =
+      std::get_if<std::string>(&attributes.at("grpc.target"));
+  ASSERT_NE(target_value, nullptr);
+  EXPECT_EQ(*target_value, "foo.test.google.fr");
+  const auto* resumed_value = std::get_if<std::string>(
+      &attributes.at("grpc.security.handshaker.resumed"));
+  ASSERT_NE(resumed_value, nullptr);
+  EXPECT_EQ(*resumed_value, "false");
+  const auto* locality_value =
+      std::get_if<std::string>(&attributes.at("grpc.lb.locality"));
+  ASSERT_NE(locality_value, nullptr);
+  EXPECT_EQ(*locality_value, "locality_1");
+  const auto* backend_value =
+      std::get_if<std::string>(&attributes.at("grpc.lb.backend_service"));
+  ASSERT_NE(backend_value, nullptr);
+  EXPECT_EQ(*backend_value, "backend_1");
+}
+
+TEST_F(OpenTelemetryPluginEnd2EndTest, ServerHandshakesFailed) {
+  if (!grpc_core::IsOtelExportTelemetryDomainsEnabled()) {
+    GTEST_SKIP() << "Test requires otel_export_telemetry_domains to be enabled";
+  }
+  InitSecureBadClient(std::move(Options().set_metric_names(
+      {grpc::OpenTelemetryPluginBuilder::kServerHandshakesInstrumentName})));
+  SendRPC();
+  const char* kMetricName = "grpc.server.tls.handshakes";
+  auto data = ReadCurrentMetricsData(
+      [&](const absl::flat_hash_map<
+          std::string,
+          std::vector<opentelemetry::sdk::metrics::PointDataAttributes>>&
+              data) {
+        if (!data.contains(kMetricName)) return true;
+        for (const auto& point : data.at(kMetricName)) {
+          const auto& attributes = point.attributes.GetAttributes();
+          if (attributes.find("grpc.security.handshaker.status") !=
+              attributes.end()) {
+            const auto* status = std::get_if<std::string>(
+                &attributes.at("grpc.security.handshaker.status"));
+            if (status != nullptr && *status != "OK") {
+              return false;
+            }
+          }
+        }
+        return true;
+      });
+  const opentelemetry::sdk::metrics::PointDataAttributes* failure_point =
+      nullptr;
+  for (const auto& point : data.at(kMetricName)) {
+    const auto& attributes = point.attributes.GetAttributes();
+    if (attributes.find("grpc.security.handshaker.status") !=
+        attributes.end()) {
+      const auto* status = std::get_if<std::string>(
+          &attributes.at("grpc.security.handshaker.status"));
+      if (status != nullptr && *status != "OK") {
+        failure_point = &point;
+        break;
+      }
+    }
+  }
+  ASSERT_NE(failure_point, nullptr);
+  auto point_data = std::get_if<opentelemetry::sdk::metrics::SumPointData>(
+      &failure_point->point_data);
+  ASSERT_NE(point_data, nullptr);
+  auto server_handshakes_value = std::get_if<int64_t>(&point_data->value_);
+  ASSERT_NE(server_handshakes_value, nullptr);
+  EXPECT_GE(*server_handshakes_value, 1);
+  const auto& attributes = failure_point->attributes.GetAttributes();
+  EXPECT_EQ(attributes.size(), 2);
+  const auto* status_value = std::get_if<std::string>(
+      &attributes.at("grpc.security.handshaker.status"));
+  ASSERT_NE(status_value, nullptr);
+  EXPECT_NE(*status_value, "OK");
+  const auto* resumed_value = std::get_if<std::string>(
+      &attributes.at("grpc.security.handshaker.resumed"));
+  ASSERT_NE(resumed_value, nullptr);
+  EXPECT_EQ(*resumed_value, "false");
+}
+
 }  // namespace
 }  // namespace testing
 }  // namespace grpc

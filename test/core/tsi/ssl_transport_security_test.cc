@@ -1562,6 +1562,45 @@ TEST_P(SslTransportSecurityTest, TestHandshakeMetricsIncremented) {
   EXPECT_GT(sink_after.client_handshakes, sink_before.client_handshakes);
   EXPECT_GT(sink_after.server_handshakes, sink_before.server_handshakes);
 }
+
+TEST_P(SslTransportSecurityTest, TestFailedClientHandshakeMetricsIncremented) {
+  TestMetricsSink sink_before;
+  MetricsQuery()
+      .OnlyMetrics({"grpc.client.tls.handshakes"})
+      .Run(GlobalCollectionScope(), sink_before);
+
+  SetUpSslFixture(/*tls_version=*/std::get<0>(GetParam()),
+                  /*send_client_ca_list=*/std::get<1>(GetParam()));
+  ssl_fixture_->MutableKeyCertLib()->use_bad_server_cert = true;
+  DoHandshake();
+
+  TestMetricsSink sink_after;
+  MetricsQuery()
+      .OnlyMetrics({"grpc.client.tls.handshakes"})
+      .Run(GlobalCollectionScope(), sink_after);
+
+  EXPECT_GT(sink_after.client_handshakes, sink_before.client_handshakes);
+}
+
+TEST_P(SslTransportSecurityTest, TestFailedServerHandshakeMetricsIncremented) {
+  TestMetricsSink sink_before;
+  MetricsQuery()
+      .OnlyMetrics({"grpc.server.tls.handshakes"})
+      .Run(GlobalCollectionScope(), sink_before);
+
+  SetUpSslFixture(/*tls_version=*/std::get<0>(GetParam()),
+                  /*send_client_ca_list=*/std::get<1>(GetParam()));
+  ssl_fixture_->MutableKeyCertLib()->use_bad_client_cert = true;
+  ssl_fixture_->SetForceClientAuth(true);
+  DoHandshake();
+
+  TestMetricsSink sink_after;
+  MetricsQuery()
+      .OnlyMetrics({"grpc.server.tls.handshakes"})
+      .Run(GlobalCollectionScope(), sink_after);
+
+  EXPECT_GT(sink_after.server_handshakes, sink_before.server_handshakes);
+}
 #endif
 
 }  // namespace
