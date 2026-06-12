@@ -283,10 +283,11 @@ class SslCertSelectorTsiTestFixture {
     tsi_handshaker* server_hs;
     ASSERT_EQ(tsi_ssl_client_handshaker_factory_create_handshaker(
                   client_handshaker_factory_, kServerName, 0, 0, std::nullopt,
-                  &client_hs),
+                  /*collection_scope=*/nullptr, &client_hs),
               TSI_OK);
     ASSERT_EQ(tsi_ssl_server_handshaker_factory_create_handshaker(
-                  server_handshaker_factory_, 0, 0, &server_hs),
+                  server_handshaker_factory_, 0, 0,
+                  /*collection_scope=*/nullptr, &server_hs),
               TSI_OK);
     base_.client_handshaker = client_hs;
     base_.server_handshaker = server_hs;
