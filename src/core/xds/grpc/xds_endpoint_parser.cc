@@ -367,7 +367,7 @@ absl::StatusOr<std::shared_ptr<const XdsEndpointResource>> EdsResourceParse(
           LocalityParse(context, endpoints[i], &address_set, &errors);
       if (parsed_locality.has_value()) {
         GRPC_CHECK_NE(parsed_locality->locality.lb_weight, 0u);
-        // Make sure prorities is big enough. Note that they might not
+        // Make sure priorities is big enough. Note that they might not
         // arrive in priority order.
         if (eds_resource->priorities.size() < parsed_locality->priority + 1) {
           eds_resource->priorities.resize(parsed_locality->priority + 1);

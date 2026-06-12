@@ -19,6 +19,8 @@
 
 #include "src/core/ext/transport/chttp2/transport/http2_ztrace_collector.h"
 #include "src/core/util/latent_see.h"
+#include "absl/base/log_severity.h"
+#include "absl/log/globals.h"
 
 namespace grpc_core {
 
@@ -81,6 +83,7 @@ void RunTheBenchmarksNamespaced() { RunSpecifiedBenchmarks(); }
 }  // namespace benchmark
 
 int main(int argc, char** argv) {
+  absl::SetMinLogLevel(absl::LogSeverityAtLeast::kError);
   ::benchmark::Initialize(&argc, argv);
   benchmark::RunTheBenchmarksNamespaced();
   return 0;

@@ -25,7 +25,9 @@
 #include <algorithm>
 
 #include "src/core/util/grpc_check.h"
+#include "src/core/util/shared_bit_gen.h"
 #include "absl/log/log.h"
+#include "absl/random/random.h"
 
 namespace grpc_core {
 
@@ -61,9 +63,10 @@ Timestamp BdpEstimator::CompletePing() {
   } else if (inter_ping_delay_ < Duration::Seconds(10)) {
     stable_estimate_count_++;
     if (stable_estimate_count_ >= 2) {
-      // if the ping estimate is steady, slowly ramp down the probe time
-      inter_ping_delay_ += Duration::Milliseconds(
-          100 + static_cast<int>(rand() * 100.0 / RAND_MAX));
+      // If the ping estimate is steady, slowly ramp down the probe time.
+      // Random jitter avoids synchronized cross-connection thundering herds.
+      inter_ping_delay_ +=
+          Duration::Milliseconds(absl::Uniform<int>(SharedBitGen(), 100, 200));
     }
   }
   if (start_inter_ping_delay != inter_ping_delay_) {

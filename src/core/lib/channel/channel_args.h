@@ -55,6 +55,8 @@
 
 namespace grpc_core {
 
+class Arena;
+
 // Define a traits object for vtable lookup - allows us to integrate with
 // existing code easily (just define the trait!) and allows some magic in
 // ChannelArgs to automatically derive a vtable from a T*.
@@ -88,8 +90,7 @@ struct IsRawPointerTagged {
   static constexpr bool kValue = false;
 };
 template <typename T>
-struct IsRawPointerTagged<T,
-                          absl::void_t<typename T::RawPointerChannelArgTag>> {
+struct IsRawPointerTagged<T, std::void_t<typename T::RawPointerChannelArgTag>> {
   static constexpr bool kValue = true;
 };
 
@@ -114,8 +115,8 @@ template <typename T, typename = void>
 struct has_channel_args_compare : std::false_type {};
 template <typename T>
 struct has_channel_args_compare<
-    T, absl::void_t<decltype(T::ChannelArgsCompare(std::declval<const T*>(),
-                                                   std::declval<const T*>()))>>
+    T, std::void_t<decltype(T::ChannelArgsCompare(std::declval<const T*>(),
+                                                  std::declval<const T*>()))>>
     : std::true_type {};
 }  // namespace channel_args_detail
 
@@ -193,7 +194,7 @@ struct ChannelArgTypeTraits<
 // ownership*.
 template <typename T>
 struct ChannelArgTypeTraits<T,
-                            absl::void_t<typename T::RawPointerChannelArgTag>> {
+                            std::void_t<typename T::RawPointerChannelArgTag>> {
   static void* TakeUnownedPointer(T* p) { return p; }
   static const grpc_arg_pointer_vtable* VTable() {
     static const grpc_arg_pointer_vtable tbl = {
@@ -216,7 +217,7 @@ struct ChannelArgPointerShouldBeConst {
 
 template <typename T>
 struct ChannelArgPointerShouldBeConst<
-    T, absl::void_t<decltype(T::ChannelArgUseConstPtr())>> {
+    T, std::void_t<decltype(T::ChannelArgUseConstPtr())>> {
   static constexpr bool kValue = T::ChannelArgUseConstPtr();
 };
 
@@ -298,6 +299,11 @@ struct ChannelArgNameTraits {
 template <typename T>
 struct ChannelArgNameTraits<std::shared_ptr<T>> {
   static absl::string_view ChannelArgName() { return T::ChannelArgName(); }
+};
+template <>
+struct ChannelArgTypeTraits<Arena> {
+  static const grpc_arg_pointer_vtable* VTable();
+  static void* TakeUnownedPointer(Arena* p) { return p; }
 };
 // Specialization for the EventEngine
 template <>

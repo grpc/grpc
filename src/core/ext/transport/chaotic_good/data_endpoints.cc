@@ -47,7 +47,9 @@
 #include "absl/cleanup/cleanup.h"
 #include "absl/container/inlined_vector.h"
 #include "absl/log/log.h"
+#include "absl/status/status.h"
 #include "absl/strings/numbers.h"
+#include "absl/strings/str_cat.h"
 #include "absl/strings/str_split.h"
 #include "absl/time/time.h"
 
@@ -90,20 +92,24 @@ OutputBuffers::Reader::PollReadNext() {
   while (true) {
     GRPC_LATENT_SEE_SCOPE("OutputBuffers::PollReadNext::loop");
     if (frames_.empty()) {
+      bool call_wakeup = false;
       if (!reading_) {
         reading_ = true;
-        output_buffers_->WakeupScheduler();
+        call_wakeup = true;
       }
       waker_ = GetContext<Activity>()->MakeNonOwningWaker();
       mu_.Unlock();
+      if (call_wakeup) {
+        output_buffers_->WakeupScheduler();
+      }
       return Pending{};
     }
     DCHECK(!reading_);
     auto frames = std::move(frames_);
     frames_.clear();
     send_rate_.DequeueFromReader(output_buffers_->clock_->Now());
-    output_buffers_->WakeupScheduler(/*async=*/true);
     mu_.Unlock();
+    output_buffers_->WakeupScheduler(/*async=*/true);
     return std::move(frames);
   }
 }
@@ -360,7 +366,7 @@ void SecureFrameQueue::Write(SliceBuffer buffer) {
   TcpDataFrameHeader{0, 0, frame_length}.Serialize(slice.data());
   if (header_padding != 0) {
     memset(slice.data() + TcpDataFrameHeader::kFrameHeaderSize, 0,
-           frame_padding);
+           header_padding);
   }
   all_frames_.Append(Slice(std::move(slice)));
   all_frames_.TakeAndAppend(buffer);
@@ -379,15 +385,19 @@ void SecureFrameQueue::Write(SliceBuffer buffer) {
 
 InputQueue::ReadTicket InputQueue::Read(uint64_t payload_tag) {
   MutexLock lock(&mu_);
+  if (!closed_error_.ok()) {
+    return ReadTicket(MakeRefCounted<Completion>(payload_tag, closed_error_),
+                      nullptr);
+  }
   if (read_requested_.Set(payload_tag)) {
     return ReadTicket(
         MakeRefCounted<Completion>(
             payload_tag, absl::UnavailableError("Duplicate read requested")),
-        nullptr);
+        Ref());
   }
   auto it = completions_.find(payload_tag);
   if (it != completions_.end()) {
-    return ReadTicket(it->second, nullptr);
+    return ReadTicket(it->second, Ref());
   }
   auto completion = MakeRefCounted<Completion>(payload_tag);
   completions_.emplace(payload_tag, completion);
@@ -458,6 +468,7 @@ void InputQueue::SetClosed(absl::Status status) {
   }
   if (status.ok()) status = absl::UnavailableError("transport closed");
   closed_error_ = std::move(status);
+  absl::Status error_to_propagate = closed_error_;
   auto completions = std::move(completions_);
   completions_.clear();
   Waker await_closed = std::move(await_closed_);
@@ -466,6 +477,8 @@ void InputQueue::SetClosed(absl::Status status) {
   for (auto& [tag, completion] : completions) {
     completion->mu.Lock();
     if (!completion->ready) {
+      completion->result = error_to_propagate;
+      completion->ready = true;
       auto waker = std::move(completion->waker);
       completion->mu.Unlock();
       waker.Wakeup();
@@ -691,7 +704,7 @@ auto Endpoint::PullDataPayload(RefCountedPtr<EndpointContext> ctx) {
       ctx->reader->Next(),
       [ctx](
           ValueOrFailure<std::vector<OutputBuffers::QueuedFrame>> queued_frames)
-          -> ValueOrFailure<SliceBuffer> {
+          -> ValueOrFailure<std::pair<SliceBuffer, bool>> {
         if (!queued_frames.ok()) return Failure{};
         GRPC_TRACE_LOG(chaotic_good, INFO)
             << "CHAOTIC_GOOD: " << ctx->reader.get() << " "
@@ -704,6 +717,7 @@ auto Endpoint::PullDataPayload(RefCountedPtr<EndpointContext> ctx) {
         GRPC_LATENT_SEE_SCOPE("SerializePayload");
         // Frame everything into a slice buffer.
         SliceBuffer buffer;
+        bool tcp_tracer_enabled = false;
         const size_t header_padding = DataConnectionPadding(
             TcpDataFrameHeader::kFrameHeaderSize, ctx->encode_alignment);
         const size_t header_size =
@@ -716,6 +730,9 @@ auto Endpoint::PullDataPayload(RefCountedPtr<EndpointContext> ctx) {
         auto padding = Slice(std::move(padding_mut));
         for (size_t i = 0; i < queued_frames->size(); ++i) {
           auto& queued_frame = (*queued_frames)[i];
+          if (queued_frame.frame->call_tracer != nullptr) {
+            tcp_tracer_enabled = true;
+          }
           auto& frame = absl::ConvertVariantTo<FrameInterface&>(
               queued_frame.frame->payload);
           auto hdr = header_frames.TakeFirstNoInline(header_size);
@@ -733,7 +750,9 @@ auto Endpoint::PullDataPayload(RefCountedPtr<EndpointContext> ctx) {
             buffer.AppendIndexed(padding.RefSubSlice(0, frame_padding));
           }
         }
-        return std::move(buffer);
+        // TODO(pragunsaxena): consider returning tcp tracer instead of this
+        // boolean to keep parity with the chttp2 transport.
+        return std::pair{std::move(buffer), tcp_tracer_enabled};
       });
 }
 
@@ -750,10 +769,13 @@ auto Endpoint::WriteLoop(RefCountedPtr<EndpointContext> ctx) {
             "DataEndpointPullPayload",
             Race(PullDataPayload(ctx),
                  Map(ctx->secure_frame_queue->Next(),
-                     [](SliceBuffer x) -> ValueOrFailure<SliceBuffer> {
-                       return std::move(x);
+                     [](SliceBuffer x)
+                         -> ValueOrFailure<std::pair<SliceBuffer, bool>> {
+                       return std::pair{std::move(x), false};
                      }))),
-        [ctx, metrics_collector](SliceBuffer buffer) {
+        [ctx, metrics_collector](std::pair<SliceBuffer, bool> result) {
+          SliceBuffer& buffer = result.first;
+          bool tcp_tracer_enabled = result.second;
           ctx->ztrace_collector->Append(
               WriteBytesToEndpointTrace{buffer.Length(), ctx->id});
           PromiseEndpoint::WriteArgs write_args;
@@ -761,7 +783,8 @@ auto Endpoint::WriteLoop(RefCountedPtr<EndpointContext> ctx) {
           static const Duration kMetricsUpdateInterval = Duration::Milliseconds(
               ConfigVars::Get().ChaoticGoodMetricsUpdateIntervalMs());
           if (metrics_collector != nullptr &&
-              now - ctx->last_metrics_update > kMetricsUpdateInterval) {
+              (tcp_tracer_enabled ||
+               now - ctx->last_metrics_update > kMetricsUpdateInterval)) {
             ctx->last_metrics_update = now;
             write_args.set_metrics_sink(metrics_collector->MakeWriteEventSink(
                 buffer.Length(), ctx->reader, ctx->ztrace_collector));
@@ -812,12 +835,24 @@ auto Endpoint::ReadLoop(RefCountedPtr<EndpointContext> ctx) {
                 TcpDataFrameHeader::kFrameHeaderSize +
                 DataConnectionPadding(TcpDataFrameHeader::kFrameHeaderSize,
                                       ctx->decode_alignment))),
-        [id = ctx->id](Slice frame_header) {
+        [id = ctx->id,
+         ctx](Slice frame_header) -> absl::StatusOr<TcpDataFrameHeader> {
           auto hdr = TcpDataFrameHeader::Parse(frame_header.data());
+          if (!hdr.ok()) return hdr.status();
+          if (hdr->payload_length > ctx->max_receive_message_length) {
+            return absl::ResourceExhaustedError(absl::StrCat(
+                "Received message larger than max (", hdr->payload_length,
+                " vs. ", ctx->max_receive_message_length, ")"));
+          }
+          uint32_t padding =
+              DataConnectionPadding(hdr->payload_length, ctx->decode_alignment);
+          if (hdr->payload_length >
+              std::numeric_limits<uint32_t>::max() - padding) {
+            return absl::InvalidArgumentError(
+                "Integer overflow in payload length plus padding");
+          }
           GRPC_TRACE_LOG(chaotic_good, INFO)
-              << "CHAOTIC_GOOD: Read "
-              << (hdr.ok() ? absl::StrCat(*hdr) : hdr.status().ToString())
-              << " on data connection #" << id;
+              << "CHAOTIC_GOOD: Read " << *hdr << " on data connection #" << id;
           return hdr;
         },
         [ctx](TcpDataFrameHeader frame_header) {
@@ -886,7 +921,8 @@ void Endpoint::AddData(channelz::DataSink sink) {
 }
 
 Endpoint::Endpoint(uint32_t id, uint32_t encode_alignment,
-                   uint32_t decode_alignment, Clock* clock,
+                   uint32_t decode_alignment,
+                   uint32_t max_receive_message_length, Clock* clock,
                    RefCountedPtr<OutputBuffers> output_buffers,
                    RefCountedPtr<InputQueue> input_queues,
                    PendingConnection pending_connection, bool enable_tracing,
@@ -897,6 +933,7 @@ Endpoint::Endpoint(uint32_t id, uint32_t encode_alignment,
   ep_ctx->id = id;
   ep_ctx->encode_alignment = encode_alignment;
   ep_ctx->decode_alignment = decode_alignment;
+  ep_ctx->max_receive_message_length = max_receive_message_length;
   ep_ctx->enable_tracing = enable_tracing;
   ep_ctx->output_buffers = std::move(output_buffers);
   ep_ctx->input_queues = std::move(input_queues);
@@ -994,6 +1031,7 @@ Endpoint::Endpoint(uint32_t id, uint32_t encode_alignment,
 DataEndpoints::DataEndpoints(
     std::vector<PendingConnection> endpoints_vec, TransportContextPtr ctx,
     uint32_t encode_alignment, uint32_t decode_alignment,
+    uint32_t max_receive_message_length,
     std::shared_ptr<TcpZTraceCollector> ztrace_collector, bool enable_tracing,
     std::string scheduler_config, data_endpoints_detail::Clock* clock)
     : channelz::DataSource(ctx->socket_node),
@@ -1003,9 +1041,9 @@ DataEndpoints::DataEndpoints(
       input_queues_(MakeRefCounted<data_endpoints_detail::InputQueue>()) {
   for (size_t i = 0; i < endpoints_vec.size(); ++i) {
     endpoints_.emplace_back(std::make_unique<data_endpoints_detail::Endpoint>(
-        i, encode_alignment, decode_alignment, clock, output_buffers_,
-        input_queues_, std::move(endpoints_vec[i]), enable_tracing, ctx,
-        ztrace_collector));
+        i, encode_alignment, decode_alignment, max_receive_message_length,
+        clock, output_buffers_, input_queues_, std::move(endpoints_vec[i]),
+        enable_tracing, ctx, ztrace_collector));
   }
   SourceConstructed();
 }

@@ -22,6 +22,7 @@
 #include <grpcpp/channel.h>
 #include <grpcpp/client_context.h>
 #include <grpcpp/create_channel.h>
+#include <grpcpp/generic/generic_stub_callback.h>
 #include <grpcpp/resource_quota.h>
 #include <grpcpp/security/auth_metadata_processor.h>
 #include <grpcpp/security/credentials.h>
@@ -29,10 +30,15 @@
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
 #include <grpcpp/server_context.h>
+#include <grpcpp/support/slice.h>
+#include <grpcpp/support/status.h>
 #include <grpcpp/support/string_ref.h>
+#include <grpcpp/support/stub_options.h>
 #include <grpcpp/test/channel_test_peer.h>
 
+#include <memory>
 #include <mutex>
+#include <string>
 #include <thread>
 
 #include "src/core/client_channel/backup_poller.h"
@@ -57,6 +63,7 @@
 #include "absl/strings/ascii.h"
 #include "absl/strings/match.h"
 #include "absl/strings/str_format.h"
+#include "absl/synchronization/notification.h"
 
 #ifdef GRPC_POSIX_SOCKET_EV
 #include "src/core/lib/iomgr/ev_posix.h"
@@ -258,8 +265,23 @@ class Proxy : public grpc::testing::EchoTestService::Service {
 
   Status Echo(ServerContext* server_context, const EchoRequest* request,
               EchoResponse* response) override {
+    const gpr_timespec deadline = server_context->raw_deadline();
+    LOG(INFO) << "Proxy::Echo server_context deadline: " << deadline.tv_sec
+              << "." << deadline.tv_nsec
+              << " clock_type: " << deadline.clock_type;
+    if (gpr_time_cmp(deadline, gpr_inf_future(deadline.clock_type)) == 0) {
+      LOG(INFO) << "Proxy::Echo server_context has INFINITE deadline";
+    }
     std::unique_ptr<ClientContext> client_context =
         ClientContext::FromServerContext(*server_context);
+    const gpr_timespec client_deadline = client_context->raw_deadline();
+    LOG(INFO) << "Proxy::Echo client_context deadline: "
+              << client_deadline.tv_sec << "." << client_deadline.tv_nsec
+              << " clock_type: " << client_deadline.clock_type;
+    if (gpr_time_cmp(client_deadline,
+                     gpr_inf_future(client_deadline.clock_type)) == 0) {
+      LOG(INFO) << "Proxy::Echo client_context has INFINITE deadline";
+    }
     return stub_->Echo(client_context.get(), *request, response);
   }
 
@@ -280,18 +302,21 @@ class TestServiceImplDupPkg
 class TestScenario {
  public:
   TestScenario(bool use_interceptors, bool use_proxy, bool inproc,
-               const std::string& credentials_type, bool callback_server)
+               const std::string& credentials_type, bool callback_server,
+               bool use_virtual_rpcs = false)
       : use_interceptors_(use_interceptors),
         use_proxy_(use_proxy),
         inproc_(inproc),
         credentials_type_(credentials_type),
-        callback_server_(callback_server) {}
+        callback_server_(callback_server),
+        use_virtual_rpcs_(use_virtual_rpcs) {}
 
   bool use_interceptors() const { return use_interceptors_; }
   bool use_proxy() const { return use_proxy_; }
   bool inproc() const { return inproc_; }
   const std::string& credentials_type() const { return credentials_type_; }
   bool callback_server() const { return callback_server_; }
+  bool use_virtual_rpcs() const { return use_virtual_rpcs_; }
 
   std::string AsString() const;
 
@@ -305,6 +330,7 @@ class TestScenario {
   bool inproc_;
   const std::string credentials_type_;
   bool callback_server_;
+  bool use_virtual_rpcs_;
 };
 
 std::string TestScenario::AsString() const {
@@ -312,6 +338,7 @@ std::string TestScenario::AsString() const {
   if (use_proxy_) retval += "Proxy";
   if (inproc_) retval += "Inproc";
   if (callback_server_) retval += "CallbackServer";
+  if (use_virtual_rpcs_) retval += "Virtual";
   if (credentials_type_ == kInsecureCredentialsType) {
     retval += "Insecure";
   } else {
@@ -329,10 +356,26 @@ class End2endTest : public ::testing::TestWithParam<TestScenario> {
   End2endTest()
       : is_server_started_(false),
         kMaxMessageSize_(8192),
-        special_service_("special"),
+        service_(
+            std::make_unique<TestServiceImpl>(GetParam().use_virtual_rpcs())),
+        callback_service_(std::make_unique<CallbackTestServiceImpl>()),
+        special_service_(std::make_unique<TestServiceImpl>(
+            "special", GetParam().use_virtual_rpcs())),
         first_picked_port_(0) {}
 
+  void SafeResetSession() {
+    if (session_context_) {
+      session_context_->TryCancel();
+      if (session_done_) {
+        session_done_->WaitForNotification();
+        session_done_.reset();
+      }
+      session_context_.reset();
+    }
+  }
+
   void TearDown() override {
+    SafeResetSession();
     if (is_server_started_) {
       server_->Shutdown();
       if (proxy_server_) proxy_server_->Shutdown();
@@ -353,6 +396,15 @@ class End2endTest : public ::testing::TestWithParam<TestScenario> {
   void RestartServer(const std::shared_ptr<AuthMetadataProcessor>& processor) {
     if (is_server_started_) {
       server_->Shutdown();
+      server_.reset();
+      // Virtual services can only be registered to a single server. We must
+      // re-initialize the service objects to clear their `server_` pointers
+      // before building the new server.
+      service_ =
+          std::make_unique<TestServiceImpl>(GetParam().use_virtual_rpcs());
+      callback_service_ = std::make_unique<CallbackTestServiceImpl>();
+      special_service_ = std::make_unique<TestServiceImpl>("special");
+
       BuildAndStartServer(processor);
     }
   }
@@ -379,11 +431,11 @@ class End2endTest : public ::testing::TestWithParam<TestScenario> {
     }
     builder.AddListeningPort(server_address_.str(), server_creds);
     if (!GetParam().callback_server()) {
-      builder.RegisterService(&service_);
+      builder.RegisterService(service_.get());
     } else {
-      builder.RegisterService(&callback_service_);
+      builder.RegisterService(callback_service_.get());
     }
-    builder.RegisterService("foo.test.youtube.com", &special_service_);
+    builder.RegisterService("foo.test.youtube.com", special_service_.get());
     builder.RegisterService(&dup_pkg_service_);
 
     builder.SetSyncServerOption(ServerBuilder::SyncServerOption::NUM_CQS, 4);
@@ -441,6 +493,7 @@ class End2endTest : public ::testing::TestWithParam<TestScenario> {
       std::vector<
           std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
           interceptor_creators = {}) {
+    SafeResetSession();
     ResetChannel(std::move(interceptor_creators));
     if (GetParam().use_proxy()) {
       proxy_service_ = std::make_unique<Proxy>(channel_);
@@ -461,21 +514,48 @@ class End2endTest : public ::testing::TestWithParam<TestScenario> {
           grpc::CreateChannel(proxyaddr.str(), InsecureChannelCredentials());
     }
 
+    if (GetParam().use_virtual_rpcs()) {
+      ChannelArguments args;
+      auto channel_creds = GetCredentialsProvider()->GetChannelCredentials(
+          GetParam().credentials_type(), &args);
+      if (!user_agent_prefix_.empty()) {
+        args.SetUserAgentPrefix(user_agent_prefix_);
+      }
+      args.SetString(GRPC_ARG_SECONDARY_USER_AGENT_STRING, "end2end_test");
+      ApplyCommonChannelArguments(args);
+
+      session_context_ = std::make_unique<grpc::ClientContext>();
+      session_context_->set_wait_for_ready(true);
+      session_request_ = std::make_unique<grpc::testing::EchoRequest>();
+      session_request_->set_message("Session request");
+      session_done_ = std::make_unique<absl::Notification>();
+
+      channel_ = MaybeWrapVirtualChannel<grpc::testing::EchoRequest,
+                                         grpc::testing::EchoResponse>(
+          channel_, args, true, session_context_.get(), session_request_.get(),
+          session_done_.get());
+    }
+
     stub_ = grpc::testing::EchoTestService::NewStub(channel_);
+    generic_stub_ = std::make_unique<grpc::GenericStubCallback>(channel_);
     PhonyInterceptor::Reset();
   }
 
   bool is_server_started_;
   std::shared_ptr<Channel> channel_;
   std::unique_ptr<grpc::testing::EchoTestService::Stub> stub_;
+  std::unique_ptr<grpc::ClientContext> session_context_;
+  std::unique_ptr<grpc::testing::EchoRequest> session_request_;
+  std::unique_ptr<absl::Notification> session_done_;
+  std::unique_ptr<grpc::GenericStubCallback> generic_stub_;
   std::unique_ptr<Server> server_;
   std::unique_ptr<Server> proxy_server_;
   std::unique_ptr<Proxy> proxy_service_;
   std::ostringstream server_address_;
   const int kMaxMessageSize_;
-  TestServiceImpl service_;
-  CallbackTestServiceImpl callback_service_;
-  TestServiceImpl special_service_;
+  std::unique_ptr<TestServiceImpl> service_;
+  std::unique_ptr<CallbackTestServiceImpl> callback_service_;
+  std::unique_ptr<TestServiceImpl> special_service_;
   TestServiceImplDupPkg dup_pkg_service_;
   std::string user_agent_prefix_;
   int first_picked_port_;
@@ -890,7 +970,9 @@ TEST_P(End2endTest, AuthoritySeenOnServerSide) {
   ClientContext context;
   Status s = stub_->Echo(&context, request, &response);
   EXPECT_EQ(response.message(), request.message());
-  if (GetParam().credentials_type() == kTlsCredentialsType) {
+  if (GetParam().use_virtual_rpcs()) {
+    EXPECT_EQ("virtual_target", response.param().host());
+  } else if (GetParam().credentials_type() == kTlsCredentialsType) {
     // SSL creds overrides the authority.
     EXPECT_EQ("foo.test.google.fr", response.param().host());
   } else if (GetParam().inproc()) {
@@ -902,7 +984,7 @@ TEST_P(End2endTest, AuthoritySeenOnServerSide) {
 }
 
 TEST_P(End2endTest, ReconnectChannel) {
-  if (GetParam().inproc()) {
+  if (GetParam().inproc() || GetParam().use_virtual_rpcs()) {
     return;
   }
   int poller_slowdown_factor = 1;
@@ -1207,17 +1289,17 @@ TEST_P(End2endTest, CancelRpcAfterStart) {
       s = stub_->Echo(&context, request, &response);
     });
     if (!GetParam().callback_server()) {
-      EXPECT_EQ(service_.ClientWaitUntilNRpcsStarted(1), 1);
+      EXPECT_EQ(service_->ClientWaitUntilNRpcsStarted(1), 1);
     } else {
-      EXPECT_EQ(callback_service_.ClientWaitUntilNRpcsStarted(1), 1);
+      EXPECT_EQ(callback_service_->ClientWaitUntilNRpcsStarted(1), 1);
     }
 
     context.TryCancel();
 
     if (!GetParam().callback_server()) {
-      service_.SignalServerToContinue();
+      service_->SignalServerToContinue();
     } else {
-      callback_service_.SignalServerToContinue();
+      callback_service_->SignalServerToContinue();
     }
 
     echo_thread.join();
@@ -1372,7 +1454,7 @@ TEST_P(End2endTest, SimultaneousReadWritesDone) {
 }
 
 TEST_P(End2endTest, ChannelState) {
-  if (GetParam().inproc()) {
+  if (GetParam().inproc() || GetParam().use_virtual_rpcs()) {
     return;
   }
 
@@ -1400,7 +1482,7 @@ TEST_P(End2endTest, ChannelState) {
 // Takes 10s.
 TEST_P(End2endTest, ChannelStateTimeout) {
   if ((GetParam().credentials_type() != kInsecureCredentialsType) ||
-      GetParam().inproc()) {
+      GetParam().inproc() || GetParam().use_virtual_rpcs()) {
     return;
   }
   int port = grpc_pick_unused_port_or_die();
@@ -1422,7 +1504,7 @@ TEST_P(End2endTest, ChannelStateTimeout) {
 
 TEST_P(End2endTest, ChannelStateOnLameChannel) {
   if ((GetParam().credentials_type() != kInsecureCredentialsType) ||
-      GetParam().inproc()) {
+      GetParam().inproc() || GetParam().use_virtual_rpcs()) {
     return;
   }
   // Channel using invalid target URI.  This creates a lame channel.
@@ -1484,8 +1566,6 @@ TEST_P(End2endTest, BinaryTrailerTest) {
 }
 
 TEST_P(End2endTest, ExpectErrorTest) {
-  SKIP_TEST_FOR_PH2_CLIENT("TODO(tjagtap) [PH2][P3][Client] Fix bug");
-
   ResetStub();
 
   std::vector<ErrorStatus> expected_status;
@@ -1534,6 +1614,11 @@ TEST_P(End2endTest, ExpectErrorTest) {
 // Test with and without a proxy.
 class ProxyEnd2endTest : public End2endTest {
  protected:
+  void SetUp() override {
+    if (GetParam().use_virtual_rpcs()) {
+      GTEST_SKIP() << "Virtual RPCs do not support proxy tests";
+    }
+  }
 };
 
 TEST_P(ProxyEnd2endTest, SimpleRpc) {
@@ -1618,11 +1703,16 @@ TEST_P(ProxyEnd2endTest, EchoDeadline) {
   std::chrono::system_clock::time_point deadline =
       std::chrono::system_clock::now() + std::chrono::seconds(100);
   context.set_deadline(deadline);
-  Status s = stub_->Echo(&context, request, &response);
-  EXPECT_EQ(response.message(), request.message());
-  EXPECT_TRUE(s.ok());
   gpr_timespec sent_deadline;
   Timepoint2Timespec(deadline, &sent_deadline);
+  LOG(INFO) << "Test EchoDeadline sent_deadline: " << sent_deadline.tv_sec
+            << "." << sent_deadline.tv_nsec;
+  Status s = stub_->Echo(&context, request, &response);
+  LOG(INFO)
+      << "Test EchoDeadline received response.param().request_deadline(): "
+      << response.param().request_deadline();
+  EXPECT_EQ(response.message(), request.message());
+  EXPECT_TRUE(s.ok());
   // We want to allow some reasonable error given:
   // - request_deadline() only has 1sec resolution so the best we can do is +-1
   // - if sent_deadline.tv_nsec is very close to the next second's boundary we
@@ -1674,7 +1764,9 @@ TEST_P(ProxyEnd2endTest, ClientCancelsRpc) {
   std::thread cancel_thread;
   if (!GetParam().callback_server()) {
     cancel_thread = std::thread(
-        [&context, this](int delay) { CancelRpc(&context, delay, &service_); },
+        [&context, this](int delay) {
+          CancelRpc(&context, delay, service_.get());
+        },
         kCancelDelayUs);
     // Note: the unusual pattern above (and below) is caused by a conflict
     // between two sets of compiler expectations. clang allows const to be
@@ -1685,7 +1777,7 @@ TEST_P(ProxyEnd2endTest, ClientCancelsRpc) {
   } else {
     cancel_thread = std::thread(
         [&context, this](int delay) {
-          CancelRpc(&context, delay, &callback_service_);
+          CancelRpc(&context, delay, callback_service_.get());
         },
         kCancelDelayUs);
   }
@@ -1752,6 +1844,13 @@ class SecureEnd2endTest : public End2endTest {
   SecureEnd2endTest() {
     GRPC_CHECK(!GetParam().use_proxy());
     GRPC_CHECK(GetParam().credentials_type() != kInsecureCredentialsType);
+  }
+
+  void SetUp() override {
+    if (GetParam().use_virtual_rpcs()) {
+      GTEST_SKIP() << "Virtual RPCs do not require independent secure "
+                      "end-to-end testing";
+    }
   }
 };
 
@@ -2250,6 +2349,34 @@ TEST_P(ResourceQuotaEnd2endTest, SimpleRequest) {
   EXPECT_TRUE(s.ok());
 }
 
+TEST_P(End2endTest, DeserializationFailure) {
+  ResetStub();
+  const std::string kMethodName("/grpc.testing.EchoTestService/Echo");
+  const char kMessage[] = "Invalid message that will not deserialize";
+  grpc::Slice slice(kMessage, sizeof(kMessage));
+  ByteBuffer send_buf(&slice, 1);
+  ByteBuffer recv_buf;
+  ClientContext cli_ctx;
+
+  absl::Notification notify;
+  Status status;
+  StubOptions options;
+  generic_stub_->UnaryCall(&cli_ctx, kMethodName, options, &send_buf, &recv_buf,
+                           [&notify, &status](Status s) {
+                             status = s;
+                             notify.Notify();
+                           });
+
+  notify.WaitForNotification();
+
+  if (!GetParam().callback_server() ||
+      grpc_core::IsReturnPreexistingErrorsEnabled()) {
+    EXPECT_EQ(StatusCode::INTERNAL, status.error_code());
+  } else {
+    EXPECT_EQ(StatusCode::UNIMPLEMENTED, status.error_code());
+  }
+}
+
 // TODO(vjpai): refactor arguments into a struct if it makes sense
 std::vector<TestScenario> CreateTestScenarios(bool use_proxy,
                                               bool test_insecure,
@@ -2281,26 +2408,41 @@ std::vector<TestScenario> CreateTestScenarios(bool use_proxy,
   // Test callback with inproc or if the event-engine allows it
   GRPC_CHECK(!credentials_types.empty());
   for (const auto& cred : credentials_types) {
-    scenarios.emplace_back(false, false, false, cred, false);
-    scenarios.emplace_back(true, false, false, cred, false);
+    scenarios.emplace_back(false, false, false, cred, false, false);
+    scenarios.emplace_back(true, false, false, cred, false, false);
     if (test_callback_server) {
       // Note that these scenarios will be dynamically disabled if the event
       // engine doesn't run in the background
-      scenarios.emplace_back(false, false, false, cred, true);
-      scenarios.emplace_back(true, false, false, cred, true);
+      scenarios.emplace_back(false, false, false, cred, true, false);
+      scenarios.emplace_back(true, false, false, cred, true, false);
     }
     if (use_proxy) {
-      scenarios.emplace_back(false, true, false, cred, false);
-      scenarios.emplace_back(true, true, false, cred, false);
+      scenarios.emplace_back(false, true, false, cred, false, false);
+      scenarios.emplace_back(true, true, false, cred, false, false);
+    }
+
+    // Add scenarios with virtual RPCs if promise-based HTTP2 transport is
+    // disabled.
+    if (!IsPh2Test()) {
+      scenarios.emplace_back(false, false, false, cred, false, true);
+      if (test_callback_server) {
+        scenarios.emplace_back(false, false, false, cred, true, true);
+      }
+      if (use_proxy) {
+        scenarios.emplace_back(false, true, false, cred, false, true);
+      }
     }
   }
   if (test_inproc && insec_ok()) {
-    scenarios.emplace_back(false, false, true, kInsecureCredentialsType, false);
-    scenarios.emplace_back(true, false, true, kInsecureCredentialsType, false);
+    scenarios.emplace_back(false, false, true, kInsecureCredentialsType, false,
+                           false);
+    scenarios.emplace_back(true, false, true, kInsecureCredentialsType, false,
+                           false);
     if (test_callback_server) {
-      scenarios.emplace_back(false, false, true, kInsecureCredentialsType,
-                             true);
-      scenarios.emplace_back(true, false, true, kInsecureCredentialsType, true);
+      scenarios.emplace_back(false, false, true, kInsecureCredentialsType, true,
+                             false);
+      scenarios.emplace_back(true, false, true, kInsecureCredentialsType, true,
+                             false);
     }
   }
   return scenarios;
