@@ -545,6 +545,10 @@ static void read_channel_args(grpc_chttp2_transport* t,
 
   t->settings.mutable_local().SetAllowSecurityFrame(
       channel_args.GetBool(GRPC_ARG_SECURITY_FRAME_ALLOWED).value_or(false));
+  t->max_security_frame_size = static_cast<uint32_t>(grpc_core::Clamp(
+      channel_args.GetInt(GRPC_ARG_MAX_SECURITY_FRAME_SIZE)
+          .value_or(kMaxSecurityFrameSize),
+      kMinMaxSecurityFrameSize, static_cast<int>(kMaxSecurityFrameSize)));
 
   t->ping_on_rst_stream_percent = grpc_core::Clamp(
       channel_args.GetInt(GRPC_ARG_HTTP2_PING_ON_RST_STREAM_PERCENT)

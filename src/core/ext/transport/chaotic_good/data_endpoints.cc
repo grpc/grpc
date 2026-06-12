@@ -634,6 +634,7 @@ class MetricsCollector
     return EventEngine::Endpoint::WriteEventSink(
         requested_metrics(),
         {EventEngine::Endpoint::WriteEvent::kSendMsg,
+         EventEngine::Endpoint::WriteEvent::kScheduled,
          EventEngine::Endpoint::WriteEvent::kSent,
          EventEngine::Endpoint::WriteEvent::kAcked},
         [reader, ztrace_collector, write_size, self = Ref()](

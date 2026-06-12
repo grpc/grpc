@@ -318,7 +318,7 @@ class TransportFlowControl final {
   // Call periodically (at a low-ish rate, 100ms - 10s makes sense)
   // to perform more complex flow control calculations and return an action
   // to let the transport change its parameters.
-  // TODO(tjagtap) [PH2][P2] Plumb with PH2 flow control.
+  // TODO(tjagtap) [PH2][P2][FCV3] Plumb with PH2 flow control.
   FlowControlAction PeriodicUpdate();
 
   int64_t test_only_target_window() const { return target_window(); }

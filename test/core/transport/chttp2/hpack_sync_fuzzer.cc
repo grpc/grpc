@@ -250,5 +250,15 @@ TEST(HpackSyncFuzzer, FuzzOneInputRegression2) {
       )pb"));
 }
 
+TEST(HpackSyncFuzzer, FuzzOneInputRegressionCRLFValue) {
+  FuzzOneInput(ParseTestProto(
+      R"pb(
+        config_vars { experiments: "optimization_05" }
+        headers {
+          literal_not_idx { key: "x-custom" value: "val\r\nEvil: true" }
+        }
+      )pb"));
+}
+
 }  // namespace
 }  // namespace grpc_core

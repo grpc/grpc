@@ -120,6 +120,7 @@ inline bool IsOptimization02Enabled() { return true; }
 inline bool IsOptimization03Enabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_OPTIMIZATION_04
 inline bool IsOptimization04Enabled() { return true; }
+inline bool IsOptimization05Enabled() { return false; }
 inline bool IsOtelExportTelemetryDomainsEnabled() { return false; }
 inline bool IsPh2ClientEnabled() { return false; }
 inline bool IsPh2ClientServerEnabled() { return false; }
@@ -134,7 +135,8 @@ inline bool IsPromiseBasedInprocTransportEnabled() { return false; }
 inline bool IsPromiseBatchCleanupOnCancelEnabled() { return true; }
 inline bool IsPromiseFilterSendCancelMetadataEnabled() { return false; }
 inline bool IsRetryInCallv3Enabled() { return false; }
-inline bool IsReturnPreexistingErrorsEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_RETURN_PREEXISTING_ERRORS
+inline bool IsReturnPreexistingErrorsEnabled() { return true; }
 inline bool IsScheduleCancellationOverWriteEnabled() { return false; }
 inline bool IsSecureEndpointOffloadLargeReadsEnabled() { return false; }
 inline bool IsSecureEndpointOffloadLargeWritesEnabled() { return false; }
@@ -217,6 +219,7 @@ inline bool IsOptimization02Enabled() { return true; }
 inline bool IsOptimization03Enabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_OPTIMIZATION_04
 inline bool IsOptimization04Enabled() { return true; }
+inline bool IsOptimization05Enabled() { return false; }
 inline bool IsOtelExportTelemetryDomainsEnabled() { return false; }
 inline bool IsPh2ClientEnabled() { return false; }
 inline bool IsPh2ClientServerEnabled() { return false; }
@@ -231,7 +234,8 @@ inline bool IsPromiseBasedInprocTransportEnabled() { return false; }
 inline bool IsPromiseBatchCleanupOnCancelEnabled() { return true; }
 inline bool IsPromiseFilterSendCancelMetadataEnabled() { return false; }
 inline bool IsRetryInCallv3Enabled() { return false; }
-inline bool IsReturnPreexistingErrorsEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_RETURN_PREEXISTING_ERRORS
+inline bool IsReturnPreexistingErrorsEnabled() { return true; }
 inline bool IsScheduleCancellationOverWriteEnabled() { return false; }
 inline bool IsSecureEndpointOffloadLargeReadsEnabled() { return false; }
 inline bool IsSecureEndpointOffloadLargeWritesEnabled() { return false; }
@@ -314,6 +318,7 @@ inline bool IsOptimization02Enabled() { return true; }
 inline bool IsOptimization03Enabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_OPTIMIZATION_04
 inline bool IsOptimization04Enabled() { return true; }
+inline bool IsOptimization05Enabled() { return false; }
 inline bool IsOtelExportTelemetryDomainsEnabled() { return false; }
 inline bool IsPh2ClientEnabled() { return false; }
 inline bool IsPh2ClientServerEnabled() { return false; }
@@ -328,7 +333,8 @@ inline bool IsPromiseBasedInprocTransportEnabled() { return false; }
 inline bool IsPromiseBatchCleanupOnCancelEnabled() { return true; }
 inline bool IsPromiseFilterSendCancelMetadataEnabled() { return false; }
 inline bool IsRetryInCallv3Enabled() { return false; }
-inline bool IsReturnPreexistingErrorsEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_RETURN_PREEXISTING_ERRORS
+inline bool IsReturnPreexistingErrorsEnabled() { return true; }
 inline bool IsScheduleCancellationOverWriteEnabled() { return false; }
 inline bool IsSecureEndpointOffloadLargeReadsEnabled() { return false; }
 inline bool IsSecureEndpointOffloadLargeWritesEnabled() { return false; }
@@ -386,6 +392,7 @@ enum ExperimentIds {
   kExperimentIdOptimization02,
   kExperimentIdOptimization03,
   kExperimentIdOptimization04,
+  kExperimentIdOptimization05,
   kExperimentIdOtelExportTelemetryDomains,
   kExperimentIdPh2Client,
   kExperimentIdPh2ClientServer,
@@ -563,6 +570,10 @@ inline bool IsOptimization03Enabled() {
 #define GRPC_EXPERIMENT_IS_INCLUDED_OPTIMIZATION_04
 inline bool IsOptimization04Enabled() {
   return IsExperimentEnabled<kExperimentIdOptimization04>();
+}
+#define GRPC_EXPERIMENT_IS_INCLUDED_OPTIMIZATION_05
+inline bool IsOptimization05Enabled() {
+  return IsExperimentEnabled<kExperimentIdOptimization05>();
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_OTEL_EXPORT_TELEMETRY_DOMAINS
 inline bool IsOtelExportTelemetryDomainsEnabled() {
