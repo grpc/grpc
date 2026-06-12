@@ -21,6 +21,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "absl/strings/string_view.h"
+
 namespace grpc_core {
 
 enum class TlsTelemetryHandshakeResult {
@@ -69,6 +71,10 @@ enum class TlsTelemetryHandshakeResult {
 TlsTelemetryHandshakeResult MapSslErrorToTlsTelemetryHandshakeResult(
     int ssl_error, unsigned long err_code, long verify_result);
 
+// Converts the C-Core enum into a cross-language-consistent string
+// representation for monitoring.
+absl::string_view TlsTelemetryHandshakeResultToString(
+    TlsTelemetryHandshakeResult result);
 }  // namespace grpc_core
 
 #endif  // GRPC_SRC_CORE_TSI_SSL_TELEMETRY_UTILS_H

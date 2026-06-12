@@ -94,6 +94,8 @@ class grpc_security_connector
 
   virtual grpc_core::UniqueTypeName type() const = 0;
 
+  virtual bool is_client() const = 0;
+
  private:
   absl::string_view url_scheme_;
 };
@@ -145,6 +147,8 @@ class grpc_channel_security_connector : public grpc_security_connector {
 
   grpc_core::UniqueTypeName type() const override;
 
+  bool is_client() const override { return true; }
+
  protected:
   // Helper methods to be used in subclasses.
   int channel_security_connector_cmp(
@@ -184,6 +188,8 @@ class grpc_server_security_connector : public grpc_security_connector {
   }
 
   grpc_core::UniqueTypeName type() const override;
+
+  bool is_client() const override { return false; }
 
  protected:
   // Helper methods to be used in subclasses.

@@ -1383,6 +1383,7 @@ let package = Package(
         "src/core/handshaker/security/secure_endpoint.h",
         "src/core/handshaker/security/security_handshaker.cc",
         "src/core/handshaker/security/security_handshaker.h",
+        "src/core/handshaker/security/security_telemetry.h",
         "src/core/handshaker/tcp_connect/tcp_connect_handshaker.cc",
         "src/core/handshaker/tcp_connect/tcp_connect_handshaker.h",
         "src/core/lib/address_utils/parse_address.cc",

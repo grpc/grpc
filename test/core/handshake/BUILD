@@ -235,3 +235,18 @@ grpc_cc_test(
         "//test/core/test_util:test_memory_allocator",
     ],
 )
+
+grpc_cc_test(
+    name = "security_telemetry_test",
+    srcs = ["security_telemetry_test.cc"],
+    external_deps = [
+        "gtest",
+        "absl/strings",
+    ],
+    deps = [
+        "//:grpc",
+        "//:grpc_security_base",
+        "//src/core:instrument",
+        "//test/core/test_util:grpc_test_util",
+    ],
+)

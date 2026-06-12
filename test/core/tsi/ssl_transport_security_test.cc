@@ -43,6 +43,8 @@
 #include "test/core/test_util/test_config.h"
 #include "test/core/test_util/tls_utils.h"
 #include "test/core/tsi/transport_security_test_lib.h"
+#include "src/core/telemetry/instrument.h"
+#include "src/core/handshaker/security/security_telemetry.h"
 #include "gtest/gtest.h"
 #include "absl/log/log.h"
 #include "absl/strings/str_cat.h"
@@ -438,17 +440,18 @@ class SslTransportSecurityTest
         gpr_free(server_options.alpn_protocols);
       }
       // Create server and client handshakers.
-      ASSERT_EQ(tsi_ssl_client_handshaker_factory_create_handshaker(
-                    ssl_fixture->client_handshaker_factory_,
-                    ssl_fixture->server_name_indication_.empty()
-                        ? nullptr
-                        : ssl_fixture->server_name_indication_.c_str(),
-                    ssl_fixture->network_bio_buf_size_,
-                    ssl_fixture->ssl_bio_buf_size_,
-                    ssl_fixture->alpn_client_overriden_protocols_,
-                    /*collection_scope=*/nullptr,
-                    &ssl_fixture->base_.client_handshaker),
-                TSI_OK);
+      ASSERT_EQ(
+          tsi_ssl_client_handshaker_factory_create_handshaker(
+              ssl_fixture->client_handshaker_factory_,
+              ssl_fixture->server_name_indication_.empty()
+                  ? nullptr
+                  : ssl_fixture->server_name_indication_.c_str(),
+              ssl_fixture->network_bio_buf_size_,
+              ssl_fixture->ssl_bio_buf_size_,
+              ssl_fixture->alpn_client_overriden_protocols_,
+              /*collection_scope=*/nullptr, /*locality=*/"",
+              /*backend_service=*/"", &ssl_fixture->base_.client_handshaker),
+          TSI_OK);
       ASSERT_EQ(tsi_ssl_server_handshaker_factory_create_handshaker(
                     ssl_fixture->server_handshaker_factory_,
                     ssl_fixture->network_bio_buf_size_,
@@ -1187,7 +1190,8 @@ TEST(SslTransportSecurityTest, TestClientHandshakerFactoryRefcounting) {
     ASSERT_EQ(tsi_ssl_client_handshaker_factory_create_handshaker(
                   client_handshaker_factory, "google.com", 0, 0,
                   /*alpn_preferred_protocol_list=*/std::nullopt,
-                  /*collection_scope=*/nullptr, &handshaker[i]),
+                  /*collection_scope=*/nullptr, /*locality=*/"",
+                  /*backend_service=*/"", &handshaker[i]),
               TSI_OK);
   }
 
@@ -1503,6 +1507,99 @@ TEST_P(SslTransportSecurityTest, TestKeyExchangeGroupMismatch) {
   ssl_fixture_->SetServerExpectsHandshakeFailure(tls_version == TSI_TLS1_3);
   ssl_fixture_->SetClientExpectsHandshakeFailure(tls_version == TSI_TLS1_3);
   DoHandshake();
+}
+
+class TestMetricsSink : public MetricsSink {
+ public:
+  void Counter(InstrumentLabelList /*label_keys*/,
+               absl::Span<const std::string> /*label*/, absl::string_view name,
+               uint64_t value) override {
+    if (name == "grpc.client.tls.handshakes") {
+      client_handshakes += value;
+    } else if (name == "grpc.server.tls.handshakes") {
+      server_handshakes += value;
+    }
+  }
+  void UpDownCounter(InstrumentLabelList /*label_keys*/,
+                     absl::Span<const std::string> /*label*/,
+                     absl::string_view /*name*/,
+                     uint64_t /*value*/) override {}
+  void Histogram(InstrumentLabelList /*label_keys*/,
+                 absl::Span<const std::string> /*label*/,
+                 absl::string_view /*name*/, HistogramBuckets /*bounds*/,
+                 absl::Span<const uint64_t> /*counts*/) override {}
+  void DoubleGauge(InstrumentLabelList /*label_keys*/,
+                   absl::Span<const std::string> /*labels*/,
+                   absl::string_view /*name*/, double /*value*/) override {}
+  void IntGauge(InstrumentLabelList /*label_keys*/,
+                absl::Span<const std::string> /*labels*/,
+                absl::string_view /*name*/, int64_t /*value*/) override {}
+  void UintGauge(InstrumentLabelList /*label_keys*/,
+                 absl::Span<const std::string> /*labels*/,
+                 absl::string_view /*name*/, uint64_t /*value*/) override {}
+
+  uint64_t client_handshakes = 0;
+  uint64_t server_handshakes = 0;
+};
+
+TEST_P(SslTransportSecurityTest, TestHandshakeMetricsIncremented) {
+  TestMetricsSink sink_before;
+  MetricsQuery()
+      .OnlyMetrics(
+          {"grpc.client.tls.handshakes", "grpc.server.tls.handshakes"})
+      .Run(GlobalCollectionScope(), sink_before);
+
+  SetUpSslFixture(/*tls_version=*/std::get<0>(GetParam()),
+                  /*send_client_ca_list=*/std::get<1>(GetParam()));
+  DoHandshake();
+
+  TestMetricsSink sink_after;
+  MetricsQuery()
+      .OnlyMetrics(
+          {"grpc.client.tls.handshakes", "grpc.server.tls.handshakes"})
+      .Run(GlobalCollectionScope(), sink_after);
+
+  EXPECT_GT(sink_after.client_handshakes, sink_before.client_handshakes);
+  EXPECT_GT(sink_after.server_handshakes, sink_before.server_handshakes);
+}
+
+TEST_P(SslTransportSecurityTest, TestFailedClientHandshakeMetricsIncremented) {
+  TestMetricsSink sink_before;
+  MetricsQuery()
+      .OnlyMetrics({"grpc.client.tls.handshakes"})
+      .Run(GlobalCollectionScope(), sink_before);
+
+  SetUpSslFixture(/*tls_version=*/std::get<0>(GetParam()),
+                  /*send_client_ca_list=*/std::get<1>(GetParam()));
+  ssl_fixture_->MutableKeyCertLib()->use_bad_server_cert = true;
+  DoHandshake();
+
+  TestMetricsSink sink_after;
+  MetricsQuery()
+      .OnlyMetrics({"grpc.client.tls.handshakes"})
+      .Run(GlobalCollectionScope(), sink_after);
+
+  EXPECT_GT(sink_after.client_handshakes, sink_before.client_handshakes);
+}
+
+TEST_P(SslTransportSecurityTest, TestFailedServerHandshakeMetricsIncremented) {
+  TestMetricsSink sink_before;
+  MetricsQuery()
+      .OnlyMetrics({"grpc.server.tls.handshakes"})
+      .Run(GlobalCollectionScope(), sink_before);
+
+  SetUpSslFixture(/*tls_version=*/std::get<0>(GetParam()),
+                  /*send_client_ca_list=*/std::get<1>(GetParam()));
+  ssl_fixture_->MutableKeyCertLib()->use_bad_client_cert = true;
+  ssl_fixture_->SetForceClientAuth(true);
+  DoHandshake();
+
+  TestMetricsSink sink_after;
+  MetricsQuery()
+      .OnlyMetrics({"grpc.server.tls.handshakes"})
+      .Run(GlobalCollectionScope(), sink_after);
+
+  EXPECT_GT(sink_after.server_handshakes, sink_before.server_handshakes);
 }
 #endif
 
