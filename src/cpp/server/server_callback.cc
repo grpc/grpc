@@ -25,6 +25,7 @@
 #include <memory>
 #include <utility>
 
+#include "src/core/call/security_context.h"
 #include "src/core/call/server_call.h"
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/lib/experiments/experiments.h"
@@ -33,6 +34,7 @@
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/server/server.h"
 #include "src/core/transport/session_endpoint.h"
+#include "src/core/util/down_cast.h"
 #include "absl/log/log.h"
 #include "absl/status/status.h"
 
@@ -71,6 +73,11 @@ void BindSessionToInnerServer(grpc_call* call, grpc::Server* inner_server,
   // Add the session call arena to channel args to propagate to child calls.
   // The server will extract this and add it to the virtual call's arena.
   grpc_core::Arena* parent_arena = grpc_call_get_arena(call);
+  auto* sec_ctx = grpc_core::DownCast<grpc_server_security_context*>(
+      parent_arena->GetContext<grpc_core::SecurityContext>());
+  if (sec_ctx != nullptr && sec_ctx->auth_context != nullptr) {
+    args = args.SetObject(sec_ctx->auth_context);
+  }
   static const grpc_arg_pointer_vtable vtable = {
       // copy
       [](void* p) -> void* {
