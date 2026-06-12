@@ -1079,9 +1079,6 @@ auto Http2ServerTransport::MultiplexerLoop() {
 }
 
 //////////////////////////////////////////////////////////////////////////////
-// Spawn Helpers and Promise Helpers
-
-//////////////////////////////////////////////////////////////////////////////
 // Settings
 
 void Http2ServerTransport::EnforceLatestIncomingSettings() {
@@ -2028,7 +2025,7 @@ Http2ServerTransport::Http2ServerTransport(
       event_engine_(std::move(event_engine)),
       endpoint_(std::move(endpoint)),
       settings_(MakeRefCounted<SettingsPromiseManager>(
-          std::move(on_receive_settings))),
+          kIsClient, std::move(on_receive_settings))),
       on_close_callback_(on_close_callback),
       should_reset_ping_clock_(false),
       read_context_(MaxNewStreamsPerRead(channel_args), endpoint_, kIsClient,
