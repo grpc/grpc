@@ -53,35 +53,28 @@ install_import_hook('grpc._utilities')
 
 class SingleLoader:
     def __init__(
-        self, target_module: str, test_patterns: Optional[list[str]] = None
+        self, target_module: str, unittest_path: str, test_patterns: Optional[list[str]] = None
     ):
         loader = unittest.TestLoader()
         loader.testNamePatterns = test_patterns
         self.suite = unittest.TestSuite()
-        suites = []
+        tests = []
 
-        # TODO: Refactor/cleanup as discussed in
-        # https://github.com/grpc/grpc/pull/41713#discussion_r2932055174
-        #
-        # Look in the current working directory for the test file physically
-        target_file = f"{target_module}.py"
-        target_module_name = None
+        for importer, module_name, is_package in pkgutil.walk_packages([unittest_path]):
+            if target_module in module_name:
+                try:
+                    spec = importer.find_spec(module_name)
+                    if spec is not None:
+                        module = importlib.util.module_from_spec(spec)
+                        spec.loader.exec_module(module)
+                        tests.append(loader.loadTestsFromModule(module))
+                except Exception as e:
+                    raise AssertionError(f"Error loading module {module_name}: {e}")
+        
+        if len(tests) != 1:
+            raise AssertionError("Expected only 1 test module. Found {}".format(tests))
 
-        cwd = pathlib.Path.cwd()
-        filepath = next(cwd.rglob(target_file), None)
-        if not filepath:
-            raise ValueError(f"Could not find target module {target_module}")
-        rel_path = filepath.relative_to(cwd)
-        # Remove the file extension and replace path separators with dots.
-        target_module_name = str(rel_path.with_suffix('')).replace(os.sep, '.')
-
-        spec = importlib.util.find_spec(target_module_name)
-        module = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(module)
-        suites.append(loader.loadTestsFromModule(module))
-
-        assert len(suites) == 1, f"Expected only 1 test module. Found {suites}"
-        self.suite.addTest(suites[0])
+        self.suite.addTest(tests[0])
 
 
 def _convert_select_pattern(pattern):
@@ -117,8 +110,8 @@ def _arg_parser() -> argparse.ArgumentParser:
 
 
 def main():
-    if len(sys.argv) < 2:
-        print(f"USAGE: {sys.argv[0]} TARGET_MODULE [TEST_ARGS]", file=sys.stderr)
+    if len(sys.argv) < 3:
+        print(f"USAGE: {sys.argv[0]} TARGET_MODULE UNITTEST_PATH [TEST_ARGS]", file=sys.stderr)
         sys.exit(1)
 
     # Remove the current wrapper script from the args.
@@ -126,9 +119,10 @@ def main():
 
     # Target module first.
     target_module = sys.argv[0]
+    unittest_path = sys.argv[1]
 
     # Optional test args the rest.
-    parsed_args = _arg_parser().parse_args(sys.argv[1:])
+    parsed_args = _arg_parser().parse_args(sys.argv[2:])
     test_kwargs = vars(parsed_args)
 
     if test_kwargs["verbosity"] is None:
@@ -136,7 +130,7 @@ def main():
 
     test_patterns = test_kwargs.pop("testNamePatterns")
 
-    loader = SingleLoader(target_module, test_patterns=test_patterns)
+    loader = SingleLoader(target_module, unittest_path, test_patterns=test_patterns)
     runner = unittest.TextTestRunner(**test_kwargs)
 
     result = runner.run(loader.suite)
