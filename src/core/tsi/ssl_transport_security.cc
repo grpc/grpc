@@ -247,8 +247,9 @@ void tsi_ssl_handshaker::RecordTelemetry(tsi_result status) {
   if (metric_recorded) return;
   metric_recorded = true;
 
-  std::string resumed =
-      (ssl != nullptr && SSL_session_reused(ssl)) ? "true" : "false";
+  std::string resumed = ssl == nullptr            ? "unknown"
+                        : SSL_session_reused(ssl) ? "true"
+                                                  : "false";
 
   grpc_core::TlsTelemetryHandshakeResult result;
   if (status == TSI_OK) {

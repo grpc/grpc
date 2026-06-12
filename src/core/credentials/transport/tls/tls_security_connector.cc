@@ -369,9 +369,10 @@ void TlsChannelSecurityConnector::add_handshakers(
     RefCountedPtr<CollectionScope> collection_scope =
         stats_plugin_group != nullptr ? stats_plugin_group->GetCollectionScope()
                                       : nullptr;
-    constexpr const char* kLocalityLabel = "grpc.lb.locality";
-    constexpr const char* kBackendServiceLabel = "grpc.lb.backend_service";
-    constexpr const char* kInternalBackendServiceLabel =
+    constexpr absl::string_view kLocalityLabel = "grpc.lb.locality";
+    constexpr absl::string_view kBackendServiceLabel =
+        "grpc.lb.backend_service";
+    constexpr absl::string_view kInternalBackendServiceLabel =
         "grpc.internal.backend_service";
     std::string locality(args.GetString(kLocalityLabel).value_or(""));
     std::string backend_service(
