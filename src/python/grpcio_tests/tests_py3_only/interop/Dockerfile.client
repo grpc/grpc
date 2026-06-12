@@ -8,7 +8,7 @@ RUN ln -s /usr/bin/python3 /usr/bin/python
 RUN mkdir /artifacts
 
 COPY . .
-RUN tools/bazel build -c dbg --config=python --@rules_python//python/config_settings:bootstrap_impl=script //src/python/grpcio_tests/tests_py3_only/interop:xds_interop_client
+RUN tools/bazel build -c dbg --config=python //src/python/grpcio_tests/tests_py3_only/interop:xds_interop_client
 RUN cp -rL /workdir/bazel-bin/src/python/grpcio_tests/tests_py3_only/interop/xds_interop_client* /artifacts/
 
 ENV TINI_VERSION v0.19.0
@@ -32,4 +32,9 @@ COPY --from=0 /artifacts ./
 # tini serves as PID 1 and enables the server to properly respond to signals.
 COPY --from=0 /tini /tini
 
-ENTRYPOINT ["/tini", "-g", "-vv",  "--",  "/xds_interop_client"]
+RUN echo '#!/bin/sh' > /entrypoint.sh && \
+    echo 'export PYTHONHOME=$(ls -d /xds_interop_client.runfiles/rules_python*python* | grep -v pip | head -n 1)' >> /entrypoint.sh && \
+    echo 'exec /xds_interop_client "$@"' >> /entrypoint.sh && \
+    chmod +x /entrypoint.sh
+
+ENTRYPOINT ["/tini", "-g", "-vv",  "--",  "/entrypoint.sh"]
