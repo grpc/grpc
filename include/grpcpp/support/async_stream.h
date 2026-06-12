@@ -730,7 +730,7 @@ class ServerAsyncReader final : public ServerAsyncReaderInterface<W, R> {
     if (ctx_->compression_level_set()) {
       meta_ops_.set_compression_level(ctx_->compression_level());
     }
-    ctx_->sent_initial_metadata_ = true;
+    ctx_->MarkInitialMetadataSent();
     meta_ops_.FillOps(&call_);
   }
 
@@ -759,7 +759,7 @@ class ServerAsyncReader final : public ServerAsyncReaderInterface<W, R> {
       if (ctx_->compression_level_set()) {
         finish_ops_.set_compression_level(ctx_->compression_level());
       }
-      ctx_->sent_initial_metadata_ = true;
+      ctx_->MarkInitialMetadataSent();
     }
     // The response is dropped if the status is not OK.
     if (status.ok()) {
@@ -790,7 +790,7 @@ class ServerAsyncReader final : public ServerAsyncReaderInterface<W, R> {
       if (ctx_->compression_level_set()) {
         finish_ops_.set_compression_level(ctx_->compression_level());
       }
-      ctx_->sent_initial_metadata_ = true;
+      ctx_->MarkInitialMetadataSent();
     }
     finish_ops_.ServerSendStatus(&ctx_->trailing_metadata_, status);
     finish_ops_.FillOps(&call_);
@@ -879,7 +879,7 @@ class ServerAsyncWriter final : public ServerAsyncWriterInterface<W> {
     if (ctx_->compression_level_set()) {
       meta_ops_.set_compression_level(ctx_->compression_level());
     }
-    ctx_->sent_initial_metadata_ = true;
+    ctx_->MarkInitialMetadataSent();
     meta_ops_.FillOps(&call_);
   }
 
@@ -954,7 +954,7 @@ class ServerAsyncWriter final : public ServerAsyncWriterInterface<W> {
       if (ctx_->compression_level_set()) {
         ops->set_compression_level(ctx_->compression_level());
       }
-      ctx_->sent_initial_metadata_ = true;
+      ctx_->MarkInitialMetadataSent();
     }
   }
 
@@ -1047,7 +1047,7 @@ class ServerAsyncReaderWriter final
     if (ctx_->compression_level_set()) {
       meta_ops_.set_compression_level(ctx_->compression_level());
     }
-    ctx_->sent_initial_metadata_ = true;
+    ctx_->MarkInitialMetadataSent();
     meta_ops_.FillOps(&call_);
   }
 
@@ -1130,7 +1130,7 @@ class ServerAsyncReaderWriter final
       if (ctx_->compression_level_set()) {
         ops->set_compression_level(ctx_->compression_level());
       }
-      ctx_->sent_initial_metadata_ = true;
+      ctx_->MarkInitialMetadataSent();
     }
   }
 

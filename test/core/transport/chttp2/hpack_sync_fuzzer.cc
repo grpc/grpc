@@ -132,7 +132,7 @@ void FuzzOneInput(const hpack_sync_fuzzer::Msg& msg) {
   parser.BeginFrame(
       &read_metadata, 1024, 1024, HPackParser::Boundary::EndOfHeaders,
       HPackParser::Priority::None,
-      HPackParser::LogInfo{1, HPackParser::LogInfo::kHeaders, false});
+      HPackParser::LogInfo{1, HPackParser::LogInfo::kHeaders, false}, nullptr);
   std::vector<std::pair<size_t, absl::Status>> seen_errors;
   for (size_t i = 0; i < encode_output.Count(); i++) {
     auto err = parser.Parse(
@@ -200,7 +200,8 @@ void FuzzOneInput(const hpack_sync_fuzzer::Msg& msg) {
     parser.BeginFrame(
         &read_metadata_2, 1024, 1024, HPackParser::Boundary::EndOfHeaders,
         HPackParser::Priority::None,
-        HPackParser::LogInfo{3, HPackParser::LogInfo::kHeaders, false});
+        HPackParser::LogInfo{3, HPackParser::LogInfo::kHeaders, false},
+        nullptr);
     auto err = parser.Parse(encode_output_2.c_slice_at(0), true,
                             absl::BitGenRef(proto_bit_src),
                             /*call_tracer=*/nullptr);
@@ -246,6 +247,16 @@ TEST(HpackSyncFuzzer, FuzzOneInputRegression2) {
   FuzzOneInput(ParseTestProto(
       R"pb(
         headers { literal_not_idx { key: "grpc-status" value: "-1" } }
+      )pb"));
+}
+
+TEST(HpackSyncFuzzer, FuzzOneInputRegressionCRLFValue) {
+  FuzzOneInput(ParseTestProto(
+      R"pb(
+        config_vars { experiments: "optimization_05" }
+        headers {
+          literal_not_idx { key: "x-custom" value: "val\r\nEvil: true" }
+        }
       )pb"));
 }
 
