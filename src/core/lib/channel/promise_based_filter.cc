@@ -199,6 +199,8 @@ Waker BaseCallData::MakeNonOwningWaker() {
       handle_ = MakeOrphanable<WeakWakerHandle>(this);
     }
     handle_->Ref();
+    // The wakeup mask is unused by BaseCallData and WeakWakerHandle, so 0 is
+    // passed as a placeholder.
     return Waker(handle_.get(), 0);
   }
   return MakeOwningWaker();
