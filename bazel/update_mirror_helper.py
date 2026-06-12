@@ -27,18 +27,9 @@ logger = logging.getLogger(__name__)
 def parse_ndjson(file_path):
     repos = []
     with open(file_path, "r", encoding="utf-8") as f:
-        for line_number, line in enumerate(f, 1):
-            # Clean up whitespace and skip empty lines
-            line = line.strip()
-            if not line:
-                logger.info(f"line: {line}")
-                continue
-            try:
-                # Parse the individual JSON object
-                obj = json.loads(line)
-                repos.append(obj)
-            except json.JSONDecodeError as e:
-                logger.info(f"Skipping invalid JSON on line {line_number}: {e}")
+        for line in f:
+            obj = json.loads(line)
+            repos.append(obj)
     return repos
 
 def main():
