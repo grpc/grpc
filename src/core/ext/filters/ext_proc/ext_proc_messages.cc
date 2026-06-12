@@ -235,9 +235,10 @@ absl::StatusOr<ExtProcResponse> ParseExtProcResponse(
     case envoy_service_ext_proc_v3_ProcessingResponse_response_NOT_SET:
       break;
     default:
-      return absl::InternalError(
-          absl::StrCat("Unsupported ProcessingResponse response case: ",
-                       envoy_service_ext_proc_v3_ProcessingResponse_response_case(response)));
+      return absl::InternalError(absl::StrCat(
+          "Unsupported ProcessingResponse response case: ",
+          envoy_service_ext_proc_v3_ProcessingResponse_response_case(
+              response)));
   }
   return ext_proc_response;
 }
@@ -380,8 +381,7 @@ void SetRequestHeaders(upb_Arena* arena,
                        envoy_service_ext_proc_v3_ProcessingRequest* request) {
   auto http_headers = envoy_service_ext_proc_v3_HttpHeaders_new(arena);
   envoy_service_ext_proc_v3_HttpHeaders_set_headers(http_headers, headers);
-  envoy_service_ext_proc_v3_HttpHeaders_set_end_of_stream(http_headers,
-                                                          false);
+  envoy_service_ext_proc_v3_HttpHeaders_set_end_of_stream(http_headers, false);
   envoy_service_ext_proc_v3_ProcessingRequest_set_request_headers(request,
                                                                   http_headers);
 }
@@ -433,8 +433,8 @@ void SetResponseTrailers(upb_Arena* arena,
       request, http_trailers);
 }
 
-void SetObservabilityMode(bool mode,
-                          envoy_service_ext_proc_v3_ProcessingRequest* request) {
+void SetObservabilityMode(
+    bool mode, envoy_service_ext_proc_v3_ProcessingRequest* request) {
   envoy_service_ext_proc_v3_ProcessingRequest_set_observability_mode(request,
                                                                      mode);
 }
@@ -565,8 +565,6 @@ std::string CreateExtProcRequest(
       } else if (const Slice* host = metadata.get_pointer(HostMetadata())) {
         add_field(attr, host->as_string_view());
       }
-    } else if (attr == "request.scheme") {
-      // Not set - omit from map entirely per specification.
     } else if (attr == "request.method") {
       if (auto* method = metadata.get_pointer(HttpMethodMetadata())) {
         add_field(attr, HttpMethodMetadata::Encode(*method).as_string_view());
@@ -593,14 +591,10 @@ std::string CreateExtProcRequest(
       std::string ua_str;
       auto val = metadata.GetStringValue("user-agent", &ua_str);
       if (val.has_value()) add_field(attr, *val);
-    } else if (attr == "request.time") {
-      // Not set - omit from map entirely per specification.
     } else if (attr == "request.id") {
       std::string id_str;
       auto val = metadata.GetStringValue("x-request-id", &id_str);
       if (val.has_value()) add_field(attr, *val);
-    } else if (attr == "request.protocol") {
-      // Not set - omit from map entirely per specification.
     } else if (attr == "request.query") {
       add_field(attr, "");
     }

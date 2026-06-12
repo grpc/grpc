@@ -656,9 +656,8 @@ class ExtProcResponseTest : public ::testing::Test {
 
 TEST_F(ExtProcResponseTest, ResponseNull) {
   auto parsed_or = ParseExtProcResponse(nullptr);
-  EXPECT_FALSE(parsed_or.ok());
-  EXPECT_EQ(parsed_or.status().code(), absl::StatusCode::kInternal);
-  EXPECT_EQ(parsed_or.status().message(), "ProcessingResponse is null");
+  EXPECT_EQ(parsed_or.status(),
+            absl::InternalError("ProcessingResponse is null"));
 }
 
 TEST_F(ExtProcResponseTest, RequestDrain) {
@@ -707,11 +706,29 @@ TEST_F(ExtProcResponseTest, RequestHeadersUnsupportedStatus) {
   ASSERT_TRUE(parsed_or.ok()) << parsed_or.status().ToString();
   auto parsed = std::move(parsed_or.value());
   ASSERT_TRUE(parsed.request_headers.has_value());
-  EXPECT_FALSE(parsed.request_headers->ok());
-  EXPECT_EQ(parsed.request_headers->status().code(),
-            absl::StatusCode::kInternal);
-  EXPECT_EQ(parsed.request_headers->status().message(),
-            "CONTINUE_AND_REPLACE is not supported");
+  EXPECT_EQ(parsed.request_headers->status(),
+            absl::InternalError("CONTINUE_AND_REPLACE is not supported"));
+}
+
+TEST_F(ExtProcResponseTest, RequestHeadersMutationValidationFailed) {
+  upb::Arena arena;
+  envoy::service::ext_proc::v3::ProcessingResponse response;
+  auto* headers_response = response.mutable_request_headers();
+  auto* common_response = headers_response->mutable_response();
+  common_response->set_status(
+      envoy::service::ext_proc::v3::CommonResponse::CONTINUE);
+  auto* header_mutation = common_response->mutable_header_mutation();
+  auto* set_header = header_mutation->add_set_headers();
+  set_header->mutable_header()->set_key("x-mutated-key");
+  auto parsed_or = ParseResponse(response, arena.ptr());
+  ASSERT_TRUE(parsed_or.ok()) << parsed_or.status().ToString();
+  auto parsed = std::move(parsed_or.value());
+  ASSERT_TRUE(parsed.request_headers.has_value());
+  EXPECT_EQ(
+      parsed.request_headers->status(),
+      absl::InvalidArgumentError(
+          "validation failed: [field:header error:either value or raw_value "
+          "must be set]"));
 }
 
 TEST_F(ExtProcResponseTest, ResponseHeadersMutation) {
@@ -750,11 +767,8 @@ TEST_F(ExtProcResponseTest, ResponseHeadersUnsupportedStatus) {
   ASSERT_TRUE(parsed_or.ok()) << parsed_or.status().ToString();
   auto parsed = std::move(parsed_or.value());
   ASSERT_TRUE(parsed.response_headers.has_value());
-  EXPECT_FALSE(parsed.response_headers->ok());
-  EXPECT_EQ(parsed.response_headers->status().code(),
-            absl::StatusCode::kInternal);
-  EXPECT_EQ(parsed.response_headers->status().message(),
-            "CONTINUE_AND_REPLACE is not supported");
+  EXPECT_EQ(parsed.response_headers->status(),
+            absl::InternalError("CONTINUE_AND_REPLACE is not supported"));
 }
 
 TEST_F(ExtProcResponseTest, ResponseTrailersMutation) {
@@ -812,10 +826,8 @@ TEST_F(ExtProcResponseTest, RequestBodyUnsupportedStatus) {
   ASSERT_TRUE(parsed_or.ok()) << parsed_or.status().ToString();
   auto parsed = std::move(parsed_or.value());
   ASSERT_TRUE(parsed.request_body.has_value());
-  EXPECT_FALSE(parsed.request_body->ok());
-  EXPECT_EQ(parsed.request_body->status().code(), absl::StatusCode::kInternal);
-  EXPECT_EQ(parsed.request_body->status().message(),
-            "CONTINUE_AND_REPLACE is not supported");
+  EXPECT_EQ(parsed.request_body->status(),
+            absl::InternalError("CONTINUE_AND_REPLACE is not supported"));
 }
 
 TEST_F(ExtProcResponseTest, RequestBodyCompressedMessageUnsupported) {
@@ -833,10 +845,8 @@ TEST_F(ExtProcResponseTest, RequestBodyCompressedMessageUnsupported) {
   ASSERT_TRUE(parsed_or.ok()) << parsed_or.status().ToString();
   auto parsed = std::move(parsed_or.value());
   ASSERT_TRUE(parsed.request_body.has_value());
-  EXPECT_FALSE(parsed.request_body->ok());
-  EXPECT_EQ(parsed.request_body->status().code(), absl::StatusCode::kInternal);
-  EXPECT_EQ(parsed.request_body->status().message(),
-            "grpc_message_compressed is not supported");
+  EXPECT_EQ(parsed.request_body->status(),
+            absl::InternalError("grpc_message_compressed is not supported"));
 }
 
 TEST_F(ExtProcResponseTest, ResponseBodyMutation) {
@@ -872,10 +882,27 @@ TEST_F(ExtProcResponseTest, ResponseBodyUnsupportedStatus) {
   ASSERT_TRUE(parsed_or.ok()) << parsed_or.status().ToString();
   auto parsed = std::move(parsed_or.value());
   ASSERT_TRUE(parsed.response_body.has_value());
-  EXPECT_FALSE(parsed.response_body->ok());
-  EXPECT_EQ(parsed.response_body->status().code(), absl::StatusCode::kInternal);
-  EXPECT_EQ(parsed.response_body->status().message(),
-            "CONTINUE_AND_REPLACE is not supported");
+  EXPECT_EQ(parsed.response_body->status(),
+            absl::InternalError("CONTINUE_AND_REPLACE is not supported"));
+}
+
+TEST_F(ExtProcResponseTest, ResponseBodyCompressedMessageUnsupported) {
+  upb::Arena arena;
+  envoy::service::ext_proc::v3::ProcessingResponse response;
+  auto* body_response = response.mutable_response_body();
+  auto* common_response = body_response->mutable_response();
+  common_response->set_status(
+      envoy::service::ext_proc::v3::CommonResponse::CONTINUE);
+  auto* body_mutation = common_response->mutable_body_mutation();
+  auto* streamed_response = body_mutation->mutable_streamed_response();
+  streamed_response->set_body("test response body");
+  streamed_response->set_grpc_message_compressed(true);
+  auto parsed_or = ParseResponse(response, arena.ptr());
+  ASSERT_TRUE(parsed_or.ok()) << parsed_or.status().ToString();
+  auto parsed = std::move(parsed_or.value());
+  ASSERT_TRUE(parsed.response_body.has_value());
+  EXPECT_EQ(parsed.response_body->status(),
+            absl::InternalError("grpc_message_compressed is not supported"));
 }
 
 TEST_F(ExtProcResponseTest, ImmediateResponse) {
@@ -911,8 +938,9 @@ TEST_F(ExtProcResponseTest, UnsupportedResponseCaseRequestTrailers) {
   auto parsed_or = ParseResponse(response, arena.ptr());
   EXPECT_FALSE(parsed_or.ok());
   EXPECT_EQ(parsed_or.status().code(), absl::StatusCode::kInternal);
-  EXPECT_THAT(parsed_or.status().message(),
-              ::testing::StartsWith("Unsupported ProcessingResponse response case:"));
+  EXPECT_THAT(
+      parsed_or.status().message(),
+      ::testing::StartsWith("Unsupported ProcessingResponse response case:"));
 }
 
 TEST_F(ExtProcResponseTest, RequestHeadersCommonResponseNull) {
@@ -923,11 +951,8 @@ TEST_F(ExtProcResponseTest, RequestHeadersCommonResponseNull) {
   ASSERT_TRUE(parsed_or.ok()) << parsed_or.status().ToString();
   auto parsed = std::move(parsed_or.value());
   ASSERT_TRUE(parsed.request_headers.has_value());
-  EXPECT_FALSE(parsed.request_headers->ok());
-  EXPECT_EQ(parsed.request_headers->status().code(),
-            absl::StatusCode::kInternal);
-  EXPECT_EQ(parsed.request_headers->status().message(),
-            "common_response is not available");
+  EXPECT_EQ(parsed.request_headers->status(),
+            absl::InternalError("common_response is not available"));
 }
 
 TEST_F(ExtProcResponseTest, ResponseHeadersCommonResponseNull) {
@@ -938,11 +963,8 @@ TEST_F(ExtProcResponseTest, ResponseHeadersCommonResponseNull) {
   ASSERT_TRUE(parsed_or.ok()) << parsed_or.status().ToString();
   auto parsed = std::move(parsed_or.value());
   ASSERT_TRUE(parsed.response_headers.has_value());
-  EXPECT_FALSE(parsed.response_headers->ok());
-  EXPECT_EQ(parsed.response_headers->status().code(),
-            absl::StatusCode::kInternal);
-  EXPECT_EQ(parsed.response_headers->status().message(),
-            "common_response is not available");
+  EXPECT_EQ(parsed.response_headers->status(),
+            absl::InternalError("common_response is not available"));
 }
 
 TEST_F(ExtProcResponseTest, RequestBodyCommonResponseNull) {
@@ -953,10 +975,23 @@ TEST_F(ExtProcResponseTest, RequestBodyCommonResponseNull) {
   ASSERT_TRUE(parsed_or.ok()) << parsed_or.status().ToString();
   auto parsed = std::move(parsed_or.value());
   ASSERT_TRUE(parsed.request_body.has_value());
-  EXPECT_FALSE(parsed.request_body->ok());
-  EXPECT_EQ(parsed.request_body->status().code(), absl::StatusCode::kInternal);
-  EXPECT_EQ(parsed.request_body->status().message(),
-            "common_response is not available");
+  EXPECT_EQ(parsed.request_body->status(),
+            absl::InternalError("common_response is not available"));
+}
+
+TEST_F(ExtProcResponseTest, RequestBodyBodyMutationNull) {
+  upb::Arena arena;
+  envoy::service::ext_proc::v3::ProcessingResponse response;
+  auto* body_response = response.mutable_request_body();
+  auto* common_response = body_response->mutable_response();
+  common_response->set_status(
+      envoy::service::ext_proc::v3::CommonResponse::CONTINUE);
+  auto parsed_or = ParseResponse(response, arena.ptr());
+  ASSERT_TRUE(parsed_or.ok()) << parsed_or.status().ToString();
+  auto parsed = std::move(parsed_or.value());
+  ASSERT_TRUE(parsed.request_body.has_value());
+  EXPECT_EQ(parsed.request_body->status(),
+            absl::InternalError("body_mutation is not available"));
 }
 
 TEST_F(ExtProcResponseTest, ResponseBodyCommonResponseNull) {
@@ -967,10 +1002,23 @@ TEST_F(ExtProcResponseTest, ResponseBodyCommonResponseNull) {
   ASSERT_TRUE(parsed_or.ok()) << parsed_or.status().ToString();
   auto parsed = std::move(parsed_or.value());
   ASSERT_TRUE(parsed.response_body.has_value());
-  EXPECT_FALSE(parsed.response_body->ok());
-  EXPECT_EQ(parsed.response_body->status().code(), absl::StatusCode::kInternal);
-  EXPECT_EQ(parsed.response_body->status().message(),
-            "common_response is not available");
+  EXPECT_EQ(parsed.response_body->status(),
+            absl::InternalError("common_response is not available"));
+}
+
+TEST_F(ExtProcResponseTest, ResponseBodyBodyMutationNull) {
+  upb::Arena arena;
+  envoy::service::ext_proc::v3::ProcessingResponse response;
+  auto* body_response = response.mutable_response_body();
+  auto* common_response = body_response->mutable_response();
+  common_response->set_status(
+      envoy::service::ext_proc::v3::CommonResponse::CONTINUE);
+  auto parsed_or = ParseResponse(response, arena.ptr());
+  ASSERT_TRUE(parsed_or.ok()) << parsed_or.status().ToString();
+  auto parsed = std::move(parsed_or.value());
+  ASSERT_TRUE(parsed.response_body.has_value());
+  EXPECT_EQ(parsed.response_body->status(),
+            absl::InternalError("body_mutation is not available"));
 }
 
 TEST_F(ExtProcResponseTest, ResponseTrailersHeaderMutationNull) {
@@ -981,11 +1029,8 @@ TEST_F(ExtProcResponseTest, ResponseTrailersHeaderMutationNull) {
   ASSERT_TRUE(parsed_or.ok()) << parsed_or.status().ToString();
   auto parsed = std::move(parsed_or.value());
   ASSERT_TRUE(parsed.response_trailers.has_value());
-  EXPECT_FALSE(parsed.response_trailers->ok());
-  EXPECT_EQ(parsed.response_trailers->status().code(),
-            absl::StatusCode::kInternal);
-  EXPECT_EQ(parsed.response_trailers->status().message(),
-            "header_mutation is not available");
+  EXPECT_EQ(parsed.response_trailers->status(),
+            absl::InternalError("header_mutation is not available"));
 }
 
 TEST_F(ExtProcResponseTest, ImmediateResponseHeaderMutationNull) {
@@ -1000,11 +1045,8 @@ TEST_F(ExtProcResponseTest, ImmediateResponseHeaderMutationNull) {
   ASSERT_TRUE(parsed.immediate_response.has_value());
   EXPECT_EQ(parsed.immediate_response->status, 16);
   EXPECT_EQ(parsed.immediate_response->details, "invalid credentials");
-  EXPECT_FALSE(parsed.immediate_response->header_mutation.ok());
-  EXPECT_EQ(parsed.immediate_response->header_mutation.status().code(),
-            absl::StatusCode::kInternal);
-  EXPECT_EQ(parsed.immediate_response->header_mutation.status().message(),
-            "header_mutation is not available");
+  EXPECT_EQ(parsed.immediate_response->header_mutation.status(),
+            absl::InternalError("header_mutation is not available"));
 }
 
 }  // namespace
