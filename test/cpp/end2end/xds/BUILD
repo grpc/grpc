@@ -578,6 +578,7 @@ grpc_cc_test(
     srcs = ["xds_outlier_detection_end2end_test.cc"],
     external_deps = [
         "absl/log:check",
+        "absl/strings",
         "gtest",
     ],
     flaky = True,
@@ -595,6 +596,7 @@ grpc_cc_test(
         "//:grpc++",
         "//src/core:client_channel_backup_poller",
         "//src/core:grpc_check",
+        "//test/core/test_util:fake_stats_plugin",
         "//test/core/test_util:grpc_test_util",
         "//test/core/test_util:grpc_test_util_base",
         "@envoy_api//envoy/config/cluster/v3:pkg_cc_proto",

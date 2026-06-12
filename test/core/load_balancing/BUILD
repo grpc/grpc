@@ -281,9 +281,12 @@ grpc_cc_test(
         "//src/core:channel_args",
         "//src/core:grpc_backend_metric_data",
         "//src/core:grpc_lb_policy_outlier_detection",
+        "//src/core:grpc_lb_policy_weighted_target",
         "//src/core:json",
         "//src/core:lb_policy",
+        "//src/core:metrics",
         "//src/core:time",
+        "//test/core/test_util:fake_stats_plugin",
         "//test/core/test_util:grpc_test_util",
     ],
 )
