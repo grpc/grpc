@@ -29,16 +29,6 @@ local_path_override(
     path = "../../../",
 )
 
-bazel_dep(name = "opencensus-cpp", version = "0.0.0-20230502-50eb5de.bcr.2", repo_name = "io_opencensus_cpp")
-single_version_override(
-    module_name = "opencensus-cpp",
-    patch_strip = 1,
-    patches = [
-        "//:patches/opencensus-cpp/bazel_9_support.patch",
-    ],
-    version = "0.0.0-20230502-50eb5de.bcr.2",
-)
-
 # Bump to newer package versions that have good bazel 9 support.
 bazel_dep(name = "c-ares", version = "1.34.6")
 bazel_dep(name = "abseil-cpp", version = "20260526.0")
