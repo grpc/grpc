@@ -12130,6 +12130,7 @@ grpc_cc_library(
         "client_channel/virtual_channel.h",
     ],
     external_deps = [
+        "absl/base",
         "absl/functional:any_invocable",
         "absl/status",
         "absl/status:statusor",
@@ -12147,6 +12148,7 @@ grpc_cc_library(
         "message",
         "slice_buffer",
         ":default_event_engine",
+        ":down_cast",
         ":session_endpoint",
         "//:channel",
         "//:channel_arg_names",
@@ -12154,6 +12156,7 @@ grpc_cc_library(
         "//:config",
         "//:gpr",
         "//:grpc_base",
+        "//:grpc_security_base",
         "//:grpc_transport_chttp2",
         "//:promise",
         "//:ref_counted_ptr",

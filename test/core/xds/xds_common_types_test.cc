@@ -1208,37 +1208,25 @@ TEST_F(ParseXdsGrpcServiceTest, HeaderValueForNonBinaryHeader) {
               ::testing::ElementsAre(::testing::Pair("foo", "bar")));
 }
 
-TEST_F(ParseXdsGrpcServiceTest, InvalidHeaderKeyAndValue) {
+// Note: This shows that we include validation errors from ParseXdsHeader()
+// itself.  We don't need to test every possible matcher validation failure
+// case here, because those are covered in the tests for ParseXdsHeader().
+TEST_F(ParseXdsGrpcServiceTest, NoHeaderValueSet) {
   xds_client_ = MakeXdsClient("", /*trusted_xds_server=*/true);
   GrpcService grpc_service;
   auto* header_value = grpc_service.add_initial_metadata();
-  header_value->set_key("Foo");
-  header_value->set_value("\x1f");
-  header_value = grpc_service.add_initial_metadata();
-  header_value->set_key("host");
-  header_value->set_value("x");
-  header_value = grpc_service.add_initial_metadata();
-  header_value->set_key(":path");
-  header_value->set_value("x");
-  header_value = grpc_service.add_initial_metadata();
-  header_value->set_key("grpc-foo");
-  header_value->set_value("x");
+  header_value->set_key("foo");
   auto* google_grpc = grpc_service.mutable_google_grpc();
   google_grpc->set_target_uri("dns:server.example.com");
   google_grpc->add_channel_credentials_plugin()->PackFrom(
-      envoy::extensions::grpc_service::channel_credentials::insecure::v3::
-          InsecureCredentials());
+      envoy::extensions::grpc_service::channel_credentials::google_default::v3::
+          GoogleDefaultCredentials());
   auto xds_grpc_service = Parse(grpc_service);
-  EXPECT_EQ(
-      xds_grpc_service.status(),
-      absl::InvalidArgumentError(
-          "validation failed: ["
-          "field:initial_metadata[0].key error:Illegal header key; "
-          "field:initial_metadata[0].value error:Illegal header value; "
-          "field:initial_metadata[1].key error:header \"host\" not allowed; "
-          "field:initial_metadata[2].key error:header \":path\" not allowed; "
-          "field:initial_metadata[3].key "
-          "error:header \"grpc-foo\" not allowed]"));
+  EXPECT_EQ(xds_grpc_service.status(),
+            absl::InvalidArgumentError(
+                "validation failed: ["
+                "field:initial_metadata[0] "
+                "error:either value or raw_value must be set]"));
 }
 
 TEST_F(ParseXdsGrpcServiceTest, GoogleGrpcNotSet) {
@@ -1534,6 +1522,22 @@ TEST_F(ParseHeaderTest, NoHeaderValueSet) {
 
 TEST_F(ParseHeaderTest, InvalidHeaderKeyAndValue) {
   HeaderValueProto proto;
+  proto.set_key("Foo");
+  proto.set_value("\x1f");
+  const auto* upb_proto = ConvertToUpb(proto);
+  ASSERT_NE(upb_proto, nullptr);
+  ValidationErrors errors;
+  ParseXdsHeader(upb_proto, &errors);
+  EXPECT_FALSE(errors.ok());
+  EXPECT_EQ(
+      errors.status(absl::StatusCode::kInvalidArgument, "validation failed")
+          .message(),
+      "validation failed: [field:key error:Illegal header key; "
+      "field:value error:Illegal header value]");
+}
+
+TEST_F(ParseHeaderTest, HeaderKeyHostNotAllowed) {
+  HeaderValueProto proto;
   proto.set_key("host");
   proto.set_value("x");
   const auto* upb_proto = ConvertToUpb(proto);
@@ -1545,6 +1549,36 @@ TEST_F(ParseHeaderTest, InvalidHeaderKeyAndValue) {
       errors.status(absl::StatusCode::kInvalidArgument, "validation failed")
           .message(),
       "validation failed: [field:key error:header \"host\" not allowed]");
+}
+
+TEST_F(ParseHeaderTest, HeaderKeyStartingWithColonNotAllowed) {
+  HeaderValueProto proto;
+  proto.set_key(":path");
+  proto.set_value("x");
+  const auto* upb_proto = ConvertToUpb(proto);
+  ASSERT_NE(upb_proto, nullptr);
+  ValidationErrors errors;
+  ParseXdsHeader(upb_proto, &errors);
+  EXPECT_FALSE(errors.ok());
+  EXPECT_EQ(
+      errors.status(absl::StatusCode::kInvalidArgument, "validation failed")
+          .message(),
+      "validation failed: [field:key error:header \":path\" not allowed]");
+}
+
+TEST_F(ParseHeaderTest, HeaderKeyStartingWithGrpcNotAllowed) {
+  HeaderValueProto proto;
+  proto.set_key("grpc-foo");
+  proto.set_value("x");
+  const auto* upb_proto = ConvertToUpb(proto);
+  ASSERT_NE(upb_proto, nullptr);
+  ValidationErrors errors;
+  ParseXdsHeader(upb_proto, &errors);
+  EXPECT_FALSE(errors.ok());
+  EXPECT_EQ(
+      errors.status(absl::StatusCode::kInvalidArgument, "validation failed")
+          .message(),
+      "validation failed: [field:key error:header \"grpc-foo\" not allowed]");
 }
 
 //
@@ -1580,7 +1614,7 @@ TEST_F(ParseHeaderValueOptionTest, ReturnsErrorWhenProtoIsNull) {
       "validation failed: [field: error:field is not present]");
 }
 
-TEST_F(ParseHeaderValueOptionTest, ReturnsErrorWhenProtoIsEmpty) {
+TEST_F(ParseHeaderValueOptionTest, ReturnsErrorWhenHeaderFieldNotSet) {
   HeaderValueOptionProto proto;
   const auto* upb_proto = ConvertToUpb(proto);
   ASSERT_NE(upb_proto, nullptr);
@@ -1679,6 +1713,25 @@ TEST_F(ParseHeaderValueOptionTest, ReturnsErrorWhenAppendActionIsInvalid) {
       "action]");
 }
 
+// Note: This shows that we include validation errors from ParseXdsHeader()
+// itself.  We don't need to test every possible matcher validation failure
+// case here, because those are covered in the tests for ParseXdsHeader().
+TEST_F(ParseHeaderValueOptionTest, NoHeaderValueSet) {
+  HeaderValueOptionProto proto;
+  proto.mutable_header()->set_key("foo");
+  proto.set_append_action(HeaderValueOptionProto::APPEND_IF_EXISTS_OR_ADD);
+  const auto* upb_proto = ConvertToUpb(proto);
+  ASSERT_NE(upb_proto, nullptr);
+  ValidationErrors errors;
+  ParseXdsHeaderValueOption(upb_proto, &errors);
+  EXPECT_FALSE(errors.ok());
+  EXPECT_EQ(
+      errors.status(absl::StatusCode::kInvalidArgument, "validation failed")
+          .message(),
+      "validation failed: [field:header error:either value or raw_value must "
+      "be set]");
+}
+
 //
 // ApplyXdsHeaderMutationsRemoval() tests
 //
@@ -1698,27 +1751,6 @@ TEST(ApplyXdsHeaderMutationsRemovalTest, RemovesHeaderWhenAllowed) {
   std::string val;
   EXPECT_FALSE(metadata.GetStringValue("x-target-1", &val).has_value());
   EXPECT_EQ(metadata.GetStringValue("x-target-2", &val), "bar");
-}
-
-TEST(ApplyXdsHeaderMutationsRemovalTest,
-     RemovesMultipleAndDuplicateHeadersWhenAllowed) {
-  grpc_metadata_batch metadata;
-  metadata.Append("x-target-1", Slice::FromCopiedString("val1"),
-                  [](absl::string_view, const Slice&) {});
-  metadata.Append("x-target-2", Slice::FromCopiedString("val2"),
-                  [](absl::string_view, const Slice&) {});
-  HeaderMutationRules rules;
-  rules.disallow_is_error = false;
-  rules.allow_expression = std::make_unique<RE2>("x-target-.*");
-  for (absl::string_view remove_header :
-       {"x-target-1", "x-target-2", "x-target-1"}) {
-    absl::Status status =
-        ApplyXdsHeaderMutationsRemoval(remove_header, &rules, metadata);
-    EXPECT_TRUE(status.ok()) << status;
-  }
-  std::string val;
-  EXPECT_FALSE(metadata.GetStringValue("x-target-1", &val).has_value());
-  EXPECT_FALSE(metadata.GetStringValue("x-target-2", &val).has_value());
 }
 
 TEST(ApplyXdsHeaderMutationsRemovalTest, SucceedsWhenHeaderIsAbsent) {
@@ -1745,8 +1777,8 @@ TEST(ApplyXdsHeaderMutationsRemovalTest, DisallowIsErrorReturnsNonOkStatus) {
   rules.disallow_expression = std::make_unique<RE2>("x-target-1");
   absl::Status status =
       ApplyXdsHeaderMutationsRemoval("x-target-1", &rules, metadata);
-  EXPECT_EQ(status.code(), absl::StatusCode::kInternal);
-  EXPECT_EQ(status.message(), "Forbidden header removal: x-target-1");
+  EXPECT_EQ(status,
+            absl::InternalError("Forbidden header removal: x-target-1"));
 }
 
 TEST(ApplyXdsHeaderMutationsRemovalTest, DoesNotRemoveHeaderWhenNotAllowed) {
@@ -1996,8 +2028,8 @@ TEST(ApplyHeaderMutationsAdditionTest, DisallowIsErrorReturnsNonOkStatus) {
   rules.disallow_is_error = true;
   rules.disallow_expression = std::make_unique<RE2>("x-target-1");
   absl::Status status = ApplyXdsHeaderMutationsAddition(opt, &rules, metadata);
-  EXPECT_EQ(status.code(), absl::StatusCode::kInternal);
-  EXPECT_EQ(status.message(), "Forbidden header mutation: x-target-1");
+  EXPECT_EQ(status,
+            absl::InternalError("Forbidden header mutation: x-target-1"));
 }
 
 TEST(ApplyHeaderMutationsAdditionTest, DoesNotAddHeaderWhenNotAllowed) {

@@ -17,6 +17,7 @@
 #include "src/core/xds/grpc/xds_common_types.h"
 
 #include <string>
+#include <utility>
 
 #include "src/core/call/metadata_batch.h"
 #include "src/core/lib/slice/slice.h"

@@ -2660,6 +2660,7 @@ grpc_cc_library(
         "src/cpp/server/secure_server_credentials.h",
     ],
     external_deps = [
+        "absl/base",
         "absl/base:core_headers",
         "absl/functional:any_invocable",
         "absl/log:log",
@@ -2719,6 +2720,7 @@ grpc_cc_library(
         "//src/core:channel_stack_type",
         "//src/core:closure",
         "//src/core:default_event_engine",
+        "//src/core:down_cast",
         "//src/core:env",
         "//src/core:error",
         "//src/core:experiments",
@@ -2820,6 +2822,7 @@ grpc_cc_library(
         "//src/core:channel_stack_type",
         "//src/core:closure",
         "//src/core:default_event_engine",
+        "//src/core:down_cast",
         "//src/core:error",
         "//src/core:experiments",
         "//src/core:gpr_atm",

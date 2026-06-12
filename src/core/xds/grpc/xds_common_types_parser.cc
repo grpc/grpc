@@ -619,7 +619,7 @@ std::optional<XdsExtension> ExtractXdsExtension(
 }
 
 //
-// ParseXdsGrpcService()
+// ParseXdsHeader()
 //
 
 namespace {
@@ -816,6 +816,7 @@ XdsGrpcService ParseXdsGrpcService(
 //
 // ParseHeaderMutationRules()
 //
+
 namespace {
 
 std::unique_ptr<RE2> ParseRegexMatcher(
