@@ -813,7 +813,8 @@ TEST_F(Http2ReadContextTest, SetAndGetFrameHeader) {
   // that was set.
   util::testing::MockPromiseEndpoint mock_endpoint(1234);
   ReadContext context(/*max_new_streams_per_read_cycle=*/32u,
-                      mock_endpoint.promise_endpoint, true);
+                      mock_endpoint.promise_endpoint, true,
+                      GrpcErrors::kMaxSecurityFrameSize);
   Http2FrameHeader header;
   header.length = 100u;
   header.type = 1u;
@@ -844,7 +845,8 @@ TEST_F(Http2ReadContextTest, ReadCycleFramesLimits) {
        &was_pending_at_limit]() -> Poll<absl::Status> {
         util::testing::MockPromiseEndpoint mock_endpoint(1234);
         ReadContext read_context(/*max_new_streams_per_read_cycle=*/32u,
-                                 mock_endpoint.promise_endpoint, true);
+                                 mock_endpoint.promise_endpoint, true,
+                                 GrpcErrors::kMaxSecurityFrameSize);
         const Http2FrameHeader header = {
             0u,  // length
             0u,  // type
