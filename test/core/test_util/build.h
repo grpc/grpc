@@ -30,6 +30,9 @@ bool BuiltUnderMsan();
 // Returns whether this is built under UndefinedBehaviorSanitizer
 bool BuiltUnderUbsan();
 
+// Returns whether this is a debug build or not
+bool BuiltUnderDebug();
+
 // Force a leak check if built under ASAN. If there are leaks, crash.
 void AsanAssertNoLeaks();
 

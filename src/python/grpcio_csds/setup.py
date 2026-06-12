@@ -35,7 +35,7 @@ CLASSIFIERS = [
 ]
 
 INSTALL_REQUIRES = (
-    "protobuf>=6.33.5,<7.0.0",
+    "protobuf>=6.33.5,<8.0.0",
     f"xds-protos=={grpc_version.VERSION}",
     f"grpcio>={grpc_version.VERSION}",
 )

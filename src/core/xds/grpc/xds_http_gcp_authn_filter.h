@@ -37,20 +37,31 @@ class XdsHttpGcpAuthnFilter final : public XdsHttpFilterImpl {
   absl::string_view OverrideConfigProtoName() const override;
   void PopulateSymtab(upb_DefPool* symtab) const override;
   std::optional<Json> GenerateFilterConfig(
-      absl::string_view instance_name,
-      const XdsResourceType::DecodeContext& context,
-      const XdsExtension& extension, ValidationErrors* errors) const override;
+      absl::string_view /*instance_name*/,
+      const XdsResourceType::DecodeContext& /*context*/,
+      const XdsExtension& /*extension*/,
+      ValidationErrors* /*errors*/) const override {
+    return std::nullopt;
+  }
   std::optional<Json> GenerateFilterConfigOverride(
-      absl::string_view instance_name,
-      const XdsResourceType::DecodeContext& context,
-      const XdsExtension& extension, ValidationErrors* errors) const override;
+      absl::string_view /*instance_name*/,
+      const XdsResourceType::DecodeContext& /*context*/,
+      const XdsExtension& /*extension*/,
+      ValidationErrors* /*errors*/) const override {
+    return std::nullopt;
+  }
   const grpc_channel_filter* channel_filter() const override;
-  ChannelArgs ModifyChannelArgs(const ChannelArgs& args) const override;
   absl::StatusOr<ServiceConfigJsonEntry> GenerateMethodConfig(
-      const Json& hcm_filter_config,
-      const Json* filter_config_override) const override;
+      const Json& /*hcm_filter_config*/,
+      const Json* /*filter_config_override*/) const override {
+    return absl::UnimplementedError(
+        "old-style filter config APIs not supported");
+  }
   absl::StatusOr<ServiceConfigJsonEntry> GenerateServiceConfig(
-      const Json& hcm_filter_config) const override;
+      const Json& /*hcm_filter_config*/) const override {
+    return absl::UnimplementedError(
+        "old-style filter config APIs not supported");
+  }
   void AddFilter(FilterChainBuilder& builder,
                  RefCountedPtr<const FilterConfig> config) const override;
   RefCountedPtr<const FilterConfig> ParseTopLevelConfig(
@@ -61,11 +72,12 @@ class XdsHttpGcpAuthnFilter final : public XdsHttpFilterImpl {
       absl::string_view instance_name,
       const XdsResourceType::DecodeContext& context,
       const XdsExtension& extension, ValidationErrors* errors) const override;
-  void UpdateBlackboard(const Json& config, const Blackboard* old_blackboard,
-                        Blackboard* new_blackboard) const override;
-  void UpdateBlackboard(const FilterConfig& config,
-                        const Blackboard* old_blackboard,
-                        Blackboard* new_blackboard) const override;
+  RefCountedPtr<const FilterConfig> MergeConfigs(
+      RefCountedPtr<const FilterConfig> top_level_config,
+      RefCountedPtr<const FilterConfig> /*virtual_host_override_config*/,
+      RefCountedPtr<const FilterConfig> /*route_override_config*/,
+      RefCountedPtr<const FilterConfig> /*cluster_weight_override_config*/,
+      Blackboard& blackboard) const override;
   bool IsSupportedOnClients() const override { return true; }
   bool IsSupportedOnServers() const override { return false; }
 };

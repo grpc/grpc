@@ -1399,6 +1399,20 @@ _BUILD_EXTRA_METADATA = {
         "build": "private",
         "_RENAME": "grpc++_test_util",
     },
+    "test/core/bad_ssl:bad_ssl_alpn_server": {
+        "language": "c++",
+        "build": "test",
+        "run": False,
+        "_TYPE": "target",
+        "_RENAME": "bad_ssl_alpn_server",
+    },
+    "test/core/bad_ssl:bad_ssl_cert_server": {
+        "language": "c++",
+        "build": "test",
+        "run": False,
+        "_TYPE": "target",
+        "_RENAME": "bad_ssl_cert_server",
+    },
     # benchmark support libraries
     "test/cpp/microbenchmarks:helpers": {
         "language": "c++",
