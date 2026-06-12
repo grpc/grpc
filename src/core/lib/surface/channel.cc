@@ -88,20 +88,6 @@ Channel::RegisteredCall* Channel::RegisterCall(const char* method,
 
 }  // namespace grpc_core
 
-grpc_call* grpc_channel_create_call_with_arena_init(
-    grpc_channel* channel, grpc_call* parent_call, uint32_t propagation_mask,
-    grpc_completion_queue* completion_queue, grpc_core::Slice method,
-    std::optional<grpc_core::Slice> authority, gpr_timespec deadline,
-    bool registered_method,
-    std::optional<absl::FunctionRef<void(grpc_core::Arena*)>>
-        arena_init_function) {
-  grpc_core::ExecCtx exec_ctx;
-  return grpc_core::Channel::FromC(channel)->CreateCall(
-      parent_call, propagation_mask, completion_queue, nullptr,
-      std::move(method), std::move(authority),
-      grpc_core::Timestamp::FromTimespecRoundUp(deadline), registered_method,
-      arena_init_function);
-}
 
 //
 // C-core API
@@ -169,6 +155,22 @@ grpc_call* grpc_channel_create_registered_call(
       /*registered_method=*/true,
       /*arena_init_function=*/std::nullopt);
 }
+
+grpc_call* grpc_channel_create_call_with_arena_init(
+    grpc_channel* channel, grpc_call* parent_call, uint32_t propagation_mask,
+    grpc_completion_queue* completion_queue, grpc_core::Slice method,
+    std::optional<grpc_core::Slice> authority, gpr_timespec deadline,
+    bool registered_method,
+    std::optional<absl::FunctionRef<void(grpc_core::Arena*)>>
+        arena_init_function) {
+  grpc_core::ExecCtx exec_ctx;
+  return grpc_core::Channel::FromC(channel)->CreateCall(
+      parent_call, propagation_mask, completion_queue, nullptr,
+      std::move(method), std::move(authority),
+      grpc_core::Timestamp::FromTimespecRoundUp(deadline), registered_method,
+      arena_init_function);
+}
+
 
 char* grpc_channel_get_target(grpc_channel* channel) {
   GRPC_TRACE_LOG(api, INFO)

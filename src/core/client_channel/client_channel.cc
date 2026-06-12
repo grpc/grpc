@@ -905,7 +905,7 @@ grpc_call* ClientChannel::CreateCall(
   arena->SetContext<grpc_event_engine::experimental::EventEngine>(
       event_engine());
   if (arena_init_function.has_value()) {
-    arena_init_function.value()(arena.get());
+    (*arena_init_function)(arena.get());
   }
   return MakeClientCall(parent_call, propagation_mask, cq, std::move(path),
                         std::move(authority), false, deadline,

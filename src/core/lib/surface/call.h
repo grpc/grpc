@@ -72,7 +72,7 @@ typedef struct grpc_call_create_args {
   bool registered_method;  // client_only
 
   std::optional<absl::FunctionRef<void(grpc_core::Arena*)>>
-      arena_init_function = std::nullopt;
+      arena_init_function;
 } grpc_call_create_args;
 
 namespace grpc_core {

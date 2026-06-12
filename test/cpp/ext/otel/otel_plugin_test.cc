@@ -482,8 +482,17 @@ TEST_F(OTelMetricsTestForTransparentRetries, RetryStatsWithTransparentRetries) {
 TEST_F(OTelMetricsTestForTransparentRetries, TelemetryLabelPropagation) {
   Init(std::move(
       Options()
-          .set_metric_names({grpc::OpenTelemetryPluginBuilder::
-                                 kClientCallTransparentRetriesInstrumentName})
+          .set_metric_names(
+              {grpc::OpenTelemetryPluginBuilder::
+                   kClientCallTransparentRetriesInstrumentName,
+               grpc::OpenTelemetryPluginBuilder::
+                   kClientAttemptStartedInstrumentName,
+               grpc::OpenTelemetryPluginBuilder::
+                   kClientAttemptDurationInstrumentName,
+               grpc::OpenTelemetryPluginBuilder::
+                   kClientAttemptSentTotalCompressedMessageSizeInstrumentName,
+               grpc::OpenTelemetryPluginBuilder::
+                   kClientAttemptRcvdTotalCompressedMessageSizeInstrumentName})
           .add_optional_label("grpc.client.call.custom")));
   const char* kTransparentRetryMetricName =
       "grpc.client.call.transparent_retries";
@@ -504,12 +513,25 @@ TEST_F(OTelMetricsTestForTransparentRetries, TelemetryLabelPropagation) {
     grpc::Status status = stub_->Echo(&context, request, &response);
     EXPECT_EQ(status.error_code(), StatusCode::ABORTED);
   }
-  auto data = ReadCurrentMetricsData(
-      [&](const absl::flat_hash_map<
-          std::string,
-          std::vector<opentelemetry::sdk::metrics::PointDataAttributes>>&
-              data) { return !data.contains(kTransparentRetryMetricName); });
-  ASSERT_EQ(data.size(), 1);
+  auto data = ReadCurrentMetricsData([&](const absl::flat_hash_map<
+                                         std::string,
+                                         std::vector<
+                                             opentelemetry::sdk::metrics::
+                                                 PointDataAttributes>>& data) {
+    return !data.contains(kTransparentRetryMetricName) ||
+           !data.contains(grpc::OpenTelemetryPluginBuilder::
+                              kClientAttemptStartedInstrumentName) ||
+           !data.contains(grpc::OpenTelemetryPluginBuilder::
+                              kClientAttemptDurationInstrumentName) ||
+           !data.contains(
+               grpc::OpenTelemetryPluginBuilder::
+                   kClientAttemptSentTotalCompressedMessageSizeInstrumentName) ||
+           !data.contains(
+               grpc::OpenTelemetryPluginBuilder::
+                   kClientAttemptRcvdTotalCompressedMessageSizeInstrumentName);
+  });
+  ASSERT_EQ(data.size(), 5);
+  // Check for transparent retry stats
   EXPECT_THAT(
       data[kTransparentRetryMetricName],
       ::testing::UnorderedElementsAre(::testing::AllOf(
@@ -522,6 +544,54 @@ TEST_F(OTelMetricsTestForTransparentRetries, TelemetryLabelPropagation) {
           HistogramResultEq(::testing::Eq(int64_t(1)),
                             ::testing::Eq(int64_t(1)),
                             ::testing::Eq(int64_t(1)), 1))));
+  // Verify client side metric (grpc.client.attempt.started)
+  ASSERT_EQ(
+      data[grpc::OpenTelemetryPluginBuilder::kClientAttemptStartedInstrumentName]
+          .size(),
+      1);
+  const auto& client_attributes =
+      data[grpc::OpenTelemetryPluginBuilder::kClientAttemptStartedInstrumentName][0]
+          .attributes.GetAttributes();
+  EXPECT_EQ(
+      std::get<std::string>(client_attributes.at("grpc.client.call.custom")),
+      kTelemetryLabelValue);
+  // Verify client side metric (grpc.client.attempt.duration)
+  ASSERT_EQ(
+      data[grpc::OpenTelemetryPluginBuilder::kClientAttemptDurationInstrumentName]
+          .size(),
+      2);
+  for (const auto& point :
+       data[grpc::OpenTelemetryPluginBuilder::kClientAttemptDurationInstrumentName]) {
+    const auto& attrs = point.attributes.GetAttributes();
+    EXPECT_EQ(std::get<std::string>(attrs.at("grpc.client.call.custom")),
+              kTelemetryLabelValue);
+  }
+  // Verify client side metric
+  // (grpc.client.attempt.sent_total_compressed_message_size)
+  ASSERT_EQ(data[grpc::OpenTelemetryPluginBuilder::
+                     kClientAttemptSentTotalCompressedMessageSizeInstrumentName]
+                .size(),
+            2);
+  for (const auto& point :
+       data[grpc::OpenTelemetryPluginBuilder::
+                kClientAttemptSentTotalCompressedMessageSizeInstrumentName]) {
+    const auto& attrs = point.attributes.GetAttributes();
+    EXPECT_EQ(std::get<std::string>(attrs.at("grpc.client.call.custom")),
+              kTelemetryLabelValue);
+  }
+  // Verify client side metric
+  // (grpc.client.attempt.rcvd_total_compressed_message_size)
+  ASSERT_EQ(data[grpc::OpenTelemetryPluginBuilder::
+                     kClientAttemptRcvdTotalCompressedMessageSizeInstrumentName]
+                .size(),
+            2);
+  for (const auto& point :
+       data[grpc::OpenTelemetryPluginBuilder::
+                kClientAttemptRcvdTotalCompressedMessageSizeInstrumentName]) {
+    const auto& attrs = point.attributes.GetAttributes();
+    EXPECT_EQ(std::get<std::string>(attrs.at("grpc.client.call.custom")),
+              kTelemetryLabelValue);
+  }
 }
 
 // Make sure that no meter provider results in normal operations.

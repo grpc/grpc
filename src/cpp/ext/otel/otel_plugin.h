@@ -254,7 +254,7 @@ class OpenTelemetryPluginImpl
   }
 
   static absl::string_view GetOptionalLabelValue(
-      std::variant<grpc_core::RefCountedStringValue, absl::string_view> v) {
+      const std::variant<grpc_core::RefCountedStringValue, absl::string_view>& v) {
     return grpc_core::Match(
         v,
         [](const grpc_core::RefCountedStringValue& value) {
