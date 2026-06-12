@@ -21,6 +21,8 @@ GIT_ROOT=$(realpath "$(dirname "$0")/../../..")
 # The out-of-tree test
 cd ${GIT_ROOT}/test/bazel_build_out_of_tree/bazel_9
 
+# Build the same targets as .bcr/presubmit.yml so we are more confident with
+# releases.
 ${GIT_ROOT}/tools/bazel \
     build \
     -- \
