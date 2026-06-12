@@ -73,6 +73,8 @@ namespace http2 {
 // [PH2][EXT] This is a TODO related to a project unrelated to PH2 but happening
 //            in parallel.
 // [PH2][CHTTP2] This TODO is a part of CHTTP2 deletion.
+// [PH2][Px][FCV3] This TODO is related to Flow Control plumbing with the
+// Application and the Call V3 stack.
 
 constexpr Duration kDefaultPingTimeout = Duration::Minutes(1);
 constexpr Duration kDefaultKeepaliveTimeout = Duration::Seconds(20);
@@ -267,6 +269,14 @@ uint32_t MaxNewStreamsPerRead(const ChannelArgs& channel_args) {
   return Clamp(
       channel_args.GetInt("grpc.http2.max_requests_per_read").value_or(32), 1,
       10000);
+}
+
+uint32_t GetMaxSecurityFrameSize(const ChannelArgs& channel_args) {
+  return static_cast<uint32_t>(
+      Clamp(channel_args.GetInt(GRPC_ARG_MAX_SECURITY_FRAME_SIZE)
+                .value_or(GrpcErrors::kMaxSecurityFrameSize),
+            GrpcErrors::kMinMaxSecurityFrameSize,
+            static_cast<int>(GrpcErrors::kMaxSecurityFrameSize)));
 }
 
 ///////////////////////////////////////////////////////////////////////////////

@@ -74,8 +74,10 @@ namespace grpc_core {
 class SettingsPromiseManager final : public RefCounted<SettingsPromiseManager> {
  public:
   explicit SettingsPromiseManager(
+      const bool is_client,
       absl::AnyInvocable<void(absl::StatusOr<uint32_t>)> on_receive_settings)
-      : on_receive_first_settings_(std::move(on_receive_settings)),
+      : is_client_(is_client),
+        on_receive_first_settings_(std::move(on_receive_settings)),
         state_(SettingsState::kWaitingForFirstPeerSettings) {
     pending_peer_settings_.reserve(Http2Settings::kNumSettings + 1);
   }
@@ -447,6 +449,7 @@ class SettingsPromiseManager final : public RefCounted<SettingsPromiseManager> {
 
   //////////////////////////////////////////////////////////////////////////////
   // Data Members for SETTINGS being received from the peer.
+  GRPC_UNUSED const bool is_client_;
 
   absl::AnyInvocable<void(absl::StatusOr<uint32_t>)> on_receive_first_settings_;
   absl::flat_hash_map<uint16_t, uint32_t> pending_peer_settings_;
