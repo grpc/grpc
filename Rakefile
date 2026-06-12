@@ -260,6 +260,28 @@ task 'gem:native', [:plat, :build_type] do |t, args|
   end
 end
 
+desc 'Publish native debug rubygems to GCS'
+task 'publish:native_debug', [:gem_dir] do |_t, args|
+  gem_dir = File.expand_path(args[:gem_dir] || 'tmp/nativedebug')
+  gcs_root = 'gs://packages.grpc.io/'
+  gcs_path = "#{gcs_root}grpc-ruby-native-debug-symbols"
+
+  fail "Directory '#{gem_dir}' not found" unless Dir.exist?(gem_dir)
+
+  gems = Dir["#{gem_dir}/*native-debug*.gem"]
+  fail "No native-debug gems found in '#{gem_dir}'" if gems.empty?
+
+  Dir.chdir(gem_dir) do
+    `sha256sum *native-debug*.gem > checksums.txt`
+    fail 'Checksum generation failed' unless $?.success?
+    `gsutil -m cp *native-debug*.gem checksums.txt #{gcs_path}`
+    fail 'Upload failed' unless $?.success?
+    `gsutil -m acl ch -u AllUsers:R #{gcs_path}* 2>/dev/null`
+  end
+
+  puts "Successfully published to: #{gcs_path}"
+end
+
 # Define dependencies between the suites.
 task 'suite:wrapper' => [:compile, :rubocop]
 task 'suite:idiomatic' => 'suite:wrapper'
