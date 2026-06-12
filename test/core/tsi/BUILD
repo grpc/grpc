@@ -154,6 +154,8 @@ grpc_cc_test(
         "//:grpc",
         "//:tsi_base",
         "//:tsi_ssl_credentials",
+        "//:grpc_security_base",
+        "//src/core:instrument",
         "//test/core/test_util:build",
         "//test/core/test_util:grpc_test_util",
     ],
