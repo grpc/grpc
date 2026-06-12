@@ -1261,10 +1261,6 @@ XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
     GRPC_CHECK_NE(filter_impl, nullptr);
     config_selector->filter_impls_.push_back(filter_impl);
   }
-  // Reverse the order of the filters, since ops flow *up* the stack on
-  // the server side.
-  std::reverse(config_selector->filter_impls_.begin(),
-               config_selector->filter_impls_.end());
   return config_selector;
 }
 
