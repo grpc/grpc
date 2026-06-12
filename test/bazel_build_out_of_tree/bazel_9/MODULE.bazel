@@ -16,7 +16,6 @@ module(
 )
 
 bazel_dep(name = "grpc")
-
 local_path_override(
     module_name = "grpc",
     path = "../../../",
