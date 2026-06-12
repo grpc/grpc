@@ -6156,6 +6156,7 @@ grpc_cc_library(
         "xds/grpc/xds_common_types.h",
     ],
     external_deps = [
+        "absl/status",
         "absl/strings",
     ],
     tags = ["nofixdeps"],
@@ -6163,6 +6164,8 @@ grpc_cc_library(
         "grpc_matchers",
         "json",
         "match",
+        "metadata_batch",
+        "slice",
         "time",
         "validation_errors",
         "xds_server_grpc",
