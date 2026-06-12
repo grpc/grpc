@@ -1,0 +1,6 @@
+grpcio>=1.65.4
+protobuf>=5.26.1,<6.0dev
+grpcio-observability>=1.65.4
+opentelemetry-sdk==1.26.0
+opentelemetry-api==1.26.0
+opentelemetry-exporter-prometheus==0.47b0
