@@ -11,6 +11,14 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
+# A build test that gives a working combination of bazel 9 compatible packages.
+# The versions can be newer than what we're using in grpc/MODULE.bazel, because
+# bazel will ignore overrides in non-root modules, See
+# https://bazel.build/external/module#overrides
+#
+# To view the resolved dependency graph, run `bazel mod graph`.
+
 module(
     name = "grpc_build_test",
 )
