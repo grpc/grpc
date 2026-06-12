@@ -142,7 +142,7 @@ class BaseCallData::WeakWakerHandle final : public Wakeable, public Orphanable {
     }
   }
 
-  RefCount refs_{2};
+  RefCount refs_;
   mutable Mutex mu_;
   BaseCallData* base_ ABSL_GUARDED_BY(mu_);
 };
@@ -176,7 +176,6 @@ BaseCallData::BaseCallData(
               : nullptr) {}
 
 BaseCallData::~BaseCallData() {
-  handle_.reset();
   FakeActivity(this).Run([this] {
     if (send_message_ != nullptr) {
       send_message_->~SendMessage();
@@ -198,9 +197,8 @@ Waker BaseCallData::MakeNonOwningWaker() {
   if (IsV2NonOwningWakerImplementationEnabled()) {
     if (handle_ == nullptr) {
       handle_ = MakeOrphanable<WeakWakerHandle>(this);
-    } else {
-      handle_->Ref();
     }
+    handle_->Ref();
     return Waker(handle_.get(), 0);
   }
   return MakeOwningWaker();
@@ -227,15 +225,6 @@ void BaseCallData::WakeupAsync(WakeupMask wakeup_mask) {
   } else {
     Crash("not implemented");
   }
-}
-
-void BaseCallData::WakeupNonOwning(WakeupMask) {
-  auto wakeup = [](void* p, grpc_error_handle) {
-    auto* self = static_cast<BaseCallData*>(p);
-    self->OnWakeup();
-  };
-  auto* closure = GRPC_CLOSURE_CREATE(wakeup, this, nullptr);
-  GRPC_CALL_COMBINER_START(call_combiner_, closure, absl::OkStatus(), "wakeup");
 }
 
 void BaseCallData::Drop(WakeupMask) {
