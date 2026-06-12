@@ -5688,6 +5688,31 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "grpc_ext_proc_filter",
+    hdrs = [
+        "ext/filters/ext_proc/ext_proc_filter.h",
+    ],
+    external_deps = [
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
+    ],
+    deps = [
+        "ext_proc_messages",
+        "blackboard",
+        "channel_args",
+        "channel_fwd",
+        "down_cast",
+        "inter_activity_latch",
+        "inter_activity_pipe",
+        "//:ref_counted_ptr",
+        "unique_type_name",
+        "xds_common_types",
+        "//:grpc_base",
+    ],
+)
+
+grpc_cc_library(
     name = "ext_proc_messages",
     srcs = [
         "ext/filters/ext_proc/ext_proc_messages.cc",
@@ -5703,7 +5728,6 @@ grpc_cc_library(
     ],
     deps = [
         "grpc_matchers",
-        "grpc_xds_client",
         "metadata_batch",
         "protobuf_struct_upb",
         "upb_utils",
@@ -6491,6 +6515,7 @@ grpc_cc_library(
         "xds/grpc/xds_common_types_parser.cc",
         "xds/grpc/xds_endpoint_parser.cc",
         "xds/grpc/xds_http_composite_filter.cc",
+        "xds/grpc/xds_http_ext_proc_filter.cc",
         "xds/grpc/xds_http_fault_filter.cc",
         "xds/grpc/xds_http_filter_registry.cc",
         "xds/grpc/xds_http_gcp_authn_filter.cc",
@@ -6591,6 +6616,8 @@ grpc_cc_library(
         "envoy_extensions_filters_common_matcher_action_upbdefs",
         "envoy_extensions_filters_http_composite_upb",
         "envoy_extensions_filters_http_composite_upbdefs",
+        "//:envoy_extensions_filters_http_ext_proc_upb",
+        "//:envoy_extensions_filters_http_ext_proc_upbdefs",
         "envoy_extensions_filters_http_fault_upb",
         "envoy_extensions_filters_http_fault_upbdefs",
         "envoy_extensions_filters_http_gcp_authn_upb",
@@ -6626,10 +6653,12 @@ grpc_cc_library(
         "envoy_type_upb",
         "error",
         "error_utils",
+        "filter_args",
         "gcp_authentication_filter",
         "google_rpc_status_upb",
         "grpc_audit_logging",
         "grpc_check",
+        "grpc_ext_proc_filter",
         "grpc_fake_credentials",
         "grpc_fault_injection_filter",
         "grpc_lb_policy_pick_first",

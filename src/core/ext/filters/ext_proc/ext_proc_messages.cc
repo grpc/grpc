@@ -26,13 +26,120 @@
 #include "src/core/lib/surface/validate_metadata.h"
 #include "src/core/util/upb_utils.h"
 #include "src/core/xds/grpc/xds_common_types.h"
-#include "src/core/xds/grpc/xds_common_types_parser.h"
+#include "absl/strings/escaping.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_join.h"
 
 namespace grpc_core {
 
 namespace {
+
+// TODO(rishesh): The following functions (GetHeaderValue, ParseXdsHeader,
+// ParseXdsHeaderValueOptionAppendAction, ParseXdsHeaderValueOption) are
+// duplicated from src/core/xds/grpc/xds_common_types_parser.cc to break the
+// dependency cycle (grpc_xds_client -> grpc_ext_proc_filter ->
+// ext_proc_messages -> grpc_xds_client).
+// Consider refactoring these parser helpers into a separate target that
+// does not depend on grpc_xds_client.
+std::optional<std::string> GetHeaderValue(upb_StringView upb_value,
+                                          bool is_binary,
+                                          absl::string_view field_name,
+                                          ValidationErrors* errors) {
+  absl::string_view value = UpbStringToAbsl(upb_value);
+  if (value.empty()) return std::nullopt;
+  ValidationErrors::ScopedField field(errors, field_name);
+  if (value.size() > 16384) errors->AddError("longer than 16384 bytes");
+  if (is_binary) {
+    std::string decoded_value;
+    if (!absl::Base64Unescape(value, &decoded_value)) {
+      errors->AddError("invalid base64");
+    }
+    return decoded_value;
+  }
+  ValidateMetadataResult result = ValidateNonBinaryHeaderValueIsLegal(value);
+  if (result != ValidateMetadataResult::kOk) {
+    errors->AddError(ValidateMetadataResultToString(result));
+  }
+  return std::string(value);
+}
+
+std::pair<std::string, std::string> ParseXdsHeader(
+    const envoy_config_core_v3_HeaderValue* header_value,
+    ValidationErrors* errors) {
+  absl::string_view key =
+      UpbStringToAbsl(envoy_config_core_v3_HeaderValue_key(header_value));
+  {
+    ValidationErrors::ScopedField field(errors, ".key");
+    if (key.size() > 16384) errors->AddError("longer than 16384 bytes");
+    if (absl::StartsWith(key, ":") || absl::StartsWith(key, "grpc-") ||
+        key == "host") {
+      errors->AddError(absl::StrCat("header \"", key, "\" not allowed"));
+    } else {
+      ValidateMetadataResult result = ValidateHeaderKeyIsLegal(key);
+      if (result != ValidateMetadataResult::kOk) {
+        errors->AddError(ValidateMetadataResultToString(result));
+      }
+    }
+  }
+  bool is_binary = absl::EndsWith(key, "-bin");
+  std::optional<std::string> value =
+      GetHeaderValue(envoy_config_core_v3_HeaderValue_raw_value(header_value),
+                     is_binary, ".raw_value", errors);
+  if (!value.has_value()) {
+    value = GetHeaderValue(envoy_config_core_v3_HeaderValue_value(header_value),
+                           is_binary, ".value", errors);
+    if (!value.has_value()) {
+      errors->AddError("either value or raw_value must be set");
+    }
+  }
+  return {std::string(key), value.has_value() ? std::move(*value) : ""};
+}
+
+XdsHeaderValueOption::AppendAction ParseXdsHeaderValueOptionAppendAction(
+    int32_t header_value_option_append_action, ValidationErrors* errors) {
+  switch (header_value_option_append_action) {
+    case envoy_config_core_v3_HeaderValueOption_APPEND_IF_EXISTS_OR_ADD:
+      return XdsHeaderValueOption::AppendAction::kAppendIfExistsOrAdd;
+    case envoy_config_core_v3_HeaderValueOption_ADD_IF_ABSENT:
+      return XdsHeaderValueOption::AppendAction::kAddIfAbsent;
+    case envoy_config_core_v3_HeaderValueOption_OVERWRITE_IF_EXISTS_OR_ADD:
+      return XdsHeaderValueOption::AppendAction::kOverwriteIfExistsOrAdd;
+    case envoy_config_core_v3_HeaderValueOption_OVERWRITE_IF_EXISTS:
+      return XdsHeaderValueOption::AppendAction::kOverwriteIfExists;
+    default:
+      errors->AddError("unsupported append action");
+      return XdsHeaderValueOption::AppendAction::kAppendIfExistsOrAdd;
+  }
+}
+
+XdsHeaderValueOption ParseXdsHeaderValueOption(
+    const envoy_config_core_v3_HeaderValueOption* header_value_option_config,
+    ValidationErrors* errors) {
+  if (header_value_option_config == nullptr) {
+    errors->AddError("field is not present");
+    return {};
+  }
+  XdsHeaderValueOption header_value_option;
+  {
+    ValidationErrors::ScopedField field(errors, ".header");
+    if (const auto* header = envoy_config_core_v3_HeaderValueOption_header(
+            header_value_option_config);
+        header != nullptr) {
+      header_value_option.header = ParseXdsHeader(header, errors);
+    } else {
+      errors->AddError("field not set");
+    }
+  }
+  {
+    ValidationErrors::ScopedField field(errors, ".append_action");
+    int32_t header_append_action =
+        envoy_config_core_v3_HeaderValueOption_append_action(
+            header_value_option_config);
+    header_value_option.append_action =
+        ParseXdsHeaderValueOptionAppendAction(header_append_action, errors);
+  }
+  return header_value_option;
+}
 
 absl::StatusOr<ExtProcResponse::HeaderMutation> ParseHeaderMutation(
     const envoy_service_ext_proc_v3_HeaderMutation* header_mutation) {
