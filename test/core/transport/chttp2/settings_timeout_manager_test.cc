@@ -78,6 +78,16 @@ class SettingsPromiseManagerTest : public ::testing::TestWithParam<bool> {
     return transport_write_context_.GetWriteCycle();
   }
 
+  SettingsPromiseManager MakeManager() {
+    return SettingsPromiseManager(/*is_client=*/GetParam(),
+                                  /*on_receive_settings=*/nullptr);
+  }
+
+  RefCountedPtr<SettingsPromiseManager> MakeRefCountedManager() {
+    return MakeRefCounted<SettingsPromiseManager>(
+        /*is_client=*/GetParam(), /*on_receive_settings=*/nullptr);
+  }
+
  private:
   void MaybeFlushWriteBuffer() {
     if (transport_write_context_.GetWriteCycle().CanSerializeRegularFrames()) {
@@ -140,7 +150,7 @@ TEST_P(SettingsPromiseManagerTest, NoTimeoutOneSetting) {
   // First start the timer and then immediately send the ACK
   // Check that the status must always be OK.
   auto party = MakeParty();
-  SettingsPromiseManager manager(/*on_receive_settings=*/nullptr);
+  SettingsPromiseManager manager = MakeManager();
   ExecCtx exec_ctx;
   manager.SetSettingsTimeout(Duration::Milliseconds(kSettingsShortTimeout));
   Notification notification;
@@ -162,7 +172,7 @@ TEST_P(SettingsPromiseManagerTest, NoTimeoutThreeSettings) {
   // Starting the timer and sending the ACK immediately three times in a row.
   // Check that the status must always be OK.
   auto party = MakeParty();
-  SettingsPromiseManager manager(/*on_receive_settings=*/nullptr);
+  SettingsPromiseManager manager = MakeManager();
   ExecCtx exec_ctx;
   manager.SetSettingsTimeout(Duration::Milliseconds(kSettingsShortTimeout));
   Notification notification;
@@ -188,7 +198,7 @@ TEST_P(SettingsPromiseManagerTest, NoTimeoutThreeSettingsDelayed) {
   // Starting the timer and sending the ACK immediately three times in a row.
   // Check that the status must always be OK.
   auto party = MakeParty();
-  SettingsPromiseManager manager(/*on_receive_settings=*/nullptr);
+  SettingsPromiseManager manager = MakeManager();
   ExecCtx exec_ctx;
   manager.SetSettingsTimeout(Duration::Milliseconds(kSettingsShortTimeout));
   Notification notification;
@@ -217,7 +227,7 @@ TEST_P(SettingsPromiseManagerTest, NoTimeoutOneSettingRareOrder) {
   //
   // Check that the status must always be OK.
   auto party = MakeParty();
-  SettingsPromiseManager manager(/*on_receive_settings=*/nullptr);
+  SettingsPromiseManager manager = MakeManager();
   ExecCtx exec_ctx;
   manager.SetSettingsTimeout(Duration::Milliseconds(kSettingsShortTimeout));
   Notification notification;
@@ -242,7 +252,7 @@ TEST_P(SettingsPromiseManagerTest, NoTimeoutThreeSettingsRareOrder) {
   //
   // Check that the status must always be OK.
   auto party = MakeParty();
-  SettingsPromiseManager manager(/*on_receive_settings=*/nullptr);
+  SettingsPromiseManager manager = MakeManager();
   ExecCtx exec_ctx;
   manager.SetSettingsTimeout(Duration::Milliseconds(kSettingsShortTimeout));
   Notification notification;
@@ -266,7 +276,7 @@ TEST_P(SettingsPromiseManagerTest, NoTimeoutThreeSettingsRareOrder) {
 
 TEST_P(SettingsPromiseManagerTest, NoTimeoutThreeSettingsMixedOrder) {
   auto party = MakeParty();
-  SettingsPromiseManager manager(/*on_receive_settings=*/nullptr);
+  SettingsPromiseManager manager = MakeManager();
   ExecCtx exec_ctx;
   manager.SetSettingsTimeout(Duration::Milliseconds(kSettingsShortTimeout));
   Notification notification;
@@ -295,7 +305,7 @@ TEST_P(SettingsPromiseManagerTest, TimeoutOneSetting) {
   // Also ensuring that receiving the ACK after the timeout does not crash or
   // leak memory.
   auto party = MakeParty();
-  SettingsPromiseManager manager(/*on_receive_settings=*/nullptr);
+  SettingsPromiseManager manager = MakeManager();
   ExecCtx exec_ctx;
   manager.SetSettingsTimeout(Duration::Milliseconds(kSettingsShortTimeout));
   Notification notification1;
@@ -325,7 +335,7 @@ TEST_P(SettingsPromiseManagerTest, MaybeGetSettingsAndSettingsAckFramesIdle) {
       /*name=*/"TestFlowControl", /*enable_bdp_probe=*/false,
       /*memory_owner=*/nullptr);
   RefCountedPtr<SettingsPromiseManager> timeout_manager =
-      MakeRefCounted<SettingsPromiseManager>(/*on_receive_settings=*/nullptr);
+      MakeRefCountedManager();
   SliceBuffer output_buf;
   // We add "hello" to output_buf to ensure that
   // MaybeGetSettingsAndSettingsAckFrames appends to it and does not overwrite
@@ -367,7 +377,7 @@ TEST_P(SettingsPromiseManagerTest,
       /*name=*/"TestFlowControl", /*enable_bdp_probe=*/false,
       /*memory_owner=*/nullptr);
   RefCountedPtr<SettingsPromiseManager> timeout_manager =
-      MakeRefCounted<SettingsPromiseManager>(/*on_receive_settings=*/nullptr);
+      MakeRefCountedManager();
   SliceBuffer output_buf;
   {
     http2::FrameSender frame_sender = GetWriteCycle().GetFrameSender();
@@ -416,7 +426,7 @@ TEST_P(SettingsPromiseManagerTest,
       /*name=*/"TestFlowControl", /*enable_bdp_probe=*/false,
       /*memory_owner=*/nullptr);
   RefCountedPtr<SettingsPromiseManager> timeout_manager =
-      MakeRefCounted<SettingsPromiseManager>(/*on_receive_settings=*/nullptr);
+      MakeRefCountedManager();
   const uint32_t kSetMaxFrameSize = 16385;
   SliceBuffer output_buf;
   bool should_spawn_security_frame_loop = false;
@@ -513,7 +523,7 @@ TEST_P(SettingsPromiseManagerTest,
       /*name=*/"TestFlowControl", /*enable_bdp_probe=*/false,
       /*memory_owner=*/nullptr);
   RefCountedPtr<SettingsPromiseManager> timeout_manager =
-      MakeRefCounted<SettingsPromiseManager>(/*on_receive_settings=*/nullptr);
+      MakeRefCountedManager();
   SliceBuffer output_buf;
   // We add "hello" to output_buf to ensure that
   // MaybeGetSettingsAndSettingsAckFrames appends to it and does not overwrite
@@ -554,6 +564,7 @@ TEST_P(SettingsPromiseManagerTest, OnReceiveSettingsCalled) {
       grpc_event_engine::experimental::GetDefaultEventEngine();
   bool should_spawn_security_frame_loop = false;
   SettingsPromiseManager manager(
+      /*is_client=*/GetParam(), /*on_receive_settings=*/
       [&notification](absl::StatusOr<uint32_t> status) {
         ASSERT_TRUE(status.ok());
         EXPECT_EQ(status.value(), 100u);
@@ -570,7 +581,7 @@ TEST_P(SettingsPromiseManagerTest, OnReceiveSettingsCalled) {
 
 TEST_P(SettingsPromiseManagerTest, IsFirstPeerSettingsAppliedTest) {
   bool should_spawn_security_frame_loop = false;
-  SettingsPromiseManager manager(/*on_receive_settings=*/nullptr);
+  SettingsPromiseManager manager = MakeManager();
   EXPECT_FALSE(manager.IsFirstPeerSettingsApplied());
 
   EXPECT_TRUE(manager
@@ -584,7 +595,7 @@ TEST_P(SettingsPromiseManagerTest, IsFirstPeerSettingsAppliedTest) {
 }
 
 TEST_P(SettingsPromiseManagerTest, IsSecurityFrameExpectedTest) {
-  SettingsPromiseManager manager(/*on_receive_settings=*/nullptr);
+  SettingsPromiseManager manager = MakeManager();
   bool should_spawn_security_frame_loop = false;
 
   // Make IsFirstPeerSettingsApplied true.
@@ -611,7 +622,7 @@ TEST_P(SettingsPromiseManagerTest, IsSecurityFrameExpectedTest) {
 }
 
 TEST_P(SettingsPromiseManagerTest, ShouldSpawnSecurityFrameLoopTest) {
-  SettingsPromiseManager manager(/*on_receive_settings=*/nullptr);
+  SettingsPromiseManager manager = MakeManager();
   bool should_spawn_security_frame_loop = false;
 
   // Case 1: Default (false)
@@ -623,7 +634,7 @@ TEST_P(SettingsPromiseManagerTest, ShouldSpawnSecurityFrameLoopTest) {
 }
 
 TEST_P(SettingsPromiseManagerTest, ShouldSpawnSecurityFrameLoopTrueTest) {
-  SettingsPromiseManager manager(/*on_receive_settings=*/nullptr);
+  SettingsPromiseManager manager = MakeManager();
   bool should_spawn_security_frame_loop = false;
 
   // Case 2: Both True
@@ -639,7 +650,7 @@ TEST_P(SettingsPromiseManagerTest, ShouldSpawnSecurityFrameLoopTrueTest) {
 }
 
 TEST_P(SettingsPromiseManagerTest, ShouldSpawnSecurityFrameLoopFalseTest) {
-  SettingsPromiseManager manager(/*on_receive_settings=*/nullptr);
+  SettingsPromiseManager manager = MakeManager();
   bool should_spawn_security_frame_loop = false;
 
   // Case 3: Only Peer True
@@ -654,7 +665,7 @@ TEST_P(SettingsPromiseManagerTest, ShouldSpawnSecurityFrameLoopFalseTest) {
 }
 
 TEST_P(SettingsPromiseManagerTest, ShouldSpawnSecurityFrameLoopOnlyOnceTest) {
-  SettingsPromiseManager manager(/*on_receive_settings=*/nullptr);
+  SettingsPromiseManager manager = MakeManager();
   bool should_spawn_security_frame_loop = false;
 
   // First time: Both True -> Spawn
@@ -681,7 +692,7 @@ TEST_P(SettingsPromiseManagerTest, ShouldSpawnSecurityFrameLoopOnlyOnceTest) {
 TEST_P(SettingsPromiseManagerTest, OnSettingsAckReceivedNonOkStatusTest) {
   // Purpose: Verify OnSettingsAckReceived returns a non-Ok status for
   // unsolicited SETTINGS ACK.
-  SettingsPromiseManager manager(/*on_receive_settings=*/nullptr);
+  SettingsPromiseManager manager = MakeManager();
   const Http2Status status = manager.OnSettingsAckReceived();
   EXPECT_FALSE(status.IsOk());
   EXPECT_EQ(status.GetType(), Http2Status::Http2ErrorType::kConnectionError);
@@ -695,7 +706,7 @@ TEST_P(SettingsPromiseManagerTest,
        BufferPeerSettingsInitialWindowSizeNonOkStatusTest) {
   // Purpose: Verify BufferPeerSettings returns a non-Ok status for invalid
   // initial window size.
-  SettingsPromiseManager manager(/*on_receive_settings=*/nullptr);
+  SettingsPromiseManager manager = MakeManager();
   const Http2Status status = manager.BufferPeerSettings(
       {{Http2Settings::kInitialWindowSizeWireId, RFC9113::kMaxSize31Bit + 1u}});
   EXPECT_FALSE(status.IsOk());
@@ -711,7 +722,7 @@ TEST_P(SettingsPromiseManagerTest,
        BufferPeerSettingsMaxFrameSizeNonOkStatusTest) {
   // Purpose: Verify BufferPeerSettings returns a non-Ok status for invalid
   // max frame size.
-  SettingsPromiseManager manager(/*on_receive_settings=*/nullptr);
+  SettingsPromiseManager manager = MakeManager();
   const Http2Status status = manager.BufferPeerSettings(
       {{Http2Settings::kMaxFrameSizeWireId, RFC9113::kMinimumFrameSize - 1u}});
   EXPECT_FALSE(status.IsOk());

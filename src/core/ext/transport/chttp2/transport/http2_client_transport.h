@@ -300,7 +300,7 @@ class Http2ClientTransport final : public ClientTransport,
   // the writable streams and write to the endpoint.
   auto MultiplexerLoop();
 
-  // Returns a promise to fetch data from the callhandler and pass it further
+  // Returns a promise to fetch data from the CallHandler and pass it further
   // down towards the endpoint.
   auto CallOutboundLoop(RefCountedPtr<Stream> stream);
 

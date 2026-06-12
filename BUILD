@@ -280,11 +280,11 @@ config_setting(
 python_config_settings()
 
 # This should be updated along with build_handwritten.yaml
-g_stands_for = "glacier"  # @unused
+g_stands_for = "garden"  # @unused
 
 core_version = "55.0.0"  # @unused
 
-version = "1.82.0-dev"  # @unused
+version = "1.83.0-dev"  # @unused
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
@@ -920,7 +920,10 @@ grpc_cc_library(
     external_deps = [
         "absl/functional:any_invocable",
     ],
-    visibility = ["//:__subpackages__"],
+    visibility = [
+        "//:__subpackages__",
+        "//bazel:virtual_rpcs",
+    ],
     deps = [
         "grpc++_public_hdrs",
     ],
@@ -1391,6 +1394,7 @@ grpc_cc_library(
         "nofixdeps",
     ],
     visibility = [
+        "//bazel:virtual_rpcs",
         "//test/core/transport/chttp2:__pkg__",
     ],
     deps = [
@@ -2660,6 +2664,7 @@ grpc_cc_library(
         "src/cpp/server/secure_server_credentials.h",
     ],
     external_deps = [
+        "absl/base",
         "absl/base:core_headers",
         "absl/functional:any_invocable",
         "absl/log:log",
@@ -2719,6 +2724,7 @@ grpc_cc_library(
         "//src/core:channel_stack_type",
         "//src/core:closure",
         "//src/core:default_event_engine",
+        "//src/core:down_cast",
         "//src/core:env",
         "//src/core:error",
         "//src/core:experiments",
@@ -2820,6 +2826,7 @@ grpc_cc_library(
         "//src/core:channel_stack_type",
         "//src/core:closure",
         "//src/core:default_event_engine",
+        "//src/core:down_cast",
         "//src/core:error",
         "//src/core:experiments",
         "//src/core:gpr_atm",

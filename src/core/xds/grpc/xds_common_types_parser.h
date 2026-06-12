@@ -17,6 +17,7 @@
 #ifndef GRPC_SRC_CORE_XDS_GRPC_XDS_COMMON_TYPES_PARSER_H
 #define GRPC_SRC_CORE_XDS_GRPC_XDS_COMMON_TYPES_PARSER_H
 
+#include <cstdint>
 #include <optional>
 
 #include "envoy/config/common/mutation_rules/v3/mutation_rules.upb.h"
@@ -104,6 +105,21 @@ XdsGrpcService ParseXdsGrpcService(
 HeaderMutationRules ParseHeaderMutationRules(
     const envoy_config_common_mutation_rules_v3_HeaderMutationRules*
         header_mutation_rules,
+    ValidationErrors* errors);
+
+XdsHeaderValueOption ParseXdsHeaderValueOption(
+    const envoy_config_core_v3_HeaderValueOption* header_value_option_config,
+    ValidationErrors* errors);
+
+// TODO(roth): We would ideally like to use a Slice for the header value, but
+// Slice isn't copyable, which makes it problematic to store here. The down-side
+// of this approach is that we need to make a copy when we apply the header
+// value to each RPC rather than just taking a new ref to the slice. Consider
+// solving this problem by adding a new RefCountedSlice class to represent an
+// immutable, ref-counted slice that can be turned into a Slice and thus added
+// to RPC metadata without a copy.
+std::pair<std::string, std::string> ParseXdsHeader(
+    const envoy_config_core_v3_HeaderValue* header_value,
     ValidationErrors* errors);
 
 }  // namespace grpc_core
