@@ -1106,6 +1106,7 @@ grpc_cc_test(
         "//src/core:arena",
         "//src/core:context",
         "//src/core:default_event_engine",
+        "//src/core:experiments",
         "//src/core:grpc_check",
         "//src/core:http2_security_frame",
         "//src/core:http2_settings",

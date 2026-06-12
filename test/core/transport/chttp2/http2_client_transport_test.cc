@@ -1313,7 +1313,8 @@ TEST_F(Http2ClientTransportTest,
   // 5. Client processes the settings frame and sends the stalled DATA frame.
   std::shared_ptr<EventSequenceEndpoint::Step> step3 = endpoint()->NewStep();
   settings.clear();
-  settings.push_back({Http2Settings::kInitialWindowSizeWireId, 65535u});
+  settings.push_back({Http2Settings::kInitialWindowSizeWireId,
+                      Http2Settings::kDefaultInitialWindowSize});
   step3->ThenPerformRead({
       helper_.SerializedSettingsFrame(settings),
   });

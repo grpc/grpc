@@ -124,13 +124,9 @@ class IncomingMetadataState {
   }
 
   // Called when a CONTINUATION frame is received.
-  void UpdateState(const Http2ContinuationFrame& frame,
-                   Http2FrameCountTracker& tracker) {
+  void UpdateState(const Http2ContinuationFrame& frame) {
     GRPC_CHECK(metadata_in_progress_);
     GRPC_CHECK_EQ(frame.stream_id, stream_id_);
-    if (frame.end_headers) {
-      tracker.OnEndHeaders();
-    }
     metadata_in_progress_ = !frame.end_headers;
   }
 
@@ -176,10 +172,17 @@ class IncomingMetadataState {
 
 class ReadContext {
  public:
-  explicit ReadContext(Slice peer_string, const bool is_client)
-      : peer_string_(std::move(peer_string)),
+  explicit ReadContext(const uint32_t max_new_streams_per_read_cycle,
+                       const PromiseEndpoint& endpoint, const bool is_client,
+                       const uint32_t max_security_frame_size)
+      : max_new_streams_per_read_cycle_(max_new_streams_per_read_cycle),
+        peer_string_(GetPeerString(endpoint)),
         is_client_(is_client),
-        header_assembler_(is_client) {}
+        max_security_frame_size_(max_security_frame_size),
+        header_assembler_(is_client) {
+    GRPC_DCHECK(max_new_streams_per_read_cycle > 0u)
+        << "0 is invalid, because we will never be able to create a stream.";
+  }
   ~ReadContext() = default;
 
   ReadContext(ReadContext&& rvalue) = delete;
@@ -190,16 +193,6 @@ class ReadContext {
   //////////////////////////////////////////////////////////////////////////////
   // Peer String management.
 
-  static Slice GetPeerString(const PromiseEndpoint& endpoint) {
-    absl::StatusOr<std::string> uri =
-        grpc_event_engine::experimental::ResolvedAddressToURI(
-            endpoint.GetPeerAddress());
-    if (uri.ok()) {
-      return Slice::FromCopiedString(*uri);
-    }
-    return Slice::FromCopiedString("unknown");
-  }
-
   Slice peer_string() const { return peer_string_.Ref(); }
 
   //////////////////////////////////////////////////////////////////////////////
@@ -209,6 +202,10 @@ class ReadContext {
     max_header_list_size_soft_limit_ = limit;
   }
   uint32_t soft_limit() const { return max_header_list_size_soft_limit_; }
+
+  uint32_t max_new_streams_per_read_cycle() const {
+    return max_new_streams_per_read_cycle_;
+  }
 
   HPackParser& parser() { return parser_; }
   HeaderAssembler& header_assembler() { return header_assembler_; }
@@ -238,8 +235,7 @@ class ReadContext {
         /*max_header_list_size_hard_limit=*/max_header_list_size_hard_limit,
         /*stream_id=*/metadata_state_.GetStreamId(),
     };
-    GRPC_HTTP2_COMMON_DLOG << "ParseAndDiscardHeaders buffer "
-                              "size: "
+    GRPC_HTTP2_COMMON_DLOG << "ParseAndDiscardHeaders buffer size: "
                            << buffer.Length() << " args: " << args.DebugString()
                            << " stream_id: " << metadata_state_.GetStreamId()
                            << " original_status: "
@@ -288,18 +284,28 @@ class ReadContext {
         /*last_stream_id=*/last_stream_id,
         /*is_client=*/is_client_,
         /*is_first_settings_processed=*/is_first_settings_processed,
-        /*tracker=*/tracker_);
+        /*tracker=*/tracker_,
+        /*max_security_frame_size=*/max_security_frame_size_);
   }
 
   // Called when a HEADER frame is received.
-  void UpdateState(const Http2HeaderFrame& frame) {
+  void UpdateState(const Http2HeaderFrame& frame,
+                   const bool is_existing_stream) {
     metadata_state_.UpdateState(frame);
     header_assembler_.SetStreamId(frame.stream_id);
+    if (!is_client_ && !is_existing_stream) {
+      // This is not relevant for clients, because only a client can initiate a
+      // stream. Not a server.
+      IncrementIncomingStreams();
+    }
   }
-
   // Called when a CONTINUATION frame is received.
-  void UpdateState(const Http2ContinuationFrame& frame) {
-    metadata_state_.UpdateState(frame, tracker_);
+  void UpdateState(const Http2ContinuationFrame& frame,
+                   GRPC_UNUSED const bool is_existing_stream) {
+    metadata_state_.UpdateState(frame);
+    if (frame.end_headers) {
+      tracker_.OnLastContinuationFrame();
+    }
   }
 
   // Returns true if we are in the middle of receiving a header block
@@ -369,15 +375,38 @@ class ReadContext {
     return absl::StrCat(
         "{ metadata_state : ", metadata_state_.DebugString(),
         ", read_loop_manager : ", read_loop_manager_.DebugString(),
-        ", tracker : ", tracker_.DebugString(), "}");
+        ", tracker : ", tracker_.DebugString(),
+        ", current_cycle_num_new_streams : ", current_cycle_num_new_streams_,
+        ", max_new_streams_per_read_cycle : ", max_new_streams_per_read_cycle_,
+        ", current_cycle_bytes_read : ", current_cycle_bytes_read_,
+        ", current_cycle_read_count : ", current_cycle_read_count_,
+        ", current_frame_header : ", current_frame_header_.ToString(), "}");
   }
 
  private:
+  static Slice GetPeerString(const PromiseEndpoint& endpoint) {
+    absl::StatusOr<std::string> uri =
+        grpc_event_engine::experimental::ResolvedAddressToURI(
+            endpoint.GetPeerAddress());
+    if (uri.ok()) {
+      return Slice::FromCopiedString(*uri);
+    }
+    return Slice::FromCopiedString("unknown");
+  }
+
   //////////////////////////////////////////////////////////////////////////////
   // Read Cycle Counter management.
   void ResetReadCycleCounters() {
     current_cycle_read_count_ = 0u;
     current_cycle_bytes_read_ = 0u;
+    current_cycle_num_new_streams_ = 0u;
+  }
+  void IncrementIncomingStreams() {
+    ++current_cycle_num_new_streams_;
+    if (current_cycle_num_new_streams_ >= max_new_streams_per_read_cycle_) {
+      read_loop_manager_.SetPauseReadLoop();
+      ResetReadCycleCounters();
+    }
   }
   void IncrementReadCycleCounters(const uint32_t payload_length) {
     current_cycle_bytes_read_ += kFrameHeaderSize + payload_length;
@@ -400,11 +429,17 @@ class ReadContext {
   uint64_t current_cycle_bytes_read_ = 0u;
   uint16_t current_cycle_read_count_ = 0u;
 
+  uint32_t current_cycle_num_new_streams_ = 0u;
+  // Unlike other limits, this cannot be a constexpr because it is set per
+  // transport via a ChannelArg named "grpc.http2.max_requests_per_read".
+  const uint32_t max_new_streams_per_read_cycle_;
+
   // Initialized only once at the time of transport creation.
   // Should remain constant for the lifetime of the transport.
   const Slice peer_string_;
   const bool is_client_;
 
+  const uint32_t max_security_frame_size_;
   uint32_t max_header_list_size_soft_limit_ =
       DEFAULT_MAX_HEADER_LIST_SIZE_SOFT_LIMIT;
   HPackParser parser_;

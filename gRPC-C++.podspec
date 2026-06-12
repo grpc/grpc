@@ -22,7 +22,7 @@
 Pod::Spec.new do |s|
   s.name     = 'gRPC-C++'
   # TODO (mxyan): use version that match gRPC version when pod is stabilized
-  version = '1.82.0-dev'
+  version = '1.83.0-dev'
   s.version  = version
   s.summary  = 'gRPC C++ library'
   s.homepage = 'https://grpc.io'
@@ -363,6 +363,7 @@ Pod::Spec.new do |s|
                       'src/core/credentials/call/jwt_util.h',
                       'src/core/credentials/call/oauth2/oauth2_credentials.h',
                       'src/core/credentials/call/plugin/plugin_credentials.h',
+                      'src/core/credentials/call/regional_access_boundary_fetcher.h',
                       'src/core/credentials/call/token_fetcher/token_fetcher_credentials.h',
                       'src/core/credentials/transport/alts/alts_credentials.h',
                       'src/core/credentials/transport/alts/alts_security_connector.h',
@@ -1353,6 +1354,7 @@ Pod::Spec.new do |s|
                       'src/core/tsi/ssl/key_logging/ssl_key_logging.h',
                       'src/core/tsi/ssl/session_cache/ssl_session.h',
                       'src/core/tsi/ssl/session_cache/ssl_session_cache.h',
+                      'src/core/tsi/ssl_telemetry_utils.h',
                       'src/core/tsi/ssl_transport_security.h',
                       'src/core/tsi/ssl_transport_security_utils.h',
                       'src/core/tsi/ssl_types.h',
@@ -1800,6 +1802,7 @@ Pod::Spec.new do |s|
                               'src/core/credentials/call/jwt_util.h',
                               'src/core/credentials/call/oauth2/oauth2_credentials.h',
                               'src/core/credentials/call/plugin/plugin_credentials.h',
+                              'src/core/credentials/call/regional_access_boundary_fetcher.h',
                               'src/core/credentials/call/token_fetcher/token_fetcher_credentials.h',
                               'src/core/credentials/transport/alts/alts_credentials.h',
                               'src/core/credentials/transport/alts/alts_security_connector.h',
@@ -2790,6 +2793,7 @@ Pod::Spec.new do |s|
                               'src/core/tsi/ssl/key_logging/ssl_key_logging.h',
                               'src/core/tsi/ssl/session_cache/ssl_session.h',
                               'src/core/tsi/ssl/session_cache/ssl_session_cache.h',
+                              'src/core/tsi/ssl_telemetry_utils.h',
                               'src/core/tsi/ssl_transport_security.h',
                               'src/core/tsi/ssl_transport_security_utils.h',
                               'src/core/tsi/ssl_types.h',

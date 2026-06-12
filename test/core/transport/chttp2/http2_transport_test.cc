@@ -53,6 +53,7 @@
 #include "src/core/util/ref_counted.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/time.h"
+#include "test/core/transport/util/mock_promise_endpoint.h"
 #include "gtest/gtest.h"
 #include "absl/log/log.h"
 #include "absl/status/status.h"
@@ -810,7 +811,10 @@ TEST_F(Http2ReadContextTest, SetAndGetFrameHeader) {
   // Purpose: Verify that SetCurrentFrameHeader stores header attributes
   // correctly. Assertions: GetCurrentFrameHeader returns the exact frame header
   // that was set.
-  ReadContext context(Slice::FromCopiedString("peer"), true);
+  util::testing::MockPromiseEndpoint mock_endpoint(1234);
+  ReadContext context(/*max_new_streams_per_read_cycle=*/32u,
+                      mock_endpoint.promise_endpoint, true,
+                      GrpcErrors::kMaxSecurityFrameSize);
   Http2FrameHeader header;
   header.length = 100u;
   header.type = 1u;
@@ -839,7 +843,10 @@ TEST_F(Http2ReadContextTest, ReadCycleFramesLimits) {
       "TestFramesLimits",
       [&was_pending_under_limit,
        &was_pending_at_limit]() -> Poll<absl::Status> {
-        ReadContext read_context(Slice::FromCopiedString("peer"), true);
+        util::testing::MockPromiseEndpoint mock_endpoint(1234);
+        ReadContext read_context(/*max_new_streams_per_read_cycle=*/32u,
+                                 mock_endpoint.promise_endpoint, true,
+                                 GrpcErrors::kMaxSecurityFrameSize);
         const Http2FrameHeader header = {
             0u,  // length
             0u,  // type

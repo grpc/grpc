@@ -4807,6 +4807,7 @@ grpc_cc_library(
         "error",
         "grpc_check",
         "iomgr_fwd",
+        "metrics",
         "ssl_transport_security_utils",
         "sync",
         "unique_type_name",
@@ -4942,6 +4943,7 @@ grpc_cc_library(
         "iomgr_fwd",
         "load_file",
         "match",
+        "metrics",
         "ref_counted",
         "slice",
         "slice_refcount",
@@ -5039,7 +5041,6 @@ grpc_cc_library(
         "//:orphanable",
         "//:promise",
         "//:ref_counted_ptr",
-        "//:transport_auth_context",
     ],
 )
 
@@ -5145,10 +5146,8 @@ grpc_cc_library(
         "absl/strings:str_format",
     ],
     deps = [
-        "activity",
         "arena_promise",
         "closure",
-        "context",
         "error",
         "error_utils",
         "grpc_check",
@@ -5156,10 +5155,10 @@ grpc_cc_library(
         "json",
         "json_reader",
         "load_file",
+        "map",
         "metadata_batch",
-        "poll",
-        "pollset_set",
         "ref_counted",
+        "regional_access_boundary_fetcher",
         "slice",
         "slice_refcount",
         "status_helper",
@@ -5180,6 +5179,7 @@ grpc_cc_library(
         "//:ref_counted_ptr",
         "//:transport_auth_context",
         "//:uri",
+        "//src/core:default_event_engine",
     ],
 )
 
@@ -5220,8 +5220,9 @@ grpc_cc_library(
         "json_reader",
         "json_writer",
         "load_file",
+        "map",
+        "regional_access_boundary_fetcher",
         "slice",
-        "slice_refcount",
         "status_conversion",
         "status_helper",
         "time",
@@ -6158,6 +6159,7 @@ grpc_cc_library(
         "xds/grpc/xds_common_types.h",
     ],
     external_deps = [
+        "absl/status",
         "absl/strings",
     ],
     tags = ["nofixdeps"],
@@ -6165,6 +6167,8 @@ grpc_cc_library(
         "grpc_matchers",
         "json",
         "match",
+        "metadata_batch",
+        "slice",
         "time",
         "validation_errors",
         "xds_server_grpc",
@@ -10969,7 +10973,6 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/log",
-        "absl/strings",
         "absl/types:span",
     ],
     deps = [
@@ -11633,6 +11636,45 @@ grpc_cc_library(
     ],
 )
 
+grpc_cc_library(
+    name = "regional_access_boundary_fetcher",
+    srcs = ["credentials/call/regional_access_boundary_fetcher.cc"],
+    hdrs = ["credentials/call/regional_access_boundary_fetcher.h"],
+    external_deps = [
+        "absl/log:log",
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
+        "absl/strings:str_format",
+    ],
+    deps = [
+        "closure",
+        "dual_ref_counted",
+        "env",
+        "error",
+        "grpc_check",
+        "httpcli_ssl_credentials",
+        "json",
+        "json_reader",
+        "metadata",
+        "pollset_set",
+        "ref_counted",
+        "slice",
+        "status_helper",
+        "time",
+        "//:backoff",
+        "//:gpr",
+        "//:grpc_base",
+        "//:grpc_security_base",
+        "//:httpcli",
+        "//:iomgr",
+        "//:ref_counted_ptr",
+        "//:transport_auth_context",
+        "//:uri",
+        "//src/core:default_event_engine",
+    ],
+)
+
 ### UPB Targets
 
 grpc_upb_proto_library(
@@ -12063,6 +12105,7 @@ grpc_cc_library(
         "client_channel/virtual_channel.h",
     ],
     external_deps = [
+        "absl/base",
         "absl/functional:any_invocable",
         "absl/status",
         "absl/status:statusor",
@@ -12080,6 +12123,7 @@ grpc_cc_library(
         "message",
         "slice_buffer",
         ":default_event_engine",
+        ":down_cast",
         ":session_endpoint",
         "//:channel",
         "//:channel_arg_names",
@@ -12087,6 +12131,7 @@ grpc_cc_library(
         "//:config",
         "//:gpr",
         "//:grpc_base",
+        "//:grpc_security_base",
         "//:grpc_transport_chttp2",
         "//:promise",
         "//:ref_counted_ptr",

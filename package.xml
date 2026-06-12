@@ -13,8 +13,8 @@
  <date>2019-09-24</date>
  <time>16:06:07</time>
  <version>
-  <release>1.82.0dev</release>
-  <api>1.82.0dev</api>
+  <release>1.83.0dev</release>
+  <api>1.83.0dev</api>
  </version>
  <stability>
   <release>beta</release>
@@ -22,7 +22,7 @@
  </stability>
  <license>Apache 2.0</license>
  <notes>
-- gRPC Core 1.82.0 update
+- gRPC Core 1.83.0 update
  </notes>
  <contents>
   <dir baseinstalldir="/" name="/">
@@ -257,6 +257,8 @@
     <file baseinstalldir="/" name="src/core/credentials/call/oauth2/oauth2_credentials.h" role="src" />
     <file baseinstalldir="/" name="src/core/credentials/call/plugin/plugin_credentials.cc" role="src" />
     <file baseinstalldir="/" name="src/core/credentials/call/plugin/plugin_credentials.h" role="src" />
+    <file baseinstalldir="/" name="src/core/credentials/call/regional_access_boundary_fetcher.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/credentials/call/regional_access_boundary_fetcher.h" role="src" />
     <file baseinstalldir="/" name="src/core/credentials/call/token_fetcher/token_fetcher_credentials.cc" role="src" />
     <file baseinstalldir="/" name="src/core/credentials/call/token_fetcher/token_fetcher_credentials.h" role="src" />
     <file baseinstalldir="/" name="src/core/credentials/transport/alts/alts_credentials.cc" role="src" />
@@ -2004,6 +2006,8 @@
     <file baseinstalldir="/" name="src/core/tsi/ssl/session_cache/ssl_session_cache.cc" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/ssl/session_cache/ssl_session_cache.h" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/ssl/session_cache/ssl_session_openssl.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/tsi/ssl_telemetry_utils.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/tsi/ssl_telemetry_utils.h" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/ssl_transport_security.cc" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/ssl_transport_security.h" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/ssl_transport_security_utils.cc" role="src" />
