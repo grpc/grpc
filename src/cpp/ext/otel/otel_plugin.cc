@@ -809,6 +809,7 @@ OpenTelemetryPluginImpl::OpenTelemetryPluginImpl(
                                       descriptor.value_type));
               }
               break;
+
             case grpc_core::GlobalInstrumentsRegistry::InstrumentType::
                 kHistogram:
               switch (descriptor.value_type) {
@@ -915,21 +916,16 @@ OpenTelemetryPluginImpl::~OpenTelemetryPluginImpl() {
   }
 }
 
-namespace {
-constexpr absl::string_view kLocality = "grpc.lb.locality";
-constexpr absl::string_view kBackendService = "grpc.lb.backend_service";
-}  // namespace
-
 absl::string_view OpenTelemetryPluginImpl::OptionalLabelKeyToString(
     grpc_core::ClientCallTracerInterface::CallAttemptTracer::OptionalLabelKey
         key) {
   switch (key) {
     case grpc_core::ClientCallTracerInterface::CallAttemptTracer::
         OptionalLabelKey::kLocality:
-      return kLocality;
+      return grpc_core::kMetricLabelLocality;
     case grpc_core::ClientCallTracerInterface::CallAttemptTracer::
         OptionalLabelKey::kBackendService:
-      return kBackendService;
+      return grpc_core::kMetricLabelBackendService;
     default:
       grpc_core::Crash("Illegal OptionalLabelKey index");
   }
@@ -938,10 +934,10 @@ absl::string_view OpenTelemetryPluginImpl::OptionalLabelKeyToString(
 std::optional<
     grpc_core::ClientCallTracerInterface::CallAttemptTracer::OptionalLabelKey>
 OpenTelemetryPluginImpl::OptionalLabelStringToKey(absl::string_view key) {
-  if (key == kLocality) {
+  if (key == grpc_core::kMetricLabelLocality) {
     return grpc_core::ClientCallTracerInterface::CallAttemptTracer::
         OptionalLabelKey::kLocality;
-  } else if (key == kBackendService) {
+  } else if (key == grpc_core::kMetricLabelBackendService) {
     return grpc_core::ClientCallTracerInterface::CallAttemptTracer::
         OptionalLabelKey::kBackendService;
   }
