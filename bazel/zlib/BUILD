@@ -13,5 +13,6 @@
 # limitations under the License.
 
 exports_files([
-    "*.patch",
+    "add_custom_build_file.patch",
+    "add_module_dot_bazel.patch",
 ])
