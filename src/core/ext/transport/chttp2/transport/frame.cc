@@ -831,7 +831,8 @@ Http2Status ValidateFrameHeader(const uint32_t max_frame_size_setting,
                                 const uint32_t last_stream_id,
                                 const bool is_client,
                                 const bool is_first_settings_processed,
-                                Http2FrameCountTracker& tracker) {
+                                Http2FrameCountTracker& tracker,
+                                const uint32_t max_security_frame_size) {
   const bool is_data_frame =
       current_frame_header.type == static_cast<uint8_t>(FrameType::kData);
   const bool is_continuation_frame =
@@ -859,6 +860,16 @@ Http2Status ValidateFrameHeader(const uint32_t max_frame_size_setting,
         absl::StrCat(RFC9113::kFrameSizeLargerThanMaxFrameSizeSetting,
                      ", Current Size = ", current_frame_header.length,
                      ", Max Size = ", max_frame_size_setting));
+  }
+
+  if (GPR_UNLIKELY(current_frame_header.type ==
+                       static_cast<uint8_t>(FrameType::kCustomSecurity) &&
+                   current_frame_header.length > max_security_frame_size)) {
+    return Http2Status::Http2ConnectionError(
+        Http2ErrorCode::kFrameSizeError,
+        absl::StrCat(GrpcErrors::kSecurityFrameTooLarge,
+                     max_security_frame_size,
+                     ", Received size : ", current_frame_header.length));
   }
 
   // RFC 9113 (Section 6.10) requires that if a HEADERS frame does not have
@@ -928,3 +939,49 @@ Http2Status ValidateFrameHeader(const uint32_t max_frame_size_setting,
   return Http2Status::Ok();
 }
 }  // namespace grpc_core
+
+/*
+A note on Security Frames
+
+Security Frame is a custom frame defined by gRPC.
+
+SECURITY Frame
+
+   The SECURITY frame (type=200) is used to transmit out-of-band security and
+   transport-level privacy information between peers.
+
+   Both peers MUST agree to allow SECURITY frames.
+
+    +------------------------+
+    |     Payload Length     |
+    |          (24)          |
+    +--------+--------+------+
+    |  Type  | Flags  |
+    |  (200) |  (8)   |
+    +-+------+--------+---------------+
+    |R|       Stream Identifier       |
+    | |             (31)              |
+    +=+===============================+
+    |      Security Payload (*)     ...
+    +---------------------------------+
+
+   The SECURITY frame payload contains opaque data intended for the registered
+   transport framing endpoint extension.
+
+   The SECURITY frame does not define flags.
+
+Payload Size Limits and Chunking
+
+   The current implementation of the SECURITY frame has a HARD limit of 16,384
+   bytes (16 KB) for its payload.
+
+   This strict 16 KB limit is enforced because 16,384 bytes is the minimum
+   valid value for SETTINGS_MAX_FRAME_SIZE (the smallest maximum frame size an
+   HTTP/2 peer is allowed to advertise). Currently, the SECURITY frame does not
+   support chunking. Therefore, if a peer attempts to send a SECURITY payload
+   larger than the receiver's advertised SETTINGS_MAX_FRAME_SIZE, the endpoint
+   MUST treat this as a CONNECTION ERROR of type FRAME_SIZE_ERROR. By enforcing
+a hard 16 KB upper bound, we guarantee that the frame will safely fit within any
+compliant peer's single-frame receive buffer without requiring payload chunking.
+
+*/

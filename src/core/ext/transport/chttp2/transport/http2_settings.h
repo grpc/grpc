@@ -20,6 +20,7 @@
 #include <grpc/support/port_platform.h>
 #include <stdint.h>
 
+#include <algorithm>
 #include <cstdint>
 #include <optional>
 
@@ -49,6 +50,23 @@ class Http2Settings {
   };
 
   constexpr static uint8_t kNumSettings = 9u;
+
+  // RFC9113 defines the default value for some of these settings.
+  // https://datatracker.ietf.org/doc/html/rfc9113#name-defined-settings
+  // RFC defined defaults for RFC defined settings :
+  constexpr static uint32_t kDefaultHeaderTableSize = 4096u;
+  constexpr static uint32_t kDefaultMaxConcurrentStreams = 4294967295u;
+  constexpr static uint32_t kDefaultInitialWindowSize = 65535u;
+  constexpr static uint32_t kDefaultMaxFrameSize = 16384u;
+  constexpr static bool kDefaultEnablePush = true;
+
+  // gRPC defined defaults for RFC defined settings :
+  constexpr static uint32_t kDefaultMaxHeaderListSize = 16777216u;
+
+  // gRPC defined defaults.
+  constexpr static uint32_t kDefaultPreferredReceiveCryptoMessageSize = 0u;
+  constexpr static bool kDefaultAllowTrueBinaryMetadata = false;
+  constexpr static bool kDefaultAllowSecurityFrame = false;
 
   void Diff(bool is_first_send, const Http2Settings& old_setting,
             absl::FunctionRef<void(uint16_t key, uint32_t value)> cb) const;
@@ -81,7 +99,7 @@ class Http2Settings {
   }
   void SetEnablePush(bool x) { enable_push_ = x; }
   void SetMaxHeaderListSize(uint32_t x) {
-    max_header_list_size_ = std::min(x, 16777216u);
+    max_header_list_size_ = std::min(x, kDefaultMaxHeaderListSize);
   }
   void SetAllowTrueBinaryMetadata(bool x) { allow_true_binary_metadata_ = x; }
   void SetMaxFrameSize(uint32_t x) {
@@ -178,41 +196,42 @@ class Http2Settings {
   // RFC9113 states the default value for SETTINGS_HEADER_TABLE_SIZE
   // Currently this is set only once in the lifetime of a transport.
   // We plan to change that in the future.
-  uint32_t header_table_size_ = 4096u;
+  uint32_t header_table_size_ = kDefaultHeaderTableSize;
 
   // CLIENT : Set only once in the lifetime of a client transport. This is set
   // to 0 for client.
   // SERVER : This setting can change for the server. This is usually changed to
   // handle memory pressure.
-  uint32_t initial_max_concurrent_streams_ = 4294967295u;
-  uint32_t max_concurrent_streams_ = 4294967295u;
+  uint32_t initial_max_concurrent_streams_ = kDefaultMaxConcurrentStreams;
+  uint32_t max_concurrent_streams_ = kDefaultMaxConcurrentStreams;
 
   // RFC9113 states the default for SETTINGS_INITIAL_WINDOW_SIZE
   // Both client and servers can change this setting. This is usually changed to
   // handle memory pressure.
-  uint32_t initial_window_size_ = 65535u;
+  uint32_t initial_window_size_ = kDefaultInitialWindowSize;
 
   // RFC9113 states the default for SETTINGS_MAX_FRAME_SIZE
   // Both client and servers can change this setting. This is usually changed to
   // handle memory pressure.
-  uint32_t max_frame_size_ = 16384u;
+  uint32_t max_frame_size_ = kDefaultMaxFrameSize;
 
   // This is an advisory but we currently enforce it.
   // Set only once in the lifetime of a transport currently.
   // When a peer that updates this more than once, that may indicate either an
   // underlying issue or a malicious peer.
-  uint32_t max_header_list_size_ = 16777216u;
+  uint32_t max_header_list_size_ = kDefaultMaxHeaderListSize;
 
   // gRPC defined setting
   // Both client and servers can change this setting. This is usually changed to
   // handle memory pressure.
-  uint32_t preferred_receive_crypto_message_size_ = 0u;
+  uint32_t preferred_receive_crypto_message_size_ =
+      kDefaultPreferredReceiveCryptoMessageSize;
 
   // RFC9113 defined default is true. However, for gRPC we always then set it to
   // false via the SetEnablePush function
   // Currently this is set only once in the lifetime of a transport.
   // We have no plans to support this in the future.
-  bool enable_push_ = true;
+  bool enable_push_ = kDefaultEnablePush;
 
   // gRPC defined setting
   // Currently this is set only once in the lifetime of a transport.
@@ -221,7 +240,7 @@ class Http2Settings {
   // flag. Both peers can send each other the default non-binary METADATA
   // irrespective of this flag. This flag says if we are willing to accept
   // Binary-Metadata from the peer or not.
-  bool allow_true_binary_metadata_ = false;
+  bool allow_true_binary_metadata_ = kDefaultAllowTrueBinaryMetadata;
 
   // gRPC defined setting
   // Unlike most other SETTINGS, this setting is negotiated between the client
@@ -229,7 +248,7 @@ class Http2Settings {
   // apply the custom SECURITY frame.
   // Currently this is set only once in the lifetime of a transport.
   // Disconnect if it is received more than once from the peer.
-  bool allow_security_frame_ = false;
+  bool allow_security_frame_ = kDefaultAllowSecurityFrame;
 };
 
 }  // namespace grpc_core
