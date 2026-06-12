@@ -38,7 +38,6 @@
 #include "src/core/client_channel/client_channel_internal.h"
 #include "src/core/client_channel/config_selector.h"
 #include "src/core/config/core_configuration.h"
-#include "src/core/filter/blackboard.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
@@ -72,6 +71,7 @@
 #include "src/core/util/uri.h"
 #include "src/core/util/work_serializer.h"
 #include "src/core/util/xxhash_inline.h"
+#include "src/core/xds/grpc/blackboard.h"
 #include "src/core/xds/grpc/xds_bootstrap_grpc.h"
 #include "src/core/xds/grpc/xds_client_grpc.h"
 #include "src/core/xds/grpc/xds_http_filter.h"
@@ -109,7 +109,8 @@ class XdsResolver final : public Resolver {
         interested_parties_(args.pollset_set),
         uri_(std::move(args.uri)),
         data_plane_authority_(std::move(data_plane_authority)),
-        channel_id_(absl::Uniform<uint64_t>(absl::BitGen())) {
+        channel_id_(absl::Uniform<uint64_t>(absl::BitGen())),
+        blackboard_(MakeRefCounted<Blackboard>()) {
     GRPC_TRACE_LOG(xds_resolver, INFO)
         << "[xds_resolver " << this << "] created for URI " << uri_.ToString()
         << "; data plane authority is " << data_plane_authority_;
@@ -218,9 +219,7 @@ class XdsResolver final : public Resolver {
 
     void BuildFilterChains(const XdsConfig& xds_config,
                            const XdsHttpFilterRegistry& http_filter_registry,
-                           FilterChainBuilder& builder,
-                           const Blackboard* old_blackboard,
-                           Blackboard* new_blackboard);
+                           FilterChainBuilder& builder, Blackboard& blackboard);
 
    private:
     class RouteListIterator;
@@ -256,9 +255,7 @@ class XdsResolver final : public Resolver {
                  *other_xds->xds_config_->route_config;
     }
 
-    void BuildFilterChains(FilterChainBuilder& builder,
-                           const Blackboard* old_blackboard,
-                           Blackboard* new_blackboard) override;
+    void BuildFilterChains(FilterChainBuilder& builder) override;
 
     absl::StatusOr<RefCountedPtr<const FilterChain>> GetCallConfig(
         GetCallConfigArgs args) override;
@@ -356,6 +353,7 @@ class XdsResolver final : public Resolver {
   std::string data_plane_authority_;
   const uint64_t channel_id_;
 
+  RefCountedPtr<Blackboard> blackboard_;
   OrphanablePtr<XdsDependencyManager> dependency_mgr_;
   RefCountedPtr<const XdsConfig> current_config_;
   std::map<absl::string_view, WeakRefCountedPtr<ClusterRef>> cluster_ref_map_;
@@ -422,8 +420,7 @@ XdsResolver::RouteConfigData::GetRouteForRequest(
 void XdsResolver::RouteConfigData::BuildFilterChains(
     const XdsConfig& xds_config,
     const XdsHttpFilterRegistry& http_filter_registry,
-    FilterChainBuilder& builder, const Blackboard* old_blackboard,
-    Blackboard* new_blackboard) {
+    FilterChainBuilder& builder, Blackboard& blackboard) {
   const auto& hcm = std::get<XdsListenerResource::HttpConnectionManager>(
       xds_config.listener->listener);
   XdsRouting::PerRouteFilterChainBuilder per_route_builder(
@@ -431,7 +428,7 @@ void XdsResolver::RouteConfigData::BuildFilterChains(
       [](FilterChainBuilder& builder) {
         builder.AddFilter<ClusterSelectionFilter>(nullptr);
       },
-      old_blackboard, new_blackboard);
+      blackboard);
   // Set the filter chain for each route.
   for (auto& route_entry : routes_) {
     const auto* route_action =
@@ -754,15 +751,13 @@ XdsResolver::XdsConfigSelector::GetCallConfig(GetCallConfigArgs args) {
 }
 
 void XdsResolver::XdsConfigSelector::BuildFilterChains(
-    FilterChainBuilder& builder, const Blackboard* old_blackboard,
-    Blackboard* new_blackboard) {
+    FilterChainBuilder& builder) {
   // Build filter chains.
   const auto& http_filter_registry =
       DownCast<const GrpcXdsBootstrap&>(resolver_->xds_client_->bootstrap())
           .http_filter_registry();
   route_config_data_->BuildFilterChains(*xds_config_, http_filter_registry,
-                                        builder, old_blackboard,
-                                        new_blackboard);
+                                        builder, *resolver_->blackboard_);
 }
 
 //

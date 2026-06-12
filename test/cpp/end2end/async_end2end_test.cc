@@ -34,6 +34,7 @@
 
 #include "src/core/client_channel/backup_poller.h"
 #include "src/core/config/config_vars.h"
+#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/iomgr/port.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/debug_location.h"
@@ -45,6 +46,7 @@
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/test_config.h"
 #include "test/cpp/end2end/end2end_test_utils.h"
+#include "test/cpp/end2end/test_service_impl.h"
 #include "test/cpp/util/string_ref_helper.h"
 #include "test/cpp/util/test_credentials_provider.h"
 #include "absl/log/log.h"
@@ -269,16 +271,22 @@ class ServerBuilderSyncPluginDisabler : public grpc::ServerBuilderOption {
 class TestScenario {
  public:
   TestScenario(bool inproc_stub, const std::string& creds_type, bool hcs,
-               const std::string& content)
+               const std::string& content, bool use_virtual_rpcs = false)
       : inproc(inproc_stub),
         health_check_service(hcs),
         credentials_type(creds_type),
-        message_content(content) {}
+        message_content(content),
+        use_virtual_rpcs_(use_virtual_rpcs) {}
   void Log() const;
+  bool use_virtual_rpcs() const { return use_virtual_rpcs_; }
+
   bool inproc;
   bool health_check_service;
   const std::string credentials_type;
   const std::string message_content;
+
+ private:
+  bool use_virtual_rpcs_;
 };
 
 std::ostream& operator<<(std::ostream& out, const TestScenario& scenario) {
@@ -286,7 +294,9 @@ std::ostream& operator<<(std::ostream& out, const TestScenario& scenario) {
              << ", credentials='" << scenario.credentials_type
              << ", health_check_service="
              << (scenario.health_check_service ? "true" : "false")
-             << "', message_size=" << scenario.message_content.size() << "}";
+             << "', message_size=" << scenario.message_content.size()
+             << ", virtual=" << (scenario.use_virtual_rpcs() ? "true" : "false")
+             << "}";
 }
 
 void TestScenario::Log() const {
@@ -310,6 +320,12 @@ class AsyncEnd2endTest : public ::testing::TestWithParam<TestScenario> {
   }
 
   void TearDown() override {
+    if (session_context_) {
+      session_context_->TryCancel();
+      if (session_done_) {
+        session_done_->WaitForNotification();
+      }
+    }
     stub_.reset();
     ServerShutdown();
     grpc_recycle_unused_port(port_);
@@ -332,7 +348,9 @@ class AsyncEnd2endTest : public ::testing::TestWithParam<TestScenario> {
     auto server_creds = GetCredentialsProvider()->GetServerCredentials(
         GetParam().credentials_type);
     builder.AddListeningPort(server_address_.str(), server_creds);
-    service_ = std::make_unique<grpc::testing::EchoTestService::AsyncService>();
+    service_ = std::make_unique<
+        TestMultipleServiceImpl<grpc::testing::EchoTestService::AsyncService>>(
+        GetParam().use_virtual_rpcs());
     builder.RegisterService(service_.get());
     if (GetParam().health_check_service) {
       builder.RegisterService(&health_check_);
@@ -358,6 +376,19 @@ class AsyncEnd2endTest : public ::testing::TestWithParam<TestScenario> {
         !(GetParam().inproc) ? grpc::CreateCustomChannel(server_address_.str(),
                                                          channel_creds, args)
                              : server_->InProcessChannel(args);
+
+    if (GetParam().use_virtual_rpcs()) {
+      session_context_ = std::make_unique<grpc::ClientContext>();
+      session_request_ = std::make_unique<grpc::testing::EchoRequest>();
+      session_request_->set_message("Session request");
+      session_done_ = std::make_unique<absl::Notification>();
+
+      channel = MaybeWrapVirtualChannel<grpc::testing::EchoRequest,
+                                        grpc::testing::EchoResponse>(
+          channel, args, true, session_context_.get(), session_request_.get(),
+          session_done_.get());
+    }
+
     stub_ = grpc::testing::EchoTestService::NewStub(channel);
   }
 
@@ -397,10 +428,15 @@ class AsyncEnd2endTest : public ::testing::TestWithParam<TestScenario> {
   std::unique_ptr<ServerCompletionQueue> cq_;
   std::unique_ptr<grpc::testing::EchoTestService::Stub> stub_;
   std::unique_ptr<Server> server_;
-  std::unique_ptr<grpc::testing::EchoTestService::AsyncService> service_;
+  std::unique_ptr<
+      TestMultipleServiceImpl<grpc::testing::EchoTestService::AsyncService>>
+      service_;
   HealthCheck health_check_;
   std::ostringstream server_address_;
   int port_;
+  std::unique_ptr<grpc::ClientContext> session_context_;
+  std::unique_ptr<grpc::testing::EchoRequest> session_request_;
+  std::unique_ptr<absl::Notification> session_done_;
 };
 
 TEST_P(AsyncEnd2endTest, SimpleRpc) {
@@ -460,6 +496,7 @@ TEST_P(AsyncEnd2endTest, SequentialRpcs) {
 }
 
 TEST_P(AsyncEnd2endTest, ReconnectChannel) {
+  SKIP_IF_VIRTUAL();
   // GRPC_CLIENT_CHANNEL_BACKUP_POLL_INTERVAL_MS is set to 100ms in main()
   if (GetParam().inproc) {
     return;
@@ -1997,11 +2034,15 @@ std::vector<TestScenario> CreateTestScenarios(bool /*test_secure*/,
     for (auto msg = messages.begin(); msg != messages.end(); msg++) {
       for (auto cred = credentials_types.begin();
            cred != credentials_types.end(); ++cred) {
-        scenarios.emplace_back(false, *cred, health_check_service, *msg);
+        scenarios.emplace_back(false, *cred, health_check_service, *msg, false);
+        if (!IsPh2Test()) {
+          scenarios.emplace_back(false, *cred, health_check_service, *msg,
+                                 true);
+        }
       }
       if (insec_ok()) {
         scenarios.emplace_back(true, kInsecureCredentialsType,
-                               health_check_service, *msg);
+                               health_check_service, *msg, false);
       }
     }
   }

@@ -58,8 +58,7 @@ from ._typing import SerializingFunction
 from ._utils import _timeout_to_deadline
 
 if TYPE_CHECKING:
-    from collections.abc import AsyncIterable
-    from collections.abc import AsyncIterator
+    from collections.abc import AsyncIterable, AsyncIterator
 
 
 _LOCAL_CANCELLATION_DETAILS = "Locally cancelled by application!"
@@ -353,12 +352,15 @@ class InterceptedCall:
 
         call_completed = False
 
-        try:
+        if interceptors_task.cancelled() or (
+            interceptors_task.done()
+            and interceptors_task.exception() is not None
+        ):
+            call_completed = True
+        else:
             call = interceptors_task.result()
             if call.done():
                 call_completed = True
-        except (AioRpcError, asyncio.CancelledError):
-            call_completed = True
 
         if call_completed:
             for callback in self._pending_add_done_callbacks:
@@ -378,42 +380,47 @@ class InterceptedCall:
         callback(self)
 
     def cancel(self) -> bool:
+        if self._interceptors_task.cancelled():
+            return False
+
         if not self._interceptors_task.done():
             # There is no yet the intercepted call available,
             # Trying to cancel it by using the generic Asyncio
             # cancellation method.
             return self._interceptors_task.cancel()
 
-        try:
-            call = self._interceptors_task.result()
-        except AioRpcError:
+        if self._interceptors_task.exception() is not None:
             return False
-        except asyncio.CancelledError:
-            return False
+
+        call = self._interceptors_task.result()
 
         return call.cancel()
 
     def cancelled(self) -> bool:
+        if self._interceptors_task.cancelled():
+            return True
         if not self._interceptors_task.done():
             return False
 
-        try:
-            call = self._interceptors_task.result()
-        except AioRpcError as err:
-            return err.code() == grpc.StatusCode.CANCELLED
-        except asyncio.CancelledError:
-            return True
+        exc = self._interceptors_task.exception()
+        if exc is not None:
+            if isinstance(exc, AioRpcError):
+                return exc.code() == grpc.StatusCode.CANCELLED
+            return False
+
+        call = self._interceptors_task.result()
 
         return call.cancelled()
 
     def done(self) -> bool:
+        if self._interceptors_task.cancelled():
+            return True
         if not self._interceptors_task.done():
             return False
-
-        try:
-            call = self._interceptors_task.result()
-        except (AioRpcError, asyncio.CancelledError):
+        if self._interceptors_task.exception() is not None:
             return True
+
+        call = self._interceptors_task.result()
 
         return call.done()
 
@@ -422,11 +429,14 @@ class InterceptedCall:
             self._pending_add_done_callbacks.append(callback)
             return
 
-        try:
-            call = self._interceptors_task.result()
-        except (AioRpcError, asyncio.CancelledError):
+        if (
+            self._interceptors_task.cancelled()
+            or self._interceptors_task.exception() is not None
+        ):
             callback(self)
             return
+
+        call = self._interceptors_task.result()
 
         if call.done():
             callback(self)
@@ -563,11 +573,14 @@ class _InterceptedStreamRequestMixin(Generic[RequestType]):
 
         return request_iterator
 
-    async def _proxy_writes_as_request_iterator(self):
+    async def _proxy_writes_as_request_iterator(
+        self,
+    ) -> AsyncGenerator[RequestType, None]:
         await self._interceptors_task
 
         if self._write_to_iterator_queue is None:
-            return
+            err_msg = "Write iterator queue is not initialized"
+            raise ValueError(err_msg)
 
         while True:
             value = await self._write_to_iterator_queue.get()
@@ -579,7 +592,7 @@ class _InterceptedStreamRequestMixin(Generic[RequestType]):
         self,
         request: Union[RequestType, _FINISH_ITERATOR_SENTINEL_T],
         call: _base_call.Call,
-    ):
+    ) -> None:
         # Write the specified 'request' to the request iterator queue using the
         # specified 'call' to allow for interruption of the write in the case
         # of abrupt termination of the call.
@@ -752,7 +765,7 @@ class InterceptedUnaryUnaryCall(
 
 
 class InterceptedUnaryStreamCall(
-    _InterceptedStreamResponseMixin,
+    _InterceptedStreamResponseMixin[ResponseType],
     InterceptedCall,
     _base_call.UnaryStreamCall[RequestType, ResponseType],
 ):
@@ -812,7 +825,7 @@ class InterceptedUnaryStreamCall(
         response_deserializer: Optional[DeserializingFunction],
     ) -> Union[
         _base_call.UnaryStreamCall[RequestType, ResponseType],
-        UnaryStreamCallResponseIterator,
+        UnaryStreamCallResponseIterator[ResponseType],
     ]:
         """Run the RPC call wrapped in interceptors"""
 
@@ -822,7 +835,7 @@ class InterceptedUnaryStreamCall(
             request: RequestType,
         ) -> Union[
             _base_call.UnaryStreamCall[RequestType, ResponseType],
-            UnaryStreamCallResponseIterator,
+            UnaryStreamCallResponseIterator[ResponseType],
         ]:
             if interceptors:
                 continuation = functools.partial(
@@ -883,7 +896,7 @@ class InterceptedUnaryStreamCall(
 
 class InterceptedStreamUnaryCall(
     _InterceptedUnaryResponseMixin,
-    _InterceptedStreamRequestMixin,
+    _InterceptedStreamRequestMixin[RequestType],
     InterceptedCall,
     _base_call.StreamUnaryCall[RequestType, ResponseType],
 ):
@@ -982,8 +995,8 @@ class InterceptedStreamUnaryCall(
 
 
 class InterceptedStreamStreamCall(
-    _InterceptedStreamResponseMixin,
-    _InterceptedStreamRequestMixin,
+    _InterceptedStreamResponseMixin[ResponseType],
+    _InterceptedStreamRequestMixin[RequestType],
     InterceptedCall,
     _base_call.StreamStreamCall[RequestType, ResponseType],
 ):
@@ -1044,7 +1057,7 @@ class InterceptedStreamStreamCall(
         response_deserializer: Optional[DeserializingFunction],
     ) -> Union[
         _base_call.StreamStreamCall[RequestType, ResponseType],
-        StreamStreamCallResponseIterator,
+        StreamStreamCallResponseIterator[ResponseType],
     ]:
         """Run the RPC call wrapped in interceptors"""
 
@@ -1054,7 +1067,7 @@ class InterceptedStreamStreamCall(
             request_iterator: RequestIterableType,
         ) -> Union[
             _base_call.StreamStreamCall[RequestType, ResponseType],
-            StreamStreamCallResponseIterator,
+            StreamStreamCallResponseIterator[ResponseType],
         ]:
             if interceptors:
                 continuation = functools.partial(
@@ -1073,7 +1086,7 @@ class InterceptedStreamStreamCall(
                     self._last_returned_call_from_interceptors = (
                         call_or_response_iterator
                     )
-                elif hasattr(call_or_response_iterator, "__aiter__"):
+                else:
                     if self._last_returned_call_from_interceptors is None:
                         err_msg = (
                             "Interceptor returned an AsyncIterable but did not "
@@ -1086,12 +1099,6 @@ class InterceptedStreamStreamCall(
                             call_or_response_iterator,
                         )
                     )
-                else:
-                    err_msg = (
-                        f"Interceptor must return a grpc.aio.StreamStreamCall or an "
-                        f"AsyncIterable. Got {type(call_or_response_iterator)} instead."
-                    )
-                    raise TypeError(err_msg)
                 return self._last_returned_call_from_interceptors
             self._last_returned_call_from_interceptors = StreamStreamCall(
                 request_iterator,
@@ -1227,6 +1234,7 @@ class _StreamCallResponseIterator(Generic[ResponseType]):
 class UnaryStreamCallResponseIterator(
     _StreamCallResponseIterator[ResponseType],
     _base_call.UnaryStreamCall[Any, ResponseType],
+    Generic[ResponseType],
 ):
     """UnaryStreamCall class which uses an alternative response iterator."""
 
@@ -1239,6 +1247,7 @@ class UnaryStreamCallResponseIterator(
 class StreamStreamCallResponseIterator(
     _StreamCallResponseIterator[ResponseType],
     _base_call.StreamStreamCall[Any, ResponseType],
+    Generic[ResponseType],
 ):
     _call: _base_call.StreamStreamCall[Any, ResponseType]
 

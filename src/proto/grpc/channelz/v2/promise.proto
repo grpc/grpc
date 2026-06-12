@@ -98,7 +98,7 @@ message Promise {
 
   // Join(case1, case2, ...)
   // or TryJoin(case1, case2, ...)
-  // distiguished by kind
+  // distinguished by kind
   message Join {
     CompositionKind kind = 1;
     repeated JoinBranch branches = 2;

@@ -1,5 +1,7 @@
 # bazelrc file
 
+common --downloader_config=bazel/downloader.cfg
+
 common:bzlmod --enable_bzlmod
 common:bzlmod --noenable_workspace
 
@@ -165,6 +167,7 @@ build:python --copt=-DGRPC_PYTHON_BUILD
 
 # Compile database generation config
 build:compdb --build_tag_filters=-nocompdb
+build:compdb --skip_incompatible_explicit_targets
 
 try-import %workspace%/tools/fuzztest.bazelrc
 
