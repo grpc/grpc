@@ -29,7 +29,6 @@
 #include <optional>
 #include <type_traits>
 #include <utility>
-#include <vector>
 
 #include "src/core/call/call_spine.h"
 #include "src/core/call/metadata.h"
@@ -38,7 +37,6 @@
 #include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/ext/transport/chttp2/transport/goaway.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_encoder.h"
-#include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
 #include "src/core/ext/transport/chttp2/transport/http2_settings_promises.h"
 #include "src/core/ext/transport/chttp2/transport/http2_status.h"
 #include "src/core/ext/transport/chttp2/transport/http2_transport.h"
@@ -75,7 +73,6 @@
 #include "absl/container/flat_hash_map.h"
 #include "absl/functional/any_invocable.h"
 #include "absl/log/log.h"
-#include "absl/meta/type_traits.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
@@ -322,7 +319,7 @@ class Http2ClientTransport final : public ClientTransport,
            "status: "
         << status << " at " << whence.file() << ":" << whence.line();
     GRPC_UNUSED absl::Status unused_status = HandleError(
-        /*stream_id=*/std::nullopt, ToHttpOkOrConnError(status), whence);
+        /*stream=*/nullptr, ToHttpOkOrConnError(status), whence);
     return false;
   }
 
@@ -379,7 +376,7 @@ class Http2ClientTransport final : public ClientTransport,
         [self = RefAsSubclass<Http2ClientTransport>()](absl::Status status) {
           if (!status.ok()) {
             GRPC_UNUSED absl::Status error = self->HandleError(
-                /*stream_id=*/std::nullopt, ToHttpOkOrConnError(status));
+                /*stream=*/nullptr, ToHttpOkOrConnError(status));
           }
         });
   }
@@ -485,14 +482,49 @@ class Http2ClientTransport final : public ClientTransport,
   // Runs on the call party.
   std::optional<RefCountedPtr<Stream>> MakeStream(CallHandler call_handler);
 
+  // Enqueues a RST_STREAM frame and immediately closes the stream for reads.
+  // Writes will be closed by the write loop after the RST_STREAM frame is
+  // written to the wire. Once writes are closed, the stream is considered fully
+  // closed and is removed from the active stream list (reducing the active
+  // stream count).
+  //
+  // NOTE: This function must be triggered ONLY in error scenarios (e.g., local
+  // stream errors, cancellation, transport closure). Normal call completion
+  // must not call this.
+  //
+  // Prefer calling HandleError over this API.
+  //
+  // Call flows that lead to this function:
+  // 1. Transport error: A protocol error or connection error is detected.
+  // 2. Application abort (Cancellation): Outbound loop detects cancellation,
+  //    calls HandleError, which calls BeginCloseStream.
+  // 3. Transport close: Follows the same path as transport error.
+  //
+  // Stream reference counting: The stream ref is held in at most 3 places:
+  // 1. stream_list_ : Released when the stream is fully closed (both reads
+  //    and writes are closed).
+  // 2. CallHandler OnDone : Released when Trailing Metadata is pushed to
+  //    the call spine.
+  // 3. List of writable streams : Released after the final frame is dequeued
+  //    from the StreamDataQueue.
   void BeginCloseStream(RefCountedPtr<Stream> stream,
-                        std::optional<uint32_t> reset_stream_error_code,
-                        ServerMetadataHandle&& metadata,
+                        uint32_t reset_stream_error_code,
+                        absl::Status trailing_metadata_status,
                         DebugLocation whence = {});
 
-  // This function MUST be idempotent.
-  void CloseStream(Stream& stream, CloseStreamArgs args,
-                   DebugLocation whence = {});
+  // Handles stream state changes by discarding pending header parsing if reads
+  // became closed, and triggering cleanup if the stream became closed.
+  // This function does not hold the transport mutex and MUST be called from
+  // the transport party.
+  void HandleStreamStateChange(Stream& stream, StreamStateChange change);
+
+  // Erases the stream from the active stream list. The caller MUST ensure the
+  // stream is closed. If it is the last stream and the transport is orphaned,
+  // it triggers transport closure.
+  // This function acquires the transport mutex internally.
+  void CleanupStream(
+      Stream& stream,
+      std::optional<Http2Status> close_transport_error = std::nullopt);
 
   //////////////////////////////////////////////////////////////////////////////
   // Ping Keepalive and Goaway
@@ -541,8 +573,8 @@ class Http2ClientTransport final : public ClientTransport,
   // should not be cancelled in case of stream errors.
   // If the error is a connection error, it closes the transport and returns the
   // corresponding (failed) absl status.
-  absl::Status HandleError(const std::optional<uint32_t> stream_id,
-                           Http2Status status, DebugLocation whence = {});
+  absl::Status HandleError(RefCountedPtr<Stream> stream, Http2Status status,
+                           DebugLocation whence = {});
 
   //////////////////////////////////////////////////////////////////////////////
   // Misc Transport Stuff
