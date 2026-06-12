@@ -2874,6 +2874,7 @@ grpc_cc_library(
         "grpc++_public_hdrs",
         "grpc_base",
         "grpcpp_status",
+        "//third_party/gloop/strings:cord_bytestream",
     ],
 )
 
