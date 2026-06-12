@@ -685,6 +685,10 @@ std::pair<std::string, std::string> ParseXdsHeader(
   return {std::string(key), value.has_value() ? std::move(*value) : ""};
 }
 
+//
+// ParseXdsGrpcService()
+//
+
 XdsGrpcService ParseXdsGrpcService(
     const XdsResourceType::DecodeContext& context,
     const envoy_config_core_v3_GrpcService* grpc_service,
@@ -871,6 +875,10 @@ HeaderMutationRules ParseHeaderMutationRules(
   return header_mutation_rules_config;
 }
 
+//
+// ParseXdsHeaderValueOption()
+//
+
 namespace {
 
 XdsHeaderValueOption::AppendAction ParseXdsHeaderValueOptionAppendAction(
@@ -891,10 +899,6 @@ XdsHeaderValueOption::AppendAction ParseXdsHeaderValueOptionAppendAction(
 }
 
 }  // namespace
-
-//
-// ParseXdsHeaderValueOption()
-//
 
 XdsHeaderValueOption ParseXdsHeaderValueOption(
     const envoy_config_core_v3_HeaderValueOption* header_value_option_config,
