@@ -47,6 +47,10 @@ absl::StatusOr<ExtProcResponse::HeaderMutation> ParseHeaderMutation(
   for (size_t i = 0; i < set_headers_size; ++i) {
     ValidationErrors errors;
     auto parsed = ParseXdsHeaderValueOption(set_headers[i], &errors);
+    if (!errors.ok()) {
+      return errors.status(absl::StatusCode::kInvalidArgument,
+                           "validation failed");
+    }
     header_mutation_response.set_headers.push_back(std::move(parsed));
   }
   size_t remove_headers_size = 0;

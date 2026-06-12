@@ -47,7 +47,7 @@ class ExtProcRequestTest : public ::testing::Test {
   }
 };
 
-TEST_F(ExtProcRequestTest, RequestHeadersForwardingNeitherSet) {
+TEST_F(ExtProcRequestTest, RequestHeadersNeitherAllowedNorDisallowedSet) {
   upb::Arena arena;
   grpc_metadata_batch batch;
   batch.Append("key1", Slice::FromCopiedString("val1"),
@@ -73,7 +73,7 @@ TEST_F(ExtProcRequestTest, RequestHeadersForwardingNeitherSet) {
   EXPECT_FALSE(parsed.request_headers().end_of_stream());
 }
 
-TEST_F(ExtProcRequestTest, RequestHeadersForwardingBothSet) {
+TEST_F(ExtProcRequestTest, RequestHeadersBothAllowedAndDisallowedSet) {
   upb::Arena arena;
   grpc_metadata_batch batch;
   batch.Append("key1", Slice::FromCopiedString("val1"),
@@ -102,7 +102,7 @@ TEST_F(ExtProcRequestTest, RequestHeadersForwardingBothSet) {
   EXPECT_FALSE(parsed.request_headers().end_of_stream());
 }
 
-TEST_F(ExtProcRequestTest, RequestHeadersForwardingOnlyAllowedSet) {
+TEST_F(ExtProcRequestTest, RequestHeadersOnlyAllowedSet) {
   upb::Arena arena;
   grpc_metadata_batch batch;
   batch.Append("key1", Slice::FromCopiedString("val1"),
@@ -130,7 +130,7 @@ TEST_F(ExtProcRequestTest, RequestHeadersForwardingOnlyAllowedSet) {
   EXPECT_FALSE(parsed.request_headers().end_of_stream());
 }
 
-TEST_F(ExtProcRequestTest, RequestHeadersForwardingOnlyDisallowedSet) {
+TEST_F(ExtProcRequestTest, RequestHeadersOnlyDisallowedSet) {
   upb::Arena arena;
   grpc_metadata_batch batch;
   batch.Append("key1", Slice::FromCopiedString("val1"),
@@ -157,7 +157,37 @@ TEST_F(ExtProcRequestTest, RequestHeadersForwardingOnlyDisallowedSet) {
   EXPECT_FALSE(parsed.request_headers().end_of_stream());
 }
 
-TEST_F(ExtProcRequestTest, ResponseHeadersForwardingNeitherSet) {
+TEST_F(ExtProcRequestTest, RequestHeadersObservability) {
+  upb::Arena arena;
+  grpc_metadata_batch batch;
+  std::string serialized = CreateExtProcRequest(
+      arena.ptr(), ExtProcRequestType::kClientHeaders, &batch, {}, {}, {},
+      /*observability_mode=*/true,
+      /*is_first_message=*/false, /*send_request_body=*/false,
+      /*send_response_body=*/false);
+  auto parsed = ParseRequest(serialized);
+  EXPECT_TRUE(parsed.observability_mode());
+}
+
+TEST_F(ExtProcRequestTest, RequestHeadersProtocolConfig) {
+  upb::Arena arena;
+  grpc_metadata_batch batch;
+  std::string serialized = CreateExtProcRequest(
+      arena.ptr(), ExtProcRequestType::kClientHeaders, &batch, {}, {}, {},
+      /*observability_mode=*/false,
+      /*is_first_message=*/true, /*send_request_body=*/true,
+      /*send_response_body=*/true);
+  auto parsed = ParseRequest(serialized);
+  ASSERT_TRUE(parsed.has_protocol_config());
+  EXPECT_EQ(
+      parsed.protocol_config().request_body_mode(),
+      envoy::extensions::filters::http::ext_proc::v3::ProcessingMode::GRPC);
+  EXPECT_EQ(
+      parsed.protocol_config().response_body_mode(),
+      envoy::extensions::filters::http::ext_proc::v3::ProcessingMode::GRPC);
+}
+
+TEST_F(ExtProcRequestTest, ResponseHeadersNeitherAllowedNorDisallowedSet) {
   upb::Arena arena;
   grpc_metadata_batch batch;
   batch.Append("key1", Slice::FromCopiedString("val1"),
@@ -183,7 +213,7 @@ TEST_F(ExtProcRequestTest, ResponseHeadersForwardingNeitherSet) {
   EXPECT_TRUE(parsed.response_headers().end_of_stream());
 }
 
-TEST_F(ExtProcRequestTest, ResponseHeadersForwardingBothSet) {
+TEST_F(ExtProcRequestTest, ResponseHeadersBothAllowedAndDisallowedSet) {
   upb::Arena arena;
   grpc_metadata_batch batch;
   batch.Append("key1", Slice::FromCopiedString("val1"),
@@ -212,7 +242,7 @@ TEST_F(ExtProcRequestTest, ResponseHeadersForwardingBothSet) {
   EXPECT_TRUE(parsed.response_headers().end_of_stream());
 }
 
-TEST_F(ExtProcRequestTest, ResponseHeadersForwardingOnlyAllowedSet) {
+TEST_F(ExtProcRequestTest, ResponseHeadersOnlyAllowedSet) {
   upb::Arena arena;
   grpc_metadata_batch batch;
   batch.Append("key1", Slice::FromCopiedString("val1"),
@@ -240,7 +270,7 @@ TEST_F(ExtProcRequestTest, ResponseHeadersForwardingOnlyAllowedSet) {
   EXPECT_FALSE(parsed.response_headers().end_of_stream());
 }
 
-TEST_F(ExtProcRequestTest, ResponseHeadersForwardingOnlyDisallowedSet) {
+TEST_F(ExtProcRequestTest, ResponseHeadersOnlyDisallowedSet) {
   upb::Arena arena;
   grpc_metadata_batch batch;
   batch.Append("key1", Slice::FromCopiedString("val1"),
@@ -267,7 +297,37 @@ TEST_F(ExtProcRequestTest, ResponseHeadersForwardingOnlyDisallowedSet) {
   EXPECT_TRUE(parsed.response_headers().end_of_stream());
 }
 
-TEST_F(ExtProcRequestTest, ResponseTrailersForwardingNeitherSet) {
+TEST_F(ExtProcRequestTest, ResponseHeadersObservability) {
+  upb::Arena arena;
+  grpc_metadata_batch batch;
+  std::string serialized = CreateExtProcRequest(
+      arena.ptr(), ExtProcRequestType::kServerHeaders, &batch, {}, {}, {},
+      /*observability_mode=*/true,
+      /*is_first_message=*/false, /*send_request_body=*/false,
+      /*send_response_body=*/false);
+  auto parsed = ParseRequest(serialized);
+  EXPECT_TRUE(parsed.observability_mode());
+}
+
+TEST_F(ExtProcRequestTest, ResponseHeadersProtocolConfig) {
+  upb::Arena arena;
+  grpc_metadata_batch batch;
+  std::string serialized = CreateExtProcRequest(
+      arena.ptr(), ExtProcRequestType::kServerHeaders, &batch, {}, {}, {},
+      /*observability_mode=*/false,
+      /*is_first_message=*/true, /*send_request_body=*/true,
+      /*send_response_body=*/true);
+  auto parsed = ParseRequest(serialized);
+  ASSERT_TRUE(parsed.has_protocol_config());
+  EXPECT_EQ(
+      parsed.protocol_config().request_body_mode(),
+      envoy::extensions::filters::http::ext_proc::v3::ProcessingMode::GRPC);
+  EXPECT_EQ(
+      parsed.protocol_config().response_body_mode(),
+      envoy::extensions::filters::http::ext_proc::v3::ProcessingMode::GRPC);
+}
+
+TEST_F(ExtProcRequestTest, ResponseTrailersNeitherAllowedNorDisallowedSet) {
   upb::Arena arena;
   grpc_metadata_batch batch;
   batch.Append("key1", Slice::FromCopiedString("val1"),
@@ -295,7 +355,7 @@ TEST_F(ExtProcRequestTest, ResponseTrailersForwardingNeitherSet) {
             "val3");
 }
 
-TEST_F(ExtProcRequestTest, ResponseTrailersForwardingBothSet) {
+TEST_F(ExtProcRequestTest, ResponseTrailersBothAllowedAndDisallowedSet) {
   upb::Arena arena;
   grpc_metadata_batch batch;
   batch.Append("key1", Slice::FromCopiedString("val1"),
@@ -324,7 +384,7 @@ TEST_F(ExtProcRequestTest, ResponseTrailersForwardingBothSet) {
             "val1");
 }
 
-TEST_F(ExtProcRequestTest, ResponseTrailersForwardingOnlyAllowedSet) {
+TEST_F(ExtProcRequestTest, ResponseTrailersOnlyAllowedSet) {
   upb::Arena arena;
   grpc_metadata_batch batch;
   batch.Append("key1", Slice::FromCopiedString("val1"),
@@ -353,7 +413,7 @@ TEST_F(ExtProcRequestTest, ResponseTrailersForwardingOnlyAllowedSet) {
             "val3");
 }
 
-TEST_F(ExtProcRequestTest, ResponseTrailersForwardingOnlyDisallowedSet) {
+TEST_F(ExtProcRequestTest, ResponseTrailersOnlyDisallowedSet) {
   upb::Arena arena;
   grpc_metadata_batch batch;
   batch.Append("key1", Slice::FromCopiedString("val1"),
@@ -379,6 +439,36 @@ TEST_F(ExtProcRequestTest, ResponseTrailersForwardingOnlyDisallowedSet) {
   EXPECT_EQ(parsed.response_trailers().trailers().headers(1).key(), "key3");
   EXPECT_EQ(parsed.response_trailers().trailers().headers(1).raw_value(),
             "val3");
+}
+
+TEST_F(ExtProcRequestTest, ResponseTrailersObservability) {
+  upb::Arena arena;
+  grpc_metadata_batch batch;
+  std::string serialized = CreateExtProcRequest(
+      arena.ptr(), ExtProcRequestType::kServerTrailers, &batch, {}, {}, {},
+      /*observability_mode=*/true,
+      /*is_first_message=*/false, /*send_request_body=*/false,
+      /*send_response_body=*/false);
+  auto parsed = ParseRequest(serialized);
+  EXPECT_TRUE(parsed.observability_mode());
+}
+
+TEST_F(ExtProcRequestTest, ResponseTrailersProtocolConfig) {
+  upb::Arena arena;
+  grpc_metadata_batch batch;
+  std::string serialized = CreateExtProcRequest(
+      arena.ptr(), ExtProcRequestType::kServerTrailers, &batch, {}, {}, {},
+      /*observability_mode=*/false,
+      /*is_first_message=*/true, /*send_request_body=*/true,
+      /*send_response_body=*/true);
+  auto parsed = ParseRequest(serialized);
+  ASSERT_TRUE(parsed.has_protocol_config());
+  EXPECT_EQ(
+      parsed.protocol_config().request_body_mode(),
+      envoy::extensions::filters::http::ext_proc::v3::ProcessingMode::GRPC);
+  EXPECT_EQ(
+      parsed.protocol_config().response_body_mode(),
+      envoy::extensions::filters::http::ext_proc::v3::ProcessingMode::GRPC);
 }
 
 TEST_F(ExtProcRequestTest, RequestBodyPayloadValid) {
@@ -428,25 +518,9 @@ TEST_F(ExtProcRequestTest, RequestBodyEndOfStreamWithoutMessage) {
   EXPECT_TRUE(parsed.request_body().end_of_stream_without_message());
 }
 
-TEST_F(ExtProcRequestTest, ResponseBodyPayloadValid) {
+TEST_F(ExtProcRequestTest, RequestBodyObservability) {
   upb::Arena arena;
-  std::string body_data = "test response body data";
-  upb_StringView payload{body_data.data(), body_data.size()};
-  std::string serialized = CreateExtProcRequest(
-      arena.ptr(), ExtProcRequestType::kServerMessage, payload, {}, {}, {},
-      /*observability_mode=*/false,
-      /*is_first_message=*/false, /*send_request_body=*/false,
-      /*send_response_body=*/false);
-  auto parsed = ParseRequest(serialized);
-  ASSERT_TRUE(parsed.has_response_body());
-  EXPECT_EQ(parsed.response_body().body(), body_data);
-  EXPECT_FALSE(parsed.response_body().end_of_stream());
-}
-
-TEST_F(ExtProcRequestTest, ObservabilityModeOn) {
-  upb::Arena arena;
-  std::string body_data = "test data";
-  upb_StringView payload{body_data.data(), body_data.size()};
+  upb_StringView payload{"", 0};
   std::string serialized = CreateExtProcRequest(
       arena.ptr(), ExtProcRequestType::kClientMessage, payload, {}, {}, {},
       /*observability_mode=*/true,
@@ -456,23 +530,9 @@ TEST_F(ExtProcRequestTest, ObservabilityModeOn) {
   EXPECT_TRUE(parsed.observability_mode());
 }
 
-TEST_F(ExtProcRequestTest, ObservabilityModeOff) {
+TEST_F(ExtProcRequestTest, RequestBodyProtocolConfig) {
   upb::Arena arena;
-  std::string body_data = "test data";
-  upb_StringView payload{body_data.data(), body_data.size()};
-  std::string serialized = CreateExtProcRequest(
-      arena.ptr(), ExtProcRequestType::kClientMessage, payload, {}, {}, {},
-      /*observability_mode=*/false,
-      /*is_first_message=*/false, /*send_request_body=*/false,
-      /*send_response_body=*/false);
-  auto parsed = ParseRequest(serialized);
-  EXPECT_FALSE(parsed.observability_mode());
-}
-
-TEST_F(ExtProcRequestTest, ProtocolConfigFirstMessage) {
-  upb::Arena arena;
-  std::string body_data = "test data";
-  upb_StringView payload{body_data.data(), body_data.size()};
+  upb_StringView payload{"", 0};
   std::string serialized = CreateExtProcRequest(
       arena.ptr(), ExtProcRequestType::kClientMessage, payload, {}, {}, {},
       /*observability_mode=*/false,
@@ -488,17 +548,49 @@ TEST_F(ExtProcRequestTest, ProtocolConfigFirstMessage) {
       envoy::extensions::filters::http::ext_proc::v3::ProcessingMode::GRPC);
 }
 
-TEST_F(ExtProcRequestTest, ProtocolConfigNotFirstMessage) {
+TEST_F(ExtProcRequestTest, ResponseBodyPayloadValid) {
   upb::Arena arena;
-  std::string body_data = "test data";
+  std::string body_data = "test response body data";
   upb_StringView payload{body_data.data(), body_data.size()};
   std::string serialized = CreateExtProcRequest(
-      arena.ptr(), ExtProcRequestType::kClientMessage, payload, {}, {}, {},
+      arena.ptr(), ExtProcRequestType::kServerMessage, payload, {}, {}, {},
       /*observability_mode=*/false,
-      /*is_first_message=*/false, /*send_request_body=*/true,
+      /*is_first_message=*/false, /*send_request_body=*/false,
+      /*send_response_body=*/false);
+  auto parsed = ParseRequest(serialized);
+  ASSERT_TRUE(parsed.has_response_body());
+  EXPECT_EQ(parsed.response_body().body(), body_data);
+  EXPECT_FALSE(parsed.response_body().end_of_stream());
+}
+
+TEST_F(ExtProcRequestTest, ResponseBodyObservability) {
+  upb::Arena arena;
+  upb_StringView payload{"", 0};
+  std::string serialized = CreateExtProcRequest(
+      arena.ptr(), ExtProcRequestType::kServerMessage, payload, {}, {}, {},
+      /*observability_mode=*/true,
+      /*is_first_message=*/false, /*send_request_body=*/false,
+      /*send_response_body=*/false);
+  auto parsed = ParseRequest(serialized);
+  EXPECT_TRUE(parsed.observability_mode());
+}
+
+TEST_F(ExtProcRequestTest, ResponseBodyProtocolConfig) {
+  upb::Arena arena;
+  upb_StringView payload{"", 0};
+  std::string serialized = CreateExtProcRequest(
+      arena.ptr(), ExtProcRequestType::kServerMessage, payload, {}, {}, {},
+      /*observability_mode=*/false,
+      /*is_first_message=*/true, /*send_request_body=*/true,
       /*send_response_body=*/true);
   auto parsed = ParseRequest(serialized);
-  EXPECT_FALSE(parsed.has_protocol_config());
+  ASSERT_TRUE(parsed.has_protocol_config());
+  EXPECT_EQ(
+      parsed.protocol_config().request_body_mode(),
+      envoy::extensions::filters::http::ext_proc::v3::ProcessingMode::GRPC);
+  EXPECT_EQ(
+      parsed.protocol_config().response_body_mode(),
+      envoy::extensions::filters::http::ext_proc::v3::ProcessingMode::GRPC);
 }
 
 TEST_F(ExtProcRequestTest, AttributesPayload) {
@@ -670,6 +762,18 @@ TEST_F(ExtProcResponseTest, RequestDrain) {
   EXPECT_TRUE(parsed.request_drain);
 }
 
+TEST_F(ExtProcResponseTest, UnsupportedResponseCaseRequestTrailers) {
+  upb::Arena arena;
+  envoy::service::ext_proc::v3::ProcessingResponse response;
+  response.mutable_request_trailers();
+  auto parsed_or = ParseResponse(response, arena.ptr());
+  EXPECT_FALSE(parsed_or.ok());
+  EXPECT_EQ(parsed_or.status().code(), absl::StatusCode::kInternal);
+  EXPECT_THAT(
+      parsed_or.status().message(),
+      ::testing::StartsWith("Unsupported ProcessingResponse response case:"));
+}
+
 TEST_F(ExtProcResponseTest, RequestHeadersMutation) {
   upb::Arena arena;
   envoy::service::ext_proc::v3::ProcessingResponse response;
@@ -710,7 +814,7 @@ TEST_F(ExtProcResponseTest, RequestHeadersUnsupportedStatus) {
             absl::InternalError("CONTINUE_AND_REPLACE is not supported"));
 }
 
-TEST_F(ExtProcResponseTest, RequestHeadersMutationValidationFailed) {
+TEST_F(ExtProcResponseTest, RequestHeadersInvalidHeaderMutation) {
   upb::Arena arena;
   envoy::service::ext_proc::v3::ProcessingResponse response;
   auto* headers_response = response.mutable_request_headers();
@@ -729,6 +833,18 @@ TEST_F(ExtProcResponseTest, RequestHeadersMutationValidationFailed) {
       absl::InvalidArgumentError(
           "validation failed: [field:header error:either value or raw_value "
           "must be set]"));
+}
+
+TEST_F(ExtProcResponseTest, RequestHeadersCommonResponseNull) {
+  upb::Arena arena;
+  envoy::service::ext_proc::v3::ProcessingResponse response;
+  response.mutable_request_headers();
+  auto parsed_or = ParseResponse(response, arena.ptr());
+  ASSERT_TRUE(parsed_or.ok()) << parsed_or.status().ToString();
+  auto parsed = std::move(parsed_or.value());
+  ASSERT_TRUE(parsed.request_headers.has_value());
+  EXPECT_EQ(parsed.request_headers->status(),
+            absl::InternalError("common_response is not available"));
 }
 
 TEST_F(ExtProcResponseTest, ResponseHeadersMutation) {
@@ -771,26 +887,37 @@ TEST_F(ExtProcResponseTest, ResponseHeadersUnsupportedStatus) {
             absl::InternalError("CONTINUE_AND_REPLACE is not supported"));
 }
 
-TEST_F(ExtProcResponseTest, ResponseTrailersMutation) {
+TEST_F(ExtProcResponseTest, ResponseHeadersInvalidHeaderMutation) {
   upb::Arena arena;
   envoy::service::ext_proc::v3::ProcessingResponse response;
-  auto* trailers_response = response.mutable_response_trailers();
-  auto* header_mutation = trailers_response->mutable_header_mutation();
+  auto* headers_response = response.mutable_response_headers();
+  auto* common_response = headers_response->mutable_response();
+  common_response->set_status(
+      envoy::service::ext_proc::v3::CommonResponse::CONTINUE);
+  auto* header_mutation = common_response->mutable_header_mutation();
   auto* set_header = header_mutation->add_set_headers();
   set_header->mutable_header()->set_key("x-mutated-key");
-  set_header->mutable_header()->set_raw_value("mutated-val");
-  header_mutation->add_remove_headers("x-removed-key");
   auto parsed_or = ParseResponse(response, arena.ptr());
   ASSERT_TRUE(parsed_or.ok()) << parsed_or.status().ToString();
   auto parsed = std::move(parsed_or.value());
-  ASSERT_TRUE(parsed.response_trailers.has_value());
-  ASSERT_TRUE(parsed.response_trailers->ok());
-  const auto& header_mutation_res = parsed.response_trailers->value();
-  ASSERT_EQ(header_mutation_res.set_headers.size(), 1);
-  EXPECT_EQ(header_mutation_res.set_headers[0].header.first, "x-mutated-key");
-  EXPECT_EQ(header_mutation_res.set_headers[0].header.second, "mutated-val");
-  ASSERT_EQ(header_mutation_res.remove_headers.size(), 1);
-  EXPECT_EQ(header_mutation_res.remove_headers[0], "x-removed-key");
+  ASSERT_TRUE(parsed.response_headers.has_value());
+  EXPECT_EQ(
+      parsed.response_headers->status(),
+      absl::InvalidArgumentError(
+          "validation failed: [field:header error:either value or raw_value "
+          "must be set]"));
+}
+
+TEST_F(ExtProcResponseTest, ResponseHeadersCommonResponseNull) {
+  upb::Arena arena;
+  envoy::service::ext_proc::v3::ProcessingResponse response;
+  response.mutable_response_headers();
+  auto parsed_or = ParseResponse(response, arena.ptr());
+  ASSERT_TRUE(parsed_or.ok()) << parsed_or.status().ToString();
+  auto parsed = std::move(parsed_or.value());
+  ASSERT_TRUE(parsed.response_headers.has_value());
+  EXPECT_EQ(parsed.response_headers->status(),
+            absl::InternalError("common_response is not available"));
 }
 
 TEST_F(ExtProcResponseTest, RequestBodyMutation) {
@@ -849,6 +976,33 @@ TEST_F(ExtProcResponseTest, RequestBodyCompressedMessageUnsupported) {
             absl::InternalError("grpc_message_compressed is not supported"));
 }
 
+TEST_F(ExtProcResponseTest, RequestBodyCommonResponseNull) {
+  upb::Arena arena;
+  envoy::service::ext_proc::v3::ProcessingResponse response;
+  response.mutable_request_body();
+  auto parsed_or = ParseResponse(response, arena.ptr());
+  ASSERT_TRUE(parsed_or.ok()) << parsed_or.status().ToString();
+  auto parsed = std::move(parsed_or.value());
+  ASSERT_TRUE(parsed.request_body.has_value());
+  EXPECT_EQ(parsed.request_body->status(),
+            absl::InternalError("common_response is not available"));
+}
+
+TEST_F(ExtProcResponseTest, RequestBodyBodyMutationNull) {
+  upb::Arena arena;
+  envoy::service::ext_proc::v3::ProcessingResponse response;
+  auto* body_response = response.mutable_request_body();
+  auto* common_response = body_response->mutable_response();
+  common_response->set_status(
+      envoy::service::ext_proc::v3::CommonResponse::CONTINUE);
+  auto parsed_or = ParseResponse(response, arena.ptr());
+  ASSERT_TRUE(parsed_or.ok()) << parsed_or.status().ToString();
+  auto parsed = std::move(parsed_or.value());
+  ASSERT_TRUE(parsed.request_body.has_value());
+  EXPECT_EQ(parsed.request_body->status(),
+            absl::InternalError("body_mutation is not available"));
+}
+
 TEST_F(ExtProcResponseTest, ResponseBodyMutation) {
   upb::Arena arena;
   envoy::service::ext_proc::v3::ProcessingResponse response;
@@ -905,95 +1059,6 @@ TEST_F(ExtProcResponseTest, ResponseBodyCompressedMessageUnsupported) {
             absl::InternalError("grpc_message_compressed is not supported"));
 }
 
-TEST_F(ExtProcResponseTest, ImmediateResponse) {
-  upb::Arena arena;
-  envoy::service::ext_proc::v3::ProcessingResponse response;
-  auto* immediate = response.mutable_immediate_response();
-  immediate->mutable_grpc_status()->set_status(16);
-  immediate->set_details("invalid credentials");
-  auto* header_mutation = immediate->mutable_headers();
-  auto* set_header = header_mutation->add_set_headers();
-  set_header->mutable_header()->set_key("www-authenticate");
-  set_header->mutable_header()->set_raw_value("Bearer");
-  auto parsed_or = ParseResponse(response, arena.ptr());
-  ASSERT_TRUE(parsed_or.ok()) << parsed_or.status().ToString();
-  auto parsed = std::move(parsed_or.value());
-  ASSERT_TRUE(parsed.immediate_response.has_value());
-  EXPECT_EQ(parsed.immediate_response->status, 16);
-  EXPECT_EQ(parsed.immediate_response->details, "invalid credentials");
-  ASSERT_TRUE(parsed.immediate_response->header_mutation.ok());
-  ASSERT_EQ(parsed.immediate_response->header_mutation->set_headers.size(), 1);
-  EXPECT_EQ(
-      parsed.immediate_response->header_mutation->set_headers[0].header.first,
-      "www-authenticate");
-  EXPECT_EQ(
-      parsed.immediate_response->header_mutation->set_headers[0].header.second,
-      "Bearer");
-}
-
-TEST_F(ExtProcResponseTest, UnsupportedResponseCaseRequestTrailers) {
-  upb::Arena arena;
-  envoy::service::ext_proc::v3::ProcessingResponse response;
-  response.mutable_request_trailers();
-  auto parsed_or = ParseResponse(response, arena.ptr());
-  EXPECT_FALSE(parsed_or.ok());
-  EXPECT_EQ(parsed_or.status().code(), absl::StatusCode::kInternal);
-  EXPECT_THAT(
-      parsed_or.status().message(),
-      ::testing::StartsWith("Unsupported ProcessingResponse response case:"));
-}
-
-TEST_F(ExtProcResponseTest, RequestHeadersCommonResponseNull) {
-  upb::Arena arena;
-  envoy::service::ext_proc::v3::ProcessingResponse response;
-  response.mutable_request_headers();
-  auto parsed_or = ParseResponse(response, arena.ptr());
-  ASSERT_TRUE(parsed_or.ok()) << parsed_or.status().ToString();
-  auto parsed = std::move(parsed_or.value());
-  ASSERT_TRUE(parsed.request_headers.has_value());
-  EXPECT_EQ(parsed.request_headers->status(),
-            absl::InternalError("common_response is not available"));
-}
-
-TEST_F(ExtProcResponseTest, ResponseHeadersCommonResponseNull) {
-  upb::Arena arena;
-  envoy::service::ext_proc::v3::ProcessingResponse response;
-  response.mutable_response_headers();
-  auto parsed_or = ParseResponse(response, arena.ptr());
-  ASSERT_TRUE(parsed_or.ok()) << parsed_or.status().ToString();
-  auto parsed = std::move(parsed_or.value());
-  ASSERT_TRUE(parsed.response_headers.has_value());
-  EXPECT_EQ(parsed.response_headers->status(),
-            absl::InternalError("common_response is not available"));
-}
-
-TEST_F(ExtProcResponseTest, RequestBodyCommonResponseNull) {
-  upb::Arena arena;
-  envoy::service::ext_proc::v3::ProcessingResponse response;
-  response.mutable_request_body();
-  auto parsed_or = ParseResponse(response, arena.ptr());
-  ASSERT_TRUE(parsed_or.ok()) << parsed_or.status().ToString();
-  auto parsed = std::move(parsed_or.value());
-  ASSERT_TRUE(parsed.request_body.has_value());
-  EXPECT_EQ(parsed.request_body->status(),
-            absl::InternalError("common_response is not available"));
-}
-
-TEST_F(ExtProcResponseTest, RequestBodyBodyMutationNull) {
-  upb::Arena arena;
-  envoy::service::ext_proc::v3::ProcessingResponse response;
-  auto* body_response = response.mutable_request_body();
-  auto* common_response = body_response->mutable_response();
-  common_response->set_status(
-      envoy::service::ext_proc::v3::CommonResponse::CONTINUE);
-  auto parsed_or = ParseResponse(response, arena.ptr());
-  ASSERT_TRUE(parsed_or.ok()) << parsed_or.status().ToString();
-  auto parsed = std::move(parsed_or.value());
-  ASSERT_TRUE(parsed.request_body.has_value());
-  EXPECT_EQ(parsed.request_body->status(),
-            absl::InternalError("body_mutation is not available"));
-}
-
 TEST_F(ExtProcResponseTest, ResponseBodyCommonResponseNull) {
   upb::Arena arena;
   envoy::service::ext_proc::v3::ProcessingResponse response;
@@ -1021,6 +1086,46 @@ TEST_F(ExtProcResponseTest, ResponseBodyBodyMutationNull) {
             absl::InternalError("body_mutation is not available"));
 }
 
+TEST_F(ExtProcResponseTest, ResponseTrailersMutation) {
+  upb::Arena arena;
+  envoy::service::ext_proc::v3::ProcessingResponse response;
+  auto* trailers_response = response.mutable_response_trailers();
+  auto* header_mutation = trailers_response->mutable_header_mutation();
+  auto* set_header = header_mutation->add_set_headers();
+  set_header->mutable_header()->set_key("x-mutated-key");
+  set_header->mutable_header()->set_raw_value("mutated-val");
+  header_mutation->add_remove_headers("x-removed-key");
+  auto parsed_or = ParseResponse(response, arena.ptr());
+  ASSERT_TRUE(parsed_or.ok()) << parsed_or.status().ToString();
+  auto parsed = std::move(parsed_or.value());
+  ASSERT_TRUE(parsed.response_trailers.has_value());
+  ASSERT_TRUE(parsed.response_trailers->ok());
+  const auto& header_mutation_res = parsed.response_trailers->value();
+  ASSERT_EQ(header_mutation_res.set_headers.size(), 1);
+  EXPECT_EQ(header_mutation_res.set_headers[0].header.first, "x-mutated-key");
+  EXPECT_EQ(header_mutation_res.set_headers[0].header.second, "mutated-val");
+  ASSERT_EQ(header_mutation_res.remove_headers.size(), 1);
+  EXPECT_EQ(header_mutation_res.remove_headers[0], "x-removed-key");
+}
+
+TEST_F(ExtProcResponseTest, ResponseTrailersInvalidHeaderMutation) {
+  upb::Arena arena;
+  envoy::service::ext_proc::v3::ProcessingResponse response;
+  auto* trailers_response = response.mutable_response_trailers();
+  auto* header_mutation = trailers_response->mutable_header_mutation();
+  auto* set_header = header_mutation->add_set_headers();
+  set_header->mutable_header()->set_key("x-mutated-key");
+  auto parsed_or = ParseResponse(response, arena.ptr());
+  ASSERT_TRUE(parsed_or.ok()) << parsed_or.status().ToString();
+  auto parsed = std::move(parsed_or.value());
+  ASSERT_TRUE(parsed.response_trailers.has_value());
+  EXPECT_EQ(
+      parsed.response_trailers->status(),
+      absl::InvalidArgumentError(
+          "validation failed: [field:header error:either value or raw_value "
+          "must be set]"));
+}
+
 TEST_F(ExtProcResponseTest, ResponseTrailersHeaderMutationNull) {
   upb::Arena arena;
   envoy::service::ext_proc::v3::ProcessingResponse response;
@@ -1031,6 +1136,32 @@ TEST_F(ExtProcResponseTest, ResponseTrailersHeaderMutationNull) {
   ASSERT_TRUE(parsed.response_trailers.has_value());
   EXPECT_EQ(parsed.response_trailers->status(),
             absl::InternalError("header_mutation is not available"));
+}
+
+TEST_F(ExtProcResponseTest, ImmediateResponse) {
+  upb::Arena arena;
+  envoy::service::ext_proc::v3::ProcessingResponse response;
+  auto* immediate = response.mutable_immediate_response();
+  immediate->mutable_grpc_status()->set_status(16);
+  immediate->set_details("invalid credentials");
+  auto* header_mutation = immediate->mutable_headers();
+  auto* set_header = header_mutation->add_set_headers();
+  set_header->mutable_header()->set_key("www-authenticate");
+  set_header->mutable_header()->set_raw_value("Bearer");
+  auto parsed_or = ParseResponse(response, arena.ptr());
+  ASSERT_TRUE(parsed_or.ok()) << parsed_or.status().ToString();
+  auto parsed = std::move(parsed_or.value());
+  ASSERT_TRUE(parsed.immediate_response.has_value());
+  EXPECT_EQ(parsed.immediate_response->status, 16);
+  EXPECT_EQ(parsed.immediate_response->details, "invalid credentials");
+  ASSERT_TRUE(parsed.immediate_response->header_mutation.ok());
+  ASSERT_EQ(parsed.immediate_response->header_mutation->set_headers.size(), 1);
+  EXPECT_EQ(
+      parsed.immediate_response->header_mutation->set_headers[0].header.first,
+      "www-authenticate");
+  EXPECT_EQ(
+      parsed.immediate_response->header_mutation->set_headers[0].header.second,
+      "Bearer");
 }
 
 TEST_F(ExtProcResponseTest, ImmediateResponseHeaderMutationNull) {
