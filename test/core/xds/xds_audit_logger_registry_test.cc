@@ -80,7 +80,7 @@ absl::StatusOr<std::string> ConvertAuditLoggerConfig(
 class TestAuditLoggerFactory : public AuditLoggerFactory {
  public:
   absl::string_view name() const override { return kName; }
-  absl::StatusOr<std::shared_ptr<const AuditLoggerFactory::Config>>
+  absl::StatusOr<std::unique_ptr<AuditLoggerFactory::Config>>
   ParseAuditLoggerConfig(const Json& json) override {
     if (json.object().find("bad") != json.object().end()) {
       return absl::InvalidArgumentError("invalid test_logger config");
@@ -88,7 +88,7 @@ class TestAuditLoggerFactory : public AuditLoggerFactory {
     return nullptr;
   }
   std::unique_ptr<AuditLogger> CreateAuditLogger(
-      std::shared_ptr<const AuditLoggerFactory::Config>) override {
+      std::unique_ptr<AuditLoggerFactory::Config>) override {
     Crash("unreachable");
     return nullptr;
   }

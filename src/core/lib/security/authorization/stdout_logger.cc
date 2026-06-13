@@ -57,13 +57,13 @@ std::string StdoutAuditLoggerFactory::Config::ToString() const { return "{}"; }
 
 absl::string_view StdoutAuditLoggerFactory::name() const { return kName; }
 
-absl::StatusOr<std::shared_ptr<const AuditLoggerFactory::Config>>
+absl::StatusOr<std::unique_ptr<AuditLoggerFactory::Config>>
 StdoutAuditLoggerFactory::ParseAuditLoggerConfig(const Json&) {
-  return std::make_shared<StdoutAuditLoggerFactory::Config>();
+  return std::make_unique<StdoutAuditLoggerFactory::Config>();
 }
 
 std::unique_ptr<AuditLogger> StdoutAuditLoggerFactory::CreateAuditLogger(
-    std::shared_ptr<const AuditLoggerFactory::Config> config) {
+    std::unique_ptr<AuditLoggerFactory::Config> config) {
   // Sanity check.
   GRPC_CHECK(config != nullptr);
   GRPC_CHECK_EQ(config->name(), name());

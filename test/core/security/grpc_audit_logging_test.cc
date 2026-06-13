@@ -65,12 +65,12 @@ class TestAuditLoggerFactory : public AuditLoggerFactory {
 
   absl::string_view name() const override { return kName; }
   std::unique_ptr<AuditLogger> CreateAuditLogger(
-      std::shared_ptr<const AuditLoggerFactory::Config>) override {
+      std::unique_ptr<AuditLoggerFactory::Config>) override {
     return std::make_unique<TestAuditLogger>();
   }
-  absl::StatusOr<std::shared_ptr<const Config>> ParseAuditLoggerConfig(
+  absl::StatusOr<std::unique_ptr<Config>> ParseAuditLoggerConfig(
       const Json&) override {
-    return std::make_shared<TestConfig>();
+    return std::make_unique<TestConfig>();
   }
 };
 
