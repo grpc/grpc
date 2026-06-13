@@ -95,8 +95,6 @@ class ExtProcFilter final : public V3InterceptorToV2Bridge<ExtProcFilter> {
       return grpc_service == o.grpc_service &&
              failure_mode_allow == o.failure_mode_allow &&
              processing_mode == o.processing_mode &&
-             allow_mode_override == o.allow_mode_override &&
-             allowed_override_modes == o.allowed_override_modes &&
              request_attributes == o.request_attributes &&
              response_attributes == o.response_attributes &&
              mutation_rules == o.mutation_rules &&
@@ -114,8 +112,6 @@ class ExtProcFilter final : public V3InterceptorToV2Bridge<ExtProcFilter> {
     std::shared_ptr<XdsGrpcService> grpc_service;
     bool failure_mode_allow;
     ProcessingMode processing_mode;
-    bool allow_mode_override;
-    std::vector<ProcessingMode> allowed_override_modes;
     std::vector<std::string> request_attributes;
     std::vector<std::string> response_attributes;
     std::optional<HeaderMutationRules> mutation_rules;

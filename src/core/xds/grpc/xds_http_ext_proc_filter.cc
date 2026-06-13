@@ -165,6 +165,12 @@ ExtProcFilter::ProcessingMode ParseProcessingMode(
             proto),
         errors);
   }
+  if (processing_mode.send_response_body &&
+      !processing_mode.send_response_trailers) {
+    ValidationErrors::ScopedField field(errors, ".response_trailer_mode");
+    errors->AddError(
+        "must be set to SEND if response_body_mode is set to GRPC");
+  }
   return processing_mode;
 }
 
@@ -215,20 +221,7 @@ RefCountedPtr<const FilterConfig> XdsHttpExtProcFilter::ParseTopLevelConfig(
             ext_proc),
         errors);
   }
-  // allow_mode_override
-  config->allow_mode_override =
-      envoy_extensions_filters_http_ext_proc_v3_ExternalProcessor_allow_mode_override(
-          ext_proc);
   size_t size;
-  const auto* const* allowed_override_modes =
-      envoy_extensions_filters_http_ext_proc_v3_ExternalProcessor_allowed_override_modes(
-          ext_proc, &size);
-  for (size_t i = 0; i < size; ++i) {
-    ValidationErrors::ScopedField field(
-        errors, absl::StrCat(".allowed_override_modes[", i, "]"));
-    config->allowed_override_modes.push_back(
-        ParseProcessingMode(allowed_override_modes[i], errors));
-  }
   // request_attributes
   const auto* request_attributes =
       envoy_extensions_filters_http_ext_proc_v3_ExternalProcessor_request_attributes(
@@ -445,8 +438,6 @@ RefCountedPtr<const FilterConfig> XdsHttpExtProcFilter::MergeConfigs(
   config->grpc_service = top_config.grpc_service;
   config->failure_mode_allow = top_config.failure_mode_allow;
   config->processing_mode = top_config.processing_mode;
-  config->allow_mode_override = top_config.allow_mode_override;
-  config->allowed_override_modes = top_config.allowed_override_modes;
   config->request_attributes = top_config.request_attributes;
   config->response_attributes = top_config.response_attributes;
   if (top_config.mutation_rules.has_value()) {
