@@ -41,6 +41,21 @@ then
   touch protoc_linux_aarch64/grpc_csharp_plugin
 fi
 
+# On s390x Linux, we still need to fake other Linux arch directories for packaging
+if [[ "$(uname -m)" == "s390x" ]]; then
+    mkdir -p protoc_linux_x64
+    touch protoc_linux_x64/protoc
+    touch protoc_linux_x64/grpc_csharp_plugin
+
+    mkdir -p protoc_linux_x86
+    touch protoc_linux_x86/protoc
+    touch protoc_linux_x86/grpc_csharp_plugin
+
+    mkdir -p protoc_linux_aarch64
+    touch protoc_linux_aarch64/protoc
+    touch protoc_linux_aarch64/grpc_csharp_plugin
+fi
+
 if [[ "$(uname)" != "Darwin" ]]
 then
     mkdir -p protoc_macos_x64
