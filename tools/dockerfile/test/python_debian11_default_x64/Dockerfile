@@ -15,10 +15,69 @@
 FROM debian:11
 
 #=================
+# Install apt-get-install-retry wrapper script
+#=================
+#  Create wrapper for apt-get
+
+COPY --chmod=+x <<-"EOF" /usr/local/bin/apt-get-install-retry
+#!/usr/bin/env bash
+# Copyright 2026 The gRPC Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+
+# Ensure all tracking are registered
+
+PS4="+ \$(date +[%H:%M:%S_%Z]) "
+set -xeuo pipefail
+
+# Ensure package to install is provided
+if [ $# -eq 0 ]; then
+  echo "Error: No package name provided to install with apt-get." >&2
+  exit 1
+fi
+
+PACKAGES=("$@")
+
+MAX_RETRIES=4
+# Initial delay, will grow exponentially
+delay=3
+
+echo "Installing packages ${PACKAGES} using apt-get"
+
+for i in $(seq 1 $MAX_RETRIES); do
+  echo "Running apt-get update and install (attempt ${i})..."
+  if apt-get update && apt-get install -y "${PACKAGES[@]}"; then
+    echo "apt-get succeeded on attempt ${i}.";
+    break;
+  else
+    if [ "${i}" -eq "${MAX_RETRIES}" ]; then
+      echo "Max retries reached (${MAX_RETRIES}). apt-get failed permanently." >&2
+      exit 1;
+    fi
+    
+    echo "apt-get failed on attempt ${i}. Waiting $(($delay**$i)) seconds before retrying..."
+    sleep $(($delay**$i));
+  fi
+done
+
+EOF
+
+
 # Basic C core dependencies
 
 # C/C++ dependencies according to https://github.com/grpc/grpc/blob/master/BUILDING.md
-RUN apt-get update && apt-get install -y \
+RUN /usr/local/bin/apt-get-install-retry \
   build-essential \
   autoconf \
   libtool \
@@ -26,20 +85,20 @@ RUN apt-get update && apt-get install -y \
   && apt-get clean
 
 # GCC
-RUN apt-get update && apt-get install -y \
+RUN /usr/local/bin/apt-get-install-retry \
   gcc \
   g++ \
   && apt-get clean
 
 # libc6
-RUN apt-get update && apt-get install -y \
+RUN /usr/local/bin/apt-get-install-retry \
   libc6 \
   libc6-dbg \
   libc6-dev \
   && apt-get clean
 
 # Tools
-RUN apt-get update && apt-get install -y \
+RUN /usr/local/bin/apt-get-install-retry \
   bzip2 \
   curl \
   dnsutils \
@@ -69,8 +128,8 @@ RUN mkdir /var/local/jenkins
 #=================
 # Compile CPython 3.10.3 from source
 
-RUN apt-get update && apt-get install -y zlib1g-dev libssl-dev libsqlite3-dev && apt-get clean
-RUN apt-get update && apt-get install -y jq build-essential libffi-dev && apt-get clean
+RUN /usr/local/bin/apt-get-install-retry zlib1g-dev libssl-dev libsqlite3-dev
+RUN /usr/local/bin/apt-get-install-retry jq build-essential libffi-dev
 
 RUN cd /tmp && \
     wget -q https://www.python.org/ftp/python/3.10.3/Python-3.10.3.tgz && \
@@ -90,8 +149,8 @@ RUN python3.10 -m ensurepip && \
 #=================
 # Compile CPython 3.11.4 from source
 
-RUN apt-get update && apt-get install -y zlib1g-dev libssl-dev libsqlite3-dev && apt-get clean
-RUN apt-get update && apt-get install -y jq build-essential libffi-dev && apt-get clean
+RUN /usr/local/bin/apt-get-install-retry zlib1g-dev libssl-dev libsqlite3-dev
+RUN /usr/local/bin/apt-get-install-retry jq build-essential libffi-dev
 
 RUN cd /tmp && \
     wget -q https://www.python.org/ftp/python/3.11.4/Python-3.11.4.tgz && \
@@ -112,8 +171,8 @@ RUN python3.11 -m ensurepip && \
 #=================
 # Compile CPython 3.12.0 from source
 
-RUN apt-get update && apt-get install -y zlib1g-dev libssl-dev libsqlite3-dev && apt-get clean
-RUN apt-get update && apt-get install -y jq build-essential libffi-dev && apt-get clean
+RUN /usr/local/bin/apt-get-install-retry zlib1g-dev libssl-dev libsqlite3-dev
+RUN /usr/local/bin/apt-get-install-retry jq build-essential libffi-dev
 
 RUN cd /tmp && \
     wget -q https://www.python.org/ftp/python/3.12.0/Python-3.12.0.tgz && \
@@ -134,8 +193,8 @@ RUN python3.12 -m ensurepip && \
 #=================
 # Compile CPython 3.13.0rc2 from source
 
-RUN apt-get update && apt-get install -y zlib1g-dev libssl-dev libsqlite3-dev && apt-get clean
-RUN apt-get update && apt-get install -y jq build-essential libffi-dev && apt-get clean
+RUN /usr/local/bin/apt-get-install-retry zlib1g-dev libssl-dev libsqlite3-dev
+RUN /usr/local/bin/apt-get-install-retry jq build-essential libffi-dev
 
 RUN cd /tmp && \
     wget -q https://www.python.org/ftp/python/3.13.0/Python-3.13.0rc2.tgz && \
@@ -156,8 +215,8 @@ RUN python3.13 -m ensurepip && \
 #=================
 # Compile CPython 3.14.0rc1 from source
 
-RUN apt-get update && apt-get install -y zlib1g-dev libssl-dev libsqlite3-dev && apt-get clean
-RUN apt-get update && apt-get install -y jq build-essential libffi-dev && apt-get clean
+RUN /usr/local/bin/apt-get-install-retry zlib1g-dev libssl-dev libsqlite3-dev
+RUN /usr/local/bin/apt-get-install-retry jq build-essential libffi-dev
 
 RUN cd /tmp && \
     wget -q https://www.python.org/ftp/python/3.14.0/Python-3.14.0rc1.tgz && \
@@ -178,10 +237,10 @@ RUN python3.14 -m ensurepip && \
 
 # Python test coverage requires libsqlite3, and it have
 # to be installed before Python.
-RUN apt-get update && apt-get install -y libsqlite3-dev
+RUN /usr/local/bin/apt-get-install-retry libsqlite3-dev
 
 # 3.9 is the default python3 version on debian11
-RUN apt-get update && apt-get install -y python3.9 python3.9-dev python3-pip
+RUN /usr/local/bin/apt-get-install-retry python3.9 python3.9-dev python3-pip
 
 # for Python test coverage reporting
 RUN python3.9 -m pip install coverage
@@ -198,7 +257,7 @@ RUN python3 -m pip install --upgrade google-auth==1.23.0 google-api-python-clien
 # Install cmake
 # Note that this step should be only used for distributions that have new enough cmake to satisfy gRPC's cmake version requirement.
 
-RUN apt-get update && apt-get install -y cmake && apt-get clean
+RUN /usr/local/bin/apt-get-install-retry cmake
 
 #=================
 # Install ccache
