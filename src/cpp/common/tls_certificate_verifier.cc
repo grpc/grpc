@@ -194,7 +194,10 @@ int ExternalCertificateVerifier::VerifyInCoreExternalVerifier(
     GRPC_CHECK(pair.second);
     cpp_request = &pair.first->second.cpp_request;
   }
-  grpc::Status sync_current_verifier_status;
+  grpc::Status sync_current_verifier_status =
+      grpc::Status(grpc::StatusCode::UNAUTHENTICATED,
+                   "TLS custom verification did not populate status, "
+                   "defaulting to unauthenticated.");
   bool is_done = self->Verify(
       cpp_request,
       [self, request](grpc::Status status) {
