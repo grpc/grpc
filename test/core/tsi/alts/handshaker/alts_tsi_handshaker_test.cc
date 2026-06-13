@@ -1271,6 +1271,57 @@ TEST(AltsTsiHandshakerTest, CheckHandshakerIntegrityOnlySecurityLevel) {
   notification_destroy(&tsi_to_caller_notification);
 }
 
+TEST(AltsTsiHandshakerTest, CheckHandshakerResultSetUnusedBytesOverflow) {
+  // Build a minimal valid handshaker result.
+  upb::Arena arena;
+  grpc_gcp_HandshakerResp* resp = grpc_gcp_HandshakerResp_new(arena.ptr());
+  grpc_gcp_HandshakerResult* hresult =
+      grpc_gcp_HandshakerResp_mutable_result(resp, arena.ptr());
+  grpc_gcp_Identity* peer_identity =
+      grpc_gcp_HandshakerResult_mutable_peer_identity(hresult, arena.ptr());
+  grpc_gcp_Identity_set_service_account(
+      peer_identity,
+      upb_StringView_FromString(ALTS_TSI_HANDSHAKER_TEST_PEER_IDENTITY));
+  grpc_gcp_HandshakerResult_set_key_data(
+      hresult, upb_StringView_FromString(ALTS_TSI_HANDSHAKER_TEST_KEY_DATA));
+  ASSERT_TRUE(grpc_gcp_handshaker_resp_set_peer_rpc_versions(
+      resp, arena.ptr(), ALTS_TSI_HANDSHAKER_TEST_MAX_RPC_VERSION_MAJOR,
+      ALTS_TSI_HANDSHAKER_TEST_MAX_RPC_VERSION_MINOR,
+      ALTS_TSI_HANDSHAKER_TEST_MIN_RPC_VERSION_MAJOR,
+      ALTS_TSI_HANDSHAKER_TEST_MIN_RPC_VERSION_MINOR));
+  grpc_gcp_Identity* local_identity =
+      grpc_gcp_HandshakerResult_mutable_local_identity(hresult, arena.ptr());
+  grpc_gcp_Identity_set_service_account(
+      local_identity,
+      upb_StringView_FromString(ALTS_TSI_HANDSHAKER_TEST_LOCAL_IDENTITY));
+  grpc_gcp_HandshakerResult_set_application_protocol(
+      hresult,
+      upb_StringView_FromString(ALTS_TSI_HANDSHAKER_TEST_APPLICATION_PROTOCOL));
+  grpc_gcp_HandshakerResult_set_record_protocol(
+      hresult,
+      upb_StringView_FromString(ALTS_TSI_HANDSHAKER_TEST_RECORD_PROTOCOL));
+  tsi_handshaker_result* result = nullptr;
+  ASSERT_EQ(
+      alts_tsi_handshaker_result_create(resp, /*is_client=*/true, &result),
+      TSI_OK);
+  ASSERT_NE(result, nullptr);
+  // A malformed handshaker service response may report consuming more bytes
+  // than were received. bytes_consumed larger than the recv_bytes length must
+  // not underflow the unused-bytes size computation.
+  grpc_slice recv_bytes =
+      grpc_slice_from_static_string(ALTS_TSI_HANDSHAKER_TEST_RECV_BYTES);
+  alts_tsi_handshaker_result_set_unused_bytes(
+      result, &recv_bytes, GRPC_SLICE_LENGTH(recv_bytes) + 1);
+  const unsigned char* unused_bytes = nullptr;
+  size_t unused_bytes_size = 0;
+  ASSERT_EQ(tsi_handshaker_result_get_unused_bytes(result, &unused_bytes,
+                                                   &unused_bytes_size),
+            TSI_OK);
+  ASSERT_EQ(unused_bytes_size, 0u);
+  grpc_slice_unref(recv_bytes);
+  tsi_handshaker_result_destroy(result);
+}
+
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(&argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
