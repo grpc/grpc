@@ -521,7 +521,7 @@ TEST_F(Http2ClientTransportTest, TestCanStreamReceiveDataFrames) {
 
   step->ThenExpectWrite({
       helper_.SerializedGoawayFrame(
-          /*debug_data=*/"kthxbye",
+          /*debug_data=*/std::string(RFC9113::kLastStreamClosed),
           /*last_stream_id=*/0,
           /*error_code=*/
           static_cast<uint32_t>(Http2ErrorCode::kInternalError)),

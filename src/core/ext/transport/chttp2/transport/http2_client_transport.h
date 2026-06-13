@@ -322,7 +322,7 @@ class Http2ClientTransport final : public ClientTransport,
            "status: "
         << status << " at " << whence.file() << ":" << whence.line();
     GRPC_UNUSED absl::Status unused_status = HandleError(
-        /*stream_id=*/std::nullopt, ToHttpOkOrConnError(status), whence);
+        /*stream=*/nullptr, ToHttpOkOrConnError(status), whence);
     return false;
   }
 
@@ -379,7 +379,7 @@ class Http2ClientTransport final : public ClientTransport,
         [self = RefAsSubclass<Http2ClientTransport>()](absl::Status status) {
           if (!status.ok()) {
             GRPC_UNUSED absl::Status error = self->HandleError(
-                /*stream_id=*/std::nullopt, ToHttpOkOrConnError(status));
+                /*stream=*/nullptr, ToHttpOkOrConnError(status));
           }
         });
   }
@@ -485,13 +485,26 @@ class Http2ClientTransport final : public ClientTransport,
   // Runs on the call party.
   std::optional<RefCountedPtr<Stream>> MakeStream(CallHandler call_handler);
 
+  // Call this when a stream error is detected locally (e.g., invalid frame
+  // payload) and we must notify the server by sending a RST_STREAM frame. This
+  // enqueues the RST_STREAM frame and immediately closes the stream for reads.
+  // Writes will be closed by the write loop after the RST_STREAM frame is
+  // written to the wire.
   void BeginCloseStream(RefCountedPtr<Stream> stream,
-                        std::optional<uint32_t> reset_stream_error_code,
+                        uint32_t reset_stream_error_code,
                         ServerMetadataHandle&& metadata,
                         DebugLocation whence = {});
 
-  // This function MUST be idempotent.
+  // Call this to immediately close the stream for reads and/or writes locally.
+  // This should be called when:
+  // 1. We receive a RST_STREAM from the server (server already aborted).
+  // 2. We receive trailers from the server (clean finish).
+  // 3. Stream initialization fails (stream never started on wire).
+  //
+  // This function is idempotent. If reads are closing and metadata is provided,
+  // it propagates the metadata to the upper layers to initiate close.
   void CloseStream(Stream& stream, CloseStreamArgs args,
+                   std::optional<ServerMetadataHandle> metadata = std::nullopt,
                    DebugLocation whence = {});
 
   //////////////////////////////////////////////////////////////////////////////
@@ -541,8 +554,8 @@ class Http2ClientTransport final : public ClientTransport,
   // should not be cancelled in case of stream errors.
   // If the error is a connection error, it closes the transport and returns the
   // corresponding (failed) absl status.
-  absl::Status HandleError(const std::optional<uint32_t> stream_id,
-                           Http2Status status, DebugLocation whence = {});
+  absl::Status HandleError(RefCountedPtr<Stream> stream, Http2Status status,
+                           DebugLocation whence = {});
 
   //////////////////////////////////////////////////////////////////////////////
   // Misc Transport Stuff
