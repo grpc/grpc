@@ -182,6 +182,23 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "http_proxy_tls_credentials_test",
+    srcs = ["http_proxy_tls_credentials_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    uses_polling = False,
+    deps = [
+        "//:channel_arg_names",
+        "//:gpr",
+        "//:grpc",
+        "//src/core:channel_args",
+        "//src/core:http_proxy_tls_credentials",
+        "//test/core/test_util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
     name = "secure_endpoint_test",
     srcs = ["secure_endpoint_test.cc"],
     external_deps = [
