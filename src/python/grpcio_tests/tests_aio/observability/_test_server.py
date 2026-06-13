@@ -20,86 +20,121 @@ import grpc
 _REQUEST = b"\x00\x00\x00"
 _RESPONSE = b"\x00\x00\x00"
 
-_UNARY_UNARY = "/test/UnaryUnary"
-_UNARY_STREAM = "/test/UnaryStream"
-_STREAM_UNARY = "/test/StreamUnary"
-_STREAM_STREAM = "/test/StreamStream"
+_SERVICE_NAME = "test"
+_UNARY_UNARY = "UnaryUnary"
+_UNARY_STREAM = "UnaryStream"
+_STREAM_UNARY = "StreamUnary"
+_STREAM_STREAM = "StreamStream"
 STREAM_LENGTH = 5
 
 
-class _GenericHandler(grpc.GenericRpcHandler):
-    def __init__(self):
-        self._called = asyncio.get_event_loop().create_future()
-        self._routing_table = {
-            _UNARY_UNARY: grpc.unary_unary_rpc_method_handler(
-                self._unary_unary
-            ),
-            _UNARY_STREAM: grpc.unary_stream_rpc_method_handler(
-                self._unary_stream
-            ),
-            _STREAM_UNARY: grpc.stream_unary_rpc_method_handler(
-                self._stream_unary
-            ),
-            _STREAM_STREAM: grpc.stream_stream_rpc_method_handler(
-                self._stream_stream
-            ),
-        }
-
-    async def _unary_unary(self, unused_request, unused_context):
-        return _RESPONSE
-
-    async def _unary_stream(self, unused_request, unused_context):
-        for _ in range(STREAM_LENGTH):
-            yield _RESPONSE
-
-    async def _stream_unary(self, request_iterator, unused_context):
-        async for _ in request_iterator:
-            pass
-        return _RESPONSE
-
-    async def _stream_stream(self, request_iterator, servicer_context):
-        async for _ in request_iterator:
-            yield _RESPONSE
-
-    def service(self, handler_details):
-        if not self._called.done():
-            self._called.set_result(None)
-        return self._routing_table.get(handler_details.method)
+async def unary_unary(unused_request, unused_context):
+    return _RESPONSE
 
 
-async def start_server() -> Tuple[grpc.aio.Server, int]:
+async def unary_stream(unused_request, unused_context):
+    for _ in range(STREAM_LENGTH):
+        yield _RESPONSE
+
+
+async def stream_unary(request_iterator, unused_context):
+    async for _ in request_iterator:
+        pass
+    return _RESPONSE
+
+
+async def stream_stream(request_iterator, servicer_context):
+    async for _ in request_iterator:
+        yield _RESPONSE
+
+
+class _MethodHandler(grpc.RpcMethodHandler):
+    def __init__(self, request_streaming, response_streaming):
+        self.request_streaming = request_streaming
+        self.response_streaming = response_streaming
+        self.request_deserializer = None
+        self.response_serializer = None
+        self.unary_unary = None
+        self.unary_stream = None
+        self.stream_unary = None
+        self.stream_stream = None
+        if self.request_streaming and self.response_streaming:
+            self.stream_stream = stream_stream
+        elif self.request_streaming:
+            self.stream_unary = stream_unary
+        elif self.response_streaming:
+            self.unary_stream = unary_stream
+        else:
+            self.unary_unary = unary_unary
+
+
+RPC_METHOD_HANDLERS = {
+    _UNARY_UNARY: _MethodHandler(False, False),
+    _UNARY_STREAM: _MethodHandler(False, True),
+    _STREAM_UNARY: _MethodHandler(True, False),
+    _STREAM_STREAM: _MethodHandler(True, True),
+}
+
+
+REGISTERED_RPC_METHOD_HANDLERS = {
+    _UNARY_UNARY: _MethodHandler(False, False),
+    _UNARY_STREAM: _MethodHandler(False, True),
+    _STREAM_UNARY: _MethodHandler(True, False),
+    _STREAM_STREAM: _MethodHandler(True, True),
+}
+
+
+async def start_server(register_method=False) -> Tuple[grpc.aio.Server, int]:
     server = grpc.aio.server()
     port = server.add_insecure_port("[::]:0")
-    generic_handler = _GenericHandler()
+    generic_handler = grpc.method_handlers_generic_handler(
+        _SERVICE_NAME, RPC_METHOD_HANDLERS
+    )
     server.add_generic_rpc_handlers((generic_handler,))
+    if register_method:
+        server.add_registered_method_handlers(
+            _SERVICE_NAME, REGISTERED_RPC_METHOD_HANDLERS
+        )
     await server.start()
     return server, port
 
 
-async def unary_unary_call(port):
+async def unary_unary_call(port, registered_method=False):
     async with grpc.aio.insecure_channel(f"localhost:{port}") as channel:
-        multi_callable = channel.unary_unary(_UNARY_UNARY)
+        multi_callable = channel.unary_unary(
+            grpc._common.fully_qualified_method(_SERVICE_NAME, _UNARY_UNARY),
+            _registered_method=registered_method,
+        )
         unused_response = await multi_callable(_REQUEST)
 
 
-async def unary_stream_call(port):
+async def unary_stream_call(port, registered_method=False):
     async with grpc.aio.insecure_channel(f"localhost:{port}") as channel:
-        multi_callable = channel.unary_stream(_UNARY_STREAM)
+        multi_callable = channel.unary_stream(
+            grpc._common.fully_qualified_method(_SERVICE_NAME, _UNARY_STREAM),
+            _registered_method=registered_method,
+        )
         call = multi_callable(_REQUEST)
         async for _ in call:
             pass
 
 
-async def stream_unary_call(port):
+async def stream_unary_call(port, registered_method=False):
     async with grpc.aio.insecure_channel(f"localhost:{port}") as channel:
-        multi_callable = channel.stream_unary(_STREAM_UNARY)
+        multi_callable = channel.stream_unary(
+            grpc._common.fully_qualified_method(_SERVICE_NAME, _STREAM_UNARY),
+            _registered_method=registered_method,
+        )
         call = multi_callable(iter([_REQUEST] * STREAM_LENGTH))
         unused_response = await call
 
 
-async def stream_stream_call(port):
+async def stream_stream_call(port, registered_method=False):
     async with grpc.aio.insecure_channel(f"localhost:{port}") as channel:
-        multi_callable = channel.stream_stream(_STREAM_STREAM)
+        multi_callable = channel.stream_stream(
+            grpc._common.fully_qualified_method(_SERVICE_NAME, _STREAM_STREAM),
+            _registered_method=registered_method,
+        )
         call = multi_callable(iter([_REQUEST] * STREAM_LENGTH))
         async for _ in call:
             pass
