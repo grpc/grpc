@@ -29,6 +29,7 @@
   "tests.protoc_plugin.beta_python_plugin_test.PythonPluginTest",
   "tests.reflection._reflection_client_test.ReflectionClientTest",
   "tests.reflection._reflection_servicer_test.ReflectionServicerTest",
+  "tests.reflection._reflection_version_consistency_test.ProtobufVersionTest",
   "tests.status._grpc_status_test.StatusTest",
   "tests.testing._client_test.ClientTest",
   "tests.testing._server_test.FirstServiceServicerTest",
