@@ -50,9 +50,10 @@ cdef extern from "python_observability_context.h" namespace "grpc_observability"
     string key
     string value
 
-  ctypedef struct Annotation:
+  ctypedef struct Event:
+    string name
+    vector[Label] attributes
     string time_stamp
-    string description
 
   ctypedef struct Measurement:
     cMetricsName name
@@ -70,7 +71,7 @@ cdef extern from "python_observability_context.h" namespace "grpc_observability"
     string parent_span_id
     string status
     vector[Label] span_labels
-    vector[Annotation] span_annotations
+    vector[Event] span_events
     int64_t child_span_count
     bint should_sample
 
