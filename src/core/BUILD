@@ -3478,10 +3478,14 @@ grpc_cc_library(
 grpc_cc_library(
     name = "mitigation_engine",
     hdrs = [
+        "mitigation_engine/mitigation.h",
         "mitigation_engine/mitigation_engine.h",
+        "mitigation_engine/mitigation_provider.h",
     ],
     external_deps = [
+        "absl/functional:any_invocable",
         "absl/strings",
+        "absl/time",
     ],
     deps = [
         "arena",
