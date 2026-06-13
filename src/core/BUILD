@@ -5730,6 +5730,7 @@ grpc_cc_library(
         "try_seq",
         "unique_type_name",
         "xds_common_types",
+        "//:gpr",
         "//:grpc_base",
         "//:grpc_trace",
         "//:orphanable",

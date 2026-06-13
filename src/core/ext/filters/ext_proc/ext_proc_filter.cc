@@ -17,7 +17,8 @@
 #include "src/core/ext/filters/ext_proc/ext_proc_filter.h"
 
 #include <string>
-#include <vector>
+
+#include "src/core/util/string.h"
 
 #include "src/core/call/call_spine.h"
 #include "src/core/lib/debug/trace_flags.h"
@@ -32,11 +33,6 @@
 #include "src/core/lib/promise/try_seq.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "absl/log/log.h"
-// #include "src/core/util/shared_bit_gen.h"
-// #include "src/core/xds/grpc/xds_http_filter.h"
-// #include "absl/random/random.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/str_join.h"
 
 namespace grpc_core {
 
@@ -44,63 +40,109 @@ void (*g_test_ext_proc_metadata_modifier)(grpc_metadata_batch*) = nullptr;
 absl::Status (*g_test_ext_proc_message_modifier)(MessageHandle*) = nullptr;
 
 std::string ExtProcFilter::ProcessingMode::ToString() const {
-  std::vector<std::string> parts;
-  parts.push_back(absl::StrCat("send_request_headers=",
-                               send_request_headers ? "true" : "false"));
-  parts.push_back(absl::StrCat("send_response_headers=",
-                               send_response_headers ? "true" : "false"));
-  parts.push_back(absl::StrCat("send_response_trailers=",
-                               send_response_trailers ? "true" : "false"));
-  if (send_request_body) parts.push_back("send_request_body=true");
-  if (send_response_body) parts.push_back("send_response_body=true");
-  return absl::StrCat("{", absl::StrJoin(parts, ", "), "}");
+  std::string result = "{";
+  StrAppend(result, "send_request_headers=");
+  StrAppend(result, send_request_headers ? "true" : "false");
+  StrAppend(result, ", send_response_headers=");
+  StrAppend(result, send_response_headers ? "true" : "false");
+  StrAppend(result, ", send_response_trailers=");
+  StrAppend(result, send_response_trailers ? "true" : "false");
+  StrAppend(result, ", send_request_body=");
+  StrAppend(result, send_request_body ? "true" : "false");
+  StrAppend(result, ", send_response_body=");
+  StrAppend(result, send_response_body ? "true" : "false");
+  StrAppend(result, "}");
+  return result;
 }
 
 std::string ExtProcFilter::Config::ToString() const {
-  std::vector<std::string> parts;
+  std::string result = "{";
+  bool is_first = true;
   if (grpc_service != nullptr) {
-    parts.push_back(absl::StrCat("grpc_service=", grpc_service->ToString()));
+    StrAppend(result, "grpc_service=");
+    StrAppend(result, grpc_service->ToString());
+    is_first = false;
   }
-  if (failure_mode_allow) parts.push_back("failure_mode_allow=true");
-  parts.push_back(absl::StrCat("processing_mode=", processing_mode.ToString()));
+  if (failure_mode_allow) {
+    if (!is_first) StrAppend(result, ", ");
+    StrAppend(result, "failure_mode_allow=true");
+    is_first = false;
+  }
+  if (!is_first) StrAppend(result, ", ");
+  StrAppend(result, "processing_mode=");
+  StrAppend(result, processing_mode.ToString());
+  is_first = false;
   if (!request_attributes.empty()) {
-    parts.push_back(absl::StrCat("request_attributes=[",
-                                 absl::StrJoin(request_attributes, ", "), "]"));
+    if (!is_first) StrAppend(result, ", ");
+    StrAppend(result, "request_attributes=[");
+    bool first_attr = true;
+    for (const auto& attr : request_attributes) {
+      if (!first_attr) StrAppend(result, ", ");
+      StrAppend(result, attr);
+      first_attr = false;
+    }
+    StrAppend(result, "]");
+    is_first = false;
   }
   if (!response_attributes.empty()) {
-    parts.push_back(absl::StrCat("response_attributes=[",
-                                 absl::StrJoin(response_attributes, ", "),
-                                 "]"));
+    if (!is_first) StrAppend(result, ", ");
+    StrAppend(result, "response_attributes=[");
+    bool first_attr = true;
+    for (const auto& attr : response_attributes) {
+      if (!first_attr) StrAppend(result, ", ");
+      StrAppend(result, attr);
+      first_attr = false;
+    }
+    StrAppend(result, "]");
+    is_first = false;
   }
   if (mutation_rules.has_value()) {
-    parts.push_back(
-        absl::StrCat("mutation_rules=", mutation_rules->ToString()));
+    if (!is_first) StrAppend(result, ", ");
+    StrAppend(result, "mutation_rules=");
+    StrAppend(result, mutation_rules->ToString());
+    is_first = false;
   }
   if (!forwarding_allowed_headers.empty()) {
-    std::vector<std::string> matchers;
+    if (!is_first) StrAppend(result, ", ");
+    StrAppend(result, "forwarding_allowed_headers=[");
+    bool first_matcher = true;
     for (const auto& matcher : forwarding_allowed_headers) {
-      matchers.push_back(matcher.ToString());
+      if (!first_matcher) StrAppend(result, ", ");
+      StrAppend(result, matcher.ToString());
+      first_matcher = false;
     }
-    parts.push_back(absl::StrCat("forwarding_allowed_headers=[",
-                                 absl::StrJoin(matchers, ", "), "]"));
+    StrAppend(result, "]");
+    is_first = false;
   }
   if (!forwarding_disallowed_headers.empty()) {
-    std::vector<std::string> matchers;
+    if (!is_first) StrAppend(result, ", ");
+    StrAppend(result, "forwarding_disallowed_headers=[");
+    bool first_matcher = true;
     for (const auto& matcher : forwarding_disallowed_headers) {
-      matchers.push_back(matcher.ToString());
+      if (!first_matcher) StrAppend(result, ", ");
+      StrAppend(result, matcher.ToString());
+      first_matcher = false;
     }
-    parts.push_back(absl::StrCat("forwarding_disallowed_headers=[",
-                                 absl::StrJoin(matchers, ", "), "]"));
+    StrAppend(result, "]");
+    is_first = false;
   }
   if (disable_immediate_response) {
-    parts.push_back("disable_immediate_response=true");
+    if (!is_first) StrAppend(result, ", ");
+    StrAppend(result, "disable_immediate_response=true");
+    is_first = false;
   }
-  if (observability_mode) parts.push_back("observability_mode=true");
+  if (observability_mode) {
+    if (!is_first) StrAppend(result, ", ");
+    StrAppend(result, "observability_mode=true");
+    is_first = false;
+  }
   if (deferred_close_timeout != Duration::Zero()) {
-    parts.push_back(absl::StrCat("deferred_close_timeout=",
-                                 deferred_close_timeout.ToString()));
+    if (!is_first) StrAppend(result, ", ");
+    StrAppend(result, "deferred_close_timeout=");
+    StrAppend(result, deferred_close_timeout.ToString());
   }
-  return absl::StrCat("{", absl::StrJoin(parts, ", "), "}");
+  StrAppend(result, "}");
+  return result;
 }
 
 ExtProcFilter::ExtProcChannel::ExtProcChannel(

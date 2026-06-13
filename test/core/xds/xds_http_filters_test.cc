@@ -2311,7 +2311,8 @@ TEST_F(XdsExtProcFilterTest, ParseMinimumConfig) {
             "{grpc_service={server_target={server_uri=localhost:1234, "
             "channel_creds={type=google_default, config={}}}}, "
             "processing_mode={send_request_headers=true, "
-            "send_response_headers=true, send_response_trailers=false}, "
+            "send_response_headers=true, send_response_trailers=false, "
+            "send_request_body=false, send_response_body=false}, "
             "deferred_close_timeout=5000ms}");
 }
 
@@ -2349,7 +2350,7 @@ TEST_F(XdsExtProcFilterTest, ParseFullConfig) {
             "failure_mode_allow=true, "
             "processing_mode={send_request_headers=false, "
             "send_response_headers=true, send_response_trailers=true, "
-            "send_request_body=true}, "
+            "send_request_body=true, send_response_body=false}, "
             "request_attributes=[req_attr], "
             "response_attributes=[resp_attr], "
             "mutation_rules={disallow_all=true}, "
@@ -2376,7 +2377,8 @@ TEST_F(XdsExtProcFilterTest, ParseOverrideConfig) {
   ASSERT_EQ(config->type().name(), "ext_proc_override_config");
   EXPECT_EQ(config->ToString(),
             "{processing_mode={send_request_headers=false, "
-            "send_response_headers=true, send_response_trailers=false}, "
+            "send_response_headers=true, send_response_trailers=false, "
+            "send_request_body=false, send_response_body=false}, "
             "grpc_service={server_target={server_uri=localhost:5678, "
             "channel_creds={type=google_default, config={}}}}, "
             "request_attributes=[override_req_attr], "
@@ -2907,7 +2909,8 @@ TEST_F(XdsExtProcFilterTest, MergeConfigsWithVirtualHostOverride) {
             "{grpc_service={server_target={server_uri=localhost:1234, "
             "channel_creds={type=google_default, config={}}}}, "
             "processing_mode={send_request_headers=false, "
-            "send_response_headers=true, send_response_trailers=false}, "
+            "send_response_headers=true, send_response_trailers=false, "
+            "send_request_body=false, send_response_body=false}, "
             "deferred_close_timeout=5000ms}");
 }
 
@@ -2952,7 +2955,8 @@ TEST_F(XdsExtProcFilterTest, MergeConfigsWithRouteOverride) {
             "{grpc_service={server_target={server_uri=localhost:5678, "
             "channel_creds={type=google_default, config={}}}}, "
             "processing_mode={send_request_headers=true, "
-            "send_response_headers=true, send_response_trailers=false}, "
+            "send_response_headers=true, send_response_trailers=false, "
+            "send_request_body=false, send_response_body=false}, "
             "deferred_close_timeout=5000ms}");
 }
 
