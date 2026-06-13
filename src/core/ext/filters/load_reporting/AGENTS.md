@@ -2,7 +2,7 @@
 
 This directory contains a server-side filter for reporting load data to a load balancer.
 
-See also: [gRPC Filters overview](../GEMINI.md)
+See also: [gRPC Filters overview](../AGENTS.md)
 
 ## Overarching Purpose
 

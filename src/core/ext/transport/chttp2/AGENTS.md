@@ -4,7 +4,7 @@
     *   The legacy CHTTP2 transport.
     *   The newer WIP promise-based HTTP/2 transport (PH2).
 
-See also: [gRPC Transports overview](../../../transport/GEMINI.md)
+See also: [gRPC Transports overview](../../../transport/AGENTS.md)
 
 ## Overarching Purpose
 
@@ -231,13 +231,13 @@ Key test files include:
 ## Dependencies for PH2
 
 *   **gRPC Promise Library:**
-    *   PH2 heavily relies on the gRPC Promise framework [`src/core/lib/promise/`](../../../lib/promise/GEMINI.md)
+    *   PH2 heavily relies on the gRPC Promise framework [`src/core/lib/promise/`](../../../lib/promise/AGENTS.md)
     *   Key components like [`party.h`](../../../lib/promise/party.h) are fundamental to PH2's async model.
-*   **Call Spine:** PH2 interacts with the V3 Call Spine components located in [`src/core/call/`](../../../call/GEMINI.md).
+*   **Call Spine:** PH2 interacts with the V3 Call Spine components located in [`src/core/call/`](../../../call/AGENTS.md).
 
 ## Similarities of PH2 and Chaotic Good
 
-PH2 shares several architectural similarities with the [Chaotic Good transport](../chaotic_good/GEMINI.md) :
+PH2 shares several architectural similarities with the [Chaotic Good transport](../chaotic_good/AGENTS.md) :
 
 *   **Promise-Based:** Both transports are built upon the gRPC Promise library for managing asynchronous operations. This is a departure from the callback-based system in CHTTP2.
 *   **Call V3 Stack:** Both are designed to work with the newer Call V3 stack.
