@@ -9,6 +9,9 @@ resolver_component_tests:
     - {TTL: '2100', data: '2607:f8b0:400a:801::1002', type: AAAA}
     - {TTL: '2100', data: '2607:f8b0:400a:801::1003', type: AAAA}
     - {TTL: '2100', data: '2607:f8b0:400a:801::1004', type: AAAA}
+    ipv4-and-ipv6-target:
+    - {TTL: '2100', data: 1.2.3.4, type: A}
+    - {TTL: '2100', data: '2607:f8b0:400a:801::1002', type: AAAA}
     ipv6-loopback-preferred-target:
     - {TTL: '2100', data: '2002::1111', type: AAAA}
     - {TTL: '2100', data: '::1', type: AAAA}

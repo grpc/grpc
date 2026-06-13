@@ -29,6 +29,7 @@
 
 #include <list>
 #include <memory>
+#include <vector>
 
 #include "src/core/lib/event_engine/grpc_polled_fd.h"
 #include "src/core/lib/event_engine/ref_counted_dns_resolver_interface.h"
@@ -134,6 +135,16 @@ class AresResolver : public RefCountedDNSResolverInterface {
   static void OnHostbynameDoneLocked(void* arg, int status, int /*timeouts*/,
                                      struct hostent* hostent)
       ABSL_NO_THREAD_SAFETY_ANALYSIS;
+  static void OnAddrinfoDoneLocked(void* arg, int status, int /*timeouts*/,
+                                   struct ares_addrinfo* addrinfo)
+      ABSL_NO_THREAD_SAFETY_ANALYSIS;
+  // Shared completion path for hostname lookups: looks up the pending
+  // LookupHostname callback by id and, if it is still registered, dispatches
+  // either the sorted addresses or the error status onto the EventEngine. Used
+  // by both OnHostbynameDoneLocked() and OnAddrinfoDoneLocked().
+  void FinishHostnameLookupLocked(
+      int callback_map_id, std::vector<EventEngine::ResolvedAddress> addresses,
+      absl::Status error_status) ABSL_EXCLUSIVE_LOCKS_REQUIRED(mutex_);
   static void OnSRVQueryDoneLocked(void* arg, int status, int /*timeouts*/,
                                    unsigned char* abuf,
                                    int alen) ABSL_NO_THREAD_SAFETY_ANALYSIS;

@@ -39,6 +39,7 @@ class GPR_DLL ConfigVars {
     absl::optional<int32_t> chaotic_good_metrics_update_interval_ms;
     absl::optional<double> experimental_target_memory_pressure;
     absl::optional<double> experimental_memory_pressure_threshold;
+    absl::optional<bool> dns_ares_query_use_getaddrinfo;
     absl::optional<bool> enable_fork_support;
     absl::optional<bool> abort_on_leaks;
     absl::optional<bool> use_system_roots_over_language_callback;
@@ -82,6 +83,14 @@ class GPR_DLL ConfigVars {
   // with c-ares support. Otherwise, the value of this environment variable is
   // ignored.
   absl::string_view DnsResolver() const { return dns_resolver_; }
+  // EXPERIMENTAL. If true, the c-ares based DNS resolver issues a single
+  // combined A and AAAA query via ares_getaddrinfo() with AF_UNSPEC instead of
+  // two separate ares_gethostbyname() queries. This returns as soon as one
+  // address family is satisfied, avoiding long delays when a resolver silently
+  // drops AAAA queries. See https://github.com/grpc/grpc/issues/35638.
+  bool DnsAresQueryUseGetaddrinfo() const {
+    return dns_ares_query_use_getaddrinfo_;
+  }
   // A comma separated list of tracers that provide additional insight into how
   // gRPC C core is processing requests via debug logs.
   absl::string_view Trace() const { return trace_; }
@@ -148,6 +157,7 @@ class GPR_DLL ConfigVars {
   int32_t chaotic_good_metrics_update_interval_ms_;
   double experimental_target_memory_pressure_;
   double experimental_memory_pressure_threshold_;
+  bool dns_ares_query_use_getaddrinfo_;
   bool enable_fork_support_;
   bool abort_on_leaks_;
   bool use_system_roots_over_language_callback_;
