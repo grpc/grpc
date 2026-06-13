@@ -627,16 +627,26 @@ bool ChannelInit::CreateStack(ChannelStackBuilder* builder) const {
 void ChannelInit::AddToInterceptionChainBuilder(
     grpc_channel_stack_type type, InterceptionChainBuilder& builder) const {
   const auto& stack_config = stack_configs_[type];
-  // Based on predicates build a list of filters to include in this segment.
-  for (const auto& filter : stack_config.filters) {
-    if (SkipV3(filter.version)) continue;
-    if (!filter.CheckPredicates(builder.channel_args())) continue;
+  const auto add_one = [&](const Filter& filter) -> bool {
+    if (SkipV3(filter.version)) return true;
+    if (!filter.CheckPredicates(builder.channel_args())) return true;
     if (filter.filter_adder == nullptr) {
       builder.Fail(absl::InvalidArgumentError(
           absl::StrCat("Filter ", filter.name, " has no v3-callstack vtable")));
-      return;
+      return false;
     }
     filter.filter_adder(builder);
+    return true;
+  };
+  if (grpc_channel_stack_type_is_client(type)) {
+    for (const auto& filter : stack_config.filters) {
+      if (!add_one(filter)) return;
+    }
+  } else {
+    for (auto it = stack_config.filters.rbegin();
+         it != stack_config.filters.rend(); ++it) {
+      if (!add_one(*it)) return;
+    }
   }
 }
 
