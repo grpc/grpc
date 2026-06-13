@@ -1,0 +1,26 @@
+name: Split PHP Extension
+
+on:
+  push:
+    branches: [ master ]
+    tags: [ 'v*' ]
+
+jobs:
+  split:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Subtree Split and Push
+        uses: cpina/github-action-push-to-another-repository@main
+        env:
+          API_TOKEN_GITHUB: ${{ secrets.PHP_EXT_SPLIT_TOKEN }}
+        with:
+          source-directory: 'src/php/ext/grpc'
+          destination-github-username: 'farazahmadkhan' # Organization or your username
+          destination-repository-name: 'grpc-php-extension'
+          user-email: 'grpc-packages@google.com'
+          target-branch: 'main'
