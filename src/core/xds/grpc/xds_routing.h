@@ -93,6 +93,32 @@ class XdsRouting final {
     // Builds filter chains for each route within a VirtualHost.
     class VirtualHostFilterChainBuilder {
      public:
+      // Builds filter chains for each ClusterWeight within a route.
+      class WeightedClusterRouteFilterChainBuilder {
+       public:
+        WeightedClusterRouteFilterChainBuilder(
+            VirtualHostFilterChainBuilder& vhost_builder,
+            const XdsRouteConfigResource::Route& route)
+            : vhost_builder_(vhost_builder), route_(route) {}
+
+        // Builds a filter chain for a ClusterWeight.
+        absl::StatusOr<RefCountedPtr<const FilterChain>>
+        BuildFilterChainForClusterWeight(
+            const XdsRouteConfigResource::Route::RouteAction::ClusterWeight&
+                cluster_weight);
+
+       private:
+        absl::StatusOr<RefCountedPtr<const FilterChain>> GetRouteFilterChain();
+
+        VirtualHostFilterChainBuilder& vhost_builder_;
+        const XdsRouteConfigResource::Route& route_;
+
+        // Cached filter chain for the route, to be used for any ClusterWeight
+        // that does not have any filter config overrides.
+        absl::StatusOr<RefCountedPtr<const FilterChain>> route_filter_chain_ =
+            nullptr;
+      };
+
       VirtualHostFilterChainBuilder(
           RouteConfigFilterChainBuilder& route_config_builder,
           const XdsRouteConfigResource::VirtualHost& vhost)
@@ -103,14 +129,12 @@ class XdsRouting final {
       absl::StatusOr<RefCountedPtr<const FilterChain>> BuildFilterChainForRoute(
           const XdsRouteConfigResource::Route& route);
 
-      // Builds a filter chain for a route that uses WeightedClusters.
-      // The set_filter_chain_for_cluster_weight() function will be called
-      // once for each index in the WeightedClusters list.
-      void BuildFilterChainForRouteWithWeightedClusters(
-          const XdsRouteConfigResource::Route& route,
-          absl::FunctionRef<
-              void(size_t, absl::StatusOr<RefCountedPtr<const FilterChain>>)>
-              set_filter_chain_for_cluster_weight);
+      // Returns a filter chain builder for a given virtual host.
+      WeightedClusterRouteFilterChainBuilder
+      MakeWeightedClusterRouteFilterChainBuilder(
+          const XdsRouteConfigResource::Route& route) {
+        return WeightedClusterRouteFilterChainBuilder(*this, route);
+      }
 
      private:
       absl::StatusOr<RefCountedPtr<const FilterChain>>

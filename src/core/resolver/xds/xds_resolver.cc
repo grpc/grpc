@@ -443,14 +443,15 @@ void XdsResolver::RouteConfigData::BuildFilterChains(
             XdsRouteConfigResource::Route::RouteAction::ClusterWeight>>(
             &route_action->action);
         weighted_clusters != nullptr) {
-      vhost_builder.BuildFilterChainForRouteWithWeightedClusters(
-          route_entry.route,
-          [&](size_t index,
-              absl::StatusOr<RefCountedPtr<const FilterChain>> filter_chain) {
-            GRPC_CHECK_LT(index, route_entry.weighted_cluster_state.size());
-            route_entry.weighted_cluster_state[index].filter_chain =
-                std::move(filter_chain);
-          });
+      auto weighted_cluster_builder =
+          vhost_builder.MakeWeightedClusterRouteFilterChainBuilder(
+              route_entry.route);
+      for (size_t i = 0; i < weighted_clusters->size(); ++i) {
+        GRPC_CHECK_LT(i, route_entry.weighted_cluster_state.size());
+        route_entry.weighted_cluster_state[i].filter_chain =
+            weighted_cluster_builder.BuildFilterChainForClusterWeight(
+                (*weighted_clusters)[i]);
+      }
     }
     // If the route does not use WeightedClusters, then we generate a
     // filter chain for the route.

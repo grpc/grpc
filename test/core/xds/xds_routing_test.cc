@@ -290,38 +290,6 @@ class XdsRouteConfigFilterChainBuilderTest : public ::testing::Test {
     return cluster_weight;
   }
 
-  XdsRouteConfigResource::Route MakeRouteWithWeightedClusters(
-      std::vector<XdsRouteConfigResource::Route::RouteAction::ClusterWeight>
-          cluster_weights,
-      XdsRouteConfigResource::TypedPerFilterConfig overrides = {}) {
-    XdsRouteConfigResource::Route route;
-    route.typed_per_filter_config = std::move(overrides);
-    XdsRouteConfigResource::Route::RouteAction route_action;
-    route_action.action = std::move(cluster_weights);
-    route.action = std::move(route_action);
-    return route;
-  }
-
-  class WeightedClustersFilterChainAccumulator {
-   public:
-    auto GetCallback() {
-      return [this](size_t index,
-                    absl::StatusOr<RefCountedPtr<const FilterChain>> result) {
-        if (filter_chains_.size() < index + 1) filter_chains_.resize(index + 1);
-        filter_chains_[index] = std::move(result);
-      };
-    }
-
-    const std::vector<absl::StatusOr<RefCountedPtr<const FilterChain>>>&
-    filter_chains() const {
-      return filter_chains_;
-    }
-
-   private:
-    std::vector<absl::StatusOr<RefCountedPtr<const FilterChain>>>
-        filter_chains_;
-  };
-
   absl::string_view GetBlackboardEntry(const std::string& key) {
     auto entry = blackboard_->Get<TestBlackboardEntry>(key);
     if (entry == nullptr) return "";
@@ -412,15 +380,15 @@ TEST_F(XdsRouteConfigFilterChainBuilderTest,
   auto vhost = MakeVirtualHost();
   auto vhost_builder =
       route_config_builder.MakeVirtualHostFilterChainBuilder(vhost);
-  auto route =
-      MakeRouteWithWeightedClusters({MakeClusterWeight("cluster1", 100)});
-  WeightedClustersFilterChainAccumulator accumulator;
-  vhost_builder.BuildFilterChainForRouteWithWeightedClusters(
-      route, accumulator.GetCallback());
-  EXPECT_THAT(accumulator.filter_chains(),
-              ::testing::ElementsAre(
-                  IsFilterChain(::testing::ElementsAre(IsFilterAndConfig(
-                      &TestFilter::kFilterVtable, "hcm/blackboard{hcm}")))));
+  auto route = MakeRoute();
+  auto weighted_cluster_builder =
+      vhost_builder.MakeWeightedClusterRouteFilterChainBuilder(route);
+  auto cluster_weight = MakeClusterWeight("cluster1", 100);
+  auto filter_chain =
+      weighted_cluster_builder.BuildFilterChainForClusterWeight(cluster_weight);
+  EXPECT_THAT(filter_chain,
+              IsFilterChain(::testing::ElementsAre(IsFilterAndConfig(
+                  &TestFilter::kFilterVtable, "hcm/blackboard{hcm}"))));
   EXPECT_EQ(GetBlackboardEntry("hcm"), "hcm");
 }
 
@@ -433,15 +401,16 @@ TEST_F(XdsRouteConfigFilterChainBuilderTest,
   auto vhost = MakeVirtualHost({{"filter1", MakeOverride("vhost")}});
   auto vhost_builder =
       route_config_builder.MakeVirtualHostFilterChainBuilder(vhost);
-  auto route =
-      MakeRouteWithWeightedClusters({MakeClusterWeight("cluster1", 100)});
-  WeightedClustersFilterChainAccumulator accumulator;
-  vhost_builder.BuildFilterChainForRouteWithWeightedClusters(
-      route, accumulator.GetCallback());
-  EXPECT_THAT(accumulator.filter_chains(),
-              ::testing::ElementsAre(IsFilterChain(::testing::ElementsAre(
+  auto route = MakeRoute();
+  auto weighted_cluster_builder =
+      vhost_builder.MakeWeightedClusterRouteFilterChainBuilder(route);
+  auto cluster_weight = MakeClusterWeight("cluster1", 100);
+  auto filter_chain =
+      weighted_cluster_builder.BuildFilterChainForClusterWeight(cluster_weight);
+  EXPECT_THAT(filter_chain,
+              IsFilterChain(::testing::ElementsAre(
                   IsFilterAndConfig(&TestFilter::kFilterVtable,
-                                    "hcm+vhost/blackboard{hcm+vhost}")))));
+                                    "hcm+vhost/blackboard{hcm+vhost}"))));
   EXPECT_EQ(GetBlackboardEntry("hcm+vhost"), "hcm+vhost");
 }
 
@@ -454,16 +423,16 @@ TEST_F(XdsRouteConfigFilterChainBuilderTest,
   auto vhost = MakeVirtualHost();
   auto vhost_builder =
       route_config_builder.MakeVirtualHostFilterChainBuilder(vhost);
-  auto route =
-      MakeRouteWithWeightedClusters({MakeClusterWeight("cluster1", 100)},
-                                    {{"filter1", MakeOverride("route")}});
-  WeightedClustersFilterChainAccumulator accumulator;
-  vhost_builder.BuildFilterChainForRouteWithWeightedClusters(
-      route, accumulator.GetCallback());
-  EXPECT_THAT(accumulator.filter_chains(),
-              ::testing::ElementsAre(IsFilterChain(::testing::ElementsAre(
+  auto route = MakeRoute({{"filter1", MakeOverride("route")}});
+  auto weighted_cluster_builder =
+      vhost_builder.MakeWeightedClusterRouteFilterChainBuilder(route);
+  auto cluster_weight = MakeClusterWeight("cluster1", 100);
+  auto filter_chain =
+      weighted_cluster_builder.BuildFilterChainForClusterWeight(cluster_weight);
+  EXPECT_THAT(filter_chain,
+              IsFilterChain(::testing::ElementsAre(
                   IsFilterAndConfig(&TestFilter::kFilterVtable,
-                                    "hcm+route/blackboard{hcm+route}")))));
+                                    "hcm+route/blackboard{hcm+route}"))));
   EXPECT_EQ(GetBlackboardEntry("hcm+route"), "hcm+route");
 }
 
@@ -477,17 +446,17 @@ TEST_F(
   auto vhost = MakeVirtualHost({{"filter1", MakeOverride("vhost")}});
   auto vhost_builder =
       route_config_builder.MakeVirtualHostFilterChainBuilder(vhost);
-  auto route =
-      MakeRouteWithWeightedClusters({MakeClusterWeight("cluster1", 100)},
-                                    {{"filter1", MakeOverride("route")}});
-  WeightedClustersFilterChainAccumulator accumulator;
-  vhost_builder.BuildFilterChainForRouteWithWeightedClusters(
-      route, accumulator.GetCallback());
+  auto route = MakeRoute({{"filter1", MakeOverride("route")}});
+  auto weighted_cluster_builder =
+      vhost_builder.MakeWeightedClusterRouteFilterChainBuilder(route);
+  auto cluster_weight = MakeClusterWeight("cluster1", 100);
+  auto filter_chain =
+      weighted_cluster_builder.BuildFilterChainForClusterWeight(cluster_weight);
   EXPECT_THAT(
-      accumulator.filter_chains(),
-      ::testing::ElementsAre(IsFilterChain(::testing::ElementsAre(
+      filter_chain,
+      IsFilterChain(::testing::ElementsAre(
           IsFilterAndConfig(&TestFilter::kFilterVtable,
-                            "hcm+vhost+route/blackboard{hcm+vhost+route}")))));
+                            "hcm+vhost+route/blackboard{hcm+vhost+route}"))));
   EXPECT_EQ(GetBlackboardEntry("hcm+vhost+route"), "hcm+vhost+route");
 }
 
@@ -500,15 +469,17 @@ TEST_F(XdsRouteConfigFilterChainBuilderTest,
   auto vhost = MakeVirtualHost();
   auto vhost_builder =
       route_config_builder.MakeVirtualHostFilterChainBuilder(vhost);
-  auto route = MakeRouteWithWeightedClusters(
-      {MakeClusterWeight("cluster1", 100, {{"filter1", MakeOverride("cw")}})});
-  WeightedClustersFilterChainAccumulator accumulator;
-  vhost_builder.BuildFilterChainForRouteWithWeightedClusters(
-      route, accumulator.GetCallback());
-  EXPECT_THAT(accumulator.filter_chains(),
-              ::testing::ElementsAre(IsFilterChain(::testing::ElementsAre(
+  auto route = MakeRoute();
+  auto weighted_cluster_builder =
+      vhost_builder.MakeWeightedClusterRouteFilterChainBuilder(route);
+  auto cluster_weight =
+      MakeClusterWeight("cluster1", 100, {{"filter1", MakeOverride("cw")}});
+  auto filter_chain =
+      weighted_cluster_builder.BuildFilterChainForClusterWeight(cluster_weight);
+  EXPECT_THAT(filter_chain,
+              IsFilterChain(::testing::ElementsAre(
                   IsFilterAndConfig(&TestFilter::kFilterVtable,
-                                    "hcm+cw/blackboard{hcm+cw}")))));
+                                    "hcm+cw/blackboard{hcm+cw}"))));
   EXPECT_EQ(GetBlackboardEntry("hcm+cw"), "hcm+cw");
 }
 
@@ -522,16 +493,18 @@ TEST_F(
   auto vhost = MakeVirtualHost({{"filter1", MakeOverride("vhost")}});
   auto vhost_builder =
       route_config_builder.MakeVirtualHostFilterChainBuilder(vhost);
-  auto route = MakeRouteWithWeightedClusters(
-      {MakeClusterWeight("cluster1", 100, {{"filter1", MakeOverride("cw")}})});
-  WeightedClustersFilterChainAccumulator accumulator;
-  vhost_builder.BuildFilterChainForRouteWithWeightedClusters(
-      route, accumulator.GetCallback());
+  auto route = MakeRoute();
+  auto weighted_cluster_builder =
+      vhost_builder.MakeWeightedClusterRouteFilterChainBuilder(route);
+  auto cluster_weight =
+      MakeClusterWeight("cluster1", 100, {{"filter1", MakeOverride("cw")}});
+  auto filter_chain =
+      weighted_cluster_builder.BuildFilterChainForClusterWeight(cluster_weight);
   EXPECT_THAT(
-      accumulator.filter_chains(),
-      ::testing::ElementsAre(IsFilterChain(::testing::ElementsAre(
+      filter_chain,
+      IsFilterChain(::testing::ElementsAre(
           IsFilterAndConfig(&TestFilter::kFilterVtable,
-                            "hcm+vhost+cw/blackboard{hcm+vhost+cw}")))));
+                            "hcm+vhost+cw/blackboard{hcm+vhost+cw}"))));
   EXPECT_EQ(GetBlackboardEntry("hcm+vhost+cw"), "hcm+vhost+cw");
 }
 
@@ -545,17 +518,18 @@ TEST_F(
   auto vhost = MakeVirtualHost();
   auto vhost_builder =
       route_config_builder.MakeVirtualHostFilterChainBuilder(vhost);
-  auto route = MakeRouteWithWeightedClusters(
-      {MakeClusterWeight("cluster1", 100, {{"filter1", MakeOverride("cw")}})},
-      {{"filter1", MakeOverride("route")}});
-  WeightedClustersFilterChainAccumulator accumulator;
-  vhost_builder.BuildFilterChainForRouteWithWeightedClusters(
-      route, accumulator.GetCallback());
+  auto route = MakeRoute({{"filter1", MakeOverride("route")}});
+  auto weighted_cluster_builder =
+      vhost_builder.MakeWeightedClusterRouteFilterChainBuilder(route);
+  auto cluster_weight =
+      MakeClusterWeight("cluster1", 100, {{"filter1", MakeOverride("cw")}});
+  auto filter_chain =
+      weighted_cluster_builder.BuildFilterChainForClusterWeight(cluster_weight);
   EXPECT_THAT(
-      accumulator.filter_chains(),
-      ::testing::ElementsAre(IsFilterChain(::testing::ElementsAre(
+      filter_chain,
+      IsFilterChain(::testing::ElementsAre(
           IsFilterAndConfig(&TestFilter::kFilterVtable,
-                            "hcm+route+cw/blackboard{hcm+route+cw}")))));
+                            "hcm+route+cw/blackboard{hcm+route+cw}"))));
   EXPECT_EQ(GetBlackboardEntry("hcm+route+cw"), "hcm+route+cw");
 }
 
@@ -569,17 +543,17 @@ TEST_F(
   auto vhost = MakeVirtualHost({{"filter1", MakeOverride("vhost")}});
   auto vhost_builder =
       route_config_builder.MakeVirtualHostFilterChainBuilder(vhost);
-  auto route = MakeRouteWithWeightedClusters(
-      {MakeClusterWeight("cluster1", 100, {{"filter1", MakeOverride("cw")}})},
-      {{"filter1", MakeOverride("route")}});
-  WeightedClustersFilterChainAccumulator accumulator;
-  vhost_builder.BuildFilterChainForRouteWithWeightedClusters(
-      route, accumulator.GetCallback());
-  EXPECT_THAT(accumulator.filter_chains(),
-              ::testing::ElementsAre(
-                  IsFilterChain(::testing::ElementsAre(IsFilterAndConfig(
-                      &TestFilter::kFilterVtable,
-                      "hcm+vhost+route+cw/blackboard{hcm+vhost+route+cw}")))));
+  auto route = MakeRoute({{"filter1", MakeOverride("route")}});
+  auto weighted_cluster_builder =
+      vhost_builder.MakeWeightedClusterRouteFilterChainBuilder(route);
+  auto cluster_weight =
+      MakeClusterWeight("cluster1", 100, {{"filter1", MakeOverride("cw")}});
+  auto filter_chain =
+      weighted_cluster_builder.BuildFilterChainForClusterWeight(cluster_weight);
+  EXPECT_THAT(filter_chain,
+              IsFilterChain(::testing::ElementsAre(IsFilterAndConfig(
+                  &TestFilter::kFilterVtable,
+                  "hcm+vhost+route+cw/blackboard{hcm+vhost+route+cw}"))));
   EXPECT_EQ(GetBlackboardEntry("hcm+vhost+route+cw"), "hcm+vhost+route+cw");
 }
 
@@ -612,18 +586,16 @@ TEST_F(XdsRouteConfigFilterChainBuilderTest, Caching) {
   auto vhost = MakeVirtualHost();
   auto vhost_builder =
       route_config_builder.MakeVirtualHostFilterChainBuilder(vhost);
-  auto route = MakeRouteWithWeightedClusters(
-      {MakeClusterWeight("cluster0", 50), MakeClusterWeight("cluster1", 50)});
-  WeightedClustersFilterChainAccumulator accumulator;
-  vhost_builder.BuildFilterChainForRouteWithWeightedClusters(
-      route, accumulator.GetCallback());
-  ASSERT_EQ(accumulator.filter_chains().size(), 2);
-  const auto& chain0 = accumulator.filter_chains()[0];
-  const auto& chain1 = accumulator.filter_chains()[1];
-  ASSERT_TRUE(chain0.ok());
-  ASSERT_TRUE(chain1.ok());
-  EXPECT_NE(*chain0, nullptr);
-  EXPECT_EQ(*chain0, *chain1);
+  auto route = MakeRoute();
+  auto weighted_cluster_builder =
+      vhost_builder.MakeWeightedClusterRouteFilterChainBuilder(route);
+  auto cluster_weight0 = MakeClusterWeight("cluster0", 50);
+  auto chain0 = weighted_cluster_builder.BuildFilterChainForClusterWeight(
+      cluster_weight0);
+  auto cluster_weight1 = MakeClusterWeight("cluster1", 50);
+  auto chain1 = weighted_cluster_builder.BuildFilterChainForClusterWeight(
+      cluster_weight1);
+  EXPECT_EQ(chain0, chain1);
 }
 
 }  // namespace
