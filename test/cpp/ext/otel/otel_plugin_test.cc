@@ -545,23 +545,24 @@ TEST_F(OTelMetricsTestForTransparentRetries, TelemetryLabelPropagation) {
                             ::testing::Eq(int64_t(1)),
                             ::testing::Eq(int64_t(1)), 1))));
   // Verify client side metric (grpc.client.attempt.started)
-  ASSERT_EQ(
-      data[grpc::OpenTelemetryPluginBuilder::kClientAttemptStartedInstrumentName]
-          .size(),
-      1);
+  ASSERT_EQ(data[grpc::OpenTelemetryPluginBuilder::
+                     kClientAttemptStartedInstrumentName]
+                .size(),
+            1);
   const auto& client_attributes =
-      data[grpc::OpenTelemetryPluginBuilder::kClientAttemptStartedInstrumentName][0]
+      data[grpc::OpenTelemetryPluginBuilder::
+               kClientAttemptStartedInstrumentName][0]
           .attributes.GetAttributes();
   EXPECT_EQ(
       std::get<std::string>(client_attributes.at("grpc.client.call.custom")),
       kTelemetryLabelValue);
   // Verify client side metric (grpc.client.attempt.duration)
-  ASSERT_EQ(
-      data[grpc::OpenTelemetryPluginBuilder::kClientAttemptDurationInstrumentName]
-          .size(),
-      2);
-  for (const auto& point :
-       data[grpc::OpenTelemetryPluginBuilder::kClientAttemptDurationInstrumentName]) {
+  ASSERT_EQ(data[grpc::OpenTelemetryPluginBuilder::
+                     kClientAttemptDurationInstrumentName]
+                .size(),
+            2);
+  for (const auto& point : data[grpc::OpenTelemetryPluginBuilder::
+                                    kClientAttemptDurationInstrumentName]) {
     const auto& attrs = point.attributes.GetAttributes();
     EXPECT_EQ(std::get<std::string>(attrs.at("grpc.client.call.custom")),
               kTelemetryLabelValue);

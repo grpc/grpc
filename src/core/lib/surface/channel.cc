@@ -88,7 +88,6 @@ Channel::RegisteredCall* Channel::RegisterCall(const char* method,
 
 }  // namespace grpc_core
 
-
 //
 // C-core API
 //
@@ -170,7 +169,6 @@ grpc_call* grpc_channel_create_call_with_arena_init(
       grpc_core::Timestamp::FromTimespecRoundUp(deadline), registered_method,
       arena_init_function);
 }
-
 
 char* grpc_channel_get_target(grpc_channel* channel) {
   GRPC_TRACE_LOG(api, INFO)

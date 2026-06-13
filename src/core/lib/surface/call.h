@@ -71,8 +71,7 @@ typedef struct grpc_call_create_args {
   grpc_core::Timestamp send_deadline;
   bool registered_method;  // client_only
 
-  std::optional<absl::FunctionRef<void(grpc_core::Arena*)>>
-      arena_init_function;
+  std::optional<absl::FunctionRef<void(grpc_core::Arena*)>> arena_init_function;
 } grpc_call_create_args;
 
 namespace grpc_core {
