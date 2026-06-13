@@ -2757,6 +2757,66 @@ grpc_cc_library(
     ],
 )
 
+grpc_cc_library(
+    name = "insecure_credentials_public",
+    visibility = ["//third_party:__subpackages__"],
+)
+
+grpc_cc_library(
+    name = "insecure_credentials_unsecure_public",
+    visibility = ["//third_party:__subpackages__"],
+)
+
+grpc_cc_library(
+    name = "insecure_credentials_internal",
+    srcs = ["src/cpp/client/insecure_credentials.cc"],
+    defines = ["GRPC_INTERNAL_INSECURE_CREDENTIALS"],
+    visibility = ["//security/audits/privacy_boost/insecure_rpc:insecure_credentials_allowlist"],
+    deps = [
+        "gpr",
+        "grpc",
+        "grpc++_base",
+    ],
+)
+
+grpc_cc_library(
+    name = "insecure_credentials_unsecure_internal",
+    srcs = ["src/cpp/client/insecure_credentials.cc"],
+    defines = ["GRPC_INTERNAL_INSECURE_CREDENTIALS"],
+    visibility = ["//security/audits/privacy_boost/insecure_rpc:insecure_credentials_allowlist"],
+    deps = [
+        "gpr",
+        "grpc++_base_unsecure",
+        "grpc_unsecure",
+    ],
+)
+
+grpc_cc_library(
+    name = "insecure_credentials_internal_for_tests",
+    testonly = True,
+    srcs = ["src/cpp/client/insecure_credentials.cc"],
+    defines = ["GRPC_INTERNAL_INSECURE_CREDENTIALS"],
+    visibility = ["//visibility:public"],
+    deps = [
+        "gpr",
+        "grpc",
+        "grpc++_base",
+    ],
+)
+
+grpc_cc_library(
+    name = "insecure_credentials_unsecure_internal_for_tests",
+    testonly = True,
+    srcs = ["src/cpp/client/insecure_credentials.cc"],
+    defines = ["GRPC_INTERNAL_INSECURE_CREDENTIALS"],
+    visibility = ["//visibility:public"],
+    deps = [
+        "gpr",
+        "grpc++_base_unsecure",
+        "grpc_unsecure",
+    ],
+)
+
 # TODO(chengyuc): Give it another try to merge this to `grpc++_base` after
 # codegen files are removed.
 grpc_cc_library(
