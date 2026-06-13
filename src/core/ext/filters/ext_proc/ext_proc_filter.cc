@@ -40,6 +40,10 @@ namespace grpc_core {
 void (*g_test_ext_proc_metadata_modifier)(grpc_metadata_batch*) = nullptr;
 absl::Status (*g_test_ext_proc_message_modifier)(MessageHandle*) = nullptr;
 
+//
+// ExtProcFilter::ProcessingMode
+//
+
 std::string ExtProcFilter::ProcessingMode::ToString() const {
   std::string result = "{";
   StrAppend(result, "send_request_headers=");
@@ -55,6 +59,10 @@ std::string ExtProcFilter::ProcessingMode::ToString() const {
   StrAppend(result, "}");
   return result;
 }
+
+//
+// ExtProcFilter::Config
+//
 
 std::string ExtProcFilter::Config::ToString() const {
   std::string result = "{";
@@ -146,6 +154,10 @@ std::string ExtProcFilter::Config::ToString() const {
   return result;
 }
 
+//
+// ExtProcFilter::ExtProcChannel
+//
+
 ExtProcFilter::ExtProcChannel::ExtProcChannel(
     std::shared_ptr<const XdsBootstrap::XdsServerTarget> server,
     RefCountedPtr<XdsTransportFactory> transport_factory)
@@ -166,6 +178,10 @@ ExtProcFilter::ExtProcChannel::~ExtProcChannel() {
       << "destroying ext_proc channel " << this << " for server "
       << server_->server_uri();
 }
+
+//
+// ExtProcFilter
+//
 
 const grpc_channel_filter ExtProcFilter::kFilterVtable = MakePromiseBasedFilter<
     ExtProcFilter, FilterEndpoint::kClient,
