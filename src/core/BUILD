@@ -5715,6 +5715,7 @@ grpc_cc_library(
         "ext_proc_messages",
         "filter_args",
         "for_each",
+        "grpc_check",
         "grpc_matchers",
         "if",
         "inter_activity_latch",

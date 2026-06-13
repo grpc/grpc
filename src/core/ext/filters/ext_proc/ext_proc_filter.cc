@@ -18,6 +18,7 @@
 
 #include <string>
 
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/string.h"
 
 #include "src/core/call/call_spine.h"
@@ -149,11 +150,22 @@ ExtProcFilter::ExtProcChannel::ExtProcChannel(
     std::shared_ptr<const XdsBootstrap::XdsServerTarget> server,
     RefCountedPtr<XdsTransportFactory> transport_factory)
     : server_(std::move(server)) {
+  GRPC_TRACE_LOG(ext_proc_filter, INFO)
+      << "creating channel " << this << " for server " << server_->server_uri();
   absl::Status status;
   transport_ = transport_factory->GetTransport(*server_, &status);
+  GRPC_CHECK(transport_ != nullptr);
+  if (!status.ok()) {
+    LOG(ERROR) << "Error creating ext_proc channel to " << server_->server_uri()
+               << ": " << status;
+  }
 }
 
-ExtProcFilter::ExtProcChannel::~ExtProcChannel() {}
+ExtProcFilter::ExtProcChannel::~ExtProcChannel() {
+  GRPC_TRACE_LOG(ext_proc_filter, INFO)
+      << "destroying ext_proc channel " << this << " for server "
+      << server_->server_uri();
+}
 
 const grpc_channel_filter ExtProcFilter::kFilterVtable = MakePromiseBasedFilter<
     ExtProcFilter, FilterEndpoint::kClient,

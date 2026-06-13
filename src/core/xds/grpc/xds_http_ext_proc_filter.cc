@@ -481,8 +481,7 @@ RefCountedPtr<const FilterConfig> XdsHttpExtProcFilter::MergeConfigs(
   if (config->grpc_service != nullptr &&
       config->grpc_service->server_target != nullptr &&
       config->transport_factory != nullptr) {
-    std::string key = absl::StrCat(config->instance_name, ":",
-                                   config->grpc_service->server_target->Key());
+    std::string key = config->grpc_service->server_target->Key();
     config->channel =
         blackboard.GetOrSet<ExtProcFilter::ExtProcChannel>(key, [&]() {
           std::shared_ptr<const XdsBootstrap::XdsServerTarget> target_shared =

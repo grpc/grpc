@@ -2985,6 +2985,35 @@ TEST_F(XdsExtProcFilterTest, MergeConfigsSharesChannelOnSameBlackboard) {
 }
 
 TEST_F(XdsExtProcFilterTest,
+       MergeConfigsSharesChannelForDifferentInstancesWithSameTarget) {
+  ExternalProcessor proto;
+  auto* grpc_service = proto.mutable_grpc_service();
+  grpc_service->mutable_google_grpc()->set_target_uri("localhost:1234");
+  proto.mutable_processing_mode();
+  XdsExtension extension = MakeXdsExtension(proto);
+  auto top_level_config1 = filter_->ParseTopLevelConfig(
+      "instance_name1", decode_context_, extension, &errors_);
+  ASSERT_TRUE(errors_.ok()) << errors_.status(
+      absl::StatusCode::kInvalidArgument, "unexpected errors");
+  auto top_level_config2 = filter_->ParseTopLevelConfig(
+      "instance_name2", decode_context_, extension, &errors_);
+  ASSERT_TRUE(errors_.ok()) << errors_.status(
+      absl::StatusCode::kInvalidArgument, "unexpected errors");
+  auto blackboard = MakeRefCounted<Blackboard>();
+  auto merged_config1 = filter_->MergeConfigs(top_level_config1, nullptr,
+                                              nullptr, nullptr, *blackboard);
+  ASSERT_NE(merged_config1, nullptr);
+  auto& config1 = DownCast<const ExtProcFilter::Config&>(*merged_config1);
+  ASSERT_NE(config1.channel, nullptr);
+  auto merged_config2 = filter_->MergeConfigs(top_level_config2, nullptr,
+                                              nullptr, nullptr, *blackboard);
+  ASSERT_NE(merged_config2, nullptr);
+  auto& config2 = DownCast<const ExtProcFilter::Config&>(*merged_config2);
+  ASSERT_NE(config2.channel, nullptr);
+  EXPECT_EQ(config1.channel, config2.channel);
+}
+
+TEST_F(XdsExtProcFilterTest,
        MergeConfigsDoesNotShareChannelOnDifferentBlackboards) {
   ExternalProcessor proto;
   auto* grpc_service = proto.mutable_grpc_service();
