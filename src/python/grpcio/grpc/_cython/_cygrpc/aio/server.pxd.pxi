@@ -38,6 +38,7 @@ cdef class RPCState(GrpcCallWrapper):
 
     cdef bytes method(self)
     cdef tuple invocation_metadata(self)
+    cdef bytes experimental_authority(self)
     cdef void raise_for_termination(self) except *
     cdef int get_write_flag(self)
     cdef Operation create_send_initial_metadata_op_if_not_sent(self)

@@ -63,6 +63,7 @@
   "tests.unit._dynamic_stubs_test.DynamicStubTest",
   "tests.unit._empty_message_test.EmptyMessageTest",
   "tests.unit._error_message_encoding_test.ErrorMessageEncodingTest",
+  "tests.unit._experimental_authority_test.TestExperimentalAuthority",
   "tests.unit._exit_test.ExitTest",
   "tests.unit._grpc_shutdown_test.GrpcShutdownTest",
   "tests.unit._absl_log_test.AbslLogTest",

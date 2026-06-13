@@ -31,6 +31,7 @@
   "tests_aio.unit.context_peer_test.TestContextPeer",
   "tests_aio.unit.done_callback_test.TestClientSideDoneCallback",
   "tests_aio.unit.done_callback_test.TestServerSideDoneCallback",
+  "tests_aio.unit.experimental_authority_test.TestExperimentalAuthority",
   "tests_aio.unit.init_test.TestInit",
   "tests_aio.unit.metadata_test.TestMetadata",
   "tests_aio.unit.outside_init_test.TestOutsideInit",

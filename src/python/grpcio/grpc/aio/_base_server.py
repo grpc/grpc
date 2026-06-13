@@ -236,6 +236,14 @@ class ServicerContext(Generic[RequestType, ResponseType], abc.ABC):
         """
 
     @abc.abstractmethod
+    def experimental_authority(self) -> str:
+        """Accesses the host (:authority) sent by the client
+
+        Returns:
+          The :authority header of the RPC.
+        """
+
+    @abc.abstractmethod
     def set_code(self, code: grpc.StatusCode) -> None:
         """Sets the value to be used as status code upon RPC completion.
 

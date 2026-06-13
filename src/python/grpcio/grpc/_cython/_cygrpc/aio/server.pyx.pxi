@@ -68,6 +68,9 @@ cdef class RPCState:
     cdef tuple invocation_metadata(self):
         return _metadata(&self.request_metadata)
 
+    cdef bytes experimental_authority(self):
+        return _slice_bytes(self.details.host)
+
     cdef void raise_for_termination(self) except *:
         """Raise exceptions if RPC is not running.
 
@@ -213,6 +216,9 @@ cdef class _ServicerContext:
     def invocation_metadata(self):
         return self._rpc_state.invocation_metadata()
 
+    def experimental_authority(self):
+        return self._rpc_state.experimental_authority().decode('utf-8')
+
     def set_code(self, object code):
         self._rpc_state.status_code = get_status_code(code)
         self._rpc_state.py_status_code = code
@@ -319,6 +325,9 @@ cdef class _SyncServicerContext:
 
     def invocation_metadata(self):
         return self._context.invocation_metadata()
+
+    def experimental_authority(self):
+        return self._context.experimental_authority()
 
     def set_code(self, object code):
         self._context.set_code(code)
