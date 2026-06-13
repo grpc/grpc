@@ -429,7 +429,6 @@ TEST_P(SettingsPromiseManagerTest,
       MakeRefCountedManager();
   const uint32_t kSetMaxFrameSize = 16385;
   SliceBuffer output_buf;
-  bool should_spawn_security_frame_loop = false;
 
   // Initial settings
   {
@@ -450,8 +449,9 @@ TEST_P(SettingsPromiseManagerTest,
                   ->BufferPeerSettings(
                       {{Http2Settings::kMaxConcurrentStreamsWireId, 100}})
                   .IsOk());
+  ApplySettingsResult apply_settings_result;
   timeout_manager->MaybeReportAndApplyBufferedPeerSettings(
-      nullptr, should_spawn_security_frame_loop);
+      nullptr, apply_settings_result);
 
   // Section 2: Settings ACK received from peer
   EXPECT_TRUE(timeout_manager->OnSettingsAckReceived().IsOk());
@@ -562,7 +562,6 @@ TEST_P(SettingsPromiseManagerTest, OnReceiveSettingsCalled) {
   Notification notification;
   std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine =
       grpc_event_engine::experimental::GetDefaultEventEngine();
-  bool should_spawn_security_frame_loop = false;
   SettingsPromiseManager manager(
       /*is_client=*/GetParam(), /*on_receive_settings=*/
       [&notification](absl::StatusOr<uint32_t> status) {
@@ -574,13 +573,13 @@ TEST_P(SettingsPromiseManagerTest, OnReceiveSettingsCalled) {
                   .BufferPeerSettings(
                       {{Http2Settings::kMaxConcurrentStreamsWireId, 100u}})
                   .IsOk());
-  manager.MaybeReportAndApplyBufferedPeerSettings(
-      event_engine.get(), should_spawn_security_frame_loop);
+  ApplySettingsResult apply_settings_result;
+  manager.MaybeReportAndApplyBufferedPeerSettings(event_engine.get(),
+                                                  apply_settings_result);
   notification.WaitForNotification();
 }
 
 TEST_P(SettingsPromiseManagerTest, IsFirstPeerSettingsAppliedTest) {
-  bool should_spawn_security_frame_loop = false;
   SettingsPromiseManager manager = MakeManager();
   EXPECT_FALSE(manager.IsFirstPeerSettingsApplied());
 
@@ -588,20 +587,21 @@ TEST_P(SettingsPromiseManagerTest, IsFirstPeerSettingsAppliedTest) {
                   .BufferPeerSettings(
                       {{Http2Settings::kMaxConcurrentStreamsWireId, 100}})
                   .IsOk());
+  ApplySettingsResult apply_settings_result;
   EXPECT_EQ(manager.MaybeReportAndApplyBufferedPeerSettings(
-                nullptr, should_spawn_security_frame_loop),
+                nullptr, apply_settings_result),
             Http2ErrorCode::kNoError);
   EXPECT_TRUE(manager.IsFirstPeerSettingsApplied());
 }
 
 TEST_P(SettingsPromiseManagerTest, IsSecurityFrameExpectedTest) {
   SettingsPromiseManager manager = MakeManager();
-  bool should_spawn_security_frame_loop = false;
 
   // Make IsFirstPeerSettingsApplied true.
   EXPECT_TRUE(manager.BufferPeerSettings({}).IsOk());
-  manager.MaybeReportAndApplyBufferedPeerSettings(
-      nullptr, should_spawn_security_frame_loop);
+  ApplySettingsResult apply_settings_result;
+  manager.MaybeReportAndApplyBufferedPeerSettings(nullptr,
+                                                  apply_settings_result);
   EXPECT_TRUE(manager.IsFirstPeerSettingsApplied());
 
   // Defaults: peer allow = false.
@@ -623,19 +623,18 @@ TEST_P(SettingsPromiseManagerTest, IsSecurityFrameExpectedTest) {
 
 TEST_P(SettingsPromiseManagerTest, ShouldSpawnSecurityFrameLoopTest) {
   SettingsPromiseManager manager = MakeManager();
-  bool should_spawn_security_frame_loop = false;
 
   // Case 1: Default (false)
   EXPECT_TRUE(manager.BufferPeerSettings({}).IsOk());
+  ApplySettingsResult apply_settings_result;
   EXPECT_EQ(manager.MaybeReportAndApplyBufferedPeerSettings(
-                nullptr, should_spawn_security_frame_loop),
+                nullptr, apply_settings_result),
             Http2ErrorCode::kNoError);
-  EXPECT_FALSE(should_spawn_security_frame_loop);
+  EXPECT_FALSE(apply_settings_result.should_spawn_security_frame_loop);
 }
 
 TEST_P(SettingsPromiseManagerTest, ShouldSpawnSecurityFrameLoopTrueTest) {
   SettingsPromiseManager manager = MakeManager();
-  bool should_spawn_security_frame_loop = false;
 
   // Case 2: Both True
   manager.mutable_local().SetAllowSecurityFrame(true);
@@ -643,30 +642,30 @@ TEST_P(SettingsPromiseManagerTest, ShouldSpawnSecurityFrameLoopTrueTest) {
                   .BufferPeerSettings(
                       {{Http2Settings::kGrpcAllowSecurityFrameWireId, 1}})
                   .IsOk());
+  ApplySettingsResult apply_settings_result;
   EXPECT_EQ(manager.MaybeReportAndApplyBufferedPeerSettings(
-                nullptr, should_spawn_security_frame_loop),
+                nullptr, apply_settings_result),
             Http2ErrorCode::kNoError);
-  EXPECT_TRUE(should_spawn_security_frame_loop);
+  EXPECT_TRUE(apply_settings_result.should_spawn_security_frame_loop);
 }
 
 TEST_P(SettingsPromiseManagerTest, ShouldSpawnSecurityFrameLoopFalseTest) {
   SettingsPromiseManager manager = MakeManager();
-  bool should_spawn_security_frame_loop = false;
 
   // Case 3: Only Peer True
   EXPECT_TRUE(manager
                   .BufferPeerSettings(
                       {{Http2Settings::kGrpcAllowSecurityFrameWireId, 1}})
                   .IsOk());
+  ApplySettingsResult apply_settings_result;
   EXPECT_EQ(manager.MaybeReportAndApplyBufferedPeerSettings(
-                nullptr, should_spawn_security_frame_loop),
+                nullptr, apply_settings_result),
             Http2ErrorCode::kNoError);
-  EXPECT_FALSE(should_spawn_security_frame_loop);
+  EXPECT_FALSE(apply_settings_result.should_spawn_security_frame_loop);
 }
 
 TEST_P(SettingsPromiseManagerTest, ShouldSpawnSecurityFrameLoopOnlyOnceTest) {
   SettingsPromiseManager manager = MakeManager();
-  bool should_spawn_security_frame_loop = false;
 
   // First time: Both True -> Spawn
   manager.mutable_local().SetAllowSecurityFrame(true);
@@ -674,19 +673,20 @@ TEST_P(SettingsPromiseManagerTest, ShouldSpawnSecurityFrameLoopOnlyOnceTest) {
                   .BufferPeerSettings(
                       {{Http2Settings::kGrpcAllowSecurityFrameWireId, 1}})
                   .IsOk());
+  ApplySettingsResult apply_settings_result;
   EXPECT_EQ(manager.MaybeReportAndApplyBufferedPeerSettings(
-                nullptr, should_spawn_security_frame_loop),
+                nullptr, apply_settings_result),
             Http2ErrorCode::kNoError);
-  EXPECT_TRUE(should_spawn_security_frame_loop);
+  EXPECT_TRUE(apply_settings_result.should_spawn_security_frame_loop);
 
   // Second time: Still True -> But logic only runs once -> Should be False
   // (untouched)
-  should_spawn_security_frame_loop = false;  // Reset
   EXPECT_TRUE(manager.BufferPeerSettings({}).IsOk());
+  ApplySettingsResult apply_settings_result_2;
   EXPECT_EQ(manager.MaybeReportAndApplyBufferedPeerSettings(
-                nullptr, should_spawn_security_frame_loop),
+                nullptr, apply_settings_result_2),
             Http2ErrorCode::kNoError);
-  EXPECT_FALSE(should_spawn_security_frame_loop);
+  EXPECT_FALSE(apply_settings_result_2.should_spawn_security_frame_loop);
 }
 
 TEST_P(SettingsPromiseManagerTest, OnSettingsAckReceivedNonOkStatusTest) {
