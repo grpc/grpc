@@ -1,0 +1,32 @@
+# Copyright 2026 The gRPC Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# A small Bazel module to verify that
+# `generate_py`, `py_proto_library`, `generate_cc`, `generate_objc`
+# work when `--incompatible_enable_proto_toolchain_resolution` is enabled.
+# Context:
+# - https://github.com/grpc/grpc/issues/41273
+# - https://github.com/protocolbuffers/protobuf/issues/19558
+module(
+    name = "grpc_proto_toolchain_resolution_test",
+)
+
+bazel_dep(name = "grpc")
+local_path_override(
+    module_name = "grpc",
+    path = "../../..",
+)
+
+bazel_dep(name = "protobuf", version = "35.0")
+bazel_dep(name = "bazel_skylib", version = "1.9.0")
