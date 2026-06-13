@@ -61,7 +61,7 @@
         (id<GRPCCoreTransportFactory>)transportFactory;
     return [coreTransportFactory createCoreChannelFactoryWithCallOptions:_callOptions];
   } else {
-    // To maintain backwards compatibility with tranportType
+    // To maintain backwards compatibility with transportType
     GRPCTransportType type = _callOptions.transportType;
     switch (type) {
       case GRPCTransportTypeChttp2BoringSSL:
