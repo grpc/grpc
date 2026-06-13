@@ -184,3 +184,24 @@ grpc_cc_benchmark(
         "//test/core/call:call_spine_benchmarks",
     ],
 )
+
+grpc_cc_test(
+    name = "ext_proc_message_test",
+    srcs = ["ext_proc_message_test.cc"],
+    external_deps = [
+        "@com_google_protobuf//upb/mem",
+        "gtest",
+    ],
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//:envoy_config_core_upb",
+        "//:envoy_service_ext_proc_upb",
+        "//:grpc",
+        "//src/core:ext_proc_messages",
+        "//src/core:upb_utils",
+        "@envoy_api//envoy/config/core/v3:pkg_cc_proto",
+        "@envoy_api//envoy/extensions/filters/http/ext_proc/v3:pkg_cc_proto",
+        "@envoy_api//envoy/service/ext_proc/v3:pkg_cc_proto",
+    ],
+)

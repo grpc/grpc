@@ -5688,6 +5688,34 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "ext_proc_messages",
+    srcs = [
+        "ext/filters/ext_proc/ext_proc_messages.cc",
+    ],
+    hdrs = [
+        "ext/filters/ext_proc/ext_proc_messages.h",
+    ],
+    external_deps = [
+        "@com_google_protobuf//upb/mem",
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
+    ],
+    deps = [
+        "grpc_matchers",
+        "grpc_xds_client",
+        "metadata_batch",
+        "protobuf_struct_upb",
+        "upb_utils",
+        "xds_common_types",
+        "//:envoy_config_core_upb",
+        "//:envoy_extensions_filters_http_ext_proc_upb",
+        "//:envoy_service_ext_proc_upb",
+        "//:grpc_base",
+    ],
+)
+
+grpc_cc_library(
     name = "gcp_authentication_filter",
     srcs = [
         "ext/filters/gcp_authentication/gcp_authentication_filter.cc",
