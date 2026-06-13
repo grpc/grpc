@@ -72,6 +72,7 @@ EXPERIMENT_ENABLES = {
     "secure_endpoint_offload_large_reads": "event_engine_client,event_engine_listener,secure_endpoint_offload_large_reads",
     "secure_endpoint_offload_large_writes": "event_engine_client,event_engine_listener,secure_endpoint_offload_large_writes",
     "secure_endpoint_read_coalescing": "event_engine_client,event_engine_listener,secure_endpoint_read_coalescing",
+    "server_backlog_management": "server_backlog_management",
     "skip_clear_peer_on_cancellation": "skip_clear_peer_on_cancellation",
     "subchannel_connection_scaling": "subchannel_connection_scaling",
     "subchannel_wrapper_cleanup_on_orphan": "subchannel_wrapper_cleanup_on_orphan",

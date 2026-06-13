@@ -122,6 +122,8 @@
   default: true
 - name: schedule_cancellation_over_write
   default: false
+- name: server_backlog_management
+  default: true
 - name: skip_clear_peer_on_cancellation
   default: false
 - name: subchannel_wrapper_cleanup_on_orphan
