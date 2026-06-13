@@ -203,37 +203,25 @@ ExtProcFilter::ExtProcFilter(const ChannelArgs& args,
                              ChannelFilter::Args filter_args)
     : config_(std::move(config)), channel_(config_->channel) {}
 
-auto ExtProcFilter::ServerTrailingMetadata(CallHandler handler,
-                                           CallInitiator initiator) {
-  return Seq(initiator.PullServerTrailingMetadata(),
-             [handler](ServerMetadataHandle md) mutable {
-               GRPC_TRACE_LOG(ext_proc_filter, INFO)
-                   << "ExtProc: ServerTrailingMetadata received:\n"
-                   << md->DebugString();
-               handler.SpawnPushServerTrailingMetadata(std::move(md));
-               return absl::OkStatus();
-             });
-}
-
 auto ExtProcFilter::ServerToClient(CallHandler handler,
                                    CallInitiator initiator) {
-  return TrySeq(
-      initiator.PullServerInitialMetadata(),
-      [self = RefAsSubclass<ExtProcFilter>(), handler,
-       initiator](std::optional<ServerMetadataHandle> metadata) mutable {
-        const bool has_md = metadata.has_value();
-        GRPC_TRACE_LOG(ext_proc_filter, INFO)
-            << "ExtProc: ServerToClient initial metadata received, present: "
-            << has_md;
-        return If(
-            has_md,
-            [self, handler, initiator, md = std::move(metadata)]() mutable {
-              GRPC_TRACE_LOG(ext_proc_filter, INFO)
-                  << "ExtProc: ServerToClient initial metadata content:\n"
-                  << (*md)->DebugString();
-              handler.SpawnPushServerInitialMetadata(std::move(*md));
-              return Seq(
-                  ForEach(
+  return Seq(
+      initiator.CancelIfFails(TrySeq(
+          initiator.PullServerInitialMetadata(),
+          [handler, initiator](
+              std::optional<ServerMetadataHandle> metadata) mutable {
+            const bool has_md = metadata.has_value();
+            GRPC_TRACE_LOG(ext_proc_filter, INFO)
+                << "ExtProc: ServerToClient initial metadata received, present: "
+                << has_md;
+            return If(
+                has_md,
+                [handler, initiator, md = std::move(metadata)]() mutable {
+                  GRPC_TRACE_LOG(ext_proc_filter, INFO)
+                      << "ExtProc: ServerToClient initial metadata content:\n"
+                      << (*md)->DebugString();
+                  handler.SpawnPushServerInitialMetadata(std::move(*md));
+                  return ForEach(
                       MessagesFrom(initiator),
                       [handler](MessageHandle message) mutable {
                         GRPC_TRACE_LOG(ext_proc_filter, INFO)
@@ -241,20 +229,22 @@ auto ExtProcFilter::ServerToClient(CallHandler handler,
                             << message->DebugString();
                         handler.SpawnPushMessage(std::move(message));
                         return Success{};
-                      }),
-                  self->ServerTrailingMetadata(handler, initiator));
-            },
-            [self, handler, initiator]() mutable {
-              GRPC_TRACE_LOG(ext_proc_filter, INFO)
-                  << "ExtProc: ServerToClient initial metadata not present, "
-                     "skipping to trailing";
-              return self->ServerTrailingMetadata(handler, initiator);
-            });
+                      });
+                },
+                []() -> StatusFlag { return Success{}; });
+          })),
+      initiator.PullServerTrailingMetadata(),
+      [handler](ServerMetadataHandle md) mutable {
+        GRPC_TRACE_LOG(ext_proc_filter, INFO)
+            << "ExtProc: ServerTrailingMetadata received:\n"
+            << md->DebugString();
+        handler.SpawnPushServerTrailingMetadata(std::move(md));
+        return absl::OkStatus();
       });
 }
 
-auto ExtProcFilter::ClientToServer(CallHandler handler,
-                                   CallInitiator initiator) {
+auto ExtProcFilter::ClientToServerMessage(CallHandler handler,
+                                          CallInitiator initiator) {
   return TrySeq(ForEach(MessagesFrom(handler),
                         [initiator](MessageHandle message) mutable {
                           GRPC_TRACE_LOG(ext_proc_filter, INFO)
@@ -305,7 +295,7 @@ void ExtProcFilter::InterceptCall(UnstartedCallHandler unstarted_call_handler) {
                 return self->ServerToClient(handler, initiator);
               });
 
-          return self->ClientToServer(handler, initiator);
+          return self->ClientToServerMessage(handler, initiator);
         });
   });
 }

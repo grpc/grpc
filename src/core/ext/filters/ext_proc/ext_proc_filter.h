@@ -229,9 +229,8 @@ class ExtProcFilter final : public V3InterceptorToV2Bridge<ExtProcFilter> {
 
   void InterceptCall(UnstartedCallHandler unstarted_call_handler) override;
 
-  auto ServerTrailingMetadata(CallHandler handler, CallInitiator initiator);
   auto ServerToClient(CallHandler handler, CallInitiator initiator);
-  auto ClientToServer(CallHandler handler, CallInitiator initiator);
+  auto ClientToServerMessage(CallHandler handler, CallInitiator initiator);
 
   RefCountedPtr<XdsTransportFactory> transport_factory_;
   RefCountedPtr<const Config> config_;
