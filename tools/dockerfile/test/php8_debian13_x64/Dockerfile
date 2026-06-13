@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM debian:12
+FROM debian:13
 
 #=================
 # Basic C core dependencies
@@ -62,36 +62,29 @@ RUN git config --global --add safe.directory '*'
 RUN git config --global protocol.file.allow always
 
 
-#====================
-# run_tests.py python dependencies
 
 # Basic python dependencies to be able to run tools/run_tests python scripts
-# These dependencies are not sufficient to build gRPC Python, gRPC Python
-# deps are defined elsewhere (e.g. python_deps.include)
+# We install python3-six via apt to avoid pip issues on Debian 13
 RUN apt-get update && apt-get install -y \
   python3 \
   python3-pip \
   python3-setuptools \
   python3-yaml \
+  python3-six \
   && apt-get clean
 
-# use pinned version of pip to avoid sudden breakages
-# Some newer distros that have already implemented PEP 668. Use of
-# --break-system-packages is to workaround that. We should look into using
-# virtualenv in Dockerfile though.
-RUN python3 -m pip install --break-system-packages --upgrade pip==19.3.1
+# Google Cloud Platform API libraries (inlined from gcp_api_libraries.include)
+# We add --break-system-packages since we are not downgrading pip
+RUN python3 -m pip install --break-system-packages --upgrade google-auth==1.23.0 google-api-python-client==1.12.8 oauth2client==4.1.0
 
-# TODO(jtattermusch): currently six is needed for tools/run_tests scripts
-# but since our python2 usage is deprecated, we should get rid of it.
-RUN python3 -m pip install six==1.16.0
+# Install default PHP (which is 8.4 in Debian 13)
+RUN apt-get update && apt-get install -y php php-dev php-pear php-mbstring && apt-get clean
 
-# Google Cloud Platform API libraries
-# These are needed for uploading test results to BigQuery (e.g. by tools/run_tests scripts)
-RUN python3 -m pip install --upgrade google-auth==1.23.0 google-api-python-client==1.12.8 oauth2client==4.1.0
+# Install PHPUnit (PHPUnit 11 is the stable version that supports PHP 8.4)
+RUN wget https://phar.phpunit.de/phpunit-13.phar && \
+    mv phpunit-13.phar /usr/local/bin/phpunit && \
+    chmod +x /usr/local/bin/phpunit
 
-
-RUN apt-get update && apt-get install -y php8.2 php8.2-dev php-pear php8.2-mbstring && apt-get clean
-RUN wget -q https://phar.phpunit.de/phpunit-9.phar -O /usr/local/bin/phpunit && chmod +x /usr/local/bin/phpunit
 #=================
 # PHP Test dependencies
 
@@ -107,5 +100,8 @@ RUN apt-get update && apt-get install -y ccache && apt-get clean
 
 RUN mkdir /var/local/jenkins
 
+
 # Define the default command.
 CMD ["bash"]
+
+

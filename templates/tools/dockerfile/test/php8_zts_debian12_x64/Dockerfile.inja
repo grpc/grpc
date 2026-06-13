@@ -27,5 +27,11 @@ RUN apt-get update && apt-get install -y ccache && apt-get clean
 {% include "../../run_tests_addons.include" %}
 {% include "../../xds_interop_deps.include" %}
 
+# Install mbstring extension dependencies and compile mbstring
+RUN apt-get update && apt-get install -y libonig-dev && apt-get clean
+RUN docker-php-ext-install mbstring
+# Install PHPUnit 9
+RUN curl -sSL https://phar.phpunit.de/phpunit-9.phar -o /usr/local/bin/phpunit && chmod +x /usr/local/bin/phpunit
+
 # Define the default command.
 CMD ["bash"]

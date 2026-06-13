@@ -22,8 +22,18 @@
  */
 class PersistentChannelTest extends \PHPUnit\Framework\TestCase
 {
+  protected $channel1;
+  protected $channel2;
+  protected $channel3;
+  protected $channel4;
+  protected $server;
+  protected $port;
+
   public function setUp(): void
   {
+    $channel_clean_persistent =
+        new Grpc\Channel('localhost:50010', []);
+    $channel_clean_persistent->cleanPersistentList();
   }
 
   public function tearDown(): void

@@ -270,6 +270,7 @@ then
 
     # Install PHP test dependencies.
     php /tmp/composer.phar global require phpunit/phpunit:^13 --no-security-blocking
+    export PATH="${HOME}/.composer/vendor/bin:${PATH}"
   else
     # Workaround for https://github.com/Homebrew/homebrew-core/issues/41081
     mkdir -p /usr/local/lib/php/pecl

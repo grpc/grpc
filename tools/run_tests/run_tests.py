@@ -658,6 +658,17 @@ class Php8Language:
         return "php8"
 
 
+class Php84Language(Php8Language):
+
+    def dockerfile_dir(self):
+        return "tools/dockerfile/test/php8_debian13_%s" % _docker_arch_suffix(
+            self.args.arch
+        )
+
+    def __str__(self):
+        return "php8.4"
+
+
 class PythonConfig(
     collections.namedtuple(
         "PythonConfig", ["name", "build", "run", "python_path"]
@@ -1313,6 +1324,7 @@ _LANGUAGES = {
     "c++": CLanguage("cxx", "c++"),
     "c": CLanguage("c", "c"),
     "php8": Php8Language(),
+    "php8.4": Php84Language(),
     "python": PythonLanguage(),
     "ruby": RubyLanguage(),
     "csharp": CSharpLanguage(),
