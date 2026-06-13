@@ -423,12 +423,14 @@ void XdsResolver::RouteConfigData::BuildFilterChains(
     FilterChainBuilder& builder, Blackboard& blackboard) {
   const auto& hcm = std::get<XdsListenerResource::HttpConnectionManager>(
       xds_config.listener->listener);
-  XdsRouting::PerRouteFilterChainBuilder per_route_builder(
-      hcm.http_filters, http_filter_registry, *xds_config.virtual_host, builder,
+  XdsRouting::RouteConfigFilterChainBuilder route_config_builder(
+      hcm.http_filters, http_filter_registry, builder,
       [](FilterChainBuilder& builder) {
         builder.AddFilter<ClusterSelectionFilter>(nullptr);
       },
       blackboard);
+  auto vhost_builder = route_config_builder.MakeVirtualHostFilterChainBuilder(
+      *xds_config.virtual_host);
   // Set the filter chain for each route.
   for (auto& route_entry : routes_) {
     const auto* route_action =
@@ -441,7 +443,7 @@ void XdsResolver::RouteConfigData::BuildFilterChains(
             XdsRouteConfigResource::Route::RouteAction::ClusterWeight>>(
             &route_action->action);
         weighted_clusters != nullptr) {
-      per_route_builder.BuildFilterChainForRouteWithWeightedClusters(
+      vhost_builder.BuildFilterChainForRouteWithWeightedClusters(
           route_entry.route,
           [&](size_t index,
               absl::StatusOr<RefCountedPtr<const FilterChain>> filter_chain) {
@@ -454,7 +456,7 @@ void XdsResolver::RouteConfigData::BuildFilterChains(
     // filter chain for the route.
     else {
       route_entry.filter_chain =
-          per_route_builder.BuildFilterChainForRoute(route_entry.route);
+          vhost_builder.BuildFilterChainForRoute(route_entry.route);
     }
   }
 }
