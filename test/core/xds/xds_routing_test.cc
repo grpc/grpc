@@ -301,7 +301,8 @@ class XdsRouteConfigFilterChainBuilderTest : public ::testing::Test {
   RefCountedPtr<Blackboard> blackboard_;
 };
 
-TEST_F(XdsRouteConfigFilterChainBuilderTest, BuildFilterChainForRouteNoOverrides) {
+TEST_F(XdsRouteConfigFilterChainBuilderTest,
+       BuildFilterChainForRouteNoOverrides) {
   std::vector<XdsListenerResource::HttpConnectionManager::HttpFilter>
       hcm_filters = {MakeHcmFilter("filter1", "hcm")};
   XdsRouting::RouteConfigFilterChainBuilder route_config_builder(
@@ -407,10 +408,10 @@ TEST_F(XdsRouteConfigFilterChainBuilderTest,
   auto cluster_weight = MakeClusterWeight("cluster1", 100);
   auto filter_chain =
       weighted_cluster_builder.BuildFilterChainForClusterWeight(cluster_weight);
-  EXPECT_THAT(filter_chain,
-              IsFilterChain(::testing::ElementsAre(
-                  IsFilterAndConfig(&TestFilter::kFilterVtable,
-                                    "hcm+vhost/blackboard{hcm+vhost}"))));
+  EXPECT_THAT(
+      filter_chain,
+      IsFilterChain(::testing::ElementsAre(IsFilterAndConfig(
+          &TestFilter::kFilterVtable, "hcm+vhost/blackboard{hcm+vhost}"))));
   EXPECT_EQ(GetBlackboardEntry("hcm+vhost"), "hcm+vhost");
 }
 
@@ -429,10 +430,10 @@ TEST_F(XdsRouteConfigFilterChainBuilderTest,
   auto cluster_weight = MakeClusterWeight("cluster1", 100);
   auto filter_chain =
       weighted_cluster_builder.BuildFilterChainForClusterWeight(cluster_weight);
-  EXPECT_THAT(filter_chain,
-              IsFilterChain(::testing::ElementsAre(
-                  IsFilterAndConfig(&TestFilter::kFilterVtable,
-                                    "hcm+route/blackboard{hcm+route}"))));
+  EXPECT_THAT(
+      filter_chain,
+      IsFilterChain(::testing::ElementsAre(IsFilterAndConfig(
+          &TestFilter::kFilterVtable, "hcm+route/blackboard{hcm+route}"))));
   EXPECT_EQ(GetBlackboardEntry("hcm+route"), "hcm+route");
 }
 
@@ -452,11 +453,10 @@ TEST_F(
   auto cluster_weight = MakeClusterWeight("cluster1", 100);
   auto filter_chain =
       weighted_cluster_builder.BuildFilterChainForClusterWeight(cluster_weight);
-  EXPECT_THAT(
-      filter_chain,
-      IsFilterChain(::testing::ElementsAre(
-          IsFilterAndConfig(&TestFilter::kFilterVtable,
-                            "hcm+vhost+route/blackboard{hcm+vhost+route}"))));
+  EXPECT_THAT(filter_chain,
+              IsFilterChain(::testing::ElementsAre(IsFilterAndConfig(
+                  &TestFilter::kFilterVtable,
+                  "hcm+vhost+route/blackboard{hcm+vhost+route}"))));
   EXPECT_EQ(GetBlackboardEntry("hcm+vhost+route"), "hcm+vhost+route");
 }
 
@@ -477,9 +477,8 @@ TEST_F(XdsRouteConfigFilterChainBuilderTest,
   auto filter_chain =
       weighted_cluster_builder.BuildFilterChainForClusterWeight(cluster_weight);
   EXPECT_THAT(filter_chain,
-              IsFilterChain(::testing::ElementsAre(
-                  IsFilterAndConfig(&TestFilter::kFilterVtable,
-                                    "hcm+cw/blackboard{hcm+cw}"))));
+              IsFilterChain(::testing::ElementsAre(IsFilterAndConfig(
+                  &TestFilter::kFilterVtable, "hcm+cw/blackboard{hcm+cw}"))));
   EXPECT_EQ(GetBlackboardEntry("hcm+cw"), "hcm+cw");
 }
 
@@ -500,11 +499,10 @@ TEST_F(
       MakeClusterWeight("cluster1", 100, {{"filter1", MakeOverride("cw")}});
   auto filter_chain =
       weighted_cluster_builder.BuildFilterChainForClusterWeight(cluster_weight);
-  EXPECT_THAT(
-      filter_chain,
-      IsFilterChain(::testing::ElementsAre(
-          IsFilterAndConfig(&TestFilter::kFilterVtable,
-                            "hcm+vhost+cw/blackboard{hcm+vhost+cw}"))));
+  EXPECT_THAT(filter_chain,
+              IsFilterChain(::testing::ElementsAre(
+                  IsFilterAndConfig(&TestFilter::kFilterVtable,
+                                    "hcm+vhost+cw/blackboard{hcm+vhost+cw}"))));
   EXPECT_EQ(GetBlackboardEntry("hcm+vhost+cw"), "hcm+vhost+cw");
 }
 
@@ -525,11 +523,10 @@ TEST_F(
       MakeClusterWeight("cluster1", 100, {{"filter1", MakeOverride("cw")}});
   auto filter_chain =
       weighted_cluster_builder.BuildFilterChainForClusterWeight(cluster_weight);
-  EXPECT_THAT(
-      filter_chain,
-      IsFilterChain(::testing::ElementsAre(
-          IsFilterAndConfig(&TestFilter::kFilterVtable,
-                            "hcm+route+cw/blackboard{hcm+route+cw}"))));
+  EXPECT_THAT(filter_chain,
+              IsFilterChain(::testing::ElementsAre(
+                  IsFilterAndConfig(&TestFilter::kFilterVtable,
+                                    "hcm+route+cw/blackboard{hcm+route+cw}"))));
   EXPECT_EQ(GetBlackboardEntry("hcm+route+cw"), "hcm+route+cw");
 }
 
