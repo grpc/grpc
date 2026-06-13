@@ -26,10 +26,16 @@
 #include <string>
 #include <utility>
 
+#include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
+#include "src/core/ext/transport/chttp2/transport/frame_data.h"
+#include "src/core/ext/transport/chttp2/transport/internal.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/resource_quota/arena.h"
 #include "src/core/util/bitset.h"
 #include "src/core/util/time.h"
 #include "test/core/end2end/end2end_tests.h"
+#include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "absl/strings/string_view.h"
 
@@ -44,6 +50,17 @@ class TestConfigurator {
       grpc_compression_algorithm algorithm) {
     server_args_ =
         server_args_.Set(GRPC_COMPRESSION_CHANNEL_ENABLED_ALGORITHMS_BITSET,
+                         BitSet<GRPC_COMPRESS_ALGORITHMS_COUNT>()
+                             .SetAll(true)
+                             .Set(algorithm, false)
+                             .ToInt<uint32_t>());
+    return *this;
+  }
+
+  TestConfigurator& DisableAlgorithmAtClient(
+      grpc_compression_algorithm algorithm) {
+    client_args_ =
+        client_args_.Set(GRPC_COMPRESSION_CHANNEL_ENABLED_ALGORITHMS_BITSET,
                          BitSet<GRPC_COMPRESS_ALGORITHMS_COUNT>()
                              .SetAll(true)
                              .Set(algorithm, false)
@@ -122,6 +139,59 @@ class TestConfigurator {
     EXPECT_EQ(server_status.message(),
               "Compression algorithm 'gzip' is disabled.");
     EXPECT_EQ(s.method(), "/foo");
+  }
+
+  void CompressedBitWithIdentityTest() {
+    Init();
+    auto c =
+        test_.NewClientCall("/foo").Timeout(Duration::Seconds(30)).Create();
+    IncomingStatusOnClient server_status;
+    IncomingMetadata server_initial_metadata;
+    c.NewBatch(1)
+        .SendInitialMetadata({})
+        .SendMessage(std::string(1024, 'x'), GRPC_WRITE_INTERNAL_COMPRESS)
+        .SendCloseFromClient()
+        .RecvInitialMetadata(server_initial_metadata)
+        .RecvStatusOnClient(server_status);
+    auto s = test_.RequestCall(100);
+    test_.Expect(100, true);
+    test_.Step();
+    IncomingMessage client_message;
+    s.NewBatch(101).RecvMessage(client_message);
+    test_.Expect(101, false);
+    test_.Expect(1, true);
+    test_.Step();
+    EXPECT_EQ(server_status.status(), GRPC_STATUS_INTERNAL);
+    EXPECT_EQ(server_status.message(),
+              "Compression bit set but no encoding configured");
+  }
+
+  void ClientUnsupportedAlgorithmTest() {
+    Init();
+    auto c = test_.NewClientCall("/foo").Timeout(Duration::Minutes(1)).Create();
+    IncomingStatusOnClient server_status;
+    IncomingMetadata server_initial_metadata;
+    c.NewBatch(1)
+        .SendInitialMetadata({})
+        .SendCloseFromClient()
+        .RecvInitialMetadata(server_initial_metadata)
+        .RecvStatusOnClient(server_status);
+    auto s = test_.RequestCall(100);
+    test_.Expect(100, true);
+    test_.Step();
+    IncomingMessage client_message;
+    s.NewBatch(101).SendInitialMetadata({}).RecvMessage(client_message);
+    s.NewBatch(102).SendMessage(std::string(1024, 'y'));
+    test_.Expect(102, true);
+    test_.Expect(101, true);
+    test_.Expect(1, true);
+    test_.Step();
+    EXPECT_EQ(server_status.status(), GRPC_STATUS_INTERNAL);
+    EXPECT_THAT(
+        server_status.message(),
+        ::testing::AnyOf(
+            ::testing::HasSubstr("Compression algorithm 'gzip' is disabled."),
+            ::testing::HasSubstr("Compression algorithm not supported: gzip")));
   }
 
   void RequestWithPayload(
@@ -499,6 +569,19 @@ CORE_END2END_TEST(Http2SingleHopTests,
       .DecompressInApp()
       .ExpectedAlgorithmFromServer(GRPC_COMPRESS_NONE)
       .RequestWithPayload(0, {});
+}
+
+CORE_END2END_TEST(Http2SingleHopTests, CompressedBitWithIdentityFails) {
+  SKIP_IF_VIRTUAL();
+  TestConfigurator(*this).CompressedBitWithIdentityTest();
+}
+
+CORE_END2END_TEST(Http2SingleHopTests, ClientUnsupportedAlgorithmFails) {
+  SKIP_IF_VIRTUAL();
+  TestConfigurator(*this)
+      .DisableAlgorithmAtClient(GRPC_COMPRESS_GZIP)
+      .ServerDefaultAlgorithm(GRPC_COMPRESS_GZIP)
+      .ClientUnsupportedAlgorithmTest();
 }
 
 }  // namespace
