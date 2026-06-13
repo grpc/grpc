@@ -37,8 +37,6 @@
 
 namespace grpc_core {
 
-void (*g_test_ext_proc_metadata_modifier)(grpc_metadata_batch*) = nullptr;
-absl::Status (*g_test_ext_proc_message_modifier)(MessageHandle*) = nullptr;
 
 //
 // ExtProcFilter::ProcessingMode
@@ -250,17 +248,8 @@ auto ExtProcFilter::ClientToServerMessage(CallHandler handler,
                           GRPC_TRACE_LOG(ext_proc_filter, INFO)
                               << "ExtProc: ClientToServer message received:\n"
                               << message->DebugString();
-                          absl::Status status;
-                          if (g_test_ext_proc_message_modifier != nullptr) {
-                            status = g_test_ext_proc_message_modifier(&message);
-                            GRPC_TRACE_LOG(ext_proc_filter, INFO)
-                                << "ExtProc: message modifier status: "
-                                << status.ToString();
-                          }
-                          if (status.ok()) {
-                            initiator.SpawnPushMessage(std::move(message));
-                          }
-                          return status;
+                          initiator.SpawnPushMessage(std::move(message));
+                          return absl::OkStatus();
                         }),
                 [initiator]() mutable {
                   GRPC_TRACE_LOG(ext_proc_filter, INFO)
@@ -282,9 +271,7 @@ void ExtProcFilter::InterceptCall(UnstartedCallHandler unstarted_call_handler) {
           GRPC_TRACE_LOG(ext_proc_filter, INFO)
               << "ExtProc: Client initial metadata received:\n"
               << metadata->DebugString();
-          if (g_test_ext_proc_metadata_modifier != nullptr) {
-            g_test_ext_proc_metadata_modifier(metadata.get());
-          }
+
           CallInitiator initiator =
               self->MakeChildCall(std::move(metadata), handler.arena()->Ref());
           handler.AddChildCall(initiator);
