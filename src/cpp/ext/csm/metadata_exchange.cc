@@ -345,7 +345,9 @@ void ServiceMeshLabelsInjector::AddLabels(
 
 bool ServiceMeshLabelsInjector::AddOptionalLabels(
     bool is_client,
-    absl::Span<const grpc_core::RefCountedStringValue> optional_labels,
+    absl::Span<
+        const std::variant<grpc_core::RefCountedStringValue, absl::string_view>>
+        optional_labels,
     opentelemetry::nostd::function_ref<
         bool(opentelemetry::nostd::string_view,
              opentelemetry::common::AttributeValue)>
@@ -357,17 +359,15 @@ bool ServiceMeshLabelsInjector::AddOptionalLabels(
   // Performs JSON label name format to CSM Observability Metric spec format
   // conversion.
   absl::string_view service_name =
-      optional_labels
-          [static_cast<size_t>(
-               grpc_core::ClientCallTracerInterface::CallAttemptTracer::
-                   OptionalLabelKey::kXdsServiceName)]
-              .as_string_view();
+      OpenTelemetryPluginImpl::GetOptionalLabelValue(
+          optional_labels[static_cast<size_t>(
+              grpc_core::ClientCallTracerInterface::CallAttemptTracer::
+                  OptionalLabelKey::kXdsServiceName)]);
   absl::string_view service_namespace =
-      optional_labels
-          [static_cast<size_t>(
-               grpc_core::ClientCallTracerInterface::CallAttemptTracer::
-                   OptionalLabelKey::kXdsServiceNamespace)]
-              .as_string_view();
+      OpenTelemetryPluginImpl::GetOptionalLabelValue(
+          optional_labels[static_cast<size_t>(
+              grpc_core::ClientCallTracerInterface::CallAttemptTracer::
+                  OptionalLabelKey::kXdsServiceNamespace)]);
   return callback("csm.service_name",
                   service_name.empty()
                       ? "unknown"
