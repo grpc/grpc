@@ -793,6 +793,7 @@ def _unary_response_in_pool(
                     rpc_event, state, response, response_serializer
                 )
                 if serialized_response is not None:
+                    # This is actually responsible for sending the response back.
                     _status(rpc_event, state, serialized_response)
     except Exception:  # pylint: disable=broad-except
         traceback.print_exc()
