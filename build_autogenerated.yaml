@@ -1504,6 +1504,7 @@ libs:
   - src/core/ext/filters/census/grpc_context.cc
   - src/core/ext/filters/channel_idle/idle_filter_state.cc
   - src/core/ext/filters/channel_idle/legacy_channel_idle_filter.cc
+  - src/core/ext/filters/ext_proc/ext_proc_filter.cc
   - src/core/ext/filters/ext_proc/ext_proc_messages.cc
   - src/core/ext/filters/fault_injection/fault_injection_filter.cc
   - src/core/ext/filters/gcp_authentication/gcp_authentication_filter.cc
@@ -30092,7 +30093,10 @@ targets:
   build: test
   language: c++
   headers:
+  - test/core/event_engine/event_engine_test_utils.h
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/scoped_env_var.h
+  - test/core/xds/xds_transport_fake.h
   - test/cpp/util/cli_call.h
   - test/cpp/util/cli_credentials.h
   - test/cpp/util/config_grpc_cli.h
@@ -30103,6 +30107,7 @@ targets:
   - third_party/utf8_range/utf8_validity.h
   src:
   - src/proto/grpc/reflection/v1alpha/reflection.proto
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
   - third_party/cel-spec/proto/cel/expr/checked.proto
   - third_party/cel-spec/proto/cel/expr/syntax.proto
   - third_party/envoy-api/envoy/annotations/deprecation.proto
@@ -30148,6 +30153,8 @@ targets:
   - third_party/envoy-api/envoy/extensions/filters/common/fault/v3/fault.proto
   - third_party/envoy-api/envoy/extensions/filters/common/matcher/action/v3/skip_action.proto
   - third_party/envoy-api/envoy/extensions/filters/http/composite/v3/composite.proto
+  - third_party/envoy-api/envoy/extensions/filters/http/ext_proc/v3/ext_proc.proto
+  - third_party/envoy-api/envoy/extensions/filters/http/ext_proc/v3/processing_mode.proto
   - third_party/envoy-api/envoy/extensions/filters/http/fault/v3/fault.proto
   - third_party/envoy-api/envoy/extensions/filters/http/gcp_authn/v3/gcp_authn.proto
   - third_party/envoy-api/envoy/extensions/filters/http/rbac/v3/rbac.proto
@@ -30216,7 +30223,10 @@ targets:
   - third_party/xds/xds/type/v3/cel.proto
   - third_party/xds/xds/type/v3/range.proto
   - third_party/xds/xds/type/v3/typed_struct.proto
+  - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/xds/xds_http_filters_test.cc
+  - test/core/xds/xds_transport_fake.cc
   - test/cpp/util/cli_call.cc
   - test/cpp/util/cli_credentials.cc
   - test/cpp/util/proto_file_parser.cc

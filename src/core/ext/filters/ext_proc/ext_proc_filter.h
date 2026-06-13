@@ -133,8 +133,7 @@ class ExtProcFilter final : public V3InterceptorToV2Bridge<ExtProcFilter> {
       const ChannelArgs& args, ChannelFilter::Args filter_args);
 
   ExtProcFilter(const ChannelArgs& args, RefCountedPtr<const Config> config,
-                ChannelFilter::Args filter_args,
-                RefCountedPtr<ExtProcChannel> channel);
+                ChannelFilter::Args filter_args);
 
   RefCountedPtr<const Config> config() const { return config_; }
   RefCountedPtr<ExtProcChannel> channel() const { return channel_; }
@@ -229,6 +228,10 @@ class ExtProcFilter final : public V3InterceptorToV2Bridge<ExtProcFilter> {
   void Orphaned() override {}
 
   void InterceptCall(UnstartedCallHandler unstarted_call_handler) override;
+
+  auto ServerTrailingMetadata(CallHandler handler, CallInitiator initiator);
+  auto ServerToClient(CallHandler handler, CallInitiator initiator);
+  auto ClientToServer(CallHandler handler, CallInitiator initiator);
 
   RefCountedPtr<XdsTransportFactory> transport_factory_;
   RefCountedPtr<const Config> config_;

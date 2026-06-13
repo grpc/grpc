@@ -340,6 +340,7 @@
     <file baseinstalldir="/" name="src/core/ext/filters/channel_idle/idle_filter_state.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/channel_idle/legacy_channel_idle_filter.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/channel_idle/legacy_channel_idle_filter.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/ext_proc/ext_proc_filter.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/ext_proc/ext_proc_filter.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/ext_proc/ext_proc_messages.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/ext_proc/ext_proc_messages.h" role="src" />

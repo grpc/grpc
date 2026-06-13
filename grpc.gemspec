@@ -359,6 +359,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/filters/channel_idle/idle_filter_state.h )
   s.files += %w( src/core/ext/filters/channel_idle/legacy_channel_idle_filter.cc )
   s.files += %w( src/core/ext/filters/channel_idle/legacy_channel_idle_filter.h )
+  s.files += %w( src/core/ext/filters/ext_proc/ext_proc_filter.cc )
   s.files += %w( src/core/ext/filters/ext_proc/ext_proc_filter.h )
   s.files += %w( src/core/ext/filters/ext_proc/ext_proc_messages.cc )
   s.files += %w( src/core/ext/filters/ext_proc/ext_proc_messages.h )

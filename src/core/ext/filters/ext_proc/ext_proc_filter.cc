@@ -1,0 +1,243 @@
+//
+// Copyright 2026 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+#include "src/core/ext/filters/ext_proc/ext_proc_filter.h"
+
+#include <string>
+#include <vector>
+
+#include "src/core/call/call_spine.h"
+#include "src/core/lib/debug/trace_flags.h"
+#include "src/core/lib/promise/context.h"
+#include "src/core/lib/promise/for_each.h"
+#include "src/core/lib/promise/if.h"
+#include "src/core/lib/promise/latch.h"
+#include "src/core/lib/promise/map.h"
+#include "src/core/lib/promise/pipe.h"
+#include "src/core/lib/promise/seq.h"
+#include "src/core/lib/promise/try_join.h"
+#include "src/core/lib/promise/try_seq.h"
+#include "src/core/lib/resource_quota/arena.h"
+#include "absl/log/log.h"
+// #include "src/core/util/shared_bit_gen.h"
+// #include "src/core/xds/grpc/xds_http_filter.h"
+// #include "absl/random/random.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_join.h"
+
+namespace grpc_core {
+
+void (*g_test_ext_proc_metadata_modifier)(grpc_metadata_batch*) = nullptr;
+absl::Status (*g_test_ext_proc_message_modifier)(MessageHandle*) = nullptr;
+
+std::string ExtProcFilter::ProcessingMode::ToString() const {
+  std::vector<std::string> parts;
+  parts.push_back(absl::StrCat("send_request_headers=",
+                               send_request_headers ? "true" : "false"));
+  parts.push_back(absl::StrCat("send_response_headers=",
+                               send_response_headers ? "true" : "false"));
+  parts.push_back(absl::StrCat("send_response_trailers=",
+                               send_response_trailers ? "true" : "false"));
+  if (send_request_body) parts.push_back("send_request_body=true");
+  if (send_response_body) parts.push_back("send_response_body=true");
+  return absl::StrCat("{", absl::StrJoin(parts, ", "), "}");
+}
+
+std::string ExtProcFilter::Config::ToString() const {
+  std::vector<std::string> parts;
+  if (grpc_service != nullptr) {
+    parts.push_back(absl::StrCat("grpc_service=", grpc_service->ToString()));
+  }
+  if (failure_mode_allow) parts.push_back("failure_mode_allow=true");
+  parts.push_back(absl::StrCat("processing_mode=", processing_mode.ToString()));
+  if (!request_attributes.empty()) {
+    parts.push_back(absl::StrCat("request_attributes=[",
+                                 absl::StrJoin(request_attributes, ", "), "]"));
+  }
+  if (!response_attributes.empty()) {
+    parts.push_back(absl::StrCat("response_attributes=[",
+                                 absl::StrJoin(response_attributes, ", "),
+                                 "]"));
+  }
+  if (mutation_rules.has_value()) {
+    parts.push_back(
+        absl::StrCat("mutation_rules=", mutation_rules->ToString()));
+  }
+  if (!forwarding_allowed_headers.empty()) {
+    std::vector<std::string> matchers;
+    for (const auto& matcher : forwarding_allowed_headers) {
+      matchers.push_back(matcher.ToString());
+    }
+    parts.push_back(absl::StrCat("forwarding_allowed_headers=[",
+                                 absl::StrJoin(matchers, ", "), "]"));
+  }
+  if (!forwarding_disallowed_headers.empty()) {
+    std::vector<std::string> matchers;
+    for (const auto& matcher : forwarding_disallowed_headers) {
+      matchers.push_back(matcher.ToString());
+    }
+    parts.push_back(absl::StrCat("forwarding_disallowed_headers=[",
+                                 absl::StrJoin(matchers, ", "), "]"));
+  }
+  if (disable_immediate_response) {
+    parts.push_back("disable_immediate_response=true");
+  }
+  if (observability_mode) parts.push_back("observability_mode=true");
+  if (deferred_close_timeout != Duration::Zero()) {
+    parts.push_back(absl::StrCat("deferred_close_timeout=",
+                                 deferred_close_timeout.ToString()));
+  }
+  return absl::StrCat("{", absl::StrJoin(parts, ", "), "}");
+}
+
+ExtProcFilter::ExtProcChannel::ExtProcChannel(
+    std::shared_ptr<const XdsBootstrap::XdsServerTarget> server,
+    RefCountedPtr<XdsTransportFactory> transport_factory)
+    : server_(std::move(server)) {
+  absl::Status status;
+  transport_ = transport_factory->GetTransport(*server_, &status);
+}
+
+ExtProcFilter::ExtProcChannel::~ExtProcChannel() {}
+
+const grpc_channel_filter ExtProcFilter::kFilterVtable = MakePromiseBasedFilter<
+    ExtProcFilter, FilterEndpoint::kClient,
+    kFilterExaminesServerInitialMetadata | kFilterExaminesOutboundMessages |
+        kFilterExaminesInboundMessages | kFilterExaminesCallContext>();
+
+absl::StatusOr<RefCountedPtr<ExtProcFilter>> ExtProcFilter::Create(
+    const ChannelArgs& args, ChannelFilter::Args filter_args) {
+  if (filter_args.config()->type() != Config::Type()) {
+    return absl::InternalError("ext_proc filter config has wrong type");
+  }
+  auto config = filter_args.config().TakeAsSubclass<const Config>();
+  return MakeRefCounted<ExtProcFilter>(args, std::move(config),
+                                       std::move(filter_args));
+}
+
+ExtProcFilter::ExtProcFilter(const ChannelArgs& args,
+                             RefCountedPtr<const Config> config,
+                             ChannelFilter::Args filter_args)
+    : config_(std::move(config)), channel_(config_->channel) {}
+
+auto ExtProcFilter::ServerTrailingMetadata(CallHandler handler,
+                                           CallInitiator initiator) {
+  return Seq(initiator.PullServerTrailingMetadata(),
+             [handler](ServerMetadataHandle md) mutable {
+               GRPC_TRACE_LOG(ext_proc_filter, INFO)
+                   << "ExtProc: ServerTrailingMetadata received:\n"
+                   << md->DebugString();
+               handler.SpawnPushServerTrailingMetadata(std::move(md));
+               return absl::OkStatus();
+             });
+}
+
+auto ExtProcFilter::ServerToClient(CallHandler handler,
+                                   CallInitiator initiator) {
+  return TrySeq(
+      initiator.PullServerInitialMetadata(),
+      [self = RefAsSubclass<ExtProcFilter>(), handler,
+       initiator](std::optional<ServerMetadataHandle> metadata) mutable {
+        const bool has_md = metadata.has_value();
+        GRPC_TRACE_LOG(ext_proc_filter, INFO)
+            << "ExtProc: ServerToClient initial metadata received, present: "
+            << has_md;
+        return If(
+            has_md,
+            [self, handler, initiator, md = std::move(metadata)]() mutable {
+              GRPC_TRACE_LOG(ext_proc_filter, INFO)
+                  << "ExtProc: ServerToClient initial metadata content:\n"
+                  << (*md)->DebugString();
+              handler.SpawnPushServerInitialMetadata(std::move(*md));
+              return Seq(
+                  ForEach(
+                      MessagesFrom(initiator),
+                      [handler](MessageHandle message) mutable {
+                        GRPC_TRACE_LOG(ext_proc_filter, INFO)
+                            << "ExtProc: ServerToClient message intercepted:\n"
+                            << message->DebugString();
+                        handler.SpawnPushMessage(std::move(message));
+                        return Success{};
+                      }),
+                  self->ServerTrailingMetadata(handler, initiator));
+            },
+            [self, handler, initiator]() mutable {
+              GRPC_TRACE_LOG(ext_proc_filter, INFO)
+                  << "ExtProc: ServerToClient initial metadata not present, "
+                     "skipping to trailing";
+              return self->ServerTrailingMetadata(handler, initiator);
+            });
+      });
+}
+
+auto ExtProcFilter::ClientToServer(CallHandler handler,
+                                   CallInitiator initiator) {
+  return TrySeq(ForEach(MessagesFrom(handler),
+                        [initiator](MessageHandle message) mutable {
+                          GRPC_TRACE_LOG(ext_proc_filter, INFO)
+                              << "ExtProc: ClientToServer message received:\n"
+                              << message->DebugString();
+                          absl::Status status;
+                          if (g_test_ext_proc_message_modifier != nullptr) {
+                            status = g_test_ext_proc_message_modifier(&message);
+                            GRPC_TRACE_LOG(ext_proc_filter, INFO)
+                                << "ExtProc: message modifier status: "
+                                << status.ToString();
+                          }
+                          if (status.ok()) {
+                            initiator.SpawnPushMessage(std::move(message));
+                          }
+                          return status;
+                        }),
+                [initiator]() mutable {
+                  GRPC_TRACE_LOG(ext_proc_filter, INFO)
+                      << "ExtProc: ClientToServer finished sends";
+                  initiator.SpawnFinishSends();
+                  return absl::OkStatus();
+                });
+}
+
+void ExtProcFilter::InterceptCall(UnstartedCallHandler unstarted_call_handler) {
+  CallHandler handler = Consume(std::move(unstarted_call_handler));
+  handler.SpawnGuarded("ext_proc_call", [self = RefAsSubclass<ExtProcFilter>(),
+                                         handler]() mutable {
+    GRPC_TRACE_LOG(ext_proc_filter, INFO)
+        << "ExtProc: InterceptCall promise chain start";
+    return TrySeq(
+        handler.PullClientInitialMetadata(),
+        [self, handler](ClientMetadataHandle metadata) mutable {
+          GRPC_TRACE_LOG(ext_proc_filter, INFO)
+              << "ExtProc: Client initial metadata received:\n"
+              << metadata->DebugString();
+          if (g_test_ext_proc_metadata_modifier != nullptr) {
+            g_test_ext_proc_metadata_modifier(metadata.get());
+          }
+          CallInitiator initiator =
+              self->MakeChildCall(std::move(metadata), handler.arena()->Ref());
+          handler.AddChildCall(initiator);
+          initiator.SpawnGuarded(
+              "server_to_client", [self, handler, initiator]() mutable {
+                GRPC_TRACE_LOG(ext_proc_filter, INFO)
+                    << "ExtProc: server_to_client task started";
+                return self->ServerToClient(handler, initiator);
+              });
+
+          return self->ClientToServer(handler, initiator);
+        });
+  });
+}
+
+}  // namespace grpc_core
