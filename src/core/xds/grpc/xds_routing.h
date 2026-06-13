@@ -129,7 +129,8 @@ class XdsRouting final {
       absl::StatusOr<RefCountedPtr<const FilterChain>> BuildFilterChainForRoute(
           const XdsRouteConfigResource::Route& route);
 
-      // Returns a filter chain builder for a given virtual host.
+      // Returns a filter chain builder for a given route that uses
+      // WeightedClusters.
       WeightedClusterRouteFilterChainBuilder
       MakeWeightedClusterRouteFilterChainBuilder(
           const XdsRouteConfigResource::Route& route) {
