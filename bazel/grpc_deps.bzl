@@ -59,10 +59,10 @@ def grpc_deps():
     if "com_google_protobuf" not in native.existing_rules():
         http_archive(
             name = "com_google_protobuf",
-            strip_prefix = "protobuf-e59364c38e10de3686a3305ff11fbfc59a10dbd8",
+            strip_prefix = "protobuf-b6f9284da830b69be787732ffdaa35049d20a088",
             urls = [
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/protocolbuffers/protobuf/archive/e59364c38e10de3686a3305ff11fbfc59a10dbd8.tar.gz",
-                "https://github.com/protocolbuffers/protobuf/archive/e59364c38e10de3686a3305ff11fbfc59a10dbd8.tar.gz",
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/protocolbuffers/protobuf/archive/b6f9284da830b69be787732ffdaa35049d20a088.tar.gz",
+                "https://github.com/protocolbuffers/protobuf/archive/b6f9284da830b69be787732ffdaa35049d20a088.tar.gz",
             ],
             patches = [
                 "@com_github_grpc_grpc//third_party:protobuf.patch",
