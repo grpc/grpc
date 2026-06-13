@@ -1,4 +1,4 @@
-# Copyright 2023 the gRPC authors.
+# Copyright 2026 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -11,22 +11,3 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
-
-licenses(["notice"])
-
-cc_binary(
-    name = "orca_server",
-    srcs = ["orca_server.cc"],
-    defines = ["BAZEL_BUILD"],
-    deps = [
-        "//:grpc++",
-        "//:grpcpp_orca_service",
-        "//examples/protos:helloworld_cc_grpc",
-        "@com_google_absl//absl/flags:flag",
-        "@com_google_absl//absl/flags:parse",
-        "@com_google_absl//absl/log:initialize",
-        "@com_google_absl//absl/strings:str_format",
-    ],
-)
