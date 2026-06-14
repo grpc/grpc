@@ -44,12 +44,18 @@ struct Rbac {
     kOnDenyAndAllow,
   };
 
+  // TODO(roth): Unify this with
+  // XdsListenerResource::FilterChainMap::CidrRange, possibly as part of
+  // addressing https://github.com/grpc/grpc/issues/34172.
   struct CidrRange {
     CidrRange() = default;
     CidrRange(std::string address_prefix, uint32_t prefix_len);
 
     CidrRange(CidrRange&& other) noexcept;
     CidrRange& operator=(CidrRange&& other) noexcept;
+
+    bool operator==(const CidrRange& other) const;
+    bool operator!=(const CidrRange& other) const { return !(*this == other); }
 
     std::string ToString() const;
 
@@ -90,6 +96,9 @@ struct Rbac {
 
     Permission(Permission&& other) noexcept;
     Permission& operator=(Permission&& other) noexcept;
+
+    bool operator==(const Permission& other) const;
+    bool operator!=(const Permission& other) const { return !(*this == other); }
 
     std::string ToString() const;
 
@@ -141,6 +150,9 @@ struct Rbac {
     Principal(Principal&& other) noexcept;
     Principal& operator=(Principal&& other) noexcept;
 
+    bool operator==(const Principal& other) const;
+    bool operator!=(const Principal& other) const { return !(*this == other); }
+
     std::string ToString() const;
 
     RuleType type = RuleType::kAnd;
@@ -161,6 +173,9 @@ struct Rbac {
     Policy(Policy&& other) noexcept;
     Policy& operator=(Policy&& other) noexcept;
 
+    bool operator==(const Policy& other) const;
+    bool operator!=(const Policy& other) const { return !(*this == other); }
+
     std::string ToString() const;
 
     Permission permissions;
@@ -173,6 +188,9 @@ struct Rbac {
 
   Rbac(Rbac&& other) noexcept;
   Rbac& operator=(Rbac&& other) noexcept;
+
+  bool operator==(const Rbac& other) const;
+  bool operator!=(const Rbac& other) const { return !(*this == other); }
 
   std::string ToString() const;
 

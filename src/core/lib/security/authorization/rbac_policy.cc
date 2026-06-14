@@ -51,6 +51,26 @@ Rbac& Rbac::operator=(Rbac&& other) noexcept {
   return *this;
 }
 
+bool Rbac::operator==(const Rbac& other) const {
+  if (name != other.name) return false;
+  if (action != other.action) return false;
+  if (policies != other.policies) return false;
+  if (audit_condition != other.audit_condition) return false;
+  if (logger_configs.size() != other.logger_configs.size()) return false;
+  for (size_t i = 0; i < logger_configs.size(); ++i) {
+    if (logger_configs[i] == nullptr) {
+      if (other.logger_configs[i] != nullptr) return false;
+      continue;
+    }
+    if (other.logger_configs[i] == nullptr) return false;
+    if (logger_configs[i]->name() != other.logger_configs[i]->name() ||
+        logger_configs[i]->ToString() != other.logger_configs[i]->ToString()) {
+      return false;
+    }
+  }
+  return true;
+}
+
 std::string Rbac::ToString() const {
   std::vector<std::string> contents;
   absl::string_view condition_str;
@@ -98,6 +118,11 @@ Rbac::CidrRange& Rbac::CidrRange::operator=(Rbac::CidrRange&& other) noexcept {
   address_prefix = std::move(other.address_prefix);
   prefix_len = other.prefix_len;
   return *this;
+}
+
+bool Rbac::CidrRange::operator==(const Rbac::CidrRange& other) const {
+  return address_prefix == other.address_prefix &&
+         prefix_len == other.prefix_len;
 }
 
 std::string Rbac::CidrRange::ToString() const {
@@ -235,6 +260,25 @@ Rbac::Permission& Rbac::Permission::operator=(
       port = other.port;
   }
   return *this;
+}
+
+bool Rbac::Permission::operator==(const Rbac::Permission& other) const {
+  if (type != other.type) return false;
+  if (header_matcher != other.header_matcher) return false;
+  if (string_matcher != other.string_matcher) return false;
+  if (ip != other.ip) return false;
+  if (port != other.port) return false;
+  if (invert != other.invert) return false;
+  if (permissions.size() != other.permissions.size()) return false;
+  for (size_t i = 0; i < permissions.size(); ++i) {
+    if (permissions[i] == nullptr) {
+      if (other.permissions[i] != nullptr) return false;
+    } else {
+      if (other.permissions[i] == nullptr) return false;
+      if (*permissions[i] != *other.permissions[i]) return false;
+    }
+  }
+  return true;
 }
 
 std::string Rbac::Permission::ToString() const {
@@ -409,6 +453,24 @@ Rbac::Principal& Rbac::Principal::operator=(Rbac::Principal&& other) noexcept {
   return *this;
 }
 
+bool Rbac::Principal::operator==(const Rbac::Principal& other) const {
+  if (type != other.type) return false;
+  if (header_matcher != other.header_matcher) return false;
+  if (string_matcher != other.string_matcher) return false;
+  if (ip != other.ip) return false;
+  if (invert != other.invert) return false;
+  if (principals.size() != other.principals.size()) return false;
+  for (size_t i = 0; i < principals.size(); ++i) {
+    if (principals[i] == nullptr) {
+      if (other.principals[i] != nullptr) return false;
+    } else {
+      if (other.principals[i] == nullptr) return false;
+      if (*principals[i] != *other.principals[i]) return false;
+    }
+  }
+  return true;
+}
+
 std::string Rbac::Principal::ToString() const {
   switch (type) {
     case RuleType::kAnd: {
@@ -465,6 +527,10 @@ Rbac::Policy& Rbac::Policy::operator=(Rbac::Policy&& other) noexcept {
   permissions = std::move(other.permissions);
   principals = std::move(other.principals);
   return *this;
+}
+
+bool Rbac::Policy::operator==(const Rbac::Policy& other) const {
+  return permissions == other.permissions && principals == other.principals;
 }
 
 std::string Rbac::Policy::ToString() const {

@@ -557,6 +557,17 @@ TEST_F(XdsRbacFilterTest, GenerateFilterConfig) {
   EXPECT_EQ(*config, Json::FromObject({})) << JsonDump(*config);
 }
 
+TEST_F(XdsRbacFilterTest, ParseTopLevelConfig) {
+  XdsExtension extension = MakeXdsExtension(RBAC());
+  auto config =
+      filter_->ParseTopLevelConfig("", decode_context_, extension, &errors_);
+  ASSERT_TRUE(errors_.ok()) << errors_.status(
+      absl::StatusCode::kInvalidArgument, "unexpected errors");
+  ASSERT_NE(config, nullptr);
+// FIXME
+  EXPECT_EQ(config->ToString(), "");
+}
+
 TEST_F(XdsRbacFilterTest, GenerateFilterConfigTypedStruct) {
   XdsExtension extension = MakeXdsExtension(RBAC());
   extension.value = Json();
