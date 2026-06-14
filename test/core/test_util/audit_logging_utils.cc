@@ -60,13 +60,13 @@ absl::string_view TestAuditLoggerFactory::Config::name() const {
 
 absl::string_view TestAuditLoggerFactory::name() const { return kLoggerName; }
 
-absl::StatusOr<std::shared_ptr<const AuditLoggerFactory::Config>>
+absl::StatusOr<std::unique_ptr<AuditLoggerFactory::Config>>
 TestAuditLoggerFactory::ParseAuditLoggerConfig(const Json&) {
   return std::make_unique<Config>();
 }
 
 std::unique_ptr<AuditLogger> TestAuditLoggerFactory::CreateAuditLogger(
-    std::shared_ptr<const AuditLoggerFactory::Config>) {
+    std::unique_ptr<AuditLoggerFactory::Config>) {
   return std::make_unique<TestAuditLogger>(audit_logs_);
 }
 
