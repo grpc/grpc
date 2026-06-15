@@ -1207,6 +1207,7 @@ struct FilterConfigList final : public FilterChain {
 class FilterConfigListBuilder final : public FilterChainBuilder {
  public:
   absl::StatusOr<RefCountedPtr<FilterChain>> Build() override {
+    if (filters_ == nullptr) return MakeRefCounted<FilterConfigList>();
     return std::move(filters_);
   }
 
@@ -1263,7 +1264,9 @@ XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
         http_filter_registry.GetFilterForTopLevelType(
             http_filter.config_proto_type);
     GRPC_CHECK_NE(filter_impl, nullptr);
-    config_selector->filter_impls_.push_back(filter_impl);
+    if (!filter_impl->IsTerminalFilter()) {  // Skip router filter.
+      config_selector->filter_impls_.push_back(filter_impl);
+    }
   }
   return config_selector;
 }
