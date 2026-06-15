@@ -1,4 +1,4 @@
-# gRPC C++ Gemini Collaboration Guide
+# gRPC C++ Agents Collaboration Guide
 
 This document outlines conventions and best practices for AI-assisted development in the gRPC C++ codebase.
 

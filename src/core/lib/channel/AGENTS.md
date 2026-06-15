@@ -13,7 +13,7 @@ The channel library is built around a few key abstractions:
 *   **`ChannelStack`**: A `ChannelStack` is a pipeline of channel filters. Each filter in the stack can inspect and modify the call operations that pass through it. The channel stack is a key component of the gRPC architecture, and it provides a flexible and extensible way to add functionality to a channel.
 *   **`ChannelStackBuilder`**: A `ChannelStackBuilder` is used to build a `ChannelStack`. It provides a convenient way to add filters to the stack and to configure the channel.
 *   **`ChannelArgs`**: A `ChannelArgs` is an immutable set of key-value pairs that can be used to configure a channel. Channel args are used to control the behavior of the channel stack and its filters.
-*   **`PromiseBasedFilter`**: A `PromiseBasedFilter` is a new type of channel filter that is based on the [gRPC Core Promise API](../../promise/GEMINI.md). Promise-based filters are designed to be more asynchronous and non-blocking than traditional, callback-based filters.
+*   **`PromiseBasedFilter`**: A `PromiseBasedFilter` is a new type of channel filter that is based on the [gRPC Core Promise API](../../promise/AGENTS.md). Promise-based filters are designed to be more asynchronous and non-blocking than traditional, callback-based filters.
 
 ## Files
 
