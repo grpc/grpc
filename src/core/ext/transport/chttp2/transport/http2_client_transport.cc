@@ -314,6 +314,9 @@ Http2Status Http2ClientTransport::ProcessIncomingFrame(Http2DataFrame&& frame) {
 
 template <typename T>
 Http2Status Http2ClientTransport::ProcessIncomingMetadata(T&& frame) {
+  GRPC_HTTP2_CLIENT_DLOG
+      << "Http2ClientTransport::ProcessIncomingMetadata { stream_id="
+      << frame.stream_id << ", end_headers=" << frame.end_headers << " }";
   ping_manager_->ReceivedDataFrame();
 
   RefCountedPtr<Stream> stream = LookupStream(frame.stream_id);
@@ -366,9 +369,8 @@ Http2Status Http2ClientTransport::ProcessIncomingFrame(
     Http2HeaderFrame&& frame) {
   // https://www.rfc-editor.org/rfc/rfc9113.html#name-headers
   GRPC_HTTP2_CLIENT_DLOG
-      << "Http2ClientTransport::ProcessIncomingFrame(HeaderFrame) { stream_id="
-      << frame.stream_id << ", end_headers=" << frame.end_headers
-      << ", end_stream=" << frame.end_stream << " }";
+      << "Http2ClientTransport::ProcessIncomingFrame(HeaderFrame) end_stream="
+      << frame.end_stream;
   return ProcessIncomingMetadata(std::forward<Http2HeaderFrame>(frame));
 }
 
@@ -587,9 +589,7 @@ Http2Status Http2ClientTransport::ProcessIncomingFrame(
     Http2ContinuationFrame&& frame) {
   // https://www.rfc-editor.org/rfc/rfc9113.html#name-continuation
   GRPC_HTTP2_CLIENT_DLOG
-      << "Http2ClientTransport::ProcessIncomingFrame(ContinuationFrame) { "
-         "stream_id="
-      << frame.stream_id << ", end_headers=" << frame.end_headers << " }";
+      << "Http2ClientTransport::ProcessIncomingFrame(ContinuationFrame)";
   return ProcessIncomingMetadata(std::forward<Http2ContinuationFrame>(frame));
 }
 
@@ -886,14 +886,13 @@ absl::Status Http2ClientTransport::PrepareControlFrames() {
   // 5. Custom gRPC security frame
 
   goaway_manager_.MaybeGetSerializedGoawayFrame(frame_sender);
-  bool should_spawn_security_frame_loop = false;
+  ApplySettingsResult apply_settings_result;
 
   const uint32_t old_initial_window_size =
       settings_->peer().initial_window_size();
-  http2::Http2ErrorCode apply_status =
-      settings_->MaybeReportAndApplyBufferedPeerSettings(
-          event_engine_.get(), should_spawn_security_frame_loop);
-
+  const http2::Http2ErrorCode apply_status =
+      settings_->MaybeReportAndApplyBufferedPeerSettings(event_engine_.get(),
+                                                         apply_settings_result);
   if (apply_status == http2::Http2ErrorCode::kNoError) {
     const uint32_t new_initial_window_size =
         settings_->peer().initial_window_size();
@@ -911,7 +910,7 @@ absl::Status Http2ClientTransport::PrepareControlFrames() {
     }
   }
 
-  if (should_spawn_security_frame_loop) {
+  if (apply_settings_result.should_spawn_security_frame_loop) {
     const SecurityFrameHandler::EndpointExtensionState state =
         security_frame_handler_->Initialize(event_engine_);
     if (state.is_set) {

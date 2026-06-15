@@ -2,7 +2,7 @@
 
 This directory contains an in-process transport implementation for gRPC.
 
-See also: [gRPC Transports overview](../../transport/GEMINI.md)
+See also: [gRPC Transports overview](../../transport/AGENTS.md)
 
 ## Overarching Purpose
 

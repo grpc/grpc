@@ -26,6 +26,7 @@
 #include <string>
 #include <utility>
 
+#include "envoy/config/common/mutation_rules/v3/mutation_rules.upb.h"
 #include "envoy/config/core/v3/address.upb.h"
 #include "envoy/config/core/v3/base.upb.h"
 #include "envoy/extensions/transport_sockets/tls/v3/common.upb.h"
@@ -924,13 +925,15 @@ HeaderMutationRules ParseHeaderMutationRules(
     return {};
   }
   HeaderMutationRules header_mutation_rules_config;
-  header_mutation_rules_config.disallow_all =
+  header_mutation_rules_config.disallow_all = ParseBoolValue(
       envoy_config_common_mutation_rules_v3_HeaderMutationRules_disallow_all(
-          header_mutation_rules);
-  header_mutation_rules_config.disallow_is_error =
+          header_mutation_rules));
+  const google_protobuf_BoolValue* disallow_is_error_proto =
       envoy_config_common_mutation_rules_v3_HeaderMutationRules_disallow_is_error(
           header_mutation_rules);
-  const auto* disallow_expression_proto =
+  header_mutation_rules_config.disallow_is_error =
+      ParseBoolValue(disallow_is_error_proto);
+  const envoy_type_matcher_v3_RegexMatcher* disallow_expression_proto =
       envoy_config_common_mutation_rules_v3_HeaderMutationRules_disallow_expression(
           header_mutation_rules);
   if (disallow_expression_proto != nullptr) {
@@ -939,7 +942,7 @@ HeaderMutationRules ParseHeaderMutationRules(
     header_mutation_rules_config.disallow_expression =
         ParseRegexMatcher(disallow_expression_proto, errors);
   }
-  const auto* allow_expression_proto =
+  const envoy_type_matcher_v3_RegexMatcher* allow_expression_proto =
       envoy_config_common_mutation_rules_v3_HeaderMutationRules_allow_expression(
           header_mutation_rules);
   if (allow_expression_proto != nullptr) {

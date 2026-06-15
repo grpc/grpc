@@ -2,7 +2,7 @@
 
 This directory contains the source code for the gRPC plugin registry.
 
-See also: [gRPC Core overview](../GEMINI.md)
+See also: [gRPC Core overview](../AGENTS.md)
 
 ## Overarching Purpose
 
