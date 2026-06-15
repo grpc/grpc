@@ -31,6 +31,7 @@ DIRS=(
     'test'
     'tools'
     'setup.py'
+    'bazel/update_mirror_helper.py'
 )
 
 VIRTUALENV=".venv-ci-isort"

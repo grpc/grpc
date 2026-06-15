@@ -28,6 +28,7 @@ DIRS=(
     'tools'
     'setup.py'
     'doc/python'
+    'bazel/update_mirror_helper.py'
 )
 
 VIRTUALENV=".venv-ci-black"

@@ -63,20 +63,18 @@ function _upload() {
 # Wrapper of _upload() which handles errors and keep track of stats.
 function upload() {
   local url="$1"
-  local exit_code=0
-  _upload "${url}" || exit_code=$?
-  if [[ "$exit_code" != 0 ]]; then
+  if _upload "${url}"; then
+    success=$((success + 1))
+  else
     echo "Failed to upload url ${url}"
     failure=$((failure + 1))
-  else
-    success=$((success + 1))
   fi
   return 0
 }
 
 function upload_bzlmod_deps {
   tools/bazel mod show_repo --all_repos --output=streamed_jsonproto > ${tmpdir}/repos.ndjson || true
-  bazel/update_mirror_helper.py ${tmpdir}/repos.ndjson ${tmpdir}/repos.txt
+  bazel/update_mirror_helper.py ${tmpdir}/repos.ndjson ${tmpdir}/download-list.txt
   while read -r url; do
       case "$url" in
           *grpc-bazel-mirror*)
@@ -91,7 +89,7 @@ function upload_bzlmod_deps {
             upload "${url}"
             ;;
       esac
-  done < "${tmpdir}/repos.txt"
+  done < "${tmpdir}/download-list.txt"
 }
 
 # How to check that all mirror URLs work:

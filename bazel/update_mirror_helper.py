@@ -13,24 +13,25 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import base64
-import logging
 import json
-import re
+import logging
 import sys
 
 _MIRROR_SITE_PATTERN = "https://storage.googleapis.com/grpc-bazel-mirror"
-_SUPPORTED_RULE_KINDS = ["http_archive", "http_file", "python_repository", "whl_library"]
-_LOGGED_FIELDS = ["repoRuleName", "name", "canonicalName", "apparentName"]
+_SUPPORTED_RULE_KINDS = {
+    "http_archive",
+    "http_file",
+    "python_repository",
+    "whl_library",
+}
+_LOGGED_FIELDS = {"repoRuleName", "name", "canonicalName", "apparentName"}
 logger = logging.getLogger(__name__)
 
+
 def parse_ndjson(file_path):
-    repos = []
-    with open(file_path, "r", encoding="utf-8") as f:
+    with open(file_path, encoding="utf-8") as f:
         for line in f:
-            obj = json.loads(line)
-            repos.append(obj)
-    return repos
+            yield json.loads(line)
 
 def main():
     logging.basicConfig(level=logging.INFO)
@@ -39,9 +40,8 @@ def main():
         sys.exit(1)
     input_path = sys.argv[1]
     output_path = sys.argv[2]
-    repos = parse_ndjson(input_path)
     output_lines = []
-    for repo in repos:
+    for repo in parse_ndjson(input_path):
         if repo["repoRuleName"] not in _SUPPORTED_RULE_KINDS:
             continue
         urls = []
@@ -53,7 +53,9 @@ def main():
 
         logging_data = {k: repo[k] for k in _LOGGED_FIELDS if k in repo}
         logging_data["urls"] = urls
-        logger.debug(f"Processing repo definition: {json.dumps(logging_data, indent=4)}")
+        logger.debug(
+            f"Processing repo definition: {json.dumps(logging_data, indent=4)}"
+        )
         for url in urls:
             if _MIRROR_SITE_PATTERN not in url:
                 output_lines.append(f"{url.removeprefix('https://')}")
@@ -61,5 +63,6 @@ def main():
     with open(output_path, "w") as file:
         contents = file.write(output)
 
+
 if __name__ == "__main__":
-  main()
+    main()
