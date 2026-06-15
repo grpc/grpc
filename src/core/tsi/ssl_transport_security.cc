@@ -188,6 +188,20 @@ struct HandshakerNextArgs {
   tsi_handshaker_result* handshaker_result = nullptr;
 };
 
+struct tsi_ssl_handshaker_result {
+  tsi_handshaker_result base;
+  SSL* ssl;
+  BIO* network_io;
+  unsigned char* unused_bytes;
+  size_t unused_bytes_size;
+};
+
+struct SslHandshakeResult {
+  tsi_result result;
+  int ssl_error = SSL_ERROR_NONE;
+  unsigned long err_code = 0;
+};
+
 struct tsi_ssl_handshaker : public tsi_handshaker,
                             public grpc_core::RefCounted<tsi_ssl_handshaker> {
   tsi_ssl_handshaker() = default;
@@ -226,6 +240,9 @@ struct tsi_ssl_handshaker : public tsi_handshaker,
   void RecordTelemetry(tsi_result status, int ssl_error = SSL_ERROR_NONE,
                        unsigned long err_code = 0)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(&mu);
+  void MaybeRecordTelemetry(const SslHandshakeResult& handshake_result,
+                            bool handshaker_result_created)
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(&mu);
 
 #if defined(OPENSSL_IS_BORINGSSL)
   std::shared_ptr<grpc_core::PrivateKeySigner> key_signer;
@@ -239,6 +256,24 @@ struct tsi_ssl_handshaker : public tsi_handshaker,
 #endif
 };
 
+void tsi_ssl_handshaker::MaybeRecordTelemetry(
+    const SslHandshakeResult& handshake_result,
+    bool handshaker_result_created) {
+  if (handshake_result.result == TSI_ASYNC ||
+      handshake_result.result == TSI_INCOMPLETE_DATA ||
+      handshake_result.result == TSI_DRAIN_BUFFER) {
+    return;
+  }
+  if (handshake_result.result == TSI_OK) {
+    if (handshaker_result_created) {
+      RecordTelemetry(TSI_OK);
+    }
+  } else {
+    RecordTelemetry(handshake_result.result, handshake_result.ssl_error,
+                    handshake_result.err_code);
+  }
+}
+
 void tsi_ssl_handshaker::RecordTelemetry(tsi_result status, int ssl_error,
                                          unsigned long err_code) {
   if (status == TSI_ASYNC || status == TSI_INCOMPLETE_DATA ||
@@ -248,15 +283,24 @@ void tsi_ssl_handshaker::RecordTelemetry(tsi_result status, int ssl_error,
   if (metric_recorded) return;
   metric_recorded = true;
 
-  std::string resumed = ssl == nullptr            ? "unknown"
-                        : SSL_session_reused(ssl) ? "true"
-                                                  : "false";
+  SSL* active_ssl = ssl;
+  if (active_ssl == nullptr && handshaker_next_args.has_value() &&
+      handshaker_next_args->handshaker_result != nullptr) {
+    auto* res = reinterpret_cast<tsi_ssl_handshaker_result*>(
+        handshaker_next_args->handshaker_result);
+    active_ssl = res->ssl;
+  }
+
+  std::string resumed = active_ssl == nullptr            ? "unknown"
+                        : SSL_session_reused(active_ssl) ? "true"
+                                                         : "false";
 
   grpc_core::TlsTelemetryHandshakeResult result;
   if (status == TSI_OK) {
     result = grpc_core::TlsTelemetryHandshakeResult::kSuccess;
   } else {
-    long verify_res = ssl != nullptr ? SSL_get_verify_result(ssl) : X509_V_OK;
+    long verify_res =
+        active_ssl != nullptr ? SSL_get_verify_result(active_ssl) : X509_V_OK;
     result = grpc_core::MapSslErrorToTlsTelemetryHandshakeResult(
         ssl_error, err_code, verify_res);
   }
@@ -282,13 +326,6 @@ static std::pair<tsi_result, std::optional<HandshakerNextArgs>>
 ssl_handshaker_next_async(tsi_ssl_handshaker* self)
     ABSL_EXCLUSIVE_LOCKS_REQUIRED(&tsi_ssl_handshaker::mu);
 
-struct tsi_ssl_handshaker_result {
-  tsi_handshaker_result base;
-  SSL* ssl;
-  BIO* network_io;
-  unsigned char* unused_bytes;
-  size_t unused_bytes_size;
-};
 struct tsi_ssl_frame_protector {
   tsi_frame_protector base;
   SSL* ssl;
@@ -2174,12 +2211,6 @@ static tsi_result ssl_handshaker_get_result(tsi_ssl_handshaker* impl) {
   return impl->result;
 }
 
-struct SslHandshakeResult {
-  tsi_result result;
-  int ssl_error = SSL_ERROR_NONE;
-  unsigned long err_code = 0;
-};
-
 static SslHandshakeResult ssl_handshaker_do_handshake(tsi_ssl_handshaker* impl)
     ABSL_EXCLUSIVE_LOCKS_REQUIRED(&tsi_ssl_handshaker::mu) {
   if (ssl_handshaker_get_result(impl) != TSI_HANDSHAKE_IN_PROGRESS) {
@@ -2318,10 +2349,10 @@ static tsi_result ssl_handshaker_write_output_buffer(tsi_ssl_handshaker* impl,
   return status;
 }
 
-static tsi_result ssl_handshaker_next_impl(tsi_ssl_handshaker* self)
+static SslHandshakeResult ssl_handshaker_next_impl(tsi_ssl_handshaker* self)
     ABSL_EXCLUSIVE_LOCKS_REQUIRED(&tsi_ssl_handshaker::mu) {
   // If there are received bytes, process them first.
-  SslHandshakeResult hs_result = {TSI_OK, SSL_ERROR_NONE, 0};
+  SslHandshakeResult handshake_result = {TSI_OK, SSL_ERROR_NONE, 0};
   size_t bytes_written = 0;
   if (!self->handshaker_next_args->received_bytes.empty()) {
     size_t received_bytes_size =
@@ -2332,25 +2363,25 @@ static tsi_result ssl_handshaker_next_impl(tsi_ssl_handshaker* self)
     size_t remaining_bytes_to_write_to_openssl_size = received_bytes_size;
     size_t number_bio_write_attempts = 0;
     while (remaining_bytes_to_write_to_openssl_size > 0 &&
-           (hs_result.result == TSI_OK ||
-            hs_result.result == TSI_INCOMPLETE_DATA) &&
+           (handshake_result.result == TSI_OK ||
+            handshake_result.result == TSI_INCOMPLETE_DATA) &&
            number_bio_write_attempts < TSI_SSL_MAX_BIO_WRITE_ATTEMPTS) {
       ++number_bio_write_attempts;
       // Try to write all of the remaining bytes to the BIO.
       size_t bytes_written_to_openssl =
           remaining_bytes_to_write_to_openssl_size;
-      hs_result = ssl_handshaker_process_bytes_from_peer(
+      handshake_result = ssl_handshaker_process_bytes_from_peer(
           self, remaining_bytes_to_write_to_openssl, &bytes_written_to_openssl);
       // As long as the BIO is full, drive the SSL handshake to consume bytes
       // from the BIO. If the SSL handshake returns any bytes, write them to
       // the peer.
-      while (hs_result.result == TSI_DRAIN_BUFFER) {
+      while (handshake_result.result == TSI_DRAIN_BUFFER) {
         tsi_result status =
             ssl_handshaker_write_output_buffer(self, &bytes_written);
         if (status != TSI_OK) {
-          return status;
+          return {status, SSL_ERROR_NONE, 0};
         }
-        hs_result = ssl_handshaker_do_handshake(self);
+        handshake_result = ssl_handshaker_do_handshake(self);
       }
       // Move the pointer to the first byte not yet successfully written to
       // the BIO.
@@ -2373,20 +2404,17 @@ static tsi_result ssl_handshaker_next_impl(tsi_ssl_handshaker* self)
     // During the PrivateKeyOffload signature, an empty call to
     // ssl_handshaker_do_handshake needs to be forced  after the async offload
     // has completed.
-    hs_result = ssl_handshaker_do_handshake(self);
+    handshake_result = ssl_handshaker_do_handshake(self);
 #endif
   }
 
-  if (hs_result.result != TSI_OK) {
-    self->RecordTelemetry(hs_result.result, hs_result.ssl_error,
-                          hs_result.err_code);
-    return hs_result.result;
+  if (handshake_result.result != TSI_OK) {
+    return handshake_result;
   }
-  tsi_result status =
-      ssl_handshaker_write_output_buffer(self, &bytes_written);
+  // Get bytes to send to the peer, if available.
+  tsi_result status = ssl_handshaker_write_output_buffer(self, &bytes_written);
   if (status != TSI_OK) {
-    self->RecordTelemetry(status);
-    return status;
+    return {status, SSL_ERROR_NONE, 0};
   }
   self->handshaker_next_args->bytes_to_send = self->outgoing_bytes_buffer;
   self->handshaker_next_args->bytes_to_send_size = bytes_written;
@@ -2402,21 +2430,18 @@ static tsi_result ssl_handshaker_next_impl(tsi_ssl_handshaker* self)
     size_t unused_bytes_size = 0;
     status = ssl_bytes_remaining(self, &unused_bytes, &unused_bytes_size);
     if (status != TSI_OK) {
-      self->RecordTelemetry(status);
-      return status;
+      return {status, SSL_ERROR_NONE, 0};
     }
     if (unused_bytes_size >
         self->handshaker_next_args->original_received_bytes_size) {
       LOG(ERROR) << "More unused bytes than received bytes.";
       gpr_free(unused_bytes);
       self->MaybeSetError("More unused bytes than received bytes.");
-      self->RecordTelemetry(TSI_INTERNAL_ERROR);
-      return TSI_INTERNAL_ERROR;
+      return {TSI_INTERNAL_ERROR, SSL_ERROR_NONE, 0};
     }
     status =
         ssl_handshaker_result_create(self, unused_bytes, unused_bytes_size);
     if (status == TSI_OK) {
-      self->RecordTelemetry(TSI_OK);
       // Indicates that the handshake has completed and that a
       // handshaker_result has been created.
       self->handshaker_result_created = true;
@@ -2432,11 +2457,10 @@ static tsi_result ssl_handshaker_next_impl(tsi_ssl_handshaker* self)
               SSL_CIPHER_get_name(cipher));
         }
       }
-    } else {
-      self->RecordTelemetry(status);
     }
+    return {status, SSL_ERROR_NONE, 0};
   }
-  return status;
+  return {status, SSL_ERROR_NONE, 0};
 }
 
 // Wrapper for ssl_handshaker_next_impl() when called from an async callback.
@@ -2447,13 +2471,16 @@ ssl_handshaker_next_async(tsi_ssl_handshaker* self)
   if (self->is_shutdown || !self->handshaker_next_args.has_value()) {
     return {TSI_HANDSHAKE_SHUTDOWN, std::nullopt};
   }
-  tsi_result result = ssl_handshaker_next_impl(self);
-  if (result != TSI_ASYNC) {
+  SslHandshakeResult handshake_result = ssl_handshaker_next_impl(self);
+  self->MaybeRecordTelemetry(
+      handshake_result,
+      self->handshaker_next_args->handshaker_result != nullptr);
+  if (handshake_result.result != TSI_ASYNC) {
     // We now have a result to return to the caller via the callback.
     std::optional<HandshakerNextArgs> args =
         std::move(self->handshaker_next_args);
     self->handshaker_next_args.reset();
-    return {result, std::move(args)};
+    return {handshake_result.result, std::move(args)};
   }
   return {TSI_ASYNC, std::nullopt};
 }
@@ -2489,15 +2516,18 @@ static tsi_result ssl_handshaker_next(
   impl->handshaker_next_args->user_data = user_data;
   impl->handshaker_next_args->error_ptr = error;
   // Now do the actual work.
-  tsi_result result = ssl_handshaker_next_impl(impl);
+  SslHandshakeResult handshake_result = ssl_handshaker_next_impl(impl);
   // If returning synchronously, propagate output and clear args.
-  if (result != TSI_ASYNC) {
+  if (handshake_result.result != TSI_ASYNC) {
     *bytes_to_send = impl->handshaker_next_args->bytes_to_send;
     *bytes_to_send_size = impl->handshaker_next_args->bytes_to_send_size;
     *handshaker_result = impl->handshaker_next_args->handshaker_result;
+  }
+  impl->MaybeRecordTelemetry(handshake_result, *handshaker_result != nullptr);
+  if (handshake_result.result != TSI_ASYNC) {
     impl->handshaker_next_args.reset();
   }
-  return result;
+  return handshake_result.result;
 }
 
 static void ssl_handshaker_shutdown(tsi_handshaker* self) {
