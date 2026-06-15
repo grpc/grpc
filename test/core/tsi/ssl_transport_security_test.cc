@@ -1524,7 +1524,6 @@ TEST_P(SslTransportSecurityTest, TestKeyExchangeGroupMismatch) {
   DoHandshake();
 }
 
-<<<<<<< HEAD
 class TestMetricsSink : public MetricsSink {
  public:
   struct EmittedPoint {
@@ -1690,7 +1689,6 @@ TEST_P(SslTransportSecurityTest, TestFailedServerHandshakeMetricsIncremented) {
       "CERTIFICATE_AUTHORITY_INVALID");
 }
 #endif
-=======
 #if defined(OPENSSL_IS_BORINGSSL)
 TEST_P(SslTransportSecurityTest,
        SuccessfulHandshakeServerSpecifiesX25519Mlkem768) {
@@ -1764,7 +1762,6 @@ TEST_P(SslTransportSecurityTest, SuccessfulHandshakeClientSpecifiesP256) {
 }
 
 #endif  // OPENSSL_VERSION_NUMBER >= 0x10101000L
->>>>>>> master
 
 }  // namespace
 }  // namespace testing
