@@ -2382,8 +2382,7 @@ static tsi_result ssl_handshaker_next_impl(tsi_ssl_handshaker* self)
                           hs_result.err_code);
     return hs_result.result;
   }
-  tsi_result status =
-      ssl_handshaker_write_output_buffer(self, &bytes_written);
+  tsi_result status = ssl_handshaker_write_output_buffer(self, &bytes_written);
   if (status != TSI_OK) {
     self->RecordTelemetry(status);
     return status;
