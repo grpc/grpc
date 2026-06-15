@@ -848,12 +848,12 @@ HeaderMutationRules ParseHeaderMutationRules(
     return {};
   }
   HeaderMutationRules header_mutation_rules_config;
-  header_mutation_rules_config.disallow_all =
+  header_mutation_rules_config.disallow_all = ParseBoolValue(
       envoy_config_common_mutation_rules_v3_HeaderMutationRules_disallow_all(
-          header_mutation_rules);
-  header_mutation_rules_config.disallow_is_error =
+          header_mutation_rules));
+  header_mutation_rules_config.disallow_is_error = ParseBoolValue(
       envoy_config_common_mutation_rules_v3_HeaderMutationRules_disallow_is_error(
-          header_mutation_rules);
+          header_mutation_rules));
   const auto* disallow_expression_proto =
       envoy_config_common_mutation_rules_v3_HeaderMutationRules_disallow_expression(
           header_mutation_rules);

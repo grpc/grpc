@@ -155,7 +155,7 @@ absl::StatusOr<ExtProcResponse::HeaderMutation> ParseHeaderMutation(
     ValidationErrors errors;
     auto parsed = ParseXdsHeaderValueOption(set_headers[i], &errors);
     if (!errors.ok()) {
-      return errors.status(absl::StatusCode::kInvalidArgument,
+      return errors.status(absl::StatusCode::kInternal,
                            "validation failed");
     }
     header_mutation_response.set_headers.push_back(std::move(parsed));
@@ -649,7 +649,8 @@ std::string CreateExtProcRequest(
 
 ::google_protobuf_Struct* ParseAttributes(
     upb_Arena* arena, const std::vector<std::string>& attributes,
-    const grpc_metadata_batch& metadata) {
+    const grpc_metadata_batch& metadata,
+    absl::string_view default_authority) {
   if (attributes.empty()) return nullptr;
   ::google_protobuf_Struct* struct_msg = google_protobuf_Struct_new(arena);
   auto add_field = [&](absl::string_view name, absl::string_view value) {
@@ -675,6 +676,8 @@ std::string CreateExtProcRequest(
         add_field(attr, auth->as_string_view());
       } else if (const Slice* host = metadata.get_pointer(HostMetadata())) {
         add_field(attr, host->as_string_view());
+      } else if (!default_authority.empty()) {
+        add_field(attr, default_authority);
       }
     } else if (attr == "request.method") {
       if (auto* method = metadata.get_pointer(HttpMethodMetadata())) {

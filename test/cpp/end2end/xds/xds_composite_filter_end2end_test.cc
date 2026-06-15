@@ -31,6 +31,7 @@
 #include "src/core/client_channel/backup_poller.h"
 #include "src/core/config/config_vars.h"
 #include "src/core/lib/channel/promise_based_filter.h"
+#include "src/core/lib/experiments/config.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/util/json/json_object_loader.h"
 #include "src/core/xds/grpc/xds_http_filter.h"
@@ -326,6 +327,7 @@ int main(int argc, char** argv) {
   grpc_core::ConfigVars::Overrides overrides;
   overrides.client_channel_backup_poll_interval_ms = 1;
   grpc_core::ConfigVars::SetOverrides(overrides);
+  grpc_core::ForceEnableExperiment("v2_non_owning_waker_implementation", true);
   grpc_init();
   const auto result = RUN_ALL_TESTS();
   grpc_shutdown();

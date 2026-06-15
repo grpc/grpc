@@ -1262,11 +1262,12 @@ class V3InterceptorToV2Bridge : public ChannelFilter, public Interceptor {
     // passed to the v3 interceptor.  The interceptor will wind up returning
     // a handler to us via state->call_handler_latch, which will represent
     // the server side of the v3 interceptor.
-    auto [initiator, unstarted_handler] =
+    auto call_pair =
         MakeCallPair(std::move(call_args.client_initial_metadata),
                      GetContext<Arena>()->Ref());
+    auto initiator = call_pair.initiator;
     // Inject the unstarted handler into the interceptor.
-    StartCall(std::move(unstarted_handler));
+    StartCall(std::move(call_pair.handler));
     // We need inter-activity mechanisms to move data between the v2 and v3
     // activities.
     struct PipeOwner {
@@ -1275,14 +1276,24 @@ class V3InterceptorToV2Bridge : public ChannelFilter, public Interceptor {
       InterActivityLatch<std::optional<ServerMetadataHandle>>
           server_initial_metadata;
       InterActivityPipe<MessageHandle, 1> server_to_client_messages;
+      InterActivityLatch<ServerMetadataHandle> server_trailing_metadata;
     };
     auto* pipe_owner = GetContext<Arena>()->ManagedNew<PipeOwner>();
+    initiator.SpawnInfallible(
+        "bridge_trailing_metadata",
+        [initiator, pipe_owner]() mutable {
+          return Map(initiator.PullServerTrailingMetadata(),
+                     [pipe_owner](ServerMetadataHandle md) {
+                       pipe_owner->server_trailing_metadata.Set(std::move(md));
+                       return Empty{};
+                     });
+        });
     // Now return a promise that does all the things.
     return Race(
         // We need to start polling the initiator for server trailing
         // metadata immediately, since the v3 interceptor may generate a
         // failure before any of the other promises resolve.
-        initiator.PullServerTrailingMetadata(),
+        pipe_owner->server_trailing_metadata.Wait(),
         // This promise does the rest of the things, but it will always
         // return pending, because the promise can't actually finish
         // until the initiator returns trailing metadata above.

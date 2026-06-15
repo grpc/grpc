@@ -83,7 +83,8 @@ struct ExtProcResponse {
 
 ::google_protobuf_Struct* ParseAttributes(
     upb_Arena* arena, const std::vector<std::string>& requested_attributes,
-    const grpc_metadata_batch& metadata);
+    const grpc_metadata_batch& metadata,
+    absl::string_view default_authority = "");
 
 absl::StatusOr<ExtProcResponse> ParseExtProcResponse(
     const envoy_service_ext_proc_v3_ProcessingResponse* response,

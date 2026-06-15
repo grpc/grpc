@@ -172,6 +172,13 @@ class ExtProcFilter final : public V3InterceptorToV2Bridge<ExtProcFilter> {
 
     ExtProcChannel* channel() const { return channel_.get(); }
 
+    bool TestAndSetIsFirstMessage() {
+      MutexLock lock(&mu_);
+      bool first = is_first_message_;
+      is_first_message_ = false;
+      return first;
+    }
+
     InterActivityLatch<absl::StatusOr<ExtProcResponse>> request_headers_latch_;
     InterActivityLatch<absl::StatusOr<ExtProcResponse>> response_headers_latch_;
     InterActivityLatch<absl::StatusOr<ExtProcResponse>>
@@ -222,20 +229,21 @@ class ExtProcFilter final : public V3InterceptorToV2Bridge<ExtProcFilter> {
     ProcessingMode processing_mode_;
     Duration deferred_close_timeout_;
     bool orphaned_ ABSL_GUARDED_BY(&mu_) = false;
-    bool stream_closed_ ABSL_GUARDED_BY(&mu_) = false;
-    bool client_sends_done_ ABSL_GUARDED_BY(&mu_) = false;
+    bool is_first_message_ ABSL_GUARDED_BY(&mu_) = true;
   };
   void Orphaned() override {}
 
   void InterceptCall(UnstartedCallHandler unstarted_call_handler) override;
 
-  auto ServerToClient(CallHandler handler, CallInitiator initiator);
-  auto ClientToServerMessage(CallHandler handler, CallInitiator initiator);
+  auto ServerToClient(CallHandler handler, CallInitiator initiator,
+                      RefCountedPtr<ExtProcCall> ext_proc_call);
+  auto ClientToServerMessage(CallHandler handler, CallInitiator initiator,
+                             RefCountedPtr<ExtProcCall> ext_proc_call);
 
   RefCountedPtr<XdsTransportFactory> transport_factory_;
   RefCountedPtr<const Config> config_;
   RefCountedPtr<ExtProcChannel> channel_;
-  upb_Arena* arena_;
+  Slice default_authority_;
 };
 
 }  // namespace grpc_core
