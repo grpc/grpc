@@ -6800,6 +6800,7 @@ grpc_cc_library(
         "absl/strings",
     ],
     deps = [
+        "blackboard",
         "channel_args",
         "channel_args_preconditioning",
         "channel_fwd",
