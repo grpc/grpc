@@ -5725,6 +5725,7 @@ grpc_cc_library(
         "latch",
         "map",
         "message",
+        "metadata",
         "metadata_batch",
         "pipe",
         "seq",
