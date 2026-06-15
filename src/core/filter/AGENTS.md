@@ -2,7 +2,7 @@
 
 This directory contains the fundamental building blocks for the gRPC channel filter mechanism.
 
-See also: [gRPC Core overview](../GEMINI.md)
+See also: [gRPC Core overview](../AGENTS.md)
 
 ## Overarching Purpose
 
@@ -23,5 +23,5 @@ The code in this directory provides the infrastructure for creating, composing, 
 
 *   The filter mechanism is a powerful tool for extending gRPC's functionality. It's used to implement features like authentication, retry, and compression.
 *   Filters are arranged in a stack, and each filter can pass the RPC on to the next filter in the stack, or it can terminate the RPC.
-*   Filters are used in both client and server channel stacks. See `../client_channel/GEMINI.md` and `../server/GEMINI.md` for more details about how filters are used in those stacks.
-*   Filters are registered with the `CoreConfiguration`. See `../config/GEMINI.md` for more details about how the `CoreConfiguration` works.
+*   Filters are used in both client and server channel stacks. See `../client_channel/AGENTS.md` and `../server/AGENTS.md` for more details about how filters are used in those stacks.
+*   Filters are registered with the `CoreConfiguration`. See `../config/AGENTS.md` for more details about how the `CoreConfiguration` works.

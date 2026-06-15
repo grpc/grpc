@@ -2,11 +2,11 @@
 
 This directory contains a legacy implementation of the "Chaotic Good" transport.
 
-See also: [gRPC Transports overview](../GEMINI.md)
+See also: [gRPC Transports overview](../AGENTS.md)
 
 ## Overarching Purpose
 
-This directory contains an older implementation of the "Chaotic Good" transport. It's currently the default used by many applications, and is being transitioned away from to the new implementation found in the [`chaotic_good`](../chaotic_good/GEMINI.md) directory.
+This directory contains an older implementation of the "Chaotic Good" transport. It's currently the default used by many applications, and is being transitioned away from to the new implementation found in the [`chaotic_good`](../chaotic_good/AGENTS.md) directory.
 
 ## Files
 

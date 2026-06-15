@@ -2,7 +2,7 @@
 
 This directory contains the implementation of gRPC's service config feature, which allows for per-service and per-method configuration of a gRPC channel.
 
-See also: [gRPC Core overview](../GEMINI.md)
+See also: [gRPC Core overview](../AGENTS.md)
 
 ## Overarching Purpose
 
@@ -28,7 +28,7 @@ The code in this directory provides a mechanism for parsing and applying service
 
 ## Notes
 
-*   Service configs are typically provided by the name resolver (see [`../resolver/GEMINI.md`](../resolver/GEMINI.md)).
-*   Service configs can also be delivered via xDS (see [`../xds/GEMINI.md`](../xds/GEMINI.md)).
+*   Service configs are typically provided by the name resolver (see [`../resolver/AGENTS.md`](../resolver/AGENTS.md)).
+*   Service configs can also be delivered via xDS (see [`../xds/AGENTS.md`](../xds/AGENTS.md)).
 *   The service config is a powerful feature that allows for a great deal of flexibility in configuring gRPC channels.
-*   The service config is used to configure load balancing (see [`../load_balancing/GEMINI.md`](../load_balancing/GEMINI.md)).
+*   The service config is used to configure load balancing (see [`../load_balancing/AGENTS.md`](../load_balancing/AGENTS.md)).

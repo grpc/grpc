@@ -2,7 +2,7 @@
 
 *   This directory contains common implementation details, abstractions, and utilities shared across various gRPC transport implementations (such as CHTTP2, PH2, Inproc, and Chaotic Good).
 
-See also: [gRPC Transports overview](../../transport/GEMINI.md)
+See also: [gRPC Transports overview](../../transport/AGENTS.md)
 
 ## Overarching Purpose
 
