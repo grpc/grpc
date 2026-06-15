@@ -13,7 +13,7 @@
 # limitations under the License.
 
 #
-# This is for the gRPC build system. This isn't intended to be used outsite of
+# This is for the gRPC build system. This isn't intended to be used outside of
 # the BUILD file for gRPC. It contains the mapping for the template system we
 # use to generate other platform's build system files.
 #
@@ -31,7 +31,8 @@ load("@build_bazel_apple_support//rules:universal_binary.bzl", "universal_binary
 load("@build_bazel_rules_apple//apple:ios.bzl", "ios_unit_test")
 load("@build_bazel_rules_apple//apple/testing/default_runner:ios_test_runner.bzl", "ios_test_runner")
 load("@com_google_protobuf//bazel:cc_proto_library.bzl", "cc_proto_library")
-load("@com_google_protobuf//bazel:upb_proto_library.bzl", "upb_proto_library", "upb_proto_reflection_library")
+load("@com_google_protobuf//bazel:upb_c_proto_library.bzl", "upb_c_proto_library")
+load("@com_google_protobuf//bazel:upb_proto_reflection_library.bzl", "upb_proto_reflection_library")
 load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
 load("@rules_cc//cc:cc_test.bzl", "cc_test")
@@ -889,7 +890,7 @@ def grpc_objc_library(
     )
 
 def grpc_upb_proto_library(name, deps):
-    upb_proto_library(name = name, deps = deps)
+    upb_c_proto_library(name = name, deps = deps)
 
 def grpc_upb_proto_reflection_library(name, deps):
     upb_proto_reflection_library(name = name, deps = deps)

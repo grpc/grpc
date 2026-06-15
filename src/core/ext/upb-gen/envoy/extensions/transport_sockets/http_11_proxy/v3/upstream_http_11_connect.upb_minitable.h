@@ -19,7 +19,6 @@ extern "C" {
 #endif
 
 extern const upb_MiniTable envoy__extensions__transport_0sockets__http_011_0proxy__v3__Http11ProxyUpstreamTransport_msg_init;
-extern const upb_MiniTable* envoy__extensions__transport_0sockets__http_011_0proxy__v3__Http11ProxyUpstreamTransport_msg_init_ptr;
 
 extern const upb_MiniTableFile envoy_extensions_transport_sockets_http_11_proxy_v3_upstream_http_11_connect_proto_upb_file_layout;
 

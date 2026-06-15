@@ -315,7 +315,7 @@ FlowControlAction TransportFlowControl::PeriodicUpdate() {
                         Http2Settings::max_max_frame_size()),
                   &action, &FlowControlAction::set_send_max_frame_size_update);
 
-    if (IsTcpFrameSizeTuningEnabled()) {
+    if (IsTcpFrameSizeTuningEnabled() && ph2_enable_rx_crypto_) {
       // Advertise PREFERRED_RECEIVE_CRYPTO_FRAME_SIZE to peer. By advertising
       // PREFERRED_RECEIVE_CRYPTO_FRAME_SIZE to the peer, we are informing the
       // peer that we have tcp frame size tuning enabled and we inform it of our

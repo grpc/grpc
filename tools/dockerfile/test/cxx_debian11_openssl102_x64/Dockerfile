@@ -121,7 +121,7 @@ RUN mkdir /var/local/jenkins
 # Install openssl 1.0.2 from source
 RUN apt-get update && apt-get install -y build-essential zlib1g-dev
 RUN cd /tmp && \
-    wget --no-check-certificate https://www.openssl.org/source/old/1.0.2/openssl-1.0.2u.tar.gz && \
+    wget --no-check-certificate https://www.openssl.org/source/openssl-1.0.2u.tar.gz && \
     tar -xf openssl-1.0.2u.tar.gz && \
     cd openssl-1.0.2u && \
     ./config --prefix=/usr/local/ssl --openssldir=/usr/local/ssl shared zlib && \

@@ -70,19 +70,30 @@ RUN mkdir /var/local/jenkins
 # to be installed before Python.
 RUN apt-get update && apt-get install -y libsqlite3-dev
 
-# 3.9 is the default python3 version on debian11
-RUN apt-get update && apt-get install -y python3.9 python3.9-dev python3-pip
+#=================
+# Compile CPython 3.10.3 from source
 
-# for Python test coverage reporting
-RUN python3.9 -m pip install coverage
+RUN apt-get update && apt-get install -y zlib1g-dev libssl-dev libsqlite3-dev && apt-get clean
+RUN apt-get update && apt-get install -y jq build-essential libffi-dev && apt-get clean
 
-# six is required by the run_tests.py test harness
-RUN python3.9 -m pip install six
+RUN cd /tmp && \
+    wget -q https://www.python.org/ftp/python/3.10.3/Python-3.10.3.tgz && \
+    tar xzvf Python-3.10.3.tgz && \
+    cd Python-3.10.3 && \
+    ./configure && \
+    make -j4 && \
+    make install
 
-# Google Cloud Platform API libraries
-# These are needed for uploading test results to BigQuery (e.g. by tools/run_tests scripts)
-RUN python3 -m pip install --upgrade google-auth==1.23.0 google-api-python-client==1.12.8 oauth2client==4.1.0
+RUN cd /tmp && \
+    echo "f276ffcd05bccafe46da023d0a5bb04a Python-3.10.3.tgz" > checksum.md5 && \
+    md5sum -c checksum.md5
 
+RUN python3.10 -m ensurepip && \
+    python3.10 -m pip install coverage
+
+
+# TODO(sergiitk):  Should we updating gcp_api_libraries.include instead?
+RUN python3.10 -m pip install --upgrade google-auth==1.23.0 google-api-python-client==1.12.8 oauth2client==4.1.0
 
 #=================
 # Install cmake

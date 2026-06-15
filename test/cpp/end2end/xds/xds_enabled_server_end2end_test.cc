@@ -887,7 +887,8 @@ TEST_P(XdsServerRdsTest, FailsRouteMatchesOtherThanNonForwardingAction) {
   // The server should be ready to serve but RPCs should fail.
   ASSERT_TRUE(backends_[0]->WaitOnServingStatusChange(grpc::StatusCode::OK));
   CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE,
-                      "UNAVAILABLE:matching route has unsupported action");
+                      "UNAVAILABLE:matching route has unsupported action",
+                      RpcOptions().set_wait_for_ready(true));
 }
 
 // Test that non-inline route configuration also works for non-default filter
@@ -928,7 +929,8 @@ TEST_P(XdsServerRdsTest, NonInlineRouteConfigurationNotAvailable) {
   ASSERT_TRUE(backends_[0]->WaitOnServingStatusChange(grpc::StatusCode::OK));
   CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE,
                       "RDS resource unknown_server_route_config: "
-                      "does not exist \\(node ID:xds_end2end_test\\)");
+                      "does not exist \\(node ID:xds_end2end_test\\)",
+                      RpcOptions().set_wait_for_ready(true));
 }
 
 // TODO(yashykt): Once https://github.com/grpc/grpc/issues/24035 is fixed, we
