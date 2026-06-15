@@ -2,7 +2,7 @@
 
 This directory contains the implementation of gRPC's load balancing framework.
 
-See also: [gRPC Client Channel overview](../client_channel/GEMINI.md)
+See also: [gRPC Client Channel overview](../client_channel/AGENTS.md)
 
 ## Overarching Purpose
 
@@ -26,7 +26,7 @@ gRPC comes with a number of built-in load balancing policies, each of which is i
 *   **`weighted_round_robin`**: A more advanced version of round-robin that takes into account the weights of the different backends.
 *   **`ring_hash`**: This policy uses a consistent hashing algorithm to distribute RPCs across the backends. This is useful for session affinity, as it ensures that all RPCs for a given session are sent to the same backend.
 *   **`grpclb`**: This policy uses an external load balancer to make load balancing decisions. The external load balancer is typically a separate process that is running on the same machine as the gRPC client.
-*   **`xds`**: This policy uses the xDS protocol to configure load balancing. xDS is a set of APIs that are used to configure service discovery, load balancing, and other features in a service mesh. See the [xDS documentation](../xds/GEMINI.md) for more details.
+*   **`xds`**: This policy uses the xDS protocol to configure load balancing. xDS is a set of APIs that are used to configure service discovery, load balancing, and other features in a service mesh. See the [xDS documentation](../xds/AGENTS.md) for more details.
 *   **`rls`**: Route Lookup Service. This policy uses a separate service to determine the route for each RPC.
 
 ## Files
@@ -41,5 +41,5 @@ gRPC comes with a number of built-in load balancing policies, each of which is i
 ## Notes
 
 *   gRPC's load balancing framework is highly extensible. New load balancing policies can be added by implementing the `LoadBalancingPolicy` and `LoadBalancingPolicyFactory` interfaces and registering the factory with the `LoadBalancingPolicyRegistry`.
-*   The load balancing policy is chosen based on the service config, which can be provided by the [resolver](../resolver/GEMINI.md).
-*   Load balancing is primarily used in the client channel. See the [client channel documentation](../client_channel/GEMINI.md) for more details.
+*   The load balancing policy is chosen based on the service config, which can be provided by the [resolver](../resolver/AGENTS.md).
+*   Load balancing is primarily used in the client channel. See the [client channel documentation](../client_channel/AGENTS.md) for more details.

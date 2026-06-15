@@ -677,7 +677,7 @@ class Http2ServerTransport final : public ServerTransport,
 
   RefCountedPtr<UnstartedCallDestination> call_destination_;
 
-  RefCountedPtr<Party> general_party_;  // Refer Gemini.md for party slot usage
+  RefCountedPtr<Party> general_party_;  // Refer AGENTS.md for party slot usage
   std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_;
 
   PromiseEndpoint endpoint_;

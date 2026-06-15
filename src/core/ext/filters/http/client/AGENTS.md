@@ -2,7 +2,7 @@
 
 This directory contains a client-side filter for setting HTTP/2 pseudo-headers.
 
-See also: [gRPC HTTP Filters overview](../GEMINI.md)
+See also: [gRPC HTTP Filters overview](../AGENTS.md)
 
 ## Overarching Purpose
 

@@ -2,7 +2,7 @@
 
 This directory contains the implementation of the gRPC I/O manager, a platform-abstraction layer for I/O and threading.
 
-**NOTE:** The I/O manager is a legacy component that is being replaced by the [Event Engine](../event_engine/GEMINI.md). New code should use the Event Engine instead of the I/O manager.
+**NOTE:** The I/O manager is a legacy component that is being replaced by the [Event Engine](../event_engine/AGENTS.md). New code should use the Event Engine instead of the I/O manager.
 
 ## Overarching Purpose
 

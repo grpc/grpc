@@ -2,7 +2,7 @@
 
 This directory contains the implementation of a new, experimental gRPC transport called "Chaotic Good".
 
-See also: [gRPC Transports overview](../transport/GEMINI.md)
+See also: [gRPC Transports overview](../transport/AGENTS.md)
 
 ## Overarching Purpose
 
@@ -14,7 +14,7 @@ See also: [gRPC Transports directory](../)
 The "Chaotic Good" transport is built around a few key concepts:
 
 *   **Custom Framing Format**: The transport uses a custom framing format that is defined in the `chaotic_good_frame.proto` file. The framing format is designed to be simple and efficient, and it supports all of the features of gRPC, including headers, messages, and trailers.
-*   **Promise-Based Architecture**: The transport is heavily based on the [gRPC Core Promise API](../../lib/promise/GEMINI.md). This allows the transport to be implemented in a more asynchronous and non-blocking way, which can lead to better performance and scalability.
+*   **Promise-Based Architecture**: The transport is heavily based on the [gRPC Core Promise API](../../lib/promise/AGENTS.md). This allows the transport to be implemented in a more asynchronous and non-blocking way, which can lead to better performance and scalability.
 *   **Separation of Control and Data Planes**: The transport separates the control plane (e.g., sending and receiving headers) from the data plane (e.g., sending and receiving messages). This allows the transport to be more flexible and to support a variety of different use cases.
 
 ## Files
