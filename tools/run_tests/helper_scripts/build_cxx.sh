@@ -46,5 +46,13 @@ else
 cmake -DgRPC_BUILD_GRPCPP_OTEL_PLUGIN=ON -DgRPC_ABSL_PROVIDER=package -DgRPC_BUILD_TESTS=ON -DCMAKE_BUILD_TYPE="${MSBUILD_CONFIG}" -DCMAKE_POLICY_VERSION_MINIMUM=3.5 -DCMAKE_INSTALL_PREFIX="${INSTALL_PATH}" "$@" ../..
 fi
 
+# TODO(weizheyuan): Understand if this guard is still needed for gcc >= 10.
+#
+# GRPC_SKIP_BUILD_TESTS seems only used by PR presubmit but not master, so it might be
+# there for performance reasons?
+if [[ "$*" =~ "-DgRPC_BUILD_TESTS=OFF" ]] || [[ "${GRPC_SKIP_BUILD_TESTS}" == "true" ]]; then
+make -j"${GRPC_RUN_TESTS_JOBS}" "grpc++"
+else
 # GRPC_RUN_TESTS_CXX_LANGUAGE_SUFFIX will be set to either "c" or "cxx"
 make -j"${GRPC_RUN_TESTS_JOBS}" "buildtests_${GRPC_RUN_TESTS_CXX_LANGUAGE_SUFFIX}" "tools_${GRPC_RUN_TESTS_CXX_LANGUAGE_SUFFIX}"
+fi
