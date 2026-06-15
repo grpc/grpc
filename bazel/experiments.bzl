@@ -179,6 +179,8 @@ EXPERIMENTS = {
                 "local_connector_secure",
                 "otel_export_telemetry_domains",
                 "ph2_client",
+                "ph2_client_server",
+                "ph2_server",
                 "pipelined_read_secure_endpoint",
                 "pollset_alternative",
                 "retry_in_callv3",
@@ -192,6 +194,8 @@ EXPERIMENTS = {
             ],
             "cpp_end2end_test": [
                 "ph2_client",
+                "ph2_client_server",
+                "ph2_server",
             ],
             "cpp_lb_end2end_test": [
                 "subchannel_connection_scaling",
