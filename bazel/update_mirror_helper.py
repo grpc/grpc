@@ -33,7 +33,15 @@ def parse_ndjson(file_path):
             yield json.loads(line)
 
 def main():
-    logging.basicConfig(level=logging.INFO)
+    logging.basicConfig(
+        level=logging.DEBUG,
+        style="{",
+        format=(
+            "{levelname[0]}{asctime}.{msecs:03.0f} {thread} "
+            "{filename}:{lineno}] {message}"
+        ),
+        datefmt="%m%d %H:%M:%S",
+    )
     if len(sys.argv) < 3:
         logger.error("Usage: update_mirror_helper.py <input> <output>")
         sys.exit(1)
@@ -48,7 +56,7 @@ def main():
             if attr["name"] == "url" and attr["stringValue"]:
                 urls.append(attr["stringValue"])
             elif attr["name"] == "urls":
-                urls.extend(attr.get("stringListValue", list()))
+                urls.extend(attr.get("stringListValue", []))
 
         logging_data = {k: repo[k] for k in _LOGGED_FIELDS if k in repo}
         logging_data["urls"] = urls
