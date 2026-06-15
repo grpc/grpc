@@ -327,6 +327,8 @@ void FilterStackCall::CancelWithError(grpc_error_handle error) {
   if (!gpr_atm_rel_cas(&cancelled_with_error_, 0, 1)) {
     return;
   }
+  cancel_error_.set(error);
+  SetFinalError(error);
   GRPC_TRACE_LOG(call_error, INFO)
       << "CancelWithError " << (is_client() ? "CLI" : "SVR") << " "
       << StatusToString(error);
@@ -355,6 +357,7 @@ void FilterStackCall::SetFinalStatus(grpc_error_handle error) {
   GRPC_TRACE_LOG(call_error, INFO)
       << "set_final_status " << (is_client() ? "CLI" : "SVR") << " "
       << StatusToString(error);
+  SetFinalError(error);
   ResetDeadline();
   if (is_client()) {
     std::string status_details;

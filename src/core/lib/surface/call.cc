@@ -41,6 +41,7 @@
 #include <cstdint>
 #include <memory>
 #include <new>
+#include <optional>
 #include <queue>
 #include <string>
 #include <type_traits>
@@ -419,6 +420,18 @@ void Call::Run() {
   InternalUnref("deadline[run]");
 }
 
+std::optional<grpc_error_handle> Call::GetFinalError() const {
+  MutexLock lock(&final_error_mu_);
+  return final_error_;
+}
+
+void Call::SetFinalError(grpc_error_handle error) {
+  MutexLock lock(&final_error_mu_);
+  if (!final_error_.has_value() || final_error_->ok()) {
+    final_error_ = error;
+  }
+}
+
 }  // namespace grpc_core
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -661,4 +674,9 @@ void grpc_call_run_cq_cb(const grpc_call* call,
   } else {
     cb();
   }
+}
+
+std::optional<grpc_error_handle> grpc_call_get_final_error(grpc_call* call) {
+  if (call == nullptr) return std::nullopt;
+  return grpc_core::Call::FromC(call)->GetFinalError();
 }

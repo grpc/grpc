@@ -185,6 +185,12 @@ void ServerCall::CommitBatch(const grpc_op* ops, size_t nops, void* notify_tag,
               []() { return Empty{}; }),
           [this, metadata = std::move(metadata)]() mutable -> Poll<Success> {
             GRPC_CHECK(metadata != nullptr);
+            if (auto status = metadata->get(GrpcStatusMetadata())) {
+              if (*status != GRPC_STATUS_OK) {
+                SetFinalError(
+                    absl::Status(static_cast<absl::StatusCode>(*status), ""));
+              }
+            }
             call_handler_.PushServerTrailingMetadata(std::move(metadata));
             return Success{};
           });
