@@ -2,7 +2,7 @@
 
 This directory contains filters for managing the lifecycle of a gRPC channel based on idleness and maximum connection age.
 
-See also: [gRPC Filters overview](../../filter/GEMINI.md)
+See also: [gRPC Filters overview](../../filter/AGENTS.md)
 
 ## Overarching Purpose
 

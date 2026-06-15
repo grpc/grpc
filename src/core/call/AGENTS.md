@@ -3,7 +3,7 @@
 This directory is the heart of the gRPC C++ core, defining the fundamental data
 structures and mechanisms for representing and managing a single RPC.
 
-See also: [gRPC Core overview](../GEMINI.md)
+See also: [gRPC Core overview](../AGENTS.md)
 
 ## Overarching Purpose
 
@@ -47,8 +47,8 @@ status.
     *   Call V1: CHTTP2 transport, Legacy InProc
     *   Call V3: PH2, Chaotic Good, InProc transports
     *   For details about the transports see
-        [chttp2/GEMINI.md](../ext/transport/chttp2/GEMINI.md) and
-        [chaotic_good/GEMINI.md](../ext/transport/chaotic_good/GEMINI.md)
+        [chttp2/AGENTS.md](../ext/transport/chttp2/AGENTS.md) and
+        [chaotic_good/AGENTS.md](../ext/transport/chaotic_good/AGENTS.md)
 *   **Creation Method**: The entry point used to instantiate new calls.
     *   Call V1: `grpc_call_create`
     *   Call V3: `MakeClientCall` and `MakeServerCall`
@@ -113,8 +113,8 @@ accessible to the AIs
 ## Notes
 
 *   This directory is heavily based on the
-    [gRPC Core Promise API](../lib/promise/GEMINI.md). Familiarity with that API
+    [gRPC Core Promise API](../lib/promise/AGENTS.md). Familiarity with that API
     is essential for understanding the code here.
 *   The `CallFilters` class is responsible for managing the filters for a call.
-    See the [channel documentation](../lib/channel/GEMINI.md) for more
+    See the [channel documentation](../lib/channel/AGENTS.md) for more
     information about filters.

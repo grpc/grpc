@@ -2,7 +2,7 @@
 
 This directory contains the fundamental building blocks for configuring the gRPC core library.
 
-See also: [gRPC Core overview](../GEMINI.md)
+See also: [gRPC Core overview](../AGENTS.md)
 
 ## Overarching Purpose
 
