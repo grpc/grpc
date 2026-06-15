@@ -74,7 +74,7 @@ function upload() {
 
 function upload_bzlmod_deps {
   tools/bazel mod show_repo --all_repos --output=streamed_jsonproto > ${tmpdir}/repos.ndjson || true
-  bazel/update_mirror_helper.py ${tmpdir}/repos.ndjson ${tmpdir}/download-list.txt
+  python3 bazel/update_mirror_helper.py ${tmpdir}/repos.ndjson ${tmpdir}/download-list.txt
   while read -r url; do
       case "$url" in
           *grpc-bazel-mirror*)
