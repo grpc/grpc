@@ -38,7 +38,6 @@
 #include "src/core/call/message.h"
 #include "src/core/call/metadata.h"
 #include "src/core/call/metadata_batch.h"
-#include "src/core/filter/blackboard.h"
 #include "src/core/filter/filter_args.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
@@ -71,6 +70,8 @@
 #include "src/core/util/debug_location.h"
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/match.h"
+#include "src/core/util/orphanable.h"
+#include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/time.h"
 #include "absl/container/inlined_vector.h"
 #include "absl/functional/function_ref.h"
@@ -163,7 +164,7 @@ struct HasAsyncErrorInterceptor<Promise (T::*)(A...),
   static constexpr bool value = true;
 };
 
-// For the list case we do two interceptors to avoid amiguities with the single
+// For the list case we do two interceptors to avoid ambiguities with the single
 // argument forms above.
 template <typename... Interceptors>
 inline constexpr bool HasAnyAsyncErrorInterceptor(Interceptors...) {
@@ -1175,7 +1176,7 @@ MakeFilterCall(Derived* derived) {
 //   useful for cases where the exact metadata returned needs to be customized.
 // It's also acceptable to return a promise that resolves to the
 // relevant return type listed above.
-// Finally, OnFinalize can be added to intecept call finalization.
+// Finally, OnFinalize can be added to intercept call finalization.
 // It must have one of the signatures:
 // - static inline const NoInterceptor OnFinalize:
 //   the filter does not intercept call finalization.
@@ -1423,7 +1424,7 @@ class V3InterceptorToV2Bridge : public ChannelFilter, public Interceptor {
                         });
                   });
               // In the v3 handler's activity, pull client initial metadata.
-              // Use an inter-acitivity latch to get it back to the v2
+              // Use an inter-activity latch to get it back to the v2
               // activity.
               handler.SpawnGuarded(
                   "pull_client_initial_metadata",
@@ -1918,9 +1919,11 @@ class BaseCallData : public Activity,
   std::string LogTag() const;
 
  private:
+  class WeakWakerHandle;
+
   // Wakeable implementation.
   void Wakeup(WakeupMask) final;
-  void WakeupAsync(WakeupMask) final { Crash("not implemented"); }
+  void WakeupAsync(WakeupMask) final;
   void Drop(WakeupMask) final;
 
   virtual void OnWakeup() = 0;
@@ -1932,6 +1935,7 @@ class BaseCallData : public Activity,
   const Timestamp deadline_;
   CallFinalization finalization_;
   std::atomic<grpc_polling_entity*> pollent_{nullptr};
+  OrphanablePtr<WeakWakerHandle> handle_;
   Pipe<ServerMetadataHandle>* const server_initial_metadata_pipe_;
   SendMessage* const send_message_;
   ReceiveMessage* const receive_message_;
@@ -2268,7 +2272,7 @@ struct ChannelFilterWithFlagsMethods {
         F::Create(args->channel_args,
                   ChannelFilter::Args(args->channel_stack, elem,
                                       grpc_channel_stack_filter_instance_number,
-                                      args->config, args->blackboard));
+                                      args->config));
     if (!status.ok()) {
       new (elem->channel_data) F*(nullptr);
       return absl_status_to_grpc_error(status.status());

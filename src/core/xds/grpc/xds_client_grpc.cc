@@ -191,6 +191,7 @@ const grpc_channel_args* g_channel_args ABSL_GUARDED_BY(*g_mu) = nullptr;
 // Key bytes live in clients so they outlive the entries in this map
 NoDestruct<std::map<absl::string_view, GrpcXdsClient*>> g_xds_client_map
     ABSL_GUARDED_BY(*g_mu);
+bool g_inhibit_map_removal ABSL_GUARDED_BY(*g_mu) = false;
 char* g_fallback_bootstrap_config ABSL_GUARDED_BY(*g_mu) = nullptr;
 NoDestruct<std::shared_ptr<GrpcXdsBootstrap>> g_parsed_bootstrap
     ABSL_GUARDED_BY(*g_mu);
@@ -296,6 +297,10 @@ absl::StatusOr<RefCountedPtr<GrpcXdsClient>> GrpcXdsClient::GetOrCreate(
     if (xds_client != nullptr) {
       return xds_client.TakeAsSubclass<GrpcXdsClient>();
     }
+    // Ref count was 0.  Remove the entry so that when we call emplace()
+    // below, we add a new entry, thus ensuring the lifetime of the map
+    // key is correct (since it points into the XdsClient instance).
+    g_xds_client_map->erase(it);
   }
   // The XdsClient doesn't exist, so we'll create it.
   std::shared_ptr<GrpcXdsBootstrap> bootstrap = std::move(bootstrap_override);
@@ -313,7 +318,9 @@ absl::StatusOr<RefCountedPtr<GrpcXdsClient>> GrpcXdsClient::GetOrCreate(
                                               certificate_provider_store),
       certificate_provider_store,
       GetStatsPluginGroupForKeyAndChannelArgs(key, args));
-  g_xds_client_map->emplace(xds_client->key(), xds_client.get());
+  auto [_, inserted] =
+      g_xds_client_map->emplace(xds_client->key(), xds_client.get());
+  GRPC_CHECK(inserted) << "Key: " << key;
   GRPC_TRACE_LOG(xds_client, INFO) << "[xds_client " << xds_client.get()
                                    << "] Created xDS client for key " << key;
   return xds_client;
@@ -368,6 +375,7 @@ void GrpcXdsClient::Orphaned() {
   XdsClient::Orphaned();
   lrs_client_.reset();
   MutexLock lock(g_mu);
+  if (g_inhibit_map_removal) return;
   auto it = g_xds_client_map->find(key_);
   if (it != g_xds_client_map->end() && it->second == this) {
     g_xds_client_map->erase(it);
@@ -450,6 +458,11 @@ namespace internal {
 void SetXdsChannelArgsForTest(grpc_channel_args* args) {
   MutexLock lock(g_mu);
   g_channel_args = args;
+}
+
+void SetInhibitXdsClientMapRemovalForTest(bool inhibit) {
+  MutexLock lock(g_mu);
+  g_inhibit_map_removal = inhibit;
 }
 
 void UnsetGlobalXdsClientsForTest() {

@@ -337,7 +337,7 @@ if __name__ == "__main__":
         ext_modules=extension_modules(),
         python_requires=f">={python_version.MIN_PYTHON_VERSION}",
         install_requires=[
-            "protobuf>=6.33.5,<7.0.0",
+            "protobuf>=6.33.5,<8.0.0",
             "grpcio>={version}".format(version=grpc_version.VERSION),
             "setuptools>=77.0.1",
         ],

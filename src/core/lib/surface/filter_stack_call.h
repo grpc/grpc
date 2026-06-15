@@ -46,6 +46,7 @@
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/surface/call.h"
+#include "src/core/lib/surface/call_utils.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/completion_queue.h"
 #include "src/core/lib/transport/transport.h"
@@ -99,6 +100,10 @@ class FilterStackCall final : public Call {
   void SetCompletionQueue(grpc_completion_queue* cq) override;
   grpc_call_error StartBatch(const grpc_op* ops, size_t nops, void* notify_tag,
                              bool is_notify_tag_closure) override;
+  void FailBatchImmediately(void* notify_tag, bool is_notify_tag_closure,
+                            grpc_error_handle error) override {
+    EndOpImmediately(cq_, notify_tag, is_notify_tag_closure, std::move(error));
+  }
   void ExternalRef() override { ext_ref_.Ref(); }
   void ExternalUnref() override;
   void InternalRef(const char* reason) override {

@@ -15,13 +15,15 @@
 from __future__ import annotations
 
 from collections import OrderedDict
-from collections.abc import Collection
-from collections.abc import ItemsView
-from collections.abc import Iterable
-from collections.abc import Iterator
-from collections.abc import KeysView
-from collections.abc import Sequence
-from collections.abc import ValuesView
+from collections.abc import (
+    Collection,
+    ItemsView,
+    Iterable,
+    Iterator,
+    KeysView,
+    Sequence,
+    ValuesView,
+)
 from typing import Any, List, Optional, Tuple, Union
 
 from typing_extensions import Self
@@ -66,7 +68,7 @@ class Metadata(Collection):  # noqa: PLW1641
         # TODO(asheshvidyut): Make this method public and encourage people to use it instead
         # of `from_tuple` to create metadata from non-tuple types.
         if raw_metadata is None:
-            return Metadata()
+            return cls()
         if isinstance(raw_metadata, cls):
             return raw_metadata
         if raw_metadata:

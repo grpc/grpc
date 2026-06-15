@@ -672,7 +672,7 @@ static int poll_deadline_to_millis_timeout(grpc_core::Timestamp millis) {
 // - This function then processes up-to MAX_EPOLL_EVENTS_PER_ITERATION and
 //   updates the g_epoll_set.cursor
 
-// NOTE ON SYNCRHONIZATION: Similar to do_epoll_wait(), this function is only
+// NOTE ON SYNCHRONIZATION: Similar to do_epoll_wait(), this function is only
 // called by g_active_poller thread. So there is no need for synchronization
 // when accessing fields in g_epoll_set
 static grpc_error_handle process_epoll_events(grpc_pollset* /*pollset*/) {
