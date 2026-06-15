@@ -1485,45 +1485,6 @@ TEST_P(SslTransportSecurityTest, TestServerHandshakerOverrideALPN) {
   DoHandshake();
 }
 
-// Configuring key exchange groups requires SSL_CTX_set1_groups_list(),
-// which was introduced in OpenSSL 1.1.1 (and is supported in BoringSSL).
-// Tests are gated to prevent failures on older OpenSSL 1.0.2/1.1.0
-// installations.
-#if OPENSSL_VERSION_NUMBER >= 0x10101000L
-TEST_P(SslTransportSecurityTest, TestKeyExchangeGroupSuccess) {
-  SetUpSslFixture(/*tls_version=*/std::get<0>(GetParam()),
-                  /*send_client_ca_list=*/std::get<1>(GetParam()));
-// The client default protocols set by the handshaker factory are [toto, baz].
-#ifdef OPENSSL_IS_BORINGSSL
-  ssl_fixture_->OverrideClientKeyExchangeGroups(
-      {GRPC_TLS_GROUP_X25519_MLKEM768, GRPC_TLS_GROUP_X25519});
-  ssl_fixture_->OverrideServerKeyExchangeGroups(
-      {GRPC_TLS_GROUP_X25519, GRPC_TLS_GROUP_X25519_MLKEM768});
-#else
-  ssl_fixture_->OverrideClientKeyExchangeGroups(
-      {GRPC_TLS_GROUP_SECP256R1, GRPC_TLS_GROUP_X25519});
-  ssl_fixture_->OverrideServerKeyExchangeGroups(
-      {GRPC_TLS_GROUP_X25519, GRPC_TLS_GROUP_SECP256R1});
-#endif
-  DoHandshake();
-}
-
-TEST_P(SslTransportSecurityTest, TestKeyExchangeGroupMismatch) {
-  auto tls_version = std::get<0>(GetParam());
-  SetUpSslFixture(tls_version,
-                  /*send_client_ca_list=*/std::get<1>(GetParam()));
-  // The client default protocols set by the handshaker factory are [toto, baz].
-  ssl_fixture_->OverrideClientKeyExchangeGroups({GRPC_TLS_GROUP_X25519});
-  ssl_fixture_->OverrideServerKeyExchangeGroups({GRPC_TLS_GROUP_SECP256R1});
-  // In TLS1.2, on key exchange group mismatch, it will fall back to an ECDHE
-  // ciphersuite, provided there is a matching one between the client and server
-  // TLS1.3 is stricter and requires a match, and will thus fail in this test
-  // case.
-  ssl_fixture_->SetServerExpectsHandshakeFailure(tls_version == TSI_TLS1_3);
-  ssl_fixture_->SetClientExpectsHandshakeFailure(tls_version == TSI_TLS1_3);
-  DoHandshake();
-}
-
 class TestMetricsSink : public MetricsSink {
  public:
   struct EmittedPoint {
@@ -1613,14 +1574,14 @@ TEST_P(SslTransportSecurityTest, TestHandshakeMetricsIncremented) {
   EXPECT_EQ(sink_after.client_handshakes, sink_before.client_handshakes + 1);
   EXPECT_EQ(sink_after.server_handshakes, sink_before.server_handshakes + 1);
 
-  auto client_labels = GetDeltaLabels(
-      sink_before, sink_after, "grpc.client.tls.handshakes");
+  auto client_labels =
+      GetDeltaLabels(sink_before, sink_after, "grpc.client.tls.handshakes");
   ASSERT_TRUE(client_labels.has_value());
   EXPECT_EQ(client_labels->at("grpc.security.handshaker.status"), "OK");
   EXPECT_EQ(client_labels->at("grpc.security.handshaker.resumed"), "false");
 
-  auto server_labels = GetDeltaLabels(
-      sink_before, sink_after, "grpc.server.tls.handshakes");
+  auto server_labels =
+      GetDeltaLabels(sink_before, sink_after, "grpc.server.tls.handshakes");
   ASSERT_TRUE(server_labels.has_value());
   EXPECT_EQ(server_labels->at("grpc.security.handshaker.status"), "OK");
   EXPECT_EQ(server_labels->at("grpc.security.handshaker.resumed"), "false");
@@ -1649,12 +1610,11 @@ TEST_P(SslTransportSecurityTest, TestFailedClientHandshakeMetricsIncremented) {
 
   EXPECT_EQ(sink_after.client_handshakes, sink_before.client_handshakes + 1);
 
-  auto client_labels = GetDeltaLabels(
-      sink_before, sink_after, "grpc.client.tls.handshakes");
+  auto client_labels =
+      GetDeltaLabels(sink_before, sink_after, "grpc.client.tls.handshakes");
   ASSERT_TRUE(client_labels.has_value());
-  EXPECT_EQ(
-      client_labels->at("grpc.security.handshaker.status"),
-      "CERTIFICATE_AUTHORITY_INVALID");
+  EXPECT_EQ(client_labels->at("grpc.security.handshaker.status"),
+            "CERTIFICATE_AUTHORITY_INVALID");
 }
 
 TEST_P(SslTransportSecurityTest, TestFailedServerHandshakeMetricsIncremented) {
@@ -1681,14 +1641,52 @@ TEST_P(SslTransportSecurityTest, TestFailedServerHandshakeMetricsIncremented) {
 
   EXPECT_EQ(sink_after.server_handshakes, sink_before.server_handshakes + 1);
 
-  auto server_labels = GetDeltaLabels(
-      sink_before, sink_after, "grpc.server.tls.handshakes");
+  auto server_labels =
+      GetDeltaLabels(sink_before, sink_after, "grpc.server.tls.handshakes");
   ASSERT_TRUE(server_labels.has_value());
-  EXPECT_EQ(
-      server_labels->at("grpc.security.handshaker.status"),
-      "CERTIFICATE_AUTHORITY_INVALID");
+  EXPECT_EQ(server_labels->at("grpc.security.handshaker.status"),
+            "CERTIFICATE_AUTHORITY_INVALID");
 }
+
+// Configuring key exchange groups requires SSL_CTX_set1_groups_list(),
+// which was introduced in OpenSSL 1.1.1 (and is supported in BoringSSL).
+// Tests are gated to prevent failures on older OpenSSL 1.0.2/1.1.0
+// installations.
 #if OPENSSL_VERSION_NUMBER >= 0x10101000L
+TEST_P(SslTransportSecurityTest, TestKeyExchangeGroupSuccess) {
+  SetUpSslFixture(/*tls_version=*/std::get<0>(GetParam()),
+                  /*send_client_ca_list=*/std::get<1>(GetParam()));
+// The client default protocols set by the handshaker factory are [toto, baz].
+#ifdef OPENSSL_IS_BORINGSSL
+  ssl_fixture_->OverrideClientKeyExchangeGroups(
+      {GRPC_TLS_GROUP_X25519_MLKEM768, GRPC_TLS_GROUP_X25519});
+  ssl_fixture_->OverrideServerKeyExchangeGroups(
+      {GRPC_TLS_GROUP_X25519, GRPC_TLS_GROUP_X25519_MLKEM768});
+#else
+  ssl_fixture_->OverrideClientKeyExchangeGroups(
+      {GRPC_TLS_GROUP_SECP256R1, GRPC_TLS_GROUP_X25519});
+  ssl_fixture_->OverrideServerKeyExchangeGroups(
+      {GRPC_TLS_GROUP_X25519, GRPC_TLS_GROUP_SECP256R1});
+#endif
+  DoHandshake();
+}
+
+TEST_P(SslTransportSecurityTest, TestKeyExchangeGroupMismatch) {
+  auto tls_version = std::get<0>(GetParam());
+  SetUpSslFixture(tls_version,
+                  /*send_client_ca_list=*/std::get<1>(GetParam()));
+  // The client default protocols set by the handshaker factory are [toto, baz].
+  ssl_fixture_->OverrideClientKeyExchangeGroups({GRPC_TLS_GROUP_X25519});
+  ssl_fixture_->OverrideServerKeyExchangeGroups({GRPC_TLS_GROUP_SECP256R1});
+  // In TLS1.2, on key exchange group mismatch, it will fall back to an ECDHE
+  // ciphersuite, provided there is a matching one between the client and server
+  // TLS1.3 is stricter and requires a match, and will thus fail in this test
+  // case.
+  ssl_fixture_->SetServerExpectsHandshakeFailure(tls_version == TSI_TLS1_3);
+  ssl_fixture_->SetClientExpectsHandshakeFailure(tls_version == TSI_TLS1_3);
+  DoHandshake();
+}
+
 #if defined(OPENSSL_IS_BORINGSSL)
 TEST_P(SslTransportSecurityTest,
        SuccessfulHandshakeServerSpecifiesX25519Mlkem768) {
