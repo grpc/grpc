@@ -62,7 +62,7 @@ function _upload() {
 
 # Wrapper of _upload() which handles errors and keep track of stats.
 function upload() {
-  local url="$1"
+  local url="${1:?}"
   if _upload "${url}"; then
     success=$((success + 1))
   else
