@@ -325,6 +325,11 @@ class SslTransportSecurityTest
       client_key_exchange_groups_ = key_exchange_groups;
     }
 
+    void SetExpectedNegotiatedGroup(
+        std::optional<std::string> expected_negotiated_group) {
+      expected_negotiated_group_ = expected_negotiated_group;
+    }
+
     void SetServerExpectsHandshakeFailure(
         bool server_expects_handshake_failure) {
       server_expects_handshake_failure_ = server_expects_handshake_failure;
@@ -495,6 +500,17 @@ class SslTransportSecurityTest
                                             security_level->value.length));
     }
 
+    static void CheckNegotiatedGroup(SslTsiTestFixture* ssl_fixture,
+                                     const tsi_peer* peer) {
+      if (ssl_fixture->expected_negotiated_group_.has_value()) {
+        const tsi_peer_property* property = tsi_peer_get_property_by_name(
+            peer, TSI_SSL_NEGOTIATED_KEY_EXCHANGE_GROUP);
+        ASSERT_NE(property, nullptr);
+        ASSERT_EQ(std::string(property->value.data, property->value.length),
+                  ssl_fixture->expected_negotiated_group_.value());
+      }
+    }
+
     static const tsi_peer_property* CheckBasicAuthenticatedPeerAndGetCommonName(
         const tsi_peer* peer) {
       const tsi_peer_property* cert_type_property =
@@ -577,8 +593,14 @@ class SslTransportSecurityTest
       ASSERT_NE(ssl_fixture->alpn_lib_, nullptr);
       ssl_alpn_lib* alpn_lib = ssl_fixture->alpn_lib_;
       if (!ssl_fixture->force_client_auth_) {
-        ASSERT_EQ(peer->property_count,
-                  (alpn_lib->alpn_mode == ALPN_CLIENT_SERVER_OK ? 3 : 2));
+        size_t expected_property_count =
+            (alpn_lib->alpn_mode == ALPN_CLIENT_SERVER_OK ? 3 : 2);
+        if (tsi_peer_get_property_by_name(
+                peer, TSI_SSL_NEGOTIATED_KEY_EXCHANGE_GROUP) != nullptr) {
+          expected_property_count++;
+        }
+        ASSERT_EQ(peer->property_count, expected_property_count);
+
       } else {
         const tsi_peer_property* property =
             CheckBasicAuthenticatedPeerAndGetCommonName(peer);
@@ -645,6 +667,7 @@ class SslTransportSecurityTest
         CheckSessionReusage(ssl_fixture, &peer);
         CheckAlpn(ssl_fixture, &peer);
         CheckSecurityLevel(&peer);
+        CheckNegotiatedGroup(ssl_fixture, &peer);
         if (ssl_fixture->verify_root_cert_subject_) {
           if (!ssl_fixture->session_reused_) {
             CheckVerifiedRootCertSubject(&peer);
@@ -671,6 +694,7 @@ class SslTransportSecurityTest
         CheckSessionReusage(ssl_fixture, &peer);
         CheckAlpn(ssl_fixture, &peer);
         CheckSecurityLevel(&peer);
+        CheckNegotiatedGroup(ssl_fixture, &peer);
         if (ssl_fixture->force_client_auth_ && !ssl_fixture->session_reused_) {
           CheckVerifiedRootCertSubject(&peer);
         } else {
@@ -710,6 +734,8 @@ class SslTransportSecurityTest
         client_key_exchange_groups_ = std::nullopt;
     std::optional<std::vector<grpc_tls_key_exchange_group>>
         server_key_exchange_groups_ = std::nullopt;
+    std::optional<std::string> expected_negotiated_group_ = std::nullopt;
+
     tsi_ssl_server_handshaker_factory* server_handshaker_factory_ = nullptr;
     tsi_ssl_client_handshaker_factory* client_handshaker_factory_ = nullptr;
     // This isn't required for existing tests, but helps new tests express their
@@ -1022,18 +1048,6 @@ TEST_P(SslTransportSecurityTest, DoHandshakeAlpnClientServerOk) {
   SetUpSslFixture(/*tls_version=*/std::get<0>(GetParam()),
                   /*send_client_ca_list=*/std::get<1>(GetParam()));
   ssl_fixture_->SetAlpnMode(ALPN_CLIENT_SERVER_OK);
-  DoHandshake();
-}
-
-TEST_P(SslTransportSecurityTest, DoHandshakeWithCustomBioPair) {
-  SetUpSslFixture(/*tls_version=*/std::get<0>(GetParam()),
-                  /*send_client_ca_list=*/std::get<1>(GetParam()));
-#if OPENSSL_VERSION_NUMBER >= 0x10100000
-  ssl_fixture_->SetBioBufSizes(
-      /*network_bio_buf_size=*/TSI_TEST_DEFAULT_BUFFER_SIZE,
-      /*ssl_bio_buf_size=*/256);
-#endif
-  ssl_fixture_->SetForceClientAuth(true);
   DoHandshake();
 }
 
@@ -1510,6 +1524,7 @@ TEST_P(SslTransportSecurityTest, TestKeyExchangeGroupMismatch) {
   DoHandshake();
 }
 
+<<<<<<< HEAD
 class TestMetricsSink : public MetricsSink {
  public:
   struct EmittedPoint {
@@ -1675,6 +1690,81 @@ TEST_P(SslTransportSecurityTest, TestFailedServerHandshakeMetricsIncremented) {
       "CERTIFICATE_AUTHORITY_INVALID");
 }
 #endif
+=======
+#if defined(OPENSSL_IS_BORINGSSL)
+TEST_P(SslTransportSecurityTest,
+       SuccessfulHandshakeServerSpecifiesX25519Mlkem768) {
+  auto tls_version = std::get<0>(GetParam());
+  SetUpSslFixture(tls_version,
+                  /*send_client_ca_list=*/std::get<1>(GetParam()));
+  if (tls_version == TSI_TLS1_3) {
+    ssl_fixture_->OverrideServerKeyExchangeGroups(
+        {GRPC_TLS_GROUP_X25519_MLKEM768});
+    ssl_fixture_->SetExpectedNegotiatedGroup("X25519MLKEM768");
+  }
+  DoHandshake();
+}
+
+TEST_P(SslTransportSecurityTest,
+       SuccessfulHandshakeClientSpecifiesX25519Mlkem768) {
+  auto tls_version = std::get<0>(GetParam());
+  SetUpSslFixture(tls_version,
+                  /*send_client_ca_list=*/std::get<1>(GetParam()));
+  if (tls_version == TSI_TLS1_3) {
+    ssl_fixture_->OverrideClientKeyExchangeGroups(
+        {GRPC_TLS_GROUP_X25519_MLKEM768});
+    ssl_fixture_->SetExpectedNegotiatedGroup("X25519MLKEM768");
+  }
+  DoHandshake();
+}
+#endif  // OPENSSL_IS_BORINGSSL
+
+TEST_P(SslTransportSecurityTest, SuccessfulHandshakeServerSpecifiesX25519) {
+  auto tls_version = std::get<0>(GetParam());
+  SetUpSslFixture(tls_version,
+                  /*send_client_ca_list=*/std::get<1>(GetParam()));
+  if (tls_version == TSI_TLS1_3) {
+    ssl_fixture_->OverrideServerKeyExchangeGroups({GRPC_TLS_GROUP_X25519});
+    ssl_fixture_->SetExpectedNegotiatedGroup("X25519");
+  }
+  DoHandshake();
+}
+
+TEST_P(SslTransportSecurityTest, SuccessfulHandshakeClientSpecifiesX25519) {
+  auto tls_version = std::get<0>(GetParam());
+  SetUpSslFixture(tls_version,
+                  /*send_client_ca_list=*/std::get<1>(GetParam()));
+  if (tls_version == TSI_TLS1_3) {
+    ssl_fixture_->OverrideClientKeyExchangeGroups({GRPC_TLS_GROUP_X25519});
+    ssl_fixture_->SetExpectedNegotiatedGroup("X25519");
+  }
+  DoHandshake();
+}
+
+TEST_P(SslTransportSecurityTest, SuccessfulHandshakeServerSpecifiesP256) {
+  auto tls_version = std::get<0>(GetParam());
+  SetUpSslFixture(tls_version,
+                  /*send_client_ca_list=*/std::get<1>(GetParam()));
+  if (tls_version == TSI_TLS1_3) {
+    ssl_fixture_->OverrideServerKeyExchangeGroups({GRPC_TLS_GROUP_SECP256R1});
+    ssl_fixture_->SetExpectedNegotiatedGroup("prime256v1");
+  }
+  DoHandshake();
+}
+
+TEST_P(SslTransportSecurityTest, SuccessfulHandshakeClientSpecifiesP256) {
+  auto tls_version = std::get<0>(GetParam());
+  SetUpSslFixture(tls_version,
+                  /*send_client_ca_list=*/std::get<1>(GetParam()));
+  if (tls_version == TSI_TLS1_3) {
+    ssl_fixture_->OverrideClientKeyExchangeGroups({GRPC_TLS_GROUP_SECP256R1});
+    ssl_fixture_->SetExpectedNegotiatedGroup("prime256v1");
+  }
+  DoHandshake();
+}
+
+#endif  // OPENSSL_VERSION_NUMBER >= 0x10101000L
+>>>>>>> master
 
 }  // namespace
 }  // namespace testing

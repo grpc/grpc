@@ -10,8 +10,8 @@ This directory contains a collection of filters that are responsible for handlin
 
 ## Subdirectories
 
-*   **[`client`](./client/GEMINI.md)**: Contains client-side HTTP filters.
-*   **[`server`](./server/GEMINI.md)**: Contains server-side HTTP filters.
+*   **[`client`](./client/AGENTS.md)**: Contains client-side HTTP filters.
+*   **[`server`](./server/AGENTS.md)**: Contains server-side HTTP filters.
 
 ## Files
 

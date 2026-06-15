@@ -14,8 +14,6 @@
 # limitations under the License.
 """Build and upload docker images to Google Container Registry per matrix."""
 
-from __future__ import print_function
-
 import argparse
 import atexit
 import multiprocessing

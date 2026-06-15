@@ -34,6 +34,8 @@
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/latent_see.h"
 #include "src/core/util/manual_constructor.h"
+#include "src/core/util/orphanable.h"
+#include "src/core/util/ref_counted.h"
 #include "src/core/util/status_helper.h"
 #include "absl/base/attributes.h"
 #include "absl/functional/function_ref.h"
@@ -82,6 +84,61 @@ absl::Status StatusFromMetadata(const ServerMetadata& md) {
 ///////////////////////////////////////////////////////////////////////////////
 // BaseCallData
 
+class BaseCallData::WeakWakerHandle final : public Wakeable, public Orphanable {
+ public:
+  explicit WeakWakerHandle(BaseCallData* base) : base_(base) {}
+
+  void Ref() { refs_.Ref(); }
+
+  void Orphan() override {
+    mu_.Lock();
+    base_ = nullptr;
+    mu_.Unlock();
+    Unref();
+  }
+
+  void Wakeup(WakeupMask wakeup_mask) override { WakeupGeneric(wakeup_mask); }
+
+  void WakeupAsync(WakeupMask wakeup_mask) override {
+    WakeupGeneric(wakeup_mask);
+  }
+
+  void Drop(WakeupMask) override { Unref(); }
+
+  std::string ActivityDebugTag(WakeupMask) const override {
+    MutexLock lock(&mu_);
+    return base_ == nullptr ? "<unknown>" : base_->DebugTag();
+  }
+
+ private:
+  void WakeupGeneric(WakeupMask wakeup_mask) {
+    BaseCallData* wakeup_base = nullptr;
+    {
+      MutexLock lock(&mu_);
+      if (base_ != nullptr) {
+        auto* call_stack = base_->call_stack();
+        if (call_stack->refcount.refs.RefIfNonZero(DEBUG_LOCATION, "waker")) {
+          wakeup_base = base_;
+        }
+      }
+    }
+    if (wakeup_base != nullptr) {
+      wakeup_base->Wakeup(wakeup_mask);
+    }
+    Unref();
+  }
+
+  void Unref() {
+    if (refs_.Unref()) {
+      delete this;
+    }
+  }
+
+  RefCount refs_;
+  mutable Mutex mu_;
+  BaseCallData* base_ ABSL_GUARDED_BY(mu_);
+};
+
 BaseCallData::BaseCallData(
     grpc_call_element* elem, const grpc_call_element_args* args, uint8_t flags,
     absl::FunctionRef<Interceptor*()> make_send_interceptor,
@@ -128,9 +185,18 @@ BaseCallData::~BaseCallData() {
 // Orphan().
 void BaseCallData::Orphan() { abort(); }
 
-// For now we don't care about owning/non-owning wakers, instead just share
-// implementation.
-Waker BaseCallData::MakeNonOwningWaker() { return MakeOwningWaker(); }
+Waker BaseCallData::MakeNonOwningWaker() {
+  if (IsV2NonOwningWakerImplementationEnabled()) {
+    if (handle_ == nullptr) {
+      handle_ = MakeOrphanable<WeakWakerHandle>(this);
+    }
+    handle_->Ref();
+    // The wakeup mask is unused by BaseCallData and WeakWakerHandle, so 0 is
+    // passed as a placeholder.
+    return Waker(handle_.get(), 0);
+  }
+  return MakeOwningWaker();
+}
 
 Waker BaseCallData::MakeOwningWaker() {
   GRPC_CALL_STACK_REF(call_stack_, "waker");
@@ -145,6 +211,14 @@ void BaseCallData::Wakeup(WakeupMask) {
   };
   auto* closure = GRPC_CLOSURE_CREATE(wakeup, this, nullptr);
   GRPC_CALL_COMBINER_START(call_combiner_, closure, absl::OkStatus(), "wakeup");
+}
+
+void BaseCallData::WakeupAsync(WakeupMask wakeup_mask) {
+  if (IsV2NonOwningWakerImplementationEnabled()) {
+    Wakeup(wakeup_mask);
+  } else {
+    Crash("not implemented");
+  }
 }
 
 void BaseCallData::Drop(WakeupMask) {
