@@ -1556,8 +1556,8 @@ TEST_P(SslTransportSecurityTest, TestHandshakeMetricsIncremented) {
       .OnlyMetrics({"grpc.client.tls.handshakes", "grpc.server.tls.handshakes"})
       .Run(GlobalCollectionScope(), sink_after);
 
-  EXPECT_GT(sink_after.client_handshakes, sink_before.client_handshakes);
-  EXPECT_GT(sink_after.server_handshakes, sink_before.server_handshakes);
+  EXPECT_EQ(sink_after.client_handshakes, sink_before.client_handshakes + 1);
+  EXPECT_EQ(sink_after.server_handshakes, sink_before.server_handshakes + 1);
 }
 
 TEST_P(SslTransportSecurityTest, TestFailedClientHandshakeMetricsIncremented) {
@@ -1576,7 +1576,7 @@ TEST_P(SslTransportSecurityTest, TestFailedClientHandshakeMetricsIncremented) {
       .OnlyMetrics({"grpc.client.tls.handshakes"})
       .Run(GlobalCollectionScope(), sink_after);
 
-  EXPECT_GT(sink_after.client_handshakes, sink_before.client_handshakes);
+  EXPECT_EQ(sink_after.client_handshakes, sink_before.client_handshakes + 1);
 }
 
 TEST_P(SslTransportSecurityTest, TestFailedServerHandshakeMetricsIncremented) {
@@ -1596,7 +1596,7 @@ TEST_P(SslTransportSecurityTest, TestFailedServerHandshakeMetricsIncremented) {
       .OnlyMetrics({"grpc.server.tls.handshakes"})
       .Run(GlobalCollectionScope(), sink_after);
 
-  EXPECT_GT(sink_after.server_handshakes, sink_before.server_handshakes);
+  EXPECT_EQ(sink_after.server_handshakes, sink_before.server_handshakes + 1);
 }
 #endif
 
