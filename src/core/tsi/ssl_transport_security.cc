@@ -203,7 +203,7 @@ struct tsi_ssl_handshaker_result {
 };
 
 struct SslHandshakeResult {
-  tsi_result tsi_result;
+  tsi_result transport_result;
   int ssl_error = SSL_ERROR_NONE;
   unsigned long err_code = 0;
 };
@@ -265,18 +265,18 @@ struct tsi_ssl_handshaker : public tsi_handshaker,
 void tsi_ssl_handshaker::MaybeRecordTelemetry(
     const SslHandshakeResult& handshake_result,
     bool handshaker_result_created) {
-  if (handshake_result.tsi_result == TSI_ASYNC ||
-      handshake_result.tsi_result == TSI_INCOMPLETE_DATA ||
-      handshake_result.tsi_result == TSI_DRAIN_BUFFER) {
+  if (handshake_result.transport_result == TSI_ASYNC ||
+      handshake_result.transport_result == TSI_INCOMPLETE_DATA ||
+      handshake_result.transport_result == TSI_DRAIN_BUFFER) {
     return;
   }
-  if (handshake_result.tsi_result == TSI_OK) {
+  if (handshake_result.transport_result == TSI_OK) {
     if (handshaker_result_created) {
       RecordTelemetry(TSI_OK);
     }
   } else {
-    RecordTelemetry(handshake_result.tsi_result, handshake_result.ssl_error,
-                    handshake_result.err_code);
+    RecordTelemetry(handshake_result.transport_result,
+                    handshake_result.ssl_error, handshake_result.err_code);
   }
 }
 
