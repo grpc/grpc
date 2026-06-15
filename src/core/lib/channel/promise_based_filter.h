@@ -1279,7 +1279,8 @@ class V3InterceptorToV2Bridge : public ChannelFilter, public Interceptor {
     };
     auto* pipe_owner = GetContext<Arena>()->ManagedNew<PipeOwner>();
     initiator.SpawnInfallible(
-        "pull_server_trailing_metadata", [initiator, pipe_owner]() mutable {
+        "pull_server_trailing_metadata",
+        [initiator = initiator, pipe_owner]() mutable {
           return Map(
               initiator.PullServerTrailingMetadata(),
               [pipe_owner](ServerMetadataHandle metadata) {
