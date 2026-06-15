@@ -29,6 +29,7 @@
 #include <string.h>
 
 #include <cstdint>
+#include <map>
 #include <memory>
 #include <optional>
 #include <string>
@@ -1511,14 +1512,29 @@ TEST_P(SslTransportSecurityTest, TestKeyExchangeGroupMismatch) {
 
 class TestMetricsSink : public MetricsSink {
  public:
-  void Counter(InstrumentLabelList /*label_keys*/,
-               absl::Span<const std::string> /*label*/, absl::string_view name,
+  struct EmittedPoint {
+    std::string name;
+    std::map<std::string, std::string> labels;
+    uint64_t value;
+  };
+
+  void Counter(InstrumentLabelList label_keys,
+               absl::Span<const std::string> label, absl::string_view name,
                uint64_t value) override {
     if (name == "grpc.client.tls.handshakes") {
       client_handshakes += value;
     } else if (name == "grpc.server.tls.handshakes") {
       server_handshakes += value;
     }
+    EmittedPoint pt;
+    pt.name = std::string(name);
+    pt.value = value;
+    for (size_t i = 0; i < label_keys.size(); ++i) {
+      if (i < label.size()) {
+        pt.labels[std::string(label_keys[i].label())] = label[i];
+      }
+    }
+    emitted_points.push_back(std::move(pt));
   }
   void UpDownCounter(InstrumentLabelList /*label_keys*/,
                      absl::Span<const std::string> /*label*/,
@@ -1539,13 +1555,37 @@ class TestMetricsSink : public MetricsSink {
 
   uint64_t client_handshakes = 0;
   uint64_t server_handshakes = 0;
+  std::vector<EmittedPoint> emitted_points;
 };
 
+std::optional<std::map<std::string, std::string>> GetDeltaLabels(
+    const TestMetricsSink& before, const TestMetricsSink& after,
+    const std::string& instrument_name) {
+  std::map<std::map<std::string, std::string>, uint64_t> before_map;
+  for (const auto& pt : before.emitted_points) {
+    if (pt.name == instrument_name) before_map[pt.labels] = pt.value;
+  }
+  for (const auto& pt : after.emitted_points) {
+    if (pt.name == instrument_name) {
+      uint64_t before_val = before_map[pt.labels];
+      if (pt.value > before_val) {
+        return pt.labels;
+      }
+    }
+  }
+  return std::nullopt;
+}
+
 TEST_P(SslTransportSecurityTest, TestHandshakeMetricsIncremented) {
+  TestOnlyResetInstruments();
+  auto root_scope = CreateRootCollectionScope(
+      {"grpc.security.handshaker.status", "grpc.security.handshaker.resumed"},
+      32, 32);
+
   TestMetricsSink sink_before;
   MetricsQuery()
       .OnlyMetrics({"grpc.client.tls.handshakes", "grpc.server.tls.handshakes"})
-      .Run(GlobalCollectionScope(), sink_before);
+      .Run(root_scope, sink_before);
 
   SetUpSslFixture(/*tls_version=*/std::get<0>(GetParam()),
                   /*send_client_ca_list=*/std::get<1>(GetParam()));
@@ -1554,17 +1594,34 @@ TEST_P(SslTransportSecurityTest, TestHandshakeMetricsIncremented) {
   TestMetricsSink sink_after;
   MetricsQuery()
       .OnlyMetrics({"grpc.client.tls.handshakes", "grpc.server.tls.handshakes"})
-      .Run(GlobalCollectionScope(), sink_after);
+      .Run(root_scope, sink_after);
 
   EXPECT_EQ(sink_after.client_handshakes, sink_before.client_handshakes + 1);
   EXPECT_EQ(sink_after.server_handshakes, sink_before.server_handshakes + 1);
+
+  auto client_labels = GetDeltaLabels(
+      sink_before, sink_after, "grpc.client.tls.handshakes");
+  ASSERT_TRUE(client_labels.has_value());
+  EXPECT_EQ(client_labels->at("grpc.security.handshaker.status"), "OK");
+  EXPECT_EQ(client_labels->at("grpc.security.handshaker.resumed"), "false");
+
+  auto server_labels = GetDeltaLabels(
+      sink_before, sink_after, "grpc.server.tls.handshakes");
+  ASSERT_TRUE(server_labels.has_value());
+  EXPECT_EQ(server_labels->at("grpc.security.handshaker.status"), "OK");
+  EXPECT_EQ(server_labels->at("grpc.security.handshaker.resumed"), "false");
 }
 
 TEST_P(SslTransportSecurityTest, TestFailedClientHandshakeMetricsIncremented) {
+  TestOnlyResetInstruments();
+  auto root_scope = CreateRootCollectionScope(
+      {"grpc.security.handshaker.status", "grpc.security.handshaker.resumed"},
+      32, 32);
+
   TestMetricsSink sink_before;
   MetricsQuery()
       .OnlyMetrics({"grpc.client.tls.handshakes"})
-      .Run(GlobalCollectionScope(), sink_before);
+      .Run(root_scope, sink_before);
 
   SetUpSslFixture(/*tls_version=*/std::get<0>(GetParam()),
                   /*send_client_ca_list=*/std::get<1>(GetParam()));
@@ -1574,16 +1631,28 @@ TEST_P(SslTransportSecurityTest, TestFailedClientHandshakeMetricsIncremented) {
   TestMetricsSink sink_after;
   MetricsQuery()
       .OnlyMetrics({"grpc.client.tls.handshakes"})
-      .Run(GlobalCollectionScope(), sink_after);
+      .Run(root_scope, sink_after);
 
   EXPECT_EQ(sink_after.client_handshakes, sink_before.client_handshakes + 1);
+
+  auto client_labels = GetDeltaLabels(
+      sink_before, sink_after, "grpc.client.tls.handshakes");
+  ASSERT_TRUE(client_labels.has_value());
+  EXPECT_EQ(
+      client_labels->at("grpc.security.handshaker.status"),
+      "CERTIFICATE_AUTHORITY_INVALID");
 }
 
 TEST_P(SslTransportSecurityTest, TestFailedServerHandshakeMetricsIncremented) {
+  TestOnlyResetInstruments();
+  auto root_scope = CreateRootCollectionScope(
+      {"grpc.security.handshaker.status", "grpc.security.handshaker.resumed"},
+      32, 32);
+
   TestMetricsSink sink_before;
   MetricsQuery()
       .OnlyMetrics({"grpc.server.tls.handshakes"})
-      .Run(GlobalCollectionScope(), sink_before);
+      .Run(root_scope, sink_before);
 
   SetUpSslFixture(/*tls_version=*/std::get<0>(GetParam()),
                   /*send_client_ca_list=*/std::get<1>(GetParam()));
@@ -1594,9 +1663,16 @@ TEST_P(SslTransportSecurityTest, TestFailedServerHandshakeMetricsIncremented) {
   TestMetricsSink sink_after;
   MetricsQuery()
       .OnlyMetrics({"grpc.server.tls.handshakes"})
-      .Run(GlobalCollectionScope(), sink_after);
+      .Run(root_scope, sink_after);
 
   EXPECT_EQ(sink_after.server_handshakes, sink_before.server_handshakes + 1);
+
+  auto server_labels = GetDeltaLabels(
+      sink_before, sink_after, "grpc.server.tls.handshakes");
+  ASSERT_TRUE(server_labels.has_value());
+  EXPECT_EQ(
+      server_labels->at("grpc.security.handshaker.status"),
+      "CERTIFICATE_AUTHORITY_INVALID");
 }
 #endif
 
