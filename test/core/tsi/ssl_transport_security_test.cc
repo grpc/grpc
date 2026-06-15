@@ -36,6 +36,8 @@
 #include <tuple>
 #include <vector>
 
+#include "src/core/handshaker/security/security_telemetry.h"
+#include "src/core/telemetry/instrument.h"
 #include "src/core/tsi/transport_security.h"
 #include "src/core/tsi/transport_security_interface.h"
 #include "src/core/util/memory.h"
@@ -43,8 +45,6 @@
 #include "test/core/test_util/test_config.h"
 #include "test/core/test_util/tls_utils.h"
 #include "test/core/tsi/transport_security_test_lib.h"
-#include "src/core/telemetry/instrument.h"
-#include "src/core/handshaker/security/security_telemetry.h"
 #include "gtest/gtest.h"
 #include "absl/log/log.h"
 #include "absl/strings/str_cat.h"
@@ -1522,8 +1522,7 @@ class TestMetricsSink : public MetricsSink {
   }
   void UpDownCounter(InstrumentLabelList /*label_keys*/,
                      absl::Span<const std::string> /*label*/,
-                     absl::string_view /*name*/,
-                     uint64_t /*value*/) override {}
+                     absl::string_view /*name*/, uint64_t /*value*/) override {}
   void Histogram(InstrumentLabelList /*label_keys*/,
                  absl::Span<const std::string> /*label*/,
                  absl::string_view /*name*/, HistogramBuckets /*bounds*/,
@@ -1545,8 +1544,7 @@ class TestMetricsSink : public MetricsSink {
 TEST_P(SslTransportSecurityTest, TestHandshakeMetricsIncremented) {
   TestMetricsSink sink_before;
   MetricsQuery()
-      .OnlyMetrics(
-          {"grpc.client.tls.handshakes", "grpc.server.tls.handshakes"})
+      .OnlyMetrics({"grpc.client.tls.handshakes", "grpc.server.tls.handshakes"})
       .Run(GlobalCollectionScope(), sink_before);
 
   SetUpSslFixture(/*tls_version=*/std::get<0>(GetParam()),
@@ -1555,8 +1553,7 @@ TEST_P(SslTransportSecurityTest, TestHandshakeMetricsIncremented) {
 
   TestMetricsSink sink_after;
   MetricsQuery()
-      .OnlyMetrics(
-          {"grpc.client.tls.handshakes", "grpc.server.tls.handshakes"})
+      .OnlyMetrics({"grpc.client.tls.handshakes", "grpc.server.tls.handshakes"})
       .Run(GlobalCollectionScope(), sink_after);
 
   EXPECT_GT(sink_after.client_handshakes, sink_before.client_handshakes);
