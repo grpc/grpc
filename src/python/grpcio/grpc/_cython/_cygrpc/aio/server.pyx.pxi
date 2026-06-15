@@ -1090,10 +1090,15 @@ cdef class AioServer:
                     method_bytes = pending_futures.pop(completed)
                     try:
                         rpc_state = completed.result()
-                    except:
-                        # This slot failed because server is shutting down, so
-                        # skip it (no limiter change) but keep serving the other
-                        # calls in this batch
+                    except _RequestCallError:
+                        # Only _RequestCallError (the async failure) is caught
+                        # here. A synchronous error from re-issuing the call
+                        # (InternalError / KeyError) is persistent - re-arming
+                        # it would busy-loop. So it is left to propagate to the
+                        # serving task's crash handler (fail loud) instead.
+                        if self._status == AIO_SERVER_STATUS_RUNNING:
+                            new_fut = self._make_request_call_future(method_bytes)
+                            pending_futures[new_fut] = method_bytes
                         continue
 
                     concurrency_exceeded = False
