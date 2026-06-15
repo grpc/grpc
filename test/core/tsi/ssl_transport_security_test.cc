@@ -1688,7 +1688,7 @@ TEST_P(SslTransportSecurityTest, TestFailedServerHandshakeMetricsIncremented) {
       server_labels->at("grpc.security.handshaker.status"),
       "CERTIFICATE_AUTHORITY_INVALID");
 }
-#endif
+#if OPENSSL_VERSION_NUMBER >= 0x10101000L
 #if defined(OPENSSL_IS_BORINGSSL)
 TEST_P(SslTransportSecurityTest,
        SuccessfulHandshakeServerSpecifiesX25519Mlkem768) {
