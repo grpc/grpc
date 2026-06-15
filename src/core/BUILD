@@ -5696,6 +5696,8 @@ grpc_cc_library(
         "ext/filters/ext_proc/ext_proc_filter.h",
     ],
     external_deps = [
+        "absl/cleanup",
+        "absl/functional:any_invocable",
         "absl/log:log",
         "absl/status",
         "absl/status:statusor",

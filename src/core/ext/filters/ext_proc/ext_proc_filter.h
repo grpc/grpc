@@ -17,6 +17,8 @@
 #ifndef GRPC_SRC_CORE_EXT_FILTERS_EXT_PROC_EXT_PROC_FILTER_H
 #define GRPC_SRC_CORE_EXT_FILTERS_EXT_PROC_EXT_PROC_FILTER_H
 
+#include <queue>
+
 #include "src/core/call/call_destination.h"
 #include "src/core/call/call_spine.h"
 #include "src/core/call/message.h"
@@ -40,6 +42,7 @@
 #include "src/core/xds/grpc/xds_common_types.h"
 #include "src/core/xds/xds_client/xds_bootstrap.h"
 #include "src/core/xds/xds_client/xds_transport.h"
+#include "absl/functional/any_invocable.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
@@ -191,7 +194,8 @@ class ExtProcFilter final : public V3InterceptorToV2Bridge<ExtProcFilter> {
     void OnRequestSent();
     void OnStatusReceived(absl::Status status);
 
-    void SendMessageLocked(std::string payload);
+    auto SendMessageLocked(bool condition,
+                           absl::AnyInvocable<std::string()> payload_generator);
 
    private:
     void Orphaned() override;
@@ -228,8 +232,17 @@ class ExtProcFilter final : public V3InterceptorToV2Bridge<ExtProcFilter> {
     bool failure_mode_allow_;
     ProcessingMode processing_mode_;
     Duration deferred_close_timeout_;
+    void ClearWriteQueueAndUnblockLocked(
+        std::vector<std::shared_ptr<InterActivityLatch<void>>>*
+            latches_to_unblock) ABSL_EXCLUSIVE_LOCKS_REQUIRED(&mu_);
+
     bool orphaned_ ABSL_GUARDED_BY(&mu_) = false;
     bool is_first_message_ ABSL_GUARDED_BY(&mu_) = true;
+    std::queue<std::shared_ptr<InterActivityLatch<void>>> write_queue_
+        ABSL_GUARDED_BY(&mu_);
+    bool write_active_ ABSL_GUARDED_BY(&mu_) = false;
+    std::shared_ptr<InterActivityLatch<void>> write_completed_latch_
+        ABSL_GUARDED_BY(&mu_);
   };
   void Orphaned() override {}
 

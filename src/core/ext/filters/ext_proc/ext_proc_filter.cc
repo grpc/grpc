@@ -225,33 +225,96 @@ ExtProcFilter::ExtProcCall::ExtProcCall(
       processing_mode_(processing_mode),
       deferred_close_timeout_(deferred_close_timeout) {
   GRPC_CHECK_NE(channel(), nullptr);
+  const char* method = "/envoy.service.ext_proc.v3.ExternalProcessor/Process";
+  streaming_call_ = channel()->transport()->CreateStreamingCall(
+      method, std::make_unique<StreamEventHandler>(WeakRef()));
+  GRPC_CHECK(streaming_call_ != nullptr);
+  GRPC_TRACE_LOG(ext_proc_filter, INFO)
+      << "ext_proc server " << channel()->server()->server_uri()
+      << ": starting ext_proc call (ext_proc_call=" << this
+      << ", streaming_call=" << streaming_call_.get() << ")";
+  streaming_call_->StartRecvMessage();
 }
 
 ExtProcFilter::ExtProcCall::~ExtProcCall() {
   streaming_call_.reset();
-  channel_.reset();
 }
 
-void ExtProcFilter::ExtProcCall::SendMessageLocked(std::string payload) {
-  MutexLock lock(&mu_);
-  if (orphaned_) return;
-  if (streaming_call_ == nullptr) {
-    const char* method = "/envoy.service.ext_proc.v3.ExternalProcessor/Process";
-    streaming_call_ = channel()->transport()->CreateStreamingCall(
-        method, std::make_unique<StreamEventHandler>(WeakRef()));
-    GRPC_CHECK(streaming_call_ != nullptr);
-    GRPC_TRACE_LOG(ext_proc_filter, INFO)
-        << "ext_proc server " << channel()->server()->server_uri()
-        << ": starting ext_proc call (ext_proc_call=" << this
-        << ", streaming_call=" << streaming_call_.get() << ")";
-    streaming_call_->StartRecvMessage();
-  }
-  streaming_call_->SendMessage(std::move(payload));
+auto ExtProcFilter::ExtProcCall::SendMessageLocked(
+    bool condition, absl::AnyInvocable<std::string()> payload_generator) {
+  return If(
+      condition,
+      [self = Ref(),
+       payload_generator = std::move(payload_generator)]() mutable {
+        std::shared_ptr<InterActivityLatch<void>> start_latch;
+        bool my_turn = false;
+        {
+          MutexLock lock(&self->mu_);
+          if (!self->write_active_) {
+            self->write_active_ = true;
+            my_turn = true;
+          } else {
+            start_latch = std::make_shared<InterActivityLatch<void>>();
+            self->write_queue_.push(start_latch);
+          }
+        }
+        return TrySeq(
+            If(
+                !my_turn,
+                [start_latch]() {
+                  return Map(start_latch->Wait(), [](Empty) -> absl::Status {
+                    return absl::OkStatus();
+                  });
+                },
+                []() -> absl::Status { return absl::OkStatus(); }),
+            [self, payload_generator = std::move(payload_generator)]() mutable {
+              std::string payload = payload_generator();
+              std::shared_ptr<InterActivityLatch<void>> completed_latch =
+                  std::make_shared<InterActivityLatch<void>>();
+              {
+                MutexLock lock(&self->mu_);
+                self->write_completed_latch_ = completed_latch;
+                if (!self->orphaned_ && self->streaming_call_ != nullptr) {
+                  self->streaming_call_->SendMessage(std::move(payload));
+                }
+              }
+              return Map(completed_latch->Wait(), [](Empty) -> absl::Status {
+                return absl::OkStatus();
+              });
+            },
+            [self]() mutable -> absl::Status {
+              std::shared_ptr<InterActivityLatch<void>> next_start_latch;
+              {
+                MutexLock lock(&self->mu_);
+                self->write_completed_latch_ = nullptr;
+                if (!self->write_queue_.empty()) {
+                  next_start_latch = std::move(self->write_queue_.front());
+                  self->write_queue_.pop();
+                } else {
+                  self->write_active_ = false;
+                }
+              }
+              if (next_start_latch != nullptr) {
+                next_start_latch->Set();
+              }
+              return absl::OkStatus();
+            });
+      },
+      []() -> absl::Status { return absl::OkStatus(); });
 }
 
 void ExtProcFilter::ExtProcCall::OnRequestSent() {
   GRPC_TRACE_LOG(ext_proc_filter, INFO)
       << "ExtProcCall " << this << " request sent";
+  std::shared_ptr<InterActivityLatch<void>> latch;
+  {
+    MutexLock lock(&mu_);
+    if (orphaned_) return;
+    latch = std::move(write_completed_latch_);
+  }
+  if (latch != nullptr) {
+    latch->Set();
+  }
 }
 
 void ExtProcFilter::ExtProcCall::OnStatusReceived(absl::Status status) {
@@ -267,8 +330,15 @@ void ExtProcFilter::ExtProcCall::OnStatusReceived(absl::Status status) {
       }
     }
   }
-  MutexLock lock(&mu_);
-  streaming_call_.reset();
+  std::vector<std::shared_ptr<InterActivityLatch<void>>> latches_to_unblock;
+  {
+    MutexLock lock(&mu_);
+    ClearWriteQueueAndUnblockLocked(&latches_to_unblock);
+    streaming_call_.reset();
+  }
+  for (auto& latch : latches_to_unblock) {
+    latch->Set();
+  }
 }
 
 void ExtProcFilter::ExtProcCall::OnRecvMessage(absl::string_view payload) {
@@ -315,10 +385,30 @@ void ExtProcFilter::ExtProcCall::OnRecvMessage(absl::string_view payload) {
   }
 }
 
+void ExtProcFilter::ExtProcCall::ClearWriteQueueAndUnblockLocked(
+    std::vector<std::shared_ptr<InterActivityLatch<void>>>*
+        latches_to_unblock) {
+  while (!write_queue_.empty()) {
+    latches_to_unblock->push_back(std::move(write_queue_.front()));
+    write_queue_.pop();
+  }
+  if (write_completed_latch_ != nullptr) {
+    latches_to_unblock->push_back(std::move(write_completed_latch_));
+  }
+  write_active_ = false;
+}
+
 void ExtProcFilter::ExtProcCall::Orphaned() {
-  MutexLock lock(&mu_);
-  orphaned_ = true;
-  streaming_call_.reset();
+  std::vector<std::shared_ptr<InterActivityLatch<void>>> latches_to_unblock;
+  {
+    MutexLock lock(&mu_);
+    orphaned_ = true;
+    ClearWriteQueueAndUnblockLocked(&latches_to_unblock);
+    streaming_call_.reset();
+  }
+  for (auto& latch : latches_to_unblock) {
+    latch->Set();
+  }
 }
 
 //
@@ -443,23 +533,23 @@ void ExtProcFilter::InterceptCall(UnstartedCallHandler unstarted_call_handler) {
         self->config()->deferred_close_timeout);
     return TrySeq(
         handler.PullClientInitialMetadata(),
-        [self, handler, ext_proc_call,
-         send_headers = self->config()->processing_mode.send_request_headers](
-            ClientMetadataHandle metadata) mutable {
+        [self, handler, ext_proc_call](ClientMetadataHandle metadata) mutable {
           GRPC_TRACE_LOG(ext_proc_filter, INFO)
               << "ExtProc: Client initial metadata received:\n"
               << metadata->DebugString();
           auto shared_metadata =
               std::make_shared<ClientMetadataHandle>(std::move(metadata));
-          return TrySeq(
-              If(
+          const bool send_headers =
+              self->config()->processing_mode.send_request_headers;
+          return Seq(
+              ext_proc_call->SendMessageLocked(
                   send_headers,
                   [self, ext_proc_call, shared_metadata]() {
                     GRPC_TRACE_LOG(ext_proc_filter, INFO)
                         << "ExtProc: Sending client initial metadata";
                     bool is_first = ext_proc_call->TestAndSetIsFirstMessage();
                     upb::Arena serialization_arena;
-                    std::string serialized = CreateExtProcRequest(
+                    return CreateExtProcRequest(
                         serialization_arena.ptr(),
                         ExtProcRequestType::kClientHeaders,
                         shared_metadata->get(),
@@ -473,55 +563,44 @@ void ExtProcFilter::InterceptCall(UnstartedCallHandler unstarted_call_handler) {
                         self->config()->observability_mode, is_first,
                         self->config()->processing_mode.send_request_body,
                         self->config()->processing_mode.send_response_body);
-                    ext_proc_call->SendMessageLocked(std::move(serialized));
-                    return If(
-                        self->config()->observability_mode,
-                        [shared_metadata]() {
-                          return [shared_metadata]()
-                                     -> Poll<
-                                         absl::StatusOr<ClientMetadataHandle>> {
-                            return absl::StatusOr<ClientMetadataHandle>(
-                                std::move(*shared_metadata));
-                          };
-                        },
-                        [self, ext_proc_call, shared_metadata]() {
-                          return Map(
-                              ext_proc_call->request_headers_latch_.Wait(),
-                              [self, shared_metadata](
-                                  absl::StatusOr<ExtProcResponse> response_or)
-                                  -> absl::StatusOr<ClientMetadataHandle> {
-                                if (!response_or.ok()) {
-                                  return response_or.status();
-                                }
-                                const auto& response = *response_or;
-                                if (response.request_headers.has_value()) {
-                                  if (!response.request_headers->ok()) {
-                                    return response.request_headers->status();
-                                  }
-                                  const auto& mutations =
-                                      **response.request_headers;
-                                  const auto* rules =
-                                      self->config()->mutation_rules.has_value()
-                                          ? &self->config()
-                                                 ->mutation_rules.value()
-                                          : nullptr;
-                                  auto status = ApplyHeaderMutations(
-                                      mutations, rules, **shared_metadata);
-                                  if (!status.ok()) {
-                                    return status;
-                                  }
-                                }
-                                return std::move(*shared_metadata);
-                              });
-                        });
-                  },
-                  [shared_metadata]() {
-                    return [shared_metadata]()
-                               -> Poll<absl::StatusOr<ClientMetadataHandle>> {
-                      return absl::StatusOr<ClientMetadataHandle>(
-                          std::move(*shared_metadata));
-                    };
                   }),
+              [shared_metadata](absl::Status) mutable
+                  -> absl::StatusOr<ClientMetadataHandle> {
+                return std::move(*shared_metadata);
+              });
+        },
+        [self, handler, ext_proc_call](ClientMetadataHandle metadata) mutable {
+          return TrySeq(
+              If(
+                  self->config()->processing_mode.send_request_headers &&
+                      !self->config()->observability_mode,
+                  [ext_proc_call]() {
+                    return ext_proc_call->request_headers_latch_.Wait();
+                  },
+                  []() -> absl::StatusOr<ExtProcResponse> {
+                    return ExtProcResponse{};
+                  }),
+              [self, metadata = std::move(metadata)](
+                  absl::StatusOr<ExtProcResponse> response) mutable
+                  -> absl::StatusOr<ClientMetadataHandle> {
+                if (!response.ok()) {
+                  return response.status();
+                }
+                if (response->request_headers.has_value()) {
+                  const auto& request_headers = *response->request_headers;
+                  if (!request_headers.ok()) {
+                    return request_headers.status();
+                  }
+                  const auto* rules =
+                      self->config()->mutation_rules.has_value()
+                          ? &self->config()->mutation_rules.value()
+                          : nullptr;
+                  auto status =
+                      ApplyHeaderMutations(*request_headers, rules, *metadata);
+                  if (!status.ok()) return status;
+                }
+                return std::move(metadata);
+              },
               [self, handler,
                ext_proc_call](ClientMetadataHandle metadata) mutable {
                 CallInitiator initiator = self->MakeChildCall(
