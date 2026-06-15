@@ -120,7 +120,7 @@ class OpenTelemetryObservabilityBase(AioTestBase):
         self._otel_plugin.deregister_global()
         self._provider.shutdown(timeout_millis=1_000)
 
-    def assert_eventually(
+    async def assert_eventually(
         self,
         predicate: Callable[[], bool],
         *,
@@ -133,7 +133,7 @@ class OpenTelemetryObservabilityBase(AioTestBase):
         while datetime.datetime.now() < end:
             if predicate():
                 break
-            time.sleep(0.5)
+            await asyncio.sleep(0.5)
         else:
             self.fail(message() + " after " + str(timeout))
 
@@ -144,7 +144,7 @@ class OpenTelemetryObservabilityBase(AioTestBase):
     ) -> None:
         # Sleep here to make sure we have at least expected number of metrics
         # from OTel MetricExporter.
-        self.assert_eventually(
+        await self.assert_eventually(
             lambda: len(all_metrics.keys()) >= expected_count,
             message=lambda: (
                 f"Expected at least {expected_count} metrics, got "
