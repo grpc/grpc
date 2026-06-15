@@ -1324,6 +1324,19 @@ TEST_F(ParseHeaderMutationRulesTest, Basic) {
   EXPECT_EQ(rules.disallow_expression->pattern(), "disallow");
 }
 
+TEST_F(ParseHeaderMutationRulesTest, ExplicitFalse) {
+  HeaderMutationRulesProto proto;
+  proto.mutable_disallow_all()->set_value(false);
+  proto.mutable_disallow_is_error()->set_value(false);
+  const auto* upb_proto = ConvertToUpb(proto);
+  ASSERT_NE(upb_proto, nullptr);
+  ValidationErrors errors;
+  auto rules = Parse(upb_proto, &errors);
+  EXPECT_TRUE(errors.ok());
+  EXPECT_FALSE(rules.disallow_all);
+  EXPECT_FALSE(rules.disallow_is_error);
+}
+
 TEST_F(ParseHeaderMutationRulesTest, InvalidRegex) {
   HeaderMutationRulesProto proto;
   proto.mutable_allow_expression()->set_regex("[");

@@ -2,11 +2,11 @@
 
 This directory contains the implementation of gRPC's xDS support. xDS is a set of APIs that allow a gRPC client or server to discover and configure itself dynamically.
 
-See also: [gRPC Core overview](../GEMINI.md)
+See also: [gRPC Core overview](../AGENTS.md)
 
 ## Overarching Purpose
 
-The code in this directory provides a gRPC implementation of the xDS APIs. This allows gRPC clients and servers to be configured by a central control plane. xDS is one way that service configurations can be delivered to a gRPC application; see [service config](../service_config/GEMINI.md) for more information.
+The code in this directory provides a gRPC implementation of the xDS APIs. This allows gRPC clients and servers to be configured by a central control plane. xDS is one way that service configurations can be delivered to a gRPC application; see [service config](../service_config/AGENTS.md) for more information.
 
 ## Core Concepts
 
