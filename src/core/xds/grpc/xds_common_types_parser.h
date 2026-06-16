@@ -80,7 +80,7 @@ StringMatcher StringMatcherParse(
 
 HeaderMatcher ParseXdsHeaderMatcher(
     const XdsResourceType::DecodeContext& context,
-    const envoy_config_route_v3_HeaderMatcher* matcher_proto,
+    const envoy_config_route_v3_HeaderMatcher* matcher,
     ValidationErrors* errors);
 
 CommonTlsContext CommonTlsContextParse(
