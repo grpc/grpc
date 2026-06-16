@@ -830,7 +830,7 @@ TEST_F(ExtProcResponseTest, RequestHeadersInvalidHeaderMutation) {
   ASSERT_TRUE(parsed.request_headers.has_value());
   EXPECT_EQ(
       parsed.request_headers->status(),
-      absl::InvalidArgumentError(
+      absl::InternalError(
           "validation failed: [field:header error:either value or raw_value "
           "must be set]"));
 }
@@ -903,7 +903,7 @@ TEST_F(ExtProcResponseTest, ResponseHeadersInvalidHeaderMutation) {
   ASSERT_TRUE(parsed.response_headers.has_value());
   EXPECT_EQ(
       parsed.response_headers->status(),
-      absl::InvalidArgumentError(
+      absl::InternalError(
           "validation failed: [field:header error:either value or raw_value "
           "must be set]"));
 }
@@ -1121,7 +1121,7 @@ TEST_F(ExtProcResponseTest, ResponseTrailersInvalidHeaderMutation) {
   ASSERT_TRUE(parsed.response_trailers.has_value());
   EXPECT_EQ(
       parsed.response_trailers->status(),
-      absl::InvalidArgumentError(
+      absl::InternalError(
           "validation failed: [field:header error:either value or raw_value "
           "must be set]"));
 }
