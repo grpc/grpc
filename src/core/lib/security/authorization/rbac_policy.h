@@ -82,7 +82,7 @@ struct Rbac {
         std::vector<std::unique_ptr<Permission>> permissions);
     static Permission MakeOrPermission(
         std::vector<std::unique_ptr<Permission>> permissions);
-    static Permission MakeNotPermission(Permission permission);
+    static Permission MakeNotPermission(std::unique_ptr<Permission> permission);
     static Permission MakeAnyPermission();
     static Permission MakeHeaderPermission(HeaderMatcher header_matcher);
     static Permission MakePathPermission(StringMatcher string_matcher);
@@ -133,7 +133,7 @@ struct Rbac {
         std::vector<std::unique_ptr<Principal>> principals);
     static Principal MakeOrPrincipal(
         std::vector<std::unique_ptr<Principal>> principals);
-    static Principal MakeNotPrincipal(Principal principal);
+    static Principal MakeNotPrincipal(std::unique_ptr<Principal> principal);
     static Principal MakeAnyPrincipal();
     static Principal MakeAuthenticatedPrincipal(
         std::optional<StringMatcher> string_matcher);
@@ -200,7 +200,7 @@ struct Rbac {
   Action action;
   std::map<std::string, Policy> policies;
 
-  AuditCondition audit_condition;
+  AuditCondition audit_condition = AuditCondition::kNone;
   std::vector<std::shared_ptr<const experimental::AuditLoggerFactory::Config>>
       logger_configs;
 };

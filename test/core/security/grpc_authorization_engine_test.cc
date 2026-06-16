@@ -59,9 +59,10 @@ class GrpcAuthorizationEngineTest : public ::testing::Test {
 
 TEST_F(GrpcAuthorizationEngineTest, AllowEngineWithMatchingPolicy) {
   Rbac::Policy policy1(
-      Rbac::Permission::MakeNotPermission(
-          Rbac::Permission::MakeAnyPermission()),
-      Rbac::Principal::MakeNotPrincipal(Rbac::Principal::MakeAnyPrincipal()));
+      Rbac::Permission::MakeNotPermission(std::make_unique<Rbac::Permission>(
+          Rbac::Permission::MakeAnyPermission())),
+      Rbac::Principal::MakeNotPrincipal(std::make_unique<Rbac::Principal>(
+          Rbac::Principal::MakeAnyPrincipal())));
   Rbac::Policy policy2(Rbac::Permission::MakeAnyPermission(),
                        Rbac::Principal::MakeAnyPrincipal());
   std::map<std::string, Rbac::Policy> policies;
@@ -77,9 +78,10 @@ TEST_F(GrpcAuthorizationEngineTest, AllowEngineWithMatchingPolicy) {
 
 TEST_F(GrpcAuthorizationEngineTest, AllowEngineWithNoMatchingPolicy) {
   Rbac::Policy policy1(
-      Rbac::Permission::MakeNotPermission(
-          Rbac::Permission::MakeAnyPermission()),
-      Rbac::Principal::MakeNotPrincipal(Rbac::Principal::MakeAnyPrincipal()));
+      Rbac::Permission::MakeNotPermission(std::make_unique<Rbac::Permission>(
+          Rbac::Permission::MakeAnyPermission())),
+      Rbac::Principal::MakeNotPrincipal(std::make_unique<Rbac::Principal>(
+          Rbac::Principal::MakeAnyPrincipal())));
   std::map<std::string, Rbac::Policy> policies;
   policies["policy1"] = std::move(policy1);
   Rbac rbac("authz", Rbac::Action::kAllow, std::move(policies));
@@ -100,9 +102,10 @@ TEST_F(GrpcAuthorizationEngineTest, AllowEngineWithEmptyPolicies) {
 
 TEST_F(GrpcAuthorizationEngineTest, DenyEngineWithMatchingPolicy) {
   Rbac::Policy policy1(
-      Rbac::Permission::MakeNotPermission(
-          Rbac::Permission::MakeAnyPermission()),
-      Rbac::Principal::MakeNotPrincipal(Rbac::Principal::MakeAnyPrincipal()));
+      Rbac::Permission::MakeNotPermission(std::make_unique<Rbac::Permission>(
+          Rbac::Permission::MakeAnyPermission())),
+      Rbac::Principal::MakeNotPrincipal(std::make_unique<Rbac::Principal>(
+          Rbac::Principal::MakeAnyPrincipal())));
   Rbac::Policy policy2(Rbac::Permission::MakeAnyPermission(),
                        Rbac::Principal::MakeAnyPrincipal());
   std::map<std::string, Rbac::Policy> policies;
@@ -118,9 +121,10 @@ TEST_F(GrpcAuthorizationEngineTest, DenyEngineWithMatchingPolicy) {
 
 TEST_F(GrpcAuthorizationEngineTest, DenyEngineWithNoMatchingPolicy) {
   Rbac::Policy policy1(
-      Rbac::Permission::MakeNotPermission(
-          Rbac::Permission::MakeAnyPermission()),
-      Rbac::Principal::MakeNotPrincipal(Rbac::Principal::MakeAnyPrincipal()));
+      Rbac::Permission::MakeNotPermission(std::make_unique<Rbac::Permission>(
+          Rbac::Permission::MakeAnyPermission())),
+      Rbac::Principal::MakeNotPrincipal(std::make_unique<Rbac::Principal>(
+          Rbac::Principal::MakeAnyPrincipal())));
   std::map<std::string, Rbac::Policy> policies;
   policies["policy1"] = std::move(policy1);
   Rbac rbac("authz", Rbac::Action::kDeny, std::move(policies));
@@ -159,9 +163,10 @@ TEST_F(GrpcAuthorizationEngineTest, AuditLoggerNoneNotInvokedOnAllowedRequest) {
 
 TEST_F(GrpcAuthorizationEngineTest, AuditLoggerNoneNotInvokedOnDeniedRequest) {
   Rbac::Policy policy1(
-      Rbac::Permission::MakeNotPermission(
-          Rbac::Permission::MakeAnyPermission()),
-      Rbac::Principal::MakeNotPrincipal(Rbac::Principal::MakeAnyPrincipal()));
+      Rbac::Permission::MakeNotPermission(std::make_unique<Rbac::Permission>(
+          Rbac::Permission::MakeAnyPermission())),
+      Rbac::Principal::MakeNotPrincipal(std::make_unique<Rbac::Principal>(
+          Rbac::Principal::MakeAnyPrincipal())));
   std::map<std::string, Rbac::Policy> policies;
   policies["policy1"] = std::move(policy1);
   Rbac rbac(std::string(kPolicyName), Rbac::Action::kAllow,
@@ -197,9 +202,10 @@ TEST_F(GrpcAuthorizationEngineTest, AuditLoggerOnDenyNotInvoked) {
 
 TEST_F(GrpcAuthorizationEngineTest, AuditLoggerOnAllowNotInvoked) {
   Rbac::Policy policy1(
-      Rbac::Permission::MakeNotPermission(
-          Rbac::Permission::MakeAnyPermission()),
-      Rbac::Principal::MakeNotPrincipal(Rbac::Principal::MakeAnyPrincipal()));
+      Rbac::Permission::MakeNotPermission(std::make_unique<Rbac::Permission>(
+          Rbac::Permission::MakeAnyPermission())),
+      Rbac::Principal::MakeNotPrincipal(std::make_unique<Rbac::Principal>(
+          Rbac::Principal::MakeAnyPrincipal())));
   std::map<std::string, Rbac::Policy> policies;
   policies["policy1"] = std::move(policy1);
   Rbac rbac(std::string(kPolicyName), Rbac::Action::kAllow,
@@ -262,9 +268,10 @@ TEST_F(GrpcAuthorizationEngineTest,
 
 TEST_F(GrpcAuthorizationEngineTest, AuditLoggerOnDenyInvoked) {
   Rbac::Policy policy1(
-      Rbac::Permission::MakeNotPermission(
-          Rbac::Permission::MakeAnyPermission()),
-      Rbac::Principal::MakeNotPrincipal(Rbac::Principal::MakeAnyPrincipal()));
+      Rbac::Permission::MakeNotPermission(std::make_unique<Rbac::Permission>(
+          Rbac::Permission::MakeAnyPermission())),
+      Rbac::Principal::MakeNotPrincipal(std::make_unique<Rbac::Principal>(
+          Rbac::Principal::MakeAnyPrincipal())));
   std::map<std::string, Rbac::Policy> policies;
   policies["policy1"] = std::move(policy1);
   Rbac rbac(std::string(kPolicyName), Rbac::Action::kAllow,
@@ -287,9 +294,10 @@ TEST_F(GrpcAuthorizationEngineTest, AuditLoggerOnDenyInvoked) {
 TEST_F(GrpcAuthorizationEngineTest,
        AuditLoggerOnDenyAndAllowInvokedWithDeniedRequest) {
   Rbac::Policy policy1(
-      Rbac::Permission::MakeNotPermission(
-          Rbac::Permission::MakeAnyPermission()),
-      Rbac::Principal::MakeNotPrincipal(Rbac::Principal::MakeAnyPrincipal()));
+      Rbac::Permission::MakeNotPermission(std::make_unique<Rbac::Permission>(
+          Rbac::Permission::MakeAnyPermission())),
+      Rbac::Principal::MakeNotPrincipal(std::make_unique<Rbac::Principal>(
+          Rbac::Principal::MakeAnyPrincipal())));
   std::map<std::string, Rbac::Policy> policies;
   policies["policy1"] = std::move(policy1);
   Rbac rbac(std::string(kPolicyName), Rbac::Action::kAllow,
@@ -311,9 +319,10 @@ TEST_F(GrpcAuthorizationEngineTest,
 
 TEST_F(GrpcAuthorizationEngineTest, MultipleAuditLoggerInvoked) {
   Rbac::Policy policy1(
-      Rbac::Permission::MakeNotPermission(
-          Rbac::Permission::MakeAnyPermission()),
-      Rbac::Principal::MakeNotPrincipal(Rbac::Principal::MakeAnyPrincipal()));
+      Rbac::Permission::MakeNotPermission(std::make_unique<Rbac::Permission>(
+          Rbac::Permission::MakeAnyPermission())),
+      Rbac::Principal::MakeNotPrincipal(std::make_unique<Rbac::Principal>(
+          Rbac::Principal::MakeAnyPrincipal())));
   std::map<std::string, Rbac::Policy> policies;
   policies["policy1"] = std::move(policy1);
   Rbac rbac(std::string(kPolicyName), Rbac::Action::kAllow,

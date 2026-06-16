@@ -85,7 +85,7 @@ XdsAuditLoggerRegistry::ParseXdsAuditLoggerConfig(
           typed_extension_config);
   auto extension = ExtractXdsExtension(context, typed_config, errors);
   if (!extension.has_value()) return nullptr;
-  bool found = false;
+  absl::string_view name;
   Json config;
   Match(
       extension->value,
@@ -93,17 +93,17 @@ XdsAuditLoggerRegistry::ParseXdsAuditLoggerConfig(
       [&](absl::string_view serialized_value) {
         auto it = audit_logger_config_factories_.find(extension->type);
         if (it == audit_logger_config_factories_.end()) return;
-        found = true;
+        name = it->second->name();
         config = Json::FromObject(it->second->ConvertXdsAuditLoggerConfig(
             context, serialized_value, errors));
       },
       // Custom logger types.
       [&](Json json) {
         if (!AuditLoggerRegistry::FactoryExists(extension->type)) return;
-        found = true;
+        name = extension->type;
         config = json;
       });
-  if (!found) {
+  if (name.empty()) {
     if (!envoy_config_rbac_v3_RBAC_AuditLoggingOptions_AuditLoggerConfig_is_optional(
             logger_config)) {
       errors->AddError("unsupported audit logger type");
@@ -111,8 +111,7 @@ XdsAuditLoggerRegistry::ParseXdsAuditLoggerConfig(
     return nullptr;
   }
   // Validate the converted config.
-  auto parsed_config =
-      AuditLoggerRegistry::ParseConfig(extension->type, config);
+  auto parsed_config = AuditLoggerRegistry::ParseConfig(name, config);
   if (!parsed_config.ok()) {
     errors->AddError(parsed_config.status().message());
     return nullptr;

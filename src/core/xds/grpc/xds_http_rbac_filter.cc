@@ -633,6 +633,21 @@ StringMatcher ParsePathMatcher(
   return StringMatcherParse(context, path, errors);
 }
 
+HeaderMatcher ParseHeaderMatcher(
+    const XdsResourceType::DecodeContext& context,
+    const envoy_config_route_v3_HeaderMatcher* matcher,
+    ValidationErrors* errors) {
+  HeaderMatcher header_matcher =
+      ParseXdsHeaderMatcher(context, matcher, errors);
+  ValidationErrors::ScopedField field(errors, ".name");
+  if (header_matcher.name() == ":scheme") {
+    errors->AddError("':scheme' not allowed in header");
+  } else if (absl::StartsWith(header_matcher.name(), "grpc-")) {
+    errors->AddError("'grpc-' prefixes not allowed in header");
+  }
+  return header_matcher;
+}
+
 std::unique_ptr<Rbac::Permission> ParsePermission(
     const XdsResourceType::DecodeContext& context,
     const envoy_config_rbac_v3_Permission* permission, size_t depth,
@@ -670,14 +685,14 @@ std::unique_ptr<Rbac::Permission> ParsePermission(
         depth, errors));
   } else if (envoy_config_rbac_v3_Permission_has_or_rules(permission)) {
     ValidationErrors::ScopedField field(errors, ".or_permission");
-    *result = Rbac::Permission::MakeAndPermission(ParsePermissionSet(
+    *result = Rbac::Permission::MakeOrPermission(ParsePermissionSet(
         context, envoy_config_rbac_v3_Permission_or_rules(permission),
         depth, errors));
   } else if (envoy_config_rbac_v3_Permission_has_any(permission)) {
     *result = Rbac::Permission::MakeAnyPermission();
   } else if (envoy_config_rbac_v3_Permission_has_header(permission)) {
     ValidationErrors::ScopedField field(errors, ".header");
-    *result = Rbac::Permission::MakeHeaderPermission(ParseXdsHeaderMatcher(
+    *result = Rbac::Permission::MakeHeaderPermission(ParseHeaderMatcher(
         context, envoy_config_rbac_v3_Permission_header(permission), errors));
   } else if (envoy_config_rbac_v3_Permission_has_url_path(permission)) {
     ValidationErrors::ScopedField field(errors, ".url_path");
@@ -701,7 +716,7 @@ std::unique_ptr<Rbac::Permission> ParsePermission(
     auto not_permission = ParsePermission(
         context, envoy_config_rbac_v3_Permission_not_rule(permission),
         depth + 1, errors);
-    *result = Rbac::Permission::MakeNotPermission(std::move(*not_permission));
+    *result = Rbac::Permission::MakeNotPermission(std::move(not_permission));
   } else if (envoy_config_rbac_v3_Permission_has_requested_server_name(
                  permission)) {
     ValidationErrors::ScopedField field(errors, ".requested_server_name");
@@ -780,22 +795,12 @@ std::unique_ptr<Rbac::Principal> ParsePrincipal(
         ParseCidrRange(envoy_config_rbac_v3_Principal_remote_ip(principal)));
   } else if (envoy_config_rbac_v3_Principal_has_header(principal)) {
     ValidationErrors::ScopedField field(errors, ".header");
-    HeaderMatcher header_matcher = ParseXdsHeaderMatcher(
-        context, envoy_config_rbac_v3_Principal_header(principal), errors);
-    if (header_matcher.name() == ":scheme") {
-      errors->AddError("':scheme' not allowed in header");
-    } else if (absl::StartsWith(header_matcher.name(), "grpc-")) {
-      errors->AddError("'grpc-' prefixes not allowed in header");
-    }
-    *result = Rbac::Principal::MakeHeaderPrincipal(std::move(header_matcher));
+    *result = Rbac::Principal::MakeHeaderPrincipal(ParseHeaderMatcher(
+        context, envoy_config_rbac_v3_Principal_header(principal), errors));
   } else if (envoy_config_rbac_v3_Principal_has_url_path(principal)) {
     ValidationErrors::ScopedField field(errors, ".url_path");
-    const auto* url_path = envoy_config_rbac_v3_Principal_url_path(principal);
-    const auto* path = envoy_type_matcher_v3_PathMatcher_path(url_path);
-    if (path != nullptr) {
-      *result = Rbac::Principal::MakePathPrincipal(
-          StringMatcherParse(context, path, errors));
-    }      
+    *result = Rbac::Principal::MakePathPrincipal(ParsePathMatcher(
+        context, envoy_config_rbac_v3_Principal_url_path(principal), errors));
   } else if (envoy_config_rbac_v3_Principal_has_metadata(principal)) {
     const auto* metadata = envoy_config_rbac_v3_Principal_metadata(principal);
     // The fields "filter", "path" and "value" are irrelevant to gRPC as per
@@ -808,7 +813,7 @@ std::unique_ptr<Rbac::Principal> ParsePrincipal(
     auto not_principal = ParsePrincipal(
         context, envoy_config_rbac_v3_Principal_not_id(principal), depth + 1,
         errors);
-    *result = Rbac::Principal::MakeNotPrincipal(std::move(*not_principal));
+    *result = Rbac::Principal::MakeNotPrincipal(std::move(not_principal));
   } else {
     errors->AddError("invalid rule");
   }
