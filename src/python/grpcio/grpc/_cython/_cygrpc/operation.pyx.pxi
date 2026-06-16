@@ -68,25 +68,21 @@ cdef class SendMessageOperation(Operation):
     self.c_op.flags = self._flags
     
     cdef grpc_slice message_slice
-    cdef object message_obj
-    cdef const unsigned char[::1] view
     cdef bytes message_bytes
 
+    if isinstance(self._message, bytes):
+      message_bytes = self._message
+    else:
+      message_bytes = bytes(self._message)
+
     if IsPythonZeroCopyEnabled():
-      view = self._message
-      message_obj = self._message
-      if view.shape[0] > 0:
-        Py_INCREF(message_obj)
+      if len(message_bytes) > 0:
+        Py_INCREF(message_bytes)
         message_slice = grpc_slice_new_with_user_data(
-            <void*>&view[0], view.shape[0], py_decref_destroy, <void*>message_obj)
+            <void*><char*>message_bytes, len(message_bytes), py_decref_destroy, <void*>message_bytes)
       else:
         message_slice = grpc_empty_slice()
     else:
-      if isinstance(self._message, bytes):
-        message_bytes = self._message
-      else:
-        message_bytes = bytes(self._message)
-      
       message_slice = grpc_slice_from_copied_buffer(
           <const char *>message_bytes, len(message_bytes))
       
@@ -215,6 +211,8 @@ cdef class ReceiveMessageOperation(Operation):
                        message_slice_length)
                 offset += message_slice_length
               grpc_slice_unref(message_slice)
+            if offset < total_length:
+              result = result[:offset]
             self._message = result
           else:
             self._message = b''
