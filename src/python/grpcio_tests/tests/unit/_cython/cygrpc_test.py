@@ -510,7 +510,6 @@ class ServerClientMixin:
         self.assertIsInstance(client_received, bytes)
         self.assertEqual(RESPONSE, client_received)
 
-
     def test_empty_message_returns_bytes(self):
         """Empty messages should return b'' (not memoryview), matching the
         zero-length slice fast path in ReceiveMessageOperation."""
