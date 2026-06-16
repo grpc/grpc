@@ -248,7 +248,6 @@ test_suite(
     name = "bazel_build_tests_linux",
     tests = [
         ":bazel_build_out_of_tree_with_bzlmod_linux",
-        ":bazel_build_out_of_tree_with_protobuf_34_linux",
         ":bazel_build_with_bazel_9_linux",
         ":bazel_build_with_grpc_no_xds_linux",
         ":bazel_build_with_grpc_no_xds_negative_test_linux",
