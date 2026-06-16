@@ -73,9 +73,6 @@ cdef class SendMessageOperation(Operation):
     cdef bytes message_bytes
 
     if IsPythonZeroCopyEnabled():
-      if isinstance(self._message, list):
-        self._message = b''.join(self._message)
-
       view = self._message
       message_obj = self._message
       if view.shape[0] > 0:
@@ -85,9 +82,7 @@ cdef class SendMessageOperation(Operation):
       else:
         message_slice = grpc_empty_slice()
     else:
-      if isinstance(self._message, list):
-        message_bytes = b''.join(self._message)
-      elif isinstance(self._message, bytes):
+      if isinstance(self._message, bytes):
         message_bytes = self._message
       else:
         message_bytes = bytes(self._message)
@@ -204,12 +199,9 @@ cdef class ReceiveMessageOperation(Operation):
           &message_reader, self._c_message_byte_buffer)
       if message_reader_status:
         if IsPythonZeroCopyEnabled():
-          # Copy every slice into a single bytes object. This bounds the number
-          # of Python objects (and pinned C slices) to O(1) regardless of how
-          # the peer fragments the message into slices -- preventing the
-          # per-slice memory blow-up an adversarial peer could otherwise trigger
-          # by sending many tiny DATA frames -- while copying the payload only
-          # once (vs the old per-slice bytes + join).
+          # When the zero-copy bazel experiment is enabled, copy all slices into 
+          # a single bytes object. This bounds Python objects to O(1) and copies
+          # the payload only once.
           total_length = grpc_byte_buffer_length(self._c_message_byte_buffer)
           if total_length > 0:
             result = PyBytes_FromStringAndSize(NULL, total_length)

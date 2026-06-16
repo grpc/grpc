@@ -510,16 +510,6 @@ class ServerClientMixin:
         self.assertIsInstance(client_received, bytes)
         self.assertEqual(RESPONSE, client_received)
 
-    def test_send_list_of_bytes(self):
-        """Validates that SendMessageOperation accepts list-of-bytes input
-        (as produced by ReceiveMessageOperation for multi-slice messages)."""
-        REQUEST = [b"chunk1", b"chunk2", b"chunk3"]
-        RESPONSE = b"response"
-        client_received, server_received = self._do_simple_echo(
-            REQUEST, RESPONSE
-        )
-        self.assertIsInstance(server_received, bytes)
-        self.assertEqual(b"chunk1chunk2chunk3", server_received)
 
     def test_empty_message_returns_bytes(self):
         """Empty messages should return b'' (not memoryview), matching the
