@@ -213,6 +213,53 @@ class XdsExtProcEnd2endTest : public XdsEnd2endTest {
     ClientHcmAccessor().Pack(hcm, &listener);
     return listener;
   }
+
+  Status SendRpcGetTrailers(
+      const RpcOptions& rpc_options, EchoResponse* response,
+      std::multimap<std::string, std::string>* server_initial_metadata,
+      std::multimap<std::string, std::string>* server_trailing_metadata) {
+    EchoResponse local_response;
+    if (response == nullptr) response = &local_response;
+    ClientContext context;
+    EchoRequest request;
+    if (rpc_options.server_expected_error != StatusCode::OK) {
+      auto* error = request.mutable_param()->mutable_expected_error();
+      error->set_code(rpc_options.server_expected_error);
+    }
+    rpc_options.SetupRpc(&context, &request);
+    Status status;
+    switch (rpc_options.service) {
+      case SERVICE_ECHO:
+        status = SendRpcMethod(stub_.get(), rpc_options, &context, request,
+                               response);
+        break;
+      case SERVICE_ECHO1:
+        status = SendRpcMethod(stub1_.get(), rpc_options, &context, request,
+                               response);
+        break;
+      case SERVICE_ECHO2:
+        status = SendRpcMethod(stub2_.get(), rpc_options, &context, request,
+                               response);
+        break;
+    }
+    if (server_initial_metadata != nullptr) {
+      for (const auto& [key, value] : context.GetServerInitialMetadata()) {
+        std::string header(key.data(), key.size());
+        absl::AsciiStrToLower(&header);
+        server_initial_metadata->emplace(
+            header, std::string(value.data(), value.size()));
+      }
+    }
+    if (server_trailing_metadata != nullptr) {
+      for (const auto& [key, value] : context.GetServerTrailingMetadata()) {
+        std::string header(key.data(), key.size());
+        absl::AsciiStrToLower(&header);
+        server_trailing_metadata->emplace(
+            header, std::string(value.data(), value.size()));
+      }
+    }
+    return status;
+  }
 };
 
 INSTANTIATE_TEST_SUITE_P(XdsTest, XdsExtProcEnd2endTest,
@@ -231,6 +278,7 @@ class MockRequestHeadersExternalProcessorService
     kObservabilityMode,
     kRemoveHeaders,
     kMutateReservedHeader,
+    kMutateTrailers,
   };
 
   void SetBehavior(Behavior behavior) { behavior_ = behavior; }
@@ -255,8 +303,12 @@ class MockRequestHeadersExternalProcessorService
       ::grpc::ServerReaderWriter<
           ::envoy::service::ext_proc::v3::ProcessingResponse,
           ::envoy::service::ext_proc::v3::ProcessingRequest>* stream) override {
+    LOG(INFO) << "MockRequestHeadersExternalProcessorService::Process started";
     ::envoy::service::ext_proc::v3::ProcessingRequest request;
     while (stream->Read(&request)) {
+      LOG(INFO) << "MockRequestHeadersExternalProcessorService::Process read "
+                   "request: "
+                << request.DebugString();
       if (request.has_protocol_config()) {
         absl::MutexLock lock(&mu_);
         if (request.has_request_headers()) {
@@ -336,12 +388,42 @@ class MockRequestHeadersExternalProcessorService
               ->mutable_response()
               ->mutable_header_mutation();  // just continue without mutations
         }
+      } else if (request.has_response_trailers()) {
+        if (behavior_ == Behavior::kMutateTrailers) {
+          auto* header_mutation =
+              response.mutable_response_trailers()->mutable_header_mutation();
+          auto* header = header_mutation->add_set_headers();
+          header->mutable_header()->set_key("x-ext-proc-test-trailer");
+          header->mutable_header()->set_value("e2e-modified-trailer");
+          header->set_append_action(envoy::config::core::v3::HeaderValueOption::
+                                        OVERWRITE_IF_EXISTS_OR_ADD);
+        } else if (behavior_ == Behavior::kRemoveHeaders) {
+          auto* header_mutation =
+              response.mutable_response_trailers()->mutable_header_mutation();
+          header_mutation->add_remove_headers("x-to-be-removed-trailer");
+        } else if (behavior_ == Behavior::kMutateReservedHeader) {
+          auto* header_mutation =
+              response.mutable_response_trailers()->mutable_header_mutation();
+          auto* header = header_mutation->add_set_headers();
+          header->mutable_header()->set_key("grpc-status");
+          header->mutable_header()->set_value("1");  // Cancelled
+        } else {
+          response.mutable_response_trailers()
+              ->mutable_header_mutation();  // just continue without mutations
+        }
       }
       if (behavior_ == Behavior::kObservabilityMode) {
         continue;
       }
-      stream->Write(response);
+      LOG(INFO) << "MockRequestHeadersExternalProcessorService::Process "
+                   "writing response: "
+                << response.DebugString();
+      bool write_ok = stream->Write(response);
+      LOG(INFO) << "MockRequestHeadersExternalProcessorService::Process write "
+                   "done, ok="
+                << write_ok;
     }
+    LOG(INFO) << "MockRequestHeadersExternalProcessorService::Process finished";
     return ::grpc::Status::OK;
   }
 
@@ -921,6 +1003,293 @@ TEST_P(XdsExtProcEnd2endTest,
   EXPECT_TRUE(status.ok()) << status.error_message();
   EXPECT_TRUE(service.has_protocol_config_in_request_headers());
   EXPECT_FALSE(service.has_protocol_config_in_response_headers());
+  server->Shutdown();
+}
+
+TEST_P(
+    XdsExtProcEnd2endTest,
+    ServerTrailingMetadataMutatedWhenResponseTrailerProcessingModeIsEnabled) {
+  int ext_proc_port = grpc_pick_unused_port_or_die();
+  std::string server_address = absl::StrCat("localhost:", ext_proc_port);
+  MockRequestHeadersExternalProcessorService service;
+  service.SetBehavior(
+      MockRequestHeadersExternalProcessorService::Behavior::kMutateTrailers);
+  ServerBuilder builder;
+  builder.AddListeningPort(server_address, InsecureServerCredentials());
+  builder.RegisterService(&service);
+  std::unique_ptr<Server> server = builder.BuildAndStart();
+  ASSERT_NE(server, nullptr);
+  auto ext_proc =
+      ExternalProcessorBuilder()
+          .SetTargetUri(absl::StrCat("dns:localhost:", ext_proc_port))
+          .SetInsecureChannelCredentials()
+          .SetRequestHeaderMode(envoy::extensions::filters::http::ext_proc::v3::
+                                    ProcessingMode::SKIP)
+          .SetResponseHeaderMode(envoy::extensions::filters::http::ext_proc::
+                                     v3::ProcessingMode::SKIP)
+          .SetResponseTrailerMode(envoy::extensions::filters::http::ext_proc::
+                                      v3::ProcessingMode::SEND)
+          .Build();
+  CreateAndStartBackends(1, /*xds_enabled=*/false);
+  SetListenerAndRouteConfiguration(balancer_.get(),
+                                   BuildListenerWithExtProcFilter(ext_proc),
+                                   default_route_config_);
+  Cluster ext_proc_cluster = default_cluster_;
+  ext_proc_cluster.set_name(std::string(kExtProcClusterName));
+  balancer_->ads_service()->SetCdsResource(ext_proc_cluster);
+  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
+  std::multimap<std::string, std::string> server_initial_metadata;
+  std::multimap<std::string, std::string> server_trailing_metadata;
+  EchoResponse response;
+  Status status = SendRpcGetTrailers(
+      RpcOptions().set_echo_metadata(true).set_metadata(
+          {{"x-ext-proc-test-trailer", "original-value"}}),
+      &response, &server_initial_metadata, &server_trailing_metadata);
+  EXPECT_TRUE(status.ok()) << status.error_message();
+  auto it = server_trailing_metadata.find("x-ext-proc-test-trailer");
+  ASSERT_NE(it, server_trailing_metadata.end());
+  EXPECT_EQ(it->second, "e2e-modified-trailer");
+  server->Shutdown();
+}
+
+TEST_P(
+    XdsExtProcEnd2endTest,
+    ServerTrailingMetadataMutationRejectedByRulesFailsCallWhenDisallowIsErrorIsTrue) {
+  int ext_proc_port = grpc_pick_unused_port_or_die();
+  std::string server_address = absl::StrCat("localhost:", ext_proc_port);
+  MockRequestHeadersExternalProcessorService service;
+  service.SetBehavior(
+      MockRequestHeadersExternalProcessorService::Behavior::kMutateTrailers);
+  ServerBuilder builder;
+  builder.AddListeningPort(server_address, InsecureServerCredentials());
+  builder.RegisterService(&service);
+  std::unique_ptr<Server> server = builder.BuildAndStart();
+  ASSERT_NE(server, nullptr);
+  auto ext_proc =
+      ExternalProcessorBuilder()
+          .SetTargetUri(absl::StrCat("dns:localhost:", ext_proc_port))
+          .SetInsecureChannelCredentials()
+          .SetRequestHeaderMode(envoy::extensions::filters::http::ext_proc::v3::
+                                    ProcessingMode::SKIP)
+          .SetResponseHeaderMode(envoy::extensions::filters::http::ext_proc::
+                                     v3::ProcessingMode::SKIP)
+          .SetResponseTrailerMode(envoy::extensions::filters::http::ext_proc::
+                                      v3::ProcessingMode::SEND)
+          .Build();
+  auto* rules = ext_proc.mutable_mutation_rules();
+  rules->mutable_allow_all_routing()->set_value(false);
+  rules->mutable_disallow_all()->set_value(true);
+  rules->mutable_disallow_is_error()->set_value(true);
+  CreateAndStartBackends(1, /*xds_enabled=*/false);
+  SetListenerAndRouteConfiguration(balancer_.get(),
+                                   BuildListenerWithExtProcFilter(ext_proc),
+                                   default_route_config_);
+  Cluster ext_proc_cluster = default_cluster_;
+  ext_proc_cluster.set_name(std::string(kExtProcClusterName));
+  balancer_->ads_service()->SetCdsResource(ext_proc_cluster);
+  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
+  std::multimap<std::string, std::string> server_initial_metadata;
+  std::multimap<std::string, std::string> server_trailing_metadata;
+  EchoResponse response;
+  Status status = SendRpcGetTrailers(
+      RpcOptions().set_echo_metadata(true).set_metadata(
+          {{"x-ext-proc-test-trailer", "original-value"}}),
+      &response, &server_initial_metadata, &server_trailing_metadata);
+  EXPECT_FALSE(status.ok());
+  EXPECT_EQ(status.error_code(), StatusCode::INTERNAL);
+  EXPECT_EQ(status.error_message(),
+            "Forbidden header mutation: x-ext-proc-test-trailer");
+  server->Shutdown();
+}
+
+TEST_P(
+    XdsExtProcEnd2endTest,
+    ServerTrailingMetadataMutationOfReservedHeaderFailsCallWithInternalError) {
+  int ext_proc_port = grpc_pick_unused_port_or_die();
+  std::string server_address = absl::StrCat("localhost:", ext_proc_port);
+  MockRequestHeadersExternalProcessorService service;
+  service.SetBehavior(MockRequestHeadersExternalProcessorService::Behavior::
+                          kMutateReservedHeader);
+  ServerBuilder builder;
+  builder.AddListeningPort(server_address, InsecureServerCredentials());
+  builder.RegisterService(&service);
+  std::unique_ptr<Server> server = builder.BuildAndStart();
+  ASSERT_NE(server, nullptr);
+  auto ext_proc =
+      ExternalProcessorBuilder()
+          .SetTargetUri(absl::StrCat("dns:localhost:", ext_proc_port))
+          .SetInsecureChannelCredentials()
+          .SetRequestHeaderMode(envoy::extensions::filters::http::ext_proc::v3::
+                                    ProcessingMode::SKIP)
+          .SetResponseHeaderMode(envoy::extensions::filters::http::ext_proc::
+                                     v3::ProcessingMode::SKIP)
+          .SetResponseTrailerMode(envoy::extensions::filters::http::ext_proc::
+                                      v3::ProcessingMode::SEND)
+          .Build();
+  CreateAndStartBackends(1, /*xds_enabled=*/false);
+  SetListenerAndRouteConfiguration(balancer_.get(),
+                                   BuildListenerWithExtProcFilter(ext_proc),
+                                   default_route_config_);
+  Cluster ext_proc_cluster = default_cluster_;
+  ext_proc_cluster.set_name(std::string(kExtProcClusterName));
+  balancer_->ads_service()->SetCdsResource(ext_proc_cluster);
+  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
+  std::multimap<std::string, std::string> server_initial_metadata;
+  std::multimap<std::string, std::string> server_trailing_metadata;
+  EchoResponse response;
+  Status status = SendRpcGetTrailers(
+      RpcOptions().set_echo_metadata(true).set_metadata(
+          {{"x-ext-proc-test-trailer", "original-value"}}),
+      &response, &server_initial_metadata, &server_trailing_metadata);
+  EXPECT_FALSE(status.ok());
+  EXPECT_EQ(status.error_code(), StatusCode::INTERNAL);
+  EXPECT_EQ(status.error_message(),
+            "validation failed: [field:header.key error:header \"grpc-status\" "
+            "not allowed]");
+  server->Shutdown();
+}
+
+TEST_P(
+    XdsExtProcEnd2endTest,
+    ServerTrailingMetadataRemovedWhenResponseTrailerProcessingModeIsEnabled) {
+  int ext_proc_port = grpc_pick_unused_port_or_die();
+  std::string server_address = absl::StrCat("localhost:", ext_proc_port);
+  MockRequestHeadersExternalProcessorService service;
+  service.SetBehavior(
+      MockRequestHeadersExternalProcessorService::Behavior::kRemoveHeaders);
+  ServerBuilder builder;
+  builder.AddListeningPort(server_address, InsecureServerCredentials());
+  builder.RegisterService(&service);
+  std::unique_ptr<Server> server = builder.BuildAndStart();
+  ASSERT_NE(server, nullptr);
+  auto ext_proc =
+      ExternalProcessorBuilder()
+          .SetTargetUri(absl::StrCat("dns:localhost:", ext_proc_port))
+          .SetInsecureChannelCredentials()
+          .SetRequestHeaderMode(envoy::extensions::filters::http::ext_proc::v3::
+                                    ProcessingMode::SKIP)
+          .SetResponseHeaderMode(envoy::extensions::filters::http::ext_proc::
+                                     v3::ProcessingMode::SKIP)
+          .SetResponseTrailerMode(envoy::extensions::filters::http::ext_proc::
+                                      v3::ProcessingMode::SEND)
+          .Build();
+  CreateAndStartBackends(1, /*xds_enabled=*/false);
+  SetListenerAndRouteConfiguration(balancer_.get(),
+                                   BuildListenerWithExtProcFilter(ext_proc),
+                                   default_route_config_);
+  Cluster ext_proc_cluster = default_cluster_;
+  ext_proc_cluster.set_name(std::string(kExtProcClusterName));
+  balancer_->ads_service()->SetCdsResource(ext_proc_cluster);
+  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
+  std::multimap<std::string, std::string> server_initial_metadata;
+  std::multimap<std::string, std::string> server_trailing_metadata;
+  EchoResponse response;
+  Status status = SendRpcGetTrailers(
+      RpcOptions().set_echo_metadata(true).set_metadata(
+          {{"x-to-be-removed-trailer", "present"}}),
+      &response, &server_initial_metadata, &server_trailing_metadata);
+  EXPECT_TRUE(status.ok()) << status.error_message();
+  auto it = server_trailing_metadata.find("x-to-be-removed-trailer");
+  EXPECT_EQ(it, server_trailing_metadata.end());
+  server->Shutdown();
+}
+
+TEST_P(XdsExtProcEnd2endTest,
+       ServerTrailingMetadataRequestWhenObservabilityModeIsEnabled) {
+  int ext_proc_port = grpc_pick_unused_port_or_die();
+  std::string server_address = absl::StrCat("localhost:", ext_proc_port);
+  MockRequestHeadersExternalProcessorService service;
+  service.SetBehavior(
+      MockRequestHeadersExternalProcessorService::Behavior::kObservabilityMode);
+  ServerBuilder builder;
+  builder.AddListeningPort(server_address, InsecureServerCredentials());
+  builder.RegisterService(&service);
+  std::unique_ptr<Server> server = builder.BuildAndStart();
+  ASSERT_NE(server, nullptr);
+  auto ext_proc =
+      ExternalProcessorBuilder()
+          .SetTargetUri(absl::StrCat("dns:localhost:", ext_proc_port))
+          .SetInsecureChannelCredentials()
+          .SetRequestHeaderMode(envoy::extensions::filters::http::ext_proc::v3::
+                                    ProcessingMode::SKIP)
+          .SetResponseHeaderMode(envoy::extensions::filters::http::ext_proc::
+                                     v3::ProcessingMode::SKIP)
+          .SetResponseTrailerMode(envoy::extensions::filters::http::ext_proc::
+                                      v3::ProcessingMode::SEND)
+          .SetObservabilityMode(true)
+          .Build();
+  CreateAndStartBackends(1, /*xds_enabled=*/false);
+  SetListenerAndRouteConfiguration(balancer_.get(),
+                                   BuildListenerWithExtProcFilter(ext_proc),
+                                   default_route_config_);
+  Cluster ext_proc_cluster = default_cluster_;
+  ext_proc_cluster.set_name(std::string(kExtProcClusterName));
+  balancer_->ads_service()->SetCdsResource(ext_proc_cluster);
+  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
+  std::multimap<std::string, std::string> server_initial_metadata;
+  std::multimap<std::string, std::string> server_trailing_metadata;
+  EchoResponse response;
+  Status status = SendRpcGetTrailers(
+      RpcOptions().set_echo_metadata(true).set_metadata(
+          {{"x-ext-proc-test-trailer", "original-value"}}),
+      &response, &server_initial_metadata, &server_trailing_metadata);
+  EXPECT_TRUE(status.ok()) << status.error_message();
+  server->Shutdown();
+}
+
+TEST_P(
+    XdsExtProcEnd2endTest,
+    ServerTrailingMetadataMutationRejectedByRulesIsSilentlyIgnoredWhenDisallowIsErrorIsFalse) {
+  int ext_proc_port = grpc_pick_unused_port_or_die();
+  std::string server_address = absl::StrCat("localhost:", ext_proc_port);
+  MockRequestHeadersExternalProcessorService service;
+  service.SetBehavior(
+      MockRequestHeadersExternalProcessorService::Behavior::kMutateTrailers);
+  ServerBuilder builder;
+  builder.AddListeningPort(server_address, InsecureServerCredentials());
+  builder.RegisterService(&service);
+  std::unique_ptr<Server> server = builder.BuildAndStart();
+  ASSERT_NE(server, nullptr);
+  envoy::config::common::mutation_rules::v3::HeaderMutationRules rules;
+  rules.mutable_disallow_all()->set_value(true);
+  rules.mutable_disallow_is_error()->set_value(false);
+  auto ext_proc =
+      ExternalProcessorBuilder()
+          .SetTargetUri(absl::StrCat("dns:localhost:", ext_proc_port))
+          .SetInsecureChannelCredentials()
+          .SetRequestHeaderMode(envoy::extensions::filters::http::ext_proc::v3::
+                                    ProcessingMode::SKIP)
+          .SetResponseHeaderMode(envoy::extensions::filters::http::ext_proc::
+                                     v3::ProcessingMode::SKIP)
+          .SetResponseTrailerMode(envoy::extensions::filters::http::ext_proc::
+                                      v3::ProcessingMode::SEND)
+          .SetMutationRules(rules)
+          .Build();
+  CreateAndStartBackends(1, /*xds_enabled=*/false);
+  SetListenerAndRouteConfiguration(balancer_.get(),
+                                   BuildListenerWithExtProcFilter(ext_proc),
+                                   default_route_config_);
+  Cluster ext_proc_cluster = default_cluster_;
+  ext_proc_cluster.set_name(std::string(kExtProcClusterName));
+  balancer_->ads_service()->SetCdsResource(ext_proc_cluster);
+  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
+  std::multimap<std::string, std::string> server_initial_metadata;
+  std::multimap<std::string, std::string> server_trailing_metadata;
+  EchoResponse response;
+  Status status = SendRpcGetTrailers(
+      RpcOptions().set_echo_metadata(true).set_metadata(
+          {{"x-ext-proc-test-trailer", "original-value"}}),
+      &response, &server_initial_metadata, &server_trailing_metadata);
+  EXPECT_TRUE(status.ok()) << status.error_message();
+  auto it = server_trailing_metadata.find("x-ext-proc-test-trailer");
+  ASSERT_NE(it, server_trailing_metadata.end());
+  EXPECT_EQ(it->second, "original-value");
   server->Shutdown();
 }
 

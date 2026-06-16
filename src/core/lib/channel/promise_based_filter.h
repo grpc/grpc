@@ -1262,9 +1262,8 @@ class V3InterceptorToV2Bridge : public ChannelFilter, public Interceptor {
     // passed to the v3 interceptor.  The interceptor will wind up returning
     // a handler to us via state->call_handler_latch, which will represent
     // the server side of the v3 interceptor.
-    auto call_pair =
-        MakeCallPair(std::move(call_args.client_initial_metadata),
-                     GetContext<Arena>()->Ref());
+    auto call_pair = MakeCallPair(std::move(call_args.client_initial_metadata),
+                                  GetContext<Arena>()->Ref());
     auto initiator = call_pair.initiator;
     // Inject the unstarted handler into the interceptor.
     StartCall(std::move(call_pair.handler));
@@ -1280,8 +1279,7 @@ class V3InterceptorToV2Bridge : public ChannelFilter, public Interceptor {
     };
     auto* pipe_owner = GetContext<Arena>()->ManagedNew<PipeOwner>();
     initiator.SpawnInfallible(
-        "bridge_trailing_metadata",
-        [initiator, pipe_owner]() mutable {
+        "bridge_trailing_metadata", [initiator, pipe_owner]() mutable {
           return Map(initiator.PullServerTrailingMetadata(),
                      [pipe_owner](ServerMetadataHandle md) {
                        pipe_owner->server_trailing_metadata.Set(std::move(md));
@@ -1333,7 +1331,7 @@ class V3InterceptorToV2Bridge : public ChannelFilter, public Interceptor {
                               [](bool x) { return StatusFlag(x); });
                         });
                   });
-              call_args.client_to_server_messages->InterceptAndMap(
+              call_args.client_to_server_messages->InterceptAndMapWithHalfClose(
                   [initiator, handler,
                    pipe_owner](MessageHandle message) mutable {
                     // Step 1: Push the message onto the v3 initiator in
@@ -1348,7 +1346,8 @@ class V3InterceptorToV2Bridge : public ChannelFilter, public Interceptor {
                           if (!message.has_value()) return std::nullopt;
                           return std::move(*message);
                         });
-                  });
+                  },
+                  [initiator]() mutable { initiator.SpawnFinishSends(); });
               // For server initial metadata, we do a similar thing, but
               // in the opposite direction, and using an inter-activity
               // latch instead of a pipe:
@@ -1462,14 +1461,32 @@ class V3InterceptorToV2Bridge : public ChannelFilter, public Interceptor {
                    call_args = std::move(call_args),
                    handler](ClientMetadataHandle metadata) mutable {
                     call_args.client_initial_metadata = std::move(metadata);
-                    return Seq(next_promise_factory(std::move(call_args)),
-                               [handler](ServerMetadataHandle metadata) mutable
-                                   -> Poll<ServerMetadataHandle> {
-                                 handler.SpawnPushServerTrailingMetadata(
-                                     std::move(metadata));
-                                 // We always lose the race.
-                                 return Pending{};
-                               });
+                    return Seq(
+                        next_promise_factory(std::move(call_args)),
+                        [handler](ServerMetadataHandle metadata) mutable {
+                          handler.SpawnPushServerTrailingMetadata(
+                              std::move(metadata));
+                          // We return a lambda (promise) here instead of
+                          // returning `Pending{}` directly to make this step
+                          // safe for subsequent polls. During V2 call teardown,
+                          // cancellation of active streams propagates through
+                          // the V2 filter stack, which wakes up this activity
+                          // and triggers re-polls of the bridge promise. If we
+                          // returned `Pending{}` directly, this factory lambda
+                          // would be re-evaluated on every poll, causing
+                          // duplicate calls to
+                          // `SpawnPushServerTrailingMetadata` and attempting to
+                          // move from the already-moved `metadata` parameter
+                          // (leading to crashes/undefined behavior). Returning
+                          // the inner lambda ensures that the side-effects in
+                          // this factory run exactly once, and subsequent polls
+                          // only execute the trivial, side-effect-free inner
+                          // lambda.
+                          return []() -> Poll<ServerMetadataHandle> {
+                            // We always lose the race.
+                            return Pending{};
+                          };
+                        });
                   });
             }));
   }

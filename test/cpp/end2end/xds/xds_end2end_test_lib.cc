@@ -365,6 +365,9 @@ void XdsEnd2endTest::RpcOptions::SetupRpc(ClientContext* context,
   if (echo_metadata_initially) {
     request->mutable_param()->set_echo_metadata_initially(true);
   }
+  if (echo_metadata) {
+    request->mutable_param()->set_echo_metadata(true);
+  }
 }
 
 //
