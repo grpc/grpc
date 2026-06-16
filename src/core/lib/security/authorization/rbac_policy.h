@@ -183,7 +183,7 @@ struct Rbac {
   std::map<std::string, Policy> policies;
 
   AuditCondition audit_condition;
-  std::vector<std::unique_ptr<experimental::AuditLoggerFactory::Config>>
+  std::vector<std::shared_ptr<const experimental::AuditLoggerFactory::Config>>
       logger_configs;
 };
 

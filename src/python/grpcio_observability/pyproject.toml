@@ -28,6 +28,7 @@ readme = {file = "README.rst", content-type = "text/x-rst"}
 authors = [{name = "The gRPC Authors", email = "grpc-io@googlegroups.com"}]
 classifiers = [
     "Development Status :: 5 - Production/Stable",
+    "Operating System :: POSIX :: Linux",
     "Programming Language :: Python",
     "Programming Language :: Python :: 3",
 ]

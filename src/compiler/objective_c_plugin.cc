@@ -229,6 +229,7 @@ class ObjectiveCGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
           "@class GRPCUnaryProtoCall;\n"
           "@class GRPCStreamingProtoCall;\n"
           "@class GRPCCallOptions;\n"
+          "@class GRXWriter;\n"
           "@protocol GRPCProtoResponseHandler;\n";
       if (!generator_params.no_v1_compatibility) {
         forward_declarations += "@class GRPCProtoCall;\n";

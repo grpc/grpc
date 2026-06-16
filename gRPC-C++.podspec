@@ -22,7 +22,7 @@
 Pod::Spec.new do |s|
   s.name     = 'gRPC-C++'
   # TODO (mxyan): use version that match gRPC version when pod is stabilized
-  version = '1.82.0-dev'
+  version = '1.83.0-dev'
   s.version  = version
   s.summary  = 'gRPC C++ library'
   s.homepage = 'https://grpc.io'
@@ -1284,7 +1284,9 @@ Pod::Spec.new do |s|
                       'src/core/load_balancing/xds/cds.h',
                       'src/core/load_balancing/xds/xds_channel_args.h',
                       'src/core/load_balancing/xds/xds_override_host.h',
+                      'src/core/mitigation_engine/mitigation.h',
                       'src/core/mitigation_engine/mitigation_engine.h',
+                      'src/core/mitigation_engine/mitigation_provider.h',
                       'src/core/net/socket_mutator.h',
                       'src/core/resolver/dns/c_ares/dns_resolver_ares.h',
                       'src/core/resolver/dns/c_ares/grpc_ares_ev_driver.h',
@@ -1354,6 +1356,7 @@ Pod::Spec.new do |s|
                       'src/core/tsi/ssl/key_logging/ssl_key_logging.h',
                       'src/core/tsi/ssl/session_cache/ssl_session.h',
                       'src/core/tsi/ssl/session_cache/ssl_session_cache.h',
+                      'src/core/tsi/ssl_telemetry_utils.h',
                       'src/core/tsi/ssl_transport_security.h',
                       'src/core/tsi/ssl_transport_security_utils.h',
                       'src/core/tsi/ssl_types.h',
@@ -2722,7 +2725,9 @@ Pod::Spec.new do |s|
                               'src/core/load_balancing/xds/cds.h',
                               'src/core/load_balancing/xds/xds_channel_args.h',
                               'src/core/load_balancing/xds/xds_override_host.h',
+                              'src/core/mitigation_engine/mitigation.h',
                               'src/core/mitigation_engine/mitigation_engine.h',
+                              'src/core/mitigation_engine/mitigation_provider.h',
                               'src/core/net/socket_mutator.h',
                               'src/core/resolver/dns/c_ares/dns_resolver_ares.h',
                               'src/core/resolver/dns/c_ares/grpc_ares_ev_driver.h',
@@ -2792,6 +2797,7 @@ Pod::Spec.new do |s|
                               'src/core/tsi/ssl/key_logging/ssl_key_logging.h',
                               'src/core/tsi/ssl/session_cache/ssl_session.h',
                               'src/core/tsi/ssl/session_cache/ssl_session_cache.h',
+                              'src/core/tsi/ssl_telemetry_utils.h',
                               'src/core/tsi/ssl_transport_security.h',
                               'src/core/tsi/ssl_transport_security_utils.h',
                               'src/core/tsi/ssl_types.h',

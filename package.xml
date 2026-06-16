@@ -13,8 +13,8 @@
  <date>2019-09-24</date>
  <time>16:06:07</time>
  <version>
-  <release>1.82.0dev</release>
-  <api>1.82.0dev</api>
+  <release>1.83.0dev</release>
+  <api>1.83.0dev</api>
  </version>
  <stability>
   <release>beta</release>
@@ -22,7 +22,7 @@
  </stability>
  <license>Apache 2.0</license>
  <notes>
-- gRPC Core 1.82.0 update
+- gRPC Core 1.83.0 update
  </notes>
  <contents>
   <dir baseinstalldir="/" name="/">
@@ -1866,7 +1866,9 @@
     <file baseinstalldir="/" name="src/core/load_balancing/xds/xds_override_host.cc" role="src" />
     <file baseinstalldir="/" name="src/core/load_balancing/xds/xds_override_host.h" role="src" />
     <file baseinstalldir="/" name="src/core/load_balancing/xds/xds_wrr_locality.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/mitigation_engine/mitigation.h" role="src" />
     <file baseinstalldir="/" name="src/core/mitigation_engine/mitigation_engine.h" role="src" />
+    <file baseinstalldir="/" name="src/core/mitigation_engine/mitigation_provider.h" role="src" />
     <file baseinstalldir="/" name="src/core/net/socket_mutator.cc" role="src" />
     <file baseinstalldir="/" name="src/core/net/socket_mutator.h" role="src" />
     <file baseinstalldir="/" name="src/core/plugin_registry/grpc_plugin_registry.cc" role="src" />
@@ -2006,6 +2008,8 @@
     <file baseinstalldir="/" name="src/core/tsi/ssl/session_cache/ssl_session_cache.cc" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/ssl/session_cache/ssl_session_cache.h" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/ssl/session_cache/ssl_session_openssl.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/tsi/ssl_telemetry_utils.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/tsi/ssl_telemetry_utils.h" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/ssl_transport_security.cc" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/ssl_transport_security.h" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/ssl_transport_security_utils.cc" role="src" />
