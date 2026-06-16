@@ -288,21 +288,22 @@ class ExtProcFilter final : public V3InterceptorToV2Bridge<ExtProcFilter> {
 
   auto ServerToClient(CallHandler handler, CallInitiator initiator,
                       RefCountedPtr<ExtProcCall> ext_proc_call);
+  auto ServerInitialMetadata(CallHandler handler, CallInitiator initiator,
+                             RefCountedPtr<ExtProcCall> ext_proc_call);
   auto ServerTrailingMetadata(CallHandler handler, CallInitiator initiator,
                               RefCountedPtr<ExtProcCall> ext_proc_call);
   auto ClientToServer(CallHandler handler, CallInitiator initiator,
                       RefCountedPtr<ExtProcCall> ext_proc_call,
                       ::google_protobuf_Struct* attributes);
-  auto ClientToServerMaybeObservabilityMode(CallHandler handler, CallInitiator initiator,
-                                            RefCountedPtr<ExtProcCall> ext_proc_call,
-                                            bool send_to_processor,
-                                            ::google_protobuf_Struct* attributes);
+  auto ClientToServerMaybeObservabilityMode(
+      CallHandler handler, CallInitiator initiator,
+      RefCountedPtr<ExtProcCall> ext_proc_call, bool send_to_processor,
+      ::google_protobuf_Struct* attributes);
   auto ClientToServerNormalMode(CallHandler handler, CallInitiator initiator,
                                 RefCountedPtr<ExtProcCall> ext_proc_call,
                                 ::google_protobuf_Struct* attributes);
   auto SendClientMessageRequest(const MessageHandle& message,
-                                ExtProcCall* ext_proc_call,
-                                bool end_of_stream,
+                                ExtProcCall* ext_proc_call, bool end_of_stream,
                                 bool end_of_stream_without_message,
                                 bool send_to_processor,
                                 ::google_protobuf_Struct* attributes);
