@@ -320,8 +320,7 @@ HeaderMatcher ParseXdsHeaderMatcher(
     type = HeaderMatcher::Type::kContains;
     match_string = UpbStringToAbsl(
         envoy_config_route_v3_HeaderMatcher_contains_match(header));
-  } else if (envoy_config_route_v3_HeaderMatcher_has_safe_regex_match(
-                 header)) {
+  } else if (envoy_config_route_v3_HeaderMatcher_has_safe_regex_match(header)) {
     const envoy_type_matcher_v3_RegexMatcher* regex_matcher =
         envoy_config_route_v3_HeaderMatcher_safe_regex_match(header);
     GRPC_CHECK_NE(regex_matcher, nullptr);

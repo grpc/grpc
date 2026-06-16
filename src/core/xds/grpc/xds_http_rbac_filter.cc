@@ -616,14 +616,13 @@ Rbac::CidrRange ParseCidrRange(const envoy_config_core_v3_CidrRange* range) {
       envoy_config_core_v3_CidrRange_address_prefix(range));
   cidr_range.prefix_len =
       ParseUInt32Value(envoy_config_core_v3_CidrRange_prefix_len(range))
-      .value_or(0);
+          .value_or(0);
   return cidr_range;
 }
 
-StringMatcher ParsePathMatcher(
-    const XdsResourceType::DecodeContext& context,
-    const envoy_type_matcher_v3_PathMatcher* matcher,
-    ValidationErrors* errors) {
+StringMatcher ParsePathMatcher(const XdsResourceType::DecodeContext& context,
+                               const envoy_type_matcher_v3_PathMatcher* matcher,
+                               ValidationErrors* errors) {
   ValidationErrors::ScopedField field(errors, ".path");
   const auto* path = envoy_type_matcher_v3_PathMatcher_path(matcher);
   if (path == nullptr) {
@@ -681,13 +680,13 @@ std::unique_ptr<Rbac::Permission> ParsePermission(
   if (envoy_config_rbac_v3_Permission_has_and_rules(permission)) {
     ValidationErrors::ScopedField field(errors, ".and_permission");
     *result = Rbac::Permission::MakeAndPermission(ParsePermissionSet(
-        context, envoy_config_rbac_v3_Permission_and_rules(permission),
-        depth, errors));
+        context, envoy_config_rbac_v3_Permission_and_rules(permission), depth,
+        errors));
   } else if (envoy_config_rbac_v3_Permission_has_or_rules(permission)) {
     ValidationErrors::ScopedField field(errors, ".or_permission");
     *result = Rbac::Permission::MakeOrPermission(ParsePermissionSet(
-        context, envoy_config_rbac_v3_Permission_or_rules(permission),
-        depth, errors));
+        context, envoy_config_rbac_v3_Permission_or_rules(permission), depth,
+        errors));
   } else if (envoy_config_rbac_v3_Permission_has_any(permission)) {
     *result = Rbac::Permission::MakeAnyPermission();
   } else if (envoy_config_rbac_v3_Permission_has_header(permission)) {
@@ -744,8 +743,7 @@ std::vector<std::unique_ptr<Rbac::Principal>> ParsePrincipalSet(
   const envoy_config_rbac_v3_Principal* const* ids =
       envoy_config_rbac_v3_Principal_Set_ids(set, &size);
   for (size_t i = 0; i < size; ++i) {
-    ValidationErrors::ScopedField field(errors,
-                                        absl::StrCat(".ids[", i, "]"));
+    ValidationErrors::ScopedField field(errors, absl::StrCat(".ids[", i, "]"));
     result.push_back(ParsePrincipal(context, ids[i], depth + 1, errors));
   }
   return result;
@@ -898,8 +896,8 @@ Rbac ParseXdsRbac(const XdsResourceType::DecodeContext& context,
     while (envoy_config_rbac_v3_RBAC_policies_next(rules, &key_view, &val,
                                                    &iter)) {
       absl::string_view key = UpbStringToAbsl(key_view);
-      ValidationErrors::ScopedField field(
-          errors, absl::StrCat(".policies[", key, "]"));
+      ValidationErrors::ScopedField field(errors,
+                                          absl::StrCat(".policies[", key, "]"));
       result.policies[std::string(key)] = ParsePolicy(context, val, errors);
     }
   }

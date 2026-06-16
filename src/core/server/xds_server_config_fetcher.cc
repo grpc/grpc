@@ -409,9 +409,9 @@ class XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
   };
 
   struct XdsConnectionState final : public ConnectionState {
-    absl::flat_hash_map<
-        const VirtualHost::Route*,
-        absl::StatusOr<RefCountedPtr<const FilterChain>>> filter_chains;
+    absl::flat_hash_map<const VirtualHost::Route*,
+                        absl::StatusOr<RefCountedPtr<const FilterChain>>>
+        filter_chains;
   };
 
   std::shared_ptr<const XdsRouteConfigResource> route_config_;
@@ -1252,8 +1252,10 @@ XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
               &route.action) == nullptr;
       auto filter_config_list = vhost_builder.BuildFilterChainForRoute(route);
       if (!filter_config_list.ok()) return filter_config_list.status();
-      config_selector_route.filter_configs = std::move(
-          DownCast<FilterConfigList*>(const_cast<FilterChain*>(filter_config_list->get()))->configs);
+      config_selector_route.filter_configs =
+          std::move(DownCast<FilterConfigList*>(
+                        const_cast<FilterChain*>(filter_config_list->get()))
+                        ->configs);
     }
   }
   config_selector->route_config_ = std::move(route_config);
@@ -1281,9 +1283,8 @@ XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
       if (filter_impls_.size() != route.filter_configs.size()) {
         // Should never happen.
         connection_state->filter_chains.emplace(
-            &route,
-            absl::InternalError(
-                "size of filter configs != size of filter impls"));
+            &route, absl::InternalError(
+                        "size of filter configs != size of filter impls"));
         continue;
       }
       for (size_t i = 0; i < filter_impls_.size(); ++i) {
