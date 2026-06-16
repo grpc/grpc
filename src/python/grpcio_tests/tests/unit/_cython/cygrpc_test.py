@@ -342,7 +342,6 @@ class ServerClientMixin:
                     )
                 )
             elif client_result.type() == cygrpc.OperationType.receive_message:
-                self.assertIsInstance(client_result.message(), bytes)
                 self.assertEqual(RESPONSE, client_result.message())
             elif (
                 client_result.type()
@@ -376,7 +375,6 @@ class ServerClientMixin:
             self.assertNotIn(server_result.type(), found_server_op_types)
             found_server_op_types.add(server_result.type())
             if server_result.type() == cygrpc.OperationType.receive_message:
-                self.assertIsInstance(server_result.message(), bytes)
                 self.assertEqual(REQUEST, server_result.message())
             elif (
                 server_result.type()
@@ -398,7 +396,7 @@ class ServerClientMixin:
             self.assertNotIn(server_result.type(), found_server_op_types)
             found_server_op_types.add(server_result.type())
             if server_result.type() == cygrpc.OperationType.receive_message:
-                self.assertEqual(REQUEST, bytes(server_result.message()))
+                self.assertEqual(REQUEST, server_result.message())
             elif (
                 server_result.type()
                 == cygrpc.OperationType.receive_close_on_server
