@@ -552,12 +552,31 @@ void ExtProcFilter::ExtProcCall::OnRecvMessage(absl::string_view payload) {
         auto& request_body = *parsed_response.request_body;
         bool eos = false;
         if (request_body.ok()) {
-          eos = request_body->end_of_stream ||
-                request_body->end_of_stream_without_message;
+          GRPC_TRACE_LOG(ext_proc_filter, INFO)
+              << "ExtProc: Parsed request body response, eos: "
+              << request_body->end_of_stream << ", eos_without_msg: "
+              << request_body->end_of_stream_without_message;
+          if (request_body->end_of_stream_without_message) {
+            // TODO(rishesh): Once PH2 work is done, we should make this
+            // pass (half-close without sending message). Currently we fail the
+            // RPC to avoid hangs on legacy transport adapters.
+            if (!status_latch_.IsSet()) {
+              status_latch_.Set(absl::InternalError(
+                  "end_of_stream_without_message not supported"));
+            }
+            if (!request_body_pipe_.sender.IsClosed()) {
+              request_body_pipe_.sender.MarkClosed();
+            }
+            return;
+          }
+          eos = request_body->end_of_stream;
         }
         request_body_pipe_.sender.Push(std::move(parsed_response))();
-        if (eos && !request_body_pipe_.sender.IsClosed()) {
-          request_body_pipe_.sender.MarkClosed();
+        if (eos) {
+          SetProcessorSentHalfClose();
+          if (!request_body_pipe_.sender.IsClosed()) {
+            request_body_pipe_.sender.MarkClosed();
+          }
         }
       } else if (parsed_response.response_body.has_value()) {
         auto& response_body = *parsed_response.response_body;
@@ -861,14 +880,17 @@ auto ExtProcFilter::ServerToClient(CallHandler handler, CallInitiator initiator,
                       *shared_metadata =
                           CancelledServerMetadataFromStatus(result);
                     }
-                    const bool is_ok = IsStatusOk(*shared_metadata);
+                    const bool should_wait =
+                        IsStatusOk(*shared_metadata) &&
+                        !ext_proc_call->IsProcessorSentHalfClose();
                     // For normal completion (status OK), we wait for the
                     // client-to-server path to finish sending all messages to
-                    // the external processor. For early/error completion, we
-                    // bypass the wait to avoid hangs and propagate the error
-                    // immediately.
+                    // the external processor. For early/error completion (or
+                    // when the processor has closed the client sends path
+                    // early), we bypass the wait to avoid hangs and propagate
+                    // the status immediately.
                     return If(
-                        is_ok,
+                        should_wait,
                         [ext_proc_call, handler, shared_metadata]() mutable {
                           GRPC_TRACE_LOG(ext_proc_filter, INFO)
                               << "ExtProc: ServerToClient trailing metadata "
@@ -876,11 +898,14 @@ auto ExtProcFilter::ServerToClient(CallHandler handler, CallInitiator initiator,
                                  "for client sends done";
                           return Seq(
                               ext_proc_call->client_sends_done_latch_.Wait(),
-                              [handler, shared_metadata]() mutable {
+                              [ext_proc_call, handler,
+                               shared_metadata]() mutable {
                                 GRPC_TRACE_LOG(ext_proc_filter, INFO)
                                     << "ExtProc: ServerToClient trailing "
                                        "metadata "
-                                       "client sends done, pushing metadata";
+                                       "client sends done, pushing metadata, "
+                                       "call="
+                                    << ext_proc_call.get();
                                 handler.SpawnPushServerTrailingMetadata(
                                     std::move(*shared_metadata));
                                 return absl::OkStatus();
@@ -990,51 +1015,77 @@ auto ExtProcFilter::ClientToServerNormalMode(
     RefCountedPtr<ExtProcCall> ext_proc_call,
     ::google_protobuf_Struct* attributes) {
   auto producer = TrySeq(
-      ForEach(MessagesFrom(handler),
-              [self = RefAsSubclass<ExtProcFilter>(), initiator, ext_proc_call,
-               attributes](MessageHandle message) mutable {
-                const bool send_to_processor = !ext_proc_call->IsStreamClosed();
-                if (send_to_processor) {
-                  ext_proc_call->IncrementOutstandingClientToServerMessages();
-                }
-                return Map(
-                    self->SendClientMessageRequest(
-                        message, ext_proc_call.get(),
-                        /*end_of_stream=*/false,
-                        /*end_of_stream_without_message=*/false,
-                        send_to_processor, attributes),
-                    [ext_proc_call, initiator, message = std::move(message)](
-                        absl::Status status) mutable {
-                      if (ext_proc_call->IsStreamClosed()) {
-                        initiator.SpawnPushMessage(std::move(message));
-                      }
-                      return status;
-                    });
-              }),
+      ForEach(
+          MessagesFrom(handler),
+          [self = RefAsSubclass<ExtProcFilter>(), initiator, ext_proc_call,
+           attributes](MessageHandle message) mutable {
+            return If(
+                ext_proc_call->IsProcessorSentHalfClose(),
+                []() {
+                  // TODO(rishesh): Once PH2 work is done, we should make this
+                  // pass (discard or handle cleanly). Currently we fail the
+                  // RPC to avoid crashes on half-closed transport.
+                  return absl::InternalError(
+                      "Client sends closed by external processor");
+                },
+                [self, initiator, ext_proc_call, attributes,
+                 message = std::move(message)]() mutable {
+                  const bool send_to_processor =
+                      !ext_proc_call->IsStreamClosed();
+                  if (send_to_processor) {
+                    ext_proc_call->IncrementOutstandingClientToServerMessages();
+                  }
+                  return Map(
+                      self->SendClientMessageRequest(
+                          message, ext_proc_call.get(),
+                          /*end_of_stream=*/false,
+                          /*end_of_stream_without_message=*/false,
+                          send_to_processor, attributes),
+                      [ext_proc_call, initiator, message = std::move(message)](
+                          absl::Status status) mutable {
+                        if (ext_proc_call->IsStreamClosed()) {
+                          initiator.SpawnPushMessage(std::move(message));
+                        }
+                        return status;
+                      });
+                });
+          }),
       [self = RefAsSubclass<ExtProcFilter>(), initiator, ext_proc_call,
        attributes]() mutable {
-        MessageHandle null_msg = nullptr;
-        const bool send_to_processor = !ext_proc_call->IsStreamClosed();
-        if (send_to_processor) {
-          ext_proc_call->IncrementOutstandingClientToServerMessages();
-        }
-        return Map(self->SendClientMessageRequest(
-                       null_msg, ext_proc_call.get(),
-                       /*end_of_stream=*/false,
-                       /*end_of_stream_without_message=*/true,
-                       send_to_processor, attributes),
-                   [ext_proc_call, initiator](absl::Status status) mutable {
-                     if (ext_proc_call->IsStreamClosed()) {
-                       initiator.SpawnFinishSends();
-                     }
-                     ext_proc_call->MarkClientSendsDone();
-                     return status;
-                   });
+        return If(
+            ext_proc_call->IsProcessorSentHalfClose(),
+            [ext_proc_call]() {
+              ext_proc_call->MarkClientSendsDone();
+              return absl::OkStatus();
+            },
+            [self, initiator, ext_proc_call, attributes]() mutable {
+              MessageHandle null_msg = nullptr;
+              const bool send_to_processor = !ext_proc_call->IsStreamClosed();
+              if (send_to_processor) {
+                ext_proc_call->IncrementOutstandingClientToServerMessages();
+              }
+              return Map(
+                  self->SendClientMessageRequest(
+                      null_msg, ext_proc_call.get(),
+                      /*end_of_stream=*/false,
+                      /*end_of_stream_without_message=*/true, send_to_processor,
+                      attributes),
+                  [ext_proc_call, initiator](absl::Status status) mutable {
+                    if (ext_proc_call->IsStreamClosed()) {
+                      initiator.SpawnFinishSends();
+                    }
+                    ext_proc_call->MarkClientSendsDone();
+                    return status;
+                  });
+            });
       });
   auto consumer = Seq(
       ForEach(std::move(ext_proc_call->request_body_pipe_.receiver),
               [initiator,
                ext_proc_call](absl::StatusOr<ExtProcResponse> result) mutable {
+                GRPC_TRACE_LOG(ext_proc_filter, INFO)
+                    << "ExtProc: consumer ForEach got item, ok: "
+                    << result.ok();
                 if (result.ok()) {
                   auto& ext_proc_response = *result;
                   if (ext_proc_response.request_body.has_value()) {
@@ -1065,9 +1116,14 @@ auto ExtProcFilter::ClientToServerNormalMode(
               }),
       [initiator, ext_proc_call](absl::Status status) mutable {
         GRPC_TRACE_LOG(ext_proc_filter, INFO)
-            << "ExtProc: ClientToServer finished sends";
+            << "ExtProc: ClientToServer finished sends, status: "
+            << status.ToString()
+            << ", IsClientSendsDone: " << ext_proc_call->IsClientSendsDone()
+            << ", IsStreamClosed: " << ext_proc_call->IsStreamClosed();
         if (ext_proc_call->IsClientSendsDone() ||
             !ext_proc_call->IsStreamClosed()) {
+          GRPC_TRACE_LOG(ext_proc_filter, INFO)
+              << "ExtProc: Calling SpawnFinishSends";
           initiator.SpawnFinishSends();
         }
         return status;

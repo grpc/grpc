@@ -199,6 +199,16 @@ class ExtProcFilter final : public V3InterceptorToV2Bridge<ExtProcFilter> {
       return client_sends_done_;
     }
 
+    bool IsProcessorSentHalfClose() {
+      MutexLock lock(&mu_);
+      return processor_sent_half_close_;
+    }
+
+    void SetProcessorSentHalfClose() {
+      MutexLock lock(&mu_);
+      processor_sent_half_close_ = true;
+    }
+
     void MarkClientSendsDone();
     void IncrementOutstandingClientToServerMessages();
     bool DecrementOutstandingClientToServerMessages();
@@ -270,6 +280,7 @@ class ExtProcFilter final : public V3InterceptorToV2Bridge<ExtProcFilter> {
     std::shared_ptr<InterActivityLatch<void>> write_completed_latch_
         ABSL_GUARDED_BY(&mu_);
     int outstanding_client_to_server_messages_ ABSL_GUARDED_BY(mu_) = 0;
+    bool processor_sent_half_close_ ABSL_GUARDED_BY(&mu_) = false;
   };
   void Orphaned() override {}
 
