@@ -36,7 +36,7 @@ RUN /scripts/install_python_for_wheel_crosscompilation.sh "3.11.15" "3.11.15" /o
 RUN /scripts/install_python_for_wheel_crosscompilation.sh "3.12.13" "3.12.13" /opt/python/cp312-cp312
 RUN /scripts/install_python_for_wheel_crosscompilation.sh "3.13.13" "3.13.13" /opt/python/cp313-cp313
 RUN /scripts/install_python_for_wheel_crosscompilation.sh "3.14.4" "3.14.4" /opt/python/cp314-cp314
-RUN /scripts/install_python_for_wheel_crosscompilation.sh "3.15.0b2" "3.15.0b2" /opt/python/cp315-cp315
+RUN /scripts/install_python_for_wheel_crosscompilation.sh "3.15.0" "3.15.0b2" /opt/python/cp315-cp315
 
 ENV AUDITWHEEL_ARCH armv7l
 ENV AUDITWHEEL_PLAT linux_armv7l
