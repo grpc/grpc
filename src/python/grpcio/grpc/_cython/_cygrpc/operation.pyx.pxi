@@ -13,6 +13,8 @@
 # limitations under the License.
 
 from cpython.ref cimport Py_INCREF, Py_DECREF
+from libc.string cimport memcpy
+from cpython.bytes cimport PyBytes_FromStringAndSize
 
 cdef void py_decref_destroy(void* user_data) noexcept with gil:
     Py_DECREF(<object>user_data)
@@ -206,6 +208,8 @@ cdef class ReceiveMessageOperation(Operation):
             while grpc_byte_buffer_reader_next(&message_reader, &message_slice):
               message_slice_length = grpc_slice_length(message_slice)
               if message_slice_length > 0:
+                if offset + message_slice_length > total_length:
+                  raise RuntimeError("Byte buffer length mismatch")
                 memcpy(dest + offset,
                        grpc_slice_start_ptr(message_slice),
                        message_slice_length)
