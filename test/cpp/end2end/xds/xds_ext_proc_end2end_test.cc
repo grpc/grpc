@@ -288,6 +288,7 @@ class MockRequestHeadersExternalProcessorService
     kUnsolicitedResponseBody,
     kCopyRequestBody,
     kStreamingUnsolicitedResponseBody,
+    kRequestBodyContinueAndReplace,
   };
 
   void SetBehavior(Behavior behavior) { behavior_ = behavior; }
@@ -484,16 +485,26 @@ class MockRequestHeadersExternalProcessorService
               request.request_body().end_of_stream_without_message());
           stream->Write(response);
           if (body_count == 2) {
-            ::envoy::service::ext_proc::v3::ProcessingResponse unsolicited_response;
-            auto* unsolicited_body_mutation = unsolicited_response.mutable_request_body()
-                                                    ->mutable_response()
-                                                    ->mutable_body_mutation();
-            auto* unsolicited_streamed_response = unsolicited_body_mutation->mutable_streamed_response();
+            ::envoy::service::ext_proc::v3::ProcessingResponse
+                unsolicited_response;
+            auto* unsolicited_body_mutation =
+                unsolicited_response.mutable_request_body()
+                    ->mutable_response()
+                    ->mutable_body_mutation();
+            auto* unsolicited_streamed_response =
+                unsolicited_body_mutation->mutable_streamed_response();
             unsolicited_streamed_response->set_end_of_stream(false);
-            unsolicited_streamed_response->set_end_of_stream_without_message(false);
+            unsolicited_streamed_response->set_end_of_stream_without_message(
+                false);
             stream->Write(unsolicited_response);
           }
           continue;
+        }
+        if (behavior_ == Behavior::kRequestBodyContinueAndReplace) {
+          auto* response_body = response.mutable_request_body();
+          auto* common_response = response_body->mutable_response();
+          common_response->set_status(::envoy::service::ext_proc::v3::
+                                          CommonResponse::CONTINUE_AND_REPLACE);
         }
         if (behavior_ == Behavior::kErrorOnRequestBody) {
           return ::grpc::Status(::grpc::StatusCode::INVALID_ARGUMENT,
@@ -2100,9 +2111,8 @@ TEST_P(XdsExtProcEnd2endTest,
   int ext_proc_port = grpc_pick_unused_port_or_die();
   std::string server_address = absl::StrCat("localhost:", ext_proc_port);
   MockRequestHeadersExternalProcessorService service;
-  service.SetBehavior(
-      MockRequestHeadersExternalProcessorService::Behavior::
-          kStreamingUnsolicitedResponseBody);
+  service.SetBehavior(MockRequestHeadersExternalProcessorService::Behavior::
+                          kStreamingUnsolicitedResponseBody);
   ServerBuilder builder;
   builder.AddListeningPort(server_address, InsecureServerCredentials());
   builder.RegisterService(&service);
@@ -2117,7 +2127,7 @@ TEST_P(XdsExtProcEnd2endTest,
           .SetResponseHeaderMode(envoy::extensions::filters::http::ext_proc::
                                      v3::ProcessingMode::SKIP)
           .SetRequestBodyMode(envoy::extensions::filters::http::ext_proc::v3::
-                                   ProcessingMode::GRPC)
+                                  ProcessingMode::GRPC)
           .Build();
   CreateAndStartBackends(1, /*xds_enabled=*/false);
   SetListenerAndRouteConfiguration(balancer_.get(),
@@ -2147,10 +2157,53 @@ TEST_P(XdsExtProcEnd2endTest,
   Status status = stream->Finish();
   EXPECT_FALSE(status.ok());
   EXPECT_EQ(status.error_code(), StatusCode::INTERNAL);
-  EXPECT_NE(status.error_message().find(
-                "Received unexpected request body response from external processor"),
-            std::string::npos)
+  EXPECT_NE(
+      status.error_message().find(
+          "Received unexpected request body response from external processor"),
+      std::string::npos)
       << "Actual error message: " << status.error_message();
+  server->Shutdown();
+}
+TEST_P(XdsExtProcEnd2endTest,
+       ClientToServerRequestBodyContinueAndReplaceFailsCall) {
+  int ext_proc_port = grpc_pick_unused_port_or_die();
+  std::string server_address = absl::StrCat("localhost:", ext_proc_port);
+  MockRequestHeadersExternalProcessorService service;
+  service.SetBehavior(MockRequestHeadersExternalProcessorService::Behavior::
+                          kRequestBodyContinueAndReplace);
+  ServerBuilder builder;
+  builder.AddListeningPort(server_address, InsecureServerCredentials());
+  builder.RegisterService(&service);
+  std::unique_ptr<Server> server = builder.BuildAndStart();
+  ASSERT_NE(server, nullptr);
+  auto ext_proc =
+      ExternalProcessorBuilder()
+          .SetTargetUri(absl::StrCat("dns:localhost:", ext_proc_port))
+          .SetInsecureChannelCredentials()
+          .SetRequestHeaderMode(envoy::extensions::filters::http::ext_proc::v3::
+                                    ProcessingMode::SKIP)
+          .SetResponseHeaderMode(envoy::extensions::filters::http::ext_proc::
+                                     v3::ProcessingMode::SKIP)
+          .SetRequestBodyMode(envoy::extensions::filters::http::ext_proc::v3::
+                                  ProcessingMode::GRPC)
+          .Build();
+  CreateAndStartBackends(1, /*xds_enabled=*/false);
+  SetListenerAndRouteConfiguration(balancer_.get(),
+                                   BuildListenerWithExtProcFilter(ext_proc),
+                                   default_route_config_);
+  Cluster ext_proc_cluster = default_cluster_;
+  ext_proc_cluster.set_name(std::string(kExtProcClusterName));
+  balancer_->ads_service()->SetCdsResource(ext_proc_cluster);
+  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
+  ClientContext context;
+  EchoRequest request;
+  request.set_message("msg1");
+  EchoResponse response;
+  Status status = stub_->Echo(&context, request, &response);
+  EXPECT_FALSE(status.ok());
+  EXPECT_EQ(status.error_code(), StatusCode::INTERNAL);
+  EXPECT_EQ(status.error_message(), "CONTINUE_AND_REPLACE is not supported");
   server->Shutdown();
 }
 
