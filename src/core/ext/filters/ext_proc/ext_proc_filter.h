@@ -288,6 +288,8 @@ class ExtProcFilter final : public V3InterceptorToV2Bridge<ExtProcFilter> {
 
   auto ServerToClient(CallHandler handler, CallInitiator initiator,
                       RefCountedPtr<ExtProcCall> ext_proc_call);
+  auto ServerTrailingMetadata(CallHandler handler, CallInitiator initiator,
+                              RefCountedPtr<ExtProcCall> ext_proc_call);
   auto ClientToServer(CallHandler handler, CallInitiator initiator,
                       RefCountedPtr<ExtProcCall> ext_proc_call,
                       ::google_protobuf_Struct* attributes);
