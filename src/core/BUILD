@@ -5728,6 +5728,7 @@ grpc_cc_library(
         "metadata",
         "metadata_batch",
         "pipe",
+        "race",
         "seq",
         "sync",
         "try_join",

@@ -175,12 +175,33 @@ class ExtProcFilter final : public V3InterceptorToV2Bridge<ExtProcFilter> {
 
     ExtProcChannel* channel() const { return channel_.get(); }
 
-    bool TestAndSetIsFirstMessage() {
+    bool GetAndSetIsFirstMessageOnStream() {
       MutexLock lock(&mu_);
-      bool first = is_first_message_;
-      is_first_message_ = false;
+      bool first = is_first_message_on_stream_;
+      is_first_message_on_stream_ = false;
       return first;
     }
+
+    bool GetAndSetIsFirstBodyMessage() {
+      MutexLock lock(&mu_);
+      bool first = is_first_body_message_;
+      is_first_body_message_ = false;
+      return first;
+    }
+
+    bool IsStreamClosed() {
+      MutexLock lock(&mu_);
+      return stream_closed_;
+    }
+
+    bool IsClientSendsDone() {
+      MutexLock lock(&mu_);
+      return client_sends_done_;
+    }
+
+    void MarkClientSendsDone();
+    void IncrementOutstandingClientToServerMessages();
+    bool DecrementOutstandingClientToServerMessages();
 
     InterActivityLatch<absl::StatusOr<ExtProcResponse>> request_headers_latch_;
     InterActivityLatch<absl::StatusOr<ExtProcResponse>> response_headers_latch_;
@@ -189,6 +210,8 @@ class ExtProcFilter final : public V3InterceptorToV2Bridge<ExtProcFilter> {
     InterActivityPipe<absl::StatusOr<ExtProcResponse>, 1> request_body_pipe_;
     InterActivityPipe<absl::StatusOr<ExtProcResponse>, 1> response_body_pipe_;
     InterActivityLatch<void> dispatch_trailers_latch_;
+    InterActivityLatch<absl::Status> status_latch_;
+    InterActivityLatch<void> client_sends_done_latch_;
 
     void OnRecvMessage(absl::string_view payload);
     void OnRequestSent();
@@ -237,12 +260,16 @@ class ExtProcFilter final : public V3InterceptorToV2Bridge<ExtProcFilter> {
             latches_to_unblock) ABSL_EXCLUSIVE_LOCKS_REQUIRED(&mu_);
 
     bool orphaned_ ABSL_GUARDED_BY(&mu_) = false;
-    bool is_first_message_ ABSL_GUARDED_BY(&mu_) = true;
+    bool is_first_message_on_stream_ ABSL_GUARDED_BY(&mu_) = true;
+    bool is_first_body_message_ ABSL_GUARDED_BY(&mu_) = true;
+    bool stream_closed_ ABSL_GUARDED_BY(&mu_) = false;
+    bool client_sends_done_ ABSL_GUARDED_BY(&mu_) = false;
     std::queue<std::shared_ptr<InterActivityLatch<void>>> write_queue_
         ABSL_GUARDED_BY(&mu_);
     bool write_active_ ABSL_GUARDED_BY(&mu_) = false;
     std::shared_ptr<InterActivityLatch<void>> write_completed_latch_
         ABSL_GUARDED_BY(&mu_);
+    int outstanding_client_to_server_messages_ ABSL_GUARDED_BY(mu_) = 0;
   };
   void Orphaned() override {}
 
@@ -250,8 +277,22 @@ class ExtProcFilter final : public V3InterceptorToV2Bridge<ExtProcFilter> {
 
   auto ServerToClient(CallHandler handler, CallInitiator initiator,
                       RefCountedPtr<ExtProcCall> ext_proc_call);
-  auto ClientToServerMessage(CallHandler handler, CallInitiator initiator,
-                             RefCountedPtr<ExtProcCall> ext_proc_call);
+  auto ClientToServer(CallHandler handler, CallInitiator initiator,
+                      RefCountedPtr<ExtProcCall> ext_proc_call,
+                      ::google_protobuf_Struct* attributes);
+  auto ClientToServerMaybeObservabilityMode(CallHandler handler, CallInitiator initiator,
+                                            RefCountedPtr<ExtProcCall> ext_proc_call,
+                                            bool send_to_processor,
+                                            ::google_protobuf_Struct* attributes);
+  auto ClientToServerNormalMode(CallHandler handler, CallInitiator initiator,
+                                RefCountedPtr<ExtProcCall> ext_proc_call,
+                                ::google_protobuf_Struct* attributes);
+  auto SendClientMessageRequest(const MessageHandle& message,
+                                ExtProcCall* ext_proc_call,
+                                bool end_of_stream,
+                                bool end_of_stream_without_message,
+                                bool send_to_processor,
+                                ::google_protobuf_Struct* attributes);
 
   RefCountedPtr<XdsTransportFactory> transport_factory_;
   RefCountedPtr<const Config> config_;
