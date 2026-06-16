@@ -14,7 +14,7 @@
 
 # AUTO-GENERATED FROM `$REPO_ROOT/templates/tools/dockerfile/grpc_artifact_python_manylinux2014_aarch64/Dockerfile.inja`!!!
 
-FROM quay.io/pypa/manylinux2014_aarch64:2026.05.07-2
+FROM quay.io/pypa/manylinux2014_aarch64:2026.06.14-5
 
 RUN git config --global protocol.file.allow always && \
   git config --global --add safe.directory /var/local/jenkins/grpc && \
