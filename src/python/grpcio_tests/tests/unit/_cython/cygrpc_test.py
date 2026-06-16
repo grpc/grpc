@@ -417,7 +417,6 @@ class ServerClientMixin:
         del client_call
         del server_call
 
-
     def test_6522(self):
         DEADLINE = time.time() + 5
         DEADLINE_TOLERANCE = 0.25
