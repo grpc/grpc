@@ -289,6 +289,7 @@ class MockRequestHeadersExternalProcessorService
     kCopyRequestBody,
     kStreamingUnsolicitedResponseBody,
     kRequestBodyContinueAndReplace,
+    kRequestBodyGrpcMessageCompressed,
   };
 
   void SetBehavior(Behavior behavior) { behavior_ = behavior; }
@@ -505,6 +506,13 @@ class MockRequestHeadersExternalProcessorService
           auto* common_response = response_body->mutable_response();
           common_response->set_status(::envoy::service::ext_proc::v3::
                                           CommonResponse::CONTINUE_AND_REPLACE);
+        }
+        if (behavior_ == Behavior::kRequestBodyGrpcMessageCompressed) {
+          auto* body_mutation = response.mutable_request_body()
+                                    ->mutable_response()
+                                    ->mutable_body_mutation();
+          auto* streamed_response = body_mutation->mutable_streamed_response();
+          streamed_response->set_grpc_message_compressed(true);
         }
         if (behavior_ == Behavior::kErrorOnRequestBody) {
           return ::grpc::Status(::grpc::StatusCode::INVALID_ARGUMENT,
@@ -2204,6 +2212,48 @@ TEST_P(XdsExtProcEnd2endTest,
   EXPECT_FALSE(status.ok());
   EXPECT_EQ(status.error_code(), StatusCode::INTERNAL);
   EXPECT_EQ(status.error_message(), "CONTINUE_AND_REPLACE is not supported");
+  server->Shutdown();
+}
+TEST_P(XdsExtProcEnd2endTest,
+       ClientToServerRequestBodyGrpcMessageCompressedFailsCall) {
+  int ext_proc_port = grpc_pick_unused_port_or_die();
+  std::string server_address = absl::StrCat("localhost:", ext_proc_port);
+  MockRequestHeadersExternalProcessorService service;
+  service.SetBehavior(MockRequestHeadersExternalProcessorService::Behavior::
+                          kRequestBodyGrpcMessageCompressed);
+  ServerBuilder builder;
+  builder.AddListeningPort(server_address, InsecureServerCredentials());
+  builder.RegisterService(&service);
+  std::unique_ptr<Server> server = builder.BuildAndStart();
+  ASSERT_NE(server, nullptr);
+  auto ext_proc =
+      ExternalProcessorBuilder()
+          .SetTargetUri(absl::StrCat("dns:localhost:", ext_proc_port))
+          .SetInsecureChannelCredentials()
+          .SetRequestHeaderMode(envoy::extensions::filters::http::ext_proc::v3::
+                                    ProcessingMode::SKIP)
+          .SetResponseHeaderMode(envoy::extensions::filters::http::ext_proc::
+                                     v3::ProcessingMode::SKIP)
+          .SetRequestBodyMode(envoy::extensions::filters::http::ext_proc::v3::
+                                  ProcessingMode::GRPC)
+          .Build();
+  CreateAndStartBackends(1, /*xds_enabled=*/false);
+  SetListenerAndRouteConfiguration(balancer_.get(),
+                                   BuildListenerWithExtProcFilter(ext_proc),
+                                   default_route_config_);
+  Cluster ext_proc_cluster = default_cluster_;
+  ext_proc_cluster.set_name(std::string(kExtProcClusterName));
+  balancer_->ads_service()->SetCdsResource(ext_proc_cluster);
+  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
+  ClientContext context;
+  EchoRequest request;
+  request.set_message("msg1");
+  EchoResponse response;
+  Status status = stub_->Echo(&context, request, &response);
+  EXPECT_FALSE(status.ok());
+  EXPECT_EQ(status.error_code(), StatusCode::INTERNAL);
+  EXPECT_EQ(status.error_message(), "grpc_message_compressed is not supported");
   server->Shutdown();
 }
 
