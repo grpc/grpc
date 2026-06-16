@@ -1071,7 +1071,7 @@ class CSharpLanguage:
         for test_runtime in self.test_runtimes:
             if test_runtime == "coreclr":
                 assembly_extension = ".dll"
-                assembly_subdir = "bin/%s/netcoreapp3.1" % msbuild_config
+                assembly_subdir = "bin/%s/net6.0" % msbuild_config
                 runtime_cmd = ["dotnet", "exec"]
             elif test_runtime == "mono":
                 assembly_extension = ".exe"
