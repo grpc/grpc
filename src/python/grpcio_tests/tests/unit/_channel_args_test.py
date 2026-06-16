@@ -18,6 +18,7 @@ import logging
 import unittest
 
 import grpc
+from grpc import _channel
 
 
 class TestPointerWrapper:
@@ -43,6 +44,20 @@ INVALID_TEST_CHANNEL_ARGS = [
 class ChannelArgsTest(unittest.TestCase):
     def test_client(self):
         grpc.insecure_channel("localhost:8080", options=TEST_CHANNEL_ARGS)
+
+    def test_python_channels_default_to_local_subchannel_pool(self):
+        augmented_options = _channel._augment_options((), None)
+        self.assertIn(("grpc.use_local_subchannel_pool", 1), augmented_options)
+
+    def test_explicit_subchannel_pool_option_is_preserved(self):
+        augmented_options = _channel._augment_options(
+            (("grpc.use_local_subchannel_pool", 0),), None
+        )
+        self.assertEqual(
+            1,
+            augmented_options.count(("grpc.use_local_subchannel_pool", 0)),
+        )
+        self.assertNotIn(("grpc.use_local_subchannel_pool", 1), augmented_options)
 
     def test_server(self):
         grpc.server(

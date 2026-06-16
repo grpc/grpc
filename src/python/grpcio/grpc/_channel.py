@@ -53,6 +53,7 @@ import grpc.experimental
 _LOGGER = logging.getLogger(__name__)
 
 _USER_AGENT = "grpc-python/{}".format(_grpcio_metadata.__version__)
+_LOCAL_SUBCHANNEL_POOL_OPTION = ("grpc.use_local_subchannel_pool", 1)
 
 _EMPTY_FLAGS = 0
 
@@ -1994,10 +1995,20 @@ def _augment_options(
     base_options: Sequence[ChannelArgumentType],
     compression: Optional[grpc.Compression],
 ) -> Sequence[ChannelArgumentType]:
+    base_options = tuple(base_options)
     compression_option = _compression.create_channel_option(compression)
+    subchannel_pool_option = (
+        ()
+        if any(
+            option[0] == _LOCAL_SUBCHANNEL_POOL_OPTION[0]
+            for option in base_options
+        )
+        else (_LOCAL_SUBCHANNEL_POOL_OPTION,)
+    )
     return (
-        tuple(base_options)
+        base_options
         + compression_option
+        + subchannel_pool_option
         + (
             (
                 cygrpc.ChannelArgKey.primary_user_agent_string.decode(),
