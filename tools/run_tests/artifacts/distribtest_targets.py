@@ -224,7 +224,7 @@ class PythonDistribTest:
                 "test/distrib/python/run_binary_distrib_test.sh",
                 copy_rel_path="test/distrib",
                 # TODO(sergiitk): consider decreasing this, they seem to take
-                # only around 5 mintues.
+                # only around 5 minutes.
                 timeout_seconds=datetime.timedelta(minutes=45).total_seconds(),
             )
 

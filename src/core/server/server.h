@@ -52,6 +52,7 @@
 #include "src/core/lib/resource_quota/connection_quota.h"
 #include "src/core/lib/resource_quota/stream_quota.h"
 #include "src/core/lib/slice/slice.h"
+#include "src/core/lib/surface/call.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/completion_queue.h"
 #include "src/core/lib/transport/transport.h"
@@ -75,18 +76,19 @@
 #define GRPC_ARG_SERVER_MAX_PENDING_REQUESTS "grpc.server.max_pending_requests"
 #define GRPC_ARG_SERVER_MAX_PENDING_REQUESTS_HARD_LIMIT \
   "grpc.server.max_pending_requests_hard_limit"
+#define GRPC_ARG_SERVER_INTERNAL_PARENT_CALL_ARENA \
+  "grpc.internal.parent_call_arena"
 
 namespace grpc_core {
 
 class ServerConfigFetcher
-    : public CppImplOf<ServerConfigFetcher, grpc_server_config_fetcher> {
+    : public CppImplOf<ServerConfigFetcher, grpc_server_config_fetcher>,
+      public RefCounted<ServerConfigFetcher> {
  public:
-  class ConnectionManager
-      : public grpc_core::DualRefCounted<ConnectionManager> {
+  class ConnectionManager : public DualRefCounted<ConnectionManager> {
    public:
-    virtual absl::StatusOr<grpc_core::ChannelArgs>
-    UpdateChannelArgsForConnection(const grpc_core::ChannelArgs& args,
-                                   grpc_endpoint* tcp) = 0;
+    virtual absl::StatusOr<ChannelArgs> UpdateChannelArgsForConnection(
+        const ChannelArgs& args, grpc_endpoint* tcp) = 0;
   };
 
   class WatcherInterface {
@@ -96,18 +98,24 @@ class ServerConfigFetcher
     // config is available. Implementations should update the connection manager
     // and start serving if not already serving.
     virtual void UpdateConnectionManager(
-        grpc_core::RefCountedPtr<ConnectionManager> manager) = 0;
+        RefCountedPtr<ConnectionManager> manager) = 0;
     // Implementations should stop serving when this is called. Serving should
     // only resume when UpdateConfig() is invoked.
     virtual void StopServing() = 0;
   };
 
-  virtual ~ServerConfigFetcher() = default;
-
   virtual void StartWatch(std::string listening_address,
                           std::unique_ptr<WatcherInterface> watcher) = 0;
   virtual void CancelWatch(WatcherInterface* watcher) = 0;
   virtual grpc_pollset_set* interested_parties() = 0;
+
+  static absl::string_view ChannelArgName() {
+    return GRPC_ARG_SERVER_CONFIG_FETCHER;
+  }
+  static int ChannelArgsCompare(const ServerConfigFetcher* a,
+                                const ServerConfigFetcher* b) {
+    return QsortCompare(a, b);
+  }
 };
 
 namespace experimental {
@@ -340,10 +348,6 @@ class Server : public ServerInterface,
     return server_call_tracer_factory_;
   }
 
-  void set_config_fetcher(std::unique_ptr<ServerConfigFetcher> config_fetcher) {
-    config_fetcher_ = std::move(config_fetcher);
-  }
-
   bool HasOpenConnections() ABSL_LOCKS_EXCLUDED(mu_global_);
 
   // Adds a listener to the server.  When the server starts, it will call
@@ -444,6 +448,11 @@ class Server : public ServerInterface,
     Channel* channel() const { return channel_.get(); }
     size_t cq_idx() const { return cq_idx_; }
 
+    RefCountedPtr<Arena> parent_arena() const { return parent_arena_; }
+    void set_parent_arena(RefCountedPtr<Arena> parent_arena) {
+      parent_arena_ = std::move(parent_arena);
+    }
+
     // Filter vtable functions.
     static grpc_error_handle InitChannelElement(
         grpc_channel_element* elem, grpc_channel_element_args* args);
@@ -467,6 +476,8 @@ class Server : public ServerInterface,
     std::optional<std::list<ChannelData*>::iterator> list_position_;
     grpc_closure finish_destroy_channel_closure_;
     intptr_t channelz_socket_uuid_;
+
+    RefCountedPtr<Arena> parent_arena_;
   };
 
   class CallData {
@@ -657,7 +668,7 @@ class Server : public ServerInterface,
 
   ChannelArgs const channel_args_;
   RefCountedPtr<channelz::ServerNode> channelz_node_;
-  std::unique_ptr<ServerConfigFetcher> config_fetcher_;
+  RefCountedPtr<ServerConfigFetcher> config_fetcher_;
   ServerCallTracerFactory* const server_call_tracer_factory_;
 
   std::vector<grpc_completion_queue*> cqs_;

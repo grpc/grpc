@@ -350,7 +350,7 @@ static bool check_line(grpc_http_parser* parser) {
     return true;
   }
 
-  // HTTP request with \n\r line termiantors.
+  // HTTP request with \n\r line terminators.
   else if (parser->cur_line_length >= 2 &&
            parser->cur_line[parser->cur_line_length - 2] == '\n' &&
            parser->cur_line[parser->cur_line_length - 1] == '\r') {
