@@ -1,31 +1,37 @@
-// Copyright 2024 gRPC authors.
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
 #include "src/core/call/server_call.h"
 
 #include <grpc/compression.h>
+#include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
+#include <grpc/status.h>
+#include <grpc/support/time.h>
+#include <string.h>
 
 #include <atomic>
+#include <initializer_list>
+#include <memory>
+#include <optional>
+#include <string>
+#include <utility>
 
+#include "src/core/call/call_spine.h"
+#include "src/core/call/metadata.h"
 #include "src/core/channelz/channelz.h"
-#include "src/core/lib/promise/promise.h"
+#include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/promise/try_seq.h"
 #include "src/core/lib/resource_quota/arena.h"
+#include "src/core/lib/slice/slice.h"
+#include "src/core/server/server_interface.h"
 #include "src/core/telemetry/call_tracer.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/ref_counted_ptr.h"
 #include "test/core/call/batch_builder.h"
 #include "test/core/call/yodel/yodel_test.h"
+#include "test/core/end2end/cq_verifier.h"
+#include "gtest/gtest.h"
+#include "absl/log/check.h"
 #include "absl/status/status.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 
@@ -89,7 +95,7 @@ class ServerCallTest : public YodelTest {
     return FindInMetadataArray(publish_initial_metadata_, key);
   }
 
- private:
+ protected:
   class TestServer final : public ServerInterface {
    public:
     const ChannelArgs& channel_args() const override { return channel_args_; }
@@ -139,6 +145,52 @@ SERVER_CALL_TEST(NoOp) { InitCall(MakeClientInitialMetadata({})); }
 SERVER_CALL_TEST(InitialMetadataPassedThrough) {
   InitCall(MakeClientInitialMetadata({{"foo", "bar"}}));
   EXPECT_EQ(GetClientInitialMetadata("foo"), "bar");
+}
+
+SERVER_CALL_TEST(DoubleSendInitialMetadata) {
+  grpc_call* call = InitCall(MakeClientInitialMetadata({}));
+  grpc_op ops[1];
+  memset(ops, 0, sizeof(ops));
+  ops[0].op = GRPC_OP_SEND_INITIAL_METADATA;
+  ops[0].data.send_initial_metadata.count = 0;
+  ops[0].data.send_initial_metadata.metadata = nullptr;
+
+  grpc_call_error err1 =
+      grpc_call_start_batch(call, ops, 1, CqVerifier::tag(1), nullptr);
+  EXPECT_EQ(err1, GRPC_CALL_OK);
+
+  grpc_call_error err2 =
+      grpc_call_start_batch(call, ops, 1, CqVerifier::tag(2), nullptr);
+  EXPECT_EQ(err2, GRPC_CALL_ERROR_TOO_MANY_OPERATIONS);
+
+  auto ev = grpc_completion_queue_next(cq_, gpr_inf_future(GPR_CLOCK_REALTIME),
+                                       nullptr);
+  EXPECT_EQ(ev.type, GRPC_OP_COMPLETE);
+  EXPECT_EQ(ev.tag, CqVerifier::tag(1));
+}
+
+SERVER_CALL_TEST(DoubleSendStatus) {
+  grpc_call* call = InitCall(MakeClientInitialMetadata({}));
+  grpc_op ops[1];
+  memset(ops, 0, sizeof(ops));
+  ops[0].op = GRPC_OP_SEND_STATUS_FROM_SERVER;
+  ops[0].data.send_status_from_server.status = GRPC_STATUS_OK;
+  ops[0].data.send_status_from_server.status_details = nullptr;
+  ops[0].data.send_status_from_server.trailing_metadata_count = 0;
+  ops[0].data.send_status_from_server.trailing_metadata = nullptr;
+
+  grpc_call_error err1 =
+      grpc_call_start_batch(call, ops, 1, CqVerifier::tag(1), nullptr);
+  EXPECT_EQ(err1, GRPC_CALL_OK);
+
+  grpc_call_error err2 =
+      grpc_call_start_batch(call, ops, 1, CqVerifier::tag(2), nullptr);
+  EXPECT_EQ(err2, GRPC_CALL_ERROR_TOO_MANY_OPERATIONS);
+
+  auto ev = grpc_completion_queue_next(cq_, gpr_inf_future(GPR_CLOCK_REALTIME),
+                                       nullptr);
+  EXPECT_EQ(ev.type, GRPC_OP_COMPLETE);
+  EXPECT_EQ(ev.tag, CqVerifier::tag(1));
 }
 
 }  // namespace grpc_core
