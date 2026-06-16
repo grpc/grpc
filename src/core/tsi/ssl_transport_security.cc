@@ -246,8 +246,7 @@ struct tsi_ssl_handshaker : public tsi_handshaker,
   void RecordTelemetry(tsi_result status, int ssl_error = SSL_ERROR_NONE,
                        unsigned long err_code = 0)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(&mu);
-  void MaybeRecordTelemetry(const SslHandshakeResult& handshake_result,
-                            bool handshaker_result_created)
+  void MaybeRecordTelemetry(const SslHandshakeResult& handshake_result)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(&mu);
 
 #if defined(OPENSSL_IS_BORINGSSL)
@@ -263,8 +262,7 @@ struct tsi_ssl_handshaker : public tsi_handshaker,
 };
 
 void tsi_ssl_handshaker::MaybeRecordTelemetry(
-    const SslHandshakeResult& handshake_result,
-    bool handshaker_result_created) {
+    const SslHandshakeResult& handshake_result) {
   if (handshake_result.transport_result == TSI_ASYNC ||
       handshake_result.transport_result == TSI_INCOMPLETE_DATA ||
       handshake_result.transport_result == TSI_DRAIN_BUFFER) {
@@ -2537,9 +2535,7 @@ ssl_handshaker_next_async(tsi_ssl_handshaker* self)
     return {TSI_HANDSHAKE_SHUTDOWN, std::nullopt};
   }
   SslHandshakeResult handshake_result = ssl_handshaker_next_impl(self);
-  self->MaybeRecordTelemetry(
-      handshake_result,
-      self->handshaker_next_args->handshaker_result != nullptr);
+  self->MaybeRecordTelemetry(handshake_result);
   if (handshake_result.transport_result != TSI_ASYNC) {
     // We now have a result to return to the caller via the callback.
     std::optional<HandshakerNextArgs> args =
@@ -2588,7 +2584,7 @@ static tsi_result ssl_handshaker_next(
     *bytes_to_send_size = impl->handshaker_next_args->bytes_to_send_size;
     *handshaker_result = impl->handshaker_next_args->handshaker_result;
   }
-  impl->MaybeRecordTelemetry(handshake_result, *handshaker_result != nullptr);
+  impl->MaybeRecordTelemetry(handshake_result);
   if (handshake_result.transport_result != TSI_ASYNC) {
     impl->handshaker_next_args.reset();
   }
