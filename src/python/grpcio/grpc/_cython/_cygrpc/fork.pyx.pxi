@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import atexit
 import os
 import sys
 
@@ -38,6 +39,7 @@ if sys.platform == "win32":
     _GRPC_ENABLE_FORK_SUPPORT = False
 
 _fork_handler_failed = False
+_grpc_runtime_initialized = False
 
 # These cdef functions are always compiled, even on Windows, to satisfy the
 # declarations in fork.pxd.pxi. On Windows they are effectively unused
@@ -91,7 +93,16 @@ cdef void __postfork_child() noexcept nogil:
             os._exit(os.EX_USAGE)
 
 
+def _is_grpc_runtime_initialized():
+    return _grpc_runtime_initialized and grpc_is_initialized()
+
+
 def fork_handlers_and_grpc_init():
+    global _grpc_runtime_initialized
+    if not _grpc_runtime_initialized:
+        grpc_init()
+        atexit.register(grpc_shutdown)
+        _grpc_runtime_initialized = True
     grpc_init()
     if _GRPC_ENABLE_FORK_SUPPORT:
         with _fork_state.fork_handler_registered_lock:

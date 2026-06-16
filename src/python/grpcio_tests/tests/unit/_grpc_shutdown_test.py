@@ -19,11 +19,17 @@ import time
 import unittest
 
 import grpc
+from grpc._cython import cygrpc
 
 _TIMEOUT_FOR_SEGFAULT = datetime.timedelta(seconds=10)
 
 
 class GrpcShutdownTest(unittest.TestCase):
+    def test_channel_close_keeps_python_runtime_initialized(self):
+        channel = grpc.insecure_channel("localhost:1")
+        channel.close()
+        self.assertTrue(cygrpc._is_grpc_runtime_initialized())
+
     def test_channel_close_with_connectivity_watcher(self):
         """Originated by https://github.com/grpc/grpc/issues/20299.
 
