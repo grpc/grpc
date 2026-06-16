@@ -121,7 +121,7 @@ bazel_dep(name = "yaml-cpp", version = "0.9.0", dev_dependency = True)
 # Python dependencies
 # ===================
 
-bazel_dep(name = "rules_python", version = "1.6.3")
+bazel_dep(name = "rules_python", version = "2.0.2")
 
 DEFAULT_PYTHON_VERSION = "3.11"
 
