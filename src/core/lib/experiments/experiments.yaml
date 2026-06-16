@@ -355,7 +355,7 @@
   test_tags: []
   allow_in_fuzzing_config: true
 - name: python_zero_copy
-  description: "Enable returning memoryview from ReceiveMessageOperation and zero-copy buffer sending from SendMessageOperation in gRPC Python"
+  description: "Enable zero-copy buffer sending from SendMessageOperation and optimized byte allocation in ReceiveMessageOperation in gRPC Python"
   expiry: 2027/05/01
   owner: asheshvidyut@google.com
   test_tags: []
