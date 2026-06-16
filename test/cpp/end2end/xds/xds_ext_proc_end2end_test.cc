@@ -287,6 +287,7 @@ class MockRequestHeadersExternalProcessorService
     kErrorOnRequestHeaders,
     kUnsolicitedResponseBody,
     kCopyRequestBody,
+    kStreamingUnsolicitedResponseBody,
   };
 
   void SetBehavior(Behavior behavior) { behavior_ = behavior; }
@@ -470,6 +471,29 @@ class MockRequestHeadersExternalProcessorService
               request.request_body().end_of_stream());
           streamed_response->set_end_of_stream_without_message(
               request.request_body().end_of_stream_without_message());
+        }
+        if (behavior_ == Behavior::kStreamingUnsolicitedResponseBody) {
+          auto* body_mutation = response.mutable_request_body()
+                                    ->mutable_response()
+                                    ->mutable_body_mutation();
+          auto* streamed_response = body_mutation->mutable_streamed_response();
+          streamed_response->set_body(request.request_body().body());
+          streamed_response->set_end_of_stream(
+              request.request_body().end_of_stream());
+          streamed_response->set_end_of_stream_without_message(
+              request.request_body().end_of_stream_without_message());
+          stream->Write(response);
+          if (body_count == 2) {
+            ::envoy::service::ext_proc::v3::ProcessingResponse unsolicited_response;
+            auto* unsolicited_body_mutation = unsolicited_response.mutable_request_body()
+                                                    ->mutable_response()
+                                                    ->mutable_body_mutation();
+            auto* unsolicited_streamed_response = unsolicited_body_mutation->mutable_streamed_response();
+            unsolicited_streamed_response->set_end_of_stream(false);
+            unsolicited_streamed_response->set_end_of_stream_without_message(false);
+            stream->Write(unsolicited_response);
+          }
+          continue;
         }
         if (behavior_ == Behavior::kErrorOnRequestBody) {
           return ::grpc::Status(::grpc::StatusCode::INVALID_ARGUMENT,
@@ -2069,6 +2093,64 @@ TEST_P(XdsExtProcEnd2endTest,
   Status status = stub_->Echo(&context, request, &response);
   EXPECT_TRUE(status.ok()) << status.error_message();
   EXPECT_EQ(response.message(), "original-body");
+  server->Shutdown();
+}
+TEST_P(XdsExtProcEnd2endTest,
+       ClientToServerStreamingUnsolicitedRequestBodyFailsCall) {
+  int ext_proc_port = grpc_pick_unused_port_or_die();
+  std::string server_address = absl::StrCat("localhost:", ext_proc_port);
+  MockRequestHeadersExternalProcessorService service;
+  service.SetBehavior(
+      MockRequestHeadersExternalProcessorService::Behavior::
+          kStreamingUnsolicitedResponseBody);
+  ServerBuilder builder;
+  builder.AddListeningPort(server_address, InsecureServerCredentials());
+  builder.RegisterService(&service);
+  std::unique_ptr<Server> server = builder.BuildAndStart();
+  ASSERT_NE(server, nullptr);
+  auto ext_proc =
+      ExternalProcessorBuilder()
+          .SetTargetUri(absl::StrCat("dns:localhost:", ext_proc_port))
+          .SetInsecureChannelCredentials()
+          .SetRequestHeaderMode(envoy::extensions::filters::http::ext_proc::v3::
+                                    ProcessingMode::SKIP)
+          .SetResponseHeaderMode(envoy::extensions::filters::http::ext_proc::
+                                     v3::ProcessingMode::SKIP)
+          .SetRequestBodyMode(envoy::extensions::filters::http::ext_proc::v3::
+                                   ProcessingMode::GRPC)
+          .Build();
+  CreateAndStartBackends(1, /*xds_enabled=*/false);
+  SetListenerAndRouteConfiguration(balancer_.get(),
+                                   BuildListenerWithExtProcFilter(ext_proc),
+                                   default_route_config_);
+  Cluster ext_proc_cluster = default_cluster_;
+  ext_proc_cluster.set_name(std::string(kExtProcClusterName));
+  balancer_->ads_service()->SetCdsResource(ext_proc_cluster);
+  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
+  ClientContext context;
+  auto stream = stub_->BidiStream(&context);
+  ASSERT_NE(stream, nullptr);
+  EchoRequest request;
+  request.set_message("msg0");
+  ASSERT_TRUE(stream->Write(request));
+  EchoResponse response;
+  ASSERT_TRUE(stream->Read(&response));
+  EXPECT_EQ(response.message(), "msg0");
+  request.set_message("msg1");
+  if (stream->Write(request)) {
+    if (stream->Read(&response)) {
+      EXPECT_EQ(response.message(), "msg1");
+      ASSERT_FALSE(stream->Read(&response));
+    }
+  }
+  Status status = stream->Finish();
+  EXPECT_FALSE(status.ok());
+  EXPECT_EQ(status.error_code(), StatusCode::INTERNAL);
+  EXPECT_NE(status.error_message().find(
+                "Received unexpected request body response from external processor"),
+            std::string::npos)
+      << "Actual error message: " << status.error_message();
   server->Shutdown();
 }
 
