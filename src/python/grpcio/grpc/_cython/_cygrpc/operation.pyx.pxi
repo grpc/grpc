@@ -72,7 +72,7 @@ cdef class SendMessageOperation(Operation):
     cdef const unsigned char[::1] view
     cdef bytes message_bytes
 
-    if IsPythonMemoryviewEnabled():
+    if IsPythonZeroCopyEnabled():
       if isinstance(self._message, list):
         self._message = b''.join(self._message)
 
@@ -203,7 +203,7 @@ cdef class ReceiveMessageOperation(Operation):
       message_reader_status = grpc_byte_buffer_reader_init(
           &message_reader, self._c_message_byte_buffer)
       if message_reader_status:
-        if IsPythonMemoryviewEnabled():
+        if IsPythonZeroCopyEnabled():
           # Copy every slice into a single bytes object. This bounds the number
           # of Python objects (and pinned C slices) to O(1) regardless of how
           # the peer fragments the message into slices -- preventing the
@@ -311,5 +311,5 @@ cdef class ReceiveCloseOnServerOperation(Operation):
     return self._cancelled
 
 
-def python_memoryview_enabled():
-  return IsPythonMemoryviewEnabled()
+def python_zero_copy_enabled():
+  return IsPythonZeroCopyEnabled()

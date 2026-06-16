@@ -63,13 +63,13 @@ inline bool IsTestExperiment2Enabled() { return true; }
 #ifndef NDEBUG
 #define GRPC_EXPERIMENT_IS_INCLUDED_TEST_EXPERIMENT_3
 #endif
-inline bool IsTestExperiment3Enabled() {
+inline bool IsTestExperiment3Enabled() { 
 #ifdef NDEBUG
-  return false;
+return false;
 #else
-  return true;
+return true;
 #endif
-}
+ }
 #define GRPC_EXPERIMENT_IS_INCLUDED_TEST_EXPERIMENT_4
 inline bool IsTestExperiment4Enabled() { return true; }
 inline bool IsTestExperiment5Enabled() { return false; }
@@ -80,13 +80,13 @@ inline bool IsTestExperiment2Enabled() { return false; }
 #ifndef NDEBUG
 #define GRPC_EXPERIMENT_IS_INCLUDED_TEST_EXPERIMENT_3
 #endif
-inline bool IsTestExperiment3Enabled() {
+inline bool IsTestExperiment3Enabled() { 
 #ifdef NDEBUG
-  return false;
+return false;
 #else
-  return true;
+return true;
 #endif
-}
+ }
 #define GRPC_EXPERIMENT_IS_INCLUDED_TEST_EXPERIMENT_4
 inline bool IsTestExperiment4Enabled() { return true; }
 inline bool IsTestExperiment5Enabled() { return false; }
@@ -95,33 +95,33 @@ inline bool IsTestExperiment5Enabled() { return false; }
 #ifndef NDEBUG
 #define GRPC_EXPERIMENT_IS_INCLUDED_TEST_EXPERIMENT_1
 #endif
-inline bool IsTestExperiment1Enabled() {
+inline bool IsTestExperiment1Enabled() { 
 #ifdef NDEBUG
-  return false;
+return false;
 #else
-  return true;
+return true;
 #endif
-}
+ }
 #ifndef NDEBUG
 #define GRPC_EXPERIMENT_IS_INCLUDED_TEST_EXPERIMENT_2
 #endif
-inline bool IsTestExperiment2Enabled() {
+inline bool IsTestExperiment2Enabled() { 
 #ifdef NDEBUG
-  return false;
+return false;
 #else
-  return true;
+return true;
 #endif
-}
+ }
 #ifndef NDEBUG
 #define GRPC_EXPERIMENT_IS_INCLUDED_TEST_EXPERIMENT_3
 #endif
-inline bool IsTestExperiment3Enabled() {
+inline bool IsTestExperiment3Enabled() { 
 #ifdef NDEBUG
-  return false;
+return false;
 #else
-  return true;
+return true;
 #endif
-}
+ }
 inline bool IsTestExperiment4Enabled() { return false; }
 inline bool IsTestExperiment5Enabled() { return false; }
 #endif
@@ -136,25 +136,15 @@ enum ExperimentIds {
   kNumTestExperiments
 };
 #define GRPC_EXPERIMENT_IS_INCLUDED_TEST_EXPERIMENT_1
-inline bool IsTestExperiment1Enabled() {
-  return IsTestExperimentEnabled<kExperimentIdTestExperiment1>();
-}
+inline bool IsTestExperiment1Enabled() { return IsTestExperimentEnabled<kExperimentIdTestExperiment1>(); }
 #define GRPC_EXPERIMENT_IS_INCLUDED_TEST_EXPERIMENT_2
-inline bool IsTestExperiment2Enabled() {
-  return IsTestExperimentEnabled<kExperimentIdTestExperiment2>();
-}
+inline bool IsTestExperiment2Enabled() { return IsTestExperimentEnabled<kExperimentIdTestExperiment2>(); }
 #define GRPC_EXPERIMENT_IS_INCLUDED_TEST_EXPERIMENT_3
-inline bool IsTestExperiment3Enabled() {
-  return IsTestExperimentEnabled<kExperimentIdTestExperiment3>();
-}
+inline bool IsTestExperiment3Enabled() { return IsTestExperimentEnabled<kExperimentIdTestExperiment3>(); }
 #define GRPC_EXPERIMENT_IS_INCLUDED_TEST_EXPERIMENT_4
-inline bool IsTestExperiment4Enabled() {
-  return IsTestExperimentEnabled<kExperimentIdTestExperiment4>();
-}
+inline bool IsTestExperiment4Enabled() { return IsTestExperimentEnabled<kExperimentIdTestExperiment4>(); }
 #define GRPC_EXPERIMENT_IS_INCLUDED_TEST_EXPERIMENT_5
-inline bool IsTestExperiment5Enabled() {
-  return IsTestExperimentEnabled<kExperimentIdTestExperiment5>();
-}
+inline bool IsTestExperiment5Enabled() { return IsTestExperimentEnabled<kExperimentIdTestExperiment5>(); }
 
 extern const ExperimentMetadata g_test_experiment_metadata[kNumTestExperiments];
 
