@@ -17,8 +17,6 @@
 A module to assist in generating experiment related code and artifacts.
 """
 
-from __future__ import print_function
-
 import collections
 from copy import deepcopy
 import ctypes

@@ -116,7 +116,17 @@ class CompositeFilter final : public V3InterceptorToV2Bridge<CompositeFilter> {
       return matcher->ToString();
     }
 
-    std::unique_ptr<XdsMatcher> matcher;
+    std::shared_ptr<const XdsMatcher> matcher;
+
+    // For each action, contains the list of merged filter configs to
+    // use.  This is basically the same as the filter configs in the
+    // matcher actions, except that the configs may include fields set
+    // from the blackboard.
+    // Note: This is not actually part of the identity of the config
+    // (i.e., does not matter for Equals()).
+    absl::flat_hash_map<const XdsMatcher::Action*,
+                        std::vector<RefCountedPtr<const FilterConfig>>>
+        merged_config_map;
   };
 
   static const grpc_channel_filter kFilterVtable;

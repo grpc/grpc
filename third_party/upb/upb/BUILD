@@ -6,11 +6,11 @@
 # https://developers.google.com/open-source/licenses/bsd
 
 load("@bazel_skylib//rules:common_settings.bzl", "bool_flag")
-load("@rules_cc//cc:cc_library.bzl", "cc_library")
+load("@rules_cc//cc:defs.bzl", "cc_library")
 load("@rules_python//python:defs.bzl", "py_binary")
-load("//bazel/private:upb_proto_library_internal/copts.bzl", "upb_proto_library_copts")
-load("//upb/bazel:amalgamation.bzl", "upb_amalgamation")
-load("//upb/bazel:build_defs.bzl", "UPB_DEFAULT_COPTS")
+load("//upb/bazel:copts.bzl", "UPB_DEFAULT_COPTS", "UPB_DEFAULT_FEATURES")
+load("//upb/bazel/private:upb_proto_library_internal/copts.bzl", "upb_proto_library_copts")
+load("//upb/bazel/private/oss:amalgamation.bzl", "upb_amalgamation")  # buildifier: disable=bzl-visibility
 
 package(default_applicable_licenses = ["//:license"])
 
@@ -29,6 +29,7 @@ config_setting(
     name = "windows",
     constraint_values = ["@platforms//os:windows"],
     visibility = [
+        "//benchmarks:__subpackages__",
         "//hpb:__subpackages__",
         "//hpb_generator:__subpackages__",
         "//lua:__pkg__",
@@ -41,13 +42,16 @@ config_setting(
 bool_flag(
     name = "fasttable_enabled",
     build_setting_default = False,
-    visibility = ["//bazel:__pkg__"],
+    visibility = [
+        "//upb/bazel:__pkg__",
+    ],
 )
 
 config_setting(
     name = "fasttable_enabled_setting",
     flag_values = {"//upb:fasttable_enabled": "true"},
     visibility = [
+        "//benchmarks:__subpackages__",
         "//lua:__pkg__",
         "//python:__pkg__",
         "//upb:__subpackages__",
@@ -58,7 +62,8 @@ config_setting(
 upb_proto_library_copts(
     name = "upb_proto_library_copts",
     copts = UPB_DEFAULT_COPTS,
-    visibility = ["//bazel:__pkg__"],
+    features = UPB_DEFAULT_FEATURES,
+    visibility = ["//upb/bazel:__pkg__"],
 )
 
 # Please update copy.bara.sky target = ":friends" if
@@ -83,6 +88,7 @@ cc_library(
     name = "generated_code_support",
     hdrs = ["generated_code_support.h"],
     copts = UPB_DEFAULT_COPTS,
+    features = UPB_DEFAULT_FEATURES,
     textual_hdrs = [
         "//upb/port:inc",
     ],
@@ -98,6 +104,7 @@ cc_library(
         "//upb/message:internal",
         "//upb/mini_descriptor",
         "//upb/mini_table",
+        "//upb/mini_table:internal",
         "//upb/wire",
     ] + select({
         ":fasttable_enabled_setting": [
@@ -111,6 +118,7 @@ cc_library(
 cc_library(
     name = "generated_cpp_support",
     copts = UPB_DEFAULT_COPTS,
+    features = UPB_DEFAULT_FEATURES,
     textual_hdrs = [
         "//upb/port:inc",
     ],
@@ -154,6 +162,7 @@ upb_amalgamation(
         "//upb/wire",
         "//upb/wire:decoder",
         "//upb/wire:eps_copy_input_stream",
+        "//upb/wire:eps_copy_input_stream_internal",
         "//upb/wire:reader",
         "//upb/wire:reader_internal",
         "//upb/wire:writer",
@@ -205,6 +214,7 @@ upb_amalgamation(
         "//upb/wire",
         "//upb/wire:decoder",
         "//upb/wire:eps_copy_input_stream",
+        "//upb/wire:eps_copy_input_stream_internal",
         "//upb/wire:reader",
         "//upb/wire:reader_internal",
         "//upb/wire:writer",
@@ -257,6 +267,7 @@ upb_amalgamation(
         "//upb/wire",
         "//upb/wire:decoder",
         "//upb/wire:eps_copy_input_stream",
+        "//upb/wire:eps_copy_input_stream_internal",
         "//upb/wire:reader",
         "//upb/wire:reader_internal",
         "//upb/wire:writer",
@@ -299,6 +310,7 @@ filegroup(
         "//src/google/protobuf:well_known_type_protos",
         "//upb/json:test_protos",
         "//upb/message:test_protos",
+        "//upb/mini_table:test_protos",
         "//upb/test:test_protos",
         "//upb/util:test_protos",
     ],
@@ -308,9 +320,13 @@ filegroup(
 filegroup(
     name = "test_srcs",
     srcs = [
+        "//upb/hash:test_srcs",
         "//upb/json:test_srcs",
+        "//upb/lex:test_srcs",
         "//upb/mem:test_srcs",
         "//upb/message:test_srcs",
+        "//upb/mini_descriptor:test_srcs",
+        "//upb/mini_table:test_srcs",
         "//upb/test:test_srcs",
         "//upb/util:test_srcs",
         "//upb/wire:test_srcs",

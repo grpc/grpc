@@ -167,3 +167,46 @@ grpc_cc_test(
         "//test/core/test_util:grpc_test_util_base",
     ],
 )
+
+grpc_cc_test(
+    name = "session_endpoint_test",
+    srcs = ["session_endpoint_test.cc"],
+    external_deps = [
+        "gtest",
+        "absl/status",
+    ],
+    deps = [
+        "//:exec_ctx",
+        "//:gpr",
+        "//:grpc",
+        "//src/core:channel_args",
+        "//src/core:grpc_transport_inproc",
+        "//src/core:notification",
+        "//src/core:session_endpoint",
+        "//test/core/end2end:cq_verifier",
+        "//test/core/test_util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "client_initial_metadata_outstanding_token_test",
+    srcs = ["client_initial_metadata_outstanding_token_test.cc"],
+    external_deps = [
+        "gtest",
+        "absl/status",
+    ],
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//:grpc_base",
+        "//src/core:activity",
+        "//src/core:arena",
+        "//src/core:experiments",
+        "//src/core:join",
+        "//src/core:resource_quota",
+        "//src/core:seq",
+        "//test/core/promise:test_wakeup_schedulers",
+    ],
+)

@@ -279,24 +279,40 @@ RefCountedPtr<const FilterConfig> XdsHttpCompositeFilter::ParseOverrideConfig(
   return config;
 }
 
-void XdsHttpCompositeFilter::UpdateBlackboard(
-    const FilterConfig& config, const Blackboard* old_blackboard,
-    Blackboard* new_blackboard) const {
-  auto& composite_config = DownCast<const CompositeFilter::Config&>(config);
-  if (composite_config.matcher == nullptr) return;
-  composite_config.matcher->ForEachAction(
-      [&](const XdsMatcher::Action& action) {
-        if (action.type() != CompositeFilter::ExecuteFilterAction::Type()) {
-          return;
-        }
-        const auto& execute_filter_action =
-            DownCast<const CompositeFilter::ExecuteFilterAction&>(action);
-        for (const auto& [filter_impl, filter_config] :
-             execute_filter_action.filter_chain()) {
-          filter_impl->UpdateBlackboard(*filter_config, old_blackboard,
-                                        new_blackboard);
-        }
-      });
+RefCountedPtr<const FilterConfig> XdsHttpCompositeFilter::MergeConfigs(
+    RefCountedPtr<const FilterConfig> top_level_config,
+    RefCountedPtr<const FilterConfig> virtual_host_override_config,
+    RefCountedPtr<const FilterConfig> route_override_config,
+    RefCountedPtr<const FilterConfig> cluster_weight_override_config,
+    Blackboard& blackboard) const {
+  // Get the config to use via our base class.
+  auto config_to_use = XdsHttpFilterImpl::MergeConfigs(
+      std::move(top_level_config), std::move(virtual_host_override_config),
+      std::move(route_override_config),
+      std::move(cluster_weight_override_config), blackboard);
+  auto& composite_config =
+      DownCast<const CompositeFilter::Config&>(*config_to_use);
+  if (composite_config.matcher == nullptr) return config_to_use;
+  // Make a copy of the config and populate its merged_config_map.
+  auto new_config = MakeRefCounted<CompositeFilter::Config>();
+  new_config->matcher = composite_config.matcher;
+  new_config->matcher->ForEachAction([&](const XdsMatcher::Action& action) {
+    if (action.type() != CompositeFilter::ExecuteFilterAction::Type()) {
+      return;
+    }
+    const auto& execute_filter_action =
+        DownCast<const CompositeFilter::ExecuteFilterAction&>(action);
+    auto& merged_configs = new_config->merged_config_map[&action];
+    GRPC_CHECK(merged_configs.empty());
+    for (const auto& [filter_impl, filter_config] :
+         execute_filter_action.filter_chain()) {
+      merged_configs.push_back(filter_impl->MergeConfigs(
+          filter_config, /*virtual_host_override_config=*/nullptr,
+          /*route_override_config=*/nullptr,
+          /*cluster_weight_override_config=*/nullptr, blackboard));
+    }
+  });
+  return new_config;
 }
 
 }  // namespace grpc_core
