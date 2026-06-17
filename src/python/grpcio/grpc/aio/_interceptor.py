@@ -18,7 +18,7 @@ from abc import ABCMeta
 from abc import abstractmethod
 import asyncio
 import collections
-from collections.abc import AsyncIterable, AsyncIterator
+from collections.abc import AsyncIterable, AsyncIterator  # noqa: TC003
 import functools
 from typing import (
     TYPE_CHECKING,
