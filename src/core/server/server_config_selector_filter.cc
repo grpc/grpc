@@ -331,8 +331,8 @@ void ServerConfigSelectorInterceptor::InterceptCall(
                       return absl::UnavailableError(
                           StatusToString(call_config.status()));
                     }
-                    // FIXME: remove this once we switch to per-route
-                    // filter chains
+                    // TODO(roth): Remove this once we switch to per-route
+                    // filter chains.
                     auto* service_config_call_data =
                         GetContext<Arena>()->New<ServiceConfigCallData>(
                             GetContext<Arena>());
