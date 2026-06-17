@@ -1176,6 +1176,39 @@ class OpenTelemetryObservabilityTest(unittest.TestCase):
         )
         self.assertIsNotNone(server_span, "Server span not found")
 
+    def testTracesForApplicationContext(self):
+        tracer = self._tracer_provider.get_tracer("TestApp")
+        with grpc_observability.OpenTelemetryPlugin(
+            tracer_provider=self._tracer_provider,
+            text_map_propagator=TraceContextTextMapPropagator(),
+        ):
+            server, port = _test_server.start_server()
+            self._server = server
+            with tracer.start_as_current_span("TestSpan"):
+                _test_server.unary_unary_call(port=port)
+
+        # TestSpan + 1 x client span + 1 x attempt span + 1 x server span
+        self._validate_spans_exist(self._span_exporter, expected_count=4)
+        spans = self._span_exporter.get_finished_spans()
+
+        test_span = next(
+            (span for span in spans if span.name.startswith("TestSpan")), None
+        )
+        self.assertIsNotNone(test_span)
+
+        client_span = next(
+            (span for span in spans if span.name.startswith("Sent.")), None
+        )
+        self.assertIsNotNone(client_span)
+
+        self.assertEqual(
+            test_span.get_span_context().trace_id,
+            client_span.get_span_context().trace_id
+        )
+        self.assertEqual(
+            client_span.parent.span_id, test_span.get_span_context().span_id
+        )
+
     def testTracesForCompressedMessages(self):
         with grpc_observability.OpenTelemetryPlugin(
             tracer_provider=self._tracer_provider,
