@@ -19,11 +19,13 @@
 # AUTO-GENERATED FROM `$REPO_ROOT/templates/tools/dockerfile/grpc_artifact_python_linux_armv7/Dockerfile.inja`!!!
 FROM dockcross/linux-armv7
 
+{% include "../apt_get_basic.include" %}
+
 # Configure git early so the cache reused by other py build based on the same image.
 {% include "../git_config.include" %}
 
-RUN apt update && apt install -y build-essential zlib1g-dev libncurses5-dev libgdbm-dev \
-                                 libnss3-dev libssl-dev libreadline-dev libffi-dev && apt-get clean
+RUN /usr/local/bin/apt-get-install-retry build-essential zlib1g-dev libncurses5-dev libgdbm-dev \
+                                 libnss3-dev libssl-dev libreadline-dev libffi-dev
 
 ADD install_python_for_wheel_crosscompilation.sh /scripts/install_python_for_wheel_crosscompilation.sh
 
@@ -31,12 +33,11 @@ ADD install_python_for_wheel_crosscompilation.sh /scripts/install_python_for_whe
 # grep grpc_artifact_python_ tools/bazelify_tests/dockerimage_current_versions.bzl | grep -oP '(?<=docker://)[^"]+(?=")'
 # IMG=one_of_the_images_from_the_command_above
 # docker run --rm $IMG bash -c 'ls -l /opt/python/cp3{9,1}*' | sed -E 's#^[^/]+##'
-RUN /scripts/install_python_for_wheel_crosscompilation.sh "3.10.20" "3.10.20" /opt/python/cp310-cp310
-RUN /scripts/install_python_for_wheel_crosscompilation.sh "3.11.15" "3.11.15" /opt/python/cp311-cp311
-RUN /scripts/install_python_for_wheel_crosscompilation.sh "3.12.13" "3.12.13" /opt/python/cp312-cp312
-RUN /scripts/install_python_for_wheel_crosscompilation.sh "3.13.13" "3.13.13" /opt/python/cp313-cp313
-RUN /scripts/install_python_for_wheel_crosscompilation.sh "3.14.4" "3.14.4" /opt/python/cp314-cp314
-RUN /scripts/install_python_for_wheel_crosscompilation.sh "3.15.0" "3.15.0b2" /opt/python/cp315-cp315
+RUN /scripts/install_python_for_wheel_crosscompilation.sh "3.10.18" "3.10.18" /opt/python/cp310-cp310
+RUN /scripts/install_python_for_wheel_crosscompilation.sh "3.11.13" "3.11.13" /opt/python/cp311-cp311
+RUN /scripts/install_python_for_wheel_crosscompilation.sh "3.12.11" "3.12.11" /opt/python/cp312-cp312
+RUN /scripts/install_python_for_wheel_crosscompilation.sh "3.13.5" "3.13.5" /opt/python/cp313-cp313
+RUN /scripts/install_python_for_wheel_crosscompilation.sh "3.14.0" "3.14.0rc1" /opt/python/cp314-cp314
 
 ENV AUDITWHEEL_ARCH armv7l
 ENV AUDITWHEEL_PLAT linux_armv7l

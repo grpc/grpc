@@ -14,6 +14,9 @@
 
 FROM golang:1.19
 
+# Install apt-get-install-retry wrapper script
+{% include "../../apt_get_install_with_retry.include" %}
+
 {% include "../../go_path.include" %}
 {% include "../../git_avoid_dubious_ownership_error.include" %}
 {% include "../../run_tests_python_deps_pep668.include" %}
