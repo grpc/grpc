@@ -1080,10 +1080,9 @@ TEST_F(GenerateRbacPoliciesTest, AuditConditionNone) {
   ASSERT_TRUE(rbacs.ok());
   EXPECT_EQ(rbacs->allow_policy.name, "authz");
   EXPECT_EQ(rbacs->allow_policy.audit_condition, Rbac::AuditCondition::kNone);
-  EXPECT_THAT(
-      rbacs->allow_policy.ToString(),
-      ::testing::StartsWith(
-          "Rbac{name=authz, action=Allow, audit_condition=None, "));
+  EXPECT_THAT(rbacs->allow_policy.ToString(),
+              ::testing::StartsWith(
+                  "Rbac{name=authz, action=Allow, audit_condition=None, "));
 }
 
 TEST_F(GenerateRbacPoliciesTest, AuditConditionOnDeny) {
