@@ -14,7 +14,7 @@
 """Invocation-side implementation of gRPC Asyncio Python."""
 
 import asyncio
-from typing import Any, Generic, Iterable, List, Optional, Sequence, TypeVar
+from typing import Any, Generic, List, Optional, Sequence, TypeVar
 import weakref
 
 import grpc
