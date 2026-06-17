@@ -14,8 +14,7 @@
 """Invocation-side implementation of gRPC Asyncio Python."""
 
 import asyncio
-import sys
-from typing import Any, Generic, Iterable, List, Optional, Sequence, TypeVar
+from typing import Any, Generic, List, Optional, Sequence, TypeVar
 import weakref
 
 import grpc
@@ -49,7 +48,7 @@ from ._typing import ResponseType
 from ._typing import SerializingFunction
 from ._utils import _timeout_to_deadline
 
-InterceptorT = TypeVar("InterceptorT", bound=ClientInterceptor)
+ClientInterceptorT = TypeVar("ClientInterceptorT", bound=ClientInterceptor)
 
 _USER_AGENT = "grpc-python-asyncio/{}".format(_grpcio_metadata.__version__)
 
@@ -73,7 +72,7 @@ def _augment_channel_arguments(
     )
 
 
-class _BaseMultiCallable(Generic[InterceptorT]):
+class _BaseMultiCallable(Generic[ClientInterceptorT]):
     """Base class of all multi callable objects.
 
     Handles the initialization logic and stores common attributes.
@@ -84,7 +83,7 @@ class _BaseMultiCallable(Generic[InterceptorT]):
     _method: bytes
     _request_serializer: Optional[SerializingFunction]
     _response_deserializer: Optional[DeserializingFunction]
-    _interceptors: Optional[Sequence[InterceptorT]]
+    _interceptors: Optional[Sequence[ClientInterceptorT]]
     _references: List[Any]
 
     # pylint: disable=too-many-arguments
@@ -94,7 +93,7 @@ class _BaseMultiCallable(Generic[InterceptorT]):
         method: bytes,
         request_serializer: Optional[SerializingFunction],
         response_deserializer: Optional[DeserializingFunction],
-        interceptors: Optional[Sequence[InterceptorT]],
+        interceptors: Optional[Sequence[ClientInterceptorT]],
         references: List[Any],
         loop: asyncio.AbstractEventLoop,
     ) -> None:
