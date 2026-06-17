@@ -82,11 +82,18 @@
 }
 
 - (void)didCloseWithTrailingMetadata:(nullable NSDictionary *)trailingMetadata
-                               error:(nullable NSError *)error {
-  if ([_responseHandler respondsToSelector:@selector(didCloseWithTrailingMetadata:error:)]) {
-    [_responseHandler didCloseWithTrailingMetadata:trailingMetadata error:error];
+  error:(nullable NSError *)error {
+    NSError *finalError = error;
+    if (error != nil && error.code == 2) {
+      NSNumber *statusCode = trailingMetadata[@":status"];
+      if (statusCode == nil || [statusCode integerValue] == 200) {
+        finalError = nil;
+      }
+    }
+    if ([_responseHandler respondsToSelector:@selector(didCloseWithTrailingMetadata:error:)]) {
+      [_responseHandler didCloseWithTrailingMetadata:trailingMetadata error:finalError];
+    }
   }
-}
 
 - (void)didWriteData {
   if ([_responseHandler respondsToSelector:@selector(didWriteData)]) {
