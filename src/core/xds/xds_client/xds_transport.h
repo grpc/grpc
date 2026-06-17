@@ -19,9 +19,12 @@
 
 #include <memory>
 #include <string>
+#include <utility>
+#include <vector>
 
 #include "src/core/util/dual_ref_counted.h"
 #include "src/core/util/orphanable.h"
+#include "src/core/util/time.h"
 #include "src/core/xds/xds_client/xds_bootstrap.h"
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
@@ -58,6 +61,9 @@ class XdsTransportFactory : public DualRefCounted<XdsTransportFactory> {
 
       // Starts a recv_message operation on the stream.
       virtual void StartRecvMessage() = 0;
+
+      // Half-closes the stream from the client side.
+      virtual void SendHalfClose() = 0;
     };
 
     // A watcher for connectivity failures.
@@ -83,7 +89,9 @@ class XdsTransportFactory : public DualRefCounted<XdsTransportFactory> {
     // Events on the stream will be reported to event_handler.
     virtual OrphanablePtr<StreamingCall> CreateStreamingCall(
         const char* method,
-        std::unique_ptr<StreamingCall::EventHandler> event_handler) = 0;
+        std::unique_ptr<StreamingCall::EventHandler> event_handler,
+        std::vector<std::pair<std::string, std::string>> initial_metadata,
+        Duration timeout) = 0;
 
     // Resets connection backoff for the transport.
     virtual void ResetBackoff() = 0;

@@ -139,6 +139,11 @@ void FakeXdsTransportFactory::FakeStreamingCall::StartRecvMessage() {
   }
 }
 
+void FakeXdsTransportFactory::FakeStreamingCall::SendHalfClose() {
+  MutexLock lock(&mu_);
+  half_closed_ = true;
+}
+
 void FakeXdsTransportFactory::FakeStreamingCall::SendMessageToClient(
     absl::string_view payload) {
   {
@@ -273,9 +278,12 @@ void FakeXdsTransportFactory::FakeXdsTransport::StopConnectivityFailureWatch(
 OrphanablePtr<XdsTransportFactory::XdsTransport::StreamingCall>
 FakeXdsTransportFactory::FakeXdsTransport::CreateStreamingCall(
     const char* method,
-    std::unique_ptr<StreamingCall::EventHandler> event_handler) {
+    std::unique_ptr<StreamingCall::EventHandler> event_handler,
+    std::vector<std::pair<std::string, std::string>> initial_metadata,
+    Duration timeout) {
   auto call = MakeOrphanable<FakeStreamingCall>(
-      WeakRefAsSubclass<FakeXdsTransport>(), method, std::move(event_handler));
+      WeakRefAsSubclass<FakeXdsTransport>(), method, std::move(event_handler),
+      std::move(initial_metadata), timeout);
   MutexLock lock(&mu_);
   active_calls_[method] = call->Ref().TakeAsSubclass<FakeStreamingCall>();
   return call;

@@ -573,10 +573,12 @@ LrsClient::LrsChannel::LrsCall::LrsCall(
   const char* method =
       "/envoy.service.load_stats.v3.LoadReportingService/StreamLoadStats";
   streaming_call_ = lrs_channel()->transport_->CreateStreamingCall(
-      method, std::make_unique<StreamEventHandler>(
-                  // Passing the initial ref here.  This ref will go away when
-                  // the StreamEventHandler is destroyed.
-                  RefCountedPtr<LrsCall>(this)));
+      method,
+      std::make_unique<StreamEventHandler>(
+          // Passing the initial ref here.  This ref will go away when
+          // the StreamEventHandler is destroyed.
+          RefCountedPtr<LrsCall>(this)),
+      /*initial_metadata=*/{}, Duration::Infinity());
   GRPC_CHECK(streaming_call_ != nullptr);
   // Start the call.
   GRPC_TRACE_LOG(xds_client, INFO)

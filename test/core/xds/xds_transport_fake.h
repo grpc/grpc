@@ -27,6 +27,7 @@
 #include <optional>
 #include <string>
 #include <utility>
+#include <vector>
 
 #include "src/core/util/orphanable.h"
 #include "src/core/util/ref_counted.h"
@@ -57,10 +58,14 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
    public:
     FakeStreamingCall(
         WeakRefCountedPtr<FakeXdsTransport> transport, const char* method,
-        std::unique_ptr<StreamingCall::EventHandler> event_handler)
+        std::unique_ptr<StreamingCall::EventHandler> event_handler,
+        std::vector<std::pair<std::string, std::string>> initial_metadata,
+        Duration timeout)
         : transport_(std::move(transport)),
           method_(method),
           event_engine_(transport_->factory()->event_engine_),
+          initial_metadata_(std::move(initial_metadata)),
+          timeout_(timeout),
           event_handler_(MakeRefCounted<RefCountedEventHandler>(
               std::move(event_handler))) {}
 
@@ -71,6 +76,8 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
     bool IsOrphaned();
 
     void StartRecvMessage() override;
+
+    void SendHalfClose() override;
 
     using StreamingCall::Ref;  // Make it public.
 
@@ -88,6 +95,18 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
     void MaybeSendStatusToClient(absl::Status status);
 
     bool WaitForReadsStarted(size_t expected);
+
+    const std::vector<std::pair<std::string, std::string>>& initial_metadata()
+        const {
+      return initial_metadata_;
+    }
+
+    Duration timeout() const { return timeout_; }
+
+    bool half_closed() const {
+      MutexLock lock(&mu_);
+      return half_closed_;
+    }
 
    private:
     class RefCountedEventHandler : public RefCounted<RefCountedEventHandler> {
@@ -118,12 +137,15 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
     const char* method_;
     std::shared_ptr<grpc_event_engine::experimental::FuzzingEventEngine>
         event_engine_;
+    std::vector<std::pair<std::string, std::string>> initial_metadata_;
+    Duration timeout_;
 
-    Mutex mu_;
+    mutable Mutex mu_;
     RefCountedPtr<RefCountedEventHandler> event_handler_ ABSL_GUARDED_BY(&mu_);
     std::deque<std::string> from_client_messages_ ABSL_GUARDED_BY(&mu_);
     bool status_sent_ ABSL_GUARDED_BY(&mu_) = false;
     bool orphaned_ ABSL_GUARDED_BY(&mu_) = false;
+    bool half_closed_ ABSL_GUARDED_BY(&mu_) = false;
     size_t reads_started_ ABSL_GUARDED_BY(&mu_) = 0;
     size_t num_pending_reads_ ABSL_GUARDED_BY(&mu_) = 0;
     std::deque<std::string> to_client_messages_ ABSL_GUARDED_BY(&mu_);
@@ -208,7 +230,9 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
 
     OrphanablePtr<StreamingCall> CreateStreamingCall(
         const char* method,
-        std::unique_ptr<StreamingCall::EventHandler> event_handler) override;
+        std::unique_ptr<StreamingCall::EventHandler> event_handler,
+        std::vector<std::pair<std::string, std::string>> initial_metadata,
+        Duration timeout) override;
 
     void ResetBackoff() override {}
 

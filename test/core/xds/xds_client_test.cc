@@ -6520,6 +6520,90 @@ TEST_F(XdsClientTest, FallbackOnReachabilityOnlyNotEnabled) {
   EXPECT_TRUE(stream->IsOrphaned());
 }
 
+TEST_F(XdsClientTest, XdsTransportPropagatesInitialMetadata) {
+  auto transport_factory = MakeRefCounted<FakeXdsTransportFactory>(
+      []() { FAIL() << "Multiple concurrent reads"; }, event_engine_);
+  FakeXdsBootstrap::FakeXdsServerTarget server_target("localhost:1234");
+  absl::Status status;
+  RefCountedPtr<XdsTransportFactory> factory = transport_factory;
+  auto transport = factory->GetTransport(server_target, &status);
+  ASSERT_TRUE(status.ok()) << status.ToString();
+  ASSERT_NE(transport, nullptr);
+  std::vector<std::pair<std::string, std::string>> initial_metadata = {
+      {"key1", "value1"},
+      {"key2", "value2"},
+  };
+  class EventHandler
+      : public XdsTransportFactory::XdsTransport::StreamingCall::EventHandler {
+   public:
+    void OnRequestSent(bool /*ok*/) override {}
+    void OnRecvMessage(absl::string_view /*payload*/) override {}
+    void OnStatusReceived(absl::Status /*status*/) override {}
+  };
+  auto stream =
+      transport->CreateStreamingCall("method", std::make_unique<EventHandler>(),
+                                     initial_metadata, Duration::Infinity());
+  ASSERT_NE(stream, nullptr);
+  auto* fake_stream =
+      DownCast<FakeXdsTransportFactory::FakeStreamingCall*>(stream.get());
+  EXPECT_EQ(fake_stream->initial_metadata(), initial_metadata);
+  EXPECT_EQ(fake_stream->timeout(), Duration::Infinity());
+}
+
+TEST_F(XdsClientTest, XdsTransportPropagatesTimeout) {
+  auto transport_factory = MakeRefCounted<FakeXdsTransportFactory>(
+      []() { FAIL() << "Multiple concurrent reads"; }, event_engine_);
+  FakeXdsBootstrap::FakeXdsServerTarget server_target("localhost:1234");
+  absl::Status status;
+  RefCountedPtr<XdsTransportFactory> factory = transport_factory;
+  auto transport = factory->GetTransport(server_target, &status);
+  ASSERT_TRUE(status.ok()) << status.ToString();
+  ASSERT_NE(transport, nullptr);
+  class EventHandler
+      : public XdsTransportFactory::XdsTransport::StreamingCall::EventHandler {
+   public:
+    void OnRequestSent(bool /*ok*/) override {}
+    void OnRecvMessage(absl::string_view /*payload*/) override {}
+    void OnStatusReceived(absl::Status /*status*/) override {}
+  };
+  Duration timeout = Duration::Seconds(10);
+  auto stream =
+      transport->CreateStreamingCall("method", std::make_unique<EventHandler>(),
+                                     /*initial_metadata=*/{}, timeout);
+  ASSERT_NE(stream, nullptr);
+  auto* fake_stream =
+      DownCast<FakeXdsTransportFactory::FakeStreamingCall*>(stream.get());
+  EXPECT_EQ(fake_stream->timeout(), timeout);
+  EXPECT_TRUE(fake_stream->initial_metadata().empty());
+}
+
+TEST_F(XdsClientTest, XdsTransportPropagatesHalfClose) {
+  auto transport_factory = MakeRefCounted<FakeXdsTransportFactory>(
+      []() { FAIL() << "Multiple concurrent reads"; }, event_engine_);
+  FakeXdsBootstrap::FakeXdsServerTarget server_target("localhost:1234");
+  absl::Status status;
+  RefCountedPtr<XdsTransportFactory> factory = transport_factory;
+  auto transport = factory->GetTransport(server_target, &status);
+  ASSERT_TRUE(status.ok()) << status.ToString();
+  ASSERT_NE(transport, nullptr);
+  class EventHandler
+      : public XdsTransportFactory::XdsTransport::StreamingCall::EventHandler {
+   public:
+    void OnRequestSent(bool /*ok*/) override {}
+    void OnRecvMessage(absl::string_view /*payload*/) override {}
+    void OnStatusReceived(absl::Status /*status*/) override {}
+  };
+  auto stream = transport->CreateStreamingCall(
+      "method", std::make_unique<EventHandler>(), /*initial_metadata=*/{},
+      Duration::Infinity());
+  ASSERT_NE(stream, nullptr);
+  auto* fake_stream =
+      DownCast<FakeXdsTransportFactory::FakeStreamingCall*>(stream.get());
+  EXPECT_FALSE(fake_stream->half_closed());
+  stream->SendHalfClose();
+  EXPECT_TRUE(fake_stream->half_closed());
+}
+
 }  // namespace
 }  // namespace testing
 }  // namespace grpc_core

@@ -71,13 +71,18 @@ namespace grpc_core {
 GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::GrpcStreamingCall(
     WeakRefCountedPtr<GrpcXdsTransportFactory> factory, Channel* channel,
     const char* method,
-    std::unique_ptr<StreamingCall::EventHandler> event_handler)
+    std::unique_ptr<StreamingCall::EventHandler> event_handler,
+    std::vector<std::pair<std::string, std::string>> initial_metadata,
+    Duration timeout)
     : factory_(std::move(factory)), event_handler_(std::move(event_handler)) {
+  Timestamp deadline = timeout == Duration::Infinity()
+                           ? Timestamp::InfFuture()
+                           : Timestamp::Now() + timeout;
   // Create call.
   call_ = channel->CreateCall(
       /*parent_call=*/nullptr, GRPC_PROPAGATE_DEFAULTS, /*cq=*/nullptr,
       factory_->interested_parties(), Slice::FromStaticString(method),
-      /*authority=*/std::nullopt, Timestamp::InfFuture(),
+      /*authority=*/std::nullopt, deadline,
       /*registered_method=*/true);
   GRPC_CHECK_NE(call_, nullptr);
   // Init data associated with the call.
@@ -85,14 +90,24 @@ GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::GrpcStreamingCall(
   grpc_metadata_array_init(&trailing_metadata_recv_);
   // Initialize closure to be used for sending messages.
   GRPC_CLOSURE_INIT(&on_request_sent_, OnRequestSent, this, nullptr);
+  GRPC_CLOSURE_INIT(&on_half_closed_, OnHalfClosed, this, nullptr);
   // Start ops on the call.
   grpc_call_error call_error;
   grpc_op ops[2];
   memset(ops, 0, sizeof(ops));
   // Send initial metadata.
+  send_initial_metadata_.resize(initial_metadata.size());
+  for (size_t i = 0; i < initial_metadata.size(); ++i) {
+    send_initial_metadata_[i].key =
+        grpc_slice_from_copied_string(initial_metadata[i].first.c_str());
+    send_initial_metadata_[i].value =
+        grpc_slice_from_copied_string(initial_metadata[i].second.c_str());
+  }
   grpc_op* op = ops;
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
-  op->data.send_initial_metadata.count = 0;
+  op->data.send_initial_metadata.count = send_initial_metadata_.size();
+  op->data.send_initial_metadata.metadata =
+      send_initial_metadata_.empty() ? nullptr : send_initial_metadata_.data();
   op->flags = GRPC_INITIAL_METADATA_WAIT_FOR_READY |
               GRPC_INITIAL_METADATA_WAIT_FOR_READY_EXPLICITLY_SET;
   op->reserved = nullptr;
@@ -136,6 +151,10 @@ GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::
   grpc_byte_buffer_destroy(send_message_payload_);
   grpc_byte_buffer_destroy(recv_message_payload_);
   CSliceUnref(status_details_);
+  for (auto& md : send_initial_metadata_) {
+    CSliceUnref(md.key);
+    CSliceUnref(md.value);
+  }
   GRPC_CHECK_NE(call_, nullptr);
   grpc_call_unref(call_);
 }
@@ -182,6 +201,18 @@ void GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::
 }
 
 void GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::
+    SendHalfClose() {
+  Ref(DEBUG_LOCATION, "SendHalfClose").release();
+  grpc_op op;
+  memset(&op, 0, sizeof(op));
+  op.op = GRPC_OP_SEND_CLOSE_FROM_CLIENT;
+  GRPC_CHECK_NE(call_, nullptr);
+  const grpc_call_error call_error =
+      grpc_call_start_batch_and_execute(call_, &op, 1, &on_half_closed_);
+  GRPC_CHECK_EQ(call_error, GRPC_CALL_OK);
+}
+
+void GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::
     OnRecvInitialMetadata(void* arg, grpc_error_handle /*error*/) {
   RefCountedPtr<GrpcStreamingCall> self(static_cast<GrpcStreamingCall*>(arg));
   grpc_metadata_array_destroy(&self->initial_metadata_recv_);
@@ -195,6 +226,11 @@ void GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::
   self->send_message_payload_ = nullptr;
   // Invoke request handler.
   self->event_handler_->OnRequestSent(error.ok());
+}
+
+void GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::OnHalfClosed(
+    void* arg, grpc_error_handle /*error*/) {
+  RefCountedPtr<GrpcStreamingCall> self(static_cast<GrpcStreamingCall*>(arg));
 }
 
 void GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::
@@ -355,10 +391,12 @@ void GrpcXdsTransportFactory::GrpcXdsTransport::StopConnectivityFailureWatch(
 OrphanablePtr<XdsTransportFactory::XdsTransport::StreamingCall>
 GrpcXdsTransportFactory::GrpcXdsTransport::CreateStreamingCall(
     const char* method,
-    std::unique_ptr<StreamingCall::EventHandler> event_handler) {
+    std::unique_ptr<StreamingCall::EventHandler> event_handler,
+    std::vector<std::pair<std::string, std::string>> initial_metadata,
+    Duration timeout) {
   return MakeOrphanable<GrpcStreamingCall>(
       factory_.WeakRef(DEBUG_LOCATION, "StreamingCall"), channel_.get(), method,
-      std::move(event_handler));
+      std::move(event_handler), std::move(initial_metadata), timeout);
 }
 
 void GrpcXdsTransportFactory::GrpcXdsTransport::ResetBackoff() {
