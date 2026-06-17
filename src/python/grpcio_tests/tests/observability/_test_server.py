@@ -31,12 +31,20 @@ STREAM_LENGTH = 5
 TRIGGER_RPC_METADATA = ("control", "trigger_rpc")
 TRIGGER_RPC_TO_NEW_SERVER_METADATA = ("to_new_server", "")
 ABORT_RPC_METADATA = ("control", "abort")
+COMPRESS_RPC_METADATA = ("control", "compress")
+
+LARGE_MESSAGE_SIZE = 1000
+_LARGE_REQUEST = b"\x00" * LARGE_MESSAGE_SIZE
+_LARGE_RESPONSE = b"\x01" * LARGE_MESSAGE_SIZE
 
 def handle_unary_unary(request, servicer_context):
     if ABORT_RPC_METADATA in servicer_context.invocation_metadata():
         servicer_context.abort(
             grpc.StatusCode.ABORTED, "Aborting RPC for testing purpose"
         )
+    if COMPRESS_RPC_METADATA in servicer_context.invocation_metadata():
+        servicer_context.set_compression(grpc.Compression.Gzip)
+        return _LARGE_RESPONSE
     if TRIGGER_RPC_METADATA in servicer_context.invocation_metadata():
         for k, v in servicer_context.invocation_metadata():
             if "port" in k:
@@ -145,6 +153,18 @@ def unary_unary_call(port, metadata=None, registered_method=False):
             )
         else:
             unused_response, call = multi_callable.with_call(_REQUEST)
+
+
+def unary_unary_compressed_call(port):
+    with grpc.insecure_channel(f"localhost:{port}") as channel:
+        multi_callable = channel.unary_unary(
+            grpc._common.fully_qualified_method(_SERVICE_NAME, _UNARY_UNARY),
+        )
+        multi_callable(
+            _LARGE_REQUEST,
+            metadata=(COMPRESS_RPC_METADATA,),
+            compression=grpc.Compression.Gzip,
+        )
 
 
 def unary_unary_retry_call(port, max_attempts=3):

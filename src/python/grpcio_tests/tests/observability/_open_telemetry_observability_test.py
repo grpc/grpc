@@ -55,6 +55,7 @@ logger = logging.getLogger(__name__)
 
 STREAM_LENGTH = 5
 OTEL_EXPORT_INTERVAL_S = 0.5
+COMPRESSED_MESSAGE_SIZE = 29
 
 
 class OTelMetricExporter(otel_metrics_export.MetricExporter):
@@ -1175,8 +1176,43 @@ class OpenTelemetryObservabilityTest(unittest.TestCase):
         )
         self.assertIsNotNone(server_span, "Server span not found")
 
+    def testTracesForCompressedMessages(self):
+        with grpc_observability.OpenTelemetryPlugin(
+            tracer_provider=self._tracer_provider,
+            text_map_propagator=TraceContextTextMapPropagator(),
+        ):
+            server, port = _test_server.start_server()
+            self._server = server
+            _test_server.unary_unary_compressed_call(port=port)
+
+        uncompressed_event_attrs = {
+            "sequence-number": 0,
+            "message-size": _test_server.LARGE_MESSAGE_SIZE,
+        }
+        compressed_event_attrs = {
+            "sequence-number": 0,
+            "message-size-compressed": COMPRESSED_MESSAGE_SIZE,
+        }
+
+        self._validate_spans_exist(self._span_exporter)
+        self._validate_spans(
+            spans=self._span_exporter.get_finished_spans(),
+            expected_span_size=3,
+            expected_server_events=[
+                ("Outbound message compressed", compressed_event_attrs),
+                ("Outbound message", uncompressed_event_attrs),
+                ("Inbound compressed message", compressed_event_attrs),
+                ("Inbound message", uncompressed_event_attrs),
+            ],
+            expected_attempt_events=[
+                ("Outbound message compressed", compressed_event_attrs),
+                ("Outbound message", uncompressed_event_attrs),
+                ("Inbound compressed message", compressed_event_attrs),
+                ("Inbound message", uncompressed_event_attrs),
+            ],
+        )
+
     def testTracesForRetryPolicy(self):
-        
         with grpc_observability.OpenTelemetryPlugin(
             tracer_provider=self._tracer_provider,
             text_map_propagator=TraceContextTextMapPropagator(),
