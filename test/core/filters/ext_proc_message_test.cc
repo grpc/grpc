@@ -828,11 +828,33 @@ TEST_F(ExtProcResponseTest, RequestHeadersInvalidHeaderMutation) {
   ASSERT_TRUE(parsed_or.ok()) << parsed_or.status().ToString();
   auto parsed = std::move(parsed_or.value());
   ASSERT_TRUE(parsed.request_headers.has_value());
-  EXPECT_EQ(
-      parsed.request_headers->status(),
-      absl::InvalidArgumentError(
-          "validation failed: [field:header error:either value or raw_value "
-          "must be set]"));
+  ASSERT_TRUE(parsed.request_headers->ok());
+  const auto& header_mutation_res = parsed.request_headers->value();
+  EXPECT_TRUE(header_mutation_res.set_headers.empty());
+}
+
+TEST_F(ExtProcResponseTest, RequestHeadersMixedHeaderMutation) {
+  upb::Arena arena;
+  envoy::service::ext_proc::v3::ProcessingResponse response;
+  auto* headers_response = response.mutable_request_headers();
+  auto* common_response = headers_response->mutable_response();
+  common_response->set_status(
+      envoy::service::ext_proc::v3::CommonResponse::CONTINUE);
+  auto* header_mutation = common_response->mutable_header_mutation();
+  auto* set_header1 = header_mutation->add_set_headers();
+  set_header1->mutable_header()->set_key("x-valid-key");
+  set_header1->mutable_header()->set_raw_value("valid-val");
+  auto* set_header2 = header_mutation->add_set_headers();
+  set_header2->mutable_header()->set_key("x-invalid-key");
+  auto parsed_or = ParseResponse(response, arena.ptr());
+  ASSERT_TRUE(parsed_or.ok()) << parsed_or.status().ToString();
+  auto parsed = std::move(parsed_or.value());
+  ASSERT_TRUE(parsed.request_headers.has_value());
+  ASSERT_TRUE(parsed.request_headers->ok());
+  const auto& header_mutation_res = parsed.request_headers->value();
+  ASSERT_EQ(header_mutation_res.set_headers.size(), 1);
+  EXPECT_EQ(header_mutation_res.set_headers[0].header.first, "x-valid-key");
+  EXPECT_EQ(header_mutation_res.set_headers[0].header.second, "valid-val");
 }
 
 TEST_F(ExtProcResponseTest, RequestHeadersCommonResponseNull) {
@@ -901,11 +923,9 @@ TEST_F(ExtProcResponseTest, ResponseHeadersInvalidHeaderMutation) {
   ASSERT_TRUE(parsed_or.ok()) << parsed_or.status().ToString();
   auto parsed = std::move(parsed_or.value());
   ASSERT_TRUE(parsed.response_headers.has_value());
-  EXPECT_EQ(
-      parsed.response_headers->status(),
-      absl::InvalidArgumentError(
-          "validation failed: [field:header error:either value or raw_value "
-          "must be set]"));
+  ASSERT_TRUE(parsed.response_headers->ok());
+  const auto& header_mutation_res = parsed.response_headers->value();
+  EXPECT_TRUE(header_mutation_res.set_headers.empty());
 }
 
 TEST_F(ExtProcResponseTest, ResponseHeadersCommonResponseNull) {
@@ -1119,11 +1139,9 @@ TEST_F(ExtProcResponseTest, ResponseTrailersInvalidHeaderMutation) {
   ASSERT_TRUE(parsed_or.ok()) << parsed_or.status().ToString();
   auto parsed = std::move(parsed_or.value());
   ASSERT_TRUE(parsed.response_trailers.has_value());
-  EXPECT_EQ(
-      parsed.response_trailers->status(),
-      absl::InvalidArgumentError(
-          "validation failed: [field:header error:either value or raw_value "
-          "must be set]"));
+  ASSERT_TRUE(parsed.response_trailers->ok());
+  const auto& header_mutation_res = parsed.response_trailers->value();
+  EXPECT_TRUE(header_mutation_res.set_headers.empty());
 }
 
 TEST_F(ExtProcResponseTest, ResponseTrailersHeaderMutationNull) {
@@ -1134,8 +1152,9 @@ TEST_F(ExtProcResponseTest, ResponseTrailersHeaderMutationNull) {
   ASSERT_TRUE(parsed_or.ok()) << parsed_or.status().ToString();
   auto parsed = std::move(parsed_or.value());
   ASSERT_TRUE(parsed.response_trailers.has_value());
-  EXPECT_EQ(parsed.response_trailers->status(),
-            absl::InternalError("header_mutation is not available"));
+  ASSERT_TRUE(parsed.response_trailers->ok());
+  EXPECT_TRUE(parsed.response_trailers->value().set_headers.empty());
+  EXPECT_TRUE(parsed.response_trailers->value().remove_headers.empty());
 }
 
 TEST_F(ExtProcResponseTest, ImmediateResponse) {
@@ -1176,8 +1195,10 @@ TEST_F(ExtProcResponseTest, ImmediateResponseHeaderMutationNull) {
   ASSERT_TRUE(parsed.immediate_response.has_value());
   EXPECT_EQ(parsed.immediate_response->status, 16);
   EXPECT_EQ(parsed.immediate_response->details, "invalid credentials");
-  EXPECT_EQ(parsed.immediate_response->header_mutation.status(),
-            absl::InternalError("header_mutation is not available"));
+  ASSERT_TRUE(parsed.immediate_response->header_mutation.ok());
+  EXPECT_TRUE(parsed.immediate_response->header_mutation->set_headers.empty());
+  EXPECT_TRUE(
+      parsed.immediate_response->header_mutation->remove_headers.empty());
 }
 
 }  // namespace

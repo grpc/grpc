@@ -34,10 +34,10 @@ namespace grpc_core {
 
 namespace {
 
-absl::StatusOr<ExtProcResponse::HeaderMutation> ParseHeaderMutation(
+ExtProcResponse::HeaderMutation ParseHeaderMutation(
     const envoy_service_ext_proc_v3_HeaderMutation* header_mutation) {
   if (header_mutation == nullptr) {
-    return absl::InternalError("header_mutation is not available");
+    return ExtProcResponse::HeaderMutation{};
   }
   ExtProcResponse::HeaderMutation header_mutation_response;
   size_t set_headers_size = 0;
@@ -47,11 +47,9 @@ absl::StatusOr<ExtProcResponse::HeaderMutation> ParseHeaderMutation(
   for (size_t i = 0; i < set_headers_size; ++i) {
     ValidationErrors errors;
     auto parsed = ParseXdsHeaderValueOption(set_headers[i], &errors);
-    if (!errors.ok()) {
-      return errors.status(absl::StatusCode::kInvalidArgument,
-                           "validation failed");
+    if (errors.ok()) {
+      header_mutation_response.set_headers.push_back(std::move(parsed));
     }
-    header_mutation_response.set_headers.push_back(std::move(parsed));
   }
   size_t remove_headers_size = 0;
   upb_StringView const* remove_headers =
@@ -149,6 +147,9 @@ absl::StatusOr<ExtProcResponse> ParseExtProcResponse(
       const envoy_service_ext_proc_v3_HeadersResponse* request_headers =
           envoy_service_ext_proc_v3_ProcessingResponse_request_headers(
               response);
+      if (request_headers == nullptr) {
+        return absl::InternalError("request_headers is not available");
+      }
       const envoy_service_ext_proc_v3_CommonResponse* common_response =
           envoy_service_ext_proc_v3_HeadersResponse_response(request_headers);
       auto request_headers_response = ParseHeaders(common_response);
@@ -164,6 +165,9 @@ absl::StatusOr<ExtProcResponse> ParseExtProcResponse(
       const envoy_service_ext_proc_v3_HeadersResponse* response_headers =
           envoy_service_ext_proc_v3_ProcessingResponse_response_headers(
               response);
+      if (response_headers == nullptr) {
+        return absl::InternalError("response_headers is not available");
+      }
       const envoy_service_ext_proc_v3_CommonResponse* common_response =
           envoy_service_ext_proc_v3_HeadersResponse_response(response_headers);
       auto response_headers_response = ParseHeaders(common_response);
@@ -179,6 +183,9 @@ absl::StatusOr<ExtProcResponse> ParseExtProcResponse(
       const envoy_service_ext_proc_v3_TrailersResponse* response_trailer =
           envoy_service_ext_proc_v3_ProcessingResponse_response_trailers(
               response);
+      if (response_trailer == nullptr) {
+        return absl::InternalError("response_trailer is not available");
+      }
       const envoy_service_ext_proc_v3_HeaderMutation* header_mutation =
           envoy_service_ext_proc_v3_TrailersResponse_header_mutation(
               response_trailer);
@@ -189,6 +196,9 @@ absl::StatusOr<ExtProcResponse> ParseExtProcResponse(
     case envoy_service_ext_proc_v3_ProcessingResponse_response_request_body: {
       const envoy_service_ext_proc_v3_BodyResponse* request_body =
           envoy_service_ext_proc_v3_ProcessingResponse_request_body(response);
+      if (request_body == nullptr) {
+        return absl::InternalError("request_body is not available");
+      }
       const envoy_service_ext_proc_v3_CommonResponse* common_response =
           envoy_service_ext_proc_v3_BodyResponse_response(request_body);
       auto request_body_response = ParseBodyMutation(common_response);
@@ -203,6 +213,9 @@ absl::StatusOr<ExtProcResponse> ParseExtProcResponse(
     case envoy_service_ext_proc_v3_ProcessingResponse_response_response_body: {
       const envoy_service_ext_proc_v3_BodyResponse* response_body =
           envoy_service_ext_proc_v3_ProcessingResponse_response_body(response);
+      if (response_body == nullptr) {
+        return absl::InternalError("response_body is not available");
+      }
       const envoy_service_ext_proc_v3_CommonResponse* common_response =
           envoy_service_ext_proc_v3_BodyResponse_response(response_body);
       auto response_body_response = ParseBodyMutation(common_response);
@@ -218,6 +231,9 @@ absl::StatusOr<ExtProcResponse> ParseExtProcResponse(
       const envoy_service_ext_proc_v3_ImmediateResponse* immediate_response =
           envoy_service_ext_proc_v3_ProcessingResponse_immediate_response(
               response);
+      if (immediate_response == nullptr) {
+        return absl::InternalError("immediate_response is not available");
+      }
       ExtProcResponse::ImmediateResponse immediate_response_value;
       immediate_response_value.details = UpbStringToStdString(
           envoy_service_ext_proc_v3_ImmediateResponse_details(
@@ -579,7 +595,7 @@ std::string CreateExtProcRequest(
       ::google_protobuf_Struct* headers_struct =
           google_protobuf_Struct_new(arena);
       UpbStructHeadersEncoder encoder(headers_struct, arena);
-      const_cast<grpc_metadata_batch&>(metadata).Encode(&encoder);
+      metadata.Encode(&encoder);
       char* name_buf = static_cast<char*>(upb_Arena_Malloc(arena, attr.size()));
       memcpy(name_buf, attr.data(), attr.size());
       ::google_protobuf_Value* val_msg = ::google_protobuf_Value_new(arena);
