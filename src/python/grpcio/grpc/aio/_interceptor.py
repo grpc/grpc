@@ -18,7 +18,6 @@ from abc import ABCMeta
 from abc import abstractmethod
 import asyncio
 import collections
-from collections.abc import AsyncIterable, AsyncIterator
 import functools
 from typing import (
     TYPE_CHECKING,
@@ -58,6 +57,9 @@ from ._typing import ResponseIterableType
 from ._typing import ResponseType
 from ._typing import SerializingFunction
 from ._utils import _timeout_to_deadline
+
+if TYPE_CHECKING:
+    from collections.abc import AsyncIterable, AsyncIterator
 
 _LOCAL_CANCELLATION_DETAILS = "Locally cancelled by application!"
 
@@ -601,7 +603,8 @@ class _InterceptedStreamRequestMixin(Generic[RequestType]):
         call: _base_call.Call,
     ) -> None:
         if self._write_to_iterator_queue is None:
-            raise RuntimeError("Write iterator queue is not initialized")
+            err_msg = "Write iterator queue is not initialized"
+            raise RuntimeError(err_msg)
 
         # Write the specified 'request' to the request iterator queue using the
         # specified 'call' to allow for interruption of the write in the case
@@ -1289,5 +1292,6 @@ class StreamStreamCallResponseIterator(
                 StreamStreamCallResponseIterator,
             ),
         ):
-            raise TypeError("Should not happen: expected client-streaming call")
+            err_msg = "Should not happen: expected client-streaming call"
+            raise TypeError(err_msg)
         return self._call._done_writing_flag
