@@ -18,6 +18,7 @@ from abc import ABCMeta
 from abc import abstractmethod
 import asyncio
 import collections
+from collections.abc import AsyncIterable, AsyncIterator
 import functools
 from typing import (
     TYPE_CHECKING,
@@ -57,9 +58,6 @@ from ._typing import ResponseIterableType
 from ._typing import ResponseType
 from ._typing import SerializingFunction
 from ._utils import _timeout_to_deadline
-
-if TYPE_CHECKING:
-    from collections.abc import AsyncIterable, AsyncIterator
 
 _LOCAL_CANCELLATION_DETAILS = "Locally cancelled by application!"
 
