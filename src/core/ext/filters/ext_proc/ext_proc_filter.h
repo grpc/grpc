@@ -235,7 +235,6 @@ class ExtProcFilter final : public V3InterceptorToV2Bridge<ExtProcFilter> {
                            absl::AnyInvocable<std::string()> payload_generator);
 
    private:
-    void Orphaned() override;
     class StreamEventHandler final : public XdsTransportFactory::XdsTransport::
                                          StreamingCall::EventHandler {
      public:
@@ -261,33 +260,55 @@ class ExtProcFilter final : public V3InterceptorToV2Bridge<ExtProcFilter> {
      private:
       WeakRefCountedPtr<ExtProcCall> ext_proc_call_;
     };
-    RefCountedPtr<ExtProcChannel> channel_;
-    Mutex mu_;
-    OrphanablePtr<XdsTransportFactory::XdsTransport::StreamingCall>
-        streaming_call_;
-    bool observability_mode_;
-    bool failure_mode_allow_;
-    ProcessingMode processing_mode_;
-    Duration deferred_close_timeout_;
+
+    void Orphaned() override;
     void ClearWriteQueueAndUnblockLocked(
         std::vector<std::shared_ptr<InterActivityLatch<void>>>*
             latches_to_unblock) ABSL_EXCLUSIVE_LOCKS_REQUIRED(&mu_);
 
+
+    RefCountedPtr<ExtProcChannel> channel_;
+
+    OrphanablePtr<XdsTransportFactory::XdsTransport::StreamingCall>
+        streaming_call_;
+
+    bool observability_mode_;
+    bool failure_mode_allow_;
+    ProcessingMode processing_mode_;
+    Duration deferred_close_timeout_;
+
+    Mutex mu_;
+    // True if this call has been orphaned (filter destroyed).
     bool orphaned_ ABSL_GUARDED_BY(&mu_) = false;
-    bool is_first_message_on_stream_ ABSL_GUARDED_BY(&mu_) = true;
-    bool is_first_body_message_ ABSL_GUARDED_BY(&mu_) = true;
+    // True if the external processor stream is closed (successfully or with
+    // error).
     bool stream_closed_ ABSL_GUARDED_BY(&mu_) = false;
+    // Stores the error status if the external processor stream fails.
+    absl::Status stream_error_status_ ABSL_GUARDED_BY(&mu_);
+    // True if no messages have been sent on the ext_proc stream yet. Used to
+    // determine if attributes should be included in the request.
+    bool is_first_message_on_stream_ ABSL_GUARDED_BY(&mu_) = true;
+    // True if no body messages (request or response) have been sent to the
+    // processor yet. Used for failure_mode_allow bypass logic.
+    bool is_first_body_message_ ABSL_GUARDED_BY(&mu_) = true;
+    // True if the client has half-closed (finished sending request messages).
     bool client_sends_done_ ABSL_GUARDED_BY(&mu_) = false;
+    // True if the server has finished sending response messages.
+    bool server_sends_done_ ABSL_GUARDED_BY(&mu_) = false;
+    // True if the processor half-closed its sending stream (sent EOS).
+    bool processor_sent_half_close_ ABSL_GUARDED_BY(&mu_) = false;
+    // Number of client request body messages sent to the processor that are
+    // awaiting a response. Used to detect unexpected/unsolicited responses.
+    int outstanding_client_to_server_messages_ ABSL_GUARDED_BY(mu_) = 0;
+    // Number of server response body messages sent to the processor that are
+    // awaiting a response. Used to detect unexpected responses and trigger
+    // clean close.
+    int outstanding_server_to_client_messages_ ABSL_GUARDED_BY(mu_) = 0;
     std::queue<std::shared_ptr<InterActivityLatch<void>>> write_queue_
         ABSL_GUARDED_BY(&mu_);
     bool write_active_ ABSL_GUARDED_BY(&mu_) = false;
     std::shared_ptr<InterActivityLatch<void>> write_completed_latch_
         ABSL_GUARDED_BY(&mu_);
-    int outstanding_client_to_server_messages_ ABSL_GUARDED_BY(mu_) = 0;
-    int outstanding_server_to_client_messages_ ABSL_GUARDED_BY(mu_) = 0;
-    bool processor_sent_half_close_ ABSL_GUARDED_BY(&mu_) = false;
-    bool server_sends_done_ ABSL_GUARDED_BY(&mu_) = false;
-    absl::Status stream_error_status_ ABSL_GUARDED_BY(&mu_);
   };
   void Orphaned() override {}
 
