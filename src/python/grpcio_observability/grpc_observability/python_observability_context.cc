@@ -239,9 +239,9 @@ Span Span::StartSpan(absl::string_view name, absl::string_view trace_id) {
   return Span(std::string(name), "", start_time, context);
 }
 
-void Span::SetStatus(absl::string_view status) {
+void Span::SetStatus(const std::string& status_desc) {
   grpc_core::MutexLock lock(mu_.get());
-  status_ = std::string(status);
+  status_ = status_desc;
 }
 
 void Span::AddAttribute(absl::string_view key, absl::string_view value) {

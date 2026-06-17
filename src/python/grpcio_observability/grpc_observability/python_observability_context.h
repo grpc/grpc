@@ -196,7 +196,7 @@ class Span final {
 
   const SpanContext& Context() const { return context_; }
 
-  void SetStatus(absl::string_view status);
+  void SetStatus(const std::string& status_desc);
 
   void AddAttribute(absl::string_view key, absl::string_view value);
 

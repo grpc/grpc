@@ -118,7 +118,7 @@ PythonOpenCensusCallTracer::~PythonOpenCensusCallTracer() {
   }
 
   if (tracing_enabled_) {
-    context_.GetSpan().SetStatus(StatusCodeToString(status_code_));
+    context_.GetSpan().SetStatus(status_desc_);
     context_.EndSpan();
     if (IsSampled()) {
       RecordSpan(context_.GetSpan().ToCensusData());
@@ -351,15 +351,16 @@ void PythonOpenCensusCallTracer::PythonOpenCensusCallAttemptTracer::
         parent_->labels_injector_.GetExchangeLabels(recv_trailing_metadata);
   }
   status_code_ = status.code();
+  status_desc_ = status.ToString();
   uint64_t elapsed_time = 0;
   if (recv_trailing_metadata != nullptr) {
     elapsed_time = GetElapsedTimeFromTrailingMetadata(recv_trailing_metadata);
   }
 
-  std::string final_status = absl::StatusCodeToString(status_code_);
   context_.Labels().emplace_back(kClientMethod, parent_->method_);
   context_.Labels().emplace_back(kClientTarget, parent_->target_);
-  context_.Labels().emplace_back(kClientStatus, final_status);
+  context_.Labels().emplace_back(kClientStatus,
+                                 StatusCodeToString(status_code_));
   if (parent_->add_csm_optional_labels_) {
     parent_->labels_injector_.AddXdsOptionalLabels(
         /*is_client=*/true, optional_labels_array_, context_.Labels());
@@ -434,13 +435,14 @@ void PythonOpenCensusCallTracer::PythonOpenCensusCallAttemptTracer::
   }
 
   if (parent_->tracing_enabled_) {
-    context_.GetSpan().SetStatus(StatusCodeToString(status_code_));
+    context_.GetSpan().SetStatus(status_desc_);
     context_.EndSpan();
     if (IsSampled()) {
       RecordSpan(context_.GetSpan().ToCensusData());
     }
     grpc_core::MutexLock lock(&parent_->mu_);
     parent_->status_code_ = status_code_;
+    parent_->status_desc_ = status_desc_;
   }
 
   // After RecordEnd, Core will make no further usage of this CallAttemptTracer,

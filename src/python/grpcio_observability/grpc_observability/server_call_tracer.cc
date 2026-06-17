@@ -279,7 +279,11 @@ void PythonOpenCensusServerCallTracer::RecordEnd(
                     registered_method_, /*include_exchange_labels=*/true);
   }
   if (PythonCensusTracingEnabled()) {
-    context_.GetSpan().SetStatus(StatusCodeToString(final_info->final_status));
+    context_.GetSpan().SetStatus(
+        absl::Status(
+            static_cast<absl::StatusCode>(final_info->final_status),
+            final_info->error_string == nullptr ? "" : final_info->error_string)
+            .ToString());
     context_.EndSpan();
     if (IsSampled()) {
       RecordSpan(context_.GetSpan().ToCensusData());
