@@ -190,9 +190,9 @@ class Http2ServerTransport final : public ServerTransport,
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto EndpointReadSlice(
       const size_t num_bytes) {
     return Map(endpoint_.ReadSlice(num_bytes),
-               [this, num_bytes](absl::StatusOr<Slice> status) {
+               [this, num_bytes](absl::StatusOr<Slice>&& status) {
                  OnEndpointRead(status.ok(), num_bytes);
-                 return status;
+                 return std::move(status);
                });
   }
 
@@ -201,9 +201,9 @@ class Http2ServerTransport final : public ServerTransport,
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto EndpointRead(
       const size_t num_bytes) {
     return Map(endpoint_.Read(num_bytes),
-               [this, num_bytes](absl::StatusOr<SliceBuffer> status) {
+               [this, num_bytes](absl::StatusOr<SliceBuffer>&& status) {
                  OnEndpointRead(status.ok(), num_bytes);
-                 return status;
+                 return std::move(status);
                });
   }
 
@@ -677,13 +677,7 @@ class Http2ServerTransport final : public ServerTransport,
 
   RefCountedPtr<UnstartedCallDestination> call_destination_;
 
-  // TODO(akshitpatel) : [PH2][P0] : Remove this when write path is ready.
-  MpscReceiver<Http2Frame> outgoing_frames_;
-
-  // TODO(tjagtap) : [PH2][P0] : These are copied as is from the client
-  // transport. Take a look if modifications are needed.
-
-  RefCountedPtr<Party> general_party_;  // Refer Gemini.md for party slot usage
+  RefCountedPtr<Party> general_party_;  // Refer AGENTS.md for party slot usage
   std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_;
 
   PromiseEndpoint endpoint_;

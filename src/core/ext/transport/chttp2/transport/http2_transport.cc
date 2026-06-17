@@ -73,6 +73,8 @@ namespace http2 {
 // [PH2][EXT] This is a TODO related to a project unrelated to PH2 but happening
 //            in parallel.
 // [PH2][CHTTP2] This TODO is a part of CHTTP2 deletion.
+// [PH2][Px][FCV3] This TODO is related to Flow Control plumbing with the
+// Application and the Call V3 stack.
 
 constexpr Duration kDefaultPingTimeout = Duration::Minutes(1);
 constexpr Duration kDefaultKeepaliveTimeout = Duration::Seconds(20);
