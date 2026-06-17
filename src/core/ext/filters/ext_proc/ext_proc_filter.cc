@@ -753,7 +753,8 @@ auto ExtProcFilter::ServerInitialMetadata(
               auto shared_metadata =
                   std::make_shared<ServerMetadataHandle>(std::move(*md));
               const bool send_headers =
-                  self->config()->processing_mode.send_response_headers;
+                  self->config()->processing_mode.send_response_headers &&
+                  !ext_proc_call->IsStreamClosed();
               return Map(
                   TrySeq(
                       ext_proc_call->SendMessageLocked(
@@ -894,7 +895,7 @@ auto ExtProcFilter::ServerToClientMaybeObservabilityMode(
 auto ExtProcFilter::ServerToClientNormalMode(
     CallHandler handler, CallInitiator initiator,
     RefCountedPtr<ExtProcCall> ext_proc_call) {
-  auto producer = Map(
+  auto server_to_sidestream = Map(
       ForEach(MessagesFrom(initiator),
               [self = RefAsSubclass<ExtProcFilter>(), handler,
                ext_proc_call](MessageHandle message) mutable {
@@ -921,7 +922,7 @@ auto ExtProcFilter::ServerToClientNormalMode(
         return status;
       });
 
-  auto consumer = Seq(
+  auto sidestream_to_client = Seq(
       ForEach(
           std::move(ext_proc_call->response_body_pipe_.receiver),
           [handler, initiator,
@@ -971,10 +972,11 @@ auto ExtProcFilter::ServerToClientNormalMode(
         return status;
       });
 
-  return Map(TryJoin<absl::StatusOr>(std::move(producer), std::move(consumer)),
-             [](auto result) -> absl::Status {
+  return Map(TryJoin<absl::StatusOr>(std::move(server_to_sidestream),
+                                     std::move(sidestream_to_client)),
+             [ext_proc_call](auto result) -> absl::Status {
                if (!result.ok()) return result.status();
-               return absl::OkStatus();
+               return ext_proc_call->GetStreamErrorStatus();
              });
 }
 
@@ -1015,7 +1017,7 @@ auto ExtProcFilter::ServerTrailingMetadataNormalMode(
       << IsStatusOk(*metadata) << ", metadata: " << (*metadata)->DebugString();
   return Seq(
       TrySeq(Seq(ext_proc_call->SendMessageLocked(
-                     /*condition=*/true,
+                     !ext_proc_call->IsStreamClosed(),
                      [self = RefAsSubclass<ExtProcFilter>(), ext_proc_call,
                       metadata]() {
                        GRPC_TRACE_LOG(ext_proc_filter, INFO)
@@ -1122,7 +1124,7 @@ auto ExtProcFilter::ServerTrailingMetadata(
             std::make_shared<ServerMetadataHandle>(std::move(md));
         const bool send_trailers =
             self->config()->processing_mode.send_response_trailers &&
-            IsStatusOk(*shared_metadata);
+            IsStatusOk(*shared_metadata) && !ext_proc_call->IsStreamClosed();
         return If(
             send_trailers,
             [self, handler, initiator, ext_proc_call,
@@ -1225,29 +1227,40 @@ auto ExtProcFilter::ClientToServerMaybeObservabilityMode(
     RefCountedPtr<ExtProcCall> ext_proc_call, bool send_to_processor,
     ::google_protobuf_Struct* attributes) {
   return TrySeq(
-      ForEach(MessagesFrom(handler),
-              [self = RefAsSubclass<ExtProcFilter>(), initiator, ext_proc_call,
-               send_to_processor, attributes](MessageHandle message) mutable {
-                if (!send_to_processor || ext_proc_call->IsStreamClosed()) {
-                  GRPC_TRACE_LOG(ext_proc_filter, INFO)
-                      << "ExtProc: ClientToServer bypass message "
-                         "pushed upstream:\n"
-                      << (message != nullptr ? message->DebugString()
-                                             : "nullptr");
-                }
-                return Map(
-                    self->SendClientMessageRequest(
-                        message, ext_proc_call.get(),
-                        /*end_of_stream=*/false,
-                        /*end_of_stream_without_message=*/false,
-                        send_to_processor && !ext_proc_call->IsStreamClosed(),
-                        attributes),
-                    [initiator, message = std::move(message)](
-                        absl::Status status) mutable {
-                      initiator.SpawnPushMessage(std::move(message));
-                      return status;
-                    });
-              }),
+      ForEach(
+          MessagesFrom(handler),
+          [self = RefAsSubclass<ExtProcFilter>(), initiator, ext_proc_call,
+           send_to_processor, attributes](MessageHandle message) mutable {
+            return If(
+                ext_proc_call->IsProcessorSentHalfClose(),
+                []() -> absl::Status {
+                  // PH2 Work is required here
+                  return absl::InternalError(
+                      "Client sends closed by external processor");
+                },
+                [self, initiator, ext_proc_call, send_to_processor, attributes,
+                 message = std::move(message)]() mutable {
+                  if (!send_to_processor || ext_proc_call->IsStreamClosed()) {
+                    GRPC_TRACE_LOG(ext_proc_filter, INFO)
+                        << "ExtProc: ClientToServer bypass message "
+                           "pushed upstream:\n"
+                        << (message != nullptr ? message->DebugString()
+                                               : "nullptr");
+                  }
+                  return Map(
+                      self->SendClientMessageRequest(
+                          message, ext_proc_call.get(),
+                          /*end_of_stream=*/false,
+                          /*end_of_stream_without_message=*/false,
+                          send_to_processor && !ext_proc_call->IsStreamClosed(),
+                          attributes),
+                      [initiator, message = std::move(message)](
+                          absl::Status status) mutable {
+                        initiator.SpawnPushMessage(std::move(message));
+                        return status;
+                      });
+                });
+          }),
       [self = RefAsSubclass<ExtProcFilter>(), initiator, ext_proc_call,
        send_to_processor, attributes]() mutable {
         GRPC_TRACE_LOG(ext_proc_filter, INFO)
@@ -1270,7 +1283,7 @@ auto ExtProcFilter::ClientToServerNormalMode(
     CallHandler handler, CallInitiator initiator,
     RefCountedPtr<ExtProcCall> ext_proc_call,
     ::google_protobuf_Struct* attributes) {
-  auto producer = TrySeq(
+  auto client_to_sidestream = TrySeq(
       ForEach(
           MessagesFrom(handler),
           [self = RefAsSubclass<ExtProcFilter>(), initiator, ext_proc_call,
@@ -1335,12 +1348,12 @@ auto ExtProcFilter::ClientToServerNormalMode(
                   });
             });
       });
-  auto consumer = Seq(
+  auto sidestream_to_server = Seq(
       ForEach(std::move(ext_proc_call->request_body_pipe_.receiver),
               [initiator,
                ext_proc_call](absl::StatusOr<ExtProcResponse> result) mutable {
                 GRPC_TRACE_LOG(ext_proc_filter, INFO)
-                    << "ExtProc: consumer ForEach got item, ok: "
+                    << "ExtProc: sidestream_to_server ForEach got item, ok: "
                     << result.ok();
                 if (result.ok()) {
                   auto& ext_proc_response = *result;
@@ -1384,10 +1397,11 @@ auto ExtProcFilter::ClientToServerNormalMode(
         }
         return status;
       });
-  return Map(TryJoin<absl::StatusOr>(std::move(producer), std::move(consumer)),
-             [](auto result) -> absl::Status {
+  return Map(TryJoin<absl::StatusOr>(std::move(client_to_sidestream),
+                                     std::move(sidestream_to_server)),
+             [ext_proc_call](auto result) -> absl::Status {
                if (!result.ok()) return result.status();
-               return absl::OkStatus();
+               return ext_proc_call->GetStreamErrorStatus();
              });
 }
 
