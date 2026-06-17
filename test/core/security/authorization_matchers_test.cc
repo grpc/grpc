@@ -107,24 +107,26 @@ TEST_F(AuthorizationMatchersTest, OrAuthorizationMatcherFailedMatch) {
 TEST_F(AuthorizationMatchersTest, NotAuthorizationMatcherSuccessfulMatch) {
   args_.AddPairToMetadata(":path", "/different/foo");
   EvaluateArgs args = args_.MakeEvaluateArgs();
-  auto matcher = AuthorizationMatcher::Create(Rbac::Principal(
-      Rbac::Principal::MakeNotPrincipal(Rbac::Principal::MakePathPrincipal(
-          StringMatcher::Create(StringMatcher::Type::kExact,
-                                /*matcher=*/"/expected/foo",
-                                /*case_sensitive=*/false)
-              .value()))));
+  auto matcher = AuthorizationMatcher::Create(
+      Rbac::Principal(Rbac::Principal::MakeNotPrincipal(
+          std::make_unique<Rbac::Principal>(Rbac::Principal::MakePathPrincipal(
+              StringMatcher::Create(StringMatcher::Type::kExact,
+                                    /*matcher=*/"/expected/foo",
+                                    /*case_sensitive=*/false)
+                  .value())))));
   EXPECT_TRUE(matcher->Matches(args));
 }
 
 TEST_F(AuthorizationMatchersTest, NotAuthorizationMatcherFailedMatch) {
   args_.AddPairToMetadata(":path", "/expected/foo");
   EvaluateArgs args = args_.MakeEvaluateArgs();
-  auto matcher = AuthorizationMatcher::Create(Rbac::Principal(
-      Rbac::Principal::MakeNotPrincipal(Rbac::Principal::MakePathPrincipal(
-          StringMatcher::Create(StringMatcher::Type::kExact,
-                                /*matcher=*/"/expected/foo",
-                                /*case_sensitive=*/false)
-              .value()))));
+  auto matcher = AuthorizationMatcher::Create(
+      Rbac::Principal(Rbac::Principal::MakeNotPrincipal(
+          std::make_unique<Rbac::Principal>(Rbac::Principal::MakePathPrincipal(
+              StringMatcher::Create(StringMatcher::Type::kExact,
+                                    /*matcher=*/"/expected/foo",
+                                    /*case_sensitive=*/false)
+                  .value())))));
   EXPECT_FALSE(matcher->Matches(args));
 }
 

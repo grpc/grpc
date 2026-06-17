@@ -91,8 +91,8 @@ class XdsHttpFilterImpl {
   // ALL INTERFACES BELOW ARE DEPRECATED
   //
   /////////////////////////////////////////////////////////////////////////////
-  // TODO(roth): Remove these once the server side is migrated to the new
-  // approach for passing xDS HTTP filter configs.
+  // TODO(roth): Remove these when removing the
+  // xds_server_filter_chain_per_route experiment.
 
   // Service config data for the filter, returned by GenerateServiceConfig().
   struct ServiceConfigJsonEntry {

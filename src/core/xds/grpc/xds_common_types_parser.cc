@@ -32,6 +32,7 @@
 #include "envoy/extensions/transport_sockets/tls/v3/common.upb.h"
 #include "envoy/extensions/transport_sockets/tls/v3/tls.upb.h"
 #include "envoy/type/matcher/v3/regex.upb.h"
+#include "envoy/type/v3/range.upb.h"
 #include "google/protobuf/any.upb.h"
 #include "google/protobuf/struct.upb.h"
 #include "google/protobuf/struct.upbdefs.h"
@@ -275,6 +276,81 @@ StringMatcher StringMatcherParse(
   GRPC_STRING_MATCHER_PROTO_ACCESSOR_CLASS(xds);
   ProtoAccessor proto_accessor(matcher_proto);
   return StringMatcherParseInternal(proto_accessor, errors);
+}
+
+//
+// ParseXdsHeaderMatcher()
+//
+
+HeaderMatcher ParseXdsHeaderMatcher(
+    const XdsResourceType::DecodeContext& context,
+    const envoy_config_route_v3_HeaderMatcher* matcher,
+    ValidationErrors* errors) {
+  absl::string_view name =
+      UpbStringToAbsl(envoy_config_route_v3_HeaderMatcher_name(matcher));
+  const bool invert_match =
+      envoy_config_route_v3_HeaderMatcher_invert_match(matcher);
+  if (envoy_config_route_v3_HeaderMatcher_has_string_match(matcher)) {
+    ValidationErrors::ScopedField field(errors, ".string_match");
+    auto string_matcher = StringMatcherParse(
+        context, envoy_config_route_v3_HeaderMatcher_string_match(matcher),
+        errors);
+    return HeaderMatcher::CreateFromStringMatcher(
+        name, std::move(string_matcher), invert_match);
+  }
+  HeaderMatcher::Type type;
+  absl::string_view match_string;
+  int64_t range_start = 0;
+  int64_t range_end = 0;
+  bool present_match = false;
+  bool case_sensitive = true;
+  if (envoy_config_route_v3_HeaderMatcher_has_exact_match(matcher)) {
+    type = HeaderMatcher::Type::kExact;
+    match_string = UpbStringToAbsl(
+        envoy_config_route_v3_HeaderMatcher_exact_match(matcher));
+  } else if (envoy_config_route_v3_HeaderMatcher_has_prefix_match(matcher)) {
+    type = HeaderMatcher::Type::kPrefix;
+    match_string = UpbStringToAbsl(
+        envoy_config_route_v3_HeaderMatcher_prefix_match(matcher));
+  } else if (envoy_config_route_v3_HeaderMatcher_has_suffix_match(matcher)) {
+    type = HeaderMatcher::Type::kSuffix;
+    match_string = UpbStringToAbsl(
+        envoy_config_route_v3_HeaderMatcher_suffix_match(matcher));
+  } else if (envoy_config_route_v3_HeaderMatcher_has_contains_match(matcher)) {
+    type = HeaderMatcher::Type::kContains;
+    match_string = UpbStringToAbsl(
+        envoy_config_route_v3_HeaderMatcher_contains_match(matcher));
+  } else if (envoy_config_route_v3_HeaderMatcher_has_safe_regex_match(
+                 matcher)) {
+    const envoy_type_matcher_v3_RegexMatcher* regex_matcher =
+        envoy_config_route_v3_HeaderMatcher_safe_regex_match(matcher);
+    GRPC_CHECK_NE(regex_matcher, nullptr);
+    type = HeaderMatcher::Type::kSafeRegex;
+    match_string = UpbStringToAbsl(
+        envoy_type_matcher_v3_RegexMatcher_regex(regex_matcher));
+  } else if (envoy_config_route_v3_HeaderMatcher_has_range_match(matcher)) {
+    type = HeaderMatcher::Type::kRange;
+    const envoy_type_v3_Int64Range* range_matcher =
+        envoy_config_route_v3_HeaderMatcher_range_match(matcher);
+    GRPC_CHECK_NE(range_matcher, nullptr);
+    range_start = envoy_type_v3_Int64Range_start(range_matcher);
+    range_end = envoy_type_v3_Int64Range_end(range_matcher);
+  } else if (envoy_config_route_v3_HeaderMatcher_has_present_match(matcher)) {
+    type = HeaderMatcher::Type::kPresent;
+    present_match = envoy_config_route_v3_HeaderMatcher_present_match(matcher);
+  } else {
+    errors->AddError("invalid header matcher");
+    return HeaderMatcher();
+  }
+  absl::StatusOr<HeaderMatcher> header_matcher =
+      HeaderMatcher::Create(name, type, match_string, range_start, range_end,
+                            present_match, invert_match, case_sensitive);
+  if (!header_matcher.ok()) {
+    errors->AddError(absl::StrCat("cannot create header matcher: ",
+                                  header_matcher.status().message()));
+    return HeaderMatcher();
+  }
+  return std::move(*header_matcher);
 }
 
 //

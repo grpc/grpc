@@ -557,11 +557,39 @@ TEST_F(XdsRbacFilterTest, GenerateFilterConfig) {
   EXPECT_EQ(*config, Json::FromObject({})) << JsonDump(*config);
 }
 
+TEST_F(XdsRbacFilterTest, ParseTopLevelConfig) {
+  XdsExtension extension = MakeXdsExtension(RBAC());
+  auto config =
+      filter_->ParseTopLevelConfig("", decode_context_, extension, &errors_);
+  ASSERT_TRUE(errors_.ok()) << errors_.status(
+      absl::StatusCode::kInvalidArgument, "unexpected errors");
+  ASSERT_NE(config, nullptr);
+  EXPECT_EQ(config->ToString(),
+            "Rbac{name=, action=Deny, audit_condition=None, policies={}, "
+            "audit_loggers={}}");
+}
+
 TEST_F(XdsRbacFilterTest, GenerateFilterConfigTypedStruct) {
   XdsExtension extension = MakeXdsExtension(RBAC());
   extension.value = Json();
   auto config =
       filter_->GenerateFilterConfig("", decode_context_, extension, &errors_);
+  absl::Status status = errors_.status(absl::StatusCode::kInvalidArgument,
+                                       "errors validating filter config");
+  EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(
+      status.message(),
+      "errors validating filter config: ["
+      "field:http_filter.value[envoy.extensions.filters.http.rbac.v3.RBAC] "
+      "error:could not parse HTTP RBAC filter config]")
+      << status;
+}
+
+TEST_F(XdsRbacFilterTest, ParseTopLevelConfigTypedStruct) {
+  XdsExtension extension = MakeXdsExtension(RBAC());
+  extension.value = Json();
+  auto config =
+      filter_->ParseTopLevelConfig("", decode_context_, extension, &errors_);
   absl::Status status = errors_.status(absl::StatusCode::kInvalidArgument,
                                        "errors validating filter config");
   EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
@@ -590,6 +618,23 @@ TEST_F(XdsRbacFilterTest, GenerateFilterConfigUnparsable) {
       << status;
 }
 
+TEST_F(XdsRbacFilterTest, ParseTopLevelConfigUnparsable) {
+  XdsExtension extension = MakeXdsExtension(RBAC());
+  std::string serialized_resource("\0", 1);
+  extension.value = absl::string_view(serialized_resource);
+  auto config =
+      filter_->ParseTopLevelConfig("", decode_context_, extension, &errors_);
+  absl::Status status = errors_.status(absl::StatusCode::kInvalidArgument,
+                                       "errors validating filter config");
+  EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(
+      status.message(),
+      "errors validating filter config: ["
+      "field:http_filter.value[envoy.extensions.filters.http.rbac.v3.RBAC] "
+      "error:could not parse HTTP RBAC filter config]")
+      << status;
+}
+
 TEST_F(XdsRbacFilterTest, GenerateFilterConfigOverride) {
   XdsExtension extension = MakeXdsExtension(RBACPerRoute());
   auto config = filter_->GenerateFilterConfigOverride("", decode_context_,
@@ -598,6 +643,18 @@ TEST_F(XdsRbacFilterTest, GenerateFilterConfigOverride) {
       absl::StatusCode::kInvalidArgument, "unexpected errors");
   ASSERT_TRUE(config.has_value());
   EXPECT_EQ(*config, Json::FromObject({})) << JsonDump(*config);
+}
+
+TEST_F(XdsRbacFilterTest, ParseOverrideConfig) {
+  XdsExtension extension = MakeXdsExtension(RBACPerRoute());
+  auto config =
+      filter_->ParseOverrideConfig("", decode_context_, extension, &errors_);
+  ASSERT_TRUE(errors_.ok()) << errors_.status(
+      absl::StatusCode::kInvalidArgument, "unexpected errors");
+  ASSERT_NE(config, nullptr);
+  EXPECT_EQ(config->ToString(),
+            "Rbac{name=, action=Deny, audit_condition=None, policies={}, "
+            "audit_loggers={}}");
 }
 
 TEST_F(XdsRbacFilterTest, GenerateFilterConfigOverrideTypedStruct) {
@@ -615,12 +672,43 @@ TEST_F(XdsRbacFilterTest, GenerateFilterConfigOverrideTypedStruct) {
       << status;
 }
 
+TEST_F(XdsRbacFilterTest, ParseOverrideConfigTypedStruct) {
+  XdsExtension extension = MakeXdsExtension(RBACPerRoute());
+  extension.value = Json();
+  auto config =
+      filter_->ParseOverrideConfig("", decode_context_, extension, &errors_);
+  absl::Status status = errors_.status(absl::StatusCode::kInvalidArgument,
+                                       "errors validating filter config");
+  EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(status.message(),
+            "errors validating filter config: ["
+            "field:http_filter.value[envoy.extensions.filters.http.rbac.v3"
+            ".RBACPerRoute] error:could not parse RBACPerRoute]")
+      << status;
+}
+
 TEST_F(XdsRbacFilterTest, GenerateFilterConfigOverrideUnparsable) {
   XdsExtension extension = MakeXdsExtension(RBACPerRoute());
   std::string serialized_resource("\0", 1);
   extension.value = absl::string_view(serialized_resource);
   auto config = filter_->GenerateFilterConfigOverride("", decode_context_,
                                                       extension, &errors_);
+  absl::Status status = errors_.status(absl::StatusCode::kInvalidArgument,
+                                       "errors validating filter config");
+  EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(status.message(),
+            "errors validating filter config: ["
+            "field:http_filter.value[envoy.extensions.filters.http.rbac.v3"
+            ".RBACPerRoute] error:could not parse RBACPerRoute]")
+      << status;
+}
+
+TEST_F(XdsRbacFilterTest, ParseOverrideConfigUnparsable) {
+  XdsExtension extension = MakeXdsExtension(RBACPerRoute());
+  std::string serialized_resource("\0", 1);
+  extension.value = absl::string_view(serialized_resource);
+  auto config =
+      filter_->ParseOverrideConfig("", decode_context_, extension, &errors_);
   absl::Status status = errors_.status(absl::StatusCode::kInvalidArgument,
                                        "errors validating filter config");
   EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
@@ -667,6 +755,19 @@ class XdsRbacFilterConfigTest : public XdsRbacFilterTest,
                                          &errors_);
   }
 
+  RefCountedPtr<const FilterConfig> ParseConfig(RBAC rbac) {
+    if (GetParam()) {
+      RBACPerRoute rbac_per_route;
+      *rbac_per_route.mutable_rbac() = rbac;
+      XdsExtension extension = MakeXdsExtension(rbac_per_route);
+      return filter_->ParseOverrideConfig("", decode_context_, extension,
+                                          &errors_);
+    }
+    XdsExtension extension = MakeXdsExtension(rbac);
+    return filter_->ParseTopLevelConfig("", decode_context_, extension,
+                                        &errors_);
+  }
+
   std::string FieldPrefix() {
     return absl::StrCat("http_filter.value[",
                         (GetParam() ? filter_->OverrideConfigProtoName()
@@ -684,6 +785,16 @@ TEST_P(XdsRbacFilterConfigTest, EmptyConfig) {
       absl::StatusCode::kInvalidArgument, "unexpected errors");
   ASSERT_TRUE(config.has_value());
   EXPECT_EQ(*config, Json::FromObject({})) << JsonDump(*config);
+}
+
+TEST_P(XdsRbacFilterConfigTest, ParseEmptyConfig) {
+  auto config = ParseConfig(RBAC());
+  ASSERT_TRUE(errors_.ok()) << errors_.status(
+      absl::StatusCode::kInvalidArgument, "unexpected errors");
+  ASSERT_NE(config, nullptr);
+  EXPECT_EQ(config->ToString(),
+            "Rbac{name=, action=Deny, audit_condition=None, policies={}, "
+            "audit_loggers={}}");
 }
 
 TEST_P(XdsRbacFilterConfigTest, AllPermissionTypes) {
@@ -843,6 +954,143 @@ TEST_P(XdsRbacFilterConfigTest, AllPermissionTypes) {
             "}}}}");
 }
 
+TEST_P(XdsRbacFilterConfigTest, ParseAllPermissionTypes) {
+  RBAC rbac;
+  auto* rules = rbac.mutable_rules();
+  rules->set_action(rules->ALLOW);
+  auto& policy = (*rules->mutable_policies())["policy_name"];
+  // any
+  policy.add_permissions()->set_any(true);
+  // header exact match with invert
+  auto* header = policy.add_permissions()->mutable_header();
+  header->set_name("header_name1");
+  header->set_exact_match("exact_match");
+  header->set_invert_match(true);
+  // header regex match
+  header = policy.add_permissions()->mutable_header();
+  header->set_name("header_name2");
+  header->mutable_safe_regex_match()->set_regex("regex_match");
+  // header range match
+  header = policy.add_permissions()->mutable_header();
+  header->set_name("header_name3");
+  auto* range = header->mutable_range_match();
+  range->set_start(1);
+  range->set_end(3);
+  // header present match
+  header = policy.add_permissions()->mutable_header();
+  header->set_name("header_name4");
+  header->set_present_match(true);
+  // header prefix match
+  header = policy.add_permissions()->mutable_header();
+  header->set_name("header_name5");
+  header->set_prefix_match("prefix_match");
+  // header suffix match
+  header = policy.add_permissions()->mutable_header();
+  header->set_name("header_name6");
+  header->set_suffix_match("suffix_match");
+  // header contains match
+  header = policy.add_permissions()->mutable_header();
+  header->set_name("header_name7");
+  header->set_contains_match("contains_match");
+  // path exact match with ignore_case
+  auto* string_matcher =
+      policy.add_permissions()->mutable_url_path()->mutable_path();
+  string_matcher->set_exact("exact_match");
+  string_matcher->set_ignore_case(true);
+  // path prefix match
+  string_matcher = policy.add_permissions()->mutable_url_path()->mutable_path();
+  string_matcher->set_prefix("prefix_match");
+  // path suffix match
+  string_matcher = policy.add_permissions()->mutable_url_path()->mutable_path();
+  string_matcher->set_suffix("suffix_match");
+  // path contains match
+  string_matcher = policy.add_permissions()->mutable_url_path()->mutable_path();
+  string_matcher->set_contains("contains_match");
+  // path regex match
+  string_matcher = policy.add_permissions()->mutable_url_path()->mutable_path();
+  string_matcher->mutable_safe_regex()->set_regex("regex_match");
+  // destination IP match with prefix len
+  auto* cidr_range = policy.add_permissions()->mutable_destination_ip();
+  cidr_range->set_address_prefix("127.0.0");
+  cidr_range->mutable_prefix_len()->set_value(24);
+  // destination IP match
+  cidr_range = policy.add_permissions()->mutable_destination_ip();
+  cidr_range->set_address_prefix("10.0.0");
+  // destination port match
+  policy.add_permissions()->set_destination_port(1234);
+  // metadata match
+  policy.add_permissions()->mutable_metadata();
+  // metadata match with invert
+  policy.add_permissions()->mutable_metadata()->set_invert(true);
+  // requested server name
+  string_matcher = policy.add_permissions()->mutable_requested_server_name();
+  string_matcher->set_exact("exact_match");
+  // not
+  policy.add_permissions()->mutable_not_rule()->set_any(true);
+  // and
+  policy.add_permissions()->mutable_and_rules()->add_rules()->set_any(true);
+  // or
+  policy.add_permissions()->mutable_or_rules()->add_rules()->set_any(true);
+  auto config = ParseConfig(rbac);
+  ASSERT_TRUE(errors_.ok()) << errors_.status(
+      absl::StatusCode::kInvalidArgument, "unexpected errors");
+  ASSERT_NE(config, nullptr);
+  EXPECT_EQ(config->ToString(),
+            "Rbac{name=, action=Allow, audit_condition=None, policies={"
+            "policy_name={permissions={or=["
+            // any
+            "{any}, "
+            // header exact match with invert
+            "{header=HeaderMatcher{header_name1 not "
+            "StringMatcher{exact=exact_match}}}, "
+            // header regex match
+            "{header=HeaderMatcher{header_name2 "
+            "StringMatcher{safe_regex=regex_match}}}, "
+            // header range match
+            "{header=HeaderMatcher{header_name3 range=[1, 3]}}, "
+            // header present match
+            "{header=HeaderMatcher{header_name4 present=true}}, "
+            // header prefix match
+            "{header=HeaderMatcher{header_name5 "
+            "StringMatcher{prefix=prefix_match}}}, "
+            // header suffix match
+            "{header=HeaderMatcher{header_name6 "
+            "StringMatcher{suffix=suffix_match}}}, "
+            // header contains match
+            "{header=HeaderMatcher{header_name7 "
+            "StringMatcher{contains=contains_match}}}, "
+            // path exact match with ignore_case
+            "{path=StringMatcher{exact=exact_match, case_sensitive=false}}, "
+            // path prefix match
+            "{path=StringMatcher{prefix=prefix_match}}, "
+            // path suffix match
+            "{path=StringMatcher{suffix=suffix_match}}, "
+            // path contains match
+            "{path=StringMatcher{contains=contains_match}}, "
+            // path regex match
+            "{path=StringMatcher{safe_regex=regex_match}}, "
+            // destination IP match with prefix len
+            "{dest_ip=CidrRange{address_prefix=127.0.0,prefix_len=24}}, "
+            // destination IP match
+            "{dest_ip=CidrRange{address_prefix=10.0.0,prefix_len=0}}, "
+            // destination port match
+            "{dest_port=1234}, "
+            // metadata match
+            "{metadata}, "
+            // metadata match with invert
+            "{invert metadata}, "
+            // requested server name
+            "{requested_server_name=StringMatcher{exact=exact_match}}, "
+            // not
+            "{not {any}}, "
+            // and
+            "{and=[{any}]}, "
+            // or
+            "{or=[{any}]}"
+            "]}, principals={or=[]}}}, "
+            "audit_loggers={}}");
+}
+
 TEST_P(XdsRbacFilterConfigTest, AtMaxPermissionDepth) {
   RBAC rbac;
   auto* rules = rbac.mutable_rules();
@@ -906,6 +1154,65 @@ TEST_P(XdsRbacFilterConfigTest, AtMaxPermissionDepth) {
             "}}}}");
 }
 
+TEST_P(XdsRbacFilterConfigTest, ParseAtMaxPermissionDepth) {
+  RBAC rbac;
+  auto* rules = rbac.mutable_rules();
+  rules->set_action(rules->ALLOW);
+  auto& policy = (*rules->mutable_policies())["policy_name"];
+  // We want to make sure that all of "and", "or", and "not" track
+  // depth, so we're including them all here.  We will start out with a
+  // single "and" and a single "or" and then use "not" for the rest.
+  auto* permission = policy.add_permissions();
+  permission = permission->mutable_and_rules()->add_rules();
+  permission = permission->mutable_or_rules()->add_rules();
+  for (size_t i = 0; i < 14; ++i) {
+    permission = permission->mutable_not_rule();
+  }
+  permission->set_any(true);
+  auto config = ParseConfig(rbac);
+  ASSERT_TRUE(errors_.ok()) << errors_.status(
+      absl::StatusCode::kInvalidArgument, "unexpected errors");
+  ASSERT_NE(config, nullptr);
+  EXPECT_EQ(config->ToString(),
+            "Rbac{name=, action=Allow, audit_condition=None, policies={"
+            "policy_name={permissions={or=["
+            "{and=["
+            "{or=["
+            "{not "
+            "{not "
+            "{not "
+            "{not "
+            "{not "
+            "{not "
+            "{not "
+            "{not "
+            "{not "
+            "{not "
+            "{not "
+            "{not "
+            "{not "
+            "{not "
+            "{any}"
+            "}"
+            "}"
+            "}"
+            "}"
+            "}"
+            "}"
+            "}"
+            "}"
+            "}"
+            "}"
+            "}"
+            "}"
+            "}"
+            "}"
+            "]}"
+            "]}"
+            "]}, principals={or=[]}}}, "
+            "audit_loggers={}}");
+}
+
 TEST_P(XdsRbacFilterConfigTest, ExceedsMaxPermissionDepth) {
   RBAC rbac;
   auto* rules = rbac.mutable_rules();
@@ -922,6 +1229,50 @@ TEST_P(XdsRbacFilterConfigTest, ExceedsMaxPermissionDepth) {
   }
   permission->set_any(true);
   auto config = GenerateConfig(rbac);
+  absl::Status status = errors_.status(absl::StatusCode::kInvalidArgument,
+                                       "errors validating filter config");
+  EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(
+      status.message(),
+      absl::StrCat("errors validating filter config: [field:", FieldPrefix(),
+                   ".rules.policies[policy_name]"
+                   ".permissions[0].and_permission.rules[0]"
+                   ".or_permission.rules[0]"
+                   ".not_rule"
+                   ".not_rule"
+                   ".not_rule"
+                   ".not_rule"
+                   ".not_rule"
+                   ".not_rule"
+                   ".not_rule"
+                   ".not_rule"
+                   ".not_rule"
+                   ".not_rule"
+                   ".not_rule"
+                   ".not_rule"
+                   ".not_rule"
+                   ".not_rule"
+                   ".not_rule "
+                   "error:exceeded max recursion depth]"))
+      << status;
+}
+
+TEST_P(XdsRbacFilterConfigTest, ParseExceedsMaxPermissionDepth) {
+  RBAC rbac;
+  auto* rules = rbac.mutable_rules();
+  rules->set_action(rules->ALLOW);
+  auto& policy = (*rules->mutable_policies())["policy_name"];
+  // We want to make sure that all of "and", "or", and "not" track
+  // depth, so we're including them all here.  We will start out with a
+  // single "and" and a single "or" and then use "not" for the rest.
+  auto* permission = policy.add_permissions();
+  permission = permission->mutable_and_rules()->add_rules();
+  permission = permission->mutable_or_rules()->add_rules();
+  for (size_t i = 0; i < 15; ++i) {
+    permission = permission->mutable_not_rule();
+  }
+  permission->set_any(true);
+  auto config = ParseConfig(rbac);
   absl::Status status = errors_.status(absl::StatusCode::kInvalidArgument,
                                        "errors validating filter config");
   EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
@@ -1035,6 +1386,85 @@ TEST_P(XdsRbacFilterConfigTest, AllPrincipalTypes) {
             "}}}}");
 }
 
+TEST_P(XdsRbacFilterConfigTest, ParseAllPrincipalTypes) {
+  RBAC rbac;
+  auto* rules = rbac.mutable_rules();
+  rules->set_action(rules->ALLOW);
+  auto& policy = (*rules->mutable_policies())["policy_name"];
+  // any
+  policy.add_principals()->set_any(true);
+  // authenticated principal name
+  // (not testing all possible string matchers here, since they're
+  // covered in the AllPermissionTypes test above)
+  auto* string_matcher = policy.add_principals()
+                             ->mutable_authenticated()
+                             ->mutable_principal_name();
+  string_matcher->set_exact("exact_match");
+  // source IP
+  auto* cidr_range = policy.add_principals()->mutable_source_ip();
+  cidr_range->set_address_prefix("127.0.0");
+  // direct remote IP
+  cidr_range = policy.add_principals()->mutable_direct_remote_ip();
+  cidr_range->set_address_prefix("127.0.1");
+  // remote IP
+  cidr_range = policy.add_principals()->mutable_remote_ip();
+  cidr_range->set_address_prefix("127.0.2");
+  // header match
+  // (not testing all possible header matchers here, since they're
+  // covered in the AllPermissionTypes test above)
+  auto* header = policy.add_principals()->mutable_header();
+  header->set_name("header_name1");
+  header->set_exact_match("exact_match");
+  // path match
+  // (not testing all possible string matchers here, since they're
+  // covered in the AllPermissionTypes test above)
+  string_matcher = policy.add_principals()->mutable_url_path()->mutable_path();
+  string_matcher->set_exact("exact_match");
+  // metadata match
+  // (not testing invert here, since it's covered in the AllPermissionTypes
+  // test above)
+  policy.add_principals()->mutable_metadata();
+  // not
+  policy.add_principals()->mutable_not_id()->set_any(true);
+  // and
+  policy.add_principals()->mutable_and_ids()->add_ids()->set_any(true);
+  // or
+  policy.add_principals()->mutable_or_ids()->add_ids()->set_any(true);
+  auto config = ParseConfig(rbac);
+  ASSERT_TRUE(errors_.ok()) << errors_.status(
+      absl::StatusCode::kInvalidArgument, "unexpected errors");
+  ASSERT_NE(config, nullptr);
+  EXPECT_EQ(config->ToString(),
+            "Rbac{name=, action=Allow, audit_condition=None, policies={"
+            "policy_name={permissions={or=[]}, principals={or=["
+            // any
+            "{any}, "
+            // authenticated principal name
+            "{principal_name=StringMatcher{exact=exact_match}}, "
+            // source IP match
+            "{source_ip=CidrRange{address_prefix=127.0.0,prefix_len=0}}, "
+            // direct remote IP
+            "{direct_remote_ip="
+            "CidrRange{address_prefix=127.0.1,prefix_len=0}}, "
+            // remote IP
+            "{remote_ip=CidrRange{address_prefix=127.0.2,prefix_len=0}}, "
+            // header exact match with invert
+            "{header=HeaderMatcher{header_name1 "
+            "StringMatcher{exact=exact_match}}}, "
+            // path exact match
+            "{path=StringMatcher{exact=exact_match}}, "
+            // metadata match
+            "{metadata}, "
+            // not
+            "{not {any}}, "
+            // and
+            "{and=[{any}]}, "
+            // or
+            "{or=[{any}]}"
+            "]}}}, "
+            "audit_loggers={}}");
+}
+
 TEST_P(XdsRbacFilterConfigTest, AtMaxPrincipalDepth) {
   RBAC rbac;
   auto* rules = rbac.mutable_rules();
@@ -1098,6 +1528,65 @@ TEST_P(XdsRbacFilterConfigTest, AtMaxPrincipalDepth) {
             "}}}}");
 }
 
+TEST_P(XdsRbacFilterConfigTest, ParseAtMaxPrincipalDepth) {
+  RBAC rbac;
+  auto* rules = rbac.mutable_rules();
+  rules->set_action(rules->ALLOW);
+  auto& policy = (*rules->mutable_policies())["policy_name"];
+  // We want to make sure that all of "and", "or", and "not" track
+  // depth, so we're including them all here.  We will start out with a
+  // single "and" and a single "or" and then use "not" for the rest.
+  auto* principal = policy.add_principals();
+  principal = principal->mutable_and_ids()->add_ids();
+  principal = principal->mutable_or_ids()->add_ids();
+  for (size_t i = 0; i < 14; ++i) {
+    principal = principal->mutable_not_id();
+  }
+  principal->set_any(true);
+  auto config = ParseConfig(rbac);
+  ASSERT_TRUE(errors_.ok()) << errors_.status(
+      absl::StatusCode::kInvalidArgument, "unexpected errors");
+  ASSERT_NE(config, nullptr);
+  EXPECT_EQ(config->ToString(),
+            "Rbac{name=, action=Allow, audit_condition=None, policies={"
+            "policy_name={permissions={or=[]}, principals={or=["
+            "{and=["
+            "{or=["
+            "{not "
+            "{not "
+            "{not "
+            "{not "
+            "{not "
+            "{not "
+            "{not "
+            "{not "
+            "{not "
+            "{not "
+            "{not "
+            "{not "
+            "{not "
+            "{not "
+            "{any}"
+            "}"
+            "}"
+            "}"
+            "}"
+            "}"
+            "}"
+            "}"
+            "}"
+            "}"
+            "}"
+            "}"
+            "}"
+            "}"
+            "}"
+            "]}"
+            "]}"
+            "]}}}, "
+            "audit_loggers={}}");
+}
+
 TEST_P(XdsRbacFilterConfigTest, ExceedsMaxPrincipalDepth) {
   RBAC rbac;
   auto* rules = rbac.mutable_rules();
@@ -1114,6 +1603,50 @@ TEST_P(XdsRbacFilterConfigTest, ExceedsMaxPrincipalDepth) {
   }
   principal->set_any(true);
   auto config = GenerateConfig(rbac);
+  absl::Status status = errors_.status(absl::StatusCode::kInvalidArgument,
+                                       "errors validating filter config");
+  EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(
+      status.message(),
+      absl::StrCat("errors validating filter config: [field:", FieldPrefix(),
+                   ".rules.policies[policy_name]"
+                   ".principals[0].and_ids.ids[0]"
+                   ".or_ids.ids[0]"
+                   ".not_id"
+                   ".not_id"
+                   ".not_id"
+                   ".not_id"
+                   ".not_id"
+                   ".not_id"
+                   ".not_id"
+                   ".not_id"
+                   ".not_id"
+                   ".not_id"
+                   ".not_id"
+                   ".not_id"
+                   ".not_id"
+                   ".not_id"
+                   ".not_id "
+                   "error:exceeded max recursion depth]"))
+      << status;
+}
+
+TEST_P(XdsRbacFilterConfigTest, ParseExceedsMaxPrincipalDepth) {
+  RBAC rbac;
+  auto* rules = rbac.mutable_rules();
+  rules->set_action(rules->ALLOW);
+  auto& policy = (*rules->mutable_policies())["policy_name"];
+  // We want to make sure that all of "and", "or", and "not" track
+  // depth, so we're including them all here.  We will start out with a
+  // single "and" and a single "or" and then use "not" for the rest.
+  auto* principal = policy.add_principals();
+  principal = principal->mutable_and_ids()->add_ids();
+  principal = principal->mutable_or_ids()->add_ids();
+  for (size_t i = 0; i < 15; ++i) {
+    principal = principal->mutable_not_id();
+  }
+  principal->set_any(true);
+  auto config = ParseConfig(rbac);
   absl::Status status = errors_.status(absl::StatusCode::kInvalidArgument,
                                        "errors validating filter config");
   EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
@@ -1162,6 +1695,29 @@ TEST_P(XdsRbacFilterConfigTest, AuditLoggingOptionsIgnoredWithFeatureDisabled) {
   EXPECT_EQ(JsonDump(*config), "{\"rules\":{\"action\":0}}");
 }
 
+TEST_P(XdsRbacFilterConfigTest,
+       ParseAuditLoggingOptionsIgnoredWithFeatureDisabled) {
+  RBAC rbac;
+  auto* rules = rbac.mutable_rules();
+  rules->set_action(rules->ALLOW);
+  auto* logging_options = rules->mutable_audit_logging_options();
+  logging_options->set_audit_condition(
+      envoy::config::rbac::v3::RBAC_AuditLoggingOptions_AuditCondition_ON_DENY);
+  envoy::config::rbac::v3::RBAC_AuditLoggingOptions::AuditLoggerConfig
+      logger_config;
+  auto* audit_logger = logger_config.mutable_audit_logger();
+  audit_logger->mutable_typed_config()->set_type_url(
+      "/envoy.extensions.rbac.audit_loggers.stream.v3.StdoutAuditLog");
+  *logging_options->add_logger_configs() = logger_config;
+  auto config = ParseConfig(rbac);
+  ASSERT_TRUE(errors_.ok()) << errors_.status(
+      absl::StatusCode::kInvalidArgument, "unexpected errors");
+  ASSERT_NE(config, nullptr);
+  EXPECT_EQ(config->ToString(),
+            "Rbac{name=, action=Allow, audit_condition=None, policies={}, "
+            "audit_loggers={}}");
+}
+
 TEST_P(XdsRbacFilterConfigTest, AuditLoggingOptions) {
   ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_XDS_RBAC_AUDIT_LOGGING");
   RBAC rbac;
@@ -1187,6 +1743,29 @@ TEST_P(XdsRbacFilterConfigTest, AuditLoggingOptions) {
             "}}");
 }
 
+TEST_P(XdsRbacFilterConfigTest, ParseAuditLoggingOptions) {
+  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_XDS_RBAC_AUDIT_LOGGING");
+  RBAC rbac;
+  auto* rules = rbac.mutable_rules();
+  rules->set_action(rules->ALLOW);
+  auto* logging_options = rules->mutable_audit_logging_options();
+  logging_options->set_audit_condition(
+      envoy::config::rbac::v3::RBAC_AuditLoggingOptions_AuditCondition_ON_DENY);
+  envoy::config::rbac::v3::RBAC_AuditLoggingOptions::AuditLoggerConfig
+      logger_config;
+  auto* audit_logger = logger_config.mutable_audit_logger();
+  audit_logger->mutable_typed_config()->set_type_url(
+      "/envoy.extensions.rbac.audit_loggers.stream.v3.StdoutAuditLog");
+  *logging_options->add_logger_configs() = logger_config;
+  auto config = ParseConfig(rbac);
+  ASSERT_TRUE(errors_.ok()) << errors_.status(
+      absl::StatusCode::kInvalidArgument, "unexpected errors");
+  ASSERT_NE(config, nullptr);
+  EXPECT_EQ(config->ToString(),
+            "Rbac{name=, action=Allow, audit_condition=OnDeny, policies={}, "
+            "audit_loggers={stdout_logger={}}}");
+}
+
 TEST_P(XdsRbacFilterConfigTest, InvalidAuditCondition) {
   ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_XDS_RBAC_AUDIT_LOGGING");
   RBAC rbac;
@@ -1198,6 +1777,29 @@ TEST_P(XdsRbacFilterConfigTest, InvalidAuditCondition) {
           envoy::config::rbac::v3::RBAC_AuditLoggingOptions_AuditCondition>(
           100));
   auto config = GenerateConfig(rbac);
+  absl::Status status = errors_.status(absl::StatusCode::kInvalidArgument,
+                                       "errors validating filter config");
+  EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(status.message(),
+            absl::StrCat("errors validating filter config: ["
+                         "field:",
+                         FieldPrefix(),
+                         ".rules.audit_logging_options.audit_condition "
+                         "error:invalid audit condition]"))
+      << status;
+}
+
+TEST_P(XdsRbacFilterConfigTest, ParseInvalidAuditCondition) {
+  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_XDS_RBAC_AUDIT_LOGGING");
+  RBAC rbac;
+  auto* rules = rbac.mutable_rules();
+  rules->set_action(rules->ALLOW);
+  auto* logging_options = rules->mutable_audit_logging_options();
+  logging_options->set_audit_condition(
+      static_cast<
+          envoy::config::rbac::v3::RBAC_AuditLoggingOptions_AuditCondition>(
+          100));
+  auto config = ParseConfig(rbac);
   absl::Status status = errors_.status(absl::StatusCode::kInvalidArgument,
                                        "errors validating filter config");
   EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
@@ -1235,6 +1837,31 @@ TEST_P(XdsRbacFilterConfigTest, InvalidAuditLoggerConfig) {
       << status;
 }
 
+TEST_P(XdsRbacFilterConfigTest, ParseInvalidAuditLoggerConfig) {
+  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_XDS_RBAC_AUDIT_LOGGING");
+  RBAC rbac;
+  auto* rules = rbac.mutable_rules();
+  rules->set_action(rules->ALLOW);
+  auto* logging_options = rules->mutable_audit_logging_options();
+  envoy::config::rbac::v3::RBAC_AuditLoggingOptions::AuditLoggerConfig
+      logger_config;
+  auto* audit_logger = logger_config.mutable_audit_logger();
+  audit_logger->mutable_typed_config()->set_type_url("/foo_logger");
+  *logging_options->add_logger_configs() = logger_config;
+  auto config = ParseConfig(rbac);
+  absl::Status status = errors_.status(absl::StatusCode::kInvalidArgument,
+                                       "errors validating filter config");
+  EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(status.message(),
+            absl::StrCat("errors validating filter config: ["
+                         "field:",
+                         FieldPrefix(),
+                         ".rules.audit_logging_options.logger_configs[0].audit_"
+                         "logger.typed_config.value[foo_logger] "
+                         "error:unsupported audit logger type]"))
+      << status;
+}
+
 TEST_P(XdsRbacFilterConfigTest, InvalidFieldsInPolicy) {
   RBAC rbac;
   auto* rules = rbac.mutable_rules();
@@ -1243,6 +1870,30 @@ TEST_P(XdsRbacFilterConfigTest, InvalidFieldsInPolicy) {
   policy.mutable_condition();
   policy.mutable_checked_condition();
   auto config = GenerateConfig(rbac);
+  absl::Status status = errors_.status(absl::StatusCode::kInvalidArgument,
+                                       "errors validating filter config");
+  EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(status.message(),
+            absl::StrCat("errors validating filter config: ["
+                         "field:",
+                         FieldPrefix(),
+                         ".rules.policies[policy_name].checked_condition "
+                         "error:checked condition not supported; "
+                         "field:",
+                         FieldPrefix(),
+                         ".rules.policies[policy_name].condition "
+                         "error:condition not supported]"))
+      << status;
+}
+
+TEST_P(XdsRbacFilterConfigTest, ParseInvalidFieldsInPolicy) {
+  RBAC rbac;
+  auto* rules = rbac.mutable_rules();
+  rules->set_action(rules->ALLOW);
+  auto& policy = (*rules->mutable_policies())["policy_name"];
+  policy.mutable_condition();
+  policy.mutable_checked_condition();
+  auto config = ParseConfig(rbac);
   absl::Status status = errors_.status(absl::StatusCode::kInvalidArgument,
                                        "errors validating filter config");
   EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
@@ -1294,6 +1945,41 @@ TEST_P(XdsRbacFilterConfigTest, InvalidHeaderMatchers) {
       << status;
 }
 
+TEST_P(XdsRbacFilterConfigTest, ParseInvalidHeaderMatchers) {
+  RBAC rbac;
+  auto* rules = rbac.mutable_rules();
+  rules->set_action(rules->ALLOW);
+  auto& policy = (*rules->mutable_policies())["policy_name"];
+  auto* header = policy.add_permissions()->mutable_header();
+  header->set_name(":scheme");
+  header->set_exact_match("exact_match");
+  header = policy.add_principals()->mutable_header();
+  header->set_name("grpc-foo");
+  header->set_exact_match("exact_match");
+  header = policy.add_principals()->mutable_header();
+  header->set_name("header_name");
+  auto config = ParseConfig(rbac);
+  absl::Status status = errors_.status(absl::StatusCode::kInvalidArgument,
+                                       "errors validating filter config");
+  EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(
+      status.message(),
+      absl::StrCat("errors validating filter config: ["
+                   "field:",
+                   FieldPrefix(),
+                   ".rules.policies[policy_name].permissions[0].header.name "
+                   "error:':scheme' not allowed in header; "
+                   "field:",
+                   FieldPrefix(),
+                   ".rules.policies[policy_name].principals[0].header.name "
+                   "error:'grpc-' prefixes not allowed in header; "
+                   "field:",
+                   FieldPrefix(),
+                   ".rules.policies[policy_name].principals[1].header "
+                   "error:invalid header matcher]"))
+      << status;
+}
+
 TEST_P(XdsRbacFilterConfigTest, InvalidStringMatchers) {
   RBAC rbac;
   auto* rules = rbac.mutable_rules();
@@ -1319,6 +2005,31 @@ TEST_P(XdsRbacFilterConfigTest, InvalidStringMatchers) {
       << status;
 }
 
+TEST_P(XdsRbacFilterConfigTest, ParseInvalidStringMatchers) {
+  RBAC rbac;
+  auto* rules = rbac.mutable_rules();
+  rules->set_action(rules->ALLOW);
+  auto& policy = (*rules->mutable_policies())["policy_name"];
+  policy.add_permissions()->mutable_url_path()->mutable_path();
+  policy.add_principals()->mutable_url_path();
+  auto config = ParseConfig(rbac);
+  absl::Status status = errors_.status(absl::StatusCode::kInvalidArgument,
+                                       "errors validating filter config");
+  EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(
+      status.message(),
+      absl::StrCat("errors validating filter config: ["
+                   "field:",
+                   FieldPrefix(),
+                   ".rules.policies[policy_name].permissions[0].url_path.path "
+                   "error:invalid string matcher; "
+                   "field:",
+                   FieldPrefix(),
+                   ".rules.policies[policy_name].principals[0].url_path.path "
+                   "error:field not present]"))
+      << status;
+}
+
 TEST_P(XdsRbacFilterConfigTest, InvalidPermissionAndPrincipal) {
   RBAC rbac;
   auto* rules = rbac.mutable_rules();
@@ -1327,6 +2038,30 @@ TEST_P(XdsRbacFilterConfigTest, InvalidPermissionAndPrincipal) {
   policy.add_permissions();
   policy.add_principals();
   auto config = GenerateConfig(rbac);
+  absl::Status status = errors_.status(absl::StatusCode::kInvalidArgument,
+                                       "errors validating filter config");
+  EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(status.message(),
+            absl::StrCat("errors validating filter config: ["
+                         "field:",
+                         FieldPrefix(),
+                         ".rules.policies[policy_name].permissions[0] "
+                         "error:invalid rule; "
+                         "field:",
+                         FieldPrefix(),
+                         ".rules.policies[policy_name].principals[0] "
+                         "error:invalid rule]"))
+      << status;
+}
+
+TEST_P(XdsRbacFilterConfigTest, ParseInvalidPermissionAndPrincipal) {
+  RBAC rbac;
+  auto* rules = rbac.mutable_rules();
+  rules->set_action(rules->ALLOW);
+  auto& policy = (*rules->mutable_policies())["policy_name"];
+  policy.add_permissions();
+  policy.add_principals();
+  auto config = ParseConfig(rbac);
   absl::Status status = errors_.status(absl::StatusCode::kInvalidArgument,
                                        "errors validating filter config");
   EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
