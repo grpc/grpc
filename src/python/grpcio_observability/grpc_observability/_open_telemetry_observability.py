@@ -23,6 +23,7 @@ from typing import (
     Dict,
     Iterable,
     List,
+    Mapping,
     Optional,
     Set,
     Tuple,
@@ -84,6 +85,28 @@ GRPC_STATUS_CODE_TO_STRING = {
     grpc.StatusCode.UNAVAILABLE: "UNAVAILABLE",
     grpc.StatusCode.DATA_LOSS: "DATA_LOSS",
 }
+
+
+def _str_to_bool(value: Union[str, bytes]) -> bool:
+    return value in ("1", b"1")
+
+
+_TRACING_ATTRIBUTE_CONVERTERS = {
+    "sequence-number": int,
+    "message-size": int,
+    "message-size-compressed": int,
+    "previous-rpc-attempts": int,
+    "transparent-retry": _str_to_bool,
+}
+
+
+def _convert_tracing_attributes(
+    attributes: Mapping[str, Union[str, bytes]],
+) -> Dict[str, Union[str, int, bool]]:
+    return {
+        key: _TRACING_ATTRIBUTE_CONVERTERS.get(key, str)(value)
+        for key, value in attributes.items()
+    }
 
 
 class _GrpcIdGenerator(sdk_trace.IdGenerator):
@@ -287,7 +310,9 @@ class _OpenTelemetryPlugin:
                 name=tracing_data.name,
                 context=local_ctx,
                 kind=trace.SpanKind.INTERNAL,
-                attributes=tracing_data.span_labels,
+                attributes=_convert_tracing_attributes(
+                    tracing_data.span_labels
+                ),
                 links=None,
                 start_time=tracing_data.start_time,
             )
@@ -295,7 +320,7 @@ class _OpenTelemetryPlugin:
         for event in tracing_data.span_events:
             span.add_event(
                 name=event["name"],
-                attributes=event["attributes"],
+                attributes=_convert_tracing_attributes(event["attributes"]),
                 timestamp=event["time_stamp"],
             )
         span.set_status(self._status_to_otel_status(tracing_data.status))
