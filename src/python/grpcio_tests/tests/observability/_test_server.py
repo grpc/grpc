@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import json
 from concurrent import futures
 from typing import Tuple
 
@@ -29,9 +30,13 @@ _STREAM_STREAM = "StreamStream"
 STREAM_LENGTH = 5
 TRIGGER_RPC_METADATA = ("control", "trigger_rpc")
 TRIGGER_RPC_TO_NEW_SERVER_METADATA = ("to_new_server", "")
-
+ABORT_RPC_METADATA = ("control", "abort")
 
 def handle_unary_unary(request, servicer_context):
+    if ABORT_RPC_METADATA in servicer_context.invocation_metadata():
+        servicer_context.abort(
+            grpc.StatusCode.ABORTED, "Aborting RPC for testing purpose"
+        )
     if TRIGGER_RPC_METADATA in servicer_context.invocation_metadata():
         for k, v in servicer_context.invocation_metadata():
             if "port" in k:
@@ -140,6 +145,46 @@ def unary_unary_call(port, metadata=None, registered_method=False):
             )
         else:
             unused_response, call = multi_callable.with_call(_REQUEST)
+
+
+def unary_unary_retry_call(port, max_attempts=3):
+    retry_service_config = json.dumps(
+        {
+            "methodConfig": [
+                {
+                    "name": [
+                        {
+                            "service": _SERVICE_NAME,
+                            "method": _UNARY_UNARY
+                        }
+                    ],
+                    "retryPolicy": {
+                        "maxAttempts": max_attempts,
+                        "initialBackoff": "0.1s",
+                        "maxBackoff": "120s",
+                        "backoffMultiplier": 1,
+                        "retryableStatusCodes": ["ABORTED"]
+                    }
+                }
+            ]
+        }
+    )
+    options = (
+        ("grpc.enable_retries", 1),
+        ("grpc.service_config", retry_service_config),
+    )
+
+    with grpc.insecure_channel(f"localhost:{port}", options=options) as channel:
+        multi_callable = channel.unary_unary(
+            grpc._common.fully_qualified_method(_SERVICE_NAME, _UNARY_UNARY),
+        )
+        try:
+            unused_response, call = multi_callable.with_call(
+                _REQUEST, metadata=(ABORT_RPC_METADATA,)
+            )
+        except grpc.RpcError:
+            # expected: the RPC fails with ABORTED after exhausting retries
+            pass
 
 
 def intercepted_unary_unary_call(port, interceptors, metadata=None):

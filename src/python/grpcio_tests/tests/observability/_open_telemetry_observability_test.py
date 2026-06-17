@@ -1175,6 +1175,42 @@ class OpenTelemetryObservabilityTest(unittest.TestCase):
         )
         self.assertIsNotNone(server_span, "Server span not found")
 
+    def testTracesForRetryPolicy(self):
+        
+        with grpc_observability.OpenTelemetryPlugin(
+            tracer_provider=self._tracer_provider,
+            text_map_propagator=TraceContextTextMapPropagator(),
+        ):
+            server, port = _test_server.start_server()
+            self._server = server
+            _test_server.unary_unary_retry_call(port=port)
+
+        # 1 x client span + 3 x attempt span + 3 x server span
+        self._validate_spans_exist(self._span_exporter, expected_count=7)
+        spans = self._span_exporter.get_finished_spans()
+
+        client_spans = [s for s in spans if s.name.startswith("Sent.")]
+        self.assertEqual(len(client_spans), 1)
+
+        attempt_spans = [s for s in spans if s.name.startswith("Attempt.")]
+        self.assertEqual(len(attempt_spans), 3)
+
+        server_span = [s for s in spans if s.name.startswith("Recv.")]
+        self.assertEqual(len(server_span), 3)
+
+        previous_rpc_attemps = sorted(
+            span.attributes["previous-rpc-attempts"] for span in attempt_spans
+        )
+        self.assertEqual(previous_rpc_attemps, [0, 1, 2])
+        for span in attempt_spans:
+            self.assertFalse(span.status.is_ok)
+            self.assertIn("ABORTED", span.status.description)
+            self.assertEqual(span.attributes["transparent-retry"], False)
+
+        # all spans should belong to one trace
+        trace_ids = {span.get_span_context().trace_id for span in spans}
+        self.assertEqual(len(trace_ids), 1)
+
     def assert_eventually(
         self,
         predicate: Callable[[], bool],
