@@ -380,6 +380,15 @@ class _InactiveRpcError(grpc.RpcError, grpc.Call, grpc.Future):
     _state: _RPCState
 
     def __init__(self, state: _RPCState):
+        if not isinstance(state, _RPCState):
+            # Handles exception wrapping edge-cases.
+            # See https://github.com/grpc/grpc/issues/38713 and
+            # https://github.com/pytorch/pytorch/issues/34130.
+            msg = "Inactive RPC Error: Invalid RPC state type."
+            if isinstance(state, str):
+                msg = f"{msg} Details: {state}"
+            state = _RPCState((), (), (), grpc.StatusCode.INTERNAL, msg)
+
         with state.condition:
             self._state = _RPCState(
                 (),
