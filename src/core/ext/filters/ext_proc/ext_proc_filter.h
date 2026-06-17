@@ -210,8 +210,13 @@ class ExtProcFilter final : public V3InterceptorToV2Bridge<ExtProcFilter> {
     }
 
     void MarkClientSendsDone();
+    void MarkServerSendsDone();
+    void SetStreamErrorStatus(absl::Status status);
+    absl::Status GetStreamErrorStatus();
     void IncrementOutstandingClientToServerMessages();
     bool DecrementOutstandingClientToServerMessages();
+    void IncrementOutstandingServerToClientMessages();
+    bool DecrementOutstandingServerToClientMessages();
 
     InterActivityLatch<absl::StatusOr<ExtProcResponse>> request_headers_latch_;
     InterActivityLatch<absl::StatusOr<ExtProcResponse>> response_headers_latch_;
@@ -220,7 +225,7 @@ class ExtProcFilter final : public V3InterceptorToV2Bridge<ExtProcFilter> {
     InterActivityPipe<absl::StatusOr<ExtProcResponse>, 1> request_body_pipe_;
     InterActivityPipe<absl::StatusOr<ExtProcResponse>, 1> response_body_pipe_;
     InterActivityLatch<void> dispatch_trailers_latch_;
-    InterActivityLatch<absl::Status> status_latch_;
+    InterActivityLatch<void> stream_error_status_latch_;
     InterActivityLatch<void> client_sends_done_latch_;
 
     void OnRecvMessage(absl::string_view payload);
@@ -280,16 +285,30 @@ class ExtProcFilter final : public V3InterceptorToV2Bridge<ExtProcFilter> {
     std::shared_ptr<InterActivityLatch<void>> write_completed_latch_
         ABSL_GUARDED_BY(&mu_);
     int outstanding_client_to_server_messages_ ABSL_GUARDED_BY(mu_) = 0;
+    int outstanding_server_to_client_messages_ ABSL_GUARDED_BY(mu_) = 0;
     bool processor_sent_half_close_ ABSL_GUARDED_BY(&mu_) = false;
+    bool server_sends_done_ ABSL_GUARDED_BY(&mu_) = false;
+    absl::Status stream_error_status_ ABSL_GUARDED_BY(&mu_);
   };
   void Orphaned() override {}
 
   void InterceptCall(UnstartedCallHandler unstarted_call_handler) override;
 
+  auto ProcessServerToClient(CallHandler handler, CallInitiator initiator,
+                             RefCountedPtr<ExtProcCall> ext_proc_call);
   auto ServerToClient(CallHandler handler, CallInitiator initiator,
                       RefCountedPtr<ExtProcCall> ext_proc_call);
   auto ServerInitialMetadata(CallHandler handler, CallInitiator initiator,
                              RefCountedPtr<ExtProcCall> ext_proc_call);
+
+  auto SendServerMessageRequest(const MessageHandle& message,
+                                ExtProcCall* ext_proc_call,
+                                bool send_to_processor);
+  auto ServerToClientMaybeObservabilityMode(
+      CallHandler handler, CallInitiator initiator,
+      RefCountedPtr<ExtProcCall> ext_proc_call, bool send_to_processor);
+  auto ServerToClientNormalMode(CallHandler handler, CallInitiator initiator,
+                                RefCountedPtr<ExtProcCall> ext_proc_call);
   auto ServerTrailingMetadata(CallHandler handler, CallInitiator initiator,
                               RefCountedPtr<ExtProcCall> ext_proc_call);
   auto ClientToServer(CallHandler handler, CallInitiator initiator,

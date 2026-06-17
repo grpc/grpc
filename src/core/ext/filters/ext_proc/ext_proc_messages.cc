@@ -509,9 +509,9 @@ void SetResponseHeaders(upb_Arena* arena,
       request, http_headers);
 }
 
-void SetRequestBody(upb_Arena* arena, upb_StringView buf, bool end_of_stream,
-                    bool end_of_stream_without_message,
-                    envoy_service_ext_proc_v3_ProcessingRequest* request) {
+envoy_service_ext_proc_v3_HttpBody* CreateHttpBody(
+    upb_Arena* arena, upb_StringView buf, bool end_of_stream,
+    bool end_of_stream_without_message) {
   envoy_service_ext_proc_v3_HttpBody* body =
       envoy_service_ext_proc_v3_HttpBody_new(arena);
   envoy_service_ext_proc_v3_HttpBody_set_body(body, buf);
@@ -523,16 +523,21 @@ void SetRequestBody(upb_Arena* arena, upb_StringView buf, bool end_of_stream,
     envoy_service_ext_proc_v3_HttpBody_set_end_of_stream_without_message(body,
                                                                          true);
   }
-  envoy_service_ext_proc_v3_ProcessingRequest_set_request_body(request, body);
+  return body;
 }
 
-void SetResponseBody(upb_Arena* arena, upb_StringView buf,
+void SetRequestBody(upb_Arena* arena, upb_StringView buf, bool end_of_stream,
+                    bool end_of_stream_without_message,
+                    envoy_service_ext_proc_v3_ProcessingRequest* request) {
+  envoy_service_ext_proc_v3_ProcessingRequest_set_request_body(
+      request, CreateHttpBody(arena, buf, end_of_stream, end_of_stream_without_message));
+}
+
+void SetResponseBody(upb_Arena* arena, upb_StringView buf, bool end_of_stream,
+                     bool end_of_stream_without_message,
                      envoy_service_ext_proc_v3_ProcessingRequest* request) {
-  envoy_service_ext_proc_v3_HttpBody* body =
-      envoy_service_ext_proc_v3_HttpBody_new(arena);
-  envoy_service_ext_proc_v3_HttpBody_set_body(body, buf);
-  envoy_service_ext_proc_v3_HttpBody_set_end_of_stream(body, false);
-  envoy_service_ext_proc_v3_ProcessingRequest_set_response_body(request, body);
+  envoy_service_ext_proc_v3_ProcessingRequest_set_response_body(
+      request, CreateHttpBody(arena, buf, end_of_stream, end_of_stream_without_message));
 }
 
 void SetResponseTrailers(upb_Arena* arena,
@@ -627,7 +632,8 @@ std::string CreateExtProcRequest(
       break;
     }
     case ExtProcRequestType::kServerMessage: {
-      SetResponseBody(arena, std::get<upb_StringView>(payload), request);
+      SetResponseBody(arena, std::get<upb_StringView>(payload), end_of_stream,
+                      end_of_stream_without_message, request);
       break;
     }
     case ExtProcRequestType::kServerTrailers: {
