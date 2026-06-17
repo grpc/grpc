@@ -85,8 +85,8 @@
   error:(nullable NSError *)error {
     NSError *finalError = error;
     if (error != nil && error.code == 2) {
-      NSNumber *statusCode = trailingMetadata[@":status"];
-      if (statusCode == nil || [statusCode integerValue] == 200) {
+      NSString *httpStatus = trailingMetadata[@":status"];
+      if (httpStatus == nil || [httpStatus isEqualToString:@"200"]) {
         finalError = nil;
       }
     }
