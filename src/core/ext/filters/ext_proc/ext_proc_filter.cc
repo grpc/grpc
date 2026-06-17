@@ -1006,138 +1006,207 @@ auto ExtProcFilter::ServerToClient(CallHandler handler, CallInitiator initiator,
                   }));
 }
 
+auto ExtProcFilter::ServerTrailingMetadataNormalMode(
+    CallHandler handler, CallInitiator initiator,
+    RefCountedPtr<ExtProcCall> ext_proc_call,
+    std::shared_ptr<ServerMetadataHandle> metadata) {
+  GRPC_TRACE_LOG(ext_proc_filter, INFO)
+      << "ExtProc: ServerTrailingMetadataNormalMode pulled. Status OK: "
+      << IsStatusOk(*metadata) << ", metadata: " << (*metadata)->DebugString();
+  return Seq(
+      TrySeq(Seq(ext_proc_call->SendMessageLocked(
+                     /*condition=*/true,
+                     [self = RefAsSubclass<ExtProcFilter>(), ext_proc_call,
+                      metadata]() {
+                       GRPC_TRACE_LOG(ext_proc_filter, INFO)
+                           << "ExtProc: Sending server trailing metadata";
+                       upb::Arena serialization_arena;
+                       return CreateExtProcRequest(
+                           serialization_arena.ptr(),
+                           ExtProcRequestType::kServerTrailers, metadata->get(),
+                           self->config()->forwarding_allowed_headers,
+                           self->config()->forwarding_disallowed_headers,
+                           /*attributes=*/nullptr,
+                           /*observability_mode=*/false,
+                           /*is_first_message=*/false,
+                           self->config()->processing_mode.send_request_body,
+                           self->config()->processing_mode.send_response_body);
+                     }),
+                 ext_proc_call->response_trailers_latch_.Wait()),
+             [self = RefAsSubclass<ExtProcFilter>(),
+              metadata](ExtProcResponse response) mutable -> absl::Status {
+               GRPC_TRACE_LOG(ext_proc_filter, INFO)
+                   << "ExtProc: ServerTrailingMetadata response received. "
+                      "OK: true, has_trailers: "
+                   << response.response_trailers.has_value();
+               if (response.response_trailers.has_value()) {
+                 const auto& response_trailers = *response.response_trailers;
+                 if (!response_trailers.ok()) {
+                   return response_trailers.status();
+                 }
+                 const auto* rules =
+                     self->config()->mutation_rules.has_value()
+                         ? &self->config()->mutation_rules.value()
+                         : nullptr;
+                 auto status = ApplyHeaderMutations(*response_trailers, rules,
+                                                    **metadata);
+                 GRPC_TRACE_LOG(ext_proc_filter, INFO)
+                     << "ExtProc: ServerTrailingMetadata mutations applied, "
+                        "status: "
+                     << status.ToString()
+                     << ", mutated metadata: " << (*metadata)->DebugString();
+                 if (!status.ok()) {
+                   return status;
+                 }
+               }
+               return absl::OkStatus();
+             }),
+      [self = RefAsSubclass<ExtProcFilter>(), handler, metadata,
+       ext_proc_call](absl::Status result) mutable {
+        if (!result.ok()) {
+          *metadata = CancelledServerMetadataFromStatus(result);
+        }
+        // We must wait for the client to finish sending all messages
+        // (client_sends_done_latch_) before pushing trailing metadata to the
+        // client. Otherwise, pushing trailing metadata closes the call and
+        // cancels the ClientToServer promise prematurely, aborting any active
+        // writes (e.g. logging) to the external processor. We skip this wait if
+        // the call is already aborted (non-OK status) or if the processor
+        // has already sent half-close.
+        const bool should_wait =
+            IsStatusOk(*metadata) && !ext_proc_call->IsProcessorSentHalfClose();
+        return If(
+            should_wait,
+            [ext_proc_call, handler, metadata]() mutable {
+              GRPC_TRACE_LOG(ext_proc_filter, INFO)
+                  << "ExtProc: ServerTrailingMetadata waiting for client "
+                     "sends done";
+              return Seq(
+                  ext_proc_call->client_sends_done_latch_.Wait(),
+                  [ext_proc_call, handler, metadata]() mutable {
+                    GRPC_TRACE_LOG(ext_proc_filter, INFO)
+                        << "ExtProc: ServerTrailingMetadata client sends "
+                           "done, pushing metadata";
+                    handler.SpawnPushServerTrailingMetadata(
+                        std::move(*metadata));
+                    return absl::OkStatus();
+                  });
+            },
+            [handler, metadata]() mutable {
+              GRPC_TRACE_LOG(ext_proc_filter, INFO)
+                  << "ExtProc: ServerTrailingMetadata pushing metadata "
+                     "immediately";
+              handler.SpawnPushServerTrailingMetadata(std::move(*metadata));
+              return absl::OkStatus();
+            });
+      });
+}
+
+auto ExtProcFilter::ServerTrailingMetadataMaybeObservabilityMode(
+    CallHandler handler, CallInitiator initiator,
+    RefCountedPtr<ExtProcCall> ext_proc_call, bool send_to_processor,
+    std::shared_ptr<ServerMetadataHandle> metadata) {
+  GRPC_TRACE_LOG(ext_proc_filter, INFO)
+      << "ExtProc: ServerTrailingMetadataMaybeObservabilityMode pulled. "
+         "Status OK: "
+      << IsStatusOk(*metadata) << ", send_to_processor: " << send_to_processor
+      << ", metadata: " << (*metadata)->DebugString();
+  return Seq(
+      ext_proc_call->SendMessageLocked(
+          send_to_processor,
+          [self = RefAsSubclass<ExtProcFilter>(), ext_proc_call, metadata]() {
+            GRPC_TRACE_LOG(ext_proc_filter, INFO)
+                << "ExtProc: Sending server trailing metadata";
+            upb::Arena serialization_arena;
+            return CreateExtProcRequest(
+                serialization_arena.ptr(), ExtProcRequestType::kServerTrailers,
+                metadata->get(), self->config()->forwarding_allowed_headers,
+                self->config()->forwarding_disallowed_headers,
+                /*attributes=*/nullptr,
+                /*observability_mode=*/true,
+                /*is_first_message=*/false,
+                self->config()->processing_mode.send_request_body,
+                self->config()->processing_mode.send_response_body);
+          }),
+      [self = RefAsSubclass<ExtProcFilter>(), handler, metadata,
+       ext_proc_call](absl::Status result) mutable {
+        if (!result.ok()) {
+          *metadata = CancelledServerMetadataFromStatus(result);
+        }
+        // We must wait for the client to finish sending all messages
+        // (client_sends_done_latch_) before pushing trailing metadata to the
+        // client. Otherwise, pushing trailing metadata closes the call and
+        // cancels the ClientToServer promise prematurely, aborting any active
+        // writes (e.g. logging) to the external processor. We skip this wait if
+        // the call is already aborted (non-OK status) or if the processor
+        // has already sent half-close.
+        const bool should_wait =
+            IsStatusOk(*metadata) && !ext_proc_call->IsProcessorSentHalfClose();
+        return If(
+            should_wait,
+            [ext_proc_call, handler, metadata]() mutable {
+              GRPC_TRACE_LOG(ext_proc_filter, INFO)
+                  << "ExtProc: ServerTrailingMetadata waiting for client "
+                     "sends done";
+              return Seq(
+                  ext_proc_call->client_sends_done_latch_.Wait(),
+                  [ext_proc_call, handler, metadata]() mutable {
+                    GRPC_TRACE_LOG(ext_proc_filter, INFO)
+                        << "ExtProc: ServerTrailingMetadata client sends "
+                           "done, pushing metadata";
+                    handler.SpawnPushServerTrailingMetadata(
+                        std::move(*metadata));
+                    return absl::OkStatus();
+                  });
+            },
+            [handler, metadata]() mutable {
+              GRPC_TRACE_LOG(ext_proc_filter, INFO)
+                  << "ExtProc: ServerTrailingMetadata pushing metadata "
+                     "immediately";
+              handler.SpawnPushServerTrailingMetadata(std::move(*metadata));
+              return absl::OkStatus();
+            });
+      });
+}
+
 auto ExtProcFilter::ServerTrailingMetadata(
     CallHandler handler, CallInitiator initiator,
     RefCountedPtr<ExtProcCall> ext_proc_call) {
-  return Seq(initiator.PullServerTrailingMetadata(), [self = RefAsSubclass<
-                                                          ExtProcFilter>(),
-                                                      handler, initiator,
-                                                      ext_proc_call](
-                                                         ServerMetadataHandle
-                                                             md) mutable {
-    GRPC_TRACE_LOG(ext_proc_filter, INFO)
-        << "ExtProc: ServerTrailingMetadata pulled. Status OK: "
-        << IsStatusOk(md) << ", Config send_response_trailers: "
-        << self->config()->processing_mode.send_response_trailers
-        << ", metadata: " << md->DebugString();
-    const bool send_trailers =
-        self->config()->processing_mode.send_response_trailers &&
-        IsStatusOk(md);
-    auto shared_metadata =
-        std::make_shared<ServerMetadataHandle>(std::move(md));
-    return Seq(
-        TrySeq(
-            Seq(TrySeq(
-                    ext_proc_call->SendMessageLocked(
-                        send_trailers,
-                        [self, ext_proc_call, shared_metadata]() {
-                          GRPC_TRACE_LOG(ext_proc_filter, INFO)
-                              << "ExtProc: Sending server trailing metadata";
-                          upb::Arena serialization_arena;
-                          return CreateExtProcRequest(
-                              serialization_arena.ptr(),
-                              ExtProcRequestType::kServerTrailers,
-                              shared_metadata->get(),
-                              self->config()->forwarding_allowed_headers,
-                              self->config()->forwarding_disallowed_headers,
-                              /*attributes=*/nullptr,
-                              self->config()->observability_mode,
-                              /*is_first_message=*/false,
-                              self->config()->processing_mode.send_request_body,
-                              self->config()
-                                  ->processing_mode.send_response_body);
-                        }),
-                    If(
-                        send_trailers && !self->config()->observability_mode,
-                        [ext_proc_call]() {
-                          return ext_proc_call->response_trailers_latch_.Wait();
-                        },
-                        []() -> absl::StatusOr<ExtProcResponse> {
-                          return ExtProcResponse{};
-                        })),
-                [ext_proc_call](absl::StatusOr<ExtProcResponse> result) {
-                  return If(
-                      result.ok(), [result]() { return result; },
-                      [ext_proc_call, result]() {
-                        return If(
-                            ext_proc_call->stream_error_status_latch_.IsSet(),
-                            [ext_proc_call]() {
-                              return Map(
-                                  ext_proc_call->stream_error_status_latch_
-                                      .Wait(),
-                                  [ext_proc_call](Empty)
-                                      -> absl::StatusOr<ExtProcResponse> {
-                                    return ext_proc_call
-                                        ->GetStreamErrorStatus();
-                                  });
-                            },
-                            []() -> absl::StatusOr<ExtProcResponse> {
-                              return ExtProcResponse{};
-                            });
-                      });
-                }),
-            [self, shared_metadata](
-                ExtProcResponse response) mutable -> absl::Status {
-              GRPC_TRACE_LOG(ext_proc_filter, INFO)
-                  << "ExtProc: ServerTrailingMetadata response received. "
-                     "OK: true, has_trailers: "
-                  << response.response_trailers.has_value();
-              if (response.response_trailers.has_value()) {
-                const auto& response_trailers = *response.response_trailers;
-                if (!response_trailers.ok()) {
-                  return response_trailers.status();
-                }
-                const auto* rules =
-                    self->config()->mutation_rules.has_value()
-                        ? &self->config()->mutation_rules.value()
-                        : nullptr;
-                auto status = ApplyHeaderMutations(*response_trailers, rules,
-                                                   **shared_metadata);
-                GRPC_TRACE_LOG(ext_proc_filter, INFO)
-                    << "ExtProc: ServerTrailingMetadata mutations applied, "
-                       "status: "
-                    << status.ToString() << ", mutated metadata: "
-                    << (*shared_metadata)->DebugString();
-                if (!status.ok()) {
-                  return status;
-                }
-              }
-              return absl::OkStatus();
-            }),
-        [self, handler, shared_metadata,
-         ext_proc_call](absl::Status result) mutable {
-          if (!result.ok()) {
-            *shared_metadata = CancelledServerMetadataFromStatus(result);
-          }
-          const bool should_wait = IsStatusOk(*shared_metadata) &&
-                                   !ext_proc_call->IsProcessorSentHalfClose();
-          return If(
-              should_wait,
-              [ext_proc_call, handler, shared_metadata]() mutable {
-                GRPC_TRACE_LOG(ext_proc_filter, INFO)
-                    << "ExtProc: ServerTrailingMetadata waiting for client "
-                       "sends done";
-                return Seq(
-                    ext_proc_call->client_sends_done_latch_.Wait(),
-                    [ext_proc_call, handler, shared_metadata]() mutable {
-                      GRPC_TRACE_LOG(ext_proc_filter, INFO)
-                          << "ExtProc: ServerTrailingMetadata client sends "
-                             "done, pushing metadata";
-                      handler.SpawnPushServerTrailingMetadata(
-                          std::move(*shared_metadata));
-                      return absl::OkStatus();
-                    });
-              },
-              [handler, shared_metadata]() mutable {
-                GRPC_TRACE_LOG(ext_proc_filter, INFO)
-                    << "ExtProc: ServerTrailingMetadata pushing metadata "
-                       "immediately";
-                handler.SpawnPushServerTrailingMetadata(
-                    std::move(*shared_metadata));
-                return absl::OkStatus();
-              });
-        });
-  });
+  return Seq(
+      initiator.PullServerTrailingMetadata(),
+      [self = RefAsSubclass<ExtProcFilter>(), handler, initiator,
+       ext_proc_call](ServerMetadataHandle md) mutable {
+        auto shared_metadata =
+            std::make_shared<ServerMetadataHandle>(std::move(md));
+        const bool send_trailers =
+            self->config()->processing_mode.send_response_trailers &&
+            IsStatusOk(*shared_metadata);
+        return If(
+            send_trailers,
+            [self, handler, initiator, ext_proc_call,
+             shared_metadata]() mutable {
+              return If(
+                  self->config()->observability_mode,
+                  [self, handler, initiator, ext_proc_call,
+                   shared_metadata]() mutable {
+                    return self->ServerTrailingMetadataMaybeObservabilityMode(
+                        handler, initiator, std::move(ext_proc_call),
+                        /*send_to_processor=*/true, shared_metadata);
+                  },
+                  [self, handler, initiator, ext_proc_call,
+                   shared_metadata]() mutable {
+                    return self->ServerTrailingMetadataNormalMode(
+                        handler, initiator, std::move(ext_proc_call),
+                        shared_metadata);
+                  });
+            },
+            [self, handler, initiator, ext_proc_call,
+             shared_metadata]() mutable {
+              return self->ServerTrailingMetadataMaybeObservabilityMode(
+                  handler, initiator, std::move(ext_proc_call),
+                  /*send_to_processor=*/false, shared_metadata);
+            });
+      });
 }
 
 auto ExtProcFilter::ProcessServerToClient(

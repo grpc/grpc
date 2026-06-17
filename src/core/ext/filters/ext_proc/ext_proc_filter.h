@@ -311,6 +311,14 @@ class ExtProcFilter final : public V3InterceptorToV2Bridge<ExtProcFilter> {
                                 RefCountedPtr<ExtProcCall> ext_proc_call);
   auto ServerTrailingMetadata(CallHandler handler, CallInitiator initiator,
                               RefCountedPtr<ExtProcCall> ext_proc_call);
+  auto ServerTrailingMetadataNormalMode(
+      CallHandler handler, CallInitiator initiator,
+      RefCountedPtr<ExtProcCall> ext_proc_call,
+      std::shared_ptr<ServerMetadataHandle> metadata);
+  auto ServerTrailingMetadataMaybeObservabilityMode(
+      CallHandler handler, CallInitiator initiator,
+      RefCountedPtr<ExtProcCall> ext_proc_call, bool send_to_processor,
+      std::shared_ptr<ServerMetadataHandle> metadata);
   auto ClientToServer(CallHandler handler, CallInitiator initiator,
                       RefCountedPtr<ExtProcCall> ext_proc_call,
                       ::google_protobuf_Struct* attributes);
