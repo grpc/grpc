@@ -294,8 +294,6 @@ void ServerConfigSelectorInterceptor::Orphaned() {
   config_selector_.Set(absl::CancelledError("shutting down"));
 }
 
-// FIXME: add a new tracer here
-
 void ServerConfigSelectorInterceptor::InterceptCall(
     UnstartedCallHandler unstarted_call_handler) {
   // Consume the call coming to us from the client side.
@@ -314,7 +312,7 @@ void ServerConfigSelectorInterceptor::InterceptCall(
                       absl::StatusOr<RefCountedPtr<ConfigSelectorState>>
                           state) mutable {
                     if (!state.ok()) {
-                      GRPC_TRACE_LOG(channel, INFO)
+                      GRPC_TRACE_LOG(server_config_selector_interceptor, INFO)
                           << "[server_config_selector_interceptor "
                           << self.get()
                           << "]: config selector is error: " << state.status();
@@ -324,7 +322,7 @@ void ServerConfigSelectorInterceptor::InterceptCall(
                     auto call_config = (*state)->config_selector->GetCallConfig(
                         (*state)->connection_state.get(), metadata.get());
                     if (!call_config.ok()) {
-                      GRPC_TRACE_LOG(channel, INFO)
+                      GRPC_TRACE_LOG(server_config_selector_interceptor, INFO)
                           << "[server_config_selector_interceptor "
                           << self.get() << "]: config selector returned error: "
                           << call_config.status();
@@ -341,7 +339,7 @@ void ServerConfigSelectorInterceptor::InterceptCall(
                         call_config->method_configs);
                     // Get filter chain.
                     if (!call_config->filter_chain.ok()) {
-                      GRPC_TRACE_LOG(channel, INFO)
+                      GRPC_TRACE_LOG(server_config_selector_interceptor, INFO)
                           << "[server_config_selector_interceptor "
                           << self.get()
                           << "]: config selector returned failure for filter "
@@ -350,7 +348,7 @@ void ServerConfigSelectorInterceptor::InterceptCall(
                       return call_config->filter_chain.status();
                     }
                     // Start call on selected filter chain.
-                    GRPC_TRACE_LOG(channel, INFO)
+                    GRPC_TRACE_LOG(server_config_selector_interceptor, INFO)
                         << "[server_config_selector_interceptor " << self.get()
                         << "]: starting call on dynamic filter chain";
                     auto& filter_chain = DownCast<const FilterChainImpl&>(
