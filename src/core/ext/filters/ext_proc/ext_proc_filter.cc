@@ -1423,10 +1423,6 @@ auto ExtProcFilter::ClientToServer(CallHandler handler, CallInitiator initiator,
                  return ext_proc_call->GetStreamErrorStatus();
                })),
       [initiator, ext_proc_call](absl::Status status) mutable {
-        GRPC_TRACE_LOG(ext_proc_filter, INFO)
-            << "ExtProc: ClientToServer promise resolved, setting "
-               "client_sends_done_latch_";
-        ext_proc_call->client_sends_done_latch_.Set();
         if (!status.ok()) {
           initiator.SpawnCancel(status);
         }

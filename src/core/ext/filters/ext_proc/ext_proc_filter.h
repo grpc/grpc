@@ -226,7 +226,6 @@ class ExtProcFilter final : public V3InterceptorToV2Bridge<ExtProcFilter> {
     InterActivityPipe<absl::StatusOr<ExtProcResponse>, 1> response_body_pipe_;
     InterActivityLatch<void> dispatch_trailers_latch_;
     InterActivityLatch<void> stream_error_status_latch_;
-    InterActivityLatch<void> client_sends_done_latch_;
 
     void OnRecvMessage(absl::string_view payload);
     void OnRequestSent();
