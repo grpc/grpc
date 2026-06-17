@@ -20,6 +20,7 @@
 #include "src/core/client_channel/lb_metadata.h"
 #include "src/core/client_channel/subchannel.h"
 #include "src/core/config/core_configuration.h"
+#include "src/core/lib/promise/context.h"
 #include "src/core/lib/promise/loop.h"
 #include "src/core/telemetry/call_tracer.h"
 #include "absl/log/log.h"
@@ -34,7 +35,9 @@ void MaybeCreateCallAttemptTracer(bool is_transparent_retry) {
   auto* call_tracer = MaybeGetContext<ClientCallTracer>();
   if (call_tracer == nullptr) return;
   auto* tracer = call_tracer->StartNewAttempt(is_transparent_retry);
-  SetContext<CallAttemptTracer>(WrapCallAttemptTracer(tracer, arena));
+  auto* wrapped = WrapCallAttemptTracer(tracer, arena);
+  SetContext<CallAttemptTracer>(wrapped);
+  arena->SetContext<CallTracer>(wrapped);
 }
 
 class LbCallState : public ClientChannelLbCallState {
