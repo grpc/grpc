@@ -1066,39 +1066,10 @@ auto ExtProcFilter::ServerTrailingMetadataNormalMode(
         if (!result.ok()) {
           *metadata = CancelledServerMetadataFromStatus(result);
         }
-        // We must wait for the client to finish sending all messages
-        // (client_sends_done_latch_) before pushing trailing metadata to the
-        // client. Otherwise, pushing trailing metadata closes the call and
-        // cancels the ClientToServer promise prematurely, aborting any active
-        // writes (e.g. logging) to the external processor. We skip this wait if
-        // the call is already aborted (non-OK status) or if the processor
-        // has already sent half-close.
-        const bool should_wait =
-            IsStatusOk(*metadata) && !ext_proc_call->IsProcessorSentHalfClose();
-        return If(
-            should_wait,
-            [ext_proc_call, handler, metadata]() mutable {
-              GRPC_TRACE_LOG(ext_proc_filter, INFO)
-                  << "ExtProc: ServerTrailingMetadata waiting for client "
-                     "sends done";
-              return Seq(
-                  ext_proc_call->client_sends_done_latch_.Wait(),
-                  [ext_proc_call, handler, metadata]() mutable {
-                    GRPC_TRACE_LOG(ext_proc_filter, INFO)
-                        << "ExtProc: ServerTrailingMetadata client sends "
-                           "done, pushing metadata";
-                    handler.SpawnPushServerTrailingMetadata(
-                        std::move(*metadata));
-                    return absl::OkStatus();
-                  });
-            },
-            [handler, metadata]() mutable {
-              GRPC_TRACE_LOG(ext_proc_filter, INFO)
-                  << "ExtProc: ServerTrailingMetadata pushing metadata "
-                     "immediately";
-              handler.SpawnPushServerTrailingMetadata(std::move(*metadata));
-              return absl::OkStatus();
-            });
+        GRPC_TRACE_LOG(ext_proc_filter, INFO)
+            << "ExtProc: ServerTrailingMetadata pushing metadata immediately";
+        handler.SpawnPushServerTrailingMetadata(std::move(*metadata));
+        return absl::OkStatus();
       });
 }
 
@@ -1133,39 +1104,10 @@ auto ExtProcFilter::ServerTrailingMetadataMaybeObservabilityMode(
         if (!result.ok()) {
           *metadata = CancelledServerMetadataFromStatus(result);
         }
-        // We must wait for the client to finish sending all messages
-        // (client_sends_done_latch_) before pushing trailing metadata to the
-        // client. Otherwise, pushing trailing metadata closes the call and
-        // cancels the ClientToServer promise prematurely, aborting any active
-        // writes (e.g. logging) to the external processor. We skip this wait if
-        // the call is already aborted (non-OK status) or if the processor
-        // has already sent half-close.
-        const bool should_wait =
-            IsStatusOk(*metadata) && !ext_proc_call->IsProcessorSentHalfClose();
-        return If(
-            should_wait,
-            [ext_proc_call, handler, metadata]() mutable {
-              GRPC_TRACE_LOG(ext_proc_filter, INFO)
-                  << "ExtProc: ServerTrailingMetadata waiting for client "
-                     "sends done";
-              return Seq(
-                  ext_proc_call->client_sends_done_latch_.Wait(),
-                  [ext_proc_call, handler, metadata]() mutable {
-                    GRPC_TRACE_LOG(ext_proc_filter, INFO)
-                        << "ExtProc: ServerTrailingMetadata client sends "
-                           "done, pushing metadata";
-                    handler.SpawnPushServerTrailingMetadata(
-                        std::move(*metadata));
-                    return absl::OkStatus();
-                  });
-            },
-            [handler, metadata]() mutable {
-              GRPC_TRACE_LOG(ext_proc_filter, INFO)
-                  << "ExtProc: ServerTrailingMetadata pushing metadata "
-                     "immediately";
-              handler.SpawnPushServerTrailingMetadata(std::move(*metadata));
-              return absl::OkStatus();
-            });
+        GRPC_TRACE_LOG(ext_proc_filter, INFO)
+            << "ExtProc: ServerTrailingMetadata pushing metadata immediately";
+        handler.SpawnPushServerTrailingMetadata(std::move(*metadata));
+        return absl::OkStatus();
       });
 }
 
