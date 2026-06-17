@@ -29,6 +29,7 @@ from typing import (
     List,
     MutableSequence,
     Optional,
+    Protocol,
     Sequence,
     TypeAlias,
     Union,
@@ -56,9 +57,7 @@ from ._typing import ResponseIterableType
 from ._typing import ResponseType
 from ._typing import SerializingFunction
 from ._utils import _timeout_to_deadline
-
-if TYPE_CHECKING:
-    from collections.abc import AsyncIterable, AsyncIterator
+from collections.abc import AsyncIterable, AsyncIterator
 
 
 _LOCAL_CANCELLATION_DETAILS = "Locally cancelled by application!"
@@ -477,11 +476,11 @@ class InterceptedCall:
 
         return await call.code()
 
-    async def details(self) -> Optional[str]:
+    async def details(self) -> str:
         try:
             call = await self._interceptors_task
         except AioRpcError as err:
-            return err.details()
+            return err.details() or ""
         except asyncio.CancelledError:
             return _LOCAL_CANCELLATION_DETAILS
 
@@ -502,18 +501,27 @@ class InterceptedCall:
         return await call.wait_for_connection()
 
 
-class _InterceptedUnaryResponseMixin:
+class _InterceptedUnaryMixinProtocol(Protocol):
     _interceptors_task: asyncio.Task[Any]
 
-    def __await__(self):
+
+class _InterceptedStreamMixinProtocol(Protocol, Generic[ResponseType]):
+    _interceptors_task: asyncio.Task[Any]
+    _wait_for_interceptor_task_response_iterator: Callable[
+        ..., AsyncIterator[ResponseType]
+    ]
+    _response_aiter: AsyncIterator[ResponseType] | None
+
+
+class _InterceptedUnaryResponseMixin(Generic[ResponseType]):
+
+    def __await__(self: _InterceptedUnaryMixinProtocol):
         call = yield from self._interceptors_task.__await__()
         response = yield from call.__await__()
         return response
 
 
 class _InterceptedStreamResponseMixin(Generic[ResponseType]):
-    _interceptors_task: asyncio.Task[Any]
-    _response_aiter: AsyncIterator[ResponseType] | None
 
     def _init_stream_response_mixin(self) -> None:
         # Is initialized later, otherwise if the iterator is not finally
@@ -521,30 +529,30 @@ class _InterceptedStreamResponseMixin(Generic[ResponseType]):
         self._response_aiter = None
 
     async def _wait_for_interceptor_task_response_iterator(
-        self,
+        self: _InterceptedStreamMixinProtocol[ResponseType],
     ) -> AsyncIterator[ResponseType]:
         call = await self._interceptors_task
         async for response in call:
             yield response
 
-    def __aiter__(self) -> AsyncIterator[ResponseType]:
+    def __aiter__(
+        self: _InterceptedStreamMixinProtocol[ResponseType],
+    ) -> AsyncIterator[ResponseType]:
         if self._response_aiter is None:
             self._response_aiter = (
                 self._wait_for_interceptor_task_response_iterator()
             )
         return self._response_aiter
 
-    async def read(self) -> Union[EOFType, ResponseType]:
+    async def read(
+        self: _InterceptedStreamMixinProtocol[ResponseType],
+    ) -> Union[EOFType, ResponseType]:
         if self._response_aiter is None:
             self._response_aiter = (
                 self._wait_for_interceptor_task_response_iterator()
             )
         try:
-            if self._response_aiter is not None and isinstance(
-                self._response_aiter, AsyncGenerator
-            ):
-                return await self._response_aiter.__anext__()
-            return cygrpc.EOF
+            return await self._response_aiter.__anext__()
         except StopAsyncIteration:
             return cygrpc.EOF
 
@@ -593,14 +601,14 @@ class _InterceptedStreamRequestMixin(Generic[RequestType]):
         request: Union[RequestType, _FINISH_ITERATOR_SENTINEL_T],
         call: _base_call.Call,
     ) -> None:
+        if self._write_to_iterator_queue is None:
+            raise RuntimeError("Write iterator queue is not initialized")
+
         # Write the specified 'request' to the request iterator queue using the
         # specified 'call' to allow for interruption of the write in the case
         # of abrupt termination of the call.
         if self._status_code_task is None:
             self._status_code_task = self._loop.create_task(call.code())
-
-        if self._write_to_iterator_queue is None:
-            return
 
         await asyncio.wait(
             (
@@ -1222,7 +1230,9 @@ class _StreamCallResponseIterator(Generic[ResponseType]):
         return await self._call.details()
 
     async def debug_error_string(self) -> Optional[str]:
-        return await self._call.debug_error_string()
+        return (
+            await self._call.debug_error_string()
+        )  # pyright: ignore[reportAttributeAccessIssue]
 
     def __aiter__(self):
         return self._response_iterator.__aiter__()
@@ -1272,4 +1282,13 @@ class StreamStreamCallResponseIterator(
 
     @property
     def _done_writing_flag(self) -> bool:
+        if not isinstance(
+            self._call,
+            (
+                StreamStreamCall,
+                StreamUnaryCall,
+                StreamStreamCallResponseIterator,
+            ),
+        ):
+            raise TypeError("Should not happen: expected client-streaming call")
         return self._call._done_writing_flag
