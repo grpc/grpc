@@ -1126,14 +1126,12 @@ absl::StatusOr<ChannelArgs> XdsServerConfigFetcher::ListenerWatcher::
     FilterChainMatchManager::L4FilterChain::UpdateChannelArgsForConnection(
         const ChannelArgs& args) const {
   if (!certificate_provider_.ok()) return certificate_provider_.status();
-  ChannelArgs new_args = args.SetObject(*certificate_provider_);
-  // TODO(roth): Don't add ConfigSelectorProvider if there are no filters.
-  new_args = new_args.SetObject(
-      // This is the only place where the provider is accessed from outside
-      // of the WorkSerializer, and it will always be set before this
-      // happens, so this read is safe even though the compiler can't tell.
-      ABSL_TS_UNCHECKED_READ(config_selector_provider_));
-  return new_args;
+  return args.SetObject(*certificate_provider_)
+      .SetObject(
+          // This is the only place where the provider is accessed from outside
+          // of the WorkSerializer, and it will always be set before this
+          // happens, so this read is safe even though the compiler can't tell.
+          ABSL_TS_UNCHECKED_READ(config_selector_provider_));
 }
 
 absl::StatusOr<RefCountedPtr<ServerConfigSelector>>
