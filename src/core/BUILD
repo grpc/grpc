@@ -23,6 +23,7 @@ load(
     "grpc_upb_proto_library",
     "grpc_upb_proto_reflection_library",
 )
+load("//third_party/bazel_rules/rules_cc/cc:cc_library.bzl", "cc_library")
 
 licenses(["reciprocal"])
 
@@ -12140,3 +12141,17 @@ grpc_cc_library(
 )
 
 grpc_generate_one_off_internal_targets()
+
+cc_library(
+    name = "handshaker/security/security_handshaker",
+    srcs = ["handshaker/security/security_handshaker.cc"],
+    hdrs = ["handshaker/security/security_handshaker.h"],
+    deps = [
+        "//third_party/absl/base:core_headers",
+        "//third_party/absl/functional:any_invocable",
+        "//third_party/absl/status",
+        "//third_party/absl/status:statusor",
+        "//third_party/absl/strings",
+        "//third_party/absl/strings:string_view",
+    ],
+)

@@ -311,6 +311,9 @@ void SecurityHandshaker::OnPeerCheckedFn(grpc_error_handle error) {
 }
 
 grpc_error_handle SecurityHandshaker::CheckPeerLocked() {
+  if (connector_ == nullptr) {
+    return GRPC_ERROR_CREATE("No security connector");
+  }
   tsi_peer peer;
   tsi_result result =
       tsi_handshaker_result_extract_peer(handshaker_result_, &peer);
@@ -325,7 +328,7 @@ grpc_error_handle SecurityHandshaker::CheckPeerLocked() {
   connector_->check_peer(peer, args_->endpoint.get(), args_->args,
                          &auth_context_, on_peer_checked_);
   if (auth_context_ != nullptr) {
-    auth_context_->set_protocol(connector_->type().name());
+    auth_context_->set_protocol(connector_->url_scheme());
   }
   grpc_auth_property_iterator it = grpc_auth_context_find_properties_by_name(
       auth_context_.get(), GRPC_TRANSPORT_SECURITY_LEVEL_PROPERTY_NAME);
@@ -362,8 +365,8 @@ grpc_error_handle SecurityHandshaker::OnHandshakeNextDoneLocked(
     // TODO(roth): Get a better signal from the TSI layer as to what
     // status code we should use here.
     return GRPC_ERROR_CREATE(absl::StrCat(
-        connector_->type().name(), " handshake failed (",
-        tsi_result_to_string(result), ")",
+        connector_ == nullptr ? "Security" : connector_->url_scheme(),
+        " handshake failed (", tsi_result_to_string(result), ")",
         (tsi_handshake_error_.empty() ? "" : ": "), tsi_handshake_error_));
   }
   // Update handshaker result.
