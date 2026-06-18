@@ -177,21 +177,21 @@ class ExtProcFilter final : public V3InterceptorToV2Bridge<ExtProcFilter> {
       std::shared_ptr<ServerMetadataHandle> metadata);
   auto ServerInitialMetadataMaybeObservabilityMode(
       CallHandler handler, CallInitiator initiator,
-      RefCountedPtr<ExtProcCall> ext_proc_call, bool send_to_processor,
+      RefCountedPtr<ExtProcCall> ext_proc_call, bool send_to_ext_proc_stream,
       std::shared_ptr<ServerMetadataHandle> metadata);
 
   auto SendServerMessageRequest(const MessageHandle& message,
                                 ExtProcCall* ext_proc_call,
-                                bool send_to_processor);
+                                bool send_to_ext_proc_stream);
   auto ServerToClientMessagesMaybeObservabilityMode(
       CallHandler handler, CallInitiator initiator,
-      RefCountedPtr<ExtProcCall> ext_proc_call, bool send_to_processor);
-  auto ServerToSideStreamNormalMode(
-      CallHandler handler, CallInitiator initiator,
-      RefCountedPtr<ExtProcCall> ext_proc_call);
-  auto SideStreamToClientNormalMode(
-      CallHandler handler, CallInitiator initiator,
-      RefCountedPtr<ExtProcCall> ext_proc_call);
+      RefCountedPtr<ExtProcCall> ext_proc_call, bool send_to_ext_proc_stream);
+  auto ServerToSideStreamNormalMode(CallHandler handler,
+                                    CallInitiator initiator,
+                                    RefCountedPtr<ExtProcCall> ext_proc_call);
+  auto SideStreamToClientNormalMode(CallHandler handler,
+                                    CallInitiator initiator,
+                                    RefCountedPtr<ExtProcCall> ext_proc_call);
   auto ServerTrailingMetadata(CallHandler handler, CallInitiator initiator,
                               RefCountedPtr<ExtProcCall> ext_proc_call);
   auto ServerTrailingMetadataNormalMode(
@@ -200,14 +200,14 @@ class ExtProcFilter final : public V3InterceptorToV2Bridge<ExtProcFilter> {
       std::shared_ptr<ServerMetadataHandle> metadata);
   auto ServerTrailingMetadataMaybeObservabilityMode(
       CallHandler handler, CallInitiator initiator,
-      RefCountedPtr<ExtProcCall> ext_proc_call, bool send_to_processor,
+      RefCountedPtr<ExtProcCall> ext_proc_call, bool send_to_ext_proc_stream,
       std::shared_ptr<ServerMetadataHandle> metadata);
   auto ClientToServerMessages(CallHandler handler, CallInitiator initiator,
                               RefCountedPtr<ExtProcCall> ext_proc_call,
                               ::google_protobuf_Struct* attributes);
   auto ClientToServerMessagesMaybeObservabilityMode(
       CallHandler handler, CallInitiator initiator,
-      RefCountedPtr<ExtProcCall> ext_proc_call, bool send_to_processor,
+      RefCountedPtr<ExtProcCall> ext_proc_call, bool send_to_ext_proc_stream,
       ::google_protobuf_Struct* attributes);
   auto ClientToServerMessagesNormalMode(
       CallHandler handler, CallInitiator initiator,
@@ -216,7 +216,7 @@ class ExtProcFilter final : public V3InterceptorToV2Bridge<ExtProcFilter> {
   auto SendClientMessageRequest(const MessageHandle& message,
                                 ExtProcCall* ext_proc_call, bool end_of_stream,
                                 bool end_of_stream_without_message,
-                                bool send_to_processor,
+                                bool send_to_ext_proc_stream,
                                 ::google_protobuf_Struct* attributes);
 
   RefCountedPtr<XdsTransportFactory> transport_factory_;
