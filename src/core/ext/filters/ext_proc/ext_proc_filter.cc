@@ -1083,6 +1083,13 @@ auto ExtProcFilter::ServerTrailingMetadataNormalMode(
                    << "ExtProc: ServerTrailingMetadata response received. "
                       "OK: true, has_trailers: "
                    << response.response_trailers.has_value();
+               // Rule 3: Processing and non-observability mode
+               if (self->config()->processing_mode.send_response_body &&
+                   !self->config()->observability_mode) {
+                 if (!ext_proc_call->response_body_pipe_.sender.IsClosed()) {
+                   ext_proc_call->response_body_pipe_.sender.MarkClosed();
+                 }
+               }
                if (response.response_trailers.has_value()) {
                  const auto& response_trailers = *response.response_trailers;
                  if (!response_trailers.ok()) {
@@ -1101,13 +1108,6 @@ auto ExtProcFilter::ServerTrailingMetadataNormalMode(
                      << ", mutated metadata: " << (*metadata)->DebugString();
                  if (!status.ok()) {
                    return status;
-                 }
-               }
-               // Rule 3: Processing and non-observability mode
-               if (self->config()->processing_mode.send_response_body &&
-                   !self->config()->observability_mode) {
-                 if (!ext_proc_call->response_body_pipe_.sender.IsClosed()) {
-                   ext_proc_call->response_body_pipe_.sender.MarkClosed();
                  }
                }
                return absl::OkStatus();
