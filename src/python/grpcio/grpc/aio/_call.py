@@ -295,7 +295,9 @@ class _APIStyle(enum.IntEnum):
 class _UnaryResponseMixin(Call[Any, ResponseType], Generic[ResponseType]):
     _call_response: asyncio.Task[ResponseType]
 
-    def _init_unary_response_mixin(self, response_task: asyncio.Task[ResponseType]):
+    def _init_unary_response_mixin(
+        self, response_task: asyncio.Task[ResponseType]
+    ):
         self._call_response = response_task
 
     def cancel(self) -> bool:
@@ -339,7 +341,9 @@ class _StreamResponseMixin(Call[Any, ResponseType], Generic[ResponseType]):
     _preparation: asyncio.Task[Optional[AsyncIterator[ResponseType]]]
     _response_style: _APIStyle
 
-    def _init_stream_response_mixin(self, preparation: asyncio.Task[Optional[AsyncIterator[ResponseType]]]):
+    def _init_stream_response_mixin(
+        self, preparation: asyncio.Task[Optional[AsyncIterator[ResponseType]]]
+    ):
         self._message_aiter = None
         self._preparation = preparation
         self._response_style = _APIStyle.UNKNOWN
