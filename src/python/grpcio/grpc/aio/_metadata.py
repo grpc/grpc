@@ -24,7 +24,7 @@ from collections.abc import (
     Sequence,
     ValuesView,
 )
-from typing import Any, Generic, List, Optional, Tuple, Union
+from typing import Any, List, Optional, Tuple, Union
 
 from typing_extensions import Self
 
