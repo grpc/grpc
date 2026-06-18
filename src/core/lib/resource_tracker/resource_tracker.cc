@@ -22,6 +22,14 @@ namespace {
 std::atomic<ResourceTracker*> g_resource_tracker(nullptr);
 }  // namespace
 
+ResourceTracker::~ResourceTracker() {
+  ResourceTracker* current = g_resource_tracker.load(std::memory_order_acquire);
+  if (current == this) {
+    g_resource_tracker.compare_exchange_strong(
+        current, nullptr, std::memory_order_release, std::memory_order_relaxed);
+  }
+}
+
 ResourceTracker* ResourceTracker::Get() {
   return g_resource_tracker.load(std::memory_order_acquire);
 }

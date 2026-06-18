@@ -235,6 +235,21 @@ TEST(MemoryQuotaTest, TakeCanRunWithoutExecCtx) {
   }
 }
 
+// When running this test, use the following arguments: --config=asan
+TEST(MemoryQuotaTest, DanglingResourceTracker) {
+  auto* tracker = new MockResourceTracker();
+  ResourceTracker::Set(tracker);
+  delete tracker;  // Now ResourceTracker::Get() returns a dangling pointer
+
+  MemoryQuota memory_quota(MakeRefCounted<channelz::ResourceQuotaNode>("foo"));
+  auto owner = memory_quota.CreateMemoryOwner();
+
+  // This should trigger the UAF/Invalid Free inside ContainerMemoryPressure()
+  owner.GetPressureInfo();
+
+  ResourceTracker::Set(nullptr);
+}
+
 TEST(MemoryQuotaTest, ContainerMemoryAccountedFor) {
   MemoryQuota memory_quota(MakeRefCounted<channelz::ResourceQuotaNode>("foo"));
   memory_quota.SetSize(1000000);

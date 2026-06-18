@@ -27,7 +27,7 @@ namespace grpc_core {
 // Interface for tracking and retrieving resource usage metrics.
 class ResourceTracker {
  public:
-  virtual ~ResourceTracker() = default;
+  virtual ~ResourceTracker();
 
   static ResourceTracker* Get();
   static void Set(ResourceTracker* tracker);
