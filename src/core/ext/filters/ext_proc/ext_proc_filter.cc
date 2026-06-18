@@ -1056,7 +1056,7 @@ auto ExtProcFilter::SendServerMessageRequest(const MessageHandle& message,
   });
 }
 
-auto ExtProcFilter::ServerToClientMessagesMessagesMaybeObservabilityMode(
+auto ExtProcFilter::ServerToClientMessagesMaybeObservabilityMode(
     CallHandler handler, CallInitiator initiator,
     RefCountedPtr<ExtProcCall> ext_proc_call, bool send_to_processor) {
   return ForEach(
@@ -1074,7 +1074,7 @@ auto ExtProcFilter::ServerToClientMessagesMessagesMaybeObservabilityMode(
       });
 }
 
-auto ExtProcFilter::ServerToClientMessagesMessagesNormalMode(
+auto ExtProcFilter::ServerToClientMessagesNormalMode(
     CallHandler handler, CallInitiator initiator,
     RefCountedPtr<ExtProcCall> ext_proc_call) {
   auto server_to_sidestream = Map(
@@ -1336,7 +1336,7 @@ auto ExtProcFilter::ServerTrailingMetadata(
       });
 }
 
-auto ExtProcFilter::ProcessServerToClientMessages(
+auto ExtProcFilter::ProcessServerToClient(
     CallHandler handler, CallInitiator initiator,
     RefCountedPtr<ExtProcCall> ext_proc_call) {
   return TrySeq(
@@ -1405,7 +1405,7 @@ auto ExtProcFilter::SendClientMessageRequest(
       });
 }
 
-auto ExtProcFilter::ClientToServerMessagesMessagesMaybeObservabilityMode(
+auto ExtProcFilter::ClientToServerMessagesMaybeObservabilityMode(
     CallHandler handler, CallInitiator initiator,
     RefCountedPtr<ExtProcCall> ext_proc_call, bool send_to_processor,
     ::google_protobuf_Struct* attributes) {
@@ -1462,7 +1462,7 @@ auto ExtProcFilter::ClientToServerMessagesMessagesMaybeObservabilityMode(
       });
 }
 
-auto ExtProcFilter::ClientToServerMessagesMessagesNormalMode(
+auto ExtProcFilter::ClientToServerMessagesNormalMode(
     CallHandler handler, CallInitiator initiator,
     RefCountedPtr<ExtProcCall> ext_proc_call,
     ::google_protobuf_Struct* attributes) {
@@ -1745,8 +1745,8 @@ void ExtProcFilter::InterceptCall(UnstartedCallHandler unstarted_call_handler) {
                     [self, handler, initiator, ext_proc_call]() mutable {
                       GRPC_TRACE_LOG(ext_proc_filter, INFO)
                           << "ExtProc: server_to_client task started";
-                      return self->ProcessServerToClientMessages(
-                          handler, initiator, ext_proc_call);
+                      return self->ProcessServerToClient(handler, initiator,
+                                                         ext_proc_call);
                     });
                 return self->ClientToServerMessages(
                     handler, initiator, std::move(ext_proc_call), attributes);
