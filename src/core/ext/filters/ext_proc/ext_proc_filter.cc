@@ -483,7 +483,6 @@ void ExtProcFilter::ExtProcCall::MarkClientSendsDone() {
   }
 }
 
-
 void ExtProcFilter::ExtProcCall::SetStreamErrorStatus(absl::Status status) {
   MutexLock lock(&mu_);
   if (stream_error_status_.ok()) {
@@ -971,7 +970,7 @@ auto ExtProcFilter::ServerToClientMessagesMaybeObservabilityMode(
       });
 }
 
-auto ExtProcFilter::ServerToClientMessagesNormalModeProducer(
+auto ExtProcFilter::ServerToSideStreamNormalMode(
     CallHandler handler, CallInitiator initiator,
     RefCountedPtr<ExtProcCall> ext_proc_call) {
   return Map(
@@ -1001,7 +1000,7 @@ auto ExtProcFilter::ServerToClientMessagesNormalModeProducer(
       });
 }
 
-auto ExtProcFilter::ServerToClientMessagesNormalModeConsumer(
+auto ExtProcFilter::SideStreamToClientNormalMode(
     CallHandler handler, CallInitiator initiator,
     RefCountedPtr<ExtProcCall> ext_proc_call) {
   return Seq(
@@ -1226,7 +1225,6 @@ auto ExtProcFilter::ProcessServerToClient(
         const bool has_md = metadata.has_value();
         GRPC_TRACE_LOG(ext_proc_filter, INFO)
             << "ExtProc: ServerInitialMetadata received, present: " << has_md;
-
         return If(
             has_md,
             [self, handler, initiator, ext_proc_call,
@@ -1236,7 +1234,6 @@ auto ExtProcFilter::ProcessServerToClient(
               const bool send_headers =
                   self->config()->processing_mode.send_response_headers &&
                   !ext_proc_call->IsStreamClosed();
-
               // ServerInitialMetadataFlow
               auto server_initial_metadata_flow = If(
                   send_headers,
@@ -1264,7 +1261,6 @@ auto ExtProcFilter::ProcessServerToClient(
                         handler, initiator, std::move(ext_proc_call),
                         /*send_to_processor=*/false, shared_metadata);
                   });
-
               return TrySeq(
                   std::move(server_initial_metadata_flow),
                   [self, handler, initiator, ext_proc_call]() mutable {
@@ -1277,7 +1273,6 @@ auto ExtProcFilter::ProcessServerToClient(
                            "response_body_enabled="
                         << response_body_enabled
                         << ", observability_mode=" << observability_mode;
-
                     return Race(
                         If(
                             !response_body_enabled || observability_mode,
@@ -1298,20 +1293,21 @@ auto ExtProcFilter::ProcessServerToClient(
                             },
                             [self, handler, initiator,
                              ext_proc_call]() mutable {
-                              // Join(Producer, consumer, TrailerFlow)
-                              auto producer =
-                                  self->ServerToClientMessagesNormalModeProducer(
-                                      handler, initiator, ext_proc_call);
-                              auto consumer =
-                                  self->ServerToClientMessagesNormalModeConsumer(
-                                      handler, initiator, ext_proc_call);
-                              auto trailer_flow = self->ServerTrailingMetadata(
-                                  handler, initiator, ext_proc_call);
-
+                              // Join(Seq(Producer, Trailer), Consumer)
                               return Map(
                                   TryJoin<absl::StatusOr>(
-                                      std::move(producer), std::move(consumer),
-                                      std::move(trailer_flow)),
+                                      TrySeq(
+                                          self->ServerToSideStreamNormalMode(
+                                              handler, initiator,
+                                              ext_proc_call),
+                                          [self, handler, initiator,
+                                           ext_proc_call]() mutable {
+                                            return self->ServerTrailingMetadata(
+                                                handler, initiator,
+                                                std::move(ext_proc_call));
+                                          }),
+                                      self->SideStreamToClientNormalMode(
+                                          handler, initiator, ext_proc_call)),
                                   [](auto result) -> absl::Status {
                                     if (!result.ok()) return result.status();
                                     return absl::OkStatus();
@@ -1329,7 +1325,6 @@ auto ExtProcFilter::ProcessServerToClient(
                                                   std::move(ext_proc_call));
             });
       });
-
   return Map(
       std::move(process_flow),
       [handler, initiator](absl::Status result) mutable -> StatusFlag {
