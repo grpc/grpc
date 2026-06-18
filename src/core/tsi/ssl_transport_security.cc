@@ -560,7 +560,7 @@ const SSL_PRIVATE_KEY_METHOD TlsOffloadPrivateKeyMethod = {
 static const char kSslEnginePrefix[] = "engine:";
 #endif
 
-#if OPENSSL_VERSION_NUMBER < 0x10100000
+#if OPENSSL_VERSION_NUMBER < 0x10101000L
 static gpr_mu* g_openssl_mutexes = nullptr;
 static void openssl_locking_cb(int mode, int type, const char* file,
                                int line) GRPC_UNUSED;
