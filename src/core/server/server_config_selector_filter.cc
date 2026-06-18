@@ -329,14 +329,6 @@ void ServerConfigSelectorInterceptor::InterceptCall(
                       return absl::UnavailableError(
                           StatusToString(call_config.status()));
                     }
-                    // TODO(roth): Remove this once we switch to per-route
-                    // filter chains.
-                    auto* service_config_call_data =
-                        GetContext<Arena>()->New<ServiceConfigCallData>(
-                            GetContext<Arena>());
-                    service_config_call_data->SetServiceConfig(
-                        std::move(call_config->service_config),
-                        call_config->method_configs);
                     // Get filter chain.
                     if (!call_config->filter_chain.ok()) {
                       GRPC_TRACE_LOG(server_config_selector_interceptor, INFO)
