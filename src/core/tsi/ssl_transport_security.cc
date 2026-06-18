@@ -593,7 +593,7 @@ static void init_openssl(void) {
   SSL_load_error_strings();
   OpenSSL_add_all_algorithms();
 #endif
-#if OPENSSL_VERSION_NUMBER < 0x10101000
+#if OPENSSL_VERSION_NUMBER < 0x10101000L
   if (!CRYPTO_get_locking_callback()) {
     int num_locks = CRYPTO_num_locks();
     GRPC_CHECK_GT(num_locks, 0);
