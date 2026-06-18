@@ -34,6 +34,8 @@
 #include <unordered_map>
 #include <vector>
 
+#include "absl/log/check.h"
+
 #include "src/core/ext/transport/chaotic_good/chaotic_good.h"
 #include "src/core/transport/endpoint_transport.h"
 #include "src/core/util/crash.h"
@@ -44,6 +46,7 @@
 #include "test/cpp/qps/interarrival.h"
 #include "test/cpp/qps/qps_worker.h"
 #include "test/cpp/qps/server.h"
+#include "test/cpp/qps/session_util.h"
 #include "test/cpp/qps/usage_timer.h"
 #include "test/cpp/util/create_test_channel.h"
 #include "test/cpp/util/test_credentials_provider.h"
@@ -553,7 +556,14 @@ class ClientImpl : public Client {
         channel_ = (*g_inproc_servers)[srv_num]->InProcessChannel(args);
         is_inproc_ = true;
       }
-      stub_ = create_stub(channel_);
+
+      if (config.use_session()) {
+        session_holder_ = EstablishSession(channel_);
+        CHECK(session_holder_ != nullptr);
+        stub_ = create_stub(session_holder_->virtual_channel());
+      } else {
+        stub_ = create_stub(channel_);
+      }
     }
     Channel* get_channel() { return channel_.get(); }
     StubType* get_stub() { return stub_.get(); }
@@ -573,6 +583,7 @@ class ClientImpl : public Client {
     }
 
     std::shared_ptr<Channel> channel_;
+    std::unique_ptr<SessionHolder> session_holder_;
     std::unique_ptr<StubType> stub_;
     bool is_inproc_;
   };
