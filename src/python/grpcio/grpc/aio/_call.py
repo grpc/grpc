@@ -341,9 +341,7 @@ class _StreamResponseMixin(Call, Generic[ResponseType]):
     _preparation: asyncio.Task[None]
     _response_style: _APIStyle
 
-    def _init_stream_response_mixin(
-        self, preparation: asyncio.Task[None]
-    ):
+    def _init_stream_response_mixin(self, preparation: asyncio.Task[None]):
         self._message_aiter = None
         self._preparation = preparation
         self._response_style = _APIStyle.UNKNOWN
