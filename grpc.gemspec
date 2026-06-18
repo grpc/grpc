@@ -1450,6 +1450,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/event_engine/extensions/iomgr_compatible.h )
   s.files += %w( src/core/lib/event_engine/extensions/receive_coalescing_extension.h )
   s.files += %w( src/core/lib/event_engine/extensions/supports_fd.h )
+  s.files += %w( src/core/lib/event_engine/extensions/supports_timer.h )
   s.files += %w( src/core/lib/event_engine/extensions/supports_win_sockets.h )
   s.files += %w( src/core/lib/event_engine/extensions/tcp_trace.h )
   s.files += %w( src/core/lib/event_engine/grpc_polled_fd.h )
