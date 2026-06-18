@@ -35,14 +35,47 @@ alts_handshaker_client* alts_tsi_handshaker_get_client_for_testing(
 bool alts_tsi_handshaker_get_has_sent_start_message_for_testing(
     alts_tsi_handshaker* handshaker);
 
-void alts_tsi_handshaker_set_client_vtable_for_testing(
-    alts_tsi_handshaker* handshaker, alts_handshaker_client_vtable* vtable);
-
 bool alts_tsi_handshaker_get_is_client_for_testing(
     alts_tsi_handshaker* handshaker);
 
 void alts_handshaker_client_set_grpc_caller_for_testing(
     alts_handshaker_client* client, alts_grpc_caller caller);
+
+typedef tsi_result (*alts_handshaker_client_client_start_hook)(
+    alts_handshaker_client* client);
+typedef tsi_result (*alts_handshaker_client_server_start_hook)(
+    alts_handshaker_client* client, grpc_slice* bytes_received);
+typedef tsi_result (*alts_handshaker_client_next_hook)(
+    alts_handshaker_client* client, grpc_slice* bytes_received);
+typedef void (*alts_handshaker_client_shutdown_hook)(
+    alts_handshaker_client* client);
+typedef void (*alts_handshaker_client_destruct_hook)(
+    alts_handshaker_client* client);
+
+void alts_handshaker_client_set_hooks_for_testing(
+    alts_handshaker_client* client,
+    alts_handshaker_client_client_start_hook client_start_hook,
+    alts_handshaker_client_server_start_hook server_start_hook,
+    alts_handshaker_client_next_hook next_hook,
+    alts_handshaker_client_shutdown_hook shutdown_hook,
+    alts_handshaker_client_destruct_hook destruct_hook);
+
+void alts_tsi_handshaker_set_client_hooks_for_testing(
+    alts_tsi_handshaker* handshaker,
+    alts_handshaker_client_client_start_hook client_start_hook,
+    alts_handshaker_client_server_start_hook server_start_hook,
+    alts_handshaker_client_next_hook next_hook,
+    alts_handshaker_client_shutdown_hook shutdown_hook,
+    alts_handshaker_client_destruct_hook destruct_hook);
+
+alts_tsi_handshaker* alts_handshaker_client_get_handshaker_for_testing(
+    alts_handshaker_client* client);
+
+void alts_handshaker_client_set_cb_for_testing(
+    alts_handshaker_client* client, tsi_handshaker_on_next_done_cb cb);
+
+grpc_closure* alts_handshaker_client_get_closure_for_testing(
+    alts_handshaker_client* client);
 
 grpc_byte_buffer* alts_handshaker_client_get_send_buffer_for_testing(
     alts_handshaker_client* client);
@@ -64,18 +97,6 @@ void alts_handshaker_client_set_fields_for_testing(
     alts_handshaker_client* client, alts_tsi_handshaker* handshaker,
     tsi_handshaker_on_next_done_cb cb, void* user_data,
     grpc_byte_buffer* recv_buffer, bool inject_read_failure);
-
-void alts_handshaker_client_set_vtable_for_testing(
-    alts_handshaker_client* client, alts_handshaker_client_vtable* vtable);
-
-alts_tsi_handshaker* alts_handshaker_client_get_handshaker_for_testing(
-    alts_handshaker_client* client);
-
-void alts_handshaker_client_set_cb_for_testing(
-    alts_handshaker_client* client, tsi_handshaker_on_next_done_cb cb);
-
-grpc_closure* alts_handshaker_client_get_closure_for_testing(
-    alts_handshaker_client* client);
 
 void alts_handshaker_client_on_status_received_for_testing(
     alts_handshaker_client* client, grpc_status_code status,

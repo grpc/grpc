@@ -73,7 +73,7 @@ using grpc_core::internal::alts_handshaker_client_set_fields_for_testing;
 using grpc_core::internal::alts_handshaker_client_set_recv_bytes_for_testing;
 using grpc_core::internal::alts_tsi_handshaker_get_client_for_testing;
 using grpc_core::internal::alts_tsi_handshaker_get_is_client_for_testing;
-using grpc_core::internal::alts_tsi_handshaker_set_client_vtable_for_testing;
+using grpc_core::internal::alts_tsi_handshaker_set_client_hooks_for_testing;
 static bool should_handshaker_client_api_succeed = true;
 
 // ALTS mock notification.
@@ -674,13 +674,6 @@ tsi_result MockNextIntegrityOnly(alts_handshaker_client* client,
 
 void MockDestruct(alts_handshaker_client* /*client*/) {}
 
-static alts_handshaker_client_vtable vtable = {
-    MockClientStart, MockServerStart, MockNext, MockShutdown, MockDestruct};
-
-static alts_handshaker_client_vtable integrity_only_vtable = {
-    MockClientStart, MockServerStart, MockNextIntegrityOnly, MockShutdown,
-    MockDestruct};
-
 tsi_handshaker* CreateTestHandshaker(bool is_client,
                                      bool is_integrity_only = false) {
   tsi_handshaker* handshaker = nullptr;
@@ -692,8 +685,10 @@ tsi_handshaker* CreateTestHandshaker(bool is_client,
                              ALTS_TSI_HANDSHAKER_PREFERRED_TRANSPORT_PROTOCOL);
   alts_tsi_handshaker* alts_handshaker =
       reinterpret_cast<alts_tsi_handshaker*>(handshaker);
-  alts_tsi_handshaker_set_client_vtable_for_testing(
-      alts_handshaker, is_integrity_only ? &integrity_only_vtable : &vtable);
+  alts_tsi_handshaker_set_client_hooks_for_testing(
+      alts_handshaker, MockClientStart, MockServerStart,
+      is_integrity_only ? MockNextIntegrityOnly : MockNext, MockShutdown,
+      MockDestruct);
   grpc_alts_credentials_options_destroy(options);
   return handshaker;
 }
@@ -836,7 +831,7 @@ static void check_handshaker_next_with_shutdown() {
 
 static void check_handle_response_with_shutdown(void* /*unused*/) {
   wait(&caller_to_tsi_notification);
-  alts_handshaker_client_handle_response(cb_event, true /* is_ok */);
+  cb_event->handle_response(true /* is_ok */);
 }
 
 TEST(AltsTsiHandshakerTest, CheckHandshakerNextFailure) {
@@ -934,7 +929,7 @@ TEST(AltsTsiHandshakerTest, CheckHandleResponseNullptrHandshaker) {
   alts_handshaker_client_set_fields_for_testing(
       client, nullptr, on_invalid_input_cb, nullptr, recv_buffer,
       /*inject_read_failure=*/false);
-  alts_handshaker_client_handle_response(client, true);
+  client->handle_response(true);
   // Note: here and elsewhere in this test, we first ref the handshaker in order
   // to match the unref that on_status_received will do. This necessary
   // because this test mocks out the grpc call in such a way that the code
@@ -972,7 +967,7 @@ TEST(AltsTsiHandshakerTest, CheckHandleResponseNullptrRecvBytes) {
   alts_handshaker_client_set_fields_for_testing(
       client, alts_handshaker, on_invalid_input_cb, nullptr, nullptr,
       /*inject_read_failure=*/false);
-  alts_handshaker_client_handle_response(client, true);
+  client->handle_response(true);
   alts_handshaker_client_ref_for_testing(client);
   {
     grpc_core::ExecCtx exec_ctx;
@@ -1008,7 +1003,7 @@ TEST(AltsTsiHandshakerTest,
   alts_handshaker_client_set_fields_for_testing(
       client, alts_handshaker, on_failed_grpc_call_cb, nullptr, recv_buffer,
       /*inject_read_failure=*/true);
-  alts_handshaker_client_handle_response(client, true);
+  client->handle_response(true);
   alts_handshaker_client_ref_for_testing(client);
   {
     grpc_core::ExecCtx exec_ctx;
@@ -1045,7 +1040,7 @@ TEST(AltsTsiHandshakerTest,
   alts_handshaker_client_set_fields_for_testing(
       client, alts_handshaker, on_failed_grpc_call_cb, nullptr, recv_buffer,
       /*inject_read_failure=*/false);
-  alts_handshaker_client_handle_response(client, false);
+  client->handle_response(false);
   alts_handshaker_client_ref_for_testing(client);
   {
     grpc_core::ExecCtx exec_ctx;
@@ -1091,7 +1086,7 @@ TEST(AltsTsiHandshakerTest, CheckHandleResponseInvalidResp) {
   alts_handshaker_client_set_fields_for_testing(
       client, alts_handshaker, on_invalid_resp_cb, nullptr, recv_buffer,
       /*inject_read_failure=*/false);
-  alts_handshaker_client_handle_response(client, true);
+  client->handle_response(true);
   alts_handshaker_client_ref_for_testing(client);
   {
     grpc_core::ExecCtx exec_ctx;
@@ -1107,10 +1102,10 @@ TEST(AltsTsiHandshakerTest, CheckHandleResponseInvalidResp) {
 static void check_handle_response_success(void* /*unused*/) {
   // Client start.
   wait(&caller_to_tsi_notification);
-  alts_handshaker_client_handle_response(cb_event, true /* is_ok */);
+  cb_event->handle_response(true /* is_ok */);
   // Client next.
   wait(&caller_to_tsi_notification);
-  alts_handshaker_client_handle_response(cb_event, true /* is_ok */);
+  cb_event->handle_response(true /* is_ok */);
   alts_handshaker_client_ref_for_testing(cb_event);
   {
     grpc_core::ExecCtx exec_ctx;
@@ -1119,10 +1114,10 @@ static void check_handle_response_success(void* /*unused*/) {
   }
   // Server start.
   wait(&caller_to_tsi_notification);
-  alts_handshaker_client_handle_response(cb_event, true /* is_ok */);
+  cb_event->handle_response(true /* is_ok */);
   // Server next.
   wait(&caller_to_tsi_notification);
-  alts_handshaker_client_handle_response(cb_event, true /* is_ok */);
+  cb_event->handle_response(true /* is_ok */);
   alts_handshaker_client_ref_for_testing(cb_event);
   {
     grpc_core::ExecCtx exec_ctx;
@@ -1163,7 +1158,7 @@ TEST(AltsTsiHandshakerTest, CheckHandleResponseFailure) {
   alts_handshaker_client_set_fields_for_testing(
       client, alts_handshaker, on_failed_resp_cb, nullptr, recv_buffer,
       /*inject_read_failure=*/false);
-  alts_handshaker_client_handle_response(client, true /* is_ok*/);
+  client->handle_response(true /* is_ok*/);
   alts_handshaker_client_ref_for_testing(client);
   {
     grpc_core::ExecCtx exec_ctx;
@@ -1209,7 +1204,7 @@ TEST(AltsTsiHandshakerTest, CheckHandleResponseAfterShutdown) {
   alts_handshaker_client_set_fields_for_testing(
       client, alts_handshaker, on_shutdown_resp_cb, nullptr, recv_buffer,
       /*inject_read_failure=*/false);
-  alts_handshaker_client_handle_response(client, true);
+  client->handle_response(true);
   alts_handshaker_client_ref_for_testing(client);
   {
     grpc_core::ExecCtx exec_ctx;
