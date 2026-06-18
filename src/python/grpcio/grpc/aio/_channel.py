@@ -241,7 +241,7 @@ class UnaryStreamMultiCallable(
 
 class StreamUnaryMultiCallable(
     _BaseMultiCallable[StreamUnaryClientInterceptor],
-    _base_channel.StreamUnaryMultiCallable,
+    _base_channel.StreamUnaryMultiCallable[RequestType, ResponseType],
 ):
     def __call__(
         self,
@@ -289,7 +289,7 @@ class StreamUnaryMultiCallable(
 
 class StreamStreamMultiCallable(
     _BaseMultiCallable[StreamStreamClientInterceptor],
-    _base_channel.StreamStreamMultiCallable,
+    _base_channel.StreamStreamMultiCallable[RequestType, ResponseType],
 ):
     def __call__(
         self,
@@ -544,7 +544,7 @@ class Channel(_base_channel.Channel):
         request_serializer: Optional[SerializingFunction] = None,
         response_deserializer: Optional[DeserializingFunction] = None,
         _registered_method: Optional[bool] = False,
-    ) -> StreamUnaryMultiCallable:
+    ) -> StreamUnaryMultiCallable[RequestType, ResponseType]:
         return StreamUnaryMultiCallable(
             self._channel,
             _common.encode(method),
@@ -564,7 +564,7 @@ class Channel(_base_channel.Channel):
         request_serializer: Optional[SerializingFunction] = None,
         response_deserializer: Optional[DeserializingFunction] = None,
         _registered_method: Optional[bool] = False,
-    ) -> StreamStreamMultiCallable:
+    ) -> StreamStreamMultiCallable[RequestType, ResponseType]:
         return StreamStreamMultiCallable(
             self._channel,
             _common.encode(method),

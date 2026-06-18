@@ -103,7 +103,7 @@ class UnaryStreamMultiCallable(Generic[RequestType, ResponseType], abc.ABC):
         """
 
 
-class StreamUnaryMultiCallable(abc.ABC):
+class StreamUnaryMultiCallable(Generic[RequestType, ResponseType], abc.ABC):
     """Enables asynchronous invocation of a client-streaming RPC."""
 
     @abc.abstractmethod
@@ -141,7 +141,7 @@ class StreamUnaryMultiCallable(abc.ABC):
         """
 
 
-class StreamStreamMultiCallable(abc.ABC):
+class StreamStreamMultiCallable(Generic[RequestType, ResponseType], abc.ABC):
     """Enables asynchronous invocation of a bidirectional-streaming RPC."""
 
     @abc.abstractmethod
@@ -322,7 +322,7 @@ class Channel(abc.ABC):
         request_serializer: Optional[SerializingFunction] = None,
         response_deserializer: Optional[DeserializingFunction] = None,
         _registered_method: Optional[bool] = False,
-    ) -> StreamUnaryMultiCallable:
+    ) -> StreamUnaryMultiCallable[RequestType, ResponseType]:
         """Creates a StreamUnaryMultiCallable for a stream-unary method.
 
         Args:
@@ -346,7 +346,7 @@ class Channel(abc.ABC):
         request_serializer: Optional[SerializingFunction] = None,
         response_deserializer: Optional[DeserializingFunction] = None,
         _registered_method: Optional[bool] = False,
-    ) -> StreamStreamMultiCallable:
+    ) -> StreamStreamMultiCallable[RequestType, ResponseType]:
         """Creates a StreamStreamMultiCallable for a stream-stream method.
 
         Args:

@@ -338,11 +338,11 @@ class _UnaryResponseMixin(Call, Generic[ResponseType]):
 
 class _StreamResponseMixin(Call, Generic[ResponseType]):
     _message_aiter: Optional[AsyncIterator[ResponseType]]
-    _preparation: asyncio.Task[Optional[AsyncIterator[ResponseType]]]
+    _preparation: asyncio.Task[None]
     _response_style: _APIStyle
 
     def _init_stream_response_mixin(
-        self, preparation: asyncio.Task[Optional[AsyncIterator[ResponseType]]]
+        self, preparation: asyncio.Task[None]
     ):
         self._message_aiter = None
         self._preparation = preparation
