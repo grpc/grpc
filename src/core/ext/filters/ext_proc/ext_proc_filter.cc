@@ -229,11 +229,9 @@ class ExtProcFilter::ExtProcCall : public DualRefCounted<ExtProcCall> {
     return first;
   }
 
-  bool GetAndSetIsFirstBodyMessage() {
+  void MarkFirstBodyMessageSent() {
     MutexLock lock(&mu_);
-    bool first = is_first_body_message_;
-    is_first_body_message_ = false;
-    return first;
+    is_first_body_message_sent_on_stream_ = true;
   }
 
   bool IsStreamClosed() {
@@ -331,9 +329,9 @@ class ExtProcFilter::ExtProcCall : public DualRefCounted<ExtProcCall> {
   // True if no messages have been sent on the ext_proc stream yet. Used to
   // determine if attributes should be included in the request.
   bool is_first_message_on_stream_ ABSL_GUARDED_BY(&mu_) = true;
-  // True if no body messages (request or response) have been sent to the
-  // processor yet. Used for failure_mode_allow bypass logic.
-  bool is_first_body_message_ ABSL_GUARDED_BY(&mu_) = true;
+  // True if the first body message (request or response) has been sent to the
+  // processor. Used for failure_mode_allow bypass logic.
+  bool is_first_body_message_sent_on_stream_ ABSL_GUARDED_BY(&mu_) = false;
   // True if the client has half-closed (finished sending request messages).
   bool client_sends_done_ ABSL_GUARDED_BY(&mu_) = false;
   // True if the processor half-closed its sending stream (sent EOS).
@@ -548,13 +546,13 @@ bool ExtProcFilter::ExtProcCall::DecrementOutstandingServerToClientMessages() {
 void ExtProcFilter::ExtProcCall::OnStatusReceived(absl::Status status) {
   GRPC_TRACE_LOG(ext_proc_filter, INFO)
       << "ExtProcCall " << this << " status received: " << status;
-  bool is_first_body_message = true;
+  bool is_first_body_message_sent = false;
   {
     MutexLock lock(&mu_);
     stream_closed_ = true;
-    is_first_body_message = is_first_body_message_;
+    is_first_body_message_sent = is_first_body_message_sent_on_stream_;
   }
-  if (!status.ok() && (!failure_mode_allow_ || !is_first_body_message)) {
+  if (!status.ok() && (!failure_mode_allow_ || is_first_body_message_sent)) {
     SetStreamErrorStatus(status);
     if (processing_mode_.send_request_headers &&
         !request_headers_latch_.IsSet()) {
@@ -929,7 +927,7 @@ auto ExtProcFilter::SendServerMessageRequest(const MessageHandle& message,
   Message* msg_ptr = message.get();
   return ext_proc_call->SendMessageLocked(
       send_to_ext_proc_stream, [this, msg_ptr, ext_proc_call]() {
-        ext_proc_call->GetAndSetIsFirstBodyMessage();
+        ext_proc_call->MarkFirstBodyMessageSent();
         GRPC_TRACE_LOG(ext_proc_filter, INFO)
             << "ExtProc: ServerToClientMessages body message intercepted:\n"
             << (msg_ptr != nullptr ? msg_ptr->DebugString() : "nullptr");
@@ -1309,7 +1307,7 @@ auto ExtProcFilter::ProcessServerToClient(
                                       self->SideStreamToClientNormalMode(
                                           handler, initiator, ext_proc_call)),
                                   [](auto result) -> absl::Status {
-                                    result.status();
+                                    return result.status();
                                   });
                             }),
                         Map(ext_proc_call->stream_error_status_latch_.Wait(),
@@ -1341,34 +1339,26 @@ auto ExtProcFilter::SendClientMessageRequest(
     const MessageHandle& message, ExtProcCall* ext_proc_call,
     bool end_of_stream, bool end_of_stream_without_message,
     bool send_to_ext_proc_stream, ::google_protobuf_Struct* attributes) {
-  if (config_->processing_mode.send_request_headers) {
-    attributes = nullptr;
-  }
   Message* msg_ptr = message.get();
   return ext_proc_call->SendMessageLocked(
       send_to_ext_proc_stream, [this, ext_proc_call, msg_ptr, end_of_stream,
                                 end_of_stream_without_message, attributes]() {
         GRPC_TRACE_LOG(ext_proc_filter, INFO)
             << "ExtProc: ClientToServerMessages body message intercepted:\n"
-            << (msg_ptr != nullptr ? msg_ptr->DebugString() : "nullptr");
+            << (msg_ptr != nullptr ? msg_ptr->DebugString() : "<nullptr>");
         upb::Arena arena;
         std::string message_bytes;
         if (msg_ptr != nullptr) {
           message_bytes = msg_ptr->payload()->JoinIntoString();
         }
-        const bool is_first_message_on_stream =
-            ext_proc_call->GetAndSetIsFirstMessageOnStream();
-        ext_proc_call->GetAndSetIsFirstBodyMessage();
-        ::google_protobuf_Struct* attrs = nullptr;
-        if (is_first_message_on_stream) {
-          attrs = attributes;
-        }
+        ext_proc_call->MarkFirstBodyMessageSent();
         return CreateExtProcRequest(
             arena.ptr(), ExtProcRequestType::kClientMessage,
             upb_StringView_FromDataAndSize(message_bytes.data(),
                                            message_bytes.size()),
-            /*allowed_headers=*/{}, /*disallowed_headers=*/{}, attrs,
-            config_->observability_mode, is_first_message_on_stream,
+            /*allowed_headers=*/{}, /*disallowed_headers=*/{}, attributes,
+            config_->observability_mode,
+            ext_proc_call->GetAndSetIsFirstMessageOnStream(),
             config_->processing_mode.send_request_body,
             config_->processing_mode.send_response_body, end_of_stream,
             end_of_stream_without_message);
@@ -1722,7 +1712,10 @@ void ExtProcFilter::InterceptCall(UnstartedCallHandler unstarted_call_handler) {
                                                          ext_proc_call);
                     });
                 return self->ClientToServerMessages(
-                    handler, initiator, std::move(ext_proc_call), attributes);
+                    handler, initiator, std::move(ext_proc_call),
+                    !self->config()->processing_mode.send_request_headers
+                        ? attributes
+                        : nullptr);
               });
         });
   });
