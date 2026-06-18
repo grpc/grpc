@@ -72,7 +72,9 @@ def _augment_channel_arguments(
     )
 
 
-class _BaseMultiCallable(Generic[ClientInterceptorT, RequestType, ResponseType]):
+class _BaseMultiCallable(
+    Generic[ClientInterceptorT, RequestType, ResponseType]
+):
     """Base class of all multi callable objects.
 
     Handles the initialization logic and stores common attributes.
@@ -288,7 +290,9 @@ class StreamUnaryMultiCallable(
 
 
 class StreamStreamMultiCallable(
-    _BaseMultiCallable[StreamStreamClientInterceptor, RequestType, ResponseType],
+    _BaseMultiCallable[
+        StreamStreamClientInterceptor, RequestType, ResponseType
+    ],
     _base_channel.StreamStreamMultiCallable[RequestType, ResponseType],
 ):
     def __call__(
