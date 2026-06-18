@@ -597,19 +597,18 @@ void ExtProcFilter::ExtProcCall::OnStatusReceived(absl::Status status) {
     is_first_body_message = is_first_body_message_;
   }
   if (!status.ok() && (!failure_mode_allow_ || !is_first_body_message)) {
-    absl::Status mapped_status = absl::InternalError(status.message());
-    SetStreamErrorStatus(mapped_status);
+    SetStreamErrorStatus(status);
     if (processing_mode_.send_request_headers &&
         !request_headers_latch_.IsSet()) {
-      request_headers_latch_.Set(mapped_status);
+      request_headers_latch_.Set(status);
     }
     if (processing_mode_.send_response_headers &&
         !response_headers_latch_.IsSet()) {
-      response_headers_latch_.Set(mapped_status);
+      response_headers_latch_.Set(status);
     }
     if (processing_mode_.send_response_trailers &&
         !response_trailers_latch_.IsSet()) {
-      response_trailers_latch_.Set(mapped_status);
+      response_trailers_latch_.Set(status);
     }
     if (processing_mode_.send_request_body &&
         !request_body_pipe_.sender.IsClosed()) {
