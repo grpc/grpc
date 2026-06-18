@@ -171,10 +171,6 @@ class ExtProcFilter final : public V3InterceptorToV2Bridge<ExtProcFilter> {
 
   auto ProcessServerToClient(CallHandler handler, CallInitiator initiator,
                              RefCountedPtr<ExtProcCall> ext_proc_call);
-  auto ServerToClientMessages(CallHandler handler, CallInitiator initiator,
-                              RefCountedPtr<ExtProcCall> ext_proc_call);
-  auto ServerInitialMetadata(CallHandler handler, CallInitiator initiator,
-                             RefCountedPtr<ExtProcCall> ext_proc_call);
   auto ServerInitialMetadataNormalMode(
       CallHandler handler, CallInitiator initiator,
       RefCountedPtr<ExtProcCall> ext_proc_call,
@@ -190,7 +186,10 @@ class ExtProcFilter final : public V3InterceptorToV2Bridge<ExtProcFilter> {
   auto ServerToClientMessagesMaybeObservabilityMode(
       CallHandler handler, CallInitiator initiator,
       RefCountedPtr<ExtProcCall> ext_proc_call, bool send_to_processor);
-  auto ServerToClientMessagesNormalMode(
+  auto ServerToClientMessagesNormalModeProducer(
+      CallHandler handler, CallInitiator initiator,
+      RefCountedPtr<ExtProcCall> ext_proc_call);
+  auto ServerToClientMessagesNormalModeConsumer(
       CallHandler handler, CallInitiator initiator,
       RefCountedPtr<ExtProcCall> ext_proc_call);
   auto ServerTrailingMetadata(CallHandler handler, CallInitiator initiator,

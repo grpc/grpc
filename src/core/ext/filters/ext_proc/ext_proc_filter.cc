@@ -964,69 +964,6 @@ auto ExtProcFilter::ServerInitialMetadataMaybeObservabilityMode(
       });
 }
 
-auto ExtProcFilter::ServerInitialMetadata(
-    CallHandler handler, CallInitiator initiator,
-    RefCountedPtr<ExtProcCall> ext_proc_call) {
-  return TrySeq(
-      initiator.PullServerInitialMetadata(),
-      [self = RefAsSubclass<ExtProcFilter>(), handler, initiator,
-       ext_proc_call](std::optional<ServerMetadataHandle> metadata) mutable {
-        const bool has_md = metadata.has_value();
-        GRPC_TRACE_LOG(ext_proc_filter, INFO)
-            << "ExtProc: ServerInitialMetadata received, present: " << has_md;
-        return Map(
-            If(
-                has_md,
-                [self, handler, initiator, ext_proc_call,
-                 metadata = std::move(metadata)]() mutable {
-                  auto shared_metadata = std::make_shared<ServerMetadataHandle>(
-                      std::move(*metadata));
-                  const bool send_headers =
-                      self->config()->processing_mode.send_response_headers &&
-                      !ext_proc_call->IsStreamClosed();
-                  return If(
-                      send_headers,
-                      [self, handler, initiator, ext_proc_call,
-                       shared_metadata]() mutable {
-                        return If(
-                            self->config()->observability_mode,
-                            [self, handler, initiator, ext_proc_call,
-                             shared_metadata]() mutable {
-                              return self
-                                  ->ServerInitialMetadataMaybeObservabilityMode(
-                                      handler, initiator,
-                                      std::move(ext_proc_call),
-                                      /*send_to_processor=*/true,
-                                      shared_metadata);
-                            },
-                            [self, handler, initiator, ext_proc_call,
-                             shared_metadata]() mutable {
-                              return self->ServerInitialMetadataNormalMode(
-                                  handler, initiator, std::move(ext_proc_call),
-                                  shared_metadata);
-                            });
-                      },
-                      [self, handler, initiator, ext_proc_call,
-                       shared_metadata]() mutable {
-                        return self
-                            ->ServerInitialMetadataMaybeObservabilityMode(
-                                handler, initiator, std::move(ext_proc_call),
-                                /*send_to_processor=*/false, shared_metadata);
-                      });
-                },
-                []() -> absl::Status { return absl::OkStatus(); }),
-            [handler, initiator](absl::Status result) mutable -> StatusFlag {
-              if (!result.ok()) {
-                handler.SpawnPushServerTrailingMetadata(
-                    CancelledServerMetadataFromStatus(result));
-                initiator.SpawnCancel();
-                return Failure{};
-              }
-              return Success{};
-            });
-      });
-}
-
 auto ExtProcFilter::SendServerMessageRequest(const MessageHandle& message,
                                              ExtProcCall* ext_proc_call,
                                              bool send_to_processor) {
@@ -1074,10 +1011,10 @@ auto ExtProcFilter::ServerToClientMessagesMaybeObservabilityMode(
       });
 }
 
-auto ExtProcFilter::ServerToClientMessagesNormalMode(
+auto ExtProcFilter::ServerToClientMessagesNormalModeProducer(
     CallHandler handler, CallInitiator initiator,
     RefCountedPtr<ExtProcCall> ext_proc_call) {
-  auto server_to_sidestream = Map(
+  return Map(
       ForEach(MessagesFrom(initiator),
               [self = RefAsSubclass<ExtProcFilter>(), handler,
                ext_proc_call](MessageHandle message) mutable {
@@ -1103,8 +1040,12 @@ auto ExtProcFilter::ServerToClientMessagesNormalMode(
         ext_proc_call->MarkServerSendsDone();
         return status;
       });
+}
 
-  auto sidestream_to_client = Seq(
+auto ExtProcFilter::ServerToClientMessagesNormalModeConsumer(
+    CallHandler handler, CallInitiator initiator,
+    RefCountedPtr<ExtProcCall> ext_proc_call) {
+  return Seq(
       ForEach(
           std::move(ext_proc_call->response_body_pipe_.receiver),
           [handler, initiator,
@@ -1153,42 +1094,6 @@ auto ExtProcFilter::ServerToClientMessagesNormalMode(
         }
         return status;
       });
-
-  return Map(TryJoin<absl::StatusOr>(std::move(server_to_sidestream),
-                                     std::move(sidestream_to_client)),
-             [ext_proc_call](auto result) -> absl::Status {
-               if (!result.ok()) return result.status();
-               return ext_proc_call->GetStreamErrorStatus();
-             });
-}
-
-auto ExtProcFilter::ServerToClientMessages(
-    CallHandler handler, CallInitiator initiator,
-    RefCountedPtr<ExtProcCall> ext_proc_call) {
-  return Race(If(
-                  config_->processing_mode.send_response_body,
-                  [this, handler, initiator, ext_proc_call]() mutable {
-                    return If(
-                        config_->observability_mode,
-                        [this, handler, initiator, ext_proc_call]() mutable {
-                          return ServerToClientMessagesMaybeObservabilityMode(
-                              handler, initiator, ext_proc_call,
-                              /*send_to_processor=*/true);
-                        },
-                        [this, handler, initiator, ext_proc_call]() mutable {
-                          return ServerToClientMessagesNormalMode(
-                              handler, initiator, std::move(ext_proc_call));
-                        });
-                  },
-                  [this, handler, initiator, ext_proc_call]() mutable {
-                    return ServerToClientMessagesMaybeObservabilityMode(
-                        handler, initiator, std::move(ext_proc_call),
-                        /*send_to_processor=*/false);
-                  }),
-              Map(ext_proc_call->stream_error_status_latch_.Wait(),
-                  [ext_proc_call](Empty) {
-                    return ext_proc_call->GetStreamErrorStatus();
-                  }));
 }
 
 auto ExtProcFilter::ServerTrailingMetadataNormalMode(
@@ -1218,8 +1123,8 @@ auto ExtProcFilter::ServerTrailingMetadataNormalMode(
                        self->config()->processing_mode.send_response_body);
                  }),
              ext_proc_call->response_trailers_latch_.Wait(),
-             [self = RefAsSubclass<ExtProcFilter>(),
-              metadata](ExtProcResponse response) mutable -> absl::Status {
+             [self = RefAsSubclass<ExtProcFilter>(), metadata,
+              ext_proc_call](ExtProcResponse response) mutable -> absl::Status {
                GRPC_TRACE_LOG(ext_proc_filter, INFO)
                    << "ExtProc: ServerTrailingMetadata response received. "
                       "OK: true, has_trailers: "
@@ -1242,6 +1147,13 @@ auto ExtProcFilter::ServerTrailingMetadataNormalMode(
                      << ", mutated metadata: " << (*metadata)->DebugString();
                  if (!status.ok()) {
                    return status;
+                 }
+               }
+               // Rule 3: Processing and non-observability mode
+               if (self->config()->processing_mode.send_response_body &&
+                   !self->config()->observability_mode) {
+                 if (!ext_proc_call->response_body_pipe_.sender.IsClosed()) {
+                   ext_proc_call->response_body_pipe_.sender.MarkClosed();
                  }
                }
                return absl::OkStatus();
@@ -1286,6 +1198,15 @@ auto ExtProcFilter::ServerTrailingMetadataMaybeObservabilityMode(
           }),
       [self = RefAsSubclass<ExtProcFilter>(), handler, metadata,
        ext_proc_call](absl::Status result) mutable {
+        // Rule 1: Non Processing mode (send_to_processor is false)
+        // Rule 2: Processing and observability mode (send_to_processor is true)
+        // Both guarded by the global condition:
+        if (self->config()->processing_mode.send_response_body &&
+            !self->config()->observability_mode) {
+          if (!ext_proc_call->response_body_pipe_.sender.IsClosed()) {
+            ext_proc_call->response_body_pipe_.sender.MarkClosed();
+          }
+        }
         if (!result.ok()) {
           *metadata = CancelledServerMetadataFromStatus(result);
         }
@@ -1339,31 +1260,127 @@ auto ExtProcFilter::ServerTrailingMetadata(
 auto ExtProcFilter::ProcessServerToClient(
     CallHandler handler, CallInitiator initiator,
     RefCountedPtr<ExtProcCall> ext_proc_call) {
-  return TrySeq(
-      ServerInitialMetadata(handler, initiator, ext_proc_call),
-      [this, handler, initiator, ext_proc_call]() mutable {
-        return Seq(
-            ServerToClientMessages(handler, initiator, ext_proc_call),
-            [this, handler, initiator,
-             ext_proc_call](absl::Status status) mutable {
-              GRPC_TRACE_LOG(ext_proc_filter, INFO)
-                  << "ExtProc: ServerToClientMessages completed with status: "
-                  << status.ToString();
-              const bool is_error =
-                  !status.ok() && status.code() != absl::StatusCode::kCancelled;
-              return If(
-                  is_error,
-                  [handler, initiator, status]() mutable {
-                    handler.SpawnPushServerTrailingMetadata(
-                        CancelledServerMetadataFromStatus(status));
-                    initiator.SpawnCancel(status);
-                    return absl::OkStatus();
+  auto process_flow = TrySeq(
+      initiator.PullServerInitialMetadata(),
+      [self = RefAsSubclass<ExtProcFilter>(), handler, initiator,
+       ext_proc_call](std::optional<ServerMetadataHandle> metadata) mutable {
+        const bool has_md = metadata.has_value();
+        GRPC_TRACE_LOG(ext_proc_filter, INFO)
+            << "ExtProc: ServerInitialMetadata received, present: " << has_md;
+
+        return If(
+            has_md,
+            [self, handler, initiator, ext_proc_call,
+             metadata = std::move(metadata)]() mutable {
+              auto shared_metadata =
+                  std::make_shared<ServerMetadataHandle>(std::move(*metadata));
+              const bool send_headers =
+                  self->config()->processing_mode.send_response_headers &&
+                  !ext_proc_call->IsStreamClosed();
+
+              // ServerInitialMetadataFlow
+              auto server_initial_metadata_flow = If(
+                  send_headers,
+                  [self, handler, initiator, ext_proc_call,
+                   shared_metadata]() mutable {
+                    return If(
+                        self->config()->observability_mode,
+                        [self, handler, initiator, ext_proc_call,
+                         shared_metadata]() mutable {
+                          return self
+                              ->ServerInitialMetadataMaybeObservabilityMode(
+                                  handler, initiator, std::move(ext_proc_call),
+                                  /*send_to_processor=*/true, shared_metadata);
+                        },
+                        [self, handler, initiator, ext_proc_call,
+                         shared_metadata]() mutable {
+                          return self->ServerInitialMetadataNormalMode(
+                              handler, initiator, std::move(ext_proc_call),
+                              shared_metadata);
+                        });
                   },
-                  [this, handler, initiator, ext_proc_call]() mutable {
-                    return ServerTrailingMetadata(handler, initiator,
-                                                  std::move(ext_proc_call));
+                  [self, handler, initiator, ext_proc_call,
+                   shared_metadata]() mutable {
+                    return self->ServerInitialMetadataMaybeObservabilityMode(
+                        handler, initiator, std::move(ext_proc_call),
+                        /*send_to_processor=*/false, shared_metadata);
                   });
+
+              return TrySeq(
+                  std::move(server_initial_metadata_flow),
+                  [self, handler, initiator, ext_proc_call]() mutable {
+                    const bool response_body_enabled =
+                        self->config()->processing_mode.send_response_body;
+                    const bool observability_mode =
+                        self->config()->observability_mode;
+                    GRPC_TRACE_LOG(ext_proc_filter, INFO)
+                        << "ExtProc: ProcessServerToClient: "
+                           "response_body_enabled="
+                        << response_body_enabled
+                        << ", observability_mode=" << observability_mode;
+
+                    return Race(
+                        If(
+                            !response_body_enabled || observability_mode,
+                            [self, handler, initiator, ext_proc_call,
+                             observability_mode]() mutable {
+                              // Seq (ServerToClientMayBeObservability,
+                              // TrailerFlow)
+                              return Seq(
+                                  self->ServerToClientMessagesMaybeObservabilityMode(
+                                      handler, initiator, ext_proc_call,
+                                      /*send_to_processor=*/observability_mode),
+                                  [self, handler, initiator,
+                                   ext_proc_call]() mutable {
+                                    return self->ServerTrailingMetadata(
+                                        handler, initiator,
+                                        std::move(ext_proc_call));
+                                  });
+                            },
+                            [self, handler, initiator,
+                             ext_proc_call]() mutable {
+                              // Join(Producer, consumer, TrailerFlow)
+                              auto producer =
+                                  self->ServerToClientMessagesNormalModeProducer(
+                                      handler, initiator, ext_proc_call);
+                              auto consumer =
+                                  self->ServerToClientMessagesNormalModeConsumer(
+                                      handler, initiator, ext_proc_call);
+                              auto trailer_flow = self->ServerTrailingMetadata(
+                                  handler, initiator, ext_proc_call);
+
+                              return Map(
+                                  TryJoin<absl::StatusOr>(
+                                      std::move(producer), std::move(consumer),
+                                      std::move(trailer_flow)),
+                                  [](auto result) -> absl::Status {
+                                    if (!result.ok()) return result.status();
+                                    return absl::OkStatus();
+                                  });
+                            }),
+                        Map(ext_proc_call->stream_error_status_latch_.Wait(),
+                            [ext_proc_call](Empty) {
+                              return ext_proc_call->GetStreamErrorStatus();
+                            }));
+                  });
+            },
+            [self, handler, initiator, ext_proc_call]() mutable {
+              // TrailerFlow
+              return self->ServerTrailingMetadata(handler, initiator,
+                                                  std::move(ext_proc_call));
             });
+      });
+
+  return Map(
+      std::move(process_flow),
+      [handler, initiator](absl::Status result) mutable -> StatusFlag {
+        if (!result.ok() && result.code() != absl::StatusCode::kCancelled) {
+          handler.SpawnPushServerTrailingMetadata(
+              CancelledServerMetadataFromStatus(result));
+          initiator.SpawnCancel(result);
+          return Failure{};
+        }
+        return Success{};
       });
 }
 
