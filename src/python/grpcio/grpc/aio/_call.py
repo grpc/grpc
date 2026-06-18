@@ -189,7 +189,7 @@ def _create_rpc_error(
     )
 
 
-class Call:
+class Call(Generic[RequestType, ResponseType]):
     """Base implementation of client RPC Call object.
 
     Implements logic around final status, metadata and cancellation.
@@ -260,10 +260,10 @@ class Call:
         cygrpc_code = (await self._cython_call.status()).code()
         return _common.CYGRPC_STATUS_CODE_TO_STATUS_CODE[cygrpc_code]
 
-    async def details(self) -> str:
+    async def details(self) -> Optional[str]:
         return (await self._cython_call.status()).details()
 
-    async def debug_error_string(self) -> str:
+    async def debug_error_string(self) -> Optional[str]:
         return (await self._cython_call.status()).debug_error_string()
 
     async def _raise_for_status(self) -> None:
@@ -292,7 +292,7 @@ class _APIStyle(enum.IntEnum):
     READER_WRITER = 2
 
 
-class _UnaryResponseMixin(Call, Generic[ResponseType]):
+class _UnaryResponseMixin(Call[Any, ResponseType], Generic[ResponseType]):
     _call_response: asyncio.Task[Union[ResponseType, EOFType]]
 
     def _init_unary_response_mixin(
@@ -336,7 +336,7 @@ class _UnaryResponseMixin(Call, Generic[ResponseType]):
             return response
 
 
-class _StreamResponseMixin(Call, Generic[ResponseType]):
+class _StreamResponseMixin(Call[Any, ResponseType], Generic[ResponseType]):
     _message_aiter: Optional[AsyncIterator[ResponseType]]
     _preparation: asyncio.Task[None]
     _response_style: _APIStyle
@@ -405,7 +405,7 @@ class _StreamResponseMixin(Call, Generic[ResponseType]):
         return response_message
 
 
-class _StreamRequestMixin(Call, Generic[RequestType]):
+class _StreamRequestMixin(Call[RequestType, Any], Generic[RequestType]):
     _metadata_sent: asyncio.Event
     _done_writing_flag: bool
     _async_request_poller: Optional[asyncio.Task[None]]
@@ -546,7 +546,7 @@ class _StreamRequestMixin(Call, Generic[RequestType]):
 
 class UnaryUnaryCall(
     _UnaryResponseMixin[ResponseType],
-    Call,
+    Call[RequestType, ResponseType],
     _base_call.UnaryUnaryCall[RequestType, ResponseType],
 ):
     """Object for managing unary-unary RPC calls.
@@ -613,7 +613,7 @@ class UnaryUnaryCall(
 
 class UnaryStreamCall(
     _StreamResponseMixin[ResponseType],
-    Call,
+    Call[RequestType, ResponseType],
     _base_call.UnaryStreamCall[RequestType, ResponseType],
 ):
     """Object for managing unary-stream RPC calls.
@@ -675,7 +675,7 @@ class UnaryStreamCall(
 class StreamUnaryCall(
     _StreamRequestMixin[RequestType],
     _UnaryResponseMixin[ResponseType],
-    Call,
+    Call[RequestType, ResponseType],
     _base_call.StreamUnaryCall[RequestType, ResponseType],
 ):
     """Object for managing stream-unary RPC calls.
@@ -729,7 +729,7 @@ class StreamUnaryCall(
 class StreamStreamCall(
     _StreamRequestMixin[RequestType],
     _StreamResponseMixin[ResponseType],
-    Call,
+    Call[RequestType, ResponseType],
     _base_call.StreamStreamCall[RequestType, ResponseType],
 ):
     """Object for managing stream-stream RPC calls.
