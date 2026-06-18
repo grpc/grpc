@@ -71,16 +71,5 @@ bazel_c_cpp_cf_engine_tests/bazel_wrapper \
   $BAZEL_FLAGS \
   --cxxopt=-DGRPC_CFSTREAM=1 \
   --test_env=GRPC_EXPERIMENTS="event_engine_client,event_engine_listener" \
-  --test_env=GRPC_TRACE="api,event_engine*" \
-  -- \
-  //test/core/end2end:bad_server_response_test \
-  //test/core/end2end:connection_refused_test \
-  //test/core/end2end:goaway_server_test \
-  //test/core/end2end:invalid_call_argument_test \
-  //test/core/end2end:multiple_server_queues_test \
-  //test/core/end2end:no_server_test \
-  //test/core/end2end:h2_ssl_cert_test \
-  //test/core/end2end:h2_ssl_session_reuse_test \
-  //test/core/end2end:h2_tls_peer_property_external_verifier_test \
-  # //test/core/end2end:dualstack_socket_test uses iomgr \
-
+  --test_env=GRPC_TRACE="api,event_engine*" --runs_per_test=50 \
+  -- //test/core/end2end:h2_ssl_cert_test
