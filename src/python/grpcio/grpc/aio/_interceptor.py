@@ -557,7 +557,9 @@ class _InterceptedStreamResponseMixin(Generic[ResponseType]):
 
 class _InterceptedStreamRequestMixin(Generic[RequestType]):
     _write_to_iterator_async_gen: Optional[AsyncIterable[RequestType]]
-    _write_to_iterator_queue: Optional[asyncio.Queue[Union[RequestType, _FINISH_ITERATOR_SENTINEL_T]]]
+    _write_to_iterator_queue: Optional[
+        asyncio.Queue[Union[RequestType, _FINISH_ITERATOR_SENTINEL_T]]
+    ]
     _status_code_task: Optional[asyncio.Task[Any]]
     _interceptors_task: asyncio.Task[Any]
     _loop: asyncio.AbstractEventLoop
