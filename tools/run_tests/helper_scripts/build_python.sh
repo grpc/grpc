@@ -149,6 +149,7 @@ pip_install() {
 pip_install --upgrade pip==25.2
 pip_install --upgrade wheel
 pip_install --upgrade setuptools==77.0.1
+pip_install --upgrade nox
 
 # pip-installs the directory specified. Used because on MSYS the vanilla Windows
 # Python gets confused when parsing paths.
@@ -194,23 +195,42 @@ else
 fi
 
 # Build/install Channelz
-$VENV_PYTHON "$ROOT/src/python/grpcio_channelz/setup.py" preprocess
-$VENV_PYTHON "$ROOT/src/python/grpcio_channelz/setup.py" build_package_protos
+$VENV_PYTHON -m nox -s preprocess -f \
+ "$ROOT/src/python/grpcio_channelz/noxfile.py"
+
+$VENV_PYTHON -m nox -s build_package_protos -f \
+ "$ROOT/src/python/grpcio_channelz/noxfile.py"
+
 pip_install_dir "$ROOT/src/python/grpcio_channelz"
 
+
 # Build/install health checking
-$VENV_PYTHON "$ROOT/src/python/grpcio_health_checking/setup.py" preprocess
-$VENV_PYTHON "$ROOT/src/python/grpcio_health_checking/setup.py" build_package_protos
+$VENV_PYTHON -m nox -s preprocess -f \
+ "$ROOT/src/python/grpcio_health_checking/noxfile.py"
+
+$VENV_PYTHON -m nox -s build_package_protos -f \
+ "$ROOT/src/python/grpcio_health_checking/noxfile.py"
+
 pip_install_dir "$ROOT/src/python/grpcio_health_checking"
 
+
 # Build/install reflection
-$VENV_PYTHON "$ROOT/src/python/grpcio_reflection/setup.py" preprocess
-$VENV_PYTHON "$ROOT/src/python/grpcio_reflection/setup.py" build_package_protos
+$VENV_PYTHON -m nox -s preprocess -f \
+ "$ROOT/src/python/grpcio_reflection/noxfile.py"
+
+$VENV_PYTHON -m nox -s build_package_protos -f \
+ "$ROOT/src/python/grpcio_reflection/noxfile.py"
+
 pip_install_dir "$ROOT/src/python/grpcio_reflection"
 
+
 # Build/install status proto mapping
-$VENV_PYTHON "$ROOT/src/python/grpcio_status/setup.py" preprocess
-$VENV_PYTHON "$ROOT/src/python/grpcio_status/setup.py" build_package_protos
+$VENV_PYTHON -m nox -s preprocess -f \
+ "$ROOT/src/python/grpcio_status/noxfile.py"
+
+$VENV_PYTHON -m nox -s build_package_protos -f \
+ "$ROOT/src/python/grpcio_status/noxfile.py"
+
 pip_install_dir "$ROOT/src/python/grpcio_status"
 
 
@@ -233,6 +253,10 @@ pip_install "coverage>=7.9.0" oauth2client==4.1.0 \
             rsa==4.0 absl-py==1.4.0 \
             opentelemetry-sdk==1.21.0
 
-$VENV_PYTHON "$ROOT/src/python/grpcio_tests/setup.py" preprocess
-$VENV_PYTHON "$ROOT/src/python/grpcio_tests/setup.py" build_package_protos
+$VENV_PYTHON -m nox -s preprocess -f \
+ "$ROOT/src/python/grpcio_tests/noxfile.py"
+
+$VENV_PYTHON -m nox -s build_package_protos -f \
+ "$ROOT/src/python/grpcio_tests/noxfile.py"
+
 pip_install_dir "$ROOT/src/python/grpcio_tests"

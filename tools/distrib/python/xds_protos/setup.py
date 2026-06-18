@@ -1,4 +1,5 @@
-# Copyright 2018 The gRPC Authors
+#! /usr/bin/env python3
+# Copyright 2021 The gRPC Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -11,41 +12,36 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Setup module for the GRPC Python package's status mapping."""
+"""A PyPI package for xDS protos generated Python code."""
 
 import os
-import sys
 
 import setuptools
+import sys
 
 # Manually insert the source directory into the Python path for local module
 # imports to succeed
 sys.path.insert(0, os.path.abspath("."))
 
-
 import grpc_version
 import python_version
 
-CLASSIFIERS = [
-    "Development Status :: 5 - Production/Stable",
-    "Programming Language :: Python",
-    "Programming Language :: Python :: 3",
-] + [
-    f"Programming Language :: Python :: {x}"
-    for x in python_version.SUPPORTED_PYTHON_VERSIONS
+
+# Keep this in sync with XDS_PROTOS_GENCODE_GRPC_VERSION
+# in tools/buildgen/generate_projects.sh.
+XDS_PROTOS_GENCODE_GRPC_VERSION = "1.74.0"
+
+INSTALL_REQUIRES = [
+    f"grpcio>={XDS_PROTOS_GENCODE_GRPC_VERSION}",
+    "protobuf>=6.31.1,<7.0.0",
 ]
-
-
-INSTALL_REQUIRES = (
-    "protobuf>=6.33.5,<8.0.0",
-    "grpcio>={version}".format(version=grpc_version.VERSION),
-    "googleapis-common-protos>=1.5.5",
-)
-
+SETUP_REQUIRES = INSTALL_REQUIRES + [
+    f"grpcio-tools>={XDS_PROTOS_GENCODE_GRPC_VERSION}"
+]
 
 if __name__ == "__main__":
     setuptools.setup(
-        classifiers=CLASSIFIERS,
         python_requires=f">={python_version.MIN_PYTHON_VERSION}",
         install_requires=INSTALL_REQUIRES,
+        setup_requires=SETUP_REQUIRES,
     )

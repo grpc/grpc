@@ -22,25 +22,9 @@ import setuptools
 # imports to succeed
 sys.path.insert(0, os.path.abspath("."))
 
+# Break import-style to ensure we can actually find our local modules.
 import grpc_version
 import python_version
-
-
-class _NoOpCommand(setuptools.Command):
-    """No-op command."""
-
-    description = ""
-    user_options = []
-
-    def initialize_options(self):
-        pass
-
-    def finalize_options(self):
-        pass
-
-    def run(self):
-        pass
-
 
 CLASSIFIERS = [
     "Development Status :: 5 - Production/Stable",
@@ -64,18 +48,8 @@ try:
     SETUP_REQUIRES = (
         "grpcio-tools=={version}".format(version=grpc_version.VERSION),
     )
-    COMMAND_CLASS = {
-        # Run preprocess from the repository *before* doing any packaging!
-        "preprocess": _reflection_commands.Preprocess,
-        "build_package_protos": _reflection_commands.BuildPackageProtos,
-    }
 except ImportError:
     SETUP_REQUIRES = ()
-    COMMAND_CLASS = {
-        # wire up commands to no-op not to break the external dependencies
-        "preprocess": _NoOpCommand,
-        "build_package_protos": _NoOpCommand,
-    }
 
 if __name__ == "__main__":
     setuptools.setup(
@@ -83,5 +57,4 @@ if __name__ == "__main__":
         python_requires=f">={python_version.MIN_PYTHON_VERSION}",
         install_requires=INSTALL_REQUIRES,
         setup_requires=SETUP_REQUIRES,
-        cmdclass=COMMAND_CLASS,
     )

@@ -24,6 +24,7 @@ sys.path.insert(0, os.path.abspath("."))
 import grpc_tools.command
 import setuptools
 
+# Break import-style to ensure we can actually find our in-repo dependencies.
 import commands
 import grpc_version
 import python_version
@@ -46,8 +47,8 @@ INSTALL_REQUIRES = (
 
 COMMAND_CLASS = {
     # Run `preprocess` *before* doing any packaging!
-    "preprocess": commands.GatherProto,
-    "build_package_protos": commands.BuildPackageProtos,
+    # "preprocess": commands.GatherProto,
+    # "build_package_protos": grpc_tools.command.BuildPackageProtos,
     "build_py": commands.BuildPy,
     "run_fork": commands.RunFork,
     "run_interop": commands.RunInterop,
@@ -62,6 +63,7 @@ TEST_RUNNER = "tests:Runner"
 TESTS_REQUIRE = INSTALL_REQUIRES
 
 CLASSIFIERS = [
+    "Development Status :: 5 - Production/Stable",
     "Programming Language :: Python",
     "Programming Language :: Python :: 3",
 ]
