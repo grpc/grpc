@@ -157,6 +157,16 @@ pip = use_extension("@rules_python//python/extensions:pip.bzl", "pip")
         hub_name = "grpc_python_dependencies",
         python_version = python_version,
         requirements_lock = "//:requirements.bazel.lock",
+        target_platforms = [
+            "cp" + python_version.replace(".", "") + "_" + plat
+            for plat in [
+                "osx_aarch64",
+                "osx_x86_64",
+                "manylinux_x86_64",
+                "windows_x86_64",
+                "aarch64_manylinux2014",
+            ]
+        ],
     )
     for python_version in PYTHON_VERSIONS
 ]
