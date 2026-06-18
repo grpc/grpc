@@ -102,6 +102,8 @@ class Call : public CppImplOf<Call, grpc_call>,
   virtual bool Completed() = 0;
   void CancelWithStatus(grpc_status_code status, const char* description);
   virtual void CancelWithError(grpc_error_handle error) = 0;
+  std::optional<grpc_error_handle> GetFinalError() const;
+  void SetFinalError(grpc_error_handle error);
   virtual void SetCompletionQueue(grpc_completion_queue* cq) = 0;
   virtual char* GetPeer() = 0;
   virtual grpc_call_error StartBatch(const grpc_op* ops, size_t nops,
@@ -248,6 +250,9 @@ class Call : public CppImplOf<Call, grpc_call>,
   grpc_event_engine::experimental::EventEngine::TaskHandle ABSL_GUARDED_BY(
       deadline_mu_) deadline_task_;
   gpr_cycle_counter start_time_ = gpr_get_cycle_counter();
+  mutable Mutex final_error_mu_;
+  std::optional<grpc_error_handle> final_error_
+      ABSL_GUARDED_BY(final_error_mu_);
 };
 
 template <>
@@ -329,5 +334,7 @@ bool grpc_call_is_trailers_only(const grpc_call* call);
 
 // Returns the authority for the call, as seen on the server side.
 absl::string_view grpc_call_server_authority(const grpc_call* call);
+
+std::optional<grpc_error_handle> grpc_call_get_final_error(grpc_call* call);
 
 #endif  // GRPC_SRC_CORE_LIB_SURFACE_CALL_H

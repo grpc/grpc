@@ -82,6 +82,7 @@ class ServerCall final : public Call, public DualRefCounted<ServerCall> {
   }
 
   void CancelWithError(grpc_error_handle error) override {
+    SetFinalError(error);
     call_handler_.SpawnInfallible(
         "CancelWithError",
         [self = WeakRefAsSubclass<ServerCall>(), error = std::move(error)] {

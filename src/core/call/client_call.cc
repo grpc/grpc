@@ -171,6 +171,7 @@ grpc_call_error ClientCall::StartBatch(const grpc_op* ops, size_t nops,
 
 void ClientCall::CancelWithError(grpc_error_handle error) {
   cancel_status_.Set(new absl::Status(error));
+  SetFinalError(error);
   auto cur_state = call_state_.load(std::memory_order_acquire);
   while (true) {
     GRPC_TRACE_LOG(call, INFO)
@@ -460,6 +461,12 @@ void ClientCall::OnReceivedStatus(ServerMetadataHandle server_trailing_metadata,
   }
   PublishMetadataArray(server_trailing_metadata.get(), out_trailing_metadata,
                        true);
+  if (received_trailing_metadata_ != nullptr) {
+    absl::Status status = ServerMetadataToStatus(*received_trailing_metadata_);
+    if (!status.ok()) {
+      SetFinalError(status);
+    }
+  }
   received_trailing_metadata_ = std::move(server_trailing_metadata);
 }
 
