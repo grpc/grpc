@@ -1965,15 +1965,22 @@ auto Http2ClientTransport::CallOutboundLoop(RefCountedPtr<Stream> stream) {
           [send_half_closed = std::move(send_half_closed)]() mutable {
             return std::move(send_half_closed)();
           },
-          [stream]() mutable {
+          [this, stream, stream_id = stream->GetStreamId()]() mutable {
             return Map(
-                stream->GetCallHandler().WasCancelled(), [](bool cancelled) {
+                stream->GetCallHandler().WasCancelled(),
+                [this, stream_id](bool cancelled) {
                   GRPC_HTTP2_CLIENT_DLOG
                       << "Http2ClientTransport::CallOutboundLoop End with "
                          "cancelled="
                       << cancelled;
-                  return (cancelled) ? absl::CancelledError()
-                                     : absl::OkStatus();
+                  if (cancelled) {
+                    // Enqueue an RST_STREAM frame immediately upon call
+                    // cancellation rather than waiting for CallHandler::OnDone.
+                    return HandleError(stream_id, Http2Status::Http2StreamError(
+                                                      Http2ErrorCode::kCancel,
+                                                      "Client call cancelled"));
+                  }
+                  return absl::OkStatus();
                 });
           }));
 }
