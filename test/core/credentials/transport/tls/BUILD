@@ -305,3 +305,31 @@ grpc_cc_test(
         "//test/core/test_util:grpc_test_util",
     ],
 )
+
+grpc_cc_test(
+    name = "ssl_utils_test",
+    srcs = ["ssl_utils_test.cc"],
+    data = [
+        "//src/core/tsi/test_creds:ca.pem",
+        "//src/core/tsi/test_creds:client.key",
+        "//src/core/tsi/test_creds:client.pem",
+        "//src/core/tsi/test_creds:server1.key",
+        "//src/core/tsi/test_creds:server1.pem",
+    ],
+    external_deps = [
+        "gtest",
+        "absl/status",
+        "absl/base:log_severity",
+    ],
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//:grpc_security_base",
+        "//:grpc_trace",
+        "//:transport_auth_context",
+        "//:tsi_base",
+        "//:tsi_ssl_credentials",
+        "//src/core:grpc_tls_credentials",
+        "//test/core/test_util:grpc_test_util",
+    ],
+)
