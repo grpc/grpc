@@ -56,7 +56,7 @@ grpc_cc_library(
         "//:gpr",
         "//:grpc++",
         "//:grpc++_config_proto",
-        "//src/proto/grpc/reflection/v1alpha:reflection_proto",
+        "//src/proto/grpc/reflection/v1:reflection_proto",
     ],
 )
 
@@ -183,7 +183,7 @@ grpc_cc_library(
         "//:grpc_slice",
         "//src/core:grpc_check",
         "//src/core:load_file",
-        "//src/proto/grpc/reflection/v1alpha:reflection_proto",
+        "//src/proto/grpc/reflection/v1:reflection_proto",
     ],
 )
 
@@ -409,7 +409,7 @@ grpc_cc_binary(
         ":grpc_cli_utils",
         ":test_config",
         "//:grpc++",
-        "//src/proto/grpc/reflection/v1alpha:reflection_proto",
+        "//src/proto/grpc/reflection/v1:reflection_proto",
     ],
 )
 
