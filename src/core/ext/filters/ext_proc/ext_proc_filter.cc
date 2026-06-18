@@ -269,7 +269,6 @@ class ExtProcFilter::ExtProcCall : public DualRefCounted<ExtProcCall> {
   InterActivityLatch<absl::StatusOr<ExtProcResponse>> response_trailers_latch_;
   InterActivityPipe<absl::StatusOr<ExtProcResponse>, 1> request_body_pipe_;
   InterActivityPipe<absl::StatusOr<ExtProcResponse>, 1> response_body_pipe_;
-  InterActivityLatch<void> dispatch_trailers_latch_;
   InterActivityLatch<void> stream_error_status_latch_;
 
   void OnRecvMessage(absl::string_view payload);
@@ -1034,9 +1033,6 @@ auto ExtProcFilter::SideStreamToClientNormalMode(
                     SliceBuffer(std::move(slice)),
                     /*flags=*/0);
                 handler.SpawnPushMessage(std::move(new_msg));
-                if (body_mutation.end_of_stream) {
-                  ext_proc_call->dispatch_trailers_latch_.Set();
-                }
               }
             }
             return absl::OkStatus();
