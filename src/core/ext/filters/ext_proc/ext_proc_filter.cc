@@ -1085,10 +1085,9 @@ auto ExtProcFilter::ServerTrailingMetadataNormalMode(
                    << response.response_trailers.has_value();
                // Rule 3: Processing and non-observability mode
                if (self->config()->processing_mode.send_response_body &&
-                   !self->config()->observability_mode) {
-                 if (!ext_proc_call->response_body_pipe_.sender.IsClosed()) {
-                   ext_proc_call->response_body_pipe_.sender.MarkClosed();
-                 }
+                   !self->config()->observability_mode &&
+                   !ext_proc_call->response_body_pipe_.sender.IsClosed()) {
+                 ext_proc_call->response_body_pipe_.sender.MarkClosed();
                }
                if (response.response_trailers.has_value()) {
                  const auto& response_trailers = *response.response_trailers;
@@ -1156,10 +1155,9 @@ auto ExtProcFilter::ServerTrailingMetadataMaybeObservabilityMode(
         // Rule 2: Processing and observability mode (send_to_processor is true)
         // Both guarded by the global condition:
         if (self->config()->processing_mode.send_response_body &&
-            !self->config()->observability_mode) {
-          if (!ext_proc_call->response_body_pipe_.sender.IsClosed()) {
-            ext_proc_call->response_body_pipe_.sender.MarkClosed();
-          }
+            !self->config()->observability_mode &&
+            !ext_proc_call->response_body_pipe_.sender.IsClosed()) {
+          ext_proc_call->response_body_pipe_.sender.MarkClosed();
         }
         if (!result.ok()) {
           *metadata = CancelledServerMetadataFromStatus(result);
