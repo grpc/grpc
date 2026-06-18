@@ -885,25 +885,25 @@ auto ExtProcFilter::ServerInitialMetadataNormalMode(
       << "ExtProc: ServerInitialMetadataNormalMode pulled. metadata: "
       << (*metadata)->DebugString();
   return Seq(
-      TrySeq(Seq(ext_proc_call->SendMessageLocked(
-                     /*condition=*/true,
-                     [self = RefAsSubclass<ExtProcFilter>(), ext_proc_call,
-                      metadata]() {
-                       GRPC_TRACE_LOG(ext_proc_filter, INFO)
-                           << "ExtProc: Sending server initial metadata";
-                       upb::Arena serialization_arena;
-                       return CreateExtProcRequest(
-                           serialization_arena.ptr(),
-                           ExtProcRequestType::kServerHeaders, metadata->get(),
-                           self->config()->forwarding_allowed_headers,
-                           self->config()->forwarding_disallowed_headers,
-                           /*attributes=*/nullptr,
-                           /*observability_mode=*/false,
-                           /*is_first_message=*/false,
-                           self->config()->processing_mode.send_request_body,
-                           self->config()->processing_mode.send_response_body);
-                     }),
-                 ext_proc_call->response_headers_latch_.Wait()),
+      TrySeq(ext_proc_call->SendMessageLocked(
+                 /*condition=*/true,
+                 [self = RefAsSubclass<ExtProcFilter>(), ext_proc_call,
+                  metadata]() {
+                   GRPC_TRACE_LOG(ext_proc_filter, INFO)
+                       << "ExtProc: Sending server initial metadata";
+                   upb::Arena serialization_arena;
+                   return CreateExtProcRequest(
+                       serialization_arena.ptr(),
+                       ExtProcRequestType::kServerHeaders, metadata->get(),
+                       self->config()->forwarding_allowed_headers,
+                       self->config()->forwarding_disallowed_headers,
+                       /*attributes=*/nullptr,
+                       /*observability_mode=*/false,
+                       /*is_first_message=*/false,
+                       self->config()->processing_mode.send_request_body,
+                       self->config()->processing_mode.send_response_body);
+                 }),
+             ext_proc_call->response_headers_latch_.Wait(),
              [self = RefAsSubclass<ExtProcFilter>(),
               metadata](ExtProcResponse response) mutable -> absl::Status {
                GRPC_TRACE_LOG(ext_proc_filter, INFO)
@@ -928,12 +928,8 @@ auto ExtProcFilter::ServerInitialMetadataNormalMode(
                return absl::OkStatus();
              }),
       [handler, initiator, metadata](absl::Status result) mutable {
-        if (!result.ok()) {
-          handler.SpawnPushServerInitialMetadata(std::move(*metadata));
-          return result;
-        }
         handler.SpawnPushServerInitialMetadata(std::move(*metadata));
-        return absl::OkStatus();
+        return result;
       });
 }
 
@@ -1202,25 +1198,25 @@ auto ExtProcFilter::ServerTrailingMetadataNormalMode(
       << "ExtProc: ServerTrailingMetadataNormalMode pulled. Status OK: "
       << IsStatusOk(*metadata) << ", metadata: " << (*metadata)->DebugString();
   return Seq(
-      TrySeq(Seq(ext_proc_call->SendMessageLocked(
-                     !ext_proc_call->IsStreamClosed(),
-                     [self = RefAsSubclass<ExtProcFilter>(), ext_proc_call,
-                      metadata]() {
-                       GRPC_TRACE_LOG(ext_proc_filter, INFO)
-                           << "ExtProc: Sending server trailing metadata";
-                       upb::Arena serialization_arena;
-                       return CreateExtProcRequest(
-                           serialization_arena.ptr(),
-                           ExtProcRequestType::kServerTrailers, metadata->get(),
-                           self->config()->forwarding_allowed_headers,
-                           self->config()->forwarding_disallowed_headers,
-                           /*attributes=*/nullptr,
-                           /*observability_mode=*/false,
-                           /*is_first_message=*/false,
-                           self->config()->processing_mode.send_request_body,
-                           self->config()->processing_mode.send_response_body);
-                     }),
-                 ext_proc_call->response_trailers_latch_.Wait()),
+      TrySeq(ext_proc_call->SendMessageLocked(
+                 !ext_proc_call->IsStreamClosed(),
+                 [self = RefAsSubclass<ExtProcFilter>(), ext_proc_call,
+                  metadata]() {
+                   GRPC_TRACE_LOG(ext_proc_filter, INFO)
+                       << "ExtProc: Sending server trailing metadata";
+                   upb::Arena serialization_arena;
+                   return CreateExtProcRequest(
+                       serialization_arena.ptr(),
+                       ExtProcRequestType::kServerTrailers, metadata->get(),
+                       self->config()->forwarding_allowed_headers,
+                       self->config()->forwarding_disallowed_headers,
+                       /*attributes=*/nullptr,
+                       /*observability_mode=*/false,
+                       /*is_first_message=*/false,
+                       self->config()->processing_mode.send_request_body,
+                       self->config()->processing_mode.send_response_body);
+                 }),
+             ext_proc_call->response_trailers_latch_.Wait(),
              [self = RefAsSubclass<ExtProcFilter>(),
               metadata](ExtProcResponse response) mutable -> absl::Status {
                GRPC_TRACE_LOG(ext_proc_filter, INFO)
