@@ -175,6 +175,14 @@ class ExtProcFilter final : public V3InterceptorToV2Bridge<ExtProcFilter> {
                       RefCountedPtr<ExtProcCall> ext_proc_call);
   auto ServerInitialMetadata(CallHandler handler, CallInitiator initiator,
                              RefCountedPtr<ExtProcCall> ext_proc_call);
+  auto ServerInitialMetadataNormalMode(
+      CallHandler handler, CallInitiator initiator,
+      RefCountedPtr<ExtProcCall> ext_proc_call,
+      std::shared_ptr<ServerMetadataHandle> metadata);
+  auto ServerInitialMetadataMaybeObservabilityMode(
+      CallHandler handler, CallInitiator initiator,
+      RefCountedPtr<ExtProcCall> ext_proc_call, bool send_to_processor,
+      std::shared_ptr<ServerMetadataHandle> metadata);
 
   auto SendServerMessageRequest(const MessageHandle& message,
                                 ExtProcCall* ext_proc_call,
