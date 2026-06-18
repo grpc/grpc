@@ -257,7 +257,6 @@ class ExtProcFilter::ExtProcCall : public DualRefCounted<ExtProcCall> {
   }
 
   void MarkClientSendsDone();
-  void MarkServerSendsDone();
   void SetStreamErrorStatus(absl::Status status);
   absl::Status GetStreamErrorStatus();
   void IncrementOutstandingClientToServerMessages();
@@ -338,8 +337,6 @@ class ExtProcFilter::ExtProcCall : public DualRefCounted<ExtProcCall> {
   bool is_first_body_message_ ABSL_GUARDED_BY(&mu_) = true;
   // True if the client has half-closed (finished sending request messages).
   bool client_sends_done_ ABSL_GUARDED_BY(&mu_) = false;
-  // True if the server has finished sending response messages.
-  bool server_sends_done_ ABSL_GUARDED_BY(&mu_) = false;
   // True if the processor half-closed its sending stream (sent EOS).
   bool processor_sent_half_close_ ABSL_GUARDED_BY(&mu_) = false;
   // Number of client request body messages sent to the processor that are
@@ -486,28 +483,6 @@ void ExtProcFilter::ExtProcCall::MarkClientSendsDone() {
   }
 }
 
-void ExtProcFilter::ExtProcCall::MarkServerSendsDone() {
-  bool close_pipe = false;
-  {
-    MutexLock lock(&mu_);
-    if (!server_sends_done_) {
-      GRPC_TRACE_LOG(ext_proc_filter, INFO)
-          << "ExtProcCall " << this << " server sends done (boolean set)";
-      server_sends_done_ = true;
-      if (outstanding_server_to_client_messages_ == 0) {
-        close_pipe = true;
-      }
-    }
-  }
-  if (close_pipe) {
-    GRPC_TRACE_LOG(ext_proc_filter, INFO)
-        << "ExtProcCall " << this
-        << " MarkServerSendsDone: closing response body pipe";
-    if (!response_body_pipe_.sender.IsClosed()) {
-      response_body_pipe_.sender.MarkClosed();
-    }
-  }
-}
 
 void ExtProcFilter::ExtProcCall::SetStreamErrorStatus(absl::Status status) {
   MutexLock lock(&mu_);
@@ -557,33 +532,18 @@ void ExtProcFilter::ExtProcCall::IncrementOutstandingServerToClientMessages() {
 }
 
 bool ExtProcFilter::ExtProcCall::DecrementOutstandingServerToClientMessages() {
-  bool close_pipe = false;
-  {
-    MutexLock lock(&mu_);
-    if (outstanding_server_to_client_messages_ == 0) {
-      GRPC_TRACE_LOG(ext_proc_filter, INFO)
-          << "ExtProcCall " << this
-          << " DecrementOutstandingServerToClientMessages: already 0, failing";
-      return false;
-    }
-    outstanding_server_to_client_messages_--;
+  MutexLock lock(&mu_);
+  if (outstanding_server_to_client_messages_ == 0) {
     GRPC_TRACE_LOG(ext_proc_filter, INFO)
         << "ExtProcCall " << this
-        << " DecrementOutstandingServerToClientMessages: "
-        << outstanding_server_to_client_messages_;
-    if (server_sends_done_ && outstanding_server_to_client_messages_ == 0) {
-      close_pipe = true;
-    }
+        << " DecrementOutstandingServerToClientMessages: already 0, failing";
+    return false;
   }
-  if (close_pipe) {
-    GRPC_TRACE_LOG(ext_proc_filter, INFO)
-        << "ExtProcCall " << this
-        << " DecrementOutstandingServerToClientMessages: closing response body "
-           "pipe";
-    if (!response_body_pipe_.sender.IsClosed()) {
-      response_body_pipe_.sender.MarkClosed();
-    }
-  }
+  outstanding_server_to_client_messages_--;
+  GRPC_TRACE_LOG(ext_proc_filter, INFO)
+      << "ExtProcCall " << this
+      << " DecrementOutstandingServerToClientMessages: "
+      << outstanding_server_to_client_messages_;
   return true;
 }
 
@@ -1033,11 +993,10 @@ auto ExtProcFilter::ServerToClientMessagesNormalModeProducer(
                       return status;
                     });
               }),
-      [ext_proc_call](absl::Status status) {
+      [](absl::Status status) {
         GRPC_TRACE_LOG(ext_proc_filter, INFO)
             << "ExtProc: ServerToClientMessages finished sends, status: "
             << status.ToString();
-        ext_proc_call->MarkServerSendsDone();
         return status;
       });
 }
