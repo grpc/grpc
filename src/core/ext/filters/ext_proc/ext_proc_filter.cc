@@ -1035,7 +1035,7 @@ auto ExtProcFilter::SendServerMessageRequest(const MessageHandle& message,
                                                               ext_proc_call]() {
     ext_proc_call->GetAndSetIsFirstBodyMessage();
     GRPC_TRACE_LOG(ext_proc_filter, INFO)
-        << "ExtProc: ServerToClient body message intercepted:\n"
+        << "ExtProc: ServerToClientMessages body message intercepted:\n"
         << (msg_ptr != nullptr ? msg_ptr->DebugString() : "nullptr");
     upb::Arena arena;
     std::string message_bytes;
@@ -1056,7 +1056,7 @@ auto ExtProcFilter::SendServerMessageRequest(const MessageHandle& message,
   });
 }
 
-auto ExtProcFilter::ServerToClientMaybeObservabilityMode(
+auto ExtProcFilter::ServerToClientMessagesMessagesMaybeObservabilityMode(
     CallHandler handler, CallInitiator initiator,
     RefCountedPtr<ExtProcCall> ext_proc_call, bool send_to_processor) {
   return ForEach(
@@ -1074,7 +1074,7 @@ auto ExtProcFilter::ServerToClientMaybeObservabilityMode(
       });
 }
 
-auto ExtProcFilter::ServerToClientNormalMode(
+auto ExtProcFilter::ServerToClientMessagesMessagesNormalMode(
     CallHandler handler, CallInitiator initiator,
     RefCountedPtr<ExtProcCall> ext_proc_call) {
   auto server_to_sidestream = Map(
@@ -1098,7 +1098,7 @@ auto ExtProcFilter::ServerToClientNormalMode(
               }),
       [ext_proc_call](absl::Status status) {
         GRPC_TRACE_LOG(ext_proc_filter, INFO)
-            << "ExtProc: ServerToClient finished sends, status: "
+            << "ExtProc: ServerToClientMessages finished sends, status: "
             << status.ToString();
         ext_proc_call->MarkServerSendsDone();
         return status;
@@ -1128,7 +1128,7 @@ auto ExtProcFilter::ServerToClientNormalMode(
                 }
                 const auto& body_mutation = *response_body;
                 GRPC_TRACE_LOG(ext_proc_filter, INFO)
-                    << "ExtProc: ServerToClient playing body mutation: "
+                    << "ExtProc: ServerToClientMessages playing body mutation: "
                     << body_mutation.body.size() << "b";
                 auto slice = Slice::FromCopiedString(body_mutation.body);
                 auto new_msg = handler.arena()->MakePooled<Message>(
@@ -1162,25 +1162,26 @@ auto ExtProcFilter::ServerToClientNormalMode(
              });
 }
 
-auto ExtProcFilter::ServerToClient(CallHandler handler, CallInitiator initiator,
-                                   RefCountedPtr<ExtProcCall> ext_proc_call) {
+auto ExtProcFilter::ServerToClientMessages(
+    CallHandler handler, CallInitiator initiator,
+    RefCountedPtr<ExtProcCall> ext_proc_call) {
   return Race(If(
                   config_->processing_mode.send_response_body,
                   [this, handler, initiator, ext_proc_call]() mutable {
                     return If(
                         config_->observability_mode,
                         [this, handler, initiator, ext_proc_call]() mutable {
-                          return ServerToClientMaybeObservabilityMode(
+                          return ServerToClientMessagesMaybeObservabilityMode(
                               handler, initiator, ext_proc_call,
                               /*send_to_processor=*/true);
                         },
                         [this, handler, initiator, ext_proc_call]() mutable {
-                          return ServerToClientNormalMode(
+                          return ServerToClientMessagesNormalMode(
                               handler, initiator, std::move(ext_proc_call));
                         });
                   },
                   [this, handler, initiator, ext_proc_call]() mutable {
-                    return ServerToClientMaybeObservabilityMode(
+                    return ServerToClientMessagesMaybeObservabilityMode(
                         handler, initiator, std::move(ext_proc_call),
                         /*send_to_processor=*/false);
                   }),
@@ -1335,34 +1336,34 @@ auto ExtProcFilter::ServerTrailingMetadata(
       });
 }
 
-auto ExtProcFilter::ProcessServerToClient(
+auto ExtProcFilter::ProcessServerToClientMessages(
     CallHandler handler, CallInitiator initiator,
     RefCountedPtr<ExtProcCall> ext_proc_call) {
   return TrySeq(
       ServerInitialMetadata(handler, initiator, ext_proc_call),
       [this, handler, initiator, ext_proc_call]() mutable {
-        return Seq(ServerToClient(handler, initiator, ext_proc_call),
-                   [this, handler, initiator,
-                    ext_proc_call](absl::Status status) mutable {
-                     GRPC_TRACE_LOG(ext_proc_filter, INFO)
-                         << "ExtProc: ServerToClient completed with status: "
-                         << status.ToString();
-                     const bool is_error =
-                         !status.ok() &&
-                         status.code() != absl::StatusCode::kCancelled;
-                     return If(
-                         is_error,
-                         [handler, initiator, status]() mutable {
-                           handler.SpawnPushServerTrailingMetadata(
-                               CancelledServerMetadataFromStatus(status));
-                           initiator.SpawnCancel(status);
-                           return absl::OkStatus();
-                         },
-                         [this, handler, initiator, ext_proc_call]() mutable {
-                           return ServerTrailingMetadata(
-                               handler, initiator, std::move(ext_proc_call));
-                         });
-                   });
+        return Seq(
+            ServerToClientMessages(handler, initiator, ext_proc_call),
+            [this, handler, initiator,
+             ext_proc_call](absl::Status status) mutable {
+              GRPC_TRACE_LOG(ext_proc_filter, INFO)
+                  << "ExtProc: ServerToClientMessages completed with status: "
+                  << status.ToString();
+              const bool is_error =
+                  !status.ok() && status.code() != absl::StatusCode::kCancelled;
+              return If(
+                  is_error,
+                  [handler, initiator, status]() mutable {
+                    handler.SpawnPushServerTrailingMetadata(
+                        CancelledServerMetadataFromStatus(status));
+                    initiator.SpawnCancel(status);
+                    return absl::OkStatus();
+                  },
+                  [this, handler, initiator, ext_proc_call]() mutable {
+                    return ServerTrailingMetadata(handler, initiator,
+                                                  std::move(ext_proc_call));
+                  });
+            });
       });
 }
 
@@ -1378,7 +1379,7 @@ auto ExtProcFilter::SendClientMessageRequest(
       send_to_processor, [this, ext_proc_call, msg_ptr, end_of_stream,
                           end_of_stream_without_message, attributes]() {
         GRPC_TRACE_LOG(ext_proc_filter, INFO)
-            << "ExtProc: ClientToServer body message intercepted:\n"
+            << "ExtProc: ClientToServerMessages body message intercepted:\n"
             << (msg_ptr != nullptr ? msg_ptr->DebugString() : "nullptr");
         upb::Arena arena;
         std::string message_bytes;
@@ -1404,7 +1405,7 @@ auto ExtProcFilter::SendClientMessageRequest(
       });
 }
 
-auto ExtProcFilter::ClientToServerMaybeObservabilityMode(
+auto ExtProcFilter::ClientToServerMessagesMessagesMaybeObservabilityMode(
     CallHandler handler, CallInitiator initiator,
     RefCountedPtr<ExtProcCall> ext_proc_call, bool send_to_processor,
     ::google_protobuf_Struct* attributes) {
@@ -1424,7 +1425,7 @@ auto ExtProcFilter::ClientToServerMaybeObservabilityMode(
                  message = std::move(message)]() mutable {
                   if (!send_to_processor || ext_proc_call->IsStreamClosed()) {
                     GRPC_TRACE_LOG(ext_proc_filter, INFO)
-                        << "ExtProc: ClientToServer bypass message "
+                        << "ExtProc: ClientToServerMessages bypass message "
                            "pushed upstream:\n"
                         << (message != nullptr ? message->DebugString()
                                                : "nullptr");
@@ -1446,7 +1447,7 @@ auto ExtProcFilter::ClientToServerMaybeObservabilityMode(
       [self = RefAsSubclass<ExtProcFilter>(), initiator, ext_proc_call,
        send_to_processor, attributes]() mutable {
         GRPC_TRACE_LOG(ext_proc_filter, INFO)
-            << "ExtProc: ClientToServer finished sends";
+            << "ExtProc: ClientToServerMessages finished sends";
         MessageHandle null_msg = nullptr;
         return Map(self->SendClientMessageRequest(
                        null_msg, ext_proc_call.get(),
@@ -1461,7 +1462,7 @@ auto ExtProcFilter::ClientToServerMaybeObservabilityMode(
       });
 }
 
-auto ExtProcFilter::ClientToServerNormalMode(
+auto ExtProcFilter::ClientToServerMessagesMessagesNormalMode(
     CallHandler handler, CallInitiator initiator,
     RefCountedPtr<ExtProcCall> ext_proc_call,
     ::google_protobuf_Struct* attributes) {
@@ -1553,7 +1554,8 @@ auto ExtProcFilter::ClientToServerNormalMode(
                     const auto& body_mutation = *request_body;
                     if (!body_mutation.end_of_stream_without_message) {
                       GRPC_TRACE_LOG(ext_proc_filter, INFO)
-                          << "ExtProc: ClientToServer playing body mutation: "
+                          << "ExtProc: ClientToServerMessages playing body "
+                             "mutation: "
                           << body_mutation.body.size() << "b";
                       auto slice = Slice::FromCopiedString(body_mutation.body);
                       auto new_msg = initiator.arena()->MakePooled<Message>(
@@ -1567,7 +1569,7 @@ auto ExtProcFilter::ClientToServerNormalMode(
               }),
       [initiator, ext_proc_call](absl::Status status) mutable {
         GRPC_TRACE_LOG(ext_proc_filter, INFO)
-            << "ExtProc: ClientToServer finished sends, status: "
+            << "ExtProc: ClientToServerMessages finished sends, status: "
             << status.ToString()
             << ", IsClientSendsDone: " << ext_proc_call->IsClientSendsDone()
             << ", IsStreamClosed: " << ext_proc_call->IsStreamClosed();
@@ -1587,9 +1589,10 @@ auto ExtProcFilter::ClientToServerNormalMode(
              });
 }
 
-auto ExtProcFilter::ClientToServer(CallHandler handler, CallInitiator initiator,
-                                   RefCountedPtr<ExtProcCall> ext_proc_call,
-                                   ::google_protobuf_Struct* attributes) {
+auto ExtProcFilter::ClientToServerMessages(
+    CallHandler handler, CallInitiator initiator,
+    RefCountedPtr<ExtProcCall> ext_proc_call,
+    ::google_protobuf_Struct* attributes) {
   return Map(
       Race(If(
                config_->processing_mode.send_request_body,
@@ -1598,19 +1601,19 @@ auto ExtProcFilter::ClientToServer(CallHandler handler, CallInitiator initiator,
                      config_->observability_mode,
                      [this, handler, initiator, ext_proc_call,
                       attributes]() mutable {
-                       return ClientToServerMaybeObservabilityMode(
+                       return ClientToServerMessagesMaybeObservabilityMode(
                            handler, initiator, std::move(ext_proc_call),
                            /*send_to_processor=*/true, attributes);
                      },
                      [this, handler, initiator, ext_proc_call,
                       attributes]() mutable {
-                       return ClientToServerNormalMode(handler, initiator,
-                                                       std::move(ext_proc_call),
-                                                       attributes);
+                       return ClientToServerMessagesNormalMode(
+                           handler, initiator, std::move(ext_proc_call),
+                           attributes);
                      });
                },
                [this, handler, initiator, ext_proc_call, attributes]() mutable {
-                 return ClientToServerMaybeObservabilityMode(
+                 return ClientToServerMessagesMaybeObservabilityMode(
                      handler, initiator, std::move(ext_proc_call),
                      /*send_to_processor=*/false, attributes);
                }),
@@ -1742,10 +1745,10 @@ void ExtProcFilter::InterceptCall(UnstartedCallHandler unstarted_call_handler) {
                     [self, handler, initiator, ext_proc_call]() mutable {
                       GRPC_TRACE_LOG(ext_proc_filter, INFO)
                           << "ExtProc: server_to_client task started";
-                      return self->ProcessServerToClient(handler, initiator,
-                                                         ext_proc_call);
+                      return self->ProcessServerToClientMessages(
+                          handler, initiator, ext_proc_call);
                     });
-                return self->ClientToServer(
+                return self->ClientToServerMessages(
                     handler, initiator, std::move(ext_proc_call), attributes);
               });
         });

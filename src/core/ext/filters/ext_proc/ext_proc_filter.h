@@ -171,8 +171,8 @@ class ExtProcFilter final : public V3InterceptorToV2Bridge<ExtProcFilter> {
 
   auto ProcessServerToClient(CallHandler handler, CallInitiator initiator,
                              RefCountedPtr<ExtProcCall> ext_proc_call);
-  auto ServerToClient(CallHandler handler, CallInitiator initiator,
-                      RefCountedPtr<ExtProcCall> ext_proc_call);
+  auto ServerToClientMessages(CallHandler handler, CallInitiator initiator,
+                              RefCountedPtr<ExtProcCall> ext_proc_call);
   auto ServerInitialMetadata(CallHandler handler, CallInitiator initiator,
                              RefCountedPtr<ExtProcCall> ext_proc_call);
   auto ServerInitialMetadataNormalMode(
@@ -187,11 +187,12 @@ class ExtProcFilter final : public V3InterceptorToV2Bridge<ExtProcFilter> {
   auto SendServerMessageRequest(const MessageHandle& message,
                                 ExtProcCall* ext_proc_call,
                                 bool send_to_processor);
-  auto ServerToClientMaybeObservabilityMode(
+  auto ServerToClientMessagesMaybeObservabilityMode(
       CallHandler handler, CallInitiator initiator,
       RefCountedPtr<ExtProcCall> ext_proc_call, bool send_to_processor);
-  auto ServerToClientNormalMode(CallHandler handler, CallInitiator initiator,
-                                RefCountedPtr<ExtProcCall> ext_proc_call);
+  auto ServerToClientMessagesNormalMode(
+      CallHandler handler, CallInitiator initiator,
+      RefCountedPtr<ExtProcCall> ext_proc_call);
   auto ServerTrailingMetadata(CallHandler handler, CallInitiator initiator,
                               RefCountedPtr<ExtProcCall> ext_proc_call);
   auto ServerTrailingMetadataNormalMode(
@@ -202,16 +203,17 @@ class ExtProcFilter final : public V3InterceptorToV2Bridge<ExtProcFilter> {
       CallHandler handler, CallInitiator initiator,
       RefCountedPtr<ExtProcCall> ext_proc_call, bool send_to_processor,
       std::shared_ptr<ServerMetadataHandle> metadata);
-  auto ClientToServer(CallHandler handler, CallInitiator initiator,
-                      RefCountedPtr<ExtProcCall> ext_proc_call,
-                      ::google_protobuf_Struct* attributes);
-  auto ClientToServerMaybeObservabilityMode(
+  auto ClientToServerMessages(CallHandler handler, CallInitiator initiator,
+                              RefCountedPtr<ExtProcCall> ext_proc_call,
+                              ::google_protobuf_Struct* attributes);
+  auto ClientToServerMessagesMaybeObservabilityMode(
       CallHandler handler, CallInitiator initiator,
       RefCountedPtr<ExtProcCall> ext_proc_call, bool send_to_processor,
       ::google_protobuf_Struct* attributes);
-  auto ClientToServerNormalMode(CallHandler handler, CallInitiator initiator,
-                                RefCountedPtr<ExtProcCall> ext_proc_call,
-                                ::google_protobuf_Struct* attributes);
+  auto ClientToServerMessagesNormalMode(
+      CallHandler handler, CallInitiator initiator,
+      RefCountedPtr<ExtProcCall> ext_proc_call,
+      ::google_protobuf_Struct* attributes);
   auto SendClientMessageRequest(const MessageHandle& message,
                                 ExtProcCall* ext_proc_call, bool end_of_stream,
                                 bool end_of_stream_without_message,
