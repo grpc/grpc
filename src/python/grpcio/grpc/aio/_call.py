@@ -293,7 +293,7 @@ class _APIStyle(enum.IntEnum):
 
 
 class _UnaryResponseMixin(Call, Generic[ResponseType]):
-    _call_response: asyncio.Task[ResponseType]
+    _call_response: asyncio.Task[Union[ResponseType, EOFType]]
 
     def _init_unary_response_mixin(
         self, response_task: asyncio.Task[ResponseType]
