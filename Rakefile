@@ -254,32 +254,66 @@ task 'gem:native', [:plat, :build_type] do |t, args|
     unless unix_platforms_without_debug_symbols.include?(plat)
       `bash src/ruby/nativedebug/build_package.sh #{plat}`
       # Native debug gems uploaded to GCS, are copied to ruby-native-debug-symbols for grpc_publish_packages to recognize
-      `mkdir -p pkg/ruby-native-debug-symbols`
-      `cp src/ruby/nativedebug/pkg/*.gem pkg/ruby-native-debug-symbols/`
+      FileUtils.mkdir_p(target = 'pkg/ruby-native-debug-symbols')
+      FileUtils.cp(Dir.glob('src/ruby/nativedebug/pkg/*.gem'), target)
     end
   end
 end
 
 desc 'Publish native debug rubygems to GCS'
 task 'publish:native_debug', [:gem_dir] do |_t, args|
-  gem_dir = File.expand_path(args[:gem_dir] || 'tmp/nativedebug')
-  gcs_root = 'gs://packages.grpc.io/'
-  gcs_path = "#{gcs_root}grpc-ruby-native-debug-symbols"
+  require 'rubygems/package'
+
+  gem_dir = File.expand_path(args[:gem_dir] || 'build/ruby/nativedebug')
+  force_upload = ENV['FORCE'].to_s.downcase == 'true'
+  gcs_base = 'gs://packages.grpc.io/grpc-ruby-native-debug-symbols'
 
   fail "Directory '#{gem_dir}' not found" unless Dir.exist?(gem_dir)
 
-  gems = Dir["#{gem_dir}/*native-debug*.gem"]
-  fail "No native-debug gems found in '#{gem_dir}'" if gems.empty?
+  gem_files = Dir["#{gem_dir}/*native-debug*.gem"]
+  fail "No native-debug gems found in '#{gem_dir}'" if gem_files.empty?
 
-  Dir.chdir(gem_dir) do
-    `sha256sum *native-debug*.gem > checksums.txt`
-    fail 'Checksum generation failed' unless $?.success?
-    `gsutil -m cp *native-debug*.gem checksums.txt #{gcs_path}`
-    fail 'Upload failed' unless $?.success?
-    `gsutil -m acl ch -u AllUsers:R #{gcs_path}* 2>/dev/null`
+  gems_by_version = gem_files.group_by do |path|
+    full_version = Gem::Package.new(path).spec.version.to_s
+    full_version.match(/^(\d+\.\d+\.\d+)/)[1]
+  rescue StandardError => e
+    fail "Error: Cannot extract metadata from #{File.basename(path)}. Is it a valid gem? (#{e.message})"
   end
 
-  puts "Successfully published to: #{gcs_path}"
+  Dir.chdir(gem_dir) do
+    gems_by_version.each_key do |base_version|
+      gcs_version_path = "#{gcs_base}/v#{base_version}"
+
+      # Check only for existence of gems
+      gems_exist = system("gsutil ls #{gcs_version_path}/*.gem > /dev/null 2>&1")
+
+      if gems_exist && !force_upload
+        puts "Skipping v#{base_version}.Gems already exist in #{gcs_version_path}. Use 'FORCE=true' to overwrite"
+        next
+      end
+
+      if force_upload
+        puts "Force upload enabled. Clearing existing files in #{gcs_version_path}."
+        system("gsutil -m rm #{gcs_version_path}/* > /dev/null 2>&1")
+      end
+
+      puts "Processing base version #{base_version}."
+
+      begin
+        # Generate checksums only for the gems belonging to this version
+        
+        fail 'Checksum generation failed' unless system("sha256sum *#{base_version}*.gem > checksums.txt")
+
+        # Upload all gems and the checksums file
+        upload_cmd = "gsutil -m cp *#{base_version}*.gem checksums.txt #{gcs_version_path}/"
+        fail 'Upload failed' unless system(upload_cmd)
+      ensure
+        FileUtils.rm_f('checksums.txt')
+      end
+
+      puts "Successfully published version #{base_version}."
+    end
+  end
 end
 
 # Define dependencies between the suites.
