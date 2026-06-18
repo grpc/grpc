@@ -57,11 +57,13 @@ class OutputBuffers final
  public:
   OutputBuffers(Clock* clock, uint32_t encode_alignment,
                 std::shared_ptr<TcpZTraceCollector> ztrace_collector,
-                std::string scheduler_config, TransportContextPtr ctx)
+                std::string scheduler_config, TransportContextPtr ctx,
+                uint64_t connection_id)
       : encode_alignment_(encode_alignment),
         clock_(clock),
         ztrace_collector_(std::move(ztrace_collector)),
         ctx_(std::move(ctx)),
+        connection_id_(connection_id),
         scheduling_party_(Party::Make(arena_)),
         scheduler_(MakeScheduler(std::move(scheduler_config))) {
     scheduling_party_->Spawn(
@@ -221,6 +223,7 @@ class OutputBuffers final
   Clock* const clock_;
   const std::shared_ptr<TcpZTraceCollector> ztrace_collector_;
   TransportContextPtr ctx_;
+  const uint64_t connection_id_;
   RefCountedPtr<Arena> arena_ = [ctx = ctx_]() {
     auto arena = SimpleArenaAllocator()->MakeArena();
     arena->SetContext<grpc_event_engine::experimental::EventEngine>(
@@ -420,7 +423,8 @@ class Endpoint final {
            RefCountedPtr<InputQueue> input_queues,
            PendingConnection pending_connection, bool enable_tracing,
            TransportContextPtr ctx,
-           std::shared_ptr<TcpZTraceCollector> ztrace_collector);
+           std::shared_ptr<TcpZTraceCollector> ztrace_collector,
+           uint64_t connection_id);
   Endpoint(const Endpoint&) = delete;
   Endpoint& operator=(const Endpoint&) = delete;
   Endpoint(Endpoint&&) = delete;
@@ -449,6 +453,7 @@ class Endpoint final {
     RefCountedPtr<Arena> arena;
     Clock* clock;
     RefCountedPtr<OutputBuffers::Reader> reader;
+    uint64_t connection_id;
     Timestamp last_metrics_update = Timestamp::ProcessEpoch();
   };
 
@@ -474,6 +479,7 @@ class DataEndpoints final : public channelz::DataSource {
                          uint32_t max_receive_message_length,
                          std::shared_ptr<TcpZTraceCollector> ztrace_collector,
                          bool enable_tracing, std::string scheduler_config,
+                         uint64_t connection_id,
                          data_endpoints_detail::Clock* clock = DefaultClock());
   ~DataEndpoints() { SourceDestructing(); }
 
