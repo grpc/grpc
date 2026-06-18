@@ -38,10 +38,10 @@ from ._metadata import MetadatumType
 
 RequestType = TypeVar("RequestType")
 ResponseType = TypeVar("ResponseType")
-SerializingFunction = Callable[[Any], bytes]
-DeserializingFunction = Callable[[bytes], Any]
+SerializingFunction = Callable[[RequestType], bytes]
+DeserializingFunction = Callable[[bytes], ResponseType]
 ChannelArgumentType = Sequence[Tuple[str, Any]]
 EOFType: TypeAlias = type(EOF)  # type: ignore[reportInvalidTypeForm]
 DoneCallbackType = Callable[[Any], None]
-RequestIterableType = Union[Iterable[Any], AsyncIterable[Any]]
-ResponseIterableType = AsyncIterable[Any]
+RequestIterableType = Union[Iterable[RequestType], AsyncIterable[RequestType]]
+ResponseIterableType = AsyncIterable[ResponseType]

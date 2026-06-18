@@ -75,6 +75,7 @@ include = [
 ]
 
 typeCheckingMode = "basic"
+reportMissingTypeArgument = "error"
 exclude = [
     "**/third_party",
     "**/build",
