@@ -251,7 +251,7 @@ class StreamUnaryMultiCallable(
         credentials: Optional[grpc.CallCredentials] = None,
         wait_for_ready: Optional[bool] = None,
         compression: Optional[grpc.Compression] = None,
-    ) -> _base_call.StreamUnaryCall:
+    ) -> _base_call.StreamUnaryCall[RequestType, ResponseType]:
         metadata = self._init_metadata(metadata, compression)
 
         if not self._interceptors:
@@ -299,7 +299,7 @@ class StreamStreamMultiCallable(
         credentials: Optional[grpc.CallCredentials] = None,
         wait_for_ready: Optional[bool] = None,
         compression: Optional[grpc.Compression] = None,
-    ) -> _base_call.StreamStreamCall:
+    ) -> _base_call.StreamStreamCall[RequestType, ResponseType]:
         metadata = self._init_metadata(metadata, compression)
 
         if not self._interceptors:
@@ -504,7 +504,7 @@ class Channel(_base_channel.Channel):
         request_serializer: Optional[SerializingFunction] = None,
         response_deserializer: Optional[DeserializingFunction] = None,
         _registered_method: Optional[bool] = False,
-    ) -> UnaryUnaryMultiCallable:
+    ) -> UnaryUnaryMultiCallable[RequestType, ResponseType]:
         return UnaryUnaryMultiCallable(
             self._channel,
             _common.encode(method),
@@ -524,7 +524,7 @@ class Channel(_base_channel.Channel):
         request_serializer: Optional[SerializingFunction] = None,
         response_deserializer: Optional[DeserializingFunction] = None,
         _registered_method: Optional[bool] = False,
-    ) -> UnaryStreamMultiCallable:
+    ) -> UnaryStreamMultiCallable[RequestType, ResponseType]:
         return UnaryStreamMultiCallable(
             self._channel,
             _common.encode(method),

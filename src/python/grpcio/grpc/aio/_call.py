@@ -293,9 +293,9 @@ class _APIStyle(enum.IntEnum):
 
 
 class _UnaryResponseMixin(Call, Generic[ResponseType]):
-    _call_response: asyncio.Task
+    _call_response: asyncio.Task[ResponseType]
 
-    def _init_unary_response_mixin(self, response_task: asyncio.Task):
+    def _init_unary_response_mixin(self, response_task: asyncio.Task[ResponseType]):
         self._call_response = response_task
 
     def cancel(self) -> bool:
@@ -336,10 +336,10 @@ class _UnaryResponseMixin(Call, Generic[ResponseType]):
 
 class _StreamResponseMixin(Call, Generic[ResponseType]):
     _message_aiter: Optional[AsyncIterator[ResponseType]]
-    _preparation: asyncio.Task
+    _preparation: asyncio.Task[Optional[AsyncIterator[ResponseType]]]
     _response_style: _APIStyle
 
-    def _init_stream_response_mixin(self, preparation: asyncio.Task):
+    def _init_stream_response_mixin(self, preparation: asyncio.Task[Optional[AsyncIterator[ResponseType]]]):
         self._message_aiter = None
         self._preparation = preparation
         self._response_style = _APIStyle.UNKNOWN
@@ -404,7 +404,7 @@ class _StreamResponseMixin(Call, Generic[ResponseType]):
 class _StreamRequestMixin(Call, Generic[RequestType]):
     _metadata_sent: asyncio.Event
     _done_writing_flag: bool
-    _async_request_poller: Optional[asyncio.Task]
+    _async_request_poller: Optional[asyncio.Task[None]]
     _request_style: _APIStyle
 
     def _init_stream_request_mixin(
@@ -551,7 +551,7 @@ class UnaryUnaryCall(
     """
 
     _request: RequestType
-    _invocation_task: asyncio.Task
+    _invocation_task: asyncio.Task[ResponseType]
 
     # pylint: disable=too-many-arguments
     def __init__(
@@ -618,7 +618,7 @@ class UnaryStreamCall(
     """
 
     _request: RequestType
-    _send_unary_request_task: asyncio.Task
+    _send_unary_request_task: asyncio.Task[None]
 
     # pylint: disable=too-many-arguments
     def __init__(
@@ -733,7 +733,7 @@ class StreamStreamCall(
     Returned when an instance of `StreamStreamMultiCallable` object is called.
     """
 
-    _initializer: asyncio.Task
+    _initializer: asyncio.Task[None]
 
     # pylint: disable=too-many-arguments
     def __init__(
