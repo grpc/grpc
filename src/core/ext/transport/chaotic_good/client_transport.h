@@ -98,8 +98,9 @@ class ChaoticGoodClientTransport final : public ClientTransport,
 
  private:
   struct Stream : public RefCounted<Stream> {
-    explicit Stream(CallHandler call)
+    explicit Stream(CallHandler call, uint32_t max_receive_message_length)
         : call(std::move(call)),
+          message_reassembly(max_receive_message_length),
           frame_dispatch_serializer(this->call.party()->MakeSpawnSerializer()) {
     }
     CallHandler call;
@@ -112,7 +113,8 @@ class ChaoticGoodClientTransport final : public ClientTransport,
    public:
     StreamDispatch(MpscSender<OutgoingFrame> outgoing_frames,
                    std::shared_ptr<grpc_event_engine::experimental::EventEngine>
-                       event_engine);
+                       event_engine,
+                   uint32_t max_receive_message_length);
 
     void OnIncomingFrame(IncomingFrame incoming_frame) override;
     void OnFrameTransportClosed(absl::Status status) override;
@@ -157,6 +159,7 @@ class ChaoticGoodClientTransport final : public ClientTransport,
     RefCountedPtr<StateWatcher> watcher_ ABSL_GUARDED_BY(mu_);
     MpscSender<OutgoingFrame> outgoing_frames_;
     std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_;
+    uint32_t max_receive_message_length_;
   };
 
   auto CallOutboundLoop(uint32_t stream_id, CallHandler call_handler);

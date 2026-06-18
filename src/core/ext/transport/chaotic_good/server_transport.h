@@ -109,7 +109,9 @@ class ChaoticGoodServerTransport final : public ServerTransport {
 
  private:
   struct Stream : public RefCounted<Stream> {
-    explicit Stream(CallInitiator call) : call(std::move(call)) {}
+    explicit Stream(CallInitiator call, uint32_t max_receive_message_length)
+        : call(std::move(call)),
+          message_reassembly(max_receive_message_length) {}
     CallInitiator call;
     MessageReassembly message_reassembly;
     Party::SpawnSerializer* spawn_serializer =
@@ -172,6 +174,7 @@ class ChaoticGoodServerTransport final : public ServerTransport {
     MessageChunker message_chunker_;
     MpscSender<OutgoingFrame> outgoing_frames_;
     RefCountedPtr<Party> party_;
+    uint32_t max_receive_message_length_;
   };
 
   struct ConstructionParameters {

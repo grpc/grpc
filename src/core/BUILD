@@ -9396,10 +9396,15 @@ grpc_cc_library(
     hdrs = [
         "ext/transport/chaotic_good/message_reassembly.h",
     ],
-    external_deps = ["absl/log"],
+    external_deps = [
+        "absl/log",
+        "absl/status",
+        "absl/strings:str_format",
+    ],
     deps = [
         "call_spine",
         "chaotic_good_frame",
+        "metadata",
     ],
 )
 
@@ -9670,6 +9675,7 @@ grpc_cc_library(
         "sync",
         "try_join",
         "try_seq",
+        "//:channel_arg_names",
         "//:exec_ctx",
         "//:gpr_platform",
         "//:grpc_base",
@@ -9734,6 +9740,7 @@ grpc_cc_library(
         "sync",
         "try_join",
         "try_seq",
+        "//:channel_arg_names",
         "//:exec_ctx",
         "//:gpr_platform",
         "//:grpc_base",
