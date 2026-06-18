@@ -412,7 +412,7 @@ class _StreamRequestMixin(Call, Generic[RequestType]):
     _request_style: _APIStyle
 
     def _init_stream_request_mixin(
-        self, request_iterator: Optional[RequestIterableType]
+        self, request_iterator: Optional[RequestIterableType[RequestType]]
     ):
         self._metadata_sent = asyncio.Event()
         self._done_writing_flag = False
@@ -442,7 +442,7 @@ class _StreamRequestMixin(Call, Generic[RequestType]):
         self._metadata_sent.set()
 
     async def _consume_request_iterator(
-        self, request_iterator: RequestIterableType
+        self, request_iterator: RequestIterableType[RequestType]
     ) -> None:
         try:
             if isinstance(request_iterator, AsyncIterable):
@@ -686,7 +686,7 @@ class StreamUnaryCall(
     # pylint: disable=too-many-arguments
     def __init__(
         self,
-        request_iterator: Optional[RequestIterableType],
+        request_iterator: Optional[RequestIterableType[RequestType]],
         deadline: Optional[float],
         metadata: Metadata,
         credentials: Optional[grpc.CallCredentials],
@@ -742,7 +742,7 @@ class StreamStreamCall(
     # pylint: disable=too-many-arguments
     def __init__(
         self,
-        request_iterator: Optional[RequestIterableType],
+        request_iterator: Optional[RequestIterableType[RequestType]],
         deadline: Optional[float],
         metadata: Metadata,
         credentials: Optional[grpc.CallCredentials],

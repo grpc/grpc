@@ -245,7 +245,7 @@ class StreamUnaryMultiCallable(
 ):
     def __call__(
         self,
-        request_iterator: Optional[RequestIterableType] = None,
+        request_iterator: Optional[RequestIterableType[RequestType]] = None,
         timeout: Optional[float] = None,
         metadata: Optional[MetadataType] = None,
         credentials: Optional[grpc.CallCredentials] = None,
@@ -293,7 +293,7 @@ class StreamStreamMultiCallable(
 ):
     def __call__(
         self,
-        request_iterator: Optional[RequestIterableType] = None,
+        request_iterator: Optional[RequestIterableType[RequestType]] = None,
         timeout: Optional[float] = None,
         metadata: Optional[MetadataType] = None,
         credentials: Optional[grpc.CallCredentials] = None,
