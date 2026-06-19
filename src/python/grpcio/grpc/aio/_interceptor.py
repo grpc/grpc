@@ -1151,7 +1151,7 @@ class UnaryUnaryCallResponse(
     def done(self) -> bool:
         return True
 
-    def add_done_callback(self, unused_callback) -> None:
+    def add_done_callback(self, callback) -> None:
         raise NotImplementedError()
 
     def time_remaining(self) -> Optional[float]:
@@ -1258,7 +1258,6 @@ class StreamStreamCallResponseIterator(
     _base_call.StreamStreamCall[Any, ResponseType],
     Generic[ResponseType],
 ):
-    _call: _base_call.StreamStreamCall[Any, ResponseType]
 
     """StreamStreamCall class which uses an alternative response iterator."""
 
@@ -1267,7 +1266,7 @@ class StreamStreamCallResponseIterator(
         # async iterator. So this path should not be reached.
         raise NotImplementedError()
 
-    async def write(self, request: RequestType) -> None:
+    async def write(self, request: Any) -> None:
         # Behind the scenes everything goes through the
         # async iterator provided by the InterceptedStreamStreamCall.
         # So this path should not be reached.
