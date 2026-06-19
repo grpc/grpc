@@ -353,6 +353,7 @@ class InterceptedCall:
 
         call_completed = False
 
+        call = None
         if interceptors_task.cancelled() or (
             interceptors_task.done()
             and interceptors_task.exception() is not None
@@ -366,12 +367,14 @@ class InterceptedCall:
         if call_completed:
             for callback in self._pending_add_done_callbacks:
                 callback(self)
-        else:
+        elif call is not None:
             for callback in self._pending_add_done_callbacks:
                 callback = functools.partial(
                     self._wrap_add_done_callback, callback
                 )
                 call.add_done_callback(callback)
+        else:
+            raise RuntimeError("Call not available")
 
         self._pending_add_done_callbacks = []
 
