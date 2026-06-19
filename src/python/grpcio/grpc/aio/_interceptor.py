@@ -30,6 +30,7 @@ from typing import (
     MutableSequence,
     NamedTuple,
     Optional,
+    Protocol,
     Sequence,
     TypeAlias,
     Union,
@@ -507,40 +508,48 @@ class InterceptedCall:
         call = await self._interceptors_task
         return await call.wait_for_connection()
 
+class _InterceptedUnaryMixinProtocol(Protocol):
+    _interceptors_task: asyncio.Task[Any]
+
 
 class _InterceptedUnaryResponseMixin:
     _interceptors_task: asyncio.Task[Any]
 
-    def __await__(self):
+    def __await__(self: _InterceptedUnaryMixinProtocol):
         call = yield from self._interceptors_task.__await__()
         response = yield from call.__await__()
         return response
 
-
-class _InterceptedStreamResponseMixin(Generic[ResponseType]):
+class _InterceptedStreamResponseMixinProtocol(Generic[ResponseType], Protocol):
     _interceptors_task: asyncio.Task[Any]
     _response_aiter: AsyncIterator[ResponseType] | None
 
-    def _init_stream_response_mixin(self) -> None:
+    def _wait_for_interceptor_task_response_iterator(
+        self,
+    ) -> AsyncIterator[ResponseType]: ...
+
+class _InterceptedStreamResponseMixin(Generic[ResponseType]):
+
+    def _init_stream_response_mixin(self: _InterceptedStreamResponseMixinProtocol[ResponseType]) -> None:
         # Is initialized later, otherwise if the iterator is not finally
         # consumed a logging warning is emitted by Asyncio.
         self._response_aiter = None
 
     async def _wait_for_interceptor_task_response_iterator(
-        self,
+        self: _InterceptedStreamResponseMixinProtocol[ResponseType],
     ) -> AsyncIterator[ResponseType]:
         call = await self._interceptors_task
         async for response in call:
             yield response
 
-    def __aiter__(self) -> AsyncIterator[ResponseType]:
+    def __aiter__(self: _InterceptedStreamResponseMixinProtocol[ResponseType]) -> AsyncIterator[ResponseType]:
         if self._response_aiter is None:
             self._response_aiter = (
                 self._wait_for_interceptor_task_response_iterator()
             )
         return self._response_aiter
 
-    async def read(self) -> Union[EOFType, ResponseType]:
+    async def read(self: _InterceptedStreamResponseMixinProtocol[ResponseType]) -> Union[EOFType, ResponseType]:
         if self._response_aiter is None:
             self._response_aiter = (
                 self._wait_for_interceptor_task_response_iterator()
