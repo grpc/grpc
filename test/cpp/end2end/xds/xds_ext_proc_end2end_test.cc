@@ -36,6 +36,7 @@
 #include "src/core/config/config_vars.h"
 #include "src/core/ext/filters/ext_proc/ext_proc_filter.h"
 #include "src/core/lib/experiments/config.h"
+#include "src/core/lib/debug/trace.h"
 #include "test/core/test_util/scoped_env_var.h"
 #include "test/core/test_util/test_config.h"
 #include "test/cpp/end2end/xds/xds_end2end_test_lib.h"
@@ -194,7 +195,11 @@ class XdsExtProcEnd2endTest : public XdsEnd2endTest {
  public:
   void SetUp() override {
     grpc_core::SetEnv("GRPC_EXPERIMENTAL_XDS_EXT_PROC_ON_CLIENT", "true");
-    grpc_core::SetEnv("GRPC_TRACE", "ext_proc_filter,promise_primitives");
+    grpc_tracer_set_enabled("ext_proc_filter", 1);
+    grpc_tracer_set_enabled("promise_primitives", 1);
+    grpc_tracer_set_enabled("call_state", 1);
+    grpc_tracer_set_enabled("channel", 1);
+    grpc_tracer_set_enabled("transport", 1);
     grpc_core::SetEnv("GRPC_VERBOSITY", "DEBUG");
     InitClient(MakeBootstrapBuilder().SetTrustedXdsServer(),
                /*lb_expected_authority=*/"",
@@ -326,6 +331,21 @@ class MockRequestHeadersExternalProcessorService
     return received_response_message_bodies_;
   }
 
+  bool received_request_headers() {
+    absl::MutexLock lock(&mu_);
+    return received_request_headers_;
+  }
+
+  bool received_response_headers() {
+    absl::MutexLock lock(&mu_);
+    return received_response_headers_;
+  }
+
+  bool received_response_trailers() {
+    absl::MutexLock lock(&mu_);
+    return received_response_trailers_;
+  }
+
   ::grpc::Status Process(
       ::grpc::ServerContext* /*context*/,
       ::grpc::ServerReaderWriter<
@@ -361,6 +381,10 @@ class MockRequestHeadersExternalProcessorService
       }
       ::envoy::service::ext_proc::v3::ProcessingResponse response;
       if (request.has_request_headers()) {
+        {
+          absl::MutexLock lock(&mu_);
+          received_request_headers_ = true;
+        }
         if (behavior_ == Behavior::kErrorOnRequestHeaders) {
           return ::grpc::Status(::grpc::StatusCode::INTERNAL,
                                 "error on request headers");
@@ -397,6 +421,10 @@ class MockRequestHeadersExternalProcessorService
               ->mutable_header_mutation();  // just continue without mutations
         }
       } else if (request.has_response_headers()) {
+        {
+          absl::MutexLock lock(&mu_);
+          received_response_headers_ = true;
+        }
         if (behavior_ == Behavior::kMutateHeaders) {
           auto* header_mutation = response.mutable_response_headers()
                                       ->mutable_response()
@@ -422,6 +450,10 @@ class MockRequestHeadersExternalProcessorService
               ->mutable_header_mutation();  // just continue without mutations
         }
       } else if (request.has_response_trailers()) {
+        {
+          absl::MutexLock lock(&mu_);
+          received_response_trailers_ = true;
+        }
         if (behavior_ == Behavior::kMutateTrailers) {
           auto* header_mutation =
               response.mutable_response_trailers()->mutable_header_mutation();
@@ -448,7 +480,9 @@ class MockRequestHeadersExternalProcessorService
         size_t body_count = 0;
         {
           absl::MutexLock lock(&mu_);
-          received_message_bodies_.push_back(request.request_body().body());
+          if (!request.request_body().end_of_stream_without_message()) {
+            received_message_bodies_.push_back(request.request_body().body());
+          }
           body_count = received_message_bodies_.size();
         }
         if (behavior_ == Behavior::kUnsolicitedResponseBody) {
@@ -591,8 +625,10 @@ class MockRequestHeadersExternalProcessorService
         size_t response_body_count = 0;
         {
           absl::MutexLock lock(&mu_);
-          received_response_message_bodies_.push_back(
-              request.response_body().body());
+          if (!request.response_body().end_of_stream_without_message()) {
+            received_response_message_bodies_.push_back(
+                request.response_body().body());
+          }
           response_body_count = received_response_message_bodies_.size();
         }
         if (behavior_ == Behavior::kErrorOnResponseBody) {
@@ -686,6 +722,9 @@ class MockRequestHeadersExternalProcessorService
   std::vector<std::string> received_message_bodies_ ABSL_GUARDED_BY(mu_);
   std::vector<std::string> received_response_message_bodies_
       ABSL_GUARDED_BY(mu_);
+  bool received_request_headers_ ABSL_GUARDED_BY(mu_) = false;
+  bool received_response_headers_ ABSL_GUARDED_BY(mu_) = false;
+  bool received_response_trailers_ ABSL_GUARDED_BY(mu_) = false;
 };
 
 TEST_P(XdsExtProcEnd2endTest,
@@ -3389,6 +3428,95 @@ TEST_P(XdsExtProcEnd2endTest, NoProcessingModeBypassesFilter) {
   Status status = SendRpc(RpcOptions());
   EXPECT_TRUE(status.ok()) << status.error_message() << " ("
                            << status.error_details() << ")";
+}
+
+TEST_P(XdsExtProcEnd2endTest, ObservabilityModeAllProcessingModesEnabled) {
+  int ext_proc_port = grpc_pick_unused_port_or_die();
+  std::string server_address = absl::StrCat("localhost:", ext_proc_port);
+  MockRequestHeadersExternalProcessorService service;
+  service.SetBehavior(
+      MockRequestHeadersExternalProcessorService::Behavior::kObservabilityMode);
+  ServerBuilder builder;
+  builder.AddListeningPort(server_address, InsecureServerCredentials());
+  builder.RegisterService(&service);
+  std::unique_ptr<Server> server = builder.BuildAndStart();
+  ASSERT_NE(server, nullptr);
+  auto ext_proc =
+      ExternalProcessorBuilder()
+          .SetTargetUri(absl::StrCat("dns:localhost:", ext_proc_port))
+          .SetInsecureChannelCredentials()
+          .SetRequestHeaderMode(envoy::extensions::filters::http::ext_proc::v3::
+                                    ProcessingMode::SEND)
+          .SetResponseHeaderMode(envoy::extensions::filters::http::ext_proc::
+                                     v3::ProcessingMode::SEND)
+          .SetRequestBodyMode(envoy::extensions::filters::http::ext_proc::v3::
+                                   ProcessingMode::GRPC)
+          .SetResponseBodyMode(envoy::extensions::filters::http::ext_proc::v3::
+                                   ProcessingMode::GRPC)
+          .SetResponseTrailerMode(envoy::extensions::filters::http::ext_proc::
+                                      v3::ProcessingMode::SEND)
+          .SetObservabilityMode(true)
+          .Build();
+  CreateAndStartBackends(1, /*xds_enabled=*/false);
+  SetListenerAndRouteConfiguration(balancer_.get(),
+                                   BuildListenerWithExtProcFilter(ext_proc),
+                                   default_route_config_);
+  Cluster ext_proc_cluster = default_cluster_;
+  ext_proc_cluster.set_name(std::string(kExtProcClusterName));
+  balancer_->ads_service()->SetCdsResource(ext_proc_cluster);
+  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
+
+  ClientContext context;
+  EchoRequest request;
+  request.set_message("observability-test-request");
+  EchoResponse response;
+  Status status = stub_->Echo(&context, request, &response);
+  EXPECT_TRUE(status.ok()) << status.error_message() << " ("
+                           << status.error_details() << ")";
+  EXPECT_EQ(response.message(), "observability-test-request");
+
+  const int kMaxRetries = 100;
+  bool all_received = false;
+  for (int i = 0; i < kMaxRetries; ++i) {
+    if (service.received_request_headers() &&
+        service.received_response_headers() &&
+        service.received_response_trailers() &&
+        !service.received_message_bodies().empty() &&
+        !service.received_response_message_bodies().empty()) {
+      all_received = true;
+      break;
+    }
+    absl::SleepFor(absl::Milliseconds(50));
+  }
+  if (!all_received) {
+    LOG(ERROR) << "Timeout waiting for all messages. Status: "
+               << "request_headers=" << service.received_request_headers()
+               << ", response_headers=" << service.received_response_headers()
+               << ", response_trailers=" << service.received_response_trailers()
+               << ", request_bodies=" << service.received_message_bodies().size()
+               << ", response_bodies=" << service.received_response_message_bodies().size();
+  }
+  EXPECT_TRUE(all_received);
+
+  if (all_received) {
+    EXPECT_EQ(service.received_message_bodies().size(), 1);
+    EchoRequest received_req;
+    ASSERT_TRUE(
+        received_req.ParseFromString(service.received_message_bodies()[0]));
+    EXPECT_EQ(received_req.message(), "observability-test-request");
+
+    EXPECT_EQ(service.received_response_message_bodies().size(), 1);
+    EchoResponse received_resp;
+    ASSERT_TRUE(received_resp.ParseFromString(
+        service.received_response_message_bodies()[0]));
+    EXPECT_EQ(received_resp.message(), "observability-test-request");
+  }
+
+  EXPECT_EQ(backends_[0]->backend_service()->request_count(), 1);
+  EXPECT_EQ(backends_[0]->backend_service()->response_count(), 1);
+
+  server->Shutdown();
 }
 
 }  // namespace
