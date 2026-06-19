@@ -150,9 +150,8 @@ class Metadata(Collection):  # noqa: PLW1641
     def __contains__(self, key: object) -> bool:
         if isinstance(key, MetadataKey):
             return key in self._metadata
-        raise TypeError(
-            f"__contains__ on {self.__class__.__name__} expects MetadataKey type"
-        )
+        err_msg = f"__contains__ on {self.__class__.__name__} expects MetadataKey type"
+        raise TypeError(err_msg)
 
     def __eq__(self, other: object) -> bool:
         if isinstance(other, self.__class__):
