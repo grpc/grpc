@@ -269,13 +269,13 @@ class StreamStreamClientInterceptor(ClientInterceptor, metaclass=ABCMeta):
     async def intercept_stream_stream(
         self,
         continuation: Callable[
-            [ClientCallDetails, RequestIterableType],
+            [ClientCallDetails, RequestIterableType[RequestType]],
             Awaitable[_base_call.StreamStreamCall[RequestType, ResponseType]],
         ],
         client_call_details: ClientCallDetails,
-        request_iterator: RequestIterableType,
+        request_iterator: RequestIterableType[RequestType],
     ) -> Union[
-        ResponseIterableType,
+        ResponseIterableType[ResponseType],
         _base_call.StreamStreamCall[RequestType, ResponseType],
     ]:
         """Intercepts a stream-stream invocation asynchronously.
