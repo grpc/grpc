@@ -346,6 +346,11 @@ class MockRequestHeadersExternalProcessorService
     return received_response_trailers_;
   }
 
+  bool received_end_of_stream_without_message() {
+    absl::MutexLock lock(&mu_);
+    return received_end_of_stream_without_message_;
+  }
+
   ::grpc::Status Process(
       ::grpc::ServerContext* /*context*/,
       ::grpc::ServerReaderWriter<
@@ -480,7 +485,9 @@ class MockRequestHeadersExternalProcessorService
         size_t body_count = 0;
         {
           absl::MutexLock lock(&mu_);
-          if (!request.request_body().end_of_stream_without_message()) {
+          if (request.request_body().end_of_stream_without_message()) {
+            received_end_of_stream_without_message_ = true;
+          } else {
             received_message_bodies_.push_back(request.request_body().body());
           }
           body_count = received_message_bodies_.size();
@@ -725,6 +732,7 @@ class MockRequestHeadersExternalProcessorService
   bool received_request_headers_ ABSL_GUARDED_BY(mu_) = false;
   bool received_response_headers_ ABSL_GUARDED_BY(mu_) = false;
   bool received_response_trailers_ ABSL_GUARDED_BY(mu_) = false;
+  bool received_end_of_stream_without_message_ ABSL_GUARDED_BY(mu_) = false;
 };
 
 TEST_P(XdsExtProcEnd2endTest,
@@ -3466,7 +3474,6 @@ TEST_P(XdsExtProcEnd2endTest, ObservabilityModeAllProcessingModesEnabled) {
   balancer_->ads_service()->SetCdsResource(ext_proc_cluster);
   EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-
   ClientContext context;
   EchoRequest request;
   request.set_message("observability-test-request");
@@ -3475,47 +3482,92 @@ TEST_P(XdsExtProcEnd2endTest, ObservabilityModeAllProcessingModesEnabled) {
   EXPECT_TRUE(status.ok()) << status.error_message() << " ("
                            << status.error_details() << ")";
   EXPECT_EQ(response.message(), "observability-test-request");
-
-  const int kMaxRetries = 100;
-  bool all_received = false;
-  for (int i = 0; i < kMaxRetries; ++i) {
-    if (service.received_request_headers() &&
-        service.received_response_headers() &&
-        service.received_response_trailers() &&
-        !service.received_message_bodies().empty() &&
-        !service.received_response_message_bodies().empty()) {
-      all_received = true;
-      break;
-    }
-    absl::SleepFor(absl::Milliseconds(50));
-  }
-  if (!all_received) {
-    LOG(ERROR) << "Timeout waiting for all messages. Status: "
-               << "request_headers=" << service.received_request_headers()
-               << ", response_headers=" << service.received_response_headers()
-               << ", response_trailers=" << service.received_response_trailers()
-               << ", request_bodies=" << service.received_message_bodies().size()
-               << ", response_bodies=" << service.received_response_message_bodies().size();
-  }
-  EXPECT_TRUE(all_received);
-
-  if (all_received) {
-    EXPECT_EQ(service.received_message_bodies().size(), 1);
-    EchoRequest received_req;
-    ASSERT_TRUE(
-        received_req.ParseFromString(service.received_message_bodies()[0]));
-    EXPECT_EQ(received_req.message(), "observability-test-request");
-
-    EXPECT_EQ(service.received_response_message_bodies().size(), 1);
-    EchoResponse received_resp;
-    ASSERT_TRUE(received_resp.ParseFromString(
-        service.received_response_message_bodies()[0]));
-    EXPECT_EQ(received_resp.message(), "observability-test-request");
-  }
-
+  // Assert immediately without waiting.
+  EXPECT_TRUE(service.received_request_headers());
+  EXPECT_TRUE(service.received_response_headers());
+  EXPECT_TRUE(service.received_response_trailers());
+  ASSERT_EQ(service.received_message_bodies().size(), 1);
+  ASSERT_EQ(service.received_response_message_bodies().size(), 1);
+  EchoRequest received_req;
+  ASSERT_TRUE(received_req.ParseFromString(service.received_message_bodies()[0]));
+  EXPECT_EQ(received_req.message(), "observability-test-request");
+  EchoResponse received_resp;
+  ASSERT_TRUE(received_resp.ParseFromString(service.received_response_message_bodies()[0]));
+  EXPECT_EQ(received_resp.message(), "observability-test-request");
   EXPECT_EQ(backends_[0]->backend_service()->request_count(), 1);
   EXPECT_EQ(backends_[0]->backend_service()->response_count(), 1);
+  server->Shutdown();
+}
 
+TEST_P(XdsExtProcEnd2endTest, ObservabilityModeBidiStream10Messages) {
+  int ext_proc_port = grpc_pick_unused_port_or_die();
+  std::string server_address = absl::StrCat("localhost:", ext_proc_port);
+  MockRequestHeadersExternalProcessorService service;
+  service.SetBehavior(MockRequestHeadersExternalProcessorService::Behavior::
+                          kObservabilityMode);
+  ServerBuilder builder;
+  builder.AddListeningPort(server_address, InsecureServerCredentials());
+  builder.RegisterService(&service);
+  std::unique_ptr<Server> server = builder.BuildAndStart();
+  ASSERT_NE(server, nullptr);
+  auto ext_proc =
+      ExternalProcessorBuilder()
+          .SetTargetUri(absl::StrCat("dns:localhost:", ext_proc_port))
+          .SetInsecureChannelCredentials()
+          .SetRequestHeaderMode(envoy::extensions::filters::http::ext_proc::v3::
+                                    ProcessingMode::SEND)
+          .SetResponseHeaderMode(envoy::extensions::filters::http::ext_proc::
+                                     v3::ProcessingMode::SEND)
+          .SetRequestBodyMode(envoy::extensions::filters::http::ext_proc::v3::
+                                   ProcessingMode::GRPC)
+          .SetResponseBodyMode(envoy::extensions::filters::http::ext_proc::v3::
+                                   ProcessingMode::GRPC)
+          .SetResponseTrailerMode(envoy::extensions::filters::http::ext_proc::
+                                      v3::ProcessingMode::SEND)
+          .SetObservabilityMode(true)
+          .Build();
+  CreateAndStartBackends(1, /*xds_enabled=*/false);
+  SetListenerAndRouteConfiguration(balancer_.get(),
+                                   BuildListenerWithExtProcFilter(ext_proc),
+                                   default_route_config_);
+  Cluster ext_proc_cluster = default_cluster_;
+  ext_proc_cluster.set_name(std::string(kExtProcClusterName));
+  balancer_->ads_service()->SetCdsResource(ext_proc_cluster);
+  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
+  ClientContext context;
+  auto stream = stub_->BidiStream(&context);
+  ASSERT_NE(stream, nullptr);
+  // Send 10 messages and read 10 responses in ping-pong fashion.
+  for (int i = 0; i < 10; ++i) {
+    EchoRequest request;
+    request.set_message(absl::StrCat("observability-stream-request-", i));
+    ASSERT_TRUE(stream->Write(request));
+    EchoResponse response;
+    ASSERT_TRUE(stream->Read(&response));
+    EXPECT_EQ(response.message(), absl::StrCat("observability-stream-request-", i));
+  }
+  ASSERT_TRUE(stream->WritesDone());
+  EchoResponse response;
+  EXPECT_FALSE(stream->Read(&response)); // Expect EOF
+  Status status = stream->Finish();
+  EXPECT_TRUE(status.ok()) << status.error_message() << " ("
+                           << status.error_details() << ")";
+  // Assert immediately without waiting.
+  EXPECT_TRUE(service.received_request_headers());
+  EXPECT_TRUE(service.received_response_headers());
+  EXPECT_TRUE(service.received_response_trailers());
+  ASSERT_EQ(service.received_message_bodies().size(), 10);
+  ASSERT_EQ(service.received_response_message_bodies().size(), 10);
+  EXPECT_TRUE(service.received_end_of_stream_without_message());
+  for (int i = 0; i < 10; ++i) {
+    EchoRequest received_req;
+    ASSERT_TRUE(received_req.ParseFromString(service.received_message_bodies()[i]));
+    EXPECT_EQ(received_req.message(), absl::StrCat("observability-stream-request-", i));
+    EchoResponse received_resp;
+    ASSERT_TRUE(received_resp.ParseFromString(service.received_response_message_bodies()[i]));
+    EXPECT_EQ(received_resp.message(), absl::StrCat("observability-stream-request-", i));
+  }
   server->Shutdown();
 }
 
