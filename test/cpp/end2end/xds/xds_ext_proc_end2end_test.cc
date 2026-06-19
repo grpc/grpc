@@ -3357,6 +3357,40 @@ TEST_P(XdsExtProcEnd2endTest, ServerToClientExtraResponseBodyResponseFails) {
   server->Shutdown();
 }
 
+TEST_P(XdsExtProcEnd2endTest, NoProcessingModeBypassesFilter) {
+  auto ext_proc =
+      ExternalProcessorBuilder()
+          .SetTargetUri("dns:localhost:1234")  // Dummy port where nothing is listening
+          .SetInsecureChannelCredentials()
+          .SetRequestHeaderMode(envoy::extensions::filters::http::ext_proc::v3::
+                                    ProcessingMode::SKIP)
+          .SetResponseHeaderMode(envoy::extensions::filters::http::ext_proc::
+                                     v3::ProcessingMode::SKIP)
+          .SetRequestBodyMode(envoy::extensions::filters::http::ext_proc::v3::
+                                   ProcessingMode::NONE)
+          .SetResponseBodyMode(envoy::extensions::filters::http::ext_proc::v3::
+                                   ProcessingMode::NONE)
+          .SetResponseTrailerMode(envoy::extensions::filters::http::ext_proc::
+                                      v3::ProcessingMode::SKIP)
+          .Build();
+  CreateAndStartBackends(1, /*xds_enabled=*/false);
+  SetListenerAndRouteConfiguration(balancer_.get(),
+                                   BuildListenerWithExtProcFilter(ext_proc),
+                                   default_route_config_);
+  Cluster ext_proc_cluster = default_cluster_;
+  ext_proc_cluster.set_name(std::string(kExtProcClusterName));
+  balancer_->ads_service()->SetCdsResource(ext_proc_cluster);
+  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
+  // Make an RPC. It should succeed because it bypasses the ext proc filter
+  // completely and does not try to connect to the dummy port.
+  // Note: failure_mode_allow is false by default, so if it did try to connect,
+  // the RPC would fail.
+  Status status = SendRpc(RpcOptions());
+  EXPECT_TRUE(status.ok()) << status.error_message() << " ("
+                           << status.error_details() << ")";
+}
+
 }  // namespace
 }  // namespace testing
 }  // namespace grpc
