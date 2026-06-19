@@ -1234,7 +1234,7 @@ class _StreamCallResponseIterator(Generic[ResponseType]):
         return (await self._call.details()) or ""
 
     async def debug_error_string(self) -> Optional[str]:
-        return await self._call.debug_error_string()
+        return await self._call.debug_error_string()  # type: ignore[reportAttributeAccessIssue]
 
     def __aiter__(self):
         return self._response_iterator.__aiter__()
