@@ -498,8 +498,7 @@ class InterceptedCall:
             return err.debug_error_string()
         except asyncio.CancelledError:
             return ""
-
-        return await call.debug_error_string()
+        return await call.debug_error_string()  # type: ignore[reportAttributeAccessIssue]
 
     async def wait_for_connection(self) -> None:
         call = await self._interceptors_task
