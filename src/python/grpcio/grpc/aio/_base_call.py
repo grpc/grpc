@@ -114,7 +114,7 @@ class Call(RpcContext, metaclass=ABCMeta):
         """
 
     @abstractmethod
-    async def details(self) -> Optional[str]:
+    async def details(self) -> str:
         """Accesses the details sent by the server.
 
         Returns:
