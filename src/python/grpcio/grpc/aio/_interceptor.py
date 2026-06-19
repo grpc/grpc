@@ -529,7 +529,7 @@ class _InterceptedStreamResponseMixinProtocol(Generic[ResponseType], Protocol):
 
 class _InterceptedStreamResponseMixin(Generic[ResponseType]):
 
-    def _init_stream_response_mixin(self: _InterceptedStreamResponseMixinProtocol[ResponseType]) -> None:
+    def _init_stream_response_mixin(self) -> None:
         # Is initialized later, otherwise if the iterator is not finally
         # consumed a logging warning is emitted by Asyncio.
         self._response_aiter = None
