@@ -587,6 +587,7 @@ class UnaryUnaryCall(
         # NOTE(lidiz) asyncio.CancelledError is not a good transport for status,
         # because the asyncio.Task class do not cache the exception object.
         # https://github.com/python/cpython/blob/edad4d89e357c92f70c0324b937845d652b20afd/Lib/asyncio/tasks.py#L785
+        serialized_response: bytes = b""
         try:
             serialized_response = await self._cython_call.unary_unary(
                 serialized_request, self._metadata, self._context
