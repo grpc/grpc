@@ -459,7 +459,7 @@ class InterceptedCall:
         try:
             call = await self._interceptors_task
         except AioRpcError as err:
-            return err.details()
+            return err.details() or ""
         except asyncio.CancelledError:
             return _LOCAL_CANCELLATION_DETAILS
 
