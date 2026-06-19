@@ -28,6 +28,7 @@ from typing import (
     Generic,
     List,
     MutableSequence,
+    NamedTuple,
     Optional,
     Sequence,
     TypeAlias,
@@ -105,11 +106,16 @@ class ServerInterceptor(metaclass=ABCMeta):
         """
 
 
+class _ClientCallDetailsTuple(NamedTuple):
+    method: bytes
+    timeout: Optional[float]
+    metadata: Optional[Metadata]
+    credentials: Optional[grpc.CallCredentials]
+    wait_for_ready: Optional[bool]
+
+
 class ClientCallDetails(
-    collections.namedtuple(
-        "ClientCallDetails",
-        ("method", "timeout", "metadata", "credentials", "wait_for_ready"),
-    ),
+    _ClientCallDetailsTuple,
     grpc.ClientCallDetails,
 ):
     """Describes an RPC to be invoked.
@@ -124,12 +130,6 @@ class ClientCallDetails(
         credentials: An optional CallCredentials for the RPC.
         wait_for_ready: An optional flag to enable :term:`wait_for_ready` mechanism.
     """
-
-    method: bytes
-    timeout: Optional[float]
-    metadata: Optional[Metadata]
-    credentials: Optional[grpc.CallCredentials]
-    wait_for_ready: Optional[bool]
 
 
 class ClientInterceptor(metaclass=ABCMeta):
@@ -478,11 +478,11 @@ class InterceptedCall:
 
         return await call.code()
 
-    async def details(self) -> Optional[str]:
+    async def details(self) -> str:
         try:
             call = await self._interceptors_task
         except AioRpcError as err:
-            return err.details()
+            return err.details() or ""
         except asyncio.CancelledError:
             return _LOCAL_CANCELLATION_DETAILS
 
@@ -1157,7 +1157,7 @@ class UnaryUnaryCallResponse(
     async def code(self) -> grpc.StatusCode:
         return grpc.StatusCode.OK
 
-    async def details(self) -> Optional[str]:
+    async def details(self) -> str:
         return ""
 
     async def debug_error_string(self) -> Optional[str]:
@@ -1216,8 +1216,8 @@ class _StreamCallResponseIterator(Generic[ResponseType]):
     async def code(self) -> grpc.StatusCode:
         return await self._call.code()
 
-    async def details(self) -> Optional[str]:
-        return await self._call.details()
+    async def details(self) -> str:
+        return (await self._call.details()) or ""
 
     async def debug_error_string(self) -> Optional[str]:
         return await self._call.debug_error_string()
