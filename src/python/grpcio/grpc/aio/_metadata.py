@@ -147,8 +147,11 @@ class Metadata(Collection[MetadatumType]):  # noqa: PLW1641
     def set_all(self, key: MetadataKey, values: List[MetadataValue]) -> None:
         self._metadata[key] = values
 
-    def __contains__(self, key: MetadataKey) -> bool:
-        return key in self._metadata
+    def __contains__(self, key: object) -> bool:
+        if isinstance(key, MetadataKey):
+            return key in self._metadata
+        err_msg = f"__contains__ on {self.__class__.__name__} expects MetadataKey type"
+        raise TypeError(err_msg)
 
     def __eq__(self, other: object) -> bool:
         if isinstance(other, self.__class__):

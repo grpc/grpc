@@ -745,7 +745,8 @@ auto Http2ServerTransport::ReadAndProcessOneFrame() {
             /*max_frame_size_setting=*/settings_->acked().max_frame_size(),
             /*current_frame_header=*/header,
             // TODO(tjagtap) : [PH2][P0] : Fix
-            /*last_stream_id=*//*GetLastStreamId()*/ 100,
+            /*last_stream_id=*//*GetLastStreamId()*/
+            std::numeric_limits<uint32_t>::max(),
             /*is_first_settings_processed=*/
             settings_->IsFirstPeerSettingsApplied());
 
