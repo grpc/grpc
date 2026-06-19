@@ -554,11 +554,7 @@ class _InterceptedStreamResponseMixin(Generic[ResponseType]):
                 self._wait_for_interceptor_task_response_iterator()
             )
         try:
-            if self._response_aiter is not None and isinstance(
-                self._response_aiter, AsyncGenerator
-            ):
-                return await self._response_aiter.__anext__()
-            return cygrpc.EOF
+            return await self._response_aiter.__anext__()
         except StopAsyncIteration:
             return cygrpc.EOF
 
@@ -726,7 +722,7 @@ class InterceptedUnaryUnaryCall(
         response_deserializer: Optional[DeserializingFunction],
     ) -> Union[
         _base_call.UnaryUnaryCall[RequestType, ResponseType],
-        UnaryUnaryCallResponse,
+        UnaryUnaryCallResponse[ResponseType],
     ]:
         """Run the RPC call wrapped in interceptors"""
 
@@ -736,7 +732,7 @@ class InterceptedUnaryUnaryCall(
             request: RequestType,
         ) -> Union[
             _base_call.UnaryUnaryCall[RequestType, ResponseType],
-            UnaryUnaryCallResponse,
+            UnaryUnaryCallResponse[ResponseType],
         ]:
             if interceptors:
 
@@ -924,7 +920,7 @@ class InterceptedStreamUnaryCall(
     def __init__(
         self,
         interceptors: Sequence[StreamUnaryClientInterceptor],
-        request_iterator: Optional[RequestIterableType],
+        request_iterator: Optional[RequestIterableType[RequestType]],
         timeout: Optional[float],
         metadata: Metadata,
         credentials: Optional[grpc.CallCredentials],
@@ -962,7 +958,7 @@ class InterceptedStreamUnaryCall(
         metadata: Optional[Metadata],
         credentials: Optional[grpc.CallCredentials],
         wait_for_ready: Optional[bool],
-        request_iterator: RequestIterableType,
+        request_iterator: RequestIterableType[RequestType],
         request_serializer: Optional[SerializingFunction],
         response_deserializer: Optional[DeserializingFunction],
     ) -> _base_call.StreamUnaryCall[RequestType, ResponseType]:
@@ -971,7 +967,7 @@ class InterceptedStreamUnaryCall(
         async def _run_interceptor(
             interceptors: Sequence[StreamUnaryClientInterceptor],
             client_call_details: ClientCallDetails,
-            request_iterator: RequestIterableType,
+            request_iterator: RequestIterableType[RequestType],
         ) -> _base_call.StreamUnaryCall[RequestType, ResponseType]:
             if interceptors:
                 continuation = functools.partial(
@@ -1023,7 +1019,7 @@ class InterceptedStreamStreamCall(
     def __init__(
         self,
         interceptors: Sequence[StreamStreamClientInterceptor],
-        request_iterator: Optional[RequestIterableType],
+        request_iterator: Optional[RequestIterableType[RequestType]],
         timeout: Optional[float],
         metadata: Metadata,
         credentials: Optional[grpc.CallCredentials],
@@ -1063,7 +1059,7 @@ class InterceptedStreamStreamCall(
         metadata: Optional[Metadata],
         credentials: Optional[grpc.CallCredentials],
         wait_for_ready: Optional[bool],
-        request_iterator: RequestIterableType,
+        request_iterator: RequestIterableType[RequestType],
         request_serializer: Optional[SerializingFunction],
         response_deserializer: Optional[DeserializingFunction],
     ) -> Union[
@@ -1075,7 +1071,7 @@ class InterceptedStreamStreamCall(
         async def _run_interceptor(
             interceptors: List[StreamStreamClientInterceptor],
             client_call_details: ClientCallDetails,
-            request_iterator: RequestIterableType,
+            request_iterator: RequestIterableType[RequestType],
         ) -> Union[
             _base_call.StreamStreamCall[RequestType, ResponseType],
             StreamStreamCallResponseIterator[ResponseType],
@@ -1285,4 +1281,4 @@ class StreamStreamCallResponseIterator(
 
     @property
     def _done_writing_flag(self) -> bool:
-        return self._call._done_writing_flag
+        return self._call._done_writing_flag  # type: ignore[reportAttributeAccessIssue]
