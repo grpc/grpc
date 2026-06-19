@@ -17,12 +17,9 @@ from __future__ import annotations
 from abc import ABCMeta
 from abc import abstractmethod
 import asyncio
-import collections
 import functools
 from typing import (
-    TYPE_CHECKING,
     Any,
-    AsyncGenerator,
     AsyncIterable,
     AsyncIterator,
     Awaitable,
@@ -63,8 +60,10 @@ from ._utils import _timeout_to_deadline
 
 _LOCAL_CANCELLATION_DETAILS = "Locally cancelled by application!"
 
+
 class _FinishIteratorSentinel:
     pass
+
 
 _FINISH_ITERATOR_SENTINEL = _FinishIteratorSentinel()
 _FINISH_ITERATOR_SENTINEL_T: TypeAlias = _FinishIteratorSentinel
@@ -336,7 +335,9 @@ class InterceptedCall:
     _interceptors_task: asyncio.Task[_base_call.Call]
     _pending_add_done_callbacks: MutableSequence[DoneCallbackType]
 
-    def __init__(self, interceptors_task: asyncio.Task[_base_call.Call]) -> None:
+    def __init__(
+        self, interceptors_task: asyncio.Task[_base_call.Call]
+    ) -> None:
         self._interceptors_task = interceptors_task
         self._pending_add_done_callbacks = []
         self._interceptors_task.add_done_callback(
@@ -508,6 +509,7 @@ class InterceptedCall:
         call = await self._interceptors_task
         return await call.wait_for_connection()
 
+
 class _InterceptedUnaryMixinProtocol(Protocol):
     _interceptors_task: asyncio.Task[Any]
 
@@ -520,13 +522,15 @@ class _InterceptedUnaryResponseMixin:
         response = yield from call.__await__()
         return response
 
-class _InterceptedStreamResponseMixinProtocol(Protocol, Generic[ResponseType]):
+
+class _InterceptedStreamResponseMixinProtocol(Generic[ResponseType], Protocol):
     _interceptors_task: asyncio.Task[Any]
     _response_aiter: AsyncIterator[ResponseType] | None
 
     def _wait_for_interceptor_task_response_iterator(
         self,
     ) -> AsyncIterator[ResponseType]: ...
+
 
 class _InterceptedStreamResponseMixin(Generic[ResponseType]):
 
@@ -542,14 +546,18 @@ class _InterceptedStreamResponseMixin(Generic[ResponseType]):
         async for response in call:
             yield response
 
-    def __aiter__(self: _InterceptedStreamResponseMixinProtocol[ResponseType]) -> AsyncIterator[ResponseType]:
+    def __aiter__(
+        self: _InterceptedStreamResponseMixinProtocol[ResponseType],
+    ) -> AsyncIterator[ResponseType]:
         if self._response_aiter is None:
             self._response_aiter = (
                 self._wait_for_interceptor_task_response_iterator()
             )
         return self._response_aiter
 
-    async def read(self: _InterceptedStreamResponseMixinProtocol[ResponseType]) -> Union[EOFType, ResponseType]:
+    async def read(
+        self: _InterceptedStreamResponseMixinProtocol[ResponseType],
+    ) -> Union[EOFType, ResponseType]:
         if self._response_aiter is None:
             self._response_aiter = (
                 self._wait_for_interceptor_task_response_iterator()
@@ -562,7 +570,9 @@ class _InterceptedStreamResponseMixin(Generic[ResponseType]):
 
 class _InterceptedStreamRequestMixin(Generic[RequestType]):
     _write_to_iterator_async_gen: Optional[AsyncIterable[RequestType]]
-    _write_to_iterator_queue: Optional[asyncio.Queue[Union[RequestType, _FINISH_ITERATOR_SENTINEL_T]]]
+    _write_to_iterator_queue: Optional[
+        asyncio.Queue[Union[RequestType, _FINISH_ITERATOR_SENTINEL_T]]
+    ]
     _status_code_task: Optional[asyncio.Task[grpc.StatusCode]]
     _interceptors_task: asyncio.Task[Any]
     _loop: asyncio.AbstractEventLoop
@@ -584,7 +594,9 @@ class _InterceptedStreamRequestMixin(Generic[RequestType]):
 
         return request_iterator
 
-    async def _proxy_writes_as_request_iterator(self) -> AsyncIterable[RequestType]:
+    async def _proxy_writes_as_request_iterator(
+        self,
+    ) -> AsyncIterable[RequestType]:
         await self._interceptors_task
 
         if self._write_to_iterator_queue is None:
