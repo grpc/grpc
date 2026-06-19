@@ -308,10 +308,10 @@ class InterceptedCall:
     final status, metadata and cancellation.
     """
 
-    _interceptors_task: asyncio.Task
+    _interceptors_task: asyncio.Task[_base_call.Call]
     _pending_add_done_callbacks: Sequence[DoneCallbackType]
 
-    def __init__(self, interceptors_task: asyncio.Task) -> None:
+    def __init__(self, interceptors_task: asyncio.Task[_base_call.Call]) -> None:
         self._interceptors_task = interceptors_task
         self._pending_add_done_callbacks = []
         self._interceptors_task.add_done_callback(
@@ -322,7 +322,7 @@ class InterceptedCall:
         self.cancel()
 
     def _fire_or_add_pending_done_callbacks(
-        self, interceptors_task: asyncio.Task
+        self, interceptors_task: asyncio.Task[_base_call.Call]
     ) -> None:
         if not self._pending_add_done_callbacks:
             return
