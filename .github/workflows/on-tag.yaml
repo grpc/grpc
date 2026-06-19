@@ -1,0 +1,17 @@
+# Publish new releases to Bazel Central Registry.
+name: Publish to BCR with new tag
+on:
+  push:
+    tags:
+      - 'v*'
+  # Temporary: run whenever you push code to this PR
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  publish:
+    uses: ./.github/workflows/publish-to-bcr.yaml
+    with:
+      #tag_name: ${{ github.ref_name }}
+      tag_name: "fake-tag"
