@@ -455,23 +455,25 @@ class InterceptedCall:
     def time_remaining(self) -> Optional[float]:
         raise NotImplementedError()
 
-    async def initial_metadata(self) -> Optional[Metadata]:
+    async def initial_metadata(self) -> Metadata:
         try:
             call = await self._interceptors_task
         except AioRpcError as err:
-            return err.initial_metadata()
+            md = err.initial_metadata()
+            return md if md is not None else Metadata()
         except asyncio.CancelledError:
-            return None
+            return Metadata()
 
         return await call.initial_metadata()
 
-    async def trailing_metadata(self) -> Optional[Metadata]:
+    async def trailing_metadata(self) -> Metadata:
         try:
             call = await self._interceptors_task
         except AioRpcError as err:
-            return err.trailing_metadata()
+            md = err.trailing_metadata()
+            return md if md is not None else Metadata()
         except asyncio.CancelledError:
-            return None
+            return Metadata()
 
         return await call.trailing_metadata()
 
@@ -1162,11 +1164,11 @@ class UnaryUnaryCallResponse(
     def time_remaining(self) -> Optional[float]:
         raise NotImplementedError()
 
-    async def initial_metadata(self) -> Optional[Metadata]:
-        return None
+    async def initial_metadata(self) -> Metadata:
+        return Metadata()
 
-    async def trailing_metadata(self) -> Optional[Metadata]:
-        return None
+    async def trailing_metadata(self) -> Metadata:
+        return Metadata()
 
     async def code(self) -> grpc.StatusCode:
         return grpc.StatusCode.OK
@@ -1221,10 +1223,10 @@ class _StreamCallResponseIterator(Generic[ResponseType]):
     def time_remaining(self) -> Optional[float]:
         return self._call.time_remaining()
 
-    async def initial_metadata(self) -> Optional[Metadata]:
+    async def initial_metadata(self) -> Metadata:
         return await self._call.initial_metadata()
 
-    async def trailing_metadata(self) -> Optional[Metadata]:
+    async def trailing_metadata(self) -> Metadata:
         return await self._call.trailing_metadata()
 
     async def code(self) -> grpc.StatusCode:
