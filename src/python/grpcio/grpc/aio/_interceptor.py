@@ -554,14 +554,14 @@ class _InterceptedStreamResponseMixin(Generic[ResponseType]):
 
 class _InterceptedStreamRequestMixin(Generic[RequestType]):
     _write_to_iterator_async_gen: Optional[AsyncIterable[RequestType]]
-    _write_to_iterator_queue: Optional[asyncio.Queue]
-    _status_code_task: Optional[asyncio.Task]
+    _write_to_iterator_queue: Optional[asyncio.Queue[Union[RequestType, _FINISH_ITERATOR_SENTINEL_T]]]
+    _status_code_task: Optional[asyncio.Task[grpc.StatusCode]]
     _interceptors_task: asyncio.Task[Any]
     _loop: asyncio.AbstractEventLoop
 
     def _init_stream_request_mixin(
-        self, request_iterator: Optional[RequestIterableType]
-    ) -> RequestIterableType:
+        self, request_iterator: Optional[RequestIterableType[RequestType]]
+    ) -> RequestIterableType[RequestType]:
         if request_iterator is None:
             # We provide our own request iterator which is a proxy
             # of the futures writes that will be done by the caller.
