@@ -15,13 +15,15 @@
 from __future__ import annotations
 
 from collections import OrderedDict
-from collections.abc import Collection
-from collections.abc import ItemsView
-from collections.abc import Iterable
-from collections.abc import Iterator
-from collections.abc import KeysView
-from collections.abc import Sequence
-from collections.abc import ValuesView
+from collections.abc import (
+    Collection,
+    ItemsView,
+    Iterable,
+    Iterator,
+    KeysView,
+    Sequence,
+    ValuesView,
+)
 from typing import Any, List, Optional, Tuple, Union
 
 from typing_extensions import Self
@@ -32,7 +34,7 @@ MetadatumType = Tuple[MetadataKey, MetadataValue]
 MetadataType = Union["Metadata", Sequence[MetadatumType]]
 
 
-class Metadata(Collection):  # noqa: PLW1641
+class Metadata(Collection[MetadatumType]):  # noqa: PLW1641
     """Metadata abstraction for the asynchronous calls and interceptors.
 
     The metadata is a mapping from str -> List[str]
@@ -51,7 +53,7 @@ class Metadata(Collection):  # noqa: PLW1641
             self.add(md_key, md_value)
 
     @classmethod
-    def from_tuple(cls, raw_metadata: tuple):
+    def from_tuple(cls, raw_metadata: tuple[MetadatumType, ...]) -> Self:
         # Note: We unintentionally support non-tuple arguments here. We plan
         # to emit a DeprecationWarning when a non-tuple type is used.
         if raw_metadata:
@@ -119,13 +121,13 @@ class Metadata(Collection):  # noqa: PLW1641
             for value in values:
                 yield (key, value)
 
-    def keys(self) -> KeysView:
+    def keys(self) -> KeysView[MetadataKey]:
         return KeysView(self._metadata)
 
-    def values(self) -> ValuesView:
+    def values(self) -> ValuesView[MetadataValue]:
         return ValuesView(self._metadata)
 
-    def items(self) -> ItemsView:
+    def items(self) -> ItemsView[MetadataKey, MetadataValue]:
         return ItemsView(self._metadata)
 
     def get(
@@ -145,8 +147,11 @@ class Metadata(Collection):  # noqa: PLW1641
     def set_all(self, key: MetadataKey, values: List[MetadataValue]) -> None:
         self._metadata[key] = values
 
-    def __contains__(self, key: MetadataKey) -> bool:
-        return key in self._metadata
+    def __contains__(self, key: object) -> bool:
+        if isinstance(key, MetadataKey):
+            return key in self._metadata
+        err_msg = f"__contains__ on {self.__class__.__name__} expects MetadataKey type"
+        raise TypeError(err_msg)
 
     def __eq__(self, other: object) -> bool:
         if isinstance(other, self.__class__):

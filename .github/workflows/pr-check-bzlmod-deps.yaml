@@ -10,6 +10,9 @@ on:
       - 'third_party/**'
       - 'tools/run_tests/sanity/**'
 
+permissions:
+  contents: read
+
 jobs:
   build:
     runs-on: ubuntu-latest
