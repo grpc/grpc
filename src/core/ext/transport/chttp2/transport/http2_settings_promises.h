@@ -335,15 +335,11 @@ class SettingsPromiseManager final : public RefCounted<SettingsPromiseManager> {
   };
 
  private:
-  Http2SettingsManager settings_;
-
   //////////////////////////////////////////////////////////////////////////////
   // Plumbing Settings with Chttp2Connector class
 
   void MaybeReportInitialSettings(
       grpc_event_engine::experimental::EventEngine* event_engine) {
-    // TODO(tjagtap) [PH2][P2] Relook at this while writing server. I think this
-    // will be different for client and server.
     if (on_receive_first_settings_ != nullptr) {
       GRPC_DCHECK(state_ == SettingsState::kFirstPeerSettingsReceived);
       GRPC_DCHECK(event_engine != nullptr);
@@ -364,8 +360,6 @@ class SettingsPromiseManager final : public RefCounted<SettingsPromiseManager> {
 
   void MaybeReportInitialSettingsAbort(
       grpc_event_engine::experimental::EventEngine* event_engine) {
-    // TODO(tjagtap) [PH2][P2] Relook at this while writing server. I think this
-    // will be different for client and server.
     if (on_receive_first_settings_ != nullptr) {
       GRPC_DCHECK(event_engine != nullptr);
       GRPC_DCHECK(state_ != SettingsState::kReady);
@@ -485,6 +479,7 @@ class SettingsPromiseManager final : public RefCounted<SettingsPromiseManager> {
   // make them writable. This is tracked via channelz in case it causes any
   // performance issues in the future.
   size_t num_peer_initial_window_size_increases_ = 0;
+  Http2SettingsManager settings_;
 };
 
 }  // namespace grpc_core
