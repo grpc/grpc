@@ -375,7 +375,8 @@ class InterceptedCall:
                 )
                 call.add_done_callback(callback)
         else:
-            raise RuntimeError("Call not available")
+            msg = "Call not available"
+            raise RuntimeError(msg)
 
         self._pending_add_done_callbacks = []
 
@@ -519,7 +520,7 @@ class _InterceptedUnaryResponseMixin:
         response = yield from call.__await__()
         return response
 
-class _InterceptedStreamResponseMixinProtocol(Generic[ResponseType], Protocol):
+class _InterceptedStreamResponseMixinProtocol(Protocol, Generic[ResponseType]):
     _interceptors_task: asyncio.Task[Any]
     _response_aiter: AsyncIterator[ResponseType] | None
 
@@ -587,7 +588,8 @@ class _InterceptedStreamRequestMixin(Generic[RequestType]):
         await self._interceptors_task
 
         if self._write_to_iterator_queue is None:
-            raise ValueError("Write iterator queue is not initialized")
+            msg = "Write iterator queue is not initialized"
+            raise ValueError(msg)
 
         while True:
             value = await self._write_to_iterator_queue.get()
