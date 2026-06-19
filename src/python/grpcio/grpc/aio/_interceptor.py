@@ -65,8 +65,11 @@ if TYPE_CHECKING:
 
 _LOCAL_CANCELLATION_DETAILS = "Locally cancelled by application!"
 
-_FINISH_ITERATOR_SENTINEL = object()
-_FINISH_ITERATOR_SENTINEL_T: TypeAlias = object
+class _FinishIteratorSentinel:
+    pass
+
+_FINISH_ITERATOR_SENTINEL = _FinishIteratorSentinel()
+_FINISH_ITERATOR_SENTINEL_T: TypeAlias = _FinishIteratorSentinel
 
 
 class ServerInterceptor(metaclass=ABCMeta):
@@ -584,7 +587,7 @@ class _InterceptedStreamRequestMixin(Generic[RequestType]):
 
         while True:
             value = await self._write_to_iterator_queue.get()
-            if value is _FINISH_ITERATOR_SENTINEL:
+            if isinstance(value, _FinishIteratorSentinel):
                 break
             yield value
 
