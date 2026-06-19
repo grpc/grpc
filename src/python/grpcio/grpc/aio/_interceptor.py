@@ -25,6 +25,7 @@ from typing import (
     Awaitable,
     Callable,
     List,
+    MutableSequence,
     Optional,
     Sequence,
     Union,
@@ -309,7 +310,7 @@ class InterceptedCall:
     """
 
     _interceptors_task: asyncio.Task[_base_call.Call]
-    _pending_add_done_callbacks: Sequence[DoneCallbackType]
+    _pending_add_done_callbacks: MutableSequence[DoneCallbackType]
 
     def __init__(self, interceptors_task: asyncio.Task[_base_call.Call]) -> None:
         self._interceptors_task = interceptors_task
