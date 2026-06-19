@@ -1224,10 +1224,12 @@ class _StreamCallResponseIterator(Generic[ResponseType]):
         return self._call.time_remaining()
 
     async def initial_metadata(self) -> Metadata:
-        return await self._call.initial_metadata()
+        md = await self._call.initial_metadata()
+        return md if md is not None else Metadata()
 
     async def trailing_metadata(self) -> Metadata:
-        return await self._call.trailing_metadata()
+        md = await self._call.trailing_metadata()
+        return md if md is not None else Metadata()
 
     async def code(self) -> grpc.StatusCode:
         return await self._call.code()
