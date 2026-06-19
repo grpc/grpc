@@ -1258,7 +1258,6 @@ class StreamStreamCallResponseIterator(
     _base_call.StreamStreamCall[Any, ResponseType],
     Generic[ResponseType],
 ):
-
     """StreamStreamCall class which uses an alternative response iterator."""
 
     async def read(self) -> Union[EOFType, ResponseType]:
