@@ -131,11 +131,11 @@ class UnaryUnaryClientInterceptor(ClientInterceptor, metaclass=ABCMeta):
     async def intercept_unary_unary(
         self,
         continuation: Callable[
-            [ClientCallDetails, RequestType], UnaryUnaryCall
+            [ClientCallDetails, RequestType], UnaryUnaryCall[RequestType, ResponseType]
         ],
         client_call_details: ClientCallDetails,
         request: RequestType,
-    ) -> Union[UnaryUnaryCall, ResponseType]:
+    ) -> Union[UnaryUnaryCall[RequestType, ResponseType], ResponseType]:
         """Intercepts a unary-unary invocation asynchronously.
 
         Args:
