@@ -584,7 +584,7 @@ class UnaryUnaryCall(
             self._request, self._request_serializer
         )
 
-        serialized_response: Optional[bytes] = b""
+        serialized_response: Optional[bytes] = None
         # NOTE(lidiz) asyncio.CancelledError is not a good transport for status,
         # because the asyncio.Task class do not cache the exception object.
         # https://github.com/python/cpython/blob/edad4d89e357c92f70c0324b937845d652b20afd/Lib/asyncio/tasks.py#L785
