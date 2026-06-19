@@ -542,7 +542,7 @@ class _StreamRequestMixin(Call, Generic[RequestType]):
             await self._raise_for_status()
 
 
-class UnaryUnaryCall(
+class UnaryUnaryCall(  # pyright: ignore[reportIncompatibleMethodOverride]
     _UnaryResponseMixin[ResponseType],
     Call,
     _base_call.UnaryUnaryCall[RequestType, ResponseType],
@@ -610,7 +610,7 @@ class UnaryUnaryCall(
             await self._raise_for_status()
 
 
-class UnaryStreamCall(
+class UnaryStreamCall(  # pyright: ignore[reportIncompatibleMethodOverride]
     _StreamResponseMixin[ResponseType],
     Call,
     _base_call.UnaryStreamCall[RequestType, ResponseType],
@@ -671,7 +671,7 @@ class UnaryStreamCall(
 
 
 # pylint: disable=too-many-ancestors
-class StreamUnaryCall(
+class StreamUnaryCall(  # pyright: ignore[reportIncompatibleMethodOverride]
     _StreamRequestMixin[RequestType],
     _UnaryResponseMixin[ResponseType],
     Call,
@@ -725,7 +725,7 @@ class StreamUnaryCall(
         return cygrpc.EOF
 
 
-class StreamStreamCall(
+class StreamStreamCall(  # pyright: ignore[reportIncompatibleMethodOverride]
     _StreamRequestMixin[RequestType],
     _StreamResponseMixin[ResponseType],
     Call,
