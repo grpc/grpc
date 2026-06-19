@@ -882,7 +882,7 @@ class PythonLanguage:
                 # Default set tested on master. Test oldest and newest.
                 return (
                     python310_config,
-                    python312_config,
+                    python314_config,
                     python315_config,
                 )
         elif args.compiler == "python3.10":
