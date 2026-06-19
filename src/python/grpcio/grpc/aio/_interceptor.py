@@ -207,11 +207,11 @@ class StreamUnaryClientInterceptor(ClientInterceptor, metaclass=ABCMeta):
     async def intercept_stream_unary(
         self,
         continuation: Callable[
-            [ClientCallDetails, RequestType], StreamUnaryCall
+            [ClientCallDetails, RequestType], StreamUnaryCall[RequestType, ResponseType]
         ],
         client_call_details: ClientCallDetails,
-        request_iterator: RequestIterableType,
-    ) -> StreamUnaryCall:
+        request_iterator: RequestIterableType[RequestType],
+    ) -> StreamUnaryCall[RequestType, ResponseType]:
         """Intercepts a stream-unary invocation asynchronously.
 
         Within the interceptor the usage of the call methods like `write` or
