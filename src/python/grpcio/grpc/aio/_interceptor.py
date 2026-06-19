@@ -132,7 +132,8 @@ class UnaryUnaryClientInterceptor(ClientInterceptor, metaclass=ABCMeta):
     async def intercept_unary_unary(
         self,
         continuation: Callable[
-            [ClientCallDetails, RequestType], UnaryUnaryCall[RequestType, ResponseType]
+            [ClientCallDetails, RequestType],
+            UnaryUnaryCall[RequestType, ResponseType],
         ],
         client_call_details: ClientCallDetails,
         request: RequestType,
@@ -168,11 +169,15 @@ class UnaryStreamClientInterceptor(ClientInterceptor, metaclass=ABCMeta):
     async def intercept_unary_stream(
         self,
         continuation: Callable[
-            [ClientCallDetails, RequestType], UnaryStreamCall[RequestType, ResponseType]
+            [ClientCallDetails, RequestType],
+            UnaryStreamCall[RequestType, ResponseType],
         ],
         client_call_details: ClientCallDetails,
         request: RequestType,
-    ) -> Union[ResponseIterableType[ResponseType], UnaryStreamCall[RequestType, ResponseType]]:
+    ) -> Union[
+        ResponseIterableType[ResponseType],
+        UnaryStreamCall[RequestType, ResponseType],
+    ]:
         """Intercepts a unary-stream invocation asynchronously.
 
         The function could return the call object or an asynchronous
@@ -208,7 +213,8 @@ class StreamUnaryClientInterceptor(ClientInterceptor, metaclass=ABCMeta):
     async def intercept_stream_unary(
         self,
         continuation: Callable[
-            [ClientCallDetails, RequestType], StreamUnaryCall[RequestType, ResponseType]
+            [ClientCallDetails, RequestType],
+            StreamUnaryCall[RequestType, ResponseType],
         ],
         client_call_details: ClientCallDetails,
         request_iterator: RequestIterableType[RequestType],
@@ -250,11 +256,15 @@ class StreamStreamClientInterceptor(ClientInterceptor, metaclass=ABCMeta):
     async def intercept_stream_stream(
         self,
         continuation: Callable[
-            [ClientCallDetails, RequestType], StreamStreamCall[RequestType, ResponseType]
+            [ClientCallDetails, RequestType],
+            StreamStreamCall[RequestType, ResponseType],
         ],
         client_call_details: ClientCallDetails,
         request_iterator: RequestIterableType[RequestType],
-    ) -> Union[ResponseIterableType[ResponseType], StreamStreamCall[RequestType, ResponseType]]:
+    ) -> Union[
+        ResponseIterableType[ResponseType],
+        StreamStreamCall[RequestType, ResponseType],
+    ]:
         """Intercepts a stream-stream invocation asynchronously.
 
         Within the interceptor the usage of the call methods like `write` or
@@ -312,7 +322,9 @@ class InterceptedCall:
     _interceptors_task: asyncio.Task[_base_call.Call]
     _pending_add_done_callbacks: MutableSequence[DoneCallbackType]
 
-    def __init__(self, interceptors_task: asyncio.Task[_base_call.Call]) -> None:
+    def __init__(
+        self, interceptors_task: asyncio.Task[_base_call.Call]
+    ) -> None:
         self._interceptors_task = interceptors_task
         self._pending_add_done_callbacks = []
         self._interceptors_task.add_done_callback(
