@@ -22,6 +22,7 @@ from grpc import _common
 from grpc import _compression
 from grpc import _grpcio_metadata
 from grpc._cython import cygrpc
+from typing_extensions import Self
 
 from . import _base_call
 from . import _base_channel
@@ -400,7 +401,7 @@ class Channel(_base_channel.Channel):
         self._active_calls.add(call)
         call.add_done_callback(self._active_calls.discard)
 
-    async def __aenter__(self):
+    async def __aenter__(self) -> Self:
         return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
