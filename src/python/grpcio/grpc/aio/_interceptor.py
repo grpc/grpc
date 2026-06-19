@@ -1266,7 +1266,7 @@ class StreamStreamCallResponseIterator(
         # async iterator. So this path should not be reached.
         raise NotImplementedError()
 
-    async def write(self, request: Any) -> None:
+    async def write(self, request: RequestType) -> None:
         # Behind the scenes everything goes through the
         # async iterator provided by the InterceptedStreamStreamCall.
         # So this path should not be reached.
