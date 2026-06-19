@@ -559,8 +559,8 @@ class CLanguage:
 
         if compiler == "default" or compiler == "cmake":
             return ("debian11", ["-DCMAKE_CXX_STANDARD=17"])
-        elif compiler == "gcc8":
-            return ("gcc_8", ["-DCMAKE_CXX_STANDARD=17"])
+        elif compiler == "gcc10":
+            return ("gcc_10", ["-DCMAKE_CXX_STANDARD=17"])
         elif compiler == "gcc10.2":
             return ("debian11", ["-DCMAKE_CXX_STANDARD=17"])
         elif compiler == "gcc10.2_openssl102":
@@ -594,6 +594,14 @@ class CLanguage:
         elif compiler == "clang11":
             return (
                 "clang_11",
+                self._clang_cmake_configure_extra_args()
+                + [
+                    "-DCMAKE_CXX_STANDARD=17",
+                ],
+            )
+        elif compiler == "clang14":
+            return (
+                "clang_14",
                 self._clang_cmake_configure_extra_args()
                 + [
                     "-DCMAKE_CXX_STANDARD=17",
@@ -1063,7 +1071,7 @@ class CSharpLanguage:
         for test_runtime in self.test_runtimes:
             if test_runtime == "coreclr":
                 assembly_extension = ".dll"
-                assembly_subdir = "bin/%s/netcoreapp3.1" % msbuild_config
+                assembly_subdir = "bin/%s/net6.0" % msbuild_config
                 runtime_cmd = ["dotnet", "exec"]
             elif test_runtime == "mono":
                 assembly_extension = ".exe"
@@ -1718,7 +1726,9 @@ argp.add_argument(
     "--compiler",
     choices=[
         "default",
-        "gcc8",
+        # The gcc:10 docker image which is 10.5 as of May 2026.
+        "gcc10",
+        # Uses debian11 docker image which comes with gcc 10.2
         "gcc10.2",
         "gcc10.2_openssl102",
         "gcc10.2_openssl111",
@@ -1726,6 +1736,7 @@ argp.add_argument(
         "gcc14",
         "gcc_musl",
         "clang11",
+        "clang14",
         "clang19",
         # TODO: Automatically populate from supported version
         "python3.10",

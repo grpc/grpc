@@ -91,7 +91,7 @@
 // It's also acceptable to return a promise that resolves to the
 // relevant return type listed above.
 //
-// OnFinalize is added to intecept call finalization.
+// OnFinalize is added to intercept call finalization.
 // It must have one of the signatures:
 // - static inline const NoInterceptor OnFinalize:
 //   the filter does not intercept call finalization.
@@ -2015,7 +2015,13 @@ class CallFilters {
     GRPC_DCHECK_NE(message.get(), nullptr);
     GRPC_DCHECK_EQ(push_client_to_server_message_.get(), nullptr);
     push_client_to_server_message_ = std::move(message);
-    return [this]() { return call_state_.PollPushClientToServerMessage(); };
+    return Map([this]() { return call_state_.PollPushClientToServerMessage(); },
+               [this](StatusFlag r) {
+                 if (!IsStatusOk(r)) {
+                   push_client_to_server_message_ = nullptr;
+                 }
+                 return r;
+               });
   }
   // Client: Indicate that no more messages will be sent
   void FinishClientToServerSends() { call_state_.ClientToServerHalfClose(); }
@@ -2047,7 +2053,13 @@ class CallFilters {
   GRPC_MUST_USE_RESULT auto PushServerToClientMessage(MessageHandle message) {
     call_state_.BeginPushServerToClientMessage();
     push_server_to_client_message_ = std::move(message);
-    return [this]() { return call_state_.PollPushServerToClientMessage(); };
+    return Map([this]() { return call_state_.PollPushServerToClientMessage(); },
+               [this](StatusFlag r) {
+                 if (!IsStatusOk(r)) {
+                   push_server_to_client_message_ = nullptr;
+                 }
+                 return r;
+               });
   }
   // Server: Fetch server to client message
   // Returns a promise that resolves to ServerToClientNextMessage

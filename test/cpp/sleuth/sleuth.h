@@ -30,7 +30,7 @@ int RunSleuth(int argc, char** argv,
 // Does NOT expect `args` to include the binary name.
 // This is a wrapper for a cython API.
 // - python_print: Pointer to a Python Callable[[str], None].
-// - python_cb: Python bridge funciton to call python_print.
+// - python_cb: Python bridge function to call python_print.
 int RunSleuth_Wrapper(std::vector<std::string> args, void* python_print,
                       void (*python_cb)(void*, const std::string&));
 

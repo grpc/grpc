@@ -154,7 +154,7 @@ class TrieLookupTree {
     if (node->value.has_value()) {
       cb(current_key, *node->value);
     }
-    // Recurse on childeren
+    // Recurse on children
     for (const auto& [character, child_node] : node->child) {
       current_key.push_back(character);
       ForEachRecursive(child_node.get(), current_key, cb);

@@ -26,6 +26,7 @@
 
 namespace grpc_core {
 
+extern const grpc_channel_filter kLegacyServerConfigSelectorFilter;
 extern const grpc_channel_filter kServerConfigSelectorFilter;
 
 }  // namespace grpc_core

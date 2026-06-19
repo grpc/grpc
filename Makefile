@@ -367,8 +367,8 @@ E = @echo
 Q = @
 endif
 
-CORE_VERSION = 54.0.0
-CPP_VERSION = 1.82.0-dev
+CORE_VERSION = 55.0.0
+CPP_VERSION = 1.83.0-dev
 
 CPPFLAGS_NO_ARCH += $(addprefix -I, $(INCLUDES)) $(addprefix -D, $(DEFINES))
 CPPFLAGS += $(CPPFLAGS_NO_ARCH) $(ARCH_FLAGS)
@@ -404,7 +404,7 @@ SHARED_EXT_CORE = dll
 SHARED_EXT_CPP = dll
 
 SHARED_PREFIX =
-SHARED_VERSION_CORE = -54
+SHARED_VERSION_CORE = -55
 SHARED_VERSION_CPP = -1
 else ifeq ($(SYSTEM),Darwin)
 EXECUTABLE_SUFFIX =
@@ -733,6 +733,7 @@ LIBGRPC_SRC = \
     src/core/credentials/call/jwt_util.cc \
     src/core/credentials/call/oauth2/oauth2_credentials.cc \
     src/core/credentials/call/plugin/plugin_credentials.cc \
+    src/core/credentials/call/regional_access_boundary_fetcher.cc \
     src/core/credentials/call/token_fetcher/token_fetcher_credentials.cc \
     src/core/credentials/transport/alts/alts_credentials.cc \
     src/core/credentials/transport/alts/alts_security_connector.cc \
@@ -778,9 +779,7 @@ LIBGRPC_SRC = \
     src/core/ext/filters/channel_idle/idle_filter_state.cc \
     src/core/ext/filters/channel_idle/legacy_channel_idle_filter.cc \
     src/core/ext/filters/fault_injection/fault_injection_filter.cc \
-    src/core/ext/filters/fault_injection/fault_injection_service_config_parser.cc \
     src/core/ext/filters/gcp_authentication/gcp_authentication_filter.cc \
-    src/core/ext/filters/gcp_authentication/gcp_authentication_service_config_parser.cc \
     src/core/ext/filters/http/client/http_client_filter.cc \
     src/core/ext/filters/http/client_authority_filter.cc \
     src/core/ext/filters/http/http_filters_plugin.cc \
@@ -790,7 +789,6 @@ LIBGRPC_SRC = \
     src/core/ext/filters/rbac/rbac_filter.cc \
     src/core/ext/filters/rbac/rbac_service_config_parser.cc \
     src/core/ext/filters/stateful_session/stateful_session_filter.cc \
-    src/core/ext/filters/stateful_session/stateful_session_service_config_parser.cc \
     src/core/ext/transport/chttp2/alpn/alpn.cc \
     src/core/ext/transport/chttp2/chttp2_plugin.cc \
     src/core/ext/transport/chttp2/client/chttp2_connector.cc \
@@ -1186,7 +1184,6 @@ LIBGRPC_SRC = \
     src/core/ext/upbdefs-gen/xds/type/v3/typed_struct.upbdefs.c \
     src/core/filter/auth/client_auth_filter.cc \
     src/core/filter/auth/server_auth_filter.cc \
-    src/core/filter/blackboard.cc \
     src/core/filter/composite/composite_filter.cc \
     src/core/filter/fused_filters.cc \
     src/core/handshaker/endpoint_info/endpoint_info_handshaker.cc \
@@ -1351,6 +1348,7 @@ LIBGRPC_SRC = \
     src/core/lib/resource_quota/periodic_update.cc \
     src/core/lib/resource_quota/resource_quota.cc \
     src/core/lib/resource_quota/stream_quota.cc \
+    src/core/lib/resource_quota/telemetry.cc \
     src/core/lib/resource_quota/thread_quota.cc \
     src/core/lib/resource_tracker/resource_tracker.cc \
     src/core/lib/security/authorization/audit_logging.cc \
@@ -1452,6 +1450,7 @@ LIBGRPC_SRC = \
     src/core/server/server_config_selector_filter.cc \
     src/core/server/xds_channel_stack_modifier.cc \
     src/core/server/xds_server_config_fetcher.cc \
+    src/core/server/xds_server_config_fetcher_legacy.cc \
     src/core/service_config/service_config_channel_arg_filter.cc \
     src/core/service_config/service_config_impl.cc \
     src/core/service_config/service_config_parser.cc \
@@ -1493,6 +1492,7 @@ LIBGRPC_SRC = \
     src/core/tsi/ssl/session_cache/ssl_session_boringssl.cc \
     src/core/tsi/ssl/session_cache/ssl_session_cache.cc \
     src/core/tsi/ssl/session_cache/ssl_session_openssl.cc \
+    src/core/tsi/ssl_telemetry_utils.cc \
     src/core/tsi/ssl_transport_security.cc \
     src/core/tsi/ssl_transport_security_utils.cc \
     src/core/tsi/transport_security.cc \
@@ -1570,6 +1570,7 @@ LIBGRPC_SRC = \
     src/core/util/windows/time.cc \
     src/core/util/windows/tmpfile.cc \
     src/core/util/work_serializer.cc \
+    src/core/xds/grpc/blackboard.cc \
     src/core/xds/grpc/certificate_provider_store.cc \
     src/core/xds/grpc/file_watcher_certificate_provider_factory.cc \
     src/core/xds/grpc/xds_audit_logger_registry.cc \
@@ -1802,6 +1803,7 @@ LIBGRPC_SRC = \
     third_party/upb/upb/mini_descriptor/internal/encode.c \
     third_party/upb/upb/mini_descriptor/link.c \
     third_party/upb/upb/mini_table/extension_registry.c \
+    third_party/upb/upb/mini_table/generated_registry.c \
     third_party/upb/upb/mini_table/internal/message.c \
     third_party/upb/upb/mini_table/message.c \
     third_party/upb/upb/reflection/def_pool.c \
@@ -1918,8 +1920,8 @@ $(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $(LIBGRPC_
 ifeq ($(SYSTEM),Darwin)
 	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)grpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_OBJS) $(LIBDIR)/$(CONFIG)/libcares.a $(OPENSSL_MERGE_LIBS) $(ZLIB_MERGE_LIBS) $(LDLIBS_SECURE) $(LDLIBS)
 else
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgrpc.so.54 -o $(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_OBJS) $(LIBDIR)/$(CONFIG)/libcares.a $(OPENSSL_MERGE_LIBS) $(ZLIB_MERGE_LIBS) $(LDLIBS_SECURE) $(LDLIBS)
-	$(Q) ln -sf $(SHARED_PREFIX)grpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION_CORE).so.54
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgrpc.so.55 -o $(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_OBJS) $(LIBDIR)/$(CONFIG)/libcares.a $(OPENSSL_MERGE_LIBS) $(ZLIB_MERGE_LIBS) $(LDLIBS_SECURE) $(LDLIBS)
+	$(Q) ln -sf $(SHARED_PREFIX)grpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION_CORE).so.55
 	$(Q) ln -sf $(SHARED_PREFIX)grpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION_CORE).so
 endif
 endif

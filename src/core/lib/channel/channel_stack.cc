@@ -115,7 +115,7 @@ grpc_error_handle grpc_channel_stack_init(
     int initial_refs, grpc_iomgr_cb_func destroy, void* destroy_arg,
     std::vector<grpc_core::FilterAndConfig> filters,
     const grpc_core::ChannelArgs& channel_args, const char* name,
-    grpc_channel_stack* stack, const grpc_core::Blackboard* blackboard) {
+    grpc_channel_stack* stack) {
   if (GRPC_TRACE_FLAG_ENABLED(channel_stack)) {
     LOG(INFO) << "CHANNEL_STACK: init " << name;
     for (const auto& [filter, _] : filters) {
@@ -144,7 +144,6 @@ grpc_error_handle grpc_channel_stack_init(
                                              sizeof(grpc_channel_element));
 
   // init per-filter data
-  args.blackboard = blackboard;
   grpc_error_handle first_error;
   for (i = 0; i < filters.size(); ++i) {
     args.channel_stack = stack;
