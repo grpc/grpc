@@ -409,6 +409,22 @@ bool ProcessIncomingWindowUpdateFrameFlowControl(
 
 void MaybeAddTransportWindowUpdateFrame(
     chttp2::TransportFlowControl& flow_control, FrameSender& frame_sender) {
+  // Known Limitation:
+  // 1. writing_anyway is set to true always. This might cause the write cycle
+  // to just write 1 window update frame in one entire iteration of the
+  // Multiplexer Loop, making it wasteful. In most of the scenarios this is fine
+  // as TriggerWriteCycle is only invoked from code points that want to write
+  // frames on the wire.
+  // 2. This is because we write control frames before we write HEADER and DATA
+  // frames. So we don't know if we are going to write or not when we call
+  // this function.
+  // 3. Setting writing_anyway to false always might be a problem, because we
+  // would rather send a WINDOW_UPDATE frame with a small increment, than not
+  // send it at all.
+  // 4. In the future if we want to fix this, we need to call
+  // MaybeAddTransportWindowUpdateFrame once while writing control frames, and
+  // once after all the DATA and HEADER frames are written for the current write
+  // cycle.
   uint32_t window_size =
       flow_control.DesiredAnnounceSize(/*writing_anyway=*/true);
   if (window_size > 0) {
