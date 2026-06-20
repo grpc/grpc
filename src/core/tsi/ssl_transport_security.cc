@@ -89,8 +89,7 @@
 #define TSI_SSL_MAX_PROTECTED_FRAME_SIZE_LOWER_BOUND 1024
 #define TSI_SSL_HANDSHAKER_OUTGOING_BUFFER_INITIAL_SIZE 1024
 const size_t kMaxChainLength = 100;
-const char kDefaultBoringSSLKeyExchangeGroups[] =
-    "X25519MLKEM768:X25519:P-256:P-384:P-521";
+const char kDefaultBoringSSLKeyExchangeGroups[] = "X25519:P-256:P-384:P-521";
 [[maybe_unused]] const char kDefaultOpenSSL1_1_1KeyExchangeGroups[] =
     "X25519:P-256:P-384:P-521";
 [[maybe_unused]] const char kDefaultOpenSSL1_0_2KeyExchangeGroups[] =
