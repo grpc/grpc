@@ -260,7 +260,6 @@ grpc_objc_testing_library(
     deps = [
         "//src/core:cf_event_engine",
         "//test/core/event_engine/cf:cf_engine_unit_test_lib",
-        "//test/core/event_engine/test_suite/tests:dns",
         "//test/core/event_engine/test_suite/tests:timer",
     ],
 )
