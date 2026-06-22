@@ -26,22 +26,54 @@
 #include <grpc/support/port_platform.h>
 
 #include <memory>
+#include <utility>
 
+#include "src/core/call/security_context.h"
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/surface/call.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/channel_create.h"
 #include "src/core/lib/surface/channel_stack_type.h"
+#include "src/core/lib/transport/transport.h"
 #include "src/core/transport/session_endpoint.h"
+#include "src/core/util/down_cast.h"
 #include "src/core/util/ref_counted_ptr.h"
+#include "absl/functional/any_invocable.h"
 #include "absl/status/statusor.h"
 
 namespace grpc_core {
 
+class GoawayWatcher : public Transport::StateWatcher {
+ public:
+  explicit GoawayWatcher(absl::AnyInvocable<void()> callback)
+      : callback_(std::move(callback)) {}
+  void OnDisconnect(absl::Status /*status*/,
+                    DisconnectInfo disconnect_info) override {
+    if (disconnect_info.reason == Transport::StateWatcher::kGoaway) {
+      callback_();
+    }
+  }
+  void OnPeerMaxConcurrentStreamsUpdate(
+      uint32_t /*max_concurrent_streams*/,
+      std::unique_ptr<MaxConcurrentStreamsUpdateDoneHandle> /*on_done*/)
+      override {}
+  grpc_pollset_set* interested_parties() const override { return nullptr; }
+
+ private:
+  absl::AnyInvocable<void()> callback_;
+};
+
 absl::StatusOr<RefCountedPtr<Channel>> VirtualChannel::Create(
-    grpc_call* call, ChannelArgs args) {
+    grpc_call* call, ChannelArgs args,
+    absl::AnyInvocable<void()> goaway_callback) {
   Call* core_call = Call::FromC(call);
+
+  auto* sec_ctx = DownCast<grpc_client_security_context*>(
+      core_call->arena()->GetContext<SecurityContext>());
+  if (sec_ctx != nullptr && sec_ctx->auth_context != nullptr) {
+    args = args.SetObject(sec_ctx->auth_context);
+  }
 
   // TODO(snohria): Add support for Call V3.
   GRPC_CHECK(core_call->call_stack() != nullptr);
@@ -70,9 +102,14 @@ absl::StatusOr<RefCountedPtr<Channel>> VirtualChannel::Create(
   auto legacy_endpoint = SessionEndpoint::Create(call, true);
   auto transport = grpc_create_chttp2_transport(
       args, OrphanablePtr<grpc_endpoint>(legacy_endpoint), true);
-  // TODO(snohria): Implement a new channel type for virtual channels.
+
+  if (goaway_callback != nullptr) {
+    transport->StartWatch(
+        MakeRefCounted<GoawayWatcher>(std::move(goaway_callback)));
+  }
+
   auto channel = ChannelCreate("virtual_target", args,
-                               GRPC_CLIENT_DIRECT_CHANNEL, transport);
+                               GRPC_CLIENT_VIRTUAL_CHANNEL, transport);
   if (!channel.ok()) {
     return channel.status();
   }

@@ -198,7 +198,7 @@ void PosixEngineListenerImpl::AsyncConnectionAcceptor::NotifyOnAccept(
       auto peer_address = posix_interface.PeerAddress(fd.value());
       if (!peer_address.ok()) {
         auto listener_addr_uri = ResolvedAddressToURI(socket_.addr);
-        LOG(ERROR) << "Failed getpeername: " << grpc_core::StrError(errno)
+        LOG(ERROR) << "Failed getpeername: " << peer_address.status()
                    << ". Dropping the connection, and continuing "
                       "to listen on "
                    << (listener_addr_uri.ok() ? *listener_addr_uri

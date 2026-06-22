@@ -59,7 +59,7 @@ struct XdsRouteConfigResource : public XdsResourceType::ResourceData {
                std::string /*LB policy config*/>;
 
   struct RetryPolicy {
-    internal::StatusCodeSet retry_on;
+    StatusCodeSet retry_on;
     uint32_t num_retries;
 
     struct RetryBackOff {

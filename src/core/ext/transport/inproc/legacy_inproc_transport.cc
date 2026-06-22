@@ -40,6 +40,7 @@
 #include "src/core/config/core_configuration.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_args_preconditioning.h"
+#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/error.h"
@@ -68,6 +69,7 @@
 namespace {
 struct inproc_stream;
 bool cancel_stream_locked(inproc_stream* s, grpc_error_handle error);
+bool cancel_stream(inproc_stream* s, grpc_error_handle error);
 void maybe_process_ops_locked(inproc_stream* s, grpc_error_handle error);
 void op_state_machine_locked(inproc_stream* s, grpc_error_handle error);
 void log_metadata(const grpc_metadata_batch* md_batch, bool is_client,
@@ -195,8 +197,12 @@ struct inproc_stream {
       other_side = nullptr;  // will get filled in soon
       inproc_transport* st = t->other_side;
       if (st->accept_stream_cb == nullptr) {
-        cancel_stream_locked(this,
-                             absl::UnavailableError("inproc server closed"));
+        if (grpc_core::IsInprocCancelStreamEnabled()) {
+          cancel_stream(this, absl::UnavailableError("inproc server closed"));
+        } else {
+          cancel_stream_locked(this,
+                               absl::UnavailableError("inproc server closed"));
+        }
       } else {
         st->ref();
         // Pass the client-side stream address to the server-side for a ref
@@ -949,6 +955,14 @@ bool cancel_stream_locked(inproc_stream* s, grpc_error_handle error) {
   close_other_side_locked(s, "cancel_stream:other_side");
   close_stream_locked(s);
 
+  return ret;
+}
+
+bool cancel_stream(inproc_stream* s, grpc_error_handle error) {
+  inproc_transport* t = s->t;
+  gpr_mu_lock(&t->mu->mu);
+  bool ret = cancel_stream_locked(s, std::move(error));
+  gpr_mu_unlock(&t->mu->mu);
   return ret;
 }
 
