@@ -954,14 +954,13 @@ grpc_cc_test(
         "//test/core/test_util:grpc_test_util",
         "//test/core/test_util:scoped_env_var",
         "@envoy_api//envoy/config/cluster/v3:pkg_cc_proto",
+        "@envoy_api//envoy/config/common/mutation_rules/v3:pkg_cc_proto",
         "@envoy_api//envoy/extensions/filters/http/ext_proc/v3:pkg_cc_proto",
         "@envoy_api//envoy/extensions/filters/network/http_connection_manager/v3:pkg_cc_proto",
         "@envoy_api//envoy/extensions/grpc_service/call_credentials/access_token/v3:pkg_cc_proto",
         "@envoy_api//envoy/extensions/grpc_service/channel_credentials/google_default/v3:pkg_cc_proto",
         "@envoy_api//envoy/extensions/grpc_service/channel_credentials/insecure/v3:pkg_cc_proto",
-        "@envoy_api//envoy/config/common/mutation_rules/v3:pkg_cc_proto",
         "@envoy_api//envoy/service/ext_proc/v3:pkg_cc_grpc",
         "@envoy_api//envoy/service/ext_proc/v3:pkg_cc_proto",
     ],
 )
-

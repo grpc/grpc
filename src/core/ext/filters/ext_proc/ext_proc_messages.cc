@@ -155,8 +155,7 @@ absl::StatusOr<ExtProcResponse::HeaderMutation> ParseHeaderMutation(
     ValidationErrors errors;
     auto parsed = ParseXdsHeaderValueOption(set_headers[i], &errors);
     if (!errors.ok()) {
-      return errors.status(absl::StatusCode::kInternal,
-                           "validation failed");
+      return errors.status(absl::StatusCode::kInternal, "validation failed");
     }
     header_mutation_response.set_headers.push_back(std::move(parsed));
   }
@@ -476,6 +475,7 @@ class UpbHeaderMapEncoder {
   const std::vector<StringMatcher>& allowed_headers_;
   const std::vector<StringMatcher>& disallowed_headers_;
 };
+}  // namespace
 
 void PopulateMetadataBatchToHeaderMap(
     grpc_metadata_batch& batch,
@@ -486,6 +486,8 @@ void PopulateMetadataBatchToHeaderMap(
                               disallowed_headers);
   batch.Encode(&encoder);
 }
+
+namespace {
 
 void SetRequestHeaders(upb_Arena* arena,
                        envoy_config_core_v3_HeaderMap* headers,
@@ -530,14 +532,16 @@ void SetRequestBody(upb_Arena* arena, upb_StringView buf, bool end_of_stream,
                     bool end_of_stream_without_message,
                     envoy_service_ext_proc_v3_ProcessingRequest* request) {
   envoy_service_ext_proc_v3_ProcessingRequest_set_request_body(
-      request, CreateHttpBody(arena, buf, end_of_stream, end_of_stream_without_message));
+      request,
+      CreateHttpBody(arena, buf, end_of_stream, end_of_stream_without_message));
 }
 
 void SetResponseBody(upb_Arena* arena, upb_StringView buf, bool end_of_stream,
                      bool end_of_stream_without_message,
                      envoy_service_ext_proc_v3_ProcessingRequest* request) {
   envoy_service_ext_proc_v3_ProcessingRequest_set_response_body(
-      request, CreateHttpBody(arena, buf, end_of_stream, end_of_stream_without_message));
+      request,
+      CreateHttpBody(arena, buf, end_of_stream, end_of_stream_without_message));
 }
 
 void SetResponseTrailers(upb_Arena* arena,
@@ -601,7 +605,9 @@ std::string SerializeMessage(
 
 std::string CreateExtProcRequest(
     upb_Arena* arena, ExtProcRequestType type,
-    std::variant<grpc_metadata_batch*, upb_StringView> payload,
+    std::variant<grpc_metadata_batch*, upb_StringView,
+                 const envoy_config_core_v3_HeaderMap*>
+        payload,
     const std::vector<StringMatcher>& allowed_headers,
     const std::vector<StringMatcher>& disallowed_headers,
     ::google_protobuf_Struct* attributes, bool observability_mode,
@@ -610,18 +616,32 @@ std::string CreateExtProcRequest(
   auto* request = envoy_service_ext_proc_v3_ProcessingRequest_new(arena);
   switch (type) {
     case ExtProcRequestType::kClientHeaders: {
-      auto* upb_headers = envoy_config_core_v3_HeaderMap_new(arena);
-      PopulateMetadataBatchToHeaderMap(*std::get<grpc_metadata_batch*>(payload),
-                                       allowed_headers, disallowed_headers,
-                                       arena, upb_headers);
+      envoy_config_core_v3_HeaderMap* upb_headers = nullptr;
+      if (std::holds_alternative<const envoy_config_core_v3_HeaderMap*>(
+              payload)) {
+        upb_headers = const_cast<envoy_config_core_v3_HeaderMap*>(
+            std::get<const envoy_config_core_v3_HeaderMap*>(payload));
+      } else {
+        upb_headers = envoy_config_core_v3_HeaderMap_new(arena);
+        PopulateMetadataBatchToHeaderMap(
+            *std::get<grpc_metadata_batch*>(payload), allowed_headers,
+            disallowed_headers, arena, upb_headers);
+      }
       SetRequestHeaders(arena, upb_headers, request);
       break;
     }
     case ExtProcRequestType::kServerHeaders: {
-      auto* upb_headers = envoy_config_core_v3_HeaderMap_new(arena);
-      PopulateMetadataBatchToHeaderMap(*std::get<grpc_metadata_batch*>(payload),
-                                       allowed_headers, disallowed_headers,
-                                       arena, upb_headers);
+      envoy_config_core_v3_HeaderMap* upb_headers = nullptr;
+      if (std::holds_alternative<const envoy_config_core_v3_HeaderMap*>(
+              payload)) {
+        upb_headers = const_cast<envoy_config_core_v3_HeaderMap*>(
+            std::get<const envoy_config_core_v3_HeaderMap*>(payload));
+      } else {
+        upb_headers = envoy_config_core_v3_HeaderMap_new(arena);
+        PopulateMetadataBatchToHeaderMap(
+            *std::get<grpc_metadata_batch*>(payload), allowed_headers,
+            disallowed_headers, arena, upb_headers);
+      }
       SetResponseHeaders(arena, upb_headers, /*end_of_stream=*/end_of_stream,
                          request);
       break;
@@ -637,10 +657,17 @@ std::string CreateExtProcRequest(
       break;
     }
     case ExtProcRequestType::kServerTrailers: {
-      auto* upb_trailers = envoy_config_core_v3_HeaderMap_new(arena);
-      PopulateMetadataBatchToHeaderMap(*std::get<grpc_metadata_batch*>(payload),
-                                       allowed_headers, disallowed_headers,
-                                       arena, upb_trailers);
+      envoy_config_core_v3_HeaderMap* upb_trailers = nullptr;
+      if (std::holds_alternative<const envoy_config_core_v3_HeaderMap*>(
+              payload)) {
+        upb_trailers = const_cast<envoy_config_core_v3_HeaderMap*>(
+            std::get<const envoy_config_core_v3_HeaderMap*>(payload));
+      } else {
+        upb_trailers = envoy_config_core_v3_HeaderMap_new(arena);
+        PopulateMetadataBatchToHeaderMap(
+            *std::get<grpc_metadata_batch*>(payload), allowed_headers,
+            disallowed_headers, arena, upb_trailers);
+      }
       SetResponseTrailers(arena, upb_trailers, request);
       break;
     }
@@ -655,8 +682,7 @@ std::string CreateExtProcRequest(
 
 ::google_protobuf_Struct* ParseAttributes(
     upb_Arena* arena, const std::vector<std::string>& attributes,
-    const grpc_metadata_batch& metadata,
-    absl::string_view default_authority) {
+    const grpc_metadata_batch& metadata, absl::string_view default_authority) {
   if (attributes.empty()) return nullptr;
   ::google_protobuf_Struct* struct_msg = google_protobuf_Struct_new(arena);
   auto add_field = [&](absl::string_view name, absl::string_view value) {

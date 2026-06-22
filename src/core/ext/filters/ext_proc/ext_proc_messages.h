@@ -43,10 +43,17 @@ enum class ExtProcRequestType {
   kServerMessage,
   kServerTrailers,
 };
+void PopulateMetadataBatchToHeaderMap(
+    grpc_metadata_batch& batch,
+    const std::vector<StringMatcher>& allowed_headers,
+    const std::vector<StringMatcher>& disallowed_headers, upb_Arena* arena,
+    envoy_config_core_v3_HeaderMap* header_map);
 
 std::string CreateExtProcRequest(
     upb_Arena* arena, ExtProcRequestType type,
-    std::variant<grpc_metadata_batch*, upb_StringView> payload,
+    std::variant<grpc_metadata_batch*, upb_StringView,
+                 const envoy_config_core_v3_HeaderMap*>
+        payload,
     const std::vector<StringMatcher>& allowed_headers,
     const std::vector<StringMatcher>& disallowed_headers,
     ::google_protobuf_Struct* attributes, bool observability_mode,

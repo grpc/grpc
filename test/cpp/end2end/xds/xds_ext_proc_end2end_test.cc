@@ -35,8 +35,8 @@
 #include "src/core/client_channel/backup_poller.h"
 #include "src/core/config/config_vars.h"
 #include "src/core/ext/filters/ext_proc/ext_proc_filter.h"
-#include "src/core/lib/experiments/config.h"
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/experiments/config.h"
 #include "test/core/test_util/scoped_env_var.h"
 #include "test/core/test_util/test_config.h"
 #include "test/cpp/end2end/xds/xds_end2end_test_lib.h"
@@ -301,6 +301,16 @@ class MockRequestHeadersExternalProcessorService
     kStreamingEarlyHalfClose,
     kStreamingEarlyHalfCloseWithoutMessage,
     kHalfCloseResponseBodyMidCall,
+    kImmediateError,
+    kErrorAfterRequestHeaders,
+    kErrorAfterResponseHeaders,
+    kSendRequestBodyWithoutHeaders,
+    kSendResponseBodyWithoutHeaders,
+    kSendResponseTrailersWithoutHeaders,
+    kSendResponseTrailersInTrailersOnly,
+    kSendResponseBodyInTrailersOnly,
+    kSendUnexpectedRequestHeaders,
+    kSendUnexpectedRequestBody,
   };
 
   void SetBehavior(Behavior behavior) { behavior_ = behavior; }
@@ -319,6 +329,26 @@ class MockRequestHeadersExternalProcessorService
   bool has_protocol_config_in_response_headers() {
     absl::MutexLock lock(&mu_);
     return has_protocol_config_in_response_headers_;
+  }
+
+  bool has_protocol_config_in_request_body() {
+    absl::MutexLock lock(&mu_);
+    return has_protocol_config_in_request_body_;
+  }
+
+  bool has_protocol_config_in_response_body() {
+    absl::MutexLock lock(&mu_);
+    return has_protocol_config_in_response_body_;
+  }
+
+  bool request_headers_had_eos() {
+    absl::MutexLock lock(&mu_);
+    return request_headers_had_eos_;
+  }
+
+  bool response_headers_had_eos() {
+    absl::MutexLock lock(&mu_);
+    return response_headers_had_eos_;
   }
 
   std::vector<std::string> received_message_bodies() {
@@ -351,12 +381,27 @@ class MockRequestHeadersExternalProcessorService
     return received_end_of_stream_without_message_;
   }
 
-  ::grpc::Status Process(
-      ::grpc::ServerContext* /*context*/,
-      ::grpc::ServerReaderWriter<
+  grpc::Status Process(
+      grpc::ServerContext* /*context*/,
+      grpc::ServerReaderWriter<
           ::envoy::service::ext_proc::v3::ProcessingResponse,
           ::envoy::service::ext_proc::v3::ProcessingRequest>* stream) override {
     LOG(INFO) << "MockRequestHeadersExternalProcessorService::Process started";
+    if (behavior_ == Behavior::kSendUnexpectedRequestHeaders) {
+      ::envoy::service::ext_proc::v3::ProcessingResponse unsolicited_response;
+      unsolicited_response.mutable_request_headers();
+      stream->Write(unsolicited_response);
+      return grpc::Status::OK;
+    }
+    if (behavior_ == Behavior::kSendUnexpectedRequestBody) {
+      ::envoy::service::ext_proc::v3::ProcessingResponse unsolicited_response;
+      unsolicited_response.mutable_request_body();
+      stream->Write(unsolicited_response);
+      return grpc::Status::OK;
+    }
+    if (behavior_ == Behavior::kImmediateError) {
+      return grpc::Status(grpc::StatusCode::INTERNAL, "immediate error");
+    }
     ::envoy::service::ext_proc::v3::ProcessingRequest request;
     while (stream->Read(&request)) {
       LOG(INFO) << "MockRequestHeadersExternalProcessorService::Process read "
@@ -382,6 +427,10 @@ class MockRequestHeadersExternalProcessorService
           has_protocol_config_in_request_headers_ = true;
         } else if (request.has_response_headers()) {
           has_protocol_config_in_response_headers_ = true;
+        } else if (request.has_request_body()) {
+          has_protocol_config_in_request_body_ = true;
+        } else if (request.has_response_body()) {
+          has_protocol_config_in_response_body_ = true;
         }
       }
       ::envoy::service::ext_proc::v3::ProcessingResponse response;
@@ -389,17 +438,28 @@ class MockRequestHeadersExternalProcessorService
         {
           absl::MutexLock lock(&mu_);
           received_request_headers_ = true;
+          request_headers_had_eos_ = request.request_headers().end_of_stream();
         }
         if (behavior_ == Behavior::kErrorOnRequestHeaders) {
-          return ::grpc::Status(::grpc::StatusCode::INTERNAL,
-                                "error on request headers");
+          return grpc::Status(grpc::StatusCode::INTERNAL,
+                              "error on request headers");
         }
-        if (behavior_ == Behavior::kFail) {
+        if (behavior_ == Behavior::kErrorAfterRequestHeaders) {
+          response.mutable_request_headers()
+              ->mutable_response()
+              ->mutable_header_mutation();
+          stream->Write(response);
+          return grpc::Status(grpc::StatusCode::INTERNAL,
+                              "error after request headers");
+        }
+        if (behavior_ == Behavior::kSendRequestBodyWithoutHeaders) {
+          response.mutable_request_body();
+        } else if (behavior_ == Behavior::kFail) {
           auto* immediate = response.mutable_immediate_response();
           immediate->mutable_status()->set_code(
               envoy::type::v3::StatusCode::Forbidden);
           immediate->mutable_grpc_status()->set_status(
-              static_cast<uint32_t>(::grpc::StatusCode::PERMISSION_DENIED));
+              static_cast<uint32_t>(grpc::StatusCode::PERMISSION_DENIED));
           immediate->set_details("rejected by ext_proc");
         } else if (behavior_ == Behavior::kMutateHeaders) {
           auto* header_mutation = response.mutable_request_headers()
@@ -429,8 +489,25 @@ class MockRequestHeadersExternalProcessorService
         {
           absl::MutexLock lock(&mu_);
           received_response_headers_ = true;
+          response_headers_had_eos_ =
+              request.response_headers().end_of_stream();
         }
-        if (behavior_ == Behavior::kMutateHeaders) {
+        if (behavior_ == Behavior::kSendResponseBodyWithoutHeaders) {
+          response.mutable_response_body();
+        } else if (behavior_ == Behavior::kSendResponseTrailersWithoutHeaders) {
+          response.mutable_response_trailers();
+        } else if (behavior_ == Behavior::kSendResponseTrailersInTrailersOnly) {
+          response.mutable_response_trailers();
+        } else if (behavior_ == Behavior::kSendResponseBodyInTrailersOnly) {
+          response.mutable_response_body();
+        } else if (behavior_ == Behavior::kErrorAfterResponseHeaders) {
+          response.mutable_response_headers()
+              ->mutable_response()
+              ->mutable_header_mutation();
+          stream->Write(response);
+          return grpc::Status(grpc::StatusCode::INTERNAL,
+                              "error after response headers");
+        } else if (behavior_ == Behavior::kMutateHeaders) {
           auto* header_mutation = response.mutable_response_headers()
                                       ->mutable_response()
                                       ->mutable_header_mutation();
@@ -589,12 +666,12 @@ class MockRequestHeadersExternalProcessorService
           continue;
         }
         if (behavior_ == Behavior::kErrorOnRequestBody) {
-          return ::grpc::Status(::grpc::StatusCode::INTERNAL,
-                                "error on request body");
+          return grpc::Status(grpc::StatusCode::INTERNAL,
+                              "error on request body");
         }
         if (behavior_ == Behavior::kErrorMidCall &&
             body_count >= error_threshold_) {
-          return ::grpc::Status(::grpc::StatusCode::INTERNAL, "error mid call");
+          return grpc::Status(grpc::StatusCode::INTERNAL, "error mid call");
         }
         if (behavior_ == Behavior::kMutateRequestBody ||
             behavior_ == Behavior::kCloseGracefullyMidCall ||
@@ -639,12 +716,12 @@ class MockRequestHeadersExternalProcessorService
           response_body_count = received_response_message_bodies_.size();
         }
         if (behavior_ == Behavior::kErrorOnResponseBody) {
-          return ::grpc::Status(::grpc::StatusCode::INTERNAL,
-                                "error on response body");
+          return grpc::Status(grpc::StatusCode::INTERNAL,
+                              "error on response body");
         }
         if (behavior_ == Behavior::kErrorMidCall &&
             response_body_count >= error_threshold_) {
-          return ::grpc::Status(::grpc::StatusCode::INTERNAL, "error mid call");
+          return grpc::Status(grpc::StatusCode::INTERNAL, "error mid call");
         }
         if (behavior_ == Behavior::kCopyResponseBody ||
             (behavior_ == Behavior::kHalfCloseResponseBodyMidCall &&
@@ -715,7 +792,7 @@ class MockRequestHeadersExternalProcessorService
       }
     }
     LOG(INFO) << "MockRequestHeadersExternalProcessorService::Process finished";
-    return ::grpc::Status::OK;
+    return grpc::Status::OK;
   }
 
  private:
@@ -726,6 +803,10 @@ class MockRequestHeadersExternalProcessorService
       ABSL_GUARDED_BY(mu_);
   bool has_protocol_config_in_request_headers_ ABSL_GUARDED_BY(mu_) = false;
   bool has_protocol_config_in_response_headers_ ABSL_GUARDED_BY(mu_) = false;
+  bool has_protocol_config_in_request_body_ ABSL_GUARDED_BY(mu_) = false;
+  bool has_protocol_config_in_response_body_ ABSL_GUARDED_BY(mu_) = false;
+  bool request_headers_had_eos_ ABSL_GUARDED_BY(mu_) = false;
+  bool response_headers_had_eos_ ABSL_GUARDED_BY(mu_) = false;
   std::vector<std::string> received_message_bodies_ ABSL_GUARDED_BY(mu_);
   std::vector<std::string> received_response_message_bodies_
       ABSL_GUARDED_BY(mu_);
@@ -975,7 +1056,7 @@ TEST_P(
   EchoResponse response;
   Status status = SendRpc(RpcOptions(), &response, &server_initial_metadata);
   EXPECT_FALSE(status.ok());
-  EXPECT_EQ(status.error_code(), ::grpc::StatusCode::INTERNAL);
+  EXPECT_EQ(status.error_code(), grpc::StatusCode::INTERNAL);
   EXPECT_EQ(status.error_message(),
             "Forbidden header mutation: x-ext-proc-test");
   server->Shutdown();
@@ -1014,7 +1095,7 @@ TEST_P(
   EchoResponse response;
   Status status = SendRpc(RpcOptions(), &response, &server_initial_metadata);
   EXPECT_FALSE(status.ok());
-  EXPECT_EQ(status.error_code(), ::grpc::StatusCode::INTERNAL);
+  EXPECT_EQ(status.error_code(), grpc::StatusCode::INTERNAL);
   EXPECT_EQ(status.error_message(),
             "validation failed: [field:header.key error:header \":path\" not "
             "allowed]");
@@ -1218,7 +1299,7 @@ TEST_P(
   EchoResponse response;
   Status status = SendRpc(RpcOptions(), &response, &server_initial_metadata);
   EXPECT_FALSE(status.ok());
-  EXPECT_EQ(status.error_code(), ::grpc::StatusCode::INTERNAL);
+  EXPECT_EQ(status.error_code(), grpc::StatusCode::INTERNAL);
   EXPECT_EQ(status.error_message(),
             "Forbidden header mutation: x-ext-proc-test-response");
   server->Shutdown();
@@ -1259,7 +1340,7 @@ TEST_P(
   EchoResponse response;
   Status status = SendRpc(RpcOptions(), &response, &server_initial_metadata);
   EXPECT_FALSE(status.ok());
-  EXPECT_EQ(status.error_code(), ::grpc::StatusCode::INTERNAL);
+  EXPECT_EQ(status.error_code(), grpc::StatusCode::INTERNAL);
   EXPECT_EQ(status.error_message(),
             "validation failed: [field:header.key error:header \":status\" not "
             "allowed]");
@@ -2539,8 +2620,9 @@ TEST_P(XdsExtProcEnd2endTest,
   server->Shutdown();
 }
 
-TEST_P(XdsExtProcEnd2endTest,
-       ServerToClientTrailerOnlyResponseNotMutatedWhenResponseTrailerProcessingModeIsSend) {
+TEST_P(
+    XdsExtProcEnd2endTest,
+    ServerToClientTrailerOnlyResponseNotMutatedWhenResponseTrailerProcessingModeIsSend) {
   int ext_proc_port = grpc_pick_unused_port_or_die();
   std::string server_address = absl::StrCat("localhost:", ext_proc_port);
   MockRequestHeadersExternalProcessorService service;
@@ -2586,7 +2668,8 @@ TEST_P(XdsExtProcEnd2endTest,
   EXPECT_EQ(status.error_message(), "backend-error");
   auto trailer = context.GetServerTrailingMetadata();
   auto it = trailer.find("x-ext-proc-test-trailer");
-  // Non-OK trailers should NOT be sent to ext_proc, so they shouldn't be mutated.
+  // Non-OK trailers should NOT be sent to ext_proc, so they shouldn't be
+  // mutated.
   EXPECT_EQ(it, trailer.end());
   server->Shutdown();
 }
@@ -3307,11 +3390,11 @@ TEST_P(XdsExtProcEnd2endTest, ServerToClientMultipleMessagesFailure) {
 class ExtraResponseExternalProcessorService
     : public envoy::service::ext_proc::v3::ExternalProcessor::Service {
  public:
-  ::grpc::Status Process(
-      ::grpc::ServerContext* /*context*/,
-      ::grpc::ServerReaderWriter<
-          envoy::service::ext_proc::v3::ProcessingResponse,
-          envoy::service::ext_proc::v3::ProcessingRequest>* stream) override {
+  grpc::Status Process(
+      grpc::ServerContext* /*context*/,
+      grpc::ServerReaderWriter<envoy::service::ext_proc::v3::ProcessingResponse,
+                               envoy::service::ext_proc::v3::ProcessingRequest>*
+          stream) override {
     envoy::service::ext_proc::v3::ProcessingRequest request;
     while (stream->Read(&request)) {
       if (request.has_response_body()) {
@@ -3348,7 +3431,7 @@ class ExtraResponseExternalProcessorService
         stream->Write(response);
       }
     }
-    return ::grpc::Status::OK;
+    return grpc::Status::OK;
   }
 };
 
@@ -3407,14 +3490,15 @@ TEST_P(XdsExtProcEnd2endTest, ServerToClientExtraResponseBodyResponseFails) {
 TEST_P(XdsExtProcEnd2endTest, NoProcessingModeBypassesFilter) {
   auto ext_proc =
       ExternalProcessorBuilder()
-          .SetTargetUri("dns:localhost:1234")  // Dummy port where nothing is listening
+          .SetTargetUri(
+              "dns:localhost:1234")  // Dummy port where nothing is listening
           .SetInsecureChannelCredentials()
           .SetRequestHeaderMode(envoy::extensions::filters::http::ext_proc::v3::
                                     ProcessingMode::SKIP)
           .SetResponseHeaderMode(envoy::extensions::filters::http::ext_proc::
                                      v3::ProcessingMode::SKIP)
           .SetRequestBodyMode(envoy::extensions::filters::http::ext_proc::v3::
-                                   ProcessingMode::NONE)
+                                  ProcessingMode::NONE)
           .SetResponseBodyMode(envoy::extensions::filters::http::ext_proc::v3::
                                    ProcessingMode::NONE)
           .SetResponseTrailerMode(envoy::extensions::filters::http::ext_proc::
@@ -3458,7 +3542,7 @@ TEST_P(XdsExtProcEnd2endTest, ObservabilityModeAllProcessingModesEnabled) {
           .SetResponseHeaderMode(envoy::extensions::filters::http::ext_proc::
                                      v3::ProcessingMode::SEND)
           .SetRequestBodyMode(envoy::extensions::filters::http::ext_proc::v3::
-                                   ProcessingMode::GRPC)
+                                  ProcessingMode::GRPC)
           .SetResponseBodyMode(envoy::extensions::filters::http::ext_proc::v3::
                                    ProcessingMode::GRPC)
           .SetResponseTrailerMode(envoy::extensions::filters::http::ext_proc::
@@ -3489,10 +3573,12 @@ TEST_P(XdsExtProcEnd2endTest, ObservabilityModeAllProcessingModesEnabled) {
   ASSERT_EQ(service.received_message_bodies().size(), 1);
   ASSERT_EQ(service.received_response_message_bodies().size(), 1);
   EchoRequest received_req;
-  ASSERT_TRUE(received_req.ParseFromString(service.received_message_bodies()[0]));
+  ASSERT_TRUE(
+      received_req.ParseFromString(service.received_message_bodies()[0]));
   EXPECT_EQ(received_req.message(), "observability-test-request");
   EchoResponse received_resp;
-  ASSERT_TRUE(received_resp.ParseFromString(service.received_response_message_bodies()[0]));
+  ASSERT_TRUE(received_resp.ParseFromString(
+      service.received_response_message_bodies()[0]));
   EXPECT_EQ(received_resp.message(), "observability-test-request");
   EXPECT_EQ(backends_[0]->backend_service()->request_count(), 1);
   EXPECT_EQ(backends_[0]->backend_service()->response_count(), 1);
@@ -3503,8 +3589,8 @@ TEST_P(XdsExtProcEnd2endTest, ObservabilityModeBidiStream10Messages) {
   int ext_proc_port = grpc_pick_unused_port_or_die();
   std::string server_address = absl::StrCat("localhost:", ext_proc_port);
   MockRequestHeadersExternalProcessorService service;
-  service.SetBehavior(MockRequestHeadersExternalProcessorService::Behavior::
-                          kObservabilityMode);
+  service.SetBehavior(
+      MockRequestHeadersExternalProcessorService::Behavior::kObservabilityMode);
   ServerBuilder builder;
   builder.AddListeningPort(server_address, InsecureServerCredentials());
   builder.RegisterService(&service);
@@ -3519,7 +3605,7 @@ TEST_P(XdsExtProcEnd2endTest, ObservabilityModeBidiStream10Messages) {
           .SetResponseHeaderMode(envoy::extensions::filters::http::ext_proc::
                                      v3::ProcessingMode::SEND)
           .SetRequestBodyMode(envoy::extensions::filters::http::ext_proc::v3::
-                                   ProcessingMode::GRPC)
+                                  ProcessingMode::GRPC)
           .SetResponseBodyMode(envoy::extensions::filters::http::ext_proc::v3::
                                    ProcessingMode::GRPC)
           .SetResponseTrailerMode(envoy::extensions::filters::http::ext_proc::
@@ -3545,11 +3631,12 @@ TEST_P(XdsExtProcEnd2endTest, ObservabilityModeBidiStream10Messages) {
     ASSERT_TRUE(stream->Write(request));
     EchoResponse response;
     ASSERT_TRUE(stream->Read(&response));
-    EXPECT_EQ(response.message(), absl::StrCat("observability-stream-request-", i));
+    EXPECT_EQ(response.message(),
+              absl::StrCat("observability-stream-request-", i));
   }
   ASSERT_TRUE(stream->WritesDone());
   EchoResponse response;
-  EXPECT_FALSE(stream->Read(&response)); // Expect EOF
+  EXPECT_FALSE(stream->Read(&response));  // Expect EOF
   Status status = stream->Finish();
   EXPECT_TRUE(status.ok()) << status.error_message() << " ("
                            << status.error_details() << ")";
@@ -3562,12 +3649,701 @@ TEST_P(XdsExtProcEnd2endTest, ObservabilityModeBidiStream10Messages) {
   EXPECT_TRUE(service.received_end_of_stream_without_message());
   for (int i = 0; i < 10; ++i) {
     EchoRequest received_req;
-    ASSERT_TRUE(received_req.ParseFromString(service.received_message_bodies()[i]));
-    EXPECT_EQ(received_req.message(), absl::StrCat("observability-stream-request-", i));
+    ASSERT_TRUE(
+        received_req.ParseFromString(service.received_message_bodies()[i]));
+    EXPECT_EQ(received_req.message(),
+              absl::StrCat("observability-stream-request-", i));
     EchoResponse received_resp;
-    ASSERT_TRUE(received_resp.ParseFromString(service.received_response_message_bodies()[i]));
-    EXPECT_EQ(received_resp.message(), absl::StrCat("observability-stream-request-", i));
+    ASSERT_TRUE(received_resp.ParseFromString(
+        service.received_response_message_bodies()[i]));
+    EXPECT_EQ(received_resp.message(),
+              absl::StrCat("observability-stream-request-", i));
   }
+  server->Shutdown();
+}
+
+TEST_P(XdsExtProcEnd2endTest,
+       StreamErrorBeforeHeaderCallWhenFailureModeAllowIsTrue) {
+  int ext_proc_port = grpc_pick_unused_port_or_die();
+  std::string server_address = absl::StrCat("localhost:", ext_proc_port);
+  MockRequestHeadersExternalProcessorService service;
+  service.SetBehavior(
+      MockRequestHeadersExternalProcessorService::Behavior::kImmediateError);
+  ServerBuilder builder;
+  builder.AddListeningPort(server_address, InsecureServerCredentials());
+  builder.RegisterService(&service);
+  std::unique_ptr<Server> server = builder.BuildAndStart();
+  ASSERT_NE(server, nullptr);
+  auto ext_proc =
+      ExternalProcessorBuilder()
+          .SetTargetUri(absl::StrCat("dns:localhost:", ext_proc_port))
+          .SetInsecureChannelCredentials()
+          .SetFailureModeAllow(true)
+          .SetRequestHeaderMode(envoy::extensions::filters::http::ext_proc::v3::
+                                    ProcessingMode::SEND)
+          .Build();
+  CreateAndStartBackends(1, /*xds_enabled=*/false);
+  SetListenerAndRouteConfiguration(balancer_.get(),
+                                   BuildListenerWithExtProcFilter(ext_proc),
+                                   default_route_config_);
+  Cluster ext_proc_cluster = default_cluster_;
+  ext_proc_cluster.set_name(std::string(kExtProcClusterName));
+  balancer_->ads_service()->SetCdsResource(ext_proc_cluster);
+  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
+
+  Status status = SendRpc(RpcOptions());
+  EXPECT_TRUE(status.ok()) << status.error_message() << " ("
+                           << status.error_details() << ")";
+  server->Shutdown();
+}
+
+TEST_P(XdsExtProcEnd2endTest,
+       StreamErrorBeforeHeaderCallWhenFailureModeAllowIsFalse) {
+  int ext_proc_port = grpc_pick_unused_port_or_die();
+  std::string server_address = absl::StrCat("localhost:", ext_proc_port);
+  MockRequestHeadersExternalProcessorService service;
+  service.SetBehavior(
+      MockRequestHeadersExternalProcessorService::Behavior::kImmediateError);
+  ServerBuilder builder;
+  builder.AddListeningPort(server_address, InsecureServerCredentials());
+  builder.RegisterService(&service);
+  std::unique_ptr<Server> server = builder.BuildAndStart();
+  ASSERT_NE(server, nullptr);
+  auto ext_proc =
+      ExternalProcessorBuilder()
+          .SetTargetUri(absl::StrCat("dns:localhost:", ext_proc_port))
+          .SetInsecureChannelCredentials()
+          .SetFailureModeAllow(false)
+          .SetRequestHeaderMode(envoy::extensions::filters::http::ext_proc::v3::
+                                    ProcessingMode::SEND)
+          .Build();
+  CreateAndStartBackends(1, /*xds_enabled=*/false);
+  SetListenerAndRouteConfiguration(balancer_.get(),
+                                   BuildListenerWithExtProcFilter(ext_proc),
+                                   default_route_config_);
+  Cluster ext_proc_cluster = default_cluster_;
+  ext_proc_cluster.set_name(std::string(kExtProcClusterName));
+  balancer_->ads_service()->SetCdsResource(ext_proc_cluster);
+  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
+
+  Status status = SendRpc(RpcOptions());
+  // Should fail because the connection succeeded and we sent headers before the
+  // server rejected.
+  EXPECT_FALSE(status.ok());
+  EXPECT_EQ(status.error_code(), StatusCode::INTERNAL);
+  EXPECT_EQ(status.error_message(), "immediate error");
+  server->Shutdown();
+}
+
+TEST_P(XdsExtProcEnd2endTest,
+       ConnectionErrorBeforeHeaderCallWhenFailureModeAllowIsFalse) {
+  auto ext_proc =
+      ExternalProcessorBuilder()
+          .SetTargetUri("dns:localhost:1234")  // Dummy port
+          .SetInsecureChannelCredentials()
+          .SetFailureModeAllow(false)
+          .SetRequestHeaderMode(envoy::extensions::filters::http::ext_proc::v3::
+                                    ProcessingMode::SEND)
+          .Build();
+  CreateAndStartBackends(1, /*xds_enabled=*/false);
+  SetListenerAndRouteConfiguration(balancer_.get(),
+                                   BuildListenerWithExtProcFilter(ext_proc),
+                                   default_route_config_);
+  Cluster ext_proc_cluster = default_cluster_;
+  ext_proc_cluster.set_name(std::string(kExtProcClusterName));
+  balancer_->ads_service()->SetCdsResource(ext_proc_cluster);
+  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
+
+  Status status = SendRpc(RpcOptions());
+  // Should succeed because the connection fails before we can send any message.
+  EXPECT_TRUE(status.ok()) << status.error_message() << " ("
+                           << status.error_details() << ")";
+}
+
+TEST_P(XdsExtProcEnd2endTest,
+       StreamErrorAfterHeaderResponseBeforeBodyCallWhenFailureModeAllowIsTrue) {
+  int ext_proc_port = grpc_pick_unused_port_or_die();
+  std::string server_address = absl::StrCat("localhost:", ext_proc_port);
+  MockRequestHeadersExternalProcessorService service;
+  service.SetBehavior(MockRequestHeadersExternalProcessorService::Behavior::
+                          kErrorAfterRequestHeaders);
+  ServerBuilder builder;
+  builder.AddListeningPort(server_address, InsecureServerCredentials());
+  builder.RegisterService(&service);
+  std::unique_ptr<Server> server = builder.BuildAndStart();
+  ASSERT_NE(server, nullptr);
+  auto ext_proc =
+      ExternalProcessorBuilder()
+          .SetTargetUri(absl::StrCat("dns:localhost:", ext_proc_port))
+          .SetInsecureChannelCredentials()
+          .SetFailureModeAllow(true)
+          .SetRequestHeaderMode(envoy::extensions::filters::http::ext_proc::v3::
+                                    ProcessingMode::SEND)
+          .SetRequestBodyMode(envoy::extensions::filters::http::ext_proc::v3::
+                                  ProcessingMode::GRPC)
+          .Build();
+  CreateAndStartBackends(1, /*xds_enabled=*/false);
+  SetListenerAndRouteConfiguration(balancer_.get(),
+                                   BuildListenerWithExtProcFilter(ext_proc),
+                                   default_route_config_);
+  Cluster ext_proc_cluster = default_cluster_;
+  ext_proc_cluster.set_name(std::string(kExtProcClusterName));
+  balancer_->ads_service()->SetCdsResource(ext_proc_cluster);
+  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
+
+  Status status = SendRpc(RpcOptions());
+  EXPECT_TRUE(status.ok()) << status.error_message() << " ("
+                           << status.error_details() << ")";
+  server->Shutdown();
+}
+
+TEST_P(
+    XdsExtProcEnd2endTest,
+    StreamErrorAfterHeaderResponseBeforeBodyCallWhenFailureModeAllowIsFalse) {
+  int ext_proc_port = grpc_pick_unused_port_or_die();
+  std::string server_address = absl::StrCat("localhost:", ext_proc_port);
+  MockRequestHeadersExternalProcessorService service;
+  service.SetBehavior(MockRequestHeadersExternalProcessorService::Behavior::
+                          kErrorAfterRequestHeaders);
+  ServerBuilder builder;
+  builder.AddListeningPort(server_address, InsecureServerCredentials());
+  builder.RegisterService(&service);
+  std::unique_ptr<Server> server = builder.BuildAndStart();
+  ASSERT_NE(server, nullptr);
+  auto ext_proc =
+      ExternalProcessorBuilder()
+          .SetTargetUri(absl::StrCat("dns:localhost:", ext_proc_port))
+          .SetInsecureChannelCredentials()
+          .SetFailureModeAllow(false)
+          .SetRequestHeaderMode(envoy::extensions::filters::http::ext_proc::v3::
+                                    ProcessingMode::SEND)
+          .SetRequestBodyMode(envoy::extensions::filters::http::ext_proc::v3::
+                                  ProcessingMode::GRPC)
+          .Build();
+  CreateAndStartBackends(1, /*xds_enabled=*/false);
+  SetListenerAndRouteConfiguration(balancer_.get(),
+                                   BuildListenerWithExtProcFilter(ext_proc),
+                                   default_route_config_);
+  Cluster ext_proc_cluster = default_cluster_;
+  ext_proc_cluster.set_name(std::string(kExtProcClusterName));
+  balancer_->ads_service()->SetCdsResource(ext_proc_cluster);
+  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
+
+  Status status = SendRpc(RpcOptions());
+  EXPECT_FALSE(status.ok());
+  EXPECT_EQ(status.error_code(), StatusCode::INTERNAL);
+  EXPECT_EQ(status.error_message(), "error after request headers");
+  server->Shutdown();
+}
+
+TEST_P(
+    XdsExtProcEnd2endTest,
+    StreamErrorAfterRequestHeaderResponseBeforeResponseHeaderCallWhenFailureModeAllowIsTrue) {
+  int ext_proc_port = grpc_pick_unused_port_or_die();
+  std::string server_address = absl::StrCat("localhost:", ext_proc_port);
+  MockRequestHeadersExternalProcessorService service;
+  service.SetBehavior(MockRequestHeadersExternalProcessorService::Behavior::
+                          kErrorAfterRequestHeaders);
+  ServerBuilder builder;
+  builder.AddListeningPort(server_address, InsecureServerCredentials());
+  builder.RegisterService(&service);
+  std::unique_ptr<Server> server = builder.BuildAndStart();
+  ASSERT_NE(server, nullptr);
+  auto ext_proc =
+      ExternalProcessorBuilder()
+          .SetTargetUri(absl::StrCat("dns:localhost:", ext_proc_port))
+          .SetInsecureChannelCredentials()
+          .SetFailureModeAllow(true)
+          .SetRequestHeaderMode(envoy::extensions::filters::http::ext_proc::v3::
+                                    ProcessingMode::SEND)
+          .SetResponseHeaderMode(envoy::extensions::filters::http::ext_proc::
+                                     v3::ProcessingMode::SEND)
+          .Build();
+  CreateAndStartBackends(1, /*xds_enabled=*/false);
+  SetListenerAndRouteConfiguration(balancer_.get(),
+                                   BuildListenerWithExtProcFilter(ext_proc),
+                                   default_route_config_);
+  Cluster ext_proc_cluster = default_cluster_;
+  ext_proc_cluster.set_name(std::string(kExtProcClusterName));
+  balancer_->ads_service()->SetCdsResource(ext_proc_cluster);
+  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
+
+  Status status = SendRpc(RpcOptions());
+  EXPECT_TRUE(status.ok()) << status.error_message() << " ("
+                           << status.error_details() << ")";
+  server->Shutdown();
+}
+
+TEST_P(
+    XdsExtProcEnd2endTest,
+    StreamErrorAfterRequestHeaderResponseBeforeResponseHeaderCallWhenFailureModeAllowIsFalse) {
+  int ext_proc_port = grpc_pick_unused_port_or_die();
+  std::string server_address = absl::StrCat("localhost:", ext_proc_port);
+  MockRequestHeadersExternalProcessorService service;
+  service.SetBehavior(MockRequestHeadersExternalProcessorService::Behavior::
+                          kErrorAfterRequestHeaders);
+  ServerBuilder builder;
+  builder.AddListeningPort(server_address, InsecureServerCredentials());
+  builder.RegisterService(&service);
+  std::unique_ptr<Server> server = builder.BuildAndStart();
+  ASSERT_NE(server, nullptr);
+  auto ext_proc =
+      ExternalProcessorBuilder()
+          .SetTargetUri(absl::StrCat("dns:localhost:", ext_proc_port))
+          .SetInsecureChannelCredentials()
+          .SetFailureModeAllow(false)
+          .SetRequestHeaderMode(envoy::extensions::filters::http::ext_proc::v3::
+                                    ProcessingMode::SEND)
+          .SetResponseHeaderMode(envoy::extensions::filters::http::ext_proc::
+                                     v3::ProcessingMode::SEND)
+          .Build();
+  CreateAndStartBackends(1, /*xds_enabled=*/false);
+  SetListenerAndRouteConfiguration(balancer_.get(),
+                                   BuildListenerWithExtProcFilter(ext_proc),
+                                   default_route_config_);
+  Cluster ext_proc_cluster = default_cluster_;
+  ext_proc_cluster.set_name(std::string(kExtProcClusterName));
+  balancer_->ads_service()->SetCdsResource(ext_proc_cluster);
+  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
+
+  Status status = SendRpc(RpcOptions());
+  EXPECT_FALSE(status.ok());
+  EXPECT_EQ(status.error_code(), StatusCode::INTERNAL);
+  EXPECT_EQ(status.error_message(), "error after request headers");
+  server->Shutdown();
+}
+
+TEST_P(
+    XdsExtProcEnd2endTest,
+    StreamErrorAfterResponseHeaderResponseBeforeResponseBodyCallWhenFailureModeAllowIsTrue) {
+  int ext_proc_port = grpc_pick_unused_port_or_die();
+  std::string server_address = absl::StrCat("localhost:", ext_proc_port);
+  MockRequestHeadersExternalProcessorService service;
+  service.SetBehavior(MockRequestHeadersExternalProcessorService::Behavior::
+                          kErrorAfterResponseHeaders);
+  ServerBuilder builder;
+  builder.AddListeningPort(server_address, InsecureServerCredentials());
+  builder.RegisterService(&service);
+  std::unique_ptr<Server> server = builder.BuildAndStart();
+  ASSERT_NE(server, nullptr);
+  auto ext_proc =
+      ExternalProcessorBuilder()
+          .SetTargetUri(absl::StrCat("dns:localhost:", ext_proc_port))
+          .SetInsecureChannelCredentials()
+          .SetFailureModeAllow(true)
+          .SetRequestHeaderMode(envoy::extensions::filters::http::ext_proc::v3::
+                                    ProcessingMode::SKIP)
+          .SetResponseHeaderMode(envoy::extensions::filters::http::ext_proc::
+                                     v3::ProcessingMode::SEND)
+          .SetResponseBodyMode(envoy::extensions::filters::http::ext_proc::v3::
+                                   ProcessingMode::GRPC)
+          .SetResponseTrailerMode(envoy::extensions::filters::http::ext_proc::
+                                      v3::ProcessingMode::SEND)
+          .Build();
+  CreateAndStartBackends(1, /*xds_enabled=*/false);
+  SetListenerAndRouteConfiguration(balancer_.get(),
+                                   BuildListenerWithExtProcFilter(ext_proc),
+                                   default_route_config_);
+  Cluster ext_proc_cluster = default_cluster_;
+  ext_proc_cluster.set_name(std::string(kExtProcClusterName));
+  balancer_->ads_service()->SetCdsResource(ext_proc_cluster);
+  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
+
+  Status status = SendRpc(RpcOptions());
+  EXPECT_TRUE(status.ok()) << status.error_message() << " ("
+                           << status.error_details() << ")";
+  server->Shutdown();
+}
+
+TEST_P(
+    XdsExtProcEnd2endTest,
+    StreamErrorAfterResponseHeaderResponseBeforeResponseBodyCallWhenFailureModeAllowIsFalse) {
+  int ext_proc_port = grpc_pick_unused_port_or_die();
+  std::string server_address = absl::StrCat("localhost:", ext_proc_port);
+  MockRequestHeadersExternalProcessorService service;
+  service.SetBehavior(MockRequestHeadersExternalProcessorService::Behavior::
+                          kErrorAfterResponseHeaders);
+  ServerBuilder builder;
+  builder.AddListeningPort(server_address, InsecureServerCredentials());
+  builder.RegisterService(&service);
+  std::unique_ptr<Server> server = builder.BuildAndStart();
+  ASSERT_NE(server, nullptr);
+  auto ext_proc =
+      ExternalProcessorBuilder()
+          .SetTargetUri(absl::StrCat("dns:localhost:", ext_proc_port))
+          .SetInsecureChannelCredentials()
+          .SetFailureModeAllow(false)
+          .SetRequestHeaderMode(envoy::extensions::filters::http::ext_proc::v3::
+                                    ProcessingMode::SKIP)
+          .SetResponseHeaderMode(envoy::extensions::filters::http::ext_proc::
+                                     v3::ProcessingMode::SEND)
+          .SetResponseBodyMode(envoy::extensions::filters::http::ext_proc::v3::
+                                   ProcessingMode::GRPC)
+          .SetResponseTrailerMode(envoy::extensions::filters::http::ext_proc::
+                                      v3::ProcessingMode::SEND)
+          .Build();
+  CreateAndStartBackends(1, /*xds_enabled=*/false);
+  SetListenerAndRouteConfiguration(balancer_.get(),
+                                   BuildListenerWithExtProcFilter(ext_proc),
+                                   default_route_config_);
+  Cluster ext_proc_cluster = default_cluster_;
+  ext_proc_cluster.set_name(std::string(kExtProcClusterName));
+  balancer_->ads_service()->SetCdsResource(ext_proc_cluster);
+  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
+
+  Status status = SendRpc(RpcOptions());
+  EXPECT_FALSE(status.ok());
+  EXPECT_EQ(status.error_code(), StatusCode::INTERNAL);
+  EXPECT_EQ(status.error_message(), "error after response headers");
+  server->Shutdown();
+}
+
+TEST_P(XdsExtProcEnd2endTest, EventOrderingTrailersOnly) {
+  int ext_proc_port = grpc_pick_unused_port_or_die();
+  std::string server_address = absl::StrCat("localhost:", ext_proc_port);
+  MockRequestHeadersExternalProcessorService service;
+  ServerBuilder builder;
+  builder.AddListeningPort(server_address, InsecureServerCredentials());
+  builder.RegisterService(&service);
+  std::unique_ptr<Server> server = builder.BuildAndStart();
+  ASSERT_NE(server, nullptr);
+  auto ext_proc =
+      ExternalProcessorBuilder()
+          .SetTargetUri(absl::StrCat("dns:localhost:", ext_proc_port))
+          .SetInsecureChannelCredentials()
+          .SetRequestHeaderMode(envoy::extensions::filters::http::ext_proc::v3::
+                                    ProcessingMode::SKIP)
+          .SetResponseHeaderMode(envoy::extensions::filters::http::ext_proc::
+                                     v3::ProcessingMode::SEND)
+          .SetResponseBodyMode(envoy::extensions::filters::http::ext_proc::v3::
+                                   ProcessingMode::GRPC)
+          .SetResponseTrailerMode(envoy::extensions::filters::http::ext_proc::
+                                      v3::ProcessingMode::SEND)
+          .Build();
+  CreateAndStartBackends(1, /*xds_enabled=*/false);
+  SetListenerAndRouteConfiguration(balancer_.get(),
+                                   BuildListenerWithExtProcFilter(ext_proc),
+                                   default_route_config_);
+  Cluster ext_proc_cluster = default_cluster_;
+  ext_proc_cluster.set_name(std::string(kExtProcClusterName));
+  balancer_->ads_service()->SetCdsResource(ext_proc_cluster);
+  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
+
+  ClientContext context;
+  EchoRequest request;
+  request.set_message("hello");
+  // Configure backend to return error immediately (Trailers-Only)
+  request.mutable_param()->mutable_expected_error()->set_code(
+      static_cast<int>(StatusCode::UNAVAILABLE));
+  request.mutable_param()->mutable_expected_error()->set_error_message(
+      "backend error");
+  EchoResponse response;
+  Status status = stub_->Echo(&context, request, &response);
+  EXPECT_FALSE(status.ok());
+  EXPECT_EQ(status.error_code(), StatusCode::UNAVAILABLE);
+  EXPECT_EQ(status.error_message(), "backend error");
+
+  // Verify ext_proc received response_headers with EOS = true
+  EXPECT_TRUE(service.received_response_headers());
+  EXPECT_TRUE(service.response_headers_had_eos());
+
+  // Verify ext_proc did NOT receive response_trailers or response_body
+  EXPECT_FALSE(service.received_response_trailers());
+  EXPECT_TRUE(service.received_response_message_bodies().empty());
+
+  server->Shutdown();
+}
+
+TEST_P(XdsExtProcEnd2endTest,
+       EventOrderingProtocolConfigOnFirstMessageServerHeaders) {
+  int ext_proc_port = grpc_pick_unused_port_or_die();
+  std::string server_address = absl::StrCat("localhost:", ext_proc_port);
+  MockRequestHeadersExternalProcessorService service;
+  ServerBuilder builder;
+  builder.AddListeningPort(server_address, InsecureServerCredentials());
+  builder.RegisterService(&service);
+  std::unique_ptr<Server> server = builder.BuildAndStart();
+  ASSERT_NE(server, nullptr);
+  // Bypass request path completely, enable only response headers
+  auto ext_proc =
+      ExternalProcessorBuilder()
+          .SetTargetUri(absl::StrCat("dns:localhost:", ext_proc_port))
+          .SetInsecureChannelCredentials()
+          .SetRequestHeaderMode(envoy::extensions::filters::http::ext_proc::v3::
+                                    ProcessingMode::SKIP)
+          .SetResponseHeaderMode(envoy::extensions::filters::http::ext_proc::
+                                     v3::ProcessingMode::SEND)
+          .Build();
+  CreateAndStartBackends(1, /*xds_enabled=*/false);
+  SetListenerAndRouteConfiguration(balancer_.get(),
+                                   BuildListenerWithExtProcFilter(ext_proc),
+                                   default_route_config_);
+  Cluster ext_proc_cluster = default_cluster_;
+  ext_proc_cluster.set_name(std::string(kExtProcClusterName));
+  balancer_->ads_service()->SetCdsResource(ext_proc_cluster);
+  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
+
+  ClientContext context;
+  EchoRequest request;
+  request.set_message("hello");
+  EchoResponse response;
+  Status status = stub_->Echo(&context, request, &response);
+  EXPECT_TRUE(status.ok()) << status.error_message();
+
+  // Verify ext_proc received response_headers as first message and it had
+  // config
+  EXPECT_TRUE(service.received_response_headers());
+  EXPECT_TRUE(service.has_protocol_config_in_response_headers());
+  EXPECT_FALSE(service.received_request_headers());
+
+  server->Shutdown();
+}
+
+TEST_P(XdsExtProcEnd2endTest,
+       EventOrderingProtocolConfigOnFirstMessageClientBody) {
+  int ext_proc_port = grpc_pick_unused_port_or_die();
+  std::string server_address = absl::StrCat("localhost:", ext_proc_port);
+  MockRequestHeadersExternalProcessorService service;
+  ServerBuilder builder;
+  builder.AddListeningPort(server_address, InsecureServerCredentials());
+  builder.RegisterService(&service);
+  std::unique_ptr<Server> server = builder.BuildAndStart();
+  ASSERT_NE(server, nullptr);
+  // Bypass request headers, enable request body. First message will be request
+  // body.
+  auto ext_proc =
+      ExternalProcessorBuilder()
+          .SetTargetUri(absl::StrCat("dns:localhost:", ext_proc_port))
+          .SetInsecureChannelCredentials()
+          .SetRequestHeaderMode(envoy::extensions::filters::http::ext_proc::v3::
+                                    ProcessingMode::SKIP)
+          .SetRequestBodyMode(envoy::extensions::filters::http::ext_proc::v3::
+                                  ProcessingMode::GRPC)
+          .Build();
+  CreateAndStartBackends(1, /*xds_enabled=*/false);
+  SetListenerAndRouteConfiguration(balancer_.get(),
+                                   BuildListenerWithExtProcFilter(ext_proc),
+                                   default_route_config_);
+  Cluster ext_proc_cluster = default_cluster_;
+  ext_proc_cluster.set_name(std::string(kExtProcClusterName));
+  balancer_->ads_service()->SetCdsResource(ext_proc_cluster);
+  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
+
+  ClientContext context;
+  EchoRequest request;
+  request.set_message("hello");
+  EchoResponse response;
+  Status status = stub_->Echo(&context, request, &response);
+  EXPECT_TRUE(status.ok()) << status.error_message();
+
+  // Verify ext_proc received request_body as first message and it had config
+  EXPECT_FALSE(service.received_request_headers());
+  EXPECT_FALSE(service.received_message_bodies().empty());
+  EXPECT_TRUE(service.has_protocol_config_in_request_body());
+
+  server->Shutdown();
+}
+
+TEST_P(XdsExtProcEnd2endTest, ProtocolViolationRequestBodyBeforeHeaders) {
+  int ext_proc_port = grpc_pick_unused_port_or_die();
+  std::string server_address = absl::StrCat("localhost:", ext_proc_port);
+  MockRequestHeadersExternalProcessorService service;
+  service.SetBehavior(MockRequestHeadersExternalProcessorService::Behavior::
+                          kSendRequestBodyWithoutHeaders);
+  ServerBuilder builder;
+  builder.AddListeningPort(server_address, InsecureServerCredentials());
+  builder.RegisterService(&service);
+  std::unique_ptr<Server> server = builder.BuildAndStart();
+  ASSERT_NE(server, nullptr);
+  auto ext_proc =
+      ExternalProcessorBuilder()
+          .SetTargetUri(absl::StrCat("dns:localhost:", ext_proc_port))
+          .SetInsecureChannelCredentials()
+          .SetRequestHeaderMode(envoy::extensions::filters::http::ext_proc::v3::
+                                    ProcessingMode::SEND)
+          .SetRequestBodyMode(envoy::extensions::filters::http::ext_proc::v3::
+                                  ProcessingMode::GRPC)
+          .Build();
+  CreateAndStartBackends(1, /*xds_enabled=*/false);
+  SetListenerAndRouteConfiguration(balancer_.get(),
+                                   BuildListenerWithExtProcFilter(ext_proc),
+                                   default_route_config_);
+  Cluster ext_proc_cluster = default_cluster_;
+  ext_proc_cluster.set_name(std::string(kExtProcClusterName));
+  balancer_->ads_service()->SetCdsResource(ext_proc_cluster);
+  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
+
+  ClientContext context;
+  EchoRequest request;
+  request.set_message("hello");
+  EchoResponse response;
+  Status status = stub_->Echo(&context, request, &response);
+  EXPECT_FALSE(status.ok());
+  EXPECT_EQ(status.error_code(), StatusCode::INTERNAL);
+  EXPECT_NE(
+      status.error_message().find(
+          "Received request body response before request headers response"),
+      std::string::npos)
+      << "Actual error: " << status.error_message();
+
+  server->Shutdown();
+}
+
+TEST_P(XdsExtProcEnd2endTest, ProtocolViolationResponseBodyBeforeHeaders) {
+  int ext_proc_port = grpc_pick_unused_port_or_die();
+  std::string server_address = absl::StrCat("localhost:", ext_proc_port);
+  MockRequestHeadersExternalProcessorService service;
+  service.SetBehavior(MockRequestHeadersExternalProcessorService::Behavior::
+                          kSendResponseBodyWithoutHeaders);
+  ServerBuilder builder;
+  builder.AddListeningPort(server_address, InsecureServerCredentials());
+  builder.RegisterService(&service);
+  std::unique_ptr<Server> server = builder.BuildAndStart();
+  ASSERT_NE(server, nullptr);
+  auto ext_proc =
+      ExternalProcessorBuilder()
+          .SetTargetUri(absl::StrCat("dns:localhost:", ext_proc_port))
+          .SetInsecureChannelCredentials()
+          .SetRequestHeaderMode(envoy::extensions::filters::http::ext_proc::v3::
+                                    ProcessingMode::SKIP)
+          .SetResponseHeaderMode(envoy::extensions::filters::http::ext_proc::
+                                     v3::ProcessingMode::SEND)
+          .SetResponseBodyMode(envoy::extensions::filters::http::ext_proc::v3::
+                                   ProcessingMode::GRPC)
+          .SetResponseTrailerMode(envoy::extensions::filters::http::ext_proc::
+                                      v3::ProcessingMode::SEND)
+          .Build();
+  CreateAndStartBackends(1, /*xds_enabled=*/false);
+  SetListenerAndRouteConfiguration(balancer_.get(),
+                                   BuildListenerWithExtProcFilter(ext_proc),
+                                   default_route_config_);
+  Cluster ext_proc_cluster = default_cluster_;
+  ext_proc_cluster.set_name(std::string(kExtProcClusterName));
+  balancer_->ads_service()->SetCdsResource(ext_proc_cluster);
+  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
+
+  ClientContext context;
+  EchoRequest request;
+  request.set_message("hello");
+  EchoResponse response;
+  Status status = stub_->Echo(&context, request, &response);
+  EXPECT_FALSE(status.ok());
+  EXPECT_EQ(status.error_code(), StatusCode::INTERNAL);
+  EXPECT_NE(
+      status.error_message().find(
+          "Received response body response before response headers response"),
+      std::string::npos)
+      << "Actual error: " << status.error_message();
+
+  server->Shutdown();
+}
+
+TEST_P(XdsExtProcEnd2endTest, ProtocolViolationResponseTrailersInTrailersOnly) {
+  int ext_proc_port = grpc_pick_unused_port_or_die();
+  std::string server_address = absl::StrCat("localhost:", ext_proc_port);
+  MockRequestHeadersExternalProcessorService service;
+  service.SetBehavior(MockRequestHeadersExternalProcessorService::Behavior::
+                          kSendResponseTrailersInTrailersOnly);
+  ServerBuilder builder;
+  builder.AddListeningPort(server_address, InsecureServerCredentials());
+  builder.RegisterService(&service);
+  std::unique_ptr<Server> server = builder.BuildAndStart();
+  ASSERT_NE(server, nullptr);
+  auto ext_proc =
+      ExternalProcessorBuilder()
+          .SetTargetUri(absl::StrCat("dns:localhost:", ext_proc_port))
+          .SetInsecureChannelCredentials()
+          .SetRequestHeaderMode(envoy::extensions::filters::http::ext_proc::v3::
+                                    ProcessingMode::SKIP)
+          .SetResponseHeaderMode(envoy::extensions::filters::http::ext_proc::
+                                     v3::ProcessingMode::SEND)
+          .SetResponseTrailerMode(envoy::extensions::filters::http::ext_proc::
+                                      v3::ProcessingMode::SEND)
+          .Build();
+  CreateAndStartBackends(1, /*xds_enabled=*/false);
+  SetListenerAndRouteConfiguration(balancer_.get(),
+                                   BuildListenerWithExtProcFilter(ext_proc),
+                                   default_route_config_);
+  Cluster ext_proc_cluster = default_cluster_;
+  ext_proc_cluster.set_name(std::string(kExtProcClusterName));
+  balancer_->ads_service()->SetCdsResource(ext_proc_cluster);
+  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
+
+  ClientContext context;
+  EchoRequest request;
+  request.set_message("hello");
+  request.mutable_param()->mutable_expected_error()->set_code(
+      static_cast<int>(StatusCode::UNAVAILABLE));
+  request.mutable_param()->mutable_expected_error()->set_error_message(
+      "backend error");
+  EchoResponse response;
+  Status status = stub_->Echo(&context, request, &response);
+  EXPECT_FALSE(status.ok());
+  EXPECT_EQ(status.error_code(), StatusCode::INTERNAL);
+  EXPECT_NE(status.error_message().find(
+                "Received response trailers response in a Trailers-Only call"),
+            std::string::npos)
+      << "Actual error: " << status.error_message();
+
+  server->Shutdown();
+}
+
+TEST_P(XdsExtProcEnd2endTest, ProtocolViolationUnexpectedRequestHeaders) {
+  int ext_proc_port = grpc_pick_unused_port_or_die();
+  std::string server_address = absl::StrCat("localhost:", ext_proc_port);
+  MockRequestHeadersExternalProcessorService service;
+  service.SetBehavior(MockRequestHeadersExternalProcessorService::Behavior::
+                          kSendUnexpectedRequestHeaders);
+  ServerBuilder builder;
+  builder.AddListeningPort(server_address, InsecureServerCredentials());
+  builder.RegisterService(&service);
+  std::unique_ptr<Server> server = builder.BuildAndStart();
+  ASSERT_NE(server, nullptr);
+  auto ext_proc =
+      ExternalProcessorBuilder()
+          .SetTargetUri(absl::StrCat("dns:localhost:", ext_proc_port))
+          .SetInsecureChannelCredentials()
+          .SetRequestHeaderMode(envoy::extensions::filters::http::ext_proc::v3::
+                                    ProcessingMode::SKIP)
+          .Build();
+  CreateAndStartBackends(1, /*xds_enabled=*/false);
+  SetListenerAndRouteConfiguration(balancer_.get(),
+                                   BuildListenerWithExtProcFilter(ext_proc),
+                                   default_route_config_);
+  Cluster ext_proc_cluster = default_cluster_;
+  ext_proc_cluster.set_name(std::string(kExtProcClusterName));
+  balancer_->ads_service()->SetCdsResource(ext_proc_cluster);
+  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
+
+  ClientContext context;
+  EchoRequest request;
+  request.set_message("hello");
+  EchoResponse response;
+  Status status = stub_->Echo(&context, request, &response);
+  EXPECT_FALSE(status.ok());
+  EXPECT_EQ(status.error_code(), StatusCode::INTERNAL);
+  EXPECT_NE(
+      status.error_message().find(
+          "Received request headers response but request headers are disabled"),
+      std::string::npos)
+      << "Actual error: " << status.error_message();
+
   server->Shutdown();
 }
 
