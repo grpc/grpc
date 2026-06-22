@@ -16,6 +16,7 @@
 
 #include "src/core/ext/filters/ext_proc/ext_proc_filter.h"
 
+#include <atomic>
 #include <string>
 
 #include "envoy/service/ext_proc/v3/external_processor.upb.h"
@@ -226,6 +227,8 @@ class ExtProcFilter::ExtProcCall : public DualRefCounted<ExtProcCall> {
       watcher = connectivity_watcher_;
     }
     channel_->transport()->StartConnectivityFailureWatch(watcher);
+    // Take a strong ref to keep ourselves alive until the stream is closed.
+    Ref(DEBUG_LOCATION, "active_stream").release();
   }
 
   ~ExtProcCall() override { streaming_call_.reset(); }
@@ -236,18 +239,12 @@ class ExtProcFilter::ExtProcCall : public DualRefCounted<ExtProcCall> {
     return is_first;
   }
 
-  void MarkFirstBodyMessageSent() {
-    MutexLock lock(&mu_);
+  void MarkFirstBodyMessageSentLocked() ABSL_NO_THREAD_SAFETY_ANALYSIS {
     first_body_message_sent_ = true;
   }
 
-  bool IsStreamClosed() {
-    MutexLock lock(&mu_);
-    return stream_closed_;
-  }
-
-  bool IsStreamClosedLocked() const ABSL_EXCLUSIVE_LOCKS_REQUIRED(&mu_) {
-    return stream_closed_;
+  bool IsStreamClosed() const {
+    return stream_closed_.load(std::memory_order_acquire);
   }
 
   void IncrementOutstandingServerToClientMessages() {
@@ -326,7 +323,8 @@ class ExtProcFilter::ExtProcCall : public DualRefCounted<ExtProcCall> {
     if (!condition) {
       return []() -> Poll<absl::Status> { return absl::OkStatus(); };
     }
-    if (stream_closed_ || streaming_call_ == nullptr) {
+    if (stream_closed_.load(std::memory_order_acquire) ||
+        streaming_call_ == nullptr) {
       return []() -> Poll<absl::Status> {
         return absl::CancelledError("Stream closed");
       };
@@ -411,7 +409,7 @@ class ExtProcFilter::ExtProcCall : public DualRefCounted<ExtProcCall> {
     RefCountedPtr<ConnectivityWatcher> watcher_to_stop;
     {
       MutexLock lock(&mu_);
-      stream_closed_ = true;
+      stream_closed_.store(true, std::memory_order_release);
       call_to_reset = std::move(streaming_call_);
       watcher_to_stop = std::move(connectivity_watcher_);
     }
@@ -424,7 +422,7 @@ class ExtProcFilter::ExtProcCall : public DualRefCounted<ExtProcCall> {
   void SetStreamErrorStatus(absl::Status status) {
     MutexLock lock(&mu_);
     stream_status_ = status;
-    stream_closed_ = true;
+    stream_closed_.store(true, std::memory_order_release);
   }
 
   bool IsTrailersOnly() {
@@ -671,7 +669,7 @@ class ExtProcFilter::ExtProcCall : public DualRefCounted<ExtProcCall> {
     bool is_first_message_on_stream = false;
     {
       MutexLock lock(&mu_);
-      stream_closed_ = true;
+      stream_closed_.store(true, std::memory_order_release);
       is_first_body_message_sent = first_body_message_sent_;
       is_first_message_on_stream = is_first_message_on_ext_proc_stream_;
     }
@@ -686,6 +684,8 @@ class ExtProcFilter::ExtProcCall : public DualRefCounted<ExtProcCall> {
       CompleteAllLatchesAndPipes(ExtProcResponse{});
     }
     CloseStream();
+    // Release the active stream ref!
+    Unref(DEBUG_LOCATION, "active_stream");
   }
 
   void Orphaned() override { CloseStream(); }
@@ -703,7 +703,7 @@ class ExtProcFilter::ExtProcCall : public DualRefCounted<ExtProcCall> {
   Duration deferred_close_timeout_;
   OrphanablePtr<SerializedStreamingCall> streaming_call_;
   Mutex mu_;
-  bool stream_closed_ ABSL_GUARDED_BY(&mu_) = false;
+  std::atomic<bool> stream_closed_{false};
   bool is_first_message_on_ext_proc_stream_ ABSL_GUARDED_BY(&mu_) = true;
   bool first_body_message_sent_ ABSL_GUARDED_BY(&mu_) = false;
   size_t outstanding_s2c_messages_ ABSL_GUARDED_BY(&mu_) = 0;
@@ -917,7 +917,7 @@ auto SendServerMessageRequest(std::string message_bytes,
       [ext_proc_call = ext_proc_call->Ref(), is_first_message,
        config = std::move(config),
        message_bytes = std::move(message_bytes)]() mutable {
-        ext_proc_call->MarkFirstBodyMessageSent();
+        ext_proc_call->MarkFirstBodyMessageSentLocked();
         GRPC_TRACE_LOG(ext_proc_filter, INFO)
             << "ExtProc: ServerToClientMessages body message intercepted";
         upb::Arena arena;
@@ -1178,7 +1178,7 @@ auto SendServerTrailingMetadataRequest(
     std::shared_ptr<ServerMetadataHandle> metadata)
     ABSL_EXCLUSIVE_LOCKS_REQUIRED(ext_proc_call->mu()) {
   const bool is_first_message = ext_proc_call->IsFirstMessageOnStream();
-  const bool is_stream_closed = ext_proc_call->IsStreamClosedLocked();
+  const bool is_stream_closed = ext_proc_call->IsStreamClosed();
   return ext_proc_call->SendMessageLocked(
       !is_stream_closed,
       [ext_proc_call = ext_proc_call->Ref(), config = std::move(config),
@@ -1283,7 +1283,7 @@ ServerTrailingMetadataObservabilityMode(
       << "ExtProc: ServerTrailingMetadataObservabilityMode pulled. metadata: "
       << (*metadata)->DebugString();
   const bool is_first_message = ext_proc_call->IsFirstMessageOnStream();
-  const bool is_stream_closed = ext_proc_call->IsStreamClosedLocked();
+  const bool is_stream_closed = ext_proc_call->IsStreamClosed();
   auto send_promise = ext_proc_call->SendMessageLocked(
       !is_stream_closed, [ext_proc_call = ext_proc_call->Ref(), config = config,
                           metadata, is_first_message]() {
@@ -1438,7 +1438,7 @@ absl::AnyInvocable<Poll<absl::Status>()> ServerTrailingMetadataTrailersOnly(
     std::shared_ptr<ServerMetadataHandle> metadata)
     ABSL_EXCLUSIVE_LOCKS_REQUIRED(ext_proc_call->mu()) {
   const bool send_headers = config->processing_mode.send_response_headers &&
-                            !ext_proc_call->IsStreamClosedLocked();
+                            !ext_proc_call->IsStreamClosed();
   if (config->observability_mode) {
     return ServerTrailingMetadataTrailersOnlyObservabilityMode(
         handler, ext_proc_call, std::move(config), std::move(metadata),
@@ -1461,7 +1461,7 @@ absl::AnyInvocable<Poll<absl::Status>()> ServerTrailingMetadataNormal(
     ABSL_EXCLUSIVE_LOCKS_REQUIRED(ext_proc_call->mu()) {
   const bool send_trailers_to_ext_proc_stream =
       config->processing_mode.send_response_trailers && IsStatusOk(*metadata) &&
-      !ext_proc_call->IsStreamClosedLocked();
+      !ext_proc_call->IsStreamClosed();
   if (send_trailers_to_ext_proc_stream) {
     if (config->observability_mode) {
       return ServerTrailingMetadataObservabilityMode(
@@ -1525,7 +1525,7 @@ auto SendClientMessageRequest(const MessageHandle& message,
         if (msg_ptr != nullptr) {
           message_bytes = msg_ptr->payload()->JoinIntoString();
         }
-        ext_proc_call->MarkFirstBodyMessageSent();
+        ext_proc_call->MarkFirstBodyMessageSentLocked();
         return CreateExtProcRequest(
             arena.ptr(), ExtProcRequestType::kClientMessage,
             upb_StringView_FromDataAndSize(message_bytes.data(),
@@ -1556,7 +1556,7 @@ auto SendClientMessageRequest(std::string message_bytes,
             << "ExtProc: ClientToServerMessages body message intercepted "
                "(observability mode)";
         upb::Arena arena;
-        ext_proc_call->MarkFirstBodyMessageSent();
+        ext_proc_call->MarkFirstBodyMessageSentLocked();
         return CreateExtProcRequest(
             arena.ptr(), ExtProcRequestType::kClientMessage,
             upb_StringView_FromDataAndSize(message_bytes.data(),
@@ -1903,16 +1903,12 @@ ExtProcFilter::ProcessCallObservabilityMode(
                   handler, initiator, ext_proc_call));
             });
         // Run client headers write and client-to-server messages
-        // concurrently, mapping the Empty result of CancelIfFails to
-        // absl::Status
-        return Map(
-            initiator.CancelIfFails(Map(
-                TryJoin<absl::StatusOr>(
-                    std::move(client_headers_write_promise),
-                    ClientToServerMessages(handler, initiator, ext_proc_call,
-                                           self->config(), attributes)),
-                [](auto result) -> absl::Status { return result.status(); })),
-            [](Empty) -> absl::Status { return absl::OkStatus(); });
+        // concurrently, returning the status of the join.
+        return Map(TryJoin<absl::StatusOr>(
+                       std::move(client_headers_write_promise),
+                       ClientToServerMessages(handler, initiator, ext_proc_call,
+                                              self->config(), attributes)),
+                   [](auto result) -> absl::Status { return result.status(); });
       });
   return [promise = std::move(promise)]() mutable { return promise(); };
 }
