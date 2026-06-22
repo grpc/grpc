@@ -55,6 +55,8 @@ class InterceptorList {
     virtual void MakePromise(T x, void* memory) = 0;
     // Destroy a promise constructed at memory.
     virtual void Destroy(void* memory) = 0;
+    // Get the size of the promise constructed at memory.
+    virtual size_t promise_size() const = 0;
     // Poll a promise constructed at memory.
     // Resolves to an optional<T> -- if nullopt it means terminate the chain and
     // resolve.
@@ -156,6 +158,13 @@ class InterceptorList {
           if (async_resolution_.current_factory == nullptr) {
             return std::move(*p);
           }
+          size_t required_size =
+              async_resolution_.current_factory->promise_size();
+          if (required_size > async_resolution_.space_size) {
+            async_resolution_.space =
+                GetContext<Arena>()->MakePooledArray<char>(required_size);
+            async_resolution_.space_size = required_size;
+          }
           async_resolution_.current_factory->MakePromise(
               std::move(**p), async_resolution_.space.get());
           continue;
@@ -181,16 +190,19 @@ class InterceptorList {
     }
     struct AsyncResolution {
       explicit AsyncResolution(size_t max_size)
-          : space(GetContext<Arena>()->MakePooledArray<char>(max_size)) {}
+          : space(GetContext<Arena>()->MakePooledArray<char>(max_size)),
+            space_size(max_size) {}
       AsyncResolution(const AsyncResolution&) = delete;
       AsyncResolution& operator=(const AsyncResolution&) = delete;
       AsyncResolution(AsyncResolution&& other) noexcept
           : current_factory(std::exchange(other.current_factory, nullptr)),
             first_factory(std::exchange(other.first_factory, nullptr)),
-            space(std::move(other.space)) {}
+            space(std::move(other.space)),
+            space_size(std::exchange(other.space_size, 0)) {}
       Map* current_factory;
       Map** first_factory;
       Arena::PoolPtr<char[]> space;
+      size_t space_size;
     };
     union {
       AsyncResolution async_resolution_;
@@ -263,6 +275,7 @@ class InterceptorList {
     void Destroy(void* memory) override {
       static_cast<Promise*>(memory)->~Promise();
     }
+    size_t promise_size() const override { return sizeof(Promise); }
     Poll<std::optional<T>> PollOnce(void* memory) override {
       return poll_cast<std::optional<T>>((*static_cast<Promise*>(memory))());
     }
